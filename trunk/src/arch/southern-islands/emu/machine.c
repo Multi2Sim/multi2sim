@@ -2921,6 +2921,44 @@ void si_isa_V_MAX_I32_impl(struct si_work_item_t *work_item,
 }
 #undef INST
 
+/* D.i = min(S0.i, S1.i). */
+#define INST SI_INST_VOP2
+void si_isa_V_MIN_I32_impl(struct si_work_item_t *work_item,
+	SIInst *inst)
+{
+	SIInstReg s0;
+	SIInstReg s1;
+	SIInstReg min;
+
+	/* Load operands from registers or as a literal constant. */
+	if (INST.src0 == 0xFF)
+		s0.as_uint = INST.lit_cnst;
+	else
+		s0.as_uint = si_isa_read_reg(work_item, INST.src0);
+	s1.as_uint = si_isa_read_vreg(work_item, INST.vsrc1);
+
+	/* Calculate the minimum operand. */
+	if (s0.as_int < s1.as_int)
+	{
+		min.as_int = s0.as_int;
+	}
+	else
+	{
+		min.as_int = s1.as_int;
+	}
+
+	/* Write the results. */
+	si_isa_write_vreg(work_item, INST.vdst, min.as_uint);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("t%d: V%u<=(%d)", work_item->id, INST.vdst,
+			min.as_int);
+	}
+}
+#undef INST
+
 /* D.u = min(S0.u, S1.u). */
 #define INST SI_INST_VOP2
 void si_isa_V_MIN_U32_impl(struct si_work_item_t *work_item,
@@ -2975,7 +3013,7 @@ void si_isa_V_MAX_U32_impl(struct si_work_item_t *work_item,
 		s0.as_uint = si_isa_read_reg(work_item, INST.src0);
 	s1.as_uint = si_isa_read_vreg(work_item, INST.vsrc1);
 
-	/* Calculate the minimum operand. */
+	/* Calculate the maximum operand. */
 	if (s0.as_uint > s1.as_uint)
 	{
 		max.as_uint = s0.as_uint;
@@ -5526,6 +5564,59 @@ void si_isa_V_CMP_LT_U64_VOP3a_impl(struct si_work_item_t *work_item,
 }
 #undef INST
 
+/* Max of three numbers. */
+#define INST SI_INST_VOP3a
+void si_isa_V_MAX3_I32_impl(struct si_work_item_t *work_item,
+	SIInst *inst)
+{
+	SIInstReg s0;
+	SIInstReg s1;
+	SIInstReg s2;
+	SIInstReg max;
+
+	assert(!INST.clamp);
+	assert(!INST.omod);
+	assert(!INST.neg);
+	assert(!INST.abs);
+
+	/* Load operands from registers. */
+	s0.as_uint = si_isa_read_reg(work_item, INST.src0);
+	s1.as_uint = si_isa_read_reg(work_item, INST.src1);
+	s2.as_uint = si_isa_read_reg(work_item, INST.src2);
+
+	/* Determine the max. */
+	/* max3(s0, s1, s2) == s0 */
+	if (s0.as_int >= s1.as_int && s0.as_int >= s2.as_int)
+	{
+		max.as_int = s0.as_int;
+	}
+	/* max3(s0, s1, s2) == s1 */
+	else if (s1.as_int >= s0.as_int && s1.as_int >= s2.as_int)
+	{
+		max.as_int = s1.as_int;
+	}
+	/* max3(s0, s1, s2) == s2 */
+	else if (s2.as_int >= s0.as_int && s2.as_int >= s1.as_int)
+	{
+		max.as_int = s2.as_int;
+	}
+	else
+	{
+		fatal("%s: Max algorithm failed\n", __FUNCTION__);
+	}
+
+	/* Write the results. */
+	si_isa_write_vreg(work_item, INST.vdst, max.as_uint);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("t%d: V[%u]<=(%d) ",
+			work_item->id_in_wavefront, INST.vdst, max.as_int);
+	}
+}
+#undef INST
+
 /* Median of three numbers. */
 #define INST SI_INST_VOP3a
 void si_isa_V_MED3_I32_impl(struct si_work_item_t *work_item,
@@ -5593,6 +5684,54 @@ void si_isa_V_LSHR_B64_impl(struct si_work_item_t *work_item,
 	union
 	{
 		unsigned long long as_b64;
+		unsigned int as_reg[2];
+
+	} s0, value;
+
+	SIInstReg s1;
+	SIInstReg result_lo;
+	SIInstReg result_hi;
+
+	assert(!INST.clamp);
+	assert(!INST.omod);
+	assert(!INST.neg);
+	assert(!INST.abs);
+
+	/* Load operands from registers. */
+	s0.as_reg[0] = si_isa_read_reg(work_item, INST.src0);
+	s0.as_reg[1] = si_isa_read_reg(work_item, INST.src0 + 1);
+	s1.as_uint = si_isa_read_reg(work_item, INST.src1);
+	s1.as_uint = s1.as_uint & 0x1F;
+
+	/* Shift s0. */
+	value.as_b64 = s0.as_b64 >> s1.as_uint;
+
+	/* Write the results. */
+	result_lo.as_uint = value.as_reg[0];
+	result_hi.as_uint = value.as_reg[1];
+	si_isa_write_vreg(work_item, INST.vdst, result_lo.as_uint);
+	si_isa_write_vreg(work_item, INST.vdst + 1, result_hi.as_uint);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("t%d: S[%u]<=(0x%x) ",
+			work_item->id_in_wavefront, INST.vdst,
+			result_lo.as_uint);
+		si_isa_debug("S[%u]<=(0x%x) ", INST.vdst + 1,
+			result_hi.as_uint);
+	}
+}
+#undef INST
+
+/* D = S0.u >> S1.u[4:0] (Arithmetic shift) */
+#define INST SI_INST_VOP3a
+void si_isa_V_ASHR_B64_impl(struct si_work_item_t *work_item,
+	SIInst *inst)
+{
+	union
+	{
+		long long as_b64;
 		unsigned int as_reg[2];
 
 	} s0, value;
