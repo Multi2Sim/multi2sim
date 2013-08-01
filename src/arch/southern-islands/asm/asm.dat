@@ -523,6 +523,14 @@ DEFINST(V_MAX_F32,
 	0
 )
 
+DEFINST(V_MIN_I32,
+	" v_min_i32     %VDST, %SRC0, %VSRC1",
+	VOP2,
+	17,
+	4,
+	0
+)
+
 DEFINST(V_MAX_I32,
 	" v_max_i32     %VDST, %SRC0, %VSRC1",
 	VOP2,
@@ -1184,10 +1192,26 @@ DEFINST(V_ALIGNBIT_B32,
 	0
 )
 
+DEFINST(V_MAX3_I32,
+	" v_max3_i32    FIXME",
+	VOP3a,
+	341,
+	8,
+	0
+)
+
 DEFINST(V_DIV_FIXUP_F64,
 	" v_div_fixup_f64  %VOP3_64_VDST, %VOP3_64_SRC0, %VOP3_64_SRC1, %VOP3_64_SRC2",
 	VOP3a,
 	352,
+	8,
+	0
+)
+
+DEFINST(V_ASHR_I64,
+	" v_ashr_i64    FIXME",
+	VOP3a,
+	355,
 	8,
 	0
 )
