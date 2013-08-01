@@ -5726,12 +5726,12 @@ void si_isa_V_LSHR_B64_impl(struct si_work_item_t *work_item,
 
 /* D = S0.u >> S1.u[4:0] (Arithmetic shift) */
 #define INST SI_INST_VOP3a
-void si_isa_V_ASHR_B64_impl(struct si_work_item_t *work_item,
+void si_isa_V_ASHR_I64_impl(struct si_work_item_t *work_item,
 	SIInst *inst)
 {
 	union
 	{
-		long long as_b64;
+		long long as_i64;
 		unsigned int as_reg[2];
 
 	} s0, value;
@@ -5752,7 +5752,7 @@ void si_isa_V_ASHR_B64_impl(struct si_work_item_t *work_item,
 	s1.as_uint = s1.as_uint & 0x1F;
 
 	/* Shift s0. */
-	value.as_b64 = s0.as_b64 >> s1.as_uint;
+	value.as_i64 = s0.as_i64 >> s1.as_uint;
 
 	/* Write the results. */
 	result_lo.as_uint = value.as_reg[0];
