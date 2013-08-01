@@ -236,198 +236,6 @@ static void kpl_asm_table_init(enum kpl_inst_opcode_t opcode, char *name,
 	table[index].info = &kpl_inst_info[opcode];
 }
 
-
-
-struct str_map_t kpl_inst_sat_map =
-{
-	2,
-	{
-		{ "", 0},
-		{ ".SAT", 1}
-	}
-};
-
-struct str_map_t kpl_inst_x_map =
-{
-	2,
-	{
-		{ "", 0},
-		{ ".X", 1}
-	}
-};
-
-struct str_map_t kpl_inst_cc_map =
-{
-	2,
-	{
-		{ "", 0},
-		{ ".CC", 1}
-	}
-};
-
-struct str_map_t kpl_inst_hi_map =
-{
-	2,
-	{
-		{ "", 0},
-		{ ".HI", 1}
-	}
-};
-
-struct str_map_t kpl_inst_u0_map =
-{
-	4,
-	{
-		{ ".U32.U32", 0},
-		{ ".S32.U32", 1},
-		{ ".U32.S32", 2},
-		{ "", 3}
-	}
-};
-
-struct str_map_t kpl_inst_keeprefcount_map =
-{
-	2,
-	{
-		{ "", 0},
-		{ ".KEEPREFCOUNT", 1}
-	}
-};
-
-struct str_map_t kpl_inst_s_map =
-{
-	2,
-	{
-		{ "", 0},
-		{ ".S", 1}
-	}
-};
-
-struct str_map_t kpl_inst_and_map =
-{
-	4,
-	{
-		{ ".AND", 0},
-		{ ".OR", 1},
-		{ ".XOR", 2},
-		{ ".INVALIDBOP3", 3}
-	}
-};
-
-struct str_map_t kpl_inst_cv_map =
-{
-	4,
-	{
-		{ "", 0},
-		{ ".CG", 1},
-		{ ".CS", 2},
-		{ ".CV", 3}
-	}
-};
-
-struct str_map_t kpl_inst_wt_map =
-{
-	4,
-	{
-		{ "", 0},
-		{ ".CG", 1},
-		{ ".CS", 2},
-		{ ".WT", 3}
-	}
-};
-
-struct str_map_t kpl_inst_po_map =
-{
-	2,
-	{
-		{ "", 0},
-		{ ".PO", 1}
-	}
-};
-
-struct str_map_t kpl_inst_u1_map =
-{
-	2,
-	{
-		{ ".U32.U32", 0},
-		{ ".U32.S32", 1}
-	}
-};
-
-struct str_map_t kpl_inst_f_map=
-{
-	8,
-	{	
-		{ ".F", 0},
-		{ ".LT", 1},
-		{ ".EQ", 2},
-		{ ".LE", 3},
-		{ ".GT", 4},
-		{ ".NE", 5},
-		{ ".GE", 6},
-		{ ".T", 7}
-	}
-};
-
-struct str_map_t kpl_inst_u_map =
-{
-	2,
-	{
-		{ "", 0},
-		{ ".U", 1}
-	}
-};
-
-struct str_map_t kpl_inst_lmt_map =
-{
-	2,
-	{
-		{ "", 0},
-		{ ".LMT", 1}
-	}
-};
-
-struct str_map_t kpl_inst_e_map =
-{
-	2,
-	{
-		{ "", 0},
-		{ ".E", 1}
-	}
-};
-
-struct str_map_t kpl_inst_u32_map =
-{
-	2,
-	{
-		{ "", 0},
-		{ ".U32", 1}
-	}
-};
-
-struct str_map_t kpl_inst_rm_map =
-{
-	4,
-	{
-		{ "", 0},
-		{ ".RM", 1},
-		{ ".RP", 2},
-		{ ".RZ", 3}
-	}
-};
-
-struct str_map_t kpl_inst_us_map =
-{
-	2,
-	{
-		{ ".U32", 0},
-		{ ".S32", 1},
-	}
-};
-
-
-
-
 /*
  * Public Functions
  */
@@ -848,7 +656,7 @@ void kpl_asm_init(void)
 }
 
 
-void kpl_inst_decode(struct kpl_inst_t *inst, void *ptr)
+void kpl_inst_decode(struct kpl_inst_t *inst)
 {
 	struct kpl_inst_table_entry_t *table;
 	int index;
@@ -863,7 +671,7 @@ void kpl_inst_decode(struct kpl_inst_t *inst, void *ptr)
 	/* Traverse tables */
 	while (1)
 	{
-		index = BITS64(* (unsigned long long *) ptr, high, low);
+		index = BITS64(inst->dword.as_dword, high, low);
 		if (!table[index].next_table)
 		{
 			inst->info = table[index].info;
@@ -886,40 +694,537 @@ void kpl_inst_hex_dump(FILE *f, void *inst_ptr, unsigned int inst_addr)
 			*(unsigned int *) (inst_ptr + 4));
 }
 
-
 /*************************************************************************/
-# if 0
+#if 0
 static int kpl_token_comp(char *fmt_str, char *token_str, int *token_len)
 {
 	*token_len = strlen(token_str);
-	//      return !strncmp(fmt_str, token_str, *token_len) &&
-	//              !isalnum(fmt_str[*token_len]);
+	return !strncmp(fmt_str, token_str, *token_len) &&
+		!isalnum(fmt_str[*token_len]);
 	return 0;
 }
-# endif
+#endif
+
+/********************************************************************/
+struct str_map_t kpl_inst_sat_map =
+{
+	2,
+	{
+		{ "", 0},
+		{ ".SAT", 1}
+	}
+};
+
+struct str_map_t kpl_inst_x_map =
+{
+	2,
+	{
+		{ "", 0},
+		{ ".X", 1}
+	}
+};
+
+struct str_map_t kpl_inst_cc_map =
+{
+	2,
+	{
+		{ "", 0},
+		{ ".CC", 1}
+	}
+};
+
+struct str_map_t kpl_inst_hi_map =
+{
+	2,
+	{
+		{ "", 0},
+		{ ".HI", 1}
+	}
+};
+
+struct str_map_t kpl_inst_keeprefcount_map =
+{
+	2,
+	{
+		{ "", 0},
+		{ ".KEEPREFCOUNT", 1}
+	}
+};
+
+struct str_map_t kpl_inst_s_map =
+{
+	2,
+	{
+		{ "", 0},
+		{ ".S", 1}
+	}
+};
+
+struct str_map_t kpl_inst_and_map =
+{
+	4,
+	{
+		{ ".AND", 0},
+		{ ".OR", 1},
+		{ ".XOR", 2},
+		{ ".INVALIDBOP3", 3}
+	}
+};
+
+struct str_map_t kpl_inst_cv_map =
+{
+	4,
+	{
+		{ "", 0},
+		{ ".CG", 1},
+		{ ".CS", 2},
+		{ ".CV", 3}
+	}
+};
+
+struct str_map_t kpl_inst_wt_map =
+{
+	4,
+	{
+		{ "", 0},
+		{ ".CG", 1},
+		{ ".CS", 2},
+		{ ".WT", 3}
+	}
+};
+
+struct str_map_t kpl_inst_po_map =
+{
+	2,
+	{
+		{ "", 0},
+		{ ".PO", 1}
+	}
+};
+
+struct str_map_t kpl_inst_u1_map =
+{
+	2,
+	{
+		{ ".U32.U32", 0},
+		{ ".U32.S32", 1}
+	}
+};
+
+struct str_map_t kpl_inst_f_map=
+{
+	8,
+	{	
+		{ ".F", 0},
+		{ ".LT", 1},
+		{ ".EQ", 2},
+		{ ".LE", 3},
+		{ ".GT", 4},
+		{ ".NE", 5},
+		{ ".GE", 6},
+		{ ".T", 7}
+	}
+};
+
+struct str_map_t kpl_inst_u_map =
+{
+	2,
+	{
+		{ "", 0},
+		{ ".U", 1}
+	}
+};
+
+struct str_map_t kpl_inst_lmt_map =
+{
+	2,
+	{
+		{ "", 0},
+		{ ".LMT", 1}
+	}
+};
+
+struct str_map_t kpl_inst_e_map =
+{
+	2,
+	{
+		{ "", 0},
+		{ ".E", 1}
+	}
+};
+
+struct str_map_t kpl_inst_u32_map =
+{
+	2,
+	{
+		{ ".U32", 0},
+		{ "", 1}
+	}
+};
+
+struct str_map_t kpl_inst_rm_map =
+{
+	4,
+	{
+		{ "", 0},
+		{ ".RM", 1},
+		{ ".RP", 2},
+		{ ".RZ", 3}
+	}
+};
+
+struct str_map_t kpl_inst_us_map =
+{
+	2,
+	{
+		{ ".U32", 0},
+		{ ".S32", 1},
+	}
+};
+
+/*************************************************************************************/
+
+void kpl_inst_dump_PRED(struct kpl_inst_t *inst, char **str_ptr, int *size_ptr, int high, int low)
+{
+	int value;
+
+	value = BITS64(inst->dword.as_dword, high, low);
+	if (value != 7)
+	{
+		str_printf(str_ptr, size_ptr, "@");
+		if (value >> 3)
+			str_printf(str_ptr, size_ptr, "!");
+		if (value == 15)
+			str_printf(str_ptr, size_ptr, "PT ");
+		else
+			str_printf(str_ptr, size_ptr, "P%d ", value & 7);
+	}
+}
+
+void kpl_inst_dump_REG(struct kpl_inst_t * inst, char **str_ptr, int *size_ptr, int high, int low)
+{
+	int value;
+
+	value = BITS64(inst->dword.as_dword, high, low);
+	if(value == 255)
+		str_printf(str_ptr, size_ptr, "RZ");
+	else
+		str_printf(str_ptr, size_ptr, "R%d", value);
+}
+
+void kpl_inst_dump_S(struct kpl_inst_t * inst, char **str_ptr, int *size_ptr, int high, int low)
+{
+	int value;
+
+	value = BITS64(inst->dword.as_dword, high, low);
+	str_printf(str_ptr, size_ptr, "%s", str_map_value(&kpl_inst_s_map, value));
+}
+
+void kpl_inst_dump_F(struct kpl_inst_t * inst, char **str_ptr, int *size_ptr, int high, int low)
+{
+	int value;
+
+	value = BITS64(inst->dword.as_dword, high, low);
+	str_printf(str_ptr, size_ptr, "%s", str_map_value(&kpl_inst_f_map, value));
+}
+
+void kpl_inst_dump_AND(struct kpl_inst_t * inst, char **str_ptr, int *size_ptr, int high, int low)
+{
+	int value;
+
+	value = BITS64(inst->dword.as_dword, high, low);
+	str_printf(str_ptr, size_ptr, "%s", str_map_value(&kpl_inst_and_map, value));
+}
+
+void kpl_inst_dump_X(struct kpl_inst_t * inst, char **str_ptr, int *size_ptr, int high, int low)
+{
+	int value;
+
+	value = BITS64(inst->dword.as_dword, high, low);
+	str_printf(str_ptr, size_ptr, "%s", str_map_value(&kpl_inst_x_map, value));
+}
+
+void kpl_inst_dump_U32(struct kpl_inst_t * inst, char **str_ptr, int *size_ptr, int high, int low)
+{
+	int value;
+
+	value = BITS64(inst->dword.as_dword, high, low);
+	str_printf(str_ptr, size_ptr, "%s", str_map_value(&kpl_inst_u32_map, value));
+}
+
+void kpl_inst_dump_HI(struct kpl_inst_t * inst, char **str_ptr, int *size_ptr, int high, int low)
+{
+	int value;
+
+	value = BITS64(inst->dword.as_dword, high, low);
+	str_printf(str_ptr, size_ptr, "%s", str_map_value(&kpl_inst_hi_map, value));
+}
+
+void kpl_inst_dump_SAT(struct kpl_inst_t * inst, char **str_ptr, int *size_ptr, int high, int low)
+{
+	int value;
+
+	value = BITS64(inst->dword.as_dword, high, low);
+	str_printf(str_ptr, size_ptr, "%s", str_map_value(&kpl_inst_sat_map, value));
+}
+
+void kpl_inst_dump_PO(struct kpl_inst_t * inst, char **str_ptr, int *size_ptr, int high, int low)
+{
+	int value;
+
+	value = BITS64(inst->dword.as_dword, high, low);
+	str_printf(str_ptr, size_ptr, "%s", str_map_value(&kpl_inst_po_map, value));
+}
+
+void kpl_inst_dump_US(struct kpl_inst_t * inst, char **str_ptr, int *size_ptr, int high0, int low0, int high1, int low1)
+{
+	int value0;
+	int value1; 
+
+	value0 = BITS64(inst->dword.as_dword, high0, low0);
+	value1 = BITS64(inst->dword.as_dword, high1, low1);
+
+	if(value0 == 1 && value1 == 1)
+		str_printf(str_ptr, size_ptr, "%s", "");
+	else
+	{
+		str_printf(str_ptr, size_ptr, "%s", str_map_value(&kpl_inst_us_map, value1));
+		str_printf(str_ptr, size_ptr, "%s", str_map_value(&kpl_inst_us_map, value0));
+	}
+}
+
+void kpl_inst_dump_CC(struct kpl_inst_t * inst, char **str_ptr, int *size_ptr, int high, int low)
+{
+        int value;
+
+        value = BITS64(inst->dword.as_dword, high, low);
+        str_printf(str_ptr, size_ptr, "%s", str_map_value(&kpl_inst_cc_map, value));
+}
+
+void kpl_inst_dump_E(struct kpl_inst_t * inst, char **str_ptr, int *size_ptr, int high, int low)
+{
+        int value;
+
+        value = BITS64(inst->dword.as_dword, high, low);
+        str_printf(str_ptr, size_ptr, "%s", str_map_value(&kpl_inst_e_map, value));
+}
+
+void kpl_inst_dump_CV(struct kpl_inst_t * inst, char **str_ptr, int *size_ptr, int high, int low)
+{
+        int value;
+
+        value = BITS64(inst->dword.as_dword, high, low);
+        str_printf(str_ptr, size_ptr, "%s", str_map_value(&kpl_inst_cv_map, value));
+}
+
+void kpl_inst_dump_LMT(struct kpl_inst_t * inst, char **str_ptr, int *size_ptr, int high, int low)
+{
+        int value;
+
+        value = BITS64(inst->dword.as_dword, high, low);
+        str_printf(str_ptr, size_ptr, "%s", str_map_value(&kpl_inst_lmt_map, value));
+}
+
+void kpl_inst_dump_U(struct kpl_inst_t * inst, char **str_ptr, int *size_ptr, int high, int low)
+{
+        int value;
+
+        value = BITS64(inst->dword.as_dword, high, low);
+        str_printf(str_ptr, size_ptr, "%s", str_map_value(&kpl_inst_u_map, value));
+}
 
 /*************************************************************************/
 
-void kpl_inst_dump_buf(char *str, int str_size, void *ptr)
+void kpl_inst_dump_buf(struct kpl_inst_t *inst, char *str, int size)
 {
-	struct kpl_inst_t inst;
+	char *fmt_str;
 
 	/* Decode the instruction */
-	kpl_inst_decode(&inst, ptr);
+	kpl_inst_decode(inst);
 
 	/* Invalid instruction */
-	if (!inst.info)
+	if (!inst->info || !inst->info->fmt_str)
 	{
-		snprintf(str, str_size, "<unknown>");
+		snprintf(str, size, "<unknown>");
 		return;
 	}
 
 	/* Print entire format string temporarily */
-	snprintf(str, str_size, "%s", inst.info->fmt_str);
+	fmt_str = inst->info->fmt_str;
+	while (*fmt_str)
+	{
+                if (str_prefix(fmt_str, "%_LMT"))
+                {
+                        // Extract corresponding fields of the instruction and print them as the predicate
+
+                        kpl_inst_dump_LMT(inst, &str, &size, 8, 8);
+                        fmt_str += 5;
+                        continue;
+                } 
+         
+	       if (str_prefix(fmt_str, "%_cg"))
+                {
+                        // Extract corresponding fields of the instruction and print them as the predicate
+
+                        kpl_inst_dump_CV(inst, &str, &size, 50, 50);
+                        fmt_str += 4;
+                        continue;
+                } 
+
+                if (str_prefix(fmt_str, "%_e"))
+                {
+                        // Extract corresponding fields of the instruction and print them as the predicate
+
+                        kpl_inst_dump_CC(inst, &str, &size, 60, 59);
+                        fmt_str += 3;
+                        continue;
+                } 
+                
+		if (str_prefix(fmt_str, "%_cc"))
+                {
+                        // Extract corresponding fields of the instruction and print them as the predicate
+
+                        kpl_inst_dump_CC(inst, &str, &size, 50, 50);
+                        fmt_str += 4;
+                        continue;
+                } 
+
+		if (str_prefix(fmt_str, "%_us"))
+		{
+			// Extract corresponding fields of the instruction and print them as the predicate
+
+			kpl_inst_dump_US(inst, &str, &size, 56, 56, 51, 51);
+			fmt_str += 4;
+			continue;
+		}
+
+		if (str_prefix(fmt_str, "%_po"))
+		{
+			// Extract corresponding fields of the instruction and print them as the predicate
+
+			kpl_inst_dump_PO(inst, &str, &size, 55, 55);
+			fmt_str += 4;
+			continue;
+		}
+
+		if (str_prefix(fmt_str, "%_sat"))
+		{
+			// Extract corresponding fields of the instruction and print them as the predicate
+
+			kpl_inst_dump_SAT(inst, &str, &size, 53, 53);
+			fmt_str += 5;
+			continue;
+		}
+
+		if (str_prefix(fmt_str, "%_hi"))
+		{
+			// Extract corresponding fields of the instruction and print them as the predicate
+
+			kpl_inst_dump_HI(inst, &str, &size, 57, 57);
+			fmt_str += 4;
+			continue;
+		}
+
+		if (str_prefix(fmt_str, "%_U32"))
+		{
+			// Extract corresponding fields of the instruction and print them as the predicate
+
+			kpl_inst_dump_U32(inst, &str, &size, 51, 51);
+			fmt_str += 5;
+			continue;
+		}
+
+		if (str_prefix(fmt_str, "%_x"))
+		{
+			// Extract corresponding fields of the instruction and print them as the predicate
+
+			kpl_inst_dump_X(inst, &str, &size, 46, 46);
+			fmt_str += 3;
+			continue;
+		}
+
+		if (str_prefix(fmt_str, "%_and"))
+		{
+			// Extract corresponding fields of the instruction and print them as the predicate
+
+			kpl_inst_dump_AND(inst, &str, &size, 49, 48);
+			fmt_str += 5;
+			continue;
+		}
+
+		if (str_prefix(fmt_str, "%_f"))
+		{
+			// Extract corresponding fields of the instruction and print them as the predicate
+
+			kpl_inst_dump_F(inst, &str, &size, 54, 52);
+			fmt_str += 3;
+			continue;
+		}
+
+		if (str_prefix(fmt_str, "%_s"))
+		{
+			// Extract corresponding fields of the instruction and print them as the predicate
+
+			kpl_inst_dump_S(inst, &str, &size, 22, 22);
+			fmt_str += 3;
+			continue;
+		}                
+
+                if (str_prefix(fmt_str, "%_u"))
+                {
+                        // Extract corresponding fields of the instruction and print them as the predicate
+
+                        kpl_inst_dump_U(inst, &str, &size, 9, 9);
+                        fmt_str += 3;
+                        continue;
+                }
+
+		if (str_prefix(fmt_str, "%srcA"))
+		{
+			// Extract corresponding fields of the instruction and print them as the predicate
+
+			kpl_inst_dump_REG(inst, &str, &size, 17, 10);
+			fmt_str += 5;
+			continue;
+		}                
+
+		if (str_prefix(fmt_str, "%dst"))
+		{
+			// Extract corresponding fields of the instruction and print them as the predicate
+
+			kpl_inst_dump_REG(inst, &str, &size, 9, 2);
+			fmt_str += 4;
+			continue;
+		}
+
+		if (str_prefix(fmt_str, "%pred0"))
+		{
+			// Extract corresponding fields of the instruction and print them as the predicate
+
+			kpl_inst_dump_PRED(inst, &str, &size, 21, 18);
+			fmt_str += 6;
+			continue;
+		}
+
+		if (str_prefix(fmt_str, "%pred"))
+		{
+			// Extract corresponding fields of the instruction and print them as the predicate
+
+			kpl_inst_dump_PRED(inst, &str, &size, 21, 18);
+			//str_printf(&str, &size, "HELLO");
+			fmt_str += 5;
+			continue;
+		}
+
+		/* Print literal character */
+		str_printf(&str, &size, "%c", *fmt_str);
+		++fmt_str;
+	}
 }
 
 
 /********************************************************************/
+
 
 void kpl_disasm(char *path)
 {
@@ -927,7 +1232,9 @@ void kpl_disasm(char *path)
 
 	struct elf_section_t *section; 
 	struct elf_file_t *elf_file;
+	struct kpl_inst_t inst;
 
+	char *title;
 	char inst_str[MAX_STRING_SIZE];
 	int i;
 
@@ -946,9 +1253,14 @@ void kpl_disasm(char *path)
 		if (!(section->header->sh_flags & SHF_EXECINSTR))
 			continue;
 
+		/* Set section name (get rid of .text.) */
+		title = section->name;
+		const int len = 22;
+		const char* new_title = title +len - 16;
+
 		/* Title */
 		printf("\n\tcode for sm_35");
-		printf("\n\t\tFunction : %s", section->name);
+		printf("\n\t\tFunction : %s", new_title);
 
 		/* Decode and dump instructions */
 		for (inst_ptr = section->buffer.ptr; inst_ptr < section->buffer.ptr +
@@ -956,8 +1268,9 @@ void kpl_disasm(char *path)
 		{
 			kpl_inst_hex_dump(stdout, inst_ptr, section->header->sh_addr + section->buffer.pos);
 
-			kpl_inst_dump_buf(inst_str, sizeof inst_str, inst_ptr);
-			printf("%s\n", inst_str);
+			inst.dword.as_dword = * (unsigned long long *) inst_ptr;
+			kpl_inst_dump_buf(&inst, inst_str, sizeof inst_str);
+			printf("%s", inst_str);
 
 			/* Move to next instruction */
 			section->buffer.pos += 8;
@@ -1047,79 +1360,6 @@ void kpl_asm_done(void)
 	free(kpl_asm_table_c_b_e_b_b);
 
 	free(kpl_asm_table_c_b_e_b_a_a);
-
-
-	/*
-	   free(kpl_asm_table_a);
-	   free(kpl_asm_table_b);
-	   free(kpl_asm_table_c);
-
-	   free(kpl_asm_table_a_a);
-
-	   free(kpl_asm_table_b_a);
-	   free(kpl_asm_table_b_b);
-	   free(kpl_asm_table_b_c);
-	   free(kpl_asm_table_b_d);
-
-	   free(kpl_asm_table_b_c_a);
-	   free(kpl_asm_table_b_c_b);
-	   free(kpl_asm_table_b_c_c);
-	   free(kpl_asm_table_b_c_d);
-
-	   free(kpl_asm_table_b_c_d_a);
-	   free(kpl_asm_table_b_c_d_b);
-	   free(kpl_asm_table_b_c_d_c);
-
-	   free(kpl_asm_table_b_c_d_c_a);
-	   free(kpl_asm_table_b_c_d_c_b);
-	   free(kpl_asm_table_b_c_d_c_c);
-
-	   free(kpl_asm_table_b_d_a);
-
-	   free(kpl_asm_table_c_a);
-	   free(kpl_asm_table_c_b);
-	   free(kpl_asm_table_c_c);
-	   free(kpl_asm_table_c_d);
-	   free(kpl_asm_table_c_e);
-
-	   free(kpl_asm_table_c_c_a);
-	   free(kpl_asm_table_c_c_b);
-	   free(kpl_asm_table_c_c_c);
-
-	   free(kpl_asm_table_c_c_c_a);
-	   free(kpl_asm_table_c_c_c_b);
-	   free(kpl_asm_table_c_c_c_c);
-
-	   free(kpl_asm_table_c_e_a);
-	   free(kpl_asm_table_c_e_b);
-	   free(kpl_asm_table_c_e_c);
-	   free(kpl_asm_table_c_e_d);
-
-	   free(kpl_asm_table_c_e_a_a);
-	   free(kpl_asm_table_c_e_a_b);
-
-	   free(kpl_asm_table_c_e_b_a);
-	   free(kpl_asm_table_c_e_b_b);
-
-	   free(kpl_asm_table_c_e_b_a_a);
-	   free(kpl_asm_table_c_e_b_a_b);
-	   free(kpl_asm_table_c_e_b_a_c);
-	   free(kpl_asm_table_c_e_b_a_d);
-
-	   free(kpl_asm_table_c_e_b_a_c_a);
-
-	   free(kpl_asm_table_c_e_b_b_a);
-	   free(kpl_asm_table_c_e_b_b_b);
-
-	   free(kpl_asm_table_c_e_b_b_a_a);
-	   free(kpl_asm_table_c_e_b_b_a_b);
-	   free(kpl_asm_table_c_e_b_b_a_c);
-
-	   free(kpl_asm_table_c_e_c_a);
-	   free(kpl_asm_table_c_e_c_b);
-
-	   free(kpl_asm_table_c_e_c_a_a);
-	 */
 }
 
 /*************************************************************************/
