@@ -33,6 +33,18 @@
 #define MAX_NUM_UAV      1024
 #define MAX_CONSTANTS    256
 
+#define MAX_UAV      12      /* mask uav supported */
+#define MAX_TRANSFORM_FEEDBACK_BUFFERS 4  /* maximum number of transform feedback buffers supported */
+
+#define MAX_UAV_RESOURCES 1024 /* The maximum number of UAVs supported */
+#define MAX_UAV_MASKS (((MAX_UAV_RESOURCES) + 31) / 32)   /* The maximum of UAV masks */
+
+#define MAX_TEXTURE_IMAGE_UNITS        32 /* The maximum number of texture image units supported by GLL */
+#define MAX_UAV_IMAGE_UNITS            8  /* The maximum number of image (UAV) supported by GLL */
+#define NUM_GLOBAL_RETURN_BUFFERS      8  /* max global return buffers */
+#define MAX_TEXTURE_RESOURCES          160 /* The maximus number of texture resource */
+#define PS_MAX_OUTPUTS                 8   /* Max Render Targets */
+
 /* SI specific */
 #define SC_SI_VS_MAX_INPUTS       32
 #define SC_SI_VS_MAX_OUTPUTS      32
@@ -49,7 +61,6 @@
 #define SC_SI_SO_MAX_STREAMS  4
 /* Number of SO buffers */
 #define SC_SI_SO_MAX_BUFFERS  4
-
 
 /* Forward declaration */
 struct list_t;
@@ -374,6 +385,15 @@ enum si_opengl_bin_symbol_datatype_t
 	SI_OPENGL_SYMBOL_DATATYPE_LAST  = SI_OPENGL_SYMBOL_DATATYPE_INTERFACE
 };
 
+enum si_opengl_fetch_shader_type_t
+{
+	SI_OPENGL_FETCH_FIXED_FUNCTION,   /* Fetch shader executes all vertex fetches and start address is in a fixed function register. */
+	SI_OPENGL_FETCH_SUB_IMMEDIATE,    /* SI+: Fetch shader performs all fetches, vertex buffer refs are stored as immediate user data */
+	SI_OPENGL_FETCH_SUB_FLAT_TABLE,   /* SI+: Fetch shader performs all fetches, vertex buffer refs are stored in a flat table */
+	SI_OPENGL_FETCH_SUB_PER_ATTRIB    /* SI+: Fetch shader performs a single attribute fetch per execution, vertex buffer refs stored in a flat table */
+};
+
+
 
 struct si_opengl_bin_shader_stats_t
 {
@@ -627,6 +647,131 @@ struct si_opengl_bin_si_vertex_shader_metadata_t
 
 }__attribute__((packed));
 
+/* texture resource and sampler binding */
+struct si_opengl_texture_resource_bound_t
+{
+	uint32_t resourceId;         /* resource id */
+	uint32_t samplerMask;        /* samplers bind to resource id */
+};
+
+/* FIXME: size not match binary */
+/* Info descriptor for .info section */
+struct si_opengl_bin_si_info_t
+{
+	/* generaic shader resource information */
+
+	/* texture */
+	uint32_t fetch4Mask;                    /* Fetch4 mask */
+	uint32_t textureMask;                   /* Texture unit masks */
+	uint32_t textureSamplerMask;            /* texture sampler mask */
+	uint32_t textureResourceMask[MAX_TEXTURE_RESOURCES/32]; /* texture resource mask */
+	uint32_t bufferMask[MAX_TEXTURE_RESOURCES/32];  /* texture buffer mask */
+	uint32_t textureResourceBoundCount;     /* the size of texture resource bound array */
+	/* scratch */
+	uint32_t maxScratchRegsNeeded;          /* scratch registers needed */
+	/* constant buffer */
+	uint32_t constantBufferMask;            /* constant buffer mask */
+	/* uav */
+	uint32_t uavOpIsUsed;                   /* mask for uav used delete!! */
+	bool   uavInCB;                       /* UAV is in CB */
+	uint32_t uavResourceCount;              /* size of uav resource mask array */
+	/* atomic counter */
+	uint32_t uavAtomicOpIsUsed;             /* mask for atomic op used */
+	/* subroutine */
+	int16_t  maxUniformLocation;             /* max explicit uniform location assigned by application */
+	int16_t  maxSubroutineIndex;             /* max explicit Subroutine index assigned by application */
+	int16_t  maxSubroutineUniformLocation;   /* max explicit Subroutine uniform location assigned by application */
+	/* / union for per shader stage parameters */
+	union
+	{
+	    /// Vexter Shader,  Tessellation Evaluation Shader and Geometry Shader parameter
+	    struct
+	    {
+	        // VS input mask
+	        uint32_t inputStreamMask;                /* input stream mask (phsyical id) */
+	        bool   usesVertexID;                   /* tells whether this program uses VertexID */
+	        // transform feedback
+	        uint32_t streamOutStrideInDWORDs0;       /* streamout stride0 */
+	        uint32_t streamOutStrideInDWORDs1;       /* streamout stride1 */
+	        uint32_t streamOutStrideInDWORDs2;       /* streamout stride2 */
+	        uint32_t streamOutStrideInDWORDs3;       /* streamout stride3 */
+	        int8_t   streamOutBufferMapping[MAX_TRANSFORM_FEEDBACK_BUFFERS];   /* streamout buffer config */
+	        // vertex shader tessellation
+	        uint8_t  tessPrimType;                            /* tessellation shader primitive type (sclTessPrimType) */
+	        // viewport array index
+	        unsigned int   outputViewportArrayIndex :8;             /* true if output viewport array index */
+	        // svp members
+	        uint8_t  frontColorOutputReg;                     /* front color output register number */
+	        uint8_t  frontSecondaryColorOutputReg;            /* front secondary color output register number */
+	        uint8_t  backColorOutputReg;                      /* back color output register number */
+	        uint8_t  backSecondaryColorOutputReg;             /* back secondary color output register number */
+	        uint8_t  aaStippleTexCoord;                       /* Bitfield representing which texture cood will be used for aastipple patch */
+	        enum si_opengl_fetch_shader_type_t fsTypeForPassThruVS :8;   /* Fetch shader type (SVP PassThruVS) */
+	        uint8_t  fsReturnAddrRegForPassThruVS;            /* Fetch shader subroutine start SGPR (SVP PassThruVS) */
+	        uint8_t  fsInputStreamTableRegForPassThruVS;      /* Fetch shader input stream table start SGPR (SVP PassThruVS) */
+	        int32_t  fsAttribValidMaskReg;                    /* VPGR which Fetch shader should populate, if sparse buffers are used. */
+	    };
+	    /// Fragment Shader Parameters
+	    struct
+	    {
+	        uint32_t texKillPresent;                         /* Program uses texkill */
+	        int32_t  pointCoordReg;                          /* register number of gl_PointCoord which is an input of FS */
+	        uint8_t  outputColorMap[PS_MAX_OUTPUTS];  /* fragment shader color output map (from virtual to physical) */
+	        bool   useFlatInterpMode;                      /* if flat has been used on a varying */
+	        bool   forcePerSampleShading;                  /* true if the FS is required to run in per sample frequency */
+	        bool   uncached_writes;                        /* uncached writes */
+	        bool   outputDepth;                            /* true if fragment shader output depth */
+	        uint32_t usingDualBlendMask;                     /* indicates using an index = 1 for dual blending, in glsl layout */
+	    };
+	    /// Compute Shader Parameters
+	    struct
+	    {
+	        uint32_t numSharedGPRUser;    /* shared GPR */
+	        uint32_t numSharedGPRTotal;   /* shared GPR total including ones used by SC. */
+
+	        uint32_t numThreadPerGroup;   /* threads per group */
+	        uint32_t numThreadPerGroupX;  /* dimension x of NumThreadPerGroup */
+	        uint32_t numThreadPerGroupY;  /* dimension y of NumThreadPerGroup */
+	        uint32_t numThreadPerGroupZ;  /* dimension z of NumThreadPerGroup */
+	        uint32_t totalNumThreadGroup; /* total number of thread groups */
+	        uint32_t NumWavefrontPerSIMD; /* wavefronts per simd */
+	        bool   eCsSetupMode;        /* compute slow/fast mode */
+	        bool   IsMaxNumWavePerSIMD; /* Is this the max active num wavefronts per simd */
+	        bool   SetBufferForNumGroup;/* Need to set up buffer for info on number of thread groups? */
+	    };
+	    /// Fetch Shader Parameters
+	    struct
+	    {
+	        bool   usesVertexCache;      /* vertex cache used? (fetch shader only) */
+	    };
+	};
+	/* /dynamic array, offset fields is valid in ELF package, int64_t is to keep the struct size fixed in all operation system. */
+	/* / texture resource bound array */
+	union
+	{
+	    struct si_opengl_texture_resource_bound_t *_textureResourceBound; /* texture resoruce and sampler bounding */
+	    int64_t textureResourceBoundOffset;                 /* resource binding array offset */
+	};
+	/* / uav resource mask array */
+	union
+	{
+	    uint32_t* uavResourceMask;                          /* UAV resource mask */
+	    int64_t   uavResourceMaskOffset;                    /* UAV resource mask array offset */
+	};
+	/* / uav return buffer */
+	union
+	{
+	    uint32_t *_uavRtnBufStride;       /* save stride of uav return buffer for each UAV */
+	    int64_t   uavRtnBufStrideOffset;                    /* uav return buffer stride array offset */
+	};
+	/* / uav dynamic resource map */
+	union
+	{
+	    uint32_t *_uavDynamicResouceMap;  /* save fetch const offset of each UAV */
+	    int64_t   uavDynamicResouceMapOffset;               /* uav dynamic resource map offset */
+	};
+}__attribute__((packed));
+
 struct si_opengl_bin_si_vertex_shader_t
 {
 	/* Parent shader binary it belongs to */
@@ -636,6 +781,7 @@ struct si_opengl_bin_si_vertex_shader_t
 	struct si_opengl_bin_si_vertex_shader_metadata_t *meta;
 	struct list_t *inputs; /* Elements with type struct si_opengl_bin_si_input_t */
 	struct list_t *outputs; /* Elements with type struct si_opengl_bin_si_output_t*/
+	struct si_opengl_bin_si_info_t *info;
 	struct list_t *constants;
 };
 
@@ -645,7 +791,7 @@ struct si_opengl_bin_si_input_t
 	enum si_opengl_bin_si_input_type_t type;
 	unsigned int voffset;
 	unsigned int poffset;
-	// bool isFloat16; /* FIXME: has to comment this as the size will be 29 instead of 28 bytes */
+	// bool isFloat16;  FIXME: has to comment this as the size will be 29 instead of 28 bytes  
 	enum si_opengl_bin_si_input_swizzle_type_t swizzles[4];
 }__attribute__((packed));
 
@@ -653,10 +799,13 @@ struct si_opengl_bin_si_input_t
 /* Output descriptor for .outputs section */
 struct si_opengl_bin_si_output_t 
 {
-	enum si_opengl_bin_output_type_t type;          /* Semantic type */
+	union
+	{
+		enum si_opengl_bin_output_type_t type;          /* Semantic type */
+		enum si_opengl_bin_symbol_datatype_t data_type;      /* Data type */
+	};
 	unsigned int voffset;           /* Virtual offset */
 	unsigned int poffset;           /* Physical offset */
-	enum si_opengl_bin_symbol_datatype_t data_type;      /* Data type */
 	unsigned int array_size;     /* Array size */
 	char* name;           /* Name of the output */
 }__attribute__((packed));;
