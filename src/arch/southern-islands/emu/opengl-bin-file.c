@@ -280,10 +280,9 @@ static void si_opengl_si_bin_info_init_with_section(struct si_opengl_bin_si_info
 {
 	assert(!strcmp(section->name, ".info"));
 
-	/* FIXME: size not match */
-	// if (section->buffer.size != sizeof(struct si_opengl_bin_si_info_t))
-	// 	fatal("Section size doesn't match info structure.");
-	// else
+	if (section->buffer.size != sizeof(struct si_opengl_bin_si_info_t))
+		fatal("Section size doesn't match info structure.");
+	else
 		memcpy(info, section->buffer.ptr, sizeof(struct si_opengl_bin_si_info_t));
 }
 
