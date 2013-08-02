@@ -50,6 +50,11 @@
 /* Number of SO buffers */
 #define SC_SI_SO_MAX_BUFFERS  4
 
+
+/* Forward declaration */
+struct list_t;
+struct si_opengl_shader_binary_t;
+
 /* Shader types */
 enum si_opengl_shader_binary_kind_t
 {
@@ -62,7 +67,7 @@ enum si_opengl_shader_binary_kind_t
 	SI_OPENGL_SHADER_INVALID
 };
 
-enum si_opengl_bin_input_swizzle_type_t
+enum si_opengl_bin_si_input_swizzle_type_t
 {
 	SI_OPENGL_SWIZZLE_X,	/* Swizzle the X component into this component */
 	SI_OPENGL_SWIZZLE_Y,	/* Swizzle the Y component into this component */
@@ -72,7 +77,7 @@ enum si_opengl_bin_input_swizzle_type_t
 	SI_OPENGL_SWIZZLE_1	/* Swizzle constant 1 into this component */
 };
 
-enum si_opengl_bin_input_type_t
+enum si_opengl_bin_si_input_type_t
 {
 	SI_OPENGL_INPUT_ATTRIB,	/* generic attribute */
 	SI_OPENGL_INPUT_COLOR,	/* primary color */
@@ -102,6 +107,274 @@ enum si_opengl_bin_output_type_t
 	SI_OPENGL_OUTPUT_STREAMID	/* Ouput stream id */
 };
 
+/* Symbol types */
+enum si_opengl_bin_symbol_type_t
+{
+	SI_OPENGL_SYMBOL_UNIFORM,                      /* GLSL uniform */
+	SI_OPENGL_SYMBOL_BINDABLE_UNIFORM,             /* GLSL bindable uniform */
+	SI_OPENGL_SYMBOL_UNIFORM_BLOCK,                /* GLSL uniform block */
+	SI_OPENGL_SYMBOL_ATTRIB_POSITION,              /* Vertex position */
+	SI_OPENGL_SYMBOL_ATTRIB_NORMAL,                /* Vertex normal */
+	SI_OPENGL_SYMBOL_ATTRIB_PRIMARY_COLOR,         /* Vertex primary color */
+	SI_OPENGL_SYMBOL_ATTRIB_SECONDARY_COLOR,       /* Vertex secondary color */
+	SI_OPENGL_SYMBOL_ATTRIB_FOGCOORD,              /* Vertex fog coord */
+	SI_OPENGL_SYMBOL_ATTRIB_EDGEFLAG,              /* Vertex edge flag */
+	SI_OPENGL_SYMBOL_ATTRIB_TEXCOORD0,             /* Vertex texture coord 0 */
+	SI_OPENGL_SYMBOL_ATTRIB_TEXCOORD1,             /* Vertex texture coord 1 */
+	SI_OPENGL_SYMBOL_ATTRIB_TEXCOORD2,             /* Vertex texture coord 2 */
+	SI_OPENGL_SYMBOL_ATTRIB_TEXCOORD3,             /* Vertex texture coord 3 */
+	SI_OPENGL_SYMBOL_ATTRIB_TEXCOORD4,             /* Vertex texture coord 4 */
+	SI_OPENGL_SYMBOL_ATTRIB_TEXCOORD5,             /* Vertex texture coord 5 */
+	SI_OPENGL_SYMBOL_ATTRIB_TEXCOORD6,             /* Vertex texture coord 6 */
+	SI_OPENGL_SYMBOL_ATTRIB_TEXCOORD7,             /* Vertex texture coord 7 */
+	SI_OPENGL_SYMBOL_ATTRIB_TEXCOORD8,             /* Vertex texture coord 8 */
+	SI_OPENGL_SYMBOL_ATTRIB_TEXCOORD9,             /* Vertex texture coord 9 */
+	SI_OPENGL_SYMBOL_ATTRIB_TEXCOORD10,            /* Vertex texture coord 10 */
+	SI_OPENGL_SYMBOL_ATTRIB_TEXCOORD11,            /* Vertex texture coord 11 */
+	SI_OPENGL_SYMBOL_ATTRIB_TEXCOORD12,            /* Vertex texture coord 12 */
+	SI_OPENGL_SYMBOL_ATTRIB_TEXCOORD13,            /* Vertex texture coord 13 */
+	SI_OPENGL_SYMBOL_ATTRIB_TEXCOORD14,            /* Vertex texture coord 14 */
+	SI_OPENGL_SYMBOL_ATTRIB_TEXCOORD15,            /* Vertex texture coord 15 */
+	SI_OPENGL_SYMBOL_ATTRIB_GENERIC0,              /* Generic attrib 0 */
+	SI_OPENGL_SYMBOL_ATTRIB_GENERIC1,              /* Generic attrib 1 */
+	SI_OPENGL_SYMBOL_ATTRIB_GENERIC2,              /* Generic attrib 2 */
+	SI_OPENGL_SYMBOL_ATTRIB_GENERIC3,              /* Generic attrib 3 */
+	SI_OPENGL_SYMBOL_ATTRIB_GENERIC4,              /* Generic attrib 4 */
+	SI_OPENGL_SYMBOL_ATTRIB_GENERIC5,              /* Generic attrib 5 */
+	SI_OPENGL_SYMBOL_ATTRIB_GENERIC6,              /* Generic attrib 6 */
+	SI_OPENGL_SYMBOL_ATTRIB_GENERIC7,              /* Generic attrib 7 */
+	SI_OPENGL_SYMBOL_ATTRIB_GENERIC8,              /* Generic attrib 8 */
+	SI_OPENGL_SYMBOL_ATTRIB_GENERIC9,              /* Generic attrib 9 */
+	SI_OPENGL_SYMBOL_ATTRIB_GENERIC10,             /* Generic attrib 10 */
+	SI_OPENGL_SYMBOL_ATTRIB_GENERIC11,             /* Generic attrib 11 */
+	SI_OPENGL_SYMBOL_ATTRIB_GENERIC12,             /* Generic attrib 12 */
+	SI_OPENGL_SYMBOL_ATTRIB_GENERIC13,             /* Generic attrib 13 */
+	SI_OPENGL_SYMBOL_ATTRIB_GENERIC14,             /* Generic attrib 14 */
+	SI_OPENGL_SYMBOL_ATTRIB_GENERIC15,             /* Generic attrib 15 */
+	SI_OPENGL_SYMBOL_ATTRIB_GENERIC16,             /* Generic attrib 16 */
+	SI_OPENGL_SYMBOL_ATTRIB_GENERIC17,             /* Generic attrib 17 */
+	SI_OPENGL_SYMBOL_ATTRIB_GENERIC18,             /* Generic attrib 18 */
+	SI_OPENGL_SYMBOL_ATTRIB_GENERIC19,             /* Generic attrib 19 */
+	SI_OPENGL_SYMBOL_ATTRIB_GENERIC20,             /* Generic attrib 20 */
+	SI_OPENGL_SYMBOL_ATTRIB_GENERIC21,             /* Generic attrib 21 */
+	SI_OPENGL_SYMBOL_ATTRIB_GENERIC22,             /* Generic attrib 22 */
+	SI_OPENGL_SYMBOL_ATTRIB_GENERIC23,             /* Generic attrib 23 */
+	SI_OPENGL_SYMBOL_ATTRIB_GENERIC24,             /* Generic attrib 24 */
+	SI_OPENGL_SYMBOL_ATTRIB_GENERIC25,             /* Generic attrib 25 */
+	SI_OPENGL_SYMBOL_ATTRIB_GENERIC26,             /* Generic attrib 26 */
+	SI_OPENGL_SYMBOL_ATTRIB_GENERIC27,             /* Generic attrib 27 */
+	SI_OPENGL_SYMBOL_ATTRIB_GENERIC28,             /* Generic attrib 28 */
+	SI_OPENGL_SYMBOL_ATTRIB_GENERIC29,             /* Generic attrib 29 */
+	SI_OPENGL_SYMBOL_ATTRIB_GENERIC30,             /* Generic attrib 30 */
+	SI_OPENGL_SYMBOL_ATTRIB_GENERIC31,             /* Generic attrib 31 */
+	SI_OPENGL_SYMBOL_ATTRIB_GENERIC32,             /* Generic attrib 32 */
+	SI_OPENGL_SYMBOL_ATTRIB_GENERIC33,             /* Generic attrib 33 */
+	SI_OPENGL_SYMBOL_ATTRIB_GENERIC34,             /* Generic attrib 34 */
+	SI_OPENGL_SYMBOL_ATTRIB_GENERIC35,             /* Generic attrib 35 */
+	SI_OPENGL_SYMBOL_ATTRIB_GENERIC36,             /* Generic attrib 36 */
+	SI_OPENGL_SYMBOL_ATTRIB_GENERIC37,             /* Generic attrib 37 */
+	SI_OPENGL_SYMBOL_ATTRIB_GENERIC38,             /* Generic attrib 38 */
+	SI_OPENGL_SYMBOL_ATTRIB_GENERIC39,             /* Generic attrib 39 */
+	SI_OPENGL_SYMBOL_FSVARYINGOUT,                 /* Varying out */
+	SI_OPENGL_SYMBOL_ATTRIB_VERTEXID,              /* VertexID */
+	SI_OPENGL_SYMBOL_ATTRIB_INSTANCEID,            /* InstanceID */
+	SI_OPENGL_SYMBOL_SUBROUTINE_UNIFORM,           /* GLSL Subroutine Uniform */
+	SI_OPENGL_SYMBOL_SUBROUTINE_FUNCTION,          /* GLSL Subroutine Function */
+	SI_OPENGL_SYMBOL_SEPARATE_VARYING_IN_BASE,     /* base varying in symbol of separate mode */
+	SI_OPENGL_SYMBOL_SEPARATE_VARYING_OUT_BASE,    /* base varying out symbol of sparate mode */
+	SI_OPENGL_SYMBOL_SEPARATE_VARYING_IN_DERIVED,  /* derived varying in symbol of separate mode */
+	SI_OPENGL_SYMBOL_SEPARATE_VARYING_OUT_DERIVED, /* derived varying out symbol of sparate mode */
+	SI_OPENGL_SYMBOL_NONSEPARATE_VARYING_IN,       /* varying in of nonseparate mode */
+	SI_OPENGL_SYMBOL_NONSEPARATE_VARYING_OUT,      /* varying out of nonseparate mode */
+	SI_OPENGL_SYMBOL_SHADER_STORAGE_BUFFER,        /* shader storage buffer */
+	SI_OPENGL_SYMBOL_ATTRIB_INPUTVALID,            /* input valide bits for sparse texture */
+};
+
+
+/* Symbol data types */
+enum si_opengl_bin_symbol_datatype_t
+{
+	SI_OPENGL_SYMBOL_DATATYPE_VOID,                   /* void */
+	SI_OPENGL_SYMBOL_DATATYPE_BOOL,                   /* bool */
+	SI_OPENGL_SYMBOL_DATATYPE_INT,                    /* int */
+	SI_OPENGL_SYMBOL_DATATYPE_UINT,                   /* unsigned int */
+	SI_OPENGL_SYMBOL_DATATYPE_FLOAT,                  /* float */
+	SI_OPENGL_SYMBOL_DATATYPE_DOUBLE,                 /* double */
+	SI_OPENGL_SYMBOL_DATATYPE_FLOAT16,                /* float16 */
+	SI_OPENGL_SYMBOL_DATATYPE_DVEC2,                  /* dvec2 */
+	SI_OPENGL_SYMBOL_DATATYPE_DVEC3,                  /* dvec3 */
+	SI_OPENGL_SYMBOL_DATATYPE_DVEC4,                  /* dvec4 */
+	SI_OPENGL_SYMBOL_DATATYPE_VEC2,                   /* vec2 */
+	SI_OPENGL_SYMBOL_DATATYPE_VEC3,                   /* vec3 */
+	SI_OPENGL_SYMBOL_DATATYPE_VEC4,                   /* vec4 */
+	SI_OPENGL_SYMBOL_DATATYPE_BVEC2,                  /* bvec2 */
+	SI_OPENGL_SYMBOL_DATATYPE_BVEC3,                  /* bvec3 */
+	SI_OPENGL_SYMBOL_DATATYPE_BVEC4,                  /* bvec4 */
+	SI_OPENGL_SYMBOL_DATATYPE_IVEC2,                  /* ivec2 */
+	SI_OPENGL_SYMBOL_DATATYPE_IVEC3,                  /* ivec3 */
+	SI_OPENGL_SYMBOL_DATATYPE_IVEC4,                  /* ivec4 */
+	SI_OPENGL_SYMBOL_DATATYPE_UVEC2,                  /* unsigned ivec2 */
+	SI_OPENGL_SYMBOL_DATATYPE_UVEC3,                  /* unsigned ivec3 */
+	SI_OPENGL_SYMBOL_DATATYPE_UVEC4,                  /* unsigned ivec4 */
+	SI_OPENGL_SYMBOL_DATATYPE_F16VEC2,                /* f16vec2 */
+	SI_OPENGL_SYMBOL_DATATYPE_F16VEC3,                /* f16vec3 */
+	SI_OPENGL_SYMBOL_DATATYPE_F16VEC4,                /* f16vec4 */
+	SI_OPENGL_SYMBOL_DATATYPE_MAT2,                   /* mat2 */
+	SI_OPENGL_SYMBOL_DATATYPE_MAT2X3,                 /* mat2x3 */
+	SI_OPENGL_SYMBOL_DATATYPE_MAT2X4,                 /* mat2x4 */
+	SI_OPENGL_SYMBOL_DATATYPE_MAT3X2,                 /* mat3x2 */
+	SI_OPENGL_SYMBOL_DATATYPE_MAT3,                   /* mat3 */
+	SI_OPENGL_SYMBOL_DATATYPE_MAT3X4,                 /* mat3x4 */
+	SI_OPENGL_SYMBOL_DATATYPE_MAT4X2,                 /* mat4x2 */
+	SI_OPENGL_SYMBOL_DATATYPE_MAT4X3,                 /* mat4x3 */
+	SI_OPENGL_SYMBOL_DATATYPE_MAT4,                   /* mat4 */
+	SI_OPENGL_SYMBOL_DATATYPE_DMAT2,                  /* dmat2 */
+	SI_OPENGL_SYMBOL_DATATYPE_DMAT2X3,                /* dmat2x3 */
+	SI_OPENGL_SYMBOL_DATATYPE_DMAT2X4,                /* dmat2x4 */
+	SI_OPENGL_SYMBOL_DATATYPE_DMAT3X2,                /* dmat3x2 */
+	SI_OPENGL_SYMBOL_DATATYPE_DMAT3,                  /* dmat3 */
+	SI_OPENGL_SYMBOL_DATATYPE_DMAT3X4,                /* dmat3x4 */
+	SI_OPENGL_SYMBOL_DATATYPE_DMAT4X2,                /* dmat4x2 */
+	SI_OPENGL_SYMBOL_DATATYPE_DMAT4X3,                /* dmat4x3 */
+	SI_OPENGL_SYMBOL_DATATYPE_DMAT4,                  /* dmat4 */
+	SI_OPENGL_SYMBOL_DATATYPE_F16MAT2,                /* f16mat2 */
+	SI_OPENGL_SYMBOL_DATATYPE_F16MAT2X3,              /* f16mat2x3 */
+	SI_OPENGL_SYMBOL_DATATYPE_F16MAT2X4,              /* f16mat2x4 */
+	SI_OPENGL_SYMBOL_DATATYPE_F16MAT3X2,              /* f16mat3x2 */
+	SI_OPENGL_SYMBOL_DATATYPE_F16MAT3,                /* f16mat3 */
+	SI_OPENGL_SYMBOL_DATATYPE_F16MAT3X4,              /* f16mat3x4 */
+	SI_OPENGL_SYMBOL_DATATYPE_F16MAT4X2,              /* f16mat4x2 */
+	SI_OPENGL_SYMBOL_DATATYPE_F16MAT4X3,              /* f16mat4x3 */
+	SI_OPENGL_SYMBOL_DATATYPE_F16MAT4,                /* f16mat4 */
+
+	SI_OPENGL_SYMBOL_DATATYPE_SAMPLER_1D,             /* sampler1D */
+	SI_OPENGL_SYMBOL_DATATYPE_SAMPLER_2D,             /* sampler2D */
+	SI_OPENGL_SYMBOL_DATATYPE_SAMPLER_2D_RECT,        /* sampler2DRect */
+	SI_OPENGL_SYMBOL_DATATYPE_SAMPLER_EXTERNAL,       /* samplerExternalOES */
+	SI_OPENGL_SYMBOL_DATATYPE_SAMPLER_3D,             /* sampler3D */
+	SI_OPENGL_SYMBOL_DATATYPE_SAMPLER_CUBE,           /* samplerCube */
+	SI_OPENGL_SYMBOL_DATATYPE_SAMPLER_1D_ARRAY,       /* sampler1DArray */
+	SI_OPENGL_SYMBOL_DATATYPE_SAMPLER_2D_ARRAY,       /* sampler2DArray */
+	SI_OPENGL_SYMBOL_DATATYPE_SAMPLER_CUBE_ARRAY,        /*samplerCubeArray */
+	SI_OPENGL_SYMBOL_DATATYPE_SAMPLER_BUFFER,         /* samplerBuffer */
+	SI_OPENGL_SYMBOL_DATATYPE_SAMPLER_RENDERBUFFER,   /* samplerRenderbuffer */
+	SI_OPENGL_SYMBOL_DATATYPE_SAMPLER_2D_MS,          /* sampler2DMS */
+	SI_OPENGL_SYMBOL_DATATYPE_SAMPLER_2D_MS_ARRAY,    /* sampler2DMSArray */
+
+	SI_OPENGL_SYMBOL_DATATYPE_SAMPLER_1D_SHADOW,      /* sampler1DShadow */
+	SI_OPENGL_SYMBOL_DATATYPE_SAMPLER_2D_SHADOW,      /* sampler2DShadow */
+	SI_OPENGL_SYMBOL_DATATYPE_SAMPLER_2D_RECT_SHADOW, /* sampler2DRectShadow */
+	SI_OPENGL_SYMBOL_DATATYPE_SAMPLER_CUBE_SHADOW,    /* samplerCubeShadow */
+	SI_OPENGL_SYMBOL_DATATYPE_SAMPLER_1D_ARRAY_SHADOW,/* sampler1DArrayShadow */
+	SI_OPENGL_SYMBOL_DATATYPE_SAMPLER_2D_ARRAY_SHADOW,/* sampler2DArrayShadow */
+	SI_OPENGL_SYMBOL_DATATYPE_SAMPLER_CUBE_ARRAY_SHADOW, /*samplerCubeArrayShadow */
+	                                                  ///
+	SI_OPENGL_SYMBOL_DATATYPE_INT_SAMPLER_1D,         /* isampler1D */
+	SI_OPENGL_SYMBOL_DATATYPE_INT_SAMPLER_2D,         /* isampler2D */
+	SI_OPENGL_SYMBOL_DATATYPE_INT_SAMPLER_2D_RECT,    /* isampler2DRect */
+	SI_OPENGL_SYMBOL_DATATYPE_INT_SAMPLER_3D,         /* isampler3D */
+	SI_OPENGL_SYMBOL_DATATYPE_INT_SAMPLER_CUBE,       /* isamplerCube */
+	SI_OPENGL_SYMBOL_DATATYPE_INT_SAMPLER_1D_ARRAY,   /* isampler1DArray */
+	SI_OPENGL_SYMBOL_DATATYPE_INT_SAMPLER_2D_ARRAY,   /* isampler2DArray */
+	SI_OPENGL_SYMBOL_DATATYPE_INT_SAMPLER_CUBE_ARRAY, /* isamplerCubeArray */
+	SI_OPENGL_SYMBOL_DATATYPE_INT_SAMPLER_BUFFER,     /* isamplerBuffer */
+	SI_OPENGL_SYMBOL_DATATYPE_INT_SAMPLER_RENDERBUFFER,   /* isamplerRenderbuffer */
+	SI_OPENGL_SYMBOL_DATATYPE_INT_SAMPLER_2D_MS,          /* isampler2DMS */
+	SI_OPENGL_SYMBOL_DATATYPE_INT_SAMPLER_2D_MS_ARRAY,    /* isampler2DMSArray */
+
+	SI_OPENGL_SYMBOL_DATATYPE_UNSIGNED_INT_SAMPLER_1D,         /* usampler1D */
+	SI_OPENGL_SYMBOL_DATATYPE_UNSIGNED_INT_SAMPLER_2D,         /* usampler2D */
+	SI_OPENGL_SYMBOL_DATATYPE_UNSIGNED_INT_SAMPLER_2D_RECT,    /* usampler2DRect */
+	SI_OPENGL_SYMBOL_DATATYPE_UNSIGNED_INT_SAMPLER_3D,         /* usampler3D */
+	SI_OPENGL_SYMBOL_DATATYPE_UNSIGNED_INT_SAMPLER_CUBE,       /* usamplerCube */
+	SI_OPENGL_SYMBOL_DATATYPE_UNSIGNED_INT_SAMPLER_1D_ARRAY,   /* usampler1DArray */
+	SI_OPENGL_SYMBOL_DATATYPE_UNSIGNED_INT_SAMPLER_2D_ARRAY,   /* usampler2DArray */
+	SI_OPENGL_SYMBOL_DATATYPE_UNSIGNED_INT_SAMPLER_CUBE_ARRAY, /* usamplerCubeArray */
+	SI_OPENGL_SYMBOL_DATATYPE_UNSIGNED_INT_SAMPLER_BUFFER,     /* usamplerBuffer */
+	SI_OPENGL_SYMBOL_DATATYPE_UNSIGNED_INT_SAMPLER_RENDERBUFFER,   /* usamplerRenderbuffer */
+	SI_OPENGL_SYMBOL_DATATYPE_UNSIGNED_INT_SAMPLER_2D_MS,          /* usampler2DMS */
+	SI_OPENGL_SYMBOL_DATATYPE_UNSIGNED_INT_SAMPLER_2D_MS_ARRAY,    /* usampler2DMSArray */
+
+	SI_OPENGL_SYMBOL_DATATYPE_FLOAT16_SAMPLER_1D,             /* f16sampler1D */
+	SI_OPENGL_SYMBOL_DATATYPE_FLOAT16_SAMPLER_2D,             /* f16sampler2D */
+	SI_OPENGL_SYMBOL_DATATYPE_FLOAT16_SAMPLER_2D_RECT,        /* f16sampler2DRect */
+	SI_OPENGL_SYMBOL_DATATYPE_FLOAT16_SAMPLER_3D,             /* f16sampler3D */
+	SI_OPENGL_SYMBOL_DATATYPE_FLOAT16_SAMPLER_CUBE,           /* f16samplerCube */
+	SI_OPENGL_SYMBOL_DATATYPE_FLOAT16_SAMPLER_1D_ARRAY,       /* f16sampler1DArray */
+	SI_OPENGL_SYMBOL_DATATYPE_FLOAT16_SAMPLER_2D_ARRAY,       /* f16sampler2DArray */
+	SI_OPENGL_SYMBOL_DATATYPE_FLOAT16_SAMPLER_CUBE_ARRAY,        /*f16samplerCubeArray */
+	SI_OPENGL_SYMBOL_DATATYPE_FLOAT16_SAMPLER_BUFFER,         /* f16samplerBuffer */
+	SI_OPENGL_SYMBOL_DATATYPE_FLOAT16_SAMPLER_2D_MS,          /* f16sampler2DMS */
+	SI_OPENGL_SYMBOL_DATATYPE_FLOAT16_SAMPLER_2D_MS_ARRAY,    /* f16sampler2DMSArray */
+	SI_OPENGL_SYMBOL_DATATYPE_FLOAT16_SAMPLER_1D_SHADOW,      /* f16sampler1DShadow */
+	SI_OPENGL_SYMBOL_DATATYPE_FLOAT16_SAMPLER_2D_SHADOW,      /* f16sampler2DShadow */
+	SI_OPENGL_SYMBOL_DATATYPE_FLOAT16_SAMPLER_2D_RECT_SHADOW, /* f16sampler2DRectShadow */
+	SI_OPENGL_SYMBOL_DATATYPE_FLOAT16_SAMPLER_CUBE_SHADOW,    /* f16samplerCubeShadow */
+	SI_OPENGL_SYMBOL_DATATYPE_FLOAT16_SAMPLER_1D_ARRAY_SHADOW,/* f16sampler1DArrayShadow */
+	SI_OPENGL_SYMBOL_DATATYPE_FLOAT16_SAMPLER_2D_ARRAY_SHADOW,/* f16sampler2DArrayShadow */
+	SI_OPENGL_SYMBOL_DATATYPE_FLOAT16_SAMPLER_CUBE_ARRAY_SHADOW,/* f16samplerCubeArrayShadow */
+
+	SI_OPENGL_SYMBOL_DATATYPE_IMAGE_1D,                        /* image1D */
+	SI_OPENGL_SYMBOL_DATATYPE_IMAGE_2D,                        /* image2D */
+	SI_OPENGL_SYMBOL_DATATYPE_IMAGE_3D,                        /* image3D */
+	SI_OPENGL_SYMBOL_DATATYPE_IMAGE_2D_RECT,                   /* image2DRect */
+	SI_OPENGL_SYMBOL_DATATYPE_IMAGE_CUBEMAP,                   /* imageCube */
+	SI_OPENGL_SYMBOL_DATATYPE_IMAGE_BUFFER,                    /* imageBuffer */
+	SI_OPENGL_SYMBOL_DATATYPE_IMAGE_1D_ARRAY,                  /* image1DArray */
+	SI_OPENGL_SYMBOL_DATATYPE_IMAGE_2D_ARRAY,                  /* image2DArray */
+	SI_OPENGL_SYMBOL_DATATYPE_IMAGE_CUBEMAP_ARRAY,             /* imageCubeArray */
+	SI_OPENGL_SYMBOL_DATATYPE_IMAGE_2D_MS,                     /* image2DMultisample */
+	SI_OPENGL_SYMBOL_DATATYPE_IMAGE_2D_MS_ARRAY,               /* image2DMultisampleArray */
+
+	SI_OPENGL_SYMBOL_DATATYPE_INT_IMAGE_1D,                    /* iimage1D */
+	SI_OPENGL_SYMBOL_DATATYPE_INT_IMAGE_2D,                    /* iimage2D */
+	SI_OPENGL_SYMBOL_DATATYPE_INT_IMAGE_3D,                    /* iimage3D */
+	SI_OPENGL_SYMBOL_DATATYPE_INT_IMAGE_2D_RECT,               /* iimage2DRect */
+	SI_OPENGL_SYMBOL_DATATYPE_INT_IMAGE_CUBEMAP,               /* iimageCube */
+	SI_OPENGL_SYMBOL_DATATYPE_INT_IMAGE_BUFFER,                /* iimageBuffer */
+	SI_OPENGL_SYMBOL_DATATYPE_INT_IMAGE_1D_ARRAY,              /* iimage1DArray */
+	SI_OPENGL_SYMBOL_DATATYPE_INT_IMAGE_2D_ARRAY,              /* iimage2DArray */
+	SI_OPENGL_SYMBOL_DATATYPE_INT_IMAGE_CUBEMAP_ARRAY,         /* iimageCubeArray */
+	SI_OPENGL_SYMBOL_DATATYPE_INT_IMAGE_2D_MS,                 /* iimage2DMultisample */
+	SI_OPENGL_SYMBOL_DATATYPE_INT_IMAGE_2D_MS_ARRAY,           /* iimage2DMultisampleArray */
+
+	SI_OPENGL_SYMBOL_DATATYPE_UNSIGNED_INT_IMAGE_1D,           /* uimage1D */
+	SI_OPENGL_SYMBOL_DATATYPE_UNSIGNED_INT_IMAGE_2D,           /* uimage2D */
+	SI_OPENGL_SYMBOL_DATATYPE_UNSIGNED_INT_IMAGE_3D,           /* uimage3D */
+	SI_OPENGL_SYMBOL_DATATYPE_UNSIGNED_INT_IMAGE_2D_RECT,      /* uimage2DRect */
+	SI_OPENGL_SYMBOL_DATATYPE_UNSIGNED_INT_IMAGE_CUBEMAP,      /* uimageCube */
+	SI_OPENGL_SYMBOL_DATATYPE_UNSIGNED_INT_IMAGE_BUFFER,       /* uimageBuffer */
+	SI_OPENGL_SYMBOL_DATATYPE_UNSIGNED_INT_IMAGE_1D_ARRAY,     /* uimage1DArray */
+	SI_OPENGL_SYMBOL_DATATYPE_UNSIGNED_INT_IMAGE_2D_ARRAY,     /* uimage2DArray */
+	SI_OPENGL_SYMBOL_DATATYPE_UNSIGNED_INT_IMAGE_CUBEMAP_ARRAY,/* uimageCubeArray */
+	SI_OPENGL_SYMBOL_DATATYPE_UNSIGNED_INT_IMAGE_2D_MS,        /* uimage2DMultisample */
+	SI_OPENGL_SYMBOL_DATATYPE_UNSIGNED_INT_IMAGE_2D_MS_ARRAY,  /* uimage2DMultisampleArray */
+
+	SI_OPENGL_SYMBOL_DATATYPE_FLOAT16_IMAGE_1D,                /* f16image1D */
+	SI_OPENGL_SYMBOL_DATATYPE_FLOAT16_IMAGE_2D,                /* f16image2D */
+	SI_OPENGL_SYMBOL_DATATYPE_FLOAT16_IMAGE_3D,                /* f16image3D */
+	SI_OPENGL_SYMBOL_DATATYPE_FLOAT16_IMAGE_2D_RECT,           /* f16image2DRect */
+	SI_OPENGL_SYMBOL_DATATYPE_FLOAT16_IMAGE_CUBEMAP,           /* f16imageCube */
+	SI_OPENGL_SYMBOL_DATATYPE_FLOAT16_IMAGE_BUFFER,            /* f16imageBuffer */
+	SI_OPENGL_SYMBOL_DATATYPE_FLOAT16_IMAGE_1D_ARRAY,          /* f16image1DArray */
+	SI_OPENGL_SYMBOL_DATATYPE_FLOAT16_IMAGE_2D_ARRAY,          /* f16image2DArray */
+	SI_OPENGL_SYMBOL_DATATYPE_FLOAT16_IMAGE_CUBEMAP_ARRAY,     /* f16imageCubeArray */
+	SI_OPENGL_SYMBOL_DATATYPE_FLOAT16_IMAGE_2D_MS,             /* f16image2DMultisample */
+	SI_OPENGL_SYMBOL_DATATYPE_FLOAT16_IMAGE_2D_MS_ARRAY,       /* f16image2DMultisampleArray */
+
+	SI_OPENGL_SYMBOL_DATATYPE_SAMPLER_BUFFER_AMD,                 /* used for tessellation (from vbo) */
+	SI_OPENGL_SYMBOL_DATATYPE_INT_SAMPLER_BUFFER_AMD,             /* used for vertex shader tesssellation */
+	SI_OPENGL_SYMBOL_DATATYPE_UNSIGNED_INT_SAMPLER_BUFFER_AMD,    /* used for vertex shader tesssellation */
+
+	SI_OPENGL_SYMBOL_DATATYPE_ATOMIC_COUNTER,          /* atomic counter */
+
+	SI_OPENGL_SYMBOL_DATATYPE_STRUCT,                 /* struct, used for bindable uniform, it is also used for type check in separate program mode */
+	SI_OPENGL_SYMBOL_DATATYPE_INTERFACE,              /* interface block, used for type check in separate progarm mode */
+	SI_OPENGL_SYMBOL_DATATYPE_FIRST = SI_OPENGL_SYMBOL_DATATYPE_VOID,
+	SI_OPENGL_SYMBOL_DATATYPE_LAST  = SI_OPENGL_SYMBOL_DATATYPE_INTERFACE
+};
+
+
 struct si_opengl_bin_shader_stats_t
 {
 	uint32_t uNumInst;
@@ -122,7 +395,7 @@ struct si_opengl_bin_shader_stats_t
 	uint32_t uNumIntConstReg;
 	uint32_t uNumInternalALUConst;
 	uint32_t uNumInternalTfetch;
-};
+}__attribute__((packed));
 
 struct si_opengl_bin_shader_dep_t
 {
@@ -149,15 +422,15 @@ struct si_opengl_bin_shader_dep_t
 	uint32_t X32XDefFConstants;
 	uint32_t X32XDefIConstants;
 	uint32_t X32XDefBConstants;
-};
+}__attribute__((packed));
 
 struct si_opengl_bin_constant_usage_t
 {
-    uint32_t maskBits[(MAX_CONSTANTS + 31) / 32];
-};
+	uint32_t maskBits[(MAX_CONSTANTS + 31) / 32];
+}__attribute__((packed));
 
 
-#define SI_OPENGL_BIN_SHADER_COMMON
+#define SI_OPENGL_BIN_SHADER_COMMON \
 	uint32_t uSizeInBytes;	/* size of structure */            \
 	struct si_opengl_bin_shader_stats_t stats;             /* hw-neutral stats */             \
 	struct si_opengl_bin_shader_dep_t dep;	/* hw-neutral dependency */        \
@@ -177,7 +450,7 @@ struct si_opengl_bin_constant_usage_t
 	uint32_t NumConstOpportunities;               \
 	uint32_t ResourcesAffectAlphaOutput[(MAX_NUM_RESOURCE+31)/32];        \
 
-#define SI_OPENGL_BIN_SHADER_SI_COMMON
+#define SI_OPENGL_BIN_SHADER_SI_COMMON \
 	uint32_t X32XhShaderMemHandle;   \
 	uint32_t X32XhConstBufferMemHandle[SC_SI_NUM_INTBUF]; \
 	uint32_t CodeLenInByte;\
@@ -192,18 +465,9 @@ struct si_opengl_bin_constant_usage_t
 	bool     bUsesVertexId; \
 	uint32_t   scratchSize;/* Scratch size in DWORDs for a single thread*/ \
 
-#define SI_OPENGL_BIN_SHADER_SI_BASE
-	SI_OPENGL_BIN_SHADER_COMMON 
-	SI_OPENGL_BIN_SHADER_SI_COMMON
-
-struct si_opengl_bin_input_t
-{
-	enum si_opengl_bin_input_type_t type;
-	unsigned int voffset;
-	unsigned int poffset;
-	bool isFloat16;
-	enum si_opengl_bin_input_swizzle_type_t swizzles[4];
-};
+#define SI_OPENGL_BIN_SHADER_SI_BASE \
+	SI_OPENGL_BIN_SHADER_COMMON \
+	SI_OPENGL_BIN_SHADER_SI_COMMON \
 
 /* SPI_SHADER_PGM_RSRC2_VS */
 struct si_opengl_bin_spi_shader_pgm_rsrc2_vs_t
@@ -247,10 +511,10 @@ struct si_opengl_spi_shader_pos_format
  */
 struct si_opengl_bin_vs_semantic_mapping_in_t
 {
-	unsigned int usage: 8;  // semantic usage. IL_IMPORTUSAGE.
-	unsigned int usageIdx  : 8;  // semantic index. Opaque to SC.
-	unsigned int dataVgpr  : 8;  // first VGPR to contain fetch result
-	unsigned int dataSize  : 2;  // (fetch_size - 1), size in elements
+	unsigned int usage: 8;  /* semantic usage. IL_IMPORTUSAGE. */
+	unsigned int usageIdx  : 8;  /* semantic index. Opaque to SC. */
+	unsigned int dataVgpr  : 8;  /* first VGPR to contain fetch result */
+	unsigned int dataSize  : 2;  /* (fetch_size - 1), size in elements */
 	unsigned int reserved  : 6;
 };
 
@@ -260,12 +524,11 @@ struct si_opengl_bin_vs_semantic_mapping_in_t
  */
 struct si_opengl_bin_vs_semantic_mapping_out_t
 {
-	uint32_t usage     : 8;      // semantic usage. IL_IMPORTUSAGE.
-	uint32_t usageIdx  : 8;      // semantic index. Opaque to SC.
-	uint32_t paramIdx  : 8;      // attribute export parameter index (0-31)
+	uint32_t usage     : 8;      /* semantic usage. IL_IMPORTUSAGE. */
+	uint32_t usageIdx  : 8;      /* semantic index. Opaque to SC. */
+	uint32_t paramIdx  : 8;      /* attribute export parameter index (0-31) */
 	uint32_t reserved  : 8;
 };
-
 
 /*
  *  Flags to guide shader compilation.
@@ -273,12 +536,12 @@ struct si_opengl_bin_vs_semantic_mapping_out_t
 struct si_opengl_bin_compile_guide_t
 {
 	/* To make this structure consistent with SC_COMPILE_FLAGS, we add some reserved bits. */
-	uint32_t psPrimId           : 1; // PS needs primID input
-	uint32_t useHsOffChip       : 1; // HS can use off-ship LDS
-	uint32_t clampScratchAccess : 1; // add code to clamp scratch assesses
-	uint32_t streamOutEnable    : 1; // enable writes to stream-out buffers
+	uint32_t psPrimId           : 1; /* PS needs primID input */
+	uint32_t useHsOffChip       : 1; /* HS can use off-ship LDS */
+	uint32_t clampScratchAccess : 1; /* add code to clamp scratch assesses */
+	uint32_t streamOutEnable    : 1; /* enable writes to stream-out buffers */
 	uint32_t reserved1          : 4;
-	uint32_t useGsOnChip        : 1; // ES and GS can use on-chip LDS. (CI+)
+	uint32_t useGsOnChip        : 1; /* ES and GS can use on-chip LDS. (CI+) */
 	uint32_t reserved2          : 23;
 } ;
 
@@ -318,20 +581,22 @@ struct si_opengl_bin_enc_dict_entry_t
 	struct si_opengl_bin_spi_shader_pgm_rsrc2_vs_t *shader_pgm_rsrc2_vs;
 };
 
-/* Vertex shader */
-struct si_opengl_bin_si_vertex_shader_t  
+/* Vertex shader metadata stored in .text section */
+struct si_opengl_bin_si_vertex_shader_metadata_t  
 {
+	/* SI Shader base structure, same for all shaders */
 	SI_OPENGL_BIN_SHADER_SI_BASE
 
+	/* Shader specific structures */
 	/* Input semantics */
 	uint32_t numVsInSemantics;
 	struct si_opengl_bin_vs_semantic_mapping_in_t vsInSemantics[SC_SI_VS_MAX_INPUTS];
 
-	// Output semantics
+	/* Output semantics */
 	uint32_t numVsOutSemantics;
 	struct si_opengl_bin_vs_semantic_mapping_out_t vsOutSemantics[SC_SI_VS_MAX_OUTPUTS];
 
-	// LS/ES/VS specific shader resources
+	/* LS/ES/VS specific shader resources */
 	union
 	{
 	    uint32_t spiShaderPgmRsrc2Ls;
@@ -339,30 +604,64 @@ struct si_opengl_bin_si_vertex_shader_t
 	    uint32_t spiShaderPgmRsrc2Vs;
 	};
 
-	// SC-provided values for certain VS-specific registers
+	/* SC-provided values for certain VS-specific registers */
 	uint32_t paClVsOutCntl;
 	uint32_t spiVsOutConfig;
 	uint32_t spiShaderPosFormat;
 	uint32_t vgtStrmoutConfig;
 
-	// Number of SPI-generated VGPRs referenced by the vertex shader
+	/* Number of SPI-generated VGPRs referenced by the vertex shader */
 	uint32_t vgprCompCnt;
 
-	// Exported vertex size in DWORDs, can be used to program ESGS ring size
+	/* Exported vertex size in DWORDs, can be used to program ESGS ring size */
 	uint32_t exportVertexSize;
 
 	bool useEdgeFlags;  
-	bool  remapClipDistance; //true if clip distance[4-7] is remapped to [0-3] 
-	uint32_t hwShaderStage;    // hardware stage which this shader actually in when execution
-	struct si_opengl_bin_compile_guide_t compileFlags;     // compile flag
-	uint32_t gsMode;                            // gs mode
+	bool  remapClipDistance; /*true if clip distance[4-7] is remapped to [0-3]  */
+	uint32_t hwShaderStage;    /* hardware stage which this shader actually in when execution */
+	struct si_opengl_bin_compile_guide_t compileFlags;     /* compile flag */
+	uint32_t gsMode;                            /* gs mode */
 
 	bool isOnChipGs;
 	uint32_t targetLdsSize;
 
+}__attribute__((packed));
+
+struct si_opengl_bin_si_vertex_shader_t
+{
+	/* Parent shader binary it belongs to */
+	struct si_opengl_shader_binary_t *parent;
+
+	/* Shader data */
+	struct si_opengl_bin_si_vertex_shader_metadata_t *meta;
+	struct list_t *inputs; /* Elements with type struct si_opengl_bin_si_input_t */
+	struct list_t *outputs; /* Elements with type struct si_opengl_bin_si_output_t*/
+	struct list_t *constants;
 };
 
+/* Input descriptor for .inputs section */
+struct si_opengl_bin_si_input_t
+{
+	enum si_opengl_bin_si_input_type_t type;
+	unsigned int voffset;
+	unsigned int poffset;
+	// bool isFloat16; /* FIXME: has to comment this as the size will be 29 instead of 28 bytes */
+	enum si_opengl_bin_si_input_swizzle_type_t swizzles[4];
+}__attribute__((packed));
 
+/* FIXME: size of this structure doesn't match the binary */
+/* Output descriptor for .outputs section */
+struct si_opengl_bin_si_output_t 
+{
+	enum si_opengl_bin_output_type_t type;          /* Semantic type */
+	unsigned int voffset;           /* Virtual offset */
+	unsigned int poffset;           /* Physical offset */
+	enum si_opengl_bin_symbol_datatype_t data_type;      /* Data type */
+	unsigned int array_size;     /* Array size */
+	char* name;           /* Name of the output */
+}__attribute__((packed));;
+
+typedef void (*si_opengl_shader_free_func_t)(void *);
 struct si_opengl_shader_binary_t
 {
 	/* Type of shader */
@@ -378,6 +677,8 @@ struct si_opengl_shader_binary_t
 	/* Encoding dictionary */
 	struct si_opengl_bin_enc_dict_entry_t *shader_enc_dict;
 
+	void *shader; /* Shader with type si_opengl_bin_si_xxxxx_shader_t */
+	si_opengl_shader_free_func_t free_func;  /* Callback function to free shader */
 };
 
 struct si_opengl_program_binary_t

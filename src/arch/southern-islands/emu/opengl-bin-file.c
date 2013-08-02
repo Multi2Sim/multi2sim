@@ -18,6 +18,7 @@
  */
 
 
+#include <assert.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
@@ -27,7 +28,12 @@
 #include "opengl-bin-file.h"
 
 
-
+/* Forward declaration */
+static struct si_opengl_bin_si_vertex_shader_metadata_t *si_opengl_bin_si_vertex_shader_metadata_init_from_section(struct elf_section_t *section);
+static void si_opengl_bin_si_vertex_shader_metadata_free(struct si_opengl_bin_si_vertex_shader_metadata_t *vs);
+static struct si_opengl_bin_si_vertex_shader_t *si_opengl_bin_si_vertex_shader_create(struct si_opengl_shader_binary_t *parent);
+static void si_opengl_bin_si_vertex_shader_free(struct si_opengl_bin_si_vertex_shader_t *vs);
+static void si_opengl_bin_si_vertex_shader_init(struct si_opengl_bin_si_vertex_shader_t *vs);
 
 /*
  * Private Functions
@@ -67,6 +73,9 @@ static void si_opengl_shader_binary_set_type(struct si_opengl_shader_binary_t *s
 	{
 	case 0x0:
 		shdr->shader_kind = SI_OPENGL_SHADER_VERTEX;
+		shdr->shader = si_opengl_bin_si_vertex_shader_create(shdr);
+		shdr->free_func = (si_opengl_shader_free_func_t) &si_opengl_bin_si_vertex_shader_free;
+		si_opengl_bin_si_vertex_shader_init(shdr->shader);
 		break;
 	case 0x4:
 		shdr->shader_kind = SI_OPENGL_SHADER_FRAGMENT;
@@ -96,7 +105,6 @@ static void si_opengl_shader_binary_set_isa(struct si_opengl_shader_binary_t *sh
 			shdr->shader_isa->pos = 0;
 		}
 	}
-
 }
 
 static struct si_opengl_bin_spi_shader_pgm_rsrc2_vs_t *si_opengl_bin_spi_shader_pgm_rsrc2_vs_create()
@@ -113,6 +121,196 @@ static struct si_opengl_bin_spi_shader_pgm_rsrc2_vs_t *si_opengl_bin_spi_shader_
 static void si_opengl_bin_spi_shader_pgm_rsrc2_vs_free(struct si_opengl_bin_spi_shader_pgm_rsrc2_vs_t *pgm_rsrc2)
 {
 	free(pgm_rsrc2);
+}
+
+/* Structure in .text section */
+static struct si_opengl_bin_si_vertex_shader_metadata_t *si_opengl_bin_si_vertex_shader_metadata_create()
+{
+	struct si_opengl_bin_si_vertex_shader_metadata_t *vs;
+
+	/* Allocate */
+	vs = xcalloc(1, sizeof(struct si_opengl_bin_si_vertex_shader_metadata_t));
+
+	/* Return */
+	return vs;
+}
+
+static void si_opengl_bin_si_vertex_shader_metadata_free(struct si_opengl_bin_si_vertex_shader_metadata_t *vs)
+{
+	/* Free */
+	free(vs);
+}
+
+static struct si_opengl_bin_si_vertex_shader_metadata_t *si_opengl_bin_si_vertex_shader_metadata_init_from_section(struct elf_section_t *section)
+{
+	struct si_opengl_bin_si_vertex_shader_metadata_t *vs_meta;
+
+	/* Create and memcpy */
+	assert(sizeof(struct si_opengl_bin_si_vertex_shader_metadata_t) < section->buffer.size);
+	vs_meta = si_opengl_bin_si_vertex_shader_metadata_create();
+	memcpy(vs_meta, section->buffer.ptr, sizeof(struct si_opengl_bin_si_vertex_shader_metadata_t));
+
+	/* Return */
+	return vs_meta;
+}
+
+/* Structure in .inputs section */
+static struct si_opengl_bin_si_input_t *si_opengl_bin_si_input_create()
+{
+	struct si_opengl_bin_si_input_t *input;
+
+	/* Allocate */
+	input = xcalloc(1, sizeof(struct si_opengl_bin_si_input_t));
+
+	/* Return */
+	return input;
+}
+
+static void si_opengl_bin_si_input_free(struct si_opengl_bin_si_input_t *input)
+{
+	free(input);
+}
+
+static void si_opengl_bin_si_inputs_init_from_section(struct list_t *lst, struct elf_section_t *section)
+{
+	struct si_opengl_bin_si_input_t *input;
+	int input_count;
+	int i;
+
+	/* Calculate # of input */
+	if (section->buffer.size % sizeof(struct si_opengl_bin_si_input_t))
+		fatal("Section size must be multiples of input structure.");
+	else
+	{
+		input_count = section->buffer.size / sizeof(struct si_opengl_bin_si_input_t);
+		for (i = 0; i < input_count; ++i)
+		{
+			input = si_opengl_bin_si_input_create();
+			memcpy(input, section->buffer.ptr + i * sizeof(struct si_opengl_bin_si_input_t), 
+				sizeof(struct si_opengl_bin_si_input_t));
+			list_add(lst, input);
+		}
+	}
+}
+
+/* Structure in .outputs section */
+static struct si_opengl_bin_si_output_t *si_opengl_bin_si_output_create()
+{
+	struct si_opengl_bin_si_output_t *output;
+
+	/* Allocate */
+	output = xcalloc(1, sizeof(struct si_opengl_bin_si_output_t));
+
+	/* Return */
+	return output;
+}
+
+static void si_opengl_bin_si_output_free(struct si_opengl_bin_si_output_t *output)
+{
+	free(output->name);
+	free(output);
+}
+
+static void si_opengl_bin_si_outputs_init_from_section(struct list_t *lst, struct elf_section_t *section)
+{
+	struct si_opengl_bin_si_output_t *output;
+	struct si_opengl_bin_si_output_t* output_ptr;	
+	char *outname;
+	char *bin_ptr;
+	unsigned int name_offset;
+	size_t len;
+	int output_count;
+	int i;
+
+	output_count = section->header->sh_entsize;
+	bin_ptr = (char *) section->buffer.ptr;
+	name_offset = sizeof(struct si_opengl_bin_si_output_t) - sizeof(char*);
+	for (i = 0; i < output_count; ++i)
+	{
+		output_ptr = (struct si_opengl_bin_si_output_t *)bin_ptr;
+
+		output = si_opengl_bin_si_output_create();
+		outname = &bin_ptr[name_offset];
+		if(*outname != '\0')
+		{
+			len = strlen(outname)+1;
+			output->name = xstrdup(outname);
+			output->data_type = output_ptr->data_type;
+			output->array_size = output_ptr->array_size;
+			bin_ptr += (name_offset + len);
+		}
+		else
+		{
+			bin_ptr += (name_offset + 1);
+			output->name = NULL;
+			output->type = (enum si_opengl_bin_output_type_t) output_ptr->type;
+			output->poffset = output_ptr->poffset;
+			output->array_size = output_ptr->array_size;
+		}
+		list_add(lst, output);
+	}
+}
+
+static struct si_opengl_bin_si_vertex_shader_t *si_opengl_bin_si_vertex_shader_create(struct si_opengl_shader_binary_t *parent)
+{
+	struct si_opengl_bin_si_vertex_shader_t *vs;
+
+	/* Allocate */
+	vs = xcalloc(1, sizeof(struct si_opengl_bin_si_vertex_shader_t));
+	vs->parent = parent;
+	parent->shader = vs;
+	vs->meta = si_opengl_bin_si_vertex_shader_metadata_create();
+	vs->inputs = list_create();
+	vs->outputs = list_create();
+
+	/* Return */
+	return vs;
+}
+
+static void si_opengl_bin_si_vertex_shader_free(struct si_opengl_bin_si_vertex_shader_t *vs)
+{
+	struct si_opengl_bin_si_input_t *input;
+	struct si_opengl_bin_si_output_t *output;
+	int i;
+
+	si_opengl_bin_si_vertex_shader_metadata_free(vs->meta);
+	LIST_FOR_EACH(vs->inputs, i)
+	{
+		input = list_get(vs->inputs, i);
+		si_opengl_bin_si_input_free(input);
+	}
+	LIST_FOR_EACH(vs->outputs, i)
+	{
+		output = list_get(vs->outputs, i);
+		si_opengl_bin_si_output_free(output);
+	}
+}
+
+static void si_opengl_bin_si_vertex_shader_init(struct si_opengl_bin_si_vertex_shader_t *vs)
+{
+	struct si_opengl_shader_binary_t *parent;
+	struct elf_file_t *shader_elf;
+	struct elf_section_t *section;
+	int i;
+
+	/* Get parent */
+	parent = vs->parent;
+	assert(parent);
+	assert(parent->shader_kind == SI_OPENGL_SHADER_VERTEX);
+
+	shader_elf = parent->shader_elf;
+
+	/* Initialize from sections */
+	LIST_FOR_EACH(shader_elf->section_list, i)
+	{
+		section = list_get(shader_elf->section_list, i);
+		if (!strcmp(section->name, ".text"))
+			si_opengl_bin_si_vertex_shader_metadata_init_from_section(section);
+		else if (!strcmp(section->name, ".inputs"))
+			si_opengl_bin_si_inputs_init_from_section(vs->inputs, section);
+		else if (!strcmp(section->name, ".outputs"))
+			si_opengl_bin_si_outputs_init_from_section(vs->outputs, section);
+	}
 }
 
 static struct si_opengl_bin_enc_dict_entry_t *si_opengl_bin_enc_dict_entry_create()
@@ -188,9 +386,11 @@ static void si_opengl_enc_dict_set_semanticMappings(struct si_opengl_shader_bina
 
 static void si_opengl_enc_dict_set_inputs(struct si_opengl_shader_binary_t *shdr, struct si_opengl_bin_enc_dict_entry_t *enc_dict)
 {
+	// struct elf_section_t *section;
+	int i;
+
 	/* FIXME: should get this info from binary! */
 	int input_count = 2;
-	int i;
 	struct si_input_t *input;
 
 	/* Create input and add to input list */
