@@ -145,6 +145,9 @@ static struct si_opengl_bin_si_vertex_shader_metadata_t *si_opengl_bin_si_vertex
 {
 	struct si_opengl_bin_si_vertex_shader_metadata_t *vs_meta;
 
+	/* Make sure section is correct */
+	assert(!strcmp(section->name, ".text"));
+
 	/* Create and memcpy */
 	assert(sizeof(struct si_opengl_bin_si_vertex_shader_metadata_t) < section->buffer.size);
 	vs_meta = si_opengl_bin_si_vertex_shader_metadata_create();
@@ -176,6 +179,8 @@ static void si_opengl_bin_si_inputs_init_from_section(struct list_t *lst, struct
 	struct si_opengl_bin_si_input_t *input;
 	int input_count;
 	int i;
+
+	assert(!strcmp(section->name, ".inputs"));
 
 	/* Calculate # of input */
 	if (section->buffer.size % sizeof(struct si_opengl_bin_si_input_t))
@@ -222,6 +227,9 @@ static void si_opengl_bin_si_outputs_init_from_section(struct list_t *lst, struc
 	int output_count;
 	int i;
 
+	/* Make sure section is correct */
+	assert(!strcmp(section->name, ".outputs"));
+
 	output_count = section->header->sh_entsize;
 	bin_ptr = (char *) section->buffer.ptr;
 	name_offset = sizeof(struct si_opengl_bin_si_output_t) - sizeof(char*);
@@ -233,7 +241,7 @@ static void si_opengl_bin_si_outputs_init_from_section(struct list_t *lst, struc
 		outname = &bin_ptr[name_offset];
 		if(*outname != '\0')
 		{
-			len = strlen(outname)+1;
+			len = strlen(outname) + 1;
 			output->name = xstrdup(outname);
 			output->data_type = output_ptr->data_type;
 			output->array_size = output_ptr->array_size;
@@ -251,6 +259,34 @@ static void si_opengl_bin_si_outputs_init_from_section(struct list_t *lst, struc
 	}
 }
 
+/* Structure in .info section */
+static struct si_opengl_bin_si_info_t *si_opengl_si_bin_info_create()
+{
+	struct si_opengl_bin_si_info_t *info;
+
+	/* Allocate */
+	info = xcalloc(1, sizeof(struct si_opengl_bin_si_info_t));
+
+	/* Return */	
+	return info;
+}
+
+static void si_opengl_si_bin_info_free(struct si_opengl_bin_si_info_t *info)
+{
+	free(info);
+}
+
+static void si_opengl_si_bin_info_init_with_section(struct si_opengl_bin_si_info_t *info, struct elf_section_t *section)
+{
+	assert(!strcmp(section->name, ".info"));
+
+	/* FIXME: size not match */
+	// if (section->buffer.size != sizeof(struct si_opengl_bin_si_info_t))
+	// 	fatal("Section size doesn't match info structure.");
+	// else
+		memcpy(info, section->buffer.ptr, sizeof(struct si_opengl_bin_si_info_t));
+}
+
 static struct si_opengl_bin_si_vertex_shader_t *si_opengl_bin_si_vertex_shader_create(struct si_opengl_shader_binary_t *parent)
 {
 	struct si_opengl_bin_si_vertex_shader_t *vs;
@@ -262,6 +298,7 @@ static struct si_opengl_bin_si_vertex_shader_t *si_opengl_bin_si_vertex_shader_c
 	vs->meta = si_opengl_bin_si_vertex_shader_metadata_create();
 	vs->inputs = list_create();
 	vs->outputs = list_create();
+	vs->info = si_opengl_si_bin_info_create();
 
 	/* Return */
 	return vs;
@@ -284,6 +321,7 @@ static void si_opengl_bin_si_vertex_shader_free(struct si_opengl_bin_si_vertex_s
 		output = list_get(vs->outputs, i);
 		si_opengl_bin_si_output_free(output);
 	}
+	si_opengl_si_bin_info_free(vs->info);
 }
 
 static void si_opengl_bin_si_vertex_shader_init(struct si_opengl_bin_si_vertex_shader_t *vs)
@@ -310,6 +348,8 @@ static void si_opengl_bin_si_vertex_shader_init(struct si_opengl_bin_si_vertex_s
 			si_opengl_bin_si_inputs_init_from_section(vs->inputs, section);
 		else if (!strcmp(section->name, ".outputs"))
 			si_opengl_bin_si_outputs_init_from_section(vs->outputs, section);
+		else if (!strcmp(section->name, ".info"))
+			si_opengl_si_bin_info_init_with_section(vs->info, section);
 	}
 }
 
