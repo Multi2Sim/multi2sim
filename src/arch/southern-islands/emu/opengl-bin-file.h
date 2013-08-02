@@ -656,6 +656,11 @@ struct si_opengl_texture_resource_bound_t
 
 /* FIXME: size not match binary */
 /* Info descriptor for .info section */
+enum si_opengl_bin_si_info_max_offset
+{ 
+	MAX_PROGRAMINFO_OFFSET = 0x0ffff 
+};
+
 struct si_opengl_bin_si_info_t
 {
 	/* generaic shader resource information */
@@ -770,7 +775,9 @@ struct si_opengl_bin_si_info_t
 	    uint32_t *_uavDynamicResouceMap;  /* save fetch const offset of each UAV */
 	    int64_t   uavDynamicResouceMapOffset;               /* uav dynamic resource map offset */
 	};
-}__attribute__((packed));
+	
+	enum si_opengl_bin_si_info_max_offset max_valid_offset;
+};
 
 struct si_opengl_bin_si_vertex_shader_t
 {
