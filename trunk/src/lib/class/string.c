@@ -62,6 +62,16 @@ static void StringGrow(String *self, size_t new_length)
 }
 
 
+static void StringDoCreate(String *self)
+{
+	/* Virtual functions */
+	asObject(self)->Dump = StringDump;
+	asObject(self)->Compare = StringCompare;
+	asObject(self)->Hash = StringHash;
+	asObject(self)->Clone = StringClone;
+}
+
+
 void StringCreate(String *self, const char *text)
 {
 	/* Initialize */
@@ -69,11 +79,31 @@ void StringCreate(String *self, const char *text)
 	self->length = strlen(text);
 	self->size = self->length + 1;
 
-	/* Virtual functions */
-	asObject(self)->Dump = StringDump;
-	asObject(self)->Compare = StringCompare;
-	asObject(self)->Hash = StringHash;
-	asObject(self)->Clone = StringClone;
+	/* Common constructor */
+	StringDoCreate(self);
+}
+
+
+void StringCreateMaxLength(String *self, const char *text, int max_length)
+{
+	int length;
+
+	/* Find length of 'text' */
+	for (length = 0; length < max_length; length++)
+		if (!text[length])
+			break;
+	
+	/* Create string */
+	self->length = length;
+	self->size = self->length + 1;
+	self->text = xmalloc(self->size);
+
+	/* Copy text */
+	memcpy(self->text, text, length);
+	self->text[length] = '\0';
+
+	/* Common constructor */
+	StringDoCreate(self);
 }
 
 
@@ -308,6 +338,80 @@ void StringTrim(String *self, const char *set)
 }
 
 
+void StringSingleSpaces(String *self)
+{
+	char *src;
+	char *dest;
+	char *set;
+
+	int new_length;
+	int is_space;
+	int was_space;
+	int started;
+	int i;
+
+	set = "\n\t\r ";
+	src = self->text;
+	dest = self->text;
+	new_length = 0;
+	is_space = 0;
+	was_space = 0;
+	started = 0;
+	for (i = 0; i < self->length; i++)
+	{
+		is_space = CharInSet(*src, set);
+		if (is_space)
+		{
+			src++;
+			if (!was_space && started)
+			{
+				*(dest++) = ' ';
+				new_length++;
+			}
+		}
+		else
+		{
+			*(dest++) = *(src++);
+			new_length++;
+			started = 1;
+		}
+		was_space = is_space;
+	}
+
+	/* Get rid of possible extra space at the end */
+	if (new_length && is_space)
+	{
+		dest--;
+		new_length--;
+	}
+
+	/* Null-terminate */
+	*dest = '\0';
+
+	/* Set new length */
+	self->length = new_length;
+	assert(new_length == strlen(self->text));
+}
+
+
+void StringToLower(String *self)
+{
+	int i;
+
+	for (i = 0; i < self->length; i++)
+		self->text[i] = tolower(self->text[i]);
+}
+
+
+void StringToUpper(String *self)
+{
+	int i;
+
+	for (i = 0; i < self->length; i++)
+		self->text[i] = toupper(self->text[i]);
+}
+
+
 List *StringTokenize(String *self, const char *set)
 {
 	List *list;
@@ -345,3 +449,127 @@ List *StringTokenize(String *self, const char *set)
 	/* Return token list */
 	return list;
 }
+
+
+
+
+/*
+ * String Maps
+ */
+
+static char *string_map_unknown = "<unknown>";
+
+char *StringMapValue(StringMap map, int value)
+{
+	return StringMapValueErr(map, value, NULL);
+}
+
+
+char *StringMapValueErr(StringMap map, int value, int *err_ptr)
+{
+	int index;
+
+	/* Assume no error */
+	if (err_ptr)
+		*err_ptr = 0;
+
+	/* Find value */
+	for (index = 0; map[index].string; index++)
+		if (map[index].value == value)
+			return map[index].string;
+	
+	/* Error */
+	if (err_ptr)
+		*err_ptr = 1;
+
+	/* Not found */
+	return string_map_unknown;
+}
+
+
+int StringMapString(StringMap map, char *string)
+{
+	return StringMapStringErr(map, string, NULL);
+}
+
+
+int StringMapStringErr(StringMap map, char *string, int *err_ptr)
+{
+	int index;
+
+	/* Assume no error */
+	if (err_ptr)
+		*err_ptr = 0;
+
+	/* Find value */
+	for (index = 0; map[index].string; index++)
+		if (!strcmp(map[index].string, string))
+			return map[index].value;
+
+	/* Error */
+	if (err_ptr)
+		*err_ptr = 1;
+	
+	/* Not found */
+	return 0;
+}
+
+
+int StringMapStringCase(StringMap map, char *string)
+{
+	return StringMapStringCaseErr(map, string, NULL);
+}
+
+
+int StringMapStringCaseErr(StringMap map, char *string, int *err_ptr)
+{
+	int index;
+
+	/* Assume no error */
+	if (err_ptr)
+		*err_ptr = 0;
+
+	/* Find value */
+	for (index = 0; map[index].string; index++)
+		if (!strcasecmp(map[index].string, string))
+			return map[index].value;
+
+	/* Error */
+	if (err_ptr)
+		*err_ptr = 1;
+	
+	/* Not found */
+	return 0;
+}
+
+
+String *StringMapFlags(StringMap map, unsigned int flags)
+{
+	int i;
+	int err;
+
+	char *comma = "";
+	char *s;
+
+	String *string;
+
+	string = new(String, "{");
+	for (i = 0; i < 32; i++)
+	{
+		if (flags & (1 << i))
+		{
+			StringConcat(string, "%s", comma);
+			s = StringMapValueErr(map, 1 << i, &err);
+			if (err)
+				StringConcat(string, "%d", 1 << i);
+			else
+				StringConcat(string, "%s", s);
+			comma = "|";
+		}
+	}
+	StringConcat(string, "}");
+
+	/* Return created string */
+	return string;
+}
+

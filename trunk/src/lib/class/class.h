@@ -188,6 +188,7 @@ void ObjectDump(Object *self, FILE *f);
 #define new_static_ctor(p, name, ctor, ...) \
 	{ \
 		name *__p = (p); \
+		memset(__p, 0, name##Class.size); \
 		__class_new(__p, &name##Class, __FILE__, __LINE__, #name); \
 		name##ctor(__p, ##__VA_ARGS__); \
 	}
