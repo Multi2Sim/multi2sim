@@ -9,6 +9,12 @@ libclass_a_SOURCES = \
 	class.dat \
 	class.h \
 	\
+	elf-reader.c \
+	elf-reader.h \
+	\
+	elf-writer.c \
+	elf-writer.h \
+	\
 	hash-table.c \
 	hash-table.h \
 	\

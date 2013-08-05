@@ -39,7 +39,16 @@ CLASS_BEGIN(String, Object)
 
 CLASS_END(String)
 
-void StringCreate(String *self, const char *str);
+/* Default constructor */
+void StringCreate(String *self, const char *text);
+
+/* Create a new string with the text given in 'text' truncated to a maximum
+ * length of 'max_length' characters (not including the null-termination). It is
+ * safe to pass a not null-terminated string in 'text', as long as it is safe to
+ * read 'max_length' characters from 'text'. */
+void StringCreateMaxLength(String *self, const char *text, int max_length);
+
+/* Destructor */
 void StringDestroy(String *self);
 
 /* Clone a string object */
@@ -93,6 +102,14 @@ void StringTrimLeft(String *self, const char *set);
 void StringTrimRight(String *self, const char *set);
 void StringTrim(String *self, const char *set);
 
+/* Replace consecutive spaces/tabs/newlines in a string by one single space. Any
+ * spaces/tabs/newlines at the beginning and end of the string are removed. */
+void StringSingleSpaces(String *self);
+
+/* Convert to lower/upper case. */
+void StringToLower(String *self);
+void StringToUpper(String *self);
+
 /* Create a list (and return it) with string representing all tokens. Argument
  * 'set' is a string where each character is a possible separator. The caller is
  * responsible for freeing all returned strings, as well as the list itself. */
@@ -101,6 +118,30 @@ List *StringTokenize(String *self, const char *set);
 /* Set a new value for the 'case_sensitive' flag, and update the virtual
  * functions used to compare and hash the string. */
 void StringSetCaseSensitive(String *self, int case_sensitive);
+
+
+
+
+/*
+ * String Maps
+ */
+
+typedef struct
+{
+	char *string;
+	int value;
+} StringMap[];
+
+char *StringMapValue(StringMap map, int value);
+char *StringMapValueErr(StringMap map, int value, int *err_ptr);
+
+int StringMapString(StringMap map, char *string);
+int StringMapStringErr(StringMap map, char *string, int *err_ptr);
+
+int StringMapStringCase(StringMap map, char *string);
+int StringMapStringCaseErr(StringMap map, char *string, int *err_ptr);
+
+String *StringMapFlags(StringMap map, unsigned int flags);
 
 #endif
 

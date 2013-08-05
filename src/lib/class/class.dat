@@ -3,9 +3,17 @@
  */
 
 CLASS(Array)
+
+CLASS(ELFBuffer)
+CLASS(ELFProgramHeader)
+CLASS(ELFSection)
+CLASS(ELFSymbol)
+CLASS(ELFReader)
+
 CLASS(List)
 CLASS(ListIterator)
 CLASS(HashTable)
+CLASS(HashTableIterator)
 CLASS(Heap)
 CLASS(IniFile)
 CLASS(String)
