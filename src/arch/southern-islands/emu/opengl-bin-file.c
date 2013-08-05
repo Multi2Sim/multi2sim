@@ -29,11 +29,11 @@
 
 
 /* Forward declaration */
-static struct si_opengl_bin_si_vertex_shader_metadata_t *si_opengl_bin_si_vertex_shader_metadata_init_from_section(struct elf_section_t *section);
-static void si_opengl_bin_si_vertex_shader_metadata_free(struct si_opengl_bin_si_vertex_shader_metadata_t *vs);
-static struct si_opengl_bin_si_vertex_shader_t *si_opengl_bin_si_vertex_shader_create(struct si_opengl_shader_binary_t *parent);
-static void si_opengl_bin_si_vertex_shader_free(struct si_opengl_bin_si_vertex_shader_t *vs);
-static void si_opengl_bin_si_vertex_shader_init(struct si_opengl_bin_si_vertex_shader_t *vs);
+static struct si_opengl_bin_vertex_shader_metadata_t *si_opengl_bin_vertex_shader_metadata_init_from_section(struct elf_section_t *section);
+static void si_opengl_bin_vertex_shader_metadata_free(struct si_opengl_bin_vertex_shader_metadata_t *vs);
+static struct si_opengl_bin_vertex_shader_t *si_opengl_bin_vertex_shader_create(struct si_opengl_shader_binary_t *parent);
+static void si_opengl_bin_vertex_shader_free(struct si_opengl_bin_vertex_shader_t *vs);
+static void si_opengl_bin_vertex_shader_init(struct si_opengl_bin_vertex_shader_t *vs);
 
 /*
  * Private Functions
@@ -73,9 +73,9 @@ static void si_opengl_shader_binary_set_type(struct si_opengl_shader_binary_t *s
 	{
 	case 0x0:
 		shdr->shader_kind = SI_OPENGL_SHADER_VERTEX;
-		shdr->shader = si_opengl_bin_si_vertex_shader_create(shdr);
-		shdr->free_func = (si_opengl_shader_free_func_t) &si_opengl_bin_si_vertex_shader_free;
-		si_opengl_bin_si_vertex_shader_init(shdr->shader);
+		shdr->shader = si_opengl_bin_vertex_shader_create(shdr);
+		shdr->free_func = (si_opengl_shader_free_func_t) &si_opengl_bin_vertex_shader_free;
+		si_opengl_bin_vertex_shader_init(shdr->shader);
 		break;
 	case 0x4:
 		shdr->shader_kind = SI_OPENGL_SHADER_FRAGMENT;
@@ -124,102 +124,102 @@ static void si_opengl_bin_spi_shader_pgm_rsrc2_vs_free(struct si_opengl_bin_spi_
 }
 
 /* Structure in .text section */
-static struct si_opengl_bin_si_vertex_shader_metadata_t *si_opengl_bin_si_vertex_shader_metadata_create()
+static struct si_opengl_bin_vertex_shader_metadata_t *si_opengl_bin_vertex_shader_metadata_create()
 {
-	struct si_opengl_bin_si_vertex_shader_metadata_t *vs;
+	struct si_opengl_bin_vertex_shader_metadata_t *vs;
 
 	/* Allocate */
-	vs = xcalloc(1, sizeof(struct si_opengl_bin_si_vertex_shader_metadata_t));
+	vs = xcalloc(1, sizeof(struct si_opengl_bin_vertex_shader_metadata_t));
 
 	/* Return */
 	return vs;
 }
 
-static void si_opengl_bin_si_vertex_shader_metadata_free(struct si_opengl_bin_si_vertex_shader_metadata_t *vs)
+static void si_opengl_bin_vertex_shader_metadata_free(struct si_opengl_bin_vertex_shader_metadata_t *vs)
 {
 	/* Free */
 	free(vs);
 }
 
-static struct si_opengl_bin_si_vertex_shader_metadata_t *si_opengl_bin_si_vertex_shader_metadata_init_from_section(struct elf_section_t *section)
+static struct si_opengl_bin_vertex_shader_metadata_t *si_opengl_bin_vertex_shader_metadata_init_from_section(struct elf_section_t *section)
 {
-	struct si_opengl_bin_si_vertex_shader_metadata_t *vs_meta;
+	struct si_opengl_bin_vertex_shader_metadata_t *vs_meta;
 
 	/* Make sure section is correct */
 	assert(!strcmp(section->name, ".text"));
 
 	/* Create and memcpy */
-	assert(sizeof(struct si_opengl_bin_si_vertex_shader_metadata_t) < section->buffer.size);
-	vs_meta = si_opengl_bin_si_vertex_shader_metadata_create();
-	memcpy(vs_meta, section->buffer.ptr, sizeof(struct si_opengl_bin_si_vertex_shader_metadata_t));
+	assert(sizeof(struct si_opengl_bin_vertex_shader_metadata_t) < section->buffer.size);
+	vs_meta = si_opengl_bin_vertex_shader_metadata_create();
+	memcpy(vs_meta, section->buffer.ptr, sizeof(struct si_opengl_bin_vertex_shader_metadata_t));
 
 	/* Return */
 	return vs_meta;
 }
 
 /* Structure in .inputs section */
-static struct si_opengl_bin_si_input_t *si_opengl_bin_si_input_create()
+static struct si_opengl_bin_input_t *si_opengl_bin_input_create()
 {
-	struct si_opengl_bin_si_input_t *input;
+	struct si_opengl_bin_input_t *input;
 
 	/* Allocate */
-	input = xcalloc(1, sizeof(struct si_opengl_bin_si_input_t));
+	input = xcalloc(1, sizeof(struct si_opengl_bin_input_t));
 
 	/* Return */
 	return input;
 }
 
-static void si_opengl_bin_si_input_free(struct si_opengl_bin_si_input_t *input)
+static void si_opengl_bin_input_free(struct si_opengl_bin_input_t *input)
 {
 	free(input);
 }
 
-static void si_opengl_bin_si_inputs_init_from_section(struct list_t *lst, struct elf_section_t *section)
+static void si_opengl_bin_inputs_init_from_section(struct list_t *lst, struct elf_section_t *section)
 {
-	struct si_opengl_bin_si_input_t *input;
+	struct si_opengl_bin_input_t *input;
 	int input_count;
 	int i;
 
 	assert(!strcmp(section->name, ".inputs"));
 
 	/* Calculate # of input */
-	if (section->buffer.size % sizeof(struct si_opengl_bin_si_input_t))
+	if (section->buffer.size % sizeof(struct si_opengl_bin_input_t))
 		fatal("Section size must be multiples of input structure.");
 	else
 	{
-		input_count = section->buffer.size / sizeof(struct si_opengl_bin_si_input_t);
+		input_count = section->buffer.size / sizeof(struct si_opengl_bin_input_t);
 		for (i = 0; i < input_count; ++i)
 		{
-			input = si_opengl_bin_si_input_create();
-			memcpy(input, section->buffer.ptr + i * sizeof(struct si_opengl_bin_si_input_t), 
-				sizeof(struct si_opengl_bin_si_input_t));
+			input = si_opengl_bin_input_create();
+			memcpy(input, section->buffer.ptr + i * sizeof(struct si_opengl_bin_input_t), 
+				sizeof(struct si_opengl_bin_input_t));
 			list_add(lst, input);
 		}
 	}
 }
 
 /* Structure in .outputs section */
-static struct si_opengl_bin_si_output_t *si_opengl_bin_si_output_create()
+static struct si_opengl_bin_output_t *si_opengl_bin_output_create()
 {
-	struct si_opengl_bin_si_output_t *output;
+	struct si_opengl_bin_output_t *output;
 
 	/* Allocate */
-	output = xcalloc(1, sizeof(struct si_opengl_bin_si_output_t));
+	output = xcalloc(1, sizeof(struct si_opengl_bin_output_t));
 
 	/* Return */
 	return output;
 }
 
-static void si_opengl_bin_si_output_free(struct si_opengl_bin_si_output_t *output)
+static void si_opengl_bin_output_free(struct si_opengl_bin_output_t *output)
 {
 	free(output->name);
 	free(output);
 }
 
-static void si_opengl_bin_si_outputs_init_from_section(struct list_t *lst, struct elf_section_t *section)
+static void si_opengl_bin_outputs_init_from_section(struct list_t *lst, struct elf_section_t *section)
 {
-	struct si_opengl_bin_si_output_t *output;
-	struct si_opengl_bin_si_output_t* output_ptr;	
+	struct si_opengl_bin_output_t *output;
+	struct si_opengl_bin_output_t* output_ptr;	
 	char *outname;
 	char *bin_ptr;
 	unsigned int name_offset;
@@ -232,12 +232,12 @@ static void si_opengl_bin_si_outputs_init_from_section(struct list_t *lst, struc
 
 	output_count = section->header->sh_entsize;
 	bin_ptr = (char *) section->buffer.ptr;
-	name_offset = sizeof(struct si_opengl_bin_si_output_t) - sizeof(char*);
+	name_offset = sizeof(struct si_opengl_bin_output_t) - sizeof(char*);
 	for (i = 0; i < output_count; ++i)
 	{
-		output_ptr = (struct si_opengl_bin_si_output_t *)bin_ptr;
+		output_ptr = (struct si_opengl_bin_output_t *)bin_ptr;
 
-		output = si_opengl_bin_si_output_create();
+		output = si_opengl_bin_output_create();
 		outname = &bin_ptr[name_offset];
 		if(*outname != '\0')
 		{
@@ -260,70 +260,100 @@ static void si_opengl_bin_si_outputs_init_from_section(struct list_t *lst, struc
 }
 
 /* Structure in .info section */
-static struct si_opengl_bin_si_info_t *si_opengl_si_bin_info_create()
+static struct si_opengl_bin_info_t *si_opengl_si_bin_info_create()
 {
-	struct si_opengl_bin_si_info_t *info;
+	struct si_opengl_bin_info_t *info;
 
 	/* Allocate */
-	info = xcalloc(1, sizeof(struct si_opengl_bin_si_info_t));
+	info = xcalloc(1, sizeof(struct si_opengl_bin_info_t));
 
 	/* Return */	
 	return info;
 }
 
-static void si_opengl_si_bin_info_free(struct si_opengl_bin_si_info_t *info)
+static void si_opengl_si_bin_info_free(struct si_opengl_bin_info_t *info)
 {
 	free(info);
 }
 
-static void si_opengl_si_bin_info_init_with_section(struct si_opengl_bin_si_info_t *info, struct elf_section_t *section)
+static void si_opengl_si_bin_info_init_with_section(struct si_opengl_bin_info_t *info, struct elf_section_t *section)
 {
 	assert(!strcmp(section->name, ".info"));
 
-	if (section->buffer.size != sizeof(struct si_opengl_bin_si_info_t))
+	if (section->buffer.size != sizeof(struct si_opengl_bin_info_t))
 		fatal("Section size doesn't match info structure.");
 	else
-		memcpy(info, section->buffer.ptr, sizeof(struct si_opengl_bin_si_info_t));
+		memcpy(info, section->buffer.ptr, sizeof(struct si_opengl_bin_info_t));
 }
 
-static struct si_opengl_bin_si_vertex_shader_t *si_opengl_bin_si_vertex_shader_create(struct si_opengl_shader_binary_t *parent)
+/* Structure in .usageinfo section */
+static struct si_opengl_bin_usageinfo_t *si_opengl_bin_usageinfo_create()
 {
-	struct si_opengl_bin_si_vertex_shader_t *vs;
+	struct si_opengl_bin_usageinfo_t *usageinfo;
 
 	/* Allocate */
-	vs = xcalloc(1, sizeof(struct si_opengl_bin_si_vertex_shader_t));
+	usageinfo = xcalloc(1, sizeof(struct si_opengl_bin_usageinfo_t));
+
+	/* Return */
+	return usageinfo;
+}
+
+static void si_opengl_bin_usageinfo_free(struct si_opengl_bin_usageinfo_t *usageinfo)
+{
+	free(usageinfo);
+}
+
+static void si_opengl_si_bin_usageinfo_init_with_section(struct si_opengl_bin_usageinfo_t *usageinfo, struct elf_section_t *section)
+{
+	assert(!strcmp(section->name, ".usageinfo"));
+
+	if (section->buffer.size != sizeof(struct si_opengl_bin_usageinfo_t))
+		fatal("Section size doesn't match usageinfo structure.");
+	else
+		memcpy(usageinfo, section->buffer.ptr, sizeof(struct si_opengl_bin_usageinfo_t));
+}
+
+
+static struct si_opengl_bin_vertex_shader_t *si_opengl_bin_vertex_shader_create(struct si_opengl_shader_binary_t *parent)
+{
+	struct si_opengl_bin_vertex_shader_t *vs;
+
+	/* Allocate */
+	vs = xcalloc(1, sizeof(struct si_opengl_bin_vertex_shader_t));
 	vs->parent = parent;
 	parent->shader = vs;
-	vs->meta = si_opengl_bin_si_vertex_shader_metadata_create();
+	vs->meta = si_opengl_bin_vertex_shader_metadata_create();
 	vs->inputs = list_create();
 	vs->outputs = list_create();
 	vs->info = si_opengl_si_bin_info_create();
+	vs->usageinfo = si_opengl_bin_usageinfo_create();
 
 	/* Return */
 	return vs;
 }
 
-static void si_opengl_bin_si_vertex_shader_free(struct si_opengl_bin_si_vertex_shader_t *vs)
+static void si_opengl_bin_vertex_shader_free(struct si_opengl_bin_vertex_shader_t *vs)
 {
-	struct si_opengl_bin_si_input_t *input;
-	struct si_opengl_bin_si_output_t *output;
+	struct si_opengl_bin_input_t *input;
+	struct si_opengl_bin_output_t *output;
 	int i;
 
-	si_opengl_bin_si_vertex_shader_metadata_free(vs->meta);
+	si_opengl_bin_vertex_shader_metadata_free(vs->meta);
 	LIST_FOR_EACH(vs->inputs, i)
 	{
 		input = list_get(vs->inputs, i);
-		si_opengl_bin_si_input_free(input);
+		si_opengl_bin_input_free(input);
 	}
 	LIST_FOR_EACH(vs->outputs, i)
 	{
 		output = list_get(vs->outputs, i);
-		si_opengl_bin_si_output_free(output);
+		si_opengl_bin_output_free(output);
 	}
 	si_opengl_si_bin_info_free(vs->info);
+	si_opengl_bin_usageinfo_free(vs->usageinfo);
 }
 
-static void si_opengl_bin_si_vertex_shader_init(struct si_opengl_bin_si_vertex_shader_t *vs)
+static void si_opengl_bin_vertex_shader_init(struct si_opengl_bin_vertex_shader_t *vs)
 {
 	struct si_opengl_shader_binary_t *parent;
 	struct elf_file_t *shader_elf;
@@ -342,13 +372,15 @@ static void si_opengl_bin_si_vertex_shader_init(struct si_opengl_bin_si_vertex_s
 	{
 		section = list_get(shader_elf->section_list, i);
 		if (!strcmp(section->name, ".text"))
-			si_opengl_bin_si_vertex_shader_metadata_init_from_section(section);
+			si_opengl_bin_vertex_shader_metadata_init_from_section(section);
 		else if (!strcmp(section->name, ".inputs"))
-			si_opengl_bin_si_inputs_init_from_section(vs->inputs, section);
+			si_opengl_bin_inputs_init_from_section(vs->inputs, section);
 		else if (!strcmp(section->name, ".outputs"))
-			si_opengl_bin_si_outputs_init_from_section(vs->outputs, section);
+			si_opengl_bin_outputs_init_from_section(vs->outputs, section);
 		else if (!strcmp(section->name, ".info"))
 			si_opengl_si_bin_info_init_with_section(vs->info, section);
+		else if(!strcmp(section->name, ".usageinfo"))
+			si_opengl_si_bin_usageinfo_init_with_section(vs->usageinfo, section);
 	}
 }
 
