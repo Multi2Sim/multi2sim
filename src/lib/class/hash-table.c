@@ -69,6 +69,11 @@ static char *hash_table_err_key_class =
 	"\tThe hash table accepts any class for its key. But once the first\n"
 	"\tkey is inserted, all following keys must be of the same class.\n";
 
+static char *hash_table_err_iter =
+	"\tA hash table iterator is being used after an operation that\n"
+	"\tChanged the hash table state. Please make sure that your code only\n"
+	"\tuses iterators between insersion and deletions of elements.\n";
+
 
 static struct hash_table_elem_t *HashTableFind(HashTable *self, Object *key,
 		int *index_ptr)
@@ -120,6 +125,7 @@ static void HashTableGrow(HashTable *self)
 	old_array = self->array;
 
 	/* Allocate new array */
+	self->version++;
 	self->size = old_size * 2;
 	self->array = xcalloc(self->size, sizeof(void *));
 
@@ -147,6 +153,7 @@ static void HashTableGrow(HashTable *self)
 void HashTableCreateWithSize(HashTable *self, int size)
 {
 	/* Initialize */
+	self->version++;
 	self->size = size < 10 ? 10 : size;
 	self->case_sensitive = 1;
 	self->array = xcalloc(self->size, sizeof(void *));
@@ -191,6 +198,7 @@ void HashTableClear(HashTable *self)
 	self->KeyHash = NULL;
 
 	/* Reset count */
+	self->version++;
 	self->count = 0;
 	self->error = HashTableErrOK;
 }
@@ -227,6 +235,7 @@ void HashTableDeleteObjects(HashTable *self)
 
 	/* Reset count */
 	self->count = 0;
+	self->version++;
 	self->error = HashTableErrOK;
 }
 
@@ -305,7 +314,7 @@ Object *HashTableInsert(HashTable *self, Object *key, Object *data)
 			self->KeyHash = StringHashCase;
 		}
 	}
-
+	
 	/* Rehashing */
 	if (self->count >= self->size / 2)
 		HashTableGrow(self);
@@ -330,6 +339,7 @@ Object *HashTableInsert(HashTable *self, Object *key, Object *data)
 	assert(self->count < self->size);
 
 	/* Success */
+	self->version++;
 	self->error = HashTableErrOK;
 	return data;
 }
@@ -476,6 +486,7 @@ Object *HashTableRemove(HashTable *self, Object *key)
 	/* One less element */
 	assert(self->count > 0);
 	self->count--;
+	self->version++;
 
 	/* Reset key class if hash table is empty */
 	if (!self->count)
@@ -503,3 +514,261 @@ Object *HashTableRemoveString(HashTable *self, const char *key)
 
 	return object;
 }
+
+
+Object *HashTableFirst(HashTable *self, Object **data_ptr)
+{
+	struct hash_table_elem_t *elem;
+	int index;
+
+	/* Update iterator version */
+	self->error = HashTableErrOK;
+	self->iter_version = self->version;
+	self->iter_index = 0;
+	self->iter_elem = NULL;
+	if (data_ptr)
+		*data_ptr = NULL;
+
+	/* Table is empty */
+	if (!self->count)
+	{
+		self->error = HashTableErrEmpty;
+		return NULL;
+	}
+
+	/* Find first element */
+	for (index = 0; index < self->size; index++)
+	{
+		elem = self->array[index];
+		if (elem)
+		{
+			self->iter_index = index;
+			self->iter_elem = elem;
+			if (data_ptr)
+				*data_ptr = elem->data;
+			return elem->key;
+		}
+	}
+
+	/* Never get here */
+	panic("%s: inconsistent hash table", __FUNCTION__);
+	return NULL;
+}
+
+
+Object *HashTableNext(HashTable *self, Object **data_ptr)
+{
+	struct hash_table_elem_t *elem;
+	int index;
+
+	/* Check iterator version */
+	if (self->iter_version != self->version)
+		panic("%s: obsolete iterator\n%s", __FUNCTION__,
+				hash_table_err_iter);
+
+	/* End of enumeration reached in previous calls */
+	if (!self->iter_elem)
+	{
+		self->error = HashTableErrEnd;
+		return NULL;
+	}
+
+	/* Valid operation */
+	self->error = HashTableErrOK;
+
+	/* Continue enumeration in collision list */
+	elem = self->iter_elem->next;
+	if (elem)
+	{
+		self->iter_elem = elem;
+		if (data_ptr)
+			*data_ptr = elem->data;
+		return elem->key;
+	}
+
+	/* Continue enumeration in vector */
+	self->iter_index++;
+	for (index = self->iter_index; index < self->size; index++)
+	{
+		elem = self->array[index];
+		if (elem)
+		{
+			self->iter_index = index;
+			self->iter_elem = elem;
+			if (data_ptr)
+				*data_ptr = elem->data;
+			return elem->key;
+		}
+	}
+
+	/* End of enumeration */
+	self->error = HashTableErrEnd;
+	self->iter_index = 0;
+	self->iter_elem = NULL;
+	if (data_ptr)
+		*data_ptr = NULL;
+	return NULL;
+}
+
+
+int HashTableIsEnd(HashTable *self)
+{
+	/* Check iterator version */
+	if (self->iter_version != self->version)
+		panic("%s: obsolete iterator\n%s", __FUNCTION__,
+				hash_table_err_iter);
+
+	/* End of hash table found */
+	if (!self->iter_elem)
+	{
+		self->error = HashTableErrEnd;
+		return 1;
+	}
+
+	/* Not the end */
+	self->error = HashTableErrOK;
+	return 0;
+}
+
+
+
+/*
+ * Class 'HashTableIterator'
+ */
+
+
+void HashTableIteratorCreate(HashTableIterator *self, HashTable *table)
+{
+	/* Initialize */
+	self->table = table;
+	
+	/* Initially, set the iterator's version number to a state prior to the
+	 * current hash table's state in order to invalidate it until the first
+	 * call to 'HashTableIteratorFirst' is performed. */
+	self->version = table->version - 1;
+}
+
+
+void HashTableIteratorDestroy(HashTableIterator *self)
+{
+}
+
+
+Object *HashTableIteratorFirst(HashTableIterator *self, Object **data_ptr)
+{
+	HashTable *table = self->table;
+	struct hash_table_elem_t *elem;
+	int index;
+
+	/* Update iterator version */
+	self->error = HashTableErrOK;
+	self->version = table->version;
+	self->index = 0;
+	self->elem = NULL;
+	if (data_ptr)
+		*data_ptr = NULL;
+
+	/* Table is empty */
+	if (!table->count)
+	{
+		self->error = HashTableErrEmpty;
+		return NULL;
+	}
+
+	/* Find first element */
+	for (index = 0; index < table->size; index++)
+	{
+		elem = table->array[index];
+		if (elem)
+		{
+			self->index = index;
+			self->elem = elem;
+			if (data_ptr)
+				*data_ptr = elem->data;
+			return elem->key;
+		}
+	}
+
+	/* Never get here */
+	panic("%s: inconsistent hash table", __FUNCTION__);
+	return NULL;
+}
+
+
+Object *HashTableIteratorNext(HashTableIterator *self, Object **data_ptr)
+{
+	HashTable *table = self->table;
+	struct hash_table_elem_t *elem;
+	int index;
+
+	/* Check iterator version */
+	if (self->version != table->version)
+		panic("%s: obsolete iterator\n%s", __FUNCTION__,
+				hash_table_err_iter);
+
+	/* End of enumeration reached in previous calls */
+	if (!self->elem)
+	{
+		self->error = HashTableErrEnd;
+		return NULL;
+	}
+
+	/* Valid operation */
+	self->error = HashTableErrOK;
+
+	/* Continue enumeration in collision list */
+	elem = self->elem->next;
+	if (elem)
+	{
+		self->elem = elem;
+		if (data_ptr)
+			*data_ptr = elem->data;
+		return elem->key;
+	}
+
+	/* Continue enumeration in vector */
+	self->index++;
+	for (index = self->index; index < table->size; index++)
+	{
+		elem = table->array[index];
+		if (elem)
+		{
+			self->index = index;
+			self->elem = elem;
+			if (data_ptr)
+				*data_ptr = elem->data;
+			return elem->key;
+		}
+	}
+
+	/* End of enumeration */
+	self->error = HashTableErrEnd;
+	self->index = 0;
+	self->elem = NULL;
+	if (data_ptr)
+		*data_ptr = NULL;
+	return NULL;
+}
+
+
+int HashTableIteratorIsEnd(HashTableIterator *self)
+{
+	HashTable *table = self->table;
+
+	/* Check iterator version */
+	if (self->version != table->version)
+		panic("%s: obsolete iterator\n%s", __FUNCTION__,
+				hash_table_err_iter);
+
+	/* End of hash table found */
+	if (!self->elem)
+	{
+		self->error = HashTableErrEnd;
+		return 1;
+	}
+
+	/* Not the end */
+	self->error = HashTableErrOK;
+	return 0;
+}
+
