@@ -78,7 +78,7 @@ enum si_opengl_shader_binary_kind_t
 	SI_OPENGL_SHADER_INVALID
 };
 
-enum si_opengl_bin_si_input_swizzle_type_t
+enum si_opengl_bin_input_swizzle_type_t
 {
 	SI_OPENGL_SWIZZLE_X,	/* Swizzle the X component into this component */
 	SI_OPENGL_SWIZZLE_Y,	/* Swizzle the Y component into this component */
@@ -88,7 +88,7 @@ enum si_opengl_bin_si_input_swizzle_type_t
 	SI_OPENGL_SWIZZLE_1	/* Swizzle constant 1 into this component */
 };
 
-enum si_opengl_bin_si_input_type_t
+enum si_opengl_bin_input_type_t
 {
 	SI_OPENGL_INPUT_ATTRIB,	/* generic attribute */
 	SI_OPENGL_INPUT_COLOR,	/* primary color */
@@ -602,7 +602,7 @@ struct si_opengl_bin_enc_dict_entry_t
 };
 
 /* Vertex shader metadata stored in .text section */
-struct si_opengl_bin_si_vertex_shader_metadata_t  
+struct si_opengl_bin_vertex_shader_metadata_t  
 {
 	/* SI Shader base structure, same for all shaders */
 	SI_OPENGL_BIN_SHADER_SI_BASE
@@ -654,14 +654,14 @@ struct si_opengl_texture_resource_bound_t
 	uint32_t samplerMask;        /* samplers bind to resource id */
 };
 
-/* FIXME: size not match binary */
+/* FIXME: size doesn't match binary */
 /* Info descriptor for .info section */
-enum si_opengl_bin_si_info_max_offset
+enum si_opengl_bin_info_max_offset
 { 
 	MAX_PROGRAMINFO_OFFSET = 0x0ffff 
 };
 
-struct si_opengl_bin_si_info_t
+struct si_opengl_bin_info_t
 {
 	/* generaic shader resource information */
 
@@ -776,35 +776,185 @@ struct si_opengl_bin_si_info_t
 	    int64_t   uavDynamicResouceMapOffset;               /* uav dynamic resource map offset */
 	};
 	
-	enum si_opengl_bin_si_info_max_offset max_valid_offset;
+	enum si_opengl_bin_info_max_offset max_valid_offset;
 };
 
-struct si_opengl_bin_si_vertex_shader_t
+/* ARB program parameter */
+struct si_opengl_bin_arb_program_parameter_t
+{
+	uint32_t instructions;              /* Number of instructions */
+	uint32_t nativeInstructions;        /* Number of native instructions */
+	uint32_t aluInstructions;           /* Number of alu instructions */
+	uint32_t nativeAluInstructions;     /* Number of native alu instructions */
+	uint32_t texInstructions;           /* Number of tex instructions */
+	uint32_t nativeTexInstructions;     /* Number of native tex instructions */
+	uint32_t texIndirections;           /* Number of tex indirections */
+	uint32_t nativeTexIndirections;     /* Number of native tex indirections */
+	uint32_t temporaries;               /* Number of temporaries */
+	uint32_t nativeTemporaries;         /* Number of native temporaries */
+	uint32_t parameters;                /* Number of parameters */
+	uint32_t nativeParameters;          /* Number of native parameters */
+	uint32_t attribs;                   /* Number of attribs */
+	uint32_t nativeAttribs;             /* Number of native attribs */
+	uint32_t addressRegisters;          /* Number of address registers */
+	uint32_t nativeAddressRegisters;    /* Number of native address registers */
+	bool   underNativeLimits;         /* Is shader under native limits? */
+};
+
+/* Structure in .usageinfo section */
+struct si_opengl_bin_usageinfo_t
+{
+	struct si_opengl_bin_arb_program_parameter_t   arbProgramParameter;   /* ARB program parameters */
+	uint16_t layoutParamMask;                            /* layout parameters mask, see type gllShaderLayoutType for detail info */
+	bool usesPrimitiveID;                              /* Does this program use PrimitiveID */
+	bool usesClipDistance;                             /* vp outputs clip distance(s) */
+
+	uint32_t texImageMask;                               /* orignial teximage unit usage mask (without SC optimization and it isn't include patched texture stage) */
+	uint32_t usesTexImageMask;                           /* teximge unit usage returned by SC */
+	uint32_t usesShadowMask;                             /* shadow texture unit usage mask */
+	uint32_t uavImageMask;                               /* original uav image usage mask */
+	uint32_t uavImageMaskShaderStorageBuffer;            /* uav used by shader storage buffer */
+	uint32_t usesBufMask;                                /* vertex tessellation buffer mask */
+
+	uint32_t imageTypeAndFormatSize;                     /* size of array imageType and imageFormat */
+	uint32_t textureTypeSize;                            /* size of array textureType */
+	//
+	/// per shader stage parameter
+	//
+	union
+	{
+		//
+		/// Fragment Shader Parameters
+		//
+		struct
+		{
+			/* fs input usage */
+			uint32_t usesTexCoordMask;                   /* texcoord unit usage mask */
+			bool   usesFogCoord;                       /* fogcoord usage */
+			bool   usePrimaryColor;                    /* true if primary color is used */
+			bool   useSecondaryColor;                  /* true if secondary color is used */
+			/* aa stipple */
+			int8_t   aaStippleTexCoord;                  /* the texture coord used by SCL to simulate aa/stipple */
+			int8_t   aaStippleTexUnit;                   /* the texture unit used by aa/stipple texture image */
+			int8_t   aaStippleTexVirtUnit;               /* default logic unit for aa stipple texture unit */
+			/* bitmap */
+			int8_t   bitmapTexCoord;                     /* the texture coord used for bitmap drawing */
+			int8_t   bitmapTexUnit;                      /* the texture unit used for bitmap drawing */
+			int8_t   bitmapTexVirtUnit;                  /* default logic unit for bitmap drawing */
+			/* misc fields */
+			bool   needSampleInfoCBs;                  /* whether the FP needs the 2 constant buffers for the SAMPLEINFO, SAMPLEPOS and EVAL_SAMPLE_INDEX. */
+			bool   earlyFragTest;                      /* true if early frag test is enabled */
+			uint8_t  conservativeZ;                      /* 0:defult, 1:less, 2:greater */
+		};
+		//
+		/// Geometry Shader Parametes
+		//
+		struct
+		{
+			uint16_t maxGSVertices[4];                   /* max gs output vertices */
+			uint16_t gsInvocations;                      /* gs invocation number */
+			uint8_t  inputTopology;                      /* gs input topology */
+			uint8_t  outputTopology[4];                  /* gs output topology */
+		};
+		//
+		/// Tessellation Evaluation Shader Parameters
+		//
+		struct
+		{
+			uint32_t tessOutputVertices;                 /* output control point number */
+		};
+		//
+		/// Tessellation Control Shader Parameters
+		//
+		struct
+		{
+			uint32_t tessGenMode;                        /* domain mode */
+			uint32_t tessGenSpacing;                     /* partition mode */
+			uint32_t tessGenVertexOrder;                 /* output primitive mode */
+			bool   tessGenPointMode;                   /* If point mode when tessellated */
+		};
+		//
+		/// Vertex Shader Parametes
+		//
+		struct
+		{
+			bool   positionInvariant;                  /* Has the ARB_position_invariant option been requested */
+			bool   enableAnotherSetAttribAlias;        /* if it is cg generated program or nv_vertex_program */
+			uint32_t lsStride;                           /* The number of input-control-points per patch declared in HS */
+			/* SI+ fetch shader parameters */
+			int8_t   fsType;                             /* Fetch shader type (immediate vs flat), SI only */
+			int8_t   fsReturnAddrReg;                    /* Fetch shader subroutine return address SGPR, SI only */
+			int8_t   fsInputStreamTableReg;              /* Fetch shader input stream table start SGPR (either first data element or pointer depending on FS type), SI only */
+			int8_t   fsVertexIdChannel;                  /* Fetch shader channel(R,G,B,A) to compute the vertexID with */
+		};
+		//
+		/* Compute Shader Parameters */
+		//
+		struct
+		{
+			uint32_t  workDimension;                     /* Work dimension (1, 2 or 3 right now) */
+			uint32_t  workSizeX;                         /* Work size in the X dimension */
+			uint32_t  workSizeY;                         /* Work size in the Y dimension */
+			uint32_t  workSizeZ;                         /* Work size in the Z dimension */
+		};
+
+	};
+
+	enum si_opengl_bin_info_max_offset maxOffset;         /* max valid value for dynamic array offset */
+	//
+	/// texture type array
+	//
+	union
+	{
+		uint32_t* textureType;                         /* teximage unit usage */
+		int64_t   textureTypeOffset;                   /* texture type array offset in elf section */
+	};
+	//
+	/// uav image type array
+	//
+	union
+	{
+		uint32_t* imageType;                            /* UAV image usage */
+		int64_t   imageTypeOffset;                      /* uav image type array offset in elf section */
+	};
+	//
+	/// uav image format array
+	//
+	union
+	{
+		uint32_t* imageFormat;                          /* uav image format array */
+		int64_t   imageFormatOffset;                    /* uav image format array offset in elf section */
+	};
+
+}__attribute__((packed));
+
+struct si_opengl_bin_vertex_shader_t
 {
 	/* Parent shader binary it belongs to */
 	struct si_opengl_shader_binary_t *parent;
 
 	/* Shader data */
-	struct si_opengl_bin_si_vertex_shader_metadata_t *meta;
-	struct list_t *inputs; /* Elements with type struct si_opengl_bin_si_input_t */
-	struct list_t *outputs; /* Elements with type struct si_opengl_bin_si_output_t*/
-	struct si_opengl_bin_si_info_t *info;
+	struct si_opengl_bin_vertex_shader_metadata_t *meta;
+	struct list_t *inputs; /* Elements with type struct si_opengl_bin_input_t */
+	struct list_t *outputs; /* Elements with type struct si_opengl_bin_output_t*/
+	struct si_opengl_bin_info_t *info;
+	struct si_opengl_bin_usageinfo_t *usageinfo;
 	struct list_t *constants;
 };
 
 /* Input descriptor for .inputs section */
-struct si_opengl_bin_si_input_t
+struct si_opengl_bin_input_t
 {
-	enum si_opengl_bin_si_input_type_t type;
+	enum si_opengl_bin_input_type_t type;
 	unsigned int voffset;
 	unsigned int poffset;
 	// bool isFloat16;  FIXME: has to comment this as the size will be 29 instead of 28 bytes  
-	enum si_opengl_bin_si_input_swizzle_type_t swizzles[4];
+	enum si_opengl_bin_input_swizzle_type_t swizzles[4];
 }__attribute__((packed));
 
 /* FIXME: size of this structure doesn't match the binary */
 /* Output descriptor for .outputs section */
-struct si_opengl_bin_si_output_t 
+struct si_opengl_bin_output_t 
 {
 	union
 	{
@@ -833,7 +983,7 @@ struct si_opengl_shader_binary_t
 	/* Encoding dictionary */
 	struct si_opengl_bin_enc_dict_entry_t *shader_enc_dict;
 
-	void *shader; /* Shader with type si_opengl_bin_si_xxxxx_shader_t */
+	void *shader; /* Shader with type si_opengl_bin_xxxxx_shader_t */
 	si_opengl_shader_free_func_t free_func;  /* Callback function to free shader */
 };
 
