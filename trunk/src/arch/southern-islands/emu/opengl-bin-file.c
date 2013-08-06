@@ -281,7 +281,8 @@ static void si_opengl_si_bin_info_init_with_section(struct si_opengl_bin_info_t 
 	assert(!strcmp(section->name, ".info"));
 
 	if (section->buffer.size != sizeof(struct si_opengl_bin_info_t))
-		fatal("Section size doesn't match info structure.");
+		fatal("Section size(%d) doesn't match info structure(%d).",
+			section->buffer.size, sizeof(struct si_opengl_bin_info_t));
 	else
 		memcpy(info, section->buffer.ptr, sizeof(struct si_opengl_bin_info_t));
 }
@@ -307,9 +308,11 @@ static void si_opengl_si_bin_usageinfo_init_with_section(struct si_opengl_bin_us
 {
 	assert(!strcmp(section->name, ".usageinfo"));
 
-	if (section->buffer.size != sizeof(struct si_opengl_bin_usageinfo_t))
-		fatal("Section size doesn't match usageinfo structure.");
-	else
+	/* FIXME: size doesn't match */
+	// if (section->buffer.size != sizeof(struct si_opengl_bin_usageinfo_t))
+	// 	fatal("Section size(%d) doesn't match usageinfo structure(%d).",
+	// 		section->buffer.size, sizeof(struct si_opengl_bin_usageinfo_t));
+	// else
 		memcpy(usageinfo, section->buffer.ptr, sizeof(struct si_opengl_bin_usageinfo_t));
 }
 
@@ -412,22 +415,21 @@ static void si_opengl_bin_enc_dict_entry_free(struct si_opengl_bin_enc_dict_entr
 
 static void si_opengl_enc_dict_set_userElements(struct si_opengl_shader_binary_t *shdr, struct si_opengl_bin_enc_dict_entry_t *enc_dict)
 {
-	/* FIXME: should get this info from binary! */
+	struct si_opengl_bin_vertex_shader_t *vs;
+	int i;
+
 	switch(shdr->shader_kind)
 	{
 	case SI_OPENGL_SHADER_VERTEX:
-		/* Set userElementCount */
-		enc_dict->userElementCount = 0x2;
-		/* Fetch shader */
-		enc_dict->userElements[0].dataClass = SUB_PTR_FETCH_SHADER;
-		enc_dict->userElements[0].apiSlot = 0x0; /* */
-		enc_dict->userElements[0].startUserReg = 0x00000002; /* s2, s3*/
-		enc_dict->userElements[0].userRegCount = 0x00000002;
-		/* Vertex Buffer Table */
-		enc_dict->userElements[1].dataClass = PTR_VERTEX_BUFFER_TABLE;
-		enc_dict->userElements[1].apiSlot = 0x0; /* ? */
-		enc_dict->userElements[1].startUserReg = 0x00000004;	/* s4, s5 */
-		enc_dict->userElements[1].userRegCount = 0x00000002;
+		vs = (struct si_opengl_bin_vertex_shader_t *)shdr->shader;
+		enc_dict->userElementCount = vs->meta->u32UserElementCount;
+		for (i = 0; i < enc_dict->userElementCount; ++i)
+		{
+			enc_dict->userElements[i].dataClass = vs->meta->pUserElement[i].dataClass;
+			enc_dict->userElements[i].apiSlot = vs->meta->pUserElement[i].apiSlot;
+			enc_dict->userElements[i].startUserReg = vs->meta->pUserElement[i].startUserReg;
+			enc_dict->userElements[i].userRegCount = vs->meta->pUserElement[i].userRegCount;
+		}
 		break;
 	default:
 		break;
@@ -436,19 +438,30 @@ static void si_opengl_enc_dict_set_userElements(struct si_opengl_shader_binary_t
 
 static void si_opengl_enc_dict_set_semanticMappings(struct si_opengl_shader_binary_t *shdr, struct si_opengl_bin_enc_dict_entry_t *enc_dict)
 {
-	/* FIXME: should get this info from binary! */
+	struct si_opengl_bin_vertex_shader_t *vs;	
+	int i;
+
 	switch(shdr->shader_kind)
 	{
 	case SI_OPENGL_SHADER_VERTEX:
-		/* Semantic mapping */
-		enc_dict->semanticsMapping[0].count = 0x0;
-		enc_dict->semanticsMapping[0].usageIndex = 0x0;
-		enc_dict->semanticsMapping[0].startUserReg = 0x8;
-		enc_dict->semanticsMapping[0].userRegCount = 0x4;
-		enc_dict->semanticsMapping[1].count = 0x0;
-		enc_dict->semanticsMapping[1].usageIndex = 0x1;
-		enc_dict->semanticsMapping[1].startUserReg = 0x4;
-		enc_dict->semanticsMapping[1].userRegCount = 0x4;
+		vs = (struct si_opengl_bin_vertex_shader_t *)shdr->shader;
+		enc_dict->semanticMappingInCount = vs->meta->numVsInSemantics;
+		enc_dict->semanticMappingOutCount = vs->meta->numVsOutSemantics;
+		/* Input semantic mapping */
+		for (i = 0; i < enc_dict->semanticMappingInCount; ++i)
+		{
+			enc_dict->semanticsMappingIn[i].usage = vs->meta->vsInSemantics[i].usage;
+			enc_dict->semanticsMappingIn[i].usageIdx = vs->meta->vsInSemantics[i].usageIdx;
+			enc_dict->semanticsMappingIn[i].dataVgpr = vs->meta->vsInSemantics[i].dataVgpr;
+			enc_dict->semanticsMappingIn[i].dataSize = vs->meta->vsInSemantics[i].dataSize;
+		}
+		/*Output semantic mapping */
+		for (i = 0; i < enc_dict->semanticMappingOutCount; ++i)
+		{
+			enc_dict->semanticsMappingOut[i].usage = vs->meta->vsOutSemantics[i].usage;
+			enc_dict->semanticsMappingOut[i].usageIdx = vs->meta->vsOutSemantics[i].usageIdx;
+			enc_dict->semanticsMappingOut[i].paramIdx = vs->meta->vsOutSemantics[i].paramIdx;
+		}
 		break;
 	default:
 		break;
@@ -457,7 +470,6 @@ static void si_opengl_enc_dict_set_semanticMappings(struct si_opengl_shader_bina
 
 static void si_opengl_enc_dict_set_inputs(struct si_opengl_shader_binary_t *shdr, struct si_opengl_bin_enc_dict_entry_t *enc_dict)
 {
-	// struct elf_section_t *section;
 	int i;
 
 	/* FIXME: should get this info from binary! */

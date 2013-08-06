@@ -536,7 +536,7 @@ struct si_opengl_bin_vs_semantic_mapping_in_t
 	unsigned int dataVgpr  : 8;  /* first VGPR to contain fetch result */
 	unsigned int dataSize  : 2;  /* (fetch_size - 1), size in elements */
 	unsigned int reserved  : 6;
-};
+}__attribute__((packed));
 
 /*
  *  Vertex shader output declaration to be used for semantic mapping.
@@ -548,7 +548,7 @@ struct si_opengl_bin_vs_semantic_mapping_out_t
 	uint32_t usageIdx  : 8;      /* semantic index. Opaque to SC. */
 	uint32_t paramIdx  : 8;      /* attribute export parameter index (0-31) */
 	uint32_t reserved  : 8;
-};
+}__attribute__((packed));
 
 /*
  *  Flags to guide shader compilation.
@@ -563,16 +563,7 @@ struct si_opengl_bin_compile_guide_t
 	uint32_t reserved1          : 4;
 	uint32_t useGsOnChip        : 1; /* ES and GS can use on-chip LDS. (CI+) */
 	uint32_t reserved2          : 23;
-} ;
-
-/* FIXME: Totally unverified */
-struct si_opengl_bin_enc_semantic_mapping_t
-{
-	unsigned int count;
-	unsigned int usageIndex;
-	unsigned int startUserReg;
-	unsigned int userRegCount;
-};
+}__attribute__((packed));
 
 /* Inputs contains the index of vertex attribute array used in a shader program */
 struct si_opengl_bin_enc_inputs_t
@@ -592,8 +583,10 @@ struct si_opengl_bin_enc_dict_entry_t
 	unsigned int userElementCount;
 	struct si_bin_enc_user_element_t userElements[MAX_USER_ELEMENTS];
 
-	unsigned int semanticMappingCount;
-	struct si_opengl_bin_enc_semantic_mapping_t semanticsMapping[MAX_SEMANTICS_MAPPINGS];
+	unsigned int semanticMappingInCount;
+	struct si_opengl_bin_vs_semantic_mapping_in_t semanticsMappingIn[SC_SI_VS_MAX_INPUTS];
+	unsigned int semanticMappingOutCount;
+	struct si_opengl_bin_vs_semantic_mapping_out_t semanticsMappingOut[SC_SI_VS_MAX_OUTPUTS];
 
 	struct list_t *input_list; /* Equivalent to arg_list in OpenCL, elements of type si_input_t */
 
@@ -619,9 +612,9 @@ struct si_opengl_bin_vertex_shader_metadata_t
 	/* LS/ES/VS specific shader resources */
 	union
 	{
-	    uint32_t spiShaderPgmRsrc2Ls;
-	    uint32_t spiShaderPgmRsrc2Es;
-	    uint32_t spiShaderPgmRsrc2Vs;
+		uint32_t spiShaderPgmRsrc2Ls;
+		uint32_t spiShaderPgmRsrc2Es;
+		uint32_t spiShaderPgmRsrc2Vs;
 	};
 
 	/* SC-provided values for certain VS-specific registers */
@@ -645,7 +638,7 @@ struct si_opengl_bin_vertex_shader_metadata_t
 	bool isOnChipGs;
 	uint32_t targetLdsSize;
 
-}__attribute__((packed));
+};
 
 /* texture resource and sampler binding */
 struct si_opengl_texture_resource_bound_t
@@ -653,7 +646,6 @@ struct si_opengl_texture_resource_bound_t
 	uint32_t resourceId;         /* resource id */
 	uint32_t samplerMask;        /* samplers bind to resource id */
 };
-
 /* FIXME: size doesn't match binary */
 /* Info descriptor for .info section */
 enum si_opengl_bin_info_max_offset
@@ -689,91 +681,91 @@ struct si_opengl_bin_info_t
 	/* / union for per shader stage parameters */
 	union
 	{
-	    /// Vexter Shader,  Tessellation Evaluation Shader and Geometry Shader parameter
-	    struct
-	    {
-	        // VS input mask
-	        uint32_t inputStreamMask;                /* input stream mask (phsyical id) */
-	        bool   usesVertexID;                   /* tells whether this program uses VertexID */
-	        // transform feedback
-	        uint32_t streamOutStrideInDWORDs0;       /* streamout stride0 */
-	        uint32_t streamOutStrideInDWORDs1;       /* streamout stride1 */
-	        uint32_t streamOutStrideInDWORDs2;       /* streamout stride2 */
-	        uint32_t streamOutStrideInDWORDs3;       /* streamout stride3 */
-	        int8_t   streamOutBufferMapping[MAX_TRANSFORM_FEEDBACK_BUFFERS];   /* streamout buffer config */
-	        // vertex shader tessellation
-	        uint8_t  tessPrimType;                            /* tessellation shader primitive type (sclTessPrimType) */
-	        // viewport array index
-	        unsigned int   outputViewportArrayIndex :8;             /* true if output viewport array index */
-	        // svp members
-	        uint8_t  frontColorOutputReg;                     /* front color output register number */
-	        uint8_t  frontSecondaryColorOutputReg;            /* front secondary color output register number */
-	        uint8_t  backColorOutputReg;                      /* back color output register number */
-	        uint8_t  backSecondaryColorOutputReg;             /* back secondary color output register number */
-	        uint8_t  aaStippleTexCoord;                       /* Bitfield representing which texture cood will be used for aastipple patch */
-	        enum si_opengl_fetch_shader_type_t fsTypeForPassThruVS :8;   /* Fetch shader type (SVP PassThruVS) */
-	        uint8_t  fsReturnAddrRegForPassThruVS;            /* Fetch shader subroutine start SGPR (SVP PassThruVS) */
-	        uint8_t  fsInputStreamTableRegForPassThruVS;      /* Fetch shader input stream table start SGPR (SVP PassThruVS) */
-	        int32_t  fsAttribValidMaskReg;                    /* VPGR which Fetch shader should populate, if sparse buffers are used. */
-	    };
-	    /// Fragment Shader Parameters
-	    struct
-	    {
-	        uint32_t texKillPresent;                         /* Program uses texkill */
-	        int32_t  pointCoordReg;                          /* register number of gl_PointCoord which is an input of FS */
-	        uint8_t  outputColorMap[PS_MAX_OUTPUTS];  /* fragment shader color output map (from virtual to physical) */
-	        bool   useFlatInterpMode;                      /* if flat has been used on a varying */
-	        bool   forcePerSampleShading;                  /* true if the FS is required to run in per sample frequency */
-	        bool   uncached_writes;                        /* uncached writes */
-	        bool   outputDepth;                            /* true if fragment shader output depth */
-	        uint32_t usingDualBlendMask;                     /* indicates using an index = 1 for dual blending, in glsl layout */
-	    };
-	    /// Compute Shader Parameters
-	    struct
-	    {
-	        uint32_t numSharedGPRUser;    /* shared GPR */
-	        uint32_t numSharedGPRTotal;   /* shared GPR total including ones used by SC. */
+		/// Vexter Shader,  Tessellation Evaluation Shader and Geometry Shader parameter
+		struct
+		{
+			// VS input mask
+			uint32_t inputStreamMask;                /* input stream mask (phsyical id) */
+			bool   usesVertexID;                   /* tells whether this program uses VertexID */
+			// transform feedback
+			uint32_t streamOutStrideInDWORDs0;       /* streamout stride0 */
+			uint32_t streamOutStrideInDWORDs1;       /* streamout stride1 */
+			uint32_t streamOutStrideInDWORDs2;       /* streamout stride2 */
+			uint32_t streamOutStrideInDWORDs3;       /* streamout stride3 */
+			int8_t   streamOutBufferMapping[MAX_TRANSFORM_FEEDBACK_BUFFERS];   /* streamout buffer config */
+			// vertex shader tessellation
+			uint8_t  tessPrimType;                            /* tessellation shader primitive type (sclTessPrimType) */
+			// viewport array index
+			unsigned int   outputViewportArrayIndex :8;             /* true if output viewport array index */
+			// svp members
+			uint8_t  frontColorOutputReg;                     /* front color output register number */
+			uint8_t  frontSecondaryColorOutputReg;            /* front secondary color output register number */
+			uint8_t  backColorOutputReg;                      /* back color output register number */
+			uint8_t  backSecondaryColorOutputReg;             /* back secondary color output register number */
+			uint8_t  aaStippleTexCoord;                       /* Bitfield representing which texture cood will be used for aastipple patch */
+			enum si_opengl_fetch_shader_type_t fsTypeForPassThruVS :8;   /* Fetch shader type (SVP PassThruVS) */
+			uint8_t  fsReturnAddrRegForPassThruVS;            /* Fetch shader subroutine start SGPR (SVP PassThruVS) */
+			uint8_t  fsInputStreamTableRegForPassThruVS;      /* Fetch shader input stream table start SGPR (SVP PassThruVS) */
+			int32_t  fsAttribValidMaskReg;                    /* VPGR which Fetch shader should populate, if sparse buffers are used. */
+		};
+		/// Fragment Shader Parameters
+		struct
+		{
+			uint32_t texKillPresent;                         /* Program uses texkill */
+			int32_t  pointCoordReg;                          /* register number of gl_PointCoord which is an input of FS */
+			uint8_t  outputColorMap[PS_MAX_OUTPUTS];  /* fragment shader color output map (from virtual to physical) */
+			bool   useFlatInterpMode;                      /* if flat has been used on a varying */
+			bool   forcePerSampleShading;                  /* true if the FS is required to run in per sample frequency */
+			bool   uncached_writes;                        /* uncached writes */
+			bool   outputDepth;                            /* true if fragment shader output depth */
+			uint32_t usingDualBlendMask;                     /* indicates using an index = 1 for dual blending, in glsl layout */
+		};
+		/// Compute Shader Parameters
+		struct
+		{
+			uint32_t numSharedGPRUser;    /* shared GPR */
+			uint32_t numSharedGPRTotal;   /* shared GPR total including ones used by SC. */
 
-	        uint32_t numThreadPerGroup;   /* threads per group */
-	        uint32_t numThreadPerGroupX;  /* dimension x of NumThreadPerGroup */
-	        uint32_t numThreadPerGroupY;  /* dimension y of NumThreadPerGroup */
-	        uint32_t numThreadPerGroupZ;  /* dimension z of NumThreadPerGroup */
-	        uint32_t totalNumThreadGroup; /* total number of thread groups */
-	        uint32_t NumWavefrontPerSIMD; /* wavefronts per simd */
-	        bool   eCsSetupMode;        /* compute slow/fast mode */
-	        bool   IsMaxNumWavePerSIMD; /* Is this the max active num wavefronts per simd */
-	        bool   SetBufferForNumGroup;/* Need to set up buffer for info on number of thread groups? */
-	    };
-	    /// Fetch Shader Parameters
-	    struct
-	    {
-	        bool   usesVertexCache;      /* vertex cache used? (fetch shader only) */
-	    };
+			uint32_t numThreadPerGroup;   /* threads per group */
+			uint32_t numThreadPerGroupX;  /* dimension x of NumThreadPerGroup */
+			uint32_t numThreadPerGroupY;  /* dimension y of NumThreadPerGroup */
+			uint32_t numThreadPerGroupZ;  /* dimension z of NumThreadPerGroup */
+			uint32_t totalNumThreadGroup; /* total number of thread groups */
+			uint32_t NumWavefrontPerSIMD; /* wavefronts per simd */
+			bool   eCsSetupMode;        /* compute slow/fast mode */
+			bool   IsMaxNumWavePerSIMD; /* Is this the max active num wavefronts per simd */
+			bool   SetBufferForNumGroup;/* Need to set up buffer for info on number of thread groups? */
+		};
+		/// Fetch Shader Parameters
+		struct
+		{
+			bool   usesVertexCache;      /* vertex cache used? (fetch shader only) */
+		};
 	};
-	/* /dynamic array, offset fields is valid in ELF package, int64_t is to keep the struct size fixed in all operation system. */
-	/* / texture resource bound array */
+	/* dynamic array, offset fields is valid in ELF package, int64_t is to keep the struct size fixed in all operation system. */
+	/* texture resource bound array */
 	union
 	{
-	    struct si_opengl_texture_resource_bound_t *_textureResourceBound; /* texture resoruce and sampler bounding */
-	    int64_t textureResourceBoundOffset;                 /* resource binding array offset */
+		struct si_opengl_texture_resource_bound_t *_textureResourceBound; /* texture resoruce and sampler bounding */
+		int64_t textureResourceBoundOffset;                 /* resource binding array offset */
 	};
 	/* / uav resource mask array */
 	union
 	{
-	    uint32_t* uavResourceMask;                          /* UAV resource mask */
-	    int64_t   uavResourceMaskOffset;                    /* UAV resource mask array offset */
+		uint32_t *uavResourceMask;                          /* UAV resource mask */
+		int64_t   uavResourceMaskOffset;                    /* UAV resource mask array offset */
 	};
 	/* / uav return buffer */
 	union
 	{
-	    uint32_t *_uavRtnBufStride;       /* save stride of uav return buffer for each UAV */
-	    int64_t   uavRtnBufStrideOffset;                    /* uav return buffer stride array offset */
+		uint32_t *_uavRtnBufStride;       /* save stride of uav return buffer for each UAV */
+		int64_t   uavRtnBufStrideOffset;                    /* uav return buffer stride array offset */
 	};
 	/* / uav dynamic resource map */
 	union
 	{
-	    uint32_t *_uavDynamicResouceMap;  /* save fetch const offset of each UAV */
-	    int64_t   uavDynamicResouceMapOffset;               /* uav dynamic resource map offset */
+		uint32_t *_uavDynamicResouceMap;  /* save fetch const offset of each UAV */
+		int64_t   uavDynamicResouceMapOffset;               /* uav dynamic resource map offset */
 	};
 	
 	enum si_opengl_bin_info_max_offset max_valid_offset;
@@ -926,7 +918,7 @@ struct si_opengl_bin_usageinfo_t
 		int64_t   imageFormatOffset;                    /* uav image format array offset in elf section */
 	};
 
-}__attribute__((packed));
+};
 
 struct si_opengl_bin_vertex_shader_t
 {
