@@ -282,7 +282,7 @@ static void si_opengl_si_bin_info_init_with_section(struct si_opengl_bin_info_t 
 
 	if (section->buffer.size != sizeof(struct si_opengl_bin_info_t))
 		fatal("Section size(%d) doesn't match info structure(%d).",
-			section->buffer.size, sizeof(struct si_opengl_bin_info_t));
+			section->buffer.size, (int)sizeof(struct si_opengl_bin_info_t));
 	else
 		memcpy(info, section->buffer.ptr, sizeof(struct si_opengl_bin_info_t));
 }
