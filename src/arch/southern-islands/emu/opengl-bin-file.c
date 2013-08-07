@@ -413,6 +413,24 @@ static void si_opengl_bin_enc_dict_entry_free(struct si_opengl_bin_enc_dict_entr
 	free(enc_dict);
 }
 
+static void si_opengl_enc_dict_set_meta(struct si_opengl_shader_binary_t *shdr, struct si_opengl_bin_enc_dict_entry_t *enc_dict)
+{
+	struct si_opengl_bin_vertex_shader_t *vs;
+
+	/* */
+	switch(shdr->shader_kind)
+	{
+	case SI_OPENGL_SHADER_VERTEX:
+		vs = (struct si_opengl_bin_vertex_shader_t *)shdr->shader;
+		enc_dict->num_sgpr_used = vs->meta->u32NumSgprs;
+		enc_dict->num_vgpr_used = vs->meta->u32NumVgprs;
+		break;
+	default:
+		break;
+	}
+
+}
+
 static void si_opengl_enc_dict_set_userElements(struct si_opengl_shader_binary_t *shdr, struct si_opengl_bin_enc_dict_entry_t *enc_dict)
 {
 	struct si_opengl_bin_vertex_shader_t *vs;
@@ -503,6 +521,7 @@ static void si_opengl_shader_binary_set_enc_dict(struct si_opengl_shader_binary_
 	enc_dict = shdr->shader_enc_dict;
 
 	/* Initialize */
+	si_opengl_enc_dict_set_meta(shdr, enc_dict);
 	si_opengl_enc_dict_set_userElements(shdr, enc_dict);
 	si_opengl_enc_dict_set_semanticMappings(shdr, enc_dict);
 	si_opengl_enc_dict_set_inputs(shdr, enc_dict);
