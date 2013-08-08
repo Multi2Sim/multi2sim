@@ -249,7 +249,8 @@ struct si_work_group_t *si_work_group_create(unsigned int work_group_id,
 					user_elements[i].startUserReg,
 					user_elements[i].userRegCount);
 			}
-			else if (user_elements[i].dataClass == PTR_VERTEX_BUFFER_TABLE)
+			/* FIXME: PTR_VERTEX_BUFFER_TABLE doesn't match binary */
+			else if (user_elements[i].dataClass == 21)
 			{
 				/* Store VB table in sregs */
 				si_wavefront_init_sreg_with_vertex_buffer_table(
@@ -257,7 +258,8 @@ struct si_work_group_t *si_work_group_create(unsigned int work_group_id,
 					user_elements[i].startUserReg,
 					user_elements[i].userRegCount);
 			}
-			else if (user_elements[i].dataClass == SUB_PTR_FETCH_SHADER)
+			/* FIXME: SUB_PTR_FETCH_SHADER doesn't match binary */
+			else if (user_elements[i].dataClass == 16)
 			{
 				/* Store Fetch Shader pointer in sregs */
 				si_wavefront_init_sreg_with_fetch_shader(
