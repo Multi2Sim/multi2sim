@@ -551,6 +551,31 @@ struct si_opengl_bin_vs_semantic_mapping_out_t
 }__attribute__((packed));
 
 /*
+ *  Pixel shader input declaration to be used for semantic mapping.
+ */
+struct si_opengl_bin_fs_semantic_mapping_in_t
+{
+	uint32_t usage                  : 8;  // semantic usage. IL_IMPORTUSAGE.
+	uint32_t usageIdx               : 8;  // semantic index. Opaque to SC.
+	uint32_t inputIdx               : 8;  // PS input index.
+	uint32_t defaultVal : 2;  // default val if VS doesn't export.
+	uint32_t flatShade              : 1;  // set if interp mode is constant.
+	uint32_t reserved               : 5;
+}__attribute__((packed));
+
+/*
+ *  Pixel shader export patch .
+ */
+struct si_opengl_bin_fs_export_patch_into_t
+{
+	// Patch offset (in DWORDs) to start of an export sequence
+	uint32_t patchOffset;
+	// Conversion code snippet for each of the export formats
+	uint32_t patchCode[SC_SI_NUM_EXPORT_FMT][SC_SI_MAX_EXPORT_CODE_SIZE];
+}__attribute__((packed));
+
+
+/*
  *  Flags to guide shader compilation.
  */
 struct si_opengl_bin_compile_guide_t
@@ -594,6 +619,7 @@ struct si_opengl_bin_enc_dict_entry_t
 	struct si_opengl_bin_spi_shader_pgm_rsrc2_vs_t *shader_pgm_rsrc2_vs;
 };
 
+/* FIXME: size doesn't match, should be 2124 bytes */
 /* Vertex shader metadata stored in .text section */
 struct si_opengl_bin_vertex_shader_metadata_t  
 {
@@ -640,12 +666,52 @@ struct si_opengl_bin_vertex_shader_metadata_t
 
 };
 
+/* FIXME: size doesn't match, should be 3436 bytes */
+/* Fragment shader metadata stored in .text section */
+struct si_opengl_bin_fragment_shader_metadata_t
+{
+	/* SI Shader base structure, same for all shaders */
+	SI_OPENGL_BIN_SHADER_SI_BASE
+
+	// Input semantics
+	uint32_t numPsInSemantics;
+	struct si_opengl_bin_fs_semantic_mapping_in_t psInSemantics[SC_SI_PS_MAX_INPUTS];
+
+	// Mapping of a PS interpolant to a texture coordinate index (0xffffffff if that interpolant is not a texture coordinate)
+	uint32_t psInTexCoordIndex[SC_SI_PS_MAX_INPUTS];
+
+	// PS specific shader resources
+	uint32_t spiShaderPgmRsrc2Ps;
+
+	uint32_t spiShaderZFormat;
+	uint32_t spiPsInControl;
+	uint32_t spiPsInputAddr;
+	uint32_t spiPsInputEna;
+
+	uint32_t spiBarycCntl;  // XXX mbalci: this would come from SCL(so SC) too; waiting for new interface change to be ported.
+
+	uint32_t dbShaderControl;
+	uint32_t cbShaderMask;
+
+	// Size of each export patch fragment
+	uint32_t exportPatchCodeSize;
+	// Number of RT exports
+	uint32_t numPsExports;
+	// true if dual blending is enable
+	bool dualBlending;
+	// Export patch info per RT
+	struct si_opengl_bin_fs_export_patch_into_t exportPatchInfo[SC_SI_PS_MAX_OUTPUTS];
+	uint32_t defaultExportFmt;
+
+};
+
 /* texture resource and sampler binding */
 struct si_opengl_texture_resource_bound_t
 {
 	uint32_t resourceId;         /* resource id */
 	uint32_t samplerMask;        /* samplers bind to resource id */
 };
+
 /* FIXME: size doesn't match binary */
 /* Info descriptor for .info section */
 enum si_opengl_bin_info_max_offset
@@ -925,13 +991,25 @@ struct si_opengl_bin_vertex_shader_t
 	/* Parent shader binary it belongs to */
 	struct si_opengl_shader_binary_t *parent;
 
-	/* Shader data */
+	/* Shader info extracted from sections in parent shader binary */
 	struct si_opengl_bin_vertex_shader_metadata_t *meta;
 	struct list_t *inputs; /* Elements with type struct si_opengl_bin_input_t */
 	struct list_t *outputs; /* Elements with type struct si_opengl_bin_output_t*/
 	struct si_opengl_bin_info_t *info;
 	struct si_opengl_bin_usageinfo_t *usageinfo;
-	struct list_t *constants;
+};
+
+struct si_opengl_bin_fragment_shader_t
+{
+	/* Parent binary it belongs to */
+	struct si_opengl_shader_binary_t *parent;
+
+	/* Shader info extracted from sections in parent shader binary */
+	struct si_opengl_bin_fragment_shader_metadata_t *meta;
+	struct list_t *inputs; /* Elements with type struct si_opengl_bin_input_t */
+	struct list_t *outputs; /* Elements with type struct si_opengl_bin_output_t*/
+	struct si_opengl_bin_info_t *info;
+	struct si_opengl_bin_usageinfo_t *usageinfo;
 };
 
 /* Input descriptor for .inputs section */
