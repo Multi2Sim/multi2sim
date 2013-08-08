@@ -29,6 +29,7 @@
 #include <m2c/llvm2si/llvm2si.h>
 #include <m2c/si2bin/si2bin.h>
 #include <lib/class/array.h>
+#include <lib/class/elf-writer.h>
 #include <lib/class/hash-table.h>
 #include <lib/class/list.h>
 #include <lib/class/string.h>
@@ -572,11 +573,18 @@ void m2c_init(void)
 	CLASS_REGISTER(ListIterator);
 	CLASS_REGISTER(HashTable);
 	CLASS_REGISTER(String);
+	
 	CLASS_REGISTER(Node);
 	CLASS_REGISTER(LeafNode);
 	CLASS_REGISTER(AbstractNode);
 	CLASS_REGISTER(BasicBlock);
 	CLASS_REGISTER(CTree);
+		
+	CLASS_REGISTER(ELFWriterBuffer);
+	CLASS_REGISTER(ELFWriterSection);
+	CLASS_REGISTER(ELFWriterSegment);
+	CLASS_REGISTER(ELFWriterSymbolTable);
+	CLASS_REGISTER(ELFWriter);
 
 	/* Libraries */
 	debug_init();
@@ -642,122 +650,8 @@ void m2c_done(void)
 }
 
 
-////////////
-#include <lib/class/elf-reader.h>
-////////////
-
 int main(int argc, char **argv)
 {
-#if 0
-	{
-		CLASS_REGISTER(String);
-		CLASS_REGISTER(ELFBuffer);
-		CLASS_REGISTER(ELFReader);
-		CLASS_REGISTER(ELFSection);
-		CLASS_REGISTER(ELFProgramHeader);
-		CLASS_REGISTER(ELFSymbol);
-		CLASS_REGISTER(List);
-		CLASS_REGISTER(Array);
-
-		ELFReader *reader;
-		ELFSymbol *symbol;
-
-		debug_init();
-		elf_reader_debug_category = debug_new_category("stdout");
-
-		reader = new(ELFReader, "/home/ubal/test/test-args");
-
-		unsigned int offset;
-		symbol = ELFReaderGetSymbolByAddress(reader, 0x8049f21, &offset);
-		symbol = ELFReaderGetSymbolByName(reader, "adata_start");
-		printf("symbol_ptr=%p ", symbol);
-		if (symbol)
-			printf("symbol_name='%s'\n", symbol->name);
-		printf("\n");
-
-		delete(reader);
-
-		debug_done();
-		mhandle_done();
-		exit(0);
-	}
-	{
-		HashTable *table;
-		Object *object;
-		String *key;
-
-		CLASS_REGISTER(String);
-		CLASS_REGISTER(HashTable);
-		CLASS_REGISTER(HashTableIterator);
-		CLASS_REGISTER(Node);
-		CLASS_REGISTER(List);
-
-		table = new(HashTable);
-
-		HashTableSetCaseSensitive(table, 0);
-
-		printf("Elements in the table:\n--begin--\n");
-		HashTableForEach(table, key, String)
-		{
-			StringDump(asObject(key), stdout);
-			printf("\n");
-		}
-		printf("--end--\n");
-
-		HashTableInsertString(table, "hello", asObject(new(String, "ContentOfHello")));
-		printf("Inserted 'hello', error = %d\n", table->error);
-
-		HashTableInsertString(table, "how", NULL);
-		printf("Inserted 'how', error = %d\n", table->error);
-
-		object = HashTableGetString(table, "How");
-		printf("Value for 'How' is %p, error = %d\n", object, table->error);
-
-		object = HashTableSetString(table, "How", asObject(new(String, "How")));
-		printf("Set value for 'How' to 'How', error = %d\n", table->error);
-
-		object = HashTableGetString(table, "How");
-		printf("Value for 'How' is %p, error = %d\n", object, table->error);
-
-		HashTableInsertString(table, "are", asObject(new(String, "ContentOfAre")));
-		printf("Inserted 'are', error = %d\n", table->error);
-
-		HashTableInsertString(table, "you", asObject(new(String, "ContentOfYou")));
-		printf("Inserted 'you', error = %d\n", table->error);
-
-		delete(HashTableRemoveString(table, "Are"));
-		printf("Removed 'Are', error = %d\n", table->error);
-
-		HashTableRemoveString(table, "are");
-		printf("Removed 'are', error = %d\n", table->error);
-		
-		printf("Elements in the table:\n--begin--\n");
-		HashTableIterator *iter = new(HashTableIterator, table);
-		HashTableIteratorForEach(iter, key, String)
-		{
-			String *data = asString(HashTableGet(table, asObject(key)));
-			StringDump(asObject(key), stdout);
-			printf(" - ");
-			if (data)
-				StringDump(asObject(data), stdout);
-			else
-				printf("(nil)");
-			printf("\n");
-		}
-		printf("--end--\n");
-		delete(iter);
-
-
-		HashTableDeleteObjects(table);
-
-
-		delete(table);
-		////////////////////
-		mhandle_done();
-		exit(0);
-	}
-#endif
-
 	/* Read command line */
 	m2c_pre_init();
 	m2c_read_command_line(argc, argv);
