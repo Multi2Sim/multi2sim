@@ -724,6 +724,45 @@ struct str_map_t kpl_inst_x_map =
 	}
 };
 
+struct str_map_t kpl_inst_cc2_map = 
+{
+	32,
+	{
+                { "CC.F", 0},
+		{ "CC.LT", 1},
+		{ "CC.EQ", 2},
+		{ "CC.LE", 3},
+		{ "CC.GT", 4},
+		{ "CC.NE", 5},
+		{ "CC.GE", 6},
+		{ "CC.NUM", 7},
+		{ "CC.NAN", 8},
+		{ "CC.LTU", 9},
+		{ "CC.EQU", 10},
+		{ "CC.LEU", 11},
+		{ "CC.GTU", 12},
+		{ "CC.NEU", 13},
+		{ "CC.GEU", 14},
+		{ "", 15},
+		{ "CC.OFF", 16},
+		{ "CC.LO", 17},
+		{ "CC.SFF", 18},
+		{ "CC.LS", 19},
+		{ "CC.HI", 20},
+		{ "CC.SFT", 21},
+		{ "CC.HS", 22},
+		{ "CC.OFT", 23},
+		{ "CC.CSM_TA", 24},
+		{ "CC.CSM_TR", 25},
+		{ "CC.CSM_MX", 26},
+		{ "CC.FCSM_TA", 27},
+		{ "CC.FCSM_TR", 28},
+		{ "CC.FCSM_MX", 29},
+		{ "CC.RLE", 30},
+		{ "CC.RGT", 31}
+	}
+};
+
 struct str_map_t kpl_inst_cc_map =
 {
 	2,
@@ -884,6 +923,35 @@ struct str_map_t kpl_inst_us_map =
 
 /*************************************************************************************/
 
+void kpl_inst_dump_PRED_SHORT(struct kpl_inst_t *inst, char **str_ptr, int *size_ptr, int high, int low)
+{
+        int value;
+
+        value = BITS64(inst->dword.as_dword, high, low);
+        if (value == 7)
+		str_printf(str_ptr, size_ptr, "PT");
+	else
+                str_printf(str_ptr, size_ptr, "P%d", value & 7);
+}
+
+void kpl_inst_dump_PRED_noat(struct kpl_inst_t *inst, char **str_ptr, int *size_ptr, int high, int low)
+{
+        int value;
+
+        value = BITS64(inst->dword.as_dword, high, low);
+        if (value != 7)
+        {
+                if (value >> 3)
+                        str_printf(str_ptr, size_ptr, "!");
+                if (value == 15)
+                        str_printf(str_ptr, size_ptr, "PT");
+                else
+                        str_printf(str_ptr, size_ptr, "P%d", value & 7);
+	}
+	else
+		str_printf(str_ptr, size_ptr, "PT");
+}
+
 void kpl_inst_dump_PRED(struct kpl_inst_t *inst, char **str_ptr, int *size_ptr, int high, int low)
 {
 	int value;
@@ -910,6 +978,19 @@ void kpl_inst_dump_REG(struct kpl_inst_t * inst, char **str_ptr, int *size_ptr, 
 		str_printf(str_ptr, size_ptr, "RZ");
 	else
 		str_printf(str_ptr, size_ptr, "R%d", value);
+}
+
+void kpl_inst_dump_SPEC_REG(struct kpl_inst_t * inst, char **str_ptr, int *size_ptr, int high, int low)
+{
+        int value;
+
+        value = BITS64(inst->dword.as_dword, high, low);
+        if(value == 61)
+                str_printf(str_ptr, size_ptr, "SR_RegAlloc");
+	else if(value == 62)
+		str_printf(str_ptr, size_ptr, "SR_CtxAddr");
+        else
+                str_printf(str_ptr, size_ptr, "SR%d", value);
 }
 
 void kpl_inst_dump_S(struct kpl_inst_t * inst, char **str_ptr, int *size_ptr, int high, int low)
@@ -1033,6 +1114,29 @@ void kpl_inst_dump_U(struct kpl_inst_t * inst, char **str_ptr, int *size_ptr, in
         str_printf(str_ptr, size_ptr, "%s", str_map_value(&kpl_inst_u_map, value));
 }
 
+void kpl_inst_dump_RM(struct kpl_inst_t * inst, char **str_ptr, int *size_ptr, int high, int low)
+{
+        int value;
+
+        value = BITS64(inst->dword.as_dword, high, low);
+        str_printf(str_ptr, size_ptr, "%s", str_map_value(&kpl_inst_rm_map, value));
+}
+
+void kpl_inst_dump_KEEPREFCOUNT(struct kpl_inst_t * inst, char **str_ptr, int *size_ptr, int high, int low)
+{
+        int value;
+
+        value = BITS64(inst->dword.as_dword, high, low);
+        str_printf(str_ptr, size_ptr, "%s", str_map_value(&kpl_inst_keeprefcount_map, value));
+}
+
+void kpl_inst_dump_CC2(struct kpl_inst_t * inst, char **str_ptr, int *size_ptr, int high, int   low)
+{
+        int value;
+
+        value = BITS64(inst->dword.as_dword, high, low);
+        str_printf(str_ptr, size_ptr, "%s", str_map_value(&kpl_inst_cc2_map, value));
+}
 /*************************************************************************/
 
 void kpl_inst_dump_buf(struct kpl_inst_t *inst, char *str, int size)
@@ -1053,6 +1157,78 @@ void kpl_inst_dump_buf(struct kpl_inst_t *inst, char *str, int size)
 	fmt_str = inst->info->fmt_str;
 	while (*fmt_str)
 	{
+                if (str_prefix(fmt_str, "%srcB"))
+                {
+                        // Extract corresponding fields of the instruction and print them as the         predicate
+
+                        kpl_inst_dump_REG(inst, &str, &size, 30, 23);
+                        fmt_str += 5;
+                        continue;
+                }        
+
+	        if (str_prefix(fmt_str, "%src_spec"))
+                {
+                        // Extract corresponding fields of the instruction and print them as the         predicate
+
+                        kpl_inst_dump_SPEC_REG(inst, &str, &size, 30, 23);
+                        fmt_str += 9;
+                        continue;
+                }        
+
+	        if (str_prefix(fmt_str, "%cc"))
+                {
+                        // Extract corresponding fields of the instruction and print them as the         predicate
+
+                        kpl_inst_dump_CC2(inst, &str, &size, 6, 2);
+                        fmt_str += 3;
+                        continue;
+                }
+
+                if (str_prefix(fmt_str, "%pred1"))
+                {
+                        // Extract corresponding fields of the instruction and print them as the         predicate
+
+                        kpl_inst_dump_PRED_SHORT(inst, &str, &size, 7, 5);
+                        fmt_str += 6;
+                        continue;
+                }
+               
+                if (str_prefix(fmt_str, "%pred2"))
+                {
+                        // Extract corresponding fields of the instruction and print them as the         predicate
+
+                        kpl_inst_dump_PRED_SHORT(inst, &str, &size, 4, 2);
+                        fmt_str += 6;
+                        continue;
+                }
+
+                if (str_prefix(fmt_str, "%pred3"))
+                {
+                        // Extract corresponding fields of the instruction and print them as the         predicate
+
+                        kpl_inst_dump_PRED_noat(inst, &str, &size, 45, 42);
+                        fmt_str += 6;
+                        continue;
+                }
+
+		 if (str_prefix(fmt_str, "%_keeprefcount"))
+                {
+                        // Extract corresponding fields of the instruction and print them as the         predicate
+
+                        kpl_inst_dump_KEEPREFCOUNT(inst, &str, &size, 7, 7);
+                        fmt_str += 14;
+                        continue;
+                } 
+
+                if (str_prefix(fmt_str, "%_rm"))
+                {
+                        // Extract corresponding fields of the instruction and print them as the         predicate
+
+                        kpl_inst_dump_RM(inst, &str, &size, 43, 42);
+                        fmt_str += 4;
+                        continue;
+                } 
+
                 if (str_prefix(fmt_str, "%_LMT"))
                 {
                         // Extract corresponding fields of the instruction and print them as the predicate
@@ -1211,7 +1387,6 @@ void kpl_inst_dump_buf(struct kpl_inst_t *inst, char *str, int size)
 			// Extract corresponding fields of the instruction and print them as the predicate
 
 			kpl_inst_dump_PRED(inst, &str, &size, 21, 18);
-			//str_printf(&str, &size, "HELLO");
 			fmt_str += 5;
 			continue;
 		}
