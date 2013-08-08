@@ -20,12 +20,31 @@
 #ifndef M2C_CL2LLVM_BUILT_IN_FUNCS_H
 #define M2C_CL2LLVM_BUILT_IN_FUNCS_H
 
+#include <llvm-c/Core.h>
+#include <lib/util/list.h>
 
+#include "type.h"
+
+struct cl2llvm_built_in_func_info_t
+{
+	int func_id;
+	int arg_count;
+	char *arg_string;
+};
 
 struct hash_table_t *built_in_func_table_create(void);
 
-void func_declare(int *func_id);
+void cl2llvm_built_in_func_table_free(struct hash_table_t *built_in_func_table);
+
+struct cl2llvm_built_in_func_info_t *cl2llvm_built_in_func_info_create(int, int, char*);
+
+void cl2llvm_built_in_func_analyze(char* name, struct list_t *param_list);
+
+void func_declare(struct list_t *arg_types, struct cl2llvm_type_t *ret_type, 
+	char* name, char* param_spec_name);
 
 int *intptr(int num);
+
+struct cl2llvm_type_t *string_to_type(char*);
 
 #endif
