@@ -38,6 +38,9 @@ struct cl2llvm_function_t
 
 struct cl2llvm_function_t *cl2llvm_function_create(char *name, struct list_t *arg_list);
 
+/* Creates a copy of a function can only be used on OpenCL built-in functions. */
+struct cl2llvm_function_t * cl2llvm_func_cpy(struct cl2llvm_function_t *src_func);
+
 void cl2llvm_function_free(struct cl2llvm_function_t *function);
 	
 #endif

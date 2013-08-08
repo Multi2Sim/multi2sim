@@ -42,6 +42,9 @@ LLVMModuleRef cl2llvm_module;
 /* Built-in function table */
 struct hash_table_t *cl2llvm_built_in_func_table;
 
+/* Declared built-in function table */
+struct hash_table_t *cl2llvm_declared_built_in_funcs_table;
+
 /* Built in constants table */
 struct hash_table_t *cl2llvm_built_in_const_table;
 
@@ -116,18 +119,15 @@ void cl2llvm_init_global_vars(void)
 	/* Initialize global symbol table */
 	cl2llvm_global_symbol_table = hash_table_create(10, 1);
 
+	/* Initialize declared built-in functions table */
+	cl2llvm_declared_built_in_funcs_table = hash_table_create(10, 1);
 }
 
 
 void cl2llvm_done(void)
 {
-	char *name;
-	int *intptr;
-
 	/* Free built-in function table. */
-	HASH_TABLE_FOR_EACH(cl2llvm_built_in_func_table, name, intptr)
-		free(intptr);
-	hash_table_free(cl2llvm_built_in_func_table);
+	cl2llvm_built_in_func_table_free(cl2llvm_built_in_func_table);
 	
 	/* Free enumerated type table */
 	hash_table_free(cl2llvm_built_in_const_table);
@@ -142,11 +142,15 @@ void cl2llvm_erase_global_vars(void)
 	struct cl2llvm_function_t *function;
 	struct cl2llvm_symbol_t *symbol;
 
-	/* Free global function table */
+	/* Free declared built-in function table and global function table */
+	HASH_TABLE_FOR_EACH(cl2llvm_declared_built_in_funcs_table, name, function)
+		cl2llvm_function_free(function);
+	hash_table_free(cl2llvm_declared_built_in_funcs_table);
+	
 	HASH_TABLE_FOR_EACH(cl2llvm_symbol_table, name, function)
 		cl2llvm_function_free(function);
 	hash_table_free(cl2llvm_symbol_table);
-
+	
 	/* Free preprocessor file list */
 	LIST_FOR_EACH(cl2llvm_preprcr_file_list, index)
 	{
@@ -159,7 +163,7 @@ void cl2llvm_erase_global_vars(void)
 	HASH_TABLE_FOR_EACH(cl2llvm_global_symbol_table, name, symbol)
 		cl2llvm_symbol_free(symbol);
 	hash_table_free(cl2llvm_global_symbol_table);
-
+	
 }
 
 
@@ -191,7 +195,7 @@ void cl2llvm_compile(struct list_t *source_file_list, struct list_t *llvm_file_l
 
 		/* Compile */
 		cl2llvm_yyparse();
-	
+		
 		/* Verify module and optimize */
 		LLVMVerifyModule(cl2llvm_module, LLVMAbortProcessAction, &error);
 		LLVMPassManagerRef pm = LLVMCreatePassManager();
