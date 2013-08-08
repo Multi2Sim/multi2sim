@@ -18,6 +18,7 @@
  */
 
 
+#include <lib/util/bit-map.h>
 #include <lib/util/debug.h>
 #include <mem-system/memory.h>
 
@@ -61,21 +62,51 @@ void frm_isa_FFMA_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 
 void frm_isa_FADD_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 {
-	unsigned int dst_id, src1_id, src2_id;
+	unsigned int pred_id, dst_id, src1_id, src2_id;
+	unsigned int active, pred;
 	float dst, src1, src2;
 
-	dst_id = inst->dword.general0.dst;
-	src1_id = inst->dword.general0.src1;
-	src2_id = inst->dword.general0.src2;
-	src1 = thread->gpr[src1_id].v.f;
-	if (inst->dword.general0.src2_mod == 0)
-		src2 = thread->gpr[src2_id].v.f;
-	else if (inst->dword.general0.src2_mod == 1)
-		mem_read(frm_emu->const_mem, src2_id, 4, &src2);
+	struct frm_warp_t *warp;
 
-	dst = src1 + src2;
+	/* Active */
+	warp = thread->warp;
+	active = (warp->active_thread_stack[warp->active_thread_stack_top] >> 
+			thread->id_in_warp) & 0x1;
 
-        thread->gpr[dst_id].v.f = dst;
+	/* Predicate */
+	pred_id = inst->dword.general0.pred;
+	if (pred_id <= 7)
+		pred = thread->pr[pred_id];
+	else
+		pred = ! thread->pr[pred_id - 8];
+
+	/* Execute */
+	if (active == 1 && pred == 1)
+	{
+		/* Read */
+		src1_id = inst->dword.general0.src1;
+		src1 = thread->gpr[src1_id].v.f;
+		src2_id = inst->dword.general0.src2;
+		if (inst->dword.general0.src2_mod == 0)
+			src2 = thread->gpr[src2_id].v.f;
+		else if (inst->dword.general0.src2_mod == 1)
+			mem_read(frm_emu->const_mem, src2_id, 4, &src2);
+
+		/* Execute */
+		dst = src1 + src2;
+
+		/* Write */
+		dst_id = inst->dword.general0.dst;
+		thread->gpr[dst_id].v.f = dst;
+	}
+
+	/* Debug */
+	frm_isa_debug("%s:%d: thread[%d] active = %d pred = [%x] %x "
+			"dst = [0x%x] 0x%f src1 = [0x%x] 0x%f "
+			"src2 = [0x%x] 0x%f\n", 
+			__FUNCTION__, __LINE__, thread->id, active, 
+			pred_id, pred, dst_id, dst, src1_id, src1, 
+			src2_id, src2);
 }
 
 void frm_isa_FADD32I_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
@@ -90,7 +121,7 @@ void frm_isa_FADD32I_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 
 	dst = src1 + imm32;
 
-        thread->gpr[dst_id].v.f = dst;
+	thread->gpr[dst_id].v.f = dst;
 }
 
 void frm_isa_FCMP_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
@@ -114,7 +145,7 @@ void frm_isa_FMUL_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 
 	dst = src1 * src2;
 
-        thread->gpr[dst_id].v.f = dst;
+	thread->gpr[dst_id].v.f = dst;
 }
 
 void frm_isa_FMUL32I_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
@@ -129,7 +160,7 @@ void frm_isa_FMUL32I_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 
 	dst = src1 * imm32;
 
-        thread->gpr[dst_id].v.f = dst;
+	thread->gpr[dst_id].v.f = dst;
 }
 
 void frm_isa_FMNMX_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
@@ -168,8 +199,8 @@ void frm_isa_FSETP_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 	p = (src1 >= src2) && r;
 	q = !p;
 
-        thread->pr[p_id] = p;
-        thread->pr[q_id] = q;
+	thread->pr[p_id] = p;
+	thread->pr[q_id] = q;
 }
 
 void frm_isa_RRO_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
@@ -215,13 +246,23 @@ void frm_isa_DSETP_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 void frm_isa_IMAD_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 {
 	unsigned int pred_id, dst_id, src1_id, src2_id, src3_id;
-	unsigned int pred, dst, src1, src2, src3;
+	unsigned int active, pred, dst, src1, src2, src3;
 
-	/* Predication */
+	struct frm_warp_t *warp;
+
+	/* Active */
+	warp = thread->warp;
+	active = (warp->active_thread_stack[warp->active_thread_stack_top] >> 
+			thread->id_in_warp) & 0x1;
+
+	/* Predicate */
 	pred_id = inst->dword.general1.pred;
-	pred = thread->pr[pred_id];
+	if (pred_id <= 7)
+		pred = thread->pr[pred_id];
+	else
+		pred = ! thread->pr[pred_id - 8];
 
-	if (pred == 1)
+	if (active == 1 && pred == 1)
 	{
 		/* Read */
 		src1_id = inst->dword.general0.src1;
@@ -243,10 +284,11 @@ void frm_isa_IMAD_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 	}
 
 	/* Debug */
-	frm_isa_debug("%s:%d: thread[%d] pred = [%x] %x dst = [0x%x] 0x%08x "
-			"src1 = [0x%x] 0x%08x src2 = [0x%x] 0x%08x "
-			"src3 = [0x%x] 0x%08x\n", __FUNCTION__, __LINE__,
-			thread->id, pred_id, pred, dst_id, dst, src1_id, src1,
+	frm_isa_debug("%s:%d: thread[%d] active = %d pred = [%x] %x "
+			"dst = [0x%x] 0x%08x src1 = [0x%x] 0x%08x "
+			"src2 = [0x%x] 0x%08x src3 = [0x%x] 0x%08x\n", 
+			__FUNCTION__, __LINE__, thread->id, active, 
+			pred_id, pred, dst_id, dst, src1_id, src1,
 			src2_id, src2, src3_id, src3);
 }
 
@@ -305,22 +347,51 @@ void frm_isa_IADD32I_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 
 void frm_isa_ISCADD_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 {
-	unsigned int dst_id, src1_id, src2_id;
-	unsigned int dst, src1, src2, shamt;
+	unsigned int pred_id, dst_id, src1_id, src2_id;
+	unsigned int active, pred, dst, src1, src2, shamt;
 
-	dst_id = inst->dword.general0.dst;
-	src1_id = inst->dword.general0.src1;
-	src2_id = inst->dword.general0.src2;
-	src1 = thread->gpr[src1_id].v.i;
-	if (inst->dword.general0.src2_mod == 0)
-		src2 = thread->gpr[src2_id].v.i;
-	else if (inst->dword.general0.src2_mod == 1)
-		mem_read(frm_emu->const_mem, src2_id, 4, &src2);
-	shamt = inst->dword.mod0_C.shamt;
+	struct frm_warp_t *warp;
 
-	dst = (src1 << shamt) + src2;
+	/* Active */
+	warp = thread->warp;
+	active = (warp->active_thread_stack[warp->active_thread_stack_top] >> 
+			thread->id_in_warp) & 0x1;
 
-	thread->gpr[dst_id].v.i = dst;
+	/* Predicate */
+	pred_id = inst->dword.general0.pred;
+	if (pred_id <= 7)
+		pred = thread->pr[pred_id];
+	else
+		pred = ! thread->pr[pred_id - 8];
+
+	if (active == 1 && pred == 1)
+	{
+		/* Read */
+		src1_id = inst->dword.general0.src1;
+		src1 = thread->gpr[src1_id].v.i;
+		src2_id = inst->dword.general0.src2;
+		if (inst->dword.general0.src2_mod == 0)
+			src2 = thread->gpr[src2_id].v.i;
+		else if (inst->dword.general0.src2_mod == 1)
+			mem_read(frm_emu->const_mem, src2_id, 4, &src2);
+		shamt = inst->dword.mod0_C.shamt;
+
+
+		/* Execute */
+		dst = (src1 << shamt) + src2;
+
+		/* Write */
+		dst_id = inst->dword.general0.dst;
+		thread->gpr[dst_id].v.i = dst;
+	}
+
+	/* Debug */
+	frm_isa_debug("%s:%d: thread[%d] active = %d pred = [%x] %x "
+			"dst = [0x%x] 0x%08x src1 = [0x%x] 0x%08x "
+			"src2 = [0x%x] 0x%08x shamt = %d\n", 
+			__FUNCTION__, __LINE__, thread->id, active, 
+			pred_id, pred, dst_id, dst, src1_id, src1,
+			src2_id, src2, shamt);
 }
 
 void frm_isa_ISAD_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
@@ -398,17 +469,27 @@ void frm_isa_ISET_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 void frm_isa_ISETP_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 {
 	unsigned int pred_id, p_id, q_id, src1_id, src2_id, r_id;
-	unsigned int pred, p, q, src1, src2, r;
+	unsigned int active, pred, p, q, src1, src2, r;
 
 	int compare_op;
 	int logic_op;
 	int compare_result;
 
-	/* Predication */
-	pred_id = inst->dword.general1.pred;
-	pred = thread->pr[pred_id];
+	struct frm_warp_t *warp;
 
-	if (pred == 1)
+	/* Active */
+	warp = thread->warp;
+	active = (warp->active_thread_stack[warp->active_thread_stack_top] >> 
+			thread->id_in_warp) & 0x1;
+
+	/* Predicate */
+	pred_id = inst->dword.general1.pred;
+	if (pred_id <= 7)
+		pred = thread->pr[pred_id];
+	else
+		pred = ! thread->pr[pred_id - 8];
+
+	if (active == 1 && pred == 1)
 	{
 		/* Read */
 		src1_id = inst->dword.general1.src1;
@@ -460,17 +541,19 @@ void frm_isa_ISETP_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 		/* Write */
 		p_id = inst->dword.general1.dst >> 3;
 		q_id = inst->dword.general1.dst & 0x7;
-		thread->pr[p_id] = p;
-		thread->pr[q_id] = q;
+		if (p_id != 7)
+			thread->pr[p_id] = p;
+		if (q_id != 7)
+			thread->pr[q_id] = q;
 	}
 
 	/* Debug */
-	frm_isa_debug("%s:%d: thread[%d] pred = [%d] %d p = [%d] %d, "
-			"q = [%d] %d, src1 = [0x%x] 0x%08x, "
+	frm_isa_debug("%s:%d: thread[%d] active = %d pred = [%d] %d "
+			"p = [%d] %d, q = [%d] %d, src1 = [0x%x] 0x%08x, "
 			"src2 = [0x%x]0x%08x, r = [%d] %d\n", 
-			__FUNCTION__, __LINE__, thread->id, pred_id, pred, 
-			p_id, p, q_id, q, src1_id, src1, src2_id, src2, 
-			r_id, r);
+			__FUNCTION__, __LINE__, thread->id, active, 
+			pred_id, pred, p_id, p, q_id, q, src1_id, src1, 
+			src2_id, src2, r_id, r);
 }
 
 void frm_isa_ICMP_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
@@ -506,13 +589,23 @@ void frm_isa_I2I_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 void frm_isa_MOV_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 {
 	unsigned int pred_id, dst_id, src_id;
-	unsigned int pred, dst, src;
+	unsigned int active, pred, dst, src;
 
-	/* Predication */
+	struct frm_warp_t *warp;
+
+	/* Active */
+	warp = thread->warp;
+	active = (warp->active_thread_stack[warp->active_thread_stack_top] >> 
+			thread->id_in_warp) & 0x1;
+
+	/* Predicate */
 	pred_id = inst->dword.general0.pred;
-	pred = thread->pr[pred_id];
+	if (pred_id <= 7)
+		pred = thread->pr[pred_id];
+	else
+		pred = ! thread->pr[pred_id - 8];
 
-	if (pred == 1)
+	if (active == 1 && pred == 1)
 	{
 		/* Read */
 		src_id = inst->dword.general0.src2;
@@ -530,9 +623,10 @@ void frm_isa_MOV_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 	}
 
 	/* Debug */
-	frm_isa_debug("%s:%d: thread[%d] pred = [%x] %d dst = [0x%x] 0x%08x "
-			"src = [0x%x] 0x%08x\n", __FUNCTION__, __LINE__,
-			thread->id, pred_id, pred, dst_id, dst, src_id, src);
+	frm_isa_debug("%s:%d: thread[%d] active = %d pred = [%x] %d "
+			"dst = [0x%x] 0x%08x src = [0x%x] 0x%08x\n", 
+			__FUNCTION__, __LINE__, thread->id, active, 
+			pred_id, pred, dst_id, dst, src_id, src);
 }
 
 void frm_isa_MOV32I_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
@@ -615,16 +709,43 @@ void frm_isa_LDC_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 
 void frm_isa_LD_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 {
-	unsigned int dst_id, src_id, addr;
-	unsigned int dst;
+	unsigned int pred_id, dst_id, src_id, addr;
+	unsigned int active, pred, dst;
 
-	dst_id = inst->dword.offs.dst;
-	src_id = inst->dword.offs.src1;
-	addr = thread->gpr[src_id].v.i;
+	struct frm_warp_t *warp;
 
-	mem_read(frm_emu->global_mem, addr, 4, &dst);
+	/* Active */
+	warp = thread->warp;
+	active = (warp->active_thread_stack[warp->active_thread_stack_top] >> 
+			thread->id_in_warp) & 0x1;
 
-	thread->gpr[dst_id].v.i = dst;
+	/* Predicate */
+	pred_id = inst->dword.offs.pred;
+	if (pred_id <= 7)
+		pred = thread->pr[pred_id];
+	else
+		pred = ! thread->pr[pred_id - 8];
+
+	/* Execute */
+	if (active == 1 && pred == 1)
+	{
+		/* Read */
+		src_id = inst->dword.offs.src1;
+		addr = thread->gpr[src_id].v.i;
+
+		/* Execute */
+		mem_read(frm_emu->global_mem, addr, 4, &dst);
+
+		/* Write */
+		dst_id = inst->dword.offs.dst;
+		thread->gpr[dst_id].v.i = dst;
+	}
+
+	/* Debug */
+	frm_isa_debug("%s:%d: thread[%d] active = %d pred = [%x] %x "
+			"dst = [0x%x] 0x%08x src = [0x%x] 0x%08x\n", 
+			__FUNCTION__, __LINE__, thread->id, active, 
+			pred_id, pred, dst_id, dst, src_id, addr);
 }
 
 void frm_isa_LDU_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
@@ -673,15 +794,41 @@ void frm_isa_LDS_LDU_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 
 void frm_isa_ST_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 {
-	unsigned int dst_id, src_id, addr;
-	unsigned int dst;
+	unsigned int pred_id, dst_id, src_id, addr;
+	unsigned int active, pred, dst;
 
-	dst_id = inst->dword.offs.dst;
-	dst = thread->gpr[dst_id].v.i;
-	src_id = inst->dword.offs.src1;
-	addr = thread->gpr[src_id].v.i;
+	struct frm_warp_t *warp;
 
-	mem_write(frm_emu->global_mem, addr, 4, &dst);
+	/* Active */
+	warp = thread->warp;
+	active = (warp->active_thread_stack[warp->active_thread_stack_top] >> 
+			thread->id_in_warp) & 0x1;
+
+	/* Predicate */
+	pred_id = inst->dword.offs.pred;
+	if (pred_id <= 7)
+		pred = thread->pr[pred_id];
+	else
+		pred = ! thread->pr[pred_id - 8];
+
+	/* Execute */
+	if (active == 1 && pred == 1)
+	{
+		/* Read */
+		dst_id = inst->dword.offs.dst;
+		dst = thread->gpr[dst_id].v.i;
+		src_id = inst->dword.offs.src1;
+		addr = thread->gpr[src_id].v.i;
+
+		/* Execute */
+		mem_write(frm_emu->global_mem, addr, 4, &dst);
+	}
+
+	/* Debug */
+	frm_isa_debug("%s:%d: thread[%d] active = %d pred = [%x] %x "
+			"dst = [0x%x] 0x%08x src = [0x%x] 0x%08x\n", 
+			__FUNCTION__, __LINE__, thread->id, active, 
+			pred_id, pred, dst_id, dst, src_id, addr);
 }
 
 void frm_isa_STL_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
@@ -764,13 +911,46 @@ void frm_isa_SUQ_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 
 void frm_isa_BRA_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 {
-	//	struct frm_warp_t *warp;
-	//
-	//	warp = thread->warp;
-	//
-	//	printf("1warp->pc = %x\n", warp->pc);
-	//	warp->pc = inst->dword.tgt.target - 8;
-	//	printf("2warp->pc = %x\n", warp->pc);
+	unsigned int pred_id;
+	unsigned int active, pred, target;
+
+	struct frm_warp_t *warp;
+
+	/* Active */
+	warp = thread->warp;
+	active = (warp->active_thread_stack[warp->active_thread_stack_top] >> 
+			thread->id_in_warp) & 0x1;
+
+	/* Predicate */
+	pred_id = inst->dword.tgt.pred;
+	if (pred_id <= 7)
+		pred = thread->pr[pred_id];
+	else
+		pred = ! thread->pr[pred_id - 8];
+
+	if (active == 1 && pred == 1)
+	{
+		/* Update active thread mask stack */
+		warp->active_thread_stack[warp->active_thread_stack_top + 1] |=
+			0 << thread->id_in_warp;
+
+		target = inst->dword.tgt.target;
+	}
+	else
+	{
+		/* Update active thread mask stack */
+		warp->active_thread_stack[warp->active_thread_stack_top + 1] |=
+			1 << thread->id_in_warp;
+	}
+
+	/* Push active thread mask stack */
+	if (thread->id_in_warp == thread->warp->thread_count - 1)
+		warp->active_thread_stack_top++;
+
+	/* Debug */
+	frm_isa_debug("%s:%d: thread[%d] active = %d pred = [%d] %d "
+			"target = 0x%x\n", __FUNCTION__, __LINE__, thread->id, 
+			active, pred_id, pred, target);
 }
 
 void frm_isa_BRX_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
@@ -849,8 +1029,41 @@ void frm_isa_BPT_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 
 void frm_isa_EXIT_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 {
-	if (inst->dword.tgt.pred == 7)
-		thread->warp->finished = 1;
+	unsigned int pred_id;
+	unsigned int active, pred;
+
+	struct frm_warp_t *warp;
+
+	warp = thread->warp;
+
+	/* Pop active thread mask stack */
+	if (thread->id_in_warp == 0)
+	{
+		warp->active_thread_stack_top--;
+		warp->finished_thread_count = 0;
+	}
+
+	/* Active */
+	active = (warp->active_thread_stack[warp->active_thread_stack_top] >> 
+			thread->id_in_warp) & 0x1;
+
+	/* Predicate */
+	pred_id = inst->dword.tgt.pred;
+	if (pred_id <= 7)
+		pred = thread->pr[pred_id];
+	else
+		pred = ! thread->pr[pred_id - 8];
+
+	/* Execute */
+	if (active == 1 && pred == 1)
+		warp->finished_thread_count++;
+	if (warp->finished_thread_count == warp->thread_count)
+		warp->finished = 1;
+
+	/* Debug */
+	frm_isa_debug("%s:%d: thread[%d] active = %d pred = [%d] %d\n", 
+			__FUNCTION__, __LINE__, thread->id, 
+			active, pred_id, pred);
 }
 
 void frm_isa_NOP_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
@@ -860,13 +1073,23 @@ void frm_isa_NOP_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 void frm_isa_S2R_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 {
 	unsigned int pred_id, dst_id, src_id;
-	unsigned int pred, dst, src;
+	unsigned int active, pred, dst, src;
 
-	/* Predication */
+	struct frm_warp_t *warp;
+
+	/* Active */
+	warp = thread->warp;
+	active = (warp->active_thread_stack[warp->active_thread_stack_top] >> 
+			thread->id_in_warp) & 0x1;
+
+	/* Predicate */
 	pred_id = inst->dword.general1.pred;
-	pred = thread->pr[pred_id];
+	if (pred_id <= 7)
+		pred = thread->pr[pred_id];
+	else
+		pred = ! thread->pr[pred_id - 8];
 
-	if (pred == 1)
+	if (active == 1 && pred == 1)
 	{
 		/* Read */
 		src_id = inst->dword.general0.src2 & 0xff;
@@ -881,9 +1104,10 @@ void frm_isa_S2R_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 	}
 
 	/* Debug */
-	frm_isa_debug("%s:%d: thread[%d] pred = [%x] %x dst = [0x%x] 0x%08x "
-			"src = [0x%x] 0x%08x\n", __FUNCTION__, __LINE__,
-			thread->id, pred_id, pred, dst_id, dst, src_id, src);
+	frm_isa_debug("%s:%d: thread[%d] active = %d pred = [%x] %x "
+			"dst = [0x%x] 0x%08x src = [0x%x] 0x%08x\n", 
+			__FUNCTION__, __LINE__, thread->id, active, 
+			pred_id, pred, dst_id, dst, src_id, src);
 }
 
 void frm_isa_B2R_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
