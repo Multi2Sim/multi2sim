@@ -10,6 +10,13 @@ CLASS(ELFSection)
 CLASS(ELFSymbol)
 CLASS(ELFReader)
 
+CLASS(ELFWriterBuffer)
+CLASS(ELFWriterSection)
+CLASS(ELFWriterSegment)
+CLASS(ELFWriterSymbol)
+CLASS(ELFWriterSymbolTable)
+CLASS(ELFWriter)
+
 CLASS(List)
 CLASS(ListIterator)
 CLASS(HashTable)
