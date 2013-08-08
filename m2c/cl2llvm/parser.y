@@ -31,6 +31,7 @@
 #include "parser.h"
 #include "cl2llvm.h"
 #include "array.h"
+#include "format.h"
 
 #define CL2LLVM_MAX_FUNC_ARGS 64
 #define CL2LLVM_MAX_ARG_NAME_LEN 200
@@ -806,7 +807,6 @@ stmt
 func_call
 	: TOK_ID TOK_PAR_OPEN param_list TOK_PAR_CLOSE
 	{
-		int *func_id;
 		int i;
 		LLVMValueRef cast_param_array[100];
 		struct cl2llvm_arg_t *current_func_arg;
@@ -816,54 +816,40 @@ func_call
 		struct cl2llvm_val_t *cast_param;
 		LLVMValueRef llvm_val_func_ret;
 		struct cl2llvm_val_t *ret_val;
-		LLVMTypeRef llvm_param_types[100];
-		int offset = 0;
 
 		/* If function is found in the built-in function table but not the
 		   global symbol table, declare it and insert it into the  global
 		   symbol table. */
-		func_id = hash_table_get(cl2llvm_built_in_func_table, $1);
-		if (func_id && !hash_table_get(cl2llvm_symbol_table, $1))
-			func_declare(func_id);
-	
+		if (hash_table_get(cl2llvm_built_in_func_table, $1))
+			cl2llvm_built_in_func_analyze($1, $3);
+
 		/* Retrieve function specs from sybmol table */
 		function = hash_table_get(cl2llvm_symbol_table, $1);
 		if (!function)
 			yyerror("implicit declaration of function");
 		
-		/* If specified function arg count differs from the arg count of
-		   the generated function, get offset */
-		if (function->arg_count != LLVMCountParamTypes(function->func_type))
-		{
-			LLVMGetParamTypes(function->func_type, llvm_param_types);
-
-			offset = LLVMCountParamTypes(function->func_type) -
-				function->arg_count;
-			for (i = 0; i < offset; i++)
-			{
-				cast_param_array[i] = LLVMConstInt(llvm_param_types[i], 0, 0);
-			}		
-		}
-
 		/* check that parameter types match */
 		for (i = 0; i < function->arg_count; i++)
 		{
 			current_func_arg = list_get(function->arg_list, i);
 			current_param = list_get($3, i);
-			if (current_func_arg->type_spec->llvm_type != current_param->type->llvm_type)
+			if (current_func_arg == NULL)
+				cast_param_array[i] = NULL;
+			else if (current_func_arg->type_spec->llvm_type 
+				!= current_param->type->llvm_type)
 			{
 				type = cl2llvm_type_create_w_init( 
 					current_func_arg->type_spec->llvm_type,
 					current_func_arg->type_spec->sign);
 				cast_param = llvm_type_cast(current_param, type);
 				cl2llvm_type_free(type);
-				cast_param_array[i + offset] = cast_param->val;
+				cast_param_array[i] = cast_param->val;
 				cl2llvm_val_free(current_param);
 				cl2llvm_val_free(cast_param);
 			}
 			else
 			{
-				cast_param_array[i + offset] = current_param->val;
+				cast_param_array[i] = current_param->val;
 				cl2llvm_val_free(current_param);
 			}
 		}
@@ -874,7 +860,7 @@ func_call
 		if (LLVMGetReturnType(function->func_type) == LLVMVoidType())
 		{
 			llvm_val_func_ret = LLVMBuildCall(cl2llvm_builder, function->func,
-				cast_param_array, function->arg_count + offset, "");
+				cast_param_array, function->arg_count, "");
 		}
 		else
 		{
@@ -882,7 +868,7 @@ func_call
 				"tmp_%d", temp_var_count++);
 
 			llvm_val_func_ret = LLVMBuildCall(cl2llvm_builder, function->func,
-				cast_param_array, function->arg_count + offset, temp_var_name);
+				cast_param_array, function->arg_count, temp_var_name);
 		}
 
 		/* Create return value */
@@ -891,15 +877,16 @@ func_call
 		
 		$$ = ret_val;
 	}
-	| TOK_ID TOK_PAR_OPEN TOK_PAR_CLOSE
-	{
-		cl2llvm_yyerror("function calls with no parameters not supported");
-		$$ = NULL;
-	}
 	;
 
 param_list
-	: expr
+	: /*empty*/
+	{
+		struct list_t *param_list = list_create();
+		list_add(param_list, NULL);
+		$$ = param_list;
+	}
+	| expr
 	{
 		struct list_t *param_list = list_create();
 		list_add(param_list, $1);
@@ -1021,7 +1008,7 @@ declaration
 		for(i = 0; i < init_count; i++)
 		{	
 			int err;			
-			current_list_elem = list_get($2, i);
+			current_list_elem = list_get($2, i);			
 			
 			/*if variable type is a vector*/
 			if (LLVMGetTypeKind($1->type_spec->llvm_type) == LLVMVectorTypeKind)
@@ -1137,6 +1124,7 @@ declaration
 				cl2llvm_val_free(ptr);
 
 			}
+			
 			/* Insert symbol into symbol table */
 			err = hash_table_insert(cl2llvm_current_function->symbol_table, 
 				current_list_elem->name, symbol);
