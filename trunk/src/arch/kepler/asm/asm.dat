@@ -19,35 +19,35 @@
 
 
 DEFINST(IMUL,
-		"%predIMUL%_U32%_U32%_hi%_s, %dst%_cc, %srcA, %src2;",
+		"%predIMUL%_U32%_U32%_hi%_s, %dst%_cc, %srcA, %srcB;",
 		0x01,
 		0x03,
 		0x00,
 		0x07)
 
 DEFINST(ISCADD,
-		"%predISCADD%_s, %dst%_cc, %srcA, %src2, %src3;",
+		"%predISCADD%_s, %dst%_cc, %srcA, %srcB, %src3;",
 		0x02,
 		0x01,
 		0x0c,
 		0x03)
 
 DEFINST(IMAD,
-		"%predIMAD%_us%_hi%_po%_sat%_x%_s, %dst%_cc, %srcA, %src2, %src3;",
+		"%predIMAD%_us%_hi%_po%_sat%_x%_s, %dst%_cc, %srcA, %srcB, %src3;",
 		0x02,
 		0x02,
 		0x02,
 		0x00)
 
 DEFINST(IADD,
-		"%predIADD%_sat%_x%_s, %dst%IADD_cc, %srcA, %src2;",
+		"%predIADD%_sat%_x%_s, %dst%IADD_cc, %srcA, %srcB;",
 		0x02,
 		0x01,
 		0x0c,
 		0x02)
 
 DEFINST(ISETP,
-		"%pred0ISETP%_f%_U32%_x%_and%_s, %pred1, %pred2, %srcA, %src1, %pred3;",
+		"%pred0ISETP%_f%_U32%_x%_and%_s, %pred1, %pred2, %srcA, %srcB, %pred3;",
 		0x02,
 		0x01,    
 		0x0b,
@@ -60,13 +60,13 @@ DEFINST(ISETP,
  */
 
 DEFINST(EXIT,
-		"%predEXIT%_keeprefcount, %cc;",
+		"%predEXIT%_keeprefcount%cc;",
 		0x00,
 		0x00,
 		0x30)
 
 DEFINST(BRA,
-		"%predBRA%_u%_LMT %cc, %tgt;",
+		"%predBRA%_u%_LMT%cc, %tgt;",
 		0x00,
 		0x00,
 		0x24)
@@ -85,7 +85,7 @@ DEFINST(MOV_A,
 		0x13)
 
 DEFINST(MOV_B,
-		"%predMOV%_s, %dst, %src;",
+		"%predMOV%_s, %dst, %srcB;",
 		0x02,
 		0x01,
 		0x0c,
@@ -124,7 +124,7 @@ DEFINST(ST,
  */
 
 DEFINST(DADD,
-		"%pred0DADD%_rm%_s, %dst, %srcA, %src1;",
+		"%pred0DADD%_rm%_s, %dst, %srcA, %srcB;",
 		0x02,
 		0x03,
 		0x0c,
@@ -146,7 +146,7 @@ DEFINST(NOP,
 		0x06)
 
 DEFINST(S2R,
-		"%pred0S2R%_s, %dst, %src;",
+		"%pred0S2R%_s, %dst, %src_spec;",
 		0x02,
 		0x02,
 		0x00,
