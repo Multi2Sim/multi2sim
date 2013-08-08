@@ -151,9 +151,8 @@ struct frm_warp_t *frm_warp_create()
 
 	/* Initialize */
 	warp = xcalloc(1, sizeof(struct frm_warp_t));
-	warp->active_stack = bit_map_create(FRM_MAX_STACK_SIZE *
-			frm_emu_warp_size);
-	warp->pred = bit_map_create(frm_emu_warp_size);
+	warp->active_thread_stack[0] = 0xffffffff;
+	warp->active_thread_stack_top = 0;
 	/* FIXME: Remove once loop state is part of stack */
 	warp->loop_depth = 0;
 
@@ -166,7 +165,6 @@ void frm_warp_free(struct frm_warp_t *warp)
 {
 	/* Free warp */
 	free(warp->threads);
-	bit_map_free(warp->active_stack);
 	bit_map_free(warp->pred);
 	free(warp);
 }
@@ -208,21 +206,21 @@ void frm_warp_dump(struct frm_warp_t *warp, FILE *f)
 
 void frm_warp_stack_push(struct frm_warp_t *warp)
 {
-	warp->stack_top++;
-	warp->active_mask_push++;
-	bit_map_copy(warp->active_stack, warp->stack_top * warp->thread_count,
-			warp->active_stack, (warp->stack_top - 1) *
-			warp->thread_count, warp->thread_count);
+//	warp->stack_top++;
+//	warp->active_mask_push++;
+//	bit_map_copy(warp->active_stack, warp->stack_top * warp->thread_count,
+//			warp->active_stack, (warp->stack_top - 1) *
+//			warp->thread_count, warp->thread_count);
 }
 
 
 void frm_warp_stack_pop(struct frm_warp_t *warp, int count)
 {
-	if (!count)
-		return;
-	warp->stack_top -= count;
-	warp->active_mask_pop += count;
-	warp->active_mask_update = 1;
+//	if (!count)
+//		return;
+//	warp->stack_top -= count;
+//	warp->active_mask_pop += count;
+//	warp->active_mask_update = 1;
 }
 
 
@@ -261,8 +259,9 @@ void frm_warp_execute(struct frm_warp_t *warp)
 		((warp->inst_buffer)[warp->pc / warp->inst_size]) >> 32;
 	((inst->dword).word)[1] = 
 		(warp->inst_buffer)[warp->pc / warp->inst_size];
-	frm_isa_debug("%s:%d: warp[%d] executes instruction 0x%0llx\n", 
-			__FUNCTION__, __LINE__, warp->id, inst->dword.dword);
+	frm_isa_debug("%s:%d: warp[%d] executes instruction [0x%x] 0x%0llx\n", 
+			__FUNCTION__, __LINE__, warp->id, warp->pc,
+			inst->dword.dword);
 
 	/* Decode instruction */
 	frm_inst_decode(inst);
@@ -271,27 +270,10 @@ void frm_warp_execute(struct frm_warp_t *warp)
 			__FUNCTION__, inst->dword.word[0], inst->dword.word[1]);
 
 	/* Execute instruction */
-	switch (inst->info->fmt)
+	for (thread_id = 0; thread_id < warp->thread_count; thread_id++)
 	{
-	case FRM_FMT_MOV_MOV:
-		warp->vector_mem_read = 1;
-		warp->lds_read = 1;
-
-		for (thread_id = warp->threads[0]->id_in_warp; 
-				thread_id < (warp)->thread_count; 
-				thread_id++)
-		{
-			thread = warp->threads[thread_id];
-			(*frm_isa_inst_func[inst->info->inst])(thread, inst);
-		}
-		break;
-	default:
-		for (thread_id = 0; thread_id < warp->thread_count; thread_id++)
-		{
-			thread = warp->threads[thread_id];
-			(*frm_isa_inst_func[inst->info->inst])(thread, inst);
-		}
-		break;
+		thread = warp->threads[thread_id];
+		(*frm_isa_inst_func[inst->info->inst])(thread, inst);
 	}
 
 	if (warp->finished)
@@ -333,4 +315,5 @@ void frm_warp_execute(struct frm_warp_t *warp)
 	warp->emu_inst_count++;
 	warp->inst_count++;
 }
+
 

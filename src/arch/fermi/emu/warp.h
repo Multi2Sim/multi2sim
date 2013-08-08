@@ -25,7 +25,7 @@
 #include <lib/util/string.h>
 
 
-#define FRM_MAX_STACK_SIZE  32
+#define FRM_MAX_THREAD_MASK_SIZE  32
 
 struct frm_warp_t
 {
@@ -56,9 +56,11 @@ struct frm_warp_t
 	unsigned int inst_buffer_index;
 	unsigned int inst_buffer_size;
 
-	/* Active mask stack */
-	struct bit_map_t *active_stack;  /* FRM_MAX_STACK_SIZE * thread_count elements */
-	int stack_top;
+	/* Active thread mask */
+	unsigned int active_thread_stack[FRM_MAX_THREAD_MASK_SIZE];
+	int active_thread_stack_top;
+
+	unsigned int finished_thread_count;
 
 	/* Predicate mask */
 	struct bit_map_t *pred;  /* thread_count elements */
