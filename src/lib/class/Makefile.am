@@ -18,6 +18,9 @@ libclass_a_SOURCES = \
 	hash-table.c \
 	hash-table.h \
 	\
+	ini-file.c \
+	ini-file.h \
+	\
 	list.c \
 	list.h \
 	\

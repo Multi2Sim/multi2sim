@@ -71,6 +71,11 @@ unsigned int StringHashCase(Object *self);
 /* Convert the string into an empty string */
 void StringClear(String *self);
 
+/* Read a line from a file. The final '\n' character is omitted form the
+ * resulting string. The function returns 0 on success and non-zero in case the
+ * file could not be read. */
+int StringRead(String *self, FILE *f);
+
 /* Replace 'count' characters starting at position 'pos' by the string given in
  * 'text'. Negative values for 'pos' represent positions relative to the end of
  * the string, where -1 is the last character. */
@@ -95,6 +100,13 @@ void StringErase(String *self, int pos, size_t count);
  * is returned. The returned string must be freed by the caller with a delete()
  * call. */
 String *StringSubStr(String *self, int pos, size_t count);
+
+/* Count the number of occurrences of a substring inside of the string. */
+int StringCount(String *self, const char *sub_str);
+
+/* Return the first occurrence of a substring inside of the string, or -1 if the
+ * substring is not present. */
+int StringIndex(String *self, const char *sub_str);
 
 /* Remove consecutive characters in 'set' from the beginning, the end, or both
  * ends of the string. */

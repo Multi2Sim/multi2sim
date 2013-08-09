@@ -31,6 +31,7 @@
 #include <lib/class/array.h>
 #include <lib/class/elf-writer.h>
 #include <lib/class/hash-table.h>
+#include <lib/class/ini-file.h>
 #include <lib/class/list.h>
 #include <lib/class/string.h>
 #include <lib/mhandle/mhandle.h>
@@ -573,6 +574,7 @@ void m2c_init(void)
 	CLASS_REGISTER(ListIterator);
 	CLASS_REGISTER(HashTable);
 	CLASS_REGISTER(String);
+	CLASS_REGISTER(IniFile);
 	
 	CLASS_REGISTER(Node);
 	CLASS_REGISTER(LeafNode);
@@ -658,6 +660,20 @@ int main(int argc, char **argv)
 
 	/* Initialize */
 	m2c_init();
+
+#if 0
+	{
+		IniFile *ini_file;
+
+		ini_file = new(IniFile, "/home/ubal/test.ini");
+
+		IniFileLoad(ini_file);
+
+		IniFileDump(asObject(ini_file), stdout);
+
+		delete(ini_file);
+	}
+#endif
 
 	/* Process list of sources in 'm2c_source_file_list' and generate the
 	 * rest of the file lists. */
