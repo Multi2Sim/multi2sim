@@ -143,11 +143,13 @@ static int IniFileInsertVariable(IniFile *self, String *section,
 	{
 		delete(old_value);
 		HashTableSet(self->item_table, asObject(item), asObject(value));
+		delete(item);
 		return 1;
 	}
 	
 	/* Set new value */
 	HashTableInsert(self->item_table, asObject(item), asObject(value));
+	delete(item);
 	return 0;
 }
 
@@ -329,27 +331,111 @@ void IniFileSave(IniFile *self)
 }
 
 
-int IniFileSectionExsists(IniFile *self, char *section)
+int IniFileSectionExists(IniFile *self, char *section)
 {
-	return 0;
+	String section_str;
+
+	new_static(&section_str, String, section);
+	StringSingleSpaces(&section_str);
+	HashTableGet(self->item_table, asObject(&section_str));
+	delete_static(&section_str);
+	return !self->item_table->error;
 }
 
 
 int IniFileVariableExists(IniFile *self, char *section, char *var)
 {
-	return 0;
+	String *item;
+	String section_str;
+	String var_str;
+
+	new_static(&section_str, String, section);
+	new_static(&var_str, String, var);
+
+	item = IniFileSectionVariableToItem(&section_str, &var_str);
+	HashTableGet(self->item_table, asObject(item));
+
+	delete_static(&section_str);
+	delete_static(&var_str);
+	delete(item);
+
+	return !self->item_table->error;
 }
 
 
 int IniFileRemoveSection(IniFile *self, char *section)
 {
+	List *item_list;
+
+	String *item;
+	String *value;
+	String *tmp_section;
+
+	int length;
+
+	/* Create list of items to remove */
+	item_list = new(List);
+	length = strlen(section);
+	HashTableForEach(self->item_table, item, String)
+		if (!strncasecmp(item->text, section, length)
+				&& item->text[length] == '\n')
+			ListAdd(item_list, asObject(item));
+	
+	/* Section not found */
+	if (!item_list->count)
+	{
+		delete(item_list);
+		return 1;
+	}
+
+	/* Remove items */
+	ListHead(item_list);
+	while (item_list->count)
+	{
+		item = asString(ListRemove(item_list));
+		value = asString(HashTableRemove(self->item_table, asObject(item)));
+		if (value)
+			delete(value);
+	}
+
+	/* Remove it from the list of sections */
+	ListForEach(self->section_list, tmp_section, String)
+	{
+		if (!strcasecmp(tmp_section->text, section))
+		{
+			ListRemove(self->section_list);
+			delete(tmp_section);
+			break;
+		}
+	}
+
+	/* Success */
+	delete(item_list);
 	return 0;
 }
 
 
 int IniFileRemoveVariable(IniFile *self, char *section, char *var)
 {
-	return 0;
+	String section_str;
+	String var_str;
+
+	String *item;
+	String *value;
+
+	new_static(&section_str, String, section);
+	new_static(&var_str, String, var);
+	item = IniFileSectionVariableToItem(&section_str, &var_str);
+
+	value = asString(HashTableRemove(self->item_table, asObject(item)));
+	if (value)
+		delete(value);
+
+	delete(item);
+	delete_static(&section_str);
+	delete_static(&var_str);
+
+	return !!self->item_table->error;
 }
 
 
