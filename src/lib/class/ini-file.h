@@ -67,11 +67,11 @@ void IniFileLoad(IniFile *self);
 void IniFileSave(IniFile *self);
 
 /* Return true if a section/variable exists. */
-int IniFileSectionExsists(IniFile *self, char *section);
+int IniFileSectionExists(IniFile *self, char *section);
 int IniFileVariableExists(IniFile *self, char *section, char *var);
 
-/* Remove a variable/section;
- * Return value: non-0=ok, 0=variable/section does not exist */
+/* Remove a section/variable. These functions return 0 on success, and a
+ * non-zero value if the section/variable does not exist. */
 int IniFileRemoveSection(IniFile *self, char *section);
 int IniFileRemoveVariable(IniFile *self, char *section, char *var);
 

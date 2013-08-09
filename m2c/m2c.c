@@ -670,7 +670,18 @@ int main(int argc, char **argv)
 		IniFileLoad(ini_file);
 
 		IniFileDump(asObject(ini_file), stdout);
+		printf("*** %d\n", IniFileSectionExists(ini_file, "Section  1  "));
+		printf("*** %d\n", IniFileSectionExists(ini_file, "Section  2  "));
+		printf("*** %d\n", IniFileVariableExists(ini_file, "Section 1", "  vaR3  "));
+		printf("*** %d\n", IniFileVariableExists(ini_file, "Section 1", "  vaR  "));
 
+		printf("Remove ret=%d\n", IniFileRemoveVariable(ini_file, "section 1 ", "  var1"));
+		IniFileDump(asObject(ini_file), stdout);
+		printf("Remove ret=%d\n", IniFileRemoveVariable(ini_file, "section 1 ", "  var2"));
+		IniFileDump(asObject(ini_file), stdout);
+		printf("Remove ret=%d\n", IniFileRemoveVariable(ini_file, "section 1 ", "  var2"));
+		IniFileDump(asObject(ini_file), stdout);
+		
 		delete(ini_file);
 	}
 #endif
