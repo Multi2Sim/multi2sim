@@ -29,6 +29,9 @@ struct CUfunc_st
 
 	char *name;
 
+	/* CUDA function binary */
+	struct elf_file_t *bin;
+
 	/* Instruction buffer, i.e., .text section in cubin */
 	unsigned int inst_buf_size;
 	unsigned long long int *inst_buf;
