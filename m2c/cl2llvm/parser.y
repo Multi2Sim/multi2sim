@@ -4781,13 +4781,13 @@ type_name
 	| TOK_FLOATN
 	{
 		struct cl2llvm_type_t *type;
-		type = cl2llvm_type_create_w_init(LLVMVectorType(LLVMFloatType(), $1), 0);
+		type = cl2llvm_type_create_w_init(LLVMVectorType(LLVMFloatType(), $1), 1);
 		$$ = type;
 	}
 	| TOK_DOUBLEN
 	{
 		struct cl2llvm_type_t *type;
-		type = cl2llvm_type_create_w_init(LLVMVectorType(LLVMDoubleType(), $1), 0);
+		type = cl2llvm_type_create_w_init(LLVMVectorType(LLVMDoubleType(), $1), 1);
 		$$ = type;
 	}
 	| TOK_INT 
