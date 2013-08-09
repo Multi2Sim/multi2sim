@@ -27,7 +27,8 @@
 
 union value_t
 {
-	unsigned int i;
+	unsigned int u32;
+	int s32;
 	float f;
 };
 
