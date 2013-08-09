@@ -196,6 +196,31 @@ void StringClear(String *self)
 }
 
 
+int StringRead(String *self, FILE *f)
+{
+	char line[STRING_MAX_SIZE];
+	char *line_ptr;
+
+	/* Clear string */
+	StringClear(self);
+
+	/* Read line */
+	line_ptr = fgets(line, sizeof line, f);
+	if (!line_ptr)
+		return 1;
+
+	/* Set new string */
+	StringConcat(self, "%s", line);
+
+	/* Remove final '\n' */
+	if (self->length && self->text[self->length - 1] == '\n')
+		StringErase(self, -1, 1);
+
+	/* Return success */
+	return 0;
+}
+
+
 static void __StringReplace(String *self, int pos, size_t count, const char *str)
 {
 	int delta;
@@ -311,6 +336,36 @@ String *StringSubStr(String *self, int pos, size_t count)
 
 	/* Return new string */
 	return new_str;
+}
+
+
+int StringCount(String *self, const char *sub_str)
+{
+	int i;
+	int count;
+	int length;
+
+	count = 0;
+	length = strlen(sub_str);
+	for (i = 0; i < self->length - length + 1; i++)
+		if (!strncmp(self->text + i, sub_str, length))
+			count++;
+	
+	return count;
+}
+
+
+int StringIndex(String *self, const char *sub_str)
+{
+	int i;
+	int length;
+
+	length = strlen(sub_str);
+	for (i = 0; i < self->length - length + 1; i++)
+		if (!strncmp(self->text + i, sub_str, length))
+			return i;
+	
+	return -1;
 }
 
 
