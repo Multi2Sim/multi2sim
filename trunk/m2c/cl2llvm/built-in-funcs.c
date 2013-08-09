@@ -131,7 +131,6 @@ void cl2llvm_built_in_func_analyze(char* name, struct list_t *param_list)
 		args_match = 1;
 		for (i = 0; i < built_in_func_info->arg_count; i++)
 		{
-			printf("for_loop\n");
 			param = list_get(param_list, i);
 			index2 = 0;
 			while(arg_string[index1] == ' ')
@@ -145,7 +144,6 @@ void cl2llvm_built_in_func_analyze(char* name, struct list_t *param_list)
 				index2++;
 			}
 			type_string[index2] = '\00';
-			printf("%s\n", type_string);
 			type = string_to_type(type_string);
 			if (args_match)	
 			{
@@ -171,7 +169,6 @@ void cl2llvm_built_in_func_analyze(char* name, struct list_t *param_list)
 			list_add(arg_types_list, type);
 		}
 
-		printf("%d\n", match_found);
 		if (args_match)
 		{
 			index2 = 0;
@@ -223,7 +220,6 @@ void cl2llvm_built_in_func_analyze(char* name, struct list_t *param_list)
 		LIST_FOR_EACH(arg_types_list, i)
 		{
 			type = list_get(arg_types_list, i);
-			printf("%d\n", LLVMGetTypeKind(type->llvm_type));
 			cl2llvm_type_free(type);
 		}
 		list_free(arg_types_list);
@@ -232,7 +228,6 @@ void cl2llvm_built_in_func_analyze(char* name, struct list_t *param_list)
 		if (arg_string[index1] == '\00')
 			end_of_string = 1;
 	}
-	printf("%d-2\n", match_found);
 	if (!match_found)
 	{
 		cl2llvm_error_built_in_func_arg_mismatch(param_list, built_in_func_info,  
