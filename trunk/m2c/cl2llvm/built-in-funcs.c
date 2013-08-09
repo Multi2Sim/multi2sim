@@ -28,8 +28,9 @@
 #include "arg.h"
 #include "function.h"
 #include "cl2llvm.h"
+#include "format.h"
 
-#define BUILT_IN_FUNC_COUNT 9
+#define BUILT_IN_FUNC_COUNT 10
 
 extern LLVMModuleRef cl2llvm_module;
 extern struct hash_table_t *cl2llvm_symbol_table;
@@ -45,7 +46,8 @@ char built_in_func_info_list[BUILT_IN_FUNC_COUNT][3][200] = {
 	{"get_num_groups", "1", "u32 u32 get_num_groups"},
 	{"get_group_id", "1", "u32 u32 get_group_id"},
 	{"get_global_offset", "1", "u32 u32 get_global_offset"},
-	{"barrier", "1", "u32 void barrier"}
+	{"barrier", "1", "u32 void barrier"},
+	{"atan2", "2", "f32 f32 f32 __atan2_f32 f32v2 f32v2 f32v2 __atan2_2f32"}
 };
 
 
@@ -105,8 +107,8 @@ void cl2llvm_built_in_func_analyze(char* name, struct list_t *param_list)
 	int match_found;
 	int args_match;
 	int i;
-	int arg_count;
 	int index1, index2;
+	char error_message[1000];
 	char* arg_string;
 	char type_string[20];
 	char param_spec_name[50];
@@ -117,7 +119,6 @@ void cl2llvm_built_in_func_analyze(char* name, struct list_t *param_list)
 
 	built_in_func_info = hash_table_get(cl2llvm_built_in_func_table, name);
 	arg_string = built_in_func_info->arg_string;
-	arg_count = built_in_func_info->arg_count;
 
 	end_of_string = 0;
 	index1 = 0;
@@ -126,9 +127,11 @@ void cl2llvm_built_in_func_analyze(char* name, struct list_t *param_list)
 
 	while(!end_of_string && !match_found)
 	{
+		arg_types_list = list_create();
 		args_match = 1;
-		for (i = 0; i < built_in_func_info->arg_count && args_match; i++)
+		for (i = 0; i < built_in_func_info->arg_count; i++)
 		{
+			printf("for_loop\n");
 			param = list_get(param_list, i);
 			index2 = 0;
 			while(arg_string[index1] == ' ')
@@ -141,28 +144,35 @@ void cl2llvm_built_in_func_analyze(char* name, struct list_t *param_list)
 				index1++;
 				index2++;
 			}
+			type_string[index2] = '\00';
+			printf("%s\n", type_string);
 			type = string_to_type(type_string);
-			
-			/* If type is void, Create special comparison */
-			if (type->llvm_type == LLVMVoidType() && param == NULL)
-				args_match = 1;
-			/* Only compare signs if type is a vector */
-			else if (LLVMGetTypeKind(param->type->llvm_type) ==
-				LLVMVectorTypeKind)
+			if (args_match)	
 			{
-				if (type->llvm_type == 
-					param->type->llvm_type && type->sign == 
-					param->type->sign)
+				/* If type is void, Create special comparison */
+				if (type->llvm_type == LLVMVoidType() && param == NULL)
 					args_match = 1;
+				/* Only compare signs if type is a vector */
+				else if (LLVMGetTypeKind(param->type->llvm_type) ==
+					LLVMVectorTypeKind)
+				{
+					if (type->llvm_type == 
+						param->type->llvm_type && type->sign == 
+						param->type->sign)
+						args_match = 1;
+					else
+						args_match = 0;
 				}
-			else if (type->llvm_type == param->type->llvm_type)
-				args_match = 1;
-			else
-				args_match = 0;
-
+				else if (type->llvm_type == param->type->llvm_type)
+					args_match = 1;
+				else
+					args_match = 0;
+			}
 			list_add(arg_types_list, type);
 		}
-		if (i == arg_count && args_match)
+
+		printf("%d\n", match_found);
+		if (args_match)
 		{
 			index2 = 0;
 			while (arg_string[index1] == ' ')
@@ -205,23 +215,30 @@ void cl2llvm_built_in_func_analyze(char* name, struct list_t *param_list)
 				index1++;
 			while (arg_string[index1] == ' ')
 				index1++;
-			while (arg_string[index1] != ' ')
+			while (arg_string[index1] != ' ' && arg_string[index1] != '\00')
 				index1++;
 
 		}
 		/* Free types stored in list */
 		LIST_FOR_EACH(arg_types_list, i)
 		{
-			cl2llvm_type_free(list_get(arg_types_list, i));
+			type = list_get(arg_types_list, i);
+			printf("%d\n", LLVMGetTypeKind(type->llvm_type));
+			cl2llvm_type_free(type);
 		}
+		list_free(arg_types_list);
 
 		/* Check for end of string */
 		if (arg_string[index1] == '\00')
 			end_of_string = 1;
 	}
+	printf("%d-2\n", match_found);
 	if (!match_found)
-		cl2llvm_yyerror("param types do not match");
-	list_free(arg_types_list);
+	{
+		cl2llvm_error_built_in_func_arg_mismatch(param_list, built_in_func_info,  
+			name, error_message);
+		cl2llvm_yyerror_fmt("%s", error_message);
+	}
 }
 
 void func_declare(struct list_t *arg_types_list, struct cl2llvm_type_t *ret_type, 
@@ -446,4 +463,122 @@ struct cl2llvm_type_t *string_to_type(char* info_str)
 	ret_type = cl2llvm_type_create_w_init(type, is_signed);
 	
 	return ret_type;
+}
+
+/* This function creates an error message for argument type mismatches based
+   on and arg_info string and a list of the attempted argument types. */
+char *cl2llvm_error_built_in_func_arg_mismatch(struct list_t *param_list,
+	struct cl2llvm_built_in_func_info_t *func_info,  char *func_name, 
+	char *error_message)
+{
+	int index1, index2;
+	int i, j;
+	int end_of_string;
+	char format_arg_str[50];
+	char error_message_cpy[1000];
+	char arg_type_string[50];
+	char* info_string;
+	struct cl2llvm_val_t *param;
+
+	index1 = 0;
+	index1 = 0;
+	j = 0;
+	end_of_string = 0;
+	info_string = func_info->arg_string;
+	error_message[0] = '\00';
+
+	while (!end_of_string)
+	{
+		strcpy(error_message_cpy, error_message);
+		snprintf(error_message, 1000 * sizeof(char),
+			"%s\t\t%s(", error_message_cpy, func_name);
+
+		for (i = 0; i < func_info->arg_count; i++)
+		{
+			index2 = 0;
+					while (info_string[index1] == ' ')
+				index1++;
+			while (info_string[index1] != ' ')
+			{
+				arg_type_string[index2] = info_string[index1];
+				index1++;
+				index2++;
+			}
+			cl2llvm_type_to_string(string_to_type(arg_type_string), format_arg_str);
+
+			strcpy(error_message_cpy, error_message);
+			snprintf(error_message, 1000 * sizeof(char),
+				"%s%s", error_message_cpy, format_arg_str);
+
+			if (i == func_info->arg_count - 1)
+			{
+				strcpy(error_message_cpy, error_message);
+				snprintf(error_message, 1000 * sizeof(char),
+					"%s)\n", error_message_cpy);
+			}
+			else
+			{
+				strcpy(error_message_cpy, error_message);
+				snprintf(error_message, 1000 * sizeof(char),
+					"%s, ", error_message_cpy);
+			}
+		}
+		j++;
+		while (info_string[index1] == ' ')
+			index1++;
+		while (info_string[index1] != ' ')
+			index1++;
+		while (info_string[index1] == ' ')
+			index1++;
+		while (info_string[index1] != ' ' && info_string[index1] != '\00')
+			index1++;
+		if (info_string[index1] == '\00')
+			end_of_string = 1;
+	}
+	if (j > 1)
+	{
+		strcpy(error_message_cpy, error_message);
+		snprintf(error_message, 1000 * sizeof(char),
+			"none of the following instances of overloaded\n"
+			"function '%s' match the argument list\n%s"
+			"arguments are:  "
+			, func_name, error_message_cpy);
+	}
+	else
+	{
+		strcpy(error_message_cpy, error_message);
+		snprintf(error_message, 1000 * sizeof(char),
+			"invalid type of argument for function '%s'\n"
+			"expected:%s"
+			"you have: ", func_name, error_message_cpy);
+	}
+
+	strcpy(error_message_cpy, error_message);
+	snprintf(error_message, 1000 * sizeof(char),
+		"%s%s(", error_message_cpy, func_name);
+	
+	for (i = 0; i < func_info->arg_count; i++)
+	{
+		param = list_get(param_list, i);
+		cl2llvm_type_to_string(param->type, format_arg_str);
+
+		strcpy(error_message_cpy, error_message);
+		snprintf(error_message, 1000 * sizeof(char),
+			"%s%s", error_message_cpy, format_arg_str);
+
+
+		if (i == func_info->arg_count - 1)
+		{
+			strcpy(error_message_cpy, error_message);
+			snprintf(error_message, 1000 * sizeof(char),
+				"%s)\n", error_message_cpy);
+		}
+		else
+		{
+			strcpy(error_message_cpy, error_message);
+			snprintf(error_message, 1000 * sizeof(char),
+				"%s, ", error_message_cpy);
+		}
+	}
+	return error_message;
 }

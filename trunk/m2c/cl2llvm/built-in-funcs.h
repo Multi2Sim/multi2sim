@@ -47,4 +47,10 @@ int *intptr(int num);
 
 struct cl2llvm_type_t *string_to_type(char*);
 
+/* This function creates an error message for argument type mismatches based
+   on and arg_info string and a list of the attempted argument types. */
+char *cl2llvm_error_built_in_func_arg_mismatch(struct list_t *param_list,
+	struct cl2llvm_built_in_func_info_t *func_info,  char *func_name, 
+	char *error_message);
+
 #endif
