@@ -289,7 +289,6 @@ void __cudaRegisterFunction(void **fatCubinHandle,
 
 	/* Add function to stack */
 	list_add(runtime_func_list, function);
-//printf("%p %p\n", list_get(runtime_func_list, 0), *(CUfunction *)list_get(runtime_func_list, 0));
 
 	/* Free */
 	elf_file_free(dev_func_bin);

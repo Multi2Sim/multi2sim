@@ -655,10 +655,13 @@ int cuda_func_cuLaunchKernel(X86Context *ctx)
 	unsigned int extra;
 
 	struct cuda_function_t *function;
+	struct cuda_module_t *module;
+	struct elf_section_t *section;
 	struct cuda_function_arg_t *arg;
 	char arg_name[MAX_STRING_SIZE];
 	unsigned int arg_ptr;
 	unsigned int arg_value;
+	unsigned int arg_count;
 	struct frm_grid_t *grid;
 	int i;
 	struct cuda_abi_frm_kernel_launch_info_t *info;
@@ -693,8 +696,22 @@ int cuda_func_cuLaunchKernel(X86Context *ctx)
 	/* Get function */
 	function = list_get(function_list, function_id);
 
+	/* Get the number of arguments */
+	module = list_get(module_list, function->module_id);
+	for (i = 0; i < list_count(module->elf_file->section_list); ++i)
+	{
+		section = (struct elf_section_t *)list_get(module->elf_file->section_list, i);
+		/* Determine if section is .nv.info.kernel_name */
+		if (!strncmp(section->name, ".nv.info.", 9))
+		{
+			arg_count = ((unsigned char *)section->buffer.ptr)[10] /
+				4;
+			break;
+		}
+	}
+
 	/* Arguments */
-	for (i = 0; i < sizeof(kernelParams); ++i)
+	for (i = 0; i < arg_count; ++i)
 	{
 		/* Get argument value */
 		mem_read(mem, kernelParams + i * 4, sizeof(unsigned int), 
