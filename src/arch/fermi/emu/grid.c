@@ -271,19 +271,19 @@ static void frm_grid_setup_arrays(struct frm_grid_t *grid)
 			thread->grid = grid;
 
 			/* Save thread IDs in special register R0 */
-			thread->sr[FRM_SR_Tid_X].v.i = tid % 
+			thread->sr[FRM_SR_Tid_X].v.u32 = tid % 
 				grid->block_size3[0];
-			thread->sr[FRM_SR_Tid_Y].v.i = tid / 
+			thread->sr[FRM_SR_Tid_Y].v.u32 = tid / 
 				grid->block_size3[0];
-			thread->sr[FRM_SR_Tid_Z].v.i = tid / 
+			thread->sr[FRM_SR_Tid_Z].v.u32 = tid / 
 				(grid->block_size3[0] * grid->block_size3[1]);
 
 			/* Save thread block IDs in special register R1 */
-			thread->sr[FRM_SR_CTAid_X].v.i = bid % 
+			thread->sr[FRM_SR_CTAid_X].v.u32 = bid % 
 				grid->block_count3[0];
-			thread->sr[FRM_SR_CTAid_Y].v.i = bid / 
+			thread->sr[FRM_SR_CTAid_Y].v.u32 = bid / 
 				grid->block_count3[0];
-			thread->sr[FRM_SR_CTAid_Z].v.i = bid / 
+			thread->sr[FRM_SR_CTAid_Z].v.u32 = bid / 
 				(grid->block_count3[0] * grid->block_count3[1]);
 
 			/* Set predicate register #7 to 1 */
