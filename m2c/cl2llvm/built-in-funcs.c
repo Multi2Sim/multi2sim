@@ -37,18 +37,6 @@ extern struct hash_table_t *cl2llvm_symbol_table;
 extern struct hash_table_t *cl2llvm_built_in_func_table;
 extern struct hash_table_t *cl2llvm_declared_built_in_funcs_table;
 
-char built_in_func_info_list[BUILT_IN_FUNC_COUNT][3][200] = {
-	{"get_work_dim", "1", "void u32 get_work_dim"},
-	{"get_global_id", "1", "u32 u32 get_global_id"},
-	{"get_global_size", "1", "u32 u32 get_global_size"},
-	{"get_local_size", "1", "u32 u32 get_local_size"},
-	{"get_local_id", "1", "u32 u32 get_local_id"},
-	{"get_num_groups", "1", "u32 u32 get_num_groups"},
-	{"get_group_id", "1", "u32 u32 get_group_id"},
-	{"get_global_offset", "1", "u32 u32 get_global_offset"},
-	{"barrier", "1", "u32 void barrier"},
-	{"atan2", "2", "f32 f32 f32 __atan2_f32 f32v2 f32v2 f32v2 __atan2_2f32"}
-};
 
 
 
@@ -57,6 +45,19 @@ struct hash_table_t *built_in_func_table_create(void)
 	int i;
 	struct cl2llvm_built_in_func_info_t *built_in_func_info;
 	
+	char built_in_func_info_list[BUILT_IN_FUNC_COUNT][3][400] = {
+		{"get_work_dim", "1", "void u32 get_work_dim"},
+		{"get_global_id", "1", "u32 u32 get_global_id"},
+		{"get_global_size", "1", "u32 u32 get_global_size"},
+		{"get_local_size", "1", "u32 u32 get_local_size"},
+		{"get_local_id", "1", "u32 u32 get_local_id"},
+		{"get_num_groups", "1", "u32 u32 get_num_groups"},
+		{"get_group_id", "1", "u32 u32 get_group_id"},
+		{"get_global_offset", "1", "u32 u32 get_global_offset"},
+		{"barrier", "1", "u32 void barrier"},
+		{"atan2", "2", "f32 f32 f32 __atan2_f32 f32v2 f32v2 f32v2 __atan2_2f32 f32v3 f32v3 f32v3 __atan2_3f32 f32v4 f32v4 f32v4 __atan2_4f32 f32v8 f32v8 f32v8 __atan2_8f32 f32v16 f32v16 f32v16 __atan2_16f32 f64 f64 f64 __atan2_f64 f64v2 f64v2 f62v2 __atan2_2f64 f64v3 f64v3 f64v3 __atan2_3f64 f64v4 f64v4 f64v4 __atan2_4f64 f64v8 f64v8 f64v8 __atan2_8f64 f64v16 f64v16 f64v16 __atan2_16f64"}
+	};
+
 
 	/* Create hash table */
 	struct hash_table_t *built_in_func_table = hash_table_create(200, 1);
@@ -123,7 +124,6 @@ void cl2llvm_built_in_func_analyze(char* name, struct list_t *param_list)
 	end_of_string = 0;
 	index1 = 0;
 	match_found = 0;
-	arg_types_list = list_create();
 
 	while(!end_of_string && !match_found)
 	{
@@ -157,7 +157,9 @@ void cl2llvm_built_in_func_analyze(char* name, struct list_t *param_list)
 					if (type->llvm_type == 
 						param->type->llvm_type && type->sign == 
 						param->type->sign)
+						{
 						args_match = 1;
+						}
 					else
 						args_match = 0;
 				}
@@ -386,7 +388,7 @@ struct cl2llvm_type_t *string_to_type(char* info_str)
 	else if (info_str[i] == '6')
 	{
 		i++;
-		if (info_str[++i] == '4')
+		if (info_str[i] == '4')
 		{
 			i++;
 			if (is_int)
