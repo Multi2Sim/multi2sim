@@ -20,9 +20,9 @@
 
 #include <arch/southern-islands/asm/arg.h>
 #include <arch/southern-islands/asm/bin-file.h>
+#include <lib/class/elf-writer.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
-#include <lib/util/elf-encode.h>
 #include <lib/util/list.h>
 #include <lib/util/string.h>
 
@@ -55,7 +55,7 @@ struct si2bin_outer_bin_t *si2bin_outer_bin_create(void)
 	outer_bin = xcalloc(1, sizeof(struct si2bin_outer_bin_t));
 
 	/* Create Lists */
-	outer_bin->file = elf_enc_file_create();
+	outer_bin->writer = new(ELFWriter);
 	outer_bin->data_list = list_create();
 	outer_bin->inner_bin_list = list_create();
 	outer_bin->metadata_list = list_create();
@@ -69,7 +69,7 @@ void si2bin_outer_bin_free(struct si2bin_outer_bin_t *outer_bin)
 {
 	int i;
 
-	elf_enc_file_free(outer_bin->file);
+	delete(outer_bin->writer);
 
 	LIST_FOR_EACH(outer_bin->data_list, i)
 	{
@@ -107,24 +107,24 @@ void si2bin_outer_bin_add(struct si2bin_outer_bin_t *outer_bin,
 }
 
 void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
-		struct elf_enc_buffer_t *buffer)
+		ELFWriterBuffer *buffer)
 {
 	struct si2bin_inner_bin_t *inner_bin;
 	struct si2bin_inner_bin_entry_t *entry;
 	struct si2bin_inner_bin_note_t *note;
 
-	struct elf_enc_section_t *text_section;
-	struct elf_enc_section_t *rodata_section;
-	struct elf_enc_symbol_table_t *symbol_table;
-	struct elf_enc_buffer_t *rodata_buffer;
-	struct elf_enc_buffer_t *text_buffer;
-	struct elf_enc_buffer_t *kernel_buffer;
-	struct elf_enc_symbol_t *global_symbol;
-	struct elf_enc_symbol_t *header_symbol;
-	struct elf_enc_symbol_t *metadata_symbol;
-	struct elf_enc_symbol_t *kernel_symbol;
-	struct elf_enc_symbol_t *uav_symbol;
-	struct elf_enc_symbol_t *cb_symbol;
+	ELFWriterSection *text_section;
+	ELFWriterSection *rodata_section;
+	ELFWriterSymbolTable *symbol_table;
+	ELFWriterBuffer *rodata_buffer;
+	ELFWriterBuffer *text_buffer;
+	ELFWriterBuffer *kernel_buffer;
+	ELFWriterSymbol *global_symbol;
+	ELFWriterSymbol *header_symbol;
+	ELFWriterSymbol *metadata_symbol;
+	ELFWriterSymbol *kernel_symbol;
+	ELFWriterSymbol *uav_symbol;
+	ELFWriterSymbol *cb_symbol;
 
 	struct si2bin_metadata_t *metadata;
 	struct si_arg_t *arg;
@@ -165,17 +165,17 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 
 
 	/* Create Text Section */
-	text_buffer = elf_enc_buffer_create();
-	text_section = elf_enc_section_create(".text", text_buffer, text_buffer);
+	text_buffer = new(ELFWriterBuffer);
+	text_section = new(ELFWriterSection, ".text", text_buffer, text_buffer);
 	text_section->header.sh_type = SHT_PROGBITS;
 	text_section->header.sh_flags = SHF_EXECINSTR | SHF_ALLOC;
 
 	/* Create .symtab section and .strtab section */
-	symbol_table = elf_enc_symbol_table_create(".symtab", ".strtab");
+	symbol_table = new(ELFWriterSymbolTable, ".symtab", ".strtab");
 
 	/* Create .rodata section */
-	rodata_buffer = elf_enc_buffer_create();
-	rodata_section = elf_enc_section_create(".rodata", rodata_buffer, rodata_buffer);
+	rodata_buffer = new(ELFWriterBuffer);
+	rodata_section = new(ELFWriterSection, ".rodata", rodata_buffer, rodata_buffer);
 	rodata_section->header.sh_type = SHT_PROGBITS;
 	rodata_section->header.sh_flags = SHF_ALLOC;
 
@@ -195,25 +195,25 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 					break;
 
 				case si2bin_data_float:
-					elf_enc_buffer_write(rodata_buffer, 
+					ELFWriterBufferWrite(rodata_buffer, 
 						&data->float_value, 
 						sizeof(float));
 					break;
 				
 				case si2bin_data_word:
-					elf_enc_buffer_write(rodata_buffer, 
+					ELFWriterBufferWrite(rodata_buffer, 
 						&data->word_value, 
 						sizeof(unsigned int));
 					break;
 				
 				case si2bin_data_half:
-					elf_enc_buffer_write(rodata_buffer, 
+					ELFWriterBufferWrite(rodata_buffer, 
 						&data->half_value, 
 						sizeof(unsigned short));
 					break;
 				
 				case si2bin_data_byte:
-					elf_enc_buffer_write(rodata_buffer, 
+					ELFWriterBufferWrite(rodata_buffer, 
 						&data->byte_value, 
 						sizeof(unsigned char));
 					break;
@@ -223,7 +223,7 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 		/* Global section has to have a size that is a multiple of 16 */
 		while ((rodata_buffer->offset % 16) != 0)
 		{
-			elf_enc_buffer_write(rodata_buffer, &byte,
+			ELFWriterBufferWrite(rodata_buffer, &byte,
 				sizeof(unsigned char));
 		}
 		
@@ -234,12 +234,12 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 		/* Add global symbol correspoding to data elements */
 		snprintf(line, sizeof line, "__OpenCL_%d_global", 2);
 
-		global_symbol = elf_enc_symbol_create(line);
+		global_symbol = new(ELFWriterSymbol, line);
 		global_symbol->symbol.st_shndx = 4;
 		global_symbol->symbol.st_size = rodata_buffer->offset - rodata_size;
 		global_symbol->symbol.st_value = rodata_size;
 		global_symbol->symbol.st_info = ELF32_ST_TYPE(STT_OBJECT);
-		elf_enc_symbol_table_add(symbol_table, global_symbol);
+		ELFWriterSymbolTableAdd(symbol_table, global_symbol);
 
 		rodata_size = rodata_buffer->offset;
 	}
@@ -257,7 +257,7 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 		for (j = 0; j < MAX_CB_NUM; j++)
 			cb[j] = 0;
 
-		kernel_buffer = elf_enc_buffer_create();
+		kernel_buffer = new(ELFWriterBuffer);
 
 
 		/* Initial Inner ELF settings */
@@ -266,10 +266,10 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 		metadata = list_get(outer_bin->metadata_list, i);
 		entry = list_get(inner_bin->entry_list, 0);
 
-		inner_bin->file->header.e_machine = 0x7d;
-		inner_bin->file->header.e_version = 1;
-		inner_bin->file->header.e_ident[EI_OSABI] = 0x64;
-		inner_bin->file->header.e_ident[EI_ABIVERSION] = 1;
+		inner_bin->writer->header.e_machine = 0x7d;
+		inner_bin->writer->header.e_version = 1;
+		inner_bin->writer->header.e_ident[EI_OSABI] = 0x64;
+		inner_bin->writer->header.e_ident[EI_ABIVERSION] = 1;
 
 		entry->header.d_type = 4;	/* ???? */
 
@@ -296,31 +296,31 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 
 		/* Print kernel name */
 		snprintf(line, sizeof line, ";ARGSTART:__OpenCL_%s_kernel\n", inner_bin->name);
-		elf_enc_buffer_write(rodata_buffer, line, strlen(line));
+		ELFWriterBufferWrite(rodata_buffer, line, strlen(line));
 
 		/* Version */
 		snprintf(line, sizeof line, ";version:3:1:104\n");
-		elf_enc_buffer_write(rodata_buffer, line, strlen(line));
+		ELFWriterBufferWrite(rodata_buffer, line, strlen(line));
 
 		/* Device */
 		snprintf(line, sizeof line, ";device:%s\n", str_map_value(&si2bin_outer_bin_device_map, outer_bin->device));
-		elf_enc_buffer_write(rodata_buffer, line, strlen(line));
+		ELFWriterBufferWrite(rodata_buffer, line, strlen(line));
 
 		/* Unique ID */
 		snprintf(line, sizeof line, ";uniqueid:%d\n", metadata->uniqueid);
-		elf_enc_buffer_write(rodata_buffer, line, strlen(line));
+		ELFWriterBufferWrite(rodata_buffer, line, strlen(line));
 
 		/* Memory - uavprivate */
 		snprintf(line, sizeof line, ";memory:uavprivate:%d\n", metadata->uavprivate);
-		elf_enc_buffer_write(rodata_buffer, line, strlen(line));
+		ELFWriterBufferWrite(rodata_buffer, line, strlen(line));
 
 		/* Memory - hwregion */
 		snprintf(line, sizeof line, ";memory:hwregion:%d\n", metadata->hwregion);
-		elf_enc_buffer_write(rodata_buffer, line, strlen(line));
+		ELFWriterBufferWrite(rodata_buffer, line, strlen(line));
 
 		/* Memory - hwlocal */
 		snprintf(line, sizeof line, ";memory:hwlocal:%d\n", metadata->hwlocal);
-		elf_enc_buffer_write(rodata_buffer, line, strlen(line));
+		ELFWriterBufferWrite(rodata_buffer, line, strlen(line));
 
 
 		LIST_FOR_EACH(metadata->arg_list, j)
@@ -367,13 +367,13 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 						uav[arg->pointer.buffer_num] = 1;
 					}
 
-					elf_enc_buffer_write(rodata_buffer, line, strlen(line));
+					ELFWriterBufferWrite(rodata_buffer, line, strlen(line));
 					
 					/* Include const_arg line only if pointer is marked with "const" */
 					if (arg->constarg)
 					{
 						snprintf(line, sizeof line, ";constarg:%d:%s\n", j, arg->name);
-						elf_enc_buffer_write(rodata_buffer, line, strlen(line));
+						ELFWriterBufferWrite(rodata_buffer, line, strlen(line));
 					}
 
 					break;
@@ -396,7 +396,7 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 
 					offset = arg->value.constant_offset;
 
-					elf_enc_buffer_write(rodata_buffer, line, strlen(line));
+					ELFWriterBufferWrite(rodata_buffer, line, strlen(line));
 					
 					/* Include const_arg line only if pointer is marked with "const" */
 					if (arg->constarg)
@@ -405,7 +405,7 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 							";constarg:%d:%s\n",
 							j, arg->name);
 						
-						elf_enc_buffer_write(rodata_buffer, line, strlen(line));
+						ELFWriterBufferWrite(rodata_buffer, line, strlen(line));
 					}
 
 
@@ -420,17 +420,17 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 		if (list_count(outer_bin->data_list) > 0)
 		{
 			snprintf(line, sizeof line, ";memory:datareqd\n");
-			elf_enc_buffer_write(rodata_buffer, line, strlen(line));
+			ELFWriterBufferWrite(rodata_buffer, line, strlen(line));
 		}
 
 		/* Function ID */
 		snprintf(line, sizeof line, 
 			";function:1:%d\n", metadata->uniqueid + 3);
-		elf_enc_buffer_write(rodata_buffer, line, strlen(line));
+		ELFWriterBufferWrite(rodata_buffer, line, strlen(line));
 
 		/* Private ID */
 		snprintf(line, sizeof line, ";privateid:%d\n", 8);
-		elf_enc_buffer_write(rodata_buffer, line, strlen(line));
+		ELFWriterBufferWrite(rodata_buffer, line, strlen(line));
 
 		/* Reflections */
 		LIST_FOR_EACH(metadata->arg_list, j)
@@ -461,7 +461,7 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 						fatal("Invalid number of elements in argument: %s", arg->name);
 					}
 
-					elf_enc_buffer_write(rodata_buffer, line, strlen(line));
+					ELFWriterBufferWrite(rodata_buffer, line, strlen(line));
 
 					break;
 
@@ -487,7 +487,7 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 						fatal("Invalid number of elements in argument: %s", arg->name);
 					}
 
-					elf_enc_buffer_write(rodata_buffer, line, strlen(line));
+					ELFWriterBufferWrite(rodata_buffer, line, strlen(line));
 
 					break;
 
@@ -500,18 +500,18 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 		/* ARGEND */
 		snprintf(line, sizeof line, ";ARGEND:__OpenCL_%s_kernel\n",
 			inner_bin->name);
-		elf_enc_buffer_write(rodata_buffer, line, strlen(line));
+		ELFWriterBufferWrite(rodata_buffer, line, strlen(line));
 
 		/* Create metadata symbol and store it */
 		snprintf(line, sizeof line, "__OpenCL_%s_metadata", 
 			inner_bin->name);
 
-		metadata_symbol = elf_enc_symbol_create(line);
+		metadata_symbol = new(ELFWriterSymbol, line);
 		metadata_symbol->symbol.st_shndx = 4;
 		metadata_symbol->symbol.st_size = rodata_buffer->offset - rodata_size;
 		metadata_symbol->symbol.st_value = rodata_size;
 		metadata_symbol->symbol.st_info = ELF32_ST_TYPE(STT_OBJECT);
-		elf_enc_symbol_table_add(symbol_table, metadata_symbol);
+		ELFWriterSymbolTableAdd(symbol_table, metadata_symbol);
 
 		/* Increment rodata size */
 		rodata_size = rodata_buffer->offset;
@@ -522,12 +522,12 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 		snprintf(line, sizeof line, "__OpenCL_%s_header", 
 			inner_bin->name);
 
-		header_symbol = elf_enc_symbol_create(line);
+		header_symbol = new(ELFWriterSymbol, line);
 		header_symbol->symbol.st_shndx = 4;
 		header_symbol->symbol.st_size = 32;
 		header_symbol->symbol.st_value = rodata_size;
 		header_symbol->symbol.st_info = ELF32_ST_TYPE(STT_OBJECT);
-		elf_enc_symbol_table_add(symbol_table, header_symbol);
+		ELFWriterSymbolTableAdd(symbol_table, header_symbol);
 
 		/* Create header - Header is not always set the way it is here but
 		 * changing it does not seem to affect the program
@@ -535,7 +535,7 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 
 		ptr = xcalloc(1, 32);
 		ptr[20] = 1;
-		elf_enc_buffer_write(rodata_buffer, ptr, 32);
+		ELFWriterBufferWrite(rodata_buffer, ptr, 32);
 		free(ptr);
 
 		rodata_size = rodata_buffer->offset;
@@ -577,10 +577,10 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 				continue;
 		
 			snprintf(line, sizeof line, "uav%d", k);
-			uav_symbol = elf_enc_symbol_create(line);
+			uav_symbol = new(ELFWriterSymbol, line);
 			uav_symbol->symbol.st_value = buff_num_offset;
 			uav_symbol->symbol.st_shndx = 16;
-			elf_enc_symbol_table_add(entry->symbol_table, uav_symbol);
+			ELFWriterSymbolTableAdd(entry->symbol_table, uav_symbol);
 
 			ptr[buff_num_offset * 16] = k;
 			ptr[buff_num_offset * 16 + 4] = 4;
@@ -685,10 +685,10 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 			{
 				snprintf(line, sizeof line, "cb%d", k);
 
-				cb_symbol = elf_enc_symbol_create(line);
+				cb_symbol = new(ELFWriterSymbol, line);
 				cb_symbol->symbol.st_value = buff_num_offset - 1;
 				cb_symbol->symbol.st_shndx = 10;
-				elf_enc_symbol_table_add(entry->symbol_table, cb_symbol);
+				ELFWriterSymbolTableAdd(entry->symbol_table, cb_symbol);
 				
 			
 				ptr[(buff_num_offset - 1) * 8] = k;
@@ -921,7 +921,7 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 
 		/* Data Section - Not supported yet (section is empty right now) */
 		ptr = xcalloc(1, 4736);
-		elf_enc_buffer_write(entry->data_section_buffer, ptr, 4736);
+		ELFWriterBufferWrite(entry->data_section_buffer, ptr, 4736);
 		free(ptr);
 
 
@@ -929,29 +929,29 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 		si2bin_inner_bin_generate(inner_bin, kernel_buffer);
 			
 		/* Output Inner ELF */
-		/* FILE *f;
+		 FILE *f;
 		snprintf(line, sizeof line, "%s_kernel", inner_bin->name);
-		f = file_open_for_write(line);
-		elf_enc_buffer_write_to_file(kernel_buffer, f);
-		file_close(f); */
+		f = fopen(line, "w");
+		ELFWriterBufferWriteToFile(kernel_buffer, f);
+		fclose(f); 
 
 	
 		/* Create kernel symbol and add it to the symbol table */
 		snprintf(line, sizeof line, "__OpenCL_%s_kernel", inner_bin->name);
 
-		kernel_symbol = elf_enc_symbol_create(line);
+		kernel_symbol = new(ELFWriterSymbol, line);
 		kernel_symbol->symbol.st_shndx = 5;
 		kernel_symbol->symbol.st_size = kernel_buffer->offset;
 		kernel_symbol->symbol.st_value = text_buffer->offset;
 		kernel_symbol->symbol.st_info =  ELF32_ST_TYPE(STT_FUNC);
-		elf_enc_symbol_table_add(symbol_table, kernel_symbol);
+		ELFWriterSymbolTableAdd(symbol_table, kernel_symbol);
 
 
-		elf_enc_buffer_write(text_buffer, kernel_buffer->ptr,
+		ELFWriterBufferWrite(text_buffer, kernel_buffer->ptr,
 			kernel_buffer->offset);
 
 
-		elf_enc_buffer_free(kernel_buffer);
+		delete(kernel_buffer);
 
 	}
 	
@@ -959,35 +959,35 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 	switch (outer_bin->device)
 	{
 		case si2bin_outer_bin_cape_verde:
-			outer_bin->file->header.e_machine = 0x3ff;
+			outer_bin->writer->header.e_machine = 0x3ff;
 			break;
 
 		case si2bin_outer_bin_pitcairn:
-			outer_bin->file->header.e_machine = 0x3fe;
+			outer_bin->writer->header.e_machine = 0x3fe;
 			break;
 
 		case si2bin_outer_bin_tahiti:
-			outer_bin->file->header.e_machine = 0x3fd;
+			outer_bin->writer->header.e_machine = 0x3fd;
 			break;
 
 		default:
 			fatal("%s: unrecognized device type", __FUNCTION__);
 	}
         
-	outer_bin->file->header.e_version = 1;
+	outer_bin->writer->header.e_version = 1;
 
 	/* Add symbol table to outer elf */
-        elf_enc_file_add_symbol_table(outer_bin->file, symbol_table);
+        ELFWriterAddSymbolTable(outer_bin->writer, symbol_table);
 	
 	/* Create and rodata section and add it to outer elf */
-        elf_enc_file_add_buffer(outer_bin->file, rodata_buffer);
-        elf_enc_file_add_section(outer_bin->file, rodata_section);
+        ELFWriterAddBuffer(outer_bin->writer, rodata_buffer);
+        ELFWriterAddSection(outer_bin->writer, rodata_section);
 
 	/* Create text section and add it to outer elf */
-        elf_enc_file_add_buffer(outer_bin->file, text_buffer);
-        elf_enc_file_add_section(outer_bin->file, text_section);
+        ELFWriterAddBuffer(outer_bin->writer, text_buffer);
+        ELFWriterAddSection(outer_bin->writer, text_section);
 
 	/* Generate final binary */
-        elf_enc_file_generate(outer_bin->file, buffer);
+        ELFWriterGenerate(outer_bin->writer, buffer);
 }
 

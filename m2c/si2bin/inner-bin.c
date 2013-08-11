@@ -19,9 +19,10 @@
 
 
 #include <arch/southern-islands/asm/bin-file.h>
+#include <lib/class/elf-writer.h>
+#include <lib/class/array.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
-#include <lib/util/elf-encode.h>
 #include <lib/util/list.h>
 #include <lib/util/string.h>
 
@@ -63,7 +64,7 @@ void si2bin_inner_bin_note_free(struct si2bin_inner_bin_note_t *note)
 }
 
 
-void si2bin_inner_bin_note_dump(struct elf_enc_buffer_t *buffer, FILE *fp)
+void si2bin_inner_bin_note_dump(ELFWriterBuffer *buffer, FILE *fp)
 {
 	int offset;
 	int descsz;
@@ -71,7 +72,7 @@ void si2bin_inner_bin_note_dump(struct elf_enc_buffer_t *buffer, FILE *fp)
 
 	char *note_type_str;
 
-	struct elf_enc_buffer_t *payload;
+	ELFWriterBuffer *payload;
 
 	descsz = 0;
 	offset = 0;
@@ -94,11 +95,11 @@ void si2bin_inner_bin_note_dump(struct elf_enc_buffer_t *buffer, FILE *fp)
 		fprintf(fp, "\n Name: %s\n", (char *)(buffer->ptr + offset));
 		offset += 8;
 
-		payload = elf_enc_buffer_create();
-		elf_enc_buffer_write(payload, buffer->ptr + offset, descsz);
-		elf_enc_buffer_dump(payload, fp);
+		payload = new(ELFWriterBuffer);
+		ELFWriterBufferWrite(payload, buffer->ptr + offset, descsz);
+		ELFWriterBufferDump(asObject(payload), fp);
 		fprintf(fp, "\n\n");
-		elf_enc_buffer_free(payload);
+		delete(payload);
 		
 		offset += descsz;
 
@@ -123,23 +124,23 @@ struct si2bin_inner_bin_entry_t *si2bin_inner_bin_entry_create(void)
 	entry = xcalloc(1, sizeof(struct si2bin_inner_bin_entry_t));
 
 	/* Text Section Initialization */
-	entry->text_section_buffer = elf_enc_buffer_create();
-	entry->text_section = elf_enc_section_create(".text", entry->text_section_buffer, 
+	entry->text_section_buffer = new(ELFWriterBuffer);
+	entry->text_section = new(ELFWriterSection, ".text", entry->text_section_buffer, 
 			entry->text_section_buffer);
 	entry->text_section->header.sh_type = SHT_PROGBITS;
 
 	/* Data Section Initialization */
-	entry->data_section_buffer = elf_enc_buffer_create();
-	entry->data_section = elf_enc_section_create(".data", entry->data_section_buffer, 
+	entry->data_section_buffer = new(ELFWriterBuffer);
+	entry->data_section = new(ELFWriterSection, ".data", entry->data_section_buffer, 
 			entry->data_section_buffer);
 	entry->data_section->header.sh_type = SHT_PROGBITS;
 	
 	/* Symbol Table Initialization */
-	entry->symbol_table = elf_enc_symbol_table_create(".symtab", ".strtab");
+	entry->symbol_table = new(ELFWriterSymbolTable, ".symtab", ".strtab");
 
 	/* Make note list and buffer for note segment */
 	entry->note_list = list_create();
-	entry->note_buffer = elf_enc_buffer_create();
+	entry->note_buffer = new(ELFWriterBuffer);
 
 	
 	/* Return */
@@ -178,20 +179,20 @@ void si2bin_inner_bin_entry_add_note(struct si2bin_inner_bin_entry_t *entry,
 struct si2bin_inner_bin_t *si2bin_inner_bin_create(char *name)
 {
 	struct si2bin_inner_bin_t *bin;
-	struct elf_enc_buffer_t *buffer;
-	struct elf_enc_segment_t *segment;
+	ELFWriterBuffer *buffer;
+	ELFWriterSegment *segment;
 
 	/* Initialize */
 	bin = xcalloc(1, sizeof(struct si2bin_inner_bin_t));
-	bin->file = elf_enc_file_create();
+	bin->writer = new(ELFWriter);
 	bin->entry_list = list_create();
 	
 	/* Create buffer and segment for encoding dictionary */
-	buffer = elf_enc_buffer_create();
-	elf_enc_file_add_buffer(bin->file, buffer);
+	buffer = new(ELFWriterBuffer);
+	ELFWriterAddBuffer(bin->writer, buffer);
 	
-	segment = elf_enc_segment_create("Encoding Dictionary", buffer, buffer);
-	elf_enc_file_add_segment(bin->file, segment);
+	segment = new(ELFWriterSegment, "Encoding Dictionary", buffer, buffer);
+	ELFWriterAddSegment(bin->writer, segment);
 
 	segment->header.p_type = PT_LOPROC + 2;
 
@@ -217,8 +218,8 @@ void si2bin_inner_bin_free(struct si2bin_inner_bin_t *bin)
 		si2bin_inner_bin_entry_free(list_get(bin->entry_list ,i));
 	list_free(bin->entry_list);
 
-	/* Free elf_enc_file */
-	elf_enc_file_free(bin->file);
+	/* Free ELFWriter */
+	delete(bin->writer);
 
 	/* Free kernel name */
 	free(bin->name);
@@ -274,36 +275,36 @@ void si2bin_inner_bin_add_user_element(struct si2bin_inner_bin_t *bin,
 void si2bin_inner_bin_add_entry(struct si2bin_inner_bin_t *bin,
 		struct si2bin_inner_bin_entry_t *entry)
 {
-	struct elf_enc_segment_t *note_segment;
-	struct elf_enc_segment_t *load_segment;
+	ELFWriterSegment *note_segment;
+	ELFWriterSegment *load_segment;
 	
 	/* Add entry */
 	list_add(bin->entry_list, entry);
 	
 	/* Add note_buffer and create note segment */
-	elf_enc_file_add_buffer(bin->file, entry->note_buffer);
+	ELFWriterAddBuffer(bin->writer, entry->note_buffer);
 
-	note_segment = elf_enc_segment_create("Note Segment", entry->note_buffer,
+	note_segment = new(ELFWriterSegment, "Note Segment", entry->note_buffer,
 			entry->note_buffer);
-	elf_enc_file_add_segment(bin->file, note_segment);
+	ELFWriterAddSegment(bin->writer, note_segment);
 
 	note_segment->header.p_type = PT_NOTE;
 
 	/* Add text section and text buffer section to elf_enc_file */
-	elf_enc_file_add_buffer(bin->file, entry->text_section_buffer);
-	elf_enc_file_add_section(bin->file, entry->text_section);
+	ELFWriterAddBuffer(bin->writer, entry->text_section_buffer);
+	ELFWriterAddSection(bin->writer, entry->text_section);
 
 	/* Add data section and data buffer section to elf_enc_file */
-	elf_enc_file_add_buffer(bin->file, entry->data_section_buffer);
-	elf_enc_file_add_section(bin->file, entry->data_section);
+	ELFWriterAddBuffer(bin->writer, entry->data_section_buffer);
+	ELFWriterAddSection(bin->writer, entry->data_section);
 	
 	/* Add symbol table section and text buffer section to elf_enc_file */
-	elf_enc_file_add_symbol_table(bin->file, entry->symbol_table);
+	ELFWriterAddSymbolTable(bin->writer, entry->symbol_table);
 
 	/* Create load segment */
-	load_segment = elf_enc_segment_create("Load Segment", entry->text_section_buffer,
+	load_segment = new(ELFWriterSegment, "Load Segment", entry->text_section_buffer,
 			entry->symbol_table->string_table_buffer);
-	elf_enc_file_add_segment(bin->file, load_segment);
+	ELFWriterAddSegment(bin->writer, load_segment);
 
 	load_segment->header.p_type = PT_LOAD;
 
@@ -311,7 +312,7 @@ void si2bin_inner_bin_add_entry(struct si2bin_inner_bin_t *bin,
 }
 
 
-void si2bin_inner_bin_generate(struct si2bin_inner_bin_t *bin, struct elf_enc_buffer_t *bin_buffer)
+void si2bin_inner_bin_generate(struct si2bin_inner_bin_t *bin, ELFWriterBuffer *bin_buffer)
 {
 	int i;
 	int namesz;
@@ -319,19 +320,22 @@ void si2bin_inner_bin_generate(struct si2bin_inner_bin_t *bin, struct elf_enc_bu
 	int end;
 	int buf_offset;
 	int phtab_size;
+
 	char *name;
+
 	struct si2bin_inner_bin_note_t *note;
 	struct si2bin_inner_bin_entry_t *entry;
-	struct elf_enc_buffer_t *enc_dict;
-	struct elf_enc_buffer_t *buffer;
+	
+	ELFWriterBuffer *enc_dict;
+	ELFWriterBuffer *buffer;
 
 
 	namesz = 8;
 	name = "ATI CAL";
 
-	enc_dict = list_get(bin->file->buffer_list, 2);
+	enc_dict = asELFWriterBuffer(ArrayGet(bin->writer->buffer_array, 2));
 
-	phtab_size = sizeof(Elf32_Phdr) * list_count(bin->file->segment_list);
+	phtab_size = sizeof(Elf32_Phdr) * bin->writer->segment_array->count;
 
 	LIST_FOR_EACH(bin->entry_list, i)
 	{
@@ -342,11 +346,11 @@ void si2bin_inner_bin_generate(struct si2bin_inner_bin_t *bin, struct elf_enc_bu
 
 			/* Write name, size, type, etc. to buffer */
 			note = list_get(entry->note_list, i);
-			elf_enc_buffer_write(entry->note_buffer, &namesz, 4);
-			elf_enc_buffer_write(entry->note_buffer, &note->size, 4);
-			elf_enc_buffer_write(entry->note_buffer, &note->type, 4);
-			elf_enc_buffer_write(entry->note_buffer, name, 8);
-			elf_enc_buffer_write(entry->note_buffer, note->payload,
+			ELFWriterBufferWrite(entry->note_buffer, &namesz, 4);
+			ELFWriterBufferWrite(entry->note_buffer, &note->size, 4);
+			ELFWriterBufferWrite(entry->note_buffer, &note->type, 4);
+			ELFWriterBufferWrite(entry->note_buffer, name, 8);
+			ELFWriterBufferWrite(entry->note_buffer, note->payload,
 					note->size);
 		}
 
@@ -356,7 +360,7 @@ void si2bin_inner_bin_generate(struct si2bin_inner_bin_t *bin, struct elf_enc_bu
 		/* Calculate offset and type for enc_dict */
 		for(i = start; i <= end; i++)
 		{
-			buffer = list_get(bin->file->buffer_list, i);
+			buffer = asELFWriterBuffer(ArrayGet(bin->writer->buffer_array, i));
 			entry->header.d_size += buffer->size;
 		}
 		
@@ -364,7 +368,7 @@ void si2bin_inner_bin_generate(struct si2bin_inner_bin_t *bin, struct elf_enc_bu
 		
 		for(i = 0; i < start; i++)
 		{	
-			buffer = list_get(bin->file->buffer_list, i);
+			buffer = asELFWriterBuffer(ArrayGet(bin->writer->buffer_array, i));
 			buf_offset += buffer->size;
 		}
 
@@ -374,7 +378,7 @@ void si2bin_inner_bin_generate(struct si2bin_inner_bin_t *bin, struct elf_enc_bu
 
 
 		/* Write information to enc_dict */
-		elf_enc_buffer_write(enc_dict, &entry->header,
+		ELFWriterBufferWrite(enc_dict, &entry->header,
 				sizeof(struct si2bin_inner_bin_entry_header_t));
 
 	}
@@ -383,7 +387,7 @@ void si2bin_inner_bin_generate(struct si2bin_inner_bin_t *bin, struct elf_enc_bu
 
 	
 	/* Write elf_enc_file to buffer */
-	elf_enc_file_generate(bin->file, bin_buffer);
+	ELFWriterGenerate(bin->writer, bin_buffer);
 	
 }
 

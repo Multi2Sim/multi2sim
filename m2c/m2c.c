@@ -585,6 +585,7 @@ void m2c_init(void)
 	CLASS_REGISTER(ELFWriterBuffer);
 	CLASS_REGISTER(ELFWriterSection);
 	CLASS_REGISTER(ELFWriterSegment);
+	CLASS_REGISTER(ELFWriterSymbol);
 	CLASS_REGISTER(ELFWriterSymbolTable);
 	CLASS_REGISTER(ELFWriter);
 
