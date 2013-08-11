@@ -26,8 +26,8 @@
 
 #include <arch/southern-islands/asm/arg.h>
 #include <arch/southern-islands/asm/bin-file.h>
+#include <lib/class/elf-writer.h>
 #include <lib/util/debug.h>
-#include <lib/util/elf-encode.h>
 #include <lib/util/hash-table.h>
 #include <lib/util/list.h>
 #include <lib/util/string.h>
@@ -710,7 +710,7 @@ text_stmt
 
 		/* Generate code */
 		si2bin_inst_gen(inst);
-		elf_enc_buffer_write(si2bin_entry->text_section_buffer, inst->inst_bytes.byte, inst->size);
+		ELFWriterBufferWrite(si2bin_entry->text_section_buffer, inst->inst_bytes.byte, inst->size);
 		
 		/* Dump Instruction Info */
 		//si2bin_inst_dump(inst, stdout);

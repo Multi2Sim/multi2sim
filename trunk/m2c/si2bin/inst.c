@@ -18,9 +18,9 @@
  */
 
 
+#include <lib/class/elf-writer.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
-#include <lib/util/elf-encode.h>
 #include <lib/util/hash-table.h>
 #include <lib/util/list.h>
 #include <lib/util/string.h>
