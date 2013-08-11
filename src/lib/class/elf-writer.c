@@ -611,14 +611,22 @@ void ELFWriterGenerate(ELFWriter *self, ELFWriterBuffer *out_buffer)
 	/* Create Section Header Table */
 	Elf32_Shdr shtab[self->section_array->count];
 	
+	i = 0;
 	/* Enter section headers into section header string table */
 	ArrayForEach(self->section_array, section, ELFWriterSection)
+	{
 		shtab[i] = section->header;
+		i++;
+	}
 
 	/* Create program header table */
 	Elf32_Phdr phtab[self->segment_array->count];
+	i = 0;
 	ArrayForEach(self->segment_array, segment, ELFWriterSegment)
+	{
 		phtab[i] = segment->header;
+		i++;
+	}
 	
 	/* Calculate total size of buffers. Needed to calculate offset 
 	 * for section header table. Section header table is typically 

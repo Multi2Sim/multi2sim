@@ -19,9 +19,9 @@
 
 #include <stdarg.h>
 
+#include <lib/class/elf-writer.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
-#include <lib/util/elf-encode.h>
 #include <lib/util/list.h>
 
 #include "inst-info.h"
@@ -46,9 +46,10 @@ char *si2bin_source_file;
  * 'si2bin_compile()' */
 struct si2bin_outer_bin_t *si2bin_outer_bin;
 struct si2bin_inner_bin_entry_t *si2bin_entry;
-struct elf_enc_buffer_t *bin_buffer;
 struct si2bin_inner_bin_t *si2bin_inner_bin;
 struct si2bin_metadata_t *si2bin_metadata;
+
+ELFWriterBuffer *bin_buffer;
 
 int si2bin_uniqueid = 1024;
 
@@ -128,7 +129,7 @@ void si2bin_compile(struct list_t *source_file_list,
 
 		/* Create output buffer */
 		si2bin_outer_bin = si2bin_outer_bin_create();
-		bin_buffer = elf_enc_buffer_create();
+		bin_buffer = new(ELFWriterBuffer);
 		
 		/* Parse input */
 		si2bin_yyparse();
@@ -140,11 +141,11 @@ void si2bin_compile(struct list_t *source_file_list,
 		si2bin_outer_bin_generate(si2bin_outer_bin, bin_buffer);
 		
 		/* Write contents of buffer to file */
-		elf_enc_buffer_write_to_file(bin_buffer, f);
+		ELFWriterBufferWriteToFile(bin_buffer, f);
 
 		/* Free Outer ELF and bin_buffer */
 		si2bin_outer_bin_free(si2bin_outer_bin);
-		elf_enc_buffer_free(bin_buffer);
+		delete(bin_buffer);
 	}
 }
 

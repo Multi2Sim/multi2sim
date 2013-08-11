@@ -24,7 +24,6 @@
 #include <stdio.h>
 
 /* Forward declaration */
-struct elf_enc_buffer_t;
 struct list_t;
 struct si_bin_compute_pgm_rsrc2_t;
 struct si_bin_enc_user_element_t;
@@ -46,7 +45,7 @@ struct si2bin_inner_bin_note_t *si2bin_inner_bin_note_create(unsigned int type, 
 		void *payload);
 void si2bin_inner_bin_note_free(struct si2bin_inner_bin_note_t *note);
 
-void si2bin_inner_bin_note_dump(struct elf_enc_buffer_t *buffer, FILE *fp);
+void si2bin_inner_bin_note_dump(ELFWriterBuffer *buffer, FILE *fp);
 
 
 
@@ -79,23 +78,23 @@ struct si2bin_inner_bin_entry_t
 	/* This will form the .text section containing the final ISA. The user
 	 * is responsible for dumping instructions in this buffer. The buffer is
 	 * created and freed internally, however. */
-	struct elf_enc_buffer_t *text_section_buffer;  /* Public field */
-	struct elf_enc_section_t *text_section;  /* Private field */
+	ELFWriterBuffer *text_section_buffer;  /* Public field */
+	ELFWriterSection *text_section;  /* Private field */
 
 	/* Section .data associated with this encoding dictionary entry. The
 	 * user can fill it out by adding data into the buffer. */
-	struct elf_enc_buffer_t *data_section_buffer;  /* Public field */
-	struct elf_enc_section_t *data_section;  /* Private field */
+	ELFWriterBuffer *data_section_buffer;  /* Public field */
+	ELFWriterSection *data_section;  /* Private field */
 
 	/* Symbol table associated with the encoding dictionary entry. It is
 	 * initialized internally, and the user can just add new symbols
 	 * using function 'elf_enc_symbol_table_add'. */
-	struct elf_enc_symbol_table_t *symbol_table;  /* Public field */
+	ELFWriterSymbolTable *symbol_table;  /* Public field */
 
 	/* List of notes. Each element is of type 'si2bin_inner_bin_note_t'.
 	 * Private field. */
 	struct list_t *note_list;
-	struct elf_enc_buffer_t *note_buffer;
+	ELFWriterBuffer *note_buffer;
 };
 
 struct si2bin_inner_bin_entry_t *si2bin_inner_bin_entry_create(void);
@@ -136,7 +135,7 @@ struct si2bin_inner_bin_t
 
 	/* ELF file created internally.
 	 * Private field. */
-	struct elf_enc_file_t *file;
+	ELFWriter *writer;
 
 	/* Each element of type 'si2bin_inner_bin_entry_t'.
 	 * Private field. */
@@ -149,7 +148,7 @@ void si2bin_inner_bin_add_user_element(struct si2bin_inner_bin_t *bin,
 		struct si_bin_enc_user_element_t *user_elem, int index);
 
 void si2bin_inner_bin_add_entry(struct si2bin_inner_bin_t *bin, struct si2bin_inner_bin_entry_t *entry);
-void si2bin_inner_bin_generate(struct si2bin_inner_bin_t *bin, struct elf_enc_buffer_t *bin_buffer);
+void si2bin_inner_bin_generate(struct si2bin_inner_bin_t *bin, ELFWriterBuffer *bin_buffer);
 
 #endif
 
