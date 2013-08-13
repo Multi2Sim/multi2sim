@@ -36,7 +36,9 @@ struct cuda_function_arg_t *cuda_function_arg_create(char *name)
 
 void cuda_function_arg_free(struct cuda_function_arg_t *arg)
 {
-	free(arg->name);
-	free(arg);
+	if (arg->name)
+		free(arg->name);
+	if (arg)
+		free(arg);
 }
 

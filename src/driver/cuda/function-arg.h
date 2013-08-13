@@ -29,12 +29,6 @@ enum cuda_mem_scope_t
 	CUDA_MEM_SCOPE_CONSTANT
 };
 
-enum cuda_function_arg_kind_t
-{
-	CUDA_FUNCTION_ARG_KIND_VALUE = 1,
-	CUDA_FUNCTION_ARG_KIND_POINTER
-};
-
 enum cuda_function_arg_access_type_t
 {
 	CUDA_FUNCTION_ARG_READ_ONLY = 1,
@@ -47,7 +41,6 @@ struct cuda_function_arg_t
 	int id;
 	char *name;
 
-	enum cuda_function_arg_kind_t kind;
 	enum cuda_mem_scope_t mem_scope;
 	enum cuda_function_arg_access_type_t access_type;
 
