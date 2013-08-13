@@ -270,12 +270,14 @@ void frm_warp_execute(struct frm_warp_t *warp)
 			__FUNCTION__, inst->dword.word[0], inst->dword.word[1]);
 
 	/* Execute instruction */
+printf("%d %d\n", warp->id, warp->thread_count);
 	for (thread_id = 0; thread_id < warp->thread_count; thread_id++)
 	{
 		thread = warp->threads[thread_id];
 		(*frm_isa_inst_func[inst->info->inst])(thread, inst);
 	}
 
+	/* Finish */
 	if (warp->finished)
 	{
 		/* Check if warp finished kernel execution */

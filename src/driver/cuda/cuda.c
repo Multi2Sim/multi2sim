@@ -39,7 +39,7 @@
  */
 
 /* Debug */
-int cuda_debug_category = 1;
+int cuda_debug_category;
 
 /* Error messages */
 char *cuda_err_code =
@@ -235,7 +235,7 @@ int cuda_func_cuDeviceTotalMem(X86Context *ctx)
  * CUDA call - cuModuleLoad
  *
  * @param const char *fname;
- *      Filename of module to load.
+ *      Path of CUDA module binary to load.
  *
  * @return
  *	The return value is always 0 on success.
@@ -246,17 +246,13 @@ int cuda_func_cuModuleLoad(X86Context *ctx)
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
 
-	struct cuda_module_t *module;
-	char cubin_path[MAX_STRING_SIZE] = "";
+	char cubin_path[MAX_STRING_SIZE];
 
 	/* Get kernel binary */
-	if (regs->ecx != 0)
-		mem_read(mem, regs->ecx, MAX_STRING_SIZE, cubin_path);
+	mem_read(mem, regs->ecx, MAX_STRING_SIZE, cubin_path);
 	
 	/* Create module */
-	module = cuda_module_create(cubin_path);
-
-	cuda_debug("\tout: module.id=0x%08x\n", module->id);
+	cuda_module_create(cubin_path);
 
 	return 0;
 }
@@ -283,7 +279,7 @@ int cuda_func_cuModuleUnload(X86Context *ctx)
 
 	/* Get module */
 	module_id = regs->ecx;
-	module = (struct cuda_module_t *)list_get(module_list, module_id);
+	module = list_get(module_list, module_id);
 
 	/* Free module */
 	cuda_module_free(module);
@@ -322,38 +318,21 @@ int cuda_func_cuModuleGetFunction(X86Context *ctx)
 	struct mem_t *mem = ctx->mem;
 
 	unsigned int module_id;
-	char function_name[MAX_STRING_SIZE];
-	unsigned long long int *inst_buffer;
-	unsigned int inst_buffer_size;
-	unsigned int num_gpr_used;
+	char func_name[MAX_STRING_SIZE];
 
 	struct cuda_module_t *module;
-	struct cuda_function_t *function;
 
 	module_id = regs->ecx;
-	mem_read(mem, regs->edx, MAX_STRING_SIZE, function_name);
-	inst_buffer_size = regs->edi;
-	inst_buffer = (unsigned long long int *)xcalloc(1, inst_buffer_size);
-	mem_read(mem, regs->esi, inst_buffer_size, inst_buffer);
-	num_gpr_used = regs->ebp;
+	mem_read(mem, regs->edx, MAX_STRING_SIZE, func_name);
 
 	cuda_debug("\tin: module.id = 0x%08x\n", module_id);
-	cuda_debug("\tin: function_name = %s\n", function_name);
-	cuda_debug("\tin: inst_buffer = %p\n", inst_buffer);
-	cuda_debug("\tin: inst_buffer_size = %u\n", inst_buffer_size);
-	cuda_debug("\tin: num_gpr_used = %u\n", num_gpr_used);
+	cuda_debug("\tin: function_name = %s\n", func_name);
 
 	/* Get module */
-	module = (struct cuda_module_t *)list_get(module_list, module_id);
+	module = list_get(module_list, module_id);
 
 	/* Create function */
-	function = cuda_function_create(module, function_name, inst_buffer,
-			inst_buffer_size, num_gpr_used);
-
-	/* Free */
-	free(inst_buffer);
-
-	cuda_debug("\tout: function.id=0x%08x\n", function->id);
+	cuda_function_create(module, func_name);
 
 	return 0;
 }
@@ -655,13 +634,10 @@ int cuda_func_cuLaunchKernel(X86Context *ctx)
 	unsigned int extra;
 
 	struct cuda_function_t *function;
-	struct cuda_module_t *module;
-	struct elf_section_t *section;
 	struct cuda_function_arg_t *arg;
 	char arg_name[MAX_STRING_SIZE];
 	unsigned int arg_ptr;
 	unsigned int arg_value;
-	unsigned int arg_count;
 	struct frm_grid_t *grid;
 	int i;
 	struct cuda_abi_frm_kernel_launch_info_t *info;
@@ -696,22 +672,8 @@ int cuda_func_cuLaunchKernel(X86Context *ctx)
 	/* Get function */
 	function = list_get(function_list, function_id);
 
-	/* Get the number of arguments */
-	module = list_get(module_list, function->module_id);
-	for (i = 0; i < list_count(module->elf_file->section_list); ++i)
-	{
-		section = (struct elf_section_t *)list_get(module->elf_file->section_list, i);
-		/* Determine if section is .nv.info.kernel_name */
-		if (!strncmp(section->name, ".nv.info.", 9))
-		{
-			arg_count = ((unsigned char *)section->buffer.ptr)[10] /
-				4;
-			break;
-		}
-	}
-
-	/* Arguments */
-	for (i = 0; i < arg_count; ++i)
+	/* Set up arguments */
+	for (i = 0; i < function->arg_count; ++i)
 	{
 		/* Get argument value */
 		mem_read(mem, kernelParams + i * 4, sizeof(unsigned int), 
@@ -723,13 +685,11 @@ int cuda_func_cuLaunchKernel(X86Context *ctx)
 		arg = cuda_function_arg_create(arg_name);
 
 		/* Initialize argument */
-		arg->kind = CUDA_FUNCTION_ARG_KIND_POINTER;
-		arg->mem_scope = CUDA_MEM_SCOPE_GLOBAL;
 		arg->access_type = CUDA_FUNCTION_ARG_READ_WRITE;
 		arg->value = arg_value;
 
 		/* Add to list */
-		list_add(function->arg_list, arg);
+		function->arg_array[i] = arg;
 	}
 
 	/* Create grid */
