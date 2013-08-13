@@ -27,17 +27,25 @@ extern struct list_t *function_list;
 
 struct cuda_function_t
 {
+	/* ID */
 	int id;
-	int ref_count;
 
+	/* Name */
 	char *name;
 
+	/* Module ID */
 	unsigned int module_id;
-	struct list_t *arg_list;
 
-	unsigned long long int *inst_buffer;
-	unsigned int inst_buffer_size;
-	unsigned int num_gpr_used;
+	/* Instruction binary */
+	int inst_bin_size;
+	unsigned long long int *inst_bin;
+
+	/* Arguments */
+	int arg_count;
+	struct cuda_function_arg_t **arg_array;
+
+	/* Number of GPRs used by one thread */
+	int num_gpr;
 
 	/* Number of work dimensions */
 	int work_dim;
@@ -58,9 +66,9 @@ struct cuda_function_t
 };
 
 struct cuda_module_t;
+
 struct cuda_function_t *cuda_function_create(struct cuda_module_t *module, 
-		char *function_name, unsigned long long int *inst_buffer,
-		unsigned int inst_buffer_size, unsigned int num_gpr_used);
+		char *func_name);
 void cuda_function_free(struct cuda_function_t *function);
 
 #endif

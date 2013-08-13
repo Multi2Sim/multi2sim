@@ -47,7 +47,7 @@ struct frm_grid_t
 	struct cuda_function_t *function;
 
 	/* Number of register used by each thread. */
-	unsigned int num_gpr_used;
+	unsigned int num_gpr;
 
 	/* Call-back function run right before freeing ND-Range, using the value in
 	 * 'free_notify_data' as an argument. */
@@ -55,15 +55,14 @@ struct frm_grid_t
 	void *free_notify_data;
 
 	/* 3D work size counters */
-	int grid_size3[3];  /* Total number of threads */
-	int block_size3[3];  /* Number of threads in a thread block */
-	int block_count3[3];  /* Number of thread blocks */
+	int thread_count3[3];  /* Total number of threads */
+	int thread_block_size3[3];  /* Number of threads in a thread block */
+	int thread_block_count3[3];  /* Number of thread blocks */
 
 	/* 1D work size counters. Each counter is equal to the multiplication
 	 * of each component in the corresponding 3D counter. */
-	int grid_size;
-	int block_size;
-	int block_count;
+	int thread_count;
+	int thread_block_size;
 
 	/* Array of thread blocks */
 	int thread_block_count;

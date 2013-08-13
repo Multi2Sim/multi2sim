@@ -33,13 +33,16 @@ struct cuda_module_t *cuda_module_create(char *cubin_path)
 {
 	struct cuda_module_t *module;
 
-	/* Initialize */
+	/* Allocate */
 	module = xcalloc(1, sizeof(struct cuda_module_t));
+
+	/* ID */
 	module->id = list_count(module_list);
-	module->ref_count = 1;
-	assert(cubin_path);
+
+	/* ELF */
 	module->elf_file = elf_file_create_from_path(cubin_path);
 
+	/* Add module to list */
 	list_add(module_list, module);
 
 	return module;
@@ -48,9 +51,11 @@ struct cuda_module_t *cuda_module_create(char *cubin_path)
 /* Free module */
 void cuda_module_free(struct cuda_module_t *module)
 {
+	/* Free ELF */
 	assert(module->elf_file);
 	elf_file_free(module->elf_file);
 
+	/* Free module */
 	free(module);
 }
 

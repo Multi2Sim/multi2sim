@@ -44,7 +44,7 @@ struct frm_grid_t *frm_grid_create(struct cuda_function_t *function)
 	strncpy(grid->name, function->name, MAX_STRING_SIZE);
 	grid->status = frm_grid_pending;
 	grid->function = function;
-	grid->num_gpr_used = function->num_gpr_used;
+	grid->num_gpr = function->num_gpr;
 
 	/* Add to list */
 	list_add(frm_emu->grids, grid);
@@ -87,7 +87,7 @@ void frm_grid_free(struct frm_grid_t *grid)
 void frm_grid_setup_const_mem(struct frm_grid_t *grid)
 {
 	/* FIXME: built-in consts */
-        frm_isa_const_mem_write(0x8, &grid->block_size3[0]);
+        frm_isa_const_mem_write(0x8, &grid->thread_block_size3[0]);
 }
 
 
@@ -99,77 +99,59 @@ void frm_grid_setup_args(struct frm_grid_t *grid)
 	int offset = 0x20;
 
 	/* Kernel arguments */
-	for (i = 0; i < list_count(function->arg_list); i++)
+	for (i = 0; i < function->arg_count; i++)
 	{
-		arg = list_get(function->arg_list, i);
+		arg = function->arg_array[i];
 		assert(arg);
 
-		/* Process argument depending on its type */
-		if (arg->kind == CUDA_FUNCTION_ARG_KIND_POINTER)
-		{
-			if (arg->mem_scope == CUDA_MEM_SCOPE_GLOBAL)
-			{
-                                frm_isa_const_mem_write(offset, &(arg->value));
-				offset += 0x4;
-				continue;
-			}
-			else if (arg->mem_scope == CUDA_MEM_SCOPE_LOCAL)
-			{
-				offset += 0x4;
-				continue;
-			}
-			else
-				fatal("%s: argument in memory scope %d not supported",
-					__FUNCTION__, arg->mem_scope);
-		}
-		else
-			fatal("%s: argument type not recognized", __FUNCTION__);
+		frm_isa_const_mem_write(offset, &(arg->value));
+		offset += 0x4;
 	}
 }
 
 
 void frm_grid_dump(struct frm_grid_t *grid, FILE *f)
 {
-//	struct frm_thread_block_t *thread_block;
-//	int thread_block_id;
-//	int tid, last_thread_id;
-//	uint32_t branch_digest, last_branch_digest;
-//	int branch_digest_count;
-//
-//	if (!f)
-//		return;
-//	
-//	fprintf(f, "[ Grid[%d] ]\n\n", grid->id);
-//	fprintf(f, "Name = %s\n", grid->name);
-//	fprintf(f, "ThreadBlockFirst = %d\n", 0);
-//	fprintf(f, "ThreadBlockLast = %d\n", grid->block_count - 1);
-//	fprintf(f, "ThreadBlockCount = %d\n", grid->block_count);
-//
-//	/* Branch digests */
-//	branch_digest_count = 0;
-//	last_thread_id = 0;
-//	last_branch_digest = grid->thread_blocks[0]->threads[0]->branch_digest;
-//	for (tid = 1; tid <= grid->grid_size; tid++)
-//	{
-//		branch_digest = tid < grid->grid_size ? grid->threads[tid]->branch_digest : 0;
-//		if (tid == grid->thread_count || branch_digest != last_branch_digest)
-//		{
-//			fprintf(f, "BranchDigest[%d] = %d %d %08x\n", branch_digest_count,
-//				last_thread_id, tid - 1, last_branch_digest);
-//			last_thread_id = tid;
-//			last_branch_digest = branch_digest;
-//			branch_digest_count++;
-//		}
-//	}
-//	fprintf(f, "BranchDigestCount = %d\n", branch_digest_count);
-//	fprintf(f, "\n");
-//
-//	/* Thread block */
-//	FRM_FOR_EACH_THREADBLOCK_IN_GRID(grid, thread_block_id)
-//	{
-//		thread_block = grid->thread_blocks[thread_block_id];
-//		frm_thread_block_dump(thread_block, f);
-//	}
+	//	struct frm_thread_block_t *thread_block;
+	//	int thread_block_id;
+	//	int tid, last_thread_id;
+	//	uint32_t branch_digest, last_branch_digest;
+	//	int branch_digest_count;
+	//
+	//	if (!f)
+	//		return;
+	//	
+	//	fprintf(f, "[ Grid[%d] ]\n\n", grid->id);
+	//	fprintf(f, "Name = %s\n", grid->name);
+	//	fprintf(f, "ThreadBlockFirst = %d\n", 0);
+	//	fprintf(f, "ThreadBlockLast = %d\n", grid->block_count - 1);
+	//	fprintf(f, "ThreadBlockCount = %d\n", grid->block_count);
+	//
+	//	/* Branch digests */
+	//	branch_digest_count = 0;
+	//	last_thread_id = 0;
+	//	last_branch_digest = grid->thread_blocks[0]->threads[0]->branch_digest;
+	//	for (tid = 1; tid <= grid->grid_size; tid++)
+	//	{
+	//		branch_digest = tid < grid->grid_size ? grid->threads[tid]->branch_digest : 0;
+	//		if (tid == grid->thread_count || branch_digest != last_branch_digest)
+	//		{
+	//			fprintf(f, "BranchDigest[%d] = %d %d %08x\n", branch_digest_count,
+	//				last_thread_id, tid - 1, last_branch_digest);
+	//			last_thread_id = tid;
+	//			last_branch_digest = branch_digest;
+	//			branch_digest_count++;
+	//		}
+	//	}
+	//	fprintf(f, "BranchDigestCount = %d\n", branch_digest_count);
+	//	fprintf(f, "\n");
+	//
+	//	/* Thread block */
+	//	FRM_FOR_EACH_THREADBLOCK_IN_GRID(grid, thread_block_id)
+	//	{
+	//		thread_block = grid->thread_blocks[thread_block_id];
+	//		frm_thread_block_dump(thread_block, f);
+	//	}
 }
 
 static void frm_grid_setup_arrays(struct frm_grid_t *grid)
@@ -183,15 +165,14 @@ static void frm_grid_setup_arrays(struct frm_grid_t *grid)
 	int tid;  /* Thread ID iterator */
 
 	/* Create array/lists of thread blocks */
-	grid->thread_block_count = grid->block_count;
 	grid->thread_blocks = (struct frm_thread_block_t **)xcalloc(
-			grid->block_count, 
+			grid->thread_block_count, 
 			sizeof(struct frm_thread_block_t *));
 	grid->pending_thread_blocks = list_create();
 	grid->running_thread_blocks = list_create();
 	grid->finished_thread_blocks = list_create();
 
-	for (bid = 0; bid < grid->block_count; bid++)
+	for (bid = 0; bid < grid->thread_block_count; bid++)
 	{
 		/* Create new thread block */
 		thread_block = frm_thread_block_create();
@@ -209,7 +190,7 @@ static void frm_grid_setup_arrays(struct frm_grid_t *grid)
 
 		/* Create array/lists of warps */
 		thread_block->warp_count = 
-			(grid->block_size + frm_emu_warp_size - 1) /
+			(grid->thread_block_size + frm_emu_warp_size - 1) /
 			frm_emu_warp_size;
 		thread_block->warps = (struct frm_warp_t **)xcalloc(
 				thread_block->warp_count, 
@@ -232,13 +213,13 @@ static void frm_grid_setup_arrays(struct frm_grid_t *grid)
 					warp->id_in_thread_block);
 			warp->grid = grid;
 			warp->thread_block = thread_block;
-			warp->inst_buffer = grid->function->inst_buffer;
+			warp->inst_buffer = grid->function->inst_bin;
 			warp->inst_buffer_size =
-				grid->function->inst_buffer_size;
+				grid->function->inst_bin_size;
 			if (wid < thread_block->warp_count - 1)
 				warp->thread_count = frm_emu_warp_size;
 			else
-				warp->thread_count = grid->block_size - 
+				warp->thread_count = grid->thread_block_size - 
 					(thread_block->warp_count - 1) *
 					frm_emu_warp_size;
 			warp->threads = (struct frm_thread_t **)xcalloc(
@@ -250,7 +231,7 @@ static void frm_grid_setup_arrays(struct frm_grid_t *grid)
 		}
 
 		/* Create array/lists of threads */
-		thread_block->thread_count = grid->block_size;
+		thread_block->thread_count = grid->thread_block_size;
 		thread_block->threads = (struct frm_thread_t **)xcalloc(
 				thread_block->thread_count, 
 				sizeof(struct frm_thread_t *));
@@ -272,19 +253,21 @@ static void frm_grid_setup_arrays(struct frm_grid_t *grid)
 
 			/* Save thread IDs in special register R0 */
 			thread->sr[FRM_SR_Tid_X].v.u32 = tid % 
-				grid->block_size3[0];
+				grid->thread_block_size3[0];
 			thread->sr[FRM_SR_Tid_Y].v.u32 = tid / 
-				grid->block_size3[0];
+				grid->thread_block_size3[0];
 			thread->sr[FRM_SR_Tid_Z].v.u32 = tid / 
-				(grid->block_size3[0] * grid->block_size3[1]);
+				(grid->thread_block_size3[0] *
+				 grid->thread_block_size3[1]);
 
 			/* Save thread block IDs in special register R1 */
 			thread->sr[FRM_SR_CTAid_X].v.u32 = bid % 
-				grid->block_count3[0];
+				grid->thread_block_count3[0];
 			thread->sr[FRM_SR_CTAid_Y].v.u32 = bid / 
-				grid->block_count3[0];
+				grid->thread_block_count3[0];
 			thread->sr[FRM_SR_CTAid_Z].v.u32 = bid / 
-				(grid->block_count3[0] * grid->block_count3[1]);
+				(grid->thread_block_count3[0] *
+				 grid->thread_block_count3[1]);
 
 			/* Set predicate register #7 to 1 */
 			thread->pr[7] = 1;
@@ -296,42 +279,49 @@ static void frm_grid_setup_arrays(struct frm_grid_t *grid)
 }
 
 
-void frm_grid_setup_size(struct frm_grid_t *grid, unsigned int *block_count,
-		unsigned int *block_size)
+void frm_grid_setup_size(struct frm_grid_t *grid, 
+		unsigned int *thread_block_count, 
+		unsigned int *thread_block_size)
 {
 	int i;
 
 	/* Thread block counts */
 	for (i = 0; i < 3; i++)
-		grid->block_count3[i] = block_count[i];
-	grid->block_count = grid->block_count3[0] * grid->block_count3[1] *
-		grid->block_count3[2];
+		grid->thread_block_count3[i] = thread_block_count[i];
+	grid->thread_block_count = grid->thread_block_count3[0] *
+		grid->thread_block_count3[1] *
+		grid->thread_block_count3[2];
 
 	/* Thread block sizes */
 	for (i = 0; i < 3; i++)
-		grid->block_size3[i] = block_size[i];
-	grid->block_size = grid->block_size3[0] * grid->block_size3[1] *
-		grid->block_size3[2];
+		grid->thread_block_size3[i] = thread_block_size[i];
+	grid->thread_block_size = grid->thread_block_size3[0] *
+		grid->thread_block_size3[1] *
+		grid->thread_block_size3[2];
 
 	/* Calculate grid sizes */
 	for (i = 0; i < 3; i++)
-		grid->grid_size3[i] = block_count[i] * block_size[i];
-	grid->grid_size = grid->grid_size3[0] * grid->grid_size3[1] *
-		grid->grid_size3[2];
+		grid->thread_count3[i] = thread_block_count[i] *
+			thread_block_size[i];
+	grid->thread_count = grid->thread_count3[0] * 
+		grid->thread_count3[1] *
+		grid->thread_count3[2];
 
 	/* Allocate thread blocks, warps, and threads */
 	frm_grid_setup_arrays(grid);
 
 	/* Debug */
 	frm_isa_debug("%s:%d: block count = (%d,%d,%d)\n", 
-			__FUNCTION__, __LINE__, grid->block_count3[0],
-			grid->block_count3[1], grid->block_count3[2]);
+			__FUNCTION__, __LINE__, grid->thread_block_count3[0],
+			grid->thread_block_count3[1],
+			grid->thread_block_count3[2]);
 	frm_isa_debug("%s:%d: block size = (%d,%d,%d)\n", 
-			__FUNCTION__, __LINE__, grid->block_size3[0], 
-			grid->block_size3[1], grid->block_size3[2]);
+			__FUNCTION__, __LINE__, grid->thread_block_size3[0], 
+			grid->thread_block_size3[1],
+			grid->thread_block_size3[2]);
 	frm_isa_debug("%s:%d: grid size = (%d,%d,%d)\n", 
-			__FUNCTION__, __LINE__, grid->grid_size3[0], 
-			grid->grid_size3[1], grid->grid_size3[2]);
+			__FUNCTION__, __LINE__, grid->thread_count3[0], 
+			grid->thread_count3[1], grid->thread_count3[2]);
 }
 
 

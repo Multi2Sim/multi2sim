@@ -82,8 +82,8 @@ void frm_isa_FFMA_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 
 	/* Debug */
 	frm_isa_debug("%s:%d: thread[%d] active = %d pred = [%x] %x "
-			"dst = [0x%x] 0x%f src1 = [0x%x] 0x%f "
-			"src2 = [0x%x] 0x%f src3 = [0x%x] 0x%f\n", 
+			"dst = [0x%x] %f src1 = [0x%x] %f "
+			"src2 = [0x%x] %f src3 = [0x%x] %f\n", 
 			__FUNCTION__, __LINE__, thread->id, active, 
 			pred_id, pred, dst_id, dst, src1_id, src1,
 			src2_id, src2, src3_id, src3);
@@ -131,8 +131,8 @@ void frm_isa_FADD_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 
 	/* Debug */
 	frm_isa_debug("%s:%d: thread[%d] active = %d pred = [%x] %x "
-			"dst = [0x%x] 0x%f src1 = [0x%x] 0x%f "
-			"src2 = [0x%x] 0x%f\n", 
+			"dst = [0x%x] %f src1 = [0x%x] %f "
+			"src2 = [0x%x] %f\n", 
 			__FUNCTION__, __LINE__, thread->id, active, 
 			pred_id, pred, dst_id, dst, src1_id, src1, 
 			src2_id, src2);
@@ -176,7 +176,7 @@ void frm_isa_FADD32I_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 
 	/* Debug */
 	frm_isa_debug("%s:%d: thread[%d] active = %d pred = [%x] %x "
-			"dst = [0x%x] 0x%f src1 = [0x%x] 0x%f imm32 = 0x%f\n", 
+			"dst = [0x%x] %f src1 = [0x%x] %f imm32 = %f\n", 
 			__FUNCTION__, __LINE__, thread->id, active, 
 			pred_id, pred, dst_id, dst, src1_id, src1, imm32.f);
 }
@@ -227,8 +227,8 @@ void frm_isa_FMUL_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 
 	/* Debug */
 	frm_isa_debug("%s:%d: thread[%d] active = %d pred = [%x] %x "
-			"dst = [0x%x] 0x%f src1 = [0x%x] 0x%f "
-			"src2 = [0x%x] 0x%f\n", 
+			"dst = [0x%x] %f src1 = [0x%x] %f "
+			"src2 = [0x%x] %f\n", 
 			__FUNCTION__, __LINE__, thread->id, active, 
 			pred_id, pred, dst_id, dst, src1_id, src1,
 			src2_id, src2);
@@ -272,7 +272,7 @@ void frm_isa_FMUL32I_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 
 	/* Debug */
 	frm_isa_debug("%s:%d: thread[%d] active = %d pred = [%x] %x "
-			"dst = [0x%x] 0x%f src1 = [0x%x] 0x%f imm32 = 0x%f\n", 
+			"dst = [0x%x] %f src1 = [0x%x] %f imm32 = %f\n", 
 			__FUNCTION__, __LINE__, thread->id, active, 
 			pred_id, pred, dst_id, dst, src1_id, src1, imm32.f);
 }

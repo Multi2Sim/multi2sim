@@ -504,7 +504,7 @@ static void frm_gpu_map_grid(struct frm_grid_t *grid)
 	/* Calculate the number of thread blocks per SM */
 	frm_gpu->thread_blocks_per_sm =
 		frm_calc_get_thread_blocks_per_sm(
-				grid->block_size, grid->num_gpr_used,
+				grid->thread_block_size, grid->num_gpr,
 				grid->local_mem_top);
 
 	/* Thread block cannot be assigned to SM */
