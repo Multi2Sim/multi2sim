@@ -44,7 +44,7 @@ struct cuda_device_t *device;
 
 /* Version */
 #define CUDA_VERSION_MAJOR 1
-#define CUDA_VERSION_MINOR 905
+#define CUDA_VERSION_MINOR 910
 struct cuda_version_t
 {
 	int major;
