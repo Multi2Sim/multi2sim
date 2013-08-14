@@ -670,18 +670,25 @@ int main(int argc, char **argv)
 
 		IniFileLoad(ini_file);
 
-		IniFileDump(asObject(ini_file), stdout);
-		printf("*** %d\n", IniFileSectionExists(ini_file, "Section  1  "));
-		printf("*** %d\n", IniFileSectionExists(ini_file, "Section  2  "));
-		printf("*** %d\n", IniFileVariableExists(ini_file, "Section 1", "  vaR3  "));
-		printf("*** %d\n", IniFileVariableExists(ini_file, "Section 1", "  vaR  "));
+		StringMap map = {
+			{ "value1", 1 },
+			{ "value2", 2 },
+			{ NULL, 0 }
+		};
+		int value;
+		value = IniFileReadEnum(ini_file, "section 1", "my_var", 3, map);
+		printf("VALUE = %d\n", value);
 
-		printf("Remove ret=%d\n", IniFileRemoveVariable(ini_file, "section 1 ", "  var1"));
-		IniFileDump(asObject(ini_file), stdout);
-		printf("Remove ret=%d\n", IniFileRemoveVariable(ini_file, "section 1 ", "  var2"));
-		IniFileDump(asObject(ini_file), stdout);
-		printf("Remove ret=%d\n", IniFileRemoveVariable(ini_file, "section 1 ", "  var2"));
-		IniFileDump(asObject(ini_file), stdout);
+		IniFileReadString(ini_file, "section 1", "var1", NULL);
+		IniFileReadString(ini_file, "section 1", "var2", NULL);
+		IniFileReadString(ini_file, "Section 1", "Var3", NULL);
+
+		//IniFileWriteString(ini_file, "section 3", "a", "b");
+		
+		//IniFileReadString(ini_file, "section 2", "a", NULL);
+		IniFileEnforceVariable(ini_file, "section 4", "a");
+
+		IniFileCheck(ini_file);
 		
 		delete(ini_file);
 	}

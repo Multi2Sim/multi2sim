@@ -19,6 +19,7 @@
 
 #include <assert.h>
 #include <ctype.h>
+#include <limits.h>
 #include <stdarg.h>
 
 #include <lib/mhandle/mhandle.h>
@@ -506,6 +507,427 @@ List *StringTokenize(String *self, const char *set)
 }
 
 
+int StringToInt(String *self, int *error_ptr)
+{
+	int sign;
+	int base;
+	int result;
+	int digit;
+	int num_digits;
+	int error;
+	int factor;
+	int len;
+
+	char *text;
+	char text_buffer[100];
+
+	/* Copy string */
+	snprintf(text_buffer, sizeof text_buffer, "%s", self->text);
+	text = text_buffer;
+
+	/* Remove spaces on the left */
+	while (*text && (*text == ' ' || *text == '\t'))
+		text++;
+	
+	/* Remove spaces on the right */
+	len = strlen(text);
+	while (len && (text[len - 1] == ' ' || text[len - 1] == '\t'))
+	{
+		text[len - 1] = '\0';
+		len--;
+	}
+
+	/* Assume no error initially */
+	if (error_ptr)
+		*error_ptr = StringErrorOK;
+
+	/* Base */
+	base = 10;
+	if (text[0] == '0' && text[1] == 'x')
+	{
+		base = 16;
+		text += 2;
+	}
+	else if (text[0] == '0' && text[1])
+	{
+		base = 8;
+		text++;
+	}
+
+	/* Sign (only for base 10) */
+	sign = 1;
+	if (base == 10)
+	{
+		if (*text == '+')
+		{
+			sign = 1;
+			text++;
+		}
+		else if (*text == '-')
+		{
+			sign = -1;
+			text++;
+		}
+	}
+
+	/* Empty string */
+	if (!*text)
+	{
+		if (error_ptr)
+			*error_ptr = StringErrorFormat;
+		return 0;
+	}
+
+	/* Suffixes (only for base 10) */
+	factor = 0;
+	len = strlen(text);
+	assert(len > 0);
+	if (base == 10)
+	{
+		switch (text[len - 1])
+		{
+		case 'k':
+			factor = 1024;
+			text[len - 1] = '\0';
+			break;
+
+		case 'K':
+			factor = 1000;
+			text[len - 1] = '\0';
+			break;
+
+		case 'm':
+			factor = 1024 * 1024;
+			text[len - 1] = '\0';
+			break;
+
+		case 'M':
+			factor = 1000 * 1000;
+			text[len - 1] = '\0';
+			break;
+
+		case 'g':
+			factor = 1024 * 1024 * 1024;
+			text[len - 1] = '\0';
+			break;
+
+		case 'G':
+			factor = 1000 * 1000 * 1000;
+			text[len - 1] = '\0';
+			break;
+		}
+	}
+
+	/* Remove leading 0s */
+	while (*text == '0')
+		text++;
+	if (!*text)
+		return 0;
+
+	/* Start converting */
+	result = 0;
+	num_digits = 0;
+	while (*text)
+	{
+		/* Get one digit */
+		digit = StringDigitToInt(*text, base, &error);
+		num_digits++;
+		if (error)
+		{
+			if (error_ptr)
+				*error_ptr = error;
+			return 0;
+		}
+
+		/* Prevent overflow in base 10 */
+		if (base == 10)
+		{
+			if (sign < 0 && INT_MIN / base > result)
+			{
+				if (error_ptr)
+					*error_ptr = StringErrorRange;
+				return 0;
+			}
+			if (sign > 0 && INT_MAX / base < result)
+			{
+				if (error_ptr)
+					*error_ptr = StringErrorRange;
+				return 0;
+			}
+		}
+
+		/* Multiply by base */
+		result *= base;
+
+		/* Prevent overflow in base 10 */
+		if (base == 10)
+		{
+			if (sign < 0 && INT_MIN + digit > result)
+			{
+				if (error_ptr)
+					*error_ptr = StringErrorRange;
+				return 0;
+			}
+			if (sign > 0 && INT_MAX - digit < result)
+			{
+				if (error_ptr)
+					*error_ptr = StringErrorRange;
+				return 0;
+			}
+		}
+
+		/* Add digit */
+		result += digit * sign;
+
+		/* Prevent overflow in hexadecimal (unsigned) */
+		if (base == 16 && num_digits > 8)
+		{
+			if (error_ptr)
+				*error_ptr = StringErrorRange;
+			return 0;
+		}
+
+		/* Next character */
+		text++;
+	}
+
+	/* Multiplying factor */
+	if (base == 10 && factor)
+	{
+		/* Prevent overflow */
+		if (sign < 0 && INT_MIN / factor > result)
+		{
+			if (error_ptr)
+				*error_ptr = StringErrorRange;
+			return 0;
+		}
+		if (sign > 0 && INT_MAX / factor < result)
+		{
+			if (error_ptr)
+				*error_ptr = StringErrorRange;
+			return 0;
+		}
+
+		/* Multiply by factor */
+		result *= factor;
+	}
+
+	/* Return */
+	return result;
+}
+
+
+long long StringToInt64(String *self, int *error_ptr)
+{
+	int sign;
+	int base;
+	int digit;
+	int num_digits;
+	int error;
+	int factor;
+	int len;
+
+	long long result;
+
+	char *text;
+	char text_buffer[100];
+
+	/* Copy string */
+	snprintf(text_buffer, sizeof text_buffer, "%s", self->text);
+	text = text_buffer;
+
+	/* Remove spaces on the left */
+	while (*text && (*text == ' ' || *text == '\t'))
+		text++;
+	
+	/* Remove spaces on the right */
+	len = strlen(text);
+	while (len && (text[len - 1] == ' ' || text[len - 1] == '\t'))
+	{
+		text[len - 1] = '\0';
+		len--;
+	}
+
+	/* Assume no error initially */
+	if (error_ptr)
+		*error_ptr = StringErrorOK;
+
+	/* Base */
+	base = 10;
+	if (text[0] == '0' && text[1] == 'x')
+	{
+		base = 16;
+		text += 2;
+	}
+	else if (text[0] == '0' && text[1])
+	{
+		base = 8;
+		text++;
+	}
+
+	/* Sign (only for base 10) */
+	sign = 1;
+	if (base == 10)
+	{
+		if (*text == '+')
+		{
+			sign = 1;
+			text++;
+		}
+		else if (*text == '-')
+		{
+			sign = -1;
+			text++;
+		}
+	}
+
+	/* Empty string */
+	if (!*text)
+	{
+		if (error_ptr)
+			*error_ptr = StringErrorFormat;
+		return 0;
+	}
+
+	/* Suffixes (only for base 10) */
+	factor = 0;
+	len = strlen(text);
+	assert(len > 0);
+	if (base == 10)
+	{
+		switch (text[len - 1])
+		{
+		case 'k':
+			factor = 1024;
+			text[len - 1] = '\0';
+			break;
+
+		case 'K':
+			factor = 1000;
+			text[len - 1] = '\0';
+			break;
+
+		case 'm':
+			factor = 1024 * 1024;
+			text[len - 1] = '\0';
+			break;
+
+		case 'M':
+			factor = 1000 * 1000;
+			text[len - 1] = '\0';
+			break;
+
+		case 'g':
+			factor = 1024 * 1024 * 1024;
+			text[len - 1] = '\0';
+			break;
+
+		case 'G':
+			factor = 1000 * 1000 * 1000;
+			text[len - 1] = '\0';
+			break;
+		}
+	}
+
+	/* Remove leading 0s */
+	while (*text == '0')
+		text++;
+	if (!*text)
+		return 0;
+
+	/* Start converting */
+	result = 0;
+	num_digits = 0;
+	while (*text)
+	{
+		/* Get one digit */
+		digit = StringDigitToInt(*text, base, &error);
+		num_digits++;
+		if (error)
+		{
+			if (error_ptr)
+				*error_ptr = error;
+			return 0;
+		}
+
+		/* Prevent overflow in base 10 */
+		if (base == 10)
+		{
+			if (sign < 0 && LLONG_MIN / base > result)
+			{
+				if (error_ptr)
+					*error_ptr = StringErrorRange;
+				return 0;
+			}
+			if (sign > 0 && LLONG_MAX / base < result)
+			{
+				if (error_ptr)
+					*error_ptr = StringErrorRange;
+				return 0;
+			}
+		}
+
+		/* Multiply by base */
+		result *= base;
+
+		/* Prevent overflow in base 10 */
+		if (base == 10)
+		{
+			if (sign < 0 && LLONG_MIN + digit > result)
+			{
+				if (error_ptr)
+					*error_ptr = StringErrorRange;
+				return 0;
+			}
+			if (sign > 0 && LLONG_MAX - digit < result)
+			{
+				if (error_ptr)
+					*error_ptr = StringErrorRange;
+				return 0;
+			}
+		}
+
+		/* Add digit */
+		result += digit * sign;
+
+		/* Prevent overflow in hexadecimal (unsigned) */
+		if (base == 16 && num_digits > 16)
+		{
+			if (error_ptr)
+				*error_ptr = StringErrorRange;
+			return 0;
+		}
+
+		/* Next character */
+		text++;
+	}
+
+	/* Multiplying factor */
+	if (base == 10 && factor)
+	{
+		/* Prevent overflow */
+		if (sign < 0 && LLONG_MIN / factor > result)
+		{
+			if (error_ptr)
+				*error_ptr = StringErrorRange;
+			return 0;
+		}
+		if (sign > 0 && LLONG_MAX / factor < result)
+		{
+			if (error_ptr)
+				*error_ptr = StringErrorRange;
+			return 0;
+		}
+
+		/* Multiply by factor */
+		result *= factor;
+	}
+
+	/* Return */
+	return result;
+}
+
+
 
 
 /*
@@ -520,13 +942,13 @@ char *StringMapValue(StringMap map, int value)
 }
 
 
-char *StringMapValueErr(StringMap map, int value, int *err_ptr)
+char *StringMapValueErr(StringMap map, int value, int *error_ptr)
 {
 	int index;
 
 	/* Assume no error */
-	if (err_ptr)
-		*err_ptr = 0;
+	if (error_ptr)
+		*error_ptr = 0;
 
 	/* Find value */
 	for (index = 0; map[index].string; index++)
@@ -534,8 +956,8 @@ char *StringMapValueErr(StringMap map, int value, int *err_ptr)
 			return map[index].string;
 	
 	/* Error */
-	if (err_ptr)
-		*err_ptr = 1;
+	if (error_ptr)
+		*error_ptr = 1;
 
 	/* Not found */
 	return string_map_unknown;
@@ -548,13 +970,13 @@ int StringMapString(StringMap map, char *string)
 }
 
 
-int StringMapStringErr(StringMap map, char *string, int *err_ptr)
+int StringMapStringErr(StringMap map, char *string, int *error_ptr)
 {
 	int index;
 
 	/* Assume no error */
-	if (err_ptr)
-		*err_ptr = 0;
+	if (error_ptr)
+		*error_ptr = 0;
 
 	/* Find value */
 	for (index = 0; map[index].string; index++)
@@ -562,8 +984,8 @@ int StringMapStringErr(StringMap map, char *string, int *err_ptr)
 			return map[index].value;
 
 	/* Error */
-	if (err_ptr)
-		*err_ptr = 1;
+	if (error_ptr)
+		*error_ptr = 1;
 	
 	/* Not found */
 	return 0;
@@ -576,13 +998,13 @@ int StringMapStringCase(StringMap map, char *string)
 }
 
 
-int StringMapStringCaseErr(StringMap map, char *string, int *err_ptr)
+int StringMapStringCaseErr(StringMap map, char *string, int *error_ptr)
 {
 	int index;
 
 	/* Assume no error */
-	if (err_ptr)
-		*err_ptr = 0;
+	if (error_ptr)
+		*error_ptr = 0;
 
 	/* Find value */
 	for (index = 0; map[index].string; index++)
@@ -590,8 +1012,8 @@ int StringMapStringCaseErr(StringMap map, char *string, int *err_ptr)
 			return map[index].value;
 
 	/* Error */
-	if (err_ptr)
-		*err_ptr = 1;
+	if (error_ptr)
+		*error_ptr = 1;
 	
 	/* Not found */
 	return 0;
@@ -627,4 +1049,94 @@ String *StringMapFlags(StringMap map, unsigned int flags)
 	/* Return created string */
 	return string;
 }
+
+
+String *StringMapGetValues(StringMap map)
+{
+	String *s;
+	int index;
+	char *comma;
+
+	s = new(String, "{");
+	index = 0;
+	comma = "";
+	while (map[index].string)
+	{
+		StringConcat(s, "%s%s", comma, map[index].string);
+		index++;
+		comma = ",";
+	}
+	StringConcat(s, "}");
+	return s;
+}
+
+
+
+
+/*
+ * Public Functions
+ */
+
+StringMap string_error_map =
+{
+	{ "ok", StringErrorOK },
+	{ "invalid base", StringErrorBase },
+	{ "invalid format", StringErrorFormat },
+	{ "integer out of range", StringErrorRange },
+	{ NULL, 0 }
+};
+
+
+char *StringGetErrorString(int error)
+{
+	return StringMapValue(string_error_map, error);
+}
+
+
+int StringDigitToInt(char digit, int base, int *error_ptr)
+{
+	int result;
+
+	/* Assume no error */
+	if (error_ptr)
+		*error_ptr = StringErrorOK;
+
+	/* Check base */
+	if (base != 2 && base != 8 && base != 10 && base != 16)
+	{
+		if (error_ptr)
+			*error_ptr = StringErrorBase;
+		return 0;
+	}
+
+	/* Parse digit */
+	result = 0;
+	digit = tolower(digit);
+	if (digit >= '0' && digit <= '9')
+	{
+		result = digit - '0';
+	}
+	else if (digit >= 'a' && digit <= 'f')
+	{
+		result = digit - 'a' + 10;
+	}
+	else
+	{
+		if (error_ptr)
+			*error_ptr = StringErrorFormat;
+		return 0;
+	}
+
+	/* Check digit range */
+	if (result >= base)
+	{
+		if (error_ptr)
+			*error_ptr = StringErrorFormat;
+		return 0;
+	}
+
+	/* Return */
+	return result;
+}
+
 

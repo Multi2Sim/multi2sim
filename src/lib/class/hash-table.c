@@ -173,6 +173,31 @@ void HashTableDestroy(HashTable *self)
 }
 
 
+void HashTableDump(Object *self, FILE *f)
+{
+	HashTable *hash_table = asHashTable(self);
+
+	struct hash_table_elem_t *elem;
+
+	int i;
+
+	/* Free elements */
+	for (i = 0; i < hash_table->size; i++)
+	{
+		for (elem = hash_table->array[i]; elem; elem = elem->next)
+		{
+			elem->key->Dump(elem->key, f);
+			fprintf(f, " -> ");
+			if (elem->data)
+				elem->data->Dump(elem->data, f);
+			else
+				fprintf(f, "(nil)");
+			fprintf(f, "\n");
+		}
+	}
+}
+
+
 void HashTableClear(HashTable *self)
 {
 	struct hash_table_elem_t *elem;
