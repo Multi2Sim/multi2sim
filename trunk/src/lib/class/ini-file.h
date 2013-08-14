@@ -43,9 +43,9 @@ CLASS_BEGIN(IniFile, Object)
 	 * "<section>\n<variable>", and the data elements are always NULL. */
 	HashTable *allowed_item_table;
 
-	/* List of enforced items. Each element is a string with template
-	 * "<section>\n<variable>". */
-	List *enforced_item_list;
+	/* Table of enforced items. Each element is a string with template
+	 * "<section>\n<variable>", and data elements are always NULL. */
+	HashTable *enforced_item_table;
 
 	/* Redundant linked list containing section names. This extra
 	 * information is added to keep track of the order in which sections
@@ -53,6 +53,9 @@ CLASS_BEGIN(IniFile, Object)
 	 * when saving the file could be annoying. Each element is an allocated
 	 * string of type 'char *'. */
 	List *section_list;
+
+	/* Internal iterator for sections. */
+	int section_index;
 
 CLASS_END(IniFile)
 
@@ -110,11 +113,8 @@ void IniFileAllowVariable(IniFile *self, char *section, char *var);
 void IniFileEnforceVariable(IniFile *self, char *section, char *var);
 
 /* Check that all enforced variables and sections are present in the file, and
- * that all variables/sections present in the file are allowed. The first
- * function checks the entire file, while the second version checks only one
- * section in the file. */
+ * that all variables/sections present in the file are allowed. */
 void IniFileCheck(IniFile *self);
-void IniFileCheckSection(IniFile *self, char *section);
 
 #endif
 

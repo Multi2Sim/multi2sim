@@ -131,6 +131,45 @@ List *StringTokenize(String *self, const char *set);
  * functions used to compare and hash the string. */
 void StringSetCaseSensitive(String *self, int case_sensitive);
 
+/* Convert a string 'str' into an integer, accepting the following modifiers.
+ * If conversion fails due to wrong formatting of 'str', an error code is returned
+ * in argument 'err' (can be NULL).
+ *
+ * String prefixes:
+ *   Prefix '0x' - Use base 16 for conversion.
+ *   Prefix '0' - Use base 8 for conversion.
+ * String suffixes:
+ *   Suffix 'k' - Multiply by 1024.
+ *   Suffix 'K' - Multiply by 1000.
+ *   Suffix 'm' - Multiply by 1024*1024.
+ *   Suffix 'M' - Multiply by 1000*1000.
+ *   Suffix 'g' - Multiply by 1024*1024*1024.
+ *   Suffix 'G' - Multiply by 1000*1000*1000.
+ */
+int StringToInt(String *self, int *error_ptr);
+long long StringToInt64(String *self, int *error_ptr);
+
+
+
+
+/*
+ * Public Functions
+ */
+
+/* String error codes */
+typedef enum
+{
+	StringErrorOK = 0,
+	StringErrorBase,
+	StringErrorFormat,
+	StringErrorRange
+} StringError;
+
+/* Return a description of an error code returned by 'StringXXX' functions. */
+char *StringGetErrorString(int error);
+
+int StringDigitToInt(char digit, int base, int *error_ptr);
+
 
 
 
@@ -154,6 +193,11 @@ int StringMapStringCase(StringMap map, char *string);
 int StringMapStringCaseErr(StringMap map, char *string, int *err_ptr);
 
 String *StringMapFlags(StringMap map, unsigned int flags);
+
+/* Return a string with a list of values present in the string map, set off by
+ * brackets, and separated by commas. It is the responsibility of the caller to
+ * free the returned string. */
+String *StringMapGetValues(StringMap map);
 
 #endif
 
