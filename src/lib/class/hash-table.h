@@ -90,6 +90,8 @@ void HashTableCreate(HashTable *self);
 void HashTableCreateWithSize(HashTable *self, int size);
 void HashTableDestroy(HashTable *self);
 
+void HashTableDump(Object *self, FILE *f);
+
 /* Clear the content of the hash table. The error code is set to
  * 'HashTableErrOK'. Freeing the objects is a responsibility of the caller.
  * All iterators related with the hash table are invalidated after this
