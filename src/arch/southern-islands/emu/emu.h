@@ -42,7 +42,7 @@ CLASS_BEGIN(SIEmu, Emu)
 	struct mem_t *global_mem; /* will point to video_mem or shared_mem */
 
 	/* Current ND-Range */
-	struct si_ndrange_t *ndrange;
+	SINDRange *ndrange;
 
 	/* Work-group lists */
 	struct list_t *waiting_work_groups;

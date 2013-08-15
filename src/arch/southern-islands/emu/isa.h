@@ -108,36 +108,11 @@ void si_isa_init();
 void si_isa_done();
 
 /* Forward declaration */
-struct si_work_item_t;
 union SIInstReg;
 
 /* List of functions implementing GPU instructions 'amd_inst_XXX_impl' */
-typedef void (*si_isa_inst_func_t)(struct si_work_item_t *work_item, SIInst *inst);
+typedef void (*si_isa_inst_func_t)(SIWorkItem *work_item, SIInst *inst);
 extern si_isa_inst_func_t *si_isa_inst_func;
-
-/* FIXME
- * Some older compilers need the 'union' type to be not only declared but 
- * also defined to allow for the declaration below. This forces us to 
- * #include 'asm.h' from this file.  To avoid this extra dependence, 
- * 'union' types below could be replaced by 'unsigned int', and then all 
- * callers updated accordingly. */
-unsigned int si_isa_read_sreg(struct si_work_item_t *work_item, int sreg);
-void si_isa_write_sreg(struct si_work_item_t *work_item, int sreg, 
-	unsigned int value);
-unsigned int si_isa_read_vreg(struct si_work_item_t *work_item, int vreg);
-void si_isa_write_vreg(struct si_work_item_t *work_item, int vreg, 
-	unsigned int value);
-unsigned int si_isa_read_reg(struct si_work_item_t *work_item, int reg);
-void si_isa_bitmask_sreg(struct si_work_item_t *work_item, int sreg, 
-	unsigned int value);
-int si_isa_read_bitmask_sreg(struct si_work_item_t *work_item, int sreg);
-
-struct si_buffer_desc_t;
-struct si_mem_ptr_t;
-void si_isa_read_buf_res(struct si_work_item_t *work_item, 
-	struct si_buffer_desc_t *buf_desc, int sreg);
-void si_isa_read_mem_ptr(struct si_work_item_t *work_item, 
-	struct si_mem_ptr_t *mem_ptr, int sreg);
 
 unsigned int si_isa_const_mem_allocate(unsigned int size);
 

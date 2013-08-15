@@ -21,10 +21,14 @@
 #define ARCH_SOUTHERN_ISLANDS_EMU_WORK_ITEM_H
 
 #include <arch/southern-islands/asm/inst.h>
+#include <lib/class/class.h>
 
+
+/*
+ * Class 'SIWorkItem'
+ */
 
 #define SI_MAX_LDS_ACCESSES_PER_INST  2
-
 
 /* Structure describing a memory access definition */
 struct si_mem_access_t
@@ -34,8 +38,9 @@ struct si_mem_access_t
 	int size;
 };
 
-struct si_work_item_t
-{
+
+CLASS_BEGIN(SIWorkItem, Object)
+	
 	/* IDs */
 	int id;  /* global ID */
 	int id_in_wavefront;
@@ -46,8 +51,8 @@ struct si_work_item_t
 	int id_in_work_group_3d[3];  /* local 3D IDs */
 
 	/* Wavefront, work-group, and NDRange where it belongs */
-	struct si_wavefront_t *wavefront;
-	struct si_work_group_t *work_group;
+	SIWavefront *wavefront;
+	SIWorkGroup *work_group;
 
 	/* Work-item state */
 	SIInstReg vreg[256];  /* Vector general purpose registers */
@@ -61,14 +66,39 @@ struct si_work_item_t
 	unsigned int lds_access_addr[SI_MAX_LDS_ACCESSES_PER_INST];
 	unsigned int lds_access_size[SI_MAX_LDS_ACCESSES_PER_INST];
 	int lds_access_type[SI_MAX_LDS_ACCESSES_PER_INST];  /* 0-none, 1-read, 2-write */
-};
+
+CLASS_END(SIWorkItem)
 
 #define SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(WAVEFRONT, WORK_ITEM_ID) \
 	for ((WORK_ITEM_ID) = 0; \
 		(WORK_ITEM_ID) < si_emu_wavefront_size; \
 		(WORK_ITEM_ID)++)
 
-struct si_work_item_t *si_work_item_create(void);
-void si_work_item_free(struct si_work_item_t *work_item);
+void SIWorkItemCreate(SIWorkItem *self, int id, SIWavefront *wavefront);
+void SIWorkItemDestroy(SIWorkItem *self);
+
+/* FIXME
+ * Some older compilers need the 'union' type to be not only declared but 
+ * also defined to allow for the declaration below. This forces us to 
+ * #include 'asm.h' from this file.  To avoid this extra dependence, 
+ * 'union' types below could be replaced by 'unsigned int', and then all 
+ * callers updated accordingly. */
+unsigned int SIWorkItemReadSReg(SIWorkItem *self, int sreg);
+void SIWorkItemWriteSReg(SIWorkItem *self, int sreg, 
+	unsigned int value);
+unsigned int SIWorkItemReadVReg(SIWorkItem *self, int vreg);
+void SIWorkItemWriteVReg(SIWorkItem *self, int vreg, 
+	unsigned int value);
+unsigned int SIWorkItemReadReg(SIWorkItem *self, int reg);
+void SIWorkItemWriteBitmaskSReg(SIWorkItem *self, int sreg, 
+	unsigned int value);
+int SIWorkItemReadBitmaskSReg(SIWorkItem *self, int sreg);
+
+struct si_buffer_desc_t;
+struct si_mem_ptr_t;
+void SIWorkItemReadBufferResource(SIWorkItem *self, 
+	struct si_buffer_desc_t *buf_desc, int sreg);
+void SIWorkItemReadMemPtr(SIWorkItem *self, 
+	struct si_mem_ptr_t *mem_ptr, int sreg);
 
 #endif

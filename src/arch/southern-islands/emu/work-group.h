@@ -20,8 +20,13 @@
 #ifndef ARCH_SOUTHERN_ISLANDS_EMU_WORK_GROUP_H
 #define ARCH_SOUTHERN_ISLANDS_EMU_WORK_GROUP_H
 
-struct si_work_group_t
-{
+
+/*
+ * Class 'SIWorkGroup'
+ */
+
+CLASS_BEGIN(SIWorkGroup, Object)
+
 	/* ID */
 	int id;  /* Group ID */
 	int id_3d[3];  /* 3-dimensional Group ID */
@@ -33,15 +38,15 @@ struct si_work_group_t
 	int finished_emu;
 	int finished_timing;
 
-	/* ND-Range metadata */
-	struct si_ndrange_t *ndrange;
+	/* ND-Range that it belongs to */
+	SINDRange *ndrange;
 
 	/* Pointers to wavefronts and work-items */
 	int work_item_count;
 	int wavefront_count;
-	struct si_work_item_t **work_items;  /* Pointer to first work_item in 
+	SIWorkItem **work_items;  /* Pointer to first work_item in 
 						'kernel->work_items' */
-	struct si_wavefront_t **wavefronts;  /* Pointer to first wavefront in 
+	SIWavefront **wavefronts;  /* Pointer to first wavefront in 
 						'kernel->wavefronts' */
 	struct si_wavefront_pool_t *wavefront_pool;
 
@@ -56,11 +61,13 @@ struct si_work_group_t
 	long long int sreg_write_count;
 	long long int vreg_read_count;
 	long long int vreg_write_count;
-};
 
-struct si_work_group_t *si_work_group_create(unsigned int work_group_id, 
-	struct si_ndrange_t *ndrange);
-void si_work_group_free(struct si_work_group_t *work_group);
-void si_work_group_dump(struct si_work_group_t *work_group, FILE *f);
+CLASS_END(SIWorkGroup)
+
+
+void SIWorkGroupCreate(SIWorkGroup *self, unsigned int id, SINDRange *ndrange);
+void SIWorkGroupDestroy(SIWorkGroup *self);
+
+void SIWorkGroupDump(Object *self, FILE *f);
 
 #endif

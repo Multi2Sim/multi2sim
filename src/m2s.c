@@ -41,7 +41,11 @@
 #include <arch/southern-islands/asm/asm.h>
 #include <arch/southern-islands/asm/inst.h>
 #include <arch/southern-islands/emu/emu.h>
+#include <arch/southern-islands/emu/ndrange.h>
 #include <arch/southern-islands/emu/isa.h>
+#include <arch/southern-islands/emu/wavefront.h>
+#include <arch/southern-islands/emu/work-group.h>
+#include <arch/southern-islands/emu/work-item.h>
 #include <arch/southern-islands/timing/gpu.h>
 #include <arch/x86/emu/checkpoint.h>
 #include <arch/x86/emu/context.h>
@@ -1835,6 +1839,10 @@ static void m2s_init(void)
 
 	CLASS_REGISTER(SIAsm);
 	CLASS_REGISTER(SIInst);
+	CLASS_REGISTER(SINDRange);
+	CLASS_REGISTER(SIWavefront);
+	CLASS_REGISTER(SIWorkGroup);
+	CLASS_REGISTER(SIWorkItem);
 
 	/* Drivers */
 	CLASS_REGISTER(Driver);

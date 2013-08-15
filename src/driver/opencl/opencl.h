@@ -35,7 +35,7 @@ CLASS_BEGIN(OpenclDriver, Driver)
 	struct list_t *si_kernel_list;
 
 	struct opencl_si_kernel_t *kernel;
-	struct si_ndrange_t *ndrange;
+	SINDRange *ndrange;
 
 	int ready_for_work;
 	int wait_for_ndrange_completion;

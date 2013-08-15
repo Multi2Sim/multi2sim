@@ -34,13 +34,13 @@
  * Public Functions
  */
 
-struct si_work_group_t *si_work_group_create(unsigned int work_group_id, 
-	struct si_ndrange_t *ndrange)
+void SIWorkGroupCreate(SIWorkGroup *self, unsigned int id, SINDRange *ndrange)
 {
 	struct si_bin_enc_user_element_t *user_elements;
-	struct si_wavefront_t *wavefront;
-	struct si_work_group_t *work_group;
-	struct si_work_item_t *work_item;
+
+	SIWavefront *wavefront;
+	SIWorkItem *work_item;
+	SIEmu *emu = ndrange->emu;
 
 	int i;
 	int lid;
@@ -65,68 +65,66 @@ struct si_work_group_t *si_work_group_create(unsigned int work_group_id,
 	assert(wavefronts_per_group > 0);
 
 	/* Initialize */
-	work_group = xcalloc(1, sizeof(struct si_work_group_t));
-	work_group->id = work_group_id;
-	work_group->ndrange = ndrange;
+	self->id = id;
+	self->ndrange = ndrange;
 
 	/* Create LDS */
-	work_group->lds_module = mem_create();
-	work_group->lds_module->safe = 0;
+	self->lds_module = mem_create();
+	self->lds_module->safe = 0;
 
 	/* Allocate pointers for work-items (will actually be created when
 	 * wavefronts are created) */
-	work_group->work_items = xcalloc(si_emu_wavefront_size * 
+	self->work_items = xcalloc(si_emu_wavefront_size * 
 		wavefronts_per_group, sizeof(void *));
-	work_group->wavefronts = xcalloc(wavefronts_per_group, sizeof(void *));
-	work_group->wavefront_count = wavefronts_per_group;
+	self->wavefronts = xcalloc(wavefronts_per_group, sizeof(void *));
+	self->wavefront_count = wavefronts_per_group;
 
 	/* Allocate wavefronts and work-items */
-	SI_FOREACH_WAVEFRONT_IN_WORK_GROUP(work_group, wavefront_id)
+	SI_FOREACH_WAVEFRONT_IN_WORK_GROUP(self, wavefront_id)
 	{
-		work_group->wavefronts[wavefront_id] = si_wavefront_create(
-			work_group->id * wavefronts_per_group + wavefront_id,
-			work_group);
+		self->wavefronts[wavefront_id] = new(SIWavefront,
+			self->id * wavefronts_per_group + wavefront_id,
+			self);
 
-		wavefront = work_group->wavefronts[wavefront_id];
+		wavefront = self->wavefronts[wavefront_id];
 
 		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
 		{
 			wavefront_offset = wavefront_id * si_emu_wavefront_size;
 
-			work_group->work_items[wavefront_offset+work_item_id] = 
+			self->work_items[wavefront_offset+work_item_id] = 
 				wavefront->work_items[work_item_id];
-			work_group->work_items[wavefront_offset+work_item_id]->
-				work_group = work_group;
+			self->work_items[wavefront_offset+work_item_id]->
+				work_group = self;
 		}
 	}
 
 	/* Initialize work-group and work-item metadata */
-	work_group->id_3d[0] = work_group_id % ndrange->group_count3[0];
-	work_group->id_3d[1] = (work_group_id / ndrange->group_count3[0]) % 
+	self->id_3d[0] = id % ndrange->group_count3[0];
+	self->id_3d[1] = (id / ndrange->group_count3[0]) % 
 		ndrange->group_count3[1];
-	work_group->id_3d[2] = work_group_id / (ndrange->group_count3[0] * 
+	self->id_3d[2] = id / (ndrange->group_count3[0] * 
 		ndrange->group_count3[1]);
-	work_group->id = work_group_id;
 
 	/* Number of work-items in work-group */
-	work_group->work_item_count = ndrange->local_size3[2] *
+	self->work_item_count = ndrange->local_size3[2] *
 		ndrange->local_size3[1] * ndrange->local_size3[0];
 
 	/* Global ID of work-item (0,0,0) within the work group */
-	work_item_gidx_start = work_group->id_3d[0] * ndrange->local_size3[0];
-	work_item_gidy_start = work_group->id_3d[1] * ndrange->local_size3[1];
-	work_item_gidz_start = work_group->id_3d[2] * ndrange->local_size3[2];
+	work_item_gidx_start = self->id_3d[0] * ndrange->local_size3[0];
+	work_item_gidy_start = self->id_3d[1] * ndrange->local_size3[1];
+	work_item_gidz_start = self->id_3d[2] * ndrange->local_size3[2];
 
 	/* Initialize work-item metadata */
 	lid = 0;
-	tid = work_group->id * work_items_per_group;
+	tid = self->id * work_items_per_group;
 	for (lidz = 0; lidz < ndrange->local_size3[2]; lidz++)
 	{
 		for (lidy = 0; lidy < ndrange->local_size3[1]; lidy++)
 		{
 			for (lidx = 0; lidx < ndrange->local_size3[0]; lidx++)
 			{
-				work_item = work_group->work_items[lid];
+				work_item = self->work_items[lid];
 
 				/* Global IDs */
 				work_item->id_3d[0] = work_item_gidx_start + 
@@ -180,9 +178,9 @@ struct si_work_group_t *si_work_group_create(unsigned int work_group_id,
 	}
 
 	/* Intialize wavefront state */
-	SI_FOREACH_WAVEFRONT_IN_WORK_GROUP(work_group, wavefront_id)
+	SI_FOREACH_WAVEFRONT_IN_WORK_GROUP(self, wavefront_id)
 	{
-		wavefront = work_group->wavefronts[wavefront_id];
+		wavefront = self->wavefronts[wavefront_id];
 
 		/* Set PC */
 		wavefront->pc = 0;
@@ -220,7 +218,7 @@ struct si_work_group_t *si_work_group_create(unsigned int work_group_id,
 			if (user_elements[i].dataClass == IMM_CONST_BUFFER)
 			{
 				/* Store CB pointer in sregs */
-				si_wavefront_init_sreg_with_cb(wavefront,
+				SIWavefrontInitSRegWithConstantBuffer(wavefront,
 					user_elements[i].startUserReg,
 					user_elements[i].userRegCount,
 					user_elements[i].apiSlot);
@@ -228,7 +226,7 @@ struct si_work_group_t *si_work_group_create(unsigned int work_group_id,
 			else if (user_elements[i].dataClass == IMM_UAV)
 			{
 				/* Store UAV pointer in sregs */
-				si_wavefront_init_sreg_with_uav(wavefront,
+				SIWavefrontInitSRegWithUAV(wavefront,
 					user_elements[i].startUserReg,
 					user_elements[i].userRegCount,
 					user_elements[i].apiSlot);
@@ -237,14 +235,14 @@ struct si_work_group_t *si_work_group_create(unsigned int work_group_id,
 				PTR_CONST_BUFFER_TABLE)
 			{
 				/* Store CB table in sregs */
-				si_wavefront_init_sreg_with_cb_table(wavefront,
+				SIWavefrontInitSRegWithConstantBufferTable(wavefront,
 					user_elements[i].startUserReg,
 					user_elements[i].userRegCount);
 			}
 			else if (user_elements[i].dataClass == PTR_UAV_TABLE)
 			{
 				/* Store UAV table in sregs */
-				si_wavefront_init_sreg_with_uav_table(
+				SIWavefrontInitSRegWithUAVTable(
 					wavefront,
 					user_elements[i].startUserReg,
 					user_elements[i].userRegCount);
@@ -253,7 +251,7 @@ struct si_work_group_t *si_work_group_create(unsigned int work_group_id,
 			else if (user_elements[i].dataClass == 21)
 			{
 				/* Store VB table in sregs */
-				si_wavefront_init_sreg_with_vertex_buffer_table(
+				SIWavefrontInitSRegWithBufferTable(
 					wavefront,
 					user_elements[i].startUserReg,
 					user_elements[i].userRegCount);
@@ -262,7 +260,7 @@ struct si_work_group_t *si_work_group_create(unsigned int work_group_id,
 			else if (user_elements[i].dataClass == 16)
 			{
 				/* Store Fetch Shader pointer in sregs */
-				si_wavefront_init_sreg_with_fetch_shader(
+				SIWavefrontInitSRegWithFetchShader(
 					wavefront,
 					user_elements[i].startUserReg,
 					user_elements[i].userRegCount);
@@ -294,42 +292,32 @@ struct si_work_group_t *si_work_group_create(unsigned int work_group_id,
 	}
 
 	/* Statistics */
-	si_emu->work_group_count++;
-
-	/* Return */
-	return work_group;
+	emu->work_group_count++;
 }
 
-void si_work_group_free(struct si_work_group_t *work_group)
+
+void SIWorkGroupDestroy(SIWorkGroup *self)
 {
-	struct si_wavefront_t *wavefront;
+	SIWavefront *wavefront;
 
 	int wavefront_id;
 	int work_item_id; 
 
-	assert(work_group);
-
 	/* Free wavefronts and work-items */
-	SI_FOREACH_WAVEFRONT_IN_WORK_GROUP(work_group, wavefront_id)
+	SI_FOREACH_WAVEFRONT_IN_WORK_GROUP(self, wavefront_id)
 	{
-		wavefront = work_group->wavefronts[wavefront_id];
+		wavefront = self->wavefronts[wavefront_id];
 
 		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
-		{
-			si_work_item_free(wavefront->work_items[work_item_id]);
-		}
+			delete(wavefront->work_items[work_item_id]);
 
-		si_work_item_free(wavefront->scalar_work_item);
-		si_wavefront_free(wavefront);
+		delete(wavefront->scalar_work_item);
+		delete(wavefront);
 	}
-	free(work_group->wavefronts);
-	free(work_group->work_items);
+	free(self->wavefronts);
+	free(self->work_items);
 
 	/* Free LDS memory module */
-	mem_free(work_group->lds_module);
-
-	/* Free work-group */
-	memset(work_group, 0, sizeof(struct si_work_group_t));
-	free(work_group);
-	work_group = NULL;
+	mem_free(self->lds_module);
 }
+

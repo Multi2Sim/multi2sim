@@ -105,9 +105,9 @@ int SIEmuRun(Emu *self)
 	SIEmu *emu = asSIEmu(self);
 	OpenclDriver *opencl_driver;
 
-	struct si_ndrange_t *ndrange;
-	struct si_wavefront_t *wavefront;
-	struct si_work_group_t *work_group;
+	SINDRange *ndrange;
+	SIWavefront *wavefront;
+	SIWorkGroup *work_group;
 
 	int wavefront_id;
 	long work_group_id;
@@ -130,7 +130,7 @@ int SIEmuRun(Emu *self)
 
 	/* Instantiate the next work-group */
 	work_group_id = (long)list_bottom(emu->running_work_groups);
-	work_group = si_work_group_create(work_group_id, ndrange);
+	work_group = new(SIWorkGroup, work_group_id, ndrange);
 
 	/* Execute the work-group to completion */
 	while (!work_group->finished_emu)
@@ -143,7 +143,7 @@ int SIEmuRun(Emu *self)
 				continue;
 
 			/* Execute instruction in wavefront */
-			si_wavefront_execute(wavefront);
+			SIWavefrontExecute(wavefront);
 		}
 	}
 
@@ -151,7 +151,7 @@ int SIEmuRun(Emu *self)
 	list_dequeue(emu->running_work_groups);
 
 	/* Free work group */
-	si_work_group_free(work_group);
+	delete(work_group);
 
 	/* If there is not more work groups to run, let driver know */
 	if (!emu->waiting_work_groups->count && opencl_driver)
