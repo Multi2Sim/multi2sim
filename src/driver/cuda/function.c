@@ -42,6 +42,7 @@ struct cuda_function_t *cuda_function_create(struct cuda_module_t *module,
 	char func_text_sec_name[MAX_STRING_SIZE];
 	char func_info_sec_name[MAX_STRING_SIZE];
 	unsigned char inst_bin_byte;
+	char arg_name[MAX_STRING_SIZE];
 	int i;
 
 	/* Allocate */
@@ -118,9 +119,14 @@ struct cuda_function_t *cuda_function_create(struct cuda_module_t *module,
 	function->arg_count = ((unsigned char *)
 			func_info_sec->buffer.ptr)[10] / 4;
 
-	/* Create argument list */
+	/* Create arguments */
 	function->arg_array = xcalloc(function->arg_count, 
 			sizeof(struct cuda_function_arg_t *));
+	for (i = 0; i < function->arg_count; ++i)
+	{
+		snprintf(arg_name, MAX_STRING_SIZE, "arg_%d", i);
+		function->arg_array[i] = cuda_function_arg_create(arg_name);
+	}
 
 	/* Add function to function list */
 	list_add(function_list, function);
