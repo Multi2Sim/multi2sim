@@ -233,9 +233,9 @@ void si_compute_unit_free(struct si_compute_unit_t *compute_unit)
 }
 
 void si_compute_unit_map_work_group(struct si_compute_unit_t *compute_unit,
-	struct si_work_group_t *work_group)
+	SIWorkGroup *work_group)
 {
-	struct si_wavefront_t *wavefront;
+	SIWavefront *wavefront;
 	int wavefront_id;
 	int wfp_id;
 
@@ -293,9 +293,10 @@ void si_compute_unit_map_work_group(struct si_compute_unit_t *compute_unit,
 
 
 void si_compute_unit_unmap_work_group(struct si_compute_unit_t *compute_unit,
-	struct si_work_group_t *work_group)
+	SIWorkGroup *work_group)
 {
-	struct si_ndrange_t *ndrange = work_group->ndrange;
+	SINDRange *ndrange = work_group->ndrange;
+	SIEmu *emu = ndrange->emu;
 	OpenclDriver *driver = ndrange->opencl_driver;
 
 	long work_group_id;
@@ -317,12 +318,11 @@ void si_compute_unit_unmap_work_group(struct si_compute_unit_t *compute_unit,
 		work_group);
 
 	work_group_id = work_group->id;
-	assert(list_index_of(si_emu->running_work_groups, 
-		(void*) work_group_id) >= 0);
-	list_remove(si_emu->running_work_groups, (void*)work_group_id);
+	assert(list_index_of(emu->running_work_groups, (void*) work_group_id) >= 0);
+	list_remove(emu->running_work_groups, (void*)work_group_id);
 
-	if (driver && !si_emu->running_work_groups->count &&
-			!si_emu->waiting_work_groups->count)
+	if (driver && !emu->running_work_groups->count &&
+			!emu->waiting_work_groups->count)
 		OpenclDriverRequestWork(driver);
 
 	/* If compute unit is not already in the available list, place
@@ -341,7 +341,7 @@ void si_compute_unit_unmap_work_group(struct si_compute_unit_t *compute_unit,
 	if(si_spatial_report_active)
 		si_report_unmapped_work_group(compute_unit);
 
-	si_work_group_free(work_group);
+	delete(work_group);
 }
 
 void si_compute_unit_fetch(struct si_compute_unit_t *compute_unit, 
@@ -350,8 +350,8 @@ void si_compute_unit_fetch(struct si_compute_unit_t *compute_unit,
 	int i, j;
 	int instructions_processed = 0;
 	int work_item_id;
-	struct si_wavefront_t *wavefront;
-	struct si_work_item_t *work_item;
+	SIWavefront *wavefront;
+	SIWorkItem *work_item;
 	struct si_uop_t *uop;
 	struct si_work_item_uop_t *work_item_uop;
 	struct si_wavefront_pool_entry_t *wavefront_pool_entry;
@@ -445,7 +445,7 @@ void si_compute_unit_fetch(struct si_compute_unit_t *compute_unit,
 		}
 
 		/* Emulate instruction */
-		si_wavefront_execute(wavefront);
+		SIWavefrontExecute(wavefront);
 
 		wavefront_pool_entry = wavefront->wavefront_pool_entry;
 		wavefront_pool_entry->ready = 0;

@@ -148,7 +148,7 @@ void si_lds_mem(struct si_lds_t *lds)
 {
 	struct si_uop_t *uop;
 	struct si_work_item_uop_t *work_item_uop;
-	struct si_work_item_t *work_item;
+	SIWorkItem *work_item;
 	int work_item_id;
 	int instructions_processed = 0;
 	int list_entries;

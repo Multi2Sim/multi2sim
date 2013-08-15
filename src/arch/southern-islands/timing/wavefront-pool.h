@@ -28,7 +28,7 @@ struct si_wavefront_pool_entry_t
 	int id_in_wavefront_pool;
 	struct si_wavefront_pool_t *wavefront_pool;
 
-	struct si_wavefront_t *wavefront;
+	SIWavefront *wavefront;
 	struct si_uop_t *uop;
 
 	/* Status (not mutually exclusive) */

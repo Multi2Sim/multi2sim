@@ -20,7 +20,9 @@
 #ifndef DRIVER_OPENGL_SI_SHADER_H
 #define DRIVER_OPENGL_SI_SHADER_H
 
+#include <lib/class/class.h>
 #include <src/arch/southern-islands/asm/opengl-bin-file.h>
+
 
 /* Forward declaration */
 struct opengl_si_program_t;
@@ -55,15 +57,12 @@ void opengl_si_shader_free(struct opengl_si_shader_t *shdr);
 void opengl_si_shader_init( struct opengl_si_program_t *program, unsigned int shader_id);
 
 
-struct si_ndrange_t;
-void opengl_si_shader_create_ndrange_constant_buffers(
-	struct si_ndrange_t *ndrange);
-void opengl_si_shader_setup_ndrange_constant_buffers(
-	struct si_ndrange_t *ndrange);
+void opengl_si_shader_create_ndrange_constant_buffers(SINDRange *ndrange);
+void opengl_si_shader_setup_ndrange_constant_buffers(SINDRange *ndrange);
 void opengl_si_shader_setup_ndrange_inputs(struct opengl_si_shader_t *shdr,
-		struct si_ndrange_t *ndrange);
+		SINDRange *ndrange);
 void opengl_si_shader_debug_ndrange_state(struct opengl_si_shader_t *shader, 
-	struct si_ndrange_t *ndrange);
-void opengl_si_shader_create_ndrange_tables(struct si_ndrange_t *ndrange);
+		SINDRange *ndrange);
+void opengl_si_shader_create_ndrange_tables(SINDRange *ndrange);
 
 #endif

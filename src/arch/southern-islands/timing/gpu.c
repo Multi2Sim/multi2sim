@@ -422,11 +422,13 @@ int si_gpu_lds_num_ports = 2;
 #define SI_TRACE_VERSION_MINOR		1
 
 
-void si_gpu_map_ndrange(struct si_ndrange_t *ndrange)
+void si_gpu_map_ndrange(SINDRange *ndrange)
 {
+	SIEmu *emu = ndrange->emu;
+
 	/* Assign current ND-Range */
-	assert(si_emu->ndrange);
-	si_emu->ndrange = ndrange;
+	assert(emu->ndrange);
+	emu->ndrange = ndrange;
 
 	/* Check that at least one work-group can be allocated per 
 	 * wavefront pool */
@@ -1090,7 +1092,7 @@ void si_gpu_init(void)
 			si_gpu_report_file_name);
 	
 	/* Create GPU */
-	si_gpu = new(SIGpu);
+	si_gpu = new(SIGpu, si_emu);
 
 	/* Initializations */
 	si_uop_init();
@@ -1140,6 +1142,8 @@ void si_gpu_dump_report(void)
 	struct mod_t *lds_mod;
 	int compute_unit_id;
 
+	SIEmu *emu = si_gpu->emu;
+
 	FILE *f;
 
 	double inst_per_cycle;
@@ -1159,21 +1163,21 @@ void si_gpu_dump_report(void)
 	/* Report for device */
 	fprintf(f, ";\n; Simulation Statistics\n;\n\n");
 	inst_per_cycle = asTiming(si_gpu)->cycle ? 
-		(double)(asEmu(si_emu)->instructions/asTiming(si_gpu)->cycle) : 0.0;
+		(double)(asEmu(emu)->instructions / asTiming(si_gpu)->cycle) : 0.0;
 	fprintf(f, "[ Device ]\n\n");
-	fprintf(f, "NDRangeCount = %d\n", si_emu->ndrange_count);
-	fprintf(f, "WorkGroupCount = %lld\n", si_emu->work_group_count);
-	fprintf(f, "Instructions = %lld\n", asEmu(si_emu)->instructions);
+	fprintf(f, "NDRangeCount = %d\n", emu->ndrange_count);
+	fprintf(f, "WorkGroupCount = %lld\n", emu->work_group_count);
+	fprintf(f, "Instructions = %lld\n", asEmu(emu)->instructions);
 	fprintf(f, "ScalarALUInstructions = %lld\n", 
-		si_emu->scalar_alu_inst_count);
+		emu->scalar_alu_inst_count);
 	fprintf(f, "ScalarMemInstructions = %lld\n", 
-		si_emu->scalar_mem_inst_count);
-	fprintf(f, "BranchInstructions = %lld\n", si_emu->branch_inst_count);
+		emu->scalar_mem_inst_count);
+	fprintf(f, "BranchInstructions = %lld\n", emu->branch_inst_count);
 	fprintf(f, "VectorALUInstructions = %lld\n", 
-		si_emu->vector_alu_inst_count);
-	fprintf(f, "LDSInstructions = %lld\n", si_emu->lds_inst_count);
+		emu->vector_alu_inst_count);
+	fprintf(f, "LDSInstructions = %lld\n", emu->lds_inst_count);
 	fprintf(f, "VectorMemInstructions = %lld\n", 
-		si_emu->vector_mem_inst_count);
+		emu->vector_mem_inst_count);
 	fprintf(f, "Cycles = %lld\n", asTiming(si_gpu)->cycle);
 	fprintf(f, "InstructionsPerCycle = %.4g\n", inst_per_cycle);
 	fprintf(f, "\n\n");
@@ -1244,7 +1248,7 @@ void si_gpu_dump_report(void)
  * Class 'SIGpu'
  */
 
-void SIGpuCreate(SIGpu *self)
+void SIGpuCreate(SIGpu *self, SIEmu *emu)
 {
 	struct si_compute_unit_t *compute_unit;
 	int compute_unit_id;
@@ -1257,6 +1261,7 @@ void SIGpuCreate(SIGpu *self)
 	asTiming(self)->frequency_domain = esim_new_domain(si_gpu_frequency);
 
 	/* Initialize */
+	self->emu = emu;
 	self->available_compute_units = list_create();
 	self->compute_units = xcalloc(si_gpu_num_compute_units, 
 		sizeof(void *));
@@ -1313,35 +1318,36 @@ void SIGpuDumpSummary(Timing *self, FILE *f)
 int SIGpuRun(Timing *self)
 {
 	SIGpu *gpu = asSIGpu(self);
+	SIEmu *emu = gpu->emu;
 	OpenclDriver *opencl_driver;
 
 	struct si_compute_unit_t *compute_unit;
-	struct si_ndrange_t *ndrange;
-	struct si_work_group_t *work_group;
+	SINDRange *ndrange;
+	SIWorkGroup *work_group;
 
 	int compute_unit_id;
 	long work_group_id;
 	
 	/* For efficiency when no Southern Islands emulation is selected, 
 	 * exit here if the list of existing ND-Ranges is empty. */
-	if (!list_count(si_emu->waiting_work_groups) && 
-			!list_count(si_emu->running_work_groups))
+	if (!list_count(emu->waiting_work_groups) &&
+			!list_count(emu->running_work_groups))
 		return FALSE;
 
-	ndrange = si_emu->ndrange;
+	ndrange = emu->ndrange;
 	opencl_driver = ndrange->opencl_driver;
 	assert(ndrange);
 
 	/* Allocate work-groups to compute units */
 	while (list_count(gpu->available_compute_units) && 
-		list_count(si_emu->waiting_work_groups))
+		list_count(emu->waiting_work_groups))
 	{
 		work_group_id = (long) list_dequeue(
-			si_emu->waiting_work_groups);
+			emu->waiting_work_groups);
 
-		work_group = si_work_group_create(work_group_id, ndrange);
+		work_group = new(SIWorkGroup, work_group_id, ndrange);
 
-		list_enqueue(si_emu->running_work_groups, 
+		list_enqueue(emu->running_work_groups,
 			(void *)work_group_id);
 
 		si_compute_unit_map_work_group(
@@ -1358,7 +1364,7 @@ int SIGpuRun(Timing *self)
 		esim_finish = esim_finish_si_max_cycles;
 
 	/* Stop if maximum number of GPU instructions exceeded */
-	if (si_emu_max_inst && asEmu(si_emu)->instructions >= 
+	if (si_emu_max_inst && asEmu(emu)->instructions >=
 			si_emu_max_inst)
 		esim_finish = esim_finish_si_max_inst;
 
@@ -1376,7 +1382,7 @@ int SIGpuRun(Timing *self)
 		return TRUE;
 
 	/* If we're out of work, request more */
-	if (opencl_driver && !si_emu->waiting_work_groups->count)
+	if (opencl_driver && !emu->waiting_work_groups->count)
 		OpenclDriverRequestWork(opencl_driver);
 
 	/* Run one loop iteration on each busy compute unit */

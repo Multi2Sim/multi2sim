@@ -310,7 +310,7 @@ void opengl_si_shader_init( struct opengl_si_program_t *program, unsigned int sh
 }
 
 void opengl_si_shader_create_ndrange_constant_buffers(
-	struct si_ndrange_t *ndrange)
+	SINDRange *ndrange)
 {
 	/* Create constant buffer 0 */
 	ndrange->cb0 = si_emu->video_mem_top;
@@ -322,7 +322,7 @@ void opengl_si_shader_create_ndrange_constant_buffers(
 }
 
 void opengl_si_shader_setup_ndrange_constant_buffers(
-	struct si_ndrange_t *ndrange)
+	SINDRange *ndrange)
 {
 	struct si_buffer_desc_t buffer_desc;
 
@@ -333,53 +333,53 @@ void opengl_si_shader_setup_ndrange_constant_buffers(
 	opengl_si_create_buffer_desc(ndrange->cb0, SI_EMU_CONST_BUF_0_SIZE, 1,
 		si_input_int, &buffer_desc);
 
-	si_ndrange_insert_buffer_into_const_buf_table(ndrange, &buffer_desc, 0);
+	SINDRangeInsertBufferIntoConstantBufferTable(ndrange, &buffer_desc, 0);
 
 	opengl_si_create_buffer_desc(ndrange->cb1, SI_EMU_CONST_BUF_1_SIZE, 1,
 		si_input_int, &buffer_desc);
 
-	si_ndrange_insert_buffer_into_const_buf_table(ndrange, &buffer_desc, 1);
+	SINDRangeInsertBufferIntoConstantBufferTable(ndrange, &buffer_desc, 1);
 
 	/* Initialize constant buffers */
 
 	/* CB0 bytes 0:15 */
 
 	/* Global work size for the {x,y,z} dimensions */
-	si_ndrange_const_buf_write(ndrange, 0, 0, 
+	SINDRangeConstantBufferWrite(ndrange, 0, 0, 
 		&ndrange->global_size3[0], 4);
-	si_ndrange_const_buf_write(ndrange, 0, 4, 
+	SINDRangeConstantBufferWrite(ndrange, 0, 4, 
 		&ndrange->global_size3[1], 4);
-	si_ndrange_const_buf_write(ndrange, 0, 8, 
+	SINDRangeConstantBufferWrite(ndrange, 0, 8, 
 		&ndrange->global_size3[2], 4);
 
 	/* Number of work dimensions */
-	si_ndrange_const_buf_write(ndrange, 0, 12, &ndrange->work_dim, 4);
+	SINDRangeConstantBufferWrite(ndrange, 0, 12, &ndrange->work_dim, 4);
 
 	/* CB0 bytes 16:31 */
 
 	/* Local work size for the {x,y,z} dimensions */
-	si_ndrange_const_buf_write(ndrange, 0, 16, 
+	SINDRangeConstantBufferWrite(ndrange, 0, 16, 
 		&ndrange->local_size3[0], 4);
-	si_ndrange_const_buf_write(ndrange, 0, 20, 
+	SINDRangeConstantBufferWrite(ndrange, 0, 20, 
 		&ndrange->local_size3[1], 4);
-	si_ndrange_const_buf_write(ndrange, 0, 24, 
+	SINDRangeConstantBufferWrite(ndrange, 0, 24, 
 		&ndrange->local_size3[2], 4);
 
 	/* 0  */
-	si_ndrange_const_buf_write(ndrange, 0, 28, &zero, 4);
+	SINDRangeConstantBufferWrite(ndrange, 0, 28, &zero, 4);
 
 	/* CB0 bytes 32:47 */
 
 	/* Global work size {x,y,z} / local work size {x,y,z} */
-	si_ndrange_const_buf_write(ndrange, 0, 32, 
+	SINDRangeConstantBufferWrite(ndrange, 0, 32, 
 		&ndrange->group_count3[0], 4);
-	si_ndrange_const_buf_write(ndrange, 0, 36, 
+	SINDRangeConstantBufferWrite(ndrange, 0, 36, 
 		&ndrange->group_count3[1], 4);
-	si_ndrange_const_buf_write(ndrange, 0, 40, 
+	SINDRangeConstantBufferWrite(ndrange, 0, 40, 
 		&ndrange->group_count3[2], 4);
 
 	/* 0  */
-	si_ndrange_const_buf_write(ndrange, 0, 44, &zero, 4);
+	SINDRangeConstantBufferWrite(ndrange, 0, 44, &zero, 4);
 
 	/* CB0 bytes 48:63 */
 
@@ -389,10 +389,10 @@ void opengl_si_shader_setup_ndrange_constant_buffers(
 	/* FIXME Private memory allocated per work_item */
 
 	/* 0  */
-	si_ndrange_const_buf_write(ndrange, 0, 56, &zero, 4);
+	SINDRangeConstantBufferWrite(ndrange, 0, 56, &zero, 4);
 
 	/* 0  */
-	si_ndrange_const_buf_write(ndrange, 0, 60, &zero, 4);
+	SINDRangeConstantBufferWrite(ndrange, 0, 60, &zero, 4);
 
 	/* CB0 bytes 64:79 */
 
@@ -402,7 +402,7 @@ void opengl_si_shader_setup_ndrange_constant_buffers(
 	/* FIXME Local memory allocated per group */
 
 	/* 0 */
-	si_ndrange_const_buf_write(ndrange, 0, 72, &zero, 4);
+	SINDRangeConstantBufferWrite(ndrange, 0, 72, &zero, 4);
 
 	/* FIXME Pointer to location in global buffer where math library
 	 * tables start. */
@@ -411,39 +411,39 @@ void opengl_si_shader_setup_ndrange_constant_buffers(
 
 	/* 0.0 as IEEE-32bit float - required for math library. */
 	f = 0.0f;
-	si_ndrange_const_buf_write(ndrange, 0, 80, &f, 4);
+	SINDRangeConstantBufferWrite(ndrange, 0, 80, &f, 4);
 
 	/* 0.5 as IEEE-32bit float - required for math library. */
 	f = 0.5f;
-	si_ndrange_const_buf_write(ndrange, 0, 84, &f, 4);
+	SINDRangeConstantBufferWrite(ndrange, 0, 84, &f, 4);
 
 	/* 1.0 as IEEE-32bit float - required for math library. */
 	f = 1.0f;
-	si_ndrange_const_buf_write(ndrange, 0, 88, &f, 4);
+	SINDRangeConstantBufferWrite(ndrange, 0, 88, &f, 4);
 
 	/* 2.0 as IEEE-32bit float - required for math library. */
 	f = 2.0f;
-	si_ndrange_const_buf_write(ndrange, 0, 92, &f, 4);
+	SINDRangeConstantBufferWrite(ndrange, 0, 92, &f, 4);
 
 	/* CB0 bytes 96:111 */
 
 	/* Global offset for the {x,y,z} dimension of the work_item spawn */
-	si_ndrange_const_buf_write(ndrange, 0, 96, &zero, 4);
-	si_ndrange_const_buf_write(ndrange, 0, 100, &zero, 4);
-	si_ndrange_const_buf_write(ndrange, 0, 104, &zero, 4);
+	SINDRangeConstantBufferWrite(ndrange, 0, 96, &zero, 4);
+	SINDRangeConstantBufferWrite(ndrange, 0, 100, &zero, 4);
+	SINDRangeConstantBufferWrite(ndrange, 0, 104, &zero, 4);
 
 	/* Global single dimension flat offset: x * y * z */
-	si_ndrange_const_buf_write(ndrange, 0, 108, &zero, 4);
+	SINDRangeConstantBufferWrite(ndrange, 0, 108, &zero, 4);
 
 	/* CB0 bytes 112:127 */
 
 	/* Group offset for the {x,y,z} dimensions of the work_item spawn */
-	si_ndrange_const_buf_write(ndrange, 0, 112, &zero, 4);
-	si_ndrange_const_buf_write(ndrange, 0, 116, &zero, 4);
-	si_ndrange_const_buf_write(ndrange, 0, 120, &zero, 4);
+	SINDRangeConstantBufferWrite(ndrange, 0, 112, &zero, 4);
+	SINDRangeConstantBufferWrite(ndrange, 0, 116, &zero, 4);
+	SINDRangeConstantBufferWrite(ndrange, 0, 120, &zero, 4);
 
 	/* Group single dimension flat offset, x * y * z */
-	si_ndrange_const_buf_write(ndrange, 0, 124, &zero, 4);
+	SINDRangeConstantBufferWrite(ndrange, 0, 124, &zero, 4);
 
 	/* CB0 bytes 128:143 */
 
@@ -453,7 +453,7 @@ void opengl_si_shader_setup_ndrange_constant_buffers(
 }
 
 void opengl_si_shader_setup_ndrange_inputs(struct opengl_si_shader_t *shdr,
-		struct si_ndrange_t *ndrange)
+		SINDRange *ndrange)
 {
 	struct si_input_t *input;
 	struct si_buffer_desc_t buffer_desc;
@@ -482,7 +482,7 @@ void opengl_si_shader_setup_ndrange_inputs(struct opengl_si_shader_t *shdr,
 			input->device_ptr, input->size, input->num_elems, input->type);
 
 		/* Add to Vertex Buffer table */
-		si_ndrange_insert_buffer_into_vertex_buffer_table(
+		SINDRangeInsertBufferIntoVertexBufferTable(
 			ndrange, &buffer_desc,
 			input->usage_index);
 	}
@@ -490,12 +490,12 @@ void opengl_si_shader_setup_ndrange_inputs(struct opengl_si_shader_t *shdr,
 }
 
 void opengl_si_shader_debug_ndrange_state(struct opengl_si_shader_t *shader, 
-	struct si_ndrange_t *ndrange)
+	SINDRange *ndrange)
 {
 
 }
 
-void opengl_si_shader_create_ndrange_tables(struct si_ndrange_t *ndrange)
+void opengl_si_shader_create_ndrange_tables(SINDRange *ndrange)
 {
 	/* Setup internal tables */
 	ndrange->const_buf_table = si_emu->video_mem_top;

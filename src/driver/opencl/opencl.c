@@ -943,12 +943,12 @@ static int opencl_abi_si_ndrange_initialize_impl(X86Context *ctx)
 {
 	X86Emu *emu = ctx->emu;
 	OpenclDriver *driver = emu->opencl_driver;
+	SINDRange *ndrange;
 
 	struct elf_buffer_t *elf_buffer;
 	struct mem_t *mem = ctx->mem;
 	struct opencl_si_kernel_t *kernel;
 	struct si_bin_enc_user_element_t *user_elements;
-	struct si_ndrange_t *ndrange;
 	struct x86_regs_t *regs = ctx->regs;
 
 	int i;
@@ -996,7 +996,7 @@ static int opencl_abi_si_ndrange_initialize_impl(X86Context *ctx)
 		fatal("%s: invalid kernel ID (%d)", __FUNCTION__, kernel_id);
 
 	/* Create ND-Range */
-	ndrange = si_ndrange_create(si_emu);
+	ndrange = new(SINDRange, si_emu);
 	ndrange->opencl_driver = driver;
 	ndrange->local_mem_top = kernel->mem_size_local;
 	ndrange->num_sgpr_used = kernel->bin_file->
@@ -1005,7 +1005,7 @@ static int opencl_abi_si_ndrange_initialize_impl(X86Context *ctx)
 		enc_dict_entry_southern_islands->num_vgpr_used;
 	ndrange->wg_id_sgpr = kernel->bin_file->
 		enc_dict_entry_southern_islands->compute_pgm_rsrc2->user_sgpr;
-	si_ndrange_setup_size(ndrange, global_size, local_size, work_dim);
+	SINDRangeSetupSize(ndrange, global_size, local_size, work_dim);
 
 	/* Copy user elements from kernel to ND-Range */
 	user_element_count = kernel->bin_file->
@@ -1023,7 +1023,7 @@ static int opencl_abi_si_ndrange_initialize_impl(X86Context *ctx)
 	if (!elf_buffer->size)
 		fatal("%s: cannot load kernel code", __FUNCTION__);
 
-	si_ndrange_setup_inst_mem(ndrange, elf_buffer->ptr, 
+	SINDRangeSetupInstMem(ndrange, elf_buffer->ptr, 
 		elf_buffer->size, 0);
 
 	assert(!driver->kernel);
@@ -1233,7 +1233,7 @@ static void opencl_abi_si_ndrange_finish_wakeup(X86Context *ctx,
 	opencl_debug("waking up after finish");
 
 	/* Reset driver state */
-	si_ndrange_free(driver->ndrange);
+	delete(driver->ndrange);
 	driver->ndrange = NULL;
 	driver->kernel = NULL;
 	driver->wait_for_ndrange_completion = 0;
@@ -1255,7 +1255,7 @@ static int opencl_abi_si_ndrange_finish_impl(X86Context *ctx)
 		opencl_debug("\tndrange is complete\n");
 
 		/* Reset driver state */
-		si_ndrange_free(driver->ndrange);
+		delete(driver->ndrange);
 		driver->ndrange = NULL;
 		driver->kernel = NULL;
 		driver->wait_for_ndrange_completion = 0;
@@ -1295,9 +1295,9 @@ static int opencl_abi_si_ndrange_pass_mem_objs_impl(X86Context *ctx)
 {
 	X86Emu *emu = ctx->emu;
 	OpenclDriver *driver = emu->opencl_driver;
+	SINDRange *ndrange;
 
 	struct opencl_si_kernel_t *kernel;
-	struct si_ndrange_t *ndrange;
 	struct x86_regs_t *regs = ctx->regs;
 
 	unsigned int tables_ptr;

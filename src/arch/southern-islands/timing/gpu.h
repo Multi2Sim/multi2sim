@@ -225,8 +225,7 @@ void si_compute_unit_run_simd(struct si_compute_unit_t *compute_unit);
 void si_compute_unit_run_scalar_unit(struct si_compute_unit_t *compute_unit);
 void si_compute_unit_run_branch_unit(struct si_compute_unit_t *compute_unit);
 
-struct si_ndrange_t;
-void si_gpu_map_ndrange(struct si_ndrange_t *ndrange);
+void si_gpu_map_ndrange(SINDRange *ndrange);
 
 void si_simd_run(struct si_simd_t *simd);
 void si_scalar_unit_run(struct si_scalar_unit_t *scalar_unit);
@@ -242,6 +241,9 @@ void si_lds_run(struct si_lds_t *lds);
 
 CLASS_BEGIN(SIGpu, Timing)
 
+	/* Associated emulator */
+	SIEmu *emu;
+
 	/* ND-Range running on it */
 	int work_groups_per_wavefront_pool;
 	int work_groups_per_compute_unit;
@@ -256,7 +258,7 @@ CLASS_BEGIN(SIGpu, Timing)
 
 CLASS_END(SIGpu)
 
-void SIGpuCreate(SIGpu *self);
+void SIGpuCreate(SIGpu *self, SIEmu *emu);
 void SIGpuDestroy(SIGpu *self);
 
 void SIGpuDump(Object *self, FILE *f);

@@ -77,9 +77,9 @@ void si_wavefront_pool_entry_clear(
 
 void si_wavefront_pool_map_wavefronts(
 	struct si_wavefront_pool_t *wavefront_pool, 
-	struct si_work_group_t *work_group)
+	SIWorkGroup *work_group)
 {
-	struct si_wavefront_t *wavefront;
+	SIWavefront *wavefront;
 	int wg_id_in_wfp;
 	int first_entry;
 	int i;
@@ -109,9 +109,9 @@ void si_wavefront_pool_map_wavefronts(
 }
 
 void si_wavefront_pool_unmap_wavefronts(struct si_wavefront_pool_t 
-	*wavefront_pool, struct si_work_group_t *work_group)
+	*wavefront_pool, SIWorkGroup *work_group)
 {
-	struct si_wavefront_t *wavefront;
+	SIWavefront *wavefront;
 	int wf_id_in_wfp;
 	int i;
 
