@@ -29,28 +29,8 @@
 #include "asm.h"
 #include "bin-file.h"
 #include "inst.h"
+#include "opengl-bin-file.h"
 
-
-struct si_inst_info_t si_inst_info[SIInstOpcodeCount];
-
-
-/* Pointers to 'si_inst_info' table indexed by instruction opcode */
-struct si_inst_info_t *si_inst_info_sopp[SI_INST_INFO_SOPP_MAX_VALUE + 1];
-struct si_inst_info_t *si_inst_info_sopc[SI_INST_INFO_SOPC_MAX_VALUE + 1];
-struct si_inst_info_t *si_inst_info_sop1[SI_INST_INFO_SOP1_MAX_VALUE + 1];
-struct si_inst_info_t *si_inst_info_sopk[SI_INST_INFO_SOPK_MAX_VALUE + 1];
-struct si_inst_info_t *si_inst_info_sop2[SI_INST_INFO_SOP2_MAX_VALUE + 1];
-struct si_inst_info_t *si_inst_info_smrd[SI_INST_INFO_SMRD_MAX_VALUE + 1];
-struct si_inst_info_t *si_inst_info_vop3[SI_INST_INFO_VOP3_MAX_VALUE + 1];
-struct si_inst_info_t *si_inst_info_vopc[SI_INST_INFO_VOPC_MAX_VALUE + 1];
-struct si_inst_info_t *si_inst_info_vop1[SI_INST_INFO_VOP1_MAX_VALUE + 1];
-struct si_inst_info_t *si_inst_info_vop2[SI_INST_INFO_VOP2_MAX_VALUE + 1];
-struct si_inst_info_t *si_inst_info_vintrp[SI_INST_INFO_VINTRP_MAX_VALUE + 1];
-struct si_inst_info_t *si_inst_info_ds[SI_INST_INFO_DS_MAX_VALUE + 1];
-struct si_inst_info_t *si_inst_info_mtbuf[SI_INST_INFO_MTBUF_MAX_VALUE + 1];
-struct si_inst_info_t *si_inst_info_mubuf[SI_INST_INFO_MUBUF_MAX_VALUE + 1];
-struct si_inst_info_t *si_inst_info_mimg[SI_INST_INFO_MIMG_MAX_VALUE + 1];
-struct si_inst_info_t *si_inst_info_exp[SI_INST_INFO_EXP_MAX_VALUE + 1];
 
 
 struct str_map_t si_inst_fmt_map =
@@ -215,21 +195,24 @@ struct str_map_t si_inst_special_reg_map = {
 
 
 
-/* 
- * Initialization/finalization of disassembler
+/*
+ * Class 'SIAsm'
  */
 
-void si_disasm_init()
+void SIAsmCreate(SIAsm *self)
 {
 	struct si_inst_info_t *info;
 	int i;
+
+	/* Allocate array of instruction information */
+	self->inst_info = xcalloc(SIInstOpcodeCount, sizeof(struct si_inst_info_t));
 
 	/* Type size assertions */
 	assert(sizeof(SIInstReg) == 4);
 
 	/* Read information about all instructions */
 #define DEFINST(_name, _fmt_str, _fmt, _op, _size, _flags) \
-	info = &si_inst_info[SI_INST_##_name]; \
+	info = &self->inst_info[SI_INST_##_name]; \
 	info->opcode = SI_INST_##_name; \
 	info->name = #_name; \
 	info->fmt_str = _fmt_str; \
@@ -243,48 +226,48 @@ void si_disasm_init()
 	/* Tables of pointers to 'si_inst_info' */
 	for (i = 1; i < SIInstOpcodeCount; i++)
 	{
-		info = &si_inst_info[i];
+		info = &self->inst_info[i];
 
 		if (info->fmt == SIInstFormatSOPP)
 		{
 			assert(IN_RANGE(info->op, 0, 
 				SI_INST_INFO_SOPP_MAX_VALUE));
-			si_inst_info_sopp[info->op] = info;
+			self->inst_info_sopp[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == SIInstFormatSOPC)
 		{
 			assert(IN_RANGE(info->op, 0, 
 				SI_INST_INFO_SOPC_MAX_VALUE));
-			si_inst_info_sopc[info->op] = info;
+			self->inst_info_sopc[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == SIInstFormatSOP1)
 		{
 			assert(IN_RANGE(info->op, 0, 
 				SI_INST_INFO_SOP1_MAX_VALUE));
-			si_inst_info_sop1[info->op] = info;
+			self->inst_info_sop1[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == SIInstFormatSOPK)
 		{
 			assert(IN_RANGE(info->op, 0, 
 				SI_INST_INFO_SOPK_MAX_VALUE));
-			si_inst_info_sopk[info->op] = info;
+			self->inst_info_sopk[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == SIInstFormatSOP2)
 		{
 			assert(IN_RANGE(info->op, 0, 
 				SI_INST_INFO_SOP2_MAX_VALUE));
-			si_inst_info_sop2[info->op] = info;
+			self->inst_info_sop2[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == SIInstFormatSMRD) 
 		{
 			assert(IN_RANGE(info->op, 0, 
 				SI_INST_INFO_SMRD_MAX_VALUE));
-			si_inst_info_smrd[info->op] = info;
+			self->inst_info_smrd[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == SIInstFormatVOP3a || info->fmt == SIInstFormatVOP3b)
@@ -293,12 +276,12 @@ void si_disasm_init()
 
 			assert(IN_RANGE(info->op, 0, 
 				SI_INST_INFO_VOP3_MAX_VALUE));
-			si_inst_info_vop3[info->op] = info;
+			self->inst_info_vop3[info->op] = info;
 			if (info->flags & SIInstFlagOp8)
 			{
 				for (i = 1; i < 8; i++)
 				{
-					si_inst_info_vop3[info->op + i] = 
+					self->inst_info_vop3[info->op + i] = 
 						info;
 				}
 			}
@@ -306,7 +289,7 @@ void si_disasm_init()
 			{
 				for (i = 1; i < 16; i++)
 				{
-					si_inst_info_vop3[info->op + i] = 
+					self->inst_info_vop3[info->op + i] = 
 						info;
 				}
 			}
@@ -316,63 +299,63 @@ void si_disasm_init()
 		{
 			assert(IN_RANGE(info->op, 0, 
 				SI_INST_INFO_VOPC_MAX_VALUE));
-			si_inst_info_vopc[info->op] = info;
+			self->inst_info_vopc[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == SIInstFormatVOP1)
 		{
 			assert(IN_RANGE(info->op, 0, 
 				SI_INST_INFO_VOP1_MAX_VALUE));
-			si_inst_info_vop1[info->op] = info;
+			self->inst_info_vop1[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == SIInstFormatVOP2)
 		{
 			assert(IN_RANGE(info->op, 0, 
 				SI_INST_INFO_VOP2_MAX_VALUE));
-			si_inst_info_vop2[info->op] = info;
+			self->inst_info_vop2[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == SIInstFormatVINTRP)
 		{
 			assert(IN_RANGE(info->op, 0, 
 				SI_INST_INFO_VINTRP_MAX_VALUE));
-			si_inst_info_vintrp[info->op] = info;
+			self->inst_info_vintrp[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == SIInstFormatDS)
 		{
 			assert(IN_RANGE(info->op, 0, 
 				SI_INST_INFO_DS_MAX_VALUE));
-			si_inst_info_ds[info->op] = info;
+			self->inst_info_ds[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == SIInstFormatMTBUF)
 		{
 			assert(IN_RANGE(info->op, 0, 
 				SI_INST_INFO_MTBUF_MAX_VALUE));
-			si_inst_info_mtbuf[info->op] = info;
+			self->inst_info_mtbuf[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == SIInstFormatMUBUF)
 		{
 			assert(IN_RANGE(info->op, 0, 
 				SI_INST_INFO_MUBUF_MAX_VALUE));
-			si_inst_info_mubuf[info->op] = info;
+			self->inst_info_mubuf[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == SIInstFormatMIMG)
 		{
 			assert(IN_RANGE(info->op, 0, 
 				SI_INST_INFO_MIMG_MAX_VALUE));
-			si_inst_info_mimg[info->op] = info;
+			self->inst_info_mimg[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == SIInstFormatEXP)
 		{
 			assert(IN_RANGE(info->op, 0, 
 				SI_INST_INFO_EXP_MAX_VALUE));
-			si_inst_info_exp[info->op] = info;
+			self->inst_info_exp[info->op] = info;
 			continue;
 		}
 		else 
@@ -384,40 +367,36 @@ void si_disasm_init()
 }
 
 
-void si_disasm_done()
+void SIAsmDestroy(SIAsm *self)
 {
-
+	free(self->inst_info);
 }
 
 
-
-/* 
- * Functions for decoding instructions
- */
-
-void si_disasm_buffer(struct elf_buffer_t *buffer, FILE *f)
+static void SIAsmDisassembleBuffer(SIAsm *self, void *ptr, int size, FILE *f)
 {
-	void *inst_buf = buffer->ptr;
+	void *original_ptr = ptr;
+
 	int inst_count = 0;
 	int rel_addr = 0;
 
-	int label_addr[buffer->size / 4];	/* A list of created labels sorted by rel_addr. */
+	int label_addr[size / 4];	/* A list of created labels sorted by rel_addr. */
 
 	int *next_label = &label_addr[0];	/* The next label to dump. */
 	int *end_label = &label_addr[0];	/* The address after the last label. */
 
+	SIInst inst;
+
+	/* Create instruction */
+	new_static(&inst, SIInst, self);
 
 	/* Read through instructions to find labels. */
-	while (inst_buf)
+	while (ptr < original_ptr + size)
 	{
-		SIInst inst;
 		int inst_size;
 
-		/* Zero-out instruction structure */
-		memset(&inst, 0, sizeof(SIInst));
-
 		/* Decode instruction */
-		inst_size = SIInstDecode(&inst, inst_buf, rel_addr);
+		inst_size = SIInstDecode(&inst, ptr, rel_addr);
 
 		/* If ENDPGM, break. */
 		if (inst.info->fmt == SIInstFormatSOPP && 
@@ -460,24 +439,22 @@ void si_disasm_buffer(struct elf_buffer_t *buffer, FILE *f)
 
 		}
 
-		inst_buf += inst_size;
+		ptr += inst_size;
 		rel_addr += inst_size;
 	}
 
 
 	/* Reset to disassemble. */
-	inst_buf = buffer->ptr;
+	ptr = original_ptr;
 	rel_addr = 0;
 
 	/* Disassemble */
-	while (inst_buf)
+	while (ptr < original_ptr + size)
 	{
-		SIInst inst;
 		int inst_size;
 
 		/* Parse the instruction */
-		inst_size = SIInstDecode(&inst, inst_buf, rel_addr);
-
+		inst_size = SIInstDecode(&inst, ptr, rel_addr);
 		inst_count++;
 
 		/* Dump a label if necessary. */
@@ -492,7 +469,7 @@ void si_disasm_buffer(struct elf_buffer_t *buffer, FILE *f)
 		int line_size = MAX_STRING_SIZE;
 		char line[line_size];
 
-		SIInstDump(&inst, inst_size, rel_addr, inst_buf, line, 
+		SIInstDump(&inst, inst_size, rel_addr, ptr, line, 
 			line_size);
 		fprintf(f, " %s", line);
 
@@ -505,15 +482,16 @@ void si_disasm_buffer(struct elf_buffer_t *buffer, FILE *f)
 		}
 
 		/* Increment instruction pointer */
-		inst_buf += inst_size;
+		ptr += inst_size;
 		rel_addr += inst_size;
 	}
 
+	/* Free instruction */
+	delete_static(&inst);
 }
 
 
-/* GPU disassembler tool */
-void si_disasm(char *path)
+void SIAsmDisassembleBinary(SIAsm *self, char *path)
 {
 	struct elf_file_t *elf_file;
 	struct elf_symbol_t *symbol;
@@ -522,10 +500,10 @@ void si_disasm(char *path)
 
 	char kernel_name[MAX_STRING_SIZE];
 
-	int i;
+	void *ptr;
 
-	/* Initialize disassembler */
-	si_disasm_init();
+	int size;
+	int i;
 
 	/* Decode external ELF */
 	elf_file = elf_file_create_from_path(path);
@@ -551,10 +529,10 @@ void si_disasm(char *path)
 
 			/* Get kernel name */
 			printf("**\n** Disassembly for '__kernel %s'\n**\n\n",
-				kernel_name);
-			si_disasm_buffer( 
-				&amd_bin->enc_dict_entry_southern_islands->
-				sec_text_buffer, stdout);
+					kernel_name);
+			ptr = amd_bin->enc_dict_entry_southern_islands->sec_text_buffer.ptr;
+			size = amd_bin->enc_dict_entry_southern_islands->sec_text_buffer.size;
+			SIAsmDisassembleBuffer(self, ptr, size, stdout);
 			printf("\n\n\n");
 
 			/* Free internal ELF */
@@ -564,9 +542,44 @@ void si_disasm(char *path)
 
 	/* Free external ELF */
 	elf_file_free(elf_file);
-	si_disasm_done();
-
-	/* End */
-	mhandle_done();
-	exit(0);
 }
+
+
+void SIAsmDisassembleOpenGLBinary(SIAsm *self, char *path, int shader_index)
+{
+	struct si_opengl_program_binary_t *si_program_bin;
+	struct si_opengl_shader_binary_t *si_shader;
+	void *file_buffer;
+	int file_size;
+
+	/* Load file into memory buffer */
+	file_buffer = read_buffer(path, &file_size);
+	if(!file_buffer)
+		fatal("%s:Invalid file!", path);
+
+	/* Analyze the file and initialize structure */	
+	si_program_bin = si_opengl_program_binary_create(file_buffer, file_size, path);
+	free_buffer(file_buffer);
+
+	/* Basic info of the shader binary */
+	printf("This shader binary contains %d shaders\n\n", 
+		list_count(si_program_bin->shaders));
+	if (shader_index > list_count(si_program_bin->shaders) ||
+			shader_index <= 0 )
+	{
+		fatal("Shader index out of range! Please choose <index> "
+			"from 1 ~ %d", list_count(si_program_bin->shaders));
+	}
+
+	/* Disassemble */
+	si_shader = list_get(si_program_bin->shaders, 
+			shader_index - 1);
+	printf("**\n** Disassembly for shader %d\n**\n\n", shader_index);
+	SIAsmDisassembleBuffer(self, si_shader->shader_isa->ptr,
+			si_shader->shader_isa->size, stdout);
+	printf("\n\n\n");
+
+	/* Free */
+	si_opengl_program_binary_free(si_program_bin);
+}
+

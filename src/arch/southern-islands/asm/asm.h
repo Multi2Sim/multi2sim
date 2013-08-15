@@ -20,10 +20,13 @@
 #ifndef ARCH_SOUTHERN_ISLANDS_ASM_H
 #define ARCH_SOUTHERN_ISLANDS_ASM_H
 
-#include <stdio.h>
+#include <arch/common/asm.h>
 
 
-/* Define the number of valid opcodes. */
+/*
+ * Class 'SIAsm'
+ */
+
 #define SI_INST_INFO_SOPP_MAX_VALUE 22
 #define SI_INST_INFO_SOPC_MAX_VALUE 16
 #define SI_INST_INFO_SOP1_MAX_VALUE 53
@@ -41,32 +44,38 @@
 #define SI_INST_INFO_MIMG_MAX_VALUE 96
 #define SI_INST_INFO_EXP_MAX_VALUE  0
 
-extern struct si_inst_info_t *si_inst_info_sopp[SI_INST_INFO_SOPP_MAX_VALUE + 1];
-extern struct si_inst_info_t *si_inst_info_sopc[SI_INST_INFO_SOPC_MAX_VALUE + 1];
-extern struct si_inst_info_t *si_inst_info_sop1[SI_INST_INFO_SOP1_MAX_VALUE + 1];
-extern struct si_inst_info_t *si_inst_info_sopk[SI_INST_INFO_SOPK_MAX_VALUE + 1];
-extern struct si_inst_info_t *si_inst_info_sop2[SI_INST_INFO_SOP2_MAX_VALUE + 1];
-extern struct si_inst_info_t *si_inst_info_smrd[SI_INST_INFO_SMRD_MAX_VALUE + 1];
-extern struct si_inst_info_t *si_inst_info_vop3[SI_INST_INFO_VOP3_MAX_VALUE + 1];
-extern struct si_inst_info_t *si_inst_info_vopc[SI_INST_INFO_VOPC_MAX_VALUE + 1];
-extern struct si_inst_info_t *si_inst_info_vop1[SI_INST_INFO_VOP1_MAX_VALUE + 1];
-extern struct si_inst_info_t *si_inst_info_vop2[SI_INST_INFO_VOP2_MAX_VALUE + 1];
-extern struct si_inst_info_t *si_inst_info_vintrp[SI_INST_INFO_VINTRP_MAX_VALUE + 1];
-extern struct si_inst_info_t *si_inst_info_ds[SI_INST_INFO_DS_MAX_VALUE + 1];
-extern struct si_inst_info_t *si_inst_info_mtbuf[SI_INST_INFO_MTBUF_MAX_VALUE + 1];
-extern struct si_inst_info_t *si_inst_info_mubuf[SI_INST_INFO_MUBUF_MAX_VALUE + 1];
-extern struct si_inst_info_t *si_inst_info_mimg[SI_INST_INFO_MIMG_MAX_VALUE + 1];
-extern struct si_inst_info_t *si_inst_info_exp[SI_INST_INFO_EXP_MAX_VALUE + 1];
+CLASS_BEGIN(SIAsm, Asm)
+
+	/* Array containing 'SIInstOpcodeCount' elements with information about
+	 * the Southern Islands instructions. */
+	struct si_inst_info_t *inst_info;
+
+	/* Pointers to elements in 'inst_info' */
+	struct si_inst_info_t *inst_info_sopp[SI_INST_INFO_SOPP_MAX_VALUE + 1];
+	struct si_inst_info_t *inst_info_sopc[SI_INST_INFO_SOPC_MAX_VALUE + 1];
+	struct si_inst_info_t *inst_info_sop1[SI_INST_INFO_SOP1_MAX_VALUE + 1];
+	struct si_inst_info_t *inst_info_sopk[SI_INST_INFO_SOPK_MAX_VALUE + 1];
+	struct si_inst_info_t *inst_info_sop2[SI_INST_INFO_SOP2_MAX_VALUE + 1];
+	struct si_inst_info_t *inst_info_smrd[SI_INST_INFO_SMRD_MAX_VALUE + 1];
+	struct si_inst_info_t *inst_info_vop3[SI_INST_INFO_VOP3_MAX_VALUE + 1];
+	struct si_inst_info_t *inst_info_vopc[SI_INST_INFO_VOPC_MAX_VALUE + 1];
+	struct si_inst_info_t *inst_info_vop1[SI_INST_INFO_VOP1_MAX_VALUE + 1];
+	struct si_inst_info_t *inst_info_vop2[SI_INST_INFO_VOP2_MAX_VALUE + 1];
+	struct si_inst_info_t *inst_info_vintrp[SI_INST_INFO_VINTRP_MAX_VALUE + 1];
+	struct si_inst_info_t *inst_info_ds[SI_INST_INFO_DS_MAX_VALUE + 1];
+	struct si_inst_info_t *inst_info_mtbuf[SI_INST_INFO_MTBUF_MAX_VALUE + 1];
+	struct si_inst_info_t *inst_info_mubuf[SI_INST_INFO_MUBUF_MAX_VALUE + 1];
+	struct si_inst_info_t *inst_info_mimg[SI_INST_INFO_MIMG_MAX_VALUE + 1];
+	struct si_inst_info_t *inst_info_exp[SI_INST_INFO_EXP_MAX_VALUE + 1];
+
+CLASS_END(SIAsm)
 
 
+void SIAsmCreate(SIAsm *self);
+void SIAsmDestroy(SIAsm *self);
 
-struct elf_buffer_t;
-void si_disasm_init(void);
-void si_disasm_done(void);
-
-void si_disasm_buffer(struct elf_buffer_t *buffer, FILE *f);
-
-void si_disasm(char* path);
+void SIAsmDisassembleBinary(SIAsm *self, char *path);
+void SIAsmDisassembleOpenGLBinary(SIAsm *self, char *path, int shader_index);
 
 #endif
 

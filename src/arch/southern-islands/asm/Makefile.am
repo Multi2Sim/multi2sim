@@ -19,7 +19,10 @@ libasm_a_SOURCES = \
 	inst.h \
 	\
 	input.c \
-	input.h
+	input.h \
+	\
+	opengl-bin-file.c \
+	opengl-bin-file.h
 
 INCLUDES = @M2S_INCLUDES@
 

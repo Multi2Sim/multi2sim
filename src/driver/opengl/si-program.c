@@ -22,7 +22,7 @@
 #include <lib/util/list.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/string.h>
-#include <arch/southern-islands/emu/opengl-bin-file.h>
+#include <arch/southern-islands/asm/opengl-bin-file.h>
 
 #include "si-program.h"
 

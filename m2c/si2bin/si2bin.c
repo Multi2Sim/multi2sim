@@ -89,7 +89,6 @@ void si2bin_yyerror_fmt(char *fmt, ...)
 void si2bin_init(void)
 {
 	/* Initialize */
-	si_disasm_init();
 	si2bin_inst_info_init();
 	si2bin_task_list_init();
 	si2bin_symbol_table_init();
@@ -102,7 +101,6 @@ void si2bin_done(void)
 	si2bin_task_list_done();
 	si2bin_symbol_table_done();
 	si2bin_inst_info_done();
-	si_disasm_done();
 }
 
 

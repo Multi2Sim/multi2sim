@@ -996,7 +996,7 @@ static int opencl_abi_si_ndrange_initialize_impl(X86Context *ctx)
 		fatal("%s: invalid kernel ID (%d)", __FUNCTION__, kernel_id);
 
 	/* Create ND-Range */
-	ndrange = si_ndrange_create();
+	ndrange = si_ndrange_create(si_emu);
 	ndrange->opencl_driver = driver;
 	ndrange->local_mem_top = kernel->mem_size_local;
 	ndrange->num_sgpr_used = kernel->bin_file->

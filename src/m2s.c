@@ -39,6 +39,7 @@
 #include <arch/mips/emu/isa.h>
 #include <arch/mips/timing/cpu.h>
 #include <arch/southern-islands/asm/asm.h>
+#include <arch/southern-islands/asm/inst.h>
 #include <arch/southern-islands/emu/emu.h>
 #include <arch/southern-islands/emu/isa.h>
 #include <arch/southern-islands/timing/gpu.h>
@@ -1832,6 +1833,9 @@ static void m2s_init(void)
 	CLASS_REGISTER(X86Core);
 	CLASS_REGISTER(X86Thread);
 
+	CLASS_REGISTER(SIAsm);
+	CLASS_REGISTER(SIInst);
+
 	/* Drivers */
 	CLASS_REGISTER(Driver);
 	CLASS_REGISTER(OpenclDriver);
@@ -1929,7 +1933,15 @@ int main(int argc, char **argv)
 
 	/* Southern Islands disassembler tool */
 	if (*si_disasm_file_name)
-		si_disasm(si_disasm_file_name);
+	{
+		SIAsm *as;
+
+		as = new(SIAsm);
+		SIAsmDisassembleBinary(as, si_disasm_file_name);
+		delete(as)
+
+		goto end;
+	}
 
 	/* Evergreen OpenGL disassembler tool */
 	if (*evg_opengl_disasm_file_name)
@@ -1937,7 +1949,16 @@ int main(int argc, char **argv)
 
 	/* Southern Islands OpenGL disassembler tool */
 	if (*si_opengl_disasm_file_name)
-		si_emu_opengl_disasm(si_opengl_disasm_file_name, si_opengl_disasm_shader_index);
+	{
+		SIAsm *as;
+
+		as = new(SIAsm);
+		SIAsmDisassembleOpenGLBinary(as, si_opengl_disasm_file_name,
+				si_opengl_disasm_shader_index);
+
+		delete(as);
+		goto end;
+	}
 
 	/* Fermi disassembler tool */
 	if (*frm_disasm_file_name)
