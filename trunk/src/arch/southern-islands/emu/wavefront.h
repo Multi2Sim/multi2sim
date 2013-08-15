@@ -21,10 +21,15 @@
 #define ARCH_SOUTHERN_ISLANDS_EMU_WAVEFRONT_H
 
 #include <arch/southern-islands/asm/inst.h>
+#include <lib/class/class.h>
 
 
-struct si_wavefront_t
-{
+/*
+ * Class 'SIWavefront'
+ */
+
+CLASS_BEGIN(SIWavefront, Object)
+
 	/* ID */
 	int id;
 
@@ -34,7 +39,7 @@ struct si_wavefront_t
 	int work_item_count;
 
 	/* Work-group it belongs to */
-	struct si_work_group_t *work_group;
+	SIWorkGroup *work_group;
 
 	/* Program counter. Offset in 'inst_buffer' where we can find the next
 	 * instruction to be executed. */
@@ -45,8 +50,8 @@ struct si_wavefront_t
 	int inst_size;
 
 	/* Pointer to work_items */
-	struct si_work_item_t *scalar_work_item;
-	struct si_work_item_t **work_items;  
+	SIWorkItem *scalar_work_item;
+	SIWorkItem **work_items;  
 
 	/* Scalar registers */
 	SIInstReg sreg[256];
@@ -83,37 +88,38 @@ struct si_wavefront_t
 	long long global_mem_inst_count;
 	long long lds_inst_count;
 	long long export_inst_count;
-};
+
+CLASS_END(SIWavefront)
+
 
 #define SI_FOREACH_WAVEFRONT_IN_WORK_GROUP(WORK_GROUP, WAVEFRONT_ID) \
 	for ((WAVEFRONT_ID) = 0; \
 		(WAVEFRONT_ID) < (WORK_GROUP)->wavefront_count; \
 		(WAVEFRONT_ID)++)
 
-struct si_wavefront_t *si_wavefront_create(int wavefront_id,
-	struct si_work_group_t *work_group);
-void si_wavefront_sreg_init(struct si_wavefront_t *wavefront);
-void si_wavefront_free(struct si_wavefront_t *wavefront);
-void si_wavefront_dump(struct si_wavefront_t *wavefront, FILE *f);
+void SIWavefrontCreate(SIWavefront *self, int id, SIWorkGroup *work_group);
+void SIWavefrontDestroy(SIWavefront *self);
 
-void si_wavefront_execute(struct si_wavefront_t *wavefront);
+void SIWavefrontDump(Object *self, FILE *f);
 
-int si_wavefront_work_item_active(struct si_wavefront_t *wavefront, 
+void SIWavefrontExecute(SIWavefront *self);
+
+int SIWavefrontIsWorkItemActive(SIWavefront *self, 
 	int id_in_wavefront);
 
-void si_wavefront_init_sreg_with_value(struct si_wavefront_t *wavefront, 
+void SIWavefrontInitSRegWithValue(SIWavefront *self, 
 	int sreg, unsigned int value);
-void si_wavefront_init_sreg_with_cb(struct si_wavefront_t *wavefront, 
+void SIWavefrontInitSRegWithConstantBuffer(SIWavefront *self, 
 	int first_reg, int num_regs, int cb);
-void si_wavefront_init_sreg_with_cb_table(struct si_wavefront_t *wavefront,
+void SIWavefrontInitSRegWithConstantBufferTable(SIWavefront *self,
         int first_reg, int num_regs);
-void si_wavefront_init_sreg_with_uav_table(struct si_wavefront_t *wavefront, 
+void SIWavefrontInitSRegWithUAVTable(SIWavefront *self, 
 	int first_reg, int num_regs);
-void si_wavefront_init_sreg_with_uav(struct si_wavefront_t *wavefront,
+void SIWavefrontInitSRegWithUAV(SIWavefront *self,
 	int first_reg, int num_regs, int uav);
-void si_wavefront_init_sreg_with_vertex_buffer_table(struct si_wavefront_t *wavefront, 
+void SIWavefrontInitSRegWithBufferTable(SIWavefront *self, 
 	int first_reg, int num_regs);
-void si_wavefront_init_sreg_with_fetch_shader(struct si_wavefront_t *wavefront, 
+void SIWavefrontInitSRegWithFetchShader(SIWavefront *self, 
 	int first_reg, int num_regs);
 
 

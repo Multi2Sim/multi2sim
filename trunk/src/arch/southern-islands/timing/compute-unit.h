@@ -31,11 +31,10 @@ struct si_reg_file_t;
 void si_reg_file_init(struct si_compute_unit_t *compute_unit);
 void si_reg_file_done(struct si_compute_unit_t *compute_unit);
 
-struct si_work_group_t;
 void si_reg_file_map_work_group(struct si_compute_unit_t *compute_unit,
-	struct si_work_group_t *work_group);
+	SIWorkGroup *work_group);
 void si_reg_file_unmap_work_group(struct si_compute_unit_t *compute_unit,
-	struct si_work_group_t *work_group);
+	SIWorkGroup *work_group);
 
 struct si_work_item_t;
 int si_reg_file_rename(struct si_compute_unit_t *compute_unit,
@@ -87,7 +86,7 @@ struct si_compute_unit_t
 
 	/* List of currently mapped work-groups */
 	int work_group_count;
-	struct si_work_group_t **work_groups;
+	SIWorkGroup **work_groups;
 
 	/* Compute Unit capacity state  (for concurrent command queue)*/
 	/* Spatial profiling statistics */
@@ -102,17 +101,17 @@ struct si_compute_unit_t
 struct si_compute_unit_t *si_compute_unit_create(void);
 void si_compute_unit_free(struct si_compute_unit_t *gpu_compute_unit);
 void si_compute_unit_map_work_group(struct si_compute_unit_t *compute_unit, 
-	struct si_work_group_t *work_group);
+	SIWorkGroup *work_group);
 void si_compute_unit_unmap_work_group(struct si_compute_unit_t *compute_unit, 
-	struct si_work_group_t *work_group);
-struct si_wavefront_t *si_compute_unit_schedule(struct si_compute_unit_t *compute_unit);
+	SIWorkGroup *work_group);
+SIWavefront *si_compute_unit_schedule(struct si_compute_unit_t *compute_unit);
 void si_compute_unit_run(struct si_compute_unit_t *compute_unit);
 
 struct si_wavefront_pool_t *si_wavefront_pool_create();
 void si_wavefront_pool_free(struct si_wavefront_pool_t *wavefront_pool);
 void si_wavefront_pool_map_wavefronts(struct si_wavefront_pool_t *wavefront_pool, 
-	struct si_work_group_t *work_group);
+	SIWorkGroup *work_group);
 void si_wavefront_pool_unmap_wavefronts(struct si_wavefront_pool_t *wavefront_pool, 
-	struct si_work_group_t *work_group);
+	SIWorkGroup *work_group);
 
 #endif

@@ -34,55 +34,13 @@
 
 
 /*
- * Public Functions
+ * Class 'SIWavefront'
  */
 
-
-struct si_wavefront_t *si_wavefront_create(int wavefront_id, 
-	struct si_work_group_t *work_group)
-{
-	struct si_ndrange_t *ndrange = work_group->ndrange;
-	struct si_wavefront_t *wavefront;
-
-	SIEmu *emu = ndrange->emu;
-	SIAsm *as = emu->as;
-
-	int work_item_id;
-
-	/* Initialize */
-	wavefront = xcalloc(1, sizeof(struct si_wavefront_t));
-	new_static(&wavefront->inst, SIInst, as);
-	wavefront->id = wavefront_id;
-	si_wavefront_sreg_init(wavefront);
-
-	/* Create work items */
-	wavefront->work_items = xcalloc(si_emu_wavefront_size, sizeof(void *));
-	SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
-	{
-		wavefront->work_items[work_item_id] = si_work_item_create();
-
-		wavefront->work_items[work_item_id]->wavefront = wavefront;
-		wavefront->work_items[work_item_id]->id_in_wavefront = 
-			work_item_id;
-		wavefront->work_items[work_item_id]->work_group = work_group;
-	}
-
-	/* Create scalar work item */
-	wavefront->scalar_work_item = si_work_item_create();
-	wavefront->scalar_work_item->wavefront = wavefront;
-	wavefront->scalar_work_item->work_group = work_group;
-
-	/* Assign the work group */
-	wavefront->work_group = work_group;
-
-	/* Return */
-	return wavefront;
-}
-
 /* Helper function for initializing the wavefront. */
-void si_wavefront_sreg_init(struct si_wavefront_t *wavefront)
+static void SIWavefrontInitSReg(SIWavefront *self)
 {
-	SIInstReg *sreg = &wavefront->sreg[0];
+	SIInstReg *sreg = &self->sreg[0];
 
 	/* Integer inline constants. */
 	for(int i = 128; i < 193; i++)
@@ -102,64 +60,84 @@ void si_wavefront_sreg_init(struct si_wavefront_t *wavefront)
 }
 
 
-void si_wavefront_free(struct si_wavefront_t *wavefront)
+void SIWavefrontCreate(SIWavefront *self, int id, SIWorkGroup *work_group)
 {
-	assert(wavefront);
+	SINDRange *ndrange = work_group->ndrange;
+	SIEmu *emu = ndrange->emu;
+	SIAsm *as = emu->as;
 
-	/* Free wavefront */
-	
-	free(wavefront->work_items);
+	int work_item_id;
 
-	memset(wavefront, 0, sizeof(struct si_wavefront_t));
-	free(wavefront);
+	/* Initialize */
+	new_static(&self->inst, SIInst, as);
+	self->work_group = work_group;
+	self->id = id;
+	SIWavefrontInitSReg(self);
 
-	wavefront = NULL;
+	/* Create work items */
+	self->work_items = xcalloc(si_emu_wavefront_size, sizeof(void *));
+	SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(self, work_item_id)
+	{
+		self->work_items[work_item_id] = new(SIWorkItem, work_item_id, self);
+		self->work_items[work_item_id]->work_group = work_group;
+	}
+
+	/* Create scalar work item */
+	self->scalar_work_item = new(SIWorkItem, 0, self);
+	self->scalar_work_item->work_group = work_group;
 }
 
-/* Execute the next instruction for the wavefront */
-void si_wavefront_execute(struct si_wavefront_t *wavefront)
+
+void SIWavefrontDestroy(SIWavefront *self)
 {
-	struct si_ndrange_t *ndrange;
-	struct si_work_group_t *work_group;
-	struct si_work_item_t *work_item;
+	free(self->work_items);
+}
+
+
+/* Execute the next instruction for the wavefront */
+void SIWavefrontExecute(SIWavefront *self)
+{
+	SINDRange *ndrange;
+	SIWorkGroup *work_group;
+	SIWorkItem *work_item;
 	SIInst *inst;
+	SIEmu *emu;
 
 	char inst_dump[MAX_STRING_SIZE];
-
-	ndrange = wavefront->work_group->ndrange;
 
 	int work_item_id;
 
 	/* Get current work-group */
-	ndrange = wavefront->work_group->ndrange;
-	work_group = wavefront->work_group;
+	work_group = self->work_group;
+	ndrange = work_group->ndrange;
+	emu = ndrange->emu;
 	work_item = NULL;
 	inst = NULL;
 
 	/* Reset instruction flags */
-	wavefront->vector_mem_write = 0;
-	wavefront->vector_mem_read = 0;
-	wavefront->scalar_mem_read = 0;
-	wavefront->lds_write = 0;
-	wavefront->lds_read = 0;
-	wavefront->mem_wait = 0;
-	wavefront->at_barrier = 0;
-	wavefront->barrier_inst = 0;
-	wavefront->vector_mem_glc = 0;
+	self->vector_mem_write = 0;
+	self->vector_mem_read = 0;
+	self->scalar_mem_read = 0;
+	self->lds_write = 0;
+	self->lds_read = 0;
+	self->mem_wait = 0;
+	self->at_barrier = 0;
+	self->barrier_inst = 0;
+	self->vector_mem_glc = 0;
 
-	assert(!wavefront->finished);
+	assert(!self->finished);
 	
 	/* Grab the instruction at PC and update the pointer */
-	wavefront->inst_size = SIInstDecode(&wavefront->inst,
-		ndrange->inst_buffer + wavefront->pc, 0);
+	self->inst_size = SIInstDecode(&self->inst,
+		ndrange->inst_buffer + self->pc, 0);
 
 	/* Stats */
-	asEmu(si_emu)->instructions++;
-	wavefront->emu_inst_count++;
-	wavefront->inst_count++;
+	asEmu(emu)->instructions++;
+	self->emu_inst_count++;
+	self->inst_count++;
 
 	/* Set the current instruction */
-	inst = &wavefront->inst;
+	inst = &self->inst;
 
 	/* Execute the current instruction */
 	switch (inst->info->fmt)
@@ -171,18 +149,18 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			SIInstDump(inst, wavefront->inst_size, wavefront->pc,
-					ndrange->inst_buffer + wavefront->pc,
+			SIInstDump(inst, self->inst_size, self->pc,
+					ndrange->inst_buffer + self->pc,
 					inst_dump, sizeof inst_dump);
 			si_isa_debug("\n%s", inst_dump);
 		}
 
 		/* Stats */
-		si_emu->scalar_alu_inst_count++;
-		wavefront->scalar_alu_inst_count++;
+		emu->scalar_alu_inst_count++;
+		self->scalar_alu_inst_count++;
 
 		/* Only one work item executes the instruction */
-		work_item = wavefront->scalar_work_item;
+		work_item = self->scalar_work_item;
 		(*si_isa_inst_func[inst->info->opcode])(work_item, inst);
 
 		if (debug_status(si_isa_debug_category))
@@ -198,18 +176,18 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			SIInstDump(inst, wavefront->inst_size, wavefront->pc,
-					ndrange->inst_buffer + wavefront->pc,
+			SIInstDump(inst, self->inst_size, self->pc,
+					ndrange->inst_buffer + self->pc,
 					inst_dump, sizeof inst_dump);
 			si_isa_debug("\n%s", inst_dump);
 		}
 
 		/* Stats */
-		si_emu->scalar_alu_inst_count++;
-		wavefront->scalar_alu_inst_count++;
+		emu->scalar_alu_inst_count++;
+		self->scalar_alu_inst_count++;
 
 		/* Only one work item executes the instruction */
-		work_item = wavefront->scalar_work_item;
+		work_item = self->scalar_work_item;
 		(*si_isa_inst_func[inst->info->opcode])(work_item, inst);
 
 		if (debug_status(si_isa_debug_category))
@@ -225,26 +203,26 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			SIInstDump(inst, wavefront->inst_size, wavefront->pc,
-					ndrange->inst_buffer + wavefront->pc,
+			SIInstDump(inst, self->inst_size, self->pc,
+					ndrange->inst_buffer + self->pc,
 					inst_dump, sizeof inst_dump);
 			si_isa_debug("\n%s", inst_dump);
 		}
 
 		/* Stats */
-		if (wavefront->inst.bytes.sopp.op > 1 &&
-			wavefront->inst.bytes.sopp.op < 10)
+		if (self->inst.bytes.sopp.op > 1 &&
+			self->inst.bytes.sopp.op < 10)
 		{
-			si_emu->branch_inst_count++;
-			wavefront->branch_inst_count++;
+			emu->branch_inst_count++;
+			self->branch_inst_count++;
 		} else
 		{
-			si_emu->scalar_alu_inst_count++;
-			wavefront->scalar_alu_inst_count++;
+			emu->scalar_alu_inst_count++;
+			self->scalar_alu_inst_count++;
 		}
 
 		/* Only one work item executes the instruction */
-		work_item = wavefront->scalar_work_item;
+		work_item = self->scalar_work_item;
 		(*si_isa_inst_func[inst->info->opcode])(work_item, inst);
 
 		if (debug_status(si_isa_debug_category))
@@ -260,18 +238,18 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			SIInstDump(inst, wavefront->inst_size, wavefront->pc,
-					ndrange->inst_buffer + wavefront->pc,
+			SIInstDump(inst, self->inst_size, self->pc,
+					ndrange->inst_buffer + self->pc,
 					inst_dump, sizeof inst_dump);
 			si_isa_debug("\n%s", inst_dump);
 		}
 
 		/* Stats */
-		si_emu->scalar_alu_inst_count++;
-		wavefront->scalar_alu_inst_count++;
+		emu->scalar_alu_inst_count++;
+		self->scalar_alu_inst_count++;
 
 		/* Only one work item executes the instruction */
-		work_item = wavefront->scalar_work_item;
+		work_item = self->scalar_work_item;
 		(*si_isa_inst_func[inst->info->opcode])(work_item, inst);
 
 		if (debug_status(si_isa_debug_category))
@@ -287,18 +265,18 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			SIInstDump(inst, wavefront->inst_size, wavefront->pc,
-					ndrange->inst_buffer + wavefront->pc,
+			SIInstDump(inst, self->inst_size, self->pc,
+					ndrange->inst_buffer + self->pc,
 					inst_dump, sizeof inst_dump);
 			si_isa_debug("\n%s", inst_dump);
 		}
 
 		/* Stats */
-		si_emu->scalar_alu_inst_count++;
-		wavefront->scalar_alu_inst_count++;
+		emu->scalar_alu_inst_count++;
+		self->scalar_alu_inst_count++;
 
 		/* Only one work item executes the instruction */
-		work_item = wavefront->scalar_work_item;
+		work_item = self->scalar_work_item;
 		(*si_isa_inst_func[inst->info->opcode])(work_item, inst);
 
 		if (debug_status(si_isa_debug_category))
@@ -315,18 +293,18 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			SIInstDump(inst, wavefront->inst_size, wavefront->pc,
-					ndrange->inst_buffer + wavefront->pc,
+			SIInstDump(inst, self->inst_size, self->pc,
+					ndrange->inst_buffer + self->pc,
 					inst_dump, sizeof inst_dump);
 			si_isa_debug("\n%s", inst_dump);
 		}
 
 		/* Stats */
-		si_emu->scalar_mem_inst_count++;
-		wavefront->scalar_mem_inst_count++;
+		emu->scalar_mem_inst_count++;
+		self->scalar_mem_inst_count++;
 
 		/* Only one work item executes the instruction */
-		work_item = wavefront->scalar_work_item;
+		work_item = self->scalar_work_item;
 		(*si_isa_inst_func[inst->info->opcode])(work_item, inst);
 
 		if (debug_status(si_isa_debug_category))
@@ -343,21 +321,21 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			SIInstDump(inst, wavefront->inst_size, wavefront->pc,
-					ndrange->inst_buffer + wavefront->pc,
+			SIInstDump(inst, self->inst_size, self->pc,
+					ndrange->inst_buffer + self->pc,
 					inst_dump, sizeof inst_dump);
 			si_isa_debug("\n%s", inst_dump);
 		}
 
 		/* Stats */
-		si_emu->vector_alu_inst_count++;
-		wavefront->vector_alu_inst_count++;
+		emu->vector_alu_inst_count++;
+		self->vector_alu_inst_count++;
 	
 		/* Execute the instruction */
-		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
+		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(self, work_item_id)
 		{
-			work_item = wavefront->work_items[work_item_id];
-			if(si_wavefront_work_item_active(wavefront, 
+			work_item = self->work_items[work_item_id];
+			if(SIWavefrontIsWorkItemActive(self, 
 				work_item->id_in_wavefront))
 			{
 				(*si_isa_inst_func[inst->info->opcode])(work_item,
@@ -378,15 +356,15 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			SIInstDump(inst, wavefront->inst_size, wavefront->pc,
-					ndrange->inst_buffer + wavefront->pc,
+			SIInstDump(inst, self->inst_size, self->pc,
+					ndrange->inst_buffer + self->pc,
 					inst_dump, sizeof inst_dump);
 			si_isa_debug("\n%s", inst_dump);
 		}
 
 		/* Stats */
-		si_emu->vector_alu_inst_count++;
-		wavefront->vector_alu_inst_count++;
+		emu->vector_alu_inst_count++;
+		self->vector_alu_inst_count++;
 
 		/* Special case: V_READFIRSTLANE_B32 */
 		if (inst->bytes.vop1.op == 2)
@@ -395,21 +373,21 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 			 * executed on one work item. Execute on the first 
 			 * active work item from the least significant bit 
 			 * in EXEC. (if exec is 0, execute work item 0) */
-			work_item = wavefront->work_items[0];
-			if (si_isa_read_sreg(work_item, SI_EXEC) == 0 && 
-				si_isa_read_sreg(work_item, SI_EXEC + 1) == 0)
+			work_item = self->work_items[0];
+			if (SIWorkItemReadSReg(work_item, SI_EXEC) == 0 && 
+				SIWorkItemReadSReg(work_item, SI_EXEC + 1) == 0)
 			{
 				(*si_isa_inst_func[inst->info->opcode])(work_item,
 					inst);
 			}
 			else {
-				SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, 
+				SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(self, 
 					work_item_id)
 				{
-					work_item = wavefront->
+					work_item = self->
 						work_items[work_item_id];
-					if(si_wavefront_work_item_active(
-						wavefront, 
+					if(SIWavefrontIsWorkItemActive(
+						self, 
 						work_item->id_in_wavefront))
 					{
 						(*si_isa_inst_func[
@@ -423,11 +401,11 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		else
 		{
 			/* Execute the instruction */
-			SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, 
+			SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(self, 
 				work_item_id)
 			{
-				work_item = wavefront->work_items[work_item_id];
-				if(si_wavefront_work_item_active(wavefront, 
+				work_item = self->work_items[work_item_id];
+				if(SIWavefrontIsWorkItemActive(self, 
 					work_item->id_in_wavefront))
 				{
 					(*si_isa_inst_func[inst->info->opcode])(
@@ -449,21 +427,21 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			SIInstDump(inst, wavefront->inst_size, wavefront->pc,
-					ndrange->inst_buffer + wavefront->pc,
+			SIInstDump(inst, self->inst_size, self->pc,
+					ndrange->inst_buffer + self->pc,
 					inst_dump, sizeof inst_dump);
 			si_isa_debug("\n%s", inst_dump);
 		}
 
 		/* Stats */
-		si_emu->vector_alu_inst_count++;
-		wavefront->vector_alu_inst_count++;
+		emu->vector_alu_inst_count++;
+		self->vector_alu_inst_count++;
 	
 		/* Execute the instruction */
-		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
+		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(self, work_item_id)
 		{
-			work_item = wavefront->work_items[work_item_id];
-			if(si_wavefront_work_item_active(wavefront, 
+			work_item = self->work_items[work_item_id];
+			if(SIWavefrontIsWorkItemActive(self, 
 				work_item->id_in_wavefront))
 			{
 				(*si_isa_inst_func[inst->info->opcode])(work_item,
@@ -484,21 +462,21 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			SIInstDump(inst, wavefront->inst_size, wavefront->pc,
-					ndrange->inst_buffer + wavefront->pc,
+			SIInstDump(inst, self->inst_size, self->pc,
+					ndrange->inst_buffer + self->pc,
 					inst_dump, sizeof inst_dump);
 			si_isa_debug("\n%s", inst_dump);
 		}
 
 		/* Stats */
-		si_emu->vector_alu_inst_count++;
-		wavefront->vector_alu_inst_count++;
+		emu->vector_alu_inst_count++;
+		self->vector_alu_inst_count++;
 	
 		/* Execute the instruction */
-		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
+		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(self, work_item_id)
 		{
-			work_item = wavefront->work_items[work_item_id];
-			if(si_wavefront_work_item_active(wavefront, 
+			work_item = self->work_items[work_item_id];
+			if(SIWavefrontIsWorkItemActive(self, 
 				work_item->id_in_wavefront))
 			{
 				(*si_isa_inst_func[inst->info->opcode])(work_item,
@@ -519,21 +497,21 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			SIInstDump(inst, wavefront->inst_size, wavefront->pc,
-					ndrange->inst_buffer + wavefront->pc,
+			SIInstDump(inst, self->inst_size, self->pc,
+					ndrange->inst_buffer + self->pc,
 					inst_dump, sizeof inst_dump);
 			si_isa_debug("\n%s", inst_dump);
 		}
 
 		/* Stats */
-		si_emu->vector_alu_inst_count++;
-		wavefront->vector_alu_inst_count++;
+		emu->vector_alu_inst_count++;
+		self->vector_alu_inst_count++;
 	
 		/* Execute the instruction */
-		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
+		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(self, work_item_id)
 		{
-			work_item = wavefront->work_items[work_item_id];
-			if(si_wavefront_work_item_active(wavefront, 
+			work_item = self->work_items[work_item_id];
+			if(SIWavefrontIsWorkItemActive(self, 
 				work_item->id_in_wavefront))
 			{
 				(*si_isa_inst_func[inst->info->opcode])(work_item,
@@ -554,28 +532,28 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			SIInstDump(inst, wavefront->inst_size, wavefront->pc,
-					ndrange->inst_buffer + wavefront->pc,
+			SIInstDump(inst, self->inst_size, self->pc,
+					ndrange->inst_buffer + self->pc,
 					inst_dump, sizeof inst_dump);
 			si_isa_debug("\n%s", inst_dump);
 		}
 
 		/* Stats */
-		si_emu->lds_inst_count++;
-		wavefront->lds_inst_count++;
+		emu->lds_inst_count++;
+		self->lds_inst_count++;
 
 		/* Record access type */
 		if ((inst->info->op >= 13 && inst->info->op < 16) ||
 			(inst->info->op >= 30 && inst->info->op < 32) ||
 			(inst->info->op >= 77 && inst->info->op < 80))
 		{
-			wavefront->lds_write = 1;
+			self->lds_write = 1;
 		}
 		else if (
 			(inst->info->op >= 54 && inst->info->op < 61) ||
 			(inst->info->op >= 118 && inst->info->op < 120))
 		{
-			wavefront->lds_read = 1;
+			self->lds_read = 1;
 		}
 		else 
 		{
@@ -583,10 +561,10 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		}
 
 		/* Execute the instruction */
-		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
+		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(self, work_item_id)
 		{
-			work_item = wavefront->work_items[work_item_id];
-			if(si_wavefront_work_item_active(wavefront, 
+			work_item = self->work_items[work_item_id];
+			if(SIWavefrontIsWorkItemActive(self, 
 				work_item->id_in_wavefront))
 			{
 				(*si_isa_inst_func[inst->info->opcode])(work_item,
@@ -608,29 +586,29 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			SIInstDump(inst, wavefront->inst_size, wavefront->pc,
-					ndrange->inst_buffer + wavefront->pc,
+			SIInstDump(inst, self->inst_size, self->pc,
+					ndrange->inst_buffer + self->pc,
 					inst_dump, sizeof inst_dump);
 			si_isa_debug("\n%s", inst_dump);
 		}
 
 		/* Stats */
-		si_emu->vector_mem_inst_count++;
-		wavefront->vector_mem_inst_count++;
+		emu->vector_mem_inst_count++;
+		self->vector_mem_inst_count++;
 
 		/* Record access type */
 		if (inst->info->op >= 0 && inst->info->op < 4)
-			wavefront->vector_mem_read = 1;
+			self->vector_mem_read = 1;
 		else if (inst->info->op >= 4 && inst->info->op < 8)
-			wavefront->vector_mem_write = 1;
+			self->vector_mem_write = 1;
 		else 
 			fatal("%s: invalid mtbuf opcode", __FUNCTION__);
 	
 		/* Execute the instruction */
-		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
+		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(self, work_item_id)
 		{
-			work_item = wavefront->work_items[work_item_id];
-			if (si_wavefront_work_item_active(wavefront, 
+			work_item = self->work_items[work_item_id];
+			if (SIWavefrontIsWorkItemActive(self, 
 				work_item->id_in_wavefront))
 			{
 				(*si_isa_inst_func[inst->info->opcode])(work_item,
@@ -651,26 +629,26 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			SIInstDump(inst, wavefront->inst_size, wavefront->pc,
-					ndrange->inst_buffer + wavefront->pc,
+			SIInstDump(inst, self->inst_size, self->pc,
+					ndrange->inst_buffer + self->pc,
 					inst_dump, sizeof inst_dump);
 			si_isa_debug("\n%s", inst_dump);
 		}
 
 		/* Stats */
-		si_emu->vector_mem_inst_count++;
-		wavefront->vector_mem_inst_count++;
+		emu->vector_mem_inst_count++;
+		self->vector_mem_inst_count++;
 
 		/* Record access type */
 		if ((inst->info->op >= 0 && inst->info->op < 4) ||
 			(inst->info->op >= 8 && inst->info->op < 15))
 		{
-			wavefront->vector_mem_read = 1;
+			self->vector_mem_read = 1;
 		}
 		else if ((inst->info->op >= 4 && inst->info->op < 8) ||
 			(inst->info->op >= 24 && inst->info->op < 30))
 		{
-			wavefront->vector_mem_write = 1;
+			self->vector_mem_write = 1;
 		}
 		else 
 		{
@@ -678,10 +656,10 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		}
 	
 		/* Execute the instruction */
-		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
+		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(self, work_item_id)
 		{
-			work_item = wavefront->work_items[work_item_id];
-			if (si_wavefront_work_item_active(wavefront, 
+			work_item = self->work_items[work_item_id];
+			if (SIWavefrontIsWorkItemActive(self, 
 				work_item->id_in_wavefront))
 			{
 				(*si_isa_inst_func[inst->info->opcode])
@@ -702,24 +680,24 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			SIInstDump(inst, wavefront->inst_size, wavefront->pc,
-					ndrange->inst_buffer + wavefront->pc,
+			SIInstDump(inst, self->inst_size, self->pc,
+					ndrange->inst_buffer + self->pc,
 					inst_dump, sizeof inst_dump);
 			si_isa_debug("\n%s", inst_dump);
 		}
 
 		/* Stats */
-		si_emu->export_inst_count++;
-		wavefront->export_inst_count++;
+		emu->export_inst_count++;
+		self->export_inst_count++;
 
 		/* Record access type */
 		/* FIXME */
 			
 		/* Execute the instruction */
-		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
+		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(self, work_item_id)
 		{
-			work_item = wavefront->work_items[work_item_id];
-			if (si_wavefront_work_item_active(wavefront, 
+			work_item = self->work_items[work_item_id];
+			if (SIWavefrontIsWorkItemActive(self, 
 				work_item->id_in_wavefront))
 			{
 				(*si_isa_inst_func[inst->info->opcode])
@@ -746,10 +724,10 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 	}
 
 	/* Check if wavefront finished kernel execution */
-	if (!wavefront->finished)
+	if (!self->finished)
 	{
 		/* Increment the PC */
-		wavefront->pc += wavefront->inst_size;
+		self->pc += self->inst_size;
 	}
 	else
 	{
@@ -762,37 +740,38 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 	}
 }
 
-int si_wavefront_work_item_active(struct si_wavefront_t *wavefront, 
+int SIWavefrontIsWorkItemActive(SIWavefront *self, 
 	int id_in_wavefront) 
 {
 	int mask = 1;
 	if(id_in_wavefront < 32)
 	{
 		mask <<= id_in_wavefront;
-		return (wavefront->sreg[SI_EXEC].as_uint & mask) >> 
+		return (self->sreg[SI_EXEC].as_uint & mask) >> 
 			id_in_wavefront;
 	}
 	else
 	{
 		mask <<= (id_in_wavefront - 32);
-		return (wavefront->sreg[SI_EXEC + 1].as_uint & mask) >> 
+		return (self->sreg[SI_EXEC + 1].as_uint & mask) >> 
 			(id_in_wavefront - 32);
 	}
 }
 
-void si_wavefront_init_sreg_with_value(struct si_wavefront_t *wavefront, 
+void SIWavefrontInitSRegWithValue(SIWavefront *self, 
 	int sreg, unsigned int value)
 {
-	wavefront->sreg[sreg].as_uint = value;
+	self->sreg[sreg].as_uint = value;
 }
 
 /* Puts a memory descriptor for a constant buffer (e.g. CB0) into sregs
  * (requires 4 consecutive registers to store the 128-bit structure) */
-void si_wavefront_init_sreg_with_cb(struct si_wavefront_t *wavefront, 
+void SIWavefrontInitSRegWithConstantBuffer(SIWavefront *self, 
 	int first_reg, int num_regs, int const_buf_num)
 {
 	struct si_buffer_desc_t buf_desc;
-	struct si_ndrange_t *ndrange = wavefront->work_group->ndrange;
+	SINDRange *ndrange = self->work_group->ndrange;
+	SIEmu *emu = ndrange->emu;
 
 	unsigned int buf_desc_addr;
 
@@ -806,18 +785,18 @@ void si_wavefront_init_sreg_with_cb(struct si_wavefront_t *wavefront,
 
 	/* Read a descriptor from the constant buffer table (located 
 	 * in global memory) */
-	mem_read(si_emu->global_mem, buf_desc_addr, sizeof(buf_desc), 
+	mem_read(emu->global_mem, buf_desc_addr, sizeof(buf_desc),
 		&buf_desc);
 
 	/* Store the descriptor in 4 scalar registers */
-	memcpy(&wavefront->sreg[first_reg], &buf_desc, sizeof(buf_desc));
+	memcpy(&self->sreg[first_reg], &buf_desc, sizeof(buf_desc));
 }
 
 /* Put a pointer to the constant buffer table into 2 consecutive sregs */
-void si_wavefront_init_sreg_with_cb_table(struct si_wavefront_t *wavefront,
+void SIWavefrontInitSRegWithConstantBufferTable(SIWavefront *self,
         int first_reg, int num_regs)
 {
-	struct si_ndrange_t *ndrange = wavefront->work_group->ndrange;
+	SINDRange *ndrange = self->work_group->ndrange;
 	struct si_mem_ptr_t mem_ptr;
 
 	assert(num_regs == 2);
@@ -825,16 +804,18 @@ void si_wavefront_init_sreg_with_cb_table(struct si_wavefront_t *wavefront,
 
 	mem_ptr.addr = (unsigned int)ndrange->const_buf_table;
 
-	memcpy(&wavefront->sreg[first_reg], &mem_ptr, sizeof(mem_ptr));
+	memcpy(&self->sreg[first_reg], &mem_ptr, sizeof(mem_ptr));
 }
 
 /* Puts a memory descriptor for a UAV into sregs
  * (requires 4 consecutive registers to store the 128-bit structure) */
-void si_wavefront_init_sreg_with_uav(struct si_wavefront_t *wavefront, 
+void SIWavefrontInitSRegWithUAV(SIWavefront *self, 
 	int first_reg, int num_regs, int uav)
 {
 	struct si_buffer_desc_t buf_desc;
-	struct si_ndrange_t *ndrange = wavefront->work_group->ndrange;
+
+	SINDRange *ndrange = self->work_group->ndrange;
+	SIEmu *emu = ndrange->emu;
 
 	unsigned int buf_desc_addr;
 
@@ -847,18 +828,18 @@ void si_wavefront_init_sreg_with_uav(struct si_wavefront_t *wavefront,
 
 	/* Read a descriptor from the constant buffer table (located 
 	 * in global memory) */
-	mem_read(si_emu->global_mem, buf_desc_addr, sizeof(buf_desc), 
+	mem_read(emu->global_mem, buf_desc_addr, sizeof(buf_desc),
 		&buf_desc);
 
 	/* Store the descriptor in 4 scalar registers */
-	memcpy(&wavefront->sreg[first_reg], &buf_desc, sizeof(buf_desc));
+	memcpy(&self->sreg[first_reg], &buf_desc, sizeof(buf_desc));
 }
 
 /* Put a pointer to the UAV table into 2 consecutive sregs */
-void si_wavefront_init_sreg_with_uav_table(struct si_wavefront_t *wavefront, 
-	int first_reg, int num_regs)
+void SIWavefrontInitSRegWithUAVTable(SIWavefront *self, 
+		int first_reg, int num_regs)
 {
-	struct si_ndrange_t *ndrange = wavefront->work_group->ndrange;
+	SINDRange *ndrange = self->work_group->ndrange;
 	struct si_mem_ptr_t mem_ptr;
 
 	assert(num_regs == 2);
@@ -866,14 +847,14 @@ void si_wavefront_init_sreg_with_uav_table(struct si_wavefront_t *wavefront,
 
 	mem_ptr.addr = (unsigned int)ndrange->uav_table;
 
-	memcpy(&wavefront->sreg[first_reg], &mem_ptr, sizeof(mem_ptr));
+	memcpy(&self->sreg[first_reg], &mem_ptr, sizeof(mem_ptr));
 }
 
 /* Put a pointer to the Vertex Buffer table into 2 consecutive sregs */
-void si_wavefront_init_sreg_with_vertex_buffer_table(struct si_wavefront_t *wavefront, 
-	int first_reg, int num_regs)
+void SIWavefrontInitSRegWithBufferTable(SIWavefront *self, 
+		int first_reg, int num_regs)
 {
-	struct si_ndrange_t *ndrange = wavefront->work_group->ndrange;
+	SINDRange *ndrange = self->work_group->ndrange;
 	struct si_mem_ptr_t mem_ptr;
 
 	assert(num_regs == 2);
@@ -881,14 +862,14 @@ void si_wavefront_init_sreg_with_vertex_buffer_table(struct si_wavefront_t *wave
 
 	mem_ptr.addr = (unsigned int)ndrange->vertex_buffer_table;
 
-	memcpy(&wavefront->sreg[first_reg], &mem_ptr, sizeof(mem_ptr));
+	memcpy(&self->sreg[first_reg], &mem_ptr, sizeof(mem_ptr));
 }
 
 /* Put a pointer to the Fetch Shader into 2 consecutive sregs */
-void si_wavefront_init_sreg_with_fetch_shader(struct si_wavefront_t *wavefront, 
+void SIWavefrontInitSRegWithFetchShader(SIWavefront *self, 
 	int first_reg, int num_regs)
 {
-	struct si_ndrange_t *ndrange = wavefront->work_group->ndrange;
+	SINDRange *ndrange = self->work_group->ndrange;
 	struct si_mem_ptr_t mem_ptr;
 
 	assert(num_regs == 2);
@@ -896,6 +877,6 @@ void si_wavefront_init_sreg_with_fetch_shader(struct si_wavefront_t *wavefront,
 
 	mem_ptr.addr = ndrange->fs_buffer_ptr;
 
-	memcpy(&wavefront->sreg[first_reg], &mem_ptr, sizeof(mem_ptr));
+	memcpy(&self->sreg[first_reg], &mem_ptr, sizeof(mem_ptr));
 }
 

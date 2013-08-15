@@ -22,10 +22,6 @@
 
 #include <lib/util/elf-format.h>
 
-/* Forward declarations */
-struct si_ndrange_t;
-
-
 
 /*
  * Kernel
@@ -65,14 +61,13 @@ struct opencl_si_kernel_t *opencl_si_kernel_create(int id,
 void opencl_si_kernel_free(struct opencl_si_kernel_t *kernel);
 
 void opencl_si_kernel_setup_ndrange_constant_buffers(
-	struct si_ndrange_t *ndrange);
+	SINDRange *ndrange);
 void opencl_si_kernel_setup_ndrange_args(struct opencl_si_kernel_t *kernel,
-	struct si_ndrange_t *ndrange);
+	SINDRange *ndrange);
 void opencl_si_kernel_debug_ndrange_state(struct opencl_si_kernel_t *kernel, 
-	struct si_ndrange_t *ndrange);
-void opencl_si_kernel_create_ndrange_tables(struct si_ndrange_t *ndrange);
-void opencl_si_kernel_create_ndrange_constant_buffers(
-	struct si_ndrange_t *ndrange);
+	SINDRange *ndrange);
+void opencl_si_kernel_create_ndrange_tables(SINDRange *ndrange);
+void opencl_si_kernel_create_ndrange_constant_buffers(SINDRange *ndrange);
 
 #endif
 

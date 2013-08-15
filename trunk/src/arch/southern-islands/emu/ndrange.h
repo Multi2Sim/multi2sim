@@ -28,22 +28,27 @@
 #include "emu.h"
 
 
+/*
+ * Class 'SINDRange'
+ */
+
 enum si_ndrange_table_entry_kind_t
 {
-        SI_TABLE_ENTRY_KIND_BUFFER_DESC = 1,
-        SI_TABLE_ENTRY_KIND_IMAGE_DESC,
-        SI_TABLE_ENTRY_KIND_SAMPLER_DESC
+	SI_TABLE_ENTRY_KIND_BUFFER_DESC = 1,
+	SI_TABLE_ENTRY_KIND_IMAGE_DESC,
+	SI_TABLE_ENTRY_KIND_SAMPLER_DESC
 };
 
 struct si_ndrange_table_entry_t
 {
-        unsigned int valid : 1;
-        enum si_ndrange_table_entry_kind_t kind;
-        unsigned int size;
+	unsigned int valid : 1;
+	enum si_ndrange_table_entry_kind_t kind;
+	unsigned int size;
 };
 
-struct si_ndrange_t
-{
+
+CLASS_BEGIN(SINDRange, Object)
+	
 	/* Emulator */
 	SIEmu *emu;
 
@@ -115,34 +120,38 @@ struct si_ndrange_t
 	/* Histogram of executed instructions. Only allocated if the kernel 
 	 * report option is active. */
 	unsigned int *inst_histogram;
-};
+
+CLASS_END(SINDRange)
 
 
-struct si_ndrange_t *si_ndrange_create(SIEmu *emu);
-void si_ndrange_free(struct si_ndrange_t *ndrange);
-void si_ndrange_dump(struct si_ndrange_t *ndrange, FILE *f);
+void SINDRangeCreate(SINDRange *self, SIEmu *emu);
+void SINDRangeDestroy(SINDRange *self);
+
+void SINDRangeDump(Object *self, FILE *f);
 
 /* Functions to set up ND-Range after initialization */
-void si_ndrange_setup_size(struct si_ndrange_t *ndrange, 
+void SINDRangeSetupSize(SINDRange *self, 
 	unsigned int *global_size, unsigned int *local_size, int work_dim);
-void si_ndrange_setup_fs_mem(struct si_ndrange_t *ndrange, void *buf, 
+void SINDRangeSetupFSMem(SINDRange *self, void *buf, 
 	int size, unsigned int pc);
-void si_ndrange_setup_inst_mem(struct si_ndrange_t *ndrange, void *buf, 
+void SINDRangeSetupInstMem(SINDRange *self, void *buf, 
 	int size, unsigned int pc);
 
 /* Access constant buffers */
-void si_ndrange_const_buf_write(struct si_ndrange_t *ndrange, 
-	int const_buf_num, int offset, void *pvalue, unsigned int size);
-void si_ndrange_const_buf_read(struct si_ndrange_t *ndrange, int const_buf_num, 	int offset, void *pvalue, unsigned int size);
+void SINDRangeConstantBufferWrite(SINDRange *self,
+		int const_buf_num, int offset, void *pvalue, unsigned int size);
+void SINDRangeConstantBufferRead(SINDRange *self, int const_buf_num,
+		int offset, void *pvalue, unsigned int size);
 
 /* Access internal tables */
-void si_ndrange_insert_buffer_into_uav_table(struct si_ndrange_t *ndrange,
+void SINDRangeInsertBufferIntoUAVTable(SINDRange *self,
         struct si_buffer_desc_t *buf_desc, unsigned int uav);
-void si_ndrange_insert_buffer_into_vertex_buffer_table(struct si_ndrange_t *ndrange,
+void SINDRangeInsertBufferIntoVertexBufferTable(SINDRange *self,
 	struct si_buffer_desc_t *buf_desc, unsigned int vertex_buffer);
-void si_ndrange_insert_buffer_into_const_buf_table(struct si_ndrange_t *ndrange,
+void SINDRangeInsertBufferIntoConstantBufferTable(SINDRange *self,
         struct si_buffer_desc_t *buf_desc, unsigned int const_buf_num);
-void si_ndrange_insert_image_into_uav_table(struct si_ndrange_t *ndrange,
+void SINDRangeInsertImageIntoUAVTable(SINDRange *self,
         struct si_image_desc_t *image_desc, unsigned int uav);
 
 #endif
+
