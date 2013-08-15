@@ -19,6 +19,7 @@
 
 #include <assert.h>
 
+#include <arch/southern-islands/asm/asm.h>
 #include <arch/southern-islands/asm/inst.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/hash-table.h>
@@ -42,6 +43,11 @@ struct list_t *si2bin_inst_info_list;
  * extracted from the first token of the format string. */
 struct hash_table_t *si2bin_inst_info_table;
 
+/* FIXME
+ * To obtain 'si_inst_info_t' elements
+ */
+SIAsm *si_asm;
+
 
 void si2bin_inst_info_init(void)
 {
@@ -51,6 +57,9 @@ void si2bin_inst_info_init(void)
 
 	int i;
 
+	/* Disassembler */
+	si_asm = new(SIAsm);
+
 	/* Initialize hash table and list */
 	si2bin_inst_info_list = list_create_with_size(SIInstOpcodeCount);
 	si2bin_inst_info_table = hash_table_create(SIInstOpcodeCount, 1);
@@ -59,7 +68,7 @@ void si2bin_inst_info_init(void)
 	for (i = 0; i < SIInstOpcodeCount; i++)
 	{
 		/* Instruction info from disassembler */
-		inst_info = &si_inst_info[i];
+		inst_info = &si_asm->inst_info[i];
 		if (!inst_info->name || !inst_info->fmt_str)
 		{
 			list_add(si2bin_inst_info_list, NULL);
@@ -109,6 +118,9 @@ void si2bin_inst_info_done(void)
 	/* Free list and hash table */
 	list_free(si2bin_inst_info_list);
 	hash_table_free(si2bin_inst_info_table);
+
+	/* FIXME */
+	delete(si_asm);
 }
 
 

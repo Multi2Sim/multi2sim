@@ -472,13 +472,16 @@ typedef union
 
 CLASS_BEGIN(SIInst, Object)
 
+	/* Disassembler */
+	SIAsm *as;
+
 	struct si_inst_info_t *info;
 	SIInstBytes bytes;
 
 CLASS_END(SIInst)
 
 
-void SIInstCreate(SIInst *self);
+void SIInstCreate(SIInst *self, SIAsm *as);
 void SIInstDestroy(SIInst *self);
 
 void SIInstClear(SIInst *self);
@@ -513,13 +516,6 @@ struct si_inst_info_t
 	SIInstFlag flags;  /* Flag bitmap */
 	int size;  /* Size of microcode inst (bytes) */
 };
-
-
-/* Table containing information for all instructions, filled out with the
- * fields found in 'asm.dat'. */
-extern struct si_inst_info_t si_inst_info[SIInstOpcodeCount];
-
-
 
 
 #endif

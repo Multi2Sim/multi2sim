@@ -30,7 +30,7 @@
 
 CLASS_BEGIN(X86Asm, Asm)
 
-	/* Array containing 'x86_inst_opcode_count' elements of type
+	/* Array containing 'X86InstOpcodeCount' elements of type
 	 * 'X86InstInfo' allocated contiguously, and storing instructions
 	 * information as given in 'asm.dat'. */
 	struct x86_inst_info_t *inst_info_list;

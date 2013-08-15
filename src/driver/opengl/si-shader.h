@@ -20,7 +20,7 @@
 #ifndef DRIVER_OPENGL_SI_SHADER_H
 #define DRIVER_OPENGL_SI_SHADER_H
 
-#include <src/arch/southern-islands/emu/opengl-bin-file.h>
+#include <src/arch/southern-islands/asm/opengl-bin-file.h>
 
 /* Forward declaration */
 struct opengl_si_program_t;

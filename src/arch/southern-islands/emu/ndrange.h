@@ -23,8 +23,10 @@
 #include <stdio.h>
 
 #include <arch/southern-islands/asm/bin-file.h>
+#include <lib/class/class.h>
 
 #include "emu.h"
+
 
 enum si_ndrange_table_entry_kind_t
 {
@@ -42,6 +44,9 @@ struct si_ndrange_table_entry_t
 
 struct si_ndrange_t
 {
+	/* Emulator */
+	SIEmu *emu;
+
 	/* ID */
 	int id;  /* Sequential ND-Range ID (given by si_emu->ndrange_count) */
 
@@ -113,7 +118,7 @@ struct si_ndrange_t
 };
 
 
-struct si_ndrange_t *si_ndrange_create();
+struct si_ndrange_t *si_ndrange_create(SIEmu *emu);
 void si_ndrange_free(struct si_ndrange_t *ndrange);
 void si_ndrange_dump(struct si_ndrange_t *ndrange, FILE *f);
 

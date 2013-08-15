@@ -31,12 +31,13 @@
  * Public Functions
  */
 
-struct si_ndrange_t *si_ndrange_create()
+struct si_ndrange_t *si_ndrange_create(SIEmu *emu)
 {
 	struct si_ndrange_t *ndrange;
 
 	/* Initialize */
 	ndrange = xcalloc(1, sizeof(struct si_ndrange_t));
+	ndrange->emu = emu;
 	ndrange->id = si_emu->ndrange_count++;
 
 	/* Instruction histogram */

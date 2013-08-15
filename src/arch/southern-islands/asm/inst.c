@@ -265,8 +265,10 @@ void line_dump(char *inst_str, unsigned int rel_addr, void *buf, char *line, int
 
 
 
-void SIInstCreate(SIInst *self)
+void SIInstCreate(SIInst *self, SIAsm *as)
 {
+	/* Initialize */
+	self->as = as;
 }
 
 
@@ -1129,6 +1131,7 @@ void SIInstClear(SIInst *self)
 
 int SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 {
+	SIAsm *as = self->as;
 	unsigned int inst_size;
 
 	/* Initialize instruction */
@@ -1141,25 +1144,25 @@ int SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 	/* Use the encoding field to determine the instruction type */
 	if (self->bytes.sopp.enc == 0x17F)
 	{
-		if (!si_inst_info_sopp[self->bytes.sopp.op])
+		if (!as->inst_info_sopp[self->bytes.sopp.op])
 		{
 			fatal("Unimplemented Instruction: SOPP:%d  "
 				"// %08X: %08X\n", self->bytes.sopp.op,
 				offset, * (unsigned int *) buf);
 		}
 
-		self->info = si_inst_info_sopp[self->bytes.sopp.op];
+		self->info = as->inst_info_sopp[self->bytes.sopp.op];
 	}
 	else if (self->bytes.sopc.enc == 0x17E)
 	{
-		if (!si_inst_info_sopc[self->bytes.sopc.op])
+		if (!as->inst_info_sopc[self->bytes.sopc.op])
 		{
 			fatal("Unimplemented Instruction: SOPC:%d  "
 				"// %08X: %08X\n", self->bytes.sopc.op,
 				offset, * (unsigned int *) buf);
 		}
 
-		self->info = si_inst_info_sopc[self->bytes.sopc.op];
+		self->info = as->inst_info_sopc[self->bytes.sopc.op];
 
 		/* Only one source field may use a literal constant,
 		 * which is indicated by 0xFF. */
@@ -1174,14 +1177,14 @@ int SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 	}
 	else if (self->bytes.sop1.enc == 0x17D)
 	{
-		if (!si_inst_info_sop1[self->bytes.sop1.op])
+		if (!as->inst_info_sop1[self->bytes.sop1.op])
 		{
 			fatal("Unimplemented Instruction: SOP1:%d  "
 				"// %08X: %08X\n", self->bytes.sop1.op,
 				offset, *(unsigned int*)buf);
 		}
 
-		self->info = si_inst_info_sop1[self->bytes.sop1.op];
+		self->info = as->inst_info_sop1[self->bytes.sop1.op];
 
 		/* 0xFF indicates the use of a literal constant as a
 		 * source operand. */
@@ -1192,25 +1195,25 @@ int SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 	}
 	else if (self->bytes.sopk.enc == 0xB)
 	{
-		if (!si_inst_info_sopk[self->bytes.sopk.op])
+		if (!as->inst_info_sopk[self->bytes.sopk.op])
 		{
 			fatal("Unimplemented Instruction: SOPK:%d  "
 				"// %08X: %08X\n", self->bytes.sopk.op,
 				offset, * (unsigned int *) buf);
 		}
 
-		self->info = si_inst_info_sopk[self->bytes.sopk.op];
+		self->info = as->inst_info_sopk[self->bytes.sopk.op];
 	}
 	else if (self->bytes.sop2.enc == 0x2)
 	{
-		if (!si_inst_info_sop2[self->bytes.sop2.op])
+		if (!as->inst_info_sop2[self->bytes.sop2.op])
 		{
 			fatal("Unimplemented Instruction: SOP2:%d  "
 				"// %08X: %08X\n", self->bytes.sop2.op,
 				offset, *(unsigned int *)buf);
 		}
 
-		self->info = si_inst_info_sop2[self->bytes.sop2.op];
+		self->info = as->inst_info_sop2[self->bytes.sop2.op];
 
 		/* Only one source field may use a literal constant,
 		 * which is indicated by 0xFF. */
@@ -1224,14 +1227,14 @@ int SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 	}
 	else if (self->bytes.smrd.enc == 0x18)
 	{
-		if (!si_inst_info_smrd[self->bytes.smrd.op])
+		if (!as->inst_info_smrd[self->bytes.smrd.op])
 		{
 			fatal("Unimplemented Instruction: SMRD:%d  "
 				"// %08X: %08X\n", self->bytes.smrd.op,
 				offset, *(unsigned int *)buf);
 		}
 
-		self->info = si_inst_info_smrd[self->bytes.smrd.op];
+		self->info = as->inst_info_smrd[self->bytes.smrd.op];
 	}
 	else if (self->bytes.vop3a.enc == 0x34)
 	{
@@ -1239,7 +1242,7 @@ int SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 		inst_size = 8;
 		self->bytes.dword = * (unsigned long long *) buf;
 
-		if (!si_inst_info_vop3[self->bytes.vop3a.op])
+		if (!as->inst_info_vop3[self->bytes.vop3a.op])
 		{
 			fatal("Unimplemented Instruction: VOP3:%d  "
 				"// %08X: %08X %08X\n",
@@ -1248,11 +1251,11 @@ int SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 				*(unsigned int *)(buf + 4));
 		}
 
-		self->info = si_inst_info_vop3[self->bytes.vop3a.op];
+		self->info = as->inst_info_vop3[self->bytes.vop3a.op];
 	}
 	else if (self->bytes.vopc.enc == 0x3E)
 	{
-		if (!si_inst_info_vopc[self->bytes.vopc.op])
+		if (!as->inst_info_vopc[self->bytes.vopc.op])
 		{
 			fatal("Unimplemented Instruction: VOPC:%d  "
 				"// %08X: %08X\n",
@@ -1260,7 +1263,7 @@ int SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 				*(unsigned int *)buf);
 		}
 
-		self->info = si_inst_info_vopc[self->bytes.vopc.op];
+		self->info = as->inst_info_vopc[self->bytes.vopc.op];
 
 		/* 0xFF indicates the use of a literal constant as a
 		 * source operand. */
@@ -1271,14 +1274,14 @@ int SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 	}
 	else if (self->bytes.vop1.enc == 0x3F)
 	{
-		if (!si_inst_info_vop1[self->bytes.vop1.op])
+		if (!as->inst_info_vop1[self->bytes.vop1.op])
 		{
 			fatal("Unimplemented Instruction: VOP1:%d  "
 				"// %08X: %08X\n", self->bytes.vop1.op,
 				offset, * (unsigned int *) buf);
 		}
 
-		self->info = si_inst_info_vop1[self->bytes.vop1.op];
+		self->info = as->inst_info_vop1[self->bytes.vop1.op];
 
 		/* 0xFF indicates the use of a literal constant as a
 		 * source operand. */
@@ -1289,14 +1292,14 @@ int SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 	}
 	else if (self->bytes.vop2.enc == 0x0)
 	{
-		if (!si_inst_info_vop2[self->bytes.vop2.op])
+		if (!as->inst_info_vop2[self->bytes.vop2.op])
 		{
 			fatal("Unimplemented Instruction: VOP2:%d  "
 				"// %08X: %08X\n", self->bytes.vop2.op,
 				offset, * (unsigned int *) buf);
 		}
 
-		self->info = si_inst_info_vop2[self->bytes.vop2.op];
+		self->info = as->inst_info_vop2[self->bytes.vop2.op];
 
 		/* 0xFF indicates the use of a literal constant as a
 		 * source operand. */
@@ -1314,14 +1317,14 @@ int SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 	}
 	else if (self->bytes.vintrp.enc == 0x32)
 	{
-		if (!si_inst_info_vintrp[self->bytes.vintrp.op])
+		if (!as->inst_info_vintrp[self->bytes.vintrp.op])
 		{
 			fatal("Unimplemented Instruction: VINTRP:%d  "
 				"// %08X: %08X\n", self->bytes.vintrp.op,
 				offset, * (unsigned int *) buf);
 		}
 
-		self->info = si_inst_info_vintrp[self->bytes.vintrp.op];
+		self->info = as->inst_info_vintrp[self->bytes.vintrp.op];
 
 	}
 	else if (self->bytes.ds.enc == 0x36)
@@ -1329,7 +1332,7 @@ int SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 		/* 64 bit instruction. */
 		inst_size = 8;
 		self->bytes.dword = * (unsigned long long *) buf;
-		if (!si_inst_info_ds[self->bytes.ds.op])
+		if (!as->inst_info_ds[self->bytes.ds.op])
 		{
 			fatal("Unimplemented Instruction: DS:%d  "
 				"// %08X: %08X %08X\n", self->bytes.ds.op,
@@ -1337,7 +1340,7 @@ int SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 				*(unsigned int *)(buf + 4));
 		}
 
-		self->info = si_inst_info_ds[self->bytes.ds.op];
+		self->info = as->inst_info_ds[self->bytes.ds.op];
 	}
 	else if (self->bytes.mtbuf.enc == 0x3A)
 	{
@@ -1345,7 +1348,7 @@ int SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 		inst_size = 8;
 		self->bytes.dword = * (unsigned long long *) buf;
 
-		if (!si_inst_info_mtbuf[self->bytes.mtbuf.op])
+		if (!as->inst_info_mtbuf[self->bytes.mtbuf.op])
 		{
 			fatal("Unimplemented Instruction: MTBUF:%d  "
 				"// %08X: %08X %08X\n",
@@ -1353,7 +1356,7 @@ int SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 				*(unsigned int *)buf, *(unsigned int *)(buf+4));
 		}
 
-		self->info = si_inst_info_mtbuf[self->bytes.mtbuf.op];
+		self->info = as->inst_info_mtbuf[self->bytes.mtbuf.op];
 	}
 	else if (self->bytes.mubuf.enc == 0x38)
 	{
@@ -1361,7 +1364,7 @@ int SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 		inst_size = 8;
 		self->bytes.dword = * (unsigned long long *) buf;
 
-		if (!si_inst_info_mubuf[self->bytes.mubuf.op])
+		if (!as->inst_info_mubuf[self->bytes.mubuf.op])
 		{
 			fatal("Unimplemented Instruction: MUBUF:%d  "
 				"// %08X: %08X %08X\n",
@@ -1370,7 +1373,7 @@ int SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 				*(unsigned int *)(buf+4));
 		}
 
-		self->info = si_inst_info_mubuf[self->bytes.mubuf.op];
+		self->info = as->inst_info_mubuf[self->bytes.mubuf.op];
 	}
 	else if (self->bytes.mimg.enc == 0x3C)
 	{
@@ -1378,7 +1381,7 @@ int SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 		inst_size = 8;
 		self->bytes.dword = * (unsigned long long *) buf;
 
-		if(!si_inst_info_mimg[self->bytes.mimg.op])
+		if(!as->inst_info_mimg[self->bytes.mimg.op])
 		{
 			fatal("Unimplemented Instruction: MIMG:%d  "
 				"// %08X: %08X %08X\n",
@@ -1387,7 +1390,7 @@ int SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 				*(unsigned int *)(buf+4));
 		}
 
-		self->info = si_inst_info_mimg[self->bytes.mimg.op];
+		self->info = as->inst_info_mimg[self->bytes.mimg.op];
 	}
 	else if (self->bytes.exp.enc == 0x3E)
 	{
@@ -1396,10 +1399,10 @@ int SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 		self->bytes.dword = * (unsigned long long *) buf;
 
 		/* Export is the only instruction in its kind */
-		if (!si_inst_info_exp[0])
+		if (!as->inst_info_exp[0])
 			fatal("Unimplemented Instruction: EXP\n");
 
-		self->info = si_inst_info_exp[0];
+		self->info = as->inst_info_exp[0];
 	}
 	else
 	{

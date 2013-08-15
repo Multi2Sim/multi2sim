@@ -19,7 +19,7 @@
 
 
 #include <arch/southern-islands/asm/input.h>
-#include <arch/southern-islands/emu/opengl-bin-file.h> 
+#include <arch/southern-islands/asm/opengl-bin-file.h> 
 #include <arch/southern-islands/emu/ndrange.h>
 
 #include <lib/mhandle/mhandle.h>
