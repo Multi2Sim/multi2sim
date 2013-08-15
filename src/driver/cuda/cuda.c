@@ -635,9 +635,7 @@ int cuda_func_cuLaunchKernel(X86Context *ctx)
 
 	struct cuda_function_t *function;
 	struct cuda_function_arg_t *arg;
-	char arg_name[MAX_STRING_SIZE];
 	unsigned int arg_ptr;
-	unsigned int arg_value;
 	struct frm_grid_t *grid;
 	int i;
 	struct cuda_abi_frm_kernel_launch_info_t *info;
@@ -675,21 +673,15 @@ int cuda_func_cuLaunchKernel(X86Context *ctx)
 	/* Set up arguments */
 	for (i = 0; i < function->arg_count; ++i)
 	{
+		arg = function->arg_array[i];
+
+		/* Get argument access type */
+		arg->access_type = CUDA_FUNCTION_ARG_READ_WRITE;
+
 		/* Get argument value */
 		mem_read(mem, kernelParams + i * 4, sizeof(unsigned int), 
 				&arg_ptr);
-		mem_read(mem, arg_ptr, sizeof(unsigned int), &arg_value);
-
-		/* Create argument */
-		snprintf(arg_name, MAX_STRING_SIZE, "arg_%d", i);
-		arg = cuda_function_arg_create(arg_name);
-
-		/* Initialize argument */
-		arg->access_type = CUDA_FUNCTION_ARG_READ_WRITE;
-		arg->value = arg_value;
-
-		/* Add to list */
-		function->arg_array[i] = arg;
+		mem_read(mem, arg_ptr, sizeof(unsigned int), &(arg->value));
 	}
 
 	/* Create grid */

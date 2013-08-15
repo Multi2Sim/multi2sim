@@ -151,8 +151,10 @@ struct frm_warp_t *frm_warp_create()
 
 	/* Initialize */
 	warp = xcalloc(1, sizeof(struct frm_warp_t));
-	warp->active_thread_stack[0] = 0xffffffff;
-	warp->active_thread_stack_top = 0;
+	warp->reconv_stack.entries[0].active_thread_bitmap = 0xffffffff;
+	warp->reconv_stack_top = 0;
+	warp->reconv_stack_pushed = 0;
+	warp->reconv_stack_popped = 0;
 	/* FIXME: Remove once loop state is part of stack */
 	warp->loop_depth = 0;
 
@@ -270,7 +272,6 @@ void frm_warp_execute(struct frm_warp_t *warp)
 			__FUNCTION__, inst->dword.word[0], inst->dword.word[1]);
 
 	/* Execute instruction */
-printf("%d %d\n", warp->id, warp->thread_count);
 	for (thread_id = 0; thread_id < warp->thread_count; thread_id++)
 	{
 		thread = warp->threads[thread_id];
