@@ -25,7 +25,19 @@
 #include <lib/util/string.h>
 
 
-#define FRM_MAX_THREAD_MASK_SIZE  32
+#define FRM_MAX_RECONV_STACK_SIZE  32
+
+struct frm_reconv_stack_entry_t
+{
+	unsigned int reconv_pc;
+	unsigned int next_path_pc;
+	unsigned int active_thread_bitmap;
+};
+
+struct frm_reconv_stack_t
+{
+	struct frm_reconv_stack_entry_t entries[FRM_MAX_RECONV_STACK_SIZE];
+};
 
 struct frm_warp_t
 {
@@ -56,10 +68,13 @@ struct frm_warp_t
 	unsigned int inst_buffer_index;
 	unsigned int inst_buffer_size;
 
-	/* Active thread mask */
-	unsigned int active_thread_stack[FRM_MAX_THREAD_MASK_SIZE];
-	int active_thread_stack_top;
+	/* Recovergence stack */
+	struct frm_reconv_stack_t reconv_stack;
+	int reconv_stack_top;
+	int reconv_stack_pushed;
+	int reconv_stack_popped;
 
+	unsigned int at_barrier_thread_count;
 	unsigned int finished_thread_count;
 
 	/* Predicate mask */

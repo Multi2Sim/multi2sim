@@ -46,10 +46,12 @@ void frm_isa_FFMA_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 	float dst, src1, src2, src3;
 
 	struct frm_warp_t *warp;
+        struct frm_reconv_stack_entry_t entry;
 
 	/* Active */
 	warp = thread->warp;
-	active = (warp->active_thread_stack[warp->active_thread_stack_top] >> 
+	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
+	active = (entry.active_thread_bitmap >> 
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
@@ -96,10 +98,12 @@ void frm_isa_FADD_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 	float dst, src1, src2;
 
 	struct frm_warp_t *warp;
+        struct frm_reconv_stack_entry_t entry;
 
 	/* Active */
 	warp = thread->warp;
-	active = (warp->active_thread_stack[warp->active_thread_stack_top] >> 
+	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
+	active = (entry.active_thread_bitmap >> 
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
@@ -146,10 +150,12 @@ void frm_isa_FADD32I_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 	union value_t imm32;
 
 	struct frm_warp_t *warp;
+        struct frm_reconv_stack_entry_t entry;
 
 	/* Active */
 	warp = thread->warp;
-	active = (warp->active_thread_stack[warp->active_thread_stack_top] >> 
+	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
+	active = (entry.active_thread_bitmap >> 
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
@@ -193,10 +199,12 @@ void frm_isa_FMUL_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 	float dst, src1, src2;
 
 	struct frm_warp_t *warp;
+        struct frm_reconv_stack_entry_t entry;
 
 	/* Active */
 	warp = thread->warp;
-	active = (warp->active_thread_stack[warp->active_thread_stack_top] >> 
+	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
+	active = (entry.active_thread_bitmap >> 
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
@@ -242,10 +250,12 @@ void frm_isa_FMUL32I_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 	union value_t imm32;
 
 	struct frm_warp_t *warp;
+        struct frm_reconv_stack_entry_t entry;
 
 	/* Active */
 	warp = thread->warp;
-	active = (warp->active_thread_stack[warp->active_thread_stack_top] >> 
+	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
+	active = (entry.active_thread_bitmap >> 
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
@@ -344,10 +354,12 @@ void frm_isa_IMAD_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 	int dst, src1, src2, src3;
 
 	struct frm_warp_t *warp;
+        struct frm_reconv_stack_entry_t entry;
 
 	/* Active */
 	warp = thread->warp;
-	active = (warp->active_thread_stack[warp->active_thread_stack_top] >> 
+	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
+	active = (entry.active_thread_bitmap >> 
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
@@ -394,10 +406,12 @@ void frm_isa_IMUL_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 	int dst, src1, src2;
 
 	struct frm_warp_t *warp;
+        struct frm_reconv_stack_entry_t entry;
 
 	/* Active */
 	warp = thread->warp;
-	active = (warp->active_thread_stack[warp->active_thread_stack_top] >> 
+	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
+	active = (entry.active_thread_bitmap >> 
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
@@ -442,10 +456,12 @@ void frm_isa_IADD_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 	int dst, src1, src2;
 
 	struct frm_warp_t *warp;
+        struct frm_reconv_stack_entry_t entry;
 
 	/* Active */
 	warp = thread->warp;
-	active = (warp->active_thread_stack[warp->active_thread_stack_top] >> 
+	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
+	active = (entry.active_thread_bitmap >> 
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
@@ -497,10 +513,12 @@ void frm_isa_IADD32I_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 	int dst, src1, imm32;
 
 	struct frm_warp_t *warp;
+        struct frm_reconv_stack_entry_t entry;
 
 	/* Active */
 	warp = thread->warp;
-	active = (warp->active_thread_stack[warp->active_thread_stack_top] >> 
+	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
+	active = (entry.active_thread_bitmap >> 
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
@@ -541,10 +559,12 @@ void frm_isa_ISCADD_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 	unsigned int shamt;
 
 	struct frm_warp_t *warp;
+        struct frm_reconv_stack_entry_t entry;
 
 	/* Active */
 	warp = thread->warp;
-	active = (warp->active_thread_stack[warp->active_thread_stack_top] >> 
+	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
+	active = (entry.active_thread_bitmap >> 
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
@@ -613,10 +633,12 @@ void frm_isa_SHR_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 	unsigned int src2;
 
 	struct frm_warp_t *warp;
+        struct frm_reconv_stack_entry_t entry;
 
 	/* Active */
 	warp = thread->warp;
-	active = (warp->active_thread_stack[warp->active_thread_stack_top] >> 
+	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
+	active = (entry.active_thread_bitmap >> 
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
@@ -664,10 +686,12 @@ void frm_isa_SHL_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 	unsigned int src2;
 
 	struct frm_warp_t *warp;
+        struct frm_reconv_stack_entry_t entry;
 
 	/* Active */
 	warp = thread->warp;
-	active = (warp->active_thread_stack[warp->active_thread_stack_top] >> 
+	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
+	active = (entry.active_thread_bitmap >> 
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
@@ -737,10 +761,12 @@ void frm_isa_ISETP_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 	int compare_result;
 
 	struct frm_warp_t *warp;
+        struct frm_reconv_stack_entry_t entry;
 
 	/* Active */
 	warp = thread->warp;
-	active = (warp->active_thread_stack[warp->active_thread_stack_top] >> 
+	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
+	active = (entry.active_thread_bitmap >> 
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
@@ -854,10 +880,12 @@ void frm_isa_MOV_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 	int dst, src;
 
 	struct frm_warp_t *warp;
+        struct frm_reconv_stack_entry_t entry;
 
 	/* Active */
 	warp = thread->warp;
-	active = (warp->active_thread_stack[warp->active_thread_stack_top] >> 
+	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
+	active = (entry.active_thread_bitmap >> 
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
@@ -898,10 +926,12 @@ void frm_isa_MOV32I_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 	int dst, imm32;
 
 	struct frm_warp_t *warp;
+        struct frm_reconv_stack_entry_t entry;
 
 	/* Active */
 	warp = thread->warp;
-	active = (warp->active_thread_stack[warp->active_thread_stack_top] >> 
+	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
+	active = (entry.active_thread_bitmap >> 
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
@@ -1002,10 +1032,12 @@ void frm_isa_LD_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 	unsigned int active, pred, dst, addr;
 
 	struct frm_warp_t *warp;
+        struct frm_reconv_stack_entry_t entry;
 
 	/* Active */
 	warp = thread->warp;
-	active = (warp->active_thread_stack[warp->active_thread_stack_top] >> 
+	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
+	active = (entry.active_thread_bitmap >> 
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
@@ -1053,10 +1085,12 @@ void frm_isa_LDS_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 	unsigned int active, pred, dst, addr;
 
 	struct frm_warp_t *warp;
+        struct frm_reconv_stack_entry_t entry;
 
 	/* Active */
 	warp = thread->warp;
-	active = (warp->active_thread_stack[warp->active_thread_stack_top] >> 
+	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
+	active = (entry.active_thread_bitmap >> 
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
@@ -1114,10 +1148,12 @@ void frm_isa_ST_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 	unsigned int active, pred, value, addr;
 
 	struct frm_warp_t *warp;
+        struct frm_reconv_stack_entry_t entry;
 
 	/* Active */
 	warp = thread->warp;
-	active = (warp->active_thread_stack[warp->active_thread_stack_top] >> 
+	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
+	active = (entry.active_thread_bitmap >> 
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
@@ -1163,10 +1199,12 @@ void frm_isa_STS_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 	unsigned int active, pred, value, addr;
 
 	struct frm_warp_t *warp;
+        struct frm_reconv_stack_entry_t entry;
 
 	/* Active */
 	warp = thread->warp;
-	active = (warp->active_thread_stack[warp->active_thread_stack_top] >> 
+	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
+	active = (entry.active_thread_bitmap >> 
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
@@ -1257,10 +1295,12 @@ void frm_isa_BRA_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 	unsigned int active, pred, target;
 
 	struct frm_warp_t *warp;
+        struct frm_reconv_stack_entry_t *entry;
 
 	/* Active */
 	warp = thread->warp;
-	active = (warp->active_thread_stack[warp->active_thread_stack_top] >> 
+	entry = &(warp->reconv_stack.entries[warp->reconv_stack_top]);
+	active = (entry->active_thread_bitmap >> 
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
@@ -1270,25 +1310,31 @@ void frm_isa_BRA_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 	else
 		pred = ! thread->pr[pred_id - 8];
 
-	if (active == 1 && pred == 1)
-	{
-		/* Update active thread mask stack */
-		warp->active_thread_stack[warp->active_thread_stack_top + 1] |=
-			0 << thread->id_in_warp;
+	/* Get target */
+	target = inst->dword.tgt.target;
 
-		/* FIXME: target is not used */
-		target = inst->dword.tgt.target;
+	/* Create new reconvergence stack entry */
+	entry = &(warp->reconv_stack.entries[warp->reconv_stack_top + 1]);
+	if (active == 1)
+	{
+		entry->reconv_pc = warp->pc + 8 + target;
+		entry->next_path_pc = warp->pc + 8;
+		if (pred == 1)
+			entry->active_thread_bitmap |= 1 << thread->id_in_warp;
+		else
+			entry->active_thread_bitmap |= 0 << thread->id_in_warp;
+
+		/* Push reconvergence stack */
+		if (warp->reconv_stack_pushed == 0)
+		{
+			warp->reconv_stack_top++;
+			warp->reconv_stack_pushed = 1;
+			warp->pc += target;
+		}
 	}
 	else
-	{
-		/* Update active thread mask stack */
-		warp->active_thread_stack[warp->active_thread_stack_top + 1] |=
-			1 << thread->id_in_warp;
-	}
-
-	/* Push active thread mask stack */
-	if (thread->id_in_warp == thread->warp->thread_count - 1)
-		warp->active_thread_stack_top++;
+		entry->active_thread_bitmap |= 0 << thread->id_in_warp;
+	warp->at_barrier_thread_count = 0;
 
 	/* Debug */
 	frm_isa_debug("%s:%d: thread[%d] active = %d pred = [%d] %d "
@@ -1347,18 +1393,20 @@ void frm_isa_SSY_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 	unsigned int active, pred;
 
 	struct frm_warp_t *warp;
+	struct frm_reconv_stack_entry_t entry;
 
 	warp = thread->warp;
 
 	/* Pop active thread mask stack */
 	if (thread->id_in_warp == 0)
 	{
-		warp->active_thread_stack_top--;
+		warp->reconv_stack_top--;
 		warp->finished_thread_count = 0;
 	}
 
 	/* Active */
-	active = (warp->active_thread_stack[warp->active_thread_stack_top] >> 
+	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
+	active = (entry.active_thread_bitmap >> 
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
@@ -1405,32 +1453,59 @@ void frm_isa_EXIT_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 	unsigned int active, pred;
 
 	struct frm_warp_t *warp;
+	struct frm_reconv_stack_entry_t *entry;
+	struct frm_reconv_stack_entry_t *last_entry;
+	unsigned int *active_thread_bitmap;
+	static int first_time = 1;
 
 	warp = thread->warp;
 
-	/* Pop active thread mask stack */
-	if (thread->id_in_warp == 0)
-	{
-		warp->active_thread_stack_top--;
-		warp->finished_thread_count = 0;
-	}
-
-	/* Active */
-	active = (warp->active_thread_stack[warp->active_thread_stack_top] >> 
+	last_entry = &(warp->reconv_stack.entries[warp->reconv_stack_top - 1]);
+	active = (last_entry->active_thread_bitmap >> 
 			thread->id_in_warp) & 0x1;
-
-	/* Predicate */
-	pred_id = inst->dword.tgt.pred;
-	if (pred_id <= 7)
-		pred = thread->pr[pred_id];
+	entry = &(warp->reconv_stack.entries[warp->reconv_stack_top]);
+	active_thread_bitmap = &(entry->active_thread_bitmap);
+	if (first_time == 1)
+	{
+		warp->pc = entry->next_path_pc - 8;
+		if (active)
+		{
+			if ((*active_thread_bitmap >> thread->id_in_warp) & 0x1)
+				warp->at_barrier_thread_count++;
+			*active_thread_bitmap ^= 1 << thread->id_in_warp;
+		}
+		else
+			*active_thread_bitmap |= 0 << thread->id_in_warp;
+		if (thread->id_in_warp == warp->thread_count - 1)
+			first_time = 0;
+	}
 	else
-		pred = ! thread->pr[pred_id - 8];
+	{
+		/* Pop reconvergence stack */
+		if (warp->reconv_stack_popped == 0)
+		{
+			warp->reconv_stack_top--;
+			warp->reconv_stack_popped = 1;
+		}
 
-	/* Execute */
-	if (active == 1 && pred == 1)
-		warp->finished_thread_count++;
-	if (warp->finished_thread_count == warp->thread_count)
+		/* Active */
+		entry = &(warp->reconv_stack.entries[warp->reconv_stack_top]);
+		active = (entry->active_thread_bitmap >> 
+				thread->id_in_warp) & 0x1;
+
+		/* Predicate */
+		pred_id = inst->dword.tgt.pred;
+		if (pred_id <= 7)
+			pred = thread->pr[pred_id];
+		else
+			pred = ! thread->pr[pred_id - 8];
+
+		/* Execute */
 		warp->finished = 1;
+
+		if (thread->id_in_warp == warp->thread_count - 1)
+			first_time = 1;
+	}
 
 	/* Debug */
 	frm_isa_debug("%s:%d: thread[%d] active = %d pred = [%d] %d\n", 
@@ -1448,10 +1523,12 @@ void frm_isa_S2R_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 	unsigned int active, pred, dst, src;
 
 	struct frm_warp_t *warp;
+	struct frm_reconv_stack_entry_t entry;
 
 	/* Active */
 	warp = thread->warp;
-	active = (warp->active_thread_stack[warp->active_thread_stack_top] >> 
+	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
+	active = (entry.active_thread_bitmap >> 
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
@@ -1494,10 +1571,6 @@ void frm_isa_LEPC_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 
 void frm_isa_BAR_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 {
-	/* FIXME */
-	unsigned int pred_id = 7;
-	unsigned int active = 1, pred = 1;
-
 	struct frm_thread_block_t *thread_block;
 	struct frm_warp_t *warp;
 
@@ -1523,9 +1596,8 @@ void frm_isa_BAR_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 	}
 
 	/* Debug */
-	frm_isa_debug("%s:%d: thread[%d] active = %d pred = [%d] %d\n", 
-			__FUNCTION__, __LINE__, thread->id, 
-			active, pred_id, pred);
+	frm_isa_debug("%s:%d: thread[%d]\n", 
+			__FUNCTION__, __LINE__, thread->id);
 }
 
 void frm_isa_VOTE_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
