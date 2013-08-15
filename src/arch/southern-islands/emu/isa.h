@@ -45,7 +45,7 @@ struct si_isa_write_task_t
 	/* When 'kind' == SI_ISA_WRITE_TASK_WRITE_LDS */
 	unsigned int lds_addr;
 	unsigned int lds_value;
-        size_t   lds_value_size;
+	size_t   lds_value_size;
 
 	/* When 'kind' == GPU_ISA_WRITE_TASK_PRED_SET */
 	int cond;
@@ -99,7 +99,8 @@ extern char *err_si_isa_note;
 #define SI_INST_VOPC		inst->bytes.vopc
 #define SI_INST_VOP3b		inst->bytes.vop3b
 #define SI_INST_VOP3a		inst->bytes.vop3a
-#define SI_INST_DS		inst->bytes.ds
+#define SI_INST_VINTRP		inst->bytes.vintrp
+#define SI_INST_DS			inst->bytes.ds
 #define SI_INST_MTBUF		inst->bytes.mtbuf
 #define SI_INST_MUBUF		inst->bytes.mubuf
 
