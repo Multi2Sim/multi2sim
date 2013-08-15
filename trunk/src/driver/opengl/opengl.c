@@ -22,8 +22,8 @@
 #include <arch/x86/emu/regs.h>
 #include <arch/southern-islands/asm/fetch-shader.h>
 #include <arch/southern-islands/asm/input.h>
+#include <arch/southern-islands/asm/opengl-bin-file.h>
 #include <arch/southern-islands/emu/ndrange.h>
-#include <arch/southern-islands/emu/opengl-bin-file.h>
 #include <arch/southern-islands/timing/gpu.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
@@ -800,7 +800,7 @@ static int opengl_abi_si_ndrange_initialize_impl(X86Context *ctx)
 		fatal("%s: invalid shader ID (%d)", __FUNCTION__, shader_id);
 
 	/* Create ND-Range */
-	ndrange = si_ndrange_create();
+	ndrange = si_ndrange_create(si_emu);
 	ndrange->local_mem_top = shader->mem_size_local;
 	ndrange->num_sgpr_used = shader->shader_bin->
 		shader_enc_dict->num_sgpr_used;

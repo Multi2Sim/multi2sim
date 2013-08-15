@@ -32,6 +32,9 @@
 
 CLASS_BEGIN(SIEmu, Emu)
 
+	/* Associated disassembler */
+	SIAsm *as;
+
 	/* Memory */
 	struct mem_t *video_mem;  /* local to the GPU */
 	unsigned int video_mem_top;
@@ -58,7 +61,7 @@ CLASS_BEGIN(SIEmu, Emu)
 
 CLASS_END(SIEmu)
 
-void SIEmuCreate(SIEmu *self);
+void SIEmuCreate(SIEmu *self, SIAsm *as);
 void SIEmuDestroy(SIEmu *self);
 
 void SIEmuDump(Object *self, FILE *f);

@@ -18,6 +18,7 @@
  */
 
 #include <arch/southern-islands/asm/asm.h>
+#include <arch/southern-islands/asm/opengl-bin-file.h>
 #include <arch/x86/emu/emu.h>
 #include <driver/opencl/opencl.h>
 #include <lib/mhandle/mhandle.h>
@@ -31,7 +32,6 @@
 #include "emu.h"
 #include "isa.h"
 #include "ndrange.h"
-#include "opengl-bin-file.h"
 #include "wavefront.h"
 #include "work-group.h"
 
@@ -40,12 +40,13 @@
  * Class 'SIEmu'
  */
 
-void SIEmuCreate(SIEmu *self)
+void SIEmuCreate(SIEmu *self, SIAsm *as)
 {
 	/* Parent */
 	EmuCreate(asEmu(self), "SouthernIslands");
 
 	/* Initialize */
+	self->as = as;
 	self->video_mem = mem_create();
 	self->video_mem->safe = 0;
 	self->video_mem_top = 0;
@@ -166,6 +167,7 @@ int SIEmuRun(Emu *self)
  * Non-Class
  */
 
+SIAsm *si_asm;
 SIEmu *si_emu;
 
 long long si_emu_max_cycles = 0;
@@ -196,10 +198,8 @@ void si_emu_init(void)
 	}
 
 	/* Create emulator */
-	si_emu = new(SIEmu);
-
-	/* Initialize disassembler (decoding tables...) */
-	si_disasm_init();
+	si_asm = new(SIAsm);
+	si_emu = new(SIEmu, si_asm);
 
 	/* Initialize ISA (instruction execution tables...) */
 	si_isa_init();
@@ -212,119 +212,11 @@ void si_emu_done(void)
 	if (si_emu_report_file)
 		fclose(si_emu_report_file);
 
-	/* Finalize disassembler */
-	si_disasm_done();
-
 	/* Finalize ISA */
 	si_isa_done();
 
 	/* Free emulator */
 	delete(si_emu);
-}
-
-
-/* GPU disassembler tool */
-void si_emu_disasm(char *path)
-{
-	struct elf_file_t *elf_file;
-	struct elf_symbol_t *symbol;
-	struct elf_section_t *section;
-
-	struct si_bin_file_t *amd_bin;
-
-	char kernel_name[MAX_STRING_SIZE];
-
-	int i;
-
-	/* Initialize disassembler */
-	si_disasm_init();
-
-	/* Decode external ELF */
-	elf_file = elf_file_create_from_path(path);
-	for (i = 0; i < list_count(elf_file->symbol_table); i++)
-	{
-		/* Get symbol and section */
-		symbol = list_get(elf_file->symbol_table, i);
-		section = list_get(elf_file->section_list, symbol->section);
-		if (!section)
-			continue;
-
-		/* If symbol is '__OpenCL_XXX_kernel', it points to internal ELF */
-		if (str_prefix(symbol->name, "__OpenCL_") && 
-			str_suffix(symbol->name, "_kernel"))
-		{
-			/* Decode internal ELF */
-			str_substr(kernel_name, sizeof(kernel_name), 
-				symbol->name, 9, strlen(symbol->name) - 16);
-			amd_bin = si_bin_file_create(
-				section->buffer.ptr + symbol->value, 
-				symbol->size, kernel_name);
-
-			/* Get kernel name */
-			printf("**\n** Disassembly for '__kernel %s'\n**\n\n", 
-				kernel_name);
-			si_disasm_buffer(&amd_bin->
-				enc_dict_entry_southern_islands->
-				sec_text_buffer, stdout);
-			printf("\n\n\n");
-
-			/* Free internal ELF */
-			si_bin_file_free(amd_bin);
-		}
-	}
-
-	/* Free external ELF */
-	elf_file_free(elf_file);
-	si_disasm_done();
-
-	/* End */
-	mhandle_done();
-	exit(0);
-}
-
-/* GPU OpenGL disassembler tool */
-void si_emu_opengl_disasm(char *path, int opengl_shader_index)
-{
-	struct si_opengl_program_binary_t *si_program_bin;
-	struct si_opengl_shader_binary_t *si_shader;
-	void *file_buffer;
-	int file_size;
-
-	/* Initialize disassembler */
-	si_disasm_init();
-
-	/* Load file into memory buffer */
-	file_buffer = read_buffer(path, &file_size);
-	if(!file_buffer)
-		fatal("%s:Invalid file!", path);
-
-	/* Analyze the file and initialize structure */	
-	si_program_bin = si_opengl_program_binary_create(file_buffer, file_size, path);
-	free_buffer(file_buffer);
-
-	/* Basic info of the shader binary */
-	printf("This shader binary contains %d shaders\n\n", 
-		list_count(si_program_bin->shaders));
-	if (opengl_shader_index > list_count(si_program_bin->shaders) || 
-		opengl_shader_index <= 0 )
-	{
-		fatal("Shader index out of range! Please choose <index> "
-			"from 1 ~ %d", list_count(si_program_bin->shaders));
-	}
-
-	/* Disassemble */
-	si_shader = list_get(si_program_bin->shaders, 
-		opengl_shader_index - 1 );
-	printf("**\n** Disassembly for shader %d\n**\n\n", opengl_shader_index);
-	si_disasm_buffer(si_shader->shader_isa, stdout);
-	printf("\n\n\n");
-
-	/* Free */
-	si_opengl_program_binary_free(si_program_bin);
-	si_disasm_done();
-
-	/* End */
-	mhandle_done();
-	exit(0);
+	delete(si_asm);
 }
 

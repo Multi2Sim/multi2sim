@@ -14,9 +14,6 @@ libemu_a_SOURCES = \
 	ndrange.c \
 	ndrange.h \
 	\
-	opengl-bin-file.c \
-	opengl-bin-file.h \
-	\
 	wavefront.c \
 	wavefront.h \
 	\

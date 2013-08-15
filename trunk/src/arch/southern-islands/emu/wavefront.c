@@ -18,6 +18,8 @@
  */
 
 
+#include <arch/southern-islands/asm/inst.h>
+#include <lib/class/class.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/string.h>
@@ -39,12 +41,17 @@
 struct si_wavefront_t *si_wavefront_create(int wavefront_id, 
 	struct si_work_group_t *work_group)
 {
+	struct si_ndrange_t *ndrange = work_group->ndrange;
 	struct si_wavefront_t *wavefront;
+
+	SIEmu *emu = ndrange->emu;
+	SIAsm *as = emu->as;
 
 	int work_item_id;
 
 	/* Initialize */
 	wavefront = xcalloc(1, sizeof(struct si_wavefront_t));
+	new_static(&wavefront->inst, SIInst, as);
 	wavefront->id = wavefront_id;
 	si_wavefront_sreg_init(wavefront);
 
