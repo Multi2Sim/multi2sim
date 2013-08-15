@@ -6100,12 +6100,61 @@ void si_isa_V_DIV_SCALE_F64_impl(SIWorkItem *work_item,
  * VINTRP
  */
 
+/* FIXME: move this to some header file */
+/* M0 must be intialized before VINTRP instructions */
+struct si_m0_for_vintrp_t
+{
+	unsigned int b0 : 1;
+	unsigned int new_prim_mask : 15;
+	unsigned int lds_param_offset : 16;
+}__attribute__((packed));
+
+union si_isa_v_interp_m0_t
+{
+	unsigned int as_uint;
+	struct si_m0_for_vintrp_t for_vintrp;
+};
+
 /* D = P10 * S + P0 */
 #define INST SI_INST_VINTRP
 void si_isa_V_INTERP_P1_F32_impl(SIWorkItem *work_item,
 	SIInst *inst)
 {
-	NOT_IMPL();
+	SIInstReg s;
+	SIInstReg p0;
+	SIInstReg p10;
+	SIInstReg data;
+
+	union si_isa_v_interp_m0_t m0_vintrp;
+
+	/* Get lds offset and primitive mask information */
+	m0_vintrp.as_uint = SIWorkItemReadReg(work_item, SI_M0);
+
+	/* Read barycentric coordinates stored in VGPR */
+	s.as_float = SIWorkItemReadReg(work_item, INST.vsrc);
+
+	/* 12 successive dwords contain P0 P10 P20 */
+	/* 4dwords P0: X Y Z W*/
+	mem_read(work_item->work_group->lds_module, 
+		m0_vintrp.for_vintrp.lds_param_offset + 48 * work_item->id_in_wavefront + INST.attrchan ,
+		 4, &p0.as_float);
+	/* 4dwords P10: X Y Z W*/
+	mem_read(work_item->work_group->lds_module, 
+		m0_vintrp.for_vintrp.lds_param_offset + 48 * work_item->id_in_wavefront + 16 + INST.attrchan,
+		 4, &p10.as_float);
+
+	/* D = P10 * S + P0 */
+	data.as_float = p10.as_float * s.as_float + p0.as_float;
+
+	/* Write the result */
+	SIWorkItemWriteVReg(work_item, INST.vdst, data.as_float);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("t%d: V%u<=(%f) ", work_item->id, INST.vdst,
+			data.as_float);
+	}
 }
 #undef INST
 
@@ -6114,7 +6163,39 @@ void si_isa_V_INTERP_P1_F32_impl(SIWorkItem *work_item,
 void si_isa_V_INTERP_P2_F32_impl(SIWorkItem *work_item,
 	SIInst *inst)
 {
-	NOT_IMPL();
+	SIInstReg s;
+	SIInstReg p20;
+	SIInstReg data;
+
+	union si_isa_v_interp_m0_t m0_vintrp;
+
+	/* Get lds offset and primitive mask information */
+	m0_vintrp.as_uint = SIWorkItemReadReg(work_item, SI_M0);
+
+	/* Read barycentric coordinates stored in VGPR */
+	s.as_float = SIWorkItemReadReg(work_item, INST.vsrc);
+
+	/* Read data stores in VGPR for later acclumulation */
+	data.as_float = SIWorkItemReadReg(work_item, INST.vdst);
+
+	/* 12 successive dwords contain P0 P10 P20 */
+	/* 4dwords P20: X Y Z W*/
+	mem_read(work_item->work_group->lds_module, 
+		m0_vintrp.for_vintrp.lds_param_offset + 48 * work_item->id_in_wavefront + 32 + INST.attrchan,
+		 4, &p20.as_float);
+
+	/* D = P20 * S + D */
+	data.as_float += p20.as_float * s.as_float;
+
+	/* Write the result */
+	SIWorkItemWriteVReg(work_item, INST.vdst, data.as_float);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("t%d: V%u<=(%f) ", work_item->id, INST.vdst,
+			data.as_float);
+	}
 }
 #undef INST
 
