@@ -36,20 +36,11 @@ void SINDRangeCreate(SINDRange *self, SIEmu *emu)
 	/* Initialize */
 	self->emu = emu;
 	self->id = emu->ndrange_count++;
-
-	/* Instruction histogram */
-	if (si_emu_report_file)
-		self->inst_histogram = xcalloc(SIInstOpcodeCount, 
-			sizeof(unsigned int));
 }
 
 
 void SINDRangeDestroy(SINDRange *self)
 {
-	/* Free instruction histogram */
-	if (self->inst_histogram)
-		free(self->inst_histogram);
-
 	/* Free instruction buffer */
 	if (self->inst_buffer)
 		free(self->inst_buffer);

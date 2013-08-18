@@ -540,6 +540,39 @@ void __mhandle_check(char *at)
 }
 
 
+void __mhandle_check_ptr(void *ptr)
+{
+	struct mhandle_item_t *item;
+	void *eff_ptr;
+	unsigned long eff_size;
+	
+	/* initialization */
+	if (!ptr)
+		return;
+	mhandle_init();
+
+	/* Read item */
+	item = mhandle_hash_table_get(ptr);
+	if (!item)
+	{
+		fprintf(stderr, "\n%s: invalid pointer %p\n",
+			__FUNCTION__, ptr);
+		abort();
+	}
+
+	/* Check corruption */
+	if (item->corrupt_info)
+	{
+		eff_ptr = ptr - MHANDLE_CORRUPT_RANGE;
+		eff_size = item->size + MHANDLE_CORRUPT_TOTAL;
+		mhandle_check_corrupt(eff_ptr, eff_size, item->at);
+	}
+
+	/* Message */
+	fprintf(stderr, "libmhandle: pointer %p is safe\n", ptr);
+}
+
+
 unsigned long __mhandle_used_memory()
 {
 	return mhandle_mem_used;

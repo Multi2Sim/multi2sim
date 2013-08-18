@@ -21,4 +21,10 @@
 #define ARCH_SOUTHERN_ISLANDS_EMU_MACHINE_H
 
 
+#define DEFINST(_name, _fmt_str, _fmt, _opcode, _size, _flags) \
+	void si_isa_##_name##_impl(SIWorkItem *work_item, SIInst *inst);
+#include <arch/southern-islands/asm/asm.dat>
+#undef DEFINST
+
+
 #endif

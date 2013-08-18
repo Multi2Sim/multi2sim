@@ -22,6 +22,7 @@
 #include <arch/southern-islands/emu/work-group.h>
 #include <arch/x86/emu/emu.h>
 #include <driver/opencl/opencl.h>
+#include <lib/class/string.h>
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
 #include <lib/mhandle/mhandle.h>
@@ -422,7 +423,7 @@ int si_gpu_lds_num_ports = 2;
 #define SI_TRACE_VERSION_MINOR		1
 
 
-void si_gpu_map_ndrange(SINDRange *ndrange)
+void SIGpuMapNDRange(SIGpu *self, SINDRange *ndrange)
 {
 	SIEmu *emu = ndrange->emu;
 
@@ -432,12 +433,12 @@ void si_gpu_map_ndrange(SINDRange *ndrange)
 
 	/* Check that at least one work-group can be allocated per 
 	 * wavefront pool */
-	si_gpu->work_groups_per_wavefront_pool = 
+	self->work_groups_per_wavefront_pool =
 		si_calc_get_work_groups_per_wavefront_pool(
 			ndrange->local_size, ndrange->num_vgpr_used,
 			ndrange->local_mem_top);
 
-	if (!si_gpu->work_groups_per_wavefront_pool)
+	if (!self->work_groups_per_wavefront_pool)
 	{
 		fatal("work-group resources cannot be allocated to a compute "
 			"unit.\n\tA compute unit in the GPU has a limit in "
@@ -448,10 +449,10 @@ void si_gpu_map_ndrange(SINDRange *ndrange)
 	}
 
 	/* Calculate limit of work groups per compute unit */
-	si_gpu->work_groups_per_compute_unit = 
-		si_gpu->work_groups_per_wavefront_pool * 
+	self->work_groups_per_compute_unit =
+		self->work_groups_per_wavefront_pool *
 		si_gpu_num_wavefront_pools;
-	assert(si_gpu->work_groups_per_wavefront_pool <= 
+	assert(self->work_groups_per_wavefront_pool <=
 		si_gpu_max_work_groups_per_wavefront_pool);
 
 	/* Optional plotting */
@@ -1077,50 +1078,6 @@ void si_gpu_read_config(void)
 }
 
 
-void si_gpu_init(void)
-{
-	/* Classes */
-	CLASS_REGISTER(SIGpu);
-
-	/* Trace */
-	si_trace_category = trace_new_category();
-
-	/* Try to open report file */
-	if (si_gpu_report_file_name[0] && 
-			!file_can_open_for_write(si_gpu_report_file_name))
-		fatal("%s: cannot open GPU pipeline report file",
-			si_gpu_report_file_name);
-	
-	/* Create GPU */
-	si_gpu = new(SIGpu, si_emu);
-
-	/* Initializations */
-	si_uop_init();
-
-	/* Trace */
-	si_trace_header("si.init version=\"%d.%d\" num_compute_units=%d\n",
-		SI_TRACE_VERSION_MAJOR, SI_TRACE_VERSION_MINOR,
-		si_gpu_num_compute_units);
-}
-
-
-void si_gpu_done(void)
-{
-	/* GPU pipeline report */
-	si_gpu_dump_report();
-
-	/* Free GPU */
-	delete(si_gpu);
-
-	/* Spatial report */
-	if (si_spatial_report_active)
-		si_cu_spatial_report_done();
-
-	/* Finalizations */
-	si_uop_done();
-}
-
-
 void si_gpu_dump_default_config(char *filename)
 {
 	FILE *f;
@@ -1136,13 +1093,13 @@ void si_gpu_dump_default_config(char *filename)
 }
 
 
-void si_gpu_dump_report(void)
+void si_gpu_dump_report(SIGpu *self)
 {
-	struct si_compute_unit_t *compute_unit;
+	SIComputeUnit *compute_unit;
 	struct mod_t *lds_mod;
 	int compute_unit_id;
 
-	SIEmu *emu = si_gpu->emu;
+	SIEmu *emu = self->emu;
 
 	FILE *f;
 
@@ -1162,8 +1119,8 @@ void si_gpu_dump_report(void)
 
 	/* Report for device */
 	fprintf(f, ";\n; Simulation Statistics\n;\n\n");
-	inst_per_cycle = asTiming(si_gpu)->cycle ? 
-		(double)(asEmu(emu)->instructions / asTiming(si_gpu)->cycle) : 0.0;
+	inst_per_cycle = asTiming(self)->cycle ?
+		(double) (asEmu(emu)->instructions / asTiming(self)->cycle) : 0.0;
 	fprintf(f, "[ Device ]\n\n");
 	fprintf(f, "NDRangeCount = %d\n", emu->ndrange_count);
 	fprintf(f, "WorkGroupCount = %lld\n", emu->work_group_count);
@@ -1178,14 +1135,14 @@ void si_gpu_dump_report(void)
 	fprintf(f, "LDSInstructions = %lld\n", emu->lds_inst_count);
 	fprintf(f, "VectorMemInstructions = %lld\n", 
 		emu->vector_mem_inst_count);
-	fprintf(f, "Cycles = %lld\n", asTiming(si_gpu)->cycle);
+	fprintf(f, "Cycles = %lld\n", asTiming(self)->cycle);
 	fprintf(f, "InstructionsPerCycle = %.4g\n", inst_per_cycle);
 	fprintf(f, "\n\n");
 
 	/* Report for compute units */
 	SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
 	{
-		compute_unit = si_gpu->compute_units[compute_unit_id];
+		compute_unit = self->compute_units[compute_unit_id];
 		lds_mod = compute_unit->lds_module;
 
 		inst_per_cycle = compute_unit->cycle ? 
@@ -1250,7 +1207,7 @@ void si_gpu_dump_report(void)
 
 void SIGpuCreate(SIGpu *self, SIEmu *emu)
 {
-	struct si_compute_unit_t *compute_unit;
+	SIComputeUnit *compute_unit;
 	int compute_unit_id;
 
 	/* Parent */
@@ -1259,6 +1216,15 @@ void SIGpuCreate(SIGpu *self, SIEmu *emu)
 	/* Frequency */
 	asTiming(self)->frequency = si_gpu_frequency;
 	asTiming(self)->frequency_domain = esim_new_domain(si_gpu_frequency);
+
+	/* Trace */
+	si_trace_category = trace_new_category();
+
+	/* Try to open report file */
+	if (si_gpu_report_file_name[0] &&
+			!file_can_open_for_write(si_gpu_report_file_name))
+		fatal("%s: cannot open GPU pipeline report file",
+			si_gpu_report_file_name);
 
 	/* Initialize */
 	self->emu = emu;
@@ -1269,7 +1235,7 @@ void SIGpuCreate(SIGpu *self, SIEmu *emu)
 	/* Initialize compute units */
 	SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
 	{
-		compute_unit = si_compute_unit_create();
+		compute_unit = new(SIComputeUnit);
 		compute_unit->id = compute_unit_id;
 		self->compute_units[compute_unit_id] = compute_unit;
 		list_add(self->available_compute_units, compute_unit);
@@ -1282,19 +1248,38 @@ void SIGpuCreate(SIGpu *self, SIEmu *emu)
 	asTiming(self)->MemConfigCheck = SIGpuMemConfigCheck;
 	asTiming(self)->MemConfigDefault = SIGpuMemConfigDefault;
 	asTiming(self)->MemConfigParseEntry = SIGpuMemConfigParseEntry;
+
+	/* Uop repository
+	 * FIXME - must be made part of class */
+	si_uop_init();
+
+	/* Trace */
+	si_trace_header("si.init version=\"%d.%d\" num_compute_units=%d\n",
+		SI_TRACE_VERSION_MAJOR, SI_TRACE_VERSION_MINOR,
+		si_gpu_num_compute_units);
 }
 
 
 void SIGpuDestroy(SIGpu *self)
 {
-	struct si_compute_unit_t *compute_unit;
+	SIComputeUnit *compute_unit;
 	int compute_unit_id;
+	
+	/* GPU pipeline report */
+	si_gpu_dump_report(self);
+
+	/* Spatial report */
+	if (si_spatial_report_active)
+		si_cu_spatial_report_done();
+
+	/* Uop repository */
+	si_uop_done();
 
 	/* Free stream cores, compute units, and device */
 	SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
 	{
 		compute_unit = self->compute_units[compute_unit_id];
-		si_compute_unit_free(compute_unit);
+		delete(compute_unit);
 	}
 	free(self->compute_units);
 
@@ -1321,7 +1306,7 @@ int SIGpuRun(Timing *self)
 	SIEmu *emu = gpu->emu;
 	OpenclDriver *opencl_driver;
 
-	struct si_compute_unit_t *compute_unit;
+	SIComputeUnit *compute_unit;
 	SINDRange *ndrange;
 	SIWorkGroup *work_group;
 
@@ -1350,16 +1335,16 @@ int SIGpuRun(Timing *self)
 		list_enqueue(emu->running_work_groups,
 			(void *)work_group_id);
 
-		si_compute_unit_map_work_group(
+		SIComputeUnitMapWorkGroup(
 			list_dequeue(gpu->available_compute_units),
 			work_group);
 	}
 
 	/* One more cycle */
-	asTiming(si_gpu)->cycle++;
+	asTiming(self)->cycle++;
 
 	/* Stop if maximum number of GPU cycles exceeded */
-	if (si_emu_max_cycles && asTiming(si_gpu)->cycle >= 
+	if (si_emu_max_cycles && asTiming(self)->cycle >=
 			si_emu_max_cycles)
 		esim_finish = esim_finish_si_max_cycles;
 
@@ -1369,7 +1354,7 @@ int SIGpuRun(Timing *self)
 		esim_finish = esim_finish_si_max_inst;
 
 	/* Stop if there was a simulation stall */
-	if ((asTiming(si_gpu)->cycle-gpu->last_complete_cycle) > 
+	if ((asTiming(self)->cycle-gpu->last_complete_cycle) >
 		1000000)
 	{
 		warning("Southern Islands GPU simulation stalled.\n%s", 
@@ -1391,7 +1376,7 @@ int SIGpuRun(Timing *self)
 		compute_unit = gpu->compute_units[compute_unit_id];
 
 		/* Run one cycle */
-		si_compute_unit_run(compute_unit);
+		SIComputeUnitRun(compute_unit);
 	}
 
 	/* Still running */

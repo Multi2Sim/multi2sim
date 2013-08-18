@@ -20,9 +20,10 @@
 #ifndef LIB_CLASS_CLASS_H
 #define LIB_CLASS_CLASS_H
 
-
 #include <assert.h>
 #include <stdio.h>
+
+#include <lib/mhandle/mhandle.h>
 
 
 /*

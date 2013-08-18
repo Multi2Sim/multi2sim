@@ -1036,7 +1036,7 @@ static int opencl_abi_si_ndrange_initialize_impl(X86Context *ctx)
 	si_emu->ndrange = ndrange;
 
 	if (si_gpu)
-		si_gpu_map_ndrange(ndrange);
+		SIGpuMapNDRange(si_gpu, ndrange);
 
 	/* No return value */
 	return 0;

@@ -26,26 +26,12 @@
 #include "vector-mem-unit.h"
 
 
-struct si_reg_file_t;
+/*
+ * Class 'SIComputeUnit'
+ */
 
-void si_reg_file_init(struct si_compute_unit_t *compute_unit);
-void si_reg_file_done(struct si_compute_unit_t *compute_unit);
-
-void si_reg_file_map_work_group(struct si_compute_unit_t *compute_unit,
-	SIWorkGroup *work_group);
-void si_reg_file_unmap_work_group(struct si_compute_unit_t *compute_unit,
-	SIWorkGroup *work_group);
-
-struct si_work_item_t;
-int si_reg_file_rename(struct si_compute_unit_t *compute_unit,
-	struct si_work_item_t *work_item, int logical_register);
-void si_reg_file_inverse_rename(struct si_compute_unit_t *compute_unit,
-	int physical_register, struct si_work_item_t **work_item, int *logical_register);
-
-
-
-struct si_compute_unit_t
-{
+CLASS_BEGIN(SIComputeUnit, Object)
+	
 	/* IDs */
 	int id;
 	int subdevice_id;
@@ -96,18 +82,25 @@ struct si_compute_unit_t
 	long long interval_alu_issued;
 	long long interval_lds_issued ;
 	FILE * spatial_report_file;
-};
 
-struct si_compute_unit_t *si_compute_unit_create(void);
-void si_compute_unit_free(struct si_compute_unit_t *gpu_compute_unit);
-void si_compute_unit_map_work_group(struct si_compute_unit_t *compute_unit, 
-	SIWorkGroup *work_group);
-void si_compute_unit_unmap_work_group(struct si_compute_unit_t *compute_unit, 
-	SIWorkGroup *work_group);
-SIWavefront *si_compute_unit_schedule(struct si_compute_unit_t *compute_unit);
-void si_compute_unit_run(struct si_compute_unit_t *compute_unit);
+CLASS_END(SIComputeUnit)
 
-struct si_wavefront_pool_t *si_wavefront_pool_create();
+
+void SIComputeUnitCreate(SIComputeUnit *self);
+void SIComputeUnitDestroy(SIComputeUnit *self);
+
+void SIComputeUnitMapWorkGroup(SIComputeUnit *self, SIWorkGroup *work_group);
+void SIComputeUnitUnmapWorkGroup(SIComputeUnit *self, SIWorkGroup *work_group);
+SIWavefront *SIComputeUnitSchedule(SIComputeUnit *self);
+void SIComputeUnitRun(SIComputeUnit *self);
+
+
+
+/*
+ * Object 'si_wavefront_pool_t'
+ */
+
+struct si_wavefront_pool_t *si_wavefront_pool_create(void);
 void si_wavefront_pool_free(struct si_wavefront_pool_t *wavefront_pool);
 void si_wavefront_pool_map_wavefronts(struct si_wavefront_pool_t *wavefront_pool, 
 	SIWorkGroup *work_group);
@@ -115,3 +108,4 @@ void si_wavefront_pool_unmap_wavefronts(struct si_wavefront_pool_t *wavefront_po
 	SIWorkGroup *work_group);
 
 #endif
+

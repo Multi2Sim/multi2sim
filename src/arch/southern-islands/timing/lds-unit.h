@@ -28,7 +28,7 @@ struct si_lds_t
 	struct list_t *mem_buffer;   /* Submitted memory accesses */
 	struct list_t *write_buffer;  /* Register writes */
 
-	struct si_compute_unit_t *compute_unit;
+	SIComputeUnit *compute_unit;
 
 	/* Statistics */
 	long long inst_count;

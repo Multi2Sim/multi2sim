@@ -46,6 +46,7 @@
 #include <arch/southern-islands/emu/wavefront.h>
 #include <arch/southern-islands/emu/work-group.h>
 #include <arch/southern-islands/emu/work-item.h>
+#include <arch/southern-islands/timing/compute-unit.h>
 #include <arch/southern-islands/timing/gpu.h>
 #include <arch/x86/emu/checkpoint.h>
 #include <arch/x86/emu/context.h>
@@ -64,6 +65,7 @@
 #include <driver/opencl/opencl.h>
 #include <driver/opencl-old/evergreen/opencl.h>
 #include <driver/opengl/opengl.h>
+#include <lib/class/string.h>
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
 #include <lib/mhandle/mhandle.h>
@@ -151,6 +153,8 @@ static volatile int m2s_signal_received;  /* Signal received by handler (0 = non
 
 static X86Asm *x86_asm;
 static X86Cpu *x86_cpu;
+
+static SIAsm *si_asm;
 
 
 static char *m2s_help =
@@ -1823,6 +1827,9 @@ static void m2s_init(void)
 	unsigned int id;
 
 	/* Classes */
+	
+	CLASS_REGISTER(String);
+
 	CLASS_REGISTER(Asm);
 	CLASS_REGISTER(Emu);
 	CLASS_REGISTER(Timing);
@@ -1839,10 +1846,13 @@ static void m2s_init(void)
 
 	CLASS_REGISTER(SIAsm);
 	CLASS_REGISTER(SIInst);
+	CLASS_REGISTER(SIEmu);
 	CLASS_REGISTER(SINDRange);
 	CLASS_REGISTER(SIWavefront);
 	CLASS_REGISTER(SIWorkGroup);
 	CLASS_REGISTER(SIWorkItem);
+	CLASS_REGISTER(SIGpu);
+	CLASS_REGISTER(SIComputeUnit);
 
 	/* Drivers */
 	CLASS_REGISTER(Driver);
@@ -2070,9 +2080,9 @@ int main(int argc, char **argv)
 			mips_cpu_read_config,
 			mips_cpu_init, mips_cpu_done);
 	arch_southern_islands = arch_register("SouthernIslands", "si", si_sim_kind,
-			si_emu_init, si_emu_done,
+			NULL, NULL,
 			si_gpu_read_config,
-			si_gpu_init, si_gpu_done);
+			NULL, NULL);
 	arch_x86 = arch_register("x86", "x86", x86_sim_kind,
 			NULL, NULL,
 			X86CpuReadConfig,
@@ -2090,9 +2100,6 @@ int main(int argc, char **argv)
 
 	arch_set_emu(arch_mips, asEmu(mips_emu));
 	arch_set_timing(arch_mips, asTiming(mips_cpu));
-
-	arch_set_emu(arch_southern_islands, asEmu(si_emu));
-	arch_set_timing(arch_southern_islands, asTiming(si_gpu));
 
 	/* x86 */
 	/* FIXME
@@ -2113,6 +2120,16 @@ int main(int argc, char **argv)
 	}
 	arch_set_emu(arch_x86, asEmu(x86_emu));
 
+	/* Southern Islands
+	 * FIXME */
+	si_asm = new(SIAsm);
+	si_emu = new(SIEmu, si_asm);
+	if (si_sim_kind == arch_sim_kind_detailed)
+	{
+		si_gpu = new(SIGpu, si_emu);
+		arch_set_timing(arch_southern_islands, asTiming(si_gpu));
+	}
+	arch_set_emu(arch_southern_islands, asEmu(si_emu));
 
 	/* Network and memory system */
 	net_init();
@@ -2141,6 +2158,12 @@ int main(int argc, char **argv)
 
 	/* Dump statistics summary */
 	m2s_dump_summary(stderr);
+
+	/* Southern Islands */
+	if (si_gpu)
+		delete(si_gpu);
+	delete(si_emu);
+	delete(si_asm);
 
 	/* x86 */
 	if (x86_cpu)

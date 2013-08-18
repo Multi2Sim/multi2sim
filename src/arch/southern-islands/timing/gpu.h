@@ -197,7 +197,6 @@ extern int si_gpu_lds_num_ports;
 
 /* Forward declaration */
 struct si_uop_t;
-struct si_compute_unit_t;
 struct si_scalar_unit_t;
 struct si_simd_t;
 struct si_branch_unit_t;
@@ -212,20 +211,17 @@ struct si_lds_t;
 
 void si_gpu_read_config(void);
 
-void si_gpu_init(void);
-void si_gpu_done(void);
-
 void si_gpu_dump_default_config(char *filename);
-void si_gpu_dump_report(void);
+void si_gpu_dump_report(SIGpu *self);
 
 void si_gpu_uop_trash_add(struct si_uop_t *uop);
 void si_gpu_uop_trash_empty(void);
 
-void si_compute_unit_run_simd(struct si_compute_unit_t *compute_unit);
-void si_compute_unit_run_scalar_unit(struct si_compute_unit_t *compute_unit);
-void si_compute_unit_run_branch_unit(struct si_compute_unit_t *compute_unit);
+void si_compute_unit_run_simd(SIComputeUnit *self);
+void si_compute_unit_run_scalar_unit(SIComputeUnit *self);
+void si_compute_unit_run_branch_unit(SIComputeUnit *self);
 
-void si_gpu_map_ndrange(SINDRange *ndrange);
+void SIGpuMapNDRange(SIGpu *self, SINDRange *ndrange);
 
 void si_simd_run(struct si_simd_t *simd);
 void si_scalar_unit_run(struct si_scalar_unit_t *scalar_unit);
@@ -249,7 +245,7 @@ CLASS_BEGIN(SIGpu, Timing)
 	int work_groups_per_compute_unit;
 
 	/* Compute units */
-	struct si_compute_unit_t **compute_units;
+	SIComputeUnit **compute_units;
 
 	/* List of ready compute units accepting work-groups */
 	struct list_t *available_compute_units;
