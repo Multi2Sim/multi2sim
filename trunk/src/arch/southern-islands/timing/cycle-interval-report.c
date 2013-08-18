@@ -85,12 +85,13 @@ void si_cu_spatial_report_done()
 	str_free(spatial_report_filename);
 }
 
-void si_cu_spatial_report_dump(struct si_compute_unit_t *compute_unit)
+void si_cu_spatial_report_dump(SIComputeUnit *compute_unit)
 {
 	FILE *f = spatial_report_file;
 
 	fprintf(f,
-		"CU,%d,MemAcc,%lld,MappedWGs,%lld,UnmappedWGs,%lld,ALUIssued,%lld,LDSIssued,%lld,Cycles,%lld\n",
+		"CU,%d,MemAcc,%lld,MappedWGs,%lld,UnmappedWGs,%lld,"
+		"ALUIssued,%lld,LDSIssued,%lld,Cycles,%lld\n",
 		compute_unit->id,
 		compute_unit->vector_mem_unit.inflight_mem_accesses,
 		compute_unit->interval_mapped_work_groups,
@@ -102,19 +103,21 @@ void si_cu_spatial_report_dump(struct si_compute_unit_t *compute_unit)
 
 }
 
-void si_lds_report_new_inst(struct si_compute_unit_t *compute_unit)
+
+void si_lds_report_new_inst(SIComputeUnit *compute_unit)
 {
 	compute_unit->interval_lds_issued = compute_unit->interval_lds_issued + 1;
 }
 
-void si_alu_report_new_inst(struct si_compute_unit_t *compute_unit)
+
+void si_alu_report_new_inst(SIComputeUnit *compute_unit)
 {
 	compute_unit->interval_alu_issued ++ ;
 
 }
 
 
-void si_report_global_mem_inflight( struct si_compute_unit_t *compute_unit, int long long pending_accesses)
+void si_report_global_mem_inflight( SIComputeUnit *compute_unit, int long long pending_accesses)
 {
 	/* Read stage adds a negative number for accesses added
 	 * Write stage adds a positive number for accesses finished
@@ -124,7 +127,8 @@ void si_report_global_mem_inflight( struct si_compute_unit_t *compute_unit, int 
 
 }
 
-void si_report_global_mem_finish( struct si_compute_unit_t *compute_unit, int long long completed_accesses)
+
+void si_report_global_mem_finish( SIComputeUnit *compute_unit, int long long completed_accesses)
 {
 	/* Read stage adds a negative number for accesses added */
 	/* Write stage adds a positive number for accesses finished */
@@ -132,20 +136,22 @@ void si_report_global_mem_finish( struct si_compute_unit_t *compute_unit, int lo
 
 }
 
-void si_report_mapped_work_group(struct si_compute_unit_t *compute_unit)
+
+void si_report_mapped_work_group(SIComputeUnit *compute_unit)
 {
 	/*TODO Add calculation here to change this to wavefront pool entries used */
 	compute_unit->interval_mapped_work_groups++;
 }
 
-void si_report_unmapped_work_group(struct si_compute_unit_t *compute_unit)
+
+void si_report_unmapped_work_group(SIComputeUnit *compute_unit)
 {
 	/*TODO Add calculation here to change this to wavefront pool entries used */
 	compute_unit->interval_unmapped_work_groups++;
 }
 
 
-void si_cu_interval_update(struct si_compute_unit_t *compute_unit)
+void si_cu_interval_update(SIComputeUnit *compute_unit)
 {
 	/* If interval - reset the counters in all the engines */
 	compute_unit->interval_cycle ++;
@@ -166,3 +172,4 @@ void si_cu_interval_update(struct si_compute_unit_t *compute_unit)
 		compute_unit->interval_lds_issued = 0;
 	}
 }
+

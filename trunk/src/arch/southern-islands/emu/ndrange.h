@@ -115,12 +115,6 @@ CLASS_BEGIN(SINDRange, Object)
 	unsigned int cb0;
 	unsigned int cb1;
 
-	/* Statistics */
-
-	/* Histogram of executed instructions. Only allocated if the kernel 
-	 * report option is active. */
-	unsigned int *inst_histogram;
-
 CLASS_END(SINDRange)
 
 

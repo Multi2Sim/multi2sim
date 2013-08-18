@@ -163,7 +163,7 @@ void si_scalar_unit_complete(struct si_scalar_unit_t *scalar_unit)
 					wavefronts_completed_timing == 
 					uop->work_group->wavefront_count);
 
-				si_compute_unit_unmap_work_group(
+				SIComputeUnitUnmapWorkGroup(
 					scalar_unit->compute_unit,
 					uop->work_group);
 			}

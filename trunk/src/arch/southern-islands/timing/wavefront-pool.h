@@ -54,7 +54,7 @@ struct si_wavefront_pool_t
 	struct si_wavefront_pool_entry_t **entries;
 
 	/* Compute unit */
-	struct si_compute_unit_t *compute_unit;
+	SIComputeUnit *compute_unit;
 };
 
 #endif

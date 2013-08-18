@@ -26,6 +26,7 @@
 #include <lib/util/file.h>
 #include <lib/util/list.h>
 #include <lib/util/misc.h>
+#include <lib/util/repos.h>
 #include <lib/util/string.h>
 #include <mem-system/memory.h>
 
@@ -55,7 +56,11 @@ void SIEmuCreate(SIEmu *self, SIAsm *as)
 	
 	/* Set global memory to video memory by default */
 	self->global_mem = self->video_mem;
-
+	
+	/* Repository of deferred tasks */
+	self->write_task_repos = repos_create(sizeof(struct si_isa_write_task_t),
+		"SIEmu.write_task_repos");
+	
 	/* Virtual functions */
 	asObject(self)->Dump = SIEmuDump;
 	asEmu(self)->DumpSummary = SIEmuDumpSummary;
@@ -71,6 +76,9 @@ void SIEmuDestroy(SIEmu *self)
 	/* Free the work-group queues */
 	list_free(self->waiting_work_groups);
 	list_free(self->running_work_groups);
+	
+	/* Repository of deferred tasks */
+	repos_free(self->write_task_repos);
 }
 
 
@@ -175,48 +183,8 @@ long long si_emu_max_inst = 0;
 int si_emu_max_kernels = 0;
 
 char *si_emu_opengl_binary_name = "";
-char *si_emu_report_file_name = "";
-FILE *si_emu_report_file = NULL;
 
 int si_emu_wavefront_size = 64;
 
 int si_emu_num_mapped_const_buffers = 2;  /* CB0, CB1 by default */
-
-
-void si_emu_init(void)
-{
-	/* Classes */
-	CLASS_REGISTER(SIEmu);
-
-	/* Open report file */
-	if (*si_emu_report_file_name)
-	{
-		si_emu_report_file = file_open_for_write(si_emu_report_file_name);
-		if (!si_emu_report_file)
-			fatal("%s: cannot open report for Southern Islands "
-				"emulator", si_emu_report_file_name);
-	}
-
-	/* Create emulator */
-	si_asm = new(SIAsm);
-	si_emu = new(SIEmu, si_asm);
-
-	/* Initialize ISA (instruction execution tables...) */
-	si_isa_init();
-}
-
-
-void si_emu_done(void)
-{
-	/* GPU report */
-	if (si_emu_report_file)
-		fclose(si_emu_report_file);
-
-	/* Finalize ISA */
-	si_isa_done();
-
-	/* Free emulator */
-	delete(si_emu);
-	delete(si_asm);
-}
 

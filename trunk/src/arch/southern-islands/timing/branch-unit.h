@@ -29,7 +29,7 @@ struct si_branch_unit_t
 	struct list_t *exec_buffer;   /* Execution */
 	struct list_t *write_buffer;  /* Register writes */
 
-	struct si_compute_unit_t *compute_unit;
+	SIComputeUnit *compute_unit;
 
 	/* Statistics */
 	long long inst_count;

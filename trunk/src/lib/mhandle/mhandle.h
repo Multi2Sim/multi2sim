@@ -44,6 +44,7 @@
 #define free(x) (mhandle_free((x), MHANDLE_AT))
 
 #define mhandle_check() __mhandle_check(MHANDLE_AT)
+#define mhandle_check_ptr(ptr) __mhandle_check_ptr((ptr))
 #define mhandle_done() __mhandle_done()
 #define mhandle_used_memory() __mhandle_used_memory()
 #define mhandle_register_ptr(ptr, size) __mhandle_register_ptr((ptr), (size), MHANDLE_AT)
@@ -56,6 +57,7 @@
 #define xstrdup(x) (__xstrdup((x), MHANDLE_AT))
 
 #define mhandle_check()
+#define mhandle_check_ptr(ptr)
 #define mhandle_done()
 #define mhandle_used_memory() (0UL)
 #define mhandle_register_ptr(ptr, size)
@@ -76,6 +78,7 @@ void *__xrealloc(void *ptr, size_t size, char *at);
 void *__xstrdup(const char *s, char *at);
 
 void __mhandle_check(char *at);
+void __mhandle_check_ptr(void *ptr);
 void __mhandle_done();
 unsigned long __mhandle_used_memory();
 
