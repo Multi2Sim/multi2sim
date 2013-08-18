@@ -44,7 +44,7 @@ struct si_simd_t
 	struct si_subwavefront_pool_t *subwavefront_pool;  
 	struct si_wavefront_pool_t *wavefront_pool;
 
-	struct si_compute_unit_t *compute_unit;
+	SIComputeUnit *compute_unit;
 
 	/* Statistics */
 	long long inst_count;

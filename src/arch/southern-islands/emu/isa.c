@@ -20,56 +20,28 @@
 
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
-#include <lib/util/repos.h>
 
 #include "emu.h"
 #include "isa.h"
+#include "machine.h"
 #include "wavefront.h"
 #include "work-group.h"
 #include "work-item.h"
 
 
-/* Repository of deferred tasks */
-struct repos_t *si_isa_write_task_repos;
-
 /* Instruction execution table */
-si_isa_inst_func_t *si_isa_inst_func;
+si_isa_inst_func_t si_isa_inst_func[SIInstOpcodeCount + 1] =
+{
+	NULL,
+#define DEFINST(_name, _fmt_str, _fmt, _opcode, _size, _flags) \
+	si_isa_##_name##_impl,
+#include <arch/southern-islands/asm/asm.dat>
+#undef DEFINST
+	NULL
+};
 
 /* Debug */
 int si_isa_debug_category;
-
-
-
-
-/*
- * Initialization, finalization
- */
-
-
-/* Initialization */
-void si_isa_init()
-{
-	/* Initialize */
-	si_isa_inst_func = xcalloc(SIInstOpcodeCount, sizeof(si_isa_inst_func_t));
-#define DEFINST(_name, _fmt_str, _fmt, _opcode, _size, _flags) \
-	extern void si_isa_##_name##_impl(SIWorkItem *work_item, SIInst *inst); \
-	si_isa_inst_func[SI_INST_##_name] = si_isa_##_name##_impl;
-#include <arch/southern-islands/asm/asm.dat>
-#undef DEFINST
-
-	/* Repository of deferred tasks */
-	si_isa_write_task_repos = repos_create(sizeof(struct si_isa_write_task_t),
-		"gpu_isa_write_task_repos");
-}
-
-void si_isa_done()
-{
-	/* Instruction execution table */
-	free(si_isa_inst_func);
-
-	/* Repository of deferred tasks */
-	repos_free(si_isa_write_task_repos);
-}
 
 
 

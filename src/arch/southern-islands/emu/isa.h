@@ -105,15 +105,12 @@ extern char *err_si_isa_note;
 #define SI_INST_MUBUF		inst->bytes.mubuf
 
 
-void si_isa_init();
-void si_isa_done();
-
 /* Forward declaration */
 union SIInstReg;
 
 /* List of functions implementing GPU instructions 'amd_inst_XXX_impl' */
 typedef void (*si_isa_inst_func_t)(SIWorkItem *work_item, SIInst *inst);
-extern si_isa_inst_func_t *si_isa_inst_func;
+extern si_isa_inst_func_t si_isa_inst_func[];
 
 unsigned int si_isa_const_mem_allocate(unsigned int size);
 

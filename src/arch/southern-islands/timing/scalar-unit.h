@@ -29,7 +29,7 @@ struct si_scalar_unit_t
 	struct list_t *write_buffer;  /* Register writes */
 	struct list_t *inflight_buffer; /* Pending memory accesses */
 
-	struct si_compute_unit_t *compute_unit;
+	SIComputeUnit *compute_unit;
 
 	/* Statistics */
 	long long inst_count;

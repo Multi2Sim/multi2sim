@@ -48,6 +48,9 @@ CLASS_BEGIN(SIEmu, Emu)
 	struct list_t *waiting_work_groups;
 	struct list_t *running_work_groups;
 
+	/* Repository of deferred tasks */
+	struct repos_t *write_task_repos;
+
 	/* Statistics */
 	int ndrange_count;  /* Number of OpenCL kernels executed */
 	long long work_group_count;  /* Number of OpenCL work groups executed */
@@ -242,19 +245,11 @@ extern long long si_emu_max_inst;
 extern int si_emu_max_kernels;
 
 extern char *si_emu_opengl_binary_name;
-extern char *si_emu_report_file_name;
-extern FILE *si_emu_report_file;
 
 extern int si_emu_wavefront_size;
 
 extern SIEmu *si_emu;
 
-
-void si_emu_init(void);
-void si_emu_done(void);
-
-void si_emu_disasm(char *path);
-void si_emu_opengl_disasm(char *path, int opengl_shader_index);
 
 #endif
 

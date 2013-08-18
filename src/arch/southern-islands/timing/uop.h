@@ -59,7 +59,7 @@ struct si_uop_t
 	int wavefront_pool_id;
 	SIWavefront *wavefront;       /* Wavefront it belongs to */
 	SIWorkGroup *work_group;     /* Work-group it belongs to */
-	struct si_compute_unit_t *compute_unit; /* Compute unit it belongs to */
+	SIComputeUnit *compute_unit; /* Compute unit it belongs to */
 	struct si_wavefront_pool_entry_t *wavefront_pool_entry;  /* IB entry where uop is located */
 	SIInst inst;
 

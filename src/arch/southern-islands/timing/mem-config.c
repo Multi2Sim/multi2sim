@@ -392,7 +392,7 @@ void SIGpuMemConfigParseEntry(Timing *self, struct config_t *config, char *secti
 
 	int compute_unit_id;
 
-	struct si_compute_unit_t *compute_unit;
+	SIComputeUnit *compute_unit;
 
 	/* Get configuration file name */
 	file_name = config_get_file_name(config);
@@ -514,7 +514,7 @@ void SIGpuMemConfigParseEntry(Timing *self, struct config_t *config, char *secti
 
 void SIGpuMemConfigCheck(Timing *self, struct config_t *config)
 {
-	struct si_compute_unit_t *compute_unit;
+	SIComputeUnit *compute_unit;
 	int compute_unit_id;
 	char *file_name;
 
