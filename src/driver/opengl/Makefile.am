@@ -7,6 +7,10 @@ libopengl_a_SOURCES = \
 	opengl.dat \
 	opengl.h \
 	\
+	\
+	scan-converter.c \
+	scan-converter.h \
+	\
 	si-shader.c \
 	si-shader.h \
 	\
