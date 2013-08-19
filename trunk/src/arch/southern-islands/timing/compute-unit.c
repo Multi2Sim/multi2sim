@@ -41,10 +41,14 @@
  * Compute Unit
  */
 
-void SIComputeUnitCreate(SIComputeUnit *self)
+void SIComputeUnitCreate(SIComputeUnit *self, SIGpu *gpu, int id)
 {
 	char buf[MAX_STRING_SIZE];
 	int i;
+
+	/* Initialize */
+	self->id = id;
+	self->gpu = gpu;
 
 	/* Local memory */
 	snprintf(buf, sizeof buf, "LDS[%d]", self->id);
@@ -227,33 +231,30 @@ void SIComputeUnitDestroy(SIComputeUnit *self)
 
 void SIComputeUnitMapWorkGroup(SIComputeUnit *self, SIWorkGroup *work_group)
 {
+	SIGpu *gpu = self->gpu;
 	SIWavefront *wavefront;
+
 	int wavefront_id;
 	int wfp_id;
 
-	assert(self->work_group_count <
-		si_gpu->work_groups_per_compute_unit);
+	assert(self->work_group_count < gpu->work_groups_per_compute_unit);
 	assert(!work_group->id_in_compute_unit);
 
 	/* Find an available slot */
-	while (work_group->id_in_compute_unit <
-		si_gpu->work_groups_per_compute_unit &&
-		self->work_groups[work_group->id_in_compute_unit])
+	while (work_group->id_in_compute_unit < gpu->work_groups_per_compute_unit
+			&& self->work_groups[work_group->id_in_compute_unit])
 	{
 		work_group->id_in_compute_unit++;
 	}
-	assert(work_group->id_in_compute_unit <
-		si_gpu->work_groups_per_compute_unit);
+	assert(work_group->id_in_compute_unit < gpu->work_groups_per_compute_unit);
 	self->work_groups[work_group->id_in_compute_unit] = work_group;
 	self->work_group_count++;
 
 	/* If compute unit is not full, add it back to the available list */
-	assert(self->work_group_count <= 
-		si_gpu->work_groups_per_compute_unit);
-	if (self->work_group_count <
-		si_gpu->work_groups_per_compute_unit)
+	assert(self->work_group_count <= gpu->work_groups_per_compute_unit);
+	if (self->work_group_count < gpu->work_groups_per_compute_unit)
 	{
-		list_enqueue(si_gpu->available_compute_units, self);
+		list_enqueue(gpu->available_compute_units, self);
 	}
 
 	/* Assign wavefronts identifiers in compute unit */
@@ -280,12 +281,13 @@ void SIComputeUnitMapWorkGroup(SIComputeUnit *self, SIWorkGroup *work_group)
 	/* Stats */
 	self->mapped_work_groups++;
 	if (si_spatial_report_active)
-		si_report_mapped_work_group(self);
+		SIComputeUnitReportMapWorkGroup(self);
 }
 
 
 void SIComputeUnitUnmapWorkGroup(SIComputeUnit *self, SIWorkGroup *work_group)
 {
+	SIGpu *gpu = self->gpu;
 	SINDRange *ndrange = work_group->ndrange;
 	SIEmu *emu = ndrange->emu;
 	OpenclDriver *driver = ndrange->opencl_driver;
@@ -318,11 +320,10 @@ void SIComputeUnitUnmapWorkGroup(SIComputeUnit *self, SIWorkGroup *work_group)
 
 	/* If compute unit is not already in the available list, place
 	 * it there */
-	assert(self->work_group_count <
-		si_gpu->work_groups_per_compute_unit);
-	if (list_index_of(si_gpu->available_compute_units, self) < 0)
+	assert(self->work_group_count < gpu->work_groups_per_compute_unit);
+	if (list_index_of(gpu->available_compute_units, self) < 0)
 	{
-		list_enqueue(si_gpu->available_compute_units, self);
+		list_enqueue(gpu->available_compute_units, self);
 	}
 
 	/* Trace */
@@ -330,7 +331,7 @@ void SIComputeUnitUnmapWorkGroup(SIComputeUnit *self, SIWorkGroup *work_group)
 		work_group->id);
 
 	if(si_spatial_report_active)
-		si_report_unmapped_work_group(self);
+		SIComputeUnitReportUnmapWorkGroup(self);
 
 	delete(work_group);
 }
@@ -338,14 +339,18 @@ void SIComputeUnitUnmapWorkGroup(SIComputeUnit *self, SIWorkGroup *work_group)
 
 void SIComputeUnitFetch(SIComputeUnit *self, int active_fb)
 {
+	SIGpu *gpu = self->gpu;
+	SIWavefront *wavefront;
+	SIWorkItem *work_item;
+
 	int i, j;
 	int instructions_processed = 0;
 	int work_item_id;
-	SIWavefront *wavefront;
-	SIWorkItem *work_item;
+
 	struct si_uop_t *uop;
 	struct si_work_item_uop_t *work_item_uop;
 	struct si_wavefront_pool_entry_t *wavefront_pool_entry;
+
 	char inst_str[MAX_STRING_SIZE];
 	char inst_str_trimmed[MAX_STRING_SIZE];
 
@@ -459,7 +464,7 @@ void SIComputeUnitFetch(SIComputeUnit *self, int active_fb)
 		uop->mem_wait_inst = wavefront->mem_wait;
 		uop->barrier_wait_inst = wavefront->barrier_inst;
 		uop->inst = wavefront->inst;
-		uop->cycle_created = asTiming(si_gpu)->cycle;
+		uop->cycle_created = asTiming(gpu)->cycle;
 		uop->glc = wavefront->vector_mem_glc;
 		assert(wavefront->work_group && uop->work_group);
 		
@@ -511,7 +516,7 @@ void SIComputeUnitFetch(SIComputeUnit *self, int active_fb)
 		/* Access instruction cache. Record the time when the 
 		 * instruction will have been fetched, as per the latency 
 		 * of the instruction memory. */
-		uop->fetch_ready = asTiming(si_gpu)->cycle + si_gpu_fe_fetch_latency;
+		uop->fetch_ready = asTiming(gpu)->cycle + si_gpu_fe_fetch_latency;
 
 		/* Insert into fetch buffer */
 		list_enqueue(self->fetch_buffers[active_fb], uop);
@@ -524,8 +529,11 @@ void SIComputeUnitFetch(SIComputeUnit *self, int active_fb)
 /* Decode the instruction type */
 void SIComputeUnitIssueOldest(SIComputeUnit *self, int active_fb)
 {
+	SIGpu *gpu = self->gpu;
+
 	struct si_uop_t *uop;
 	struct si_uop_t *oldest_uop;
+
 	int list_index;
 	int list_entries;
 	int i;
@@ -561,7 +569,7 @@ void SIComputeUnitIssueOldest(SIComputeUnit *self, int active_fb)
 
 			/* Skip all uops that have not yet completed 
 			 * the fetch */
-			if (asTiming(si_gpu)->cycle < uop->fetch_ready)
+			if (asTiming(gpu)->cycle < uop->fetch_ready)
 			{
 				list_index++;
 				continue;
@@ -580,7 +588,7 @@ void SIComputeUnitIssueOldest(SIComputeUnit *self, int active_fb)
 					issue_buffer) < 
 					si_gpu_branch_unit_issue_buffer_size)
 			{
-				oldest_uop->issue_ready = asTiming(si_gpu)->cycle + 
+				oldest_uop->issue_ready = asTiming(gpu)->cycle +
 					si_gpu_fe_issue_latency;
 				list_remove(self->
 					fetch_buffers[active_fb], oldest_uop);
@@ -636,7 +644,7 @@ void SIComputeUnitIssueOldest(SIComputeUnit *self, int active_fb)
 
 			/* Skip all uops that have not yet completed 
 			 * the fetch */
-			if (asTiming(si_gpu)->cycle < uop->fetch_ready)
+			if (asTiming(gpu)->cycle < uop->fetch_ready)
 			{
 				list_index++;
 				continue;
@@ -655,7 +663,7 @@ void SIComputeUnitIssueOldest(SIComputeUnit *self, int active_fb)
 					issue_buffer) < 
 					si_gpu_scalar_unit_issue_buffer_size)
 			{
-				oldest_uop->issue_ready = asTiming(si_gpu)->cycle + 
+				oldest_uop->issue_ready = asTiming(gpu)->cycle +
 					si_gpu_fe_issue_latency;
 				list_remove(self->
 					fetch_buffers[active_fb], oldest_uop);
@@ -716,7 +724,7 @@ void SIComputeUnitIssueOldest(SIComputeUnit *self, int active_fb)
 
 			/* Skip all uops that have not yet completed 
 			 * the fetch */
-			if (asTiming(si_gpu)->cycle < uop->fetch_ready)
+			if (asTiming(gpu)->cycle < uop->fetch_ready)
 			{
 				list_index++;
 				continue;
@@ -735,7 +743,7 @@ void SIComputeUnitIssueOldest(SIComputeUnit *self, int active_fb)
 					issue_buffer) < 
 					si_gpu_simd_issue_buffer_size)
 			{
-				oldest_uop->issue_ready = asTiming(si_gpu)->cycle + 
+				oldest_uop->issue_ready = asTiming(gpu)->cycle +
 					si_gpu_fe_issue_latency;
 				list_remove(self->
 					fetch_buffers[active_fb], oldest_uop);
@@ -780,7 +788,7 @@ void SIComputeUnitIssueOldest(SIComputeUnit *self, int active_fb)
 
 			/* Skip all uops that have not yet completed 
 			 * the fetch */
-			if (asTiming(si_gpu)->cycle < uop->fetch_ready)
+			if (asTiming(gpu)->cycle < uop->fetch_ready)
 			{
 				list_index++;
 				continue;
@@ -799,7 +807,7 @@ void SIComputeUnitIssueOldest(SIComputeUnit *self, int active_fb)
 					vector_mem_unit.issue_buffer) < 
 					si_gpu_vector_mem_issue_buffer_size)
 			{
-				oldest_uop->issue_ready = asTiming(si_gpu)->cycle + 
+				oldest_uop->issue_ready = asTiming(gpu)->cycle +
 					si_gpu_fe_issue_latency;
 				list_remove(self->
 					fetch_buffers[active_fb], oldest_uop);
@@ -847,7 +855,7 @@ void SIComputeUnitIssueOldest(SIComputeUnit *self, int active_fb)
 
 			/* Skip all uops that have not yet completed 
 			 * the fetch */
-			if (asTiming(si_gpu)->cycle < uop->fetch_ready)
+			if (asTiming(gpu)->cycle < uop->fetch_ready)
 			{
 				list_index++;
 				continue;
@@ -866,7 +874,7 @@ void SIComputeUnitIssueOldest(SIComputeUnit *self, int active_fb)
 					self->lds_unit.issue_buffer) < 
 					si_gpu_lds_issue_buffer_size)
 			{
-				oldest_uop->issue_ready = asTiming(si_gpu)->cycle + 
+				oldest_uop->issue_ready = asTiming(gpu)->cycle +
 					si_gpu_fe_issue_latency;
 				list_remove(self->
 					fetch_buffers[active_fb], oldest_uop);
@@ -896,7 +904,7 @@ void SIComputeUnitIssueOldest(SIComputeUnit *self, int active_fb)
 		assert(uop);
 
 		/* Skip all uops that have not yet completed the fetch */
-		if (asTiming(si_gpu)->cycle < uop->fetch_ready)
+		if (asTiming(gpu)->cycle < uop->fetch_ready)
 		{
 			continue;
 		}
@@ -910,7 +918,10 @@ void SIComputeUnitIssueOldest(SIComputeUnit *self, int active_fb)
 void SIComputeUnitUpdateFetchVisualization(SIComputeUnit *self,
 		int non_active_fb)
 {
+	SIGpu *gpu = self->gpu;
+
 	struct si_uop_t *uop;
+
 	int list_entries;
 	int i;
 
@@ -922,7 +933,7 @@ void SIComputeUnitUpdateFetchVisualization(SIComputeUnit *self,
 		assert(uop);
 
 		/* Skip all uops that have not yet completed the fetch */
-		if (asTiming(si_gpu)->cycle < uop->fetch_ready)
+		if (asTiming(gpu)->cycle < uop->fetch_ready)
 		{
 			continue;
 		}
@@ -936,7 +947,10 @@ void SIComputeUnitUpdateFetchVisualization(SIComputeUnit *self,
 /* Decode the instruction type */
 void SIComputeUnitIssueFirst(SIComputeUnit *self, int active_fb)
 {
+	SIGpu *gpu = self->gpu;
+
 	struct si_uop_t *uop;
+
 	int list_index = 0;
 	int list_entries;
 	int i;
@@ -957,7 +971,7 @@ void SIComputeUnitIssueFirst(SIComputeUnit *self, int active_fb)
 		assert(uop);
 
 		/* Skip all uops that have not yet completed the fetch */
-		if (asTiming(si_gpu)->cycle < uop->fetch_ready)
+		if (asTiming(gpu)->cycle < uop->fetch_ready)
 		{
 			list_index++;
 			continue;
@@ -1019,7 +1033,7 @@ void SIComputeUnitIssueFirst(SIComputeUnit *self, int active_fb)
 					continue;
 				}
 
-				uop->issue_ready = asTiming(si_gpu)->cycle + 
+				uop->issue_ready = asTiming(gpu)->cycle +
 					si_gpu_fe_issue_latency;
 				list_remove(self->
 					fetch_buffers[active_fb], uop);
@@ -1064,7 +1078,7 @@ void SIComputeUnitIssueFirst(SIComputeUnit *self, int active_fb)
 					continue;
 				}
 
-				uop->issue_ready = asTiming(si_gpu)->cycle + 
+				uop->issue_ready = asTiming(gpu)->cycle +
 					si_gpu_fe_issue_latency;
 				list_remove(
 					self->
@@ -1113,7 +1127,7 @@ void SIComputeUnitIssueFirst(SIComputeUnit *self, int active_fb)
 				continue;
 			}
 
-			uop->issue_ready = asTiming(si_gpu)->cycle + 
+			uop->issue_ready = asTiming(gpu)->cycle +
 				si_gpu_fe_issue_latency;
 			list_remove(self->fetch_buffers[active_fb], 
 				uop);
@@ -1159,7 +1173,7 @@ void SIComputeUnitIssueFirst(SIComputeUnit *self, int active_fb)
 				continue;
 			}
 
-			uop->issue_ready = asTiming(si_gpu)->cycle + 
+			uop->issue_ready = asTiming(gpu)->cycle +
 				si_gpu_fe_issue_latency;
 			list_remove(self->fetch_buffers[active_fb], 
 				uop);
@@ -1212,7 +1226,7 @@ void SIComputeUnitIssueFirst(SIComputeUnit *self, int active_fb)
 				continue;
 			}
 
-			uop->issue_ready = asTiming(si_gpu)->cycle + 
+			uop->issue_ready = asTiming(gpu)->cycle +
 				si_gpu_fe_issue_latency;
 			list_remove(self->fetch_buffers[active_fb], 
 				uop);
@@ -1260,7 +1274,7 @@ void SIComputeUnitIssueFirst(SIComputeUnit *self, int active_fb)
 				continue;
 			}
 
-			uop->issue_ready = asTiming(si_gpu)->cycle + 
+			uop->issue_ready = asTiming(gpu)->cycle +
 				si_gpu_fe_issue_latency;
 			list_remove(self->fetch_buffers[active_fb], 
 				uop);
@@ -1309,7 +1323,7 @@ void SIComputeUnitIssueFirst(SIComputeUnit *self, int active_fb)
 				continue;
 			}
 
-			uop->issue_ready = asTiming(si_gpu)->cycle + 
+			uop->issue_ready = asTiming(gpu)->cycle +
 				si_gpu_fe_issue_latency;
 			list_remove(self->fetch_buffers[active_fb], 
 				uop);
@@ -1341,6 +1355,8 @@ void SIComputeUnitIssueFirst(SIComputeUnit *self, int active_fb)
  * last to first */
 void SIComputeUnitRun(SIComputeUnit *self)
 {
+	SIGpu *gpu = self->gpu;
+
 	int i;
 	int num_simd_units;
 	int active_fetch_buffer;  
@@ -1350,7 +1366,7 @@ void SIComputeUnitRun(SIComputeUnit *self)
 		return;
 
 	/* Fetch buffer chosen to issue this cycle */
-	active_fetch_buffer = asTiming(si_gpu)->cycle % 
+	active_fetch_buffer = asTiming(gpu)->cycle %
 		self->num_wavefront_pools;
 
 	assert(active_fetch_buffer >= 0 && 
@@ -1395,6 +1411,6 @@ void SIComputeUnitRun(SIComputeUnit *self)
 	self->cycle++;
 
 	if(si_spatial_report_active)
-		si_cu_interval_update(self);
+		SIComputeUnitReportUpdate(self);
 }
 

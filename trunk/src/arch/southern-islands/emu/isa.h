@@ -112,8 +112,6 @@ union SIInstReg;
 typedef void (*si_isa_inst_func_t)(SIWorkItem *work_item, SIInst *inst);
 extern si_isa_inst_func_t si_isa_inst_func[];
 
-unsigned int si_isa_const_mem_allocate(unsigned int size);
-
 int si_isa_get_num_elems(int data_format);
 int si_isa_get_elem_size(int data_format);
 

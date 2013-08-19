@@ -20,33 +20,38 @@
 #ifndef ARCH_SOUTHERN_ISLANDS_SPATIAL_REPORT_H
 #define ARCH_SOUTHERN_ISLANDS_SPATIAL_REPORT_H
 
+
 /*
- * Public variable
+ * Class 'SIComputeUnit'
  */
-extern int si_spatial_report_active;
 
+void SIComputeUnitReportNewALUInst(SIComputeUnit *self);
+void SIComputeUnitReportNewLDSInst(SIComputeUnit *self);
 
-void si_alu_report_new_inst(SIComputeUnit *compute_unit);
-
-void si_lds_report_new_inst(SIComputeUnit *compute_unit);
-
-void si_report_mapped_work_group(SIComputeUnit *compute_unit);
-
-void si_report_unmapped_work_group(SIComputeUnit *compute_unit);
+void SIComputeUnitReportMapWorkGroup(SIComputeUnit *self);
+void SIComputeUnitReportUnmapWorkGroup(SIComputeUnit *self);
 
 
 /* Used in vector unit to keep track of num of mem accesses in flight */
-void si_report_global_mem_inflight( SIComputeUnit *compute_unit, int long long pending_accesses);
+void SIComputeUnitReportGlobalMemInFlight( SIComputeUnit *self,
+		long long pending_accesses);
 
-void si_report_global_mem_finish( SIComputeUnit *compute_unit, int long long completed_accesses);
+void SIComputeUnitReportGlobalMemFinish( SIComputeUnit *self,
+		long long completed_accesses);
+void SIComputeUnitReportUpdate(SIComputeUnit *self);
+
+
+/*
+ * Public
+ */
+
+extern int si_spatial_report_active;
+
 
 struct config_t;
 
-void si_spatial_report_config_read(struct config_t *config);
-
-void si_cu_interval_update(SIComputeUnit *compute_unit);
-
-void si_cu_spatial_report_done();
+void SISpatialReportReadConfig(struct config_t *config);
+void SISpatialReportDone(void);
 
 
 #endif
