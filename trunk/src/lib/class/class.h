@@ -23,8 +23,6 @@
 #include <assert.h>
 #include <stdio.h>
 
-#include <lib/mhandle/mhandle.h>
-
 
 /*
  * Class declarations
