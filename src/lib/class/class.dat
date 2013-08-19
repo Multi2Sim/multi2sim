@@ -31,6 +31,8 @@ CLASS(String)
  */
 
 CLASS(ARMAsm)
+CLASS(ARMInst)
+
 CLASS(ARMEmu)
 CLASS(ARMCpu)
 

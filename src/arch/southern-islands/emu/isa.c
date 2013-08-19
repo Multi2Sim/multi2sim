@@ -45,26 +45,10 @@ int si_isa_debug_category;
 
 
 
-/*
- * Constant Memory
- */
-
-/* Used for allocating CB0 and CB1 */
-unsigned int si_isa_const_mem_allocate(unsigned int size)
-{
-        unsigned int ptr;
-
-        /* Assign position in device global memory */
-        ptr = si_emu->video_mem_top;
-        si_emu->video_mem_top += size;
-
-        return ptr;
-}
-
-
 /* 
  * Southern Islands data types
  */
+
 int si_isa_get_num_elems(int data_format)
 {
 	int num_elems;

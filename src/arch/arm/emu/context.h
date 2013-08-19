@@ -22,9 +22,13 @@
 
 #include <arch/arm/asm/asm.h>
 #include <arch/arm/asm/asm-thumb.h>
-#include <lib/util/config.h>
+#include <lib/class/class.h>
 
 #include "emu.h"
+
+
+/* Forward declarations */
+struct config_t;
 
 
 #define arm_ctx_debug(...) debug(arm_ctx_debug_category, __VA_ARGS__)
@@ -111,7 +115,7 @@ struct arm_ctx_t
 	unsigned int inst_type;	/* The type of the current instruction ARM/Thumb16/Thumb32 */
 
 	/* Currently emulated instruction */
-	struct arm_inst_t inst;
+	ARMInst inst;
 	struct arm_thumb16_inst_t inst_th_16;
 	struct arm_thumb32_inst_t inst_th_32;
 

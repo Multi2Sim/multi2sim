@@ -214,7 +214,7 @@ long long arm_emu_max_cycles;
 long long arm_emu_max_time;
 
 
-/* ARM emulator */
+ARMAsm *arm_asm;
 ARMEmu *arm_emu;
 
 
@@ -225,7 +225,7 @@ void arm_emu_init(void)
 
 	/* Initialization */
 	arm_sys_init();
-	arm_disasm_init();
+	arm_asm = new(ARMAsm);
 	arm_thumb16_disasm_init();
 	arm_thumb32_disasm_init();
 
@@ -237,7 +237,7 @@ void arm_emu_init(void)
 void arm_emu_done(void)
 {
 	/* End */
-	arm_disasm_done();
+	delete(arm_asm);
 	arm_sys_done();
 	
 	/* Free ARM emulator */

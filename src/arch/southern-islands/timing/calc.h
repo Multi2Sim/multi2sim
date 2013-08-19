@@ -20,8 +20,15 @@
 #ifndef ARCH_SOUTHERN_ISLANDS_TIMING_CALC_H
 #define ARCH_SOUTHERN_ISLANDS_TIMING_CALC_H
 
-int si_calc_get_work_groups_per_wavefront_pool(int work_items_per_work_group,
-	int registers_per_work_item, int local_mem_per_work_group);
-void si_calc_plot(void);
+/*
+ * Class 'SIGpu'
+ */
+
+int SIGpuCalcGetWorkGroupsPerWavefrontPool(SIGpu *self,
+		int work_items_per_work_group, int registers_per_work_item,
+		int local_mem_per_work_group);
+
+void SIGpuCalcPlot(SIGpu *self);
+
 
 #endif

@@ -33,7 +33,11 @@
 
 void si_vector_mem_complete(struct si_vector_mem_unit_t *vector_mem)
 {
+	SIComputeUnit *compute_unit = vector_mem->compute_unit;
+	SIGpu *gpu = compute_unit->gpu;
+
 	struct si_uop_t *uop = NULL;
+
 	int list_entries;
 	int i;
 	int list_index = 0;
@@ -50,7 +54,7 @@ void si_vector_mem_complete(struct si_vector_mem_unit_t *vector_mem)
 		assert(uop);
 
 		/* Uop is not ready */
-		if (asTiming(si_gpu)->cycle < uop->write_ready)
+		if (asTiming(gpu)->cycle < uop->write_ready)
 		{
 			list_index++;
 			continue;
@@ -70,13 +74,18 @@ void si_vector_mem_complete(struct si_vector_mem_unit_t *vector_mem)
 
 		/* Statistics */
 		vector_mem->inst_count++;
-		si_gpu->last_complete_cycle = asTiming(si_gpu)->cycle;
+		gpu->last_complete_cycle = asTiming(gpu)->cycle;
 	}
 }
 
+
 void si_vector_mem_write(struct si_vector_mem_unit_t *vector_mem)
 {
+	SIComputeUnit *compute_unit = vector_mem->compute_unit;
+	SIGpu *gpu = compute_unit->gpu;
+
 	struct si_uop_t *uop;
+
 	int instructions_processed = 0;
 	int list_entries;
 	int list_index = 0;
@@ -129,22 +138,22 @@ void si_vector_mem_write(struct si_vector_mem_unit_t *vector_mem)
 		}
 
 		/* Access complete, remove the uop from the queue */
-		uop->write_ready = asTiming(si_gpu)->cycle + 
+		uop->write_ready = asTiming(gpu)->cycle +
 			si_gpu_vector_mem_write_latency;
 
 		/* In the above context, access means any of the 
 		 * mod_access calls in si_vector_mem_mem. Means all 
 		 * inflight accesses for uop are done */
-		if(si_spatial_report_active)
+		if (si_spatial_report_active)
 		{
 			if (uop->vector_mem_write)
 			{
-				si_report_global_mem_finish(uop->compute_unit,
+				SIComputeUnitReportGlobalMemFinish(uop->compute_unit,
 						uop->num_global_mem_write);
 			}
 			else if (uop->vector_mem_read)
 			{
-				si_report_global_mem_finish(uop->compute_unit,
+				SIComputeUnitReportGlobalMemFinish(uop->compute_unit,
 						uop->num_global_mem_read);
 			}
 			else
@@ -163,11 +172,17 @@ void si_vector_mem_write(struct si_vector_mem_unit_t *vector_mem)
 	}
 }
 
+
 void si_vector_mem_mem(struct si_vector_mem_unit_t *vector_mem)
 {
+	SIComputeUnit *compute_unit = vector_mem->compute_unit;
+	SIGpu *gpu = compute_unit->gpu;
+
 	struct si_uop_t *uop;
 	struct si_work_item_uop_t *work_item_uop;
+
 	SIWorkItem *work_item;
+
 	int work_item_id;
 	int instructions_processed = 0;
 	int list_entries;
@@ -188,7 +203,7 @@ void si_vector_mem_mem(struct si_vector_mem_unit_t *vector_mem)
 		instructions_processed++;
 
 		/* Uop is not ready yet */
-		if (asTiming(si_gpu)->cycle < uop->read_ready)
+		if (asTiming(gpu)->cycle < uop->read_ready)
 		{
 			list_index++;
 			continue;
@@ -252,14 +267,14 @@ void si_vector_mem_mem(struct si_vector_mem_unit_t *vector_mem)
 			{
 				uop->num_global_mem_write += 
 					uop->global_mem_witness;
-				si_report_global_mem_inflight(uop->compute_unit,
+				SIComputeUnitReportGlobalMemInFlight(uop->compute_unit,
 						uop->num_global_mem_write);
 			}
 			else if (uop->vector_mem_read)
 			{
 				uop->num_global_mem_read += 
 					uop->global_mem_witness;
-				si_report_global_mem_inflight(uop->compute_unit,
+				SIComputeUnitReportGlobalMemInFlight(uop->compute_unit,
 						uop->num_global_mem_read);
 			}
 			else
@@ -277,9 +292,14 @@ void si_vector_mem_mem(struct si_vector_mem_unit_t *vector_mem)
 	}
 }
 
+
 void si_vector_mem_read(struct si_vector_mem_unit_t *vector_mem)
 {
+	SIComputeUnit *compute_unit = vector_mem->compute_unit;
+	SIGpu *gpu = compute_unit->gpu;
+
 	struct si_uop_t *uop;
+
 	int instructions_processed = 0;
 	int list_entries;
 	int list_index = 0;
@@ -298,7 +318,7 @@ void si_vector_mem_read(struct si_vector_mem_unit_t *vector_mem)
 		instructions_processed++;
 
 		/* Uop is not ready yet */
-		if (asTiming(si_gpu)->cycle < uop->decode_ready)
+		if (asTiming(gpu)->cycle < uop->decode_ready)
 		{
 			list_index++;
 			continue;
@@ -331,7 +351,7 @@ void si_vector_mem_read(struct si_vector_mem_unit_t *vector_mem)
 			continue;
 		}
 
-		uop->read_ready = asTiming(si_gpu)->cycle + 
+		uop->read_ready = asTiming(gpu)->cycle +
 			si_gpu_vector_mem_read_latency;
 
 		list_remove(vector_mem->decode_buffer, uop);
@@ -344,9 +364,14 @@ void si_vector_mem_read(struct si_vector_mem_unit_t *vector_mem)
 	}
 }
 
+
 void si_vector_mem_decode(struct si_vector_mem_unit_t *vector_mem)
 {
+	SIComputeUnit *compute_unit = vector_mem->compute_unit;
+	SIGpu *gpu = compute_unit->gpu;
+
 	struct si_uop_t *uop;
+
 	int instructions_processed = 0;
 	int list_entries;
 	int list_index = 0;
@@ -365,7 +390,7 @@ void si_vector_mem_decode(struct si_vector_mem_unit_t *vector_mem)
 		instructions_processed++;
 
 		/* Uop not ready yet */
-		if (asTiming(si_gpu)->cycle < uop->issue_ready)
+		if (asTiming(gpu)->cycle < uop->issue_ready)
 		{
 			list_index++;
 			continue;
@@ -398,7 +423,7 @@ void si_vector_mem_decode(struct si_vector_mem_unit_t *vector_mem)
 			continue;
 		}
 
-		uop->decode_ready = asTiming(si_gpu)->cycle + 
+		uop->decode_ready = asTiming(gpu)->cycle +
 			si_gpu_vector_mem_decode_latency;
 
 		list_remove(vector_mem->issue_buffer, uop);
@@ -410,6 +435,7 @@ void si_vector_mem_decode(struct si_vector_mem_unit_t *vector_mem)
 			uop->id_in_wavefront);
 	}
 }
+
 
 void si_vector_mem_run(struct si_vector_mem_unit_t *vector_mem)
 {

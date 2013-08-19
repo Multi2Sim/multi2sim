@@ -434,7 +434,7 @@ void SIGpuMapNDRange(SIGpu *self, SINDRange *ndrange)
 	/* Check that at least one work-group can be allocated per 
 	 * wavefront pool */
 	self->work_groups_per_wavefront_pool =
-		si_calc_get_work_groups_per_wavefront_pool(
+		SIGpuCalcGetWorkGroupsPerWavefrontPool(self,
 			ndrange->local_size, ndrange->num_vgpr_used,
 			ndrange->local_mem_top);
 
@@ -456,7 +456,7 @@ void SIGpuMapNDRange(SIGpu *self, SINDRange *ndrange)
 		si_gpu_max_work_groups_per_wavefront_pool);
 
 	/* Optional plotting */
-	si_calc_plot();
+	SIGpuCalcPlot(self);
 }
 
 
@@ -1070,7 +1070,7 @@ void si_gpu_read_config(void)
 			section, section, err_note);
 	
 	/* Cycle Interval report */
-	si_spatial_report_config_read(gpu_config);
+	SISpatialReportReadConfig(gpu_config);
 
 	/* Close GPU configuration file */
 	config_check(gpu_config);
@@ -1093,7 +1093,7 @@ void si_gpu_dump_default_config(char *filename)
 }
 
 
-void si_gpu_dump_report(SIGpu *self)
+void SIGpuDumpReport(SIGpu *self)
 {
 	SIComputeUnit *compute_unit;
 	struct mod_t *lds_mod;
@@ -1235,8 +1235,7 @@ void SIGpuCreate(SIGpu *self, SIEmu *emu)
 	/* Initialize compute units */
 	SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
 	{
-		compute_unit = new(SIComputeUnit);
-		compute_unit->id = compute_unit_id;
+		compute_unit = new(SIComputeUnit, self, compute_unit_id);
 		self->compute_units[compute_unit_id] = compute_unit;
 		list_add(self->available_compute_units, compute_unit);
 	}
@@ -1266,11 +1265,11 @@ void SIGpuDestroy(SIGpu *self)
 	int compute_unit_id;
 	
 	/* GPU pipeline report */
-	si_gpu_dump_report(self);
+	SIGpuDumpReport(self);
 
 	/* Spatial report */
 	if (si_spatial_report_active)
-		si_cu_spatial_report_done();
+		SISpatialReportDone();
 
 	/* Uop repository */
 	si_uop_done();
@@ -1386,7 +1385,7 @@ int SIGpuRun(Timing *self)
 
 
 /*
- * Public Stuff
+ * Public
  */
 
 SIGpu *si_gpu;

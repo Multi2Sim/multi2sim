@@ -39,7 +39,7 @@ int arm_isa_inst_debug_category;
 /* Instruction execution table */
 
 
-static arm_isa_inst_func_t arm_isa_inst_func[ARM_INST_COUNT] =
+static arm_isa_inst_func_t arm_isa_inst_func[ARMInstOpcodeCount] =
 {
 	NULL /* for op_none */
 #define DEFINST(_name, _fmt_str, _category, _arg1, _arg2) , arm_isa_##_name##_impl
@@ -69,7 +69,7 @@ static arm_isa_inst_func_t arm_th32_isa_inst_func[ARM_THUMB32_INST_COUNT] =
  * Instruction statistics
  */
 
-static long long arm_inst_freq[ARM_INST_COUNT];
+static long long arm_inst_freq[ARMInstOpcodeCount];
 static long long arm_th_16_inst_freq[ARM_THUMB16_INST_COUNT];
 static long long arm_th_32_inst_freq[ARM_THUMB32_INST_COUNT];
 
@@ -85,7 +85,7 @@ static long long arm_th_32_inst_freq[ARM_THUMB32_INST_COUNT];
 
 unsigned int arm_isa_get_addr_amode2(struct arm_ctx_t *ctx)
 {
-	struct arm_inst_t *inst;
+	ARMInst *inst;
 	unsigned int rn;
 	unsigned int rm;
 	unsigned int shift;
@@ -97,21 +97,21 @@ unsigned int arm_isa_get_addr_amode2(struct arm_ctx_t *ctx)
 
 	inst = &ctx->inst;
 
-	offset = inst->dword.sdtr_ins.off;
-	rn = inst->dword.sdtr_ins.base_rn;
+	offset = inst->bytes.sdtr.off;
+	rn = inst->bytes.sdtr.base_rn;
 	arm_isa_reg_load(ctx, rn, &rn_val);
 	arm_isa_inst_debug("  rn = 0x%x\n", rn_val);
-	if(inst->dword.sdtr_ins.imm == 1)
+	if(inst->bytes.sdtr.imm == 1)
 	{
 		rm = (offset & (0x0000000f));
 		arm_isa_reg_load(ctx, rm, &rm_val);
 		shift = ((offset >> 4) & (0x000000ff));
 		shift_val = ((shift >> 3) & 0x0000001f);
 
-		if(inst->dword.sdtr_ins.idx_typ) /* Pre- Indexed */
+		if(inst->bytes.sdtr.idx_typ) /* Pre- Indexed */
 		{
 
-			if (inst->dword.sdtr_ins.up_dn) /* Increment */
+			if (inst->bytes.sdtr.up_dn) /* Increment */
 			{
 				switch ((shift >> 1) & 0x00000003)
 				{
@@ -162,13 +162,13 @@ unsigned int arm_isa_get_addr_amode2(struct arm_ctx_t *ctx)
 				}
 			}
 
-			if (inst->dword.sdtr_ins.wb)
+			if (inst->bytes.sdtr.wb)
 				arm_isa_reg_store(ctx, rn, ret_addr);
 		}
 
 		else	/* Post Indexed */
 		{
-			if (inst->dword.sdtr_ins.up_dn) /* Increment */
+			if (inst->bytes.sdtr.up_dn) /* Increment */
 			{
 				switch ((shift >> 1) & 0x00000003)
 				{
@@ -231,7 +231,7 @@ unsigned int arm_isa_get_addr_amode2(struct arm_ctx_t *ctx)
 	}
 	else /* Register Addressing */
 	{
-		if(inst->dword.sdtr_ins.idx_typ) /* Pre-Indexed */
+		if(inst->bytes.sdtr.idx_typ) /* Pre-Indexed */
 		{
 			if(!offset)
 			{
@@ -239,7 +239,7 @@ unsigned int arm_isa_get_addr_amode2(struct arm_ctx_t *ctx)
 			}
 			else
 			{
-				if(inst->dword.sdtr_ins.up_dn) /* Increment */
+				if(inst->bytes.sdtr.up_dn) /* Increment */
 				{
 					ret_addr = rn_val + offset;
 				}
@@ -249,7 +249,7 @@ unsigned int arm_isa_get_addr_amode2(struct arm_ctx_t *ctx)
 				}
 			}
 
-			if (inst->dword.sdtr_ins.wb)
+			if (inst->bytes.sdtr.wb)
 				arm_isa_reg_store(ctx, rn, ret_addr);
 		}
 		else /* Post-Index */
@@ -260,7 +260,7 @@ unsigned int arm_isa_get_addr_amode2(struct arm_ctx_t *ctx)
 			}
 			else
 			{
-				if(inst->dword.sdtr_ins.up_dn) /* Increment */
+				if(inst->bytes.sdtr.up_dn) /* Increment */
 				{
 					ret_addr = rn_val;
 					rn_val = rn_val + offset;
@@ -288,18 +288,18 @@ int arm_isa_get_addr_amode3_imm(struct arm_ctx_t *ctx)
 	int rn_val;
 	unsigned int addr;
 
-	imm4l = ctx->inst.dword.hfwrd_imm_ins.imm_off_lo;
-	imm4h = ctx->inst.dword.hfwrd_imm_ins.imm_off_hi;
+	imm4l = ctx->inst.bytes.hfwrd_imm.imm_off_lo;
+	imm4h = ctx->inst.bytes.hfwrd_imm.imm_off_hi;
 
 	immd8 = (0x000000ff) & ((imm4h << 4) | (imm4l));
 	arm_isa_inst_debug("  imm8 offset = %d,  (0x%x)\n", immd8, immd8);
 
 
-	if(ctx->inst.dword.hfwrd_imm_ins.idx_typ) /* Pre-Indexed */
+	if(ctx->inst.bytes.hfwrd_imm.idx_typ) /* Pre-Indexed */
 	{
-		arm_isa_reg_load(ctx, ctx->inst.dword.hfwrd_imm_ins.base_rn, &rn_val);
+		arm_isa_reg_load(ctx, ctx->inst.bytes.hfwrd_imm.base_rn, &rn_val);
 
-		if(ctx->inst.dword.hfwrd_imm_ins.up_dn)
+		if(ctx->inst.bytes.hfwrd_imm.up_dn)
 		{
 			addr = rn_val + immd8;
 		}
@@ -309,10 +309,10 @@ int arm_isa_get_addr_amode3_imm(struct arm_ctx_t *ctx)
 			addr = rn_val - immd8;
 		}
 
-		if (ctx->inst.dword.hfwrd_imm_ins.wb)
+		if (ctx->inst.bytes.hfwrd_imm.wb)
 		{
 			rn_val = addr;
-			arm_isa_reg_store(ctx, ctx->inst.dword.hfwrd_imm_ins.base_rn, rn_val);
+			arm_isa_reg_store(ctx, ctx->inst.bytes.hfwrd_imm.base_rn, rn_val);
 
 		}
 		arm_isa_inst_debug("  ld/str addr = %d,  (0x%x)\n", addr, addr);
@@ -321,8 +321,8 @@ int arm_isa_get_addr_amode3_imm(struct arm_ctx_t *ctx)
 
 	else /* Post Indexed */
 	{
-		arm_isa_reg_load(ctx, ctx->inst.dword.hfwrd_imm_ins.base_rn, &rn_val);
-		if(ctx->inst.dword.hfwrd_imm_ins.up_dn)
+		arm_isa_reg_load(ctx, ctx->inst.bytes.hfwrd_imm.base_rn, &rn_val);
+		if(ctx->inst.bytes.hfwrd_imm.up_dn)
 		{
 			addr = rn_val;
 		}
@@ -332,7 +332,7 @@ int arm_isa_get_addr_amode3_imm(struct arm_ctx_t *ctx)
 			addr = rn_val;
 		}
 
-		if (ctx->inst.dword.hfwrd_imm_ins.wb)
+		if (ctx->inst.bytes.hfwrd_imm.wb)
 		{
 			fatal("%s: Arm instruction not according to v7 ISA specification,"
 				" unpredictable behavior possible. Please check your "
@@ -870,12 +870,12 @@ void arm_isa_branch(struct arm_ctx_t *ctx)
 	unsigned int br_add;
 	int rm_val;
 
-	if(ctx->inst.info->category == ARM_CAT_BRNCH)
+	if(ctx->inst.info->category == ARMInstCategoryBrnch)
 	{
-		offset = (ctx->inst.dword.brnch_ins.off << 2);
+		offset = (ctx->inst.bytes.brnch.off << 2);
 		br_add = offset + ctx->regs->pc;
 
-		if(ctx->inst.dword.brnch_ins.link)
+		if(ctx->inst.bytes.brnch.link)
 		{
 			arm_isa_reg_store(ctx, 14, ctx->regs->pc - 4);
 		}
@@ -884,18 +884,18 @@ void arm_isa_branch(struct arm_ctx_t *ctx)
 		arm_isa_inst_debug("  Branch addr = 0x%x, pc <= %d\n", ctx->regs->pc - 4, ctx->regs->pc);
 	}
 
-	else if (ctx->inst.info->category == ARM_CAT_BAX)
+	else if (ctx->inst.info->category == ARMInstCategoryBax)
 	{
 		if((ctx->inst.info->inst == ARM_INST_BLX))
 		{
-			arm_isa_reg_load(ctx, ctx->inst.dword.bax_ins.op0_rn, &rm_val);
+			arm_isa_reg_load(ctx, ctx->inst.bytes.bax.op0_rn, &rm_val);
 			arm_isa_reg_store(ctx, 14, ctx->regs->pc - 4);
 			ctx->regs->pc = (rm_val & 0xfffffffe) + 4;
 			arm_isa_inst_debug("  Branch addr = 0x%x, pc <= %d\n", rm_val, rm_val);
 		}
 		else
 		{
-			arm_isa_reg_load(ctx, ctx->inst.dword.bax_ins.op0_rn, &rm_val);
+			arm_isa_reg_load(ctx, ctx->inst.bytes.bax.op0_rn, &rm_val);
 			ctx->regs->pc = (rm_val & 0xfffffffe) + 4;
 			arm_isa_inst_debug("  Branch addr = 0x%x, pc <= %d\n", rm_val, rm_val);
 		}
@@ -910,7 +910,7 @@ int arm_isa_check_cond(struct arm_ctx_t *ctx)
 	struct arm_regs_t *regs;
 	unsigned int ret_val;
 	regs = ctx->regs;
-	cond = ctx->inst.dword.brnch_ins.cond;
+	cond = ctx->inst.bytes.brnch.cond;
 
 	switch (cond)
 	{
@@ -1025,12 +1025,12 @@ void arm_isa_amode4s_str(struct arm_ctx_t *ctx)
 	int i;
 
 	buf = &copy_buf;
-	reg_list = ctx->inst.dword.bdtr_ins.reg_lst;
-	arm_isa_reg_load(ctx, ctx->inst.dword.bdtr_ins.base_rn, &rn_val);
+	reg_list = ctx->inst.bytes.bdtr.reg_lst;
+	arm_isa_reg_load(ctx, ctx->inst.bytes.bdtr.base_rn, &rn_val);
 
-	if(ctx->inst.dword.bdtr_ins.idx_typ)	/* Pre indexed */
+	if(ctx->inst.bytes.bdtr.idx_typ)	/* Pre indexed */
 	{
-		if (ctx->inst.dword.bdtr_ins.up_dn)
+		if (ctx->inst.bytes.bdtr.up_dn)
 		{
 			wrt_val = rn_val + 4;
 
@@ -1045,8 +1045,8 @@ void arm_isa_amode4s_str(struct arm_ctx_t *ctx)
 					wrt_val += 4;
 				}
 			}
-			if(ctx->inst.dword.bdtr_ins.wb)
-				arm_isa_reg_store(ctx, ctx->inst.dword.bdtr_ins.base_rn, (wrt_val - 4));
+			if(ctx->inst.bytes.bdtr.wb)
+				arm_isa_reg_store(ctx, ctx->inst.bytes.bdtr.base_rn, (wrt_val - 4));
 		}
 
 		else
@@ -1063,15 +1063,15 @@ void arm_isa_amode4s_str(struct arm_ctx_t *ctx)
 					wrt_val -= 4;
 				}
 			}
-			if(ctx->inst.dword.bdtr_ins.wb)
-				arm_isa_reg_store(ctx, ctx->inst.dword.bdtr_ins.base_rn, (wrt_val + 4));
+			if(ctx->inst.bytes.bdtr.wb)
+				arm_isa_reg_store(ctx, ctx->inst.bytes.bdtr.base_rn, (wrt_val + 4));
 
 		}
 	}
 
 	else	/* Post-Indexed */
 	{
-		if (ctx->inst.dword.bdtr_ins.up_dn)
+		if (ctx->inst.bytes.bdtr.up_dn)
 		{
 			wrt_val = rn_val;
 
@@ -1086,8 +1086,8 @@ void arm_isa_amode4s_str(struct arm_ctx_t *ctx)
 					wrt_val += 4;
 				}
 			}
-			if(ctx->inst.dword.bdtr_ins.wb)
-				arm_isa_reg_store(ctx, ctx->inst.dword.bdtr_ins.base_rn, (wrt_val));
+			if(ctx->inst.bytes.bdtr.wb)
+				arm_isa_reg_store(ctx, ctx->inst.bytes.bdtr.base_rn, (wrt_val));
 		}
 
 		else
@@ -1104,8 +1104,8 @@ void arm_isa_amode4s_str(struct arm_ctx_t *ctx)
 					wrt_val -= 4;
 				}
 			}
-			if(ctx->inst.dword.bdtr_ins.wb)
-				arm_isa_reg_store(ctx, ctx->inst.dword.bdtr_ins.base_rn, (wrt_val));
+			if(ctx->inst.bytes.bdtr.wb)
+				arm_isa_reg_store(ctx, ctx->inst.bytes.bdtr.base_rn, (wrt_val));
 
 		}
 	}
@@ -1121,12 +1121,12 @@ void arm_isa_amode4s_ld(struct arm_ctx_t *ctx)
 	int i;
 
 	buf = &copy_buf;
-	reg_list = ctx->inst.dword.bdtr_ins.reg_lst;
-	arm_isa_reg_load(ctx, ctx->inst.dword.bdtr_ins.base_rn, &rn_val);
+	reg_list = ctx->inst.bytes.bdtr.reg_lst;
+	arm_isa_reg_load(ctx, ctx->inst.bytes.bdtr.base_rn, &rn_val);
 
-	if(ctx->inst.dword.bdtr_ins.idx_typ)	/* Pre indexed */
+	if(ctx->inst.bytes.bdtr.idx_typ)	/* Pre indexed */
 	{
-		if (ctx->inst.dword.bdtr_ins.up_dn)
+		if (ctx->inst.bytes.bdtr.up_dn)
 		{
 			read_val = rn_val + 4;
 
@@ -1154,8 +1154,8 @@ void arm_isa_amode4s_ld(struct arm_ctx_t *ctx)
 					}
 				}
 			}
-			if(ctx->inst.dword.bdtr_ins.wb)
-				arm_isa_reg_store(ctx, ctx->inst.dword.bdtr_ins.base_rn, (read_val - 4));
+			if(ctx->inst.bytes.bdtr.wb)
+				arm_isa_reg_store(ctx, ctx->inst.bytes.bdtr.base_rn, (read_val - 4));
 		}
 
 		else
@@ -1186,15 +1186,15 @@ void arm_isa_amode4s_ld(struct arm_ctx_t *ctx)
 					}
 				}
 			}
-			if(ctx->inst.dword.bdtr_ins.wb)
-				arm_isa_reg_store(ctx, ctx->inst.dword.bdtr_ins.base_rn, (read_val + 4));
+			if(ctx->inst.bytes.bdtr.wb)
+				arm_isa_reg_store(ctx, ctx->inst.bytes.bdtr.base_rn, (read_val + 4));
 
 		}
 	}
 
 	else	/* Post-Indexed */
 	{
-		if (ctx->inst.dword.bdtr_ins.up_dn)
+		if (ctx->inst.bytes.bdtr.up_dn)
 		{
 			read_val = rn_val;
 
@@ -1223,8 +1223,8 @@ void arm_isa_amode4s_ld(struct arm_ctx_t *ctx)
 					}
 				}
 			}
-			if(ctx->inst.dword.bdtr_ins.wb)
-				arm_isa_reg_store(ctx, ctx->inst.dword.bdtr_ins.base_rn, (read_val));
+			if(ctx->inst.bytes.bdtr.wb)
+				arm_isa_reg_store(ctx, ctx->inst.bytes.bdtr.base_rn, (read_val));
 		}
 
 		else
@@ -1255,8 +1255,8 @@ void arm_isa_amode4s_ld(struct arm_ctx_t *ctx)
 					}
 				}
 			}
-			if(ctx->inst.dword.bdtr_ins.wb)
-				arm_isa_reg_store(ctx, ctx->inst.dword.bdtr_ins.base_rn, (read_val));
+			if(ctx->inst.bytes.bdtr.wb)
+				arm_isa_reg_store(ctx, ctx->inst.bytes.bdtr.base_rn, (read_val));
 
 		}
 	}
@@ -1410,7 +1410,7 @@ void arm_isa_subtract(struct arm_ctx_t *ctx, unsigned int rd, unsigned int rn, i
 	regs = ctx->regs;
 	flags = 0;
 
-	if(!(ctx->inst.dword.dpr_ins.s_cond))
+	if(!(ctx->inst.bytes.dpr.s_cond))
 	{
 		if(rd == 15)
 		{
@@ -1577,7 +1577,7 @@ void arm_isa_subtract_rev(struct arm_ctx_t *ctx, unsigned int rd, unsigned int r
 
 	arm_isa_reg_load(ctx, rn, &rn_val);
 
-	if(!(ctx->inst.dword.dpr_ins.s_cond))
+	if(!(ctx->inst.bytes.dpr.s_cond))
 	{
 		rd_val = op2 - rn_val - op3;
 		arm_isa_inst_debug("  r%d = r%d - %d\n", rd, rn, op2);
@@ -1718,7 +1718,7 @@ void arm_isa_add(struct arm_ctx_t *ctx, unsigned int rd, unsigned int rn, int op
 	regs = ctx->regs;
 	arm_isa_reg_load(ctx, rn, &rn_val);
 
-	if(!(ctx->inst.dword.dpr_ins.s_cond))
+	if(!(ctx->inst.bytes.dpr.s_cond))
 	{
 		rd_val = rn_val + op2 + op3;
 		arm_isa_inst_debug("  r%d = r%d + %d\n", rd, rn, op2);
@@ -1776,25 +1776,25 @@ void arm_isa_multiply(struct arm_ctx_t *ctx)
 	int rd_val;
 	int rn_val;
 
-	if (!(ctx->inst.dword.mult_ins.m_acc))
+	if (!(ctx->inst.bytes.mult.m_acc))
 	{
-		arm_isa_reg_load(ctx, ctx->inst.dword.mult_ins.op1_rs, &rs_val);
-		arm_isa_reg_load(ctx, ctx->inst.dword.mult_ins.op0_rm, &rm_val);
+		arm_isa_reg_load(ctx, ctx->inst.bytes.mult.op1_rs, &rs_val);
+		arm_isa_reg_load(ctx, ctx->inst.bytes.mult.op0_rm, &rm_val);
 
 		rd_val = rm_val * rs_val;
 
-		arm_isa_reg_store(ctx, ctx->inst.dword.mult_ins.dst_rd, rd_val);
+		arm_isa_reg_store(ctx, ctx->inst.bytes.mult.dst_rd, rd_val);
 	}
 	else
 	{
 
-		arm_isa_reg_load(ctx, ctx->inst.dword.mult_ins.op1_rs, &rs_val);
-		arm_isa_reg_load(ctx, ctx->inst.dword.mult_ins.op0_rm, &rm_val);
-		arm_isa_reg_load(ctx, ctx->inst.dword.mult_ins.op2_rn, &rn_val);
+		arm_isa_reg_load(ctx, ctx->inst.bytes.mult.op1_rs, &rs_val);
+		arm_isa_reg_load(ctx, ctx->inst.bytes.mult.op0_rm, &rm_val);
+		arm_isa_reg_load(ctx, ctx->inst.bytes.mult.op2_rn, &rn_val);
 
 		rd_val = (rm_val * rs_val) + rn_val;
 
-		arm_isa_reg_store(ctx, ctx->inst.dword.mult_ins.dst_rd, rd_val);
+		arm_isa_reg_store(ctx, ctx->inst.bytes.mult.dst_rd, rd_val);
 	}
 }
 
@@ -2061,7 +2061,7 @@ void arm_isa_execute_inst(struct arm_ctx_t *ctx)
 		}
 		else
 		{
-			arm_inst_debug_dump(&ctx->inst, debug_file(arm_isa_inst_debug_category));
+			ARMInstDump(&ctx->inst, debug_file(arm_isa_inst_debug_category));
 			arm_isa_inst_debug("  (%d bytes)", ctx->inst.info->size);
 		}
 	}

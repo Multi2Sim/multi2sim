@@ -28,6 +28,11 @@
 #include "compute-unit.h"
 
 
+
+/*
+ * Public
+ */
+
 int si_spatial_report_active = 0 ;
 
 static int spatial_profiling_interval = 10000;
@@ -36,7 +41,7 @@ static FILE *spatial_report_file;
 static char *spatial_report_filename = "report-cu-spatial";
 
 
-void si_spatial_report_config_read(struct config_t *config)
+void SISpatialReportReadConfig(struct config_t *config)
 {
 	char *section;
 	char *file_name;
@@ -72,12 +77,13 @@ void si_spatial_report_config_read(struct config_t *config)
 
 }
 
-void si_cu_spatial_report_init()
-{
 
+void SISpatialReportInit(void)
+{
 }
 
-void si_cu_spatial_report_done()
+
+void SISpatialReportDone(void)
 {
 
 	fclose(spatial_report_file);
@@ -85,91 +91,101 @@ void si_cu_spatial_report_done()
 	str_free(spatial_report_filename);
 }
 
-void si_cu_spatial_report_dump(SIComputeUnit *compute_unit)
+
+
+
+/*
+ * Class 'SIComputeUnit'
+ */
+
+void SIComputeUnitReportDump(SIComputeUnit *self)
 {
+	SIGpu *gpu = self->gpu;
 	FILE *f = spatial_report_file;
 
 	fprintf(f,
 		"CU,%d,MemAcc,%lld,MappedWGs,%lld,UnmappedWGs,%lld,"
 		"ALUIssued,%lld,LDSIssued,%lld,Cycles,%lld\n",
-		compute_unit->id,
-		compute_unit->vector_mem_unit.inflight_mem_accesses,
-		compute_unit->interval_mapped_work_groups,
-		compute_unit->interval_unmapped_work_groups,
-		compute_unit->interval_alu_issued,
-		compute_unit->interval_lds_issued,
-		asTiming(si_gpu)->cycle);
-
-
+		self->id,
+		self->vector_mem_unit.inflight_mem_accesses,
+		self->interval_mapped_work_groups,
+		self->interval_unmapped_work_groups,
+		self->interval_alu_issued,
+		self->interval_lds_issued,
+		asTiming(gpu)->cycle);
 }
 
 
-void si_lds_report_new_inst(SIComputeUnit *compute_unit)
+void SIComputeUnitReportNewLDSInst(SIComputeUnit *self)
 {
-	compute_unit->interval_lds_issued = compute_unit->interval_lds_issued + 1;
+	self->interval_lds_issued = self->interval_lds_issued + 1;
 }
 
 
-void si_alu_report_new_inst(SIComputeUnit *compute_unit)
+void SIComputeUnitReportNewALUInst(SIComputeUnit *self)
 {
-	compute_unit->interval_alu_issued ++ ;
+	self->interval_alu_issued ++ ;
 
 }
 
 
-void si_report_global_mem_inflight( SIComputeUnit *compute_unit, int long long pending_accesses)
+void SIComputeUnitReportGlobalMemInFlight(SIComputeUnit *self,
+		long long pending_accesses)
 {
 	/* Read stage adds a negative number for accesses added
 	 * Write stage adds a positive number for accesses finished
 	 */
-	compute_unit->vector_mem_unit.inflight_mem_accesses += pending_accesses;
+	self->vector_mem_unit.inflight_mem_accesses += pending_accesses;
 
 
 }
 
 
-void si_report_global_mem_finish( SIComputeUnit *compute_unit, int long long completed_accesses)
+void SIComputeUnitReportGlobalMemFinish(SIComputeUnit *self,
+		long long completed_accesses)
 {
 	/* Read stage adds a negative number for accesses added */
 	/* Write stage adds a positive number for accesses finished */
-	compute_unit->vector_mem_unit.inflight_mem_accesses -= completed_accesses;
+	self->vector_mem_unit.inflight_mem_accesses -= completed_accesses;
 
 }
 
 
-void si_report_mapped_work_group(SIComputeUnit *compute_unit)
+void SIComputeUnitReportMapWorkGroup(SIComputeUnit *self)
 {
 	/*TODO Add calculation here to change this to wavefront pool entries used */
-	compute_unit->interval_mapped_work_groups++;
+	self->interval_mapped_work_groups++;
 }
 
 
-void si_report_unmapped_work_group(SIComputeUnit *compute_unit)
+void SIComputeUnitReportUnmapWorkGroup(SIComputeUnit *self)
 {
 	/*TODO Add calculation here to change this to wavefront pool entries used */
-	compute_unit->interval_unmapped_work_groups++;
+	self->interval_unmapped_work_groups++;
 }
 
 
-void si_cu_interval_update(SIComputeUnit *compute_unit)
+void SIComputeUnitReportUpdate(SIComputeUnit *self)
 {
+	SIGpu *gpu = self->gpu;
+
 	/* If interval - reset the counters in all the engines */
-	compute_unit->interval_cycle ++;
+	self->interval_cycle ++;
 
-	if (!(asTiming(si_gpu)->cycle % spatial_profiling_interval))
+	if (!(asTiming(gpu)->cycle % spatial_profiling_interval))
 	{
-		si_cu_spatial_report_dump(compute_unit);
+		SIComputeUnitReportDump(self);
 
 		/*
 		 * This counter is not reset since memory accesses could still
 		 * be in flight in the hierarchy
 		 * compute_unit->inflight_mem_accesses = 0;
 		 */
-		compute_unit->interval_cycle = 0;
-		compute_unit->interval_mapped_work_groups = 0;
-		compute_unit->interval_unmapped_work_groups = 0;
-		compute_unit->interval_alu_issued = 0;
-		compute_unit->interval_lds_issued = 0;
+		self->interval_cycle = 0;
+		self->interval_mapped_work_groups = 0;
+		self->interval_unmapped_work_groups = 0;
+		self->interval_alu_issued = 0;
+		self->interval_lds_issued = 0;
 	}
 }
 

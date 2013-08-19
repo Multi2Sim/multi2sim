@@ -19,6 +19,8 @@
 
 #include <signal.h>
 
+#include <arch/arm/asm/asm.h>
+#include <arch/arm/asm/inst.h>
 #include <arch/arm/emu/context.h>
 #include <arch/arm/emu/isa.h>
 #include <arch/arm/emu/syscall.h>
@@ -1834,6 +1836,9 @@ static void m2s_init(void)
 	CLASS_REGISTER(Emu);
 	CLASS_REGISTER(Timing);
 
+	CLASS_REGISTER(ARMAsm);
+	CLASS_REGISTER(ARMInst);
+
 	CLASS_REGISTER(X86Asm);
 	CLASS_REGISTER(X86Inst);
 
@@ -1846,11 +1851,13 @@ static void m2s_init(void)
 
 	CLASS_REGISTER(SIAsm);
 	CLASS_REGISTER(SIInst);
+
 	CLASS_REGISTER(SIEmu);
 	CLASS_REGISTER(SINDRange);
 	CLASS_REGISTER(SIWavefront);
 	CLASS_REGISTER(SIWorkGroup);
 	CLASS_REGISTER(SIWorkItem);
+
 	CLASS_REGISTER(SIGpu);
 	CLASS_REGISTER(SIComputeUnit);
 
