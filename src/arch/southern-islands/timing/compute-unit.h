@@ -35,7 +35,10 @@ CLASS_BEGIN(SIComputeUnit, Object)
 	/* IDs */
 	int id;
 	int subdevice_id;
-	long long uop_id_counter;  
+	long long uop_id_counter;
+
+	/* GPU that it belongs to */
+	SIGpu *gpu;
 
 	/* Entry points to memory hierarchy */
 	struct mod_t *scalar_cache;
@@ -86,7 +89,7 @@ CLASS_BEGIN(SIComputeUnit, Object)
 CLASS_END(SIComputeUnit)
 
 
-void SIComputeUnitCreate(SIComputeUnit *self);
+void SIComputeUnitCreate(SIComputeUnit *self, SIGpu *gpu, int id);
 void SIComputeUnitDestroy(SIComputeUnit *self);
 
 void SIComputeUnitMapWorkGroup(SIComputeUnit *self, SIWorkGroup *work_group);

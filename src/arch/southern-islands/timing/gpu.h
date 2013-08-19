@@ -212,7 +212,7 @@ struct si_lds_t;
 void si_gpu_read_config(void);
 
 void si_gpu_dump_default_config(char *filename);
-void si_gpu_dump_report(SIGpu *self);
+void SIGpuDumpReport(SIGpu *self);
 
 void si_gpu_uop_trash_add(struct si_uop_t *uop);
 void si_gpu_uop_trash_empty(void);

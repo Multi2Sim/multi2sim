@@ -392,6 +392,7 @@ void SIGpuMemConfigParseEntry(Timing *self, struct config_t *config, char *secti
 
 	int compute_unit_id;
 
+	SIGpu *gpu = asSIGpu(self);
 	SIComputeUnit *compute_unit;
 
 	/* Get configuration file name */
@@ -449,7 +450,7 @@ void SIGpuMemConfigParseEntry(Timing *self, struct config_t *config, char *secti
 	}
 
 	/* Check that entry has not been assigned before */
-	compute_unit = si_gpu->compute_units[compute_unit_id];
+	compute_unit = gpu->compute_units[compute_unit_id];
 	if (compute_unit->vector_cache)
 	{
 		fatal(
@@ -514,7 +515,9 @@ void SIGpuMemConfigParseEntry(Timing *self, struct config_t *config, char *secti
 
 void SIGpuMemConfigCheck(Timing *self, struct config_t *config)
 {
+	SIGpu *gpu = asSIGpu(self);
 	SIComputeUnit *compute_unit;
+
 	int compute_unit_id;
 	char *file_name;
 
@@ -523,7 +526,7 @@ void SIGpuMemConfigCheck(Timing *self, struct config_t *config)
 	file_name = config_get_file_name(config);
 	SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
 	{
-		compute_unit = si_gpu->compute_units[compute_unit_id];
+		compute_unit = gpu->compute_units[compute_unit_id];
 		if (!compute_unit->vector_cache)
 		{
 			fatal(

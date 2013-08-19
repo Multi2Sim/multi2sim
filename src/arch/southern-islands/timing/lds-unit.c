@@ -33,7 +33,11 @@
 
 void si_lds_complete(struct si_lds_t *lds)
 {
+	SIComputeUnit *compute_unit = lds->compute_unit;
+	SIGpu *gpu = compute_unit->gpu;
+
 	struct si_uop_t *uop = NULL;
+
 	int list_entries;
 	int i;
 	int list_index = 0;
@@ -50,7 +54,7 @@ void si_lds_complete(struct si_lds_t *lds)
 		assert(uop);
 
 		/* Uop is not ready */
-		if (asTiming(si_gpu)->cycle < uop->write_ready)
+		if (asTiming(gpu)->cycle < uop->write_ready)
 		{
 			list_index++;
 			continue;
@@ -70,13 +74,18 @@ void si_lds_complete(struct si_lds_t *lds)
 
 		/* Statistics */
 		lds->inst_count++;
-		si_gpu->last_complete_cycle = asTiming(si_gpu)->cycle;
+		gpu->last_complete_cycle = asTiming(gpu)->cycle;
 	}
 }
 
+
 void si_lds_write(struct si_lds_t *lds)
 {
+	SIComputeUnit *compute_unit = lds->compute_unit;
+	SIGpu *gpu = compute_unit->gpu;
+
 	struct si_uop_t *uop;
+
 	int instructions_processed = 0;
 	int list_entries;
 	int list_index = 0;
@@ -129,7 +138,7 @@ void si_lds_write(struct si_lds_t *lds)
 		}
 
 		/* Access complete, remove the uop from the queue */
-		uop->write_ready = asTiming(si_gpu)->cycle + si_gpu_lds_write_latency;
+		uop->write_ready = asTiming(gpu)->cycle + si_gpu_lds_write_latency;
 		list_remove(lds->mem_buffer, uop);
 		list_enqueue(lds->write_buffer, uop);
 
@@ -144,11 +153,16 @@ void si_lds_write(struct si_lds_t *lds)
 	}
 }
 
+
 void si_lds_mem(struct si_lds_t *lds)
 {
+	SIComputeUnit *compute_unit = lds->compute_unit;
+	SIGpu *gpu = compute_unit->gpu;
+	SIWorkItem *work_item;
+
 	struct si_uop_t *uop;
 	struct si_work_item_uop_t *work_item_uop;
-	SIWorkItem *work_item;
+
 	int work_item_id;
 	int instructions_processed = 0;
 	int list_entries;
@@ -169,7 +183,7 @@ void si_lds_mem(struct si_lds_t *lds)
 		instructions_processed++;
 
 		/* Uop is not ready yet */
-		if (asTiming(si_gpu)->cycle < uop->read_ready)
+		if (asTiming(gpu)->cycle < uop->read_ready)
         	{
 			list_index++;
 			continue;
@@ -248,9 +262,14 @@ void si_lds_mem(struct si_lds_t *lds)
 	}
 }
 
+
 void si_lds_read(struct si_lds_t *lds)
 {
+	SIComputeUnit *compute_unit = lds->compute_unit;
+	SIGpu *gpu = compute_unit->gpu;
+
 	struct si_uop_t *uop;
+
 	int instructions_processed = 0;
 	int list_entries;
 	int list_index = 0;
@@ -291,13 +310,13 @@ void si_lds_read(struct si_lds_t *lds)
 		}
 
 		/* Uop is not ready yet */
-		if (asTiming(si_gpu)->cycle < uop->decode_ready)
+		if (asTiming(gpu)->cycle < uop->decode_ready)
 		{
 			list_index++;
 			continue;
 		}
 		
-		uop->read_ready = asTiming(si_gpu)->cycle + si_gpu_lds_read_latency;
+		uop->read_ready = asTiming(gpu)->cycle + si_gpu_lds_read_latency;
 		list_remove(lds->decode_buffer, uop);
 		list_enqueue(lds->read_buffer, uop);
 
@@ -310,7 +329,11 @@ void si_lds_read(struct si_lds_t *lds)
 
 void si_lds_decode(struct si_lds_t *lds)
 {
+	SIComputeUnit *compute_unit = lds->compute_unit;
+	SIGpu *gpu = compute_unit->gpu;
+
 	struct si_uop_t *uop;
+
 	int instructions_processed = 0;
 	int list_entries;
 	int list_index = 0;
@@ -329,7 +352,7 @@ void si_lds_decode(struct si_lds_t *lds)
 		instructions_processed++;
 
 		/* Uop not ready yet */
-		if (asTiming(si_gpu)->cycle < uop->issue_ready)
+		if (asTiming(gpu)->cycle < uop->issue_ready)
 		{
 			list_index++;
 			continue;
@@ -362,12 +385,12 @@ void si_lds_decode(struct si_lds_t *lds)
 			continue;
 		}
 
-		uop->decode_ready = asTiming(si_gpu)->cycle + si_gpu_lds_decode_latency;
+		uop->decode_ready = asTiming(gpu)->cycle + si_gpu_lds_decode_latency;
 		list_remove(lds->issue_buffer, uop);
 		list_enqueue(lds->decode_buffer, uop);
 
 		if (si_spatial_report_active)
-			si_lds_report_new_inst(lds->compute_unit);
+			SIComputeUnitReportNewLDSInst(lds->compute_unit);
 
 		si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld "
 			"stg=\"lds-d\"\n", uop->id_in_compute_unit, 
