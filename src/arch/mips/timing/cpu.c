@@ -25,10 +25,13 @@
  * Class 'MIPSCpu'
  */
 
-void MIPSCpuCreate(MIPSCpu *self)
+void MIPSCpuCreate(MIPSCpu *self, MIPSEmu *emu)
 {
 	/* Parent */
 	TimingCreate(asTiming(self));
+
+	/* Initialize */
+	self->emu = emu;
 
 	/* Virtual functions */
 	asObject(self)->Dump = MIPSCpuDump;
@@ -66,18 +69,7 @@ int MIPSCpuRun(Timing *self)
  * Public Functions
  */
 
-MIPSCpu *mips_cpu;
-
 void mips_cpu_read_config(void)
 {
 }
 
-
-void mips_cpu_init(void)
-{
-}
-
-
-void mips_cpu_done(void)
-{
-}

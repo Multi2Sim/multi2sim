@@ -61,38 +61,38 @@ CLASS_BEGIN(MIPSEmu, Emu)
 	int context_reschedule;
 
 	/* List of contexts */
-	struct mips_ctx_t *context_list_head;
-	struct mips_ctx_t *context_list_tail;
+	MIPSContext *context_list_head;
+	MIPSContext *context_list_tail;
 	int context_list_count;
 	int context_list_max;
 
 	/* List of running contexts */
-	struct mips_ctx_t *running_list_head;
-	struct mips_ctx_t *running_list_tail;
+	MIPSContext *running_list_head;
+	MIPSContext *running_list_tail;
 	int running_list_count;
 	int running_list_max;
 
 	/* List of suspended contexts */
-	struct mips_ctx_t *suspended_list_head;
-	struct mips_ctx_t *suspended_list_tail;
+	MIPSContext *suspended_list_head;
+	MIPSContext *suspended_list_tail;
 	int suspended_list_count;
 	int suspended_list_max;
 
 	/* List of zombie contexts */
-	struct mips_ctx_t *zombie_list_head;
-	struct mips_ctx_t *zombie_list_tail;
+	MIPSContext *zombie_list_head;
+	MIPSContext *zombie_list_tail;
 	int zombie_list_count;
 	int zombie_list_max;
 
 	/* List of finished contexts */
-	struct mips_ctx_t *finished_list_head;
-	struct mips_ctx_t *finished_list_tail;
+	MIPSContext *finished_list_head;
+	MIPSContext *finished_list_tail;
 	int finished_list_count;
 	int finished_list_max;
 
 	/* List of allocated contexts */
-	struct mips_ctx_t *alloc_list_head;
-	struct mips_ctx_t *alloc_list_tail;
+	MIPSContext *alloc_list_head;
+	MIPSContext *alloc_list_tail;
 	int alloc_list_count;
 	int alloc_list_max;
 
@@ -109,20 +109,27 @@ void MIPSEmuDump(Object *self, FILE *f);
 void MIPSEmuDumpSummary(Emu *self, FILE *f);
 
 /* Virtual function from class 'Emu' */
-int MIPSEmuRun(Emu *emu);
+int MIPSEmuRun(Emu *self);
 
 void MIPSEmuProcessEventsSchedule(MIPSEmu *self);
+
+void MIPSEmuLoadContextFromCommandLine(MIPSEmu *self,
+		int argc, char **argv);
+void MIPSEmuLoadContextsFromIniFile(MIPSEmu *self,
+		struct config_t *config, char *section);
+
+
 
 
 /* FIXME - Functions below should be removed */
 int MIPSEmuListMember(MIPSEmu *self, enum mips_emu_list_kind_t list,
-		struct mips_ctx_t *ctx);
+		MIPSContext *ctx);
 void MIPSEmuListRemove(MIPSEmu *self, enum mips_emu_list_kind_t list,
-		struct mips_ctx_t *ctx);
+		MIPSContext *ctx);
 void MIPSEmuListInsertTail(MIPSEmu *self, enum mips_emu_list_kind_t list,
-		struct mips_ctx_t *ctx);
+		MIPSContext *ctx);
 void MIPSEmuListInsertHead(MIPSEmu *self, enum mips_emu_list_kind_t list,
-		struct mips_ctx_t *ctx);
+		MIPSContext *ctx);
 
 
 
@@ -131,17 +138,11 @@ void MIPSEmuListInsertHead(MIPSEmu *self, enum mips_emu_list_kind_t list,
  * Non-Class Functions
  */
 
-extern MIPSEmu *mips_emu;
-extern struct arch_t *mips_emu_arch;
-
 extern enum arch_sim_kind_t mips_emu_sim_kind;
 
 extern long long mips_emu_max_cycles;
 extern long long mips_emu_max_inst;
 extern long long mips_emu_max_time;
-
-void mips_emu_init(void);
-void mips_emu_done(void);
 
 
 #endif

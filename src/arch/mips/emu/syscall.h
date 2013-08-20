@@ -21,19 +21,20 @@
 #define ARCH_MIPS_EMU_SYSCALL_H
 
 
-//#define ARM_set_tls 0xF0005
-//#define ARM_exit_group 248
+/*
+ * Public
+ */
 
 #define mips_sys_debug(...) debug(mips_sys_debug_category, __VA_ARGS__)
 #define mips_sys_debug_buffer(...) debug_buffer(mips_sys_debug_category, __VA_ARGS__)
 extern int mips_sys_debug_category;
 
-void mips_sys_init(void);
-void mips_sys_done(void);
 
-void mips_sys_call(struct mips_ctx_t *ctx);
+/*
+ * Class 'MIPSContext'
+ */
 
-
+void MIPSContextSyscall(MIPSContext *self);
 
 
 #endif
