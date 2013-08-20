@@ -39,7 +39,7 @@ char *frm_err_isa_note = "\tThe NVIDIA Fermi SASS instruction set is \n"
 
 
 
-void frm_isa_FFMA_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_FFMA_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	unsigned int pred_id, dst_id, src1_id, src2_id, src3_id;
 	unsigned int active, pred;
@@ -91,7 +91,7 @@ void frm_isa_FFMA_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 			src2_id, src2, src3_id, src3);
 }
 
-void frm_isa_FADD_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_FADD_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	unsigned int pred_id, dst_id, src1_id, src2_id;
 	unsigned int active, pred;
@@ -142,7 +142,7 @@ void frm_isa_FADD_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 			src2_id, src2);
 }
 
-void frm_isa_FADD32I_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_FADD32I_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	unsigned int pred_id, dst_id, src1_id;
 	unsigned int active, pred;
@@ -187,12 +187,12 @@ void frm_isa_FADD32I_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 			pred_id, pred, dst_id, dst, src1_id, src1, imm32.f);
 }
 
-void frm_isa_FCMP_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_FCMP_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_FMUL_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_FMUL_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	unsigned int pred_id, dst_id, src1_id, src2_id;
 	unsigned int active, pred;
@@ -242,7 +242,7 @@ void frm_isa_FMUL_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 			src2_id, src2);
 }
 
-void frm_isa_FMUL32I_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_FMUL32I_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	unsigned int pred_id, dst_id, src1_id;
 	unsigned int active, pred;
@@ -287,67 +287,67 @@ void frm_isa_FMUL32I_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 			pred_id, pred, dst_id, dst, src1_id, src1, imm32.f);
 }
 
-void frm_isa_FMNMX_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_FMNMX_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_FSWZ_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_FSWZ_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_FSET_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_FSET_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_FSETP_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)  
+void frm_isa_FSETP_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_RRO_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_RRO_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_MUFU_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_MUFU_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_DFMA_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_DFMA_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_DADD_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_DADD_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_DMUL_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_DMUL_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_DMNMX_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_DMNMX_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_DSET_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_DSET_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_DSETP_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_DSETP_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_IMAD_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_IMAD_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	unsigned int pred_id, dst_id, src1_id, src2_id, src3_id;
 	unsigned int active, pred;
@@ -399,7 +399,7 @@ void frm_isa_IMAD_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 			src2_id, src2, src3_id, src3);
 }
 
-void frm_isa_IMUL_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_IMUL_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	unsigned int pred_id, dst_id, src1_id, src2_id;
 	unsigned int active, pred;
@@ -449,7 +449,7 @@ void frm_isa_IMUL_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 			src2_id, src2);
 }
 
-void frm_isa_IADD_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_IADD_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	unsigned int pred_id, dst_id, src1_id, src2_id;
 	unsigned int active, pred;
@@ -506,7 +506,7 @@ void frm_isa_IADD_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 			src2_id, src2);
 }
 
-void frm_isa_IADD32I_impl(struct frm_thread_t *thread, struct frm_inst_t *inst) 
+void frm_isa_IADD32I_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	unsigned int pred_id, dst_id, src1_id;
 	unsigned int active, pred;
@@ -551,7 +551,7 @@ void frm_isa_IADD32I_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 			pred_id, pred, dst_id, dst, src1_id, src1, imm32);
 }
 
-void frm_isa_ISCADD_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_ISCADD_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	unsigned int pred_id, dst_id, src1_id, src2_id;
 	unsigned int active, pred;
@@ -605,27 +605,27 @@ void frm_isa_ISCADD_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 			src2_id, src2, shamt);
 }
 
-void frm_isa_ISAD_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_ISAD_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_IMNMX_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_IMNMX_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_BFE_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_BFE_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_BFI_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_BFI_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_SHR_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_SHR_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	unsigned int pred_id, dst_id, src1_id, src2_id;
 	unsigned int active, pred;
@@ -678,7 +678,7 @@ void frm_isa_SHR_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 			src2_id, src2);
 }
 
-void frm_isa_SHL_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_SHL_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	unsigned int pred_id, dst_id, src1_id, src2_id;
 	unsigned int active, pred;
@@ -731,27 +731,27 @@ void frm_isa_SHL_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 			src2_id, src2);
 }
 
-void frm_isa_LOP_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_LOP_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_LOP32I_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_LOP32I_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_FLO_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_FLO_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_ISET_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_ISET_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_ISETP_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_ISETP_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	unsigned int pred_id, p_id, q_id, src1_id, src2_id, r_id;
 	unsigned int active, pred, p, q, src1, src2, r;
@@ -843,37 +843,37 @@ void frm_isa_ISETP_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 			src2_id, src2, r_id, r);
 }
 
-void frm_isa_ICMP_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_ICMP_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_POPC_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_POPC_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_F2F_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_F2F_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_F2I_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_F2I_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_I2F_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_I2F_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_I2I_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_I2I_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_MOV_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_MOV_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	unsigned int pred_id, dst_id, src_id;
 	unsigned int active, pred;
@@ -919,7 +919,7 @@ void frm_isa_MOV_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 			pred_id, pred, dst_id, dst, src_id, src);
 }
 
-void frm_isa_MOV32I_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_MOV32I_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	unsigned int pred_id, dst_id;
 	unsigned int active, pred;
@@ -961,72 +961,72 @@ void frm_isa_MOV32I_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 			pred_id, pred, dst_id, dst, imm32);
 }
 
-void frm_isa_SEL_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_SEL_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_PRMT_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_PRMT_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_P2R_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_P2R_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_R2P_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_R2P_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_CSET_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_CSET_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_CSETP_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_CSETP_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_PSET_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_PSET_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_PSETP_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_PSETP_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_TEX_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_TEX_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_TLD_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_TLD_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_TLD4_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_TLD4_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_TXQ_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_TXQ_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_LDC_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_LDC_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_LD_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_LD_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	unsigned int pred_id, dst_id, src_id;
 	unsigned int active, pred, dst, addr;
@@ -1069,17 +1069,17 @@ void frm_isa_LD_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 			pred_id, pred, dst_id, dst, src_id, addr);
 }
 
-void frm_isa_LDU_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_LDU_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_LDL_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_LDL_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_LDS_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_LDS_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	unsigned int pred_id, dst_id, src_id;
 	unsigned int active, pred, dst, addr;
@@ -1122,27 +1122,27 @@ void frm_isa_LDS_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 			pred_id, pred, dst_id, dst, src_id, addr);
 }
 
-void frm_isa_LDLK_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_LDLK_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_LDSLK_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_LDSLK_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_LD_LDU_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_LD_LDU_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_LDS_LDU_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_LDS_LDU_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_ST_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_ST_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	unsigned int pred_id, value_id, addr_id;
 	unsigned int active, pred, value, addr;
@@ -1183,17 +1183,17 @@ void frm_isa_ST_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 			pred_id, pred, value_id, value, addr_id, addr);
 }
 
-void frm_isa_STL_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_STL_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_STUL_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_STUL_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_STS_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_STS_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	unsigned int pred_id, value_id, addr_id;
 	unsigned int active, pred, value, addr;
@@ -1234,62 +1234,62 @@ void frm_isa_STS_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 			pred_id, pred, value_id, value, addr_id, addr);
 }
 
-void frm_isa_STSUL_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_STSUL_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_ATOM_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_ATOM_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_RED_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_RED_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_CCTL_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_CCTL_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_CCTLL_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_CCTLL_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_MEMBAR_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_MEMBAR_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_SULD_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_SULD_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_SULEA_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_SULEA_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_SUST_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_SUST_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_SURED_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_SURED_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_SUQ_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_SUQ_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_BRA_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_BRA_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	unsigned int pred_id;
 	unsigned int active, pred, target;
@@ -1342,52 +1342,52 @@ void frm_isa_BRA_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 			active, pred_id, pred, target);
 }
 
-void frm_isa_BRX_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_BRX_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_JMP_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_JMP_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_JMX_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_JMX_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_CAL_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_CAL_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_JCAL_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_JCAL_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_RET_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_RET_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_BRK_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_BRK_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_CONT_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_CONT_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_LONGJMP_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_LONGJMP_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_SSY_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_SSY_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	unsigned int pred_id;
 	unsigned int active, pred;
@@ -1422,32 +1422,32 @@ void frm_isa_SSY_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 			active, pred_id, pred);
 }
 
-void frm_isa_PBK_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_PBK_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_PCNT_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_PCNT_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_PRET_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_PRET_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_PLONGJMP_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_PLONGJMP_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_BPT_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_BPT_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_EXIT_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_EXIT_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	unsigned int pred_id;
 	unsigned int active, pred;
@@ -1513,11 +1513,11 @@ void frm_isa_EXIT_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 			active, pred_id, pred);
 }
 
-void frm_isa_NOP_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_NOP_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 }
 
-void frm_isa_S2R_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_S2R_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	unsigned int pred_id, dst_id, src_id;
 	unsigned int active, pred, dst, src;
@@ -1559,17 +1559,17 @@ void frm_isa_S2R_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 			pred_id, pred, dst_id, dst, src_id, src);
 }
 
-void frm_isa_B2R_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_B2R_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_LEPC_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_LEPC_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_BAR_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_BAR_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	struct frm_thread_block_t *thread_block;
 	struct frm_warp_t *warp;
@@ -1600,7 +1600,7 @@ void frm_isa_BAR_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 			__FUNCTION__, __LINE__, thread->id);
 }
 
-void frm_isa_VOTE_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
+void frm_isa_VOTE_impl(struct frm_thread_t *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }

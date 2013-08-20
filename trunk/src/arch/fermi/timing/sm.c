@@ -514,7 +514,7 @@ void frm_sm_issue_oldest(struct frm_sm_t *sm,
 			assert(uop);
 
 			/* Only evaluate branch instructions */
-			if (uop->inst.info->fmt) 
+			if (uop->inst.info->category != FrmInstCategoryCtrl)
 			{
 				list_index++;
 				continue;
@@ -577,11 +577,11 @@ void frm_sm_issue_oldest(struct frm_sm_t *sm,
 			assert(uop);
 
 			/* Only evaluate SIMD instructions */
-			if (uop->inst.info->fmt != FRM_FMT_FP_FADD && 
-					uop->inst.info->fmt != FRM_FMT_INT_IMAD && 
-					uop->inst.info->fmt != FRM_FMT_INT_ISCADD && 
-					uop->inst.info->fmt != FRM_FMT_MISC_S2R &&
-					uop->inst.info->fmt != FRM_FMT_CTRL_EXIT)
+			if (uop->inst.info->opcode != FRM_INST_FADD &&
+					uop->inst.info->opcode != FRM_INST_IMAD &&
+					uop->inst.info->opcode != FRM_INST_ISCADD &&
+					uop->inst.info->opcode != FRM_INST_S2R &&
+					uop->inst.info->opcode != FRM_INST_EXIT)
 			{	
 				list_index++;
 				continue;
@@ -647,10 +647,9 @@ void frm_sm_issue_oldest(struct frm_sm_t *sm,
 			assert(uop);
 
 			/* Only evaluate memory instructions */
-			if (uop->inst.info->fmt != FRM_FMT_LDST_LD &&
-					uop->inst.info->fmt != FRM_FMT_LDST_ST
-					&&
-					uop->inst.info->fmt != FRM_FMT_MOV_MOV)
+			if (uop->inst.info->opcode != FRM_INST_LD &&
+					uop->inst.info->opcode != FRM_INST_ST &&
+					uop->inst.info->opcode != FRM_INST_MOV)
 			{	
 				list_index++;
 				continue;
@@ -856,7 +855,7 @@ void frm_sm_issue_first(struct frm_sm_t *sm,
 		/* Determine instruction type.  This simply decodes the 
 		 * instruction type, so that it can be issued to the proper 
 		 * hardware unit.  It is not the full decode stage */
-		switch (uop->inst.info->fmt)
+		switch (uop->inst.info->opcode)
 		{
 
 			///* Scalar ALU or Branch */
@@ -1052,11 +1051,11 @@ void frm_sm_issue_first(struct frm_sm_t *sm,
 			//}
 
 			/* Vector ALU */
-			case FRM_FMT_FP_FADD:
-			case FRM_FMT_INT_IMAD:
-			case FRM_FMT_MOV_MOV:
-			case FRM_FMT_MISC_S2R:
-			case FRM_FMT_CTRL_EXIT:
+			case FRM_INST_FADD:
+			case FRM_INST_IMAD:
+			case FRM_INST_MOV:
+			case FRM_INST_S2R:
+			case FRM_INST_EXIT:
 				{
 					/* Stall if max SIMD instructions already issued */
 					assert(simd_insts_issued <= 
@@ -1104,8 +1103,8 @@ void frm_sm_issue_first(struct frm_sm_t *sm,
 				}
 
 				/* Memory instruction */
-			case FRM_FMT_LDST_LD:
-			case FRM_FMT_LDST_ST:
+			case FRM_INST_LD:
+			case FRM_INST_ST:
 				{
 					/* Stall if max vector memory instructions already 
 					 * issued */

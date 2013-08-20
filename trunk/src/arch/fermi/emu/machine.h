@@ -20,16 +20,16 @@
 #ifndef FERMI_EMU_MACHINE_H
 #define FERMI_EMU_MACHINE_H
 
+#include <lib/class/class.h>
 
 /* List of functions implementing GPU instructions 'amd_inst_XXX_impl' */
-struct frm_inst_t;
-typedef void (*frm_isa_inst_func_t)(struct frm_thread_t *thread, struct frm_inst_t *inst);
+typedef void (*frm_isa_inst_func_t)(struct frm_thread_t *thread, FrmInst *inst);
 extern frm_isa_inst_func_t *frm_isa_inst_func;
 
 /* Declarations of function prototypes implementing Fermi ISA */
-#define DEFINST(_name, _fmt_str, _fmt, _category, _opcode) \
+#define DEFINST(_name, _fmt_str, _category, _opcode) \
         extern void frm_isa_##_name##_impl(struct frm_thread_t *thread, \
-                        struct frm_inst_t *inst);
+                        FrmInst *inst);
 #include <arch/fermi/asm/asm.dat>
 #undef DEFINST
 

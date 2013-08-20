@@ -45,6 +45,8 @@ CLASS(EvgWorkItem)
 CLASS(EvgWavefront)
 
 CLASS(FrmAsm)
+CLASS(FrmInst)
+
 CLASS(FrmEmu)
 CLASS(FrmGpu)
 

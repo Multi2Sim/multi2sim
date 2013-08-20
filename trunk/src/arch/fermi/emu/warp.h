@@ -61,7 +61,7 @@ struct frm_warp_t
 	int inst_size;
 
 	/* Current instructions */
-	struct frm_inst_t inst;
+	FrmInst inst;
 
 	/* Starting/current position in buffer */
 	unsigned long long int *inst_buffer;
