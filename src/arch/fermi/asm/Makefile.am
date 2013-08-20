@@ -4,7 +4,10 @@ libasm_a_SOURCES = \
 	\
 	asm.c \
 	asm.dat \
-	asm.h
+	asm.h \
+	\
+	inst.c \
+	inst.h
 
 INCLUDES = @M2S_INCLUDES@
 

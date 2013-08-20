@@ -61,7 +61,7 @@ struct frm_uop_t
 	struct frm_thread_block_t *thread_block;     /* Work-group it belongs to */
 	struct frm_sm_t *sm; /* Compute unit it belongs to */
 	struct frm_warp_inst_queue_entry_t *warp_inst_queue_entry;  /* IB entry where uop is located */
-	struct frm_inst_t inst;
+	FrmInst inst;
 
 	/* Flags */
 	unsigned int ready : 1;

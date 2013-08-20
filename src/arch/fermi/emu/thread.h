@@ -62,7 +62,7 @@ struct frm_thread_t
 
 	/* Thread state */
 	struct frm_reg_t gpr[128];  /* General purpose registers */
-	struct frm_reg_t sr[FRM_SR_COUNT];  /* Special registers */
+	struct frm_reg_t sr[FrmInstSRegCount];  /* Special registers */
 	unsigned int pr[8];  /* Predicate registers */
 
 	/* Linked list of write tasks. They are enqueued by machine instructions

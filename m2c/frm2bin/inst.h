@@ -28,7 +28,7 @@
 struct frm2bin_inst_t
 {
 	/* si use: si_inst_opcode_t, frm use: frm_inst_enum, see asm.h */
-	enum frm_inst_enum opcode;
+	FrmInstOpcode opcode;
 	struct frm2bin_inst_info_t *info;
 	struct list_t *arg_list;
 	/* modifier list */
@@ -36,7 +36,7 @@ struct frm2bin_inst_t
 	int pred_num;		/* predicate number */
 
 	/* Instruction bytes generated */
-	union frm_inst_dword_t inst_bytes;
+	FrmInstBytes inst_bytes;
 
 	/* address of current instruction */
 	long long int addr;

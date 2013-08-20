@@ -351,7 +351,7 @@ struct frm2bin_inst_t *frm2bin_inst_create(struct frm2bin_pred_t *pred, char *na
 
 	/* Initialize opcode */
 	inst->info = info;
-	inst->opcode = info->inst_info->opcode;
+	inst->opcode = info->inst_info->op;
 
 	free(inst_name);
 
@@ -433,7 +433,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 {
 	/* Fermi uses frm_inst_dword_t inst_bytes it's different from
 	 * southern-island */
-	union frm_inst_dword_t *inst_bytes;
+	FrmInstBytes *inst_bytes;
 
 	struct frm_inst_info_t *inst_info;
 	struct frm2bin_inst_info_t *info;
@@ -459,12 +459,12 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 	inst->size = inst_info->size;
 
 	/* Instruction opcode */
-	switch (inst_info->fmt)
+	switch (inst_info->opcode)
 	{
 
 		/* encoding in [31:26], op in [18:16] */
 
-	case FRM_FMT_FP_FFMA:
+	case FRM_INST_FFMA:
 
 		/* [3:0]: 0000 */
 		inst_bytes->general0.op0 = 0x0;
@@ -499,7 +499,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 
 
 		/* encoding in [:], op in [] */
-	case FRM_FMT_FP_FADD:
+	case FRM_INST_FADD:
 
 		inst_bytes->general0.op0 = 0x0;
 		/* [4] = 0, default value for other bits */
@@ -586,7 +586,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 	*/
 	
 
-	case FRM_FMT_FP_DADD:
+	case FRM_INST_DADD:
 
 		/* [3:0]: 0001 */
 		inst_bytes->general0.op0 = 0x1;
@@ -618,7 +618,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 
 		break;
 
-	case FRM_FMT_FP_DMUL:
+	case FRM_INST_DMUL:
 
 		/* [3:0]: 0001 */
 		inst_bytes->general0.op0 = 0x1;
@@ -650,7 +650,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 
 		break;
 
-	case FRM_FMT_FP_DMNMX:
+	case FRM_INST_DMNMX:
 
 		/* [3:0]: 0001 */
 		inst_bytes->general0.op0 = 0x1;
@@ -682,7 +682,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 
 		break;
 
-	case FRM_FMT_FP_DSETP:
+	case FRM_INST_DSETP:
 
 		/* [3:0]: 0001 */
 		inst_bytes->general0.op0 = 0x1;
@@ -716,7 +716,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 
 
 		/* encoding in [31], op in [30:25] */
-	case FRM_FMT_INT_IMAD:
+	case FRM_INST_IMAD:
 
 		inst_bytes->general0.op0 = 0x3;
 		/* [4] = 0, others are default value */
@@ -741,7 +741,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 
 		break;
 
-	case FRM_FMT_INT_IMUL:
+	case FRM_INST_IMUL:
 
 		/* [3:0]: 0011 */
 		inst_bytes->general0.op0 = 0x3;
@@ -774,7 +774,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 		break;
 
 
-	case FRM_FMT_INT_IADD:
+	case FRM_INST_IADD:
 
 		/* [3:0]: 0011 */
 		inst_bytes->general0.op0 = 0x3;
@@ -816,7 +816,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 
 		break;
 
-	case FRM_FMT_INT_IADD32I:
+	case FRM_INST_IADD32I:
 
 		/* [3:0]: 0010 */
 		inst_bytes->imm.op0 = 0x2;
@@ -843,7 +843,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 
 		break;
 
-	case FRM_FMT_INT_ISCADD:
+	case FRM_INST_ISCADD:
 
 		inst_bytes->general0.op0 = 0x3;
 		/* [4] = 0 */
@@ -867,7 +867,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 
 		break;
 
-	case FRM_FMT_INT_BFE:
+	case FRM_INST_BFE:
 
 		/* [3:0]: 0011 */
 		inst_bytes->general0.op0 = 0x3;
@@ -906,7 +906,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 	//	/* No opcode: only 1 instruction */
 	//	break;
 
-	case FRM_FMT_INT_SHR:
+	case FRM_INST_SHR:
 
 		/* [3:0]: 0011 */
 		inst_bytes->general0.op0 = 0x3;
@@ -939,7 +939,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 
 		break;
 
-	case FRM_FMT_INT_SHL:
+	case FRM_INST_SHL:
 
 		/* [3:0]: 0011 */
 		inst_bytes->general0.op0 = 0x3;
@@ -996,7 +996,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 	//	/* No opcode: only 1 instruction */
 	//	break;
 
-	case FRM_FMT_INT_ISETP:
+	case FRM_INST_ISETP:
 		
 		inst_bytes->general1.op0 = 0x3;
 		/* bit [4] = 0, [9:6] = 0, others default */
@@ -1029,7 +1029,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 //		/* No opcode: only 1 instruction */
 //		break;
 //
-	case FRM_FMT_CONV_I2F:
+	case FRM_INST_I2F:
 
 		/* [3:0]: 0100 */
 		inst_bytes->general0.op0 = 0x4;
@@ -1077,7 +1077,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 //		/* No opcode: only 1 instruction */
 //		break;
 
-	case FRM_FMT_MOV_MOV:
+	case FRM_INST_MOV:
 
 		inst_bytes->general0.op0 = 0x4;
 		inst_bytes->general0.op1 = 0xa;
@@ -1096,7 +1096,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 
 		break;
 
-	case FRM_FMT_MOV_MOV32I:
+	case FRM_INST_MOV32I:
 
 		/* [3:0]: 0010 */
 		inst_bytes->imm.op0 = 0x2;
@@ -1123,7 +1123,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 
 		break;
 
-	case FRM_FMT_MOV_SEL:
+	case FRM_INST_SEL:
 
 		/* [3:0]: 0100 */
 		inst_bytes->general0.op0 = 0x4;
@@ -1165,7 +1165,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 
 		break;
 
-	case FRM_FMT_LDST_LD:
+	case FRM_INST_LD:
 
 		/* use offset format */
 		inst_bytes->offs.op0 = 0x5;
@@ -1188,7 +1188,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 		}
 		break;
 
-	case FRM_FMT_LDST_LDL:
+	case FRM_INST_LDL:
 
 		/* [3:0]: 0101 */
 		inst_bytes->offs.op0 = 0x5;
@@ -1215,7 +1215,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 
 		break;
 
-	case FRM_FMT_LDST_LDS:
+	case FRM_INST_LDS:
 
 		/* [3:0]: 0101 */
 		inst_bytes->offs.op0 = 0x5;
@@ -1242,7 +1242,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 
 		break;
 
-	case FRM_FMT_LDST_ST:
+	case FRM_INST_ST:
 
 		inst_bytes->offs.op0 = 0x5;
 		/* [4]=0, others default */
@@ -1265,7 +1265,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 		/* No opcode: only 1 instruction */
 		break;
 
-	case FRM_FMT_LDST_STL:
+	case FRM_INST_STL:
 
 		inst_bytes->offs.op0 = 0x5;
 		/* [4]=0, others default */
@@ -1288,7 +1288,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 		/* No opcode: only 1 instruction */
 		break;
 
-	case FRM_FMT_LDST_STS:
+	case FRM_INST_STS:
 
 		/* [3:0]: 0101 */
 		inst_bytes->offs.op0 = 0x5;
@@ -1315,7 +1315,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 
 		break;
 
-	case FRM_FMT_CTRL_BRA:
+	case FRM_INST_BRA:
 
 		/* [3:0]: 0111 */
 		inst_bytes->tgt.op0 = 0x7;
@@ -1365,7 +1365,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 
 		break;
 
-	case FRM_FMT_CTRL_CAL:
+	case FRM_INST_CAL:
 
 		/* [3:0]: 0111 */
 		inst_bytes->tgt.op0 = 0x7;
@@ -1415,7 +1415,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 
 		break;
 
-	case FRM_FMT_CTRL_RET:
+	case FRM_INST_RET:
 
 		/* [3:0]: 0111 */
 		inst_bytes->general0.op0 = 0x7;
@@ -1457,7 +1457,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 
 		break;
 
-	case FRM_FMT_CTRL_CONT:
+	case FRM_INST_CONT:
 
 		/* [3:0]: 0111 */
 		inst_bytes->general0.op0 = 0x7;
@@ -1499,7 +1499,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 
 		break;
 
-	case FRM_FMT_CTRL_EXIT:
+	case FRM_INST_EXIT:
 
 		inst_bytes->general0.op0 = 0x7;
 		inst_bytes->general0.mod0 = 0x1e;
@@ -1524,7 +1524,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 
 		break;
 
-	case FRM_FMT_CTRL_SSY:
+	case FRM_INST_SSY:
 
 		/* [3:0]: 0111 */
 		inst_bytes->tgt.op0 = 0x7;
@@ -1567,7 +1567,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 
 		break;
 
-	case FRM_FMT_CTRL_PBK:
+	case FRM_INST_PBK:
 
 		/* [3:0]: 0111 */
 		inst_bytes->tgt.op0 = 0x7;
@@ -1610,7 +1610,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 
 		break;
 
-	case FRM_FMT_CTRL_PCNT:
+	case FRM_INST_PCNT:
 
 		/* [3:0]: 0111 */
 		inst_bytes->tgt.op0 = 0x7;
@@ -1657,7 +1657,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 
 		break;
 
-	case FRM_FMT_MISC_NOP:
+	case FRM_INST_NOP:
 
 		/* [3:0]: 0100 */
 		inst_bytes->offs.op0 = 0x4;
@@ -1693,7 +1693,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 
 		break;
 
-	case FRM_FMT_MISC_S2R:
+	case FRM_INST_S2R:
 
 		inst_bytes->general0.op0 = 0x4;
 		inst_bytes->general0.mod0 = 0x0;
@@ -1716,7 +1716,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 
 		break;
 
-	case FRM_FMT_MISC_BAR:
+	case FRM_INST_BAR:
 
 		/* [3:0]: 0100 */
 		inst_bytes->general0.op0 = 0x4;
