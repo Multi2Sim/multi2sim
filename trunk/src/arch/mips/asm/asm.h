@@ -32,46 +32,10 @@
 #include "inst.h"
 
 
-/* 
- * Mips Disassembler
+
+/*
+ * Public
  */
-
-void mips_asm_init();
-void mips_asm_done();
-void mips_emu_disasm(char *path);
-
-/* Pointers to the tables of instructions */
-extern struct mips_inst_info_t *mips_asm_table;
-extern struct mips_inst_info_t *mips_asm_table_special;
-extern struct mips_inst_info_t *mips_asm_table_special_movci;
-extern struct mips_inst_info_t *mips_asm_table_special_srl;
-extern struct mips_inst_info_t *mips_asm_table_special_srlv;
-
-extern struct mips_inst_info_t *mips_asm_table_regimm;
-
-extern struct mips_inst_info_t *mips_asm_table_cop0;
-extern struct mips_inst_info_t *mips_asm_table_cop0_c0;
-extern struct mips_inst_info_t *mips_asm_table_cop0_notc0;
-extern struct mips_inst_info_t *mips_asm_table_cop0_notc0_mfmc0;
-
-extern struct mips_inst_info_t *mips_asm_table_cop1;
-extern struct mips_inst_info_t *mips_asm_table_cop1_bc1;
-extern struct mips_inst_info_t *mips_asm_table_cop1_s;
-extern struct mips_inst_info_t *mips_asm_table_cop1_s_movcf;
-extern struct mips_inst_info_t *mips_asm_table_cop1_d;
-extern struct mips_inst_info_t *mips_asm_table_cop1_d_movcf;
-extern struct mips_inst_info_t *mips_asm_table_cop1_w;
-extern struct mips_inst_info_t *mips_asm_table_cop1_l;
-extern struct mips_inst_info_t *mips_asm_table_cop1_ps;
-
-extern struct mips_inst_info_t *mips_asm_table_cop2;
-extern struct mips_inst_info_t *mips_asm_table_cop2_bc2;
-
-extern struct mips_inst_info_t *mips_asm_table_special2;
-
-extern struct mips_inst_info_t *mips_asm_table_special3;
-extern struct mips_inst_info_t *mips_asm_table_special3_bshfl;
-
 
 struct mips_inst_info_t
 {
@@ -82,11 +46,7 @@ struct mips_inst_info_t
 	int next_table_low;
 	int next_table_high;
 	struct mips_inst_info_t *next_table;
-
 };
-
-
-void mips_disasm(unsigned int buf, unsigned int ip, volatile MIPSInst *inst);
 
 
 
@@ -96,10 +56,45 @@ void mips_disasm(unsigned int buf, unsigned int ip, volatile MIPSInst *inst);
 
 CLASS_BEGIN(MIPSAsm, Asm)
 
+	/* Decoding tables */
+	struct mips_inst_info_t *dec_table;
+	struct mips_inst_info_t *dec_table_special;
+	struct mips_inst_info_t *dec_table_special_movci;
+	struct mips_inst_info_t *dec_table_special_srl;
+	struct mips_inst_info_t *dec_table_special_srlv;
+
+	struct mips_inst_info_t *dec_table_regimm;
+
+	struct mips_inst_info_t *dec_table_cop0;
+	struct mips_inst_info_t *dec_table_cop0_c0;
+	struct mips_inst_info_t *dec_table_cop0_notc0;
+	struct mips_inst_info_t *dec_table_cop0_notc0_mfmc0;
+
+	struct mips_inst_info_t *dec_table_cop1;
+	struct mips_inst_info_t *dec_table_cop1_bc1;
+	struct mips_inst_info_t *dec_table_cop1_s;
+	struct mips_inst_info_t *dec_table_cop1_s_movcf;
+	struct mips_inst_info_t *dec_table_cop1_d;
+	struct mips_inst_info_t *dec_table_cop1_d_movcf;
+	struct mips_inst_info_t *dec_table_cop1_w;
+	struct mips_inst_info_t *dec_table_cop1_l;
+	struct mips_inst_info_t *dec_table_cop1_ps;
+
+	struct mips_inst_info_t *dec_table_cop2;
+	struct mips_inst_info_t *dec_table_cop2_bc2;
+
+	struct mips_inst_info_t *dec_table_special2;
+
+	struct mips_inst_info_t *dec_table_special3;
+	struct mips_inst_info_t *dec_table_special3_bshfl;
+
 CLASS_END(MIPSAsm)
 
 void MIPSAsmCreate(MIPSAsm *self);
 void MIPSAsmDestroy(MIPSAsm *self);
+
+void MIPSAsmDisassembleBinary(MIPSAsm *self, char *path);
+
 
 #endif
 

@@ -88,12 +88,13 @@ static struct str_map_t elf_program_header_type_map = {
 	}
 };
 
-static struct mips_ctx_t *mips_ctx_do_create()
+static struct mips_ctx_t *mips_ctx_do_create(MIPSEmu *emu)
 {
 	struct mips_ctx_t *ctx;
 
 	/* Initialize */
 	ctx = xcalloc(1, sizeof(struct mips_ctx_t));
+	ctx->emu = emu;
 	ctx->pid = mips_emu->current_pid++;
 
 	/* Update status so that the context is inserted in the
@@ -104,6 +105,7 @@ static struct mips_ctx_t *mips_ctx_do_create()
 
 	/* Structures */
 	ctx->regs = mips_regs_create();
+	ctx->inst = new(MIPSInst, emu->as);
 
 	/* Return context */
 	return ctx;
@@ -497,12 +499,12 @@ void mips_ctx_loader_load_exe(struct mips_ctx_t *ctx, char *exe)
 	mips_loader_debug("Heap start set to 0x%x\n", mem->heap_break);
 }
 
-struct mips_ctx_t *mips_ctx_create(void)
+struct mips_ctx_t *mips_ctx_create(MIPSEmu *emu)
 {
 	struct mips_ctx_t *ctx;
 
 	mips_ctx_debug("Calling mips_ctx_do_create\n");
-	ctx = mips_ctx_do_create();
+	ctx = mips_ctx_do_create(emu);
 
 	/* Memory */
 	ctx->mem = mem_create();
@@ -576,6 +578,9 @@ void mips_ctx_free(struct mips_ctx_t *ctx)
 	/* Remove context from contexts list and free */
 	MIPSEmuListRemove(mips_emu, mips_emu_list_context, ctx);
 	mips_ctx_debug("context %d freed\n", ctx->pid);
+
+	/* Instruction */
+	delete(ctx->inst);
 
 	free(ctx);
 }
@@ -671,12 +676,13 @@ void mips_ctx_execute(struct mips_ctx_t *ctx)
 	mem->safe = mem_safe_mode;
 
 	/* Disassemble */
-	mips_disasm(*buffer_ptr, (regs->pc), &ctx->inst);
-	if (ctx->inst.info->opcode == MIPSInstOpcodeInvalid)/*&& !spec_mode)*/
-		fatal("0x%x: not supported mips instruction\nOpcode: %x\n",
-			(regs->pc), ctx->inst.bytes.standard.opc);
+	MIPSInstDecode(ctx->inst, regs->pc, buffer_ptr);
+	if (!ctx->inst->info || ctx->inst->info->opcode == MIPSInstOpcodeInvalid)/*&& !spec_mode)*/
+		fatal("0x%x: instruction not implemented\nOpcode: %x\n",
+			(regs->pc), ctx->inst->bytes.standard.opc);
 	else
-		mips_loader_debug("Instruction decoded:%8x - %s\n", ctx->inst.addr, ctx->inst.info->name);
+		mips_loader_debug("Instruction decoded:%8x - %s\n",
+				ctx->inst->addr, ctx->inst->info->name);
 
 	/* Execute instruction */
 	mips_isa_execute_inst(ctx);
@@ -887,7 +893,7 @@ struct mips_ctx_t *mips_ctx_get(int pid)
 	return ctx;
 }
 
-void mips_ctx_load_from_command_line(int argc, char **argv)
+void mips_ctx_load_from_command_line(MIPSEmu *emu, int argc, char **argv)
 {
 	struct mips_ctx_t *ctx;
 
@@ -895,7 +901,7 @@ void mips_ctx_load_from_command_line(int argc, char **argv)
 
 	/* Create context */
 	mips_ctx_debug("Creating context\n");
-	ctx = mips_ctx_create();
+	ctx = mips_ctx_create(emu);
 	mips_ctx_debug("Context Created\n");
 	/* Arguments and environment */
 	mips_ctx_loader_add_args_vector(ctx, argc, argv);

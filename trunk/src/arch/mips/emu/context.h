@@ -31,6 +31,9 @@ extern int mips_ctx_debug_category;
 
 struct mips_ctx_t
 {
+	/* Emulator */
+	MIPSEmu *emu;
+
 	/* Number of extra contexts using this loader */
 	int num_links; //???
 
@@ -86,7 +89,7 @@ struct mips_ctx_t
 	unsigned int n_next_ip;  /* Address for secon-next instruction */
 
 	/* Currently emulated instruction */
-	MIPSInst inst;
+	MIPSInst *inst;
 
 	/* Links to contexts forming a linked list. */
 	struct mips_ctx_t *context_list_next, *context_list_prev;
@@ -156,7 +159,7 @@ enum mips_ctx_status_t
 	mips_ctx_none         = 0x00000
 };
 
-struct mips_ctx_t *mips_ctx_create();
+struct mips_ctx_t *mips_ctx_create(MIPSEmu *emu);
 
 #define mips_loader_debug(...) debug(mips_loader_debug_category, __VA_ARGS__)
 extern int mips_loader_debug_category;
@@ -170,7 +173,7 @@ void mips_ctx_free(struct mips_ctx_t *ctx);
 void mips_ctx_loader_get_full_path(struct mips_ctx_t *ctx, char *file_name, char *full_path, int size);
 void mips_ctx_finish(struct mips_ctx_t *ctx, int status);
 void mips_ctx_finish_group(struct mips_ctx_t *ctx, int status);
-void mips_ctx_load_from_command_line(int argc, char **argv);
+void mips_ctx_load_from_command_line(MIPSEmu *emu, int argc, char **argv);
 void mips_ctx_load_from_ctx_config(struct config_t *config, char *section);
 void mips_ctx_gen_proc_self_maps(struct mips_ctx_t *ctx, char *path);
 

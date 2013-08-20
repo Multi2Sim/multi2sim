@@ -33,12 +33,13 @@
  * Class 'MIPSEmu'
  */
 
-void MIPSEmuCreate(MIPSEmu *self)
+void MIPSEmuCreate(MIPSEmu *self, MIPSAsm *as)
 {
 	/* Parent */
 	EmuCreate(asEmu(self), "MIPS");
 
 	/* Initialize */
+	self->as = as;
 	self->current_pid = 100;
 	pthread_mutex_init(&self->process_events_mutex, NULL);
 
@@ -221,6 +222,7 @@ long long mips_emu_max_time;
 enum arch_sim_kind_t mips_emu_sim_kind = arch_sim_kind_functional;
 
 MIPSEmu *mips_emu;
+MIPSAsm *mips_asm;
 
 
 void mips_emu_init(void)
@@ -230,20 +232,17 @@ void mips_emu_init(void)
 
 	/* Initialization */
 	mips_sys_init();
-	mips_asm_init();
 
 	/* Create emulator */
-	mips_emu = new(MIPSEmu);
+	mips_asm = new(MIPSAsm);
+	mips_emu = new(MIPSEmu, mips_asm);
 }
 
 
 void mips_emu_done(void)
 {
-	/* Free emulator */
 	delete(mips_emu);
-
-	/* Free */
-	mips_asm_done();
+	delete(mips_asm);
 
 	/* End */
 	mips_sys_done();
