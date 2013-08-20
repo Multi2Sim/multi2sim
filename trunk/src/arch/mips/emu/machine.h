@@ -21,11 +21,11 @@
 #define ARCH_MIPS_EMU_MACHINE_H
 
 /* Table of functions implementing the MIPS ISA */
-typedef void (*mips_isa_inst_func_t)(struct mips_ctx_t *ctx);
+typedef void (*mips_isa_inst_func_t)(MIPSContext *ctx);
 
 /* Declarations of function prototypes implementing MIPS ISA */
 #define DEFINST(_name, _fmt_str, _op0, _op1, _op2, _op3) \
-	extern void mips_isa_##_name##_impl(struct mips_ctx_t *ctx);
+	extern void mips_isa_##_name##_impl(MIPSContext *ctx);
 #include <arch/mips/asm/asm.dat>
 #undef DEFINST
 

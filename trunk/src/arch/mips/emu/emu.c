@@ -17,11 +17,14 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <unistd.h>
 
 #include <arch/common/arch.h>
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
+#include <lib/util/debug.h>
 #include <lib/util/misc.h>
+#include <lib/util/string.h>
 #include <mem-system/memory.h>
 
 #include "context.h"
@@ -52,16 +55,16 @@ void MIPSEmuCreate(MIPSEmu *self, MIPSAsm *as)
 
 void MIPSEmuDestroy(MIPSEmu *self)
 {
-	struct mips_ctx_t *ctx;
+	MIPSContext *ctx;
 
 	/* Finish all contexts */
 	for (ctx = self->context_list_head; ctx; ctx = ctx->context_list_next)
-		if (!mips_ctx_get_status(ctx, mips_ctx_finished))
-			mips_ctx_finish(ctx, 0);
+		if (!MIPSContextGetState(ctx, MIPSContextFinished))
+			MIPSContextFinish(ctx, 0);
 
 	/* Free contexts */
 	while (self->context_list_head)
-		mips_ctx_free(self->context_list_head);
+		delete(self->context_list_head);
 
 }
 
@@ -87,7 +90,7 @@ void MIPSEmuDumpSummary(Emu *self, FILE *f)
 
 
 void MIPSEmuListInsertHead(MIPSEmu *self, enum mips_emu_list_kind_t list,
-		struct mips_ctx_t *ctx)
+		MIPSContext *ctx)
 {
 	assert(!MIPSEmuListMember(self, list, ctx));
 	switch (list)
@@ -126,7 +129,7 @@ void MIPSEmuListInsertHead(MIPSEmu *self, enum mips_emu_list_kind_t list,
 
 
 void MIPSEmuListInsertTail(MIPSEmu *self, enum mips_emu_list_kind_t list,
-		struct mips_ctx_t *ctx)
+		MIPSContext *ctx)
 {
 	assert(!MIPSEmuListMember(self, list, ctx));
 	switch (list) {
@@ -141,7 +144,7 @@ void MIPSEmuListInsertTail(MIPSEmu *self, enum mips_emu_list_kind_t list,
 
 
 void MIPSEmuListRemove(MIPSEmu *self, enum mips_emu_list_kind_t list,
-		struct mips_ctx_t *ctx)
+		MIPSContext *ctx)
 {
 	assert(MIPSEmuListMember(self, list, ctx));
 	switch (list) {
@@ -156,7 +159,7 @@ void MIPSEmuListRemove(MIPSEmu *self, enum mips_emu_list_kind_t list,
 
 
 int MIPSEmuListMember(MIPSEmu *self, enum mips_emu_list_kind_t list,
-		struct mips_ctx_t *ctx)
+		MIPSContext *ctx)
 {
 	switch (list) {
 	case mips_emu_list_context: return DOUBLE_LINKED_LIST_MEMBER(self, context, ctx);
@@ -181,15 +184,14 @@ void MIPSEmuProcessEventsSchedule(MIPSEmu *self)
 int MIPSEmuRun(Emu *self)
 {
 	MIPSEmu *emu = asMIPSEmu(self);
-
-	struct mips_ctx_t *ctx;
+	MIPSContext *ctx;
 
 	/* Stop if there is no context running */
 	if (emu->finished_list_count >= emu->context_list_count)
 		return FALSE;
 
 	/* Stop if maximum number of CPU instructions exceeded */
-	if (mips_emu_max_inst && asEmu(mips_emu)->instructions >= mips_emu_max_inst)
+	if (mips_emu_max_inst && asEmu(self)->instructions >= mips_emu_max_inst)
 		esim_finish = esim_finish_mips_max_inst;
 
 	/* Stop if any previous reason met */
@@ -198,21 +200,70 @@ int MIPSEmuRun(Emu *self)
 
 	/* Run an instruction from every running process */
 	for (ctx = emu->running_list_head; ctx; ctx = ctx->running_list_next)
-		mips_ctx_execute(ctx);
+		MIPSContextExecute(ctx);
 
 	/* Free finished contexts */
 	while (emu->finished_list_head)
-		mips_ctx_free(emu->finished_list_head);
+		delete(emu->finished_list_head);
 
 	/* Still running */
 	return TRUE;
 }
 
 
+/* Look for a context matching pid in the list of existing
+ * contexts of the kernel. */
+MIPSContext *MIPSEmuGetContext(MIPSEmu *self, int pid)
+{
+	MIPSContext *context;
+
+	context = self->context_list_head;
+	while (context && context->pid != pid)
+		context = context->context_list_next;
+	return context;
+}
+
+
+void MIPSEmuLoadContextFromCommandLine(MIPSEmu *self, int argc, char **argv)
+{
+	MIPSContext *context;
+
+	char buf[MAX_STRING_SIZE];
+
+	/* Create context */
+	MIPSContextDebug("Creating context\n");
+	context = new(MIPSContext, self);
+	MIPSContextDebug("Context Created\n");
+
+	/* Arguments and environment */
+	MIPSContextAddArgsVector(context, argc, argv);
+	MIPSContextAddEnviron(context, "");
+
+	/* Get current directory */
+	context->cwd = getcwd(buf, sizeof buf);
+	if (!context->cwd)
+		panic("%s: buffer too small", __FUNCTION__);
+
+	/* Redirections */
+	context->cwd = xstrdup(context->cwd);
+	context->stdin_file = xstrdup("");
+	context->stdout_file = xstrdup("");
+
+	/* Load executable */
+	mips_loader_debug("Loading executable\n");
+	MIPSContextLoadExecutable(context, argv[0]);
+}
+
+
+void MIPSEmuLoadContextsFromIniFile(MIPSEmu *self,
+		struct config_t *config, char *section)
+{
+}
+
 
 
 /*
- * Non-Class Stuff
+ * Public
  */
 
 
@@ -220,31 +271,3 @@ long long mips_emu_max_inst;
 long long mips_emu_max_cycles;
 long long mips_emu_max_time;
 enum arch_sim_kind_t mips_emu_sim_kind = arch_sim_kind_functional;
-
-MIPSEmu *mips_emu;
-MIPSAsm *mips_asm;
-
-
-void mips_emu_init(void)
-{
-	/* Classes */
-	CLASS_REGISTER(MIPSEmu);
-
-	/* Initialization */
-	mips_sys_init();
-
-	/* Create emulator */
-	mips_asm = new(MIPSAsm);
-	mips_emu = new(MIPSEmu, mips_asm);
-}
-
-
-void mips_emu_done(void)
-{
-	delete(mips_emu);
-	delete(mips_asm);
-
-	/* End */
-	mips_sys_done();
-}
-

@@ -29,9 +29,13 @@
 
 CLASS_BEGIN(MIPSCpu, Timing)
 
+	/* Emulator */
+	MIPSEmu *emu;
+
 CLASS_END(MIPSCpu)
 
-void MIPSCpuCreate(MIPSCpu *self);
+
+void MIPSCpuCreate(MIPSCpu *self, MIPSEmu *emu);
 void MIPSCpuDestroy(MIPSCpu *self);
 
 void MIPSCpuDump(Object *self, FILE *f);
@@ -46,11 +50,6 @@ int MIPSCpuRun(Timing *self);
  * Public Functions
  */
 
-extern MIPSCpu *mips_cpu;
-
 void mips_cpu_read_config(void);
-
-void mips_cpu_init(void);
-void mips_cpu_done(void);
 
 #endif
