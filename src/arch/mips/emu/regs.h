@@ -48,16 +48,16 @@
 #define MIPS_REG_C_FPC_FIR 		ctx->regs->regs_C.FIR
 
 /* Instruction fields */
-#define RS 					ctx->inst.dword.standard.rs
-#define RD 					ctx->inst.dword.standard.rd
-#define SA 					ctx->inst.dword.standard.sa
-#define OFFSET 				ctx->inst.dword.offset_imm.offset
-#define RT					ctx->inst.dword.standard.rt
-#define IMM					ctx->inst.dword.offset_imm.offset
-#define	FT					ctx->inst.dword.standard.rt
-#define	FS					ctx->inst.dword.standard.rd
-#define	FD					ctx->inst.dword.standard.sa
-#define	TARGET				ctx->inst.dword.target.target
+#define RS 					ctx->inst.bytes.standard.rs
+#define RD 					ctx->inst.bytes.standard.rd
+#define SA 					ctx->inst.bytes.standard.sa
+#define OFFSET 				ctx->inst.bytes.offset_imm.offset
+#define RT					ctx->inst.bytes.standard.rt
+#define IMM					ctx->inst.bytes.offset_imm.offset
+#define	FT					ctx->inst.bytes.standard.rt
+#define	FS					ctx->inst.bytes.standard.rd
+#define	FD					ctx->inst.bytes.standard.sa
+#define	TARGET				ctx->inst.bytes.target.target
 
 extern char *gpr_name[];
 extern char *fpr_name[];
