@@ -46,9 +46,10 @@ static mips_isa_inst_func_t mips_isa_inst_func[MIPSInstOpcodeCount] =
 };
 
 /* FIXME - merge with ctx_execute */
-void mips_isa_execute_inst(struct mips_ctx_t *ctx)
+void mips_isa_execute_inst(MIPSContext *ctx)
 {
-//	struct mips_regs_t *regs = ctx->regs;
+	MIPSEmu *emu = ctx->emu;
+
 	ctx->next_ip = ctx->n_next_ip;
 	ctx->n_next_ip += 4;
 
@@ -56,12 +57,11 @@ void mips_isa_execute_inst(struct mips_ctx_t *ctx)
 	if (debug_status(mips_isa_inst_debug_category))
 	{
 		mips_isa_inst_debug("%d %8lld %x: ", ctx->pid,
-			asEmu(mips_emu)->instructions, ctx->regs->pc);
+				asEmu(emu)->instructions, ctx->regs->pc);
 		MIPSInstDump(ctx->inst, debug_file(mips_isa_inst_debug_category));
 	}
 
 	/* Call instruction emulation function */
-//	regs->pc = regs->pc + ctx->inst->info->size;
 	if (ctx->inst->info->opcode)
 		mips_isa_inst_func[ctx->inst->info->opcode](ctx);
 	/* Statistics */
@@ -99,22 +99,22 @@ void mips_isa_execute_inst(struct mips_ctx_t *ctx)
 #define	FD				ctx->inst->bytes.standard.sa
 #define	TARGET				ctx->inst->bytes.target.target
 
-unsigned int mips_gpr_get_value(struct mips_ctx_t* ctx, unsigned int reg_no)
+unsigned int mips_gpr_get_value(MIPSContext* ctx, unsigned int reg_no)
 {
 	return (ctx->regs->regs_R[reg_no]);
 }
 
-void mips_gpr_set_value(struct mips_ctx_t *ctx, unsigned int reg_no, unsigned int value)
+void mips_gpr_set_value(MIPSContext *ctx, unsigned int reg_no, unsigned int value)
 {
 	ctx->regs->regs_R[reg_no] = (value);
 }
 
-void mips_isa_branch(struct mips_ctx_t *ctx, unsigned int dest)
+void mips_isa_branch(MIPSContext *ctx, unsigned int dest)
 {
 	(ctx->n_next_ip) = dest;
 }
 
-void mips_isa_rel_branch(struct mips_ctx_t *ctx, unsigned int dest)
+void mips_isa_rel_branch(MIPSContext *ctx, unsigned int dest)
 {
 	ctx->n_next_ip = ctx->regs->pc + (dest) + 4;
 }

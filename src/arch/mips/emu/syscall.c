@@ -74,13 +74,13 @@ mips_sys_code_count
 
 /* Forward declarations of system calls */
 #define DEFSYSCALL(name, code) \
-	static int mips_sys_##name##_impl(struct mips_ctx_t *ctx);
+	static int mips_sys_##name##_impl(MIPSContext *ctx);
 #include "syscall.dat"
 #undef DEFSYSCALL
 
 
 /* System call functions */
-static int (*mips_sys_call_func[mips_sys_code_count + 1])(struct mips_ctx_t *ctx) =
+static int (*mips_sys_call_func[mips_sys_code_count + 1])(MIPSContext *ctx) =
 {
 #define DEFSYSCALL(name, code) mips_sys_##name##_impl,
 #include "syscall.dat"
@@ -175,56 +175,12 @@ static struct str_map_t mips_sys_error_code_map =
 	}
 };
 
-void mips_sys_init(void)
-{
-	/* Host constants for 'errno' must match */
-	M2S_HOST_GUEST_MATCH(EPERM, SIM_EPERM);
-	M2S_HOST_GUEST_MATCH(ENOENT, SIM_ENOENT);
-	M2S_HOST_GUEST_MATCH(ESRCH, SIM_ESRCH);
-	M2S_HOST_GUEST_MATCH(EINTR, SIM_EINTR);
-	M2S_HOST_GUEST_MATCH(EIO, SIM_EIO);
-	M2S_HOST_GUEST_MATCH(ENXIO, SIM_ENXIO);
-	M2S_HOST_GUEST_MATCH(E2BIG, SIM_E2BIG);
-	M2S_HOST_GUEST_MATCH(ENOEXEC, SIM_ENOEXEC);
-	M2S_HOST_GUEST_MATCH(EBADF, SIM_EBADF);
-	M2S_HOST_GUEST_MATCH(ECHILD, SIM_ECHILD);
-	M2S_HOST_GUEST_MATCH(EAGAIN, SIM_EAGAIN);
-	M2S_HOST_GUEST_MATCH(ENOMEM, SIM_ENOMEM);
-	M2S_HOST_GUEST_MATCH(EACCES, SIM_EACCES);
-	M2S_HOST_GUEST_MATCH(EFAULT, SIM_EFAULT);
-	M2S_HOST_GUEST_MATCH(ENOTBLK, SIM_ENOTBLK);
-	M2S_HOST_GUEST_MATCH(EBUSY, SIM_EBUSY);
-	M2S_HOST_GUEST_MATCH(EEXIST, SIM_EEXIST);
-	M2S_HOST_GUEST_MATCH(EXDEV, SIM_EXDEV);
-	M2S_HOST_GUEST_MATCH(ENODEV, SIM_ENODEV);
-	M2S_HOST_GUEST_MATCH(ENOTDIR, SIM_ENOTDIR);
-	M2S_HOST_GUEST_MATCH(EISDIR, SIM_EISDIR);
-	M2S_HOST_GUEST_MATCH(EINVAL, SIM_EINVAL);
-	M2S_HOST_GUEST_MATCH(ENFILE, SIM_ENFILE);
-	M2S_HOST_GUEST_MATCH(EMFILE, SIM_EMFILE);
-	M2S_HOST_GUEST_MATCH(ENOTTY, SIM_ENOTTY);
-	M2S_HOST_GUEST_MATCH(ETXTBSY, SIM_ETXTBSY);
-	M2S_HOST_GUEST_MATCH(EFBIG, SIM_EFBIG);
-	M2S_HOST_GUEST_MATCH(ENOSPC, SIM_ENOSPC);
-	M2S_HOST_GUEST_MATCH(ESPIPE, SIM_ESPIPE);
-	M2S_HOST_GUEST_MATCH(EROFS, SIM_EROFS);
-	M2S_HOST_GUEST_MATCH(EMLINK, SIM_EMLINK);
-	M2S_HOST_GUEST_MATCH(EPIPE, SIM_EPIPE);
-	M2S_HOST_GUEST_MATCH(EDOM, SIM_EDOM);
-	M2S_HOST_GUEST_MATCH(ERANGE, SIM_ERANGE);
-}
 
-void mips_sys_done(void)
+void MIPSContextSyscall(MIPSContext *self)
 {
-	/* Print summary
-	if (debug_status(mips_sys_debug_category))
-		mips_sys_dump(debug_file(mips_sys_debug_category));
-	 */}
+	MIPSEmu *emu = self->emu;
 
-
-void mips_sys_call(struct mips_ctx_t *ctx)
-{
-	struct mips_regs_t *regs = ctx->regs;
+	struct mips_regs_t *regs = self->regs;
 
 	int code;
 	int err;
@@ -239,16 +195,16 @@ void mips_sys_call(struct mips_ctx_t *ctx)
 
 	/* Debug */
 	mips_sys_debug("'%s' (code %d, inst %lld, pid %d)\n",
-		mips_sys_call_name[code], code, asEmu(mips_emu)->instructions, ctx->pid);
+		mips_sys_call_name[code], code, asEmu(emu)->instructions, self->pid);
 	mips_isa_call_debug("system call '%s' (code %d, inst %lld, pid %d)\n",
-		mips_sys_call_name[code], code, asEmu(mips_emu)->instructions, ctx->pid);
+		mips_sys_call_name[code], code, asEmu(emu)->instructions, self->pid);
 
 	/* Perform system call */
-	err = mips_sys_call_func[code](ctx);
+	err = mips_sys_call_func[code](self);
 
 	/* Set return value in 'eax', except for 'sigreturn' system call. Also, if the
 	 * context got suspended, the wake up routine will set the return value. */
-	if (code != mips_sys_code_sigreturn && !mips_ctx_get_status(ctx, mips_ctx_suspended))
+	if (code != mips_sys_code_sigreturn && !MIPSContextGetState(self, MIPSContextSuspended))
 		regs->regs_R[2] = err;
 
 	/* Debug */
@@ -264,7 +220,7 @@ void mips_sys_call(struct mips_ctx_t *ctx)
  * System call 'close' (code 2)
  */
 
-static int mips_sys_close_impl(struct mips_ctx_t *ctx)
+static int mips_sys_close_impl(MIPSContext *ctx)
 {
 	struct mips_regs_t *regs = ctx->regs;
 	struct mips_file_desc_t *fd;
@@ -303,8 +259,10 @@ static int mips_sys_close_impl(struct mips_ctx_t *ctx)
  * System call 'read' (code 3)
  */
 
-static int mips_sys_read_impl(struct mips_ctx_t *ctx)
+static int mips_sys_read_impl(MIPSContext *ctx)
 {
+	MIPSEmu *emu = ctx->emu;
+
 	struct mips_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
 
@@ -369,8 +327,8 @@ static int mips_sys_read_impl(struct mips_ctx_t *ctx)
 	mips_sys_debug("  blocking read - process suspended\n");
 	ctx->wakeup_fd = guest_fd;
 	ctx->wakeup_events = 1;  /* POLLIN */
-	mips_ctx_set_status(ctx, mips_ctx_suspended | mips_ctx_read);
-	MIPSEmuProcessEventsSchedule(mips_emu);
+	MIPSContextSetState(ctx, MIPSContextSuspended | MIPSContextRead);
+	MIPSEmuProcessEventsSchedule(emu);
 
 	/* Free allocated buffer. Return value doesn't matter,
 	 * it will be overwritten when context wakes up from blocking call. */
@@ -385,8 +343,10 @@ static int mips_sys_read_impl(struct mips_ctx_t *ctx)
  * System call 'write' (code 4)
  */
 
-static int mips_sys_write_impl(struct mips_ctx_t *ctx)
+static int mips_sys_write_impl(MIPSContext *ctx)
 {
+	MIPSEmu *emu = ctx->emu;
+
 	struct mips_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
 
@@ -446,8 +406,8 @@ static int mips_sys_write_impl(struct mips_ctx_t *ctx)
 	/* Blocking write - suspend thread */
 	mips_sys_debug("  blocking write - process suspended\n");
 	ctx->wakeup_fd = guest_fd;
-	mips_ctx_set_status(ctx, mips_ctx_suspended | mips_ctx_write);
-	MIPSEmuProcessEventsSchedule(mips_emu);
+	MIPSContextSetState(ctx, MIPSContextSuspended | MIPSContextWrite);
+	MIPSEmuProcessEventsSchedule(emu);
 
 	/* Return value doesn't matter here. It will be overwritten when the
 	 * context wakes up after blocking call. */
@@ -484,7 +444,7 @@ static struct str_map_t mips_sys_open_flags_map =
 	}
 };
 
-static int mips_sys_open_impl(struct mips_ctx_t *ctx)
+static int mips_sys_open_impl(MIPSContext *ctx)
 {
 	struct mips_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -511,7 +471,7 @@ static int mips_sys_open_impl(struct mips_ctx_t *ctx)
 	length = mem_read_string(mem, file_name_ptr, sizeof file_name, file_name);
 	if (length >= MAX_PATH_SIZE)
 		fatal("syscall open: maximum path length exceeded");
-	mips_ctx_loader_get_full_path(ctx, file_name, full_path, sizeof full_path);
+	MIPSContextGetFullPath(ctx, file_name, full_path, sizeof full_path);
 	mips_sys_debug("  filename='%s' flags=0x%x, mode=0x%x\n",
 		file_name, flags, mode);
 	mips_sys_debug("  fullpath='%s'\n", full_path);
@@ -525,7 +485,7 @@ static int mips_sys_open_impl(struct mips_ctx_t *ctx)
 		if (!strcmp(full_path, "/proc/self/maps"))
 		{
 			/* Create temporary file and open it. */
-			mips_ctx_gen_proc_self_maps(ctx, temp_path);
+			MIPSContextGenerateProcSelfMaps(ctx, temp_path);
 			host_fd = open(temp_path, flags, mode);
 			assert(host_fd > 0);
 
@@ -563,7 +523,7 @@ static int mips_sys_open_impl(struct mips_ctx_t *ctx)
  * System call 'brk' (code 45)
  */
 
-static int mips_sys_brk_impl(struct mips_ctx_t *ctx)
+static int mips_sys_brk_impl(MIPSContext *ctx)
 {
 	struct mips_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -630,7 +590,7 @@ static int mips_sys_brk_impl(struct mips_ctx_t *ctx)
  * System call 'gettimeofday' (code 78)
  */
 
-static int mips_sys_gettimeofday_impl(struct mips_ctx_t *ctx)
+static int mips_sys_gettimeofday_impl(MIPSContext *ctx)
 {
 	struct mips_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -702,7 +662,7 @@ static struct str_map_t sys_mmap_flags_map =
 	}
 };
 
-static int mips_sys_mmap(struct mips_ctx_t *ctx, unsigned int addr, unsigned int len,
+static int mips_sys_mmap(MIPSContext *ctx, unsigned int addr, unsigned int len,
 	int prot, int flags, int guest_fd, int offset)
 {
 	struct mem_t *mem = ctx->mem;
@@ -809,7 +769,7 @@ static int mips_sys_mmap(struct mips_ctx_t *ctx, unsigned int addr, unsigned int
 	/* Return mapped address */
 	return addr;
 }
-static int mips_sys_mmap_impl(struct mips_ctx_t *ctx)
+static int mips_sys_mmap_impl(MIPSContext *ctx)
 {
 	struct mips_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -856,7 +816,7 @@ static int mips_sys_mmap_impl(struct mips_ctx_t *ctx)
  * System call 'munmap' (code 91)
  */
 
-static int mips_sys_munmap_impl(struct mips_ctx_t *ctx)
+static int mips_sys_munmap_impl(MIPSContext *ctx)
 {
 	struct mips_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -922,7 +882,7 @@ static struct sim_utsname sim_utsname =
 	""
 };
 
-static int mips_sys_uname_impl(struct mips_ctx_t *ctx)
+static int mips_sys_uname_impl(MIPSContext *ctx)
 {
 	struct mips_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -948,7 +908,7 @@ static int mips_sys_uname_impl(struct mips_ctx_t *ctx)
  * System call 'mmap2' (code 192)
  */
 
-//static int mips_sys_mmap2_impl(struct mips_ctx_t *ctx)
+//static int mips_sys_mmap2_impl(MIPSContext *ctx)
 //{
 //	struct mips_regs_t *regs = ctx->regs;
 //
@@ -1055,7 +1015,7 @@ static void mips_sys_stat_host_to_guest(struct sim_stat64_t *guest, struct stat 
  * System call 'fstat64' (code 197)
  */
 
-static int mips_sys_fstat64_impl(struct mips_ctx_t *ctx)
+static int mips_sys_fstat64_impl(MIPSContext *ctx)
 {
 	struct mips_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -1096,7 +1056,7 @@ static int mips_sys_fstat64_impl(struct mips_ctx_t *ctx)
  * System call 'getuid' (code 199)
  */
 
-static int mips_sys_getuid_impl(struct mips_ctx_t *ctx)
+static int mips_sys_getuid_impl(MIPSContext *ctx)
 {
 	return getuid();
 }
@@ -1107,7 +1067,7 @@ static int mips_sys_getuid_impl(struct mips_ctx_t *ctx)
  * System call 'getgid' (code 200)
  */
 
-static int mips_sys_getgid_impl(struct mips_ctx_t *ctx)
+static int mips_sys_getgid_impl(MIPSContext *ctx)
 {
 	return getgid();
 }
@@ -1119,7 +1079,7 @@ static int mips_sys_getgid_impl(struct mips_ctx_t *ctx)
  * System call 'geteuid' (code 201)
  */
 
-static int mips_sys_geteuid_impl(struct mips_ctx_t *ctx)
+static int mips_sys_geteuid_impl(MIPSContext *ctx)
 {
 	return geteuid();
 }
@@ -1131,7 +1091,7 @@ static int mips_sys_geteuid_impl(struct mips_ctx_t *ctx)
  * System call 'getegid' (code 202)
  */
 
-static int mips_sys_getegid_impl(struct mips_ctx_t *ctx)
+static int mips_sys_getegid_impl(MIPSContext *ctx)
 {
 	return getegid();
 }
@@ -1143,7 +1103,7 @@ static int mips_sys_getegid_impl(struct mips_ctx_t *ctx)
  * System call 'exit_group' (code 252)
  */
 
-static int mips_sys_exit_group_impl(struct mips_ctx_t *ctx)
+static int mips_sys_exit_group_impl(MIPSContext *ctx)
 {
 	struct mips_regs_t *regs = ctx->regs;
 
@@ -1154,7 +1114,7 @@ static int mips_sys_exit_group_impl(struct mips_ctx_t *ctx)
 	mips_sys_debug("  status=%d\n", status);
 
 	/* Finish */
-	mips_ctx_finish_group(ctx, status);
+	MIPSContextFinishGroup(ctx, status);
 	return 0;
 }
 
@@ -1162,7 +1122,7 @@ static int mips_sys_exit_group_impl(struct mips_ctx_t *ctx)
  * System call 'set_thread_area' (code 283)
  */
 
-static int mips_sys_set_thread_area_impl(struct mips_ctx_t *ctx)
+static int mips_sys_set_thread_area_impl(MIPSContext *ctx)
 {
 	struct mips_regs_t *regs = ctx->regs;
 //	struct mem_t *mem = ctx->mem;
@@ -1220,7 +1180,7 @@ static int mips_sys_set_thread_area_impl(struct mips_ctx_t *ctx)
  * System call 'writev' (code 146)
  */
 
-static int mips_sys_writev_impl(struct mips_ctx_t *ctx)
+static int mips_sys_writev_impl(MIPSContext *ctx)
 {
 	struct mips_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -1289,7 +1249,7 @@ static int mips_sys_writev_impl(struct mips_ctx_t *ctx)
 }
 
 
-static int mips_sys_getpid_impl(struct mips_ctx_t *ctx)
+static int mips_sys_getpid_impl(MIPSContext *ctx)
 {
 	return ctx->pid;
 }
@@ -1300,11 +1260,12 @@ static int mips_sys_getpid_impl(struct mips_ctx_t *ctx)
  */
 
 #define SYS_NOT_IMPL(NAME) \
-	static int mips_sys_##NAME##_impl(struct mips_ctx_t *ctx) \
+	static int mips_sys_##NAME##_impl(MIPSContext *ctx) \
 	{ \
+		MIPSEmu *emu = ctx->emu; \
 		struct mips_regs_t *regs = ctx->regs; \
 		fatal("%s: system call not implemented (code %d, inst %lld, pid %d).\n%s", \
-			__FUNCTION__, regs->regs_R[2], mips_emu->inst_count, ctx->pid, \
+			__FUNCTION__, regs->regs_R[2], emu->inst_count, ctx->pid, \
 			err_mips_sys_note); \
 		return 0; \
 	}

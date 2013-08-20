@@ -158,6 +158,11 @@ static char m2s_sim_id[10];  /* Pseudo-unique simulation ID (5 alpha-numeric dig
 
 static volatile int m2s_signal_received;  /* Signal received by handler (0 = none */
 
+
+static MIPSAsm *mips_asm;
+static MIPSEmu *mips_emu;
+static MIPSCpu *mips_cpu;
+
 static X86Asm *x86_asm;
 static X86Cpu *x86_cpu;
 
@@ -1647,7 +1652,7 @@ static void m2s_load_programs(int argc, char **argv)
 			break;
 
 		case EM_MIPS:
-			mips_ctx_load_from_command_line(mips_emu, argc - 1, argv + 1);
+			MIPSEmuLoadContextFromCommandLine(mips_emu, argc - 1, argv + 1);
 			break;
 		default:
 			fatal("%s: unsupported ELF architecture", argv[1]);
@@ -1852,6 +1857,9 @@ static void m2s_init(void)
 
 	CLASS_REGISTER(MIPSAsm);
 	CLASS_REGISTER(MIPSInst);
+
+	CLASS_REGISTER(MIPSEmu);
+	CLASS_REGISTER(MIPSContext);
 
 	CLASS_REGISTER(X86Asm);
 	CLASS_REGISTER(X86Inst);
@@ -2105,9 +2113,9 @@ int main(int argc, char **argv)
 			frm_gpu_read_config,
 			frm_gpu_init, frm_gpu_done);
 	arch_mips = arch_register("MIPS", "mips", mips_sim_kind,
-			mips_emu_init, mips_emu_done,
+			NULL, NULL,
 			mips_cpu_read_config,
-			mips_cpu_init, mips_cpu_done);
+			NULL, NULL);
 	arch_southern_islands = arch_register("SouthernIslands", "si", si_sim_kind,
 			NULL, NULL,
 			si_gpu_read_config,
@@ -2149,6 +2157,18 @@ int main(int argc, char **argv)
 	}
 	arch_set_emu(arch_x86, asEmu(x86_emu));
 
+	/* MIPS
+	 * FIXME
+	 */
+	mips_asm = new(MIPSAsm);
+	mips_emu = new(MIPSEmu, mips_asm);
+	if (mips_sim_kind == arch_sim_kind_detailed)
+	{
+		mips_cpu = new(MIPSCpu, mips_emu);
+		arch_set_timing(arch_mips, asTiming(mips_cpu));
+	}
+	arch_set_emu(arch_mips, asEmu(mips_emu));
+
 	/* Southern Islands
 	 * FIXME */
 	si_asm = new(SIAsm);
@@ -2187,6 +2207,10 @@ int main(int argc, char **argv)
 
 	/* Dump statistics summary */
 	m2s_dump_summary(stderr);
+
+	/* MIPS */
+	delete(mips_emu);
+	delete(mips_asm);
 
 	/* Southern Islands */
 	if (si_gpu)
