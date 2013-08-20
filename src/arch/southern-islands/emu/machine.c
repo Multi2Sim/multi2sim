@@ -1335,12 +1335,10 @@ void si_isa_S_SWAPPC_B64_impl(SIWorkItem *work_item,
 	SIInstReg s0_lo;
 	SIInstReg s0_hi;
 
+	/* FIXME: cuurently PC is implemented as 32-bit offset */
 	/* Load operands from registers */
 	s0_lo.as_uint = SIWorkItemReadSReg(work_item, INST.ssrc0);
 	s0_hi.as_uint = SIWorkItemReadSReg(work_item, INST.ssrc0 + 1);
-
-	/* PC is implemented as 32-bit offset */
-	assert(s0_hi.as_uint == 0);
 
 	/* Write the results */
 	SIWorkItemWriteSReg(work_item, INST.sdst, work_item->wavefront->pc + 4);
