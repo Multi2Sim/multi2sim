@@ -87,6 +87,8 @@ void MIPSInstDestroy(MIPSInst *self)
 
 void MIPSInstDecode(MIPSInst *self, unsigned int addr, void *buf)
 {
+	MIPSAsm *as = self->as;
+
 	struct mips_inst_info_t *current_table;
 
 	int current_table_low;
@@ -102,7 +104,7 @@ void MIPSInstDecode(MIPSInst *self, unsigned int addr, void *buf)
 
 	/* We start with the first table mips_asm_table, with the
 	 * opcode field as argument */
-	current_table = mips_asm_table;
+	current_table = as->dec_table;
 	current_table_low = 26;
 	current_table_high = 31;
 	loop_iteration = 0;
@@ -113,17 +115,13 @@ void MIPSInstDecode(MIPSInst *self, unsigned int addr, void *buf)
 	while (1)
 	{
 		if (current_table[table_arg].next_table
-			&& loop_iteration < 4)
+				&& loop_iteration < 4)
 		{
-			current_table_high =
-				current_table[table_arg].next_table_high;
-			current_table_low =
-				current_table[table_arg].next_table_low;
-			current_table =
-				current_table[table_arg].next_table;
-			table_arg =
-				BITS32(self->bytes.word, current_table_high,
-				current_table_low);
+			current_table_high = current_table[table_arg].next_table_high;
+			current_table_low = current_table[table_arg].next_table_low;
+			current_table = current_table[table_arg].next_table;
+			table_arg = BITS32(self->bytes.word, current_table_high,
+					current_table_low);
 			loop_iteration++;
 		}
 		else if (loop_iteration > 4)
@@ -131,8 +129,9 @@ void MIPSInstDecode(MIPSInst *self, unsigned int addr, void *buf)
 			fatal("%s: invalid instruction", __FUNCTION__);
 		}
 		else
+		{
 			break;
-
+		}
 	}
 
 	/* Instruction found */

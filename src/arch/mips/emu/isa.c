@@ -57,15 +57,15 @@ void mips_isa_execute_inst(struct mips_ctx_t *ctx)
 	{
 		mips_isa_inst_debug("%d %8lld %x: ", ctx->pid,
 			asEmu(mips_emu)->instructions, ctx->regs->pc);
-		MIPSInstDump(&ctx->inst, debug_file(mips_isa_inst_debug_category));
+		MIPSInstDump(ctx->inst, debug_file(mips_isa_inst_debug_category));
 	}
 
 	/* Call instruction emulation function */
-//	regs->pc = regs->pc + ctx->inst.info->size;
-	if (ctx->inst.info->opcode)
-		mips_isa_inst_func[ctx->inst.info->opcode](ctx);
+//	regs->pc = regs->pc + ctx->inst->info->size;
+	if (ctx->inst->info->opcode)
+		mips_isa_inst_func[ctx->inst->info->opcode](ctx);
 	/* Statistics */
-	mips_inst_freq[ctx->inst.info->opcode]++;
+	mips_inst_freq[ctx->inst->info->opcode]++;
 
 	/* Debug */
 	mips_isa_inst_debug("\n");
@@ -88,16 +88,16 @@ void mips_isa_execute_inst(struct mips_ctx_t *ctx)
 #define MIPS_REG_C_FPC_FIR 		ctx->regs->regs_C.FIR
 
 /* Instruction fields */
-#define RS 					ctx->inst.bytes.standard.rs
-#define RD 					ctx->inst.bytes.standard.rd
-#define SA 					ctx->inst.bytes.standard.sa
-#define OFFSET 				ctx->inst.bytes.offset_imm.offset
-#define RT					ctx->inst.bytes.standard.rt
-#define IMM					ctx->inst.bytes.offset_imm.offset
-#define	FT					ctx->inst.bytes.standard.rt
-#define	FS					ctx->inst.bytes.standard.rd
-#define	FD					ctx->inst.bytes.standard.sa
-#define	TARGET				ctx->inst.bytes.target.target
+#define RS 				ctx->inst->bytes.standard.rs
+#define RD 				ctx->inst->bytes.standard.rd
+#define SA 				ctx->inst->bytes.standard.sa
+#define OFFSET 				ctx->inst->bytes.offset_imm.offset
+#define RT				ctx->inst->bytes.standard.rt
+#define IMM				ctx->inst->bytes.offset_imm.offset
+#define	FT				ctx->inst->bytes.standard.rt
+#define	FS				ctx->inst->bytes.standard.rd
+#define	FD				ctx->inst->bytes.standard.sa
+#define	TARGET				ctx->inst->bytes.target.target
 
 unsigned int mips_gpr_get_value(struct mips_ctx_t* ctx, unsigned int reg_no)
 {

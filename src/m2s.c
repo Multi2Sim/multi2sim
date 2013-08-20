@@ -69,6 +69,9 @@
 #include <driver/opencl/opencl.h>
 #include <driver/opencl-old/evergreen/opencl.h>
 #include <driver/opengl/opengl.h>
+#include <lib/class/array.h>
+#include <lib/class/elf-reader.h>
+#include <lib/class/list.h>
 #include <lib/class/string.h>
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
@@ -1644,7 +1647,7 @@ static void m2s_load_programs(int argc, char **argv)
 			break;
 
 		case EM_MIPS:
-			mips_ctx_load_from_command_line(argc - 1, argv + 1);
+			mips_ctx_load_from_command_line(mips_emu, argc - 1, argv + 1);
 			break;
 		default:
 			fatal("%s: unsupported ELF architecture", argv[1]);
@@ -1831,7 +1834,13 @@ static void m2s_init(void)
 	unsigned int id;
 
 	/* Classes */
-	
+	CLASS_REGISTER(Array);
+	CLASS_REGISTER(ELFBuffer);
+	CLASS_REGISTER(ELFProgramHeader);
+	CLASS_REGISTER(ELFReader);
+	CLASS_REGISTER(ELFSection);
+	CLASS_REGISTER(ELFSymbol);
+	CLASS_REGISTER(List);
 	CLASS_REGISTER(String);
 
 	CLASS_REGISTER(Asm);
@@ -2004,7 +2013,15 @@ int main(int argc, char **argv)
 
 	/* MIPS disassembler tool */
 	if (*mips_disasm_file_name)
-		mips_emu_disasm(mips_disasm_file_name);
+	{
+		MIPSAsm *as;
+
+		as = new(MIPSAsm);
+		MIPSAsmDisassembleBinary(as, mips_disasm_file_name);
+
+		delete(as);
+		goto end;
+	}
 
 	/* Memory hierarchy visualization tool */
 	if (*visual_file_name)
