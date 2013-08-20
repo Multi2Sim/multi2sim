@@ -232,7 +232,7 @@ void frm_warp_execute(struct frm_warp_t *warp)
 	struct frm_grid_t *grid;
 	struct frm_thread_block_t *thread_block;
 	struct frm_thread_t *thread;
-	struct frm_inst_t *inst;
+	FrmInst *inst;
 
 	int thread_id;
 
@@ -275,7 +275,7 @@ void frm_warp_execute(struct frm_warp_t *warp)
 	for (thread_id = 0; thread_id < warp->thread_count; thread_id++)
 	{
 		thread = warp->threads[thread_id];
-		(*frm_isa_inst_func[inst->info->inst])(thread, inst);
+		(*frm_isa_inst_func[inst->info->opcode])(thread, inst);
 	}
 
 	/* Finish */

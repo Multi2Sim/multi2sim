@@ -252,20 +252,20 @@ static void frm_grid_setup_arrays(struct frm_grid_t *grid)
 			thread->grid = grid;
 
 			/* Save thread IDs in special register R0 */
-			thread->sr[FRM_SR_Tid_X].v.u32 = tid % 
+			thread->sr[FrmInstSRegTidX].v.u32 = tid % 
 				grid->thread_block_size3[0];
-			thread->sr[FRM_SR_Tid_Y].v.u32 = tid / 
+			thread->sr[FrmInstSRegTidY].v.u32 = tid / 
 				grid->thread_block_size3[0];
-			thread->sr[FRM_SR_Tid_Z].v.u32 = tid / 
+			thread->sr[FrmInstSRegTidZ].v.u32 = tid / 
 				(grid->thread_block_size3[0] *
 				 grid->thread_block_size3[1]);
 
 			/* Save thread block IDs in special register R1 */
-			thread->sr[FRM_SR_CTAid_X].v.u32 = bid % 
+			thread->sr[FrmInstSRegCTAidX].v.u32 = bid % 
 				grid->thread_block_count3[0];
-			thread->sr[FRM_SR_CTAid_Y].v.u32 = bid / 
+			thread->sr[FrmInstSRegCTAidY].v.u32 = bid / 
 				grid->thread_block_count3[0];
-			thread->sr[FRM_SR_CTAid_Z].v.u32 = bid / 
+			thread->sr[FrmInstSRegCTAidZ].v.u32 = bid / 
 				(grid->thread_block_count3[0] *
 				 grid->thread_block_count3[1]);
 

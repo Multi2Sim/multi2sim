@@ -48,8 +48,8 @@ void frm2bin_inst_info_init(void)
 	int i;
 
 	/* Initialize hash table with instruction names. */
-	frm2bin_inst_info_table = hash_table_create(FRM_INST_COUNT, 1);
-	for (i = 0; i < FRM_INST_COUNT; i++)
+	frm2bin_inst_info_table = hash_table_create(FrmInstOpcodeCount, 1);
+	for (i = 0; i < FrmInstOpcodeCount; i++)
 	{
 		/* Instruction info from disassembler */
 		inst_info = &frm_inst_info[i];

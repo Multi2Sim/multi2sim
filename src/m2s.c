@@ -33,6 +33,7 @@
 #include <arch/evergreen/timing/gpu.h>
 #include <arch/evergreen/timing/uop.h>
 #include <arch/fermi/asm/asm.h>
+#include <arch/fermi/asm/inst.h>
 #include <arch/fermi/emu/emu.h>
 #include <arch/fermi/emu/isa.h>
 #include <arch/fermi/timing/gpu.h>
@@ -1854,6 +1855,9 @@ static void m2s_init(void)
 
 	CLASS_REGISTER(ARMAsm);
 	CLASS_REGISTER(ARMInst);
+
+	CLASS_REGISTER(FrmAsm);
+	CLASS_REGISTER(FrmInst);
 
 	CLASS_REGISTER(MIPSAsm);
 	CLASS_REGISTER(MIPSInst);

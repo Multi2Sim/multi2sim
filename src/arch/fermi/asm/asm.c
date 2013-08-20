@@ -28,7 +28,7 @@
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
 
-#include "asm.h"  
+#include "asm.h"
 
 
 
@@ -38,7 +38,7 @@
 
  
 /* Table containing information of all instructions */
-struct frm_inst_info_t frm_inst_info[FRM_INST_COUNT];
+struct frm_inst_info_t frm_inst_info[FrmInstOpcodeCount];
 
 /* Pointers to 'frm_inst_info' table indexed by instruction opcode */
 #define FRM_ISNT_INFO_LONG_SIZE 1024
@@ -47,7 +47,7 @@ struct frm_inst_info_t frm_inst_info[FRM_INST_COUNT];
 static struct frm_inst_info_t *frm_inst_info_long[FRM_ISNT_INFO_LONG_SIZE];
 
 /* Table containing names of all special registers */
-static char *frm_sr[FRM_SR_COUNT];
+static char *frm_sr[FrmInstSRegCount];
 
 void frm_disasm_init()
 {
@@ -55,75 +55,74 @@ void frm_disasm_init()
 	int i;
 
 	/* Read information about all instructions */
-#define DEFINST(_name, _fmt_str, _fmt, _category, _opcode) \
+#define DEFINST(_name, _fmt_str, _category, _op) \
 	info = &frm_inst_info[FRM_INST_##_name]; \
-	info->inst = FRM_INST_##_name; \
-	info->category = FRM_INST_CAT_##_category; \
+	info->opcode = FRM_INST_##_name; \
+	info->category = FrmInstCategory##_category; \
 	info->name = #_name; \
 	info->fmt_str = _fmt_str; \
-	info->fmt = FRM_FMT_##_fmt; \
-	info->opcode = _opcode; \
+	info->op = _op; \
 	info->size = 8;
 #include "asm.dat"
 #undef DEFINST
 
-	for (i = 1; i < FRM_INST_COUNT; ++i)
+	for (i = 1; i < FrmInstOpcodeCount; ++i)
 	{
 		info = &frm_inst_info[i];
-		frm_inst_info_long[info->opcode] = info;
+		frm_inst_info_long[info->op] = info;
 	}
 
 	/* Special registers */
-	frm_sr[FRM_SR_Laneld] = "SR_Laneld";
-	frm_sr[FRM_SR_VirtCfg] = "SR_VirtCfg";
-	frm_sr[FRM_SR_VirtId] = "SR_VirtId";
-	frm_sr[FRM_SR_PM0] = "SR_PM0";
-	frm_sr[FRM_SR_PM1] = "SR_PM1";
-	frm_sr[FRM_SR_PM2] = "SR_PM2";
-	frm_sr[FRM_SR_PM3] = "SR_PM3";
-	frm_sr[FRM_SR_PM4] = "SR_PM4";
-	frm_sr[FRM_SR_PM5] = "SR_PM5";
-	frm_sr[FRM_SR_PM6] = "SR_PM6";
-	frm_sr[FRM_SR_PM7] = "SR_PM7";
-	frm_sr[FRM_SR_PRIM_TYPE] = "SR_PRIM_TYPE";
-	frm_sr[FRM_SR_INVOCATION_ID] = "SR_INVOCATION_ID";
-	frm_sr[FRM_SR_Y_DIRECTION] = "SR_Y_DIRECTION";
-	frm_sr[FRM_SR_MACHINE_ID_0] = "SR_MACHINE_ID_0";
-	frm_sr[FRM_SR_MACHINE_ID_1] = "SR_MACHINE_ID_1";
-	frm_sr[FRM_SR_MACHINE_ID_2] = "SR_MACHINE_ID_2";
-	frm_sr[FRM_SR_MACHINE_ID_3] = "SR_MACHINE_ID_3";
-	frm_sr[FRM_SR_AFFINITY] = "SR_AFFINITY";
-	frm_sr[FRM_SR_Tid] = "SR_Tid";
-	frm_sr[FRM_SR_Tid_X] = "SR_Tid_X";
-	frm_sr[FRM_SR_Tid_Y] = "SR_Tid_Y";
-	frm_sr[FRM_SR_Tid_Z] = "SR_Tid_Z";
-	frm_sr[FRM_SR_CTAParam] = "SR_CTAParam";
-	frm_sr[FRM_SR_CTAid_X] = "SR_CTAid_X";
-	frm_sr[FRM_SR_CTAid_Y] = "SR_CTAid_Y";
-	frm_sr[FRM_SR_CTAid_Z] = "SR_CTAid_Z";
-	frm_sr[FRM_SR_NTid] = "SR_NTid";
-	frm_sr[FRM_SR_NTid_X] = "SR_NTid_X";
-	frm_sr[FRM_SR_NTid_Y] = "SR_NTid_Y";
-	frm_sr[FRM_SR_NTid_Z] = "SR_NTid_Z";
-	frm_sr[FRM_SR_GridParam] = "SR_GridParam";
-	frm_sr[FRM_SR_NCTAid_X] = "SR_NCTAid_X";
-	frm_sr[FRM_SR_NCTAid_Y] = "SR_NCTAid_Y";
-	frm_sr[FRM_SR_NCTAid_Z] = "SR_NCTAid_Z";
-	frm_sr[FRM_SR_SWinLo] = "SR_SWinLo";
-	frm_sr[FRM_SR_SWINSZ] = "SR_SWINSZ";
-	frm_sr[FRM_SR_SMemSz] = "SR_SMemSz";
-	frm_sr[FRM_SR_SMemBanks] = "SR_SMemBanks";
-	frm_sr[FRM_SR_LWinLo] = "SR_LWinLo";
-	frm_sr[FRM_SR_LWINSZ] = "SR_LWINSZ";
-	frm_sr[FRM_SR_LMemLoSz] = "SR_LMemLoSz";
-	frm_sr[FRM_SR_LMemHiOff] = "SR_LMemHiOff";
-	frm_sr[FRM_SR_EqMask] = "SR_EqMask";
-	frm_sr[FRM_SR_LtMask] = "SR_LtMask";
-	frm_sr[FRM_SR_LeMask] = "SR_LeMask";
-	frm_sr[FRM_SR_GtMask] = "SR_GtMask";
-	frm_sr[FRM_SR_GeMask] = "SR_GeMask";
-	frm_sr[FRM_SR_ClockLo] = "SR_ClockLo";
-	frm_sr[FRM_SR_ClockHi] = "SR_ClockHi";
+	frm_sr[FrmInstSRegLaneld] = "SR_Laneld";
+	frm_sr[FrmInstSRegVirtCfg] = "SR_VirtCfg";
+	frm_sr[FrmInstSRegVirtId] = "SR_VirtId";
+	frm_sr[FrmInstSRegPM0] = "SR_PM0";
+	frm_sr[FrmInstSRegPM1] = "SR_PM1";
+	frm_sr[FrmInstSRegPM2] = "SR_PM2";
+	frm_sr[FrmInstSRegPM3] = "SR_PM3";
+	frm_sr[FrmInstSRegPM4] = "SR_PM4";
+	frm_sr[FrmInstSRegPM5] = "SR_PM5";
+	frm_sr[FrmInstSRegPM6] = "SR_PM6";
+	frm_sr[FrmInstSRegPM7] = "SR_PM7";
+	frm_sr[FrmInstSRegPrimType] = "SR_PRIM_TYPE";
+	frm_sr[FrmInstSRegInvocationID] = "SR_INVOCATION_ID";
+	frm_sr[FrmInstSRegYDirection] = "SR_Y_DIRECTION";
+	frm_sr[FrmInstSRegMachineID0] = "SR_MACHINE_ID_0";
+	frm_sr[FrmInstSRegMachineID1] = "SR_MACHINE_ID_1";
+	frm_sr[FrmInstSRegMachineID2] = "SR_MACHINE_ID_2";
+	frm_sr[FrmInstSRegMachineID3] = "SR_MACHINE_ID_3";
+	frm_sr[FrmInstSRegAffinity] = "SR_AFFINITY";
+	frm_sr[FrmInstSRegTid] = "SR_Tid";
+	frm_sr[FrmInstSRegTidX] = "SR_Tid_X";
+	frm_sr[FrmInstSRegTidY] = "SR_Tid_Y";
+	frm_sr[FrmInstSRegTidZ] = "SR_Tid_Z";
+	frm_sr[FrmInstSRegCTAParam] = "SR_CTAParam";
+	frm_sr[FrmInstSRegCTAidX] = "SR_CTAid_X";
+	frm_sr[FrmInstSRegCTAidY] = "SR_CTAid_Y";
+	frm_sr[FrmInstSRegCTAidZ] = "SR_CTAid_Z";
+	frm_sr[FrmInstSRegNTid] = "SR_NTid";
+	frm_sr[FrmInstSRegNTidX] = "SR_NTid_X";
+	frm_sr[FrmInstSRegNTidY] = "SR_NTid_Y";
+	frm_sr[FrmInstSRegNTidZ] = "SR_NTid_Z";
+	frm_sr[FrmInstSRegGridParam] = "SR_GridParam";
+	frm_sr[FrmInstSRegNCTAidX] = "SR_NCTAid_X";
+	frm_sr[FrmInstSRegNCTAidY] = "SR_NCTAid_Y";
+	frm_sr[FrmInstSRegNCTAidZ] = "SR_NCTAid_Z";
+	frm_sr[FrmInstSRegSWinLo] = "SR_SWinLo";
+	frm_sr[FrmInstSRegSWINSZ] = "SR_SWINSZ";
+	frm_sr[FrmInstSRegSMemSz] = "SR_SMemSz";
+	frm_sr[FrmInstSRegSMemBanks] = "SR_SMemBanks";
+	frm_sr[FrmInstSRegLWinLo] = "SR_LWinLo";
+	frm_sr[FrmInstSRegLWINSZ] = "SR_LWINSZ";
+	frm_sr[FrmInstSRegLMemLoSz] = "SR_LMemLoSz";
+	frm_sr[FrmInstSRegLMemHiOff] = "SR_LMemHiOff";
+	frm_sr[FrmInstSRegEqMask] = "SR_EqMask";
+	frm_sr[FrmInstSRegLtMask] = "SR_LtMask";
+	frm_sr[FrmInstSRegLeMask] = "SR_LeMask";
+	frm_sr[FrmInstSRegGtMask] = "SR_GtMask";
+	frm_sr[FrmInstSRegGeMask] = "SR_GeMask";
+	frm_sr[FrmInstSRegClockLo] = "SR_ClockLo";
+	frm_sr[FrmInstSRegClockHi] = "SR_ClockHi";
 }
 
 void frm_disasm_done()
@@ -148,7 +147,7 @@ void frm_inst_hex_dump(FILE *f, unsigned char *buf, int inst_index)
  * Decoder
  */
 
-void frm_inst_decode(struct frm_inst_t *inst)
+void frm_inst_decode(FrmInst *inst)
 {
 	unsigned int op;
 
@@ -370,7 +369,7 @@ static int inst_is_token(char *fmt_str, char *token_str, int *len_ptr)
 
 void frm_inst_dump(char *str, int size, void *buf, int inst_index)
 {
-	struct frm_inst_t inst;
+	FrmInst inst;
 	char *fmt_str;
 	char *orig_str;
 	int len;
@@ -1039,3 +1038,16 @@ void frm_disasm_text_section_buffer(struct elf_enc_buffer_t *buffer)
 	}
 }
 
+
+/*
+ * Class 'FrmAsm'
+ */
+
+void FrmAsmCreate(FrmAsm *self)
+{
+}
+
+
+void FrmAsmDestroy(FrmAsm *self)
+{
+}
