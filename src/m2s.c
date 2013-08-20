@@ -37,6 +37,8 @@
 #include <arch/fermi/emu/isa.h>
 #include <arch/fermi/timing/gpu.h>
 #include <arch/kepler/asm/asm.h>
+#include <arch/mips/asm/asm.h>
+#include <arch/mips/asm/inst.h>
 #include <arch/mips/emu/context.h>
 #include <arch/mips/emu/isa.h>
 #include <arch/mips/timing/cpu.h>
@@ -1838,6 +1840,9 @@ static void m2s_init(void)
 
 	CLASS_REGISTER(ARMAsm);
 	CLASS_REGISTER(ARMInst);
+
+	CLASS_REGISTER(MIPSAsm);
+	CLASS_REGISTER(MIPSInst);
 
 	CLASS_REGISTER(X86Asm);
 	CLASS_REGISTER(X86Inst);

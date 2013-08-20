@@ -86,7 +86,7 @@ struct mips_ctx_t
 	unsigned int n_next_ip;  /* Address for secon-next instruction */
 
 	/* Currently emulated instruction */
-	struct mips_inst_t inst;
+	MIPSInst inst;
 
 	/* Links to contexts forming a linked list. */
 	struct mips_ctx_t *context_list_next, *context_list_prev;

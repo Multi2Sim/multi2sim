@@ -672,9 +672,9 @@ void mips_ctx_execute(struct mips_ctx_t *ctx)
 
 	/* Disassemble */
 	mips_disasm(*buffer_ptr, (regs->pc), &ctx->inst);
-	if (ctx->inst.info->opcode == MIPS_INST_NONE)/*&& !spec_mode)*/
+	if (ctx->inst.info->opcode == MIPSInstOpcodeInvalid)/*&& !spec_mode)*/
 		fatal("0x%x: not supported mips instruction\nOpcode: %x\n",
-			(regs->pc), ctx->inst.dword.standard.opc);
+			(regs->pc), ctx->inst.bytes.standard.opc);
 	else
 		mips_loader_debug("Instruction decoded:%8x - %s\n", ctx->inst.addr, ctx->inst.info->name);
 
