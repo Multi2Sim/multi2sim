@@ -39,6 +39,9 @@
 #include <lib/util/list.h>
 #include <lib/util/string.h>
 
+#include <src/arch/common/asm.h>
+#include <src/arch/southern-islands/asm/asm.h>
+
 
 /*
  * Global Variables
@@ -588,6 +591,9 @@ void m2c_init(void)
 	CLASS_REGISTER(ELFWriterSymbol);
 	CLASS_REGISTER(ELFWriterSymbolTable);
 	CLASS_REGISTER(ELFWriter);
+
+	CLASS_REGISTER(Asm);
+	CLASS_REGISTER(SIAsm);
 
 	/* Libraries */
 	debug_init();
