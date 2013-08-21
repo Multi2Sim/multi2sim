@@ -41,7 +41,7 @@
 
 /* Comparison function to sort list */
 
-static int frm_warp_divergence_compare(const void *elem1, const void *elem2)
+static int FrmWarpCompareDivergence(const void *elem1, const void *elem2)
 {
 	const int count1 = * (const int *) elem1;
 	const int count2 = * (const int *) elem2;
@@ -54,9 +54,9 @@ static int frm_warp_divergence_compare(const void *elem1, const void *elem2)
 }
 
 
-static void frm_warp_divergence_dump(struct frm_warp_t *warp, FILE *f)
+static void FrmWarpDumpDivergence(FrmWarp *self, FILE *f)
 {
-	struct frm_thread_t *thread;
+	FrmThread *thread;
 	struct elem_t
 	{
 		int count;  /* 1st field hardcoded for comparison */
@@ -75,9 +75,9 @@ static void frm_warp_divergence_dump(struct frm_warp_t *warp, FILE *f)
 
 	/* Create one 'elem' for each thread with a different branch digest, and
 	 * store it into the hash table and list. */
-	for (i = 0; i < warp->thread_count; i++)
+	for (i = 0; i < self->thread_count; i++)
 	{
-		thread = warp->threads[i];
+		thread = self->threads[i];
 		sprintf(str, "%08x", thread->branch_digest);
 		elem = hash_table_get(ht, str);
 		if (!elem)
@@ -93,7 +93,7 @@ static void frm_warp_divergence_dump(struct frm_warp_t *warp, FILE *f)
 	}
 
 	/* Sort divergence groups as per size */
-	list_sort(list, frm_warp_divergence_compare);
+	list_sort(list, FrmWarpCompareDivergence);
 	fprintf(f, "DivergenceGroups = %d\n", list_count(list));
 
 	/* Dump size of groups with */
@@ -111,16 +111,16 @@ static void frm_warp_divergence_dump(struct frm_warp_t *warp, FILE *f)
 		elem = list_get(list, i);
 		fprintf(f, "DivergenceGroup[%d] =", i);
 
-		for (j = 0; j < warp->thread_count; j++)
+		for (j = 0; j < self->thread_count; j++)
 		{
 			int first, last;
-			first = warp->threads[j]->branch_digest ==
+			first = self->threads[j]->branch_digest ==
 				elem->branch_digest &&
-				(j == 0 || warp->threads[j - 1]->branch_digest
+				(j == 0 || self->threads[j - 1]->branch_digest
 				 != elem->branch_digest);
-			last = warp->threads[j]->branch_digest ==
+			last = self->threads[j]->branch_digest ==
 				elem->branch_digest &&
-				(j == warp->thread_count - 1 || warp->threads[j
+				(j == self->thread_count - 1 || self->threads[j
 				 + 1]->branch_digest != elem->branch_digest);
 			if (first)
 				fprintf(f, " %d", j);
@@ -144,43 +144,36 @@ static void frm_warp_divergence_dump(struct frm_warp_t *warp, FILE *f)
  * Public Functions
  */
 
-
-struct frm_warp_t *frm_warp_create()
+void FrmWarpCreate(FrmWarp *self)
 {
-	struct frm_warp_t *warp;
+	self->reconv_stack.entries[0].active_thread_bitmap = 0xffffffff;
+	self->reconv_stack_top = 0;
+	self->reconv_stack_pushed = 0;
+	self->reconv_stack_popped = 0;
 
-	/* Initialize */
-	warp = xcalloc(1, sizeof(struct frm_warp_t));
-	warp->reconv_stack.entries[0].active_thread_bitmap = 0xffffffff;
-	warp->reconv_stack_top = 0;
-	warp->reconv_stack_pushed = 0;
-	warp->reconv_stack_popped = 0;
 	/* FIXME: Remove once loop state is part of stack */
-	warp->loop_depth = 0;
-	new_static(&warp->inst, FrmInst, frm_asm);
+	self->loop_depth = 0;
 
-	/* Return */
-	return warp;
+	new_static(&self->inst, FrmInst, frm_asm);
 }
 
 
-void frm_warp_free(struct frm_warp_t *warp)
+void FrmWarpDestroy(FrmWarp *self)
 {
 	/* Free warp */
-	free(warp->threads);
-	bit_map_free(warp->pred);
-	delete_static(&warp->inst);
-	free(warp);
+	free(self->threads);
+	bit_map_free(self->pred);
+	delete_static(&self->inst);
 }
 
 
-void frm_warp_dump(struct frm_warp_t *warp, FILE *f)
+void FrmWarpDump(FrmWarp *self, FILE *f)
 {
-	struct frm_grid_t *grid;
-	struct frm_thread_block_t *thread_block;
+	FrmGrid *grid;
+	FrmThreadBlock *thread_block;
 
-	grid = warp->grid;
-	thread_block = warp->thread_block;
+	grid = self->grid;
+	thread_block = self->thread_block;
 
 	if (!f)
 		return;
@@ -188,27 +181,27 @@ void frm_warp_dump(struct frm_warp_t *warp, FILE *f)
 	/* Dump warp statistics in GPU report */
 	fprintf(f, "[ Grid[%d].ThreadBlock[%d].Warp[%d] ]\n\n", 
 			grid->id, thread_block->id,
-			warp->id_in_thread_block);
+			self->id_in_thread_block);
 
-	fprintf(f, "Name = %s\n", warp->name);
-	fprintf(f, "ThreadFirst = %d\n", warp->threads[0]->id_in_warp);
-	fprintf(f, "ThreadLast = %d\n", warp->threads[warp->thread_count - 1]->id_in_warp);
-	fprintf(f, "ThreadCount = %d\n", warp->thread_count);
+	fprintf(f, "Name = %s\n", self->name);
+	fprintf(f, "ThreadFirst = %d\n", self->threads[0]->id_in_warp);
+	fprintf(f, "ThreadLast = %d\n", self->threads[self->thread_count - 1]->id_in_warp);
+	fprintf(f, "ThreadCount = %d\n", self->thread_count);
 	fprintf(f, "\n");
 
-	fprintf(f, "InstCount = %lld\n", warp->inst_count);
+	fprintf(f, "InstCount = %lld\n", self->inst_count);
 	fprintf(f, "GlobalMemInstCount = %lld\n",
-			warp->global_mem_inst_count);
-	fprintf(f, "LocalMemInstCount = %lld\n", warp->local_mem_inst_count);
+			self->global_mem_inst_count);
+	fprintf(f, "LocalMemInstCount = %lld\n", self->local_mem_inst_count);
 	fprintf(f, "\n");
 
-	frm_warp_divergence_dump(warp, f);
+	FrmWarpDumpDivergence(self, f);
 
 	fprintf(f, "\n");
 }
 
 
-void frm_warp_stack_push(struct frm_warp_t *warp)
+void FrmWarpPush(FrmWarp *self)
 {
 //	warp->stack_top++;
 //	warp->active_mask_push++;
@@ -218,7 +211,7 @@ void frm_warp_stack_push(struct frm_warp_t *warp)
 }
 
 
-void frm_warp_stack_pop(struct frm_warp_t *warp, int count)
+void FrmWarpPop(FrmWarp *self, int count)
 {
 //	if (!count)
 //		return;
@@ -229,64 +222,66 @@ void frm_warp_stack_pop(struct frm_warp_t *warp, int count)
 
 
 /* Execute one instruction in the warp */
-void frm_warp_execute(struct frm_warp_t *warp)
+void FrmWarpExecute(FrmWarp *self)
 {
-	struct frm_grid_t *grid;
-	struct frm_thread_block_t *thread_block;
-	struct frm_thread_t *thread;
+	FrmEmu *emu;
+	FrmGrid *grid;
+	FrmThreadBlock *thread_block;
+	FrmThread *thread;
 
 	FrmInst *inst;
 
 	int thread_id;
 
 	/* Get current arch, grid, and thread-block */
-	grid = warp->grid;
-	thread_block = warp->thread_block;
+	grid = self->grid;
+	emu = grid->emu;
+	thread_block = self->thread_block;
 	thread = NULL;
 	inst = NULL;
-	assert(list_index_of(thread_block->finished_warps, warp) == -1);
+	assert(list_index_of(thread_block->finished_warps, self) == -1);
 
 	/* Reset instruction flags */
-	warp->global_mem_write = 0;
-	warp->global_mem_read = 0;
-	warp->local_mem_write = 0;
-	warp->local_mem_read = 0;
-	warp->pred_mask_update = 0;
-	warp->active_mask_update = 0;
-	warp->active_mask_push = 0;
-	warp->active_mask_pop = 0;
-	warp->inst_size = 8;
-	warp->at_barrier = 0;
+	self->global_mem_write = 0;
+	self->global_mem_read = 0;
+	self->local_mem_write = 0;
+	self->local_mem_read = 0;
+	self->pred_mask_update = 0;
+	self->active_mask_update = 0;
+	self->active_mask_push = 0;
+	self->active_mask_pop = 0;
+	self->inst_size = 8;
+	self->at_barrier = 0;
 
 	/* Get instruction */
-	inst = &warp->inst;
-	inst->bytes.word[0] = warp->inst_buffer[warp->pc / warp->inst_size] >> 32;
-	inst->bytes.word[1] = warp->inst_buffer[warp->pc / warp->inst_size];
+	inst = &self->inst;
+	inst->bytes.word[0] = self->inst_buffer[self->pc / self->inst_size] >> 32;
+	inst->bytes.word[1] = self->inst_buffer[self->pc / self->inst_size];
 	frm_isa_debug("%s:%d: warp[%d] executes instruction [0x%x] 0x%0llx\n", 
-			__FUNCTION__, __LINE__, warp->id, warp->pc,
+			__FUNCTION__, __LINE__, self->id, self->pc,
 			inst->bytes.dword);
 
 	/* Decode instruction */
-	FrmInstDecode(inst, warp->pc, &inst->bytes);
+	FrmInstDecode(inst, self->pc, &inst->bytes);
 	if (!inst->info)
 		fatal("%s: unrecognized instruction (%08x %08x)",
 			__FUNCTION__, inst->bytes.word[0], inst->bytes.word[1]);
 
 	/* Execute instruction */
-	for (thread_id = 0; thread_id < warp->thread_count; thread_id++)
+	for (thread_id = 0; thread_id < self->thread_count; thread_id++)
 	{
-		thread = warp->threads[thread_id];
-		(*frm_isa_inst_func[inst->info->opcode])(thread, inst);
+		thread = self->threads[thread_id];
+		emu->inst_func[inst->info->opcode](thread, inst);
 	}
 
 	/* Finish */
-	if (warp->finished)
+	if (self->finished)
 	{
 		/* Check if warp finished kernel execution */
-		assert(list_index_of(thread_block->running_warps, warp) != -1);
-		assert(list_index_of(thread_block->finished_warps, warp) == -1);
-		list_remove(thread_block->running_warps, warp);
-		list_add(thread_block->finished_warps, warp);
+		assert(list_index_of(thread_block->running_warps, self) != -1);
+		assert(list_index_of(thread_block->finished_warps, self) == -1);
+		list_remove(thread_block->running_warps, self);
+		list_add(thread_block->finished_warps, self);
 
 		/* Check if thread block finished kernel execution */
 		if (list_count(thread_block->finished_warps) ==
@@ -303,21 +298,21 @@ void frm_warp_execute(struct frm_warp_t *warp)
 			if (list_count(grid->finished_thread_blocks) == 
 					grid->thread_block_count)
 			{
-				assert(list_index_of(frm_emu->running_grids, grid) != -1);
-				assert(list_index_of(frm_emu->finished_grids, grid) == -1);
-				list_remove(frm_emu->running_grids, grid);
-				list_add(frm_emu->finished_grids, grid);
+				assert(list_index_of(emu->running_grids, grid) != -1);
+				assert(list_index_of(emu->finished_grids, grid) == -1);
+				list_remove(emu->running_grids, grid);
+				list_add(emu->finished_grids, grid);
 			}
 		}
 	}
 
 	/* Increment the PC */
-	warp->pc += warp->inst_size;
+	self->pc += self->inst_size;
 
 	/* Stats */
-	asEmu(frm_emu)->instructions++;
-	warp->emu_inst_count++;
-	warp->inst_count++;
+	asEmu(emu)->instructions++;
+	self->emu_inst_count++;
+	self->inst_count++;
 }
 
 

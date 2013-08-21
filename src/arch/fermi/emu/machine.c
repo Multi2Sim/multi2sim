@@ -39,14 +39,14 @@ char *frm_err_isa_note = "\tThe NVIDIA Fermi SASS instruction set is \n"
 
 
 
-void frm_isa_FFMA_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_FFMA_impl(FrmThread *thread, FrmInst *inst)
 {
 	unsigned int pred_id, dst_id, src1_id, src2_id, src3_id;
 	unsigned int active, pred;
 	float dst, src1, src2, src3;
 
-	struct frm_warp_t *warp;
-        struct frm_reconv_stack_entry_t entry;
+	FrmWarp *warp;
+        FrmWarpReconvStackEntry entry;
 
 	/* Active */
 	warp = thread->warp;
@@ -65,21 +65,21 @@ void frm_isa_FFMA_impl(struct frm_thread_t *thread, FrmInst *inst)
 	{
 		/* Read */
 		src1_id = inst->bytes.general0.src1;
-		src1 = thread->gpr[src1_id].v.f;
+		src1 = thread->gpr[src1_id].f;
 		src2_id = inst->bytes.general0.src2;
 		if (inst->bytes.general0.src2_mod == 0)
-			src2 = thread->gpr[src2_id].v.f;
+			src2 = thread->gpr[src2_id].f;
 		else if (inst->bytes.general0.src2_mod == 1)
 			mem_read(frm_emu->const_mem, src2_id, 4, &src2);
 		src3_id = inst->bytes.general0_mod1_B.src3;
-		src3 = thread->gpr[src3_id].v.f;
+		src3 = thread->gpr[src3_id].f;
 
 		/* Execute */
 		dst = src1 * src2 + src3;
 
 		/* Write */
 		dst_id = inst->bytes.general0.dst;
-		thread->gpr[dst_id].v.f = dst;
+		thread->gpr[dst_id].f = dst;
 	}
 
 	/* Debug */
@@ -91,14 +91,14 @@ void frm_isa_FFMA_impl(struct frm_thread_t *thread, FrmInst *inst)
 			src2_id, src2, src3_id, src3);
 }
 
-void frm_isa_FADD_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_FADD_impl(FrmThread *thread, FrmInst *inst)
 {
 	unsigned int pred_id, dst_id, src1_id, src2_id;
 	unsigned int active, pred;
 	float dst, src1, src2;
 
-	struct frm_warp_t *warp;
-        struct frm_reconv_stack_entry_t entry;
+	FrmWarp *warp;
+        FrmWarpReconvStackEntry entry;
 
 	/* Active */
 	warp = thread->warp;
@@ -118,10 +118,10 @@ void frm_isa_FADD_impl(struct frm_thread_t *thread, FrmInst *inst)
 	{
 		/* Read */
 		src1_id = inst->bytes.general0.src1;
-		src1 = thread->gpr[src1_id].v.f;
+		src1 = thread->gpr[src1_id].f;
 		src2_id = inst->bytes.general0.src2;
 		if (inst->bytes.general0.src2_mod == 0)
-			src2 = thread->gpr[src2_id].v.f;
+			src2 = thread->gpr[src2_id].f;
 		else if (inst->bytes.general0.src2_mod == 1)
 			mem_read(frm_emu->const_mem, src2_id, 4, &src2);
 
@@ -130,7 +130,7 @@ void frm_isa_FADD_impl(struct frm_thread_t *thread, FrmInst *inst)
 
 		/* Write */
 		dst_id = inst->bytes.general0.dst;
-		thread->gpr[dst_id].v.f = dst;
+		thread->gpr[dst_id].f = dst;
 	}
 
 	/* Debug */
@@ -142,15 +142,15 @@ void frm_isa_FADD_impl(struct frm_thread_t *thread, FrmInst *inst)
 			src2_id, src2);
 }
 
-void frm_isa_FADD32I_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_FADD32I_impl(FrmThread *thread, FrmInst *inst)
 {
 	unsigned int pred_id, dst_id, src1_id;
 	unsigned int active, pred;
 	float dst, src1;
-	union value_t imm32;
+	FrmThreadReg imm32;
 
-	struct frm_warp_t *warp;
-        struct frm_reconv_stack_entry_t entry;
+	FrmWarp *warp;
+        FrmWarpReconvStackEntry entry;
 
 	/* Active */
 	warp = thread->warp;
@@ -169,7 +169,7 @@ void frm_isa_FADD32I_impl(struct frm_thread_t *thread, FrmInst *inst)
 	{
 		/* Read */
 		src1_id = inst->bytes.imm.src1;
-		src1 = thread->gpr[src1_id].v.f;
+		src1 = thread->gpr[src1_id].f;
 		imm32.u32 = inst->bytes.imm.imm32;
 
 		/* Execute */
@@ -177,7 +177,7 @@ void frm_isa_FADD32I_impl(struct frm_thread_t *thread, FrmInst *inst)
 
 		/* Write */
 		dst_id = inst->bytes.imm.dst;
-		thread->gpr[dst_id].v.f = dst;
+		thread->gpr[dst_id].f = dst;
 	}
 
 	/* Debug */
@@ -187,19 +187,19 @@ void frm_isa_FADD32I_impl(struct frm_thread_t *thread, FrmInst *inst)
 			pred_id, pred, dst_id, dst, src1_id, src1, imm32.f);
 }
 
-void frm_isa_FCMP_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_FCMP_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_FMUL_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_FMUL_impl(FrmThread *thread, FrmInst *inst)
 {
 	unsigned int pred_id, dst_id, src1_id, src2_id;
 	unsigned int active, pred;
 	float dst, src1, src2;
 
-	struct frm_warp_t *warp;
-        struct frm_reconv_stack_entry_t entry;
+	FrmWarp *warp;
+        FrmWarpReconvStackEntry entry;
 
 	/* Active */
 	warp = thread->warp;
@@ -218,10 +218,10 @@ void frm_isa_FMUL_impl(struct frm_thread_t *thread, FrmInst *inst)
 	{
 		/* Read */
 		src1_id = inst->bytes.general0.src1;
-		src1 = thread->gpr[src1_id].v.f;
+		src1 = thread->gpr[src1_id].f;
 		src2_id = inst->bytes.general0.src2;
 		if (inst->bytes.general0.src2_mod == 0)
-			src2 = thread->gpr[src2_id].v.f;
+			src2 = thread->gpr[src2_id].f;
 		else if (inst->bytes.general0.src2_mod == 1)
 			mem_read(frm_emu->const_mem, src2_id, 4, &src2);
 
@@ -230,7 +230,7 @@ void frm_isa_FMUL_impl(struct frm_thread_t *thread, FrmInst *inst)
 
 		/* Write */
 		dst_id = inst->bytes.general0.dst;
-		thread->gpr[dst_id].v.f = dst;
+		thread->gpr[dst_id].f = dst;
 	}
 
 	/* Debug */
@@ -242,15 +242,15 @@ void frm_isa_FMUL_impl(struct frm_thread_t *thread, FrmInst *inst)
 			src2_id, src2);
 }
 
-void frm_isa_FMUL32I_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_FMUL32I_impl(FrmThread *thread, FrmInst *inst)
 {
 	unsigned int pred_id, dst_id, src1_id;
 	unsigned int active, pred;
 	float dst, src1;
-	union value_t imm32;
+	FrmThreadReg imm32;
 
-	struct frm_warp_t *warp;
-        struct frm_reconv_stack_entry_t entry;
+	FrmWarp *warp;
+        FrmWarpReconvStackEntry entry;
 
 	/* Active */
 	warp = thread->warp;
@@ -269,7 +269,7 @@ void frm_isa_FMUL32I_impl(struct frm_thread_t *thread, FrmInst *inst)
 	{
 		/* Read */
 		src1_id = inst->bytes.imm.src1;
-		src1 = thread->gpr[src1_id].v.f;
+		src1 = thread->gpr[src1_id].f;
 		imm32.u32 = inst->bytes.imm.imm32;
 
 		/* Execute */
@@ -277,7 +277,7 @@ void frm_isa_FMUL32I_impl(struct frm_thread_t *thread, FrmInst *inst)
 
 		/* Write */
 		dst_id = inst->bytes.imm.dst;
-		thread->gpr[dst_id].v.f = dst;
+		thread->gpr[dst_id].f = dst;
 	}
 
 	/* Debug */
@@ -287,74 +287,74 @@ void frm_isa_FMUL32I_impl(struct frm_thread_t *thread, FrmInst *inst)
 			pred_id, pred, dst_id, dst, src1_id, src1, imm32.f);
 }
 
-void frm_isa_FMNMX_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_FMNMX_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_FSWZ_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_FSWZ_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_FSET_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_FSET_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_FSETP_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_FSETP_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_RRO_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_RRO_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_MUFU_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_MUFU_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_DFMA_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_DFMA_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_DADD_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_DADD_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_DMUL_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_DMUL_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_DMNMX_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_DMNMX_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_DSET_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_DSET_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_DSETP_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_DSETP_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_IMAD_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_IMAD_impl(FrmThread *thread, FrmInst *inst)
 {
 	unsigned int pred_id, dst_id, src1_id, src2_id, src3_id;
 	unsigned int active, pred;
 	int dst, src1, src2, src3;
 
-	struct frm_warp_t *warp;
-        struct frm_reconv_stack_entry_t entry;
+	FrmWarp *warp;
+        FrmWarpReconvStackEntry entry;
 
 	/* Active */
 	warp = thread->warp;
@@ -373,21 +373,21 @@ void frm_isa_IMAD_impl(struct frm_thread_t *thread, FrmInst *inst)
 	{
 		/* Read */
 		src1_id = inst->bytes.general0.src1;
-		src1 = thread->gpr[src1_id].v.s32;
+		src1 = thread->gpr[src1_id].s32;
 		src2_id = inst->bytes.general0.src2;
 		if (inst->bytes.general0.src2_mod == 0)
-			src2 = thread->gpr[src2_id].v.s32;
+			src2 = thread->gpr[src2_id].s32;
 		else if (inst->bytes.general0.src2_mod == 1)
 			mem_read(frm_emu->const_mem, src2_id, 4, &src2);
 		src3_id = inst->bytes.general0_mod1_B.src3;
-		src3 = thread->gpr[src3_id].v.s32;
+		src3 = thread->gpr[src3_id].s32;
 
 		/* Execute */
 		dst = src1 * src2 + src3;
 
 		/* Write */
 		dst_id = inst->bytes.general0.dst;
-		thread->gpr[dst_id].v.s32 = dst;
+		thread->gpr[dst_id].s32 = dst;
 	}
 
 	/* Debug */
@@ -399,14 +399,14 @@ void frm_isa_IMAD_impl(struct frm_thread_t *thread, FrmInst *inst)
 			src2_id, src2, src3_id, src3);
 }
 
-void frm_isa_IMUL_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_IMUL_impl(FrmThread *thread, FrmInst *inst)
 {
 	unsigned int pred_id, dst_id, src1_id, src2_id;
 	unsigned int active, pred;
 	int dst, src1, src2;
 
-	struct frm_warp_t *warp;
-        struct frm_reconv_stack_entry_t entry;
+	FrmWarp *warp;
+        FrmWarpReconvStackEntry entry;
 
 	/* Active */
 	warp = thread->warp;
@@ -425,10 +425,10 @@ void frm_isa_IMUL_impl(struct frm_thread_t *thread, FrmInst *inst)
 	{
 		/* Read */
 		src1_id = inst->bytes.general0.src1;
-		src1 = thread->gpr[src1_id].v.s32;
+		src1 = thread->gpr[src1_id].s32;
 		src2_id = inst->bytes.general0.src2;
 		if (inst->bytes.general0.src2_mod == 0)
-			src2 = thread->gpr[src2_id].v.s32;
+			src2 = thread->gpr[src2_id].s32;
 		else if (inst->bytes.general0.src2_mod == 1)
 			mem_read(frm_emu->const_mem, src2_id, 4, &src2);
 
@@ -437,7 +437,7 @@ void frm_isa_IMUL_impl(struct frm_thread_t *thread, FrmInst *inst)
 
 		/* Write */
 		dst_id = inst->bytes.general0.dst;
-		thread->gpr[dst_id].v.s32 = dst;
+		thread->gpr[dst_id].s32 = dst;
 	}
 
 	/* Debug */
@@ -449,14 +449,14 @@ void frm_isa_IMUL_impl(struct frm_thread_t *thread, FrmInst *inst)
 			src2_id, src2);
 }
 
-void frm_isa_IADD_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_IADD_impl(FrmThread *thread, FrmInst *inst)
 {
 	unsigned int pred_id, dst_id, src1_id, src2_id;
 	unsigned int active, pred;
 	int dst, src1, src2;
 
-	struct frm_warp_t *warp;
-        struct frm_reconv_stack_entry_t entry;
+	FrmWarp *warp;
+        FrmWarpReconvStackEntry entry;
 
 	/* Active */
 	warp = thread->warp;
@@ -475,10 +475,10 @@ void frm_isa_IADD_impl(struct frm_thread_t *thread, FrmInst *inst)
 	{
 		/* Read */
 		src1_id = inst->bytes.general0.src1;
-		src1 = thread->gpr[src1_id].v.s32;
+		src1 = thread->gpr[src1_id].s32;
 		src2_id = inst->bytes.general0.src2;
 		if (inst->bytes.general0.src2_mod == 0)
-			src2 = thread->gpr[src2_id].v.s32;
+			src2 = thread->gpr[src2_id].s32;
 		else if (inst->bytes.general0.src2_mod == 1)
 			mem_read(frm_emu->const_mem, src2_id, 4, &src2);
 		else if (inst->bytes.general0.src2_mod >= 2)
@@ -494,7 +494,7 @@ void frm_isa_IADD_impl(struct frm_thread_t *thread, FrmInst *inst)
 
 		/* Write */
 		dst_id = inst->bytes.general0.dst;
-		thread->gpr[dst_id].v.s32 = dst;
+		thread->gpr[dst_id].s32 = dst;
 	}
 
 	/* Debug */
@@ -506,14 +506,14 @@ void frm_isa_IADD_impl(struct frm_thread_t *thread, FrmInst *inst)
 			src2_id, src2);
 }
 
-void frm_isa_IADD32I_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_IADD32I_impl(FrmThread *thread, FrmInst *inst)
 {
 	unsigned int pred_id, dst_id, src1_id;
 	unsigned int active, pred;
 	int dst, src1, imm32;
 
-	struct frm_warp_t *warp;
-        struct frm_reconv_stack_entry_t entry;
+	FrmWarp *warp;
+        FrmWarpReconvStackEntry entry;
 
 	/* Active */
 	warp = thread->warp;
@@ -532,7 +532,7 @@ void frm_isa_IADD32I_impl(struct frm_thread_t *thread, FrmInst *inst)
 	{
 		/* Read */
 		src1_id = inst->bytes.imm.src1;
-		src1 = thread->gpr[src1_id].v.s32;
+		src1 = thread->gpr[src1_id].s32;
 		imm32 = (int)inst->bytes.imm.imm32;
 
 		/* Execute */
@@ -540,7 +540,7 @@ void frm_isa_IADD32I_impl(struct frm_thread_t *thread, FrmInst *inst)
 
 		/* Write */
 		dst_id = inst->bytes.imm.dst;
-		thread->gpr[dst_id].v.s32 = dst;
+		thread->gpr[dst_id].s32 = dst;
 	}
 
 	/* Debug */
@@ -551,15 +551,15 @@ void frm_isa_IADD32I_impl(struct frm_thread_t *thread, FrmInst *inst)
 			pred_id, pred, dst_id, dst, src1_id, src1, imm32);
 }
 
-void frm_isa_ISCADD_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_ISCADD_impl(FrmThread *thread, FrmInst *inst)
 {
 	unsigned int pred_id, dst_id, src1_id, src2_id;
 	unsigned int active, pred;
 	int dst, src1, src2;
 	unsigned int shamt;
 
-	struct frm_warp_t *warp;
-        struct frm_reconv_stack_entry_t entry;
+	FrmWarp *warp;
+        FrmWarpReconvStackEntry entry;
 
 	/* Active */
 	warp = thread->warp;
@@ -578,10 +578,10 @@ void frm_isa_ISCADD_impl(struct frm_thread_t *thread, FrmInst *inst)
 	{
 		/* Read */
 		src1_id = inst->bytes.general0.src1;
-		src1 = thread->gpr[src1_id].v.s32;
+		src1 = thread->gpr[src1_id].s32;
 		src2_id = inst->bytes.general0.src2;
 		if (inst->bytes.general0.src2_mod == 0)
-			src2 = thread->gpr[src2_id].v.s32;
+			src2 = thread->gpr[src2_id].s32;
 		else if (inst->bytes.general0.src2_mod == 1)
 			mem_read(frm_emu->const_mem, src2_id, 4, &src2);
 		else if (inst->bytes.general0.src2_mod >= 2)
@@ -593,7 +593,7 @@ void frm_isa_ISCADD_impl(struct frm_thread_t *thread, FrmInst *inst)
 
 		/* Write */
 		dst_id = inst->bytes.general0.dst;
-		thread->gpr[dst_id].v.s32 = dst;
+		thread->gpr[dst_id].s32 = dst;
 	}
 
 	/* Debug */
@@ -605,35 +605,35 @@ void frm_isa_ISCADD_impl(struct frm_thread_t *thread, FrmInst *inst)
 			src2_id, src2, shamt);
 }
 
-void frm_isa_ISAD_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_ISAD_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_IMNMX_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_IMNMX_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_BFE_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_BFE_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_BFI_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_BFI_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_SHR_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_SHR_impl(FrmThread *thread, FrmInst *inst)
 {
 	unsigned int pred_id, dst_id, src1_id, src2_id;
 	unsigned int active, pred;
 	int dst, src1;
 	unsigned int src2;
 
-	struct frm_warp_t *warp;
-        struct frm_reconv_stack_entry_t entry;
+	FrmWarp *warp;
+        FrmWarpReconvStackEntry entry;
 
 	/* Active */
 	warp = thread->warp;
@@ -652,10 +652,10 @@ void frm_isa_SHR_impl(struct frm_thread_t *thread, FrmInst *inst)
 	{
 		/* Read */
 		src1_id = inst->bytes.general0.src1;
-		src1 = thread->gpr[src1_id].v.s32;
+		src1 = thread->gpr[src1_id].s32;
 		src2_id = inst->bytes.general0.src2;
 		if (inst->bytes.general0.src2_mod == 0)
-			src2 = thread->gpr[src2_id].v.u32;
+			src2 = thread->gpr[src2_id].u32;
 		else if (inst->bytes.general0.src2_mod == 1)
 			mem_read(frm_emu->const_mem, src2_id, 4, &src2);
 		else if (inst->bytes.general0.src2_mod >= 2)
@@ -666,7 +666,7 @@ void frm_isa_SHR_impl(struct frm_thread_t *thread, FrmInst *inst)
 
 		/* Write */
 		dst_id = inst->bytes.general0.dst;
-		thread->gpr[dst_id].v.s32 = dst;
+		thread->gpr[dst_id].s32 = dst;
 	}
 
 	/* Debug */
@@ -678,15 +678,15 @@ void frm_isa_SHR_impl(struct frm_thread_t *thread, FrmInst *inst)
 			src2_id, src2);
 }
 
-void frm_isa_SHL_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_SHL_impl(FrmThread *thread, FrmInst *inst)
 {
 	unsigned int pred_id, dst_id, src1_id, src2_id;
 	unsigned int active, pred;
 	int dst, src1;
 	unsigned int src2;
 
-	struct frm_warp_t *warp;
-        struct frm_reconv_stack_entry_t entry;
+	FrmWarp *warp;
+        FrmWarpReconvStackEntry entry;
 
 	/* Active */
 	warp = thread->warp;
@@ -705,10 +705,10 @@ void frm_isa_SHL_impl(struct frm_thread_t *thread, FrmInst *inst)
 	{
 		/* Read */
 		src1_id = inst->bytes.general0.src1;
-		src1 = thread->gpr[src1_id].v.s32;
+		src1 = thread->gpr[src1_id].s32;
 		src2_id = inst->bytes.general0.src2;
 		if (inst->bytes.general0.src2_mod == 0)
-			src2 = thread->gpr[src2_id].v.u32;
+			src2 = thread->gpr[src2_id].u32;
 		else if (inst->bytes.general0.src2_mod == 1)
 			mem_read(frm_emu->const_mem, src2_id, 4, &src2);
 		else if (inst->bytes.general0.src2_mod >= 2)
@@ -719,7 +719,7 @@ void frm_isa_SHL_impl(struct frm_thread_t *thread, FrmInst *inst)
 
 		/* Write */
 		dst_id = inst->bytes.general0.dst;
-		thread->gpr[dst_id].v.s32 = dst;
+		thread->gpr[dst_id].s32 = dst;
 	}
 
 	/* Debug */
@@ -731,27 +731,27 @@ void frm_isa_SHL_impl(struct frm_thread_t *thread, FrmInst *inst)
 			src2_id, src2);
 }
 
-void frm_isa_LOP_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_LOP_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_LOP32I_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_LOP32I_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_FLO_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_FLO_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_ISET_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_ISET_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_ISETP_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_ISETP_impl(FrmThread *thread, FrmInst *inst)
 {
 	unsigned int pred_id, p_id, q_id, src1_id, src2_id, r_id;
 	unsigned int active, pred, p, q, src1, src2, r;
@@ -760,8 +760,8 @@ void frm_isa_ISETP_impl(struct frm_thread_t *thread, FrmInst *inst)
 	int logic_op;
 	int compare_result;
 
-	struct frm_warp_t *warp;
-        struct frm_reconv_stack_entry_t entry;
+	FrmWarp *warp;
+        FrmWarpReconvStackEntry entry;
 
 	/* Active */
 	warp = thread->warp;
@@ -780,10 +780,10 @@ void frm_isa_ISETP_impl(struct frm_thread_t *thread, FrmInst *inst)
 	{
 		/* Read */
 		src1_id = inst->bytes.general1.src1;
-		src1 = thread->gpr[src1_id].v.s32;
+		src1 = thread->gpr[src1_id].s32;
 		src2_id = inst->bytes.general1.src2;
 		if (inst->bytes.general1.src2_mod == 0)
-			src2 = thread->gpr[src2_id].v.s32;
+			src2 = thread->gpr[src2_id].s32;
 		else if (inst->bytes.general1.src2_mod == 1)
 			mem_read(frm_emu->const_mem, src2_id, 4, &src2);
 		r_id = inst->bytes.general1.R;
@@ -843,44 +843,44 @@ void frm_isa_ISETP_impl(struct frm_thread_t *thread, FrmInst *inst)
 			src2_id, src2, r_id, r);
 }
 
-void frm_isa_ICMP_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_ICMP_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_POPC_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_POPC_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_F2F_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_F2F_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_F2I_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_F2I_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_I2F_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_I2F_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_I2I_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_I2I_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_MOV_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_MOV_impl(FrmThread *thread, FrmInst *inst)
 {
 	unsigned int pred_id, dst_id, src_id;
 	unsigned int active, pred;
 	int dst, src;
 
-	struct frm_warp_t *warp;
-        struct frm_reconv_stack_entry_t entry;
+	FrmWarp *warp;
+        FrmWarpReconvStackEntry entry;
 
 	/* Active */
 	warp = thread->warp;
@@ -900,7 +900,7 @@ void frm_isa_MOV_impl(struct frm_thread_t *thread, FrmInst *inst)
 		/* Read */
 		src_id = inst->bytes.general0.src2;
 		if (inst->bytes.general0.src2_mod == 0)
-			src = thread->gpr[src_id].v.s32;
+			src = thread->gpr[src_id].s32;
 		else if (inst->bytes.general0.src2_mod == 1)
 			mem_read(frm_emu->const_mem, src_id, 4, &src);
 
@@ -909,7 +909,7 @@ void frm_isa_MOV_impl(struct frm_thread_t *thread, FrmInst *inst)
 
 		/* Write */
 		dst_id = inst->bytes.general0.dst;
-		thread->gpr[dst_id].v.s32 = dst;
+		thread->gpr[dst_id].s32 = dst;
 	}
 
 	/* Debug */
@@ -919,14 +919,14 @@ void frm_isa_MOV_impl(struct frm_thread_t *thread, FrmInst *inst)
 			pred_id, pred, dst_id, dst, src_id, src);
 }
 
-void frm_isa_MOV32I_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_MOV32I_impl(FrmThread *thread, FrmInst *inst)
 {
 	unsigned int pred_id, dst_id;
 	unsigned int active, pred;
 	int dst, imm32;
 
-	struct frm_warp_t *warp;
-        struct frm_reconv_stack_entry_t entry;
+	FrmWarp *warp;
+        FrmWarpReconvStackEntry entry;
 
 	/* Active */
 	warp = thread->warp;
@@ -951,7 +951,7 @@ void frm_isa_MOV32I_impl(struct frm_thread_t *thread, FrmInst *inst)
 
 		/* Write */
 		dst_id = inst->bytes.imm.dst;
-		thread->gpr[dst_id].v.u32 = dst;
+		thread->gpr[dst_id].u32 = dst;
 	}
 
 	/* Debug */
@@ -961,78 +961,78 @@ void frm_isa_MOV32I_impl(struct frm_thread_t *thread, FrmInst *inst)
 			pred_id, pred, dst_id, dst, imm32);
 }
 
-void frm_isa_SEL_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_SEL_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_PRMT_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_PRMT_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_P2R_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_P2R_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_R2P_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_R2P_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_CSET_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_CSET_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_CSETP_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_CSETP_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_PSET_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_PSET_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_PSETP_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_PSETP_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_TEX_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_TEX_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_TLD_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_TLD_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_TLD4_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_TLD4_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_TXQ_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_TXQ_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_LDC_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_LDC_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_LD_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_LD_impl(FrmThread *thread, FrmInst *inst)
 {
 	unsigned int pred_id, dst_id, src_id;
 	unsigned int active, pred, dst, addr;
 
-	struct frm_warp_t *warp;
-        struct frm_reconv_stack_entry_t entry;
+	FrmWarp *warp;
+        FrmWarpReconvStackEntry entry;
 
 	/* Active */
 	warp = thread->warp;
@@ -1052,14 +1052,14 @@ void frm_isa_LD_impl(struct frm_thread_t *thread, FrmInst *inst)
 	{
 		/* Read */
 		src_id = inst->bytes.offs.src1;
-		addr = thread->gpr[src_id].v.u32;
+		addr = thread->gpr[src_id].u32;
 
 		/* Execute */
 		mem_read(frm_emu->global_mem, addr, 4, &dst);
 
 		/* Write */
 		dst_id = inst->bytes.offs.dst;
-		thread->gpr[dst_id].v.u32 = dst;
+		thread->gpr[dst_id].u32 = dst;
 	}
 
 	/* Debug */
@@ -1069,23 +1069,23 @@ void frm_isa_LD_impl(struct frm_thread_t *thread, FrmInst *inst)
 			pred_id, pred, dst_id, dst, src_id, addr);
 }
 
-void frm_isa_LDU_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_LDU_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_LDL_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_LDL_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_LDS_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_LDS_impl(FrmThread *thread, FrmInst *inst)
 {
 	unsigned int pred_id, dst_id, src_id;
 	unsigned int active, pred, dst, addr;
 
-	struct frm_warp_t *warp;
-        struct frm_reconv_stack_entry_t entry;
+	FrmWarp *warp;
+        FrmWarpReconvStackEntry entry;
 
 	/* Active */
 	warp = thread->warp;
@@ -1105,14 +1105,14 @@ void frm_isa_LDS_impl(struct frm_thread_t *thread, FrmInst *inst)
 	{
 		/* Read */
 		src_id = inst->bytes.offs.src1;
-		addr = thread->gpr[src_id].v.u32 + inst->bytes.offs.offset;
+		addr = thread->gpr[src_id].u32 + inst->bytes.offs.offset;
 
 		/* Execute */
 		mem_read(thread->thread_block->shared_mem, addr, 4, &dst);
 
 		/* Write */
 		dst_id = inst->bytes.offs.dst;
-		thread->gpr[dst_id].v.u32 = dst;
+		thread->gpr[dst_id].u32 = dst;
 	}
 
 	/* Debug */
@@ -1122,33 +1122,33 @@ void frm_isa_LDS_impl(struct frm_thread_t *thread, FrmInst *inst)
 			pred_id, pred, dst_id, dst, src_id, addr);
 }
 
-void frm_isa_LDLK_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_LDLK_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_LDSLK_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_LDSLK_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_LD_LDU_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_LD_LDU_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_LDS_LDU_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_LDS_LDU_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_ST_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_ST_impl(FrmThread *thread, FrmInst *inst)
 {
 	unsigned int pred_id, value_id, addr_id;
 	unsigned int active, pred, value, addr;
 
-	struct frm_warp_t *warp;
-        struct frm_reconv_stack_entry_t entry;
+	FrmWarp *warp;
+        FrmWarpReconvStackEntry entry;
 
 	/* Active */
 	warp = thread->warp;
@@ -1168,9 +1168,9 @@ void frm_isa_ST_impl(struct frm_thread_t *thread, FrmInst *inst)
 	{
 		/* Read */
 		value_id = inst->bytes.offs.dst;
-		value = thread->gpr[value_id].v.u32;
+		value = thread->gpr[value_id].u32;
 		addr_id = inst->bytes.offs.src1;
-		addr = thread->gpr[addr_id].v.u32;
+		addr = thread->gpr[addr_id].u32;
 
 		/* Execute */
 		mem_write(frm_emu->global_mem, addr, 4, &value);
@@ -1183,23 +1183,23 @@ void frm_isa_ST_impl(struct frm_thread_t *thread, FrmInst *inst)
 			pred_id, pred, value_id, value, addr_id, addr);
 }
 
-void frm_isa_STL_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_STL_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_STUL_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_STUL_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_STS_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_STS_impl(FrmThread *thread, FrmInst *inst)
 {
 	unsigned int pred_id, value_id, addr_id;
 	unsigned int active, pred, value, addr;
 
-	struct frm_warp_t *warp;
-        struct frm_reconv_stack_entry_t entry;
+	FrmWarp *warp;
+        FrmWarpReconvStackEntry entry;
 
 	/* Active */
 	warp = thread->warp;
@@ -1219,9 +1219,9 @@ void frm_isa_STS_impl(struct frm_thread_t *thread, FrmInst *inst)
 	{
 		/* Read */
 		value_id = inst->bytes.offs.dst;
-		value = thread->gpr[value_id].v.u32;
+		value = thread->gpr[value_id].u32;
 		addr_id = inst->bytes.offs.src1;
-		addr = thread->gpr[addr_id].v.u32 + inst->bytes.offs.offset;
+		addr = thread->gpr[addr_id].u32 + inst->bytes.offs.offset;
 
 		/* Execute */
 		mem_write(thread->thread_block->shared_mem, addr, 4, &value);
@@ -1234,68 +1234,68 @@ void frm_isa_STS_impl(struct frm_thread_t *thread, FrmInst *inst)
 			pred_id, pred, value_id, value, addr_id, addr);
 }
 
-void frm_isa_STSUL_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_STSUL_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_ATOM_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_ATOM_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_RED_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_RED_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_CCTL_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_CCTL_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_CCTLL_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_CCTLL_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_MEMBAR_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_MEMBAR_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_SULD_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_SULD_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_SULEA_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_SULEA_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_SUST_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_SUST_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_SURED_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_SURED_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_SUQ_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_SUQ_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_BRA_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_BRA_impl(FrmThread *thread, FrmInst *inst)
 {
 	unsigned int pred_id;
 	unsigned int active, pred, target;
 
-	struct frm_warp_t *warp;
-        struct frm_reconv_stack_entry_t *entry;
+	FrmWarp *warp;
+        FrmWarpReconvStackEntry *entry;
 
 	/* Active */
 	warp = thread->warp;
@@ -1342,58 +1342,58 @@ void frm_isa_BRA_impl(struct frm_thread_t *thread, FrmInst *inst)
 			active, pred_id, pred, target);
 }
 
-void frm_isa_BRX_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_BRX_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_JMP_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_JMP_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_JMX_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_JMX_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_CAL_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_CAL_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_JCAL_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_JCAL_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_RET_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_RET_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_BRK_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_BRK_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_CONT_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_CONT_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_LONGJMP_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_LONGJMP_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_SSY_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_SSY_impl(FrmThread *thread, FrmInst *inst)
 {
 	unsigned int pred_id;
 	unsigned int active, pred;
 
-	struct frm_warp_t *warp;
-	struct frm_reconv_stack_entry_t entry;
+	FrmWarp *warp;
+	FrmWarpReconvStackEntry entry;
 
 	warp = thread->warp;
 
@@ -1422,39 +1422,39 @@ void frm_isa_SSY_impl(struct frm_thread_t *thread, FrmInst *inst)
 			active, pred_id, pred);
 }
 
-void frm_isa_PBK_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_PBK_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_PCNT_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_PCNT_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_PRET_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_PRET_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_PLONGJMP_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_PLONGJMP_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_BPT_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_BPT_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_EXIT_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_EXIT_impl(FrmThread *thread, FrmInst *inst)
 {
 	unsigned int pred_id;
 	unsigned int active, pred;
 
-	struct frm_warp_t *warp;
-	struct frm_reconv_stack_entry_t *entry;
-	struct frm_reconv_stack_entry_t *last_entry;
+	FrmWarp *warp;
+	FrmWarpReconvStackEntry *entry;
+	FrmWarpReconvStackEntry *last_entry;
 	unsigned int *active_thread_bitmap;
 	static int first_time = 1;
 
@@ -1513,17 +1513,17 @@ void frm_isa_EXIT_impl(struct frm_thread_t *thread, FrmInst *inst)
 			active, pred_id, pred);
 }
 
-void frm_isa_NOP_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_NOP_impl(FrmThread *thread, FrmInst *inst)
 {
 }
 
-void frm_isa_S2R_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_S2R_impl(FrmThread *thread, FrmInst *inst)
 {
 	unsigned int pred_id, dst_id, src_id;
 	unsigned int active, pred, dst, src;
 
-	struct frm_warp_t *warp;
-	struct frm_reconv_stack_entry_t entry;
+	FrmWarp *warp;
+	FrmWarpReconvStackEntry entry;
 
 	/* Active */
 	warp = thread->warp;
@@ -1542,14 +1542,14 @@ void frm_isa_S2R_impl(struct frm_thread_t *thread, FrmInst *inst)
 	{
 		/* Read */
 		src_id = inst->bytes.general0.src2 & 0xff;
-		src = thread->sr[src_id].v.u32;
+		src = thread->sr[src_id].u32;
 
 		/* Execute */
 		dst = src;
 
 		/* Write */
 		dst_id = inst->bytes.general0.dst;
-		thread->gpr[dst_id].v.u32 = dst;
+		thread->gpr[dst_id].u32 = dst;
 	}
 
 	/* Debug */
@@ -1559,20 +1559,20 @@ void frm_isa_S2R_impl(struct frm_thread_t *thread, FrmInst *inst)
 			pred_id, pred, dst_id, dst, src_id, src);
 }
 
-void frm_isa_B2R_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_B2R_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_LEPC_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_LEPC_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_BAR_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_BAR_impl(FrmThread *thread, FrmInst *inst)
 {
-	struct frm_thread_block_t *thread_block;
-	struct frm_warp_t *warp;
+	FrmThreadBlock *thread_block;
+	FrmWarp *warp;
 
 	int warp_id;
 
@@ -1600,7 +1600,7 @@ void frm_isa_BAR_impl(struct frm_thread_t *thread, FrmInst *inst)
 			__FUNCTION__, __LINE__, thread->id);
 }
 
-void frm_isa_VOTE_impl(struct frm_thread_t *thread, FrmInst *inst)
+void frm_isa_VOTE_impl(FrmThread *thread, FrmInst *inst)
 {
 	__NOT_IMPL__
 }

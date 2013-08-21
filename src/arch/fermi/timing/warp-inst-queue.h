@@ -28,7 +28,7 @@ struct frm_warp_inst_queue_entry_t
 	int id_in_warp_inst_queue;
 	struct frm_warp_inst_queue_t *warp_inst_queue;
 
-	struct frm_warp_t *warp;
+	FrmWarp *warp;
 	long long int cycle_fetched;
 	struct frm_uop_t *uop;
 

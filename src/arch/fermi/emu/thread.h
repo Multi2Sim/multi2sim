@@ -23,19 +23,19 @@
 #include <arch/fermi/asm/asm.h>
 
 
+/*
+ * Class 'FrmThread'
+ */
+
 #define FRM_MAX_LOCAL_MEM_ACCESSES_PER_INST  2
 
-union value_t
+typedef union
 {
 	unsigned int u32;
 	int s32;
 	float f;
-};
+} FrmThreadReg;
 
-struct frm_reg_t
-{
-	union value_t v;
-};
 
 struct frm_mem_access_t
 {
@@ -44,8 +44,9 @@ struct frm_mem_access_t
 	int size;
 };
 
-struct frm_thread_t
-{
+
+CLASS_BEGIN(FrmThread, Object)
+
 	/* IDs */
 	int id;
 	int id_in_warp;
@@ -56,13 +57,13 @@ struct frm_thread_t
 	int id_in_thread_block_3d[3];  /* local 3D IDs */
 
 	/* Warp, thread_block, and grid where it belongs */
-	struct frm_warp_t *warp;
-	struct frm_thread_block_t *thread_block;
-	struct frm_grid_t *grid;
+	FrmWarp *warp;
+	FrmThreadBlock *thread_block;
+	FrmGrid *grid;
 
 	/* Thread state */
-	struct frm_reg_t gpr[128];  /* General purpose registers */
-	struct frm_reg_t sr[FrmInstSRegCount];  /* Special registers */
+	FrmThreadReg gpr[128];  /* General purpose registers */
+	FrmThreadReg sr[FrmInstSRegCount];  /* Special registers */
 	unsigned int pr[8];  /* Predicate registers */
 
 	/* Linked list of write tasks. They are enqueued by machine instructions
@@ -89,7 +90,9 @@ struct frm_thread_t
 	unsigned int lds_access_addr[FRM_MAX_LOCAL_MEM_ACCESSES_PER_INST];
 	unsigned int lds_access_size[FRM_MAX_LOCAL_MEM_ACCESSES_PER_INST];
 	int lds_access_type[FRM_MAX_LOCAL_MEM_ACCESSES_PER_INST];  /* 0-none, 1-read, 2-write */
-};
+
+CLASS_END(FrmThread)
+
 
 #define FRM_FOREACH_THREAD_IN_GRID(GRID, THREAD_ID) \
 	for ((THREAD_ID) = (GRID)->thread_id_first; \
@@ -103,13 +106,18 @@ struct frm_thread_t
 	for ((THREAD_ID) = (WARP)->thread_id_first; \
 		(THREAD_ID) <= (WARP)->thread_id_last; \
 		(THREAD_ID)++)
-struct frm_thread_t *frm_thread_create(void);
-void frm_thread_free(struct frm_thread_t *thread);
-int frm_thread_get_active(struct frm_thread_t *thread);
-void frm_thread_set_active(struct frm_thread_t *thread, int active);
-int frm_thread_get_pred(struct frm_thread_t *thread);
-void frm_thread_set_pred(struct frm_thread_t *thread, int pred);
-void frm_thread_update_branch_digest(struct frm_thread_t *thread,
+
+
+void FrmThreadCreate(FrmThread *self);
+void FrmThreadDestroy(FrmThread *self);
+
+int FrmThreadGetActive(FrmThread *self);
+void FrmThreadSetActive(FrmThread *self, int active);
+
+int FrmThreadGetPred(FrmThread *self);
+void FrmThreadSetPred(FrmThread *self, int pred);
+
+void FrmThreadUpdateBranchDigest(FrmThread *self,
 	long long inst_count, unsigned int inst_addr);
 
 

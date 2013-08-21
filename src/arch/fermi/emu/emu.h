@@ -23,13 +23,21 @@
 #include <stdio.h>
 
 #include <arch/common/emu.h>
+#include <arch/fermi/asm/inst.h>
 
 
 /*
  * Class 'FrmEmu'
  */
 
+/* Function implementing an ISA instruction */
+typedef void (*FrmEmuInstFunc)(FrmThread *thread, FrmInst *inst);
+
+
 CLASS_BEGIN(FrmEmu, Emu)
+
+	/* Disassembler */
+	FrmAsm *as;
 	
 	/* List of grids */
 	struct list_t *grids;
@@ -53,6 +61,9 @@ CLASS_BEGIN(FrmEmu, Emu)
 	unsigned int free_global_mem_size;
 	unsigned int total_global_mem_size;
 
+	/* Instruction emulation table */
+	FrmEmuInstFunc inst_func[FrmInstOpcodeCount];
+
 	/* Stats */
 	int grid_count;  /* Number of CUDA functions executed */
 	long long scalar_alu_inst_count;  /* Scalar ALU instructions executed */
@@ -66,7 +77,7 @@ CLASS_BEGIN(FrmEmu, Emu)
 CLASS_END(FrmEmu)
 
 
-void FrmEmuCreate(FrmEmu *self);
+void FrmEmuCreate(FrmEmu *self, FrmAsm *as);
 void FrmEmuDestroy(FrmEmu *self);
 
 void FrmEmuDump(Object *self, FILE *f);
@@ -87,17 +98,12 @@ extern long long frm_emu_max_inst;
 extern int frm_emu_max_functions;
 
 extern char *frm_emu_cuda_binary_name;
-extern char *frm_emu_report_file_name;
-extern FILE *frm_emu_report_file;
 
 extern int frm_emu_warp_size;
 extern char *err_frm_cuda_note;
 
 extern FrmEmu *frm_emu;
 extern FrmAsm *frm_asm;
-
-void frm_emu_init(void);
-void frm_emu_done(void);
 
 #endif
 

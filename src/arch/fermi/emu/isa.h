@@ -91,9 +91,5 @@ void frm_isa_write_gpr_float(int id, float value);
 unsigned int frm_isa_read_src_int(int src_idx);
 float frm_isa_read_src_float(int src_idx);
 
-void frm_isa_init(void);
-void frm_isa_done(void);
-
-
 #endif
 

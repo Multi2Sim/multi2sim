@@ -495,7 +495,7 @@ void frm_config_dump(FILE *f)
 }
 
 
-static void frm_gpu_map_grid(struct frm_grid_t *grid)
+static void frm_gpu_map_grid(FrmGrid *grid)
 {
 	/* Assign current grid */
 	assert(!frm_gpu->grid);
@@ -526,9 +526,6 @@ static void frm_gpu_map_grid(struct frm_grid_t *grid)
 
 static void frm_gpu_unmap_grid(void)
 {
-	/* Dump stats */
-	frm_grid_dump(frm_gpu->grid, frm_emu_report_file);
-
 	/* Unmap */
 	frm_gpu->grid = NULL;
 }
@@ -1113,7 +1110,7 @@ int FrmGpuRun(Timing *self)
 {
 	FrmGpu *gpu = asFrmGpu(self);
 
-	struct frm_grid_t *grid;
+	FrmGrid *grid;
 
 	struct frm_sm_t *sm;
 	struct frm_sm_t *sm_next;
@@ -1195,9 +1192,6 @@ int FrmGpuRun(Timing *self)
 	/* Finish execution */
 	if (!list_count(gpu->sm_busy_list))
 	{
-		/* Dump Grid report */
-		frm_grid_dump(grid, frm_emu_report_file);
-
 		/* Stop if maximum number of kernels reached */
 		if (frm_emu_max_functions && list_count(frm_emu->grids) >= 
 				frm_emu_max_functions)
@@ -1206,9 +1200,9 @@ int FrmGpuRun(Timing *self)
 		}
 
 		/* Finalize and free Grid */
-		assert(grid->status == frm_grid_finished);
+		assert(grid->state == FrmGridFinished);
 		frm_gpu_unmap_grid();
-		frm_grid_free(grid);
+		FrmGridDestroy(grid);
 	}
 
 	/* Still simulating */

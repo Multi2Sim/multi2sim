@@ -215,10 +215,10 @@ void frm_sm_free(struct frm_sm_t *sm)
 
 
 void frm_sm_map_thread_block(struct frm_sm_t *sm, 
-		struct frm_thread_block_t *thread_block)
+		FrmThreadBlock *thread_block)
 {
-	struct frm_grid_t *grid;
-	struct frm_warp_t *warp;
+	FrmGrid *grid;
+	FrmWarp *warp;
 
 	int warp_id;
 	int wiq_id;
@@ -286,7 +286,7 @@ void frm_sm_map_thread_block(struct frm_sm_t *sm,
 }
 
 
-void frm_sm_unmap_thread_block(struct frm_sm_t *sm, struct frm_thread_block_t *thread_block)
+void frm_sm_unmap_thread_block(struct frm_sm_t *sm, FrmThreadBlock *thread_block)
 {
 	/* Reset mapped work-group */
 	assert(sm->thread_block_count > 0);
@@ -318,8 +318,8 @@ void frm_sm_fetch(struct frm_sm_t *sm, int wiq_id)
 	int j;
 	int instructions_processed = 0;
 	int thread_id;
-	struct frm_warp_t *warp;
-	struct frm_thread_t *thread;
+	FrmWarp *warp;
+	FrmThread *thread;
 	struct frm_uop_t *uop;
 	struct frm_thread_uop_t *thread_uop;
 	struct frm_warp_inst_queue_entry_t *warp_inst_queue_entry;
@@ -399,7 +399,7 @@ void frm_sm_fetch(struct frm_sm_t *sm, int wiq_id)
 		return;
 
 	/* Emulate instruction */
-	frm_warp_execute(warp);
+	FrmWarpExecute(warp);
 
 	warp_inst_queue_entry = warp->warp_inst_queue_entry;
 	warp_inst_queue_entry->ready = 0;
