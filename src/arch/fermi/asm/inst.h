@@ -323,6 +323,23 @@ typedef union
 } FrmInstBytes;
 
 
+typedef struct
+{
+	FrmInstOpcode opcode;
+	FrmInstCategory category;
+
+	char *name;
+	char *fmt_str;
+
+	/* Field of the instruction containing the instruction opcode
+	 * identifier. */
+	unsigned int op;
+
+	int size;
+
+} FrmInstInfo;
+
+
 CLASS_BEGIN(FrmInst, Object)
 
 	/* Disassembler */
@@ -332,16 +349,26 @@ CLASS_BEGIN(FrmInst, Object)
 	unsigned int addr;
 
 	/* Instruction bytes */
-	FrmInstBytes dword;
+	FrmInstBytes bytes;
 
 	/* Decoded information */
-	struct frm_inst_info_t *info;
+	FrmInstInfo *info;
 
 CLASS_END(FrmInst)
 
 
 void FrmInstCreate(FrmInst *self, FrmAsm *as);
 void FrmInstDestroy(FrmInst *self);
+
+void FrmInstDumpHex(FrmInst *self, FILE *f);
+void FrmInstDumpBuf(FrmInst *self, char *str, int size);
+void FrmInstDump(FrmInst *self, FILE *f);
+
+/* From the buffer given in 'ptr', decode an instruction and populate fields
+ * 'bytes' and 'info' of the instruction object. Argument 'addr' passes the
+ * virtual address of the instruction for branch decoding purposes, and it is
+ * copied to the 'addr' field of the instruction. */
+void FrmInstDecode(FrmInst *self, unsigned int addr, void *ptr);
 
 
 #endif

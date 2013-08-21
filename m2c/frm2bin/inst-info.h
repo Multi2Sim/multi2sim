@@ -26,7 +26,7 @@
 
 /* Object 'frm2bin_inst_info_t' */
 /* Forward declaration */
-struct frm_inst_info_t;
+struct FrmInstInfo;
 
 extern struct hash_table_t *frm2bin_inst_info_table;
 
@@ -39,7 +39,7 @@ struct frm2bin_inst_info_t
 	struct frm2bin_inst_info_t *next;
 
 	/* Associated info structure in disassembler */
-	struct frm_inst_info_t *inst_info;
+	FrmInstInfo *inst_info;
 
 	/* List of tokens in format string */
 	struct list_t *str_token_list;  /* Element of type string */
@@ -51,7 +51,7 @@ struct frm2bin_inst_info_t
 	struct list_t *mod_list;
 };
 
-struct frm2bin_inst_info_t *frm2bin_inst_info_create(struct frm_inst_info_t *inst_info);
+struct frm2bin_inst_info_t *frm2bin_inst_info_create(FrmInstInfo *inst_info);
 void frm2bin_inst_info_free(struct frm2bin_inst_info_t *info);
 
 

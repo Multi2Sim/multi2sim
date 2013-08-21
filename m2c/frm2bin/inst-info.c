@@ -25,6 +25,7 @@
 #include <lib/util/list.h>
 #include <lib/util/string.h>
 
+#include "frm2bin.h"
 #include "inst-info.h"
 #include "arg.h"
 
@@ -43,7 +44,7 @@ void frm2bin_inst_info_init(void)
 {
 	struct frm2bin_inst_info_t *info;
 	struct frm2bin_inst_info_t *prev_info;
-	struct frm_inst_info_t *inst_info;
+	FrmInstInfo *inst_info;
 
 	int i;
 
@@ -52,7 +53,7 @@ void frm2bin_inst_info_init(void)
 	for (i = 0; i < FrmInstOpcodeCount; i++)
 	{
 		/* Instruction info from disassembler */
-		inst_info = &frm_inst_info[i];
+		inst_info = &frm_asm->inst_info[i];
 		if (!inst_info->name || !inst_info->fmt_str)
 			continue;
 
@@ -98,7 +99,7 @@ void frm2bin_inst_info_done(void)
 }
 
 /* Object 'frm2bin_inst_info_t' */
-struct frm2bin_inst_info_t *frm2bin_inst_info_create(struct frm_inst_info_t *inst_info)
+struct frm2bin_inst_info_t *frm2bin_inst_info_create(FrmInstInfo *inst_info)
 {
 	struct frm2bin_inst_info_t *info;
 	struct frm_token_t *token;

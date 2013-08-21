@@ -19,10 +19,11 @@
 
 #include <stdarg.h>
 
-/*
-#include <lib/mhandle/mhandle.h>
-*/
 
+#include <arch/fermi/asm/asm.h>
+
+#include <lib/class/class.h>
+#include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/elf-encode.h>
 #include <lib/util/list.h>
@@ -79,10 +80,12 @@ void frm2bin_yyerror_fmt(char *fmt, ...)
  * Public Functions
  */
 
+FrmAsm *frm_asm;
+
 void frm2bin_init(void)
 {
 	/* Initialize */
-	frm_disasm_init();
+	frm_asm = new(FrmAsm);
 	frm2bin_inst_info_init();
 
 	/* task list is for label processing, lable is not supported now
@@ -105,7 +108,7 @@ void frm2bin_done(void)
 	/* This should be changed for fermi */
 	/* frm_stream_done(); */
 	frm2bin_inst_info_done();
-	frm_disasm_done();
+	delete(frm_asm);
 }
 
 void frm2bin_compile(struct list_t *source_file_list,
@@ -134,7 +137,12 @@ void frm2bin_compile(struct list_t *source_file_list,
 
 		/* call the Fermi disassbmler for text_section it's just a
 		 * temporarily implementation */
-		frm_disasm_text_section_buffer(text_section_buffer);
+		{
+			FrmAsm *as = new(FrmAsm);
+			FrmAsmDisassembleBuffer(as, text_section_buffer->ptr,
+					text_section_buffer->size);
+			delete(as);
+		}
 
 		/* free the text_section buffer */
 		elf_enc_buffer_free(text_section_buffer);
