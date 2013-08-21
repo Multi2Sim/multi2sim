@@ -144,8 +144,14 @@ static void FrmWarpDumpDivergence(FrmWarp *self, FILE *f)
  * Public Functions
  */
 
-void FrmWarpCreate(FrmWarp *self)
+void FrmWarpCreate(FrmWarp *self, FrmThreadBlock *thread_block)
 {
+	FrmGrid *grid = thread_block->grid;
+	FrmEmu *emu = grid->emu;
+
+	/* Initialize */
+	self->thread_block = thread_block;
+	self->grid = thread_block->grid;
 	self->reconv_stack.entries[0].active_thread_bitmap = 0xffffffff;
 	self->reconv_stack_top = 0;
 	self->reconv_stack_pushed = 0;
@@ -154,7 +160,7 @@ void FrmWarpCreate(FrmWarp *self)
 	/* FIXME: Remove once loop state is part of stack */
 	self->loop_depth = 0;
 
-	new_static(&self->inst, FrmInst, frm_asm);
+	new_static(&self->inst, FrmInst, emu->as);
 }
 
 

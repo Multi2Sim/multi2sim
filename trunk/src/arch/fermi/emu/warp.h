@@ -168,7 +168,7 @@ CLASS_END(FrmWarp)
 		(WARP_ID)++)
 
 
-void FrmWarpCreate(FrmWarp *self);
+void FrmWarpCreate(FrmWarp *self, FrmThreadBlock *thread_block);
 void FrmWarpDestroy(FrmWarp *self);
 
 void FrmWarpDump(FrmWarp *self, FILE *f);

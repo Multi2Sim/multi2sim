@@ -1869,6 +1869,8 @@ static void m2s_init(void)
 	CLASS_REGISTER(FrmWarp);
 	CLASS_REGISTER(FrmGrid);
 
+	CLASS_REGISTER(FrmGpu);
+
 	CLASS_REGISTER(MIPSAsm);
 	CLASS_REGISTER(MIPSInst);
 

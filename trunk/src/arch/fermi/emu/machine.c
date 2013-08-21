@@ -23,6 +23,7 @@
 #include <mem-system/memory.h>
 
 #include "emu.h"
+#include "grid.h"
 #include "isa.h"
 #include "thread.h"
 #include "warp.h"
@@ -45,11 +46,13 @@ void frm_isa_FFMA_impl(FrmThread *thread, FrmInst *inst)
 	unsigned int active, pred;
 	float dst, src1, src2, src3;
 
-	FrmWarp *warp;
+	FrmWarp *warp = thread->warp;
+	FrmGrid *grid = thread->grid;
+	FrmEmu *emu = grid->emu;
+
         FrmWarpReconvStackEntry entry;
 
 	/* Active */
-	warp = thread->warp;
 	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
 	active = (entry.active_thread_bitmap >> 
 			thread->id_in_warp) & 0x1;
@@ -70,7 +73,7 @@ void frm_isa_FFMA_impl(FrmThread *thread, FrmInst *inst)
 		if (inst->bytes.general0.src2_mod == 0)
 			src2 = thread->gpr[src2_id].f;
 		else if (inst->bytes.general0.src2_mod == 1)
-			mem_read(frm_emu->const_mem, src2_id, 4, &src2);
+			mem_read(emu->const_mem, src2_id, 4, &src2);
 		src3_id = inst->bytes.general0_mod1_B.src3;
 		src3 = thread->gpr[src3_id].f;
 
@@ -97,11 +100,13 @@ void frm_isa_FADD_impl(FrmThread *thread, FrmInst *inst)
 	unsigned int active, pred;
 	float dst, src1, src2;
 
-	FrmWarp *warp;
+	FrmWarp *warp = thread->warp;
+	FrmGrid *grid = thread->grid;
+	FrmEmu *emu = grid->emu;
+
         FrmWarpReconvStackEntry entry;
 
 	/* Active */
-	warp = thread->warp;
 	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
 	active = (entry.active_thread_bitmap >> 
 			thread->id_in_warp) & 0x1;
@@ -123,7 +128,7 @@ void frm_isa_FADD_impl(FrmThread *thread, FrmInst *inst)
 		if (inst->bytes.general0.src2_mod == 0)
 			src2 = thread->gpr[src2_id].f;
 		else if (inst->bytes.general0.src2_mod == 1)
-			mem_read(frm_emu->const_mem, src2_id, 4, &src2);
+			mem_read(emu->const_mem, src2_id, 4, &src2);
 
 		/* Execute */
 		dst = src1 + src2;
@@ -198,11 +203,13 @@ void frm_isa_FMUL_impl(FrmThread *thread, FrmInst *inst)
 	unsigned int active, pred;
 	float dst, src1, src2;
 
-	FrmWarp *warp;
+	FrmWarp *warp = thread->warp;
+	FrmGrid *grid = thread->grid;
+	FrmEmu *emu = grid->emu;
+
         FrmWarpReconvStackEntry entry;
 
 	/* Active */
-	warp = thread->warp;
 	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
 	active = (entry.active_thread_bitmap >> 
 			thread->id_in_warp) & 0x1;
@@ -223,7 +230,7 @@ void frm_isa_FMUL_impl(FrmThread *thread, FrmInst *inst)
 		if (inst->bytes.general0.src2_mod == 0)
 			src2 = thread->gpr[src2_id].f;
 		else if (inst->bytes.general0.src2_mod == 1)
-			mem_read(frm_emu->const_mem, src2_id, 4, &src2);
+			mem_read(emu->const_mem, src2_id, 4, &src2);
 
 		/* Execute */
 		dst = src1 * src2;
@@ -353,11 +360,13 @@ void frm_isa_IMAD_impl(FrmThread *thread, FrmInst *inst)
 	unsigned int active, pred;
 	int dst, src1, src2, src3;
 
-	FrmWarp *warp;
+	FrmWarp *warp = thread->warp;
+	FrmGrid *grid = thread->grid;
+	FrmEmu *emu = grid->emu;
+
         FrmWarpReconvStackEntry entry;
 
 	/* Active */
-	warp = thread->warp;
 	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
 	active = (entry.active_thread_bitmap >> 
 			thread->id_in_warp) & 0x1;
@@ -378,7 +387,7 @@ void frm_isa_IMAD_impl(FrmThread *thread, FrmInst *inst)
 		if (inst->bytes.general0.src2_mod == 0)
 			src2 = thread->gpr[src2_id].s32;
 		else if (inst->bytes.general0.src2_mod == 1)
-			mem_read(frm_emu->const_mem, src2_id, 4, &src2);
+			mem_read(emu->const_mem, src2_id, 4, &src2);
 		src3_id = inst->bytes.general0_mod1_B.src3;
 		src3 = thread->gpr[src3_id].s32;
 
@@ -405,11 +414,13 @@ void frm_isa_IMUL_impl(FrmThread *thread, FrmInst *inst)
 	unsigned int active, pred;
 	int dst, src1, src2;
 
-	FrmWarp *warp;
+	FrmWarp *warp = thread->warp;
+	FrmGrid *grid = thread->grid;
+	FrmEmu *emu = grid->emu;
+
         FrmWarpReconvStackEntry entry;
 
 	/* Active */
-	warp = thread->warp;
 	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
 	active = (entry.active_thread_bitmap >> 
 			thread->id_in_warp) & 0x1;
@@ -430,7 +441,7 @@ void frm_isa_IMUL_impl(FrmThread *thread, FrmInst *inst)
 		if (inst->bytes.general0.src2_mod == 0)
 			src2 = thread->gpr[src2_id].s32;
 		else if (inst->bytes.general0.src2_mod == 1)
-			mem_read(frm_emu->const_mem, src2_id, 4, &src2);
+			mem_read(emu->const_mem, src2_id, 4, &src2);
 
 		/* Execute */
 		dst = src1 * src2;
@@ -455,11 +466,13 @@ void frm_isa_IADD_impl(FrmThread *thread, FrmInst *inst)
 	unsigned int active, pred;
 	int dst, src1, src2;
 
-	FrmWarp *warp;
+	FrmWarp *warp = thread->warp;
+	FrmGrid *grid = thread->grid;
+	FrmEmu *emu = grid->emu;
+
         FrmWarpReconvStackEntry entry;
 
 	/* Active */
-	warp = thread->warp;
 	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
 	active = (entry.active_thread_bitmap >> 
 			thread->id_in_warp) & 0x1;
@@ -480,7 +493,7 @@ void frm_isa_IADD_impl(FrmThread *thread, FrmInst *inst)
 		if (inst->bytes.general0.src2_mod == 0)
 			src2 = thread->gpr[src2_id].s32;
 		else if (inst->bytes.general0.src2_mod == 1)
-			mem_read(frm_emu->const_mem, src2_id, 4, &src2);
+			mem_read(emu->const_mem, src2_id, 4, &src2);
 		else if (inst->bytes.general0.src2_mod >= 2)
 		{
 			src2 = inst->bytes.general0.src2;
@@ -558,11 +571,13 @@ void frm_isa_ISCADD_impl(FrmThread *thread, FrmInst *inst)
 	int dst, src1, src2;
 	unsigned int shamt;
 
-	FrmWarp *warp;
+	FrmWarp *warp = thread->warp;
+	FrmGrid *grid = thread->grid;
+	FrmEmu *emu = grid->emu;
+
         FrmWarpReconvStackEntry entry;
 
 	/* Active */
-	warp = thread->warp;
 	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
 	active = (entry.active_thread_bitmap >> 
 			thread->id_in_warp) & 0x1;
@@ -583,7 +598,7 @@ void frm_isa_ISCADD_impl(FrmThread *thread, FrmInst *inst)
 		if (inst->bytes.general0.src2_mod == 0)
 			src2 = thread->gpr[src2_id].s32;
 		else if (inst->bytes.general0.src2_mod == 1)
-			mem_read(frm_emu->const_mem, src2_id, 4, &src2);
+			mem_read(emu->const_mem, src2_id, 4, &src2);
 		else if (inst->bytes.general0.src2_mod >= 2)
 			src2 = src2_id;
 		shamt = inst->bytes.mod0_C.shamt;
@@ -632,11 +647,13 @@ void frm_isa_SHR_impl(FrmThread *thread, FrmInst *inst)
 	int dst, src1;
 	unsigned int src2;
 
-	FrmWarp *warp;
+	FrmWarp *warp = thread->warp;
+	FrmGrid *grid = thread->grid;
+	FrmEmu *emu = grid->emu;
+
         FrmWarpReconvStackEntry entry;
 
 	/* Active */
-	warp = thread->warp;
 	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
 	active = (entry.active_thread_bitmap >> 
 			thread->id_in_warp) & 0x1;
@@ -657,7 +674,7 @@ void frm_isa_SHR_impl(FrmThread *thread, FrmInst *inst)
 		if (inst->bytes.general0.src2_mod == 0)
 			src2 = thread->gpr[src2_id].u32;
 		else if (inst->bytes.general0.src2_mod == 1)
-			mem_read(frm_emu->const_mem, src2_id, 4, &src2);
+			mem_read(emu->const_mem, src2_id, 4, &src2);
 		else if (inst->bytes.general0.src2_mod >= 2)
 			src2 = src2_id;
 
@@ -685,11 +702,13 @@ void frm_isa_SHL_impl(FrmThread *thread, FrmInst *inst)
 	int dst, src1;
 	unsigned int src2;
 
-	FrmWarp *warp;
+	FrmWarp *warp = thread->warp;
+	FrmGrid *grid = thread->grid;
+	FrmEmu *emu = grid->emu;
+
         FrmWarpReconvStackEntry entry;
 
 	/* Active */
-	warp = thread->warp;
 	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
 	active = (entry.active_thread_bitmap >> 
 			thread->id_in_warp) & 0x1;
@@ -710,7 +729,7 @@ void frm_isa_SHL_impl(FrmThread *thread, FrmInst *inst)
 		if (inst->bytes.general0.src2_mod == 0)
 			src2 = thread->gpr[src2_id].u32;
 		else if (inst->bytes.general0.src2_mod == 1)
-			mem_read(frm_emu->const_mem, src2_id, 4, &src2);
+			mem_read(emu->const_mem, src2_id, 4, &src2);
 		else if (inst->bytes.general0.src2_mod >= 2)
 			src2 = src2_id;
 
@@ -760,11 +779,13 @@ void frm_isa_ISETP_impl(FrmThread *thread, FrmInst *inst)
 	int logic_op;
 	int compare_result;
 
-	FrmWarp *warp;
+	FrmWarp *warp = thread->warp;
+	FrmGrid *grid = thread->grid;
+	FrmEmu *emu = grid->emu;
+
         FrmWarpReconvStackEntry entry;
 
 	/* Active */
-	warp = thread->warp;
 	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
 	active = (entry.active_thread_bitmap >> 
 			thread->id_in_warp) & 0x1;
@@ -785,7 +806,7 @@ void frm_isa_ISETP_impl(FrmThread *thread, FrmInst *inst)
 		if (inst->bytes.general1.src2_mod == 0)
 			src2 = thread->gpr[src2_id].s32;
 		else if (inst->bytes.general1.src2_mod == 1)
-			mem_read(frm_emu->const_mem, src2_id, 4, &src2);
+			mem_read(emu->const_mem, src2_id, 4, &src2);
 		r_id = inst->bytes.general1.R;
 		r = thread->pr[r_id];
 
@@ -879,11 +900,13 @@ void frm_isa_MOV_impl(FrmThread *thread, FrmInst *inst)
 	unsigned int active, pred;
 	int dst, src;
 
-	FrmWarp *warp;
+	FrmWarp *warp = thread->warp;
+	FrmGrid *grid = thread->grid;
+	FrmEmu *emu = grid->emu;
+
         FrmWarpReconvStackEntry entry;
 
 	/* Active */
-	warp = thread->warp;
 	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
 	active = (entry.active_thread_bitmap >> 
 			thread->id_in_warp) & 0x1;
@@ -902,7 +925,7 @@ void frm_isa_MOV_impl(FrmThread *thread, FrmInst *inst)
 		if (inst->bytes.general0.src2_mod == 0)
 			src = thread->gpr[src_id].s32;
 		else if (inst->bytes.general0.src2_mod == 1)
-			mem_read(frm_emu->const_mem, src_id, 4, &src);
+			mem_read(emu->const_mem, src_id, 4, &src);
 
 		/* Execute */
 		dst = src;
@@ -1031,11 +1054,13 @@ void frm_isa_LD_impl(FrmThread *thread, FrmInst *inst)
 	unsigned int pred_id, dst_id, src_id;
 	unsigned int active, pred, dst, addr;
 
-	FrmWarp *warp;
+	FrmWarp *warp = thread->warp;
+	FrmGrid *grid = thread->grid;
+	FrmEmu *emu = grid->emu;
+
         FrmWarpReconvStackEntry entry;
 
 	/* Active */
-	warp = thread->warp;
 	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
 	active = (entry.active_thread_bitmap >> 
 			thread->id_in_warp) & 0x1;
@@ -1055,7 +1080,7 @@ void frm_isa_LD_impl(FrmThread *thread, FrmInst *inst)
 		addr = thread->gpr[src_id].u32;
 
 		/* Execute */
-		mem_read(frm_emu->global_mem, addr, 4, &dst);
+		mem_read(emu->global_mem, addr, 4, &dst);
 
 		/* Write */
 		dst_id = inst->bytes.offs.dst;
@@ -1147,11 +1172,13 @@ void frm_isa_ST_impl(FrmThread *thread, FrmInst *inst)
 	unsigned int pred_id, value_id, addr_id;
 	unsigned int active, pred, value, addr;
 
-	FrmWarp *warp;
+	FrmWarp *warp = thread->warp;
+	FrmGrid *grid = thread->grid;
+	FrmEmu *emu = grid->emu;
+
         FrmWarpReconvStackEntry entry;
 
 	/* Active */
-	warp = thread->warp;
 	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
 	active = (entry.active_thread_bitmap >> 
 			thread->id_in_warp) & 0x1;
@@ -1173,7 +1200,7 @@ void frm_isa_ST_impl(FrmThread *thread, FrmInst *inst)
 		addr = thread->gpr[addr_id].u32;
 
 		/* Execute */
-		mem_write(frm_emu->global_mem, addr, 4, &value);
+		mem_write(emu->global_mem, addr, 4, &value);
 	}
 
 	/* Debug */

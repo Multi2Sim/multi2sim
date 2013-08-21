@@ -910,9 +910,6 @@ void frm_gpu_read_config(void)
 
 void frm_gpu_init(void)
 {
-	/* Classes */
-	CLASS_REGISTER(FrmGpu);
-
 	/* Trace */
 	frm_trace_category = trace_new_category();
 
@@ -928,7 +925,7 @@ void frm_gpu_init(void)
 			frm_gpu_num_sms);
 
 	/* Create GPU */
-	frm_gpu = new(FrmGpu);
+	frm_gpu = new(FrmGpu, frm_emu);
 
 	/* Initializations */
 	frm_uop_init();
@@ -938,7 +935,7 @@ void frm_gpu_init(void)
 void frm_gpu_done()
 {
 	/* GPU pipeline report */
-	frm_gpu_dump_report();
+	FrmGpuDumpReport(frm_gpu);
 
 	/* Free GPU */
 	delete(frm_gpu);
@@ -967,92 +964,21 @@ void frm_gpu_dump_default_config(char *filename)
 }
 
 
-void frm_gpu_dump_report(void)
-{
-	struct frm_sm_t *sm;
-	struct mod_t *lds_mod;
-	int sm_id;
-
-	FILE *f;
-
-	double inst_per_cycle;
-	long long coalesced_reads;
-	long long coalesced_writes;
-
-	/* Open file */
-	f = file_open_for_write(frm_gpu_report_file_name);
-	if (!f)
-		return;
-
-	/* Dump GPU configuration */
-	fprintf(f, ";\n; GPU Configuration\n;\n\n");
-	frm_config_dump(f);
-
-	/* Report for device */
-	fprintf(f, ";\n; Simulation Statistics\n;\n\n");
-	inst_per_cycle = asTiming(frm_gpu)->cycle ? 
-		(double)(asEmu(frm_emu)->instructions / asTiming(frm_gpu)->cycle) : 0.0;
-	fprintf(f, "[ Device ]\n\n");
-	fprintf(f, "GridCount = %d\n", frm_emu->grid_count);
-	fprintf(f, "Instructions = %lld\n", asEmu(frm_emu)->instructions);
-	fprintf(f, "BranchInstructions = %lld\n", frm_emu->branch_inst_count);
-	fprintf(f, "ALUInstructions = %lld\n", frm_emu->vector_alu_inst_count);
-	fprintf(f, "SharedMemInstructions = %lld\n", frm_emu->lds_inst_count);
-	fprintf(f, "GlobalMemInstructions = %lld\n", frm_emu->vector_mem_inst_count);
-	fprintf(f, "Cycles = %lld\n", asTiming(frm_gpu)->cycle);
-	fprintf(f, "InstructionsPerCycle = %.4g\n", inst_per_cycle);
-	fprintf(f, "\n\n");
-
-	/* Report for SMs */
-	FRM_GPU_FOREACH_SM(sm_id)
-	{
-		sm = frm_gpu->sms[sm_id];
-		lds_mod = sm->lds_module;
-
-		inst_per_cycle = sm->cycle ? 
-			(double)(sm->inst_count/sm->cycle) :
-			0.0;
-		coalesced_reads = lds_mod->reads - lds_mod->effective_reads;
-		coalesced_writes = lds_mod->writes - lds_mod->effective_writes;
-
-		fprintf(f, "[ SM%d ]\n\n", sm_id);
-
-		fprintf(f, "ThreadBlockCount = %lld\n", sm->mapped_thread_blocks);
-		fprintf(f, "Instructions = %lld\n", sm->inst_count);
-		fprintf(f, "BranchInstructions = %lld\n", sm->branch_inst_count);
-		fprintf(f, "ALUInstructions = %lld\n", 	sm->simd_inst_count);
-		fprintf(f, "SharedMemInstructions = %lld\n", sm->lds_inst_count);
-		fprintf(f, "GlobalMemInstructions = %lld\n", sm->vector_mem_inst_count);
-		fprintf(f, "Cycles = %lld\n", sm->cycle);
-		fprintf(f, "InstructionsPerCycle = %.4g\n", inst_per_cycle);
-		fprintf(f, "\n");
-
-		fprintf(f, "SharedMem.Accesses = %lld\n", lds_mod->reads + lds_mod->writes);
-		fprintf(f, "SharedMem.Reads = %lld\n", lds_mod->reads);
-		fprintf(f, "SharedMem.EffectiveReads = %lld\n", lds_mod->effective_reads);
-		fprintf(f, "SharedMem.CoalescedReads = %lld\n", coalesced_reads);
-		fprintf(f, "SharedMem.Writes = %lld\n", lds_mod->writes);
-		fprintf(f, "SharedMem.EffectiveWrites = %lld\n", lds_mod->effective_writes);
-		fprintf(f, "SharedMem.CoalescedWrites = %lld\n", coalesced_writes);
-		fprintf(f, "\n\n");
-	}
-
-	file_close(f);
-}
-
-
 
 /*
  * Class 'FrmGpu'
  */
 
-void FrmGpuCreate(FrmGpu *self)
+void FrmGpuCreate(FrmGpu *self, FrmEmu *emu)
 {
 	struct frm_sm_t *sm;
 	int sm_id;
 
 	/* Parent */
 	TimingCreate(asTiming(self));
+
+	/* Initialize */
+	self->emu = emu;
 
 	/* Frequency */
 	asTiming(self)->frequency = frm_gpu_frequency;
@@ -1106,9 +1032,86 @@ void FrmGpuDumpSummary(Timing *self, FILE *f)
 }
 
 
+void FrmGpuDumpReport(FrmGpu *self)
+{
+	FrmEmu *emu = self->emu;
+
+	struct frm_sm_t *sm;
+	struct mod_t *lds_mod;
+	int sm_id;
+
+	FILE *f;
+
+	double inst_per_cycle;
+	long long coalesced_reads;
+	long long coalesced_writes;
+
+	/* Open file */
+	f = file_open_for_write(frm_gpu_report_file_name);
+	if (!f)
+		return;
+
+	/* Dump GPU configuration */
+	fprintf(f, ";\n; GPU Configuration\n;\n\n");
+	frm_config_dump(f);
+
+	/* Report for device */
+	fprintf(f, ";\n; Simulation Statistics\n;\n\n");
+	inst_per_cycle = asTiming(frm_gpu)->cycle ? 
+		(double)(asEmu(emu)->instructions / asTiming(frm_gpu)->cycle) : 0.0;
+	fprintf(f, "[ Device ]\n\n");
+	fprintf(f, "GridCount = %d\n", emu->grid_count);
+	fprintf(f, "Instructions = %lld\n", asEmu(emu)->instructions);
+	fprintf(f, "BranchInstructions = %lld\n", emu->branch_inst_count);
+	fprintf(f, "ALUInstructions = %lld\n", emu->vector_alu_inst_count);
+	fprintf(f, "SharedMemInstructions = %lld\n", emu->lds_inst_count);
+	fprintf(f, "GlobalMemInstructions = %lld\n", emu->vector_mem_inst_count);
+	fprintf(f, "Cycles = %lld\n", asTiming(frm_gpu)->cycle);
+	fprintf(f, "InstructionsPerCycle = %.4g\n", inst_per_cycle);
+	fprintf(f, "\n\n");
+
+	/* Report for SMs */
+	FRM_GPU_FOREACH_SM(sm_id)
+	{
+		sm = frm_gpu->sms[sm_id];
+		lds_mod = sm->lds_module;
+
+		inst_per_cycle = sm->cycle ? 
+			(double)(sm->inst_count/sm->cycle) :
+			0.0;
+		coalesced_reads = lds_mod->reads - lds_mod->effective_reads;
+		coalesced_writes = lds_mod->writes - lds_mod->effective_writes;
+
+		fprintf(f, "[ SM%d ]\n\n", sm_id);
+
+		fprintf(f, "ThreadBlockCount = %lld\n", sm->mapped_thread_blocks);
+		fprintf(f, "Instructions = %lld\n", sm->inst_count);
+		fprintf(f, "BranchInstructions = %lld\n", sm->branch_inst_count);
+		fprintf(f, "ALUInstructions = %lld\n", 	sm->simd_inst_count);
+		fprintf(f, "SharedMemInstructions = %lld\n", sm->lds_inst_count);
+		fprintf(f, "GlobalMemInstructions = %lld\n", sm->vector_mem_inst_count);
+		fprintf(f, "Cycles = %lld\n", sm->cycle);
+		fprintf(f, "InstructionsPerCycle = %.4g\n", inst_per_cycle);
+		fprintf(f, "\n");
+
+		fprintf(f, "SharedMem.Accesses = %lld\n", lds_mod->reads + lds_mod->writes);
+		fprintf(f, "SharedMem.Reads = %lld\n", lds_mod->reads);
+		fprintf(f, "SharedMem.EffectiveReads = %lld\n", lds_mod->effective_reads);
+		fprintf(f, "SharedMem.CoalescedReads = %lld\n", coalesced_reads);
+		fprintf(f, "SharedMem.Writes = %lld\n", lds_mod->writes);
+		fprintf(f, "SharedMem.EffectiveWrites = %lld\n", lds_mod->effective_writes);
+		fprintf(f, "SharedMem.CoalescedWrites = %lld\n", coalesced_writes);
+		fprintf(f, "\n\n");
+	}
+
+	file_close(f);
+}
+
+
 int FrmGpuRun(Timing *self)
 {
 	FrmGpu *gpu = asFrmGpu(self);
+	FrmEmu *emu = gpu->emu;
 
 	FrmGrid *grid;
 
@@ -1123,15 +1126,15 @@ int FrmGpuRun(Timing *self)
 
 	/* For efficiency when no Fermi emulation is selected, 
 	 * exit here if the list of existing grids is empty. */
-	if (!list_count(frm_emu->grids))
+	if (!list_count(emu->grids))
 		return FALSE;
 
 	/* Map grids */
-	while ((grid = list_head(frm_emu->pending_grids)))
+	while ((grid = list_head(emu->pending_grids)))
 	{
 		/* Set grid status to 'running' */
-		list_remove(frm_emu->pending_grids, grid);
-		list_add(frm_emu->running_grids, grid);
+		list_remove(emu->pending_grids, grid);
+		list_add(emu->running_grids, grid);
 
 		/* Trace */
 		frm_trace("frm.new_grid id=%d tb_first=%d tb_count=%d\n", 
@@ -1163,7 +1166,7 @@ int FrmGpuRun(Timing *self)
 		esim_finish = esim_finish_frm_max_cycles;
 
 	/* Stop if maximum number of GPU instructions exceeded */
-	if (frm_emu_max_inst && asEmu(frm_emu)->instructions >= frm_emu_max_inst)
+	if (frm_emu_max_inst && asEmu(emu)->instructions >= frm_emu_max_inst)
 		esim_finish = esim_finish_frm_max_inst;
 
 	/* Stop if there was a simulation stall */
@@ -1193,7 +1196,7 @@ int FrmGpuRun(Timing *self)
 	if (!list_count(gpu->sm_busy_list))
 	{
 		/* Stop if maximum number of kernels reached */
-		if (frm_emu_max_functions && list_count(frm_emu->grids) >= 
+		if (frm_emu_max_functions && list_count(emu->grids) >=
 				frm_emu_max_functions)
 		{
 			esim_finish = esim_finish_frm_max_functions;
