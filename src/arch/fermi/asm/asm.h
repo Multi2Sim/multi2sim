@@ -26,37 +26,21 @@
 
 
 
-void frm_disasm_init(void);
-void frm_disasm_done(void);
-
-void frm_inst_dump(char *str, int inst_str_size, void *buf, int inst_index);
-void frm_inst_hex_dump(FILE *f, unsigned char *buf, int inst_index);
-
-
-
-
-/* Copy instruction */
-void frm_inst_copy(FrmInst *dest, FrmInst *src);
-
-/* Obtaining source operand fields for ALU instructions */
-void frm_inst_get_op_src(FrmInst *inst, int src_idx,
-        int *sel, int *rel, int *chan, int *neg, int *abs);
-
-void frm_inst_decode(FrmInst *inst);
-
-void frm_disasm(char *path);
-
-/* a temporial implementation to disassmbler only text_section */
-struct elf_enc_buffer_t;
-void frm_disasm_text_section_buffer(struct elf_enc_buffer_t *buffer);
-
-
-
 /*
  * Class 'FrmAsm'
  */
 
+#define FRM_ASM_DEC_TABLE_SIZE  1024
+
 CLASS_BEGIN(FrmAsm, Asm)
+
+	/* Instruction information table, indexed with an instruction opcode
+	 * enumeration. */
+	FrmInstInfo inst_info[FrmInstOpcodeCount];
+
+	/* Decoding table. This table is indexed by the opcode bits of the
+	 * instruction bytes. */
+	FrmInstInfo *dec_table[FRM_ASM_DEC_TABLE_SIZE];
 
 CLASS_END(FrmAsm)
 
@@ -64,31 +48,8 @@ CLASS_END(FrmAsm)
 void FrmAsmCreate(FrmAsm *self);
 void FrmAsmDestroy(FrmAsm *self);
 
-
-
-/*
- * Public
- */
-
-
-struct frm_inst_info_t
-{
-	FrmInstOpcode opcode;
-	FrmInstCategory category;
-
-	char *name;
-	char *fmt_str;
-
-	/* Field of the instruction containing the instruction opcode
-	 * identifier. */
-	unsigned int op;
-
-	int size;
-};
-
-/* Table containing information for all instructions, filled out with the
- * fields found in 'asm.dat'. */
-extern struct frm_inst_info_t frm_inst_info[FrmInstOpcodeCount];
+void FrmAsmDisassembleBinary(FrmAsm *self, char *path);
+void FrmAsmDisassembleBuffer(FrmAsm *self, void *ptr, int size);
 
 
 #endif

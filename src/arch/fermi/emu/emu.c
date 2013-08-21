@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
+#include <arch/fermi/asm/asm.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/file.h>
@@ -164,6 +164,8 @@ FILE *frm_emu_report_file;
 
 int frm_emu_warp_size = 32;
 
+
+FrmAsm *frm_asm;
 FrmEmu *frm_emu;
 
 
@@ -185,7 +187,7 @@ void frm_emu_init(void)
 	frm_emu = new(FrmEmu);
 
 	/* Initialize disassembler (decoding tables...) */
-	frm_disasm_init();
+	frm_asm = new(FrmAsm);
 
 	/* Initialize ISA (instruction execution tables...) */
 	frm_isa_init();
@@ -198,13 +200,11 @@ void frm_emu_done(void)
 	if (frm_emu_report_file)
 		fclose(frm_emu_report_file);
 
-	/* Finalize disassembler */
-	frm_disasm_done();
-
 	/* Finalize ISA */
 	frm_isa_done();
 
 	/* Free emulator */
 	delete(frm_emu);
+	delete(frm_asm);
 }
 
