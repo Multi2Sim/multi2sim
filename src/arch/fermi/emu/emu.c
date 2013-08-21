@@ -153,6 +153,28 @@ int FrmEmuRun(Emu *self)
 }
 
 
+void FrmEmuConstMemWrite(FrmEmu *self, unsigned int addr, void *value_ptr)
+{
+	/* Mark c[0][0..1c] as initialized */
+	if (addr < 0x20)
+		self->const_mem_init[addr] = 1;
+
+	/* Write */
+	mem_write(self->const_mem, addr, sizeof(unsigned int), value_ptr);
+}
+
+
+void FrmEmuConstMemRead(FrmEmu *self, unsigned int addr, void *value_ptr)
+{
+	/* Warn if c[0][0..1c] is used uninitialized */
+	if (addr < 0x20 && !self->const_mem_init[addr])
+		warning("c [0] [0x%x] is used uninitialized", addr);
+
+	/* Read */
+	mem_read(self->const_mem, addr, sizeof(unsigned int), value_ptr);
+}
+
+
 
 
 /*

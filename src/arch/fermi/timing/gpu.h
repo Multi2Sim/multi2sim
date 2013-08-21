@@ -212,6 +212,9 @@ struct frm_lds_t;
 
 CLASS_BEGIN(FrmGpu, Timing)
 
+	/* Emulator */
+	FrmEmu *emu;
+
 	/* Grids */
 	FrmGrid *grid;
 	int thread_blocks_per_sm;
@@ -233,11 +236,12 @@ CLASS_BEGIN(FrmGpu, Timing)
 CLASS_END(FrmGpu)
 
 
-void FrmGpuCreate(FrmGpu *self);
+void FrmGpuCreate(FrmGpu *self, FrmEmu *emu);
 void FrmGpuDestroy(FrmGpu *self);
 
 void FrmGpuDump(Object *self, FILE *f);
 void FrmGpuDumpSummary(Timing *self, FILE *f);
+void FrmGpuDumpReport(FrmGpu *self);
 
 int FrmGpuRun(Timing *self);
 
@@ -256,7 +260,6 @@ void frm_gpu_init(void);
 void frm_gpu_done(void);
 
 void frm_gpu_dump_default_config(char *filename);
-void frm_gpu_dump_report(void);
 
 void frm_gpu_uop_trash_add(struct frm_uop_t *uop);
 void frm_gpu_uop_trash_empty(void);

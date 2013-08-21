@@ -33,9 +33,12 @@
  * Public Functions
  */
 
-void FrmThreadCreate(FrmThread *self)
+void FrmThreadCreate(FrmThread *self, FrmWarp *warp)
 {
 	/* Initialize */
+	self->warp = warp;
+	self->thread_block = warp->thread_block;
+	self->grid = warp->grid;
 	self->write_task_list = linked_list_create();
 	self->lds_oqa = list_create();
 	self->lds_oqb = list_create();
