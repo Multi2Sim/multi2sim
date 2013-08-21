@@ -31,9 +31,10 @@
  * Public Functions
  */
 
-void FrmThreadBlockCreate(FrmThreadBlock *self)
+void FrmThreadBlockCreate(FrmThreadBlock *self, FrmGrid *grid)
 {
 	/* Initialize */
+	self->grid = grid;
 	self->shared_mem = mem_create();
 	self->shared_mem->safe = 0;
 	self->num_warps_at_barrier = 0;

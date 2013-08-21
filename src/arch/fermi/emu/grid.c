@@ -37,7 +37,7 @@ void FrmGridCreate(FrmGrid *self, FrmEmu *emu, struct cuda_function_t *function)
 {
 	/* Initialize grid */
 	self->emu = emu;
-	self->id = list_count(frm_emu->grids);
+	self->id = list_count(emu->grids);
 	self->name = new(String, function->name);
 	self->state = FrmGridPending;
 	self->function = function;
@@ -82,7 +82,7 @@ void FrmGridDestroy(FrmGrid *self)
 void FrmGridSetupConstantMemory(FrmGrid *self)
 {
 	/* FIXME: built-in consts */
-        frm_isa_const_mem_write(0x8, &self->thread_block_size3[0]);
+        FrmEmuConstMemWrite(self->emu, 0x8, &self->thread_block_size3[0]);
 }
 
 
@@ -99,7 +99,7 @@ void FrmGridSetupArguments(FrmGrid *self)
 		arg = function->arg_array[i];
 		assert(arg);
 
-		frm_isa_const_mem_write(offset, &(arg->value));
+		FrmEmuConstMemWrite(self->emu, offset, &(arg->value));
 		offset += 0x4;
 	}
 }
@@ -170,7 +170,7 @@ static void FrmGridSetupArrays(FrmGrid *self)
 	for (bid = 0; bid < self->thread_block_count; bid++)
 	{
 		/* Create new thread block */
-		thread_block = new(FrmThreadBlock);
+		thread_block = new(FrmThreadBlock, self);
 		self->thread_blocks[bid] = thread_block;
 
 		/* Initialize thread block */
@@ -178,7 +178,6 @@ static void FrmGridSetupArrays(FrmGrid *self)
 		snprintf(thread_block->name, sizeof(thread_block->name), 
 				"thread-block[g%d-b%d]", 
 				self->id, thread_block->id);
-		thread_block->grid = self;
 
 		/* Add to pending list */
 		list_add(self->pending_thread_blocks, thread_block);
@@ -196,7 +195,7 @@ static void FrmGridSetupArrays(FrmGrid *self)
 		for (wid = 0; wid < thread_block->warp_count; wid++)
 		{
 			/* Create new warp */
-			warp = new(FrmWarp);
+			warp = new(FrmWarp, thread_block);
 			thread_block->warps[wid] = warp;
 
 			/* Initialize warp */
@@ -206,8 +205,6 @@ static void FrmGridSetupArrays(FrmGrid *self)
 					"warp[g%d-b%d-w%d]",
 					self->id, thread_block->id,
 					warp->id_in_thread_block);
-			warp->grid = self;
-			warp->thread_block = thread_block;
 			warp->inst_buffer = self->function->inst_bin;
 			warp->inst_buffer_size =
 				self->function->inst_bin_size;
@@ -234,17 +231,14 @@ static void FrmGridSetupArrays(FrmGrid *self)
 		for (tid = 0; tid < thread_block->thread_count; tid++)
 		{
 			/* Create new thread */
-			thread = new(FrmThread);
+			thread = new(FrmThread, thread_block->
+					warps[tid / frm_emu_warp_size]);
 			thread_block->threads[tid] = thread;
 
 			/* Initialize thread */
 			thread->id = tid + bid * thread_block->thread_count;
 			thread->id_in_warp = tid % frm_emu_warp_size;
 			thread->id_in_thread_block = tid;
-			thread->warp = thread_block->
-				warps[tid / frm_emu_warp_size];
-			thread->thread_block = thread_block;
-			thread->grid = self;
 
 			/* Save thread IDs in special register R0 */
 			thread->sr[FrmInstSRegTidX].u32 = tid %

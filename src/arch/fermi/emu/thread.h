@@ -108,7 +108,7 @@ CLASS_END(FrmThread)
 		(THREAD_ID)++)
 
 
-void FrmThreadCreate(FrmThread *self);
+void FrmThreadCreate(FrmThread *self, FrmWarp *warp);
 void FrmThreadDestroy(FrmThread *self);
 
 int FrmThreadGetActive(FrmThread *self);

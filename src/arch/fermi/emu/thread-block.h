@@ -93,7 +93,7 @@ CLASS_END(FrmThreadBlock)
 		(THREADBLOCK_ID) <= (GRID)->thread_block_id_last; \
 		(THREADBLOCK_ID)++)
 
-void FrmThreadBlockCreate(FrmThreadBlock *self);
+void FrmThreadBlockCreate(FrmThreadBlock *self, FrmGrid *grid);
 void FrmThreadBlockDestroy(FrmThreadBlock *self);
 
 void FrmThreadBlockDump(FrmThreadBlock *self, FILE *f);

@@ -86,6 +86,10 @@ void FrmEmuDumpSummary(Emu *self, FILE *f);
 /* Virtual function from class 'Emu' */
 int FrmEmuRun(Emu *emu);
 
+/* Access to constant memory */
+void FrmEmuConstMemWrite(FrmEmu *self, unsigned int addr, void *pvalue);
+void FrmEmuConstMemRead(FrmEmu *self, unsigned int addr, void *pvalue);
+
 
 
 

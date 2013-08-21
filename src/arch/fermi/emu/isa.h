@@ -65,31 +65,6 @@ extern char *err_frm_isa_note;
 	__FUNCTION__, frm_isa_inst->info->name, (min), (max), err_frm_opencl_param_note); }
 
 
-/* Access to global memory */
-void frm_isa_global_mem_write(unsigned int addr, void *pvalue);
-void frm_isa_global_mem_read(unsigned int addr, void *pvalue);
-
-/* Access to constant memory */
-void frm_isa_const_mem_write(unsigned int addr, void *pvalue);
-void frm_isa_const_mem_read(unsigned int addr, void *pvalue);
-
-/* For ALU clauses */
-void frm_isa_alu_clause_start(void);
-void frm_isa_alu_clause_end(void);
-
-/* For TC clauses */
-void frm_isa_tc_clause_start(void);
-void frm_isa_tc_clause_end(void);
-
-/* For functional simulation */
-unsigned int frm_isa_read_gpr_int(int id);
-float frm_isa_read_gpr_float(int id);
-unsigned int frm_isa_read_sgpr(int id);
-void frm_isa_write_gpr_int(int id, unsigned int value);
-void frm_isa_write_gpr_float(int id, float value);
-
-unsigned int frm_isa_read_src_int(int src_idx);
-float frm_isa_read_src_float(int src_idx);
 
 #endif
 
