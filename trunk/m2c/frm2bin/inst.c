@@ -435,7 +435,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 	 * southern-island */
 	FrmInstBytes *inst_bytes;
 
-	struct frm_inst_info_t *inst_info;
+	FrmInstInfo *inst_info;
 	struct frm2bin_inst_info_t *info;
 
 	struct frm_arg_t *arg;

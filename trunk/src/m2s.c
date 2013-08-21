@@ -2013,7 +2013,15 @@ int main(int argc, char **argv)
 
 	/* Fermi disassembler tool */
 	if (*frm_disasm_file_name)
-		frm_disasm(frm_disasm_file_name);
+	{
+		FrmAsm *as;
+
+		as = new(FrmAsm);
+		FrmAsmDisassembleBinary(as, frm_disasm_file_name);
+
+		delete(as);
+		goto end;
+	}
 
 	/* Kepler disassembler tool */
 	if (*kpl_disasm_file_name)

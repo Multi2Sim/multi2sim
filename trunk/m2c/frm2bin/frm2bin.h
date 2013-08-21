@@ -22,6 +22,8 @@
 
 #include <stdio.h>
 
+#include <lib/class/class.h>
+
 
 /* Forward declarations */
 struct list_t;
@@ -50,6 +52,9 @@ extern int frm2bin_yylineno;
 extern FILE *frm2bin_yyin;
 
 extern char *frm2bin_yytext;
+
+extern FrmAsm *frm_asm;
+
 
 /*
  * Public functions
