@@ -166,7 +166,7 @@ void frm_vector_mem_mem(struct frm_vector_mem_unit_t *vector_mem)
 {
 	struct frm_uop_t *uop;
 	struct frm_thread_uop_t *thread_uop;
-	struct frm_thread_t *thread;
+	FrmThread *thread;
 	int thread_id;
 	int instructions_processed = 0;
 	int list_entries;

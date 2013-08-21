@@ -29,35 +29,8 @@
 
 
 
-/* Instruction execution table */
-frm_isa_inst_func_t *frm_isa_inst_func;
-
 /* Debug */
 int frm_isa_debug_category = 1;
-
-
-/*
- * Initialization & Finalization
- */
-
-
-/* Initialization */
-void frm_isa_init()
-{
-	/* Initialize instruction execution table */
-	frm_isa_inst_func = xcalloc(FrmInstOpcodeCount, sizeof(frm_isa_inst_func_t));
-#define DEFINST(_name, _fmt_str, _category, _opcode) \
-	frm_isa_inst_func[FRM_INST_##_name] = frm_isa_##_name##_impl;
-#include <arch/fermi/asm/asm.dat>
-#undef DEFINST
-}
-
-
-void frm_isa_done()
-{
-	/* Free instruction execution table */
-	free(frm_isa_inst_func);
-}
 
 
 

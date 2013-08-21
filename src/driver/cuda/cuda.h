@@ -64,7 +64,7 @@ int cuda_abi_call(X86Context *ctx);
 struct cuda_abi_frm_kernel_launch_info_t
 {
 	struct cuda_function_t *function;
-	struct frm_grid_t *grid;
+	FrmGrid *grid;
 	int finished;
 };
 

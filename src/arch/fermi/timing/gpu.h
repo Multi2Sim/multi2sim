@@ -213,7 +213,7 @@ struct frm_lds_t;
 CLASS_BEGIN(FrmGpu, Timing)
 
 	/* Grids */
-	struct frm_grid_t *grid;
+	FrmGrid *grid;
 	int thread_blocks_per_sm;
 	int warps_per_sm;
 	int threads_per_sm;

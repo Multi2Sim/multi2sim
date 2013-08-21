@@ -20,18 +20,25 @@
 #ifndef FERMI_EMU_THREADBLOCK_H
 #define FERMI_EMU_THREADBLOCK_H
 
+#include <lib/class/class.h>
 #include <lib/util/string.h>
 
 
-enum frm_thread_block_status_t
-{
-	frm_thread_block_pending	= 0x0001,
-	frm_thread_block_running	= 0x0002,
-	frm_thread_block_finished	= 0x0004
-};
+/*
+ * Class 'FrmThreadBlock'
+ */
 
-struct frm_thread_block_t
+typedef enum
 {
+	FrmThreadBlockInvalid = 0,
+	FrmThreadBlockPending = 0x0001,
+	FrmThreadBlockRunning = 0x0002,
+	FrmThreadBlockFinished = 0x0004
+} FrmThreadBlockState;
+
+
+CLASS_BEGIN(FrmThreadBlock, Object)
+
 	/* ID */
 	int id;
 	int id_3d[3];
@@ -40,25 +47,25 @@ struct frm_thread_block_t
 	char name[MAX_STRING_SIZE];
 
 	/* Status */
-	enum frm_thread_block_status_t status;
+	FrmThreadBlockState state;
 
 	/* Grid it belongs to */
-	struct frm_grid_t *grid;
+	FrmGrid *grid;
 
 	/* SM it is mapped to */
 	struct frm_sm_t *sm;
 
 	/* Double linked lists of thread_blocks */
-	struct frm_thread_block_t *pending_list_prev;
-	struct frm_thread_block_t *pending_list_next;
-	struct frm_thread_block_t *running_list_prev;
-	struct frm_thread_block_t *running_list_next;
-	struct frm_thread_block_t *finished_list_prev;
-	struct frm_thread_block_t *finished_list_next;
+	FrmThreadBlock *pending_list_prev;
+	FrmThreadBlock *pending_list_next;
+	FrmThreadBlock *running_list_prev;
+	FrmThreadBlock *running_list_next;
+	FrmThreadBlock *finished_list_prev;
+	FrmThreadBlock *finished_list_next;
 
 	/* Array of warps */
 	int warp_count;
-	struct frm_warp_t **warps;
+	FrmWarp **warps;
 
 	/* List of warps */
 	struct list_t *running_warps;
@@ -66,7 +73,7 @@ struct frm_thread_block_t
 
 	/* Array of threads */
 	int thread_count;
-	struct frm_thread_t **threads;
+	FrmThread **threads;
 
 	/* Barrier information */
 	unsigned int num_warps_at_barrier;
@@ -77,16 +84,19 @@ struct frm_thread_block_t
 
 	/* Shared memory */
 	struct mem_t *shared_mem;
-};
+
+CLASS_END(FrmThreadBlock)
+
 
 #define FRM_FOR_EACH_THREADBLOCK_IN_GRID(GRID, THREADBLOCK_ID) \
 	for ((THREADBLOCK_ID) = (GRID)->thread_block_id_first; \
 		(THREADBLOCK_ID) <= (GRID)->thread_block_id_last; \
 		(THREADBLOCK_ID)++)
 
-struct frm_thread_block_t *frm_thread_block_create(void);
-void frm_thread_block_free(struct frm_thread_block_t *thread_block);
-void frm_thread_block_dump(struct frm_thread_block_t *thread_block, FILE *f);
+void FrmThreadBlockCreate(FrmThreadBlock *self);
+void FrmThreadBlockDestroy(FrmThreadBlock *self);
+
+void FrmThreadBlockDump(FrmThreadBlock *self, FILE *f);
 
 
 #endif

@@ -59,7 +59,7 @@ void frm_warp_inst_queue_free(struct frm_warp_inst_queue_t *warp_inst_queue)
 
 void frm_warp_inst_queue_unmap_warp(
 		struct frm_warp_inst_queue_t *warp_inst_queue, 
-		struct frm_warp_t *warp)
+		FrmWarp *warp)
 {
 //	int wf_id_in_ib;
 //	int i;

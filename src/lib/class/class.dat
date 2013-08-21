@@ -48,6 +48,11 @@ CLASS(FrmAsm)
 CLASS(FrmInst)
 
 CLASS(FrmEmu)
+CLASS(FrmThread)
+CLASS(FrmThreadBlock)
+CLASS(FrmWarp)
+CLASS(FrmGrid)
+
 CLASS(FrmGpu)
 
 CLASS(MIPSAsm)

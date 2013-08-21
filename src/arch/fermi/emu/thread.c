@@ -33,65 +33,53 @@
  * Public Functions
  */
 
-
-struct frm_thread_t *frm_thread_create()
+void FrmThreadCreate(FrmThread *self)
 {
-	struct frm_thread_t *thread;
-
 	/* Initialize */
-	thread = xcalloc(1, sizeof(struct frm_thread_t));
-	thread->write_task_list = linked_list_create();
-	thread->lds_oqa = list_create();
-	thread->lds_oqb = list_create();
-
-	/* Return */
-	return thread;
+	self->write_task_list = linked_list_create();
+	self->lds_oqa = list_create();
+	self->lds_oqb = list_create();
 }
 
 
-void frm_thread_free(struct frm_thread_t *thread)
+void FrmThreadDestroy(FrmThread *self)
 {
 	/* Empty LDS output queues */
-	while (list_count(thread->lds_oqa))
-		free(list_dequeue(thread->lds_oqa));
-	while (list_count(thread->lds_oqb))
-		free(list_dequeue(thread->lds_oqb));
-	list_free(thread->lds_oqa);
-	list_free(thread->lds_oqb);
-	linked_list_free(thread->write_task_list);
-
-	/* Free thread */
-	free(thread);
+	while (list_count(self->lds_oqa))
+		free(list_dequeue(self->lds_oqa));
+	while (list_count(self->lds_oqb))
+		free(list_dequeue(self->lds_oqb));
+	list_free(self->lds_oqa);
+	list_free(self->lds_oqb);
+	linked_list_free(self->write_task_list);
 }
 
 
-
-
-int frm_thread_get_pred(struct frm_thread_t *thread)
+int FrmThreadGetPred(FrmThread *self)
 {
-	struct frm_warp_t *warp = thread->warp;
+	FrmWarp *warp = self->warp;
 
-	assert(thread->id_in_warp >= 0 && thread->id_in_warp < warp->thread_count);
-	return bit_map_get(warp->pred, thread->id_in_warp, 1);
+	assert(self->id_in_warp >= 0 && self->id_in_warp < warp->thread_count);
+	return bit_map_get(warp->pred, self->id_in_warp, 1);
 }
 
 
-void frm_thread_set_pred(struct frm_thread_t *thread, int pred)
+void FrmThreadSetPred(FrmThread *self, int pred)
 {
-	struct frm_warp_t *warp = thread->warp;
+	FrmWarp *warp = self->warp;
 
-	assert(thread->id_in_warp >= 0 && thread->id_in_warp < warp->thread_count);
-	bit_map_set(warp->pred, thread->id_in_warp, 1, !!pred);
+	assert(self->id_in_warp >= 0 && self->id_in_warp < warp->thread_count);
+	bit_map_set(warp->pred, self->id_in_warp, 1, !!pred);
 	warp->pred_mask_update = 1;
 }
 
 
 /* Based on an instruction counter, instruction address, and thread mask,
  * update (xor) branch_digest with a random number */
-void frm_thread_update_branch_digest(struct frm_thread_t *thread,
+void FrmThreadUpdateBranchDigest(FrmThread *self,
 	long long inst_count, unsigned int inst_addr)
 {
-//	struct frm_warp_t *warp = thread->warp;
+//	FrmWarp *warp = self->warp;
 //	unsigned int mask = 0;
 //
 //	/* Update branch digest only if thread is active */

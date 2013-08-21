@@ -28,6 +28,7 @@
 #include "emu.h"
 #include "isa.h"
 #include "grid.h"
+#include "machine.h"
 #include "warp.h"
 #include "thread-block.h"
 
@@ -36,12 +37,13 @@
  * Class 'FrmEmu'
  */
 
-void FrmEmuCreate(FrmEmu *self)
+void FrmEmuCreate(FrmEmu *self, FrmAsm *as)
 {
 	/* Parent */
 	EmuCreate(asEmu(self), "Fermi");
 
         /* Initialize */
+	self->as = as;
 	self->grids = list_create();
 	self->pending_grids = list_create();
 	self->running_grids = list_create();
@@ -53,6 +55,12 @@ void FrmEmuCreate(FrmEmu *self)
         self->free_global_mem_size = 1 << 31; /* 2GB */
         self->const_mem = mem_create();
         self->const_mem->safe = 0;
+
+	/* Initialize instruction execution table */
+#define DEFINST(_name, _fmt_str, _category, _opcode) \
+	self->inst_func[FRM_INST_##_name] = frm_isa_##_name##_impl;
+#include <arch/fermi/asm/asm.dat>
+#undef DEFINST
 
         /* Virtual functions */
         asObject(self)->Dump = FrmEmuDump;
@@ -91,9 +99,9 @@ int FrmEmuRun(Emu *self)
 {
 	FrmEmu *emu = asFrmEmu(self);
 
-	struct frm_grid_t *grid;
-	struct frm_thread_block_t *thread_block;
-	struct frm_warp_t *warp;
+	FrmGrid *grid;
+	FrmThreadBlock *thread_block;
+	FrmWarp *warp;
 
 	/* Stop emulation if no grid needs running */
 	if (!list_count(emu->grids))
@@ -123,7 +131,7 @@ int FrmEmuRun(Emu *self)
 				if (warp->finished || warp->at_barrier)
 					continue;
 
-				frm_warp_execute(warp);
+				FrmWarpExecute(warp);
 			}
 		}
 	}
@@ -133,14 +141,11 @@ int FrmEmuRun(Emu *self)
 			list_count(emu->running_grids) == 0);
 	while ((grid = list_head(emu->finished_grids)))
 	{
-		/* Dump grid report */
-		frm_grid_dump(grid, frm_emu_report_file);
-
 		/* Remove grid from finished list */
 		list_remove(emu->finished_grids, grid);
 
 		/* Free grid */
-		frm_grid_free(grid);
+		delete(grid);
 	}
 
 	/* Continue emulation */
@@ -159,52 +164,9 @@ long long frm_emu_max_inst;
 int frm_emu_max_functions;
 
 char *frm_emu_cuda_binary_name = "";
-char *frm_emu_report_file_name = "";
-FILE *frm_emu_report_file;
 
 int frm_emu_warp_size = 32;
 
 
 FrmAsm *frm_asm;
 FrmEmu *frm_emu;
-
-
-void frm_emu_init(void)
-{
-	/* Classes */
-	CLASS_REGISTER(FrmEmu);
-
-	/* Open report file */
-	if (*frm_emu_report_file_name)
-	{
-		frm_emu_report_file = file_open_for_write(frm_emu_report_file_name);
-		if (!frm_emu_report_file)
-			fatal("%s: cannot open report for Fermi emulator", 
-				frm_emu_report_file_name);
-	}
-
-	/* Create emulator */
-	frm_emu = new(FrmEmu);
-
-	/* Initialize disassembler (decoding tables...) */
-	frm_asm = new(FrmAsm);
-
-	/* Initialize ISA (instruction execution tables...) */
-	frm_isa_init();
-}
-
-
-void frm_emu_done(void)
-{
-	/* Report */
-	if (frm_emu_report_file)
-		fclose(frm_emu_report_file);
-
-	/* Finalize ISA */
-	frm_isa_done();
-
-	/* Free emulator */
-	delete(frm_emu);
-	delete(frm_asm);
-}
-

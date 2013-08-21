@@ -20,6 +20,7 @@
 #ifndef FERMI_EMU_GRID_H
 #define FERMI_EMU_GRID_H
 
+#include <lib/class/class.h>
 #include <lib/util/string.h>
 
 
@@ -27,21 +28,30 @@
 struct cuda_function_t;
 
 
-enum frm_grid_status_t
-{
-        frm_grid_pending             = 0x0001,
-        frm_grid_running             = 0x0002,
-        frm_grid_finished            = 0x0004
-};
+/*
+ * Class 'FrmGrid'
+ */
 
-struct frm_grid_t
+typedef enum
 {
+	FrmGridStateInvalid = 0,
+        FrmGridPending = 0x1,
+        FrmGridRunning = 0x2,
+        FrmGridFinished = 0x4
+} FrmGridState;
+
+
+CLASS_BEGIN(FrmGrid, Object)
+
+	/* Emulator */
+	FrmEmu *emu;
+
 	/* ID */
 	int id;
-	char name[MAX_STRING_SIZE];
+	String *name;
 
-        /* Status */
-        enum frm_grid_status_t status;
+        /* State */
+        FrmGridState state;
 
 	/* CUDA function associated */
 	struct cuda_function_t *function;
@@ -66,7 +76,7 @@ struct frm_grid_t
 
 	/* Array of thread blocks */
 	int thread_block_count;
-	struct frm_thread_block_t **thread_blocks;
+	FrmThreadBlock **thread_blocks;
 
 	/* Lists of thread blocks */
 	struct list_t *pending_thread_blocks;
@@ -74,14 +84,14 @@ struct frm_grid_t
 	struct list_t *finished_thread_blocks;
 
         /* List of Grid */
-        struct frm_grid_t *grid_list_prev;
-        struct frm_grid_t *grid_list_next;
-        struct frm_grid_t *pending_grid_list_prev;
-        struct frm_grid_t *pending_grid_list_next;
-        struct frm_grid_t *running_grid_list_prev;
-        struct frm_grid_t *running_grid_list_next;
-        struct frm_grid_t *finished_grid_list_prev;
-        struct frm_grid_t *finished_grid_list_next;
+        FrmGrid *grid_list_prev;
+        FrmGrid *grid_list_next;
+        FrmGrid *pending_grid_list_prev;
+        FrmGrid *pending_grid_list_next;
+        FrmGrid *running_grid_list_prev;
+        FrmGrid *running_grid_list_next;
+        FrmGrid *finished_grid_list_prev;
+        FrmGrid *finished_grid_list_next;
 
 	void *inst_buffer;
 	unsigned int inst_buffer_size;
@@ -91,18 +101,21 @@ struct frm_grid_t
 	 * kernel function. */
 	unsigned int local_mem_top;
 
-};
+CLASS_END(FrmGrid)
 
-struct frm_grid_t *frm_grid_create(struct cuda_function_t *function);
-void frm_grid_free(struct frm_grid_t *grid);
-void frm_grid_dump(struct frm_grid_t *grid, FILE *f);
-void frm_grid_setup_threads(struct frm_grid_t *grid);
-void frm_grid_setup_const_mem(struct frm_grid_t *grid);
-void frm_grid_setup_args(struct frm_grid_t *grid);
-void frm_grid_run(struct frm_grid_t *grid);
 
-void frm_grid_setup_size(struct frm_grid_t *grid,
-		unsigned int *global_size,
+void FrmGridCreate(FrmGrid *self, FrmEmu *emu, struct cuda_function_t *function);
+void FrmGridDestroy(FrmGrid *self);
+
+void FrmGridDump(FrmGrid *self, FILE *f);
+
+void FrmGridSetupThreads(FrmGrid *self);
+void FrmGridSetupConstantMemory(FrmGrid *self);
+void FrmGridSetupArguments(FrmGrid *self);
+
+void FrmGridRun(FrmGrid *self);
+
+void FrmGridSetupSize(FrmGrid *self, unsigned int *global_size,
 		unsigned int *local_size);
 
 #endif

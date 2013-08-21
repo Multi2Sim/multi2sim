@@ -30,11 +30,10 @@ struct frm_reg_file_t;
 void frm_reg_file_init(struct frm_sm_t *sm);
 void frm_reg_file_done(struct frm_sm_t *sm);
 
-struct frm_thread_block_t;
 void frm_reg_file_map_thread_block(struct frm_sm_t *sm,
-	struct frm_thread_block_t *thread_block);
+	FrmThreadBlock *thread_block);
 void frm_reg_file_unmap_thread_block(struct frm_sm_t *sm,
-	struct frm_thread_block_t *thread_block);
+	FrmThreadBlock *thread_block);
 
 struct frm_thread_t;
 int frm_reg_file_rename(struct frm_sm_t *sm,
@@ -83,7 +82,7 @@ struct frm_sm_t
 	long long lds_inst_count;
 
 	/* List of currently mapped thread blocks */
-	struct frm_thread_block_t **thread_blocks;
+	FrmThreadBlock **thread_blocks;
 	int thread_block_count;
 
 	/* List of currently mapped warps */
@@ -103,17 +102,17 @@ struct frm_sm_t
 struct frm_sm_t *frm_sm_create(void);
 void frm_sm_free(struct frm_sm_t *gpu_sm);
 void frm_sm_map_thread_block(struct frm_sm_t *sm, 
-	struct frm_thread_block_t *thread_block);
+	FrmThreadBlock *thread_block);
 void frm_sm_unmap_thread_block(struct frm_sm_t *sm, 
-	struct frm_thread_block_t *thread_block);
+	FrmThreadBlock *thread_block);
 struct frm_warp_t *frm_sm_schedule(struct frm_sm_t *sm);
 void frm_sm_run(struct frm_sm_t *sm);
 
 struct frm_warp_inst_queue_t *frm_warp_inst_queue_create();
 void frm_warp_inst_queue_free(struct frm_warp_inst_queue_t *warp_inst_queue);
 void frm_warp_inst_queue_map_warps(struct frm_warp_inst_queue_t *warp_inst_queue, 
-	struct frm_thread_block_t *thread_block);
+	FrmThreadBlock *thread_block);
 void frm_warp_inst_queue_unmap_warps(struct frm_warp_inst_queue_t *warp_inst_queue, 
-	struct frm_thread_block_t *thread_block);
+	FrmThreadBlock *thread_block);
 
 #endif
