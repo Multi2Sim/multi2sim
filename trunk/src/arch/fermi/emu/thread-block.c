@@ -31,44 +31,36 @@
  * Public Functions
  */
 
-
-struct frm_thread_block_t *frm_thread_block_create()
+void FrmThreadBlockCreate(FrmThreadBlock *self)
 {
-	struct frm_thread_block_t *thread_block;
-
 	/* Initialize */
-	thread_block = xcalloc(1, sizeof(struct frm_thread_block_t));
-	thread_block->shared_mem = mem_create();
-	thread_block->shared_mem->safe = 0;
-	thread_block->num_warps_at_barrier = 0;
-
-	/* Return */
-	return thread_block;
+	self->shared_mem = mem_create();
+	self->shared_mem->safe = 0;
+	self->num_warps_at_barrier = 0;
 }
 
 
-void frm_thread_block_free(struct frm_thread_block_t *thread_block)
+void FrmThreadBlockDestroy(FrmThreadBlock *self)
 {
 	int i;
 
-	for (i = 0; i < thread_block->warp_count; i++)
-                frm_warp_free(thread_block->warps[i]);
-	free(thread_block->warps);
-	list_free(thread_block->running_warps);
-	list_free(thread_block->finished_warps);
+	for (i = 0; i < self->warp_count; i++)
+                delete(self->warps[i]);
+	free(self->warps);
+	list_free(self->running_warps);
+	list_free(self->finished_warps);
 
-	for (i = 0; i < thread_block->thread_count; i++)
-                frm_thread_free(thread_block->threads[i]);
-	free(thread_block->threads);
+	for (i = 0; i < self->thread_count; i++)
+                delete(self->threads[i]);
+	free(self->threads);
 
-	mem_free(thread_block->shared_mem);
-	free(thread_block);
+	mem_free(self->shared_mem);
 }
 
 
-void frm_thread_block_dump(struct frm_thread_block_t *thread_block, FILE *f)
+void FrmThreadBlockDump(FrmThreadBlock *self, FILE *f)
 {
-//	struct frm_grid_t *grid = thread_block->grid;
+//	struct frm_grid_t *grid = self->grid;
 //	struct frm_warp_t *warp;
 //	int warp_id;
 //

@@ -25,22 +25,28 @@
 #include <lib/util/string.h>
 
 
-#define FRM_MAX_RECONV_STACK_SIZE  32
+/*
+ * Class 'FrmWarp'
+ */
 
-struct frm_reconv_stack_entry_t
+#define FRM_WARP_RECONV_STACK_SIZE  32
+
+typedef struct
 {
 	unsigned int reconv_pc;
 	unsigned int next_path_pc;
 	unsigned int active_thread_bitmap;
-};
+} FrmWarpReconvStackEntry;
 
-struct frm_reconv_stack_t
-{
-	struct frm_reconv_stack_entry_t entries[FRM_MAX_RECONV_STACK_SIZE];
-};
 
-struct frm_warp_t
+typedef struct
 {
+	FrmWarpReconvStackEntry entries[FRM_WARP_RECONV_STACK_SIZE];
+} FrmWarpReconvStack;
+
+
+CLASS_BEGIN(FrmWarp, Object)
+
 	/* ID */
 	int id;
 	int id_in_thread_block;
@@ -49,12 +55,12 @@ struct frm_warp_t
 	char name[MAX_STRING_SIZE];
 
 	/* Grid and thread_block it belongs to */
-	struct frm_grid_t *grid;
-	struct frm_thread_block_t *thread_block;
+	FrmGrid *grid;
+	FrmThreadBlock *thread_block;
 
 	/* Threads */
 	int thread_count;
-	struct frm_thread_t **threads;
+	FrmThread **threads;
 
 	/* PC */
 	unsigned int pc;
@@ -69,7 +75,7 @@ struct frm_warp_t
 	unsigned int inst_buffer_size;
 
 	/* Recovergence stack */
-	struct frm_reconv_stack_t reconv_stack;
+	FrmWarpReconvStack reconv_stack;
 	int reconv_stack_top;
 	int reconv_stack_pushed;
 	int reconv_stack_popped;
@@ -113,12 +119,12 @@ struct frm_warp_t
 	int active_mask_pop;  /* Number of entries the stack was popped */
 
 	/* Linked lists */
-	struct frm_warp_t *running_list_next;
-	struct frm_warp_t *running_list_prev;
-	struct frm_warp_t *barrier_list_next;
-	struct frm_warp_t *barrier_list_prev;
-	struct frm_warp_t *finished_list_next;
-	struct frm_warp_t *finished_list_prev;
+	FrmWarp *running_list_next;
+	FrmWarp *running_list_prev;
+	FrmWarp *barrier_list_next;
+	FrmWarp *barrier_list_prev;
+	FrmWarp *finished_list_next;
+	FrmWarp *finished_list_prev;
 
 	/* To measure simulation performance */
 	long long emu_inst_count;  /* Total emulated instructions */
@@ -148,7 +154,9 @@ struct frm_warp_t
 	long long inst_count;  /* Total number of instructions */
 	long long global_mem_inst_count;  /* Instructions accessing global memory */
 	long long local_mem_inst_count;  /* Instructions accessing local memory */
-};
+
+CLASS_END(FrmWarp)
+
 
 #define FRM_FOREACH_WARP_IN_GRID(GRID, WARP_ID) \
 	for ((WARP_ID) = (GRID)->warp_id_first; \
@@ -158,13 +166,17 @@ struct frm_warp_t
 	for ((WARP_ID) = (THREADBLOCK)->warp_id_first; \
 		(WARP_ID) <= (THREADBLOCK)->warp_id_last; \
 		(WARP_ID)++)
-struct frm_warp_t *frm_warp_create(void);
-void frm_warp_free(struct frm_warp_t *warp);
-void frm_warp_dump(struct frm_warp_t *warp, FILE *f);
-void frm_warp_set_name(struct frm_warp_t *warp, char *name);
-void frm_warp_stack_push(struct frm_warp_t *warp);
-void frm_warp_stack_pop(struct frm_warp_t *warp, int count);
-void frm_warp_execute(struct frm_warp_t *warp);
+
+
+void FrmWarpCreate(FrmWarp *self);
+void FrmWarpDestroy(FrmWarp *self);
+
+void FrmWarpDump(FrmWarp *self, FILE *f);
+
+void FrmWarpPush(FrmWarp *self);
+void FrmWarpPop(FrmWarp *self, int count);
+
+void FrmWarpExecute(FrmWarp *self);
 
 
 #endif

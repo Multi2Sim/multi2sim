@@ -35,7 +35,11 @@
 #include <arch/fermi/asm/asm.h>
 #include <arch/fermi/asm/inst.h>
 #include <arch/fermi/emu/emu.h>
+#include <arch/fermi/emu/grid.h>
 #include <arch/fermi/emu/isa.h>
+#include <arch/fermi/emu/thread.h>
+#include <arch/fermi/emu/thread-block.h>
+#include <arch/fermi/emu/warp.h>
 #include <arch/fermi/timing/gpu.h>
 #include <arch/kepler/asm/asm.h>
 #include <arch/mips/asm/asm.h>
@@ -1859,6 +1863,12 @@ static void m2s_init(void)
 	CLASS_REGISTER(FrmAsm);
 	CLASS_REGISTER(FrmInst);
 
+	CLASS_REGISTER(FrmEmu);
+	CLASS_REGISTER(FrmThread);
+	CLASS_REGISTER(FrmThreadBlock);
+	CLASS_REGISTER(FrmWarp);
+	CLASS_REGISTER(FrmGrid);
+
 	CLASS_REGISTER(MIPSAsm);
 	CLASS_REGISTER(MIPSInst);
 
@@ -2121,7 +2131,7 @@ int main(int argc, char **argv)
 			evg_gpu_read_config,
 			evg_gpu_init, evg_gpu_done);
 	arch_fermi = arch_register("Fermi", "frm", frm_sim_kind,
-			frm_emu_init, frm_emu_done,
+			NULL, NULL,
 			frm_gpu_read_config,
 			frm_gpu_init, frm_gpu_done);
 	arch_mips = arch_register("MIPS", "mips", mips_sim_kind,
@@ -2168,6 +2178,13 @@ int main(int argc, char **argv)
 		arch_set_timing(arch_x86, asTiming(x86_cpu));
 	}
 	arch_set_emu(arch_x86, asEmu(x86_emu));
+
+	/* Fermi
+	 * FIXME
+	 */
+	frm_asm = new(FrmAsm);
+	frm_emu = new(FrmEmu, frm_asm);
+	arch_set_emu(arch_fermi, asEmu(frm_emu));
 
 	/* MIPS
 	 * FIXME
@@ -2219,6 +2236,10 @@ int main(int argc, char **argv)
 
 	/* Dump statistics summary */
 	m2s_dump_summary(stderr);
+
+	/* Fermi */
+	delete(frm_emu);
+	delete(frm_asm);
 
 	/* MIPS */
 	delete(mips_emu);

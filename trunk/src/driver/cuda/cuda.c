@@ -574,7 +574,7 @@ int cuda_func_cuMemcpyDtoH(X86Context *ctx)
  *	The return value is always 0 on success.
  */
 
-void frm_grid_set_free_notify_func(struct frm_grid_t *grid,
+void frm_grid_set_free_notify_func(FrmGrid *grid,
 	void (*func)(void *), void *user_data)
 {
 	grid->free_notify_func = func;
@@ -585,7 +585,7 @@ static void cuda_abi_frm_kernel_launch_finish(void *user_data)
 {
 	struct cuda_abi_frm_kernel_launch_info_t *info = user_data;
 	struct cuda_function_t *kernel = info->function;
-	struct frm_grid_t *grid = info->grid;
+	FrmGrid *grid = info->grid;
 
 	/* Debug */
 	cuda_debug("Grid %d running kernel '%s' finished\n",
@@ -636,7 +636,7 @@ int cuda_func_cuLaunchKernel(X86Context *ctx)
 	struct cuda_function_t *function;
 	struct cuda_function_arg_t *arg;
 	unsigned int arg_ptr;
-	struct frm_grid_t *grid;
+	FrmGrid *grid;
 	int i;
 	struct cuda_abi_frm_kernel_launch_info_t *info;
 
@@ -685,12 +685,12 @@ int cuda_func_cuLaunchKernel(X86Context *ctx)
 	}
 
 	/* Create grid */
-	grid = frm_grid_create(function);
+	grid = new(FrmGrid, frm_emu, function);
 
 	/* Set up grid */
-	frm_grid_setup_size(grid, gridDim, blockDim);
-	frm_grid_setup_const_mem(grid);
-	frm_grid_setup_args(grid);
+	FrmGridSetupSize(grid, gridDim, blockDim);
+	FrmGridSetupConstantMemory(grid);
+	FrmGridSetupArguments(grid);
 
 	/* Add to pending list */
 	list_add(frm_emu->pending_grids, grid);

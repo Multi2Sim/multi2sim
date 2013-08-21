@@ -145,7 +145,7 @@ void frm_lds_mem(struct frm_lds_t *lds)
 {
 	struct frm_uop_t *uop;
 	struct frm_thread_uop_t *thread_uop;
-	struct frm_thread_t *thread;
+	FrmThread *thread;
 	int thread_id;
 	int instructions_processed = 0;
 	int list_entries;
