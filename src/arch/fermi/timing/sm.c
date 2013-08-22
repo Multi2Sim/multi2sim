@@ -34,187 +34,184 @@
 
 #include "cycle-interval-report.h"
 
+
+
 /*
- * Compute Unit
+ * Class 'FrmSM'
  */
 
-struct frm_sm_t *frm_sm_create()
+void FrmSMCreate(FrmSM *self, FrmGpu *gpu)
 {
-	struct frm_sm_t *sm;
 	char buf[MAX_STRING_SIZE];
 	int i;
 
 	/* Initialize */
-	sm = xcalloc(1, sizeof(struct frm_sm_t));
+	self->gpu = gpu;
 
 	/* Local memory */
-	snprintf(buf, sizeof buf, "LDS[%d]", sm->id);
-	sm->lds_module = mod_create(buf, mod_kind_local_memory,
+	snprintf(buf, sizeof buf, "LDS[%d]", self->id);
+	self->lds_module = mod_create(buf, mod_kind_local_memory,
 		frm_gpu_lds_num_ports, frm_gpu_lds_block_size, 
 		frm_gpu_lds_latency);
 
 	/* Hardware structures */
-	sm->num_warp_inst_queues = 2;
-	sm->warp_inst_queues = xcalloc(sm->num_warp_inst_queues,
+	self->num_warp_inst_queues = 2;
+	self->warp_inst_queues = xcalloc(self->num_warp_inst_queues,
 		sizeof(struct list_t *));
-	sm->fetch_buffers = xcalloc(sm->num_warp_inst_queues,
+	self->fetch_buffers = xcalloc(self->num_warp_inst_queues,
 		sizeof(struct list_t *));
-	sm->num_simd_units = 2;
-	sm->simd_units = xcalloc(sm->num_simd_units, 
+	self->num_simd_units = 2;
+	self->simd_units = xcalloc(self->num_simd_units, 
 		sizeof(struct frm_simd_t*));
 
-	sm->branch_unit.issue_buffer = list_create();
-	sm->branch_unit.decode_buffer = list_create();
-	sm->branch_unit.read_buffer = list_create();
-	sm->branch_unit.exec_buffer = list_create();
-	sm->branch_unit.write_buffer = list_create();
-	sm->branch_unit.sm = sm;
+	self->branch_unit.issue_buffer = list_create();
+	self->branch_unit.decode_buffer = list_create();
+	self->branch_unit.read_buffer = list_create();
+	self->branch_unit.exec_buffer = list_create();
+	self->branch_unit.write_buffer = list_create();
+	self->branch_unit.sm = self;
 
-	sm->vector_mem_unit.issue_buffer = list_create();
-	sm->vector_mem_unit.decode_buffer = list_create();
-	sm->vector_mem_unit.read_buffer = list_create();
-	sm->vector_mem_unit.mem_buffer = list_create();
-	sm->vector_mem_unit.write_buffer = list_create();
-	sm->vector_mem_unit.sm = sm;
+	self->vector_mem_unit.issue_buffer = list_create();
+	self->vector_mem_unit.decode_buffer = list_create();
+	self->vector_mem_unit.read_buffer = list_create();
+	self->vector_mem_unit.mem_buffer = list_create();
+	self->vector_mem_unit.write_buffer = list_create();
+	self->vector_mem_unit.sm = self;
 
-	sm->lds_unit.issue_buffer = list_create();
-	sm->lds_unit.decode_buffer = list_create();
-	sm->lds_unit.read_buffer = list_create();
-	sm->lds_unit.mem_buffer = list_create();
-	sm->lds_unit.write_buffer = list_create();
-	sm->lds_unit.sm = sm;
+	self->lds_unit.issue_buffer = list_create();
+	self->lds_unit.decode_buffer = list_create();
+	self->lds_unit.read_buffer = list_create();
+	self->lds_unit.mem_buffer = list_create();
+	self->lds_unit.write_buffer = list_create();
+	self->lds_unit.sm = self;
 
 	/* Allocate and initialize instruction buffers */
-	for (i = 0; i < sm->num_warp_inst_queues; i++)
+	for (i = 0; i < self->num_warp_inst_queues; i++)
 	{
-		sm->warp_inst_queues[i] = frm_warp_inst_queue_create();
-		sm->warp_inst_queues[i]->sm = sm;
+		self->warp_inst_queues[i] = frm_warp_inst_queue_create();
+		self->warp_inst_queues[i]->sm = self;
 	}
-	for (i = 0; i < sm->num_warp_inst_queues; i++)
-		sm->fetch_buffers[i] = list_create();
+	for (i = 0; i < self->num_warp_inst_queues; i++)
+		self->fetch_buffers[i] = list_create();
 
 	/* Allocate SIMD structures */
-	assert(sm->num_warp_inst_queues == sm->num_simd_units);
-	for (i = 0; i < sm->num_simd_units; i++)
+	assert(self->num_warp_inst_queues == self->num_simd_units);
+	for (i = 0; i < self->num_simd_units; i++)
 	{
-		sm->simd_units[i] = xcalloc(1,
+		self->simd_units[i] = xcalloc(1,
 			sizeof(struct frm_simd_t));
-		sm->simd_units[i]->id_in_sm = i;
-		sm->simd_units[i]->sm = sm;
-		sm->simd_units[i]->warp_inst_queue =
-			sm->warp_inst_queues[i];
-		sm->simd_units[i]->issue_buffer = list_create();
-		sm->simd_units[i]->decode_buffer = list_create();
-		sm->simd_units[i]->exec_buffer = list_create();
-		sm->simd_units[i]->subwarp_inst_queue =
+		self->simd_units[i]->id_in_sm = i;
+		self->simd_units[i]->sm = self;
+		self->simd_units[i]->warp_inst_queue =
+			self->warp_inst_queues[i];
+		self->simd_units[i]->issue_buffer = list_create();
+		self->simd_units[i]->decode_buffer = list_create();
+		self->simd_units[i]->exec_buffer = list_create();
+		self->simd_units[i]->subwarp_inst_queue =
 			xcalloc(1, sizeof(struct frm_subwarp_inst_queue_t));
 
-		sm->simd_units[i]->sm = sm;
-		sm->simd_units[i]->wkg_util = xcalloc(1,
+		self->simd_units[i]->sm = self;
+		self->simd_units[i]->wkg_util = xcalloc(1,
 			sizeof(struct frm_util_t));
-		sm->simd_units[i]->wvf_util = xcalloc(1,
+		self->simd_units[i]->wvf_util = xcalloc(1,
 			sizeof(struct frm_util_t));
-		sm->simd_units[i]->rdy_util = xcalloc(1,
+		self->simd_units[i]->rdy_util = xcalloc(1,
 			sizeof(struct frm_util_t));
-		sm->simd_units[i]->occ_util = xcalloc(1,
+		self->simd_units[i]->occ_util = xcalloc(1,
 			sizeof(struct frm_util_t));
-		sm->simd_units[i]->wki_util = xcalloc(1,
+		self->simd_units[i]->wki_util = xcalloc(1,
 			sizeof(struct frm_util_t));
-		sm->simd_units[i]->act_util = xcalloc(1,
+		self->simd_units[i]->act_util = xcalloc(1,
 			sizeof(struct frm_util_t));
-		sm->simd_units[i]->tot_util = xcalloc(1,
+		self->simd_units[i]->tot_util = xcalloc(1,
 			sizeof(struct frm_util_t));
 	}
 
-	sm->thread_blocks = 
+	self->thread_blocks = 
 		xcalloc(frm_gpu_max_thread_blocks_per_sm, sizeof(void *));
-
-	/* Return */
-	return sm;
 }
 
 
-void frm_sm_free(struct frm_sm_t *sm)
+void FrmSMDestroy(FrmSM *self)
 {
 	int i;
 
 	/* Branch Unit */
-	frm_uop_list_free(sm->branch_unit.issue_buffer);
-	frm_uop_list_free(sm->branch_unit.decode_buffer);
-	frm_uop_list_free(sm->branch_unit.read_buffer);
-	frm_uop_list_free(sm->branch_unit.exec_buffer);
-	frm_uop_list_free(sm->branch_unit.write_buffer);
-	list_free(sm->branch_unit.issue_buffer);
-	list_free(sm->branch_unit.decode_buffer);
-	list_free(sm->branch_unit.read_buffer);
-	list_free(sm->branch_unit.exec_buffer);
-	list_free(sm->branch_unit.write_buffer);
+	frm_uop_list_free(self->branch_unit.issue_buffer);
+	frm_uop_list_free(self->branch_unit.decode_buffer);
+	frm_uop_list_free(self->branch_unit.read_buffer);
+	frm_uop_list_free(self->branch_unit.exec_buffer);
+	frm_uop_list_free(self->branch_unit.write_buffer);
+	list_free(self->branch_unit.issue_buffer);
+	list_free(self->branch_unit.decode_buffer);
+	list_free(self->branch_unit.read_buffer);
+	list_free(self->branch_unit.exec_buffer);
+	list_free(self->branch_unit.write_buffer);
 
 	/* Global Memory */
-	frm_uop_list_free(sm->vector_mem_unit.issue_buffer);
-	frm_uop_list_free(sm->vector_mem_unit.decode_buffer);
-	frm_uop_list_free(sm->vector_mem_unit.read_buffer);
-	frm_uop_list_free(sm->vector_mem_unit.mem_buffer);
-	frm_uop_list_free(sm->vector_mem_unit.write_buffer);
-	list_free(sm->vector_mem_unit.issue_buffer);
-	list_free(sm->vector_mem_unit.decode_buffer);
-	list_free(sm->vector_mem_unit.read_buffer);
-	list_free(sm->vector_mem_unit.mem_buffer);
-	list_free(sm->vector_mem_unit.write_buffer);
+	frm_uop_list_free(self->vector_mem_unit.issue_buffer);
+	frm_uop_list_free(self->vector_mem_unit.decode_buffer);
+	frm_uop_list_free(self->vector_mem_unit.read_buffer);
+	frm_uop_list_free(self->vector_mem_unit.mem_buffer);
+	frm_uop_list_free(self->vector_mem_unit.write_buffer);
+	list_free(self->vector_mem_unit.issue_buffer);
+	list_free(self->vector_mem_unit.decode_buffer);
+	list_free(self->vector_mem_unit.read_buffer);
+	list_free(self->vector_mem_unit.mem_buffer);
+	list_free(self->vector_mem_unit.write_buffer);
 
 	/* Shared Memory */
-	frm_uop_list_free(sm->lds_unit.issue_buffer);
-	frm_uop_list_free(sm->lds_unit.decode_buffer);
-	frm_uop_list_free(sm->lds_unit.read_buffer);
-	frm_uop_list_free(sm->lds_unit.mem_buffer);
-	frm_uop_list_free(sm->lds_unit.write_buffer);
-	list_free(sm->lds_unit.issue_buffer);
-	list_free(sm->lds_unit.decode_buffer);
-	list_free(sm->lds_unit.read_buffer);
-	list_free(sm->lds_unit.mem_buffer);
-	list_free(sm->lds_unit.write_buffer);
+	frm_uop_list_free(self->lds_unit.issue_buffer);
+	frm_uop_list_free(self->lds_unit.decode_buffer);
+	frm_uop_list_free(self->lds_unit.read_buffer);
+	frm_uop_list_free(self->lds_unit.mem_buffer);
+	frm_uop_list_free(self->lds_unit.write_buffer);
+	list_free(self->lds_unit.issue_buffer);
+	list_free(self->lds_unit.decode_buffer);
+	list_free(self->lds_unit.read_buffer);
+	list_free(self->lds_unit.mem_buffer);
+	list_free(self->lds_unit.write_buffer);
 
 	/* SIMDs */
-	for (i = 0; i < sm->num_simd_units; i++)
+	for (i = 0; i < self->num_simd_units; i++)
 	{
-		frm_uop_list_free(sm->simd_units[i]->issue_buffer);
-		frm_uop_list_free(sm->simd_units[i]->decode_buffer);
-		frm_uop_list_free(sm->simd_units[i]->exec_buffer);
-		list_free(sm->simd_units[i]->issue_buffer);
-		list_free(sm->simd_units[i]->decode_buffer);
-		list_free(sm->simd_units[i]->exec_buffer);
+		frm_uop_list_free(self->simd_units[i]->issue_buffer);
+		frm_uop_list_free(self->simd_units[i]->decode_buffer);
+		frm_uop_list_free(self->simd_units[i]->exec_buffer);
+		list_free(self->simd_units[i]->issue_buffer);
+		list_free(self->simd_units[i]->decode_buffer);
+		list_free(self->simd_units[i]->exec_buffer);
 
-		free(sm->simd_units[i]->subwarp_inst_queue);
-		free(sm->simd_units[i]->wkg_util);
-		free(sm->simd_units[i]->wvf_util);
-		free(sm->simd_units[i]->rdy_util);
-		free(sm->simd_units[i]->occ_util);
-		free(sm->simd_units[i]->wki_util);
-		free(sm->simd_units[i]->act_util);
-		free(sm->simd_units[i]->tot_util);
-		free(sm->simd_units[i]);
+		free(self->simd_units[i]->subwarp_inst_queue);
+		free(self->simd_units[i]->wkg_util);
+		free(self->simd_units[i]->wvf_util);
+		free(self->simd_units[i]->rdy_util);
+		free(self->simd_units[i]->occ_util);
+		free(self->simd_units[i]->wki_util);
+		free(self->simd_units[i]->act_util);
+		free(self->simd_units[i]->tot_util);
+		free(self->simd_units[i]);
 	}
-	free(sm->simd_units);
+	free(self->simd_units);
 
 	/* Fetch buffers */
-	for (i = 0; i < sm->num_warp_inst_queues; i++)
+	for (i = 0; i < self->num_warp_inst_queues; i++)
 	{
-		frm_uop_list_free(sm->fetch_buffers[i]);
-		list_free(sm->fetch_buffers[i]);
+		frm_uop_list_free(self->fetch_buffers[i]);
+		list_free(self->fetch_buffers[i]);
 	}
-	free(sm->fetch_buffers);
+	free(self->fetch_buffers);
 
 	/* Others */
-	for (i = 0; i < sm->num_warp_inst_queues; i++)
-		frm_warp_inst_queue_free(sm->warp_inst_queues[i]);
-	free(sm->warp_inst_queues);
-	free(sm->thread_blocks);
-	mod_free(sm->lds_module);
-	free(sm);
+	for (i = 0; i < self->num_warp_inst_queues; i++)
+		frm_warp_inst_queue_free(self->warp_inst_queues[i]);
+	free(self->warp_inst_queues);
+	free(self->thread_blocks);
+	mod_free(self->lds_module);
 }
 
 
-void frm_sm_map_thread_block(struct frm_sm_t *sm, 
+void FrmSMMapThreadBlock(FrmSM *sm,
 		FrmThreadBlock *thread_block)
 {
 	FrmGrid *grid;
@@ -286,7 +283,7 @@ void frm_sm_map_thread_block(struct frm_sm_t *sm,
 }
 
 
-void frm_sm_unmap_thread_block(struct frm_sm_t *sm, FrmThreadBlock *thread_block)
+void FrmSMUnmapThreadBlock(FrmSM *sm, FrmThreadBlock *thread_block)
 {
 	/* Reset mapped work-group */
 	assert(sm->thread_block_count > 0);
@@ -313,7 +310,7 @@ void frm_sm_unmap_thread_block(struct frm_sm_t *sm, FrmThreadBlock *thread_block
 	frm_trace("si.unmap_wg cu=%d wg=%d\n", sm->id, thread_block->id);
 }
 
-void frm_sm_fetch(struct frm_sm_t *sm, int wiq_id)
+void frm_sm_fetch(FrmSM *sm, int wiq_id)
 {
 	int j;
 	int instructions_processed = 0;
@@ -488,7 +485,7 @@ void frm_sm_fetch(struct frm_sm_t *sm, int wiq_id)
 }
 
 /* Decode the instruction type */
-void frm_sm_issue_oldest(struct frm_sm_t *sm, 
+void frm_sm_issue_oldest(FrmSM *sm,
 		int active_fb)
 {
 	struct frm_uop_t *uop;
@@ -785,7 +782,7 @@ void frm_sm_issue_oldest(struct frm_sm_t *sm,
 }
 
 void frm_sm_update_fetch_visualization(
-		struct frm_sm_t *sm, int non_active_fb)
+		FrmSM *sm, int non_active_fb)
 {
 	struct frm_uop_t *uop;
 	int list_entries;
@@ -811,7 +808,7 @@ void frm_sm_update_fetch_visualization(
 }
 
 /* Decode the instruction type */
-void frm_sm_issue_first(struct frm_sm_t *sm, 
+void frm_sm_issue_first(FrmSM *sm,
 		int active_fb)
 {
 	struct frm_uop_t *uop;
@@ -1216,7 +1213,7 @@ void frm_sm_issue_first(struct frm_sm_t *sm,
 }
 
 /* Advance one cycle in the SM by running every stage from last to first */
-void frm_sm_run(struct frm_sm_t *sm)
+void FrmSMRun(FrmSM *sm)
 {
 	//struct arch_t *arch = frm_emu->arch;
 	int i;

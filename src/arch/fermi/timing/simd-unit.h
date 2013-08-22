@@ -44,7 +44,7 @@ struct frm_simd_t
 	struct frm_subwarp_inst_queue_t *subwarp_inst_queue;  
 	struct frm_warp_inst_queue_t *warp_inst_queue;
 
-	struct frm_sm_t *sm;
+	FrmSM *sm;
 
 	/* Statistics */
 	long long inst_count;

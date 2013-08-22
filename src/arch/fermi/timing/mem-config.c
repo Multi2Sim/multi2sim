@@ -35,7 +35,7 @@
 
 void FrmGpuMemConfigCheck(Timing *self, struct config_t *config)
 {
-	struct frm_sm_t *sm;
+	FrmSM *sm;
 	int sm_id;
 	char *file_name;
 
@@ -246,7 +246,7 @@ void FrmGpuMemConfigParseEntry(Timing *self, struct config_t *config, char *sect
 
 	int sm_id;
 
-	struct frm_sm_t *sm;
+	FrmSM *sm;
 
 	/* Get configuration file name */
 	file_name = config_get_file_name(config);

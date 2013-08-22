@@ -24,27 +24,26 @@
 /*
  * Public variable
  */
-extern int frm_spatial_report_active  ;
-struct frm_sm_t;
+extern int frm_spatial_report_active;
 
 
-void frm_report_new_inst(struct frm_sm_t *sm);
+void frm_report_new_inst(FrmSM *sm);
 
-void frm_alu_report_new_inst(struct frm_sm_t *sm);
+void frm_alu_report_new_inst(FrmSM *sm);
 
-void frm_report_mapped_thread_block(struct frm_sm_t *sm);
+void frm_report_mapped_thread_block(FrmSM *sm);
 
 
 /* Used in vector unit to keep track of num of mem accesses in flight */
-void frm_report_global_mem_inflight( struct frm_sm_t *sm, int long long pending_accesses);
+void frm_report_global_mem_inflight(FrmSM *sm, int long long pending_accesses);
 
-void frm_report_global_mem_finish( struct frm_sm_t *sm, int long long completed_accesses);
+void frm_report_global_mem_finish(FrmSM *sm, int long long completed_accesses);
 
 struct config_t;
 
 void frm_spatial_report_config_read(struct config_t *config);
 
-void frm_sm_interval_update(struct frm_sm_t *sm);
+void frm_sm_interval_update(FrmSM *sm);
 
 void frm_sm_spatial_report_done();
 

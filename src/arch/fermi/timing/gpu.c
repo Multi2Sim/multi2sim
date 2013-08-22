@@ -971,7 +971,7 @@ void frm_gpu_dump_default_config(char *filename)
 
 void FrmGpuCreate(FrmGpu *self, FrmEmu *emu)
 {
-	struct frm_sm_t *sm;
+	FrmSM *sm;
 	int sm_id;
 
 	/* Parent */
@@ -985,11 +985,11 @@ void FrmGpuCreate(FrmGpu *self, FrmEmu *emu)
 	asTiming(self)->frequency_domain = esim_new_domain(frm_gpu_frequency);
 
 	/* Initialize SMs */
-	self->sms = xcalloc(frm_gpu_num_sms, sizeof(struct frm_sm_t *));
+	self->sms = xcalloc(frm_gpu_num_sms, sizeof(FrmSM *));
 	self->sm_ready_list = list_create();
 	FRM_GPU_FOREACH_SM(sm_id)
 	{
-		self->sms[sm_id] = frm_sm_create();
+		self->sms[sm_id] = new(FrmSM, self);
 		sm = self->sms[sm_id];
 		sm->id = sm_id;
 		list_add(self->sm_ready_list, sm);
@@ -1007,13 +1007,13 @@ void FrmGpuCreate(FrmGpu *self, FrmEmu *emu)
 
 void FrmGpuDestroy(FrmGpu *self)
 {
-	struct frm_sm_t *sm;
+	FrmSM *sm;
 	int sm_id;
 
 	FRM_GPU_FOREACH_SM(sm_id)
 	{
 		sm = self->sms[sm_id];
-		frm_sm_free(sm);
+		delete(sm);
 	}
 	list_free(self->sm_ready_list);
 	free(self->sms);
@@ -1036,7 +1036,7 @@ void FrmGpuDumpReport(FrmGpu *self)
 {
 	FrmEmu *emu = self->emu;
 
-	struct frm_sm_t *sm;
+	FrmSM *sm;
 	struct mod_t *lds_mod;
 	int sm_id;
 
@@ -1115,8 +1115,8 @@ int FrmGpuRun(Timing *self)
 
 	FrmGrid *grid;
 
-	struct frm_sm_t *sm;
-	struct frm_sm_t *sm_next;
+	FrmSM *sm;
+	FrmSM *sm_next;
 	int sm_id;
 
 	/* FIXME - temporarily disabled due to segfault.
@@ -1154,7 +1154,7 @@ int FrmGpuRun(Timing *self)
 	while (list_head(gpu->sm_ready_list) && 
 			list_head(grid->pending_thread_blocks))
 	{
-		frm_sm_map_thread_block(list_head(gpu->sm_ready_list),
+		FrmSMMapThreadBlock(list_head(gpu->sm_ready_list),
 				list_head(grid->pending_thread_blocks));
 	}
 
@@ -1189,7 +1189,7 @@ int FrmGpuRun(Timing *self)
 		sm_next = list_get(gpu->sm_busy_list, sm_id + 1);
 
 		/* Run one cycle */
-		frm_sm_run(sm);
+		FrmSMRun(sm);
 	}
 
 	/* Finish execution */

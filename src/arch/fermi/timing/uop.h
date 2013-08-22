@@ -59,7 +59,7 @@ struct frm_uop_t
 	int warp_inst_queue_id;
 	FrmWarp *warp;       /* Wavefront it belongs to */
 	FrmThreadBlock *thread_block;     /* Work-group it belongs to */
-	struct frm_sm_t *sm; /* Compute unit it belongs to */
+	FrmSM *sm; /* Compute unit it belongs to */
 	struct frm_warp_inst_queue_entry_t *warp_inst_queue_entry;  /* IB entry where uop is located */
 	FrmInst inst;
 
