@@ -123,7 +123,7 @@ struct evg_uop_t *evg_uop_create_from_alu_group(struct evg_alu_group_t *alu_grou
 		inst = &alu_group->inst[i];
 
 		/* Local memory access instruction */
-		if (inst->info->fmt[0] == EVG_FMT_ALU_WORD0_LDS_IDX_OP)
+		if (inst->info->fmt[0] == EvgInstFormatAluWord0LdsIdxOp)
 		{
 			/* Assume read and write to local memory */
 			assert(uop->idep_count < EVG_UOP_MAX_IDEP);
@@ -133,16 +133,16 @@ struct evg_uop_t *evg_uop_create_from_alu_group(struct evg_alu_group_t *alu_grou
 		}
 
 		/* Arithmetic instruction */
-		else if (inst->info->fmt[0] == EVG_FMT_ALU_WORD0)
+		else if (inst->info->fmt[0] == EvgInstFormatAluWord0)
 		{
 			/* Add input dependences */
 			evg_uop_add_src_idep(uop, inst, 0);
 			evg_uop_add_src_idep(uop, inst, 1);
-			if (inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP3)
+			if (inst->info->fmt[1] == EvgInstFormatAluWord1Op3)
 				evg_uop_add_src_idep(uop, inst, 2);
 
 			/* Add register output dependence if not masked */
-			if (inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP3 ||
+			if (inst->info->fmt[1] == EvgInstFormatAluWord1Op3 ||
 				inst->words[1].alu_word1_op2.write_mask)
 			{
 				assert(uop->odep_count < EVG_UOP_MAX_ODEP);

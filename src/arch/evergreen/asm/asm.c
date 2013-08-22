@@ -34,7 +34,7 @@
  */
 
 /* Table containing information of all instructions */
-struct evg_inst_info_t evg_inst_info[EVG_INST_COUNT];
+EvgInstInfo evg_inst_info[EvgInstOpcodeCount];
 
 /* Pointers to 'amd_inst_info' table indexed by instruction opcode */
 #define EVG_INST_INFO_CF_LONG_SIZE  256
@@ -43,71 +43,73 @@ struct evg_inst_info_t evg_inst_info[EVG_INST_COUNT];
 #define EVG_INST_INFO_ALU_SHORT_SIZE 32
 #define EVG_INST_INFO_TEX_SIZE 32
 
-static struct evg_inst_info_t *evg_inst_info_cf_long[EVG_INST_INFO_CF_LONG_SIZE];  /* for 8-bit cf_inst */
-static struct evg_inst_info_t *evg_inst_info_cf_short[EVG_INST_INFO_CF_SHORT_SIZE];  /* for 4-bit cf_inst */
-static struct evg_inst_info_t *evg_inst_info_alu_long[EVG_INST_INFO_ALU_LONG_SIZE];  /* for ALU_OP2 */
-static struct evg_inst_info_t *evg_inst_info_alu_short[EVG_INST_INFO_ALU_SHORT_SIZE];  /* for ALU_OP3 */
-static struct evg_inst_info_t *evg_inst_info_tex[EVG_INST_INFO_TEX_SIZE];  /* For tex instructions */
+static EvgInstInfo *evg_inst_info_cf_long[EVG_INST_INFO_CF_LONG_SIZE];  /* for 8-bit cf_inst */
+static EvgInstInfo *evg_inst_info_cf_short[EVG_INST_INFO_CF_SHORT_SIZE];  /* for 4-bit cf_inst */
+static EvgInstInfo *evg_inst_info_alu_long[EVG_INST_INFO_ALU_LONG_SIZE];  /* for ALU_OP2 */
+static EvgInstInfo *evg_inst_info_alu_short[EVG_INST_INFO_ALU_SHORT_SIZE];  /* for ALU_OP3 */
+static EvgInstInfo *evg_inst_info_tex[EVG_INST_INFO_TEX_SIZE];  /* For tex instructions */
 
 
 void evg_disasm_init()
 {
-	struct evg_inst_info_t *info;
+	EvgInstInfo *info;
 	int i;
 
 	/* Type size assertions */
 	assert(sizeof(union evg_reg_t) == 4);
 
 	/* Read information about all instructions */
-#define DEFINST(_name, _fmt_str, _fmt0, _fmt1, _fmt2, _category, _opcode, _flags) \
+#define DEFINST(_name, _fmt_str, _fmt0, _fmt1, _fmt2, _category, _op, _flags) \
 	info = &evg_inst_info[EVG_INST_##_name]; \
-	info->inst = EVG_INST_##_name; \
-	info->category = EVG_INST_CAT_##_category; \
+	info->opcode = EVG_INST_##_name; \
+	info->category = EvgInstCategory##_category; \
 	info->name = #_name; \
 	info->fmt_str = _fmt_str; \
-	info->fmt[0] = EVG_FMT_##_fmt0; \
-	info->fmt[1] = EVG_FMT_##_fmt1; \
-	info->fmt[2] = EVG_FMT_##_fmt2; \
-	info->opcode = _opcode; \
+	info->fmt[0] = EvgInstFormat##_fmt0; \
+	info->fmt[1] = EvgInstFormat##_fmt1; \
+	info->fmt[2] = EvgInstFormat##_fmt2; \
+	info->op = _op; \
 	info->flags = _flags; \
-	info->size = (EVG_FMT_##_fmt0 ? 1 : 0) + (EVG_FMT_##_fmt1 ? 1 : 0) + (EVG_FMT_##_fmt2 ? 1 : 0);
+	info->size = (EvgInstFormat##_fmt0 ? 1 : 0) + \
+			(EvgInstFormat##_fmt1 ? 1 : 0) + \
+			(EvgInstFormat##_fmt2 ? 1 : 0);
 #include "asm.dat"
 #undef DEFINST
 	
 	/* Tables of pointers to 'evg_inst_info' */
-	for (i = 1; i < EVG_INST_COUNT; i++)
+	for (i = 1; i < EvgInstOpcodeCount; i++)
 	{
 		info = &evg_inst_info[i];
-		if (info->fmt[1] == EVG_FMT_CF_WORD1 ||
-			info->fmt[1] == EVG_FMT_CF_ALLOC_EXPORT_WORD1_BUF ||
-			info->fmt[1] == EVG_FMT_CF_ALLOC_EXPORT_WORD1_SWIZ)
+		if (info->fmt[1] == EvgInstFormatCfWord1 ||
+			info->fmt[1] == EvgInstFormatCfAllocExportWord1Buf ||
+			info->fmt[1] == EvgInstFormatCfAllocExportWord1Swiz)
 		{
-			assert(IN_RANGE(info->opcode, 0, EVG_INST_INFO_CF_LONG_SIZE - 1));
-			evg_inst_info_cf_long[info->opcode] = info;
+			assert(IN_RANGE(info->op, 0, EVG_INST_INFO_CF_LONG_SIZE - 1));
+			evg_inst_info_cf_long[info->op] = info;
 			continue;
 		}
-		if (info->fmt[1] == EVG_FMT_CF_ALU_WORD1 ||
-			info->fmt[1] == EVG_FMT_CF_ALU_WORD1_EXT)
+		if (info->fmt[1] == EvgInstFormatCfAluWord1 ||
+			info->fmt[1] == EvgInstFormatCfAluWord1Ext)
 		{
-			assert(IN_RANGE(info->opcode, 0, EVG_INST_INFO_CF_SHORT_SIZE - 1));
-			evg_inst_info_cf_short[info->opcode] = info;
+			assert(IN_RANGE(info->op, 0, EVG_INST_INFO_CF_SHORT_SIZE - 1));
+			evg_inst_info_cf_short[info->op] = info;
 			continue;
 		}
-		if (info->fmt[1] == EVG_FMT_ALU_WORD1_OP2) {
-			assert(IN_RANGE(info->opcode, 0, EVG_INST_INFO_ALU_LONG_SIZE - 1));
-			evg_inst_info_alu_long[info->opcode] = info;
+		if (info->fmt[1] == EvgInstFormatAluWord1Op2) {
+			assert(IN_RANGE(info->op, 0, EVG_INST_INFO_ALU_LONG_SIZE - 1));
+			evg_inst_info_alu_long[info->op] = info;
 			continue;
 		}
-		if (info->fmt[1] == EVG_FMT_ALU_WORD1_OP3 ||
-			info->fmt[1] == EVG_FMT_ALU_WORD1_LDS_IDX_OP)
+		if (info->fmt[1] == EvgInstFormatAluWord1Op3 ||
+			info->fmt[1] == EvgInstFormatAluWord1LdsIdxOp)
 		{
-			assert(IN_RANGE(info->opcode, 0, EVG_INST_INFO_ALU_SHORT_SIZE - 1));
-			evg_inst_info_alu_short[info->opcode] = info;
+			assert(IN_RANGE(info->op, 0, EVG_INST_INFO_ALU_SHORT_SIZE - 1));
+			evg_inst_info_alu_short[info->op] = info;
 			continue;
 		}
-		if (info->fmt[0] == EVG_FMT_TEX_WORD0 || info->fmt[0] == EVG_FMT_VTX_WORD0 || info->fmt[0] == EVG_FMT_MEM_RD_WORD0) {
-			assert(IN_RANGE(info->opcode, 0, EVG_INST_INFO_TEX_SIZE - 1));
-			evg_inst_info_tex[info->opcode] = info;
+		if (info->fmt[0] == EvgInstFormatTexWord0 || info->fmt[0] == EvgInstFormatVtxWord0 || info->fmt[0] == EvgInstFormatMemRdWord0) {
+			assert(IN_RANGE(info->op, 0, EVG_INST_INFO_TEX_SIZE - 1));
+			evg_inst_info_tex[info->op] = info;
 			continue;
 		}
 		fprintf(stderr, "warning: '%s' not indexed\n", info->name);
@@ -144,7 +146,7 @@ void evg_disasm_buffer(struct elf_buffer_t *buffer, FILE *f)
 
 		/* CF Instruction */
 		cf_buf = evg_inst_decode_cf(cf_buf, &cf_inst);
-                if (cf_inst.info->flags & EVG_INST_FLAG_DEC_LOOP_IDX)
+                if (cf_inst.info->flags & EvgInstFlagDecLoopIdx)
                 {
                         assert(loop_idx > 0);
                         loop_idx--;
@@ -155,7 +157,7 @@ void evg_disasm_buffer(struct elf_buffer_t *buffer, FILE *f)
 		inst_count++;
 
 		/* ALU Clause */
-		if (cf_inst.info->fmt[0] == EVG_FMT_CF_ALU_WORD0)
+		if (cf_inst.info->fmt[0] == EvgInstFormatCfAluWord0)
 		{
 			void *alu_buf, *alu_buf_end;
 			struct evg_alu_group_t alu_group;
@@ -172,7 +174,7 @@ void evg_disasm_buffer(struct elf_buffer_t *buffer, FILE *f)
 		}
 
 		/* TEX Clause */
-		if (cf_inst.info->inst == EVG_INST_TC)
+		if (cf_inst.info->opcode == EVG_INST_TC)
 		{
 			char *tex_buf, *tex_buf_end;
 			struct evg_inst_t inst;
@@ -189,7 +191,7 @@ void evg_disasm_buffer(struct elf_buffer_t *buffer, FILE *f)
 		}
 
 		/* Increase loop depth counter */
-                if (cf_inst.info->flags & EVG_INST_FLAG_INC_LOOP_IDX)
+                if (cf_inst.info->flags & EvgInstFlagIncLoopIdx)
                         loop_idx++;
 	}
 }
@@ -225,9 +227,9 @@ void *evg_inst_decode_cf(void *buf, struct evg_inst_t *inst)
 
 	/* If 'end_of_program' bit is set, return NULL */
 	end_of_program = 0;
-	if (inst->info->fmt[1] == EVG_FMT_CF_WORD1
-		|| inst->info->fmt[1] == EVG_FMT_CF_ALLOC_EXPORT_WORD1_BUF
-		|| inst->info->fmt[1] == EVG_FMT_CF_ALLOC_EXPORT_WORD1_SWIZ)
+	if (inst->info->fmt[1] == EvgInstFormatCfWord1
+		|| inst->info->fmt[1] == EvgInstFormatCfAllocExportWord1Buf
+		|| inst->info->fmt[1] == EvgInstFormatCfAllocExportWord1Swiz)
 		end_of_program = inst->words[1].cf_word1.end_of_program;
 	if (end_of_program)
 		return NULL;
@@ -295,7 +297,7 @@ void *evg_inst_decode_alu_group(void *buf, int group_id, struct evg_alu_group_t 
 			chan = inst->words[0].alu_word0.src1_chan;
 			group->literal_count = MAX(group->literal_count, (chan + 2) / 2);
 		}
-		if (inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP3 && inst->words[1].alu_word1_op3.src2_sel == 253) {
+		if (inst->info->fmt[1] == EvgInstFormatAluWord1Op3 && inst->words[1].alu_word1_op3.src2_sel == 253) {
 			chan = inst->words[1].alu_word1_op3.src2_chan;
 			group->literal_count = MAX(group->literal_count, (chan + 2) / 2);
 		}
@@ -306,7 +308,7 @@ void *evg_inst_decode_alu_group(void *buf, int group_id, struct evg_alu_group_t 
 		/* Initially, set ALU as indicated by the destination operand. For both OP2 and OP3 formats, field
 		 * 'dest_chan' is located at the same bit position. */
 		dest_chan = inst->words[1].alu_word1_op2.dst_chan;
-		alu = inst->info->flags & EVG_INST_FLAG_TRANS_ONLY ? EVG_ALU_TRANS : dest_chan;
+		alu = inst->info->flags & EvgInstFlagTransOnly ? EVG_ALU_TRANS : dest_chan;
 		if (alu_busy[alu])
 			alu = EVG_ALU_TRANS;
 		if (alu_busy[alu])
@@ -592,7 +594,7 @@ static void evg_inst_dump_op_dest_buf(struct evg_inst_t *inst, char **buf_ptr, i
 	index_mode = inst->words[0].alu_word0.index_mode;
 
 	/* If 'write_mask' field is clear, print underscore */
-	if (inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP2 && !inst->words[1].alu_word1_op2.write_mask) {
+	if (inst->info->fmt[1] == EvgInstFormatAluWord1Op2 && !inst->words[1].alu_word1_op2.write_mask) {
 		str_printf(buf_ptr, size_ptr, "____");
 		return;
 	}
@@ -626,11 +628,11 @@ void evg_inst_get_op_src(struct evg_inst_t *inst, int src_idx,
 	int *sel, int *rel, int *chan, int *neg, int *abs)
 {
 	/* Valid formats */
-	assert(inst->info->fmt[0] == EVG_FMT_ALU_WORD0
-		|| inst->info->fmt[0] == EVG_FMT_ALU_WORD0_LDS_IDX_OP);
-	assert(inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP2
-		|| inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP3
-		|| inst->info->fmt[1] == EVG_FMT_ALU_WORD1_LDS_IDX_OP);
+	assert(inst->info->fmt[0] == EvgInstFormatAluWord0
+		|| inst->info->fmt[0] == EvgInstFormatAluWord0LdsIdxOp);
+	assert(inst->info->fmt[1] == EvgInstFormatAluWord1Op2
+		|| inst->info->fmt[1] == EvgInstFormatAluWord1Op3
+		|| inst->info->fmt[1] == EvgInstFormatAluWord1LdsIdxOp);
 	
 	/* Get parameters */
 	switch (src_idx)
@@ -650,13 +652,13 @@ void evg_inst_get_op_src(struct evg_inst_t *inst, int src_idx,
 		 * Present:	EVG_ALU_WORD0
 		 * Absent:	EVG_ALU_WORD0_LDS_IDX_OP
 		 */
-		*neg = inst->info->fmt[0] == EVG_FMT_ALU_WORD0 ? inst->words[0].alu_word0.src0_neg : 0;
+		*neg = inst->info->fmt[0] == EvgInstFormatAluWord0 ? inst->words[0].alu_word0.src0_neg : 0;
 
 		/* Fields:	src0_abs
 		 * Present:	EVG_ALU_WORD1_OP2
 		 * Absent:	EVG_ALU_WORD1_OP3, EVG_ALU_WORD1_LDS_IDX_OP
 		 */
-		*abs = inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP2 ? inst->words[1].alu_word1_op2.src0_abs : 0;
+		*abs = inst->info->fmt[1] == EvgInstFormatAluWord1Op2 ? inst->words[1].alu_word1_op2.src0_abs : 0;
 		break;
 
 	case 1:
@@ -673,13 +675,13 @@ void evg_inst_get_op_src(struct evg_inst_t *inst, int src_idx,
 		 * Present:	EVG_ALU_WORD0
 		 * Absent:	EVG_ALU_WORD0_LDS_IDX_OP
 		 */
-		*neg = inst->info->fmt[0] == EVG_FMT_ALU_WORD0 ? inst->words[0].alu_word0.src1_neg : 0;
+		*neg = inst->info->fmt[0] == EvgInstFormatAluWord0 ? inst->words[0].alu_word0.src1_neg : 0;
 
 		/* Fields:	src_abs
 		 * Present:	EVG_ALU_WORD1_OP2
 		 * Absent:	EVG_ALU_WORD1_OP3, EVG_ALU_WORD1_LDS_IDX_OP
 		 */
-		*abs = inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP2 ? inst->words[1].alu_word1_op2.src1_abs : 0;
+		*abs = inst->info->fmt[1] == EvgInstFormatAluWord1Op2 ? inst->words[1].alu_word1_op2.src1_abs : 0;
 		break;
 
 	case 2:
@@ -688,8 +690,8 @@ void evg_inst_get_op_src(struct evg_inst_t *inst, int src_idx,
 		 * Present:	EVG_ALU_WORD1_OP3, EVG_ALU_WORD1_LDS_IDX_OP
 		 * Absent:	EVG_ALU_WORD1_OP2
 		 */
-		assert(inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP3
-			|| inst->info->fmt[1] == EVG_FMT_ALU_WORD1_LDS_IDX_OP);
+		assert(inst->info->fmt[1] == EvgInstFormatAluWord1Op3
+			|| inst->info->fmt[1] == EvgInstFormatAluWord1LdsIdxOp);
 		*sel = inst->words[1].alu_word1_op3.src2_sel;
 		*rel = inst->words[1].alu_word1_op3.src2_rel;
 		*chan = inst->words[1].alu_word1_op3.src2_chan;
@@ -698,7 +700,7 @@ void evg_inst_get_op_src(struct evg_inst_t *inst, int src_idx,
 		 * Present:	EVG_ALU_WORD1_OP3
 		 * Absent:	EVG_ALU_WORD1_LDS_IDX_OP, ALU_WORD_OP2
 		 */
-		*neg = inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP3 ? inst->words[1].alu_word1_op3.src2_neg : 0;
+		*neg = inst->info->fmt[1] == EvgInstFormatAluWord1Op3 ? inst->words[1].alu_word1_op3.src2_neg : 0;
 
 		/* Fields:	src2_abs
 		 * Present:	-
@@ -810,7 +812,7 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 	str_printf(buf_ptr, size_ptr, "%s", shift_str);
 
 	/* Instruction counter */
-	if (inst->info->category == EVG_INST_CAT_CF)
+	if (inst->info->category == EvgInstCategoryCF)
 	{
 		if (count >= 0)
 			str_printf(buf_ptr, size_ptr, "%02d ", count);
@@ -845,7 +847,7 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 		fmt_str++;
 		if (evg_inst_is_token(fmt_str, "name", &len))
 		{
-			if (inst->info->category == EVG_INST_CAT_ALU)
+			if (inst->info->category == EvgInstCategoryALU)
 				str_printf(buf_ptr, size_ptr, "%-11s", inst->info->name);
 			else
 				str_printf(buf_ptr, size_ptr, "%s", inst->info->name);
@@ -873,7 +875,7 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 		else if (evg_inst_is_token(fmt_str, "alu_mod", &len))
 		{
 			/* Padding */
-			assert(inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP2 || inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP3);
+			assert(inst->info->fmt[1] == EvgInstFormatAluWord1Op2 || inst->info->fmt[1] == EvgInstFormatAluWord1Op3);
 			str_printf(buf_ptr, size_ptr, "    ");
 
 			/* EVG_ALU_WORD1_OP2 - 'bank_swizzle' field.
@@ -887,16 +889,16 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 				str_printf(buf_ptr, size_ptr, " (p)");
 
 			/* EVG_ALU_WORD1_OP2 - 'update_exec_mask' field */
-			if (inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP2 && inst->words[1].alu_word1_op2.update_exec_mask)
+			if (inst->info->fmt[1] == EvgInstFormatAluWord1Op2 && inst->words[1].alu_word1_op2.update_exec_mask)
 				str_printf(buf_ptr, size_ptr, " UPDATE_EXEC_MASK");
 
 			/* EVG_ALU_WORD1_OP2 - 'update_pred' field */
-			if (inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP2 && inst->words[1].alu_word1_op2.update_pred)
+			if (inst->info->fmt[1] == EvgInstFormatAluWord1Op2 && inst->words[1].alu_word1_op2.update_pred)
 				str_printf(buf_ptr, size_ptr, " UPDATE_PRED");
 		}
 		else if (evg_inst_is_token(fmt_str, "omod", &len))
 		{
-			assert(inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP2);
+			assert(inst->info->fmt[1] == EvgInstFormatAluWord1Op2);
 			switch (inst->words[1].alu_word1_op2.omod)
 			{
 			case 0: str_printf(buf_ptr, size_ptr, "  "); break;
@@ -907,23 +909,23 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 		}
 		else if (evg_inst_is_token(fmt_str, "clamp", &len))
 		{
-			assert(inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP2 || inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP3);
+			assert(inst->info->fmt[1] == EvgInstFormatAluWord1Op2 || inst->info->fmt[1] == EvgInstFormatAluWord1Op3);
 			if (inst->words[1].alu_word1_op2.clamp || inst->words[1].alu_word1_op3.clamp)
 				str_printf(buf_ptr, size_ptr, "CLAMP");
 		}
 		else if (evg_inst_is_token(fmt_str, "cf_addr", &len))
 		{
-			assert(inst->info->fmt[0] == EVG_FMT_CF_WORD0);
+			assert(inst->info->fmt[0] == EvgInstFormatCfWord0);
 			str_printf(buf_ptr, size_ptr, "%d", inst->words[0].cf_word0.addr);
 		}
 		else if (evg_inst_is_token(fmt_str, "cf_cnt", &len))
 		{
-			assert(inst->info->fmt[1] == EVG_FMT_CF_WORD1);
+			assert(inst->info->fmt[1] == EvgInstFormatCfWord1);
 			str_printf(buf_ptr, size_ptr, "%d", inst->words[1].cf_word1.count + 1);
 		}
 		else if (evg_inst_is_token(fmt_str, "cf_stream_id", &len))
 		{
-			assert(inst->info->fmt[1] == EVG_FMT_CF_WORD1);
+			assert(inst->info->fmt[1] == EvgInstFormatCfWord1);
 			/* For EMIT, CUT, EMIT_CUT, bit[10] are the stream ID */
 			int stream_id = inst->words[1].cf_word1.count % 2;
 			str_printf(buf_ptr, size_ptr, "%d", stream_id);
@@ -932,7 +934,7 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 		{
 			int pop_count;
 
-			assert(inst->info->fmt[1] == EVG_FMT_CF_WORD1);
+			assert(inst->info->fmt[1] == EvgInstFormatCfWord1);
 			pop_count = inst->words[1].cf_word1.pop_count;
 			if (pop_count)
 				str_printf(buf_ptr, size_ptr, "POP_CNT(%d)", pop_count);
@@ -942,7 +944,7 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 			int cf_cond;
 			int valid_pixel_mode;
 			
-			assert(inst->info->fmt[1] == EVG_FMT_CF_WORD1);
+			assert(inst->info->fmt[1] == EvgInstFormatCfWord1);
 			valid_pixel_mode = inst->words[1].cf_word1.valid_pixel_mode;
 			cf_cond = inst->words[1].cf_word1.cond;
 			if (valid_pixel_mode && cf_cond)
@@ -954,7 +956,7 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 			int cf_cond;
 			int valid_pixel_mode;
 			
-			assert(inst->info->fmt[1] == EVG_FMT_CF_WORD1);
+			assert(inst->info->fmt[1] == EvgInstFormatCfWord1);
 			valid_pixel_mode = inst->words[1].cf_word1.valid_pixel_mode;
 			cf_cond = inst->words[1].cf_word1.cond;
 			cf_const = inst->words[1].cf_word1.cf_const;
@@ -965,7 +967,7 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 		{
 			int whole_quad_mode;
 			
-			assert(inst->info->fmt[1] == EVG_FMT_CF_WORD1 || inst->info->fmt[1] == EVG_FMT_CF_ALU_WORD1);
+			assert(inst->info->fmt[1] == EvgInstFormatCfWord1 || inst->info->fmt[1] == EvgInstFormatCfAluWord1);
 			whole_quad_mode = inst->words[1].cf_word1.whole_quad_mode;
 			if (whole_quad_mode)
 				str_printf(buf_ptr, size_ptr, "WHOLE_QUAD");
@@ -974,21 +976,21 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 		{
 			int valid_pixel_mode;
 			
-			assert(inst->info->fmt[1] == EVG_FMT_CF_WORD1 ||
-				inst->info->fmt[1] == EVG_FMT_CF_ALLOC_EXPORT_WORD1_BUF ||
-				inst->info->fmt[1] == EVG_FMT_CF_ALLOC_EXPORT_WORD1_SWIZ);
+			assert(inst->info->fmt[1] == EvgInstFormatCfWord1 ||
+				inst->info->fmt[1] == EvgInstFormatCfAllocExportWord1Buf ||
+				inst->info->fmt[1] == EvgInstFormatCfAllocExportWord1Swiz);
 			valid_pixel_mode = inst->words[1].cf_word1.valid_pixel_mode;
 			if (valid_pixel_mode)
 				str_printf(buf_ptr, size_ptr, "VPM");
 		}
 		else if (evg_inst_is_token(fmt_str, "cf_alu_addr", &len))
 		{
-			assert(inst->info->fmt[0] == EVG_FMT_CF_ALU_WORD0);
+			assert(inst->info->fmt[0] == EvgInstFormatCfAluWord0);
 			str_printf(buf_ptr, size_ptr, "%d", inst->words[0].cf_alu_word0.addr);
 		}
 		else if (evg_inst_is_token(fmt_str, "cf_alu_cnt", &len))
 		{
-			assert(inst->info->fmt[1] == EVG_FMT_CF_ALU_WORD1);
+			assert(inst->info->fmt[1] == EvgInstFormatCfAluWord1);
 			str_printf(buf_ptr, size_ptr, "%d", inst->words[1].cf_alu_word1.count + 1);
 		}
 		else if (evg_inst_is_token(fmt_str, "loop_idx", &len))
@@ -1002,8 +1004,8 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 		{
 			int mark;
 			
-			assert(inst->info->fmt[1] == EVG_FMT_CF_ALLOC_EXPORT_WORD1_BUF ||
-				inst->info->fmt[1] == EVG_FMT_CF_ALLOC_EXPORT_WORD1_SWIZ);
+			assert(inst->info->fmt[1] == EvgInstFormatCfAllocExportWord1Buf ||
+				inst->info->fmt[1] == EvgInstFormatCfAllocExportWord1Swiz);
 			mark = inst->words[1].cf_alloc_export_word1_buf.mark;
 			if (mark)
 				str_printf(buf_ptr, size_ptr, "MARK");
@@ -1012,26 +1014,26 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 		{
 			int burst_count;
 
-			assert(inst->info->fmt[1] == EVG_FMT_CF_ALLOC_EXPORT_WORD1_BUF ||
-				inst->info->fmt[1] == EVG_FMT_CF_ALLOC_EXPORT_WORD1_SWIZ);
+			assert(inst->info->fmt[1] == EvgInstFormatCfAllocExportWord1Buf ||
+				inst->info->fmt[1] == EvgInstFormatCfAllocExportWord1Swiz);
 			burst_count = inst->words[1].cf_alloc_export_word1_buf.burst_count;
 			if (burst_count)
 				str_printf(buf_ptr, size_ptr, "BRSTCNT(%d)", burst_count);
 		}
 		else if (evg_inst_is_token(fmt_str, "no_barrier", &len))
 		{
-			assert(inst->info->fmt[1] == EVG_FMT_CF_WORD1 || inst->info->fmt[1] == EVG_FMT_CF_ALU_WORD1 ||
-				inst->info->fmt[1] == EVG_FMT_CF_ALU_WORD1_EXT ||
-				inst->info->fmt[1] == EVG_FMT_CF_ALLOC_EXPORT_WORD1_BUF ||
-				inst->info->fmt[1] == EVG_FMT_CF_ALLOC_EXPORT_WORD1_SWIZ);
+			assert(inst->info->fmt[1] == EvgInstFormatCfWord1 || inst->info->fmt[1] == EvgInstFormatCfAluWord1 ||
+				inst->info->fmt[1] == EvgInstFormatCfAluWord1Ext ||
+				inst->info->fmt[1] == EvgInstFormatCfAllocExportWord1Buf ||
+				inst->info->fmt[1] == EvgInstFormatCfAllocExportWord1Swiz);
 			if (!inst->words[1].cf_word1.barrier)
 				str_printf(buf_ptr, size_ptr, "NO_BARRIER");
 		}
 		else if (evg_inst_is_token(fmt_str, "vpm", &len))
 		{
-			assert(inst->info->fmt[1] == EVG_FMT_CF_WORD1 ||
-				inst->info->fmt[1] == EVG_FMT_CF_ALLOC_EXPORT_WORD1_BUF ||
-				inst->info->fmt[1] == EVG_FMT_CF_ALLOC_EXPORT_WORD1_SWIZ);
+			assert(inst->info->fmt[1] == EvgInstFormatCfWord1 ||
+				inst->info->fmt[1] == EvgInstFormatCfAllocExportWord1Buf ||
+				inst->info->fmt[1] == EvgInstFormatCfAllocExportWord1Swiz);
 			if (inst->words[1].cf_word1.valid_pixel_mode)
 				str_printf(buf_ptr, size_ptr, "VPM");
 		}
@@ -1050,13 +1052,13 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 		}
 		else if (evg_inst_is_token(fmt_str, "exp_type", &len))
 		{
-			assert(inst->info->fmt[0] == EVG_FMT_CF_ALLOC_EXPORT_WORD0);
+			assert(inst->info->fmt[0] == EvgInstFormatCfAllocExportWord0);
 			str_printf(buf_ptr, size_ptr, "%s", str_map_value(&export_type_map, inst->words[0].cf_alloc_export_word0.type));
 		}
 		else if (evg_inst_is_token(fmt_str, "exp_array_base", &len))
 		{
 			/* FIXME */
-			assert(inst->info->fmt[0] == EVG_FMT_CF_ALLOC_EXPORT_WORD0);
+			assert(inst->info->fmt[0] == EvgInstFormatCfAllocExportWord0);
 			if (inst->words[0].cf_alloc_export_word0.type == 0)
 			{	
 				int array_base = inst->words[0].cf_alloc_export_word0.array_base % 8;
@@ -1080,11 +1082,11 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 		}
 		else if (evg_inst_is_token(fmt_str, "exp_rw_gpr", &len))
 		{
-			assert(inst->info->fmt[0] == EVG_FMT_CF_ALLOC_EXPORT_WORD0);
-			assert(inst->info->fmt[1] == EVG_FMT_CF_ALLOC_EXPORT_WORD1_SWIZ || inst->info->fmt[1] == EVG_FMT_CF_ALLOC_EXPORT_WORD1_BUF);
+			assert(inst->info->fmt[0] == EvgInstFormatCfAllocExportWord0);
+			assert(inst->info->fmt[1] == EvgInstFormatCfAllocExportWord1Swiz || inst->info->fmt[1] == EvgInstFormatCfAllocExportWord1Buf);
 
 			int rw_gpr = inst->words[0].cf_alloc_export_word0.rw_gpr;
-			if (inst->info->fmt[1] == EVG_FMT_CF_ALLOC_EXPORT_WORD1_SWIZ)
+			if (inst->info->fmt[1] == EvgInstFormatCfAllocExportWord1Swiz)
 			{
 				int src_sel[4];
 				src_sel[0] = inst->words[1].cf_alloc_export_word1_swiz.sel_x;
@@ -1157,7 +1159,7 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 						str_printf(buf_ptr, size_ptr, "R%d", rw_gpr);
 				}				
 			}
-			else if (inst->info->fmt[1] == EVG_FMT_CF_ALLOC_EXPORT_WORD1_BUF)
+			else if (inst->info->fmt[1] == EvgInstFormatCfAllocExportWord1Buf)
 			{
 				str_printf(buf_ptr, size_ptr, "R%d", rw_gpr);
 			}
@@ -1165,38 +1167,38 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 		}
 		else if (evg_inst_is_token(fmt_str, "exp_index_gpr", &len))
 		{
-			assert(inst->info->fmt[0] == EVG_FMT_CF_ALLOC_EXPORT_WORD0_RAT);
+			assert(inst->info->fmt[0] == EvgInstFormatCfAllocExportWord0Rat);
 			str_printf(buf_ptr, size_ptr, "%s", str_map_value(&evg_rat_inst_map, inst->words[0].cf_alloc_export_word0_rat.rat_inst));
 		}
 		else if (evg_inst_is_token(fmt_str, "rat_inst", &len))
 		{
-			assert(inst->info->fmt[0] == EVG_FMT_CF_ALLOC_EXPORT_WORD0_RAT);
+			assert(inst->info->fmt[0] == EvgInstFormatCfAllocExportWord0Rat);
 			str_printf(buf_ptr, size_ptr, "%s", str_map_value(&evg_rat_inst_map, inst->words[0].cf_alloc_export_word0_rat.rat_inst));
 
 		}
 		else if (evg_inst_is_token(fmt_str, "rat_id", &len))
 		{
-			assert(inst->info->fmt[0] == EVG_FMT_CF_ALLOC_EXPORT_WORD0_RAT);
+			assert(inst->info->fmt[0] == EvgInstFormatCfAllocExportWord0Rat);
 			str_printf(buf_ptr, size_ptr, "%d", inst->words[0].cf_alloc_export_word0_rat.rat_id);
 		}
 		else if (evg_inst_is_token(fmt_str, "rat_index_mode", &len))
 		{
 			int rim;
-			assert(inst->info->fmt[0] == EVG_FMT_CF_ALLOC_EXPORT_WORD0_RAT);
+			assert(inst->info->fmt[0] == EvgInstFormatCfAllocExportWord0Rat);
 			rim = inst->words[0].cf_alloc_export_word0_rat.rat_index_mode;
 			if (rim)
 				str_printf(buf_ptr, size_ptr, "+idx%d", rim - 1);
 		}
 		else if (evg_inst_is_token(fmt_str, "rat_index_gpr", &len))
 		{
-			assert(inst->info->fmt[0] == EVG_FMT_CF_ALLOC_EXPORT_WORD0_RAT);
+			assert(inst->info->fmt[0] == EvgInstFormatCfAllocExportWord0Rat);
 			evg_inst_dump_gpr_buf(inst->words[0].cf_alloc_export_word0_rat.index_gpr, 0, -1, 0, buf_ptr, size_ptr);
 		}
 		else if (evg_inst_is_token(fmt_str, "comp_mask", &len))
 		{
 			int comp_mask;
 			
-			assert(inst->info->fmt[1] == EVG_FMT_CF_ALLOC_EXPORT_WORD1_BUF);
+			assert(inst->info->fmt[1] == EvgInstFormatCfAllocExportWord1Buf);
 			comp_mask = inst->words[1].cf_alloc_export_word1_buf.comp_mask;
 			if (comp_mask != 0xf)
 				str_printf(buf_ptr, size_ptr, ".%s%s%s%s", comp_mask & 1 ? "x" : "_", comp_mask & 2 ? "y" : "_",
@@ -1204,7 +1206,7 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 		}
 		else if (evg_inst_is_token(fmt_str, "rat_rw_gpr", &len))
 		{
-			assert(inst->info->fmt[0] == EVG_FMT_CF_ALLOC_EXPORT_WORD0_RAT);
+			assert(inst->info->fmt[0] == EvgInstFormatCfAllocExportWord0Rat);
 			evg_inst_dump_gpr_buf(inst->words[0].cf_alloc_export_word0_rat.rw_gpr, 0, -1, 0, buf_ptr, size_ptr);
 		}
 		else if (evg_inst_is_token(fmt_str, "array_size", &len))
@@ -1212,8 +1214,8 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 			int elem_size;
 			int array_size;
 			
-			assert(inst->info->fmt[0] == EVG_FMT_CF_ALLOC_EXPORT_WORD0 || inst->info->fmt[0] == EVG_FMT_CF_ALLOC_EXPORT_WORD0_RAT);
-			assert(inst->info->fmt[1] == EVG_FMT_CF_ALLOC_EXPORT_WORD1_BUF);
+			assert(inst->info->fmt[0] == EvgInstFormatCfAllocExportWord0 || inst->info->fmt[0] == EvgInstFormatCfAllocExportWord0Rat);
+			assert(inst->info->fmt[1] == EvgInstFormatCfAllocExportWord1Buf);
 			elem_size = inst->words[0].cf_alloc_export_word0.elem_size;
 			array_size = inst->words[1].cf_alloc_export_word1_buf.array_size;
 			str_printf(buf_ptr, size_ptr, "ARRAY_SIZE(%d", array_size);
@@ -1225,7 +1227,7 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 		{
 			int elem_size;
 			
-			assert(inst->info->fmt[0] == EVG_FMT_CF_ALLOC_EXPORT_WORD0 || inst->info->fmt[0] == EVG_FMT_CF_ALLOC_EXPORT_WORD0_RAT);
+			assert(inst->info->fmt[0] == EvgInstFormatCfAllocExportWord0 || inst->info->fmt[0] == EvgInstFormatCfAllocExportWord0Rat);
 			elem_size = inst->words[0].cf_alloc_export_word0.elem_size;
 			if (elem_size)
 				str_printf(buf_ptr, size_ptr, "ELEM_SIZE(%d)", elem_size);
@@ -1236,7 +1238,7 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 			int dst_sel_w, dst_sel_z, dst_sel_y, dst_sel_x;
 
 			/* Destination register */
-			assert(inst->info->fmt[1] == EVG_FMT_VTX_WORD1_GPR);
+			assert(inst->info->fmt[1] == EvgInstFormatVtxWord1Gpr);
 			dst_gpr = inst->words[1].vtx_word1_gpr.dst_gpr;
 			dst_rel = inst->words[1].vtx_word1_gpr.dst_rel;
 			evg_inst_dump_gpr_buf(dst_gpr, dst_rel, -1, 0, buf_ptr, size_ptr);
@@ -1254,7 +1256,7 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 		{
 			int fetch_type;
 			
-			assert(inst->info->fmt[0] == EVG_FMT_VTX_WORD0);
+			assert(inst->info->fmt[0] == EvgInstFormatVtxWord0);
 			fetch_type = inst->words[0].vtx_word0.fetch_type;
 			if (fetch_type)
 				str_printf(buf_ptr, size_ptr, "%sFETCH_TYPE(%s)", evg_inst_token_prefix(loop_idx, &nl),
@@ -1263,7 +1265,7 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 		else if (evg_inst_is_token(fmt_str, "vtx_fetch_whole_quad", &len))
 		{
 			int fetch_whole_quad;
-			assert(inst->info->fmt[0] == EVG_FMT_VTX_WORD0);
+			assert(inst->info->fmt[0] == EvgInstFormatVtxWord0);
 			fetch_whole_quad = inst->words[0].vtx_word0.fetch_whole_quad;
 			if (fetch_whole_quad)
 				str_printf(buf_ptr, size_ptr, "WHOLE_QUAD");
@@ -1272,7 +1274,7 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 		{
 			int buffer_id;
 			
-			assert(inst->info->fmt[0] == EVG_FMT_VTX_WORD0);
+			assert(inst->info->fmt[0] == EvgInstFormatVtxWord0);
 			buffer_id = inst->words[0].vtx_word0.buffer_id;
 			str_printf(buf_ptr, size_ptr, "fc%d", buffer_id);
 
@@ -1283,7 +1285,7 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 			int src_rel;
 			int src_sel;
 			
-			assert(inst->info->fmt[0] == EVG_FMT_VTX_WORD0);
+			assert(inst->info->fmt[0] == EvgInstFormatVtxWord0);
 			src_gpr = inst->words[0].vtx_word0.src_gpr;
 			src_rel = inst->words[0].vtx_word0.src_rel;
 			src_sel = inst->words[0].vtx_word0.src_sel_x;
@@ -1294,7 +1296,7 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 			int data_format;
 			int use_const_fields;
 
-			assert(inst->info->fmt[1] == EVG_FMT_VTX_WORD1_GPR || inst->info->fmt[1] == EVG_FMT_VTX_WORD1_SEM);
+			assert(inst->info->fmt[1] == EvgInstFormatVtxWord1Gpr || inst->info->fmt[1] == EvgInstFormatVtxWord1Sem);
 			data_format = inst->words[1].vtx_word1_gpr.data_format;
 			use_const_fields = inst->words[1].vtx_word1_gpr.use_const_fields;
 			if (!use_const_fields)
@@ -1306,7 +1308,7 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 			int num_format;
 			int use_const_fields;
 
-			assert(inst->info->fmt[1] == EVG_FMT_VTX_WORD1_GPR || inst->info->fmt[1] == EVG_FMT_VTX_WORD1_SEM);
+			assert(inst->info->fmt[1] == EvgInstFormatVtxWord1Gpr || inst->info->fmt[1] == EvgInstFormatVtxWord1Sem);
 			num_format = inst->words[1].vtx_word1_gpr.num_format_all;
 			use_const_fields = inst->words[1].vtx_word1_gpr.use_const_fields;
 			if (!use_const_fields && num_format)
@@ -1318,7 +1320,7 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 			int format_comp;
 			int use_const_fields;
 
-			assert(inst->info->fmt[1] == EVG_FMT_VTX_WORD1_GPR || inst->info->fmt[1] == EVG_FMT_VTX_WORD1_SEM);
+			assert(inst->info->fmt[1] == EvgInstFormatVtxWord1Gpr || inst->info->fmt[1] == EvgInstFormatVtxWord1Sem);
 			format_comp = inst->words[1].vtx_word1_gpr.format_comp_all;
 			use_const_fields = inst->words[1].vtx_word1_gpr.use_const_fields;
 			if (!use_const_fields && format_comp)
@@ -1330,7 +1332,7 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 			int srf_mode;
 			int use_const_fields;
 
-			assert(inst->info->fmt[1] == EVG_FMT_VTX_WORD1_GPR || inst->info->fmt[1] == EVG_FMT_VTX_WORD1_SEM);
+			assert(inst->info->fmt[1] == EvgInstFormatVtxWord1Gpr || inst->info->fmt[1] == EvgInstFormatVtxWord1Sem);
 			srf_mode = inst->words[1].vtx_word1_gpr.srf_mode_all;
 			use_const_fields = inst->words[1].vtx_word1_gpr.use_const_fields;
 			if (!use_const_fields && srf_mode)
@@ -1341,7 +1343,7 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 		{
 			int offset;
 			
-			assert(inst->info->fmt[2] == EVG_FMT_VTX_WORD2);
+			assert(inst->info->fmt[2] == EvgInstFormatVtxWord2);
 			offset = inst->words[2].vtx_word2.offset;
 			if (offset)
 				str_printf(buf_ptr, size_ptr, "OFFSET(%d)", offset);
@@ -1351,8 +1353,8 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 			int endian_swap;
 			int use_const_fields;
 
-			assert(inst->info->fmt[1] == EVG_FMT_VTX_WORD1_GPR || inst->info->fmt[1] == EVG_FMT_VTX_WORD1_SEM);
-			assert(inst->info->fmt[2] == EVG_FMT_VTX_WORD2);
+			assert(inst->info->fmt[1] == EvgInstFormatVtxWord1Gpr || inst->info->fmt[1] == EvgInstFormatVtxWord1Sem);
+			assert(inst->info->fmt[2] == EvgInstFormatVtxWord2);
 			use_const_fields = inst->words[1].vtx_word1_gpr.use_const_fields;
 			endian_swap = inst->words[2].vtx_word2.endian_swap;
 			if (!use_const_fields && endian_swap)
@@ -1363,7 +1365,7 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 		{
 			int cbns;
 			
-			assert(inst->info->fmt[2] == EVG_FMT_VTX_WORD2);
+			assert(inst->info->fmt[2] == EvgInstFormatVtxWord2);
 			cbns = inst->words[2].vtx_word2.const_buf_no_stride;
 			if (cbns)
 				str_printf(buf_ptr, size_ptr, "%sCONST_BUF_NO_STRIDE", evg_inst_token_prefix(loop_idx, &nl));
@@ -1373,13 +1375,13 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 		{
 			int mega_fetch_count;
 			
-			assert(inst->info->fmt[0] == EVG_FMT_VTX_WORD0);
+			assert(inst->info->fmt[0] == EvgInstFormatVtxWord0);
 			mega_fetch_count = inst->words[0].vtx_word0.mega_fetch_count;
 			str_printf(buf_ptr, size_ptr, "MEGA(%d)", mega_fetch_count + 1);
 		}
 		else if (evg_inst_is_token(fmt_str, "lds_op", &len))
 		{
-			assert(inst->info->fmt[1] == EVG_FMT_ALU_WORD1_LDS_IDX_OP);
+			assert(inst->info->fmt[1] == EvgInstFormatAluWord1LdsIdxOp);
 			str_printf(buf_ptr, size_ptr, "%s", str_map_value(&evg_fmt_lds_op_map,
 				inst->words[1].alu_word1_lds_idx_op.lds_op));
 		}
@@ -1399,8 +1401,8 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 		}
 		else if (evg_inst_is_token(fmt_str, "tex_src_reg", &len))
 		{
-			assert(inst->info->fmt[0] == EVG_FMT_TEX_WORD0);
-			assert(inst->info->fmt[2] == EVG_FMT_TEX_WORD2);
+			assert(inst->info->fmt[0] == EvgInstFormatTexWord0);
+			assert(inst->info->fmt[2] == EvgInstFormatTexWord2);
 
 			int src_gpr = inst->words[0].tex_word0.src_gpr;
 
@@ -1475,7 +1477,7 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 		}
 		else if (evg_inst_is_token(fmt_str, "tex_dst_reg", &len))
 		{
-			assert(inst->info->fmt[1] == EVG_FMT_TEX_WORD1);
+			assert(inst->info->fmt[1] == EvgInstFormatTexWord1);
 
 			int dst_gpr = inst->words[1].tex_word1.dst_gpr;
 
@@ -1550,14 +1552,14 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 		}
 		else if (evg_inst_is_token(fmt_str, "tex_res_id", &len))
 		{
-			assert(inst->info->fmt[0] == EVG_FMT_TEX_WORD0);
+			assert(inst->info->fmt[0] == EvgInstFormatTexWord0);
 
 			int resource_id = inst->words[0].tex_word0.resource_id;
 			str_printf(buf_ptr, size_ptr, "t%d", resource_id);
 		}
 		else if (evg_inst_is_token(fmt_str, "tex_sampler_id", &len))
 		{
-			assert(inst->info->fmt[2] == EVG_FMT_TEX_WORD2);
+			assert(inst->info->fmt[2] == EvgInstFormatTexWord2);
 
 			int sampler_id = inst->words[2].tex_word2.sampler_id;
 			str_printf(buf_ptr, size_ptr, "s%d", sampler_id);
@@ -1565,7 +1567,7 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 		}
 		else if (evg_inst_is_token(fmt_str, "tex_props", &len))
 		{
-			assert(inst->info->fmt[1] == EVG_FMT_TEX_WORD1);
+			assert(inst->info->fmt[1] == EvgInstFormatTexWord1);
 
 			if (inst->words[1].tex_word1.ctx || inst->words[1].tex_word1.cty ||
 				inst->words[1].tex_word1.ctz || inst->words[1].tex_word1.ctw)
@@ -1580,7 +1582,7 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 		}
 		else if (evg_inst_is_token(fmt_str, "mem_op_name", &len))
 		{
-			assert(inst->info->fmt[0] == EVG_FMT_MEM_RD_WORD0 || inst->info->fmt[0] == EVG_FMT_MEM_GDS_WORD0);
+			assert(inst->info->fmt[0] == EvgInstFormatMemRdWord0 || inst->info->fmt[0] == EvgInstFormatMemGdsWord0);
 
 			/* MEM_RD instruction has subopcode in MEM_OP field
 			 * main opcode borrows from VTX */
@@ -1734,4 +1736,21 @@ void evg_alu_group_dump_debug(struct evg_alu_group_t *alu_group, int count, int 
 		fprintf(f, "%sinst.%s=\"%s\"", spc, str_map_value(&evg_alu_map, inst->alu), no_spc_buf);
 		spc = " ";
 	}
+}
+
+
+
+
+
+/*
+ * Class 'EvgAsm'
+ */
+
+void EvgAsmCreate(EvgAsm *self)
+{
+}
+
+
+void EvgAsmDestroy(EvgAsm *self)
+{
 }

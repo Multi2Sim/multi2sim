@@ -60,7 +60,7 @@ struct evg_ndrange_t *evg_ndrange_create(struct evg_opencl_kernel_t *kernel)
 
 	/* Instruction histogram */
 	if (evg_emu_report_file)
-		ndrange->inst_histogram = xcalloc(EVG_INST_COUNT, sizeof(unsigned int));
+		ndrange->inst_histogram = xcalloc(EvgInstOpcodeCount, sizeof(unsigned int));
 
 	/* Return */
 	return ndrange;
@@ -159,7 +159,7 @@ void evg_ndrange_dump(struct evg_ndrange_t *ndrange, FILE *f)
 	/* Instruction histogram */
 	if (ndrange->inst_histogram)
 	{
-		for (i = 0; i < EVG_INST_COUNT; i++)
+		for (i = 0; i < EvgInstOpcodeCount; i++)
 			if (ndrange->inst_histogram[i])
 				fprintf(f, "InstHistogram[%s] = %u\n",
 					evg_inst_info[i].name,

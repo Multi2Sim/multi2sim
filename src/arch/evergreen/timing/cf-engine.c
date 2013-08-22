@@ -90,7 +90,7 @@ static void evg_cf_engine_fetch(struct evg_compute_unit_t *compute_unit)
 	/* If instruction is a global memory write, record addresses */
 	if (uop->global_mem_write)
 	{
-		assert((inst->info->flags & EVG_INST_FLAG_MEM_WRITE));
+		assert((inst->info->flags & EvgInstFlagMemWrite));
 		EVG_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
 		{
 			work_item = ndrange->work_items[work_item_id];

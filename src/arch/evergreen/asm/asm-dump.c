@@ -83,20 +83,6 @@ static struct str_map_t evg_fmt_kcache_mode_map =
 };
 
 
-struct str_map_t evg_inst_category_map =
-{
-	7, {
-		{ "CF", EVG_INST_CAT_CF },
-		{ "ALU", EVG_INST_CAT_ALU },
-		{ "LDS", EVG_INST_CAT_LDS },
-		{ "VTX", EVG_INST_CAT_VTX },
-		{ "TEX", EVG_INST_CAT_TEX },
-		{ "MEM_RD", EVG_INST_CAT_MEM_RD },
-		{ "MEM_GDS", EVG_INST_CAT_MEM_GDS }
-	}
-};
-
-
 struct str_map_t evg_fmt_cf_inst_map =
 {
 	55, {
@@ -1239,7 +1225,7 @@ void evg_fmt_vtx_word2_dump(void *buf, FILE *f)
  */
 
 /* List of 'dump' functions for each microcode format */
-evg_fmt_dump_func_t evg_fmt_dump_func_list[EVG_FMT_COUNT] = {
+evg_fmt_dump_func_t evg_fmt_dump_func_list[EvgInstFormatCount] = {
 	
 	evg_fmt_invalid_dump,  /* FMT_INVALID */
 
@@ -1286,7 +1272,7 @@ evg_fmt_dump_func_t evg_fmt_dump_func_list[EVG_FMT_COUNT] = {
 };
 
 
-void evg_inst_word_dump(void *buf, enum evg_fmt_enum fmt, FILE *f)
+void evg_inst_word_dump(void *buf, EvgInstFormat fmt, FILE *f)
 {
 	evg_fmt_dump_func_t dump_func;
 	int i;
