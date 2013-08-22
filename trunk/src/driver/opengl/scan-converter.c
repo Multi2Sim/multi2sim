@@ -26,7 +26,7 @@
 #include "scan-converter.h"
 
 /* Forward declaration */
-static void opengl_sc_pixel_info_set_wndw_cood(struct opengl_sc_pixel_info_t *pxl_info, int i, int j);
+static void opengl_sc_pixel_info_set_wndw_cood(struct opengl_sc_pixel_info_t *pxl_info, int x, int y, int z);
 static void opengl_sc_pixel_info_set_brctrc_cood(struct opengl_sc_pixel_info_t *pxl_info, 
 	struct opengl_sc_triangle_t *triangle);
 static struct opengl_sc_span_array_t *opengl_sc_span_array_create();
@@ -36,24 +36,45 @@ static void opengl_sc_span_array_free(struct opengl_sc_span_array_t *spn_array);
  * Private functions
  */
 
-static void opengl_sc_pixel_info_set_wndw_cood(struct opengl_sc_pixel_info_t *pxl_info, int i, int j)
+static void opengl_sc_pixel_info_set_wndw_cood(struct opengl_sc_pixel_info_t *pxl_info, int x, int y, int z)
 {
-	pxl_info->wndw_i = i;
-	pxl_info->wndw_j = j;
+	pxl_info->pos[X_COMP] = x;
+	pxl_info->pos[Y_COMP] = y;
+	pxl_info->pos[Z_COMP] = z;
 	pxl_info->wndw_init = 1;
 }
 
 static void opengl_sc_pixel_info_set_brctrc_cood(struct opengl_sc_pixel_info_t *pxl_info, 
 	struct opengl_sc_triangle_t *triangle)
 {
-	assert(!pxl_info->wndw_init);
+	assert(pxl_info->wndw_init);
+
+	// int vector_u[3];
+	// int vector_v[3];
+	// int vector_w[3];
+	// int vector_vCrossW[3];
+	// int vector_vCrossU[3];
 
 	/* 
 	 * Calculate barycentric coordinate based on current
 	 * pixel postion and positions of 3 associated vertex 
 	 */
 
+	// vector_u[X_COMP] = triangle->vtx1->pos[X_COMP] - triangle->vtx0->pos[X_COMP];
+	// vector_u[Y_COMP] = triangle->vtx1->pos[Y_COMP] - triangle->vtx0->pos[Y_COMP];
+	// vector_u[Z_COMP] = triangle->vtx1->pos[Z_COMP] - triangle->svn vtx0->pos[Z_COMP];
+
+	// vector_v[X_COMP] = triangle->vtx2->pos[X_COMP] - triangle->vtx0->pos[X_COMP];
+	// vector_v[Y_COMP] = triangle->vtx2->pos[Y_COMP] - triangle->vtx0->pos[Y_COMP];
+	// vector_v[Z_COMP] = triangle->vtx2->pos[Z_COMP] - triangle->vtx0->pos[Z_COMP];
+
+	// vector_w[X_COMP] = pxl_info->pos[X_COMP] - triangle->vtx0->pos[X_COMP];
+	// vector_w[Y_COMP] = pxl_info->pos[Y_COMP] - triangle->vtx0->pos[Y_COMP];
+	// vector_w[Z_COMP] = pxl_info->pos[Z_COMP] - triangle->vtx0->pos[Z_COMP];
+
+
 	/* FIXME: TODO */
+
 
 }
 
@@ -92,6 +113,32 @@ struct opengl_sc_vertex_t *opengl_sc_vertex_create()
 void opengl_sc_vertex_free(struct opengl_sc_vertex_t *vtx)
 {
 	free(vtx);
+}
+
+struct opengl_sc_triangle_t *opengl_sc_triangle_create()
+{
+	struct opengl_sc_triangle_t *triangle;
+
+	/* Allocate */
+	triangle = xcalloc(1, sizeof(struct opengl_sc_triangle_t));
+
+	/* Return */
+	return triangle;
+}
+
+void opengl_sc_triangle_set(struct opengl_sc_triangle_t *triangle, 
+	struct opengl_sc_vertex_t *vtx0,
+	struct opengl_sc_vertex_t *vtx1,
+	struct opengl_sc_vertex_t *vtx2)
+{
+	triangle->vtx0 = vtx0;
+	triangle->vtx1 = vtx1;
+	triangle->vtx2 = vtx2;
+}
+
+void opengl_sc_triangle_free(struct opengl_sc_triangle_t *triangle)
+{
+	free(triangle);
 }
 
 struct opengl_sc_edge_t *opengl_sc_edge_create(struct opengl_sc_vertex_t *vtx0,
@@ -167,7 +214,7 @@ void opengl_sc_pixel_info_free(struct opengl_sc_pixel_info_t *pxl_info)
 	free(pxl_info);
 }
 
-struct list_t *opengl_sc_triangle(struct opengl_sc_triangle_t *triangle)
+struct list_t *opengl_sc_rast_triangle_gen(struct opengl_sc_triangle_t *triangle)
 {
 	/* List contains info of pixels inside this triangle */
 	struct list_t *pxl_lst;
@@ -308,10 +355,21 @@ struct list_t *opengl_sc_triangle(struct opengl_sc_triangle_t *triangle)
 	/* Decide scan direction */
 	scan_from_left_to_right = (one_over_area < 0.0F);
 
+	/* Interpolate depth */
+	float edge_major_dz = vtx_max->pos[Z_COMP] - vtx_min->pos[Z_COMP];
+	float edge_bottom_dz = vtx_mid->pos[Z_COMP] - vtx_min->pos[Z_COMP];
+	spn->attrStepX[2] = one_over_area * (edge_major_dz * edge_bottom->dy - edge_major->dy * edge_bottom_dz);
+	spn->attrStepY[2] = one_over_area * (edge_major->dx * edge_bottom_dz - edge_major_dz * edge_bottom->dx);
+	spn->zStep = SignedFloatToFixed(spn->attrStepX[2]);
+
 	int subTriangle;
 	int fxLeftEdge = 0, fxRightEdge = 0;
 	int fdxLeftEdge = 0, fdxRightEdge = 0;
 	int fError = 0, fdError = 0;
+
+	unsigned int zLeft = 0;
+	int fdzOuter = 0, fdzInner;
+
 
 	/* Setup order of edges */
 	for (subTriangle=0; subTriangle<=1; subTriangle++)
@@ -361,9 +419,14 @@ struct list_t *opengl_sc_triangle(struct opengl_sc_triangle_t *triangle)
 
 		if (setupLeft && edge_left->lines > 0)
 		{
+			const struct opengl_sc_vertex_t *vtx_lower = edge_left->vtx1;
 			const int fsy = edge_left->fsy;
 			const int fsx = edge_left->fsx;  /* no fractional part */
 			const int fx = FixedCeil(fsx);  /* no fractional part */
+			const int adjx = (int) (fx - edge_left->fx0); /* SCALED! */
+			const int adjy = (int) edge_left->adjy;      /* SCALED! */			
+			int idxOuter;
+			float dxOuter;			
 			int fdxOuter;
 
 			fError = fx - fsx - FIXED_ONE;
@@ -371,7 +434,19 @@ struct list_t *opengl_sc_triangle(struct opengl_sc_triangle_t *triangle)
 			fdxLeftEdge = edge_left->fdxdy;
 			fdxOuter = FixedFloor(fdxLeftEdge - FIXED_EPSILON);
 			fdError = fdxOuter - fdxLeftEdge + FIXED_ONE;
+			idxOuter = FixedToInt(fdxOuter);
+			dxOuter = (float) idxOuter;
 			spn->y = FixedToInt(fsy);
+
+			/* Interpolate Z */
+			float z0 = vtx_lower->pos[Z_COMP];
+			float tmp = (z0 * FIXED_SCALE + spn->attrStepX[2] * adjx + spn->attrStepY[2] * adjy) + FIXED_HALF;
+			if (tmp < MAX_GLUINT / 2)
+				zLeft = (int) tmp;
+			else
+				zLeft = MAX_GLUINT / 2;
+			fdzOuter = SignedFloatToFixed(spn->attrStepY[2] + dxOuter * spn->attrStepX[2]);								
+
 		}
 
 		if (setupRight && edge_right->lines>0) 
@@ -382,6 +457,9 @@ struct list_t *opengl_sc_triangle(struct opengl_sc_triangle_t *triangle)
 
 		if (lines==0)
 			continue;
+
+		/* Interpolate Z */
+		fdzInner = fdzOuter + spn->zStep;		
 
 		/* Rasterize setup */
 		while (lines > 0)
@@ -396,6 +474,8 @@ struct list_t *opengl_sc_triangle(struct opengl_sc_triangle_t *triangle)
 			else
 				spn->end = right - spn->x;
 
+			/* Interpolate Z */
+			spn->z = zLeft;
 
 			/* This is where we actually generate fragments */
 			if (spn->end > 0 && spn->y >= 0)
@@ -406,7 +486,8 @@ struct list_t *opengl_sc_triangle(struct opengl_sc_triangle_t *triangle)
 				for (i = 0; i < len; ++i)
 				{
 					pxl_info = opengl_sc_pixel_info_create();
-					opengl_sc_pixel_info_set_wndw_cood(pxl_info, spn->x, spn->y);
+					opengl_sc_pixel_info_set_wndw_cood(pxl_info, spn->x, spn->y, spn->z);
+					printf("pixel x=%d, y=%d, z=%d\n", spn->x, spn->y, spn->z);
 					opengl_sc_pixel_info_set_brctrc_cood(pxl_info, triangle);
 					list_add(pxl_lst, pxl_info);
 					spn->z += spn->zStep;
@@ -426,11 +507,14 @@ struct list_t *opengl_sc_triangle(struct opengl_sc_triangle_t *triangle)
 
 			fError += fdError;
 
-			if (fError >= 0) 
+			if (fError >= 0)
 			{
-				fError -= FIXED_ONE;
-
+				zLeft += fdzOuter;
+				fError -= FIXED_ONE;				
 			}
+			else
+				zLeft += fdzInner;
+			
 		} /*while lines>0*/
 	}
 
@@ -444,4 +528,16 @@ struct list_t *opengl_sc_triangle(struct opengl_sc_triangle_t *triangle)
 
 	/* Return */
 	return pxl_lst;
+}
+
+void opengl_sc_rast_triangle_done(struct list_t *pxl_lst)
+{
+	struct opengl_sc_pixel_info_t *pxl_info;
+	int i;
+
+	LIST_FOR_EACH(pxl_lst,i)
+	{
+		pxl_info = list_get(pxl_lst, i);
+		opengl_sc_pixel_info_free(pxl_info);
+	}
 }

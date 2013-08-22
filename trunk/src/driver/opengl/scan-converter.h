@@ -20,7 +20,7 @@
 #ifndef DRIVER_OPENGL_SCAN_CONVERTER_H
 #define DRIVER_OPENGL_SCAN_CONVERTER_H
 
-#define SWRAST_MAX_WIDTH 16384
+#define SPAN_MAX_WIDTH 16384
 #define MAX_GLUINT	0xffffffff
 
 #define X_COMP 0
@@ -77,24 +77,23 @@ struct opengl_sc_triangle_t
 
 struct opengl_sc_edge_t
 {
-	struct opengl_sc_vertex_t *vtx0; 		/* Y(vtx0) < Y(vtx1) */
+	struct opengl_sc_vertex_t *vtx0; 	/* Y(vtx0) < Y(vtx1) */
 	struct opengl_sc_vertex_t *vtx1;
 	float dx;				/* X(vtx1) - X(vtx0) */
 	float dy;				/* Y(vtx1) - Y(vtx0) */
 	float dxdy;				/* dx/dy */
 	int fdxdy;				/* dx/dy in fixed-point */
 	float adjy;				/* adjust from v[0]->fy to fsy, scaled */
-	int fsx;				/* first sample point x coord */
-	int fsy;				/* first sample point y coord */
-	int fx0;				/* fixed pt X of lower endpoint */
+	int fsx;					/* first sample point x coord */
+	int fsy;					/* first sample point y coord */
+	int fx0;					/* fixed pt X of lower endpoint */
 	int lines;				/* number of lines to be sampled on this edge */	
 };
 
 struct opengl_sc_pixel_info_t
 {
 	/* Window coordinates of a pixel */
-	int wndw_i;
-	int wndw_j;
+	int pos[4];
 	char wndw_init;
 
 	/* Barycentric coordinates to be load to VGPRs */
@@ -104,7 +103,7 @@ struct opengl_sc_pixel_info_t
 
 struct opengl_sc_span_array_t
 {
-	unsigned int  z[SWRAST_MAX_WIDTH];  /**< fragment Z coords */	
+	unsigned int  z[SPAN_MAX_WIDTH];  /* fragment Z coords */	
 };
 
 struct opengl_sc_span_t
@@ -112,8 +111,12 @@ struct opengl_sc_span_t
 	/* Coord of first fragment in horizontal span/run */
 	int x;
 	int y;
-	int z;
 
+	float attrStart[4];   /* initial value */
+	float attrStepX[4];   /* dvalue/dx */
+	float attrStepY[4];   /* dvalue/dy */
+
+	int z;
 	int zStep;
 
 	/* Number of fragments in the span */
@@ -126,6 +129,11 @@ struct opengl_sc_span_t
 struct opengl_sc_vertex_t *opengl_sc_vertex_create();
 void opengl_sc_vertex_free(struct opengl_sc_vertex_t *vtx);
 
+struct opengl_sc_triangle_t *opengl_sc_triangle_create();
+void opengl_sc_triangle_free(struct opengl_sc_triangle_t *triangle);
+void opengl_sc_triangle_set(struct opengl_sc_triangle_t *triangle, struct opengl_sc_vertex_t *vtx0,
+	struct opengl_sc_vertex_t *vtx1, struct opengl_sc_vertex_t *vtx2);
+
 struct opengl_sc_edge_t *opengl_sc_edge_create(struct opengl_sc_vertex_t *vtx0, struct opengl_sc_vertex_t *vtx1);
 void opengl_sc_edge_free(struct opengl_sc_edge_t *edge);
 
@@ -136,6 +144,7 @@ void opengl_sc_span_interpolate_z(struct opengl_sc_span_t *spn);
 struct opengl_sc_pixel_info_t *opengl_sc_pixel_info_create();
 void opengl_sc_pixel_info_free(struct opengl_sc_pixel_info_t *pxl_info);
 
-struct list_t *opengl_sc_triangle(struct opengl_sc_triangle_t *triangle);
+struct list_t *opengl_sc_rast_triangle_gen(struct opengl_sc_triangle_t *triangle);
+void opengl_sc_rast_triangle_done(struct list_t *pxl_lst);
 
 #endif
