@@ -20,6 +20,7 @@
 #ifndef ARCH_EVERGREEN_EMU_WAVEFRONT_H
 #define ARCH_EVERGREEN_EMU_WAVEFRONT_H
 
+#include <arch/evergreen/asm/alu-group.h>
 #include <arch/evergreen/asm/asm.h>
 
 
@@ -60,9 +61,9 @@ struct evg_wavefront_t
 	enum evg_clause_kind_t clause_kind;
 
 	/* Current instructions */
-	struct evg_inst_t cf_inst;
-	struct evg_alu_group_t alu_group;
-	struct evg_inst_t tex_inst;
+	EvgInst cf_inst;
+	EvgALUGroup alu_group;
+	EvgInst tex_inst;
 
 	/* Starting/current CF buffer */
 	void *cf_buf_start;

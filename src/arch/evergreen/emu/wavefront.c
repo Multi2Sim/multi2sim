@@ -259,8 +259,8 @@ void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 	struct evg_work_group_t *work_group = wavefront->work_group;
 	struct evg_work_item_t *work_item;
 
-	struct evg_alu_group_t *alu_group;
-	struct evg_inst_t *inst;
+	EvgALUGroup *alu_group;
+	EvgInst *inst;
 
 	EvgInstOpcode inst_opcode;
 

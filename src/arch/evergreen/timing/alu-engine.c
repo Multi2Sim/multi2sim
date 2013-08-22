@@ -46,7 +46,7 @@ static void evg_alu_engine_fetch(struct evg_compute_unit_t *compute_unit)
 	struct linked_list_t *finished_queue = compute_unit->alu_engine.finished_queue;
 
 	struct linked_list_t *fetch_queue = compute_unit->alu_engine.fetch_queue;
-	struct evg_alu_group_t *alu_group;
+	EvgALUGroup *alu_group;
 	struct evg_uop_t *cf_uop, *uop, *producer;
 	struct evg_work_item_uop_t *work_item_uop;
 	struct evg_wavefront_t *wavefront;
