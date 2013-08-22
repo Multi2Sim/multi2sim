@@ -23,7 +23,7 @@
 /* Declarations of function prototypes implementing Evergreen ISA */
 #define DEFINST(_name, _fmt_str, _fmt0, _fmt1, _fmt2, _category, _opcode, _flags) \
 	extern void evg_isa_##_name##_impl(struct evg_work_item_t *work_item, \
-			struct evg_inst_t *inst);
+			EvgInst *inst);
 #include <arch/evergreen/asm/asm.dat>
 #undef DEFINST
 

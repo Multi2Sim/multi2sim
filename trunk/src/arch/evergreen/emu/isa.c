@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
+#include <arch/evergreen/asm/inst.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/bit-map.h>
 #include <lib/util/debug.h>
@@ -181,7 +181,7 @@ void evg_isa_tc_clause_end(struct evg_wavefront_t *wavefront)
 
 /* Dump a destination value depending on the format of the destination operand
  * in the current instruction, as specified by its flags. */
-void gpu_isa_dest_value_dump(struct evg_inst_t *inst, void *value_ptr, FILE *f)
+void gpu_isa_dest_value_dump(EvgInst *inst, void *value_ptr, FILE *f)
 {
 	if (inst->info->flags & EvgInstFlagDstInt)
 		fprintf(f, "%d", * (int *) value_ptr);
@@ -220,7 +220,7 @@ unsigned int evg_isa_read_gpr(struct evg_work_item_t *work_item,
 float evg_isa_read_gpr_float(struct evg_work_item_t *work_item,
 	int gpr, int rel, int chan, int im)
 {
-	union evg_reg_t reg;
+	EvgInstReg reg;
 
 	reg.as_uint = evg_isa_read_gpr(work_item, gpr, rel, chan, im);
 	return reg.as_float;
@@ -246,7 +246,7 @@ void evg_isa_write_gpr(struct evg_work_item_t *work_item,
 void evg_isa_write_gpr_float(struct evg_work_item_t *work_item,
 	int gpr, int rel, int chan, float value)
 {
-	union evg_reg_t reg;
+	EvgInstReg reg;
 
 	reg.as_float = value;
 	evg_isa_write_gpr(work_item, gpr, rel, chan, reg.as_uint);
@@ -256,7 +256,7 @@ void evg_isa_write_gpr_float(struct evg_work_item_t *work_item,
 /* Read source operand in ALU instruction.
  * This is a common function for both integer and float formats. */
 static unsigned int evg_isa_read_op_src_common(struct evg_work_item_t *work_item,
-	struct evg_inst_t *inst, int src_idx, int *neg_ptr, int *abs_ptr)
+	EvgInst *inst, int src_idx, int *neg_ptr, int *abs_ptr)
 {
 	struct evg_wavefront_t *wavefront = work_item->wavefront;
 
@@ -358,7 +358,7 @@ static unsigned int evg_isa_read_op_src_common(struct evg_work_item_t *work_item
 	/* ALU_SRC_1 */
 	if (sel == 249)
 	{
-		union evg_reg_t reg;
+		EvgInstReg reg;
 
 		reg.as_float = 1.0f;
 		value = reg.as_uint;
@@ -383,7 +383,7 @@ static unsigned int evg_isa_read_op_src_common(struct evg_work_item_t *work_item
 	/* ALU_SRC_0_5 */
 	if (sel == 252)
 	{
-		union evg_reg_t reg;
+		EvgInstReg reg;
 
 		reg.as_float = 0.5f;
 		value = reg.as_uint;
@@ -422,7 +422,7 @@ static unsigned int evg_isa_read_op_src_common(struct evg_work_item_t *work_item
 
 
 unsigned int evg_isa_read_op_src_int(struct evg_work_item_t *work_item,
-	struct evg_inst_t *inst, int src_idx)
+	EvgInst *inst, int src_idx)
 {
 	int neg, abs;
 	int value;
@@ -443,9 +443,9 @@ unsigned int evg_isa_read_op_src_int(struct evg_work_item_t *work_item,
 
 
 float evg_isa_read_op_src_float(struct evg_work_item_t *work_item,
-	struct evg_inst_t *inst, int src_idx)
+	EvgInst *inst, int src_idx)
 {
-	union evg_reg_t reg;
+	EvgInstReg reg;
 	int neg;
 	int abs;
 
@@ -466,8 +466,7 @@ float evg_isa_read_op_src_float(struct evg_work_item_t *work_item,
 
 /* Return the instruction in slot 'alu' of the VLIW bundle in 'alu_group'.
  * If the VLIW slot requested is not present, this function returns NULL. */
-struct evg_inst_t *evg_isa_get_alu_inst(struct evg_alu_group_t *alu_group,
-	enum evg_alu_enum alu)
+EvgInst *evg_isa_get_alu_inst(EvgALUGroup *alu_group, EvgInstAlu alu)
 {
 	int i;
 
@@ -492,7 +491,7 @@ struct evg_inst_t *evg_isa_get_alu_inst(struct evg_alu_group_t *alu_group,
  */
 
 void evg_isa_enqueue_write_lds(struct evg_work_item_t *work_item,
-	struct evg_inst_t *inst, unsigned int addr, unsigned int value,
+	EvgInst *inst, unsigned int addr, unsigned int value,
 	int value_size)
 {
 	struct evg_isa_write_task_t *wt;
@@ -517,7 +516,7 @@ void evg_isa_enqueue_write_lds(struct evg_work_item_t *work_item,
 
 /* Write to destination operand in ALU instruction */
 void evg_isa_enqueue_write_dest(struct evg_work_item_t *work_item,
-	struct evg_inst_t *inst, unsigned int value)
+	EvgInst *inst, unsigned int value)
 {
 	struct evg_isa_write_task_t *wt;
 
@@ -549,9 +548,9 @@ void evg_isa_enqueue_write_dest(struct evg_work_item_t *work_item,
 
 
 void evg_isa_enqueue_write_dest_float(struct evg_work_item_t *work_item,
-	struct evg_inst_t *inst, float value)
+	EvgInst *inst, float value)
 {
-	union evg_reg_t reg;
+	EvgInstReg reg;
 
 	reg.as_float = value;
 	evg_isa_enqueue_write_dest(work_item, inst, reg.as_uint);
@@ -559,7 +558,7 @@ void evg_isa_enqueue_write_dest_float(struct evg_work_item_t *work_item,
 
 
 void evg_isa_enqueue_push_before(struct evg_work_item_t *work_item,
-	struct evg_inst_t *inst)
+	EvgInst *inst)
 {
 	struct evg_wavefront_t *wavefront = work_item->wavefront;
 	struct evg_isa_write_task_t *wt;
@@ -578,7 +577,7 @@ void evg_isa_enqueue_push_before(struct evg_work_item_t *work_item,
 
 
 void evg_isa_enqueue_pred_set(struct evg_work_item_t *work_item,
-	struct evg_inst_t *inst, int cond)
+	EvgInst *inst, int cond)
 {
 	struct evg_isa_write_task_t *wt;
 
@@ -605,7 +604,7 @@ void evg_isa_write_task_commit(struct evg_work_item_t *work_item)
 	struct evg_work_group_t *work_group = work_item->work_group;
 
 	struct evg_isa_write_task_t *wt;
-	struct evg_inst_t *inst;
+	EvgInst *inst;
 
 	/* Process first tasks of type:
 	 *  - EVG_ISA_WRITE_TASK_WRITE_DEST
@@ -632,7 +631,7 @@ void evg_isa_write_task_commit(struct evg_work_item_t *work_item)
 			if (evg_isa_debugging())
 			{
 				evg_isa_debug("  i%d:%s", work_item->id,
-					str_map_value(&evg_pv_map, wt->inst->alu));
+					str_map_value(&evg_inst_alu_pv_map, wt->inst->alu));
 				if (wt->write_mask)
 				{
 					evg_isa_debug(",");
@@ -650,7 +649,7 @@ void evg_isa_write_task_commit(struct evg_work_item_t *work_item)
 		case EVG_ISA_WRITE_TASK_WRITE_LDS:
 		{
 			struct mem_t *local_mem;
-			union evg_reg_t lds_value;
+			EvgInstReg lds_value;
 
 			local_mem = work_group->local_mem;
 			assert(local_mem);

@@ -47,7 +47,7 @@ static void evg_tex_engine_fetch(struct evg_compute_unit_t *compute_unit)
 	struct evg_wavefront_t *wavefront;
 	struct evg_uop_t *cf_uop, *uop;
 	struct evg_work_item_uop_t *work_item_uop;
-	struct evg_inst_t *inst;
+	EvgInst *inst;
 	int inst_num;
 
 	struct evg_work_item_t *work_item;

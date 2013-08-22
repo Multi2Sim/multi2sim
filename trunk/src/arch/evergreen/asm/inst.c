@@ -24,8 +24,32 @@
  * Class 'EvgInst'
  */
 
+struct str_map_t evg_inst_alu_map = {
+	5, {
+		{ "x", EvgInstAluX },
+		{ "y", EvgInstAluY },
+		{ "z", EvgInstAluZ },
+		{ "w", EvgInstAluW },
+		{ "t", EvgInstAluTrans }
+	}
+};
+
+
+struct str_map_t evg_inst_alu_pv_map = {
+	5, {
+		{ "PV.x", EvgInstAluX },
+		{ "PV.y", EvgInstAluY },
+		{ "PV.z", EvgInstAluZ },
+		{ "PV.w", EvgInstAluW },
+		{ "PS", EvgInstAluTrans }
+	}
+};
+
+
 void EvgInstCreate(EvgInst *self, EvgAsm *as)
 {
+	/* Initialize */
+	self->as = as;
 }
 
 
