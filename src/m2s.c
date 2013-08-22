@@ -27,6 +27,9 @@
 #include <arch/arm/timing/cpu.h>
 #include <arch/common/arch.h>
 #include <arch/common/runtime.h>
+#include <arch/evergreen/asm/asm.h>
+#include <arch/evergreen/asm/inst.h>
+#include <arch/evergreen/asm/alu-group.h>
 #include <arch/evergreen/emu/emu.h>
 #include <arch/evergreen/emu/isa.h>
 #include <arch/evergreen/timing/faults.h>
@@ -1860,6 +1863,10 @@ static void m2s_init(void)
 
 	CLASS_REGISTER(ARMAsm);
 	CLASS_REGISTER(ARMInst);
+
+	CLASS_REGISTER(EvgAsm);
+	CLASS_REGISTER(EvgInst);
+	CLASS_REGISTER(EvgALUGroup);
 
 	CLASS_REGISTER(FrmAsm);
 	CLASS_REGISTER(FrmInst);

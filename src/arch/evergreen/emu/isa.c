@@ -60,7 +60,7 @@ int evg_isa_debug_category;
 void evg_isa_init()
 {
 	/* Initialize */
-	evg_isa_inst_func = xcalloc(EVG_INST_COUNT, sizeof(evg_isa_inst_func_t));
+	evg_isa_inst_func = xcalloc(EvgInstOpcodeCount, sizeof(evg_isa_inst_func_t));
 #define DEFINST(_name, _fmt_str, _fmt0, _fmt1, _fmt2, _category, _opcode, _flags) \
 	evg_isa_inst_func[EVG_INST_##_name] = evg_isa_##_name##_impl;
 #include <arch/evergreen/asm/asm.dat>
@@ -148,7 +148,7 @@ void evg_isa_alu_clause_start(struct evg_wavefront_t *wavefront)
 void evg_isa_alu_clause_end(struct evg_wavefront_t *wavefront)
 {
 	/* If CF inst was ALU_POP_AFTER, pop the stack */
-	if (wavefront->cf_inst.info->inst == EVG_INST_ALU_POP_AFTER)
+	if (wavefront->cf_inst.info->opcode == EVG_INST_ALU_POP_AFTER)
 		evg_wavefront_stack_pop(wavefront, 1);
 }
 
@@ -183,13 +183,13 @@ void evg_isa_tc_clause_end(struct evg_wavefront_t *wavefront)
  * in the current instruction, as specified by its flags. */
 void gpu_isa_dest_value_dump(struct evg_inst_t *inst, void *value_ptr, FILE *f)
 {
-	if (inst->info->flags & EVG_INST_FLAG_DST_INT)
+	if (inst->info->flags & EvgInstFlagDstInt)
 		fprintf(f, "%d", * (int *) value_ptr);
 	
-	else if (inst->info->flags & EVG_INST_FLAG_DST_UINT)
+	else if (inst->info->flags & EvgInstFlagDstUint)
 		fprintf(f, "0x%x", * (unsigned int *) value_ptr);
 	
-	else if (inst->info->flags & EVG_INST_FLAG_DST_FLOAT)
+	else if (inst->info->flags & EvgInstFlagDstFloat)
 		fprintf(f, "%gf", * (float *) value_ptr);
 	
 	else
@@ -286,8 +286,8 @@ static unsigned int evg_isa_read_op_src_common(struct evg_work_item_t *work_item
 		unsigned int kcache_mode;
 		unsigned int kcache_addr;
 
-		assert(wavefront->cf_inst.info->fmt[0] == EVG_FMT_CF_ALU_WORD0
-			&& wavefront->cf_inst.info->fmt[1] == EVG_FMT_CF_ALU_WORD1);
+		assert(wavefront->cf_inst.info->fmt[0] == EvgInstFormatCfAluWord0
+			&& wavefront->cf_inst.info->fmt[1] == EvgInstFormatCfAluWord1);
 		kcache_bank = wavefront->cf_inst.words[0].cf_alu_word0.kcache_bank0;
 		kcache_mode = wavefront->cf_inst.words[0].cf_alu_word0.kcache_mode0;
 		kcache_addr = wavefront->cf_inst.words[1].cf_alu_word1.kcache_addr0;
@@ -305,8 +305,8 @@ static unsigned int evg_isa_read_op_src_common(struct evg_work_item_t *work_item
 
 		unsigned int kcache_bank, kcache_mode, kcache_addr;
 
-		assert(wavefront->cf_inst.info->fmt[0] == EVG_FMT_CF_ALU_WORD0
-			&& wavefront->cf_inst.info->fmt[1] == EVG_FMT_CF_ALU_WORD1);
+		assert(wavefront->cf_inst.info->fmt[0] == EvgInstFormatCfAluWord0
+			&& wavefront->cf_inst.info->fmt[1] == EvgInstFormatCfAluWord1);
 		kcache_bank = wavefront->cf_inst.words[0].cf_alu_word0.kcache_bank1;
 		kcache_mode = wavefront->cf_inst.words[1].cf_alu_word1.kcache_mode1;
 		kcache_addr = wavefront->cf_inst.words[1].cf_alu_word1.kcache_addr1;
@@ -522,7 +522,7 @@ void evg_isa_enqueue_write_dest(struct evg_work_item_t *work_item,
 	struct evg_isa_write_task_t *wt;
 
 	/* If pixel is inactive, do not enqueue the task */
-	assert(inst->info->fmt[0] == EVG_FMT_ALU_WORD0);
+	assert(inst->info->fmt[0] == EvgInstFormatAluWord0);
 	if (!evg_work_item_get_pred(work_item))
 		return;
 
@@ -540,7 +540,7 @@ void evg_isa_enqueue_write_dest(struct evg_work_item_t *work_item,
 
 	/* For EVG_ALU_WORD1_OP2, check 'write_mask' field */
 	wt->write_mask = 1;
-	if (inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP2 && !EVG_ALU_WORD1_OP2.write_mask)
+	if (inst->info->fmt[1] == EvgInstFormatAluWord1Op2 && !EVG_ALU_WORD1_OP2.write_mask)
 		wt->write_mask = 0;
 
 	/* Enqueue task */
@@ -565,7 +565,7 @@ void evg_isa_enqueue_push_before(struct evg_work_item_t *work_item,
 	struct evg_isa_write_task_t *wt;
 
 	/* Do only if instruction initiating ALU clause is ALU_PUSH_BEFORE */
-	if (wavefront->cf_inst.info->inst != EVG_INST_ALU_PUSH_BEFORE)
+	if (wavefront->cf_inst.info->opcode != EVG_INST_ALU_PUSH_BEFORE)
 		return;
 
 	/* Create and enqueue task */
@@ -583,8 +583,8 @@ void evg_isa_enqueue_pred_set(struct evg_work_item_t *work_item,
 	struct evg_isa_write_task_t *wt;
 
 	/* If pixel is inactive, predicate is not changed */
-	assert(inst->info->fmt[0] == EVG_FMT_ALU_WORD0);
-	assert(inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP2);
+	assert(inst->info->fmt[0] == EvgInstFormatAluWord0);
+	assert(inst->info->fmt[1] == EvgInstFormatAluWord1Op2);
 	if (!evg_work_item_get_pred(work_item))
 		return;
 	
@@ -698,7 +698,7 @@ void evg_isa_write_task_commit(struct evg_work_item_t *work_item)
 			int update_pred = EVG_ALU_WORD1_OP2.update_pred;
 			int update_exec_mask = EVG_ALU_WORD1_OP2.update_exec_mask;
 
-			assert(inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP2);
+			assert(inst->info->fmt[1] == EvgInstFormatAluWord1Op2);
 			if (update_pred)
 				evg_work_item_set_pred(work_item, wt->cond);
 			if (update_exec_mask)

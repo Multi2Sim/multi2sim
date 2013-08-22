@@ -95,7 +95,7 @@ static void evg_tex_engine_fetch(struct evg_compute_unit_t *compute_unit)
 	/* If instruction is a global memory read (should be), record addresses */
 	if (uop->global_mem_read)
 	{
-		assert((inst->info->flags & EVG_INST_FLAG_MEM_READ));
+		assert((inst->info->flags & EvgInstFlagMemRead));
 		EVG_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
 		{
 			work_item = evg_gpu->ndrange->work_items[work_item_id];

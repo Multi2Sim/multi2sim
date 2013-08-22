@@ -17,70 +17,16 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef EVERGREEN_ASM_H
-#define EVERGREEN_ASM_H
+#ifndef EVERGREEN_ASM_ASM_H
+#define EVERGREEN_ASM_ASM_H
 
 #include <stdio.h>
 
+#include <arch/common/asm.h>
 #include <lib/util/elf-format.h>
 
+#include "inst.h"
 
-/* Microcode Formats */
-enum evg_fmt_enum
-{
-	EVG_FMT_NONE = 0,
-
-	/* Control flow instructions */
-	EVG_FMT_CF_WORD0,
-	EVG_FMT_CF_GWS_WORD0,
-	EVG_FMT_CF_WORD1,
-
-	EVG_FMT_CF_ALU_WORD0,
-	EVG_FMT_CF_ALU_WORD1,
-	
-	EVG_FMT_CF_ALU_WORD0_EXT,
-	EVG_FMT_CF_ALU_WORD1_EXT,
-
-	EVG_FMT_CF_ALLOC_EXPORT_WORD0,
-	EVG_FMT_CF_ALLOC_EXPORT_WORD0_RAT,
-	EVG_FMT_CF_ALLOC_EXPORT_WORD1_BUF,
-	EVG_FMT_CF_ALLOC_EXPORT_WORD1_SWIZ,
-
-	/* ALU Clause Instructions */
-	EVG_FMT_ALU_WORD0,
-	EVG_FMT_ALU_WORD1_OP2,
-	EVG_FMT_ALU_WORD1_OP3,
-
-	/* LDS Clause Instructions */
-	EVG_FMT_ALU_WORD0_LDS_IDX_OP,
-	EVG_FMT_ALU_WORD1_LDS_IDX_OP,
-	EVG_FMT_ALU_WORD1_LDS_DIRECT_LITERAL_LO,
-	EVG_FMT_ALU_WORD1_LDS_DIRECT_LITERAL_HI,
-
-	/* Instructions for a Fetch Through a Vertex Cache Clause */
-	EVG_FMT_VTX_WORD0,
-	EVG_FMT_VTX_WORD1_GPR,
-	EVG_FMT_VTX_WORD1_SEM,
-	EVG_FMT_VTX_WORD2,
-
-	/* Instructions for a Fetch Through a Texture Cache Clause */
-	EVG_FMT_TEX_WORD0,
-	EVG_FMT_TEX_WORD1,
-	EVG_FMT_TEX_WORD2,
-
-	/* Memory Read Instructions */
-	EVG_FMT_MEM_RD_WORD0,
-	EVG_FMT_MEM_RD_WORD1,
-	EVG_FMT_MEM_RD_WORD2,
-
-	/* Global Data-Share Read/Write Instructions */
-	EVG_FMT_MEM_GDS_WORD0,
-	EVG_FMT_MEM_GDS_WORD1,
-	EVG_FMT_MEM_GDS_WORD2,
-
-	/* Max */
-	EVG_FMT_COUNT
-};
 
 
 /* ALUs */
@@ -526,56 +472,6 @@ struct evg_fmt_mem_gds_word2_t
 };
 
 
-extern struct str_map_t evg_inst_category_map;
-
-enum evg_inst_category_enum
-{
-	EVG_INST_CAT_NONE = 0,
-
-	EVG_INST_CAT_CF,  /* Control-flow instructions */
-	EVG_INST_CAT_ALU,  /* ALU clause instructions */
-	EVG_INST_CAT_LDS,  /* LDS clause instructions */
-	EVG_INST_CAT_VTX,  /* Instructions for a fetch through a vertex cache clause */
-	EVG_INST_CAT_TEX,  /* Instructions for a fetch through a texture cache clause */
-	EVG_INST_CAT_MEM_RD,  /* Memory read instructions */
-	EVG_INST_CAT_MEM_GDS, /* Global data-share read/write instructions */
-
-	EVG_INST_CAT_COUNT
-};
-
-
-enum evg_inst_flag_enum
-{
-	EVG_INST_FLAG_NONE         = 0x0000,
-	EVG_INST_FLAG_TRANS_ONLY   = 0x0001,  /* Only executable in transcendental unit */
-	EVG_INST_FLAG_INC_LOOP_IDX = 0x0002,  /* CF inst increasing loop depth index */
-	EVG_INST_FLAG_DEC_LOOP_IDX = 0x0004,  /* CF inst decreasing loop index */
-	EVG_INST_FLAG_DST_INT      = 0x0008,  /* Inst with integer dest operand */
-	EVG_INST_FLAG_DST_UINT     = 0x0010,  /* Inst with unsigned int dest op */
-	EVG_INST_FLAG_DST_FLOAT    = 0x0020,  /* Inst with float dest op */
-	EVG_INST_FLAG_ACT_MASK     = 0x0040,  /* Inst affects the active mask (control flow) */
-	EVG_INST_FLAG_LDS          = 0x0080,  /* Access to local memory */
-	EVG_INST_FLAG_MEM          = 0x0100,  /* Access to global memory */
-	EVG_INST_FLAG_MEM_READ     = 0x0200,  /* Read to global memory */
-	EVG_INST_FLAG_MEM_WRITE    = 0x0400,  /* Write to global memory */
-	EVG_INST_FLAG_PRED_MASK    = 0x0800   /* Inst affects the predicate mask */
-};
-
-
-enum evg_inst_enum
-{
-	EVG_INST_NONE = 0,
-
-#define DEFINST(_name, _fmt_str, _fmt0, _fmt1, _fmt2, _category, _cf_inst, _flags) \
-	EVG_INST_##_name,
-#include "asm.dat"
-#undef DEFINST
-	
-	/* Max */
-	EVG_INST_COUNT
-};
-
-
 union evg_inst_word_t
 {
 	char bytes[4];
@@ -622,20 +518,6 @@ union evg_inst_word_t
 };
 
 
-#define EVG_INST_MAX_WORDS  3
-
-struct evg_inst_info_t
-{
-	enum evg_inst_enum inst;
-	enum evg_inst_category_enum category;
-	char *name;
-	char *fmt_str;
-	enum evg_fmt_enum fmt[EVG_INST_MAX_WORDS];  /* Word formats */
-	int opcode;  /* Operation code */
-	enum evg_inst_flag_enum flags;  /* Flag bitmap */
-	int size;  /* Number of words (32-bit) */
-};
-
 union evg_reg_t
 {
 	signed int as_int;
@@ -650,7 +532,7 @@ union evg_reg_t
 struct evg_inst_t
 {
 	/* Basic instruction info */
-	struct evg_inst_info_t *info;  /* Pointer to 'amd_inst_info' table */
+	EvgInstInfo *info;  /* Pointer to 'amd_inst_info' table */
 	union evg_inst_word_t words[EVG_INST_MAX_WORDS];
 	
 	/* ALU instructions */
@@ -678,7 +560,7 @@ struct evg_alu_group_t
 };
 
 /* Table containing information of all instructions */
-extern struct evg_inst_info_t evg_inst_info[EVG_INST_COUNT];
+extern EvgInstInfo evg_inst_info[EvgInstOpcodeCount];
 
 
 typedef void (*evg_fmt_dump_func_t)(void *buf, FILE *);
@@ -690,7 +572,7 @@ void evg_disasm_buffer(struct elf_buffer_t *buffer, FILE *f);
 void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, int slot, char *buf, int size);
 void evg_inst_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, char *buf, int size);
 
-void evg_inst_word_dump(void *buf, enum evg_fmt_enum fmt, FILE *f);
+void evg_inst_word_dump(void *buf, EvgInstFormat fmt, FILE *f);
 void evg_inst_dump_gpr(int gpr, int rel, int chan, int im, FILE *f);
 void evg_inst_slot_dump(struct evg_inst_t *inst, int count, int loop_idx, int slot, FILE *f);
 void evg_inst_dump(struct evg_inst_t *inst, int count, int loop_idx, FILE *f);
@@ -713,6 +595,19 @@ void *evg_inst_decode_cf(void *buf, struct evg_inst_t *inst);
 void *evg_inst_decode_alu(void *buf, struct evg_inst_t *inst);
 void *evg_inst_decode_alu_group(void *buf, int group_id, struct evg_alu_group_t *group);
 void *evg_inst_decode_tc(void *buf, struct evg_inst_t *inst);
+
+
+
+/*
+ * Class 'EvgAsm'
+ */
+
+CLASS_BEGIN(EvgAsm, Asm)
+
+CLASS_END(EvgAsm)
+
+void EvgAsmCreate(EvgAsm *self);
+void EvgAsmDestroy(EvgAsm *self);
 
 #endif
 

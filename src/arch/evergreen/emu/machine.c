@@ -2501,7 +2501,7 @@ void evg_isa_MUL_64_VEC_impl(struct evg_work_item_t *work_item, struct evg_inst_
 		inst_slot[i] = evg_isa_get_alu_inst(alu_group, i);
 		if (!inst_slot[i])
 			fatal("%s: unexpected empty VLIW slots", __FUNCTION__);
-		if (inst_slot[i]->info->inst != inst->info->inst)
+		if (inst_slot[i]->info->opcode != inst->info->opcode)
 			fatal("%s: invalid multi-slot instruction", __FUNCTION__);
 	}
 
@@ -2556,7 +2556,7 @@ void evg_isa_ADD_64_impl(struct evg_work_item_t *work_item, struct evg_inst_t *i
 		inst_slot[i] = evg_isa_get_alu_inst(alu_group, alu / 2 * 2 + i);
 		if (!inst_slot[i])
 			fatal("%s: unexpected empty VLIW slots", __FUNCTION__);
-		if (inst_slot[i]->info->inst != inst->info->inst)
+		if (inst_slot[i]->info->opcode != inst->info->opcode)
 			fatal("%s: invalid multi-slot instruction", __FUNCTION__);
 	}
 	
@@ -2612,7 +2612,7 @@ void evg_isa_FLT64_TO_FLT32_VEC_impl(struct evg_work_item_t *work_item, struct e
 		inst_slot[i] = evg_isa_get_alu_inst(alu_group, alu / 2 * 2 + i);
 		if (!inst_slot[i])
 			fatal("%s: unexpected empty VLIW slots", __FUNCTION__);
-		if (inst_slot[i]->info->inst != inst->info->inst)
+		if (inst_slot[i]->info->opcode != inst->info->opcode)
 			fatal("%s: invalid multi-slot instruction", __FUNCTION__);
 	}
 	
@@ -2657,7 +2657,7 @@ void evg_isa_FLT32_TO_FLT64_VEC_impl(struct evg_work_item_t *work_item, struct e
 		inst_slot[i] = evg_isa_get_alu_inst(alu_group, alu / 2 * 2 + i);
 		if (!inst_slot[i])
 			fatal("%s: unexpected empty VLIW slots", __FUNCTION__);
-		if (inst_slot[i]->info->inst != inst->info->inst)
+		if (inst_slot[i]->info->opcode != inst->info->opcode)
 			fatal("%s: invalid multi-slot instruction", __FUNCTION__);
 	}
 	

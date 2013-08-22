@@ -262,7 +262,7 @@ void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 	struct evg_alu_group_t *alu_group;
 	struct evg_inst_t *inst;
 
-	enum evg_inst_enum inst_opcode;
+	EvgInstOpcode inst_opcode;
 
 	int work_item_id;
 
@@ -304,10 +304,10 @@ void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 		assert(work_item);
 
 		/* Execute once in wavefront */
-		(*evg_isa_inst_func[inst->info->inst])(work_item, inst);
+		(*evg_isa_inst_func[inst->info->opcode])(work_item, inst);
 
 		/* If instruction updates the work_item's active mask, update digests */
-		if (inst->info->flags & EVG_INST_FLAG_ACT_MASK)
+		if (inst->info->flags & EvgInstFlagActMask)
 		{
 			EVG_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
 			{
@@ -321,15 +321,15 @@ void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 		asEmu(evg_emu)->instructions++;
 		wavefront->inst_count++;
 		wavefront->cf_inst_count++;
-		if (inst->info->flags & EVG_INST_FLAG_MEM)
+		if (inst->info->flags & EvgInstFlagMem)
 		{
 			wavefront->global_mem_inst_count++;
 			wavefront->cf_inst_global_mem_write_count++;
 		}
 		if (ndrange->inst_histogram)
 		{
-			inst_opcode = wavefront->cf_inst.info->inst;
-			assert(inst_opcode < EVG_INST_COUNT);
+			inst_opcode = wavefront->cf_inst.info->opcode;
+			assert(inst_opcode < EvgInstOpcodeCount);
 			ndrange->inst_histogram[inst_opcode]++;
 		}
 
@@ -359,7 +359,7 @@ void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 			for (i = 0; i < alu_group->inst_count; i++)
 			{
 				inst = &alu_group->inst[i];
-				(*evg_isa_inst_func[inst->info->inst])(work_item, inst);
+				(*evg_isa_inst_func[inst->info->opcode])(work_item, inst);
 			}
 			evg_isa_write_task_commit(work_item);
 		}
@@ -374,15 +374,15 @@ void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 		for (i = 0; i < alu_group->inst_count; i++)
 		{
 			inst = &alu_group->inst[i];
-			if (inst->info->flags & EVG_INST_FLAG_LDS)
+			if (inst->info->flags & EvgInstFlagLDS)
 			{
 				wavefront->local_mem_inst_count++;
 				wavefront->alu_inst_local_mem_count++;
 			}
 			if (ndrange->inst_histogram)
 			{
-				inst_opcode = inst->info->inst;
-				assert(inst_opcode < EVG_INST_COUNT);
+				inst_opcode = inst->info->opcode;
+				assert(inst_opcode < EvgInstOpcodeCount);
 				ndrange->inst_histogram[inst_opcode]++;
 			}
 		}
@@ -415,22 +415,22 @@ void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 		EVG_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
 		{
 			work_item = ndrange->work_items[work_item_id];
-			(*evg_isa_inst_func[inst->info->inst])(work_item, inst);
+			(*evg_isa_inst_func[inst->info->opcode])(work_item, inst);
 		}
 
 		/* Statistics */
 		asEmu(evg_emu)->instructions++;
 		wavefront->inst_count++;
 		wavefront->tc_inst_count++;
-		if (inst->info->flags & EVG_INST_FLAG_MEM)
+		if (inst->info->flags & EvgInstFlagMem)
 		{
 			wavefront->global_mem_inst_count++;
 			wavefront->tc_inst_global_mem_read_count++;
 		}
 		if (ndrange->inst_histogram)
 		{
-			inst_opcode = inst->info->inst;
-			assert(inst_opcode < EVG_INST_COUNT);
+			inst_opcode = inst->info->opcode;
+			assert(inst_opcode < EvgInstOpcodeCount);
 			ndrange->inst_histogram[inst_opcode]++;
 		}
 
