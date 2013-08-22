@@ -80,6 +80,7 @@ void SIWavefrontCreate(SIWavefront *self, int id, SIWorkGroup *work_group)
 	{
 		self->work_items[work_item_id] = new(SIWorkItem, work_item_id, self);
 		self->work_items[work_item_id]->work_group = work_group;
+		self->work_items[work_item_id]->id_in_wavefront = work_item_id;
 	}
 
 	/* Create scalar work item */

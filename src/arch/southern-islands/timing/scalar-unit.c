@@ -87,13 +87,6 @@ void si_scalar_unit_complete(struct si_scalar_unit_t *scalar_unit)
 		/* Access complete, remove the uop from the queue */
 		list_remove(scalar_unit->write_buffer, uop);
 
-		/* Scalar ALU instructions must complete before the next
-		 * instruction can be fetched */
-		if (!uop->scalar_mem_read)
-		{
-			uop->wavefront_pool_entry->ready = 1;
-		}
-
 		/* Check for "wait" instruction */
 		if (uop->mem_wait_inst)
 		{
@@ -331,7 +324,7 @@ void si_scalar_unit_execute(struct si_scalar_unit_t *scalar_unit)
 	list_entries = list_count(scalar_unit->read_buffer);
 
 	/* Sanity check the read buffer. */
-	assert(list_entries <= si_gpu_scalar_unit_width);
+	assert(list_entries <= si_gpu_scalar_unit_read_buffer_size);
 
 	for (i = 0; i < list_entries; i++)
 	{
@@ -479,6 +472,8 @@ void si_scalar_unit_read(struct si_scalar_unit_t *scalar_unit)
 
 		list_remove(scalar_unit->decode_buffer, uop);
 		list_enqueue(scalar_unit->read_buffer, uop);
+
+		uop->wavefront_pool_entry->ready_next_cycle = 1;
 
 		si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld "
 			"stg=\"su-r\"\n", uop->id_in_compute_unit, 

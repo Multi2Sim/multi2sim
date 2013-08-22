@@ -526,44 +526,37 @@ void SIComputeUnitFetch(SIComputeUnit *self, int active_fb)
 	}
 }
 
-/* Decode the instruction type */
-void SIComputeUnitIssueOldest(SIComputeUnit *self, int active_fb)
+void SIComputeUnitIssueOldestInst(SIComputeUnit *self, int active_fb)
 {
 	SIGpu *gpu = self->gpu;
 
 	struct si_uop_t *uop;
 	struct si_uop_t *oldest_uop;
 
-	int list_index;
 	int list_entries;
 	int i;
 	int issued_insts;
 
 	/* Branch unit */
-	oldest_uop = NULL;
-	list_index = 0;
-
-	list_entries = list_count(self->fetch_buffers[active_fb]);
 	for (issued_insts = 0; 
 		issued_insts < si_gpu_fe_max_inst_issued_per_type;
 		issued_insts++)
 	{
+		list_entries = list_count(self->fetch_buffers[active_fb]);
+		oldest_uop = NULL;
 		for (i = 0; i < list_entries; i++)
 		{
-			uop = list_get(self->fetch_buffers[active_fb], 
-				list_index);
+			uop = list_get(self->fetch_buffers[active_fb], i);
 			assert(uop);
 
 			/* Only evaluate branch instructions */
 			if (uop->inst.info->fmt != SIInstFormatSOPP) 
 			{
-				list_index++;
 				continue;
 			}
 			if (uop->inst.bytes.sopp.op <= 1 || 
 				uop->inst.bytes.sopp.op >= 10)
 			{
-				list_index++;
 				continue;
 			}
 
@@ -571,7 +564,6 @@ void SIComputeUnitIssueOldest(SIComputeUnit *self, int active_fb)
 			 * the fetch */
 			if (asTiming(gpu)->cycle < uop->fetch_ready)
 			{
-				list_index++;
 				continue;
 			}
 
@@ -581,46 +573,42 @@ void SIComputeUnitIssueOldest(SIComputeUnit *self, int active_fb)
 			{
 				oldest_uop = uop;
 			}
+		}
 
-			/* Issue the oldest branch instruction */
-			if (oldest_uop &&
-				list_count(self->branch_unit.
-					issue_buffer) < 
-					si_gpu_branch_unit_issue_buffer_size)
-			{
-				oldest_uop->issue_ready = asTiming(gpu)->cycle +
-					si_gpu_fe_issue_latency;
-				list_remove(self->
-					fetch_buffers[active_fb], oldest_uop);
-				list_enqueue(self->branch_unit.
-					issue_buffer, oldest_uop);
+		/* Issue the oldest branch instruction */
+		if (oldest_uop &&
+			list_count(self->branch_unit.issue_buffer) < 
+				si_gpu_branch_unit_issue_buffer_size)
+		{
+			oldest_uop->issue_ready = asTiming(gpu)->cycle +
+				si_gpu_fe_issue_latency;
+			list_remove(self->
+				fetch_buffers[active_fb], oldest_uop);
+			list_enqueue(self->branch_unit.
+				issue_buffer, oldest_uop);
 
-				/* Trace */
-				si_trace("si.inst id=%lld cu=%d wf=%d "
-					"uop_id=%lld stg=\"i\"\n", 
-					uop->id_in_compute_unit, 
-					self->id, 
-					uop->wavefront->id, 
-					uop->id_in_wavefront);
+			/* Trace */
+			si_trace("si.inst id=%lld cu=%d wf=%d "
+				"uop_id=%lld stg=\"i\"\n", 
+				oldest_uop->id_in_compute_unit, 
+				self->id, 
+				oldest_uop->wavefront->id, 
+				oldest_uop->id_in_wavefront);
 
-				self->branch_inst_count++;
-			}
+			self->branch_inst_count++;
 		}
 	}
 
 	/* Scalar unit */
-	oldest_uop = NULL;
-	list_index = 0;
-
-	list_entries = list_count(self->fetch_buffers[active_fb]);
 	for (issued_insts = 0; 
 		issued_insts < si_gpu_fe_max_inst_issued_per_type;
 		issued_insts++)
 	{
+		list_entries = list_count(self->fetch_buffers[active_fb]);
+		oldest_uop = NULL;
 		for (i = 0; i < list_entries; i++)
 		{
-			uop = list_get(self->fetch_buffers[active_fb], 
-				list_index);
+			uop = list_get(self->fetch_buffers[active_fb], i);
 			assert(uop);
 
 			/* Only evaluate scalar instructions */
@@ -631,14 +619,13 @@ void SIComputeUnitIssueOldest(SIComputeUnit *self, int active_fb)
 				uop->inst.info->fmt != SIInstFormatSOPK && 
 				uop->inst.info->fmt != SIInstFormatSMRD)
 			{	
-				list_index++;
 				continue;
 			}
+
 			if (uop->inst.info->fmt == SIInstFormatSOPP && 
 			    uop->inst.bytes.sopp.op > 1 && 
 				uop->inst.bytes.sopp.op < 10)
 			{
-				list_index++;
 				continue;
 			}
 
@@ -646,7 +633,6 @@ void SIComputeUnitIssueOldest(SIComputeUnit *self, int active_fb)
 			 * the fetch */
 			if (asTiming(gpu)->cycle < uop->fetch_ready)
 			{
-				list_index++;
 				continue;
 			}
 
@@ -656,59 +642,54 @@ void SIComputeUnitIssueOldest(SIComputeUnit *self, int active_fb)
 			{
 				oldest_uop = uop;
 			}
+		}
 
-			/* Issue the oldest scalar instruction */
-			if (oldest_uop &&
-				list_count(self->scalar_unit.
-					issue_buffer) < 
-					si_gpu_scalar_unit_issue_buffer_size)
+		/* Issue the oldest scalar instruction */
+		if (oldest_uop &&
+			list_count(self->scalar_unit.issue_buffer) < 
+				si_gpu_scalar_unit_issue_buffer_size)
+		{
+			oldest_uop->issue_ready = asTiming(gpu)->cycle +
+				si_gpu_fe_issue_latency;
+			list_remove(self->fetch_buffers[active_fb], oldest_uop);
+			list_enqueue(self->scalar_unit.issue_buffer, 
+				oldest_uop);
+
+			/* Trace */
+			si_trace("si.inst id=%lld cu=%d wf=%d "
+				"uop_id=%lld stg=\"i\"\n", 
+				oldest_uop->id_in_compute_unit, 
+				self->id, 
+				oldest_uop->wavefront->id, 
+				oldest_uop->id_in_wavefront);
+
+			if (oldest_uop->inst.info->fmt == SIInstFormatSMRD)
 			{
-				oldest_uop->issue_ready = asTiming(gpu)->cycle +
-					si_gpu_fe_issue_latency;
-				list_remove(self->
-					fetch_buffers[active_fb], oldest_uop);
-				list_enqueue(self->scalar_unit.
-					issue_buffer, oldest_uop);
-
-				/* Trace */
-				si_trace("si.inst id=%lld cu=%d wf=%d "
-					"uop_id=%lld stg=\"i\"\n", 
-					uop->id_in_compute_unit, 
-					self->id, 
-					uop->wavefront->id, 
-					uop->id_in_wavefront);
-
-				if (uop->inst.info->fmt == SIInstFormatSMRD)
-				{
-					uop->wavefront_pool_entry->
-						ready_next_cycle = 1;
-					self->scalar_mem_inst_count++;
-					uop->wavefront_pool_entry->lgkm_cnt++;
-				}
-				else
-				{
-					/* Scalar ALU instructions have to
-					 * complete before the next 
-					 * instruction can be fetched */
-					self->scalar_alu_inst_count++;
-				}
+				oldest_uop->wavefront_pool_entry->
+					ready_next_cycle = 1;
+				self->scalar_mem_inst_count++;
+				oldest_uop->wavefront_pool_entry->lgkm_cnt++;
+			}
+			else
+			{
+				/* Scalar ALU instructions have to
+				 * complete before the next 
+				 * instruction can be fetched */
+				self->scalar_alu_inst_count++;
 			}
 		}
 	}
 
 	/* SIMD unit */
-	oldest_uop = NULL;
-	list_index = 0;
-
-	list_entries = list_count(self->fetch_buffers[active_fb]);
 	for (issued_insts = 0; 
 		issued_insts < si_gpu_fe_max_inst_issued_per_type;
 		issued_insts++)
 	{
+		list_entries = list_count(self->fetch_buffers[active_fb]);
+		oldest_uop = NULL;
 		for (i = 0; i < list_entries; i++)
 		{
-			uop = list_get(self->fetch_buffers[active_fb], 
-				list_index);
+			uop = list_get(self->fetch_buffers[active_fb], i);
 			assert(uop);
 
 			/* Only evaluate SIMD instructions */
@@ -718,7 +699,6 @@ void SIComputeUnitIssueOldest(SIComputeUnit *self, int active_fb)
 				uop->inst.info->fmt != SIInstFormatVOP3a && 
 				uop->inst.info->fmt != SIInstFormatVOP3b)
 			{	
-				list_index++;
 				continue;
 			}
 
@@ -726,7 +706,6 @@ void SIComputeUnitIssueOldest(SIComputeUnit *self, int active_fb)
 			 * the fetch */
 			if (asTiming(gpu)->cycle < uop->fetch_ready)
 			{
-				list_index++;
 				continue;
 			}
 
@@ -736,53 +715,46 @@ void SIComputeUnitIssueOldest(SIComputeUnit *self, int active_fb)
 			{
 				oldest_uop = uop;
 			}
+		}
 
-			/* Issue the oldest SIMD instruction */
-			if (oldest_uop &&
-				list_count(self->simd_units[active_fb]->
-					issue_buffer) < 
-					si_gpu_simd_issue_buffer_size)
-			{
-				oldest_uop->issue_ready = asTiming(gpu)->cycle +
-					si_gpu_fe_issue_latency;
-				list_remove(self->
-					fetch_buffers[active_fb], oldest_uop);
-				list_enqueue(self->
-					simd_units[active_fb]->issue_buffer, 
-					oldest_uop);
+		/* Issue the oldest SIMD instruction */
+		if (oldest_uop &&
+			list_count(self->simd_units[active_fb]->issue_buffer) < 
+				si_gpu_simd_issue_buffer_size)
+		{
+			oldest_uop->issue_ready = asTiming(gpu)->cycle +
+				si_gpu_fe_issue_latency;
+			list_remove(self->fetch_buffers[active_fb], oldest_uop);
+			list_enqueue(self->simd_units[active_fb]->issue_buffer, 
+				oldest_uop);
 
-				/* Trace */
-				si_trace("si.inst id=%lld cu=%d wf=%d "
-					"uop_id=%lld stg=\"i\"\n", 
-					uop->id_in_compute_unit, 
-					self->id, 
-					uop->wavefront->id, 
-					uop->id_in_wavefront);
+			/* Trace */
+			si_trace("si.inst id=%lld cu=%d wf=%d "
+				"uop_id=%lld stg=\"i\"\n", 
+				oldest_uop->id_in_compute_unit, 
+				self->id, 
+				oldest_uop->wavefront->id, 
+				oldest_uop->id_in_wavefront);
 
-				self->simd_inst_count++;
-			}
+			self->simd_inst_count++;
 		}
 	}
 
 	/* Vector memory */
-	oldest_uop = NULL;
-	list_index = 0;
-
-	list_entries = list_count(self->fetch_buffers[active_fb]);
 	for (issued_insts = 0; 
 		issued_insts < si_gpu_fe_max_inst_issued_per_type;
 		issued_insts++)
 	{
+		list_entries = list_count(self->fetch_buffers[active_fb]);
+		oldest_uop = NULL;
 		for (i = 0; i < list_entries; i++)
 		{
-			uop = list_get(self->fetch_buffers[active_fb], 
-				list_index);
+			uop = list_get(self->fetch_buffers[active_fb], i);
 			assert(uop);
 
 			/* Only evaluate memory instructions */
 			if (uop->inst.info->fmt != SIInstFormatMTBUF)
 			{	
-				list_index++;
 				continue;
 			}
 
@@ -790,66 +762,57 @@ void SIComputeUnitIssueOldest(SIComputeUnit *self, int active_fb)
 			 * the fetch */
 			if (asTiming(gpu)->cycle < uop->fetch_ready)
 			{
-				list_index++;
 				continue;
 			}
 
 			/* Save the oldest uop */
-			if (!oldest_uop || uop->fetch_ready < 
-				oldest_uop->fetch_ready)
+			if (!oldest_uop || 
+				uop->fetch_ready < oldest_uop->fetch_ready)
 			{
 				oldest_uop = uop;
 			}
+		}
 
-			/* Issue the oldest memory instruction */
-			if (oldest_uop &&
-				list_count(self->
-					vector_mem_unit.issue_buffer) < 
-					si_gpu_vector_mem_issue_buffer_size)
-			{
-				oldest_uop->issue_ready = asTiming(gpu)->cycle +
-					si_gpu_fe_issue_latency;
-				list_remove(self->
-					fetch_buffers[active_fb], oldest_uop);
-				list_enqueue(self->
-					vector_mem_unit.issue_buffer, 
-					oldest_uop);
+		/* Issue the oldest memory instruction */
+		if (oldest_uop &&
+			list_count(self->vector_mem_unit.issue_buffer) < 
+				si_gpu_vector_mem_issue_buffer_size)
+		{
+			oldest_uop->issue_ready = asTiming(gpu)->cycle +
+				si_gpu_fe_issue_latency;
+			list_remove(self->fetch_buffers[active_fb], oldest_uop);
+			list_enqueue(self->vector_mem_unit.issue_buffer, 
+				oldest_uop);
 
-				/* Trace */
-				si_trace("si.inst id=%lld cu=%d wf=%d "
-					"uop_id=%lld stg=\"i\"\n", 
-					uop->id_in_compute_unit, 
-					self->id, 
-					uop->wavefront->id, 
-					uop->id_in_wavefront);
+			/* Trace */
+			si_trace("si.inst id=%lld cu=%d wf=%d "
+				"uop_id=%lld stg=\"i\"\n", 
+				oldest_uop->id_in_compute_unit, 
+				self->id, 
+				oldest_uop->wavefront->id, 
+				oldest_uop->id_in_wavefront);
 
-				uop->wavefront_pool_entry->ready_next_cycle = 1;
-
-				self->vector_mem_inst_count++;
-				uop->wavefront_pool_entry->lgkm_cnt++;
-			}
+			self->vector_mem_inst_count++;
+			oldest_uop->wavefront_pool_entry->ready_next_cycle = 1;
+			oldest_uop->wavefront_pool_entry->lgkm_cnt++;
 		}
 	}
 
 	/* LDS */
-	oldest_uop = NULL;
-	list_index = 0;
-
-	list_entries = list_count(self->fetch_buffers[active_fb]);
 	for (issued_insts = 0; 
 		issued_insts < si_gpu_fe_max_inst_issued_per_type;
 		issued_insts++)
 	{
+		list_entries = list_count(self->fetch_buffers[active_fb]);
+		oldest_uop = NULL;
 		for (i = 0; i < list_entries; i++)
 		{
-			uop = list_get(self->fetch_buffers[active_fb], 
-				list_index);
+			uop = list_get(self->fetch_buffers[active_fb], i);
 			assert(uop);
 
 			/* Only evaluate LDS instructions */
 			if (uop->inst.info->fmt != SIInstFormatDS)
 			{	
-				list_index++;
 				continue;
 			}
 
@@ -857,42 +820,383 @@ void SIComputeUnitIssueOldest(SIComputeUnit *self, int active_fb)
 			 * the fetch */
 			if (asTiming(gpu)->cycle < uop->fetch_ready)
 			{
-				list_index++;
 				continue;
 			}
 
 			/* Save the oldest uop */
-			if (!oldest_uop || uop->fetch_ready < 
-				oldest_uop->fetch_ready)
+			if (!oldest_uop || 
+				uop->fetch_ready < oldest_uop->fetch_ready)
 			{
 				oldest_uop = uop;
 			}
+		}
 
-			/* Issue the oldest LDS instruction */
-			if (oldest_uop &&
-				list_count(
-					self->lds_unit.issue_buffer) < 
-					si_gpu_lds_issue_buffer_size)
+		/* Issue the oldest LDS instruction */
+		if (oldest_uop &&
+			list_count(self->lds_unit.issue_buffer) < 
+				si_gpu_lds_issue_buffer_size)
+		{
+			oldest_uop->issue_ready = asTiming(gpu)->cycle +
+				si_gpu_fe_issue_latency;
+			list_remove(self->fetch_buffers[active_fb], oldest_uop);
+			list_enqueue(self->lds_unit.issue_buffer, oldest_uop);
+
+			/* Trace */
+			si_trace("si.inst id=%lld cu=%d wf=%d "
+				"uop_id=%lld stg=\"i\"\n", 
+				oldest_uop->id_in_compute_unit, 
+				self->id, 
+				oldest_uop->wavefront->id, 
+				oldest_uop->id_in_wavefront);
+
+			self->lds_inst_count++;
+			oldest_uop->wavefront_pool_entry->lgkm_cnt++;
+		}
+	}
+
+	/* Update visualization states for all instructions not issued */
+	list_entries = list_count(self->fetch_buffers[active_fb]);
+	for (i = 0; i < list_entries; i++)
+	{
+		uop = list_get(self->fetch_buffers[active_fb], i);
+		assert(uop);
+
+		/* Skip all uops that have not yet completed the fetch */
+		if (asTiming(gpu)->cycle < uop->fetch_ready)
+		{
+			continue;
+		}
+
+		si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"s\"\n", 
+			uop->id_in_compute_unit, self->id, 
+			uop->wavefront->id, uop->id_in_wavefront);
+	}
+}
+
+void SIComputeUnitIssueOldestWF(SIComputeUnit *self, int active_fb)
+{
+	SIGpu *gpu = self->gpu;
+
+	struct si_uop_t *uop;
+	struct si_uop_t *oldest_uop;
+
+	int list_entries;
+	int i;
+	int issued_insts;
+
+	/* Branch unit */
+	for (issued_insts = 0; 
+		issued_insts < si_gpu_fe_max_inst_issued_per_type;
+		issued_insts++)
+	{
+		list_entries = list_count(self->fetch_buffers[active_fb]);
+		oldest_uop = NULL;
+		for (i = 0; i < list_entries; i++)
+		{
+			uop = list_get(self->fetch_buffers[active_fb], i);
+			assert(uop);
+
+			/* Only evaluate branch instructions */
+			if (uop->inst.info->fmt != SIInstFormatSOPP) 
 			{
-				oldest_uop->issue_ready = asTiming(gpu)->cycle +
-					si_gpu_fe_issue_latency;
-				list_remove(self->
-					fetch_buffers[active_fb], oldest_uop);
-				list_enqueue(
-					self->lds_unit.issue_buffer, 
-					oldest_uop);
-
-				/* Trace */
-				si_trace("si.inst id=%lld cu=%d wf=%d "
-					"uop_id=%lld stg=\"i\"\n", 
-					uop->id_in_compute_unit, 
-					self->id, 
-					uop->wavefront->id, 
-					uop->id_in_wavefront);
-
-				self->lds_inst_count++;
-				uop->wavefront_pool_entry->lgkm_cnt++;
+				continue;
 			}
+			if (uop->inst.bytes.sopp.op <= 1 || 
+				uop->inst.bytes.sopp.op >= 10)
+			{
+				continue;
+			}
+
+			/* Skip all uops that have not yet completed 
+			 * the fetch */
+			if (asTiming(gpu)->cycle < uop->fetch_ready)
+			{
+				continue;
+			}
+
+			/* Save the oldest uop */
+			if (!oldest_uop || 
+				uop->wavefront->id < oldest_uop->wavefront->id)
+			{
+				oldest_uop = uop;
+			}
+		}
+
+		/* Issue the oldest branch instruction */
+		if (oldest_uop &&
+			list_count(self->branch_unit.issue_buffer) < 
+				si_gpu_branch_unit_issue_buffer_size)
+		{
+			oldest_uop->issue_ready = asTiming(gpu)->cycle +
+				si_gpu_fe_issue_latency;
+			list_remove(self->fetch_buffers[active_fb], oldest_uop);
+			list_enqueue(self->branch_unit.issue_buffer, 
+				oldest_uop);
+
+			/* Trace */
+			si_trace("si.inst id=%lld cu=%d wf=%d "
+				"uop_id=%lld stg=\"i\"\n", 
+				oldest_uop->id_in_compute_unit, 
+				self->id, 
+				oldest_uop->wavefront->id, 
+				oldest_uop->id_in_wavefront);
+
+			self->branch_inst_count++;
+		}
+	}
+
+	/* Scalar unit */
+	for (issued_insts = 0; 
+		issued_insts < si_gpu_fe_max_inst_issued_per_type;
+		issued_insts++)
+	{
+		list_entries = list_count(self->fetch_buffers[active_fb]);
+		oldest_uop = NULL;
+		for (i = 0; i < list_entries; i++)
+		{
+			uop = list_get(self->fetch_buffers[active_fb], i);
+			assert(uop);
+
+			/* Only evaluate scalar instructions */
+			if (uop->inst.info->fmt != SIInstFormatSOPP && 
+				uop->inst.info->fmt != SIInstFormatSOP1 && 
+				uop->inst.info->fmt != SIInstFormatSOP2 && 
+				uop->inst.info->fmt != SIInstFormatSOPC && 
+				uop->inst.info->fmt != SIInstFormatSOPK && 
+				uop->inst.info->fmt != SIInstFormatSMRD)
+			{	
+				continue;
+			}
+			if (uop->inst.info->fmt == SIInstFormatSOPP && 
+			    uop->inst.bytes.sopp.op > 1 && 
+				uop->inst.bytes.sopp.op < 10)
+			{
+				continue;
+			}
+
+			/* Skip all uops that have not yet completed 
+			 * the fetch */
+			if (asTiming(gpu)->cycle < uop->fetch_ready)
+			{
+				continue;
+			}
+
+			/* Save the oldest uop */
+			if (!oldest_uop || 
+				uop->wavefront->id < oldest_uop->wavefront->id)
+			{
+				oldest_uop = uop;
+			}
+		}
+
+		/* Issue the oldest scalar instruction */
+		if (oldest_uop &&
+			list_count(self->scalar_unit.issue_buffer) < 
+				si_gpu_scalar_unit_issue_buffer_size)
+		{
+			oldest_uop->issue_ready = asTiming(gpu)->cycle +
+				si_gpu_fe_issue_latency;
+			list_remove(self->fetch_buffers[active_fb], oldest_uop);
+			list_enqueue(self->scalar_unit.issue_buffer, 
+				oldest_uop);
+
+			/* Trace */
+			si_trace("si.inst id=%lld cu=%d wf=%d "
+				"uop_id=%lld stg=\"i\"\n", 
+				oldest_uop->id_in_compute_unit, 
+				self->id, 
+				oldest_uop->wavefront->id, 
+				oldest_uop->id_in_wavefront);
+
+			if (oldest_uop->inst.info->fmt == SIInstFormatSMRD)
+			{
+				self->scalar_mem_inst_count++;
+				oldest_uop->wavefront_pool_entry->
+					ready_next_cycle = 1;
+				oldest_uop->wavefront_pool_entry->lgkm_cnt++;
+			}
+			else
+			{
+				/* Scalar ALU instructions have to
+				 * complete before the next 
+				 * instruction can be fetched */
+				self->scalar_alu_inst_count++;
+			}
+		}
+	}
+
+	/* SIMD unit */
+	for (issued_insts = 0; 
+		issued_insts < si_gpu_fe_max_inst_issued_per_type;
+		issued_insts++)
+	{
+		list_entries = list_count(self->fetch_buffers[active_fb]);
+		oldest_uop = NULL;
+		for (i = 0; i < list_entries; i++)
+		{
+			uop = list_get(self->fetch_buffers[active_fb], i);
+			assert(uop);
+
+			/* Only evaluate SIMD instructions */
+			if (uop->inst.info->fmt != SIInstFormatVOP2 && 
+				uop->inst.info->fmt != SIInstFormatVOP1 && 
+				uop->inst.info->fmt != SIInstFormatVOPC && 
+				uop->inst.info->fmt != SIInstFormatVOP3a && 
+				uop->inst.info->fmt != SIInstFormatVOP3b)
+			{	
+				continue;
+			}
+
+			/* Skip all uops that have not yet completed 
+			 * the fetch */
+			if (asTiming(gpu)->cycle < uop->fetch_ready)
+			{
+				continue;
+			}
+
+			/* Save the oldest uop */
+			if (!oldest_uop || 
+				uop->wavefront->id < oldest_uop->wavefront->id)
+			{
+				oldest_uop = uop;
+			}
+		}
+
+		/* Issue the oldest SIMD instruction */
+		if (oldest_uop &&
+			list_count(self->simd_units[active_fb]->issue_buffer) < 
+				si_gpu_simd_issue_buffer_size)
+		{
+			oldest_uop->issue_ready = asTiming(gpu)->cycle +
+				si_gpu_fe_issue_latency;
+			list_remove(self->fetch_buffers[active_fb], oldest_uop);
+			list_enqueue(self->simd_units[active_fb]->issue_buffer, 
+				oldest_uop);
+
+			/* Trace */
+			si_trace("si.inst id=%lld cu=%d wf=%d "
+				"uop_id=%lld stg=\"i\"\n", 
+				oldest_uop->id_in_compute_unit, 
+				self->id, 
+				oldest_uop->wavefront->id, 
+				oldest_uop->id_in_wavefront);
+
+			self->simd_inst_count++;
+		}
+	}
+
+	/* Vector memory */
+	for (issued_insts = 0; 
+		issued_insts < si_gpu_fe_max_inst_issued_per_type;
+		issued_insts++)
+	{
+		list_entries = list_count(self->fetch_buffers[active_fb]);
+		oldest_uop = NULL;
+		for (i = 0; i < list_entries; i++)
+		{
+			uop = list_get(self->fetch_buffers[active_fb], i);
+			assert(uop);
+
+			/* Only evaluate memory instructions */
+			if (uop->inst.info->fmt != SIInstFormatMTBUF)
+			{	
+				continue;
+			}
+
+			/* Skip all uops that have not yet completed 
+			 * the fetch */
+			if (asTiming(gpu)->cycle < uop->fetch_ready)
+			{
+				continue;
+			}
+
+			/* Save the oldest uop */
+			if (!oldest_uop || 
+				uop->wavefront->id < oldest_uop->wavefront->id)
+			{
+				oldest_uop = uop;
+			}
+		}
+
+		/* Issue the oldest memory instruction */
+		if (oldest_uop &&
+			list_count(self->vector_mem_unit.issue_buffer) < 
+				si_gpu_vector_mem_issue_buffer_size)
+		{
+			oldest_uop->issue_ready = asTiming(gpu)->cycle +
+				si_gpu_fe_issue_latency;
+			list_remove(self->fetch_buffers[active_fb], oldest_uop);
+			list_enqueue(self->vector_mem_unit.issue_buffer, 
+				oldest_uop);
+
+			/* Trace */
+			si_trace("si.inst id=%lld cu=%d wf=%d "
+				"uop_id=%lld stg=\"i\"\n", 
+				oldest_uop->id_in_compute_unit, 
+				self->id, 
+				oldest_uop->wavefront->id, 
+				oldest_uop->id_in_wavefront);
+
+			self->vector_mem_inst_count++;
+			oldest_uop->wavefront_pool_entry->ready_next_cycle = 1;
+			oldest_uop->wavefront_pool_entry->lgkm_cnt++;
+		}
+	}
+
+	/* LDS */
+	for (issued_insts = 0; 
+		issued_insts < si_gpu_fe_max_inst_issued_per_type;
+		issued_insts++)
+	{
+		list_entries = list_count(self->fetch_buffers[active_fb]);
+		oldest_uop = NULL;
+		for (i = 0; i < list_entries; i++)
+		{
+			uop = list_get(self->fetch_buffers[active_fb], i);
+			assert(uop);
+
+			/* Only evaluate LDS instructions */
+			if (uop->inst.info->fmt != SIInstFormatDS)
+			{	
+				continue;
+			}
+
+			/* Skip all uops that have not yet completed 
+			 * the fetch */
+			if (asTiming(gpu)->cycle < uop->fetch_ready)
+			{
+				continue;
+			}
+
+			/* Save the oldest uop */
+			if (!oldest_uop || 
+				uop->wavefront->id < oldest_uop->wavefront->id)
+			{
+				oldest_uop = uop;
+			}
+		}
+
+		/* Issue the oldest LDS instruction */
+		if (oldest_uop &&
+			list_count(self->lds_unit.issue_buffer) < 
+			si_gpu_lds_issue_buffer_size)
+		{
+			oldest_uop->issue_ready = asTiming(gpu)->cycle +
+				si_gpu_fe_issue_latency;
+			list_remove(self->fetch_buffers[active_fb], oldest_uop);
+			list_enqueue(self->lds_unit.issue_buffer, 
+				oldest_uop);
+
+			/* Trace */
+			si_trace("si.inst id=%lld cu=%d wf=%d "
+				"uop_id=%lld stg=\"i\"\n", 
+				oldest_uop->id_in_compute_unit, 
+				self->id, 
+				oldest_uop->wavefront->id, 
+				oldest_uop->id_in_wavefront);
+
+			self->lds_inst_count++;
+			oldest_uop->wavefront_pool_entry->lgkm_cnt++;
 		}
 	}
 
@@ -1359,18 +1663,18 @@ void SIComputeUnitRun(SIComputeUnit *self)
 
 	int i;
 	int num_simd_units;
-	int active_fetch_buffer;  
+	int active_issue_buffer;  
 
 	/* Return if no work groups are mapped to this compute unit */
 	if (!self->work_group_count)
 		return;
 
-	/* Fetch buffer chosen to issue this cycle */
-	active_fetch_buffer = asTiming(gpu)->cycle %
+	/* Issue buffer chosen to issue this cycle */
+	active_issue_buffer = asTiming(gpu)->cycle %
 		self->num_wavefront_pools;
 
-	assert(active_fetch_buffer >= 0 && 
-		active_fetch_buffer < self->num_wavefront_pools);
+	assert(active_issue_buffer >= 0 && 
+		active_issue_buffer < self->num_wavefront_pools);
 
 	/* SIMDs */
 	num_simd_units = self->num_wavefront_pools;
@@ -1389,17 +1693,17 @@ void SIComputeUnitRun(SIComputeUnit *self)
 	/* Branch unit */
 	si_branch_unit_run(&self->branch_unit);
 
-	/* Issue from the active fetch buffer */
-	//si_compute_unit_issue_first(compute_unit, active_fetch_buffer);
-	SIComputeUnitIssueOldest(self, active_fetch_buffer);
+	/* Issue from the active issue buffer */
+	//SIComputeUnitIssueFirst(compute_unit, active_issue_buffer);
+	//SIComputeUnitIssueOldestInst(self, active_issue_buffer);
+	SIComputeUnitIssueOldestWF(self, active_issue_buffer);
 
-	/* Update visualization in non-active fetch buffers */
+	/* Update visualization in non-active issue buffers */
 	for (i = 0; i < num_simd_units; i++)
 	{
-		if (i != active_fetch_buffer)
+		if (i != active_issue_buffer)
 		{
-			SIComputeUnitUpdateFetchVisualization(
-				self, i);
+			SIComputeUnitUpdateFetchVisualization(self, i);
 		}
 	}
 
