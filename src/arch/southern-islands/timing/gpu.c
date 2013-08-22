@@ -340,8 +340,8 @@ int si_gpu_num_scalar_registers = 2048; /* Per CU */
 unsigned int si_gpu_register_alloc_size = 32;
 
 /* Front-end parameters */
-int si_gpu_fe_fetch_latency = 5;
-int si_gpu_fe_fetch_width = 4;
+int si_gpu_fe_fetch_latency = 1;
+int si_gpu_fe_fetch_width = 1;
 int si_gpu_fe_fetch_buffer_size = 10;
 int si_gpu_fe_issue_latency = 1;
 int si_gpu_fe_issue_width = 5;
@@ -354,7 +354,7 @@ int si_gpu_simd_issue_buffer_size = 1;
 int si_gpu_simd_decode_latency = 1;
 int si_gpu_simd_decode_buffer_size = 1;
 int si_gpu_simd_exec_latency = 8;
-int si_gpu_simd_exec_buffer_size = 1;
+int si_gpu_simd_exec_buffer_size = 2;
 
 /* Scalar unit parameters */
 int si_gpu_scalar_unit_width = 1;
@@ -375,8 +375,8 @@ int si_gpu_branch_unit_decode_latency = 1;
 int si_gpu_branch_unit_decode_buffer_size = 1;
 int si_gpu_branch_unit_read_latency = 1;
 int si_gpu_branch_unit_read_buffer_size = 1;
-int si_gpu_branch_unit_exec_latency = 4;
-int si_gpu_branch_unit_exec_buffer_size = 4;
+int si_gpu_branch_unit_exec_latency = 16;
+int si_gpu_branch_unit_exec_buffer_size = 16;
 int si_gpu_branch_unit_write_latency = 1;
 int si_gpu_branch_unit_write_buffer_size = 1;
 
