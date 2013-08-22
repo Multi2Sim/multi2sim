@@ -357,6 +357,8 @@ void si_vector_mem_read(struct si_vector_mem_unit_t *vector_mem)
 		list_remove(vector_mem->decode_buffer, uop);
 		list_enqueue(vector_mem->read_buffer, uop);
 
+		uop->wavefront_pool_entry->ready_next_cycle = 1;
+
 		si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld "
 			"stg=\"mem-r\"\n", uop->id_in_compute_unit, 
 			vector_mem->compute_unit->id, uop->wavefront->id, 
