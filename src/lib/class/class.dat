@@ -54,6 +54,7 @@ CLASS(FrmWarp)
 CLASS(FrmGrid)
 
 CLASS(FrmGpu)
+CLASS(FrmSM)
 
 CLASS(MIPSAsm)
 CLASS(MIPSInst)

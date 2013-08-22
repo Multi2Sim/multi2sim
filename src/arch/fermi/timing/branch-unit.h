@@ -29,7 +29,7 @@ struct frm_branch_unit_t
 	struct list_t *exec_buffer;   /* Execution */
 	struct list_t *write_buffer;  /* Register writes */
 
-	struct frm_sm_t *sm;
+	FrmSM *sm;
 
 	/* Statistics */
 	long long inst_count;

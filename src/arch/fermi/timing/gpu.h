@@ -197,7 +197,6 @@ extern int frm_gpu_lds_num_ports;
 
 /* Forward declaration */
 struct frm_uop_t;
-struct frm_sm_t;
 struct frm_scalar_unit_t;
 struct frm_simd_t;
 struct frm_branch_unit_t;
@@ -222,7 +221,7 @@ CLASS_BEGIN(FrmGpu, Timing)
 	int threads_per_sm;
 
 	/* Streaming multiprocessors */
-	struct frm_sm_t **sms;
+	FrmSM **sms;
 
 	/* Lists */
 	struct list_t *sm_ready_list;
@@ -264,9 +263,9 @@ void frm_gpu_dump_default_config(char *filename);
 void frm_gpu_uop_trash_add(struct frm_uop_t *uop);
 void frm_gpu_uop_trash_empty(void);
 
-void frm_sm_run_simd(struct frm_sm_t *sm);
-void frm_sm_run_scalar_unit(struct frm_sm_t *sm);
-void frm_sm_run_branch_unit(struct frm_sm_t *sm);
+void frm_sm_run_simd(FrmSM *sm);
+void frm_sm_run_scalar_unit(FrmSM *sm);
+void frm_sm_run_branch_unit(FrmSM *sm);
 
 void frm_simd_run(struct frm_simd_t *simd);
 void frm_scalar_unit_run(struct frm_scalar_unit_t *scalar_unit);

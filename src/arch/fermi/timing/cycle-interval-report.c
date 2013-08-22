@@ -84,7 +84,7 @@ void frm_sm_spatial_report_done()
 	str_free(spatial_report_filename);
 }
 
-void frm_sm_spatial_report_dump(struct frm_sm_t *sm)
+void frm_sm_spatial_report_dump(FrmSM *sm)
 {
 	FILE *f = spatial_report_file;
 
@@ -97,7 +97,7 @@ void frm_sm_spatial_report_dump(struct frm_sm_t *sm)
 }
 
 
-void frm_report_global_mem_inflight( struct frm_sm_t *sm, int long long pending_accesses)
+void frm_report_global_mem_inflight(FrmSM *sm, int long long pending_accesses)
 {
 	/* Read stage adds a negative number for accesses added
 	 * Write stage adds a positive number for accesses finished
@@ -106,7 +106,7 @@ void frm_report_global_mem_inflight( struct frm_sm_t *sm, int long long pending_
 
 }
 
-void frm_report_global_mem_finish( struct frm_sm_t *sm, int long long completed_accesses)
+void frm_report_global_mem_finish( FrmSM *sm, int long long completed_accesses)
 {
 	/* Read stage adds a negative number for accesses added */
 	/* Write stage adds a positive number for accesses finished */
@@ -114,13 +114,13 @@ void frm_report_global_mem_finish( struct frm_sm_t *sm, int long long completed_
 
 }
 
-void frm_report_mapped_thread_block(struct frm_sm_t *sm)
+void frm_report_mapped_thread_block(FrmSM *sm)
 {
 	/*TODO Add calculation here to change this to wavefront pool entries used */
 	sm->interval_mapped_thread_blocks++;
 }
 
-void frm_sm_interval_update(struct frm_sm_t *sm)
+void frm_sm_interval_update(FrmSM *sm)
 {
 	/* If interval - reset the counters in all the engines */
 	sm->interval_cycle ++;
