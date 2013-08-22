@@ -20,13 +20,39 @@
 #ifndef EVERGREEN_ASM_ALU_GROUP_H
 #define EVERGREEN_ASM_ALU_GROUP_H
 
-#include <lib/class/class.h>
+#include "inst.h"
+
+
 
 /*
  * Class 'EvgALUGroup'
  */
 
+#define EVG_ALU_GROUP_SIZE  5
+#define EVG_ALU_GROUP_MAX_LITERALS  4
+
 CLASS_BEGIN(EvgALUGroup, Object)
+
+	/* Disassembler */
+	EvgAsm *as;
+
+	int id;
+
+	/* Number of instruction slots (max. 5) */
+	int inst_count;
+
+	/* Number of literal constant slots (max. 2) */
+	int literal_count;
+
+	/* Instructions */
+	EvgInst inst[EVG_ALU_GROUP_SIZE];
+
+	/* Literals for X, Y, Z, and W elements */
+	union
+	{
+		unsigned int as_uint;
+		float as_float;
+	} literal[EVG_ALU_GROUP_MAX_LITERALS];
 
 CLASS_END(EvgALUGroup)
 

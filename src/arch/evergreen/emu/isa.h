@@ -40,7 +40,7 @@ struct evg_isa_write_task_t
 
 	/* All */
 	enum evg_isa_write_task_kind_t kind;
-	struct evg_inst_t *inst;
+	EvgInst *inst;
 	
 	/* When 'kind' == EVG_ISA_WRITE_TASK_WRITE_DEST */
 	int gpr, rel, chan, index_mode, write_mask;
@@ -62,16 +62,16 @@ extern struct repos_t *evg_isa_write_task_repos;
 
 /* Functions to handle deferred tasks */
 void evg_isa_enqueue_write_lds(struct evg_work_item_t *work_item,
-	struct evg_inst_t *inst, unsigned int addr, unsigned int value,
+	EvgInst *inst, unsigned int addr, unsigned int value,
 	int value_size);
 void evg_isa_enqueue_write_dest(struct evg_work_item_t *work_item,
-	struct evg_inst_t *inst, unsigned int value);
+	EvgInst *inst, unsigned int value);
 void evg_isa_enqueue_write_dest_float(struct evg_work_item_t *work_item,
-	struct evg_inst_t *inst, float value);
+	EvgInst *inst, float value);
 void evg_isa_enqueue_push_before(struct evg_work_item_t *work_item,
-	struct evg_inst_t *inst);
+	EvgInst *inst);
 void evg_isa_enqueue_pred_set(struct evg_work_item_t *work_item,
-	struct evg_inst_t *inst, int cond);
+	EvgInst *inst, int cond);
 
 void evg_isa_write_task_commit(struct evg_work_item_t *work_item);
 
@@ -139,7 +139,7 @@ extern char *evg_err_isa_note;
 
 /* Table of functions implementing implementing the Evergreen ISA */
 typedef void (*evg_isa_inst_func_t)(struct evg_work_item_t *work_item,
-	struct evg_inst_t *inst);
+	EvgInst *inst);
 extern evg_isa_inst_func_t *evg_isa_inst_func;
 
 /* Access to constant memory */
@@ -168,12 +168,11 @@ void evg_isa_write_gpr_float(struct evg_work_item_t *work_item,
 
 /* Read input operands */
 unsigned int evg_isa_read_op_src_int(struct evg_work_item_t *work_item,
-	struct evg_inst_t *inst, int src_idx);
+	EvgInst *inst, int src_idx);
 float evg_isa_read_op_src_float(struct evg_work_item_t *work_item,
-	struct evg_inst_t *inst, int src_idx);
+	EvgInst *inst, int src_idx);
 
-struct evg_inst_t *evg_isa_get_alu_inst(struct evg_alu_group_t *alu_group,
-	enum evg_alu_enum alu);
+EvgInst *evg_isa_get_alu_inst(EvgALUGroup *alu_group, EvgInstAlu alu);
 
 void evg_isa_init(void);
 void evg_isa_done(void);

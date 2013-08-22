@@ -25,6 +25,7 @@
 #include <lib/util/string.h>
 #include <lib/util/debug.h>
 
+#include "alu-group.h"
 #include "asm.h"
 
 
@@ -56,7 +57,7 @@ void evg_disasm_init()
 	int i;
 
 	/* Type size assertions */
-	assert(sizeof(union evg_reg_t) == 4);
+	assert(sizeof(EvgInstReg) == 4);
 
 	/* Read information about all instructions */
 #define DEFINST(_name, _fmt_str, _fmt0, _fmt1, _fmt2, _category, _op, _flags) \
@@ -142,7 +143,7 @@ void evg_disasm_buffer(struct elf_buffer_t *buffer, FILE *f)
 	/* Disassemble */
 	while (cf_buf)
 	{
-		struct evg_inst_t cf_inst;
+		EvgInst cf_inst;
 
 		/* CF Instruction */
 		cf_buf = evg_inst_decode_cf(cf_buf, &cf_inst);
@@ -160,7 +161,7 @@ void evg_disasm_buffer(struct elf_buffer_t *buffer, FILE *f)
 		if (cf_inst.info->fmt[0] == EvgInstFormatCfAluWord0)
 		{
 			void *alu_buf, *alu_buf_end;
-			struct evg_alu_group_t alu_group;
+			EvgALUGroup alu_group;
 
 			alu_buf = buffer->ptr + cf_inst.words[0].cf_alu_word0.addr * 8;
 			alu_buf_end = alu_buf + (cf_inst.words[1].cf_alu_word1.count + 1) * 8;
@@ -177,7 +178,7 @@ void evg_disasm_buffer(struct elf_buffer_t *buffer, FILE *f)
 		if (cf_inst.info->opcode == EVG_INST_TC)
 		{
 			char *tex_buf, *tex_buf_end;
-			struct evg_inst_t inst;
+			EvgInst inst;
 
 			tex_buf = buffer->ptr + cf_inst.words[0].cf_word0.addr * 8;
 			tex_buf_end = tex_buf + (cf_inst.words[1].cf_word1.count + 1) * 16;
@@ -203,13 +204,13 @@ void evg_disasm_buffer(struct elf_buffer_t *buffer, FILE *f)
  * Decoder
  */
 
-void *evg_inst_decode_cf(void *buf, struct evg_inst_t *inst)
+void *evg_inst_decode_cf(void *buf, EvgInst *inst)
 {
 	uint32_t cf_inst_short, cf_inst_long;
 	int end_of_program;
 
 	/* Read instruction words (64-bit) */
-	memset(inst, 0, sizeof(struct evg_inst_t));
+	memset(inst, 0, sizeof(EvgInst));
 	memcpy(inst->words, buf, 8);
 
 	/* Decode instruction */
@@ -239,7 +240,7 @@ void *evg_inst_decode_cf(void *buf, struct evg_inst_t *inst)
 }
 
 
-void *evg_inst_decode_alu(void *buf, struct evg_inst_t *inst)
+void *evg_inst_decode_alu(void *buf, EvgInst *inst)
 {
 	uint32_t alu_inst_short, alu_inst_long;
 
@@ -264,15 +265,15 @@ void *evg_inst_decode_alu(void *buf, struct evg_inst_t *inst)
 }
 
 
-void *evg_inst_decode_alu_group(void *buf, int group_id, struct evg_alu_group_t *group)
+void *evg_inst_decode_alu_group(void *buf, int group_id, EvgALUGroup *group)
 {
 	int dest_chan, chan, last;
-	struct evg_inst_t *inst;
-	enum evg_alu_enum alu;
-	int alu_busy[EVG_ALU_COUNT];
+	EvgInst *inst;
+	EvgInstAlu alu;
+	int alu_busy[EvgInstAluCount];
 
 	/* Reset group */
-	memset(group, 0, sizeof(struct evg_alu_group_t));
+	memset(group, 0, sizeof(EvgALUGroup));
 	group->id = group_id;
 	memset(alu_busy, 0, sizeof(alu_busy));
 
@@ -308,9 +309,9 @@ void *evg_inst_decode_alu_group(void *buf, int group_id, struct evg_alu_group_t 
 		/* Initially, set ALU as indicated by the destination operand. For both OP2 and OP3 formats, field
 		 * 'dest_chan' is located at the same bit position. */
 		dest_chan = inst->words[1].alu_word1_op2.dst_chan;
-		alu = inst->info->flags & EvgInstFlagTransOnly ? EVG_ALU_TRANS : dest_chan;
+		alu = inst->info->flags & EvgInstFlagTransOnly ? EvgInstAluTrans : dest_chan;
 		if (alu_busy[alu])
-			alu = EVG_ALU_TRANS;
+			alu = EvgInstAluTrans;
 		if (alu_busy[alu])
 			fatal("group_id=%d, inst_id=%d: cannot allocate ALU", group_id, group->inst_count);
 		alu_busy[alu] = 1;
@@ -331,12 +332,12 @@ void *evg_inst_decode_alu_group(void *buf, int group_id, struct evg_alu_group_t 
 }
 
 
-void *evg_inst_decode_tc(void *buf, struct evg_inst_t *inst)
+void *evg_inst_decode_tc(void *buf, EvgInst *inst)
 {
 	uint32_t tex_inst;
 
 	/* Read instruction words (96-bit, 128-bit padded) */
-	memset(inst, 0, sizeof(struct evg_inst_t));
+	memset(inst, 0, sizeof(EvgInst));
 	memcpy(inst->words, buf, 12);
 
 	/* Decode instruction */
@@ -356,27 +357,7 @@ void *evg_inst_decode_tc(void *buf, struct evg_inst_t *inst)
  * Disassembler
  */
 
-struct str_map_t evg_pv_map = {
-	5, {
-		{ "PV.x", EVG_ALU_X },
-		{ "PV.y", EVG_ALU_Y },
-		{ "PV.z", EVG_ALU_Z },
-		{ "PV.w", EVG_ALU_W },
-		{ "PS", EVG_ALU_TRANS }
-	}
-};
-
-struct str_map_t evg_alu_map = {
-	5, {
-		{ "x", EVG_ALU_X },
-		{ "y", EVG_ALU_Y },
-		{ "z", EVG_ALU_Z },
-		{ "w", EVG_ALU_W },
-		{ "t", EVG_ALU_TRANS }
-	}
-};
-
-struct str_map_t evg_bank_swizzle_map = {
+static struct str_map_t evg_bank_swizzle_map = {
 	6, {
 		{ "", 0 },
 		{ "VEC_021", 1 },
@@ -387,7 +368,7 @@ struct str_map_t evg_bank_swizzle_map = {
 	}
 };
 
-struct str_map_t evg_rat_inst_map = {
+static struct str_map_t evg_rat_inst_map = {
 	39, {
 		{ "NOP", 0 },
 		{ "STORE_TYPED", 1 },
@@ -432,7 +413,7 @@ struct str_map_t evg_rat_inst_map = {
 };
 
 
-struct str_map_t evg_cf_cond_map = {
+static struct str_map_t evg_cf_cond_map = {
 	4, {
 		{ "ACTIVE", 0 },
 		{ "FALSE", 1 },
@@ -442,7 +423,7 @@ struct str_map_t evg_cf_cond_map = {
 };
 
 
-struct str_map_t evg_src_sel_map = {
+static struct str_map_t evg_src_sel_map = {
 	31, {
 		{ "QA", 219 },  /* ALU_SRC_LDS_OQ_A */
 		{ "QB", 220 },  /* ALU_SRC_LDS_OQ_B */
@@ -479,7 +460,7 @@ struct str_map_t evg_src_sel_map = {
 };
 
 
-struct str_map_t evg_dst_sel_map = {
+static struct str_map_t evg_dst_sel_map = {
 	7, {
 		{ "x", 0 },
 		{ "y", 1 },
@@ -491,12 +472,177 @@ struct str_map_t evg_dst_sel_map = {
 	}
 };
 
-struct str_map_t export_type_map = {
+static struct str_map_t export_type_map = {
 	4, {
 		{ "PIX", 0 },
 		{ "POS", 1 },
 		{ "PARAM", 2 },
 		{ "IND_ACK", 3 }
+	}
+};
+
+
+static struct str_map_t evg_fmt_vtx_fetch_type_map = {  /* VTX_FETCH prefix omitted */
+	3, {
+		{ "VERTEX_DATA", 0 },
+		{ "INSTANCE_DATA", 1 },
+		{ "NO_INDEX_OFFSET", 2 }
+	}
+};
+
+
+static struct str_map_t evg_fmt_vtx_data_format_map = {
+	64, {
+		{ "UNKNOWN", 0 },
+		{ "8", 1 },
+		{ "4_4", 2 },
+		{ "3_3_2", 3 },
+		{ "RESERVED_4", 4 },
+		{ "16", 5 },
+		{ "16_FLOAT", 6 },
+		{ "8_8", 7 },
+		{ "5_6_5", 8 },
+		{ "6_5_5", 9 },
+		{ "1_5_5_5", 10 },
+		{ "4_4_4_4", 11 },
+		{ "5_5_5_1", 12 },
+		{ "32", 13 },
+		{ "32_FLOAT", 14 },
+		{ "16_16", 15 },
+		{ "16_16_FLOAT", 16 },
+		{ "8_24", 17 },
+		{ "8_24_FLOAT", 18 },
+		{ "24_8", 19 },
+		{ "24_8_FLOAT", 20 },
+		{ "10_11_11", 21 },
+		{ "10_11_11_FLOAT", 22 },
+		{ "11_11_10", 23 },
+		{ "11_11_10_FLOAT", 24 },
+		{ "2_10_10_10", 25 },
+		{ "8_8_8_8", 26 },
+		{ "10_10_10_2", 27 },
+		{ "X24_8_32_FLOAT", 28 },
+		{ "32_32", 29 },
+		{ "32_32_FLOAT", 30 },
+		{ "16_16_16_16", 31 },
+		{ "16_16_16_16_FLOAT", 32 },
+		{ "RESERVED_33", 33 },
+		{ "32_32_32_32", 34 },
+		{ "32_32_32_32_FLOAT", 35 },
+		{ "RESERVED_36", 36 },
+		{ "1", 37 },
+		{ "1_REVERSED", 38 },
+		{ "GB_GR", 39 },
+		{ "BG_RG", 40 },
+		{ "32_AS_8", 41 },
+		{ "32_AS_8_8", 42 },
+		{ "5_9_9_9_SHAREDEXP", 43 },
+		{ "8_8_8", 44 },
+		{ "16_16_16", 45 },
+		{ "16_16_16_FLOAT", 46 },
+		{ "32_32_32", 47 },
+		{ "32_32_32_FLOAT", 48 },
+		{ "BC1", 49 },
+		{ "BC2", 50 },
+		{ "BC3", 51 },
+		{ "BC4", 52 },
+		{ "BC5", 53 },
+		{ "APC0", 54 },
+		{ "APC1", 55 },
+		{ "APC2", 56 },
+		{ "APC3", 57 },
+		{ "APC4", 58 },
+		{ "APC5", 59 },
+		{ "APC6", 60 },
+		{ "APC7", 61 },
+		{ "CTX1", 62 },
+		{ "UNKNOWN", 63 }
+	}
+};
+
+
+static struct str_map_t evg_fmt_vtx_num_format_map = {  /* Prefix NUM_FORMAT omitted */
+	3, {
+		{ "NORM", 0 },
+		{ "INT", 1 },
+		{ "SCALED", 2 }
+	}
+};
+
+
+static struct str_map_t evg_fmt_vtx_format_comp_map = {  /* Prefix FORMAT_COMP omitted */
+	2, {
+		{ "UNSIGNED", 0 },
+		{ "SIGNED", 1 }
+	}
+};
+
+
+static struct str_map_t evg_fmt_vtx_srf_mode_map = {  /* Prefix SRF_MODE omitted */
+	2, {
+		{ "ZERO_CLAMP_MINUS_ONE", 0 },
+		{ "NO_ZERO", 1 }
+	}
+};
+
+
+static struct str_map_t evg_fmt_vtx_endian_swap_map = {  /* Prefix ENDIAN omitted */
+	3, {
+		{ "NONE", 0 },
+		{ "8IN16", 1 },
+		{ "8IN32", 2 }
+	}
+};
+
+
+static struct str_map_t evg_fmt_lds_op_map = {
+	46, {
+		{ "ADD", 0 },
+		{ "SUB", 1 },
+		{ "RSUB", 2 },
+		{ "INC", 3 },
+		{ "DEC", 4 },
+		{ "MIN_INT", 5 },
+		{ "MAX_INT", 6 },
+		{ "MIN_UINT", 7 },
+		{ "MAX_UINT", 8 },
+		{ "AND", 9 },
+		{ "OR", 10 },
+		{ "XOR", 11 },
+		{ "MSKOR", 12 },
+		{ "WRITE", 13 },
+		{ "WRITE_REL", 14 },
+		{ "WRITE2", 15 },
+		{ "CMP_STORE", 16 },
+		{ "CMP_STORE_SPF", 17 },
+		{ "BYTE_WRITE", 18 },
+		{ "SHORT_WRITE", 19 },
+		{ "ADD_RET", 32 },
+		{ "RSUB_RET", 34 },
+		{ "INC_RET", 35 },
+		{ "DEC_RET", 36 },
+		{ "MIN_INT_RET", 37 },
+		{ "MAX_INT_RET", 38 },
+		{ "MIN_UINT_RET", 39 },
+		{ "MAX_UINT_RET", 40 },
+		{ "AND_RET", 41 },
+		{ "OR_RET", 42 },
+		{ "XOR_RET", 43 },
+		{ "MSKOR_RET", 44 },
+		{ "XCHG_RET", 45 },
+		{ "XCHG_REL_RET", 46 },
+		{ "XCHG2_RET", 47 },
+		{ "CMP_XCHG_RET", 48 },
+		{ "CMP_XCHG_SPF_RET", 49 },
+		{ "READ_RET", 50 },
+		{ "READ_REL_RET", 51 },
+		{ "READ2_RET", 52 },
+		{ "READWRITE_RET", 53 },
+		{ "BYTE_READ_RET", 54 },
+		{ "UBYTE_READ_RET", 55 },
+		{ "SHORT_READ_RET", 56 },
+		{ "USHORT_READ_RET", 57 },
+		{ "ATOMIC_ORDERED_ALLOC_RET", 63 }
 	}
 };
 
@@ -565,7 +711,7 @@ static void evg_inst_dump_gpr_buf(int gpr, int rel, int chan, int im,
 	if (rel)
 	{
 		if (rel && IN_RANGE(im, 0, 3))
-			str_printf(buf_ptr, size_ptr, "%s[A0.%s]", gpr_str, str_map_value(&evg_alu_map, EVG_ALU_X + im));
+			str_printf(buf_ptr, size_ptr, "%s[A0.%s]", gpr_str, str_map_value(&evg_inst_alu_map, EvgInstAluX + im));
 		else if (im == 4)
 			str_printf(buf_ptr, size_ptr, "%s[AL]", gpr_str);
 		else if (im == 5)
@@ -578,11 +724,11 @@ static void evg_inst_dump_gpr_buf(int gpr, int rel, int chan, int im,
 
 	/* Vector element */
 	if (chan >= 0)
-		str_printf(buf_ptr, size_ptr, ".%s", str_map_value(&evg_alu_map, EVG_ALU_X + chan));
+		str_printf(buf_ptr, size_ptr, ".%s", str_map_value(&evg_inst_alu_map, EvgInstAluX + chan));
 }
 
 
-static void evg_inst_dump_op_dest_buf(struct evg_inst_t *inst, char **buf_ptr, int *size_ptr)
+static void evg_inst_dump_op_dest_buf(EvgInst *inst, char **buf_ptr, int *size_ptr)
 {
 	int gpr, rel, chan, index_mode;
 
@@ -606,25 +752,25 @@ static void evg_inst_dump_op_dest_buf(struct evg_inst_t *inst, char **buf_ptr, i
 
 /* Copy an instruction. No special handling of fields is needed here, just copy the whole
  * structure. */
-void evg_inst_copy(struct evg_inst_t *dest, struct evg_inst_t *src)
+void evg_inst_copy(EvgInst *dest, EvgInst *src)
 {
-	memcpy(dest, src, sizeof(struct evg_inst_t));
+	memcpy(dest, src, sizeof(EvgInst));
 }
 
 
 /* Copy an ALU group. Fields 'alu_group' in comprising 'alu_inst' elements need to be updated
  * to point to the destination ALU group. */
-void evg_alu_group_copy(struct evg_alu_group_t *dest, struct evg_alu_group_t *src)
+void evg_alu_group_copy(EvgALUGroup *dest, EvgALUGroup *src)
 {
 	int i;
-	memcpy(dest, src, sizeof(struct evg_alu_group_t));
+	memcpy(dest, src, sizeof(EvgALUGroup));
 	for (i = 0; i < src->inst_count; i++)
 		dest->inst[i].alu_group = dest;
 }
 
 
 /* Get parameters for a source register in an ALU instruction */
-void evg_inst_get_op_src(struct evg_inst_t *inst, int src_idx,
+void evg_inst_get_op_src(EvgInst *inst, int src_idx,
 	int *sel, int *rel, int *chan, int *neg, int *abs)
 {
 	/* Valid formats */
@@ -715,7 +861,7 @@ void evg_inst_get_op_src(struct evg_inst_t *inst, int src_idx,
 }
 
 
-void amd_inst_dump_op_src_buf(struct evg_inst_t *inst, int src_idx, char **buf_ptr, int *size_ptr)
+void amd_inst_dump_op_src_buf(EvgInst *inst, int src_idx, char **buf_ptr, int *size_ptr)
 {
 	int sel, rel, chan, neg, abs;
 
@@ -741,28 +887,28 @@ void amd_inst_dump_op_src_buf(struct evg_inst_t *inst, int src_idx, char **buf_p
 	/* 128..159: Kcache constants in bank 0 */
 	if (IN_RANGE(sel, 128, 159))
 	{
-		str_printf(buf_ptr, size_ptr, "KC0[%d].%s", sel - 128, str_map_value(&evg_alu_map, EVG_ALU_X + chan));
+		str_printf(buf_ptr, size_ptr, "KC0[%d].%s", sel - 128, str_map_value(&evg_inst_alu_map, EvgInstAluX + chan));
 		goto end;
 	}
 
 	/* 160..191: Kcache constants in bank 1 */
 	if (IN_RANGE(sel, 160, 191))
 	{
-		str_printf(buf_ptr, size_ptr, "KC1[%d].%s", sel - 160, str_map_value(&evg_alu_map, EVG_ALU_X + chan));
+		str_printf(buf_ptr, size_ptr, "KC1[%d].%s", sel - 160, str_map_value(&evg_inst_alu_map, EvgInstAluX + chan));
 		goto end;
 	}
 
 	/* 256..287: Kcache constants in bank 2 */
 	if (IN_RANGE(sel, 256, 287))
 	{
-		str_printf(buf_ptr, size_ptr, "KC2[%d].%s", sel - 256, str_map_value(&evg_alu_map, EVG_ALU_X + chan));
+		str_printf(buf_ptr, size_ptr, "KC2[%d].%s", sel - 256, str_map_value(&evg_inst_alu_map, EvgInstAluX + chan));
 		goto end;
 	}
 
 	/* 288..319: Kcache constant in bank 3 */
 	if (IN_RANGE(sel, 288, 319))
 	{
-		str_printf(buf_ptr, size_ptr, "KC3[%d].%s", sel - 288, str_map_value(&evg_alu_map, EVG_ALU_X + chan));
+		str_printf(buf_ptr, size_ptr, "KC3[%d].%s", sel - 288, str_map_value(&evg_inst_alu_map, EvgInstAluX + chan));
 		goto end;
 	}
 
@@ -771,14 +917,14 @@ void amd_inst_dump_op_src_buf(struct evg_inst_t *inst, int src_idx, char **buf_p
 	{
 		assert(inst->alu_group);
 		str_printf(buf_ptr, size_ptr, "(0x%08x, %.9ef).%s", inst->alu_group->literal[chan].as_uint,
-			inst->alu_group->literal[chan].as_float, str_map_value(&evg_alu_map, EVG_ALU_X + chan));
+			inst->alu_group->literal[chan].as_float, str_map_value(&evg_inst_alu_map, EvgInstAluX + chan));
 		goto end;
 	}
 
 	/* ALU_SRC_PV */
 	if (sel == 254)
 	{
-		str_printf(buf_ptr, size_ptr, "PV.%s", str_map_value(&evg_alu_map, EVG_ALU_X + chan));
+		str_printf(buf_ptr, size_ptr, "PV.%s", str_map_value(&evg_inst_alu_map, EvgInstAluX + chan));
 		goto end;
 	}
 
@@ -794,7 +940,7 @@ end:
 
 /* Dump an instruction. Use -1 for 'count', 'loop_idx', or 'alu', if the corresponding field
  * is not relevant in the instruction dump. */
-void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, int slot,
+void evg_inst_slot_dump_buf(EvgInst *inst, int count, int loop_idx, int slot,
 	char *buf, int size)
 {
 	char shift_str[MAX_STRING_SIZE];
@@ -829,7 +975,7 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 	
 	/* VLIW slot */
 	if (slot >= 0)
-		str_printf(buf_ptr, size_ptr, "%s: ", str_map_value(&evg_alu_map, slot));
+		str_printf(buf_ptr, size_ptr, "%s: ", str_map_value(&evg_inst_alu_map, slot));
 
 	/* Format */
 	fmt_str = inst->info->fmt_str;
@@ -1390,15 +1536,6 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 			/* Mark line break before printing next token */
 			nl = 1;
 		}
-		else if (evg_inst_is_token(fmt_str, "dump", &len))
-		{
-			int i;
-
-			str_printf(buf_ptr, size_ptr, "\n\n");
-			for (i = 0; i < EVG_INST_MAX_WORDS; i++)
-				if (inst->info->fmt[i])
-					evg_inst_word_dump(inst->words[i].bytes, inst->info->fmt[i], stdout);
-		}
 		else if (evg_inst_is_token(fmt_str, "tex_src_reg", &len))
 		{
 			assert(inst->info->fmt[0] == EvgInstFormatTexWord0);
@@ -1606,7 +1743,7 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 }
 
 
-void evg_inst_dump_buf(struct evg_inst_t *inst, int count, int loop_idx,
+void evg_inst_dump_buf(EvgInst *inst, int count, int loop_idx,
 	char *buf, int size)
 {
 	evg_inst_slot_dump_buf(inst, count, loop_idx,
@@ -1625,7 +1762,7 @@ void evg_inst_dump_gpr(int gpr, int rel, int chan, int im, FILE *f)
 }
 
 
-void evg_inst_slot_dump(struct evg_inst_t *inst, int count, int loop_idx, int slot, FILE *f)
+void evg_inst_slot_dump(EvgInst *inst, int count, int loop_idx, int slot, FILE *f)
 {
 	char buf[MAX_STRING_SIZE];
 
@@ -1634,14 +1771,14 @@ void evg_inst_slot_dump(struct evg_inst_t *inst, int count, int loop_idx, int sl
 }
 
 
-void evg_inst_dump(struct evg_inst_t *inst, int count, int loop_idx, FILE *f)
+void evg_inst_dump(EvgInst *inst, int count, int loop_idx, FILE *f)
 {
 	evg_inst_slot_dump(inst, count,
 		loop_idx, -1, f);
 }
 
 
-void evg_inst_dump_debug(struct evg_inst_t *inst, int count, int loop_idx, FILE *f)
+void evg_inst_dump_debug(EvgInst *inst, int count, int loop_idx, FILE *f)
 {
 	char buf[MAX_LONG_STRING_SIZE];
 	char buf_no_spc[MAX_LONG_STRING_SIZE];
@@ -1656,22 +1793,9 @@ void evg_inst_dump_debug(struct evg_inst_t *inst, int count, int loop_idx, FILE 
 }
 
 
-void evg_inst_words_dump(struct evg_inst_t *inst, FILE *f)
+void evg_alu_group_dump(EvgALUGroup *group, int shift, FILE *f)
 {
-	int i;
-	fprintf(f, "%s\n", inst->info->name);
-	for (i = 0; i < EVG_INST_MAX_WORDS; i++)
-	{
-		if (!inst->info->fmt[i])
-			break;
-		evg_inst_word_dump(&inst->words[i], inst->info->fmt[i], f);
-	}
-}
-
-
-void evg_alu_group_dump(struct evg_alu_group_t *group, int shift, FILE *f)
-{
-	struct evg_inst_t *inst;
+	EvgInst *inst;
 	int i;
 
 	for (i = 0; i < group->inst_count; i++)
@@ -1682,9 +1806,9 @@ void evg_alu_group_dump(struct evg_alu_group_t *group, int shift, FILE *f)
 }
 
 
-void evg_alu_group_dump_buf(struct evg_alu_group_t *alu_group, char *buf, int size)
+void evg_alu_group_dump_buf(EvgALUGroup *alu_group, char *buf, int size)
 {
-	struct evg_inst_t *inst;
+	EvgInst *inst;
 
 	char str[MAX_LONG_STRING_SIZE];
 	char str_trimmed[MAX_LONG_STRING_SIZE];
@@ -1704,15 +1828,15 @@ void evg_alu_group_dump_buf(struct evg_alu_group_t *alu_group, char *buf, int si
 
 		/* Copy to output buffer */
 		str_printf(&buf, &size, "%s%s=\"%s\"", space,
-			str_map_value(&evg_alu_map, inst->alu), str_trimmed);
+			str_map_value(&evg_inst_alu_map, inst->alu), str_trimmed);
 		space = " ";
 	}
 }
 
 
-void evg_alu_group_dump_debug(struct evg_alu_group_t *alu_group, int count, int loop_idx, FILE *f)
+void evg_alu_group_dump_debug(EvgALUGroup *alu_group, int count, int loop_idx, FILE *f)
 {
-	struct evg_inst_t *inst;
+	EvgInst *inst;
 
 	char buf[MAX_LONG_STRING_SIZE];
 	char no_spc_buf[MAX_LONG_STRING_SIZE];
@@ -1733,7 +1857,7 @@ void evg_alu_group_dump_debug(struct evg_alu_group_t *alu_group, int count, int 
 		inst = &alu_group->inst[i];
 		evg_inst_dump_buf(inst, -1, 0, buf, sizeof buf);
 		str_single_spaces(no_spc_buf, sizeof no_spc_buf, buf);
-		fprintf(f, "%sinst.%s=\"%s\"", spc, str_map_value(&evg_alu_map, inst->alu), no_spc_buf);
+		fprintf(f, "%sinst.%s=\"%s\"", spc, str_map_value(&evg_inst_alu_map, inst->alu), no_spc_buf);
 		spc = " ";
 	}
 }

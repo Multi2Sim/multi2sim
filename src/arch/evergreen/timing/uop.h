@@ -127,9 +127,8 @@ struct evg_uop_t
 void evg_uop_init(void);
 void evg_uop_done(void);
 
-struct evg_alu_group_t;
 struct evg_uop_t *evg_uop_create(void);
-struct evg_uop_t *evg_uop_create_from_alu_group(struct evg_alu_group_t *alu_group);
+struct evg_uop_t *evg_uop_create_from_alu_group(EvgALUGroup *alu_group);
 void evg_uop_free(struct evg_uop_t *gpu_uop);
 
 void evg_uop_list_free(struct linked_list_t *gpu_uop_list);

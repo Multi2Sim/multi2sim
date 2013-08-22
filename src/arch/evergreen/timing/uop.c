@@ -50,7 +50,7 @@ static long long gpu_uop_id_counter = 0;
 static struct repos_t *gpu_uop_repos;
 
 
-static void evg_uop_add_src_idep(struct evg_uop_t *uop, struct evg_inst_t *inst, int src_idx)
+static void evg_uop_add_src_idep(struct evg_uop_t *uop, EvgInst *inst, int src_idx)
 {
 	int sel, rel, chan, neg, abs;
 
@@ -108,10 +108,10 @@ struct evg_uop_t *evg_uop_create()
 }
 
 
-struct evg_uop_t *evg_uop_create_from_alu_group(struct evg_alu_group_t *alu_group)
+struct evg_uop_t *evg_uop_create_from_alu_group(EvgALUGroup *alu_group)
 {
 	struct evg_uop_t *uop;
-	struct evg_inst_t *inst;
+	EvgInst *inst;
 	int i;
 
 	/* Create uop */
@@ -153,7 +153,7 @@ struct evg_uop_t *evg_uop_create_from_alu_group(struct evg_alu_group_t *alu_grou
 			/* Add PV/PS output dependence */
 			assert(uop->odep_count < EVG_UOP_MAX_ODEP);
 			uop->odep[uop->odep_count++] =
-				inst->alu == EVG_ALU_TRANS ? EVG_UOP_DEP_PS : EVG_UOP_DEP_PV;
+				inst->alu == EvgInstAluTrans ? EVG_UOP_DEP_PS : EVG_UOP_DEP_PV;
 		}
 	}
 

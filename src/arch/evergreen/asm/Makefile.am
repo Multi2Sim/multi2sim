@@ -6,7 +6,6 @@ libasm_a_SOURCES = \
 	alu-group.h \
 	\
 	asm.c \
-	asm-dump.c \
 	asm.dat \
 	asm.h \
 	\

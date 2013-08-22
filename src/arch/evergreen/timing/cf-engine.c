@@ -47,7 +47,7 @@ static void evg_cf_engine_fetch(struct evg_compute_unit_t *compute_unit)
 	char str[MAX_LONG_STRING_SIZE];
 	char str_trimmed[MAX_LONG_STRING_SIZE];
 
-	struct evg_inst_t *inst;
+	EvgInst *inst;
 
 	struct evg_uop_t *uop;
 	struct evg_work_item_uop_t *work_item_uop;
