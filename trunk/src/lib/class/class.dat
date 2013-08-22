@@ -34,15 +34,20 @@ CLASS(ARMAsm)
 CLASS(ARMInst)
 
 CLASS(ARMEmu)
+
 CLASS(ARMCpu)
 
 CLASS(EvgAsm)
+CLASS(EvgInst)
+CLASS(EvgALUGroup)
+
 CLASS(EvgEmu)
-CLASS(EvgGpu)
 CLASS(EvgNDRange)
 CLASS(EvgWorkGroup)
 CLASS(EvgWorkItem)
 CLASS(EvgWavefront)
+
+CLASS(EvgGpu)
 
 CLASS(FrmAsm)
 CLASS(FrmInst)
@@ -70,19 +75,23 @@ CLASS(Timing)
 
 CLASS(SIAsm)
 CLASS(SIInst)
+
 CLASS(SIEmu)
 CLASS(SINDRange)
 CLASS(SIWorkGroup)
 CLASS(SIWorkItem)
 CLASS(SIWavefront)
+
 CLASS(SIGpu)
 CLASS(SIComputeUnit)
 
 CLASS(X86Asm)
-CLASS(X86Emu)
-CLASS(X86Cpu)
 CLASS(X86Inst)
+
+CLASS(X86Emu)
 CLASS(X86Context)
+
+CLASS(X86Cpu)
 CLASS(X86Thread)
 CLASS(X86Core)
 
