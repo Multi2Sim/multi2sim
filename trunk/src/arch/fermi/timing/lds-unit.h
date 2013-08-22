@@ -28,7 +28,7 @@ struct frm_lds_t
 	struct list_t *mem_buffer;   /* Submitted memory accesses */
 	struct list_t *write_buffer;  /* Register writes */
 
-	struct frm_sm_t *sm;
+	FrmSM *sm;
 
 	/* Statistics */
 	long long inst_count;

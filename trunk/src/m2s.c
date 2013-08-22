@@ -41,6 +41,7 @@
 #include <arch/fermi/emu/thread-block.h>
 #include <arch/fermi/emu/warp.h>
 #include <arch/fermi/timing/gpu.h>
+#include <arch/fermi/timing/sm.h>
 #include <arch/kepler/asm/asm.h>
 #include <arch/mips/asm/asm.h>
 #include <arch/mips/asm/inst.h>
@@ -1870,6 +1871,7 @@ static void m2s_init(void)
 	CLASS_REGISTER(FrmGrid);
 
 	CLASS_REGISTER(FrmGpu);
+	CLASS_REGISTER(FrmSM);
 
 	CLASS_REGISTER(MIPSAsm);
 	CLASS_REGISTER(MIPSInst);

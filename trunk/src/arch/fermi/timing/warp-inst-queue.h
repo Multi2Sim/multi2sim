@@ -53,7 +53,14 @@ struct frm_warp_inst_queue_t
 	struct frm_warp_inst_queue_entry_t **entries;
 
 	/* SM it belongs to */
-	struct frm_sm_t *sm;
+	FrmSM *sm;
 };
+
+struct frm_warp_inst_queue_t *frm_warp_inst_queue_create(void);
+void frm_warp_inst_queue_free(struct frm_warp_inst_queue_t *warp_inst_queue);
+void frm_warp_inst_queue_map_warps(struct frm_warp_inst_queue_t *warp_inst_queue,
+	FrmThreadBlock *thread_block);
+void frm_warp_inst_queue_unmap_warps(struct frm_warp_inst_queue_t *warp_inst_queue,
+	FrmThreadBlock *thread_block);
 
 #endif

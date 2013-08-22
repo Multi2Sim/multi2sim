@@ -66,7 +66,7 @@ void frm_simd_complete(struct frm_simd_t *simd)
 			//if (uop->thread_block->sm_finished_count == 
 			//		uop->thread_block->warp_count)
 			{
-				frm_sm_unmap_thread_block(
+				FrmSMUnmapThreadBlock(
 					simd->sm,
 					uop->thread_block);
 			}
