@@ -25,15 +25,20 @@
 #include <lib/class/class.h>
 
 
-enum evg_ndrange_status_t
-{
-	evg_ndrange_pending		= 0x0001,
-	evg_ndrange_running		= 0x0002,
-	evg_ndrange_finished		= 0x0004
-};
+/*
+ * Class 'EvgNDRange'
+ */
 
-struct evg_ndrange_t
+typedef enum
 {
+	EvgNDRangePending = 0x01,
+	EvgNDRangeRunning = 0x02,
+	EvgNDRangeFinished = 0x04
+} EvgNDRangeState;
+
+
+CLASS_BEGIN(EvgNDRange, Object)
+
 	/* Emulator */
 	EvgEmu *emu;
 
@@ -42,7 +47,7 @@ struct evg_ndrange_t
 	int id;  /* Sequential ndrange ID (given by evg_emu->ndrange_count counter) */
 
 	/* Status */
-	enum evg_ndrange_status_t status;
+	EvgNDRangeState state;
 
 	/* OpenCL kernel associated */
 	struct evg_opencl_kernel_t *kernel;
@@ -52,9 +57,9 @@ struct evg_ndrange_t
 	struct evg_opencl_command_t *command;
 
 	/* Pointers to work-groups, wavefronts, and work_items */
-	struct evg_work_group_t **work_groups;
-	struct evg_wavefront_t **wavefronts;
-	struct evg_work_item_t **work_items;
+	EvgWorkGroup **work_groups;
+	EvgWavefront **wavefronts;
+	EvgWorkItem **work_items;
 
 	/* IDs of work-items contained */
 	int work_item_id_first;
@@ -75,30 +80,30 @@ struct evg_ndrange_t
 	int wavefronts_per_work_group;  /* = ceil(local_size / evg_emu_wavefront_size) */
 
 	/* List of ND-Ranges */
-	struct evg_ndrange_t *ndrange_list_prev;
-	struct evg_ndrange_t *ndrange_list_next;
-	struct evg_ndrange_t *pending_ndrange_list_prev;
-	struct evg_ndrange_t *pending_ndrange_list_next;
-	struct evg_ndrange_t *running_ndrange_list_prev;
-	struct evg_ndrange_t *running_ndrange_list_next;
-	struct evg_ndrange_t *finished_ndrange_list_prev;
-	struct evg_ndrange_t *finished_ndrange_list_next;
+	EvgNDRange *ndrange_list_prev;
+	EvgNDRange *ndrange_list_next;
+	EvgNDRange *pending_ndrange_list_prev;
+	EvgNDRange *pending_ndrange_list_next;
+	EvgNDRange *running_ndrange_list_prev;
+	EvgNDRange *running_ndrange_list_next;
+	EvgNDRange *finished_ndrange_list_prev;
+	EvgNDRange *finished_ndrange_list_next;
 
 	/* List of pending work-groups */
-	struct evg_work_group_t *pending_list_head;
-	struct evg_work_group_t *pending_list_tail;
+	EvgWorkGroup *pending_list_head;
+	EvgWorkGroup *pending_list_tail;
 	int pending_list_count;
 	int pending_list_max;
 
 	/* List of running work-groups */
-	struct evg_work_group_t *running_list_head;
-	struct evg_work_group_t *running_list_tail;
+	EvgWorkGroup *running_list_head;
+	EvgWorkGroup *running_list_tail;
 	int running_list_count;
 	int running_list_max;
 
 	/* List of finished work-groups */
-	struct evg_work_group_t *finished_list_head;
-	struct evg_work_group_t *finished_list_tail;
+	EvgWorkGroup *finished_list_head;
+	EvgWorkGroup *finished_list_tail;
 	int finished_list_count;
 	int finished_list_max;
 	
@@ -112,21 +117,22 @@ struct evg_ndrange_t
 	/* Histogram of executed instructions. Only allocated if the kernel report
 	 * option is active. */
 	unsigned int *inst_histogram;
-};
 
-struct evg_ndrange_t *evg_ndrange_create(EvgEmu *emu, struct evg_opencl_kernel_t *kernel);
-void evg_ndrange_free(struct evg_ndrange_t *ndrange);
-void evg_ndrange_dump(struct evg_ndrange_t *ndrange, FILE *f);
+CLASS_END(EvgNDRange)
 
-int evg_ndrange_get_status(struct evg_ndrange_t *ndrange, enum evg_ndrange_status_t status);
-void evg_ndrange_set_status(struct evg_ndrange_t *work_group, enum evg_ndrange_status_t status);
-void evg_ndrange_clear_status(struct evg_ndrange_t *work_group, enum evg_ndrange_status_t status);
 
-void evg_ndrange_setup_work_items(struct evg_ndrange_t *ndrange);
-void evg_ndrange_setup_const_mem(struct evg_ndrange_t *ndrange);
-void evg_ndrange_setup_args(struct evg_ndrange_t *ndrange);
+void EvgNDRangeCreate(EvgNDRange *self, EvgEmu *emu, struct evg_opencl_kernel_t *kernel);
+void EvgNDRangeDestroy(EvgNDRange *self);
 
-void evg_ndrange_finish(struct evg_ndrange_t *ndrange);
+void EvgNDRangeDump(EvgNDRange *self, FILE *f);
+
+int EvgNDRangeGetState(EvgNDRange *self, EvgNDRangeState state);
+void EvgNDRangeSetState(EvgNDRange *self, EvgNDRangeState state);
+void EvgNDRangeClearState(EvgNDRange *self, EvgNDRangeState state);
+
+void EvgNDRangeSetupWorkItems(EvgNDRange *self);
+void EvgNDRangeSetupConstantMemory(EvgNDRange *self);
+void EvgNDRangeSetupArguments(EvgNDRange *self);
 
 
 #endif

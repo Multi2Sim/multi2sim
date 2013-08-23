@@ -36,7 +36,7 @@ enum evg_isa_write_task_kind_t
 struct evg_isa_write_task_t
 {
 	/* Work-item affected */
-	struct evg_work_item_t *work_item;
+	EvgWorkItem *work_item;
 
 	/* All */
 	enum evg_isa_write_task_kind_t kind;
@@ -61,19 +61,19 @@ extern struct repos_t *evg_isa_write_task_repos;
 
 
 /* Functions to handle deferred tasks */
-void evg_isa_enqueue_write_lds(struct evg_work_item_t *work_item,
+void evg_isa_enqueue_write_lds(EvgWorkItem *work_item,
 	EvgInst *inst, unsigned int addr, unsigned int value,
 	int value_size);
-void evg_isa_enqueue_write_dest(struct evg_work_item_t *work_item,
+void evg_isa_enqueue_write_dest(EvgWorkItem *work_item,
 	EvgInst *inst, unsigned int value);
-void evg_isa_enqueue_write_dest_float(struct evg_work_item_t *work_item,
+void evg_isa_enqueue_write_dest_float(EvgWorkItem *work_item,
 	EvgInst *inst, float value);
-void evg_isa_enqueue_push_before(struct evg_work_item_t *work_item,
+void evg_isa_enqueue_push_before(EvgWorkItem *work_item,
 	EvgInst *inst);
-void evg_isa_enqueue_pred_set(struct evg_work_item_t *work_item,
+void evg_isa_enqueue_pred_set(EvgWorkItem *work_item,
 	EvgInst *inst, int cond);
 
-void evg_isa_write_task_commit(struct evg_work_item_t *work_item);
+void evg_isa_write_task_commit(EvgWorkItem *work_item);
 
 
 
@@ -138,7 +138,7 @@ extern char *evg_err_isa_note;
 
 
 /* Table of functions implementing implementing the Evergreen ISA */
-typedef void (*evg_isa_inst_func_t)(struct evg_work_item_t *work_item,
+typedef void (*evg_isa_inst_func_t)(EvgWorkItem *work_item,
 	EvgInst *inst);
 extern evg_isa_inst_func_t *evg_isa_inst_func;
 
@@ -147,29 +147,29 @@ void evg_isa_const_mem_write(int bank, int vector, int elem, void *value_ptr);
 void evg_isa_const_mem_read(int bank, int vector, int elem, void *value_ptr);
 
 /* For ALU clauses */
-void evg_isa_alu_clause_start(struct evg_wavefront_t *wavefront);
-void evg_isa_alu_clause_end(struct evg_wavefront_t *wavefront);
+void evg_isa_alu_clause_start(EvgWavefront *wavefront);
+void evg_isa_alu_clause_end(EvgWavefront *wavefront);
 
 /* For TC clauses */
-void evg_isa_tc_clause_start(struct evg_wavefront_t *wavefront);
-void evg_isa_tc_clause_end(struct evg_wavefront_t *wavefront);
+void evg_isa_tc_clause_start(EvgWavefront *wavefront);
+void evg_isa_tc_clause_end(EvgWavefront *wavefront);
 
 /* Read from source register */
-unsigned int evg_isa_read_gpr(struct evg_work_item_t *work_item,
+unsigned int evg_isa_read_gpr(EvgWorkItem *work_item,
 	int gpr, int rel, int chan, int im);
-float evg_isa_read_gpr_float(struct evg_work_item_t *work_item,
+float evg_isa_read_gpr_float(EvgWorkItem *work_item,
 	int gpr, int rel, int chan, int im);
 
 /* Write into destination register */
-void evg_isa_write_gpr(struct evg_work_item_t *work_item,
+void evg_isa_write_gpr(EvgWorkItem *work_item,
 	int gpr, int rel, int chan, unsigned int value);
-void evg_isa_write_gpr_float(struct evg_work_item_t *work_item,
+void evg_isa_write_gpr_float(EvgWorkItem *work_item,
 	int gpr, int rel, int chan, float value);
 
 /* Read input operands */
-unsigned int evg_isa_read_op_src_int(struct evg_work_item_t *work_item,
+unsigned int evg_isa_read_op_src_int(EvgWorkItem *work_item,
 	EvgInst *inst, int src_idx);
-float evg_isa_read_op_src_float(struct evg_work_item_t *work_item,
+float evg_isa_read_op_src_float(EvgWorkItem *work_item,
 	EvgInst *inst, int src_idx);
 
 EvgInst *evg_isa_get_alu_inst(EvgALUGroup *alu_group, EvgInstAlu alu);

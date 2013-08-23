@@ -65,8 +65,8 @@ struct evg_uop_t
 	/* Fields */
 	long long id;
 	long long id_in_compute_unit;
-	struct evg_wavefront_t *wavefront;  /* Wavefront it belongs to */
-	struct evg_work_group_t *work_group;  /* Work-group it belongs to */
+	EvgWavefront *wavefront;  /* Wavefront it belongs to */
+	EvgWorkGroup *work_group;  /* Work-group it belongs to */
 	struct evg_compute_unit_t *compute_unit;  /* Compute unit it belongs to */
 	struct evg_uop_t *cf_uop;  /* For ALU/TEX uops, CF uop that triggered clause */
 	int length;  /* Number of bytes occupied by ALU group */

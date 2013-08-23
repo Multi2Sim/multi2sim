@@ -39,7 +39,7 @@ struct evg_opencl_command_t
 	{
 		struct
 		{
-			struct evg_ndrange_t *ndrange;
+			EvgNDRange *ndrange;
 		} ndrange_kernel;
 	} u;
 };

@@ -72,7 +72,7 @@ void EvgEmuDestroy(EvgEmu *self)
 {
 	/* Free ND-Ranges */
 	while (self->ndrange_list_count)
-		evg_ndrange_free(self->ndrange_list_head);
+		delete(self->ndrange_list_head);
 
 	/* Free OpenCL objects */
 	evg_opencl_repo_free_all_objects(self->opencl_repo);
@@ -107,14 +107,14 @@ int EvgEmuRun(Emu *self)
 {
 	EvgEmu *emu = asEvgEmu(self);
 
-	struct evg_ndrange_t *ndrange;
-	struct evg_ndrange_t *ndrange_next;
+	EvgNDRange *ndrange;
+	EvgNDRange *ndrange_next;
 
-	struct evg_work_group_t *work_group;
-	struct evg_work_group_t *work_group_next;
+	EvgWorkGroup *work_group;
+	EvgWorkGroup *work_group_next;
 
-	struct evg_wavefront_t *wavefront;
-	struct evg_wavefront_t *wavefront_next;
+	EvgWavefront *wavefront;
+	EvgWavefront *wavefront_next;
 
 	/* Exit if there are no ND-Ranges to emulate */
 	if (!emu->ndrange_list_count)
@@ -126,13 +126,13 @@ int EvgEmuRun(Emu *self)
 		/* Set all ready work-groups to running */
 		while ((work_group = ndrange->pending_list_head))
 		{
-			evg_work_group_clear_status(work_group, evg_work_group_pending);
-			evg_work_group_set_status(work_group, evg_work_group_running);
+			EvgWorkGroupClearState(work_group, EvgWorkGroupPending);
+			EvgWorkGroupSetState(work_group, EvgWorkGroupRunning);
 		}
 
 		/* Set is in state 'running' */
-		evg_ndrange_clear_status(ndrange, evg_ndrange_pending);
-		evg_ndrange_set_status(ndrange, evg_ndrange_running);
+		EvgNDRangeClearState(ndrange, EvgNDRangePending);
+		EvgNDRangeSetState(ndrange, EvgNDRangeRunning);
 	}
 
 	/* Run one instruction of each wavefront in each work-group of each
@@ -156,7 +156,7 @@ int EvgEmuRun(Emu *self)
 				wavefront_next = wavefront->running_list_next;
 
 				/* Execute instruction in wavefront */
-				evg_wavefront_execute(wavefront);
+				EvgWavefrontExecute(wavefront);
 			}
 		}
 	}
@@ -165,14 +165,14 @@ int EvgEmuRun(Emu *self)
 	while ((ndrange = emu->finished_ndrange_list_head))
 	{
 		/* Dump ND-Range report */
-		evg_ndrange_dump(ndrange, evg_emu_report_file);
+		EvgNDRangeDump(ndrange, evg_emu_report_file);
 
 		/* Stop if maximum number of kernels reached */
 		if (evg_emu_max_kernels && emu->ndrange_count >= evg_emu_max_kernels)
 			esim_finish = esim_finish_evg_max_kernels;
 
 		/* Extract from list of finished ND-Ranges and free */
-		evg_ndrange_free(ndrange);
+		delete(ndrange);
 	}
 
 	/* Still emulating */
@@ -202,9 +202,6 @@ int evg_emu_wavefront_size = 64;
 
 void evg_emu_init(void)
 {
-	/* Classes */
-	CLASS_REGISTER(EvgEmu);
-
 	/* Open report file */
 	if (*evg_emu_report_file_name)
 	{

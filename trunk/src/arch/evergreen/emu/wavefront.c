@@ -35,11 +35,11 @@
 
 
 /*
- * Private Functions
+ * Class 'EvgWavefront'
  */
 
 /* Comparison function to sort list */
-static int evg_wavefront_divergence_compare(const void *elem1, const void *elem2)
+static int EvgWavefrontCompareDivergence(const void *elem1, const void *elem2)
 {
 	const int count1 = * (const int *) elem1;
 	const int count2 = * (const int *) elem2;
@@ -52,9 +52,9 @@ static int evg_wavefront_divergence_compare(const void *elem1, const void *elem2
 }
 
 
-static void evg_wavefront_divergence_dump(struct evg_wavefront_t *wavefront, FILE *f)
+static void EvgWavefrontDumpDivergence(EvgWavefront *self, FILE *f)
 {
-	struct evg_work_item_t *work_item;
+	EvgWorkItem *work_item;
 	struct elem_t
 	{
 		int count;  /* 1st field hardcoded for comparison */
@@ -73,9 +73,9 @@ static void evg_wavefront_divergence_dump(struct evg_wavefront_t *wavefront, FIL
 
 	/* Create one 'elem' for each work_item with a different branch digest, and
 	 * store it into the hash table and list. */
-	for (i = 0; i < wavefront->work_item_count; i++)
+	for (i = 0; i < self->work_item_count; i++)
 	{
-		work_item = wavefront->work_items[i];
+		work_item = self->work_items[i];
 		sprintf(str, "%08x", work_item->branch_digest);
 		elem = hash_table_get(ht, str);
 		if (!elem)
@@ -91,7 +91,7 @@ static void evg_wavefront_divergence_dump(struct evg_wavefront_t *wavefront, FIL
 	}
 
 	/* Sort divergence groups as per size */
-	list_sort(list, evg_wavefront_divergence_compare);
+	list_sort(list, EvgWavefrontCompareDivergence);
 	fprintf(f, "DivergenceGroups = %d\n", list_count(list));
 	
 	/* Dump size of groups with */
@@ -109,13 +109,13 @@ static void evg_wavefront_divergence_dump(struct evg_wavefront_t *wavefront, FIL
 		elem = list_get(list, i);
 		fprintf(f, "DivergenceGroup[%d] =", i);
 
-		for (j = 0; j < wavefront->work_item_count; j++)
+		for (j = 0; j < self->work_item_count; j++)
 		{
 			int first, last;
-			first = wavefront->work_items[j]->branch_digest == elem->branch_digest &&
-				(j == 0 || wavefront->work_items[j - 1]->branch_digest != elem->branch_digest);
-			last = wavefront->work_items[j]->branch_digest == elem->branch_digest &&
-				(j == wavefront->work_item_count - 1 || wavefront->work_items[j + 1]->branch_digest != elem->branch_digest);
+			first = self->work_items[j]->branch_digest == elem->branch_digest &&
+				(j == 0 || self->work_items[j - 1]->branch_digest != elem->branch_digest);
+			last = self->work_items[j]->branch_digest == elem->branch_digest &&
+				(j == self->work_item_count - 1 || self->work_items[j + 1]->branch_digest != elem->branch_digest);
 			if (first)
 				fprintf(f, " %d", j);
 			else if (last)
@@ -133,142 +133,128 @@ static void evg_wavefront_divergence_dump(struct evg_wavefront_t *wavefront, FIL
 }
 
 
-
-
-/*
- * Public Functions
- */
-
-
-struct evg_wavefront_t *evg_wavefront_create(struct evg_work_group_t *work_group)
+void EvgWavefrontCreate(EvgWavefront *self, EvgWorkGroup *work_group)
 {
-	struct evg_ndrange_t *ndrange = work_group->ndrange;
+	EvgNDRange *ndrange = work_group->ndrange;
 	EvgEmu *emu = ndrange->emu;
 	EvgAsm *as = emu->as;
-	struct evg_wavefront_t *wavefront;
 
 	/* Initialize */
-	wavefront = xcalloc(1, sizeof(struct evg_wavefront_t));
-	wavefront->work_group = work_group;
-	wavefront->ndrange = work_group->ndrange;
-	wavefront->active_stack = bit_map_create(EVG_MAX_STACK_SIZE * evg_emu_wavefront_size);
-	wavefront->pred = bit_map_create(evg_emu_wavefront_size);
+	self->work_group = work_group;
+	self->ndrange = work_group->ndrange;
+	self->active_stack = bit_map_create(EVG_WAVEFRONT_STACK_SIZE * evg_emu_wavefront_size);
+	self->pred = bit_map_create(evg_emu_wavefront_size);
 	/* FIXME: Remove once loop state is part of stack */
-	wavefront->loop_depth = 0;
-	wavefront->cf_inst = new(EvgInst, as);
-	wavefront->alu_group = new(EvgALUGroup, as);
-	wavefront->tex_inst = new(EvgInst, as);
-
-	/* Return */
-	return wavefront;
+	self->loop_depth = 0;
+	self->cf_inst = new(EvgInst, as);
+	self->alu_group = new(EvgALUGroup, as);
+	self->tex_inst = new(EvgInst, as);
 }
 
 
-void evg_wavefront_free(struct evg_wavefront_t *wavefront)
+void EvgWavefrontDestroy(EvgWavefront *self)
 {
 	/* Free wavefront */
-	bit_map_free(wavefront->active_stack);
-	bit_map_free(wavefront->pred);
-	str_free(wavefront->name);
-	delete(wavefront->cf_inst);
-	delete(wavefront->alu_group);
-	delete(wavefront->tex_inst);
-	free(wavefront);
+	bit_map_free(self->active_stack);
+	bit_map_free(self->pred);
+	str_free(self->name);
+	delete(self->cf_inst);
+	delete(self->alu_group);
+	delete(self->tex_inst);
 }
 
 
-void evg_wavefront_dump(struct evg_wavefront_t *wavefront, FILE *f)
+void EvgWavefrontDump(EvgWavefront *self, FILE *f)
 {
-	struct evg_ndrange_t *ndrange = wavefront->ndrange;
-	struct evg_work_group_t *work_group = wavefront->work_group;
+	EvgNDRange *ndrange = self->ndrange;
+	EvgWorkGroup *work_group = self->work_group;
 	int i;
 
 	if (!f)
 		return;
 	
 	/* Dump wavefront statistics in GPU report */
-	fprintf(f, "[ NDRange[%d].Wavefront[%d] ]\n\n", ndrange->id, wavefront->id);
+	fprintf(f, "[ NDRange[%d].Wavefront[%d] ]\n\n", ndrange->id, self->id);
 
-	fprintf(f, "Name = %s\n", wavefront->name);
+	fprintf(f, "Name = %s\n", self->name);
 	fprintf(f, "WorkGroup = %d\n", work_group->id);
-	fprintf(f, "WorkItemFirst = %d\n", wavefront->work_item_id_first);
-	fprintf(f, "WorkItemLast = %d\n", wavefront->work_item_id_last);
-	fprintf(f, "WorkItemCount = %d\n", wavefront->work_item_count);
+	fprintf(f, "WorkItemFirst = %d\n", self->work_item_id_first);
+	fprintf(f, "WorkItemLast = %d\n", self->work_item_id_last);
+	fprintf(f, "WorkItemCount = %d\n", self->work_item_count);
 	fprintf(f, "\n");
 
-	fprintf(f, "Inst_Count = %lld\n", wavefront->inst_count);
-	fprintf(f, "Global_Mem_Inst_Count = %lld\n", wavefront->global_mem_inst_count);
-	fprintf(f, "Local_Mem_Inst_Count = %lld\n", wavefront->local_mem_inst_count);
+	fprintf(f, "Inst_Count = %lld\n", self->inst_count);
+	fprintf(f, "Global_Mem_Inst_Count = %lld\n", self->global_mem_inst_count);
+	fprintf(f, "Local_Mem_Inst_Count = %lld\n", self->local_mem_inst_count);
 	fprintf(f, "\n");
 
-	fprintf(f, "CF_Inst_Count = %lld\n", wavefront->cf_inst_count);
-	fprintf(f, "CF_Inst_Global_Mem_Write_Count = %lld\n", wavefront->cf_inst_global_mem_write_count);
+	fprintf(f, "CF_Inst_Count = %lld\n", self->cf_inst_count);
+	fprintf(f, "CF_Inst_Global_Mem_Write_Count = %lld\n", self->cf_inst_global_mem_write_count);
 	fprintf(f, "\n");
 
-	fprintf(f, "ALU_Clause_Count = %lld\n", wavefront->alu_clause_count);
-	fprintf(f, "ALU_Group_Count = %lld\n", wavefront->alu_group_count);
+	fprintf(f, "ALU_Clause_Count = %lld\n", self->alu_clause_count);
+	fprintf(f, "ALU_Group_Count = %lld\n", self->alu_group_count);
 	fprintf(f, "ALU_Group_Size =");
 	for (i = 0; i < 5; i++)
-		fprintf(f, " %lld", wavefront->alu_group_size[i]);
+		fprintf(f, " %lld", self->alu_group_size[i]);
 	fprintf(f, "\n");
-	fprintf(f, "ALU_Inst_Count = %lld\n", wavefront->alu_inst_count);
-	fprintf(f, "ALU_Inst_Local_Mem_Count = %lld\n", wavefront->alu_inst_local_mem_count);
-	fprintf(f, "\n");
-
-	fprintf(f, "TC_Clause_Count = %lld\n", wavefront->tc_clause_count);
-	fprintf(f, "TC_Inst_Count = %lld\n", wavefront->tc_inst_count);
-	fprintf(f, "TC_Inst_Global_Mem_Read_Count = %lld\n", wavefront->tc_inst_global_mem_read_count);
+	fprintf(f, "ALU_Inst_Count = %lld\n", self->alu_inst_count);
+	fprintf(f, "ALU_Inst_Local_Mem_Count = %lld\n", self->alu_inst_local_mem_count);
 	fprintf(f, "\n");
 
-	evg_wavefront_divergence_dump(wavefront, f);
+	fprintf(f, "TC_Clause_Count = %lld\n", self->tc_clause_count);
+	fprintf(f, "TC_Inst_Count = %lld\n", self->tc_inst_count);
+	fprintf(f, "TC_Inst_Global_Mem_Read_Count = %lld\n", self->tc_inst_global_mem_read_count);
+	fprintf(f, "\n");
+
+	EvgWavefrontDumpDivergence(self, f);
 
 	fprintf(f, "\n");
 }
 
 
-void evg_wavefront_set_name(struct evg_wavefront_t *wavefront, char *name)
+void EvgWavefrontSetName(EvgWavefront *self, char *name)
 {
-	wavefront->name = str_set(wavefront->name, name);
+	self->name = str_set(self->name, name);
 }
 
 
-void evg_wavefront_stack_push(struct evg_wavefront_t *wavefront)
+void EvgWavefrontPush(EvgWavefront *self)
 {
-	if (wavefront->stack_top == EVG_MAX_STACK_SIZE - 1)
-		fatal("%s: stack overflow", wavefront->cf_inst->info->name);
-	wavefront->stack_top++;
-	wavefront->active_mask_push++;
-	bit_map_copy(wavefront->active_stack, wavefront->stack_top * wavefront->work_item_count,
-		wavefront->active_stack, (wavefront->stack_top - 1) * wavefront->work_item_count,
-		wavefront->work_item_count);
-	evg_isa_debug("  %s:push", wavefront->name);
+	if (self->stack_top == EVG_WAVEFRONT_STACK_SIZE - 1)
+		fatal("%s: stack overflow", self->cf_inst->info->name);
+	self->stack_top++;
+	self->active_mask_push++;
+	bit_map_copy(self->active_stack, self->stack_top * self->work_item_count,
+		self->active_stack, (self->stack_top - 1) * self->work_item_count,
+		self->work_item_count);
+	evg_isa_debug("  %s:push", self->name);
 }
 
 
-void evg_wavefront_stack_pop(struct evg_wavefront_t *wavefront, int count)
+void EvgWavefrontPop(EvgWavefront *self, int count)
 {
 	if (!count)
 		return;
-	if (wavefront->stack_top < count)
-		fatal("%s: stack underflow", wavefront->cf_inst->info->name);
-	wavefront->stack_top -= count;
-	wavefront->active_mask_pop += count;
-	wavefront->active_mask_update = 1;
+	if (self->stack_top < count)
+		fatal("%s: stack underflow", self->cf_inst->info->name);
+	self->stack_top -= count;
+	self->active_mask_pop += count;
+	self->active_mask_update = 1;
 	if (debug_status(evg_isa_debug_category))
 	{
-		evg_isa_debug("  %s:pop(%d),act=", wavefront->name, count);
-		bit_map_dump(wavefront->active_stack, wavefront->stack_top * wavefront->work_item_count,
-			wavefront->work_item_count, debug_file(evg_isa_debug_category));
+		evg_isa_debug("  %s:pop(%d),act=", self->name, count);
+		bit_map_dump(self->active_stack, self->stack_top * self->work_item_count,
+			self->work_item_count, debug_file(evg_isa_debug_category));
 	}
 }
 
 
-/* Execute one instruction in the wavefront */
-void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
+void EvgWavefrontExecute(EvgWavefront *self)
 {
-	struct evg_ndrange_t *ndrange = wavefront->ndrange;
-	struct evg_work_group_t *work_group = wavefront->work_group;
-	struct evg_work_item_t *work_item;
+	EvgNDRange *ndrange = self->ndrange;
+	EvgWorkGroup *work_group = self->work_group;
+	EvgWorkItem *work_item;
 
 	EvgALUGroup *alu_group;
 	EvgInst *inst;
@@ -278,29 +264,29 @@ void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 	int work_item_id;
 
 	/* Reset instruction flags */
-	assert(!DOUBLE_LINKED_LIST_MEMBER(work_group, finished, wavefront));
-	wavefront->global_mem_write = 0;
-	wavefront->global_mem_read = 0;
-	wavefront->local_mem_write = 0;
-	wavefront->local_mem_read = 0;
-	wavefront->pred_mask_update = 0;
-	wavefront->active_mask_update = 0;
-	wavefront->active_mask_push = 0;
-	wavefront->active_mask_pop = 0;
+	assert(!DOUBLE_LINKED_LIST_MEMBER(work_group, finished, self));
+	self->global_mem_write = 0;
+	self->global_mem_read = 0;
+	self->local_mem_write = 0;
+	self->local_mem_read = 0;
+	self->pred_mask_update = 0;
+	self->active_mask_update = 0;
+	self->active_mask_push = 0;
+	self->active_mask_pop = 0;
 
-	switch (wavefront->clause_kind)
+	switch (self->clause_kind)
 	{
 
-	case EVG_CLAUSE_CF:
+	case EvgInstClauseCF:
 	{
-		struct evg_work_item_t *work_item;
+		EvgWorkItem *work_item;
 
 		int inst_num;
 
 		/* Decode CF instruction */
-		inst = wavefront->cf_inst;
-		inst_num = (wavefront->cf_buf - wavefront->cf_buf_start) / 8;
-		wavefront->cf_buf = EvgInstDecodeCF(inst, wavefront->cf_buf);
+		inst = self->cf_inst;
+		inst_num = (self->cf_buf - self->cf_buf_start) / 8;
+		self->cf_buf = EvgInstDecodeCF(inst, self->cf_buf);
 
 		/* Debug */
 		if (debug_status(evg_isa_debug_category))
@@ -311,7 +297,7 @@ void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 		}
 
 		/* Get first work-item in wavefront */
-		work_item = wavefront->work_items[0];
+		work_item = self->work_items[0];
 		assert(work_item);
 
 		/* Execute once in wavefront */
@@ -320,26 +306,26 @@ void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 		/* If instruction updates the work_item's active mask, update digests */
 		if (inst->info->flags & EvgInstFlagActMask)
 		{
-			EVG_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
+			EVG_FOREACH_WORK_ITEM_IN_WAVEFRONT(self, work_item_id)
 			{
 				work_item = ndrange->work_items[work_item_id];
-				evg_work_item_update_branch_digest(work_item,
-					wavefront->cf_inst_count, inst_num);
+				EvgWorkItemUpdateBranchDigest(work_item,
+					self->cf_inst_count, inst_num);
 			}
 		}
 
 		/* Stats */
 		asEmu(evg_emu)->instructions++;
-		wavefront->inst_count++;
-		wavefront->cf_inst_count++;
+		self->inst_count++;
+		self->cf_inst_count++;
 		if (inst->info->flags & EvgInstFlagMem)
 		{
-			wavefront->global_mem_inst_count++;
-			wavefront->cf_inst_global_mem_write_count++;
+			self->global_mem_inst_count++;
+			self->cf_inst_global_mem_write_count++;
 		}
 		if (ndrange->inst_histogram)
 		{
-			inst_opcode = wavefront->cf_inst->info->opcode;
+			inst_opcode = self->cf_inst->info->opcode;
 			assert(inst_opcode < EvgInstOpcodeCount);
 			ndrange->inst_histogram[inst_opcode]++;
 		}
@@ -347,14 +333,14 @@ void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 		break;
 	}
 
-	case EVG_CLAUSE_ALU:
+	case EvgInstClauseALU:
 	{
 		int i;
 
 		/* Decode ALU group */
-		alu_group = wavefront->alu_group;
-		wavefront->clause_buf = EvgALUGroupDecode(alu_group,
-				wavefront->clause_buf, wavefront->alu_group_count);
+		alu_group = self->alu_group;
+		self->clause_buf = EvgALUGroupDecode(alu_group,
+				self->clause_buf, self->alu_group_count);
 
 		/* Debug */
 		if (debug_status(evg_isa_debug_category))
@@ -364,7 +350,7 @@ void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 		}
 
 		/* Execute group for each work_item in wavefront */
-		EVG_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
+		EVG_FOREACH_WORK_ITEM_IN_WAVEFRONT(self, work_item_id)
 		{
 			work_item = ndrange->work_items[work_item_id];
 			for (i = 0; i < alu_group->inst_count; i++)
@@ -377,18 +363,18 @@ void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 		
 		/* Statistics */
 		asEmu(evg_emu)->instructions++;
-		wavefront->inst_count += alu_group->inst_count;
-		wavefront->alu_inst_count += alu_group->inst_count;
-		wavefront->alu_group_count++;
+		self->inst_count += alu_group->inst_count;
+		self->alu_inst_count += alu_group->inst_count;
+		self->alu_group_count++;
 		assert(alu_group->inst_count > 0 && alu_group->inst_count < 6);
-		wavefront->alu_group_size[alu_group->inst_count - 1]++;
+		self->alu_group_size[alu_group->inst_count - 1]++;
 		for (i = 0; i < alu_group->inst_count; i++)
 		{
 			inst = &alu_group->inst[i];
 			if (inst->info->flags & EvgInstFlagLDS)
 			{
-				wavefront->local_mem_inst_count++;
-				wavefront->alu_inst_local_mem_count++;
+				self->local_mem_inst_count++;
+				self->alu_inst_local_mem_count++;
 			}
 			if (ndrange->inst_histogram)
 			{
@@ -399,21 +385,21 @@ void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 		}
 
 		/* End of clause reached */
-		assert(wavefront->clause_buf <= wavefront->clause_buf_end);
-		if (wavefront->clause_buf >= wavefront->clause_buf_end)
+		assert(self->clause_buf <= self->clause_buf_end);
+		if (self->clause_buf >= self->clause_buf_end)
 		{
-			evg_isa_alu_clause_end(wavefront);
-			wavefront->clause_kind = EVG_CLAUSE_CF;
+			evg_isa_alu_clause_end(self);
+			self->clause_kind = EvgInstClauseCF;
 		}
 
 		break;
 	}
 
-	case EVG_CLAUSE_TEX:
+	case EvgInstClauseTEX:
 	{
 		/* Decode TEX instruction */
-		inst = wavefront->tex_inst;
-		wavefront->clause_buf = EvgInstDecodeTC(inst, wavefront->clause_buf);
+		inst = self->tex_inst;
+		self->clause_buf = EvgInstDecodeTC(inst, self->clause_buf);
 
 		/* Debug */
 		if (debug_status(evg_isa_debug_category))
@@ -423,7 +409,7 @@ void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 		}
 
 		/* Execute in all work_items */
-		EVG_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
+		EVG_FOREACH_WORK_ITEM_IN_WAVEFRONT(self, work_item_id)
 		{
 			work_item = ndrange->work_items[work_item_id];
 			(*evg_isa_inst_func[inst->info->opcode])(work_item, inst);
@@ -431,12 +417,12 @@ void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 
 		/* Statistics */
 		asEmu(evg_emu)->instructions++;
-		wavefront->inst_count++;
-		wavefront->tc_inst_count++;
+		self->inst_count++;
+		self->tc_inst_count++;
 		if (inst->info->flags & EvgInstFlagMem)
 		{
-			wavefront->global_mem_inst_count++;
-			wavefront->tc_inst_global_mem_read_count++;
+			self->global_mem_inst_count++;
+			self->tc_inst_global_mem_read_count++;
 		}
 		if (ndrange->inst_histogram)
 		{
@@ -446,11 +432,11 @@ void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 		}
 
 		/* End of clause reached */
-		assert(wavefront->clause_buf <= wavefront->clause_buf_end);
-		if (wavefront->clause_buf == wavefront->clause_buf_end)
+		assert(self->clause_buf <= self->clause_buf_end);
+		if (self->clause_buf == self->clause_buf_end)
 		{
-			evg_isa_tc_clause_end(wavefront);
-			wavefront->clause_kind = EVG_CLAUSE_CF;
+			evg_isa_tc_clause_end(self);
+			self->clause_kind = EvgInstClauseCF;
 		}
 
 		break;
@@ -461,28 +447,28 @@ void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 	}
 
 	/* Check if wavefront finished kernel execution */
-	if (wavefront->clause_kind == EVG_CLAUSE_CF && !wavefront->cf_buf)
+	if (self->clause_kind == EvgInstClauseCF && !self->cf_buf)
 	{
-		assert(DOUBLE_LINKED_LIST_MEMBER(work_group, running, wavefront));
-		assert(!DOUBLE_LINKED_LIST_MEMBER(work_group, finished, wavefront));
-		DOUBLE_LINKED_LIST_REMOVE(work_group, running, wavefront);
-		DOUBLE_LINKED_LIST_INSERT_TAIL(work_group, finished, wavefront);
+		assert(DOUBLE_LINKED_LIST_MEMBER(work_group, running, self));
+		assert(!DOUBLE_LINKED_LIST_MEMBER(work_group, finished, self));
+		DOUBLE_LINKED_LIST_REMOVE(work_group, running, self);
+		DOUBLE_LINKED_LIST_INSERT_TAIL(work_group, finished, self);
 
 		/* Check if work-group finished kernel execution */
 		if (work_group->finished_list_count == work_group->wavefront_count)
 		{
 			assert(DOUBLE_LINKED_LIST_MEMBER(ndrange, running, work_group));
 			assert(!DOUBLE_LINKED_LIST_MEMBER(ndrange, finished, work_group));
-			evg_work_group_clear_status(work_group, evg_work_group_running);
-			evg_work_group_set_status(work_group, evg_work_group_finished);
+			EvgWorkGroupClearState(work_group, EvgWorkGroupRunning);
+			EvgWorkGroupSetState(work_group, EvgWorkGroupFinished);
 
 			/* Check if ND-Range finished kernel execution */
 			if (ndrange->finished_list_count == ndrange->work_group_count)
 			{
 				assert(DOUBLE_LINKED_LIST_MEMBER(evg_emu, running_ndrange, ndrange));
 				assert(!DOUBLE_LINKED_LIST_MEMBER(evg_emu, finished_ndrange, ndrange));
-				evg_ndrange_clear_status(ndrange, evg_ndrange_running);
-				evg_ndrange_set_status(ndrange, evg_ndrange_finished);
+				EvgNDRangeClearState(ndrange, EvgNDRangeRunning);
+				EvgNDRangeSetState(ndrange, EvgNDRangeFinished);
 			}
 		}
 	}

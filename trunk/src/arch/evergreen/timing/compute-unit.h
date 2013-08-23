@@ -34,14 +34,14 @@ void evg_reg_file_init(struct evg_compute_unit_t *compute_unit);
 void evg_reg_file_done(struct evg_compute_unit_t *compute_unit);
 
 void evg_reg_file_map_work_group(struct evg_compute_unit_t *compute_unit,
-	struct evg_work_group_t *work_group);
+	EvgWorkGroup *work_group);
 void evg_reg_file_unmap_work_group(struct evg_compute_unit_t *compute_unit,
-	struct evg_work_group_t *work_group);
+	EvgWorkGroup *work_group);
 
 int evg_reg_file_rename(struct evg_compute_unit_t *compute_unit,
-	struct evg_work_item_t *work_item, int logical_register);
+	EvgWorkItem *work_item, int logical_register);
 void evg_reg_file_inverse_rename(struct evg_compute_unit_t *compute_unit,
-	int physical_register, struct evg_work_item_t **work_item, int *logical_register);
+	int physical_register, EvgWorkItem **work_item, int *logical_register);
 
 
 
@@ -69,7 +69,7 @@ struct evg_compute_unit_t
 
 	/* List of currently mapped work-groups */
 	int work_group_count;
-	struct evg_work_group_t **work_groups;
+	EvgWorkGroup **work_groups;
 
 	/* Statistics */
 	long long mapped_work_groups;
@@ -175,8 +175,8 @@ struct evg_compute_unit_t
 
 struct evg_compute_unit_t *evg_compute_unit_create(void);
 void evg_compute_unit_free(struct evg_compute_unit_t *gpu_compute_unit);
-void evg_compute_unit_map_work_group(struct evg_compute_unit_t *compute_unit, struct evg_work_group_t *work_group);
-void evg_compute_unit_unmap_work_group(struct evg_compute_unit_t *compute_unit, struct evg_work_group_t *work_group);
+void evg_compute_unit_map_work_group(struct evg_compute_unit_t *compute_unit, EvgWorkGroup *work_group);
+void evg_compute_unit_unmap_work_group(struct evg_compute_unit_t *compute_unit, EvgWorkGroup *work_group);
 void evg_compute_unit_run(struct evg_compute_unit_t *compute_unit);
 
 #endif

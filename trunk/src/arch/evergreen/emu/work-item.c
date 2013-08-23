@@ -30,103 +30,94 @@
 
 
 /*
- * Public Functions
+ * Class 'EvgWorkItem'
  */
 
-struct evg_work_item_t *evg_work_item_create(struct evg_wavefront_t *wavefront)
+void EvgWorkItemCreate(EvgWorkItem *self, EvgWavefront *wavefront)
 {
-	struct evg_work_item_t *work_item;
-
 	/* Initialize */
-	work_item = xcalloc(1, sizeof(struct evg_work_item_t));
-	work_item->wavefront = wavefront;
-	work_item->work_group = wavefront->work_group;
-	work_item->ndrange = wavefront->ndrange;
-	work_item->write_task_list = linked_list_create();
-	work_item->lds_oqa = list_create();
-	work_item->lds_oqb = list_create();
-
-	/* Return */
-	return work_item;
+	self->wavefront = wavefront;
+	self->work_group = wavefront->work_group;
+	self->ndrange = wavefront->ndrange;
+	self->write_task_list = linked_list_create();
+	self->lds_oqa = list_create();
+	self->lds_oqb = list_create();
 }
 
 
-void evg_work_item_free(struct evg_work_item_t *work_item)
+void EvgWorkItemDestroy(EvgWorkItem *self)
 {
 	/* Empty LDS output queues */
-	while (list_count(work_item->lds_oqa))
-		free(list_dequeue(work_item->lds_oqa));
-	while (list_count(work_item->lds_oqb))
-		free(list_dequeue(work_item->lds_oqb));
-	list_free(work_item->lds_oqa);
-	list_free(work_item->lds_oqb);
-	linked_list_free(work_item->write_task_list);
-
-	/* Free work_item */
-	free(work_item);
+	while (list_count(self->lds_oqa))
+		free(list_dequeue(self->lds_oqa));
+	while (list_count(self->lds_oqb))
+		free(list_dequeue(self->lds_oqb));
+	list_free(self->lds_oqa);
+	list_free(self->lds_oqb);
+	linked_list_free(self->write_task_list);
 }
 
 
 
-void evg_work_item_set_active(struct evg_work_item_t *work_item, int active)
+void EvgWorkItemSetActive(EvgWorkItem *self, int active)
 {
-	struct evg_wavefront_t *wavefront = work_item->wavefront;
+	EvgWavefront *wavefront = self->wavefront;
 
-	assert(work_item->id_in_wavefront >= 0 && work_item->id_in_wavefront < wavefront->work_item_count);
+	assert(self->id_in_wavefront >= 0 && self->id_in_wavefront < wavefront->work_item_count);
 	bit_map_set(wavefront->active_stack, wavefront->stack_top * wavefront->work_item_count
-		+ work_item->id_in_wavefront, 1, !!active);
+		+ self->id_in_wavefront, 1, !!active);
 	wavefront->active_mask_update = 1;
 }
 
 
-int evg_work_item_get_active(struct evg_work_item_t *work_item)
+int EvgWorkItemGetActive(EvgWorkItem *self)
 {
-	struct evg_wavefront_t *wavefront = work_item->wavefront;
+	EvgWavefront *wavefront = self->wavefront;
 
-	assert(work_item->id_in_wavefront >= 0 && work_item->id_in_wavefront < wavefront->work_item_count);
+	assert(self->id_in_wavefront >= 0 && self->id_in_wavefront < wavefront->work_item_count);
 	return bit_map_get(wavefront->active_stack, wavefront->stack_top * wavefront->work_item_count
-		+ work_item->id_in_wavefront, 1);
+		+ self->id_in_wavefront, 1);
 }
 
 
-void evg_work_item_set_pred(struct evg_work_item_t *work_item, int pred)
+void EvgWorkItemSetPred(EvgWorkItem *self, int pred)
 {
-	struct evg_wavefront_t *wavefront = work_item->wavefront;
+	EvgWavefront *wavefront = self->wavefront;
 
-	assert(work_item->id_in_wavefront >= 0 && work_item->id_in_wavefront < wavefront->work_item_count);
-	bit_map_set(wavefront->pred, work_item->id_in_wavefront, 1, !!pred);
+	assert(self->id_in_wavefront >= 0 && self->id_in_wavefront < wavefront->work_item_count);
+	bit_map_set(wavefront->pred, self->id_in_wavefront, 1, !!pred);
 	wavefront->pred_mask_update = 1;
 }
 
 
-int evg_work_item_get_pred(struct evg_work_item_t *work_item)
+int EvgWorkItemGetPred(EvgWorkItem *self)
 {
-	struct evg_wavefront_t *wavefront = work_item->wavefront;
+	EvgWavefront *wavefront = self->wavefront;
 
-	assert(work_item->id_in_wavefront >= 0 && work_item->id_in_wavefront < wavefront->work_item_count);
-	return bit_map_get(wavefront->pred, work_item->id_in_wavefront, 1);
+	assert(self->id_in_wavefront >= 0 && self->id_in_wavefront < wavefront->work_item_count);
+	return bit_map_get(wavefront->pred, self->id_in_wavefront, 1);
 }
 
 
 /* Based on an instruction counter, instruction address, and work_item mask,
  * update (xor) branch_digest with a random number */
-void evg_work_item_update_branch_digest(struct evg_work_item_t *work_item,
-	long long inst_count, uint32_t inst_addr)
+void EvgWorkItemUpdateBranchDigest(EvgWorkItem *self,
+	long long inst_count, unsigned int inst_addr)
 {
-	struct evg_wavefront_t *wavefront = work_item->wavefront;
-	uint32_t mask = 0;
+	EvgWavefront *wavefront = self->wavefront;
+	unsigned int mask = 0;
 
 	/* Update branch digest only if work_item is active */
 	if (!bit_map_get(wavefront->active_stack, wavefront->stack_top * wavefront->work_item_count
-		+ work_item->id_in_wavefront, 1))
+		+ self->id_in_wavefront, 1))
 		return;
 
 	/* Update mask with inst_count */
-	mask = (uint32_t) inst_count * 0x4919f71f;  /* Multiply by prime number to generate sparse mask */
+	mask = (unsigned int) inst_count * 0x4919f71f;  /* Multiply by prime number to generate sparse mask */
 
 	/* Update mask with inst_addr */
 	mask += inst_addr * 0x31f2e73b;
 
 	/* Update branch digest */
-	work_item->branch_digest ^= mask;
+	self->branch_digest ^= mask;
 }

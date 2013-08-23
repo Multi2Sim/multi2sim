@@ -44,13 +44,13 @@ static void evg_tex_engine_fetch(struct evg_compute_unit_t *compute_unit)
 	struct linked_list_t *pending_queue = compute_unit->tex_engine.pending_queue;
 	struct linked_list_t *finished_queue = compute_unit->tex_engine.finished_queue;
 
-	struct evg_wavefront_t *wavefront;
+	EvgWavefront *wavefront;
 	struct evg_uop_t *cf_uop, *uop;
 	struct evg_work_item_uop_t *work_item_uop;
 	EvgInst *inst;
 	int inst_num;
 
-	struct evg_work_item_t *work_item;
+	EvgWorkItem *work_item;
 	int work_item_id;
 
 	char str[MAX_LONG_STRING_SIZE];
@@ -62,7 +62,7 @@ static void evg_tex_engine_fetch(struct evg_compute_unit_t *compute_unit)
 	if (!cf_uop)
 		return;
 	wavefront = cf_uop->wavefront;
-	assert(wavefront->clause_kind == EVG_CLAUSE_TEX);
+	assert(wavefront->clause_kind == EvgInstClauseTEX);
 
 
 	/* If fetch queue is full, cannot fetch until space is made */
@@ -71,7 +71,7 @@ static void evg_tex_engine_fetch(struct evg_compute_unit_t *compute_unit)
 	
 	/* Emulate instruction and create uop */
 	inst_num = (wavefront->clause_buf - wavefront->clause_buf_start) / 16;
-	evg_wavefront_execute(wavefront);
+	EvgWavefrontExecute(wavefront);
 	inst = wavefront->tex_inst;
 	uop = evg_uop_create();
 	uop->wavefront = wavefront;
@@ -79,7 +79,7 @@ static void evg_tex_engine_fetch(struct evg_compute_unit_t *compute_unit)
 	uop->cf_uop = cf_uop;
 	uop->compute_unit = compute_unit;
 	uop->id_in_compute_unit = compute_unit->gpu_uop_id_counter++;
-	uop->last = wavefront->clause_kind != EVG_CLAUSE_TEX;
+	uop->last = wavefront->clause_kind != EvgInstClauseTEX;
 	uop->global_mem_read = wavefront->global_mem_read;
 	uop->global_mem_write = wavefront->global_mem_write;
 	uop->vliw_slots = 1;
@@ -174,7 +174,7 @@ static void evg_tex_engine_decode(struct evg_compute_unit_t *compute_unit)
 
 static void evg_tex_engine_read(struct evg_compute_unit_t *compute_unit)
 {
-	struct evg_work_item_t *work_item;
+	EvgWorkItem *work_item;
 	int work_item_id;
 
 	struct evg_uop_t *uop;
