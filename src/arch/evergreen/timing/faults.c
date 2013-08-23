@@ -18,11 +18,11 @@
  */
 
 
+#include <arch/evergreen/asm/bin-file.h>
 #include <arch/evergreen/emu/emu.h>
 #include <arch/evergreen/emu/ndrange.h>
 #include <arch/evergreen/emu/wavefront.h>
 #include <arch/evergreen/emu/work-group.h>
-#include <driver/opencl-old/evergreen/bin-file.h>
 #include <driver/opencl-old/evergreen/kernel.h>
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
