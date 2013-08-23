@@ -84,6 +84,9 @@ extern int evg_gpu_tex_engine_load_queue_size;
 
 CLASS_BEGIN(EvgGpu, Timing)
 
+	/* Emulator */
+	EvgEmu *emu;
+
 	/* ND-Range running on it */
 	EvgNDRange *ndrange;
 	int work_groups_per_compute_unit;
@@ -114,7 +117,7 @@ CLASS_BEGIN(EvgGpu, Timing)
 
 CLASS_END(EvgGpu)
 
-void EvgGpuCreate(EvgGpu *self);
+void EvgGpuCreate(EvgGpu *self, EvgEmu *emu);
 void EvgGpuDestroy(EvgGpu *self);
 
 void EvgGpuDump(Object *self, FILE *f);
@@ -136,7 +139,7 @@ void evg_gpu_read_config(void);
 void evg_gpu_init(void);
 void evg_gpu_done(void);
 
-void evg_gpu_dump_report(void);
+void evg_gpu_dump_report(EvgGpu *self);
 
 struct evg_uop_t;
 void evg_gpu_uop_trash_add(struct evg_uop_t *uop);

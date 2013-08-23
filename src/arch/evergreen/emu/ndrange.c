@@ -45,14 +45,14 @@
 void EvgNDRangeCreate(EvgNDRange *self, EvgEmu *emu, struct evg_opencl_kernel_t *kernel)
 {
 	/* Insert in ND-Range list of Evergreen emulator */
-	DOUBLE_LINKED_LIST_INSERT_TAIL(evg_emu, ndrange, self);
+	DOUBLE_LINKED_LIST_INSERT_TAIL(emu, ndrange, self);
 
 	/* Initialize */
 	self->emu = emu;
 	self->name = xstrdup(kernel->name);
 	self->kernel = kernel;
 	self->local_mem_top = kernel->func_mem_local;
-	self->id = evg_emu->ndrange_count++;
+	self->id = emu->ndrange_count++;
 
 	/* Instruction histogram */
 	if (evg_emu_report_file)
@@ -62,6 +62,7 @@ void EvgNDRangeCreate(EvgNDRange *self, EvgEmu *emu, struct evg_opencl_kernel_t 
 
 void EvgNDRangeDestroy(EvgNDRange *self)
 {
+	EvgEmu *emu = self->emu;
 	int i;
 
 	/* Clear task from command queue */
@@ -77,8 +78,8 @@ void EvgNDRangeDestroy(EvgNDRange *self)
 	EvgNDRangeClearState(self, EvgNDRangeFinished);
 
 	/* Extract from ND-Range list in Evergreen emulator */
-	assert(DOUBLE_LINKED_LIST_MEMBER(evg_emu, ndrange, self));
-	DOUBLE_LINKED_LIST_REMOVE(evg_emu, ndrange, self);
+	assert(DOUBLE_LINKED_LIST_MEMBER(emu, ndrange, self));
+	DOUBLE_LINKED_LIST_REMOVE(emu, ndrange, self);
 
 	/* Free work-groups */
 	for (i = 0; i < self->work_group_count; i++)
@@ -182,22 +183,24 @@ int EvgNDRangeGetState(EvgNDRange *self, EvgNDRangeState state)
 
 void EvgNDRangeSetState(EvgNDRange *self, EvgNDRangeState state)
 {
+	EvgEmu *emu = self->emu;
+
 	/* Get only the new bits */
 	state &= ~self->state;
 
 	/* Add ND-Range to lists */
 	if (state & EvgNDRangePending)
-		DOUBLE_LINKED_LIST_INSERT_TAIL(evg_emu, pending_ndrange, self);
+		DOUBLE_LINKED_LIST_INSERT_TAIL(emu, pending_ndrange, self);
 	if (state & EvgNDRangeRunning)
-		DOUBLE_LINKED_LIST_INSERT_TAIL(evg_emu, running_ndrange, self);
+		DOUBLE_LINKED_LIST_INSERT_TAIL(emu, running_ndrange, self);
 	if (state & EvgNDRangeFinished)
-		DOUBLE_LINKED_LIST_INSERT_TAIL(evg_emu, finished_ndrange, self);
+		DOUBLE_LINKED_LIST_INSERT_TAIL(emu, finished_ndrange, self);
 
 	/* Start/stop Evergreen timer depending on ND-Range states */
-	if (evg_emu->running_ndrange_list_count)
-		m2s_timer_start(asEmu(evg_emu)->timer);
+	if (emu->running_ndrange_list_count)
+		m2s_timer_start(asEmu(emu)->timer);
 	else
-		m2s_timer_stop(asEmu(evg_emu)->timer);
+		m2s_timer_stop(asEmu(emu)->timer);
 
 	/* Update it */
 	self->state |= state;
@@ -206,16 +209,18 @@ void EvgNDRangeSetState(EvgNDRange *self, EvgNDRangeState state)
 
 void EvgNDRangeClearState(EvgNDRange *self, EvgNDRangeState state)
 {
+	EvgEmu *emu = self->emu;
+
 	/* Get only the bits that are set */
 	state &= self->state;
 
 	/* Remove ND-Range from lists */
 	if (state & EvgNDRangePending)
-		DOUBLE_LINKED_LIST_REMOVE(evg_emu, pending_ndrange, self);
+		DOUBLE_LINKED_LIST_REMOVE(emu, pending_ndrange, self);
 	if (state & EvgNDRangeRunning)
-		DOUBLE_LINKED_LIST_REMOVE(evg_emu, running_ndrange, self);
+		DOUBLE_LINKED_LIST_REMOVE(emu, running_ndrange, self);
 	if (state & EvgNDRangeFinished)
-		DOUBLE_LINKED_LIST_REMOVE(evg_emu, finished_ndrange, self);
+		DOUBLE_LINKED_LIST_REMOVE(emu, finished_ndrange, self);
 
 	/* Update state */
 	self->state &= ~state;
@@ -345,7 +350,8 @@ void EvgNDRangeSetupWorkItems(EvgNDRange *self)
 							work_item->id_in_work_group = lid;
 
 							/* Other */
-							work_item->id_in_wavefront = work_item->id_in_work_group % evg_emu_wavefront_size;
+							work_item->id_in_wavefront = work_item->id_in_work_group %
+									evg_emu_wavefront_size;
 							work_item->work_group = self->work_groups[gid];
 							work_item->wavefront = self->wavefronts[wid];
 
@@ -428,36 +434,37 @@ void EvgNDRangeSetupWorkItems(EvgNDRange *self)
 
 
 /* Write initial values in constant buffer 0 (CB0) */
-/* FIXME: constant memory should be member of 'evg_emu' or 'ndrange'? */
+/* FIXME: constant memory should be member of 'emu' or 'ndrange'? */
 void EvgNDRangeSetupConstantMemory(EvgNDRange *self)
 {
+	EvgEmu *emu = self->emu;
 	struct evg_opencl_kernel_t *kernel = self->kernel;
-	uint32_t zero = 0;
+	unsigned int zero = 0;
 	float f;
 
 	/* CB0[0]
 	 * x,y,z: global work size for the {x,y,z} dimensions.
 	 * w: number of work dimensions.  */
-	evg_isa_const_mem_write(0, 0, 0, &kernel->global_size3[0]);
-	evg_isa_const_mem_write(0, 0, 1, &kernel->global_size3[1]);
-	evg_isa_const_mem_write(0, 0, 2, &kernel->global_size3[2]);
-	evg_isa_const_mem_write(0, 0, 3, &kernel->work_dim);
+	EvgEmuConstMemWrite(emu, 0, 0, 0, &kernel->global_size3[0]);
+	EvgEmuConstMemWrite(emu, 0, 0, 1, &kernel->global_size3[1]);
+	EvgEmuConstMemWrite(emu, 0, 0, 2, &kernel->global_size3[2]);
+	EvgEmuConstMemWrite(emu, 0, 0, 3, &kernel->work_dim);
 
 	/* CB0[1]
 	 * x,y,z: local work size for the {x,y,z} dimensions.
 	 * w: 0  */
-	evg_isa_const_mem_write(0, 1, 0, &kernel->local_size3[0]);
-	evg_isa_const_mem_write(0, 1, 1, &kernel->local_size3[1]);
-	evg_isa_const_mem_write(0, 1, 2, &kernel->local_size3[2]);
-	evg_isa_const_mem_write(0, 1, 3, &zero);
+	EvgEmuConstMemWrite(emu, 0, 1, 0, &kernel->local_size3[0]);
+	EvgEmuConstMemWrite(emu, 0, 1, 1, &kernel->local_size3[1]);
+	EvgEmuConstMemWrite(emu, 0, 1, 2, &kernel->local_size3[2]);
+	EvgEmuConstMemWrite(emu, 0, 1, 3, &zero);
 
 	/* CB0[2]
 	 * x,y,z: global work size {x,y,z} / local work size {x,y,z}
 	 * w: 0  */
-	evg_isa_const_mem_write(0, 2, 0, &kernel->group_count3[0]);
-	evg_isa_const_mem_write(0, 2, 1, &kernel->group_count3[1]);
-	evg_isa_const_mem_write(0, 2, 2, &kernel->group_count3[2]);
-	evg_isa_const_mem_write(0, 2, 3, &zero);
+	EvgEmuConstMemWrite(emu, 0, 2, 0, &kernel->group_count3[0]);
+	EvgEmuConstMemWrite(emu, 0, 2, 1, &kernel->group_count3[1]);
+	EvgEmuConstMemWrite(emu, 0, 2, 2, &kernel->group_count3[2]);
+	EvgEmuConstMemWrite(emu, 0, 2, 3, &zero);
 
 	/* CB0[3]
 	 * x: Offset to private memory ring (0 if private memory is not emulated).
@@ -478,29 +485,29 @@ void EvgNDRangeSetupConstantMemory(EvgNDRange *self)
 	 * z: 1.0 as IEEE-32bit float - required for math library.
 	 * w: 2.0 as IEEE-32bit float - required for math library. */
 	f = 0.0f;
-	evg_isa_const_mem_write(0, 5, 0, &f);
+	EvgEmuConstMemWrite(emu, 0, 5, 0, &f);
 	f = 0.5f;
-	evg_isa_const_mem_write(0, 5, 1, &f);
+	EvgEmuConstMemWrite(emu, 0, 5, 1, &f);
 	f = 1.0f;
-	evg_isa_const_mem_write(0, 5, 2, &f);
+	EvgEmuConstMemWrite(emu, 0, 5, 2, &f);
 	f = 2.0f;
-	evg_isa_const_mem_write(0, 5, 3, &f);
+	EvgEmuConstMemWrite(emu, 0, 5, 3, &f);
 
 	/* CB0[6]
 	 * x,y,z: Global offset for the {x,y,z} dimension of the work_item spawn.
 	 * z: Global single dimension flat offset: x * y * z. */
-	evg_isa_const_mem_write(0, 6, 0, &zero);
-	evg_isa_const_mem_write(0, 6, 1, &zero);
-	evg_isa_const_mem_write(0, 6, 2, &zero);
-	evg_isa_const_mem_write(0, 6, 3, &zero);
+	EvgEmuConstMemWrite(emu, 0, 6, 0, &zero);
+	EvgEmuConstMemWrite(emu, 0, 6, 1, &zero);
+	EvgEmuConstMemWrite(emu, 0, 6, 2, &zero);
+	EvgEmuConstMemWrite(emu, 0, 6, 3, &zero);
 
 	/* CB0[7]
 	 * x,y,z: Group offset for the {x,y,z} dimensions of the work_item spawn.
 	 * w: Group single dimension flat offset, x * y * z.  */
-	evg_isa_const_mem_write(0, 7, 0, &zero);
-	evg_isa_const_mem_write(0, 7, 1, &zero);
-	evg_isa_const_mem_write(0, 7, 2, &zero);
-	evg_isa_const_mem_write(0, 7, 3, &zero);
+	EvgEmuConstMemWrite(emu, 0, 7, 0, &zero);
+	EvgEmuConstMemWrite(emu, 0, 7, 1, &zero);
+	EvgEmuConstMemWrite(emu, 0, 7, 2, &zero);
+	EvgEmuConstMemWrite(emu, 0, 7, 3, &zero);
 
 	/* CB0[8]
 	 * x: Offset in the global buffer where data segment exists.
@@ -511,6 +518,8 @@ void EvgNDRangeSetupConstantMemory(EvgNDRange *self)
 
 void EvgNDRangeSetupArguments(EvgNDRange *self)
 {
+	EvgEmu *emu = self->emu;
+
 	struct evg_opencl_kernel_t *kernel = self->kernel;
 	struct evg_opencl_kernel_arg_t *arg;
 	int i;
@@ -534,7 +543,7 @@ void EvgNDRangeSetupArguments(EvgNDRange *self)
 		case EVG_OPENCL_KERNEL_ARG_KIND_VALUE:
 		{
 			/* Value copied directly into device constant memory */
-			evg_isa_const_mem_write(1, cb_index, 0, &arg->value);
+			EvgEmuConstMemWrite(emu, 1, cb_index, 0, &arg->value);
 			evg_opencl_debug("    arg %d: value '0x%x' loaded into CB1[%d]\n", i, 
 					arg->value, cb_index);
 			cb_index++;
@@ -553,13 +562,13 @@ void EvgNDRangeSetupArguments(EvgNDRange *self)
 				/* Image type
 				 * Images really take up two slots, but for now we'll
 				 * just copy the pointer into both. */
-				mem = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+				mem = evg_opencl_repo_get_object(emu->opencl_repo,
 					evg_opencl_object_mem, arg->value);
-				evg_isa_const_mem_write(1, cb_index, 0, &mem->device_ptr);
+				EvgEmuConstMemWrite(emu, 1, cb_index, 0, &mem->device_ptr);
 				evg_opencl_debug("    arg %d: opencl_mem id 0x%x loaded into CB1[%d]," 
 						" device_ptr=0x%x\n", i, arg->value, cb_index,
 						mem->device_ptr);
-				evg_isa_const_mem_write(1, cb_index+1, 0, &mem->device_ptr);
+				EvgEmuConstMemWrite(emu, 1, cb_index+1, 0, &mem->device_ptr);
 				cb_index += 2;
 				break;
 			}
@@ -583,9 +592,9 @@ void EvgNDRangeSetupArguments(EvgNDRange *self)
 				/* Pointer in __global scope.
 				 * Argument value is a pointer to an 'opencl_mem' object.
 				 * It is translated first into a device memory pointer. */
-				mem = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+				mem = evg_opencl_repo_get_object(emu->opencl_repo,
 					evg_opencl_object_mem, arg->value);
-				evg_isa_const_mem_write(1, cb_index, 0, &mem->device_ptr);
+				EvgEmuConstMemWrite(emu, 1, cb_index, 0, &mem->device_ptr);
 				evg_opencl_debug("    arg %d: opencl_mem id 0x%x loaded into CB1[%d]," 
 						" device_ptr=0x%x\n", i, arg->value, cb_index,
 						mem->device_ptr);
@@ -597,7 +606,7 @@ void EvgNDRangeSetupArguments(EvgNDRange *self)
 			{
 				/* Pointer in __local scope.
 				 * Argument value is always NULL, just assign space for it. */
-				evg_isa_const_mem_write(1, cb_index, 0, &self->local_mem_top);
+				EvgEmuConstMemWrite(emu, 1, cb_index, 0, &self->local_mem_top);
 				evg_opencl_debug("    arg %d: %d bytes reserved in local memory at 0x%x\n",
 					i, arg->size, self->local_mem_top);
 				self->local_mem_top += arg->size;

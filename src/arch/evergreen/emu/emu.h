@@ -23,21 +23,54 @@
 #include <stdio.h>
 
 #include <arch/common/emu.h>
+#include <arch/evergreen/asm/inst.h>
+
+
+
+/*
+ * Public
+ */
+
+extern long long evg_emu_max_cycles;
+extern long long evg_emu_max_inst;
+extern int evg_emu_max_kernels;
+
+extern char *evg_emu_opencl_binary_name;
+extern char *evg_emu_report_file_name;
+extern FILE *evg_emu_report_file;
+
+extern int evg_emu_wavefront_size;
+
+extern char *evg_err_opencl_note;
+extern char *evg_err_opencl_param_note;
+
+extern EvgEmu *evg_emu;
+extern EvgAsm *evg_asm;
+
+
 
 
 /*
  * Class 'EvgEmu'
  */
 
+typedef void (*EvgEmuInstFunc)(EvgWorkItem *work_item, EvgInst *inst);
+
 CLASS_BEGIN(EvgEmu, Emu)
 
 	/* Disassembler */
 	EvgAsm *as;
 
+	/* Instruction execution functions */
+	EvgEmuInstFunc inst_func[EvgInstOpcodeCount];
+
 	/* OpenCL objects */
 	struct evg_opencl_repo_t *opencl_repo;
 	struct evg_opencl_platform_t *opencl_platform;
 	struct evg_opencl_device_t *opencl_device;
+
+	/* Repository of write tasks */
+	struct repos_t *write_task_repos;
 
 	/* List of ND-Ranges */
 	EvgNDRange *ndrange_list_head;
@@ -95,31 +128,9 @@ void EvgEmuDumpSummary(Emu *self, FILE *f);
 /* Virtual function from class 'Emu' */
 int EvgEmuRun(Emu *self);
 
-
-
-/*
- * Non-Class Stuff
- */
-
-extern long long evg_emu_max_cycles;
-extern long long evg_emu_max_inst;
-extern int evg_emu_max_kernels;
-
-extern char *evg_emu_opencl_binary_name;
-extern char *evg_emu_report_file_name;
-extern FILE *evg_emu_report_file;
-
-extern int evg_emu_wavefront_size;
-
-extern char *evg_err_opencl_note;
-extern char *evg_err_opencl_param_note;
-
-extern EvgEmu *evg_emu;
-extern EvgAsm *evg_asm;
-
-
-void evg_emu_init(void);
-void evg_emu_done(void);
+/* Access to constant memory */
+void EvgEmuConstMemWrite(EvgEmu *self, int bank, int vector, int elem, void *value_ptr);
+void EvgEmuConstMemRead(EvgEmu *self, int bank, int vector, int elem, void *value_ptr);
 
 
 #endif
