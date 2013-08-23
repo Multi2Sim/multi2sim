@@ -2,9 +2,6 @@ lib_LIBRARIES = libopencl.a
 
 libopencl_a_SOURCES = \
 	\
-	bin-file.c \
-	bin-file.h \
-	\
 	command-queue.c \
 	command-queue.h \
 	\

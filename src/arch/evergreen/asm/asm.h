@@ -28,18 +28,6 @@
 #include "inst.h"
 
 
-
-
-
-/*
- * String maps
- */
-
-void evg_disasm_buffer(EvgAsm *self, struct elf_buffer_t *buffer, FILE *f);
-
-
-
-
 /*
  * Class 'EvgAsm'
  */
@@ -66,6 +54,9 @@ CLASS_END(EvgAsm)
 
 void EvgAsmCreate(EvgAsm *self);
 void EvgAsmDestroy(EvgAsm *self);
+
+void EvgAsmDisassembleBinary(EvgAsm *self, char *path);
+void EvgAsmDisassembleOpenGLBinary(EvgAsm *self, char *path, int index);
 
 #endif
 
