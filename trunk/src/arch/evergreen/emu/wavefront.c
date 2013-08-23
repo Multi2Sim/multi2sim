@@ -255,6 +255,7 @@ void EvgWavefrontExecute(EvgWavefront *self)
 	EvgNDRange *ndrange = self->ndrange;
 	EvgWorkGroup *work_group = self->work_group;
 	EvgWorkItem *work_item;
+	EvgEmu *emu = ndrange->emu;
 
 	EvgALUGroup *alu_group;
 	EvgInst *inst;
@@ -301,7 +302,7 @@ void EvgWavefrontExecute(EvgWavefront *self)
 		assert(work_item);
 
 		/* Execute once in wavefront */
-		(*evg_isa_inst_func[inst->info->opcode])(work_item, inst);
+		emu->inst_func[inst->info->opcode](work_item, inst);
 
 		/* If instruction updates the work_item's active mask, update digests */
 		if (inst->info->flags & EvgInstFlagActMask)
@@ -315,7 +316,7 @@ void EvgWavefrontExecute(EvgWavefront *self)
 		}
 
 		/* Stats */
-		asEmu(evg_emu)->instructions++;
+		asEmu(emu)->instructions++;
 		self->inst_count++;
 		self->cf_inst_count++;
 		if (inst->info->flags & EvgInstFlagMem)
@@ -356,13 +357,13 @@ void EvgWavefrontExecute(EvgWavefront *self)
 			for (i = 0; i < alu_group->inst_count; i++)
 			{
 				inst = &alu_group->inst[i];
-				(*evg_isa_inst_func[inst->info->opcode])(work_item, inst);
+				emu->inst_func[inst->info->opcode](work_item, inst);
 			}
 			evg_isa_write_task_commit(work_item);
 		}
 		
 		/* Statistics */
-		asEmu(evg_emu)->instructions++;
+		asEmu(emu)->instructions++;
 		self->inst_count += alu_group->inst_count;
 		self->alu_inst_count += alu_group->inst_count;
 		self->alu_group_count++;
@@ -412,11 +413,11 @@ void EvgWavefrontExecute(EvgWavefront *self)
 		EVG_FOREACH_WORK_ITEM_IN_WAVEFRONT(self, work_item_id)
 		{
 			work_item = ndrange->work_items[work_item_id];
-			(*evg_isa_inst_func[inst->info->opcode])(work_item, inst);
+			emu->inst_func[inst->info->opcode](work_item, inst);
 		}
 
 		/* Statistics */
-		asEmu(evg_emu)->instructions++;
+		asEmu(emu)->instructions++;
 		self->inst_count++;
 		self->tc_inst_count++;
 		if (inst->info->flags & EvgInstFlagMem)
@@ -465,8 +466,8 @@ void EvgWavefrontExecute(EvgWavefront *self)
 			/* Check if ND-Range finished kernel execution */
 			if (ndrange->finished_list_count == ndrange->work_group_count)
 			{
-				assert(DOUBLE_LINKED_LIST_MEMBER(evg_emu, running_ndrange, ndrange));
-				assert(!DOUBLE_LINKED_LIST_MEMBER(evg_emu, finished_ndrange, ndrange));
+				assert(DOUBLE_LINKED_LIST_MEMBER(emu, running_ndrange, ndrange));
+				assert(!DOUBLE_LINKED_LIST_MEMBER(emu, finished_ndrange, ndrange));
 				EvgNDRangeClearState(ndrange, EvgNDRangeRunning);
 				EvgNDRangeSetState(ndrange, EvgNDRangeFinished);
 			}

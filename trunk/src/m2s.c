@@ -2165,7 +2165,7 @@ int main(int argc, char **argv)
 			arm_cpu_read_config,
 			arm_cpu_init, arm_cpu_done);
 	arch_evergreen = arch_register("Evergreen", "evg", evg_sim_kind,
-			evg_emu_init, evg_emu_done,
+			NULL, NULL,
 			evg_gpu_read_config,
 			evg_gpu_init, evg_gpu_done);
 	arch_fermi = arch_register("Fermi", "frm", frm_sim_kind,
@@ -2216,6 +2216,13 @@ int main(int argc, char **argv)
 		arch_set_timing(arch_x86, asTiming(x86_cpu));
 	}
 	arch_set_emu(arch_x86, asEmu(x86_emu));
+
+	/* Evergreen
+	 * FIXME
+	 */
+	evg_asm = new(EvgAsm);
+	evg_emu = new(EvgEmu, evg_asm);
+	arch_set_emu(arch_evergreen, asEmu(evg_emu));
 
 	/* Fermi
 	 * FIXME
@@ -2274,6 +2281,10 @@ int main(int argc, char **argv)
 
 	/* Dump statistics summary */
 	m2s_dump_summary(stderr);
+
+	/* Evergreen */
+	delete(evg_emu);
+	delete(evg_asm);
 
 	/* Fermi */
 	delete(frm_emu);

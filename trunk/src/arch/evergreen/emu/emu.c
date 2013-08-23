@@ -26,13 +26,35 @@
 #include <lib/util/file.h>
 #include <lib/util/list.h>
 #include <lib/util/misc.h>
+#include <lib/util/repos.h>
 #include <lib/util/string.h>
 #include <mem-system/memory.h>
 
 #include "emu.h"
 #include "isa.h"
+#include "machine.h"
 #include "ndrange.h"
 #include "work-group.h"
+
+
+/*
+ * Public
+ */
+
+
+EvgEmu *evg_emu;
+EvgAsm *evg_asm;
+
+long long evg_emu_max_cycles;
+long long evg_emu_max_inst;
+int evg_emu_max_kernels;
+
+char *evg_emu_opencl_binary_name = "";
+char *evg_emu_report_file_name = "";
+FILE *evg_emu_report_file = NULL;
+
+int evg_emu_wavefront_size = 64;
+
 
 
 
@@ -48,6 +70,12 @@ void EvgEmuCreate(EvgEmu *self, EvgAsm *as)
 	/* Initialize */
 	self->as = as;
 
+	/* Instruction execution functions */
+#define DEFINST(_name, _fmt_str, _fmt0, _fmt1, _fmt2, _category, _opcode, _flags) \
+	self->inst_func[EVG_INST_##_name] = evg_isa_##_name##_impl;
+#include <arch/evergreen/asm/asm.dat>
+#undef DEFINST
+
 	/* Memories */
 	self->const_mem = mem_create();
 	self->const_mem->safe = 0;
@@ -58,6 +86,19 @@ void EvgEmuCreate(EvgEmu *self, EvgAsm *as)
 	self->opencl_repo = evg_opencl_repo_create();
 	self->opencl_platform = evg_opencl_platform_create(self);
 	self->opencl_device = evg_opencl_device_create(self);
+
+	/* Repository of deferred tasks */
+	self->write_task_repos = repos_create(sizeof(struct evg_isa_write_task_t),
+		"evg_emu->write_task_repos");
+
+	/* Open report file */
+	if (*evg_emu_report_file_name)
+	{
+		evg_emu_report_file = file_open_for_write(evg_emu_report_file_name);
+		if (!evg_emu_report_file)
+			fatal("%s: cannot open report for Evergreen emulator",
+				evg_emu_report_file_name);
+	}
 
 	/* Virtual functions */
 	asObject(self)->Dump = EvgEmuDump;
@@ -79,6 +120,13 @@ void EvgEmuDestroy(EvgEmu *self)
 	/* Finalize GPU kernel */
 	mem_free(self->const_mem);
 	mem_free(self->global_mem);
+
+	/* Repository of deferred tasks */
+	repos_free(self->write_task_repos);
+
+	/* Emulator report */
+	if (evg_emu_report_file)
+		fclose(evg_emu_report_file);
 }
 
 
@@ -91,7 +139,7 @@ void EvgEmuDump(Object *self, FILE *f)
 
 void EvgEmuDumpSummary(Emu *self, FILE *f)
 {
-	EvgEmu *emu = asEvgEmu(evg_emu);
+	EvgEmu *emu = asEvgEmu(self);
 
 	/* Call parent */
 	EmuDumpSummary(self, f);
@@ -179,55 +227,29 @@ int EvgEmuRun(Emu *self)
 
 
 
-/*
- * Non-Class Stuff
- */
-
-
-EvgEmu *evg_emu;
-EvgAsm *evg_asm;
-
-long long evg_emu_max_cycles;
-long long evg_emu_max_inst;
-int evg_emu_max_kernels;
-
-char *evg_emu_opencl_binary_name = "";
-char *evg_emu_report_file_name = "";
-FILE *evg_emu_report_file = NULL;
-
-int evg_emu_wavefront_size = 64;
-
-
-void evg_emu_init(void)
+void EvgEmuConstMemWrite(EvgEmu *self, int bank, int vector, int elem, void *pvalue)
 {
-	/* Open report file */
-	if (*evg_emu_report_file_name)
-	{
-		evg_emu_report_file = file_open_for_write(evg_emu_report_file_name);
-		if (!evg_emu_report_file)
-			fatal("%s: cannot open report for Evergreen emulator",
-				evg_emu_report_file_name);
-	}
+	unsigned int addr;
 
-	/* Create emulator */
-	evg_asm = new(EvgAsm);
-	evg_emu = new(EvgEmu, evg_asm);
+	/* Mark CB0[0..8].{x,y,z,w} positions as initialized */
+	if (!bank && vector < 9)
+		self->const_mem_cb0_init[vector * 4 + elem] = 1;
 
-	/* Initialize ISA (instruction execution tables...) */
-	evg_isa_init();
+	/* Write */
+	addr = bank * 16384 + vector * 16 + elem * 4;
+	mem_write(self->const_mem, addr, 4, pvalue);
 }
 
 
-void evg_emu_done()
+void EvgEmuConstMemRead(EvgEmu *self, int bank, int vector, int elem, void *pvalue)
 {
-	/* GPU report */
-	if (evg_emu_report_file)
-		fclose(evg_emu_report_file);
+	unsigned int addr;
 
-	/* Finalize ISA */
-	evg_isa_done();
+	/* Warn if a position within CB[0..8].{x,y,z,w} is used uninitialized */
+	if (!bank && vector < 9 && !self->const_mem_cb0_init[vector * 4 + elem])
+		warning("CB0[%d].%c is used uninitialized", vector, "xyzw"[elem]);
 
-	/* Free emulator */
-	delete(evg_emu);
-	delete(evg_asm);
+	/* Read */
+	addr = bank * 16384 + vector * 16 + elem * 4;
+	mem_read(self->const_mem, addr, 4, pvalue);
 }

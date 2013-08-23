@@ -445,7 +445,7 @@ void evg_gpu_init(void)
 		evg_gpu_num_compute_units);
 
 	/* Create GPU */
-	evg_gpu = new(EvgGpu);
+	evg_gpu = new(EvgGpu, evg_emu);
 
 	/* Initializations */
 	evg_periodic_report_init();
@@ -459,7 +459,7 @@ void evg_gpu_init(void)
 void evg_gpu_done(void)
 {
 	/* GPU pipeline report */
-	evg_gpu_dump_report();
+	evg_gpu_dump_report(evg_gpu);
 
 	/* List of removed instructions */
 	evg_gpu_uop_trash_empty();
@@ -481,8 +481,10 @@ void evg_gpu_done(void)
 }
 
 
-void evg_gpu_dump_report(void)
+void evg_gpu_dump_report(EvgGpu *self)
 {
+	EvgEmu *emu = self->emu;
+
 	struct evg_compute_unit_t *compute_unit;
 	struct mod_t *local_mod;
 	int compute_unit_id;
@@ -510,11 +512,11 @@ void evg_gpu_dump_report(void)
 
 	/* Report for device */
 	fprintf(f, ";\n; Simulation Statistics\n;\n\n");
-	inst_per_cycle = asTiming(evg_gpu)->cycle ? (double) asEmu(evg_emu)->instructions
+	inst_per_cycle = asTiming(evg_gpu)->cycle ? (double) asEmu(emu)->instructions
 			/ asTiming(evg_gpu)->cycle : 0.0;
 	fprintf(f, "[ Device ]\n\n");
-	fprintf(f, "NDRangeCount = %d\n", evg_emu->ndrange_count);
-	fprintf(f, "Instructions = %lld\n", asEmu(evg_emu)->instructions);
+	fprintf(f, "NDRangeCount = %d\n", emu->ndrange_count);
+	fprintf(f, "Instructions = %lld\n", asEmu(emu)->instructions);
 	fprintf(f, "Cycles = %lld\n", asTiming(evg_gpu)->cycle);
 	fprintf(f, "InstructionsPerCycle = %.4g\n", inst_per_cycle);
 	fprintf(f, "\n\n");
@@ -615,13 +617,16 @@ void evg_gpu_uop_trash_add(struct evg_uop_t *uop)
  * Class 'EvgGpu'
  */
 
-void EvgGpuCreate(EvgGpu *self)
+void EvgGpuCreate(EvgGpu *self, EvgEmu *emu)
 {
 	struct evg_compute_unit_t *compute_unit;
 	int compute_unit_id;
 
 	/* Parent */
 	TimingCreate(asTiming(self));
+
+	/* Initialize */
+	self->emu = emu;
 
 	/* Frequency */
 	asTiming(self)->frequency = evg_gpu_frequency;
@@ -670,6 +675,7 @@ void EvgGpuDump(Object *self, FILE *f)
 
 void EvgGpuDumpSummary(Timing *self, FILE *f)
 {
+	EvgEmu *emu = asEvgGpu(self)->emu;
 	double inst_per_cycle;
 
 	/* Call parent */
@@ -677,7 +683,7 @@ void EvgGpuDumpSummary(Timing *self, FILE *f)
 
 	/* Additional statistics */
 	inst_per_cycle = asTiming(evg_gpu)->cycle ?
-			(double) asEmu(evg_emu)->instructions
+			(double) asEmu(emu)->instructions
 			/ asTiming(evg_gpu)->cycle : 0.0;
 	fprintf(f, "IPC = %.4g\n", inst_per_cycle);
 }
@@ -686,6 +692,7 @@ void EvgGpuDumpSummary(Timing *self, FILE *f)
 int EvgGpuRun(Timing *self)
 {
 	EvgGpu *gpu = asEvgGpu(self);
+	EvgEmu *emu = gpu->emu;
 
 	EvgNDRange *ndrange;
 
@@ -694,11 +701,11 @@ int EvgGpuRun(Timing *self)
 
 	/* For efficiency when no Evergreen emulation is selected, exit here
 	 * if the list of existing ND-Ranges is empty. */
-	if (!evg_emu->ndrange_list_count)
+	if (!emu->ndrange_list_count)
 		return FALSE;
 
 	/* Start one ND-Range in state 'pending' */
-	while ((ndrange = evg_emu->pending_ndrange_list_head))
+	while ((ndrange = emu->pending_ndrange_list_head))
 	{
 		/* Currently not supported for more than 1 ND-Range */
 		if (gpu->ndrange)
@@ -740,7 +747,7 @@ int EvgGpuRun(Timing *self)
 		esim_finish = esim_finish_evg_max_cycles;
 
 	/* Stop if maximum number of GPU instructions exceeded */
-	if (evg_emu_max_inst && asEmu(evg_emu)->instructions >= evg_emu_max_inst)
+	if (evg_emu_max_inst && asEmu(emu)->instructions >= evg_emu_max_inst)
 		esim_finish = esim_finish_evg_max_inst;
 	
 	/* Stop if there was a simulation stall */
@@ -780,7 +787,7 @@ int EvgGpuRun(Timing *self)
 		EvgNDRangeDump(ndrange, evg_emu_report_file);
 
 		/* Stop if maximum number of kernels reached */
-		if (evg_emu_max_kernels && evg_emu->ndrange_count >= evg_emu_max_kernels)
+		if (evg_emu_max_kernels && emu->ndrange_count >= evg_emu_max_kernels)
 			esim_finish = esim_finish_evg_max_kernels;
 
 		/* Finalize and free ND-Range */
