@@ -56,10 +56,6 @@ struct evg_isa_write_task_t
 };
 
 
-/* Repository for 'struct evg_isa_write_task_t' objects */
-extern struct repos_t *evg_isa_write_task_repos;
-
-
 /* Functions to handle deferred tasks */
 void evg_isa_enqueue_write_lds(EvgWorkItem *work_item,
 	EvgInst *inst, unsigned int addr, unsigned int value,
@@ -137,15 +133,6 @@ extern char *evg_err_isa_note;
 #define EVG_MEM_GDS_WORD2		inst->words[2].mem_gds_word2
 
 
-/* Table of functions implementing implementing the Evergreen ISA */
-typedef void (*evg_isa_inst_func_t)(EvgWorkItem *work_item,
-	EvgInst *inst);
-extern evg_isa_inst_func_t *evg_isa_inst_func;
-
-/* Access to constant memory */
-void evg_isa_const_mem_write(int bank, int vector, int elem, void *value_ptr);
-void evg_isa_const_mem_read(int bank, int vector, int elem, void *value_ptr);
-
 /* For ALU clauses */
 void evg_isa_alu_clause_start(EvgWavefront *wavefront);
 void evg_isa_alu_clause_end(EvgWavefront *wavefront);
@@ -173,9 +160,6 @@ float evg_isa_read_op_src_float(EvgWorkItem *work_item,
 	EvgInst *inst, int src_idx);
 
 EvgInst *evg_isa_get_alu_inst(EvgALUGroup *alu_group, EvgInstAlu alu);
-
-void evg_isa_init(void);
-void evg_isa_done(void);
 
 
 #endif

@@ -522,6 +522,7 @@ void evg_isa_MEM_RAT_impl(EvgWorkItem *work_item, EvgInst *inst)
 {
 	EvgWavefront *wavefront = work_item->wavefront;
 	EvgNDRange *ndrange = work_item->ndrange;
+	EvgEmu *emu = ndrange->emu;
 
 	switch (W0.rat_inst)
 	{
@@ -531,14 +532,14 @@ void evg_isa_MEM_RAT_impl(EvgWorkItem *work_item, EvgInst *inst)
 		/* FIXME Need to support multiple elements (multi-channel images) */
 	case 2:
 	{
-		uint32_t addr;
+		unsigned int addr;
 		EvgInstReg value;
 
 		int work_item_id;
 		int i;
 		int uav;
 		struct evg_opencl_mem_t *mem;
-		uint32_t base_addr;
+		unsigned int base_addr;
 
 		EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W0.rat_index_mode, 0);
 		EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W0.elem_size, 0);
@@ -609,7 +610,7 @@ void evg_isa_MEM_RAT_impl(EvgWorkItem *work_item, EvgInst *inst)
 				value.as_uint = evg_isa_read_gpr(work_item, W0.rw_gpr, W0.rr, i, 0);
 
 				/* FIXME: leave gaps when intermediate 'comp_mask' bits are not set? */
-				mem_write(evg_emu->global_mem, addr + i * 4, 4, &value);
+				mem_write(emu->global_mem, addr + i * 4, 4, &value);
 				evg_isa_debug(",");
 				if (debug_status(evg_isa_debug_category))
 					EvgInstDumpGpr(W0.rw_gpr, W0.rr, i, 0, debug_file(evg_isa_debug_category));
@@ -637,6 +638,7 @@ void evg_isa_MEM_RAT_CACHELESS_impl(EvgWorkItem *work_item, EvgInst *inst)
 {
 	EvgWavefront *wavefront = work_item->wavefront;
 	EvgNDRange *ndrange = work_item->ndrange;
+	EvgEmu *emu = ndrange->emu;
 
 	switch (W0.rat_inst)
 	{
@@ -645,7 +647,7 @@ void evg_isa_MEM_RAT_CACHELESS_impl(EvgWorkItem *work_item, EvgInst *inst)
 	case 2:
 	{
 		EvgInstReg value;
-		uint32_t addr;
+		unsigned int addr;
 
 		int work_item_id;
 		int i;
@@ -706,7 +708,7 @@ void evg_isa_MEM_RAT_CACHELESS_impl(EvgWorkItem *work_item, EvgInst *inst)
 				value.as_uint = evg_isa_read_gpr(work_item, W0.rw_gpr, W0.rr, i, 0);
 
 				/* FIXME: leave gaps when intermediate 'comp_mask' bits are not set? */
-				mem_write(evg_emu->global_mem, addr + i * 4, 4, &value);
+				mem_write(emu->global_mem, addr + i * 4, 4, &value);
 				evg_isa_debug(",");
 				if (debug_status(evg_isa_debug_category))
 					EvgInstDumpGpr(W0.rw_gpr, W0.rr, i, 0, debug_file(evg_isa_debug_category));
@@ -1284,7 +1286,7 @@ void evg_isa_FLOOR_impl(EvgWorkItem *work_item, EvgInst *inst)
 void evg_isa_ASHR_INT_impl(EvgWorkItem *work_item, EvgInst *inst)
 {
 	int32_t src0, dst;
-	uint32_t src1;
+	unsigned int src1;
 
 	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
 	src1 = evg_isa_read_op_src_int(work_item, inst, 1);
@@ -1298,7 +1300,7 @@ void evg_isa_ASHR_INT_impl(EvgWorkItem *work_item, EvgInst *inst)
 
 void evg_isa_LSHR_INT_impl(EvgWorkItem *work_item, EvgInst *inst)
 {
-	uint32_t src0, src1, dst;
+	unsigned int src0, src1, dst;
 
 	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
 	src1 = evg_isa_read_op_src_int(work_item, inst, 1);
@@ -1309,7 +1311,7 @@ void evg_isa_LSHR_INT_impl(EvgWorkItem *work_item, EvgInst *inst)
 
 void evg_isa_LSHL_INT_impl(EvgWorkItem *work_item, EvgInst *inst)
 {
-	uint32_t src0, src1, dst;
+	unsigned int src0, src1, dst;
 
 	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
 	src1 = evg_isa_read_op_src_int(work_item, inst, 1);
@@ -1320,7 +1322,7 @@ void evg_isa_LSHL_INT_impl(EvgWorkItem *work_item, EvgInst *inst)
 
 void evg_isa_MOV_impl(EvgWorkItem *work_item, EvgInst *inst)
 {
-	uint32_t value;
+	unsigned int value;
 	value = evg_isa_read_op_src_int(work_item, inst, 0);
 	evg_isa_enqueue_write_dest(work_item, inst, value);
 }
@@ -1543,7 +1545,7 @@ void evg_isa_KILLNE_impl(EvgWorkItem *work_item, EvgInst *inst)
 
 void evg_isa_AND_INT_impl(EvgWorkItem *work_item, EvgInst *inst)
 {
-	uint32_t src0, src1, dst;
+	unsigned int src0, src1, dst;
 
 	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
 	src1 = evg_isa_read_op_src_int(work_item, inst, 1);
@@ -1554,7 +1556,7 @@ void evg_isa_AND_INT_impl(EvgWorkItem *work_item, EvgInst *inst)
 
 void evg_isa_OR_INT_impl(EvgWorkItem *work_item, EvgInst *inst)
 {
-	uint32_t src0, src1, dst;
+	unsigned int src0, src1, dst;
 
 	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
 	src1 = evg_isa_read_op_src_int(work_item, inst, 1);
@@ -1565,7 +1567,7 @@ void evg_isa_OR_INT_impl(EvgWorkItem *work_item, EvgInst *inst)
 
 void evg_isa_XOR_INT_impl(EvgWorkItem *work_item, EvgInst *inst)
 {
-	uint32_t src0, src1, dst;
+	unsigned int src0, src1, dst;
 
 	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
 	src1 = evg_isa_read_op_src_int(work_item, inst, 1);
@@ -1582,7 +1584,7 @@ void evg_isa_NOT_INT_impl(EvgWorkItem *work_item, EvgInst *inst)
 
 void evg_isa_ADD_INT_impl(EvgWorkItem *work_item, EvgInst *inst)
 {
-	uint32_t src0, src1, dst;
+	unsigned int src0, src1, dst;
 
 	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
 	src1 = evg_isa_read_op_src_int(work_item, inst, 1);
@@ -1593,7 +1595,7 @@ void evg_isa_ADD_INT_impl(EvgWorkItem *work_item, EvgInst *inst)
 
 void evg_isa_SUB_INT_impl(EvgWorkItem *work_item, EvgInst *inst)
 {
-	uint32_t src0, src1, dst;
+	unsigned int src0, src1, dst;
 
 	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
 	src1 = evg_isa_read_op_src_int(work_item, inst, 1);
@@ -1626,7 +1628,7 @@ void evg_isa_MIN_INT_impl(EvgWorkItem *work_item, EvgInst *inst)
 
 void evg_isa_MAX_UINT_impl(EvgWorkItem *work_item, EvgInst *inst)
 {
-	uint32_t src0, src1, dst;
+	unsigned int src0, src1, dst;
 
 	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
 	src1 = evg_isa_read_op_src_int(work_item, inst, 1);
@@ -1637,7 +1639,7 @@ void evg_isa_MAX_UINT_impl(EvgWorkItem *work_item, EvgInst *inst)
 
 void evg_isa_MIN_UINT_impl(EvgWorkItem *work_item, EvgInst *inst)
 {
-	uint32_t src0, src1, dst;
+	unsigned int src0, src1, dst;
 
 	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
 	src1 = evg_isa_read_op_src_int(work_item, inst, 1);
@@ -1650,7 +1652,7 @@ void evg_isa_MIN_UINT_impl(EvgWorkItem *work_item, EvgInst *inst)
 #define W1 EVG_ALU_WORD1_OP2
 void evg_isa_SETE_INT_impl(EvgWorkItem *work_item, EvgInst *inst)
 {
-	uint32_t src0, src1;
+	unsigned int src0, src1;
 	int32_t dst;
 	int cond;
 
@@ -1736,7 +1738,7 @@ void evg_isa_SETNE_INT_impl(EvgWorkItem *work_item, EvgInst *inst)
 #define W1 EVG_ALU_WORD1_OP2
 void evg_isa_SETGT_UINT_impl(EvgWorkItem *work_item, EvgInst *inst)
 {
-	uint32_t src0, src1;
+	unsigned int src0, src1;
 	int32_t dst;
 	int cond;
 
@@ -1757,7 +1759,7 @@ void evg_isa_SETGT_UINT_impl(EvgWorkItem *work_item, EvgInst *inst)
 #define W1 EVG_ALU_WORD1_OP2
 void evg_isa_SETGE_UINT_impl(EvgWorkItem *work_item, EvgInst *inst)
 {
-	uint32_t src0, src1;
+	unsigned int src0, src1;
 	int32_t dst;
 	int cond;
 
@@ -2201,8 +2203,8 @@ void evg_isa_RECIP_INT_impl(EvgWorkItem *work_item, EvgInst *inst)
 
 void evg_isa_RECIP_UINT_impl(EvgWorkItem *work_item, EvgInst *inst)
 {
-	uint32_t src;
-	uint32_t dst;
+	unsigned int src;
+	unsigned int dst;
 
 	src = evg_isa_read_op_src_int(work_item, inst, 0);
 	dst = 0xffffffff / src;
@@ -2243,7 +2245,7 @@ void evg_isa_SQRT_64_impl(EvgWorkItem *work_item, EvgInst *inst)
 void evg_isa_FLT_TO_UINT_impl(EvgWorkItem *work_item, EvgInst *inst)
 {
 	float src;
-	uint32_t dst;
+	unsigned int dst;
 	
 	src = evg_isa_read_op_src_float(work_item, inst, 0);
 	if (isinf(src) == 1)
@@ -2269,7 +2271,7 @@ void evg_isa_INT_TO_FLT_impl(EvgWorkItem *work_item, EvgInst *inst)
 
 void evg_isa_UINT_TO_FLT_impl(EvgWorkItem *work_item, EvgInst *inst)
 {
-	uint32_t src0;
+	unsigned int src0;
 	float dst;
 
 	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
@@ -2959,7 +2961,7 @@ void evg_isa_BFE_INT_impl(EvgWorkItem *work_item, EvgInst *inst)
 void evg_isa_BFI_INT_impl(EvgWorkItem *work_item, EvgInst *inst)
 {
 
-	uint32_t src0, src1, src2, dst;
+	unsigned int src0, src1, src2, dst;
 
 	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
 	src1 = evg_isa_read_op_src_int(work_item, inst, 1);
@@ -3087,7 +3089,7 @@ void evg_isa_LDS_IDX_OP_impl(EvgWorkItem *work_item, EvgInst *inst)
 	 *   DS(tmp) = src1 */
 	case 14:
 	{
-		uint32_t dst, src0, src1, tmp;
+		unsigned int dst, src0, src1, tmp;
 
 		dst = op0;
 		src0 = op1;
@@ -3113,7 +3115,7 @@ void evg_isa_LDS_IDX_OP_impl(EvgWorkItem *work_item, EvgInst *inst)
 	/* DS_INST_BYTE_WRITE: 1A1D BYTEWRITE (dst,src) : DS(dst) = src[7:0] */
 	case 18:
 	{
-		uint32_t src, dst; 
+		unsigned int src, dst;
 		src = op1;
 		dst = op0;
 
@@ -3130,7 +3132,7 @@ void evg_isa_LDS_IDX_OP_impl(EvgWorkItem *work_item, EvgInst *inst)
 	/* DS_INST_SHORT_WRITE: 1A1D SHORTWRITE (dst,src) : DS(dst) = src[15:0] */
 	case 19:
 	{
-		uint32_t src, dst;
+		unsigned int src, dst;
 		src = op1;
 		dst = op0;
 
@@ -3223,7 +3225,7 @@ void evg_isa_LDS_IDX_OP_impl(EvgWorkItem *work_item, EvgInst *inst)
 	case 55: 
 	{
 		unsigned char value;
-		uint32_t *pvalue_24h0;
+		unsigned int *pvalue_24h0;
 
 		mem_read(local_mem, op0, 1, &value);
 
@@ -3268,7 +3270,7 @@ void evg_isa_LDS_IDX_OP_impl(EvgWorkItem *work_item, EvgInst *inst)
 	case 57: 
 	{
 		unsigned short value;
-		uint32_t *pvalue_16h0;
+		unsigned int *pvalue_16h0;
 
 		mem_read(local_mem, op0, 2, &value);
 
@@ -3373,7 +3375,7 @@ void evg_isa_CNDGE_impl(EvgWorkItem *work_item, EvgInst *inst)
 
 void evg_isa_CNDE_INT_impl(EvgWorkItem *work_item, EvgInst *inst)
 {
-	uint32_t src0, src1, src2, dst;
+	unsigned int src0, src1, src2, dst;
 
 	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
 	src1 = evg_isa_read_op_src_int(work_item, inst, 1);
@@ -3420,6 +3422,7 @@ void evg_isa_FETCH_impl(EvgWorkItem *work_item, EvgInst *inst)
 {
 	EvgWavefront *wavefront = work_item->wavefront;
 	EvgNDRange *ndrange = work_item->ndrange;
+	EvgEmu *emu = ndrange->emu;
 
 	unsigned int addr;
 	unsigned int base_addr;
@@ -3643,7 +3646,7 @@ void evg_isa_FETCH_impl(EvgWorkItem *work_item, EvgInst *inst)
 
 	/* FIXME The number of bytes to read is defined by mega_fetch, but we currently
 	 * cannot handle cases where num_elem*elem_size != mega_fetch */
-	mem_read(evg_emu->global_mem, addr + W2.offset, num_elem * elem_size, value);
+	mem_read(emu->global_mem, addr + W2.offset, num_elem * elem_size, value);
 
 	/* Record global memory access */
 	wavefront->global_mem_read = 1;
@@ -3776,6 +3779,7 @@ void evg_isa_SAMPLE_impl(EvgWorkItem *work_item, EvgInst *inst)
 {
 	EvgWavefront *wavefront = work_item->wavefront;
 	EvgNDRange *ndrange = work_item->ndrange;
+	EvgEmu *emu = ndrange->emu;
 
 	unsigned int base_addr;
 	unsigned int pixel_size;
@@ -3828,9 +3832,9 @@ void evg_isa_SAMPLE_impl(EvgWorkItem *work_item, EvgInst *inst)
 	/* Calculate read address */
 	base_addr = image->device_ptr;
 	addr.as_uint = evg_isa_read_gpr(work_item, W0.src_gpr, 0, 0, 0);  /* FIXME Always reads from X */ 
-	addr.as_uint = base_addr + (uint32_t) round(addr.as_float) * pixel_size;
+	addr.as_uint = base_addr + (unsigned int) round(addr.as_float) * pixel_size;
 
-	mem_read(evg_emu->global_mem, addr.as_uint, pixel_size, &value);
+	mem_read(emu->global_mem, addr.as_uint, pixel_size, &value);
 
 	evg_isa_debug("  t%d:read(%u)", work_item->id, addr.as_uint);
 	evg_isa_debug("<=(%d,%gf) ", value.as_int, value.as_float);

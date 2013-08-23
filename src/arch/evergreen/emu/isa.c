@@ -31,6 +31,7 @@
 #include "emu.h"
 #include "isa.h"
 #include "machine.h"
+#include "ndrange.h"
 #include "work-item.h"
 #include "work-group.h"
 
@@ -39,83 +40,8 @@
  * Global Variables
  */
 
-/* Repository of deferred tasks */
-struct repos_t *evg_isa_write_task_repos;
-
-/* Instruction execution table */
-evg_isa_inst_func_t *evg_isa_inst_func;
-
 /* Debug */
 int evg_isa_debug_category;
-
-
-
-
-/*
- * Initialization, finalization
- */
-
-
-/* Initialization */
-void evg_isa_init()
-{
-	/* Initialize */
-	evg_isa_inst_func = xcalloc(EvgInstOpcodeCount, sizeof(evg_isa_inst_func_t));
-#define DEFINST(_name, _fmt_str, _fmt0, _fmt1, _fmt2, _category, _opcode, _flags) \
-	evg_isa_inst_func[EVG_INST_##_name] = evg_isa_##_name##_impl;
-#include <arch/evergreen/asm/asm.dat>
-#undef DEFINST
-
-	/* Repository of deferred tasks */
-	evg_isa_write_task_repos = repos_create(sizeof(struct evg_isa_write_task_t),
-		"gpu_isa_write_task_repos");
-}
-
-
-void evg_isa_done()
-{
-	/* Instruction execution table */
-	free(evg_isa_inst_func);
-
-	/* Repository of deferred tasks */
-	repos_free(evg_isa_write_task_repos);
-}
-
-
-
-
-/*
- * Constant Memory
- */
-
-void evg_isa_const_mem_write(int bank, int vector, int elem, void *pvalue)
-{
-	unsigned int addr;
-
-	/* Mark CB0[0..8].{x,y,z,w} positions as initialized */
-	if (!bank && vector < 9)
-		evg_emu->const_mem_cb0_init[vector * 4 + elem] = 1;
-
-	/* Write */
-	addr = bank * 16384 + vector * 16 + elem * 4;
-	mem_write(evg_emu->const_mem, addr, 4, pvalue);
-}
-
-
-void evg_isa_const_mem_read(int bank, int vector, int elem, void *pvalue)
-{
-	unsigned int addr;
-
-	/* Warn if a position within CB[0..8].{x,y,z,w} is used uninitialized */
-	if (!bank && vector < 9 && !evg_emu->const_mem_cb0_init[vector * 4 + elem])
-		warning("CB0[%d].%c is used uninitialized", vector, "xyzw"[elem]);
-	
-	/* Read */
-	addr = bank * 16384 + vector * 16 + elem * 4;
-	mem_read(evg_emu->const_mem, addr, 4, pvalue);
-}
-
-
 
 
 
@@ -259,6 +185,8 @@ static unsigned int evg_isa_read_op_src_common(EvgWorkItem *work_item,
 	EvgInst *inst, int src_idx, int *neg_ptr, int *abs_ptr)
 {
 	EvgWavefront *wavefront = work_item->wavefront;
+	EvgNDRange *ndrange = work_item->ndrange;
+	EvgEmu *emu = ndrange->emu;
 
 	int sel;
 	int rel;
@@ -294,7 +222,7 @@ static unsigned int evg_isa_read_op_src_common(EvgWorkItem *work_item,
 
 		//EVG_ISA_ARG_NOT_SUPPORTED_NEQ(kcache_mode, 1);
 		EVG_ISA_ARG_NOT_SUPPORTED_RANGE(chan, 0, 3);
-		evg_isa_const_mem_read(kcache_bank, kcache_addr * 16 + sel - 128, chan, &value);
+		EvgEmuConstMemRead(emu, kcache_bank, kcache_addr * 16 + sel - 128, chan, &value);
 
 		return value;
 	}
@@ -314,7 +242,7 @@ static unsigned int evg_isa_read_op_src_common(EvgWorkItem *work_item,
 
 		//EVG_ISA_ARG_NOT_SUPPORTED_NEQ(kcache_mode, 1);
 		EVG_ISA_ARG_NOT_SUPPORTED_RANGE(chan, 0, 3);
-		evg_isa_const_mem_read(kcache_bank, kcache_addr * 16 + sel - 160, chan, &value);
+		EvgEmuConstMemRead(emu, kcache_bank, kcache_addr * 16 + sel - 160, chan, &value);
 		return value;
 	}
 
@@ -495,6 +423,9 @@ void evg_isa_enqueue_write_lds(EvgWorkItem *work_item,
 	EvgInst *inst, unsigned int addr, unsigned int value,
 	int value_size)
 {
+	EvgNDRange *ndrange = work_item->ndrange;
+	EvgEmu *emu = ndrange->emu;
+
 	struct evg_isa_write_task_t *wt;
 
 	/* Inactive pixel not enqueued */
@@ -502,7 +433,7 @@ void evg_isa_enqueue_write_lds(EvgWorkItem *work_item,
 		return;
 	
 	/* Create task */
-	wt = repos_create_object(evg_isa_write_task_repos);
+	wt = repos_create_object(emu->write_task_repos);
 	wt->work_item = work_item;
 	wt->kind = EVG_ISA_WRITE_TASK_WRITE_LDS;
 	wt->inst = inst;
@@ -519,6 +450,9 @@ void evg_isa_enqueue_write_lds(EvgWorkItem *work_item,
 void evg_isa_enqueue_write_dest(EvgWorkItem *work_item,
 	EvgInst *inst, unsigned int value)
 {
+	EvgNDRange *ndrange = work_item->ndrange;
+	EvgEmu *emu = ndrange->emu;
+
 	struct evg_isa_write_task_t *wt;
 
 	/* If pixel is inactive, do not enqueue the task */
@@ -528,7 +462,7 @@ void evg_isa_enqueue_write_dest(EvgWorkItem *work_item,
 
 	/* Fields 'dst_gpr', 'dst_rel', and 'dst_chan' are at the same bit positions in both
 	 * EVG_ALU_WORD1_OP2 and EVG_ALU_WORD1_OP3 formats. */
-	wt = repos_create_object(evg_isa_write_task_repos);
+	wt = repos_create_object(emu->write_task_repos);
 	wt->work_item = work_item;
 	wt->kind = EVG_ISA_WRITE_TASK_WRITE_DEST;
 	wt->inst = inst;
@@ -562,6 +496,9 @@ void evg_isa_enqueue_push_before(EvgWorkItem *work_item,
 	EvgInst *inst)
 {
 	EvgWavefront *wavefront = work_item->wavefront;
+	EvgNDRange *ndrange = work_item->ndrange;
+	EvgEmu *emu = ndrange->emu;
+
 	struct evg_isa_write_task_t *wt;
 
 	/* Do only if instruction initiating ALU clause is ALU_PUSH_BEFORE */
@@ -569,7 +506,7 @@ void evg_isa_enqueue_push_before(EvgWorkItem *work_item,
 		return;
 
 	/* Create and enqueue task */
-	wt = repos_create_object(evg_isa_write_task_repos);
+	wt = repos_create_object(emu->write_task_repos);
 	wt->work_item = work_item;
 	wt->kind = EVG_ISA_WRITE_TASK_PUSH_BEFORE;
 	wt->inst = inst;
@@ -580,6 +517,9 @@ void evg_isa_enqueue_push_before(EvgWorkItem *work_item,
 void evg_isa_enqueue_pred_set(EvgWorkItem *work_item,
 	EvgInst *inst, int cond)
 {
+	EvgNDRange *ndrange = work_item->ndrange;
+	EvgEmu *emu = ndrange->emu;
+
 	struct evg_isa_write_task_t *wt;
 
 	/* If pixel is inactive, predicate is not changed */
@@ -589,7 +529,7 @@ void evg_isa_enqueue_pred_set(EvgWorkItem *work_item,
 		return;
 	
 	/* Create and enqueue task */
-	wt = repos_create_object(evg_isa_write_task_repos);
+	wt = repos_create_object(emu->write_task_repos);
 	wt->work_item = work_item;
 	wt->kind = EVG_ISA_WRITE_TASK_SET_PRED;
 	wt->inst = inst;
@@ -603,6 +543,8 @@ void evg_isa_write_task_commit(EvgWorkItem *work_item)
 	struct linked_list_t *task_list = work_item->write_task_list;
 	EvgWavefront *wavefront = work_item->wavefront;
 	EvgWorkGroup *work_group = work_item->work_group;
+	EvgNDRange *ndrange = work_item->ndrange;
+	EvgEmu *emu = ndrange->emu;
 
 	struct evg_isa_write_task_t *wt;
 	EvgInst *inst;
@@ -670,7 +612,7 @@ void evg_isa_write_task_commit(EvgWorkItem *work_item)
 		}
 
 		/* Done with this task */
-		repos_free_object(evg_isa_write_task_repos, wt);
+		repos_free_object(emu->write_task_repos, wt);
 		linked_list_remove(task_list);
 	}
 
@@ -722,7 +664,7 @@ void evg_isa_write_task_commit(EvgWorkItem *work_item)
 		}
 		
 		/* Done with task */
-		repos_free_object(evg_isa_write_task_repos, wt);
+		repos_free_object(emu->write_task_repos, wt);
 		linked_list_remove(task_list);
 	}
 
