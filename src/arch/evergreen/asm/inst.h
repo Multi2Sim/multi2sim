@@ -28,6 +28,24 @@
  * Class 'EvgInst'
  */
 
+#define EVG_INST_GPR_NUM_ELEM  5
+typedef struct
+{
+	/* x, y, z, w, t */
+	unsigned int elem[EVG_INST_GPR_NUM_ELEM];
+} EvgInstGpr;
+
+
+typedef enum
+{
+	EvgInstClauseInvalid = 0,
+	EvgInstClauseCF,  /* Control-flow */
+	EvgInstClauseALU,  /* ALU clause */
+	EvgInstClauseTEX,  /* Fetch trough a Texture Cache Clause */
+	EvgInstClauseVC  /* Fetch through a Vertex Cache Clause */
+} EvgInstClause;
+
+
 typedef union
 {
 	signed int as_int;

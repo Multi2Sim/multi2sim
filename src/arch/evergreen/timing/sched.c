@@ -46,9 +46,9 @@ enum evg_gpu_sched_policy_t evg_gpu_sched_policy;
  * Private Functions
  */
 
-static struct evg_wavefront_t *evg_schedule_round_robin(struct evg_compute_unit_t *compute_unit)
+static EvgWavefront *evg_schedule_round_robin(struct evg_compute_unit_t *compute_unit)
 {
-	struct evg_wavefront_t *wavefront, *temp_wavefront;
+	EvgWavefront *wavefront, *temp_wavefront;
 	struct linked_list_t *wavefront_pool = compute_unit->wavefront_pool;
 
 	/* Select current position in pool as initial candidate wavefront */
@@ -76,15 +76,15 @@ static struct evg_wavefront_t *evg_schedule_round_robin(struct evg_compute_unit_
 	}
 
 	/* Wavefront found, remove from pool and return. */
-	assert(wavefront->clause_kind == EVG_CLAUSE_CF);
+	assert(wavefront->clause_kind == EvgInstClauseCF);
 	linked_list_remove(wavefront_pool);
 	return wavefront;
 }
 
 
-static struct evg_wavefront_t *evg_schedule_greedy(struct evg_compute_unit_t *compute_unit)
+static EvgWavefront *evg_schedule_greedy(struct evg_compute_unit_t *compute_unit)
 {
-	struct evg_wavefront_t *wavefront, *temp_wavefront;
+	EvgWavefront *wavefront, *temp_wavefront;
 	struct linked_list_t *wavefront_pool = compute_unit->wavefront_pool;
 
 	/* Check all candidates */
@@ -112,7 +112,7 @@ static struct evg_wavefront_t *evg_schedule_greedy(struct evg_compute_unit_t *co
 		return NULL;
 
 	/* Wavefront found, remove from pool and return. */
-	assert(temp_wavefront->clause_kind == EVG_CLAUSE_CF);
+	assert(temp_wavefront->clause_kind == EvgInstClauseCF);
 	linked_list_find(wavefront_pool, temp_wavefront);
 	assert(!wavefront_pool->error_code);
 	linked_list_remove(wavefront_pool);
@@ -130,9 +130,9 @@ static struct evg_wavefront_t *evg_schedule_greedy(struct evg_compute_unit_t *co
 /* Return a wavefront from the wavefront pool in the compute unit.
  * If a wavefront was found, it will be extracted from the wavefront pool.
  * If no valid candidate is found in the wavefront pool, the function returns NULL. */
-struct evg_wavefront_t *evg_schedule(struct evg_compute_unit_t *compute_unit)
+EvgWavefront *evg_schedule(struct evg_compute_unit_t *compute_unit)
 {
-	struct evg_wavefront_t *wavefront;
+	EvgWavefront *wavefront;
 
 	/* If there is no wavefront in the pool, return NULL. */
 	if (!linked_list_count(compute_unit->wavefront_pool))

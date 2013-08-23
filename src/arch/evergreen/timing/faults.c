@@ -73,7 +73,7 @@ char *evg_faults_debug_file_name = "";
  */
 
 static int evg_stack_faults_is_odep(struct evg_uop_t *uop,
-	struct evg_wavefront_t *wavefront, int lo_reg)
+	EvgWavefront *wavefront, int lo_reg)
 {
 	int i;
 
@@ -87,7 +87,7 @@ static int evg_stack_faults_is_odep(struct evg_uop_t *uop,
 
 
 static int evg_stack_faults_is_idep(struct evg_uop_t *uop,
-	struct evg_wavefront_t *wavefront, int lo_reg)
+	EvgWavefront *wavefront, int lo_reg)
 {
 	int i;
 
@@ -193,7 +193,7 @@ void evg_faults_init(void)
 			if (!line_ptr)
 				goto wrong_format;
 			fault->active_mask_id = atoi(line_ptr);
-			if (fault->active_mask_id >= EVG_MAX_STACK_SIZE)
+			if (fault->active_mask_id >= EVG_WAVEFRONT_STACK_SIZE)
 				fatal("%s: line %d: invalid active mask ID",
 					evg_faults_file_name, line_num);
 
@@ -302,9 +302,9 @@ void evg_faults_insert(void)
 
 		case evg_fault_ams:
 		{
-			struct evg_work_group_t *work_group;
-			struct evg_wavefront_t *wavefront;
-			struct evg_work_item_t *work_item;
+			EvgWorkGroup *work_group;
+			EvgWavefront *wavefront;
+			EvgWorkItem *work_item;
 
 			int work_group_id;  /* in compute unit */
 			int wavefront_id;  /* in compute unit */
@@ -375,14 +375,14 @@ void evg_faults_insert(void)
 			struct evg_opencl_kernel_t *kernel = evg_gpu->ndrange->kernel;
 
 			int work_group_id_in_compute_unit;
-			struct evg_work_group_t *work_group;
-			struct evg_wavefront_t *wavefront;
+			EvgWorkGroup *work_group;
+			EvgWavefront *wavefront;
 
 			int num_registers_per_work_group;
 
 			int work_item_id_in_compute_unit;
 			int work_item_id_in_work_group;
-			struct evg_work_item_t *work_item;
+			EvgWorkItem *work_item;
 
 			struct linked_list_t *fetch_queue;
 			struct evg_uop_t *inst_buffer;
@@ -515,7 +515,7 @@ void evg_faults_insert(void)
 
 		case evg_fault_mem:
 		{
-			struct evg_work_group_t *work_group;
+			EvgWorkGroup *work_group;
 
 			int work_group_id_in_compute_unit;
 			unsigned char value;

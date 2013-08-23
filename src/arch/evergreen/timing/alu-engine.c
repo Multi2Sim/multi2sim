@@ -49,9 +49,9 @@ static void evg_alu_engine_fetch(struct evg_compute_unit_t *compute_unit)
 	EvgALUGroup *alu_group;
 	struct evg_uop_t *cf_uop, *uop, *producer;
 	struct evg_work_item_uop_t *work_item_uop;
-	struct evg_wavefront_t *wavefront;
+	EvgWavefront *wavefront;
 
-	struct evg_work_item_t *work_item;
+	EvgWorkItem *work_item;
 	int work_item_id;
 
 	int idep, odep;
@@ -63,14 +63,14 @@ static void evg_alu_engine_fetch(struct evg_compute_unit_t *compute_unit)
 	if (!cf_uop)
 		return;
 	wavefront = cf_uop->wavefront;
-	assert(wavefront->clause_kind == EVG_CLAUSE_ALU);
+	assert(wavefront->clause_kind == EvgInstClauseALU);
 
 	/* If fetch queue is full, cannot fetch until space is made */
 	if (compute_unit->alu_engine.fetch_queue_length >= evg_gpu_alu_engine_fetch_queue_size)
 		return;
 
 	/* Emulate instruction and create uop */
-	evg_wavefront_execute(wavefront);
+	EvgWavefrontExecute(wavefront);
 	alu_group = wavefront->alu_group;
 	uop = evg_uop_create_from_alu_group(alu_group);
 	uop->wavefront = wavefront;
@@ -80,7 +80,7 @@ static void evg_alu_engine_fetch(struct evg_compute_unit_t *compute_unit)
 	uop->id_in_compute_unit = compute_unit->gpu_uop_id_counter++;
 	uop->subwavefront_count = (wavefront->work_item_count + evg_gpu_num_stream_cores - 1)
 		/ evg_gpu_num_stream_cores;
-	uop->last = wavefront->clause_kind != EVG_CLAUSE_ALU;
+	uop->last = wavefront->clause_kind != EvgInstClauseALU;
 	uop->length = alu_group->inst_count * 8 + alu_group->literal_count * 4;
 	uop->local_mem_read = wavefront->local_mem_read;
 	uop->local_mem_write = wavefront->local_mem_write;
@@ -223,7 +223,7 @@ static void evg_alu_engine_decode(struct evg_compute_unit_t *compute_unit)
 
 static void evg_alu_engine_read(struct evg_compute_unit_t *compute_unit)
 {
-	struct evg_work_item_t *work_item;
+	EvgWorkItem *work_item;
 	int work_item_id;
 
 	struct evg_uop_t *uop;
@@ -309,8 +309,8 @@ static void evg_alu_engine_write(struct evg_compute_unit_t *compute_unit)
 {
 	struct linked_list_t *finished_queue = compute_unit->alu_engine.finished_queue;
 
-	struct evg_wavefront_t *wavefront;
-	struct evg_work_item_t *work_item;
+	EvgWavefront *wavefront;
+	EvgWorkItem *work_item;
 	int work_item_id;
 
 	struct evg_uop_t *cf_uop, *uop, *consumer;
@@ -388,7 +388,7 @@ static void evg_alu_engine_write(struct evg_compute_unit_t *compute_unit)
 			/* Last instruction in clause.
 			 * Since uops might get here out of order, the condition to check if
 			 * instruction is the last cannot be 'uop->last'. */
-			if (wavefront->clause_kind != EVG_CLAUSE_ALU && !wavefront->alu_engine_in_flight)
+			if (wavefront->clause_kind != EvgInstClauseALU && !wavefront->alu_engine_in_flight)
 			{
 				/* Extract CF uop from finished queue. Since instruction execution may
 				 * vary in latency, finished CF uop may not be the one at the head of the queue. */

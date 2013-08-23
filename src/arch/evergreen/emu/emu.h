@@ -40,26 +40,26 @@ CLASS_BEGIN(EvgEmu, Emu)
 	struct evg_opencl_device_t *opencl_device;
 
 	/* List of ND-Ranges */
-	struct evg_ndrange_t *ndrange_list_head;
-	struct evg_ndrange_t *ndrange_list_tail;
+	EvgNDRange *ndrange_list_head;
+	EvgNDRange *ndrange_list_tail;
 	int ndrange_list_count;
 	int ndrange_list_max;
 
 	/* List of pending ND-Ranges */
-	struct evg_ndrange_t *pending_ndrange_list_head;
-	struct evg_ndrange_t *pending_ndrange_list_tail;
+	EvgNDRange *pending_ndrange_list_head;
+	EvgNDRange *pending_ndrange_list_tail;
 	int pending_ndrange_list_count;
 	int pending_ndrange_list_max;
 
 	/* List of running ND-Ranges */
-	struct evg_ndrange_t *running_ndrange_list_head;
-	struct evg_ndrange_t *running_ndrange_list_tail;
+	EvgNDRange *running_ndrange_list_head;
+	EvgNDRange *running_ndrange_list_tail;
 	int running_ndrange_list_count;
 	int running_ndrange_list_max;
 
 	/* List of finished ND-Ranges */
-	struct evg_ndrange_t *finished_ndrange_list_head;
-	struct evg_ndrange_t *finished_ndrange_list_tail;
+	EvgNDRange *finished_ndrange_list_head;
+	EvgNDRange *finished_ndrange_list_tail;
 	int finished_ndrange_list_count;
 	int finished_ndrange_list_max;
 

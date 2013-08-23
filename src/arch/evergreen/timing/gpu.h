@@ -85,7 +85,7 @@ extern int evg_gpu_tex_engine_load_queue_size;
 CLASS_BEGIN(EvgGpu, Timing)
 
 	/* ND-Range running on it */
-	struct evg_ndrange_t *ndrange;
+	EvgNDRange *ndrange;
 	int work_groups_per_compute_unit;
 	int wavefronts_per_compute_unit;
 	int work_items_per_compute_unit;

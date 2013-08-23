@@ -214,9 +214,9 @@ void evg_uop_dump_dep_list(char *buf, int size, int *dep_list, int dep_count)
 /* Stack debug - store current active mask in each work_item_uop. */
 void evg_uop_save_active_mask(struct evg_uop_t *uop)
 {
-	struct evg_wavefront_t *wavefront = uop->wavefront;
-	struct evg_ndrange_t *ndrange = wavefront->ndrange;
-	struct evg_work_item_t *work_item;
+	EvgWavefront *wavefront = uop->wavefront;
+	EvgNDRange *ndrange = wavefront->ndrange;
+	EvgWorkItem *work_item;
 	struct evg_work_item_uop_t *work_item_uop;
 	int work_item_id;
 
@@ -226,7 +226,7 @@ void evg_uop_save_active_mask(struct evg_uop_t *uop)
 		{
 			work_item = ndrange->work_items[work_item_id];
 			work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
-			work_item_uop->active = evg_work_item_get_active(work_item);
+			work_item_uop->active = EvgWorkItemGetActive(work_item);
 		}
 	}
 }
@@ -235,9 +235,9 @@ void evg_uop_save_active_mask(struct evg_uop_t *uop)
 /* Stack debug - dump active mask */
 void gpu_uop_dump_active_mask(struct evg_uop_t *uop, FILE *f)
 {
-	struct evg_wavefront_t *wavefront = uop->wavefront;
-	struct evg_ndrange_t *ndrange = wavefront->ndrange;
-	struct evg_work_item_t *work_item;
+	EvgWavefront *wavefront = uop->wavefront;
+	EvgNDRange *ndrange = wavefront->ndrange;
+	EvgWorkItem *work_item;
 	struct evg_work_item_uop_t *work_item_uop;
 	int work_item_id;
 
@@ -254,7 +254,7 @@ void gpu_uop_dump_active_mask(struct evg_uop_t *uop, FILE *f)
 /* Stack debug - dump debugging information */
 void evg_uop_debug_active_mask(struct evg_uop_t *uop)
 {
-	struct evg_wavefront_t *wavefront = uop->wavefront;
+	EvgWavefront *wavefront = uop->wavefront;
 
 	FILE *f;
 

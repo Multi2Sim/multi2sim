@@ -24,22 +24,15 @@
 #include <arch/evergreen/asm/asm.h>
 
 
-/* Type of clauses */
-enum evg_clause_kind_t
-{
-	EVG_CLAUSE_NONE = 0,
-	EVG_CLAUSE_CF,  /* Control-flow */
-	EVG_CLAUSE_ALU,  /* ALU clause */
-	EVG_CLAUSE_TEX,  /* Fetch trough a Texture Cache Clause */
-	EVG_CLAUSE_VC  /* Fetch through a Vertex Cache Clause */
-};
 
+/*
+ * Class 'EvgWavefront'
+ */
 
-#define EVG_MAX_STACK_SIZE  32
+#define EVG_WAVEFRONT_STACK_SIZE  32
 
-/* Wavefront */
-struct evg_wavefront_t
-{
+CLASS_BEGIN(EvgWavefront, Object)
+
 	/* ID */
 	char *name;
 	int id;
@@ -51,14 +44,14 @@ struct evg_wavefront_t
 	int work_item_count;
 
 	/* NDRange and Work-group it belongs to */
-	struct evg_ndrange_t *ndrange;
-	struct evg_work_group_t *work_group;
+	EvgNDRange *ndrange;
+	EvgWorkGroup *work_group;
 
 	/* Pointer to work_items */
-	struct evg_work_item_t **work_items;  /* Pointer to first work-items in 'kernel->work_items' */
+	EvgWorkItem **work_items;  /* Pointer to first work-items in 'kernel->work_items' */
 
 	/* Current clause kind and instruction pointers */
-	enum evg_clause_kind_t clause_kind;
+	EvgInstClause clause_kind;
 
 	/* Current instructions */
 	EvgInst *cf_inst;
@@ -102,12 +95,12 @@ struct evg_wavefront_t
 	int active_mask_pop;  /* Number of entries the stack was popped */
 
 	/* Linked lists */
-	struct evg_wavefront_t *running_list_next;
-	struct evg_wavefront_t *running_list_prev;
-	struct evg_wavefront_t *barrier_list_next;
-	struct evg_wavefront_t *barrier_list_prev;
-	struct evg_wavefront_t *finished_list_next;
-	struct evg_wavefront_t *finished_list_prev;
+	EvgWavefront *running_list_next;
+	EvgWavefront *running_list_prev;
+	EvgWavefront *barrier_list_next;
+	EvgWavefront *barrier_list_prev;
+	EvgWavefront *finished_list_next;
+	EvgWavefront *finished_list_prev;
 
 	/* Fields introduced for architectural simulation */
 	int id_in_compute_unit;
@@ -144,7 +137,8 @@ struct evg_wavefront_t
 	long long tc_clause_count;
 	long long tc_inst_count;
 	long long tc_inst_global_mem_read_count;  /* Number of instructions reading from global mem (they are TC inst) */
-};
+
+CLASS_END(EvgWavefront)
 
 #define EVG_FOREACH_WAVEFRONT_IN_NDRANGE(NDRANGE, WAVEFRONT_ID) \
 	for ((WAVEFRONT_ID) = (NDRANGE)->wavefront_id_first; \
@@ -156,15 +150,17 @@ struct evg_wavefront_t
 		(WAVEFRONT_ID) <= (WORK_GROUP)->wavefront_id_last; \
 		(WAVEFRONT_ID)++)
 
-struct evg_wavefront_t *evg_wavefront_create(struct evg_work_group_t *work_group);
-void evg_wavefront_free(struct evg_wavefront_t *wavefront);
-void evg_wavefront_dump(struct evg_wavefront_t *wavefront, FILE *f);
 
-void evg_wavefront_set_name(struct evg_wavefront_t *wavefront, char *name);
+void EvgWavefrontCreate(EvgWavefront *self, EvgWorkGroup *work_group);
+void EvgWavefrontDestroy(EvgWavefront *self);
 
-void evg_wavefront_stack_push(struct evg_wavefront_t *wavefront);
-void evg_wavefront_stack_pop(struct evg_wavefront_t *wavefront, int count);
-void evg_wavefront_execute(struct evg_wavefront_t *wavefront);
+void EvgWavefrontDump(EvgWavefront *wavefront, FILE *f);
+
+void EvgWavefrontSetName(EvgWavefront *wavefront, char *name);
+
+void EvgWavefrontPush(EvgWavefront *wavefront);
+void EvgWavefrontPop(EvgWavefront *wavefront, int count);
+void EvgWavefrontExecute(EvgWavefront *wavefront);
 
 
 #endif

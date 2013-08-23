@@ -28,8 +28,8 @@ void evg_periodic_report_done(void);
 struct config_t;
 void evg_periodic_report_config_read(struct config_t *config);
 
-void evg_periodic_report_wavefront_init(struct evg_wavefront_t *wavefront);
-void evg_periodic_report_wavefront_done(struct evg_wavefront_t *wavefront);
+void evg_periodic_report_wavefront_init(EvgWavefront *wavefront);
+void evg_periodic_report_wavefront_done(EvgWavefront *wavefront);
 
 struct evg_uop_t;
 void evg_periodic_report_new_inst(struct evg_uop_t *uop);

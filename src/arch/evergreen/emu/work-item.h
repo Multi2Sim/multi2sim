@@ -20,25 +20,17 @@
 #ifndef ARCH_EVERGREEN_EMU_WORK_ITEM_H
 #define ARCH_EVERGREEN_EMU_WORK_ITEM_H
 
+#include <arch/evergreen/asm/inst.h>
 
-#define EVG_MAX_GPR_ELEM  5
+
+/*
+ * Class 'EvgWorkItem'
+ */
+
 #define EVG_MAX_LOCAL_MEM_ACCESSES_PER_INST  2
 
-struct evg_gpr_t
-{
-	unsigned int elem[EVG_MAX_GPR_ELEM];  /* x, y, z, w, t */
-};
+CLASS_BEGIN(EvgWorkItem, Object)
 
-/* Structure describing a memory access definition */
-struct evg_mem_access_t
-{
-	int type;  /* 0-none, 1-read, 2-write */
-	unsigned int addr;
-	int size;
-};
-
-struct evg_work_item_t
-{
 	/* IDs */
 	int id;  /* global ID */
 	int id_in_wavefront;
@@ -49,13 +41,13 @@ struct evg_work_item_t
 	int id_in_work_group_3d[3];  /* local 3D IDs */
 
 	/* Wavefront, work-group, and NDRange where it belongs */
-	struct evg_wavefront_t *wavefront;
-	struct evg_work_group_t *work_group;
-	struct evg_ndrange_t *ndrange;
+	EvgWavefront *wavefront;
+	EvgWorkGroup *work_group;
+	EvgNDRange *ndrange;
 
 	/* Work-item state */
-	struct evg_gpr_t gpr[128];  /* General purpose registers */
-	struct evg_gpr_t pv;  /* Result of last computations */
+	EvgInstGpr gpr[128];  /* General purpose registers */
+	EvgInstGpr pv;  /* Result of last computations */
 
 	/* Linked list of write tasks. They are enqueued by machine instructions
 	 * and executed as a burst at the end of an ALU group. */
@@ -81,7 +73,9 @@ struct evg_work_item_t
 	unsigned int local_mem_access_addr[EVG_MAX_LOCAL_MEM_ACCESSES_PER_INST];
 	unsigned int local_mem_access_size[EVG_MAX_LOCAL_MEM_ACCESSES_PER_INST];
 	int local_mem_access_type[EVG_MAX_LOCAL_MEM_ACCESSES_PER_INST];  /* 0-none, 1-read, 2-write */
-};
+
+CLASS_END(EvgWorkItem)
+
 
 #define EVG_FOREACH_WORK_ITEM_IN_NDRANGE(NDRANGE, WORK_ITEM_ID) \
 	for ((WORK_ITEM_ID) = (NDRANGE)->work_item_id_first; \
@@ -98,15 +92,15 @@ struct evg_work_item_t
 		(WORK_ITEM_ID) <= (WAVEFRONT)->work_item_id_last; \
 		(WORK_ITEM_ID)++)
 
-struct evg_work_item_t *evg_work_item_create(struct evg_wavefront_t *wavefront);
-void evg_work_item_free(struct evg_work_item_t *work_item);
 
-/* Consult and change active/predicate bits */
-void evg_work_item_set_active(struct evg_work_item_t *work_item, int active);
-int evg_work_item_get_active(struct evg_work_item_t *work_item);
-void evg_work_item_set_pred(struct evg_work_item_t *work_item, int pred);
-int evg_work_item_get_pred(struct evg_work_item_t *work_item);
-void evg_work_item_update_branch_digest(struct evg_work_item_t *work_item,
+void EvgWorkItemCreate(EvgWorkItem *self, EvgWavefront *wavefront);
+void EvgWorkItemDestroy(EvgWorkItem *self);
+
+void EvgWorkItemSetActive(EvgWorkItem *work_item, int active);
+int EvgWorkItemGetActive(EvgWorkItem *work_item);
+void EvgWorkItemSetPred(EvgWorkItem *work_item, int pred);
+int EvgWorkItemGetPred(EvgWorkItem *work_item);
+void EvgWorkItemUpdateBranchDigest(EvgWorkItem *work_item,
 	long long inst_count, unsigned int inst_addr);
 
 

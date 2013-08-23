@@ -160,9 +160,9 @@ void evg_periodic_report_config_read(struct config_t *config)
  * containing this wavefront is mapped to the compute unit.
  * This function must be called only if the periodic report has been activated
  * (evg_periodic_report_active = 1). */
-void evg_periodic_report_wavefront_init(struct evg_wavefront_t *wavefront)
+void evg_periodic_report_wavefront_init(EvgWavefront *wavefront)
 {
-	struct evg_work_group_t *work_group = wavefront->work_group;
+	EvgWorkGroup *work_group = wavefront->work_group;
 	char file_name[MAX_STRING_SIZE];
 
 	/* Decide if wavefront should dump report, depending on the variable
@@ -214,7 +214,7 @@ void evg_periodic_report_wavefront_init(struct evg_wavefront_t *wavefront)
  * containing this wavefront is unmapped from the compute unit.
  * This function must be called only if the periodic report has been activated
  * (evg_periodic_report_active = 1). */
-void evg_periodic_report_wavefront_done(struct evg_wavefront_t *wavefront)
+void evg_periodic_report_wavefront_done(EvgWavefront *wavefront)
 {
 	/* Ignore if this wavefront is not dumping report */
 	assert(evg_periodic_report_active);
@@ -227,7 +227,7 @@ void evg_periodic_report_wavefront_done(struct evg_wavefront_t *wavefront)
 }
 
 
-void evg_periodic_report_dump_entry(struct evg_wavefront_t *wavefront)
+void evg_periodic_report_dump_entry(EvgWavefront *wavefront)
 {
 	FILE *f = wavefront->periodic_report_file;
 	int i;
@@ -272,8 +272,8 @@ void evg_periodic_report_dump_entry(struct evg_wavefront_t *wavefront)
  */
 void evg_periodic_report_new_inst(struct evg_uop_t *uop)
 {
-	struct evg_wavefront_t *wavefront = uop->wavefront;
-	struct evg_work_item_t *work_item;
+	EvgWavefront *wavefront = uop->wavefront;
+	EvgWorkItem *work_item;
 
 	int work_item_id;
 

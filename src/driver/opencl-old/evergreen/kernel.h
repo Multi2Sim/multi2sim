@@ -20,6 +20,7 @@
 #ifndef ARCH_EVERGREEN_EMU_KERNEL_H
 #define ARCH_EVERGREEN_EMU_KERNEL_H
 
+#include <lib/class/class.h>
 #include <lib/util/string.h>
 #include <lib/util/elf-format.h>
 
@@ -108,7 +109,7 @@ struct evg_opencl_kernel_t
 	struct list_t *constant_buffer_list;
 
 	/* State of the running kernel */
-	struct evg_ndrange_t *ndrange;
+	EvgNDRange *ndrange;
 };
 
 struct evg_opencl_kernel_t *evg_opencl_kernel_create(void);
