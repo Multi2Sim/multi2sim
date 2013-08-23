@@ -55,7 +55,7 @@ static void evg_uop_add_src_idep(struct evg_uop_t *uop, EvgInst *inst, int src_i
 	int sel, rel, chan, neg, abs;
 
 	assert(uop->idep_count < EVG_UOP_MAX_IDEP);
-	evg_inst_get_op_src(inst, src_idx, &sel, &rel, &chan, &neg, &abs);
+	EvgInstGetOpSrc(inst, src_idx, &sel, &rel, &chan, &neg, &abs);
 
 	/* sel = 0..127: Value in GPR */
 	if (IN_RANGE(sel, 0, 127))

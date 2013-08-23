@@ -2377,7 +2377,7 @@ void evg_opencl_clEnqueueNDRangeKernel_wakeup(X86Context *ctx, void *data)
 	}
 
 	/* Setup ND-Range */
-	ndrange = evg_ndrange_create(kernel);
+	ndrange = evg_ndrange_create(evg_emu, kernel);
 	evg_ndrange_setup_work_items(ndrange);
 	evg_ndrange_setup_const_mem(ndrange);
 	evg_ndrange_setup_args(ndrange);

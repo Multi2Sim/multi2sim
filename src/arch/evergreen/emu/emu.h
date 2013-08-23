@@ -31,6 +31,9 @@
 
 CLASS_BEGIN(EvgEmu, Emu)
 
+	/* Disassembler */
+	EvgAsm *as;
+
 	/* OpenCL objects */
 	struct evg_opencl_repo_t *opencl_repo;
 	struct evg_opencl_platform_t *opencl_platform;
@@ -83,7 +86,7 @@ CLASS_BEGIN(EvgEmu, Emu)
 CLASS_END(EvgEmu)
 
 
-void EvgEmuCreate(EvgEmu *self);
+void EvgEmuCreate(EvgEmu *self, EvgAsm *as);
 void EvgEmuDestroy(EvgEmu *self);
 
 void EvgEmuDump(Object *self, FILE *f);
@@ -112,6 +115,7 @@ extern char *evg_err_opencl_note;
 extern char *evg_err_opencl_param_note;
 
 extern EvgEmu *evg_emu;
+extern EvgAsm *evg_asm;
 
 
 void evg_emu_init(void);
