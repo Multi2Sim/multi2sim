@@ -19,13 +19,13 @@
 
 #include <unistd.h>
 
+#include <arch/evergreen/asm/bin-file.h>
+#include <arch/evergreen/emu/emu.h>
+#include <arch/evergreen/emu/ndrange.h>
+#include <driver/opencl-old/evergreen/kernel.h>
 #include <lib/util/debug.h>
 #include <lib/util/file.h>
 #include <lib/util/misc.h>
-#include <driver/opencl-old/evergreen/bin-file.h>
-#include <driver/opencl-old/evergreen/kernel.h>
-#include <arch/evergreen/emu/emu.h>
-#include <arch/evergreen/emu/ndrange.h>
 
 #include "gpu.h"
 

@@ -2011,7 +2011,15 @@ int main(int argc, char **argv)
 
 	/* Evergreen disassembler tool */
 	if (*evg_disasm_file_name)
-		evg_emu_disasm(evg_disasm_file_name);
+	{
+		EvgAsm *as;
+
+		as = new(EvgAsm);
+		EvgAsmDisassembleBinary(as, evg_disasm_file_name);
+		delete(as);
+
+		goto end;
+	}
 
 	/* Southern Islands disassembler tool */
 	if (*si_disasm_file_name)
@@ -2027,7 +2035,16 @@ int main(int argc, char **argv)
 
 	/* Evergreen OpenGL disassembler tool */
 	if (*evg_opengl_disasm_file_name)
-		evg_emu_opengl_disasm(evg_opengl_disasm_file_name, evg_opengl_disasm_shader_index);
+	{
+		EvgAsm *as;
+
+		as = new(EvgAsm);
+		EvgAsmDisassembleOpenGLBinary(as, evg_opengl_disasm_file_name,
+				evg_opengl_disasm_shader_index);
+
+		delete(as);
+		goto end;
+	}
 
 	/* Southern Islands OpenGL disassembler tool */
 	if (*si_opengl_disasm_file_name)

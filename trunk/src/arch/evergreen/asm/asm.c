@@ -21,20 +21,101 @@
 #include <string.h>
 #include <ctype.h>
 
+#include <lib/class/array.h>
+#include <lib/class/elf-reader.h>
 #include <lib/class/class.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
 #include <lib/util/debug.h>
+#include <lib/util/list.h>
 
 #include "alu-group.h"
 #include "asm.h"
+#include "bin-file.h"
 #include "inst.h"
+#include "opengl-bin-file.h"
+
+
+/*
+ * Class 'EvgAsm'
+ */
+
+void EvgAsmCreate(EvgAsm *self)
+{
+	EvgInstInfo *info;
+	int i;
+
+	/* Type size assertions */
+	assert(sizeof(EvgInstReg) == 4);
+
+	/* Read information about all instructions */
+#define DEFINST(_name, _fmt_str, _fmt0, _fmt1, _fmt2, _category, _op, _flags) \
+	info = &self->inst_info[EVG_INST_##_name]; \
+	info->opcode = EVG_INST_##_name; \
+	info->category = EvgInstCategory##_category; \
+	info->name = #_name; \
+	info->fmt_str = _fmt_str; \
+	info->fmt[0] = EvgInstFormat##_fmt0; \
+	info->fmt[1] = EvgInstFormat##_fmt1; \
+	info->fmt[2] = EvgInstFormat##_fmt2; \
+	info->op = _op; \
+	info->flags = _flags; \
+	info->size = (EvgInstFormat##_fmt0 ? 1 : 0) + \
+			(EvgInstFormat##_fmt1 ? 1 : 0) + \
+			(EvgInstFormat##_fmt2 ? 1 : 0);
+#include "asm.dat"
+#undef DEFINST
+
+	/* Tables of pointers to 'inst_info' */
+	for (i = 1; i < EvgInstOpcodeCount; i++)
+	{
+		info = &self->inst_info[i];
+		if (info->fmt[1] == EvgInstFormatCfWord1 ||
+			info->fmt[1] == EvgInstFormatCfAllocExportWord1Buf ||
+			info->fmt[1] == EvgInstFormatCfAllocExportWord1Swiz)
+		{
+			assert(IN_RANGE(info->op, 0, EVG_INST_INFO_CF_LONG_SIZE - 1));
+			self->inst_info_cf_long[info->op] = info;
+			continue;
+		}
+		if (info->fmt[1] == EvgInstFormatCfAluWord1 ||
+			info->fmt[1] == EvgInstFormatCfAluWord1Ext)
+		{
+			assert(IN_RANGE(info->op, 0, EVG_INST_INFO_CF_SHORT_SIZE - 1));
+			self->inst_info_cf_short[info->op] = info;
+			continue;
+		}
+		if (info->fmt[1] == EvgInstFormatAluWord1Op2) {
+			assert(IN_RANGE(info->op, 0, EVG_INST_INFO_ALU_LONG_SIZE - 1));
+			self->inst_info_alu_long[info->op] = info;
+			continue;
+		}
+		if (info->fmt[1] == EvgInstFormatAluWord1Op3 ||
+			info->fmt[1] == EvgInstFormatAluWord1LdsIdxOp)
+		{
+			assert(IN_RANGE(info->op, 0, EVG_INST_INFO_ALU_SHORT_SIZE - 1));
+			self->inst_info_alu_short[info->op] = info;
+			continue;
+		}
+		if (info->fmt[0] == EvgInstFormatTexWord0 || info->fmt[0] == EvgInstFormatVtxWord0 || info->fmt[0] == EvgInstFormatMemRdWord0) {
+			assert(IN_RANGE(info->op, 0, EVG_INST_INFO_TEX_SIZE - 1));
+			self->inst_info_tex[info->op] = info;
+			continue;
+		}
+		fprintf(stderr, "warning: '%s' not indexed\n", info->name);
+	}
+}
+
+
+void EvgAsmDestroy(EvgAsm *self)
+{
+}
 
 
 /* Disassemble entire ELF buffer containing Evergreen ISA.
  * The ELF buffer representing an entire kernel '.text' section can be used here. */
-void evg_disasm_buffer(EvgAsm *self, struct elf_buffer_t *buffer, FILE *f)
+static void EvgAsmDisassembleBuffer(EvgAsm *self, struct elf_buffer_t *buffer, FILE *f)
 {
 	void *cf_buf;
 	int inst_count;
@@ -119,80 +200,79 @@ void evg_disasm_buffer(EvgAsm *self, struct elf_buffer_t *buffer, FILE *f)
 }
 
 
-
-
-
-/*
- * Class 'EvgAsm'
- */
-
-void EvgAsmCreate(EvgAsm *self)
+void EvgAsmDisassembleBinary(EvgAsm *self, char *path)
 {
-	EvgInstInfo *info;
-	int i;
+	ELFReader *reader;
+	ELFSymbol *symbol;
+	ELFSection *section;
 
-	/* Type size assertions */
-	assert(sizeof(EvgInstReg) == 4);
+	struct evg_bin_file_t *amd_bin;
 
-	/* Read information about all instructions */
-#define DEFINST(_name, _fmt_str, _fmt0, _fmt1, _fmt2, _category, _op, _flags) \
-	info = &self->inst_info[EVG_INST_##_name]; \
-	info->opcode = EVG_INST_##_name; \
-	info->category = EvgInstCategory##_category; \
-	info->name = #_name; \
-	info->fmt_str = _fmt_str; \
-	info->fmt[0] = EvgInstFormat##_fmt0; \
-	info->fmt[1] = EvgInstFormat##_fmt1; \
-	info->fmt[2] = EvgInstFormat##_fmt2; \
-	info->op = _op; \
-	info->flags = _flags; \
-	info->size = (EvgInstFormat##_fmt0 ? 1 : 0) + \
-			(EvgInstFormat##_fmt1 ? 1 : 0) + \
-			(EvgInstFormat##_fmt2 ? 1 : 0);
-#include "asm.dat"
-#undef DEFINST
+	char kernel_name[MAX_STRING_SIZE];
 
-	/* Tables of pointers to 'inst_info' */
-	for (i = 1; i < EvgInstOpcodeCount; i++)
+	/* Decode external ELF */
+	reader = new(ELFReader, path);
+	ArrayForEach(reader->symbol_array, symbol, ELFSymbol)
 	{
-		info = &self->inst_info[i];
-		if (info->fmt[1] == EvgInstFormatCfWord1 ||
-			info->fmt[1] == EvgInstFormatCfAllocExportWord1Buf ||
-			info->fmt[1] == EvgInstFormatCfAllocExportWord1Swiz)
+		/* Get symbol and section */
+		section = asELFSection(ArrayGet(reader->section_array, symbol->sym->st_shndx));
+		if (!section)
+			continue;
+
+		/* If symbol is '__OpenCL_XXX_kernel', it points to internal ELF */
+		if (str_prefix(symbol->name, "__OpenCL_") && str_suffix(symbol->name, "_kernel"))
 		{
-			assert(IN_RANGE(info->op, 0, EVG_INST_INFO_CF_LONG_SIZE - 1));
-			self->inst_info_cf_long[info->op] = info;
-			continue;
+			/* Decode internal ELF */
+			str_substr(kernel_name, sizeof(kernel_name), symbol->name, 9, strlen(symbol->name) - 16);
+			amd_bin = evg_bin_file_create(section->buffer->ptr +
+					symbol->sym->st_value, symbol->sym->st_size, kernel_name);
+
+			/* Get kernel name */
+			printf("**\n** Disassembly for '__kernel %s'\n**\n\n", kernel_name);
+			EvgAsmDisassembleBuffer(self, &amd_bin->enc_dict_entry_evergreen->sec_text_buffer, stdout);
+			printf("\n\n\n");
+
+			/* Free internal ELF */
+			evg_bin_file_free(amd_bin);
 		}
-		if (info->fmt[1] == EvgInstFormatCfAluWord1 ||
-			info->fmt[1] == EvgInstFormatCfAluWord1Ext)
-		{
-			assert(IN_RANGE(info->op, 0, EVG_INST_INFO_CF_SHORT_SIZE - 1));
-			self->inst_info_cf_short[info->op] = info;
-			continue;
-		}
-		if (info->fmt[1] == EvgInstFormatAluWord1Op2) {
-			assert(IN_RANGE(info->op, 0, EVG_INST_INFO_ALU_LONG_SIZE - 1));
-			self->inst_info_alu_long[info->op] = info;
-			continue;
-		}
-		if (info->fmt[1] == EvgInstFormatAluWord1Op3 ||
-			info->fmt[1] == EvgInstFormatAluWord1LdsIdxOp)
-		{
-			assert(IN_RANGE(info->op, 0, EVG_INST_INFO_ALU_SHORT_SIZE - 1));
-			self->inst_info_alu_short[info->op] = info;
-			continue;
-		}
-		if (info->fmt[0] == EvgInstFormatTexWord0 || info->fmt[0] == EvgInstFormatVtxWord0 || info->fmt[0] == EvgInstFormatMemRdWord0) {
-			assert(IN_RANGE(info->op, 0, EVG_INST_INFO_TEX_SIZE - 1));
-			self->inst_info_tex[info->op] = info;
-			continue;
-		}
-		fprintf(stderr, "warning: '%s' not indexed\n", info->name);
 	}
+
+	/* Free external ELF */
+	delete(reader);
 }
 
 
-void EvgAsmDestroy(EvgAsm *self)
+void EvgAsmDisassembleOpenGLBinary(EvgAsm *self, char *path, int index)
 {
+	void *file_buffer;
+	int file_size;
+
+	struct evg_opengl_bin_file_t *amd_opengl_bin;
+	struct evg_opengl_shader_t *amd_opengl_shader;
+
+	/* Load file into memory buffer */
+	file_buffer = read_buffer(path, &file_size);
+	if(!file_buffer)
+		fatal("%s:Invalid file!", path);
+
+	/* Analyze the file and initialize structure */
+	amd_opengl_bin = evg_opengl_bin_file_create(file_buffer, file_size, path);
+
+	free_buffer(file_buffer);
+
+	/* Basic info of the shader binary */
+	printf("This shader binary contains %d shaders\n\n", list_count(amd_opengl_bin->shader_list));
+	if (index > list_count(amd_opengl_bin->shader_list) || index <= 0 )
+	{
+		fatal("Shader index out of range! Please choose <index> from 1 ~ %d", list_count(amd_opengl_bin->shader_list));
+	}
+
+	/* Disaseemble */
+	amd_opengl_shader = list_get(amd_opengl_bin->shader_list, index -1 );
+	printf("**\n** Disassembly for shader %d\n**\n\n", index);
+	EvgAsmDisassembleBuffer(self, &amd_opengl_shader->isa_buffer, stdout);
+	printf("\n\n\n");
+
+	/* Free */
+	evg_opengl_bin_file_free(amd_opengl_bin);
 }

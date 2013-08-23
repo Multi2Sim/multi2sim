@@ -121,9 +121,6 @@ extern EvgAsm *evg_asm;
 void evg_emu_init(void);
 void evg_emu_done(void);
 
-void evg_emu_disasm(char *path);
-void evg_emu_opengl_disasm(char *path, int opengl_shader_index);
-
 
 #endif
 

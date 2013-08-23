@@ -5,12 +5,18 @@ libasm_a_SOURCES = \
 	alu-group.c \
 	alu-group.h \
 	\
+	bin-file.c \
+	bin-file.h \
+	\
 	asm.c \
 	asm.dat \
 	asm.h \
 	\
 	inst.c \
-	inst.h
+	inst.h \
+	\
+	opengl-bin-file.c \
+	opengl-bin-file.h
 
 INCLUDES = @M2S_INCLUDES@
 

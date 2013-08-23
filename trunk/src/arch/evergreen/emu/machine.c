@@ -19,7 +19,7 @@
 
 #include <math.h>
 
-#include <driver/opencl-old/evergreen/bin-file.h>
+#include <arch/evergreen/asm/bin-file.h>
 #include <driver/opencl-old/evergreen/kernel.h>
 #include <driver/opencl-old/evergreen/mem.h>
 #include <lib/mhandle/mhandle.h>
