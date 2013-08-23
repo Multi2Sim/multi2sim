@@ -76,27 +76,30 @@ void evg_isa_ALU_impl(EvgWorkItem *work_item, EvgInst *inst)
 
 void evg_isa_ALU_BREAK_impl(EvgWorkItem *work_item, EvgInst *inst)
 {
-	/* Same behavior as ALU */
-	/* FIXME: what's the difference? */
 	evg_isa_ALU_impl(work_item, inst);
+	//evg_isa_LOOP_BREAK_impl(work_item, inst);
 }
 
 
 void evg_isa_ALU_POP_AFTER_impl(EvgWorkItem *work_item, EvgInst *inst)
 {
-	/* Same behavior as ALU */
 	evg_isa_ALU_impl(work_item, inst);
+	//evg_isa_POP_impl(work_item, inst);
 }
 
 void evg_isa_ALU_POP2_AFTER_impl(EvgWorkItem *work_item, EvgInst *inst)
 {
-	/* Initiates an ALU clause, and pops the stack twice after the clause completes execution. */
 	__EVG_NOT_IMPL__
+	/* Initiates an ALU clause, and pops the stack twice after the 
+	 * clause completes execution. */
+	//evg_isa_ALU_impl(work_item, inst);
+	//evg_isa_POP_impl(work_item, inst);
+	//evg_isa_POP_impl(work_item, inst);
 }
 
 void evg_isa_ALU_PUSH_BEFORE_impl(EvgWorkItem *work_item, EvgInst *inst)
 {
-	/* Same behavior as ALU inst */
+	//evg_isa_PUSH_impl(work_item, inst);
 	evg_isa_ALU_impl(work_item, inst);
 }
 
@@ -888,8 +891,32 @@ void evg_isa_POP_impl(EvgWorkItem *work_item, EvgInst *inst)
 #define W1  EVG_CF_WORD1
 void evg_isa_PUSH_impl(EvgWorkItem *work_item, EvgInst *inst)
 {
+	__EVG_NOT_IMPL__ // Not tested
+
+	int active;
+	int active_count = 0;
+	int i;
+
+	EvgWavefront *wavefront = work_item->wavefront;
+
 	/* Push State To Stack */
-	__EVG_NOT_IMPL__
+	for (i = 0; i < wavefront->work_item_count; i++)
+	{
+		active = bit_map_get(wavefront->active_stack, wavefront->stack_top *
+			wavefront->work_item_count + i, 1);
+		active_count += active;
+	}
+
+	/* If all pixels are inactive, pop stack and jump */
+	if (!active_count)
+	{
+		EvgWavefrontPop(wavefront, W1.pop_count);
+		wavefront->cf_buf = wavefront->cf_buf_start + W0.addr * 8;
+	}
+	else
+	{
+		EvgWavefrontPush(wavefront);
+	}
 }
 #undef W0
 #undef W1
@@ -2371,10 +2398,14 @@ void evg_isa_BCNT_ACCUM_PREV_INT_impl(EvgWorkItem *work_item, EvgInst *inst)
 }
 
 
+#define W0 EVG_ALU_WORD0
+#define W1 EVG_ALU_WORD1_OP2
 void evg_isa_MBCNT_32LO_ACCUM_PREV_INT_impl(EvgWorkItem *work_item, EvgInst *inst)
 {
 	__EVG_NOT_IMPL__
 }
+#undef W0
+#undef W1
 
 
 void evg_isa_SETE_64_impl(EvgWorkItem *work_item, EvgInst *inst)
@@ -2437,10 +2468,90 @@ void evg_isa_MAX4_impl(EvgWorkItem *work_item, EvgInst *inst)
 }
 
 
+#define W0 EVG_ALU_WORD0
+#define W1 EVG_ALU_WORD1_OP2
 void evg_isa_FREXP_64_impl(EvgWorkItem *work_item, EvgInst *inst)
 {
-	__EVG_NOT_IMPL__
+	/* Page 9-101 in Evergreen manual */
+
+	EvgALUGroup *alu_group = inst->alu_group;
+	EvgInst *inst_slot[4];
+
+	union
+	{
+		double as_double;
+		unsigned int as_uint[2];
+		unsigned long long as_ulong;
+	} src0, frac_src0, frac_dst;
+
+
+	double dst;
+
+	int exp_dst;
+	int exp_src0;
+	int sign_src0;
+
+	int i;
+
+	/* Get multi-slot instruction */
+	for (i = 0; i < 4; i++)
+	{
+		inst_slot[i] = evg_isa_get_alu_inst(alu_group, i);
+		if (!inst_slot[i])
+			fatal("%s: unexpected empty VLIW slots", __FUNCTION__);
+		if (inst_slot[i]->info->opcode != inst->info->opcode)
+			fatal("%s: invalid multi-slot instruction", __FUNCTION__);
+	}
+
+	/* Read src0 */
+	src0.as_uint[0] = evg_isa_read_op_src_int(work_item, inst_slot[0], 0);
+	src0.as_uint[1] = evg_isa_read_op_src_int(work_item, inst_slot[1], 0);
+
+	dst = src0.as_double;
+
+	frac_src0.as_double = frexp(src0.as_double, &exp_src0);
+	frac_dst.as_double = frexp(dst, &exp_dst);
+	sign_src0 = !!signbit(src0.as_double);
+
+	if (exp_src0 == 0x7FF)  // src0 is inf or NaN
+	{
+		exp_dst = 0xFFFFFFFF;	
+		if (frac_src0.as_ulong == 0x0) // src0 is inf
+		{
+			frac_dst.as_uint[0] = 0x00000000;
+			frac_dst.as_uint[1] = 0xFFF80000;
+		}
+		else  // src0 is NaN
+		{
+			frac_dst.as_double = src0.as_double;
+		}
+	}
+	else if (exp_dst == 0x0)  // src 0 is zero or denorm
+	{
+		exp_dst = 0x0;
+		frac_dst.as_uint[0] = 0x00000000;
+		frac_dst.as_uint[1] = sign_src0;
+	}
+	else  // src0 is a float
+	{
+		// double from (-1, -0.5] to [0.5, 1)
+		frac_dst.as_uint[1] = 0x3fe00000 | frac_src0.as_uint[1];
+		frac_dst.as_uint[0] = frac_src0.as_uint[0];
+		if (sign_src0)
+		{
+			frac_dst.as_uint[1] |= 0x10000000;
+		}
+		exp_dst = exp_src0 - 1023 + 1;  // convert to 2's complement
+	}
+
+	/* Store low-order operand to slot 0, high-order to slot 1 */
+	evg_isa_enqueue_write_dest(work_item, inst_slot[0], 0x00000000);
+	evg_isa_enqueue_write_dest(work_item, inst_slot[1], exp_dst);
+	evg_isa_enqueue_write_dest(work_item, inst_slot[2], frac_dst.as_uint[0]);
+	evg_isa_enqueue_write_dest(work_item, inst_slot[3], frac_dst.as_uint[1]);
 }
+#undef W0
+#undef W1
 
 
 void evg_isa_LDEXP_64_impl(EvgWorkItem *work_item, EvgInst *inst)
@@ -2522,7 +2633,7 @@ void evg_isa_MUL_64_VEC_impl(EvgWorkItem *work_item, EvgInst *inst)
 
 	/* Store high-order result to slots 1 and 3 */
 	evg_isa_enqueue_write_dest(work_item, inst_slot[1], dst.as_uint[1]);
-	evg_isa_enqueue_write_dest(work_item, inst_slot[1], dst.as_uint[1]);
+	evg_isa_enqueue_write_dest(work_item, inst_slot[3], dst.as_uint[1]);
 }
 #undef W0
 #undef W1
@@ -2862,7 +2973,15 @@ void evg_isa_BFI_INT_impl(EvgWorkItem *work_item, EvgInst *inst)
 
 void evg_isa_FMA_impl(EvgWorkItem *work_item, EvgInst *inst)
 {
-	__EVG_NOT_IMPL__
+	float src0, src1, src2, dst;
+
+	src0 = evg_isa_read_op_src_float(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_float(work_item, inst, 1);
+	src2 = evg_isa_read_op_src_float(work_item, inst, 2);
+
+	dst = src0 * src1 + src2;
+
+	evg_isa_enqueue_write_dest_float(work_item, inst, dst);
 }
 
 

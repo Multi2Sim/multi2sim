@@ -283,16 +283,16 @@ static unsigned int evg_isa_read_op_src_common(EvgWorkItem *work_item,
 	if (IN_RANGE(sel, 128, 159))
 	{
 		unsigned int kcache_bank;
-		unsigned int kcache_mode;
+		//unsigned int kcache_mode;
 		unsigned int kcache_addr;
 
 		assert(wavefront->cf_inst->info->fmt[0] == EvgInstFormatCfAluWord0
 			&& wavefront->cf_inst->info->fmt[1] == EvgInstFormatCfAluWord1);
 		kcache_bank = wavefront->cf_inst->words[0].cf_alu_word0.kcache_bank0;
-		kcache_mode = wavefront->cf_inst->words[0].cf_alu_word0.kcache_mode0;
+		//kcache_mode = wavefront->cf_inst->words[0].cf_alu_word0.kcache_mode0;
 		kcache_addr = wavefront->cf_inst->words[1].cf_alu_word1.kcache_addr0;
 
-		EVG_ISA_ARG_NOT_SUPPORTED_NEQ(kcache_mode, 1);
+		//EVG_ISA_ARG_NOT_SUPPORTED_NEQ(kcache_mode, 1);
 		EVG_ISA_ARG_NOT_SUPPORTED_RANGE(chan, 0, 3);
 		evg_isa_const_mem_read(kcache_bank, kcache_addr * 16 + sel - 128, chan, &value);
 
@@ -302,16 +302,17 @@ static unsigned int evg_isa_read_op_src_common(EvgWorkItem *work_item,
 	/* 160..191: Kcache 1 constant */
 	if (IN_RANGE(sel, 160, 191))
 	{
-
-		unsigned int kcache_bank, kcache_mode, kcache_addr;
+		unsigned int kcache_bank;
+		//unsigned int kcache_mode;
+		unsigned int kcache_addr;
 
 		assert(wavefront->cf_inst->info->fmt[0] == EvgInstFormatCfAluWord0
 			&& wavefront->cf_inst->info->fmt[1] == EvgInstFormatCfAluWord1);
 		kcache_bank = wavefront->cf_inst->words[0].cf_alu_word0.kcache_bank1;
-		kcache_mode = wavefront->cf_inst->words[1].cf_alu_word1.kcache_mode1;
+		//kcache_mode = wavefront->cf_inst->words[1].cf_alu_word1.kcache_mode1;
 		kcache_addr = wavefront->cf_inst->words[1].cf_alu_word1.kcache_addr1;
 
-		EVG_ISA_ARG_NOT_SUPPORTED_NEQ(kcache_mode, 1);
+		//EVG_ISA_ARG_NOT_SUPPORTED_NEQ(kcache_mode, 1);
 		EVG_ISA_ARG_NOT_SUPPORTED_RANGE(chan, 0, 3);
 		evg_isa_const_mem_read(kcache_bank, kcache_addr * 16 + sel - 160, chan, &value);
 		return value;
