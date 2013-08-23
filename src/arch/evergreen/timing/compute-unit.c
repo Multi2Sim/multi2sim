@@ -143,10 +143,10 @@ void evg_compute_unit_free(struct evg_compute_unit_t *compute_unit)
 }
 
 
-void evg_compute_unit_map_work_group(struct evg_compute_unit_t *compute_unit, struct evg_work_group_t *work_group)
+void evg_compute_unit_map_work_group(struct evg_compute_unit_t *compute_unit, EvgWorkGroup *work_group)
 {
-	struct evg_ndrange_t *ndrange = work_group->ndrange;
-	struct evg_wavefront_t *wavefront;
+	EvgNDRange *ndrange = work_group->ndrange;
+	EvgWavefront *wavefront;
 	int wavefront_id;
 
 	/* Map work-group */
@@ -179,8 +179,8 @@ void evg_compute_unit_map_work_group(struct evg_compute_unit_t *compute_unit, st
 	}
 
 	/* Change work-group status to running */
-	evg_work_group_clear_status(work_group, evg_work_group_pending);
-	evg_work_group_set_status(work_group, evg_work_group_running);
+	EvgWorkGroupClearState(work_group, EvgWorkGroupPending);
+	EvgWorkGroupSetState(work_group, EvgWorkGroupRunning);
 
 	/* Insert all wavefronts into the CF Engine's wavefront pool */
 	EVG_FOREACH_WAVEFRONT_IN_WORK_GROUP(work_group, wavefront_id)
@@ -211,10 +211,10 @@ void evg_compute_unit_map_work_group(struct evg_compute_unit_t *compute_unit, st
 }
 
 
-void evg_compute_unit_unmap_work_group(struct evg_compute_unit_t *compute_unit, struct evg_work_group_t *work_group)
+void evg_compute_unit_unmap_work_group(struct evg_compute_unit_t *compute_unit, EvgWorkGroup *work_group)
 {
-	struct evg_ndrange_t *ndrange = work_group->ndrange;
-	struct evg_wavefront_t *wavefront;
+	EvgNDRange *ndrange = work_group->ndrange;
+	EvgWavefront *wavefront;
 
 	int wavefront_id;
 

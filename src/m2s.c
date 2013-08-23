@@ -31,7 +31,11 @@
 #include <arch/evergreen/asm/inst.h>
 #include <arch/evergreen/asm/alu-group.h>
 #include <arch/evergreen/emu/emu.h>
+#include <arch/evergreen/emu/ndrange.h>
 #include <arch/evergreen/emu/isa.h>
+#include <arch/evergreen/emu/wavefront.h>
+#include <arch/evergreen/emu/work-group.h>
+#include <arch/evergreen/emu/work-item.h>
 #include <arch/evergreen/timing/faults.h>
 #include <arch/evergreen/timing/gpu.h>
 #include <arch/evergreen/timing/uop.h>
@@ -1867,6 +1871,12 @@ static void m2s_init(void)
 	CLASS_REGISTER(EvgAsm);
 	CLASS_REGISTER(EvgInst);
 	CLASS_REGISTER(EvgALUGroup);
+
+	CLASS_REGISTER(EvgEmu);
+	CLASS_REGISTER(EvgNDRange);
+	CLASS_REGISTER(EvgWorkGroup);
+	CLASS_REGISTER(EvgWavefront);
+	CLASS_REGISTER(EvgWorkItem);
 
 	CLASS_REGISTER(FrmAsm);
 	CLASS_REGISTER(FrmInst);

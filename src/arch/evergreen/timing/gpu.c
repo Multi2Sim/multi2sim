@@ -234,7 +234,7 @@ static void evg_config_dump(FILE *f)
 }
 
 
-static void evg_gpu_map_ndrange(struct evg_ndrange_t *ndrange)
+static void evg_gpu_map_ndrange(EvgNDRange *ndrange)
 {
 	struct evg_compute_unit_t *compute_unit;
 	int compute_unit_id;
@@ -272,7 +272,7 @@ static void evg_gpu_map_ndrange(struct evg_ndrange_t *ndrange)
 static void evg_gpu_unmap_ndrange(void)
 {
 	/* Dump stats */
-	evg_ndrange_dump(evg_gpu->ndrange, evg_emu_report_file);
+	EvgNDRangeDump(evg_gpu->ndrange, evg_emu_report_file);
 
 	/* Unmap */
 	evg_gpu->ndrange = NULL;
@@ -688,7 +688,7 @@ int EvgGpuRun(Timing *self)
 {
 	EvgGpu *gpu = asEvgGpu(self);
 
-	struct evg_ndrange_t *ndrange;
+	EvgNDRange *ndrange;
 
 	struct evg_compute_unit_t *compute_unit;
 	struct evg_compute_unit_t *compute_unit_next;
@@ -707,8 +707,8 @@ int EvgGpuRun(Timing *self)
 				__FUNCTION__);
 
 		/* Set ND-Range status to 'running' */
-		evg_ndrange_clear_status(ndrange, evg_ndrange_pending);
-		evg_ndrange_set_status(ndrange, evg_ndrange_running);
+		EvgNDRangeClearState(ndrange, EvgNDRangePending);
+		EvgNDRangeSetState(ndrange, EvgNDRangeRunning);
 
 		/* Trace */
 		evg_trace("evg.new_ndrange "
@@ -778,17 +778,17 @@ int EvgGpuRun(Timing *self)
 	if (!gpu->busy_list_count)
 	{
 		/* Dump ND-Range report */
-		evg_ndrange_dump(ndrange, evg_emu_report_file);
+		EvgNDRangeDump(ndrange, evg_emu_report_file);
 
 		/* Stop if maximum number of kernels reached */
 		if (evg_emu_max_kernels && evg_emu->ndrange_count >= evg_emu_max_kernels)
 			esim_finish = esim_finish_evg_max_kernels;
 
 		/* Finalize and free ND-Range */
-		assert(evg_ndrange_get_status(ndrange, evg_ndrange_finished));
+		assert(EvgNDRangeGetState(ndrange, EvgNDRangeFinished));
 		evg_gpu_uop_trash_empty();
 		evg_gpu_unmap_ndrange();
-		evg_ndrange_free(ndrange);
+		delete(ndrange);
 	}
 
 	/* Still simulating */

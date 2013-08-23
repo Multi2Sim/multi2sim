@@ -124,7 +124,7 @@ void evg_isa_const_mem_read(int bank, int vector, int elem, void *pvalue)
  */
 
 /* Called before and ALU clause starts for a wavefront */
-void evg_isa_alu_clause_start(struct evg_wavefront_t *wavefront)
+void evg_isa_alu_clause_start(EvgWavefront *wavefront)
 {
 	/* Copy 'active' mask at the top of the stack to 'pred' mask */
 	bit_map_copy(wavefront->pred, 0, wavefront->active_stack,
@@ -145,11 +145,11 @@ void evg_isa_alu_clause_start(struct evg_wavefront_t *wavefront)
 
 
 /* Called after an ALU clause completed in a wavefront */
-void evg_isa_alu_clause_end(struct evg_wavefront_t *wavefront)
+void evg_isa_alu_clause_end(EvgWavefront *wavefront)
 {
 	/* If CF inst was ALU_POP_AFTER, pop the stack */
 	if (wavefront->cf_inst->info->opcode == EVG_INST_ALU_POP_AFTER)
-		evg_wavefront_stack_pop(wavefront, 1);
+		EvgWavefrontPop(wavefront, 1);
 }
 
 
@@ -160,7 +160,7 @@ void evg_isa_alu_clause_end(struct evg_wavefront_t *wavefront)
  */
 
 /* Called before and TEX clause starts in wavefront */
-void evg_isa_tc_clause_start(struct evg_wavefront_t *wavefront)
+void evg_isa_tc_clause_start(EvgWavefront *wavefront)
 {
 	/* Stats */
 	wavefront->tc_clause_count++;
@@ -168,7 +168,7 @@ void evg_isa_tc_clause_start(struct evg_wavefront_t *wavefront)
 
 
 /* Called after a TEX clause completed in a wavefront */
-void evg_isa_tc_clause_end(struct evg_wavefront_t *wavefront)
+void evg_isa_tc_clause_end(EvgWavefront *wavefront)
 {
 }
 
@@ -198,7 +198,7 @@ void gpu_isa_dest_value_dump(EvgInst *inst, void *value_ptr, FILE *f)
 
 
 /* Read source GPR, checking for valid ranges. */
-unsigned int evg_isa_read_gpr(struct evg_work_item_t *work_item,
+unsigned int evg_isa_read_gpr(EvgWorkItem *work_item,
 	int gpr, int rel, int chan, int im)
 {
 	/* Check arguments */
@@ -217,7 +217,7 @@ unsigned int evg_isa_read_gpr(struct evg_work_item_t *work_item,
 
 
 /* Read source GPR in float format */
-float evg_isa_read_gpr_float(struct evg_work_item_t *work_item,
+float evg_isa_read_gpr_float(EvgWorkItem *work_item,
 	int gpr, int rel, int chan, int im)
 {
 	EvgInstReg reg;
@@ -227,7 +227,7 @@ float evg_isa_read_gpr_float(struct evg_work_item_t *work_item,
 }
 
 
-void evg_isa_write_gpr(struct evg_work_item_t *work_item,
+void evg_isa_write_gpr(EvgWorkItem *work_item,
 	int gpr, int rel, int chan, unsigned int value)
 {
 	/* Check arguments */
@@ -243,7 +243,7 @@ void evg_isa_write_gpr(struct evg_work_item_t *work_item,
 }
 
 
-void evg_isa_write_gpr_float(struct evg_work_item_t *work_item,
+void evg_isa_write_gpr_float(EvgWorkItem *work_item,
 	int gpr, int rel, int chan, float value)
 {
 	EvgInstReg reg;
@@ -255,10 +255,10 @@ void evg_isa_write_gpr_float(struct evg_work_item_t *work_item,
 
 /* Read source operand in ALU instruction.
  * This is a common function for both integer and float formats. */
-static unsigned int evg_isa_read_op_src_common(struct evg_work_item_t *work_item,
+static unsigned int evg_isa_read_op_src_common(EvgWorkItem *work_item,
 	EvgInst *inst, int src_idx, int *neg_ptr, int *abs_ptr)
 {
-	struct evg_wavefront_t *wavefront = work_item->wavefront;
+	EvgWavefront *wavefront = work_item->wavefront;
 
 	int sel;
 	int rel;
@@ -421,7 +421,7 @@ static unsigned int evg_isa_read_op_src_common(struct evg_work_item_t *work_item
 }
 
 
-unsigned int evg_isa_read_op_src_int(struct evg_work_item_t *work_item,
+unsigned int evg_isa_read_op_src_int(EvgWorkItem *work_item,
 	EvgInst *inst, int src_idx)
 {
 	int neg, abs;
@@ -442,7 +442,7 @@ unsigned int evg_isa_read_op_src_int(struct evg_work_item_t *work_item,
 }
 
 
-float evg_isa_read_op_src_float(struct evg_work_item_t *work_item,
+float evg_isa_read_op_src_float(EvgWorkItem *work_item,
 	EvgInst *inst, int src_idx)
 {
 	EvgInstReg reg;
@@ -490,14 +490,14 @@ EvgInst *evg_isa_get_alu_inst(EvgALUGroup *alu_group, EvgInstAlu alu)
  * Deferred tasks for ALU group
  */
 
-void evg_isa_enqueue_write_lds(struct evg_work_item_t *work_item,
+void evg_isa_enqueue_write_lds(EvgWorkItem *work_item,
 	EvgInst *inst, unsigned int addr, unsigned int value,
 	int value_size)
 {
 	struct evg_isa_write_task_t *wt;
 
 	/* Inactive pixel not enqueued */
-	if (!evg_work_item_get_pred(work_item))
+	if (!EvgWorkItemGetPred(work_item))
 		return;
 	
 	/* Create task */
@@ -515,14 +515,14 @@ void evg_isa_enqueue_write_lds(struct evg_work_item_t *work_item,
 
 
 /* Write to destination operand in ALU instruction */
-void evg_isa_enqueue_write_dest(struct evg_work_item_t *work_item,
+void evg_isa_enqueue_write_dest(EvgWorkItem *work_item,
 	EvgInst *inst, unsigned int value)
 {
 	struct evg_isa_write_task_t *wt;
 
 	/* If pixel is inactive, do not enqueue the task */
 	assert(inst->info->fmt[0] == EvgInstFormatAluWord0);
-	if (!evg_work_item_get_pred(work_item))
+	if (!EvgWorkItemGetPred(work_item))
 		return;
 
 	/* Fields 'dst_gpr', 'dst_rel', and 'dst_chan' are at the same bit positions in both
@@ -547,7 +547,7 @@ void evg_isa_enqueue_write_dest(struct evg_work_item_t *work_item,
 }
 
 
-void evg_isa_enqueue_write_dest_float(struct evg_work_item_t *work_item,
+void evg_isa_enqueue_write_dest_float(EvgWorkItem *work_item,
 	EvgInst *inst, float value)
 {
 	EvgInstReg reg;
@@ -557,10 +557,10 @@ void evg_isa_enqueue_write_dest_float(struct evg_work_item_t *work_item,
 }
 
 
-void evg_isa_enqueue_push_before(struct evg_work_item_t *work_item,
+void evg_isa_enqueue_push_before(EvgWorkItem *work_item,
 	EvgInst *inst)
 {
-	struct evg_wavefront_t *wavefront = work_item->wavefront;
+	EvgWavefront *wavefront = work_item->wavefront;
 	struct evg_isa_write_task_t *wt;
 
 	/* Do only if instruction initiating ALU clause is ALU_PUSH_BEFORE */
@@ -576,7 +576,7 @@ void evg_isa_enqueue_push_before(struct evg_work_item_t *work_item,
 }
 
 
-void evg_isa_enqueue_pred_set(struct evg_work_item_t *work_item,
+void evg_isa_enqueue_pred_set(EvgWorkItem *work_item,
 	EvgInst *inst, int cond)
 {
 	struct evg_isa_write_task_t *wt;
@@ -584,7 +584,7 @@ void evg_isa_enqueue_pred_set(struct evg_work_item_t *work_item,
 	/* If pixel is inactive, predicate is not changed */
 	assert(inst->info->fmt[0] == EvgInstFormatAluWord0);
 	assert(inst->info->fmt[1] == EvgInstFormatAluWord1Op2);
-	if (!evg_work_item_get_pred(work_item))
+	if (!EvgWorkItemGetPred(work_item))
 		return;
 	
 	/* Create and enqueue task */
@@ -597,11 +597,11 @@ void evg_isa_enqueue_pred_set(struct evg_work_item_t *work_item,
 }
 
 
-void evg_isa_write_task_commit(struct evg_work_item_t *work_item)
+void evg_isa_write_task_commit(EvgWorkItem *work_item)
 {
 	struct linked_list_t *task_list = work_item->write_task_list;
-	struct evg_wavefront_t *wavefront = work_item->wavefront;
-	struct evg_work_group_t *work_group = work_item->work_group;
+	EvgWavefront *wavefront = work_item->wavefront;
+	EvgWorkGroup *work_group = work_item->work_group;
 
 	struct evg_isa_write_task_t *wt;
 	EvgInst *inst;
@@ -687,7 +687,7 @@ void evg_isa_write_task_commit(struct evg_work_item_t *work_item)
 		case EVG_ISA_WRITE_TASK_PUSH_BEFORE:
 		{
 			if (!wavefront->push_before_done)
-				evg_wavefront_stack_push(wavefront);
+				EvgWavefrontPush(wavefront);
 			wavefront->push_before_done = 1;
 			break;
 		}
@@ -699,9 +699,9 @@ void evg_isa_write_task_commit(struct evg_work_item_t *work_item)
 
 			assert(inst->info->fmt[1] == EvgInstFormatAluWord1Op2);
 			if (update_pred)
-				evg_work_item_set_pred(work_item, wt->cond);
+				EvgWorkItemSetPred(work_item, wt->cond);
 			if (update_exec_mask)
-				evg_work_item_set_active(work_item, wt->cond);
+				EvgWorkItemSetActive(work_item, wt->cond);
 
 			/* Debug */
 			if (debug_status(evg_isa_debug_category))

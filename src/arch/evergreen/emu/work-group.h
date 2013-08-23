@@ -23,25 +23,30 @@
 #include <stdio.h>
 
 
-enum evg_work_group_status_t
-{
-	evg_work_group_pending		= 0x0001,
-	evg_work_group_running		= 0x0002,
-	evg_work_group_finished		= 0x0004
-};
+/*
+ * Class 'EvgWorkGroup'
+ */
 
-struct evg_work_group_t
+typedef enum
 {
+	EvgWorkGroupPending = 0x01,
+	EvgWorkGroupRunning = 0x02,
+	EvgWorkGroupFinished = 0x04
+} EvgWorkGroupState;
+
+
+CLASS_BEGIN(EvgWorkGroup, Object)
+
 	/* ID */
 	char *name;
 	int id;  /* Group ID */
 	int id_3d[3];  /* 3-dimensional Group ID */
 
 	/* Status */
-	enum evg_work_group_status_t status;
+	EvgWorkGroupState status;
 
 	/* NDRange it belongs to */
-	struct evg_ndrange_t *ndrange;
+	EvgNDRange *ndrange;
 
 	/* IDs of work-items contained */
 	int work_item_id_first;
@@ -54,32 +59,32 @@ struct evg_work_group_t
 	int wavefront_count;
 
 	/* Pointers to wavefronts and work-items */
-	struct evg_work_item_t **work_items;  /* Pointer to first work_item in 'kernel->work_items' */
-	struct evg_wavefront_t **wavefronts;  /* Pointer to first wavefront in 'kernel->wavefronts' */
+	EvgWorkItem **work_items;  /* Pointer to first work_item in 'kernel->work_items' */
+	EvgWavefront **wavefronts;  /* Pointer to first wavefront in 'kernel->wavefronts' */
 
 	/* Double linked lists of work-groups */
-	struct evg_work_group_t *pending_list_prev;
-	struct evg_work_group_t *pending_list_next;
-	struct evg_work_group_t *running_list_prev;
-	struct evg_work_group_t *running_list_next;
-	struct evg_work_group_t *finished_list_prev;
-	struct evg_work_group_t *finished_list_next;
+	EvgWorkGroup *pending_list_prev;
+	EvgWorkGroup *pending_list_next;
+	EvgWorkGroup *running_list_prev;
+	EvgWorkGroup *running_list_next;
+	EvgWorkGroup *finished_list_prev;
+	EvgWorkGroup *finished_list_next;
 
 	/* List of running wavefronts */
-	struct evg_wavefront_t *running_list_head;
-	struct evg_wavefront_t *running_list_tail;
+	EvgWavefront *running_list_head;
+	EvgWavefront *running_list_tail;
 	int running_list_count;
 	int running_list_max;
 
 	/* List of wavefronts in barrier */
-	struct evg_wavefront_t *barrier_list_head;
-	struct evg_wavefront_t *barrier_list_tail;
+	EvgWavefront *barrier_list_head;
+	EvgWavefront *barrier_list_tail;
 	int barrier_list_count;
 	int barrier_list_max;
 
 	/* List of finished wavefronts */
-	struct evg_wavefront_t *finished_list_head;
-	struct evg_wavefront_t *finished_list_tail;
+	EvgWavefront *finished_list_head;
+	EvgWavefront *finished_list_tail;
 	int finished_list_count;
 	int finished_list_max;
 	
@@ -89,22 +94,25 @@ struct evg_work_group_t
 
 	/* Local memory */
 	struct mem_t *local_mem;
-};
+
+CLASS_END(EvgWorkGroup)
+
 
 #define EVG_FOR_EACH_WORK_GROUP_IN_NDRANGE(NDRANGE, WORK_GROUP_ID) \
 	for ((WORK_GROUP_ID) = (NDRANGE)->work_group_id_first; \
 		(WORK_GROUP_ID) <= (NDRANGE)->work_group_id_last; \
 		(WORK_GROUP_ID)++)
 
-struct evg_work_group_t *evg_work_group_create(struct evg_ndrange_t *ndrange);
-void evg_work_group_free(struct evg_work_group_t *work_group);
-void evg_work_group_dump(struct evg_work_group_t *work_group, FILE *f);
+void EvgWorkGroupCreate(EvgWorkGroup *self, EvgNDRange *ndrange);
+void EvgWorkGroupDestroy(EvgWorkGroup *self);
 
-void evg_work_group_set_name(struct evg_work_group_t *work_group, char *name);
+void EvgWorkGroupDump(EvgWorkGroup *self, FILE *f);
 
-int evg_work_group_get_status(struct evg_work_group_t *work_group, enum evg_work_group_status_t status);
-void evg_work_group_set_status(struct evg_work_group_t *work_group, enum evg_work_group_status_t status);
-void evg_work_group_clear_status(struct evg_work_group_t *work_group, enum evg_work_group_status_t status);
+void EvgWorkGroupSetName(EvgWorkGroup *self, char *name);
+
+int EvgWorkGroupGetState(EvgWorkGroup *self, EvgWorkGroupState state);
+void EvgWorkGroupSetState(EvgWorkGroup *self, EvgWorkGroupState state);
+void EvgWorkGroupClearState(EvgWorkGroup *self, EvgWorkGroupState state);
 
 
 #endif

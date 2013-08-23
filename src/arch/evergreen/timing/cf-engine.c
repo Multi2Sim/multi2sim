@@ -41,8 +41,8 @@ int evg_gpu_cf_engine_inst_mem_latency = 2;  /* Instruction memory latency */
 
 static void evg_cf_engine_fetch(struct evg_compute_unit_t *compute_unit)
 {
-	struct evg_ndrange_t *ndrange = evg_gpu->ndrange;
-	struct evg_wavefront_t *wavefront;
+	EvgNDRange *ndrange = evg_gpu->ndrange;
+	EvgWavefront *wavefront;
 
 	char str[MAX_LONG_STRING_SIZE];
 	char str_trimmed[MAX_LONG_STRING_SIZE];
@@ -51,7 +51,7 @@ static void evg_cf_engine_fetch(struct evg_compute_unit_t *compute_unit)
 
 	struct evg_uop_t *uop;
 	struct evg_work_item_uop_t *work_item_uop;
-	struct evg_work_item_t *work_item;
+	EvgWorkItem *work_item;
 	int work_item_id;
 
 	/* Schedule wavefront */
@@ -60,7 +60,7 @@ static void evg_cf_engine_fetch(struct evg_compute_unit_t *compute_unit)
 		return;
 
 	/* Emulate CF instruction */
-	evg_wavefront_execute(wavefront);
+	EvgWavefrontExecute(wavefront);
 	inst = wavefront->cf_inst;
 
 
@@ -70,9 +70,9 @@ static void evg_cf_engine_fetch(struct evg_compute_unit_t *compute_unit)
 	uop->work_group = wavefront->work_group;
 	uop->compute_unit = compute_unit;
 	uop->id_in_compute_unit = compute_unit->gpu_uop_id_counter++;
-	uop->alu_clause_trigger = wavefront->clause_kind == EVG_CLAUSE_ALU;
-	uop->tex_clause_trigger = wavefront->clause_kind == EVG_CLAUSE_TEX;
-	uop->no_clause_trigger = wavefront->clause_kind == EVG_CLAUSE_CF;
+	uop->alu_clause_trigger = wavefront->clause_kind == EvgInstClauseALU;
+	uop->tex_clause_trigger = wavefront->clause_kind == EvgInstClauseTEX;
+	uop->no_clause_trigger = wavefront->clause_kind == EvgInstClauseCF;
 	uop->last = DOUBLE_LINKED_LIST_MEMBER(wavefront->work_group, finished, wavefront);
 	uop->wavefront_last = uop->last && uop->no_clause_trigger;
 	uop->global_mem_read = wavefront->global_mem_read;
@@ -174,14 +174,14 @@ static void evg_cf_engine_decode(struct evg_compute_unit_t *compute_unit)
 
 static void evg_cf_engine_execute(struct evg_compute_unit_t *compute_unit)
 {
-	struct evg_wavefront_t *wavefront;
-	struct evg_ndrange_t *ndrange;
+	EvgWavefront *wavefront;
+	EvgNDRange *ndrange;
 
 	struct evg_uop_t *uop;
 	int index;
 
 	struct evg_work_item_uop_t *work_item_uop;
-	struct evg_work_item_t *work_item;
+	EvgWorkItem *work_item;
 	int work_item_id;
 
 	/* Complete queue must be empty. If it is not, it means that a write access is trying to allocate
@@ -259,7 +259,7 @@ static void evg_cf_engine_complete(struct evg_compute_unit_t *compute_unit)
 {
 	struct linked_list_t *complete_queue = compute_unit->cf_engine.complete_queue;
 	struct linked_list_t *wavefront_pool = compute_unit->wavefront_pool;
-	struct evg_work_group_t *work_group;
+	EvgWorkGroup *work_group;
 	struct evg_uop_t *uop;
 
 	/* Process all uops in the complete queue */

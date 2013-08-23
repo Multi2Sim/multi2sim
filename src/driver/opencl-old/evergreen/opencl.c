@@ -2267,7 +2267,7 @@ void evg_opencl_clEnqueueNDRangeKernel_wakeup(X86Context *ctx, void *data)
 	struct evg_opencl_command_queue_t *command_queue;
 	struct evg_opencl_command_t *task;
 
-	struct evg_ndrange_t *ndrange;
+	EvgNDRange *ndrange;
 
 	int code;
 	int i;
@@ -2377,17 +2377,17 @@ void evg_opencl_clEnqueueNDRangeKernel_wakeup(X86Context *ctx, void *data)
 	}
 
 	/* Setup ND-Range */
-	ndrange = evg_ndrange_create(evg_emu, kernel);
-	evg_ndrange_setup_work_items(ndrange);
-	evg_ndrange_setup_const_mem(ndrange);
-	evg_ndrange_setup_args(ndrange);
+	ndrange = new(EvgNDRange, evg_emu, kernel);
+	EvgNDRangeSetupWorkItems(ndrange);
+	EvgNDRangeSetupConstantMemory(ndrange);
+	EvgNDRangeSetupArguments(ndrange);
 
 	/* Save in kernel */
 	kernel->ndrange = ndrange;
 
 	/* Set ND-Range status to 'pending'. This makes it immediately a candidate for
 	 * execution, whether we have functional or detailed simulation. */
-	evg_ndrange_set_status(ndrange, evg_ndrange_pending);
+	EvgNDRangeSetState(ndrange, EvgNDRangePending);
 
 	/* Create command queue task */
 	task = evg_opencl_command_create(evg_opencl_command_queue_task_ndrange_kernel);

@@ -39,86 +39,77 @@
 
 
 /*
- * GPU ND-Range
+ * Class 'EvgNDRange'
  */
 
-struct evg_ndrange_t *evg_ndrange_create(EvgEmu *emu, struct evg_opencl_kernel_t *kernel)
+void EvgNDRangeCreate(EvgNDRange *self, EvgEmu *emu, struct evg_opencl_kernel_t *kernel)
 {
-	struct evg_ndrange_t *ndrange;
-
-	/* Allocate */
-	ndrange = xcalloc(1, sizeof(struct evg_ndrange_t));
-
 	/* Insert in ND-Range list of Evergreen emulator */
-	DOUBLE_LINKED_LIST_INSERT_TAIL(evg_emu, ndrange, ndrange);
+	DOUBLE_LINKED_LIST_INSERT_TAIL(evg_emu, ndrange, self);
 
 	/* Initialize */
-	ndrange->emu = emu;
-	ndrange->name = xstrdup(kernel->name);
-	ndrange->kernel = kernel;
-	ndrange->local_mem_top = kernel->func_mem_local;
-	ndrange->id = evg_emu->ndrange_count++;
+	self->emu = emu;
+	self->name = xstrdup(kernel->name);
+	self->kernel = kernel;
+	self->local_mem_top = kernel->func_mem_local;
+	self->id = evg_emu->ndrange_count++;
 
 	/* Instruction histogram */
 	if (evg_emu_report_file)
-		ndrange->inst_histogram = xcalloc(EvgInstOpcodeCount, sizeof(unsigned int));
-
-	/* Return */
-	return ndrange;
+		self->inst_histogram = xcalloc(EvgInstOpcodeCount, sizeof(unsigned int));
 }
 
 
-void evg_ndrange_free(struct evg_ndrange_t *ndrange)
+void EvgNDRangeDestroy(EvgNDRange *self)
 {
 	int i;
 
 	/* Clear task from command queue */
-	if (ndrange->command_queue && ndrange->command)
+	if (self->command_queue && self->command)
 	{
-		evg_opencl_command_queue_complete(ndrange->command_queue, ndrange->command);
-		evg_opencl_command_free(ndrange->command);
+		evg_opencl_command_queue_complete(self->command_queue, self->command);
+		evg_opencl_command_free(self->command);
 	}
 
 	/* Clear all states that affect lists. */
-	evg_ndrange_clear_status(ndrange, evg_ndrange_pending);
-	evg_ndrange_clear_status(ndrange, evg_ndrange_running);
-	evg_ndrange_clear_status(ndrange, evg_ndrange_finished);
+	EvgNDRangeClearState(self, EvgNDRangePending);
+	EvgNDRangeClearState(self, EvgNDRangeRunning);
+	EvgNDRangeClearState(self, EvgNDRangeFinished);
 
 	/* Extract from ND-Range list in Evergreen emulator */
-	assert(DOUBLE_LINKED_LIST_MEMBER(evg_emu, ndrange, ndrange));
-	DOUBLE_LINKED_LIST_REMOVE(evg_emu, ndrange, ndrange);
+	assert(DOUBLE_LINKED_LIST_MEMBER(evg_emu, ndrange, self));
+	DOUBLE_LINKED_LIST_REMOVE(evg_emu, ndrange, self);
 
 	/* Free work-groups */
-	for (i = 0; i < ndrange->work_group_count; i++)
-		evg_work_group_free(ndrange->work_groups[i]);
-	free(ndrange->work_groups);
+	for (i = 0; i < self->work_group_count; i++)
+		delete(self->work_groups[i]);
+	free(self->work_groups);
 
 	/* Free wavefronts */
-	for (i = 0; i < ndrange->wavefront_count; i++)
-		evg_wavefront_free(ndrange->wavefronts[i]);
-	free(ndrange->wavefronts);
+	for (i = 0; i < self->wavefront_count; i++)
+		delete(self->wavefronts[i]);
+	free(self->wavefronts);
 
 	/* Free work-items */
-	for (i = 0; i < ndrange->work_item_count; i++)
-		evg_work_item_free(ndrange->work_items[i]);
-	free(ndrange->work_items);
+	for (i = 0; i < self->work_item_count; i++)
+		delete(self->work_items[i]);
+	free(self->work_items);
 
 	/* Free instruction histogram */
-	if (ndrange->inst_histogram)
-		free(ndrange->inst_histogram);
+	if (self->inst_histogram)
+		free(self->inst_histogram);
 
-	/* Free ND-Range */
-	free(ndrange->name);
-	free(ndrange);
+	/* Rest */
+	free(self->name);
 }
 
 
-void evg_ndrange_dump(struct evg_ndrange_t *ndrange, FILE *f)
+void EvgNDRangeDump(EvgNDRange *self, FILE *f)
 {
-	EvgEmu *emu = ndrange->emu;
+	EvgEmu *emu = self->emu;
 	EvgAsm *as = emu->as;
 
-	struct evg_work_group_t *work_group;
+	EvgWorkGroup *work_group;
 
 	int work_group_id;
 	int work_item_id, last_work_item_id;
@@ -131,27 +122,27 @@ void evg_ndrange_dump(struct evg_ndrange_t *ndrange, FILE *f)
 	if (!f)
 		return;
 	
-	fprintf(f, "[ NDRange[%d] ]\n\n", ndrange->id);
-	fprintf(f, "Name = %s\n", ndrange->name);
-	fprintf(f, "WorkGroupFirst = %d\n", ndrange->work_group_id_first);
-	fprintf(f, "WorkGroupLast = %d\n", ndrange->work_group_id_last);
-	fprintf(f, "WorkGroupCount = %d\n", ndrange->work_group_count);
-	fprintf(f, "WaveFrontFirst = %d\n", ndrange->wavefront_id_first);
-	fprintf(f, "WaveFrontLast = %d\n", ndrange->wavefront_id_last);
-	fprintf(f, "WaveFrontCount = %d\n", ndrange->wavefront_count);
-	fprintf(f, "WorkItemFirst = %d\n", ndrange->work_item_id_first);
-	fprintf(f, "WorkItemLast = %d\n", ndrange->work_item_id_last);
-	fprintf(f, "WorkItemCount = %d\n", ndrange->work_item_count);
+	fprintf(f, "[ NDRange[%d] ]\n\n", self->id);
+	fprintf(f, "Name = %s\n", self->name);
+	fprintf(f, "WorkGroupFirst = %d\n", self->work_group_id_first);
+	fprintf(f, "WorkGroupLast = %d\n", self->work_group_id_last);
+	fprintf(f, "WorkGroupCount = %d\n", self->work_group_count);
+	fprintf(f, "WaveFrontFirst = %d\n", self->wavefront_id_first);
+	fprintf(f, "WaveFrontLast = %d\n", self->wavefront_id_last);
+	fprintf(f, "WaveFrontCount = %d\n", self->wavefront_count);
+	fprintf(f, "WorkItemFirst = %d\n", self->work_item_id_first);
+	fprintf(f, "WorkItemLast = %d\n", self->work_item_id_last);
+	fprintf(f, "WorkItemCount = %d\n", self->work_item_count);
 
 	/* Branch digests */
-	assert(ndrange->work_item_count);
+	assert(self->work_item_count);
 	branch_digest_count = 0;
 	last_work_item_id = 0;
-	last_branch_digest = ndrange->work_items[0]->branch_digest;
-	for (work_item_id = 1; work_item_id <= ndrange->work_item_count; work_item_id++)
+	last_branch_digest = self->work_items[0]->branch_digest;
+	for (work_item_id = 1; work_item_id <= self->work_item_count; work_item_id++)
 	{
-		branch_digest = work_item_id < ndrange->work_item_count ? ndrange->work_items[work_item_id]->branch_digest : 0;
-		if (work_item_id == ndrange->work_item_count || branch_digest != last_branch_digest)
+		branch_digest = work_item_id < self->work_item_count ? self->work_items[work_item_id]->branch_digest : 0;
+		if (work_item_id == self->work_item_count || branch_digest != last_branch_digest)
 		{
 			fprintf(f, "BranchDigest[%d] = %d %d %08x\n", branch_digest_count,
 				last_work_item_id, work_item_id - 1, last_branch_digest);
@@ -164,43 +155,43 @@ void evg_ndrange_dump(struct evg_ndrange_t *ndrange, FILE *f)
 	fprintf(f, "\n");
 
 	/* Instruction histogram */
-	if (ndrange->inst_histogram)
+	if (self->inst_histogram)
 	{
 		for (i = 0; i < EvgInstOpcodeCount; i++)
-			if (ndrange->inst_histogram[i])
+			if (self->inst_histogram[i])
 				fprintf(f, "InstHistogram[%s] = %u\n",
 						as->inst_info[i].name,
-						ndrange->inst_histogram[i]);
+						self->inst_histogram[i]);
 		fprintf(f, "\n");
 	}
 
 	/* Work-groups */
-	EVG_FOR_EACH_WORK_GROUP_IN_NDRANGE(ndrange, work_group_id)
+	EVG_FOR_EACH_WORK_GROUP_IN_NDRANGE(self, work_group_id)
 	{
-		work_group = ndrange->work_groups[work_group_id];
-		evg_work_group_dump(work_group, f);
+		work_group = self->work_groups[work_group_id];
+		EvgWorkGroupDump(work_group, f);
 	}
 }
 
 
-int evg_ndrange_get_status(struct evg_ndrange_t *ndrange, enum evg_ndrange_status_t status)
+int EvgNDRangeGetState(EvgNDRange *self, EvgNDRangeState state)
 {
-	return (ndrange->status & status) > 0;
+	return (self->state & state) > 0;
 }
 
 
-void evg_ndrange_set_status(struct evg_ndrange_t *ndrange, enum evg_ndrange_status_t status)
+void EvgNDRangeSetState(EvgNDRange *self, EvgNDRangeState state)
 {
 	/* Get only the new bits */
-	status &= ~ndrange->status;
+	state &= ~self->state;
 
 	/* Add ND-Range to lists */
-	if (status & evg_ndrange_pending)
-		DOUBLE_LINKED_LIST_INSERT_TAIL(evg_emu, pending_ndrange, ndrange);
-	if (status & evg_ndrange_running)
-		DOUBLE_LINKED_LIST_INSERT_TAIL(evg_emu, running_ndrange, ndrange);
-	if (status & evg_ndrange_finished)
-		DOUBLE_LINKED_LIST_INSERT_TAIL(evg_emu, finished_ndrange, ndrange);
+	if (state & EvgNDRangePending)
+		DOUBLE_LINKED_LIST_INSERT_TAIL(evg_emu, pending_ndrange, self);
+	if (state & EvgNDRangeRunning)
+		DOUBLE_LINKED_LIST_INSERT_TAIL(evg_emu, running_ndrange, self);
+	if (state & EvgNDRangeFinished)
+		DOUBLE_LINKED_LIST_INSERT_TAIL(evg_emu, finished_ndrange, self);
 
 	/* Start/stop Evergreen timer depending on ND-Range states */
 	if (evg_emu->running_ndrange_list_count)
@@ -209,35 +200,35 @@ void evg_ndrange_set_status(struct evg_ndrange_t *ndrange, enum evg_ndrange_stat
 		m2s_timer_stop(asEmu(evg_emu)->timer);
 
 	/* Update it */
-	ndrange->status |= status;
+	self->state |= state;
 }
 
 
-void evg_ndrange_clear_status(struct evg_ndrange_t *ndrange, enum evg_ndrange_status_t status)
+void EvgNDRangeClearState(EvgNDRange *self, EvgNDRangeState state)
 {
 	/* Get only the bits that are set */
-	status &= ndrange->status;
+	state &= self->state;
 
 	/* Remove ND-Range from lists */
-	if (status & evg_ndrange_pending)
-		DOUBLE_LINKED_LIST_REMOVE(evg_emu, pending_ndrange, ndrange);
-	if (status & evg_ndrange_running)
-		DOUBLE_LINKED_LIST_REMOVE(evg_emu, running_ndrange, ndrange);
-	if (status & evg_ndrange_finished)
-		DOUBLE_LINKED_LIST_REMOVE(evg_emu, finished_ndrange, ndrange);
+	if (state & EvgNDRangePending)
+		DOUBLE_LINKED_LIST_REMOVE(evg_emu, pending_ndrange, self);
+	if (state & EvgNDRangeRunning)
+		DOUBLE_LINKED_LIST_REMOVE(evg_emu, running_ndrange, self);
+	if (state & EvgNDRangeFinished)
+		DOUBLE_LINKED_LIST_REMOVE(evg_emu, finished_ndrange, self);
 
-	/* Update status */
-	ndrange->status &= ~status;
+	/* Update state */
+	self->state &= ~state;
 }
 
 
-void evg_ndrange_setup_work_items(struct evg_ndrange_t *ndrange)
+void EvgNDRangeSetupWorkItems(EvgNDRange *self)
 {
-	struct evg_opencl_kernel_t *kernel = ndrange->kernel;
+	struct evg_opencl_kernel_t *kernel = self->kernel;
 
-	struct evg_work_group_t *work_group;
-	struct evg_wavefront_t *wavefront;
-	struct evg_work_item_t *work_item;
+	EvgWorkGroup *work_group;
+	EvgWavefront *wavefront;
+	EvgWorkItem *work_item;
 
 	int gidx, gidy, gidz;  /* 3D work-group ID iterators */
 	int lidx, lidy, lidz;  /* 3D work-item local ID iterators */
@@ -250,44 +241,44 @@ void evg_ndrange_setup_work_items(struct evg_ndrange_t *ndrange)
 	char name[MAX_STRING_SIZE];
 
 	/* Create array of work-groups */
-	ndrange->work_group_count = kernel->group_count;
-	ndrange->work_group_id_first = 0;
-	ndrange->work_group_id_last = ndrange->work_group_count - 1;
-	ndrange->work_groups = xcalloc(ndrange->work_group_count, sizeof(void *));
+	self->work_group_count = kernel->group_count;
+	self->work_group_id_first = 0;
+	self->work_group_id_last = self->work_group_count - 1;
+	self->work_groups = xcalloc(self->work_group_count, sizeof(void *));
 
 	/* Create work-groups */
 	for (gid = 0; gid < kernel->group_count; gid++)
 	{
-		ndrange->work_groups[gid] = evg_work_group_create(ndrange);
-		work_group = ndrange->work_groups[gid];
+		self->work_groups[gid] = new(EvgWorkGroup, self);
+		work_group = self->work_groups[gid];
 	}
 	
 	/* Array of wavefronts */
-	ndrange->wavefronts_per_work_group = (kernel->local_size + evg_emu_wavefront_size - 1) / evg_emu_wavefront_size;
-	ndrange->wavefront_count = ndrange->wavefronts_per_work_group * ndrange->work_group_count;
-	ndrange->wavefront_id_first = 0;
-	ndrange->wavefront_id_last = ndrange->wavefront_count - 1;
-	assert(ndrange->wavefronts_per_work_group > 0 && ndrange->wavefront_count > 0);
-	ndrange->wavefronts = xcalloc(ndrange->wavefront_count, sizeof(void *));
-	for (wid = 0; wid < ndrange->wavefront_count; wid++)
+	self->wavefronts_per_work_group = (kernel->local_size + evg_emu_wavefront_size - 1) / evg_emu_wavefront_size;
+	self->wavefront_count = self->wavefronts_per_work_group * self->work_group_count;
+	self->wavefront_id_first = 0;
+	self->wavefront_id_last = self->wavefront_count - 1;
+	assert(self->wavefronts_per_work_group > 0 && self->wavefront_count > 0);
+	self->wavefronts = xcalloc(self->wavefront_count, sizeof(void *));
+	for (wid = 0; wid < self->wavefront_count; wid++)
 	{
-		gid = wid / ndrange->wavefronts_per_work_group;
-		work_group = ndrange->work_groups[gid];
-		ndrange->wavefronts[wid] = evg_wavefront_create(work_group);
-		wavefront = ndrange->wavefronts[wid];
+		gid = wid / self->wavefronts_per_work_group;
+		work_group = self->work_groups[gid];
+		self->wavefronts[wid] = new(EvgWavefront, work_group);
+		wavefront = self->wavefronts[wid];
 
 		wavefront->id = wid;
-		wavefront->id_in_work_group = wid % ndrange->wavefronts_per_work_group;
-		wavefront->ndrange = ndrange;
+		wavefront->id_in_work_group = wid % self->wavefronts_per_work_group;
+		wavefront->ndrange = self;
 		wavefront->work_group = work_group;
 		DOUBLE_LINKED_LIST_INSERT_TAIL(work_group, running, wavefront);
 	}
 	
 	/* Array of work-items */
-	ndrange->work_item_count = kernel->global_size;
-	ndrange->work_item_id_first = 0;
-	ndrange->work_item_id_last = ndrange->work_item_count - 1;
-	ndrange->work_items = xcalloc(ndrange->work_item_count, sizeof(void *));
+	self->work_item_count = kernel->global_size;
+	self->work_item_id_first = 0;
+	self->work_item_id_last = self->work_item_count - 1;
+	self->work_items = xcalloc(self->work_item_count, sizeof(void *));
 
 	/* Create work-items */
 	tid = 0;
@@ -299,28 +290,28 @@ void evg_ndrange_setup_work_items(struct evg_ndrange_t *ndrange)
 			for (gidx = 0; gidx < kernel->group_count3[0]; gidx++)
 			{
 				/* Assign work-group ID */
-				work_group = ndrange->work_groups[gid];
-				work_group->ndrange = ndrange;
+				work_group = self->work_groups[gid];
+				work_group->ndrange = self;
 				work_group->id_3d[0] = gidx;
 				work_group->id_3d[1] = gidy;
 				work_group->id_3d[2] = gidz;
 				work_group->id = gid;
-				evg_work_group_set_status(work_group, evg_work_group_pending);
+				EvgWorkGroupSetState(work_group, EvgWorkGroupPending);
 
 				/* First, last, and number of work-items in work-group */
 				work_group->work_item_id_first = tid;
 				work_group->work_item_id_last = tid + kernel->local_size - 1;
 				work_group->work_item_count = kernel->local_size;
-				work_group->work_items = &ndrange->work_items[tid];
+				work_group->work_items = &self->work_items[tid];
 				snprintf(name, sizeof name, "work-group[i%d-i%d]",
 					work_group->work_item_id_first, work_group->work_item_id_last);
-				evg_work_group_set_name(work_group, name);
+				EvgWorkGroupSetName(work_group, name);
 
 				/* First ,last, and number of wavefronts in work-group */
-				work_group->wavefront_id_first = gid * ndrange->wavefronts_per_work_group;
-				work_group->wavefront_id_last = work_group->wavefront_id_first + ndrange->wavefronts_per_work_group - 1;
-				work_group->wavefront_count = ndrange->wavefronts_per_work_group;
-				work_group->wavefronts = &ndrange->wavefronts[work_group->wavefront_id_first];
+				work_group->wavefront_id_first = gid * self->wavefronts_per_work_group;
+				work_group->wavefront_id_last = work_group->wavefront_id_first + self->wavefronts_per_work_group - 1;
+				work_group->wavefront_count = self->wavefronts_per_work_group;
+				work_group->wavefronts = &self->wavefronts[work_group->wavefront_id_first];
 
 				/* Iterate through work-items */
 				lid = 0;
@@ -331,15 +322,15 @@ void evg_ndrange_setup_work_items(struct evg_ndrange_t *ndrange)
 						for (lidx = 0; lidx < kernel->local_size3[0]; lidx++)
 						{
 							/* Wavefront ID */
-							wid = gid * ndrange->wavefronts_per_work_group +
+							wid = gid * self->wavefronts_per_work_group +
 								lid / evg_emu_wavefront_size;
-							assert(wid < ndrange->wavefront_count);
-							wavefront = ndrange->wavefronts[wid];
+							assert(wid < self->wavefront_count);
+							wavefront = self->wavefronts[wid];
 							
 							/* Create work-item */
-							ndrange->work_items[tid] = evg_work_item_create(wavefront);
-							work_item = ndrange->work_items[tid];
-							work_item->ndrange = ndrange;
+							self->work_items[tid] = new(EvgWorkItem, wavefront);
+							work_item = self->work_items[tid];
+							work_item->ndrange = self;
 
 							/* Global IDs */
 							work_item->id_3d[0] = gidx * kernel->local_size3[0] + lidx;
@@ -355,13 +346,13 @@ void evg_ndrange_setup_work_items(struct evg_ndrange_t *ndrange)
 
 							/* Other */
 							work_item->id_in_wavefront = work_item->id_in_work_group % evg_emu_wavefront_size;
-							work_item->work_group = ndrange->work_groups[gid];
-							work_item->wavefront = ndrange->wavefronts[wid];
+							work_item->work_group = self->work_groups[gid];
+							work_item->wavefront = self->wavefronts[wid];
 
 							/* First, last, and number of work-items in wavefront */
 							if (!wavefront->work_item_count) {
 								wavefront->work_item_id_first = tid;
-								wavefront->work_items = &ndrange->work_items[tid];
+								wavefront->work_items = &self->work_items[tid];
 							}
 							wavefront->work_item_count++;
 							wavefront->work_item_id_last = tid;
@@ -391,20 +382,20 @@ void evg_ndrange_setup_work_items(struct evg_ndrange_t *ndrange)
 	}
 
 	/* Assign names to wavefronts */
-	for (wid = 0; wid < ndrange->wavefront_count; wid++)
+	for (wid = 0; wid < self->wavefront_count; wid++)
 	{
 		/* Set name */
-		wavefront = ndrange->wavefronts[wid];
+		wavefront = self->wavefronts[wid];
 		snprintf(name, sizeof name, "wavefront[i%d-i%d]",
 			wavefront->work_item_id_first, wavefront->work_item_id_last);
-		evg_wavefront_set_name(wavefront, name);
+		EvgWavefrontSetName(wavefront, name);
 
 		/* Initialize wavefront program counter */
 		if (!kernel->bin_file->enc_dict_entry_evergreen->sec_text_buffer.size)
 			fatal("%s: cannot load kernel code", __FUNCTION__);
 		wavefront->cf_buf_start = kernel->bin_file->enc_dict_entry_evergreen->sec_text_buffer.ptr;
 		wavefront->cf_buf = wavefront->cf_buf_start;
-		wavefront->clause_kind = EVG_CLAUSE_CF;
+		wavefront->clause_kind = EvgInstClauseCF;
 	}
 
 	/* Debug */
@@ -414,13 +405,13 @@ void evg_ndrange_setup_work_items(struct evg_ndrange_t *ndrange)
 		kernel->global_size3[1], kernel->global_size3[2]);
 	evg_isa_debug("group_count = %d (%d,%d,%d)\n", kernel->group_count, kernel->group_count3[0],
 		kernel->group_count3[1], kernel->group_count3[2]);
-	evg_isa_debug("wavefront_count = %d\n", ndrange->wavefront_count);
-	evg_isa_debug("wavefronts_per_work_group = %d\n", ndrange->wavefronts_per_work_group);
+	evg_isa_debug("wavefront_count = %d\n", self->wavefront_count);
+	evg_isa_debug("wavefronts_per_work_group = %d\n", self->wavefronts_per_work_group);
 	evg_isa_debug(" tid tid2 tid1 tid0   gid gid2 gid1 gid0   "
 			"lid lid2 lid1 lid0  wavefront            work-group\n");
-	for (tid = 0; tid < ndrange->work_item_count; tid++)
+	for (tid = 0; tid < self->work_item_count; tid++)
 	{
-		work_item = ndrange->work_items[tid];
+		work_item = self->work_items[tid];
 		wavefront = work_item->wavefront;
 		work_group = work_item->work_group;
 		evg_isa_debug("%4d %4d %4d %4d  ", work_item->id, work_item->id_3d[2],
@@ -438,9 +429,9 @@ void evg_ndrange_setup_work_items(struct evg_ndrange_t *ndrange)
 
 /* Write initial values in constant buffer 0 (CB0) */
 /* FIXME: constant memory should be member of 'evg_emu' or 'ndrange'? */
-void evg_ndrange_setup_const_mem(struct evg_ndrange_t *ndrange)
+void EvgNDRangeSetupConstantMemory(EvgNDRange *self)
 {
-	struct evg_opencl_kernel_t *kernel = ndrange->kernel;
+	struct evg_opencl_kernel_t *kernel = self->kernel;
 	uint32_t zero = 0;
 	float f;
 
@@ -518,9 +509,9 @@ void evg_ndrange_setup_const_mem(struct evg_ndrange_t *ndrange)
 }
 
 
-void evg_ndrange_setup_args(struct evg_ndrange_t *ndrange)
+void EvgNDRangeSetupArguments(EvgNDRange *self)
 {
-	struct evg_opencl_kernel_t *kernel = ndrange->kernel;
+	struct evg_opencl_kernel_t *kernel = self->kernel;
 	struct evg_opencl_kernel_arg_t *arg;
 	int i;
 	int cb_index = 0;
@@ -606,10 +597,10 @@ void evg_ndrange_setup_args(struct evg_ndrange_t *ndrange)
 			{
 				/* Pointer in __local scope.
 				 * Argument value is always NULL, just assign space for it. */
-				evg_isa_const_mem_write(1, cb_index, 0, &ndrange->local_mem_top);
+				evg_isa_const_mem_write(1, cb_index, 0, &self->local_mem_top);
 				evg_opencl_debug("    arg %d: %d bytes reserved in local memory at 0x%x\n",
-					i, arg->size, ndrange->local_mem_top);
-				ndrange->local_mem_top += arg->size;
+					i, arg->size, self->local_mem_top);
+				self->local_mem_top += arg->size;
 				cb_index++;
 				break;
 			}

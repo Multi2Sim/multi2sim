@@ -29,7 +29,7 @@ extern enum evg_gpu_sched_policy_t
 } evg_gpu_sched_policy;
 
 
-struct evg_wavefront_t *evg_schedule(struct evg_compute_unit_t *compute_unit);
+EvgWavefront *evg_schedule(struct evg_compute_unit_t *compute_unit);
 
 #endif
 
