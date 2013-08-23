@@ -72,7 +72,7 @@ static void evg_tex_engine_fetch(struct evg_compute_unit_t *compute_unit)
 	/* Emulate instruction and create uop */
 	inst_num = (wavefront->clause_buf - wavefront->clause_buf_start) / 16;
 	evg_wavefront_execute(wavefront);
-	inst = &wavefront->tex_inst;
+	inst = wavefront->tex_inst;
 	uop = evg_uop_create();
 	uop->wavefront = wavefront;
 	uop->work_group = wavefront->work_group;
@@ -127,7 +127,7 @@ static void evg_tex_engine_fetch(struct evg_compute_unit_t *compute_unit)
 	/* Trace */
 	if (evg_tracing())
 	{
-		evg_inst_dump_buf(inst, inst_num, 0, str, sizeof str);
+		EvgInstDumpBuf(inst, inst_num, 0, str, sizeof str);
 		str_single_spaces(str_trimmed, sizeof str_trimmed, str);
 		evg_trace("evg.new_inst id=%lld cu=%d wg=%d wf=%d cat=\"tex\" stg=\"tex-fe\" asm=\"%s\"\n",
 			uop->id_in_compute_unit, compute_unit->id, uop->work_group->id,

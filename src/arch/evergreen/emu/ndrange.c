@@ -42,7 +42,7 @@
  * GPU ND-Range
  */
 
-struct evg_ndrange_t *evg_ndrange_create(struct evg_opencl_kernel_t *kernel)
+struct evg_ndrange_t *evg_ndrange_create(EvgEmu *emu, struct evg_opencl_kernel_t *kernel)
 {
 	struct evg_ndrange_t *ndrange;
 
@@ -53,6 +53,7 @@ struct evg_ndrange_t *evg_ndrange_create(struct evg_opencl_kernel_t *kernel)
 	DOUBLE_LINKED_LIST_INSERT_TAIL(evg_emu, ndrange, ndrange);
 
 	/* Initialize */
+	ndrange->emu = emu;
 	ndrange->name = xstrdup(kernel->name);
 	ndrange->kernel = kernel;
 	ndrange->local_mem_top = kernel->func_mem_local;
@@ -114,12 +115,18 @@ void evg_ndrange_free(struct evg_ndrange_t *ndrange)
 
 void evg_ndrange_dump(struct evg_ndrange_t *ndrange, FILE *f)
 {
+	EvgEmu *emu = ndrange->emu;
+	EvgAsm *as = emu->as;
+
 	struct evg_work_group_t *work_group;
+
 	int work_group_id;
 	int work_item_id, last_work_item_id;
-	uint32_t branch_digest, last_branch_digest;
 	int branch_digest_count;
 	int i;
+
+	unsigned int branch_digest;
+	unsigned int last_branch_digest;
 
 	if (!f)
 		return;
@@ -162,8 +169,8 @@ void evg_ndrange_dump(struct evg_ndrange_t *ndrange, FILE *f)
 		for (i = 0; i < EvgInstOpcodeCount; i++)
 			if (ndrange->inst_histogram[i])
 				fprintf(f, "InstHistogram[%s] = %u\n",
-					evg_inst_info[i].name,
-					ndrange->inst_histogram[i]);
+						as->inst_info[i].name,
+						ndrange->inst_histogram[i]);
 		fprintf(f, "\n");
 	}
 
@@ -251,7 +258,7 @@ void evg_ndrange_setup_work_items(struct evg_ndrange_t *ndrange)
 	/* Create work-groups */
 	for (gid = 0; gid < kernel->group_count; gid++)
 	{
-		ndrange->work_groups[gid] = evg_work_group_create();
+		ndrange->work_groups[gid] = evg_work_group_create(ndrange);
 		work_group = ndrange->work_groups[gid];
 	}
 	
@@ -265,9 +272,9 @@ void evg_ndrange_setup_work_items(struct evg_ndrange_t *ndrange)
 	for (wid = 0; wid < ndrange->wavefront_count; wid++)
 	{
 		gid = wid / ndrange->wavefronts_per_work_group;
-		ndrange->wavefronts[wid] = evg_wavefront_create();
-		wavefront = ndrange->wavefronts[wid];
 		work_group = ndrange->work_groups[gid];
+		ndrange->wavefronts[wid] = evg_wavefront_create(work_group);
+		wavefront = ndrange->wavefronts[wid];
 
 		wavefront->id = wid;
 		wavefront->id_in_work_group = wid % ndrange->wavefronts_per_work_group;
@@ -330,7 +337,7 @@ void evg_ndrange_setup_work_items(struct evg_ndrange_t *ndrange)
 							wavefront = ndrange->wavefronts[wid];
 							
 							/* Create work-item */
-							ndrange->work_items[tid] = evg_work_item_create();
+							ndrange->work_items[tid] = evg_work_item_create(wavefront);
 							work_item = ndrange->work_items[tid];
 							work_item->ndrange = ndrange;
 

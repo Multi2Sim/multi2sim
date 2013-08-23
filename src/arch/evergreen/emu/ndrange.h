@@ -22,6 +22,8 @@
 
 #include <stdio.h>
 
+#include <lib/class/class.h>
+
 
 enum evg_ndrange_status_t
 {
@@ -32,6 +34,9 @@ enum evg_ndrange_status_t
 
 struct evg_ndrange_t
 {
+	/* Emulator */
+	EvgEmu *emu;
+
 	/* ID */
 	char *name;
 	int id;  /* Sequential ndrange ID (given by evg_emu->ndrange_count counter) */
@@ -109,7 +114,7 @@ struct evg_ndrange_t
 	unsigned int *inst_histogram;
 };
 
-struct evg_ndrange_t *evg_ndrange_create(struct evg_opencl_kernel_t *kernel);
+struct evg_ndrange_t *evg_ndrange_create(EvgEmu *emu, struct evg_opencl_kernel_t *kernel);
 void evg_ndrange_free(struct evg_ndrange_t *ndrange);
 void evg_ndrange_dump(struct evg_ndrange_t *ndrange, FILE *f);
 

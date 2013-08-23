@@ -59,7 +59,7 @@ static void evg_wavefront_divergence_dump(struct evg_wavefront_t *wavefront, FIL
 	{
 		int count;  /* 1st field hardcoded for comparison */
 		int list_index;
-		uint32_t branch_digest;
+		unsigned int branch_digest;
 	};
 	struct elem_t *elem;
 	struct list_t *list;
@@ -140,16 +140,24 @@ static void evg_wavefront_divergence_dump(struct evg_wavefront_t *wavefront, FIL
  */
 
 
-struct evg_wavefront_t *evg_wavefront_create()
+struct evg_wavefront_t *evg_wavefront_create(struct evg_work_group_t *work_group)
 {
+	struct evg_ndrange_t *ndrange = work_group->ndrange;
+	EvgEmu *emu = ndrange->emu;
+	EvgAsm *as = emu->as;
 	struct evg_wavefront_t *wavefront;
 
 	/* Initialize */
 	wavefront = xcalloc(1, sizeof(struct evg_wavefront_t));
+	wavefront->work_group = work_group;
+	wavefront->ndrange = work_group->ndrange;
 	wavefront->active_stack = bit_map_create(EVG_MAX_STACK_SIZE * evg_emu_wavefront_size);
 	wavefront->pred = bit_map_create(evg_emu_wavefront_size);
 	/* FIXME: Remove once loop state is part of stack */
 	wavefront->loop_depth = 0;
+	wavefront->cf_inst = new(EvgInst, as);
+	wavefront->alu_group = new(EvgALUGroup, as);
+	wavefront->tex_inst = new(EvgInst, as);
 
 	/* Return */
 	return wavefront;
@@ -162,6 +170,9 @@ void evg_wavefront_free(struct evg_wavefront_t *wavefront)
 	bit_map_free(wavefront->active_stack);
 	bit_map_free(wavefront->pred);
 	str_free(wavefront->name);
+	delete(wavefront->cf_inst);
+	delete(wavefront->alu_group);
+	delete(wavefront->tex_inst);
 	free(wavefront);
 }
 
@@ -224,7 +235,7 @@ void evg_wavefront_set_name(struct evg_wavefront_t *wavefront, char *name)
 void evg_wavefront_stack_push(struct evg_wavefront_t *wavefront)
 {
 	if (wavefront->stack_top == EVG_MAX_STACK_SIZE - 1)
-		fatal("%s: stack overflow", wavefront->cf_inst.info->name);
+		fatal("%s: stack overflow", wavefront->cf_inst->info->name);
 	wavefront->stack_top++;
 	wavefront->active_mask_push++;
 	bit_map_copy(wavefront->active_stack, wavefront->stack_top * wavefront->work_item_count,
@@ -239,7 +250,7 @@ void evg_wavefront_stack_pop(struct evg_wavefront_t *wavefront, int count)
 	if (!count)
 		return;
 	if (wavefront->stack_top < count)
-		fatal("%s: stack underflow", wavefront->cf_inst.info->name);
+		fatal("%s: stack underflow", wavefront->cf_inst->info->name);
 	wavefront->stack_top -= count;
 	wavefront->active_mask_pop += count;
 	wavefront->active_mask_update = 1;
@@ -287,15 +298,15 @@ void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 		int inst_num;
 
 		/* Decode CF instruction */
-		inst = &wavefront->cf_inst;
+		inst = wavefront->cf_inst;
 		inst_num = (wavefront->cf_buf - wavefront->cf_buf_start) / 8;
-		wavefront->cf_buf = evg_inst_decode_cf(wavefront->cf_buf, inst);
+		wavefront->cf_buf = EvgInstDecodeCF(inst, wavefront->cf_buf);
 
 		/* Debug */
 		if (debug_status(evg_isa_debug_category))
 		{
 			evg_isa_debug("\n\n");
-			evg_inst_dump(inst, inst_num, 0,
+			EvgInstDump(inst, inst_num, 0,
 				debug_file(evg_isa_debug_category));
 		}
 
@@ -328,7 +339,7 @@ void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 		}
 		if (ndrange->inst_histogram)
 		{
-			inst_opcode = wavefront->cf_inst.info->opcode;
+			inst_opcode = wavefront->cf_inst->info->opcode;
 			assert(inst_opcode < EvgInstOpcodeCount);
 			ndrange->inst_histogram[inst_opcode]++;
 		}
@@ -341,15 +352,15 @@ void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 		int i;
 
 		/* Decode ALU group */
-		alu_group = &wavefront->alu_group;
-		wavefront->clause_buf = evg_inst_decode_alu_group(wavefront->clause_buf,
-			wavefront->alu_group_count, alu_group);
+		alu_group = wavefront->alu_group;
+		wavefront->clause_buf = EvgALUGroupDecode(alu_group,
+				wavefront->clause_buf, wavefront->alu_group_count);
 
 		/* Debug */
 		if (debug_status(evg_isa_debug_category))
 		{
 			evg_isa_debug("\n\n");
-			evg_alu_group_dump(alu_group, 0, debug_file(evg_isa_debug_category));
+			EvgALUGroupDump(alu_group, 0, debug_file(evg_isa_debug_category));
 		}
 
 		/* Execute group for each work_item in wavefront */
@@ -401,14 +412,14 @@ void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 	case EVG_CLAUSE_TEX:
 	{
 		/* Decode TEX instruction */
-		inst = &wavefront->tex_inst;
-		wavefront->clause_buf = evg_inst_decode_tc(wavefront->clause_buf, inst);
+		inst = wavefront->tex_inst;
+		wavefront->clause_buf = EvgInstDecodeTC(inst, wavefront->clause_buf);
 
 		/* Debug */
 		if (debug_status(evg_isa_debug_category))
 		{
 			evg_isa_debug("\n\n");
-			evg_inst_dump(inst, 0, 0, debug_file(evg_isa_debug_category));
+			EvgInstDump(inst, 0, 0, debug_file(evg_isa_debug_category));
 		}
 
 		/* Execute in all work_items */
