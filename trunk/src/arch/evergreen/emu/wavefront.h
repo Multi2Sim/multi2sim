@@ -61,9 +61,9 @@ struct evg_wavefront_t
 	enum evg_clause_kind_t clause_kind;
 
 	/* Current instructions */
-	EvgInst cf_inst;
-	EvgALUGroup alu_group;
-	EvgInst tex_inst;
+	EvgInst *cf_inst;
+	EvgALUGroup *alu_group;
+	EvgInst *tex_inst;
 
 	/* Starting/current CF buffer */
 	void *cf_buf_start;
@@ -156,7 +156,7 @@ struct evg_wavefront_t
 		(WAVEFRONT_ID) <= (WORK_GROUP)->wavefront_id_last; \
 		(WAVEFRONT_ID)++)
 
-struct evg_wavefront_t *evg_wavefront_create(void);
+struct evg_wavefront_t *evg_wavefront_create(struct evg_work_group_t *work_group);
 void evg_wavefront_free(struct evg_wavefront_t *wavefront);
 void evg_wavefront_dump(struct evg_wavefront_t *wavefront, FILE *f);
 

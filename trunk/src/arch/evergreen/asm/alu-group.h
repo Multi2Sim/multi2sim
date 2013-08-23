@@ -60,5 +60,15 @@ CLASS_END(EvgALUGroup)
 void EvgALUGroupCreate(EvgALUGroup *self, EvgAsm *as);
 void EvgALUGroupDestroy(EvgALUGroup *self);
 
+void EvgALUGroupClear(EvgALUGroup *self);
+
+/* Decode one ALU group from 'buf', and assign it the ALU group ID given in
+ * 'group_id'. The function returns the next position in the buffer after
+ * having read the ALU group. */
+void *EvgALUGroupDecode(EvgALUGroup *self, void *buf, int group_id);
+
+void EvgALUGroupDump(EvgALUGroup *self, int shift, FILE *f);
+void EvgALUGroupDumpBuf(EvgALUGroup *self, char *buf, int size);
+
 #endif
 

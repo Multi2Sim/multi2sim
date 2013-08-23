@@ -148,7 +148,7 @@ void evg_isa_alu_clause_start(struct evg_wavefront_t *wavefront)
 void evg_isa_alu_clause_end(struct evg_wavefront_t *wavefront)
 {
 	/* If CF inst was ALU_POP_AFTER, pop the stack */
-	if (wavefront->cf_inst.info->opcode == EVG_INST_ALU_POP_AFTER)
+	if (wavefront->cf_inst->info->opcode == EVG_INST_ALU_POP_AFTER)
 		evg_wavefront_stack_pop(wavefront, 1);
 }
 
@@ -267,7 +267,7 @@ static unsigned int evg_isa_read_op_src_common(struct evg_work_item_t *work_item
 	int value = 0;  /* Signed, for negative constants and abs operations */
 
 	/* Get the source operand parameters */
-	evg_inst_get_op_src(inst, src_idx, &sel, &rel, &chan, neg_ptr, abs_ptr);
+	EvgInstGetOpSrc(inst, src_idx, &sel, &rel, &chan, neg_ptr, abs_ptr);
 
 	/* 0..127: Value in GPR */
 	if (IN_RANGE(sel, 0, 127))
@@ -286,11 +286,11 @@ static unsigned int evg_isa_read_op_src_common(struct evg_work_item_t *work_item
 		unsigned int kcache_mode;
 		unsigned int kcache_addr;
 
-		assert(wavefront->cf_inst.info->fmt[0] == EvgInstFormatCfAluWord0
-			&& wavefront->cf_inst.info->fmt[1] == EvgInstFormatCfAluWord1);
-		kcache_bank = wavefront->cf_inst.words[0].cf_alu_word0.kcache_bank0;
-		kcache_mode = wavefront->cf_inst.words[0].cf_alu_word0.kcache_mode0;
-		kcache_addr = wavefront->cf_inst.words[1].cf_alu_word1.kcache_addr0;
+		assert(wavefront->cf_inst->info->fmt[0] == EvgInstFormatCfAluWord0
+			&& wavefront->cf_inst->info->fmt[1] == EvgInstFormatCfAluWord1);
+		kcache_bank = wavefront->cf_inst->words[0].cf_alu_word0.kcache_bank0;
+		kcache_mode = wavefront->cf_inst->words[0].cf_alu_word0.kcache_mode0;
+		kcache_addr = wavefront->cf_inst->words[1].cf_alu_word1.kcache_addr0;
 
 		EVG_ISA_ARG_NOT_SUPPORTED_NEQ(kcache_mode, 1);
 		EVG_ISA_ARG_NOT_SUPPORTED_RANGE(chan, 0, 3);
@@ -305,11 +305,11 @@ static unsigned int evg_isa_read_op_src_common(struct evg_work_item_t *work_item
 
 		unsigned int kcache_bank, kcache_mode, kcache_addr;
 
-		assert(wavefront->cf_inst.info->fmt[0] == EvgInstFormatCfAluWord0
-			&& wavefront->cf_inst.info->fmt[1] == EvgInstFormatCfAluWord1);
-		kcache_bank = wavefront->cf_inst.words[0].cf_alu_word0.kcache_bank1;
-		kcache_mode = wavefront->cf_inst.words[1].cf_alu_word1.kcache_mode1;
-		kcache_addr = wavefront->cf_inst.words[1].cf_alu_word1.kcache_addr1;
+		assert(wavefront->cf_inst->info->fmt[0] == EvgInstFormatCfAluWord0
+			&& wavefront->cf_inst->info->fmt[1] == EvgInstFormatCfAluWord1);
+		kcache_bank = wavefront->cf_inst->words[0].cf_alu_word0.kcache_bank1;
+		kcache_mode = wavefront->cf_inst->words[1].cf_alu_word1.kcache_mode1;
+		kcache_addr = wavefront->cf_inst->words[1].cf_alu_word1.kcache_addr1;
 
 		EVG_ISA_ARG_NOT_SUPPORTED_NEQ(kcache_mode, 1);
 		EVG_ISA_ARG_NOT_SUPPORTED_RANGE(chan, 0, 3);
@@ -564,7 +564,7 @@ void evg_isa_enqueue_push_before(struct evg_work_item_t *work_item,
 	struct evg_isa_write_task_t *wt;
 
 	/* Do only if instruction initiating ALU clause is ALU_PUSH_BEFORE */
-	if (wavefront->cf_inst.info->opcode != EVG_INST_ALU_PUSH_BEFORE)
+	if (wavefront->cf_inst->info->opcode != EVG_INST_ALU_PUSH_BEFORE)
 		return;
 
 	/* Create and enqueue task */
@@ -635,7 +635,7 @@ void evg_isa_write_task_commit(struct evg_work_item_t *work_item)
 				if (wt->write_mask)
 				{
 					evg_isa_debug(",");
-					evg_inst_dump_gpr(wt->gpr, wt->rel, wt->chan, 0,
+					EvgInstDumpGpr(wt->gpr, wt->rel, wt->chan, 0,
 						debug_file(evg_isa_debug_category));
 				}
 				evg_isa_debug("<=");

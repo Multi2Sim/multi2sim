@@ -33,12 +33,15 @@
  * Public Functions
  */
 
-struct evg_work_item_t *evg_work_item_create()
+struct evg_work_item_t *evg_work_item_create(struct evg_wavefront_t *wavefront)
 {
 	struct evg_work_item_t *work_item;
 
 	/* Initialize */
 	work_item = xcalloc(1, sizeof(struct evg_work_item_t));
+	work_item->wavefront = wavefront;
+	work_item->work_group = wavefront->work_group;
+	work_item->ndrange = wavefront->ndrange;
 	work_item->write_task_list = linked_list_create();
 	work_item->lds_oqa = list_create();
 	work_item->lds_oqb = list_create();

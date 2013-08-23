@@ -35,12 +35,13 @@
  */
 
 
-struct evg_work_group_t *evg_work_group_create(void)
+struct evg_work_group_t *evg_work_group_create(struct evg_ndrange_t *ndrange)
 {
 	struct evg_work_group_t *work_group;
 
 	/* Initialize */
 	work_group = xcalloc(1, sizeof(struct evg_work_group_t));
+	work_group->ndrange = ndrange;
 	work_group->local_mem = mem_create();
 	work_group->local_mem->safe = 0;
 

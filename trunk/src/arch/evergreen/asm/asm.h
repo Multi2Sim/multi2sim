@@ -35,40 +35,8 @@
  * String maps
  */
 
-/* Table containing information of all instructions */
-extern EvgInstInfo evg_inst_info[EvgInstOpcodeCount];
+void evg_disasm_buffer(EvgAsm *self, struct elf_buffer_t *buffer, FILE *f);
 
-
-typedef void (*evg_fmt_dump_func_t)(void *buf, FILE *);
-
-void evg_disasm_init(void);
-void evg_disasm_done(void);
-void evg_disasm_buffer(struct elf_buffer_t *buffer, FILE *f);
-
-void evg_inst_slot_dump_buf(EvgInst *inst, int count, int loop_idx, int slot, char *buf, int size);
-void evg_inst_dump_buf(EvgInst *inst, int count, int loop_idx, char *buf, int size);
-
-void evg_inst_dump_gpr(int gpr, int rel, int chan, int im, FILE *f);
-void evg_inst_slot_dump(EvgInst *inst, int count, int loop_idx, int slot, FILE *f);
-void evg_inst_dump(EvgInst *inst, int count, int loop_idx, FILE *f);
-void evg_inst_dump_debug(EvgInst *inst, int count, int loop_idx, FILE *f);
-void evg_alu_group_dump(EvgALUGroup *group, int shift, FILE *f);
-void evg_alu_group_dump_buf(EvgALUGroup *alu_group, char *buf, int size);
-void evg_alu_group_dump_debug(EvgALUGroup *alu_group, int count, int loop_idx, FILE *f);
-
-/* Copy instruction */
-void evg_inst_copy(EvgInst *dest, EvgInst *src);
-void evg_alu_group_copy(EvgALUGroup *dest, EvgALUGroup *src);
-
-/* Obtaining source operand fields for ALU instructions */
-void evg_inst_get_op_src(EvgInst *inst, int src_idx,
-	int *sel, int *rel, int *chan, int *neg, int *abs);
-
-/* Decode */
-void *evg_inst_decode_cf(void *buf, EvgInst *inst);
-void *evg_inst_decode_alu(void *buf, EvgInst *inst);
-void *evg_inst_decode_alu_group(void *buf, int group_id, EvgALUGroup *group);
-void *evg_inst_decode_tc(void *buf, EvgInst *inst);
 
 
 
@@ -76,7 +44,23 @@ void *evg_inst_decode_tc(void *buf, EvgInst *inst);
  * Class 'EvgAsm'
  */
 
+#define EVG_INST_INFO_CF_LONG_SIZE  256
+#define EVG_INST_INFO_CF_SHORT_SIZE 16
+#define EVG_INST_INFO_ALU_LONG_SIZE 256
+#define EVG_INST_INFO_ALU_SHORT_SIZE 32
+#define EVG_INST_INFO_TEX_SIZE 32
+
 CLASS_BEGIN(EvgAsm, Asm)
+
+	/* Table containing information of all instructions */
+	EvgInstInfo inst_info[EvgInstOpcodeCount];
+
+	/* Pointers to 'inst_info' table indexed by instruction opcode */
+	EvgInstInfo *inst_info_cf_long[EVG_INST_INFO_CF_LONG_SIZE];  /* for 8-bit cf_inst */
+	EvgInstInfo *inst_info_cf_short[EVG_INST_INFO_CF_SHORT_SIZE];  /* for 4-bit cf_inst */
+	EvgInstInfo *inst_info_alu_long[EVG_INST_INFO_ALU_LONG_SIZE];  /* for ALU_OP2 */
+	EvgInstInfo *inst_info_alu_short[EVG_INST_INFO_ALU_SHORT_SIZE];  /* for ALU_OP3 */
+	EvgInstInfo *inst_info_tex[EVG_INST_INFO_TEX_SIZE];  /* For tex instructions */
 
 CLASS_END(EvgAsm)
 

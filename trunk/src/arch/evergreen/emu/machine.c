@@ -609,7 +609,7 @@ void evg_isa_MEM_RAT_impl(struct evg_work_item_t *work_item, EvgInst *inst)
 				mem_write(evg_emu->global_mem, addr + i * 4, 4, &value);
 				evg_isa_debug(",");
 				if (debug_status(evg_isa_debug_category))
-					evg_inst_dump_gpr(W0.rw_gpr, W0.rr, i, 0, debug_file(evg_isa_debug_category));
+					EvgInstDumpGpr(W0.rw_gpr, W0.rr, i, 0, debug_file(evg_isa_debug_category));
 				evg_isa_debug("=(0x%x,%gf)", value.as_uint, value.as_float);
 			}
 			/* FIXME: array_size: ignored now, because 'burst_count' = 0 */
@@ -706,7 +706,7 @@ void evg_isa_MEM_RAT_CACHELESS_impl(struct evg_work_item_t *work_item, EvgInst *
 				mem_write(evg_emu->global_mem, addr + i * 4, 4, &value);
 				evg_isa_debug(",");
 				if (debug_status(evg_isa_debug_category))
-					evg_inst_dump_gpr(W0.rw_gpr, W0.rr, i, 0, debug_file(evg_isa_debug_category));
+					EvgInstDumpGpr(W0.rw_gpr, W0.rr, i, 0, debug_file(evg_isa_debug_category));
 				evg_isa_debug("=(0x%x,%gf)", value.as_uint, value.as_float);
 			}
 			/* FIXME: array_size: ignored now, because 'burst_count' = 0 */
@@ -3553,7 +3553,7 @@ void evg_isa_FETCH_impl(struct evg_work_item_t *work_item, EvgInst *inst)
 				EvgInstReg reg;
 				reg.as_uint = value[dst_sel_elem];
 				evg_isa_debug(" ");
-				evg_inst_dump_gpr(W1.dst_gpr, W1.dst_rel, i, dst_sel_elem, debug_file(evg_isa_debug_category));
+				EvgInstDumpGpr(W1.dst_gpr, W1.dst_rel, i, dst_sel_elem, debug_file(evg_isa_debug_category));
 				evg_isa_debug("<=(%d,%gf)", reg.as_uint, reg.as_float);
 			}
 			break;
@@ -3749,7 +3749,7 @@ void evg_isa_SAMPLE_impl(struct evg_work_item_t *work_item, EvgInst *inst)
 			if (debug_status(evg_isa_debug_category))
 			{
 				evg_isa_debug(" ");
-				evg_inst_dump_gpr(W1.dst_gpr, W1.dr, i, dst_sel_elem, debug_file(evg_isa_debug_category));
+				EvgInstDumpGpr(W1.dst_gpr, W1.dr, i, dst_sel_elem, debug_file(evg_isa_debug_category));
 				evg_isa_debug("<=(%d,%gf)", value.as_int, value.as_float);
 			}
 			break;

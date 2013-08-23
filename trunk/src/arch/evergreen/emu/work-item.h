@@ -98,7 +98,7 @@ struct evg_work_item_t
 		(WORK_ITEM_ID) <= (WAVEFRONT)->work_item_id_last; \
 		(WORK_ITEM_ID)++)
 
-struct evg_work_item_t *evg_work_item_create(void);
+struct evg_work_item_t *evg_work_item_create(struct evg_wavefront_t *wavefront);
 void evg_work_item_free(struct evg_work_item_t *work_item);
 
 /* Consult and change active/predicate bits */

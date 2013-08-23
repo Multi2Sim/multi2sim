@@ -42,10 +42,13 @@
  * Class 'EvgEmu'
  */
 
-void EvgEmuCreate(EvgEmu *self)
+void EvgEmuCreate(EvgEmu *self, EvgAsm *as)
 {
 	/* Parent */
 	EmuCreate(asEmu(self), "Evergreen");
+
+	/* Initialize */
+	self->as = as;
 
 	/* Memories */
 	self->const_mem = mem_create();
@@ -184,6 +187,7 @@ int EvgEmuRun(Emu *self)
 
 
 EvgEmu *evg_emu;
+EvgAsm *evg_asm;
 
 long long evg_emu_max_cycles;
 long long evg_emu_max_inst;
@@ -211,10 +215,8 @@ void evg_emu_init(void)
 	}
 
 	/* Create emulator */
-	evg_emu = new(EvgEmu);
-
-	/* Initialize disassembler (decoding tables...) */
-	evg_disasm_init();
+	evg_asm = new(EvgAsm);
+	evg_emu = new(EvgEmu, evg_asm);
 
 	/* Initialize ISA (instruction execution tables...) */
 	evg_isa_init();
@@ -227,19 +229,19 @@ void evg_emu_done()
 	if (evg_emu_report_file)
 		fclose(evg_emu_report_file);
 
-	/* Finalize disassembler */
-	evg_disasm_done();
-
 	/* Finalize ISA */
 	evg_isa_done();
 
 	/* Free emulator */
 	delete(evg_emu);
+	delete(evg_asm);
 }
 
 
 void evg_emu_disasm(char *path)
 {
+	EvgAsm *as;
+
 	struct elf_file_t *elf_file;
 	struct elf_symbol_t *symbol;
 	struct elf_section_t *section;
@@ -251,7 +253,7 @@ void evg_emu_disasm(char *path)
 	int i;
 
 	/* Initialize disassembler */
-	evg_disasm_init();
+	as = new(EvgAsm);
 
 	/* Decode external ELF */
 	elf_file = elf_file_create_from_path(path);
@@ -272,7 +274,7 @@ void evg_emu_disasm(char *path)
 
 			/* Get kernel name */
 			printf("**\n** Disassembly for '__kernel %s'\n**\n\n", kernel_name);
-			evg_disasm_buffer(&amd_bin->enc_dict_entry_evergreen->sec_text_buffer, stdout);
+			evg_disasm_buffer(as, &amd_bin->enc_dict_entry_evergreen->sec_text_buffer, stdout);
 			printf("\n\n\n");
 
 			/* Free internal ELF */
@@ -282,7 +284,7 @@ void evg_emu_disasm(char *path)
 
 	/* Free external ELF */
 	elf_file_free(elf_file);
-	evg_disasm_done();
+	delete(as);
 
 	/* End */
 	mhandle_done();
@@ -292,6 +294,8 @@ void evg_emu_disasm(char *path)
 
 void evg_emu_opengl_disasm(char *path, int opengl_shader_index)
 {
+	EvgAsm *as;
+
 	void *file_buffer;
 	int file_size;
 
@@ -299,7 +303,7 @@ void evg_emu_opengl_disasm(char *path, int opengl_shader_index)
 	struct evg_opengl_shader_t *amd_opengl_shader;
 
 	/* Initialize disassembler */
-	evg_disasm_init();
+	as = new(EvgAsm);
 
 	/* Load file into memory buffer */
 	file_buffer = read_buffer(path, &file_size);
@@ -321,12 +325,12 @@ void evg_emu_opengl_disasm(char *path, int opengl_shader_index)
 	/* Disaseemble */
 	amd_opengl_shader = list_get(amd_opengl_bin->shader_list, opengl_shader_index -1 );
 	printf("**\n** Disassembly for shader %d\n**\n\n", opengl_shader_index);
-	evg_disasm_buffer(&amd_opengl_shader->isa_buffer, stdout);
+	evg_disasm_buffer(as, &amd_opengl_shader->isa_buffer, stdout);
 	printf("\n\n\n");
 
 	/* Free */
 	evg_opengl_bin_file_free(amd_opengl_bin);
-	evg_disasm_done();
+	delete(as);
 
 	/* End */
 	mhandle_done();

@@ -96,7 +96,7 @@ struct evg_work_group_t
 		(WORK_GROUP_ID) <= (NDRANGE)->work_group_id_last; \
 		(WORK_GROUP_ID)++)
 
-struct evg_work_group_t *evg_work_group_create(void);
+struct evg_work_group_t *evg_work_group_create(struct evg_ndrange_t *ndrange);
 void evg_work_group_free(struct evg_work_group_t *work_group);
 void evg_work_group_dump(struct evg_work_group_t *work_group, FILE *f);
 

@@ -61,7 +61,7 @@ static void evg_cf_engine_fetch(struct evg_compute_unit_t *compute_unit)
 
 	/* Emulate CF instruction */
 	evg_wavefront_execute(wavefront);
-	inst = &wavefront->cf_inst;
+	inst = wavefront->cf_inst;
 
 
 	/* Create uop */
@@ -128,7 +128,7 @@ static void evg_cf_engine_fetch(struct evg_compute_unit_t *compute_unit)
 	/* Trace */
 	if (evg_tracing())
 	{
-		evg_inst_dump_buf(inst, -1, 0, str, sizeof str);
+		EvgInstDumpBuf(inst, -1, 0, str, sizeof str);
 		str_single_spaces(str_trimmed, sizeof str_trimmed, str);
 		evg_trace("evg.new_inst id=%lld cu=%d wg=%d wf=%d cat=\"cf\" stg=\"cf-fe\" asm=\"%s\"\n",
 			uop->id_in_compute_unit, compute_unit->id, uop->work_group->id, wavefront->id, str_trimmed);

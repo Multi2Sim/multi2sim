@@ -625,5 +625,26 @@ CLASS_END(EvgInst)
 void EvgInstCreate(EvgInst *self, EvgAsm *as);
 void EvgInstDestroy(EvgInst *self);
 
+void EvgInstClear(EvgInst *self);
+
+/* Decode an instruction from a control-flow, ALU, or texture clause in the
+ * buffer given in 'buf'. The functions return the next position in 'buf' after
+ * having read the instruction. */
+void *EvgInstDecodeCF(EvgInst *self, void *buf);
+void *EvgInstDecodeALU(EvgInst *self, void *buf);
+void *EvgInstDecodeTC(EvgInst *self, void *buf);
+
+void EvgInstDump(EvgInst *self, int count, int loop_idx, FILE *f);
+void EvgInstDumpBuf(EvgInst *self, int count, int loop_idx,
+	char *buf, int size);
+
+void EvgInstSlotDump(EvgInst *self, int count, int loop_idx, int slot, FILE *f);
+void EvgInstSlotDumpBuf(EvgInst *self, int count, int loop_idx, int slot,
+	char *buf, int size);
+
+void EvgInstDumpGpr(int gpr, int rel, int chan, int im, FILE *f);
+
+void EvgInstGetOpSrc(EvgInst *self, int src_idx,
+	int *sel, int *rel, int *chan, int *neg, int *abs);
 #endif
 

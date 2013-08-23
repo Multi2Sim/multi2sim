@@ -71,7 +71,7 @@ static void evg_alu_engine_fetch(struct evg_compute_unit_t *compute_unit)
 
 	/* Emulate instruction and create uop */
 	evg_wavefront_execute(wavefront);
-	alu_group = &wavefront->alu_group;
+	alu_group = wavefront->alu_group;
 	uop = evg_uop_create_from_alu_group(alu_group);
 	uop->wavefront = wavefront;
 	uop->work_group = wavefront->work_group;
@@ -177,7 +177,7 @@ static void evg_alu_engine_fetch(struct evg_compute_unit_t *compute_unit)
 	{
 		char str_inst[MAX_LONG_STRING_SIZE];
 
-		evg_alu_group_dump_buf(&wavefront->alu_group, str_inst, sizeof str_inst);
+		EvgALUGroupDumpBuf(wavefront->alu_group, str_inst, sizeof str_inst);
 		evg_trace("evg.new_inst id=%lld cu=%d wg=%d wf=%d cat=\"alu\" stg=\"alu-fe\" %s\n",
 			uop->id_in_compute_unit, compute_unit->id,
 			uop->work_group->id, wavefront->id, str_inst);
