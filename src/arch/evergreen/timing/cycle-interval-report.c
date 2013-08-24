@@ -79,6 +79,7 @@ void evg_cu_spatial_report_done()
 
 void evg_cu_spatial_report_dump(struct evg_compute_unit_t *compute_unit)
 {
+	EvgGpu *gpu = compute_unit->gpu;
 	FILE *f = spatial_report_file;
 
 	fprintf(f,"CU,%d,CFInst,%lld,MemAcc,%lld,TEXInstn,%lld,ALUInstn,%lld,Cycles,%lld \n",
@@ -87,7 +88,7 @@ void evg_cu_spatial_report_dump(struct evg_compute_unit_t *compute_unit)
 			compute_unit->inflight_mem_accesses,
 			compute_unit->tex_engine.interval_inst_count,
 			compute_unit->alu_engine.interval_inst_count,
-			asTiming(evg_gpu)->cycle);
+			asTiming(gpu)->cycle);
 
 }
 
@@ -128,9 +129,11 @@ void evg_tex_report_global_mem_finish( struct evg_compute_unit_t *compute_unit, 
 
 void evg_cu_interval_update(struct evg_compute_unit_t *compute_unit)
 {
+	EvgGpu *gpu = compute_unit->gpu;
+
 	/* If interval - reset the counters in all the engines */
 	compute_unit->interval_cycle ++;
-	if (!(asTiming(evg_gpu)->cycle % spatial_profiling_interval))
+	if (!(asTiming(gpu)->cycle % spatial_profiling_interval))
 	{
 		evg_cu_spatial_report_dump(compute_unit);
 

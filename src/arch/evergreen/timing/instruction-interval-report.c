@@ -43,7 +43,7 @@ int evg_periodic_report_active;
  * Private variables
  */
 
-static char *evg_periodic_report_file_name;
+char *evg_periodic_report_file_name;
 static int evg_periodic_report_interval = 1000;
 
 static enum evg_periodic_report_scope_t
@@ -107,16 +107,6 @@ static char *evg_periodic_report_intro =
  * Public Functions
  */
 
-void evg_periodic_report_init(void)
-{
-}
-
-
-void evg_periodic_report_done(void)
-{
-	str_free(evg_periodic_report_file_name);
-}
-
 
 static char *evg_periodic_report_section_name = "PeriodicReport";
 
@@ -160,7 +150,7 @@ void evg_periodic_report_config_read(struct config_t *config)
  * containing this wavefront is mapped to the compute unit.
  * This function must be called only if the periodic report has been activated
  * (evg_periodic_report_active = 1). */
-void evg_periodic_report_wavefront_init(EvgWavefront *wavefront)
+void evg_periodic_report_wavefront_init(EvgGpu *gpu, EvgWavefront *wavefront)
 {
 	EvgWorkGroup *work_group = wavefront->work_group;
 	char file_name[MAX_STRING_SIZE];
@@ -206,7 +196,7 @@ void evg_periodic_report_wavefront_init(EvgWavefront *wavefront)
 		fatal("%s: could not open periodic report file", file_name);
 
 	/* Record initial cycle */
-	wavefront->periodic_report_cycle = asTiming(evg_gpu)->cycle;
+	wavefront->periodic_report_cycle = asTiming(gpu)->cycle;
 }
 
 
@@ -214,7 +204,7 @@ void evg_periodic_report_wavefront_init(EvgWavefront *wavefront)
  * containing this wavefront is unmapped from the compute unit.
  * This function must be called only if the periodic report has been activated
  * (evg_periodic_report_active = 1). */
-void evg_periodic_report_wavefront_done(EvgWavefront *wavefront)
+void evg_periodic_report_wavefront_done(EvgGpu *gpu, EvgWavefront *wavefront)
 {
 	/* Ignore if this wavefront is not dumping report */
 	assert(evg_periodic_report_active);
@@ -227,7 +217,7 @@ void evg_periodic_report_wavefront_done(EvgWavefront *wavefront)
 }
 
 
-void evg_periodic_report_dump_entry(EvgWavefront *wavefront)
+void evg_periodic_report_dump_entry(EvgGpu *gpu, EvgWavefront *wavefront)
 {
 	FILE *f = wavefront->periodic_report_file;
 	int i;
@@ -249,7 +239,7 @@ void evg_periodic_report_dump_entry(EvgWavefront *wavefront)
 
 	/* Dump entry */
 	fprintf(f, "%8lld ", wavefront->periodic_report_vliw_bundle_count);
-	fprintf(f, "%5lld ", asTiming(evg_gpu)->cycle - wavefront->periodic_report_cycle);
+	fprintf(f, "%5lld ", asTiming(gpu)->cycle - wavefront->periodic_report_cycle);
 	fprintf(f, "%5d ", wavefront->periodic_report_inst_count);
 	fprintf(f, "%5d ", wavefront->periodic_report_local_mem_accesses);
 	fprintf(f, "%5d ", wavefront->periodic_report_global_mem_reads);
@@ -257,7 +247,7 @@ void evg_periodic_report_dump_entry(EvgWavefront *wavefront)
 	fprintf(f, "\n");
 
 	/* Reset statistics */
-	wavefront->periodic_report_cycle = asTiming(evg_gpu)->cycle;
+	wavefront->periodic_report_cycle = asTiming(gpu)->cycle;
 	wavefront->periodic_report_inst_count = 0;
 	wavefront->periodic_report_local_mem_accesses = 0;
 	wavefront->periodic_report_global_mem_reads = 0;
@@ -270,7 +260,7 @@ void evg_periodic_report_dump_entry(EvgWavefront *wavefront)
  * a new instruction is fetched in the CF, ALU, or TEX engines. It should be only
  * called if the periodic report has been activated (evg_periodic_report_active = 1).
  */
-void evg_periodic_report_new_inst(struct evg_uop_t *uop)
+void evg_periodic_report_new_inst(EvgGpu *gpu, struct evg_uop_t *uop)
 {
 	EvgWavefront *wavefront = uop->wavefront;
 	EvgWorkItem *work_item;
@@ -291,7 +281,7 @@ void evg_periodic_report_new_inst(struct evg_uop_t *uop)
 	{
 		EVG_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
 		{
-			work_item = evg_gpu->ndrange->work_items[work_item_id];
+			work_item = gpu->ndrange->work_items[work_item_id];
 			wavefront->periodic_report_local_mem_accesses += work_item->local_mem_access_count;
 		}
 	}
@@ -309,5 +299,5 @@ void evg_periodic_report_new_inst(struct evg_uop_t *uop)
 	/* Dump report entry if interval reached */
 	wavefront->periodic_report_vliw_bundle_count++;
 	if (!(wavefront->periodic_report_vliw_bundle_count % evg_periodic_report_interval) || uop->wavefront_last)
-		evg_periodic_report_dump_entry(wavefront);
+		evg_periodic_report_dump_entry(gpu, wavefront);
 }

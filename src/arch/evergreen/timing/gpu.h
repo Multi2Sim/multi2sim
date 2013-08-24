@@ -23,6 +23,13 @@
 #include <arch/common/timing.h>
 
 
+/*
+ * Public
+ */
+
+/* Forward declarations */
+struct evg_uop_t;
+
 /* Trace */
 #define evg_tracing() trace_status(evg_trace_category)
 #define evg_trace(...) trace(evg_trace_category, __VA_ARGS__)
@@ -78,6 +85,11 @@ extern int evg_gpu_tex_engine_load_queue_size;
 		(WORK_ITEM_ID)++)
 
 
+void EvgGpuReadConfig(void);
+
+
+
+
 /*
  * Class 'EvgGpu'
  */
@@ -111,6 +123,9 @@ CLASS_BEGIN(EvgGpu, Timing)
 	/* List of deleted instructions */
 	struct linked_list_t *trash_uop_list;
 
+	/* uop repository */
+	struct repos_t *uop_repos;
+
 	/* Last cycle when an instructions completed in any engine. This is used
  	 * to decide when to stop simulation if there was a simulation stall. */
 	long long last_complete_cycle;
@@ -123,29 +138,15 @@ void EvgGpuDestroy(EvgGpu *self);
 void EvgGpuDump(Object *self, FILE *f);
 void EvgGpuDumpSummary(Timing *self, FILE *f);
 
+void EvgGpuDumpReport(EvgGpu *self);
+
 int EvgGpuRun(Timing *self);
 
+void EvgGpuMapNDRange(EvgGpu *self, EvgNDRange *ndrange);
+void EvgGpuUnmapNDRange(EvgGpu *self);
 
-
-
-/*
- * Public Functions
- */
-
-extern EvgGpu *evg_gpu;
-
-void evg_gpu_read_config(void);
-
-void evg_gpu_init(void);
-void evg_gpu_done(void);
-
-void evg_gpu_dump_report(EvgGpu *self);
-
-struct evg_uop_t;
-void evg_gpu_uop_trash_add(struct evg_uop_t *uop);
-void evg_gpu_uop_trash_empty(void);
-
-
+void EvgGpuAddToUopTrash(EvgGpu *self, struct evg_uop_t *uop);
+void EvgGpuEmptyUopTrash(EvgGpu *self);
 
 
 #endif

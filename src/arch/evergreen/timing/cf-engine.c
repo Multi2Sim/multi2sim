@@ -41,7 +41,8 @@ int evg_gpu_cf_engine_inst_mem_latency = 2;  /* Instruction memory latency */
 
 static void evg_cf_engine_fetch(struct evg_compute_unit_t *compute_unit)
 {
-	EvgNDRange *ndrange = evg_gpu->ndrange;
+	EvgGpu *gpu = compute_unit->gpu;
+	EvgNDRange *ndrange = gpu->ndrange;
 	EvgWavefront *wavefront;
 
 	char str[MAX_LONG_STRING_SIZE];
@@ -65,10 +66,9 @@ static void evg_cf_engine_fetch(struct evg_compute_unit_t *compute_unit)
 
 
 	/* Create uop */
-	uop = evg_uop_create();
+	uop = evg_uop_create(compute_unit);
 	uop->wavefront = wavefront;
 	uop->work_group = wavefront->work_group;
-	uop->compute_unit = compute_unit;
 	uop->id_in_compute_unit = compute_unit->gpu_uop_id_counter++;
 	uop->alu_clause_trigger = wavefront->clause_kind == EvgInstClauseALU;
 	uop->tex_clause_trigger = wavefront->clause_kind == EvgInstClauseTEX;
@@ -102,7 +102,7 @@ static void evg_cf_engine_fetch(struct evg_compute_unit_t *compute_unit)
 
 	/* Access instruction cache. Record the time when the instruction will have been fetched,
 	 * as per the latency of the instruction memory. */
-	uop->inst_mem_ready = asTiming(evg_gpu)->cycle + evg_gpu_cf_engine_inst_mem_latency;
+	uop->inst_mem_ready = asTiming(gpu)->cycle + evg_gpu_cf_engine_inst_mem_latency;
 
 	/* Insert uop to fetch buffer */
 	assert(!compute_unit->cf_engine.fetch_buffer[wavefront->id_in_compute_unit]);
@@ -123,7 +123,7 @@ static void evg_cf_engine_fetch(struct evg_compute_unit_t *compute_unit)
 	if (uop->tex_clause_trigger)
 		compute_unit->cf_engine.tex_clause_trigger_count++;
 	if (evg_periodic_report_active)
-		evg_periodic_report_new_inst(uop);
+		evg_periodic_report_new_inst(gpu, uop);
 
 	/* Trace */
 	if (evg_tracing())
@@ -138,6 +138,7 @@ static void evg_cf_engine_fetch(struct evg_compute_unit_t *compute_unit)
 
 static void evg_cf_engine_decode(struct evg_compute_unit_t *compute_unit)
 {
+	EvgGpu *gpu = compute_unit->gpu;
 	struct evg_uop_t *uop;
 	int index;
 
@@ -153,7 +154,7 @@ static void evg_cf_engine_decode(struct evg_compute_unit_t *compute_unit)
 
 		/* Current candidate is not valid - go to next.
 		 * If we went through the whole fetch buffer, no decode. */
-		index = (index + 1) % evg_gpu->wavefronts_per_compute_unit;
+		index = (index + 1) % gpu->wavefronts_per_compute_unit;
 		if (index == compute_unit->cf_engine.decode_index)
 			return;
 	}
@@ -164,7 +165,7 @@ static void evg_cf_engine_decode(struct evg_compute_unit_t *compute_unit)
 
 	/* Set next decode candidate */
 	compute_unit->cf_engine.decode_index = (index + 1)
-		% evg_gpu->wavefronts_per_compute_unit;
+		% gpu->wavefronts_per_compute_unit;
 
 	/* Trace */
 	evg_trace("evg.inst id=%lld cu=%d stg=\"cf-de\"\n",
@@ -174,6 +175,7 @@ static void evg_cf_engine_decode(struct evg_compute_unit_t *compute_unit)
 
 static void evg_cf_engine_execute(struct evg_compute_unit_t *compute_unit)
 {
+	EvgGpu *gpu = compute_unit->gpu;
 	EvgWavefront *wavefront;
 	EvgNDRange *ndrange;
 
@@ -200,7 +202,7 @@ static void evg_cf_engine_execute(struct evg_compute_unit_t *compute_unit)
 
 		/* Current candidate is not valid - go to next.
 		 * If we went through the whole instruction buffer, no execute. */
-		index = (index + 1) % evg_gpu->wavefronts_per_compute_unit;
+		index = (index + 1) % gpu->wavefronts_per_compute_unit;
 		if (index == compute_unit->cf_engine.execute_index)
 			return;
 	}
@@ -247,7 +249,7 @@ static void evg_cf_engine_execute(struct evg_compute_unit_t *compute_unit)
 
 	/* Set next execute candidate */
 	compute_unit->cf_engine.execute_index = (index + 1)
-		% evg_gpu->wavefronts_per_compute_unit;
+		% gpu->wavefronts_per_compute_unit;
 	
 	/* Trace */
 	evg_trace("evg.inst id=%lld cu=%d stg=\"cf-ex\"\n",
@@ -257,6 +259,7 @@ static void evg_cf_engine_execute(struct evg_compute_unit_t *compute_unit)
 
 static void evg_cf_engine_complete(struct evg_compute_unit_t *compute_unit)
 {
+	EvgGpu *gpu = compute_unit->gpu;
 	struct linked_list_t *complete_queue = compute_unit->cf_engine.complete_queue;
 	struct linked_list_t *wavefront_pool = compute_unit->wavefront_pool;
 	EvgWorkGroup *work_group;
@@ -300,7 +303,7 @@ static void evg_cf_engine_complete(struct evg_compute_unit_t *compute_unit)
 		/* Free uop. If a trace is being generated, defer the instruction
 		 * release to the next cycle to allow for the last stage to be shown. */
 		if (evg_tracing())
-			evg_gpu_uop_trash_add(uop);
+			EvgGpuAddToUopTrash(gpu, uop);
 		else
 			evg_uop_free(uop);
 
@@ -310,7 +313,7 @@ static void evg_cf_engine_complete(struct evg_compute_unit_t *compute_unit)
 			evg_compute_unit_unmap_work_group(compute_unit, work_group);
 
 		/* Statistics */
-		evg_gpu->last_complete_cycle = asTiming(evg_gpu)->cycle;
+		gpu->last_complete_cycle = asTiming(gpu)->cycle;
 	}
 }
 
