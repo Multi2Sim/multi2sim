@@ -67,7 +67,7 @@ struct evg_uop_t
 	long long id_in_compute_unit;
 	EvgWavefront *wavefront;  /* Wavefront it belongs to */
 	EvgWorkGroup *work_group;  /* Work-group it belongs to */
-	struct evg_compute_unit_t *compute_unit;  /* Compute unit it belongs to */
+	EvgComputeUnit *compute_unit;  /* Compute unit it belongs to */
 	struct evg_uop_t *cf_uop;  /* For ALU/TEX uops, CF uop that triggered clause */
 	int length;  /* Number of bytes occupied by ALU group */
 	int vliw_slots;  /* Number of slots for ALU group, or 1 for CF/TEX instructions */
@@ -124,8 +124,8 @@ struct evg_uop_t
 	struct evg_work_item_uop_t work_item_uop[0];
 };
 
-struct evg_uop_t *evg_uop_create(struct evg_compute_unit_t *compute_unit);
-struct evg_uop_t *evg_uop_create_from_alu_group(struct evg_compute_unit_t *compute_unit,
+struct evg_uop_t *evg_uop_create(EvgComputeUnit *compute_unit);
+struct evg_uop_t *evg_uop_create_from_alu_group(EvgComputeUnit *compute_unit,
 		EvgALUGroup *alu_group);
 void evg_uop_free(struct evg_uop_t *gpu_uop);
 

@@ -36,6 +36,7 @@
 #include <arch/evergreen/emu/wavefront.h>
 #include <arch/evergreen/emu/work-group.h>
 #include <arch/evergreen/emu/work-item.h>
+#include <arch/evergreen/timing/compute-unit.h>
 #include <arch/evergreen/timing/faults.h>
 #include <arch/evergreen/timing/gpu.h>
 #include <arch/evergreen/timing/uop.h>
@@ -1881,6 +1882,7 @@ static void m2s_init(void)
 	CLASS_REGISTER(EvgWorkItem);
 
 	CLASS_REGISTER(EvgGpu);
+	CLASS_REGISTER(EvgComputeUnit);
 
 	CLASS_REGISTER(FrmAsm);
 	CLASS_REGISTER(FrmInst);

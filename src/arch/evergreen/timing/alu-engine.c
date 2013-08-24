@@ -40,7 +40,7 @@ int evg_gpu_alu_engine_fetch_queue_size = 64;  /* Number of bytes */
 int evg_gpu_alu_engine_pe_latency = 4;  /* Processing element latency */
 
 
-static void evg_alu_engine_fetch(struct evg_compute_unit_t *compute_unit)
+static void evg_alu_engine_fetch(EvgComputeUnit *compute_unit)
 {
 	EvgGpu *gpu = compute_unit->gpu;
 
@@ -186,7 +186,7 @@ static void evg_alu_engine_fetch(struct evg_compute_unit_t *compute_unit)
 }
 
 
-static void evg_alu_engine_decode(struct evg_compute_unit_t *compute_unit)
+static void evg_alu_engine_decode(EvgComputeUnit *compute_unit)
 {
 	EvgGpu *gpu = compute_unit->gpu;
 
@@ -224,7 +224,7 @@ static void evg_alu_engine_decode(struct evg_compute_unit_t *compute_unit)
 }
 
 
-static void evg_alu_engine_read(struct evg_compute_unit_t *compute_unit)
+static void evg_alu_engine_read(EvgComputeUnit *compute_unit)
 {
 	EvgGpu *gpu = compute_unit->gpu;
 	EvgWorkItem *work_item;
@@ -273,7 +273,7 @@ static void evg_alu_engine_read(struct evg_compute_unit_t *compute_unit)
 }
 
 
-static void evg_alu_engine_execute(struct evg_compute_unit_t *compute_unit)
+static void evg_alu_engine_execute(EvgComputeUnit *compute_unit)
 {
 	EvgGpu *gpu = compute_unit->gpu;
 	struct mod_t *local_memory = compute_unit->local_memory;
@@ -310,7 +310,7 @@ static void evg_alu_engine_execute(struct evg_compute_unit_t *compute_unit)
 }
 
 
-static void evg_alu_engine_write(struct evg_compute_unit_t *compute_unit)
+static void evg_alu_engine_write(EvgComputeUnit *compute_unit)
 {
 	EvgGpu *gpu = compute_unit->gpu;
 
@@ -425,7 +425,7 @@ static void evg_alu_engine_write(struct evg_compute_unit_t *compute_unit)
 }
 
 
-void evg_alu_engine_run(struct evg_compute_unit_t *compute_unit)
+void evg_alu_engine_run(EvgComputeUnit *compute_unit)
 {
 	/* If no wavefront to run, avoid entering loop */
 	if (!linked_list_count(compute_unit->alu_engine.pending_queue) &&

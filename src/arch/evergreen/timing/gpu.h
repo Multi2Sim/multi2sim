@@ -106,17 +106,17 @@ CLASS_BEGIN(EvgGpu, Timing)
 	int work_items_per_compute_unit;
 
 	/* Compute units */
-	struct evg_compute_unit_t **compute_units;
+	EvgComputeUnit **compute_units;
 
 	/* List of ready compute units accepting work-groups */
-	struct evg_compute_unit_t *ready_list_head;
-	struct evg_compute_unit_t *ready_list_tail;
+	EvgComputeUnit *ready_list_head;
+	EvgComputeUnit *ready_list_tail;
 	int ready_list_count;
 	int ready_list_max;
 
 	/* List of busy compute units */
-	struct evg_compute_unit_t *busy_list_head;
-	struct evg_compute_unit_t *busy_list_tail;
+	EvgComputeUnit *busy_list_head;
+	EvgComputeUnit *busy_list_tail;
 	int busy_list_count;
 	int busy_list_max;
 

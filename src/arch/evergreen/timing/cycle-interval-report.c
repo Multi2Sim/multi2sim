@@ -77,7 +77,7 @@ void evg_cu_spatial_report_done()
 
 }
 
-void evg_cu_spatial_report_dump(struct evg_compute_unit_t *compute_unit)
+void evg_cu_spatial_report_dump(EvgComputeUnit *compute_unit)
 {
 	EvgGpu *gpu = compute_unit->gpu;
 	FILE *f = spatial_report_file;
@@ -93,24 +93,24 @@ void evg_cu_spatial_report_dump(struct evg_compute_unit_t *compute_unit)
 }
 
 /* Called in fetch stage cf engine */
-void evg_cf_report_new_inst(struct evg_compute_unit_t *compute_unit)
+void evg_cf_report_new_inst(EvgComputeUnit *compute_unit)
 {
 	compute_unit->cf_engine.interval_inst_count++;
 }
 
-void evg_tex_report_new_inst(struct evg_compute_unit_t *compute_unit)
+void evg_tex_report_new_inst(EvgComputeUnit *compute_unit)
 {
 	compute_unit->tex_engine.interval_inst_count++;
 
 }
 
-void evg_alu_report_new_inst(struct evg_compute_unit_t *compute_unit)
+void evg_alu_report_new_inst(EvgComputeUnit *compute_unit)
 {
 	compute_unit->alu_engine.interval_inst_count++;
 }
 
 
-void evg_tex_report_global_mem_inflight( struct evg_compute_unit_t *compute_unit, int long long pending_accesses)
+void evg_tex_report_global_mem_inflight( EvgComputeUnit *compute_unit, int long long pending_accesses)
 {
 	/* Read stage adds a negative number for accesses added */
 	/* Write stage adds a positive number for accesses finished */
@@ -118,7 +118,7 @@ void evg_tex_report_global_mem_inflight( struct evg_compute_unit_t *compute_unit
 
 }
 
-void evg_tex_report_global_mem_finish( struct evg_compute_unit_t *compute_unit, int long long completed_accesses)
+void evg_tex_report_global_mem_finish( EvgComputeUnit *compute_unit, int long long completed_accesses)
 {
 	/* Read stage adds a negative number for accesses added */
 	/* Write stage adds a positive number for accesses finished */
@@ -127,7 +127,7 @@ void evg_tex_report_global_mem_finish( struct evg_compute_unit_t *compute_unit, 
 }
 
 
-void evg_cu_interval_update(struct evg_compute_unit_t *compute_unit)
+void evg_cu_interval_update(EvgComputeUnit *compute_unit)
 {
 	EvgGpu *gpu = compute_unit->gpu;
 
