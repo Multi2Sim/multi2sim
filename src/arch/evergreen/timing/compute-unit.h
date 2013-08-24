@@ -20,39 +20,19 @@
 #ifndef ARCH_EVERGREEN_COMPUTE_UNIT_H
 #define ARCH_EVERGREEN_COMPUTE_UNIT_H
 
+#include <lib/class/class.h>
+
 #include "uop.h"
 
 
-/*
- * Register file in Compute Unit
- */
-
-struct evg_reg_file_t;
-struct evg_compute_unit_t;
-
-void evg_reg_file_init(struct evg_compute_unit_t *compute_unit);
-void evg_reg_file_done(struct evg_compute_unit_t *compute_unit);
-
-void evg_reg_file_map_work_group(struct evg_compute_unit_t *compute_unit,
-	EvgWorkGroup *work_group);
-void evg_reg_file_unmap_work_group(struct evg_compute_unit_t *compute_unit,
-	EvgWorkGroup *work_group);
-
-int evg_reg_file_rename(struct evg_compute_unit_t *compute_unit,
-	EvgWorkItem *work_item, int logical_register);
-void evg_reg_file_inverse_rename(struct evg_compute_unit_t *compute_unit,
-	int physical_register, EvgWorkItem **work_item, int *logical_register);
-
-
-
-
 
 /*
- * GPU Compute Unit
+ * Class 'EvgComputeUnit'
  */
 
-struct evg_compute_unit_t
-{
+CLASS_BEGIN(EvgComputeUnit, Object)
+
+	/* GPU that it belongs to */
 	EvgGpu *gpu;
 
 	/* IDs */
@@ -60,10 +40,10 @@ struct evg_compute_unit_t
 	long long gpu_uop_id_counter;  /* Counter to assign 'id_in_compute_unit' to uops */
 
 	/* Double linked list of compute units */
-	struct evg_compute_unit_t *ready_list_prev;
-	struct evg_compute_unit_t *ready_list_next;
-	struct evg_compute_unit_t *busy_list_prev;
-	struct evg_compute_unit_t *busy_list_next;
+	EvgComputeUnit *ready_list_prev;
+	EvgComputeUnit *ready_list_next;
+	EvgComputeUnit *busy_list_prev;
+	EvgComputeUnit *busy_list_next;
 
 	/* Entry points to memory hierarchy */
 	struct mod_t *global_memory;
@@ -173,13 +153,16 @@ struct evg_compute_unit_t
 
 	} tex_engine;
 
-};
+CLASS_END(EvgComputeUnit)
 
-struct evg_compute_unit_t *evg_compute_unit_create(EvgGpu *gpu);
-void evg_compute_unit_free(struct evg_compute_unit_t *gpu_compute_unit);
-void evg_compute_unit_map_work_group(struct evg_compute_unit_t *compute_unit, EvgWorkGroup *work_group);
-void evg_compute_unit_unmap_work_group(struct evg_compute_unit_t *compute_unit, EvgWorkGroup *work_group);
-void evg_compute_unit_run(struct evg_compute_unit_t *compute_unit);
+
+void EvgComputeUnitCreate(EvgComputeUnit *self, EvgGpu *gpu);
+void EvgComputeUnitDestroy(EvgComputeUnit *self);
+
+void EvgComputeUnitMapWorkGroup(EvgComputeUnit *self, EvgWorkGroup *work_group);
+void EvgComputeUnitUnmapWorkGroup(EvgComputeUnit *self, EvgWorkGroup *work_group);
+
+void EvgComputeUnitRun(EvgComputeUnit *self);
 
 #endif
 

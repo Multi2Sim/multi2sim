@@ -124,7 +124,7 @@ void EvgGpuMemConfigParseEntry(Timing *self, struct config_t *config,
 
 	int compute_unit_id;
 
-	struct evg_compute_unit_t *compute_unit;
+	EvgComputeUnit *compute_unit;
 
 	/* Get configuration file name */
 	file_name = config_get_file_name(config);
@@ -188,7 +188,7 @@ void EvgGpuMemConfigParseEntry(Timing *self, struct config_t *config,
 void EvgGpuMemConfigCheck(Timing *self, struct config_t *config)
 {
 	EvgGpu *gpu = asEvgGpu(self);
-	struct evg_compute_unit_t *compute_unit;
+	EvgComputeUnit *compute_unit;
 
 	int compute_unit_id;
 	char *file_name;

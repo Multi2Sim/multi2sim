@@ -20,6 +20,9 @@
 #ifndef ARCH_EVERGREEN_TIMING_SCHED_H
 #define ARCH_EVERGREEN_TIMING_SCHED_H
 
+#include <lib/class/class.h>
+
+
 extern struct str_map_t evg_gpu_sched_policy_map;
 extern enum evg_gpu_sched_policy_t
 {
@@ -29,7 +32,7 @@ extern enum evg_gpu_sched_policy_t
 } evg_gpu_sched_policy;
 
 
-EvgWavefront *evg_schedule(struct evg_compute_unit_t *compute_unit);
+EvgWavefront *evg_schedule(EvgComputeUnit *compute_unit);
 
 #endif
 

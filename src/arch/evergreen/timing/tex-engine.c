@@ -39,7 +39,7 @@ int evg_gpu_tex_engine_fetch_queue_size = 32;  /* Number of bytes */
 int evg_gpu_tex_engine_load_queue_size = 8;  /* Maximum number of in-flight global memory reads */
 
 
-static void evg_tex_engine_fetch(struct evg_compute_unit_t *compute_unit)
+static void evg_tex_engine_fetch(EvgComputeUnit *compute_unit)
 {
 	EvgGpu *gpu = compute_unit->gpu;
 
@@ -137,7 +137,7 @@ static void evg_tex_engine_fetch(struct evg_compute_unit_t *compute_unit)
 }
 
 
-static void evg_tex_engine_decode(struct evg_compute_unit_t *compute_unit)
+static void evg_tex_engine_decode(EvgComputeUnit *compute_unit)
 {
 	EvgGpu *gpu = compute_unit->gpu;
 
@@ -175,7 +175,7 @@ static void evg_tex_engine_decode(struct evg_compute_unit_t *compute_unit)
 }
 
 
-static void evg_tex_engine_read(struct evg_compute_unit_t *compute_unit)
+static void evg_tex_engine_read(EvgComputeUnit *compute_unit)
 {
 	EvgGpu *gpu = compute_unit->gpu;
 	EvgWorkItem *work_item;
@@ -225,7 +225,7 @@ static void evg_tex_engine_read(struct evg_compute_unit_t *compute_unit)
 }
 
 
-static void evg_tex_engine_write(struct evg_compute_unit_t *compute_unit)
+static void evg_tex_engine_write(EvgComputeUnit *compute_unit)
 {
 	EvgGpu *gpu = compute_unit->gpu;
 
@@ -279,7 +279,7 @@ static void evg_tex_engine_write(struct evg_compute_unit_t *compute_unit)
 }
 
 
-void evg_tex_engine_run(struct evg_compute_unit_t *compute_unit)
+void evg_tex_engine_run(EvgComputeUnit *compute_unit)
 {
 	/* If no wavefront to run, avoid entering loop */
 	if (!linked_list_count(compute_unit->tex_engine.pending_queue) &&

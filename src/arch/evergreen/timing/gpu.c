@@ -378,7 +378,7 @@ void EvgGpuReadConfig(void)
 
 void EvgGpuCreate(EvgGpu *self, EvgEmu *emu)
 {
-	struct evg_compute_unit_t *compute_unit;
+	EvgComputeUnit *compute_unit;
 	int compute_unit_id;
 
 	/* Parent */
@@ -396,7 +396,7 @@ void EvgGpuCreate(EvgGpu *self, EvgEmu *emu)
 	self->compute_units = xcalloc(evg_gpu_num_compute_units, sizeof(void *));
 	EVG_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
 	{
-		self->compute_units[compute_unit_id] = evg_compute_unit_create(self);
+		self->compute_units[compute_unit_id] = new(EvgComputeUnit, self);
 		compute_unit = self->compute_units[compute_unit_id];
 		compute_unit->id = compute_unit_id;
 		DOUBLE_LINKED_LIST_INSERT_TAIL(self, ready, compute_unit);
@@ -436,7 +436,7 @@ void EvgGpuCreate(EvgGpu *self, EvgEmu *emu)
 
 void EvgGpuDestroy(EvgGpu *self)
 {
-	struct evg_compute_unit_t *compute_unit;
+	EvgComputeUnit *compute_unit;
 	int compute_unit_id;
 
 	/* Periodic report */
@@ -456,7 +456,7 @@ void EvgGpuDestroy(EvgGpu *self)
 	EVG_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
 	{
 		compute_unit = self->compute_units[compute_unit_id];
-		evg_compute_unit_free(compute_unit);
+		delete(compute_unit);
 	}
 	free(self->compute_units);
 
@@ -499,8 +499,8 @@ int EvgGpuRun(Timing *self)
 
 	EvgNDRange *ndrange;
 
-	struct evg_compute_unit_t *compute_unit;
-	struct evg_compute_unit_t *compute_unit_next;
+	EvgComputeUnit *compute_unit;
+	EvgComputeUnit *compute_unit_next;
 
 	/* For efficiency when no Evergreen emulation is selected, exit here
 	 * if the list of existing ND-Ranges is empty. */
@@ -539,7 +539,7 @@ int EvgGpuRun(Timing *self)
 
 	/* Allocate work-groups to compute units */
 	while (gpu->ready_list_head && ndrange->pending_list_head)
-		evg_compute_unit_map_work_group(gpu->ready_list_head,
+		EvgComputeUnitMapWorkGroup(gpu->ready_list_head,
 			ndrange->pending_list_head);
 
 	/* One more cycle */
@@ -577,7 +577,7 @@ int EvgGpuRun(Timing *self)
 		compute_unit_next = compute_unit->busy_list_next;
 
 		/* Run one cycle */
-		evg_compute_unit_run(compute_unit);
+		EvgComputeUnitRun(compute_unit);
 	}
 
 	/* GPU-REL: insert stack faults */
@@ -607,7 +607,7 @@ int EvgGpuRun(Timing *self)
 
 void EvgGpuMapNDRange(EvgGpu *self, EvgNDRange *ndrange)
 {
-	struct evg_compute_unit_t *compute_unit;
+	EvgComputeUnit *compute_unit;
 	int compute_unit_id;
 
 	/* Assign current ND-Range */
@@ -654,7 +654,7 @@ void EvgGpuDumpReport(EvgGpu *self)
 {
 	EvgEmu *emu = self->emu;
 
-	struct evg_compute_unit_t *compute_unit;
+	EvgComputeUnit *compute_unit;
 	struct mod_t *local_mod;
 	int compute_unit_id;
 

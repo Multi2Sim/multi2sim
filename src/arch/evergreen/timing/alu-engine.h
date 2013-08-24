@@ -20,8 +20,9 @@
 #ifndef ARCH_EVERGREEN_TIMING_ALU_ENGINE_H
 #define ARCH_EVERGREEN_TIMING_ALU_ENGINE_H
 
-struct evg_compute_unit_t;
-void evg_alu_engine_run(struct evg_compute_unit_t *compute_unit);
+#include <lib/class/class.h>
+
+void evg_alu_engine_run(EvgComputeUnit *compute_unit);
 
 #endif
 

@@ -39,7 +39,7 @@
 int evg_gpu_cf_engine_inst_mem_latency = 2;  /* Instruction memory latency */
 
 
-static void evg_cf_engine_fetch(struct evg_compute_unit_t *compute_unit)
+static void evg_cf_engine_fetch(EvgComputeUnit *compute_unit)
 {
 	EvgGpu *gpu = compute_unit->gpu;
 	EvgNDRange *ndrange = gpu->ndrange;
@@ -136,7 +136,7 @@ static void evg_cf_engine_fetch(struct evg_compute_unit_t *compute_unit)
 }
 
 
-static void evg_cf_engine_decode(struct evg_compute_unit_t *compute_unit)
+static void evg_cf_engine_decode(EvgComputeUnit *compute_unit)
 {
 	EvgGpu *gpu = compute_unit->gpu;
 	struct evg_uop_t *uop;
@@ -173,7 +173,7 @@ static void evg_cf_engine_decode(struct evg_compute_unit_t *compute_unit)
 }
 
 
-static void evg_cf_engine_execute(struct evg_compute_unit_t *compute_unit)
+static void evg_cf_engine_execute(EvgComputeUnit *compute_unit)
 {
 	EvgGpu *gpu = compute_unit->gpu;
 	EvgWavefront *wavefront;
@@ -257,7 +257,7 @@ static void evg_cf_engine_execute(struct evg_compute_unit_t *compute_unit)
 }
 
 
-static void evg_cf_engine_complete(struct evg_compute_unit_t *compute_unit)
+static void evg_cf_engine_complete(EvgComputeUnit *compute_unit)
 {
 	EvgGpu *gpu = compute_unit->gpu;
 	struct linked_list_t *complete_queue = compute_unit->cf_engine.complete_queue;
@@ -310,7 +310,7 @@ static void evg_cf_engine_complete(struct evg_compute_unit_t *compute_unit)
 		/* Wavefront finishes a work-group */
 		assert(work_group->compute_unit_finished_count <= work_group->wavefront_count);
 		if (work_group->compute_unit_finished_count == work_group->wavefront_count)
-			evg_compute_unit_unmap_work_group(compute_unit, work_group);
+			EvgComputeUnitUnmapWorkGroup(compute_unit, work_group);
 
 		/* Statistics */
 		gpu->last_complete_cycle = asTiming(gpu)->cycle;
@@ -318,7 +318,7 @@ static void evg_cf_engine_complete(struct evg_compute_unit_t *compute_unit)
 }
 
 
-void evg_cf_engine_run(struct evg_compute_unit_t *compute_unit)
+void evg_cf_engine_run(EvgComputeUnit *compute_unit)
 {
 	/* Call CF Engine stages */
 	evg_cf_engine_complete(compute_unit);

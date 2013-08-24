@@ -80,7 +80,7 @@ static void evg_uop_add_src_idep(struct evg_uop_t *uop, EvgInst *inst, int src_i
  * Public Functions
  */
 
-struct evg_uop_t *evg_uop_create(struct evg_compute_unit_t *compute_unit)
+struct evg_uop_t *evg_uop_create(EvgComputeUnit *compute_unit)
 {
 	EvgGpu *gpu = compute_unit->gpu;
 	struct evg_uop_t *uop;
@@ -92,7 +92,7 @@ struct evg_uop_t *evg_uop_create(struct evg_compute_unit_t *compute_unit)
 }
 
 
-struct evg_uop_t *evg_uop_create_from_alu_group(struct evg_compute_unit_t *compute_unit,
+struct evg_uop_t *evg_uop_create_from_alu_group(EvgComputeUnit *compute_unit,
 		EvgALUGroup *alu_group)
 {
 	struct evg_uop_t *uop;
@@ -149,7 +149,7 @@ struct evg_uop_t *evg_uop_create_from_alu_group(struct evg_compute_unit_t *compu
 
 void evg_uop_free(struct evg_uop_t *uop)
 {
-	struct evg_compute_unit_t *compute_unit;
+	EvgComputeUnit *compute_unit;
 	EvgGpu *gpu;
 
 	/* Nothing for NULL uop */
@@ -247,7 +247,7 @@ void gpu_uop_dump_active_mask(struct evg_uop_t *uop, FILE *f)
 /* Stack debug - dump debugging information */
 void evg_uop_debug_active_mask(struct evg_uop_t *uop)
 {
-	struct evg_compute_unit_t *compute_unit = uop->compute_unit;
+	EvgComputeUnit *compute_unit = uop->compute_unit;
 	EvgGpu *gpu = compute_unit->gpu;
 	EvgWavefront *wavefront = uop->wavefront;
 
