@@ -117,6 +117,8 @@ void EvgGpuMemConfigDefault(Timing *self, struct config_t *config)
 void EvgGpuMemConfigParseEntry(Timing *self, struct config_t *config,
 		char *section)
 {
+	EvgGpu *gpu = asEvgGpu(self);
+
 	char *file_name;
 	char *module_name;
 
@@ -148,7 +150,7 @@ void EvgGpuMemConfigParseEntry(Timing *self, struct config_t *config,
 	}
 
 	/* Check that entry has not been assigned before */
-	compute_unit = evg_gpu->compute_units[compute_unit_id];
+	compute_unit = gpu->compute_units[compute_unit_id];
 	if (compute_unit->global_memory)
 		fatal("%s: section [%s]: entry from compute unit %d already assigned.\n"
 			"\tA different [Entry <name>] section in the memory configuration file has already\n"
@@ -185,7 +187,9 @@ void EvgGpuMemConfigParseEntry(Timing *self, struct config_t *config,
 
 void EvgGpuMemConfigCheck(Timing *self, struct config_t *config)
 {
+	EvgGpu *gpu = asEvgGpu(self);
 	struct evg_compute_unit_t *compute_unit;
+
 	int compute_unit_id;
 	char *file_name;
 
@@ -193,7 +197,7 @@ void EvgGpuMemConfigCheck(Timing *self, struct config_t *config)
 	file_name = config_get_file_name(config);
 	EVG_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
 	{
-		compute_unit = evg_gpu->compute_units[compute_unit_id];
+		compute_unit = gpu->compute_units[compute_unit_id];
 		if (!compute_unit->global_memory)
 			fatal("%s: Evergreen compute unit %d has no entry to memory.\n"
 				"\tPlease add a new [Entry <name>] section in your memory configuration\n"

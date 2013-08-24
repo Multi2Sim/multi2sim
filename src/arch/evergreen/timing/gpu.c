@@ -29,6 +29,7 @@
 #include <lib/util/file.h>
 #include <lib/util/linked-list.h>
 #include <lib/util/misc.h>
+#include <lib/util/repos.h>
 
 #include "calc.h"
 #include "compute-unit.h"
@@ -42,8 +43,9 @@
 
 
 /*
- * Global variables
+ * Public
  */
+
 
 char *evg_gpu_config_help =
 	"The Evergreen GPU configuration file is a plain text INI file defining\n"
@@ -162,16 +164,8 @@ int evg_gpu_local_mem_latency = 2;
 int evg_gpu_local_mem_block_size = 256;
 int evg_gpu_local_mem_num_ports = 2;
 
-EvgGpu *evg_gpu;
 
-
-
-
-/*
- * Private Functions
- */
-
-static char *evg_err_stall =
+static char *evg_gpu_err_stall =
 	"\tThe Evergreen GPU has not completed execution of any in-flight\n"
 	"\tinstruction for 1M cycles. Most likely, this means that a\n"
 	"\tdeadlock condition occurred in the management of some modeled\n"
@@ -184,7 +178,7 @@ static char *evg_err_stall =
 #define EVG_TRACE_VERSION_MINOR		671
 
 
-static void evg_config_dump(FILE *f)
+static void EvgGpuDumpConfig(FILE *f)
 {
 	/* Device configuration */
 	fprintf(f, "[ Config.Device ]\n");
@@ -233,58 +227,7 @@ static void evg_config_dump(FILE *f)
 }
 
 
-static void evg_gpu_map_ndrange(EvgNDRange *ndrange)
-{
-	struct evg_compute_unit_t *compute_unit;
-	int compute_unit_id;
-
-	/* Assign current ND-Range */
-	assert(!evg_gpu->ndrange);
-	evg_gpu->ndrange = ndrange;
-
-	/* Check that at least one work-group can be allocated per compute unit */
-	evg_gpu->work_groups_per_compute_unit = evg_calc_get_work_groups_per_compute_unit(
-		ndrange->kernel->local_size, ndrange->kernel->bin_file->enc_dict_entry_evergreen->num_gpr_used,
-		ndrange->local_mem_top);
-	if (!evg_gpu->work_groups_per_compute_unit)
-		fatal("work-group resources cannot be allocated to a compute unit.\n"
-			"\tA compute unit in the GPU has a limit in number of wavefronts, number\n"
-			"\tof registers, and amount of local memory. If the work-group size\n"
-			"\texceeds any of these limits, the ND-Range cannot be executed.\n");
-
-	/* Derived from this, calculate limit of wavefronts and work-items per compute unit. */
-	evg_gpu->wavefronts_per_compute_unit = evg_gpu->work_groups_per_compute_unit * ndrange->wavefronts_per_work_group;
-	evg_gpu->work_items_per_compute_unit = evg_gpu->wavefronts_per_compute_unit * evg_emu_wavefront_size;
-	assert(evg_gpu->work_groups_per_compute_unit <= evg_gpu_max_work_groups_per_compute_unit);
-	assert(evg_gpu->wavefronts_per_compute_unit <= evg_gpu_max_wavefronts_per_compute_unit);
-
-	/* Reset architectural state */
-	EVG_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
-	{
-		compute_unit = evg_gpu->compute_units[compute_unit_id];
-		compute_unit->cf_engine.decode_index = 0;
-		compute_unit->cf_engine.execute_index = 0;
-	}
-}
-
-
-static void evg_gpu_unmap_ndrange(void)
-{
-	/* Dump stats */
-	EvgNDRangeDump(evg_gpu->ndrange, evg_emu_report_file);
-
-	/* Unmap */
-	evg_gpu->ndrange = NULL;
-}
-
-
-
-
-/*
- * Public Functions
- */
-
-void evg_gpu_read_config(void)
+void EvgGpuReadConfig(void)
 {
 	struct config_t *gpu_config;
 	char *section;
@@ -426,10 +369,38 @@ void evg_gpu_read_config(void)
 }
 
 
-void evg_gpu_init(void)
+
+
+
+/*
+ * Class 'EvgGpu'
+ */
+
+void EvgGpuCreate(EvgGpu *self, EvgEmu *emu)
 {
-	/* Classes */
-	CLASS_REGISTER(EvgGpu);
+	struct evg_compute_unit_t *compute_unit;
+	int compute_unit_id;
+
+	/* Parent */
+	TimingCreate(asTiming(self));
+
+	/* Initialize */
+	self->emu = emu;
+
+	/* Frequency */
+	asTiming(self)->frequency = evg_gpu_frequency;
+	asTiming(self)->frequency_domain = esim_new_domain(evg_gpu_frequency);
+
+	/* Initialize */
+	self->trash_uop_list = linked_list_create();
+	self->compute_units = xcalloc(evg_gpu_num_compute_units, sizeof(void *));
+	EVG_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
+	{
+		self->compute_units[compute_unit_id] = evg_compute_unit_create(self);
+		compute_unit = self->compute_units[compute_unit_id];
+		compute_unit->id = compute_unit_id;
+		DOUBLE_LINKED_LIST_INSERT_TAIL(self, ready, compute_unit);
+	}
 
 	/* Trace */
 	evg_trace_category = trace_new_category();
@@ -444,33 +415,35 @@ void evg_gpu_init(void)
 		EVG_TRACE_VERSION_MAJOR, EVG_TRACE_VERSION_MINOR,
 		evg_gpu_num_compute_units);
 
-	/* Create GPU */
-	evg_gpu = new(EvgGpu, evg_emu);
-
-	/* Initializations */
-	evg_periodic_report_init();
-	evg_uop_init();
+	/* GPU uop repository.
+	 * The size assigned for each 'evg_uop_t' is equals to the baseline structure size plus the
+	 * size of a 'evg_work_item_uop_t' element for each work-item in the wavefront. */
+	self->uop_repos = repos_create(sizeof(struct evg_uop_t) + sizeof(struct evg_work_item_uop_t)
+		* evg_emu_wavefront_size, "gpu_uop_repos");
 
 	/* GPU-REL: read stack faults file */
 	evg_faults_init();
+
+	/* Virtual functions */
+	asObject(self)->Dump = EvgGpuDump;
+	asTiming(self)->DumpSummary = EvgGpuDumpSummary;
+	asTiming(self)->Run = EvgGpuRun;
+	asTiming(self)->MemConfigCheck = EvgGpuMemConfigCheck;
+	asTiming(self)->MemConfigDefault = EvgGpuMemConfigDefault;
+	asTiming(self)->MemConfigParseEntry = EvgGpuMemConfigParseEntry;
 }
 
 
-void evg_gpu_done(void)
+void EvgGpuDestroy(EvgGpu *self)
 {
+	struct evg_compute_unit_t *compute_unit;
+	int compute_unit_id;
+
+	/* Periodic report */
+	evg_periodic_report_file_name = str_free(evg_periodic_report_file_name);
+
 	/* GPU pipeline report */
-	evg_gpu_dump_report(evg_gpu);
-
-	/* List of removed instructions */
-	evg_gpu_uop_trash_empty();
-	linked_list_free(evg_gpu->trash_uop_list);
-
-	/* Finalizations */
-	evg_uop_done();
-	evg_periodic_report_done();
-
-	/* Free GPU */
-	delete(evg_gpu);
+	EvgGpuDumpReport(self);
 
 	/* Spatial report */
 	if (evg_spatial_report_active)
@@ -478,10 +451,206 @@ void evg_gpu_done(void)
 
 	/* GPU-REL: read stack faults file */
 	evg_faults_done();
+
+	/* Free stream cores, compute units, and device */
+	EVG_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
+	{
+		compute_unit = self->compute_units[compute_unit_id];
+		evg_compute_unit_free(compute_unit);
+	}
+	free(self->compute_units);
+
+	/* List of removed instructions */
+	EvgGpuEmptyUopTrash(self);
+	linked_list_free(self->trash_uop_list);
+
+	/* Uop repository */
+	repos_free(self->uop_repos);
 }
 
 
-void evg_gpu_dump_report(EvgGpu *self)
+void EvgGpuDump(Object *self, FILE *f)
+{
+}
+
+
+void EvgGpuDumpSummary(Timing *self, FILE *f)
+{
+	EvgGpu *gpu = asEvgGpu(self);
+	EvgEmu *emu = gpu->emu;
+
+	double inst_per_cycle;
+
+	/* Call parent */
+	TimingDumpSummary(asTiming(self), f);
+
+	/* Additional statistics */
+	inst_per_cycle = asTiming(gpu)->cycle ?
+			(double) asEmu(emu)->instructions
+			/ asTiming(gpu)->cycle : 0.0;
+	fprintf(f, "IPC = %.4g\n", inst_per_cycle);
+}
+
+
+int EvgGpuRun(Timing *self)
+{
+	EvgGpu *gpu = asEvgGpu(self);
+	EvgEmu *emu = gpu->emu;
+
+	EvgNDRange *ndrange;
+
+	struct evg_compute_unit_t *compute_unit;
+	struct evg_compute_unit_t *compute_unit_next;
+
+	/* For efficiency when no Evergreen emulation is selected, exit here
+	 * if the list of existing ND-Ranges is empty. */
+	if (!emu->ndrange_list_count)
+		return FALSE;
+
+	/* Start one ND-Range in state 'pending' */
+	while ((ndrange = emu->pending_ndrange_list_head))
+	{
+		/* Currently not supported for more than 1 ND-Range */
+		if (gpu->ndrange)
+			fatal("%s: Evergreen GPU timing simulation not supported for multiple ND-Ranges",
+				__FUNCTION__);
+
+		/* Set ND-Range status to 'running' */
+		EvgNDRangeClearState(ndrange, EvgNDRangePending);
+		EvgNDRangeSetState(ndrange, EvgNDRangeRunning);
+
+		/* Trace */
+		evg_trace("evg.new_ndrange "
+			"id=%d "
+			"wg_first=%d "
+			"wg_count=%d\n",
+			ndrange->id,
+			ndrange->work_group_id_first,
+			ndrange->work_group_count);
+
+		/* Map ND-Range to GPU */
+		EvgGpuMapNDRange(gpu, ndrange);
+		evg_calc_plot(gpu);
+	}
+
+	/* Mapped ND-Range */
+	ndrange = gpu->ndrange;
+	assert(ndrange);
+
+	/* Allocate work-groups to compute units */
+	while (gpu->ready_list_head && ndrange->pending_list_head)
+		evg_compute_unit_map_work_group(gpu->ready_list_head,
+			ndrange->pending_list_head);
+
+	/* One more cycle */
+	asTiming(gpu)->cycle++;
+
+	/* Stop if maximum number of GPU cycles exceeded */
+	if (evg_emu_max_cycles && asTiming(gpu)->cycle >= evg_emu_max_cycles)
+		esim_finish = esim_finish_evg_max_cycles;
+
+	/* Stop if maximum number of GPU instructions exceeded */
+	if (evg_emu_max_inst && asEmu(emu)->instructions >= evg_emu_max_inst)
+		esim_finish = esim_finish_evg_max_inst;
+	
+	/* Stop if there was a simulation stall */
+	if (asTiming(gpu)->cycle - gpu->last_complete_cycle > 1000000)
+	{
+		warning("Evergreen GPU simulation stalled.\n%s",
+			evg_gpu_err_stall);
+		esim_finish = esim_finish_stall;
+	}
+
+	/* Stop if any reason met */
+	if (esim_finish)
+		return TRUE;
+
+	/* Free instructions in trash */
+	EvgGpuEmptyUopTrash(gpu);
+
+	/* Run one loop iteration on each busy compute unit */
+	for (compute_unit = gpu->busy_list_head; compute_unit;
+		compute_unit = compute_unit_next)
+	{
+		/* Store next busy compute unit, since this can change
+		 * during the compute unit simulation loop iteration. */
+		compute_unit_next = compute_unit->busy_list_next;
+
+		/* Run one cycle */
+		evg_compute_unit_run(compute_unit);
+	}
+
+	/* GPU-REL: insert stack faults */
+	evg_faults_insert(gpu);
+
+	/* If ND-Range finished execution in all compute units, free it. */
+	if (!gpu->busy_list_count)
+	{
+		/* Dump ND-Range report */
+		EvgNDRangeDump(ndrange, evg_emu_report_file);
+
+		/* Stop if maximum number of kernels reached */
+		if (evg_emu_max_kernels && emu->ndrange_count >= evg_emu_max_kernels)
+			esim_finish = esim_finish_evg_max_kernels;
+
+		/* Finalize and free ND-Range */
+		assert(EvgNDRangeGetState(ndrange, EvgNDRangeFinished));
+		EvgGpuEmptyUopTrash(gpu);
+		EvgGpuUnmapNDRange(gpu);
+		delete(ndrange);
+	}
+
+	/* Still simulating */
+	return TRUE;
+}
+
+
+void EvgGpuMapNDRange(EvgGpu *self, EvgNDRange *ndrange)
+{
+	struct evg_compute_unit_t *compute_unit;
+	int compute_unit_id;
+
+	/* Assign current ND-Range */
+	assert(!self->ndrange);
+	self->ndrange = ndrange;
+
+	/* Check that at least one work-group can be allocated per compute unit */
+	self->work_groups_per_compute_unit = evg_calc_get_work_groups_per_compute_unit(
+		ndrange->kernel->local_size, ndrange->kernel->bin_file->enc_dict_entry_evergreen->num_gpr_used,
+		ndrange->local_mem_top);
+	if (!self->work_groups_per_compute_unit)
+		fatal("work-group resources cannot be allocated to a compute unit.\n"
+			"\tA compute unit in the GPU has a limit in number of wavefronts, number\n"
+			"\tof registers, and amount of local memory. If the work-group size\n"
+			"\texceeds any of these limits, the ND-Range cannot be executed.\n");
+
+	/* Derived from this, calculate limit of wavefronts and work-items per compute unit. */
+	self->wavefronts_per_compute_unit = self->work_groups_per_compute_unit * ndrange->wavefronts_per_work_group;
+	self->work_items_per_compute_unit = self->wavefronts_per_compute_unit * evg_emu_wavefront_size;
+	assert(self->work_groups_per_compute_unit <= evg_gpu_max_work_groups_per_compute_unit);
+	assert(self->wavefronts_per_compute_unit <= evg_gpu_max_wavefronts_per_compute_unit);
+
+	/* Reset architectural state */
+	EVG_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
+	{
+		compute_unit = self->compute_units[compute_unit_id];
+		compute_unit->cf_engine.decode_index = 0;
+		compute_unit->cf_engine.execute_index = 0;
+	}
+}
+
+
+void EvgGpuUnmapNDRange(EvgGpu *self)
+{
+	/* Dump stats */
+	EvgNDRangeDump(self->ndrange, evg_emu_report_file);
+
+	/* Unmap */
+	self->ndrange = NULL;
+}
+
+
+void EvgGpuDumpReport(EvgGpu *self)
 {
 	EvgEmu *emu = self->emu;
 
@@ -508,23 +677,23 @@ void evg_gpu_dump_report(EvgGpu *self)
 
 	/* Dump GPU configuration */
 	fprintf(f, ";\n; GPU Configuration\n;\n\n");
-	evg_config_dump(f);
+	EvgGpuDumpConfig(f);
 
 	/* Report for device */
 	fprintf(f, ";\n; Simulation Statistics\n;\n\n");
-	inst_per_cycle = asTiming(evg_gpu)->cycle ? (double) asEmu(emu)->instructions
-			/ asTiming(evg_gpu)->cycle : 0.0;
+	inst_per_cycle = asTiming(self)->cycle ? (double) asEmu(emu)->instructions
+			/ asTiming(self)->cycle : 0.0;
 	fprintf(f, "[ Device ]\n\n");
 	fprintf(f, "NDRangeCount = %d\n", emu->ndrange_count);
 	fprintf(f, "Instructions = %lld\n", asEmu(emu)->instructions);
-	fprintf(f, "Cycles = %lld\n", asTiming(evg_gpu)->cycle);
+	fprintf(f, "Cycles = %lld\n", asTiming(self)->cycle);
 	fprintf(f, "InstructionsPerCycle = %.4g\n", inst_per_cycle);
 	fprintf(f, "\n\n");
 
 	/* Report for compute units */
 	EVG_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
 	{
-		compute_unit = evg_gpu->compute_units[compute_unit_id];
+		compute_unit = self->compute_units[compute_unit_id];
 		local_mod = compute_unit->local_memory;
 
 		inst_per_cycle = compute_unit->cycle ? (double) compute_unit->inst_count
@@ -586,15 +755,15 @@ void evg_gpu_dump_report(EvgGpu *self)
 }
 
 
-void evg_gpu_uop_trash_empty(void)
+void EvgGpuEmptyUopTrash(EvgGpu *self)
 {
 	struct evg_uop_t *uop;
 
-	while (evg_gpu->trash_uop_list->count)
+	while (self->trash_uop_list->count)
 	{
-		linked_list_head(evg_gpu->trash_uop_list);
-		uop = linked_list_get(evg_gpu->trash_uop_list);
-		linked_list_remove(evg_gpu->trash_uop_list);
+		linked_list_head(self->trash_uop_list);
+		uop = linked_list_get(self->trash_uop_list);
+		linked_list_remove(self->trash_uop_list);
 
 		evg_trace("evg.end_inst id=%lld cu=%d\n",
 			uop->id_in_compute_unit, uop->compute_unit->id);
@@ -604,199 +773,7 @@ void evg_gpu_uop_trash_empty(void)
 }
 
 
-void evg_gpu_uop_trash_add(struct evg_uop_t *uop)
+void EvgGpuAddToUopTrash(EvgGpu *self, struct evg_uop_t *uop)
 {
-	linked_list_add(evg_gpu->trash_uop_list, uop);
-}
-
-
-
-
-
-/*
- * Class 'EvgGpu'
- */
-
-void EvgGpuCreate(EvgGpu *self, EvgEmu *emu)
-{
-	struct evg_compute_unit_t *compute_unit;
-	int compute_unit_id;
-
-	/* Parent */
-	TimingCreate(asTiming(self));
-
-	/* Initialize */
-	self->emu = emu;
-
-	/* Frequency */
-	asTiming(self)->frequency = evg_gpu_frequency;
-	asTiming(self)->frequency_domain = esim_new_domain(evg_gpu_frequency);
-
-	/* Initialize */
-	self->trash_uop_list = linked_list_create();
-	self->compute_units = xcalloc(evg_gpu_num_compute_units, sizeof(void *));
-	EVG_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
-	{
-		self->compute_units[compute_unit_id] = evg_compute_unit_create();
-		compute_unit = self->compute_units[compute_unit_id];
-		compute_unit->id = compute_unit_id;
-		DOUBLE_LINKED_LIST_INSERT_TAIL(self, ready, compute_unit);
-	}
-
-	/* Virtual functions */
-	asObject(self)->Dump = EvgGpuDump;
-	asTiming(self)->DumpSummary = EvgGpuDumpSummary;
-	asTiming(self)->Run = EvgGpuRun;
-	asTiming(self)->MemConfigCheck = EvgGpuMemConfigCheck;
-	asTiming(self)->MemConfigDefault = EvgGpuMemConfigDefault;
-	asTiming(self)->MemConfigParseEntry = EvgGpuMemConfigParseEntry;
-}
-
-
-void EvgGpuDestroy(EvgGpu *self)
-{
-	struct evg_compute_unit_t *compute_unit;
-	int compute_unit_id;
-
-	/* Free stream cores, compute units, and device */
-	EVG_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
-	{
-		compute_unit = self->compute_units[compute_unit_id];
-		evg_compute_unit_free(compute_unit);
-	}
-	free(self->compute_units);
-}
-
-
-void EvgGpuDump(Object *self, FILE *f)
-{
-}
-
-
-void EvgGpuDumpSummary(Timing *self, FILE *f)
-{
-	EvgEmu *emu = asEvgGpu(self)->emu;
-	double inst_per_cycle;
-
-	/* Call parent */
-	TimingDumpSummary(asTiming(self), f);
-
-	/* Additional statistics */
-	inst_per_cycle = asTiming(evg_gpu)->cycle ?
-			(double) asEmu(emu)->instructions
-			/ asTiming(evg_gpu)->cycle : 0.0;
-	fprintf(f, "IPC = %.4g\n", inst_per_cycle);
-}
-
-
-int EvgGpuRun(Timing *self)
-{
-	EvgGpu *gpu = asEvgGpu(self);
-	EvgEmu *emu = gpu->emu;
-
-	EvgNDRange *ndrange;
-
-	struct evg_compute_unit_t *compute_unit;
-	struct evg_compute_unit_t *compute_unit_next;
-
-	/* For efficiency when no Evergreen emulation is selected, exit here
-	 * if the list of existing ND-Ranges is empty. */
-	if (!emu->ndrange_list_count)
-		return FALSE;
-
-	/* Start one ND-Range in state 'pending' */
-	while ((ndrange = emu->pending_ndrange_list_head))
-	{
-		/* Currently not supported for more than 1 ND-Range */
-		if (gpu->ndrange)
-			fatal("%s: Evergreen GPU timing simulation not supported for multiple ND-Ranges",
-				__FUNCTION__);
-
-		/* Set ND-Range status to 'running' */
-		EvgNDRangeClearState(ndrange, EvgNDRangePending);
-		EvgNDRangeSetState(ndrange, EvgNDRangeRunning);
-
-		/* Trace */
-		evg_trace("evg.new_ndrange "
-			"id=%d "
-			"wg_first=%d "
-			"wg_count=%d\n",
-			ndrange->id,
-			ndrange->work_group_id_first,
-			ndrange->work_group_count);
-
-		/* Map ND-Range to GPU */
-		evg_gpu_map_ndrange(ndrange);
-		evg_calc_plot();
-	}
-
-	/* Mapped ND-Range */
-	ndrange = gpu->ndrange;
-	assert(ndrange);
-
-	/* Allocate work-groups to compute units */
-	while (gpu->ready_list_head && ndrange->pending_list_head)
-		evg_compute_unit_map_work_group(gpu->ready_list_head,
-			ndrange->pending_list_head);
-
-	/* One more cycle */
-	asTiming(evg_gpu)->cycle++;
-
-	/* Stop if maximum number of GPU cycles exceeded */
-	if (evg_emu_max_cycles && asTiming(evg_gpu)->cycle >= evg_emu_max_cycles)
-		esim_finish = esim_finish_evg_max_cycles;
-
-	/* Stop if maximum number of GPU instructions exceeded */
-	if (evg_emu_max_inst && asEmu(emu)->instructions >= evg_emu_max_inst)
-		esim_finish = esim_finish_evg_max_inst;
-	
-	/* Stop if there was a simulation stall */
-	if (asTiming(evg_gpu)->cycle - gpu->last_complete_cycle > 1000000)
-	{
-		warning("Evergreen GPU simulation stalled.\n%s",
-			evg_err_stall);
-		esim_finish = esim_finish_stall;
-	}
-
-	/* Stop if any reason met */
-	if (esim_finish)
-		return TRUE;
-
-	/* Free instructions in trash */
-	evg_gpu_uop_trash_empty();
-
-	/* Run one loop iteration on each busy compute unit */
-	for (compute_unit = gpu->busy_list_head; compute_unit;
-		compute_unit = compute_unit_next)
-	{
-		/* Store next busy compute unit, since this can change
-		 * during the compute unit simulation loop iteration. */
-		compute_unit_next = compute_unit->busy_list_next;
-
-		/* Run one cycle */
-		evg_compute_unit_run(compute_unit);
-	}
-
-	/* GPU-REL: insert stack faults */
-	evg_faults_insert();
-
-	/* If ND-Range finished execution in all compute units, free it. */
-	if (!gpu->busy_list_count)
-	{
-		/* Dump ND-Range report */
-		EvgNDRangeDump(ndrange, evg_emu_report_file);
-
-		/* Stop if maximum number of kernels reached */
-		if (evg_emu_max_kernels && emu->ndrange_count >= evg_emu_max_kernels)
-			esim_finish = esim_finish_evg_max_kernels;
-
-		/* Finalize and free ND-Range */
-		assert(EvgNDRangeGetState(ndrange, EvgNDRangeFinished));
-		evg_gpu_uop_trash_empty();
-		evg_gpu_unmap_ndrange();
-		delete(ndrange);
-	}
-
-	/* Still simulating */
-	return TRUE;
+	linked_list_add(self->trash_uop_list, uop);
 }

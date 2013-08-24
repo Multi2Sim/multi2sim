@@ -48,7 +48,11 @@ enum evg_gpu_sched_policy_t evg_gpu_sched_policy;
 
 static EvgWavefront *evg_schedule_round_robin(struct evg_compute_unit_t *compute_unit)
 {
-	EvgWavefront *wavefront, *temp_wavefront;
+	EvgGpu *gpu = compute_unit->gpu;
+
+	EvgWavefront *wavefront;
+	EvgWavefront *temp_wavefront;
+
 	struct linked_list_t *wavefront_pool = compute_unit->wavefront_pool;
 
 	/* Select current position in pool as initial candidate wavefront */
@@ -62,7 +66,7 @@ static EvgWavefront *evg_schedule_round_robin(struct evg_compute_unit_t *compute
 	{
 		/* Wavefront must be running,
 		 * and the corresponding slot in fetch buffer must be free. */
-		assert(wavefront->id_in_compute_unit < evg_gpu->wavefronts_per_compute_unit);
+		assert(wavefront->id_in_compute_unit < gpu->wavefronts_per_compute_unit);
 		if (DOUBLE_LINKED_LIST_MEMBER(wavefront->work_group, running, wavefront) &&
 			!compute_unit->cf_engine.fetch_buffer[wavefront->id_in_compute_unit])
 			break;
@@ -84,7 +88,11 @@ static EvgWavefront *evg_schedule_round_robin(struct evg_compute_unit_t *compute
 
 static EvgWavefront *evg_schedule_greedy(struct evg_compute_unit_t *compute_unit)
 {
-	EvgWavefront *wavefront, *temp_wavefront;
+	EvgGpu *gpu = compute_unit->gpu;
+
+	EvgWavefront *wavefront;
+	EvgWavefront *temp_wavefront;
+
 	struct linked_list_t *wavefront_pool = compute_unit->wavefront_pool;
 
 	/* Check all candidates */
@@ -96,7 +104,7 @@ static EvgWavefront *evg_schedule_greedy(struct evg_compute_unit_t *compute_unit
 		
 		/* Wavefront must be running,
 		 * and the corresponding slot in fetch buffer must be free. */
-		assert(wavefront->id_in_compute_unit < evg_gpu->wavefronts_per_compute_unit);
+		assert(wavefront->id_in_compute_unit < gpu->wavefronts_per_compute_unit);
 		if (!DOUBLE_LINKED_LIST_MEMBER(wavefront->work_group, running, wavefront) ||
 			compute_unit->cf_engine.fetch_buffer[wavefront->id_in_compute_unit])
 			continue;
@@ -116,7 +124,7 @@ static EvgWavefront *evg_schedule_greedy(struct evg_compute_unit_t *compute_unit
 	linked_list_find(wavefront_pool, temp_wavefront);
 	assert(!wavefront_pool->error_code);
 	linked_list_remove(wavefront_pool);
-	temp_wavefront->sched_when = asTiming(evg_gpu)->cycle;
+	temp_wavefront->sched_when = asTiming(gpu)->cycle;
 	return temp_wavefront;
 }
 

@@ -42,13 +42,14 @@
  * Compute Unit
  */
 
-struct evg_compute_unit_t *evg_compute_unit_create()
+struct evg_compute_unit_t *evg_compute_unit_create(EvgGpu *gpu)
 {
 	struct evg_compute_unit_t *compute_unit;
 	char buf[MAX_STRING_SIZE];
 
 	/* Initialize */
 	compute_unit = xcalloc(1, sizeof(struct evg_compute_unit_t));
+	compute_unit->gpu = gpu;
 	compute_unit->wavefront_pool = linked_list_create();
 
 	/* Local memory */
@@ -145,30 +146,31 @@ void evg_compute_unit_free(struct evg_compute_unit_t *compute_unit)
 
 void evg_compute_unit_map_work_group(struct evg_compute_unit_t *compute_unit, EvgWorkGroup *work_group)
 {
+	EvgGpu *gpu = compute_unit->gpu;
 	EvgNDRange *ndrange = work_group->ndrange;
 	EvgWavefront *wavefront;
 	int wavefront_id;
 
 	/* Map work-group */
-	assert(compute_unit->work_group_count < evg_gpu->work_groups_per_compute_unit);
+	assert(compute_unit->work_group_count < gpu->work_groups_per_compute_unit);
 	assert(!work_group->id_in_compute_unit);
-	while (work_group->id_in_compute_unit < evg_gpu->work_groups_per_compute_unit
+	while (work_group->id_in_compute_unit < gpu->work_groups_per_compute_unit
 		&& compute_unit->work_groups[work_group->id_in_compute_unit])
 		work_group->id_in_compute_unit++;
-	assert(work_group->id_in_compute_unit < evg_gpu->work_groups_per_compute_unit);
+	assert(work_group->id_in_compute_unit < gpu->work_groups_per_compute_unit);
 	compute_unit->work_groups[work_group->id_in_compute_unit] = work_group;
 	compute_unit->work_group_count++;
 
 	/* If compute unit reached its maximum load, remove it from 'ready' list.
 	 * Otherwise, move it to the end of the 'ready' list. */
-	assert(DOUBLE_LINKED_LIST_MEMBER(evg_gpu, ready, compute_unit));
-	DOUBLE_LINKED_LIST_REMOVE(evg_gpu, ready, compute_unit);
-	if (compute_unit->work_group_count < evg_gpu->work_groups_per_compute_unit)
-		DOUBLE_LINKED_LIST_INSERT_TAIL(evg_gpu, ready, compute_unit);
+	assert(DOUBLE_LINKED_LIST_MEMBER(gpu, ready, compute_unit));
+	DOUBLE_LINKED_LIST_REMOVE(gpu, ready, compute_unit);
+	if (compute_unit->work_group_count < gpu->work_groups_per_compute_unit)
+		DOUBLE_LINKED_LIST_INSERT_TAIL(gpu, ready, compute_unit);
 	
 	/* If this is the first scheduled work-group, insert to 'busy' list. */
-	if (!DOUBLE_LINKED_LIST_MEMBER(evg_gpu, busy, compute_unit))
-		DOUBLE_LINKED_LIST_INSERT_TAIL(evg_gpu, busy, compute_unit);
+	if (!DOUBLE_LINKED_LIST_MEMBER(gpu, busy, compute_unit))
+		DOUBLE_LINKED_LIST_INSERT_TAIL(gpu, busy, compute_unit);
 
 	/* Assign wavefronts identifiers in compute unit */
 	EVG_FOREACH_WAVEFRONT_IN_WORK_GROUP(work_group, wavefront_id)
@@ -195,7 +197,7 @@ void evg_compute_unit_map_work_group(struct evg_compute_unit_t *compute_unit, Ev
 		EVG_FOREACH_WAVEFRONT_IN_WORK_GROUP(work_group, wavefront_id)
 		{
 			wavefront = ndrange->wavefronts[wavefront_id];
-			evg_periodic_report_wavefront_init(wavefront);
+			evg_periodic_report_wavefront_init(gpu, wavefront);
 		}
 	}
 
@@ -207,12 +209,13 @@ void evg_compute_unit_map_work_group(struct evg_compute_unit_t *compute_unit, Ev
 
 	/* Stats */
 	compute_unit->mapped_work_groups++;
-	evg_gpu->last_complete_cycle = asTiming(evg_gpu)->cycle;
+	gpu->last_complete_cycle = asTiming(gpu)->cycle;
 }
 
 
 void evg_compute_unit_unmap_work_group(struct evg_compute_unit_t *compute_unit, EvgWorkGroup *work_group)
 {
+	EvgGpu *gpu = compute_unit->gpu;
 	EvgNDRange *ndrange = work_group->ndrange;
 	EvgWavefront *wavefront;
 
@@ -225,12 +228,12 @@ void evg_compute_unit_unmap_work_group(struct evg_compute_unit_t *compute_unit, 
 	compute_unit->work_group_count--;
 
 	/* If compute unit accepts work-groups again, insert into 'ready' list */
-	if (!DOUBLE_LINKED_LIST_MEMBER(evg_gpu, ready, compute_unit))
-		DOUBLE_LINKED_LIST_INSERT_TAIL(evg_gpu, ready, compute_unit);
+	if (!DOUBLE_LINKED_LIST_MEMBER(gpu, ready, compute_unit))
+		DOUBLE_LINKED_LIST_INSERT_TAIL(gpu, ready, compute_unit);
 	
 	/* If compute unit is not busy anymore, remove it from 'busy' list */
-	if (!compute_unit->work_group_count && DOUBLE_LINKED_LIST_MEMBER(evg_gpu, busy, compute_unit))
-		DOUBLE_LINKED_LIST_REMOVE(evg_gpu, busy, compute_unit);
+	if (!compute_unit->work_group_count && DOUBLE_LINKED_LIST_MEMBER(gpu, busy, compute_unit))
+		DOUBLE_LINKED_LIST_REMOVE(gpu, busy, compute_unit);
 
 	/* Finalization of periodic events for all wavefronts in the work-group */
 	if (evg_periodic_report_active)
@@ -238,7 +241,7 @@ void evg_compute_unit_unmap_work_group(struct evg_compute_unit_t *compute_unit, 
 		EVG_FOREACH_WAVEFRONT_IN_WORK_GROUP(work_group, wavefront_id)
 		{
 			wavefront = ndrange->wavefronts[wavefront_id];
-			evg_periodic_report_wavefront_done(wavefront);
+			evg_periodic_report_wavefront_done(gpu, wavefront);
 		}
 	}
 

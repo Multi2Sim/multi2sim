@@ -41,6 +41,8 @@ int evg_gpu_tex_engine_load_queue_size = 8;  /* Maximum number of in-flight glob
 
 static void evg_tex_engine_fetch(struct evg_compute_unit_t *compute_unit)
 {
+	EvgGpu *gpu = compute_unit->gpu;
+
 	struct linked_list_t *pending_queue = compute_unit->tex_engine.pending_queue;
 	struct linked_list_t *finished_queue = compute_unit->tex_engine.finished_queue;
 
@@ -73,11 +75,10 @@ static void evg_tex_engine_fetch(struct evg_compute_unit_t *compute_unit)
 	inst_num = (wavefront->clause_buf - wavefront->clause_buf_start) / 16;
 	EvgWavefrontExecute(wavefront);
 	inst = wavefront->tex_inst;
-	uop = evg_uop_create();
+	uop = evg_uop_create(compute_unit);
 	uop->wavefront = wavefront;
 	uop->work_group = wavefront->work_group;
 	uop->cf_uop = cf_uop;
-	uop->compute_unit = compute_unit;
 	uop->id_in_compute_unit = compute_unit->gpu_uop_id_counter++;
 	uop->last = wavefront->clause_kind != EvgInstClauseTEX;
 	uop->global_mem_read = wavefront->global_mem_read;
@@ -98,7 +99,7 @@ static void evg_tex_engine_fetch(struct evg_compute_unit_t *compute_unit)
 		assert((inst->info->flags & EvgInstFlagMemRead));
 		EVG_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
 		{
-			work_item = evg_gpu->ndrange->work_items[work_item_id];
+			work_item = gpu->ndrange->work_items[work_item_id];
 			work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
 			work_item_uop->global_mem_access_addr = work_item->global_mem_access_addr;
 			work_item_uop->global_mem_access_size = work_item->global_mem_access_size;
@@ -107,7 +108,7 @@ static void evg_tex_engine_fetch(struct evg_compute_unit_t *compute_unit)
 
 	/* Access instruction cache. Record the time when the instruction will have been fetched,
 	 * as per the latency of the instruction memory. */
-	uop->inst_mem_ready = asTiming(evg_gpu)->cycle + evg_gpu_tex_engine_inst_mem_latency;
+	uop->inst_mem_ready = asTiming(gpu)->cycle + evg_gpu_tex_engine_inst_mem_latency;
 
 	/* Enqueue uop into fetch queue */
 	linked_list_out(compute_unit->tex_engine.fetch_queue);
@@ -122,7 +123,7 @@ static void evg_tex_engine_fetch(struct evg_compute_unit_t *compute_unit)
 		evg_tex_report_new_inst(compute_unit);
 
 	if (evg_periodic_report_active)
-		evg_periodic_report_new_inst(uop);
+		evg_periodic_report_new_inst(gpu, uop);
 
 	/* Trace */
 	if (evg_tracing())
@@ -138,6 +139,8 @@ static void evg_tex_engine_fetch(struct evg_compute_unit_t *compute_unit)
 
 static void evg_tex_engine_decode(struct evg_compute_unit_t *compute_unit)
 {
+	EvgGpu *gpu = compute_unit->gpu;
+
 	struct linked_list_t *fetch_queue = compute_unit->tex_engine.fetch_queue;
 	struct evg_uop_t *uop;
 
@@ -150,7 +153,7 @@ static void evg_tex_engine_decode(struct evg_compute_unit_t *compute_unit)
 		return;
 
 	/* If uop is still being fetched from instruction memory, done */
-	if (uop->inst_mem_ready > asTiming(evg_gpu)->cycle)
+	if (uop->inst_mem_ready > asTiming(gpu)->cycle)
 		return;
 
 	/* If instruction buffer is occupied, done */
@@ -174,7 +177,9 @@ static void evg_tex_engine_decode(struct evg_compute_unit_t *compute_unit)
 
 static void evg_tex_engine_read(struct evg_compute_unit_t *compute_unit)
 {
+	EvgGpu *gpu = compute_unit->gpu;
 	EvgWorkItem *work_item;
+
 	int work_item_id;
 
 	struct evg_uop_t *uop;
@@ -200,7 +205,7 @@ static void evg_tex_engine_read(struct evg_compute_unit_t *compute_unit)
 		assert(!uop->global_mem_witness);
 		EVG_FOREACH_WORK_ITEM_IN_WAVEFRONT(uop->wavefront, work_item_id)
 		{
-			work_item = evg_gpu->ndrange->work_items[work_item_id];
+			work_item = gpu->ndrange->work_items[work_item_id];
 			work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
 			mod_access(compute_unit->global_memory, mod_access_load, 
 				work_item_uop->global_mem_access_addr,
@@ -222,8 +227,11 @@ static void evg_tex_engine_read(struct evg_compute_unit_t *compute_unit)
 
 static void evg_tex_engine_write(struct evg_compute_unit_t *compute_unit)
 {
+	EvgGpu *gpu = compute_unit->gpu;
+
 	struct linked_list_t *finished_queue = compute_unit->tex_engine.finished_queue;
-	struct evg_uop_t *cf_uop, *uop;
+	struct evg_uop_t *cf_uop;
+	struct evg_uop_t *uop;
 
 	/* Get instruction at the head of the load queue. */
 	linked_list_head(compute_unit->tex_engine.load_queue);
@@ -262,12 +270,12 @@ static void evg_tex_engine_write(struct evg_compute_unit_t *compute_unit)
 
 	/* Free uop */
 	if (evg_tracing())
-		evg_gpu_uop_trash_add(uop);
+		EvgGpuAddToUopTrash(gpu, uop);
 	else
 		evg_uop_free(uop);
 	
 	/* Statistics */
-	evg_gpu->last_complete_cycle = asTiming(evg_gpu)->cycle;
+	gpu->last_complete_cycle = asTiming(gpu)->cycle;
 }
 
 

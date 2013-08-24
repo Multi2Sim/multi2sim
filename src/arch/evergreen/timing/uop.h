@@ -124,11 +124,9 @@ struct evg_uop_t
 	struct evg_work_item_uop_t work_item_uop[0];
 };
 
-void evg_uop_init(void);
-void evg_uop_done(void);
-
-struct evg_uop_t *evg_uop_create(void);
-struct evg_uop_t *evg_uop_create_from_alu_group(EvgALUGroup *alu_group);
+struct evg_uop_t *evg_uop_create(struct evg_compute_unit_t *compute_unit);
+struct evg_uop_t *evg_uop_create_from_alu_group(struct evg_compute_unit_t *compute_unit,
+		EvgALUGroup *alu_group);
 void evg_uop_free(struct evg_uop_t *gpu_uop);
 
 void evg_uop_list_free(struct linked_list_t *gpu_uop_list);

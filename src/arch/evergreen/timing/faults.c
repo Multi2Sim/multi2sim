@@ -284,7 +284,7 @@ void evg_faults_done(void)
 }
 
 
-void evg_faults_insert(void)
+void evg_faults_insert(EvgGpu *gpu)
 {
 	struct evg_fault_t *fault;
 	struct evg_compute_unit_t *compute_unit;
@@ -293,7 +293,7 @@ void evg_faults_insert(void)
 	{
 		linked_list_head(evg_fault_list);
 		fault = linked_list_get(evg_fault_list);
-		if (!fault || fault->cycle > asTiming(evg_gpu)->cycle)
+		if (!fault || fault->cycle > asTiming(gpu)->cycle)
 			break;
 
 		/* Insert fault depending on fault type */
@@ -312,11 +312,11 @@ void evg_faults_insert(void)
 
 			/* Initial debug */
 			evg_faults_debug("fault clk=%lld cu=%d type=\"ams\" stack=%d am=%d bit=%d ",
-				asTiming(evg_gpu)->cycle,
+				asTiming(gpu)->cycle,
 				fault->compute_unit_id, fault->stack_id,
 				fault->active_mask_id, fault->bit);
-			assert(fault->cycle == asTiming(evg_gpu)->cycle);
-			compute_unit = evg_gpu->compute_units[fault->compute_unit_id];
+			assert(fault->cycle == asTiming(gpu)->cycle);
+			compute_unit = gpu->compute_units[fault->compute_unit_id];
 
 			/* If compute unit is idle, dismiss */
 			if (!compute_unit->work_group_count)
@@ -326,8 +326,8 @@ void evg_faults_insert(void)
 			}
 
 			/* Get work-group and wavefront. If wavefront ID exceeds current number, dismiss */
-			work_group_id = fault->stack_id / evg_gpu->ndrange->wavefronts_per_work_group;
-			wavefront_id = fault->stack_id % evg_gpu->ndrange->wavefronts_per_work_group;
+			work_group_id = fault->stack_id / gpu->ndrange->wavefronts_per_work_group;
+			wavefront_id = fault->stack_id % gpu->ndrange->wavefronts_per_work_group;
 			if (work_group_id >= evg_gpu_max_work_groups_per_compute_unit
 				|| !compute_unit->work_groups[work_group_id])
 			{
@@ -372,7 +372,7 @@ void evg_faults_insert(void)
 
 		case evg_fault_reg:
 		{
-			struct evg_opencl_kernel_t *kernel = evg_gpu->ndrange->kernel;
+			struct evg_opencl_kernel_t *kernel = gpu->ndrange->kernel;
 
 			int work_group_id_in_compute_unit;
 			EvgWorkGroup *work_group;
@@ -394,12 +394,12 @@ void evg_faults_insert(void)
 
 			/* Initial debug */
 			evg_faults_debug("fault clk=%lld cu=%d type=\"reg\" reg=%d bit=%d ",
-				asTiming(evg_gpu)->cycle,
+				asTiming(gpu)->cycle,
 				fault->compute_unit_id,
 				fault->reg_id,
 				fault->bit);
-			assert(fault->cycle == asTiming(evg_gpu)->cycle);
-			compute_unit = evg_gpu->compute_units[fault->compute_unit_id];
+			assert(fault->cycle == asTiming(gpu)->cycle);
+			compute_unit = gpu->compute_units[fault->compute_unit_id];
 
 			/* If compute unit is idle, dismiss */
 			if (!compute_unit->work_group_count)
@@ -522,12 +522,12 @@ void evg_faults_insert(void)
 
 			/* Initial debug */
 			evg_faults_debug("fault clk=%lld cu=%d type=\"mem\" byte=%d bit=%d ",
-				asTiming(evg_gpu)->cycle,
+				asTiming(gpu)->cycle,
 				fault->compute_unit_id,
 				fault->byte,
 				fault->bit);
-			assert(fault->cycle == asTiming(evg_gpu)->cycle);
-			compute_unit = evg_gpu->compute_units[fault->compute_unit_id];
+			assert(fault->cycle == asTiming(gpu)->cycle);
+			compute_unit = gpu->compute_units[fault->compute_unit_id];
 
 			/* If compute unit is idle, dismiss */
 			if (!compute_unit->work_group_count)
@@ -537,14 +537,14 @@ void evg_faults_insert(void)
 			}
 
 			/* Check if there is any local memory used at all */
-			if (!evg_gpu->ndrange->local_mem_top)
+			if (!gpu->ndrange->local_mem_top)
 			{
 				evg_faults_debug("effect=\"mem_idle\"");
 				goto end_loop;
 			}
 
 			/* Get work-group */
-			work_group_id_in_compute_unit = fault->byte / evg_gpu->ndrange->local_mem_top;
+			work_group_id_in_compute_unit = fault->byte / gpu->ndrange->local_mem_top;
 			if (work_group_id_in_compute_unit >= evg_gpu_max_work_groups_per_compute_unit)
 			{
 				evg_faults_debug("effect=\"mem_idle\"");

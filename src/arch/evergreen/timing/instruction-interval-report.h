@@ -21,18 +21,19 @@
 #define ARCH_EVERGREEN_PERIODIC_REPORT_H
 
 extern int evg_periodic_report_active;
+extern char *evg_periodic_report_file_name;
 
-void evg_periodic_report_init(void);
-void evg_periodic_report_done(void);
-
+/* Forward declarations */
 struct config_t;
+struct evg_uop_t;
+
+
 void evg_periodic_report_config_read(struct config_t *config);
 
-void evg_periodic_report_wavefront_init(EvgWavefront *wavefront);
-void evg_periodic_report_wavefront_done(EvgWavefront *wavefront);
+void evg_periodic_report_wavefront_init(EvgGpu *gpu, EvgWavefront *wavefront);
+void evg_periodic_report_wavefront_done(EvgGpu *gpu, EvgWavefront *wavefront);
 
-struct evg_uop_t;
-void evg_periodic_report_new_inst(struct evg_uop_t *uop);
+void evg_periodic_report_new_inst(EvgGpu *gpu, struct evg_uop_t *uop);
 
 #endif
 

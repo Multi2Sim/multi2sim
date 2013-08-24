@@ -47,7 +47,6 @@ int evg_stack_debug_category;
 
 static long long gpu_uop_id_counter = 0;
 
-static struct repos_t *gpu_uop_repos;
 
 
 static void evg_uop_add_src_idep(struct evg_uop_t *uop, EvgInst *inst, int src_idx)
@@ -81,41 +80,27 @@ static void evg_uop_add_src_idep(struct evg_uop_t *uop, EvgInst *inst, int src_i
  * Public Functions
  */
 
-void evg_uop_init()
+struct evg_uop_t *evg_uop_create(struct evg_compute_unit_t *compute_unit)
 {
-	/* GPU uop repository.
-	 * The size assigned for each 'evg_uop_t' is equals to the baseline structure size plus the
-	 * size of a 'evg_work_item_uop_t' element for each work-item in the wavefront. */
-	gpu_uop_repos = repos_create(sizeof(struct evg_uop_t) + sizeof(struct evg_work_item_uop_t)
-		* evg_emu_wavefront_size, "gpu_uop_repos");
-	
-}
-
-
-void evg_uop_done()
-{
-	repos_free(gpu_uop_repos);
-}
-
-
-struct evg_uop_t *evg_uop_create()
-{
+	EvgGpu *gpu = compute_unit->gpu;
 	struct evg_uop_t *uop;
 
-	uop = repos_create_object(gpu_uop_repos);
+	uop = repos_create_object(gpu->uop_repos);
+	uop->compute_unit = compute_unit;
 	uop->id = gpu_uop_id_counter++;
 	return uop;
 }
 
 
-struct evg_uop_t *evg_uop_create_from_alu_group(EvgALUGroup *alu_group)
+struct evg_uop_t *evg_uop_create_from_alu_group(struct evg_compute_unit_t *compute_unit,
+		EvgALUGroup *alu_group)
 {
 	struct evg_uop_t *uop;
 	EvgInst *inst;
 	int i;
 
 	/* Create uop */
-	uop = evg_uop_create();
+	uop = evg_uop_create(compute_unit);
 
 	/* Update dependences */
 	for (i = 0; i < alu_group->inst_count; i++)
@@ -162,11 +147,19 @@ struct evg_uop_t *evg_uop_create_from_alu_group(EvgALUGroup *alu_group)
 }
 
 
-void evg_uop_free(struct evg_uop_t *gpu_uop)
+void evg_uop_free(struct evg_uop_t *uop)
 {
-	if (!gpu_uop)
+	struct evg_compute_unit_t *compute_unit;
+	EvgGpu *gpu;
+
+	/* Nothing for NULL uop */
+	if (!uop)
 		return;
-	repos_free_object(gpu_uop_repos, gpu_uop);
+
+	/* Free */
+	compute_unit = uop->compute_unit;
+	gpu = compute_unit->gpu;
+	repos_free_object(gpu->uop_repos, uop);
 }
 
 
@@ -254,6 +247,8 @@ void gpu_uop_dump_active_mask(struct evg_uop_t *uop, FILE *f)
 /* Stack debug - dump debugging information */
 void evg_uop_debug_active_mask(struct evg_uop_t *uop)
 {
+	struct evg_compute_unit_t *compute_unit = uop->compute_unit;
+	EvgGpu *gpu = compute_unit->gpu;
 	EvgWavefront *wavefront = uop->wavefront;
 
 	FILE *f;
@@ -266,7 +261,7 @@ void evg_uop_debug_active_mask(struct evg_uop_t *uop)
 	if (uop->active_mask_pop)
 	{
 		evg_stack_debug("stack clk=%lld cu=%d stack=%d wf=%d a=\"pop\" cnt=%d top=%d mask=\"",
-			asTiming(evg_gpu)->cycle,
+			asTiming(gpu)->cycle,
 			uop->compute_unit->id,
 			wavefront->id_in_compute_unit,
 			wavefront->id,
@@ -280,7 +275,7 @@ void evg_uop_debug_active_mask(struct evg_uop_t *uop)
 	if (uop->active_mask_push)
 	{
 		evg_stack_debug("stack clk=%lld cu=%d stack=%d wf=%d a=\"push\" cnt=%d top=%d mask=\"",
-			asTiming(evg_gpu)->cycle,
+			asTiming(gpu)->cycle,
 			uop->compute_unit->id,
 			wavefront->id_in_compute_unit,
 			wavefront->id,

@@ -172,6 +172,8 @@ static char m2s_sim_id[10];  /* Pseudo-unique simulation ID (5 alpha-numeric dig
 static volatile int m2s_signal_received;  /* Signal received by handler (0 = none */
 
 
+static EvgGpu *evg_gpu;
+
 static MIPSAsm *mips_asm;
 static MIPSEmu *mips_emu;
 static MIPSCpu *mips_cpu;
@@ -1878,6 +1880,8 @@ static void m2s_init(void)
 	CLASS_REGISTER(EvgWavefront);
 	CLASS_REGISTER(EvgWorkItem);
 
+	CLASS_REGISTER(EvgGpu);
+
 	CLASS_REGISTER(FrmAsm);
 	CLASS_REGISTER(FrmInst);
 
@@ -2166,8 +2170,8 @@ int main(int argc, char **argv)
 			arm_cpu_init, arm_cpu_done);
 	arch_evergreen = arch_register("Evergreen", "evg", evg_sim_kind,
 			NULL, NULL,
-			evg_gpu_read_config,
-			evg_gpu_init, evg_gpu_done);
+			EvgGpuReadConfig,
+			NULL, NULL);
 	arch_fermi = arch_register("Fermi", "frm", frm_sim_kind,
 			NULL, NULL,
 			frm_gpu_read_config,
@@ -2222,6 +2226,11 @@ int main(int argc, char **argv)
 	 */
 	evg_asm = new(EvgAsm);
 	evg_emu = new(EvgEmu, evg_asm);
+	if (evg_sim_kind == arch_sim_kind_detailed)
+	{
+		evg_gpu = new(EvgGpu, evg_emu);
+		arch_set_timing(arch_evergreen, asTiming(evg_gpu));
+	}
 	arch_set_emu(arch_evergreen, asEmu(evg_emu));
 
 	/* Fermi
@@ -2283,6 +2292,8 @@ int main(int argc, char **argv)
 	m2s_dump_summary(stderr);
 
 	/* Evergreen */
+	if (evg_gpu)
+		delete(evg_gpu);
 	delete(evg_emu);
 	delete(evg_asm);
 
