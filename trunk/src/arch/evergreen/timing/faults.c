@@ -287,7 +287,7 @@ void evg_faults_done(void)
 void evg_faults_insert(EvgGpu *gpu)
 {
 	struct evg_fault_t *fault;
-	struct evg_compute_unit_t *compute_unit;
+	EvgComputeUnit *compute_unit;
 
 	for (;;)
 	{

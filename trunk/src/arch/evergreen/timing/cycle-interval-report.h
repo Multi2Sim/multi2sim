@@ -26,19 +26,19 @@
 extern int evg_spatial_report_active  ;
 
 /* Called in fetch stage cf engine */
-void evg_cf_report_new_inst(struct evg_compute_unit_t *compute_unit);
+void evg_cf_report_new_inst(EvgComputeUnit *compute_unit);
 
 /* Called in fetch stage tex engine */
-void evg_tex_report_new_inst(struct evg_compute_unit_t *compute_unit);
+void evg_tex_report_new_inst(EvgComputeUnit *compute_unit);
 
 /* Called in fetch stage alu engine */
-void evg_alu_report_new_inst(struct evg_compute_unit_t *compute_unit);
+void evg_alu_report_new_inst(EvgComputeUnit *compute_unit);
 
-void evg_tex_report_global_mem_inflight( struct evg_compute_unit_t *compute_unit, int long long pending_accesses);
+void evg_tex_report_global_mem_inflight(EvgComputeUnit *compute_unit, int long long pending_accesses);
 
-void evg_tex_report_global_mem_finish( struct evg_compute_unit_t *compute_unit, int long long completed_accesses);
+void evg_tex_report_global_mem_finish(EvgComputeUnit *compute_unit, int long long completed_accesses);
 
-void evg_cu_interval_update(struct evg_compute_unit_t *compute_unit);
+void evg_cu_interval_update(EvgComputeUnit *compute_unit);
 
 struct config_t;
 void evg_spatial_report_config_read(struct config_t *config);

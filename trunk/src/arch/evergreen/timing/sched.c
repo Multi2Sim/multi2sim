@@ -46,7 +46,7 @@ enum evg_gpu_sched_policy_t evg_gpu_sched_policy;
  * Private Functions
  */
 
-static EvgWavefront *evg_schedule_round_robin(struct evg_compute_unit_t *compute_unit)
+static EvgWavefront *evg_schedule_round_robin(EvgComputeUnit *compute_unit)
 {
 	EvgGpu *gpu = compute_unit->gpu;
 
@@ -86,7 +86,7 @@ static EvgWavefront *evg_schedule_round_robin(struct evg_compute_unit_t *compute
 }
 
 
-static EvgWavefront *evg_schedule_greedy(struct evg_compute_unit_t *compute_unit)
+static EvgWavefront *evg_schedule_greedy(EvgComputeUnit *compute_unit)
 {
 	EvgGpu *gpu = compute_unit->gpu;
 
@@ -138,7 +138,7 @@ static EvgWavefront *evg_schedule_greedy(struct evg_compute_unit_t *compute_unit
 /* Return a wavefront from the wavefront pool in the compute unit.
  * If a wavefront was found, it will be extracted from the wavefront pool.
  * If no valid candidate is found in the wavefront pool, the function returns NULL. */
-EvgWavefront *evg_schedule(struct evg_compute_unit_t *compute_unit)
+EvgWavefront *evg_schedule(EvgComputeUnit *compute_unit)
 {
 	EvgWavefront *wavefront;
 
