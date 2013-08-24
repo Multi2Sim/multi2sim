@@ -62,6 +62,9 @@ CLASS(FrmGrid)
 CLASS(FrmGpu)
 CLASS(FrmSM)
 
+CLASS(KplAsm)
+CLASS(KplInst)
+
 CLASS(MIPSAsm)
 CLASS(MIPSInst)
 
