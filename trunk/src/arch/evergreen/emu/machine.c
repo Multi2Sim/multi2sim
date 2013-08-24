@@ -529,7 +529,8 @@ void evg_isa_MEM_RAT_impl(EvgWorkItem *work_item, EvgInst *inst)
 
 	/* STORE_RAW */
 	case 1:
-		/* FIXME Need to support multiple elements (multi-channel images) */
+		/* FIXME Need to support multiple elements 
+		 * (multi-channel images) */
 	case 2:
 	{
 		unsigned int addr;
@@ -537,8 +538,6 @@ void evg_isa_MEM_RAT_impl(EvgWorkItem *work_item, EvgInst *inst)
 
 		int work_item_id;
 		int i;
-		int uav;
-		struct evg_opencl_mem_t *mem;
 		unsigned int base_addr;
 
 		EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W0.rat_index_mode, 0);
@@ -547,13 +546,15 @@ void evg_isa_MEM_RAT_impl(EvgWorkItem *work_item, EvgInst *inst)
 
 		/* Values for W0.type:
 		 *   0  EXPORT_WRITE: Write to the memory buffer.
-		 *   1  EXPORT_WRITE_IND: write to memory buffer, use offset in INDEX_GPR.
-		 *   2  EXPORT_WRITE_ACK: write to memory buffer, request an ACK when write is
-		 *      committed to memory. For UAV, ACK guarantees return value has been writ-
-		 *      ten to memory.
+		 *   1  EXPORT_WRITE_IND: write to memory buffer, 
+		 *      use offset in INDEX_GPR.
+		 *   2  EXPORT_WRITE_ACK: write to memory buffer, 
+		 *      request an ACK when write is committed to memory. 
+		 *      For UAV, ACK guarantees 
+		 *      return value has been written to memory.
 		 *   3  EXPORT_WRITE_IND_ACK: write to memory buffer with
-		 *      offset in INDEX_GPR, get an ACK when done. For UAV, ACK guarantees return
-		 *      value has been written to memory.
+		 *      offset in INDEX_GPR, get an ACK when done. For UAV, 
+		 *      ACK guarantees return value has been written to memory.
 		 *      FIXME: What is the ACK?
 		 */
 		/* Only 1 and 3 supported */
@@ -568,23 +569,27 @@ void evg_isa_MEM_RAT_impl(EvgWorkItem *work_item, EvgInst *inst)
 			work_item = ndrange->work_items[work_item_id];
 
 			/* If VPM is set, do not export for inactive pixels. */
-			if (W1.valid_pixel_mode && !EvgWorkItemGetActive(work_item))
+			if (W1.valid_pixel_mode && 
+				!EvgWorkItemGetActive(work_item))
+			{
 				continue;
+			}
 
 			/* W0.rw_gpr: GPR register from which to read data */
 			/* W0.rr: relative/absolute rw_gpr */
-			/* W0.index_gpr: GPR containing buffer coordinates. It is multiplied by (elem_size+1) */
-			/* W0.elem_size: number of doublewords per array element, minus one */
+			/* W0.index_gpr: GPR containing buffer coordinates. 
+			 *     It is multiplied by (elem_size+1) */
+			/* W0.elem_size: number of doublewords per array 
+			 *     element, minus one */
 			/* W1.array_size: array size (elem-size units) */
 
-			/* This is a write, so we need to get the correct address based on the UAV number */
-			uav = W0.rat_id;
+			//mem = list_get(ndrange->kernel->uav_list, uav);
+			//assert(mem);
+			//base_addr = mem->device_ptr;
 
-			/* Otherwise, we have an image, and we need to provide a base address */
-			mem = list_get(ndrange->kernel->uav_write_list, uav);
-			base_addr = mem->device_ptr;
-			addr = base_addr + evg_isa_read_gpr(work_item, W0.index_gpr,
-				0, 0, 0) * 4;  /* FIXME: only 1D - X coordinate, FIXME: x4? */
+			base_addr = 0;
+			addr = base_addr + evg_isa_read_gpr(work_item, 
+				W0.index_gpr, 0, 0, 0) * 4;  /* FIXME: only 1D - X coordinate, FIXME: x4? */
 			evg_isa_debug("  t%d:write(0x%x)", work_item->id, addr);
 
 			/* Record access */
@@ -648,7 +653,11 @@ void evg_isa_MEM_RAT_CACHELESS_impl(EvgWorkItem *work_item, EvgInst *inst)
 	{
 		EvgInstReg value;
 		unsigned int addr;
+		uint32_t base_addr;
 
+		//struct evg_opencl_mem_t *mem;
+
+		//int uav;
 		int work_item_id;
 		int i;
 
@@ -685,8 +694,16 @@ void evg_isa_MEM_RAT_CACHELESS_impl(EvgWorkItem *work_item, EvgInst *inst)
 			/* W0.elem_size: number of doublewords per array element, minus one */
 			/* W1.array_size: array size (elem-size units) */
 
-			/* This is a write, so we need to get the correct address based on the UAV number */
-			addr = evg_isa_read_gpr(work_item, W0.index_gpr, 0, 0, 0) * 4;  /* FIXME: only 1D - X coordinate, FIXME: x4? */
+			/* This is a write, so we need to get the correct 
+			 * address based on the UAV number */
+			//uav = W0.rat_id;
+			//mem = list_get(ndrange->kernel->uav_list, uav);
+			//assert(mem);
+			//base_addr = mem->device_ptr;
+
+			base_addr = 0;
+
+			addr = base_addr + evg_isa_read_gpr(work_item, W0.index_gpr, 0, 0, 0) * 4;  /* FIXME: only 1D - X coordinate, FIXME: x4? */
 			evg_isa_debug("  t%d:write(0x%x)", work_item->id, addr);
 
 			/* Record access */
@@ -3425,7 +3442,7 @@ void evg_isa_FETCH_impl(EvgWorkItem *work_item, EvgInst *inst)
 	EvgEmu *emu = ndrange->emu;
 
 	unsigned int addr;
-	unsigned int base_addr;
+	unsigned int base_addr = 0;
 
 	int data_format;
 	int dst_sel[4];
@@ -3475,8 +3492,6 @@ void evg_isa_FETCH_impl(EvgWorkItem *work_item, EvgInst *inst)
 	dst_sel[2] = W1.dst_sel_z;
 	dst_sel[3] = W1.dst_sel_w;
 
-	base_addr = 0;
-	
 	/* Data type information is either stored in instruction or constant fields */
 	if (W1.use_const_fields)
 	{
@@ -3639,7 +3654,7 @@ void evg_isa_FETCH_impl(EvgWorkItem *work_item, EvgInst *inst)
 		}
 	}
 
-	/* Address */
+	/* Get the correct base address based on the UAV number */
 	addr = base_addr + evg_isa_read_gpr(work_item, W0.src_gpr, W0.src_rel,
 		W0.src_sel_x, 0) * (num_elem * elem_size);
 	evg_isa_debug("  t%d:read(%u)", work_item->id, addr);
@@ -3823,7 +3838,7 @@ void evg_isa_SAMPLE_impl(EvgWorkItem *work_item, EvgInst *inst)
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W2.ssx, 0); 
 
 	/* Look up the image object based on UAV */
-	image = list_get(ndrange->kernel->uav_read_list, W0.resource_id);
+	image = list_get(ndrange->kernel->uav_list, W0.resource_id);
 	if(!image) 
 		fatal("No table entry for read-only UAV %d\n", W0.resource_id);
 

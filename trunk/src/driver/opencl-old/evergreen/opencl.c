@@ -1455,8 +1455,8 @@ int evg_opencl_clSetKernelArg_impl(X86Context *ctx, int *argv)
 	/* Check */
 	kernel = evg_opencl_repo_get_object(evg_emu->opencl_repo,
 			evg_opencl_object_kernel, kernel_id);
-	if (arg_value)
-		EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(arg_size, 4);
+	//if (arg_value)
+	//	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(arg_size, 4);
 	if (arg_index >= list_count(kernel->arg_list))
 		fatal("%s: argument index out of bounds.\n%s", __FUNCTION__,
 				evg_err_opencl_param_note);
@@ -1466,8 +1466,16 @@ int evg_opencl_clSetKernelArg_impl(X86Context *ctx, int *argv)
 	assert(arg);
 	arg->set = 1;
 	arg->size = arg_size;
-	if (arg_value)
-		mem_read(mem, arg_value, 4, &arg->value);
+	if (arg->kind == EVG_OPENCL_KERNEL_ARG_KIND_VALUE)
+	{
+		assert(arg_size <= 128);  /* Fixed size in arg_t */
+		mem_read(mem, arg_value, arg_size, &arg->value);
+	}
+	else
+	{
+		if (arg_value)
+			mem_read(mem, arg_value, 4, &arg->value);
+	}
 
 	/* If OpenCL argument scope is __local, argument value must be NULL */
 	if (arg->mem_scope == EVG_OPENCL_MEM_SCOPE_LOCAL && arg_value)
@@ -2290,15 +2298,9 @@ void evg_opencl_clEnqueueNDRangeKernel_wakeup(X86Context *ctx, void *data)
 		if (arg->kind == EVG_OPENCL_KERNEL_ARG_KIND_IMAGE) 
 		{
 			mem = evg_opencl_repo_get_object(evg_emu->opencl_repo,
-					evg_opencl_object_mem, arg->value);
+					evg_opencl_object_mem, arg->value[0]);
 
-			if (arg->access_type == EVG_OPENCL_KERNEL_ARG_READ_ONLY) 
-				list_set(kernel->uav_read_list, arg->uav, mem);
-			else if (arg->access_type == EVG_OPENCL_KERNEL_ARG_WRITE_ONLY) 
-				list_set(kernel->uav_write_list, arg->uav, mem);
-			else 
-				fatal("%s: unsupported image access type (%d)\n", __FUNCTION__, 
-						arg->access_type);
+			list_set(kernel->uav_list, arg->uav, mem);
 		}
 
 		/* If argument is a pointer and not in UAV 11, then it is
@@ -2307,7 +2309,7 @@ void evg_opencl_clEnqueueNDRangeKernel_wakeup(X86Context *ctx, void *data)
 		if (arg->mem_scope == EVG_OPENCL_MEM_SCOPE_CONSTANT)
 		{	
 			mem = evg_opencl_repo_get_object(evg_emu->opencl_repo,
-					evg_opencl_object_mem, arg->value);
+					evg_opencl_object_mem, arg->value[0]);
 			list_set(kernel->constant_buffer_list, arg->uav, mem);
 		}
 	}
