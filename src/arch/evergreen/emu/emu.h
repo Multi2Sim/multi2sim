@@ -129,7 +129,7 @@ void EvgEmuDumpSummary(Emu *self, FILE *f);
 int EvgEmuRun(Emu *self);
 
 /* Access to constant memory */
-void EvgEmuConstMemWrite(EvgEmu *self, int bank, int vector, int elem, void *value_ptr);
+void EvgEmuConstMemWrite(EvgEmu *self, int bank, int vector, int elem, void *value_ptr, int size);
 void EvgEmuConstMemRead(EvgEmu *self, int bank, int vector, int elem, void *value_ptr);
 
 

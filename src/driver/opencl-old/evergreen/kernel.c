@@ -29,6 +29,28 @@
 #include "program.h"
 #include "repo.h"
 
+struct str_map_t evg_arg_data_type_map =
+{
+        16,
+        {
+                { "i1", evg_arg_i1 },
+                { "i8", evg_arg_i8 },
+                { "i16", evg_arg_i16 },
+                { "i32", evg_arg_i32 },
+                { "i64", evg_arg_i64 },
+                { "u1", evg_arg_u1 },
+                { "u8", evg_arg_u8 },
+                { "u16", evg_arg_u16 },
+                { "u32", evg_arg_u32 },
+                { "u64", evg_arg_u64 },
+                { "float", evg_arg_float },
+                { "double", evg_arg_double },
+                { "struct", evg_arg_struct },
+                { "union", evg_arg_union },
+                { "event", evg_arg_event },
+                { "opaque", evg_arg_opaque }
+        }
+};
 
 struct evg_opencl_kernel_t *evg_opencl_kernel_create()
 {
@@ -43,17 +65,17 @@ struct evg_opencl_kernel_t *evg_opencl_kernel_create()
 	kernel->arg_list = list_create();
 
 	/* Create the UAV-to-physical-address lookup lists */
-	kernel->uav_read_list = list_create_with_size(12); /* FIXME Repalce with MAX_UAVS? */
-	kernel->uav_write_list = list_create_with_size(12); /* FIXME Repalce with MAX_UAVS? */
+	kernel->uav_list = list_create_with_size(12); /* FIXME Repalce with MAX_UAVS? */
 	kernel->constant_buffer_list = list_create_with_size(25); /* For constant buffers (128 to 153) */
 	/* FIXME Replace with new list functionality */
 	for (i = 0; i < 12; i++) 
 	{
-		list_add(kernel->uav_read_list, NULL);
-		list_add(kernel->uav_write_list, NULL);
+		list_add(kernel->uav_list, NULL);
 	}
 	for (i = 0; i < 25; i++) 
+	{
 		list_add(kernel->constant_buffer_list, NULL);
+	}
 
 	/* Return */
 	evg_opencl_repo_add_object(evg_emu->opencl_repo, kernel);
@@ -71,8 +93,7 @@ void evg_opencl_kernel_free(struct evg_opencl_kernel_t *kernel)
 	list_free(kernel->arg_list);
 
 	/* Free lists */
-	list_free(kernel->uav_read_list);
-	list_free(kernel->uav_write_list);
+	list_free(kernel->uav_list);
 	list_free(kernel->constant_buffer_list);
 
 	/* AMD Binary (internal ELF) */
@@ -126,11 +147,14 @@ static char *evg_err_opencl_kernel_metadata_note =
 
 static void evg_opencl_kernel_load_metadata(struct evg_opencl_kernel_t *kernel)
 {
-	char line[MAX_STRING_SIZE];
-	char *line_ptrs[MAX_STRING_SIZE];
-	int token_count;
 	struct evg_opencl_kernel_arg_t *arg;
 	struct elf_buffer_t *buffer;
+
+	char line[MAX_STRING_SIZE];
+	char *line_ptrs[MAX_STRING_SIZE];
+
+	int token_count;
+	int err;
 
 	/* Open as text file */
 	buffer = &kernel->metadata_buffer;
@@ -146,7 +170,8 @@ static void evg_opencl_kernel_load_metadata(struct evg_opencl_kernel_t *kernel)
 
 		/* Split line */
 		line_ptrs[0] = strtok(line, ":;\n");
-		for (token_count = 1; (line_ptrs[token_count] = strtok(NULL, ":\n")); token_count++);
+		for (token_count = 1; (line_ptrs[token_count] = 
+			strtok(NULL, ":\n")); token_count++);
 
 		/* Ignored entries */
 		if (!line_ptrs[0] ||
@@ -175,24 +200,29 @@ static void evg_opencl_kernel_load_metadata(struct evg_opencl_kernel_t *kernel)
 			else
 			{
 				fatal("%s: Invalid number of dimensions for OpenCL Image (%s)\n%s",
-					__FUNCTION__, line_ptrs[2], evg_err_opencl_param_note);
+					__FUNCTION__, line_ptrs[2], 
+					evg_err_opencl_param_note);
 			}
 			
 			if (!strcmp(line_ptrs[3], "RO"))
 			{
-				arg->access_type = EVG_OPENCL_KERNEL_ARG_READ_ONLY;
+				arg->access_type = 
+					EVG_OPENCL_KERNEL_ARG_READ_ONLY;
 			}
 			else if (!strcmp(line_ptrs[3], "WO"))
 			{
-				arg->access_type = EVG_OPENCL_KERNEL_ARG_WRITE_ONLY;
+				arg->access_type = 
+					EVG_OPENCL_KERNEL_ARG_WRITE_ONLY;
 			}
 			else
 			{
 				fatal("%s: Invalid memory access type for OpenCL Image (%s)\n%s",
-					__FUNCTION__, line_ptrs[3], evg_err_opencl_param_note);
+					__FUNCTION__, line_ptrs[3], 
+					evg_err_opencl_param_note);
 			}
 			arg->uav = atoi(line_ptrs[4]);
 			arg->mem_scope = EVG_OPENCL_MEM_SCOPE_GLOBAL;
+			arg->size = 4;
 
 			list_add(kernel->arg_list, arg);
 
@@ -205,12 +235,14 @@ static void evg_opencl_kernel_load_metadata(struct evg_opencl_kernel_t *kernel)
 		{
 			if (!strcmp(line_ptrs[1], "hwprivate"))
 			{
-				EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(2, "0");
+			//	EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(
+			//		2, "0");
 			}
 			else if (!strcmp(line_ptrs[1], "hwregion"))
 			{
 				EVG_OPENCL_KERNEL_METADATA_TOKEN_COUNT(3);
-				EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(2, "0");
+				//EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(
+			//		2, "0");
 			}
 			else if (!strcmp(line_ptrs[1], "hwlocal"))
 			{
@@ -222,7 +254,11 @@ static void evg_opencl_kernel_load_metadata(struct evg_opencl_kernel_t *kernel)
 				EVG_OPENCL_KERNEL_METADATA_TOKEN_COUNT(2); 
 			}
 			else
+			{
 				EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED(1);
+			}
+
+			arg->size = 4;
 
 			continue;
 		}
@@ -231,10 +267,27 @@ static void evg_opencl_kernel_load_metadata(struct evg_opencl_kernel_t *kernel)
 		if (!strcmp(line_ptrs[0], "value"))
 		{
 			EVG_OPENCL_KERNEL_METADATA_TOKEN_COUNT(6);
-			EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(3, "1");
 			EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(4, "1");
+
 			arg = evg_opencl_kernel_arg_create(line_ptrs[1]);
+
 			arg->kind = EVG_OPENCL_KERNEL_ARG_KIND_VALUE;
+
+			arg->data_type = str_map_string_err(
+				&evg_arg_data_type_map, line_ptrs[2], &err);
+			if (err)
+			{
+				fatal("%s: invalid data type '%s'.\n",
+					__FUNCTION__, line_ptrs[2]);
+			}
+
+			arg->size = atoi(line_ptrs[3]);
+
+			arg->constant_buffer_num = atoi(line_ptrs[4]);
+			assert(arg->constant_buffer_num == 1);
+
+			arg->constant_offset = atoi(line_ptrs[5]);
+
 			list_add(kernel->arg_list, arg);
 
 			continue;
@@ -243,25 +296,40 @@ static void evg_opencl_kernel_load_metadata(struct evg_opencl_kernel_t *kernel)
 		/* Entry 'pointer'. Format: pointer:<name>:<type>:?:?:<addr>:?:?:<elem_size> */
 		if (!strcmp(line_ptrs[0], "pointer"))
 		{
-			/* APP SDK 2.5 supplies 9 tokens, 2.6 supplies 10 tokens */
-			/* Metadata version 3:1:104 (as specified in entry 'version') uses 12 items. */
-			if (token_count != 9 && token_count != 10 && token_count != 12)
+			/* APP SDK 2.5 supplies 9 tokens, 2.6 supplies 
+			 * 10 tokens */
+			/* Metadata version 3:1:104 (as specified in 
+			 * entry 'version') uses 12 items. */
+			if (token_count != 9 && token_count != 10 && 
+				token_count != 12)
 			{
 				EVG_OPENCL_KERNEL_METADATA_TOKEN_COUNT(10);
 			}
 			EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(3, "1");
 			EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(4, "1");
 
-			/* We don't know what the two last entries are, so make sure that they are
-			 * set to 0. If they're not 0, it probably means something important. */
+			/* We don't know what the two last entries are, 
+			 * so make sure that they are set to 0. If they're 
+			 * not 0, it probably means something important. */
 			if (token_count == 12)
 			{
-				EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(10, "0");
-				EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(11, "0");
+				EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(
+					10, "0");
+				EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(
+					11, "0");
 			}
 
 			arg = evg_opencl_kernel_arg_create(line_ptrs[1]);
 			arg->kind = EVG_OPENCL_KERNEL_ARG_KIND_POINTER;
+			arg->constant_buffer_num = atoi(line_ptrs[4]);
+			arg->constant_offset = atoi(line_ptrs[5]);
+			arg->data_type = str_map_string_err(
+				&evg_arg_data_type_map, line_ptrs[2], &err);
+			if (err)
+			{
+				fatal("%s: invalid data type '%s'.\n",
+					__FUNCTION__, line_ptrs[2]);
+			}
 
 			list_add(kernel->arg_list, arg);
 			if (!strcmp(line_ptrs[6], "uav"))
@@ -280,7 +348,11 @@ static void evg_opencl_kernel_load_metadata(struct evg_opencl_kernel_t *kernel)
 				arg->uav = atoi(line_ptrs[7]);
 			}
 			else
+			{
 				EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED(6);
+			}
+
+			arg->size = 4;
 
 			continue;
 		}
@@ -295,20 +367,24 @@ static void evg_opencl_kernel_load_metadata(struct evg_opencl_kernel_t *kernel)
 		}
 
 		/* Entry 'sampler'. Format: sampler:name:ID:location:value.
-		 * 'location' is 1 for kernel defined samplers, 0 for kernel argument.
-		 * 'value' is bitfield value of sampler (0 if a kernel argument) */
+		 * 'location' is 1 for kernel defined samplers, 0 for kernel 
+		 * argument. 'value' is bitfield value of sampler 
+		 * (0 if a kernel argument) */
 		if (!strcmp(line_ptrs[0], "sampler"))
 		{
-			/* As far as I can tell, the actual sampler data is stored 
-			 * as a value, so adding it to the argument list is not required */
+			/* As far as I can tell, the actual sampler data is 
+			 * stored as a value, so adding it to the argument 
+			 * list is not required */
 			continue;
 		}
 
 		/* Entry 'reflection'. Format: reflection:<arg_id>:<type>
 		 * Observed first in version 3:1:104 of metadata.
-		 * This entry specifies the type of the argument, as specified in the OpenCL
-		 * kernel function header. It is currently ignored, since this information
-		 * is extracted from the argument descriptions in 'value' and 'pointer' entries.
+		 * This entry specifies the type of the argument, as 
+		 * specified in the OpenCL kernel function header. It is 
+		 * currently ignored, since this information is extracted 
+		 * from the argument descriptions in 'value' and 'pointer' 
+		 * entries.
 		 */
 		if (!strcmp(line_ptrs[0], "reflection"))
 		{
@@ -317,7 +393,8 @@ static void evg_opencl_kernel_load_metadata(struct evg_opencl_kernel_t *kernel)
 		}
 
 		/* Entry 'privateid'. Format: privateid:<id>
-		 * Observed first in version 3:1:104 of metadata. Not sure what this entry is for.
+		 * Observed first in version 3:1:104 of metadata. Not 
+		 * sure what this entry is for.
 		 */
 		if (!strcmp(line_ptrs[0], "privateid"))
 		{
@@ -326,8 +403,9 @@ static void evg_opencl_kernel_load_metadata(struct evg_opencl_kernel_t *kernel)
 		}
 
 		/* Entry 'constarg'. Format: constarg:<arg_id>:<arg_name>
-		 * Observed first in version 3:1:104 of metadata. It shows up when an argument
-		 * is declared as '__global const'. Entry ignored here. */
+		 * Observed first in version 3:1:104 of metadata. 
+		 * It shows up when an argument is declared as '__global 
+		 * const'. Entry ignored here. */
 		if (!strcmp(line_ptrs[0], "constarg"))
 		{
 			EVG_OPENCL_KERNEL_METADATA_TOKEN_COUNT(3);

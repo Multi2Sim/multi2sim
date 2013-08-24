@@ -227,7 +227,7 @@ int EvgEmuRun(Emu *self)
 
 
 
-void EvgEmuConstMemWrite(EvgEmu *self, int bank, int vector, int elem, void *pvalue)
+void EvgEmuConstMemWrite(EvgEmu *self, int bank, int vector, int elem, void *pvalue, int size)
 {
 	unsigned int addr;
 
@@ -237,7 +237,7 @@ void EvgEmuConstMemWrite(EvgEmu *self, int bank, int vector, int elem, void *pva
 
 	/* Write */
 	addr = bank * 16384 + vector * 16 + elem * 4;
-	mem_write(self->const_mem, addr, 4, pvalue);
+	mem_write(self->const_mem, addr, size, pvalue);
 }
 
 
