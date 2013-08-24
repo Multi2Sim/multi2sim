@@ -34,7 +34,7 @@ extern char *evg_faults_file_name;
 void evg_faults_init(void);
 void evg_faults_done(void);
 
-void evg_faults_insert(void);
+void evg_faults_insert(EvgGpu *gpu);
 
 
 #endif

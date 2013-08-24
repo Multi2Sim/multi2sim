@@ -53,6 +53,8 @@ void evg_reg_file_inverse_rename(struct evg_compute_unit_t *compute_unit,
 
 struct evg_compute_unit_t
 {
+	EvgGpu *gpu;
+
 	/* IDs */
 	int id;
 	long long gpu_uop_id_counter;  /* Counter to assign 'id_in_compute_unit' to uops */
@@ -173,7 +175,7 @@ struct evg_compute_unit_t
 
 };
 
-struct evg_compute_unit_t *evg_compute_unit_create(void);
+struct evg_compute_unit_t *evg_compute_unit_create(EvgGpu *gpu);
 void evg_compute_unit_free(struct evg_compute_unit_t *gpu_compute_unit);
 void evg_compute_unit_map_work_group(struct evg_compute_unit_t *compute_unit, EvgWorkGroup *work_group);
 void evg_compute_unit_unmap_work_group(struct evg_compute_unit_t *compute_unit, EvgWorkGroup *work_group);
