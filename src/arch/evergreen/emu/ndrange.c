@@ -445,26 +445,26 @@ void EvgNDRangeSetupConstantMemory(EvgNDRange *self)
 	/* CB0[0]
 	 * x,y,z: global work size for the {x,y,z} dimensions.
 	 * w: number of work dimensions.  */
-	EvgEmuConstMemWrite(emu, 0, 0, 0, &kernel->global_size3[0]);
-	EvgEmuConstMemWrite(emu, 0, 0, 1, &kernel->global_size3[1]);
-	EvgEmuConstMemWrite(emu, 0, 0, 2, &kernel->global_size3[2]);
-	EvgEmuConstMemWrite(emu, 0, 0, 3, &kernel->work_dim);
+	EvgEmuConstMemWrite(emu, 0, 0, 0, &kernel->global_size3[0], 4);
+	EvgEmuConstMemWrite(emu, 0, 0, 1, &kernel->global_size3[1], 4);
+	EvgEmuConstMemWrite(emu, 0, 0, 2, &kernel->global_size3[2], 4);
+	EvgEmuConstMemWrite(emu, 0, 0, 3, &kernel->work_dim, 4);
 
 	/* CB0[1]
 	 * x,y,z: local work size for the {x,y,z} dimensions.
 	 * w: 0  */
-	EvgEmuConstMemWrite(emu, 0, 1, 0, &kernel->local_size3[0]);
-	EvgEmuConstMemWrite(emu, 0, 1, 1, &kernel->local_size3[1]);
-	EvgEmuConstMemWrite(emu, 0, 1, 2, &kernel->local_size3[2]);
-	EvgEmuConstMemWrite(emu, 0, 1, 3, &zero);
+	EvgEmuConstMemWrite(emu, 0, 1, 0, &kernel->local_size3[0], 4);
+	EvgEmuConstMemWrite(emu, 0, 1, 1, &kernel->local_size3[1], 4);
+	EvgEmuConstMemWrite(emu, 0, 1, 2, &kernel->local_size3[2], 4);
+	EvgEmuConstMemWrite(emu, 0, 1, 3, &zero, 4);
 
 	/* CB0[2]
 	 * x,y,z: global work size {x,y,z} / local work size {x,y,z}
 	 * w: 0  */
-	EvgEmuConstMemWrite(emu, 0, 2, 0, &kernel->group_count3[0]);
-	EvgEmuConstMemWrite(emu, 0, 2, 1, &kernel->group_count3[1]);
-	EvgEmuConstMemWrite(emu, 0, 2, 2, &kernel->group_count3[2]);
-	EvgEmuConstMemWrite(emu, 0, 2, 3, &zero);
+	EvgEmuConstMemWrite(emu, 0, 2, 0, &kernel->group_count3[0], 4);
+	EvgEmuConstMemWrite(emu, 0, 2, 1, &kernel->group_count3[1], 4);
+	EvgEmuConstMemWrite(emu, 0, 2, 2, &kernel->group_count3[2], 4);
+	EvgEmuConstMemWrite(emu, 0, 2, 3, &zero, 4);
 
 	/* CB0[3]
 	 * x: Offset to private memory ring (0 if private memory is not emulated).
@@ -485,29 +485,29 @@ void EvgNDRangeSetupConstantMemory(EvgNDRange *self)
 	 * z: 1.0 as IEEE-32bit float - required for math library.
 	 * w: 2.0 as IEEE-32bit float - required for math library. */
 	f = 0.0f;
-	EvgEmuConstMemWrite(emu, 0, 5, 0, &f);
+	EvgEmuConstMemWrite(emu, 0, 5, 0, &f, 4);
 	f = 0.5f;
-	EvgEmuConstMemWrite(emu, 0, 5, 1, &f);
+	EvgEmuConstMemWrite(emu, 0, 5, 1, &f, 4);
 	f = 1.0f;
-	EvgEmuConstMemWrite(emu, 0, 5, 2, &f);
+	EvgEmuConstMemWrite(emu, 0, 5, 2, &f, 4);
 	f = 2.0f;
-	EvgEmuConstMemWrite(emu, 0, 5, 3, &f);
+	EvgEmuConstMemWrite(emu, 0, 5, 3, &f, 4);
 
 	/* CB0[6]
 	 * x,y,z: Global offset for the {x,y,z} dimension of the work_item spawn.
 	 * z: Global single dimension flat offset: x * y * z. */
-	EvgEmuConstMemWrite(emu, 0, 6, 0, &zero);
-	EvgEmuConstMemWrite(emu, 0, 6, 1, &zero);
-	EvgEmuConstMemWrite(emu, 0, 6, 2, &zero);
-	EvgEmuConstMemWrite(emu, 0, 6, 3, &zero);
+	EvgEmuConstMemWrite(emu, 0, 6, 0, &zero, 4);
+	EvgEmuConstMemWrite(emu, 0, 6, 1, &zero, 4);
+	EvgEmuConstMemWrite(emu, 0, 6, 2, &zero, 4);
+	EvgEmuConstMemWrite(emu, 0, 6, 3, &zero, 4);
 
 	/* CB0[7]
 	 * x,y,z: Group offset for the {x,y,z} dimensions of the work_item spawn.
 	 * w: Group single dimension flat offset, x * y * z.  */
-	EvgEmuConstMemWrite(emu, 0, 7, 0, &zero);
-	EvgEmuConstMemWrite(emu, 0, 7, 1, &zero);
-	EvgEmuConstMemWrite(emu, 0, 7, 2, &zero);
-	EvgEmuConstMemWrite(emu, 0, 7, 3, &zero);
+	EvgEmuConstMemWrite(emu, 0, 7, 0, &zero, 4);
+	EvgEmuConstMemWrite(emu, 0, 7, 1, &zero, 4);
+	EvgEmuConstMemWrite(emu, 0, 7, 2, &zero, 4);
+	EvgEmuConstMemWrite(emu, 0, 7, 3, &zero, 4);
 
 	/* CB0[8]
 	 * x: Offset in the global buffer where data segment exists.
@@ -523,7 +523,6 @@ void EvgNDRangeSetupArguments(EvgNDRange *self)
 	struct evg_opencl_kernel_t *kernel = self->kernel;
 	struct evg_opencl_kernel_arg_t *arg;
 	int i;
-	int cb_index = 0;
 
 	/* Kernel arguments */
 	for (i = 0; i < list_count(kernel->arg_list); i++)
@@ -543,10 +542,16 @@ void EvgNDRangeSetupArguments(EvgNDRange *self)
 		case EVG_OPENCL_KERNEL_ARG_KIND_VALUE:
 		{
 			/* Value copied directly into device constant memory */
-			EvgEmuConstMemWrite(emu, 1, cb_index, 0, &arg->value);
-			evg_opencl_debug("    arg %d: value '0x%x' loaded into CB1[%d]\n", i, 
-					arg->value, cb_index);
-			cb_index++;
+			EvgEmuConstMemWrite(emu, arg->constant_buffer_num, 
+				arg->constant_offset/16, 0, &arg->value, 
+				arg->size);
+			evg_opencl_debug("    arg %d: value loaded into CB1[%d] (size %d)\n", 
+				i, arg->constant_offset/16, 
+				arg->size);
+			for (int j = 0; j < arg->size/4; j++)
+			{
+				printf("arg %d = %d\n", j, ((int*)&arg->value)[j]);
+			}
 			break;
 		}
 
@@ -559,17 +564,20 @@ void EvgNDRangeSetupArguments(EvgNDRange *self)
 			{
 				struct evg_opencl_mem_t *mem;
 
-				/* Image type
-				 * Images really take up two slots, but for now we'll
-				 * just copy the pointer into both. */
-				mem = evg_opencl_repo_get_object(emu->opencl_repo,
-					evg_opencl_object_mem, arg->value);
-				EvgEmuConstMemWrite(emu, 1, cb_index, 0, &mem->device_ptr);
+				/* Image type */
+				mem = evg_opencl_repo_get_object(
+					evg_emu->opencl_repo,
+					evg_opencl_object_mem, arg->value[0]);
+
+				EvgEmuConstMemWrite(emu, 
+					arg->constant_buffer_num, 
+					arg->constant_offset/16, 0, 
+					&mem->device_ptr, arg->size);
 				evg_opencl_debug("    arg %d: opencl_mem id 0x%x loaded into CB1[%d]," 
-						" device_ptr=0x%x\n", i, arg->value, cb_index,
+						" device_ptr=0x%x\n", i, 
+						arg->value[0], 
+						arg->constant_offset/16,
 						mem->device_ptr);
-				EvgEmuConstMemWrite(emu, 1, cb_index+1, 0, &mem->device_ptr);
-				cb_index += 2;
 				break;
 			}
 
@@ -592,25 +600,33 @@ void EvgNDRangeSetupArguments(EvgNDRange *self)
 				/* Pointer in __global scope.
 				 * Argument value is a pointer to an 'opencl_mem' object.
 				 * It is translated first into a device memory pointer. */
-				mem = evg_opencl_repo_get_object(emu->opencl_repo,
-					evg_opencl_object_mem, arg->value);
-				EvgEmuConstMemWrite(emu, 1, cb_index, 0, &mem->device_ptr);
+				mem = evg_opencl_repo_get_object(
+					evg_emu->opencl_repo,
+					evg_opencl_object_mem, arg->value[0]);
+
+				EvgEmuConstMemWrite(emu, 
+					arg->constant_buffer_num, 
+					arg->constant_offset/16, 0, 
+					&mem->device_ptr, 4);
 				evg_opencl_debug("    arg %d: opencl_mem id 0x%x loaded into CB1[%d]," 
-						" device_ptr=0x%x\n", i, arg->value, cb_index,
+					" device_ptr=0x%x\n", i, arg->value[0], 
+					arg->constant_offset/16,
 						mem->device_ptr);
-				cb_index++;
 				break;
 			}
 
 			case EVG_OPENCL_MEM_SCOPE_LOCAL:
 			{
 				/* Pointer in __local scope.
-				 * Argument value is always NULL, just assign space for it. */
-				EvgEmuConstMemWrite(emu, 1, cb_index, 0, &self->local_mem_top);
+				 * Argument value is always NULL, 
+				 * just assign space for it. */
+				EvgEmuConstMemWrite(emu, 
+					arg->constant_buffer_num, 
+					arg->constant_offset/16, 0, 
+					&self->local_mem_top, 4);
 				evg_opencl_debug("    arg %d: %d bytes reserved in local memory at 0x%x\n",
 					i, arg->size, self->local_mem_top);
-				self->local_mem_top += arg->size;
-				cb_index++;
+					self->local_mem_top += arg->size;
 				break;
 			}
 
@@ -623,8 +639,8 @@ void EvgNDRangeSetupArguments(EvgNDRange *self)
 
 		case EVG_OPENCL_KERNEL_ARG_KIND_SAMPLER:
 		{
-			evg_opencl_debug("    arg %d: sampler at CB1[%d]\n", i, cb_index);
-			cb_index++;
+			evg_opencl_debug("    arg %d: sampler at CB1[%d].x\n", 
+				i, arg->constant_offset/16);
 			break;
 		}
 
