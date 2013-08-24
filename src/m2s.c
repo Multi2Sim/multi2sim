@@ -51,6 +51,7 @@
 #include <arch/fermi/timing/gpu.h>
 #include <arch/fermi/timing/sm.h>
 #include <arch/kepler/asm/asm.h>
+#include <arch/kepler/asm/inst.h>
 #include <arch/mips/asm/asm.h>
 #include <arch/mips/asm/inst.h>
 #include <arch/mips/emu/context.h>
@@ -1896,6 +1897,9 @@ static void m2s_init(void)
 	CLASS_REGISTER(FrmGpu);
 	CLASS_REGISTER(FrmSM);
 
+	CLASS_REGISTER(KplAsm);
+	CLASS_REGISTER(KplInst);
+
 	CLASS_REGISTER(MIPSAsm);
 	CLASS_REGISTER(MIPSInst);
 
@@ -2079,7 +2083,15 @@ int main(int argc, char **argv)
 
 	/* Kepler disassembler tool */
 	if (*kpl_disasm_file_name)
-		kpl_disasm(kpl_disasm_file_name);
+	{
+		KplAsm *as;
+
+		as = new(KplAsm);
+		KplAsmDisassembleBinary(as, kpl_disasm_file_name);
+
+		delete(as);
+		goto end;
+	}
 
 	/* ARM disassembler tool */
 	if (*arm_disasm_file_name)
