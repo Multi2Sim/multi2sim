@@ -548,10 +548,6 @@ void EvgNDRangeSetupArguments(EvgNDRange *self)
 			evg_opencl_debug("    arg %d: value loaded into CB1[%d] (size %d)\n", 
 				i, arg->constant_offset/16, 
 				arg->size);
-			for (int j = 0; j < arg->size/4; j++)
-			{
-				printf("arg %d = %d\n", j, ((int*)&arg->value)[j]);
-			}
 			break;
 		}
 
