@@ -22,6 +22,17 @@ struct dispatch_info
 	void *arch_kernel;
 };
 
+/* Some of the dynamic scheduling algorithms might try to schedule a zero-size NDRange.
+   Better to just detect this in general */
+int device_ndrange_has_work(unsigned int dims, const unsigned int *group_count)
+{
+	int i;
+	for (i = 0; i < dims; i++)
+		if (group_count[i] == 0)
+			return 0;
+	return 1;
+}
+
 void *device_ndrange_dispatch(void *ptr)
 {
 	int i;
@@ -74,7 +85,8 @@ void *device_ndrange_dispatch(void *ptr)
 		info->part, 
 		info->id,
 		info->device->arch_device_preferred_workgroups_func(
-			info->device), group_offset, group_count, now))
+			info->device), group_offset, group_count, now)
+		&& device_ndrange_has_work(ndrange->work_dim, group_count))
 	{
 		opencl_debug("[%s] running work groups (%d,%d,%d) to (%d,%d,%d)"
 			" on device %s", __FUNCTION__,
