@@ -26,6 +26,7 @@
 #include <lib/util/list.h>
 #include <lib/util/string.h>
 #include <mem-system/memory.h>
+#include <mem-system/mmu.h>
 
 #include "opencl.h"
 #include "si-kernel.h"
@@ -646,9 +647,28 @@ void opencl_si_kernel_free(struct opencl_si_kernel_t *kernel)
 }
 
 
-void opencl_si_kernel_create_ndrange_constant_buffers(
-	SINDRange *ndrange)
+void opencl_si_kernel_create_ndrange_constant_buffers(SINDRange *ndrange)
 {
+	unsigned int size_of_constant_buffers;
+
+	size_of_constant_buffers = SI_EMU_CONST_BUF_0_SIZE + 
+		SI_EMU_CONST_BUF_1_SIZE;
+
+	/* Allocate starting from nearest page boundary */
+	if (si_emu->video_mem_top % si_emu->mmu->page_size)
+	{
+		si_emu->video_mem_top += si_emu->mmu->page_size -
+			(si_emu->video_mem_top & si_emu->mmu->page_mask);
+	}
+
+	/* Map new pages */
+	mem_map(si_emu->video_mem, si_emu->video_mem_top, 
+		size_of_constant_buffers, mem_access_read | mem_access_write);
+
+	opencl_debug("\t%u bytes of device memory allocated at " 
+		"0x%x for SI constant buffers\n", size_of_constant_buffers,
+		si_emu->video_mem_top);
+
 	/* Create constant buffer 0 */
 	ndrange->cb0 = si_emu->video_mem_top;
 	si_emu->video_mem_top += SI_EMU_CONST_BUF_0_SIZE;
@@ -656,7 +676,6 @@ void opencl_si_kernel_create_ndrange_constant_buffers(
 	/* Create constant buffer 1 */
 	ndrange->cb1 = si_emu->video_mem_top;
 	si_emu->video_mem_top += SI_EMU_CONST_BUF_1_SIZE;
-
 }
 
 void opencl_si_kernel_setup_ndrange_constant_buffers(
@@ -792,6 +811,26 @@ void opencl_si_kernel_setup_ndrange_constant_buffers(
 
 void opencl_si_kernel_create_ndrange_tables(SINDRange *ndrange)
 {
+	unsigned int size_of_tables;
+
+	size_of_tables = SI_EMU_CONST_BUF_TABLE_SIZE + 
+		SI_EMU_RESOURCE_TABLE_SIZE + SI_EMU_UAV_TABLE_SIZE;
+
+	/* Allocate starting from nearest page boundary */
+	if (si_emu->video_mem_top % si_emu->mmu->page_size)
+	{
+		si_emu->video_mem_top += si_emu->mmu->page_size -
+			(si_emu->video_mem_top & si_emu->mmu->page_mask);
+	}
+
+	/* Map new pages */
+	mem_map(si_emu->video_mem, si_emu->video_mem_top, size_of_tables,
+		mem_access_read | mem_access_write);
+
+	opencl_debug("\t%u bytes of device memory allocated at " 
+		"0x%x for SI internal tables\n", size_of_tables,
+		si_emu->video_mem_top);
+
 	/* Setup internal tables */
 	ndrange->const_buf_table = si_emu->video_mem_top;
 	si_emu->video_mem_top += SI_EMU_CONST_BUF_TABLE_SIZE;

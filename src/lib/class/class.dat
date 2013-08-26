@@ -99,6 +99,8 @@ CLASS(X86Cpu)
 CLASS(X86Thread)
 CLASS(X86Core)
 
+CLASS(MMU)
+
 
 /*
  * Drivers

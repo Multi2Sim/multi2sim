@@ -43,6 +43,9 @@ CLASS_BEGIN(X86Emu, Emu)
 	/* PID assignment */
 	int current_pid;
 
+	/* MMU */
+	MMU *mmu;
+
 	/* Schedule next call to 'X86EmuProcessEvents()'.
 	 * The call will only be effective if 'process_events_force' is set.
 	 * This flag should be accessed thread-safely locking 'process_events_mutex'. */
@@ -119,6 +122,8 @@ void X86EmuLoadContextFromCommandLine(X86Emu *self, int argc, char **argv);
  */
 
 extern X86Emu *x86_emu;
+
+extern char *x86_mmu_report_file_name;
 
 extern long long x86_emu_max_cycles;
 extern long long x86_emu_max_inst;

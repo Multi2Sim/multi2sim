@@ -310,6 +310,10 @@ static char *m2s_help =
 		"      simulation, it is given as the number of committed (non-speculative)\n"
 		"      instructions. Use 0 (default) for unlimited.\n"
 		"\n"
+		"  --x86-mmu-report <file>\n"
+		"      File to dump a report of the x86 MMU. Use together with a detailed \n"
+		"      CPU simulation (option '--x86-sim detailed').\n"
+		"\n"
 		"  --x86-report <file>\n"
 		"      File to dump a report of the x86 CPU pipeline, including statistics such\n"
 		"      as the number of instructions handled in every pipeline stage, read/write\n"
@@ -444,6 +448,10 @@ static char *m2s_help =
 		"  --si-max-kernels <kernels>\n"
 		"      Maximum number of Southern Islands kernels (0 for no maximum). After the\n"
 		"      last kernel finishes execution, the simulator will stop.\n"
+		"\n"
+		"  --si-mmu-report <file>\n"
+		"      File to dump a report of the GPU MMU. Use together with a detailed \n"
+		"      GPU simulation (option '--si-sim detailed').\n"
 		"\n"
 		"  --si-report <file>\n"
 		"      File to dump a report of the GPU pipeline, such as active execution\n"
@@ -858,6 +866,14 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
+		/* x86 MMU report */
+		if (!strcmp(argv[argi], "--x86-mmu-report"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			x86_mmu_report_file_name = argv[++argi];
+			continue;
+		}
+
 		/* x86 CPU pipeline report */
 		if (!strcmp(argv[argi], "--x86-report"))
 		{
@@ -1127,6 +1143,14 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		{
 			m2s_need_argument(argc, argv, argi);
 			si_emu_max_kernels = atoi(argv[++argi]);
+			continue;
+		}
+
+		/* Southern Islands MMU report */
+		if (!strcmp(argv[argi], "--si-mmu-report"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			si_mmu_report_file_name = argv[++argi];
 			continue;
 		}
 
@@ -1562,6 +1586,8 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			fatal(msg, "--x86-max-cycles");
 		if (*x86_cpu_report_file_name)
 			fatal(msg, "--x86-report");
+		if (*x86_mmu_report_file_name)
+			fatal(msg, "--x86-mmu-report");
 	}
 
 	/* Options that only make sense for GPU detailed simulation */
@@ -1594,6 +1620,8 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			fatal(msg, "--si-max-cycles");
 		if (*si_gpu_report_file_name)
 			fatal(msg, "--si-report");
+		if (*si_mmu_report_file_name)
+			fatal(msg, "--si-mmu-report");
 	}
 
 	/* Options that only make sense for GPU detailed simulation */
@@ -1927,6 +1955,8 @@ static void m2s_init(void)
 
 	CLASS_REGISTER(SIGpu);
 	CLASS_REGISTER(SIComputeUnit);
+
+	CLASS_REGISTER(MMU);
 
 	/* Drivers */
 	CLASS_REGISTER(Driver);
@@ -2280,7 +2310,6 @@ int main(int argc, char **argv)
 	/* Network and memory system */
 	net_init();
 	mem_system_init();
-	mmu_init();
 
 	/* Load architectural state checkpoint */
 	if (x86_load_checkpoint_file_name[0])
@@ -2338,7 +2367,6 @@ int main(int argc, char **argv)
 	runtime_done();
 
 	/* Finalization of network and memory system */
-	mmu_done();
 	mem_system_done();
 	net_done();
 

@@ -90,7 +90,7 @@ void X86ContextCreate(X86Context *self, X86Emu *emu)
 	self->loader = x86_loader_create();
 
 	/* Memory */
-	self->address_space_index = mmu_address_space_new();
+	self->address_space_index = MMUAddressSpaceNew(emu->mmu);
 	self->mem = mem_create();
 	self->spec_mem = spec_mem_create(self->mem);
 
@@ -141,7 +141,7 @@ void X86ContextCreateAndFork(X86Context *self, X86Context *forked)
 	x86_regs_copy(self->regs, forked->regs);
 
 	/* Memory */
-	self->address_space_index = mmu_address_space_new();
+	self->address_space_index = MMUAddressSpaceNew(self->emu->mmu);
 	self->mem = mem_create();
 	self->spec_mem = spec_mem_create(self->mem);
 	mem_clone(self->mem, forked->mem);

@@ -18,10 +18,12 @@
  */
 
 
+#include <arch/southern-islands/emu/emu.h>
 #include <arch/southern-islands/emu/wavefront.h>
 #include <arch/southern-islands/emu/work-group.h>
 #include <lib/esim/trace.h>
 #include <lib/util/list.h>
+#include <mem-system/mmu.h>
 
 #include "compute-unit.h"
 #include "gpu.h"
@@ -321,6 +323,8 @@ void si_scalar_unit_execute(struct si_scalar_unit_t *scalar_unit)
 	int instructions_processed = 0;
 	int i;
 
+	unsigned int phys_addr;
+
 	list_entries = list_count(scalar_unit->read_buffer);
 
 	/* Sanity check the read buffer. */
@@ -371,13 +375,23 @@ void si_scalar_unit_execute(struct si_scalar_unit_t *scalar_unit)
 		{
 			/* Access global memory */
 			uop->global_mem_witness--;
+
 			/* FIXME Get rid of dependence on wavefront here */
 			uop->global_mem_access_addr =
 				uop->wavefront->scalar_work_item->
 				global_mem_access_addr;
+
+			/* Translate virtual address to physical address */
+			phys_addr = MMUTranslate(si_emu->mmu, 0,
+				uop->global_mem_access_addr);
+
+			/* Submit the access */
 			mod_access(scalar_unit->compute_unit->scalar_cache,
-				mod_access_load, uop->global_mem_access_addr,
+				mod_access_load, phys_addr,
 				&uop->global_mem_witness, NULL, NULL, NULL);
+
+			/* MMU statistics */
+			MMUAccessPage(si_emu->mmu, phys_addr, mmu_access_read);
 
 			/* Transfer the uop to the execution buffer */
 			list_remove(scalar_unit->read_buffer, uop);
