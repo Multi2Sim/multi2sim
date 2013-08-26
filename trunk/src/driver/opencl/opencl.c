@@ -30,6 +30,7 @@
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
 #include <mem-system/memory.h>
+#include <mem-system/mmu.h>
 
 #include "opencl.h"
 #include "si-program.h"
@@ -266,21 +267,43 @@ static int opencl_abi_si_mem_alloc_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
-	unsigned int size;
 	unsigned int device_ptr;
+	unsigned int num_pages;
+	unsigned int page_size;
+	unsigned int size;
 
 	/* Arguments */
 	size = regs->ecx;
 	opencl_debug("\tsize = %u\n", size);
 
+	page_size = si_emu->mmu->page_size;
+	num_pages = (size+page_size-1)/page_size;
+
+	assert(num_pages);
+
+	/* Allocate starting from nearest page boundary */
+	if (si_emu->video_mem_top % si_emu->mmu->page_size)
+	{
+		si_emu->video_mem_top += si_emu->mmu->page_size -
+			(si_emu->video_mem_top & si_emu->mmu->page_mask);
+	}
+
+	/* New virtual address */
+	device_ptr = si_emu->video_mem_top;
+	opencl_debug("\t%d bytes of device memory allocated at 0x%x\n",
+		size, device_ptr);
+	opencl_debug("\tnum pages = %u (page size = %u)\n", num_pages, 
+		page_size);
+
+	/* Map new pages */
+	mem_map(si_emu->video_mem, si_emu->video_mem_top, size,
+		mem_access_read | mem_access_write);
+
 	/* For now, memory allocation in device memory is done by just 
 	 * incrementing a pointer to the top of the global memory space. 
 	 * Since memory deallocation is not implemented, "holes" in the 
 	 * memory space are not considered. */
-	device_ptr = si_emu->video_mem_top;
 	si_emu->video_mem_top += size;
-	opencl_debug("\t%d bytes of device memory allocated at 0x%x\n",
-			size, device_ptr);
 
 	/* Return device pointer */
 	return device_ptr;
@@ -372,7 +395,7 @@ static int opencl_abi_si_mem_read_impl(X86Context *ctx)
 static int opencl_abi_si_mem_write_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
-	struct mem_t *mem = ctx->mem;
+	struct mem_t *x86_mem = ctx->mem;
 
 	unsigned int device_ptr;
 	unsigned int host_ptr;
@@ -394,7 +417,7 @@ static int opencl_abi_si_mem_write_impl(X86Context *ctx)
 
 	/* Write memory from host to device */
 	buf = xmalloc(size);
-	mem_read(mem, host_ptr, size, buf);
+	mem_read(x86_mem, host_ptr, size, buf);
 	mem_write(si_emu->video_mem, device_ptr, size, buf);
 	free(buf);
 

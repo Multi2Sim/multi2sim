@@ -35,11 +35,14 @@ CLASS_BEGIN(SIEmu, Emu)
 	/* Associated disassembler */
 	SIAsm *as;
 
-	/* Memory */
+	/* Memory spaces */
 	struct mem_t *video_mem;  /* local to the GPU */
 	unsigned int video_mem_top;
 	struct mem_t *shared_mem; /* shared with the CPU */
 	struct mem_t *global_mem; /* will point to video_mem or shared_mem */
+
+	/* MMU */
+	MMU *mmu;
 
 	/* Current ND-Range */
 	SINDRange *ndrange;
@@ -250,6 +253,7 @@ extern int si_emu_wavefront_size;
 
 extern SIEmu *si_emu;
 
+extern char *si_mmu_report_file_name;
 
 #endif
 

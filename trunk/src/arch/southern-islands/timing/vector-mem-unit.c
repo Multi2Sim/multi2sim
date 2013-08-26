@@ -23,6 +23,7 @@
 #include <lib/esim/trace.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
+#include <mem-system/mmu.h>
 
 #include "compute-unit.h"
 #include "gpu.h"
@@ -183,12 +184,16 @@ void si_vector_mem_mem(struct si_vector_mem_unit_t *vector_mem)
 
 	SIWorkItem *work_item;
 
+	enum mod_access_kind_t access_kind;
+	enum mmu_access_t mmu_access_kind;
+
 	int work_item_id;
 	int instructions_processed = 0;
 	int list_entries;
 	int i;
-	enum mod_access_kind_t access_kind;
 	int list_index = 0;
+
+	unsigned int phys_addr;
 
 	list_entries = list_count(vector_mem->read_buffer);
 	
@@ -238,13 +243,24 @@ void si_vector_mem_mem(struct si_vector_mem_unit_t *vector_mem)
 
 		/* Set the access type */
 		if (uop->vector_mem_write && !uop->glc)
+		{
 			access_kind = mod_access_nc_store;
+			mmu_access_kind = mmu_access_write;
+		}
 		else if (uop->vector_mem_write && uop->glc)
+		{
 			access_kind = mod_access_store;
+			mmu_access_kind = mmu_access_write;
+		}
 		else if (uop->vector_mem_read)
+		{
 			access_kind = mod_access_load;
+			mmu_access_kind = mmu_access_read;
+		}
 		else 
+		{
 			fatal("%s: invalid access kind", __FUNCTION__);
+		}
 
 		/* Access global memory */
 		assert(!uop->global_mem_witness);
@@ -254,10 +270,18 @@ void si_vector_mem_mem(struct si_vector_mem_unit_t *vector_mem)
 			work_item_uop = 
 				&uop->work_item_uop[work_item->id_in_wavefront];
 
+			/* Translate virtual address to physical address */
+			phys_addr = MMUTranslate(si_emu->mmu, 0,
+				work_item_uop->global_mem_access_addr);
+
+			/* Submit the access */
 			mod_access(vector_mem->compute_unit->vector_cache, 
-				access_kind, 
-				work_item_uop->global_mem_access_addr,
+				access_kind, phys_addr,
 				&uop->global_mem_witness, NULL, NULL, NULL);
+
+			/* MMU statistics */
+			MMUAccessPage(si_emu->mmu, phys_addr, mmu_access_kind);
+
 			uop->global_mem_witness--;
 		}
 
