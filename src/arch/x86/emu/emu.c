@@ -35,6 +35,7 @@
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
 #include <mem-system/memory.h>
+#include <mem-system/mmu.h>
 
 #include "context.h"
 #include "emu.h"
@@ -55,6 +56,8 @@ long long x86_emu_max_cycles = 0;
 char x86_emu_last_inst_bytes[20];
 int x86_emu_last_inst_size = 0;
 int x86_emu_process_prefetch_hints = 0;
+
+char *x86_mmu_report_file_name = "";
 
 X86Emu *x86_emu;
 
@@ -114,6 +117,9 @@ void X86EmuCreate(X86Emu *self, X86Asm *as)
 	asObject(self)->Dump = X86EmuDump;
 	asEmu(self)->DumpSummary = X86EmuDumpSummary;
 	asEmu(self)->Run = X86EmuRun;
+
+	/* MMU */
+	self->mmu = new(MMU, x86_mmu_report_file_name);
 }
 
 
@@ -150,6 +156,9 @@ void X86EmuDestroy(X86Emu *self)
 
 	/* Drivers */
 	delete(self->opencl_driver);
+
+	/* MMU */
+	delete(self->mmu);
 
 	/* Print system call summary */
 	if (debug_status(x86_sys_debug_category))

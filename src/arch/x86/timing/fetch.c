@@ -19,6 +19,7 @@
 
 
 #include <arch/x86/emu/context.h>
+#include <arch/x86/emu/emu.h>
 #include <arch/x86/emu/regs.h>
 #include <lib/esim/trace.h>
 #include <lib/util/debug.h>
@@ -70,7 +71,8 @@ static int X86ThreadCanFetch(X86Thread *self)
 	block = self->fetch_neip & ~(self->inst_mod->block_size - 1);
 	if (block != self->fetch_block)
 	{
-		phy_addr = mmu_translate(self->ctx->address_space_index,
+		phy_addr = MMUTranslate(self->ctx->emu->mmu, 
+			self->ctx->address_space_index,
 			self->fetch_neip);
 		if (!mod_can_access(self->inst_mod, phy_addr))
 			return 0;
@@ -153,7 +155,9 @@ static struct x86_uop_t *X86ThreadFetchInst(X86Thread *self, int fetch_trace_cac
 
 		/* Calculate physical address of a memory access */
 		if (uop->flags & X86_UINST_MEM)
-			uop->phy_addr = mmu_translate(self->ctx->address_space_index,
+			uop->phy_addr = MMUTranslate(
+				self->ctx->emu->mmu,
+				self->ctx->address_space_index,
 				uinst->address);
 
 		/* Trace */
@@ -301,7 +305,8 @@ static void X86ThreadFetch(X86Thread *self)
 	block = self->fetch_neip & ~(self->inst_mod->block_size - 1);
 	if (block != self->fetch_block)
 	{
-		phy_addr = mmu_translate(self->ctx->address_space_index, self->fetch_neip);
+		phy_addr = MMUTranslate(self->ctx->emu->mmu, 
+			self->ctx->address_space_index, self->fetch_neip);
 		self->fetch_block = block;
 		self->fetch_address = phy_addr;
 		self->fetch_access = mod_access(self->inst_mod,
@@ -309,8 +314,8 @@ static void X86ThreadFetch(X86Thread *self)
 		self->btb_reads++;
 
 		/* MMU statistics */
-		if (*mmu_report_file_name)
-			mmu_access_page(phy_addr, mmu_access_execute);
+		MMUAccessPage(self->ctx->emu->mmu, phy_addr, 
+			mmu_access_execute);
 	}
 
 	/* Fetch all instructions within the block up to the first predict-taken branch. */

@@ -20,6 +20,15 @@
 #ifndef MEM_SYSTEM_MMU_H
 #define MEM_SYSTEM_MMU_H
 
+#include <lib/class/class.h>
+#include <lib/mhandle/mhandle.h>
+#include <lib/util/debug.h>
+#include <lib/util/file.h>
+#include <lib/util/list.h>
+#include <lib/util/misc.h>
+
+#define MMU_PAGE_HASH_SIZE  (1 << 10)
+#define MMU_PAGE_LIST_SIZE  (1 << 10)
 
 enum mmu_access_t
 {
@@ -29,22 +38,37 @@ enum mmu_access_t
 	mmu_access_execute
 };
 
-extern char *mmu_report_file_name;
+/*
+ * Class 'MMU'
+ */
+CLASS_BEGIN(MMU, Object)
+
+	/* List of pages */
+	struct list_t *page_list;
+
+	/* Hash table of pages */
+	struct mmu_page_t *page_hash_table[MMU_PAGE_HASH_SIZE];
+
+	/* Report file */
+	FILE *report_file;
+
+	unsigned int page_size;
+	unsigned int log_page_size;
+	unsigned int page_mask;
+	int address_space_index;
+
+CLASS_END(MMU)
+
+void MMUCreate(MMU *self, char *report_file_name);
+void MMUDestroy(MMU *self);
+
+void MMUAccessPage(MMU *self, unsigned int phy_addr, enum mmu_access_t access);
+int MMUAddressSpaceNew(MMU *self);
+unsigned int MMUTranslate(MMU *self, int address_space_index, 
+	unsigned int vtl_addr);
+int MMUValidPhysicalAddr(MMU *self, unsigned int phy_addr);
 
 extern unsigned int mmu_page_size;
-extern unsigned int mmu_page_mask;
-extern unsigned int mmu_log_page_size;
-
-void mmu_init(void);
-void mmu_done(void);
-void mmu_dump_report(void);
-
-int mmu_address_space_new(void);
-unsigned int mmu_translate(int address_space_index, unsigned int vtl_addr);
-int mmu_valid_phy_addr(unsigned int phy_addr);
-
-void mmu_access_page(unsigned int phy_addr, enum mmu_access_t access);
-
 
 #endif
 
