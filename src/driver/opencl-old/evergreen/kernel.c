@@ -258,8 +258,6 @@ static void evg_opencl_kernel_load_metadata(struct evg_opencl_kernel_t *kernel)
 				EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED(1);
 			}
 
-			arg->size = 4;
-
 			continue;
 		}
 
