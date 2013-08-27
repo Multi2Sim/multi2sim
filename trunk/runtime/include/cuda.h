@@ -20,6 +20,9 @@
 #ifndef RUNTIME_INCLUDE_CUDA_H
 #define RUNTIME_INCLUDE_CUDA_H
 
+#ifndef __cuda_cuda_h__
+#define __cuda_cuda_h__
+
 #include <stdlib.h>
 
 #define cuDeviceTotalMem                    cuDeviceTotalMem_v2
@@ -754,6 +757,7 @@ CUresult cuGetExportTable(const void **ppExportTable, const CUuuid *pExportTable
 
 #ifdef __cplusplus
 }
+#endif
 #endif
 
 #endif

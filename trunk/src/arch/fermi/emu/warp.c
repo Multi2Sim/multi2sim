@@ -152,10 +152,9 @@ void FrmWarpCreate(FrmWarp *self, FrmThreadBlock *thread_block)
 	/* Initialize */
 	self->thread_block = thread_block;
 	self->grid = thread_block->grid;
-	self->reconv_stack.entries[0].active_thread_bitmap = 0xffffffff;
-	self->reconv_stack_top = 0;
-	self->reconv_stack_pushed = 0;
-	self->reconv_stack_popped = 0;
+	self->sync_stack_top = 0;
+	self->sync_stack_pushed = 0;
+	self->sync_stack_popped = 0;
 
 	/* FIXME: Remove once loop state is part of stack */
 	self->loop_depth = 0;
