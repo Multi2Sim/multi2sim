@@ -118,10 +118,8 @@ void X86EmuLoadContextFromCommandLine(X86Emu *self, int argc, char **argv);
 
 
 /*
- * Non-Class
+ * Public
  */
-
-extern X86Emu *x86_emu;
 
 extern char *x86_mmu_report_file_name;
 

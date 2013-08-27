@@ -50,13 +50,13 @@ enum cuda_call_t
 };
 
 /* Prototype of CUDA driver functions */
-typedef int (*cuda_func_t)(X86Context *ctx);
+typedef int (*cuda_func_t)(X86Context *context);
 
 /* Functions */
 int cuda_abi_call(X86Context *ctx);
 
 #define CUDA_DEFINE_CALL(name) \
-	int cuda_func_##name(X86Context *ctx);
+	int cuda_func_##name(X86Context *context);
 #include "cuda.dat"
 #undef CUDA_DEFINE_CALL
 
@@ -64,6 +64,7 @@ int cuda_abi_call(X86Context *ctx);
 struct cuda_abi_frm_kernel_launch_info_t
 {
 	struct cuda_function_t *function;
+	X86Context *context;
 	FrmGrid *grid;
 	int finished;
 };

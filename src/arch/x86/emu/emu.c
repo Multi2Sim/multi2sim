@@ -47,10 +47,9 @@
 
 
 /*
- * Global variables
+ * Public
  */
 
-/* Configuration parameters */
 long long x86_emu_max_inst = 0;
 long long x86_emu_max_cycles = 0;
 char x86_emu_last_inst_bytes[20];
@@ -58,8 +57,6 @@ int x86_emu_last_inst_size = 0;
 int x86_emu_process_prefetch_hints = 0;
 
 char *x86_mmu_report_file_name = "";
-
-X86Emu *x86_emu;
 
 
 

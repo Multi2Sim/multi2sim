@@ -34,6 +34,7 @@ enum evg_opencl_command_type_t
 
 struct evg_opencl_command_t
 {
+	X86Context *context;
 	enum evg_opencl_command_type_t type;
 	union
 	{
@@ -59,8 +60,8 @@ struct evg_opencl_command_queue_t
 struct evg_opencl_command_queue_t *evg_opencl_command_queue_create(void);
 void evg_opencl_command_queue_free(struct evg_opencl_command_queue_t *command_queue);
 
-struct evg_opencl_command_t *evg_opencl_command_create(enum
-	evg_opencl_command_type_t type);
+struct evg_opencl_command_t *evg_opencl_command_create(X86Context *context,
+		enum evg_opencl_command_type_t type);
 void evg_opencl_command_free(struct evg_opencl_command_t *command);
 
 void evg_opencl_command_queue_submit(struct evg_opencl_command_queue_t *command_queue,

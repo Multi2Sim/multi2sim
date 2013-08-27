@@ -19,6 +19,7 @@
 
 
 #include <arch/evergreen/emu/emu.h>
+#include <arch/x86/emu/context.h>
 #include <arch/x86/emu/emu.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
@@ -63,13 +64,14 @@ void evg_opencl_command_queue_free(struct evg_opencl_command_queue_t *command_qu
 
 
 /* Create a command */
-struct evg_opencl_command_t *evg_opencl_command_create(enum
-	evg_opencl_command_type_t type)
+struct evg_opencl_command_t *evg_opencl_command_create(X86Context *context,
+		enum evg_opencl_command_type_t type)
 {
 	struct evg_opencl_command_t *command;
 
 	/* Initialize */
 	command = xcalloc(1, sizeof(struct evg_opencl_command_t));
+	command->context = context;
 	command->type = type;
 
 	/* Return */
@@ -102,6 +104,7 @@ void evg_opencl_command_queue_submit(struct evg_opencl_command_queue_t *command_
 void evg_opencl_command_queue_complete(struct evg_opencl_command_queue_t *command_queue,
 	struct evg_opencl_command_t *command)
 {
+	X86Context *context = command->context;
 	struct linked_list_t *command_list;
 
 	/* Check that command is in command queue */
@@ -115,11 +118,12 @@ void evg_opencl_command_queue_complete(struct evg_opencl_command_queue_t *comman
 
 	/* x86 contexts might be waiting for the command queue to get empty
 	 * (e.g., suspended in a 'clFinish' call. Check events. */
-	X86EmuProcessEventsSchedule(x86_emu);
+	assert(context);
+	X86EmuProcessEventsSchedule(context->emu);
 }
 
 
-int evg_opencl_command_queue_can_wakeup(X86Context *ctx, void *data)
+int evg_opencl_command_queue_can_wakeup(X86Context *context, void *data)
 {
 	struct evg_opencl_command_queue_t *command_queue;
 	struct linked_list_t *command_list;
