@@ -181,6 +181,7 @@ static MIPSEmu *mips_emu;
 static MIPSCpu *mips_cpu;
 
 static X86Asm *x86_asm;
+static X86Emu *x86_emu;
 static X86Cpu *x86_cpu;
 
 static SIAsm *si_asm;

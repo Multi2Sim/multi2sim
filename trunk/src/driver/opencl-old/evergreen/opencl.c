@@ -2263,7 +2263,7 @@ struct evg_opencl_clEnqueueNDRangeKernel_args_t
 	unsigned int event_ptr;  /* cl_event *event */
 };
 
-void evg_opencl_clEnqueueNDRangeKernel_wakeup(X86Context *ctx, void *data)
+void evg_opencl_clEnqueueNDRangeKernel_wakeup(X86Context *context, void *data)
 {
 	struct evg_opencl_clEnqueueNDRangeKernel_args_t argv;
 
@@ -2281,7 +2281,7 @@ void evg_opencl_clEnqueueNDRangeKernel_wakeup(X86Context *ctx, void *data)
 	int i;
 
 	/* Read function arguments again */
-	code = evg_opencl_abi_read_args(ctx, NULL, &argv, sizeof argv);
+	code = evg_opencl_abi_read_args(context, NULL, &argv, sizeof argv);
 	assert(code == 1067);
 
 	/* Get kernel */
@@ -2319,7 +2319,7 @@ void evg_opencl_clEnqueueNDRangeKernel_wakeup(X86Context *ctx, void *data)
 	kernel->global_size3[1] = 1;
 	kernel->global_size3[2] = 1;
 	for (i = 0; i < argv.work_dim; i++)
-		mem_read(ctx->mem, argv.global_work_size_ptr + i * 4, 4, &kernel->global_size3[i]);
+		mem_read(context->mem, argv.global_work_size_ptr + i * 4, 4, &kernel->global_size3[i]);
 	kernel->global_size = kernel->global_size3[0] * kernel->global_size3[1] * kernel->global_size3[2];
 	evg_opencl_debug("    global_work_size=");
 	evg_opencl_debug_array(argv.work_dim, kernel->global_size3);
@@ -2332,7 +2332,7 @@ void evg_opencl_clEnqueueNDRangeKernel_wakeup(X86Context *ctx, void *data)
 	{
 		for (i = 0; i < argv.work_dim; i++)
 		{
-			mem_read(ctx->mem, argv.local_work_size_ptr + i * 4, 4, &kernel->local_size3[i]);
+			mem_read(context->mem, argv.local_work_size_ptr + i * 4, 4, &kernel->local_size3[i]);
 			if (kernel->local_size3[i] < 1)
 				fatal("%s: local work size must be greater than 0.\n%s",
 						__FUNCTION__, evg_err_opencl_param_note);
@@ -2374,7 +2374,7 @@ void evg_opencl_clEnqueueNDRangeKernel_wakeup(X86Context *ctx, void *data)
 		event->time_queued = evg_opencl_event_timer();
 		event->time_submit = evg_opencl_event_timer();
 		event->time_start = evg_opencl_event_timer();  /* FIXME: change for asynchronous exec */
-		mem_write(ctx->mem, argv.event_ptr, 4, &event->id);
+		mem_write(context->mem, argv.event_ptr, 4, &event->id);
 		evg_opencl_debug("    event: 0x%x\n", event->id);
 	}
 
@@ -2392,7 +2392,7 @@ void evg_opencl_clEnqueueNDRangeKernel_wakeup(X86Context *ctx, void *data)
 	EvgNDRangeSetState(ndrange, EvgNDRangePending);
 
 	/* Create command queue task */
-	task = evg_opencl_command_create(evg_opencl_command_queue_task_ndrange_kernel);
+	task = evg_opencl_command_create(context, evg_opencl_command_queue_task_ndrange_kernel);
 	task->u.ndrange_kernel.ndrange = ndrange;
 
 	/* Enqueue task */
@@ -2403,7 +2403,7 @@ void evg_opencl_clEnqueueNDRangeKernel_wakeup(X86Context *ctx, void *data)
 	ndrange->command = task;
 
 	/* Return success */
-	evg_opencl_abi_return(ctx, 0);
+	evg_opencl_abi_return(context, 0);
 }
 
 int evg_opencl_clEnqueueNDRangeKernel_impl(X86Context *ctx, int *argv_ptr)
