@@ -1095,7 +1095,7 @@ void frm_isa_LDL_impl(FrmThread *thread, FrmInst *inst)
 void frm_isa_LDS_impl(FrmThread *thread, FrmInst *inst)
 {
 	unsigned int pred_id, dst_id, src_id;
-	unsigned int active, pred, dst, addr;
+	unsigned int active, pred, dst0, dst1, dst2, dst3, addr;
 
 	FrmWarp *warp;
         FrmWarpSyncStackEntry entry;
@@ -1121,18 +1121,32 @@ void frm_isa_LDS_impl(FrmThread *thread, FrmInst *inst)
 		addr = thread->gpr[src_id].u32 + inst->bytes.offs.offset;
 
 		/* Execute */
-		mem_read(thread->thread_block->shared_mem, addr, 4, &dst);
+		mem_read(thread->thread_block->shared_mem, addr, 4, &dst0);
+		if (inst->bytes.mod0_B.type == 5 || inst->bytes.mod0_B.type == 6)
+			mem_read(thread->thread_block->shared_mem, addr + 4, 4, &dst1);
+		if (inst->bytes.mod0_B.type == 6)
+		{
+			mem_read(thread->thread_block->shared_mem, addr + 8, 4, &dst2);
+			mem_read(thread->thread_block->shared_mem, addr + 12, 4, &dst3);
+		}
 
 		/* Write */
 		dst_id = inst->bytes.offs.dst;
-		thread->gpr[dst_id].u32 = dst;
+		thread->gpr[dst_id].u32 = dst0;
+		if (inst->bytes.mod0_B.type == 5 || inst->bytes.mod0_B.type == 6)
+			thread->gpr[dst_id + 1].u32 = dst1;
+		if (inst->bytes.mod0_B.type == 6)
+		{
+			thread->gpr[dst_id + 2].u32 = dst2;
+			thread->gpr[dst_id + 3].u32 = dst3;
+		}
 	}
 
 	/* Debug */
 	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%x] %x "
-			"dst = [0x%x] 0x%08x src = [0x%x] 0x%08x\n", 
+			"dst0 = [0x%x] 0x%08x src = [0x%x] 0x%08x\n", 
 			__FUNCTION__, __LINE__, warp->pc, thread->id, active, 
-			pred_id, pred, dst_id, dst, src_id, addr);
+			pred_id, pred, dst_id, dst0, src_id, addr);
 }
 
 void frm_isa_LDLK_impl(FrmThread *thread, FrmInst *inst)
