@@ -29,20 +29,20 @@
  * Class 'FrmWarp'
  */
 
-#define FRM_WARP_RECONV_STACK_SIZE  32
+#define FRM_WARP_SYNC_STACK_SIZE  32
 
 typedef struct
 {
 	unsigned int reconv_pc;
 	unsigned int next_path_pc;
-	unsigned int active_thread_bitmap;
-} FrmWarpReconvStackEntry;
+	unsigned int active_thread_mask;
+} FrmWarpSyncStackEntry;
 
 
 typedef struct
 {
-	FrmWarpReconvStackEntry entries[FRM_WARP_RECONV_STACK_SIZE];
-} FrmWarpReconvStack;
+	FrmWarpSyncStackEntry entries[FRM_WARP_SYNC_STACK_SIZE];
+} FrmWarpSyncStack;
 
 
 CLASS_BEGIN(FrmWarp, Object)
@@ -74,11 +74,14 @@ CLASS_BEGIN(FrmWarp, Object)
 	unsigned int inst_buffer_index;
 	unsigned int inst_buffer_size;
 
-	/* Recovergence stack */
-	FrmWarpReconvStack reconv_stack;
-	int reconv_stack_top;
-	int reconv_stack_pushed;
-	int reconv_stack_popped;
+	/* Sync stack */
+	FrmWarpSyncStackEntry new_entry;
+	FrmWarpSyncStack sync_stack;
+	int sync_stack_top;
+	int sync_stack_pushed;
+	int sync_stack_popped;
+	unsigned int divergent;
+	unsigned int taken;
 
 	unsigned int at_barrier_thread_count;
 	unsigned int finished_thread_count;

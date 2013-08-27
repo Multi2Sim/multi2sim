@@ -49,12 +49,11 @@ void frm_isa_FFMA_impl(FrmThread *thread, FrmInst *inst)
 	FrmWarp *warp = thread->warp;
 	FrmGrid *grid = thread->grid;
 	FrmEmu *emu = grid->emu;
-
-        FrmWarpReconvStackEntry entry;
+        FrmWarpSyncStackEntry entry;
 
 	/* Active */
-	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
-	active = (entry.active_thread_bitmap >> 
+	entry = warp->sync_stack.entries[warp->sync_stack_top];
+	active = (entry.active_thread_mask >> 
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
@@ -86,10 +85,10 @@ void frm_isa_FFMA_impl(FrmThread *thread, FrmInst *inst)
 	}
 
 	/* Debug */
-	frm_isa_debug("%s:%d: thread[%d] active = %d pred = [%x] %x "
+	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%x] %x "
 			"dst = [0x%x] %f src1 = [0x%x] %f "
 			"src2 = [0x%x] %f src3 = [0x%x] %f\n", 
-			__FUNCTION__, __LINE__, thread->id, active, 
+			__FUNCTION__, __LINE__, warp->pc, thread->id, active, 
 			pred_id, pred, dst_id, dst, src1_id, src1,
 			src2_id, src2, src3_id, src3);
 }
@@ -103,12 +102,11 @@ void frm_isa_FADD_impl(FrmThread *thread, FrmInst *inst)
 	FrmWarp *warp = thread->warp;
 	FrmGrid *grid = thread->grid;
 	FrmEmu *emu = grid->emu;
-
-        FrmWarpReconvStackEntry entry;
+        FrmWarpSyncStackEntry entry;
 
 	/* Active */
-	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
-	active = (entry.active_thread_bitmap >> 
+	entry = warp->sync_stack.entries[warp->sync_stack_top];
+	active = (entry.active_thread_mask >> 
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
@@ -139,10 +137,10 @@ void frm_isa_FADD_impl(FrmThread *thread, FrmInst *inst)
 	}
 
 	/* Debug */
-	frm_isa_debug("%s:%d: thread[%d] active = %d pred = [%x] %x "
+	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%x] %x "
 			"dst = [0x%x] %f src1 = [0x%x] %f "
 			"src2 = [0x%x] %f\n", 
-			__FUNCTION__, __LINE__, thread->id, active, 
+			__FUNCTION__, __LINE__, warp->pc, thread->id, active, 
 			pred_id, pred, dst_id, dst, src1_id, src1, 
 			src2_id, src2);
 }
@@ -155,12 +153,12 @@ void frm_isa_FADD32I_impl(FrmThread *thread, FrmInst *inst)
 	FrmThreadReg imm32;
 
 	FrmWarp *warp;
-        FrmWarpReconvStackEntry entry;
+        FrmWarpSyncStackEntry entry;
 
 	/* Active */
 	warp = thread->warp;
-	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
-	active = (entry.active_thread_bitmap >> 
+	entry = warp->sync_stack.entries[warp->sync_stack_top];
+	active = (entry.active_thread_mask >> 
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
@@ -186,9 +184,9 @@ void frm_isa_FADD32I_impl(FrmThread *thread, FrmInst *inst)
 	}
 
 	/* Debug */
-	frm_isa_debug("%s:%d: thread[%d] active = %d pred = [%x] %x "
+	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%x] %x "
 			"dst = [0x%x] %f src1 = [0x%x] %f imm32 = %f\n", 
-			__FUNCTION__, __LINE__, thread->id, active, 
+			__FUNCTION__, __LINE__, warp->pc, thread->id, active, 
 			pred_id, pred, dst_id, dst, src1_id, src1, imm32.f);
 }
 
@@ -206,12 +204,11 @@ void frm_isa_FMUL_impl(FrmThread *thread, FrmInst *inst)
 	FrmWarp *warp = thread->warp;
 	FrmGrid *grid = thread->grid;
 	FrmEmu *emu = grid->emu;
-
-        FrmWarpReconvStackEntry entry;
+        FrmWarpSyncStackEntry entry;
 
 	/* Active */
-	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
-	active = (entry.active_thread_bitmap >> 
+	entry = warp->sync_stack.entries[warp->sync_stack_top];
+	active = (entry.active_thread_mask >> 
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
@@ -241,10 +238,10 @@ void frm_isa_FMUL_impl(FrmThread *thread, FrmInst *inst)
 	}
 
 	/* Debug */
-	frm_isa_debug("%s:%d: thread[%d] active = %d pred = [%x] %x "
+	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%x] %x "
 			"dst = [0x%x] %f src1 = [0x%x] %f "
 			"src2 = [0x%x] %f\n", 
-			__FUNCTION__, __LINE__, thread->id, active, 
+			__FUNCTION__, __LINE__, warp->pc, thread->id, active, 
 			pred_id, pred, dst_id, dst, src1_id, src1,
 			src2_id, src2);
 }
@@ -257,12 +254,12 @@ void frm_isa_FMUL32I_impl(FrmThread *thread, FrmInst *inst)
 	FrmThreadReg imm32;
 
 	FrmWarp *warp;
-        FrmWarpReconvStackEntry entry;
+        FrmWarpSyncStackEntry entry;
 
 	/* Active */
 	warp = thread->warp;
-	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
-	active = (entry.active_thread_bitmap >> 
+	entry = warp->sync_stack.entries[warp->sync_stack_top];
+	active = (entry.active_thread_mask >> 
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
@@ -288,9 +285,9 @@ void frm_isa_FMUL32I_impl(FrmThread *thread, FrmInst *inst)
 	}
 
 	/* Debug */
-	frm_isa_debug("%s:%d: thread[%d] active = %d pred = [%x] %x "
+	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%x] %x "
 			"dst = [0x%x] %f src1 = [0x%x] %f imm32 = %f\n", 
-			__FUNCTION__, __LINE__, thread->id, active, 
+			__FUNCTION__, __LINE__, warp->pc, thread->id, active, 
 			pred_id, pred, dst_id, dst, src1_id, src1, imm32.f);
 }
 
@@ -363,12 +360,11 @@ void frm_isa_IMAD_impl(FrmThread *thread, FrmInst *inst)
 	FrmWarp *warp = thread->warp;
 	FrmGrid *grid = thread->grid;
 	FrmEmu *emu = grid->emu;
-
-        FrmWarpReconvStackEntry entry;
+        FrmWarpSyncStackEntry entry;
 
 	/* Active */
-	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
-	active = (entry.active_thread_bitmap >> 
+	entry = warp->sync_stack.entries[warp->sync_stack_top];
+	active = (entry.active_thread_mask >> 
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
@@ -400,10 +396,10 @@ void frm_isa_IMAD_impl(FrmThread *thread, FrmInst *inst)
 	}
 
 	/* Debug */
-	frm_isa_debug("%s:%d: thread[%d] active = %d pred = [%x] %x "
+	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%x] %x "
 			"dst = [0x%x] 0x%08x src1 = [0x%x] 0x%08x "
 			"src2 = [0x%x] 0x%08x src3 = [0x%x] 0x%08x\n", 
-			__FUNCTION__, __LINE__, thread->id, active, 
+			__FUNCTION__, __LINE__, warp->pc, thread->id, active, 
 			pred_id, pred, dst_id, dst, src1_id, src1,
 			src2_id, src2, src3_id, src3);
 }
@@ -417,12 +413,11 @@ void frm_isa_IMUL_impl(FrmThread *thread, FrmInst *inst)
 	FrmWarp *warp = thread->warp;
 	FrmGrid *grid = thread->grid;
 	FrmEmu *emu = grid->emu;
-
-        FrmWarpReconvStackEntry entry;
+        FrmWarpSyncStackEntry entry;
 
 	/* Active */
-	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
-	active = (entry.active_thread_bitmap >> 
+	entry = warp->sync_stack.entries[warp->sync_stack_top];
+	active = (entry.active_thread_mask >> 
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
@@ -452,10 +447,10 @@ void frm_isa_IMUL_impl(FrmThread *thread, FrmInst *inst)
 	}
 
 	/* Debug */
-	frm_isa_debug("%s:%d: thread[%d] active = %d pred = [%x] %x "
+	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%x] %x "
 			"dst = [0x%x] 0x%08x src1 = [0x%x] 0x%08x "
 			"src2 = [0x%x] 0x%08x\n", 
-			__FUNCTION__, __LINE__, thread->id, active, 
+			__FUNCTION__, __LINE__, warp->pc, thread->id, active, 
 			pred_id, pred, dst_id, dst, src1_id, src1,
 			src2_id, src2);
 }
@@ -469,12 +464,11 @@ void frm_isa_IADD_impl(FrmThread *thread, FrmInst *inst)
 	FrmWarp *warp = thread->warp;
 	FrmGrid *grid = thread->grid;
 	FrmEmu *emu = grid->emu;
-
-        FrmWarpReconvStackEntry entry;
+        FrmWarpSyncStackEntry entry;
 
 	/* Active */
-	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
-	active = (entry.active_thread_bitmap >> 
+	entry = warp->sync_stack.entries[warp->sync_stack_top];
+	active = (entry.active_thread_mask >> 
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
@@ -511,10 +505,10 @@ void frm_isa_IADD_impl(FrmThread *thread, FrmInst *inst)
 	}
 
 	/* Debug */
-	frm_isa_debug("%s:%d: thread[%d] active = %d pred = [%x] %x "
+	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%x] %x "
 			"dst = [0x%x] 0x%08x src1 = [0x%x] 0x%08x "
 			"src2 = [0x%x] 0x%08x\n", 
-			__FUNCTION__, __LINE__, thread->id, active, 
+			__FUNCTION__, __LINE__, warp->pc, thread->id, active, 
 			pred_id, pred, dst_id, dst, src1_id, src1,
 			src2_id, src2);
 }
@@ -526,12 +520,12 @@ void frm_isa_IADD32I_impl(FrmThread *thread, FrmInst *inst)
 	int dst, src1, imm32;
 
 	FrmWarp *warp;
-        FrmWarpReconvStackEntry entry;
+        FrmWarpSyncStackEntry entry;
 
 	/* Active */
 	warp = thread->warp;
-	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
-	active = (entry.active_thread_bitmap >> 
+	entry = warp->sync_stack.entries[warp->sync_stack_top];
+	active = (entry.active_thread_mask >> 
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
@@ -557,10 +551,10 @@ void frm_isa_IADD32I_impl(FrmThread *thread, FrmInst *inst)
 	}
 
 	/* Debug */
-	frm_isa_debug("%s:%d: thread[%d] active = %d pred = [%x] %x "
+	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%x] %x "
 			"dst = [0x%x] 0x%08x src1 = [0x%x] 0x%08x "
 			"imm32 = 0x%08x\n", 
-			__FUNCTION__, __LINE__, thread->id, active, 
+			__FUNCTION__, __LINE__, warp->pc, thread->id, active, 
 			pred_id, pred, dst_id, dst, src1_id, src1, imm32);
 }
 
@@ -574,12 +568,11 @@ void frm_isa_ISCADD_impl(FrmThread *thread, FrmInst *inst)
 	FrmWarp *warp = thread->warp;
 	FrmGrid *grid = thread->grid;
 	FrmEmu *emu = grid->emu;
-
-        FrmWarpReconvStackEntry entry;
+        FrmWarpSyncStackEntry entry;
 
 	/* Active */
-	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
-	active = (entry.active_thread_bitmap >> 
+	entry = warp->sync_stack.entries[warp->sync_stack_top];
+	active = (entry.active_thread_mask >> 
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
@@ -612,10 +605,10 @@ void frm_isa_ISCADD_impl(FrmThread *thread, FrmInst *inst)
 	}
 
 	/* Debug */
-	frm_isa_debug("%s:%d: thread[%d] active = %d pred = [%x] %x "
+	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%x] %x "
 			"dst = [0x%x] 0x%08x src1 = [0x%x] 0x%08x "
 			"src2 = [0x%x] 0x%08x shamt = %d\n", 
-			__FUNCTION__, __LINE__, thread->id, active, 
+			__FUNCTION__, __LINE__, warp->pc, thread->id, active, 
 			pred_id, pred, dst_id, dst, src1_id, src1,
 			src2_id, src2, shamt);
 }
@@ -650,12 +643,11 @@ void frm_isa_SHR_impl(FrmThread *thread, FrmInst *inst)
 	FrmWarp *warp = thread->warp;
 	FrmGrid *grid = thread->grid;
 	FrmEmu *emu = grid->emu;
-
-        FrmWarpReconvStackEntry entry;
+        FrmWarpSyncStackEntry entry;
 
 	/* Active */
-	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
-	active = (entry.active_thread_bitmap >> 
+	entry = warp->sync_stack.entries[warp->sync_stack_top];
+	active = (entry.active_thread_mask >> 
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
@@ -687,10 +679,10 @@ void frm_isa_SHR_impl(FrmThread *thread, FrmInst *inst)
 	}
 
 	/* Debug */
-	frm_isa_debug("%s:%d: thread[%d] active = %d pred = [%x] %x "
+	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%x] %x "
 			"dst = [0x%x] 0x%08x src1 = [0x%x] 0x%08x "
 			"src2 = [0x%x] 0x%08x\n", 
-			__FUNCTION__, __LINE__, thread->id, active, 
+			__FUNCTION__, __LINE__, warp->pc, thread->id, active, 
 			pred_id, pred, dst_id, dst, src1_id, src1,
 			src2_id, src2);
 }
@@ -705,12 +697,11 @@ void frm_isa_SHL_impl(FrmThread *thread, FrmInst *inst)
 	FrmWarp *warp = thread->warp;
 	FrmGrid *grid = thread->grid;
 	FrmEmu *emu = grid->emu;
-
-        FrmWarpReconvStackEntry entry;
+        FrmWarpSyncStackEntry entry;
 
 	/* Active */
-	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
-	active = (entry.active_thread_bitmap >> 
+	entry = warp->sync_stack.entries[warp->sync_stack_top];
+	active = (entry.active_thread_mask >> 
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
@@ -742,10 +733,10 @@ void frm_isa_SHL_impl(FrmThread *thread, FrmInst *inst)
 	}
 
 	/* Debug */
-	frm_isa_debug("%s:%d: thread[%d] active = %d pred = [%x] %x "
+	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%x] %x "
 			"dst = [0x%x] 0x%08x src1 = [0x%x] 0x%08x "
 			"src2 = [0x%x] 0x%08x\n", 
-			__FUNCTION__, __LINE__, thread->id, active, 
+			__FUNCTION__, __LINE__, warp->pc, thread->id, active, 
 			pred_id, pred, dst_id, dst, src1_id, src1,
 			src2_id, src2);
 }
@@ -782,12 +773,11 @@ void frm_isa_ISETP_impl(FrmThread *thread, FrmInst *inst)
 	FrmWarp *warp = thread->warp;
 	FrmGrid *grid = thread->grid;
 	FrmEmu *emu = grid->emu;
-
-        FrmWarpReconvStackEntry entry;
+        FrmWarpSyncStackEntry entry;
 
 	/* Active */
-	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
-	active = (entry.active_thread_bitmap >> 
+	entry = warp->sync_stack.entries[warp->sync_stack_top];
+	active = (entry.active_thread_mask >> 
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
@@ -856,10 +846,10 @@ void frm_isa_ISETP_impl(FrmThread *thread, FrmInst *inst)
 	}
 
 	/* Debug */
-	frm_isa_debug("%s:%d: thread[%d] active = %d pred = [%d] %d "
+	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
 			"p = [%d] %d, q = [%d] %d, src1 = [0x%x] 0x%08x, "
 			"src2 = [0x%x]0x%08x, r = [%d] %d\n", 
-			__FUNCTION__, __LINE__, thread->id, active, 
+			__FUNCTION__, __LINE__, warp->pc, thread->id, active, 
 			pred_id, pred, p_id, p, q_id, q, src1_id, src1, 
 			src2_id, src2, r_id, r);
 }
@@ -903,12 +893,11 @@ void frm_isa_MOV_impl(FrmThread *thread, FrmInst *inst)
 	FrmWarp *warp = thread->warp;
 	FrmGrid *grid = thread->grid;
 	FrmEmu *emu = grid->emu;
-
-        FrmWarpReconvStackEntry entry;
+        FrmWarpSyncStackEntry entry;
 
 	/* Active */
-	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
-	active = (entry.active_thread_bitmap >> 
+	entry = warp->sync_stack.entries[warp->sync_stack_top];
+	active = (entry.active_thread_mask >> 
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
@@ -936,9 +925,9 @@ void frm_isa_MOV_impl(FrmThread *thread, FrmInst *inst)
 	}
 
 	/* Debug */
-	frm_isa_debug("%s:%d: thread[%d] active = %d pred = [%x] %d "
+	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%x] %d "
 			"dst = [0x%x] 0x%08x src = [0x%x] 0x%08x\n", 
-			__FUNCTION__, __LINE__, thread->id, active, 
+			__FUNCTION__, __LINE__, warp->pc, thread->id, active, 
 			pred_id, pred, dst_id, dst, src_id, src);
 }
 
@@ -949,12 +938,12 @@ void frm_isa_MOV32I_impl(FrmThread *thread, FrmInst *inst)
 	int dst, imm32;
 
 	FrmWarp *warp;
-        FrmWarpReconvStackEntry entry;
+        FrmWarpSyncStackEntry entry;
 
 	/* Active */
 	warp = thread->warp;
-	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
-	active = (entry.active_thread_bitmap >> 
+	entry = warp->sync_stack.entries[warp->sync_stack_top];
+	active = (entry.active_thread_mask >> 
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
@@ -978,9 +967,9 @@ void frm_isa_MOV32I_impl(FrmThread *thread, FrmInst *inst)
 	}
 
 	/* Debug */
-	frm_isa_debug("%s:%d: thread[%d] active = %d pred = [%x] %d "
+	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%x] %d "
 			"dst = [0x%x] 0x%08x imm32 = 0x%08x\n", 
-			__FUNCTION__, __LINE__, thread->id, active, 
+			__FUNCTION__, __LINE__, warp->pc, thread->id, active, 
 			pred_id, pred, dst_id, dst, imm32);
 }
 
@@ -1057,12 +1046,11 @@ void frm_isa_LD_impl(FrmThread *thread, FrmInst *inst)
 	FrmWarp *warp = thread->warp;
 	FrmGrid *grid = thread->grid;
 	FrmEmu *emu = grid->emu;
-
-        FrmWarpReconvStackEntry entry;
+        FrmWarpSyncStackEntry entry;
 
 	/* Active */
-	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
-	active = (entry.active_thread_bitmap >> 
+	entry = warp->sync_stack.entries[warp->sync_stack_top];
+	active = (entry.active_thread_mask >> 
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
@@ -1088,9 +1076,9 @@ void frm_isa_LD_impl(FrmThread *thread, FrmInst *inst)
 	}
 
 	/* Debug */
-	frm_isa_debug("%s:%d: thread[%d] active = %d pred = [%x] %x "
+	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%x] %x "
 			"dst = [0x%x] 0x%08x src = [0x%x] 0x%08x\n", 
-			__FUNCTION__, __LINE__, thread->id, active, 
+			__FUNCTION__, __LINE__, warp->pc, thread->id, active, 
 			pred_id, pred, dst_id, dst, src_id, addr);
 }
 
@@ -1110,12 +1098,12 @@ void frm_isa_LDS_impl(FrmThread *thread, FrmInst *inst)
 	unsigned int active, pred, dst, addr;
 
 	FrmWarp *warp;
-        FrmWarpReconvStackEntry entry;
+        FrmWarpSyncStackEntry entry;
 
 	/* Active */
 	warp = thread->warp;
-	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
-	active = (entry.active_thread_bitmap >> 
+	entry = warp->sync_stack.entries[warp->sync_stack_top];
+	active = (entry.active_thread_mask >> 
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
@@ -1141,9 +1129,9 @@ void frm_isa_LDS_impl(FrmThread *thread, FrmInst *inst)
 	}
 
 	/* Debug */
-	frm_isa_debug("%s:%d: thread[%d] active = %d pred = [%x] %x "
+	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%x] %x "
 			"dst = [0x%x] 0x%08x src = [0x%x] 0x%08x\n", 
-			__FUNCTION__, __LINE__, thread->id, active, 
+			__FUNCTION__, __LINE__, warp->pc, thread->id, active, 
 			pred_id, pred, dst_id, dst, src_id, addr);
 }
 
@@ -1175,12 +1163,11 @@ void frm_isa_ST_impl(FrmThread *thread, FrmInst *inst)
 	FrmWarp *warp = thread->warp;
 	FrmGrid *grid = thread->grid;
 	FrmEmu *emu = grid->emu;
-
-        FrmWarpReconvStackEntry entry;
+        FrmWarpSyncStackEntry entry;
 
 	/* Active */
-	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
-	active = (entry.active_thread_bitmap >> 
+	entry = warp->sync_stack.entries[warp->sync_stack_top];
+	active = (entry.active_thread_mask >> 
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
@@ -1204,9 +1191,9 @@ void frm_isa_ST_impl(FrmThread *thread, FrmInst *inst)
 	}
 
 	/* Debug */
-	frm_isa_debug("%s:%d: thread[%d] active = %d pred = [%x] %x "
+	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%x] %x "
 			"value = [0x%x] 0x%08x addr = [0x%x] 0x%08x\n", 
-			__FUNCTION__, __LINE__, thread->id, active, 
+			__FUNCTION__, __LINE__, warp->pc, thread->id, active, 
 			pred_id, pred, value_id, value, addr_id, addr);
 }
 
@@ -1226,12 +1213,12 @@ void frm_isa_STS_impl(FrmThread *thread, FrmInst *inst)
 	unsigned int active, pred, value, addr;
 
 	FrmWarp *warp;
-        FrmWarpReconvStackEntry entry;
+        FrmWarpSyncStackEntry entry;
 
 	/* Active */
 	warp = thread->warp;
-	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
-	active = (entry.active_thread_bitmap >> 
+	entry = warp->sync_stack.entries[warp->sync_stack_top];
+	active = (entry.active_thread_mask >> 
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
@@ -1255,9 +1242,9 @@ void frm_isa_STS_impl(FrmThread *thread, FrmInst *inst)
 	}
 
 	/* Debug */
-	frm_isa_debug("%s:%d: thread[%d] active = %d pred = [%x] %x "
+	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%x] %x "
 			"value = [0x%x] 0x%08x addr = [0x%x] 0x%08x\n", 
-			__FUNCTION__, __LINE__, thread->id, active, 
+			__FUNCTION__, __LINE__, warp->pc, thread->id, active, 
 			pred_id, pred, value_id, value, addr_id, addr);
 }
 
@@ -1319,18 +1306,21 @@ void frm_isa_SUQ_impl(FrmThread *thread, FrmInst *inst)
 void frm_isa_BRA_impl(FrmThread *thread, FrmInst *inst)
 {
 	unsigned int pred_id;
-	unsigned int active, pred, target;
+	unsigned int active, pred;
+	int target;
 
 	FrmWarp *warp;
-        FrmWarpReconvStackEntry *entry;
+	FrmWarpSyncStackEntry *top_entry;
+	FrmWarpSyncStackEntry *new_entry;
 
-	/* Active */
 	warp = thread->warp;
-	entry = &(warp->reconv_stack.entries[warp->reconv_stack_top]);
-	active = (entry->active_thread_bitmap >> 
-			thread->id_in_warp) & 0x1;
+	top_entry = &(warp->sync_stack.entries[warp->sync_stack_top]);
+	new_entry = &(warp->new_entry);
 
-	/* Predicate */
+	/* Get active bit */
+	active = (top_entry->active_thread_mask >> thread->id_in_warp) & 0x1;
+
+	/* Get predicate */
 	pred_id = inst->bytes.tgt.pred;
 	if (pred_id <= 7)
 		pred = thread->pr[pred_id];
@@ -1339,34 +1329,66 @@ void frm_isa_BRA_impl(FrmThread *thread, FrmInst *inst)
 
 	/* Get target */
 	target = inst->bytes.tgt.target;
+	if ((target >> 19 & 0x1) == 1)
+		target |= 0xfff00000;
 
-	/* Create new reconvergence stack entry */
-	entry = &(warp->reconv_stack.entries[warp->reconv_stack_top + 1]);
-	if (active == 1)
+	/* Update active thread mask for new entry */
+	if (inst->bytes.tgt.u != 1)
 	{
-		entry->reconv_pc = warp->pc + 8 + target;
-		entry->next_path_pc = warp->pc + 8;
-		if (pred == 1)
-			entry->active_thread_bitmap |= 1 << thread->id_in_warp;
-		else
-			entry->active_thread_bitmap |= 0 << thread->id_in_warp;
-
-		/* Push reconvergence stack */
-		if (warp->reconv_stack_pushed == 0)
+		if (active == 1 && pred == 1)
 		{
-			warp->reconv_stack_top++;
-			warp->reconv_stack_pushed = 1;
-			warp->pc += target;
+			new_entry->active_thread_mask |= 
+				1 << thread->id_in_warp;
+			warp->taken |= 1 << thread->id_in_warp;
+		}
+		else
+		{
+			new_entry->active_thread_mask |= 
+				0 << thread->id_in_warp;
+			warp->taken |= 0 << thread->id_in_warp;
 		}
 	}
-	else
-		entry->active_thread_bitmap |= 0 << thread->id_in_warp;
-	warp->at_barrier_thread_count = 0;
+
+	/* If divergent, push sync stack and go to taken path */
+	if (thread->id_in_warp == warp->thread_count - 1)
+	{
+		if (inst->bytes.tgt.u == 1 || 
+				top_entry->active_thread_mask == warp->taken || 
+				warp->taken == 0)
+			warp->divergent = 0;
+		else
+			warp->divergent = 1;
+
+		if (warp->divergent)
+		{
+			new_entry->next_path_pc = warp->pc + 8;
+			warp->sync_stack.entries[warp->sync_stack_top + 1].reconv_pc = 
+				new_entry->reconv_pc;
+			warp->sync_stack.entries[warp->sync_stack_top + 1].next_path_pc =
+				new_entry->next_path_pc;
+			warp->sync_stack.entries[warp->sync_stack_top + 1].active_thread_mask =
+				new_entry->active_thread_mask;
+			warp->sync_stack_top++;
+			new_entry->reconv_pc = 0;
+			new_entry->next_path_pc = 0;
+			new_entry->active_thread_mask = 0;
+			if (warp->taken != 0)
+				warp->pc += target;
+		}
+		else
+		{
+			if (inst->bytes.tgt.u == 0 && warp->taken != 0)
+				warp->pc += target;
+		}
+		warp->taken = 0;
+	}
 
 	/* Debug */
-	frm_isa_debug("%s:%d: thread[%d] active = %d pred = [%d] %d "
-			"target = 0x%x\n", __FUNCTION__, __LINE__, thread->id, 
-			active, pred_id, pred, target);
+	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
+			"target = 0x%x active_thread_mask = 0x%08x\n", 
+			__FUNCTION__, __LINE__, warp->pc, thread->id, 
+			active, pred_id, pred, target,
+			new_entry->active_thread_mask);
 }
 
 void frm_isa_BRX_impl(FrmThread *thread, FrmInst *inst)
@@ -1416,37 +1438,20 @@ void frm_isa_LONGJMP_impl(FrmThread *thread, FrmInst *inst)
 
 void frm_isa_SSY_impl(FrmThread *thread, FrmInst *inst)
 {
-	unsigned int pred_id;
-	unsigned int active, pred;
+	int target;
+	FrmWarp *warp = thread->warp;
 
-	FrmWarp *warp;
-	FrmWarpReconvStackEntry entry;
+	/* Get target. Target is the recovergence point */
+	target = inst->bytes.tgt.target;
+	if ((target >> 19 & 0x1) == 1)
+		target |= 0xfff00000;
 
-	warp = thread->warp;
-
-	/* Pop active thread mask stack */
-	if (thread->id_in_warp == 0)
-	{
-		warp->reconv_stack_top--;
-		warp->finished_thread_count = 0;
-	}
-
-	/* Active */
-	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
-	active = (entry.active_thread_bitmap >> 
-			thread->id_in_warp) & 0x1;
-
-	/* Predicate */
-	pred_id = inst->bytes.tgt.pred;
-	if (pred_id <= 7)
-		pred = thread->pr[pred_id];
-	else
-		pred = ! thread->pr[pred_id - 8];
+	/* Set reconvergence PC */
+	warp->new_entry.reconv_pc = target;
 
 	/* Debug */
-	frm_isa_debug("%s:%d: thread[%d] active = %d pred = [%d] %d\n", 
-			__FUNCTION__, __LINE__, thread->id, 
-			active, pred_id, pred);
+	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] target = 0x%x\n", 
+			__FUNCTION__, __LINE__, warp->pc, thread->id, target);
 }
 
 void frm_isa_PBK_impl(FrmThread *thread, FrmInst *inst)
@@ -1476,72 +1481,47 @@ void frm_isa_BPT_impl(FrmThread *thread, FrmInst *inst)
 
 void frm_isa_EXIT_impl(FrmThread *thread, FrmInst *inst)
 {
-	unsigned int pred_id;
-	unsigned int active, pred;
-
 	FrmWarp *warp;
-	FrmWarpReconvStackEntry *entry;
-	FrmWarpReconvStackEntry *last_entry;
-	unsigned int *active_thread_bitmap;
-	static int first_time = 1;
 
 	warp = thread->warp;
 
-	last_entry = &(warp->reconv_stack.entries[warp->reconv_stack_top - 1]);
-	active = (last_entry->active_thread_bitmap >> 
-			thread->id_in_warp) & 0x1;
-	entry = &(warp->reconv_stack.entries[warp->reconv_stack_top]);
-	active_thread_bitmap = &(entry->active_thread_bitmap);
-	if (first_time == 1)
-	{
-		warp->pc = entry->next_path_pc - 8;
-		if (active)
-		{
-			if ((*active_thread_bitmap >> thread->id_in_warp) & 0x1)
-				warp->at_barrier_thread_count++;
-			*active_thread_bitmap ^= 1 << thread->id_in_warp;
-		}
-		else
-			*active_thread_bitmap |= 0 << thread->id_in_warp;
-		if (thread->id_in_warp == warp->thread_count - 1)
-			first_time = 0;
-	}
-	else
-	{
-		/* Pop reconvergence stack */
-		if (warp->reconv_stack_popped == 0)
-		{
-			warp->reconv_stack_top--;
-			warp->reconv_stack_popped = 1;
-		}
-
-		/* Active */
-		entry = &(warp->reconv_stack.entries[warp->reconv_stack_top]);
-		active = (entry->active_thread_bitmap >> 
-				thread->id_in_warp) & 0x1;
-
-		/* Predicate */
-		pred_id = inst->bytes.tgt.pred;
-		if (pred_id <= 7)
-			pred = thread->pr[pred_id];
-		else
-			pred = ! thread->pr[pred_id - 8];
-
-		/* Execute */
+	/* Execute */
+	if (thread->id_in_warp == warp->thread_count - 1)
 		warp->finished = 1;
 
-		if (thread->id_in_warp == warp->thread_count - 1)
-			first_time = 1;
-	}
-
 	/* Debug */
-	frm_isa_debug("%s:%d: thread[%d] active = %d pred = [%d] %d\n", 
-			__FUNCTION__, __LINE__, thread->id, 
-			active, pred_id, pred);
+	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active_thread_mask = 0x%08x\n", 
+			__FUNCTION__, __LINE__, warp->pc, thread->id, 
+			warp->sync_stack.entries[warp->sync_stack_top].
+			active_thread_mask);
 }
 
 void frm_isa_NOP_impl(FrmThread *thread, FrmInst *inst)
 {
+//	FrmWarp *warp;
+//	FrmWarpSyncStackEntry *entry;
+//	static int first_time = 1;
+//
+//	warp = thread->warp;
+//
+//	if (first_time == 1)
+//	{
+//		entry = &(warp->sync_stack.entries[warp->sync_stack_top]);
+//
+//		/* Reverse thread mask */
+//		entry->active_thread_mask ^= 1 << thread->id_in_warp;
+//
+//		/* Go to not taken path */
+//		warp->pc = entry->next_path_pc - 8;
+//
+//		if (thread->id_in_warp == warp->thread_count - 1)
+//			first_time = 0;
+//	}
+//	else
+//	{
+//		/* Pop sync stack */
+//		if (thread->id_in_warp == warp->thread_count - 1)
+//			warp->sync_stack_top--;
 }
 
 void frm_isa_S2R_impl(FrmThread *thread, FrmInst *inst)
@@ -1550,12 +1530,12 @@ void frm_isa_S2R_impl(FrmThread *thread, FrmInst *inst)
 	unsigned int active, pred, dst, src;
 
 	FrmWarp *warp;
-	FrmWarpReconvStackEntry entry;
+	FrmWarpSyncStackEntry entry;
 
 	/* Active */
 	warp = thread->warp;
-	entry = warp->reconv_stack.entries[warp->reconv_stack_top];
-	active = (entry.active_thread_bitmap >> 
+	entry = warp->sync_stack.entries[warp->sync_stack_top];
+	active = (entry.active_thread_mask >> 
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
@@ -1580,9 +1560,9 @@ void frm_isa_S2R_impl(FrmThread *thread, FrmInst *inst)
 	}
 
 	/* Debug */
-	frm_isa_debug("%s:%d: thread[%d] active = %d pred = [%x] %x "
+	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%x] %x "
 			"dst = [0x%x] 0x%08x src = [0x%x] 0x%08x\n", 
-			__FUNCTION__, __LINE__, thread->id, active, 
+			__FUNCTION__, __LINE__, warp->pc, thread->id, active, 
 			pred_id, pred, dst_id, dst, src_id, src);
 }
 
@@ -1609,7 +1589,8 @@ void frm_isa_BAR_impl(FrmThread *thread, FrmInst *inst)
 	/* Set flag to suspend warp execution */
 	warp->at_barrier = 1;
 
-	thread_block->num_warps_at_barrier++;
+	if (thread->id_in_warp == warp->thread_count - 1)
+		thread_block->num_warps_at_barrier++;
 
 	/* Continue execution when all warps in the thread block reach the
 	 * barrier*/
@@ -1623,8 +1604,8 @@ void frm_isa_BAR_impl(FrmThread *thread, FrmInst *inst)
 	}
 
 	/* Debug */
-	frm_isa_debug("%s:%d: thread[%d]\n", 
-			__FUNCTION__, __LINE__, thread->id);
+	frm_isa_debug("%s:%d: PC = 0x%x thread[%d]\n", 
+			__FUNCTION__, __LINE__, warp->pc, thread->id);
 }
 
 void frm_isa_VOTE_impl(FrmThread *thread, FrmInst *inst)
