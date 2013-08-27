@@ -585,6 +585,8 @@ static void cuda_abi_frm_kernel_launch_finish(void *user_data)
 {
 	struct cuda_abi_frm_kernel_launch_info_t *info = user_data;
 	struct cuda_function_t *kernel = info->function;
+
+	X86Context *context = info->context;
 	FrmGrid *grid = info->grid;
 
 	/* Debug */
@@ -596,7 +598,7 @@ static void cuda_abi_frm_kernel_launch_finish(void *user_data)
 
 	/* Force the x86 emulator to check which suspended contexts can wakeup,
 	 * based on their new state. */
-	X86EmuProcessEventsSchedule(x86_emu);
+	X86EmuProcessEventsSchedule(context->emu);
 }
 
 static int cuda_abi_frm_kernel_launch_can_wakeup(X86Context *ctx,
@@ -619,10 +621,10 @@ static void cuda_abi_frm_kernel_launch_wakeup(X86Context *ctx,
 	free(info);
 }
 
-int cuda_func_cuLaunchKernel(X86Context *ctx)
+int cuda_func_cuLaunchKernel(X86Context *context)
 {
-	struct x86_regs_t *regs = ctx->regs;
-	struct mem_t *mem = ctx->mem;
+	struct x86_regs_t *regs = context->regs;
+	struct mem_t *mem = context->mem;
 
 	unsigned int args[11];
 	unsigned int function_id;
@@ -698,11 +700,12 @@ int cuda_func_cuLaunchKernel(X86Context *ctx)
 	/* Set up call-back function to be run when grid finishes */
 	info = xcalloc(1, sizeof(struct cuda_abi_frm_kernel_launch_info_t));
 	info->function= function;
+	info->context = context;
 	info->grid = grid;
 	frm_grid_set_free_notify_func(grid, cuda_abi_frm_kernel_launch_finish, info);
 
 	/* Suspend x86 context until grid finishes */
-	X86ContextSuspend(ctx, cuda_abi_frm_kernel_launch_can_wakeup, info,
+	X86ContextSuspend(context, cuda_abi_frm_kernel_launch_can_wakeup, info,
 			cuda_abi_frm_kernel_launch_wakeup, info);
 
 	return 0;
