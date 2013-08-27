@@ -217,6 +217,8 @@ static void FrmGridSetupArrays(FrmGrid *self)
 			warp->threads = (FrmThread **)xcalloc(
 					warp->thread_count, 
 					sizeof(FrmThread *));
+			warp->sync_stack.entries[0].active_thread_mask
+				= ((unsigned long long int)1 << warp->thread_count) - 1;
 
 			/* Add to running list */
 			list_add(thread_block->running_warps, warp);

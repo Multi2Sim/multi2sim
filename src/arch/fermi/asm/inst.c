@@ -333,21 +333,21 @@ void FrmInstDumpBuf(FrmInst *self, char *str, int size)
 		++fmt_str;
 
 		/* 1st level token such as pred, dst, src1, src2, src2_mod, imm, offs*/
-		if (asm_is_token(fmt_str, "pred", &len))
+		if (asm_is_token(fmt_str, "pred_no@P0", &len))
 		{
 			unsigned long long int pred;
 			pred = self->bytes.general0.pred;
-			if (pred < 7)
+			if (pred < 7 && pred != 0)
 				str_printf(&str, &size, "@P%lld", pred);
 			else if (pred > 7)
 				str_printf(&str, &size, "@!P%lld", pred - 8);
 		}
 
-		else if (asm_is_token(fmt_str, "pred_no@P0", &len))
+		else if (asm_is_token(fmt_str, "pred", &len))
 		{
 			unsigned long long int pred;
 			pred = self->bytes.general0.pred;
-			if (pred < 7 && pred != 0)
+			if (pred < 7)
 				str_printf(&str, &size, "@P%lld", pred);
 			else if (pred > 7)
 				str_printf(&str, &size, "@!P%lld", pred - 8);
@@ -363,12 +363,20 @@ void FrmInstDumpBuf(FrmInst *self, char *str, int size)
 				str_printf(&str, &size, "RZ");
 		}
 
-		else if (asm_is_token(fmt_str,"src1", &len))
+		else if (asm_is_token(fmt_str, "src1_neg", &len))
 		{
 			unsigned long long int src1;
+			unsigned long long int src_mod;
+
 			src1 = self->bytes.general0.src1;
+			src_mod = self->bytes.mod0_D.fma_mod;
 			if (src1 != 63)
-				str_printf(&str, &size, "R%lld", src1);
+			{
+				if (src_mod == 0x2)
+					str_printf(&str, &size, "-R%lld", src1);
+				else
+					str_printf(&str, &size, "R%lld", src1);
+			}
 			else
 				str_printf(&str, &size, "RZ");
 		}
@@ -397,83 +405,14 @@ void FrmInstDumpBuf(FrmInst *self, char *str, int size)
 			str_printf(&str, &size, "]");
 		}
 
-		else if (asm_is_token(fmt_str, "src1_neg", &len))
+		else if (asm_is_token(fmt_str,"src1", &len))
 		{
 			unsigned long long int src1;
-			unsigned long long int src_mod;
-
 			src1 = self->bytes.general0.src1;
-			src_mod = self->bytes.mod0_D.fma_mod;
 			if (src1 != 63)
-			{
-				if (src_mod == 0x2)
-					str_printf(&str, &size, "-R%lld", src1);
-				else
-					str_printf(&str, &size, "R%lld", src1);
-			}
+				str_printf(&str, &size, "R%lld", src1);
 			else
 				str_printf(&str, &size, "RZ");
-		}
-
-		else if (asm_is_token(fmt_str,"src2", &len))
-		{
-			unsigned long long int bank_id;
-			unsigned long long int offset_in_bank;
-
-			if (self->bytes.general0.src2_mod == 0)
-			{
-				if (self->bytes.general0.src2 != 0x3f)
-					str_printf(&str, &size, "R%d", self->bytes.general0.src2 & 0x3f);
-				else
-					str_printf(&str, &size, "RZ");
-			}
-			else if (self->bytes.general0.src2_mod == 1)
-			{
-				bank_id = self->bytes.general0.src2 >> 16;
-				offset_in_bank= self->bytes.general0.src2 & 0xffff;
-				if (bank_id == 0 && offset_in_bank == 0)
-					str_printf(&str, &size, "c [0x0] [0x0]");
-				else if (bank_id == 0 && offset_in_bank != 0)
-					str_printf(&str, &size, "c [0x0] [%#llx]", offset_in_bank);
-				else if (bank_id != 0 && offset_in_bank == 0)
-					str_printf(&str, &size, "c [%#llx] [0x0]", bank_id);
-				else
-					str_printf(&str, &size, "c [%#llx] [%#llx]", bank_id, offset_in_bank);
-			}
-			else if (self->bytes.general0.src2_mod == 2)
-				str_printf(&str, &size, "0x%x", self->bytes.general0.src2);
-			else if (self->bytes.general0.src2_mod == 3)
-				str_printf(&str, &size, "0x%x", self->bytes.general0.src2);
-		}
-
-		else if (asm_is_token(fmt_str,"src2_neg", &len))
-		{
-			unsigned long long int bank_id;
-			unsigned long long int offset_in_bank;
-
-			if (self->bytes.general0.src2_mod == 0)
-			{
-				if (self->bytes.mod0_A.neg_src2)
-					str_printf(&str, &size, "-");
-				str_printf(&str, &size, "R%d", self->bytes.general0.src2 & 0x3f);
-			}
-			else if (self->bytes.general0.src2_mod == 1)
-			{
-				bank_id = self->bytes.general0.src2 >> 16;
-				offset_in_bank= self->bytes.general0.src2 & 0xffff;
-				if (bank_id == 0 && offset_in_bank == 0)
-					str_printf(&str, &size, "c [0x0] [0x0]");
-				else if (bank_id == 0 && offset_in_bank != 0)
-					str_printf(&str, &size, "c [0x0] [%#llx]", offset_in_bank);
-				else if (bank_id != 0 && offset_in_bank == 0)
-					str_printf(&str, &size, "c [%#llx] [0x0]", bank_id);
-				else
-					str_printf(&str, &size, "c [%#llx] [%#llx]", bank_id, offset_in_bank);
-			}
-			else if (self->bytes.general0.src2_mod == 2)
-				str_printf(&str, &size, "0x%x", self->bytes.general0.src2);
-			else if (self->bytes.general0.src2_mod == 3)
-				str_printf(&str, &size, "0x%x", self->bytes.general0.src2);
 		}
 
 		/* This is a special case for src2 and src3. For FFMA,
@@ -517,6 +456,75 @@ void FrmInstDumpBuf(FrmInst *self, char *str, int size)
 			}
 		}
 
+		else if (asm_is_token(fmt_str,"src2_frm_sr", &len))
+		{
+			char *sreg;
+			sreg = StringMapValue(frm_inst_sreg_map, self->bytes.general0.src2 & 0xff);
+			str_printf(&str, &size, "%s", sreg);
+
+		}
+
+		else if (asm_is_token(fmt_str,"src2_neg", &len))
+		{
+			unsigned long long int bank_id;
+			unsigned long long int offset_in_bank;
+
+			if (self->bytes.general0.src2_mod == 0)
+			{
+				if (self->bytes.mod0_A.neg_src2)
+					str_printf(&str, &size, "-");
+				str_printf(&str, &size, "R%d", self->bytes.general0.src2 & 0x3f);
+			}
+			else if (self->bytes.general0.src2_mod == 1)
+			{
+				bank_id = self->bytes.general0.src2 >> 16;
+				offset_in_bank= self->bytes.general0.src2 & 0xffff;
+				if (bank_id == 0 && offset_in_bank == 0)
+					str_printf(&str, &size, "c [0x0] [0x0]");
+				else if (bank_id == 0 && offset_in_bank != 0)
+					str_printf(&str, &size, "c [0x0] [%#llx]", offset_in_bank);
+				else if (bank_id != 0 && offset_in_bank == 0)
+					str_printf(&str, &size, "c [%#llx] [0x0]", bank_id);
+				else
+					str_printf(&str, &size, "c [%#llx] [%#llx]", bank_id, offset_in_bank);
+			}
+			else if (self->bytes.general0.src2_mod == 2)
+				str_printf(&str, &size, "0x%x", self->bytes.general0.src2);
+			else if (self->bytes.general0.src2_mod == 3)
+				str_printf(&str, &size, "0x%x", self->bytes.general0.src2);
+		}
+
+		else if (asm_is_token(fmt_str,"src2", &len))
+		{
+			unsigned long long int bank_id;
+			unsigned long long int offset_in_bank;
+
+			if (self->bytes.general0.src2_mod == 0)
+			{
+				if (self->bytes.general0.src2 != 0x3f)
+					str_printf(&str, &size, "R%d", self->bytes.general0.src2 & 0x3f);
+				else
+					str_printf(&str, &size, "RZ");
+			}
+			else if (self->bytes.general0.src2_mod == 1)
+			{
+				bank_id = self->bytes.general0.src2 >> 16;
+				offset_in_bank= self->bytes.general0.src2 & 0xffff;
+				if (bank_id == 0 && offset_in_bank == 0)
+					str_printf(&str, &size, "c [0x0] [0x0]");
+				else if (bank_id == 0 && offset_in_bank != 0)
+					str_printf(&str, &size, "c [0x0] [%#llx]", offset_in_bank);
+				else if (bank_id != 0 && offset_in_bank == 0)
+					str_printf(&str, &size, "c [%#llx] [0x0]", bank_id);
+				else
+					str_printf(&str, &size, "c [%#llx] [%#llx]", bank_id, offset_in_bank);
+			}
+			else if (self->bytes.general0.src2_mod == 2)
+				str_printf(&str, &size, "0x%x", self->bytes.general0.src2);
+			else if (self->bytes.general0.src2_mod == 3)
+				str_printf(&str, &size, "0x%x", self->bytes.general0.src2);
+		}
+
 		else if (asm_is_token(fmt_str, "src3_FFMA", &len))
 		{
 			unsigned long long int src3;
@@ -550,22 +558,20 @@ void FrmInstDumpBuf(FrmInst *self, char *str, int size)
 			}
 		}
 
-		else if (asm_is_token(fmt_str,"src2_frm_sr", &len))
+		else if (asm_is_token(fmt_str,"src3", &len))
 		{
-			char *sreg;
-			sreg = StringMapValue(frm_inst_sreg_map, self->bytes.general0.src2 & 0xff);
-			str_printf(&str, &size, "%s", sreg);
-
+			unsigned long long int src3;
+			src3 = self->bytes.general0_mod1_B.src3;
+			if (src3 != 63)
+				str_printf(&str, &size, "R%lld", src3);
+			else
+				str_printf(&str, &size, "RZ");
 		}
 
-		else if (asm_is_token(fmt_str,"tgt", &len))
+		else if (asm_is_token(fmt_str,"tgt_lmt", &len))
 		{
-			unsigned long long int target;
-
-			target = self->bytes.tgt.target;
-			target = SEXT64(target, 24);
-			target += self->addr + 8;
-			str_printf (&str,&size, "%#llx", target);
+			if (self->bytes.tgt.noinc)
+				str_printf(&str,&size, ".LMT");
 		}
 
 		else if (asm_is_token(fmt_str,"tgt_noinc", &len))
@@ -580,10 +586,14 @@ void FrmInstDumpBuf(FrmInst *self, char *str, int size)
 				str_printf(&str,&size, ".U");
 		}
 
-		else if (asm_is_token(fmt_str,"tgt_lmt", &len))
+		else if (asm_is_token(fmt_str,"tgt", &len))
 		{
-			if (self->bytes.tgt.noinc)
-				str_printf(&str,&size, ".LMT");
+			unsigned long long int target;
+
+			target = self->bytes.tgt.target;
+			target = SEXT64(target, 24);
+			target += self->addr + 8;
+			str_printf (&str,&size, "%#llx", target);
 		}
 
 		else if (asm_is_token(fmt_str,"imm32", &len))
@@ -602,24 +612,10 @@ void FrmInstDumpBuf(FrmInst *self, char *str, int size)
 			str_printf(&str, &size, "%#llx", imm32);
 		}
 
-		else if (asm_is_token(fmt_str,"offs", &len))
-		{
-			unsigned long long int offs;
-			offs = self->bytes.offs.offset;
-			if (offs)
-				str_printf(&str, &size, "+%#llx", offs);
-		}
-
 		else if (asm_is_token(fmt_str,"gen1_cmp", &len))
 		{
 			str_printf(&str, &size, "%s", str_map_value(&frm_inst_cmp_map,
 						self->bytes.general1.cmp));
-		}
-
-		else if (asm_is_token(fmt_str,"gen1_logic", &len))
-		{
-			str_printf(&str, &size, "%s", str_map_value(&frm_inst_logic_map,
-						self->bytes.general1.logic));
 		}
 
 		else if (asm_is_token(fmt_str,"gen1_logicftz", &len))
@@ -628,7 +624,207 @@ void FrmInstDumpBuf(FrmInst *self, char *str, int size)
 						self->bytes.general1.logic));
 		}
 
-		else if (asm_is_token(fmt_str,"R", &len))
+		else if (asm_is_token(fmt_str,"gen1_logic", &len))
+		{
+			str_printf(&str, &size, "%s", str_map_value(&frm_inst_logic_map,
+						self->bytes.general1.logic));
+		}
+
+		/* 2nd level token such as mod0, mod1, P, Q*/
+		else if (asm_is_token(fmt_str, "mod0_A_ftz", &len))
+		{
+			if (self->bytes.mod0_A.satftz)
+				str_printf(&str, &size, ".FTZ");
+		}
+
+		else if (asm_is_token(fmt_str, "mod0_A_op", &len))
+		{
+			unsigned long long int op;
+			op = self->bytes.mod0_A.abs_src2 << 1 || self->bytes.mod0_A.satftz;
+			str_printf(&str, &size, "%s", str_map_value (&frm_inst_op56_map,op));
+		}
+
+		else if (asm_is_token(fmt_str, "mod0_A_redarv", &len))
+		{
+			if (self->bytes.mod0_A.abs_src1)
+				str_printf(&str, &size, ".ARV");
+			else
+				str_printf(&str, &size, ".RED");
+		}
+
+		else if (asm_is_token(fmt_str, "mod0_A_s", &len))
+		{
+			if (self->bytes.mod0_A.s)
+				str_printf(&str, &size, ".S");
+		}
+
+		else if (asm_is_token(fmt_str, "mod0_A_u32", &len))
+		{
+			if (!self->bytes.mod0_A.satftz)
+				str_printf(&str, &size, ".U32");
+		}
+
+		else if (asm_is_token(fmt_str, "mod0_A_w", &len))
+		{
+			if (self->bytes.mod0_A.neg_src1)
+				str_printf(&str, &size, ".W");
+		}
+
+		else if (asm_is_token(fmt_str, "mod0_B_brev", &len))
+		{
+			if (self->bytes.mod0_B.cop)
+				str_printf(&str, &size, ".brev");
+		}
+
+		else if (asm_is_token(fmt_str, "mod0_B_cop", &len))
+		{
+			str_printf(&str, &size, "%s", str_map_value(&frm_inst_cop_map, self->bytes.mod0_B.cop));
+		}
+
+		else if (asm_is_token(fmt_str, "mod0_B_type", &len))
+		{
+			str_printf(&str, &size, "%s", str_map_value(&frm_inst_type_map, self->bytes.mod0_B.type));
+		}
+
+		else if (asm_is_token(fmt_str, "mod0_B_u32", &len))
+		{
+			if (!self->bytes.mod0_B.type)
+				str_printf(&str, &size, ".U32");
+		}
+
+		else if (asm_is_token(fmt_str, "mod0_C_ccop", &len))
+		{
+			str_printf(&str, &size, "%s", str_map_value(&frm_inst_ccop_map, self->bytes.mod0_C.shamt));
+		}
+
+		else if (asm_is_token(fmt_str, "mod0_C_shamt", &len))
+		{
+			unsigned long long int shamt;
+			shamt = self->bytes.mod0_C.shamt;
+			str_printf(&str, &size, "%#llx", shamt);
+		}
+
+		else if (asm_is_token(fmt_str, "mod0_C_s", &len))
+		{
+			if (self->bytes.mod0_C.s)
+				str_printf(&str, &size, ".S");
+		}
+
+		else if (asm_is_token(fmt_str, "mod0_D_ftzfmz", &len))
+		{
+			str_printf(&str, &size, "%s", str_map_value(&frm_inst_ftzfmz_map, self->bytes.mod0_D.ftzfmz));
+		}
+
+		else if (asm_is_token(fmt_str, "mod0_D_op67", &len))
+		{
+			str_printf(&str, &size, "%s", str_map_value(&frm_inst_op67_map, self->bytes.mod0_D.ftzfmz));
+		}
+
+		else if (asm_is_token(fmt_str, "mod0_D_op", &len))
+		{
+			str_printf(&str, &size, "%s", str_map_value(&frm_inst_op_map, self->bytes.mod0_D.ftzfmz));
+		}
+
+		else if (asm_is_token(fmt_str, "mod0_D_sat", &len))
+		{
+			str_printf(&str, &size, "%s", str_map_value(&frm_inst_sat_map, self->bytes.mod0_D.sat));
+		}
+
+		else if (asm_is_token(fmt_str, "mod0_D_x", &len))
+		{
+			unsigned long long int x;
+			x = self->bytes.mod0_D.ftzfmz & 0x1;
+			if (x)
+				str_printf(&str, &size, ".X");
+		}
+
+		else if (asm_is_token(fmt_str, "gen0_mod1_B_rnd", &len))
+		{
+			str_printf(&str, &size, "%s", str_map_value(&frm_inst_rnd_map, self->bytes.general0_mod1_B.rnd));
+		}
+
+		else if (asm_is_token(fmt_str, "gen0_mod1_D_cmp", &len))
+		{
+			str_printf(&str, &size, "%s", str_map_value(&frm_inst_cmp_map, self->bytes.general0_mod1_D.cmp));
+		}
+
+		else if (asm_is_token(fmt_str, "gen0_src1_dtype_n", &len))
+		{
+			unsigned long long int dtype_n;
+			dtype_n = self->bytes.general0.src1 & 0x3;
+			str_printf(&str, &size, "%s", str_map_value(&frm_inst_stype_n_map, dtype_n));
+		}
+
+		else if (asm_is_token(fmt_str, "gen0_src1_dtype", &len))
+		{
+			unsigned long long int dtype;
+			dtype = self->bytes.general0.src1 & 0x3;
+			str_printf(&str, &size, "%s", str_map_value(&frm_inst_dtype_map, dtype));
+		}
+
+		else if (asm_is_token(fmt_str, "gen0_src1_stype_n", &len))
+		{
+			unsigned long long int stype_n;
+			stype_n = self->bytes.general0.src1 >> 3 & 0x3;
+			str_printf(&str, &size, "%s", str_map_value (&frm_inst_stype_n_map, stype_n));
+		}
+
+		else if (asm_is_token(fmt_str, "dtype_sn", &len))
+		{
+			unsigned long long int dtype_n;
+			if (self->bytes.mod0_A.abs_src1)
+				str_printf(&str, &size, ".S");
+			else
+				str_printf(&str, &size, ".U");
+			dtype_n = self->bytes.general0.src1 & 0x3;
+			str_printf(&str, &size, "%s", str_map_value (&frm_inst_stype_n_map, dtype_n));
+		}
+
+		else if (asm_is_token(fmt_str, "stype_sn", &len))
+		{
+			unsigned long long int stype_n;
+			if (self->bytes.mod0_A.neg_src1)
+				str_printf(&str, &size, ".S");
+		        else
+			        str_printf(&str, &size, ".U");
+			stype_n = self->bytes.general0.src1 >> 3 & 0x3;
+				str_printf(&str, &size, "%s", str_map_value (&frm_inst_stype_n_map, stype_n));
+		}
+
+		else if (asm_is_token(fmt_str, "offs_op1_e", &len))
+		{
+			unsigned long long int e;
+			e = self->bytes.offs.op1 & 0x1;
+			if (e)
+				str_printf(&str, &size, ".e");
+		}
+
+		else if (asm_is_token(fmt_str,"offs", &len))
+		{
+			unsigned long long int offs;
+			offs = self->bytes.offs.offset;
+			if (offs)
+				str_printf(&str, &size, "+%#llx", offs);
+		}
+
+		else if (asm_is_token(fmt_str, "P", &len))
+		{
+			unsigned long long int P;
+			P = self->bytes.general1.dst >> 3;
+			str_printf(&str, &size, "P%lld", P);
+		}
+
+		else if (asm_is_token(fmt_str, "Q", &len))
+		{
+			unsigned long long int Q;
+			Q = self->bytes.general1.dst & 0x7;
+			if (Q != 7)
+				str_printf(&str, &size, "p%lld", Q);
+			else
+				str_printf(&str, &size, "pt");
+		}
+
+		else if (asm_is_token(fmt_str, "R", &len))
 		{
 			unsigned long long int R;
 			R = self->bytes.general1.R;
@@ -640,195 +836,7 @@ void FrmInstDumpBuf(FrmInst *self, char *str, int size)
 				str_printf(&str, &size, "pt");
 		}
 
-		/* 2nd level token such as mod0, mod1, P, Q*/
-		else if (asm_is_token(fmt_str,"mod0_A_ftz", &len))
-		{
-			if (self->bytes.mod0_A.satftz)
-				str_printf(&str, &size, ".FTZ");
-		}
-
-		else if (asm_is_token(fmt_str, "mod0_A_s", &len))
-		{
-			if (self->bytes.mod0_A.s)
-				str_printf(&str, &size, ".S");
-		}
-
-		else if (asm_is_token(fmt_str, "mod0_A_redarv", &len))
-		{
-			if (self->bytes.mod0_A.abs_src1)
-				str_printf(&str, &size, ".ARV");
-			else
-				str_printf(&str, &size, ".RED");
-		}
-
-		else if (asm_is_token(fmt_str, "mod0_A_u32", &len))
-		{
-			if (!self->bytes.mod0_A.satftz)
-				str_printf(&str, &size, ".U32");
-		}
-
-		else if (asm_is_token(fmt_str,"mod0_A_w", &len))
-		{
-			if (self->bytes.mod0_A.neg_src1)
-				str_printf(&str, &size, ".W");
-		}
-
-		else if (asm_is_token(fmt_str,"mod0_A_op", &len))
-		{
-			unsigned long long int op;
-			op = self->bytes.mod0_A.abs_src2 << 1 || self->bytes.mod0_A.satftz;
-			str_printf(&str, &size, "%s", str_map_value (&frm_inst_op56_map,op));
-		}
-
-		else if (asm_is_token(fmt_str,"mod0_B_u32", &len))
-		{
-			if (!self->bytes.mod0_B.type)
-				str_printf(&str, &size, ".U32");
-		}
-
-		else if (asm_is_token(fmt_str,"mod0_B_brev", &len))
-		{
-			if (self->bytes.mod0_B.cop)
-				str_printf(&str, &size, ".brev");
-		}
-
-		else if (asm_is_token(fmt_str,"mod0_B_cop", &len))
-		{
-			str_printf(&str, &size, "%s", str_map_value(&frm_inst_cop_map, self->bytes.mod0_B.cop));
-		}
-
-		else if (asm_is_token(fmt_str,"mod0_B_type", &len))
-		{
-			str_printf(&str, &size, "%s", str_map_value(&frm_inst_type_map, self->bytes.mod0_B.type));
-		}
-
-		else if (asm_is_token(fmt_str,"mod0_C_s", &len))
-		{
-			if (self->bytes.mod0_C.s)
-				str_printf(&str, &size, ".S");
-		}
-
-		else if (asm_is_token(fmt_str,"mod0_C_shamt", &len))
-		{
-			unsigned long long int shamt;
-			shamt = self->bytes.mod0_C.shamt;
-			str_printf(&str, &size, "%#llx", shamt);
-		}
-
-		else if (asm_is_token(fmt_str,"mod0_C_ccop", &len))
-		{
-			str_printf(&str, &size, "%s", str_map_value(&frm_inst_ccop_map, self->bytes.mod0_C.shamt));
-		}
-
-		else if (asm_is_token(fmt_str,"mod0_D_ftzfmz", &len))
-		{
-			str_printf(&str, &size, "%s", str_map_value(&frm_inst_ftzfmz_map, self->bytes.mod0_D.ftzfmz));
-		}
-
-		else if (asm_is_token(fmt_str,"mod0_D_sat", &len))
-		{
-			str_printf(&str, &size, "%s", str_map_value(&frm_inst_sat_map, self->bytes.mod0_D.sat));
-		}
-
-		else if (asm_is_token(fmt_str,"mod0_D_op", &len))
-		{
-			str_printf(&str, &size, "%s", str_map_value(&frm_inst_op_map, self->bytes.mod0_D.ftzfmz));
-		}
-
-		else if (asm_is_token(fmt_str,"mod0_D_op67", &len))
-		{
-			str_printf(&str, &size, "%s", str_map_value(&frm_inst_op67_map, self->bytes.mod0_D.ftzfmz));
-		}
-
-		else if (asm_is_token(fmt_str,"gen0_mod1_B_rnd", &len))
-		{
-			str_printf(&str, &size, "%s", str_map_value(&frm_inst_rnd_map, self->bytes.general0_mod1_B.rnd));
-		}
-
-		else if (asm_is_token(fmt_str,"gen0_mod1_D_cmp", &len))
-		{
-			str_printf(&str, &size, "%s", str_map_value(&frm_inst_cmp_map, self->bytes.general0_mod1_D.cmp));
-		}
-
-		else if (asm_is_token(fmt_str,"gen0_src1_dtype", &len))
-		{
-			unsigned long long int dtype;
-			dtype = self->bytes.general0.src1 & 0x3;
-			str_printf(&str, &size, "%s", str_map_value(&frm_inst_dtype_map, dtype));
-		}
-
-		else if (asm_is_token(fmt_str,"gen0_src1_dtype_n", &len))
-		{
-			unsigned long long int dtype_n;
-			dtype_n = self->bytes.general0.src1 & 0x3;
-			str_printf(&str, &size, "%s", str_map_value(&frm_inst_stype_n_map, dtype_n));
-		}
-
-		else if (asm_is_token(fmt_str,"gen0_src1_stype_n", &len))
-		{
-			unsigned long long int stype_n;
-			stype_n = self->bytes.general0.src1 >> 3 & 0x3;
-			str_printf(&str, &size, "%s", str_map_value (&frm_inst_stype_n_map, stype_n));
-		}
-
-		else if (asm_is_token(fmt_str,"stype_sn", &len))
-		{
-			unsigned long long int stype_n;
-			if (self->bytes.mod0_A.neg_src1)
-				str_printf(&str, &size, ".S");
-		        else
-			        str_printf(&str, &size, ".U");
-			stype_n = self->bytes.general0.src1 >> 3 & 0x3;
-				str_printf(&str, &size, "%s", str_map_value (&frm_inst_stype_n_map, stype_n));
-		}
-
-		else if (asm_is_token(fmt_str,"dtype_sn", &len))
-		{
-			unsigned long long int dtype_n;
-			if (self->bytes.mod0_A.abs_src1)
-				str_printf(&str, &size, ".S");
-			else
-				str_printf(&str, &size, ".U");
-			dtype_n = self->bytes.general0.src1 & 0x3;
-			str_printf(&str, &size, "%s", str_map_value (&frm_inst_stype_n_map, dtype_n));
-		}
-
-		else if (asm_is_token(fmt_str,"offs_op1_e", &len))
-		{
-			unsigned long long int e;
-			e = self->bytes.offs.op1 & 0x1;
-			if (e)
-				str_printf(&str, &size, ".e");
-		}
-
-		else if (asm_is_token(fmt_str,"P", &len))
-		{
-			unsigned long long int P;
-			P = self->bytes.general1.dst >> 3;
-			str_printf(&str, &size, "P%lld", P);
-		}
-
-		else if (asm_is_token(fmt_str,"Q", &len))
-		{
-			unsigned long long int Q;
-			Q = self->bytes.general1.dst & 0x7;
-			if (Q != 7)
-				str_printf(&str, &size, "p%lld", Q);
-			else
-				str_printf(&str, &size, "pt");
-		}
-
-		else if (asm_is_token(fmt_str,"src3", &len))
-		{
-			unsigned long long int src3;
-			src3 = self->bytes.general0_mod1_B.src3;
-			if (src3 != 63)
-				str_printf(&str, &size, "R%lld", src3);
-			else
-				str_printf(&str, &size, "RZ");
-		}
-
-		else if (asm_is_token(fmt_str,"FADD_sat", &len))
+		else if (asm_is_token(fmt_str, "FADD_sat", &len))
 		{
 			unsigned long long int sat;
 			sat = self->bytes.general0_mod1_B.src3 & 0x1;
@@ -836,45 +844,21 @@ void FrmInstDumpBuf(FrmInst *self, char *str, int size)
 				str_printf(&str, &size, ".SAT");
 		}
 
-		else if (asm_is_token(fmt_str,"MUFU_op", &len))
+		else if (asm_is_token(fmt_str, "MUFU_op", &len))
 		{
 			unsigned long long int op;
 			op = self->bytes.imm.imm32;
 			str_printf(&str, &size, "%s", str_map_value(&frm_inst_op_map, op));
 		}
 
-		else if (asm_is_token(fmt_str,"NOP_op", &len))
+		else if (asm_is_token(fmt_str, "NOP_op", &len))
 		{
 			unsigned long long int op;
 			op = self->bytes.offs.mod1 >> 9 & 0x4;
 			str_printf(&str, &size, "%s", str_map_value(&frm_inst_NOP_op_map, op));
 		}
 
-		else if (asm_is_token(fmt_str,"mod0_D_x", &len))
-		{
-			unsigned long long int x;
-			x = self->bytes.mod0_D.ftzfmz & 0x1;
-			if (x)
-				str_printf(&str, &size, ".X");
-		}
-
-		else if (asm_is_token(fmt_str,"IMAD_mod1", &len))
-		{
-			unsigned long long int mod1;
-			mod1 = self->bytes.mod0_D.ftzfmz >> 1;
-			if (!mod1)
-				str_printf(&str, &size, ".U32");
-		}
-
-		else if (asm_is_token(fmt_str,"IMAD_mod2", &len))
-		{
-			unsigned long long int mod2;
-			mod2 = self->bytes.mod0_D.sat;
-			if (!mod2)
-				str_printf(&str, &size, ".U32");
-		}
-
-		else if (asm_is_token(fmt_str,"IMAD_hi", &len))
+		else if (asm_is_token(fmt_str, "IMAD_hi", &len))
 		{
 			unsigned long long int hi;
 			hi= self->bytes.mod0_D.ftzfmz & 0x1;
@@ -882,7 +866,23 @@ void FrmInstDumpBuf(FrmInst *self, char *str, int size)
 				str_printf(&str, &size, ".HI");
 		}
 
-		else if (asm_is_token(fmt_str,"IMAD_sat", &len))
+		else if (asm_is_token(fmt_str, "IMAD_mod1", &len))
+		{
+			unsigned long long int mod1;
+			mod1 = self->bytes.mod0_D.ftzfmz >> 1;
+			if (!mod1)
+				str_printf(&str, &size, ".U32");
+		}
+
+		else if (asm_is_token(fmt_str, "IMAD_mod2", &len))
+		{
+			unsigned long long int mod2;
+			mod2 = self->bytes.mod0_D.sat;
+			if (!mod2)
+				str_printf(&str, &size, ".U32");
+		}
+
+		else if (asm_is_token(fmt_str, "IMAD_sat", &len))
 		{
 			unsigned long long int sat;
 			sat = self->bytes.general0_mod1_B.rnd >> 1;

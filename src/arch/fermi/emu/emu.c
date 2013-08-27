@@ -103,6 +103,8 @@ int FrmEmuRun(Emu *self)
 	FrmThreadBlock *thread_block;
 	FrmWarp *warp;
 
+	int warp_id;
+
 	/* Stop emulation if no grid needs running */
 	if (!list_count(emu->grids))
 		return FALSE;
@@ -126,8 +128,12 @@ int FrmEmuRun(Emu *self)
 	{
 		while ((thread_block = list_head(grid->running_thread_blocks)))
 		{
-			while ((warp = list_head(thread_block->running_warps)))
+			for (warp_id = 0; warp_id <
+					list_count(thread_block->running_warps);
+					warp_id++)
 			{
+				warp = list_get(thread_block->running_warps,
+						warp_id);
 				if (warp->finished || warp->at_barrier)
 					continue;
 
