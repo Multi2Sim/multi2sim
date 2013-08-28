@@ -29,15 +29,6 @@
  * Class 'MIPSEmu'
  */
 
-enum mips_emu_list_kind_t
-{
-	mips_emu_list_context = 0,
-	mips_emu_list_running,
-	mips_emu_list_suspended,
-	mips_emu_list_zombie,
-	mips_emu_list_finished,
-	mips_emu_list_alloc
-};
 
 CLASS_BEGIN(MIPSEmu, Emu)
 
@@ -117,21 +108,6 @@ void MIPSEmuLoadContextFromCommandLine(MIPSEmu *self,
 		int argc, char **argv);
 void MIPSEmuLoadContextsFromIniFile(MIPSEmu *self,
 		struct config_t *config, char *section);
-
-
-
-
-/* FIXME - Functions below should be removed */
-int MIPSEmuListMember(MIPSEmu *self, enum mips_emu_list_kind_t list,
-		MIPSContext *ctx);
-void MIPSEmuListRemove(MIPSEmu *self, enum mips_emu_list_kind_t list,
-		MIPSContext *ctx);
-void MIPSEmuListInsertTail(MIPSEmu *self, enum mips_emu_list_kind_t list,
-		MIPSContext *ctx);
-void MIPSEmuListInsertHead(MIPSEmu *self, enum mips_emu_list_kind_t list,
-		MIPSContext *ctx);
-
-
 
 
 /*

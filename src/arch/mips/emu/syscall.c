@@ -25,6 +25,8 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+#include <sys/ioctl.h>
+#include <termios.h>
 
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
@@ -1254,6 +1256,142 @@ static int mips_sys_getpid_impl(MIPSContext *ctx)
 	return ctx->pid;
 }
 
+static int mips_sys_time_impl(MIPSContext *ctx)
+{
+	struct mips_regs_t *regs = ctx->regs;
+		struct mem_t *mem = ctx->mem;
+
+		unsigned int time_ptr;
+		int t;
+
+		/* Arguments */
+		time_ptr = regs->regs_R[4];
+		mips_sys_debug("  ptime=0x%x\n", time_ptr);
+
+		/* Host call */
+		t = time(NULL);
+		if (time_ptr)
+			mem_write(mem, time_ptr, 4, &t);
+
+		/* Return */
+		return t;
+}
+
+
+/*
+ * System call 'ioctl' (code 4054)
+ */
+
+/* An 'ioctl' code (first argument) is a 32-bit word split into 4 fields:
+ *   -NR [7..0]: ioctl code number.
+ *   -TYPE [15..8]: ioctl category.
+ *   -SIZE [29..16]: size of the structure passed as 2nd argument.
+ *   -DIR [31..30]: direction (01=Write, 10=Read, 11=R/W).
+ */
+
+static int mips_sys_ioctl_impl(MIPSContext *ctx)
+{
+	struct mips_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
+	unsigned int cmd;
+	unsigned int arg;
+
+	int guest_fd;
+	int err;
+
+	struct mips_file_desc_t *desc;
+
+	/* Arguments */
+	guest_fd = regs->regs_R[4];
+	cmd = regs->regs_R[5];
+	arg = regs->regs_R[6];
+	mips_sys_debug("  guest_fd=%d, cmd=0x%x, arg=0x%x\n",
+		guest_fd, cmd, arg);
+
+	/* File descriptor */
+	desc = mips_file_desc_table_entry_get(ctx->file_desc_table, guest_fd);
+	if (!desc)
+		return -EBADF;
+
+	   /* Action */
+	switch (cmd) {
+	case 0x5401: /* TCGETA */
+	case 0x540d: /* TCGETS */
+	{
+		struct sim_termios {
+			uint32_t c_iflag;
+			uint32_t c_oflag;
+			uint32_t c_cflag;
+			uint32_t c_lflag;
+			uint8_t c_line;
+			uint8_t c_cc[32];
+		} sbuf;
+		struct termios buf;
+		int i;
+
+		mem_read(mem, arg, sizeof(sbuf), &sbuf);
+		buf.c_iflag = sbuf.c_iflag;
+		buf.c_oflag = sbuf.c_oflag;
+		buf.c_cflag = sbuf.c_cflag;
+		buf.c_lflag = sbuf.c_lflag;
+		buf.c_line = sbuf.c_line;
+		for (i = 0; i < 32; i++)
+			buf.c_cc[i] = sbuf.c_cc[i];
+
+		err = ioctl(guest_fd, TCGETS, &buf);
+		sbuf.c_iflag = buf.c_iflag;
+		sbuf.c_oflag = buf.c_oflag;
+		sbuf.c_cflag = buf.c_cflag;
+		sbuf.c_lflag = buf.c_lflag;
+		sbuf.c_line = buf.c_line;
+		for (i = 0; i < 32; i++)
+			sbuf.c_cc[i] = buf.c_cc[i];
+
+		mips_sys_debug("\tsyscall ioctl: req=TCGETS, result=%d, c_iflag=%u, c_oflag=%u, c_cflag=%u, c_lflag=%u\n",
+				err, buf.c_iflag, buf.c_oflag, buf.c_cflag, buf.c_lflag);
+		break;
+	}
+
+	default:
+		fatal("unknown ioctl request: 0x%x", cmd);
+	}
+		return err;
+}
+
+/*
+ * System call 'lseek' (code 4019)
+ */
+
+static int mips_sys_lseek_impl(MIPSContext *ctx)
+{
+	struct mips_regs_t *regs = ctx->regs;
+
+	unsigned int offset;
+
+	int fd;
+	int origin;
+	int host_fd;
+	int err;
+
+	/* Arguments */
+	fd = regs->regs_R[4];
+	offset = regs->regs_R[5];
+	origin = regs->regs_R[6];
+	host_fd = mips_file_desc_table_get_host_fd(ctx->file_desc_table, fd);
+	mips_sys_debug("  fd=%d, offset=0x%x, origin=0x%x\n",
+		fd, offset, origin);
+	mips_sys_debug("  host_fd=%d\n", host_fd);
+
+	/* Host call */
+	err = lseek(host_fd, offset, origin);
+	if (err == -1)
+		return -errno;
+
+	/* Return */
+	return err;
+}
+
 
 /*
  * Not implemented system calls
@@ -1279,13 +1417,13 @@ SYS_NOT_IMPL(link)
 SYS_NOT_IMPL(unlink)
 SYS_NOT_IMPL(execve)
 SYS_NOT_IMPL(chdir)
-SYS_NOT_IMPL(time)
+//SYS_NOT_IMPL(time)
 SYS_NOT_IMPL(mknod)
 SYS_NOT_IMPL(chmod)
 //SYS_NOT_IMPL(lchown16)
 //SYS_NOT_IMPL(ni_syscall_17)
 SYS_NOT_IMPL(stat)
-SYS_NOT_IMPL(lseek)
+//SYS_NOT_IMPL(lseek)
 //SYS_NOT_IMPL(getpid)
 SYS_NOT_IMPL(mount)
 //SYS_NOT_IMPL(oldumount)
@@ -1319,7 +1457,7 @@ SYS_NOT_IMPL(signal)
 SYS_NOT_IMPL(acct)
 SYS_NOT_IMPL(umount)
 //SYS_NOT_IMPL(ni_syscall_53)
-SYS_NOT_IMPL(ioctl)
+//SYS_NOT_IMPL(ioctl)
 SYS_NOT_IMPL(fcntl)
 //SYS_NOT_IMPL(ni_syscall_56)
 SYS_NOT_IMPL(setpgid)

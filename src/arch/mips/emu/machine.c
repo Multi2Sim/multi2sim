@@ -65,7 +65,6 @@ void mips_isa_BNE_impl(MIPSContext *ctx)
 	if (mips_gpr_get_value(ctx,RS) != mips_gpr_get_value(ctx,RT))
 	{
 		mips_isa_rel_branch(ctx,SEXT32(IMM << 2, 16));
-		mips_isa_inst_debug("  Branch taken");
 	}
 	else
 		mips_isa_inst_debug("  Branch not taken");
@@ -346,7 +345,15 @@ void mips_isa_SRL_impl(MIPSContext *ctx)
 }
 void mips_isa_ROR_impl(MIPSContext *ctx)
 {
-	__MIPS_NOT_IMPL__
+	unsigned int s, left, right, new_value=0, rt_value;
+	s = mips_gpr_get_value(ctx, SA);
+	rt_value = mips_gpr_get_value(ctx, RT);
+	left = BITS32(rt_value, s-1, 0);
+	right = BITS32(rt_value, 31, s);
+	new_value = SET_BITS_32(new_value, 31, (31-s+1), left);
+	new_value = SET_BITS_32(new_value, (31-s), 0, right);
+	mips_gpr_set_value(ctx, RD, new_value);
+//	__MIPS_NOT_IMPL__
 }
 void mips_isa_SRA_impl(MIPSContext *ctx)
 {
@@ -651,7 +658,18 @@ void mips_isa_MSUBU_impl(MIPSContext *ctx)
 }
 void mips_isa_CLZ_impl(MIPSContext *ctx)
 {
-	__MIPS_NOT_IMPL__
+	unsigned int temp = 32;
+	int i;
+	unsigned int rs_value = mips_gpr_get_value(ctx, RS);
+	for (i=31; i >= 0; i--)
+	{
+		if (GETBIT32(rs_value, i) == 1)
+		{
+			temp = 31 - i;
+			break;
+		}
+	}
+	mips_gpr_set_value(ctx, RD, temp);
 }
 void mips_isa_CLO_impl(MIPSContext *ctx)
 {
@@ -668,7 +686,17 @@ void mips_isa_CLO_impl(MIPSContext *ctx)
 
 void mips_isa_EXT_impl(MIPSContext *ctx)
 {
-	__MIPS_NOT_IMPL__
+	unsigned int lsb, msbd, right, temp=0, rs_value;
+	lsb = mips_gpr_get_value(ctx, SA);
+	msbd = mips_gpr_get_value(ctx, RD);
+
+	//if(lsb + msbd > 31)
+		//fatal("UNPREDICTABLE: EXT instruction. lsb + msbd >31\n");
+
+	rs_value = mips_gpr_get_value(ctx, RS);
+	right = BITS32(rs_value, (msbd+lsb), lsb);
+	temp = SET_BITS_32(temp, msbd+1, 0, right);
+	mips_gpr_set_value(ctx, RT, temp);
 }
 
 //#define MASK_BITS(X, HI, LO) (unsigned int)((X) & ((((1ull)<<(HI-LO+1))-1) << LO))

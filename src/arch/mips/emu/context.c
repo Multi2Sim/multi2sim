@@ -104,7 +104,9 @@ static void MIPSContextDoCreate(MIPSContext *self, MIPSEmu *emu)
 	 * corresponding lists. The mips_ctx_running parameter has no
 	 * effect, since it will be updated later. */
 	MIPSContextSetState(self, MIPSContextRunning);
-	MIPSEmuListInsertHead(emu, mips_emu_list_context, self);
+
+	assert(!(DOUBLE_LINKED_LIST_MEMBER(emu, context, self)));
+	DOUBLE_LINKED_LIST_INSERT_HEAD(emu, context, self);
 
 	/* Structures */
 	self->regs = mips_regs_create();
@@ -479,11 +481,11 @@ void MIPSContextDestroy(MIPSContext *self)
 
 	/* Remove context from finished contexts list. This should
 	 * be the only list the context is in right now. */
-	assert(!MIPSEmuListMember(emu, mips_emu_list_running, self));
-	assert(!MIPSEmuListMember(emu, mips_emu_list_suspended, self));
-	assert(!MIPSEmuListMember(emu, mips_emu_list_zombie, self));
-	assert(MIPSEmuListMember(emu, mips_emu_list_finished, self));
-	MIPSEmuListRemove(emu, mips_emu_list_finished, self);
+	assert(!(DOUBLE_LINKED_LIST_MEMBER(emu, running, self)));
+	assert(!(DOUBLE_LINKED_LIST_MEMBER(emu, suspended, self)));
+	assert(!(DOUBLE_LINKED_LIST_MEMBER(emu, zombie, self)));
+	assert((DOUBLE_LINKED_LIST_MEMBER(emu, finished, self)));
+	DOUBLE_LINKED_LIST_REMOVE(emu, finished, self);
 
 	/* Free private structures */
 	mips_regs_free(self->regs);
@@ -517,7 +519,8 @@ void MIPSContextDestroy(MIPSContext *self)
 	free(self->cstack);
 
 	/* Remove context from contexts list and free */
-	MIPSEmuListRemove(emu, mips_emu_list_context, self);
+	assert(DOUBLE_LINKED_LIST_MEMBER(emu, context, self));
+	DOUBLE_LINKED_LIST_REMOVE(emu, context, self);
 	MIPSContextDebug("context %d freed\n", self->pid);
 
 	/* Instruction */
@@ -742,16 +745,20 @@ static void MIPSContextUpdateState(MIPSContext *self, MIPSContextState state)
 
 	/* Remove contexts from the following lists:
 	 *   running, suspended, zombie */
-	if (MIPSEmuListMember(emu, mips_emu_list_running, self))
-		MIPSEmuListRemove(emu, mips_emu_list_running, self);
-	if (MIPSEmuListMember(emu, mips_emu_list_suspended, self))
-		MIPSEmuListRemove(emu, mips_emu_list_suspended, self);
-	if (MIPSEmuListMember(emu, mips_emu_list_zombie, self))
-		MIPSEmuListRemove(emu, mips_emu_list_zombie, self);
-	if (MIPSEmuListMember(emu, mips_emu_list_finished, self))
-		MIPSEmuListRemove(emu, mips_emu_list_finished, self);
-	if (MIPSEmuListMember(emu, mips_emu_list_alloc, self))
-		MIPSEmuListRemove(emu, mips_emu_list_alloc, self);
+	if ((DOUBLE_LINKED_LIST_MEMBER(emu, running, self)))
+		DOUBLE_LINKED_LIST_REMOVE(emu, running, self);
+
+	if ((DOUBLE_LINKED_LIST_MEMBER(emu, suspended, self)))
+		DOUBLE_LINKED_LIST_REMOVE(emu, suspended, self);
+
+	if ((DOUBLE_LINKED_LIST_MEMBER(emu, zombie, self)))
+		DOUBLE_LINKED_LIST_REMOVE(emu, zombie, self);
+
+	if ((DOUBLE_LINKED_LIST_MEMBER(emu, finished, self)))
+		DOUBLE_LINKED_LIST_REMOVE(emu, finished, self);
+
+	if ((DOUBLE_LINKED_LIST_MEMBER(emu, alloc, self)))
+		DOUBLE_LINKED_LIST_REMOVE(emu, alloc, self);
 
 	/* If the difference between the old and new status lies in other
 	 * states other than 'mips_ctx_specmode', a reschedule is marked. */
@@ -775,15 +782,30 @@ static void MIPSContextUpdateState(MIPSContext *self, MIPSContextState state)
 
 	/* Insert context into the corresponding lists. */
 	if (self->status & MIPSContextRunning)
-		MIPSEmuListInsertHead(emu, mips_emu_list_running, self);
+	{
+		assert(!(DOUBLE_LINKED_LIST_MEMBER(emu, running, self)));
+		DOUBLE_LINKED_LIST_INSERT_HEAD(emu, running, self);
+	}
 	if (self->status & MIPSContextZombie)
-		MIPSEmuListInsertHead(emu, mips_emu_list_zombie, self);
+	{
+		assert(!(DOUBLE_LINKED_LIST_MEMBER(emu, zombie, self)));
+		DOUBLE_LINKED_LIST_INSERT_HEAD(emu, zombie, self);
+	}
 	if (self->status & MIPSContextFinished)
-		MIPSEmuListInsertHead(emu, mips_emu_list_finished, self);
+	{
+		assert(!(DOUBLE_LINKED_LIST_MEMBER(emu, finished, self)));
+		DOUBLE_LINKED_LIST_INSERT_HEAD(emu, finished, self);
+	}
 	if (self->status & MIPSContextSuspended)
-		MIPSEmuListInsertHead(emu, mips_emu_list_suspended, self);
+	{
+		assert(!(DOUBLE_LINKED_LIST_MEMBER(emu, suspended, self)));
+		DOUBLE_LINKED_LIST_INSERT_HEAD(emu, suspended, self);
+	}
 	if (self->status & MIPSContextAlloc)
-		MIPSEmuListInsertHead(emu, mips_emu_list_alloc, self);
+	{
+		assert(!(DOUBLE_LINKED_LIST_MEMBER(emu, alloc, self)));
+		DOUBLE_LINKED_LIST_INSERT_HEAD(emu, alloc, self);
+	}
 
 	/* Dump new status (ignore 'mips_ctx_specmode' status, it's too frequent) */
 	if (debug_status(mips_context_debug_category) && (diff & ~MIPSContextSpecMode))
