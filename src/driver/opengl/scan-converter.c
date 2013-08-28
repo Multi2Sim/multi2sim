@@ -134,10 +134,19 @@ void opengl_sc_triangle_set(struct opengl_sc_triangle_t *triangle,
 	triangle->vtx0 = vtx0;
 	triangle->vtx1 = vtx1;
 	triangle->vtx2 = vtx2;
+	triangle->edgfunc0 = opengl_sc_edge_func_create();
+	triangle->edgfunc1 = opengl_sc_edge_func_create();
+	triangle->edgfunc2 = opengl_sc_edge_func_create();
+	opengl_sc_edge_func_set(triangle->edgfunc0, vtx0, vtx1);
+	opengl_sc_edge_func_set(triangle->edgfunc1, vtx1, vtx2);
+	opengl_sc_edge_func_set(triangle->edgfunc2, vtx2, vtx0);
 }
 
 void opengl_sc_triangle_free(struct opengl_sc_triangle_t *triangle)
 {
+	opengl_sc_edge_func_free(triangle->edgfunc0);
+	opengl_sc_edge_func_free(triangle->edgfunc1);
+	opengl_sc_edge_func_free(triangle->edgfunc2);
 	free(triangle);
 }
 
@@ -212,6 +221,105 @@ struct opengl_sc_pixel_info_t *opengl_sc_pixel_info_create()
 void opengl_sc_pixel_info_free(struct opengl_sc_pixel_info_t *pxl_info)
 {
 	free(pxl_info);
+}
+
+/* Edge function is used to test if a pixel is in the right side of an edge */
+struct opengl_sc_edge_func_t *opengl_sc_edge_func_create()
+{
+	struct opengl_sc_edge_func_t *edge_func;
+
+	/* Allocate */
+	edge_func = xcalloc(1, sizeof(struct opengl_sc_edge_func_t));
+
+	/* Return */	
+	return edge_func;
+}
+
+void opengl_sc_edge_func_free(struct opengl_sc_edge_func_t *edge_func)
+{
+	free(edge_func);
+}
+
+/* vtx0/1 are 2 homegenious points */
+void opengl_sc_edge_func_set(struct opengl_sc_edge_func_t *edge_func,struct opengl_sc_vertex_t *vtx0, struct opengl_sc_vertex_t *vtx1)
+{
+
+	edge_func->a = vtx0->pos[Y_COMP] - vtx1->pos[Y_COMP];
+	edge_func->b = vtx1->pos[X_COMP] - vtx0->pos[X_COMP];
+	edge_func->c = vtx0->pos[X_COMP] * vtx1->pos[Y_COMP] - vtx1->pos[X_COMP] * vtx0->pos[Y_COMP];
+}
+
+/* Return PIXEL_TEST_PASS if a pixel is on the right side of an edge, PIXEL_TEST_FAIL if on the left side */
+int opengl_sc_edge_func_test_pixel(struct opengl_sc_edge_func_t *edge_func, int x, int y)
+{
+	/* E(x,y) >= 0 meaning a pixel is on the right side of the edge or exactly on the edge */
+	return edge_func->a * x + edge_func->b * y + edge_func->c >= 0.0 ? PIXEL_TEST_PASS : PIXEL_TEST_FAIL ;
+}
+
+/* Pass test only when a pixel passes on 3 edge function */
+int opengl_sc_triangle_test_pixel(struct opengl_sc_triangle_t *triangle, int x, int y)
+{
+	if (opengl_sc_edge_func_test_pixel(triangle->edgfunc0, x, y) && 
+		opengl_sc_edge_func_test_pixel(triangle->edgfunc1, x, y) &&
+		opengl_sc_edge_func_test_pixel(triangle->edgfunc2, x, y))
+	{
+		return PIXEL_TEST_PASS;		
+	}
+	else
+		return PIXEL_TEST_FAIL;
+
+}
+
+/* If pass test, then generate a pixel info object */
+struct opengl_sc_pixel_info_t *opengl_sc_triangle_test_and_gen_pixel(struct opengl_sc_triangle_t *triangle, int x, int y, int z)
+{
+	struct opengl_sc_pixel_info_t *pixel;
+	if (opengl_sc_triangle_test_pixel(triangle, x, y))
+	{
+		pixel = opengl_sc_pixel_info_create();
+		opengl_sc_pixel_info_set_wndw_cood(pixel, x, y, z);
+		return pixel;
+	}
+	return NULL;
+}
+
+void opengl_sc_pixel_gen_and_add_to_list(struct opengl_sc_triangle_t *triangle, int x, int y, struct list_t *lst)
+{
+	struct opengl_sc_pixel_info_t *pixel;
+	/* FIXME: Z value should be interpolated */
+	pixel = opengl_sc_triangle_test_and_gen_pixel(triangle, x, y, 0);
+	if (pixel)
+		list_add(lst, pixel);
+}
+
+/* Resursive testing tiles , x/y are the position of the lower left of a bounding box */
+void opengl_sc_triangle_tiled_pixel_gen(struct opengl_sc_triangle_t *triangle, int x, int y, int size, struct list_t *pxl_lst)
+{
+	int half_size;
+
+	/* Test if bounding box size is power of 2 */
+	assert(size % 2 ==0);
+	half_size = size>>1;
+
+	if (size > 2)
+	{
+		/* Subdivide the bounding box and test in Z pattern */
+		opengl_sc_triangle_tiled_pixel_gen(triangle, x, y + half_size, half_size, pxl_lst);
+		opengl_sc_triangle_tiled_pixel_gen(triangle, x + half_size, y + half_size, half_size, pxl_lst);
+		opengl_sc_triangle_tiled_pixel_gen(triangle, x, y, half_size, pxl_lst);
+		opengl_sc_triangle_tiled_pixel_gen(triangle, x + half_size, y, half_size, pxl_lst);
+	}
+	else if (size == 2)
+	{
+		/* Size is 2x2, so test this quad and add to list if pixel test pass */
+		opengl_sc_pixel_gen_and_add_to_list(triangle, x, y+1, pxl_lst);
+		opengl_sc_pixel_gen_and_add_to_list(triangle, x+1, y+1, pxl_lst);
+		opengl_sc_pixel_gen_and_add_to_list(triangle, x, y, pxl_lst);
+		opengl_sc_pixel_gen_and_add_to_list(triangle, x+1, y, pxl_lst);		
+	}
+
+	/* Return */
+	return;
 }
 
 struct list_t *opengl_sc_rast_triangle_gen(struct opengl_sc_triangle_t *triangle)
