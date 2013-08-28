@@ -40,6 +40,9 @@ libcl2llvm_a_SOURCES = \
 	init.c\
 	init.h\
 	\
+	ret-error.c\
+	ret-error.h\
+	\
 	symbol.c \
 	symbol.h \
 	\

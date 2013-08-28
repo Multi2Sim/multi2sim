@@ -24,6 +24,7 @@
 #include "declarator-list.h"
 #include "function.h"
 #include "val.h"
+#include "ret-error.h"
 #include "type.h"
 #include "init.h"
 #include "symbol.h"
@@ -377,7 +378,18 @@ func_def
 		by default*/
 		if (LLVMGetReturnType(cl2llvm_current_function->func_type)
 			== LLVMVoidType())
-			LLVMBuildRetVoid(cl2llvm_builder);
+		{
+				if (LLVMGetLastInstruction(
+					current_basic_block) != NULL)
+				{
+					if (LLVMGetInstructionOpcode(
+						LLVMGetLastInstruction(
+						current_basic_block)) != LLVMRet)
+						LLVMBuildRetVoid(cl2llvm_builder);
+				}
+				else
+					LLVMBuildRetVoid(cl2llvm_builder);
+		}
 	}
 	; 
 
@@ -481,7 +493,6 @@ addr_qual
 	}
 	| TOK_PRIVATE
 	{
-		cl2llvm_yyerror("'private' not supported");
 		$$ = 0;
 	}
 	| TOK_CONSTANT
@@ -539,6 +550,9 @@ declarator
 
 type_qual
 	: TOK_CONST
+	{
+		cl2llvm_warning("const not supported");
+	}
 	| TOK_VOLATILE
 	;
 
@@ -768,19 +782,33 @@ stmt
 	| while_loop
 	| do_while_loop
 	| if_stmt
-	| TOK_RETURN expr TOK_SEMICOLON
+	| TOK_RETURN maybe_expr TOK_SEMICOLON
 	{
 		struct cl2llvm_val_t *ret_val;
 		struct cl2llvm_type_t *type = cl2llvm_type_create_w_init( LLVMGetReturnType(cl2llvm_current_function->func_type), cl2llvm_current_function->sign);
-		if (type->llvm_type != $2->type->llvm_type || type->sign != $2->type->sign)
-			ret_val = llvm_type_cast($2, type);
+		if (type->llvm_type == LLVMVoidType())
+		{
+			if ($2 == NULL)
+			{
+				LLVMBuildRetVoid(cl2llvm_builder);
+			}
+			else
+				cl2llvm_yyerror("returning a value to a void function");
+		}
 		else
-			ret_val = $2;
-		LLVMBuildRet(cl2llvm_builder, ret_val->val);
-		cl2llvm_type_free(type);
-		if (ret_val != $2)
-			cl2llvm_val_free(ret_val);
-		cl2llvm_val_free($2);
+		{
+			if (type->llvm_type != $2->type->llvm_type || type->sign != $2->type->sign)
+				ret_val = llvm_type_cast($2, type);
+			else
+				ret_val = $2;
+		
+			LLVMBuildRet(cl2llvm_builder, ret_val->val);
+			cl2llvm_type_free(type);
+	
+			if (ret_val != $2)
+				cl2llvm_val_free(ret_val);
+			cl2llvm_val_free($2);
+		}
 	}
 	| TOK_CONTINUE TOK_SEMICOLON
 	{
@@ -1193,7 +1221,8 @@ if_stmt
 	: if %prec TOK_PLUS
 	{
 		/* goto endif block*/
-		LLVMBuildBr(cl2llvm_builder, $1);
+		if (check_for_ret());
+			LLVMBuildBr(cl2llvm_builder, $1);
 		LLVMPositionBuilderAtEnd(cl2llvm_builder, $1);
 		current_basic_block = $1;
 	}
@@ -1205,7 +1234,8 @@ if_stmt
 		LLVMBasicBlockRef endif = LLVMAppendBasicBlock(cl2llvm_current_function->func, block_name);
 		
 		/*Branch to endif*/
-		LLVMBuildBr(cl2llvm_builder, endif);
+		if (check_for_ret())
+			LLVMBuildBr(cl2llvm_builder, endif);
 		/*position builder at if false block*/
 		LLVMPositionBuilderAtEnd(cl2llvm_builder, $1);
 		current_basic_block = $1;
@@ -1215,7 +1245,8 @@ if_stmt
 	stmt_or_stmt_list %prec TOK_MULT
 	{
 		/*branch to endif block and prepare to write code for endif block*/
-		LLVMBuildBr(cl2llvm_builder, $<basic_block_ref>3);
+		if (check_for_ret())
+			LLVMBuildBr(cl2llvm_builder, $<basic_block_ref>3);
 		LLVMPositionBuilderAtEnd(cl2llvm_builder, $<basic_block_ref>3);
 		current_basic_block = $<basic_block_ref>3;
 

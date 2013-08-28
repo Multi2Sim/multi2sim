@@ -197,6 +197,7 @@ void cl2llvm_compile(struct list_t *source_file_list, struct list_t *llvm_file_l
 		cl2llvm_yyparse();
 		
 		/* Verify module and optimize */
+		LLVMDumpModule(cl2llvm_module);
 		LLVMVerifyModule(cl2llvm_module, LLVMAbortProcessAction, &error);
 		LLVMPassManagerRef pm = LLVMCreatePassManager();
 
