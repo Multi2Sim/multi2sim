@@ -889,7 +889,6 @@ AC_CONFIG_FILES([
 
                 src/Makefile
 
-		src/avf/Makefile
 		src/arch/Makefile
 		src/driver/Makefile
 		src/lib/Makefile
