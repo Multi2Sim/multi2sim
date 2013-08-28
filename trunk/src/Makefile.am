@@ -1,6 +1,5 @@
 SUBDIRS = \
 	arch \
-	avf \
 	dram \
 	driver \
 	lib \
@@ -68,8 +67,6 @@ LDADD = \
 	$(top_builddir)/src/lib/esim/libesim.a \
 	$(top_builddir)/src/lib/util/libutil.a \
 	$(top_builddir)/src/lib/class/libclass.a \
-	\
-	$(top_builddir)/src/avf/libavf.a
 	
 
 if HAVE_GTK
