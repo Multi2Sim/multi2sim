@@ -127,10 +127,3 @@ CLASS(Llvm2siBasicBlock)
 CLASS(Llvm2siFunction)
 CLASS(Llvm2siFunctionUAV)
 CLASS(Llvm2siFunctionArg)
-
-/*
- * AVF Classes
- */
-CLASS(RefCounted)
-CLASS(RefCountingPtr)
-CLASS(IndObj)
