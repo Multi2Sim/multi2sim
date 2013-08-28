@@ -28,6 +28,9 @@
 #define Z_COMP 2
 #define W_COMP 3
 
+#define PIXEL_TEST_PASS 1
+#define PIXEL_TEST_FAIL 0
+
 /* Convert float to int by rounding to nearest integer, away from zero */
 static inline int IROUND(float f)
 {
@@ -62,6 +65,7 @@ static inline int IROUND(float f)
 
 /* Forward declaration */
 struct list_t;
+struct opengl_sc_edge_func_t;
 
 struct opengl_sc_vertex_t
 {
@@ -70,9 +74,14 @@ struct opengl_sc_vertex_t
 
 struct opengl_sc_triangle_t
 {
+	/* 3 verticies */
 	struct opengl_sc_vertex_t *vtx0;
 	struct opengl_sc_vertex_t *vtx1;
 	struct opengl_sc_vertex_t *vtx2;
+	/* And 3 edge functions */
+	struct opengl_sc_edge_func_t *edgfunc0;
+	struct opengl_sc_edge_func_t *edgfunc1;
+	struct opengl_sc_edge_func_t *edgfunc2;	
 };
 
 struct opengl_sc_edge_t
@@ -126,6 +135,24 @@ struct opengl_sc_span_t
 
 };
 
+/* Used to check if a pixel is inside the triangle */
+struct opengl_sc_edge_func_t
+{
+	float a;
+	float b;
+	float c;
+};
+
+/* Bounding box for an triangle */
+struct opengl_sc_bounding_box_t
+{
+	/* Top left of the bounding box */
+	int x0;
+	int y0;
+	/* Size must be power of 2 */
+	int size;
+};
+
 struct opengl_sc_vertex_t *opengl_sc_vertex_create();
 void opengl_sc_vertex_free(struct opengl_sc_vertex_t *vtx);
 
@@ -143,6 +170,13 @@ void opengl_sc_span_interpolate_z(struct opengl_sc_span_t *spn);
 
 struct opengl_sc_pixel_info_t *opengl_sc_pixel_info_create();
 void opengl_sc_pixel_info_free(struct opengl_sc_pixel_info_t *pxl_info);
+
+struct opengl_sc_edge_func_t *opengl_sc_edge_func_create();
+void opengl_sc_edge_func_free(struct opengl_sc_edge_func_t *edge_func);
+void opengl_sc_edge_func_set(struct opengl_sc_edge_func_t *edge_func,struct opengl_sc_vertex_t *vtx0, struct opengl_sc_vertex_t *vtx1);
+int opengl_sc_edge_func_test_pixel(struct opengl_sc_edge_func_t *edge_func, int x, int y);
+
+void opengl_sc_triangle_tiled_pixel_gen(struct opengl_sc_triangle_t *triangle, int x, int y, int size, struct list_t *pxl_lst);
 
 struct list_t *opengl_sc_rast_triangle_gen(struct opengl_sc_triangle_t *triangle);
 void opengl_sc_rast_triangle_done(struct list_t *pxl_lst);
