@@ -31,6 +31,17 @@
 #define PIXEL_TEST_PASS 1
 #define PIXEL_TEST_FAIL 0
 
+#define MAX(a,b) \
+({ __typeof__ (a) _a = (a); \
+	__typeof__ (b) _b = (b); \
+	_a > _b ? _a : _b; })
+
+#define MIN(a,b) \
+({ __typeof__ (a) _a = (a); \
+	__typeof__ (b) _b = (b); \
+	_a < _b ? _a : _b; })
+
+
 /* Convert float to int by rounding to nearest integer, away from zero */
 static inline int IROUND(float f)
 {
@@ -176,6 +187,7 @@ void opengl_sc_edge_func_free(struct opengl_sc_edge_func_t *edge_func);
 void opengl_sc_edge_func_set(struct opengl_sc_edge_func_t *edge_func,struct opengl_sc_vertex_t *vtx0, struct opengl_sc_vertex_t *vtx1);
 int opengl_sc_edge_func_test_pixel(struct opengl_sc_edge_func_t *edge_func, int x, int y);
 
+struct list_t *opengl_sc_tiled_rast_triangle_gen(struct opengl_sc_triangle_t *triangle);
 void opengl_sc_triangle_tiled_pixel_gen(struct opengl_sc_triangle_t *triangle, int x, int y, int size, struct list_t *pxl_lst);
 
 struct list_t *opengl_sc_rast_triangle_gen(struct opengl_sc_triangle_t *triangle);
