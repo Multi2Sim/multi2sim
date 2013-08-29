@@ -29,8 +29,12 @@
 static void opengl_sc_pixel_info_set_wndw_cood(struct opengl_sc_pixel_info_t *pxl_info, int x, int y, int z);
 static void opengl_sc_pixel_info_set_brctrc_cood(struct opengl_sc_pixel_info_t *pxl_info, 
 	struct opengl_sc_triangle_t *triangle);
+
 static struct opengl_sc_span_array_t *opengl_sc_span_array_create();
 static void opengl_sc_span_array_free(struct opengl_sc_span_array_t *spn_array);
+
+static struct opengl_sc_bounding_box_t *opengl_sc_bounding_box_create(struct opengl_sc_triangle_t *triangle);
+static void opengl_sc_bounding_box_free(struct opengl_sc_bounding_box_t *bbox);
 
 /* 
  * Private functions
@@ -94,6 +98,50 @@ static void opengl_sc_span_array_free(struct opengl_sc_span_array_t *spn_array)
 	free(spn_array);
 }
 
+static struct opengl_sc_bounding_box_t *opengl_sc_bounding_box_create(struct opengl_sc_triangle_t *triangle)
+{
+	struct opengl_sc_bounding_box_t *bbox;
+	float xmin;
+	float xmax;
+	float ymin;
+	float ymax;
+	float span;
+	int snapMask;
+	int s;
+	int k;
+
+	/* Allocate */
+	bbox = xcalloc(1, sizeof(struct opengl_sc_bounding_box_t));	
+
+	/* Find the length of the span */
+	xmin = MIN(triangle->vtx0->pos[X_COMP], MIN(triangle->vtx1->pos[X_COMP], triangle->vtx2->pos[X_COMP]));
+	xmax = MAX(triangle->vtx0->pos[X_COMP], MAX(triangle->vtx1->pos[X_COMP], triangle->vtx2->pos[X_COMP]));
+	ymin = MIN(triangle->vtx0->pos[Y_COMP], MIN(triangle->vtx1->pos[Y_COMP], triangle->vtx2->pos[Y_COMP]));
+	ymax = MAX(triangle->vtx0->pos[Y_COMP], MAX(triangle->vtx1->pos[Y_COMP], triangle->vtx2->pos[Y_COMP]));
+	span = MAX(xmax - xmin, ymax - ymin);
+	s = IROUND(span);
+
+	/* Calculate bounding box size */
+	k = 0;
+	do
+	{
+		k++;
+	} while (s > (2<<k));
+
+	/* Snapping to nearest subpixel grid */
+	snapMask = ~((FIXED_ONE / (1 << SUB_PIXEL_BITS)) - 1); 
+	bbox->x0 = FixedToInt(FloatToFixed(xmin - 0.5F) & snapMask);
+	bbox->y0 = FixedToInt(FloatToFixed(ymin - 0.5F) & snapMask);
+	bbox->size = 2<<k;
+
+	/* Return */
+	return bbox;
+}
+
+static void opengl_sc_bounding_box_free(struct opengl_sc_bounding_box_t *bbox)
+{
+	free(bbox);
+}
 
 /* 
  *  Public funtions
@@ -246,7 +294,10 @@ void opengl_sc_edge_func_set(struct opengl_sc_edge_func_t *edge_func,struct open
 
 	edge_func->a = vtx0->pos[Y_COMP] - vtx1->pos[Y_COMP];
 	edge_func->b = vtx1->pos[X_COMP] - vtx0->pos[X_COMP];
-	edge_func->c = vtx0->pos[X_COMP] * vtx1->pos[Y_COMP] - vtx1->pos[X_COMP] * vtx0->pos[Y_COMP];
+	/* Reformulate to avoid precision problem */
+	// edge_func->c = vtx0->pos[X_COMP] * vtx1->pos[Y_COMP] - vtx1->pos[X_COMP] * vtx0->pos[Y_COMP];
+	edge_func->c = -0.5 * (edge_func->a * (vtx0->pos[X_COMP] + vtx1->pos[X_COMP]) + 
+		edge_func->b * (vtx0->pos[Y_COMP] + vtx1->pos[Y_COMP]));
 }
 
 /* Return PIXEL_TEST_PASS if a pixel is on the right side of an edge, PIXEL_TEST_FAIL if on the left side */
@@ -262,9 +313,7 @@ int opengl_sc_triangle_test_pixel(struct opengl_sc_triangle_t *triangle, int x, 
 	if (opengl_sc_edge_func_test_pixel(triangle->edgfunc0, x, y) && 
 		opengl_sc_edge_func_test_pixel(triangle->edgfunc1, x, y) &&
 		opengl_sc_edge_func_test_pixel(triangle->edgfunc2, x, y))
-	{
 		return PIXEL_TEST_PASS;		
-	}
 	else
 		return PIXEL_TEST_FAIL;
 
@@ -311,7 +360,7 @@ void opengl_sc_triangle_tiled_pixel_gen(struct opengl_sc_triangle_t *triangle, i
 	}
 	else if (size == 2)
 	{
-		/* Size is 2x2, so test this quad and add to list if pixel test pass */
+		/* Size is 2x2, so test this quad and add to list if pass pixel test */
 		opengl_sc_pixel_gen_and_add_to_list(triangle, x, y+1, pxl_lst);
 		opengl_sc_pixel_gen_and_add_to_list(triangle, x+1, y+1, pxl_lst);
 		opengl_sc_pixel_gen_and_add_to_list(triangle, x, y, pxl_lst);
@@ -320,6 +369,27 @@ void opengl_sc_triangle_tiled_pixel_gen(struct opengl_sc_triangle_t *triangle, i
 
 	/* Return */
 	return;
+}
+
+
+/* Tiled rasterizer */
+struct list_t *opengl_sc_tiled_rast_triangle_gen(struct opengl_sc_triangle_t *triangle)
+{
+	struct opengl_sc_bounding_box_t *bbox;
+	struct list_t *pxl_lst;
+
+	/* Calculate bounding box */
+	bbox = opengl_sc_bounding_box_create(triangle);
+
+	/* Create pixel list and add pixels pass test to this list */
+	pxl_lst = list_create();
+	opengl_sc_triangle_tiled_pixel_gen(triangle, bbox->x0, bbox->y0, bbox->size, pxl_lst);
+
+	/* Free */
+	opengl_sc_bounding_box_free(bbox);
+
+	/* Return */
+	return pxl_lst;
 }
 
 struct list_t *opengl_sc_rast_triangle_gen(struct opengl_sc_triangle_t *triangle)

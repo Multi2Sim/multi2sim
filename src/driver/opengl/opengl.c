@@ -203,46 +203,6 @@ static int opengl_abi_init_impl(X86Context *ctx)
 		OPENGL_VERSION_MAJOR, OPENGL_VERSION_MINOR);
 	opengl_debug("\tMulti2Sim OpenGL Runtime in guest: v. %d.%d.\n",
 		version.major, version.minor);
-	
-	/* FIXME: Some test code, to be removed */
-	struct opengl_sc_vertex_t *test_vtx0;
-	struct opengl_sc_vertex_t *test_vtx1;
-	struct opengl_sc_vertex_t *test_vtx2;
-	struct opengl_sc_triangle_t *test_triangle;
-	struct list_t* test_pxl_list;
-
-	test_vtx0 = opengl_sc_vertex_create();
-	test_vtx1 = opengl_sc_vertex_create();
-	test_vtx2 = opengl_sc_vertex_create();
-
-	test_vtx0->pos[X_COMP] = 20.0;
-	test_vtx0->pos[Y_COMP] = 10.0;
-	test_vtx0->pos[Z_COMP] = 0.0;
-	test_vtx0->pos[W_COMP] = 1.0;
-
-	test_vtx1->pos[X_COMP] = 80.0;
-	test_vtx1->pos[Y_COMP] = 10.0;
-	test_vtx1->pos[Z_COMP] = 0.0;
-	test_vtx1->pos[W_COMP] = 1.0;
-
-	test_vtx2->pos[X_COMP] = 50.0;
-	test_vtx2->pos[Y_COMP] = 70.0;
-	test_vtx2->pos[Z_COMP] = 0.0;
-	test_vtx2->pos[W_COMP] = 1.0;
-
-	test_triangle = opengl_sc_triangle_create();
-	opengl_sc_triangle_set(test_triangle, test_vtx0, test_vtx1, test_vtx2);
-	// test_pxl_list = opengl_sc_rast_triangle_gen(test_triangle);
-	test_pxl_list = list_create();
-	opengl_sc_triangle_tiled_pixel_gen(test_triangle, 20, 10, 64, test_pxl_list);
-
-	opengl_sc_rast_triangle_done(test_pxl_list);
-	
-	opengl_sc_triangle_free(test_triangle);
-	
-	opengl_sc_vertex_free(test_vtx0);
-	opengl_sc_vertex_free(test_vtx1);
-	opengl_sc_vertex_free(test_vtx2);
 
 	/* Return success */
 	return 0;
