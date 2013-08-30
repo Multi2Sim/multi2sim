@@ -40,6 +40,9 @@ CLASS_BEGIN(SIComputeUnit, Object)
 	/* GPU that it belongs to */
 	SIGpu *gpu;
 
+	/* MMU used by the compute unit */
+	MMU *mmu;
+
 	/* Entry points to memory hierarchy */
 	struct mod_t *scalar_cache;
 	struct mod_t *vector_cache;

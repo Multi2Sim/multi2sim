@@ -90,6 +90,9 @@ void X86EmuCreate(X86Emu *self, X86Asm *as)
 	M2S_HOST_GUEST_MATCH(sizeof(int), 4);
 	M2S_HOST_GUEST_MATCH(sizeof(short), 2);
 
+	/* MMU */
+	self->mmu = new(MMU, x86_mmu_report_file_name);
+
 	/* Drivers */
 	self->opencl_driver = new(OpenclDriver, self);
 
@@ -114,9 +117,6 @@ void X86EmuCreate(X86Emu *self, X86Asm *as)
 	asObject(self)->Dump = X86EmuDump;
 	asEmu(self)->DumpSummary = X86EmuDumpSummary;
 	asEmu(self)->Run = X86EmuRun;
-
-	/* MMU */
-	self->mmu = new(MMU, x86_mmu_report_file_name);
 }
 
 
@@ -154,12 +154,12 @@ void X86EmuDestroy(X86Emu *self)
 	/* Drivers */
 	delete(self->opencl_driver);
 
-	/* MMU */
-	delete(self->mmu);
-
 	/* Print system call summary */
 	if (debug_status(x86_sys_debug_category))
 		x86_sys_dump_stats(debug_file(x86_sys_debug_category));
+
+	/* MMU */
+	delete(self->mmu);
 }
 
 

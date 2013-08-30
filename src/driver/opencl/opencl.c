@@ -282,7 +282,7 @@ static int opencl_abi_si_mem_alloc_impl(X86Context *ctx)
 	assert(num_pages);
 
 	/* Allocate starting from nearest page boundary */
-	if (si_emu->video_mem_top % si_emu->mmu->page_size)
+	if (si_emu->video_mem_top % si_emu->mmu->page_mask)
 	{
 		si_emu->video_mem_top += si_emu->mmu->page_size -
 			(si_emu->video_mem_top & si_emu->mmu->page_mask);

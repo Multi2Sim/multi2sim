@@ -271,8 +271,8 @@ void si_vector_mem_mem(struct si_vector_mem_unit_t *vector_mem)
 				&uop->work_item_uop[work_item->id_in_wavefront];
 
 			/* Translate virtual address to physical address */
-			phys_addr = MMUTranslate(si_emu->mmu, 0,
-				work_item_uop->global_mem_access_addr);
+			phys_addr = MMUTranslate(vector_mem->compute_unit->mmu,
+				0, work_item_uop->global_mem_access_addr);
 
 			/* Submit the access */
 			mod_access(vector_mem->compute_unit->vector_cache, 
@@ -280,7 +280,8 @@ void si_vector_mem_mem(struct si_vector_mem_unit_t *vector_mem)
 				&uop->global_mem_witness, NULL, NULL, NULL);
 
 			/* MMU statistics */
-			MMUAccessPage(si_emu->mmu, phys_addr, mmu_access_kind);
+			MMUAccessPage(vector_mem->compute_unit->mmu, phys_addr, 
+				mmu_access_kind);
 
 			uop->global_mem_witness--;
 		}

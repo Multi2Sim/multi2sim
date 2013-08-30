@@ -101,6 +101,10 @@ static void opencl_si_program_initialize_constant_buffers(
 		opencl_debug("\tconstant buffer '%s' found with size %d\n",
 			symbol->name, symbol->size);
 
+		/* Allocate memory for constant buffers */
+		mem_map(si_emu->video_mem, si_emu->video_mem_top, symbol->size,
+			mem_access_read | mem_access_write);
+
 		/* Copy constant buffer into device memory */
 		mem_write(si_emu->video_mem, si_emu->video_mem_top,
 			symbol->size, elf_buffer.ptr);
