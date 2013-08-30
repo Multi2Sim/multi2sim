@@ -655,7 +655,7 @@ void opencl_si_kernel_create_ndrange_constant_buffers(SINDRange *ndrange)
 		SI_EMU_CONST_BUF_1_SIZE;
 
 	/* Allocate starting from nearest page boundary */
-	if (si_emu->video_mem_top % si_emu->mmu->page_size)
+	if (si_emu->video_mem_top % si_emu->mmu->page_mask)
 	{
 		si_emu->video_mem_top += si_emu->mmu->page_size -
 			(si_emu->video_mem_top & si_emu->mmu->page_mask);
@@ -817,7 +817,7 @@ void opencl_si_kernel_create_ndrange_tables(SINDRange *ndrange)
 		SI_EMU_RESOURCE_TABLE_SIZE + SI_EMU_UAV_TABLE_SIZE;
 
 	/* Allocate starting from nearest page boundary */
-	if (si_emu->video_mem_top % si_emu->mmu->page_size)
+	if (si_emu->video_mem_top % si_emu->mmu->page_mask)
 	{
 		si_emu->video_mem_top += si_emu->mmu->page_size -
 			(si_emu->video_mem_top & si_emu->mmu->page_mask);

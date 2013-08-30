@@ -42,6 +42,8 @@ CLASS_BEGIN(SIEmu, Emu)
 	struct mem_t *global_mem; /* will point to video_mem or shared_mem */
 
 	/* MMU */
+	/* Currently used in emulation and pointed to by each
+	 * compute unit in timing mode */
 	MMU *mmu;
 
 	/* Current ND-Range */

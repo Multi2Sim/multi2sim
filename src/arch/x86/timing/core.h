@@ -53,6 +53,9 @@ CLASS_BEGIN(X86Core, Object)
 	/* Array of threads */
 	X86Thread **threads;
 
+	/* MMU used by this core */
+	MMU *mmu;
+
 	char *name;
 
 	/* Unique ID in CPU */
