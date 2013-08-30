@@ -19,6 +19,7 @@
 
 
 #include <arch/southern-islands/emu/emu.h>
+#include <arch/southern-islands/emu/ndrange.h>
 #include <arch/southern-islands/emu/wavefront.h>
 #include <arch/southern-islands/emu/work-group.h>
 #include <lib/esim/trace.h>
@@ -382,8 +383,9 @@ void si_scalar_unit_execute(struct si_scalar_unit_t *scalar_unit)
 				global_mem_access_addr;
 
 			/* Translate virtual address to physical address */
-			phys_addr = MMUTranslate(scalar_unit->compute_unit->mmu, 
-				0, uop->global_mem_access_addr);
+			phys_addr = MMUTranslate(scalar_unit->compute_unit->mmu,
+				uop->work_group->ndrange->address_space_index,
+				uop->global_mem_access_addr);
 
 			/* Submit the access */
 			mod_access(scalar_unit->compute_unit->scalar_cache,

@@ -863,9 +863,9 @@ void opencl_si_kernel_setup_ndrange_args(struct opencl_si_kernel_t *kernel,
 			enc_dict_entry_southern_islands->num_vgpr_used;
 
 	/* Kernel arguments */
-	LIST_FOR_EACH(kernel->arg_list, index)
+	LIST_FOR_EACH(ndrange->arg_list, index)
 	{
-		arg = list_get(kernel->arg_list, index);
+		arg = list_get(ndrange->arg_list, index);
 		assert(arg);
 
 		/* Check that argument was set */
@@ -1175,9 +1175,15 @@ void opencl_si_kernel_debug_ndrange_state(struct opencl_si_kernel_t *kernel,
 
 	struct si_buffer_desc_t buffer_desc;
 
+	struct si_arg_t *arg;
+
+	opencl_debug("\tndrange arg_list has %d elems\n", list_count(ndrange->arg_list));
+
         si_isa_debug("\n");
         si_isa_debug("================ Initialization Summary ================"
                 "\n");
+        si_isa_debug("Kernel: %s\n", kernel->name);
+        si_isa_debug("ND-Range: %d\n", ndrange->id);
         si_isa_debug("\n");
 
         /* Table locations */
@@ -1268,15 +1274,14 @@ void opencl_si_kernel_debug_ndrange_state(struct opencl_si_kernel_t *kernel,
         si_isa_debug("\t-------------------------------------------\n");
         si_isa_debug("\n");
 
-#if 0
         /* Dump constant buffer 1 (argument mapping) */
         si_isa_debug("Constant buffer 1 initialization (kernel arguments):\n");
-        si_isa_debug("\t-------------------------------------------\n");
-        si_isa_debug("\t| CB1 Idx | Arg # |   Size   |    Name    |\n");
-        si_isa_debug("\t-------------------------------------------\n");
-        for (i = 0; i < list_count(kernel->arg_list); i++)
+        si_isa_debug("\t----------------------------------------------\n");
+        si_isa_debug("\t| CB1 Idx | Arg | Uav |   Size   |    Name    |\n");
+        si_isa_debug("\t----------------------------------------------\n");
+        for (i = 0; i < list_count(ndrange->arg_list); i++)
         {
-                arg = list_get(kernel->arg_list, i);
+                arg = list_get(ndrange->arg_list, i);
                 assert(arg);
 
                 /* Check that argument was set */
@@ -1288,47 +1293,46 @@ void opencl_si_kernel_debug_ndrange_state(struct opencl_si_kernel_t *kernel,
                 }
 
                 /* Process argument depending on its type */
-                switch (arg->kind)
+                switch (arg->type)
                 {
 
-                case SI_OPENCL_KERNEL_ARG_KIND_VALUE:
+		case si_arg_value:
                 {
                         /* Value copied directly into device constant 
                          * memory */
                         assert(arg->size);
-                        si_isa_debug("\t| CB1[%2d] | %5d | %8d | %-10s |\n",
-                                arg->pointer.constant_offset/4, i, arg->size,
-                                arg->name);
+                        si_isa_debug("\t| CB1[%2d] | %3d | %s | %8d | %-10s |\n",
+                                arg->value.constant_offset/16, i, 
+				"n/a", arg->size, arg->name);
 
                         break;
                 }
 
-                case SI_OPENCL_KERNEL_ARG_KIND_POINTER:
+		case si_arg_pointer:
                 {
-                        if (arg->pointer.mem_type !=
-                                SI_OPENCL_KERNEL_ARG_MEM_TYPE_HW_LOCAL)
+                        if (arg->pointer.scope != si_arg_hw_local)
                         {
-                                si_isa_debug("\t| CB1[%2d] | %5d | %8d | %-10s"
-                                        " |\n", arg->pointer.constant_offset/4,
-                                        i, arg->size,
-                                        arg->name);
+                                si_isa_debug("\t| CB1[%2d] | %3d | %3d | %8d | %-10s |\n", 
+					arg->pointer.constant_offset/16, i, 
+					arg->pointer.buffer_num, arg->size, 
+					arg->name);
                         }
                         else
                         {
-                                assert(0);
+				warning("unexpected type in si isa debug file");
                         }
                         break;
                 }
 
-                case SI_OPENCL_KERNEL_ARG_KIND_IMAGE:
+		case si_arg_image:
                 {
-                        assert(0);
+			warning("unexpected type in si isa debug file");
                         break;
                 }
 
-                case SI_OPENCL_KERNEL_ARG_KIND_SAMPLER:
+		case si_arg_sampler:
                 {
-                        assert(0);
+			warning("unexpected type in si isa debug file");
                         break;
                 }
 
@@ -1342,7 +1346,7 @@ void opencl_si_kernel_debug_ndrange_state(struct opencl_si_kernel_t *kernel,
         }
         si_isa_debug("\t-------------------------------------------\n");
         si_isa_debug("\n");
-#endif
+
         /* Initialized constant buffers */
 	si_isa_debug("Initialized constant buffers:\n");
 	si_isa_debug("\t-----------------------------------\n");

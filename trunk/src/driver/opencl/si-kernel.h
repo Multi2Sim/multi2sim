@@ -62,7 +62,7 @@ void opencl_si_kernel_free(struct opencl_si_kernel_t *kernel);
 
 void opencl_si_kernel_setup_ndrange_constant_buffers(
 	SINDRange *ndrange);
-void opencl_si_kernel_setup_ndrange_args(struct opencl_si_kernel_t *kernel,
+void opencl_si_kernel_setup_ndrange_args(struct opencl_si_kernel_t *kernel, 
 	SINDRange *ndrange);
 void opencl_si_kernel_debug_ndrange_state(struct opencl_si_kernel_t *kernel, 
 	SINDRange *ndrange);

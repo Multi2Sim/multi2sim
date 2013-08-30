@@ -53,6 +53,9 @@ void OpenclDriverCreate(OpenclDriver *self, X86Emu *emu)
 	/* List of SI kernels */
 	self->si_kernel_list = list_create();
 	list_add(self->si_kernel_list, NULL);
+
+	/* List of SI kernels */
+	self->si_ndrange_list = list_create();
 }
 
 
@@ -74,30 +77,38 @@ void OpenclDriverDestroy(OpenclDriver *self)
 		if ((kernel = list_get(self->si_kernel_list, index)))
 			opencl_si_kernel_free(kernel);
 	list_free(self->si_kernel_list);
+
+	/* Free list of Southern Islands nd-ranges*/
+	assert(!list_count(self->si_ndrange_list));
+	list_free(self->si_ndrange_list);
 }
 
 
-void OpenclDriverRequestWork(OpenclDriver *self)
+/* This function is called when all work groups from an ND-Range have
+ * been scheduled (i.e., ndrange->waiting_work_groups is empty) */
+void OpenclDriverRequestWork(OpenclDriver *self, SINDRange *ndrange)
 {
 	X86Emu *emu = asDriver(self)->emu;
 
-	if (self->wait_for_ndrange_completion &&
-		!si_emu->running_work_groups->count &&
-		!si_emu->waiting_work_groups->count)
-	{
-		opencl_debug("ND-Range is complete\n");
-		self->ndrange_complete = 1;
-	}
-	else
-	{
-		opencl_debug("SI is ready for more work\n");
-		self->ready_for_work = 1;
-	}
+	opencl_debug("%s: nd-range %d waiting queue is empty\n", 
+		__FUNCTION__, ndrange->id);
 
 	X86EmuProcessEventsSchedule(emu);
 }
 
 
+/* This function is called when all work groups from an ND-Range have
+ * been scheduled and completed (i.e., ndrange->waiting_work_groups and 
+ * ndrange->running_work_groups are both empty) */
+void OpenclDriverNDRangeComplete(OpenclDriver *self, SINDRange *ndrange)
+{
+	X86Emu *emu = asDriver(self)->emu;
+
+	opencl_debug("%s: nd-range %d complete\n", 
+		__FUNCTION__, ndrange->id);
+
+	X86EmuProcessEventsSchedule(emu);
+}
 
 
 
@@ -209,8 +220,8 @@ int opencl_abi_call(X86Context *ctx)
 
 /* NOTE: when modifying the values of these two macros, the same values should
  * be reflected in 'runtime/opencl/platform.c'. */
-#define OPENCL_VERSION_MAJOR  3
-#define OPENCL_VERSION_MINOR  1664
+#define OPENCL_VERSION_MAJOR  4
+#define OPENCL_VERSION_MINOR  2143
 
 struct opencl_version_t
 {
@@ -930,7 +941,7 @@ static int opencl_abi_si_kernel_set_arg_sampler_impl(X86Context *ctx)
 
 
 /*
- * OpenCL ABI call #14 - si_ndrange_initialize
+ * OpenCL ABI call #14 - si_ndrange_create
  *
  * Create and initialize an ND-Range for the supplied kernel.
  *
@@ -959,10 +970,10 @@ static int opencl_abi_si_kernel_set_arg_sampler_impl(X86Context *ctx)
  *
  * @return int
  *
- *	Unique kernel ID.
+ *	ID of new nd-range
  */
 
-static int opencl_abi_si_ndrange_initialize_impl(X86Context *ctx)
+static int opencl_abi_si_ndrange_create_impl(X86Context *ctx)
 {
 	X86Emu *emu = ctx->emu;
 	OpenclDriver *driver = emu->opencl_driver;
@@ -975,6 +986,7 @@ static int opencl_abi_si_ndrange_initialize_impl(X86Context *ctx)
 	struct x86_regs_t *regs = ctx->regs;
 
 	int i;
+	int index;
 	int kernel_id;
 	int user_element_count;
 	int work_dim;
@@ -1020,7 +1032,8 @@ static int opencl_abi_si_ndrange_initialize_impl(X86Context *ctx)
 
 	/* Create ND-Range */
 	ndrange = new(SINDRange, si_emu);
-	ndrange->opencl_driver = driver;
+	opencl_debug("\tcreated ndrange %d\n", ndrange->id);
+
 	ndrange->local_mem_top = kernel->mem_size_local;
 	ndrange->num_sgpr_used = kernel->bin_file->
 		enc_dict_entry_southern_islands->num_sgpr_used;
@@ -1029,6 +1042,8 @@ static int opencl_abi_si_ndrange_initialize_impl(X86Context *ctx)
 	ndrange->wg_id_sgpr = kernel->bin_file->
 		enc_dict_entry_southern_islands->compute_pgm_rsrc2->user_sgpr;
 	SINDRangeSetupSize(ndrange, global_size, local_size, work_dim);
+	opencl_debug("\tndrange address space index = %d\n", 
+		ndrange->address_space_index);
 
 	/* Copy user elements from kernel to ND-Range */
 	user_element_count = kernel->bin_file->
@@ -1046,23 +1061,27 @@ static int opencl_abi_si_ndrange_initialize_impl(X86Context *ctx)
 	if (!elf_buffer->size)
 		fatal("%s: cannot load kernel code", __FUNCTION__);
 
-	SINDRangeSetupInstMem(ndrange, elf_buffer->ptr, 
-		elf_buffer->size, 0);
-
-	assert(!driver->kernel);
-	driver->kernel = kernel;
-
-	assert(!driver->ndrange);
-	driver->ndrange = ndrange;
-
-	assert(!si_emu->ndrange);
-	si_emu->ndrange = ndrange;
+	SINDRangeSetupInstMem(ndrange, elf_buffer->ptr, elf_buffer->size, 0);
 
 	if (si_gpu)
 		SIGpuMapNDRange(si_gpu, ndrange);
+	
+	opencl_debug("\tkernel arg_list has %d elems\n", 
+		list_count(kernel->arg_list));
 
-	/* No return value */
-	return 0;
+	/* Copy kernel arg list to nd-range */
+	LIST_FOR_EACH(kernel->arg_list, index)
+	{
+		list_insert(ndrange->arg_list, index, 
+			list_get(kernel->arg_list, index));
+		assert(!ndrange->arg_list->error_code);
+		assert(!kernel->arg_list->error_code);
+	}
+
+	list_add(driver->si_ndrange_list, ndrange);
+
+	/* Return ID of new nd-range */
+	return ndrange->id;
 }
 
 
@@ -1098,8 +1117,17 @@ static int opencl_abi_si_ndrange_get_num_buffer_entries_impl(
 	/* Arguments */
 	host_ptr = regs->ecx;
 
-	available_buffer_entries = SI_DRIVER_MAX_WORK_GROUP_BUFFER_SIZE -
-		list_count(si_emu->waiting_work_groups);
+	if (si_gpu)
+	{
+		available_buffer_entries = 
+			SI_DRIVER_MAX_WORK_GROUP_BUFFER_SIZE -
+			list_count(si_gpu->waiting_work_groups);
+	}
+	else
+	{
+		available_buffer_entries = 
+			SI_DRIVER_MAX_WORK_GROUP_BUFFER_SIZE;
+	}
 
 	opencl_debug("\tavailable buffer entries = %d\n", 
 		available_buffer_entries);
@@ -1115,6 +1143,10 @@ static int opencl_abi_si_ndrange_get_num_buffer_entries_impl(
  *
  * Let's the driver know that work groups have been added to 
  * the queue.
+ *
+ * @param unsigned int ndrange_id
+ *
+ *	ID of the ND-Range
  *
  * @param unsigned int work_group_start[3]
  *
@@ -1136,28 +1168,35 @@ static int opencl_abi_si_ndrange_get_num_buffer_entries_impl(
 static int opencl_abi_si_ndrange_send_work_groups_can_wakeup(
 	X86Context *ctx, void *user_data)
 {
-	X86Emu *emu = ctx->emu;
-	OpenclDriver *driver = emu->opencl_driver;
+	assert(user_data);
+	SINDRange *ndrange = (SINDRange *) user_data;
 
-	assert(!user_data);
-	return driver->ready_for_work;
+	return !list_count(ndrange->waiting_work_groups);
 }
 
 static void opencl_abi_si_ndrange_send_work_groups_wakeup(
 	X86Context *ctx, void *user_data)
 {
-	assert(!user_data);
+	assert(user_data);
+	SINDRange *ndrange = (SINDRange *) user_data;
+
+	assert(!list_count(ndrange->waiting_work_groups));
+
+	return;
 }
 
 static int opencl_abi_si_ndrange_send_work_groups_impl(X86Context *ctx)
 {
 	X86Emu *emu = ctx->emu;
 	OpenclDriver *driver = emu->opencl_driver;
+	SINDRange *ndrange = NULL, *tmp;
 
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
 
 	int i, j, k;
+	int index;
+	int ndrange_id;
 
 	unsigned int work_group_start_ptr;
 	unsigned int work_group_count_ptr;
@@ -1169,15 +1208,21 @@ static int opencl_abi_si_ndrange_send_work_groups_impl(X86Context *ctx)
 
 	long work_group_id;
 
-	assert(driver->ndrange);
-	assert(driver->ndrange->const_buf_table);
-	assert(driver->ndrange->uav_table);
-	assert(driver->ndrange->resource_table);
-
 	/* Arguments */
-	work_group_start_ptr = regs->ecx;
-	work_group_count_ptr = regs->edx;
-	work_group_sizes_ptr = regs->esi;
+	ndrange_id = regs->ecx;
+	work_group_start_ptr = regs->edx;
+	work_group_count_ptr = regs->esi;
+	work_group_sizes_ptr = regs->edi;
+
+	LIST_FOR_EACH(driver->si_ndrange_list, index)
+	{
+		tmp = (SINDRange* )list_get(driver->si_ndrange_list, index);
+		if (tmp->id == ndrange_id)
+			ndrange = tmp;
+	}
+	if (!ndrange)
+		fatal("%s: invalid ndrange ID (%d)", __FUNCTION__, ndrange_id);
+	opencl_debug("\tndrange %d\n", ndrange->id);
 
 	mem_read(mem, work_group_start_ptr, 3 * 4, work_group_start);
 	mem_read(mem, work_group_count_ptr, 3 * 4, work_group_count);
@@ -1186,9 +1231,10 @@ static int opencl_abi_si_ndrange_send_work_groups_impl(X86Context *ctx)
 	total_num_groups = work_group_count[2] * work_group_count[1] * 
 		work_group_count[0];
 	assert(total_num_groups <= SI_DRIVER_MAX_WORK_GROUP_BUFFER_SIZE -
-		list_count(si_emu->waiting_work_groups));
+		list_count(ndrange->waiting_work_groups));
 
-	opencl_debug("\treceiving work groups (%d,%d,%d) through (%d,%d,%d)\n",
+	opencl_debug("\treceiving %d work groups: (%d,%d,%d) through (%d,%d,%d)\n",
+		work_group_count[2] * work_group_count[1] * work_group_count[0],
 		work_group_start[0], work_group_start[1], work_group_start[2],
 		work_group_start[0] + work_group_count[0] - 1, 
 		work_group_start[1] + work_group_count[1] - 1, 
@@ -1205,22 +1251,17 @@ static int opencl_abi_si_ndrange_send_work_groups_impl(X86Context *ctx)
 					work_group_sizes[0]) + (j * 
 					work_group_sizes[0]) + k;
 
-				list_enqueue(si_emu->waiting_work_groups, 
+				list_enqueue(ndrange->waiting_work_groups, 
 					(void*)work_group_id);
-				opencl_debug("\tadding wg %ld\n", 
-					work_group_id);
 			}
 		}
 	}
 
-	/* XXX Later, check if waiting queue is still under a threshold.  
-	 * If it is, set as ready for work */
-	driver->ready_for_work = 0;
-
 	/* Suspend x86 context until driver needs more work */
 	X86ContextSuspend(ctx, 
-		opencl_abi_si_ndrange_send_work_groups_can_wakeup, NULL,
-		opencl_abi_si_ndrange_send_work_groups_wakeup, NULL);
+		opencl_abi_si_ndrange_send_work_groups_can_wakeup, 
+		ndrange, opencl_abi_si_ndrange_send_work_groups_wakeup, 
+		ndrange);
 
 	return 0;
 }
@@ -1231,6 +1272,10 @@ static int opencl_abi_si_ndrange_send_work_groups_impl(X86Context *ctx)
  * Tells the driver that there are no more work groups to execute
  * from the ND-Range.
  *
+ * @param int ndrange_id
+ *
+ *	ID of nd-range
+ *
  * @return int
  *
  *	The function always returns 0.
@@ -1239,60 +1284,77 @@ static int opencl_abi_si_ndrange_send_work_groups_impl(X86Context *ctx)
 static int opencl_abi_si_ndrange_finish_can_wakeup(X86Context *ctx, 
 	void *user_data)
 {
-	X86Emu *emu = ctx->emu;
-	OpenclDriver *driver = emu->opencl_driver;
+	assert(user_data);
+	SINDRange *ndrange = (SINDRange *) user_data;
 
-	assert(!user_data);
-	return driver->ndrange_complete;
+	assert(ndrange->last_work_group_sent);
+	
+	int can_wakeup =
+		!list_count(ndrange->waiting_work_groups) &&
+		!list_count(ndrange->running_work_groups);
+
+	return can_wakeup;
 }
 
 static void opencl_abi_si_ndrange_finish_wakeup(X86Context *ctx, 
 	void *user_data)
 {
+	assert(user_data);
+
 	X86Emu *emu = ctx->emu;
 	OpenclDriver *driver = emu->opencl_driver;
+	SINDRange *ndrange = (SINDRange *) user_data;
 
-	assert(!user_data);
-	opencl_debug("waking up after finish");
+	assert(!list_count(ndrange->waiting_work_groups));
+	assert(!list_count(ndrange->running_work_groups));
+	assert(ndrange->last_work_group_sent);
 
-	/* Reset driver state */
-	delete(driver->ndrange);
-	driver->ndrange = NULL;
-	driver->kernel = NULL;
-	driver->wait_for_ndrange_completion = 0;
-	driver->ndrange_complete = 0;
-	driver->ready_for_work = 0;
-	si_emu->ndrange = NULL;
+	list_remove(driver->si_ndrange_list, ndrange);
+
+	delete(ndrange);
+
+	return;
 }
 
 static int opencl_abi_si_ndrange_finish_impl(X86Context *ctx)
 {
 	X86Emu *emu = ctx->emu;
 	OpenclDriver *driver = emu->opencl_driver;
+	struct x86_regs_t *regs = ctx->regs;
 
-	driver->wait_for_ndrange_completion = 1;
+	SINDRange *ndrange = NULL, *tmp;
 
-	if (!list_count(si_emu->running_work_groups) && 
-		!list_count(si_emu->waiting_work_groups))
+	int ndrange_id = regs->ecx;
+
+	int index;
+
+	LIST_FOR_EACH(driver->si_ndrange_list, index)
 	{
-		opencl_debug("\tndrange is complete\n");
-
-		/* Reset driver state */
-		delete(driver->ndrange);
-		driver->ndrange = NULL;
-		driver->kernel = NULL;
-		driver->wait_for_ndrange_completion = 0;
-		driver->ndrange_complete = 0;
-		driver->ready_for_work = 0;
-
-		si_emu->ndrange = NULL;
+		tmp = (SINDRange* )list_get(driver->si_ndrange_list, index);
+		if (tmp->id == ndrange_id)
+			ndrange = tmp;
 	}
-	else 
+	if (!ndrange)
+		fatal("%s: invalid ndrange ID (%d)", __FUNCTION__, ndrange_id);
+
+	ndrange->last_work_group_sent = 1;
+	
+	/* If no work-groups are left in the queues, remove the nd-range
+	 * from the driver list */
+	if (!list_count(ndrange->running_work_groups) && 
+		!list_count(ndrange->waiting_work_groups))
 	{
-		/* Suspend x86 context until simulation completes */
-		opencl_debug("\tsuspending driver thread\n");
-		X86ContextSuspend(ctx, opencl_abi_si_ndrange_finish_can_wakeup, 
-			NULL, opencl_abi_si_ndrange_finish_wakeup, NULL);
+		opencl_debug("\tnd-range %d finished\n", ndrange_id);
+		list_remove(driver->si_ndrange_list, ndrange);
+		delete(ndrange);
+	}
+	else
+	{
+		opencl_debug("\twaiting for nd-range %d to finish (blocking)\n", 
+				ndrange_id);
+		X86ContextSuspend(ctx, 
+			opencl_abi_si_ndrange_finish_can_wakeup, ndrange, 
+			opencl_abi_si_ndrange_finish_wakeup, ndrange);
 	}
 
 	return 0;
@@ -1300,6 +1362,14 @@ static int opencl_abi_si_ndrange_finish_impl(X86Context *ctx)
 
 /*
  * OpenCL ABI call #18 - si_ndrange_pass_mem_objs
+ *
+ * @param int ndrange_id
+ *
+ *	ID of nd-range
+ *
+ * @param int kernel_id
+ *
+ *	ID of kernel
  *
  * @param unsigned int *tables_ptr
  *
@@ -1318,7 +1388,7 @@ static int opencl_abi_si_ndrange_pass_mem_objs_impl(X86Context *ctx)
 {
 	X86Emu *emu = ctx->emu;
 	OpenclDriver *driver = emu->opencl_driver;
-	SINDRange *ndrange;
+	SINDRange *ndrange = NULL, *tmp_ndrange;
 
 	struct opencl_si_kernel_t *kernel;
 	struct x86_regs_t *regs = ctx->regs;
@@ -1326,30 +1396,45 @@ static int opencl_abi_si_ndrange_pass_mem_objs_impl(X86Context *ctx)
 	unsigned int tables_ptr;
 	unsigned int constant_buffers_ptr;
 
+	int index;
+	int ndrange_id;
+	int kernel_id;
+
+	ndrange_id = regs->ecx;
+	kernel_id = regs->edx;
+
+	LIST_FOR_EACH(driver->si_ndrange_list, index)
+	{
+		tmp_ndrange = (SINDRange* )list_get(driver->si_ndrange_list, 
+			index);
+		if (tmp_ndrange->id == ndrange_id)
+			ndrange = tmp_ndrange;
+	}
+	if (!ndrange)
+		fatal("%s: invalid ndrange ID (%d)", __FUNCTION__, ndrange_id);
+
+	kernel = list_get(driver->si_kernel_list, kernel_id);
+	if (!kernel)
+		fatal("%s: invalid kernel ID (%d)", __FUNCTION__, kernel_id);
+
 	if (si_gpu_fused_device)
 	{
 		/* 16 extra bytes allocated */
-		tables_ptr = (regs->ecx + 15) & 0xFFFFFFF0;
-		constant_buffers_ptr = (regs->edx + 15) & 0xFFFFFFF0;
+		tables_ptr = (regs->esi + 15) & 0xFFFFFFF0;
+		constant_buffers_ptr = (regs->edi + 15) & 0xFFFFFFF0;
 
-		si_emu->ndrange->const_buf_table = tables_ptr;
+		ndrange->const_buf_table = tables_ptr;
 
 		/* The successive tables must be aligned */
-		si_emu->ndrange->resource_table = 
-			(si_emu->ndrange->const_buf_table + 
+		ndrange->resource_table = (ndrange->const_buf_table + 
 			SI_EMU_CONST_BUF_TABLE_SIZE + 16) & 0xFFFFFFF0;
 		
-		si_emu->ndrange->uav_table = 
-			(si_emu->ndrange->resource_table +
+		ndrange->uav_table = (ndrange->resource_table +
 			SI_EMU_RESOURCE_TABLE_SIZE + 16) & 0xFFFFFFF0;
 
-		si_emu->ndrange->cb0 = constant_buffers_ptr;
-		si_emu->ndrange->cb1 = si_emu->ndrange->cb0 + 
-			SI_EMU_CONST_BUF_0_SIZE;
+		ndrange->cb0 = constant_buffers_ptr;
+		ndrange->cb1 = ndrange->cb0 + SI_EMU_CONST_BUF_0_SIZE;
 	}
-
-	kernel = driver->kernel;
-	ndrange = driver->ndrange;
 
 	/* Set up initial state and arguments (order matters!) */
 	if (!si_gpu_fused_device)

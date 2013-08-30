@@ -84,6 +84,8 @@ struct opencl_si_kernel_t
 
 struct opencl_si_ndrange_t
 {
+	int id;  /* ID in driver */
+
 	enum opencl_runtime_type_t type;  /* First field */
 
 	struct opencl_ndrange_t *parent;	

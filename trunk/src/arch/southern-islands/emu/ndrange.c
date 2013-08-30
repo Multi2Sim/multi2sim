@@ -21,6 +21,7 @@
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <mem-system/memory.h>
+#include <mem-system/mmu.h>
 
 #include "ndrange.h"
 #include "work-item.h"
@@ -36,6 +37,16 @@ void SINDRangeCreate(SINDRange *self, SIEmu *emu)
 	/* Initialize */
 	self->emu = emu;
 	self->id = emu->ndrange_count++;
+	self->address_space_index = MMUAddressSpaceNew(emu->mmu);
+
+	self->arg_list = list_create();
+
+	self->waiting_work_groups = list_create();
+	self->running_work_groups = list_create();
+	self->completed_work_groups = list_create();
+
+	/* Set by driver */
+	self->last_work_group_sent = 0;
 }
 
 
@@ -44,6 +55,15 @@ void SINDRangeDestroy(SINDRange *self)
 	/* Free instruction buffer */
 	if (self->inst_buffer)
 		free(self->inst_buffer);
+
+	/* Free the work-group queues */
+	list_free(self->waiting_work_groups);
+	list_free(self->running_work_groups);
+	list_free(self->completed_work_groups);
+
+	/* Free argument list (do not free the arguments themselves,
+	 * they can still be used in later ND-Ranges) */
+	list_free(self->arg_list);
 }
 
 

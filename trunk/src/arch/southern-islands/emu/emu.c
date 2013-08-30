@@ -53,8 +53,6 @@ void SIEmuCreate(SIEmu *self, SIAsm *as)
 	self->video_mem = mem_create();
 	self->video_mem->safe = 1;
 	self->video_mem_top = 0x80000000;  /////////////////////////
-	self->waiting_work_groups = list_create();
-	self->running_work_groups = list_create();
 	
 	/* Set global memory to video memory by default */
 	self->global_mem = self->video_mem;
@@ -78,10 +76,6 @@ void SIEmuDestroy(SIEmu *self)
 	/* Free emulator memory */
 	mem_free(self->video_mem);
 
-	/* Free the work-group queues */
-	list_free(self->waiting_work_groups);
-	list_free(self->running_work_groups);
-	
 	/* Repository of deferred tasks */
 	repos_free(self->write_task_repos);
 
@@ -125,53 +119,81 @@ int SIEmuRun(Emu *self)
 	SIWavefront *wavefront;
 	SIWorkGroup *work_group;
 
+	int ndrange_index;
+	int wg_index;
 	int wavefront_id;
 	long work_group_id;
 
-	if (!list_count(emu->running_work_groups) &&
-		list_count(emu->waiting_work_groups))
-	{
-		work_group_id = (long)list_dequeue(emu->waiting_work_groups);
-		list_enqueue(emu->running_work_groups, (void*)work_group_id);
-	}
+	opencl_driver = emu->opencl_driver;
+	assert(opencl_driver);
 
 	/* For efficiency when no Southern Islands emulation is selected, 
 	 * exit here if the list of existing ND-Ranges is empty. */
-	if (!list_count(emu->running_work_groups))
+	if (!list_count(opencl_driver->si_ndrange_list))
 		return FALSE;
 
-	assert(emu->ndrange);
-	ndrange = emu->ndrange;
-	opencl_driver = ndrange->opencl_driver;
-
-	/* Instantiate the next work-group */
-	work_group_id = (long)list_bottom(emu->running_work_groups);
-	work_group = new(SIWorkGroup, work_group_id, ndrange);
-
-	/* Execute the work-group to completion */
-	while (!work_group->finished_emu)
+	/* Iterate over each nd-range */
+	LIST_FOR_EACH(opencl_driver->si_ndrange_list, ndrange_index)
 	{
-		SI_FOREACH_WAVEFRONT_IN_WORK_GROUP(work_group, wavefront_id)
+		ndrange = list_get(opencl_driver->si_ndrange_list, 
+			ndrange_index);
+
+		/* Move waiting work groups to running work groups */
+		if (list_count(ndrange->waiting_work_groups))
 		{
-			wavefront = work_group->wavefronts[wavefront_id];
+			work_group_id = (long)list_dequeue(
+				ndrange->waiting_work_groups);
+			list_enqueue(ndrange->running_work_groups, 
+				(void*)work_group_id);
+		}
 
-			if (wavefront->finished || wavefront->at_barrier)
-				continue;
+		/* If there's no work groups to run, go to next nd-range */
+		if (!list_count(ndrange->running_work_groups))
+			continue;
 
-			/* Execute instruction in wavefront */
-			SIWavefrontExecute(wavefront);
+		printf("running ndrange %d\n", ndrange->id);
+
+		/* Iterate over running work groups */
+		LIST_FOR_EACH(ndrange->running_work_groups, wg_index)
+		{
+			/* Instantiate the next work-group */
+			work_group_id = (long) list_dequeue(
+				ndrange->running_work_groups);
+			work_group = new(SIWorkGroup, work_group_id, ndrange);
+			printf("running work group %d\n", work_group->id);
+
+			/* Execute the work-group to completion */
+			while (!work_group->finished_emu)
+			{
+				SI_FOREACH_WAVEFRONT_IN_WORK_GROUP(work_group, 
+					wavefront_id)
+				{
+					wavefront = work_group->wavefronts[
+						wavefront_id];
+
+					if (wavefront->finished || 
+						wavefront->at_barrier)
+					{
+						continue;
+					}
+
+					/* Execute instruction in wavefront */
+					SIWavefrontExecute(wavefront);
+				}
+			}
+
+			/* Free work group */
+			delete(work_group);
+		}
+
+		/* Let driver know that all work-groups from this nd-range
+		 * have been run */
+		if (opencl_driver)
+		{
+			OpenclDriverRequestWork(opencl_driver, ndrange);
+			printf("requesting more work from driver\n");
 		}
 	}
-
-	/* Remove work group from running list */
-	list_dequeue(emu->running_work_groups);
-
-	/* Free work group */
-	delete(work_group);
-
-	/* If there is not more work groups to run, let driver know */
-	if (!emu->waiting_work_groups->count && opencl_driver)
-		OpenclDriverRequestWork(opencl_driver);
 
 	/* Still emulating */
 	return TRUE;

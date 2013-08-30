@@ -2301,9 +2301,11 @@ int main(int argc, char **argv)
 	 * FIXME */
 	si_asm = new(SIAsm);
 	si_emu = new(SIEmu, si_asm);
+	si_emu->opencl_driver = x86_emu->opencl_driver; // FIXME 
 	if (si_sim_kind == arch_sim_kind_detailed)
 	{
 		si_gpu = new(SIGpu, si_emu);
+		si_gpu->opencl_driver = x86_emu->opencl_driver; // FIXME
 		arch_set_timing(arch_southern_islands, asTiming(si_gpu));
 	}
 	arch_set_emu(arch_southern_islands, asEmu(si_emu));

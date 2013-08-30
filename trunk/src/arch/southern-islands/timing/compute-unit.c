@@ -289,9 +289,7 @@ void SIComputeUnitMapWorkGroup(SIComputeUnit *self, SIWorkGroup *work_group)
 void SIComputeUnitUnmapWorkGroup(SIComputeUnit *self, SIWorkGroup *work_group)
 {
 	SIGpu *gpu = self->gpu;
-	SINDRange *ndrange = work_group->ndrange;
-	SIEmu *emu = ndrange->emu;
-	OpenclDriver *driver = ndrange->opencl_driver;
+	OpenclDriver *driver = gpu->opencl_driver;
 
 	long work_group_id;
 
@@ -311,13 +309,27 @@ void SIComputeUnitUnmapWorkGroup(SIComputeUnit *self, SIWorkGroup *work_group)
 	si_wavefront_pool_unmap_wavefronts(work_group->wavefront_pool,
 		work_group);
 
-	work_group_id = work_group->id;
-	assert(list_index_of(emu->running_work_groups, (void*) work_group_id) >= 0);
-	list_remove(emu->running_work_groups, (void*)work_group_id);
+	/* Remove the work group from the GPU running queue */
+	assert(list_index_of(gpu->running_work_groups, work_group) >= 0);
+	list_remove(gpu->running_work_groups, work_group);
 
-	if (driver && !emu->running_work_groups->count &&
-			!emu->waiting_work_groups->count)
-		OpenclDriverRequestWork(driver);
+	/* Move the work group from the ndrange running queue to 
+	 * completed queue */
+	work_group_id = work_group->id; 
+	work_group_id = (long )list_remove(
+		work_group->ndrange->running_work_groups, 
+		(void *) work_group_id);
+	/* Can't check for null, since 0 is a valid value */
+	assert(!work_group->ndrange->running_work_groups->error_code);
+	list_enqueue(work_group->ndrange->completed_work_groups, 
+		(void *) work_group_id);
+
+	/* Let the driver know if the GPU needs more work */
+	if (driver && !list_count(work_group->ndrange->running_work_groups) &&
+		!list_count(work_group->ndrange->waiting_work_groups))
+	{
+		OpenclDriverNDRangeComplete(driver, work_group->ndrange);
+	}
 
 	/* If compute unit is not already in the available list, place
 	 * it there */
@@ -583,8 +595,8 @@ void SIComputeUnitIssueOldestInst(SIComputeUnit *self, int active_fb)
 		{
 			oldest_uop->issue_ready = asTiming(gpu)->cycle +
 				si_gpu_fe_issue_latency;
-			list_remove(self->
-				fetch_buffers[active_fb], oldest_uop);
+			list_remove(self->fetch_buffers[active_fb], 
+				oldest_uop);
 			list_enqueue(self->branch_unit.
 				issue_buffer, oldest_uop);
 
@@ -1340,10 +1352,10 @@ void SIComputeUnitIssueFirst(SIComputeUnit *self, int active_fb)
 
 				uop->issue_ready = asTiming(gpu)->cycle +
 					si_gpu_fe_issue_latency;
-				list_remove(self->
-					fetch_buffers[active_fb], uop);
-				list_enqueue(self->
-					branch_unit.issue_buffer, uop);
+				list_remove(self->fetch_buffers[active_fb], 
+					uop);
+				list_enqueue(self->branch_unit.issue_buffer, 
+					uop);
 
 				branch_insts_issued++;
 				self->branch_inst_count++;
@@ -1385,11 +1397,10 @@ void SIComputeUnitIssueFirst(SIComputeUnit *self, int active_fb)
 
 				uop->issue_ready = asTiming(gpu)->cycle +
 					si_gpu_fe_issue_latency;
-				list_remove(
-					self->
-					fetch_buffers[active_fb], uop);
-				list_enqueue(self->
-					scalar_unit.issue_buffer, uop);
+				list_remove(self->fetch_buffers[active_fb], 
+					uop);
+				list_enqueue(self->scalar_unit.issue_buffer, 
+					uop);
 
 				scalar_insts_issued++;
 				self->scalar_alu_inst_count++;
@@ -1434,10 +1445,8 @@ void SIComputeUnitIssueFirst(SIComputeUnit *self, int active_fb)
 
 			uop->issue_ready = asTiming(gpu)->cycle +
 				si_gpu_fe_issue_latency;
-			list_remove(self->fetch_buffers[active_fb], 
-				uop);
-			list_enqueue(self->scalar_unit.issue_buffer, 
-				uop);
+			list_remove(self->fetch_buffers[active_fb], uop);
+			list_enqueue(self->scalar_unit.issue_buffer, uop);
 
 			scalar_insts_issued++;
 			self->scalar_alu_inst_count++;
@@ -1480,10 +1489,8 @@ void SIComputeUnitIssueFirst(SIComputeUnit *self, int active_fb)
 
 			uop->issue_ready = asTiming(gpu)->cycle +
 				si_gpu_fe_issue_latency;
-			list_remove(self->fetch_buffers[active_fb], 
-				uop);
-			list_enqueue(self->scalar_unit.issue_buffer, 
-				uop);
+			list_remove(self->fetch_buffers[active_fb], uop);
+			list_enqueue(self->scalar_unit.issue_buffer, uop);
 
 			uop->wavefront_pool_entry->ready_next_cycle = 1;
 
@@ -1533,10 +1540,9 @@ void SIComputeUnitIssueFirst(SIComputeUnit *self, int active_fb)
 
 			uop->issue_ready = asTiming(gpu)->cycle +
 				si_gpu_fe_issue_latency;
-			list_remove(self->fetch_buffers[active_fb], 
+			list_remove(self->fetch_buffers[active_fb], uop);
+			list_enqueue(self->simd_units[active_fb]->issue_buffer, 
 				uop);
-			list_enqueue(self->simd_units[active_fb]->
-				issue_buffer, uop);
 
 			simd_insts_issued++;
 			self->simd_inst_count++;
@@ -1581,10 +1587,8 @@ void SIComputeUnitIssueFirst(SIComputeUnit *self, int active_fb)
 
 			uop->issue_ready = asTiming(gpu)->cycle +
 				si_gpu_fe_issue_latency;
-			list_remove(self->fetch_buffers[active_fb], 
-				uop);
-			list_enqueue(self->vector_mem_unit.issue_buffer,
-				uop);
+			list_remove(self->fetch_buffers[active_fb], uop);
+			list_enqueue(self->vector_mem_unit.issue_buffer, uop);
 
 			uop->wavefront_pool_entry->ready_next_cycle = 1;
 
@@ -1630,8 +1634,7 @@ void SIComputeUnitIssueFirst(SIComputeUnit *self, int active_fb)
 
 			uop->issue_ready = asTiming(gpu)->cycle +
 				si_gpu_fe_issue_latency;
-			list_remove(self->fetch_buffers[active_fb], 
-				uop);
+			list_remove(self->fetch_buffers[active_fb], uop);
 			list_enqueue(self->lds_unit.issue_buffer, uop);
 
 			lds_insts_issued++;
