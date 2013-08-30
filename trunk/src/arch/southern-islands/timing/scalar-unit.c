@@ -382,8 +382,8 @@ void si_scalar_unit_execute(struct si_scalar_unit_t *scalar_unit)
 				global_mem_access_addr;
 
 			/* Translate virtual address to physical address */
-			phys_addr = MMUTranslate(si_emu->mmu, 0,
-				uop->global_mem_access_addr);
+			phys_addr = MMUTranslate(scalar_unit->compute_unit->mmu, 
+				0, uop->global_mem_access_addr);
 
 			/* Submit the access */
 			mod_access(scalar_unit->compute_unit->scalar_cache,
@@ -391,7 +391,8 @@ void si_scalar_unit_execute(struct si_scalar_unit_t *scalar_unit)
 				&uop->global_mem_witness, NULL, NULL, NULL);
 
 			/* MMU statistics */
-			MMUAccessPage(si_emu->mmu, phys_addr, mmu_access_read);
+			MMUAccessPage(scalar_unit->compute_unit->mmu, phys_addr, 
+				mmu_access_read);
 
 			/* Transfer the uop to the execution buffer */
 			list_remove(scalar_unit->read_buffer, uop);

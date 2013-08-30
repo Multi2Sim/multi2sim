@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <arch/x86/emu/emu.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/string.h>
 
@@ -43,6 +44,9 @@ void X86CoreCreate(X86Core *self, X86Cpu *cpu)
 	self->threads = xcalloc(x86_cpu_num_threads, sizeof(X86Thread *));
 	for (i = 0; i < x86_cpu_num_threads; i++)
 		self->threads[i] = new(X86Thread, self);
+
+	/* MMU */
+	self->mmu = cpu->emu->mmu;
 
 	/* Prefetcher */
 	self->prefetch_history = prefetch_history_create();

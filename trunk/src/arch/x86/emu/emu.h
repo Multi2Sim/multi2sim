@@ -44,7 +44,9 @@ CLASS_BEGIN(X86Emu, Emu)
 	int current_pid;
 
 	/* MMU */
-	MMU *mmu;
+	/* Currently used in emulation and pointed to by each
+	 * core in timing mode */
+	MMU *mmu; 
 
 	/* Schedule next call to 'X86EmuProcessEvents()'.
 	 * The call will only be effective if 'process_events_force' is set.

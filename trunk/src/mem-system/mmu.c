@@ -268,7 +268,7 @@ void MMUAccessPage(MMU *self, unsigned int phy_addr, enum mmu_access_t access)
 	index = phy_addr >> self->log_page_size;
 	page = list_get(self->page_list, index);
 	if (!page)
-		return;
+		fatal("%s: accessing non-allocated page", __FUNCTION__);
 
 	/* Record access */
 	switch (access)
