@@ -53,32 +53,34 @@ static void opengl_sc_pixel_info_set_brctrc_cood(struct opengl_sc_pixel_info_t *
 {
 	assert(pxl_info->wndw_init);
 
-	// int vector_u[3];
-	// int vector_v[3];
-	// int vector_w[3];
-	// int vector_vCrossW[3];
-	// int vector_vCrossU[3];
+	float lamda1, lamda2, lamda3;
+	float x, x1, x2, x3;
+	float y, y1, y2, y3;
+	float det;
 
 	/* 
 	 * Calculate barycentric coordinate based on current
 	 * pixel postion and positions of 3 associated vertex 
 	 */
+	x = (float)pxl_info->pos[X_COMP];
+	y = (float)pxl_info->pos[Y_COMP];
+	x1 = triangle->vtx0->pos[X_COMP];
+	x2 = triangle->vtx1->pos[X_COMP];
+	x3 = triangle->vtx2->pos[X_COMP];
+	y1 = triangle->vtx0->pos[Y_COMP];
+	y2 = triangle->vtx1->pos[Y_COMP];
+	y3 = triangle->vtx2->pos[Y_COMP];
 
-	// vector_u[X_COMP] = triangle->vtx1->pos[X_COMP] - triangle->vtx0->pos[X_COMP];
-	// vector_u[Y_COMP] = triangle->vtx1->pos[Y_COMP] - triangle->vtx0->pos[Y_COMP];
-	// vector_u[Z_COMP] = triangle->vtx1->pos[Z_COMP] - triangle->svn vtx0->pos[Z_COMP];
+	det = (y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3);
+	lamda1 = (y2 - y3) * (x - x3) + (x3 - x2) * (y - y3);
+	lamda1 /= det;
+	lamda2 = (y3 - y1) * (x - x3) + (x1 - x3) * (y - y3);
+	lamda2 /= det;
+	lamda3 = 1 - lamda1 -lamda2;
 
-	// vector_v[X_COMP] = triangle->vtx2->pos[X_COMP] - triangle->vtx0->pos[X_COMP];
-	// vector_v[Y_COMP] = triangle->vtx2->pos[Y_COMP] - triangle->vtx0->pos[Y_COMP];
-	// vector_v[Z_COMP] = triangle->vtx2->pos[Z_COMP] - triangle->vtx0->pos[Z_COMP];
-
-	// vector_w[X_COMP] = pxl_info->pos[X_COMP] - triangle->vtx0->pos[X_COMP];
-	// vector_w[Y_COMP] = pxl_info->pos[Y_COMP] - triangle->vtx0->pos[Y_COMP];
-	// vector_w[Z_COMP] = pxl_info->pos[Z_COMP] - triangle->vtx0->pos[Z_COMP];
-
-
-	/* FIXME: TODO */
-
+	/* Only need to store lamda2 and lamda3 as AMD rearrange the formula */
+	pxl_info->brctrc_i = lamda2;
+	pxl_info->brctrc_j = lamda3;
 
 }
 
@@ -218,7 +220,6 @@ void opengl_sc_edge_free(struct opengl_sc_edge_t *edge)
 	free(edge);
 }
 
-
 struct opengl_sc_span_t *opengl_sc_span_create()
 {
 	struct opengl_sc_span_t *spn;
@@ -327,6 +328,9 @@ struct opengl_sc_pixel_info_t *opengl_sc_triangle_test_and_gen_pixel(struct open
 	{
 		pixel = opengl_sc_pixel_info_create();
 		opengl_sc_pixel_info_set_wndw_cood(pixel, x, y, z);
+		opengl_sc_pixel_info_set_brctrc_cood(pixel, triangle);
+		printf("px %d %d, i = %f, j = %f\n", pixel->pos[X_COMP], pixel->pos[Y_COMP], 
+			pixel->brctrc_i, pixel->brctrc_j);
 		return pixel;
 	}
 	return NULL;

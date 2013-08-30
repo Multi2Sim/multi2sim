@@ -478,6 +478,7 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count )
 
 	/* Find the ID of current vertex shader */
 	program_obj = opengl_ctx->program_binding_point;
+
 	LIST_FOR_EACH(program_obj->shaders, i)
 	{
 		shader_obj = list_get(program_obj->shaders, i);
@@ -490,6 +491,7 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count )
 	 */
 	/* FIXME: Add support of texture/sampler/image... */
 	vao = opengl_ctx->vao_binding_point;
+
 	if (vao)
 	{
 		/* Send vertex attribute data to device memory */
