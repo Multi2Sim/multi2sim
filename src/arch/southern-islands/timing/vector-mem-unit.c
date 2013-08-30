@@ -19,7 +19,9 @@
 
 
 #include <arch/southern-islands/emu/emu.h>
+#include <arch/southern-islands/emu/ndrange.h>
 #include <arch/southern-islands/emu/wavefront.h>
+#include <arch/southern-islands/emu/work-group.h>
 #include <lib/esim/trace.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
@@ -272,7 +274,8 @@ void si_vector_mem_mem(struct si_vector_mem_unit_t *vector_mem)
 
 			/* Translate virtual address to physical address */
 			phys_addr = MMUTranslate(vector_mem->compute_unit->mmu,
-				0, work_item_uop->global_mem_access_addr);
+				uop->work_group->ndrange->address_space_index,
+				work_item_uop->global_mem_access_addr);
 
 			/* Submit the access */
 			mod_access(vector_mem->compute_unit->vector_cache, 

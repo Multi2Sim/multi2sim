@@ -425,12 +425,6 @@ int si_gpu_lds_num_ports = 2;
 
 void SIGpuMapNDRange(SIGpu *self, SINDRange *ndrange)
 {
-	SIEmu *emu = ndrange->emu;
-
-	/* Assign current ND-Range */
-	assert(emu->ndrange);
-	emu->ndrange = ndrange;
-
 	/* Check that at least one work-group can be allocated per 
 	 * wavefront pool */
 	self->work_groups_per_wavefront_pool =
@@ -456,7 +450,7 @@ void SIGpuMapNDRange(SIGpu *self, SINDRange *ndrange)
 		si_gpu_max_work_groups_per_wavefront_pool);
 
 	/* Optional plotting */
-	SIGpuCalcPlot(self);
+	SIGpuCalcPlot(self, ndrange);
 }
 
 
@@ -1229,8 +1223,9 @@ void SIGpuCreate(SIGpu *self, SIEmu *emu)
 	/* Initialize */
 	self->emu = emu;
 	self->available_compute_units = list_create();
-	self->compute_units = xcalloc(si_gpu_num_compute_units, 
-		sizeof(void *));
+	self->running_work_groups = list_create();
+	self->waiting_work_groups = list_create();
+	self->compute_units = xcalloc(si_gpu_num_compute_units, sizeof(void *));
 
 	/* Initialize compute units */
 	SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
@@ -1284,6 +1279,10 @@ void SIGpuDestroy(SIGpu *self)
 
 	/* Free available compute unit list */
 	list_free(self->available_compute_units);
+
+	/* Free work group lists */
+	list_free(self->running_work_groups);
+	list_free(self->waiting_work_groups);
 }
 
 
@@ -1309,30 +1308,70 @@ int SIGpuRun(Timing *self)
 	SINDRange *ndrange;
 	SIWorkGroup *work_group;
 
+	int gpu_has_work;
 	int compute_unit_id;
+	int ndrange_index;
+	int wg_index;
 	long work_group_id;
-	
-	/* For efficiency when no Southern Islands emulation is selected, 
-	 * exit here if the list of existing ND-Ranges is empty. */
-	if (!list_count(emu->waiting_work_groups) &&
-			!list_count(emu->running_work_groups))
-		return FALSE;
 
-	ndrange = emu->ndrange;
-	opencl_driver = ndrange->opencl_driver;
-	assert(ndrange);
+	opencl_driver = emu->opencl_driver;
+	
+	/* For efficiency, exit early if there are no nd-ranges to run */
+	LIST_FOR_EACH(opencl_driver->si_ndrange_list, ndrange_index)
+	{
+		ndrange = list_get(opencl_driver->si_ndrange_list, 
+			ndrange_index);
+
+		if (list_count(ndrange->waiting_work_groups) ||
+			list_count(ndrange->running_work_groups))
+		{
+			gpu_has_work = 1;
+		}
+	}
+	if (!gpu_has_work)
+	{
+		return FALSE;
+	}
+
+	/* Add any available work groups to the waiting list */
+	LIST_FOR_EACH(opencl_driver->si_ndrange_list, ndrange_index)
+	{
+		ndrange = list_get(opencl_driver->si_ndrange_list, 
+			ndrange_index);
+
+		if (!list_count(ndrange->waiting_work_groups))
+			continue;
+
+		LIST_FOR_EACH(ndrange->waiting_work_groups, wg_index)
+		{
+			work_group_id = (long) list_dequeue(
+				ndrange->waiting_work_groups);
+			list_enqueue(ndrange->running_work_groups,
+				(void *) work_group_id);
+
+			/* Instantiate the work group */
+			work_group = new(SIWorkGroup, work_group_id, ndrange);
+
+			list_add(gpu->waiting_work_groups, work_group);
+		}
+
+		/* Let the driver know that all work groups for this
+		 * nd-range have been scheduled */
+		if (opencl_driver && 
+			!list_count(ndrange->waiting_work_groups))
+		{
+			OpenclDriverRequestWork(opencl_driver, ndrange);
+		}
+	}
 
 	/* Allocate work-groups to compute units */
 	while (list_count(gpu->available_compute_units) && 
-		list_count(emu->waiting_work_groups))
+		list_count(gpu->waiting_work_groups))
 	{
-		work_group_id = (long) list_dequeue(
-			emu->waiting_work_groups);
+		work_group = (SIWorkGroup*) list_dequeue(
+			gpu->waiting_work_groups);
 
-		work_group = new(SIWorkGroup, work_group_id, ndrange);
-
-		list_enqueue(emu->running_work_groups,
-			(void *)work_group_id);
+		list_enqueue(gpu->running_work_groups, work_group);
 
 		SIComputeUnitMapWorkGroup(
 			list_dequeue(gpu->available_compute_units),
@@ -1364,10 +1403,6 @@ int SIGpuRun(Timing *self)
 	/* Stop if any reason met */
 	if (esim_finish)
 		return TRUE;
-
-	/* If we're out of work, request more */
-	if (opencl_driver && !emu->waiting_work_groups->count)
-		OpenclDriverRequestWork(opencl_driver);
 
 	/* Run one loop iteration on each busy compute unit */
 	SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)

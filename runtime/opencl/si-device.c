@@ -112,6 +112,7 @@ struct opencl_si_device_t *opencl_si_device_create(struct opencl_device_t *paren
 	parent->arch_device_free_func = (opencl_arch_device_free_func_t)
 			opencl_si_device_free;
 
+	/* Memory */
 	parent->arch_device_mem_alloc_func = 
 		(opencl_arch_device_mem_alloc_func_t)
 		opencl_si_device_mem_alloc;
@@ -124,9 +125,6 @@ struct opencl_si_device_t *opencl_si_device_create(struct opencl_device_t *paren
 		opencl_si_device_mem_write;
 	parent->arch_device_mem_copy_func = (opencl_arch_device_mem_copy_func_t)
 		opencl_si_device_mem_copy;
-	parent->arch_device_preferred_workgroups_func = 
-		(opencl_arch_device_preferred_workgroups_func_t)
-		opencl_si_device_preferred_workgroups;
 
 	/* Call-back functions for kernel */
 	parent->arch_kernel_create_func = (opencl_arch_kernel_create_func_t)
@@ -148,6 +146,9 @@ struct opencl_si_device_t *opencl_si_device_create(struct opencl_device_t *paren
 	parent->arch_ndrange_run_partial_func = 
 		(opencl_arch_ndrange_run_partial_func_t) 
 		opencl_si_ndrange_run_partial;
+	parent->arch_device_preferred_workgroups_func = 
+		(opencl_arch_device_preferred_workgroups_func_t)
+		opencl_si_device_preferred_workgroups;
 	
 	/* Call-back functions for program */
 	parent->arch_program_create_func = (opencl_arch_program_create_func_t)

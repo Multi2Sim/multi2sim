@@ -240,6 +240,9 @@ CLASS_BEGIN(SIGpu, Timing)
 	/* Associated emulator */
 	SIEmu *emu;
 
+	/* OpenCL driver */
+	OpenclDriver *opencl_driver;
+
 	/* ND-Range running on it */
 	int work_groups_per_wavefront_pool;
 	int work_groups_per_compute_unit;
@@ -249,6 +252,10 @@ CLASS_BEGIN(SIGpu, Timing)
 
 	/* List of ready compute units accepting work-groups */
 	struct list_t *available_compute_units;
+
+	/* Lists of type SIWorkGroup */
+	struct list_t *running_work_groups;
+	struct list_t *waiting_work_groups;
 
 	long long int last_complete_cycle;
 
