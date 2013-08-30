@@ -55,8 +55,12 @@ CLASS_BEGIN(SINDRange, Object)
 	/* ID */
 	int id;  /* Sequential ND-Range ID (given by si_emu->ndrange_count) */
 
-	/* OpenCL driver that created the ND-Range (if any) */
-	OpenclDriver *opencl_driver;
+	/* Work-group lists */
+	struct list_t *waiting_work_groups;
+	struct list_t *running_work_groups;
+	struct list_t *completed_work_groups;
+
+	int last_work_group_sent;  /* Used by the driver */
 
 	/* Number of work dimensions */
 	unsigned int work_dim;
@@ -90,6 +94,9 @@ CLASS_BEGIN(SINDRange, Object)
 	 * kernel function. */
 	unsigned int local_mem_top;
 
+	/* Each ND-Range has it's own address space */
+	int address_space_index;
+
 	/* Number of register used by each work-item. This fields determines
 	 * how many work-groups can be allocated per compute unit, among
 	 * others. */
@@ -114,6 +121,10 @@ CLASS_BEGIN(SINDRange, Object)
 	/* Addresses of the constant buffers */
 	unsigned int cb0;
 	unsigned int cb1;
+
+	/* List of kernel arguments. Each element of the list is of type
+	 * 'struct si_arg_t'. */
+	struct list_t *arg_list;
 
 CLASS_END(SINDRange)
 

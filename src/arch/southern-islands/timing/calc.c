@@ -107,10 +107,8 @@ int SIGpuCalcGetWorkGroupsPerWavefrontPool(SIGpu *self,
 }
 
 
-static void SIGpuCalcPlotWorkItemsPerWorkGroup(SIGpu *self)
+static void SIGpuCalcPlotWorkItemsPerWorkGroup(SIGpu *self, SINDRange *ndrange)
 {
-	SIEmu *emu = self->emu;
-
 	FILE *data_file;
 	FILE *script_file;
 
@@ -131,7 +129,7 @@ static void SIGpuCalcPlotWorkItemsPerWorkGroup(SIGpu *self)
 
 	/* Create plot file */
 	snprintf(plot_file_name, MAX_PATH_SIZE, "%s.%d.work_items.eps",
-		si_gpu_calc_file_name, emu->ndrange->id);
+		si_gpu_calc_file_name, ndrange->id);
 	if (!file_can_open_for_write(plot_file_name))
 	{
 		fatal("%s: cannot write GPU occupancy calculation plot", 
@@ -140,8 +138,8 @@ static void SIGpuCalcPlotWorkItemsPerWorkGroup(SIGpu *self)
 
 	/* Generate data file */
 	data_file = file_create_temp(data_file_name, MAX_PATH_SIZE);
-	local_mem_per_work_group = emu->ndrange->local_mem_top;
-	registers_per_work_item = emu->ndrange->num_vgpr_used;
+	local_mem_per_work_group = ndrange->local_mem_top;
+	registers_per_work_item = ndrange->num_vgpr_used;
 	for (work_items_per_work_group = si_emu_wavefront_size;
 		work_items_per_work_group < 
 		(si_gpu_max_wavefronts_per_wavefront_pool * 
@@ -166,8 +164,7 @@ static void SIGpuCalcPlotWorkItemsPerWorkGroup(SIGpu *self)
 	fclose(data_file);
 
 	/* Current data point */
-	work_items_per_work_group = ROUND_UP(
-		emu->ndrange->local_size,
+	work_items_per_work_group = ROUND_UP(ndrange->local_size,
 		si_emu_wavefront_size);
 	work_groups_per_wavefront_pool = 
 		SIGpuCalcGetWorkGroupsPerWavefrontPool(self,
@@ -205,10 +202,8 @@ static void SIGpuCalcPlotWorkItemsPerWorkGroup(SIGpu *self)
 }
 
 
-static void SIGpuCalcPlotRegistersPerWorkItem(SIGpu *self)
+static void SIGpuCalcPlotRegistersPerWorkItem(SIGpu *self, SINDRange *ndrange)
 {
-	SIEmu *emu = self->emu;
-
 	FILE *data_file;
 	FILE *script_file;
 
@@ -229,7 +224,7 @@ static void SIGpuCalcPlotRegistersPerWorkItem(SIGpu *self)
 
 	/* Create plot file */
 	snprintf(plot_file_name, MAX_PATH_SIZE, "%s.%d.registers.eps",
-		si_gpu_calc_file_name, emu->ndrange->id);
+		si_gpu_calc_file_name, ndrange->id);
 	if (!file_can_open_for_write(plot_file_name))
 	{
 		fatal("%s: cannot write GPU occupancy calculation plot", 
@@ -238,8 +233,8 @@ static void SIGpuCalcPlotRegistersPerWorkItem(SIGpu *self)
 
 	/* Generate data file */
 	data_file = file_create_temp(data_file_name, MAX_PATH_SIZE);
-	local_mem_per_work_group = emu->ndrange->local_mem_top;
-	work_items_per_work_group = emu->ndrange->local_size;
+	local_mem_per_work_group = ndrange->local_mem_top;
+	work_items_per_work_group = ndrange->local_size;
 	wavefronts_per_work_group = (work_items_per_work_group + 
 		si_emu_wavefront_size - 1) / si_emu_wavefront_size;
 	for (registers_per_work_item = 1; registers_per_work_item <= 128; 
@@ -261,7 +256,7 @@ static void SIGpuCalcPlotRegistersPerWorkItem(SIGpu *self)
 	fclose(data_file);
 
 	/* Current data point */
-	registers_per_work_item = emu->ndrange->num_vgpr_used;
+	registers_per_work_item = ndrange->num_vgpr_used;
 	work_groups_per_wavefront_pool = 
 		SIGpuCalcGetWorkGroupsPerWavefrontPool(self,
 			work_items_per_work_group, 
@@ -299,10 +294,8 @@ static void SIGpuCalcPlotRegistersPerWorkItem(SIGpu *self)
 }
 
 
-static void SIGpuCalcPlotLocalMemPerWorkGroup(SIGpu *self)
+static void SIGpuCalcPlotLocalMemPerWorkGroup(SIGpu *self, SINDRange *ndrange)
 {
-	SIEmu *emu = self->emu;
-
 	FILE *data_file;
 	FILE *script_file;
 
@@ -324,16 +317,16 @@ static void SIGpuCalcPlotLocalMemPerWorkGroup(SIGpu *self)
 
 	/* Create plot file */
 	snprintf(plot_file_name, MAX_PATH_SIZE, "%s.%d.local_mem.eps",
-		si_gpu_calc_file_name, emu->ndrange->id);
+		si_gpu_calc_file_name, ndrange->id);
 	if (!file_can_open_for_write(plot_file_name))
 		fatal("%s: cannot write GPU occupancy calculation plot", 
 			plot_file_name);
 
 	/* Generate data file */
 	data_file = file_create_temp(data_file_name, MAX_PATH_SIZE);
-	registers_per_work_item = emu->ndrange->num_vgpr_used;
+	registers_per_work_item = ndrange->num_vgpr_used;
 	local_mem_step = MAX(1, si_gpu_lds_size / 32);
-	work_items_per_work_group = emu->ndrange->local_size;
+	work_items_per_work_group = ndrange->local_size;
 	wavefronts_per_work_group = (work_items_per_work_group + 
 		si_emu_wavefront_size - 1) / si_emu_wavefront_size;
 	for (local_mem_per_work_group = local_mem_step;
@@ -355,7 +348,7 @@ static void SIGpuCalcPlotLocalMemPerWorkGroup(SIGpu *self)
 	fclose(data_file);
 
 	/* Current data point */
-	local_mem_per_work_group = emu->ndrange->local_mem_top;
+	local_mem_per_work_group = ndrange->local_mem_top;
 	work_groups_per_wavefront_pool = 
 		SIGpuCalcGetWorkGroupsPerWavefrontPool(self,
 			work_items_per_work_group, registers_per_work_item, 
@@ -393,7 +386,7 @@ static void SIGpuCalcPlotLocalMemPerWorkGroup(SIGpu *self)
 }
 
 
-void SIGpuCalcPlot(SIGpu *self)
+void SIGpuCalcPlot(SIGpu *self, SINDRange *ndrange)
 {
 	int ret;
 
@@ -414,11 +407,11 @@ void SIGpuCalcPlot(SIGpu *self)
 	}
 
 	/* Plot varying work-items per work-group */
-	SIGpuCalcPlotWorkItemsPerWorkGroup(self);
+	SIGpuCalcPlotWorkItemsPerWorkGroup(self, ndrange);
 
 	/* Plot varying registers per work-item */
-	SIGpuCalcPlotRegistersPerWorkItem(self);
+	SIGpuCalcPlotRegistersPerWorkItem(self, ndrange);
 
 	/* Plot varying local memory per work-group */
-	SIGpuCalcPlotLocalMemPerWorkGroup(self);
+	SIGpuCalcPlotLocalMemPerWorkGroup(self, ndrange);
 }

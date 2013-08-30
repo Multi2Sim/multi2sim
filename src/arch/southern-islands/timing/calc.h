@@ -28,7 +28,7 @@ int SIGpuCalcGetWorkGroupsPerWavefrontPool(SIGpu *self,
 		int work_items_per_work_group, int registers_per_work_item,
 		int local_mem_per_work_group);
 
-void SIGpuCalcPlot(SIGpu *self);
+void SIGpuCalcPlot(SIGpu *self, SINDRange *ndrange);
 
 
 #endif

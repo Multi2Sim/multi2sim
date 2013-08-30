@@ -25,7 +25,6 @@
 #include <arch/common/emu.h>
 
 
-
 /*
  * Class 'SIEmu'
  */
@@ -34,6 +33,9 @@ CLASS_BEGIN(SIEmu, Emu)
 
 	/* Associated disassembler */
 	SIAsm *as;
+
+	/* OpenCL driver */
+	OpenclDriver *opencl_driver;
 
 	/* Memory spaces */
 	struct mem_t *video_mem;  /* local to the GPU */

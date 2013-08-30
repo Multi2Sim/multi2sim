@@ -22,6 +22,7 @@
 
 #include <driver/common/driver.h>
 #include <lib/class/class.h>
+#include <arch/southern-islands/emu/ndrange.h>
 
 
 /*
@@ -33,20 +34,15 @@ CLASS_BEGIN(OpenclDriver, Driver)
 	/* List of Southern Islands programs and kernels */
 	struct list_t *si_program_list;
 	struct list_t *si_kernel_list;
-
-	struct opencl_si_kernel_t *kernel;
-	SINDRange *ndrange;
-
-	int ready_for_work;
-	int wait_for_ndrange_completion;
-	int ndrange_complete;
+	struct list_t *si_ndrange_list;
 
 CLASS_END(OpenclDriver)
 
 void OpenclDriverCreate(OpenclDriver *self, X86Emu *emu);
 void OpenclDriverDestroy(OpenclDriver *self);
 
-void OpenclDriverRequestWork(OpenclDriver *self);
+void OpenclDriverRequestWork(OpenclDriver *self, SINDRange *ndrange);
+void OpenclDriverNDRangeComplete(OpenclDriver *self, SINDRange *ndrange);
 
 
 
