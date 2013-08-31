@@ -95,9 +95,6 @@ void X86EmuCreate(X86Emu *self, X86Asm *as)
 	/* MMU */
 	self->mmu = new(MMU, x86_mmu_report_file_name);
 
-	/* Drivers */
-	self->opencl_driver = new(OpenclDriver, self);
-
 	/* Micro-instructions - FIXME - should be part of class */
 	x86_uinst_init();
 
