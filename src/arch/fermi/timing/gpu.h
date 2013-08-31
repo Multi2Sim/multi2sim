@@ -255,17 +255,10 @@ extern FrmGpu *frm_gpu;
 
 void frm_gpu_read_config(void);
 
-void frm_gpu_init(void);
-void frm_gpu_done(void);
-
 void frm_gpu_dump_default_config(char *filename);
 
 void frm_gpu_uop_trash_add(struct frm_uop_t *uop);
 void frm_gpu_uop_trash_empty(void);
-
-void frm_sm_run_simd(FrmSM *sm);
-void frm_sm_run_scalar_unit(FrmSM *sm);
-void frm_sm_run_branch_unit(FrmSM *sm);
 
 void frm_simd_run(struct frm_simd_t *simd);
 void frm_scalar_unit_run(struct frm_scalar_unit_t *scalar_unit);

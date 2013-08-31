@@ -20,29 +20,33 @@
 #include <arch/evergreen/emu/emu.h>
 #include <lib/mhandle/mhandle.h>
 
+#include "opencl.h"
 #include "repo.h"
 #include "sampler.h"
 
 
-struct evg_opencl_sampler_t *evg_opencl_sampler_create()
+struct evg_opencl_sampler_t *evg_opencl_sampler_create(OpenclOldDriver *driver)
 {
 	struct evg_opencl_sampler_t *sampler;
 
 	/* Initialize */
 	sampler = xcalloc(1, sizeof(struct evg_opencl_sampler_t));
-	sampler->id = evg_opencl_repo_new_object_id(evg_emu->opencl_repo,
+	sampler->id = evg_opencl_repo_new_object_id(driver->opencl_repo,
 		evg_opencl_object_sampler);
 	sampler->ref_count = 1;
 
 	/* Return */
-	evg_opencl_repo_add_object(evg_emu->opencl_repo, sampler);
+	evg_opencl_repo_add_object(driver->opencl_repo, sampler);
 	return sampler;
 }
+
 
 /* Free sampler */
 void evg_opencl_sampler_free(struct evg_opencl_sampler_t *sampler)
 {
-	evg_opencl_repo_remove_object(evg_emu->opencl_repo, sampler);
+	OpenclOldDriver *driver = sampler->driver;
+
+	evg_opencl_repo_remove_object(driver->opencl_repo, sampler);
 	free(sampler);
 }
 

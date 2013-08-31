@@ -42,8 +42,6 @@
  */
 
 
-EvgEmu *evg_emu;
-
 long long evg_emu_max_cycles;
 long long evg_emu_max_inst;
 int evg_emu_max_kernels;
@@ -81,11 +79,6 @@ void EvgEmuCreate(EvgEmu *self, EvgAsm *as)
 	self->global_mem = mem_create();
 	self->global_mem->safe = 0;
 
-	/* Initialize OpenCL objects */
-	self->opencl_repo = evg_opencl_repo_create();
-	self->opencl_platform = evg_opencl_platform_create(self);
-	self->opencl_device = evg_opencl_device_create(self);
-
 	/* Repository of deferred tasks */
 	self->write_task_repos = repos_create(sizeof(struct evg_isa_write_task_t),
 		"evg_emu->write_task_repos");
@@ -111,10 +104,6 @@ void EvgEmuDestroy(EvgEmu *self)
 	/* Free ND-Ranges */
 	while (self->ndrange_list_count)
 		delete(self->ndrange_list_head);
-
-	/* Free OpenCL objects */
-	evg_opencl_repo_free_all_objects(self->opencl_repo);
-	evg_opencl_repo_free(self->opencl_repo);
 
 	/* Finalize GPU kernel */
 	mem_free(self->const_mem);

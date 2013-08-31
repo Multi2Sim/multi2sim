@@ -57,11 +57,13 @@ enum cuda_call_t
 
 CLASS_BEGIN(CudaDriver, Driver)
 
+	/* Device emulators */
+	FrmEmu *frm_emu;
 
 CLASS_END(CudaDriver)
 
 
-void CudaDriverCreate(CudaDriver *self, X86Emu *emu);
+void CudaDriverCreate(CudaDriver *self, X86Emu *x86_emu, FrmEmu *frm_emu);
 void CudaDriverDestroy(CudaDriver *self);
 
 

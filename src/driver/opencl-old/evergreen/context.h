@@ -26,11 +26,13 @@ struct evg_opencl_context_t
 	unsigned int id;
 	int ref_count;
 
+	OpenclOldDriver *driver;
+
 	unsigned int platform_id;
 	unsigned int device_id;
 };
 
-struct evg_opencl_context_t *evg_opencl_context_create(void);
+struct evg_opencl_context_t *evg_opencl_context_create(OpenclOldDriver *driver);
 void evg_opencl_context_free(struct evg_opencl_context_t *context);
 
 struct mem_t;

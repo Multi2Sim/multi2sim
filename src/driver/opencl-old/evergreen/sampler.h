@@ -26,12 +26,14 @@ struct evg_opencl_sampler_t
 	unsigned int id;
 	int ref_count;
 
+	OpenclOldDriver *driver;
+
 	unsigned int normalized_coords;
 	unsigned int filter_mode;
 	unsigned int addressing_mode;
 };
 
-struct evg_opencl_sampler_t *evg_opencl_sampler_create(void);
+struct evg_opencl_sampler_t *evg_opencl_sampler_create(OpenclOldDriver *driver);
 void evg_opencl_sampler_free(struct evg_opencl_sampler_t *sampler);
 
 

@@ -39,8 +39,9 @@ typedef enum
 
 CLASS_BEGIN(EvgNDRange, Object)
 
-	/* Emulator */
+	/* Emulator and driver */
 	EvgEmu *emu;
+	OpenclOldDriver *driver;
 
 	/* ID */
 	char *name;
@@ -121,7 +122,8 @@ CLASS_BEGIN(EvgNDRange, Object)
 CLASS_END(EvgNDRange)
 
 
-void EvgNDRangeCreate(EvgNDRange *self, EvgEmu *emu, struct evg_opencl_kernel_t *kernel);
+void EvgNDRangeCreate(EvgNDRange *self, EvgEmu *emu, OpenclOldDriver *driver,
+		struct evg_opencl_kernel_t *kernel);
 void EvgNDRangeDestroy(EvgNDRange *self);
 
 void EvgNDRangeDump(EvgNDRange *self, FILE *f);

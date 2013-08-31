@@ -101,6 +101,8 @@ struct evg_opencl_kernel_t
 	char name[MAX_STRING_SIZE];
 	struct list_t *arg_list;
 
+	OpenclOldDriver *driver;
+
 	/* Excerpts of program ELF binary */
 	struct elf_buffer_t metadata_buffer;
 	struct elf_buffer_t kernel_buffer;
@@ -137,7 +139,7 @@ struct evg_opencl_kernel_t
 	EvgNDRange *ndrange;
 };
 
-struct evg_opencl_kernel_t *evg_opencl_kernel_create(void);
+struct evg_opencl_kernel_t *evg_opencl_kernel_create(OpenclOldDriver *driver);
 void evg_opencl_kernel_free(struct evg_opencl_kernel_t *kernel);
 
 struct evg_opencl_kernel_arg_t *evg_opencl_kernel_arg_create(char *name);

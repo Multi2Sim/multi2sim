@@ -175,18 +175,27 @@ char *evg_err_opencl_version_note =
  * Class 'OpenclOldDriver'
  */
 
-void OpenclOldDriverCreate(OpenclOldDriver *self, X86Emu *emu)
+void OpenclOldDriverCreate(OpenclOldDriver *self, X86Emu *x86_emu, EvgEmu *evg_emu)
 {
 	/* Parent */
-	DriverCreate(asDriver(self), emu);
+	DriverCreate(asDriver(self), x86_emu);
+
+	/* Initialize */
+	self->evg_emu = evg_emu;
+	self->opencl_repo = evg_opencl_repo_create();
+	self->opencl_platform = evg_opencl_platform_create(self);
+	self->opencl_device = evg_opencl_device_create(self);
+
 
 	/* Assign driver to host emulator */
-	emu->opencl_old_driver = self;
+	x86_emu->opencl_old_driver = self;
 }
 
 
 void OpenclOldDriverDestroy(OpenclOldDriver *self)
 {
+	evg_opencl_repo_free_all_objects(self->opencl_repo);
+	evg_opencl_repo_free(self->opencl_repo);
 }
 
 
@@ -268,6 +277,9 @@ int OpenclOldDriverCall(X86Context *ctx)
 
 int evg_opencl_clGetPlatformIDs_impl(X86Context *ctx, int *argv)
 {
+	X86Emu *emu = ctx->emu;
+	OpenclOldDriver *driver = emu->opencl_old_driver;
+
 	struct mem_t *mem = ctx->mem;
 
 	int num_entries = argv[0];  /* cl_uint num_entries */
@@ -295,7 +307,7 @@ int evg_opencl_clGetPlatformIDs_impl(X86Context *ctx, int *argv)
 	if (num_platforms)
 		mem_write(mem, num_platforms, 4, &one);
 	if (platforms && num_entries > 0)
-		mem_write(mem, platforms, 4, &evg_emu->opencl_platform->id);
+		mem_write(mem, platforms, 4, &driver->opencl_platform->id);
 	
 	/* Return success */
 	return 0;
@@ -310,6 +322,9 @@ int evg_opencl_clGetPlatformIDs_impl(X86Context *ctx, int *argv)
 
 int evg_opencl_clGetPlatformInfo_impl(X86Context *ctx, int *argv)
 {
+	X86Emu *emu = ctx->emu;
+	OpenclOldDriver *driver = emu->opencl_old_driver;
+
 	struct mem_t *mem = ctx->mem;
 
 	unsigned int platform_id = argv[0];  /* cl_platform_id platform */
@@ -326,7 +341,7 @@ int evg_opencl_clGetPlatformInfo_impl(X86Context *ctx, int *argv)
 		platform_id, param_name, param_value_size, param_value,
 		param_value_size_ret);
 
-	platform = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+	platform = evg_opencl_repo_get_object(driver->opencl_repo,
 		evg_opencl_object_platform, platform_id);
 	size_ret = evg_opencl_platform_get_info(platform, param_name,
 		mem, param_value, param_value_size);
@@ -346,6 +361,9 @@ int evg_opencl_clGetPlatformInfo_impl(X86Context *ctx, int *argv)
 
 int evg_opencl_clGetDeviceIDs_impl(X86Context *ctx, int *argv)
 {
+	X86Emu *emu = ctx->emu;
+	OpenclOldDriver *driver = emu->opencl_old_driver;
+
 	struct mem_t *mem = ctx->mem;
 
 	unsigned int platform = argv[0];  /* cl_platform_id platform */
@@ -360,7 +378,7 @@ int evg_opencl_clGetDeviceIDs_impl(X86Context *ctx, int *argv)
 		platform, device_type, num_entries);
 	evg_opencl_debug("  devices=0x%x, num_devices=%x\n",
 		devices, num_devices);
-	if (platform != evg_emu->opencl_platform->id)
+	if (platform != driver->opencl_platform->id)
 		fatal("%s: invalid platform\n%s", __FUNCTION__,
 			evg_err_opencl_param_note);
 
@@ -371,7 +389,7 @@ int evg_opencl_clGetDeviceIDs_impl(X86Context *ctx, int *argv)
 	/* Return 'id' of the only existing device */
 	if (devices && num_entries > 0)
 	{
-		device = evg_opencl_repo_get_object_of_type(evg_emu->opencl_repo,
+		device = evg_opencl_repo_get_object_of_type(driver->opencl_repo,
 			evg_opencl_object_device);
 		if (!device)
 			panic("%s: no device", __FUNCTION__);
@@ -391,6 +409,9 @@ int evg_opencl_clGetDeviceIDs_impl(X86Context *ctx, int *argv)
 
 int evg_opencl_clGetDeviceInfo_impl(X86Context *ctx, int *argv)
 {
+	X86Emu *emu = ctx->emu;
+	OpenclOldDriver *driver = emu->opencl_old_driver;
+
 	struct mem_t *mem = ctx->mem;
 
 	unsigned int device_id = argv[0];  /* cl_device_id device */
@@ -407,7 +428,7 @@ int evg_opencl_clGetDeviceInfo_impl(X86Context *ctx, int *argv)
 			device_id, param_name, param_value_size, param_value,
 			param_value_size_ret);
 
-	device = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+	device = evg_opencl_repo_get_object(driver->opencl_repo,
 		evg_opencl_object_device, device_id);
 	size_ret = evg_opencl_device_get_info(device, param_name, mem,
 		param_value, param_value_size);
@@ -427,6 +448,9 @@ int evg_opencl_clGetDeviceInfo_impl(X86Context *ctx, int *argv)
 
 int evg_opencl_clCreateContext_impl(X86Context *ctx, int *argv)
 {
+	X86Emu *emu = ctx->emu;
+	OpenclOldDriver *driver = emu->opencl_old_driver;
+
 	struct mem_t *mem = ctx->mem;
 
 	unsigned int properties = argv[0];  /* const cl_context_properties *properties */
@@ -452,13 +476,13 @@ int evg_opencl_clCreateContext_impl(X86Context *ctx, int *argv)
 
 	/* Read device id */
 	mem_read(mem, devices, 4, &device_id);
-	device = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+	device = evg_opencl_repo_get_object(driver->opencl_repo,
 			evg_opencl_object_device, device_id);
 	if (!device)
 		fatal("%s: invalid device\n%s", __FUNCTION__, evg_err_opencl_param_note);
 
 	/* Create context and return id */
-	context = evg_opencl_context_create();
+	context = evg_opencl_context_create(driver);
 	evg_opencl_context_set_properties(context, mem, properties);
 	context->device_id = device_id;
 
@@ -479,6 +503,9 @@ int evg_opencl_clCreateContext_impl(X86Context *ctx, int *argv)
 
 int evg_opencl_clCreateContextFromType_impl(X86Context *ctx, int *argv)
 {
+	X86Emu *emu = ctx->emu;
+	OpenclOldDriver *driver = emu->opencl_old_driver;
+
 	struct mem_t *mem = ctx->mem;
 
 	unsigned int properties = argv[0];  /* const cl_context_properties *properties */
@@ -498,12 +525,12 @@ int evg_opencl_clCreateContextFromType_impl(X86Context *ctx, int *argv)
 	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(pfn_notify, 0);
 
 	/* Get device */
-	device = evg_opencl_repo_get_object_of_type(evg_emu->opencl_repo,
+	device = evg_opencl_repo_get_object_of_type(driver->opencl_repo,
 			evg_opencl_object_device);
 	assert(device);
 
 	/* Create context */
-	context = evg_opencl_context_create();
+	context = evg_opencl_context_create(driver);
 	context->device_id = device->id;
 	evg_opencl_context_set_properties(context, mem, properties);
 
@@ -524,11 +551,14 @@ int evg_opencl_clCreateContextFromType_impl(X86Context *ctx, int *argv)
 
 int evg_opencl_clReleaseContext_impl(X86Context *ctx, int *argv)
 {
+	X86Emu *emu = ctx->emu;
+	OpenclOldDriver *driver = emu->opencl_old_driver;
+
 	unsigned int context_id = argv[0];  /* cl_context context */
 	struct evg_opencl_context_t *context;
 
 	evg_opencl_debug("  context=0x%x\n", context_id);
-	context = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+	context = evg_opencl_repo_get_object(driver->opencl_repo,
 			evg_opencl_object_context, context_id);
 
 	/* Release context */
@@ -549,6 +579,9 @@ int evg_opencl_clReleaseContext_impl(X86Context *ctx, int *argv)
 
 int evg_opencl_clGetContextInfo_impl(X86Context *ctx, int *argv)
 {
+	X86Emu *emu = ctx->emu;
+	OpenclOldDriver *driver = emu->opencl_old_driver;
+
 	struct mem_t *mem = ctx->mem;
 
 	unsigned int context_id = argv[0];  /* cl_context context */
@@ -564,7 +597,7 @@ int evg_opencl_clGetContextInfo_impl(X86Context *ctx, int *argv)
 			"  param_value=0x%x, param_value_size_ret=0x%x\n",
 			context_id, param_name, param_value_size, param_value, param_value_size_ret);
 
-	context = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+	context = evg_opencl_repo_get_object(driver->opencl_repo,
 		evg_opencl_object_context, context_id);
 	size_ret = evg_opencl_context_get_info(context, param_name, mem,
 		param_value, param_value_size);
@@ -584,6 +617,9 @@ int evg_opencl_clGetContextInfo_impl(X86Context *ctx, int *argv)
 
 int evg_opencl_clCreateCommandQueue_impl(X86Context *ctx, int *argv)
 {
+	X86Emu *x86_emu = ctx->emu;
+	OpenclOldDriver *driver = x86_emu->opencl_old_driver;
+
 	struct mem_t *mem = ctx->mem;
 
 	unsigned int context_id = argv[0];  /* cl_context context */
@@ -599,11 +635,11 @@ int evg_opencl_clCreateCommandQueue_impl(X86Context *ctx, int *argv)
 			context_id, device_id, properties, errcode_ret);
 
 	/* Check that context and device are valid */
-	evg_opencl_repo_get_object(evg_emu->opencl_repo, evg_opencl_object_context, context_id);
-	evg_opencl_repo_get_object(evg_emu->opencl_repo, evg_opencl_object_device, device_id);
+	evg_opencl_repo_get_object(driver->opencl_repo, evg_opencl_object_context, context_id);
+	evg_opencl_repo_get_object(driver->opencl_repo, evg_opencl_object_device, device_id);
 
 	/* Create command queue and return id */
-	command_queue = evg_opencl_command_queue_create();
+	command_queue = evg_opencl_command_queue_create(driver);
 	command_queue->context_id = context_id;
 	command_queue->device_id = device_id;
 	command_queue->properties = properties;
@@ -625,11 +661,14 @@ int evg_opencl_clCreateCommandQueue_impl(X86Context *ctx, int *argv)
 
 int evg_opencl_clReleaseCommandQueue_impl(X86Context *ctx, int *argv)
 {
+	X86Emu *emu = ctx->emu;
+	OpenclOldDriver *driver = emu->opencl_old_driver;
+
 	unsigned int command_queue_id = argv[0];  /* cl_command_queue command_queue */
 	struct evg_opencl_command_queue_t *command_queue;
 
 	evg_opencl_debug("  command_queue=0x%x\n", command_queue_id);
-	command_queue = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+	command_queue = evg_opencl_repo_get_object(driver->opencl_repo,
 			evg_opencl_object_command_queue, command_queue_id);
 
 	/* Release command queue */
@@ -650,14 +689,16 @@ int evg_opencl_clReleaseCommandQueue_impl(X86Context *ctx, int *argv)
 
 int evg_opencl_clRetainCommandQueue_impl(X86Context *ctx, int *argv)
 {
-	unsigned int command_queue_id = argv[0];  /* cl_command_queue command_queue */
+	X86Emu *emu = ctx->emu;
+	OpenclOldDriver *driver = emu->opencl_old_driver;
 
+	unsigned int command_queue_id = argv[0];  /* cl_command_queue command_queue */
 	struct evg_opencl_command_queue_t *command_queue;
 
 	evg_opencl_debug("  command_queue=0x%x\n", command_queue_id);
 
 	/* Check that the command queue argument is valid */
-	command_queue = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+	command_queue = evg_opencl_repo_get_object(driver->opencl_repo,
 			evg_opencl_object_command_queue, command_queue_id);
 
 	/* Increase the reference count */
@@ -689,6 +730,10 @@ static struct str_map_t create_buffer_flags_map =
 
 int evg_opencl_clCreateBuffer_impl(X86Context *ctx, int *argv)
 {
+	X86Emu *x86_emu = ctx->emu;
+	OpenclOldDriver *driver = x86_emu->opencl_old_driver;
+	EvgEmu *evg_emu = driver->evg_emu;
+
 	struct mem_t *mem = ctx->mem;
 
 	unsigned int context_id = argv[0];  /* cl_context context */
@@ -719,7 +764,7 @@ int evg_opencl_clCreateBuffer_impl(X86Context *ctx, int *argv)
 				__FUNCTION__, evg_err_opencl_param_note);
 
 	/* Create memory object */
-	opencl_mem = evg_opencl_mem_create();
+	opencl_mem = evg_opencl_mem_create(driver);
 	opencl_mem->type = 0;  /* FIXME */
 	opencl_mem->size = size;
 	opencl_mem->flags = flags;
@@ -766,6 +811,10 @@ static struct str_map_t evg_opencl_create_image_flags_map =
 
 int evg_opencl_clCreateImage2D_impl(X86Context *ctx, int *argv)
 {
+	X86Emu *x86_emu = ctx->emu;
+	OpenclOldDriver *driver = x86_emu->opencl_old_driver;
+	EvgEmu *evg_emu = driver->evg_emu;
+
 	struct mem_t *mem = ctx->mem;
 
 	unsigned int context_id = argv[0];  /* cl_context context */
@@ -868,7 +917,7 @@ int evg_opencl_clCreateImage2D_impl(X86Context *ctx, int *argv)
 
 	/* Create memory object */
 	size = image_row_pitch * image_height;
-	opencl_mem = evg_opencl_mem_create();
+	opencl_mem = evg_opencl_mem_create(driver);
 	opencl_mem->type = 1;  /* FIXME */
 	opencl_mem->size = size;
 	opencl_mem->flags = flags;
@@ -913,6 +962,10 @@ int evg_opencl_clCreateImage2D_impl(X86Context *ctx, int *argv)
 
 int evg_opencl_clCreateImage3D_impl(X86Context *ctx, int *argv)
 {
+	X86Emu *x86_emu = ctx->emu;
+	OpenclOldDriver *driver = x86_emu->opencl_old_driver;
+	EvgEmu *evg_emu = driver->evg_emu;
+
 	struct mem_t *mem = ctx->mem;
 
 	unsigned int context_id = argv[0];  /* cl_context context */
@@ -1022,7 +1075,7 @@ int evg_opencl_clCreateImage3D_impl(X86Context *ctx, int *argv)
 
 	/* Create memory object */
 	size = image_slice_pitch*image_depth;
-	opencl_mem = evg_opencl_mem_create();
+	opencl_mem = evg_opencl_mem_create(driver);
 	opencl_mem->type = 2; /* FIXME */
 	opencl_mem->size = size;
 	opencl_mem->flags = flags;
@@ -1065,12 +1118,15 @@ int evg_opencl_clCreateImage3D_impl(X86Context *ctx, int *argv)
 
 int evg_opencl_clRetainMemObject_impl(X86Context *ctx, int *argv)
 {
+	X86Emu *emu = ctx->emu;
+	OpenclOldDriver *driver = emu->opencl_old_driver;
+
 	unsigned int mem_id = argv[0];  /* cl_mem memobj */
 
 	struct evg_opencl_mem_t *mem;
 
 	evg_opencl_debug("  memobj=0x%x\n", mem_id);
-	mem = evg_opencl_repo_get_object(evg_emu->opencl_repo, evg_opencl_object_mem,
+	mem = evg_opencl_repo_get_object(driver->opencl_repo, evg_opencl_object_mem,
 			mem_id);
 
 	/* Increase the reference count */
@@ -1089,11 +1145,15 @@ int evg_opencl_clRetainMemObject_impl(X86Context *ctx, int *argv)
 
 int evg_opencl_clReleaseMemObject_impl(X86Context *ctx, int *argv)
 {
+	X86Emu *emu = ctx->emu;
+	OpenclOldDriver *driver = emu->opencl_old_driver;
+
 	unsigned int mem_id = argv[0];  /* cl_mem memobj */
 	struct evg_opencl_mem_t *opencl_mem;
 
 	evg_opencl_debug("  memobj=0x%x\n", mem_id);
-	opencl_mem = evg_opencl_repo_get_object(evg_emu->opencl_repo, evg_opencl_object_mem, mem_id);
+	opencl_mem = evg_opencl_repo_get_object(driver->opencl_repo,
+			evg_opencl_object_mem, mem_id);
 
 	/* Release object */
 	assert(opencl_mem->ref_count > 0);
@@ -1113,6 +1173,9 @@ int evg_opencl_clReleaseMemObject_impl(X86Context *ctx, int *argv)
 
 int evg_opencl_clCreateSampler_impl(X86Context *ctx, int *argv)
 {
+	X86Emu *emu = ctx->emu;
+	OpenclOldDriver *driver = emu->opencl_old_driver;
+
 	struct mem_t *mem = ctx->mem;
 
 	unsigned int context = argv[0];  /* cl_context context */
@@ -1138,11 +1201,11 @@ int evg_opencl_clCreateSampler_impl(X86Context *ctx, int *argv)
 		fatal("%s: addressing mode %u not supported.\n", __FUNCTION__, 
 				addressing_mode);
 
-	evg_opencl_repo_get_object(evg_emu->opencl_repo,
+	evg_opencl_repo_get_object(driver->opencl_repo,
 			evg_opencl_object_context, context);
 
 	/* Create command queue and return id */
-	sampler = evg_opencl_sampler_create();
+	sampler = evg_opencl_sampler_create(driver);
 	sampler->normalized_coords = normalized_coords;
 	sampler->addressing_mode = addressing_mode;
 	sampler->filter_mode = filter_mode;
@@ -1164,6 +1227,9 @@ int evg_opencl_clCreateSampler_impl(X86Context *ctx, int *argv)
 
 int evg_opencl_clCreateProgramWithSource_impl(X86Context *ctx, int *argv)
 {
+	X86Emu *emu = ctx->emu;
+	OpenclOldDriver *driver = emu->opencl_old_driver;
+
 	unsigned int context_id = argv[0];  /* cl_context context */
 	unsigned int count = argv[1];  /* cl_uint count */
 	unsigned int strings = argv[2];  /* const char **strings */
@@ -1181,8 +1247,8 @@ int evg_opencl_clCreateProgramWithSource_impl(X86Context *ctx, int *argv)
 				__FUNCTION__, evg_err_opencl_compiler);
 
 	/* Create program */
-	evg_opencl_repo_get_object(evg_emu->opencl_repo, evg_opencl_object_context, context_id);
-	program = evg_opencl_program_create();
+	evg_opencl_repo_get_object(driver->opencl_repo, evg_opencl_object_context, context_id);
+	program = evg_opencl_program_create(driver);
 	warning("%s: binary '%s' used as pre-compiled kernel.\n%s",
 			__FUNCTION__, evg_emu_opencl_binary_name, evg_err_opencl_binary_note);
 
@@ -1202,6 +1268,9 @@ int evg_opencl_clCreateProgramWithSource_impl(X86Context *ctx, int *argv)
 
 int evg_opencl_clCreateProgramWithBinary_impl(X86Context *ctx, int *argv)
 {
+	X86Emu *emu = ctx->emu;
+	OpenclOldDriver *driver = emu->opencl_old_driver;
+
 	struct mem_t *mem = ctx->mem;
 
 	unsigned int context_id = argv[0];  /* cl_context context */
@@ -1230,11 +1299,11 @@ int evg_opencl_clCreateProgramWithBinary_impl(X86Context *ctx, int *argv)
 
 	/* Get device and context */
 	mem_read(mem, device_list, 4, &device_id);
-	evg_opencl_repo_get_object(evg_emu->opencl_repo, evg_opencl_object_device, device_id);
-	evg_opencl_repo_get_object(evg_emu->opencl_repo, evg_opencl_object_context, context_id);
+	evg_opencl_repo_get_object(driver->opencl_repo, evg_opencl_object_device, device_id);
+	evg_opencl_repo_get_object(driver->opencl_repo, evg_opencl_object_context, context_id);
 
 	/* Create program */
-	program = evg_opencl_program_create();
+	program = evg_opencl_program_create(driver);
 
 	/* Read binary length and pointer */
 	mem_read(mem, lengths, 4, &length);
@@ -1274,12 +1343,15 @@ int evg_opencl_clCreateProgramWithBinary_impl(X86Context *ctx, int *argv)
 
 int evg_opencl_clRetainProgram_impl(X86Context *ctx, int *argv)
 {
+	X86Emu *emu = ctx->emu;
+	OpenclOldDriver *driver = emu->opencl_old_driver;
+
 	unsigned int program_id = argv[0];  /* cl_program program */
 
 	struct evg_opencl_program_t *program;
 
 	evg_opencl_debug("  program=0x%x\n", program_id);
-	program = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+	program = evg_opencl_repo_get_object(driver->opencl_repo,
 			evg_opencl_object_program, program_id);
 
 	/* Increase the reference count */
@@ -1298,11 +1370,14 @@ int evg_opencl_clRetainProgram_impl(X86Context *ctx, int *argv)
 
 int evg_opencl_clReleaseProgram_impl(X86Context *ctx, int *argv)
 {
+	X86Emu *emu = ctx->emu;
+	OpenclOldDriver *driver = emu->opencl_old_driver;
+
 	unsigned int program_id = argv[0];  /* cl_program program */
 	struct evg_opencl_program_t *program;
 
 	evg_opencl_debug("  program=0x%x\n", program_id);
-	program = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+	program = evg_opencl_repo_get_object(driver->opencl_repo,
 			evg_opencl_object_program, program_id);
 
 	/* Release program */
@@ -1323,6 +1398,9 @@ int evg_opencl_clReleaseProgram_impl(X86Context *ctx, int *argv)
 
 int evg_opencl_clBuildProgram_impl(X86Context *ctx, int *argv)
 {
+	X86Emu *emu = ctx->emu;
+	OpenclOldDriver *driver = emu->opencl_old_driver;
+
 	struct mem_t *mem = ctx->mem;
 
 	unsigned int program_id = argv[0];  /* cl_program program */
@@ -1352,7 +1430,7 @@ int evg_opencl_clBuildProgram_impl(X86Context *ctx, int *argv)
 				__FUNCTION__, options_str);
 
 	/* Get program */
-	program = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+	program = evg_opencl_repo_get_object(driver->opencl_repo,
 			evg_opencl_object_program, program_id);
 	if (!program->elf_file)
 		fatal("%s: program binary must be loaded first.\n%s",
@@ -1374,6 +1452,9 @@ int evg_opencl_clBuildProgram_impl(X86Context *ctx, int *argv)
 
 int evg_opencl_clCreateKernel_impl(X86Context *ctx, int *argv)
 {
+	X86Emu *emu = ctx->emu;
+	OpenclOldDriver *driver = emu->opencl_old_driver;
+
 	struct mem_t *mem = ctx->mem;
 
 	unsigned int program_id = argv[0];  /* cl_program program */
@@ -1397,11 +1478,11 @@ int evg_opencl_clCreateKernel_impl(X86Context *ctx, int *argv)
 	evg_opencl_debug("    kernel_name='%s'\n", kernel_name_str);
 
 	/* Get program */
-	program = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+	program = evg_opencl_repo_get_object(driver->opencl_repo,
 			evg_opencl_object_program, program_id);
 
 	/* Create the kernel */
-	kernel = evg_opencl_kernel_create();
+	kernel = evg_opencl_kernel_create(driver);
 	kernel->program_id = program_id;
 
 	/* Program must be built */
@@ -1437,11 +1518,14 @@ int evg_opencl_clCreateKernel_impl(X86Context *ctx, int *argv)
 
 int evg_opencl_clReleaseKernel_impl(X86Context *ctx, int *argv)
 {
+	X86Emu *emu = ctx->emu;
+	OpenclOldDriver *driver = emu->opencl_old_driver;
+
 	unsigned int kernel_id = argv[0];  /* cl_kernel kernel */
 	struct evg_opencl_kernel_t *kernel;
 
 	evg_opencl_debug("  kernel=0x%x\n", kernel_id);
-	kernel = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+	kernel = evg_opencl_repo_get_object(driver->opencl_repo,
 			evg_opencl_object_kernel, kernel_id);
 
 	/* Release kernel */
@@ -1462,6 +1546,9 @@ int evg_opencl_clReleaseKernel_impl(X86Context *ctx, int *argv)
 
 int evg_opencl_clSetKernelArg_impl(X86Context *ctx, int *argv)
 {
+	X86Emu *emu = ctx->emu;
+	OpenclOldDriver *driver = emu->opencl_old_driver;
+
 	struct mem_t *mem = ctx->mem;
 
 	unsigned int kernel_id = argv[0];  /* cl_kernel kernel */
@@ -1476,7 +1563,7 @@ int evg_opencl_clSetKernelArg_impl(X86Context *ctx, int *argv)
 			kernel_id, arg_index, arg_size, arg_value);
 
 	/* Check */
-	kernel = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+	kernel = evg_opencl_repo_get_object(driver->opencl_repo,
 			evg_opencl_object_kernel, kernel_id);
 	//if (arg_value)
 	//	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(arg_size, 4);
@@ -1518,6 +1605,9 @@ int evg_opencl_clSetKernelArg_impl(X86Context *ctx, int *argv)
 
 int evg_opencl_clGetKernelWorkGroupInfo_impl(X86Context *ctx, int *argv)
 {
+	X86Emu *emu = ctx->emu;
+	OpenclOldDriver *driver = emu->opencl_old_driver;
+
 	struct mem_t *mem = ctx->mem;
 
 	unsigned int kernel_id = argv[0];  /* cl_kernel kernel */
@@ -1535,9 +1625,9 @@ int evg_opencl_clGetKernelWorkGroupInfo_impl(X86Context *ctx, int *argv)
 			kernel_id, device_id, param_name, param_value_size, param_value,
 			param_value_size_ret);
 
-	kernel = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+	kernel = evg_opencl_repo_get_object(driver->opencl_repo,
 			evg_opencl_object_kernel, kernel_id);
-	evg_opencl_repo_get_object(evg_emu->opencl_repo,
+	evg_opencl_repo_get_object(driver->opencl_repo,
 			evg_opencl_object_device, device_id);
 	size_ret = evg_opencl_kernel_get_work_group_info(kernel, param_name, mem,
 			param_value, param_value_size);
@@ -1629,11 +1719,14 @@ int evg_opencl_clGetEventInfo_impl(X86Context *ctx, int *argv)
 
 int evg_opencl_clReleaseEvent_impl(X86Context *ctx, int *argv)
 {
+	X86Emu *emu = ctx->emu;
+	OpenclOldDriver *driver = emu->opencl_old_driver;
+
 	unsigned int event_id = argv[0];  /* cl_event event */
 	struct evg_opencl_event_t *event;
 
 	evg_opencl_debug("  event=0x%x\n", event_id);
-	event = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+	event = evg_opencl_repo_get_object(driver->opencl_repo,
 			evg_opencl_object_event, event_id);
 
 	/* Release event */
@@ -1654,6 +1747,9 @@ int evg_opencl_clReleaseEvent_impl(X86Context *ctx, int *argv)
 
 int evg_opencl_clGetEventProfilingInfo_impl(X86Context *ctx, int *argv)
 {
+	X86Emu *emu = ctx->emu;
+	OpenclOldDriver *driver = emu->opencl_old_driver;
+
 	struct mem_t *mem = ctx->mem;
 
 	unsigned int event_id = argv[0];  /* cl_event event */
@@ -1669,7 +1765,7 @@ int evg_opencl_clGetEventProfilingInfo_impl(X86Context *ctx, int *argv)
 			"  param_value=0x%x, param_value_size_ret=0x%x\n",
 			event_id, param_name, param_value_size, param_value,
 			param_value_size_ret);
-	event = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+	event = evg_opencl_repo_get_object(driver->opencl_repo,
 			evg_opencl_object_event, event_id);
 	size_ret = evg_opencl_event_get_profiling_info(event, param_name, mem,
 			param_value, param_value_size);
@@ -1722,6 +1818,9 @@ void evg_opencl_clFinish_wakeup(X86Context *ctx, void *data)
 
 int evg_opencl_clFinish_impl(X86Context *ctx, int *argv_ptr)
 {
+	X86Emu *emu = ctx->emu;
+	OpenclOldDriver *driver = emu->opencl_old_driver;
+
 	struct evg_opencl_clFinish_args_t *argv;
 	struct evg_opencl_command_queue_t *command_queue;
 
@@ -1730,7 +1829,7 @@ int evg_opencl_clFinish_impl(X86Context *ctx, int *argv_ptr)
 	evg_opencl_debug("  command_queue=0x%x\n", argv->command_queue_id);
 
 	/* Get command queue */
-	command_queue = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+	command_queue = evg_opencl_repo_get_object(driver->opencl_repo,
 			evg_opencl_object_command_queue, argv->command_queue_id);
 
 	/* Suspend context until command queue is empty */
@@ -1765,6 +1864,10 @@ struct evg_opencl_clEnqueueReadBuffer_args_t
 
 void evg_opencl_clEnqueueReadBuffer_wakeup(X86Context *ctx, void *data)
 {
+	X86Emu *x86_emu = ctx->emu;
+	OpenclOldDriver *driver = x86_emu->opencl_old_driver;
+	EvgEmu *evg_emu = driver->evg_emu;
+
 	struct evg_opencl_clEnqueueReadBuffer_args_t argv;
 	struct evg_opencl_mem_t *opencl_mem;
 	struct evg_opencl_event_t *event;
@@ -1778,7 +1881,7 @@ void evg_opencl_clEnqueueReadBuffer_wakeup(X86Context *ctx, void *data)
 	assert(code == 1053);
 
 	/* Get memory object */
-	opencl_mem = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+	opencl_mem = evg_opencl_repo_get_object(driver->opencl_repo,
 			evg_opencl_object_mem, argv.buffer);
 
 	/* Check that device buffer storage is not exceeded */
@@ -1795,7 +1898,7 @@ void evg_opencl_clEnqueueReadBuffer_wakeup(X86Context *ctx, void *data)
 	/* Event */
 	if (argv.event_ptr)
 	{
-		event = evg_opencl_event_create(EVG_OPENCL_EVENT_NDRANGE_KERNEL);
+		event = evg_opencl_event_create(driver, EVG_OPENCL_EVENT_NDRANGE_KERNEL);
 		event->status = EVG_OPENCL_EVENT_STATUS_SUBMITTED;
 		event->time_queued = evg_opencl_event_timer();
 		event->time_submit = evg_opencl_event_timer();
@@ -1815,6 +1918,9 @@ void evg_opencl_clEnqueueReadBuffer_wakeup(X86Context *ctx, void *data)
 
 int evg_opencl_clEnqueueReadBuffer_impl(X86Context *ctx, int *argv_ptr)
 {
+	X86Emu *emu = ctx->emu;
+	OpenclOldDriver *driver = emu->opencl_old_driver;
+
 	struct evg_opencl_clEnqueueReadBuffer_args_t *argv;
 	struct evg_opencl_command_queue_t *command_queue;
 
@@ -1832,7 +1938,7 @@ int evg_opencl_clEnqueueReadBuffer_impl(X86Context *ctx, int *argv_ptr)
 	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(argv->event_wait_list, 0);
 
 	/* Get command queue */
-	command_queue = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+	command_queue = evg_opencl_repo_get_object(driver->opencl_repo,
 			evg_opencl_object_command_queue, argv->command_queue);
 	
 	/* Suspend context until command queue is empty */
@@ -1866,6 +1972,10 @@ struct evg_opencl_clEnqueueWriteBuffer_args_t
 
 void evg_opencl_clEnqueueWriteBuffer_wakeup(X86Context *ctx, void *data)
 {
+	X86Emu *x86_emu = ctx->emu;
+	OpenclOldDriver *driver = x86_emu->opencl_old_driver;
+	EvgEmu *evg_emu = driver->evg_emu;
+
 	struct evg_opencl_clEnqueueWriteBuffer_args_t argv;
 	struct evg_opencl_mem_t *opencl_mem;
 	struct evg_opencl_event_t *event;
@@ -1879,7 +1989,7 @@ void evg_opencl_clEnqueueWriteBuffer_wakeup(X86Context *ctx, void *data)
 	assert(code == 1055);
 
 	/* Get memory object */
-	opencl_mem = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+	opencl_mem = evg_opencl_repo_get_object(driver->opencl_repo,
 			evg_opencl_object_mem, argv.buffer);
 
 	/* Check that device buffer storage is not exceeded */
@@ -1896,7 +2006,7 @@ void evg_opencl_clEnqueueWriteBuffer_wakeup(X86Context *ctx, void *data)
 	/* Event */
 	if (argv.event_ptr)
 	{
-		event = evg_opencl_event_create(EVG_OPENCL_EVENT_MAP_BUFFER);
+		event = evg_opencl_event_create(driver, EVG_OPENCL_EVENT_MAP_BUFFER);
 		event->status = EVG_OPENCL_EVENT_STATUS_COMPLETE;
 		event->time_queued = evg_opencl_event_timer();
 		event->time_submit = evg_opencl_event_timer();
@@ -1916,6 +2026,9 @@ void evg_opencl_clEnqueueWriteBuffer_wakeup(X86Context *ctx, void *data)
 
 int evg_opencl_clEnqueueWriteBuffer_impl(X86Context *ctx, int *argv_ptr)
 {
+	X86Emu *emu = ctx->emu;
+	OpenclOldDriver *driver = emu->opencl_old_driver;
+
 	struct evg_opencl_clEnqueueWriteBuffer_args_t *argv;
 	struct evg_opencl_command_queue_t *command_queue;
 
@@ -1933,7 +2046,7 @@ int evg_opencl_clEnqueueWriteBuffer_impl(X86Context *ctx, int *argv_ptr)
 	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(argv->event_wait_list, 0);
 
 	/* Get command queue */
-	command_queue = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+	command_queue = evg_opencl_repo_get_object(driver->opencl_repo,
 			evg_opencl_object_command_queue, argv->command_queue);
 
 	/* Suspend context until command queue is empty */
@@ -1966,6 +2079,10 @@ struct evg_opencl_clEnqueueCopyBuffer_args_t
 
 void evg_opencl_clEnqueueCopyBuffer_wakeup(X86Context *ctx, void *data)
 {
+	X86Emu *x86_emu = ctx->emu;
+	OpenclOldDriver *driver = x86_emu->opencl_old_driver;
+	EvgEmu *evg_emu = driver->evg_emu;
+
 	struct evg_opencl_clEnqueueCopyBuffer_args_t argv;
 	struct evg_opencl_mem_t *src_mem;
 	struct evg_opencl_mem_t *dst_mem;
@@ -1979,9 +2096,9 @@ void evg_opencl_clEnqueueCopyBuffer_wakeup(X86Context *ctx, void *data)
 	assert(code == 1057);
 
 	/* Get memory objects */
-	src_mem = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+	src_mem = evg_opencl_repo_get_object(driver->opencl_repo,
 			evg_opencl_object_mem, argv.src_buffer);
-	dst_mem = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+	dst_mem = evg_opencl_repo_get_object(driver->opencl_repo,
 			evg_opencl_object_mem, argv.dst_buffer);
 
 	/* Check that device buffer storage is not exceeded */
@@ -1997,7 +2114,7 @@ void evg_opencl_clEnqueueCopyBuffer_wakeup(X86Context *ctx, void *data)
 	/* Event */
 	if (argv.event_ptr)
 	{
-		event = evg_opencl_event_create(EVG_OPENCL_EVENT_MAP_BUFFER);
+		event = evg_opencl_event_create(driver, EVG_OPENCL_EVENT_MAP_BUFFER);
 		event->status = EVG_OPENCL_EVENT_STATUS_COMPLETE;
 		event->time_queued = evg_opencl_event_timer();
 		event->time_submit = evg_opencl_event_timer();
@@ -2018,6 +2135,9 @@ void evg_opencl_clEnqueueCopyBuffer_wakeup(X86Context *ctx, void *data)
 
 int evg_opencl_clEnqueueCopyBuffer_impl(X86Context *ctx, int *argv_ptr)
 {
+	X86Emu *emu = ctx->emu;
+	OpenclOldDriver *driver = emu->opencl_old_driver;
+
 	struct evg_opencl_clEnqueueCopyBuffer_args_t *argv;
 	struct evg_opencl_command_queue_t *command_queue;
 
@@ -2035,7 +2155,7 @@ int evg_opencl_clEnqueueCopyBuffer_impl(X86Context *ctx, int *argv_ptr)
 	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(argv->event_wait_list, 0);
 
 	/* Get command queue */
-	command_queue = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+	command_queue = evg_opencl_repo_get_object(driver->opencl_repo,
 			evg_opencl_object_command_queue, argv->command_queue);
 
 	/* Suspend context until command queue is empty */
@@ -2070,6 +2190,10 @@ struct evg_opencl_clEnqueueReadImage_args_t
 
 void evg_opencl_clEnqueueReadImage_wakeup(X86Context *ctx, void *data)
 {
+	X86Emu *x86_emu = ctx->emu;
+	OpenclOldDriver *driver = x86_emu->opencl_old_driver;
+	EvgEmu *evg_emu = driver->evg_emu;
+
 	struct evg_opencl_clEnqueueReadImage_args_t argv;
 
 	unsigned int read_region[3];
@@ -2086,7 +2210,7 @@ void evg_opencl_clEnqueueReadImage_wakeup(X86Context *ctx, void *data)
 	assert(code == 1059);
 
 	/* Get memory object */
-	opencl_mem = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+	opencl_mem = evg_opencl_repo_get_object(driver->opencl_repo,
 			evg_opencl_object_mem, argv.image);
 
 	/* Determine image geometry */
@@ -2125,7 +2249,7 @@ void evg_opencl_clEnqueueReadImage_wakeup(X86Context *ctx, void *data)
 	/* Event */
 	if (argv.event_ptr)
 	{
-		event = evg_opencl_event_create(EVG_OPENCL_EVENT_NDRANGE_KERNEL);
+		event = evg_opencl_event_create(driver, EVG_OPENCL_EVENT_NDRANGE_KERNEL);
 		event->status = EVG_OPENCL_EVENT_STATUS_SUBMITTED;
 		event->time_queued = evg_opencl_event_timer();
 		event->time_submit = evg_opencl_event_timer();
@@ -2146,6 +2270,9 @@ void evg_opencl_clEnqueueReadImage_wakeup(X86Context *ctx, void *data)
 
 int evg_opencl_clEnqueueReadImage_impl(X86Context *ctx, int *argv_ptr)
 {
+	X86Emu *emu = ctx->emu;
+	OpenclOldDriver *driver = emu->opencl_old_driver;
+
 	struct evg_opencl_clEnqueueReadImage_args_t *argv;
 	struct evg_opencl_command_queue_t *command_queue;
 
@@ -2163,7 +2290,7 @@ int evg_opencl_clEnqueueReadImage_impl(X86Context *ctx, int *argv_ptr)
 	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(argv->event_wait_list, 0);
 
 	/* Get command queue */
-	command_queue = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+	command_queue = evg_opencl_repo_get_object(driver->opencl_repo,
 			evg_opencl_object_command_queue, argv->command_queue);
 
 	/* Suspend context until command queue is empty */
@@ -2197,6 +2324,9 @@ struct evg_opencl_clEnqueueMapBuffer_args_t
 
 void evg_opencl_clEnqueueMapBuffer_wakeup(X86Context *ctx, void *data)
 {
+	X86Emu *emu = ctx->emu;
+	OpenclOldDriver *driver = emu->opencl_old_driver;
+
 	struct evg_opencl_clEnqueueMapBuffer_args_t argv;
 	struct evg_opencl_event_t *event;
 
@@ -2208,13 +2338,13 @@ void evg_opencl_clEnqueueMapBuffer_wakeup(X86Context *ctx, void *data)
 	assert(code == 1064);
 
 	/* Get memory object */
-	evg_opencl_repo_get_object(evg_emu->opencl_repo,
+	evg_opencl_repo_get_object(driver->opencl_repo,
 			evg_opencl_object_mem, argv.buffer);
 
 	/* Event */
 	if (argv.event_ptr)
 	{
-		event = evg_opencl_event_create(EVG_OPENCL_EVENT_MAP_BUFFER);
+		event = evg_opencl_event_create(driver, EVG_OPENCL_EVENT_MAP_BUFFER);
 		event->status = EVG_OPENCL_EVENT_STATUS_COMPLETE;
 		event->time_queued = evg_opencl_event_timer();
 		event->time_submit = evg_opencl_event_timer();
@@ -2237,6 +2367,9 @@ void evg_opencl_clEnqueueMapBuffer_wakeup(X86Context *ctx, void *data)
 
 int evg_opencl_clEnqueueMapBuffer_impl(X86Context *ctx, int *argv_ptr)
 {
+	X86Emu *emu = ctx->emu;
+	OpenclOldDriver *driver = emu->opencl_old_driver;
+
 	struct evg_opencl_clEnqueueMapBuffer_args_t *argv;
 	struct evg_command_queue_t *command_queue;
 
@@ -2255,7 +2388,7 @@ int evg_opencl_clEnqueueMapBuffer_impl(X86Context *ctx, int *argv_ptr)
 	EVG_OPENCL_ARG_NOT_SUPPORTED_EQ(argv->blocking_map, 0);
 
 	/* Get command queue */
-	command_queue = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+	command_queue = evg_opencl_repo_get_object(driver->opencl_repo,
 			evg_opencl_object_command_queue, argv->command_queue);
 
 	/* Suspend context until command queue is empty */
@@ -2288,6 +2421,10 @@ struct evg_opencl_clEnqueueNDRangeKernel_args_t
 
 void evg_opencl_clEnqueueNDRangeKernel_wakeup(X86Context *context, void *data)
 {
+	X86Emu *x86_emu = context->emu;
+	OpenclOldDriver *driver = x86_emu->opencl_old_driver;
+	EvgEmu *evg_emu = driver->evg_emu;
+
 	struct evg_opencl_clEnqueueNDRangeKernel_args_t argv;
 
 	struct evg_opencl_kernel_t *kernel;
@@ -2308,7 +2445,7 @@ void evg_opencl_clEnqueueNDRangeKernel_wakeup(X86Context *context, void *data)
 	assert(code == 1067);
 
 	/* Get kernel */
-	kernel = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+	kernel = evg_opencl_repo_get_object(driver->opencl_repo,
 			evg_opencl_object_kernel, argv.kernel_id);
 	kernel->work_dim = argv.work_dim;
 
@@ -2320,7 +2457,7 @@ void evg_opencl_clEnqueueNDRangeKernel_wakeup(X86Context *context, void *data)
 		/* If argument is an image, add it to the appropriate UAV list */
 		if (arg->kind == EVG_OPENCL_KERNEL_ARG_KIND_IMAGE) 
 		{
-			mem = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+			mem = evg_opencl_repo_get_object(driver->opencl_repo,
 					evg_opencl_object_mem, arg->value[0]);
 
 			list_set(kernel->uav_list, arg->uav, mem);
@@ -2331,7 +2468,7 @@ void evg_opencl_clEnqueueNDRangeKernel_wakeup(X86Context *context, void *data)
 		/* TODO Check if __read_only or __write_only affects uav number */
 		if (arg->mem_scope == EVG_OPENCL_MEM_SCOPE_CONSTANT)
 		{	
-			mem = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+			mem = evg_opencl_repo_get_object(driver->opencl_repo,
 					evg_opencl_object_mem, arg->value[0]);
 			list_set(kernel->constant_buffer_list, arg->uav, mem);
 		}
@@ -2392,7 +2529,7 @@ void evg_opencl_clEnqueueNDRangeKernel_wakeup(X86Context *context, void *data)
 	/* Event */
 	if (argv.event_ptr)
 	{
-		event = evg_opencl_event_create(EVG_OPENCL_EVENT_NDRANGE_KERNEL);
+		event = evg_opencl_event_create(driver, EVG_OPENCL_EVENT_NDRANGE_KERNEL);
 		event->status = EVG_OPENCL_EVENT_STATUS_SUBMITTED;
 		event->time_queued = evg_opencl_event_timer();
 		event->time_submit = evg_opencl_event_timer();
@@ -2402,7 +2539,7 @@ void evg_opencl_clEnqueueNDRangeKernel_wakeup(X86Context *context, void *data)
 	}
 
 	/* Setup ND-Range */
-	ndrange = new(EvgNDRange, evg_emu, kernel);
+	ndrange = new(EvgNDRange, evg_emu, driver, kernel);
 	EvgNDRangeSetupWorkItems(ndrange);
 	EvgNDRangeSetupConstantMemory(ndrange);
 	EvgNDRangeSetupArguments(ndrange);
@@ -2419,7 +2556,7 @@ void evg_opencl_clEnqueueNDRangeKernel_wakeup(X86Context *context, void *data)
 	task->u.ndrange_kernel.ndrange = ndrange;
 
 	/* Enqueue task */
-	command_queue = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+	command_queue = evg_opencl_repo_get_object(driver->opencl_repo,
 			evg_opencl_object_command_queue, argv.command_queue_id);
 	evg_opencl_command_queue_submit(command_queue, task);
 	ndrange->command_queue = command_queue;
@@ -2431,6 +2568,9 @@ void evg_opencl_clEnqueueNDRangeKernel_wakeup(X86Context *context, void *data)
 
 int evg_opencl_clEnqueueNDRangeKernel_impl(X86Context *ctx, int *argv_ptr)
 {
+	X86Emu *emu = ctx->emu;
+	OpenclOldDriver *driver = emu->opencl_old_driver;
+
 	struct evg_opencl_clEnqueueNDRangeKernel_args_t *argv;
 	struct evg_opencl_command_queue_t *command_queue;
 
@@ -2451,7 +2591,7 @@ int evg_opencl_clEnqueueNDRangeKernel_impl(X86Context *ctx, int *argv_ptr)
 	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(argv->event_wait_list, 0);
 
 	/* Get command queue */
-	command_queue = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+	command_queue = evg_opencl_repo_get_object(driver->opencl_repo,
 			evg_opencl_object_command_queue, argv->command_queue_id);
 
 	/* Suspend context until command queue is empty */

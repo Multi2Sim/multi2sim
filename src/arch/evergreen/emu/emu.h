@@ -44,8 +44,6 @@ extern int evg_emu_wavefront_size;
 extern char *evg_err_opencl_note;
 extern char *evg_err_opencl_param_note;
 
-extern EvgEmu *evg_emu;
-
 
 
 
@@ -62,11 +60,6 @@ CLASS_BEGIN(EvgEmu, Emu)
 
 	/* Instruction execution functions */
 	EvgEmuInstFunc inst_func[EvgInstOpcodeCount];
-
-	/* OpenCL objects */
-	struct evg_opencl_repo_t *opencl_repo;
-	struct evg_opencl_platform_t *opencl_platform;
-	struct evg_opencl_device_t *opencl_device;
 
 	/* Repository of write tasks */
 	struct repos_t *write_task_repos;

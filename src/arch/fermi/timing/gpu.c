@@ -534,10 +534,9 @@ static void frm_gpu_unmap_grid(void)
 
 
 /*
- * Public Functions
+ * Public
  */
 
-/* FIXME - some copied from Southern Islands, check if required in Fermi */
 void frm_gpu_read_config(void)
 {
 	struct config_t *gpu_config;
@@ -908,47 +907,6 @@ void frm_gpu_read_config(void)
 }
 
 
-void frm_gpu_init(void)
-{
-	/* Trace */
-	frm_trace_category = trace_new_category();
-
-	/* Try to open report file */
-	if (frm_gpu_report_file_name[0] && 
-			!file_can_open_for_write(frm_gpu_report_file_name))
-		fatal("%s: cannot open GPU pipeline report file",
-				frm_gpu_report_file_name);
-
-	/* Trace */
-	frm_trace_header("frm.init version=\"%d.%d\" num_sms=%d\n",
-			FRM_TRACE_VERSION_MAJOR, FRM_TRACE_VERSION_MINOR,
-			frm_gpu_num_sms);
-
-	/* Create GPU */
-	frm_gpu = new(FrmGpu, frm_emu);
-
-	/* Initializations */
-	frm_uop_init();
-}
-
-
-void frm_gpu_done()
-{
-	/* GPU pipeline report */
-	FrmGpuDumpReport(frm_gpu);
-
-	/* Free GPU */
-	delete(frm_gpu);
-
-	/* Spatial report */
-	if (frm_spatial_report_active)
-		frm_sm_spatial_report_done();
-
-	/* Finalizations */
-	frm_uop_done();
-}
-
-
 void frm_gpu_dump_default_config(char *filename)
 {
 	FILE *f;
@@ -980,6 +938,20 @@ void FrmGpuCreate(FrmGpu *self, FrmEmu *emu)
 	/* Initialize */
 	self->emu = emu;
 
+	/* Trace */
+	frm_trace_category = trace_new_category();
+
+	/* Try to open report file */
+	if (frm_gpu_report_file_name[0] &&
+			!file_can_open_for_write(frm_gpu_report_file_name))
+		fatal("%s: cannot open GPU pipeline report file",
+				frm_gpu_report_file_name);
+
+	/* Trace */
+	frm_trace_header("frm.init version=\"%d.%d\" num_sms=%d\n",
+			FRM_TRACE_VERSION_MAJOR, FRM_TRACE_VERSION_MINOR,
+			frm_gpu_num_sms);
+
 	/* Frequency */
 	asTiming(self)->frequency = frm_gpu_frequency;
 	asTiming(self)->frequency_domain = esim_new_domain(frm_gpu_frequency);
@@ -994,6 +966,9 @@ void FrmGpuCreate(FrmGpu *self, FrmEmu *emu)
 		sm->id = sm_id;
 		list_add(self->sm_ready_list, sm);
 	}
+
+	/* Uops */
+	frm_uop_init();
 
 	/* Virtual functions */
 	asObject(self)->Dump = FrmGpuDump;
@@ -1010,13 +985,26 @@ void FrmGpuDestroy(FrmGpu *self)
 	FrmSM *sm;
 	int sm_id;
 
+	/* GPU pipeline report */
+	FrmGpuDumpReport(frm_gpu);
+
+	/* Free SMs */
 	FRM_GPU_FOREACH_SM(sm_id)
 	{
 		sm = self->sms[sm_id];
 		delete(sm);
 	}
-	list_free(self->sm_ready_list);
 	free(self->sms);
+
+	/* Rest */
+	list_free(self->sm_ready_list);
+
+	/* Spatial report */
+	if (frm_spatial_report_active)
+		frm_sm_spatial_report_done();
+
+	/* Finalizations */
+	frm_uop_done();
 }
 
 
@@ -1035,8 +1023,8 @@ void FrmGpuDumpSummary(Timing *self, FILE *f)
 void FrmGpuDumpReport(FrmGpu *self)
 {
 	FrmEmu *emu = self->emu;
-
 	FrmSM *sm;
+
 	struct mod_t *lds_mod;
 	int sm_id;
 
