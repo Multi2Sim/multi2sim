@@ -20,25 +20,30 @@
 #ifndef DRIVER_GLU_GLU_H
 #define DRIVER_GLU_GLU_H
 
-#include <lib/class/class.h>
+#include <driver/common/driver.h>
 
 
 /*
- * GLU system call interface
- *
- * NOTE: for every new function or external variable added here, its
- * implementation should be added in the regular 'glu-xx.c' files and also in
- * 'glu-missing.c' to allow for correct compilation when the GLU library is
- * missing in the user's system.
+ * Class 'GluDriver'
+ */
+
+CLASS_BEGIN(GluDriver, Driver)
+
+CLASS_END(GluDriver)
+
+
+void GluDriverCreate(GluDriver *self, X86Emu *emu);
+void GluDriverDestroy(GluDriver *self);
+
+
+/*
+ * Public
  */
 
 #define glu_debug(...) debug(glu_debug_category, __VA_ARGS__)
 extern int glu_debug_category;
 
-void glu_init(void);
-void glu_done(void);
-
-int glu_abi_call(X86Context *ctx);
+int GluDriverCall(X86Context *ctx);
 
 
 #endif

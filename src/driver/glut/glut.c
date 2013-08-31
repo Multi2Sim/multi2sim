@@ -20,6 +20,7 @@
 #include <GL/glut.h>
 
 #include <arch/x86/emu/context.h>
+#include <arch/x86/emu/emu.h>
 #include <arch/x86/emu/regs.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
@@ -88,6 +89,10 @@ static glut_abi_func_t glut_abi_table[glut_call_count + 1] =
 #undef X86_GLUT_DEFINE_CALL
 	NULL
 };
+
+/* Forward declaration */
+static struct glut_window_properties_t *glut_window_properties;
+static char *glut_window_title;
 
 
 
@@ -612,14 +617,18 @@ void glut_timer(int value)
 
 
 
-
-
 /*
- * GLUT global functions
+ * Class 'GlutDriver'
  */
 
-void glut_init(void)
+void GlutDriverCreate(GlutDriver *self, X86Emu *emu)
 {
+	/* Parent */
+	DriverCreate(asDriver(self), emu);
+
+	/* Assign driver to host emulator */
+	emu->glut_driver = self;
+
 	/* Initialize GLUT global mutex */
 	pthread_mutex_init(&glut_mutex, NULL);
 
@@ -630,17 +639,10 @@ void glut_init(void)
 	glut_event_list = linked_list_create();
 }
 
-/* Forward declaration */
-static struct glut_window_properties_t *glut_window_properties;
-static char *glut_window_title;
 
-void glut_done(void)
+void GlutDriverDestroy(GlutDriver *self)
 {
 	struct glut_event_t *event;
-
-	/* Kill GLUT thread */
-	if (glut_thread)
-		
 
 	/* Free list of events */
 	LINKED_LIST_FOR_EACH(glut_event_list)
@@ -661,7 +663,13 @@ void glut_done(void)
 }
 
 
-int glut_abi_call(X86Context *ctx)
+
+
+/*
+ * Public
+ */
+
+int GlutDriverCall(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 

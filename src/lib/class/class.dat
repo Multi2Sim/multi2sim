@@ -108,6 +108,12 @@ CLASS(MMU)
 
 CLASS(Driver)
 CLASS(OpenclDriver)
+CLASS(OpenglDriver)
+CLASS(CudaDriver)
+CLASS(GlewDriver)
+CLASS(GlutDriver)
+CLASS(GluDriver)
+CLASS(OpenclOldDriver)
 
 
 /*

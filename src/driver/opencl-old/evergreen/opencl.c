@@ -21,6 +21,7 @@
 #include <arch/evergreen/emu/emu.h>
 #include <arch/evergreen/emu/ndrange.h>
 #include <arch/x86/emu/context.h>
+#include <arch/x86/emu/emu.h>
 #include <arch/x86/emu/regs.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/list.h>
@@ -171,32 +172,35 @@ char *evg_err_opencl_version_note =
 
 
 /*
- * Entry point for OpenCL API
+ * Class 'OpenclOldDriver'
  */
 
-int evg_opencl_abi_call(X86Context *ctx)
+void OpenclOldDriverCreate(OpenclOldDriver *self, X86Emu *emu)
 {
-	int argv[EVG_OPENCL_MAX_ARGS];
-	int code;
-	int ret;
+	/* Parent */
+	DriverCreate(asDriver(self), emu);
 
-	/* Get function code and arguments */
-	code = evg_opencl_abi_read_args(ctx, NULL, argv, sizeof argv);
-	assert(IN_RANGE(code, EVG_OPENCL_FUNC_FIRST, EVG_OPENCL_FUNC_LAST));
-	
-	/* Call function */
-	evg_opencl_debug("%s\n", evg_opencl_func_name[code - EVG_OPENCL_FUNC_FIRST]);
-	ret = evg_opencl_func_impl[code - EVG_OPENCL_FUNC_FIRST](ctx, argv);
-
-	/* Return OpencL result */
-	return ret;
+	/* Assign driver to host emulator */
+	emu->opencl_old_driver = self;
 }
 
+
+void OpenclOldDriverDestroy(OpenclOldDriver *self)
+{
+}
+
+
+
+
+
+/*
+ * Public
+ */
 
 /* Return OpenCL function arguments, as identified in the current state
  * of the x86 context stack and registers. The value returned by the function
  * is the OpenCL function code identified by register 'ebx'. */
-int evg_opencl_abi_read_args(X86Context *ctx, int *argc_ptr,
+static int evg_opencl_abi_read_args(X86Context *ctx, int *argc_ptr,
 		void *argv_ptr, int argv_size)
 {
 	struct mem_t *mem = ctx->mem;
@@ -232,9 +236,28 @@ int evg_opencl_abi_read_args(X86Context *ctx, int *argc_ptr,
 /* Set return value of an OpenCL API call. This needs to be done explicitly when
  * a context gets suspended during the execution of the OpenCL call, and later the
  * wake-up call-back routine finishes the OpenCL call execution. */
-void evg_opencl_abi_return(X86Context *ctx, int value)
+static void evg_opencl_abi_return(X86Context *ctx, int value)
 {
 	ctx->regs->eax = value;
+}
+
+
+int OpenclOldDriverCall(X86Context *ctx)
+{
+	int argv[EVG_OPENCL_MAX_ARGS];
+	int code;
+	int ret;
+
+	/* Get function code and arguments */
+	code = evg_opencl_abi_read_args(ctx, NULL, argv, sizeof argv);
+	assert(IN_RANGE(code, EVG_OPENCL_FUNC_FIRST, EVG_OPENCL_FUNC_LAST));
+
+	/* Call function */
+	evg_opencl_debug("%s\n", evg_opencl_func_name[code - EVG_OPENCL_FUNC_FIRST]);
+	ret = evg_opencl_func_impl[code - EVG_OPENCL_FUNC_FIRST](ctx, argv);
+
+	/* Return OpencL result */
+	return ret;
 }
 
 

@@ -46,6 +46,9 @@ void OpenclDriverCreate(OpenclDriver *self, X86Emu *emu)
 	/* Parent */
 	DriverCreate(asDriver(self), emu);
 
+	/* Assign driver to host emulator */
+	emu->opencl_driver = self;
+
 	/* List of Southern Islands programs */
 	self->si_program_list = list_create();
 	list_add(self->si_program_list, NULL);
@@ -169,7 +172,7 @@ int opencl_debug_category;
 
 
 
-int opencl_abi_call(X86Context *ctx)
+int OpenclDriverCall(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 

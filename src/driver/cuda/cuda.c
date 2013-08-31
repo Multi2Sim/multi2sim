@@ -58,6 +58,15 @@ char *cuda_call_name[cuda_call_count + 1] =
 	NULL
 };
 
+/* Forward declarations of ABI calls */
+#define CUDA_DEFINE_CALL(name) \
+	int cuda_func_##name(X86Context *context);
+#include "cuda.dat"
+#undef CUDA_DEFINE_CALL
+
+/* Prototype of CUDA driver functions */
+typedef int (*cuda_func_t)(X86Context *context);
+
 /* List of CUDA driver functions */
 cuda_func_t cuda_func_table[cuda_call_count + 1] =
 {
@@ -68,41 +77,33 @@ cuda_func_t cuda_func_table[cuda_call_count + 1] =
 	NULL
 };
 
+/* For CUDA launch */
+struct cuda_abi_frm_kernel_launch_info_t
+{
+	struct cuda_function_t *function;
+	X86Context *context;
+	FrmGrid *grid;
+	int finished;
+};
+
 
 
 
 /*
- * CUDA Global Functions
+ * Class 'CudaDriver'
  */
 
-int cuda_abi_call(X86Context *ctx)
+void CudaDriverCreate(CudaDriver *self, X86Emu *emu)
 {
-	struct x86_regs_t *regs = ctx->regs;
+	/* Parent */
+	DriverCreate(asDriver(self), emu);
 
-	int code;
-	int ret;
-
-	/* Function code */
-	code = regs->ebx;
-	if (code <= cuda_call_invalid || code >= cuda_call_count)
-		fatal("%s: invalid CUDA function (code %d).\n%s",
-			__FUNCTION__, code, cuda_err_code);
-
-	/* Debug */
-	cuda_debug("CUDA call '%s' (code %d)\n", cuda_call_name[code], code);
-
-	/* Call */
-	assert(cuda_func_table[code]);
-	ret = cuda_func_table[code](ctx);
-
-	return ret;
+	/* Assign driver to host emulator */
+	emu->cuda_driver = self;
 }
 
-void cuda_init(void)
-{
-}
 
-void cuda_done(void)
+void CudaDriverDestroy(CudaDriver *self)
 {
 	int i;
 	struct cuda_module_t *module;
@@ -130,6 +131,38 @@ void cuda_done(void)
 	}
 	list_free(function_list);
 }
+
+
+
+
+
+/*
+ * Public
+ */
+
+int CudaDriverCall(X86Context *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+
+	int code;
+	int ret;
+
+	/* Function code */
+	code = regs->ebx;
+	if (code <= cuda_call_invalid || code >= cuda_call_count)
+		fatal("%s: invalid CUDA function (code %d).\n%s",
+			__FUNCTION__, code, cuda_err_code);
+
+	/* Debug */
+	cuda_debug("CUDA call '%s' (code %d)\n", cuda_call_name[code], code);
+
+	/* Call */
+	assert(cuda_func_table[code]);
+	ret = cuda_func_table[code](ctx);
+
+	return ret;
+}
+
 
 
 

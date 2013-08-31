@@ -49,22 +49,9 @@ static void glew_missing(void)
  * Public Functions
  */
 
-void glew_init(void)
-{
-	/* Silent missing feature */
-}
-
-
-void glew_done(void)
-{
-	/* Silent missing feature */
-}
-
-
-int glew_abi_call(X86Context *context)
+int GlewDriverCall(X86Context *context)
 {
 	__GLEW_MISSING__
 	return 0;
 }
-
 

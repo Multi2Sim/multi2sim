@@ -43,7 +43,6 @@
 
 
 EvgEmu *evg_emu;
-EvgAsm *evg_asm;
 
 long long evg_emu_max_cycles;
 long long evg_emu_max_inst;

@@ -22,16 +22,25 @@
 
 #include <pthread.h>
 
-#include <lib/class/class.h>
+#include <driver/common/driver.h>
 
 
 /*
- * GLUT system call interface
- *
- * NOTE: for every new function or external variable added here, its
- * implementation should be added in the regular 'glut-xx.c' files and also in
- * 'glut-missing.c' to allow for correct compilation when the GLUT library is
- * missing in the user's system.
+ * Class 'GlutDriver'
+ */
+
+CLASS_BEGIN(GlutDriver, Driver)
+
+CLASS_END(GlutDriver)
+
+
+void GlutDriverCreate(GlutDriver *self, X86Emu *emu);
+void GlutDriverDestroy(GlutDriver *self);
+
+
+
+/*
+ * Public
  */
 
 #define glut_debug(...) debug(glut_debug_category, __VA_ARGS__)
@@ -39,10 +48,7 @@ extern int glut_debug_category;
 
 extern pthread_mutex_t glut_mutex;
 
-void glut_init(void);
-void glut_done(void);
-
-int glut_abi_call(X86Context *ctx);
+int GlutDriverCall(X86Context *ctx);
 
 
 #endif

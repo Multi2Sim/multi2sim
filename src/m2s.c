@@ -174,7 +174,10 @@ static char m2s_sim_id[10];  /* Pseudo-unique simulation ID (5 alpha-numeric dig
 static volatile int m2s_signal_received;  /* Signal received by handler (0 = none */
 
 
+static EvgAsm *evg_asm;
 static EvgGpu *evg_gpu;
+
+static FrmAsm *frm_asm;
 
 static MIPSAsm *mips_asm;
 static MIPSEmu *mips_emu;
@@ -185,6 +188,14 @@ static X86Emu *x86_emu;
 static X86Cpu *x86_cpu;
 
 static SIAsm *si_asm;
+
+static OpenclOldDriver *opencl_old_driver;
+static OpenclDriver *opencl_driver;
+static OpenglDriver *opengl_driver;
+static CudaDriver *cuda_driver;
+static GluDriver *glu_driver;
+static GlutDriver *glut_driver;
+static GlewDriver *glew_driver;
 
 
 static char *m2s_help =
@@ -1962,6 +1973,12 @@ static void m2s_init(void)
 	/* Drivers */
 	CLASS_REGISTER(Driver);
 	CLASS_REGISTER(OpenclDriver);
+	CLASS_REGISTER(OpenglDriver);
+	CLASS_REGISTER(CudaDriver);
+	CLASS_REGISTER(GlewDriver);
+	CLASS_REGISTER(GlutDriver);
+	CLASS_REGISTER(GluDriver);
+	CLASS_REGISTER(OpenclOldDriver);
 
 	/* Compute simulation ID */
 	gettimeofday(&tv, NULL);
@@ -2192,17 +2209,14 @@ int main(int argc, char **argv)
 	/* Initialization of runtimes */
 	runtime_init();
 	runtime_register("Old OpenCL", "m2s-opencl-old", "m2s-opencl-old", 325,
-			(runtime_abi_func_t) evg_opencl_abi_call);
-	runtime_register("GLUT", "glut", "m2s-glut", 326, (runtime_abi_func_t) glut_abi_call);
-	runtime_register("OpenGL", "GL", "m2s-opengl", 327, (runtime_abi_func_t) opengl_abi_call);
-	runtime_register("CUDA", "cuda", "m2s-cuda", 328, (runtime_abi_func_t) cuda_abi_call);
-	runtime_register("CudaRT", "cudart", "m2s-cuda", 328, (runtime_abi_func_t) cuda_abi_call);
-	runtime_register("OpenCL", "OpenCL", "m2s-opencl", 329, (runtime_abi_func_t) opencl_abi_call);
-	runtime_register("GLEW", "GLEW", "m2s-glew", 330, (runtime_abi_func_t) glew_abi_call);
-	runtime_register("GLU", "GLU", "m2s-glu", 331, (runtime_abi_func_t) glu_abi_call);
-
-	/* Initialization of drivers */
-	cuda_init();
+			(runtime_abi_func_t) OpenclOldDriverCall);
+	runtime_register("GLUT", "glut", "m2s-glut", 326, (runtime_abi_func_t) GlutDriverCall);
+	runtime_register("OpenGL", "GL", "m2s-opengl", 327, (runtime_abi_func_t) OpenglDriverCall);
+	runtime_register("CUDA", "cuda", "m2s-cuda", 328, (runtime_abi_func_t) CudaDriverCall);
+	runtime_register("CudaRT", "cudart", "m2s-cuda", 328, (runtime_abi_func_t) CudaDriverCall);
+	runtime_register("OpenCL", "OpenCL", "m2s-opencl", 329, (runtime_abi_func_t) OpenclDriverCall);
+	runtime_register("GLEW", "GLEW", "m2s-glew", 330, (runtime_abi_func_t) GlewDriverCall);
+	runtime_register("GLU", "GLU", "m2s-glu", 331, (runtime_abi_func_t) GluDriverCall);
 
 	/* Initialization of libraries */
 	esim_init();
@@ -2310,6 +2324,15 @@ int main(int argc, char **argv)
 	}
 	arch_set_emu(arch_southern_islands, asEmu(si_emu));
 
+	/* Drivers */
+	opencl_driver = new(OpenclDriver, x86_emu);
+	opencl_old_driver = new(OpenclOldDriver, x86_emu);
+	opengl_driver = new(OpenglDriver, x86_emu);
+	cuda_driver = new(CudaDriver, x86_emu);
+	glu_driver = new(GluDriver, x86_emu);
+	glut_driver = new(GlutDriver, x86_emu);
+	glew_driver = new(GlewDriver, x86_emu);
+
 	/* Network and memory system */
 	net_init();
 	mem_system_init();
@@ -2336,6 +2359,15 @@ int main(int argc, char **argv)
 
 	/* Dump statistics summary */
 	m2s_dump_summary(stderr);
+
+	/* Drivers */
+	delete(opencl_driver);
+	delete(opencl_old_driver);
+	delete(opengl_driver);
+	delete(cuda_driver);
+	delete(glu_driver);
+	delete(glut_driver);
+	delete(glew_driver);
 
 	/* Evergreen */
 	if (evg_gpu)
@@ -2372,9 +2404,6 @@ int main(int argc, char **argv)
 	/* Finalization of network and memory system */
 	mem_system_done();
 	net_done();
-
-	/* Finalization of drivers */
-	cuda_done();
 
 	/* Finalization of libraries */
 	esim_done();
