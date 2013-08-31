@@ -42,23 +42,13 @@ static void opengl_missing(void)
 
 
 
-/* Satisfy external reference to debug category */
+/*
+ * Public
+ */
+
 int opengl_debug_category;
 
-
-void opengl_init(void)
-{
-	/* Silent missing feature */
-}
-
-
-void opengl_done(void)
-{
-	/* Silent missing feature */
-}
-
-
-int opengl_abi_call(X86Context *context)
+int OpenglDriverCall(X86Context *context)
 {
 	__OPENGL_MISSING__
 	return 0;

@@ -20,7 +20,21 @@
 #ifndef DRIVER_OPENGL_OPENGL_H
 #define DRIVER_OPENGL_OPENGL_H
 
-#include <lib/class/class.h>
+#include <driver/common/driver.h>
+
+
+/*
+ * Class 'OpenglDriver'
+ */
+
+CLASS_BEGIN(OpenglDriver, Driver)
+
+
+CLASS_END(OpenglDriver)
+
+
+void OpenglDriverCreate(OpenglDriver *self, X86Emu *emu);
+void OpenglDriverDestroy(OpenglDriver *self);
 
 
 /*
@@ -34,10 +48,7 @@
 #define opengl_debug(...) debug(opengl_debug_category, __VA_ARGS__)
 extern int opengl_debug_category;
 
-void opengl_init(void);
-void opengl_done(void);
-
-int opengl_abi_call(X86Context *ctx);
+int OpenglDriverCall(X86Context *ctx);
 
 
 #endif

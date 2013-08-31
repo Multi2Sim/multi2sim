@@ -107,7 +107,6 @@ extern int frm_emu_warp_size;
 extern char *err_frm_cuda_note;
 
 extern FrmEmu *frm_emu;
-extern FrmAsm *frm_asm;
 
 #endif
 

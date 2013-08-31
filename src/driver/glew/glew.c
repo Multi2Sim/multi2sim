@@ -19,6 +19,7 @@
 
 
 #include <arch/x86/emu/context.h>
+#include <arch/x86/emu/emu.h>
 #include <arch/x86/emu/regs.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
@@ -86,27 +87,35 @@ static glew_abi_func_t glew_abi_table[glew_call_count + 1] =
 
 
 /*
- * GLEW global variables
+ * Class 'GlewDriver'
  */
+
+void GlewDriverCreate(GlewDriver *self, X86Emu *emu)
+{
+	/* Parent */
+	DriverCreate(asDriver(self), emu);
+
+	/* Assign driver to host emulator */
+	emu->glew_driver = self;
+
+	/* Debug */
+	glew_debug("Initializing Glew...\n");
+}
+
+
+void GlewDriverDestroy(GlewDriver *self)
+{
+	glew_debug("Finalizing Glew...\n");
+}
+
+
 
 
 /*
  * GLEW global functions
  */
 
-void glew_init(void)
-{
-	glew_debug("Initializing Glew...\n");
-}
-
-
-void glew_done(void)
-{
-	glew_debug("Finalizing Glew...\n");
-}
-
-
-int glew_abi_call(X86Context *ctx)
+int GlewDriverCall(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 

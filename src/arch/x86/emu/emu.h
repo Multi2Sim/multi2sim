@@ -97,6 +97,12 @@ CLASS_BEGIN(X86Emu, Emu)
 
 	/* Drivers */
 	OpenclDriver *opencl_driver;
+	OpenglDriver *opengl_driver;
+	CudaDriver *cuda_driver;
+	GlewDriver *glew_driver;
+	GlutDriver *glut_driver;
+	GluDriver *glu_driver;
+	OpenclOldDriver *opencl_old_driver;
 
 CLASS_END(X86Emu)
 

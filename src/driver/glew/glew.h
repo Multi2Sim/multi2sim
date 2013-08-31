@@ -20,24 +20,32 @@
 #ifndef DRIVER_GLEW_GLEW_H
 #define DRIVER_GLEW_GLEW_H
 
-#include <lib/class/class.h>
+#include <driver/common/driver.h>
+
 
 /*
- * GLEW system call interface
- *
- * NOTE: for every new function or external variable added here, its
- * implementation should be added in the regular 'glew-xx.c' files and also in
- * 'glew-missing.c' to allow for correct compilation when the GLEW library is
- * missing in the user's system.
+ * Class 'GlewDriver'
+ */
+
+CLASS_BEGIN(GlewDriver, Driver)
+
+CLASS_END(GlewDriver)
+
+
+void GlewDriverCreate(GlewDriver *self, X86Emu *emu);
+void GlewDriverDestroy(GlewDriver *self);
+
+
+
+
+/*
+ * Public
  */
 
 #define glew_debug(...) debug(glew_debug_category, __VA_ARGS__)
 extern int glew_debug_category;
 
-void glew_init(void);
-void glew_done(void);
-
-int glew_abi_call(X86Context *ctx);
+int GlewDriverCall(X86Context *ctx);
 
 
 #endif

@@ -53,19 +53,7 @@ static void glut_missing(void)
  * Public Functions
  */
 
-void glut_init(void)
-{
-	/* Silent missing feature */
-}
-
-
-void glut_done(void)
-{
-	/* Silent missing feature */
-}
-
-
-int glut_abi_call(X86Context *context)
+int GlutDriverCall(X86Context *context)
 {
 	__GLUT_MISSING__
 	return 0;
