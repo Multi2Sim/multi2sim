@@ -2280,6 +2280,18 @@ int main(int argc, char **argv)
 	}
 	arch_set_emu(arch_x86, asEmu(x86_emu));
 
+	/* Drivers 
+	 * Instantiating these here, because they rely on x86 and
+	 * are required for other architectures */
+	opencl_driver = new(OpenclDriver, x86_emu);
+	opencl_old_driver = new(OpenclOldDriver, x86_emu);
+	opengl_driver = new(OpenglDriver, x86_emu);
+	cuda_driver = new(CudaDriver, x86_emu);
+	glu_driver = new(GluDriver, x86_emu);
+	glut_driver = new(GlutDriver, x86_emu);
+	glew_driver = new(GlewDriver, x86_emu);
+
+
 	/* Evergreen
 	 * FIXME
 	 */
@@ -2323,15 +2335,6 @@ int main(int argc, char **argv)
 		arch_set_timing(arch_southern_islands, asTiming(si_gpu));
 	}
 	arch_set_emu(arch_southern_islands, asEmu(si_emu));
-
-	/* Drivers */
-	opencl_driver = new(OpenclDriver, x86_emu);
-	opencl_old_driver = new(OpenclOldDriver, x86_emu);
-	opengl_driver = new(OpenglDriver, x86_emu);
-	cuda_driver = new(CudaDriver, x86_emu);
-	glu_driver = new(GluDriver, x86_emu);
-	glut_driver = new(GlutDriver, x86_emu);
-	glew_driver = new(GlewDriver, x86_emu);
 
 	/* Network and memory system */
 	net_init();
