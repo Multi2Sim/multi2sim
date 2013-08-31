@@ -45,9 +45,20 @@ extern int evg_opencl_debug_category;
 
 CLASS_BEGIN(OpenclOldDriver, Driver)
 
+	/* Device emulator */
+	EvgEmu *evg_emu;
+
+	/* Object repository */
+	struct evg_opencl_repo_t *opencl_repo;
+
+	/* Device and platform */
+	struct evg_opencl_platform_t *opencl_platform;
+	struct evg_opencl_device_t *opencl_device;
+
 CLASS_END(OpenclOldDriver)
 
-void OpenclOldDriverCreate(OpenclOldDriver *self, X86Emu *emu);
+
+void OpenclOldDriverCreate(OpenclOldDriver *self, X86Emu *x86_emu, EvgEmu *evg_emu);
 void OpenclOldDriverDestroy(OpenclOldDriver *self);
 
 

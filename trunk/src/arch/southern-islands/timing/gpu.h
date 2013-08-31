@@ -240,9 +240,6 @@ CLASS_BEGIN(SIGpu, Timing)
 	/* Associated emulator */
 	SIEmu *emu;
 
-	/* OpenCL driver */
-	OpenclDriver *opencl_driver;
-
 	/* ND-Range running on it */
 	int work_groups_per_wavefront_pool;
 	int work_groups_per_compute_unit;

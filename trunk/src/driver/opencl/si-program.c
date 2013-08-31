@@ -66,6 +66,9 @@ void opencl_si_constant_buffer_free(struct opencl_si_constant_buffer_t *constant
 static void opencl_si_program_initialize_constant_buffers(
 		struct opencl_si_program_t *program)
 {
+	OpenclDriver *driver = program->driver;
+	SIEmu *emu = driver->si_emu;
+
 	struct elf_file_t *elf_file;
 	struct elf_buffer_t elf_buffer;
 	struct elf_symbol_t *symbol;
@@ -102,30 +105,31 @@ static void opencl_si_program_initialize_constant_buffers(
 			symbol->name, symbol->size);
 
 		/* Allocate memory for constant buffers */
-		mem_map(si_emu->video_mem, si_emu->video_mem_top, symbol->size,
+		mem_map(emu->video_mem, emu->video_mem_top, symbol->size,
 			mem_access_read | mem_access_write);
 
 		/* Copy constant buffer into device memory */
-		mem_write(si_emu->video_mem, si_emu->video_mem_top,
+		mem_write(emu->video_mem, emu->video_mem_top,
 			symbol->size, elf_buffer.ptr);
 
 		/* Create buffer */
 		constant_buffer = opencl_si_constant_buffer_create(i,
-			si_emu->video_mem_top, symbol->size);
-		si_emu->video_mem_top += symbol->size;
+			emu->video_mem_top, symbol->size);
+		emu->video_mem_top += symbol->size;
 
 		/* Add the constant buffer to the list */
 		list_set(program->constant_buffer_list, i, constant_buffer);
 	}
 } 
 
-struct opencl_si_program_t *opencl_si_program_create(int id)
+struct opencl_si_program_t *opencl_si_program_create(OpenclDriver *driver, int id)
 {
 	struct opencl_si_program_t *program;
 
 	/* Initialize */
 	program = xcalloc(1, sizeof(struct opencl_si_program_t));
 	program->id = id;
+	program->driver = driver;
 
 	/* Return */
 	return program;

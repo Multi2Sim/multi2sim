@@ -52,16 +52,17 @@ struct str_map_t evg_arg_data_type_map =
         }
 };
 
-struct evg_opencl_kernel_t *evg_opencl_kernel_create()
+struct evg_opencl_kernel_t *evg_opencl_kernel_create(OpenclOldDriver *driver)
 {
 	struct evg_opencl_kernel_t *kernel;
 	int i;
 
 	/* Initialize */
 	kernel = xcalloc(1, sizeof(struct evg_opencl_kernel_t));
-	kernel->id = evg_opencl_repo_new_object_id(evg_emu->opencl_repo,
+	kernel->id = evg_opencl_repo_new_object_id(driver->opencl_repo,
 		evg_opencl_object_kernel);
 	kernel->ref_count = 1;
+	kernel->driver = driver;
 	kernel->arg_list = list_create();
 
 	/* Create the UAV-to-physical-address lookup lists */
@@ -78,13 +79,15 @@ struct evg_opencl_kernel_t *evg_opencl_kernel_create()
 	}
 
 	/* Return */
-	evg_opencl_repo_add_object(evg_emu->opencl_repo, kernel);
+	evg_opencl_repo_add_object(driver->opencl_repo, kernel);
 	return kernel;
 }
 
 
 void evg_opencl_kernel_free(struct evg_opencl_kernel_t *kernel)
 {
+	OpenclOldDriver *driver = kernel->driver;
+
 	int i;
 
 	/* Free arguments */
@@ -101,7 +104,7 @@ void evg_opencl_kernel_free(struct evg_opencl_kernel_t *kernel)
 		evg_bin_file_free(kernel->bin_file);
 
 	/* Free kernel */
-	evg_opencl_repo_remove_object(evg_emu->opencl_repo, kernel);
+	evg_opencl_repo_remove_object(driver->opencl_repo, kernel);
 	free(kernel);
 }
 
@@ -420,13 +423,15 @@ static void evg_opencl_kernel_load_metadata(struct evg_opencl_kernel_t *kernel)
 /* Extract and analyze information from the program binary associated with 'kernel_name' */
 void evg_opencl_kernel_load(struct evg_opencl_kernel_t *kernel, char *kernel_name)
 {
+	OpenclOldDriver *driver = kernel->driver;
+
 	struct evg_opencl_program_t *program;
 	char symbol_name[MAX_STRING_SIZE];
 	char name[MAX_STRING_SIZE];
 
 	/* First */
 	strncpy(kernel->name, kernel_name, MAX_STRING_SIZE);
-	program = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+	program = evg_opencl_repo_get_object(driver->opencl_repo,
 		evg_opencl_object_program, kernel->program_id);
 
 	/* Read 'metadata' symbol */
@@ -451,14 +456,14 @@ void evg_opencl_kernel_load(struct evg_opencl_kernel_t *kernel, char *kernel_nam
 }
 
 
-uint32_t evg_opencl_kernel_get_work_group_info(struct evg_opencl_kernel_t *kernel, uint32_t name,
-	struct mem_t *mem, uint32_t addr, uint32_t size)
+unsigned int evg_opencl_kernel_get_work_group_info(struct evg_opencl_kernel_t *kernel, unsigned int name,
+	struct mem_t *mem, unsigned int addr, unsigned int size)
 {
-	uint32_t size_ret = 0;
+	unsigned int size_ret = 0;
 	void *info = NULL;
 
-	uint64_t local_mem_size = 0;
-	uint32_t max_work_group_size = 256;  /* FIXME */
+	unsigned long long local_mem_size = 0;
+	unsigned int max_work_group_size = 256;  /* FIXME */
 
 	switch (name)
 	{

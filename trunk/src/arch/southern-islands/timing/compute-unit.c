@@ -289,7 +289,8 @@ void SIComputeUnitMapWorkGroup(SIComputeUnit *self, SIWorkGroup *work_group)
 void SIComputeUnitUnmapWorkGroup(SIComputeUnit *self, SIWorkGroup *work_group)
 {
 	SIGpu *gpu = self->gpu;
-	OpenclDriver *driver = gpu->opencl_driver;
+	SIEmu *emu = gpu->emu;
+	OpenclDriver *driver = emu->opencl_driver;
 
 	long work_group_id;
 

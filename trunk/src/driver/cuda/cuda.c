@@ -93,13 +93,16 @@ struct cuda_abi_frm_kernel_launch_info_t
  * Class 'CudaDriver'
  */
 
-void CudaDriverCreate(CudaDriver *self, X86Emu *emu)
+void CudaDriverCreate(CudaDriver *self, X86Emu *x86_emu, FrmEmu *frm_emu)
 {
 	/* Parent */
-	DriverCreate(asDriver(self), emu);
+	DriverCreate(asDriver(self), x86_emu);
+
+	/* Initialize */
+	self->frm_emu = frm_emu;
 
 	/* Assign driver to host emulator */
-	emu->cuda_driver = self;
+	x86_emu->cuda_driver = self;
 }
 
 
@@ -247,6 +250,10 @@ int cuda_func_cuInit(X86Context *ctx)
 
 int cuda_func_cuDeviceTotalMem(X86Context *ctx)
 {
+	X86Emu *x86_emu = ctx->emu;
+	CudaDriver *driver = x86_emu->cuda_driver;
+	FrmEmu *frm_emu = driver->frm_emu;
+
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
 
@@ -388,6 +395,10 @@ int cuda_func_cuModuleGetFunction(X86Context *ctx)
 
 int cuda_func_cuMemGetInfo(X86Context *ctx)
 {
+	X86Emu *x86_emu = ctx->emu;
+	CudaDriver *driver = x86_emu->cuda_driver;
+	FrmEmu *frm_emu = driver->frm_emu;
+
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
 
@@ -424,6 +435,10 @@ int cuda_func_cuMemGetInfo(X86Context *ctx)
 
 int cuda_func_cuMemAlloc(X86Context *ctx)
 {
+	X86Emu *x86_emu = ctx->emu;
+	CudaDriver *driver = x86_emu->cuda_driver;
+	FrmEmu *frm_emu = driver->frm_emu;
+
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
 
@@ -493,6 +508,10 @@ int cuda_func_cuMemFree(X86Context *ctx)
 
 int cuda_func_cuMemcpyHtoD(X86Context *ctx)
 {
+	X86Emu *x86_emu = ctx->emu;
+	CudaDriver *driver = x86_emu->cuda_driver;
+	FrmEmu *frm_emu = driver->frm_emu;
+
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
 
@@ -539,6 +558,10 @@ int cuda_func_cuMemcpyHtoD(X86Context *ctx)
 
 int cuda_func_cuMemcpyDtoH(X86Context *ctx)
 {
+	X86Emu *x86_emu = ctx->emu;
+	CudaDriver *driver = x86_emu->cuda_driver;
+	FrmEmu *frm_emu = driver->frm_emu;
+
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
 
@@ -656,6 +679,10 @@ static void cuda_abi_frm_kernel_launch_wakeup(X86Context *ctx,
 
 int cuda_func_cuLaunchKernel(X86Context *context)
 {
+	X86Emu *x86_emu = context->emu;
+	CudaDriver *driver = x86_emu->cuda_driver;
+	FrmEmu *frm_emu = driver->frm_emu;
+
 	struct x86_regs_t *regs = context->regs;
 	struct mem_t *mem = context->mem;
 

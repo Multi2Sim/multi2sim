@@ -30,10 +30,11 @@
 struct evg_opencl_device_t
 {
 	unsigned int id;
-	EvgEmu *emu;
+
+	OpenclOldDriver *driver;
 };
 
-struct evg_opencl_device_t *evg_opencl_device_create(EvgEmu *emu);
+struct evg_opencl_device_t *evg_opencl_device_create(OpenclOldDriver *driver);
 void evg_opencl_device_free(struct evg_opencl_device_t *device);
 
 struct mem_t;

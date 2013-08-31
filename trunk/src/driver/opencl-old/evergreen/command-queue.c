@@ -17,7 +17,6 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 #include <arch/evergreen/emu/emu.h>
 #include <arch/x86/emu/context.h>
 #include <arch/x86/emu/emu.h>
@@ -32,19 +31,20 @@
 
 
 /* Create a command queue */
-struct evg_opencl_command_queue_t *evg_opencl_command_queue_create()
+struct evg_opencl_command_queue_t *evg_opencl_command_queue_create(OpenclOldDriver *driver)
 {
 	struct evg_opencl_command_queue_t *command_queue;
 
 	/* Initialize */
 	command_queue = xcalloc(1, sizeof(struct evg_opencl_command_queue_t));
-	command_queue->id = evg_opencl_repo_new_object_id(evg_emu->opencl_repo,
+	command_queue->id = evg_opencl_repo_new_object_id(driver->opencl_repo,
 		evg_opencl_object_command_queue);
 	command_queue->ref_count = 1;
 	command_queue->command_list = linked_list_create();
+	command_queue->driver = driver;
 
 	/* Return */
-	evg_opencl_repo_add_object(evg_emu->opencl_repo, command_queue);
+	evg_opencl_repo_add_object(driver->opencl_repo, command_queue);
 	return command_queue;
 }
 
@@ -52,12 +52,14 @@ struct evg_opencl_command_queue_t *evg_opencl_command_queue_create()
 /* Free command queue */
 void evg_opencl_command_queue_free(struct evg_opencl_command_queue_t *command_queue)
 {
+	OpenclOldDriver *driver = command_queue->driver;
+
 	/* Check that command list is empty */
 	if (linked_list_count(command_queue->command_list))
 		fatal("%s: freed command queue is not empty", __FUNCTION__);
 	
 	/* Free */
-	evg_opencl_repo_remove_object(evg_emu->opencl_repo, command_queue);
+	evg_opencl_repo_remove_object(driver->opencl_repo, command_queue);
 	linked_list_free(command_queue->command_list);
 	free(command_queue);
 }

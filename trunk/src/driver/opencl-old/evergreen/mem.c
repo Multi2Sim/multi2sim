@@ -21,28 +21,32 @@
 #include <lib/mhandle/mhandle.h>
 
 #include "mem.h"
+#include "opencl.h"
 #include "repo.h"
 
 
-struct evg_opencl_mem_t *evg_opencl_mem_create()
+struct evg_opencl_mem_t *evg_opencl_mem_create(OpenclOldDriver *driver)
 {
 	struct evg_opencl_mem_t *mem;
 
 	/* Initialize */
 	mem = xcalloc(1, sizeof(struct evg_opencl_mem_t));
-	mem->id = evg_opencl_repo_new_object_id(evg_emu->opencl_repo,
+	mem->id = evg_opencl_repo_new_object_id(driver->opencl_repo,
 		evg_opencl_object_mem);
 	mem->ref_count = 1;
+	mem->driver = driver;
 
 	/* Return */
-	evg_opencl_repo_add_object(evg_emu->opencl_repo, mem);
+	evg_opencl_repo_add_object(driver->opencl_repo, mem);
 	return mem;
 }
 
 
 void evg_opencl_mem_free(struct evg_opencl_mem_t *mem)
 {
-	evg_opencl_repo_remove_object(evg_emu->opencl_repo, mem);
+	OpenclOldDriver *driver = mem->driver;
+
+	evg_opencl_repo_remove_object(driver->opencl_repo, mem);
 	free(mem);
 }
 

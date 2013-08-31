@@ -30,10 +30,10 @@
 struct evg_opencl_platform_t
 {
 	unsigned int id;
-	EvgEmu *emu;
+	OpenclOldDriver *driver;
 };
 
-struct evg_opencl_platform_t *evg_opencl_platform_create(EvgEmu *emu);
+struct evg_opencl_platform_t *evg_opencl_platform_create(OpenclOldDriver *driver);
 void evg_opencl_platform_free(struct evg_opencl_platform_t *platform);
 
 unsigned int evg_opencl_platform_get_info(struct evg_opencl_platform_t *platform,

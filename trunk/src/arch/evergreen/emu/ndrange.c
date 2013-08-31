@@ -42,13 +42,15 @@
  * Class 'EvgNDRange'
  */
 
-void EvgNDRangeCreate(EvgNDRange *self, EvgEmu *emu, struct evg_opencl_kernel_t *kernel)
+void EvgNDRangeCreate(EvgNDRange *self, EvgEmu *emu, OpenclOldDriver *driver,
+		struct evg_opencl_kernel_t *kernel)
 {
 	/* Insert in ND-Range list of Evergreen emulator */
 	DOUBLE_LINKED_LIST_INSERT_TAIL(emu, ndrange, self);
 
 	/* Initialize */
 	self->emu = emu;
+	self->driver = driver;
 	self->name = xstrdup(kernel->name);
 	self->kernel = kernel;
 	self->local_mem_top = kernel->func_mem_local;
@@ -519,6 +521,7 @@ void EvgNDRangeSetupConstantMemory(EvgNDRange *self)
 void EvgNDRangeSetupArguments(EvgNDRange *self)
 {
 	EvgEmu *emu = self->emu;
+	OpenclOldDriver *driver = self->driver;
 
 	struct evg_opencl_kernel_t *kernel = self->kernel;
 	struct evg_opencl_kernel_arg_t *arg;
@@ -562,7 +565,7 @@ void EvgNDRangeSetupArguments(EvgNDRange *self)
 
 				/* Image type */
 				mem = evg_opencl_repo_get_object(
-					evg_emu->opencl_repo,
+					driver->opencl_repo,
 					evg_opencl_object_mem, arg->value[0]);
 
 				EvgEmuConstMemWrite(emu, 
@@ -597,7 +600,7 @@ void EvgNDRangeSetupArguments(EvgNDRange *self)
 				 * Argument value is a pointer to an 'opencl_mem' object.
 				 * It is translated first into a device memory pointer. */
 				mem = evg_opencl_repo_get_object(
-					evg_emu->opencl_repo,
+					driver->opencl_repo,
 					evg_opencl_object_mem, arg->value[0]);
 
 				EvgEmuConstMemWrite(emu, 

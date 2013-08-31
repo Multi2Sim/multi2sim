@@ -254,9 +254,6 @@ extern int si_emu_max_kernels;
 extern char *si_emu_opengl_binary_name;
 
 extern int si_emu_wavefront_size;
-
-extern SIEmu *si_emu;
-
 extern char *si_mmu_report_file_name;
 
 #endif

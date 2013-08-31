@@ -41,13 +41,17 @@
  * Class 'OpenclDriver'
  */
 
-void OpenclDriverCreate(OpenclDriver *self, X86Emu *emu)
+void OpenclDriverCreate(OpenclDriver *self, X86Emu *x86_emu, SIEmu *si_emu)
 {
 	/* Parent */
-	DriverCreate(asDriver(self), emu);
+	DriverCreate(asDriver(self), x86_emu);
+
+	/* Initialize */
+	self->si_emu = si_emu;
 
 	/* Assign driver to host emulator */
-	emu->opencl_driver = self;
+	x86_emu->opencl_driver = self;
+	si_emu->opencl_driver = self;
 
 	/* List of Southern Islands programs */
 	self->si_program_list = list_create();
@@ -279,6 +283,10 @@ static int opencl_abi_init_impl(X86Context *ctx)
 
 static int opencl_abi_si_mem_alloc_impl(X86Context *ctx)
 {
+	X86Emu *x86_emu = ctx->emu;
+	OpenclDriver *driver = x86_emu->opencl_driver;
+	SIEmu *si_emu = driver->si_emu;
+
 	struct x86_regs_t *regs = ctx->regs;
 
 	unsigned int device_ptr;
@@ -350,6 +358,10 @@ static int opencl_abi_si_mem_alloc_impl(X86Context *ctx)
 
 static int opencl_abi_si_mem_read_impl(X86Context *ctx)
 {
+	X86Emu *x86_emu = ctx->emu;
+	OpenclDriver *driver = x86_emu->opencl_driver;
+	SIEmu *si_emu = driver->si_emu;
+
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
 
@@ -408,6 +420,10 @@ static int opencl_abi_si_mem_read_impl(X86Context *ctx)
 
 static int opencl_abi_si_mem_write_impl(X86Context *ctx)
 {
+	X86Emu *x86_emu = ctx->emu;
+	OpenclDriver *driver = x86_emu->opencl_driver;
+	SIEmu *si_emu = driver->si_emu;
+
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *x86_mem = ctx->mem;
 
@@ -467,6 +483,10 @@ static int opencl_abi_si_mem_write_impl(X86Context *ctx)
 
 static int opencl_abi_si_mem_copy_impl(X86Context *ctx)
 {
+	X86Emu *x86_emu = ctx->emu;
+	OpenclDriver *driver = x86_emu->opencl_driver;
+	SIEmu *si_emu = driver->si_emu;
+
 	struct x86_regs_t *regs = ctx->regs;
 
 	unsigned int dest_ptr;
@@ -552,7 +572,7 @@ static int opencl_abi_si_program_create_impl(X86Context *ctx)
 	struct opencl_si_program_t *program;
 
 	/* Create program and add it to list of SI programs */
-	program = opencl_si_program_create(driver->si_program_list->count);
+	program = opencl_si_program_create(driver, driver->si_program_list->count);
 	list_add(driver->si_program_list, program);
 	opencl_debug("\tnew program ID = %d\n", program->id);
 
@@ -978,8 +998,10 @@ static int opencl_abi_si_kernel_set_arg_sampler_impl(X86Context *ctx)
 
 static int opencl_abi_si_ndrange_create_impl(X86Context *ctx)
 {
-	X86Emu *emu = ctx->emu;
-	OpenclDriver *driver = emu->opencl_driver;
+	X86Emu *x86_emu = ctx->emu;
+	OpenclDriver *driver = x86_emu->opencl_driver;
+	SIEmu *si_emu = driver->si_emu;
+
 	SINDRange *ndrange;
 
 	struct elf_buffer_t *elf_buffer;
