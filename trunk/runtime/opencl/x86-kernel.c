@@ -489,9 +489,9 @@ void opencl_nd_address(int dim, int addr, const unsigned int *size, unsigned int
 		pos[0] = addr - (pos[1] * size[0]);
 		return;
 	case 3:
-		pos[2] = addr / size[1];
-		pos[1] = (addr - (pos[2] * size[1])) / size[0];
-		pos[0] = addr - ((pos[2] * size[1]) + pos[1]) * size[0];
+		pos[2] = addr / (size[1] * size[0]);
+		pos[1] = (addr / size[0]) % size[1];
+		pos[0] = (addr % size[0]);
 		return;
 	default:
 		fatal("%s: dim is greater than 3\n", __FUNCTION__);

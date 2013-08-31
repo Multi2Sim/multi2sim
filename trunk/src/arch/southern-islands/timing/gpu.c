@@ -1315,8 +1315,12 @@ int SIGpuRun(Timing *self)
 	long work_group_id;
 
 	opencl_driver = emu->opencl_driver;
-	
+
 	/* For efficiency, exit early if there are no nd-ranges to run */
+	if (!list_count(opencl_driver->si_ndrange_list))
+		return FALSE;
+	
+	/* For efficiency, exit early if there are no work-groups to run */
 	LIST_FOR_EACH(opencl_driver->si_ndrange_list, ndrange_index)
 	{
 		ndrange = list_get(opencl_driver->si_ndrange_list, 
@@ -1392,8 +1396,8 @@ int SIGpuRun(Timing *self)
 		esim_finish = esim_finish_si_max_inst;
 
 	/* Stop if there was a simulation stall */
-	if ((asTiming(self)->cycle-gpu->last_complete_cycle) >
-		1000000)
+	if (gpu->last_complete_cycle && 
+		(asTiming(self)->cycle-gpu->last_complete_cycle) > 1000000)
 	{
 		warning("Southern Islands GPU simulation stalled.\n%s", 
 			si_err_stall);
