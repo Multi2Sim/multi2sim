@@ -22,10 +22,12 @@
 #include <unistd.h>
 
 #include <arch/x86/timing/cpu.h>
+#include <driver/cuda/cuda.h>
 #include <driver/glew/glew.h>
 #include <driver/glu/glu.h>
 #include <driver/glut/glut.h>
 #include <driver/opencl/opencl.h>
+#include <driver/opencl-old/evergreen/opencl.h>
 #include <driver/opengl/opengl.h>
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
@@ -99,20 +101,6 @@ void X86EmuCreate(X86Emu *self, X86Asm *as)
 	/* Micro-instructions - FIXME - should be part of class */
 	x86_uinst_init();
 
-#ifdef HAVE_OPENGL
-	/* GLUT - FIXME - should be part of class */
-	glut_init();
-
-	/* GLEW - FIXME - should be part of class */
-	glew_init();
-
-	/* GLU - FIXME - should be part of class */
-	glu_init();
-#endif
-
-	/* OpenGL - FIXME - should be part of class */
-	opengl_init();
-
 	/* Virtual functions */
 	asObject(self)->Dump = X86EmuDump;
 	asEmu(self)->DumpSummary = X86EmuDumpSummary;
@@ -133,26 +121,8 @@ void X86EmuDestroy(X86Emu *self)
 	while (self->context_list_head)
 		delete(self->context_list_head);
 	
-#ifdef HAVE_OPENGL
-
-	/* GLUT  - FIXME - should be part of class */
-	glut_done();
-
-	/* GLEW - FIXME - should be part of class */
-	glew_done();
-
-	/* GLU - FIXME - should be part of class */
-	glu_done();
-#endif
-
-	/* Finalize OpenGl - FIXME - should be part of class */
-	opengl_done();
-
 	/* Micro-instructions  - FIXME - should be part of class */
 	x86_uinst_done();
-
-	/* Drivers */
-	delete(self->opencl_driver);
 
 	/* Print system call summary */
 	if (debug_status(x86_sys_debug_category))

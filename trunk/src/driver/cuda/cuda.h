@@ -20,7 +20,7 @@
 #ifndef DRIVER_CUDA_CUDA_H
 #define DRIVER_CUDA_CUDA_H
 
-#include <lib/class/class.h>
+#include <driver/common/driver.h>
 
 
 /* Version */
@@ -49,28 +49,30 @@ enum cuda_call_t
 	cuda_call_count
 };
 
-/* Prototype of CUDA driver functions */
-typedef int (*cuda_func_t)(X86Context *context);
 
-/* Functions */
-int cuda_abi_call(X86Context *ctx);
 
-#define CUDA_DEFINE_CALL(name) \
-	int cuda_func_##name(X86Context *context);
-#include "cuda.dat"
-#undef CUDA_DEFINE_CALL
+/*
+ * Class 'CudaDriver'
+ */
 
-/* For CUDA launch */
-struct cuda_abi_frm_kernel_launch_info_t
-{
-	struct cuda_function_t *function;
-	X86Context *context;
-	FrmGrid *grid;
-	int finished;
-};
+CLASS_BEGIN(CudaDriver, Driver)
 
-void cuda_init(void);
-void cuda_done(void);
+
+CLASS_END(CudaDriver)
+
+
+void CudaDriverCreate(CudaDriver *self, X86Emu *emu);
+void CudaDriverDestroy(CudaDriver *self);
+
+
+
+
+/*
+ * Public
+ */
+
+int CudaDriverCall(X86Context *ctx);
+
 
 #endif
 

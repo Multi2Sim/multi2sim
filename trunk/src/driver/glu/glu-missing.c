@@ -49,19 +49,7 @@ static void glu_missing(void)
  * Public Functions
  */
 
-void glu_init(void)
-{
-	/* Silent missing feature */
-}
-
-
-void glu_done(void)
-{
-	/* Silent missing feature */
-}
-
-
-int glu_abi_call(X86Context *context)
+int GluDriverCall(X86Context *context)
 {
 	__GLU_MISSING__
 	return 0;

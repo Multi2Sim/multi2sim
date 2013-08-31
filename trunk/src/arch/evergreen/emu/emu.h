@@ -45,7 +45,6 @@ extern char *evg_err_opencl_note;
 extern char *evg_err_opencl_param_note;
 
 extern EvgEmu *evg_emu;
-extern EvgAsm *evg_asm;
 
 
 

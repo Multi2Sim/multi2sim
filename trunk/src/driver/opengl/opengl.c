@@ -19,6 +19,7 @@
 
 
 #include <arch/x86/emu/context.h>
+#include <arch/x86/emu/emu.h>
 #include <arch/x86/emu/regs.h>
 #include <arch/southern-islands/asm/fetch-shader.h>
 #include <arch/southern-islands/asm/input.h>
@@ -110,21 +111,33 @@ static opengl_abi_call_t opengl_abi_call_table[opengl_abi_call_count + 1] =
 #define __NOT_IMPL__  fatal("%s: not implemented.\n%s", \
 	__FUNCTION__, opengl_err_not_impl);
 
+
+
 /*
- * OpenGL global variables
+ * Class 'OepnglDriver'
  */
 
-void opengl_init(void)
+void OpenglDriverCreate(OpenglDriver *self, X86Emu *emu)
+{
+	/* Parent */
+	DriverCreate(asDriver(self), emu);
+
+	/* Assign driver to host emulator */
+	emu->opengl_driver = self;
+}
+
+
+void OpenglDriverDestroy(OpenglDriver *self)
 {
 }
 
 
-void opengl_done(void)
-{
-}
 
+/*
+ * Public
+ */
 
-int opengl_abi_call(X86Context *ctx)
+int OpenglDriverCall(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 

@@ -20,7 +20,7 @@
 #ifndef ARCH_EVERGREEN_EMU_OPENCL_H
 #define ARCH_EVERGREEN_EMU_OPENCL_H
 
-#include <lib/class/class.h>
+#include <driver/common/driver.h>
 
 
 /* Function tables */
@@ -37,11 +37,27 @@ extern int evg_opencl_debug_category;
 #define EVG_OPENCL_FUNC_COUNT  (EVG_OPENCL_FUNC_LAST - EVG_OPENCL_FUNC_FIRST + 1)
 #define EVG_OPENCL_MAX_ARGS  14
 
-int evg_opencl_abi_call(X86Context *ctx);
 
-int evg_opencl_abi_read_args(X86Context *ctx, int *argc_ptr,
-		void *argv_ptr, int argv_size);
-void evg_opencl_abi_return(X86Context *ctx, int value);
+
+/*
+ * Class 'OpenclOldDriver'
+ */
+
+CLASS_BEGIN(OpenclOldDriver, Driver)
+
+CLASS_END(OpenclOldDriver)
+
+void OpenclOldDriverCreate(OpenclOldDriver *self, X86Emu *emu);
+void OpenclOldDriverDestroy(OpenclOldDriver *self);
+
+
+
+/*
+ * Public
+ */
+
+int OpenclOldDriverCall(X86Context *ctx);
+
 
 #endif
 

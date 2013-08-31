@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 #include <arch/x86/emu/context.h>
+#include <arch/x86/emu/emu.h>
 #include <arch/x86/emu/regs.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
@@ -86,27 +86,31 @@ static glu_abi_func_t glu_abi_table[glu_call_count + 1] =
 
 
 /*
- * GLU global variables
+ * Class 'GluDriver'
  */
+
+void GluDriverCreate(GluDriver *self, X86Emu *emu)
+{
+	/* Parent */
+	DriverCreate(asDriver(self), emu);
+
+	/* Assign driver to host emulator */
+	emu->glu_driver = self;
+}
+
+
+void GluDriverDestroy(GluDriver *self)
+{
+}
+
+
 
 
 /*
- * GLU global functions
+ * Public
  */
 
-void glu_init(void)
-{
-
-}
-
-
-void glu_done(void)
-{
-
-}
-
-
-int glu_abi_call(X86Context *ctx)
+int GluDriverCall(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 

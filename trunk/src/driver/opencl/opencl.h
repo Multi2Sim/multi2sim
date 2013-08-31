@@ -54,7 +54,7 @@ void OpenclDriverNDRangeComplete(OpenclDriver *self, SINDRange *ndrange);
 #define opencl_debug(...) debug(opencl_debug_category, __VA_ARGS__)
 extern int opencl_debug_category;
 
-int opencl_abi_call(X86Context *ctx);
+int OpenclDriverCall(X86Context *ctx);
 
 #endif
 
