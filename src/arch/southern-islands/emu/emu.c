@@ -202,11 +202,10 @@ int SIEmuRun(Emu *self)
 
 
 /*
- * Non-Class
+ * Public
  */
 
 SIAsm *si_asm;
-SIEmu *si_emu;
 
 long long si_emu_max_cycles = 0;
 long long si_emu_max_inst = 0;
@@ -215,6 +214,5 @@ int si_emu_max_kernels = 0;
 char *si_emu_opengl_binary_name = "";
 
 int si_emu_wavefront_size = 64;
-
 int si_emu_num_mapped_const_buffers = 2;  /* CB0, CB1 by default */
 

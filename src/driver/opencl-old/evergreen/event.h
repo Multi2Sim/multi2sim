@@ -61,13 +61,16 @@ struct evg_opencl_event_t
 	enum evg_opencl_event_kind_t kind;
 	enum evg_opencl_event_status_t status;
 
+	OpenclOldDriver *driver;
+
 	long long time_queued;
 	long long time_submit;
 	long long time_start;
 	long long time_end;
 };
 
-struct evg_opencl_event_t *evg_opencl_event_create(enum evg_opencl_event_kind_t kind);
+struct evg_opencl_event_t *evg_opencl_event_create(OpenclOldDriver *driver,
+		enum evg_opencl_event_kind_t kind);
 void evg_opencl_event_free(struct evg_opencl_event_t *event);
 
 unsigned int evg_opencl_event_get_profiling_info(struct evg_opencl_event_t *event, unsigned int name,

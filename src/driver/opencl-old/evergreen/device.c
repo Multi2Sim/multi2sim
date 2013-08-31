@@ -24,22 +24,23 @@
 #include <mem-system/memory.h>
 
 #include "device.h"
+#include "opencl.h"
 #include "repo.h"
 
 
 /* Create a device */
-struct evg_opencl_device_t *evg_opencl_device_create(EvgEmu *emu)
+struct evg_opencl_device_t *evg_opencl_device_create(OpenclOldDriver *driver)
 {
 	struct evg_opencl_device_t *device;
 
 	/* Initialize */
 	device = xcalloc(1, sizeof(struct evg_opencl_device_t));
-	device->id = evg_opencl_repo_new_object_id(emu->opencl_repo,
+	device->id = evg_opencl_repo_new_object_id(driver->opencl_repo,
 		evg_opencl_object_device);
-	device->emu = emu;
+	device->driver = driver;
 
 	/* Return */
-	evg_opencl_repo_add_object(emu->opencl_repo, device);
+	evg_opencl_repo_add_object(driver->opencl_repo, device);
 	return device;
 }
 
@@ -47,10 +48,9 @@ struct evg_opencl_device_t *evg_opencl_device_create(EvgEmu *emu)
 /* Free device */
 void evg_opencl_device_free(struct evg_opencl_device_t *device)
 {
-	EvgEmu *emu;
+	OpenclOldDriver *driver = device->driver;
 
-	emu = device->emu;
-	evg_opencl_repo_remove_object(emu->opencl_repo, device);
+	evg_opencl_repo_remove_object(driver->opencl_repo, device);
 	free(device);
 }
 

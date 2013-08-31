@@ -31,16 +31,17 @@
 #include "repo.h"
 
 
-struct evg_opencl_program_t *evg_opencl_program_create()
+struct evg_opencl_program_t *evg_opencl_program_create(OpenclOldDriver *driver)
 {
 	struct evg_opencl_program_t *program;
 	int i;
 
 	/* Initialize */
 	program = xcalloc(1, sizeof(struct evg_opencl_program_t));
-	program->id = evg_opencl_repo_new_object_id(evg_emu->opencl_repo,
+	program->id = evg_opencl_repo_new_object_id(driver->opencl_repo,
 		evg_opencl_object_program);
 	program->ref_count = 1;
+	program->driver = driver;
 
 	/* Constant buffers encoded in ELF file */
 	program->constant_buffer_list = list_create_with_size(25);
@@ -48,19 +49,21 @@ struct evg_opencl_program_t *evg_opencl_program_create()
 		list_add(program->constant_buffer_list, NULL);
 
 	/* Return */
-	evg_opencl_repo_add_object(evg_emu->opencl_repo, program);
+	evg_opencl_repo_add_object(driver->opencl_repo, program);
 	return program;
 }
 
 
 void evg_opencl_program_free(struct evg_opencl_program_t *program)
 {
+	OpenclOldDriver *driver = program->driver;
+
 	/* Free lists */
 	list_free(program->constant_buffer_list);
 
 	if (program->elf_file)
 		elf_file_free(program->elf_file);
-	evg_opencl_repo_remove_object(evg_emu->opencl_repo, program);
+	evg_opencl_repo_remove_object(driver->opencl_repo, program);
 	free(program);
 }
 
@@ -137,6 +140,9 @@ void evg_opencl_program_read_symbol(struct evg_opencl_program_t *program, char *
 
 void evg_opencl_program_initialize_constant_buffers(struct evg_opencl_program_t *program)
 {
+	OpenclOldDriver *driver = program->driver;
+	EvgEmu *emu = driver->evg_emu;
+
 	struct elf_file_t *elf_file;
 	struct elf_symbol_t *elf_symbol;
 	struct elf_buffer_t elf_buffer;
@@ -167,18 +173,18 @@ void evg_opencl_program_initialize_constant_buffers(struct evg_opencl_program_t 
 		evg_opencl_program_read_symbol(program, elf_symbol->name, &elf_buffer);
 
 		/* Create a memory object and copy the constant buffer data to it */
-		mem = evg_opencl_mem_create();
+		mem = evg_opencl_mem_create(program->driver);
 		mem->type = 0;  /* FIXME */
 		mem->size = elf_buffer.size;
 		mem->flags = 0; /* TODO Change to CL_MEM_READ_ONLY */
 		mem->host_ptr = 0;
 
 		/* Assign position in device global memory */
-		mem->device_ptr = evg_emu->global_mem_top;
-		evg_emu->global_mem_top += mem->size;
+		mem->device_ptr = emu->global_mem_top;
+		emu->global_mem_top += mem->size;
 
 		/* Copy constant buffer into device memory */
-		mem_write(evg_emu->global_mem, mem->device_ptr, mem->size, elf_buffer.ptr);
+		mem_write(emu->global_mem, mem->device_ptr, mem->size, elf_buffer.ptr);
 
 		/* Add the memory object to the constant buffer list */
 		list_set(program->constant_buffer_list, i, mem);

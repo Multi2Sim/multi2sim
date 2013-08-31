@@ -24,31 +24,31 @@
 #include <mem-system/memory.h>
 
 #include "platform.h"
+#include "opencl.h"
 #include "repo.h"
 
 
-struct evg_opencl_platform_t *evg_opencl_platform_create(EvgEmu *emu)
+struct evg_opencl_platform_t *evg_opencl_platform_create(OpenclOldDriver *driver)
 {
 	struct evg_opencl_platform_t *platform;
 
 	/* Initialize */
 	platform = xcalloc(1, sizeof(struct evg_opencl_platform_t));
-	platform->id = evg_opencl_repo_new_object_id(emu->opencl_repo,
+	platform->id = evg_opencl_repo_new_object_id(driver->opencl_repo,
 		evg_opencl_object_platform);
-	platform->emu = emu;
+	platform->driver = driver;
 
 	/* Return */
-	evg_opencl_repo_add_object(emu->opencl_repo, platform);
+	evg_opencl_repo_add_object(driver->opencl_repo, platform);
 	return platform;
 }
 
 
 void evg_opencl_platform_free(struct evg_opencl_platform_t *platform)
 {
-	EvgEmu *emu;
+	OpenclOldDriver *driver = platform->driver;
 
-	emu = platform->emu;
-	evg_opencl_repo_remove_object(emu->opencl_repo, platform);
+	evg_opencl_repo_remove_object(driver->opencl_repo, platform);
 	free(platform);
 }
 

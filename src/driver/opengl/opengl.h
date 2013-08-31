@@ -29,11 +29,21 @@
 
 CLASS_BEGIN(OpenglDriver, Driver)
 
+	/* Device emulators */
+	SIEmu *si_emu;
+
+	/* Active ND-Range */
+	SINDRange *ndrange;
+
+	struct opengl_si_shader_t *shader;
+	int ready_for_work;
+	int wait_for_ndrange_completion;
+	int ndrange_complete;
 
 CLASS_END(OpenglDriver)
 
 
-void OpenglDriverCreate(OpenglDriver *self, X86Emu *emu);
+void OpenglDriverCreate(OpenglDriver *self, X86Emu *x86_emu, SIEmu *si_emu);
 void OpenglDriverDestroy(OpenglDriver *self);
 
 

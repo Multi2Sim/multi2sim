@@ -46,6 +46,7 @@ void opencl_si_constant_buffer_free(struct opencl_si_constant_buffer_t *constant
 struct opencl_si_program_t
 {
 	int id;
+	OpenclDriver *driver;
 	
 	/* ELF binary */
 	struct elf_file_t *elf_file;
@@ -56,7 +57,7 @@ struct opencl_si_program_t
 	struct list_t *constant_buffer_list;
 };
 
-struct opencl_si_program_t *opencl_si_program_create(int id);
+struct opencl_si_program_t *opencl_si_program_create(OpenclDriver *driver, int id);
 void opencl_si_program_free(struct opencl_si_program_t *program);
 
 void opencl_si_program_set_binary(struct opencl_si_program_t *program,

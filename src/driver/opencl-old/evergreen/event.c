@@ -25,29 +25,34 @@
 #include <mem-system/memory.h>
 
 #include "event.h"
+#include "opencl.h"
 #include "repo.h"
 
 
-struct evg_opencl_event_t *evg_opencl_event_create(enum evg_opencl_event_kind_t kind)
+struct evg_opencl_event_t *evg_opencl_event_create(OpenclOldDriver *driver,
+		enum evg_opencl_event_kind_t kind)
 {
 	struct evg_opencl_event_t *event;
 
 	/* Initialize */
 	event = xcalloc(1, sizeof(struct evg_opencl_event_t));
-	event->id = evg_opencl_repo_new_object_id(evg_emu->opencl_repo,
+	event->id = evg_opencl_repo_new_object_id(driver->opencl_repo,
 		evg_opencl_object_event);
 	event->ref_count = 1;
 	event->kind = kind;
+	event->driver = driver;
 
 	/* Return */
-	evg_opencl_repo_add_object(evg_emu->opencl_repo, event);
+	evg_opencl_repo_add_object(driver->opencl_repo, event);
 	return event;
 }
 
 
 void evg_opencl_event_free(struct evg_opencl_event_t *event)
 {
-	evg_opencl_repo_remove_object(evg_emu->opencl_repo, event);
+	OpenclOldDriver *driver = event->driver;
+
+	evg_opencl_repo_remove_object(driver->opencl_repo, event);
 	free(event);
 }
 

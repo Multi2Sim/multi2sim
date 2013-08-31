@@ -29,18 +29,19 @@
 
 
 /* Create a context */
-struct evg_opencl_context_t *evg_opencl_context_create()
+struct evg_opencl_context_t *evg_opencl_context_create(OpenclOldDriver *driver)
 {
 	struct evg_opencl_context_t *context;
 
 	/* Initialize */
 	context = xcalloc(1, sizeof(struct evg_opencl_context_t));
-	context->id = evg_opencl_repo_new_object_id(evg_emu->opencl_repo,
+	context->id = evg_opencl_repo_new_object_id(driver->opencl_repo,
 		evg_opencl_object_context);
 	context->ref_count = 1;
+	context->driver = driver;
 
 	/* Return */
-	evg_opencl_repo_add_object(evg_emu->opencl_repo, context);
+	evg_opencl_repo_add_object(driver->opencl_repo, context);
 	return context;
 }
 
@@ -48,7 +49,9 @@ struct evg_opencl_context_t *evg_opencl_context_create()
 /* Free context */
 void evg_opencl_context_free(struct evg_opencl_context_t *context)
 {
-	evg_opencl_repo_remove_object(evg_emu->opencl_repo, context);
+	OpenclOldDriver *driver = context->driver;
+
+	evg_opencl_repo_remove_object(driver->opencl_repo, context);
 	free(context);
 }
 
@@ -94,6 +97,8 @@ unsigned int evg_opencl_context_get_info(struct evg_opencl_context_t *context,
 void evg_opencl_context_set_properties(struct evg_opencl_context_t *context,
 		struct mem_t *mem, unsigned int addr)
 {
+	OpenclOldDriver *driver = context->driver;
+
 	unsigned int property;
 	unsigned int value;
 
@@ -112,7 +117,7 @@ void evg_opencl_context_set_properties(struct evg_opencl_context_t *context,
 
 		case 0x1084:  /* CL_CONTEXT_PLATFORM */
 			context->platform_id = value;
-			evg_opencl_repo_get_object(evg_emu->opencl_repo, evg_opencl_object_platform, value);
+			evg_opencl_repo_get_object(driver->opencl_repo, evg_opencl_object_platform, value);
 			evg_opencl_debug("    property CL_CONTEXT_PLATFORM assigned: 0x%x\n", value);
 			break;
 

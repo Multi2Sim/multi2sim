@@ -194,6 +194,3 @@ int frm_emu_max_functions;
 char *frm_emu_cuda_binary_name = "";
 
 int frm_emu_warp_size = 32;
-
-
-FrmEmu *frm_emu;

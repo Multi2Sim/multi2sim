@@ -175,9 +175,11 @@ static volatile int m2s_signal_received;  /* Signal received by handler (0 = non
 
 
 static EvgAsm *evg_asm;
+static EvgEmu *evg_emu;
 static EvgGpu *evg_gpu;
 
 static FrmAsm *frm_asm;
+static FrmEmu *frm_emu;
 
 static MIPSAsm *mips_asm;
 static MIPSEmu *mips_emu;
@@ -188,6 +190,7 @@ static X86Emu *x86_emu;
 static X86Cpu *x86_cpu;
 
 static SIAsm *si_asm;
+static SIEmu *si_emu;
 
 static OpenclOldDriver *opencl_old_driver;
 static OpenclDriver *opencl_driver;
@@ -2234,7 +2237,7 @@ int main(int argc, char **argv)
 	arch_fermi = arch_register("Fermi", "frm", frm_sim_kind,
 			NULL, NULL,
 			frm_gpu_read_config,
-			frm_gpu_init, frm_gpu_done);
+			NULL, NULL);
 	arch_mips = arch_register("MIPS", "mips", mips_sim_kind,
 			NULL, NULL,
 			mips_cpu_read_config,
@@ -2280,18 +2283,6 @@ int main(int argc, char **argv)
 	}
 	arch_set_emu(arch_x86, asEmu(x86_emu));
 
-	/* Drivers 
-	 * Instantiating these here, because they rely on x86 and
-	 * are required for other architectures */
-	opencl_driver = new(OpenclDriver, x86_emu);
-	opencl_old_driver = new(OpenclOldDriver, x86_emu);
-	opengl_driver = new(OpenglDriver, x86_emu);
-	cuda_driver = new(CudaDriver, x86_emu);
-	glu_driver = new(GluDriver, x86_emu);
-	glut_driver = new(GlutDriver, x86_emu);
-	glew_driver = new(GlewDriver, x86_emu);
-
-
 	/* Evergreen
 	 * FIXME
 	 */
@@ -2309,6 +2300,11 @@ int main(int argc, char **argv)
 	 */
 	frm_asm = new(FrmAsm);
 	frm_emu = new(FrmEmu, frm_asm);
+	if (frm_sim_kind == arch_sim_kind_detailed)
+	{
+		frm_gpu = new(FrmGpu, frm_emu);
+		arch_set_timing(arch_fermi, asTiming(frm_gpu));
+	}
 	arch_set_emu(arch_fermi, asEmu(frm_emu));
 
 	/* MIPS
@@ -2327,14 +2323,21 @@ int main(int argc, char **argv)
 	 * FIXME */
 	si_asm = new(SIAsm);
 	si_emu = new(SIEmu, si_asm);
-	si_emu->opencl_driver = x86_emu->opencl_driver; // FIXME 
 	if (si_sim_kind == arch_sim_kind_detailed)
 	{
 		si_gpu = new(SIGpu, si_emu);
-		si_gpu->opencl_driver = x86_emu->opencl_driver; // FIXME
 		arch_set_timing(arch_southern_islands, asTiming(si_gpu));
 	}
 	arch_set_emu(arch_southern_islands, asEmu(si_emu));
+
+	/* Drivers */
+	opencl_driver = new(OpenclDriver, x86_emu, si_emu);
+	opencl_old_driver = new(OpenclOldDriver, x86_emu, evg_emu);
+	opengl_driver = new(OpenglDriver, x86_emu, si_emu);
+	cuda_driver = new(CudaDriver, x86_emu, frm_emu);
+	glu_driver = new(GluDriver, x86_emu);
+	glut_driver = new(GlutDriver, x86_emu);
+	glew_driver = new(GlewDriver, x86_emu);
 
 	/* Network and memory system */
 	net_init();

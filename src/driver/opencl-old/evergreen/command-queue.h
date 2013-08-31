@@ -50,6 +50,8 @@ struct evg_opencl_command_queue_t
 	unsigned int id;
 	int ref_count;
 
+	OpenclOldDriver *driver;
+
 	unsigned int device_id;
 	unsigned int context_id;
 	unsigned int properties;
@@ -57,7 +59,7 @@ struct evg_opencl_command_queue_t
 	struct linked_list_t *command_list;
 };
 
-struct evg_opencl_command_queue_t *evg_opencl_command_queue_create(void);
+struct evg_opencl_command_queue_t *evg_opencl_command_queue_create(OpenclOldDriver *driver);
 void evg_opencl_command_queue_free(struct evg_opencl_command_queue_t *command_queue);
 
 struct evg_opencl_command_t *evg_opencl_command_create(X86Context *context,

@@ -31,6 +31,9 @@
 
 CLASS_BEGIN(OpenclDriver, Driver)
 
+	/* Device emulators */
+	SIEmu *si_emu;
+
 	/* List of Southern Islands programs and kernels */
 	struct list_t *si_program_list;
 	struct list_t *si_kernel_list;
@@ -38,7 +41,7 @@ CLASS_BEGIN(OpenclDriver, Driver)
 
 CLASS_END(OpenclDriver)
 
-void OpenclDriverCreate(OpenclDriver *self, X86Emu *emu);
+void OpenclDriverCreate(OpenclDriver *self, X86Emu *x86_emu, SIEmu *si_emu);
 void OpenclDriverDestroy(OpenclDriver *self);
 
 void OpenclDriverRequestWork(OpenclDriver *self, SINDRange *ndrange);

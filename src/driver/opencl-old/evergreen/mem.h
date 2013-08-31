@@ -31,6 +31,8 @@ struct evg_opencl_mem_t
 	unsigned int id;
 	int ref_count;
 
+	OpenclOldDriver *driver;
+
 	unsigned int type;  /* 0 buffer, 1 2D image, 2 3D image */
 
 	unsigned int size;
@@ -49,7 +51,7 @@ struct evg_opencl_mem_t
 	unsigned int device_ptr;  /* Position assigned in device global memory */
 };
 
-struct evg_opencl_mem_t *evg_opencl_mem_create(void);
+struct evg_opencl_mem_t *evg_opencl_mem_create(OpenclOldDriver *driver);
 void evg_opencl_mem_free(struct evg_opencl_mem_t *mem);
 
 

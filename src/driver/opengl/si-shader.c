@@ -312,13 +312,15 @@ void opengl_si_shader_init( struct opengl_si_program_t *program, unsigned int sh
 void opengl_si_shader_create_ndrange_constant_buffers(
 	SINDRange *ndrange)
 {
+	SIEmu *emu = ndrange->emu;
+
 	/* Create constant buffer 0 */
-	ndrange->cb0 = si_emu->video_mem_top;
-	si_emu->video_mem_top += SI_EMU_CONST_BUF_0_SIZE;
+	ndrange->cb0 = emu->video_mem_top;
+	emu->video_mem_top += SI_EMU_CONST_BUF_0_SIZE;
 
 	/* Create constant buffer 1 */
-	ndrange->cb1 = si_emu->video_mem_top;
-	si_emu->video_mem_top += SI_EMU_CONST_BUF_1_SIZE;
+	ndrange->cb1 = emu->video_mem_top;
+	emu->video_mem_top += SI_EMU_CONST_BUF_1_SIZE;
 }
 
 void opengl_si_shader_setup_ndrange_constant_buffers(
@@ -497,15 +499,17 @@ void opengl_si_shader_debug_ndrange_state(struct opengl_si_shader_t *shader,
 
 void opengl_si_shader_create_ndrange_tables(SINDRange *ndrange)
 {
+	SIEmu *emu = ndrange->emu;
+
 	/* Setup internal tables */
-	ndrange->const_buf_table = si_emu->video_mem_top;
-	si_emu->video_mem_top += SI_EMU_CONST_BUF_TABLE_SIZE;
-	ndrange->resource_table = si_emu->video_mem_top;
-	si_emu->video_mem_top += SI_EMU_RESOURCE_TABLE_SIZE;
-	ndrange->uav_table = si_emu->video_mem_top;
-	si_emu->video_mem_top += SI_EMU_UAV_TABLE_SIZE;
-	ndrange->vertex_buffer_table = si_emu->video_mem_top;
-	si_emu->video_mem_top += SI_EMU_VERTEX_BUFFER_TABLE_SIZE;
+	ndrange->const_buf_table = emu->video_mem_top;
+	emu->video_mem_top += SI_EMU_CONST_BUF_TABLE_SIZE;
+	ndrange->resource_table = emu->video_mem_top;
+	emu->video_mem_top += SI_EMU_RESOURCE_TABLE_SIZE;
+	ndrange->uav_table = emu->video_mem_top;
+	emu->video_mem_top += SI_EMU_UAV_TABLE_SIZE;
+	ndrange->vertex_buffer_table = emu->video_mem_top;
+	emu->video_mem_top += SI_EMU_VERTEX_BUFFER_TABLE_SIZE;
 
 	return;
 }

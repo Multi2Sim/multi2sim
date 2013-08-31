@@ -28,6 +28,8 @@ struct evg_opencl_program_t
 	unsigned int id;
 	int ref_count;
 
+	OpenclOldDriver *driver;
+
 	unsigned int device_id;  /* Only one device allowed */
 	unsigned int context_id;
 
@@ -39,7 +41,7 @@ struct evg_opencl_program_t
 	struct list_t *constant_buffer_list;
 };
 
-struct evg_opencl_program_t *evg_opencl_program_create(void);
+struct evg_opencl_program_t *evg_opencl_program_create(OpenclOldDriver *driver);
 void evg_opencl_program_free(struct evg_opencl_program_t *program);
 
 void evg_opencl_program_build(struct evg_opencl_program_t *program);

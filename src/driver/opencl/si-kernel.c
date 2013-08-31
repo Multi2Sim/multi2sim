@@ -649,33 +649,35 @@ void opencl_si_kernel_free(struct opencl_si_kernel_t *kernel)
 
 void opencl_si_kernel_create_ndrange_constant_buffers(SINDRange *ndrange)
 {
+	SIEmu *emu = ndrange->emu;
+
 	unsigned int size_of_constant_buffers;
 
 	size_of_constant_buffers = SI_EMU_CONST_BUF_0_SIZE + 
 		SI_EMU_CONST_BUF_1_SIZE;
 
 	/* Allocate starting from nearest page boundary */
-	if (si_emu->video_mem_top % si_emu->mmu->page_mask)
+	if (emu->video_mem_top % emu->mmu->page_mask)
 	{
-		si_emu->video_mem_top += si_emu->mmu->page_size -
-			(si_emu->video_mem_top & si_emu->mmu->page_mask);
+		emu->video_mem_top += emu->mmu->page_size -
+			(emu->video_mem_top & emu->mmu->page_mask);
 	}
 
 	/* Map new pages */
-	mem_map(si_emu->video_mem, si_emu->video_mem_top, 
+	mem_map(emu->video_mem, emu->video_mem_top,
 		size_of_constant_buffers, mem_access_read | mem_access_write);
 
 	opencl_debug("\t%u bytes of device memory allocated at " 
 		"0x%x for SI constant buffers\n", size_of_constant_buffers,
-		si_emu->video_mem_top);
+		emu->video_mem_top);
 
 	/* Create constant buffer 0 */
-	ndrange->cb0 = si_emu->video_mem_top;
-	si_emu->video_mem_top += SI_EMU_CONST_BUF_0_SIZE;
+	ndrange->cb0 = emu->video_mem_top;
+	emu->video_mem_top += SI_EMU_CONST_BUF_0_SIZE;
 
 	/* Create constant buffer 1 */
-	ndrange->cb1 = si_emu->video_mem_top;
-	si_emu->video_mem_top += SI_EMU_CONST_BUF_1_SIZE;
+	ndrange->cb1 = emu->video_mem_top;
+	emu->video_mem_top += SI_EMU_CONST_BUF_1_SIZE;
 }
 
 void opencl_si_kernel_setup_ndrange_constant_buffers(
@@ -811,33 +813,34 @@ void opencl_si_kernel_setup_ndrange_constant_buffers(
 
 void opencl_si_kernel_create_ndrange_tables(SINDRange *ndrange)
 {
+	SIEmu *emu = ndrange->emu;
 	unsigned int size_of_tables;
 
 	size_of_tables = SI_EMU_CONST_BUF_TABLE_SIZE + 
 		SI_EMU_RESOURCE_TABLE_SIZE + SI_EMU_UAV_TABLE_SIZE;
 
 	/* Allocate starting from nearest page boundary */
-	if (si_emu->video_mem_top % si_emu->mmu->page_mask)
+	if (emu->video_mem_top % emu->mmu->page_mask)
 	{
-		si_emu->video_mem_top += si_emu->mmu->page_size -
-			(si_emu->video_mem_top & si_emu->mmu->page_mask);
+		emu->video_mem_top += emu->mmu->page_size -
+			(emu->video_mem_top & emu->mmu->page_mask);
 	}
 
 	/* Map new pages */
-	mem_map(si_emu->video_mem, si_emu->video_mem_top, size_of_tables,
+	mem_map(emu->video_mem, emu->video_mem_top, size_of_tables,
 		mem_access_read | mem_access_write);
 
 	opencl_debug("\t%u bytes of device memory allocated at " 
 		"0x%x for SI internal tables\n", size_of_tables,
-		si_emu->video_mem_top);
+		emu->video_mem_top);
 
 	/* Setup internal tables */
-	ndrange->const_buf_table = si_emu->video_mem_top;
-	si_emu->video_mem_top += SI_EMU_CONST_BUF_TABLE_SIZE;
-	ndrange->resource_table = si_emu->video_mem_top;
-	si_emu->video_mem_top += SI_EMU_RESOURCE_TABLE_SIZE;
-	ndrange->uav_table = si_emu->video_mem_top;
-	si_emu->video_mem_top += SI_EMU_UAV_TABLE_SIZE;
+	ndrange->const_buf_table = emu->video_mem_top;
+	emu->video_mem_top += SI_EMU_CONST_BUF_TABLE_SIZE;
+	ndrange->resource_table = emu->video_mem_top;
+	emu->video_mem_top += SI_EMU_RESOURCE_TABLE_SIZE;
+	ndrange->uav_table = emu->video_mem_top;
+	emu->video_mem_top += SI_EMU_UAV_TABLE_SIZE;
 
 	return;
 }
@@ -1171,10 +1174,11 @@ static void opencl_si_create_buffer_desc(unsigned int base_addr,
 void opencl_si_kernel_debug_ndrange_state(struct opencl_si_kernel_t *kernel, 
 	SINDRange *ndrange) 
 {
-        int i;
+	SIEmu *emu = ndrange->emu;
+
+	int i;
 
 	struct si_buffer_desc_t buffer_desc;
-
 	struct si_arg_t *arg;
 
 	opencl_debug("\tndrange arg_list has %d elems\n", list_count(ndrange->arg_list));
@@ -1355,11 +1359,9 @@ void opencl_si_kernel_debug_ndrange_state(struct opencl_si_kernel_t *kernel,
         for (i = 0; i < SI_EMU_MAX_NUM_CONST_BUFS; i++)
 	{
 		if (!ndrange->const_buf_table_entries[i].valid)
-		{
                 	continue;
-		}
 
-        	mem_read(si_emu->global_mem, 
+        	mem_read(emu->global_mem,
 			ndrange->const_buf_table + 
 			i*SI_EMU_CONST_BUF_TABLE_ENTRY_SIZE, 
 			sizeof(buffer_desc), &buffer_desc);
@@ -1380,11 +1382,9 @@ void opencl_si_kernel_debug_ndrange_state(struct opencl_si_kernel_t *kernel,
         for (i = 0; i < SI_EMU_MAX_NUM_UAVS; i++)
 	{
 		if (!ndrange->uav_table_entries[i].valid)
-		{
                 	continue;
-		}
 
-        	mem_read(si_emu->global_mem, 
+        	mem_read(emu->global_mem,
 			ndrange->uav_table + i*SI_EMU_UAV_TABLE_ENTRY_SIZE, 
 			sizeof(buffer_desc), &buffer_desc);
 
