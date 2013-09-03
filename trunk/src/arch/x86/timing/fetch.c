@@ -49,7 +49,6 @@ static int X86ThreadCanFetch(X86Thread *self)
 {
 	X86Cpu *cpu = self->cpu;
 	X86Context *ctx = self->ctx;
-	X86Core *core = self->core;
 
 	unsigned int phy_addr;
 	unsigned int block;
@@ -72,7 +71,7 @@ static int X86ThreadCanFetch(X86Thread *self)
 	block = self->fetch_neip & ~(self->inst_mod->block_size - 1);
 	if (block != self->fetch_block)
 	{
-		phy_addr = MMUTranslate(core->mmu, 
+		phy_addr = MMUTranslate(cpu->mmu, 
 			self->ctx->address_space_index,
 			self->fetch_neip);
 		if (!mod_can_access(self->inst_mod, phy_addr))
@@ -156,7 +155,7 @@ static struct x86_uop_t *X86ThreadFetchInst(X86Thread *self, int fetch_trace_cac
 
 		/* Calculate physical address of a memory access */
 		if (uop->flags & X86_UINST_MEM)
-			uop->phy_addr = MMUTranslate(core->mmu,
+			uop->phy_addr = MMUTranslate(cpu->mmu,
 				self->ctx->address_space_index,
 				uinst->address);
 
@@ -287,8 +286,8 @@ static int X86ThreadFetchTraceCache(X86Thread *self)
 
 static void X86ThreadFetch(X86Thread *self)
 {
+	X86Cpu *cpu = self->cpu;
 	X86Context *ctx = self->ctx;
-	X86Core *core = self->core;
 	struct x86_uop_t *uop;
 
 	unsigned int phy_addr;
@@ -306,7 +305,7 @@ static void X86ThreadFetch(X86Thread *self)
 	block = self->fetch_neip & ~(self->inst_mod->block_size - 1);
 	if (block != self->fetch_block)
 	{
-		phy_addr = MMUTranslate(core->mmu, 
+		phy_addr = MMUTranslate(cpu->mmu, 
 			self->ctx->address_space_index, self->fetch_neip);
 		self->fetch_block = block;
 		self->fetch_address = phy_addr;
@@ -315,7 +314,7 @@ static void X86ThreadFetch(X86Thread *self)
 		self->btb_reads++;
 
 		/* MMU statistics */
-		MMUAccessPage(core->mmu, phy_addr, mmu_access_execute);
+		MMUAccessPage(cpu->mmu, phy_addr, mmu_access_execute);
 	}
 
 	/* Fetch all instructions within the block up to the first predict-taken branch. */

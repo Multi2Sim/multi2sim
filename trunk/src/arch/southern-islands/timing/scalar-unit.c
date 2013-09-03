@@ -33,8 +33,7 @@
 #include "wavefront-pool.h"
 
 
-void si_scalar_unit_complete(struct si_scalar_unit_t *scalar_unit)
-{
+void si_scalar_unit_complete(struct si_scalar_unit_t *scalar_unit) {
 	SIComputeUnit *compute_unit = scalar_unit->compute_unit;
 	SIGpu *gpu = compute_unit->gpu;
 
@@ -383,7 +382,8 @@ void si_scalar_unit_execute(struct si_scalar_unit_t *scalar_unit)
 				global_mem_access_addr;
 
 			/* Translate virtual address to physical address */
-			phys_addr = MMUTranslate(scalar_unit->compute_unit->mmu,
+			phys_addr = MMUTranslate(
+				scalar_unit->compute_unit->gpu->mmu,
 				uop->work_group->ndrange->address_space_index,
 				uop->global_mem_access_addr);
 
@@ -393,8 +393,8 @@ void si_scalar_unit_execute(struct si_scalar_unit_t *scalar_unit)
 				&uop->global_mem_witness, NULL, NULL, NULL);
 
 			/* MMU statistics */
-			MMUAccessPage(scalar_unit->compute_unit->mmu, phys_addr, 
-				mmu_access_read);
+			MMUAccessPage(scalar_unit->compute_unit->gpu->mmu, 
+				phys_addr, mmu_access_read);
 
 			/* Transfer the uop to the execution buffer */
 			list_remove(scalar_unit->read_buffer, uop);

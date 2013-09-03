@@ -20,8 +20,8 @@
 
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
+#include <lib/util/list.h>
 #include <mem-system/memory.h>
-#include <mem-system/mmu.h>
 
 #include "ndrange.h"
 #include "work-item.h"
@@ -37,7 +37,7 @@ void SINDRangeCreate(SINDRange *self, SIEmu *emu)
 	/* Initialize */
 	self->emu = emu;
 	self->id = emu->ndrange_count++;
-	self->address_space_index = MMUAddressSpaceNew(emu->mmu);
+	self->address_space_index = emu->address_space_index++;
 
 	self->arg_list = list_create();
 

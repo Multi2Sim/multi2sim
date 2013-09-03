@@ -35,9 +35,6 @@ extern char *si_gpu_dump_default_config_file_name;
 extern char *si_gpu_report_file_name;
 extern char *si_gpu_calc_file_name;
 
-/* FIXME - remove */
-extern int si_gpu_fused_device;
-
 
 /* OpenCL Device Info */
 extern unsigned long long si_gpu_device_type;
@@ -240,6 +237,9 @@ CLASS_BEGIN(SIGpu, Timing)
 	/* Associated emulator */
 	SIEmu *emu;
 
+	/* MMU used by this GPU */
+	MMU *mmu;
+
 	/* ND-Range running on it */
 	int work_groups_per_wavefront_pool;
 	int work_groups_per_compute_unit;
@@ -258,6 +258,10 @@ CLASS_BEGIN(SIGpu, Timing)
 
 CLASS_END(SIGpu)
 
+/*
+ * Public
+ */
+
 void SIGpuCreate(SIGpu *self, SIEmu *emu);
 void SIGpuDestroy(SIGpu *self);
 
@@ -266,14 +270,8 @@ void SIGpuDumpSummary(Timing *self, FILE *f);
 
 int SIGpuRun(Timing *self);
 
-
-
-/*
- * Public
- */
-
 extern SIGpu *si_gpu;
-
+extern char *si_mmu_report_file_name;
 
 #endif
 

@@ -29,7 +29,6 @@
 #include <lib/util/string.h>
 #include <lib/util/timer.h>
 #include <mem-system/memory.h>
-#include <mem-system/mmu.h>
 #include <mem-system/spec-mem.h>
 
 #include "context.h"
@@ -90,7 +89,7 @@ void X86ContextCreate(X86Context *self, X86Emu *emu)
 	self->loader = x86_loader_create();
 
 	/* Memory */
-	self->address_space_index = MMUAddressSpaceNew(emu->mmu);
+	self->address_space_index = emu->address_space_index++;
 	self->mem = mem_create();
 	self->spec_mem = spec_mem_create(self->mem);
 
@@ -141,7 +140,7 @@ void X86ContextCreateAndFork(X86Context *self, X86Context *forked)
 	x86_regs_copy(self->regs, forked->regs);
 
 	/* Memory */
-	self->address_space_index = MMUAddressSpaceNew(self->emu->mmu);
+	self->address_space_index = self->emu->address_space_index++;
 	self->mem = mem_create();
 	self->spec_mem = spec_mem_create(self->mem);
 	mem_clone(self->mem, forked->mem);

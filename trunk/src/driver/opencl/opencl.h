@@ -34,6 +34,11 @@ CLASS_BEGIN(OpenclDriver, Driver)
 	/* Device emulators */
 	SIEmu *si_emu;
 
+	/* Device timing simulators */
+	X86Cpu *x86_cpu;
+	SIGpu *si_gpu;
+	int fused : 1;
+
 	/* List of Southern Islands programs and kernels */
 	struct list_t *si_program_list;
 	struct list_t *si_kernel_list;

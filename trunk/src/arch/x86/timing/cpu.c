@@ -31,6 +31,7 @@
 #include <lib/util/string.h>
 #include <lib/util/timer.h>
 #include <mem-system/memory.h>
+#include <mem-system/mmu.h>
 
 #include "bpred.h"
 #include "commit.h"
@@ -58,6 +59,7 @@
  * Global variables
  */
 
+char *x86_mmu_report_file_name = "";
 
 /* Help message */
 
@@ -431,6 +433,9 @@ void X86CpuCreate(X86Cpu *self, X86Emu *emu)
 
 	/* Parent */
 	TimingCreate(asTiming(self));
+
+	/* MMU */
+	self->mmu = new(MMU, x86_mmu_report_file_name);
 	
 	/* Trace */
 	/* FIXME - should be made part of class */
@@ -497,6 +502,9 @@ void X86CpuDestroy(X86Cpu *self)
 	/* Uop trace list */
 	X86CpuEmptyTraceList(self);
 	linked_list_free(self->uop_trace_list);
+
+	/* Free MMU */
+	delete(self->mmu);
 
 	/* Free cores */
 	for (i = 0; i < x86_cpu_num_cores; i++)
