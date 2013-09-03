@@ -76,6 +76,7 @@ void partition_issue_log_write(struct partition_issue_log_t *log, FILE *file)
 {
 	unsigned int i;
 	struct partition_issue_log_entry_t *entry = log->parts;
+	fprintf(file, "PARTITION_LOG kernels:%d partitions:%d\n", log->num_kernels, log->num_entries);
 	for (i = 0; i < log->num_kernels; i++)
 	{
 		struct partition_issue_kernel_entry_t *kernel = log->kernels + i;
