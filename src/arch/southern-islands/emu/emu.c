@@ -29,7 +29,6 @@
 #include <lib/util/repos.h>
 #include <lib/util/string.h>
 #include <mem-system/memory.h>
-#include <mem-system/mmu.h>
 
 #include "emu.h"
 #include "isa.h"
@@ -37,7 +36,6 @@
 #include "wavefront.h"
 #include "work-group.h"
 
-char *si_mmu_report_file_name = "";
 
 /*
  * Class 'SIEmu'
@@ -57,9 +55,6 @@ void SIEmuCreate(SIEmu *self, SIAsm *as)
 	/* Set global memory to video memory by default */
 	self->global_mem = self->video_mem;
 
-	/* MMU */
-	self->mmu = new(MMU, si_mmu_report_file_name);
-	
 	/* Repository of deferred tasks */
 	self->write_task_repos = repos_create(sizeof(struct si_isa_write_task_t),
 		"SIEmu.write_task_repos");
@@ -78,9 +73,6 @@ void SIEmuDestroy(SIEmu *self)
 
 	/* Repository of deferred tasks */
 	repos_free(self->write_task_repos);
-
-	/* MMU */
-	delete(self->mmu);
 }
 
 

@@ -45,9 +45,6 @@ void X86CoreCreate(X86Core *self, X86Cpu *cpu)
 	for (i = 0; i < x86_cpu_num_threads; i++)
 		self->threads[i] = new(X86Thread, self);
 
-	/* MMU */
-	self->mmu = cpu->emu->mmu;
-
 	/* Prefetcher */
 	self->prefetch_history = prefetch_history_create();
 

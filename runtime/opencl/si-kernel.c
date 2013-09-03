@@ -372,12 +372,13 @@ void opencl_si_ndrange_init(struct opencl_si_ndrange_t *ndrange)
 
 void opencl_si_ndrange_free(struct opencl_si_ndrange_t *ndrange)
 {
+	opencl_debug("[%s] freeing si kernel", __FUNCTION__);
 
 	/* Wait for the nd-range to complete */
 	syscall(OPENCL_SYSCALL_CODE, opencl_abi_si_ndrange_finish,
 		ndrange->id);
 
-	/* FIXME delete nd-range here? */
+	free(ndrange);
 
 	return;
 }

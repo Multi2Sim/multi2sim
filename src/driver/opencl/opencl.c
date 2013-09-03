@@ -24,6 +24,7 @@
 #include <arch/x86/emu/context.h>
 #include <arch/x86/emu/emu.h>
 #include <arch/x86/emu/regs.h>
+#include <arch/x86/timing/cpu.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
@@ -286,40 +287,42 @@ static int opencl_abi_si_mem_alloc_impl(X86Context *ctx)
 	X86Emu *x86_emu = ctx->emu;
 	OpenclDriver *driver = x86_emu->opencl_driver;
 	SIEmu *si_emu = driver->si_emu;
+	SIGpu *si_gpu = driver->si_gpu;
 
 	struct x86_regs_t *regs = ctx->regs;
 
 	unsigned int device_ptr;
-	unsigned int num_pages;
-	unsigned int page_size;
 	unsigned int size;
 
 	/* Arguments */
 	size = regs->ecx;
 	opencl_debug("\tsize = %u\n", size);
 
-	page_size = si_emu->mmu->page_size;
-	num_pages = (size+page_size-1)/page_size;
-
-	assert(num_pages);
-
-	/* Allocate starting from nearest page boundary */
-	if (si_emu->video_mem_top % si_emu->mmu->page_mask)
+	if (driver->fused)
 	{
-		si_emu->video_mem_top += si_emu->mmu->page_size -
-			(si_emu->video_mem_top & si_emu->mmu->page_mask);
+		fatal("%s: GPU is set as a fused device, so the x86 "
+			"allocator should be used", __FUNCTION__);
 	}
 
-	/* New virtual address */
+	if (si_gpu)
+	{
+		/* Allocate starting from nearest page boundary */
+		if (si_emu->video_mem_top % si_gpu->mmu->page_mask)
+		{
+			si_emu->video_mem_top += si_gpu->mmu->page_size -
+				(si_emu->video_mem_top & 
+				 si_gpu->mmu->page_mask);
+		}
+
+		/* Map new pages */
+		mem_map(si_emu->video_mem, si_emu->video_mem_top, size,
+			mem_access_read | mem_access_write);
+	}
+
+	/* Virtual address of memory object */
 	device_ptr = si_emu->video_mem_top;
 	opencl_debug("\t%d bytes of device memory allocated at 0x%x\n",
 		size, device_ptr);
-	opencl_debug("\tnum pages = %u (page size = %u)\n", num_pages, 
-		page_size);
-
-	/* Map new pages */
-	mem_map(si_emu->video_mem, si_emu->video_mem_top, size,
-		mem_access_read | mem_access_write);
 
 	/* For now, memory allocation in device memory is done by just 
 	 * incrementing a pointer to the top of the global memory space. 
@@ -370,6 +373,12 @@ static int opencl_abi_si_mem_read_impl(X86Context *ctx)
 	unsigned int size;
 
 	void *buf;
+
+	if (driver->fused)
+	{
+		fatal("%s: GPU is set as a fused device, so the x86 "
+			"memory operations should be used", __FUNCTION__);
+	}
 
 	/* Arguments */
 	host_ptr = regs->ecx;
@@ -433,6 +442,12 @@ static int opencl_abi_si_mem_write_impl(X86Context *ctx)
 
 	void *buf;
 
+	if (driver->fused)
+	{
+		fatal("%s: GPU is set as a fused device, so the x86 "
+			"memory operations should be used", __FUNCTION__);
+	}
+
 	/* Arguments */
 	device_ptr = regs->ecx;
 	host_ptr = regs->edx;
@@ -494,6 +509,12 @@ static int opencl_abi_si_mem_copy_impl(X86Context *ctx)
 	unsigned int size;
 
 	void *buf;
+
+	if (driver->fused)
+	{
+		fatal("%s: GPU is set as a fused device, so the x86 "
+			"memory operations should be used", __FUNCTION__);
+	}
 
 	/* Arguments */
 	dest_ptr = regs->ecx;
@@ -1024,7 +1045,7 @@ static int opencl_abi_si_ndrange_create_impl(X86Context *ctx)
 	unsigned int global_size[3];
 	unsigned int local_size[3];
 
-	if (si_gpu_fused_device)
+	if (driver->fused)
 		si_emu->global_mem = ctx->mem;
 
 	/* Arguments */
@@ -1442,7 +1463,7 @@ static int opencl_abi_si_ndrange_pass_mem_objs_impl(X86Context *ctx)
 	if (!kernel)
 		fatal("%s: invalid kernel ID (%d)", __FUNCTION__, kernel_id);
 
-	if (si_gpu_fused_device)
+	if (driver->fused)
 	{
 		/* 16 extra bytes allocated */
 		tables_ptr = (regs->esi + 15) & 0xFFFFFFF0;
@@ -1459,13 +1480,18 @@ static int opencl_abi_si_ndrange_pass_mem_objs_impl(X86Context *ctx)
 
 		ndrange->cb0 = constant_buffers_ptr;
 		ndrange->cb1 = ndrange->cb0 + SI_EMU_CONST_BUF_0_SIZE;
+		
+		opencl_si_ndrange_setup_mmu(ndrange, driver->x86_cpu->mmu, 
+			ctx->address_space_index, si_gpu->mmu, tables_ptr, 
+			constant_buffers_ptr);
 	}
 
 	/* Set up initial state and arguments (order matters!) */
-	if (!si_gpu_fused_device)
+	if (!driver->fused)
 	{
-		opencl_si_kernel_create_ndrange_tables(ndrange); 
-		opencl_si_kernel_create_ndrange_constant_buffers(ndrange); 
+		opencl_si_kernel_create_ndrange_tables(ndrange, si_gpu->mmu); 
+		opencl_si_kernel_create_ndrange_constant_buffers(ndrange,
+			si_gpu->mmu); 
 	}
 	opencl_si_kernel_setup_ndrange_constant_buffers(ndrange);
 	opencl_si_kernel_setup_ndrange_args(kernel, ndrange);
@@ -1490,7 +1516,16 @@ static int opencl_abi_si_ndrange_set_fused_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
-	si_gpu_fused_device = regs->ecx;
+	X86Emu *x86_emu = ctx->emu;
+	OpenclDriver *driver = x86_emu->opencl_driver;
+	SIGpu *si_gpu = driver->si_gpu;
+	assert(si_gpu);
+
+	driver->fused = regs->ecx;
+
+	/* With a fused device, the GPU MMU will be initialized by
+	 * the CPU */
+	si_gpu->mmu->read_only = driver->fused;
 
 	return 0;
 }

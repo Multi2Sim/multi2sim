@@ -43,10 +43,8 @@ CLASS_BEGIN(X86Emu, Emu)
 	/* PID assignment */
 	int current_pid;
 
-	/* MMU */
-	/* Currently used in emulation and pointed to by each
-	 * core in timing mode */
-	MMU *mmu; 
+	/* Address space ID (can be cloned, so different from PID) */
+	int address_space_index;
 
 	/* Schedule next call to 'X86EmuProcessEvents()'.
 	 * The call will only be effective if 'process_events_force' is set.
@@ -128,8 +126,6 @@ void X86EmuLoadContextFromCommandLine(X86Emu *self, int argc, char **argv);
 /*
  * Public
  */
-
-extern char *x86_mmu_report_file_name;
 
 extern long long x86_emu_max_cycles;
 extern long long x86_emu_max_inst;

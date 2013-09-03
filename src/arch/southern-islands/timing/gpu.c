@@ -32,6 +32,7 @@
 #include <lib/util/list.h>
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
+#include <mem-system/mmu.h>
 
 #include "calc.h"
 #include "compute-unit.h"
@@ -51,6 +52,8 @@ static char *si_err_stall =
 /*
  * Global variables
  */
+
+char *si_mmu_report_file_name = "";
 
 char *si_gpu_config_help =
 	"The Southern Islands GPU configuration file is a plain text INI file\n"
@@ -241,8 +244,6 @@ char *si_gpu_dump_default_config_file_name = "";
 char *si_gpu_report_file_name = "";
 
 int si_trace_category;
-
-int si_gpu_fused_device;
 
 /* Default parameters based on the AMD Radeon HD 7970 */
 unsigned long long si_gpu_device_type = 4; /* CL_DEVICE_TYPE_GPU */
@@ -1206,6 +1207,9 @@ void SIGpuCreate(SIGpu *self, SIEmu *emu)
 
 	/* Parent */
 	TimingCreate(asTiming(self));
+
+	/* MMU */
+	self->mmu = new(MMU, si_mmu_report_file_name);
 	
 	/* Frequency */
 	asTiming(self)->frequency = si_gpu_frequency;
@@ -1283,6 +1287,9 @@ void SIGpuDestroy(SIGpu *self)
 	/* Free work group lists */
 	list_free(self->running_work_groups);
 	list_free(self->waiting_work_groups);
+
+	/* Free MMU */
+	delete(self->mmu);
 }
 
 

@@ -37,7 +37,6 @@
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
 #include <mem-system/memory.h>
-#include <mem-system/mmu.h>
 
 #include "context.h"
 #include "emu.h"
@@ -58,7 +57,6 @@ char x86_emu_last_inst_bytes[20];
 int x86_emu_last_inst_size = 0;
 int x86_emu_process_prefetch_hints = 0;
 
-char *x86_mmu_report_file_name = "";
 
 
 
@@ -92,9 +90,6 @@ void X86EmuCreate(X86Emu *self, X86Asm *as)
 	M2S_HOST_GUEST_MATCH(sizeof(int), 4);
 	M2S_HOST_GUEST_MATCH(sizeof(short), 2);
 
-	/* MMU */
-	self->mmu = new(MMU, x86_mmu_report_file_name);
-
 	/* Micro-instructions - FIXME - should be part of class */
 	x86_uinst_init();
 
@@ -124,9 +119,6 @@ void X86EmuDestroy(X86Emu *self)
 	/* Print system call summary */
 	if (debug_status(x86_sys_debug_category))
 		x86_sys_dump_stats(debug_file(x86_sys_debug_category));
-
-	/* MMU */
-	delete(self->mmu);
 }
 
 

@@ -62,62 +62,6 @@ struct mmu_page_t
  * Private Functions
  */
 
-static struct mmu_page_t *MMUGetPage(MMU *self, int address_space_index, 
-	unsigned int vtladdr)
-{
-	struct mmu_page_t *prev, *page;
-	unsigned int tag;
-	int index;
-
-	/* Look for page */
-	index = ((vtladdr >> self->log_page_size) + address_space_index * 23) % 
-		MMU_PAGE_HASH_SIZE;
-	tag = vtladdr & ~(self->page_mask);
-	prev = NULL;
-	page = self->page_hash_table[index];
-	while (page)
-	{
-		if (page->vtl_addr == tag && 
-			page->address_space_index == address_space_index)
-		{
-			break;
-		}
-		prev = page;
-		page = page->next;
-	}
-	
-	/* Not found */
-	if (!page)
-	{
-		/* Initialize */
-		page = xcalloc(1, sizeof(struct mmu_page_t));
-		page->vtl_addr = tag;
-		page->address_space_index = address_space_index;
-		page->phy_addr = list_count(self->page_list) << 
-			self->log_page_size;
-
-		/* Insert in page list */
-		list_add(self->page_list, page);
-
-		/* Insert in page hash table */
-		page->next = self->page_hash_table[index];
-		self->page_hash_table[index] = page;
-		prev = NULL;
-	}
-	
-	/* Locate page at the head of the hash table for faster 
-	 * subsequent lookup */
-	if (prev)
-	{
-		prev->next = page->next;
-		page->next = self->page_hash_table[index];
-		self->page_hash_table[index] = page;
-	}
-
-	/* Return it */
-	return page;
-}
-
 static int MMUPageCompare(const void *ptr1, const void *ptr2)
 {
 	struct mmu_page_t *page1 = (struct mmu_page_t *) ptr1;
@@ -159,6 +103,23 @@ static void MMUDumpReport(MMU *self)
 	if (!f)
 		return;
 
+	/* If MMU is read-only, the address range is bloated with 
+	 * NULL pages */
+	if (self->read_only)
+	{
+		int list_entries = list_count(self->page_list);
+		int list_index = 0;
+		for (i = 0; i < list_entries; i++)
+		{
+			if (!list_get(self->page_list, list_index))
+			{
+				list_remove_at(self->page_list, list_index);
+				continue;
+			}
+			list_index++;
+		}
+	}
+
 	/* Sort list of pages it as per access count */
 	list_sort(self->page_list, MMUPageCompare);
 
@@ -173,6 +134,9 @@ static void MMUDumpReport(MMU *self)
 	for (i = 0; i < list_count(self->page_list); i++)
 	{
 		page = list_get(self->page_list, i);
+		if (!page)
+			continue;
+
 		num_accesses = page->num_read_accesses + 
 			page->num_write_accesses + 
 			page->num_execute_accesses;
@@ -181,6 +145,72 @@ static void MMUDumpReport(MMU *self)
 			page->phy_addr, num_accesses, page->num_read_accesses,
 			page->num_write_accesses, page->num_execute_accesses);
 	}
+}
+
+static struct mmu_page_t *MMUGetPage(MMU *self, int address_space_index, 
+	unsigned int vtladdr)
+{
+	struct mmu_page_t *prev, *page;
+	unsigned int tag;
+	int index;
+
+	/* Look for page */
+	index = ((vtladdr >> self->log_page_size) + address_space_index * 23) % 
+		MMU_PAGE_HASH_SIZE;
+	tag = vtladdr & ~(self->page_mask);
+	prev = NULL;
+	page = self->page_hash_table[index];
+	while (page)
+	{
+		if (page->vtl_addr == tag && 
+			page->address_space_index == address_space_index)
+		{
+			break;
+		}
+		prev = page;
+		page = page->next;
+	}
+	
+	/* Not found */
+	if (!page)
+	{
+		if (self->read_only)
+		{
+			if (self->report_file)
+				MMUDumpReport(self);
+			
+			fatal("%s: MMU was trying to allocate page 0x%x "
+				"(asid %d) in read-only mode.", __FUNCTION__, 
+				vtladdr, address_space_index);
+		}
+
+		/* Initialize */
+		page = xcalloc(1, sizeof(struct mmu_page_t));
+		page->vtl_addr = tag;
+		page->address_space_index = address_space_index;
+		page->phy_addr = list_count(self->page_list) << 
+			self->log_page_size;
+
+		/* Insert in page list */
+		list_add(self->page_list, page);
+
+		/* Insert in page hash table */
+		page->next = self->page_hash_table[index];
+		self->page_hash_table[index] = page;
+		prev = NULL;
+	}
+	
+	/* Locate page at the head of the hash table for faster 
+	 * subsequent lookup */
+	if (prev)
+	{
+		prev->next = page->next;
+		page->next = self->page_hash_table[index];
+		self->page_hash_table[index] = page;
+	}
+
+	/* Return it */
+	return page;
 }
 
 
@@ -268,7 +298,13 @@ void MMUAccessPage(MMU *self, unsigned int phy_addr, enum mmu_access_t access)
 	index = phy_addr >> self->log_page_size;
 	page = list_get(self->page_list, index);
 	if (!page)
-		fatal("%s: accessing non-allocated page", __FUNCTION__);
+	{
+		if (self->report_file)
+			MMUDumpReport(self);
+
+		fatal("%s: accessing non-allocated page (addr 0x%x)", 
+			__FUNCTION__, phy_addr);
+	}
 
 	/* Record access */
 	switch (access)
@@ -287,5 +323,78 @@ void MMUAccessPage(MMU *self, unsigned int phy_addr, enum mmu_access_t access)
 
 	default:
 		panic("%s: invalid access", __FUNCTION__);
+	}
+}
+
+void MMUCopyTranslation(MMU *self, int self_address_space_index, MMU *other, 
+	int other_address_space_index, unsigned int vtl_addr, unsigned int size)
+{
+	assert(self->read_only);
+	assert(!other->read_only);
+	assert(self->page_size = other->page_size);
+	assert(self->page_mask = other->page_mask);
+
+	struct mmu_page_t *self_page, *other_page;
+
+	int vtl_index;
+	int phy_index;
+
+	unsigned int addr = vtl_addr & ~self->page_mask;
+
+	/* Map all pages in range */
+	while (addr <= (vtl_addr + size))
+	{
+		/* Find existing page in other MMU */
+		other_page = MMUGetPage(other, other_address_space_index, addr);
+
+		/* Insert in page list (may need to insert empty pages
+		 * in the list first) */
+		phy_index = other_page->phy_addr >> self->log_page_size;
+		if (list_count(self->page_list) < phy_index)
+		{
+			/* Page doesn't exist yet.  Create NULL pages
+			 * up to and including the page to be created. */
+			while (list_count(self->page_list) <= phy_index)
+				list_add(self->page_list, NULL);
+
+			/* Create page in self */
+			self_page = xcalloc(1, sizeof(struct mmu_page_t));
+			self_page->vtl_addr = addr & ~(self->page_mask);
+			self_page->phy_addr = other_page->phy_addr;
+			self_page->address_space_index = 
+				self_address_space_index;
+
+			/* Add page to page-list */
+			list_set(self->page_list, phy_index, self_page);
+		}
+		else if (list_get(self->page_list, phy_index))
+		{
+			/* Page exists. Continue using it to keep the stats
+			 * correct. */
+			self_page = list_get(self->page_list, phy_index);
+		}
+		else
+		{
+			/* Page location exists, but page is NULL */
+
+			/* Create page in self */
+			self_page = xcalloc(1, sizeof(struct mmu_page_t));
+			self_page->vtl_addr = addr & ~(self->page_mask);
+			self_page->phy_addr = other_page->phy_addr;
+			self_page->address_space_index = 
+				self_address_space_index;
+
+			/* Set page to page-list */
+			list_set(self->page_list, phy_index, self_page);
+		}
+		assert(!self->page_list->error_code);
+
+		/* Insert in page hash table */
+		vtl_index = ((addr >> self->log_page_size) + 
+			self_address_space_index * 23) % MMU_PAGE_HASH_SIZE;
+		self_page->next = self->page_hash_table[vtl_index];
+		self->page_hash_table[vtl_index] = self_page;
+
+		addr += self->page_size;
 	}
 }
