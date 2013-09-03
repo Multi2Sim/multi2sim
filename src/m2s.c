@@ -2339,6 +2339,11 @@ int main(int argc, char **argv)
 	glut_driver = new(GlutDriver, x86_emu);
 	glew_driver = new(GlewDriver, x86_emu);
 
+	if (si_sim_kind == arch_sim_kind_detailed)
+		opencl_driver->si_gpu = si_gpu;
+	if (x86_sim_kind == arch_sim_kind_detailed)
+		opencl_driver->x86_cpu = x86_cpu;
+
 	/* Network and memory system */
 	net_init();
 	mem_system_init();

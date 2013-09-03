@@ -49,7 +49,6 @@ void SIComputeUnitCreate(SIComputeUnit *self, SIGpu *gpu, int id)
 	/* Initialize */
 	self->id = id;
 	self->gpu = gpu;
-	self->mmu = gpu->emu->mmu;
 
 	/* Local memory */
 	snprintf(buf, sizeof buf, "LDS[%d]", self->id);

@@ -1560,7 +1560,9 @@ void mem_config_read(void)
 	mem_config_check_routes();
 
 	/* Check for disjoint memory hierarchies for different architectures. */
-	if (!si_gpu_fused_device)
+	/* FIXME We don't know if device is fused until runtime, so we can't
+	 * check this in advance */
+	if (0)
 		arch_for_each(mem_config_check_disjoint, NULL);
 
 	/* Compute sub-block sizes, based on high modules. This function also

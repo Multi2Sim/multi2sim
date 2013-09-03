@@ -42,11 +42,7 @@ CLASS_BEGIN(SIEmu, Emu)
 	unsigned int video_mem_top;
 	struct mem_t *shared_mem; /* shared with the CPU */
 	struct mem_t *global_mem; /* will point to video_mem or shared_mem */
-
-	/* MMU */
-	/* Currently used in emulation and pointed to by each
-	 * compute unit in timing mode */
-	MMU *mmu;
+	int address_space_index;
 
 	/* Current ND-Range */
 	SINDRange *ndrange;
@@ -254,7 +250,6 @@ extern int si_emu_max_kernels;
 extern char *si_emu_opengl_binary_name;
 
 extern int si_emu_wavefront_size;
-extern char *si_mmu_report_file_name;
 
 #endif
 

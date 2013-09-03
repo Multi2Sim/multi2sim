@@ -43,6 +43,9 @@ CLASS_BEGIN(X86Cpu, Timing)
 	/* Array of cores */
 	X86Core **cores;
 
+	/* MMU used by this CPU */
+	MMU *mmu;
+
 	/* Some fields */
 	long long uop_id_counter;  /* Counter of uop ID assignment */
 	char *stage;  /* Name of currently simulated stage */
@@ -172,6 +175,7 @@ extern int x86_cpu_commit_width;
 #define x86_trace(...) trace(x86_trace_category, __VA_ARGS__)
 #define x86_trace_header(...) trace_header(x86_trace_category, __VA_ARGS__)
 extern int x86_trace_category;
+extern char *x86_mmu_report_file_name;
 
 
 void X86CpuReadConfig(void);

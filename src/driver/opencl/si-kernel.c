@@ -21,6 +21,9 @@
 #include <arch/southern-islands/asm/arg.h>
 #include <arch/southern-islands/emu/isa.h>
 #include <arch/southern-islands/emu/ndrange.h>
+#include <arch/x86/emu/context.h>
+#include <arch/x86/emu/emu.h>
+#include <arch/x86/timing/cpu.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
@@ -647,7 +650,8 @@ void opencl_si_kernel_free(struct opencl_si_kernel_t *kernel)
 }
 
 
-void opencl_si_kernel_create_ndrange_constant_buffers(SINDRange *ndrange)
+void opencl_si_kernel_create_ndrange_constant_buffers(SINDRange *ndrange,
+	MMU *gpu_mmu)
 {
 	SIEmu *emu = ndrange->emu;
 
@@ -656,16 +660,20 @@ void opencl_si_kernel_create_ndrange_constant_buffers(SINDRange *ndrange)
 	size_of_constant_buffers = SI_EMU_CONST_BUF_0_SIZE + 
 		SI_EMU_CONST_BUF_1_SIZE;
 
-	/* Allocate starting from nearest page boundary */
-	if (emu->video_mem_top % emu->mmu->page_mask)
+	if (gpu_mmu)
 	{
-		emu->video_mem_top += emu->mmu->page_size -
-			(emu->video_mem_top & emu->mmu->page_mask);
-	}
+		/* Allocate starting from nearest page boundary */
+		if (emu->video_mem_top % gpu_mmu->page_mask)
+		{
+			emu->video_mem_top += gpu_mmu->page_size -
+				(emu->video_mem_top & gpu_mmu->page_mask);
+		}
 
-	/* Map new pages */
-	mem_map(emu->video_mem, emu->video_mem_top,
-		size_of_constant_buffers, mem_access_read | mem_access_write);
+		/* Map new pages */
+		mem_map(emu->video_mem, emu->video_mem_top,
+			size_of_constant_buffers, 
+			mem_access_read | mem_access_write);
+	}
 
 	opencl_debug("\t%u bytes of device memory allocated at " 
 		"0x%x for SI constant buffers\n", size_of_constant_buffers,
@@ -811,7 +819,7 @@ void opencl_si_kernel_setup_ndrange_constant_buffers(
 	/* FIXME Size of the printf buffer */
 }
 
-void opencl_si_kernel_create_ndrange_tables(SINDRange *ndrange)
+void opencl_si_kernel_create_ndrange_tables(SINDRange *ndrange, MMU *gpu_mmu)
 {
 	SIEmu *emu = ndrange->emu;
 	unsigned int size_of_tables;
@@ -819,16 +827,19 @@ void opencl_si_kernel_create_ndrange_tables(SINDRange *ndrange)
 	size_of_tables = SI_EMU_CONST_BUF_TABLE_SIZE + 
 		SI_EMU_RESOURCE_TABLE_SIZE + SI_EMU_UAV_TABLE_SIZE;
 
-	/* Allocate starting from nearest page boundary */
-	if (emu->video_mem_top % emu->mmu->page_mask)
+	if (gpu_mmu)
 	{
-		emu->video_mem_top += emu->mmu->page_size -
-			(emu->video_mem_top & emu->mmu->page_mask);
-	}
+		/* Allocate starting from nearest page boundary */
+		if (emu->video_mem_top % gpu_mmu->page_mask)
+		{
+			emu->video_mem_top += gpu_mmu->page_size -
+				(emu->video_mem_top & gpu_mmu->page_mask);
+		}
 
-	/* Map new pages */
-	mem_map(emu->video_mem, emu->video_mem_top, size_of_tables,
-		mem_access_read | mem_access_write);
+		/* Map new pages */
+		mem_map(emu->video_mem, emu->video_mem_top, size_of_tables,
+			mem_access_read | mem_access_write);
+	}
 
 	opencl_debug("\t%u bytes of device memory allocated at " 
 		"0x%x for SI internal tables\n", size_of_tables,
@@ -1398,4 +1409,84 @@ void opencl_si_kernel_debug_ndrange_state(struct opencl_si_kernel_t *kernel,
         si_isa_debug("========================================================"
                 "\n");
 }
+
+void opencl_si_ndrange_setup_mmu(SINDRange *ndrange, MMU *cpu_mmu,
+	int cpu_address_space_index, MMU *gpu_mmu, 
+	unsigned int internal_tables_ptr, 
+	unsigned int constant_buffers_ptr)
+{
+	struct si_arg_t *arg;
+
+	int index;
+
+	/* Map constant buffers to MMU */
+	MMUCopyTranslation(gpu_mmu, ndrange->address_space_index, cpu_mmu, 
+		cpu_address_space_index, constant_buffers_ptr, 
+		SI_EMU_TOTAL_CONST_BUF_SIZE);
+	opencl_debug("\tmapping constant buffers (addr 0x%x)\n", 
+		constant_buffers_ptr);
+
+	/* Map internal tables to MMU */
+	unsigned int internal_tables_size = SI_EMU_CONST_BUF_TABLE_SIZE +
+		SI_EMU_RESOURCE_TABLE_SIZE + SI_EMU_UAV_TABLE_SIZE;
+	MMUCopyTranslation(gpu_mmu, ndrange->address_space_index, cpu_mmu, 
+		cpu_address_space_index, internal_tables_ptr, 
+		internal_tables_size);
+	opencl_debug("\tmapping internal tables (addr 0x%x)\n", 
+		internal_tables_ptr);
+
+	/* Map memory objects to MMU */
+	LIST_FOR_EACH(ndrange->arg_list, index)
+	{
+		arg = list_get(ndrange->arg_list, index);
+		assert(arg);
+
+		/* Process argument depending on its type */
+		switch (arg->type)
+		{
+
+		case si_arg_pointer:
+		{
+			
+			switch (arg->pointer.scope)
+			{
+			/* UAV */
+			case si_arg_uav:
+			{
+				opencl_debug("\tmapping uav %d (addr 0x%x)\n",
+					arg->pointer.buffer_num, 
+					arg->pointer.device_ptr);
+				MMUCopyTranslation(gpu_mmu, 
+					ndrange->address_space_index, 
+					cpu_mmu, cpu_address_space_index, 
+					arg->pointer.device_ptr, arg->size);
+				break;
+			}
+			/* Hardware constant memory */
+			case si_arg_hw_constant:
+			{
+				opencl_debug("\tmapping cb %d (addr 0x%x)\n",
+					arg->pointer.constant_buffer_num, 
+					arg->pointer.device_ptr);
+				MMUCopyTranslation(gpu_mmu, 
+					ndrange->address_space_index,
+					cpu_mmu, cpu_address_space_index, 
+					arg->pointer.device_ptr, arg->size);
+				break;
+			}
+			default:
+			{
+				break;
+			}
+			}
+
+		}
+		default:
+		{
+			break;
+		}
+		}
+	}
+}
+
 

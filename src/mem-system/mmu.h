@@ -57,6 +57,8 @@ CLASS_BEGIN(MMU, Object)
 	unsigned int page_mask;
 	int address_space_index;
 
+	unsigned int read_only : 1;
+
 CLASS_END(MMU)
 
 void MMUCreate(MMU *self, char *report_file_name);
@@ -64,6 +66,9 @@ void MMUDestroy(MMU *self);
 
 void MMUAccessPage(MMU *self, unsigned int phy_addr, enum mmu_access_t access);
 int MMUAddressSpaceNew(MMU *self);
+void MMUCopyTranslation(MMU *self, int self_address_space_index, MMU *other, 
+	int other_address_space_index, unsigned int vtl_addr, 
+	unsigned int size);
 unsigned int MMUTranslate(MMU *self, int address_space_index, 
 	unsigned int vtl_addr);
 int MMUValidPhysicalAddr(MMU *self, unsigned int phy_addr);

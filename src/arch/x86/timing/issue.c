@@ -102,7 +102,7 @@ static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 		quantum--;
 		
 		/* MMU statistics */
-		MMUAccessPage(core->mmu, store->phy_addr, mmu_access_write);
+		MMUAccessPage(cpu->mmu, store->phy_addr, mmu_access_write);
 	}
 	return quantum;
 }
@@ -173,7 +173,7 @@ static int X86ThreadIssueLQ(X86Thread *self, int quant)
 		quant--;
 		
 		/* MMU statistics */
-		MMUAccessPage(core->mmu, load->phy_addr, mmu_access_read);
+		MMUAccessPage(cpu->mmu, load->phy_addr, mmu_access_read);
 
 		/* Trace */
 		x86_trace("x86.inst id=%lld core=%d stg=\"i\"\n",
@@ -264,7 +264,7 @@ static int X86ThreadIssuePreQ(X86Thread *self, int quantum)
 		quantum--;
 		
 		/* MMU statistics */
-		MMUAccessPage(core->mmu, prefetch->phy_addr, mmu_access_read);
+		MMUAccessPage(cpu->mmu, prefetch->phy_addr, mmu_access_read);
 
 		/* Trace */
 		x86_trace("x86.inst id=%lld core=%d stg=\"i\"\n",
