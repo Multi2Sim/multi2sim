@@ -191,6 +191,7 @@ static X86Cpu *x86_cpu;
 
 static SIAsm *si_asm;
 static SIEmu *si_emu;
+static SIGpu *si_gpu;
 
 static OpenclOldDriver *opencl_old_driver;
 static OpenclDriver *opencl_driver;
@@ -2340,7 +2341,10 @@ int main(int argc, char **argv)
 	glew_driver = new(GlewDriver, x86_emu);
 
 	if (si_sim_kind == arch_sim_kind_detailed)
+	{
 		opencl_driver->si_gpu = si_gpu;
+		opengl_driver->si_gpu = si_gpu;
+	}
 	if (x86_sim_kind == arch_sim_kind_detailed)
 		opencl_driver->x86_cpu = x86_cpu;
 

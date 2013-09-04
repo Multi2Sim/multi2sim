@@ -1022,6 +1022,7 @@ static int opencl_abi_si_ndrange_create_impl(X86Context *ctx)
 	X86Emu *x86_emu = ctx->emu;
 	OpenclDriver *driver = x86_emu->opencl_driver;
 	SIEmu *si_emu = driver->si_emu;
+	SIGpu *si_gpu = driver->si_gpu;
 
 	SINDRange *ndrange;
 
@@ -1155,6 +1156,10 @@ static int opencl_abi_si_ndrange_get_num_buffer_entries_impl(
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
+
+	X86Emu *x86_emu = ctx->emu;
+	OpenclDriver *driver = x86_emu->opencl_driver;
+	SIGpu *si_gpu = driver->si_gpu;
 
 	unsigned int host_ptr;
 
@@ -1434,6 +1439,7 @@ static int opencl_abi_si_ndrange_pass_mem_objs_impl(X86Context *ctx)
 {
 	X86Emu *emu = ctx->emu;
 	OpenclDriver *driver = emu->opencl_driver;
+	SIGpu *si_gpu = driver->si_gpu;
 	SINDRange *ndrange = NULL, *tmp_ndrange;
 
 	struct opencl_si_kernel_t *kernel;

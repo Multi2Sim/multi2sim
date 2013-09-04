@@ -32,6 +32,9 @@ CLASS_BEGIN(OpenglDriver, Driver)
 	/* Device emulators */
 	SIEmu *si_emu;
 
+	/* Device timing simulators */
+	SIGpu *si_gpu;
+
 	/* Active ND-Range */
 	SINDRange *ndrange;
 
