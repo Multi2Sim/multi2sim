@@ -143,8 +143,6 @@ int SIEmuRun(Emu *self)
 		if (!list_count(ndrange->running_work_groups))
 			continue;
 
-		printf("running ndrange %d\n", ndrange->id);
-
 		/* Iterate over running work groups */
 		LIST_FOR_EACH(ndrange->running_work_groups, wg_index)
 		{
@@ -152,7 +150,6 @@ int SIEmuRun(Emu *self)
 			work_group_id = (long) list_dequeue(
 				ndrange->running_work_groups);
 			work_group = new(SIWorkGroup, work_group_id, ndrange);
-			printf("running work group %d\n", work_group->id);
 
 			/* Execute the work-group to completion */
 			while (!work_group->finished_emu)
@@ -183,7 +180,6 @@ int SIEmuRun(Emu *self)
 		if (opencl_driver)
 		{
 			OpenclDriverRequestWork(opencl_driver, ndrange);
-			printf("requesting more work from driver\n");
 		}
 	}
 

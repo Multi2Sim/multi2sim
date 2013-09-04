@@ -314,10 +314,11 @@ static int opencl_abi_si_mem_alloc_impl(X86Context *ctx)
 				 si_gpu->mmu->page_mask);
 		}
 
-		/* Map new pages */
-		mem_map(si_emu->video_mem, si_emu->video_mem_top, size,
-			mem_access_read | mem_access_write);
 	}
+
+	/* Map new pages */
+	mem_map(si_emu->video_mem, si_emu->video_mem_top, size,
+		mem_access_read | mem_access_write);
 
 	/* Virtual address of memory object */
 	device_ptr = si_emu->video_mem_top;
@@ -1495,9 +1496,9 @@ static int opencl_abi_si_ndrange_pass_mem_objs_impl(X86Context *ctx)
 	/* Set up initial state and arguments (order matters!) */
 	if (!driver->fused)
 	{
-		opencl_si_kernel_create_ndrange_tables(ndrange, si_gpu->mmu); 
+		opencl_si_kernel_create_ndrange_tables(ndrange, NULL); 
 		opencl_si_kernel_create_ndrange_constant_buffers(ndrange,
-			si_gpu->mmu); 
+			NULL); 
 	}
 	opencl_si_kernel_setup_ndrange_constant_buffers(ndrange);
 	opencl_si_kernel_setup_ndrange_args(kernel, ndrange);
@@ -1525,13 +1526,16 @@ static int opencl_abi_si_ndrange_set_fused_impl(X86Context *ctx)
 	X86Emu *x86_emu = ctx->emu;
 	OpenclDriver *driver = x86_emu->opencl_driver;
 	SIGpu *si_gpu = driver->si_gpu;
-	assert(si_gpu);
 
 	driver->fused = regs->ecx;
 
 	/* With a fused device, the GPU MMU will be initialized by
 	 * the CPU */
-	si_gpu->mmu->read_only = driver->fused;
+	if (driver->fused)
+	{
+		assert(si_gpu);
+		si_gpu->mmu->read_only = 1;
+	}
 
 	return 0;
 }

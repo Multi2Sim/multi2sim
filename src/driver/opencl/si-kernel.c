@@ -1332,10 +1332,7 @@ void opencl_si_kernel_debug_ndrange_state(struct opencl_si_kernel_t *kernel,
 					arg->pointer.buffer_num, arg->size, 
 					arg->name);
                         }
-                        else
-                        {
-				warning("unexpected type in si isa debug file");
-                        }
+
                         break;
                 }
 
