@@ -7,15 +7,17 @@
 
 void partition_issue_log_init(struct partition_issue_log_t *log)
 {
-	log->parts = (struct partition_issue_log_entry_t *)calloc(MAX_ENTRIES, sizeof (struct partition_issue_log_entry_t));
+/*	log->parts = (struct partition_issue_log_entry_t *)calloc(MAX_ENTRIES, sizeof (struct partition_issue_log_entry_t));
 	log->kernels = (struct partition_issue_kernel_entry_t *)calloc(MAX_ENTRIES, sizeof (struct partition_issue_kernel_entry_t));
-	log->lock = 0;
+	log->lock = 0; */
+	log->num_entries = 0;
+	log->num_kernels = 0;
 }
 
 void partition_issue_log_destroy(struct partition_issue_log_t *log)
 {
-	free(log->parts);
-	free(log->kernels);
+/*	free(log->parts);
+	free(log->kernels); */
 }
 
 int partition_issue_still_room(struct partition_issue_log_t *log)
@@ -28,14 +30,15 @@ void partition_issue_log_kernel(
 	unsigned int num_dims, 
 	const unsigned int *groups)
 {
-	while (__sync_lock_test_and_set(&log->lock, 1));
+/*	while (__sync_lock_test_and_set(&log->lock, 1));
 	if (partition_issue_still_room(log))
 	{
 		log->kernels[log->num_kernels].num_dims = num_dims;
 		memcpy(log->kernels[log->num_kernels].groups, groups, sizeof (unsigned int) * num_dims);
 		log->num_kernels++;
 	}
-	__sync_lock_release(&log->lock);
+	__sync_lock_release(&log->lock);*/
+	__sync_fetch_and_add(&log->num_kernels, 1);
 }
 
 void partition_issue_log_record(
@@ -45,7 +48,7 @@ void partition_issue_log_record(
 	const unsigned int *group_offset,
 	const unsigned int *group_size)
 {
-	while (__sync_lock_test_and_set(&log->lock, 1));
+/*	while (__sync_lock_test_and_set(&log->lock, 1));
 	if (partition_issue_still_room(log))
 	{
 		struct partition_issue_log_entry_t *entry = log->parts + log->num_entries;
@@ -60,7 +63,8 @@ void partition_issue_log_record(
 		memcpy(entry->group_size, group_size, sizeof (unsigned int) * num_dims);
 		log->num_entries++;
 	}
-	__sync_lock_release(&log->lock);
+	__sync_lock_release(&log->lock);*/
+	__sync_fetch_and_add(&log->num_entries, 1);
 }
 
 void partition_issue_log_print_vector(unsigned int dims, unsigned int *vec, FILE *f)
@@ -74,10 +78,10 @@ void partition_issue_log_print_vector(unsigned int dims, unsigned int *vec, FILE
 
 void partition_issue_log_write(struct partition_issue_log_t *log, FILE *file)
 {
-	unsigned int i;
-	struct partition_issue_log_entry_t *entry = log->parts;
+/*	unsigned int i;
+	struct partition_issue_log_entry_t *entry = log->parts; */
 	fprintf(file, "PARTITION_LOG kernels:%d partitions:%d\n", log->num_kernels, log->num_entries);
-	for (i = 0; i < log->num_kernels; i++)
+/*	for (i = 0; i < log->num_kernels; i++)
 	{
 		struct partition_issue_kernel_entry_t *kernel = log->kernels + i;
 		fprintf(file, "Kernel %d ", i);
@@ -97,7 +101,7 @@ void partition_issue_log_write(struct partition_issue_log_t *log, FILE *file)
 		}
 		
 		
-	}
+	} */
 }
 
 
@@ -144,7 +148,7 @@ int part_is_in_range(int dims, const unsigned int *point, const unsigned int *st
 
 void partition_issue_log_verify(struct partition_issue_log_t *log, FILE *show_errors)
 {
-	unsigned int i, j;
+/*	unsigned int i, j;
 	struct partition_issue_log_entry_t *entry = log->parts;
 	for (i = 0; i < log->num_kernels; i++)
 	{
@@ -189,7 +193,7 @@ void partition_issue_log_verify(struct partition_issue_log_t *log, FILE *show_er
 		}
 		
 		free(wg);
-	}
+	}*/
 	
 }
 
