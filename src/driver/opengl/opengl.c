@@ -777,6 +777,7 @@ static int opengl_abi_si_ndrange_initialize_impl(X86Context *ctx)
 	X86Emu *x86_emu = ctx->emu;
 	OpenglDriver *driver = x86_emu->opengl_driver;
 	SIEmu *si_emu = driver->si_emu;
+	SIGpu *si_gpu = driver->si_gpu;
 
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;

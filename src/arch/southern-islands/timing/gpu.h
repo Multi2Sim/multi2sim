@@ -270,7 +270,6 @@ void SIGpuDumpSummary(Timing *self, FILE *f);
 
 int SIGpuRun(Timing *self);
 
-extern SIGpu *si_gpu;
 extern char *si_mmu_report_file_name;
 
 #endif
