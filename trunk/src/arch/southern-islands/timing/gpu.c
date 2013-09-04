@@ -1428,12 +1428,3 @@ int SIGpuRun(Timing *self)
 	return TRUE;
 }
 
-
-
-/*
- * Public
- */
-
-SIGpu *si_gpu;
-
-
