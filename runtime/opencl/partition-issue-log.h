@@ -26,11 +26,11 @@ struct partition_issue_kernel_entry_t
 
 struct partition_issue_log_t
 {
-	struct partition_issue_log_entry_t *parts;
-	struct partition_issue_kernel_entry_t *kernels;
+//	struct partition_issue_log_entry_t *parts;
+//	struct partition_issue_kernel_entry_t *kernels;
 	int num_entries;
 	int num_kernels;
-	volatile int lock;
+//	volatile int lock;
 };
 
 void partition_issue_log_init(struct partition_issue_log_t *log);
