@@ -48,7 +48,7 @@ CLASS_BEGIN(Si2binInst, Object)
 
 	/* Comment attached to the instruction, which will be dumped together
 	 * with it. */
-	char *comment;
+	String *comment;
 
 CLASS_END(Si2binInst)
 

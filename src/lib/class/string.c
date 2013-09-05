@@ -270,6 +270,17 @@ void StringReplace(String *self, int pos, size_t count, const char *fmt, ...)
 }
 
 
+void StringSet(String *self, const char *fmt, ...)
+{
+	char buf[STRING_MAX_SIZE];
+	va_list va;
+
+	va_start(va, fmt);
+	vsnprintf(buf, sizeof buf, fmt, va);
+	__StringReplace(self, 0, self->length, buf);
+}
+
+
 static void __StringInsert(String *self, int pos, const char *str)
 {
 	__StringReplace(self, pos, 0, str);
