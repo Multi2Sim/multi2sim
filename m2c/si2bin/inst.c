@@ -19,6 +19,7 @@
 
 
 #include <lib/class/elf-writer.h>
+#include <lib/class/list.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/hash-table.h>
@@ -35,7 +36,7 @@
 #include "token.h"
 
 
-struct si2bin_inst_t *si2bin_inst_create(int opcode, struct list_t *arg_list)
+struct si2bin_inst_t *si2bin_inst_create(int opcode, List *arg_list)
 {
 	struct si2bin_inst_t *inst;
 	Si2binArg *arg;
@@ -63,11 +64,9 @@ struct si2bin_inst_t *si2bin_inst_create(int opcode, struct list_t *arg_list)
 				__FUNCTION__, arg_list->count, info->token_list->count);
 
 	/* Check argument types */
-	LIST_FOR_EACH(arg_list, index)
+	index = 0;
+	ListForEach(arg_list, arg, Si2binArg)
 	{
-		/* Get actual argument */
-		arg = list_get(arg_list, index);
-
 		/* Get formal argument from instruction info */
 		token = list_get(info->token_list, index);
 		assert(token);
@@ -75,6 +74,9 @@ struct si2bin_inst_t *si2bin_inst_create(int opcode, struct list_t *arg_list)
 		/* Check that actual argument type is acceptable for token */
 		if (!si2bin_token_is_arg_allowed(token, arg))
 			fatal("%s: invalid type for argument %d", __FUNCTION__, index);
+
+		/* Next */
+		index++;
 	}
 
 	/* Return */
@@ -82,7 +84,7 @@ struct si2bin_inst_t *si2bin_inst_create(int opcode, struct list_t *arg_list)
 }
 
 
-struct si2bin_inst_t *si2bin_inst_create_with_name(char *name, struct list_t *arg_list)
+struct si2bin_inst_t *si2bin_inst_create_with_name(char *name, List *arg_list)
 {
 	struct si2bin_inst_t *inst;
 	struct si2bin_inst_info_t *info;
@@ -98,7 +100,7 @@ struct si2bin_inst_t *si2bin_inst_create_with_name(char *name, struct list_t *ar
 	
 	/* Initialize */
 	if (!arg_list)
-		arg_list = list_create();
+		arg_list = new(List);
 	inst->arg_list = arg_list;
 	
 	/* Try to create the instruction following all possible encodings for
@@ -118,11 +120,9 @@ struct si2bin_inst_t *si2bin_inst_create_with_name(char *name, struct list_t *ar
 
 		/* Check arguments */
 		err_str[0] = '\0';
-		LIST_FOR_EACH(arg_list, index)
+		index = 0;
+		ListForEach(arg_list, arg, Si2binArg)
 		{
-			/* Get actual argument */
-			arg = list_get(arg_list, index);
-
 			/* Get formal argument from instruction info */
 			token = list_get(info->token_list, index);
 			assert(token);
@@ -134,6 +134,9 @@ struct si2bin_inst_t *si2bin_inst_create_with_name(char *name, struct list_t *ar
 					"invalid type for argument %d", index + 1);
 				break;
 			}
+
+			/* Next */
+			index++;
 		}
 
 		/* Error while processing arguments */
@@ -160,12 +163,9 @@ struct si2bin_inst_t *si2bin_inst_create_with_name(char *name, struct list_t *ar
 
 void si2bin_inst_free(struct si2bin_inst_t *inst)
 {
-	int index;
-	
 	/* Free argument list */
-	LIST_FOR_EACH(inst->arg_list, index)
-		delete(list_get(inst->arg_list, index));
-	list_free(inst->arg_list);
+	ListDeleteObjects(inst->arg_list);
+	delete(inst->arg_list);
 	
 	/* Rest */
 	str_free(inst->comment);
@@ -188,12 +188,13 @@ void si2bin_inst_dump(struct si2bin_inst_t *inst, FILE *f)
 			inst->size);
 
 	/* Dump arguments */
-	LIST_FOR_EACH(inst->arg_list, i)
+	i = 0;
+	ListForEach(inst->arg_list, arg, Si2binArg)
 	{
-		arg = list_get(inst->arg_list, i);
 		fprintf(f, "\targ %d: ", i);
 		Si2binArgDump(arg, f);
 		fprintf(f, "\n");
+		i++;
 	}
 
 	/* Empty instruction bits */
@@ -226,13 +227,14 @@ void si2bin_inst_dump_assembly(struct si2bin_inst_t *inst, FILE *f)
         fprintf(f, "\t%s ", inst->info->name);
 
         /* Dump arguments */
-        LIST_FOR_EACH(inst->arg_list, i)
+	i = 0;
+	ListForEach(inst->arg_list, arg, Si2binArg)
         {
-                arg = list_get(inst->arg_list, i);
 		assert(arg);
                 Si2binArgDumpAssembly(arg, f);
                 if (i < inst->arg_list->count - 1)
 			fprintf(f, ", ");
+		i++;
 			
 	}
 
@@ -398,10 +400,10 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 
 	/* Arguments */
 	assert(inst->arg_list->count == info->token_list->count);
-	LIST_FOR_EACH(inst->arg_list, index)
+	index = 0;
+	ListForEach(inst->arg_list, arg, Si2binArg)
 	{
 		/* Get argument */
-		arg = list_get(inst->arg_list, index);
 		token = list_get(info->token_list, index);
 		assert(arg);
 		assert(token);
@@ -1189,6 +1191,9 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 			si2bin_yyerror_fmt("unsupported token for argument %d",
 				index + 1);
 		}
+
+		/* Next */
+		index++;
 	}
 }
 

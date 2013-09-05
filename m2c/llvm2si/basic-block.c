@@ -101,7 +101,7 @@ static void Llvm2siBasicBlockEmitAdd(Llvm2siBasicBlock *self,
 	Si2binArg *arg_op1;
 	Si2binArg *arg_op2;
 	struct si2bin_inst_t *inst;
-	struct list_t *arg_list;
+	List *arg_list;
 
 	int num_operands;
 	int ret_vreg;
@@ -148,11 +148,11 @@ static void Llvm2siBasicBlockEmitAdd(Llvm2siBasicBlock *self,
 	/* Emit addition.
 	 * v_add_i32 ret_vreg, vcc, arg_op1, arg_op2
 	 */
-	arg_list = list_create();
-	list_add(arg_list, new_ctor(Si2binArg, CreateVectorRegister, ret_vreg));
-	list_add(arg_list, new_ctor(Si2binArg, CreateSpecialRegister, si_inst_special_reg_vcc));
-	list_add(arg_list, arg_op1);
-	list_add(arg_list, arg_op2);
+	arg_list = new(List);
+	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateVectorRegister, ret_vreg)));
+	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateSpecialRegister, si_inst_special_reg_vcc)));
+	ListAdd(arg_list, asObject(arg_op1));
+	ListAdd(arg_list, asObject(arg_op2));
 	inst = si2bin_inst_create(SI_INST_V_ADD_I32, arg_list);
 	Llvm2siBasicBlockAddInst(self, inst);
 }
@@ -170,7 +170,7 @@ static void Llvm2siBasicBlockEmitCall(Llvm2siBasicBlock *self,
 	Llvm2siSymbol *ret_symbol;
 	struct si2bin_inst_t *inst;
 	Si2binArg *ret_arg;
-	struct list_t *arg_list;
+	List *arg_list;
 
 	int ret_vreg;
 	int num_args;
@@ -243,10 +243,10 @@ static void Llvm2siBasicBlockEmitCall(Llvm2siBasicBlock *self,
 		/* Create new vector register containing the global size.
 		 * v_mov_b32 vreg, s[gsize+dim]
 		 */
-		arg_list = list_create();
-		list_add(arg_list, ret_arg);
-		list_add(arg_list, new_ctor(Si2binArg, CreateScalarRegister,
-				function->sreg_gsize + dim));
+		arg_list = new(List);
+		ListAdd(arg_list, asObject(ret_arg));
+		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegister,
+				function->sreg_gsize + dim)));
 		inst = si2bin_inst_create(SI_INST_V_MOV_B32, arg_list);
 		Llvm2siBasicBlockAddInst(self, inst);
 	}
@@ -272,7 +272,7 @@ static void Llvm2siBasicBlockEmitGetelementptr(Llvm2siBasicBlock *self,
 	Si2binArg *arg_index;
 	Si2binArg *arg_offset;
 	struct si2bin_inst_t *inst;
-	struct list_t *arg_list;
+	List *arg_list;
 
 	int num_operands;
 	int tmp_vreg;
@@ -339,10 +339,10 @@ static void Llvm2siBasicBlockEmitGetelementptr(Llvm2siBasicBlock *self,
 		 * index argument and the pointed element size.
 		 * v_mul_i32_i24 tmp_vreg, ptr_size, arg_index
 		 */
-		arg_list = list_create();
-		list_add(arg_list, new_ctor(Si2binArg, CreateVectorRegister, tmp_vreg));
-		list_add(arg_list, new_ctor(Si2binArg, CreateLiteral, ptr_size));
-		list_add(arg_list, arg_index);
+		arg_list = new(List);
+		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateVectorRegister, tmp_vreg)));
+		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateLiteral, ptr_size)));
+		ListAdd(arg_list, asObject(arg_index));
 		inst = si2bin_inst_create(SI_INST_V_MUL_I32_I24, arg_list);
 		Llvm2siBasicBlockAddInst(self, inst);
 	}
@@ -351,11 +351,11 @@ static void Llvm2siBasicBlockEmitGetelementptr(Llvm2siBasicBlock *self,
 	 * original pointer and the offset.
 	 * v_add_i32 ret_vreg, vcc, arg_offset, arg_pointer
 	 */
-	arg_list = list_create();
-	list_add(arg_list, new_ctor(Si2binArg, CreateVectorRegister, ret_vreg));
-	list_add(arg_list, new_ctor(Si2binArg, CreateSpecialRegister, si_inst_special_reg_vcc));
-	list_add(arg_list, arg_offset);
-	list_add(arg_list, arg_ptr);
+	arg_list = new(List);
+	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateVectorRegister, ret_vreg)));
+	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateSpecialRegister, si_inst_special_reg_vcc)));
+	ListAdd(arg_list, asObject(arg_offset));
+	ListAdd(arg_list, asObject(arg_ptr));
 	inst = si2bin_inst_create(SI_INST_V_ADD_I32, arg_list);
 	Llvm2siBasicBlockAddInst(self, inst);
 }
@@ -375,7 +375,7 @@ static void Llvm2siBasicBlockEmitIcmp(Llvm2siBasicBlock *basic_block,
 	Si2binArg *arg_op1;
 	Si2binArg *arg_op2;
 	struct si2bin_inst_t *inst;
-	struct list_t *arg_list;
+	List *arg_list;
 
 	SIInstOpcode opcode;
 
@@ -508,20 +508,20 @@ static void Llvm2siBasicBlockEmitIcmp(Llvm2siBasicBlock *basic_block,
 	/* Emit comparison.
 	 * v_cmp_<pred>_<type> vcc, arg_op1, arg_op2
 	 */
-	arg_list = list_create();
-	list_add(arg_list, new_ctor(Si2binArg, CreateSpecialRegister, si_inst_special_reg_vcc));
-	list_add(arg_list, arg_op1);
-	list_add(arg_list, arg_op2);
+	arg_list = new(List);
+	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateSpecialRegister, si_inst_special_reg_vcc)));
+	ListAdd(arg_list, asObject(arg_op1));
+	ListAdd(arg_list, asObject(arg_op2));
 	inst = si2bin_inst_create(opcode, arg_list);
 	Llvm2siBasicBlockAddInst(basic_block, inst);
 
 	/* Store 'vcc' in scalar register
 	 * s_mov_b64 ret_sreg_series, vcc
 	 */
-	arg_list = list_create();
-	list_add(arg_list, new_ctor(Si2binArg, CreateScalarRegisterSeries, ret_sreg_series,
-			ret_sreg_series + 1));
-	list_add(arg_list, new_ctor(Si2binArg, CreateSpecialRegister, si_inst_special_reg_vcc));
+	arg_list = new(List);
+	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegisterSeries, ret_sreg_series,
+			ret_sreg_series + 1)));
+	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateSpecialRegister, si_inst_special_reg_vcc)));
 	inst = si2bin_inst_create(SI_INST_S_MOV_B64, arg_list);
 	Llvm2siBasicBlockAddInst(basic_block, inst);
 }
@@ -542,7 +542,7 @@ static void Llvm2siBasicBlockEmitLoad(Llvm2siBasicBlock *self,
 	Si2binArg *arg_addr;
 	Si2binArg *arg_qual;
 	Si2binArg *arg_soffset;
-	struct list_t *arg_list;
+	List *arg_list;
 
 	int num_operands;
 	int addr_space;
@@ -599,15 +599,15 @@ static void Llvm2siBasicBlockEmitLoad(Llvm2siBasicBlock *self,
 	 * tbuffer_load_format_x v[value_symbol->vreg], v[pointer_symbol->vreg],
 	 * 	s[sreg_uav,sreg_uav+3], 0 offen format:[BUF_DATA_FORMAT_32,BUF_NUM_FORMAT_FLOAT]
 	 */
-	arg_list = list_create();
-	list_add(arg_list, new_ctor(Si2binArg, CreateVectorRegister, ret_vreg));
-	list_add(arg_list, arg_addr);
-	list_add(arg_list, new_ctor(Si2binArg, CreateScalarRegisterSeries, uav->sreg,
-			uav->sreg + 3));
+	arg_list = new(List);
+	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateVectorRegister, ret_vreg)));
+	ListAdd(arg_list, asObject(arg_addr));
+	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegisterSeries, uav->sreg,
+			uav->sreg + 3)));
 	arg_soffset = new_ctor(Si2binArg, CreateLiteral, 0);
 	arg_qual = new_ctor(Si2binArg, CreateMaddrQual);
-	list_add(arg_list, new_ctor(Si2binArg, CreateMaddr, arg_soffset, arg_qual,
-			si_inst_buf_data_format_32, si_inst_buf_num_format_float));
+	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateMaddr, arg_soffset, arg_qual,
+			si_inst_buf_data_format_32, si_inst_buf_num_format_float)));
 	inst = si2bin_inst_create(SI_INST_TBUFFER_LOAD_FORMAT_X, arg_list);
 	Llvm2siBasicBlockAddInst(self, inst);
 }
@@ -626,7 +626,7 @@ static void Llvm2siBasicBlockEmitMul(Llvm2siBasicBlock *self,
 	Si2binArg *arg_op1;
 	Si2binArg *arg_op2;
 	struct si2bin_inst_t *inst;
-	struct list_t *arg_list;
+	List *arg_list;
 
 	int num_operands;
 	int ret_vreg;
@@ -675,10 +675,10 @@ static void Llvm2siBasicBlockEmitMul(Llvm2siBasicBlock *self,
 	/* Emit effective address calculation.
 	 * v_mul_lo_i32 ret_vreg, arg_op1, arg_op2
 	 */
-	arg_list = list_create();
-	list_add(arg_list, new_ctor(Si2binArg, CreateVectorRegister, ret_vreg));
-	list_add(arg_list, arg_op1);
-	list_add(arg_list, arg_op2);
+	arg_list = new(List);
+	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateVectorRegister, ret_vreg)));
+	ListAdd(arg_list, asObject(arg_op1));
+	ListAdd(arg_list, asObject(arg_op2));
 	inst = si2bin_inst_create(SI_INST_V_MUL_LO_U32, arg_list);
 	Llvm2siBasicBlockAddInst(self, inst);
 }
@@ -753,13 +753,13 @@ static void Llvm2siBasicBlockEmitPhi(Llvm2siBasicBlock *self,
 static void Llvm2siBasicBlockEmitRet(Llvm2siBasicBlock *self,
 		LLVMValueRef llinst)
 {
-	struct list_t *arg_list;
+	List *arg_list;
 	struct si2bin_inst_t *inst;
 
 	/* Emit program end instruction.
 	 * s_endpgm
 	 */
-	arg_list = list_create();
+	arg_list = new(List);
 	inst = si2bin_inst_create(SI_INST_S_ENDPGM, arg_list);
 	Llvm2siBasicBlockAddInst(self, inst);
 }
@@ -781,7 +781,7 @@ static void Llvm2siBasicBlockEmitStore(Llvm2siBasicBlock *self,
 	Si2binArg *arg_addr;
 	Si2binArg *arg_qual;
 	Si2binArg *arg_soffset;
-	struct list_t *arg_list;
+	List *arg_list;
 
 	int num_operands;
 	int addr_space;
@@ -836,15 +836,15 @@ static void Llvm2siBasicBlockEmitStore(Llvm2siBasicBlock *self,
 	 * 	s[sreg_uav,sreg_uav+3], 0 offen format:[BUF_DATA_FORMAT_32,
 	 * 	BUF_NUM_FORMAT_FLOAT]
 	 */
-	arg_list = list_create();
-	list_add(arg_list, arg_data);
-	list_add(arg_list, arg_addr);
-	list_add(arg_list, new_ctor(Si2binArg, CreateScalarRegisterSeries, uav->sreg,
-			uav->sreg + 3));
+	arg_list = new(List);
+	ListAdd(arg_list, asObject(arg_data));
+	ListAdd(arg_list, asObject(arg_addr));
+	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegisterSeries, uav->sreg,
+			uav->sreg + 3)));
 	arg_soffset = new_ctor(Si2binArg, CreateLiteral, 0);
 	arg_qual = new_ctor(Si2binArg, CreateMaddrQual);
-	list_add(arg_list, new_ctor(Si2binArg, CreateMaddr, arg_soffset, arg_qual,
-			si_inst_buf_data_format_32, si_inst_buf_num_format_float));
+	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateMaddr, arg_soffset, arg_qual,
+			si_inst_buf_data_format_32, si_inst_buf_num_format_float)));
 	inst = si2bin_inst_create(SI_INST_TBUFFER_STORE_FORMAT_X, arg_list);
 	Llvm2siBasicBlockAddInst(self, inst);
 }
@@ -863,7 +863,7 @@ static void Llvm2siBasicBlockEmitSub(Llvm2siBasicBlock *self,
 	Si2binArg *arg_op1;
 	Si2binArg *arg_op2;
 	struct si2bin_inst_t *inst;
-	struct list_t *arg_list;
+	List *arg_list;
 
 	int num_operands;
 	int ret_vreg;
@@ -910,11 +910,11 @@ static void Llvm2siBasicBlockEmitSub(Llvm2siBasicBlock *self,
 	/* Emit subtraction.
 	 * v_sub_i32 ret_vreg, vcc, arg_op1, arg_op2
 	 */
-	arg_list = list_create();
-	list_add(arg_list, new_ctor(Si2binArg, CreateVectorRegister, ret_vreg));
-	list_add(arg_list, new_ctor(Si2binArg, CreateSpecialRegister, si_inst_special_reg_vcc));
-	list_add(arg_list, arg_op1);
-	list_add(arg_list, arg_op2);
+	arg_list = new(List);
+	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateVectorRegister, ret_vreg)));
+	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateSpecialRegister, si_inst_special_reg_vcc)));
+	ListAdd(arg_list, asObject(arg_op1));
+	ListAdd(arg_list, asObject(arg_op2));
 	inst = si2bin_inst_create(SI_INST_V_SUB_I32, arg_list);
 	Llvm2siBasicBlockAddInst(self, inst);
 }
