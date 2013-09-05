@@ -21,13 +21,9 @@
 #define M2C_LLVM2SI_BASIC_BLOCK_H
 
 #include <llvm-c/Core.h>
-#include <stdio.h>
 
+#include <lib/class/class.h>
 #include <m2c/common/basic-block.h>
-
-
-/* Forward declarations */
-struct linked_list_t;
 
 
 /*
@@ -38,20 +34,15 @@ CLASS_BEGIN(Llvm2siBasicBlock, BasicBlock)
 
 	/* Comment stored temporarily in the basic block to be attached to the
 	 * next instruction added. */
-	char *comment;
+	String *comment;
 
 	/* Function where the basic block belongs. This field is populated
 	 * automatically when function 'llvm2si_function_add' is called. */
 	Llvm2siFunction *function;
 
-	/* Leaf node in control flow tree associated with the basic block. This
-	 * value is initialized by 'cnode_create_leaf' when the
-	 * basic block is passed. */
-	struct cnode_t *node;
-
 	/* List list of instructions forming the basic block. Each element is of
 	 * type 'Si2binInst'. */
-	struct linked_list_t *inst_list;
+	List *inst_list;
 
 CLASS_END(Llvm2siBasicBlock)
 

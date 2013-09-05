@@ -21,7 +21,9 @@
 #include <m2c/common/ctree.h>
 #include <m2c/si2bin/arg.h>
 #include <m2c/si2bin/inst.h>
+#include <lib/class/array.h>
 #include <lib/class/list.h>
+#include <lib/class/string.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
@@ -201,7 +203,7 @@ static void Llvm2siFunctionAddUAV(Llvm2siFunction *self,
 
 	/* Insert to UAV list */
 	uav->index = self->uav_list->count;
-	list_add(self->uav_list, uav);
+	ArrayAdd(self->uav_list, asObject(uav));
 
 	/* Emit code to load UAV.
 	 * s_load_dwordx4 s[uavX:uavX+3], s[uav_table:uav_table+1], x * 8
@@ -238,7 +240,7 @@ static void Llvm2siFunctionAddArg(Llvm2siFunction *self,
 		basic_block = new(Llvm2siBasicBlock, self, self->args_node);
 
 	/* Add argument */
-	list_add(self->arg_list, arg);
+	ListAdd(self->arg_list, asObject(arg));
 	arg->function = self;
 	arg->index = self->arg_list->count - 1;
 
@@ -330,11 +332,11 @@ void Llvm2siFunctionCreate(Llvm2siFunction *self, LLVMValueRef llfunction)
 
 	/* Initialize */
 	self->llfunction = llfunction;
-	self->name = str_set(self->name, (char *) LLVMGetValueName(llfunction));
-	self->arg_list = list_create();
-	self->uav_list = list_create();
+	self->name = new(String, LLVMGetValueName(llfunction));
+	self->arg_list = new(List);
+	self->uav_list = new(Array);
 	self->symbol_table = new(Llvm2siSymbolTable);
-	self->ctree = ctree = new(CTree, self->name);
+	self->ctree = ctree = new(CTree, self->name->text);
 	self->phi_list = new(List);
 
 	/* Create pre-defined nodes in control tree */
@@ -358,26 +360,13 @@ void Llvm2siFunctionCreate(Llvm2siFunction *self, LLVMValueRef llfunction)
 
 void Llvm2siFunctionDestroy(Llvm2siFunction *self)
 {
-	Llvm2siFunctionArg *arg;
-	Llvm2siFunctionUAV *uav;
-
-	int index;
-
 	/* Free list of arguments */
-	LIST_FOR_EACH(self->arg_list, index)
-	{
-		arg = asLlvm2siFunctionArg(list_get(self->arg_list, index));
-		delete(arg);
-	}
-	list_free(self->arg_list);
+	ListDeleteObjects(self->arg_list);
+	delete(self->arg_list);
 
 	/* Free list of UAVs */
-	LIST_FOR_EACH(self->uav_list, index)
-	{
-		uav = asLlvm2siFunctionUAV(list_get(self->uav_list, index));
-		delete(uav);
-	}
-	list_free(self->uav_list);
+	ArrayDeleteObjects(self->uav_list);
+	delete(self->uav_list);
 
 	/* Free control tree */
 	if (self->ctree)
@@ -389,7 +378,7 @@ void Llvm2siFunctionDestroy(Llvm2siFunction *self)
 
 	/* Rest */
 	delete(self->symbol_table);
-	self->name = str_free(self->name);
+	delete(self->name);
 }
 
 
@@ -402,19 +391,14 @@ void Llvm2siFunctionDump(Object *self, FILE *f)
 	Llvm2siFunctionArg *function_arg;
 	List *node_list;
 
-	int index;
-
 	/* Function name */
 	function = asLlvm2siFunction(self);
-	fprintf(f, ".global %s\n\n", function->name);
+	fprintf(f, ".global %s\n\n", function->name->text);
 
 	/* Arguments */
 	fprintf(f, ".args\n");
-	LIST_FOR_EACH(function->arg_list, index)
-	{
-		function_arg = list_get(function->arg_list, index);
+	ListForEach(function->arg_list, function_arg, Llvm2siFunctionArg)
 		Llvm2siFunctionArgDump(asObject(function_arg), f);
-	}
 	fprintf(f, "\n");
 
 	/* Dump basic blocks */
