@@ -103,6 +103,7 @@ extern char *err_si_isa_note;
 #define SI_INST_DS			inst->bytes.ds
 #define SI_INST_MTBUF		inst->bytes.mtbuf
 #define SI_INST_MUBUF		inst->bytes.mubuf
+#define SI_INST_EXP			inst->bytes.exp
 
 
 /* Forward declaration */
