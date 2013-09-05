@@ -20,7 +20,29 @@
 #ifndef M2C_SI2BIN_SI2BIN_H
 #define M2C_SI2BIN_SI2BIN_H
 
-#include <stdio.h>
+#include <lib/class/class.h>
+
+
+
+/*
+ * Class 'Si2bin'
+ */
+
+CLASS_BEGIN(Si2bin, Object)
+
+CLASS_END(Si2bin)
+
+void Si2binCreate(Si2bin *self);
+void Si2binDestroy(Si2bin *self);
+
+void Si2binCompile(Si2bin *self,
+		struct list_t *source_file_list,
+		struct list_t *bin_file_list);
+
+
+/*
+ * Public
+ */
 
 /* Forward declarations */
 struct list_t;
@@ -45,16 +67,6 @@ void si2bin_yyerror_fmt(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
 extern int si2bin_yylineno;
 extern FILE *si2bin_yyin;
 extern char *si2bin_yytext;
-
-
-/*
- * Public functions
- */
-
-void si2bin_init(void);
-void si2bin_done(void);
-void si2bin_compile(struct list_t *source_file_list,
-		struct list_t *bin_file_list);
 
 
 #endif

@@ -20,11 +20,13 @@
 #ifndef M2C_CL2LLVM_CL2LLVM_H
 #define M2C_CL2LLVM_CL2LLVM_H
 
-#include <stdio.h>
-
+#include <lib/class/class.h>
 #include <lib/util/debug.h>
 
-/* Forward declarations */
+
+/*
+ * Public
+ */
 
 struct list_t;
 struct hash_table_t;
@@ -54,14 +56,21 @@ extern struct hash_table_t *cl2llvm_symbol_table;
 
 
 /*
- * Public Functions
+ * Class 'Cl2llvm'
  */
 
-void cl2llvm_init(void);
-void cl2llvm_done(void);
+CLASS_BEGIN(Cl2llvm, Object)
 
-void cl2llvm_compile(struct list_t *source_file_list,
-		struct list_t *llvm_file_list, int opt_level);
+CLASS_END(Cl2llvm)
+
+
+void Cl2llvmCreate(Cl2llvm *self);
+void Cl2llvmDestroy(Cl2llvm *self);
+
+void Cl2llvmCompile(Cl2llvm *self,
+		struct list_t *source_file_list,
+		struct list_t *llvm_file_list,
+		int opt_level);
 
 #endif
 

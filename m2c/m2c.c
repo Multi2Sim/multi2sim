@@ -26,7 +26,12 @@
 #include <m2c/common/basic-block.h>
 #include <m2c/common/ctree.h>
 #include <m2c/frm2bin/frm2bin.h>
+#include <m2c/llvm2si/basic-block.h>
+#include <m2c/llvm2si/function.h>
 #include <m2c/llvm2si/llvm2si.h>
+#include <m2c/llvm2si/phi.h>
+#include <m2c/llvm2si/symbol.h>
+#include <m2c/llvm2si/symbol-table.h>
 #include <m2c/si2bin/arg.h>
 #include <m2c/si2bin/si2bin.h>
 #include <lib/class/array.h>
@@ -563,6 +568,13 @@ static void m2c_preprocess(struct list_t *source_file_list,
 }
 
 
+/* Compilers */
+static Cl2llvm *cl2llvm;
+static Llvm2si *llvm2si;
+static Si2bin *si2bin;
+static Frm2bin *frm2bin;
+
+
 /* Initialization before reading command line */
 void m2c_pre_init(void)
 {
@@ -598,6 +610,20 @@ void m2c_init(void)
 	CLASS_REGISTER(FrmAsm);
 	CLASS_REGISTER(SIAsm);
 
+	CLASS_REGISTER(Cl2llvm);
+
+	CLASS_REGISTER(Frm2bin);
+
+	CLASS_REGISTER(Llvm2si);
+	CLASS_REGISTER(Llvm2siBasicBlock);
+	CLASS_REGISTER(Llvm2siPhi);
+	CLASS_REGISTER(Llvm2siFunction);
+	CLASS_REGISTER(Llvm2siFunctionArg);
+	CLASS_REGISTER(Llvm2siFunctionUAV);
+	CLASS_REGISTER(Llvm2siSymbol);
+	CLASS_REGISTER(Llvm2siSymbolTable);
+
+	CLASS_REGISTER(Si2bin);
 	CLASS_REGISTER(Si2binArg);
 
 	/* Libraries */
@@ -609,11 +635,11 @@ void m2c_init(void)
 	m2c_asm_file_list = list_create();
 	m2c_bin_file_list = list_create();
 
-	/* Initialize compiler modules */
-	cl2llvm_init();
-	llvm2si_init();
-	si2bin_init();
-	frm2bin_init();
+	/* Initialize compilers */
+	cl2llvm = new(Cl2llvm);
+	llvm2si = new(Llvm2si);
+	si2bin = new(Si2bin);
+	frm2bin = new(Frm2bin);
 	ctree_init();
 }
 
@@ -652,11 +678,11 @@ void m2c_done(void)
 		free(list_get(m2c_define_list, index));
 	list_free(m2c_define_list);
 
-	/* Finalize compiler modules */
-	cl2llvm_done();
-	llvm2si_done();
-	si2bin_done();
-	frm2bin_done();
+	/* Finalize compilers */
+	delete(cl2llvm);
+	delete(llvm2si);
+	delete(si2bin);
+	delete(frm2bin);
 	ctree_done();
 
 	/* Libraries */
@@ -672,38 +698,6 @@ int main(int argc, char **argv)
 
 	/* Initialize */
 	m2c_init();
-
-#if 0
-	{
-		IniFile *ini_file;
-
-		ini_file = new(IniFile, "/home/ubal/test.ini");
-
-		IniFileLoad(ini_file);
-
-		StringMap map = {
-			{ "value1", 1 },
-			{ "value2", 2 },
-			{ NULL, 0 }
-		};
-		int value;
-		value = IniFileReadEnum(ini_file, "section 1", "my_var", 3, map);
-		printf("VALUE = %d\n", value);
-
-		IniFileReadString(ini_file, "section 1", "var1", NULL);
-		IniFileReadString(ini_file, "section 1", "var2", NULL);
-		IniFileReadString(ini_file, "Section 1", "Var3", NULL);
-
-		//IniFileWriteString(ini_file, "section 3", "a", "b");
-		
-		//IniFileReadString(ini_file, "section 2", "a", NULL);
-		IniFileEnforceVariable(ini_file, "section 4", "a");
-
-		IniFileCheck(ini_file);
-		
-		delete(ini_file);
-	}
-#endif
 
 	/* Process list of sources in 'm2c_source_file_list' and generate the
 	 * rest of the file lists. */
@@ -749,7 +743,8 @@ int main(int argc, char **argv)
 		m2c_replace_temp_file_name(m2c_clp_file_list);
 		m2c_replace_out_file_name(m2c_llvm_file_list);
 		m2c_preprocess(m2c_source_file_list, m2c_clp_file_list);
-		cl2llvm_compile(m2c_clp_file_list, m2c_llvm_file_list, m2c_opt_level);
+		Cl2llvmCompile(cl2llvm, m2c_clp_file_list,
+				m2c_llvm_file_list, m2c_opt_level);
 		m2c_remove_temp_file_name(m2c_clp_file_list);
 		goto out;
 	}
@@ -758,7 +753,7 @@ int main(int argc, char **argv)
 	if (m2c_llvm2si_run)
 	{
 		m2c_replace_out_file_name(m2c_asm_file_list);
-		llvm2si_compile(m2c_source_file_list, m2c_asm_file_list);
+		Llvm2siCompile(llvm2si, m2c_source_file_list, m2c_asm_file_list);
 		goto out;
 	}
 
@@ -766,7 +761,7 @@ int main(int argc, char **argv)
 	if (m2c_si2bin_run)
 	{
 		m2c_replace_out_file_name(m2c_bin_file_list);
-		si2bin_compile(m2c_source_file_list, m2c_bin_file_list);
+		Si2binCompile(si2bin, m2c_source_file_list, m2c_bin_file_list);
 		goto out;
 	}
 
@@ -774,7 +769,7 @@ int main(int argc, char **argv)
 	if (m2c_frm2bin_run)
 	{
 		m2c_replace_out_file_name(m2c_bin_file_list);
-		frm2bin_compile(m2c_source_file_list, m2c_bin_file_list);
+		Frm2binCompile(frm2bin, m2c_source_file_list, m2c_bin_file_list);
 		goto out;
 	}
 
@@ -797,9 +792,9 @@ int main(int argc, char **argv)
 
 	/* Compilation steps */
 	m2c_preprocess(m2c_source_file_list, m2c_clp_file_list);
-	cl2llvm_compile(m2c_clp_file_list, m2c_llvm_file_list, m2c_opt_level);
-	llvm2si_compile(m2c_llvm_file_list, m2c_asm_file_list);
-	si2bin_compile(m2c_asm_file_list, m2c_bin_file_list);
+	Cl2llvmCompile(cl2llvm, m2c_clp_file_list, m2c_llvm_file_list, m2c_opt_level);
+	Llvm2siCompile(llvm2si, m2c_llvm_file_list, m2c_asm_file_list);
+	Si2binCompile(si2bin, m2c_asm_file_list, m2c_bin_file_list);
 
 	/* Remove temporary files */
 	m2c_remove_temp_file_name(m2c_clp_file_list);

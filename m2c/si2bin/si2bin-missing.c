@@ -67,7 +67,7 @@ void si2bin_done(void)
 }
 
 
-void si2bin_compile(struct list_t *source_file_list,
+void Si2binCompile(struct list_t *source_file_list,
 		struct list_t *bin_file_list)
 {
 	si2bin_missing();
