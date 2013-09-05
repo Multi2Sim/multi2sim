@@ -100,7 +100,7 @@ static void Llvm2siBasicBlockEmitAdd(Llvm2siBasicBlock *self,
 	Llvm2siSymbol *ret_symbol;
 	Si2binArg *arg_op1;
 	Si2binArg *arg_op2;
-	struct si2bin_inst_t *inst;
+	Si2binInst *inst;
 	List *arg_list;
 
 	int num_operands;
@@ -153,7 +153,7 @@ static void Llvm2siBasicBlockEmitAdd(Llvm2siBasicBlock *self,
 	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateSpecialRegister, si_inst_special_reg_vcc)));
 	ListAdd(arg_list, asObject(arg_op1));
 	ListAdd(arg_list, asObject(arg_op2));
-	inst = si2bin_inst_create(SI_INST_V_ADD_I32, arg_list);
+	inst = new(Si2binInst, SI_INST_V_ADD_I32, arg_list);
 	Llvm2siBasicBlockAddInst(self, inst);
 }
 
@@ -168,7 +168,7 @@ static void Llvm2siBasicBlockEmitCall(Llvm2siBasicBlock *self,
 
 	Llvm2siFunction *function;
 	Llvm2siSymbol *ret_symbol;
-	struct si2bin_inst_t *inst;
+	Si2binInst *inst;
 	Si2binArg *ret_arg;
 	List *arg_list;
 
@@ -247,7 +247,7 @@ static void Llvm2siBasicBlockEmitCall(Llvm2siBasicBlock *self,
 		ListAdd(arg_list, asObject(ret_arg));
 		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegister,
 				function->sreg_gsize + dim)));
-		inst = si2bin_inst_create(SI_INST_V_MOV_B32, arg_list);
+		inst = new(Si2binInst, SI_INST_V_MOV_B32, arg_list);
 		Llvm2siBasicBlockAddInst(self, inst);
 	}
 	else
@@ -271,7 +271,7 @@ static void Llvm2siBasicBlockEmitGetelementptr(Llvm2siBasicBlock *self,
 	Si2binArg *arg_ptr;
 	Si2binArg *arg_index;
 	Si2binArg *arg_offset;
-	struct si2bin_inst_t *inst;
+	Si2binInst *inst;
 	List *arg_list;
 
 	int num_operands;
@@ -343,7 +343,7 @@ static void Llvm2siBasicBlockEmitGetelementptr(Llvm2siBasicBlock *self,
 		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateVectorRegister, tmp_vreg)));
 		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateLiteral, ptr_size)));
 		ListAdd(arg_list, asObject(arg_index));
-		inst = si2bin_inst_create(SI_INST_V_MUL_I32_I24, arg_list);
+		inst = new(Si2binInst, SI_INST_V_MUL_I32_I24, arg_list);
 		Llvm2siBasicBlockAddInst(self, inst);
 	}
 
@@ -356,7 +356,7 @@ static void Llvm2siBasicBlockEmitGetelementptr(Llvm2siBasicBlock *self,
 	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateSpecialRegister, si_inst_special_reg_vcc)));
 	ListAdd(arg_list, asObject(arg_offset));
 	ListAdd(arg_list, asObject(arg_ptr));
-	inst = si2bin_inst_create(SI_INST_V_ADD_I32, arg_list);
+	inst = new(Si2binInst, SI_INST_V_ADD_I32, arg_list);
 	Llvm2siBasicBlockAddInst(self, inst);
 }
 
@@ -374,7 +374,7 @@ static void Llvm2siBasicBlockEmitIcmp(Llvm2siBasicBlock *basic_block,
 	Llvm2siSymbol *ret_symbol;
 	Si2binArg *arg_op1;
 	Si2binArg *arg_op2;
-	struct si2bin_inst_t *inst;
+	Si2binInst *inst;
 	List *arg_list;
 
 	SIInstOpcode opcode;
@@ -512,7 +512,7 @@ static void Llvm2siBasicBlockEmitIcmp(Llvm2siBasicBlock *basic_block,
 	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateSpecialRegister, si_inst_special_reg_vcc)));
 	ListAdd(arg_list, asObject(arg_op1));
 	ListAdd(arg_list, asObject(arg_op2));
-	inst = si2bin_inst_create(opcode, arg_list);
+	inst = new(Si2binInst, opcode, arg_list);
 	Llvm2siBasicBlockAddInst(basic_block, inst);
 
 	/* Store 'vcc' in scalar register
@@ -522,7 +522,7 @@ static void Llvm2siBasicBlockEmitIcmp(Llvm2siBasicBlock *basic_block,
 	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegisterSeries, ret_sreg_series,
 			ret_sreg_series + 1)));
 	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateSpecialRegister, si_inst_special_reg_vcc)));
-	inst = si2bin_inst_create(SI_INST_S_MOV_B64, arg_list);
+	inst = new(Si2binInst, SI_INST_S_MOV_B64, arg_list);
 	Llvm2siBasicBlockAddInst(basic_block, inst);
 }
 
@@ -538,7 +538,7 @@ static void Llvm2siBasicBlockEmitLoad(Llvm2siBasicBlock *self,
 	Llvm2siFunctionUAV *uav;
 	Llvm2siSymbol *addr_symbol;
 	Llvm2siSymbol *ret_symbol;
-	struct si2bin_inst_t *inst;
+	Si2binInst *inst;
 	Si2binArg *arg_addr;
 	Si2binArg *arg_qual;
 	Si2binArg *arg_soffset;
@@ -608,7 +608,7 @@ static void Llvm2siBasicBlockEmitLoad(Llvm2siBasicBlock *self,
 	arg_qual = new_ctor(Si2binArg, CreateMaddrQual);
 	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateMaddr, arg_soffset, arg_qual,
 			si_inst_buf_data_format_32, si_inst_buf_num_format_float)));
-	inst = si2bin_inst_create(SI_INST_TBUFFER_LOAD_FORMAT_X, arg_list);
+	inst = new(Si2binInst, SI_INST_TBUFFER_LOAD_FORMAT_X, arg_list);
 	Llvm2siBasicBlockAddInst(self, inst);
 }
 
@@ -625,7 +625,7 @@ static void Llvm2siBasicBlockEmitMul(Llvm2siBasicBlock *self,
 	Llvm2siSymbol *ret_symbol;
 	Si2binArg *arg_op1;
 	Si2binArg *arg_op2;
-	struct si2bin_inst_t *inst;
+	Si2binInst *inst;
 	List *arg_list;
 
 	int num_operands;
@@ -679,7 +679,7 @@ static void Llvm2siBasicBlockEmitMul(Llvm2siBasicBlock *self,
 	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateVectorRegister, ret_vreg)));
 	ListAdd(arg_list, asObject(arg_op1));
 	ListAdd(arg_list, asObject(arg_op2));
-	inst = si2bin_inst_create(SI_INST_V_MUL_LO_U32, arg_list);
+	inst = new(Si2binInst, SI_INST_V_MUL_LO_U32, arg_list);
 	Llvm2siBasicBlockAddInst(self, inst);
 }
 
@@ -754,13 +754,13 @@ static void Llvm2siBasicBlockEmitRet(Llvm2siBasicBlock *self,
 		LLVMValueRef llinst)
 {
 	List *arg_list;
-	struct si2bin_inst_t *inst;
+	Si2binInst *inst;
 
 	/* Emit program end instruction.
 	 * s_endpgm
 	 */
 	arg_list = new(List);
-	inst = si2bin_inst_create(SI_INST_S_ENDPGM, arg_list);
+	inst = new(Si2binInst, SI_INST_S_ENDPGM, arg_list);
 	Llvm2siBasicBlockAddInst(self, inst);
 }
 
@@ -776,7 +776,7 @@ static void Llvm2siBasicBlockEmitStore(Llvm2siBasicBlock *self,
 	Llvm2siFunction *function;
 	Llvm2siFunctionUAV *uav;
 	Llvm2siSymbol *addr_symbol;
-	struct si2bin_inst_t *inst;
+	Si2binInst *inst;
 	Si2binArg *arg_data;
 	Si2binArg *arg_addr;
 	Si2binArg *arg_qual;
@@ -845,7 +845,7 @@ static void Llvm2siBasicBlockEmitStore(Llvm2siBasicBlock *self,
 	arg_qual = new_ctor(Si2binArg, CreateMaddrQual);
 	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateMaddr, arg_soffset, arg_qual,
 			si_inst_buf_data_format_32, si_inst_buf_num_format_float)));
-	inst = si2bin_inst_create(SI_INST_TBUFFER_STORE_FORMAT_X, arg_list);
+	inst = new(Si2binInst, SI_INST_TBUFFER_STORE_FORMAT_X, arg_list);
 	Llvm2siBasicBlockAddInst(self, inst);
 }
 
@@ -862,7 +862,7 @@ static void Llvm2siBasicBlockEmitSub(Llvm2siBasicBlock *self,
 	Llvm2siSymbol *ret_symbol;
 	Si2binArg *arg_op1;
 	Si2binArg *arg_op2;
-	struct si2bin_inst_t *inst;
+	Si2binInst *inst;
 	List *arg_list;
 
 	int num_operands;
@@ -915,7 +915,7 @@ static void Llvm2siBasicBlockEmitSub(Llvm2siBasicBlock *self,
 	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateSpecialRegister, si_inst_special_reg_vcc)));
 	ListAdd(arg_list, asObject(arg_op1));
 	ListAdd(arg_list, asObject(arg_op2));
-	inst = si2bin_inst_create(SI_INST_V_SUB_I32, arg_list);
+	inst = new(Si2binInst, SI_INST_V_SUB_I32, arg_list);
 	Llvm2siBasicBlockAddInst(self, inst);
 }
 
@@ -943,9 +943,14 @@ void Llvm2siBasicBlockCreate(Llvm2siBasicBlock *self,
 
 void Llvm2siBasicBlockDestroy(Llvm2siBasicBlock *self)
 {
+	Si2binInst *inst;
+
 	/* Free list of instructions */
 	LINKED_LIST_FOR_EACH(self->inst_list)
-		si2bin_inst_free(linked_list_get(self->inst_list));
+	{
+		inst = asSi2binInst(linked_list_get(self->inst_list));
+		delete(inst);
+	}
 	linked_list_free(self->inst_list);
 
 	/* Rest */
@@ -957,7 +962,7 @@ void Llvm2siBasicBlockDump(Object *self, FILE *f)
 {
 	Llvm2siBasicBlock *basic_block;
 	LeafNode *node;
-	struct si2bin_inst_t *inst;
+	Si2binInst *inst;
 
 	/* Nothing if basic block is empty */
 	basic_block = asLlvm2siBasicBlock(self);
@@ -972,13 +977,12 @@ void Llvm2siBasicBlockDump(Object *self, FILE *f)
 	LINKED_LIST_FOR_EACH(basic_block->inst_list)
 	{
 		inst = linked_list_get(basic_block->inst_list);
-		si2bin_inst_dump_assembly(inst, f);
+		Si2binInstDumpAssembly(inst, f);
 	}
 }
 
 
-void Llvm2siBasicBlockAddInst(Llvm2siBasicBlock *self,
-		struct si2bin_inst_t *inst)
+void Llvm2siBasicBlockAddInst(Llvm2siBasicBlock *self, Si2binInst *inst)
 {
 	/* Check that the instruction does not belong to any other basic
 	 * block already. */
@@ -994,7 +998,7 @@ void Llvm2siBasicBlockAddInst(Llvm2siBasicBlock *self,
 	 * the instruction being added now. */
 	if (self->comment)
 	{
-		si2bin_inst_add_comment(inst, self->comment);
+		Si2binInstAddComment(inst, self->comment);
 		self->comment = str_free(self->comment);
 	}
 }

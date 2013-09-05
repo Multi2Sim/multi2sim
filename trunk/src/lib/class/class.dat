@@ -142,4 +142,5 @@ CLASS(Llvm2siFunctionArg)
 
 CLASS(Si2bin)
 CLASS(Si2binArg)
+CLASS(Si2binInst)
 

@@ -33,6 +33,7 @@
 #include <m2c/llvm2si/symbol.h>
 #include <m2c/llvm2si/symbol-table.h>
 #include <m2c/si2bin/arg.h>
+#include <m2c/si2bin/inst.h>
 #include <m2c/si2bin/si2bin.h>
 #include <lib/class/array.h>
 #include <lib/class/elf-writer.h>
@@ -598,7 +599,7 @@ void m2c_init(void)
 	CLASS_REGISTER(AbstractNode);
 	CLASS_REGISTER(BasicBlock);
 	CLASS_REGISTER(CTree);
-		
+	
 	CLASS_REGISTER(ELFWriterBuffer);
 	CLASS_REGISTER(ELFWriterSection);
 	CLASS_REGISTER(ELFWriterSegment);
@@ -625,6 +626,7 @@ void m2c_init(void)
 
 	CLASS_REGISTER(Si2bin);
 	CLASS_REGISTER(Si2binArg);
+	CLASS_REGISTER(Si2binInst);
 
 	/* Libraries */
 	debug_init();
