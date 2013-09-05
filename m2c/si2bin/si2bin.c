@@ -83,10 +83,10 @@ void si2bin_yyerror_fmt(char *fmt, ...)
 
 
 /*
- * Public Functions
+ * Class 'Si2bin'
  */
 
-void si2bin_init(void)
+void Si2binCreate(Si2bin *self)
 {
 	/* Initialize */
 	si2bin_inst_info_init();
@@ -95,7 +95,7 @@ void si2bin_init(void)
 }
 
 
-void si2bin_done(void)
+void Si2binDestroy(Si2bin *self)
 {
 	/* Finalize */
 	si2bin_task_list_done();
@@ -104,7 +104,7 @@ void si2bin_done(void)
 }
 
 
-void si2bin_compile(struct list_t *source_file_list,
+void Si2binCompile(Si2bin *self, struct list_t *source_file_list,
 		struct list_t *bin_file_list)
 {
 	int index;

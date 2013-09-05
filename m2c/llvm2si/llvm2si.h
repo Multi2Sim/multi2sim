@@ -28,14 +28,18 @@ struct list_t;
 
 
 /*
- * Public Functions
+ * Class 'Llvm2si'
  */
 
-void llvm2si_init(void);
-void llvm2si_done(void);
+CLASS_BEGIN(Llvm2si, Object)
 
-void llvm2si_compile(struct list_t *source_file_list,
+CLASS_END(Llvm2si)
+
+
+void Llvm2siCreate(Llvm2si *self);
+void Llvm2siDestroy(Llvm2si *self);
+
+void Llvm2siCompile(Llvm2si *self, struct list_t *source_file_list,
 		struct list_t *output_file_list);
 
 #endif
-
