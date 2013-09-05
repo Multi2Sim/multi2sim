@@ -29,7 +29,6 @@
 
 /* Forward declarations */
 struct llvm2si_node_t;
-struct si2bin_arg_t;
 
 
 
@@ -203,7 +202,7 @@ void Llvm2siFunctionEmitControlFlow(Llvm2siFunction *function);
  *     will be the vector register associated with that symbol. In this case,
  *     the symbol is returned in the 'symbol_ptr' argument.
  */
-struct si2bin_arg_t *Llvm2siFunctionTranslateValue(
+Si2binArg *Llvm2siFunctionTranslateValue(
 		Llvm2siFunction *function,
 		LLVMValueRef llvalue,
 		Llvm2siSymbol **symbol_ptr);
@@ -213,10 +212,10 @@ struct si2bin_arg_t *Llvm2siFunctionTranslateValue(
  * make part of the new instruction, while a new argument instance is returned
  * containing the new vector register. If the original argument was not a
  * literal, it will be returned directly, and no instruction is emitted. */
-struct si2bin_arg_t *Llvm2siFunctionConstToVReg(
+Si2binArg *Llvm2siFunctionConstToVReg(
 		Llvm2siFunction *function,
 		Llvm2siBasicBlock *basic_block,
-		struct si2bin_arg_t *arg);
+		Si2binArg *arg);
 
 /* Allocate 'count' scalar/vector registers where the first register
  * identifier is a multiple of 'align'. */

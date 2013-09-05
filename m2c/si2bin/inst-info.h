@@ -30,7 +30,7 @@
  */
 
 /* Forward declaration */
-struct si_inst_info_t;
+struct SIInstInfo;
 
 extern struct list_t *si2bin_inst_info_list;
 extern struct hash_table_t *si2bin_inst_info_table;
@@ -44,7 +44,7 @@ struct si2bin_inst_info_t
 	struct si2bin_inst_info_t *next;
 
 	/* Associated info structure in disassembler */
-	struct si_inst_info_t *inst_info;
+	SIInstInfo *inst_info;
 
 	/* List of tokens in format string */
 	struct list_t *str_token_list;  /* Element of type string */
@@ -52,7 +52,7 @@ struct si2bin_inst_info_t
 	char *name;  /* Token 0 of this list */
 };
 
-struct si2bin_inst_info_t *si2bin_inst_info_create(struct si_inst_info_t *inst_info);
+struct si2bin_inst_info_t *si2bin_inst_info_create(SIInstInfo *inst_info);
 void si2bin_inst_info_free(struct si2bin_inst_info_t *info);
 
 

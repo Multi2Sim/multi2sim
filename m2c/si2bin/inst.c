@@ -38,7 +38,7 @@
 struct si2bin_inst_t *si2bin_inst_create(int opcode, struct list_t *arg_list)
 {
 	struct si2bin_inst_t *inst;
-	struct si2bin_arg_t *arg;
+	Si2binArg *arg;
 	struct si2bin_token_t *token;
 	struct si2bin_inst_info_t *info;
 	int index;
@@ -87,7 +87,7 @@ struct si2bin_inst_t *si2bin_inst_create_with_name(char *name, struct list_t *ar
 	struct si2bin_inst_t *inst;
 	struct si2bin_inst_info_t *info;
 
-	struct si2bin_arg_t *arg;
+	Si2binArg *arg;
 	struct si2bin_token_t *token;
 
 	char err_str[MAX_STRING_SIZE];
@@ -164,7 +164,7 @@ void si2bin_inst_free(struct si2bin_inst_t *inst)
 	
 	/* Free argument list */
 	LIST_FOR_EACH(inst->arg_list, index)
-		si2bin_arg_free(list_get(inst->arg_list, index));
+		delete(list_get(inst->arg_list, index));
 	list_free(inst->arg_list);
 	
 	/* Rest */
@@ -175,7 +175,7 @@ void si2bin_inst_free(struct si2bin_inst_t *inst)
 
 void si2bin_inst_dump(struct si2bin_inst_t *inst, FILE *f)
 {
-	struct si2bin_arg_t *arg;
+	Si2binArg *arg;
 	unsigned int word;
 	
 	int i;
@@ -192,7 +192,7 @@ void si2bin_inst_dump(struct si2bin_inst_t *inst, FILE *f)
 	{
 		arg = list_get(inst->arg_list, i);
 		fprintf(f, "\targ %d: ", i);
-		si2bin_arg_dump(arg, f);
+		Si2binArgDump(arg, f);
 		fprintf(f, "\n");
 	}
 
@@ -214,7 +214,7 @@ void si2bin_inst_dump(struct si2bin_inst_t *inst, FILE *f)
 
 void si2bin_inst_dump_assembly(struct si2bin_inst_t *inst, FILE *f)
 {
-        struct si2bin_arg_t *arg;
+        Si2binArg *arg;
 
         int i;
 
@@ -230,7 +230,7 @@ void si2bin_inst_dump_assembly(struct si2bin_inst_t *inst, FILE *f)
         {
                 arg = list_get(inst->arg_list, i);
 		assert(arg);
-                si2bin_arg_dump_assembly(arg, f);
+                Si2binArgDumpAssembly(arg, f);
                 if (i < inst->arg_list->count - 1)
 			fprintf(f, ", ");
 			
@@ -250,10 +250,10 @@ void si2bin_inst_add_comment(struct si2bin_inst_t *inst, char *comment)
 void si2bin_inst_gen(struct si2bin_inst_t *inst)
 {
 	SIInstBytes *inst_bytes;
-	struct si_inst_info_t *inst_info;
+	SIInstInfo *inst_info;
 	struct si2bin_inst_info_t *info;
 
-	struct si2bin_arg_t *arg;
+	Si2binArg *arg;
 	struct si2bin_token_t *token;
 
 	int index;
@@ -414,8 +414,8 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 		{
 			int value;
 
-			if (arg->type == si2bin_arg_literal || 
-				arg->type == si2bin_arg_literal_reduced)
+			if (arg->type == Si2binArgLiteral || 
+				arg->type == Si2binArgLiteralReduced)
 			{
 				/* Literal constant other than [-16...64] */
 				if (arg->value.literal.val > 0xff00)
@@ -428,7 +428,7 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 			{
 
 				/* Encode */
-				value = si2bin_arg_encode_operand(arg);
+				value = Si2binArgEncodeOperand(arg);
 				if (!IN_RANGE(value, 0, 255))
 					si2bin_yyerror("invalid argument type");
 				inst_bytes->sopk.simm16 = value;
@@ -442,7 +442,7 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 			int high;
 
 			/* Check range if scalar register range given */
-			if (arg->type == si2bin_arg_scalar_register_series)
+			if (arg->type == Si2binArgScalarRegisterSeries)
 			{
 				low = arg->value.scalar_register_series.low;
 				high = arg->value.scalar_register_series.high;
@@ -451,7 +451,7 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 			}
 			
 			/* Encode */
-			inst_bytes->sop2.sdst = si2bin_arg_encode_operand(arg);
+			inst_bytes->sop2.sdst = Si2binArgEncodeOperand(arg);
 			break;
 		}
 
@@ -459,7 +459,7 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 		{
 			int value;
 
-			if (arg->type == si2bin_arg_literal)
+			if (arg->type == Si2binArgLiteral)
 			{
 				/* Literal constant other than [-16...64] is encoded by adding
 				 * four more bits to the instruction. */
@@ -472,13 +472,13 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 			else
 			{
 				/* Check range of scalar registers */
-				if (arg->type == si2bin_arg_scalar_register_series &&
+				if (arg->type == Si2binArgScalarRegisterSeries &&
 						arg->value.scalar_register_series.high !=
 						arg->value.scalar_register_series.low + 1)
 					si2bin_yyerror("invalid scalar register series, s[x:x+1] expected");
 
 				/* Encode */
-				value = si2bin_arg_encode_operand(arg);
+				value = Si2binArgEncodeOperand(arg);
 				if (!IN_RANGE(value, 0, 255))
 					si2bin_yyerror("invalid argument type");
 				inst_bytes->sop2.ssrc0 = value;
@@ -490,7 +490,7 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 		{
 			int value;
 
-			if (arg->type == si2bin_arg_literal)
+			if (arg->type == Si2binArgLiteral)
 			{
 				/* Literal constant other than [-16...64] is encoded by adding
 				 * four more bits to the instruction. */
@@ -503,13 +503,13 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 			else
 			{
 				/* Check range of scalar registers */
-				if (arg->type == si2bin_arg_scalar_register_series &&
+				if (arg->type == Si2binArgScalarRegisterSeries &&
 						arg->value.scalar_register_series.high !=
 						arg->value.scalar_register_series.low + 1)
 					si2bin_yyerror("invalid scalar register series, s[x:x+1] expected");
 
 				/* Encode */
-				value = si2bin_arg_encode_operand(arg);
+				value = Si2binArgEncodeOperand(arg);
 				if (!IN_RANGE(value, 0, 255))
 					si2bin_yyerror("invalid argument type");
 				inst_bytes->sop2.ssrc1 = value;
@@ -519,11 +519,11 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 		
 		case si2bin_token_mt_maddr:
 		{
-			struct si2bin_arg_t *qual;
+			Si2binArg *qual;
 			int soffset;
 
 			/* Offset */
-			soffset = si2bin_arg_encode_operand(arg->value.maddr.soffset);
+			soffset = Si2binArgEncodeOperand(arg->value.maddr.soffset);
 			if (!IN_RANGE(soffset, 0, 253))
 				si2bin_yyerror("invalid offset");
 			inst_bytes->mtbuf.soffset = soffset;
@@ -534,7 +534,7 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 
 			/* Qualifiers */
 			qual = arg->value.maddr.qual;
-			assert(qual->type == si2bin_arg_maddr_qual);
+			assert(qual->type == Si2binArgMaddrQual);
 			inst_bytes->mtbuf.offen = qual->value.maddr_qual.offen;
 			inst_bytes->mtbuf.idxen = qual->value.maddr_qual.idxen;
 			inst_bytes->mtbuf.offset = qual->value.maddr_qual.offset;
@@ -548,7 +548,7 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 			struct si2bin_task_t *task;
 
 			/* Search symbol in symbol table */
-			assert(arg->type == si2bin_arg_label);
+			assert(arg->type == Si2binArgLabel);
 			symbol = hash_table_get(si2bin_symbol_table, arg->value.label.name);
 
 			/* Create symbol if it doesn't exist */
@@ -585,13 +585,13 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 			switch (arg->type)
 			{
 
-			case si2bin_arg_vector_register:
+			case Si2binArgVectorRegister:
 
 				low = arg->value.vector_register.id;
 				high = low;
 				break;
 
-			case si2bin_arg_vector_register_series:
+			case Si2binArgVectorRegisterSeries:
 
 				low = arg->value.vector_register_series.low;
 				high = arg->value.vector_register_series.high;
@@ -644,7 +644,7 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 			switch (arg->type)
 			{
 
-			case si2bin_arg_literal:
+			case Si2binArgLiteral:
 
 				if (arg->value.literal.val > 255)
 					si2bin_yyerror_fmt("%s: offset needs to fit in 8 bit field",
@@ -655,13 +655,13 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 				/* FIXME - check valid range of literal */
 				break;
 
-			case si2bin_arg_literal_reduced:
+			case Si2binArgLiteralReduced:
 				
 				inst_bytes->smrd.imm = 1;
 				inst_bytes->smrd.offset = arg->value.literal.val;
 				break;
 			
-			case si2bin_arg_scalar_register:
+			case Si2binArgScalarRegister:
 
 				inst_bytes->smrd.offset = arg->value.scalar_register.id;
 				break;
@@ -675,7 +675,7 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 		case si2bin_token_sdst:
 
 			/* Encode */
-			inst_bytes->sop2.sdst = si2bin_arg_encode_operand(arg);
+			inst_bytes->sop2.sdst = Si2binArgEncodeOperand(arg);
 			break;
 
 		case si2bin_token_series_sbase:
@@ -777,7 +777,7 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 
 		case si2bin_token_src0:
 
-			if (arg->type == si2bin_arg_literal)
+			if (arg->type == Si2binArgLiteral)
 			{
 				/* Literal constant other than [-16...64] is encoded by adding
 				 * four more bits to the instruction. */
@@ -789,7 +789,7 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 			}
 			else
 			{
-				inst_bytes->vopc.src0 = si2bin_arg_encode_operand(arg);
+				inst_bytes->vopc.src0 = Si2binArgEncodeOperand(arg);
 			}
 			break;
 
@@ -797,7 +797,7 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 		{
 			int value;
 
-			if (arg->type == si2bin_arg_literal)
+			if (arg->type == Si2binArgLiteral)
 			{
 				/* Literal constant other than [-16...64] is encoded by adding
 				 * four more bits to the instruction. */
@@ -809,7 +809,7 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 			}
 			else
 			{
-				value = si2bin_arg_encode_operand(arg);
+				value = Si2binArgEncodeOperand(arg);
 				if (!IN_RANGE(value, 0, 255))
 					si2bin_yyerror("invalid argument type");
 				inst_bytes->sop2.ssrc0 = value;
@@ -821,7 +821,7 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 		{
 			int value;
 
-			if (arg->type == si2bin_arg_literal)
+			if (arg->type == Si2binArgLiteral)
 			{
 				/* Literal constant other than [-16...64] is encoded by adding
 				 * four more bits to the instruction. */
@@ -833,7 +833,7 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 			}
 			else
 			{
-				value = si2bin_arg_encode_operand(arg);
+				value = Si2binArgEncodeOperand(arg);
 				if (!IN_RANGE(value, 0, 255))
 					si2bin_yyerror("invalid argument type");
 				inst_bytes->sop2.ssrc1 = value;
@@ -846,12 +846,12 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 			switch (arg->type)
 			{
 
-			case si2bin_arg_vector_register:
+			case Si2binArgVectorRegister:
 
 				inst_bytes->mtbuf.vaddr = arg->value.vector_register.id;
 				break;
 			
-			case si2bin_arg_vector_register_series:
+			case Si2binArgVectorRegisterSeries:
 				/* High register must be low plus 1 */
 				if (arg->value.vector_register_series.high !=
 						arg->value.vector_register_series.low + 1)
@@ -877,10 +877,10 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 		case si2bin_token_svdst:
 
 			/* Check for scalar register */
-			assert(arg->type == si2bin_arg_scalar_register);
+			assert(arg->type == Si2binArgScalarRegister);
 			
 			/* Encode */
-			inst_bytes->vop1.vdst = si2bin_arg_encode_operand(arg);
+			inst_bytes->vop1.vdst = Si2binArgEncodeOperand(arg);
 			break;
 
 		case si2bin_token_vdst:
@@ -895,14 +895,14 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 			int high;
 
 			/* Check argument type */
-			if (arg->type == si2bin_arg_scalar_register_series)
+			if (arg->type == Si2binArgScalarRegisterSeries)
 			{
 				low = arg->value.scalar_register_series.low;
 				high = arg->value.scalar_register_series.high;
 				if (high != low + 1)
 					si2bin_yyerror("register series must be s[low:low+1]");
 			}
-			else if (arg->type == si2bin_arg_vector_register_series)
+			else if (arg->type == Si2binArgVectorRegisterSeries)
 			{
 				low = arg->value.vector_register_series.low;
 				high = arg->value.vector_register_series.high;
@@ -911,7 +911,7 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 			}
 
 			/* Encode */
-			inst_bytes->vop1.src0 = si2bin_arg_encode_operand(arg);
+			inst_bytes->vop1.src0 = Si2binArgEncodeOperand(arg);
 			break;
 		}
 	
@@ -921,7 +921,7 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 			int high;
 
 			/* Check argument type */
-			if (arg->type == si2bin_arg_vector_register_series)
+			if (arg->type == Si2binArgVectorRegisterSeries)
 			{
 				low = arg->value.vector_register_series.low;
 				high = arg->value.vector_register_series.high;
@@ -939,7 +939,7 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 			int high;
 
 			/* If operand is a scalar register series, check range */
-			if (arg->type == si2bin_arg_scalar_register_series)
+			if (arg->type == Si2binArgScalarRegisterSeries)
 			{
 				low = arg->value.scalar_register_series.low;
 				high = arg->value.scalar_register_series.high;
@@ -948,13 +948,13 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 			}
 
 			/* Encode */
-			inst_bytes->vop3a.vdst = si2bin_arg_encode_operand(arg);
+			inst_bytes->vop3a.vdst = Si2binArgEncodeOperand(arg);
 			break;
 		}
 
 		case si2bin_token_vop3_src0:
 
-			inst_bytes->vop3a.src0 = si2bin_arg_encode_operand(arg);
+			inst_bytes->vop3a.src0 = Si2binArgEncodeOperand(arg);
 			if (arg->abs)
 				inst_bytes->vop3a.abs |= 0x1;
 			if (arg->neg)
@@ -963,7 +963,7 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 
 		case si2bin_token_vop3_src1:
 
-			inst_bytes->vop3a.src1 = si2bin_arg_encode_operand(arg);
+			inst_bytes->vop3a.src1 = Si2binArgEncodeOperand(arg);
 			if (arg->abs)
 				inst_bytes->vop3a.abs |= 0x2;
 			if (arg->neg)
@@ -972,7 +972,7 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 
 		case si2bin_token_vop3_src2:
 
-			inst_bytes->vop3a.src2 = si2bin_arg_encode_operand(arg);
+			inst_bytes->vop3a.src2 = Si2binArgEncodeOperand(arg);
 			if (arg->abs)
 				inst_bytes->vop3a.abs |= 0x4;
 			if (arg->neg)
@@ -986,14 +986,14 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 			int high;
 
 			/* If operand is a scalar register series, check range */
-			if (arg->type == si2bin_arg_scalar_register_series)
+			if (arg->type == Si2binArgScalarRegisterSeries)
 			{
 				low = arg->value.scalar_register_series.low;
 				high = arg->value.scalar_register_series.high;
 				if (high != low + 1)
 					si2bin_yyerror("register series must be s[low:low+1]");
 			}
-			else if (arg->type == si2bin_arg_vector_register_series)
+			else if (arg->type == Si2binArgVectorRegisterSeries)
 			{
 				low = arg->value.vector_register_series.low;
 				high = arg->value.vector_register_series.high;
@@ -1002,7 +1002,7 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 			}
 
 			/* Encode */
-			inst_bytes->vop3a.src0 = si2bin_arg_encode_operand(arg);
+			inst_bytes->vop3a.src0 = Si2binArgEncodeOperand(arg);
 			
 			if (arg->abs)
 				inst_bytes->vop3a.abs |= 0x1;
@@ -1016,14 +1016,14 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 			int high;
 
 			/* If operand is a scalar register series, check range */
-			if (arg->type == si2bin_arg_scalar_register_series)
+			if (arg->type == Si2binArgScalarRegisterSeries)
 			{
 				low = arg->value.scalar_register_series.low;
 				high = arg->value.scalar_register_series.high;
 				if (high != low + 1)
 					si2bin_yyerror("register series must be s[low:low+1]");
 			}
-			else if (arg->type == si2bin_arg_vector_register_series)
+			else if (arg->type == Si2binArgVectorRegisterSeries)
 			{
 				low = arg->value.vector_register_series.low;
 				high = arg->value.vector_register_series.high;
@@ -1032,7 +1032,7 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 			}
 
 			/* Encode */
-			inst_bytes->vop3a.src1 = si2bin_arg_encode_operand(arg);
+			inst_bytes->vop3a.src1 = Si2binArgEncodeOperand(arg);
 			
 			if (arg->abs)
 				inst_bytes->vop3a.abs |= 0x2;
@@ -1046,14 +1046,14 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 			int high;
 
 			/* If operand is a scalar register series, check range */
-			if (arg->type == si2bin_arg_scalar_register_series)
+			if (arg->type == Si2binArgScalarRegisterSeries)
 			{
 				low = arg->value.scalar_register_series.low;
 				high = arg->value.scalar_register_series.high;
 				if (high != low + 1)
 					si2bin_yyerror("register series must be s[low:low+1]");
 			}
-			else if (arg->type == si2bin_arg_vector_register_series)
+			else if (arg->type == Si2binArgVectorRegisterSeries)
 			{
 				low = arg->value.vector_register_series.low;
 				high = arg->value.vector_register_series.high;
@@ -1062,7 +1062,7 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 			}
 
 			/* Encode */
-			inst_bytes->vop3a.src2 = si2bin_arg_encode_operand(arg);
+			inst_bytes->vop3a.src2 = Si2binArgEncodeOperand(arg);
 			
 			if (arg->abs)
 				inst_bytes->vop3a.abs |= 0x4;
@@ -1074,7 +1074,7 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 		case si2bin_token_vop3_64_sdst:
 			
 			/* Encode */
-			inst_bytes->vop3b.sdst = si2bin_arg_encode_operand(arg);
+			inst_bytes->vop3b.sdst = Si2binArgEncodeOperand(arg);
 			
 			break;
 
@@ -1090,7 +1090,7 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 			int high;
 
 			/* Check argument type */
-			if (arg->type == si2bin_arg_vector_register_series)
+			if (arg->type == Si2binArgVectorRegisterSeries)
 			{
 				low = arg->value.vector_register_series.low;
 				high = arg->value.vector_register_series.high;
@@ -1106,7 +1106,7 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 		case si2bin_token_vsrc1:
 
 			/* Make sure argument is a vector register */
-			assert(arg->type == si2bin_arg_vector_register);
+			assert(arg->type == Si2binArgVectorRegister);
 
 			/* Encode */
 			inst_bytes->vopc.vsrc1 = arg->value.vector_register.id;
@@ -1160,7 +1160,7 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 		case si2bin_token_addr:
 			
 			/* Make sure argument is a vector register */
-			assert(arg->type == si2bin_arg_vector_register);
+			assert(arg->type == Si2binArgVectorRegister);
 			
 			/* Encode */
 			inst_bytes->ds.addr = arg->value.vector_register.id;
@@ -1169,7 +1169,7 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 		case si2bin_token_data0:
 
 			/* Make sure argument is a vector register */
-			assert(arg->type == si2bin_arg_vector_register);
+			assert(arg->type == Si2binArgVectorRegister);
 
 			/* Encode */
 			inst_bytes->ds.data0 = arg->value.vector_register.id;
@@ -1178,7 +1178,7 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 		case si2bin_token_ds_vdst:
 
 			/* Make sure argument is a vector register */
-			assert(arg->type == si2bin_arg_vector_register);
+			assert(arg->type == Si2binArgVectorRegister);
 
 			/* Encode */
 			inst_bytes->ds.vdst = arg->value.vector_register.id;

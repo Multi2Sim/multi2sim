@@ -201,11 +201,11 @@ struct str_map_t si_inst_special_reg_map = {
 
 void SIAsmCreate(SIAsm *self)
 {
-	struct si_inst_info_t *info;
+	SIInstInfo *info;
 	int i;
 
 	/* Allocate array of instruction information */
-	self->inst_info = xcalloc(SIInstOpcodeCount, sizeof(struct si_inst_info_t));
+	self->inst_info = xcalloc(SIInstOpcodeCount, sizeof(SIInstInfo));
 
 	/* Type size assertions */
 	assert(sizeof(SIInstReg) == 4);
