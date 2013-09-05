@@ -182,7 +182,7 @@ void Llvm2siFunctionUAVDestroy(Llvm2siFunctionUAV *self)
 static void Llvm2siFunctionAddUAV(Llvm2siFunction *self,
 		Llvm2siFunctionUAV *uav)
 {
-	struct list_t *arg_list;
+	List *arg_list;
 	struct si2bin_inst_t *inst;
 	Llvm2siBasicBlock *basic_block;
 
@@ -206,12 +206,12 @@ static void Llvm2siFunctionAddUAV(Llvm2siFunction *self,
 	/* Emit code to load UAV.
 	 * s_load_dwordx4 s[uavX:uavX+3], s[uav_table:uav_table+1], x * 8
 	 */
-	arg_list = list_create();
-	list_add(arg_list, new_ctor(Si2binArg, CreateScalarRegisterSeries,
-			uav->sreg, uav->sreg + 3));
-	list_add(arg_list, new_ctor(Si2binArg, CreateScalarRegisterSeries,
-			self->sreg_uav_table, self->sreg_uav_table + 1));
-	list_add(arg_list, new_ctor(Si2binArg, CreateLiteral, (uav->index + 10) * 8));
+	arg_list = new(List);
+	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegisterSeries,
+			uav->sreg, uav->sreg + 3)));
+	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegisterSeries,
+			self->sreg_uav_table, self->sreg_uav_table + 1)));
+	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateLiteral, (uav->index + 10) * 8)));
 	inst = si2bin_inst_create(SI_INST_S_LOAD_DWORDX4, arg_list);
 	Llvm2siBasicBlockAddInst(basic_block, inst);
 }
@@ -222,7 +222,7 @@ static void Llvm2siFunctionAddUAV(Llvm2siFunction *self,
 static void Llvm2siFunctionAddArg(Llvm2siFunction *self,
 		Llvm2siFunctionArg *arg)
 {
-	struct list_t *arg_list;
+	List *arg_list;
 	struct si2bin_inst_t *inst;
 	Llvm2siSymbol *symbol;
 	Llvm2siBasicBlock *basic_block;
@@ -249,11 +249,11 @@ static void Llvm2siFunctionAddArg(Llvm2siFunction *self,
 	/* Generate code to load argument into a scalar register.
 	 * s_buffer_load_dword s[arg], s[cb1:cb1+3], idx*4
 	 */
-	arg_list = list_create();
-	list_add(arg_list, new_ctor(Si2binArg, CreateScalarRegister, arg->sreg));
-	list_add(arg_list, new_ctor(Si2binArg, CreateScalarRegisterSeries, self->sreg_cb1,
-			self->sreg_cb1 + 3));
-	list_add(arg_list, new_ctor(Si2binArg, CreateLiteral, arg->index * 4));
+	arg_list = new(List);
+	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegister, arg->sreg)));
+	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegisterSeries, self->sreg_cb1,
+			self->sreg_cb1 + 3)));
+	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateLiteral, arg->index * 4)));
 	inst = si2bin_inst_create(SI_INST_S_BUFFER_LOAD_DWORD, arg_list);
 	Llvm2siBasicBlockAddInst(basic_block, inst);
 
@@ -264,9 +264,9 @@ static void Llvm2siFunctionAddArg(Llvm2siFunction *self,
 	 * copies and scalar opportunities.
 	 * v_mov_b32 v[arg], s[arg]
 	 */
-	arg_list = list_create();
-	list_add(arg_list, new_ctor(Si2binArg, CreateVectorRegister, arg->vreg));
-	list_add(arg_list, new_ctor(Si2binArg, CreateScalarRegister, arg->sreg));
+	arg_list = new(List);
+	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateVectorRegister, arg->vreg)));
+	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegister, arg->sreg)));
 	inst = si2bin_inst_create(SI_INST_V_MOV_B32, arg_list);
 	Llvm2siBasicBlockAddInst(basic_block, inst);
 
@@ -439,7 +439,7 @@ void Llvm2siFunctionEmitHeader(Llvm2siFunction *self)
 {
 	Llvm2siBasicBlock *basic_block;
 	struct si2bin_inst_t *inst;
-	struct list_t *arg_list;
+	List *arg_list;
 
 	char comment[MAX_STRING_SIZE];
 	int index;
@@ -481,12 +481,12 @@ void Llvm2siFunctionEmitHeader(Llvm2siFunction *self)
 	self->sreg_gsize = Llvm2siFunctionAllocSReg(self, 3, 1);
 	for (index = 0; index < 3; index++)
 	{
-		arg_list = list_create();
-		list_add(arg_list, new_ctor(Si2binArg, CreateScalarRegister,
-				self->sreg_gsize + index));
-		list_add(arg_list, new_ctor(Si2binArg, CreateScalarRegisterSeries,
-				self->sreg_cb0, self->sreg_cb0 + 3));
-		list_add(arg_list, new_ctor(Si2binArg, CreateLiteral, index));
+		arg_list = new(List);
+		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegister,
+				self->sreg_gsize + index)));
+		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegisterSeries,
+				self->sreg_cb0, self->sreg_cb0 + 3)));
+		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateLiteral, index)));
 		inst = si2bin_inst_create(SI_INST_S_BUFFER_LOAD_DWORD, arg_list);
 		Llvm2siBasicBlockAddInst(basic_block, inst);
 	}
@@ -501,12 +501,12 @@ void Llvm2siFunctionEmitHeader(Llvm2siFunction *self)
 	self->sreg_lsize = Llvm2siFunctionAllocSReg(self, 3, 1);
 	for (index = 0; index < 3; index++)
 	{
-		arg_list = list_create();
-		list_add(arg_list, new_ctor(Si2binArg, CreateScalarRegister,
-				self->sreg_lsize + index));
-		list_add(arg_list, new_ctor(Si2binArg, CreateScalarRegisterSeries,
-				self->sreg_cb0, self->sreg_cb0 + 3));
-		list_add(arg_list, new_ctor(Si2binArg, CreateLiteral, 4 + index));
+		arg_list = new(List);
+		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegister,
+				self->sreg_lsize + index)));
+		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegisterSeries,
+				self->sreg_cb0, self->sreg_cb0 + 3)));
+		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateLiteral, 4 + index)));
 		inst = si2bin_inst_create(SI_INST_S_BUFFER_LOAD_DWORD, arg_list);
 		Llvm2siBasicBlockAddInst(basic_block, inst);
 	}
@@ -521,12 +521,12 @@ void Llvm2siFunctionEmitHeader(Llvm2siFunction *self)
 	self->sreg_offs = Llvm2siFunctionAllocSReg(self, 3, 1);
 	for (index = 0; index < 3; index++)
 	{
-		arg_list = list_create();
-		list_add(arg_list, new_ctor(Si2binArg, CreateScalarRegister,
-				self->sreg_offs + index));
-		list_add(arg_list, new_ctor(Si2binArg, CreateScalarRegisterSeries,
-				self->sreg_cb0, self->sreg_cb0 + 3));
-		list_add(arg_list, new_ctor(Si2binArg, CreateLiteral, 0x18 + index));
+		arg_list = new(List);
+		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegister,
+				self->sreg_offs + index)));
+		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegisterSeries,
+				self->sreg_cb0, self->sreg_cb0 + 3)));
+		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateLiteral, 0x18 + index)));
 		inst = si2bin_inst_create(SI_INST_S_BUFFER_LOAD_DWORD, arg_list);
 		Llvm2siBasicBlockAddInst(basic_block, inst);
 	}
@@ -547,46 +547,46 @@ void Llvm2siFunctionEmitHeader(Llvm2siFunction *self)
 		Llvm2siBasicBlockAddComment(basic_block, comment);
 
 		/* v_mov_b32 */
-		arg_list = list_create();
-		list_add(arg_list, new_ctor(Si2binArg, CreateVectorRegister,
-				self->vreg_gid + index));
-		list_add(arg_list, new_ctor(Si2binArg, CreateScalarRegister,
-				self->sreg_lsize + index));
+		arg_list = new(List);
+		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateVectorRegister,
+				self->vreg_gid + index)));
+		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegister,
+				self->sreg_lsize + index)));
 		inst = si2bin_inst_create(SI_INST_V_MOV_B32, arg_list);
 		Llvm2siBasicBlockAddInst(basic_block, inst);
 
 		/* v_mul_i32_i24 */
-		arg_list = list_create();
-		list_add(arg_list, new_ctor(Si2binArg, CreateVectorRegister,
-				self->vreg_gid + index));
-		list_add(arg_list, new_ctor(Si2binArg, CreateScalarRegister,
-				self->sreg_wgid + index));
-		list_add(arg_list, new_ctor(Si2binArg, CreateVectorRegister,
-				self->vreg_gid + index));
+		arg_list = new(List);
+		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateVectorRegister,
+				self->vreg_gid + index)));
+		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegister,
+				self->sreg_wgid + index)));
+		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateVectorRegister,
+				self->vreg_gid + index)));
 		inst = si2bin_inst_create(SI_INST_V_MUL_I32_I24, arg_list);
 		Llvm2siBasicBlockAddInst(basic_block, inst);
 
 		/* v_add_i32 */
-		arg_list = list_create();
-		list_add(arg_list, new_ctor(Si2binArg, CreateVectorRegister,
-				self->vreg_gid + index));
-		list_add(arg_list, new_ctor(Si2binArg, CreateSpecialRegister, si_inst_special_reg_vcc));
-		list_add(arg_list, new_ctor(Si2binArg, CreateVectorRegister,
-				self->vreg_gid + index));
-		list_add(arg_list, new_ctor(Si2binArg, CreateVectorRegister,
-				self->vreg_lid + index));
+		arg_list = new(List);
+		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateVectorRegister,
+				self->vreg_gid + index)));
+		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateSpecialRegister, si_inst_special_reg_vcc)));
+		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateVectorRegister,
+				self->vreg_gid + index)));
+		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateVectorRegister,
+				self->vreg_lid + index)));
 		inst = si2bin_inst_create(SI_INST_V_ADD_I32, arg_list);
 		Llvm2siBasicBlockAddInst(basic_block, inst);
 
 		/* v_add_i32 */
-		arg_list = list_create();
-		list_add(arg_list, new_ctor(Si2binArg, CreateVectorRegister,
-				self->vreg_gid + index));
-		list_add(arg_list, new_ctor(Si2binArg, CreateSpecialRegister, si_inst_special_reg_vcc));
-		list_add(arg_list, new_ctor(Si2binArg, CreateScalarRegister,
-				self->sreg_offs + index));
-		list_add(arg_list, new_ctor(Si2binArg, CreateVectorRegister,
-				self->vreg_gid + index));
+		arg_list = new(List);
+		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateVectorRegister,
+				self->vreg_gid + index)));
+		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateSpecialRegister, si_inst_special_reg_vcc)));
+		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegister,
+				self->sreg_offs + index)));
+		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateVectorRegister,
+				self->vreg_gid + index)));
 		inst = si2bin_inst_create(SI_INST_V_ADD_I32, arg_list);
 		Llvm2siBasicBlockAddInst(basic_block, inst);
 	}
@@ -665,7 +665,7 @@ void Llvm2siFunctionEmitPhi(Llvm2siFunction *self)
 	LeafNode *node;
 	Llvm2siPhi *phi;
 	Llvm2siBasicBlock *basic_block;
-	struct list_t *arg_list;
+	List *arg_list;
 	struct si2bin_inst_t *inst;
 	Si2binArg *src_value;
 
@@ -687,9 +687,9 @@ void Llvm2siFunctionEmitPhi(Llvm2siFunction *self)
 		/* Copy source value to destination value.
 		 * s_mov_b32 <dest_value>, <src_value>
 		 */
-		arg_list = list_create();
-		list_add(arg_list, phi->dest_value);
-		list_add(arg_list, src_value);
+		arg_list = new(List);
+		ListAdd(arg_list, asObject(phi->dest_value));
+		ListAdd(arg_list, asObject(src_value));
 		inst = si2bin_inst_create(SI_INST_V_MOV_B32, arg_list);
 		Llvm2siBasicBlockAddInst(basic_block, inst);
 
@@ -708,7 +708,7 @@ static void Llvm2siFunctionEmitIfThen(Llvm2siFunction *self, Node *node)
 	Llvm2siBasicBlock *then_bb;
 
 	Llvm2siSymbol *cond_symbol;
-	struct list_t *arg_list;
+	List *arg_list;
 	struct si2bin_inst_t *inst;
 
 	LLVMBasicBlockRef llbb;
@@ -763,9 +763,9 @@ static void Llvm2siFunctionEmitIfThen(Llvm2siFunction *self, Node *node)
 	/* Emit active mask push and set at the end of the 'If' block.
 	 * s_and_saveexec_b64 <tos_sreg> <cond_sreg>
 	 */
-	arg_list = list_create();
-	list_add(arg_list, new_ctor(Si2binArg, CreateScalarRegisterSeries, tos_sreg, tos_sreg + 1));
-	list_add(arg_list, new_ctor(Si2binArg, CreateScalarRegisterSeries, cond_sreg, cond_sreg + 1));
+	arg_list = new(List);
+	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegisterSeries, tos_sreg, tos_sreg + 1)));
+	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegisterSeries, cond_sreg, cond_sreg + 1)));
 	inst = si2bin_inst_create(SI_INST_S_AND_SAVEEXEC_B64, arg_list);
 	Llvm2siBasicBlockAddInst(if_bb, inst);
 
@@ -775,9 +775,9 @@ static void Llvm2siFunctionEmitIfThen(Llvm2siFunction *self, Node *node)
 	/* Pop the active mask.
 	 * s_mov_b64 exec, <tos_sreg>
 	 */
-	arg_list = list_create();
-	list_add(arg_list, new_ctor(Si2binArg, CreateSpecialRegister, si_inst_special_reg_exec));
-	list_add(arg_list, new_ctor(Si2binArg, CreateScalarRegisterSeries, tos_sreg, tos_sreg + 1));
+	arg_list = new(List);
+	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateSpecialRegister, si_inst_special_reg_exec)));
+	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegisterSeries, tos_sreg, tos_sreg + 1)));
 	inst = si2bin_inst_create(SI_INST_S_MOV_B64, arg_list);
 	Llvm2siBasicBlockAddInst(then_bb, inst);
 }
@@ -794,7 +794,7 @@ static void Llvm2siFunctionEmitIfThenElse(Llvm2siFunction *self, Node *node)
 	Llvm2siBasicBlock *else_bb;
 
 	Llvm2siSymbol *cond_symbol;
-	struct list_t *arg_list;
+	List *arg_list;
 	struct si2bin_inst_t *inst;
 
 	LLVMBasicBlockRef llbb;
@@ -854,9 +854,9 @@ static void Llvm2siFunctionEmitIfThenElse(Llvm2siFunction *self, Node *node)
 	/* Emit active mask push and set at the end of the 'If' block.
 	 * s_and_saveexec_b64 <tos_sreg> <cond_sreg>
 	 */
-	arg_list = list_create();
-	list_add(arg_list, new_ctor(Si2binArg, CreateScalarRegisterSeries, tos_sreg, tos_sreg + 1));
-	list_add(arg_list, new_ctor(Si2binArg, CreateScalarRegisterSeries, cond_sreg, cond_sreg + 1));
+	arg_list = new(List);
+	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegisterSeries, tos_sreg, tos_sreg + 1)));
+	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegisterSeries, cond_sreg, cond_sreg + 1)));
 	inst = si2bin_inst_create(SI_INST_S_AND_SAVEEXEC_B64, arg_list);
 	Llvm2siBasicBlockAddInst(if_bb, inst);
 
@@ -866,10 +866,10 @@ static void Llvm2siFunctionEmitIfThenElse(Llvm2siFunction *self, Node *node)
 	/* Invert active mask and-ing it with the top of the stack.
 	 * s_andn2_b64 exec, <tos_sreg>, exec
 	 */
-	arg_list = list_create();
-	list_add(arg_list, new_ctor(Si2binArg, CreateSpecialRegister, si_inst_special_reg_exec));
-	list_add(arg_list, new_ctor(Si2binArg, CreateScalarRegisterSeries, tos_sreg, tos_sreg + 1));
-	list_add(arg_list, new_ctor(Si2binArg, CreateSpecialRegister, si_inst_special_reg_exec));
+	arg_list = new(List);
+	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateSpecialRegister, si_inst_special_reg_exec)));
+	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegisterSeries, tos_sreg, tos_sreg + 1)));
+	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateSpecialRegister, si_inst_special_reg_exec)));
 	inst = si2bin_inst_create(SI_INST_S_ANDN2_B64, arg_list);
 	Llvm2siBasicBlockAddInst(then_bb, inst);
 
@@ -879,9 +879,9 @@ static void Llvm2siFunctionEmitIfThenElse(Llvm2siFunction *self, Node *node)
 	/* Pop the active mask.
 	 * s_mov_b64 exec, <tos_sreg>
 	 */
-	arg_list = list_create();
-	list_add(arg_list, new_ctor(Si2binArg, CreateSpecialRegister, si_inst_special_reg_exec));
-	list_add(arg_list, new_ctor(Si2binArg, CreateScalarRegisterSeries, tos_sreg, tos_sreg + 1));
+	arg_list = new(List);
+	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateSpecialRegister, si_inst_special_reg_exec)));
+	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegisterSeries, tos_sreg, tos_sreg + 1)));
 	inst = si2bin_inst_create(SI_INST_S_MOV_B64, arg_list);
 	Llvm2siBasicBlockAddInst(else_bb, inst);
 }
@@ -900,7 +900,7 @@ static void Llvm2siFunctionEmitWhileLoop(Llvm2siFunction *self, Node *node)
 	Llvm2siBasicBlock *exit_bb;
 
 	Llvm2siSymbol *cond_symbol;
-	struct list_t *arg_list;
+	List *arg_list;
 	struct si2bin_inst_t *inst;
 
 	SIInstOpcode opcode;
@@ -966,9 +966,9 @@ static void Llvm2siFunctionEmitWhileLoop(Llvm2siFunction *self, Node *node)
 	/* Push active mask.
 	 * s_mov_b64 <tos_sreg>, exec
 	 */
-	arg_list = list_create();
-	list_add(arg_list, new_ctor(Si2binArg, CreateScalarRegisterSeries, tos_sreg, tos_sreg + 1));
-	list_add(arg_list, new_ctor(Si2binArg, CreateSpecialRegister, si_inst_special_reg_exec));
+	arg_list = new(List);
+	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegisterSeries, tos_sreg, tos_sreg + 1)));
+	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateSpecialRegister, si_inst_special_reg_exec)));
 	inst = si2bin_inst_create(SI_INST_S_MOV_B64, arg_list);
 	Llvm2siBasicBlockAddInst(pre_bb, inst);
 
@@ -978,9 +978,9 @@ static void Llvm2siFunctionEmitWhileLoop(Llvm2siFunction *self, Node *node)
 	/* Pop active mask.
 	 * s_mov_b64 exec, <tos_sreg>
 	 */
-	arg_list = list_create();
-	list_add(arg_list, new_ctor(Si2binArg, CreateSpecialRegister, si_inst_special_reg_exec));
-	list_add(arg_list, new_ctor(Si2binArg, CreateScalarRegisterSeries, tos_sreg, tos_sreg + 1));
+	arg_list = new(List);
+	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateSpecialRegister, si_inst_special_reg_exec)));
+	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegisterSeries, tos_sreg, tos_sreg + 1)));
 	inst = si2bin_inst_create(SI_INST_S_MOV_B64, arg_list);
 	Llvm2siBasicBlockAddInst(exit_bb, inst);
 
@@ -990,8 +990,8 @@ static void Llvm2siFunctionEmitWhileLoop(Llvm2siFunction *self, Node *node)
 	/* Jump to head block.
 	 * s_branch <head_block>
 	 */
-	arg_list = list_create();
-	list_add(arg_list, new_ctor(Si2binArg, CreateLabel, head_node->name));
+	arg_list = new(List);
+	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateLabel, head_node->name)));
 	inst = si2bin_inst_create(SI_INST_S_BRANCH, arg_list);
 	Llvm2siBasicBlockAddInst(tail_bb, inst);
 
@@ -1024,18 +1024,18 @@ static void Llvm2siFunctionEmitWhileLoop(Llvm2siFunction *self, Node *node)
 	/* Bitwise 'and' of active mask with condition.
 	 * s_and(n2)_b64 exec, exec, <cond_sreg>
 	 */
-	arg_list = list_create();
-	list_add(arg_list, new_ctor(Si2binArg, CreateSpecialRegister, si_inst_special_reg_exec));
-	list_add(arg_list, new_ctor(Si2binArg, CreateSpecialRegister, si_inst_special_reg_exec));
-	list_add(arg_list, new_ctor(Si2binArg, CreateScalarRegisterSeries, cond_sreg, cond_sreg + 1));
+	arg_list = new(List);
+	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateSpecialRegister, si_inst_special_reg_exec)));
+	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateSpecialRegister, si_inst_special_reg_exec)));
+	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegisterSeries, cond_sreg, cond_sreg + 1)));
 	inst = si2bin_inst_create(opcode, arg_list);
 	Llvm2siBasicBlockAddInst(head_bb, inst);
 
 	/* Exit loop if no more work-items are active.
 	 * s_cbranch_execz <exit_node>
 	 */
-	arg_list = list_create();
-	list_add(arg_list, new_ctor(Si2binArg, CreateLabel, exit_node->name));
+	arg_list = new(List);
+	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateLabel, exit_node->name)));
 	inst = si2bin_inst_create(SI_INST_S_CBRANCH_EXECZ, arg_list);
 	Llvm2siBasicBlockAddInst(head_bb, inst);
 }
@@ -1190,7 +1190,7 @@ Si2binArg *Llvm2siFunctionConstToVReg(Llvm2siFunction *self,
 		Llvm2siBasicBlock *basic_block, Si2binArg *arg)
 {
 	Si2binArg *ret_arg;
-	struct list_t *arg_list;
+	List *arg_list;
 	struct si2bin_inst_t *inst;
 	int vreg;
 
@@ -1205,9 +1205,9 @@ Si2binArg *Llvm2siFunctionConstToVReg(Llvm2siFunction *self,
 	/* Copy constant to vector register.
 	 * v_mov_b32 <vreg>, <const>
 	 */
-	arg_list = list_create();
-	list_add(arg_list, new_ctor(Si2binArg, CreateVectorRegister, vreg));
-	list_add(arg_list, arg);
+	arg_list = new(List);
+	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateVectorRegister, vreg)));
+	ListAdd(arg_list, asObject(arg));
 	inst = si2bin_inst_create(SI_INST_V_MOV_B32, arg_list);
 	Llvm2siBasicBlockAddInst(basic_block, inst);
 

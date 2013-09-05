@@ -30,9 +30,8 @@ struct si2bin_inst_t
 	SIInstOpcode opcode;
 	struct si2bin_inst_info_t *info;
 
-	/* List of arguments. Each element in the list is of type
-	 * 'struct si2bin_arg_t'. */
-	struct list_t *arg_list;
+	/* List of arguments. Each element is of type 'Si2binArg' */
+	List *arg_list;
 
 	/* Instruction bytes generated */
 	SIInstBytes inst_bytes;
@@ -48,19 +47,18 @@ struct si2bin_inst_t
 };
 
 
-/* Create a new instruction with an opcode of type 'enum SIInstOpcode', as
+/* Create a new instruction with an opcode of type 'SIInstOpcode', as
  * defined in the Southern Islands disassembler. The argument list in 'arg_list'
- * is composed of objects of type 'si2bin_arg_t'. All these objects, as well as
- * the argument list itself, will be freed internally when calling
- * 'si2bin_inst_free'. */
-struct si2bin_inst_t *si2bin_inst_create(int opcode, struct list_t *arg_list);
+ * is composed of objects of type 'Si2binArg'. All these objects, as well as
+ * the argument list itself, will be freed by the class destructor. */
+struct si2bin_inst_t *si2bin_inst_create(int opcode, List *arg_list);
 
 /* Create a new instruction with the opcode corresponding to the first instruction
  * named 'name' that matches the number and type of arguments passed in 'arg_list'.
  * The list of arguments in 'arg_list' and 'arg_list' itself will be freed
- * internally during the call to 'si2bin_inst_free'. */
+ * internally in the class destructor. */
 struct si2bin_inst_t *si2bin_inst_create_with_name(char *name,
-		struct list_t *arg_list);
+		List *arg_list);
 
 void si2bin_inst_free(struct si2bin_inst_t *inst);
 void si2bin_inst_dump(struct si2bin_inst_t *inst, FILE *f);
