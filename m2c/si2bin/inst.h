@@ -25,8 +25,13 @@
 #include <lib/class/class.h>
 
 
-struct si2bin_inst_t
-{
+
+/*
+ * Class 'Si2binInst'
+ */
+
+CLASS_BEGIN(Si2binInst, Object)
+
 	SIInstOpcode opcode;
 	struct si2bin_inst_info_t *info;
 
@@ -44,32 +49,33 @@ struct si2bin_inst_t
 	/* Comment attached to the instruction, which will be dumped together
 	 * with it. */
 	char *comment;
-};
+
+CLASS_END(Si2binInst)
 
 
 /* Create a new instruction with an opcode of type 'SIInstOpcode', as
  * defined in the Southern Islands disassembler. The argument list in 'arg_list'
  * is composed of objects of type 'Si2binArg'. All these objects, as well as
  * the argument list itself, will be freed by the class destructor. */
-struct si2bin_inst_t *si2bin_inst_create(int opcode, List *arg_list);
+void Si2binInstCreate(Si2binInst *self, int opcode, List *arg_list);
 
 /* Create a new instruction with the opcode corresponding to the first instruction
  * named 'name' that matches the number and type of arguments passed in 'arg_list'.
  * The list of arguments in 'arg_list' and 'arg_list' itself will be freed
  * internally in the class destructor. */
-struct si2bin_inst_t *si2bin_inst_create_with_name(char *name,
-		List *arg_list);
+void Si2binInstCreateWithName(Si2binInst *self, char *name, List *arg_list);
 
-void si2bin_inst_free(struct si2bin_inst_t *inst);
-void si2bin_inst_dump(struct si2bin_inst_t *inst, FILE *f);
-void si2bin_inst_dump_assembly(struct si2bin_inst_t *inst, FILE *f);
+void Si2binInstDestroy(Si2binInst *self);
+
+void Si2binInstDump(Si2binInst *self, FILE *f);
+void Si2binInstDumpAssembly(Si2binInst *self, FILE *f);
 
 /* Attach a comment to the instruction */
-void si2bin_inst_add_comment(struct si2bin_inst_t *inst, char *comment);
+void Si2binInstAddComment(Si2binInst *self, char *comment);
 
 /* Populate fields 'inst_bytes' and 'size' based on the instruction and the value
  * of its arguments. */
-void si2bin_inst_gen(struct si2bin_inst_t *inst);
+void Si2binInstGenerate(Si2binInst *self);
 
 #endif
 

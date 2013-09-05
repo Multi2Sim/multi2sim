@@ -36,25 +36,27 @@
 #include "token.h"
 
 
-struct si2bin_inst_t *si2bin_inst_create(int opcode, List *arg_list)
+/*
+ * Class 'Si2binInst'
+ */
+
+void Si2binInstCreate(Si2binInst *self, int opcode, List *arg_list)
 {
-	struct si2bin_inst_t *inst;
 	Si2binArg *arg;
 	struct si2bin_token_t *token;
 	struct si2bin_inst_info_t *info;
 	int index;
 
 	/* Initialize */
-	inst = xcalloc(1, sizeof(struct si2bin_inst_t));
-	inst->arg_list = arg_list;
+	self->arg_list = arg_list;
 
 	/* Check valid opcode */
 	if (!IN_RANGE(opcode, 1, SIInstOpcodeCount - 1))
 		fatal("%s: invalid opcode (%d)", __FUNCTION__, opcode);
 
 	/* Get instruction information */
-	inst->info = list_get(si2bin_inst_info_list, opcode);
-	info = inst->info;
+	self->info = list_get(si2bin_inst_info_list, opcode);
+	info = self->info;
 	if (!info)
 		fatal("%s: opcode %d not supported", __FUNCTION__, opcode);
 
@@ -78,15 +80,11 @@ struct si2bin_inst_t *si2bin_inst_create(int opcode, List *arg_list)
 		/* Next */
 		index++;
 	}
-
-	/* Return */
-	return inst;
 }
 
 
-struct si2bin_inst_t *si2bin_inst_create_with_name(char *name, List *arg_list)
+void Si2binInstCreateWithName(Si2binInst *self, char *name, List *arg_list)
 {
-	struct si2bin_inst_t *inst;
 	struct si2bin_inst_info_t *info;
 
 	Si2binArg *arg;
@@ -95,13 +93,10 @@ struct si2bin_inst_t *si2bin_inst_create_with_name(char *name, List *arg_list)
 	char err_str[MAX_STRING_SIZE];
 	int index;
 	
-	/* Allocate */
-	inst = xcalloc(1, sizeof(struct si2bin_inst_t));
-	
 	/* Initialize */
 	if (!arg_list)
 		arg_list = new(List);
-	inst->arg_list = arg_list;
+	self->arg_list = arg_list;
 	
 	/* Try to create the instruction following all possible encodings for
 	 * the same instruction name. */
@@ -153,27 +148,23 @@ struct si2bin_inst_t *si2bin_inst_create_with_name(char *name, List *arg_list)
 		si2bin_yyerror(err_str);
 
 	/* Initialize opcode */
-	inst->info = info;
-	inst->opcode = info->inst_info->op;
-
-	/* Return */
-	return inst;
+	self->info = info;
+	self->opcode = info->inst_info->op;
 }
 
 
-void si2bin_inst_free(struct si2bin_inst_t *inst)
+void Si2binInstDestroy(Si2binInst *self)
 {
 	/* Free argument list */
-	ListDeleteObjects(inst->arg_list);
-	delete(inst->arg_list);
+	ListDeleteObjects(self->arg_list);
+	delete(self->arg_list);
 	
 	/* Rest */
-	str_free(inst->comment);
-	free(inst);
+	str_free(self->comment);
 }
 
 
-void si2bin_inst_dump(struct si2bin_inst_t *inst, FILE *f)
+void Si2binInstDump(Si2binInst *inst, FILE *f)
 {
 	Si2binArg *arg;
 	unsigned int word;
@@ -213,7 +204,7 @@ void si2bin_inst_dump(struct si2bin_inst_t *inst, FILE *f)
 }
 
 
-void si2bin_inst_dump_assembly(struct si2bin_inst_t *inst, FILE *f)
+void Si2binInstDumpAssembly(Si2binInst *inst, FILE *f)
 {
         Si2binArg *arg;
 
@@ -243,13 +234,13 @@ void si2bin_inst_dump_assembly(struct si2bin_inst_t *inst, FILE *f)
 }
 
 
-void si2bin_inst_add_comment(struct si2bin_inst_t *inst, char *comment)
+void Si2binInstAddComment(Si2binInst *inst, char *comment)
 {
 	inst->comment = str_set(inst->comment, comment);
 }
 
 
-void si2bin_inst_gen(struct si2bin_inst_t *inst)
+void Si2binInstGenerate(Si2binInst *inst)
 {
 	SIInstBytes *inst_bytes;
 	SIInstInfo *inst_info;

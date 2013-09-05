@@ -28,6 +28,7 @@
 #include <arch/southern-islands/asm/bin-file.h>
 #include <lib/class/class.h>
 #include <lib/class/elf-writer.h>
+#include <lib/class/list.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/hash-table.h>
@@ -56,9 +57,9 @@
 	int num;
 	float num_float;
 	struct si2bin_id_t *id;
-	struct si2bin_inst_t *inst;
+	Si2binInst *inst;
 	struct si_label_t *label;
-	struct list_t *list;
+	List *list;
 	Si2binArg *arg;
 	struct si_arg_t *si_arg;
 }
@@ -708,15 +709,15 @@ text_stmt
 	: label TOK_NEW_LINE
 	| instr
 	{
-		struct si2bin_inst_t *inst = $1;
+		Si2binInst *inst = $1;
 
 		/* Generate code */
-		si2bin_inst_gen(inst);
+		Si2binInstGenerate(inst);
 		ELFWriterBufferWrite(si2bin_entry->text_section_buffer, inst->inst_bytes.byte, inst->size);
 		
 		/* Dump Instruction Info */
 		//si2bin_inst_dump(inst, stdout);
-		si2bin_inst_free(inst);
+		delete(inst);
 	} TOK_NEW_LINE
 	| TOK_NEW_LINE
 ;
@@ -751,16 +752,17 @@ label
 instr
 	: TOK_ID arg_list 
 	{
-		struct si2bin_inst_t *inst;
+		Si2binInst *inst;
 		struct si2bin_id_t *id;
-		struct list_t *arg_list;
+		List *arg_list;
 
 		/* Get arguments */
 		id = $1;
 		arg_list = $2;
 		
 		/* Create instruction */
-		inst = si2bin_inst_create_with_name(id->name, arg_list);
+		inst = new_ctor(Si2binInst, CreateWithName,
+				id->name, arg_list);
 
 		/* Return instructions */
 		si2bin_id_free(id);
@@ -776,25 +778,23 @@ arg_list
 
 	| arg
 	{
-		struct list_t *arg_list;
+		List *arg_list;
 		
-		/* Create */
-		arg_list = list_create();
-		
-		/* Initialize */
-		list_add(arg_list, $1);
-		
-		/* Return the arg list */
+		arg_list = new(List);
+		ListAdd(arg_list, asObject($1));
 		$$ = arg_list;
 	}
 
 	| arg TOK_COMMA arg_list
 	{
-		/* Add argument to head of list_t in $3 */
-		list_insert($3, 0, $1);
+		List *arg_list = $3;
+
+		/* Add argument to head of argument list */
+		ListHead(arg_list);
+		ListInsert(arg_list, asObject($1));
 		
-		/* Return the arg list */
-		$$ = $3;
+		/* Return the argument list */
+		$$ = arg_list;
 
 	}
 ;
@@ -913,10 +913,10 @@ arg
 		/* Check valid application of 'abs' */
 		switch (arg->type)
 		{
-		case si2bin_arg_scalar_register:
-		case si2bin_arg_scalar_register_series:
-		case si2bin_arg_vector_register:
-		case si2bin_arg_vector_register_series:
+		case Si2binArgScalarRegister:
+		case Si2binArgScalarRegisterSeries:
+		case Si2binArgVectorRegister:
+		case Si2binArgVectorRegisterSeries:
 			break;
 
 		default:
@@ -937,10 +937,10 @@ arg
 		/* Check valid application of 'abs' */
 		switch (arg->type)
 		{
-		case si2bin_arg_scalar_register:
-		case si2bin_arg_scalar_register_series:
-		case si2bin_arg_vector_register:
-		case si2bin_arg_vector_register_series:
+		case Si2binArgScalarRegister:
+		case Si2binArgScalarRegisterSeries:
+		case Si2binArgVectorRegister:
+		case Si2binArgVectorRegisterSeries:
 			break;
 
 		default:
@@ -1025,7 +1025,7 @@ maddr_qual
 	{
 		Si2binArg *qual = $1;
 
-		assert(qual->type == si2bin_arg_maddr_qual);
+		assert(qual->type == Si2binArgMaddrQual);
 		if (qual->value.maddr_qual.offen)
 			si2bin_yyerror("redundant qualifier 'offen'");
 		qual->value.maddr_qual.offen = 1;
@@ -1036,7 +1036,7 @@ maddr_qual
 	{
 		Si2binArg *qual = $1;
 
-		assert(qual->type == si2bin_arg_maddr_qual);
+		assert(qual->type == Si2binArgMaddrQual);
 		if (qual->value.maddr_qual.idxen)
 			si2bin_yyerror("redundant qualifier 'idxen'");
 		qual->value.maddr_qual.idxen = 1;
@@ -1048,7 +1048,7 @@ maddr_qual
 		Si2binArg *qual = $1;
 		int offset = $4;
 
-		assert(qual->type == si2bin_arg_maddr_qual);
+		assert(qual->type == Si2binArgMaddrQual);
 		qual->value.maddr_qual.offset = offset;
 		/* FIXME - check range of 'offset' */
 		$$ = qual;
@@ -1092,7 +1092,7 @@ waitcnt_elem
 		
 		/* Create argument */
 		arg = new(Si2binArg);
-		arg->type = si2bin_arg_waitcnt;
+		arg->type = Si2binArgWaitcnt;
 		
 		if (!strcmp(id->name, "vmcnt"))
 		{

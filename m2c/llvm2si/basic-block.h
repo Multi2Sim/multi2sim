@@ -27,7 +27,6 @@
 
 
 /* Forward declarations */
-struct si2bin_inst_t;
 struct linked_list_t;
 
 
@@ -51,7 +50,7 @@ CLASS_BEGIN(Llvm2siBasicBlock, BasicBlock)
 	struct cnode_t *node;
 
 	/* List list of instructions forming the basic block. Each element is of
-	 * type 'struct si2bin_inst_t'. */
+	 * type 'Si2binInst'. */
 	struct linked_list_t *inst_list;
 
 CLASS_END(Llvm2siBasicBlock)
@@ -65,8 +64,7 @@ void Llvm2siBasicBlockDestroy(Llvm2siBasicBlock *self);
 void Llvm2siBasicBlockDump(Object *self, FILE *f);
 
 /* Add one SI instruction to the 'inst_list' field of the basic block. */
-void Llvm2siBasicBlockAddInst(Llvm2siBasicBlock *basic_block,
-		struct si2bin_inst_t *inst);
+void Llvm2siBasicBlockAddInst(Llvm2siBasicBlock *basic_block, Si2binInst *inst);
 
 /* Add a comment to a basic block. The comment will be attached to the next
  * instruction added with 'Llvm2siBasicBlockAddInst'. If not other
