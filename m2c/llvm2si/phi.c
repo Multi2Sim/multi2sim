@@ -28,7 +28,7 @@
  */
 
 void Llvm2siPhiCreate(Llvm2siPhi *self, Node *src_node,
-		LLVMValueRef src_value, struct si2bin_arg_t *dest_value)
+		LLVMValueRef src_value, Si2binArg *dest_value)
 {
 	self->src_node = src_node;
 	self->src_value = src_value;

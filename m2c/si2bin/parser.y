@@ -26,7 +26,9 @@
 
 #include <arch/southern-islands/asm/arg.h>
 #include <arch/southern-islands/asm/bin-file.h>
+#include <lib/class/class.h>
 #include <lib/class/elf-writer.h>
+#include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/hash-table.h>
 #include <lib/util/list.h>
@@ -57,7 +59,7 @@
 	struct si2bin_inst_t *inst;
 	struct si_label_t *label;
 	struct list_t *list;
-	struct si2bin_arg_t *arg;
+	Si2binArg *arg;
 	struct si_arg_t *si_arg;
 }
 
@@ -804,7 +806,7 @@ operand
 		int value;
 
 		value = atoi($1->name + 1);
-		$$ = si2bin_arg_create_scalar_register(value); 
+		$$ = new_ctor(Si2binArg, CreateScalarRegister, value);
 
 		if (value >= si2bin_inner_bin->num_sgprs)
 			si2bin_inner_bin->num_sgprs = value + 1;
@@ -817,7 +819,7 @@ operand
 		int value;
 
 		value = atoi($1->name + 1);
-		$$ = si2bin_arg_create_vector_register(value); 
+		$$ = new_ctor(Si2binArg, CreateVectorRegister, value); 
 		
 		if (value >= si2bin_inner_bin->num_vgprs)
 			si2bin_inner_bin->num_vgprs = value + 1;
@@ -829,19 +831,19 @@ operand
 	{
 		enum si_inst_special_reg_t reg;
 		reg = str_map_string(&si_inst_special_reg_map, $1->name);
-		$$ = si2bin_arg_create_special_register(reg); 
+		$$ = new_ctor(Si2binArg, CreateSpecialRegister, reg); 
 		si2bin_id_free($1);
 	}
 
 	| TOK_MEMORY_REGISTER
 	{
-		$$ = si2bin_arg_create_mem_register(atoi($1->name + 1));
+		$$ = new_ctor(Si2binArg, CreateMemRegister, atoi($1->name + 1));
 		si2bin_id_free($1);
 	}
 	
 	| TOK_DECIMAL
 	{
-		$$ = si2bin_arg_create_literal($1);
+		$$ = new_ctor(Si2binArg, CreateLiteral, $1);
 	}
 
 	| TOK_HEX
@@ -849,13 +851,13 @@ operand
 		int value;
 
 		sscanf($1->name, "%x", &value);
-		$$ = si2bin_arg_create_literal(value); 
+		$$ = new_ctor(Si2binArg, CreateLiteral, value); 
 		si2bin_id_free($1);
 	}
 
 	| TOK_FLOAT
 	{
-		$$ = si2bin_arg_create_literal_float($1);
+		$$ = new_ctor(Si2binArg, CreateLiteralFloat, $1);
 	}	
 
 
@@ -867,7 +869,7 @@ arg
 
 	| TOK_ID TOK_OBRA TOK_DECIMAL TOK_COLON TOK_DECIMAL TOK_CBRA  
 	{
-		struct si2bin_arg_t *arg;
+		Si2binArg *arg = NULL;
 		struct si2bin_id_t *id;
 
 		int low;
@@ -878,25 +880,16 @@ arg
 		low = $3;
 		high = $5;
 		
-		/* Create argument */
-		arg = si2bin_arg_create(); 
-		
 		/* Initialize */
 		if (!strcmp(id->name, "s"))
 		{
-			arg->type = si2bin_arg_scalar_register_series;
-			arg->value.scalar_register_series.low = low;
-			arg->value.scalar_register_series.high = high;
-
+			arg = new_ctor(Si2binArg, CreateScalarRegisterSeries, low, high);
 			if (high >= si2bin_inner_bin->num_sgprs)
 				si2bin_inner_bin->num_sgprs = high + 1;
 		}
 		else if (!strcmp(id->name, "v"))
 		{
-			arg->type = si2bin_arg_vector_register_series;
-			arg->value.vector_register_series.low = low;
-			arg->value.vector_register_series.high = high;
-			
+			arg = new_ctor(Si2binArg, CreateVectorRegisterSeries, low, high);
 			if (high >= si2bin_inner_bin->num_vgprs)
 				si2bin_inner_bin->num_vgprs = high + 1;
 		}
@@ -912,7 +905,7 @@ arg
 
 	| TOK_ABS TOK_OPAR arg TOK_CPAR
 	{
-		struct si2bin_arg_t *arg = $3;
+		Si2binArg *arg = $3;
 
 		/* Activate absolute value flag */
 		arg->abs = 1;
@@ -936,7 +929,7 @@ arg
 
 	| TOK_NEG arg
 	{
-		struct si2bin_arg_t *arg = $2;
+		Si2binArg *arg = $2;
 
 		/* Activate absolute value flag */
 		arg->neg = 1;
@@ -960,9 +953,9 @@ arg
 
 	| operand maddr_qual TOK_FORMAT TOK_COLON TOK_OBRA TOK_ID TOK_COMMA TOK_ID TOK_CBRA
 	{
-		struct si2bin_arg_t *arg;
-		struct si2bin_arg_t *soffset;
-		struct si2bin_arg_t *qual;
+		Si2binArg *arg;
+		Si2binArg *soffset;
+		Si2binArg *qual;
 
 		struct si2bin_id_t *id_data_format;
 		struct si2bin_id_t *id_num_format;
@@ -991,7 +984,7 @@ arg
 			si2bin_yyerror_fmt("%s: invalid number format", id_num_format->name); 
 
 		/* Create argument */
-		arg = si2bin_arg_create_maddr(soffset, qual, data_format, num_format);	
+		arg = new_ctor(Si2binArg, CreateMaddr, soffset, qual, data_format, num_format);	
 			
 		/* Return */
 		si2bin_id_free(id_data_format);
@@ -1001,14 +994,14 @@ arg
 
 	| TOK_ID
 	{
-		struct si2bin_arg_t *arg;
+		Si2binArg *arg;
 		struct si2bin_id_t *id;
 
 		/* Get ID */
 		id = $1;
 		
 		/* Create argument */
-		arg = si2bin_arg_create_label(id->name);
+		arg = new_ctor(Si2binArg, CreateLabel, id->name);
 		si2bin_id_free(id);
 
 		/* Return argument */
@@ -1025,12 +1018,12 @@ maddr_qual
 
 	: 
 	{
-		$$ = si2bin_arg_create_maddr_qual();
+		$$ = new_ctor(Si2binArg, CreateMaddrQual);
 	}
 
 	| maddr_qual TOK_OFFEN
 	{
-		struct si2bin_arg_t *qual = $1;
+		Si2binArg *qual = $1;
 
 		assert(qual->type == si2bin_arg_maddr_qual);
 		if (qual->value.maddr_qual.offen)
@@ -1041,7 +1034,7 @@ maddr_qual
 
 	| maddr_qual TOK_IDXEN
 	{
-		struct si2bin_arg_t *qual = $1;
+		Si2binArg *qual = $1;
 
 		assert(qual->type == si2bin_arg_maddr_qual);
 		if (qual->value.maddr_qual.idxen)
@@ -1052,7 +1045,7 @@ maddr_qual
 
 	| maddr_qual TOK_OFFSET TOK_COLON TOK_DECIMAL
 	{
-		struct si2bin_arg_t *qual = $1;
+		Si2binArg *qual = $1;
 		int offset = $4;
 
 		assert(qual->type == si2bin_arg_maddr_qual);
@@ -1082,7 +1075,7 @@ waitcnt_arg
 		$3->value.wait_cnt.lgkmcnt_active += $1->value.wait_cnt.lgkmcnt_active;
 		$3->value.wait_cnt.lgkmcnt_value += $1->value.wait_cnt.lgkmcnt_value;	
 		
-		si2bin_arg_free($1);
+		delete($1);
 		$$ = $3;
 	}
 ;
@@ -1091,16 +1084,14 @@ waitcnt_elem
 
 	: TOK_ID TOK_OPAR TOK_DECIMAL TOK_CPAR
 	{
-		struct si2bin_arg_t *arg;
+		Si2binArg *arg;
 		struct si2bin_id_t *id;
 
 		/* Read arguments */
 		id = $1;
 		
 		/* Create argument */
-		arg = si2bin_arg_create(); 
-		
-		/* Initialize */
+		arg = new(Si2binArg);
 		arg->type = si2bin_arg_waitcnt;
 		
 		if (!strcmp(id->name, "vmcnt"))

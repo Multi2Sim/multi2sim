@@ -30,36 +30,39 @@
 struct si2bin_symbol_t;
 
 extern struct str_map_t si2bin_arg_type_map;
-enum si2bin_arg_type_t 
+typedef enum
 {
-	si2bin_arg_invalid = 0,
+	Si2binArgInvalid = 0,
 
-	si2bin_arg_scalar_register,
-	si2bin_arg_vector_register,
-	si2bin_arg_scalar_register_series,
-	si2bin_arg_vector_register_series,
-	si2bin_arg_mem_register,
-	si2bin_arg_special_register,
-	si2bin_arg_literal,
-	si2bin_arg_literal_reduced,
-	si2bin_arg_literal_float,
-	si2bin_arg_literal_float_reduced,
-	si2bin_arg_waitcnt,
-	si2bin_arg_label,
-	si2bin_arg_maddr,
-	si2bin_arg_maddr_qual
-};
+	Si2binArgScalarRegister,
+	Si2binArgVectorRegister,
+	Si2binArgScalarRegisterSeries,
+	Si2binArgVectorRegisterSeries,
+	Si2binArgMemRegister,
+	Si2binArgSpecialRegister,
+	Si2binArgLiteral,
+	Si2binArgLiteralReduced,
+	Si2binArgLiteralFloat,
+	Si2binArgLiteralFloatReduced,
+	Si2binArgWaitcnt,
+	Si2binArgLabel,
+	Si2binArgMaddr,
+	Si2binArgMaddrQual
+} Si2binArgType;
 
 /* Return true if the argument type is any kind of literal */
-#define SI2BIN_ARG_IS_CONSTANT(arg) \
-	((arg)->type == si2bin_arg_literal || \
-	(arg)->type == si2bin_arg_literal_reduced || \
-	(arg)->type == si2bin_arg_literal_float || \
-	(arg)->type == si2bin_arg_literal_float_reduced)
+#define Si2binArgIsConstant(arg) \
+	((arg)->type == Si2binArgLiteral || \
+	(arg)->type == Si2binArgLiteralReduced || \
+	(arg)->type == Si2binArgLiteralFloat || \
+	(arg)->type == Si2binArgLiteralFloatReduced)
 
-struct si2bin_arg_t 
-{
-	enum si2bin_arg_type_t type;
+
+CLASS_BEGIN(Si2binArg, Object)
+
+	/* Argument type */
+	Si2binArgType type;
+
 	int abs;  /* Absolute value */
 	int neg;  /* Negation */
 
@@ -124,11 +127,11 @@ struct si2bin_arg_t
 		{
 			/* Sub-argument of type 'vector', 'scalar', 'literal',
 			 * or 'literal_float'. */
-			struct si2bin_arg_t *soffset;
+			Si2binArg *soffset;
 
 			/* Sub-argument of type 'maddr_qual'
 			 * (memory address qualifier) */
-			struct si2bin_arg_t *qual;
+			Si2binArg *qual;
 
 			enum si_inst_buf_data_format_t data_format;
 			enum si_inst_buf_num_format_t num_format;
@@ -152,31 +155,32 @@ struct si2bin_arg_t
 		} label;
 		
 	} value;
-};
 
-struct si2bin_arg_t *si2bin_arg_create(void);
-void si2bin_arg_free(struct si2bin_arg_t *inst_arg);
+CLASS_END(Si2binArg)
 
-/* Constructors with specific types */
-struct si2bin_arg_t *si2bin_arg_create_literal(int value);
-struct si2bin_arg_t *si2bin_arg_create_literal_float(float value);
-struct si2bin_arg_t *si2bin_arg_create_scalar_register(int id);
-struct si2bin_arg_t *si2bin_arg_create_scalar_register_series(int low, int high);
-struct si2bin_arg_t *si2bin_arg_create_vector_register(int id);
-struct si2bin_arg_t *si2bin_arg_create_vector_register_series(int low, int high);
-struct si2bin_arg_t *si2bin_arg_create_special_register(enum si_inst_special_reg_t reg);
-struct si2bin_arg_t *si2bin_arg_create_mem_register(int id);
-struct si2bin_arg_t *si2bin_arg_create_maddr(struct si2bin_arg_t *soffset,
-		struct si2bin_arg_t *qual,
+
+/* Constructors and destructor */
+void Si2binArgCreate(Si2binArg *self);
+void Si2binArgCreateLiteral(Si2binArg *self, int value);
+void Si2binArgCreateLiteralFloat(Si2binArg *self, float value);
+void Si2binArgCreateScalarRegister(Si2binArg *self, int id);
+void Si2binArgCreateScalarRegisterSeries(Si2binArg *self, int low, int high);
+void Si2binArgCreateVectorRegister(Si2binArg *self, int id);
+void Si2binArgCreateVectorRegisterSeries(Si2binArg *self, int low, int high);
+void Si2binArgCreateSpecialRegister(Si2binArg *self, enum si_inst_special_reg_t reg);
+void Si2binArgCreateMemRegister(Si2binArg *self, int id);
+void Si2binArgCreateMaddr(Si2binArg *self, Si2binArg *soffset,
+		Si2binArg *qual,
 		enum si_inst_buf_data_format_t data_format,
 		enum si_inst_buf_num_format_t num_format);
-struct si2bin_arg_t *si2bin_arg_create_maddr_qual(void);
-struct si2bin_arg_t *si2bin_arg_create_label(char *name);
+void Si2binArgCreateMaddrQual(Si2binArg *self);
+void Si2binArgCreateLabel(Si2binArg *self, char *name);
+void Si2binArgDestroy(Si2binArg *self);
 
-void si2bin_arg_dump(struct si2bin_arg_t *inst_arg, FILE *f);
-void si2bin_arg_dump_assembly(struct si2bin_arg_t *arg, FILE *f);
+void Si2binArgDump(Si2binArg *self, FILE *f);
+void Si2binArgDumpAssembly(Si2binArg *self, FILE *f);
 
-int si2bin_arg_encode_operand(struct si2bin_arg_t *arg);
+int Si2binArgEncodeOperand(Si2binArg *self);
 
 
 /* Check that an argument is of any of the types listed in the function. For
@@ -184,15 +188,19 @@ int si2bin_arg_encode_operand(struct si2bin_arg_t *arg);
  *	si2bin_arg_valid_types(arg, si2bin_arg_literal,
  *		si2bin_arg_scalar_register);
  */
-#define si2bin_arg_valid_types(arg, ...) \
-	__si2bin_arg_valid_types(arg, __FUNCTION__, \
+#define Si2binArgValidTypes(arg, ...) \
+	__Si2binArgValidTypes(arg, __FUNCTION__, \
 		PP_NARG(__VA_ARGS__), __VA_ARGS__)
-void __si2bin_arg_valid_types(struct si2bin_arg_t *arg, const char *user_message,
+void __Si2binArgValidTypes(Si2binArg *self, const char *user_message,
 		int num_args, ...);
 
-/* Swap two arguments */
-void si2bin_arg_swap(struct si2bin_arg_t **arg1_ptr,
-		struct si2bin_arg_t **arg2_ptr);
+
+
+/*
+ * Public
+ */
+
+void Si2binArgSwap(Si2binArg **arg1_ptr, Si2binArg **arg2_ptr);
 
 
 #endif

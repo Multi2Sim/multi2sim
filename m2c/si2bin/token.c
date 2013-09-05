@@ -94,7 +94,7 @@ void si2bin_token_free(struct si2bin_token_t *token)
 }
 
 
-int si2bin_token_is_arg_allowed(struct si2bin_token_t *token, struct si2bin_arg_t *arg)
+int si2bin_token_is_arg_allowed(struct si2bin_token_t *token, Si2binArg *arg)
 {
 	/* FIXME
 	 * Some tokens that currently allow for literal and literal_float
@@ -105,58 +105,58 @@ int si2bin_token_is_arg_allowed(struct si2bin_token_t *token, struct si2bin_arg_
 	{
 
 	case si2bin_token_simm16:
-		return arg->type == si2bin_arg_literal ||
-			arg->type == si2bin_arg_literal_reduced ||
-			arg->type == si2bin_arg_literal_float ||
-			arg->type == si2bin_arg_literal_float_reduced;
+		return arg->type == Si2binArgLiteral ||
+			arg->type == Si2binArgLiteralReduced ||
+			arg->type == Si2binArgLiteralFloat ||
+			arg->type == Si2binArgLiteralFloatReduced;
 		/*TODO - Check if this is correct */
 
 	case si2bin_token_64_sdst:
-		return arg->type == si2bin_arg_scalar_register_series ||
-				arg->type == si2bin_arg_special_register;
+		return arg->type == Si2binArgScalarRegisterSeries ||
+				arg->type == Si2binArgSpecialRegister;
 
 	case si2bin_token_64_ssrc0:
 	case si2bin_token_64_ssrc1:
-		return arg->type == si2bin_arg_scalar_register_series ||
-				arg->type == si2bin_arg_literal ||
-				arg->type == si2bin_arg_literal_reduced ||
-				arg->type == si2bin_arg_literal_float ||
-				arg->type == si2bin_arg_literal_float_reduced ||
-				arg->type == si2bin_arg_special_register;
+		return arg->type == Si2binArgScalarRegisterSeries ||
+				arg->type == Si2binArgLiteral ||
+				arg->type == Si2binArgLiteralReduced ||
+				arg->type == Si2binArgLiteralFloat ||
+				arg->type == Si2binArgLiteralFloatReduced ||
+				arg->type == Si2binArgSpecialRegister;
 	
 	case si2bin_token_label:
-		return arg->type == si2bin_arg_label;
+		return arg->type == Si2binArgLabel;
 
 	case si2bin_token_mt_maddr:
-		return arg->type == si2bin_arg_maddr;
+		return arg->type == Si2binArgMaddr;
 
 	case si2bin_token_mt_series_vdata:
-		return arg->type == si2bin_arg_vector_register ||
-			arg->type == si2bin_arg_vector_register_series;
+		return arg->type == Si2binArgVectorRegister ||
+			arg->type == Si2binArgVectorRegisterSeries;
 
 	case si2bin_token_offset:
-		return arg->type == si2bin_arg_literal ||
-			arg->type == si2bin_arg_literal_reduced ||
-			arg->type == si2bin_arg_scalar_register;
+		return arg->type == Si2binArgLiteral ||
+			arg->type == Si2binArgLiteralReduced ||
+			arg->type == Si2binArgScalarRegister;
 
 	case si2bin_token_ssrc0:
 	case si2bin_token_ssrc1:
-		return arg->type == si2bin_arg_literal ||
-				arg->type == si2bin_arg_literal_reduced ||
-				arg->type == si2bin_arg_literal_float ||
-				arg->type == si2bin_arg_literal_float_reduced ||
-				arg->type == si2bin_arg_scalar_register ||
-				arg->type == si2bin_arg_special_register;
+		return arg->type == Si2binArgLiteral ||
+				arg->type == Si2binArgLiteralReduced ||
+				arg->type == Si2binArgLiteralFloat ||
+				arg->type == Si2binArgLiteralFloatReduced ||
+				arg->type == Si2binArgScalarRegister ||
+				arg->type == Si2binArgSpecialRegister;
 
 	case si2bin_token_series_sdst:
 	case si2bin_token_series_sbase:
 	case si2bin_token_series_srsrc:
-		return arg->type == si2bin_arg_scalar_register_series;
+		return arg->type == Si2binArgScalarRegisterSeries;
 
 	case si2bin_token_sdst:
 	case si2bin_token_smrd_sdst:
-		return arg->type == si2bin_arg_scalar_register ||
-			arg->type == si2bin_arg_mem_register;
+		return arg->type == Si2binArgScalarRegister ||
+			arg->type == Si2binArgMemRegister;
 
 	case si2bin_token_src0:
 
@@ -166,31 +166,31 @@ int si2bin_token_is_arg_allowed(struct si2bin_token_t *token, struct si2bin_arg_
 		if (arg->neg)
 			return 0;
 
-		return arg->type == si2bin_arg_literal ||
-			arg->type == si2bin_arg_literal_reduced ||
-			arg->type == si2bin_arg_literal_float ||
-			arg->type == si2bin_arg_literal_float_reduced ||
-			arg->type == si2bin_arg_vector_register ||
-			arg->type == si2bin_arg_scalar_register;
+		return arg->type == Si2binArgLiteral ||
+			arg->type == Si2binArgLiteralReduced ||
+			arg->type == Si2binArgLiteralFloat ||
+			arg->type == Si2binArgLiteralFloatReduced ||
+			arg->type == Si2binArgVectorRegister ||
+			arg->type == Si2binArgScalarRegister;
 
 	case si2bin_token_vaddr:
-		return arg->type == si2bin_arg_vector_register_series ||
-			arg->type == si2bin_arg_vector_register;
+		return arg->type == Si2binArgVectorRegisterSeries ||
+			arg->type == Si2binArgVectorRegister;
 
 	case si2bin_token_vdst:
 	case si2bin_token_vop3_vdst:
 	case si2bin_token_vsrc0:
-		return arg->type == si2bin_arg_vector_register;
+		return arg->type == Si2binArgVectorRegister;
 	
 	case si2bin_token_64_src0:
-		return arg->type == si2bin_arg_vector_register_series ||
-			arg->type == si2bin_arg_scalar_register_series;
+		return arg->type == Si2binArgVectorRegisterSeries ||
+			arg->type == Si2binArgScalarRegisterSeries;
 
 	case si2bin_token_64_vdst:
-		return arg->type == si2bin_arg_vector_register_series;
+		return arg->type == Si2binArgVectorRegisterSeries;
 
 	case si2bin_token_svdst:
-		return arg->type == si2bin_arg_scalar_register;
+		return arg->type == Si2binArgScalarRegister;
 
 	case si2bin_token_vsrc1:
 		
@@ -200,44 +200,44 @@ int si2bin_token_is_arg_allowed(struct si2bin_token_t *token, struct si2bin_arg_
 		if (arg->neg)
 			return 0;
 		
-		return arg->type == si2bin_arg_vector_register;
+		return arg->type == Si2binArgVectorRegister;
 
 	case si2bin_token_vop3_64_svdst:
-		return arg->type == si2bin_arg_scalar_register_series ||
-			arg->type == si2bin_arg_special_register;
+		return arg->type == Si2binArgScalarRegisterSeries ||
+			arg->type == Si2binArgSpecialRegister;
 
 	case si2bin_token_vop3_src0:
 	case si2bin_token_vop3_src1:
 	case si2bin_token_vop3_src2:
-		return arg->type == si2bin_arg_literal_reduced ||
-			arg->type == si2bin_arg_literal_float_reduced ||
-			arg->type == si2bin_arg_vector_register ||
-			arg->type == si2bin_arg_scalar_register;
+		return arg->type == Si2binArgLiteralReduced ||
+			arg->type == Si2binArgLiteralFloatReduced ||
+			arg->type == Si2binArgVectorRegister ||
+			arg->type == Si2binArgScalarRegister;
 	
 	case si2bin_token_vop3_64_src0:
 	case si2bin_token_vop3_64_src1:
 	case si2bin_token_vop3_64_src2:
-		return arg->type == si2bin_arg_scalar_register_series ||
-			arg->type == si2bin_arg_vector_register_series ||
-			arg->type == si2bin_arg_special_register;
+		return arg->type == Si2binArgScalarRegisterSeries ||
+			arg->type == Si2binArgVectorRegisterSeries ||
+			arg->type == Si2binArgSpecialRegister;
 	
 	case si2bin_token_vop3_64_vdst:
-		return arg->type == si2bin_arg_vector_register_series;
+		return arg->type == Si2binArgVectorRegisterSeries;
 	
 	case si2bin_token_vop3_64_sdst:
-		return arg->type == si2bin_arg_special_register;
+		return arg->type == Si2binArgSpecialRegister;
 	
 	case si2bin_token_vcc:
-		return arg->type == si2bin_arg_special_register &&
+		return arg->type == Si2binArgSpecialRegister &&
 			arg->value.special_register.reg == si_inst_special_reg_vcc;
 	
 	case si2bin_token_wait_cnt:
-		return arg->type == si2bin_arg_waitcnt;
+		return arg->type == Si2binArgWaitcnt;
 	
 	case si2bin_token_addr:
 	case si2bin_token_data0:
 	case si2bin_token_ds_vdst:
-		return arg->type == si2bin_arg_vector_register;
+		return arg->type == Si2binArgVectorRegister;
 	
 
 	default:

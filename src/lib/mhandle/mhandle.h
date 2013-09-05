@@ -28,11 +28,22 @@
 #define MHANDLE_AT __FILE__ ":" MHANDLE_TOSTRING(__LINE__)
 
 
+/* Under regular circumstances, including 'mhandle.h' will forbid the use of
+ * malloc/calloc/realloc/strdup functions, and force the use of their equivalent
+ * functions with the 'x' prefix (xmalloc/xcalloc/...). If macro
+ * MHANDLE_ALLOW_NON_X_FUNCTIONS is defined (e.g., using a -D flag in the
+ * compiler), using functions without the 'x' prefix is still allowed.
+ * One use of this feature is when some code is generated automatically (e.g.,
+ * using flex/bison) which produces malloc/calloc calls. */
+#ifndef MHANDLE_ALLOW_NON_X_FUNCTIONS
+
 #undef strdup
 #define malloc(sz) __ERROR_USE_XMALLOC_INSTEAD__
 #define calloc(nmemb, sz) __ERROR_USE_XCALLOC_INSTEAD__
 #define realloc(x, sz) __ERROR_USE_XREALLOC_INSTEAD__
 #define strdup(x) __ERROR_USE_XSTRDUP_INSTEAD__
+
+#endif  /* MHANDLE_ALLOW_NON_X_FUNCTIONS */
 
 
 #ifdef MHANDLE

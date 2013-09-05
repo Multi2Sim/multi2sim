@@ -46,13 +46,13 @@ CLASS_BEGIN(Llvm2siPhi, Object)
 	/* Destination value (in destination basic block) to write this value
 	 * into. This object must be created by the caller, but will be freed
 	 * internally. */
-	struct si2bin_arg_t *dest_value;
+	Si2binArg *dest_value;
 
 CLASS_END(Llvm2siPhi);
 
 
 void Llvm2siPhiCreate(Llvm2siPhi *self, Node *src_node,
-		LLVMValueRef src_value, struct si2bin_arg_t *dest_value);
+		LLVMValueRef src_value, Si2binArg *dest_value);
 
 void Llvm2siPhiDestroy(Llvm2siPhi *self);
 

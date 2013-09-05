@@ -53,7 +53,7 @@ void si2bin_inst_info_init(void)
 {
 	struct si2bin_inst_info_t *info;
 	struct si2bin_inst_info_t *prev_info;
-	struct si_inst_info_t *inst_info;
+	SIInstInfo *inst_info;
 
 	int i;
 
@@ -130,7 +130,7 @@ void si2bin_inst_info_done(void)
  * Instruction Information Object
  */
 
-struct si2bin_inst_info_t *si2bin_inst_info_create(struct si_inst_info_t *inst_info)
+struct si2bin_inst_info_t *si2bin_inst_info_create(SIInstInfo *inst_info)
 {
 	struct si2bin_inst_info_t *info;
 	struct si2bin_token_t *token;

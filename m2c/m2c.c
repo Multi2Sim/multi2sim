@@ -27,6 +27,7 @@
 #include <m2c/common/ctree.h>
 #include <m2c/frm2bin/frm2bin.h>
 #include <m2c/llvm2si/llvm2si.h>
+#include <m2c/si2bin/arg.h>
 #include <m2c/si2bin/si2bin.h>
 #include <lib/class/array.h>
 #include <lib/class/elf-writer.h>
@@ -40,6 +41,7 @@
 #include <lib/util/string.h>
 
 #include <src/arch/common/asm.h>
+#include <src/arch/fermi/asm/asm.h>
 #include <src/arch/southern-islands/asm/asm.h>
 
 
@@ -593,7 +595,10 @@ void m2c_init(void)
 	CLASS_REGISTER(ELFWriter);
 
 	CLASS_REGISTER(Asm);
+	CLASS_REGISTER(FrmAsm);
 	CLASS_REGISTER(SIAsm);
+
+	CLASS_REGISTER(Si2binArg);
 
 	/* Libraries */
 	debug_init();
