@@ -71,6 +71,10 @@ unsigned int StringHashCase(Object *self);
 /* Convert the string into an empty string */
 void StringClear(String *self);
 
+/* Set a new text for the string */
+void StringSet(String *self, const char *fmt, ...)
+		__attribute__((format(printf, 2, 3)));
+
 /* Read a line from a file. The final '\n' character is omitted form the
  * resulting string. The function returns 0 on success and non-zero in case the
  * file could not be read. */

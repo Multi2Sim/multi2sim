@@ -27,11 +27,6 @@
 #include <stdio.h>
 
 
-/* Forward declarations */
-struct llvm2si_node_t;
-
-
-
 /*
  * Class 'Llvm2siFunctionArg'
  */
@@ -101,7 +96,7 @@ void Llvm2siFunctionUAVDestroy(Llvm2siFunctionUAV *self);
 CLASS_BEGIN(Llvm2siFunction, Object)
 	
 	/* Function name */
-	char *name;
+	String *name;
 
 	/* LLVM function */
 	LLVMValueRef llfunction;
@@ -121,13 +116,13 @@ CLASS_BEGIN(Llvm2siFunction, Object)
 	int vreg_lid;  /* Local ID (3 registers) */
 	int vreg_gid;  /* Global ID (4 registers) */
 
-	/* List of arguments. Each element is of type
-	 * 'struct llvm2si_function_arg_t' */
-	struct list_t *arg_list;
+	/* List of arguments. Each element is of type 'Llvm2siFunctionArg' */
+	List *arg_list;
 
-	/* List of UAVs, starting at uav10. Each UAV is associated with one
-	 * function argument using a buffer in global memory. */
-	struct list_t *uav_list;
+	/* Array of UAVs, starting at uav10. Each UAV is associated with one
+	 * function argument using a buffer in global memory. Element of type
+	 * 'Llvm2siFunctionUAV'. */
+	Array *uav_list;
 
 	/* Predefined nodes */
 	LeafNode *header_node;
@@ -157,20 +152,6 @@ void Llvm2siFunctionDestroy(Llvm2siFunction *self);
 
 /* Virtual function from class Object */
 void Llvm2siFunctionDump(Object *self, FILE *f);
-
-/* Add a basic block to the function */
-/* Add a basic block to the function after basic block 'after'. If the value in
- * 'after' is NULL, the basic block is added after the last basic block added
- * using this function. */
-void llvm2si_function_add_basic_block(Llvm2siFunction *function,
-		Llvm2siBasicBlock *basic_block);
-
-/* Add a basic block to the function before basic block 'before'. The value
- * in 'before' can only be NULL if the function is empty. */
-void llvm2si_function_add_basic_block_before(
-		Llvm2siFunction *function,
-		Llvm2siBasicBlock *basic_block,
-		Llvm2siBasicBlock *before);
 
 /* Generate initialization code for the function in basic block
  * 'function->basic_block_header'. */

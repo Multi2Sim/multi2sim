@@ -21,7 +21,9 @@
 #include <m2c/common/ctree.h>
 #include <m2c/si2bin/arg.h>
 #include <m2c/si2bin/inst.h>
+#include <lib/class/array.h>
 #include <lib/class/list.h>
+#include <lib/class/string.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/linked-list.h>
@@ -570,7 +572,8 @@ static void Llvm2siBasicBlockEmitLoad(Llvm2siBasicBlock *self,
 		fatal("%s: no UAV for symbol", __FUNCTION__);
 
 	/* Get UAV */
-	uav = list_get(function->uav_list, addr_symbol->uav_index);
+	uav = asLlvm2siFunctionUAV(ArrayGet(function->uav_list,
+			addr_symbol->uav_index));
 	if (!uav)
 		fatal("%s: invalid UAV index (%d)", __FUNCTION__,
 				addr_symbol->uav_index);
@@ -812,7 +815,8 @@ static void Llvm2siBasicBlockEmitStore(Llvm2siBasicBlock *self,
 		fatal("%s: no UAV for symbol", __FUNCTION__);
 
 	/* Get UAV */
-	uav = list_get(function->uav_list, addr_symbol->uav_index);
+	uav = asLlvm2siFunctionUAV(ArrayGet(function->uav_list,
+			addr_symbol->uav_index));
 	if (!uav)
 		fatal("%s: invalid UAV index (%d)", __FUNCTION__,
 				addr_symbol->uav_index);
@@ -933,8 +937,9 @@ void Llvm2siBasicBlockCreate(Llvm2siBasicBlock *self,
 	BasicBlockCreate(asBasicBlock(self), node);
 
 	/* Initialize */
+	self->comment = new(String, "");
 	self->function = function;
-	self->inst_list = linked_list_create();
+	self->inst_list = new(List);
 
 	/* Virtual functions */
 	asObject(self)->Dump = Llvm2siBasicBlockDump;
@@ -943,18 +948,9 @@ void Llvm2siBasicBlockCreate(Llvm2siBasicBlock *self,
 
 void Llvm2siBasicBlockDestroy(Llvm2siBasicBlock *self)
 {
-	Si2binInst *inst;
-
-	/* Free list of instructions */
-	LINKED_LIST_FOR_EACH(self->inst_list)
-	{
-		inst = asSi2binInst(linked_list_get(self->inst_list));
-		delete(inst);
-	}
-	linked_list_free(self->inst_list);
-
-	/* Rest */
-	self->comment = str_free(self->comment);
+	ListDeleteObjects(self->inst_list);
+	delete(self->inst_list);
+	delete(self->comment);
 }
 
 
@@ -974,11 +970,8 @@ void Llvm2siBasicBlockDump(Object *self, FILE *f)
 	fprintf(f, "\n%s:\n", asNode(node)->name);
 
 	/* Print list of instructions */
-	LINKED_LIST_FOR_EACH(basic_block->inst_list)
-	{
-		inst = linked_list_get(basic_block->inst_list);
+	ListForEach(basic_block->inst_list, inst, Si2binInst)
 		Si2binInstDumpAssembly(inst, f);
-	}
 }
 
 
@@ -991,22 +984,22 @@ void Llvm2siBasicBlockAddInst(Llvm2siBasicBlock *self, Si2binInst *inst)
 				__FUNCTION__);
 
 	/* Add instruction */
-	linked_list_add(self->inst_list, inst);
+	ListAdd(self->inst_list, asObject(inst));
 	inst->basic_block = self;
 
 	/* If there was a comment added to the basic block, attach it to
 	 * the instruction being added now. */
-	if (self->comment)
+	if (self->comment->length)
 	{
-		Si2binInstAddComment(inst, self->comment);
-		self->comment = str_free(self->comment);
+		Si2binInstAddComment(inst, self->comment->text);
+		StringClear(self->comment);
 	}
 }
 
 
 void Llvm2siBasicBlockAddComment(Llvm2siBasicBlock *self, char *comment)
 {
-	self->comment = str_set(self->comment, comment);
+	StringSet(self->comment, "%s", comment);
 }
 
 

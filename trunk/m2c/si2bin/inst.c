@@ -20,6 +20,7 @@
 
 #include <lib/class/elf-writer.h>
 #include <lib/class/list.h>
+#include <lib/class/string.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/hash-table.h>
@@ -49,6 +50,7 @@ void Si2binInstCreate(Si2binInst *self, int opcode, List *arg_list)
 
 	/* Initialize */
 	self->arg_list = arg_list;
+	self->comment = new(String, "");
 
 	/* Check valid opcode */
 	if (!IN_RANGE(opcode, 1, SIInstOpcodeCount - 1))
@@ -97,6 +99,7 @@ void Si2binInstCreateWithName(Si2binInst *self, char *name, List *arg_list)
 	if (!arg_list)
 		arg_list = new(List);
 	self->arg_list = arg_list;
+	self->comment = new(String, "");
 	
 	/* Try to create the instruction following all possible encodings for
 	 * the same instruction name. */
@@ -155,12 +158,9 @@ void Si2binInstCreateWithName(Si2binInst *self, char *name, List *arg_list)
 
 void Si2binInstDestroy(Si2binInst *self)
 {
-	/* Free argument list */
 	ListDeleteObjects(self->arg_list);
 	delete(self->arg_list);
-	
-	/* Rest */
-	str_free(self->comment);
+	delete(self->comment);
 }
 
 
@@ -204,26 +204,26 @@ void Si2binInstDump(Si2binInst *inst, FILE *f)
 }
 
 
-void Si2binInstDumpAssembly(Si2binInst *inst, FILE *f)
+void Si2binInstDumpAssembly(Si2binInst *self, FILE *f)
 {
         Si2binArg *arg;
 
         int i;
 
         /* Comment attached to the instruction */
-        if (inst->comment)
-        	fprintf(f, "\n\t# %s\n", inst->comment);
+        if (self->comment->length)
+        	fprintf(f, "\n\t# %s\n", self->comment->text);
 
         /* Dump instruction opcode */
-        fprintf(f, "\t%s ", inst->info->name);
+        fprintf(f, "\t%s ", self->info->name);
 
         /* Dump arguments */
 	i = 0;
-	ListForEach(inst->arg_list, arg, Si2binArg)
+	ListForEach(self->arg_list, arg, Si2binArg)
         {
 		assert(arg);
                 Si2binArgDumpAssembly(arg, f);
-                if (i < inst->arg_list->count - 1)
+                if (i < self->arg_list->count - 1)
 			fprintf(f, ", ");
 		i++;
 			
@@ -234,13 +234,13 @@ void Si2binInstDumpAssembly(Si2binInst *inst, FILE *f)
 }
 
 
-void Si2binInstAddComment(Si2binInst *inst, char *comment)
+void Si2binInstAddComment(Si2binInst *self, char *comment)
 {
-	inst->comment = str_set(inst->comment, comment);
+	StringSet(self->comment, "%s", comment);
 }
 
 
-void Si2binInstGenerate(Si2binInst *inst)
+void Si2binInstGenerate(Si2binInst *self)
 {
 	SIInstBytes *inst_bytes;
 	SIInstInfo *inst_info;
@@ -252,15 +252,15 @@ void Si2binInstGenerate(Si2binInst *inst)
 	int index;
 
 	/* Initialize */
-	inst_bytes = &inst->inst_bytes;
-	info = inst->info;
+	inst_bytes = &self->inst_bytes;
+	info = self->info;
 	assert(info);
 	inst_info = info->inst_info;
 
 	/* By default, the instruction has the number of bytes specified by its
 	 * format. 4-bit instructions could be extended later to 8 bits upon
 	 * the presence of a literal constant. */
-	inst->size = inst_info->size;
+	self->size = inst_info->size;
 
 	/* Instruction opcode */
 	switch (inst_info->fmt)
@@ -390,9 +390,9 @@ void Si2binInstGenerate(Si2binInst *inst)
 	}
 
 	/* Arguments */
-	assert(inst->arg_list->count == info->token_list->count);
+	assert(self->arg_list->count == info->token_list->count);
 	index = 0;
-	ListForEach(inst->arg_list, arg, Si2binArg)
+	ListForEach(self->arg_list, arg, Si2binArg)
 	{
 		/* Get argument */
 		token = list_get(info->token_list, index);
@@ -456,9 +456,9 @@ void Si2binInstGenerate(Si2binInst *inst)
 			{
 				/* Literal constant other than [-16...64] is encoded by adding
 				 * four more bits to the instruction. */
-				if (inst->size == 8)
+				if (self->size == 8)
 					si2bin_yyerror("only one literal allowed");
-				inst->size = 8;
+				self->size = 8;
 				inst_bytes->sop2.ssrc0 = 0xff;
 				inst_bytes->sop2.lit_cnst = arg->value.literal.val;
 			}
@@ -487,9 +487,9 @@ void Si2binInstGenerate(Si2binInst *inst)
 			{
 				/* Literal constant other than [-16...64] is encoded by adding
 				 * four more bits to the instruction. */
-				if (inst->size == 8)
+				if (self->size == 8)
 					si2bin_yyerror("only one literal allowed");
-				inst->size = 8;
+				self->size = 8;
 				inst_bytes->sop2.ssrc1 = 0xff;
 				inst_bytes->sop2.lit_cnst = arg->value.literal.val;
 			}
@@ -774,9 +774,9 @@ void Si2binInstGenerate(Si2binInst *inst)
 			{
 				/* Literal constant other than [-16...64] is encoded by adding
 				 * four more bits to the instruction. */
-				if (inst->size == 8)
+				if (self->size == 8)
 					si2bin_yyerror("only one literal allowed");
-				inst->size = 8;
+				self->size = 8;
 				inst_bytes->vopc.src0 = 0xff;
 				inst_bytes->vopc.lit_cnst = arg->value.literal.val;
 			}
@@ -794,9 +794,9 @@ void Si2binInstGenerate(Si2binInst *inst)
 			{
 				/* Literal constant other than [-16...64] is encoded by adding
 				 * four more bits to the instruction. */
-				if (inst->size == 8)
+				if (self->size == 8)
 					si2bin_yyerror("only one literal allowed");
-				inst->size = 8;
+				self->size = 8;
 				inst_bytes->sop2.ssrc0 = 0xff;
 				inst_bytes->sop2.lit_cnst = arg->value.literal.val;
 			}
@@ -818,9 +818,9 @@ void Si2binInstGenerate(Si2binInst *inst)
 			{
 				/* Literal constant other than [-16...64] is encoded by adding
 				 * four more bits to the instruction. */
-				if (inst->size == 8)
+				if (self->size == 8)
 					si2bin_yyerror("only one literal allowed");
-				inst->size = 8;
+				self->size = 8;
 				inst_bytes->sop2.ssrc1 = 0xff;
 				inst_bytes->sop2.lit_cnst = arg->value.literal.val;
 			}
