@@ -19,6 +19,9 @@
 
 %{
 
+#include <lib/class/class.h>
+#include <lib/mhandle/mhandle.h>
+
 #include "id.h"
 #include "si2bin.h"
 #include "parser.h"

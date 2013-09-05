@@ -470,12 +470,29 @@ typedef union
 } SIInstReg;
 
 
+typedef struct
+{
+	SIInstOpcode opcode;
+	SIInstCategory category;
+
+	char *name;
+	char *fmt_str;
+	SIInstFormat fmt;  /* Word formats */
+	int op;  /* Opcode bits */
+	SIInstFlag flags;  /* Flag bitmap */
+	int size;  /* Size of microcode inst (bytes) */
+} SIInstInfo;
+
+
 CLASS_BEGIN(SIInst, Object)
 
 	/* Disassembler */
 	SIAsm *as;
 
-	struct si_inst_info_t *info;
+	/* Instruction identifier with all information */
+	SIInstInfo *info;
+
+	/* Instruction bytes */
 	SIInstBytes bytes;
 
 CLASS_END(SIInst)
@@ -495,27 +512,6 @@ void SIInstDump_VOP3_64_SRC(SIInst *self, unsigned int src, int neg, char *opera
 void SIInstDump_SERIES_VDATA(unsigned int vdata, int op, char *operand_str, char **inst_str, int str_size);
 void SIInstDump_MADDR(SIInst *self, char *operand_str, char **inst_str, int str_size);
 void SIInstDump_DUG(SIInst *self, char *operand_str, char **inst_str, int str_size);
-
-
-
-
-
-/*
- * Public
- */
-
-struct si_inst_info_t
-{
-	SIInstOpcode opcode;
-	SIInstCategory category;
-
-	char *name;
-	char *fmt_str;
-	SIInstFormat fmt;  /* Word formats */
-	int op;  /* Opcode bits */
-	SIInstFlag flags;  /* Flag bitmap */
-	int size;  /* Size of microcode inst (bytes) */
-};
 
 
 #endif

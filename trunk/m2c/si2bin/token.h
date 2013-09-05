@@ -81,8 +81,7 @@ struct si2bin_token_t
 struct si2bin_token_t *si2bin_token_create(enum si2bin_token_type_t type);
 void si2bin_token_free(struct si2bin_token_t *token);
 
-struct si2bin_arg_t;
-int si2bin_token_is_arg_allowed(struct si2bin_token_t *token, struct si2bin_arg_t *arg);
+int si2bin_token_is_arg_allowed(struct si2bin_token_t *token, Si2binArg *arg);
 
 #endif
 
