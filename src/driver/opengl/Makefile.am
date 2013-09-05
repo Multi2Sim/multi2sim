@@ -8,8 +8,11 @@ libopengl_a_SOURCES = \
 	opengl.h \
 	\
 	\
-	scan-converter.c \
-	scan-converter.h \
+	si-sc.c \
+	si-sc.h \
+	\
+	si-pa.c \
+	si-pa.h \
 	\
 	si-shader.c \
 	si-shader.h \

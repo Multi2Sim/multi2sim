@@ -7743,6 +7743,31 @@ void si_isa_IMAGE_SAMPLE_impl(SIWorkItem *work_item, SIInst *inst)
 #define INST SI_INST_EXP
 void si_isa_EXPORT_impl(SIWorkItem *work_item, SIInst *inst)
 {
-	/* FIXME : not implemented */
+	unsigned int target;
+
+	target = INST.tgt;
+	if (target >=0 && target <= 7)
+	{
+		/* Export to MRT 0-7 */
+	}
+	else if (target == 8)
+	{
+		/* Export to Z */
+	}
+	else if (target == 9)
+	{
+		/* NULL */
+	}
+	else if (target >= 12 && target <= 15)
+	{
+		/* Position 0-3 */
+
+	}
+	else if (target >= 32 && target <= 63)
+	{
+		 /* Parameter 0 - 31 */
+
+	} else
+		panic("Export target is not valid!\n");
 }
 #undef INST

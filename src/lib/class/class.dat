@@ -85,6 +85,7 @@ CLASS(SINDRange)
 CLASS(SIWorkGroup)
 CLASS(SIWorkItem)
 CLASS(SIWavefront)
+CLASS(SISX)
 
 CLASS(SIGpu)
 CLASS(SIComputeUnit)

@@ -583,12 +583,6 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count )
 
 		syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_ndrange_finish);
 
-		/* Set rendering mode */
-
-		/* Launch Fragment Shader*/
-
-		/* Display */
-	
 	}
 	else
 		opengl_debug("\tNo Vertex Array is available to render!\n");
