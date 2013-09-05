@@ -26,7 +26,6 @@
 #include <arch/southern-islands/asm/opengl-bin-file.h>
 #include <arch/southern-islands/emu/ndrange.h>
 #include <arch/southern-islands/timing/gpu.h>
-#include <driver/opengl/scan-converter.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
@@ -36,6 +35,7 @@
 #include "opengl.h"
 #include "si-program.h"
 #include "si-shader.h"
+#include "si-sc.h"
 
 /* Debug */
 int opengl_debug_category;
@@ -106,7 +106,7 @@ static opengl_abi_call_t opengl_abi_call_table[opengl_abi_call_count + 1] =
 
 
 /*
- * Class 'OepnglDriver'
+ * Class 'OpenglDriver'
  */
 
 void OpenglDriverCreate(OpenglDriver *self, X86Emu *x86_emu, SIEmu *si_emu)
@@ -264,7 +264,6 @@ static int opengl_abi_si_mem_alloc_impl(X86Context *ctx)
 
 	/* Arguments */
 	size = regs->ecx;
-	opengl_debug("\tsize = %u\n", size);
 
 	/* For now, memory allocation in device memory is done by just 
 	 * incrementing a pointer to the top of the global memory space. 
@@ -644,7 +643,7 @@ static int opengl_abi_si_shader_create_impl(X86Context *ctx)
 	program_id = regs->ecx;
 	shader_id = regs->edx;
 	shader_type = regs->esi;
-	opengl_debug("\tprogram_id=%d, shader_id=%d, type=%x\n", program_id, shader_id, shader_type);
+	opengl_debug("\tprogram_id = %d, shader_id = %d, type = %x\n", program_id, shader_id, shader_type);
 
 	/* Create a shader object, will be initialized with shaders in program object */
 	program = list_get(opengl_si_program_list, program_id);
@@ -1142,3 +1141,34 @@ static int opengl_abi_si_ndrange_pass_mem_objs_impl(X86Context *ctx)
 	return 0;
 }
 
+/*
+ * OpenGL ABI call #19 - si_viewport
+ *
+ * @return int
+ *
+ *	The function always returns 0.
+ */
+
+static int opengl_abi_si_viewport_impl(X86Context *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+
+	unsigned int x;
+	unsigned int y;
+	unsigned int width;
+	unsigned int height;
+
+	/* Arguments */
+	x = regs->ecx;
+	y = regs->edx;
+	width = regs->esi;
+	height = regs->edi;
+
+	/* Debug */
+	opengl_debug("\tViewport x = %d, y = %d, width = %d, height = %d\n", 
+		x, y, width, height);
+
+	/**/
+
+	return 0;
+}

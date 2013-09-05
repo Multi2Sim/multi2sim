@@ -88,6 +88,10 @@ void glViewport( GLint x, GLint y, GLsizei width, GLsizei height )
 	opengl_ctx->props->vp_y = y;
 	opengl_ctx->props->vp_w = width;
 	opengl_ctx->props->vp_h = height;
+
+	/* glViewport launches fragment shader */
+	syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_viewport,
+		x, y, width, height);
 }
 
 void glClipPlane( GLenum plane, const GLdouble *equation )

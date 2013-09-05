@@ -21,19 +21,21 @@
 #include <assert.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
+#include <lib/util/misc.h>
 #include <lib/mhandle/mhandle.h>
 
-#include "scan-converter.h"
+#include "si-sc.h"
+#include "si-pa.h"
 
 /* Forward declaration */
 static void opengl_sc_pixel_info_set_wndw_cood(struct opengl_sc_pixel_info_t *pxl_info, int x, int y, int z);
 static void opengl_sc_pixel_info_set_brctrc_cood(struct opengl_sc_pixel_info_t *pxl_info, 
-	struct opengl_sc_triangle_t *triangle);
+	struct opengl_pa_triangle_t *triangle);
 
 static struct opengl_sc_span_array_t *opengl_sc_span_array_create();
 static void opengl_sc_span_array_free(struct opengl_sc_span_array_t *spn_array);
 
-static struct opengl_sc_bounding_box_t *opengl_sc_bounding_box_create(struct opengl_sc_triangle_t *triangle);
+static struct opengl_sc_bounding_box_t *opengl_sc_bounding_box_create(struct opengl_pa_triangle_t *triangle);
 static void opengl_sc_bounding_box_free(struct opengl_sc_bounding_box_t *bbox);
 
 /* 
@@ -49,7 +51,7 @@ static void opengl_sc_pixel_info_set_wndw_cood(struct opengl_sc_pixel_info_t *px
 }
 
 static void opengl_sc_pixel_info_set_brctrc_cood(struct opengl_sc_pixel_info_t *pxl_info, 
-	struct opengl_sc_triangle_t *triangle)
+	struct opengl_pa_triangle_t *triangle)
 {
 	assert(pxl_info->wndw_init);
 
@@ -100,7 +102,7 @@ static void opengl_sc_span_array_free(struct opengl_sc_span_array_t *spn_array)
 	free(spn_array);
 }
 
-static struct opengl_sc_bounding_box_t *opengl_sc_bounding_box_create(struct opengl_sc_triangle_t *triangle)
+static struct opengl_sc_bounding_box_t *opengl_sc_bounding_box_create(struct opengl_pa_triangle_t *triangle)
 {
 	struct opengl_sc_bounding_box_t *bbox;
 	float xmin;
@@ -149,59 +151,8 @@ static void opengl_sc_bounding_box_free(struct opengl_sc_bounding_box_t *bbox)
  *  Public funtions
  */
 
-struct opengl_sc_vertex_t *opengl_sc_vertex_create()
-{
-	struct opengl_sc_vertex_t *vtx;
-
-	/* Allocate */
-	vtx = xcalloc(1, sizeof(struct opengl_sc_vertex_t));
-
-	/* Return */	
-	return vtx;
-}
-
-void opengl_sc_vertex_free(struct opengl_sc_vertex_t *vtx)
-{
-	free(vtx);
-}
-
-struct opengl_sc_triangle_t *opengl_sc_triangle_create()
-{
-	struct opengl_sc_triangle_t *triangle;
-
-	/* Allocate */
-	triangle = xcalloc(1, sizeof(struct opengl_sc_triangle_t));
-
-	/* Return */
-	return triangle;
-}
-
-void opengl_sc_triangle_set(struct opengl_sc_triangle_t *triangle, 
-	struct opengl_sc_vertex_t *vtx0,
-	struct opengl_sc_vertex_t *vtx1,
-	struct opengl_sc_vertex_t *vtx2)
-{
-	triangle->vtx0 = vtx0;
-	triangle->vtx1 = vtx1;
-	triangle->vtx2 = vtx2;
-	triangle->edgfunc0 = opengl_sc_edge_func_create();
-	triangle->edgfunc1 = opengl_sc_edge_func_create();
-	triangle->edgfunc2 = opengl_sc_edge_func_create();
-	opengl_sc_edge_func_set(triangle->edgfunc0, vtx0, vtx1);
-	opengl_sc_edge_func_set(triangle->edgfunc1, vtx1, vtx2);
-	opengl_sc_edge_func_set(triangle->edgfunc2, vtx2, vtx0);
-}
-
-void opengl_sc_triangle_free(struct opengl_sc_triangle_t *triangle)
-{
-	opengl_sc_edge_func_free(triangle->edgfunc0);
-	opengl_sc_edge_func_free(triangle->edgfunc1);
-	opengl_sc_edge_func_free(triangle->edgfunc2);
-	free(triangle);
-}
-
-struct opengl_sc_edge_t *opengl_sc_edge_create(struct opengl_sc_vertex_t *vtx0,
-		struct opengl_sc_vertex_t *vtx1)
+struct opengl_sc_edge_t *opengl_sc_edge_create(struct opengl_pa_vertex_t *vtx0,
+		struct opengl_pa_vertex_t *vtx1)
 {
 	struct opengl_sc_edge_t * edge;
 
@@ -272,44 +223,15 @@ void opengl_sc_pixel_info_free(struct opengl_sc_pixel_info_t *pxl_info)
 	free(pxl_info);
 }
 
-/* Edge function is used to test if a pixel is in the right side of an edge */
-struct opengl_sc_edge_func_t *opengl_sc_edge_func_create()
-{
-	struct opengl_sc_edge_func_t *edge_func;
-
-	/* Allocate */
-	edge_func = xcalloc(1, sizeof(struct opengl_sc_edge_func_t));
-
-	/* Return */	
-	return edge_func;
-}
-
-void opengl_sc_edge_func_free(struct opengl_sc_edge_func_t *edge_func)
-{
-	free(edge_func);
-}
-
-/* vtx0/1 are 2 homegenious points */
-void opengl_sc_edge_func_set(struct opengl_sc_edge_func_t *edge_func,struct opengl_sc_vertex_t *vtx0, struct opengl_sc_vertex_t *vtx1)
-{
-
-	edge_func->a = vtx0->pos[Y_COMP] - vtx1->pos[Y_COMP];
-	edge_func->b = vtx1->pos[X_COMP] - vtx0->pos[X_COMP];
-	/* Reformulate to avoid precision problem */
-	// edge_func->c = vtx0->pos[X_COMP] * vtx1->pos[Y_COMP] - vtx1->pos[X_COMP] * vtx0->pos[Y_COMP];
-	edge_func->c = -0.5 * (edge_func->a * (vtx0->pos[X_COMP] + vtx1->pos[X_COMP]) + 
-		edge_func->b * (vtx0->pos[Y_COMP] + vtx1->pos[Y_COMP]));
-}
-
 /* Return PIXEL_TEST_PASS if a pixel is on the right side of an edge, PIXEL_TEST_FAIL if on the left side */
-int opengl_sc_edge_func_test_pixel(struct opengl_sc_edge_func_t *edge_func, int x, int y)
+int opengl_sc_edge_func_test_pixel(struct opengl_pa_edge_func_t *edge_func, int x, int y)
 {
 	/* E(x,y) >= 0 meaning a pixel is on the right side of the edge or exactly on the edge */
 	return edge_func->a * x + edge_func->b * y + edge_func->c >= 0.0 ? PIXEL_TEST_PASS : PIXEL_TEST_FAIL ;
 }
 
 /* Pass test only when a pixel passes on 3 edge function */
-int opengl_sc_triangle_test_pixel(struct opengl_sc_triangle_t *triangle, int x, int y)
+int opengl_pa_triangle_test_pixel(struct opengl_pa_triangle_t *triangle, int x, int y)
 {
 	if (opengl_sc_edge_func_test_pixel(triangle->edgfunc0, x, y) && 
 		opengl_sc_edge_func_test_pixel(triangle->edgfunc1, x, y) &&
@@ -321,10 +243,10 @@ int opengl_sc_triangle_test_pixel(struct opengl_sc_triangle_t *triangle, int x, 
 }
 
 /* If pass test, then generate a pixel info object */
-struct opengl_sc_pixel_info_t *opengl_sc_triangle_test_and_gen_pixel(struct opengl_sc_triangle_t *triangle, int x, int y, int z)
+struct opengl_sc_pixel_info_t *opengl_pa_triangle_test_and_gen_pixel(struct opengl_pa_triangle_t *triangle, int x, int y, int z)
 {
 	struct opengl_sc_pixel_info_t *pixel;
-	if (opengl_sc_triangle_test_pixel(triangle, x, y))
+	if (opengl_pa_triangle_test_pixel(triangle, x, y))
 	{
 		pixel = opengl_sc_pixel_info_create();
 		opengl_sc_pixel_info_set_wndw_cood(pixel, x, y, z);
@@ -336,17 +258,17 @@ struct opengl_sc_pixel_info_t *opengl_sc_triangle_test_and_gen_pixel(struct open
 	return NULL;
 }
 
-void opengl_sc_pixel_gen_and_add_to_list(struct opengl_sc_triangle_t *triangle, int x, int y, struct list_t *lst)
+void opengl_sc_pixel_gen_and_add_to_list(struct opengl_pa_triangle_t *triangle, int x, int y, struct list_t *lst)
 {
 	struct opengl_sc_pixel_info_t *pixel;
 	/* FIXME: Z value should be interpolated */
-	pixel = opengl_sc_triangle_test_and_gen_pixel(triangle, x, y, 0);
+	pixel = opengl_pa_triangle_test_and_gen_pixel(triangle, x, y, 0);
 	if (pixel)
 		list_add(lst, pixel);
 }
 
 /* Resursive testing tiles , x/y are the position of the lower left of a bounding box */
-void opengl_sc_triangle_tiled_pixel_gen(struct opengl_sc_triangle_t *triangle, int x, int y, int size, struct list_t *pxl_lst)
+void opengl_pa_triangle_tiled_pixel_gen(struct opengl_pa_triangle_t *triangle, int x, int y, int size, struct list_t *pxl_lst)
 {
 	int half_size;
 
@@ -357,10 +279,10 @@ void opengl_sc_triangle_tiled_pixel_gen(struct opengl_sc_triangle_t *triangle, i
 	if (size > 2)
 	{
 		/* Subdivide the bounding box and test in Z pattern */
-		opengl_sc_triangle_tiled_pixel_gen(triangle, x, y + half_size, half_size, pxl_lst);
-		opengl_sc_triangle_tiled_pixel_gen(triangle, x + half_size, y + half_size, half_size, pxl_lst);
-		opengl_sc_triangle_tiled_pixel_gen(triangle, x, y, half_size, pxl_lst);
-		opengl_sc_triangle_tiled_pixel_gen(triangle, x + half_size, y, half_size, pxl_lst);
+		opengl_pa_triangle_tiled_pixel_gen(triangle, x, y + half_size, half_size, pxl_lst);
+		opengl_pa_triangle_tiled_pixel_gen(triangle, x + half_size, y + half_size, half_size, pxl_lst);
+		opengl_pa_triangle_tiled_pixel_gen(triangle, x, y, half_size, pxl_lst);
+		opengl_pa_triangle_tiled_pixel_gen(triangle, x + half_size, y, half_size, pxl_lst);
 	}
 	else if (size == 2)
 	{
@@ -377,7 +299,7 @@ void opengl_sc_triangle_tiled_pixel_gen(struct opengl_sc_triangle_t *triangle, i
 
 
 /* Tiled rasterizer */
-struct list_t *opengl_sc_tiled_rast_triangle_gen(struct opengl_sc_triangle_t *triangle)
+struct list_t *opengl_sc_tiled_rast_triangle_gen(struct opengl_pa_triangle_t *triangle)
 {
 	struct opengl_sc_bounding_box_t *bbox;
 	struct list_t *pxl_lst;
@@ -387,7 +309,7 @@ struct list_t *opengl_sc_tiled_rast_triangle_gen(struct opengl_sc_triangle_t *tr
 
 	/* Create pixel list and add pixels pass test to this list */
 	pxl_lst = list_create();
-	opengl_sc_triangle_tiled_pixel_gen(triangle, bbox->x0, bbox->y0, bbox->size, pxl_lst);
+	opengl_pa_triangle_tiled_pixel_gen(triangle, bbox->x0, bbox->y0, bbox->size, pxl_lst);
 
 	/* Free */
 	opengl_sc_bounding_box_free(bbox);
@@ -396,7 +318,7 @@ struct list_t *opengl_sc_tiled_rast_triangle_gen(struct opengl_sc_triangle_t *tr
 	return pxl_lst;
 }
 
-struct list_t *opengl_sc_rast_triangle_gen(struct opengl_sc_triangle_t *triangle)
+struct list_t *opengl_sc_rast_triangle_gen(struct opengl_pa_triangle_t *triangle)
 {
 	/* List contains info of pixels inside this triangle */
 	struct list_t *pxl_lst;
@@ -406,9 +328,9 @@ struct list_t *opengl_sc_rast_triangle_gen(struct opengl_sc_triangle_t *triangle
 	struct opengl_sc_edge_t *edge_top;
 	struct opengl_sc_edge_t *edge_bottom;
 
-	struct opengl_sc_vertex_t *vtx_max;
-	struct opengl_sc_vertex_t *vtx_mid;
-	struct opengl_sc_vertex_t *vtx_min;
+	struct opengl_pa_vertex_t *vtx_max;
+	struct opengl_pa_vertex_t *vtx_mid;
+	struct opengl_pa_vertex_t *vtx_min;
 
 	struct opengl_sc_span_t *spn;
 
@@ -601,7 +523,7 @@ struct list_t *opengl_sc_rast_triangle_gen(struct opengl_sc_triangle_t *triangle
 
 		if (setupLeft && edge_left->lines > 0)
 		{
-			const struct opengl_sc_vertex_t *vtx_lower = edge_left->vtx1;
+			const struct opengl_pa_vertex_t *vtx_lower = edge_left->vtx1;
 			const int fsy = edge_left->fsy;
 			const int fsx = edge_left->fsx;  /* no fractional part */
 			const int fx = FixedCeil(fsx);  /* no fractional part */

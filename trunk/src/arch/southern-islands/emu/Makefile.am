@@ -11,6 +11,9 @@ libemu_a_SOURCES = \
 	machine.c \
 	machine.h \
 	\
+	sx.c \
+	sx.h \
+	\
 	ndrange.c \
 	ndrange.h \
 	\
