@@ -22,6 +22,9 @@
 
 #include <lib/class/class.h>
 
+/* Forward declaration */
+struct list_t;
+
 
 
 /*
