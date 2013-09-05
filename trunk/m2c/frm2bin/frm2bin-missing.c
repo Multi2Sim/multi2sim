@@ -59,7 +59,7 @@ void frm2bin_done(void)
 }
 
 
-void frm2bin_compile(struct list_t *source_file_list,
+void Frm2binCompile(struct list_t *source_file_list,
 		struct list_t *bin_file_list)
 {
 	frm2bin_missing();

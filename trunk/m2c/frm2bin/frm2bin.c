@@ -82,7 +82,8 @@ void frm2bin_yyerror_fmt(char *fmt, ...)
 
 FrmAsm *frm_asm;
 
-void frm2bin_init(void)
+
+void Frm2binCreate(Frm2bin *self)
 {
 	/* Initialize */
 	frm_asm = new(FrmAsm);
@@ -98,7 +99,7 @@ void frm2bin_init(void)
 }
 
 
-void frm2bin_done(void)
+void Frm2binDestroy(Frm2bin *self)
 {
 	/* Finalize */
 	/* task list is for label processing, lable is not supported now
@@ -111,8 +112,10 @@ void frm2bin_done(void)
 	delete(frm_asm);
 }
 
-void frm2bin_compile(struct list_t *source_file_list,
-	struct list_t *bin_file_list)
+
+void Frm2binCompile(Frm2bin *self,
+		struct list_t *source_file_list,
+		struct list_t *bin_file_list)
 {
 	int index;
 

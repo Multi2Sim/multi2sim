@@ -126,6 +126,11 @@ CLASS(AbstractNode)
 CLASS(CTree)
 CLASS(BasicBlock)
 
+CLASS(Cl2llvm)
+
+CLASS(Frm2bin)
+
+CLASS(Llvm2si)
 CLASS(Llvm2siPhi)
 CLASS(Llvm2siSymbol)
 CLASS(Llvm2siSymbolTable)
@@ -134,5 +139,6 @@ CLASS(Llvm2siFunction)
 CLASS(Llvm2siFunctionUAV)
 CLASS(Llvm2siFunctionArg)
 
+CLASS(Si2bin)
 CLASS(Si2binArg)
 

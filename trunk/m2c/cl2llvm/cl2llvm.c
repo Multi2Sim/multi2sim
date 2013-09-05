@@ -30,6 +30,12 @@
 #include "type.h"
 #include "built-in-funcs.h"
 
+
+
+/*
+ * Public
+ */
+
 extern void cl2llvm_set_lineno(int);
 extern int cl2llvm_col_num;
 extern int temp_var_count;
@@ -85,7 +91,13 @@ void cl2llvm_warning(char *s)
 		cl2llvm_yyget_lineno(), cl2llvm_get_col_num(), s);
 }
 
-void cl2llvm_init(void)
+
+
+/*
+ * Class 'Cl2llvm'
+ */
+
+void Cl2llvmCreate(Cl2llvm *self)
 {
 	/* Initialize built in function table */
 	cl2llvm_built_in_func_table = built_in_func_table_create();
@@ -94,6 +106,16 @@ void cl2llvm_init(void)
 	cl2llvm_built_in_const_table = cl2llvm_built_in_const_table_create();
 }
 
+
+void Cl2llvmDestroy(Cl2llvm *self)
+{
+	/* Free built-in function table. */
+	cl2llvm_built_in_func_table_free(cl2llvm_built_in_func_table);
+
+	/* Free enumerated type table */
+	hash_table_free(cl2llvm_built_in_const_table);
+
+}
 
 
 void cl2llvm_init_global_vars(void)
@@ -123,16 +145,6 @@ void cl2llvm_init_global_vars(void)
 	cl2llvm_declared_built_in_funcs_table = hash_table_create(10, 1);
 }
 
-
-void cl2llvm_done(void)
-{
-	/* Free built-in function table. */
-	cl2llvm_built_in_func_table_free(cl2llvm_built_in_func_table);
-	
-	/* Free enumerated type table */
-	hash_table_free(cl2llvm_built_in_const_table);
-
-}
 
 void cl2llvm_erase_global_vars(void)
 {
@@ -167,7 +179,9 @@ void cl2llvm_erase_global_vars(void)
 }
 
 
-void cl2llvm_compile(struct list_t *source_file_list, struct list_t *llvm_file_list,
+void Cl2llvmCompile(Cl2llvm *self,
+		struct list_t *source_file_list,
+		struct list_t *llvm_file_list,
 		int opt_level)
 {
 	int index;
@@ -225,4 +239,3 @@ void cl2llvm_compile(struct list_t *source_file_list, struct list_t *llvm_file_l
 		cl2llvm_erase_global_vars();
 	}
 }
-

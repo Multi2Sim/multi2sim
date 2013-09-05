@@ -58,7 +58,7 @@ void llvm2si_done(void)
 }
 
 
-void llvm2si_compile(struct list_t *source_file_list,
+void Llvm2siCompile(struct list_t *source_file_list,
 		struct list_t *output_file_list)
 {
 	llvm2si_missing();
