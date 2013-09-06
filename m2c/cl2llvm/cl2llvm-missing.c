@@ -44,19 +44,20 @@ static void cl2llvm_missing(void)
  * Public Functions
  */
 
-void cl2llvm_init(void)
+void Cl2llvmCreate(Cl2llvm *self)
 {
 }
 
 
-void cl2llvm_done(void)
+void Cl2llvmDestroy(Cl2llvm *self)
 {
 }
 
 
-void Cl2llvmCompile(struct list_t *source_file_list,
-		struct list_t *llvm_file_list, int opt_level)
+void Cl2llvmCompile(Cl2llvm *self,
+		struct list_t *source_file_list,
+		struct list_t *llvm_file_list,
+		int opt_level)
 {
 	cl2llvm_missing();
 }
-

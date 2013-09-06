@@ -20,7 +20,8 @@
 #ifndef M2C_LLVM2SI_LLVM2SI_H
 #define M2C_LLVM2SI_LLVM2SI_H
 
-#include <stdio.h>
+#include <lib/class/class.h>
+
 
 /* Forward declarations */
 struct list_t;
