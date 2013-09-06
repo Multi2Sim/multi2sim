@@ -48,19 +48,19 @@ static void llvm2si_missing(void)
  * Public Functions
  */
 
-void llvm2si_init(void)
+void Llvm2siCreate(Llvm2si *self)
 {
 }
 
 
-void llvm2si_done(void)
+void Llvm2siDestroy(Llvm2si *self)
 {
 }
 
 
-void Llvm2siCompile(struct list_t *source_file_list,
+void Llvm2siCompile(Llvm2si *self,
+		struct list_t *source_file_list,
 		struct list_t *output_file_list)
 {
 	llvm2si_missing();
 }
-

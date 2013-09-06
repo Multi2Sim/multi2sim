@@ -26,12 +26,7 @@
 #include <m2c/common/basic-block.h>
 #include <m2c/common/ctree.h>
 #include <m2c/frm2bin/frm2bin.h>
-#include <m2c/llvm2si/basic-block.h>
-#include <m2c/llvm2si/function.h>
 #include <m2c/llvm2si/llvm2si.h>
-#include <m2c/llvm2si/phi.h>
-#include <m2c/llvm2si/symbol.h>
-#include <m2c/llvm2si/symbol-table.h>
 #include <m2c/si2bin/arg.h>
 #include <m2c/si2bin/inst.h>
 #include <m2c/si2bin/si2bin.h>
@@ -45,6 +40,14 @@
 #include <lib/util/misc.h>
 #include <lib/util/list.h>
 #include <lib/util/string.h>
+
+#ifdef HAVE_LLVM
+#include <m2c/llvm2si/basic-block.h>
+#include <m2c/llvm2si/function.h>
+#include <m2c/llvm2si/phi.h>
+#include <m2c/llvm2si/symbol.h>
+#include <m2c/llvm2si/symbol-table.h>
+#endif
 
 #include <src/arch/common/asm.h>
 #include <src/arch/fermi/asm/asm.h>
@@ -616,6 +619,8 @@ void m2c_init(void)
 	CLASS_REGISTER(Frm2bin);
 
 	CLASS_REGISTER(Llvm2si);
+
+#ifdef HAVE_LLVM
 	CLASS_REGISTER(Llvm2siBasicBlock);
 	CLASS_REGISTER(Llvm2siPhi);
 	CLASS_REGISTER(Llvm2siFunction);
@@ -623,6 +628,7 @@ void m2c_init(void)
 	CLASS_REGISTER(Llvm2siFunctionUAV);
 	CLASS_REGISTER(Llvm2siSymbol);
 	CLASS_REGISTER(Llvm2siSymbolTable);
+#endif
 
 	CLASS_REGISTER(Si2bin);
 	CLASS_REGISTER(Si2binArg);
