@@ -23,10 +23,12 @@
 #include <lib/util/debug.h>
 #include <lib/util/misc.h>
 #include <mem-system/memory.h>
+ #include <driver/opengl/si-pa.h>
 
 #include "isa.h"
 #include "machine.h"
 #include "ndrange.h"
+#include "sx.h"
 #include "wavefront.h"
 #include "work-group.h"
 #include "work-item.h"
@@ -7743,31 +7745,45 @@ void si_isa_IMAGE_SAMPLE_impl(SIWorkItem *work_item, SIInst *inst)
 #define INST SI_INST_EXP
 void si_isa_EXPORT_impl(SIWorkItem *work_item, SIInst *inst)
 {
-	unsigned int target;
+	SIWorkGroup *work_group = work_item->work_group;
+	SINDRange *ndrange = work_group->ndrange;
+	SIEmu *emu = ndrange->emu;
+	SISX *sx = emu->sx;
+	
+	unsigned int target_id;
+	unsigned int vtx0;
+	unsigned int vtx1;
+	unsigned int vtx2;
+	unsigned int vtx3;
 
-	target = INST.tgt;
-	if (target >=0 && target <= 7)
+	vtx0 = SIWorkItemReadVReg(work_item, INST.vsrc0);
+	vtx1 = SIWorkItemReadVReg(work_item, INST.vsrc1);
+	vtx2 = SIWorkItemReadVReg(work_item, INST.vsrc2);
+	vtx3 = SIWorkItemReadVReg(work_item, INST.vsrc3);
+
+	target_id = INST.tgt;
+
+	if (target_id >=0 && target_id <= 7)
 	{
 		/* Export to MRT 0-7 */
 	}
-	else if (target == 8)
+	else if (target_id == 8)
 	{
 		/* Export to Z */
 	}
-	else if (target == 9)
+	else if (target_id == 9)
 	{
 		/* NULL */
 	}
-	else if (target >= 12 && target <= 15)
+	else if (target_id >= 12 && target_id <= 15)
 	{
 		/* Position 0-3 */
-
+		SISXExportPosition(sx, target_id, work_item->id, vtx0, vtx1, vtx2, vtx3);
 	}
-	else if (target >= 32 && target <= 63)
+	else if (target_id >= 32 && target_id <= 63)
 	{
 		 /* Parameter 0 - 31 */
-
 	} else
-		panic("Export target is not valid!\n");
+		fatal("Export target %d is not valid!\n", target_id);
 }
 #undef INST

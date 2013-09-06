@@ -231,7 +231,7 @@ int opengl_sc_edge_func_test_pixel(struct opengl_pa_edge_func_t *edge_func, int 
 }
 
 /* Pass test only when a pixel passes on 3 edge function */
-int opengl_pa_triangle_test_pixel(struct opengl_pa_triangle_t *triangle, int x, int y)
+int opengl_sc_triangle_test_pixel(struct opengl_pa_triangle_t *triangle, int x, int y)
 {
 	if (opengl_sc_edge_func_test_pixel(triangle->edgfunc0, x, y) && 
 		opengl_sc_edge_func_test_pixel(triangle->edgfunc1, x, y) &&
@@ -243,10 +243,10 @@ int opengl_pa_triangle_test_pixel(struct opengl_pa_triangle_t *triangle, int x, 
 }
 
 /* If pass test, then generate a pixel info object */
-struct opengl_sc_pixel_info_t *opengl_pa_triangle_test_and_gen_pixel(struct opengl_pa_triangle_t *triangle, int x, int y, int z)
+struct opengl_sc_pixel_info_t *opengl_sc_triangle_test_and_gen_pixel(struct opengl_pa_triangle_t *triangle, int x, int y, int z)
 {
 	struct opengl_sc_pixel_info_t *pixel;
-	if (opengl_pa_triangle_test_pixel(triangle, x, y))
+	if (opengl_sc_triangle_test_pixel(triangle, x, y))
 	{
 		pixel = opengl_sc_pixel_info_create();
 		opengl_sc_pixel_info_set_wndw_cood(pixel, x, y, z);
@@ -262,7 +262,7 @@ void opengl_sc_pixel_gen_and_add_to_list(struct opengl_pa_triangle_t *triangle, 
 {
 	struct opengl_sc_pixel_info_t *pixel;
 	/* FIXME: Z value should be interpolated */
-	pixel = opengl_pa_triangle_test_and_gen_pixel(triangle, x, y, 0);
+	pixel = opengl_sc_triangle_test_and_gen_pixel(triangle, x, y, 0);
 	if (pixel)
 		list_add(lst, pixel);
 }

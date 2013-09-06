@@ -54,6 +54,9 @@ CLASS_BEGIN(SIEmu, Emu)
 	/* Repository of deferred tasks */
 	struct repos_t *write_task_repos;
 
+	/* Shader export module */
+	SISX *sx;
+
 	/* Statistics */
 	int ndrange_count;  /* Number of OpenCL kernels executed */
 	long long work_group_count;  /* Number of OpenCL work groups executed */
