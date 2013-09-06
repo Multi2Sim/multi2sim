@@ -33,6 +33,7 @@
 #include <mem-system/memory.h>
 
 #include "opengl.h"
+#include "si-pa.h"
 #include "si-program.h"
 #include "si-shader.h"
 #include "si-sc.h"
