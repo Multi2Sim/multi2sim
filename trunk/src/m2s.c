@@ -62,6 +62,7 @@
 #include <arch/southern-islands/emu/emu.h>
 #include <arch/southern-islands/emu/ndrange.h>
 #include <arch/southern-islands/emu/isa.h>
+#include <arch/southern-islands/emu/sx.h>
 #include <arch/southern-islands/emu/wavefront.h>
 #include <arch/southern-islands/emu/work-group.h>
 #include <arch/southern-islands/emu/work-item.h>
@@ -1968,6 +1969,7 @@ static void m2s_init(void)
 	CLASS_REGISTER(SIWavefront);
 	CLASS_REGISTER(SIWorkGroup);
 	CLASS_REGISTER(SIWorkItem);
+	CLASS_REGISTER(SISX);
 
 	CLASS_REGISTER(SIGpu);
 	CLASS_REGISTER(SIComputeUnit);

@@ -20,6 +20,7 @@
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
+#include <driver/opengl/si-pa.h>
 
 #include "sx.h"
 
@@ -57,5 +58,22 @@ void SISXDestroy(SISX *self)
 	{
 		list_free(self->param[i]);
 	}
+}
+
+void SISXExportPosition(SISX *self, unsigned int target, unsigned int id, 
+	unsigned int v0, unsigned int v1, unsigned int v2, unsigned int v3)
+{
+	struct list_t *vtx_lst;
+	float *pos;
+
+	pos = xcalloc(1, 4 * sizeof(float));
+
+	pos[0] = (float)v0;
+	pos[1] = (float)v1;
+	pos[2] = (float)v2;
+	pos[3] = (float)v3;
+
+	vtx_lst = self->pos[target];
+	list_insert(vtx_lst, id, pos);
 }
 
