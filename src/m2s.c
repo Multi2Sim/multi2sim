@@ -196,11 +196,14 @@ static SIGpu *si_gpu;
 
 static OpenclOldDriver *opencl_old_driver;
 static OpenclDriver *opencl_driver;
-static OpenglDriver *opengl_driver;
 static CudaDriver *cuda_driver;
+
+#ifdef HAVE_OPENGL
+static OpenglDriver *opengl_driver;
 static GluDriver *glu_driver;
 static GlutDriver *glut_driver;
 static GlewDriver *glew_driver;
+#endif
 
 
 static char *m2s_help =
@@ -1979,12 +1982,15 @@ static void m2s_init(void)
 	/* Drivers */
 	CLASS_REGISTER(Driver);
 	CLASS_REGISTER(OpenclDriver);
-	CLASS_REGISTER(OpenglDriver);
 	CLASS_REGISTER(CudaDriver);
+	CLASS_REGISTER(OpenclOldDriver);
+
+#ifdef HAVE_OPENGL
+	CLASS_REGISTER(OpenglDriver);
 	CLASS_REGISTER(GlewDriver);
 	CLASS_REGISTER(GlutDriver);
 	CLASS_REGISTER(GluDriver);
-	CLASS_REGISTER(OpenclOldDriver);
+#endif
 
 	/* Compute simulation ID */
 	gettimeofday(&tv, NULL);
@@ -2336,17 +2342,19 @@ int main(int argc, char **argv)
 	/* Drivers */
 	opencl_driver = new(OpenclDriver, x86_emu, si_emu);
 	opencl_old_driver = new(OpenclOldDriver, x86_emu, evg_emu);
-	opengl_driver = new(OpenglDriver, x86_emu, si_emu);
 	cuda_driver = new(CudaDriver, x86_emu, frm_emu);
+
+#ifdef HAVE_OPENGL
+	opengl_driver = new(OpenglDriver, x86_emu, si_emu);
 	glu_driver = new(GluDriver, x86_emu);
 	glut_driver = new(GlutDriver, x86_emu);
 	glew_driver = new(GlewDriver, x86_emu);
+	if (si_sim_kind == arch_sim_kind_detailed)
+		opengl_driver->si_gpu = si_gpu;
+#endif
 
 	if (si_sim_kind == arch_sim_kind_detailed)
-	{
 		opencl_driver->si_gpu = si_gpu;
-		opengl_driver->si_gpu = si_gpu;
-	}
 	if (x86_sim_kind == arch_sim_kind_detailed)
 		opencl_driver->x86_cpu = x86_cpu;
 
@@ -2380,11 +2388,14 @@ int main(int argc, char **argv)
 	/* Drivers */
 	delete(opencl_driver);
 	delete(opencl_old_driver);
-	delete(opengl_driver);
 	delete(cuda_driver);
+
+#ifdef HAVE_OPENGL
+	delete(opengl_driver);
 	delete(glu_driver);
 	delete(glut_driver);
 	delete(glew_driver);
+#endif
 
 	/* Evergreen */
 	if (evg_gpu)
