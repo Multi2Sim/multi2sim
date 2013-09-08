@@ -1492,13 +1492,21 @@ static int opencl_abi_si_ndrange_pass_mem_objs_impl(X86Context *ctx)
 			ctx->address_space_index, si_gpu->mmu, tables_ptr, 
 			constant_buffers_ptr);
 	}
-
-	/* Set up initial state and arguments (order matters!) */
-	if (!driver->fused)
+	else
 	{
-		opencl_si_kernel_create_ndrange_tables(ndrange, NULL); 
-		opencl_si_kernel_create_ndrange_constant_buffers(ndrange,
-			NULL); 
+		if (si_gpu)
+		{
+			opencl_si_kernel_create_ndrange_tables(ndrange, 
+				si_gpu->mmu); 
+			opencl_si_kernel_create_ndrange_constant_buffers(
+				ndrange, si_gpu->mmu); 
+		}
+		else
+		{
+			opencl_si_kernel_create_ndrange_tables(ndrange, NULL); 
+			opencl_si_kernel_create_ndrange_constant_buffers(
+				ndrange, NULL); 
+		}
 	}
 	opencl_si_kernel_setup_ndrange_constant_buffers(ndrange);
 	opencl_si_kernel_setup_ndrange_args(kernel, ndrange);
