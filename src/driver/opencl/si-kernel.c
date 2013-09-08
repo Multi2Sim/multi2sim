@@ -668,12 +668,11 @@ void opencl_si_kernel_create_ndrange_constant_buffers(SINDRange *ndrange,
 			emu->video_mem_top += gpu_mmu->page_size -
 				(emu->video_mem_top & gpu_mmu->page_mask);
 		}
-
-		/* Map new pages */
-		mem_map(emu->video_mem, emu->video_mem_top,
-			size_of_constant_buffers, 
-			mem_access_read | mem_access_write);
 	}
+
+	/* Map new pages */
+	mem_map(emu->video_mem, emu->video_mem_top, size_of_constant_buffers, 
+		mem_access_read | mem_access_write);
 
 	opencl_debug("\t%u bytes of device memory allocated at " 
 		"0x%x for SI constant buffers\n", size_of_constant_buffers,
@@ -836,10 +835,10 @@ void opencl_si_kernel_create_ndrange_tables(SINDRange *ndrange, MMU *gpu_mmu)
 				(emu->video_mem_top & gpu_mmu->page_mask);
 		}
 
-		/* Map new pages */
-		mem_map(emu->video_mem, emu->video_mem_top, size_of_tables,
-			mem_access_read | mem_access_write);
 	}
+	/* Map new pages */
+	mem_map(emu->video_mem, emu->video_mem_top, size_of_tables,
+		mem_access_read | mem_access_write);
 
 	opencl_debug("\t%u bytes of device memory allocated at " 
 		"0x%x for SI internal tables\n", size_of_tables,
