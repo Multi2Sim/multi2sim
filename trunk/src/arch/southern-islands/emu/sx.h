@@ -43,7 +43,6 @@ CLASS_END(SISX)
 
 void SISXCreate(SISX *self, SIEmu *emu);
 void SISXDestroy(SISX *self);
-
 void SISXExportPosition(SISX *self, unsigned int target, unsigned int id, 
 	unsigned int v0, unsigned int v1, unsigned int v2, unsigned int v3);
 

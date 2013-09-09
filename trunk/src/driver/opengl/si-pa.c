@@ -35,6 +35,50 @@
  * Public Functions
  */
 
+struct opengl_pa_viewport_t *opengl_pa_viewport_create()
+{
+	struct opengl_pa_viewport_t *vwpt;
+
+	/* Allocate */
+	vwpt = xcalloc(1, sizeof(struct opengl_pa_viewport_t));
+
+	/* Return */	
+	return vwpt;
+}
+
+void opengl_pa_viewport_free(struct opengl_pa_viewport_t *vwpt)
+{
+	free(vwpt);
+}
+
+void opengl_pa_viewport_apply(struct opengl_pa_viewport_t *vwpt, struct opengl_pa_vertex_t *vtx)
+{
+	vtx->pos[X_COMP] = 0.5 * vwpt->width * (vtx->pos[X_COMP] + 1) + vwpt->x; 
+	vtx->pos[Y_COMP] = 0.5 * vwpt->height * (vtx->pos[Y_COMP] + 1) + vwpt->y; 
+}
+
+struct opengl_pa_depth_range_t *opengl_pa_depth_range_create()
+{
+	struct opengl_pa_depth_range_t *dprg;
+
+	/* Allocate */
+	dprg = xcalloc(1, sizeof(struct opengl_pa_depth_range_t));
+
+	/* Return */	
+	return dprg;
+}
+
+void opengl_pa_depth_range_free(struct opengl_pa_depth_range_t *dprg)
+{
+	free(dprg);
+}
+
+void opengl_pa_depth_range_apply(struct opengl_pa_depth_range_t *dprg, struct opengl_pa_vertex_t *vtx)
+{
+	vtx->pos[Z_COMP] = 0.5 * (dprg->f - dprg->n) * vtx->pos[Z_COMP] + 0.5 * (dprg->f + dprg->n); 
+}
+
+
 struct opengl_pa_vertex_t *opengl_pa_vertex_create()
 {
 	struct opengl_pa_vertex_t *vtx;
