@@ -150,14 +150,12 @@ section
 	| args_section
 	| text_section
 	{
-		/* Process any tasks still left */
-		si2bin_task_list_process();
+		Si2binTask *task;
 		
-		/* Clean up tasks and symbol table when finished parsing kernel */
-		si2bin_task_list_done();
-
-		/* Set up new tasks and symbol table for next kernel */
-		si2bin_task_list_init();
+		/* Process tasks and reset list */
+		ListForEach(si2bin_yysi2bin->task_list, task, Si2binTask)
+			Si2binTaskProcess(task);
+		ListDeleteObjects(si2bin_yysi2bin->task_list);
 
 		/* Reset symbol table */
 		HashTableDeleteObjects(si2bin_yysi2bin->symbol_table);

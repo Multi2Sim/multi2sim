@@ -33,8 +33,11 @@ struct list_t;
 
 CLASS_BEGIN(Si2bin, Object)
 
-	/* Symbol table */
+	/* Symbol table, elements of type 'Si2binSymbol' */
 	HashTable *symbol_table;
+
+	/* List of tasks, elements of type 'Si2binTask' */
+	List *task_list;
 
 CLASS_END(Si2bin)
 

@@ -539,7 +539,7 @@ void Si2binInstGenerate(Si2binInst *self, Si2bin *si2bin)
 		case si2bin_token_label:
 		{
 			Si2binSymbol *symbol;
-			struct si2bin_task_t *task;
+			Si2binTask *task;
 
 			/* Search symbol in symbol table */
 			assert(arg->type == Si2binArgLabel);
@@ -564,9 +564,9 @@ void Si2binInstGenerate(Si2binInst *self, Si2bin *si2bin)
 			}
 			else
 			{
-				task = si2bin_task_create(si2bin_entry->text_section_buffer
+				task = new(Si2binTask, si2bin_entry->text_section_buffer
 						->offset, symbol);
-				list_add(si2bin_task_list, task);
+				ListAdd(si2bin->task_list, asObject(task));
 			}
 			break;
 		}

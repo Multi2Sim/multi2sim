@@ -21,6 +21,8 @@
 
 #include <lib/class/elf-writer.h>
 #include <lib/class/hash-table.h>
+#include <lib/class/list.h>
+#include <lib/class/string.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
@@ -91,22 +93,23 @@ void Si2binCreate(Si2bin *self)
 {
 	/* Initialize */
 	si2bin_inst_info_init();
-	si2bin_task_list_init();
-
-	/* Symbol table */
 	self->symbol_table = new(HashTable);
+	self->task_list = new(List);
 }
 
 
 void Si2binDestroy(Si2bin *self)
 {
 	/* Finalize */
-	si2bin_task_list_done();
 	si2bin_inst_info_done();
 
 	/* Symbol table */
 	HashTableDeleteObjects(self->symbol_table);
 	delete(self->symbol_table);
+
+	/* List of tasks */
+	ListDeleteObjects(self->task_list);
+	delete(self->task_list);
 }
 
 
@@ -159,16 +162,33 @@ void Si2binCompile(Si2bin *self, struct list_t *source_file_list,
 
 void Si2binDumpSymbolTable(Si2bin *self, FILE *f)
 {
-#if 0
 	Si2binSymbol *symbol;
-	char *name;
+	String *name;
 
 	fprintf(f, "Symbol Table:\n");
-	HASH_TABLE_FOR_EACH(si2bin_symbol_table, name, symbol)
+	HashTableForEach(self->symbol_table, name, String)
 	{
+		symbol = asSi2binSymbol(HashTableGet(self->symbol_table,
+				asObject(name)));
 		fprintf(f, "\t");
 		Si2binSymbolDump(symbol, f);
 		fprintf(f, "\n");
 	}
-#endif
+}
+
+
+void Si2binDumpTaskList(Si2bin *self, FILE *f)
+{
+	Si2binTask *task;
+	int index;
+
+	index = 0;
+	fprintf(f, "Task list:\n");
+	ListForEach(self->task_list, task, Si2binTask)
+	{
+		fprintf(f, "\ttask %d: ", index);
+		Si2binTaskDump(task, f);
+		fprintf(f, "\n");
+		index++;
+	}
 }
