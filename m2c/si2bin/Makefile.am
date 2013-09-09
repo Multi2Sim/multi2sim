@@ -20,9 +20,6 @@ libsi2bin_a_SOURCES = \
 	inner-bin.c \
 	inner-bin.h \
 	\
-	id.c \
-	id.h \
-	\
 	inst.c \
 	inst.h \
 	\
