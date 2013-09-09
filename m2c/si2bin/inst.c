@@ -19,6 +19,7 @@
 
 
 #include <lib/class/elf-writer.h>
+#include <lib/class/hash-table.h>
 #include <lib/class/list.h>
 #include <lib/class/string.h>
 #include <lib/mhandle/mhandle.h>
@@ -240,7 +241,7 @@ void Si2binInstAddComment(Si2binInst *self, char *comment)
 }
 
 
-void Si2binInstGenerate(Si2binInst *self)
+void Si2binInstGenerate(Si2binInst *self, Si2bin *si2bin)
 {
 	SIInstBytes *inst_bytes;
 	SIInstInfo *inst_info;
@@ -537,18 +538,20 @@ void Si2binInstGenerate(Si2binInst *self)
 
 		case si2bin_token_label:
 		{
-			struct si2bin_symbol_t *symbol;
+			Si2binSymbol *symbol;
 			struct si2bin_task_t *task;
 
 			/* Search symbol in symbol table */
 			assert(arg->type == Si2binArgLabel);
-			symbol = hash_table_get(si2bin_symbol_table, arg->value.label.name);
+			symbol = asSi2binSymbol(HashTableGetString(si2bin->symbol_table,
+					arg->value.label.name));
 
 			/* Create symbol if it doesn't exist */
 			if (!symbol)
 			{
-				symbol = si2bin_symbol_create(arg->value.label.name);
-				hash_table_insert(si2bin_symbol_table, symbol->name, symbol);
+				symbol = new(Si2binSymbol, arg->value.label.name);
+				HashTableInsert(si2bin->symbol_table, asObject(symbol->name),
+						asObject(symbol));
 			}
 
 			/* If symbol is defined, resolve label right away. Otherwise,

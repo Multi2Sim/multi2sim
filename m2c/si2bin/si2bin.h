@@ -33,6 +33,9 @@ struct list_t;
 
 CLASS_BEGIN(Si2bin, Object)
 
+	/* Symbol table */
+	HashTable *symbol_table;
+
 CLASS_END(Si2bin)
 
 void Si2binCreate(Si2bin *self);
@@ -41,6 +44,10 @@ void Si2binDestroy(Si2bin *self);
 void Si2binCompile(Si2bin *self,
 		struct list_t *source_file_list,
 		struct list_t *bin_file_list);
+
+void Si2binDumpSymbolTable(Si2bin *self, FILE *f);
+
+
 
 
 /*
@@ -67,10 +74,13 @@ int si2bin_yyparse(void);
 void si2bin_yyerror(const char *s);
 void si2bin_yyerror_fmt(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
 
+/* Variables used by parser */
 extern int si2bin_yylineno;
 extern FILE *si2bin_yyin;
 extern char *si2bin_yytext;
 
+/* Arguments passed to parser as global variables */
+extern Si2bin *si2bin_yysi2bin;
 
 #endif
 

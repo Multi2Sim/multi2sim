@@ -30,6 +30,7 @@
 #include <m2c/si2bin/arg.h>
 #include <m2c/si2bin/inst.h>
 #include <m2c/si2bin/si2bin.h>
+#include <m2c/si2bin/symbol.h>
 #include <lib/class/array.h>
 #include <lib/class/elf-writer.h>
 #include <lib/class/hash-table.h>
@@ -636,6 +637,7 @@ void m2c_init(void)
 	CLASS_REGISTER(Si2bin);
 	CLASS_REGISTER(Si2binArg);
 	CLASS_REGISTER(Si2binInst);
+	CLASS_REGISTER(Si2binSymbol);
 
 	/* Libraries */
 	debug_init();

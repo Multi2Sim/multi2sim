@@ -75,7 +75,7 @@ void Si2binInstAddComment(Si2binInst *self, char *comment);
 
 /* Populate fields 'inst_bytes' and 'size' based on the instruction and the value
  * of its arguments. */
-void Si2binInstGenerate(Si2binInst *self);
+void Si2binInstGenerate(Si2binInst *self, Si2bin *si2bin);
 
 #endif
 

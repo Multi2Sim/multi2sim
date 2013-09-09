@@ -28,6 +28,7 @@
 #include <arch/southern-islands/asm/bin-file.h>
 #include <lib/class/class.h>
 #include <lib/class/elf-writer.h>
+#include <lib/class/hash-table.h>
 #include <lib/class/list.h>
 #include <lib/class/string.h>
 #include <lib/mhandle/mhandle.h>
@@ -49,6 +50,10 @@
 
 
 #define YYERROR_VERBOSE
+
+/* Arguments passed to parser as global variables */
+Si2bin *si2bin_yysi2bin;
+
 
 %}
 
@@ -150,11 +155,12 @@ section
 		
 		/* Clean up tasks and symbol table when finished parsing kernel */
 		si2bin_task_list_done();
-		si2bin_symbol_table_done();
 
 		/* Set up new tasks and symbol table for next kernel */
 		si2bin_task_list_init();
-		si2bin_symbol_table_init();
+
+		/* Reset symbol table */
+		HashTableDeleteObjects(si2bin_yysi2bin->symbol_table);
 	}
 	;
 
@@ -717,7 +723,7 @@ text_stmt
 		Si2binInst *inst = $1;
 
 		/* Generate code */
-		Si2binInstGenerate(inst);
+		Si2binInstGenerate(inst, si2bin_yysi2bin);
 		ELFWriterBufferWrite(si2bin_entry->text_section_buffer, inst->inst_bytes.byte, inst->size);
 		
 		/* Dump Instruction Info */
@@ -731,19 +737,20 @@ label
 	: TOK_ID TOK_COLON
 	{
 		String *id = $1;
-		struct si2bin_symbol_t *symbol;
+		Si2binSymbol *symbol;
 
 		
 		/* Check if symbol exists */
-		symbol = hash_table_get(si2bin_symbol_table, id->text);
+		symbol = asSi2binSymbol(HashTableGet(si2bin_yysi2bin->symbol_table, asObject(id)));
 		if (symbol && symbol->defined)
 			si2bin_yyerror_fmt("multiply defined label: %s", id->text);
 
 		/* Create if it does not exists */
 		if (!symbol)
 		{
-			symbol = si2bin_symbol_create(id->text);
-			hash_table_insert(si2bin_symbol_table, id->text, symbol);
+			symbol = new(Si2binSymbol, id->text);
+			HashTableInsert(si2bin_yysi2bin->symbol_table,
+					asObject(id), asObject(symbol));
 		}
 
 		/* Define symbol */

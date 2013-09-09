@@ -21,6 +21,7 @@
 
 #include <arch/southern-islands/asm/inst.h>
 #include <lib/class/elf-writer.h>
+#include <lib/class/string.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/list.h>
 #include <lib/util/misc.h>
@@ -35,7 +36,7 @@
  * Task Object
  */
 
-struct si2bin_task_t *si2bin_task_create(int offset, struct si2bin_symbol_t *symbol)
+struct si2bin_task_t *si2bin_task_create(int offset, Si2binSymbol *symbol)
 {
 	struct si2bin_task_t *task;
 	
@@ -60,21 +61,21 @@ void si2bin_task_free(struct si2bin_task_t *task)
 void si2bin_task_dump(struct si2bin_task_t *task, FILE *f)
 {
 	fprintf(f, "offset=%d, symbol={", task->offset);
-	si2bin_symbol_dump(task->symbol, f);
+	Si2binSymbolDump(task->symbol, f);
 	fprintf(f, "}");
 }
 
 
 void si2bin_task_process(struct si2bin_task_t *task)
 {
-	struct si2bin_symbol_t *label;
+	Si2binSymbol *label;
 	SIInstBytes *inst;
 
 
 	/* Check whether symbol is resolved */
 	label = task->symbol;
 	if (!label->defined)
-		si2bin_yyerror_fmt("undefined label: %s", label->name);
+		si2bin_yyerror_fmt("undefined label: %s", label->name->text);
 
 	/* Resolve label */
 	assert(IN_RANGE(task->offset, 0, si2bin_entry->text_section_buffer->offset - 4));
