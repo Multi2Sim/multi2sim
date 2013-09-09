@@ -48,7 +48,7 @@ struct si2bin_inst_info_t
 
 	/* List of tokens in format string */
 	struct list_t *str_token_list;  /* Element of type string */
-	struct list_t *token_list;  /* Element of type 'si_token_t' */
+	List *token_list;  /* Elements of type 'Si2binToken' */
 	char *name;  /* Token 0 of this list */
 };
 
