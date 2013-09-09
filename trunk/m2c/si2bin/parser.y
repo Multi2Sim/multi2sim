@@ -61,7 +61,7 @@
 	struct si_label_t *label;
 	List *list;
 	Si2binArg *arg;
-	struct si_arg_t *si_arg;
+	SIArg *si_arg;
 }
 
  
@@ -514,12 +514,12 @@ args_stmt_list
 args_stmt
 	: TOK_ID TOK_ID TOK_DECIMAL val_stmt_list
 	{
-		struct si_arg_t *arg = $4;
+		SIArg *arg = $4;
 		int err;
 
 		
 		/* Set argument name */
-		si_arg_name_set(arg, $2->name);
+		SIArgSetName(arg, $2->name);
 		
 		/* Set arg fields */
 		arg->value.data_type = str_map_string_err(&si_arg_data_type_map, $1->name, &err);
@@ -537,11 +537,11 @@ args_stmt
 	} TOK_NEW_LINE
 	| TOK_ID TOK_OBRA TOK_DECIMAL TOK_CBRA TOK_ID TOK_DECIMAL val_stmt_list
 	{
-		struct si_arg_t *arg = $7;
+		SIArg *arg = $7;
 		int err;
 
 		/* Set argument name */
-		si_arg_name_set(arg, $5->name);
+		SIArgSetName(arg, $5->name);
 		
 		/* Set argument fields */
 		arg->value.data_type = str_map_string_err(&si_arg_data_type_map, $1->name, &err);
@@ -559,11 +559,11 @@ args_stmt
 	} TOK_NEW_LINE
 	| TOK_ID TOK_STAR TOK_ID TOK_DECIMAL ptr_stmt_list
 	{
-		struct si_arg_t *arg = $5;
+		SIArg *arg = $5;
 		int err;
 
 		/* Set new argument name */
-		si_arg_name_set(arg, $3->name);
+		SIArgSetName(arg, $3->name);
 		
 		/* Initialize argument */
 		arg->pointer.num_elems = 1;
@@ -581,11 +581,11 @@ args_stmt
 	} TOK_NEW_LINE
 	| TOK_ID TOK_OBRA TOK_DECIMAL TOK_CBRA TOK_STAR TOK_ID TOK_DECIMAL ptr_stmt_list
 	{
-		struct si_arg_t *arg = $8;
+		SIArg *arg = $8;
 		int err;
 
 		/* Set new argument name */
-		si_arg_name_set(arg, $6->name);
+		SIArgSetName(arg, $6->name);
 		
 		/* Initialize argument */
 		arg->pointer.num_elems = $3;
@@ -608,16 +608,16 @@ args_stmt
 val_stmt_list
 	:
 	{
-		struct si_arg_t *arg;
+		SIArg *arg;
 
 		/* Create an argument with defaults*/
-		arg = si_arg_create(si_arg_value, "arg");
+		arg = new(SIArg, SIArgTypeValue, "arg");
 
 		$$ = arg;
 	}
 	| val_stmt_list TOK_CONST
 	{
-		struct si_arg_t *arg = $1;
+		SIArg *arg = $1;
 
 		/* set constarg field to true */
 		arg->constarg = 1;
@@ -630,19 +630,19 @@ val_stmt_list
 ptr_stmt_list
 	:
 	{
-		struct si_arg_t *arg;
+		SIArg *arg;
 
 		/* Create an argument with defaults*/
-		arg = si_arg_create(si_arg_pointer, "arg");
-		arg->pointer.scope = si_arg_uav;
+		arg = new(SIArg, SIArgTypePointer, "arg");
+		arg->pointer.scope = SIArgUAV;
 		arg->pointer.buffer_num = 12;
-		arg->pointer.access_type = si_arg_read_write;
+		arg->pointer.access_type = SIArgReadWrite;
 		
 		$$ = arg;
 	}
 	| ptr_stmt_list TOK_ID
 	{
-		struct si_arg_t *arg = $1;
+		SIArg *arg = $1;
 		struct si2bin_id_t *id = $2;
 		int err;
 
@@ -657,11 +657,11 @@ ptr_stmt_list
 	}
 	| ptr_stmt_list TOK_UAV
 	{
-		struct si_arg_t *arg = $1;
+		SIArg *arg = $1;
 		struct si2bin_id_t *id = $2;
 	
 		/* Obtain UAV index */
-		arg->pointer.scope = si_arg_uav;
+		arg->pointer.scope = SIArgUAV;
 		arg->pointer.buffer_num = atoi(id->name + 3);
 
 		/* Free ID and return argument */
@@ -670,10 +670,10 @@ ptr_stmt_list
 	}
 	| ptr_stmt_list TOK_HL
 	{
-		struct si_arg_t *arg = $1;
+		SIArg *arg = $1;
 	
 		/* Set scope to hl */
-		arg->pointer.scope = si_arg_hw_local;
+		arg->pointer.scope = SIArgHwLocal;
 		arg->pointer.buffer_num = 1;
 
 		/* Return argument */
@@ -681,7 +681,7 @@ ptr_stmt_list
 	}
 	| ptr_stmt_list TOK_CONST
 	{
-		struct si_arg_t *arg = $1;
+		SIArg *arg = $1;
 	
 		/* set constarg field to true */
 		arg->constarg = 1;

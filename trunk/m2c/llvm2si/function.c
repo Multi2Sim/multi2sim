@@ -41,7 +41,7 @@
  */
 
 /* Return a Southern Islands argument type from an LLVM type. */
-static enum si_arg_data_type_t Llvm2siFunctionArgGetDataType(LLVMTypeRef lltype)
+static SIArgDataType Llvm2siFunctionArgGetDataType(LLVMTypeRef lltype)
 {
 	LLVMTypeKind lltype_kind;
 	int bit_width;
@@ -52,30 +52,30 @@ static enum si_arg_data_type_t Llvm2siFunctionArgGetDataType(LLVMTypeRef lltype)
 		bit_width = LLVMGetIntTypeWidth(lltype);
 		switch (bit_width)
 		{
-		case 1: return si_arg_i1;
-		case 8: return si_arg_i8;
-		case 16: return si_arg_i16;
-		case 32: return si_arg_i32;
-		case 64: return si_arg_i64;
+		case 1: return SIArgInt1;
+		case 8: return SIArgInt8;
+		case 16: return SIArgInt16;
+		case 32: return SIArgInt32;
+		case 64: return SIArgInt64;
 
 		default:
 			fatal("%s: invalid argument bit width (%d)",
 				__FUNCTION__, bit_width);
-			return si_arg_data_type_invalid;
+			return SIArgDataTypeInvalid;
 		}
 	}
 	else
 	{
 		fatal("%s: unsupported argument type kind (%d)",
 				__FUNCTION__, lltype_kind);
-		return si_arg_data_type_invalid;
+		return SIArgDataTypeInvalid;
 	}
 }
 
 
 void Llvm2siFunctionArgCreate(Llvm2siFunctionArg *self, LLVMValueRef llarg)
 {
-	struct si_arg_t *si_arg;
+	SIArg *si_arg;
 
 	LLVMTypeRef lltype;
 	LLVMTypeKind lltype_kind;
@@ -93,13 +93,13 @@ void Llvm2siFunctionArgCreate(Llvm2siFunctionArg *self, LLVMValueRef llarg)
 	if (lltype_kind == LLVMPointerTypeKind)
 	{
 		lltype = LLVMGetElementType(lltype);
-		si_arg = si_arg_create(si_arg_pointer, name);
-		si_arg->pointer.scope = si_arg_uav;
+		si_arg = new(SIArg, SIArgTypePointer, name);
+		si_arg->pointer.scope = SIArgUAV;
 		si_arg->pointer.data_type = Llvm2siFunctionArgGetDataType(lltype);
 	}
 	else
 	{
-		si_arg = si_arg_create(si_arg_value, name);
+		si_arg = new(SIArg, SIArgTypeValue, name);
 		si_arg->value.data_type = Llvm2siFunctionArgGetDataType(lltype);
 	}
 
@@ -115,7 +115,7 @@ void Llvm2siFunctionArgDestroy(Llvm2siFunctionArg *self)
 	assert(self->name);
 	assert(self->si_arg);
 	self->name = str_free(self->name);
-	si_arg_free(self->si_arg);
+	delete(self->si_arg);
 }
 
 
@@ -123,21 +123,21 @@ void Llvm2siFunctionArgDestroy(Llvm2siFunctionArg *self)
 void Llvm2siFunctionArgDump(Object *self, FILE *f)
 {
 	Llvm2siFunctionArg *arg = asLlvm2siFunctionArg(self);
-	struct si_arg_t *si_arg = arg->si_arg;
+	SIArg *si_arg = arg->si_arg;
 
 	switch (si_arg->type)
 	{
-	case si_arg_pointer:
+	case SIArgTypePointer:
 
 		switch (si_arg->pointer.scope)
 		{
 
-		case si_arg_uav:
+		case SIArgUAV:
 			
 			/* Type, name, offset, UAV */
 			fprintf(f, "\t%s* %s %d uav%d\n",
 				str_map_value(&si_arg_data_type_map, si_arg->pointer.data_type),
-				si_arg->name, arg->index * 16, arg->uav_index + 10);
+				si_arg->name->text, arg->index * 16, arg->uav_index + 10);
 			break;
 
 		default:
@@ -278,8 +278,8 @@ static void Llvm2siFunctionAddArg(Llvm2siFunction *self,
 
 	/* If argument is an object in global memory, create a UAV
 	 * associated with it. */
-	if (arg->si_arg->type == si_arg_pointer &&
-			arg->si_arg->pointer.scope == si_arg_uav)
+	if (arg->si_arg->type == SIArgTypePointer &&
+			arg->si_arg->pointer.scope == SIArgUAV)
 	{
 		/* New UAV */
 		uav = new(Llvm2siFunctionUAV);

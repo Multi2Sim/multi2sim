@@ -19,6 +19,7 @@
 
 
 #include <arch/southern-islands/asm/arg.h>
+#include <lib/class/list.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/list.h>
 
@@ -33,33 +34,24 @@ struct si2bin_metadata_t *si2bin_metadata_create(void)
 {
        struct si2bin_metadata_t *metadata;
 
+       /* Initialize */
        metadata = xcalloc(1, sizeof(struct si2bin_metadata_t));
-
-       metadata->arg_list = list_create();
+       metadata->arg_list = new(List);
        
 	/* Return */
        return metadata;
 }
 
+
 void si2bin_metadata_free(struct si2bin_metadata_t *metadata)
 {
-	struct si_arg_t *arg;
-	int i;
-	
-	LIST_FOR_EACH(metadata->arg_list, i)
-	{
-		arg = list_get(metadata->arg_list, i);
-		si_arg_free(arg);
-	}
-
-	list_free(metadata->arg_list);
-
+	ListDeleteObjects(metadata->arg_list);
+	delete(metadata->arg_list);
 	free(metadata);
 }
 
-void si2bin_metadata_add_arg(struct si2bin_metadata_t *metadata, struct si_arg_t *arg)
+
+void si2bin_metadata_add_arg(struct si2bin_metadata_t *metadata, SIArg *arg)
 {
-	list_add(metadata->arg_list, arg);
+	ListAdd(metadata->arg_list, asObject(arg));
 }
-
-

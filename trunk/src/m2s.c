@@ -57,6 +57,7 @@
 #include <arch/mips/emu/context.h>
 #include <arch/mips/emu/isa.h>
 #include <arch/mips/timing/cpu.h>
+#include <arch/southern-islands/asm/arg.h>
 #include <arch/southern-islands/asm/asm.h>
 #include <arch/southern-islands/asm/inst.h>
 #include <arch/southern-islands/emu/emu.h>
@@ -1965,6 +1966,7 @@ static void m2s_init(void)
 	CLASS_REGISTER(X86Thread);
 
 	CLASS_REGISTER(SIAsm);
+	CLASS_REGISTER(SIArg);
 	CLASS_REGISTER(SIInst);
 
 	CLASS_REGISTER(SIEmu);

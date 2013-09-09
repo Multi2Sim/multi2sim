@@ -78,6 +78,7 @@ CLASS(Emu)
 CLASS(Timing)
 
 CLASS(SIAsm)
+CLASS(SIArg)
 CLASS(SIInst)
 
 CLASS(SIEmu)

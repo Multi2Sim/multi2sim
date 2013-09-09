@@ -18,6 +18,7 @@
  */
 
 
+#include <lib/class/list.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
@@ -39,7 +40,7 @@ void SINDRangeCreate(SINDRange *self, SIEmu *emu)
 	self->id = emu->ndrange_count++;
 	self->address_space_index = emu->address_space_index++;
 
-	self->arg_list = list_create();
+	self->arg_list = new(List);
 
 	self->waiting_work_groups = list_create();
 	self->running_work_groups = list_create();
@@ -63,7 +64,7 @@ void SINDRangeDestroy(SINDRange *self)
 
 	/* Free argument list (do not free the arguments themselves,
 	 * they can still be used in later ND-Ranges) */
-	list_free(self->arg_list);
+	delete(self->arg_list);
 }
 
 

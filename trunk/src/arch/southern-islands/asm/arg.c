@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <lib/class/string.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/string.h>
@@ -37,9 +38,9 @@ struct str_map_t si_arg_access_type_map =
 {
 	3,
 	{
-		{ "RO", si_arg_read_only },
-		{ "WO", si_arg_write_only },
-		{ "RW", si_arg_read_write }
+		{ "RO", SIArgReadOnly },
+		{ "WO", SIArgWriteOnly },
+		{ "RW", SIArgReadWrite }
 	}
 };
 
@@ -48,22 +49,22 @@ struct str_map_t si_arg_data_type_map =
 {
 	16,
 	{
-		{ "i1", si_arg_i1 },
-		{ "i8", si_arg_i8 },
-		{ "i16", si_arg_i16 },
-		{ "i32", si_arg_i32 },
-		{ "i64", si_arg_i64 },
-		{ "u1", si_arg_u1 },
-		{ "u8", si_arg_u8 },
-		{ "u16", si_arg_u16 },
-		{ "u32", si_arg_u32 },
-		{ "u64", si_arg_u64 },
-		{ "float", si_arg_float },
-		{ "double", si_arg_double },
-		{ "struct", si_arg_struct },
-		{ "union", si_arg_union },
-		{ "event", si_arg_event },
-		{ "opaque", si_arg_opaque }
+		{ "i1", SIArgInt1 },
+		{ "i8", SIArgInt8 },
+		{ "i16", SIArgInt16 },
+		{ "i32", SIArgInt32 },
+		{ "i64", SIArgInt64 },
+		{ "u1", SIArgUInt1 },
+		{ "u8", SIArgUInt8 },
+		{ "u16", SIArgUInt16 },
+		{ "u32", SIArgUInt32 },
+		{ "u64", SIArgUInt64 },
+		{ "float", SIArgFloat },
+		{ "double", SIArgDouble },
+		{ "struct", SIArgStruct },
+		{ "union", SIArgUnion },
+		{ "event", SIArgEvent },
+		{ "opaque", SIArgOpaque }
 	}
 };
 
@@ -72,16 +73,16 @@ struct str_map_t si_arg_scope_map =
 {
 	10,
 	{
-		{ "g", si_arg_global },
-		{ "p", si_arg_emu_private },
-		{ "l", si_arg_emu_local },
-		{ "uav", si_arg_uav },
-		{ "c", si_arg_emu_constant },
-		{ "r", si_arg_emu_gds },
-		{ "hl", si_arg_hw_local },
-		{ "hp", si_arg_hw_private },
-		{ "hc", si_arg_hw_constant },
-		{ "hr", si_arg_hw_gds }
+		{ "g", SIArgGlobal },
+		{ "p", SIArgEmuPrivate },
+		{ "l", SIArgEmuLocal },
+		{ "uav", SIArgUAV },
+		{ "c", SIArgEmuConstant },
+		{ "r", SIArgEmuGDS },
+		{ "hl", SIArgHwLocal },
+		{ "hp", SIArgHwPrivate },
+		{ "hc", SIArgHwConstant },
+		{ "hr", SIArgHwGDS }
 	}
 };
 
@@ -91,48 +92,41 @@ struct str_map_t si_arg_reflection_map =
 {
 	14,
 	{
-		{ "char", si_arg_i8 },
-		{ "short", si_arg_i16 },
-		{ "int", si_arg_i32 },
-		{ "long", si_arg_i64 },
-		{ "uchar", si_arg_u8 },
-		{ "ushort", si_arg_u16 },
-		{ "uint", si_arg_u32 },
-		{ "ulong", si_arg_u64 },
-		{ "float", si_arg_float },
-		{ "double", si_arg_double },
-		{ "struct", si_arg_struct },
-		{ "union", si_arg_union },
-		{ "event", si_arg_event },
-		{ "opaque", si_arg_opaque }
+		{ "char", SIArgInt8 },
+		{ "short", SIArgInt16 },
+		{ "int", SIArgInt32 },
+		{ "long", SIArgInt64 },
+		{ "uchar", SIArgUInt8 },
+		{ "ushort", SIArgUInt16 },
+		{ "uint", SIArgUInt32 },
+		{ "ulong", SIArgUInt64 },
+		{ "float", SIArgFloat },
+		{ "double", SIArgDouble },
+		{ "struct", SIArgStruct },
+		{ "union", SIArgUnion },
+		{ "event", SIArgEvent },
+		{ "opaque", SIArgOpaque }
 	}
 };
 
 
-struct si_arg_t *si_arg_create(enum si_arg_type_t type,
-		char *name)
+void SIArgCreate(SIArg *self, SIArgType type, char *name)
 {
-	struct si_arg_t *arg;
-
 	/* Initialize */
-	arg = xcalloc(1, sizeof(struct si_arg_t));
-	arg->type = type;
-	arg->name = xstrdup(name);
-
-	/* Return */
-	return arg;
+	self->type = type;
+	self->name = new(String, name);
 }
 
 
-void si_arg_free(struct si_arg_t *arg)
+void SIArgDestroy(SIArg *self)
 {
 	/* Specific fields per type */
-	switch (arg->type)
+	switch (self->type)
 	{
-	case si_arg_value:
+	case SIArgTypeValue:
 
-		if (arg->value.value_ptr)
-			free(arg->value.value_ptr);
+		if (self->value.value_ptr)
+			free(self->value.value_ptr);
 		break;
 
 	default:
@@ -140,47 +134,45 @@ void si_arg_free(struct si_arg_t *arg)
 	}
 
 	/* Rest */
-	free(arg->name);
-	free(arg);
+	delete(self->name);
 }
 
 /* Set name if incorrect name is used in constructor */
-void si_arg_name_set(struct si_arg_t *arg, char *name)
+void SIArgSetName(SIArg *self, char *name)
 {
-	free(arg->name);
-	arg->name = xstrdup(name);
+	StringSet(self->name, "%s", name);
 }
 
 
 /* Infer argument size from its data type */
-int si_arg_get_data_size(enum si_arg_data_type_t data_type)
+int SIArgGetDataSize(SIArgDataType data_type)
 {
 	switch (data_type)
 	{
 
-	case si_arg_i8:
-	case si_arg_u8:
-	case si_arg_struct:
-	case si_arg_union:
-	case si_arg_event:
-	case si_arg_opaque:
+	case SIArgInt8:
+	case SIArgUInt8:
+	case SIArgStruct:
+	case SIArgUnion:
+	case SIArgEvent:
+	case SIArgOpaque:
 
 		return 1;
 
-	case si_arg_i16:
-	case si_arg_u16:
+	case SIArgInt16:
+	case SIArgUInt16:
 
 		return 2;
 
-	case si_arg_i32:
-	case si_arg_u32:
-	case si_arg_float:
+	case SIArgInt32:
+	case SIArgUInt32:
+	case SIArgFloat:
 
 		return 4;
 
-	case si_arg_i64:
-	case si_arg_u64:
-	case si_arg_double:
+	case SIArgInt64:
+	case SIArgUInt64:
+	case SIArgDouble:
 
 		return 8;
 
