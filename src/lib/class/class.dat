@@ -83,10 +83,10 @@ CLASS(SIInst)
 
 CLASS(SIEmu)
 CLASS(SINDRange)
+CLASS(SISX)
 CLASS(SIWorkGroup)
 CLASS(SIWorkItem)
 CLASS(SIWavefront)
-CLASS(SISX)
 
 CLASS(SIGpu)
 CLASS(SIComputeUnit)

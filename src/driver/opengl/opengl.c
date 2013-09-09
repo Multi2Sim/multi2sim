@@ -1169,7 +1169,8 @@ static int opengl_abi_si_viewport_impl(X86Context *ctx)
 	opengl_debug("\tViewport x = %d, y = %d, width = %d, height = %d\n", 
 		x, y, width, height);
 
-	/**/
+	/* FIXME: Set Viewport */
 
+	/* Return */
 	return 0;
 }
