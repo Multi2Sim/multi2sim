@@ -146,4 +146,5 @@ CLASS(Si2binArg)
 CLASS(Si2binInst)
 CLASS(Si2binSymbol)
 CLASS(Si2binTask)
+CLASS(Si2binToken)
 

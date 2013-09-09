@@ -27,96 +27,92 @@
 
 struct str_map_t si2bin_token_map =
 {
-	si2bin_token_count,
+	Si2binTokenCount,
 	{
-		{ "<invalid>", si2bin_token_invalid },
+		{ "<invalid>", Si2binTokenInvalid },
 
-		{ "\%64_sdst", si2bin_token_64_sdst },
-		{ "\%64_ssrc0", si2bin_token_64_ssrc0 },
-		{ "\%64_ssrc1", si2bin_token_64_ssrc1 },
-		{ "\%64_src0", si2bin_token_64_src0 },
-		{ "\%64_src1", si2bin_token_64_src1 },
-		{ "\%64_src2", si2bin_token_64_src2 },
-		{ "\%64_svdst", si2bin_token_64_svdst },
-		{ "\%64_vdst", si2bin_token_64_vdst },
-		{ "\%label", si2bin_token_label },
-		{ "\%mt_maddr", si2bin_token_mt_maddr },
-		{ "\%mt_series_vdata", si2bin_token_mt_series_vdata },
-		{ "\%offset", si2bin_token_offset },
-		{ "\%sdst", si2bin_token_sdst },
-		{ "\%series_sbase", si2bin_token_series_sbase },
-		{"\%series_sdst", si2bin_token_series_sdst },
-		{ "\%series_srsrc", si2bin_token_series_srsrc },
-		{ "\%simm16", si2bin_token_simm16 },
-		{ "\%smrd_sdst", si2bin_token_smrd_sdst },
-		{ "\%src0", si2bin_token_src0 },
-		{ "\%src1", si2bin_token_src1 },
-		{ "\%src2", si2bin_token_src2 },
-		{ "\%ssrc0", si2bin_token_ssrc0 },
-		{ "\%ssrc1", si2bin_token_ssrc1 },
-		{ "\%vaddr", si2bin_token_vaddr },
-		{ "\%svdst", si2bin_token_svdst },
-		{ "\%vdst", si2bin_token_vdst },
-		{ "\%vop3_64_svdst", si2bin_token_vop3_64_svdst },
-		{ "\%vop3_src0", si2bin_token_vop3_src0 },
-		{ "\%vop3_src1", si2bin_token_vop3_src1 },
-		{ "\%vop3_src2", si2bin_token_vop3_src2 },
-		{ "\%vop3_64_src0", si2bin_token_vop3_64_src0 },
-		{ "\%vop3_64_src1", si2bin_token_vop3_64_src1 },
-		{ "\%vop3_64_src2", si2bin_token_vop3_64_src2 },
-		{ "\%vop3_64_sdst", si2bin_token_vop3_64_sdst },
-		{ "\%vop3_vdst", si2bin_token_vop3_vdst },
-		{ "\%vop3_64_vdst", si2bin_token_vop3_64_vdst },
-		{ "\%vsrc0", si2bin_token_vsrc0 },
-		{ "\%vsrc1", si2bin_token_vsrc1 },
-		{ "\%wait_cnt", si2bin_token_wait_cnt },
-		{ "\%addr", si2bin_token_addr },
-		{ "\%data0", si2bin_token_data0 },
-		{ "\%ds_vdst", si2bin_token_ds_vdst },
-		{ "vcc", si2bin_token_vcc }
+		{ "\%64_sdst", Si2binToken64Sdst },
+		{ "\%64_ssrc0", Si2binToken64Ssrc0 },
+		{ "\%64_ssrc1", Si2binToken64Ssrc1 },
+		{ "\%64_src0", Si2binToken64Src0 },
+		{ "\%64_src1", Si2binToken64Src1 },
+		{ "\%64_src2", Si2binToken64Src2 },
+		{ "\%64_svdst", Si2binToken64Svdst },
+		{ "\%64_vdst", Si2binToken64Vdst },
+		{ "\%label", Si2binTokenLabel },
+		{ "\%mt_maddr", Si2binTokenMtMaddr },
+		{ "\%mt_series_vdata", Si2binTokenMtSeriesVdata },
+		{ "\%offset", Si2binTokenOffset },
+		{ "\%sdst", Si2binTokenSdst },
+		{ "\%series_sbase", Si2binTokenSeriesSbase },
+		{"\%series_sdst", Si2binTokenSeriesSdst },
+		{ "\%series_srsrc", Si2binTokenSeriesSrsrc },
+		{ "\%simm16", Si2binTokenSimm16 },
+		{ "\%smrd_sdst", Si2binTokenSmrdSdst },
+		{ "\%src0", Si2binTokenSrc0 },
+		{ "\%src1", Si2binTokenSrc1 },
+		{ "\%src2", Si2binTokenSrc2 },
+		{ "\%ssrc0", Si2binTokenSsrc0 },
+		{ "\%ssrc1", Si2binTokenSsrc1 },
+		{ "\%vaddr", Si2binTokenVaddr },
+		{ "\%svdst", Si2binTokenSvdst },
+		{ "\%vdst", Si2binTokenVdst },
+		{ "\%vop3_64_svdst", Si2binTokenVop364Svdst },
+		{ "\%vop3_src0", Si2binTokenVop3Src0 },
+		{ "\%vop3_src1", Si2binTokenVop3Src1 },
+		{ "\%vop3_src2", Si2binTokenVop3Src2 },
+		{ "\%vop3_64_src0", Si2binTokenVop364Src0 },
+		{ "\%vop3_64_src1", Si2binTokenVop364Src1 },
+		{ "\%vop3_64_src2", Si2binTokenVop364Src2 },
+		{ "\%vop3_64_sdst", Si2binTokenVop364Sdst },
+		{ "\%vop3_vdst", Si2binTokenVop3Vdst },
+		{ "\%vop3_64_vdst", Si2binTokenVop364Vdst },
+		{ "\%vsrc0", Si2binTokenVsrc0 },
+		{ "\%vsrc1", Si2binTokenVsrc1 },
+		{ "\%wait_cnt", Si2binTokenWaitCnt },
+		{ "\%addr", Si2binTokenTokenAddr },
+		{ "\%data0", Si2binTokenData0 },
+		{ "\%ds_vdst", Si2binTokenDsVdst },
+		{ "vcc", Si2binTokenVcc }
 	}
 };
 
 
-struct si2bin_token_t *si2bin_token_create(enum si2bin_token_type_t type)
+void Si2binTokenCreate(Si2binToken *self, Si2binTokenType type)
 {
-	struct si2bin_token_t *token;
-
-	token = xcalloc(1, sizeof(struct si2bin_token_t));
-	token->type = type;
-	return token;
+	/* Initialize */
+	self->type = type;
 }
 
 
-void si2bin_token_free(struct si2bin_token_t *token)
+void Si2binTokenDestroy(Si2binToken *self)
 {
-	free(token);
 }
 
 
-int si2bin_token_is_arg_allowed(struct si2bin_token_t *token, Si2binArg *arg)
+int Si2binTokenIsArgAllowed(Si2binToken *self, Si2binArg *arg)
 {
 	/* FIXME
 	 * Some tokens that currently allow for literal and literal_float
 	 * actually should change to literal_reduced and literal_float_reduced.
 	 * Some others should extend it to literal_reduced and
 	 * literal_float_reduced (such as src0) */
-	switch (token->type)
+	switch (self->type)
 	{
 
-	case si2bin_token_simm16:
+	case Si2binTokenSimm16:
 		return arg->type == Si2binArgLiteral ||
 			arg->type == Si2binArgLiteralReduced ||
 			arg->type == Si2binArgLiteralFloat ||
 			arg->type == Si2binArgLiteralFloatReduced;
 		/*TODO - Check if this is correct */
 
-	case si2bin_token_64_sdst:
+	case Si2binToken64Sdst:
 		return arg->type == Si2binArgScalarRegisterSeries ||
 				arg->type == Si2binArgSpecialRegister;
 
-	case si2bin_token_64_ssrc0:
-	case si2bin_token_64_ssrc1:
+	case Si2binToken64Ssrc0:
+	case Si2binToken64Ssrc1:
 		return arg->type == Si2binArgScalarRegisterSeries ||
 				arg->type == Si2binArgLiteral ||
 				arg->type == Si2binArgLiteralReduced ||
@@ -124,23 +120,23 @@ int si2bin_token_is_arg_allowed(struct si2bin_token_t *token, Si2binArg *arg)
 				arg->type == Si2binArgLiteralFloatReduced ||
 				arg->type == Si2binArgSpecialRegister;
 	
-	case si2bin_token_label:
+	case Si2binTokenLabel:
 		return arg->type == Si2binArgLabel;
 
-	case si2bin_token_mt_maddr:
+	case Si2binTokenMtMaddr:
 		return arg->type == Si2binArgMaddr;
 
-	case si2bin_token_mt_series_vdata:
+	case Si2binTokenMtSeriesVdata:
 		return arg->type == Si2binArgVectorRegister ||
 			arg->type == Si2binArgVectorRegisterSeries;
 
-	case si2bin_token_offset:
+	case Si2binTokenOffset:
 		return arg->type == Si2binArgLiteral ||
 			arg->type == Si2binArgLiteralReduced ||
 			arg->type == Si2binArgScalarRegister;
 
-	case si2bin_token_ssrc0:
-	case si2bin_token_ssrc1:
+	case Si2binTokenSsrc0:
+	case Si2binTokenSsrc1:
 		return arg->type == Si2binArgLiteral ||
 				arg->type == Si2binArgLiteralReduced ||
 				arg->type == Si2binArgLiteralFloat ||
@@ -148,17 +144,17 @@ int si2bin_token_is_arg_allowed(struct si2bin_token_t *token, Si2binArg *arg)
 				arg->type == Si2binArgScalarRegister ||
 				arg->type == Si2binArgSpecialRegister;
 
-	case si2bin_token_series_sdst:
-	case si2bin_token_series_sbase:
-	case si2bin_token_series_srsrc:
+	case Si2binTokenSeriesSdst:
+	case Si2binTokenSeriesSbase:
+	case Si2binTokenSeriesSrsrc:
 		return arg->type == Si2binArgScalarRegisterSeries;
 
-	case si2bin_token_sdst:
-	case si2bin_token_smrd_sdst:
+	case Si2binTokenSdst:
+	case Si2binTokenSmrdSdst:
 		return arg->type == Si2binArgScalarRegister ||
 			arg->type == Si2binArgMemRegister;
 
-	case si2bin_token_src0:
+	case Si2binTokenSrc0:
 
 		/* Token 'src' does not accept 'abs' of 'neg' function */
 		if (arg->abs)
@@ -173,26 +169,26 @@ int si2bin_token_is_arg_allowed(struct si2bin_token_t *token, Si2binArg *arg)
 			arg->type == Si2binArgVectorRegister ||
 			arg->type == Si2binArgScalarRegister;
 
-	case si2bin_token_vaddr:
+	case Si2binTokenVaddr:
 		return arg->type == Si2binArgVectorRegisterSeries ||
 			arg->type == Si2binArgVectorRegister;
 
-	case si2bin_token_vdst:
-	case si2bin_token_vop3_vdst:
-	case si2bin_token_vsrc0:
+	case Si2binTokenVdst:
+	case Si2binTokenVop3Vdst:
+	case Si2binTokenVsrc0:
 		return arg->type == Si2binArgVectorRegister;
 	
-	case si2bin_token_64_src0:
+	case Si2binToken64Src0:
 		return arg->type == Si2binArgVectorRegisterSeries ||
 			arg->type == Si2binArgScalarRegisterSeries;
 
-	case si2bin_token_64_vdst:
+	case Si2binToken64Vdst:
 		return arg->type == Si2binArgVectorRegisterSeries;
 
-	case si2bin_token_svdst:
+	case Si2binTokenSvdst:
 		return arg->type == Si2binArgScalarRegister;
 
-	case si2bin_token_vsrc1:
+	case Si2binTokenVsrc1:
 		
 		/* Token 'src' does not accept 'abs' of 'neg' function */
 		if (arg->abs)
@@ -202,48 +198,47 @@ int si2bin_token_is_arg_allowed(struct si2bin_token_t *token, Si2binArg *arg)
 		
 		return arg->type == Si2binArgVectorRegister;
 
-	case si2bin_token_vop3_64_svdst:
+	case Si2binTokenVop364Svdst:
 		return arg->type == Si2binArgScalarRegisterSeries ||
 			arg->type == Si2binArgSpecialRegister;
 
-	case si2bin_token_vop3_src0:
-	case si2bin_token_vop3_src1:
-	case si2bin_token_vop3_src2:
+	case Si2binTokenVop3Src0:
+	case Si2binTokenVop3Src1:
+	case Si2binTokenVop3Src2:
 		return arg->type == Si2binArgLiteralReduced ||
 			arg->type == Si2binArgLiteralFloatReduced ||
 			arg->type == Si2binArgVectorRegister ||
 			arg->type == Si2binArgScalarRegister;
 	
-	case si2bin_token_vop3_64_src0:
-	case si2bin_token_vop3_64_src1:
-	case si2bin_token_vop3_64_src2:
+	case Si2binTokenVop364Src0:
+	case Si2binTokenVop364Src1:
+	case Si2binTokenVop364Src2:
 		return arg->type == Si2binArgScalarRegisterSeries ||
 			arg->type == Si2binArgVectorRegisterSeries ||
 			arg->type == Si2binArgSpecialRegister;
 	
-	case si2bin_token_vop3_64_vdst:
+	case Si2binTokenVop364Vdst:
 		return arg->type == Si2binArgVectorRegisterSeries;
 	
-	case si2bin_token_vop3_64_sdst:
+	case Si2binTokenVop364Sdst:
 		return arg->type == Si2binArgSpecialRegister;
 	
-	case si2bin_token_vcc:
+	case Si2binTokenVcc:
 		return arg->type == Si2binArgSpecialRegister &&
 			arg->value.special_register.reg == si_inst_special_reg_vcc;
 	
-	case si2bin_token_wait_cnt:
+	case Si2binTokenWaitCnt:
 		return arg->type == Si2binArgWaitcnt;
 	
-	case si2bin_token_addr:
-	case si2bin_token_data0:
-	case si2bin_token_ds_vdst:
+	case Si2binTokenTokenAddr:
+	case Si2binTokenData0:
+	case Si2binTokenDsVdst:
 		return arg->type == Si2binArgVectorRegister;
 	
 
 	default:
 		si2bin_yyerror_fmt("%s: unsupported token (code = %d)",
-				__FUNCTION__, token->type);
+				__FUNCTION__, self->type);
 		return 0;
 	}
 }
-

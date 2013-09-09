@@ -20,68 +20,86 @@
 #ifndef M2C_SI2BIN_TOKEN_H
 #define M2C_SI2BIN_TOKEN_H
 
-enum si2bin_token_type_t
+#include <lib/class/class.h>
+
+
+/*
+ * Class 'Si2binToken'
+ */
+
+typedef enum
 {
-	si2bin_token_invalid = 0,
+	Si2binTokenInvalid = 0,
 
-	si2bin_token_64_sdst,
-	si2bin_token_64_ssrc0,
-	si2bin_token_64_ssrc1,
-	si2bin_token_64_src0,
-	si2bin_token_64_src1,
-	si2bin_token_64_src2,
-	si2bin_token_64_svdst,
-	si2bin_token_64_vdst,
-	si2bin_token_label,
-	si2bin_token_mt_maddr,
-	si2bin_token_mt_series_vdata,
-	si2bin_token_offset,
-	si2bin_token_sdst,
-	si2bin_token_series_sbase,
-	si2bin_token_series_sdst,
-	si2bin_token_series_srsrc,
-	si2bin_token_simm16,
-	si2bin_token_smrd_sdst,
-	si2bin_token_src0,
-	si2bin_token_src1,
-	si2bin_token_src2,
-	si2bin_token_ssrc0,
-	si2bin_token_ssrc1,
-	si2bin_token_vaddr,
-	si2bin_token_vcc,
-	si2bin_token_vdst,
-	si2bin_token_svdst,
-	si2bin_token_vop3_64_svdst,
-	si2bin_token_vop3_src0,
-	si2bin_token_vop3_src1,
-	si2bin_token_vop3_src2,
-	si2bin_token_vop3_64_src0,
-	si2bin_token_vop3_64_src1,
-	si2bin_token_vop3_64_src2,
-	si2bin_token_vop3_64_sdst,
-	si2bin_token_vop3_vdst,
-	si2bin_token_vop3_64_vdst,
-	si2bin_token_vsrc0,
-	si2bin_token_vsrc1,
-	si2bin_token_wait_cnt,
-	si2bin_token_addr,
-	si2bin_token_data0,
-	si2bin_token_ds_vdst,
+	Si2binToken64Sdst,
+	Si2binToken64Ssrc0,
+	Si2binToken64Ssrc1,
+	Si2binToken64Src0,
+	Si2binToken64Src1,
+	Si2binToken64Src2,
+	Si2binToken64Svdst,
+	Si2binToken64Vdst,
+	Si2binTokenLabel,
+	Si2binTokenMtMaddr,
+	Si2binTokenMtSeriesVdata,
+	Si2binTokenOffset,
+	Si2binTokenSdst,
+	Si2binTokenSeriesSbase,
+	Si2binTokenSeriesSdst,
+	Si2binTokenSeriesSrsrc,
+	Si2binTokenSimm16,
+	Si2binTokenSmrdSdst,
+	Si2binTokenSrc0,
+	Si2binTokenSrc1,
+	Si2binTokenSrc2,
+	Si2binTokenSsrc0,
+	Si2binTokenSsrc1,
+	Si2binTokenVaddr,
+	Si2binTokenVcc,
+	Si2binTokenVdst,
+	Si2binTokenSvdst,
+	Si2binTokenVop364Svdst,
+	Si2binTokenVop3Src0,
+	Si2binTokenVop3Src1,
+	Si2binTokenVop3Src2,
+	Si2binTokenVop364Src0,
+	Si2binTokenVop364Src1,
+	Si2binTokenVop364Src2,
+	Si2binTokenVop364Sdst,
+	Si2binTokenVop3Vdst,
+	Si2binTokenVop364Vdst,
+	Si2binTokenVsrc0,
+	Si2binTokenVsrc1,
+	Si2binTokenWaitCnt,
+	Si2binTokenTokenAddr,
+	Si2binTokenData0,
+	Si2binTokenDsVdst,
 
-	si2bin_token_count
-};
+	Si2binTokenCount
+} Si2binTokenType;
+
+
+CLASS_BEGIN(Si2binToken, Object)
+
+	Si2binTokenType type;
+
+CLASS_END(Si2binToken)
+
+
+void Si2binTokenCreate(Si2binToken *self, Si2binTokenType type);
+void Si2binTokenDestroy(Si2binToken *self);
+
+int Si2binTokenIsArgAllowed(Si2binToken *token, Si2binArg *arg);
+
+
+
+
+/*
+ * Public
+ */
 
 extern struct str_map_t si2bin_token_map;
 
-struct si2bin_token_t
-{
-	enum si2bin_token_type_t type;
-};
-
-struct si2bin_token_t *si2bin_token_create(enum si2bin_token_type_t type);
-void si2bin_token_free(struct si2bin_token_t *token);
-
-int si2bin_token_is_arg_allowed(struct si2bin_token_t *token, Si2binArg *arg);
 
 #endif
 
