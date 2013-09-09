@@ -20,9 +20,9 @@
 %{
 
 #include <lib/class/class.h>
+#include <lib/class/string.h>
 #include <lib/mhandle/mhandle.h>
 
-#include "id.h"
 #include "si2bin.h"
 #include "parser.h"
 
@@ -90,27 +90,27 @@ extern long offset;
 }
 
 s[0-9]+ {
-	si2bin_yylval.id = si2bin_id_create(yytext);
+	si2bin_yylval.id = new(String, yytext);
 	return TOK_SCALAR_REGISTER;
 }
 
 v[0-9]+ {
-	si2bin_yylval.id = si2bin_id_create(yytext);
+	si2bin_yylval.id = new(String, yytext);
 	return TOK_VECTOR_REGISTER;
 }
 
 vcc|scc|exec {
-	si2bin_yylval.id = si2bin_id_create(yytext);
+	si2bin_yylval.id = new(String, yytext);
 	return TOK_SPECIAL_REGISTER;
 }
 
 m[0-9]+ {
-	si2bin_yylval.id = si2bin_id_create(yytext);
+	si2bin_yylval.id = new(String, yytext);
 	return TOK_MEMORY_REGISTER;
 }
 
 uav[0-9]+ {
-	si2bin_yylval.id = si2bin_id_create(yytext);
+	si2bin_yylval.id = new(String, yytext);
 	return TOK_UAV;
 }
 
@@ -180,12 +180,12 @@ uav[0-9]+ {
 
 
 [a-zA-Z_][a-zA-Z0-9_]* {   
-	si2bin_yylval.id = si2bin_id_create(yytext);
+	si2bin_yylval.id = new(String, yytext);
 	return TOK_ID; 
 }
 
 0x[0-9a-z]+ { 
-	si2bin_yylval.id = si2bin_id_create(yytext);
+	si2bin_yylval.id = new(String, yytext);
 	return TOK_HEX;	
 }
 

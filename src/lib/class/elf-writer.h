@@ -210,7 +210,8 @@ CLASS_BEGIN(ELFWriterSymbol, Object)
 	 *		-st_shndx;  -> 	st_shndx will refer to the section list
 	 */
 	Elf32_Sym symbol;
-};	
+
+CLASS_END(ELFWriterSymbol)
 
 void ELFWriterSymbolCreate(ELFWriterSymbol *self, char *name);
 void ELFWriterSymbolDestroy(ELFWriterSymbol *self);
