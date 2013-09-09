@@ -21,6 +21,7 @@
 
 #include <arch/southern-islands/asm/asm.h>
 #include <arch/southern-islands/asm/inst.h>
+#include <lib/class/list.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/hash-table.h>
 #include <lib/util/list.h>
@@ -133,8 +134,8 @@ void si2bin_inst_info_done(void)
 struct si2bin_inst_info_t *si2bin_inst_info_create(SIInstInfo *inst_info)
 {
 	struct si2bin_inst_info_t *info;
-	struct si2bin_token_t *token;
-	enum si2bin_token_type_t token_type;
+	Si2binToken *token;
+	Si2binTokenType token_type;
 
 	int index;
 	char *str_token;
@@ -149,7 +150,7 @@ struct si2bin_inst_info_t *si2bin_inst_info_create(SIInstInfo *inst_info)
 	info->name = list_get(info->str_token_list, 0);
 
 	/* Create list of formal arguments */
-	info->token_list = list_create_with_size(5);
+	info->token_list = new(List);
 	for (index = 1; index < info->str_token_list->count; index++)
 	{
 		/* Get token from format string */
@@ -157,8 +158,8 @@ struct si2bin_inst_info_t *si2bin_inst_info_create(SIInstInfo *inst_info)
 		token_type = str_map_string_case(&si2bin_token_map, str_token);
 
 		/* Add formal argument */
-		token = si2bin_token_create(token_type);
-		list_add(info->token_list, token);
+		token = new(Si2binToken, token_type);
+		ListAdd(info->token_list, asObject(token));
 	}
 
 	/* Return */
@@ -168,17 +169,10 @@ struct si2bin_inst_info_t *si2bin_inst_info_create(SIInstInfo *inst_info)
 
 void si2bin_inst_info_free(struct si2bin_inst_info_t *info)
 {
-	struct si2bin_token_t *token;
-	int index;
-
 	/* Tokens */
 	str_token_list_free(info->str_token_list);
-	LIST_FOR_EACH(info->token_list, index)
-	{
-		token = list_get(info->token_list, index);
-		si2bin_token_free(token);
-	}
-	list_free(info->token_list);
+	ListDeleteObjects(info->token_list);
+	delete(info->token_list);
 
 	/* Free */
 	free(info);

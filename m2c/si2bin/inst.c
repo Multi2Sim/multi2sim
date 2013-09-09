@@ -45,7 +45,7 @@
 void Si2binInstCreate(Si2binInst *self, SIInstOpcode opcode, List *arg_list)
 {
 	Si2binArg *arg;
-	struct si2bin_token_t *token;
+	Si2binToken *token;
 	struct si2bin_inst_info_t *info;
 	int index;
 
@@ -70,17 +70,19 @@ void Si2binInstCreate(Si2binInst *self, SIInstOpcode opcode, List *arg_list)
 
 	/* Check argument types */
 	index = 0;
+	ListHead(info->token_list);
 	ListForEach(arg_list, arg, Si2binArg)
 	{
 		/* Get formal argument from instruction info */
-		token = list_get(info->token_list, index);
+		token = asSi2binToken(ListGet(info->token_list));
 		assert(token);
 
 		/* Check that actual argument type is acceptable for token */
-		if (!si2bin_token_is_arg_allowed(token, arg))
+		if (!Si2binTokenIsArgAllowed(token, arg))
 			fatal("%s: invalid type for argument %d", __FUNCTION__, index);
 
 		/* Next */
+		ListNext(info->token_list);
 		index++;
 	}
 }
@@ -91,7 +93,7 @@ void Si2binInstCreateWithName(Si2binInst *self, char *name, List *arg_list)
 	struct si2bin_inst_info_t *info;
 
 	Si2binArg *arg;
-	struct si2bin_token_t *token;
+	Si2binToken *token;
 
 	char err_str[MAX_STRING_SIZE];
 	int index;
@@ -120,14 +122,15 @@ void Si2binInstCreateWithName(Si2binInst *self, char *name, List *arg_list)
 		/* Check arguments */
 		err_str[0] = '\0';
 		index = 0;
+		ListHead(info->token_list);
 		ListForEach(arg_list, arg, Si2binArg)
 		{
 			/* Get formal argument from instruction info */
-			token = list_get(info->token_list, index);
+			token = asSi2binToken(ListGet(info->token_list));
 			assert(token);
 
 			/* Check that actual argument type is acceptable for token */
-			if (!si2bin_token_is_arg_allowed(token, arg))
+			if (!Si2binTokenIsArgAllowed(token, arg))
 			{
 				snprintf(err_str, sizeof err_str,
 					"invalid type for argument %d", index + 1);
@@ -135,6 +138,7 @@ void Si2binInstCreateWithName(Si2binInst *self, char *name, List *arg_list)
 			}
 
 			/* Next */
+			ListNext(info->token_list);
 			index++;
 		}
 
@@ -248,7 +252,7 @@ void Si2binInstGenerate(Si2binInst *self, Si2bin *si2bin)
 	struct si2bin_inst_info_t *info;
 
 	Si2binArg *arg;
-	struct si2bin_token_t *token;
+	Si2binToken *token;
 
 	int index;
 
@@ -393,10 +397,11 @@ void Si2binInstGenerate(Si2binInst *self, Si2bin *si2bin)
 	/* Arguments */
 	assert(self->arg_list->count == info->token_list->count);
 	index = 0;
+	ListHead(info->token_list);
 	ListForEach(self->arg_list, arg, Si2binArg)
 	{
 		/* Get argument */
-		token = list_get(info->token_list, index);
+		token = asSi2binToken(ListGet(info->token_list));
 		assert(arg);
 		assert(token);
 
@@ -404,7 +409,7 @@ void Si2binInstGenerate(Si2binInst *self, Si2bin *si2bin)
 		switch (token->type)
 		{
 		
-		case si2bin_token_simm16:
+		case Si2binTokenSimm16:
 		{
 			int value;
 
@@ -430,7 +435,7 @@ void Si2binInstGenerate(Si2binInst *self, Si2bin *si2bin)
 			break;
 		}
 		
-		case si2bin_token_64_sdst:
+		case Si2binToken64Sdst:
 		{
 			int low;
 			int high;
@@ -449,7 +454,7 @@ void Si2binInstGenerate(Si2binInst *self, Si2bin *si2bin)
 			break;
 		}
 
-		case si2bin_token_64_ssrc0:
+		case Si2binToken64Ssrc0:
 		{
 			int value;
 
@@ -480,7 +485,7 @@ void Si2binInstGenerate(Si2binInst *self, Si2bin *si2bin)
 			break;
 		}
 
-		case si2bin_token_64_ssrc1:
+		case Si2binToken64Ssrc1:
 		{
 			int value;
 
@@ -511,7 +516,7 @@ void Si2binInstGenerate(Si2binInst *self, Si2bin *si2bin)
 			break;
 		}
 		
-		case si2bin_token_mt_maddr:
+		case Si2binTokenMtMaddr:
 		{
 			Si2binArg *qual;
 			int soffset;
@@ -536,7 +541,7 @@ void Si2binInstGenerate(Si2binInst *self, Si2bin *si2bin)
 			break;
 		}
 
-		case si2bin_token_label:
+		case Si2binTokenLabel:
 		{
 			Si2binSymbol *symbol;
 			Si2binTask *task;
@@ -571,7 +576,7 @@ void Si2binInstGenerate(Si2binInst *self, Si2bin *si2bin)
 			break;
 		}
 
-		case si2bin_token_mt_series_vdata:
+		case Si2binTokenMtSeriesVdata:
 		{
 			int low = 0;
 			int high = 0;
@@ -634,7 +639,7 @@ void Si2binInstGenerate(Si2binInst *self, Si2bin *si2bin)
 			break;
 		}
 
-		case si2bin_token_offset:
+		case Si2binTokenOffset:
 
 			/* Depends of argument type */
 			switch (arg->type)
@@ -668,13 +673,13 @@ void Si2binInstGenerate(Si2binInst *self, Si2bin *si2bin)
 			}
 			break;
 
-		case si2bin_token_sdst:
+		case Si2binTokenSdst:
 
 			/* Encode */
 			inst_bytes->sop2.sdst = Si2binArgEncodeOperand(arg);
 			break;
 
-		case si2bin_token_series_sbase:
+		case Si2binTokenSeriesSbase:
 
 			/* Check that low register is multiple of 2 */
 			if (arg->value.scalar_register_series.low % 2)
@@ -712,7 +717,7 @@ void Si2binInstGenerate(Si2binInst *self, Si2bin *si2bin)
 			inst_bytes->smrd.sbase = arg->value.scalar_register_series.low / 2;
 			break;
 
-		case si2bin_token_series_sdst:
+		case Si2binTokenSeriesSdst:
 
 			/* Restrictions for high register */
 			switch (inst_info->opcode)
@@ -745,7 +750,7 @@ void Si2binInstGenerate(Si2binInst *self, Si2bin *si2bin)
 			inst_bytes->smrd.sdst = arg->value.scalar_register_series.low;
 			break;
 
-		case si2bin_token_series_srsrc:
+		case Si2binTokenSeriesSrsrc:
 		{
 			int low = arg->value.scalar_register_series.low;
 			int high = arg->value.scalar_register_series.high;
@@ -765,13 +770,13 @@ void Si2binInstGenerate(Si2binInst *self, Si2bin *si2bin)
 			break;
 		}
 
-		case si2bin_token_smrd_sdst:
+		case Si2binTokenSmrdSdst:
 
 			/* Encode */
 			inst_bytes->smrd.sdst = arg->value.scalar_register.id;
 			break;
 
-		case si2bin_token_src0:
+		case Si2binTokenSrc0:
 
 			if (arg->type == Si2binArgLiteral)
 			{
@@ -789,7 +794,7 @@ void Si2binInstGenerate(Si2binInst *self, Si2bin *si2bin)
 			}
 			break;
 
-		case si2bin_token_ssrc0:
+		case Si2binTokenSsrc0:
 		{
 			int value;
 
@@ -813,7 +818,7 @@ void Si2binInstGenerate(Si2binInst *self, Si2bin *si2bin)
 			break;
 		}
 
-		case si2bin_token_ssrc1:
+		case Si2binTokenSsrc1:
 		{
 			int value;
 
@@ -837,7 +842,7 @@ void Si2binInstGenerate(Si2binInst *self, Si2bin *si2bin)
 			break;
 		}
 
-		case si2bin_token_vaddr:
+		case Si2binTokenVaddr:
 
 			switch (arg->type)
 			{
@@ -865,12 +870,12 @@ void Si2binInstGenerate(Si2binInst *self, Si2bin *si2bin)
 			}
 			break;
 
-		case si2bin_token_vcc:
+		case Si2binTokenVcc:
 
 			/* Not encoded */
 			break;
 
-		case si2bin_token_svdst:
+		case Si2binTokenSvdst:
 
 			/* Check for scalar register */
 			assert(arg->type == Si2binArgScalarRegister);
@@ -879,13 +884,13 @@ void Si2binInstGenerate(Si2binInst *self, Si2bin *si2bin)
 			inst_bytes->vop1.vdst = Si2binArgEncodeOperand(arg);
 			break;
 
-		case si2bin_token_vdst:
+		case Si2binTokenVdst:
 
 			/* Encode */
 			inst_bytes->vop1.vdst = arg->value.vector_register.id;
 			break;
 		
-		case si2bin_token_64_src0:
+		case Si2binToken64Src0:
 		{
 			int low;
 			int high;
@@ -911,7 +916,7 @@ void Si2binInstGenerate(Si2binInst *self, Si2bin *si2bin)
 			break;
 		}
 	
-		case si2bin_token_64_vdst:
+		case Si2binToken64Vdst:
 		{
 			int low;
 			int high;
@@ -929,7 +934,7 @@ void Si2binInstGenerate(Si2binInst *self, Si2bin *si2bin)
 			inst_bytes->vop1.vdst = arg->value.vector_register_series.low;
 			break;
 		}
-		case si2bin_token_vop3_64_svdst:
+		case Si2binTokenVop364Svdst:
 		{
 			int low;
 			int high;
@@ -948,7 +953,7 @@ void Si2binInstGenerate(Si2binInst *self, Si2bin *si2bin)
 			break;
 		}
 
-		case si2bin_token_vop3_src0:
+		case Si2binTokenVop3Src0:
 
 			inst_bytes->vop3a.src0 = Si2binArgEncodeOperand(arg);
 			if (arg->abs)
@@ -957,7 +962,7 @@ void Si2binInstGenerate(Si2binInst *self, Si2bin *si2bin)
 				inst_bytes->vop3a.neg |= 0x1;
 			break;
 
-		case si2bin_token_vop3_src1:
+		case Si2binTokenVop3Src1:
 
 			inst_bytes->vop3a.src1 = Si2binArgEncodeOperand(arg);
 			if (arg->abs)
@@ -966,7 +971,7 @@ void Si2binInstGenerate(Si2binInst *self, Si2bin *si2bin)
 				inst_bytes->vop3a.neg |= 0x2;
 			break;
 
-		case si2bin_token_vop3_src2:
+		case Si2binTokenVop3Src2:
 
 			inst_bytes->vop3a.src2 = Si2binArgEncodeOperand(arg);
 			if (arg->abs)
@@ -975,7 +980,7 @@ void Si2binInstGenerate(Si2binInst *self, Si2bin *si2bin)
 				inst_bytes->vop3a.neg |= 0x4;
 			break;
 
-		case si2bin_token_vop3_64_src0:
+		case Si2binTokenVop364Src0:
 		{
 			
 			int low;
@@ -1006,7 +1011,7 @@ void Si2binInstGenerate(Si2binInst *self, Si2bin *si2bin)
 				inst_bytes->vop3a.neg |= 0x1;
 			break;
 		}
-		case si2bin_token_vop3_64_src1:
+		case Si2binTokenVop364Src1:
 		{	
 			int low;
 			int high;
@@ -1036,7 +1041,7 @@ void Si2binInstGenerate(Si2binInst *self, Si2bin *si2bin)
 				inst_bytes->vop3a.neg |= 0x2;
 			break;
 		}
-		case si2bin_token_vop3_64_src2:
+		case Si2binTokenVop364Src2:
 		{
 			int low;
 			int high;
@@ -1067,20 +1072,20 @@ void Si2binInstGenerate(Si2binInst *self, Si2bin *si2bin)
 			break;
 		}
 		
-		case si2bin_token_vop3_64_sdst:
+		case Si2binTokenVop364Sdst:
 			
 			/* Encode */
 			inst_bytes->vop3b.sdst = Si2binArgEncodeOperand(arg);
 			
 			break;
 
-		case si2bin_token_vop3_vdst:
+		case Si2binTokenVop3Vdst:
 			
 			/* Encode */
 			inst_bytes->vop3a.vdst = arg->value.vector_register.id;
 			break;
 
-		case si2bin_token_vop3_64_vdst:
+		case Si2binTokenVop364Vdst:
 		{
 			int low;
 			int high;
@@ -1099,7 +1104,7 @@ void Si2binInstGenerate(Si2binInst *self, Si2bin *si2bin)
 			break;
 		}
 
-		case si2bin_token_vsrc1:
+		case Si2binTokenVsrc1:
 
 			/* Make sure argument is a vector register */
 			assert(arg->type == Si2binArgVectorRegister);
@@ -1109,7 +1114,7 @@ void Si2binInstGenerate(Si2binInst *self, Si2bin *si2bin)
 			
 			break;
 
-		case si2bin_token_wait_cnt:
+		case Si2binTokenWaitCnt:
 			/* vmcnt(x) */
 			if (arg->value.wait_cnt.vmcnt_active)
 			{
@@ -1153,7 +1158,7 @@ void Si2binInstGenerate(Si2binInst *self, Si2bin *si2bin)
 			}
 			break;
 
-		case si2bin_token_addr:
+		case Si2binTokenTokenAddr:
 			
 			/* Make sure argument is a vector register */
 			assert(arg->type == Si2binArgVectorRegister);
@@ -1162,7 +1167,7 @@ void Si2binInstGenerate(Si2binInst *self, Si2bin *si2bin)
 			inst_bytes->ds.addr = arg->value.vector_register.id;
 			break;
 
-		case si2bin_token_data0:
+		case Si2binTokenData0:
 
 			/* Make sure argument is a vector register */
 			assert(arg->type == Si2binArgVectorRegister);
@@ -1171,7 +1176,7 @@ void Si2binInstGenerate(Si2binInst *self, Si2bin *si2bin)
 			inst_bytes->ds.data0 = arg->value.vector_register.id;
 			break;
 
-		case si2bin_token_ds_vdst:
+		case Si2binTokenDsVdst:
 
 			/* Make sure argument is a vector register */
 			assert(arg->type == Si2binArgVectorRegister);
@@ -1187,6 +1192,7 @@ void Si2binInstGenerate(Si2binInst *self, Si2bin *si2bin)
 		}
 
 		/* Next */
+		ListNext(info->token_list);
 		index++;
 	}
 }
