@@ -20,6 +20,7 @@
 #ifndef DRIVER_OPENCL_SI_KERNEL_H
 #define DRIVER_OPENCL_SI_KERNEL_H
 
+#include <lib/class/class.h>
 #include <lib/util/elf-format.h>
 
 
@@ -36,9 +37,8 @@ struct opencl_si_kernel_t
 	/* Program that kernel belongs to */
 	struct opencl_si_program_t *program;
 
-	/* List of kernel arguments. Each element of the list is of type
-	 * 'struct si_arg_t'. */
-	struct list_t *arg_list;
+	/* List of kernel arguments, elements of type 'SIArg' */
+	List *arg_list;
 
 	/* Excerpts of program binary */
 	struct elf_buffer_t metadata_buffer;

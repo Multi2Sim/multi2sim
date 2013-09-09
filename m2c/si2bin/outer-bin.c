@@ -21,6 +21,8 @@
 #include <arch/southern-islands/asm/arg.h>
 #include <arch/southern-islands/asm/bin-file.h>
 #include <lib/class/elf-writer.h>
+#include <lib/class/list.h>
+#include <lib/class/string.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
@@ -127,7 +129,7 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 	ELFWriterSymbol *cb_symbol;
 
 	struct si2bin_metadata_t *metadata;
-	struct si_arg_t *arg;
+	SIArg *arg;
 	struct si_bin_enc_user_element_t *user_elem;
 	struct pt_note_prog_info_entry_t prog_info[NUM_PROG_INFO_ELEM];
 	struct si2bin_data_t *data;
@@ -143,6 +145,7 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 	int i;
 	int j;
 	int k;
+	int index;
 	int offset;
 	int uav[MAX_UAV_NUM];
 	int cb[MAX_CB_NUM];
@@ -322,21 +325,18 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 		snprintf(line, sizeof line, ";memory:hwlocal:%d\n", metadata->hwlocal);
 		ELFWriterBufferWrite(rodata_buffer, line, strlen(line));
 
-
-		LIST_FOR_EACH(metadata->arg_list, j)
+		index = 0;
+		ListForEach(metadata->arg_list, arg, SIArg)
 		{
-			arg = list_get(metadata->arg_list, j);
-
-
 			switch (arg->type)
 			{
-				case si_arg_pointer:
+				case SIArgTypePointer:
 
 					data_type =
 						str_map_value(&si_arg_data_type_map,
 						arg->pointer.data_type);
 					data_size =
-						si_arg_get_data_size(arg->pointer.
+						SIArgGetDataSize(arg->pointer.
 						data_type) * arg->pointer.num_elems;
 					scope = str_map_value(&si_arg_scope_map,
 						arg->pointer.scope);
@@ -346,7 +346,7 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 
 					snprintf(line, sizeof line,
 						";pointer:%s:%s:1:%d:%d:%s:%d:%d:%s:0:0\n",
-						arg->name, data_type,
+						arg->name->text, data_type,
 						arg->pointer.constant_buffer_num,
 						arg->pointer.constant_offset, scope,
 						arg->pointer.buffer_num, data_size,
@@ -354,14 +354,14 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 
 					
 					/* Check for 16 byte alignment */
-					if (((arg->pointer.constant_offset - offset) < 16) && j) 
+					if (((arg->pointer.constant_offset - offset) < 16) && index)
 						fatal("16 byte alignment not maintained in argument: %s - Expected offset of %d or higher", 
-							arg->name, offset + 16);
+							arg->name->text, offset + 16);
 
 					offset = arg->pointer.constant_offset;
 					
 					/* Mark which uav's are being used */
-					if (arg->pointer.scope == si_arg_uav
+					if (arg->pointer.scope == SIArgUAV
 						&& !(uav[arg->pointer.buffer_num]))
 					{
 						uav[arg->pointer.buffer_num] = 1;
@@ -372,27 +372,28 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 					/* Include const_arg line only if pointer is marked with "const" */
 					if (arg->constarg)
 					{
-						snprintf(line, sizeof line, ";constarg:%d:%s\n", j, arg->name);
+						snprintf(line, sizeof line, ";constarg:%d:%s\n",
+								index, arg->name->text);
 						ELFWriterBufferWrite(rodata_buffer, line, strlen(line));
 					}
 
 					break;
 
-				case si_arg_value:
+				case SIArgTypeValue:
 
 					data_type = 
 						str_map_value(&si_arg_data_type_map, 
 						arg->value.data_type);
 
 					snprintf(line, sizeof line, 
-						";value:%s:%s:%d:%d:%d\n", arg->name, data_type, 
+						";value:%s:%s:%d:%d:%d\n", arg->name->text, data_type,
 						arg->value.num_elems, arg->value.constant_buffer_num, 
 						arg->value.constant_offset);
 
 					/* Check for 16 byte alignment */
-					if (((arg->value.constant_offset - offset) < 16) && j) 
+					if (((arg->value.constant_offset - offset) < 16) && index)
 						fatal("16 byte alignment not maintained in argument: %s - Expected offset of %d or higher",
-							arg->name, offset + 16);
+							arg->name->text, offset + 16);
 
 					offset = arg->value.constant_offset;
 
@@ -403,7 +404,7 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 					{
 						snprintf(line, sizeof line, 
 							";constarg:%d:%s\n",
-							j, arg->name);
+							index, arg->name->text);
 						
 						ELFWriterBufferWrite(rodata_buffer, line, strlen(line));
 					}
@@ -412,8 +413,11 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 					break;
 
 				default:
-					fatal("Unrecognized argument type: arg %d", j);
+					fatal("Unrecognized argument type: arg %d", index);
 			}
+
+			/* Next */
+			index++;
 		}
 		
 		/* Data Required */
@@ -433,14 +437,12 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 		ELFWriterBufferWrite(rodata_buffer, line, strlen(line));
 
 		/* Reflections */
-		LIST_FOR_EACH(metadata->arg_list, j)
+		index = 0;
+		ListForEach(metadata->arg_list, arg, SIArg)
 		{
-			arg = list_get(metadata->arg_list, j);
-
-
 			switch (arg->type)
 			{
-				case si_arg_pointer:
+				case SIArgTypePointer:
 
 					reflection = str_map_value(&si_arg_reflection_map, 
 						arg->pointer.data_type);
@@ -448,24 +450,25 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 					if (arg->pointer.num_elems == 1)
 					{
 						snprintf(line, sizeof line, 
-							";reflection:%d:%s*\n",j, reflection);
+							";reflection:%d:%s*\n",
+							index, reflection);
 					}
 					else if (arg->pointer.num_elems > 1)
 					{
 						snprintf(line, sizeof line, 
-							";reflection:%d:%s%d*\n", j, reflection,
+							";reflection:%d:%s%d*\n", index, reflection,
 							arg->pointer.num_elems);
 					}
 					else
 					{
-						fatal("Invalid number of elements in argument: %s", arg->name);
+						fatal("Invalid number of elements in argument: %s", arg->name->text);
 					}
 
 					ELFWriterBufferWrite(rodata_buffer, line, strlen(line));
 
 					break;
 
-				case si_arg_value:
+				case SIArgTypeValue:
 
 					reflection = 
 						str_map_value(&si_arg_reflection_map,
@@ -474,17 +477,17 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 					if (arg->value.num_elems == 1)
 					{
 						snprintf(line, sizeof line, 
-							";reflection:%d:%s\n", j, reflection);
+							";reflection:%d:%s\n", index, reflection);
 					}
 					else if (arg->value.num_elems > 1)
 					{
 						snprintf(line, sizeof line, 
-							";reflection:%d:%s%d\n", j, reflection,
+							";reflection:%d:%s%d\n", index, reflection,
 							arg->value.num_elems);
 					}
 					else
 					{
-						fatal("Invalid number of elements in argument: %s", arg->name);
+						fatal("Invalid number of elements in argument: %s", arg->name->text);
 					}
 
 					ELFWriterBufferWrite(rodata_buffer, line, strlen(line));
@@ -492,10 +495,12 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 					break;
 
 				default:
-					fatal("Unrecognized argument type: arg %d", j);
+					fatal("Unrecognized argument type: arg %d", index);
 			}
 
-		}								
+			/* Next */
+			index++;
+		}
 
 		/* ARGEND */
 		snprintf(line, sizeof line, ";ARGEND:__OpenCL_%s_kernel\n",
@@ -659,7 +664,7 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 				/* If PTR_CONST_BUFFER_TABLE is found, manually set cb's */
 				cb[0] = 1;
 				
-				if (list_count(metadata->arg_list) > 0)
+				if (metadata->arg_list->count > 0)
 					cb[1] = 1;
 				
 				if (list_count(outer_bin->data_list) > 0)
@@ -698,7 +703,7 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 
 				if (k == 1)
 					ptr[(buff_num_offset - 1) * 8 + 4] = 
-						list_count(metadata->arg_list);
+						metadata->arg_list->count;
 				
 				if (k == 2)
 				{
