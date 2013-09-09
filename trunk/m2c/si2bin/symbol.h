@@ -20,40 +20,28 @@
 #ifndef M2C_SI2BIN_SYMBOL_H
 #define M2C_SI2BIN_SYMBOL_H
 
-#include <stdio.h>
+#include <lib/class/class.h>
 
 
 /*
- * Global
+ * Class 'Si2binSymbol'
  */
 
-extern struct hash_table_t *si2bin_symbol_table;
+CLASS_BEGIN(Si2binSymbol, Object)
 
-void si2bin_symbol_table_init(void);
-void si2bin_symbol_table_done(void);
-
-void si2bin_symbol_table_dump(FILE *f);
-
-
-
-/*
- * Symbol
- */
-
-struct si2bin_symbol_t
-{
-	char *name;
+	String *name;
 	int value;
 
 	/* True if the symbol definition has been found already. False when
 	 * the symbol has been found as a forward declaration. */
 	int defined;
-};
 
-struct si2bin_symbol_t *si2bin_symbol_create(char *name);
-void si2bin_symbol_free(struct si2bin_symbol_t *symbol);
+CLASS_END(Si2binSymbol)
 
-void si2bin_symbol_dump(struct si2bin_symbol_t *symbol, FILE *f);
+
+void Si2binSymbolCreate(Si2binSymbol *self, char *name);
+void Si2binSymbolDestroy(Si2binSymbol *self);
+
+void Si2binSymbolDump(Si2binSymbol *self, FILE *f);
 
 #endif
-

@@ -20,6 +20,7 @@
 #include <stdarg.h>
 
 #include <lib/class/elf-writer.h>
+#include <lib/class/hash-table.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
@@ -91,7 +92,9 @@ void Si2binCreate(Si2bin *self)
 	/* Initialize */
 	si2bin_inst_info_init();
 	si2bin_task_list_init();
-	si2bin_symbol_table_init();
+
+	/* Symbol table */
+	self->symbol_table = new(HashTable);
 }
 
 
@@ -99,8 +102,11 @@ void Si2binDestroy(Si2bin *self)
 {
 	/* Finalize */
 	si2bin_task_list_done();
-	si2bin_symbol_table_done();
 	si2bin_inst_info_done();
+
+	/* Symbol table */
+	HashTableDeleteObjects(self->symbol_table);
+	delete(self->symbol_table);
 }
 
 
@@ -128,6 +134,9 @@ void Si2binCompile(Si2bin *self, struct list_t *source_file_list,
 		/* Create output buffer */
 		si2bin_outer_bin = si2bin_outer_bin_create();
 		bin_buffer = new(ELFWriterBuffer);
+
+		/* Set arguments for parser */
+		si2bin_yysi2bin = self;
 		
 		/* Parse input */
 		si2bin_yyparse();
@@ -147,3 +156,19 @@ void Si2binCompile(Si2bin *self, struct list_t *source_file_list,
 	}
 }
 
+
+void Si2binDumpSymbolTable(Si2bin *self, FILE *f)
+{
+#if 0
+	Si2binSymbol *symbol;
+	char *name;
+
+	fprintf(f, "Symbol Table:\n");
+	HASH_TABLE_FOR_EACH(si2bin_symbol_table, name, symbol)
+	{
+		fprintf(f, "\t");
+		Si2binSymbolDump(symbol, f);
+		fprintf(f, "\n");
+	}
+#endif
+}
