@@ -484,8 +484,7 @@ void SIComputeUnitFetch(SIComputeUnit *self, int active_fb)
 		/* Trace */
 		if (si_tracing())
 		{
-			SIInstDump(&wavefront->inst, wavefront->inst_size, 
-				wavefront->pc, 
+			SIInstDump(&wavefront->inst, wavefront->pc, 
 				wavefront->work_group->ndrange->inst_buffer + 
 				wavefront->pc, inst_str, sizeof inst_str);
 			str_single_spaces(inst_str_trimmed, 

@@ -393,10 +393,8 @@ static void SIAsmDisassembleBuffer(SIAsm *self, void *ptr, int size, FILE *f)
 	/* Read through instructions to find labels. */
 	while (ptr < original_ptr + size)
 	{
-		int inst_size;
-
 		/* Decode instruction */
-		inst_size = SIInstDecode(&inst, ptr, rel_addr);
+		SIInstDecode(&inst, ptr, rel_addr);
 
 		/* If ENDPGM, break. */
 		if (inst.info->fmt == SIInstFormatSOPP && 
@@ -439,8 +437,8 @@ static void SIAsmDisassembleBuffer(SIAsm *self, void *ptr, int size, FILE *f)
 
 		}
 
-		ptr += inst_size;
-		rel_addr += inst_size;
+		ptr += inst.size;
+		rel_addr += inst.size;
 	}
 
 
@@ -451,10 +449,8 @@ static void SIAsmDisassembleBuffer(SIAsm *self, void *ptr, int size, FILE *f)
 	/* Disassemble */
 	while (ptr < original_ptr + size)
 	{
-		int inst_size;
-
 		/* Parse the instruction */
-		inst_size = SIInstDecode(&inst, ptr, rel_addr);
+		SIInstDecode(&inst, ptr, rel_addr);
 		inst_count++;
 
 		/* Dump a label if necessary. */
@@ -469,8 +465,7 @@ static void SIAsmDisassembleBuffer(SIAsm *self, void *ptr, int size, FILE *f)
 		int line_size = MAX_STRING_SIZE;
 		char line[line_size];
 
-		SIInstDump(&inst, inst_size, rel_addr, ptr, line, 
-			line_size);
+		SIInstDump(&inst, rel_addr, ptr, line, line_size);
 		fprintf(f, " %s", line);
 
 
@@ -482,8 +477,8 @@ static void SIAsmDisassembleBuffer(SIAsm *self, void *ptr, int size, FILE *f)
 		}
 
 		/* Increment instruction pointer */
-		ptr += inst_size;
-		rel_addr += inst_size;
+		ptr += inst.size;
+		rel_addr += inst.size;
 	}
 
 	/* Free instruction */

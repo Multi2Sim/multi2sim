@@ -129,8 +129,8 @@ void SIWavefrontExecute(SIWavefront *self)
 	assert(!self->finished);
 	
 	/* Grab the instruction at PC and update the pointer */
-	self->inst_size = SIInstDecode(&self->inst,
-		ndrange->inst_buffer + self->pc, 0);
+	SIInstDecode(&self->inst, ndrange->inst_buffer + self->pc, 0);
+	self->inst_size = self->inst.size;
 
 	/* Stats */
 	asEmu(emu)->instructions++;
@@ -150,7 +150,7 @@ void SIWavefrontExecute(SIWavefront *self)
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			SIInstDump(inst, self->inst_size, self->pc,
+			SIInstDump(inst, self->pc,
 					ndrange->inst_buffer + self->pc,
 					inst_dump, sizeof inst_dump);
 			si_isa_debug("\n%s", inst_dump);
@@ -177,7 +177,7 @@ void SIWavefrontExecute(SIWavefront *self)
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			SIInstDump(inst, self->inst_size, self->pc,
+			SIInstDump(inst, self->pc,
 					ndrange->inst_buffer + self->pc,
 					inst_dump, sizeof inst_dump);
 			si_isa_debug("\n%s", inst_dump);
@@ -204,7 +204,7 @@ void SIWavefrontExecute(SIWavefront *self)
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			SIInstDump(inst, self->inst_size, self->pc,
+			SIInstDump(inst, self->pc,
 					ndrange->inst_buffer + self->pc,
 					inst_dump, sizeof inst_dump);
 			si_isa_debug("\n%s", inst_dump);
@@ -239,7 +239,7 @@ void SIWavefrontExecute(SIWavefront *self)
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			SIInstDump(inst, self->inst_size, self->pc,
+			SIInstDump(inst, self->pc,
 					ndrange->inst_buffer + self->pc,
 					inst_dump, sizeof inst_dump);
 			si_isa_debug("\n%s", inst_dump);
@@ -266,7 +266,7 @@ void SIWavefrontExecute(SIWavefront *self)
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			SIInstDump(inst, self->inst_size, self->pc,
+			SIInstDump(inst, self->pc,
 					ndrange->inst_buffer + self->pc,
 					inst_dump, sizeof inst_dump);
 			si_isa_debug("\n%s", inst_dump);
@@ -294,7 +294,7 @@ void SIWavefrontExecute(SIWavefront *self)
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			SIInstDump(inst, self->inst_size, self->pc,
+			SIInstDump(inst, self->pc,
 					ndrange->inst_buffer + self->pc,
 					inst_dump, sizeof inst_dump);
 			si_isa_debug("\n%s", inst_dump);
@@ -322,7 +322,7 @@ void SIWavefrontExecute(SIWavefront *self)
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			SIInstDump(inst, self->inst_size, self->pc,
+			SIInstDump(inst, self->pc,
 					ndrange->inst_buffer + self->pc,
 					inst_dump, sizeof inst_dump);
 			si_isa_debug("\n%s", inst_dump);
@@ -357,7 +357,7 @@ void SIWavefrontExecute(SIWavefront *self)
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			SIInstDump(inst, self->inst_size, self->pc,
+			SIInstDump(inst, self->pc,
 					ndrange->inst_buffer + self->pc,
 					inst_dump, sizeof inst_dump);
 			si_isa_debug("\n%s", inst_dump);
@@ -428,7 +428,7 @@ void SIWavefrontExecute(SIWavefront *self)
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			SIInstDump(inst, self->inst_size, self->pc,
+			SIInstDump(inst, self->pc,
 					ndrange->inst_buffer + self->pc,
 					inst_dump, sizeof inst_dump);
 			si_isa_debug("\n%s", inst_dump);
@@ -463,7 +463,7 @@ void SIWavefrontExecute(SIWavefront *self)
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			SIInstDump(inst, self->inst_size, self->pc,
+			SIInstDump(inst, self->pc,
 					ndrange->inst_buffer + self->pc,
 					inst_dump, sizeof inst_dump);
 			si_isa_debug("\n%s", inst_dump);
@@ -498,7 +498,7 @@ void SIWavefrontExecute(SIWavefront *self)
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			SIInstDump(inst, self->inst_size, self->pc,
+			SIInstDump(inst, self->pc,
 					ndrange->inst_buffer + self->pc,
 					inst_dump, sizeof inst_dump);
 			si_isa_debug("\n%s", inst_dump);
@@ -533,7 +533,7 @@ void SIWavefrontExecute(SIWavefront *self)
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			SIInstDump(inst, self->inst_size, self->pc,
+			SIInstDump(inst, self->pc,
 					ndrange->inst_buffer + self->pc,
 					inst_dump, sizeof inst_dump);
 			si_isa_debug("\n%s", inst_dump);
@@ -587,7 +587,7 @@ void SIWavefrontExecute(SIWavefront *self)
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			SIInstDump(inst, self->inst_size, self->pc,
+			SIInstDump(inst, self->pc,
 					ndrange->inst_buffer + self->pc,
 					inst_dump, sizeof inst_dump);
 			si_isa_debug("\n%s", inst_dump);
@@ -630,7 +630,7 @@ void SIWavefrontExecute(SIWavefront *self)
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			SIInstDump(inst, self->inst_size, self->pc,
+			SIInstDump(inst, self->pc,
 					ndrange->inst_buffer + self->pc,
 					inst_dump, sizeof inst_dump);
 			si_isa_debug("\n%s", inst_dump);
@@ -681,7 +681,7 @@ void SIWavefrontExecute(SIWavefront *self)
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			SIInstDump(inst, self->inst_size, self->pc,
+			SIInstDump(inst, self->pc,
 					ndrange->inst_buffer + self->pc,
 					inst_dump, sizeof inst_dump);
 			si_isa_debug("\n%s", inst_dump);
