@@ -25,6 +25,7 @@
 #include <arch/x86/emu/emu.h>
 #include <arch/x86/emu/regs.h>
 #include <arch/x86/timing/cpu.h>
+#include <lib/class/list.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
@@ -770,7 +771,7 @@ static int opencl_abi_si_kernel_set_arg_value_impl(X86Context *ctx)
 
 	struct x86_regs_t *regs = ctx->regs;
 	struct opencl_si_kernel_t *kernel;
-	struct si_arg_t *arg;
+	SIArg *arg;
 
 	int kernel_id;
 
@@ -793,8 +794,8 @@ static int opencl_abi_si_kernel_set_arg_value_impl(X86Context *ctx)
 				__FUNCTION__, kernel_id);
 
 	/* Get argument */
-	arg = list_get(kernel->arg_list, index);
-	if (!arg || arg->type != si_arg_value)
+	arg = asSIArg(ListGoto(kernel->arg_list, index));
+	if (!arg || arg->type != SIArgTypeValue)
 		fatal("%s: invalid argument %d type",
 				__FUNCTION__, index);
 
@@ -861,7 +862,7 @@ static int opencl_abi_si_kernel_set_arg_pointer_impl(X86Context *ctx)
 
 	struct x86_regs_t *regs = ctx->regs;
 	struct opencl_si_kernel_t *kernel;
-	struct si_arg_t *arg;
+	SIArg *arg;
 
 	int kernel_id;
 
@@ -884,8 +885,8 @@ static int opencl_abi_si_kernel_set_arg_pointer_impl(X86Context *ctx)
 				__FUNCTION__, kernel_id);
 
 	/* Get argument */
-	arg = list_get(kernel->arg_list, index);
-	if (!arg || arg->type != si_arg_pointer)
+	arg = asSIArg(ListGoto(kernel->arg_list, index));
+	if (!arg || arg->type != SIArgTypePointer)
 		fatal("%s: invalid argument %d type",
 				__FUNCTION__, index);
 
@@ -1020,6 +1021,7 @@ static int opencl_abi_si_kernel_set_arg_sampler_impl(X86Context *ctx)
 
 static int opencl_abi_si_ndrange_create_impl(X86Context *ctx)
 {
+	SIArg *arg;
 	X86Emu *x86_emu = ctx->emu;
 	OpenclDriver *driver = x86_emu->opencl_driver;
 	SIEmu *si_emu = driver->si_emu;
@@ -1034,7 +1036,6 @@ static int opencl_abi_si_ndrange_create_impl(X86Context *ctx)
 	struct x86_regs_t *regs = ctx->regs;
 
 	int i;
-	int index;
 	int kernel_id;
 	int user_element_count;
 	int work_dim;
@@ -1115,16 +1116,11 @@ static int opencl_abi_si_ndrange_create_impl(X86Context *ctx)
 		SIGpuMapNDRange(si_gpu, ndrange);
 	
 	opencl_debug("\tkernel arg_list has %d elems\n", 
-		list_count(kernel->arg_list));
+		kernel->arg_list->count);
 
 	/* Copy kernel arg list to nd-range */
-	LIST_FOR_EACH(kernel->arg_list, index)
-	{
-		list_insert(ndrange->arg_list, index, 
-			list_get(kernel->arg_list, index));
-		assert(!ndrange->arg_list->error_code);
-		assert(!kernel->arg_list->error_code);
-	}
+	ListForEach(kernel->arg_list, arg, SIArg)
+		ListAdd(ndrange->arg_list, asObject(arg));
 
 	list_add(driver->si_ndrange_list, ndrange);
 

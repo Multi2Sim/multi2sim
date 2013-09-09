@@ -20,10 +20,141 @@
 #ifndef ARCH_SOUTHERN_ISLANDS_ASM_ARG_H
 #define ARCH_SOUTHERN_ISLANDS_ASM_ARG_H
 
-#include <stdio.h>
+#include <lib/class/class.h>
 
 
-/* String Maps */
+/*
+ * Class 'SIArg'
+ */
+
+typedef enum
+{
+	SIArgTypeInvalid = 0,
+	SIArgTypeValue,
+	SIArgTypePointer,
+	SIArgTypeImage,
+	SIArgTypeSampler
+} SIArgType;
+
+typedef enum
+{
+	SIArgAccessTypeInvalid = 0,
+	SIArgReadOnly,
+	SIArgWriteOnly,
+	SIArgReadWrite
+} SIArgAccessType;
+
+typedef enum
+{
+	SIArgScopeInavlid = 0,
+	SIArgGlobal,
+	SIArgEmuPrivate,
+	SIArgEmuLocal,
+	SIArgUAV,
+	SIArgEmuConstant,
+	SIArgEmuGDS,
+	SIArgHwLocal,
+	SIArgHwPrivate,
+	SIArgHwConstant,
+	SIArgHwGDS
+} SIArgScope;
+
+typedef enum
+{
+	SIArgDataTypeInvalid = 0,
+	SIArgInt1,
+	SIArgInt8,
+	SIArgInt16,
+	SIArgInt32,
+	SIArgInt64,
+	SIArgUInt1,
+	SIArgUInt8,
+	SIArgUInt16,
+	SIArgUInt32,
+	SIArgUInt64,
+	SIArgFloat,
+	SIArgDouble,
+	SIArgStruct,
+	SIArgUnion,
+	SIArgEvent,
+	SIArgOpaque
+} SIArgDataType;
+
+typedef struct
+{
+	/* Metadata info */
+	SIArgDataType data_type;
+	int num_elems;
+	int constant_buffer_num;
+	int constant_offset;
+
+	/* Value set by user */
+	void *value_ptr;
+} SIArgValue;
+
+typedef struct
+{
+	/* Metadata info */
+	SIArgDataType data_type;
+	int num_elems;
+	int constant_buffer_num;
+	int constant_offset;
+	SIArgScope scope;
+	int buffer_num;
+	int alignment;
+	SIArgAccessType access_type;
+
+	/* Value set by user */
+	unsigned int device_ptr;
+} SIArgPointer;
+
+typedef struct
+{
+	int dimension;  /* 2 or 3 */
+	SIArgAccessType access_type;
+	int uav;
+	int constant_buffer_num;
+	int constant_offset;
+} SIArgImage;
+
+typedef struct
+{
+	int id;
+	unsigned int location;
+	int value;
+} SIArgSampler;
+
+
+CLASS_BEGIN(SIArg, Object)
+
+	SIArgType type;
+	String *name;
+
+	int set;  /* Set to true when it is assigned */
+	int size; /* Inferred from metadata or user calls */
+	int constarg; /*Set to true when argument is constant */
+
+	union
+	{
+		SIArgValue value;
+		SIArgPointer pointer;
+		SIArgImage image;
+		SIArgSampler sampler;
+	};
+
+CLASS_END(SIArg)
+
+
+void SIArgCreate(SIArg *self, SIArgType type, char *name);
+void SIArgDestroy(SIArg *self);
+
+void SIArgSetName(SIArg *self, char *name);
+
+
+
+/*
+ * Public
+ */
 
 extern struct str_map_t si_arg_dimension_map;
 extern struct str_map_t si_arg_access_type_map;
@@ -31,127 +162,6 @@ extern struct str_map_t si_arg_data_type_map;
 extern struct str_map_t si_arg_scope_map;
 extern struct str_map_t si_arg_reflection_map;
 
-enum si_arg_type_t
-{
-	si_arg_type_invalid = 0,
-	si_arg_value,
-	si_arg_pointer,
-	si_arg_image,
-	si_arg_sampler
-};
-
-enum si_arg_access_type_t
-{
-	si_arg_access_type_invalid = 0,
-	si_arg_read_only,
-	si_arg_write_only,
-	si_arg_read_write
-};
-
-enum si_arg_scope_t
-{
-	si_arg_scope_invalid = 0,
-	si_arg_global,
-	si_arg_emu_private,
-	si_arg_emu_local,
-	si_arg_uav,
-	si_arg_emu_constant,
-	si_arg_emu_gds,
-	si_arg_hw_local,
-	si_arg_hw_private,
-	si_arg_hw_constant,
-	si_arg_hw_gds
-};
-
-enum si_arg_data_type_t
-{
-	si_arg_data_type_invalid = 0,
-	si_arg_i1,
-	si_arg_i8,
-	si_arg_i16,
-	si_arg_i32,
-	si_arg_i64,
-	si_arg_u1,
-	si_arg_u8,
-	si_arg_u16,
-	si_arg_u32,
-	si_arg_u64,
-	si_arg_float,
-	si_arg_double,
-	si_arg_struct,
-	si_arg_union,
-	si_arg_event,
-	si_arg_opaque
-};
-
-struct si_arg_value_t
-{
-	/* Metadata info */
-	enum si_arg_data_type_t data_type;
-	int num_elems;
-	int constant_buffer_num;
-	int constant_offset;
-
-	/* Value set by user */
-	void *value_ptr;
-};
-
-struct si_arg_pointer_t
-{
-	/* Metadata info */
-	enum si_arg_data_type_t data_type;
-	int num_elems;
-	int constant_buffer_num;
-	int constant_offset;
-	enum si_arg_scope_t scope;
-	int buffer_num;
-	int alignment;
-	enum si_arg_access_type_t access_type;
-
-	/* Value set by user */
-	unsigned int device_ptr;
-};
-
-struct si_arg_image_t
-{
-	int dimension;  /* 2 or 3 */
-	enum si_arg_access_type_t access_type;
-	int uav;
-	int constant_buffer_num;
-	int constant_offset;
-};
-
-struct si_arg_sampler_t
-{
-	int id;
-	unsigned int location;
-	int value;
-};
-
-struct si_arg_t
-{
-	enum si_arg_type_t type;
-	char *name;
-	int set;  /* Set to true when it is assigned */
-	int size; /* Inferred from metadata or user calls */
-	int constarg; /*Set to true when argument is constant */
-
-	union
-	{
-		struct si_arg_value_t value;
-		struct si_arg_pointer_t pointer;
-		struct si_arg_image_t image;
-		struct si_arg_sampler_t sampler;
-	};
-};
-
-
-struct si_arg_t *si_arg_create(enum si_arg_type_t type,
-		char *name);
-void si_arg_free(struct si_arg_t *arg);
-
-void si_arg_name_set(struct si_arg_t *arg, char *name);
-
-int si_arg_get_data_size(enum si_arg_data_type_t data_type);
+int SIArgGetDataSize(SIArgDataType data_type);
 
 #endif

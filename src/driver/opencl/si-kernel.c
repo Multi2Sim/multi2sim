@@ -24,6 +24,8 @@
 #include <arch/x86/emu/context.h>
 #include <arch/x86/emu/emu.h>
 #include <arch/x86/timing/cpu.h>
+#include <lib/class/list.h>
+#include <lib/class/string.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
@@ -56,7 +58,7 @@ static char *opencl_err_si_kernel_metadata =
 
 static void opencl_si_create_buffer_desc(unsigned int base_addr,
 	unsigned int size, int num_elems, 
-	enum si_arg_data_type_t data_type,
+	SIArgDataType data_type,
 	struct si_buffer_desc_t *buffer_desc);
 
 
@@ -109,7 +111,7 @@ static void opencl_si_kernel_expect_count(struct opencl_si_kernel_t *kernel,
 static void opencl_si_kernel_load_metadata_v3(struct opencl_si_kernel_t *kernel)
 {
 	struct elf_buffer_t *buffer = &kernel->metadata_buffer;
-	struct si_arg_t *arg;
+	SIArg *arg;
 	struct list_t *token_list;
 
 	char line[MAX_STRING_SIZE];
@@ -144,7 +146,7 @@ static void opencl_si_kernel_load_metadata_v3(struct opencl_si_kernel_t *kernel)
 
 			/* Token 1 - Name */
 			token = str_token_list_shift(token_list);
-			arg = si_arg_create(si_arg_value, token);
+			arg = new(SIArg, SIArgTypeValue, token);
 
 			/* Token 2 - Data type */
 			token = str_token_list_shift(token_list);
@@ -174,17 +176,17 @@ static void opencl_si_kernel_load_metadata_v3(struct opencl_si_kernel_t *kernel)
 
 			/* Infer argument size from its type */
 			arg->size = arg->value.num_elems *
-				si_arg_get_data_size(
+				SIArgGetDataSize(
 					arg->value.data_type);
 
 			/* Debug */
 			opencl_debug("\targument '%s' - value stored in "
 				"constant buffer %d at offset %d\n",
-				arg->name, arg->value.constant_buffer_num,
+				arg->name->text, arg->value.constant_buffer_num,
 				arg->value.constant_offset);
 
 			/* Add argument */
-			list_add(kernel->arg_list, arg);
+			ListAdd(kernel->arg_list, asObject(arg));
 			str_token_list_free(token_list);
 			continue;
 		}
@@ -199,8 +201,7 @@ static void opencl_si_kernel_load_metadata_v3(struct opencl_si_kernel_t *kernel)
 
 			/* Token 1 - Name */
 			token = str_token_list_shift(token_list);
-			arg = si_arg_create(si_arg_pointer, 
-				token);
+			arg = new(SIArg, SIArgTypePointer, token);
 
 			/* Token 2 - Data type */
 			token = str_token_list_shift(token_list);
@@ -272,11 +273,11 @@ static void opencl_si_kernel_load_metadata_v3(struct opencl_si_kernel_t *kernel)
 			/* Debug */
 			opencl_debug("\targument '%s' - Pointer stored in "
 				"constant buffer %d at offset %d\n",
-				arg->name, arg->pointer.constant_buffer_num,
+				arg->name->text, arg->pointer.constant_buffer_num,
 				arg->pointer.constant_offset);
 
 			/* Add argument */
-			list_add(kernel->arg_list, arg);
+			ListAdd(kernel->arg_list, asObject(arg));
 			str_token_list_free(token_list);
 			continue;
 		}
@@ -289,7 +290,7 @@ static void opencl_si_kernel_load_metadata_v3(struct opencl_si_kernel_t *kernel)
 
 			/* Token 1 - Name */
 			token = str_token_list_shift(token_list);
-			arg = si_arg_create(si_arg_image, token);
+			arg = new(SIArg, SIArgTypeImage, token);
 
 			/* Token 2 - Dimension */
 			token = str_token_list_shift(token_list);
@@ -323,7 +324,7 @@ static void opencl_si_kernel_load_metadata_v3(struct opencl_si_kernel_t *kernel)
 			arg->image.constant_offset = atoi(token);
 
 			/* Add argument */
-			list_add(kernel->arg_list, arg);
+			ListAdd(kernel->arg_list, asObject(arg));
 			str_token_list_free(token_list);
 			continue;
 		}
@@ -336,7 +337,7 @@ static void opencl_si_kernel_load_metadata_v3(struct opencl_si_kernel_t *kernel)
 
 			/* Token 1 - Name */
 			token = str_token_list_shift(token_list);
-			arg = si_arg_create(si_arg_sampler, token);
+			arg = new(SIArg, SIArgTypeSampler, token);
 
 			/* Token 2 - ID */
 			token = str_token_list_shift(token_list);
@@ -354,7 +355,7 @@ static void opencl_si_kernel_load_metadata_v3(struct opencl_si_kernel_t *kernel)
 			arg->sampler.value = atoi(token);
 
 			/* Add argument */
-			list_add(kernel->arg_list, arg);
+			ListAdd(kernel->arg_list, asObject(arg));
 			str_token_list_free(token_list);
 			continue;
 		}
@@ -590,7 +591,7 @@ struct opencl_si_kernel_t *opencl_si_kernel_create(int id,
 	kernel->id = id;
 	kernel->name = xstrdup(name);
 	kernel->program = program;
-	kernel->arg_list = list_create();
+	kernel->arg_list = new(List);
 
 	/* Check that program has been built */
 	elf_file = program->elf_file;
@@ -636,12 +637,9 @@ struct opencl_si_kernel_t *opencl_si_kernel_create(int id,
 
 void opencl_si_kernel_free(struct opencl_si_kernel_t *kernel)
 {
-	int index;
-
 	/* Free argument list */
-	LIST_FOR_EACH(kernel->arg_list, index)
-		si_arg_free(list_get(kernel->arg_list, index));
-	list_free(kernel->arg_list);
+	ListDeleteObjects(kernel->arg_list);
+	delete(kernel->arg_list);
 
 	/* Rest */
 	si_bin_file_free(kernel->bin_file);
@@ -697,12 +695,12 @@ void opencl_si_kernel_setup_ndrange_constant_buffers(
 	float f;
 
 	opencl_si_create_buffer_desc(ndrange->cb0, SI_EMU_CONST_BUF_0_SIZE, 1,
-		si_arg_i32, &buffer_desc);
+		SIArgInt32, &buffer_desc);
 
 	SINDRangeInsertBufferIntoConstantBufferTable(ndrange, &buffer_desc, 0);
 
 	opencl_si_create_buffer_desc(ndrange->cb1, SI_EMU_CONST_BUF_1_SIZE, 1,
-		si_arg_i32, &buffer_desc);
+		SIArgInt32, &buffer_desc);
 
 	SINDRangeInsertBufferIntoConstantBufferTable(ndrange, &buffer_desc, 1);
 
@@ -859,7 +857,7 @@ void opencl_si_kernel_create_ndrange_tables(SINDRange *ndrange, MMU *gpu_mmu)
 void opencl_si_kernel_setup_ndrange_args(struct opencl_si_kernel_t *kernel,
 		SINDRange *ndrange)
 {
-	struct si_arg_t *arg;
+	SIArg *arg;
 	struct opencl_si_constant_buffer_t *constant_buffer;
 	struct si_buffer_desc_t buffer_desc;
 
@@ -876,21 +874,20 @@ void opencl_si_kernel_setup_ndrange_args(struct opencl_si_kernel_t *kernel,
 			enc_dict_entry_southern_islands->num_vgpr_used;
 
 	/* Kernel arguments */
-	LIST_FOR_EACH(ndrange->arg_list, index)
+	index = 0;
+	ListForEach(ndrange->arg_list, arg, SIArg)
 	{
-		arg = list_get(ndrange->arg_list, index);
-		assert(arg);
-
 		/* Check that argument was set */
+		assert(arg);
 		if (!arg->set)
 			fatal("%s: kernel '%s': argument '%s' not set",
-				__FUNCTION__, kernel->name, arg->name);
+				__FUNCTION__, kernel->name, arg->name->text);
 
 		/* Process argument depending on its type */
 		switch (arg->type)
 		{
 
-		case si_arg_value:
+		case SIArgTypeValue:
 
 			/* Value copied directly into device constant
 			 * memory */
@@ -901,13 +898,13 @@ void opencl_si_kernel_setup_ndrange_args(struct opencl_si_kernel_t *kernel,
 				arg->value.value_ptr, arg->size);
 			break;
 
-		case si_arg_pointer:
+		case SIArgTypePointer:
 
 			switch (arg->pointer.scope)
 			{
 
 			/* Hardware local memory */
-			case si_arg_hw_local:
+			case SIArgHwLocal:
 
 				/* Pointer in __local scope.
 				 * Argument value is always NULL, just assign
@@ -926,7 +923,7 @@ void opencl_si_kernel_setup_ndrange_args(struct opencl_si_kernel_t *kernel,
 				break;
 
 			/* UAV */
-			case si_arg_uav:
+			case SIArgUAV:
 			{
 				/* Create descriptor for argument */
 				opencl_si_create_buffer_desc(
@@ -950,7 +947,7 @@ void opencl_si_kernel_setup_ndrange_args(struct opencl_si_kernel_t *kernel,
 			}
 
 			/* Hardware constant memory */
-			case si_arg_hw_constant:
+			case SIArgHwConstant:
 			{
 				opencl_si_create_buffer_desc(
 					arg->pointer.device_ptr,
@@ -984,12 +981,12 @@ void opencl_si_kernel_setup_ndrange_args(struct opencl_si_kernel_t *kernel,
 
 			break;
 
-		case si_arg_image:
+		case SIArgTypeImage:
 
 			fatal("%s: type 'image' not implemented", __FUNCTION__);
 			break;
 
-		case si_arg_sampler:
+		case SIArgTypeSampler:
 
 			fatal("%s: type 'sampler' not implemented", 
 				__FUNCTION__);
@@ -1001,6 +998,9 @@ void opencl_si_kernel_setup_ndrange_args(struct opencl_si_kernel_t *kernel,
 				__FUNCTION__, arg->type);
 
 		}
+
+		/* Next */
+		index++;
 	}
 
 	/* Add program-wide constant buffers to the ND-range. 
@@ -1017,7 +1017,7 @@ void opencl_si_kernel_setup_ndrange_args(struct opencl_si_kernel_t *kernel,
 			constant_buffer->device_ptr,
 			constant_buffer->size,
 			4,
-			si_arg_float,
+			SIArgFloat,
 			&buffer_desc);
 
 		/* Data stored in hw constant memory 
@@ -1032,7 +1032,7 @@ void opencl_si_kernel_setup_ndrange_args(struct opencl_si_kernel_t *kernel,
 
 static void opencl_si_create_buffer_desc(unsigned int base_addr,
 	unsigned int size, int num_elems, 
-	enum si_arg_data_type_t data_type,
+	SIArgDataType data_type,
 	struct si_buffer_desc_t *buffer_desc)
 {
 	int num_format;
@@ -1049,8 +1049,8 @@ static void opencl_si_create_buffer_desc(unsigned int base_addr,
 	switch (data_type)
 	{
 
-	case si_arg_i8:
-	case si_arg_u8:
+	case SIArgInt8:
+	case SIArgUInt8:
 
 		num_format = SI_BUF_DESC_NUM_FMT_SINT;
 		switch (num_elems)
@@ -1074,8 +1074,8 @@ static void opencl_si_create_buffer_desc(unsigned int base_addr,
 		elem_size = 1 * num_elems;
 		break;
 
-	case si_arg_i16:
-	case si_arg_u16:
+	case SIArgInt16:
+	case SIArgUInt16:
 
 		num_format = SI_BUF_DESC_NUM_FMT_SINT;
 		switch (num_elems)
@@ -1100,8 +1100,8 @@ static void opencl_si_create_buffer_desc(unsigned int base_addr,
 		elem_size = 2 * num_elems;
 		break;
 
-	case si_arg_i32:
-	case si_arg_u32:
+	case SIArgInt32:
+	case SIArgUInt32:
 
 		num_format = SI_BUF_DESC_NUM_FMT_SINT;
 		switch (num_elems)
@@ -1130,7 +1130,7 @@ static void opencl_si_create_buffer_desc(unsigned int base_addr,
 		elem_size = 4 * num_elems;
 		break;
 
-	case si_arg_float:
+	case SIArgFloat:
 
 		num_format = SI_BUF_DESC_NUM_FMT_FLOAT;
 		switch (num_elems)
@@ -1158,7 +1158,7 @@ static void opencl_si_create_buffer_desc(unsigned int base_addr,
 		elem_size = 4 * num_elems;
 		break;
 
-	case si_arg_struct:
+	case SIArgStruct:
 
 		num_format = SI_BUF_DESC_NUM_FMT_UINT;
 		data_format = SI_BUF_DESC_DATA_FMT_8;
@@ -1187,11 +1187,12 @@ void opencl_si_kernel_debug_ndrange_state(struct opencl_si_kernel_t *kernel,
 	SIEmu *emu = ndrange->emu;
 
 	int i;
+	int index;
 
 	struct si_buffer_desc_t buffer_desc;
-	struct si_arg_t *arg;
+	SIArg *arg;
 
-	opencl_debug("\tndrange arg_list has %d elems\n", list_count(ndrange->arg_list));
+	opencl_debug("\tndrange arg_list has %d elems\n", ndrange->arg_list->count);
 
         si_isa_debug("\n");
         si_isa_debug("================ Initialization Summary ================"
@@ -1293,67 +1294,66 @@ void opencl_si_kernel_debug_ndrange_state(struct opencl_si_kernel_t *kernel,
         si_isa_debug("\t----------------------------------------------\n");
         si_isa_debug("\t| CB1 Idx | Arg | Uav |   Size   |    Name    |\n");
         si_isa_debug("\t----------------------------------------------\n");
-        for (i = 0; i < list_count(ndrange->arg_list); i++)
+        index = 0;
+        ListForEach(ndrange->arg_list, arg, SIArg)
         {
-                arg = list_get(ndrange->arg_list, i);
-                assert(arg);
-
                 /* Check that argument was set */
+                assert(arg);
                 if (!arg->set)
                 {
                         fatal("kernel '%s': argument '%s' has not been "
                                 "assigned with 'clKernelSetArg'.",
-                                kernel->name, arg->name);
+                                kernel->name, arg->name->text);
                 }
 
                 /* Process argument depending on its type */
                 switch (arg->type)
                 {
 
-		case si_arg_value:
+		case SIArgTypeValue:
                 {
                         /* Value copied directly into device constant 
                          * memory */
                         assert(arg->size);
                         si_isa_debug("\t| CB1[%2d] | %3d | %s | %8d | %-10s |\n",
-                                arg->value.constant_offset/16, i, 
-				"n/a", arg->size, arg->name);
+                                arg->value.constant_offset/16, index,
+				"n/a", arg->size, arg->name->text);
 
                         break;
                 }
 
-		case si_arg_pointer:
+		case SIArgTypePointer:
                 {
-                        if (arg->pointer.scope != si_arg_hw_local)
+                        if (arg->pointer.scope != SIArgHwLocal)
                         {
                                 si_isa_debug("\t| CB1[%2d] | %3d | %3d | %8d | %-10s |\n", 
-					arg->pointer.constant_offset/16, i, 
+					arg->pointer.constant_offset/16, index,
 					arg->pointer.buffer_num, arg->size, 
-					arg->name);
+					arg->name->text);
                         }
 
                         break;
                 }
 
-		case si_arg_image:
+		case SIArgTypeImage:
                 {
 			warning("unexpected type in si isa debug file");
                         break;
                 }
 
-		case si_arg_sampler:
+		case SIArgTypeSampler:
                 {
 			warning("unexpected type in si isa debug file");
                         break;
                 }
 
                 default:
-                {
                         fatal("%s: argument type not reconized",
                                 __FUNCTION__);
                 }
 
-                }
+                /* Next */
+                index++;
         }
         si_isa_debug("\t-------------------------------------------\n");
         si_isa_debug("\n");
@@ -1411,9 +1411,7 @@ void opencl_si_ndrange_setup_mmu(SINDRange *ndrange, MMU *cpu_mmu,
 	unsigned int internal_tables_ptr, 
 	unsigned int constant_buffers_ptr)
 {
-	struct si_arg_t *arg;
-
-	int index;
+	SIArg *arg;
 
 	/* Map constant buffers to MMU */
 	MMUCopyTranslation(gpu_mmu, ndrange->address_space_index, cpu_mmu, 
@@ -1432,22 +1430,20 @@ void opencl_si_ndrange_setup_mmu(SINDRange *ndrange, MMU *cpu_mmu,
 		internal_tables_ptr);
 
 	/* Map memory objects to MMU */
-	LIST_FOR_EACH(ndrange->arg_list, index)
+	ListForEach(ndrange->arg_list, arg, SIArg)
 	{
-		arg = list_get(ndrange->arg_list, index);
-		assert(arg);
-
 		/* Process argument depending on its type */
+		assert(arg);
 		switch (arg->type)
 		{
 
-		case si_arg_pointer:
+		case SIArgTypePointer:
 		{
 			
 			switch (arg->pointer.scope)
 			{
 			/* UAV */
-			case si_arg_uav:
+			case SIArgUAV:
 			{
 				opencl_debug("\tmapping uav %d (addr 0x%x)\n",
 					arg->pointer.buffer_num, 
@@ -1459,7 +1455,7 @@ void opencl_si_ndrange_setup_mmu(SINDRange *ndrange, MMU *cpu_mmu,
 				break;
 			}
 			/* Hardware constant memory */
-			case si_arg_hw_constant:
+			case SIArgHwConstant:
 			{
 				opencl_debug("\tmapping cb %d (addr 0x%x)\n",
 					arg->pointer.constant_buffer_num, 
@@ -1478,9 +1474,8 @@ void opencl_si_ndrange_setup_mmu(SINDRange *ndrange, MMU *cpu_mmu,
 
 		}
 		default:
-		{
 			break;
-		}
+
 		}
 	}
 }

@@ -36,7 +36,7 @@ CLASS_BEGIN(Llvm2siFunctionArg, Object)
 	/* Inherits from 'si_arg_t'.
 	 * FIXME: if we port all or part of the SI assembler to work with
 	 * classes, this should be a real inheritance. */
-	struct si_arg_t *si_arg;
+	SIArg *si_arg;
 
 	char *name;
 	LLVMValueRef llarg;  /* Associated LLVM argument */

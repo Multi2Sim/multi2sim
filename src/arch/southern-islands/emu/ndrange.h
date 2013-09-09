@@ -122,9 +122,8 @@ CLASS_BEGIN(SINDRange, Object)
 	unsigned int cb0;
 	unsigned int cb1;
 
-	/* List of kernel arguments. Each element of the list is of type
-	 * 'struct si_arg_t'. */
-	struct list_t *arg_list;
+	/* List of kernel arguments, elements of type 'SIArg' */
+	List *arg_list;
 
 CLASS_END(SINDRange)
 

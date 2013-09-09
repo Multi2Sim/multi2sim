@@ -20,9 +20,7 @@
 #ifndef M2C_SI2BIN_METADATA_H
 #define M2C_SI2BIN_METADATA_H
 
-/* Forward Declarations */
-struct list_t;
-struct si_arg_t;
+#include <lib/class/class.h>
 
 
 /*
@@ -32,8 +30,8 @@ struct si_arg_t;
 	
 struct si2bin_metadata_t
 {
-
-	struct list_t *arg_list; /* Elements of type si_arg_t */
+	/* Elements of type 'SIArg' */
+	List *arg_list;
 	
 	int uniqueid;
 	int uavprivate;
@@ -45,7 +43,7 @@ struct si2bin_metadata_t
 struct si2bin_metadata_t *si2bin_metadata_create(void);
 void si2bin_metadata_free(struct si2bin_metadata_t *metadata);
 
-void si2bin_metadata_add_arg(struct si2bin_metadata_t *metadata, struct si_arg_t *arg);
+void si2bin_metadata_add_arg(struct si2bin_metadata_t *metadata, SIArg *arg);
 
 #endif
 
