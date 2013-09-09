@@ -20,23 +20,20 @@
 #ifndef M2C_SI2BIN_TASK_H
 #define M2C_SI2BIN_TASK_H
 
-#include <stdio.h>
+#include <lib/class/class.h>
 
 
 /*
  * Task Object
  */
 
-/* Forward declaration */
-struct si2bin_symbol_t;
-
 struct si2bin_task_t
 {
 	int offset;
-	struct si2bin_symbol_t *symbol;
+	Si2binSymbol *symbol;
 };
 
-struct si2bin_task_t *si2bin_task_create(int offset, struct si2bin_symbol_t *symbol);
+struct si2bin_task_t *si2bin_task_create(int offset, Si2binSymbol *symbol);
 void si2bin_task_free(struct si2bin_task_t *task);
 
 void si2bin_task_dump(struct si2bin_task_t *task, FILE *f);

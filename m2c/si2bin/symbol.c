@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
+#include <lib/class/string.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/hash-table.h>
 #include <lib/util/string.h>
@@ -25,74 +25,28 @@
 #include "symbol.h"
 
 
-struct hash_table_t *si2bin_symbol_table;
+/*
+ * Class 'Si2binSymbol'
+ */
 
-struct si2bin_symbol_t *si2bin_symbol_create(char *name)
+void Si2binSymbolCreate(Si2binSymbol *self, char *name)
 {
-	struct si2bin_symbol_t *symbol;
-	
-	/* Allocate */
-	symbol = xcalloc(1, sizeof(struct si2bin_symbol_t));
-	symbol->name = xstrdup(name);
-	
-	/* Return */
-	return symbol;
-
+	/* Initialize */
+	self->name = new(String, name);
 }
 
-void si2bin_symbol_free(struct si2bin_symbol_t *symbol)
+
+void Si2binSymbolDestroy(Si2binSymbol *self)
 {
-	free(symbol->name);
-	free(symbol);
+	delete(self->name);
 }
 
-void si2bin_symbol_dump(struct si2bin_symbol_t *symbol, FILE *f)
+
+void Si2binSymbolDump(Si2binSymbol *symbol, FILE *f)
 {
 	char buf[MAX_STRING_SIZE];
 
-	fprintf(f, "name='%s', ", symbol->name);
-
+	fprintf(f, "name='%s', ", symbol->name->text);
 	snprintf(buf, sizeof buf, "%d", symbol->value);
 	fprintf(f, "value=%s", symbol->defined ? buf : "?");
 }
-
-
-
-
-/*
- * Global Functions
- */
-
-void si2bin_symbol_table_init(void)
-{
-	si2bin_symbol_table = hash_table_create(5, 1);
-}
-
-
-void si2bin_symbol_table_done(void)
-{
-	struct si2bin_symbol_t *symbol;
-	char *name;
-
-	/* Free all symbols */
-	HASH_TABLE_FOR_EACH(si2bin_symbol_table, name, symbol)
-		si2bin_symbol_free(symbol);
-	
-	/* Free symbol table */
-	hash_table_free(si2bin_symbol_table);
-}
-
-void si2bin_symbol_table_dump(FILE *f)
-{
-	struct si2bin_symbol_t *symbol;
-	char *name;
-
-	fprintf(f, "Symbol Table:\n");
-	HASH_TABLE_FOR_EACH(si2bin_symbol_table, name, symbol)
-	{
-		fprintf(f, "\t");
-		si2bin_symbol_dump(symbol, f);
-		fprintf(f, "\n");
-	}
-}
-
