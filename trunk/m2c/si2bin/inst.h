@@ -30,17 +30,13 @@
  * Class 'Si2binInst'
  */
 
-CLASS_BEGIN(Si2binInst, Object)
+CLASS_BEGIN(Si2binInst, SIInst)
 
 	SIInstOpcode opcode;
 	struct si2bin_inst_info_t *info;
 
 	/* List of arguments. Each element is of type 'Si2binArg' */
 	List *arg_list;
-
-	/* Instruction bytes generated */
-	SIInstBytes inst_bytes;
-	int size;  /* Number of bytes */
 
 	/* For LLVM-to-SI back-end: basic block that the instruction
 	 * belongs to. */
@@ -57,7 +53,7 @@ CLASS_END(Si2binInst)
  * defined in the Southern Islands disassembler. The argument list in 'arg_list'
  * is composed of objects of type 'Si2binArg'. All these objects, as well as
  * the argument list itself, will be freed by the class destructor. */
-void Si2binInstCreate(Si2binInst *self, int opcode, List *arg_list);
+void Si2binInstCreate(Si2binInst *self, SIInstOpcode opcode, List *arg_list);
 
 /* Create a new instruction with the opcode corresponding to the first instruction
  * named 'name' that matches the number and type of arguments passed in 'arg_list'.

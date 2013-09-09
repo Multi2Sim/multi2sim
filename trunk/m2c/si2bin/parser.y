@@ -722,7 +722,8 @@ text_stmt
 
 		/* Generate code */
 		Si2binInstGenerate(inst, si2bin_yysi2bin);
-		ELFWriterBufferWrite(si2bin_entry->text_section_buffer, inst->inst_bytes.byte, inst->size);
+		ELFWriterBufferWrite(si2bin_entry->text_section_buffer,
+				asSIInst(inst)->bytes.byte, asSIInst(inst)->size);
 		
 		/* Dump Instruction Info */
 		//si2bin_inst_dump(inst, stdout);

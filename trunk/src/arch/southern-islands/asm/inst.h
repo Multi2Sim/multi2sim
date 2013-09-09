@@ -20,8 +20,6 @@
 #ifndef ARCH_SOUTHERN_ISLANDS_ASM_INST_H
 #define ARCH_SOUTHERN_ISLANDS_ASM_INST_H
 
-#include <stdio.h>
-
 #include <lib/class/class.h>
 
 
@@ -480,7 +478,11 @@ typedef struct
 	SIInstFormat fmt;  /* Word formats */
 	int op;  /* Opcode bits */
 	SIInstFlag flags;  /* Flag bitmap */
-	int size;  /* Size of microcode inst (bytes) */
+
+	/* Size of the micro-code format in bytes, not counting a possible
+	 * additional literal added by a particular instance. */
+	int size;
+
 } SIInstInfo;
 
 
@@ -495,6 +497,10 @@ CLASS_BEGIN(SIInst, Object)
 	/* Instruction bytes */
 	SIInstBytes bytes;
 
+	/* Instruction size in bytes, including the literal constant
+	 * if present. */
+	int size;
+
 CLASS_END(SIInst)
 
 
@@ -502,9 +508,9 @@ void SIInstCreate(SIInst *self, SIAsm *as);
 void SIInstDestroy(SIInst *self);
 
 void SIInstClear(SIInst *self);
-int SIInstDecode(SIInst *self, void *buf, unsigned int offset);
+void SIInstDecode(SIInst *self, void *buf, unsigned int offset);
 
-void SIInstDump(SIInst *self, unsigned int inst_size, unsigned int rel_addr, void *buf, char *line, int line_size);
+void SIInstDump(SIInst *self, unsigned int rel_addr, void *buf, char *line, int line_size);
 void SIInstDump_SSRC(SIInst *self, unsigned int ssrc, char *operand_str, char **inst_str, int str_size);
 void SIInstDump_64_SSRC(SIInst *self, unsigned int ssrc, char *operand_str, char **inst_str, int str_size);
 void SIInstDump_VOP3_SRC(SIInst *self, unsigned int src, int neg, char *operand_str, char **inst_str, int str_size);
