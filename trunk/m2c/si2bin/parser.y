@@ -29,6 +29,7 @@
 #include <lib/class/class.h>
 #include <lib/class/elf-writer.h>
 #include <lib/class/list.h>
+#include <lib/class/string.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/hash-table.h>
@@ -38,7 +39,6 @@
 #include "arg.h"
 #include "data.h"
 #include "inner-bin.h"
-#include "id.h"
 #include "inst.h"
 #include "metadata.h"
 #include "outer-bin.h"
@@ -56,7 +56,7 @@
 %union {
 	int num;
 	float num_float;
-	struct si2bin_id_t *id;
+	String *id;
 	Si2binInst *inst;
 	struct si_label_t *label;
 	List *list;
@@ -166,8 +166,10 @@ global_section
 global_header
 	: TOK_GLOBAL TOK_ID
 	{
+		String *id = $2;
+		
 		/* Create new objects for each kernel */
-		si2bin_inner_bin = si2bin_inner_bin_create($2->name);
+		si2bin_inner_bin = si2bin_inner_bin_create($2->text);
 		si2bin_metadata = si2bin_metadata_create();
 		si2bin_entry = si2bin_inner_bin_entry_create();
 		
@@ -180,7 +182,7 @@ global_header
 		si2bin_uniqueid ++;
 
 		/* Free id */
-		si2bin_id_free($2);
+		delete(id);
 	} TOK_NEW_LINE
 	;
 
@@ -203,58 +205,61 @@ metadata_stmt_list
 metadata_stmt
 	: TOK_ID TOK_EQ hex_or_dec_value
 	{
+		String *id = $1;
+		
 		/* Find memory information and store it in metadata */
-		if (!strcmp("uavprivate", $1->name))
+		if (!strcmp("uavprivate", id->text))
 		{
 			si2bin_metadata->uavprivate = $3;
 		}
-		else if (!strcmp("hwregion", $1->name))
+		else if (!strcmp("hwregion", id->text))
 		{	
 			si2bin_metadata->hwregion = $3;
 		}
-		else if (!strcmp("hwlocal", $1->name))
+		else if (!strcmp("hwlocal", id->text))
 		{
 			si2bin_metadata->hwlocal = $3;
 		}
-		else if (!strcmp("userElementCount", $1->name))
+		else if (!strcmp("userElementCount", id->text))
 		{
 			warning("User has provided 'userElementCount' but this number is automatically calculated");
 		}
-		else if (!strcmp("NumVgprs", $1->name))
+		else if (!strcmp("NumVgprs", id->text))
 		{	
 			warning("User has provided 'NumVgprs' but this number is automatically calculated");
 		}
-		else if (!strcmp("NumSgprs", $1->name))
+		else if (!strcmp("NumSgprs", id->text))
 		{
 			warning("User has provided 'NumSgprs' but this number is automatically calculated");
 		}
-		else if (!strcmp("FloatMode", $1->name))
+		else if (!strcmp("FloatMode", id->text))
 		{
 			si2bin_inner_bin->FloatMode = $3;
 		}
-		else if (!strcmp("IeeeMode", $1->name))
+		else if (!strcmp("IeeeMode", id->text))
 		{	
 			si2bin_inner_bin->IeeeMode = $3;
 		}
-		else if (!strcmp("COMPUTE_PGM_RSRC2", $1->name))
+		else if (!strcmp("COMPUTE_PGM_RSRC2", id->text))
 		{
 			warning("User has provided 'COMPUTE_PGM_RSRC2' but this number is automatically calculated from provided PGM_RSRC2 fields");
 		}
-		else if(!strcmp("rat_op", $1->name))
+		else if(!strcmp("rat_op", id->text))
 		{	
 			si2bin_inner_bin->rat_op = $3;
 		}
-		else if (!strcmp("COMPUTE_PGM_RSRC2", $1->name))
+		else if (!strcmp("COMPUTE_PGM_RSRC2", id->text))
 		{
 			warning("User has provided 'COMPUTE_PGM_RSRC2' but this number is automatically calculated from provided PGM_RSRC2 fields");
 		}
 		else
 		{
-			si2bin_yyerror_fmt("Unrecognized assignment: %s", $1->name);
+			si2bin_yyerror_fmt("Unrecognized assignment: %s", id->text);
 		}
 
 		/* Free id */
-		si2bin_id_free($1);
+		delete(id);
+		
 	} TOK_NEW_LINE
 	| TOK_ID TOK_OBRA TOK_DECIMAL TOK_CBRA TOK_EQ TOK_ID TOK_COMMA TOK_DECIMAL TOK_COMMA TOK_ID TOK_OBRA TOK_DECIMAL TOK_COLON TOK_DECIMAL TOK_CBRA
 	{
@@ -262,8 +267,8 @@ metadata_stmt
 		int err;
 
 		/* check for correct syntax */
-		if (strcmp("userElements", $1->name))
-			si2bin_yyerror_fmt("User Elements not correctly specified: %s", $1->name);
+		if (strcmp("userElements", $1->text))
+			si2bin_yyerror_fmt("User Elements not correctly specified: %s", $1->text);
 		
 		/* Make sure userElement index is in correct range */
 		if ($3 > 15 || $3 < 0)
@@ -271,9 +276,9 @@ metadata_stmt
 
 		/* Create userElement object */
 		user_elem = si_bin_enc_user_element_create();
-		user_elem->dataClass = str_map_string_err(&si_bin_user_data_class, $6->name, &err);
+		user_elem->dataClass = str_map_string_err(&si_bin_user_data_class, $6->text, &err);
 		if (err)
-			si2bin_yyerror_fmt("Unrecognized data class: %s", $6->name);
+			si2bin_yyerror_fmt("Unrecognized data class: %s", $6->text);
 
 		user_elem->apiSlot = $8;
 		user_elem->startUserReg = $12;
@@ -282,70 +287,70 @@ metadata_stmt
 		/* Add userElement to userElement list */
 		si2bin_inner_bin_add_user_element(si2bin_inner_bin, user_elem, $3);
 
-		/* Free id */
-		si2bin_id_free($1);
-		si2bin_id_free($6);
-		si2bin_id_free($10);
+		/* Free identifiers */
+		delete($1);
+		delete($6);
+		delete($10);
 
 	} TOK_NEW_LINE
 	| TOK_ID TOK_COLON TOK_ID TOK_EQ hex_or_dec_value
 	{
 		/* Find pgm_rsrc2 information */
-		if (strcmp("COMPUTE_PGM_RSRC2", $1->name))
-			si2bin_yyerror_fmt("Unrecognized assignment: %s", $1->name);
+		if (strcmp("COMPUTE_PGM_RSRC2", $1->text))
+			si2bin_yyerror_fmt("Unrecognized assignment: %s", $1->text);
 		
-		if (!strcmp("SCRATCH_EN", $3->name))
+		if (!strcmp("SCRATCH_EN", $3->text))
 		{
 			si2bin_inner_bin->pgm_rsrc2->scrach_en = $5;
 		}
-		else if (!strcmp("USER_SGPR", $3->name))
+		else if (!strcmp("USER_SGPR", $3->text))
 		{
 			si2bin_inner_bin->pgm_rsrc2->user_sgpr = $5;
 		}
-		else if (!strcmp("TRAP_PRESENT", $3->name))
+		else if (!strcmp("TRAP_PRESENT", $3->text))
 		{
 			si2bin_inner_bin->pgm_rsrc2->trap_present = $5;
 		}
-		else if (!strcmp("TGID_X_EN", $3->name))
+		else if (!strcmp("TGID_X_EN", $3->text))
 		{
 			si2bin_inner_bin->pgm_rsrc2->tgid_x_en = $5;
 		}
-		else if (!strcmp("TGID_Y_EN", $3->name))
+		else if (!strcmp("TGID_Y_EN", $3->text))
 		{
 			si2bin_inner_bin->pgm_rsrc2->tgid_y_en = $5;
 		}
-		else if (!strcmp("TGID_Z_EN", $3->name))
+		else if (!strcmp("TGID_Z_EN", $3->text))
 		{
 			si2bin_inner_bin->pgm_rsrc2->tgid_z_en = $5;
 		}
-		else if (!strcmp("TG_SIZE_EN", $3->name))
+		else if (!strcmp("TG_SIZE_EN", $3->text))
 		{
 			si2bin_inner_bin->pgm_rsrc2->tg_size_en = $5;
 		}
-		else if (!strcmp("TIDIG_COMP_CNT", $3->name))
+		else if (!strcmp("TIDIG_COMP_CNT", $3->text))
 		{
 			si2bin_inner_bin->pgm_rsrc2->tidig_comp_cnt = $5;
 		}
-		else if (!strcmp("EXCP_EN_MSB", $3->name))
+		else if (!strcmp("EXCP_EN_MSB", $3->text))
 		{
 			si2bin_inner_bin->pgm_rsrc2->excp_en_msb = $5;
 		}
-		else if (!strcmp("LDS_SIZE", $3->name))
+		else if (!strcmp("LDS_SIZE", $3->text))
 		{
 			si2bin_inner_bin->pgm_rsrc2->lds_size = $5;
 		}
-		else if (!strcmp("EXCP_EN", $3->name))
+		else if (!strcmp("EXCP_EN", $3->text))
 		{
 			si2bin_inner_bin->pgm_rsrc2->excp_en = $5;
 		}
 		else
 		{
-			si2bin_yyerror_fmt("Unrecognized field of COMPUTE_PGM_RSRC2: %s", $3->name);
+			si2bin_yyerror_fmt("Unrecognized field of COMPUTE_PGM_RSRC2: %s", $3->text);
 		}
 
 		/* Free id's */
-		si2bin_id_free($1);
-		si2bin_id_free($3);
+		delete($1);
+		delete($3);
 	} TOK_NEW_LINE
 	| TOK_NEW_LINE
 	;
@@ -359,9 +364,9 @@ hex_or_dec_value
 	{
 		int value;
 		
-		sscanf($1->name, "%x", &value);
+		sscanf($1->text, "%x", &value);
 
-		si2bin_id_free($1);
+		delete($1);
 		$$ = value;
 	}
 	;
@@ -384,11 +389,11 @@ data_stmt_list
 data_stmt
 	: TOK_ID TOK_COLON
 	{	
-		si2bin_id_free($1);
+		delete($1);
 	}
 	| TOK_ID TOK_COLON TOK_NEW_LINE
 	{
-		si2bin_id_free($1);
+		delete($1);
 	}
 	| TOK_FLOAT_DECL float_vals
 	| TOK_WORD_DECL word_vals
@@ -519,12 +524,12 @@ args_stmt
 
 		
 		/* Set argument name */
-		SIArgSetName(arg, $2->name);
+		SIArgSetName(arg, $2->text);
 		
 		/* Set arg fields */
-		arg->value.data_type = str_map_string_err(&si_arg_data_type_map, $1->name, &err);
+		arg->value.data_type = str_map_string_err(&si_arg_data_type_map, $1->text, &err);
 		if(err)
-			si2bin_yyerror_fmt("Unrecognized data type: %s", $1->name);
+			si2bin_yyerror_fmt("Unrecognized data type: %s", $1->text);
 
 		arg->value.num_elems = 1;
 		arg->value.constant_buffer_num = 1;
@@ -532,8 +537,8 @@ args_stmt
 		
 		/* Insert argument and free identifiers */
 		si2bin_metadata_add_arg(si2bin_metadata, arg);
-		si2bin_id_free($1);
-		si2bin_id_free($2);
+		delete($1);
+		delete($2);
 	} TOK_NEW_LINE
 	| TOK_ID TOK_OBRA TOK_DECIMAL TOK_CBRA TOK_ID TOK_DECIMAL val_stmt_list
 	{
@@ -541,12 +546,12 @@ args_stmt
 		int err;
 
 		/* Set argument name */
-		SIArgSetName(arg, $5->name);
+		SIArgSetName(arg, $5->text);
 		
 		/* Set argument fields */
-		arg->value.data_type = str_map_string_err(&si_arg_data_type_map, $1->name, &err);
+		arg->value.data_type = str_map_string_err(&si_arg_data_type_map, $1->text, &err);
 		if (err)
-			si2bin_yyerror_fmt("Unrecognized data type: %s", $1->name);
+			si2bin_yyerror_fmt("Unrecognized data type: %s", $1->text);
 		
 		arg->value.num_elems = $3;
 		arg->value.constant_buffer_num = 1;
@@ -554,8 +559,8 @@ args_stmt
 		
 		/* Insert argument and free identifiers */
 		si2bin_metadata_add_arg(si2bin_metadata, arg);
-		si2bin_id_free($1);
-		si2bin_id_free($5);
+		delete($1);
+		delete($5);
 	} TOK_NEW_LINE
 	| TOK_ID TOK_STAR TOK_ID TOK_DECIMAL ptr_stmt_list
 	{
@@ -563,21 +568,21 @@ args_stmt
 		int err;
 
 		/* Set new argument name */
-		SIArgSetName(arg, $3->name);
+		SIArgSetName(arg, $3->text);
 		
 		/* Initialize argument */
 		arg->pointer.num_elems = 1;
-		arg->pointer.data_type = str_map_string_err(&si_arg_data_type_map, $1->name, &err);
+		arg->pointer.data_type = str_map_string_err(&si_arg_data_type_map, $1->text, &err);
 		if (err)
-			si2bin_yyerror_fmt("Unrecognized data type: %s", $1->name);
+			si2bin_yyerror_fmt("Unrecognized data type: %s", $1->text);
 
 		arg->pointer.constant_buffer_num = 1;
 		arg->pointer.constant_offset = $4;
 
 		/* Insert argument and free identifiers */
 		si2bin_metadata_add_arg(si2bin_metadata, arg);
-		si2bin_id_free($1);
-		si2bin_id_free($3);
+		delete($1);
+		delete($3);
 	} TOK_NEW_LINE
 	| TOK_ID TOK_OBRA TOK_DECIMAL TOK_CBRA TOK_STAR TOK_ID TOK_DECIMAL ptr_stmt_list
 	{
@@ -585,13 +590,13 @@ args_stmt
 		int err;
 
 		/* Set new argument name */
-		SIArgSetName(arg, $6->name);
+		SIArgSetName(arg, $6->text);
 		
 		/* Initialize argument */
 		arg->pointer.num_elems = $3;
-		arg->pointer.data_type = str_map_string_err(&si_arg_data_type_map, $1->name, &err);
+		arg->pointer.data_type = str_map_string_err(&si_arg_data_type_map, $1->text, &err);
 		if (err)
-			si2bin_yyerror_fmt("Unrecognized data type: %s", $1->name);
+			si2bin_yyerror_fmt("Unrecognized data type: %s", $1->text);
 		
 		arg->pointer.constant_buffer_num = 1;
 		arg->pointer.constant_offset = $7;
@@ -599,8 +604,8 @@ args_stmt
 
 		/* Insert argument and free identifiers */
 		si2bin_metadata_add_arg(si2bin_metadata, arg);
-		si2bin_id_free($1);
-		si2bin_id_free($6);
+		delete($1);
+		delete($6);
 	} TOK_NEW_LINE
 	| TOK_NEW_LINE
 	;
@@ -643,29 +648,29 @@ ptr_stmt_list
 	| ptr_stmt_list TOK_ID
 	{
 		SIArg *arg = $1;
-		struct si2bin_id_t *id = $2;
+		String *id = $2;
 		int err;
 
 		/* Translate access type */
-		arg->pointer.access_type = str_map_string_err(&si_arg_access_type_map, id->name, &err);
+		arg->pointer.access_type = str_map_string_err(&si_arg_access_type_map, id->text, &err);
 		if (err)
-			si2bin_yyerror_fmt("Unrecognized access type: %s", id->name);
+			si2bin_yyerror_fmt("Unrecognized access type: %s", id->text);
 		
 		/* Free ID and return argument */
-		si2bin_id_free(id);
+		delete(id);
 		$$ = arg;
 	}
 	| ptr_stmt_list TOK_UAV
 	{
 		SIArg *arg = $1;
-		struct si2bin_id_t *id = $2;
+		String *id = $2;
 	
 		/* Obtain UAV index */
 		arg->pointer.scope = SIArgUAV;
-		arg->pointer.buffer_num = atoi(id->name + 3);
+		arg->pointer.buffer_num = atoi(id->text + 3);
 
 		/* Free ID and return argument */
-		si2bin_id_free(id);
+		delete(id);
 		$$ = arg;
 	}
 	| ptr_stmt_list TOK_HL
@@ -725,20 +730,20 @@ text_stmt
 label
 	: TOK_ID TOK_COLON
 	{
-		struct si2bin_id_t *id = $1;
+		String *id = $1;
 		struct si2bin_symbol_t *symbol;
 
 		
 		/* Check if symbol exists */
-		symbol = hash_table_get(si2bin_symbol_table, id->name);
+		symbol = hash_table_get(si2bin_symbol_table, id->text);
 		if (symbol && symbol->defined)
-			si2bin_yyerror_fmt("multiply defined label: %s", id->name);
+			si2bin_yyerror_fmt("multiply defined label: %s", id->text);
 
 		/* Create if it does not exists */
 		if (!symbol)
 		{
-			symbol = si2bin_symbol_create(id->name);
-			hash_table_insert(si2bin_symbol_table, id->name, symbol);
+			symbol = si2bin_symbol_create(id->text);
+			hash_table_insert(si2bin_symbol_table, id->text, symbol);
 		}
 
 		/* Define symbol */
@@ -746,14 +751,14 @@ label
 		symbol->value = si2bin_entry->text_section_buffer->offset;		
 
 		/* End */
-		si2bin_id_free(id);
+		delete(id);
 	}
 
 instr
 	: TOK_ID arg_list 
 	{
 		Si2binInst *inst;
-		struct si2bin_id_t *id;
+		String *id;
 		List *arg_list;
 
 		/* Get arguments */
@@ -762,10 +767,10 @@ instr
 		
 		/* Create instruction */
 		inst = new_ctor(Si2binInst, CreateWithName,
-				id->name, arg_list);
+				id->text, arg_list);
 
 		/* Return instructions */
-		si2bin_id_free(id);
+		delete(id);
 		$$ = inst;
 	}
 ;
@@ -805,40 +810,40 @@ operand
 	{	
 		int value;
 
-		value = atoi($1->name + 1);
+		value = atoi($1->text + 1);
 		$$ = new_ctor(Si2binArg, CreateScalarRegister, value);
 
 		if (value >= si2bin_inner_bin->num_sgprs)
 			si2bin_inner_bin->num_sgprs = value + 1;
 		
-		si2bin_id_free($1);
+		delete($1);
 	}
 	
 	| TOK_VECTOR_REGISTER
 	{
 		int value;
 
-		value = atoi($1->name + 1);
+		value = atoi($1->text + 1);
 		$$ = new_ctor(Si2binArg, CreateVectorRegister, value); 
 		
 		if (value >= si2bin_inner_bin->num_vgprs)
 			si2bin_inner_bin->num_vgprs = value + 1;
 
-		si2bin_id_free($1);
+		delete($1);
 	}
 	
 	| TOK_SPECIAL_REGISTER
 	{
 		enum si_inst_special_reg_t reg;
-		reg = str_map_string(&si_inst_special_reg_map, $1->name);
+		reg = str_map_string(&si_inst_special_reg_map, $1->text);
 		$$ = new_ctor(Si2binArg, CreateSpecialRegister, reg); 
-		si2bin_id_free($1);
+		delete($1);
 	}
 
 	| TOK_MEMORY_REGISTER
 	{
-		$$ = new_ctor(Si2binArg, CreateMemRegister, atoi($1->name + 1));
-		si2bin_id_free($1);
+		$$ = new_ctor(Si2binArg, CreateMemRegister, atoi($1->text + 1));
+		delete($1);
 	}
 	
 	| TOK_DECIMAL
@@ -850,9 +855,9 @@ operand
 	{
 		int value;
 
-		sscanf($1->name, "%x", &value);
+		sscanf($1->text, "%x", &value);
 		$$ = new_ctor(Si2binArg, CreateLiteral, value); 
-		si2bin_id_free($1);
+		delete($1);
 	}
 
 	| TOK_FLOAT
@@ -870,7 +875,7 @@ arg
 	| TOK_ID TOK_OBRA TOK_DECIMAL TOK_COLON TOK_DECIMAL TOK_CBRA  
 	{
 		Si2binArg *arg = NULL;
-		struct si2bin_id_t *id;
+		String *id;
 
 		int low;
 		int high;
@@ -881,13 +886,13 @@ arg
 		high = $5;
 		
 		/* Initialize */
-		if (!strcmp(id->name, "s"))
+		if (!strcmp(id->text, "s"))
 		{
 			arg = new_ctor(Si2binArg, CreateScalarRegisterSeries, low, high);
 			if (high >= si2bin_inner_bin->num_sgprs)
 				si2bin_inner_bin->num_sgprs = high + 1;
 		}
-		else if (!strcmp(id->name, "v"))
+		else if (!strcmp(id->text, "v"))
 		{
 			arg = new_ctor(Si2binArg, CreateVectorRegisterSeries, low, high);
 			if (high >= si2bin_inner_bin->num_vgprs)
@@ -895,11 +900,11 @@ arg
 		}
 		else
 		{
-			si2bin_yyerror_fmt("invalid register series: %s", id->name);
+			si2bin_yyerror_fmt("invalid register series: %s", id->text);
 		}
 		
 		/* Return created argument */
-		si2bin_id_free(id);
+		delete(id);
 		$$ = arg;
 	}
 
@@ -957,8 +962,8 @@ arg
 		Si2binArg *soffset;
 		Si2binArg *qual;
 
-		struct si2bin_id_t *id_data_format;
-		struct si2bin_id_t *id_num_format;
+		String *id_data_format;
+		String *id_num_format;
 		
 		enum si_inst_buf_data_format_t data_format;
 		enum si_inst_buf_num_format_t num_format;
@@ -973,36 +978,36 @@ arg
 		
 		/* Data format */
 		data_format = str_map_string_err(&si_inst_buf_data_format_map,
-				id_data_format->name, &err);
+				id_data_format->text, &err);
 		if (err)
-			si2bin_yyerror_fmt("%s: invalid data format", id_data_format->name);
+			si2bin_yyerror_fmt("%s: invalid data format", id_data_format->text);
 			
 		/* Number format */
 		num_format = str_map_string_err(&si_inst_buf_num_format_map,
-				id_num_format->name, &err);
+				id_num_format->text, &err);
 		if (err)
-			si2bin_yyerror_fmt("%s: invalid number format", id_num_format->name); 
+			si2bin_yyerror_fmt("%s: invalid number format", id_num_format->text); 
 
 		/* Create argument */
 		arg = new_ctor(Si2binArg, CreateMaddr, soffset, qual, data_format, num_format);	
 			
 		/* Return */
-		si2bin_id_free(id_data_format);
-		si2bin_id_free(id_num_format);
+		delete(id_data_format);
+		delete(id_num_format);
 		$$ = arg;
 	}
 
 	| TOK_ID
 	{
 		Si2binArg *arg;
-		struct si2bin_id_t *id;
+		String *id;
 
 		/* Get ID */
 		id = $1;
 		
 		/* Create argument */
-		arg = new_ctor(Si2binArg, CreateLabel, id->name);
-		si2bin_id_free(id);
+		arg = new_ctor(Si2binArg, CreateLabel, id->text);
+		delete(id);
 
 		/* Return argument */
 		$$ = arg;
@@ -1085,7 +1090,7 @@ waitcnt_elem
 	: TOK_ID TOK_OPAR TOK_DECIMAL TOK_CPAR
 	{
 		Si2binArg *arg;
-		struct si2bin_id_t *id;
+		String *id;
 
 		/* Read arguments */
 		id = $1;
@@ -1094,24 +1099,24 @@ waitcnt_elem
 		arg = new(Si2binArg);
 		arg->type = Si2binArgWaitcnt;
 		
-		if (!strcmp(id->name, "vmcnt"))
+		if (!strcmp(id->text, "vmcnt"))
 		{
 			arg->value.wait_cnt.vmcnt_active = 1;
 			arg->value.wait_cnt.vmcnt_value = $3;
 		}
-		else if (!strcmp(id->name, "expcnt"))
+		else if (!strcmp(id->text, "expcnt"))
 		{
 			arg->value.wait_cnt.expcnt_active = 1;
 			arg->value.wait_cnt.expcnt_value = $3;
 		}
-		else if (!strcmp(id->name, "lgkmcnt"))
+		else if (!strcmp(id->text, "lgkmcnt"))
 		{
 			arg->value.wait_cnt.lgkmcnt_active = 1;
 			arg->value.wait_cnt.lgkmcnt_value = $3;
 		}
 		
 		/* Return */
-		si2bin_id_free(id);
+		delete(id);
 		$$ = arg;
 	}
 ;
