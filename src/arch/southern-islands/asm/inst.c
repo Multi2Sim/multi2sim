@@ -468,8 +468,8 @@ void SIInstDump_DUG(SIInst *inst, char *operand_str,
 		str_printf(inst_str, &str_size, " glc");
 }
 
-void SIInstDump(SIInst *self, unsigned int inst_size, 
-	unsigned int rel_addr, void *buf, char *line, int line_size)
+void SIInstDump(SIInst *self, unsigned int rel_addr, void *buf,
+		char *line, int line_size)
 {
 	int str_size = MAX_STRING_SIZE;
 	int token_len;
@@ -1118,7 +1118,7 @@ void SIInstDump(SIInst *self, unsigned int inst_size,
 
 		fmt_str += token_len;
 	}
-	line_dump(orig_inst_str, rel_addr, buf, line, line_size, inst_size);
+	line_dump(orig_inst_str, rel_addr, buf, line, line_size, self->size);
 }
 
 
@@ -1129,16 +1129,15 @@ void SIInstClear(SIInst *self)
 }
 
 
-int SIInstDecode(SIInst *self, void *buf, unsigned int offset)
+void SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 {
 	SIAsm *as = self->as;
-	unsigned int inst_size;
 
 	/* Initialize instruction */
 	SIInstClear(self);
 
 	/* Instruction is at least 4 bytes */
-	inst_size = 4;
+	self->size = 4;
 	self->bytes.word[0] = * (unsigned int *) buf;
 
 	/* Use the encoding field to determine the instruction type */
@@ -1171,7 +1170,7 @@ int SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 		if (self->bytes.sopc.ssrc0 == 0xFF ||
 			self->bytes.sopc.ssrc1 == 0xFF)
 		{
-			inst_size = 8;
+			self->size = 8;
 			self->bytes.dword = * (unsigned long long *) buf;
 		}
 	}
@@ -1190,7 +1189,7 @@ int SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 		 * source operand. */
 		if (self->bytes.sop1.ssrc0 == 0xFF)
 		{
-			inst_size = 8;
+			self->size = 8;
 			self->bytes.dword = * (unsigned long long *) buf;		}
 	}
 	else if (self->bytes.sopk.enc == 0xB)
@@ -1222,7 +1221,7 @@ int SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 		if (self->bytes.sop2.ssrc0 == 0xFF ||
 			self->bytes.sop2.ssrc1 == 0xFF)
 		{
-			inst_size = 8;
+			self->size = 8;
 			self->bytes.dword = * (unsigned long long *) buf;		}
 	}
 	else if (self->bytes.smrd.enc == 0x18)
@@ -1239,7 +1238,7 @@ int SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 	else if (self->bytes.vop3a.enc == 0x34)
 	{
 		/* 64 bit instruction. */
-		inst_size = 8;
+		self->size = 8;
 		self->bytes.dword = * (unsigned long long *) buf;
 
 		if (!as->inst_info_vop3[self->bytes.vop3a.op])
@@ -1269,7 +1268,7 @@ int SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 		 * source operand. */
 		if (self->bytes.vopc.src0 == 0xFF)
 		{
-			inst_size = 8;
+			self->size = 8;
 			self->bytes.dword = * (unsigned long long *) buf;		}
 	}
 	else if (self->bytes.vop1.enc == 0x3F)
@@ -1287,7 +1286,7 @@ int SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 		 * source operand. */
 		if (self->bytes.vop1.src0 == 0xFF)
 		{
-			inst_size = 8;
+			self->size = 8;
 			self->bytes.dword = * (unsigned long long *) buf;		}
 	}
 	else if (self->bytes.vop2.enc == 0x0)
@@ -1305,14 +1304,14 @@ int SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 		 * source operand. */
 		if (self->bytes.vop2.src0 == 0xFF)
 		{
-			inst_size = 8;
+			self->size = 8;
 			self->bytes.dword = * (unsigned long long *) buf;		}
 
 		/* Some opcodes define a 32-bit literal constant following
 		 * the instruction */
 		if (self->bytes.vop2.op == 32)
 		{
-			inst_size = 8;
+			self->size = 8;
 			self->bytes.dword = * (unsigned long long *) buf;		}
 	}
 	else if (self->bytes.vintrp.enc == 0x32)
@@ -1330,7 +1329,7 @@ int SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 	else if (self->bytes.ds.enc == 0x36)
 	{
 		/* 64 bit instruction. */
-		inst_size = 8;
+		self->size = 8;
 		self->bytes.dword = * (unsigned long long *) buf;
 		if (!as->inst_info_ds[self->bytes.ds.op])
 		{
@@ -1345,7 +1344,7 @@ int SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 	else if (self->bytes.mtbuf.enc == 0x3A)
 	{
 		/* 64 bit instruction. */
-		inst_size = 8;
+		self->size = 8;
 		self->bytes.dword = * (unsigned long long *) buf;
 
 		if (!as->inst_info_mtbuf[self->bytes.mtbuf.op])
@@ -1361,7 +1360,7 @@ int SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 	else if (self->bytes.mubuf.enc == 0x38)
 	{
 		/* 64 bit instruction. */
-		inst_size = 8;
+		self->size = 8;
 		self->bytes.dword = * (unsigned long long *) buf;
 
 		if (!as->inst_info_mubuf[self->bytes.mubuf.op])
@@ -1378,7 +1377,7 @@ int SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 	else if (self->bytes.mimg.enc == 0x3C)
 	{
 		/* 64 bit instruction. */
-		inst_size = 8;
+		self->size = 8;
 		self->bytes.dword = * (unsigned long long *) buf;
 
 		if(!as->inst_info_mimg[self->bytes.mimg.op])
@@ -1395,7 +1394,7 @@ int SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 	else if (self->bytes.exp.enc == 0x3E)
 	{
 		/* 64 bit instruction. */
-		inst_size = 8;
+		self->size = 8;
 		self->bytes.dword = * (unsigned long long *) buf;
 
 		/* Export is the only instruction in its kind */
@@ -1409,6 +1408,5 @@ int SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 		fatal("Unimplemented format. Instruction is:  // %08X: %08X\n",
 				offset, ((unsigned int*)buf)[0]);
 	}
-
-	return inst_size;
 }
+
