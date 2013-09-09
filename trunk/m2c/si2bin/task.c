@@ -36,97 +36,40 @@
  * Task Object
  */
 
-struct si2bin_task_t *si2bin_task_create(int offset, Si2binSymbol *symbol)
+void Si2binTaskCreate(Si2binTask *self, int offset, Si2binSymbol *symbol)
 {
-	struct si2bin_task_t *task;
-	
-	/* Allocate */
-	task = xcalloc(1, sizeof(struct si2bin_task_t));
-	
-	/* Initialize the task's offset and ID */
-	task->offset = offset;
-	task->symbol = symbol;
-	
-	/* Return */
-	return task;
-
-}
-
-void si2bin_task_free(struct si2bin_task_t *task)
-{
-	free(task);
+	/* Initialize */
+	self->offset = offset;
+	self->symbol = symbol;
 }
 
 
-void si2bin_task_dump(struct si2bin_task_t *task, FILE *f)
+void Si2binTaskDestroy(Si2binTask *self)
 {
-	fprintf(f, "offset=%d, symbol={", task->offset);
-	Si2binSymbolDump(task->symbol, f);
+}
+
+
+void Si2binTaskDump(Si2binTask *self, FILE *f)
+{
+	fprintf(f, "offset=%d, symbol={", self->offset);
+	Si2binSymbolDump(self->symbol, f);
 	fprintf(f, "}");
 }
 
 
-void si2bin_task_process(struct si2bin_task_t *task)
+void Si2binTaskProcess(Si2binTask *self)
 {
 	Si2binSymbol *label;
 	SIInstBytes *inst;
 
 
 	/* Check whether symbol is resolved */
-	label = task->symbol;
+	label = self->symbol;
 	if (!label->defined)
 		si2bin_yyerror_fmt("undefined label: %s", label->name->text);
 
 	/* Resolve label */
-	assert(IN_RANGE(task->offset, 0, si2bin_entry->text_section_buffer->offset - 4));
-	inst = si2bin_entry->text_section_buffer->ptr + task->offset;
-	inst->sopp.simm16 = (label->value - task->offset) / 4 - 1;
-}
-
-
-
-
-/*
- * Global Functions
- */
-
-struct list_t *si2bin_task_list;
-
-		
-void si2bin_task_list_init(void)
-{							  
-	si2bin_task_list = list_create();
-}
-
-
-void si2bin_task_list_done(void)
-{
-	int index;
-	
-	LIST_FOR_EACH(si2bin_task_list, index)
-		si2bin_task_free(list_get(si2bin_task_list, index));
-	list_free(si2bin_task_list);
-}
-
-
-void si_task_list_dump(FILE *f)
-{
-	int index;
-	
-	fprintf(f, "Task list:\n");
-	LIST_FOR_EACH(si2bin_task_list, index)
-	{
-		fprintf(f, "\ttask %d: ", index);
-		si2bin_task_dump(list_get(si2bin_task_list, index), f);
-		fprintf(f, "\n");
-	}
-}
-
-
-void si2bin_task_list_process(void)
-{
-	int index;
-
-	LIST_FOR_EACH(si2bin_task_list, index)
-		si2bin_task_process(list_get(si2bin_task_list, index));
+	assert(IN_RANGE(self->offset, 0, si2bin_entry->text_section_buffer->offset - 4));
+	inst = si2bin_entry->text_section_buffer->ptr + self->offset;
+	inst->sopp.simm16 = (label->value - self->offset) / 4 - 1;
 }
