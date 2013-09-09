@@ -24,32 +24,22 @@
 
 
 /*
- * Task Object
+ * Class 'Si2binTask'
  */
 
-struct si2bin_task_t
-{
+CLASS_BEGIN(Si2binTask, Object)
+
 	int offset;
 	Si2binSymbol *symbol;
-};
 
-struct si2bin_task_t *si2bin_task_create(int offset, Si2binSymbol *symbol);
-void si2bin_task_free(struct si2bin_task_t *task);
-
-void si2bin_task_dump(struct si2bin_task_t *task, FILE *f);
-void si2bin_task_process(struct si2bin_task_t *task);
+CLASS_END(Si2binTask)
 
 
+void Si2binTaskCreate(Si2binTask *self, int offset, Si2binSymbol *symbol);
+void Si2binTaskDestroy(Si2binTask *self);
 
-/*
- * Global
- */
+void Si2binTaskDump(Si2binTask *self, FILE *f);
+void Si2binTaskProcess(Si2binTask *self);
 
-extern struct list_t *si2bin_task_list;
-
-void si2bin_task_list_init(void);
-void si2bin_task_list_done(void);
-
-void si2bin_task_list_process(void);
 
 #endif
