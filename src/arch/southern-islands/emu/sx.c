@@ -28,7 +28,6 @@
  * Public Functions
  */
 
-
 void SISXCreate(SISX *self, SIEmu *emu)
 {
 	int i;
@@ -48,14 +47,27 @@ void SISXCreate(SISX *self, SIEmu *emu)
 void SISXDestroy(SISX *self)
 {
 	int i;
+	int j;
+	float *pos;
+	float *param;
 
-	/* Free list and content */
+	/* Free */
 	for (i = 0; i < SI_POS_COUNT; ++i)
 	{
+		LIST_FOR_EACH(self->pos[i], j)
+		{
+			pos = list_get(self->pos[i], j);
+			free(pos);
+		}
 		list_free(self->pos[i]);
 	}
 	for (int i = 0; i < SI_PARAM_COUNT; ++i)
 	{
+		LIST_FOR_EACH(self->param[i], j)
+		{
+			param = list_get(self->param[i], j);
+			free(param);
+		}
 		list_free(self->param[i]);
 	}
 }

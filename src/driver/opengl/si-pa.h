@@ -53,7 +53,23 @@ enum opengl_pa_primitive_mode_t
 struct opengl_pa_edge_func_t;
 struct list_t;
 
-/* Vertex positions are in normalized device coordinate */
+/* Viewport is used to transform vertex in normalized device coordinate to window coordinate */
+struct opengl_pa_viewport_t
+{
+	int x;
+	int y;
+	int width;
+	int height;
+};
+
+/* DepthRange is used to transform vertex in normalized device coordinate to window coordinate */
+struct opengl_pa_depth_range_t
+{
+	double n;
+	double f;
+};
+
+/* Intially, vertex positions are in normalized device coordinate */
 struct opengl_pa_vertex_t
 {
 	float pos[4];
@@ -81,12 +97,19 @@ struct opengl_pa_triangle_t
 	struct opengl_pa_edge_func_t *edgfunc2;	
 };
 
+struct opengl_pa_viewport_t *opengl_pa_viewport_t();
+void opengl_pa_viewport_free(struct opengl_pa_viewport_t *vwpt);
+void opengl_pa_viewport_apply(struct opengl_pa_viewport_t *vwpt, struct opengl_pa_vertex_t *vtx);
 
+struct opengl_pa_depth_range_t *opengl_pa_depth_range_t();
+void opengl_pa_depth_range_free(struct opengl_pa_depth_range_t *vwpt);
+void opengl_pa_depth_range_apply(struct opengl_pa_depth_range_t *vwpt, struct opengl_pa_vertex_t *vtx);
 
 struct opengl_pa_vertex_t *opengl_pa_vertex_create();
 void opengl_pa_vertex_free(struct opengl_pa_vertex_t *vtx);
 
-struct list_t *opengl_pa_primitives_create(enum opengl_pa_primitive_mode_t mode, void *data, unsigned int data_size, unsigned int );
+struct list_t *opengl_pa_primitives_create(enum opengl_pa_primitive_mode_t mode, 
+	void *data, unsigned int data_size, unsigned int );
 void opengl_pa_primitives_free(struct list_t *prim_lst);
 
 struct opengl_pa_triangle_t *opengl_pa_triangle_create();
@@ -96,7 +119,8 @@ void opengl_pa_triangle_set(struct opengl_pa_triangle_t *triangle, struct opengl
 
 struct opengl_pa_edge_func_t *opengl_pa_edge_func_create();
 void opengl_pa_edge_func_free(struct opengl_pa_edge_func_t *edge_func);
-void opengl_pa_edge_func_set(struct opengl_pa_edge_func_t *edge_func,struct opengl_pa_vertex_t *vtx0, struct opengl_pa_vertex_t *vtx1);
+void opengl_pa_edge_func_set(struct opengl_pa_edge_func_t *edge_func, 
+	struct opengl_pa_vertex_t *vtx0, struct opengl_pa_vertex_t *vtx1);
 
 
 #endif
