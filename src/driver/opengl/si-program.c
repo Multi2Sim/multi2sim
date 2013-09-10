@@ -27,40 +27,6 @@
 #include "opengl.h"
 #include "si-program.h"
 
-/*
- * Program list
- */
-
-void opengl_si_program_list_init(struct list_t *opengl_si_program_list)
-{
-	/* Already initialized */
-	if (opengl_si_program_list)
-		return;
-
-	/* Initialize and add one empty element */
-	opengl_si_program_list = list_create();
-	list_add(opengl_si_program_list, NULL);
-}
-
-
-void opengl_si_program_list_done(struct list_t *opengl_si_program_list)
-{
-	int index;
-	struct opengl_si_program_t *program;
-
-	/* Not initialized */
-	if (!opengl_si_program_list)
-		return;
-
-	/* Free list of Southern Islands programs */
-	LIST_FOR_EACH(opengl_si_program_list, index)
-	{
-		program = list_get(opengl_si_program_list, index);
-		if (program)
-			opengl_si_program_free(program);
-	}
-	list_free(opengl_si_program_list);
-}
 
 /*
  * Constant Buffer
@@ -105,7 +71,6 @@ struct opengl_si_program_t *opengl_si_program_create(OpenglDriver *driver, unsig
 	program = xcalloc(1, sizeof(struct opengl_si_program_t));
 
 	/* Insert in program list */
-	opengl_si_program_list_init(driver->opengl_si_program_list);
 	program->id = program_id;
 	program->driver = driver;
 	list_insert(driver->opengl_si_program_list, program_id, program);

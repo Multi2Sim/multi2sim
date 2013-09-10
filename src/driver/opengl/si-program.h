@@ -22,15 +22,6 @@
 
 
 /*
- * Program List
- */
-
-
-void opengl_si_program_list_init(struct list_t *opengl_si_program_list);
-void opengl_si_program_list_done(struct list_t *opengl_si_program_list);
-
-
-/*
  * Constant Buffer
  */
 

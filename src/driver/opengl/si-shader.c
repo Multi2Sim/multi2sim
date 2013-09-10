@@ -204,42 +204,10 @@ static void opengl_si_create_buffer_desc(unsigned int base_addr,
  * Public Functions
  */
 
-void opengl_si_shader_list_init(struct list_t *shdr_lst)
-{
-	/* Already initialized */
-	if (shdr_lst)
-		return;
-
-	/* Initialize and add one empty element */
-	shdr_lst = list_create();
-	list_add(shdr_lst, NULL);
-}
-
-void opengl_si_shader_list_done(struct list_t *shdr_lst)
-{
-	int index;
-	struct opengl_si_shader_t *shdr;
-
-	/* Not initialized */
-	if (!shdr_lst)
-		return;
-
-	/* Free list of Southern Islands programs */
-	LIST_FOR_EACH(shdr_lst, index)
-	{
-		shdr = list_get(shdr_lst, index);
-		if (shdr)
-			opengl_si_shader_free(shdr);
-	}
-	list_free(shdr_lst);
-}
-
 struct opengl_si_shader_t *opengl_si_shader_create(
 	struct list_t *shdr_lst, unsigned int shader_id, unsigned int shader_kind)
 {
 	struct opengl_si_shader_t *shdr;
-
-	opengl_si_shader_list_init(shdr_lst);
 
 	/* Allocate */
 	shdr = xcalloc(1, sizeof(struct opengl_si_shader_t));
