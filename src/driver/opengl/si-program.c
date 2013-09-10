@@ -24,15 +24,14 @@
 #include <lib/util/string.h>
 #include <arch/southern-islands/asm/opengl-bin-file.h>
 
+#include "opengl.h"
 #include "si-program.h"
 
 /*
  * Program list
  */
 
-struct list_t *opengl_si_program_list;
-
-void opengl_si_program_list_init(void)
+void opengl_si_program_list_init(struct list_t *opengl_si_program_list)
 {
 	/* Already initialized */
 	if (opengl_si_program_list)
@@ -44,7 +43,7 @@ void opengl_si_program_list_init(void)
 }
 
 
-void opengl_si_program_list_done(void)
+void opengl_si_program_list_done(struct list_t *opengl_si_program_list)
 {
 	int index;
 	struct opengl_si_program_t *program;
@@ -98,7 +97,7 @@ static void opengl_si_program_initialize_constant_buffers(
 	/* TODO: Constant buffers store Uniforms ? */
 } 
 
-struct opengl_si_program_t *opengl_si_program_create(unsigned int program_id)
+struct opengl_si_program_t *opengl_si_program_create(OpenglDriver *driver, unsigned int program_id)
 {
 	struct opengl_si_program_t *program;
 
@@ -106,9 +105,10 @@ struct opengl_si_program_t *opengl_si_program_create(unsigned int program_id)
 	program = xcalloc(1, sizeof(struct opengl_si_program_t));
 
 	/* Insert in program list */
-	opengl_si_program_list_init();
+	opengl_si_program_list_init(driver->opengl_si_program_list);
 	program->id = program_id;
-	list_insert(opengl_si_program_list, program_id, program);
+	program->driver = driver;
+	list_insert(driver->opengl_si_program_list, program_id, program);
 
 	/* Return */
 	return program;

@@ -570,7 +570,8 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count )
 			opengl_abi_si_ndrange_initialize,
 			vertex_shader_id, work_dim, global_work_offset, global_work_size, local_work_size);
 	
-		syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_ndrange_pass_mem_objs);
+		syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_ndrange_pass_mem_objs, 
+			vertex_shader_id);
 
 		syscall(OPENGL_SYSCALL_CODE,
 			opengl_abi_si_ndrange_get_num_buffer_entries,

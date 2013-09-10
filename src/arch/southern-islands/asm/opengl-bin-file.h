@@ -1066,7 +1066,7 @@ struct si_opengl_program_binary_t
 	struct elf_file_t *binary;
 
 	/* List of shaders in shader binary, elements with type si_opengl_shader_binary_t */
-	struct list_t *shaders;
+	struct list_t *shader_bins;
 };
 
 struct si_opengl_program_binary_t *si_opengl_program_binary_create(void *buffer_ptr, int size, char *name);

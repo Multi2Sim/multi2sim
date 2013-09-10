@@ -7751,18 +7751,19 @@ void si_isa_EXPORT_impl(SIWorkItem *work_item, SIInst *inst)
 	SISX *sx = emu->sx;
 	
 	unsigned int target_id;
-	unsigned int vtx0;
-	unsigned int vtx1;
-	unsigned int vtx2;
-	unsigned int vtx3;
+	unsigned int x;
+	unsigned int y;
+	unsigned int z;
+	unsigned int w;
 
-	vtx0 = SIWorkItemReadVReg(work_item, INST.vsrc0);
-	vtx1 = SIWorkItemReadVReg(work_item, INST.vsrc1);
-	vtx2 = SIWorkItemReadVReg(work_item, INST.vsrc2);
-	vtx3 = SIWorkItemReadVReg(work_item, INST.vsrc3);
+	x = SIWorkItemReadVReg(work_item, INST.vsrc0);
+	y = SIWorkItemReadVReg(work_item, INST.vsrc1);
+	z = SIWorkItemReadVReg(work_item, INST.vsrc2);
+	w = SIWorkItemReadVReg(work_item, INST.vsrc3);
 
 	target_id = INST.tgt;
 
+	/* FIXME: implement compression */
 	if (target_id >=0 && target_id <= 7)
 	{
 		/* Export to MRT 0-7 */
@@ -7778,11 +7779,12 @@ void si_isa_EXPORT_impl(SIWorkItem *work_item, SIInst *inst)
 	else if (target_id >= 12 && target_id <= 15)
 	{
 		/* Position 0-3 */
-		SISXExportPosition(sx, target_id, work_item->id, vtx0, vtx1, vtx2, vtx3);
+		SISXExportPosition(sx, target_id, work_item->id, x, y, z, w);
 	}
 	else if (target_id >= 32 && target_id <= 63)
 	{
 		 /* Parameter 0 - 31 */
+		SISXExportParam(sx, target_id, work_item->id, x, y, z, w);
 	} else
 		fatal("Export target %d is not valid!\n", target_id);
 }

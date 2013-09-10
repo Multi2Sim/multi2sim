@@ -31,8 +31,6 @@
 #include "si-shader.h"
 #include "si-program.h"
 
-struct list_t *opengl_si_shader_list;
-
 /*
  * Private Functions
  */
@@ -206,42 +204,42 @@ static void opengl_si_create_buffer_desc(unsigned int base_addr,
  * Public Functions
  */
 
-void opengl_si_shader_list_init(void)
+void opengl_si_shader_list_init(struct list_t *shdr_lst)
 {
 	/* Already initialized */
-	if (opengl_si_shader_list)
+	if (shdr_lst)
 		return;
 
 	/* Initialize and add one empty element */
-	opengl_si_shader_list = list_create();
-	list_add(opengl_si_shader_list, NULL);
+	shdr_lst = list_create();
+	list_add(shdr_lst, NULL);
 }
 
-void opengl_si_shader_list_done(void)
+void opengl_si_shader_list_done(struct list_t *shdr_lst)
 {
 	int index;
 	struct opengl_si_shader_t *shdr;
 
 	/* Not initialized */
-	if (!opengl_si_shader_list)
+	if (!shdr_lst)
 		return;
 
 	/* Free list of Southern Islands programs */
-	LIST_FOR_EACH(opengl_si_shader_list, index)
+	LIST_FOR_EACH(shdr_lst, index)
 	{
-		shdr = list_get(opengl_si_shader_list, index);
+		shdr = list_get(shdr_lst, index);
 		if (shdr)
 			opengl_si_shader_free(shdr);
 	}
-	list_free(opengl_si_shader_list);
+	list_free(shdr_lst);
 }
 
 struct opengl_si_shader_t *opengl_si_shader_create(
-	unsigned int shader_id, unsigned int shader_kind)
+	struct list_t *shdr_lst, unsigned int shader_id, unsigned int shader_kind)
 {
 	struct opengl_si_shader_t *shdr;
 
-	opengl_si_shader_list_init();
+	opengl_si_shader_list_init(shdr_lst);
 
 	/* Allocate */
 	shdr = xcalloc(1, sizeof(struct opengl_si_shader_t));
@@ -271,7 +269,7 @@ struct opengl_si_shader_t *opengl_si_shader_create(
 	}
 
 	/* Add to shader list, shader id is the index */
-	list_insert(opengl_si_shader_list, shader_id, shdr);
+	list_insert(shdr_lst, shader_id, shdr);
 
 	/* Return */
 	return shdr;
@@ -284,26 +282,26 @@ void opengl_si_shader_free(struct opengl_si_shader_t *shdr)
 	free(shdr);
 }
 
-void opengl_si_shader_init( struct opengl_si_program_t *program, unsigned int shader_id)
+void opengl_si_shader_init(struct opengl_si_program_t *program, struct list_t *shdr_lst, unsigned int shader_id)
 {
-	struct list_t *shaders_list;
+	struct list_t *shdr_bin_lst;
 	struct opengl_si_shader_t *shdr;
 	struct si_opengl_program_binary_t *prog_bin;
 	struct si_opengl_shader_binary_t *shdr_bin;
 	int i;
 
 	/* Get shader object */
-	shdr = list_get(opengl_si_shader_list, shader_id);
+	shdr = list_get(shdr_lst, shader_id);
 
 	/* Initialize */
 	shdr->program = program;
 	prog_bin = program->program_bin;
-	shaders_list = prog_bin->shaders;
+	shdr_bin_lst = prog_bin->shader_bins;
 	
 	/* FIXME: is it true that an OpenGL program binary can only contain 1 shader of each kind */
-	LIST_FOR_EACH(shaders_list, i)
+	LIST_FOR_EACH(shdr_bin_lst, i)
 	{
-		shdr_bin = list_get(shaders_list, i);
+		shdr_bin = list_get(shdr_bin_lst, i);
 		if (shdr_bin->shader_kind == shdr->shader_kind)
 			shdr->shader_bin = shdr_bin;
 	}
