@@ -118,6 +118,12 @@ void OpenglDriverCreate(OpenglDriver *self, X86Emu *x86_emu, SIEmu *si_emu)
 	/* Initialize */
 	self->si_emu = si_emu;
 
+	self->opengl_si_program_list = list_create();
+	list_add(self->opengl_si_program_list, NULL);
+
+	self->opengl_si_shader_list = list_create();
+	list_add(self->opengl_si_shader_list, NULL);
+
 	/* Assign driver to host emulator */
 	x86_emu->opengl_driver = self;
 }
@@ -125,6 +131,33 @@ void OpenglDriverCreate(OpenglDriver *self, X86Emu *x86_emu, SIEmu *si_emu)
 
 void OpenglDriverDestroy(OpenglDriver *self)
 {
+	int index;
+	struct list_t *program_list;
+	struct list_t *shader_list;
+	struct opengl_si_shader_t *shdr;
+	struct opengl_si_program_t *program;
+
+	program_list = self->opengl_si_program_list;
+	shader_list = self->opengl_si_shader_list;
+
+	/* Free list of Southern Islands programs */
+	LIST_FOR_EACH(program_list, index)
+	{
+		program = list_get(program_list, index);
+		if (program)
+			opengl_si_program_free(program);
+	}
+	list_free(program_list);
+
+	/* Free list of Southern Islands programs */
+	LIST_FOR_EACH(shader_list, index)
+	{
+		shdr = list_get(shader_list, index);
+		if (shdr)
+			opengl_si_shader_free(shdr);
+	}
+	list_free(shader_list);
+
 }
 
 
@@ -228,13 +261,6 @@ static int opengl_abi_init_impl(X86Context *ctx)
 
 static int opengl_abi_done_impl(X86Context *ctx)
 {
-	X86Emu *x86_emu = ctx->emu;	
-	OpenglDriver *driver = x86_emu->opengl_driver;
-
-	/* Free */
-	opengl_si_program_list_done(driver->opengl_si_program_list);
-	opengl_si_shader_list_done(driver->opengl_si_shader_list);
-
 	/* Return success */
 	return 0;
 }
