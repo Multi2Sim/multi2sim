@@ -54,6 +54,7 @@
 
 #include <src/arch/common/asm.h>
 #include <src/arch/fermi/asm/asm.h>
+#include <src/arch/southern-islands/asm/arg.h>
 #include <src/arch/southern-islands/asm/asm.h>
 
 
