@@ -45,8 +45,8 @@ struct opengl_si_shader_t
 
 };
 
-void opengl_si_shader_list_init(struct list_t *shdr_lst);
-void opengl_si_shader_list_done(struct list_t *shdr_lst);
+void opengl_si_shader_list_init(OpenglDriver *driver);
+void opengl_si_shader_list_done(OpenglDriver *driver);
 
 
 struct opengl_si_shader_t *opengl_si_shader_create(struct list_t *shdr_lst,
