@@ -73,19 +73,35 @@ void SISXDestroy(SISX *self)
 }
 
 void SISXExportPosition(SISX *self, unsigned int target, unsigned int id, 
-	unsigned int v0, unsigned int v1, unsigned int v2, unsigned int v3)
+	unsigned int x, unsigned int y, unsigned int z, unsigned int w)
 {
-	struct list_t *vtx_lst;
+	struct list_t *pos_lst;
 	float *pos;
 
 	pos = xcalloc(1, 4 * sizeof(float));
 
-	pos[0] = (float)v0;
-	pos[1] = (float)v1;
-	pos[2] = (float)v2;
-	pos[3] = (float)v3;
+	pos[0] = (float)x;
+	pos[1] = (float)y;
+	pos[2] = (float)z;
+	pos[3] = (float)w;
 
-	vtx_lst = self->pos[target];
-	list_insert(vtx_lst, id, pos);
+	pos_lst = self->pos[target];
+	list_insert(pos_lst, id, pos);
 }
 
+void SISXExportParam(SISX *self, unsigned int target, unsigned int id, 
+	unsigned int x, unsigned int y, unsigned int z, unsigned int w)
+{
+	struct list_t *param_lst;
+	float *param;
+
+	param = xcalloc(1, 4 * sizeof(float));
+
+	param[0] = (float)x;
+	param[1] = (float)y;
+	param[2] = (float)z;
+	param[3] = (float)w;
+
+	param_lst = self->param[target];
+	list_insert(param_lst, id, param);
+}
