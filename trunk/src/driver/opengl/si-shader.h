@@ -45,16 +45,15 @@ struct opengl_si_shader_t
 
 };
 
-extern struct list_t *opengl_si_shader_list;
-
-void opengl_si_shader_list_init(void);
-void opengl_si_shader_list_done(void);
+void opengl_si_shader_list_init(struct list_t *shdr_lst);
+void opengl_si_shader_list_done(struct list_t *shdr_lst);
 
 
-struct opengl_si_shader_t *opengl_si_shader_create(
+struct opengl_si_shader_t *opengl_si_shader_create(struct list_t *shdr_lst,
 	unsigned int shader_id, unsigned int shader_kind);
 void opengl_si_shader_free(struct opengl_si_shader_t *shdr);
-void opengl_si_shader_init( struct opengl_si_program_t *program, unsigned int shader_id);
+void opengl_si_shader_init(struct opengl_si_program_t *program, 
+	struct list_t *shdr_lst, unsigned int shader_id);
 
 
 void opengl_si_shader_create_ndrange_constant_buffers(SINDRange *ndrange);

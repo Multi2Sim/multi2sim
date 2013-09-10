@@ -25,10 +25,9 @@
  * Program List
  */
 
-extern struct list_t *opengl_si_program_list;
 
-void opengl_si_program_list_init(void);
-void opengl_si_program_list_done(void);
+void opengl_si_program_list_init(struct list_t *opengl_si_program_list);
+void opengl_si_program_list_done(struct list_t *opengl_si_program_list);
 
 
 /*
@@ -56,6 +55,7 @@ struct si_opengl_program_binary_t;
 struct opengl_si_program_t
 {
 	int id;
+	OpenglDriver *driver;
 	
 	/* Program binary */
 	struct si_opengl_program_binary_t *program_bin;
@@ -66,7 +66,7 @@ struct opengl_si_program_t
 	struct list_t *constant_buffer_list;
 };
 
-struct opengl_si_program_t *opengl_si_program_create(unsigned int program_id);
+struct opengl_si_program_t *opengl_si_program_create(OpenglDriver *driver, unsigned int program_id);
 void opengl_si_program_free(struct opengl_si_program_t *program);
 
 void opengl_si_program_set_binary(struct opengl_si_program_t *program,

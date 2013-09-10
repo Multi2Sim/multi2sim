@@ -37,8 +37,12 @@ CLASS_BEGIN(OpenglDriver, Driver)
 
 	/* Active ND-Range */
 	SINDRange *ndrange;
-
 	struct opengl_si_shader_t *shader;
+
+	/* Lists contain corresponding objects */
+	struct list_t *opengl_si_program_list;
+	struct list_t *opengl_si_shader_list;
+
 	int ready_for_work;
 	int wait_for_ndrange_completion;
 	int ndrange_complete;

@@ -557,17 +557,17 @@ void SIAsmDisassembleOpenGLBinary(SIAsm *self, char *path, int shader_index)
 	free_buffer(file_buffer);
 
 	/* Basic info of the shader binary */
-	printf("This shader binary contains %d shaders\n\n", 
-		list_count(si_program_bin->shaders));
-	if (shader_index > list_count(si_program_bin->shaders) ||
+	printf("This program binary contains %d shaders\n\n", 
+		list_count(si_program_bin->shader_bins));
+	if (shader_index > list_count(si_program_bin->shader_bins) ||
 			shader_index <= 0 )
 	{
 		fatal("Shader index out of range! Please choose <index> "
-			"from 1 ~ %d", list_count(si_program_bin->shaders));
+			"from 1 ~ %d", list_count(si_program_bin->shader_bins));
 	}
 
 	/* Disassemble */
-	si_shader = list_get(si_program_bin->shaders, 
+	si_shader = list_get(si_program_bin->shader_bins, 
 			shader_index - 1);
 	printf("**\n** Disassembly for shader %d\n**\n\n", shader_index);
 	SIAsmDisassembleBuffer(self, si_shader->shader_isa->ptr,

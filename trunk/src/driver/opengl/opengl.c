@@ -228,9 +228,12 @@ static int opengl_abi_init_impl(X86Context *ctx)
 
 static int opengl_abi_done_impl(X86Context *ctx)
 {
+	X86Emu *x86_emu = ctx->emu;	
+	OpenglDriver *driver = x86_emu->opengl_driver;
+
 	/* Free */
-	opengl_si_program_list_done();
-	opengl_si_shader_list_done();
+	opengl_si_program_list_done(driver->opengl_si_program_list);
+	opengl_si_shader_list_done(driver->opengl_si_shader_list);
 
 	/* Return success */
 	return 0;
@@ -514,6 +517,9 @@ static int opengl_abi_si_mem_free_impl(X86Context *ctx)
 static int opengl_abi_si_program_create_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	X86Emu *x86_emu = ctx->emu;
+	OpenglDriver *driver = x86_emu->opengl_driver;
+
 	struct opengl_si_program_t *program;
 	unsigned int program_id;
 
@@ -521,7 +527,7 @@ static int opengl_abi_si_program_create_impl(X86Context *ctx)
 	program_id = regs->ecx;
 
 	/* Create program */
-	program = opengl_si_program_create(program_id);
+	program = opengl_si_program_create(driver, program_id);
 	opengl_debug("\tnew program_id = %d\n", program->id);
 
 	/* Return program ID */
@@ -543,6 +549,9 @@ static int opengl_abi_si_program_create_impl(X86Context *ctx)
 static int opengl_abi_si_program_free_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	X86Emu *x86_emu = ctx->emu;
+	OpenglDriver *driver = x86_emu->opengl_driver;
+
 	struct opengl_si_program_t *program;
 	unsigned int program_id;
 
@@ -550,7 +559,7 @@ static int opengl_abi_si_program_free_impl(X86Context *ctx)
 	program_id = regs->ecx;
 
 	/* Create program */
-	program = list_get(opengl_si_program_list ,program_id);
+	program = list_get(driver->opengl_si_program_list ,program_id);
 	opengl_debug("\tfree program ID = %d\n", program->id);
 
 	/* Free program object */
@@ -587,13 +596,15 @@ static int opengl_abi_si_program_free_impl(X86Context *ctx)
 static int opengl_abi_si_program_set_binary_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	X86Emu *x86_emu = ctx->emu;
+	OpenglDriver *driver = x86_emu->opengl_driver;
+
 	struct opengl_si_program_t *program;
 	int program_id;
 
 	unsigned int bin_ptr;
 	unsigned int bin_size;
 	void *buf;
-
 
 	/* Arguments */
 	program_id = regs->ecx;
@@ -603,7 +614,7 @@ static int opengl_abi_si_program_set_binary_impl(X86Context *ctx)
 			program_id, bin_ptr, bin_size);
 
 	/* Get program */
-	program = list_get(opengl_si_program_list, program_id);
+	program = list_get(driver->opengl_si_program_list, program_id);
 	if (!program)
 		fatal("%s: invalid program ID (%d)",
 				__FUNCTION__, program_id);
@@ -634,8 +645,10 @@ static int opengl_abi_si_program_set_binary_impl(X86Context *ctx)
 static int opengl_abi_si_shader_create_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
-	struct opengl_si_program_t *program;
+	X86Emu *x86_emu = ctx->emu;
+	OpenglDriver *driver = x86_emu->opengl_driver;
 
+	struct opengl_si_program_t *program;
 	unsigned int program_id;
 	unsigned int shader_id;
 	unsigned int shader_type;
@@ -646,12 +659,12 @@ static int opengl_abi_si_shader_create_impl(X86Context *ctx)
 	shader_type = regs->esi;
 	opengl_debug("\tprogram_id = %d, shader_id = %d, type = %x\n", program_id, shader_id, shader_type);
 
-	/* Create a shader object, will be initialized with shaders in program object */
-	program = list_get(opengl_si_program_list, program_id);
+	/* Create a shader object and initialized with shaders in program object */
+	program = list_get(driver->opengl_si_program_list, program_id);
 	if (program)
 	{
-		opengl_si_shader_create(shader_id, shader_type);	
-		opengl_si_shader_init(program, shader_id);
+		opengl_si_shader_create(driver->opengl_si_shader_list, shader_id, shader_type);	
+		opengl_si_shader_init(program, driver->opengl_si_shader_list, shader_id);
 	}
 
 	/* Return */	
@@ -670,8 +683,10 @@ static int opengl_abi_si_shader_create_impl(X86Context *ctx)
 static int opengl_abi_si_shader_free_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
-	struct opengl_si_shader_t *shdr;
+	X86Emu *x86_emu = ctx->emu;
+	OpenglDriver *driver = x86_emu->opengl_driver;
 
+	struct opengl_si_shader_t *shdr;
 	unsigned int shader_id;
 
 	/* Arguments */
@@ -679,7 +694,7 @@ static int opengl_abi_si_shader_free_impl(X86Context *ctx)
 	opengl_debug("\tshader_id=%d\n", shader_id);
 
 	/* Get and free */
-	shdr = list_get(opengl_si_shader_list, shader_id);
+	shdr = list_get(driver->opengl_si_shader_list, shader_id);
 	if (shdr)
 		opengl_si_shader_free(shdr);
 
@@ -696,6 +711,8 @@ static int opengl_abi_si_shader_free_impl(X86Context *ctx)
 static int opengl_abi_si_shader_set_input_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	X86Emu *x86_emu = ctx->emu;
+	OpenglDriver *driver = x86_emu->opengl_driver;
 	struct mem_t *mem = ctx->mem;
 
 	struct opengl_si_shader_t *shdr;
@@ -722,7 +739,7 @@ static int opengl_abi_si_shader_set_input_impl(X86Context *ctx)
 		shader_id, device_ptr, num_elems, data_type, size, index);
 
 	/* Shader has the indices of vertex attribute array in its encoding dictionary */
-	shdr = list_get(opengl_si_shader_list, shader_id);
+	shdr = list_get(driver->opengl_si_shader_list, shader_id);
 	input_list = shdr->shader_bin->shader_enc_dict->input_list;
 	input = list_get(input_list, index);
 	if (!input || input->usage_index != index)
@@ -825,7 +842,7 @@ static int opengl_abi_si_ndrange_initialize_impl(X86Context *ctx)
 		opengl_debug("\tlocal_size[%d] = %u\n", i, local_size[i]);
 
 	/* Get shader */
-	shader = list_get(opengl_si_shader_list, shader_id);
+	shader = list_get(driver->opengl_si_shader_list, shader_id);
 	if (!shader)
 		fatal("%s: invalid shader ID (%d)", __FUNCTION__, shader_id);
 
@@ -864,9 +881,6 @@ static int opengl_abi_si_ndrange_initialize_impl(X86Context *ctx)
 	fs = si_fetch_shader_create(shader);
 	SINDRangeSetupFSMem(ndrange, fs->isa, fs->size, 0);
 	si_fetch_shader_free(fs);
-
-	assert(!driver->shader);
-	driver->shader = shader;
 
 	assert(!driver->ndrange);
 	driver->ndrange = ndrange;
@@ -1076,7 +1090,6 @@ static void opengl_abi_si_ndrange_finish_wakeup(X86Context *ctx,
 	/* Reset driver state */
 	delete(driver->ndrange);
 	driver->ndrange = NULL;
-	driver->shader = NULL;
 	driver->wait_for_ndrange_completion = 0;
 	driver->ndrange_complete = 0;
 	driver->ready_for_work = 0;
@@ -1098,7 +1111,6 @@ static int opengl_abi_si_ndrange_finish_impl(X86Context *ctx)
 		/* Reset driver state */
 		delete(driver->ndrange);
 		driver->ndrange = NULL;
-		driver->shader = NULL;
 		driver->wait_for_ndrange_completion = 0;
 		driver->ndrange_complete = 0;
 		driver->ready_for_work = 0;
@@ -1129,10 +1141,13 @@ static int opengl_abi_si_ndrange_pass_mem_objs_impl(X86Context *ctx)
 	X86Emu *x86_emu = ctx->emu;
 	OpenglDriver *driver = x86_emu->opengl_driver;
 	SINDRange *ndrange = driver->ndrange;
+	struct x86_regs_t *regs = ctx->regs;
 
+	int shader_id;
 	struct opengl_si_shader_t *shader;
 
-	shader = driver->shader;
+	shader_id =  regs->ecx;
+	shader = list_get(driver->opengl_si_shader_list, shader_id);
 	opengl_si_shader_create_ndrange_tables(ndrange); 
 	opengl_si_shader_create_ndrange_constant_buffers(ndrange); 
 	opengl_si_shader_setup_ndrange_constant_buffers(ndrange);

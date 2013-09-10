@@ -97,7 +97,7 @@ struct opengl_pa_triangle_t
 	struct opengl_pa_edge_func_t *edgfunc2;	
 };
 
-struct opengl_pa_viewport_t *opengl_pa_viewport_t();
+struct opengl_pa_viewport_t *opengl_pa_viewport_create();
 void opengl_pa_viewport_free(struct opengl_pa_viewport_t *vwpt);
 void opengl_pa_viewport_apply(struct opengl_pa_viewport_t *vwpt, struct opengl_pa_vertex_t *vtx);
 
