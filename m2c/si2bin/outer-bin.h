@@ -25,7 +25,6 @@
 
 /* Forward Declarations */
 struct list_t;
-struct si2bin_data_t;
 
 enum si2bin_outer_bin_device_t
 {
@@ -63,7 +62,7 @@ struct si2bin_outer_bin_t
 struct si2bin_outer_bin_t *si2bin_outer_bin_create(void);
 void si2bin_outer_bin_free(struct si2bin_outer_bin_t *outer_bin);
 void si2bin_outer_bin_add_data(struct si2bin_outer_bin_t *outer_bin,
-		struct si2bin_data_t *data);
+		Si2binData *data);
 void si2bin_outer_bin_add(struct si2bin_outer_bin_t *outer_bin,
 		struct si2bin_inner_bin_t *inner_bin, struct si2bin_metadata_t *metadata);
 void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,

@@ -74,9 +74,7 @@ void si2bin_outer_bin_free(struct si2bin_outer_bin_t *outer_bin)
 	delete(outer_bin->writer);
 
 	LIST_FOR_EACH(outer_bin->data_list, i)
-	{
-		si2bin_data_free(list_get(outer_bin->data_list, i));
-	}
+		delete(list_get(outer_bin->data_list, i));
 	list_free(outer_bin->data_list);
 
 	LIST_FOR_EACH(outer_bin->inner_bin_list, i)
@@ -95,7 +93,7 @@ void si2bin_outer_bin_free(struct si2bin_outer_bin_t *outer_bin)
 }
 
 void si2bin_outer_bin_add_data(struct si2bin_outer_bin_t *outer_bin,
-		struct si2bin_data_t *data)
+		Si2binData *data)
 {
 	list_add(outer_bin->data_list, data);
 }
@@ -132,7 +130,7 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 	SIArg *arg;
 	struct si_bin_enc_user_element_t *user_elem;
 	struct pt_note_prog_info_entry_t prog_info[NUM_PROG_INFO_ELEM];
-	struct si2bin_data_t *data;
+	Si2binData *data;
 
 	char line[MAX_LONG_STRING_SIZE];
 	char *data_type;
@@ -191,31 +189,31 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 		LIST_FOR_EACH(outer_bin->data_list, i)
 		{
 			data = list_get(outer_bin->data_list, i);
-			switch (data->data_type)
+			switch (data->type)
 			{
-				case si2bin_data_invalid:
+				case Si2binDataTypeInvalid:
 					fatal("Type for .data element %d is not set", i);
 					break;
 
-				case si2bin_data_float:
+				case Si2binDataFloat:
 					ELFWriterBufferWrite(rodata_buffer, 
 						&data->float_value, 
 						sizeof(float));
 					break;
 				
-				case si2bin_data_word:
+				case Si2binDataWord:
 					ELFWriterBufferWrite(rodata_buffer, 
 						&data->word_value, 
 						sizeof(unsigned int));
 					break;
 				
-				case si2bin_data_half:
+				case Si2binDataHalf:
 					ELFWriterBufferWrite(rodata_buffer, 
 						&data->half_value, 
 						sizeof(unsigned short));
 					break;
 				
-				case si2bin_data_byte:
+				case Si2binDataByte:
 					ELFWriterBufferWrite(rodata_buffer, 
 						&data->byte_value, 
 						sizeof(unsigned char));

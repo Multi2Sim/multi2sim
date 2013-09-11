@@ -51,9 +51,6 @@
 
 #define YYERROR_VERBOSE
 
-/* Arguments passed to parser as global variables */
-Si2bin *si2bin_yysi2bin;
-
 
 %}
 
@@ -153,12 +150,12 @@ section
 		Si2binTask *task;
 		
 		/* Process tasks and reset list */
-		ListForEach(si2bin_yysi2bin->task_list, task, Si2binTask)
+		ListForEach(si2bin->task_list, task, Si2binTask)
 			Si2binTaskProcess(task);
-		ListDeleteObjects(si2bin_yysi2bin->task_list);
+		ListDeleteObjects(si2bin->task_list);
 
 		/* Reset symbol table */
-		HashTableDeleteObjects(si2bin_yysi2bin->symbol_table);
+		HashTableDeleteObjects(si2bin->symbol_table);
 	}
 	;
 
@@ -410,22 +407,18 @@ float_vals
 	| float_vals TOK_NEW_LINE
 	| float_vals TOK_FLOAT TOK_COMMA
 	{
-		struct si2bin_data_t *data;
+		Si2binData *data;
 		
-		data = si2bin_data_create();
-		data->data_type = si2bin_data_float;
+		data = new(Si2binData, Si2binDataFloat);
 		data->float_value = $2;
-		
 		si2bin_outer_bin_add_data(si2bin_outer_bin, data);
 	}	
 	| float_vals TOK_FLOAT
 	{
-		struct si2bin_data_t *data;
+		Si2binData *data;
 		
-		data = si2bin_data_create();
-		data->data_type = si2bin_data_float;
+		data = new(Si2binData, Si2binDataFloat);
 		data->float_value = $2;
-
 		si2bin_outer_bin_add_data(si2bin_outer_bin, data);
 	} TOK_NEW_LINE
 	;
@@ -435,22 +428,18 @@ word_vals
 	| word_vals TOK_NEW_LINE
 	| word_vals hex_or_dec_value TOK_COMMA
 	{
-		struct si2bin_data_t *data;
+		Si2binData *data;
 		
-		data = si2bin_data_create();
-		data->data_type = si2bin_data_word;
-		data->word_value = (unsigned int)$2;
-		
+		data = new(Si2binData, Si2binDataWord);
+		data->word_value = (unsigned int) $2;
 		si2bin_outer_bin_add_data(si2bin_outer_bin, data);
 	}
 	| word_vals hex_or_dec_value
 	{
-		struct si2bin_data_t *data;
+		Si2binData *data;
 		
-		data = si2bin_data_create();
-		data->data_type = si2bin_data_word;
-		data->word_value = (unsigned int)$2;
-		
+		data = new(Si2binData, Si2binDataWord);
+		data->word_value = (unsigned int) $2;
 		si2bin_outer_bin_add_data(si2bin_outer_bin, data);
 	} TOK_NEW_LINE
 	;
@@ -460,22 +449,18 @@ half_vals
 	| half_vals TOK_NEW_LINE
 	| half_vals hex_or_dec_value TOK_COMMA
 	{
-		struct si2bin_data_t *data;
+		Si2binData *data;
 		
-		data = si2bin_data_create();
-		data->data_type = si2bin_data_half;
-		data->half_value = (unsigned short)$2;
-		
+		data = new(Si2binData, Si2binDataHalf);
+		data->half_value = (unsigned short) $2;
 		si2bin_outer_bin_add_data(si2bin_outer_bin, data);
 	}
 	| half_vals hex_or_dec_value
 	{ 
-		struct si2bin_data_t *data;
+		Si2binData *data;
 		
-		data = si2bin_data_create();
-		data->data_type = si2bin_data_half;
-		data->half_value = (unsigned short)$2;
-		
+		data = new(Si2binData, Si2binDataHalf);
+		data->half_value = (unsigned short) $2;
 		si2bin_outer_bin_add_data(si2bin_outer_bin, data);
 	} TOK_NEW_LINE
 	;
@@ -485,22 +470,18 @@ byte_vals
 	| byte_vals TOK_NEW_LINE
 	| byte_vals hex_or_dec_value TOK_COMMA
 	{
-		struct si2bin_data_t *data;
+		Si2binData *data;
 		
-		data = si2bin_data_create();
-		data->data_type = si2bin_data_byte;
-		data->byte_value = (unsigned char)$2;
-		
+		data = new(Si2binData, Si2binDataByte);
+		data->byte_value = (unsigned char) $2;
 		si2bin_outer_bin_add_data(si2bin_outer_bin, data);
 	}
 	| byte_vals hex_or_dec_value
 	{
-		struct si2bin_data_t *data;
+		Si2binData *data;
 		
-		data = si2bin_data_create();
-		data->data_type = si2bin_data_byte;
-		data->byte_value = (unsigned char)$2;
-		
+		data = new(Si2binData, Si2binDataByte);
+		data->byte_value = (unsigned char) $2;
 		si2bin_outer_bin_add_data(si2bin_outer_bin, data);
 	} TOK_NEW_LINE
 	;
@@ -721,7 +702,7 @@ text_stmt
 		Si2binInst *inst = $1;
 
 		/* Generate code */
-		Si2binInstGenerate(inst, si2bin_yysi2bin);
+		Si2binInstGenerate(inst);
 		ELFWriterBufferWrite(si2bin_entry->text_section_buffer,
 				asSIInst(inst)->bytes.byte, asSIInst(inst)->size);
 		
@@ -740,7 +721,7 @@ label
 
 		
 		/* Check if symbol exists */
-		symbol = asSi2binSymbol(HashTableGet(si2bin_yysi2bin->symbol_table, asObject(id)));
+		symbol = asSi2binSymbol(HashTableGet(si2bin->symbol_table, asObject(id)));
 		if (symbol && symbol->defined)
 			si2bin_yyerror_fmt("multiply defined label: %s", id->text);
 
@@ -748,7 +729,7 @@ label
 		if (!symbol)
 		{
 			symbol = new(Si2binSymbol, id->text);
-			HashTableInsert(si2bin_yysi2bin->symbol_table,
+			HashTableInsert(si2bin->symbol_table,
 					asObject(id), asObject(symbol));
 		}
 

@@ -19,12 +19,14 @@
 
 #include <stdarg.h>
 
+#include <lib/class/array.h>
 #include <lib/class/elf-writer.h>
 #include <lib/class/hash-table.h>
 #include <lib/class/list.h>
 #include <lib/class/string.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
+#include <lib/util/hash-table.h>
 #include <lib/util/list.h>
 
 #include "inst-info.h"
@@ -56,6 +58,8 @@ ELFWriterBuffer *bin_buffer;
 
 int si2bin_uniqueid = 1024;
 
+/* Global Southern Islands assembler variable */
+Si2bin *si2bin;
 
 
 
@@ -91,17 +95,69 @@ void si2bin_yyerror_fmt(char *fmt, ...)
 
 void Si2binCreate(Si2bin *self)
 {
+	Si2binInstInfo *info;
+	Si2binInstInfo *prev_info;
+	SIInstInfo *inst_info;
+
+	int i;
+
+	/* Initialize parent */
+	SIAsmCreate(asSIAsm(self));
+
 	/* Initialize */
-	si2bin_inst_info_init();
 	self->symbol_table = new(HashTable);
 	self->task_list = new(List);
+
+	/* Initialize hash table and list with instruction information. */
+	self->inst_info_array = new_ctor(Array, CreateWithSize, SIInstOpcodeCount);
+	self->inst_info_table = new_ctor(HashTable, CreateWithSize, SIInstOpcodeCount);
+	for (i = 0; i < SIInstOpcodeCount; i++)
+	{
+		/* Instruction info from disassembler */
+		inst_info = &asSIAsm(self)->inst_info[i];
+		if (!inst_info->name || !inst_info->fmt_str)
+		{
+			ArrayAdd(self->inst_info_array, NULL);
+			continue;
+		}
+
+		/* Create instruction info object */
+		info = new(Si2binInstInfo, inst_info);
+
+		/* Insert to list */
+		ArrayAdd(self->inst_info_array, asObject(info));
+
+		/* Insert instruction info structure into hash table. There could
+		 * be already an instruction encoding with the same name but a
+		 * different encoding. They all form a linked list. */
+		prev_info = asSi2binInstInfo(HashTableGet(self->inst_info_table,
+				asObject(info->name)));
+		if (prev_info)
+		{
+			/* Non vop3 instructions are added first into list.
+			 * Add vop3 version to end of list */
+			prev_info->next = info;
+
+			/* Non vop3 instructions are added first but vop3 version
+			 * is added to the front of list */
+			//info->next = prev_info;
+			//hash_table_set(si2bin_inst_info_table, info->name, info);
+		}
+		else
+		{
+			HashTableInsert(self->inst_info_table, asObject(info->name),
+					asObject(info));
+		}
+	}
 }
 
 
 void Si2binDestroy(Si2bin *self)
 {
-	/* Finalize */
-	si2bin_inst_info_done();
+	/* Free list and hash table */
+	ArrayDeleteObjects(self->inst_info_array);
+	delete(self->inst_info_array);
+	delete(self->inst_info_table);
 
 	/* Symbol table */
 	HashTableDeleteObjects(self->symbol_table);
@@ -138,9 +194,6 @@ void Si2binCompile(Si2bin *self, struct list_t *source_file_list,
 		si2bin_outer_bin = si2bin_outer_bin_create();
 		bin_buffer = new(ELFWriterBuffer);
 
-		/* Set arguments for parser */
-		si2bin_yysi2bin = self;
-		
 		/* Parse input */
 		si2bin_yyparse();
 

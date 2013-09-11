@@ -33,7 +33,7 @@
 CLASS_BEGIN(Si2binInst, SIInst)
 
 	SIInstOpcode opcode;
-	struct si2bin_inst_info_t *info;
+	Si2binInstInfo *info;
 
 	/* List of arguments. Each element is of type 'Si2binArg' */
 	List *arg_list;
@@ -71,7 +71,7 @@ void Si2binInstAddComment(Si2binInst *self, char *comment);
 
 /* Populate fields 'inst_bytes' and 'size' based on the instruction and the value
  * of its arguments. */
-void Si2binInstGenerate(Si2binInst *self, Si2bin *si2bin);
+void Si2binInstGenerate(Si2binInst *self);
 
 #endif
 
