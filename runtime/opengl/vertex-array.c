@@ -468,6 +468,7 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count )
 	unsigned int group_count[3];
 	unsigned int work_group_start[3];
 	unsigned int work_group_count[3];
+	unsigned int vs_ndrange_id;
 	int max_work_groups_to_send;
 
 	int i, j;
@@ -509,7 +510,7 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count )
 						syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_mem_free,
 							vbo->device_ptr);
 					/* Otherwise just allocate space in device memory */
-					vbo->device_ptr = (void*)syscall(OPENGL_SYSCALL_CODE, 
+					vbo->device_ptr = (unsigned int)syscall(OPENGL_SYSCALL_CODE, 
 						opengl_abi_si_mem_alloc,
 						vbo->size);
 					/* Then send data to device memory */
@@ -557,7 +558,7 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count )
 
 				
 					/* Debug info */
-					opengl_debug("\tVBO #%d data send to device memory, device_ptr = %p\n",
+					opengl_debug("\tVBO #%d data send to device memory, device_ptr = %x\n",
 						vbo->id, vbo->device_ptr);
 				}
 				else
@@ -566,7 +567,7 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count )
 		}
 
 		/* Launch Vertex Shader */
-		syscall(OPENGL_SYSCALL_CODE, 
+		vs_ndrange_id = syscall(OPENGL_SYSCALL_CODE, 
 			opengl_abi_si_ndrange_initialize,
 			vertex_shader_id, work_dim, global_work_offset, global_work_size, local_work_size);
 	
@@ -582,7 +583,7 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count )
 			&work_group_start[0], &work_group_count[0],
 			group_count);
 
-		syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_ndrange_finish);
+		syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_ndrange_finish, vs_ndrange_id);
 
 	}
 	else

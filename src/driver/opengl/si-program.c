@@ -70,7 +70,7 @@ struct opengl_si_program_t *opengl_si_program_create(OpenglDriver *driver, unsig
 	/* Initialize */
 	program = xcalloc(1, sizeof(struct opengl_si_program_t));
 
-	/* Insert in program list */
+	/* Insert in program list, id is index in the list */
 	program->id = program_id;
 	program->driver = driver;
 	list_insert(driver->opengl_si_program_list, program_id, program);

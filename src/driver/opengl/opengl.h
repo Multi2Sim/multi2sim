@@ -35,23 +35,19 @@ CLASS_BEGIN(OpenglDriver, Driver)
 	/* Device timing simulators */
 	SIGpu *si_gpu;
 
-	/* Active ND-Range */
-	SINDRange *ndrange;
-	struct opengl_si_shader_t *shader;
-
 	/* Lists contain corresponding objects */
 	struct list_t *opengl_si_program_list;
 	struct list_t *opengl_si_shader_list;
-
-	int ready_for_work;
-	int wait_for_ndrange_completion;
-	int ndrange_complete;
+	struct list_t *si_ndrange_list;	
 
 CLASS_END(OpenglDriver)
 
 
 void OpenglDriverCreate(OpenglDriver *self, X86Emu *x86_emu, SIEmu *si_emu);
 void OpenglDriverDestroy(OpenglDriver *self);
+
+void OpenglDriverRequestWork(OpenglDriver *self, SINDRange *ndrange);
+void OpenglDriverNDRangeComplete(OpenglDriver *self, SINDRange *ndrange);
 
 
 /*

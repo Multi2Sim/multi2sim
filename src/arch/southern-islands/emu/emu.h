@@ -37,6 +37,9 @@ CLASS_BEGIN(SIEmu, Emu)
 	/* OpenCL driver */
 	OpenclDriver *opencl_driver;
 
+	/* OpenGL driver */
+	OpenglDriver *opengl_driver;
+
 	/* Memory spaces */
 	struct mem_t *video_mem;  /* local to the GPU */
 	unsigned int video_mem_top;
