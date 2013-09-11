@@ -23,7 +23,7 @@
 #include <lib/util/debug.h>
 #include <lib/util/misc.h>
 #include <mem-system/memory.h>
- #include <driver/opengl/si-pa.h>
+#include <driver/opengl/si-pa.h>
 
 #include "isa.h"
 #include "machine.h"

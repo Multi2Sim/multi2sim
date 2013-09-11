@@ -63,7 +63,7 @@ void OpenclDriverCreate(OpenclDriver *self, X86Emu *x86_emu, SIEmu *si_emu)
 	self->si_kernel_list = list_create();
 	list_add(self->si_kernel_list, NULL);
 
-	/* List of SI kernels */
+	/* List of SI nd-ranges */
 	self->si_ndrange_list = list_create();
 }
 

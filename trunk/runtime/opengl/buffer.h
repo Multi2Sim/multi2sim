@@ -76,13 +76,13 @@ struct opengl_buffer_obj_t
 	struct list_t *bound_vattribs; /* Components with  type opengl_vertex_attrib_t */
 
 	/* Data stored in host memory*/
-	void* data;
+	void *data;
 	unsigned int size;
 	unsigned int usage;
 	unsigned int access;
 
-	/* Pointer in GPU memory */
-	void *device_ptr;
+	/* Pointer in GPU memory, it should be used as parameters in syscall(opengl_abi_XXX) */
+	unsigned int device_ptr;
 
 	/* Mapping info */
 	unsigned int map_access_flags;
