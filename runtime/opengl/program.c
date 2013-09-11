@@ -352,7 +352,7 @@ void glUseProgram (GLuint program)
 		opengl_program_obj_ref_update(program_obj, 1);
 
 		/* Call the driver to setup the program binary and load shaders from program binary */
-		syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_program_create);
+		syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_program_create, program_obj->id);
 		syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_program_set_binary, 
 			program_obj->id, program_obj->binary, program_obj->binary_size);
 

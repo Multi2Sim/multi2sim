@@ -26,6 +26,9 @@
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
 #include <../runtime/include/GL/gl.h>
+#include <mem-system/memory.h>
+#include <mem-system/mmu.h>
+
  
 #include "opengl.h"
 #include "si-shader.h"
@@ -250,7 +253,9 @@ void opengl_si_shader_free(struct opengl_si_shader_t *shdr)
 	free(shdr);
 }
 
-void opengl_si_shader_init(struct opengl_si_program_t *program, struct list_t *shdr_lst, unsigned int shader_id)
+void opengl_si_shader_init(struct opengl_si_program_t *program, 
+	struct list_t *shdr_lst, 
+	unsigned int shader_id)
 {
 	struct list_t *shdr_bin_lst;
 	struct opengl_si_shader_t *shdr;
@@ -275,10 +280,33 @@ void opengl_si_shader_init(struct opengl_si_program_t *program, struct list_t *s
 	}
 }
 
-void opengl_si_shader_create_ndrange_constant_buffers(
-	SINDRange *ndrange)
+void opengl_si_shader_create_ndrange_constant_buffers(SINDRange *ndrange, 
+	MMU *gpu_mmu)
 {
 	SIEmu *emu = ndrange->emu;
+	unsigned int size_of_constant_buffers;
+
+	size_of_constant_buffers = SI_EMU_CONST_BUF_0_SIZE + 
+		SI_EMU_CONST_BUF_1_SIZE;
+
+	if (gpu_mmu)
+	{
+		/* Allocate starting from nearest page boundary */
+		if (emu->video_mem_top % gpu_mmu->page_mask)
+		{
+			emu->video_mem_top += gpu_mmu->page_size -
+				(emu->video_mem_top & gpu_mmu->page_mask);
+		}
+	}
+
+	/* Map new pages */
+	mem_map(emu->video_mem, emu->video_mem_top, size_of_constant_buffers, 
+		mem_access_read | mem_access_write);
+
+	opengl_debug("\t%u bytes of device memory allocated at " 
+		"0x%x for SI constant buffers\n", size_of_constant_buffers,
+		emu->video_mem_top);
+
 
 	/* Create constant buffer 0 */
 	ndrange->cb0 = emu->video_mem_top;
@@ -446,7 +474,7 @@ void opengl_si_shader_setup_ndrange_inputs(struct opengl_si_shader_t *shdr,
 			input->num_elems,
 			input->type, &buffer_desc);
 
-		opengl_debug("\tinput created, device_ptr = %d, size = %d, num_elems = %d, type = %x\n", 
+		opengl_debug("\tinput created, device_ptr = %x, size = %d, num_elems = %d, type = %x\n", 
 			input->device_ptr, input->size, input->num_elems, input->type);
 
 		/* Add to Vertex Buffer table */
@@ -463,9 +491,33 @@ void opengl_si_shader_debug_ndrange_state(struct opengl_si_shader_t *shader,
 
 }
 
-void opengl_si_shader_create_ndrange_tables(SINDRange *ndrange)
+void opengl_si_shader_create_ndrange_tables(SINDRange *ndrange, MMU *gpu_mmu)
 {
 	SIEmu *emu = ndrange->emu;
+	unsigned int size_of_tables;
+
+	size_of_tables = SI_EMU_CONST_BUF_TABLE_SIZE + 
+		SI_EMU_RESOURCE_TABLE_SIZE + 
+		SI_EMU_VERTEX_BUFFER_TABLE_SIZE  +
+		SI_EMU_UAV_TABLE_SIZE;
+
+	if (gpu_mmu)
+	{
+		/* Allocate starting from nearest page boundary */
+		if (emu->video_mem_top % gpu_mmu->page_mask)
+		{
+			emu->video_mem_top += gpu_mmu->page_size -
+				(emu->video_mem_top & gpu_mmu->page_mask);
+		}
+
+	}
+	/* Map new pages */
+	mem_map(emu->video_mem, emu->video_mem_top, size_of_tables,
+		mem_access_read | mem_access_write);
+
+	opengl_debug("\t%u bytes of device memory allocated at " 
+		"0x%x for SI internal tables\n", size_of_tables,
+		emu->video_mem_top);
 
 	/* Setup internal tables */
 	ndrange->const_buf_table = emu->video_mem_top;
