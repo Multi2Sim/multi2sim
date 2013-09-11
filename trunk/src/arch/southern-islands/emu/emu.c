@@ -193,8 +193,6 @@ int SIEmuRun(Emu *self)
  * Public
  */
 
-SIAsm *si_asm;
-
 long long si_emu_max_cycles = 0;
 long long si_emu_max_inst = 0;
 int si_emu_max_kernels = 0;

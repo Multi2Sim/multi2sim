@@ -28,7 +28,9 @@
 #include <m2c/frm2bin/frm2bin.h>
 #include <m2c/llvm2si/llvm2si.h>
 #include <m2c/si2bin/arg.h>
+#include <m2c/si2bin/data.h>
 #include <m2c/si2bin/inst.h>
+#include <m2c/si2bin/inst-info.h>
 #include <m2c/si2bin/si2bin.h>
 #include <m2c/si2bin/symbol.h>
 #include <m2c/si2bin/task.h>
@@ -579,7 +581,6 @@ static void m2c_preprocess(struct list_t *source_file_list,
 /* Compilers */
 static Cl2llvm *cl2llvm;
 static Llvm2si *llvm2si;
-static Si2bin *si2bin;
 static Frm2bin *frm2bin;
 
 
@@ -639,7 +640,9 @@ void m2c_init(void)
 
 	CLASS_REGISTER(Si2bin);
 	CLASS_REGISTER(Si2binArg);
+	CLASS_REGISTER(Si2binData);
 	CLASS_REGISTER(Si2binInst);
+	CLASS_REGISTER(Si2binInstInfo);
 	CLASS_REGISTER(Si2binSymbol);
 	CLASS_REGISTER(Si2binTask);
 	CLASS_REGISTER(Si2binToken);

@@ -20,7 +20,8 @@
 #ifndef M2C_SI2BIN_SI2BIN_H
 #define M2C_SI2BIN_SI2BIN_H
 
-#include <lib/class/class.h>
+#include <arch/southern-islands/asm/asm.h>
+
 
 /* Forward declaration */
 struct list_t;
@@ -31,13 +32,22 @@ struct list_t;
  * Class 'Si2bin'
  */
 
-CLASS_BEGIN(Si2bin, Object)
+CLASS_BEGIN(Si2bin, SIAsm)
 
 	/* Symbol table, elements of type 'Si2binSymbol' */
 	HashTable *symbol_table;
 
 	/* List of tasks, elements of type 'Si2binTask' */
 	List *task_list;
+
+	/* List indexed by an instruction opcode (SIInstOpcode). Each element
+	 * of the list if of type 'Si2binInstInfo'. */
+	Array *inst_info_array;
+
+	/* Hash table indexed by an instruction name, returning the associated entry in
+	 * of type 'Si2binInstInfo'. The name of the instruction is
+	 * extracted from the first token of the format string. */
+	HashTable *inst_info_table;
 
 CLASS_END(Si2bin)
 
@@ -82,8 +92,8 @@ extern int si2bin_yylineno;
 extern FILE *si2bin_yyin;
 extern char *si2bin_yytext;
 
-/* Arguments passed to parser as global variables */
-extern Si2bin *si2bin_yysi2bin;
+/* Global Southern Islands assembler variable */
+extern Si2bin *si2bin;
 
 #endif
 
