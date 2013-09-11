@@ -26,44 +26,29 @@
 
 
 /*
- * Object 'si_dis_inst_info_t'
+ * Class 'Si2binInstInfo'
  */
 
-/* Forward declaration */
-struct SIInstInfo;
+CLASS_BEGIN(Si2binInstInfo, Object)
 
-extern struct list_t *si2bin_inst_info_list;
-extern struct hash_table_t *si2bin_inst_info_table;
-
-/* Element of hash table 'si2bin_inst_info_table', index by an instruction
- * name. */
-struct si2bin_inst_info_t
-{
 	/* There can be multiple instruction encodings for the same instruction
 	 * name. This points to the next one in the list. */
-	struct si2bin_inst_info_t *next;
+	Si2binInstInfo *next;
 
 	/* Associated info structure in disassembler */
 	SIInstInfo *inst_info;
 
 	/* List of tokens in format string */
-	struct list_t *str_token_list;  /* Element of type string */
+	List *str_token_list;  /* Element of type string */
 	List *token_list;  /* Elements of type 'Si2binToken' */
-	char *name;  /* Token 0 of this list */
-};
+	String *name;  /* Token 0 of this list */
 
-struct si2bin_inst_info_t *si2bin_inst_info_create(SIInstInfo *inst_info);
-void si2bin_inst_info_free(struct si2bin_inst_info_t *info);
+CLASS_END(Si2binInstInfo)
 
 
+void Si2binInstInfoCreate(Si2binInstInfo *self, SIInstInfo *inst_info);
+void Si2binInfoInfoDestroy(Si2binInstInfo *self);
 
-/*
- * Global functions
- */
-
-/* Initialization of encoding tables */
-void si2bin_inst_info_init(void);
-void si2bin_inst_info_done(void);
 
 #endif
 

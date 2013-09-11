@@ -20,19 +20,27 @@
 #ifndef M2C_SI2BIN_DATA_H
 #define M2C_SI2BIN_DATA_H
 
-enum si2bin_data_type_t
-{
-	si2bin_data_invalid = 0,
+#include <lib/class/class.h>
 
-	si2bin_data_float,
-	si2bin_data_word,
-	si2bin_data_half,
-	si2bin_data_byte
-};
 
-struct si2bin_data_t
+/*
+ * Class 'Si2binData'
+ */
+
+typedef enum
 {
-	enum si2bin_data_type_t data_type;
+	Si2binDataTypeInvalid = 0,
+
+	Si2binDataFloat,
+	Si2binDataWord,
+	Si2binDataHalf,
+	Si2binDataByte
+} Si2binDataType;
+
+
+CLASS_BEGIN(Si2binData, Object)
+
+	Si2binDataType type;
 	
 	union
 	{
@@ -42,9 +50,10 @@ struct si2bin_data_t
 		unsigned char byte_value;
 	};
 
-};
-		
-struct si2bin_data_t *si2bin_data_create(void);
-void si2bin_data_free(struct si2bin_data_t *data);
+CLASS_END(Si2binData)
+
+void Si2binDataCreate(Si2binData *self, Si2binDataType type);
+void Si2binDataDestroy(Si2binData *self);
+
 
 #endif

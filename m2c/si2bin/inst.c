@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
+#include <lib/class/array.h>
 #include <lib/class/elf-writer.h>
 #include <lib/class/hash-table.h>
 #include <lib/class/list.h>
@@ -46,7 +46,7 @@ void Si2binInstCreate(Si2binInst *self, SIInstOpcode opcode, List *arg_list)
 {
 	Si2binArg *arg;
 	Si2binToken *token;
-	struct si2bin_inst_info_t *info;
+	Si2binInstInfo *info;
 	int index;
 
 	/* Initialize */
@@ -58,7 +58,7 @@ void Si2binInstCreate(Si2binInst *self, SIInstOpcode opcode, List *arg_list)
 		fatal("%s: invalid opcode (%d)", __FUNCTION__, opcode);
 
 	/* Get instruction information */
-	self->info = list_get(si2bin_inst_info_list, opcode);
+	self->info = asSi2binInstInfo(ArrayGet(si2bin->inst_info_array, opcode));
 	info = self->info;
 	if (!info)
 		fatal("%s: opcode %d not supported", __FUNCTION__, opcode);
@@ -90,25 +90,27 @@ void Si2binInstCreate(Si2binInst *self, SIInstOpcode opcode, List *arg_list)
 
 void Si2binInstCreateWithName(Si2binInst *self, char *name, List *arg_list)
 {
-	struct si2bin_inst_info_t *info;
+	Si2binInstInfo *info;
 
 	Si2binArg *arg;
 	Si2binToken *token;
 
 	char err_str[MAX_STRING_SIZE];
 	int index;
-	
-	/* Initialize */
+
+	/* Create argument list if null */
 	if (!arg_list)
 		arg_list = new(List);
+	
+	/* Initialize */
 	self->arg_list = arg_list;
 	self->comment = new(String, "");
 	
 	/* Try to create the instruction following all possible encodings for
 	 * the same instruction name. */
 	snprintf(err_str, sizeof err_str, "invalid instruction: %s", name);
-	for (info = hash_table_get(si2bin_inst_info_table, name);
-			info; info = info->next)
+	for (info = asSi2binInstInfo(HashTableGetString(si2bin->inst_info_table,
+			name)); info; info = info->next)
 	{
 		/* Check number of arguments */
 		if (arg_list->count != info->token_list->count)
@@ -178,7 +180,7 @@ void Si2binInstDump(Si2binInst *self, FILE *f)
 	int j;
 	
 	/* Dump instruction opcode */
-	fprintf(f, "Instruction %s\n", self->info->name);
+	fprintf(f, "Instruction %s\n", self->info->name->text);
 	fprintf(f, "\tformat=%s, size=%d\n",
 			str_map_value(&si_inst_fmt_map, self->info->inst_info->fmt),
 			asSIInst(self)->size);
@@ -220,7 +222,7 @@ void Si2binInstDumpAssembly(Si2binInst *self, FILE *f)
         	fprintf(f, "\n\t# %s\n", self->comment->text);
 
         /* Dump instruction opcode */
-        fprintf(f, "\t%s ", self->info->name);
+        fprintf(f, "\t%s ", self->info->name->text);
 
         /* Dump arguments */
 	i = 0;
@@ -245,11 +247,11 @@ void Si2binInstAddComment(Si2binInst *self, char *comment)
 }
 
 
-void Si2binInstGenerate(Si2binInst *self, Si2bin *si2bin)
+void Si2binInstGenerate(Si2binInst *self)
 {
 	SIInstBytes *inst_bytes;
 	SIInstInfo *inst_info;
-	struct si2bin_inst_info_t *info;
+	Si2binInstInfo *info;
 
 	Si2binArg *arg;
 	Si2binToken *token;
@@ -627,7 +629,7 @@ void Si2binInstGenerate(Si2binInst *self, Si2bin *si2bin)
 
 			default:
 				fatal("%s: MUBUF/MTBUF instruction not recognized: %s",
-						__FUNCTION__, info->name);
+						__FUNCTION__, info->name->text);
 			}
 
 			/* Check range */
@@ -710,7 +712,7 @@ void Si2binInstGenerate(Si2binInst *self, Si2bin *si2bin)
 
 			default:
 				si2bin_yyerror_fmt("%s: unsupported opcode for 'series_sbase' token: %s",
-						__FUNCTION__, info->name);
+						__FUNCTION__, info->name->text);
 			}
 
 			/* Encode */
@@ -743,7 +745,7 @@ void Si2binInstGenerate(Si2binInst *self, Si2bin *si2bin)
 
 			default:
 				si2bin_yyerror_fmt("%s: unsupported opcode for 'series_sdst' token: %s",
-						__FUNCTION__, info->name);
+						__FUNCTION__, info->name->text);
 			}
 
 			/* Encode */

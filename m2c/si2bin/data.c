@@ -22,16 +22,17 @@
 #include "data.h"
 
 
-struct si2bin_data_t *si2bin_data_create(void)
+/*
+ * Class 'Si2binData'
+ */
+
+void Si2binDataCreate(Si2binData *self, Si2binDataType type)
 {
-	struct si2bin_data_t *data;
-	
-	data = xcalloc(1, sizeof(struct si2bin_data_t));
-	
-	return data;
+	/* Initialize */
+	self->type = type;
 }
 
-void si2bin_data_free(struct si2bin_data_t *data)
+
+void Si2binDataDestroy(Si2binData *self)
 {
-	free(data);
 }

@@ -22,6 +22,7 @@
 #include <arch/southern-islands/asm/asm.h>
 #include <arch/southern-islands/asm/inst.h>
 #include <lib/class/list.h>
+#include <lib/class/string.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/hash-table.h>
 #include <lib/util/list.h>
@@ -32,148 +33,49 @@
 
 
 /*
- * Global Functions
+ * Class 'Si2binInstInfo'
  */
 
-/* List indexed by an instruction opcode (enum si_inst_opcode_t). Each element
- * of the list if of type 'si2bin_inst_info_t'. */
-struct list_t *si2bin_inst_info_list;
-
-/* Hash table indexed by an instruction name, returning the associated entry in
- * of type 'si2bin_inst_info_t'. The name of the instruction is
- * extracted from the first token of the format string. */
-struct hash_table_t *si2bin_inst_info_table;
-
-/* FIXME
- * To obtain 'si_inst_info_t' elements
- */
-SIAsm *si_asm;
-
-
-void si2bin_inst_info_init(void)
+void Si2binInstInfoCreate(Si2binInstInfo *self, SIInstInfo *inst_info)
 {
-	struct si2bin_inst_info_t *info;
-	struct si2bin_inst_info_t *prev_info;
-	SIInstInfo *inst_info;
+	Si2binToken *token;
+	Si2binTokenType token_type;
+	String *token_str;
+	String *fmt_str;
 
-	int i;
+	/* Initialize */
+	self->inst_info = inst_info;
 
-	/* Disassembler */
-	si_asm = new(SIAsm);
+	/* Create list of tokens from format string */
+	fmt_str = new(String, inst_info->fmt_str);
+	self->str_token_list = StringTokenize(fmt_str, ", ");
+	assert(self->str_token_list->count);
+	delete(fmt_str);
 
-	/* Initialize hash table and list */
-	si2bin_inst_info_list = list_create_with_size(SIInstOpcodeCount);
-	si2bin_inst_info_table = hash_table_create(SIInstOpcodeCount, 1);
-
-	/* Populate them */
-	for (i = 0; i < SIInstOpcodeCount; i++)
+	/* Create list of formal arguments */
+	self->token_list = new(List);
+	ListForEach(self->str_token_list, token_str, String)
 	{
-		/* Instruction info from disassembler */
-		inst_info = &si_asm->inst_info[i];
-		if (!inst_info->name || !inst_info->fmt_str)
+		/* Name */
+		if (!self->str_token_list->current_index)
 		{
-			list_add(si2bin_inst_info_list, NULL);
+			self->name = token_str;
 			continue;
 		}
 
-		/* Create instruction info object */
-		info = si2bin_inst_info_create(inst_info);
-
-		/* Insert to list */
-		list_add(si2bin_inst_info_list, info);
-
-		/* Insert instruction info structure into hash table. There could
-		 * be already an instruction encoding with the same name but a
-		 * different encoding. They all form a linked list. */
-		prev_info = hash_table_get(si2bin_inst_info_table, info->name);
-		if (prev_info)
-		{
-			/* non vop3 instructions are added first into list. Add vop3 version to end of list */
-			prev_info->next = info;
-
-			/* non vop3 instructions are added first but vop3 version is added to the front of list */
-			//info->next = prev_info;
-			//hash_table_set(si2bin_inst_info_table, info->name, info);
-		}
-		else
-		{
-			hash_table_insert(si2bin_inst_info_table, info->name, info);
-		}
-	}
-}
-
-
-void si2bin_inst_info_done(void)
-{
-	struct si2bin_inst_info_t *info;
-	int index;
-
-	/* Free elements 'si2bin_inst_info_t' */
-	LIST_FOR_EACH(si2bin_inst_info_list, index)
-	{
-		info = list_get(si2bin_inst_info_list, index);
-		if (info)
-			si2bin_inst_info_free(info);
-	}
-
-	/* Free list and hash table */
-	list_free(si2bin_inst_info_list);
-	hash_table_free(si2bin_inst_info_table);
-
-	/* FIXME */
-	delete(si_asm);
-}
-
-
-
-
-/*
- * Instruction Information Object
- */
-
-struct si2bin_inst_info_t *si2bin_inst_info_create(SIInstInfo *inst_info)
-{
-	struct si2bin_inst_info_t *info;
-	Si2binToken *token;
-	Si2binTokenType token_type;
-
-	int index;
-	char *str_token;
-
-	/* Initialize */
-	info = xcalloc(1, sizeof(struct si2bin_inst_info_t));
-	info->inst_info = inst_info;
-
-	/* Create list of tokens from format string */
-	info->str_token_list = str_token_list_create(inst_info->fmt_str, ", ");
-	assert(info->str_token_list->count);
-	info->name = list_get(info->str_token_list, 0);
-
-	/* Create list of formal arguments */
-	info->token_list = new(List);
-	for (index = 1; index < info->str_token_list->count; index++)
-	{
-		/* Get token from format string */
-		str_token = list_get(info->str_token_list, index);
-		token_type = str_map_string_case(&si2bin_token_map, str_token);
-
 		/* Add formal argument */
+		token_type = str_map_string_case(&si2bin_token_map,
+				token_str->text);
 		token = new(Si2binToken, token_type);
-		ListAdd(info->token_list, asObject(token));
+		ListAdd(self->token_list, asObject(token));
 	}
-
-	/* Return */
-	return info;
 }
 
 
-void si2bin_inst_info_free(struct si2bin_inst_info_t *info)
+void Si2binInstInfoDestroy(Si2binInstInfo *self)
 {
-	/* Tokens */
-	str_token_list_free(info->str_token_list);
-	ListDeleteObjects(info->token_list);
-	delete(info->token_list);
-
-	/* Free */
-	free(info);
+	ListDeleteObjects(self->str_token_list);
+	ListDeleteObjects(self->token_list);
+	delete(self->str_token_list);
+	delete(self->token_list);
 }

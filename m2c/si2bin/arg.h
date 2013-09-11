@@ -23,13 +23,11 @@
 #include <arch/southern-islands/asm/inst.h>
 #include <lib/util/misc.h>
 
-#include <stdio.h>
 
+/*
+ * Class 'Si2binArg'
+ */
 
-/* Forward declarations */
-struct si2bin_symbol_t;
-
-extern struct str_map_t si2bin_arg_type_map;
 typedef enum
 {
 	Si2binArgInvalid = 0,
@@ -200,8 +198,9 @@ void __Si2binArgValidTypes(Si2binArg *self, const char *user_message,
  * Public
  */
 
+extern struct str_map_t si2bin_arg_type_map;
+
 void Si2binArgSwap(Si2binArg **arg1_ptr, Si2binArg **arg2_ptr);
 
 
 #endif
-
