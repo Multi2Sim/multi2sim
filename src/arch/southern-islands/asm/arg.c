@@ -185,4 +185,35 @@ int SIArgGetDataSize(SIArgDataType data_type)
 }
 
 
+SIArg * SIArgCopy(SIArg *original)
+{
+	SIArg *copy;
+
+	copy = new(SIArg, original->type, original->name->text);
+	delete(copy->name);
+
+	memcpy(copy, original, sizeof(*original));
+
+	/* Copy name */
+	copy->name = asString(StringClone(asObject(original->name)));
+
+	/* Copy specific fields per type */ 
+	switch (copy->type)
+	{
+	case SIArgTypeValue:
+
+		if (copy->value.value_ptr)
+		{
+			copy->value.value_ptr = xcalloc(1, copy->size); 
+			memcpy(copy->value.value_ptr, original->value.value_ptr,
+				copy->size);
+		}
+		break;
+
+	default:
+		break;
+	}
+
+	return copy;
+}
 

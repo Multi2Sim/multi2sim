@@ -286,6 +286,11 @@ void mem_system_init(void)
 	EV_MOD_NMOESI_MESSAGE_FINISH = esim_register_event_with_name(mod_handler_nmoesi_message,
 			mem_domain_index, "mod_nmoesi_message_finish");
 
+	EV_MOD_NMOESI_FLUSH = esim_register_event_with_name(mod_handler_nmoesi_flush,
+			mem_domain_index, "mod_nmoesi_flush");
+	EV_MOD_NMOESI_FLUSH_FINISH = esim_register_event_with_name(mod_handler_nmoesi_flush,
+			mem_domain_index, "mod_nmoesi_flush_finish");
+
 	/* Local memory event driven simulation */
 
 	EV_MOD_LOCAL_MEM_LOAD = esim_register_event_with_name(mod_handler_local_mem_load,

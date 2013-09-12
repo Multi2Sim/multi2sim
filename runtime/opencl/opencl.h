@@ -232,6 +232,9 @@ typedef void (*opencl_arch_ndrange_run_func_t)(void *ndrange);
 typedef void (*opencl_arch_ndrange_run_partial_func_t)(void *ndrange, 
 		unsigned int *work_group_start, unsigned int *work_group_count);
 
+/* Finish an ND-Range (blocking call) */
+typedef void (*opencl_arch_ndrange_finish_func_t)(void *ndrange);
+
 /* Free an ND-Range */
 typedef void (*opencl_arch_ndrange_free_func_t)(void *ndrange);
 

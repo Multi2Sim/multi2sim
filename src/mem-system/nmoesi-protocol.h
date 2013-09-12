@@ -103,6 +103,8 @@ extern int EV_MOD_NMOESI_MESSAGE_ACTION;
 extern int EV_MOD_NMOESI_MESSAGE_REPLY;
 extern int EV_MOD_NMOESI_MESSAGE_FINISH;
 
+extern int EV_MOD_NMOESI_FLUSH;
+extern int EV_MOD_NMOESI_FLUSH_FINISH;
 
 void mod_handler_nmoesi_find_and_lock(int event, void *data);
 void mod_handler_nmoesi_load(int event, void *data);
@@ -115,6 +117,7 @@ void mod_handler_nmoesi_read_request(int event, void *data);
 void mod_handler_nmoesi_invalidate(int event, void *data);
 void mod_handler_nmoesi_peer(int event, void *data);
 void mod_handler_nmoesi_message(int event, void *data);
+void mod_handler_nmoesi_flush(int event, void *data);
 
 
 #endif

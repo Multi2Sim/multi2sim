@@ -24,6 +24,7 @@
 #include <lib/util/linked-list.h>
 #include <lib/util/list.h>
 #include <lib/util/string.h>
+#include <mem-system/memory.h>
 #include <network/network.h>
 #include <network/node.h>
 
@@ -116,7 +117,8 @@ int EV_MOD_NMOESI_MESSAGE_ACTION;
 int EV_MOD_NMOESI_MESSAGE_REPLY;
 int EV_MOD_NMOESI_MESSAGE_FINISH;
 
-
+int EV_MOD_NMOESI_FLUSH;
+int EV_MOD_NMOESI_FLUSH_FINISH;
 
 
 
@@ -2923,6 +2925,124 @@ void mod_handler_nmoesi_message(int event, void *data)
 
 		/* Return */
 		mod_stack_return(stack);
+		return;
+	}
+
+	abort();
+}
+
+void nmoesi_flush_pages(struct mod_t *mod, struct mod_stack_t *stack)
+{
+	struct mod_stack_t *new_stack;
+
+	int set;
+	int way;
+	int tag;
+	int state;
+	unsigned int page_start;
+	unsigned int page_end;
+
+	page_start = stack->flush_page;
+	page_end = (page_start + MEM_PAGE_SIZE - 1);
+
+	for (set = 0; set < mod->dir_num_sets; set++)
+	{
+		for (way = 0; way < mod->dir_assoc; way++)
+		{
+			cache_get_block(mod->cache, set, way, &tag, &state);
+
+			if (!state)
+				continue;
+
+			if (!(tag >= page_start && tag <= page_end))
+				continue;
+
+			/* If the tag is within the page range,
+			 * send an invalidation request */
+			stack->pending++;
+			new_stack = mod_stack_create(stack->id, mod, 
+				tag, EV_MOD_NMOESI_FLUSH_FINISH, stack);
+
+			new_stack->except_mod = NULL;
+			new_stack->set = set;
+			new_stack->way = way;
+			new_stack->callback_function = stack->callback_function;
+			new_stack->callback_data = stack->callback_data;
+			new_stack->witness_ptr = stack->witness_ptr;
+
+			esim_schedule_event(EV_MOD_NMOESI_INVALIDATE, 
+				new_stack, 0);
+		}
+	}
+}
+
+void nmoesi_recursive_flush(struct mod_t *mod, struct mod_stack_t *stack)
+{
+	struct mod_t *low_mod;
+
+	LINKED_LIST_FOR_EACH(mod->low_mod_list)
+	{
+		low_mod = linked_list_get(mod->low_mod_list);
+		if (low_mod->kind != mod_kind_main_memory)
+		{
+			nmoesi_recursive_flush(low_mod, stack);
+		}
+		else
+		{
+			nmoesi_flush_pages(low_mod, stack);
+		}
+	}
+}
+
+void mod_handler_nmoesi_flush(int event, void *data)
+{
+	struct mod_stack_t *stack = data;
+
+	struct mod_t *mod = stack->mod;
+
+	if (event == EV_MOD_NMOESI_FLUSH)
+	{
+		mem_debug("  %lld %lld 0x%x %s flush\n", esim_time, stack->id,
+			stack->addr, mod->name);
+		mem_trace("mem.new_access name=\"A-%lld\" type=\"flush\" "
+			"state=\"%s:flush\" addr=0x%x\n",
+			stack->id, mod->name, stack->addr);
+
+		stack->pending = 1;
+
+		if (mod->kind == mod_kind_cache)
+		{
+			nmoesi_recursive_flush(mod, stack);
+		}
+
+		esim_schedule_event(EV_MOD_NMOESI_FLUSH_FINISH, stack, 0);
+		
+		return;
+	}
+
+	if (event == EV_MOD_NMOESI_FLUSH_FINISH)
+	{
+		/* Ignore while pending requests */
+		assert(stack->pending > 0);
+		stack->pending--;
+		if (stack->pending)
+			return;
+
+		mem_trace("mem.end_access name=\"A-%lld\"\n", stack->id);
+
+		/* Increment the witness pointer if one was provided */
+		if (stack->witness_ptr)
+		{
+			(*stack->witness_ptr)++;
+		}
+
+		/* Execute callback if one was provided */
+		if (stack->callback_function)
+			stack->callback_function(stack->callback_data);
+
+		/* Return */
+		mod_stack_return(stack);
+
 		return;
 	}
 

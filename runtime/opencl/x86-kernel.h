@@ -181,6 +181,9 @@ struct opencl_x86_ndrange_t *opencl_x86_ndrange_create(
 		unsigned int *global_work_size, unsigned int *local_work_size,
 		unsigned int fused);
 
+void opencl_x86_ndrange_finish(
+		struct opencl_x86_ndrange_t *ndrange);
+
 void opencl_x86_ndrange_free(
 		struct opencl_x86_ndrange_t *ndrange);
 

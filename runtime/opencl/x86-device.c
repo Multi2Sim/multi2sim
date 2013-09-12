@@ -611,6 +611,9 @@ struct opencl_x86_device_t *opencl_x86_device_create(
 	parent->arch_ndrange_create_func =
 			(opencl_arch_ndrange_create_func_t)
 			opencl_x86_ndrange_create;
+	parent->arch_ndrange_finish_func =
+			(opencl_arch_ndrange_finish_func_t)
+			opencl_x86_ndrange_finish;
 	parent->arch_ndrange_free_func =
 			(opencl_arch_ndrange_free_func_t)
 			opencl_x86_ndrange_free;
@@ -664,7 +667,7 @@ void *opencl_x86_device_mem_alloc(struct opencl_x86_device_t *device,
 {
 	void *ptr;
 
-	if (posix_memalign(&ptr, 16, size))
+	if (posix_memalign(&ptr, 4096, size))  /* Page align */
 		fatal("%s: out of memory", __FUNCTION__);
 	mhandle_register_ptr(ptr, size);
 	return ptr;

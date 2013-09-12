@@ -61,6 +61,8 @@ struct mod_stack_t
 	struct linked_list_t *event_queue;
 	void *event_queue_item;
 	struct mod_client_info_t *client_info;
+	void (*callback_function)(void *);
+	void *callback_data;
 
 	struct mod_t *mod;
 	struct mod_t *target_mod;
@@ -97,6 +99,9 @@ struct mod_stack_t
 	/* Bucket list of accesses in hash table in 'mod' */
 	struct mod_stack_t *bucket_list_prev;
 	struct mod_stack_t *bucket_list_next;
+
+	/* The page to flush for flush requests */
+	unsigned int flush_page;
 
 	/* Flags */
 	int hit : 1;
