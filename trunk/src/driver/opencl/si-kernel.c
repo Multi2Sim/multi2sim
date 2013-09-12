@@ -21,6 +21,8 @@
 #include <arch/southern-islands/asm/arg.h>
 #include <arch/southern-islands/emu/isa.h>
 #include <arch/southern-islands/emu/ndrange.h>
+#include <arch/southern-islands/timing/compute-unit.h>
+#include <arch/southern-islands/timing/gpu.h>
 #include <arch/x86/emu/context.h>
 #include <arch/x86/emu/emu.h>
 #include <arch/x86/timing/cpu.h>
@@ -32,6 +34,7 @@
 #include <lib/util/string.h>
 #include <mem-system/memory.h>
 #include <mem-system/mmu.h>
+#include <mem-system/module.h>
 
 #include "opencl.h"
 #include "si-kernel.h"
@@ -661,7 +664,7 @@ void opencl_si_kernel_create_ndrange_constant_buffers(SINDRange *ndrange,
 	if (gpu_mmu)
 	{
 		/* Allocate starting from nearest page boundary */
-		if (emu->video_mem_top % gpu_mmu->page_mask)
+		if (emu->video_mem_top & gpu_mmu->page_mask)
 		{
 			emu->video_mem_top += gpu_mmu->page_size -
 				(emu->video_mem_top & gpu_mmu->page_mask);
@@ -827,7 +830,7 @@ void opencl_si_kernel_create_ndrange_tables(SINDRange *ndrange, MMU *gpu_mmu)
 	if (gpu_mmu)
 	{
 		/* Allocate starting from nearest page boundary */
-		if (emu->video_mem_top % gpu_mmu->page_mask)
+		if (emu->video_mem_top & gpu_mmu->page_mask)
 		{
 			emu->video_mem_top += gpu_mmu->page_size -
 				(emu->video_mem_top & gpu_mmu->page_mask);
@@ -883,6 +886,8 @@ void opencl_si_kernel_setup_ndrange_args(struct opencl_si_kernel_t *kernel,
 			fatal("%s: kernel '%s': argument '%s' not set",
 				__FUNCTION__, kernel->name, arg->name->text);
 
+		opencl_debug("\targ[%d] = %s ", index, arg->name->text);
+
 		/* Process argument depending on its type */
 		switch (arg->type)
 		{
@@ -914,9 +919,8 @@ void opencl_si_kernel_setup_ndrange_args(struct opencl_si_kernel_t *kernel,
 					arg->pointer.constant_offset,
 					&ndrange->local_mem_top, 4);
 
-				opencl_debug("\targument %d: %u bytes reserved"
-					" in local memory at 0x%x\n", index,
-					arg->size, ndrange->local_mem_top);
+				opencl_debug("%u bytes at 0x%x", arg->size, 
+					ndrange->local_mem_top);
 
 				ndrange->local_mem_top += arg->size;
 
@@ -925,6 +929,7 @@ void opencl_si_kernel_setup_ndrange_args(struct opencl_si_kernel_t *kernel,
 			/* UAV */
 			case SIArgUAV:
 			{
+				opencl_debug("(%x0x)", arg->pointer.device_ptr);
 				/* Create descriptor for argument */
 				opencl_si_create_buffer_desc(
 					arg->pointer.device_ptr,
@@ -998,6 +1003,7 @@ void opencl_si_kernel_setup_ndrange_args(struct opencl_si_kernel_t *kernel,
 				__FUNCTION__, arg->type);
 
 		}
+		opencl_debug("\n");
 
 		/* Next */
 		index++;
@@ -1192,8 +1198,6 @@ void opencl_si_kernel_debug_ndrange_state(struct opencl_si_kernel_t *kernel,
 	struct si_buffer_desc_t buffer_desc;
 	SIArg *arg;
 
-	opencl_debug("\tndrange arg_list has %d elems\n", ndrange->arg_list->count);
-
         si_isa_debug("\n");
         si_isa_debug("================ Initialization Summary ================"
                 "\n");
@@ -1206,15 +1210,15 @@ void opencl_si_kernel_debug_ndrange_state(struct opencl_si_kernel_t *kernel,
         si_isa_debug("\t------------------------------------------------\n");
         si_isa_debug("\t|    Name            |    Address Range        |\n");
         si_isa_debug("\t------------------------------------------------\n");
-        si_isa_debug("\t| Const Buffer table | [%10u:%10u] |\n",
+        si_isa_debug("\t| Const Buffer table | [0x%8x:0x%8x] |\n",
                 ndrange->const_buf_table,
                 ndrange->const_buf_table +
                 SI_EMU_CONST_BUF_TABLE_SIZE-1);
-        si_isa_debug("\t| Resource table     | [%10u:%10u] |\n",
+        si_isa_debug("\t| Resource table     | [0x%8x:0x%8x] |\n",
                 ndrange->resource_table,
                 ndrange->resource_table +
                 SI_EMU_RESOURCE_TABLE_SIZE-1);
-        si_isa_debug("\t| UAV table          | [%10u:%10u] |\n",
+        si_isa_debug("\t| UAV table          | [0x%8x:0x%8x] |\n",
                 ndrange->uav_table,
                 ndrange->uav_table + SI_EMU_UAV_TABLE_SIZE - 1);
         si_isa_debug("\t------------------------------------------------\n");
@@ -1373,7 +1377,7 @@ void opencl_si_kernel_debug_ndrange_state(struct opencl_si_kernel_t *kernel,
 			i*SI_EMU_CONST_BUF_TABLE_ENTRY_SIZE, 
 			sizeof(buffer_desc), &buffer_desc);
 
-        	si_isa_debug("\t| CB%-2d  | [%10llu:%10llu] |\n",
+        	si_isa_debug("\t| CB%-2d  | [0x%8llx:0x%8llx] |\n",
 			i, (long long unsigned int)buffer_desc.base_addr,
 			(long long unsigned int)buffer_desc.base_addr + 
 			(long long unsigned int)buffer_desc.num_records - 1);
@@ -1395,7 +1399,7 @@ void opencl_si_kernel_debug_ndrange_state(struct opencl_si_kernel_t *kernel,
 			ndrange->uav_table + i*SI_EMU_UAV_TABLE_ENTRY_SIZE, 
 			sizeof(buffer_desc), &buffer_desc);
 
-        	si_isa_debug("\t| UAV%-2d | [%10u:%10u] |\n",
+        	si_isa_debug("\t| UAV%-2d | [0x%8x:0x%8x] |\n",
 			i, (unsigned int)buffer_desc.base_addr,
 			(unsigned int)buffer_desc.base_addr + 
 			(unsigned int)buffer_desc.num_records - 1);
@@ -1480,4 +1484,139 @@ void opencl_si_ndrange_setup_mmu(SINDRange *ndrange, MMU *cpu_mmu,
 	}
 }
 
+static void flush_callback(void *data)
+{
+	assert(data);
 
+	X86Emu *x86_emu = (X86Emu *)data;
+	X86EmuProcessEventsSchedule(x86_emu);
+}
+
+/* Go through list of arguments */
+/* For each buffer found, check if rw or wo */
+/* For each rw or wo buffer, create a list of pages to flush */
+void opencl_si_kernel_flush_ndrange_buffers(SINDRange *ndrange, SIGpu *gpu,
+	X86Emu *x86_emu)
+{
+	MMU *mmu = gpu->mmu;
+	SIArg *arg;
+
+	int num_pages;
+	int i;
+
+	unsigned int phys_page;
+
+	/* Compute unit whose cache will be used for the flush */
+	SIComputeUnit *compute_unit = gpu->compute_units[0];
+	assert(compute_unit);
+
+	/* Use vector cache for module that receives the flush request */
+	struct mod_t *flush_mod = compute_unit->vector_cache;
+	assert(flush_mod);
+
+	ListForEach(ndrange->arg_list, arg, SIArg)
+	{
+		/* Check that argument was set */
+		assert(arg);
+		assert(arg->set);
+
+		/* Process argument depending on its type */
+		switch (arg->type)
+		{
+
+		case SIArgTypeValue:
+
+			/* Ignore values */
+			break;
+
+		case SIArgTypePointer:
+
+			switch (arg->pointer.scope)
+			{
+
+			/* Hardware local memory */
+			case SIArgHwLocal:
+			{
+				/* Ignore local memory */
+				break;
+			}
+
+			/* UAV */
+			case SIArgUAV:
+			{
+				/* Flush UAVs if they are RW or WO */
+				if ((arg->pointer.access_type == 
+					SIArgWriteOnly) || 
+					(arg->pointer.access_type == 
+					SIArgReadWrite))
+				{
+					opencl_debug("\tflushing buffer %s: virtual address 0x%x, ndrange %d (asid %d)\n", 
+						arg->name->text, 
+						arg->pointer.device_ptr, 
+						ndrange->id, 
+						ndrange->address_space_index);
+					assert(!(arg->pointer.device_ptr %
+						mmu->page_size));
+
+					num_pages = (arg->size + 
+						mmu->page_size - 1) /
+						mmu->page_size;
+
+					/* Iterate through pages and generate
+					 * an flush request for each one */
+					for (i = 0; i < num_pages; i++)
+					{
+						phys_page = MMUTranslate(
+							gpu->mmu,
+							ndrange->
+							address_space_index,
+							arg->
+							pointer.device_ptr + 
+							i*mmu->page_size);
+
+						ndrange->flushing--;
+
+						mod_flush(flush_mod, phys_page,
+							&ndrange->flushing,
+							flush_callback,
+							x86_emu);
+					}
+				}
+				break;
+			}
+
+			/* Hardware constant memory */
+			case SIArgHwConstant:
+			{
+				/* Ignore constant memory */
+				break;
+			}
+
+			default:
+			{
+				fatal("%s: not implemented memory scope",
+						__FUNCTION__);
+			}
+
+			}
+
+			break;
+
+		case SIArgTypeImage:
+
+			/* Ignore images */
+			break;
+
+		case SIArgTypeSampler:
+
+			/* Ignore samplers */
+			break;
+
+		default:
+
+			fatal("%s: argument type not recognized (%d)",
+				__FUNCTION__, arg->type);
+
+		}
+	}
+}

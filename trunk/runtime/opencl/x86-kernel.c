@@ -272,7 +272,6 @@ struct opencl_x86_kernel_t *opencl_x86_kernel_create(
 	return kernel;
 }
 
-
 void opencl_x86_kernel_free(struct opencl_x86_kernel_t *kernel)
 {
 	opencl_debug("[%s] freeing x86 kernel", __FUNCTION__);
@@ -418,6 +417,11 @@ void opencl_x86_ndrange_init(struct opencl_x86_ndrange_t *ndrange)
 	ndrange->exec = exec;
 }
 
+void opencl_x86_ndrange_finish(struct opencl_x86_ndrange_t *ndrange)
+{
+
+}
+
 /* Finalize an ND-Range */
 void opencl_x86_ndrange_free(struct opencl_x86_ndrange_t *ndrange)
 {
@@ -472,6 +476,8 @@ void opencl_x86_ndrange_run(struct opencl_x86_ndrange_t *ndrange)
 
 	opencl_x86_ndrange_run_partial(ndrange, group_start, 
 		ndrange->group_count);
+
+	opencl_x86_ndrange_finish(ndrange);
 
 	opencl_x86_ndrange_free(ndrange);
 }

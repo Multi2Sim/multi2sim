@@ -137,8 +137,6 @@ struct opencl_si_device_t *opencl_si_device_create(struct opencl_device_t *paren
 	/* Call-back functions for ND-Range */
 	parent->arch_ndrange_create_func = (opencl_arch_ndrange_create_func_t)
 		opencl_si_ndrange_create;
-	parent->arch_ndrange_free_func = (opencl_arch_ndrange_free_func_t) 
-		opencl_si_ndrange_free;
 	parent->arch_ndrange_init_func = (opencl_arch_ndrange_init_func_t) 
 		opencl_si_ndrange_init;
 	parent->arch_ndrange_run_func = (opencl_arch_ndrange_run_func_t) 
@@ -146,6 +144,10 @@ struct opencl_si_device_t *opencl_si_device_create(struct opencl_device_t *paren
 	parent->arch_ndrange_run_partial_func = 
 		(opencl_arch_ndrange_run_partial_func_t) 
 		opencl_si_ndrange_run_partial;
+	parent->arch_ndrange_finish_func = (opencl_arch_ndrange_finish_func_t)
+		opencl_si_ndrange_finish;
+	parent->arch_ndrange_free_func = (opencl_arch_ndrange_free_func_t) 
+		opencl_si_ndrange_free;
 	parent->arch_device_preferred_workgroups_func = 
 		(opencl_arch_device_preferred_workgroups_func_t)
 		opencl_si_device_preferred_workgroups;

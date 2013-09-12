@@ -109,7 +109,9 @@ void *device_ndrange_dispatch(void *ptr)
 	pthread_mutex_unlock(info->lock);
 
 	opencl_debug("[%s] calling nd-range finish", __FUNCTION__);
-	/* Initialize architecture-specific ND-Range */
+	info->device->arch_ndrange_finish_func(arch_ndrange);
+
+	opencl_debug("[%s] calling nd-range free", __FUNCTION__);
 	info->device->arch_ndrange_free_func(arch_ndrange);
 
 	free(group_offset);
@@ -358,6 +360,15 @@ struct opencl_union_ndrange_t *opencl_union_ndrange_create(
 
 void opencl_union_ndrange_init(struct opencl_union_ndrange_t *ndrange)
 {
+	/* Each architecture-specific nd-range is initialized
+	 * within the run function */
+	opencl_debug("[%s] empty", __FUNCTION__);
+}
+
+void opencl_union_ndrange_finish(struct opencl_union_ndrange_t *ndrange)
+{
+	/* Each architecture-specific nd-range is finished 
+	 * within the run function */
 	opencl_debug("[%s] empty", __FUNCTION__);
 }
 

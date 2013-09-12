@@ -367,15 +367,27 @@ struct opencl_si_ndrange_t *opencl_si_ndrange_create(
 
 void opencl_si_ndrange_init(struct opencl_si_ndrange_t *ndrange)
 {
-	return;
+
+}
+
+void opencl_si_ndrange_finish(struct opencl_si_ndrange_t *ndrange)
+{
+	/* Wait for the nd-range to complete */
+	syscall(OPENCL_SYSCALL_CODE, opencl_abi_si_ndrange_finish,
+		ndrange->id);
+
+	/* Flush the cache */
+	syscall(OPENCL_SYSCALL_CODE, opencl_abi_si_ndrange_flush, 
+		ndrange->id);
+
 }
 
 void opencl_si_ndrange_free(struct opencl_si_ndrange_t *ndrange)
 {
 	opencl_debug("[%s] freeing si kernel", __FUNCTION__);
 
-	/* Wait for the nd-range to complete */
-	syscall(OPENCL_SYSCALL_CODE, opencl_abi_si_ndrange_finish,
+	/* Free the ndrange */
+	syscall(OPENCL_SYSCALL_CODE, opencl_abi_si_ndrange_free, 
 		ndrange->id);
 
 	free(ndrange);
@@ -417,6 +429,10 @@ void opencl_si_ndrange_run(struct opencl_si_ndrange_t *ndrange)
 	opencl_si_ndrange_run_partial(ndrange, work_group_start,
 		work_group_count);
 
+	/* Wait for the nd-range to complete and then flush the cache */
+	opencl_si_ndrange_finish(ndrange);
+
+	/* Free the nd-range */
 	opencl_si_ndrange_free(ndrange);
 }
 

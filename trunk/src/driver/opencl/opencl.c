@@ -26,6 +26,7 @@
 #include <arch/x86/emu/regs.h>
 #include <arch/x86/timing/cpu.h>
 #include <lib/class/list.h>
+#include <lib/class/string.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
@@ -229,8 +230,8 @@ int OpenclDriverCall(X86Context *ctx)
 
 /* NOTE: when modifying the values of these two macros, the same values should
  * be reflected in 'runtime/opencl/platform.c'. */
-#define OPENCL_VERSION_MAJOR  4
-#define OPENCL_VERSION_MINOR  2143
+#define OPENCL_VERSION_MAJOR  5
+#define OPENCL_VERSION_MINOR  2173
 
 struct opencl_version_t
 {
@@ -308,13 +309,12 @@ static int opencl_abi_si_mem_alloc_impl(X86Context *ctx)
 	if (si_gpu)
 	{
 		/* Allocate starting from nearest page boundary */
-		if (si_emu->video_mem_top % si_gpu->mmu->page_mask)
+		if (si_emu->video_mem_top & si_gpu->mmu->page_mask)
 		{
 			si_emu->video_mem_top += si_gpu->mmu->page_size -
 				(si_emu->video_mem_top & 
 				 si_gpu->mmu->page_mask);
 		}
-
 	}
 
 	/* Map new pages */
@@ -1021,7 +1021,7 @@ static int opencl_abi_si_kernel_set_arg_sampler_impl(X86Context *ctx)
 
 static int opencl_abi_si_ndrange_create_impl(X86Context *ctx)
 {
-	SIArg *arg;
+	SIArg *arg, *arg_copy;
 	X86Emu *x86_emu = ctx->emu;
 	OpenclDriver *driver = x86_emu->opencl_driver;
 	SIEmu *si_emu = driver->si_emu;
@@ -1115,12 +1115,17 @@ static int opencl_abi_si_ndrange_create_impl(X86Context *ctx)
 	if (si_gpu)
 		SIGpuMapNDRange(si_gpu, ndrange);
 	
-	opencl_debug("\tkernel arg_list has %d elems\n", 
+	opencl_debug("\tcopying %d arguments from the kernel\n", 
 		kernel->arg_list->count);
 
 	/* Copy kernel arg list to nd-range */
 	ListForEach(kernel->arg_list, arg, SIArg)
-		ListAdd(ndrange->arg_list, asObject(arg));
+	{
+		arg_copy = SIArgCopy(arg);
+		ListAdd(ndrange->arg_list, asObject(arg_copy));
+		opencl_debug("setting arg to %p\n", asObject(arg_copy));
+		opencl_debug("device_ptr = %u\n", arg->pointer.device_ptr);
+	}
 
 	list_add(driver->si_ndrange_list, ndrange);
 
@@ -1349,17 +1354,11 @@ static void opencl_abi_si_ndrange_finish_wakeup(X86Context *ctx,
 {
 	assert(user_data);
 
-	X86Emu *emu = ctx->emu;
-	OpenclDriver *driver = emu->opencl_driver;
 	SINDRange *ndrange = (SINDRange *) user_data;
 
 	assert(!list_count(ndrange->waiting_work_groups));
 	assert(!list_count(ndrange->running_work_groups));
 	assert(ndrange->last_work_group_sent);
-
-	list_remove(driver->si_ndrange_list, ndrange);
-
-	delete(ndrange);
 
 	return;
 }
@@ -1393,8 +1392,6 @@ static int opencl_abi_si_ndrange_finish_impl(X86Context *ctx)
 		!list_count(ndrange->waiting_work_groups))
 	{
 		opencl_debug("\tnd-range %d finished\n", ndrange_id);
-		list_remove(driver->si_ndrange_list, ndrange);
-		delete(ndrange);
 	}
 	else
 	{
@@ -1537,9 +1534,131 @@ static int opencl_abi_si_ndrange_set_fused_impl(X86Context *ctx)
 	 * the CPU */
 	if (driver->fused)
 	{
+		opencl_debug("\tfused\n");
 		assert(si_gpu);
 		si_gpu->mmu->read_only = 1;
 	}
+	else
+	{
+		opencl_debug("\tnot fused\n");
+	}
+
+	return 0;
+}
+
+/*
+ * OpenCL ABI call #20 - si_ndrange_flush
+ *
+ * @param int ndrange-id
+ *
+ *	ID of ND-Range to flush
+ *
+ * @return int
+ *
+ *	The function always returns 0.
+ */
+
+static int opencl_abi_si_ndrange_flush_can_wakeup(X86Context *ctx, 
+	void *user_data)
+{
+	assert(user_data);
+	
+	int* witness_ptr = user_data;
+	int can_wakeup = !(*witness_ptr);
+
+	return can_wakeup;
+}
+
+static void opencl_abi_si_ndrange_flush_wakeup(X86Context *ctx, 
+	void *user_data)
+{
+	assert(user_data);
+
+	int* witness_ptr = user_data;
+	assert(!(*witness_ptr));
+
+	return;
+}
+
+static int opencl_abi_si_ndrange_flush_impl(X86Context *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+	X86Emu *x86_emu = ctx->emu;
+	OpenclDriver *driver = x86_emu->opencl_driver;
+	SIGpu *si_gpu = driver->si_gpu;
+
+	/* If there's not a timing simulator, no need to flush */
+	if (!si_gpu)
+		return 0;
+
+	SINDRange *ndrange = NULL, *tmp_ndrange;
+
+	int index;
+	int ndrange_id;
+
+	ndrange_id = regs->ecx;
+
+	LIST_FOR_EACH(driver->si_ndrange_list, index)
+	{
+		tmp_ndrange = (SINDRange* )list_get(driver->si_ndrange_list, 
+			index);
+		if (tmp_ndrange->id == ndrange_id)
+			ndrange = tmp_ndrange;
+	}
+	if (!ndrange)
+		fatal("%s: invalid ndrange ID (%d)", __FUNCTION__, ndrange_id);
+
+	opencl_debug("\tndrange %d\n", ndrange->id);
+
+	/* Flush RW or WO buffers from this ND-Range */
+	opencl_si_kernel_flush_ndrange_buffers(ndrange, si_gpu, x86_emu);
+
+	X86ContextSuspend(ctx, opencl_abi_si_ndrange_flush_can_wakeup, 
+		&(ndrange->flushing), opencl_abi_si_ndrange_flush_wakeup, 
+		&(ndrange->flushing));
+
+	return 0;
+}
+
+/*
+ * OpenCL ABI call #21 - si_ndrange_free
+ *
+ * @param int ndrange-id
+ *
+ *	ID of ND-Range to free
+ *
+ * @return int
+ *
+ *	The function always returns 0.
+ */
+
+static int opencl_abi_si_ndrange_free_impl(X86Context *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+	X86Emu *x86_emu = ctx->emu;
+	OpenclDriver *driver = x86_emu->opencl_driver;
+
+	SINDRange *ndrange = NULL, *tmp_ndrange;
+
+	int index;
+	int ndrange_id;
+
+	ndrange_id = regs->ecx;
+
+	/* Check for nd-range in the driver's list */
+	LIST_FOR_EACH(driver->si_ndrange_list, index)
+	{
+		tmp_ndrange = (SINDRange* )list_get(driver->si_ndrange_list, 
+			index);
+		if (tmp_ndrange->id == ndrange_id)
+			ndrange = tmp_ndrange;
+	}
+	if (!ndrange)
+		fatal("%s: invalid ndrange ID (%d)", __FUNCTION__, ndrange_id);
+
+	/* Free */
+	list_remove(driver->si_ndrange_list, ndrange);
+	delete(ndrange);
 
 	return 0;
 }

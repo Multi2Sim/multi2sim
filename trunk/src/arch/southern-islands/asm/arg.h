@@ -163,5 +163,6 @@ extern struct str_map_t si_arg_scope_map;
 extern struct str_map_t si_arg_reflection_map;
 
 int SIArgGetDataSize(SIArgDataType data_type);
+SIArg * SIArgCopy(SIArg *original);
 
 #endif

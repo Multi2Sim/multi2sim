@@ -66,6 +66,8 @@ void opencl_si_kernel_setup_ndrange_args(struct opencl_si_kernel_t *kernel,
 	SINDRange *ndrange);
 void opencl_si_kernel_debug_ndrange_state(struct opencl_si_kernel_t *kernel, 
 	SINDRange *ndrange);
+void opencl_si_kernel_flush_ndrange_buffers(SINDRange *ndrange, SIGpu *gpu,
+	X86Emu *x86_emu);
 void opencl_si_kernel_create_ndrange_tables(SINDRange *ndrange, MMU *gpu_mmu);
 void opencl_si_kernel_create_ndrange_constant_buffers(SINDRange *ndrange, 
 	MMU *gpu_mmu);

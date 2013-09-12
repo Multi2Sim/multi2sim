@@ -21,8 +21,9 @@
 
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
-#include <lib/util/misc.h>
 #include <lib/util/debug.h>
+#include <lib/util/list.h>
+#include <lib/util/misc.h>
 
 #include "cache.h"
 #include "mem-system.h"
@@ -61,6 +62,10 @@ void mod_stack_return(struct mod_stack_t *stack)
 
 	/* Wake up dependent accesses */
 	mod_stack_wakeup_stack(stack);
+
+	/* Execute the callback if one was provided */
+	if (stack->callback_function)
+		stack->callback_function(stack->callback_data);
 
 	/* Free */
 	free(stack);

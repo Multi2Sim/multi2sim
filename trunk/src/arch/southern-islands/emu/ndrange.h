@@ -97,6 +97,10 @@ CLASS_BEGIN(SINDRange, Object)
 	/* Each ND-Range has it's own address space */
 	int address_space_index;
 
+	/* A non-zero value indicates that a flush of the caches
+	 * is being performed, evicting data modified by this kernel */
+	int flushing;
+
 	/* Number of register used by each work-item. This fields determines
 	 * how many work-groups can be allocated per compute unit, among
 	 * others. */

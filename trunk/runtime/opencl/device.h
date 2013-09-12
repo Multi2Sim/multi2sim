@@ -106,6 +106,7 @@ struct _cl_device_id
 	opencl_arch_ndrange_init_func_t arch_ndrange_init_func;
 	opencl_arch_ndrange_run_func_t arch_ndrange_run_func;
 	opencl_arch_ndrange_run_partial_func_t arch_ndrange_run_partial_func;
+	opencl_arch_ndrange_free_func_t arch_ndrange_finish_func;
 	opencl_arch_ndrange_free_func_t arch_ndrange_free_func;
 	
 	/* Architecture-specific device of type 'opencl_XXX_device_t'.
