@@ -18,6 +18,7 @@
  */
 
 
+#include <arch/southern-islands/asm/arg.h>
 #include <lib/class/list.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
@@ -62,14 +63,14 @@ void SINDRangeDestroy(SINDRange *self)
 	list_free(self->running_work_groups);
 	list_free(self->completed_work_groups);
 
-	/* Free argument list (do not free the arguments themselves,
-	 * they can still be used in later ND-Ranges) */
+	/* Free the argument list */
+	ListDeleteObjects(self->arg_list);
 	delete(self->arg_list);
 }
 
 
-void SINDRangeSetupSize(SINDRange *self,
-	unsigned int *global_size, unsigned int *local_size, int work_dim)
+void SINDRangeSetupSize(SINDRange *self, unsigned int *global_size, 
+	unsigned int *local_size, int work_dim)
 {
 	int i;
 

@@ -74,6 +74,9 @@ struct opencl_union_device_t *opencl_union_device_create(struct opencl_device_t 
 	parent->arch_ndrange_create_func =
 			(opencl_arch_ndrange_create_func_t)
 			opencl_union_ndrange_create;
+	parent->arch_ndrange_finish_func =
+			(opencl_arch_ndrange_finish_func_t)
+			opencl_union_ndrange_finish;
 	parent->arch_ndrange_free_func =
 			(opencl_arch_ndrange_free_func_t)
 			opencl_union_ndrange_free;

@@ -62,6 +62,9 @@ struct opencl_union_ndrange_t *opencl_union_ndrange_create(
 	unsigned int *global_work_size, unsigned int *local_work_size, 
 	unsigned int fused);
 
+void opencl_union_ndrange_finish(
+	struct opencl_union_ndrange_t *ndrange);
+
 void opencl_union_ndrange_free(
 	struct opencl_union_ndrange_t *ndrange);
 
