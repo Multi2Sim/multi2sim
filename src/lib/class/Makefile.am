@@ -5,6 +5,9 @@ libclass_a_SOURCES = \
 	array.c \
 	array.h \
 	\
+	bitmap.c \
+	bitmap.h \
+	\
 	class.c \
 	class.dat \
 	class.h \

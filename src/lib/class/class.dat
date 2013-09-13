@@ -2,8 +2,6 @@
  * Built-in Classes
  */
 
-CLASS(Array)
-
 CLASS(ELFBuffer)
 CLASS(ELFProgramHeader)
 CLASS(ELFSection)
@@ -17,6 +15,8 @@ CLASS(ELFWriterSymbol)
 CLASS(ELFWriterSymbolTable)
 CLASS(ELFWriter)
 
+CLASS(Array)
+CLASS(Bitmap)
 CLASS(List)
 CLASS(ListIterator)
 CLASS(HashTable)

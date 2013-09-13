@@ -87,6 +87,7 @@
 #include <driver/opencl-old/evergreen/opencl.h>
 #include <driver/opengl/opengl.h>
 #include <lib/class/array.h>
+#include <lib/class/bitmap.h>
 #include <lib/class/elf-reader.h>
 #include <lib/class/list.h>
 #include <lib/class/string.h>
@@ -1906,6 +1907,7 @@ static void m2s_init(void)
 
 	/* Classes */
 	CLASS_REGISTER(Array);
+	CLASS_REGISTER(Bitmap);
 	CLASS_REGISTER(ELFBuffer);
 	CLASS_REGISTER(ELFProgramHeader);
 	CLASS_REGISTER(ELFReader);
