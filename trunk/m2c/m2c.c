@@ -36,6 +36,7 @@
 #include <m2c/si2bin/task.h>
 #include <m2c/si2bin/token.h>
 #include <lib/class/array.h>
+#include <lib/class/bitmap.h>
 #include <lib/class/elf-writer.h>
 #include <lib/class/hash-table.h>
 #include <lib/class/ini-file.h>
@@ -596,6 +597,7 @@ void m2c_init(void)
 {
 	/* Classes */
 	CLASS_REGISTER(Array);
+	CLASS_REGISTER(Bitmap);
 	CLASS_REGISTER(List);
 	CLASS_REGISTER(ListIterator);
 	CLASS_REGISTER(HashTable);
