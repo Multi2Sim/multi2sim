@@ -179,7 +179,7 @@ typedef struct
 	unsigned long long int _reserved0 : 49; /* 48:0 */
 	unsigned long long int src3 : 6; /* 54:49 */
 	unsigned long long int rnd: 2; /* 56:55 */
-	unsigned long long int _const0 : 6; /* 57 */
+	unsigned long long int _const0 : 1; /* 57 */
 	unsigned long long int _reserved1 : 6; /* 63:58 */
 } FrmInstBytesGeneral0Mod1B;
 
