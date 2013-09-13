@@ -51,8 +51,8 @@ void FrmEmuCreate(FrmEmu *self, FrmAsm *as)
         self->global_mem = mem_create();
         self->global_mem->safe = 0;
         self->global_mem_top = 0;
-        self->total_global_mem_size = 1 << 31; /* 2GB */
-        self->free_global_mem_size = 1 << 31; /* 2GB */
+        self->total_global_mem_size = 1 << 30; /* 2GB */
+        self->free_global_mem_size = 1 << 30; /* 2GB */
         self->const_mem = mem_create();
         self->const_mem->safe = 0;
 

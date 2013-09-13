@@ -145,7 +145,7 @@ void __cudaRegisterFunction(void **fatCubinHandle,
 {
 	char cubin_path[1024];
 
-	const char *dev_func_bin_sec;
+	const unsigned char *dev_func_bin_sec;
 	unsigned int dev_func_bin_sec_size;
 	char identifier[1024];
 	int elf_start;
@@ -186,7 +186,7 @@ void __cudaRegisterFunction(void **fatCubinHandle,
 	else
 	{
 		/* Get the section containing kernel binary */
-		dev_func_bin_sec = (char *)
+		dev_func_bin_sec = (unsigned char *)
 			(*(struct {int m; int v; 
 			   const unsigned long long int *d; char *f;} **)
 			 fatCubinHandle)->d;
@@ -194,7 +194,7 @@ void __cudaRegisterFunction(void **fatCubinHandle,
 			(((unsigned int)dev_func_bin_sec[9]) << 8) | 
 			(((unsigned int)dev_func_bin_sec[10]) << 16) | 
 			(((unsigned int)dev_func_bin_sec[11]) << 24)) + 
-			16;
+			16u;
 
 		/* Get identifier to determine the end of cubin */
 		snprintf(identifier, sizeof identifier, "%s", 
@@ -205,7 +205,7 @@ void __cudaRegisterFunction(void **fatCubinHandle,
 		elf_end = 0;
 		for (i = 16; i < dev_func_bin_sec_size; ++i)
 		{
-			if (!strncmp(dev_func_bin_sec + i, identifier, 
+			if (!strncmp((char *)dev_func_bin_sec + i, identifier, 
 						strlen(identifier)))
 			{
 				if (elf_start == 0)
@@ -389,8 +389,7 @@ cudaError_t cudaGetDeviceCount(int *count)
 {
 	cuda_debug("CUDA runtime API '%s'", __FUNCTION__);
 
-	/* 0 for Fermi, 1 for Kepler */
-	*count = 2;	
+	*count = 1;	
 
 	cuda_debug("\t(runtime) out: count = [%p] %d", 
 			count, *count);
