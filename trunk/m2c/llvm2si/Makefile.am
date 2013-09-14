@@ -1,6 +1,6 @@
 lib_LIBRARIES = libllvm2si.a
 
-if HAVE_LLVM
+if HAVE_FLEX_BISON_AND_LLVM
 
 libllvm2si_a_SOURCES = \
 	\
