@@ -47,7 +47,7 @@
 #include <lib/util/list.h>
 #include <lib/util/string.h>
 
-#ifdef HAVE_LLVM
+#ifdef HAVE_FLEX_BISON_AND_LLVM
 #include <m2c/llvm2si/basic-block.h>
 #include <m2c/llvm2si/function.h>
 #include <m2c/llvm2si/phi.h>
@@ -239,6 +239,7 @@ static void m2c_process_option(const char *option, char *optarg)
 		return;
 	}
 
+#ifdef HAVE_FLEX_BISON_AND_LLVM
 	if (!strcmp(option, "ctree-config"))
 	{
 		ctree_config_file_name = optarg;
@@ -250,6 +251,7 @@ static void m2c_process_option(const char *option, char *optarg)
 		ctree_debug_file_name = optarg;
 		return;
 	}
+#endif
 
 	if (!strcmp(option, "frm-asm") || !strcmp(option, "frm2bin"))
 	{
@@ -603,12 +605,14 @@ void m2c_init(void)
 	CLASS_REGISTER(HashTable);
 	CLASS_REGISTER(String);
 	CLASS_REGISTER(IniFile);
-	
+
+#ifdef HAVE_FLEX_BISON_AND_LLVM
 	CLASS_REGISTER(Node);
 	CLASS_REGISTER(LeafNode);
 	CLASS_REGISTER(AbstractNode);
 	CLASS_REGISTER(BasicBlock);
 	CLASS_REGISTER(CTree);
+#endif
 	
 	CLASS_REGISTER(ELFWriterBuffer);
 	CLASS_REGISTER(ELFWriterSection);
@@ -629,8 +633,7 @@ void m2c_init(void)
 	CLASS_REGISTER(Frm2bin);
 
 	CLASS_REGISTER(Llvm2si);
-
-#ifdef HAVE_LLVM
+#ifdef HAVE_FLEX_BISON_AND_LLVM
 	CLASS_REGISTER(Llvm2siBasicBlock);
 	CLASS_REGISTER(Llvm2siPhi);
 	CLASS_REGISTER(Llvm2siFunction);
@@ -641,6 +644,7 @@ void m2c_init(void)
 #endif
 
 	CLASS_REGISTER(Si2bin);
+#ifdef HAVE_FLEX_BISON
 	CLASS_REGISTER(Si2binArg);
 	CLASS_REGISTER(Si2binData);
 	CLASS_REGISTER(Si2binInst);
@@ -648,6 +652,7 @@ void m2c_init(void)
 	CLASS_REGISTER(Si2binSymbol);
 	CLASS_REGISTER(Si2binTask);
 	CLASS_REGISTER(Si2binToken);
+#endif
 
 	/* Libraries */
 	debug_init();
@@ -663,7 +668,10 @@ void m2c_init(void)
 	llvm2si = new(Llvm2si);
 	si2bin = new(Si2bin);
 	frm2bin = new(Frm2bin);
+
+#ifdef HAVE_FLEX_BISON_AND_LLVM
 	ctree_init();
+#endif
 }
 
 
@@ -706,7 +714,10 @@ void m2c_done(void)
 	delete(llvm2si);
 	delete(si2bin);
 	delete(frm2bin);
+
+#ifdef HAVE_FLEX_BISON_AND_LLVM
 	ctree_done();
+#endif
 
 	/* Libraries */
 	debug_done();
