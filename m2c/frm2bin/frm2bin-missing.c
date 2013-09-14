@@ -49,17 +49,20 @@ static void frm2bin_missing(void)
  * Public Functions
  */
 
-void frm2bin_init(void)
+FrmAsm *frm_asm;
+
+void Frm2binCreate(Frm2bin *self)
 {
 }
 
 
-void frm2bin_done(void)
+void Frm2binDestroy(Frm2bin *self)
 {
 }
 
 
-void Frm2binCompile(struct list_t *source_file_list,
+void Frm2binCompile(Frm2bin *self,
+		struct list_t *source_file_list,
 		struct list_t *bin_file_list)
 {
 	frm2bin_missing();

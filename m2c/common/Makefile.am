@@ -1,5 +1,7 @@
 lib_LIBRARIES = libcommon.a
 
+if HAVE_FLEX_BISON_AND_LLVM
+
 libcommon_a_SOURCES = \
 	\
 	basic-block.c \
@@ -11,8 +13,12 @@ libcommon_a_SOURCES = \
 	ctree.c \
 	ctree.h
 
-if HAVE_LLVM
 AM_CFLAGS = $(LLVM_CFLAGS)
+
+else
+
+libcommon_a_SOURCES =
+
 endif
 
 INCLUDES = @M2S_INCLUDES@

@@ -54,22 +54,31 @@ static void si2bin_missing(void)
 
 
 /*
- * Public Functions
+ * Class 'Si2bin'
  */
 
-void si2bin_init(void)
+void Si2binCreate(Si2bin *self)
 {
 }
 
 
-void si2bin_done(void)
+void Si2binDestroy(Si2bin *self)
 {
 }
 
-
-void Si2binCompile(struct list_t *source_file_list,
+void Si2binCompile(Si2bin *self,
+		struct list_t *source_file_list,
 		struct list_t *bin_file_list)
 {
 	si2bin_missing();
 }
+
+
+
+
+/*
+ * Public
+ */
+
+Si2bin *si2bin;
 

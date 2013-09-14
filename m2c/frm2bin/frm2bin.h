@@ -22,6 +22,10 @@
 
 #include <lib/class/class.h>
 
+/* Forward declarations */
+struct list_t;
+
+
 /*
  * Class 'Frm2bin'
  */
@@ -43,9 +47,6 @@ void Frm2binCompile(Frm2bin *self,
 /*
  * Public
  */
-
-/* Forward declarations */
-struct list_t;
 
 extern struct frm2bin_inner_bin_t *frm2bin_inner_bin;
 extern struct frm2bin_outer_bin_t *frm2bin_outer_bin;
