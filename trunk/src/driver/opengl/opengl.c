@@ -825,7 +825,7 @@ static int opengl_abi_si_shader_set_input_impl(X86Context *ctx)
 
 	/* Shader has the indices of vertex attribute array in its encoding dictionary */
 	shdr = list_get(driver->opengl_si_shader_list, shader_id);
-	input_list = shdr->shader_bin->shader_enc_dict->input_list;
+	input_list = shdr->input_list;
 	input = list_get(input_list, index);
 	if (!input || input->usage_index != index)
 		fatal("Vertex attribute array at index %d is not needed by the vertex shader\n", index);
@@ -886,6 +886,8 @@ static int opengl_abi_si_ndrange_create_impl(X86Context *ctx)
 
 	struct elf_buffer_t *elf_buffer;
 	struct opengl_si_shader_t *shader;
+	struct opengl_si_bin_vertex_shader_t *vs;
+	struct opengl_si_bin_pixel_shader_t *ps;
 	struct si_fetch_shader_t *fs;
 	struct si_bin_enc_user_element_t *user_elements;
 	SINDRange *ndrange;
@@ -934,24 +936,45 @@ static int opengl_abi_si_ndrange_create_impl(X86Context *ctx)
 	/* Create ND-Range */
 	ndrange = new(SINDRange, si_emu);
 	ndrange->local_mem_top = shader->mem_size_local;
-	ndrange->num_sgpr_used = shader->shader_bin->
-		shader_enc_dict->num_sgpr_used;
-	ndrange->num_vgpr_used = shader->shader_bin->
-		shader_enc_dict->num_vgpr_used;
-	ndrange->wg_id_sgpr = shader->shader_bin->
-		shader_enc_dict->shader_pgm_rsrc2_vs->user_sgpr;
-	SINDRangeSetupSize(ndrange, global_size, local_size, work_dim);
 
-	/* Copy user elements from shader to ND-Range */
-	user_element_count = shader->shader_bin->
-		shader_enc_dict->userElementCount;
-	user_elements = shader->shader_bin->shader_enc_dict->
-		userElements;
-	ndrange->userElementCount = user_element_count;
-	for (i = 0; i < user_element_count; i++)
+	switch(shader->shader_kind)
 	{
-		ndrange->userElements[i] = user_elements[i];
+		
+	case OPENGL_SI_SHADER_VERTEX:
+		/* Some metadata from shader binary */
+		vs = (struct opengl_si_bin_vertex_shader_t *)shader->shader_bin->shader;
+		ndrange->num_sgpr_used = vs->meta->u32NumSgprs;
+		ndrange->num_vgpr_used = vs->meta->u32NumVgprs;
+		ndrange->wg_id_sgpr = vs->meta->spiShaderPgmRsrc2Vs.user_sgpr;
+		/* Copy user elements from shader to ND-Range */
+		user_element_count = vs->meta->u32UserElementCount;
+		user_elements = vs->meta->pUserElement;
+		ndrange->userElementCount = user_element_count;
+		for (i = 0; i < user_element_count; i++)
+		{
+			ndrange->userElements[i] = user_elements[i];
+		}
+		break;
+
+	case OPENGL_SI_SHADER_PIXEL:
+		ps = (struct opengl_si_bin_pixel_shader_t *)shader->shader_bin->shader;
+		ndrange->num_sgpr_used = ps->meta->u32NumSgprs;
+		ndrange->num_vgpr_used = ps->meta->u32NumVgprs;
+		/* Copy user elements from shader to ND-Range */
+		user_element_count = ps->meta->u32UserElementCount;
+		user_elements = ps->meta->pUserElement;
+		ndrange->userElementCount = user_element_count;
+		for (i = 0; i < user_element_count; i++)
+		{
+			ndrange->userElements[i] = user_elements[i];
+		}		
+		break;
+
+	default:
+		break;
 	}
+
+	SINDRangeSetupSize(ndrange, global_size, local_size, work_dim);
 
 	/* Set up instruction memory */
 	/* Initialize wavefront instruction buffer and PC */
@@ -963,7 +986,7 @@ static int opengl_abi_si_ndrange_create_impl(X86Context *ctx)
 		elf_buffer->size, 0);
 
 	/* Create Fetch Shader, Vertex Shader only */
-	if (shader->shader_kind == SI_OPENGL_SHADER_VERTEX)
+	if (shader->shader_kind == OPENGL_SI_SHADER_VERTEX)
 	{
 		fs = si_fetch_shader_create(shader);
 		SINDRangeSetupFSMem(ndrange, fs->isa, fs->size, 0);

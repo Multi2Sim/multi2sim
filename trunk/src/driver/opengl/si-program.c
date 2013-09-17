@@ -96,7 +96,7 @@ void opengl_si_program_free(struct opengl_si_program_t *program)
 
 	/* ELF file */
 	if (program->program_bin)
-		si_opengl_program_binary_free(program->program_bin);
+		opengl_si_program_binary_free(program->program_bin);
 
 	/* Free program */
 	free(program);
@@ -116,7 +116,7 @@ void opengl_si_program_set_binary(struct opengl_si_program_t *program,
 	snprintf(name, sizeof name, "program[%d].externalELF", program->id);
 
 	/* Program contains shader binary */
-	program->program_bin = si_opengl_program_binary_create(buf, size, name);
+	program->program_bin = opengl_si_program_binary_create(buf, size, name);
 
 	/* Initialize constant buffers */
 	opengl_si_program_initialize_constant_buffers(program);
