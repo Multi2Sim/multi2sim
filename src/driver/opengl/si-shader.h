@@ -31,13 +31,16 @@ struct si_opengl_shader_binary_t;
 struct opengl_si_shader_t
 {
 	/* Shader type */
-	enum si_opengl_shader_binary_kind_t shader_kind;
+	enum opengl_si_shader_binary_kind_t shader_kind;
 
 	/* Program that shader belongs to */
 	struct opengl_si_program_t *program;
 
 	/* AMD Shader binary (internal ELF) */
-	struct si_opengl_shader_binary_t *shader_bin;
+	struct opengl_si_shader_binary_t *shader_bin;
+
+	/* Equivalent to arg_list in OpenCL, elements of type si_input_t */
+	struct list_t *input_list; 
 
 	/* Memory requirements */
 	int mem_size_local;

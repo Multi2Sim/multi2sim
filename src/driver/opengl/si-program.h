@@ -42,14 +42,14 @@ void opengl_si_constant_buffer_free(struct opengl_si_constant_buffer_t *constant
  * OpengL Southern Islands Program
  */
 
-struct si_opengl_program_binary_t;
+struct opengl_si_program_binary_t;
 struct opengl_si_program_t
 {
 	int id;
 	OpenglDriver *driver;
 	
 	/* Program binary */
-	struct si_opengl_program_binary_t *program_bin;
+	struct opengl_si_program_binary_t *program_bin;
 
 	/* Constant buffers are shared by all shaders compiled in the
 	 * same binary. This list is comprised of elements of type
