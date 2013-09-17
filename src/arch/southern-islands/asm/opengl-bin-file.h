@@ -71,9 +71,9 @@ enum si_opengl_shader_binary_kind_t
 {
 	SI_OPENGL_SHADER_VERTEX = 0,
 	SI_OPENGL_SHADER_GEOMETRY,
-	SI_OPENGL_SHADER_CONTROL, /* aka HULL shader */
-	SI_OPENGL_SHADER_EVALUATION, /* aka Domain shader */
-	SI_OPENGL_SHADER_FRAGMENT = 4,
+	SI_OPENGL_SHADER_HULL, /* aka Tess Control shader */
+	SI_OPENGL_SHADER_DOMAIN, /* aka Tess Evalustion shader */
+	SI_OPENGL_SHADER_PIXEL = 4, /* aka Fragment shader */
 	SI_OPENGL_SHADER_COMPUTE,
 	SI_OPENGL_SHADER_INVALID
 };
@@ -719,6 +719,66 @@ enum si_opengl_bin_info_max_offset
 	MAX_PROGRAMINFO_OFFSET = 0x0ffff 
 };
 
+typedef struct
+{
+	// VS input mask
+	uint32_t inputStreamMask;                /* input stream mask (phsyical id) */
+	bool   usesVertexID;                   /* tells whether this program uses VertexID */
+	// transform feedback
+	uint32_t streamOutStrideInDWORDs0;       /* streamout stride0 */
+	uint32_t streamOutStrideInDWORDs1;       /* streamout stride1 */
+	uint32_t streamOutStrideInDWORDs2;       /* streamout stride2 */
+	uint32_t streamOutStrideInDWORDs3;       /* streamout stride3 */
+	int8_t   streamOutBufferMapping[MAX_TRANSFORM_FEEDBACK_BUFFERS];   /* streamout buffer config */
+	// vertex shader tessellation
+	uint8_t  tessPrimType;                            /* tessellation shader primitive type (sclTessPrimType) */
+	// viewport array index
+	unsigned int   outputViewportArrayIndex :8;             /* true if output viewport array index */
+	// svp members
+	uint8_t  frontColorOutputReg;                     /* front color output register number */
+	uint8_t  frontSecondaryColorOutputReg;            /* front secondary color output register number */
+	uint8_t  backColorOutputReg;                      /* back color output register number */
+	uint8_t  backSecondaryColorOutputReg;             /* back secondary color output register number */
+	uint8_t  aaStippleTexCoord;                       /* Bitfield representing which texture cood will be used for aastipple patch */
+	enum si_opengl_fetch_shader_type_t fsTypeForPassThruVS :8;   /* Fetch shader type (SVP PassThruVS) */
+	uint8_t  fsReturnAddrRegForPassThruVS;            /* Fetch shader subroutine start SGPR (SVP PassThruVS) */
+	uint8_t  fsInputStreamTableRegForPassThruVS;      /* Fetch shader input stream table start SGPR (SVP PassThruVS) */
+	int32_t  fsAttribValidMaskReg;                    /* VPGR which Fetch shader should populate, if sparse buffers are used. */
+} SIVSInfo;
+
+typedef struct
+{
+	uint32_t texKillPresent;                         /* Program uses texkill */
+	int32_t  pointCoordReg;                          /* register number of gl_PointCoord which is an input of FS */
+	uint8_t  outputColorMap[PS_MAX_OUTPUTS];  /* fragment shader color output map (from virtual to physical) */
+	bool   useFlatInterpMode;                      /* if flat has been used on a varying */
+	bool   forcePerSampleShading;                  /* true if the FS is required to run in per sample frequency */
+	bool   uncached_writes;                        /* uncached writes */
+	bool   outputDepth;                            /* true if fragment shader output depth */
+	uint32_t usingDualBlendMask;                     /* indicates using an index = 1 for dual blending, in glsl layout */
+} SIPSInfo;
+
+typedef struct
+{
+	uint32_t numSharedGPRUser;    /* shared GPR */
+	uint32_t numSharedGPRTotal;   /* shared GPR total including ones used by SC. */
+
+	uint32_t numThreadPerGroup;   /* threads per group */
+	uint32_t numThreadPerGroupX;  /* dimension x of NumThreadPerGroup */
+	uint32_t numThreadPerGroupY;  /* dimension y of NumThreadPerGroup */
+	uint32_t numThreadPerGroupZ;  /* dimension z of NumThreadPerGroup */
+	uint32_t totalNumThreadGroup; /* total number of thread groups */
+	uint32_t NumWavefrontPerSIMD; /* wavefronts per simd */
+	bool   eCsSetupMode;        /* compute slow/fast mode */
+	bool   IsMaxNumWavePerSIMD; /* Is this the max active num wavefronts per simd */
+	bool   SetBufferForNumGroup;/* Need to set up buffer for info on number of thread groups? */
+} SICSInfo;
+
+typedef struct
+{
+	bool   usesVertexCache;      /* vertex cache used? (fetch shader only) */
+} SIFSInfo;
+
 struct si_opengl_bin_info_t
 {
 	/* generaic shader resource information */
@@ -748,65 +808,13 @@ struct si_opengl_bin_info_t
 	union
 	{
 		/// Vexter Shader,  Tessellation Evaluation Shader and Geometry Shader parameter
-		struct
-		{
-			// VS input mask
-			uint32_t inputStreamMask;                /* input stream mask (phsyical id) */
-			bool   usesVertexID;                   /* tells whether this program uses VertexID */
-			// transform feedback
-			uint32_t streamOutStrideInDWORDs0;       /* streamout stride0 */
-			uint32_t streamOutStrideInDWORDs1;       /* streamout stride1 */
-			uint32_t streamOutStrideInDWORDs2;       /* streamout stride2 */
-			uint32_t streamOutStrideInDWORDs3;       /* streamout stride3 */
-			int8_t   streamOutBufferMapping[MAX_TRANSFORM_FEEDBACK_BUFFERS];   /* streamout buffer config */
-			// vertex shader tessellation
-			uint8_t  tessPrimType;                            /* tessellation shader primitive type (sclTessPrimType) */
-			// viewport array index
-			unsigned int   outputViewportArrayIndex :8;             /* true if output viewport array index */
-			// svp members
-			uint8_t  frontColorOutputReg;                     /* front color output register number */
-			uint8_t  frontSecondaryColorOutputReg;            /* front secondary color output register number */
-			uint8_t  backColorOutputReg;                      /* back color output register number */
-			uint8_t  backSecondaryColorOutputReg;             /* back secondary color output register number */
-			uint8_t  aaStippleTexCoord;                       /* Bitfield representing which texture cood will be used for aastipple patch */
-			enum si_opengl_fetch_shader_type_t fsTypeForPassThruVS :8;   /* Fetch shader type (SVP PassThruVS) */
-			uint8_t  fsReturnAddrRegForPassThruVS;            /* Fetch shader subroutine start SGPR (SVP PassThruVS) */
-			uint8_t  fsInputStreamTableRegForPassThruVS;      /* Fetch shader input stream table start SGPR (SVP PassThruVS) */
-			int32_t  fsAttribValidMaskReg;                    /* VPGR which Fetch shader should populate, if sparse buffers are used. */
-		};
+		SIVSInfo vs;
 		/// Fragment Shader Parameters
-		struct
-		{
-			uint32_t texKillPresent;                         /* Program uses texkill */
-			int32_t  pointCoordReg;                          /* register number of gl_PointCoord which is an input of FS */
-			uint8_t  outputColorMap[PS_MAX_OUTPUTS];  /* fragment shader color output map (from virtual to physical) */
-			bool   useFlatInterpMode;                      /* if flat has been used on a varying */
-			bool   forcePerSampleShading;                  /* true if the FS is required to run in per sample frequency */
-			bool   uncached_writes;                        /* uncached writes */
-			bool   outputDepth;                            /* true if fragment shader output depth */
-			uint32_t usingDualBlendMask;                     /* indicates using an index = 1 for dual blending, in glsl layout */
-		};
+		SIPSInfo ps;
 		/// Compute Shader Parameters
-		struct
-		{
-			uint32_t numSharedGPRUser;    /* shared GPR */
-			uint32_t numSharedGPRTotal;   /* shared GPR total including ones used by SC. */
-
-			uint32_t numThreadPerGroup;   /* threads per group */
-			uint32_t numThreadPerGroupX;  /* dimension x of NumThreadPerGroup */
-			uint32_t numThreadPerGroupY;  /* dimension y of NumThreadPerGroup */
-			uint32_t numThreadPerGroupZ;  /* dimension z of NumThreadPerGroup */
-			uint32_t totalNumThreadGroup; /* total number of thread groups */
-			uint32_t NumWavefrontPerSIMD; /* wavefronts per simd */
-			bool   eCsSetupMode;        /* compute slow/fast mode */
-			bool   IsMaxNumWavePerSIMD; /* Is this the max active num wavefronts per simd */
-			bool   SetBufferForNumGroup;/* Need to set up buffer for info on number of thread groups? */
-		};
+		SICSInfo cs;
 		/// Fetch Shader Parameters
-		struct
-		{
-			bool   usesVertexCache;      /* vertex cache used? (fetch shader only) */
-		};
+		SIFSInfo fs;
 	};
 	/* dynamic array, offset fields is valid in ELF package, int64_t is to keep the struct size fixed in all operation system. */
 	/* texture resource bound array */
@@ -860,6 +868,68 @@ struct si_opengl_bin_arb_program_parameter_t
 };
 
 /* Structure in .usageinfo section */
+typedef struct
+{
+	/* fs input usage */
+	uint32_t usesTexCoordMask;                   /* texcoord unit usage mask */
+	bool   usesFogCoord;                       /* fogcoord usage */
+	bool   usePrimaryColor;                    /* true if primary color is used */
+	bool   useSecondaryColor;                  /* true if secondary color is used */
+	/* aa stipple */
+	int8_t   aaStippleTexCoord;                  /* the texture coord used by SCL to simulate aa/stipple */
+	int8_t   aaStippleTexUnit;                   /* the texture unit used by aa/stipple texture image */
+	int8_t   aaStippleTexVirtUnit;               /* default logic unit for aa stipple texture unit */
+	/* bitmap */
+	int8_t   bitmapTexCoord;                     /* the texture coord used for bitmap drawing */
+	int8_t   bitmapTexUnit;                      /* the texture unit used for bitmap drawing */
+	int8_t   bitmapTexVirtUnit;                  /* default logic unit for bitmap drawing */
+	/* misc fields */
+	bool   needSampleInfoCBs;                  /* whether the FP needs the 2 constant buffers for the SAMPLEINFO, SAMPLEPOS and EVAL_SAMPLE_INDEX. */
+	bool   earlyFragTest;                      /* true if early frag test is enabled */
+	uint8_t  conservativeZ;                      /* 0:defult, 1:less, 2:greater */
+} SIPSUsageinfo;
+
+typedef struct
+{
+	uint16_t maxGSVertices[4];                   /* max gs output vertices */
+	uint16_t gsInvocations;                      /* gs invocation number */
+	uint8_t  inputTopology;                      /* gs input topology */
+	uint8_t  outputTopology[4];                  /* gs output topology */
+} SIGSUsageinfo;
+
+typedef struct
+{
+	uint32_t tessOutputVertices;                 /* output control point number */
+} SIHSUsageinfo;
+
+typedef struct
+{
+	uint32_t tessGenMode;                        /* domain mode */
+	uint32_t tessGenSpacing;                     /* partition mode */
+	uint32_t tessGenVertexOrder;                 /* output primitive mode */
+	bool   tessGenPointMode;                   /* If point mode when tessellated */
+} SIDSUsageinfo;
+
+typedef struct
+{
+	bool   positionInvariant;                  /* Has the ARB_position_invariant option been requested */
+	bool   enableAnotherSetAttribAlias;        /* if it is cg generated program or nv_vertex_program */
+	uint32_t lsStride;                           /* The number of input-control-points per patch declared in HS */
+	/* SI+ fetch shader parameters */
+	int8_t   fsType;                             /* Fetch shader type (immediate vs flat), SI only */
+	int8_t   fsReturnAddrReg;                    /* Fetch shader subroutine return address SGPR, SI only */
+	int8_t   fsInputStreamTableReg;              /* Fetch shader input stream table start SGPR (either first data element or pointer depending on FS type), SI only */
+	int8_t   fsVertexIdChannel;                  /* Fetch shader channel(R,G,B,A) to compute the vertexID with */
+} SIVSUsageinfo;
+
+typedef struct
+{
+	uint32_t  workDimension;                     /* Work dimension (1, 2 or 3 right now) */
+	uint32_t  workSizeX;                         /* Work size in the X dimension */
+	uint32_t  workSizeY;                         /* Work size in the Y dimension */
+	uint32_t  workSizeZ;                         /* Work size in the Z dimension */
+} SICSUsageinfo;
+
 struct si_opengl_bin_usageinfo_t
 {
 	struct si_opengl_bin_arb_program_parameter_t   arbProgramParameter;   /* ARB program parameters */
@@ -884,78 +954,28 @@ struct si_opengl_bin_usageinfo_t
 		//
 		/// Fragment Shader Parameters
 		//
-		struct
-		{
-			/* fs input usage */
-			uint32_t usesTexCoordMask;                   /* texcoord unit usage mask */
-			bool   usesFogCoord;                       /* fogcoord usage */
-			bool   usePrimaryColor;                    /* true if primary color is used */
-			bool   useSecondaryColor;                  /* true if secondary color is used */
-			/* aa stipple */
-			int8_t   aaStippleTexCoord;                  /* the texture coord used by SCL to simulate aa/stipple */
-			int8_t   aaStippleTexUnit;                   /* the texture unit used by aa/stipple texture image */
-			int8_t   aaStippleTexVirtUnit;               /* default logic unit for aa stipple texture unit */
-			/* bitmap */
-			int8_t   bitmapTexCoord;                     /* the texture coord used for bitmap drawing */
-			int8_t   bitmapTexUnit;                      /* the texture unit used for bitmap drawing */
-			int8_t   bitmapTexVirtUnit;                  /* default logic unit for bitmap drawing */
-			/* misc fields */
-			bool   needSampleInfoCBs;                  /* whether the FP needs the 2 constant buffers for the SAMPLEINFO, SAMPLEPOS and EVAL_SAMPLE_INDEX. */
-			bool   earlyFragTest;                      /* true if early frag test is enabled */
-			uint8_t  conservativeZ;                      /* 0:defult, 1:less, 2:greater */
-		};
+		SIPSUsageinfo ps;
 		//
 		/// Geometry Shader Parametes
 		//
-		struct
-		{
-			uint16_t maxGSVertices[4];                   /* max gs output vertices */
-			uint16_t gsInvocations;                      /* gs invocation number */
-			uint8_t  inputTopology;                      /* gs input topology */
-			uint8_t  outputTopology[4];                  /* gs output topology */
-		};
+		SIGSUsageinfo gs;
 		//
 		/// Tessellation Evaluation Shader Parameters
 		//
-		struct
-		{
-			uint32_t tessOutputVertices;                 /* output control point number */
-		};
+		//
+		SIHSUsageinfo hs;
 		//
 		/// Tessellation Control Shader Parameters
 		//
-		struct
-		{
-			uint32_t tessGenMode;                        /* domain mode */
-			uint32_t tessGenSpacing;                     /* partition mode */
-			uint32_t tessGenVertexOrder;                 /* output primitive mode */
-			bool   tessGenPointMode;                   /* If point mode when tessellated */
-		};
+		SIDSUsageinfo ds;
 		//
 		/// Vertex Shader Parametes
 		//
-		struct
-		{
-			bool   positionInvariant;                  /* Has the ARB_position_invariant option been requested */
-			bool   enableAnotherSetAttribAlias;        /* if it is cg generated program or nv_vertex_program */
-			uint32_t lsStride;                           /* The number of input-control-points per patch declared in HS */
-			/* SI+ fetch shader parameters */
-			int8_t   fsType;                             /* Fetch shader type (immediate vs flat), SI only */
-			int8_t   fsReturnAddrReg;                    /* Fetch shader subroutine return address SGPR, SI only */
-			int8_t   fsInputStreamTableReg;              /* Fetch shader input stream table start SGPR (either first data element or pointer depending on FS type), SI only */
-			int8_t   fsVertexIdChannel;                  /* Fetch shader channel(R,G,B,A) to compute the vertexID with */
-		};
+		SIVSUsageinfo vs;
 		//
-		/* Compute Shader Parameters */
+		/// Compute Shader Parameters 
 		//
-		struct
-		{
-			uint32_t  workDimension;                     /* Work dimension (1, 2 or 3 right now) */
-			uint32_t  workSizeX;                         /* Work size in the X dimension */
-			uint32_t  workSizeY;                         /* Work size in the Y dimension */
-			uint32_t  workSizeZ;                         /* Work size in the Z dimension */
-		};
-
+		SICSUsageinfo cs;
 	};
 
 	enum si_opengl_bin_info_max_offset maxOffset;         /* max valid value for dynamic array offset */

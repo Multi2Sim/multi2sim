@@ -223,16 +223,16 @@ struct opengl_si_shader_t *opengl_si_shader_create(
 		shdr->shader_kind = SI_OPENGL_SHADER_VERTEX;
 		break;
 	case GL_FRAGMENT_SHADER:
-		shdr->shader_kind = SI_OPENGL_SHADER_FRAGMENT;
+		shdr->shader_kind = SI_OPENGL_SHADER_PIXEL;
 		break;
 	case GL_GEOMETRY_SHADER:
 		shdr->shader_kind = SI_OPENGL_SHADER_GEOMETRY;
 		break;
 	case GL_TESS_CONTROL_SHADER:
-		shdr->shader_kind = SI_OPENGL_SHADER_CONTROL;
+		shdr->shader_kind = SI_OPENGL_SHADER_HULL;
 		break;
 	case GL_TESS_EVALUATION_SHADER:
-		shdr->shader_kind = SI_OPENGL_SHADER_CONTROL;
+		shdr->shader_kind = SI_OPENGL_SHADER_DOMAIN;
 		break;
 	default:
 		shdr->shader_kind = SI_OPENGL_SHADER_INVALID;

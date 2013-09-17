@@ -132,7 +132,7 @@ void OpenglDriverCreate(OpenglDriver *self, X86Emu *x86_emu, SIEmu *si_emu)
 	list_add(self->opengl_si_shader_list, NULL);
 
 	/* List of SI NDRanges */
-	self->si_ndrange_list = list_create();
+	self->opengl_si_ndrange_list = list_create();
 
 	/* Assign driver to host emulator */
 	x86_emu->opengl_driver = self;
@@ -144,8 +144,8 @@ void OpenglDriverDestroy(OpenglDriver *self)
 	int index;
 	struct list_t *program_list;
 	struct list_t *shader_list;
-	struct opengl_si_shader_t *shdr;
 	struct opengl_si_program_t *program;
+	struct opengl_si_shader_t *shdr;
 
 	program_list = self->opengl_si_program_list;
 	shader_list = self->opengl_si_shader_list;
@@ -159,7 +159,7 @@ void OpenglDriverDestroy(OpenglDriver *self)
 	}
 	list_free(program_list);
 
-	/* Free list of Southern Islands programs */
+	/* Free list of Southern Islands shaders */
 	LIST_FOR_EACH(shader_list, index)
 	{
 		shdr = list_get(shader_list, index);
@@ -169,8 +169,8 @@ void OpenglDriverDestroy(OpenglDriver *self)
 	list_free(shader_list);
 
 	/* Free list of Southern Islands nd-ranges*/
-	assert(!list_count(self->si_ndrange_list));
-	list_free(self->si_ndrange_list);
+	assert(!list_count(self->opengl_si_ndrange_list));
+	list_free(self->opengl_si_ndrange_list);
 
 }
 
@@ -744,7 +744,7 @@ static int opengl_abi_si_shader_create_impl(X86Context *ctx)
 	shader_type = regs->esi;
 	opengl_debug("\tprogram_id = %d, shader_id = %d, type = %x\n", program_id, shader_id, shader_type);
 
-	/* Create a shader object and initialized with shaders in program object */
+	/* Create a shader object and initialize it with shader binaries in program object */
 	program = list_get(driver->opengl_si_program_list, program_id);
 	if (program)
 	{
@@ -842,7 +842,7 @@ static int opengl_abi_si_shader_set_input_impl(X86Context *ctx)
 }
 
 /*
- * OpenGL ABI call #14- si_ndrange_initialize
+ * OpenGL ABI call #14- si_ndrange_create
  *
  * Create and initialize an ND-Range for the supplied shader.
  *
@@ -874,7 +874,7 @@ static int opengl_abi_si_shader_set_input_impl(X86Context *ctx)
  *	Unique NDRange ID.
  */
 
-static int opengl_abi_si_ndrange_initialize_impl(X86Context *ctx)
+static int opengl_abi_si_ndrange_create_impl(X86Context *ctx)
 {
 	X86Emu *x86_emu = ctx->emu;
 	OpenglDriver *driver = x86_emu->opengl_driver;
@@ -962,15 +962,18 @@ static int opengl_abi_si_ndrange_initialize_impl(X86Context *ctx)
 	SINDRangeSetupInstMem(ndrange, elf_buffer->ptr, 
 		elf_buffer->size, 0);
 
-	/* Create fetch shader */
-	fs = si_fetch_shader_create(shader);
-	SINDRangeSetupFSMem(ndrange, fs->isa, fs->size, 0);
-	si_fetch_shader_free(fs);
+	/* Create Fetch Shader, Vertex Shader only */
+	if (shader->shader_kind == SI_OPENGL_SHADER_VERTEX)
+	{
+		fs = si_fetch_shader_create(shader);
+		SINDRangeSetupFSMem(ndrange, fs->isa, fs->size, 0);
+		si_fetch_shader_free(fs);
+	}
 
 	if (si_gpu)
 		SIGpuMapNDRange(si_gpu, ndrange);
 
-	list_enqueue(driver->si_ndrange_list, ndrange);
+	list_enqueue(driver->opengl_si_ndrange_list, ndrange);
 
 	/* Return NDRange ID */
 	return ndrange->id;
@@ -999,12 +1002,12 @@ static int opengl_abi_si_ndrange_initialize_impl(X86Context *ctx)
 static int opengl_abi_si_ndrange_get_num_buffer_entries_impl(
 	X86Context *ctx)
 {
-	X86Emu *x86_emu = ctx->emu;
-	OpenglDriver *driver = x86_emu->opengl_driver;
-	SIEmu *si_emu = driver->si_emu;
-
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
+
+	X86Emu *x86_emu = ctx->emu;
+	OpenglDriver *driver = x86_emu->opengl_driver;
+	SIGpu *si_gpu = driver->si_gpu;
 
 	unsigned int host_ptr;
 
@@ -1013,8 +1016,17 @@ static int opengl_abi_si_ndrange_get_num_buffer_entries_impl(
 	/* Arguments */
 	host_ptr = regs->ecx;
 
-	available_buffer_entries = SI_DRIVER_MAX_WORK_GROUP_BUFFER_SIZE -
-		list_count(si_emu->waiting_work_groups);
+	if (si_gpu)
+	{
+		available_buffer_entries = 
+			SI_DRIVER_MAX_WORK_GROUP_BUFFER_SIZE -
+			list_count(si_gpu->waiting_work_groups);
+	}
+	else
+	{
+		available_buffer_entries = 
+			SI_DRIVER_MAX_WORK_GROUP_BUFFER_SIZE;
+	}
 
 	opengl_debug("\tavailable buffer entries = %d\n", 
 		available_buffer_entries);
@@ -1092,7 +1104,7 @@ static int opengl_abi_si_ndrange_send_work_groups_impl(X86Context *ctx)
 	work_group_sizes_ptr = regs->esi;
 
 	/* Vertex shader owns the 1st NDRange in the list, all following NDRanges are created for Fragment shader */
-	ndrange = list_dequeue(driver->si_ndrange_list);
+	ndrange = list_dequeue(driver->opengl_si_ndrange_list);
 
 	mem_read(mem, work_group_start_ptr, 3 * 4, work_group_start);
 	mem_read(mem, work_group_count_ptr, 3 * 4, work_group_count);
@@ -1175,7 +1187,7 @@ static void opengl_abi_si_ndrange_finish_wakeup(X86Context *ctx,
 	assert(!list_count(ndrange->running_work_groups));
 	assert(ndrange->last_work_group_sent);
 
-	list_remove(driver->si_ndrange_list, ndrange);
+	list_remove(driver->opengl_si_ndrange_list, ndrange);
 
 	delete(ndrange);
 
@@ -1194,9 +1206,9 @@ static int opengl_abi_si_ndrange_finish_impl(X86Context *ctx)
 
 	int index;
 
-	LIST_FOR_EACH(driver->si_ndrange_list, index)
+	LIST_FOR_EACH(driver->opengl_si_ndrange_list, index)
 	{
-		tmp = (SINDRange* )list_get(driver->si_ndrange_list, index);
+		tmp = (SINDRange* )list_get(driver->opengl_si_ndrange_list, index);
 		if (tmp->id == ndrange_id)
 			ndrange = tmp;
 	}
@@ -1211,7 +1223,7 @@ static int opengl_abi_si_ndrange_finish_impl(X86Context *ctx)
 		!list_count(ndrange->waiting_work_groups))
 	{
 		opengl_debug("\tnd-range %d finished\n", ndrange_id);
-		list_remove(driver->si_ndrange_list, ndrange);
+		list_remove(driver->opengl_si_ndrange_list, ndrange);
 		delete(ndrange);
 	}
 	else
@@ -1239,16 +1251,28 @@ static int opengl_abi_si_ndrange_pass_mem_objs_impl(X86Context *ctx)
 {
 	X86Emu *x86_emu = ctx->emu;
 	OpenglDriver *driver = x86_emu->opengl_driver;
-	SIEmu *si_emu= driver->si_emu;
 	SIGpu *si_gpu = driver->si_gpu;
-	SINDRange *ndrange = si_emu->ndrange;
+	SINDRange *ndrange = NULL, *tmp_ndrange;
 	struct x86_regs_t *regs = ctx->regs;
 
 	int shader_id;
+	int ndrange_id;
+	int index;
 	struct opengl_si_shader_t *shader;
 
 	shader_id =  regs->ecx;
+	ndrange_id = regs->edx;
+
 	shader = list_get(driver->opengl_si_shader_list, shader_id);
+	LIST_FOR_EACH(driver->opengl_si_ndrange_list, index)
+	{
+		tmp_ndrange = (SINDRange* )list_get(driver->opengl_si_ndrange_list, 
+			index);
+		if (tmp_ndrange->id == ndrange_id)
+			ndrange = tmp_ndrange;
+	}
+	if (!ndrange)
+		fatal("%s: invalid ndrange ID (%d)", __FUNCTION__, ndrange_id);
 	if (si_gpu)
 	{
 		opengl_si_shader_create_ndrange_tables(ndrange, 
