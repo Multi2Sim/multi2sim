@@ -38,6 +38,7 @@
  * Private Functions
  */
 
+/* Buffer descriptor will be loaded into 4 successive SGPRs */
 static void opengl_si_create_buffer_desc(unsigned int base_addr,
 	unsigned int size, int num_elems, 
 	enum si_input_data_type_t data_type,
@@ -199,8 +200,8 @@ static void opengl_si_create_buffer_desc(unsigned int base_addr,
 	buffer_desc->elem_size = elem_size;
 	buffer_desc->num_records = size;
 
+	/* Return */
 	return;
-
 }
 
 /*
@@ -218,26 +219,28 @@ struct opengl_si_shader_t *opengl_si_shader_create(
 	/* Setup shader type for later mapping */
 	switch(shader_kind)
 	{
-	
 	case GL_VERTEX_SHADER:
-		shdr->shader_kind = SI_OPENGL_SHADER_VERTEX;
+		shdr->shader_kind = OPENGL_SI_SHADER_VERTEX;
 		break;
 	case GL_FRAGMENT_SHADER:
-		shdr->shader_kind = SI_OPENGL_SHADER_PIXEL;
+		shdr->shader_kind = OPENGL_SI_SHADER_PIXEL;
 		break;
 	case GL_GEOMETRY_SHADER:
-		shdr->shader_kind = SI_OPENGL_SHADER_GEOMETRY;
+		shdr->shader_kind = OPENGL_SI_SHADER_GEOMETRY;
 		break;
 	case GL_TESS_CONTROL_SHADER:
-		shdr->shader_kind = SI_OPENGL_SHADER_HULL;
+		shdr->shader_kind = OPENGL_SI_SHADER_HULL;
 		break;
 	case GL_TESS_EVALUATION_SHADER:
-		shdr->shader_kind = SI_OPENGL_SHADER_DOMAIN;
+		shdr->shader_kind = OPENGL_SI_SHADER_DOMAIN;
 		break;
 	default:
-		shdr->shader_kind = SI_OPENGL_SHADER_INVALID;
+		shdr->shader_kind = OPENGL_SI_SHADER_INVALID;
 		break;
 	}
+
+	/* Create input list, element will be created at opengl_si_shader_binary_set_inputs() */
+	shdr->input_list = list_create();
 
 	/* Add to shader list, shader id is the index */
 	list_insert(shdr_lst, shader_id, shdr);
@@ -249,6 +252,18 @@ struct opengl_si_shader_t *opengl_si_shader_create(
 
 void opengl_si_shader_free(struct opengl_si_shader_t *shdr)
 {
+	struct si_input_t *input;
+	int index;
+
+	/* Free inputs */
+	LIST_FOR_EACH(shdr->input_list, index)
+	{
+		input = list_get(shdr->input_list, index);
+		si_input_free(input);
+	}
+	/* Free list */
+	list_free(shdr->input_list);
+
 	/* Free */
 	free(shdr);
 }
@@ -259,8 +274,8 @@ void opengl_si_shader_init(struct opengl_si_program_t *program,
 {
 	struct list_t *shdr_bin_lst;
 	struct opengl_si_shader_t *shdr;
-	struct si_opengl_program_binary_t *prog_bin;
-	struct si_opengl_shader_binary_t *shdr_bin;
+	struct opengl_si_program_binary_t *prog_bin;
+	struct opengl_si_shader_binary_t *shdr_bin;
 	int i;
 
 	/* Get shader object */
@@ -276,7 +291,10 @@ void opengl_si_shader_init(struct opengl_si_program_t *program,
 	{
 		shdr_bin = list_get(shdr_bin_lst, i);
 		if (shdr_bin->shader_kind == shdr->shader_kind)
+		{
 			shdr->shader_bin = shdr_bin;
+			shdr_bin->parent = shdr;			
+		}
 	}
 }
 
@@ -457,9 +475,9 @@ void opengl_si_shader_setup_ndrange_inputs(struct opengl_si_shader_t *shdr,
 	int index;
 
 	/* Shader inputs */
-	LIST_FOR_EACH(shdr->shader_bin->shader_enc_dict->input_list, index)
+	LIST_FOR_EACH(shdr->input_list, index)
 	{
-		input = list_get(shdr->shader_bin->shader_enc_dict->input_list, index);
+		input = list_get(shdr->input_list, index);
 		assert(input);
 
 		/* Check that input was set */

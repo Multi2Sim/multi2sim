@@ -542,8 +542,8 @@ void SIAsmDisassembleBinary(SIAsm *self, char *path)
 
 void SIAsmDisassembleOpenGLBinary(SIAsm *self, char *path, int shader_index)
 {
-	struct si_opengl_program_binary_t *si_program_bin;
-	struct si_opengl_shader_binary_t *si_shader;
+	struct opengl_si_program_binary_t *si_program_bin;
+	struct opengl_si_shader_binary_t *si_shader;
 	void *file_buffer;
 	int file_size;
 
@@ -553,7 +553,7 @@ void SIAsmDisassembleOpenGLBinary(SIAsm *self, char *path, int shader_index)
 		fatal("%s:Invalid file!", path);
 
 	/* Analyze the file and initialize structure */	
-	si_program_bin = si_opengl_program_binary_create(file_buffer, file_size, path);
+	si_program_bin = opengl_si_program_binary_create(file_buffer, file_size, path);
 	free_buffer(file_buffer);
 
 	/* Basic info of the shader binary */
@@ -575,6 +575,6 @@ void SIAsmDisassembleOpenGLBinary(SIAsm *self, char *path, int shader_index)
 	printf("\n\n\n");
 
 	/* Free */
-	si_opengl_program_binary_free(si_program_bin);
+	opengl_si_program_binary_free(si_program_bin);
 }
 
