@@ -728,6 +728,10 @@ fi
 # Define macro for Automake and gcc
 AM_CONDITIONAL(HAVE_LLVM, test x$have_llvm = xyes)
 AM_CONDITIONAL(HAVE_FLEX_BISON_AND_LLVM, test x$have_flex = xyes -a x$have_bison = xyes -a x$have_llvm = xyes)
+if test x$have_flex = xyes -a x$have_bison = xyes -a x$have_llvm = xyes
+then
+	AC_DEFINE(HAVE_FLEX_BISON_AND_LLVM, [1])
+fi
 if test x$have_llvm = xyes
 then
 	AC_DEFINE(HAVE_LLVM, [1])
