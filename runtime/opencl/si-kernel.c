@@ -21,6 +21,7 @@
 
 #include "debug.h"
 #include "elf-format.h"
+#include "event.h"
 #include "kernel.h"
 #include "list.h"
 #include "mem.h"
@@ -412,8 +413,13 @@ void opencl_si_ndrange_run_partial(struct opencl_si_ndrange_t *ndrange,
 		ndrange->group_count);
 }
 
-void opencl_si_ndrange_run(struct opencl_si_ndrange_t *ndrange)
+void opencl_si_ndrange_run(struct opencl_si_ndrange_t *ndrange,
+	struct opencl_event_t *event)
 {
+	struct timespec start, end;
+
+	cl_ulong cltime;
+
 	unsigned int work_group_start[3];
 	unsigned int work_group_count[3];
 
@@ -425,12 +431,32 @@ void opencl_si_ndrange_run(struct opencl_si_ndrange_t *ndrange)
 		work_group_count[i] = ndrange->group_count[i];
 	}
 
+	/* Record start time */
+	if (event)
+	{
+		clock_gettime(CLOCK_MONOTONIC, &start);
+		cltime = (cl_ulong)start.tv_sec;
+		cltime *= 1000000000;
+		cltime += (cl_ulong)start.tv_nsec;
+		event->time_start = cltime;
+	}
+
 	/* Run all of the work groups */
 	opencl_si_ndrange_run_partial(ndrange, work_group_start,
 		work_group_count);
 
 	/* Wait for the nd-range to complete and then flush the cache */
 	opencl_si_ndrange_finish(ndrange);
+
+	/* Record end time */
+	if (event)
+	{
+		clock_gettime(CLOCK_MONOTONIC, &end);
+		cltime = (cl_ulong)end.tv_sec;
+		cltime *= 1000000000;
+		cltime += (cl_ulong)end.tv_nsec;
+		event->time_end = cltime;
+	}
 
 	/* Free the nd-range */
 	opencl_si_ndrange_free(ndrange);
