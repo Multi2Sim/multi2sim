@@ -25,7 +25,7 @@
 
 struct str_map_t frm_token_map =
 {
-	frm_token_count,
+	65,
 	{
 		{ "<invalid>", frm_token_invalid },
 
