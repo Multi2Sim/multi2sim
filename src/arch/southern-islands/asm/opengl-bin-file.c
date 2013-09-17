@@ -58,7 +58,7 @@ static int si_opengl_shader_binary_get_isa_offset(struct si_opengl_shader_binary
 			isa_offset = 2124;
 			break;
 		}
-		case SI_OPENGL_SHADER_FRAGMENT:
+		case SI_OPENGL_SHADER_PIXEL:
 		{
 			isa_offset = 3436;
 			break;
@@ -91,7 +91,7 @@ static void si_opengl_shader_binary_set_type(struct si_opengl_shader_binary_t *s
 		si_opengl_bin_vertex_shader_init(shdr->shader);
 		break;
 	case 0x4:
-		shdr->shader_kind = SI_OPENGL_SHADER_FRAGMENT;
+		shdr->shader_kind = SI_OPENGL_SHADER_PIXEL;
 		shdr->shader = si_opengl_bin_fragment_shader_create(shdr);
 		shdr->free_func = (si_opengl_shader_free_func_t) &si_opengl_bin_fragment_shader_free;
 		si_opengl_bin_fragment_shader_init(shdr->shader);		
@@ -496,7 +496,7 @@ static void si_opengl_bin_fragment_shader_init(struct si_opengl_bin_fragment_sha
 	/* Get parent */
 	parent = fs->parent;
 	assert(parent);
-	assert(parent->shader_kind == SI_OPENGL_SHADER_FRAGMENT);
+	assert(parent->shader_kind == SI_OPENGL_SHADER_PIXEL);
 
 	shader_elf = parent->shader_elf;
 

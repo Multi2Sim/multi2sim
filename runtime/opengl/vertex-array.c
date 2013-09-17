@@ -367,7 +367,7 @@ void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean norm
 		vattrib->type = type;
 		vattrib->normalized = normalized;
 		vattrib->stride = stride;
-		vattrib->pointer = (unsigned int)pointer;
+		vattrib->pointer = (unsigned int)pointer; /* FIXME: This is confusing, some sources say it's just an offset */
 		vattrib->element_size = opengl_vertex_attrib_get_element_size(size, type);
 		vattrib->vbo = buffer_obj;
 	}
@@ -568,11 +568,11 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count )
 
 		/* Launch Vertex Shader */
 		vs_ndrange_id = syscall(OPENGL_SYSCALL_CODE, 
-			opengl_abi_si_ndrange_initialize,
+			opengl_abi_si_ndrange_create,
 			vertex_shader_id, work_dim, global_work_offset, global_work_size, local_work_size);
-	
+
 		syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_ndrange_pass_mem_objs, 
-			vertex_shader_id);
+			vertex_shader_id, vs_ndrange_id);
 
 		syscall(OPENGL_SYSCALL_CODE,
 			opengl_abi_si_ndrange_get_num_buffer_entries,
