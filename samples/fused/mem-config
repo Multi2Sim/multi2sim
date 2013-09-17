@@ -1,3 +1,6 @@
+[ General ]
+Frequency = 3000 
+
 ; 32KB x86 L1 cache (1 per core)
 [ CacheGeometry geo-x86-l1 ]
 Sets = 64

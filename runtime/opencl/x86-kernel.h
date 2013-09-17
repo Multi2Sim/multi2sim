@@ -20,6 +20,7 @@
 #ifndef RUNTIME_OPENCL_X86_KERNEL_H
 #define RUNTIME_OPENCL_X86_KERNEL_H
 
+#include "event.h"
 #include "opencl.h"
 
 #define MAX_SSE_REG_PARAMS 4
@@ -191,7 +192,8 @@ void opencl_x86_ndrange_init(
 		struct opencl_x86_ndrange_t *ndrange);
 
 void opencl_x86_ndrange_run(
-		struct opencl_x86_ndrange_t *ndrange);
+		struct opencl_x86_ndrange_t *ndrange,
+		struct opencl_event_t *event);
 
 void opencl_x86_ndrange_run_partial(
 		struct opencl_x86_ndrange_t *ndrange, 

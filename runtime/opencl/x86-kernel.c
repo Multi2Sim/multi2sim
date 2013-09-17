@@ -468,17 +468,48 @@ void opencl_x86_ndrange_run_partial(struct opencl_x86_ndrange_t *ndrange,
 }
 
 /* Run an ND-Range */
-void opencl_x86_ndrange_run(struct opencl_x86_ndrange_t *ndrange)
+void opencl_x86_ndrange_run(struct opencl_x86_ndrange_t *ndrange,
+	struct opencl_event_t *event)
 {
+	struct timespec start, end;
+
+	cl_ulong cltime;
+
 	unsigned int group_start[3] = {0, 0, 0};
 
+	/* One-time initialization */
 	opencl_x86_ndrange_init(ndrange);
 
+	/* Record start time */
+	if (event)
+	{
+		clock_gettime(CLOCK_MONOTONIC, &start);
+		cltime = (cl_ulong)start.tv_sec;
+		cltime *= 1000000000;
+		cltime += (cl_ulong)start.tv_nsec;
+		event->time_start = cltime;
+	}
+
+	/* Execute the nd-range */
 	opencl_x86_ndrange_run_partial(ndrange, group_start, 
 		ndrange->group_count);
 
-	opencl_x86_ndrange_finish(ndrange);
+	/* TODO Finish is currently not used.  If we enable non-coherent
+	 * stores for OpenCL running on x86, we will need to add a flush
+	 * command here */
+	/* opencl_x86_ndrange_finish(ndrange); */
 
+	/* Record end time */
+	if (event)
+	{
+		clock_gettime(CLOCK_MONOTONIC, &end);
+		cltime = (cl_ulong)end.tv_sec;
+		cltime *= 1000000000;
+		cltime += (cl_ulong)end.tv_nsec;
+		event->time_end = cltime;
+	}
+
+	/* Tear-down */
 	opencl_x86_ndrange_free(ndrange);
 }
 

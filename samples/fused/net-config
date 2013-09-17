@@ -1,3 +1,5 @@
+[ General ] 
+Frequency = 3000
 
 ; ---- Networks ----
 
@@ -22,19 +24,19 @@ DefaultOutputBufferSize = 256
 DefaultBandwidth = 16
 
 [ Network.net-si-l1-all-l2-all ]
-DefaultInputBufferSize = 256
-DefaultOutputBufferSize = 256 
+DefaultInputBufferSize = 1024 
+DefaultOutputBufferSize = 1024
 DefaultBandwidth = 32 
 
 [ Network.net-l2-l3 ]
-DefaultInputBufferSize = 256
-DefaultOutputBufferSize = 256
-DefaultBandwidth = 16
+DefaultInputBufferSize = 1024
+DefaultOutputBufferSize = 1024
+DefaultBandwidth = 32
 
 [ Network.net-l3-mm ]
-DefaultInputBufferSize = 256
-DefaultOutputBufferSize = 256
-DefaultBandwidth = 16
+DefaultInputBufferSize = 1024
+DefaultOutputBufferSize = 1024
+DefaultBandwidth = 32
 
 
 ; L3-mm nodes

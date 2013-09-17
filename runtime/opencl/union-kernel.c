@@ -2,6 +2,7 @@
 #include <pthread.h>
 
 #include "debug.h"
+#include "event.h"
 #include "kernel.h"
 #include "list.h"
 #include "mhandle.h"
@@ -15,10 +16,12 @@ struct dispatch_info
 {
 	void *part;
 	pthread_mutex_t *lock;
+	pthread_barrier_t *barrier;
 
 	int id;
 	struct opencl_device_t *device;
 	struct opencl_union_ndrange_t *ndrange;
+	struct opencl_event_t *event;
 	void *arch_kernel;
 };
 
@@ -35,12 +38,18 @@ int device_ndrange_has_work(unsigned int dims, const unsigned int *group_count)
 
 void *device_ndrange_dispatch(void *ptr)
 {
-	int i;
-	long long now;
 	struct dispatch_info *info = (struct dispatch_info *)ptr;
 	struct opencl_union_ndrange_t *ndrange = info->ndrange;
+	struct timespec start, end;
 
 	void *arch_ndrange;
+
+	cl_ulong cltime;
+
+	long long now;
+
+	int i;
+	int work_groups_executed = 0;
 
 	assert(ptr);
 	assert(info->part);
@@ -78,6 +87,18 @@ void *device_ndrange_dispatch(void *ptr)
 	/* Initialize architecture-specific ND-Range */
 	info->device->arch_ndrange_init_func(arch_ndrange);
 
+	/* Record the start time */
+	pthread_barrier_wait(info->barrier);
+	if (info->event && info->id == 0)
+	{
+		clock_gettime(CLOCK_MONOTONIC, &start);
+		cltime = (cl_ulong)start.tv_sec;
+		cltime *= 1000000000;
+		cltime += (cl_ulong)start.tv_nsec;
+		info->event->time_start = cltime;
+	}
+	pthread_barrier_wait(info->barrier);
+
 	/* Execute work groups until the ND-Range is complete */
 	pthread_mutex_lock(info->lock);
 	now = get_time();
@@ -88,6 +109,7 @@ void *device_ndrange_dispatch(void *ptr)
 			info->device), group_offset, group_count, now)
 		&& device_ndrange_has_work(ndrange->work_dim, group_count))
 	{
+		/*
 		opencl_debug("[%s] running work groups (%d,%d,%d) to (%d,%d,%d)"
 			" on device %s", __FUNCTION__,
 			group_offset[0], group_offset[1], group_offset[2],
@@ -95,23 +117,44 @@ void *device_ndrange_dispatch(void *ptr)
 			group_offset[1]+group_count[1]-1,
 			group_offset[2]+group_count[2]-1,
 			info->device->name);
+			*/
 		pthread_mutex_unlock(info->lock);
 
 		info->device->arch_ndrange_run_partial_func(arch_ndrange,
 			group_offset, group_count);
 
+		work_groups_executed += 
+			group_count[2] * group_count[1] * group_count[0];
+
+		/*
 		opencl_debug("[%s] id %d. offset: %d.  count: %d", 
 			__FUNCTION__, info->id, group_offset[0], 
 			group_count[0]);
+			*/
 
 		pthread_mutex_lock(info->lock);
 	}
 	pthread_mutex_unlock(info->lock);
 
-	opencl_debug("[%s] calling nd-range finish", __FUNCTION__);
+	/* opencl_debug("[%s] calling nd-range finish", __FUNCTION__); */
 	info->device->arch_ndrange_finish_func(arch_ndrange);
 
-	opencl_debug("[%s] calling nd-range free", __FUNCTION__);
+	/* Record the end time */
+	pthread_barrier_wait(info->barrier);
+	if (info->event && info->id == 0)
+	{
+		clock_gettime(CLOCK_MONOTONIC, &end);
+		cltime = (cl_ulong)end.tv_sec;
+		cltime *= 1000000000;
+		cltime += (cl_ulong)end.tv_nsec;
+		info->event->time_end = cltime;
+	}
+	pthread_barrier_wait(info->barrier);
+
+	opencl_debug("[%s] Device %s ran %d work-groups\n",
+		__FUNCTION__, info->device->name, work_groups_executed);
+
+	/* opencl_debug("[%s] calling nd-range free", __FUNCTION__); */
 	info->device->arch_ndrange_free_func(arch_ndrange);
 
 	free(group_offset);
@@ -128,13 +171,15 @@ void opencl_union_ndrange_run_partial(struct opencl_union_ndrange_t *ndrange,
 	fatal("%s: This function should never be called\n", __FUNCTION__);
 }
 
-void opencl_union_ndrange_run(struct opencl_union_ndrange_t *ndrange)
+void opencl_union_ndrange_run(struct opencl_union_ndrange_t *ndrange,
+	struct opencl_event_t *event)
 {
 	struct dispatch_info *info;
 	struct list_t *device_list;
 
 	pthread_t *threads;
 	pthread_mutex_t lock;
+	pthread_barrier_t barrier;
 
 	int i;
 	int num_devices;
@@ -159,6 +204,7 @@ void opencl_union_ndrange_run(struct opencl_union_ndrange_t *ndrange)
 	threads = xcalloc(num_devices - 1, sizeof (pthread_t));
 	info = xcalloc(num_devices, sizeof (struct dispatch_info));
 	pthread_mutex_init(&lock, NULL);
+	pthread_barrier_init(&barrier, NULL, num_devices);
 
 	for (i = 0; i < num_devices; i++)
 	{
@@ -169,7 +215,9 @@ void opencl_union_ndrange_run(struct opencl_union_ndrange_t *ndrange)
 		opencl_debug("[%s] ndrange->kernel[%d] = %p", 
 			__FUNCTION__, i, info[i].arch_kernel);
 		info[i].lock = &lock;
+		info[i].barrier = &barrier;
 		info[i].id = i;
+		info[i].event = event;
 		
 		if (i != num_devices - 1)
 		{
@@ -193,6 +241,7 @@ void opencl_union_ndrange_run(struct opencl_union_ndrange_t *ndrange)
 	}
 	
 	pthread_mutex_destroy(&lock);
+	pthread_barrier_destroy(&barrier);
 	get_strategy()->destroy(part);
 	free(info);
 	free(threads);

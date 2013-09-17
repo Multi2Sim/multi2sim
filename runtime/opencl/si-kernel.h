@@ -127,7 +127,8 @@ struct opencl_si_ndrange_t *opencl_si_ndrange_create(
 
 void opencl_si_ndrange_init(struct opencl_si_ndrange_t *ndrange);
 
-void opencl_si_ndrange_run(struct opencl_si_ndrange_t *ndrange);
+void opencl_si_ndrange_run(struct opencl_si_ndrange_t *ndrange,
+	struct opencl_event_t *event);
 
 void opencl_si_ndrange_run_partial(struct opencl_si_ndrange_t *ndrange,
 	unsigned int work_group_start[3], unsigned int work_group_size[3]);

@@ -226,7 +226,8 @@ typedef void *(*opencl_arch_ndrange_create_func_t)(
 typedef void (*opencl_arch_ndrange_init_func_t)(void *ndrange);
 
 /* Launch an ND-Range */
-typedef void (*opencl_arch_ndrange_run_func_t)(void *ndrange);
+typedef void (*opencl_arch_ndrange_run_func_t)(void *ndrange,
+	struct opencl_event_t *event);
 
 /* Run an part of an ND-Range */
 typedef void (*opencl_arch_ndrange_run_partial_func_t)(void *ndrange, 
