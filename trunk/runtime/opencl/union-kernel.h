@@ -72,7 +72,8 @@ void opencl_union_ndrange_init(
 	struct opencl_union_ndrange_t *ndrange);
 
 void opencl_union_ndrange_run(
-	struct opencl_union_ndrange_t *ndrange);
+	struct opencl_union_ndrange_t *ndrange,
+	struct opencl_event_t *event);
 
 void opencl_union_ndrange_run_partial(struct opencl_union_ndrange_t *ndrange, 
 	unsigned int *work_group_start, unsigned int *work_group_count);
