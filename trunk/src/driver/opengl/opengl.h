@@ -38,7 +38,7 @@ CLASS_BEGIN(OpenglDriver, Driver)
 	/* Lists contain corresponding objects */
 	struct list_t *opengl_si_program_list;
 	struct list_t *opengl_si_shader_list;
-	struct list_t *si_ndrange_list;	
+	struct list_t *opengl_si_ndrange_list;	
 
 CLASS_END(OpenglDriver)
 
