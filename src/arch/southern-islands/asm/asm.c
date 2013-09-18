@@ -570,8 +570,8 @@ void SIAsmDisassembleOpenGLBinary(SIAsm *self, char *path, int shader_index)
 	si_shader = list_get(si_program_bin->shader_bins, 
 			shader_index - 1);
 	printf("**\n** Disassembly for shader %d\n**\n\n", shader_index);
-	SIAsmDisassembleBuffer(self, si_shader->shader_isa->ptr,
-			si_shader->shader_isa->size, stdout);
+	SIAsmDisassembleBuffer(self, si_shader->isa->ptr,
+			si_shader->isa->size, stdout);
 	printf("\n\n\n");
 
 	/* Free */

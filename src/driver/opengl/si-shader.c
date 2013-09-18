@@ -216,7 +216,7 @@ static void opengl_si_shader_set_inputs(struct opengl_si_shader_t *shdr)
 	{
 	case OPENGL_SI_SHADER_VERTEX:
 		/* Create input and add to input list */
-		enc_vs = (struct opengl_si_enc_dict_vertex_shader_t *)shdr->shader_bin->enc_dict;
+		enc_vs = (struct opengl_si_enc_dict_vertex_shader_t *)shdr->bin->enc_dict;
 		input_count = enc_vs->meta->numVsInSemantics;
 		for (i = 0; i < input_count; ++i)
 		{
@@ -227,7 +227,7 @@ static void opengl_si_shader_set_inputs(struct opengl_si_shader_t *shdr)
 		break;
 	case OPENGL_SI_SHADER_PIXEL:
 		/* Create input and add to input list */
-		enc_ps = (struct opengl_si_enc_dict_pixel_shader_t *)shdr->shader_bin->enc_dict;
+		enc_ps = (struct opengl_si_enc_dict_pixel_shader_t *)shdr->bin->enc_dict;
 		input_count = enc_ps->meta->numPsInSemantics;
 		for (i = 0; i < input_count; ++i)
 		{
@@ -241,12 +241,48 @@ static void opengl_si_shader_set_inputs(struct opengl_si_shader_t *shdr)
 	}
 }
 
+static void opengl_si_shader_init_from_program(struct opengl_si_program_t *program, 
+	struct list_t *shdr_lst, 
+	unsigned int shader_id)
+{
+	struct list_t *shdr_bin_lst;
+	struct opengl_si_shader_t *shdr;
+	struct opengl_si_program_binary_t *prog_bin;
+	struct opengl_si_shader_binary_t *shdr_bin;
+	int i;
+
+	/* Get shader object */
+	shdr = list_get(shdr_lst, shader_id);
+
+	/* Initialize */
+	shdr->program = program;
+	prog_bin = program->program_bin;
+	shdr_bin_lst = prog_bin->shader_bins;
+	
+	/* 
+	 * Initialized program contains a list of shader binary,
+	 * Shaders created by driver should be initialized with
+	 * the same type of shader binary from the list.
+	 */
+	LIST_FOR_EACH(shdr_bin_lst, i)
+	{
+		shdr_bin = list_get(shdr_bin_lst, i);
+		if (shdr_bin->shader_kind == shdr->shader_kind)
+		{
+			shdr->bin = shdr_bin;
+			shdr_bin->parent = shdr;
+			opengl_si_shader_set_inputs(shdr);
+		}
+	}
+}
+
 /*
  * Public Functions
  */
 
 struct opengl_si_shader_t *opengl_si_shader_create(
-	struct list_t *shdr_lst, unsigned int shader_id, unsigned int shader_kind)
+	struct list_t *shdr_lst, struct opengl_si_program_t *program,
+	unsigned int shader_id, unsigned int shader_kind)
 {
 	struct opengl_si_shader_t *shdr;
 
@@ -276,11 +312,16 @@ struct opengl_si_shader_t *opengl_si_shader_create(
 		break;
 	}
 
+	/* Program it belongs to */
+	shdr->program = program;
+	
 	/* Create input list, element will be created at opengl_si_shader_binary_set_inputs() */
 	shdr->input_list = list_create();
 
 	/* Add to shader list, shader id is the index */
 	list_insert(shdr_lst, shader_id, shdr);
+
+	opengl_si_shader_init_from_program(program, shdr_lst, shader_id);
 
 	/* Return */
 	return shdr;
@@ -303,37 +344,6 @@ void opengl_si_shader_free(struct opengl_si_shader_t *shdr)
 
 	/* Free */
 	free(shdr);
-}
-
-void opengl_si_shader_init(struct opengl_si_program_t *program, 
-	struct list_t *shdr_lst, 
-	unsigned int shader_id)
-{
-	struct list_t *shdr_bin_lst;
-	struct opengl_si_shader_t *shdr;
-	struct opengl_si_program_binary_t *prog_bin;
-	struct opengl_si_shader_binary_t *shdr_bin;
-	int i;
-
-	/* Get shader object */
-	shdr = list_get(shdr_lst, shader_id);
-
-	/* Initialize */
-	shdr->program = program;
-	prog_bin = program->program_bin;
-	shdr_bin_lst = prog_bin->shader_bins;
-	
-	/* FIXME: is it true that an OpenGL program binary can only contain 1 shader of each kind */
-	LIST_FOR_EACH(shdr_bin_lst, i)
-	{
-		shdr_bin = list_get(shdr_bin_lst, i);
-		if (shdr_bin->shader_kind == shdr->shader_kind)
-		{
-			shdr->shader_bin = shdr_bin;
-			shdr_bin->parent = shdr;
-			opengl_si_shader_set_inputs(shdr);
-		}
-	}
 }
 
 void opengl_si_shader_create_ndrange_constant_buffers(SINDRange *ndrange, 

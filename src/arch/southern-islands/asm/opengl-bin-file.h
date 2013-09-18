@@ -1039,15 +1039,23 @@ struct opengl_si_shader_binary_t
 
 	/* ELF-formatted shader, it's embedded in the .internal 
 	 * section of a shader binary */
-	struct elf_file_t *shader_elf;
+	struct elf_file_t *elf;
 
 	/* Pointer to ISA */
-	struct elf_buffer_t *shader_isa;
+	struct elf_buffer_t *isa;
 
-	/* Element with type opengl_si_enc_dict_xxxxx_shader_t */
+	/* 
+	 * Element of type opengl_si_enc_dict_xxxxx_shader_t 
+	 * it is decided by a flag in ELF header when creating
+	 * on the fly
+	 */
 	void *enc_dict; 
 
-	/* Callback function to free shader */
+	/* 
+	 * Callback function to free shader binary,  as
+	 * encoding dictionary has different structure 
+	 * for different types of shader binary
+	 */
 	opengl_si_shader_bin_free_func_t free_func;  
 };
 

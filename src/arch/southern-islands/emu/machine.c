@@ -7784,7 +7784,7 @@ void si_isa_EXPORT_impl(SIWorkItem *work_item, SIInst *inst)
 	else if (target_id >= 32 && target_id <= 63)
 	{
 		 /* Parameter 0 - 31 */
-		SISXExportParam(sx, target_id, work_item->id, x, y, z, w);
+		SISXExportParam(sx, target_id - 32, work_item->id, x, y, z, w);
 	} else
 		fatal("Export target %d is not valid!\n", target_id);
 }

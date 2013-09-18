@@ -21,6 +21,7 @@
 #include <arch/southern-islands/asm/opengl-bin-file.h>
 #include <arch/x86/emu/emu.h>
 #include <driver/opencl/opencl.h>
+#include <driver/opengl/opengl.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/file.h>
@@ -33,6 +34,7 @@
 #include "emu.h"
 #include "isa.h"
 #include "ndrange.h"
+#include "sx.h"
 #include "wavefront.h"
 #include "work-group.h"
 
@@ -55,6 +57,9 @@ void SIEmuCreate(SIEmu *self, SIAsm *as)
 	/* Set global memory to video memory by default */
 	self->global_mem = self->video_mem;
 
+	/* Shader Export module */
+	self->sx = new(SISX, self);
+
 	/* Repository of deferred tasks */
 	self->write_task_repos = repos_create(sizeof(struct si_isa_write_task_t),
 		"SIEmu.write_task_repos");
@@ -70,6 +75,9 @@ void SIEmuDestroy(SIEmu *self)
 {
 	/* Free emulator memory */
 	mem_free(self->video_mem);
+
+	/* Free SX module */
+	delete(self->sx);
 
 	/* Repository of deferred tasks */
 	repos_free(self->write_task_repos);
@@ -106,10 +114,12 @@ int SIEmuRun(Emu *self)
 {
 	SIEmu *emu = asSIEmu(self);
 	OpenclDriver *opencl_driver;
+	OpenglDriver *opengl_driver;
 
 	SINDRange *ndrange;
 	SIWavefront *wavefront;
 	SIWorkGroup *work_group;
+	struct list_t *ndrange_list;
 
 	int ndrange_index;
 	int wg_index;
@@ -118,16 +128,30 @@ int SIEmuRun(Emu *self)
 
 	opencl_driver = emu->opencl_driver;
 	assert(opencl_driver);
+	opengl_driver = emu->opengl_driver;
+	assert(opengl_driver);
+
+	/* 
+	 * FIXME : need to find a better way to decide which NDRange list is 
+	 * in use, especially when we need to run CL/GL mixed programs 
+	 */
 
 	/* For efficiency when no Southern Islands emulation is selected, 
 	 * exit here if the list of existing ND-Ranges is empty. */
 	if (!list_count(opencl_driver->si_ndrange_list))
-		return FALSE;
+	{
+		if (list_count(opengl_driver->opengl_si_ndrange_list))
+			ndrange_list = opengl_driver->opengl_si_ndrange_list;
+		else
+			return FALSE;		
+	}
+	else
+		ndrange_list = opencl_driver->si_ndrange_list;
 
 	/* Iterate over each nd-range */
-	LIST_FOR_EACH(opencl_driver->si_ndrange_list, ndrange_index)
+	LIST_FOR_EACH(ndrange_list, ndrange_index)
 	{
-		ndrange = list_get(opencl_driver->si_ndrange_list, 
+		ndrange = list_get(ndrange_list, 
 			ndrange_index);
 
 		/* Move waiting work groups to running work groups */
@@ -181,6 +205,14 @@ int SIEmuRun(Emu *self)
 		{
 			OpenclDriverRequestWork(opencl_driver, ndrange);
 		}
+
+		/* Let driver know that all work-groups from this nd-range
+		 * have been run */
+		if (opengl_driver)
+		{
+			OpenglDriverRequestWork(opengl_driver, ndrange);
+		}
+
 	}
 
 	/* Still emulating */
