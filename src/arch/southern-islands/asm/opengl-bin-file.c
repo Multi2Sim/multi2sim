@@ -83,7 +83,7 @@ static void opengl_si_bin_shader_free(void *shader)
 
 static void opengl_si_shader_binary_set(struct opengl_si_shader_binary_t *shdr)
 {
-	switch(shdr->shader_elf->header->e_flags)
+	switch(shdr->elf->header->e_flags)
 	{
 	case 0x0:
 		shdr->shader_kind = OPENGL_SI_SHADER_VERTEX;
@@ -112,15 +112,15 @@ static void opengl_si_shader_binary_set_isa(struct opengl_si_shader_binary_t *sh
 
 	/* The ISA is in .text section */
 	offset = opengl_si_shader_binary_get_isa_offset(shdr);
-	LIST_FOR_EACH(shdr->shader_elf->section_list, i)
+	LIST_FOR_EACH(shdr->elf->section_list, i)
 	{
-		section = list_get(shdr->shader_elf->section_list, i);
+		section = list_get(shdr->elf->section_list, i);
 		if (!strcmp(section->name, ".text"))
 		{
-			shdr->shader_isa = xcalloc(1, sizeof(struct elf_buffer_t));
-			shdr->shader_isa->ptr = section->buffer.ptr + offset;
-			shdr->shader_isa->size = section->buffer.size - offset;
-			shdr->shader_isa->pos = 0;
+			shdr->isa = xcalloc(1, sizeof(struct elf_buffer_t));
+			shdr->isa->ptr = section->buffer.ptr + offset;
+			shdr->isa->size = section->buffer.size - offset;
+			shdr->isa->pos = 0;
 		}
 	}
 }
@@ -399,7 +399,7 @@ static void opengl_si_bin_vertex_shader_free(struct opengl_si_enc_dict_vertex_sh
 static void opengl_si_bin_vertex_shader_init(struct opengl_si_enc_dict_vertex_shader_t *vs)
 {
 	struct opengl_si_shader_binary_t *parent;
-	struct elf_file_t *shader_elf;
+	struct elf_file_t *elf;
 	struct elf_section_t *section;
 	int i;
 
@@ -408,12 +408,12 @@ static void opengl_si_bin_vertex_shader_init(struct opengl_si_enc_dict_vertex_sh
 	assert(parent);
 	assert(parent->shader_kind == OPENGL_SI_SHADER_VERTEX);
 
-	shader_elf = parent->shader_elf;
+	elf = parent->elf;
 
 	/* Initialize from sections */
-	LIST_FOR_EACH(shader_elf->section_list, i)
+	LIST_FOR_EACH(elf->section_list, i)
 	{
-		section = list_get(shader_elf->section_list, i);
+		section = list_get(elf->section_list, i);
 		if (!strcmp(section->name, ".text"))
 			opengl_si_bin_vertex_shader_metadata_init_from_section(vs->meta, section);
 		else if (!strcmp(section->name, ".inputs"))
@@ -474,7 +474,7 @@ static void opengl_si_bin_pixel_shader_free(struct opengl_si_enc_dict_pixel_shad
 static void opengl_si_bin_pixel_shader_init(struct opengl_si_enc_dict_pixel_shader_t *fs)
 {
 	struct opengl_si_shader_binary_t *parent;
-	struct elf_file_t *shader_elf;
+	struct elf_file_t *elf;
 	struct elf_section_t *section;
 	int i;
 
@@ -483,12 +483,12 @@ static void opengl_si_bin_pixel_shader_init(struct opengl_si_enc_dict_pixel_shad
 	assert(parent);
 	assert(parent->shader_kind == OPENGL_SI_SHADER_PIXEL);
 
-	shader_elf = parent->shader_elf;
+	elf = parent->elf;
 
 	/* Initialize from sections */
-	LIST_FOR_EACH(shader_elf->section_list, i)
+	LIST_FOR_EACH(elf->section_list, i)
 	{
-		section = list_get(shader_elf->section_list, i);
+		section = list_get(elf->section_list, i);
 		if (!strcmp(section->name, ".text"))
 			opengl_si_bin_pixel_shader_metadata_init_from_section(fs->meta, section);
 		else if (!strcmp(section->name, ".inputs"))
@@ -587,8 +587,8 @@ struct opengl_si_shader_binary_t *opengl_si_shader_binary_create(void *buffer, i
 	shdr = xcalloc(1, sizeof(struct opengl_si_shader_binary_t));
 
 	/* Initialize */
-	shdr->shader_elf = elf_file_create_from_buffer(buffer, size, name);
-	if (shdr->shader_elf)
+	shdr->elf = elf_file_create_from_buffer(buffer, size, name);
+	if (shdr->elf)
 	{
 		opengl_si_shader_binary_set(shdr);
 		opengl_si_shader_binary_set_isa(shdr);
@@ -601,8 +601,8 @@ struct opengl_si_shader_binary_t *opengl_si_shader_binary_create(void *buffer, i
 void opengl_si_shader_binary_free(struct opengl_si_shader_binary_t *shdr)
 {
 	shdr->free_func(shdr->enc_dict);
-	elf_file_free(shdr->shader_elf);
-	free(shdr->shader_isa);
+	elf_file_free(shdr->elf);
+	free(shdr->isa);
 	free(shdr);
 }
 

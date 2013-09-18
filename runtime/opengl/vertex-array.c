@@ -477,9 +477,10 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count )
 	opengl_debug("API call %s(%x, %d, %d)\n", 
 		__FUNCTION__, mode, first, count);
 
-	/* Find the ID of current vertex shader */
-	program_obj = opengl_ctx->program_binding_point;
+	/* --------------------------- Vertex Shader Execution ----------------------------- */
 
+	/* Find the ID of the vertex shader */
+	program_obj = opengl_ctx->program_binding_point;
 	LIST_FOR_EACH(program_obj->shaders, i)
 	{
 		shader_obj = list_get(program_obj->shaders, i);
@@ -487,15 +488,17 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count )
 			vertex_shader_id = shader_obj->id;
 	}
 
-	/* Send data to GPU from indexed vertex attribute array
-	 * Vertex shader binary has the index of expected attribute array
+	/* 
+	 * VAO 	 -- AttribArray[0]-VBO-Data 	Enabled
+	 *	 |- AttribArray[1]-VBO-Data 	Enabled
+	 *	 |- AttribArray[1]-VBO-Data 	Enabled
+	 *	 |- AttribArray[2]-VBO-Data 	Disabled
+	 * 	......
+	 * We need to pass the data in enabled attribute array to device memory
 	 */
-	/* FIXME: Add support of texture/sampler/image... */
 	vao = opengl_ctx->vao_binding_point;
-
 	if (vao)
 	{
-		/* Send vertex attribute data to device memory */
 		for (i = 0; i < MAX_VERTEX_ATTRIBS; ++i)
 		{
 			vattrib = vao->attribs[i];
@@ -570,6 +573,7 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count )
 		vs_ndrange_id = syscall(OPENGL_SYSCALL_CODE, 
 			opengl_abi_si_ndrange_create,
 			vertex_shader_id, work_dim, global_work_offset, global_work_size, local_work_size);
+		opengl_debug("\tVertex Shader NDrange id = %d\n", vs_ndrange_id);
 
 		syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_ndrange_pass_mem_objs, 
 			vertex_shader_id, vs_ndrange_id);
@@ -581,7 +585,7 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count )
 		syscall(OPENGL_SYSCALL_CODE, 
 			opengl_abi_si_ndrange_send_work_groups, 
 			&work_group_start[0], &work_group_count[0],
-			group_count);
+			group_count, vs_ndrange_id);
 
 		syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_ndrange_finish, vs_ndrange_id);
 
