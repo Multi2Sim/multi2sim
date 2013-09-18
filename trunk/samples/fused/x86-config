@@ -1,4 +1,4 @@
 [ General ]
 Frequency = 3000
 Cores = 4
-Threads = 2
+Threads = 1
