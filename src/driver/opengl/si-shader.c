@@ -204,6 +204,43 @@ static void opengl_si_create_buffer_desc(unsigned int base_addr,
 	return;
 }
 
+static void opengl_si_shader_set_inputs(struct opengl_si_shader_t *shdr)
+{
+	int i;
+	int input_count;
+	struct si_input_t *input;
+	struct opengl_si_enc_dict_vertex_shader_t *enc_vs;
+	struct opengl_si_enc_dict_pixel_shader_t *enc_ps;
+
+	switch(shdr->shader_kind)
+	{
+	case OPENGL_SI_SHADER_VERTEX:
+		/* Create input and add to input list */
+		enc_vs = (struct opengl_si_enc_dict_vertex_shader_t *)shdr->shader_bin->enc_dict;
+		input_count = enc_vs->meta->numVsInSemantics;
+		for (i = 0; i < input_count; ++i)
+		{
+			input = si_input_create();
+			si_input_set_usage_index(input, i);
+			list_insert(shdr->input_list, i, input);
+		}
+		break;
+	case OPENGL_SI_SHADER_PIXEL:
+		/* Create input and add to input list */
+		enc_ps = (struct opengl_si_enc_dict_pixel_shader_t *)shdr->shader_bin->enc_dict;
+		input_count = enc_ps->meta->numPsInSemantics;
+		for (i = 0; i < input_count; ++i)
+		{
+			input = si_input_create();
+			si_input_set_usage_index(input, i);
+			list_insert(shdr->input_list, i, input);
+		}
+		break;	
+	default:
+		break;
+	}
+}
+
 /*
  * Public Functions
  */
@@ -293,7 +330,8 @@ void opengl_si_shader_init(struct opengl_si_program_t *program,
 		if (shdr_bin->shader_kind == shdr->shader_kind)
 		{
 			shdr->shader_bin = shdr_bin;
-			shdr_bin->parent = shdr;			
+			shdr_bin->parent = shdr;
+			opengl_si_shader_set_inputs(shdr);
 		}
 	}
 }
