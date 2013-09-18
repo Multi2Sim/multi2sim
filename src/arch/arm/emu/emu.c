@@ -226,8 +226,6 @@ void arm_emu_init(void)
 	/* Initialization */
 	arm_sys_init();
 	arm_asm = new(ARMAsm);
-	arm_thumb16_disasm_init();
-	arm_thumb32_disasm_init();
 
 	/* Create ARM emulator */
 	arm_emu = new(ARMEmu);

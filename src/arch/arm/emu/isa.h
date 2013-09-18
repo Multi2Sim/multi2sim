@@ -72,7 +72,7 @@ void arm_thumb_add_isa(struct arm_ctx_t *ctx, unsigned int rd, unsigned int rn, 
 	unsigned int op3, unsigned int flag);
 void arm_thumb_isa_subtract(struct arm_ctx_t *ctx, unsigned int rd, unsigned int rn, int op2,
 	unsigned int op3, unsigned int flag_set);
-unsigned int arm_thumb32_isa_immd12(struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat);
+unsigned int arm_thumb32_isa_immd12(ARMInst *inst, ARMThumb32InstCategory cat);
 void arm_thumb32_isa_branch_link(struct arm_ctx_t *ctx);
 void arm_thumb32_isa_branch(struct arm_ctx_t *ctx);
 unsigned int arm_isa_thumb_check_cond(struct arm_ctx_t *ctx, unsigned int cond);

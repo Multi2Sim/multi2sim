@@ -44,9 +44,9 @@ void arm_isa_AND_reg_impl(struct arm_ctx_t *ctx)
 
 	if (arm_isa_check_cond(ctx))
 	{
-		arm_isa_reg_load(ctx, ctx->inst.bytes.dpr.op1_reg, &rn_val);
-		operand2 = arm_isa_op2_get(ctx, ctx->inst.bytes.dpr.op2, reg);
-		arm_isa_reg_store(ctx, ctx->inst.bytes.dpr.dst_reg, (operand2 & rn_val));
+		arm_isa_reg_load(ctx, ctx->inst.dword.dpr.op1_reg, &rn_val);
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr.op2, reg);
+		arm_isa_reg_store(ctx, ctx->inst.dword.dpr.dst_reg, (operand2 & rn_val));
 	}
 }
 
@@ -62,9 +62,9 @@ void arm_isa_ANDS_reg_impl(struct arm_ctx_t *ctx)
 
 	if(arm_isa_check_cond(ctx))
 	{
-		arm_isa_reg_load(ctx, ctx->inst.bytes.dpr.op1_reg, &rn_val);
-		operand2 = arm_isa_op2_get(ctx, ctx->inst.bytes.dpr.op2, reg);
-		arm_isa_reg_store(ctx, ctx->inst.bytes.dpr.dst_reg, (operand2 & rn_val));
+		arm_isa_reg_load(ctx, ctx->inst.dword.dpr.op1_reg, &rn_val);
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr.op2, reg);
+		arm_isa_reg_store(ctx, ctx->inst.dword.dpr.dst_reg, (operand2 & rn_val));
 
 		regs->cpsr.z = 0;
 		regs->cpsr.n = 0;
@@ -84,12 +84,12 @@ void arm_isa_ANDS_reg_impl(struct arm_ctx_t *ctx)
 			regs->cpsr.C = 0;
 			regs->cpsr.v = 0;
 		}
-		if(arm_isa_op2_carry(ctx, ctx->inst.bytes.dpr.op2, reg))
+		if(arm_isa_op2_carry(ctx, ctx->inst.dword.dpr.op2, reg))
 		{
 			regs->cpsr.C = 1;
 			regs->cpsr.v = 0;
 		}
-		if(arm_isa_op2_carry(ctx, ctx->inst.bytes.dpr.op2, reg) == -1)
+		if(arm_isa_op2_carry(ctx, ctx->inst.dword.dpr.op2, reg) == -1)
 		{
 			regs->cpsr.C = prev_regs.cpsr.C;
 		}
@@ -105,9 +105,9 @@ void arm_isa_EOR_reg_impl(struct arm_ctx_t *ctx)
 
 	if(arm_isa_check_cond(ctx))
 	{
-		arm_isa_reg_load(ctx, ctx->inst.bytes.dpr.op1_reg, &rn_val);
-		operand2 = arm_isa_op2_get(ctx, ctx->inst.bytes.dpr.op2, reg);
-		arm_isa_reg_store(ctx, ctx->inst.bytes.dpr.dst_reg, (operand2 ^ rn_val));
+		arm_isa_reg_load(ctx, ctx->inst.dword.dpr.op1_reg, &rn_val);
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr.op2, reg);
+		arm_isa_reg_store(ctx, ctx->inst.dword.dpr.dst_reg, (operand2 ^ rn_val));
 	}
 }
 
@@ -121,8 +121,8 @@ void arm_isa_SUB_reg_impl(struct arm_ctx_t *ctx)
 	int operand2;
 	if(arm_isa_check_cond(ctx))
 	{
-		operand2 = arm_isa_op2_get(ctx, ctx->inst.bytes.dpr.op2, reg);
-		arm_isa_subtract(ctx, ctx->inst.bytes.dpr.dst_reg, ctx->inst.bytes.dpr.op1_reg,
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr.op2, reg);
+		arm_isa_subtract(ctx, ctx->inst.dword.dpr.dst_reg, ctx->inst.dword.dpr.op1_reg,
 			operand2, 0);
 	}
 }
@@ -133,8 +133,8 @@ void arm_isa_SUBS_reg_impl(struct arm_ctx_t *ctx)
 	int operand2;
 	if(arm_isa_check_cond(ctx))
 	{
-		operand2 = arm_isa_op2_get(ctx, ctx->inst.bytes.dpr.op2, reg);
-		arm_isa_subtract(ctx, ctx->inst.bytes.dpr.dst_reg, ctx->inst.bytes.dpr.op1_reg,
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr.op2, reg);
+		arm_isa_subtract(ctx, ctx->inst.dword.dpr.dst_reg, ctx->inst.dword.dpr.op1_reg,
 			operand2, 0);
 	}
 }
@@ -144,9 +144,9 @@ void arm_isa_RSB_reg_impl(struct arm_ctx_t *ctx)
 	int operand2;
 	if(arm_isa_check_cond(ctx))
 	{
-		operand2 = arm_isa_op2_get(ctx, ctx->inst.bytes.dpr.op2, reg);
-		arm_isa_subtract_rev(ctx, ctx->inst.bytes.dpr.dst_reg,
-			ctx->inst.bytes.dpr.op1_reg, operand2, 0);
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr.op2, reg);
+		arm_isa_subtract_rev(ctx, ctx->inst.dword.dpr.dst_reg,
+			ctx->inst.dword.dpr.op1_reg, operand2, 0);
 	}
 }
 
@@ -160,8 +160,8 @@ void arm_isa_ADD_reg_impl(struct arm_ctx_t *ctx)
 	int operand2;
 	if(arm_isa_check_cond(ctx))
 	{
-		operand2 = arm_isa_op2_get(ctx, ctx->inst.bytes.dpr.op2, reg);
-		arm_isa_add(ctx, ctx->inst.bytes.dpr.dst_reg, ctx->inst.bytes.dpr.op1_reg,
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr.op2, reg);
+		arm_isa_add(ctx, ctx->inst.dword.dpr.dst_reg, ctx->inst.dword.dpr.op1_reg,
 			operand2, 0);
 	}
 }
@@ -171,8 +171,8 @@ void arm_isa_ADDS_reg_impl(struct arm_ctx_t *ctx)
 	int operand2;
 	if(arm_isa_check_cond(ctx))
 	{
-		operand2 = arm_isa_op2_get(ctx, ctx->inst.bytes.dpr.op2, reg);
-		arm_isa_add(ctx, ctx->inst.bytes.dpr.dst_reg, ctx->inst.bytes.dpr.op1_reg,
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr.op2, reg);
+		arm_isa_add(ctx, ctx->inst.dword.dpr.dst_reg, ctx->inst.dword.dpr.op1_reg,
 			operand2, 0);
 	}
 }
@@ -186,8 +186,8 @@ void arm_isa_ADC_reg_impl(struct arm_ctx_t *ctx)
 	carry = ctx->regs->cpsr.C;
 	if(arm_isa_check_cond(ctx))
 	{
-		operand2 = arm_isa_op2_get(ctx, ctx->inst.bytes.dpr.op2, reg);
-		arm_isa_add(ctx, ctx->inst.bytes.dpr.dst_reg, ctx->inst.bytes.dpr.op1_reg,
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr.op2, reg);
+		arm_isa_add(ctx, ctx->inst.dword.dpr.dst_reg, ctx->inst.dword.dpr.op1_reg,
 			operand2, carry);
 	}
 }
@@ -205,8 +205,8 @@ void arm_isa_SBC_reg_impl(struct arm_ctx_t *ctx)
 	carry = ctx->regs->cpsr.C;
 	if(arm_isa_check_cond(ctx))
 	{
-		operand2 = arm_isa_op2_get(ctx, ctx->inst.bytes.dpr.op2, reg);
-		arm_isa_subtract(ctx, ctx->inst.bytes.dpr.dst_reg, ctx->inst.bytes.dpr.op1_reg,
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr.op2, reg);
+		arm_isa_subtract(ctx, ctx->inst.dword.dpr.dst_reg, ctx->inst.dword.dpr.op1_reg,
 			operand2, ~(carry));
 	}
 }
@@ -219,8 +219,8 @@ void arm_isa_SBCS_reg_impl(struct arm_ctx_t *ctx)
 	carry = ctx->regs->cpsr.C;
 	if(arm_isa_check_cond(ctx))
 	{
-		operand2 = arm_isa_op2_get(ctx, ctx->inst.bytes.dpr.op2, reg);
-		arm_isa_subtract(ctx, ctx->inst.bytes.dpr.dst_reg, ctx->inst.bytes.dpr.op1_reg,
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr.op2, reg);
+		arm_isa_subtract(ctx, ctx->inst.dword.dpr.dst_reg, ctx->inst.dword.dpr.op1_reg,
 			operand2, ~(carry));
 	}
 }
@@ -244,8 +244,8 @@ void arm_isa_TSTS_reg_impl(struct arm_ctx_t *ctx)
 	regs = ctx->regs;
 	if(arm_isa_check_cond(ctx))
 	{
-		arm_isa_reg_load(ctx, ctx->inst.bytes.dpr.op1_reg, &rn_val);
-		operand2 = arm_isa_op2_get(ctx, ctx->inst.bytes.dpr.op2, reg);
+		arm_isa_reg_load(ctx, ctx->inst.dword.dpr.op1_reg, &rn_val);
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr.op2, reg);
 
 		regs->cpsr.z = 0;
 		regs->cpsr.n = 0;
@@ -265,7 +265,7 @@ void arm_isa_TSTS_reg_impl(struct arm_ctx_t *ctx)
 			regs->cpsr.C = 0;
 			regs->cpsr.v = 0;
 		}
-		if(arm_isa_op2_carry(ctx, ctx->inst.bytes.dpr.op2, reg))
+		if(arm_isa_op2_carry(ctx, ctx->inst.dword.dpr.op2, reg))
 		{
 			regs->cpsr.C = 1;
 			regs->cpsr.v = 0;
@@ -283,8 +283,8 @@ void arm_isa_TEQS_reg_impl(struct arm_ctx_t *ctx)
 	regs = ctx->regs;
 	if(arm_isa_check_cond(ctx))
 	{
-		arm_isa_reg_load(ctx, ctx->inst.bytes.dpr.op1_reg, &rn_val);
-		operand2 = arm_isa_op2_get(ctx, ctx->inst.bytes.dpr.op2, reg);
+		arm_isa_reg_load(ctx, ctx->inst.dword.dpr.op1_reg, &rn_val);
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr.op2, reg);
 
 		regs->cpsr.z = 0;
 		regs->cpsr.n = 0;
@@ -304,7 +304,7 @@ void arm_isa_TEQS_reg_impl(struct arm_ctx_t *ctx)
 			regs->cpsr.C = 0;
 			regs->cpsr.v = 0;
 		}
-		if(arm_isa_op2_carry(ctx, ctx->inst.bytes.dpr.op2, reg))
+		if(arm_isa_op2_carry(ctx, ctx->inst.dword.dpr.op2, reg))
 		{
 			regs->cpsr.C = 1;
 			regs->cpsr.v = 0;
@@ -327,8 +327,8 @@ void arm_isa_CMPS_reg_impl(struct arm_ctx_t *ctx)
 	regs = ctx->regs;
 	if(arm_isa_check_cond(ctx))
 	{
-		operand2 = arm_isa_op2_get(ctx, ctx->inst.bytes.dpr.op2, reg);
-		arm_isa_reg_load(ctx, ctx->inst.bytes.dpr.op1_reg, &rn_val);
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr.op2, reg);
+		arm_isa_reg_load(ctx, ctx->inst.dword.dpr.op1_reg, &rn_val);
 		result = rn_val - operand2;
 		arm_isa_inst_debug("  result = %d ; 0x%x\n", result, result);
 
@@ -395,9 +395,9 @@ void arm_isa_ORR_reg_impl(struct arm_ctx_t *ctx)
 
 	if(arm_isa_check_cond(ctx))
 	{
-		arm_isa_reg_load(ctx, ctx->inst.bytes.dpr.op1_reg, &rn_val);
-		operand2 = arm_isa_op2_get(ctx, ctx->inst.bytes.dpr.op2, reg);
-		arm_isa_reg_store(ctx, ctx->inst.bytes.dpr.dst_reg, (operand2 | rn_val));
+		arm_isa_reg_load(ctx, ctx->inst.dword.dpr.op1_reg, &rn_val);
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr.op2, reg);
+		arm_isa_reg_store(ctx, ctx->inst.dword.dpr.dst_reg, (operand2 | rn_val));
 	}
 }
 
@@ -413,9 +413,9 @@ void arm_isa_ORRS_reg_impl(struct arm_ctx_t *ctx)
 
 	if(arm_isa_check_cond(ctx))
 	{
-		arm_isa_reg_load(ctx, ctx->inst.bytes.dpr.op1_reg, &rn_val);
-		operand2 = arm_isa_op2_get(ctx, ctx->inst.bytes.dpr.op2, reg);
-		arm_isa_reg_store(ctx, ctx->inst.bytes.dpr.dst_reg, (operand2 | rn_val));
+		arm_isa_reg_load(ctx, ctx->inst.dword.dpr.op1_reg, &rn_val);
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr.op2, reg);
+		arm_isa_reg_store(ctx, ctx->inst.dword.dpr.dst_reg, (operand2 | rn_val));
 
 		regs->cpsr.z = 0;
 		regs->cpsr.n = 0;
@@ -435,12 +435,12 @@ void arm_isa_ORRS_reg_impl(struct arm_ctx_t *ctx)
 			regs->cpsr.C = 0;
 			regs->cpsr.v = 0;
 		}
-		if(arm_isa_op2_carry(ctx, ctx->inst.bytes.dpr.op2, reg))
+		if(arm_isa_op2_carry(ctx, ctx->inst.dword.dpr.op2, reg))
 		{
 			regs->cpsr.C = 1;
 			regs->cpsr.v = 0;
 		}
-		if(arm_isa_op2_carry(ctx, ctx->inst.bytes.dpr.op2, reg) == -1)
+		if(arm_isa_op2_carry(ctx, ctx->inst.dword.dpr.op2, reg) == -1)
 		{
 			regs->cpsr.C = prev_regs.cpsr.C;
 		}
@@ -454,8 +454,8 @@ void arm_isa_MOV_reg_impl(struct arm_ctx_t *ctx)
 	int operand2;
 	if(arm_isa_check_cond(ctx))
 	{
-		operand2 = arm_isa_op2_get(ctx, ctx->inst.bytes.dpr.op2, reg);
-		arm_isa_reg_store(ctx, ctx->inst.bytes.dpr.dst_reg, operand2);
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr.op2, reg);
+		arm_isa_reg_store(ctx, ctx->inst.dword.dpr.dst_reg, operand2);
 	}
 }
 
@@ -469,8 +469,8 @@ void arm_isa_MOVS_reg_impl(struct arm_ctx_t *ctx)
 	prev_regs.cpsr = regs->cpsr;
 	if(arm_isa_check_cond(ctx))
 	{
-		operand2 = arm_isa_op2_get(ctx, ctx->inst.bytes.dpr.op2, reg);
-		arm_isa_reg_store(ctx, ctx->inst.bytes.dpr.dst_reg, operand2);
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr.op2, reg);
+		arm_isa_reg_store(ctx, ctx->inst.dword.dpr.dst_reg, operand2);
 
 		regs->cpsr.z = 0;
 		regs->cpsr.n = 0;
@@ -490,12 +490,12 @@ void arm_isa_MOVS_reg_impl(struct arm_ctx_t *ctx)
 			regs->cpsr.C = 0;
 			regs->cpsr.v = 0;
 		}
-		if(arm_isa_op2_carry(ctx, ctx->inst.bytes.dpr.op2, reg))
+		if(arm_isa_op2_carry(ctx, ctx->inst.dword.dpr.op2, reg))
 		{
 			regs->cpsr.C = 1;
 			regs->cpsr.v = 0;
 		}
-		if(arm_isa_op2_carry(ctx, ctx->inst.bytes.dpr.op2, reg) == -1)
+		if(arm_isa_op2_carry(ctx, ctx->inst.dword.dpr.op2, reg) == -1)
 		{
 			regs->cpsr.C = prev_regs.cpsr.C;
 		}
@@ -512,16 +512,16 @@ void arm_isa_BIC_reg_impl(struct arm_ctx_t *ctx)
 
 	if(arm_isa_check_cond(ctx))
 	{
-		operand2 = arm_isa_op2_get(ctx, ctx->inst.bytes.dpr.op2, reg);
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr.op2, reg);
 
-		arm_isa_reg_load(ctx, ctx->inst.bytes.dpr.op1_reg, &rn_val);
+		arm_isa_reg_load(ctx, ctx->inst.dword.dpr.op1_reg, &rn_val);
 
-		if(!(ctx->inst.bytes.dpr.s_cond))
+		if(!(ctx->inst.dword.dpr.s_cond))
 		{
 			rd_val = (rn_val) & (~(operand2)) ;
-			arm_isa_inst_debug("  r%d = r%d & (~%d)\n", ctx->inst.bytes.dpr.dst_reg,
-				ctx->inst.bytes.dpr.op1_reg, operand2);
-			arm_isa_reg_store(ctx, ctx->inst.bytes.dpr.dst_reg, rd_val);
+			arm_isa_inst_debug("  r%d = r%d & (~%d)\n", ctx->inst.dword.dpr.dst_reg,
+				ctx->inst.dword.dpr.op1_reg, operand2);
+			arm_isa_reg_store(ctx, ctx->inst.dword.dpr.dst_reg, rd_val);
 		}
 		else
 		{
@@ -542,9 +542,9 @@ void arm_isa_MVN_reg_impl(struct arm_ctx_t *ctx)
 
 	if (arm_isa_check_cond(ctx))
 	{
-		operand2 = arm_isa_op2_get(ctx, ctx->inst.bytes.dpr.op2, reg);
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr.op2, reg);
 		result = (0xffffffff) ^ (operand2);
-		arm_isa_reg_store_safe(ctx, ctx->inst.bytes.dpr.dst_reg, result);
+		arm_isa_reg_store_safe(ctx, ctx->inst.dword.dpr.dst_reg, result);
 	}
 }
 
@@ -558,9 +558,9 @@ void arm_isa_MVNS_reg_impl(struct arm_ctx_t *ctx)
 	prev_regs.cpsr = regs->cpsr;
 	if (arm_isa_check_cond(ctx))
 	{
-		operand2 = arm_isa_op2_get(ctx, ctx->inst.bytes.dpr.op2, reg);
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr.op2, reg);
 		result = (0xffffffff) ^ (operand2);
-		arm_isa_reg_store_safe(ctx, ctx->inst.bytes.dpr.dst_reg, result);
+		arm_isa_reg_store_safe(ctx, ctx->inst.dword.dpr.dst_reg, result);
 
 		regs->cpsr.z = 0;
 		regs->cpsr.n = 0;
@@ -580,12 +580,12 @@ void arm_isa_MVNS_reg_impl(struct arm_ctx_t *ctx)
 			regs->cpsr.C = 0;
 			regs->cpsr.v = 0;
 		}
-		if(arm_isa_op2_carry(ctx, ctx->inst.bytes.dpr.op2, reg))
+		if(arm_isa_op2_carry(ctx, ctx->inst.dword.dpr.op2, reg))
 		{
 			regs->cpsr.C = 1;
 			regs->cpsr.v = 0;
 		}
-		if(arm_isa_op2_carry(ctx, ctx->inst.bytes.dpr.op2, reg) == -1)
+		if(arm_isa_op2_carry(ctx, ctx->inst.dword.dpr.op2, reg) == -1)
 		{
 			regs->cpsr.C = prev_regs.cpsr.C;
 		}
@@ -601,9 +601,9 @@ void arm_isa_AND_imm_impl(struct arm_ctx_t *ctx)
 
 	if(arm_isa_check_cond(ctx))
 	{
-		arm_isa_reg_load(ctx, ctx->inst.bytes.dpr.op1_reg, &rn_val);
-		operand2 = arm_isa_op2_get(ctx, ctx->inst.bytes.dpr.op2, immd);
-		arm_isa_reg_store(ctx, ctx->inst.bytes.dpr.dst_reg, (operand2 & rn_val));
+		arm_isa_reg_load(ctx, ctx->inst.dword.dpr.op1_reg, &rn_val);
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr.op2, immd);
+		arm_isa_reg_store(ctx, ctx->inst.dword.dpr.dst_reg, (operand2 & rn_val));
 	}
 }
 
@@ -619,9 +619,9 @@ void arm_isa_ANDS_imm_impl(struct arm_ctx_t *ctx)
 
 	if(arm_isa_check_cond(ctx))
 	{
-		arm_isa_reg_load(ctx, ctx->inst.bytes.dpr.op1_reg, &rn_val);
-		operand2 = arm_isa_op2_get(ctx, ctx->inst.bytes.dpr.op2, immd);
-		arm_isa_reg_store(ctx, ctx->inst.bytes.dpr.dst_reg, (operand2 & rn_val));
+		arm_isa_reg_load(ctx, ctx->inst.dword.dpr.op1_reg, &rn_val);
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr.op2, immd);
+		arm_isa_reg_store(ctx, ctx->inst.dword.dpr.dst_reg, (operand2 & rn_val));
 
 		regs->cpsr.z = 0;
 		regs->cpsr.n = 0;
@@ -641,12 +641,12 @@ void arm_isa_ANDS_imm_impl(struct arm_ctx_t *ctx)
 			regs->cpsr.C = 0;
 			regs->cpsr.v = 0;
 		}
-		if(arm_isa_op2_carry(ctx, ctx->inst.bytes.dpr.op2, immd))
+		if(arm_isa_op2_carry(ctx, ctx->inst.dword.dpr.op2, immd))
 		{
 			regs->cpsr.C = 1;
 			regs->cpsr.v = 0;
 		}
-		if(arm_isa_op2_carry(ctx, ctx->inst.bytes.dpr.op2, immd) == -1)
+		if(arm_isa_op2_carry(ctx, ctx->inst.dword.dpr.op2, immd) == -1)
 		{
 			regs->cpsr.C = prev_regs.cpsr.C;
 		}
@@ -662,9 +662,9 @@ void arm_isa_EOR_imm_impl(struct arm_ctx_t *ctx)
 
 	if(arm_isa_check_cond(ctx))
 	{
-		arm_isa_reg_load(ctx, ctx->inst.bytes.dpr.op1_reg, &rn_val);
-		operand2 = arm_isa_op2_get(ctx, ctx->inst.bytes.dpr.op2, immd);
-		arm_isa_reg_store(ctx, ctx->inst.bytes.dpr.dst_reg, (operand2 ^ rn_val));
+		arm_isa_reg_load(ctx, ctx->inst.dword.dpr.op1_reg, &rn_val);
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr.op2, immd);
+		arm_isa_reg_store(ctx, ctx->inst.dword.dpr.dst_reg, (operand2 ^ rn_val));
 	}
 }
 
@@ -678,8 +678,8 @@ void arm_isa_SUB_imm_impl(struct arm_ctx_t *ctx)
 	int operand2;
 	if(arm_isa_check_cond(ctx))
 	{
-		operand2 = arm_isa_op2_get(ctx, ctx->inst.bytes.dpr.op2, immd);
-		arm_isa_subtract(ctx, ctx->inst.bytes.dpr.dst_reg, ctx->inst.bytes.dpr.op1_reg,
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr.op2, immd);
+		arm_isa_subtract(ctx, ctx->inst.dword.dpr.dst_reg, ctx->inst.dword.dpr.op1_reg,
 			operand2, 0);
 	}
 }
@@ -689,8 +689,8 @@ void arm_isa_SUBS_imm_impl(struct arm_ctx_t *ctx)
 	int operand2;
 	if(arm_isa_check_cond(ctx))
 	{
-		operand2 = arm_isa_op2_get(ctx, ctx->inst.bytes.dpr.op2, immd);
-		arm_isa_subtract(ctx, ctx->inst.bytes.dpr.dst_reg, ctx->inst.bytes.dpr.op1_reg,
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr.op2, immd);
+		arm_isa_subtract(ctx, ctx->inst.dword.dpr.dst_reg, ctx->inst.dword.dpr.op1_reg,
 			operand2, 0);
 	}
 }
@@ -700,9 +700,9 @@ void arm_isa_RSB_imm_impl(struct arm_ctx_t *ctx)
 	int operand2;
 	if(arm_isa_check_cond(ctx))
 	{
-		operand2 = arm_isa_op2_get(ctx, ctx->inst.bytes.dpr.op2, immd);
-		arm_isa_subtract_rev(ctx, ctx->inst.bytes.dpr.dst_reg,
-			ctx->inst.bytes.dpr.op1_reg, operand2, 0);
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr.op2, immd);
+		arm_isa_subtract_rev(ctx, ctx->inst.dword.dpr.dst_reg,
+			ctx->inst.dword.dpr.op1_reg, operand2, 0);
 	}
 }
 
@@ -711,9 +711,9 @@ void arm_isa_RSBS_imm_impl(struct arm_ctx_t *ctx)
 	int operand2;
 	if(arm_isa_check_cond(ctx))
 	{
-		operand2 = arm_isa_op2_get(ctx, ctx->inst.bytes.dpr.op2, immd);
-		arm_isa_subtract_rev(ctx, ctx->inst.bytes.dpr.dst_reg,
-			ctx->inst.bytes.dpr.op1_reg, operand2, 0);
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr.op2, immd);
+		arm_isa_subtract_rev(ctx, ctx->inst.dword.dpr.dst_reg,
+			ctx->inst.dword.dpr.op1_reg, operand2, 0);
 	}
 }
 
@@ -722,8 +722,8 @@ void arm_isa_ADD_imm_impl(struct arm_ctx_t *ctx)
 	int operand2;
 	if(arm_isa_check_cond(ctx))
 	{
-		operand2 = arm_isa_op2_get(ctx, ctx->inst.bytes.dpr.op2, immd);
-		arm_isa_add(ctx, ctx->inst.bytes.dpr.dst_reg, ctx->inst.bytes.dpr.op1_reg,
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr.op2, immd);
+		arm_isa_add(ctx, ctx->inst.dword.dpr.dst_reg, ctx->inst.dword.dpr.op1_reg,
 			operand2, 0);
 	}
 }
@@ -733,8 +733,8 @@ void arm_isa_ADDS_imm_impl(struct arm_ctx_t *ctx)
 	int operand2;
 	if(arm_isa_check_cond(ctx))
 	{
-		operand2 = arm_isa_op2_get(ctx, ctx->inst.bytes.dpr.op2, immd);
-		arm_isa_add(ctx, ctx->inst.bytes.dpr.dst_reg, ctx->inst.bytes.dpr.op1_reg,
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr.op2, immd);
+		arm_isa_add(ctx, ctx->inst.dword.dpr.dst_reg, ctx->inst.dword.dpr.op1_reg,
 			operand2, 0);
 	}
 }
@@ -747,8 +747,8 @@ void arm_isa_ADC_imm_impl(struct arm_ctx_t *ctx)
 	carry = ctx->regs->cpsr.C;
 	if(arm_isa_check_cond(ctx))
 	{
-		operand2 = arm_isa_op2_get(ctx, ctx->inst.bytes.dpr.op2, immd);
-		arm_isa_add(ctx, ctx->inst.bytes.dpr.dst_reg, ctx->inst.bytes.dpr.op1_reg,
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr.op2, immd);
+		arm_isa_add(ctx, ctx->inst.dword.dpr.dst_reg, ctx->inst.dword.dpr.op1_reg,
 			operand2, carry);
 	}
 }
@@ -761,8 +761,8 @@ void arm_isa_ADCS_imm_impl(struct arm_ctx_t *ctx)
 	carry = ctx->regs->cpsr.C;
 	if(arm_isa_check_cond(ctx))
 	{
-		operand2 = arm_isa_op2_get(ctx, ctx->inst.bytes.dpr.op2, immd);
-		arm_isa_add(ctx, ctx->inst.bytes.dpr.dst_reg, ctx->inst.bytes.dpr.op1_reg,
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr.op2, immd);
+		arm_isa_add(ctx, ctx->inst.dword.dpr.dst_reg, ctx->inst.dword.dpr.op1_reg,
 			operand2, carry);
 	}
 }
@@ -781,8 +781,8 @@ void arm_isa_SBCS_imm_impl(struct arm_ctx_t *ctx)
 	carry = ctx->regs->cpsr.C;
 	if(arm_isa_check_cond(ctx))
 	{
-		operand2 = arm_isa_op2_get(ctx, ctx->inst.bytes.dpr.op2, immd);
-		arm_isa_subtract(ctx, ctx->inst.bytes.dpr.dst_reg, ctx->inst.bytes.dpr.op1_reg,
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr.op2, immd);
+		arm_isa_subtract(ctx, ctx->inst.dword.dpr.dst_reg, ctx->inst.dword.dpr.op1_reg,
 			operand2, ~(carry));
 	}
 }
@@ -810,8 +810,8 @@ void arm_isa_TSTS_imm_impl(struct arm_ctx_t *ctx)
 
 	if(arm_isa_check_cond(ctx))
 	{
-		arm_isa_reg_load(ctx, ctx->inst.bytes.dpr.op1_reg, &rn_val);
-		operand2 = arm_isa_op2_get(ctx, ctx->inst.bytes.dpr.op2, immd);
+		arm_isa_reg_load(ctx, ctx->inst.dword.dpr.op1_reg, &rn_val);
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr.op2, immd);
 
 		regs->cpsr.z = 0;
 		regs->cpsr.n = 0;
@@ -831,12 +831,12 @@ void arm_isa_TSTS_imm_impl(struct arm_ctx_t *ctx)
 			regs->cpsr.C = 0;
 			regs->cpsr.v = 0;
 		}
-		if(arm_isa_op2_carry(ctx, ctx->inst.bytes.dpr.op2, immd))
+		if(arm_isa_op2_carry(ctx, ctx->inst.dword.dpr.op2, immd))
 		{
 			regs->cpsr.C = 1;
 			regs->cpsr.v = 0;
 		}
-		if(arm_isa_op2_carry(ctx, ctx->inst.bytes.dpr.op2, immd) == -1)
+		if(arm_isa_op2_carry(ctx, ctx->inst.dword.dpr.op2, immd) == -1)
 		{
 			regs->cpsr.C = prev_regs.cpsr.C;
 		}
@@ -854,8 +854,8 @@ void arm_isa_TEQS_imm_impl(struct arm_ctx_t *ctx)
 	regs = ctx->regs;
 	if(arm_isa_check_cond(ctx))
 	{
-		arm_isa_reg_load(ctx, ctx->inst.bytes.dpr.op1_reg, &rn_val);
-		operand2 = arm_isa_op2_get(ctx, ctx->inst.bytes.dpr.op2, immd);
+		arm_isa_reg_load(ctx, ctx->inst.dword.dpr.op1_reg, &rn_val);
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr.op2, immd);
 
 		regs->cpsr.z = 0;
 		regs->cpsr.n = 0;
@@ -875,7 +875,7 @@ void arm_isa_TEQS_imm_impl(struct arm_ctx_t *ctx)
 			regs->cpsr.C = 0;
 			regs->cpsr.v = 0;
 		}
-		if(arm_isa_op2_carry(ctx, ctx->inst.bytes.dpr.op2, immd))
+		if(arm_isa_op2_carry(ctx, ctx->inst.dword.dpr.op2, immd))
 		{
 			regs->cpsr.C = 1;
 			regs->cpsr.v = 0;
@@ -898,8 +898,8 @@ void arm_isa_CMPS_imm_impl(struct arm_ctx_t *ctx)
 	regs = ctx->regs;
 	if(arm_isa_check_cond(ctx))
 	{
-		operand2 = arm_isa_op2_get(ctx, ctx->inst.bytes.dpr.op2, immd);
-		arm_isa_reg_load(ctx, ctx->inst.bytes.dpr.op1_reg, &rn_val);
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr.op2, immd);
+		arm_isa_reg_load(ctx, ctx->inst.dword.dpr.op1_reg, &rn_val);
 		result = rn_val - operand2;
 		arm_isa_inst_debug("  result = %d ; 0x%x\n", result, result);
 
@@ -969,8 +969,8 @@ void arm_isa_CMNS_imm_impl(struct arm_ctx_t *ctx)
 	regs = ctx->regs;
 	if(arm_isa_check_cond(ctx))
 	{
-		operand2 = arm_isa_op2_get(ctx, ctx->inst.bytes.dpr.op2, immd);
-		arm_isa_reg_load(ctx, ctx->inst.bytes.dpr.op1_reg, &rn_val);
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr.op2, immd);
+		arm_isa_reg_load(ctx, ctx->inst.dword.dpr.op1_reg, &rn_val);
 
 		result = rn_val + operand2;
 		arm_isa_inst_debug("  result = %d ; 0x%x\n", result, result);
@@ -1022,9 +1022,9 @@ void arm_isa_ORR_imm_impl(struct arm_ctx_t *ctx)
 
 	if(arm_isa_check_cond(ctx))
 	{
-		arm_isa_reg_load(ctx, ctx->inst.bytes.dpr.op1_reg, &rn_val);
-		operand2 = arm_isa_op2_get(ctx, ctx->inst.bytes.dpr.op2, immd);
-		arm_isa_reg_store(ctx, ctx->inst.bytes.dpr.dst_reg, (operand2 | rn_val));
+		arm_isa_reg_load(ctx, ctx->inst.dword.dpr.op1_reg, &rn_val);
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr.op2, immd);
+		arm_isa_reg_store(ctx, ctx->inst.dword.dpr.dst_reg, (operand2 | rn_val));
 	}
 }
 
@@ -1039,8 +1039,8 @@ void arm_isa_MOV_imm_impl(struct arm_ctx_t *ctx)
 
 	if (arm_isa_check_cond(ctx))
 	{
-		operand2 = arm_isa_op2_get(ctx, ctx->inst.bytes.dpr.op2, immd);
-		arm_isa_reg_store(ctx, ctx->inst.bytes.dpr.dst_reg, operand2);
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr.op2, immd);
+		arm_isa_reg_store(ctx, ctx->inst.dword.dpr.dst_reg, operand2);
 	}
 
 }
@@ -1059,16 +1059,16 @@ void arm_isa_BIC_imm_impl(struct arm_ctx_t *ctx)
 
 	if(arm_isa_check_cond(ctx))
 	{
-		operand2 = arm_isa_op2_get(ctx, ctx->inst.bytes.dpr.op2, immd);
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr.op2, immd);
 
-		arm_isa_reg_load(ctx, ctx->inst.bytes.dpr.op1_reg, &rn_val);
+		arm_isa_reg_load(ctx, ctx->inst.dword.dpr.op1_reg, &rn_val);
 
-		if(!(ctx->inst.bytes.dpr.s_cond))
+		if(!(ctx->inst.dword.dpr.s_cond))
 		{
 			rd_val = (rn_val) & (~(operand2)) ;
-			arm_isa_inst_debug("  r%d = r%d & (~%d)\n", ctx->inst.bytes.dpr.dst_reg,
-				ctx->inst.bytes.dpr.op1_reg, operand2);
-			arm_isa_reg_store(ctx, ctx->inst.bytes.dpr.dst_reg, rd_val);
+			arm_isa_inst_debug("  r%d = r%d & (~%d)\n", ctx->inst.dword.dpr.dst_reg,
+				ctx->inst.dword.dpr.op1_reg, operand2);
+			arm_isa_reg_store(ctx, ctx->inst.dword.dpr.dst_reg, rd_val);
 		}
 		else
 		{
@@ -1089,9 +1089,9 @@ void arm_isa_MVN_imm_impl(struct arm_ctx_t *ctx)
 
 	if (arm_isa_check_cond(ctx))
 	{
-		operand2 = arm_isa_op2_get(ctx, ctx->inst.bytes.dpr.op2, immd);
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr.op2, immd);
 		result = (0xffffffff) ^ (operand2);
-		arm_isa_reg_store_safe(ctx, ctx->inst.bytes.dpr.dst_reg, result);
+		arm_isa_reg_store_safe(ctx, ctx->inst.dword.dpr.dst_reg, result);
 	}
 }
 
@@ -1135,22 +1135,22 @@ void arm_isa_MRS_reg_impl(struct arm_ctx_t *ctx)
 	unsigned int rd_val;
 	if (arm_isa_check_cond(ctx))
 	{
-		if(!(ctx->inst.bytes.psr.psr_loc))
+		if(!(ctx->inst.dword.psr.psr_loc))
 		{
 			rd_val = arm_isa_ret_cpsr_val(ctx);
 		}
 	}
 
-	arm_isa_reg_store(ctx, ctx->inst.bytes.psr.dst_reg, rd_val);
+	arm_isa_reg_store(ctx, ctx->inst.dword.psr.dst_reg, rd_val);
 }
 
 void arm_isa_MSR_reg_impl(struct arm_ctx_t *ctx)
 {
 	if (arm_isa_check_cond(ctx))
 	{
-		if(!(ctx->inst.bytes.psr.psr_loc))
+		if(!(ctx->inst.dword.psr.psr_loc))
 		{
-			arm_isa_set_cpsr_val(ctx,ctx->inst.bytes.psr.op2);
+			arm_isa_set_cpsr_val(ctx,ctx->inst.dword.psr.op2);
 		}
 	}
 
@@ -1218,8 +1218,8 @@ void arm_isa_UMULL_impl(struct arm_ctx_t *ctx)
 	unsigned int rs;
 	unsigned int rm;
 
-	arm_isa_reg_load(ctx, ctx->inst.bytes.mult_ln.op1_rs, &rs_val);
-	arm_isa_reg_load(ctx, ctx->inst.bytes.mult.op0_rm, &rm_val);
+	arm_isa_reg_load(ctx, ctx->inst.dword.mult_ln.op1_rs, &rs_val);
+	arm_isa_reg_load(ctx, ctx->inst.dword.mult.op0_rm, &rm_val);
 
 	arm_isa_inst_debug("  rm_val: 0x%x, rs_val: 0x%x\n", rm_val,rs_val);
 
@@ -1232,8 +1232,8 @@ void arm_isa_UMULL_impl(struct arm_ctx_t *ctx)
 	rdhi = (0xffffffff00000000 & result) >> 32;
 	rdlo = 0x00000000ffffffff & result;
 
-	arm_isa_reg_store(ctx, ctx->inst.bytes.mult_ln.dst_hi, rdhi);
-	arm_isa_reg_store(ctx, ctx->inst.bytes.mult_ln.dst_lo, rdlo);
+	arm_isa_reg_store(ctx, ctx->inst.dword.mult_ln.dst_hi, rdhi);
+	arm_isa_reg_store(ctx, ctx->inst.dword.mult_ln.dst_lo, rdlo);
 
 
 }
@@ -1342,7 +1342,7 @@ void arm_isa_LDRH_ofrp_impl(struct arm_ctx_t *ctx)
 		addr = arm_isa_get_addr_amode3_imm(ctx);
 		mem_read(ctx->mem, addr, 4, buf);
 		value = value & (0x0000ffff);
-		arm_isa_reg_store(ctx, ctx->inst.bytes.hfwrd_imm.dst_rd, value);
+		arm_isa_reg_store(ctx, ctx->inst.dword.hfwrd_imm.dst_rd, value);
 	}
 }
 
@@ -1553,7 +1553,7 @@ void arm_isa_CLZ_reg_impl(struct arm_ctx_t *ctx)
 	unsigned int zero_ct;
 
 	zero_ct = 0;
-	arm_isa_reg_load(ctx, ctx->inst.bytes.hfwrd_reg.off_reg, &rm_val);
+	arm_isa_reg_load(ctx, ctx->inst.dword.hfwrd_reg.off_reg, &rm_val);
 
 	for (i = 2147483648; i >= 1; i /= 2)
 	{
@@ -1567,7 +1567,7 @@ void arm_isa_CLZ_reg_impl(struct arm_ctx_t *ctx)
 		}
 	}
 	arm_isa_inst_debug("  leading zero count = %d\n", zero_ct);
-	arm_isa_reg_store(ctx, ctx->inst.bytes.hfwrd_reg.dst_rd, zero_ct);
+	arm_isa_reg_store(ctx, ctx->inst.dword.hfwrd_reg.dst_rd, zero_ct);
 }
 
 void arm_isa_LDRH_ptim1_impl(struct arm_ctx_t *ctx)
@@ -1592,7 +1592,7 @@ void arm_isa_LDRH_ptip1_impl(struct arm_ctx_t *ctx)
 		addr = arm_isa_get_addr_amode3_imm(ctx);
 		mem_read(ctx->mem, addr, 4, buf);
 		value = value & (0x0000ffff);
-		arm_isa_reg_store(ctx, ctx->inst.bytes.hfwrd_imm.dst_rd, value);
+		arm_isa_reg_store(ctx, ctx->inst.dword.hfwrd_imm.dst_rd, value);
 	}
 }
 
@@ -1624,7 +1624,7 @@ void arm_isa_LDRH_ofip_impl(struct arm_ctx_t *ctx)
 		addr = arm_isa_get_addr_amode3_imm(ctx);
 		mem_read(ctx->mem, addr, 4, buf);
 		value = value & (0x0000ffff);
-		arm_isa_reg_store(ctx, ctx->inst.bytes.hfwrd_imm.dst_rd, value);
+		arm_isa_reg_store(ctx, ctx->inst.dword.hfwrd_imm.dst_rd, value);
 	}
 }
 
@@ -1653,7 +1653,7 @@ void arm_isa_STRH_ptip1_impl(struct arm_ctx_t *ctx)
 	{
 		buf = &value;
 		addr = arm_isa_get_addr_amode2(ctx);
-		arm_isa_reg_load(ctx, ctx->inst.bytes.sdtr.src_dst_rd, &value);
+		arm_isa_reg_load(ctx, ctx->inst.dword.sdtr.src_dst_rd, &value);
 		value = value & (0x0000ffff);
 		if(!(arm_isa_invalid_addr_str(addr, value, ctx)))
 			mem_write(ctx->mem, addr, 2, buf);
@@ -1685,7 +1685,7 @@ void arm_isa_STRH_ofip_impl(struct arm_ctx_t *ctx)
 	{
 		buf = &value;
 		addr = arm_isa_get_addr_amode2(ctx);
-		arm_isa_reg_load(ctx, ctx->inst.bytes.sdtr.src_dst_rd, &value);
+		arm_isa_reg_load(ctx, ctx->inst.dword.sdtr.src_dst_rd, &value);
 		value = value & (0x0000ffff);
 		if(!(arm_isa_invalid_addr_str(addr, value, ctx)))
 			mem_write(ctx->mem, addr, 2, buf);
@@ -1740,7 +1740,7 @@ void arm_isa_LDRSB_ofip_impl(struct arm_ctx_t *ctx)
 		addr = arm_isa_get_addr_amode3_imm(ctx);
 		mem_read(ctx->mem, addr, 1, buf);
 		value = value & (0xffffffff);
-		arm_isa_reg_store(ctx, ctx->inst.bytes.hfwrd_imm.dst_rd, value);
+		arm_isa_reg_store(ctx, ctx->inst.dword.hfwrd_imm.dst_rd, value);
 	}
 }
 
@@ -1791,7 +1791,7 @@ void arm_isa_LDRSH_ofip_impl(struct arm_ctx_t *ctx)
 		addr = arm_isa_get_addr_amode3_imm(ctx);
 		mem_read(ctx->mem, addr, 2, buf);
 		value = value & (0xffffffff);
-		arm_isa_reg_store(ctx, ctx->inst.bytes.hfwrd_imm.dst_rd, value);
+		arm_isa_reg_store(ctx, ctx->inst.dword.hfwrd_imm.dst_rd, value);
 	}
 }
 
@@ -1832,10 +1832,10 @@ void arm_isa_LDRD_ofim_impl(struct arm_ctx_t *ctx)
 		buf = &value;
 		addr = arm_isa_get_addr_amode3_imm(ctx);
 		mem_read(ctx->mem, addr, 4, buf);
-		arm_isa_reg_store(ctx, ctx->inst.bytes.hfwrd_imm.dst_rd, value);
+		arm_isa_reg_store(ctx, ctx->inst.dword.hfwrd_imm.dst_rd, value);
 
 		mem_read(ctx->mem, addr + 4, 4, buf);
-		arm_isa_reg_store(ctx, ctx->inst.bytes.hfwrd_imm.dst_rd + 1, value);
+		arm_isa_reg_store(ctx, ctx->inst.dword.hfwrd_imm.dst_rd + 1, value);
 	}
 }
 
@@ -1855,10 +1855,10 @@ void arm_isa_LDRD_ofip_impl(struct arm_ctx_t *ctx)
 		buf = &value;
 		addr = arm_isa_get_addr_amode3_imm(ctx);
 		mem_read(ctx->mem, addr, 4, buf);
-		arm_isa_reg_store(ctx, ctx->inst.bytes.hfwrd_imm.dst_rd, value);
+		arm_isa_reg_store(ctx, ctx->inst.dword.hfwrd_imm.dst_rd, value);
 
 		mem_read(ctx->mem, addr + 4, 4, buf);
-		arm_isa_reg_store(ctx, ctx->inst.bytes.hfwrd_imm.dst_rd + 1, value);
+		arm_isa_reg_store(ctx, ctx->inst.dword.hfwrd_imm.dst_rd + 1, value);
 	}
 }
 
@@ -1897,12 +1897,12 @@ void arm_isa_STRD_ofim_impl(struct arm_ctx_t *ctx)
 	{
 		buf = &value;
 		addr = arm_isa_get_addr_amode3_imm(ctx);
-		arm_isa_reg_load(ctx, ctx->inst.bytes.sdtr.src_dst_rd, &value);
+		arm_isa_reg_load(ctx, ctx->inst.dword.sdtr.src_dst_rd, &value);
 
 		if(!(arm_isa_invalid_addr_str(addr, value, ctx)))
 			mem_write(ctx->mem, addr, 4, buf);
 
-		arm_isa_reg_load(ctx, ctx->inst.bytes.sdtr.src_dst_rd + 1, &value);
+		arm_isa_reg_load(ctx, ctx->inst.dword.sdtr.src_dst_rd + 1, &value);
 
 		if(!(arm_isa_invalid_addr_str(addr + 4, value, ctx)))
 			mem_write(ctx->mem, addr + 4, 4, buf);
@@ -1924,12 +1924,12 @@ void arm_isa_STRD_ofip_impl(struct arm_ctx_t *ctx)
 	{
 		buf = &value;
 		addr = arm_isa_get_addr_amode3_imm(ctx);
-		arm_isa_reg_load(ctx, ctx->inst.bytes.sdtr.src_dst_rd, &value);
+		arm_isa_reg_load(ctx, ctx->inst.dword.sdtr.src_dst_rd, &value);
 
 		if(!(arm_isa_invalid_addr_str(addr, value, ctx)))
 			mem_write(ctx->mem, addr, 4, buf);
 
-		arm_isa_reg_load(ctx, ctx->inst.bytes.sdtr.src_dst_rd + 1, &value);
+		arm_isa_reg_load(ctx, ctx->inst.dword.sdtr.src_dst_rd + 1, &value);
 
 		if(!(arm_isa_invalid_addr_str(addr + 4, value, ctx)))
 			mem_write(ctx->mem, addr + 4, 4, buf);
@@ -1957,7 +1957,7 @@ void arm_isa_LDR_ptim_impl(struct arm_ctx_t *ctx)
 			mem_read(ctx->mem, addr, 4, &value);
 		}
 
-		arm_isa_reg_store(ctx, ctx->inst.bytes.sdtr.src_dst_rd, value);
+		arm_isa_reg_store(ctx, ctx->inst.dword.sdtr.src_dst_rd, value);
 	}
 }
 
@@ -1977,7 +1977,7 @@ void arm_isa_LDR_ptip_impl(struct arm_ctx_t *ctx)
 			mem_read(ctx->mem, addr, 4, &value);
 		}
 
-		arm_isa_reg_store(ctx, ctx->inst.bytes.sdtr.src_dst_rd, value);
+		arm_isa_reg_store(ctx, ctx->inst.dword.sdtr.src_dst_rd, value);
 	}
 }
 
@@ -1997,7 +1997,7 @@ void arm_isa_LDR_ofim_impl(struct arm_ctx_t *ctx)
 			mem_read(ctx->mem, addr, 4, &value);
 		}
 
-		arm_isa_reg_store(ctx, ctx->inst.bytes.sdtr.src_dst_rd, value);
+		arm_isa_reg_store(ctx, ctx->inst.dword.sdtr.src_dst_rd, value);
 	}
 }
 
@@ -2018,7 +2018,7 @@ void arm_isa_LDR_prim_impl(struct arm_ctx_t *ctx)
 			mem_read(ctx->mem, addr, 4, &value);
 		}
 
-		arm_isa_reg_store(ctx, ctx->inst.bytes.sdtr.src_dst_rd, value);
+		arm_isa_reg_store(ctx, ctx->inst.dword.sdtr.src_dst_rd, value);
 	}
 }
 
@@ -2039,7 +2039,7 @@ void arm_isa_LDR_ofip_impl(struct arm_ctx_t *ctx)
 			mem_read(ctx->mem, addr, 4, &value);
 		}
 
-		arm_isa_reg_store(ctx, ctx->inst.bytes.sdtr.src_dst_rd, value);
+		arm_isa_reg_store(ctx, ctx->inst.dword.sdtr.src_dst_rd, value);
 	}
 }
 
@@ -2059,7 +2059,7 @@ void arm_isa_LDR_prip_impl(struct arm_ctx_t *ctx)
 			mem_read(ctx->mem, addr, 4, &value);
 		}
 
-		arm_isa_reg_store(ctx, ctx->inst.bytes.sdtr.src_dst_rd, value);
+		arm_isa_reg_store(ctx, ctx->inst.dword.sdtr.src_dst_rd, value);
 	}
 }
 
@@ -2158,7 +2158,7 @@ void arm_isa_LDR_ofrpll_impl(struct arm_ctx_t *ctx)
 		{
 			mem_read(ctx->mem, addr, 4, &value);
 		}
-		arm_isa_reg_store(ctx, ctx->inst.bytes.sdtr.src_dst_rd, value);
+		arm_isa_reg_store(ctx, ctx->inst.dword.sdtr.src_dst_rd, value);
 	}
 }
 
@@ -2212,7 +2212,7 @@ void arm_isa_STR_ptip_impl(struct arm_ctx_t *ctx)
 	{
 		buf = &value;
 		addr = arm_isa_get_addr_amode2(ctx);
-		arm_isa_reg_load(ctx, ctx->inst.bytes.sdtr.src_dst_rd, &value);
+		arm_isa_reg_load(ctx, ctx->inst.dword.sdtr.src_dst_rd, &value);
 
 		if(!(arm_isa_invalid_addr_str(addr, value, ctx)))
 			mem_write(ctx->mem, addr, 4, buf);
@@ -2229,7 +2229,7 @@ void arm_isa_STR_ofim_impl(struct arm_ctx_t *ctx)
 	{
 		buf = &value;
 		addr = arm_isa_get_addr_amode2(ctx);
-		arm_isa_reg_load(ctx, ctx->inst.bytes.sdtr.src_dst_rd, &value);
+		arm_isa_reg_load(ctx, ctx->inst.dword.sdtr.src_dst_rd, &value);
 
 		if(!(arm_isa_invalid_addr_str(addr, value, ctx)))
 			mem_write(ctx->mem, addr, 4, buf);
@@ -2246,7 +2246,7 @@ void arm_isa_STR_prim_impl(struct arm_ctx_t *ctx)
 	{
 		buf = &value;
 		addr = arm_isa_get_addr_amode2(ctx);
-		arm_isa_reg_load(ctx, ctx->inst.bytes.sdtr.src_dst_rd, &value);
+		arm_isa_reg_load(ctx, ctx->inst.dword.sdtr.src_dst_rd, &value);
 		if(!(arm_isa_invalid_addr_str(addr, value, ctx)))
 			mem_write(ctx->mem, addr, 4, buf);
 	}
@@ -2262,7 +2262,7 @@ void arm_isa_STR_ofip_impl(struct arm_ctx_t *ctx)
 	{
 		buf = &value;
 		addr = arm_isa_get_addr_amode2(ctx);
-		arm_isa_reg_load(ctx, ctx->inst.bytes.sdtr.src_dst_rd, &value);
+		arm_isa_reg_load(ctx, ctx->inst.dword.sdtr.src_dst_rd, &value);
 
 		if(!(arm_isa_invalid_addr_str(addr, value, ctx)))
 			mem_write(ctx->mem, addr, 4, buf);
@@ -2364,7 +2364,7 @@ void arm_isa_STR_ofrpll_impl(struct arm_ctx_t *ctx)
 	{
 		buf = &value;
 		addr = arm_isa_get_addr_amode2(ctx);
-		arm_isa_reg_load(ctx, ctx->inst.bytes.sdtr.src_dst_rd, &value);
+		arm_isa_reg_load(ctx, ctx->inst.dword.sdtr.src_dst_rd, &value);
 
 		if(!(arm_isa_invalid_addr_str(addr, value, ctx)))
 			mem_write(ctx->mem, addr, 4, buf);
@@ -2424,7 +2424,7 @@ void arm_isa_LDRB_ptip_impl(struct arm_ctx_t *ctx)
 		addr = arm_isa_get_addr_amode2(ctx);
 		mem_read(ctx->mem, addr, 1, buf);
 		value = value & (0x000000ff);
-		arm_isa_reg_store(ctx, ctx->inst.bytes.sdtr.src_dst_rd, (value));
+		arm_isa_reg_store(ctx, ctx->inst.dword.sdtr.src_dst_rd, (value));
 
 	}
 }
@@ -2442,7 +2442,7 @@ void arm_isa_LDRB_ofim_impl(struct arm_ctx_t *ctx)
 		addr = arm_isa_get_addr_amode2(ctx);
 		mem_read(ctx->mem, addr, 1, buf);
 		value = value & (0x000000ff);
-		arm_isa_reg_store(ctx, ctx->inst.bytes.sdtr.src_dst_rd, (value));
+		arm_isa_reg_store(ctx, ctx->inst.dword.sdtr.src_dst_rd, (value));
 
 	}
 }
@@ -2460,7 +2460,7 @@ void arm_isa_LDRB_prim_impl(struct arm_ctx_t *ctx)
 		addr = arm_isa_get_addr_amode2(ctx);
 		mem_read(ctx->mem, addr, 1, buf);
 		value = value & (0x000000ff);
-		arm_isa_reg_store(ctx, ctx->inst.bytes.sdtr.src_dst_rd, (value));
+		arm_isa_reg_store(ctx, ctx->inst.dword.sdtr.src_dst_rd, (value));
 
 	}
 }
@@ -2478,7 +2478,7 @@ void arm_isa_LDRB_ofip_impl(struct arm_ctx_t *ctx)
 		addr = arm_isa_get_addr_amode2(ctx);
 		mem_read(ctx->mem, addr, 1, buf);
 		value = value & (0x000000ff);
-		arm_isa_reg_store(ctx, ctx->inst.bytes.sdtr.src_dst_rd, (value));
+		arm_isa_reg_store(ctx, ctx->inst.dword.sdtr.src_dst_rd, (value));
 
 	}
 }
@@ -2497,7 +2497,7 @@ void arm_isa_LDRB_prip_impl(struct arm_ctx_t *ctx)
 		addr = arm_isa_get_addr_amode2(ctx);
 		mem_read(ctx->mem, addr, 1, buf);
 		value = value & (0x000000ff);
-		arm_isa_reg_store(ctx, ctx->inst.bytes.sdtr.src_dst_rd, (value));
+		arm_isa_reg_store(ctx, ctx->inst.dword.sdtr.src_dst_rd, (value));
 
 	}
 }
@@ -2596,7 +2596,7 @@ void arm_isa_LDRB_ofrpll_impl(struct arm_ctx_t *ctx)
 		addr = arm_isa_get_addr_amode2(ctx);
 		mem_read(ctx->mem, addr, 1, buf);
 		value = value & (0x000000ff);
-		arm_isa_reg_store(ctx, ctx->inst.bytes.sdtr.src_dst_rd, (value));
+		arm_isa_reg_store(ctx, ctx->inst.dword.sdtr.src_dst_rd, (value));
 	}
 }
 
@@ -2646,7 +2646,7 @@ void arm_isa_STRB_ptim_impl(struct arm_ctx_t *ctx)
 	{
 		buf = &value;
 		addr = arm_isa_get_addr_amode2(ctx);
-		arm_isa_reg_load(ctx, ctx->inst.bytes.sdtr.src_dst_rd, &value);
+		arm_isa_reg_load(ctx, ctx->inst.dword.sdtr.src_dst_rd, &value);
 		value = value & (0x000000ff);
 		mem_write(ctx->mem, addr, 1, buf);
 	}
@@ -2663,7 +2663,7 @@ void arm_isa_STRB_ptip_impl(struct arm_ctx_t *ctx)
 	{
 		buf = &value;
 		addr = arm_isa_get_addr_amode2(ctx);
-		arm_isa_reg_load(ctx, ctx->inst.bytes.sdtr.src_dst_rd, &value);
+		arm_isa_reg_load(ctx, ctx->inst.dword.sdtr.src_dst_rd, &value);
 		value = value & (0x000000ff);
 		mem_write(ctx->mem, addr, 1, buf);
 	}
@@ -2680,7 +2680,7 @@ void arm_isa_STRB_ofim_impl(struct arm_ctx_t *ctx)
 	{
 		buf = &value;
 		addr = arm_isa_get_addr_amode2(ctx);
-		arm_isa_reg_load(ctx, ctx->inst.bytes.sdtr.src_dst_rd, &value);
+		arm_isa_reg_load(ctx, ctx->inst.dword.sdtr.src_dst_rd, &value);
 		value = value & (0x000000ff);
 		mem_write(ctx->mem, addr, 1, buf);
 	}
@@ -2702,7 +2702,7 @@ void arm_isa_STRB_ofip_impl(struct arm_ctx_t *ctx)
 	{
 		buf = &value;
 		addr = arm_isa_get_addr_amode2(ctx);
-		arm_isa_reg_load(ctx, ctx->inst.bytes.sdtr.src_dst_rd, &value);
+		arm_isa_reg_load(ctx, ctx->inst.dword.sdtr.src_dst_rd, &value);
 		value = value & (0x000000ff);
 		mem_write(ctx->mem, addr, 1, buf);
 	}
@@ -2805,7 +2805,7 @@ void arm_isa_STRB_ofrpll_impl(struct arm_ctx_t *ctx)
 	{
 		buf = &value;
 		addr = arm_isa_get_addr_amode2(ctx);
-		arm_isa_reg_load(ctx, ctx->inst.bytes.sdtr.src_dst_rd, &value);
+		arm_isa_reg_load(ctx, ctx->inst.dword.sdtr.src_dst_rd, &value);
 		value = value & (0x000000ff);
 		mem_write(ctx->mem, addr, 1, buf);
 	}

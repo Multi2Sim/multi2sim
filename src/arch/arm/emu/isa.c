@@ -48,7 +48,7 @@ static arm_isa_inst_func_t arm_isa_inst_func[ARMInstOpcodeCount] =
 };
 
 
-static arm_isa_inst_func_t arm_th16_isa_inst_func[ARM_THUMB16_INST_COUNT] =
+static arm_isa_inst_func_t arm_th16_isa_inst_func[ARMInstThumb16OpcodeCount] =
 {
 	NULL /* for op_none */
 #define DEFINST(_name,_fmt_str,_cat,_op1,_op2,_op3,_op4,_op5,_op6) , arm_th16_isa_##_name##_impl
@@ -57,7 +57,7 @@ static arm_isa_inst_func_t arm_th16_isa_inst_func[ARM_THUMB16_INST_COUNT] =
 };
 
 
-static arm_isa_inst_func_t arm_th32_isa_inst_func[ARM_THUMB32_INST_COUNT] =
+static arm_isa_inst_func_t arm_th32_isa_inst_func[ARMInstThumb32OpcodeCount] =
 {
 	NULL /* for op_none */
 #define DEFINST(_name,_fmt_str,_cat,_op1,_op2,_op3,_op4,_op5,_op6,_op7,_op8) , arm_th32_isa_##_name##_impl
@@ -70,8 +70,8 @@ static arm_isa_inst_func_t arm_th32_isa_inst_func[ARM_THUMB32_INST_COUNT] =
  */
 
 static long long arm_inst_freq[ARMInstOpcodeCount];
-static long long arm_th_16_inst_freq[ARM_THUMB16_INST_COUNT];
-static long long arm_th_32_inst_freq[ARM_THUMB32_INST_COUNT];
+static long long arm_th_16_inst_freq[ARMInstThumb16OpcodeCount];
+static long long arm_th_32_inst_freq[ARMInstThumb32OpcodeCount];
 
 
 
@@ -97,21 +97,21 @@ unsigned int arm_isa_get_addr_amode2(struct arm_ctx_t *ctx)
 
 	inst = &ctx->inst;
 
-	offset = inst->bytes.sdtr.off;
-	rn = inst->bytes.sdtr.base_rn;
+	offset = inst->dword.sdtr.off;
+	rn = inst->dword.sdtr.base_rn;
 	arm_isa_reg_load(ctx, rn, &rn_val);
 	arm_isa_inst_debug("  rn = 0x%x\n", rn_val);
-	if(inst->bytes.sdtr.imm == 1)
+	if(inst->dword.sdtr.imm == 1)
 	{
 		rm = (offset & (0x0000000f));
 		arm_isa_reg_load(ctx, rm, &rm_val);
 		shift = ((offset >> 4) & (0x000000ff));
 		shift_val = ((shift >> 3) & 0x0000001f);
 
-		if(inst->bytes.sdtr.idx_typ) /* Pre- Indexed */
+		if(inst->dword.sdtr.idx_typ) /* Pre- Indexed */
 		{
 
-			if (inst->bytes.sdtr.up_dn) /* Increment */
+			if (inst->dword.sdtr.up_dn) /* Increment */
 			{
 				switch ((shift >> 1) & 0x00000003)
 				{
@@ -162,13 +162,13 @@ unsigned int arm_isa_get_addr_amode2(struct arm_ctx_t *ctx)
 				}
 			}
 
-			if (inst->bytes.sdtr.wb)
+			if (inst->dword.sdtr.wb)
 				arm_isa_reg_store(ctx, rn, ret_addr);
 		}
 
 		else	/* Post Indexed */
 		{
-			if (inst->bytes.sdtr.up_dn) /* Increment */
+			if (inst->dword.sdtr.up_dn) /* Increment */
 			{
 				switch ((shift >> 1) & 0x00000003)
 				{
@@ -231,7 +231,7 @@ unsigned int arm_isa_get_addr_amode2(struct arm_ctx_t *ctx)
 	}
 	else /* Register Addressing */
 	{
-		if(inst->bytes.sdtr.idx_typ) /* Pre-Indexed */
+		if(inst->dword.sdtr.idx_typ) /* Pre-Indexed */
 		{
 			if(!offset)
 			{
@@ -239,7 +239,7 @@ unsigned int arm_isa_get_addr_amode2(struct arm_ctx_t *ctx)
 			}
 			else
 			{
-				if(inst->bytes.sdtr.up_dn) /* Increment */
+				if(inst->dword.sdtr.up_dn) /* Increment */
 				{
 					ret_addr = rn_val + offset;
 				}
@@ -249,7 +249,7 @@ unsigned int arm_isa_get_addr_amode2(struct arm_ctx_t *ctx)
 				}
 			}
 
-			if (inst->bytes.sdtr.wb)
+			if (inst->dword.sdtr.wb)
 				arm_isa_reg_store(ctx, rn, ret_addr);
 		}
 		else /* Post-Index */
@@ -260,7 +260,7 @@ unsigned int arm_isa_get_addr_amode2(struct arm_ctx_t *ctx)
 			}
 			else
 			{
-				if(inst->bytes.sdtr.up_dn) /* Increment */
+				if(inst->dword.sdtr.up_dn) /* Increment */
 				{
 					ret_addr = rn_val;
 					rn_val = rn_val + offset;
@@ -288,18 +288,18 @@ int arm_isa_get_addr_amode3_imm(struct arm_ctx_t *ctx)
 	int rn_val;
 	unsigned int addr;
 
-	imm4l = ctx->inst.bytes.hfwrd_imm.imm_off_lo;
-	imm4h = ctx->inst.bytes.hfwrd_imm.imm_off_hi;
+	imm4l = ctx->inst.dword.hfwrd_imm.imm_off_lo;
+	imm4h = ctx->inst.dword.hfwrd_imm.imm_off_hi;
 
 	immd8 = (0x000000ff) & ((imm4h << 4) | (imm4l));
 	arm_isa_inst_debug("  imm8 offset = %d,  (0x%x)\n", immd8, immd8);
 
 
-	if(ctx->inst.bytes.hfwrd_imm.idx_typ) /* Pre-Indexed */
+	if(ctx->inst.dword.hfwrd_imm.idx_typ) /* Pre-Indexed */
 	{
-		arm_isa_reg_load(ctx, ctx->inst.bytes.hfwrd_imm.base_rn, &rn_val);
+		arm_isa_reg_load(ctx, ctx->inst.dword.hfwrd_imm.base_rn, &rn_val);
 
-		if(ctx->inst.bytes.hfwrd_imm.up_dn)
+		if(ctx->inst.dword.hfwrd_imm.up_dn)
 		{
 			addr = rn_val + immd8;
 		}
@@ -309,10 +309,10 @@ int arm_isa_get_addr_amode3_imm(struct arm_ctx_t *ctx)
 			addr = rn_val - immd8;
 		}
 
-		if (ctx->inst.bytes.hfwrd_imm.wb)
+		if (ctx->inst.dword.hfwrd_imm.wb)
 		{
 			rn_val = addr;
-			arm_isa_reg_store(ctx, ctx->inst.bytes.hfwrd_imm.base_rn, rn_val);
+			arm_isa_reg_store(ctx, ctx->inst.dword.hfwrd_imm.base_rn, rn_val);
 
 		}
 		arm_isa_inst_debug("  ld/str addr = %d,  (0x%x)\n", addr, addr);
@@ -321,8 +321,8 @@ int arm_isa_get_addr_amode3_imm(struct arm_ctx_t *ctx)
 
 	else /* Post Indexed */
 	{
-		arm_isa_reg_load(ctx, ctx->inst.bytes.hfwrd_imm.base_rn, &rn_val);
-		if(ctx->inst.bytes.hfwrd_imm.up_dn)
+		arm_isa_reg_load(ctx, ctx->inst.dword.hfwrd_imm.base_rn, &rn_val);
+		if(ctx->inst.dword.hfwrd_imm.up_dn)
 		{
 			addr = rn_val;
 		}
@@ -332,7 +332,7 @@ int arm_isa_get_addr_amode3_imm(struct arm_ctx_t *ctx)
 			addr = rn_val;
 		}
 
-		if (ctx->inst.bytes.hfwrd_imm.wb)
+		if (ctx->inst.dword.hfwrd_imm.wb)
 		{
 			fatal("%s: Arm instruction not according to v7 ISA specification,"
 				" unpredictable behavior possible. Please check your "
@@ -872,10 +872,10 @@ void arm_isa_branch(struct arm_ctx_t *ctx)
 
 	if(ctx->inst.info->category == ARMInstCategoryBrnch)
 	{
-		offset = (ctx->inst.bytes.brnch.off << 2);
+		offset = (ctx->inst.dword.brnch.off << 2);
 		br_add = offset + ctx->regs->pc;
 
-		if(ctx->inst.bytes.brnch.link)
+		if(ctx->inst.dword.brnch.link)
 		{
 			arm_isa_reg_store(ctx, 14, ctx->regs->pc - 4);
 		}
@@ -888,14 +888,14 @@ void arm_isa_branch(struct arm_ctx_t *ctx)
 	{
 		if((ctx->inst.info->inst == ARM_INST_BLX))
 		{
-			arm_isa_reg_load(ctx, ctx->inst.bytes.bax.op0_rn, &rm_val);
+			arm_isa_reg_load(ctx, ctx->inst.dword.bax.op0_rn, &rm_val);
 			arm_isa_reg_store(ctx, 14, ctx->regs->pc - 4);
 			ctx->regs->pc = (rm_val & 0xfffffffe) + 4;
 			arm_isa_inst_debug("  Branch addr = 0x%x, pc <= %d\n", rm_val, rm_val);
 		}
 		else
 		{
-			arm_isa_reg_load(ctx, ctx->inst.bytes.bax.op0_rn, &rm_val);
+			arm_isa_reg_load(ctx, ctx->inst.dword.bax.op0_rn, &rm_val);
 			ctx->regs->pc = (rm_val & 0xfffffffe) + 4;
 			arm_isa_inst_debug("  Branch addr = 0x%x, pc <= %d\n", rm_val, rm_val);
 		}
@@ -910,7 +910,7 @@ int arm_isa_check_cond(struct arm_ctx_t *ctx)
 	struct arm_regs_t *regs;
 	unsigned int ret_val;
 	regs = ctx->regs;
-	cond = ctx->inst.bytes.brnch.cond;
+	cond = ctx->inst.dword.brnch.cond;
 
 	switch (cond)
 	{
@@ -1025,12 +1025,12 @@ void arm_isa_amode4s_str(struct arm_ctx_t *ctx)
 	int i;
 
 	buf = &copy_buf;
-	reg_list = ctx->inst.bytes.bdtr.reg_lst;
-	arm_isa_reg_load(ctx, ctx->inst.bytes.bdtr.base_rn, &rn_val);
+	reg_list = ctx->inst.dword.bdtr.reg_lst;
+	arm_isa_reg_load(ctx, ctx->inst.dword.bdtr.base_rn, &rn_val);
 
-	if(ctx->inst.bytes.bdtr.idx_typ)	/* Pre indexed */
+	if(ctx->inst.dword.bdtr.idx_typ)	/* Pre indexed */
 	{
-		if (ctx->inst.bytes.bdtr.up_dn)
+		if (ctx->inst.dword.bdtr.up_dn)
 		{
 			wrt_val = rn_val + 4;
 
@@ -1045,8 +1045,8 @@ void arm_isa_amode4s_str(struct arm_ctx_t *ctx)
 					wrt_val += 4;
 				}
 			}
-			if(ctx->inst.bytes.bdtr.wb)
-				arm_isa_reg_store(ctx, ctx->inst.bytes.bdtr.base_rn, (wrt_val - 4));
+			if(ctx->inst.dword.bdtr.wb)
+				arm_isa_reg_store(ctx, ctx->inst.dword.bdtr.base_rn, (wrt_val - 4));
 		}
 
 		else
@@ -1063,15 +1063,15 @@ void arm_isa_amode4s_str(struct arm_ctx_t *ctx)
 					wrt_val -= 4;
 				}
 			}
-			if(ctx->inst.bytes.bdtr.wb)
-				arm_isa_reg_store(ctx, ctx->inst.bytes.bdtr.base_rn, (wrt_val + 4));
+			if(ctx->inst.dword.bdtr.wb)
+				arm_isa_reg_store(ctx, ctx->inst.dword.bdtr.base_rn, (wrt_val + 4));
 
 		}
 	}
 
 	else	/* Post-Indexed */
 	{
-		if (ctx->inst.bytes.bdtr.up_dn)
+		if (ctx->inst.dword.bdtr.up_dn)
 		{
 			wrt_val = rn_val;
 
@@ -1086,8 +1086,8 @@ void arm_isa_amode4s_str(struct arm_ctx_t *ctx)
 					wrt_val += 4;
 				}
 			}
-			if(ctx->inst.bytes.bdtr.wb)
-				arm_isa_reg_store(ctx, ctx->inst.bytes.bdtr.base_rn, (wrt_val));
+			if(ctx->inst.dword.bdtr.wb)
+				arm_isa_reg_store(ctx, ctx->inst.dword.bdtr.base_rn, (wrt_val));
 		}
 
 		else
@@ -1104,8 +1104,8 @@ void arm_isa_amode4s_str(struct arm_ctx_t *ctx)
 					wrt_val -= 4;
 				}
 			}
-			if(ctx->inst.bytes.bdtr.wb)
-				arm_isa_reg_store(ctx, ctx->inst.bytes.bdtr.base_rn, (wrt_val));
+			if(ctx->inst.dword.bdtr.wb)
+				arm_isa_reg_store(ctx, ctx->inst.dword.bdtr.base_rn, (wrt_val));
 
 		}
 	}
@@ -1121,12 +1121,12 @@ void arm_isa_amode4s_ld(struct arm_ctx_t *ctx)
 	int i;
 
 	buf = &copy_buf;
-	reg_list = ctx->inst.bytes.bdtr.reg_lst;
-	arm_isa_reg_load(ctx, ctx->inst.bytes.bdtr.base_rn, &rn_val);
+	reg_list = ctx->inst.dword.bdtr.reg_lst;
+	arm_isa_reg_load(ctx, ctx->inst.dword.bdtr.base_rn, &rn_val);
 
-	if(ctx->inst.bytes.bdtr.idx_typ)	/* Pre indexed */
+	if(ctx->inst.dword.bdtr.idx_typ)	/* Pre indexed */
 	{
-		if (ctx->inst.bytes.bdtr.up_dn)
+		if (ctx->inst.dword.bdtr.up_dn)
 		{
 			read_val = rn_val + 4;
 
@@ -1154,8 +1154,8 @@ void arm_isa_amode4s_ld(struct arm_ctx_t *ctx)
 					}
 				}
 			}
-			if(ctx->inst.bytes.bdtr.wb)
-				arm_isa_reg_store(ctx, ctx->inst.bytes.bdtr.base_rn, (read_val - 4));
+			if(ctx->inst.dword.bdtr.wb)
+				arm_isa_reg_store(ctx, ctx->inst.dword.bdtr.base_rn, (read_val - 4));
 		}
 
 		else
@@ -1186,15 +1186,15 @@ void arm_isa_amode4s_ld(struct arm_ctx_t *ctx)
 					}
 				}
 			}
-			if(ctx->inst.bytes.bdtr.wb)
-				arm_isa_reg_store(ctx, ctx->inst.bytes.bdtr.base_rn, (read_val + 4));
+			if(ctx->inst.dword.bdtr.wb)
+				arm_isa_reg_store(ctx, ctx->inst.dword.bdtr.base_rn, (read_val + 4));
 
 		}
 	}
 
 	else	/* Post-Indexed */
 	{
-		if (ctx->inst.bytes.bdtr.up_dn)
+		if (ctx->inst.dword.bdtr.up_dn)
 		{
 			read_val = rn_val;
 
@@ -1223,8 +1223,8 @@ void arm_isa_amode4s_ld(struct arm_ctx_t *ctx)
 					}
 				}
 			}
-			if(ctx->inst.bytes.bdtr.wb)
-				arm_isa_reg_store(ctx, ctx->inst.bytes.bdtr.base_rn, (read_val));
+			if(ctx->inst.dword.bdtr.wb)
+				arm_isa_reg_store(ctx, ctx->inst.dword.bdtr.base_rn, (read_val));
 		}
 
 		else
@@ -1255,8 +1255,8 @@ void arm_isa_amode4s_ld(struct arm_ctx_t *ctx)
 					}
 				}
 			}
-			if(ctx->inst.bytes.bdtr.wb)
-				arm_isa_reg_store(ctx, ctx->inst.bytes.bdtr.base_rn, (read_val));
+			if(ctx->inst.dword.bdtr.wb)
+				arm_isa_reg_store(ctx, ctx->inst.dword.bdtr.base_rn, (read_val));
 
 		}
 	}
@@ -1410,7 +1410,7 @@ void arm_isa_subtract(struct arm_ctx_t *ctx, unsigned int rd, unsigned int rn, i
 	regs = ctx->regs;
 	flags = 0;
 
-	if(!(ctx->inst.bytes.dpr.s_cond))
+	if(!(ctx->inst.dword.dpr.s_cond))
 	{
 		if(rd == 15)
 		{
@@ -1577,7 +1577,7 @@ void arm_isa_subtract_rev(struct arm_ctx_t *ctx, unsigned int rd, unsigned int r
 
 	arm_isa_reg_load(ctx, rn, &rn_val);
 
-	if(!(ctx->inst.bytes.dpr.s_cond))
+	if(!(ctx->inst.dword.dpr.s_cond))
 	{
 		rd_val = op2 - rn_val - op3;
 		arm_isa_inst_debug("  r%d = r%d - %d\n", rd, rn, op2);
@@ -1718,7 +1718,7 @@ void arm_isa_add(struct arm_ctx_t *ctx, unsigned int rd, unsigned int rn, int op
 	regs = ctx->regs;
 	arm_isa_reg_load(ctx, rn, &rn_val);
 
-	if(!(ctx->inst.bytes.dpr.s_cond))
+	if(!(ctx->inst.dword.dpr.s_cond))
 	{
 		rd_val = rn_val + op2 + op3;
 		arm_isa_inst_debug("  r%d = r%d + %d\n", rd, rn, op2);
@@ -1776,25 +1776,25 @@ void arm_isa_multiply(struct arm_ctx_t *ctx)
 	int rd_val;
 	int rn_val;
 
-	if (!(ctx->inst.bytes.mult.m_acc))
+	if (!(ctx->inst.dword.mult.m_acc))
 	{
-		arm_isa_reg_load(ctx, ctx->inst.bytes.mult.op1_rs, &rs_val);
-		arm_isa_reg_load(ctx, ctx->inst.bytes.mult.op0_rm, &rm_val);
+		arm_isa_reg_load(ctx, ctx->inst.dword.mult.op1_rs, &rs_val);
+		arm_isa_reg_load(ctx, ctx->inst.dword.mult.op0_rm, &rm_val);
 
 		rd_val = rm_val * rs_val;
 
-		arm_isa_reg_store(ctx, ctx->inst.bytes.mult.dst_rd, rd_val);
+		arm_isa_reg_store(ctx, ctx->inst.dword.mult.dst_rd, rd_val);
 	}
 	else
 	{
 
-		arm_isa_reg_load(ctx, ctx->inst.bytes.mult.op1_rs, &rs_val);
-		arm_isa_reg_load(ctx, ctx->inst.bytes.mult.op0_rm, &rm_val);
-		arm_isa_reg_load(ctx, ctx->inst.bytes.mult.op2_rn, &rn_val);
+		arm_isa_reg_load(ctx, ctx->inst.dword.mult.op1_rs, &rs_val);
+		arm_isa_reg_load(ctx, ctx->inst.dword.mult.op0_rm, &rm_val);
+		arm_isa_reg_load(ctx, ctx->inst.dword.mult.op2_rn, &rn_val);
 
 		rd_val = (rm_val * rs_val) + rn_val;
 
-		arm_isa_reg_store(ctx, ctx->inst.bytes.mult.dst_rd, rd_val);
+		arm_isa_reg_store(ctx, ctx->inst.dword.mult.dst_rd, rd_val);
 	}
 }
 
@@ -2050,13 +2050,13 @@ void arm_isa_execute_inst(struct arm_ctx_t *ctx)
 		{
 			if(ctx->inst_type == THUMB32)
 			{
-				arm_th32_inst_debug_dump(&ctx->inst_th_32, debug_file(arm_isa_inst_debug_category));
-				arm_isa_inst_debug("  (%d bytes)", ctx->inst_th_32.info->size);
+				ARMThumb32InstDebugDump(&ctx->inst, debug_file(arm_isa_inst_debug_category));
+				arm_isa_inst_debug("  (%d bytes)", ctx->inst.info_32->size);
 			}
 			else if(ctx->inst_type == THUMB16)
 			{
-				arm_th16_inst_debug_dump(&ctx->inst_th_16, debug_file(arm_isa_inst_debug_category));
-				arm_isa_inst_debug("  (%d bytes)", ctx->inst_th_16.info->size);
+				ARMThumb16InstDebugDump(&ctx->inst, debug_file(arm_isa_inst_debug_category));
+				arm_isa_inst_debug("  (%d bytes)", ctx->inst.info_16->size);
 			}
 		}
 		else
@@ -2078,19 +2078,19 @@ void arm_isa_execute_inst(struct arm_ctx_t *ctx)
 		break;
 
 	case(THUMB16):
-		regs->pc = regs->pc + ctx->inst_th_16.info->size;
-		if (ctx->inst_th_16.info->inst_16)
-			arm_th16_isa_inst_func[ctx->inst_th_16.info->inst_16](ctx);
+		regs->pc = regs->pc + ctx->inst.info_16->size;
+		if (ctx->inst.info_16->inst_16)
+			arm_th16_isa_inst_func[ctx->inst.info_16->inst_16](ctx);
 		/* Statistics */
-		arm_th_16_inst_freq[ctx->inst_th_16.info->inst_16]++;
+		arm_th_16_inst_freq[ctx->inst.info_16->inst_16]++;
 		break;
 
 	case(THUMB32):
 		regs->pc = regs->pc + 2;
-		if (ctx->inst_th_32.info->inst_32)
-			arm_th32_isa_inst_func[ctx->inst_th_32.info->inst_32](ctx);
+		if (ctx->inst.info_32->inst_32)
+			arm_th32_isa_inst_func[ctx->inst.info_32->inst_32](ctx);
 		/* Statistics */
-		arm_th_32_inst_freq[ctx->inst_th_32.info->inst_32]++;
+		arm_th_32_inst_freq[ctx->inst.info_32->inst_32]++;
 		break;
 	}
 
@@ -2101,7 +2101,7 @@ void arm_isa_execute_inst(struct arm_ctx_t *ctx)
 		arm_isa_debug_call(ctx);
 }
 
-unsigned int arm_thumb32_isa_immd12(struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat)
+unsigned int arm_thumb32_isa_immd12(ARMInst *inst, ARMThumb32InstCategory cat)
 {
 	unsigned int immd8;
 	unsigned int immd3;
@@ -2114,15 +2114,15 @@ unsigned int arm_thumb32_isa_immd12(struct arm_thumb32_inst_t *inst, enum arm_th
 
 		if (cat == ARM_THUMB32_CAT_DPR_IMM)
 		{
-			immd8 = inst->dword.data_proc_immd.immd8;
-			immd3 = inst->dword.data_proc_immd.immd3;
-			i = inst->dword.data_proc_immd.i_flag;
+			immd8 = inst->dword_32.data_proc_immd.immd8;
+			immd3 = inst->dword_32.data_proc_immd.immd3;
+			i = inst->dword_32.data_proc_immd.i_flag;
 		}
 		else if (cat == ARM_THUMB32_CAT_DPR_BIN_IMM)
 		{
-			immd8 = inst->dword.data_proc_immd.immd8;
-			immd3 = inst->dword.data_proc_immd.immd3;
-			i = inst->dword.data_proc_immd.i_flag;
+			immd8 = inst->dword_32.data_proc_immd.immd8;
+			immd3 = inst->dword_32.data_proc_immd.immd3;
+			i = inst->dword_32.data_proc_immd.i_flag;
 		}
 		else
 			fatal("%d: immd12 fmt not recognized", cat);
@@ -2167,20 +2167,20 @@ unsigned int arm_thumb32_isa_immd12(struct arm_thumb32_inst_t *inst, enum arm_th
 void arm_thumb32_isa_branch(struct arm_ctx_t *ctx)
 {
 	unsigned int addr;
-	struct arm_thumb32_inst_t *inst;
-	enum arm_thumb32_cat_enum cat;
+	ARMInst *inst;
+	ARMThumb32InstCategory cat;
 	unsigned int cond;
 
-	inst = &ctx->inst_th_32;
-	cat = ctx->inst_th_32.info->cat32;
+	inst = &ctx->inst;
+	cat = ctx->inst.info_32->cat32;
 	addr = 0;
 		if (cat == ARM_THUMB32_CAT_BRANCH)
 		{
-			addr = (inst->dword.branch_link.sign << 24)
-			| ((!(inst->dword.branch.j1 ^ inst->dword.branch_link.sign)) << 23)
-			| ((!(inst->dword.branch.j2 ^ inst->dword.branch_link.sign)) << 22)
-			| (inst->dword.branch_link.immd10 << 12)
-			| (inst->dword.branch_link.immd11 << 1);
+			addr = (inst->dword_32.branch_link.sign << 24)
+			| ((!(inst->dword_32.branch.j1 ^ inst->dword_32.branch_link.sign)) << 23)
+			| ((!(inst->dword_32.branch.j2 ^ inst->dword_32.branch_link.sign)) << 22)
+			| (inst->dword_32.branch_link.immd10 << 12)
+			| (inst->dword_32.branch_link.immd11 << 1);
 			addr = SEXT32(addr,25);
 
 			addr = (ctx->regs->pc - 4) + (addr);
@@ -2189,14 +2189,14 @@ void arm_thumb32_isa_branch(struct arm_ctx_t *ctx)
 		}
 		else if (cat == ARM_THUMB32_CAT_BRANCH_COND)
 		{
-			addr = (inst->dword.branch.sign << 20)
-			| (((inst->dword.branch.j2)) << 19)
-			| (((inst->dword.branch.j1)) << 18)
-			| (inst->dword.branch.immd6 << 12)
-			| (inst->dword.branch.immd11 << 1);
+			addr = (inst->dword_32.branch.sign << 20)
+			| (((inst->dword_32.branch.j2)) << 19)
+			| (((inst->dword_32.branch.j1)) << 18)
+			| (inst->dword_32.branch.immd6 << 12)
+			| (inst->dword_32.branch.immd11 << 1);
 			addr = SEXT32(addr,21);
 
-			cond = inst->dword.branch.cond;
+			cond = inst->dword_32.branch.cond;
 			if(arm_isa_thumb_check_cond(ctx, cond))
 			{
 				addr = (ctx->regs->pc - 4) + (addr);
@@ -2215,19 +2215,19 @@ void arm_thumb32_isa_branch(struct arm_ctx_t *ctx)
 void arm_thumb32_isa_branch_link(struct arm_ctx_t *ctx)
 {
 	unsigned int addr;
-	struct arm_thumb32_inst_t *inst;
-	enum arm_thumb32_cat_enum cat;
+	ARMInst *inst;
+	ARMThumb32InstCategory cat;
 
-	inst = &ctx->inst_th_32;
-	cat = ctx->inst_th_32.info->cat32;
+	inst = &ctx->inst;
+	cat = ctx->inst.info_32->cat32;
 	addr = 0;
 		if (cat == ARM_THUMB32_CAT_BRANCH)
 		{
-			addr = (inst->dword.branch_link.sign << 24)
-			| ((!(inst->dword.branch.j1 ^ inst->dword.branch_link.sign)) << 23)
-			| ((!(inst->dword.branch.j2 ^ inst->dword.branch_link.sign)) << 22)
-			| (inst->dword.branch_link.immd10 << 12)
-			| (inst->dword.branch_link.immd11 << 1);
+			addr = (inst->dword_32.branch_link.sign << 24)
+			| ((!(inst->dword_32.branch.j1 ^ inst->dword_32.branch_link.sign)) << 23)
+			| ((!(inst->dword_32.branch.j2 ^ inst->dword_32.branch_link.sign)) << 22)
+			| (inst->dword_32.branch_link.immd10 << 12)
+			| (inst->dword_32.branch_link.immd11 << 1);
 			addr = SEXT32(addr,25);
 			arm_isa_inst_debug("  Inst_32 addr = 0x%x, Branch offset = 0x%x\n", inst->addr, addr);
 			addr = (inst->addr + 4) + addr;
@@ -2237,11 +2237,11 @@ void arm_thumb32_isa_branch_link(struct arm_ctx_t *ctx)
 		}
 		else if (cat == ARM_THUMB32_CAT_BRANCH_LX)
 		{
-			addr = (inst->dword.branch_link.sign << 24)
-						| ((!(inst->dword.branch.j1 ^ inst->dword.branch_link.sign)) << 23)
-						| ((!(inst->dword.branch.j2 ^ inst->dword.branch_link.sign)) << 22)
-						| (inst->dword.branch_link.immd10 << 12)
-						| ((inst->dword.branch_link.immd11 & 0xfffffffe) << 1);
+			addr = (inst->dword_32.branch_link.sign << 24)
+						| ((!(inst->dword_32.branch.j1 ^ inst->dword_32.branch_link.sign)) << 23)
+						| ((!(inst->dword_32.branch.j2 ^ inst->dword_32.branch_link.sign)) << 22)
+						| (inst->dword_32.branch_link.immd10 << 12)
+						| ((inst->dword_32.branch_link.immd11 & 0xfffffffe) << 1);
 			addr = SEXT32(addr,25);
 
 			if((inst->addr + 2) % 4)
@@ -2253,11 +2253,11 @@ void arm_thumb32_isa_branch_link(struct arm_ctx_t *ctx)
 		}
 		else if (cat == ARM_THUMB32_CAT_BRANCH_COND)
 		{
-			addr = (inst->dword.branch.sign << 20)
-			| (((inst->dword.branch.j2)) << 19)
-			| (((inst->dword.branch.j1)) << 18)
-			| (inst->dword.branch.immd6 << 12)
-			| (inst->dword.branch.immd11 << 1);
+			addr = (inst->dword_32.branch.sign << 20)
+			| (((inst->dword_32.branch.j2)) << 19)
+			| (((inst->dword_32.branch.j1)) << 18)
+			| (inst->dword_32.branch.immd6 << 12)
+			| (inst->dword_32.branch.immd11 << 1);
 			addr = SEXT32(addr,21);
 			addr = (inst->addr + 2) + addr;
 			//addr = (ctx->regs->pc - 4) + (addr);
@@ -2398,7 +2398,7 @@ void arm_thumb_isa_iteq(struct arm_ctx_t *ctx)
 {
 	unsigned int mask;
 
-	mask = ctx->inst_th_16.dword.if_eq_ins.mask;
+	mask = ctx->inst.dword_16.if_eq_ins.mask;
 
 	if(mask == 8)
 	{

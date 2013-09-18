@@ -116,8 +116,6 @@ struct arm_ctx_t
 
 	/* Currently emulated instruction */
 	ARMInst inst;
-	struct arm_thumb16_inst_t inst_th_16;
-	struct arm_thumb32_inst_t inst_th_32;
 
 	/* Links to contexts forming a linked list. */
 	struct arm_ctx_t *context_list_next, *context_list_prev;
