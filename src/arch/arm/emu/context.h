@@ -21,7 +21,6 @@
 #define ARCH_ARM_EMU_CONTEXT_H
 
 #include <arch/arm/asm/asm.h>
-#include <arch/arm/asm/asm-thumb.h>
 #include <lib/class/class.h>
 
 #include "emu.h"
