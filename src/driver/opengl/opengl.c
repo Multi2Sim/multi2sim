@@ -747,10 +747,7 @@ static int opengl_abi_si_shader_create_impl(X86Context *ctx)
 	/* Create a shader object and initialize it with shader binaries in program object */
 	program = list_get(driver->opengl_si_program_list, program_id);
 	if (program)
-	{
 		opengl_si_shader_create(driver->opengl_si_shader_list, shader_id, shader_type);	
-		opengl_si_shader_init(program, driver->opengl_si_shader_list, shader_id);
-	}
 
 	/* Return */	
 	return 0;
@@ -886,8 +883,8 @@ static int opengl_abi_si_ndrange_create_impl(X86Context *ctx)
 
 	struct elf_buffer_t *elf_buffer;
 	struct opengl_si_shader_t *shader;
-	struct opengl_si_bin_vertex_shader_t *vs;
-	struct opengl_si_bin_pixel_shader_t *ps;
+	struct opengl_si_enc_dict_vertex_shader_t *vs;
+	struct opengl_si_enc_dict_pixel_shader_t *ps;
 	struct si_fetch_shader_t *fs;
 	struct si_bin_enc_user_element_t *user_elements;
 	SINDRange *ndrange;
@@ -939,10 +936,10 @@ static int opengl_abi_si_ndrange_create_impl(X86Context *ctx)
 
 	switch(shader->shader_kind)
 	{
-		
+
 	case OPENGL_SI_SHADER_VERTEX:
 		/* Some metadata from shader binary */
-		vs = (struct opengl_si_bin_vertex_shader_t *)shader->shader_bin->shader;
+		vs = (struct opengl_si_enc_dict_vertex_shader_t *)shader->shader_bin->enc_dict;
 		ndrange->num_sgpr_used = vs->meta->u32NumSgprs;
 		ndrange->num_vgpr_used = vs->meta->u32NumVgprs;
 		ndrange->wg_id_sgpr = vs->meta->spiShaderPgmRsrc2Vs.user_sgpr;
@@ -957,7 +954,7 @@ static int opengl_abi_si_ndrange_create_impl(X86Context *ctx)
 		break;
 
 	case OPENGL_SI_SHADER_PIXEL:
-		ps = (struct opengl_si_bin_pixel_shader_t *)shader->shader_bin->shader;
+		ps = (struct opengl_si_enc_dict_pixel_shader_t *)shader->shader_bin->enc_dict;
 		ndrange->num_sgpr_used = ps->meta->u32NumSgprs;
 		ndrange->num_vgpr_used = ps->meta->u32NumVgprs;
 		/* Copy user elements from shader to ND-Range */

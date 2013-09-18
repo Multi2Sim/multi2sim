@@ -366,6 +366,8 @@ void glUseProgram (GLuint program)
 					program_obj->id, shader_obj->id, shader_obj->type);
 			}
 		}
+
+
 	}
 	else
 	{
