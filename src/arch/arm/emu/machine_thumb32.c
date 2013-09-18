@@ -34,7 +34,7 @@ char *arm_th32_err_isa_note =
 
 #define __ARM_TH32_NOT_IMPL__ \
 	fatal("%s: Arm 32 instruction '%s' not implemented\n%s", \
-		__FUNCTION__, ctx->inst_th_32.info->name, arm_th32_err_isa_note);
+		__FUNCTION__, ctx->inst.info->name, arm_th32_err_isa_note);
 
 
 
@@ -119,14 +119,14 @@ void arm_th32_isa_LDRD_immd_impl(struct arm_ctx_t *ctx)
 
 	buf1 = &value1;
 	buf2 = &value2;
-	immd12 = ctx->inst_th_32.dword.ld_st_double.immd8;
-	idx = ctx->inst_th_32.dword.ld_st_double.index;
-	add = ctx->inst_th_32.dword.ld_st_double.add_sub;
-	wback = ctx->inst_th_32.dword.ld_st_double.wback;
+	immd12 = ctx->inst.dword_32.ld_st_double.immd8;
+	idx = ctx->inst.dword_32.ld_st_double.index;
+	add = ctx->inst.dword_32.ld_st_double.add_sub;
+	wback = ctx->inst.dword_32.ld_st_double.wback;
 
-	if(ctx->inst_th_32.dword.ld_st_double.rn < 15)
+	if(ctx->inst.dword_32.ld_st_double.rn < 15)
 	{
-		arm_isa_reg_load(ctx, ctx->inst_th_32.dword.ld_st_double.rn, &rn_val);
+		arm_isa_reg_load(ctx, ctx->inst.dword_32.ld_st_double.rn, &rn_val);
 		if(add)
 			offset = rn_val + (immd12 & 0x000000ff);
 		else
@@ -138,36 +138,36 @@ void arm_th32_isa_LDRD_immd_impl(struct arm_ctx_t *ctx)
 			addr = rn_val;
 		arm_isa_inst_debug("imm4  addr  = %d; (0x%x)\n", addr, addr);
 		if(wback)
-			arm_isa_reg_store(ctx,  ctx->inst_th_32.dword.ld_st_double.rn, offset);
+			arm_isa_reg_store(ctx,  ctx->inst.dword_32.ld_st_double.rn, offset);
 
 		mem_read(ctx->mem, addr, 4, buf1);
 		mem_read(ctx->mem, addr + 4, 4, buf2);
 		value1 = value1 & (0xffffffff);
 		value2 = value2 & (0xffffffff);
 
-		if(ctx->inst_th_32.dword.ld_st_double.rt < 15)
-			arm_isa_reg_store(ctx,  ctx->inst_th_32.dword.ld_st_double.rt, value1);
+		if(ctx->inst.dword_32.ld_st_double.rt < 15)
+			arm_isa_reg_store(ctx,  ctx->inst.dword_32.ld_st_double.rt, value1);
 		else
 		{
 			if(value1 % 2)
-				arm_isa_reg_store(ctx, ctx->inst_th_32.dword.ld_st_double.rt, value1 - 3);
+				arm_isa_reg_store(ctx, ctx->inst.dword_32.ld_st_double.rt, value1 - 3);
 			else
-				arm_isa_reg_store(ctx, ctx->inst_th_32.dword.ld_st_double.rt, value1 - 2);
+				arm_isa_reg_store(ctx, ctx->inst.dword_32.ld_st_double.rt, value1 - 2);
 		}
 
-		if(ctx->inst_th_32.dword.ld_st_double.rt2 < 15)
-			arm_isa_reg_store(ctx,  ctx->inst_th_32.dword.ld_st_double.rt2, value2);
+		if(ctx->inst.dword_32.ld_st_double.rt2 < 15)
+			arm_isa_reg_store(ctx,  ctx->inst.dword_32.ld_st_double.rt2, value2);
 		else
 		{
 			if(value1 % 2)
-				arm_isa_reg_store(ctx, ctx->inst_th_32.dword.ld_st_double.rt2, value2 - 3);
+				arm_isa_reg_store(ctx, ctx->inst.dword_32.ld_st_double.rt2, value2 - 3);
 			else
-				arm_isa_reg_store(ctx, ctx->inst_th_32.dword.ld_st_double.rt2, value2 - 2);
+				arm_isa_reg_store(ctx, ctx->inst.dword_32.ld_st_double.rt2, value2 - 2);
 		}
 
 	}
 
-	else if (ctx->inst_th_32.dword.ldstr_imm.rn == 15)
+	else if (ctx->inst.dword_32.ldstr_imm.rn == 15)
 	{
 		arm_isa_inst_debug("  pc  = 0x%x; \n", ctx->regs->pc);
 		if((ctx->regs->pc - 4) % 4 == 2)
@@ -175,7 +175,7 @@ void arm_th32_isa_LDRD_immd_impl(struct arm_ctx_t *ctx)
 		else
 			offset = ctx->regs->pc - 4;
 		arm_isa_inst_debug("  offset  = 0x%x; \n", offset);
-		if(ctx->inst_th_32.dword.ld_st_double.add_sub)
+		if(ctx->inst.dword_32.ld_st_double.add_sub)
 			addr = offset + immd12;
 		else
 			addr = offset - immd12;
@@ -185,24 +185,24 @@ void arm_th32_isa_LDRD_immd_impl(struct arm_ctx_t *ctx)
 		value1 = value1 & (0xffffffff);
 		value2 = value2 & (0xffffffff);
 
-		if(ctx->inst_th_32.dword.ld_st_double.rt < 15)
-			arm_isa_reg_store(ctx,  ctx->inst_th_32.dword.ld_st_double.rt, value1);
+		if(ctx->inst.dword_32.ld_st_double.rt < 15)
+			arm_isa_reg_store(ctx,  ctx->inst.dword_32.ld_st_double.rt, value1);
 		else
 		{
 			if(value1 % 2)
-				arm_isa_reg_store(ctx, ctx->inst_th_32.dword.ld_st_double.rt, value1 - 3);
+				arm_isa_reg_store(ctx, ctx->inst.dword_32.ld_st_double.rt, value1 - 3);
 			else
-				arm_isa_reg_store(ctx, ctx->inst_th_32.dword.ld_st_double.rt, value1 - 2);
+				arm_isa_reg_store(ctx, ctx->inst.dword_32.ld_st_double.rt, value1 - 2);
 		}
 
-		if(ctx->inst_th_32.dword.ld_st_double.rt2 < 15)
-			arm_isa_reg_store(ctx,  ctx->inst_th_32.dword.ld_st_double.rt2, value2);
+		if(ctx->inst.dword_32.ld_st_double.rt2 < 15)
+			arm_isa_reg_store(ctx,  ctx->inst.dword_32.ld_st_double.rt2, value2);
 		else
 		{
 			if(value1 % 2)
-				arm_isa_reg_store(ctx, ctx->inst_th_32.dword.ld_st_double.rt2, value2 - 3);
+				arm_isa_reg_store(ctx, ctx->inst.dword_32.ld_st_double.rt2, value2 - 3);
 			else
-				arm_isa_reg_store(ctx, ctx->inst_th_32.dword.ld_st_double.rt2, value2 - 2);
+				arm_isa_reg_store(ctx, ctx->inst.dword_32.ld_st_double.rt2, value2 - 2);
 		}
 	}
 }
@@ -372,14 +372,13 @@ void arm_th32_isa_TBH_impl(struct arm_ctx_t *ctx)
 
 	hfwrd = 0;
 	buf = &hfwrd;
-	if(ctx->inst_th_32.dword.table_branch.rn == 15)
+	if(ctx->inst.dword_32.table_branch.rn == 15)
 	{
 		arm_isa_inst_debug("  PC = 0x%x\n", ctx->regs->pc);
-		arm_isa_reg_load(ctx, ctx->inst_th_32.dword.table_branch.rn, &rn_val);
-		rn_val = rn_val;
+		arm_isa_reg_load(ctx, ctx->inst.dword_32.table_branch.rn, &rn_val);
 	}
 
-	arm_isa_reg_load(ctx, ctx->inst_th_32.dword.table_branch.rm, &rm_val);
+	arm_isa_reg_load(ctx, ctx->inst.dword_32.table_branch.rm, &rm_val);
 
 	rm_val = rm_val << 1;
 
@@ -478,8 +477,8 @@ void arm_th32_isa_LDM15_impl(struct arm_ctx_t *ctx)
 
 void arm_th32_isa_POP_impl(struct arm_ctx_t *ctx)
 {
-	struct arm_thumb32_inst_t *inst;
-	enum arm_thumb32_cat_enum cat;
+	ARMInst *inst;
+	ARMThumb32InstCategory cat;
 	unsigned int regs;
 	unsigned int i;
 	int wrt_val;
@@ -488,15 +487,15 @@ void arm_th32_isa_POP_impl(struct arm_ctx_t *ctx)
 	void* buf;
 
 
-	inst = &ctx->inst_th_32;
-	cat = ctx->inst_th_32.info->cat32;
+	inst = &ctx->inst;
+	cat = ctx->inst.info_32->cat32;
 
 	buf = &reg_val;
 
 	if (cat == ARM_THUMB32_CAT_LD_ST_MULT)
-		regs = inst->dword.ld_st_mult.reglist;
+		regs = inst->dword_32.ld_st_mult.reglist;
 	else if (cat == ARM_THUMB32_CAT_PUSH_POP)
-		regs = inst->dword.push_pop.reglist;
+		regs = inst->dword_32.push_pop.reglist;
 
 	else
 		fatal("%d: regs fmt not recognized", cat);
@@ -534,8 +533,8 @@ void arm_th32_isa_POP_impl(struct arm_ctx_t *ctx)
 
 void arm_th32_isa_PUSH_impl(struct arm_ctx_t *ctx)
 {
-	struct arm_thumb32_inst_t *inst;
-	enum arm_thumb32_cat_enum cat;
+	ARMInst *inst;
+	ARMThumb32InstCategory cat;
 	unsigned int regs;
 	unsigned int i;
 	int wrt_val;
@@ -544,15 +543,15 @@ void arm_th32_isa_PUSH_impl(struct arm_ctx_t *ctx)
 	void* buf;
 
 
-	inst = &ctx->inst_th_32;
-	cat = ctx->inst_th_32.info->cat32;
+	inst = &ctx->inst;
+	cat = ctx->inst.info_32->cat32;
 
 	buf = &reg_val;
 
 	if (cat == ARM_THUMB32_CAT_LD_ST_MULT)
-		regs = inst->dword.ld_st_mult.reglist;
+		regs = inst->dword_32.ld_st_mult.reglist;
 	else if (cat == ARM_THUMB32_CAT_PUSH_POP)
-		regs = inst->dword.push_pop.reglist;
+		regs = inst->dword_32.push_pop.reglist;
 
 	else
 		fatal("%d: regs fmt not recognized", cat);
@@ -714,26 +713,26 @@ void arm_th32_isa_AND_reg9_impl(struct arm_ctx_t *ctx)
 	unsigned int shift;
 	unsigned int type;
 
-	struct arm_thumb32_inst_t *inst;
+	ARMInst *inst;
 	struct arm_regs_t *regs;
 	//struct arm_regs_t prev_regs;
-	enum arm_thumb32_cat_enum cat;
+	ARMThumb32InstCategory cat;
 	int rm_val;
 	int rn_val;
 	int result;
 
 	regs = ctx->regs;
-	inst = &ctx->inst_th_32;
-	cat = ctx->inst_th_32.info->cat32;
+	inst = &ctx->inst;
+	cat = ctx->inst.info_32->cat32;
 
 	//prev_regs.cpsr = regs->cpsr;
-	arm_isa_reg_load(ctx, inst->dword.data_proc_shftreg.rm, &rm_val);
-	arm_isa_reg_load(ctx, inst->dword.data_proc_shftreg.rn, &rn_val);
+	arm_isa_reg_load(ctx, inst->dword_32.data_proc_shftreg.rm, &rm_val);
+	arm_isa_reg_load(ctx, inst->dword_32.data_proc_shftreg.rn, &rn_val);
 
 	if (cat == ARM_THUMB32_CAT_DPR_SHFTREG)
 	{
-		type = inst->dword.data_proc_shftreg.type;
-		shift = (inst->dword.data_proc_shftreg.imm3 << 2) | (inst->dword.data_proc_shftreg.imm2);
+		type = inst->dword_32.data_proc_shftreg.type;
+		shift = (inst->dword_32.data_proc_shftreg.imm3 << 2) | (inst->dword_32.data_proc_shftreg.imm2);
 	}
 
 	else
@@ -762,8 +761,8 @@ void arm_th32_isa_AND_reg9_impl(struct arm_ctx_t *ctx)
 	}
 
 	result = rn_val & rm_val;
-	arm_isa_reg_store(ctx, inst->dword.data_proc_shftreg.rd, result);
-	if(ctx->inst_th_32.dword.data_proc_immd.sign)
+	arm_isa_reg_store(ctx, inst->dword_32.data_proc_shftreg.rd, result);
+	if(ctx->inst.dword_32.data_proc_immd.sign)
 	{
 		regs = ctx->regs;
 		//prev_regs.cpsr = regs->cpsr;
@@ -823,26 +822,26 @@ void arm_th32_isa_BIC_reg_impl(struct arm_ctx_t *ctx)
 	unsigned int shift;
 	unsigned int type;
 
-	struct arm_thumb32_inst_t *inst;
+	ARMInst *inst;
 	struct arm_regs_t *regs;
 	//struct arm_regs_t prev_regs;
-	enum arm_thumb32_cat_enum cat;
+	ARMThumb32InstCategory cat;
 	int rm_val;
 	int rn_val;
 	int result;
 
 	regs = ctx->regs;
-	inst = &ctx->inst_th_32;
-	cat = ctx->inst_th_32.info->cat32;
+	inst = &ctx->inst;
+	cat = ctx->inst.info_32->cat32;
 
 	//prev_regs.cpsr = regs->cpsr;
-	arm_isa_reg_load(ctx, inst->dword.data_proc_shftreg.rm, &rm_val);
-	arm_isa_reg_load(ctx, inst->dword.data_proc_shftreg.rn, &rn_val);
+	arm_isa_reg_load(ctx, inst->dword_32.data_proc_shftreg.rm, &rm_val);
+	arm_isa_reg_load(ctx, inst->dword_32.data_proc_shftreg.rn, &rn_val);
 
 	if (cat == ARM_THUMB32_CAT_DPR_SHFTREG)
 	{
-		type = inst->dword.data_proc_shftreg.type;
-		shift = (inst->dword.data_proc_shftreg.imm3 << 2) | (inst->dword.data_proc_shftreg.imm2);
+		type = inst->dword_32.data_proc_shftreg.type;
+		shift = (inst->dword_32.data_proc_shftreg.imm3 << 2) | (inst->dword_32.data_proc_shftreg.imm2);
 	}
 
 	else
@@ -871,8 +870,8 @@ void arm_th32_isa_BIC_reg_impl(struct arm_ctx_t *ctx)
 	}
 
 	result = rn_val & (~(rm_val));
-	arm_isa_reg_store(ctx, inst->dword.data_proc_shftreg.rd, result);
-	if(ctx->inst_th_32.dword.data_proc_immd.sign)
+	arm_isa_reg_store(ctx, inst->dword_32.data_proc_shftreg.rd, result);
+	if(ctx->inst.dword_32.data_proc_immd.sign)
 	{
 		regs = ctx->regs;
 		//prev_regs.cpsr = regs->cpsr;
@@ -916,26 +915,26 @@ void arm_th32_isa_ORR_reg2_impl(struct arm_ctx_t *ctx)
 	unsigned int shift;
 	unsigned int type;
 
-	struct arm_thumb32_inst_t *inst;
+	ARMInst *inst;
 	struct arm_regs_t *regs;
 	//struct arm_regs_t prev_regs;
-	enum arm_thumb32_cat_enum cat;
+	ARMThumb32InstCategory cat;
 	int rm_val;
 	int rn_val;
 	int result;
 
 	regs = ctx->regs;
-	inst = &ctx->inst_th_32;
-	cat = ctx->inst_th_32.info->cat32;
+	inst = &ctx->inst;
+	cat = ctx->inst.info_32->cat32;
 
 	//prev_regs.cpsr = regs->cpsr;
-	arm_isa_reg_load(ctx, inst->dword.data_proc_shftreg.rm, &rm_val);
-	arm_isa_reg_load(ctx, inst->dword.data_proc_shftreg.rn, &rn_val);
+	arm_isa_reg_load(ctx, inst->dword_32.data_proc_shftreg.rm, &rm_val);
+	arm_isa_reg_load(ctx, inst->dword_32.data_proc_shftreg.rn, &rn_val);
 
 	if (cat == ARM_THUMB32_CAT_DPR_SHFTREG)
 	{
-		type = inst->dword.data_proc_shftreg.type;
-		shift = (inst->dword.data_proc_shftreg.imm3 << 2) | (inst->dword.data_proc_shftreg.imm2);
+		type = inst->dword_32.data_proc_shftreg.type;
+		shift = (inst->dword_32.data_proc_shftreg.imm3 << 2) | (inst->dword_32.data_proc_shftreg.imm2);
 	}
 
 	else
@@ -964,8 +963,8 @@ void arm_th32_isa_ORR_reg2_impl(struct arm_ctx_t *ctx)
 	}
 
 	result = rn_val | rm_val;
-	arm_isa_reg_store(ctx, inst->dword.data_proc_shftreg.rd, result);
-	if(ctx->inst_th_32.dword.data_proc_immd.sign)
+	arm_isa_reg_store(ctx, inst->dword_32.data_proc_shftreg.rd, result);
+	if(ctx->inst.dword_32.data_proc_immd.sign)
 	{
 		regs = ctx->regs;
 		//prev_regs.cpsr = regs->cpsr;
@@ -1219,19 +1218,19 @@ void arm_th32_isa_ADD_reg0_impl(struct arm_ctx_t *ctx)
 	unsigned int shift;
 	unsigned int type;
 
-	struct arm_thumb32_inst_t *inst;
-	enum arm_thumb32_cat_enum cat;
+	ARMInst *inst;
+	ARMThumb32InstCategory cat;
 	int rm_val;
 
-	inst = &ctx->inst_th_32;
-	cat = ctx->inst_th_32.info->cat32;
+	inst = &ctx->inst;
+	cat = ctx->inst.info_32->cat32;
 
-	arm_isa_reg_load(ctx, inst->dword.data_proc_shftreg.rm, &rm_val);
+	arm_isa_reg_load(ctx, inst->dword_32.data_proc_shftreg.rm, &rm_val);
 
 	if (cat == ARM_THUMB32_CAT_DPR_SHFTREG)
 	{
-		type = inst->dword.data_proc_shftreg.type;
-		shift = (inst->dword.data_proc_shftreg.imm3 << 2) | (inst->dword.data_proc_shftreg.imm2);
+		type = inst->dword_32.data_proc_shftreg.type;
+		shift = (inst->dword_32.data_proc_shftreg.imm3 << 2) | (inst->dword_32.data_proc_shftreg.imm2);
 	}
 
 	else
@@ -1259,8 +1258,8 @@ void arm_th32_isa_ADD_reg0_impl(struct arm_ctx_t *ctx)
 		}
 	}
 
-	arm_thumb_add_isa(ctx, inst->dword.data_proc_shftreg.rd,
-		inst->dword.data_proc_shftreg.rn, rm_val, 0, 0);
+	arm_thumb_add_isa(ctx, inst->dword_32.data_proc_shftreg.rd,
+		inst->dword_32.data_proc_shftreg.rn, rm_val, 0, 0);
 
 }
 
@@ -1269,19 +1268,19 @@ void arm_th32_isa_ADD_reg1_impl(struct arm_ctx_t *ctx)
 	unsigned int shift;
 	unsigned int type;
 
-	struct arm_thumb32_inst_t *inst;
-	enum arm_thumb32_cat_enum cat;
+	ARMInst *inst;
+	ARMThumb32InstCategory cat;
 	int rm_val;
 
-	inst = &ctx->inst_th_32;
-	cat = ctx->inst_th_32.info->cat32;
+	inst = &ctx->inst;
+	cat = ctx->inst.info_32->cat32;
 
-	arm_isa_reg_load(ctx, inst->dword.data_proc_shftreg.rm, &rm_val);
+	arm_isa_reg_load(ctx, inst->dword_32.data_proc_shftreg.rm, &rm_val);
 
 	if (cat == ARM_THUMB32_CAT_DPR_SHFTREG)
 	{
-		type = inst->dword.data_proc_shftreg.type;
-		shift = (inst->dword.data_proc_shftreg.imm3 << 2) | (inst->dword.data_proc_shftreg.imm2);
+		type = inst->dword_32.data_proc_shftreg.type;
+		shift = (inst->dword_32.data_proc_shftreg.imm3 << 2) | (inst->dword_32.data_proc_shftreg.imm2);
 	}
 
 	else
@@ -1309,8 +1308,8 @@ void arm_th32_isa_ADD_reg1_impl(struct arm_ctx_t *ctx)
 		}
 	}
 
-	arm_thumb_add_isa(ctx, inst->dword.data_proc_shftreg.rd,
-		inst->dword.data_proc_shftreg.rn, rm_val, 0, 0);
+	arm_thumb_add_isa(ctx, inst->dword_32.data_proc_shftreg.rd,
+		inst->dword_32.data_proc_shftreg.rn, rm_val, 0, 0);
 
 }
 
@@ -1319,19 +1318,19 @@ void arm_th32_isa_ADD_reg2_impl(struct arm_ctx_t *ctx)
 	unsigned int shift;
 	unsigned int type;
 
-	struct arm_thumb32_inst_t *inst;
-	enum arm_thumb32_cat_enum cat;
+	ARMInst *inst;
+	ARMThumb32InstCategory cat;
 	int rm_val;
 
-	inst = &ctx->inst_th_32;
-	cat = ctx->inst_th_32.info->cat32;
+	inst = &ctx->inst;
+	cat = ctx->inst.info_32->cat32;
 
-	arm_isa_reg_load(ctx, inst->dword.data_proc_shftreg.rm, &rm_val);
+	arm_isa_reg_load(ctx, inst->dword_32.data_proc_shftreg.rm, &rm_val);
 
 	if (cat == ARM_THUMB32_CAT_DPR_SHFTREG)
 	{
-		type = inst->dword.data_proc_shftreg.type;
-		shift = (inst->dword.data_proc_shftreg.imm3 << 2) | (inst->dword.data_proc_shftreg.imm2);
+		type = inst->dword_32.data_proc_shftreg.type;
+		shift = (inst->dword_32.data_proc_shftreg.imm3 << 2) | (inst->dword_32.data_proc_shftreg.imm2);
 	}
 
 	else
@@ -1359,8 +1358,8 @@ void arm_th32_isa_ADD_reg2_impl(struct arm_ctx_t *ctx)
 		}
 	}
 
-	arm_thumb_add_isa(ctx, inst->dword.data_proc_shftreg.rd,
-		inst->dword.data_proc_shftreg.rn, rm_val, 0, 0);
+	arm_thumb_add_isa(ctx, inst->dword_32.data_proc_shftreg.rd,
+		inst->dword_32.data_proc_shftreg.rn, rm_val, 0, 0);
 
 }
 
@@ -1374,19 +1373,19 @@ void arm_th32_isa_ADD_reg4_impl(struct arm_ctx_t *ctx)
 	unsigned int shift;
 	unsigned int type;
 
-	struct arm_thumb32_inst_t *inst;
-	enum arm_thumb32_cat_enum cat;
+	ARMInst *inst;
+	ARMThumb32InstCategory cat;
 	int rm_val;
 
-	inst = &ctx->inst_th_32;
-	cat = ctx->inst_th_32.info->cat32;
+	inst = &ctx->inst;
+	cat = ctx->inst.info_32->cat32;
 
-	arm_isa_reg_load(ctx, inst->dword.data_proc_shftreg.rm, &rm_val);
+	arm_isa_reg_load(ctx, inst->dword_32.data_proc_shftreg.rm, &rm_val);
 
 	if (cat == ARM_THUMB32_CAT_DPR_SHFTREG)
 	{
-		type = inst->dword.data_proc_shftreg.type;
-		shift = (inst->dword.data_proc_shftreg.imm3 << 2) | (inst->dword.data_proc_shftreg.imm2);
+		type = inst->dword_32.data_proc_shftreg.type;
+		shift = (inst->dword_32.data_proc_shftreg.imm3 << 2) | (inst->dword_32.data_proc_shftreg.imm2);
 	}
 
 	else
@@ -1414,8 +1413,8 @@ void arm_th32_isa_ADD_reg4_impl(struct arm_ctx_t *ctx)
 		}
 	}
 
-	arm_thumb_add_isa(ctx, inst->dword.data_proc_shftreg.rd,
-		inst->dword.data_proc_shftreg.rn, rm_val, 0, 0);
+	arm_thumb_add_isa(ctx, inst->dword_32.data_proc_shftreg.rd,
+		inst->dword_32.data_proc_shftreg.rn, rm_val, 0, 0);
 
 }
 
@@ -1444,19 +1443,19 @@ void arm_th32_isa_ADD_reg9_impl(struct arm_ctx_t *ctx)
 	unsigned int shift;
 	unsigned int type;
 
-	struct arm_thumb32_inst_t *inst;
-	enum arm_thumb32_cat_enum cat;
+	ARMInst *inst;
+	ARMThumb32InstCategory cat;
 	int rm_val;
 
-	inst = &ctx->inst_th_32;
-	cat = ctx->inst_th_32.info->cat32;
+	inst = &ctx->inst;
+	cat = ctx->inst.info_32->cat32;
 
-	arm_isa_reg_load(ctx, inst->dword.data_proc_shftreg.rm, &rm_val);
+	arm_isa_reg_load(ctx, inst->dword_32.data_proc_shftreg.rm, &rm_val);
 
 	if (cat == ARM_THUMB32_CAT_DPR_SHFTREG)
 	{
-		type = inst->dword.data_proc_shftreg.type;
-		shift = (inst->dword.data_proc_shftreg.imm3 << 2) | (inst->dword.data_proc_shftreg.imm2);
+		type = inst->dword_32.data_proc_shftreg.type;
+		shift = (inst->dword_32.data_proc_shftreg.imm3 << 2) | (inst->dword_32.data_proc_shftreg.imm2);
 	}
 
 	else
@@ -1484,8 +1483,8 @@ void arm_th32_isa_ADD_reg9_impl(struct arm_ctx_t *ctx)
 		}
 	}
 
-	arm_thumb_add_isa(ctx, inst->dword.data_proc_shftreg.rd,
-		inst->dword.data_proc_shftreg.rn, rm_val, 0, 0);
+	arm_thumb_add_isa(ctx, inst->dword_32.data_proc_shftreg.rd,
+		inst->dword_32.data_proc_shftreg.rn, rm_val, 0, 0);
 
 }
 
@@ -1718,16 +1717,16 @@ void arm_th32_isa_BIC_imm_impl(struct arm_ctx_t *ctx)
 	struct arm_regs_t *regs;
 
 	regs = ctx->regs;
-	immd = (ctx->inst_th_32.dword.data_proc_immd.i_flag << 11)
-					| (ctx->inst_th_32.dword.data_proc_immd.immd3 << 8)
-					| (ctx->inst_th_32.dword.data_proc_immd.immd8);
+	immd = (ctx->inst.dword_32.data_proc_immd.i_flag << 11)
+					| (ctx->inst.dword_32.data_proc_immd.immd3 << 8)
+					| (ctx->inst.dword_32.data_proc_immd.immd8);
 	immd = arm_isa_thumb_immd_extend(immd);
 
-	arm_isa_reg_load(ctx, ctx->inst_th_32.dword.data_proc_immd.rn, &rn_val);
+	arm_isa_reg_load(ctx, ctx->inst.dword_32.data_proc_immd.rn, &rn_val);
 
 	result = rn_val & (~(immd));
-	arm_isa_reg_store(ctx, ctx->inst_th_32.dword.data_proc_immd.rd, result);
-	if(ctx->inst_th_32.dword.data_proc_immd.sign)
+	arm_isa_reg_store(ctx, ctx->inst.dword_32.data_proc_immd.rd, result);
+	if(ctx->inst.dword_32.data_proc_immd.sign)
 	{
 		regs = ctx->regs;
 		//prev_regs.cpsr = regs->cpsr;
@@ -1785,17 +1784,17 @@ void arm_th32_isa_ORR_imm4_impl(struct arm_ctx_t *ctx)
 	struct arm_regs_t prev_regs;
 
 
-	operand = arm_thumb32_isa_immd12(&ctx->inst_th_32, ctx->inst_th_32.info->cat32);
+	operand = arm_thumb32_isa_immd12(&ctx->inst, ctx->inst.info_32->cat32);
 	arm_isa_inst_debug("  immd32 = 0x%x\n", operand);
 
-	arm_isa_reg_load(ctx, ctx->inst_th_32.dword.data_proc_immd.rn, &rn_val);
+	arm_isa_reg_load(ctx, ctx->inst.dword_32.data_proc_immd.rn, &rn_val);
 
 	result = rn_val | operand;
 	arm_isa_inst_debug("  result = 0x%x\n", result);
 
-	arm_isa_reg_store(ctx, ctx->inst_th_32.dword.data_proc_immd.rd, result);
+	arm_isa_reg_store(ctx, ctx->inst.dword_32.data_proc_immd.rd, result);
 
-	if(ctx->inst_th_32.dword.data_proc_immd.sign)
+	if(ctx->inst.dword_32.data_proc_immd.sign)
 	{
 		regs = ctx->regs;
 		prev_regs.cpsr = regs->cpsr;
@@ -1877,9 +1876,9 @@ void arm_th32_isa_MOV_imm_impl(struct arm_ctx_t *ctx)
 {
 	unsigned int operand;
 
-	operand = arm_thumb32_isa_immd12(&ctx->inst_th_32, ctx->inst_th_32.info->cat32);
+	operand = arm_thumb32_isa_immd12(&ctx->inst, ctx->inst.info_32->cat32);
 	arm_isa_inst_debug("  immd32 = %d\n", operand);
-	arm_isa_reg_store(ctx, ctx->inst_th_32.dword.data_proc_immd.rd, operand);
+	arm_isa_reg_store(ctx, ctx->inst.dword_32.data_proc_immd.rd, operand);
 }
 
 void arm_th32_isa_ORN_imm0_impl(struct arm_ctx_t *ctx)
@@ -2046,16 +2045,16 @@ void arm_th32_isa_ADD_imm0_impl(struct arm_ctx_t *ctx)
 {
 	unsigned int flags;
 	unsigned int immd;
-	flags = ctx->inst_th_32.dword.data_proc_immd.sign;
+	flags = ctx->inst.dword_32.data_proc_immd.sign;
 
-	immd = (ctx->inst_th_32.dword.data_proc_immd.i_flag << 11)
-		| (ctx->inst_th_32.dword.data_proc_immd.immd3 << 8)
-		| (ctx->inst_th_32.dword.data_proc_immd.immd8);
+	immd = (ctx->inst.dword_32.data_proc_immd.i_flag << 11)
+		| (ctx->inst.dword_32.data_proc_immd.immd3 << 8)
+		| (ctx->inst.dword_32.data_proc_immd.immd8);
 
 	immd = arm_isa_thumb_immd_extend(immd);
 
-	arm_thumb_add_isa(ctx, ctx->inst_th_32.dword.data_proc_immd.rd,
-		ctx->inst_th_32.dword.data_proc_immd.rn, immd, 0, flags);
+	arm_thumb_add_isa(ctx, ctx->inst.dword_32.data_proc_immd.rd,
+		ctx->inst.dword_32.data_proc_immd.rn, immd, 0, flags);
 
 }
 
@@ -2063,28 +2062,28 @@ void arm_th32_isa_ADD_imm1_impl(struct arm_ctx_t *ctx)
 {
 	unsigned int flags;
 	unsigned int immd;
-	flags = ctx->inst_th_32.dword.data_proc_immd.sign;
+	flags = ctx->inst.dword_32.data_proc_immd.sign;
 
-	immd = (ctx->inst_th_32.dword.data_proc_immd.i_flag << 11)
-		| (ctx->inst_th_32.dword.data_proc_immd.immd3 << 8)
-		| (ctx->inst_th_32.dword.data_proc_immd.immd8);
+	immd = (ctx->inst.dword_32.data_proc_immd.i_flag << 11)
+		| (ctx->inst.dword_32.data_proc_immd.immd3 << 8)
+		| (ctx->inst.dword_32.data_proc_immd.immd8);
 	immd = arm_isa_thumb_immd_extend(immd);
-	arm_thumb_add_isa(ctx, ctx->inst_th_32.dword.data_proc_immd.rd,
-		ctx->inst_th_32.dword.data_proc_immd.rn, immd, 0, flags);
+	arm_thumb_add_isa(ctx, ctx->inst.dword_32.data_proc_immd.rd,
+		ctx->inst.dword_32.data_proc_immd.rn, immd, 0, flags);
 }
 
 void arm_th32_isa_ADD_imm2_impl(struct arm_ctx_t *ctx)
 {
 	unsigned int flags;
 	unsigned int immd;
-	flags = ctx->inst_th_32.dword.data_proc_immd.sign;
+	flags = ctx->inst.dword_32.data_proc_immd.sign;
 
-	immd = (ctx->inst_th_32.dword.data_proc_immd.i_flag << 11)
-		| (ctx->inst_th_32.dword.data_proc_immd.immd3 << 8)
-		| (ctx->inst_th_32.dword.data_proc_immd.immd8);
+	immd = (ctx->inst.dword_32.data_proc_immd.i_flag << 11)
+		| (ctx->inst.dword_32.data_proc_immd.immd3 << 8)
+		| (ctx->inst.dword_32.data_proc_immd.immd8);
 	immd = arm_isa_thumb_immd_extend(immd);
-	arm_thumb_add_isa(ctx, ctx->inst_th_32.dword.data_proc_immd.rd,
-		ctx->inst_th_32.dword.data_proc_immd.rn, immd, 0, flags);
+	arm_thumb_add_isa(ctx, ctx->inst.dword_32.data_proc_immd.rd,
+		ctx->inst.dword_32.data_proc_immd.rn, immd, 0, flags);
 
 }
 
@@ -2092,14 +2091,14 @@ void arm_th32_isa_ADD_imm3_impl(struct arm_ctx_t *ctx)
 {
 	unsigned int flags;
 	unsigned int immd;
-	flags = ctx->inst_th_32.dword.data_proc_immd.sign;
+	flags = ctx->inst.dword_32.data_proc_immd.sign;
 
-	immd = (ctx->inst_th_32.dword.data_proc_immd.i_flag << 11)
-		| (ctx->inst_th_32.dword.data_proc_immd.immd3 << 8)
-		| (ctx->inst_th_32.dword.data_proc_immd.immd8);
+	immd = (ctx->inst.dword_32.data_proc_immd.i_flag << 11)
+		| (ctx->inst.dword_32.data_proc_immd.immd3 << 8)
+		| (ctx->inst.dword_32.data_proc_immd.immd8);
 	immd = arm_isa_thumb_immd_extend(immd);
-	arm_thumb_add_isa(ctx, ctx->inst_th_32.dword.data_proc_immd.rd,
-		ctx->inst_th_32.dword.data_proc_immd.rn, immd, 0, flags);
+	arm_thumb_add_isa(ctx, ctx->inst.dword_32.data_proc_immd.rd,
+		ctx->inst.dword_32.data_proc_immd.rn, immd, 0, flags);
 
 
 }
@@ -2118,14 +2117,14 @@ void arm_th32_isa_ADD_imm6_impl(struct arm_ctx_t *ctx)
 {
 	unsigned int flags;
 	unsigned int immd;
-	flags = ctx->inst_th_32.dword.data_proc_immd.sign;
+	flags = ctx->inst.dword_32.data_proc_immd.sign;
 
-	immd = (ctx->inst_th_32.dword.data_proc_immd.i_flag << 11)
-		| (ctx->inst_th_32.dword.data_proc_immd.immd3 << 8)
-		| (ctx->inst_th_32.dword.data_proc_immd.immd8);
+	immd = (ctx->inst.dword_32.data_proc_immd.i_flag << 11)
+		| (ctx->inst.dword_32.data_proc_immd.immd3 << 8)
+		| (ctx->inst.dword_32.data_proc_immd.immd8);
 	immd = arm_isa_thumb_immd_extend(immd);
-	arm_thumb_add_isa(ctx, ctx->inst_th_32.dword.data_proc_immd.rd,
-		ctx->inst_th_32.dword.data_proc_immd.rn, immd, 0, flags);
+	arm_thumb_add_isa(ctx, ctx->inst.dword_32.data_proc_immd.rd,
+		ctx->inst.dword_32.data_proc_immd.rn, immd, 0, flags);
 
 }
 
@@ -2143,14 +2142,14 @@ void arm_th32_isa_ADD_imm9_impl(struct arm_ctx_t *ctx)
 {
 	unsigned int flags;
 	unsigned int immd;
-	flags = ctx->inst_th_32.dword.data_proc_immd.sign;
+	flags = ctx->inst.dword_32.data_proc_immd.sign;
 
-	immd = (ctx->inst_th_32.dword.data_proc_immd.i_flag << 11)
-		| (ctx->inst_th_32.dword.data_proc_immd.immd3 << 8)
-		| (ctx->inst_th_32.dword.data_proc_immd.immd8);
+	immd = (ctx->inst.dword_32.data_proc_immd.i_flag << 11)
+		| (ctx->inst.dword_32.data_proc_immd.immd3 << 8)
+		| (ctx->inst.dword_32.data_proc_immd.immd8);
 	immd = arm_isa_thumb_immd_extend(immd);
-	arm_thumb_add_isa(ctx, ctx->inst_th_32.dword.data_proc_immd.rd,
-		ctx->inst_th_32.dword.data_proc_immd.rn, immd, 0, flags);
+	arm_thumb_add_isa(ctx, ctx->inst.dword_32.data_proc_immd.rd,
+		ctx->inst.dword_32.data_proc_immd.rn, immd, 0, flags);
 
 
 }
@@ -2193,10 +2192,10 @@ void arm_th32_isa_CMN_imm_impl(struct arm_ctx_t *ctx)
 	flags = 0;
 	regs = ctx->regs;
 
-	arm_isa_reg_load(ctx, ctx->inst_th_32.dword.data_proc_immd.rn, &rn_val);
-	operand2 = (ctx->inst_th_32.dword.data_proc_immd.i_flag << 11)
-		| (ctx->inst_th_32.dword.data_proc_immd.immd3 << 8)
-		| (ctx->inst_th_32.dword.data_proc_immd.immd8);
+	arm_isa_reg_load(ctx, ctx->inst.dword_32.data_proc_immd.rn, &rn_val);
+	operand2 = (ctx->inst.dword_32.data_proc_immd.i_flag << 11)
+		| (ctx->inst.dword_32.data_proc_immd.immd3 << 8)
+		| (ctx->inst.dword_32.data_proc_immd.immd8);
 
 	result = rn_val + operand2;
 	arm_isa_inst_debug("  result = %d ; 0x%x\n", result, result);
@@ -2250,13 +2249,13 @@ void arm_th32_isa_SUB_imm1_impl(struct arm_ctx_t *ctx)
 {
 	unsigned int flags;
 	unsigned int immd;
-	flags = ctx->inst_th_32.dword.data_proc_immd.sign;
+	flags = ctx->inst.dword_32.data_proc_immd.sign;
 
-	immd = (ctx->inst_th_32.dword.data_proc_immd.i_flag << 11)
-		| (ctx->inst_th_32.dword.data_proc_immd.immd3 << 8)
-		| (ctx->inst_th_32.dword.data_proc_immd.immd8);
-	arm_thumb_isa_subtract(ctx, ctx->inst_th_32.dword.data_proc_immd.rd,
-		ctx->inst_th_32.dword.data_proc_immd.rn, immd, 0, flags);
+	immd = (ctx->inst.dword_32.data_proc_immd.i_flag << 11)
+		| (ctx->inst.dword_32.data_proc_immd.immd3 << 8)
+		| (ctx->inst.dword_32.data_proc_immd.immd8);
+	arm_thumb_isa_subtract(ctx, ctx->inst.dword_32.data_proc_immd.rd,
+		ctx->inst.dword_32.data_proc_immd.rn, immd, 0, flags);
 }
 
 void arm_th32_isa_SUB_imm2_impl(struct arm_ctx_t *ctx)
@@ -2278,13 +2277,13 @@ void arm_th32_isa_SUB_imm5_impl(struct arm_ctx_t *ctx)
 {
 	unsigned int flags;
 	unsigned int immd;
-	flags = ctx->inst_th_32.dword.data_proc_immd.sign;
+	flags = ctx->inst.dword_32.data_proc_immd.sign;
 
-	immd = (ctx->inst_th_32.dword.data_proc_immd.i_flag << 11)
-		| (ctx->inst_th_32.dword.data_proc_immd.immd3 << 8)
-		| (ctx->inst_th_32.dword.data_proc_immd.immd8);
-	arm_thumb_isa_subtract(ctx, ctx->inst_th_32.dword.data_proc_immd.rd,
-		ctx->inst_th_32.dword.data_proc_immd.rn, immd, 0, flags);
+	immd = (ctx->inst.dword_32.data_proc_immd.i_flag << 11)
+		| (ctx->inst.dword_32.data_proc_immd.immd3 << 8)
+		| (ctx->inst.dword_32.data_proc_immd.immd8);
+	arm_thumb_isa_subtract(ctx, ctx->inst.dword_32.data_proc_immd.rd,
+		ctx->inst.dword_32.data_proc_immd.rn, immd, 0, flags);
 }
 
 void arm_th32_isa_SUB_imm6_impl(struct arm_ctx_t *ctx)
@@ -2345,14 +2344,14 @@ void arm_th32_isa_CMP_imm_impl(struct arm_ctx_t *ctx)
 
 	regs = ctx->regs;
 
-	flags = ctx->inst_th_32.dword.data_proc_immd.sign;
+	flags = ctx->inst.dword_32.data_proc_immd.sign;
 
-	immd = (ctx->inst_th_32.dword.data_proc_immd.i_flag << 11)
-		| (ctx->inst_th_32.dword.data_proc_immd.immd3 << 8)
-		| (ctx->inst_th_32.dword.data_proc_immd.immd8);
+	immd = (ctx->inst.dword_32.data_proc_immd.i_flag << 11)
+		| (ctx->inst.dword_32.data_proc_immd.immd3 << 8)
+		| (ctx->inst.dword_32.data_proc_immd.immd8);
 	immd = arm_isa_thumb_immd_extend(immd);
 	operand2 = immd;
-	arm_isa_reg_load(ctx, ctx->inst_th_32.dword.data_proc_immd.rn, &rn_val);
+	arm_isa_reg_load(ctx, ctx->inst.dword_32.data_proc_immd.rn, &rn_val);
 	result = rn_val - operand2;
 	arm_isa_inst_debug("  result = %d ; 0x%x\n", result, result);
 
@@ -2413,13 +2412,13 @@ void arm_th32_isa_RSB_imm_impl(struct arm_ctx_t *ctx)
 {
 	unsigned int flags;
 	unsigned int immd;
-	flags = ctx->inst_th_32.dword.data_proc_immd.sign;
+	flags = ctx->inst.dword_32.data_proc_immd.sign;
 
-	immd = (ctx->inst_th_32.dword.data_proc_immd.i_flag << 11)
-		| (ctx->inst_th_32.dword.data_proc_immd.immd3 << 8)
-		| (ctx->inst_th_32.dword.data_proc_immd.immd8);
-	arm_thumb_isa_rev_subtract(ctx, ctx->inst_th_32.dword.data_proc_immd.rd,
-		ctx->inst_th_32.dword.data_proc_immd.rn, immd, 0, flags);
+	immd = (ctx->inst.dword_32.data_proc_immd.i_flag << 11)
+		| (ctx->inst.dword_32.data_proc_immd.immd3 << 8)
+		| (ctx->inst.dword_32.data_proc_immd.immd8);
+	arm_thumb_isa_rev_subtract(ctx, ctx->inst.dword_32.data_proc_immd.rd,
+		ctx->inst.dword_32.data_proc_immd.rn, immd, 0, flags);
 }
 
 void arm_th32_isa_SBC_imm_impl(struct arm_ctx_t *ctx)
@@ -2664,25 +2663,25 @@ void arm_th32_isa_BFC_binimm_impl(struct arm_ctx_t *ctx)
 	unsigned int immd3;
 	unsigned int lsb;
 	int rd_val;
-	struct arm_thumb32_inst_t *inst;
+	ARMInst *inst;
 	int i_mask;
 	int i;
 
-	inst = &ctx->inst_th_32;
+	inst = &ctx->inst;
 
-	msb = inst->dword.bit_field.msb;
-	immd2 = inst->dword.bit_field.immd2;
-	immd3 = inst->dword.bit_field.immd3;
+	msb = inst->dword_32.bit_field.msb;
+	immd2 = inst->dword_32.bit_field.immd2;
+	immd3 = inst->dword_32.bit_field.immd3;
 
 	lsb = (immd3 << 2) | immd2;
 	arm_isa_inst_debug("  msb = 0x%x, lsb = 0x%x\n", msb, lsb);
-	arm_isa_reg_load(ctx, ctx->inst_th_32.dword.bit_field.rd, &rd_val);
+	arm_isa_reg_load(ctx, ctx->inst.dword_32.bit_field.rd, &rd_val);
 	for (i = lsb; i <= msb; i++)
 	{
 		i_mask = 1 << i;
 		rd_val = rd_val & (~(i_mask));
 	}
-	arm_isa_reg_store(ctx, ctx->inst_th_32.dword.bit_field.rd, rd_val);
+	arm_isa_reg_store(ctx, ctx->inst.dword_32.bit_field.rd, rd_val);
 }
 
 void arm_th32_isa_UBFX_binimm_impl(struct arm_ctx_t *ctx)
@@ -2704,18 +2703,18 @@ void arm_th32_isa_MOVT_binimm_impl(struct arm_ctx_t *ctx)
 	unsigned int immd4;
 	int rd_val;
 
-	enum arm_thumb32_cat_enum cat;
-	struct arm_thumb32_inst_t *inst;
-	arm_isa_reg_load(ctx, ctx->inst_th_32.dword.bit_field.rd, &rd_val);
-	inst = &ctx->inst_th_32;
-	cat = ctx->inst_th_32.info->cat32;
+	ARMThumb32InstCategory cat;
+	ARMInst *inst;
+	arm_isa_reg_load(ctx, ctx->inst.dword_32.bit_field.rd, &rd_val);
+	inst = &ctx->inst;
+	cat = ctx->inst.info_32->cat32;
 
 		if (cat == ARM_THUMB32_CAT_DPR_BIN_IMM)
 		{
-			immd8 = inst->dword.data_proc_immd.immd8;
-			immd3 = inst->dword.data_proc_immd.immd3;
-			i = inst->dword.data_proc_immd.i_flag;
-			immd4 = inst->dword.data_proc_immd.rn;
+			immd8 = inst->dword_32.data_proc_immd.immd8;
+			immd3 = inst->dword_32.data_proc_immd.immd3;
+			i = inst->dword_32.data_proc_immd.i_flag;
+			immd4 = inst->dword_32.data_proc_immd.rn;
 		}
 
 		else
@@ -2724,10 +2723,10 @@ void arm_th32_isa_MOVT_binimm_impl(struct arm_ctx_t *ctx)
 		immd16 = (immd4 << 12) | (i << 11) | (immd3 << 8) | immd8;
 
 	arm_isa_inst_debug("  immd16 = 0x%x\n", immd16);
-	arm_isa_reg_load(ctx, ctx->inst_th_32.dword.data_proc_immd.rd, &rd_val);
+	arm_isa_reg_load(ctx, ctx->inst.dword_32.data_proc_immd.rd, &rd_val);
 	arm_isa_inst_debug("  rd_val = 0x%x\n", rd_val);
 	rd_val = (rd_val & 0x0000ffff) | (immd16 << 16);
-	arm_isa_reg_store(ctx, ctx->inst_th_32.dword.data_proc_immd.rd, rd_val);
+	arm_isa_reg_store(ctx, ctx->inst.dword_32.data_proc_immd.rd, rd_val);
 }
 
 void arm_th32_isa_MOVW_binimm_impl(struct arm_ctx_t *ctx)
@@ -2738,18 +2737,18 @@ void arm_th32_isa_MOVW_binimm_impl(struct arm_ctx_t *ctx)
 	unsigned int i;
 	unsigned int immd4;
 
-	enum arm_thumb32_cat_enum cat;
-	struct arm_thumb32_inst_t *inst;
+	ARMThumb32InstCategory cat;
+	ARMInst *inst;
 
-	inst = &ctx->inst_th_32;
-	cat = ctx->inst_th_32.info->cat32;
+	inst = &ctx->inst;
+	cat = ctx->inst.info_32->cat32;
 
 		if (cat == ARM_THUMB32_CAT_DPR_BIN_IMM)
 		{
-			immd8 = inst->dword.data_proc_immd.immd8;
-			immd3 = inst->dword.data_proc_immd.immd3;
-			i = inst->dword.data_proc_immd.i_flag;
-			immd4 = inst->dword.data_proc_immd.rn;
+			immd8 = inst->dword_32.data_proc_immd.immd8;
+			immd3 = inst->dword_32.data_proc_immd.immd3;
+			i = inst->dword_32.data_proc_immd.i_flag;
+			immd4 = inst->dword_32.data_proc_immd.rn;
 		}
 
 		else
@@ -2758,7 +2757,7 @@ void arm_th32_isa_MOVW_binimm_impl(struct arm_ctx_t *ctx)
 		immd16 = (immd4 << 12) | (i << 11) | (immd3 << 8) | immd8;
 
 	arm_isa_inst_debug("  immd32 = %d\n", immd16);
-	arm_isa_reg_store(ctx, ctx->inst_th_32.dword.data_proc_immd.rd, immd16);
+	arm_isa_reg_store(ctx, ctx->inst.dword_32.data_proc_immd.rd, immd16);
 
 }
 
@@ -3055,12 +3054,12 @@ void arm_th32_isa_STRHT_immd6_impl(struct arm_ctx_t *ctx)
 	unsigned int addr;
 
 	buf = &value;
-	immd12 = ctx->inst_th_32.dword.ldstr_imm.immd12;
+	immd12 = ctx->inst.dword_32.ldstr_imm.immd12;
 	idx = (immd12 & 0x00000400) >> 10;
 	add = (immd12 & 0x00000200) >> 9;
 	wback = (immd12 & 0x00000100) >> 8;
 
-	arm_isa_reg_load(ctx, ctx->inst_th_32.dword.ldstr_imm.rn, &rn_val);
+	arm_isa_reg_load(ctx, ctx->inst.dword_32.ldstr_imm.rn, &rn_val);
 	if(add)
 		offset = rn_val + (immd12 & 0x000000ff);
 	else
@@ -3072,9 +3071,9 @@ void arm_th32_isa_STRHT_immd6_impl(struct arm_ctx_t *ctx)
 		addr = rn_val;
 	arm_isa_inst_debug(" immd12 = %x; offset = %x;  addr  = %d; (0x%x)\n", immd12, offset, addr, addr);
 	if(wback)
-		arm_isa_reg_store(ctx, ctx->inst_th_32.dword.ldstr_imm.rn, offset);
+		arm_isa_reg_store(ctx, ctx->inst.dword_32.ldstr_imm.rn, offset);
 
-	arm_isa_reg_load(ctx, ctx->inst_th_32.dword.ldstr_imm.rd, &value);
+	arm_isa_reg_load(ctx, ctx->inst.dword_32.ldstr_imm.rd, &value);
 	value = value & (0xffffffff);
 	mem_write(ctx->mem, addr, 4, buf);
 }
@@ -3099,13 +3098,13 @@ void arm_th32_isa_STRB_immdb_impl(struct arm_ctx_t *ctx)
 	unsigned int addr;
 
 	buf = &value;
-	immd12 = ctx->inst_th_32.dword.ldstr_imm.immd12;
-	arm_isa_reg_load(ctx, ctx->inst_th_32.dword.ldstr_imm.rn, &rn_val);
+	immd12 = ctx->inst.dword_32.ldstr_imm.immd12;
+	arm_isa_reg_load(ctx, ctx->inst.dword_32.ldstr_imm.rn, &rn_val);
 	offset = rn_val + (immd12);
 	addr = offset;
 	arm_isa_inst_debug(" immd12 = %x; offset = %x;  addr  = %d; (0x%x)\n", immd12, offset, addr, addr);
 
-	arm_isa_reg_load(ctx, ctx->inst_th_32.dword.ldstr_imm.rd, &value);
+	arm_isa_reg_load(ctx, ctx->inst.dword_32.ldstr_imm.rd, &value);
 	value = value & (0x000000ff);
 	mem_write(ctx->mem, addr, 1, buf);
 
@@ -3126,13 +3125,13 @@ void arm_th32_isa_STRB_immdd_impl(struct arm_ctx_t *ctx)
 	unsigned int addr;
 
 	buf = &value;
-	immd12 = ctx->inst_th_32.dword.ldstr_imm.immd12;
-	arm_isa_reg_load(ctx, ctx->inst_th_32.dword.ldstr_imm.rn, &rn_val);
+	immd12 = ctx->inst.dword_32.ldstr_imm.immd12;
+	arm_isa_reg_load(ctx, ctx->inst.dword_32.ldstr_imm.rn, &rn_val);
 	offset = rn_val + (immd12);
 	addr = offset;
 	arm_isa_inst_debug(" immd12 = %x; offset = %x;  addr  = %d; (0x%x)\n", immd12, offset, addr, addr);
 
-	arm_isa_reg_load(ctx, ctx->inst_th_32.dword.ldstr_imm.rd, &value);
+	arm_isa_reg_load(ctx, ctx->inst.dword_32.ldstr_imm.rd, &value);
 	value = value & (0x000000ff);
 	mem_write(ctx->mem, addr, 1, buf);
 }
@@ -3181,18 +3180,18 @@ void arm_th32_isa_STR_immdd_impl(struct arm_ctx_t *ctx)
 	void *buf;
 
 	buf = &rd_val;
-	immd12 = ctx->inst_th_32.dword.ldstr_imm.immd12;
+	immd12 = ctx->inst.dword_32.ldstr_imm.immd12;
 
-	arm_isa_reg_load(ctx, ctx->inst_th_32.dword.ldstr_imm.rn,
+	arm_isa_reg_load(ctx, ctx->inst.dword_32.ldstr_imm.rn,
 				&rn_val);
 
 	addr = rn_val + immd12;
 
-	arm_isa_reg_load(ctx, ctx->inst_th_32.dword.ldstr_imm.rd,
+	arm_isa_reg_load(ctx, ctx->inst.dword_32.ldstr_imm.rd,
 					&rd_val);
 
 	arm_isa_inst_debug(" r%d (0x%x) => [0x%x]\n",
-		ctx->inst_th_32.dword.ldstr_imm.rd, rd_val, addr);
+		ctx->inst.dword_32.ldstr_imm.rd, rd_val, addr);
 
 	mem_write(ctx->mem, addr, 4, buf);
 }
@@ -5027,23 +5026,23 @@ void arm_th32_isa_LDRB_immA7140_impl(struct arm_ctx_t *ctx)
 	unsigned int addr;
 
 	buf = &value;
-	immd12 = ctx->inst_th_32.dword.ldstr_imm.immd12;
-	arm_isa_reg_load(ctx, ctx->inst_th_32.dword.ldstr_imm.rn, &rn_val);
+	immd12 = ctx->inst.dword_32.ldstr_imm.immd12;
+	arm_isa_reg_load(ctx, ctx->inst.dword_32.ldstr_imm.rn, &rn_val);
 	offset = rn_val + (immd12);
 	addr = offset;
 	arm_isa_inst_debug(" immd12 = 0x%x; offset = 0x%x;  addr  = %d; (0x%x)\n", immd12, offset, addr, addr);
 	mem_read(ctx->mem, addr, 1, buf);
 	value = value & (0x000000ff);
-	if(ctx->inst_th_32.dword.ldstr_imm.rd < 15)
+	if(ctx->inst.dword_32.ldstr_imm.rd < 15)
 	{
-		arm_isa_reg_store(ctx, ctx->inst_th_32.dword.ldstr_imm.rd, value);
+		arm_isa_reg_store(ctx, ctx->inst.dword_32.ldstr_imm.rd, value);
 	}
 	else
 	{
 		if(value % 2)
-			arm_isa_reg_store(ctx, ctx->inst_th_32.dword.ldstr_imm.rd, value - 3);
+			arm_isa_reg_store(ctx, ctx->inst.dword_32.ldstr_imm.rd, value - 3);
 		else
-			arm_isa_reg_store(ctx, ctx->inst_th_32.dword.ldstr_imm.rd, value - 2);
+			arm_isa_reg_store(ctx, ctx->inst.dword_32.ldstr_imm.rd, value - 2);
 	}
 }
 
@@ -5150,14 +5149,14 @@ void arm_th32_isa_LDR_imm2_impl(struct arm_ctx_t *ctx)
 	unsigned int addr;
 
 	buf = &value;
-	immd12 = ctx->inst_th_32.dword.ldstr_imm.immd12;
+	immd12 = ctx->inst.dword_32.ldstr_imm.immd12;
 	idx = (immd12 & 0x00000400) >> 10;
 	add = (immd12 & 0x00000200) >> 9;
 	wback = (immd12 & 0x00000100) >> 8;
 
-	if(ctx->inst_th_32.dword.ldstr_imm.rn < 15)
+	if(ctx->inst.dword_32.ldstr_imm.rn < 15)
 	{
-		arm_isa_reg_load(ctx, ctx->inst_th_32.dword.ldstr_imm.rn, &rn_val);
+		arm_isa_reg_load(ctx, ctx->inst.dword_32.ldstr_imm.rn, &rn_val);
 		if(add)
 			offset = rn_val + (immd12 & 0x000000ff);
 		else
@@ -5169,22 +5168,22 @@ void arm_th32_isa_LDR_imm2_impl(struct arm_ctx_t *ctx)
 			addr = rn_val;
 		arm_isa_inst_debug("imm2  addr  = %d; (0x%x)\n", addr, addr);
 		if(wback)
-			arm_isa_reg_store(ctx, ctx->inst_th_32.dword.ldstr_imm.rn, offset);
+			arm_isa_reg_store(ctx, ctx->inst.dword_32.ldstr_imm.rn, offset);
 
 		mem_read(ctx->mem, addr, 4, buf);
 		value = value & (0xffffffff);
 
-		if(ctx->inst_th_32.dword.ldstr_imm.rd < 15)
-			arm_isa_reg_store(ctx, ctx->inst_th_32.dword.ldstr_imm.rd, value);
+		if(ctx->inst.dword_32.ldstr_imm.rd < 15)
+			arm_isa_reg_store(ctx, ctx->inst.dword_32.ldstr_imm.rd, value);
 		else
 		{
 			if(value % 2)
-				arm_isa_reg_store(ctx, ctx->inst_th_32.dword.ldstr_imm.rd, value - 3);
+				arm_isa_reg_store(ctx, ctx->inst.dword_32.ldstr_imm.rd, value - 3);
 			else
-				arm_isa_reg_store(ctx, ctx->inst_th_32.dword.ldstr_imm.rd, value - 2);
+				arm_isa_reg_store(ctx, ctx->inst.dword_32.ldstr_imm.rd, value - 2);
 		}
 	}
-	else if (ctx->inst_th_32.dword.ldstr_imm.rn == 15)
+	else if (ctx->inst.dword_32.ldstr_imm.rn == 15)
 	{
 		arm_isa_inst_debug("  pc  = 0x%x; \n", ctx->regs->pc);
 		if((ctx->regs->pc - 4) % 4 == 2)
@@ -5192,21 +5191,21 @@ void arm_th32_isa_LDR_imm2_impl(struct arm_ctx_t *ctx)
 		else
 			offset = ctx->regs->pc - 4;
 		arm_isa_inst_debug("  offset  = 0x%x; \n", offset);
-		if(ctx->inst_th_32.dword.ldstr_imm.add)
+		if(ctx->inst.dword_32.ldstr_imm.add)
 			addr = offset + immd12;
 		else
 			addr = offset - immd12;
 
 		mem_read(ctx->mem, addr, 4, buf);
 		value = value & (0xffffffff);
-		if(ctx->inst_th_32.dword.ldstr_imm.rd < 15)
-			arm_isa_reg_store(ctx, ctx->inst_th_32.dword.ldstr_imm.rd, value);
+		if(ctx->inst.dword_32.ldstr_imm.rd < 15)
+			arm_isa_reg_store(ctx, ctx->inst.dword_32.ldstr_imm.rd, value);
 		else
 		{
 			if(value % 2)
-				arm_isa_reg_store(ctx, ctx->inst_th_32.dword.ldstr_imm.rd, value - 3);
+				arm_isa_reg_store(ctx, ctx->inst.dword_32.ldstr_imm.rd, value - 3);
 			else
-				arm_isa_reg_store(ctx, ctx->inst_th_32.dword.ldstr_imm.rd, value - 2);
+				arm_isa_reg_store(ctx, ctx->inst.dword_32.ldstr_imm.rd, value - 2);
 		}
 
 	}
@@ -5230,14 +5229,14 @@ void arm_th32_isa_LDR_imm4_impl(struct arm_ctx_t *ctx)
 	unsigned int addr;
 
 	buf = &value;
-	immd12 = ctx->inst_th_32.dword.ldstr_imm.immd12;
+	immd12 = ctx->inst.dword_32.ldstr_imm.immd12;
 	idx = (immd12 & 0x00000400) >> 10;
 	add = (immd12 & 0x00000200) >> 9;
 	wback = (immd12 & 0x00000100) >> 8;
 
-	if(ctx->inst_th_32.dword.ldstr_imm.rn < 15)
+	if(ctx->inst.dword_32.ldstr_imm.rn < 15)
 	{
-		arm_isa_reg_load(ctx, ctx->inst_th_32.dword.ldstr_imm.rn, &rn_val);
+		arm_isa_reg_load(ctx, ctx->inst.dword_32.ldstr_imm.rn, &rn_val);
 		if(add)
 			offset = rn_val + (immd12 & 0x000000ff);
 		else
@@ -5249,22 +5248,22 @@ void arm_th32_isa_LDR_imm4_impl(struct arm_ctx_t *ctx)
 			addr = rn_val;
 		arm_isa_inst_debug("imm4  addr  = %d; (0x%x)\n", addr, addr);
 		if(wback)
-			arm_isa_reg_store(ctx, ctx->inst_th_32.dword.ldstr_imm.rn, offset);
+			arm_isa_reg_store(ctx, ctx->inst.dword_32.ldstr_imm.rn, offset);
 
 		mem_read(ctx->mem, addr, 4, buf);
 		value = value & (0xffffffff);
 
-		if(ctx->inst_th_32.dword.ldstr_imm.rd < 15)
-			arm_isa_reg_store(ctx, ctx->inst_th_32.dword.ldstr_imm.rd, value);
+		if(ctx->inst.dword_32.ldstr_imm.rd < 15)
+			arm_isa_reg_store(ctx, ctx->inst.dword_32.ldstr_imm.rd, value);
 		else
 		{
 			if(value % 2)
-				arm_isa_reg_store(ctx, ctx->inst_th_32.dword.ldstr_imm.rd, value - 3);
+				arm_isa_reg_store(ctx, ctx->inst.dword_32.ldstr_imm.rd, value - 3);
 			else
-				arm_isa_reg_store(ctx, ctx->inst_th_32.dword.ldstr_imm.rd, value - 2);
+				arm_isa_reg_store(ctx, ctx->inst.dword_32.ldstr_imm.rd, value - 2);
 		}
 	}
-	else if (ctx->inst_th_32.dword.ldstr_imm.rn == 15)
+	else if (ctx->inst.dword_32.ldstr_imm.rn == 15)
 	{
 		arm_isa_inst_debug("  pc  = 0x%x; \n", ctx->regs->pc);
 		if((ctx->regs->pc - 4) % 4 == 2)
@@ -5272,21 +5271,21 @@ void arm_th32_isa_LDR_imm4_impl(struct arm_ctx_t *ctx)
 		else
 			offset = ctx->regs->pc - 4;
 		arm_isa_inst_debug("  offset  = 0x%x; \n", offset);
-		if(ctx->inst_th_32.dword.ldstr_imm.add)
+		if(ctx->inst.dword_32.ldstr_imm.add)
 			addr = offset + immd12;
 		else
 			addr = offset - immd12;
 
 		mem_read(ctx->mem, addr, 4, buf);
 		value = value & (0xffffffff);
-		if(ctx->inst_th_32.dword.ldstr_imm.rd < 15)
-			arm_isa_reg_store(ctx, ctx->inst_th_32.dword.ldstr_imm.rd, value);
+		if(ctx->inst.dword_32.ldstr_imm.rd < 15)
+			arm_isa_reg_store(ctx, ctx->inst.dword_32.ldstr_imm.rd, value);
 		else
 		{
 			if(value % 2)
-				arm_isa_reg_store(ctx, ctx->inst_th_32.dword.ldstr_imm.rd, value - 3);
+				arm_isa_reg_store(ctx, ctx->inst.dword_32.ldstr_imm.rd, value - 3);
 			else
-				arm_isa_reg_store(ctx, ctx->inst_th_32.dword.ldstr_imm.rd, value - 2);
+				arm_isa_reg_store(ctx, ctx->inst.dword_32.ldstr_imm.rd, value - 2);
 		}
 
 	}
@@ -5300,12 +5299,12 @@ void arm_th32_isa_MUL_impl(struct arm_ctx_t *ctx)
 
 	int result;
 
-	arm_isa_reg_load(ctx, ctx->inst_th_32.dword.mult.rn, &rn_val);
-	arm_isa_reg_load(ctx, ctx->inst_th_32.dword.mult.rm, &rm_val);
+	arm_isa_reg_load(ctx, ctx->inst.dword_32.mult.rn, &rn_val);
+	arm_isa_reg_load(ctx, ctx->inst.dword_32.mult.rm, &rm_val);
 
 	result = rn_val * rm_val;
 
-	arm_isa_reg_store(ctx, ctx->inst_th_32.dword.mult.rd, result);
+	arm_isa_reg_store(ctx, ctx->inst.dword_32.mult.rd, result);
 
 }
 
@@ -5343,13 +5342,13 @@ void arm_th32_isa_MLA5_impl(struct arm_ctx_t *ctx)
 
 	int result;
 
-	arm_isa_reg_load(ctx, ctx->inst_th_32.dword.mult.rn, &rn_val);
-	arm_isa_reg_load(ctx, ctx->inst_th_32.dword.mult.rm, &rm_val);
-	arm_isa_reg_load(ctx, ctx->inst_th_32.dword.mult.ra, &ra_val);
+	arm_isa_reg_load(ctx, ctx->inst.dword_32.mult.rn, &rn_val);
+	arm_isa_reg_load(ctx, ctx->inst.dword_32.mult.rm, &rm_val);
+	arm_isa_reg_load(ctx, ctx->inst.dword_32.mult.ra, &ra_val);
 
 	result = (rn_val * rm_val) + ra_val;
 
-	arm_isa_reg_store(ctx, ctx->inst_th_32.dword.mult.rd, result);
+	arm_isa_reg_store(ctx, ctx->inst.dword_32.mult.rd, result);
 
 }
 
