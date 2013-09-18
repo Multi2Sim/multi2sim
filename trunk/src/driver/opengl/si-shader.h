@@ -36,7 +36,7 @@ struct opengl_si_shader_t
 	/* Program that shader belongs to */
 	struct opengl_si_program_t *program;
 
-	/* AMD Shader binary (internal ELF) */
+	/* AMD Shader binary (internal ELF), which has all information of the binary */
 	struct opengl_si_shader_binary_t *shader_bin;
 
 	/* Equivalent to arg_list in OpenCL, elements of type si_input_t */

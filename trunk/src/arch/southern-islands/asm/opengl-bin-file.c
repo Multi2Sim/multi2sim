@@ -34,14 +34,14 @@
  */
 
 /* Vertex shader */
-static struct opengl_si_bin_vertex_shader_t *opengl_si_bin_vertex_shader_create(struct opengl_si_shader_binary_t *parent);
-static void opengl_si_bin_vertex_shader_free(struct opengl_si_bin_vertex_shader_t *vs);
-static void opengl_si_bin_vertex_shader_init(struct opengl_si_bin_vertex_shader_t *vs);
+static struct opengl_si_enc_dict_vertex_shader_t *opengl_si_enc_dict_vertex_shader_create(struct opengl_si_shader_binary_t *parent);
+static void opengl_si_bin_vertex_shader_free(struct opengl_si_enc_dict_vertex_shader_t *vs);
+static void opengl_si_bin_vertex_shader_init(struct opengl_si_enc_dict_vertex_shader_t *vs);
 
 /* Pixel shader */
-static struct opengl_si_bin_pixel_shader_t *opengl_si_bin_pixel_shader_create(struct opengl_si_shader_binary_t *parent);
-static void opengl_si_bin_pixel_shader_free(struct opengl_si_bin_pixel_shader_t *fs);
-static void opengl_si_bin_pixel_shader_init(struct opengl_si_bin_pixel_shader_t *fs);
+static struct opengl_si_enc_dict_pixel_shader_t *opengl_si_enc_dict_pixel_shader_create(struct opengl_si_shader_binary_t *parent);
+static void opengl_si_bin_pixel_shader_free(struct opengl_si_enc_dict_pixel_shader_t *fs);
+static void opengl_si_bin_pixel_shader_init(struct opengl_si_enc_dict_pixel_shader_t *fs);
 
 
 /*
@@ -87,19 +87,19 @@ static void opengl_si_shader_binary_set(struct opengl_si_shader_binary_t *shdr)
 	{
 	case 0x0:
 		shdr->shader_kind = OPENGL_SI_SHADER_VERTEX;
-		shdr->shader = opengl_si_bin_vertex_shader_create(shdr);
-		shdr->free_func = (opengl_si_shader_free_func_t) &opengl_si_bin_vertex_shader_free;
-		opengl_si_bin_vertex_shader_init(shdr->shader);
+		shdr->enc_dict = opengl_si_enc_dict_vertex_shader_create(shdr);
+		shdr->free_func = (opengl_si_shader_bin_free_func_t) &opengl_si_bin_vertex_shader_free;
+		opengl_si_bin_vertex_shader_init(shdr->enc_dict);
 		break;
 	case 0x4:
 		shdr->shader_kind = OPENGL_SI_SHADER_PIXEL;
-		shdr->shader = opengl_si_bin_pixel_shader_create(shdr);
-		shdr->free_func = (opengl_si_shader_free_func_t) &opengl_si_bin_pixel_shader_free;
-		opengl_si_bin_pixel_shader_init(shdr->shader);		
+		shdr->enc_dict = opengl_si_enc_dict_pixel_shader_create(shdr);
+		shdr->free_func = (opengl_si_shader_bin_free_func_t) &opengl_si_bin_pixel_shader_free;
+		opengl_si_bin_pixel_shader_init(shdr->enc_dict);		
 		break;
 	default:
 		shdr->shader_kind = OPENGL_SI_SHADER_INVALID;
-		shdr->free_func = (opengl_si_shader_free_func_t) &opengl_si_bin_shader_free;
+		shdr->free_func = (opengl_si_shader_bin_free_func_t) &opengl_si_bin_shader_free;
 		break;
 	}
 }
@@ -352,14 +352,14 @@ static void opengl_si_si_bin_usageinfo_init_with_section(struct opengl_si_bin_us
 }
 
 
-static struct opengl_si_bin_vertex_shader_t *opengl_si_bin_vertex_shader_create(struct opengl_si_shader_binary_t *parent)
+static struct opengl_si_enc_dict_vertex_shader_t *opengl_si_enc_dict_vertex_shader_create(struct opengl_si_shader_binary_t *parent)
 {
-	struct opengl_si_bin_vertex_shader_t *vs;
+	struct opengl_si_enc_dict_vertex_shader_t *vs;
 
 	/* Allocate */
-	vs = xcalloc(1, sizeof(struct opengl_si_bin_vertex_shader_t));
+	vs = xcalloc(1, sizeof(struct opengl_si_enc_dict_vertex_shader_t));
 	vs->parent = parent;
-	parent->shader = vs;
+	parent->enc_dict = vs;
 	vs->meta = opengl_si_bin_vertex_shader_metadata_create();
 	vs->inputs = list_create();
 	vs->outputs = list_create();
@@ -370,7 +370,7 @@ static struct opengl_si_bin_vertex_shader_t *opengl_si_bin_vertex_shader_create(
 	return vs;
 }
 
-static void opengl_si_bin_vertex_shader_free(struct opengl_si_bin_vertex_shader_t *vs)
+static void opengl_si_bin_vertex_shader_free(struct opengl_si_enc_dict_vertex_shader_t *vs)
 {
 	struct opengl_si_bin_input_t *input;
 	struct opengl_si_bin_output_t *output;
@@ -396,7 +396,7 @@ static void opengl_si_bin_vertex_shader_free(struct opengl_si_bin_vertex_shader_
 
 }
 
-static void opengl_si_bin_vertex_shader_init(struct opengl_si_bin_vertex_shader_t *vs)
+static void opengl_si_bin_vertex_shader_init(struct opengl_si_enc_dict_vertex_shader_t *vs)
 {
 	struct opengl_si_shader_binary_t *parent;
 	struct elf_file_t *shader_elf;
@@ -427,14 +427,14 @@ static void opengl_si_bin_vertex_shader_init(struct opengl_si_bin_vertex_shader_
 	}
 }
 
-static struct opengl_si_bin_pixel_shader_t *opengl_si_bin_pixel_shader_create(struct opengl_si_shader_binary_t *parent)
+static struct opengl_si_enc_dict_pixel_shader_t *opengl_si_enc_dict_pixel_shader_create(struct opengl_si_shader_binary_t *parent)
 {
-	struct opengl_si_bin_pixel_shader_t *fs;
+	struct opengl_si_enc_dict_pixel_shader_t *fs;
 
 	/* Allocate */
-	fs = xcalloc(1, sizeof(struct opengl_si_bin_pixel_shader_t));
+	fs = xcalloc(1, sizeof(struct opengl_si_enc_dict_pixel_shader_t));
 	fs->parent = parent;
-	parent->shader = fs;
+	parent->enc_dict = fs;
 	fs->meta = opengl_si_bin_pixel_shader_metadata_create();
 	fs->inputs = list_create();
 	fs->outputs = list_create();
@@ -445,7 +445,7 @@ static struct opengl_si_bin_pixel_shader_t *opengl_si_bin_pixel_shader_create(st
 	return fs;
 }
 
-static void opengl_si_bin_pixel_shader_free(struct opengl_si_bin_pixel_shader_t *fs)
+static void opengl_si_bin_pixel_shader_free(struct opengl_si_enc_dict_pixel_shader_t *fs)
 {
 	struct opengl_si_bin_input_t *input;
 	struct opengl_si_bin_output_t *output;
@@ -471,7 +471,7 @@ static void opengl_si_bin_pixel_shader_free(struct opengl_si_bin_pixel_shader_t 
 
 }
 
-static void opengl_si_bin_pixel_shader_init(struct opengl_si_bin_pixel_shader_t *fs)
+static void opengl_si_bin_pixel_shader_init(struct opengl_si_enc_dict_pixel_shader_t *fs)
 {
 	struct opengl_si_shader_binary_t *parent;
 	struct elf_file_t *shader_elf;
@@ -501,44 +501,6 @@ static void opengl_si_bin_pixel_shader_init(struct opengl_si_bin_pixel_shader_t 
 			opengl_si_si_bin_usageinfo_init_with_section(fs->usageinfo, section);
 	}
 
-}
-
-
-static void opengl_si_shader_binary_set_inputs(struct opengl_si_shader_binary_t *shdr)
-{
-	int i;
-	int input_count;
-	struct si_input_t *input;
-	struct opengl_si_bin_vertex_shader_t *vs;
-	struct opengl_si_bin_pixel_shader_t *ps;
-
-	switch(shdr->shader_kind)
-	{
-	case OPENGL_SI_SHADER_VERTEX:
-		/* Create input and add to input list */
-		vs = (struct opengl_si_bin_vertex_shader_t *)shdr->shader;
-		input_count = vs->meta->numVsInSemantics;
-		for (i = 0; i < input_count; ++i)
-		{
-			input = si_input_create();
-			si_input_set_usage_index(input, i);
-			list_insert(shdr->parent->input_list, i, input);
-		}
-		break;
-	case OPENGL_SI_SHADER_PIXEL:
-		/* Create input and add to input list */
-		ps = (struct opengl_si_bin_pixel_shader_t *)shdr->shader;
-		input_count = ps->meta->numPsInSemantics;
-		for (i = 0; i < input_count; ++i)
-		{
-			input = si_input_create();
-			si_input_set_usage_index(input, i);
-			list_insert(shdr->parent->input_list, i, input);
-		}
-		break;	
-	default:
-		break;
-	}
 }
 
 static struct list_t *opengl_si_shader_bin_list_create(struct elf_file_t *binary)
@@ -630,7 +592,6 @@ struct opengl_si_shader_binary_t *opengl_si_shader_binary_create(void *buffer, i
 	{
 		opengl_si_shader_binary_set(shdr);
 		opengl_si_shader_binary_set_isa(shdr);
-		opengl_si_shader_binary_set_inputs(shdr);
 	}
 
 	/* Return */
@@ -639,7 +600,7 @@ struct opengl_si_shader_binary_t *opengl_si_shader_binary_create(void *buffer, i
 
 void opengl_si_shader_binary_free(struct opengl_si_shader_binary_t *shdr)
 {
-	shdr->free_func(shdr->shader);
+	shdr->free_func(shdr->enc_dict);
 	elf_file_free(shdr->shader_elf);
 	free(shdr->shader_isa);
 	free(shdr);

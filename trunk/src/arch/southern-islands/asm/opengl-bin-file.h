@@ -64,7 +64,6 @@
 
 /* Forward declaration */
 struct list_t;
-struct opengl_si_shader_binary_t;
 
 /* Shader types */
 enum opengl_si_shader_binary_kind_t
@@ -978,7 +977,7 @@ struct opengl_si_bin_usageinfo_t
 
 };
 
-struct opengl_si_bin_vertex_shader_t
+struct opengl_si_enc_dict_vertex_shader_t
 {
 	/* Parent shader binary it belongs to */
 	struct opengl_si_shader_binary_t *parent;
@@ -991,7 +990,7 @@ struct opengl_si_bin_vertex_shader_t
 	struct opengl_si_bin_usageinfo_t *usageinfo;
 };
 
-struct opengl_si_bin_pixel_shader_t
+struct opengl_si_enc_dict_pixel_shader_t
 {
 	/* Parent binary it belongs to */
 	struct opengl_si_shader_binary_t *parent;
@@ -1029,7 +1028,7 @@ struct opengl_si_bin_output_t
 	char* name;           /* Name of the output */
 }__attribute__((packed));;
 
-typedef void (*opengl_si_shader_free_func_t)(void *);
+typedef void (*opengl_si_shader_bin_free_func_t)(void *);
 struct opengl_si_shader_binary_t
 {
 	/* Parent shader, defined in driver */
@@ -1045,11 +1044,11 @@ struct opengl_si_shader_binary_t
 	/* Pointer to ISA */
 	struct elf_buffer_t *shader_isa;
 
-	/* Element with type opengl_si_bin_xxxxx_shader_t */
-	void *shader; 
+	/* Element with type opengl_si_enc_dict_xxxxx_shader_t */
+	void *enc_dict; 
 
 	/* Callback function to free shader */
-	opengl_si_shader_free_func_t free_func;  
+	opengl_si_shader_bin_free_func_t free_func;  
 };
 
 struct opengl_si_program_binary_t
