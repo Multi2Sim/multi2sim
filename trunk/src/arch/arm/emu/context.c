@@ -746,26 +746,26 @@ void arm_ctx_execute(struct arm_ctx_t *ctx)
 	/* Disassemble */
 	if (ctx->regs->cpsr.thumb)
 	{
-		if (arm_test_thumb32(buffer_ptr))
+		if (ARMTestThumb32(buffer_ptr))
 		{
 			ctx->regs->pc += 2;
 			buffer_ptr = mem_get_buffer(mem, (regs->pc - 4), 4, mem_access_exec);
-			thumb32_disasm(buffer_ptr, (regs->pc - 2), &ctx->inst_th_32);
+			ARMInstThumb32Decode(buffer_ptr, (regs->pc - 2), &ctx->inst);
 			ctx->inst_type = THUMB32;
-			if (ctx->inst_th_32.info->name == ARM_THUMB32_INST_NONE)/*&& !spec_mode)*/
+			if (ctx->inst.info_32->name == ARMInstThumb32OpcodeInvalid)/*&& !spec_mode)*/
 				fatal("0x%x: not supported arm instruction (%02x %02x %02x %02x...)",
 					(regs->pc - 4), buffer_ptr[0], buffer_ptr[1], buffer_ptr[2], buffer_ptr[3]);
 
 		}
 		else
 		{
-			thumb16_disasm(buffer_ptr, (regs->pc - 2), &ctx->inst_th_16);
+			ARMInstThumb16Decode(buffer_ptr, (regs->pc - 2), &ctx->inst);
 			ctx->inst_type = THUMB16;
 		}
 	}
 	else
 	{
-		arm_disasm(buffer_ptr, (regs->pc - 4), &ctx->inst);
+		ARMInstDecode(&ctx->inst, (regs->pc - 4), buffer_ptr);
 		ctx->inst_type = ARM32;
 		if (ctx->inst.info->opcode == ARMInstOpcodeInvalid)/*&& !spec_mode)*/
 			fatal("0x%x: not supported arm instruction (%02x %02x %02x %02x...)",
@@ -776,7 +776,7 @@ void arm_ctx_execute(struct arm_ctx_t *ctx)
 	if(ctx->iteq_inst_num && ctx->iteq_block_flag)
 	{
 
-		if(arm_isa_thumb_check_cond(ctx, ctx->inst_th_16.dword.if_eq_ins.first_cond))
+		if(arm_isa_thumb_check_cond(ctx, ctx->inst.dword_16.if_eq_ins.first_cond))
 			arm_isa_execute_inst(ctx);
 
 		ctx->iteq_inst_num = ctx->iteq_inst_num - 1;
@@ -788,7 +788,7 @@ void arm_ctx_execute(struct arm_ctx_t *ctx)
 		break;
 
 		case(THUMB16):
-			regs->pc = regs->pc + ctx->inst_th_16.info->size;
+			regs->pc = regs->pc + ctx->inst.info_16->size;
 		break;
 
 		case(THUMB32):

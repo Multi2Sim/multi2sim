@@ -24,7 +24,6 @@
 #include <lib/class/class.h>
 #include <stdio.h>
 
-#include "asm-thumb.h"
 #include "inst.h"
 
 
@@ -91,13 +90,6 @@ enum arm_psr_regs_t
 	SPSR
 };
 
-
-
-
-/*
- * Structure of Instruction Format
- */
-
 struct arm_inst_info_t
 {
 	ARMInstOpcode inst;
@@ -108,11 +100,34 @@ struct arm_inst_info_t
 	int size;
 };
 
+struct arm_thumb16_inst_info_t
+{
+	ARMInstThumb16Opcode inst_16;
+	ARMThumb16InstCategory cat16;
+	char* name;
+	char* fmt_str;
+	unsigned int opcode;
+	int size;
+	struct arm_thumb16_inst_info_t *next_table;
+	int next_table_low;
+	int next_table_high;
+};
 
+struct arm_thumb32_inst_info_t
+{
+	ARMInstThumb32Opcode inst_32;
+	ARMThumb32InstCategory cat32;
+	char* name;
+	char* fmt_str;
+	unsigned int opcode;
+	int size;
+	struct arm_thumb32_inst_info_t *next_table;
+	int next_table_low;
+	int next_table_high;
+};
+
+/* ARM instruction table */
 struct arm_inst_info_t arm_inst_info[(256*16)];
-
-//!TODO Define functions for the ARM_INST
-
 
 
 
@@ -121,6 +136,139 @@ struct arm_inst_info_t arm_inst_info[(256*16)];
  */
 
 CLASS_BEGIN(ARMAsm, Asm)
+
+
+
+/* Pointers to the tables of instructions Thumb16*/
+
+struct arm_thumb16_inst_info_t *arm_thumb16_asm_table;
+struct arm_thumb16_inst_info_t *arm_thumb16_shft_ins_table;
+struct arm_thumb16_inst_info_t *arm_thumb16_shft_ins_lv2_table;
+
+struct arm_thumb16_inst_info_t *arm_thumb16_asm_lv1_table;
+struct arm_thumb16_inst_info_t *arm_thumb16_asm_lv2_table;
+struct arm_thumb16_inst_info_t *arm_thumb16_asm_lv3_table;
+struct arm_thumb16_inst_info_t *arm_thumb16_asm_lv4_table;
+struct arm_thumb16_inst_info_t *arm_thumb16_asm_lv5_table;
+struct arm_thumb16_inst_info_t *arm_thumb16_asm_lv6_table;
+struct arm_thumb16_inst_info_t *arm_thumb16_asm_lv7_table;
+struct arm_thumb16_inst_info_t *arm_thumb16_asm_lv8_table;
+struct arm_thumb16_inst_info_t *arm_thumb16_asm_lv9_table;
+
+
+struct arm_thumb16_inst_info_t *arm_thumb16_data_proc_table;
+struct arm_thumb16_inst_info_t *arm_thumb16_spcl_data_brex_table;
+struct arm_thumb16_inst_info_t *arm_thumb16_spcl_data_brex_lv1_table;
+
+struct arm_thumb16_inst_info_t *arm_thumb16_ld_st_table;
+struct arm_thumb16_inst_info_t *arm_thumb16_ld_st_lv1_table;
+struct arm_thumb16_inst_info_t *arm_thumb16_ld_st_lv2_table;
+
+struct arm_thumb16_inst_info_t *arm_thumb16_misc_table;
+struct arm_thumb16_inst_info_t *arm_thumb16_it_table;
+struct arm_thumb16_inst_info_t *current_table;
+
+
+
+/* Pointers to the tables of instructions Thumb32 */
+
+struct arm_thumb32_inst_info_t *arm_thumb32_asm_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_asm_lv1_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_asm_lv2_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_asm_lv3_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_asm_lv4_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_asm_lv5_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_asm_lv6_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_asm_lv7_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_asm_lv8_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_asm_lv9_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_asm_lv10_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_asm_lv11_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_asm_lv12_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_asm_lv13_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_asm_lv14_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_asm_lv15_table;
+
+
+struct arm_thumb32_inst_info_t *arm_thumb32_asm_ldst_mul_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_asm_ldst_mul1_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_asm_ldst_mul2_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_asm_ldst_mul3_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_asm_ldst_mul4_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_asm_ldst_mul5_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_asm_ldst_mul6_table;
+
+struct arm_thumb32_inst_info_t *arm_thumb32_asm_ldst_dual_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_asm_ldst1_dual_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_asm_ldst2_dual_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_asm_ldst3_dual_table;
+
+struct arm_thumb32_inst_info_t *arm_thumb32_dproc_shft_reg_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_dproc_shft_reg1_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_dproc_shft_reg2_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_dproc_shft_reg3_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_dproc_shft_reg4_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_dproc_shft_reg5_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_dproc_shft_reg6_table;
+
+struct arm_thumb32_inst_info_t *arm_thumb32_dproc_imm_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_dproc_imm1_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_dproc_imm2_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_dproc_imm3_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_dproc_imm4_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_dproc_imm5_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_dproc_imm6_table;
+
+struct arm_thumb32_inst_info_t *arm_thumb32_dproc_reg_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_dproc_reg1_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_dproc_reg2_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_dproc_reg3_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_dproc_reg4_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_dproc_reg5_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_dproc_reg6_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_dproc_reg7_table;
+
+struct arm_thumb32_inst_info_t *arm_thumb32_dproc_misc_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_dproc_misc1_table;
+
+struct arm_thumb32_inst_info_t *arm_thumb32_st_single_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_st_single1_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_st_single2_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_st_single3_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_st_single4_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_st_single5_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_st_single6_table;
+
+struct arm_thumb32_inst_info_t *arm_thumb32_ld_byte_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_ld_byte1_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_ld_byte2_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_ld_byte3_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_ld_byte4_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_ld_byte5_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_ld_byte6_table;
+
+struct arm_thumb32_inst_info_t *arm_thumb32_ld_hfword_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_ld_hfword1_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_ld_hfword2_table;
+
+struct arm_thumb32_inst_info_t *arm_thumb32_ld_word_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_ld_word1_table;
+
+struct arm_thumb32_inst_info_t *arm_thumb32_mult_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_mult1_table;
+
+struct arm_thumb32_inst_info_t *arm_thumb32_dproc_bin_imm_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_dproc_bin_imm1_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_dproc_bin_imm2_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_dproc_bin_imm3_table;
+
+struct arm_thumb32_inst_info_t *arm_thumb32_mult_long_table;
+
+struct arm_thumb32_inst_info_t *arm_thumb32_brnch_ctrl_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_brnch_ctrl1_table;
+
+struct arm_thumb32_inst_info_t *arm_thumb32_mov_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_mov1_table;
 
 CLASS_END(ARMAsm)
 
@@ -134,11 +282,23 @@ unsigned int arm_rotl(unsigned int value, unsigned int shift);
 unsigned int arm_rotr(unsigned int value, unsigned int shift);
 
 
+/* Thumb Disassembler Functions */
+
+int ARMTestThumb32(void *inst_ptr);
+void ARMThumb16InstDebugDump(ARMInst *inst, FILE *f );
+void ARMThumb32InstDebugDump(ARMInst *inst, FILE *f );
+void ARMThumb32SetupTable(char* name , char* fmt_str ,
+	ARMThumb32InstCategory cat32 , int op1 , int op2 , int op3 ,
+	int op4 , int op5 , int op6, int op7, int op8, ARMInstThumb32Opcode inst_name, ARMAsm *as);
+void ARMThumb16SetupTable(char* name , char* fmt_str ,
+	ARMThumb16InstCategory cat16 , int op1 , int op2 , int op3 ,
+	int op4 , int op5 , int op6, ARMInstThumb16Opcode inst_name, ARMAsm *as);
+
 /*
  * Arm Disassembler
  */
 
-void arm_emu_disasm(char *path);
+void ARMAsmDisassembleBinary(ARMAsm *self, char *path);
 
 void arm_disasm(void *buf, unsigned int ip, volatile ARMInst *inst);
 

@@ -6,8 +6,6 @@ libasm_a_SOURCES = \
 	asm.dat \
 	asm.h \
 	\
-	asm-thumb.c \
-	asm-thumb.h \
 	asm-thumb.dat \
 	asm-thumb32.dat \
 	\
