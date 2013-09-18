@@ -30,14 +30,14 @@ struct si_opengl_shader_binary_t;
 
 struct opengl_si_shader_t
 {
-	/* Shader type */
-	enum opengl_si_shader_binary_kind_t shader_kind;
-
 	/* Program that shader belongs to */
 	struct opengl_si_program_t *program;
 
-	/* AMD Shader binary (internal ELF), which has all information of the binary */
-	struct opengl_si_shader_binary_t *shader_bin;
+	/* Shader type, information pass from runtime to driver and set at here */
+	enum opengl_si_shader_binary_kind_t shader_kind;
+
+	/* AMD Shader binary (internal ELF), which has all information of the shader binary */
+	struct opengl_si_shader_binary_t *bin;
 
 	/* Equivalent to arg_list in OpenCL, elements of type si_input_t */
 	struct list_t *input_list; 
@@ -51,13 +51,9 @@ struct opengl_si_shader_t
 void opengl_si_shader_list_init(OpenglDriver *driver);
 void opengl_si_shader_list_done(OpenglDriver *driver);
 
-
-struct opengl_si_shader_t *opengl_si_shader_create(struct list_t *shdr_lst,
+struct opengl_si_shader_t *opengl_si_shader_create(struct list_t *shdr_lst, struct opengl_si_program_t *program,
 	unsigned int shader_id, unsigned int shader_kind);
 void opengl_si_shader_free(struct opengl_si_shader_t *shdr);
-void opengl_si_shader_init(struct opengl_si_program_t *program, 
-	struct list_t *shdr_lst, unsigned int shader_id);
-
 
 void opengl_si_shader_create_ndrange_constant_buffers(SINDRange *ndrange, MMU *gpu_mmu);
 void opengl_si_shader_setup_ndrange_constant_buffers(SINDRange *ndrange);
