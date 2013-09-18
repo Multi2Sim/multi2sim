@@ -67,9 +67,9 @@ void partition_issue_log_record(
 		
 		memcpy(entry->group_offset, group_offset, sizeof (unsigned int) * num_dims);
 		memcpy(entry->group_size, group_size, sizeof (unsigned int) * num_dims);
+		log->num_entries++;
 	}
-	__sync_lock_release(&log->lock);
-	__sync_fetch_and_add(&log->num_entries, 1);	
+	__sync_lock_release(&log->lock);	
 }
 
 void partition_issue_log_done_kernel(struct partition_issue_log_t *log)
@@ -182,7 +182,24 @@ void partition_issue_log_verify(struct partition_issue_log_t *log, FILE *show_er
 			}
 			
 		if (aborted)
+		{
+			struct partition_issue_log_entry_t *part = kernel->first_part;
+			fprintf(stderr, "Kernel partitioning information: %d\n", i);
+			fprintf(stderr, "NDRange: ");
+			partition_issue_log_print_vector(kernel->num_dims, kernel->groups, stderr);
+			fprintf(stderr, "\n");
+			while (part->executed)
+			{
+				fprintf(stderr, "At ");
+				partition_issue_log_print_vector(kernel->num_dims, part->group_offset, stderr);
+				fprintf(stderr, " Size ");
+				partition_issue_log_print_vector(kernel->num_dims, part->group_size, stderr);
+				fprintf(stderr, "\n");
+				part++;
+			}
+		
 			abort();
+		}
 		
 		free(wg);
 	}
