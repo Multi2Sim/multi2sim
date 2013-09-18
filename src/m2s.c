@@ -2159,8 +2159,14 @@ int main(int argc, char **argv)
 
 	/* ARM disassembler tool */
 	if (*arm_disasm_file_name)
-		arm_emu_disasm(arm_disasm_file_name);
+	{
+		ARMAsm *as;
+		as = new(ARMAsm);
+		ARMAsmDisassembleBinary(as, arm_disasm_file_name);
 
+		delete(as);
+		goto end;
+	}
 	/* MIPS disassembler tool */
 	if (*mips_disasm_file_name)
 	{
