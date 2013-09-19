@@ -994,6 +994,8 @@ static int opengl_abi_si_ndrange_create_impl(X86Context *ctx)
 		SIGpuMapNDRange(si_gpu, ndrange);
 
 	list_insert(driver->opengl_si_ndrange_list, ndrange->id, ndrange);
+	opengl_debug("\tNDRange #%d insert into NDRange list at slot %d\n", 
+		ndrange->id, ndrange->id);
 
 	/* Return NDRange ID */
 	return ndrange->id;
