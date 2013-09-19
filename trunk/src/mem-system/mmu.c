@@ -350,11 +350,11 @@ void MMUCopyTranslation(MMU *self, int self_address_space_index, MMU *other,
 		/* Insert in page list (may need to insert empty pages
 		 * in the list first) */
 		phy_index = other_page->phy_addr >> self->log_page_size;
-		if (list_count(self->page_list) < phy_index)
+		if (list_count(self->page_list) <= phy_index)
 		{
 			/* Page doesn't exist yet.  Create NULL pages
 			 * up to and including the page to be created. */
-			while (list_count(self->page_list) <= phy_index)
+			while (list_count(self->page_list) <= phy_index+1)
 				list_add(self->page_list, NULL);
 
 			/* Create page in self */
@@ -387,7 +387,8 @@ void MMUCopyTranslation(MMU *self, int self_address_space_index, MMU *other,
 			/* Set page to page-list */
 			list_set(self->page_list, phy_index, self_page);
 		}
-		assert(!self->page_list->error_code);
+		if (self->page_list->error_code)
+			fatal("%s: error initializing GPU MMU", __FUNCTION__);
 
 		/* Insert in page hash table */
 		vtl_index = ((addr >> self->log_page_size) + 
