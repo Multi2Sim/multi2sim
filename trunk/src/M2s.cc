@@ -27,14 +27,12 @@ using namespace Misc;
 
 extern "C" void Main(int argc, char **argv)
 {
-	MIPSAsm *as = new MIPSAsm;
+	MIPS::Asm *as = new MIPS::Asm;
 
 	if (argc != 2)
 		fatal("wrong syntax");
 
-	MIPSAsmCreate(as);
-	MIPSAsmDisassembleBinary(as, argv[1]);
-	MIPSAsmDestroy(as);
+	as->DisassembleBinary(argv[1]);
 	delete as;
 }
 

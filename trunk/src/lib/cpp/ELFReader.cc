@@ -149,144 +149,6 @@ bool Symbol::Compare(Symbol *a, Symbol *b)
 }
 
 
-#if 0
-static void ELFReaderReadSymbolSection(ELFReader *self, ELFSection *section)
-{
-	Elf32_Sym *sym;
-	ELFSection *symbol_names_section;
-	ELFSymbol *symbol;
-	
-	int i;
-	int count;
-
-	/* Read symbol table section */
-	symbol_names_section = asELFSection(ArrayGet(self->section_array,
-			section->info->sh_link));
-	assert(symbol_names_section);
-	elf_reader_debug("  section '%s' is symbol table with names in section '%s'\n",
-		section->name->text, symbol_names_section->name->text);
-
-	/* Insert symbols */
-	count = section->info->sh_size / sizeof(Elf32_Sym);
-	for (i = 0; i < count; i++)
-	{
-		/* Read symbol. Don't create symbol if name is empty. */
-		sym = (Elf32_Sym *) section->buffer->ptr + i;
-		if (* (char *) (symbol_names_section->buffer->ptr
-				+ sym->st_name) == '\0')
-			continue;
-
-		/* Create symbol */
-		symbol = new(ELFSymbol);
-		symbol->sym = sym;
-		symbol->name = symbol_names_section->buffer->ptr + sym->st_name;
-		assert(sym->st_name < symbol_names_section->buffer->size);
-
-		/* Add symbol to list */
-		ArrayAdd(self->symbol_array, asObject(symbol));
-	}
-}
-
-
-ELFSymbol *ELFReaderGetSymbolByAddress(ELFReader *self, unsigned int address,
-		unsigned int *offset_ptr)
-{
-	ELFSymbol *symbol;
-	ELFSymbol *prev_symbol;
-	
-	int min;
-	int max;
-	int mid;
-
-	/* Empty symbol table */
-	if (!self->symbol_array->count)
-		return NULL;
-
-	/* All symbols in the table have a higher address */
-	symbol = asELFSymbol(ArrayGet(self->symbol_array, 0));
-	if (address < symbol->sym->st_value)
-		return NULL;
-
-	/* Binary search */
-	min = 0;
-	max = self->symbol_array->count;
-	while (min + 1 < max)
-	{
-		mid = (max + min) / 2;
-		symbol = asELFSymbol(ArrayGet(self->symbol_array, mid));
-		if (symbol->sym->st_value > address)
-		{
-			max = mid;
-		}
-		else if (symbol->sym->st_value < address)
-		{
-			min = mid;
-		}
-		else
-		{
-			min = mid;
-			break;
-		}
-	}
-
-	/* Invalid symbol */
-	symbol = asELFSymbol(ArrayGet(self->symbol_array, min));
-	if (!symbol->sym->st_value)
-		return NULL;
-
-	/* Go backwards to find first symbol with that address */
-	for (;;)
-	{
-		min--;
-		prev_symbol = asELFSymbol(ArrayGet(self->symbol_array, min));
-		if (!prev_symbol || prev_symbol->sym->st_value !=
-				symbol->sym->st_value)
-			break;
-		symbol = prev_symbol;
-	}
-
-	/* Return the symbol and its address */
-	if (offset_ptr)
-		*offset_ptr = address - symbol->sym->st_value;
-	return symbol;
-}
-
-
-ELFSymbol *ELFReaderGetSymbolByName(ELFReader *self, char *name)
-{
-	ELFSymbol *symbol;
-
-	/* Search */
-	ArrayForEach(self->symbol_array, symbol, ELFSymbol)
-		if (!strcmp(symbol->name, name))
-			return symbol;
-	
-	/* Not found */
-	return NULL;
-}
-
-
-ELFBuffer *ELFReaderReadSymbolContent(ELFReader *self, ELFSymbol *symbol)
-{
-	ELFSection *section;
-	ELFBuffer *buffer;
-
-	/* Get section where the symbol is pointing */
-	section = asELFSection(ArrayGet(self->section_array,
-			symbol->sym->st_shndx));
-	if (!section || symbol->sym->st_value + symbol->sym->st_size
-			> section->info->sh_size)
-		return NULL;
-
-	/* Create buffer object */
-	buffer = new(ELFBuffer, section->buffer->ptr + symbol->sym->st_value,
-			symbol->sym->st_size);
-	return buffer;
-}
-
-
-#endif
-
 
 /*
  * Class 'File'
@@ -548,6 +410,120 @@ ostream &operator<<(ostream &os, const File &file)
 	/* Done */
 	return os;
 }
+
+
+Symbol *File::GetSymbol(string name)
+{
+	/* Search */
+	for (auto it = symbol_list.begin(); it != symbol_list.end(); ++it)
+		if ((*it)->name == name)
+			return *it;
+	
+	/* Not found */
+	return NULL;
+}
+
+
+Symbol *File::GetSymbol(unsigned int address)
+{
+	unsigned int offset;
+	return GetSymbol(address, offset);
+}
+
+
+Symbol *File::GetSymbol(unsigned int address, unsigned int &offset)
+{
+	Symbol *symbol;
+	Symbol *prev_symbol;
+	
+	int min;
+	int max;
+	int mid;
+
+	/* Empty symbol table */
+	if (!symbol_list.size())
+		return NULL;
+
+	/* All symbols in the table have a higher address */
+	if (address < symbol_list[0]->info->st_value)
+		return NULL;
+
+	/* Binary search */
+	min = 0;
+	max = symbol_list.size();
+	while (min + 1 < max)
+	{
+		mid = (max + min) / 2;
+		symbol = symbol_list[mid];
+		if (symbol->info->st_value > address)
+		{
+			max = mid;
+		}
+		else if (symbol->info->st_value < address)
+		{
+			min = mid;
+		}
+		else
+		{
+			min = mid;
+			break;
+		}
+	}
+
+	/* Invalid symbol */
+	symbol = symbol_list[min];
+	if (!symbol->info->st_value)
+		return NULL;
+
+	/* Go backwards to find first symbol with that address */
+	for (;;)
+	{
+		min--;
+		prev_symbol = symbol_list[min];
+		if (!prev_symbol || prev_symbol->info->st_value !=
+				symbol->info->st_value)
+			break;
+		symbol = prev_symbol;
+	}
+
+	/* Return the symbol and its address */
+	offset = address - symbol->info->st_value;
+	return symbol;
+}
+
+
+void File::GetSymbolContent(Symbol *symbol, char *&buffer, long &size)
+{
+	/* Symbol with no content */
+	buffer = NULL;
+	size = 0;
+	if (symbol->info->st_shndx >= section_list.size())
+		return;
+	
+	/* Symbol exceeds section size */
+	Section *section = section_list[symbol->info->st_shndx];
+	if (symbol->info->st_value + symbol->info->st_size > section->size)
+		return;
+
+	/* Get section where the symbol is pointing */
+	buffer = section->buffer + symbol->info->st_size;
+	size = symbol->info->st_size;
+}
+
+
+void File::GetSymbolContent(Symbol *symbol, stringstream& ss)
+{
+	char *buffer;
+	long size;
+
+	/* Get content */
+	GetSymbolContent(symbol, buffer, size);
+
+	/* Set up string stream */
+	stringbuf *buf = ss.rdbuf();
+	buf->pubsetbuf(buffer, size);
+}
+
 
 
 } /* namespace ELFReader */
