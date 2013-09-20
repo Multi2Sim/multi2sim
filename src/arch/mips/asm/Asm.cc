@@ -17,200 +17,204 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <iomanip>
+
 #include <lib/cpp/ELFReader.h>
 
 #include "Asm.h"
 #include "Inst.h"
 
+using namespace MIPS;
+using namespace std;
 
 /* Opcodes and secondary opcodes */
-#define MIPS_OPCODE_SPECIAL              0x00
-#define MIPS_OPCODE_SPECIAL2             0x1c
-#define MIPS_OPCODE_SPECIAL3             0x1f
-#define MIPS_OPCODE_REGIMM               0x01
-#define MIPS_OPCODE_COP0                 0x10
-#define MIPS_OPCODE_COP1                 0x11
-#define MIPS_OPCODE_COP2                 0x12
-#define MIPS_OPCODE_COP1X                0x13
+#define OPCODE_SPECIAL              0x00
+#define OPCODE_SPECIAL2             0x1c
+#define OPCODE_SPECIAL3             0x1f
+#define OPCODE_REGIMM               0x01
+#define OPCODE_COP0                 0x10
+#define OPCODE_COP1                 0x11
+#define OPCODE_COP2                 0x12
+#define OPCODE_COP1X                0x13
 
-#define MIPS_OPCODE_SPECIAL_MOVCI        0x01
-#define MIPS_OPCODE_SPECIAL_SRL          0x02
-#define MIPS_OPCODE_SPECIAL_SRLV         0x06
+#define OPCODE_SPECIAL_MOVCI        0x01
+#define OPCODE_SPECIAL_SRL          0x02
+#define OPCODE_SPECIAL_SRLV         0x06
 
-#define MIPS_OPCODE_COP0_C0              0x01
-#define MIPS_OPCODE_COP0_NOTC0           0x00
-#define MIPS_OPCODE_COP0_NOTC0_MFMC0     0x0b
+#define OPCODE_COP0_C0              0x01
+#define OPCODE_COP0_NOTC0           0x00
+#define OPCODE_COP0_NOTC0_MFMC0     0x0b
 
-#define MIPS_OPCODE_COP1_BC1             0x08
-#define MIPS_OPCODE_COP1_S               0x10
-#define MIPS_OPCODE_COP1_S_MOVCF         0x10
-#define MIPS_OPCODE_COP1_D               0x11
-#define MIPS_OPCODE_COP1_D_MOVCF         0x11
-#define MIPS_OPCODE_COP1_W               0x14
-#define MIPS_OPCODE_COP1_L               0x15
-#define MIPS_OPCODE_COP1_PS              0x16
+#define OPCODE_COP1_BC1             0x08
+#define OPCODE_COP1_S               0x10
+#define OPCODE_COP1_S_MOVCF         0x10
+#define OPCODE_COP1_D               0x11
+#define OPCODE_COP1_D_MOVCF         0x11
+#define OPCODE_COP1_W               0x14
+#define OPCODE_COP1_L               0x15
+#define OPCODE_COP1_PS              0x16
 
-#define MIPS_OPCODE_COP2_BC2             0x08
+#define OPCODE_COP2_BC2             0x08
 
-#define MIPS_OPCODE_SPECIAL3_BSHFL       0x20
+#define OPCODE_SPECIAL3_BSHFL       0x20
 
 
 /*
- * Class 'MIPSAsm'
+ * Class 'Asm'
  */
 
-void MIPSAsmCreate(MIPSAsm *self)
+Asm::Asm()
 {
 	/* Allocate storage for the instruction tables */
-	self->dec_table                   = new MIPSInstInfo[64]();
-	self->dec_table_special           = new MIPSInstInfo[64]();
-	self->dec_table_special_movci     = new MIPSInstInfo[2]();
-	self->dec_table_special_srl       = new MIPSInstInfo[2]();
-	self->dec_table_special_srlv      = new MIPSInstInfo[2]();
+	dec_table                   = new InstInfo[64]();
+	dec_table_special           = new InstInfo[64]();
+	dec_table_special_movci     = new InstInfo[2]();
+	dec_table_special_srl       = new InstInfo[2]();
+	dec_table_special_srlv      = new InstInfo[2]();
 
-	self->dec_table_regimm            = new MIPSInstInfo[32]();
+	dec_table_regimm            = new InstInfo[32]();
 
-	self->dec_table_cop0              = new MIPSInstInfo[32]();
-	self->dec_table_cop0_c0           = new MIPSInstInfo[64]();
-	self->dec_table_cop0_notc0        = new MIPSInstInfo[32]();
-	self->dec_table_cop0_notc0_mfmc0  = new MIPSInstInfo[2]();
+	dec_table_cop0              = new InstInfo[32]();
+	dec_table_cop0_c0           = new InstInfo[64]();
+	dec_table_cop0_notc0        = new InstInfo[32]();
+	dec_table_cop0_notc0_mfmc0  = new InstInfo[2]();
 
-	self->dec_table_cop1              = new MIPSInstInfo[32]();
-	self->dec_table_cop1_bc1          = new MIPSInstInfo[4]();
-	self->dec_table_cop1_s            = new MIPSInstInfo[64]();
-	self->dec_table_cop1_s_movcf      = new MIPSInstInfo[2]();
-	self->dec_table_cop1_d            = new MIPSInstInfo[64]();
-	self->dec_table_cop1_d_movcf      = new MIPSInstInfo[2]();
-	self->dec_table_cop1_w            = new MIPSInstInfo[64]();
-	self->dec_table_cop1_l            = new MIPSInstInfo[64]();
-	self->dec_table_cop1_ps           = new MIPSInstInfo[64]();
+	dec_table_cop1              = new InstInfo[32]();
+	dec_table_cop1_bc1          = new InstInfo[4]();
+	dec_table_cop1_s            = new InstInfo[64]();
+	dec_table_cop1_s_movcf      = new InstInfo[2]();
+	dec_table_cop1_d            = new InstInfo[64]();
+	dec_table_cop1_d_movcf      = new InstInfo[2]();
+	dec_table_cop1_w            = new InstInfo[64]();
+	dec_table_cop1_l            = new InstInfo[64]();
+	dec_table_cop1_ps           = new InstInfo[64]();
 
-	self->dec_table_cop2              = new MIPSInstInfo[32]();
-	self->dec_table_cop2_bc2          = new MIPSInstInfo[4]();
+	dec_table_cop2              = new InstInfo[32]();
+	dec_table_cop2_bc2          = new InstInfo[4]();
 
-	self->dec_table_special2          = new MIPSInstInfo[64]();
+	dec_table_special2          = new InstInfo[64]();
 
-	self->dec_table_special3          = new MIPSInstInfo[64]();
-	self->dec_table_special3_bshfl    = new MIPSInstInfo[32]();
+	dec_table_special3          = new InstInfo[64]();
+	dec_table_special3_bshfl    = new InstInfo[32]();
 
 	/* Initiate values for the 'next_table', 'next_table_low' and 'next_table_high'
 	 * fields of the tables */
-	self->dec_table[MIPS_OPCODE_SPECIAL].next_table =
-		self->dec_table_special;
-	self->dec_table[MIPS_OPCODE_SPECIAL].next_table_low                  = 0;
-	self->dec_table[MIPS_OPCODE_SPECIAL].next_table_high                 = 5;
+	dec_table[OPCODE_SPECIAL].next_table =
+		dec_table_special;
+	dec_table[OPCODE_SPECIAL].next_table_low                  = 0;
+	dec_table[OPCODE_SPECIAL].next_table_high                 = 5;
 
-	self->dec_table_special[MIPS_OPCODE_SPECIAL_SRL].next_table =
-		self->dec_table_special_srl;
-	self->dec_table_special[MIPS_OPCODE_SPECIAL_SRL].next_table_low        = 21;
-	self->dec_table_special[MIPS_OPCODE_SPECIAL_SRL].next_table_high       = 21;
+	dec_table_special[OPCODE_SPECIAL_SRL].next_table =
+		dec_table_special_srl;
+	dec_table_special[OPCODE_SPECIAL_SRL].next_table_low        = 21;
+	dec_table_special[OPCODE_SPECIAL_SRL].next_table_high       = 21;
 
-	self->dec_table_special[MIPS_OPCODE_SPECIAL_SRLV].next_table =
-		self->dec_table_special_srlv;
-	self->dec_table_special[MIPS_OPCODE_SPECIAL_SRLV].next_table_low       = 6;
-	self->dec_table_special[MIPS_OPCODE_SPECIAL_SRLV].next_table_high      = 6;
+	dec_table_special[OPCODE_SPECIAL_SRLV].next_table =
+		dec_table_special_srlv;
+	dec_table_special[OPCODE_SPECIAL_SRLV].next_table_low       = 6;
+	dec_table_special[OPCODE_SPECIAL_SRLV].next_table_high      = 6;
 
-	self->dec_table_special[MIPS_OPCODE_SPECIAL_MOVCI].next_table =
-		self->dec_table_special_movci;
-	self->dec_table_special[MIPS_OPCODE_SPECIAL_MOVCI].next_table_low      = 16;
-	self->dec_table_special[MIPS_OPCODE_SPECIAL_MOVCI].next_table_high     = 16;
+	dec_table_special[OPCODE_SPECIAL_MOVCI].next_table =
+		dec_table_special_movci;
+	dec_table_special[OPCODE_SPECIAL_MOVCI].next_table_low      = 16;
+	dec_table_special[OPCODE_SPECIAL_MOVCI].next_table_high     = 16;
 
-	self->dec_table[MIPS_OPCODE_REGIMM].next_table =
-		self->dec_table_regimm;
-	self->dec_table[MIPS_OPCODE_REGIMM].next_table_low                       = 16;
-	self->dec_table[MIPS_OPCODE_REGIMM].next_table_high                      = 20;
+	dec_table[OPCODE_REGIMM].next_table =
+		dec_table_regimm;
+	dec_table[OPCODE_REGIMM].next_table_low                       = 16;
+	dec_table[OPCODE_REGIMM].next_table_high                      = 20;
 
-	self->dec_table[MIPS_OPCODE_COP0].next_table =
-		self->dec_table_cop0;
-	self->dec_table[MIPS_OPCODE_COP0].next_table_low                         = 25;
-	self->dec_table[MIPS_OPCODE_COP0].next_table_high                        = 25;
+	dec_table[OPCODE_COP0].next_table =
+		dec_table_cop0;
+	dec_table[OPCODE_COP0].next_table_low                         = 25;
+	dec_table[OPCODE_COP0].next_table_high                        = 25;
 
-	self->dec_table_cop0[MIPS_OPCODE_COP0_C0].next_table =
-		self->dec_table_cop0_c0;
-	self->dec_table_cop0[MIPS_OPCODE_COP0_C0].next_table_low                 = 0;
-	self->dec_table_cop0[MIPS_OPCODE_COP0_C0].next_table_high                = 5;
+	dec_table_cop0[OPCODE_COP0_C0].next_table =
+		dec_table_cop0_c0;
+	dec_table_cop0[OPCODE_COP0_C0].next_table_low                 = 0;
+	dec_table_cop0[OPCODE_COP0_C0].next_table_high                = 5;
 
-	self->dec_table_cop0[MIPS_OPCODE_COP0_NOTC0].next_table =
-		self->dec_table_cop0_notc0;
-	self->dec_table_cop0[MIPS_OPCODE_COP0_NOTC0].next_table_low              = 21;
-	self->dec_table_cop0[MIPS_OPCODE_COP0_NOTC0].next_table_high             = 25;
+	dec_table_cop0[OPCODE_COP0_NOTC0].next_table =
+		dec_table_cop0_notc0;
+	dec_table_cop0[OPCODE_COP0_NOTC0].next_table_low              = 21;
+	dec_table_cop0[OPCODE_COP0_NOTC0].next_table_high             = 25;
 
-	self->dec_table_cop0_notc0[MIPS_OPCODE_COP0_NOTC0_MFMC0].next_table =
-		self->dec_table_cop0_notc0_mfmc0;
-	self->dec_table_cop0_notc0[MIPS_OPCODE_COP0_NOTC0_MFMC0].next_table_low   = 5;
-	self->dec_table_cop0_notc0[MIPS_OPCODE_COP0_NOTC0_MFMC0].next_table_high  = 5;
+	dec_table_cop0_notc0[OPCODE_COP0_NOTC0_MFMC0].next_table =
+		dec_table_cop0_notc0_mfmc0;
+	dec_table_cop0_notc0[OPCODE_COP0_NOTC0_MFMC0].next_table_low   = 5;
+	dec_table_cop0_notc0[OPCODE_COP0_NOTC0_MFMC0].next_table_high  = 5;
 
-	self->dec_table[MIPS_OPCODE_COP1].next_table =
-		self->dec_table_cop1;
-	self->dec_table[MIPS_OPCODE_COP1].next_table_low                          = 21;
-	self->dec_table[MIPS_OPCODE_COP1].next_table_high                         = 25;
+	dec_table[OPCODE_COP1].next_table =
+		dec_table_cop1;
+	dec_table[OPCODE_COP1].next_table_low                          = 21;
+	dec_table[OPCODE_COP1].next_table_high                         = 25;
 
-	self->dec_table_cop1[MIPS_OPCODE_COP1_BC1].next_table =
-		self->dec_table_cop1_bc1;
-	self->dec_table_cop1[MIPS_OPCODE_COP1_BC1].next_table_low                 = 16;
-	self->dec_table_cop1[MIPS_OPCODE_COP1_BC1].next_table_high                = 17;
+	dec_table_cop1[OPCODE_COP1_BC1].next_table =
+		dec_table_cop1_bc1;
+	dec_table_cop1[OPCODE_COP1_BC1].next_table_low                 = 16;
+	dec_table_cop1[OPCODE_COP1_BC1].next_table_high                = 17;
 
-	self->dec_table_cop1[MIPS_OPCODE_COP1_S].next_table =
-		self->dec_table_cop1_s;
-	self->dec_table_cop1[MIPS_OPCODE_COP1_S].next_table_low                   = 0;
-	self->dec_table_cop1[MIPS_OPCODE_COP1_S].next_table_high                  = 5;
+	dec_table_cop1[OPCODE_COP1_S].next_table =
+		dec_table_cop1_s;
+	dec_table_cop1[OPCODE_COP1_S].next_table_low                   = 0;
+	dec_table_cop1[OPCODE_COP1_S].next_table_high                  = 5;
 
-	self->dec_table_cop1_s[MIPS_OPCODE_COP1_S_MOVCF].next_table =
-		self->dec_table_cop1_s_movcf;
-	self->dec_table_cop1_s[MIPS_OPCODE_COP1_S_MOVCF].next_table_low           = 16;
-	self->dec_table_cop1_s[MIPS_OPCODE_COP1_S_MOVCF].next_table_high          = 16;
+	dec_table_cop1_s[OPCODE_COP1_S_MOVCF].next_table =
+		dec_table_cop1_s_movcf;
+	dec_table_cop1_s[OPCODE_COP1_S_MOVCF].next_table_low           = 16;
+	dec_table_cop1_s[OPCODE_COP1_S_MOVCF].next_table_high          = 16;
 
-	self->dec_table_cop1[MIPS_OPCODE_COP1_D].next_table =
-		self->dec_table_cop1_d;
-	self->dec_table_cop1[MIPS_OPCODE_COP1_D].next_table_low                   = 0;
-	self->dec_table_cop1[MIPS_OPCODE_COP1_D].next_table_high                  = 5;
+	dec_table_cop1[OPCODE_COP1_D].next_table =
+		dec_table_cop1_d;
+	dec_table_cop1[OPCODE_COP1_D].next_table_low                   = 0;
+	dec_table_cop1[OPCODE_COP1_D].next_table_high                  = 5;
 
-	self->dec_table_cop1_d[MIPS_OPCODE_COP1_D_MOVCF].next_table =
-		self->dec_table_cop1_d_movcf;
-	self->dec_table_cop1_d[MIPS_OPCODE_COP1_D_MOVCF].next_table_low           = 16;
-	self->dec_table_cop1_d[MIPS_OPCODE_COP1_D_MOVCF].next_table_high          = 16;
+	dec_table_cop1_d[OPCODE_COP1_D_MOVCF].next_table =
+		dec_table_cop1_d_movcf;
+	dec_table_cop1_d[OPCODE_COP1_D_MOVCF].next_table_low           = 16;
+	dec_table_cop1_d[OPCODE_COP1_D_MOVCF].next_table_high          = 16;
 
-	self->dec_table_cop1[MIPS_OPCODE_COP1_W].next_table =
-		self->dec_table_cop1_w;
-	self->dec_table_cop1[MIPS_OPCODE_COP1_W].next_table_low                   = 0;
-	self->dec_table_cop1[MIPS_OPCODE_COP1_W].next_table_high                  = 5;
+	dec_table_cop1[OPCODE_COP1_W].next_table =
+		dec_table_cop1_w;
+	dec_table_cop1[OPCODE_COP1_W].next_table_low                   = 0;
+	dec_table_cop1[OPCODE_COP1_W].next_table_high                  = 5;
 
-	self->dec_table_cop1[MIPS_OPCODE_COP1_L].next_table =
-		self->dec_table_cop1_l;
-	self->dec_table_cop1[MIPS_OPCODE_COP1_L].next_table_low                   = 0;
-	self->dec_table_cop1[MIPS_OPCODE_COP1_L].next_table_high                  = 5;
+	dec_table_cop1[OPCODE_COP1_L].next_table =
+		dec_table_cop1_l;
+	dec_table_cop1[OPCODE_COP1_L].next_table_low                   = 0;
+	dec_table_cop1[OPCODE_COP1_L].next_table_high                  = 5;
 
-	self->dec_table_cop1[MIPS_OPCODE_COP1_PS].next_table =
-		self->dec_table_cop1_ps;
-	self->dec_table_cop1[MIPS_OPCODE_COP1_PS].next_table_low                  = 0;
-	self->dec_table_cop1[MIPS_OPCODE_COP1_PS].next_table_high                 = 5;
+	dec_table_cop1[OPCODE_COP1_PS].next_table =
+		dec_table_cop1_ps;
+	dec_table_cop1[OPCODE_COP1_PS].next_table_low                  = 0;
+	dec_table_cop1[OPCODE_COP1_PS].next_table_high                 = 5;
 
-	self->dec_table[MIPS_OPCODE_COP2].next_table = self->dec_table_cop2;
-	self->dec_table[MIPS_OPCODE_COP2].next_table_low                          = 21;
-	self->dec_table[MIPS_OPCODE_COP2].next_table_high                         = 25;
+	dec_table[OPCODE_COP2].next_table = dec_table_cop2;
+	dec_table[OPCODE_COP2].next_table_low                          = 21;
+	dec_table[OPCODE_COP2].next_table_high                         = 25;
 
-	self->dec_table[MIPS_OPCODE_SPECIAL2].next_table =
-		self->dec_table_special2;
-	self->dec_table[MIPS_OPCODE_SPECIAL2].next_table_low                      = 0;
-	self->dec_table[MIPS_OPCODE_SPECIAL2].next_table_high                     = 5;
+	dec_table[OPCODE_SPECIAL2].next_table =
+		dec_table_special2;
+	dec_table[OPCODE_SPECIAL2].next_table_low                      = 0;
+	dec_table[OPCODE_SPECIAL2].next_table_high                     = 5;
 
-	self->dec_table[MIPS_OPCODE_SPECIAL3].next_table =
-		self->dec_table_special3;
-	self->dec_table[MIPS_OPCODE_SPECIAL3].next_table_low                      = 0;
-	self->dec_table[MIPS_OPCODE_SPECIAL3].next_table_high                     = 5;
+	dec_table[OPCODE_SPECIAL3].next_table =
+		dec_table_special3;
+	dec_table[OPCODE_SPECIAL3].next_table_low                      = 0;
+	dec_table[OPCODE_SPECIAL3].next_table_high                     = 5;
 
-	self->dec_table_special3[MIPS_OPCODE_SPECIAL3_BSHFL].next_table =
-		self->dec_table_special3_bshfl;
-	self->dec_table_special3[MIPS_OPCODE_SPECIAL3_BSHFL].next_table_low        = 6;
-	self->dec_table_special3[MIPS_OPCODE_SPECIAL3_BSHFL].next_table_high       = 10;
+	dec_table_special3[OPCODE_SPECIAL3_BSHFL].next_table =
+		dec_table_special3_bshfl;
+	dec_table_special3[OPCODE_SPECIAL3_BSHFL].next_table_low        = 6;
+	dec_table_special3[OPCODE_SPECIAL3_BSHFL].next_table_high       = 10;
 
 	/* Build the tables from asm.dat */
-	MIPSInstInfo *current_table;
+	InstInfo *current_table;
 	unsigned int table_arg[4];
 	int i = 0;
 
 #define DEFINST(_name,_fmt_str,_op0,_op1,_op2,_op3)			\
-	current_table = self->dec_table;				\
+	current_table = dec_table;					\
 	table_arg[0] = _op0;						\
 	table_arg[1] = _op1;						\
 	table_arg[2] = _op2;						\
@@ -222,7 +226,7 @@ void MIPSAsmCreate(MIPSAsm *self)
 		else							\
 			break;						\
 	}								\
-	current_table[table_arg[i]].opcode = MIPS_INST_##_name;		\
+	current_table[table_arg[i]].opcode = INST_##_name;		\
 	current_table[table_arg[i]].name = #_name;			\
 	current_table[table_arg[i]].fmt_str = _fmt_str;			\
 	current_table[table_arg[i]].size = 4;
@@ -231,120 +235,109 @@ void MIPSAsmCreate(MIPSAsm *self)
 }
 
 
-void MIPSAsmDestroy(MIPSAsm *self)
+Asm::~Asm()
 {
-	delete self->dec_table;
-	delete self->dec_table_special;
-	delete self->dec_table_special_movci;
-	delete self->dec_table_special_srl;
-	delete self->dec_table_special_srlv;
+	delete dec_table;
+	delete dec_table_special;
+	delete dec_table_special_movci;
+	delete dec_table_special_srl;
+	delete dec_table_special_srlv;
 
-	delete self->dec_table_regimm;
+	delete dec_table_regimm;
 
-	delete self->dec_table_cop0;
-	delete self->dec_table_cop0_c0;
-	delete self->dec_table_cop0_notc0;
-	delete self->dec_table_cop0_notc0_mfmc0;
+	delete dec_table_cop0;
+	delete dec_table_cop0_c0;
+	delete dec_table_cop0_notc0;
+	delete dec_table_cop0_notc0_mfmc0;
 
-	delete self->dec_table_cop1;
-	delete self->dec_table_cop1_bc1;
-	delete self->dec_table_cop1_s;
-	delete self->dec_table_cop1_s_movcf;
-	delete self->dec_table_cop1_d;
-	delete self->dec_table_cop1_d_movcf;
-	delete self->dec_table_cop1_w;
-	delete self->dec_table_cop1_l;
-	delete self->dec_table_cop1_ps;
+	delete dec_table_cop1;
+	delete dec_table_cop1_bc1;
+	delete dec_table_cop1_s;
+	delete dec_table_cop1_s_movcf;
+	delete dec_table_cop1_d;
+	delete dec_table_cop1_d_movcf;
+	delete dec_table_cop1_w;
+	delete dec_table_cop1_l;
+	delete dec_table_cop1_ps;
 
-	delete self->dec_table_cop2;
-	delete self->dec_table_cop2_bc2;
+	delete dec_table_cop2;
+	delete dec_table_cop2_bc2;
 
-	delete self->dec_table_special2;
+	delete dec_table_special2;
 
-	delete self->dec_table_special3;
-	delete self->dec_table_special3_bshfl;
+	delete dec_table_special3;
+	delete dec_table_special3_bshfl;
 }
 
 
-void MIPSAsmDisassembleBinary(MIPSAsm *self, char *path)
+void Asm::DisassembleBinary(string path)
 {
 	ELFReader::File file(path);
+	Inst inst(this);
 
-	std::cout << file;
-
-#if 0
-	ELFReader *reader;
-	ELFSection *section;
-	ELFSymbol *symbol;
-	ELFSymbol *print_symbol;
-
-	MIPSInst *inst;
-
-	int curr_sym;
-	void *ptr;
-
-	/* Initialize */
-	reader = new(ELFReader, path);
-	inst = new(MIPSInst, self);
+	unsigned int curr_sym;
+	long pos;
 
 	/* Read Sections */
-	ArrayForEach(reader->section_array, section, ELFSection)
+	for (auto it = file.section_list.begin();
+			it != file.section_list.end(); ++it)
 	{
 		/* Skip if section does not contain code */
-		if (!(section->header->sh_flags & SHF_EXECINSTR))
+		ELFReader::Section *section = *it;
+		if (!(section->info->sh_flags & SHF_EXECINSTR))
 			continue;
 
 		/* Title */
-		printf("\n\nDisassembly of section %s:",
-				section->name->text);
+		cout << "\n\nDisassembly of section " << section->name << ":\n";
 
+		/* Symbol */
 		curr_sym = 0;
-		symbol = asELFSymbol(ArrayGet(reader->symbol_array, curr_sym));
+		ELFReader::Symbol *symbol = NULL;
+		if (file.symbol_list.size())
+			symbol = file.symbol_list[0];
 
 		/* Decode and dump instructions */
-		for (ptr = section->buffer->ptr; ptr < section->buffer->ptr +
-			     section->buffer->size; ptr += 4)
+		for (pos = 0; pos < section->size; pos += 4)
 		{
 			/* Symbol */
-			while (symbol && symbol->sym->st_value <
-			       	       section->header->sh_addr + section->buffer->pos)
+			while (symbol && symbol->info->st_value <
+					section->info->sh_addr + pos)
 			{
 				curr_sym++;
-				symbol = asELFSymbol(ArrayGet(reader->symbol_array,
-						curr_sym));
+				symbol = curr_sym < file.symbol_list.size() ?
+						file.symbol_list[curr_sym] : NULL;
 			}
-			if (symbol && symbol->sym->st_value ==
-					section->header->sh_addr + section->buffer->pos)
-				printf("\n\n%08x <%s>:",
-				       section->header->sh_addr + section->buffer->pos,
-				       symbol->name);
+			if (symbol && symbol->info->st_value ==
+					section->info->sh_addr + pos)
+				cout << "\n\n" << setw(8) << setfill('0') << hex
+						<< section->info->sh_addr + pos
+						<< " <" << symbol->name << ">:";
 
 			/* Decode and dump */
-			MIPSInstDecode(inst, section->header->sh_addr +
-					section->buffer->pos, ptr);
-			MIPSInstDumpHex(inst, stdout);
-			MIPSInstDump(inst, stdout);
+			inst.Decode(section->info->sh_addr + pos,
+					section->buffer + pos);
+			inst.DumpHex(cout);
+			inst.Dump(cout);
 
 			/* Symbol name */
-			if (inst->target)
+			if (inst.target)
 			{
-				print_symbol = ELFReaderGetSymbolByAddress(reader,
-						inst->target, NULL);
-				if (print_symbol->sym->st_value == inst->target)
-					printf(" <%s>", print_symbol->name);
-				else
-					printf(" <%s+0x%x>", print_symbol->name,
-					       inst->target - print_symbol->sym->st_value);
+				symbol = file.GetSymbol(inst.target);
+				if (symbol)
+				{
+					if (symbol->info->st_value == inst.target)
+						cout << " <" << symbol->name << ">";
+					else
+						cout << " <" << symbol->name << "+0x"
+								<< hex <<
+								inst.target - symbol->info->st_value
+								<< ">";
+				}
 			}
-
-			/* Next instruction */
-			section->buffer->pos += 4;
 		}
 	}
 
 	/* End */
-	printf("\n");
-	delete(reader);
-	delete(inst);
-#endif
+	cout << '\n';
 }
+

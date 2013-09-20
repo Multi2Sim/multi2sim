@@ -25,53 +25,56 @@
 #include "Inst.h"
 
 
+namespace MIPS
+{
 
-/*
- * Class 'MIPSAsm'
- */
 
-class MIPSAsm : public Asm
+class Asm : public Common::Asm
 {
 public:
 	/* Decoding tables */
-	MIPSInstInfo *dec_table;
-	MIPSInstInfo *dec_table_special;
-	MIPSInstInfo *dec_table_special_movci;
-	MIPSInstInfo *dec_table_special_srl;
-	MIPSInstInfo *dec_table_special_srlv;
+	InstInfo *dec_table;
+	InstInfo *dec_table_special;
+	InstInfo *dec_table_special_movci;
+	InstInfo *dec_table_special_srl;
+	InstInfo *dec_table_special_srlv;
 
-	MIPSInstInfo *dec_table_regimm;
+	InstInfo *dec_table_regimm;
 
-	MIPSInstInfo *dec_table_cop0;
-	MIPSInstInfo *dec_table_cop0_c0;
-	MIPSInstInfo *dec_table_cop0_notc0;
-	MIPSInstInfo *dec_table_cop0_notc0_mfmc0;
+	InstInfo *dec_table_cop0;
+	InstInfo *dec_table_cop0_c0;
+	InstInfo *dec_table_cop0_notc0;
+	InstInfo *dec_table_cop0_notc0_mfmc0;
 
-	MIPSInstInfo *dec_table_cop1;
-	MIPSInstInfo *dec_table_cop1_bc1;
-	MIPSInstInfo *dec_table_cop1_s;
-	MIPSInstInfo *dec_table_cop1_s_movcf;
-	MIPSInstInfo *dec_table_cop1_d;
-	MIPSInstInfo *dec_table_cop1_d_movcf;
-	MIPSInstInfo *dec_table_cop1_w;
-	MIPSInstInfo *dec_table_cop1_l;
-	MIPSInstInfo *dec_table_cop1_ps;
+	InstInfo *dec_table_cop1;
+	InstInfo *dec_table_cop1_bc1;
+	InstInfo *dec_table_cop1_s;
+	InstInfo *dec_table_cop1_s_movcf;
+	InstInfo *dec_table_cop1_d;
+	InstInfo *dec_table_cop1_d_movcf;
+	InstInfo *dec_table_cop1_w;
+	InstInfo *dec_table_cop1_l;
+	InstInfo *dec_table_cop1_ps;
 
-	MIPSInstInfo *dec_table_cop2;
-	MIPSInstInfo *dec_table_cop2_bc2;
+	InstInfo *dec_table_cop2;
+	InstInfo *dec_table_cop2_bc2;
 
-	MIPSInstInfo *dec_table_special2;
+	InstInfo *dec_table_special2;
 
-	MIPSInstInfo *dec_table_special3;
-	MIPSInstInfo *dec_table_special3_bshfl;
+	InstInfo *dec_table_special3;
+	InstInfo *dec_table_special3_bshfl;
 
+	/* Creator and destructor */
+	Asm();
+	~Asm();
+
+	/* Disassemble binary file given a path */
+	void DisassembleBinary(std::string path);
 };
 
-void MIPSAsmCreate(MIPSAsm *self);
-void MIPSAsmDestroy(MIPSAsm *self);
 
-void MIPSAsmDisassembleBinary(MIPSAsm *self, char *path);
 
+} /* namespace MIPS */
 
 #endif
 

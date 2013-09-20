@@ -135,50 +135,20 @@ public:
 
 	/* Dump file information into output stream */
 	friend std::ostream &operator<<(std::ostream &os, const File &file);
+
+	/* Return the first symbol at a given address/name, or the closest
+	 * one with a higher address. If argument 'offset' is passed, the
+	 * offset of the symbol relative to the address is returned. */
+	Symbol *GetSymbol(std::string name);
+	Symbol *GetSymbol(unsigned int address);
+	Symbol *GetSymbol(unsigned int address, unsigned int &offset);
+
+	/* Read the content pointed to by a symbol, eather returning a pair
+	 * buffer/size, or a string stream pointing to the interal ELF buffer */
+	void GetSymbolContent(Symbol *symbol, char *&buffer, long &size);
+	void GetSymbolContent(Symbol *symbol, std::stringstream &ss);
 };
 
-/* Default constructor */
-void ELFReaderCreate(File *self, const char *path);
-
-/* Create ELF file from the content of a buffer given in 'ptr' with a size of
- * 'size' bytes. */
-void ELFReaderCreateFromBuffer(File *self, void *ptr, int size);
-
-/* Destructor */
-void ELFReaderDestroy(File *self);
-
-/* Return the first symbol with an address lower or equal to 'address'. The
- * distance between the returned symbol and 'address' is returned in
- * 'offset_ptr', if not NULL. If there is no symbol with an address lower or
- * equal to 'address', return NULL. */
-Symbol *ELFReaderGetSymbolByAddress(File *self, unsigned int address,
-		unsigned int *offset_ptr);
-
-/* Return the first symbol with name 'name'. If there is no such symbol, return
- * NULL. */
-Symbol *ELFReaderGetSymbolByName(File *self, char *name);
-
-/* Read the content in a section pointed to by a symbol value and size. If the
- * symbol points to an invalid section or its value/size point to an invalid
- * part of the section, return NULL. The caller is responsible for freeing the
- * buffer object returned. */
-//Buffer *ELFReaderReadSymbolContent(File *self, Symbol *symbol);
-
-
-
-
-/*
- * Public
- */
-
-#define elf_reader_debug(...) debug(elf_reader_debug_category, __VA_ARGS__)
-extern int elf_reader_debug_category;
-
-/* Read the ELF header from a file, without creating an entire ELF object, and
- * return it in 'ehdr_ptr'.
- * This function is useful to pre-process an ELF file before deciding a
- * specific action for it that depends on a field of the header. */
-void ELFFileReadHeader(char *path, Elf32_Ehdr *ehdr_ptr);
 
 
 }  /* namespace File */

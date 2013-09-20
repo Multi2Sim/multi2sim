@@ -22,43 +22,45 @@
 
 #include <iostream>
 
+namespace MIPS
+{
 
 /* Forward declarations */
-class MIPSAsm;
+class Asm;
 
 
 /*
- * Class 'MIPSInst'
+ * Class 'Inst'
  */
 
-enum MIPSInstOpcode
+enum InstOpcode
 {
-	MIPSInstOpcodeInvalid = 0,
+	InstOpcodeInvalid = 0,
 
 #define DEFINST(_name, _fmt_str, _op0, _op1, _op2, _op3) \
-	MIPS_INST_##_name,
+	INST_##_name,
 #include "asm.dat"
 #undef DEFINST
 
 	/* Max */
-	MIPSInstOpcodeCount
+	InstOpcodeCount
 
 };
 
 
-struct MIPSInstInfo
+struct InstInfo
 {
-	MIPSInstOpcode opcode;
+	InstOpcode opcode;
 	const char *name;
 	const char *fmt_str;
 	int size;
 	int next_table_low;
 	int next_table_high;
-	MIPSInstInfo *next_table;
+	InstInfo *next_table;
 };
 
 
-struct MIPSInstBytesStandard
+struct InstBytesStandard
 {
 	unsigned int function     :6;	/* [5:0] */
 	unsigned int sa           :5;	/* [10:6] */
@@ -70,7 +72,7 @@ struct MIPSInstBytesStandard
 };
 
 
-struct MIPSInstBytesTarget
+struct InstBytesTarget
 {
 	unsigned int target       :26;	/* [25:0] */
 	unsigned int opc          :6;	/* [31:26] */
@@ -78,7 +80,7 @@ struct MIPSInstBytesTarget
 };
 
 
-struct MIPSInstBytesOffsetImm
+struct InstBytesOffsetImm
 {
 	unsigned int offset       :16;	/* [15:0] */
 	unsigned int rt           :5;	/* [20:16] */
@@ -88,7 +90,7 @@ struct MIPSInstBytesOffsetImm
 };
 
 
-struct MIPSInstBytesCC
+struct InstBytesCC
 {
 	unsigned int offsetbr    :16;	/* [15:0] */
 	unsigned int tf           :1;	/* [16] */
@@ -100,7 +102,7 @@ struct MIPSInstBytesCC
 };
 
 
-struct MIPSInstBytesCode
+struct InstBytesCode
 {
 	unsigned int function     :6;	/* [5:0] */
 	unsigned int code         :10;	/* [15:6] */
@@ -110,7 +112,7 @@ struct MIPSInstBytesCode
 };
 
 
-struct MIPSInstBytesSel
+struct InstBytesSel
 {
 	unsigned int sel          :3;	/* [2:0] */
 	unsigned int impl         :8;	/* [10:3] */
@@ -122,59 +124,80 @@ struct MIPSInstBytesSel
 };
 
 
-union MIPSInstBytes
+union InstBytes
 {
 	unsigned int word;
 
-	MIPSInstBytesStandard standard;
-	MIPSInstBytesTarget target;
-	MIPSInstBytesOffsetImm offset_imm;
-	MIPSInstBytesCC cc;
-	MIPSInstBytesCode code;
-	MIPSInstBytesSel sel;
+	InstBytesStandard standard;
+	InstBytesTarget target;
+	InstBytesOffsetImm offset_imm;
+	InstBytesCC cc;
+	InstBytesCode code;
+	InstBytesSel sel;
 
 };
 
 
-class MIPSInst
+class Inst
 {
-public:
 	/* Disassembler */
-	MIPSAsm *as;
+	Asm *as;
 
+	void DumpBufSa(char **buf_ptr, int *size_ptr);
+	void DumpBufRd(char **buf_ptr, int *size_ptr);
+	void DumpBufRt(char **buf_ptr, int *size_ptr);
+	void DumpBufRs(char **buf_ptr, int *size_ptr);
+	void DumpBufTarget(char **buf_ptr, int *size_ptr);
+	void DumpBufOffset(char **buf_ptr, int *size_ptr);
+	void DumpBufOffsetbr(char **buf_ptr, int *size_ptr);
+	void DumpBufImm(char **buf_ptr, int *size_ptr);
+	void DumpBufImmhex(char **buf_ptr, int *size_ptr);
+	void DumpBufBase(char **buf_ptr, int *size_ptr);
+	void DumpBufSel(char **buf_ptr, int *size_ptr);
+	void DumpBufCc(char **buf_ptr, int *size_ptr);
+	void DumpBufPos(char **buf_ptr, int *size_ptr);
+	void DumpBufFs(char **buf_ptr, int *size_ptr);
+	void DumpBufSize(char **buf_ptr, int *size_ptr);
+	void DumpBufFt(char **buf_ptr, int *size_ptr);
+	void DumpBufFd(char **buf_ptr, int *size_ptr);
+	void DumpBufCode(char **buf_ptr, int *size_ptr);
+
+public:
 	/* Virtual address of the instruction, as loaded from the ELF file */
 	unsigned int addr;
 
 	/* Instruction bytes */
-	MIPSInstBytes bytes;
+	InstBytes bytes;
 
 	/* Decoded instruction information */
-	MIPSInstInfo *info;
+	InstInfo *info;
 
-	/* Target address printed by last call to 'MIPSInstDumpBuf' or
-	 * 'MIPSInstDump', or 0 if no address was printed. */
+	/* Target address used for instruction dump */
 	unsigned int target;
+
+	/* Constructor */
+	Inst(Asm *as);
+
+	/* Read an instruction from the buffer 'buf' into the 'bytes' field of the
+	 * instruction object, and decode it by populating the 'info' field. The value
+	 * in 'addr' gives the virtual address of the instruction, needed to print
+	 * branch addresses. */
+	void Decode(unsigned int addr, void *buf);
+
+	/* Dump an instruction. This function sets the 'target' field of the
+	 * instruction offset to a value other than 0 if a target address has been
+	 * printed. */
+	void DumpBuf(char *buf, int size);
+	void Dump(std::ostream &os);
+	
+	/* Print address and hexadecimal characters for instruction */
+	void DumpHex(std::ostream &os);
 };
 
 
-void MIPSInstCreate(MIPSInst *self, MIPSAsm *as);
-void MIPSInstDestroy(MIPSInst *self);
 
-/* Read an instruction from the buffer 'buf' into the 'bytes' field of the
- * instruction object, and decode it by populating the 'info' field. The value
- * in 'addr' gives the virtual address of the instruction, needed to print
- * branch addresses. */
-void MIPSInstDecode(MIPSInst *self, unsigned int addr, void *buf);
 
-/* Dump an instruction. This function sets the 'target' field of the
- * instruction offset to a value other than 0 if a target address has been
- * printed. */
-void MIPSInstDumpBuf(MIPSInst *self, char *buf, int size);
-void MIPSInstDump(MIPSInst *self, std::ostream &os);
-
-/* Print address and hexadecimal characters for instruction */
-void MIPSInstDumpHex(MIPSInst *self, std::ostream &os);
-
+} /* namespace MIPS */
 
 #endif
 
