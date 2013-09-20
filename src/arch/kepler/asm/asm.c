@@ -597,7 +597,7 @@ void KplAsmDisassembleBinary(KplAsm *self, char *path)
 				: section->name->text;
 
 		/* Title */
-		printf("\n\tcode for sm_35");
+		printf("\tcode for sm_35");
 		printf("\n\t\tFunction : %s", title);
 
 		/* Decode and dump instructions */
@@ -612,6 +612,7 @@ void KplAsmDisassembleBinary(KplAsm *self, char *path)
 			/* Move to next instruction */
 			section->buffer->pos += 8;
 		}
+		printf("\n\t\t.................................");
 	}
 	printf("\n");
 	delete(reader);
