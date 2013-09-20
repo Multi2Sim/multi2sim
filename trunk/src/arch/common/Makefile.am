@@ -8,6 +8,9 @@ libcommon_a_SOURCES = \
 	asm.c \
 	asm.h \
 	\
+	Asm.cc \
+	Asm.h \
+	\
 	emu.c \
 	emu.h \
 	\

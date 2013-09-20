@@ -106,6 +106,8 @@
 #include <sys/time.h>
 #include <visual/common/visual.h>
 
+#include "M2s.h"
+
 
 static char *visual_file_name = "";
 static char *ctx_config_file_name = "";
@@ -173,6 +175,8 @@ static char *dram_debug_file_name = "";
 static long long m2s_max_time;  /* Max. simulation time in seconds (0 = no limit) */
 static long long m2s_loop_iter;  /* Number of iterations in main simulation loop */
 static char m2s_sim_id[10];  /* Pseudo-unique simulation ID (5 alpha-numeric digits) */
+
+static int run_cpp;  /* Run C++ new code */
 
 static volatile int m2s_signal_received;  /* Signal received by handler (0 = none */
 
@@ -656,6 +660,13 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		/*
 		 * General Options
 		 */
+
+		/* Run new C++ code */
+		if (!strcmp(argv[argi], "--cpp"))
+		{
+			run_cpp = 1;
+			continue;
+		}
 
 		/* Context configuration file */
 		if (!strcmp(argv[argi], "--ctx-config"))
@@ -2070,6 +2081,13 @@ int main(int argc, char **argv)
 
 	/* Read command line */
 	m2s_read_command_line(&argc, argv);
+
+	/* C++ code */
+	if (run_cpp)
+	{
+		Main(argc, argv);
+		goto end;
+	}
 
 	/* x86 disassembler tool */
 	if (*x86_disasm_file_name)
