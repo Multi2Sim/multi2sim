@@ -98,6 +98,7 @@ AC_COMPILE_IFELSE(
 
 debug=false
 CFLAGS="-msse2 -O3 -std=gnu99 -DNDEBUG"
+CXXFLAGS="-std=gnu++0x -O3"
 AC_ARG_ENABLE(debug,
 [  --enable-debug    Turn on debugging],
 [
@@ -107,6 +108,7 @@ AC_ARG_ENABLE(debug,
 		
 		# Add flag '-Wno-error=deprecated-declarations' only if it is supported.
 		# This flag prevents warnings caused by newer GTK versions that would cause with -Werror
+		CXXFLAGS="-std=gnu++0x -Wall -Werror -g -O0"
 		saved_flags="-msse2 -Wall -Werror -DMHANDLE -g -O0 -std=gnu99"
 		CFLAGS="-Wno-error=deprecated-declarations"
 		AC_MSG_CHECKING([whether CC supports -Wno-error=deprecated-declarations])
@@ -953,6 +955,7 @@ AC_CONFIG_FILES([
 		src/driver/opengl/Makefile
 
 		src/lib/class/Makefile
+		src/lib/cpp/Makefile
 		src/lib/esim/Makefile
 		src/lib/mhandle/Makefile
 		src/lib/util/Makefile
