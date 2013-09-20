@@ -301,6 +301,21 @@ struct str_map_t kpl_inst_us_map =
 	}
 };
 
+struct str_map_t kpl_inst_u8_map =
+{
+        8,
+        {
+                { ".U8", 0},
+                { ".S8", 1},
+		{ ".U16", 2},
+		{ ".S16", 3},
+                { "", 4},
+                { ".64", 5},
+                { ".128", 6},
+                { ".U.128", 7},
+        }
+};
+
 
 static void KplInstDumpPredShort(KplInst *self, char **buf_ptr, int *size_ptr, int high, int low)
 {
@@ -403,6 +418,13 @@ static void KplInstDumpAnd(KplInst *self, char **buf_ptr, int *size_ptr, int hig
 	str_printf(buf_ptr, size_ptr, "%s", str_map_value(&kpl_inst_and_map, value));
 }
 
+static void KplInstDumpU8(KplInst *self, char **buf_ptr, int *size_ptr, int high, int low)
+{
+        int value;
+
+        value = BITS64(self->bytes.as_dword, high, low);
+        str_printf(buf_ptr, size_ptr, "%s", str_map_value(&kpl_inst_u8_map, value));
+}
 
 static void KplInstDumpX(KplInst *self, char **buf_ptr, int *size_ptr, int high, int low)
 {
@@ -538,7 +560,51 @@ static void KplInstDumpCc2(KplInst *self, char **buf_ptr, int *size_ptr, int hig
         str_printf(buf_ptr, size_ptr, "%s", str_map_value(&kpl_inst_cc2_map, value));
 }
 
+static void KplInstDumpSRCB(KplInst *self, char **buf_ptr, int *size_ptr, int high0, int low0, int high1, int low1, int high2, int low2, int high3, int low3)
+{
+        int value0;
+	int value1;
+	int value2;
+	int value3;
+	int value4;
+	int valueConst;
 
+        value0 = BITS64(self->bytes.as_dword, high0, low0);
+        value1 = BITS64(self->bytes.as_dword, high1, low1);
+        value2 = BITS64(self->bytes.as_dword, high2, low2);
+        value3 = BITS64(self->bytes.as_dword, high3, low3);
+        value4 = BITS64(self->bytes.as_dword, high3 - 1, low3);
+	valueConst = 4*(value2*1000000000 + value3);
+	
+	if (value0 == 0)
+		str_printf(buf_ptr, size_ptr, "c [0x%x] [0x%x]", value1, valueConst);
+	else if (value0 == 1)
+	{
+        	if(value4 == 255)
+                	str_printf(buf_ptr, size_ptr, "RZ");
+        	else
+                	str_printf(buf_ptr, size_ptr, "R%d", value4);
+	}
+}
+
+static void KplInstDumpEndConst(KplInst *self, char **buf_ptr, int *size_ptr, int high, int low)
+{
+        int value;
+
+        value = BITS64(self->bytes.as_dword, high, low);
+       	str_printf(buf_ptr, size_ptr, "0x%x", value);
+}
+
+static void KplInstDumpOffset(KplInst *self, char **buf_ptr, int *size_ptr, int high, int low)
+{
+        int value;
+
+        value = BITS64(self->bytes.as_dword, high, low);
+	if (value == 0)
+		str_printf(buf_ptr, size_ptr, "%s", "");
+	else
+       		str_printf(buf_ptr, size_ptr, " 0x%x", value);
+}
 void KplInstDumpBuf(KplInst *self, char *buf, int size)
 {
 	char *fmt_str;
@@ -554,9 +620,30 @@ void KplInstDumpBuf(KplInst *self, char *buf, int size)
 	fmt_str = self->info->fmt_str;
 	while (*fmt_str)
 	{
+                if (str_prefix(fmt_str, "%offset"))
+                {
+                        KplInstDumpOffset(self, &buf, &size, 53, 23);
+                        fmt_str += 7;
+                        continue;
+                }
+                
+                if (str_prefix(fmt_str, "%const"))
+                {
+                        KplInstDumpEndConst(self, &buf, &size, 45, 42);
+                        fmt_str += 6;
+                        continue;
+                }
+
+                if (str_prefix(fmt_str, "%srcC"))
+                {
+			KplInstDumpReg(self, &buf, &size, 49, 42);
+                        fmt_str += 5;
+                        continue;
+                }
+		
                 if (str_prefix(fmt_str, "%srcB"))
                 {
-                        KplInstDumpReg(self, &buf, &size, 30, 23);
+                        KplInstDumpSRCB(self, &buf, &size, 63, 63, 41, 37, 36, 32, 31, 23);
                         fmt_str += 5;
                         continue;
                 }
@@ -665,6 +752,13 @@ void KplInstDumpBuf(KplInst *self, char *buf, int size)
 			fmt_str += 4;
 			continue;
 		}
+
+                if (str_prefix(fmt_str, "%_u8"))
+                {
+                        KplInstDumpU8(self, &buf, &size, 58, 56);
+                        fmt_str += 4;
+                        continue;
+                }
 
 		if (str_prefix(fmt_str, "%_U32"))
 		{
