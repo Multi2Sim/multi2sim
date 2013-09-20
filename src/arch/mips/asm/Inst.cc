@@ -26,6 +26,7 @@
 
 using namespace Misc;
 using namespace std;
+using namespace MIPS;
 
 
 
@@ -69,29 +70,19 @@ static const char *inst_reg_name[MIPS_INST_REG_COUNT] =
 
 
 
-
-
-/*
- * Class 'MIPSInst'
- */
-
-void MIPSInstCreate(MIPSInst *self, MIPSAsm *as)
+Inst::Inst(Asm *as)
 {
-	/* Initialize */
-	self->as = as;
+	this->as = as;
+	bytes.word = 0;
+	addr = 0;
+	target = 0;
+	info = NULL;
 }
 
 
-void MIPSInstDestroy(MIPSInst *self)
+void Inst::Decode(unsigned int addr, void *buf)
 {
-}
-
-
-void MIPSInstDecode(MIPSInst *self, unsigned int addr, void *buf)
-{
-	MIPSAsm *as = self->as;
-
-	MIPSInstInfo *current_table;
+	InstInfo *current_table;
 
 	int current_table_low;
 	int current_table_high;
@@ -100,9 +91,9 @@ void MIPSInstDecode(MIPSInst *self, unsigned int addr, void *buf)
 	unsigned int table_arg;
 
 	/* Store the instruction */
-	self->bytes.word = * (unsigned int *) buf;
-	self->addr = addr;
-	self->target = 0;
+	bytes.word = * (unsigned int *) buf;
+	this->addr = addr;
+	target = 0;
 
 	/* We start with the first table mips_asm_table, with the
 	 * opcode field as argument */
@@ -110,7 +101,7 @@ void MIPSInstDecode(MIPSInst *self, unsigned int addr, void *buf)
 	current_table_low = 26;
 	current_table_high = 31;
 	loop_iteration = 0;
-	table_arg = Misc::GetBit(self->bytes.word, current_table_high,
+	table_arg = Misc::GetBit(bytes.word, current_table_high,
 			current_table_low);
 
 	/* Find next tables if the instruction belongs to another table */
@@ -122,7 +113,7 @@ void MIPSInstDecode(MIPSInst *self, unsigned int addr, void *buf)
 			current_table_high = current_table[table_arg].next_table_high;
 			current_table_low = current_table[table_arg].next_table_low;
 			current_table = current_table[table_arg].next_table;
-			table_arg = GetBit(self->bytes.word, current_table_high,
+			table_arg = GetBit(bytes.word, current_table_high,
 					current_table_low);
 			loop_iteration++;
 		}
@@ -137,15 +128,15 @@ void MIPSInstDecode(MIPSInst *self, unsigned int addr, void *buf)
 	}
 
 	/* Instruction found */
-	self->info = &current_table[table_arg];
+	info = &current_table[table_arg];
 }
 
 
-static void MIPSInstDumpBufSa(MIPSInst *self, char **buf_ptr, int *size_ptr)
+void Inst::DumpBufSa(char **buf_ptr, int *size_ptr)
 {
 	unsigned int sa;
 
-	sa = self->bytes.standard.sa;
+	sa = bytes.standard.sa;
 	if (sa != 0)
 		str_printf(buf_ptr, size_ptr, "0x%x", sa);
 	else
@@ -153,18 +144,18 @@ static void MIPSInstDumpBufSa(MIPSInst *self, char **buf_ptr, int *size_ptr)
 }
 
 
-static void MIPSInstDumpBufRd(MIPSInst *self, char **buf_ptr, int *size_ptr)
+void Inst::DumpBufRd(char **buf_ptr, int *size_ptr)
 {
 	unsigned int rd;
 	int token_len;
 
-	rd = self->bytes.standard.rd;
+	rd = bytes.standard.rd;
 
-	if (Asm::IsToken(self->info->name, "RDHWR", &token_len))
+	if (Asm::IsToken(info->name, "RDHWR", &token_len))
 	{
 		str_printf(buf_ptr, size_ptr, "$%d", rd);
 	}
-	else if (Asm::IsToken(self->info->name, "JALR", &token_len))
+	else if (Asm::IsToken(info->name, "JALR", &token_len))
 	{
 		if (rd == (int) 31)
 		{
@@ -182,176 +173,175 @@ static void MIPSInstDumpBufRd(MIPSInst *self, char **buf_ptr, int *size_ptr)
 }
 
 
-static void MIPSInstDumpBufRt(MIPSInst *self, char **buf_ptr, int *size_ptr)
+void Inst::DumpBufRt(char **buf_ptr, int *size_ptr)
 {
 	unsigned int rt;
 
-	rt = self->bytes.standard.rt;
+	rt = bytes.standard.rt;
 	str_printf(buf_ptr, size_ptr, "%s", inst_reg_name[rt]);
 }
 
 
-static void MIPSInstDumpBufRs(MIPSInst *self, char **buf_ptr, int *size_ptr)
+void Inst::DumpBufRs(char **buf_ptr, int *size_ptr)
 {
 	unsigned int rs;
 
-	rs = self->bytes.standard.rs;
+	rs = bytes.standard.rs;
 	str_printf(buf_ptr, size_ptr, "%s", inst_reg_name[rs]);
 }
 
 
-static void MIPSInstDumpBufTarget(MIPSInst *self,
-		char **buf_ptr, int *size_ptr)
+void Inst::DumpBufTarget(char **buf_ptr, int *size_ptr)
 {
 	unsigned int target;
 
-	target = self->bytes.target.target;
+	target = bytes.target.target;
 	target = target << 2;
-	self->target = target;
+	target = target;
 	str_printf(buf_ptr, size_ptr, "%x", target);
 }
 
 
-static void MIPSInstDumpBufOffset(MIPSInst *self, char **buf_ptr, int *size_ptr)
+void Inst::DumpBufOffset(char **buf_ptr, int *size_ptr)
 {
 	unsigned int offset;
 
-	offset = self->bytes.offset_imm.offset;
+	offset = bytes.offset_imm.offset;
 	if (offset & 0x8000)
 		offset = -((offset ^ 0xffff) + 1);
 	str_printf(buf_ptr, size_ptr, "%d", (int) offset);
 }
 
 
-static void MIPSInstDumpBufOffsetbr(MIPSInst *self, char **buf_ptr, int *size_ptr)
+void Inst::DumpBufOffsetbr(char **buf_ptr, int *size_ptr)
 {
 	unsigned int offsetbr;
 
-	offsetbr = self->bytes.cc.offsetbr;
+	offsetbr = bytes.cc.offsetbr;
 	if (offsetbr & 0x8000)
 		offsetbr = -((offsetbr ^ 0xffff) + 1);
-	offsetbr = (offsetbr << 2) + self->addr + 4;
-	self->target = offsetbr;
+	offsetbr = (offsetbr << 2) + addr + 4;
+	target = offsetbr;
 	str_printf(buf_ptr, size_ptr, "%x", offsetbr);
 }
 
 
-static void MIPSInstDumpBufImm(MIPSInst *self, char **buf_ptr, int *size_ptr)
+void Inst::DumpBufImm(char **buf_ptr, int *size_ptr)
 {
 	unsigned int imm;
 
-	imm = self->bytes.offset_imm.offset;
+	imm = bytes.offset_imm.offset;
 	if (imm & 0x8000)
 		imm = -((imm ^ 0xffff) + 1);
 	str_printf(buf_ptr, size_ptr, "%d", (int) imm);
 }
 
 
-static void MIPSInstDumpBufImmhex(MIPSInst *self, char **buf_ptr, int *size_ptr)
+void Inst::DumpBufImmhex(char **buf_ptr, int *size_ptr)
 {
 	unsigned int immhex;
 
-	immhex = self->bytes.offset_imm.offset;
+	immhex = bytes.offset_imm.offset;
 	str_printf(buf_ptr, size_ptr, "0x%x", immhex);
 }
 
 
-static void MIPSInstDumpBufBase(MIPSInst *self, char **buf_ptr, int *size_ptr)
+void Inst::DumpBufBase(char **buf_ptr, int *size_ptr)
 {
 	unsigned int base;
 
-	base = self->bytes.offset_imm.base;
+	base = bytes.offset_imm.base;
 	str_printf(buf_ptr, size_ptr, "%s", inst_reg_name[base]);
 }
 
 
-static void MIPSInstDumpBufSel(MIPSInst *self, char **buf_ptr, int *size_ptr)
+void Inst::DumpBufSel(char **buf_ptr, int *size_ptr)
 {
 	unsigned int sel;
 
-	sel = self->bytes.sel.sel;
+	sel = bytes.sel.sel;
 	str_printf(buf_ptr, size_ptr, "%d", sel);
 }
 
 
-static void MIPSInstDumpBufCc(MIPSInst *self, char **buf_ptr, int *size_ptr)
+void Inst::DumpBufCc(char **buf_ptr, int *size_ptr)
 {
 	unsigned int cc;
 
-	cc = self->bytes.cc.cc;
+	cc = bytes.cc.cc;
 	str_printf(buf_ptr, size_ptr, "$fcc%d", cc);
 }
 
 
-static void MIPSInstDumpBufPos(MIPSInst *self, char **buf_ptr, int *size_ptr)
+void Inst::DumpBufPos(char **buf_ptr, int *size_ptr)
 {
 	unsigned int pos;
 
-	pos = self->bytes.standard.sa;
+	pos = bytes.standard.sa;
 	str_printf(buf_ptr, size_ptr, "0x%x", pos);
 }
 
 
-static void MIPSInstDumpBufFs(MIPSInst *self, char **buf_ptr, int *size_ptr)
+void Inst::DumpBufFs(char **buf_ptr, int *size_ptr)
 {
 	unsigned int fs;
 	int token_len;
 
-	fs = self->bytes.standard.rd;
-	if ((Asm::IsToken(self->info->name, "CFC1", &token_len)) ||
-		(Asm::IsToken(self->info->name, "CTC1", &token_len)))
+	fs = bytes.standard.rd;
+	if ((Asm::IsToken(info->name, "CFC1", &token_len)) ||
+		(Asm::IsToken(info->name, "CTC1", &token_len)))
 		str_printf(buf_ptr, size_ptr, "$%d", fs);
 	else
 		str_printf(buf_ptr, size_ptr, "$f%d", fs);
 }
 
 
-static void MIPSInstDumpBufSize(MIPSInst *self, char **buf_ptr, int *size_ptr)
+void Inst::DumpBufSize(char **buf_ptr, int *size_ptr)
 {
 	unsigned int size;
 	unsigned int pos;
 
 	int token_len;
 
-	pos = self->bytes.standard.sa;
-	size = self->bytes.standard.rd;
+	pos = bytes.standard.sa;
+	size = bytes.standard.rd;
 
-	if (Asm::IsToken(self->info->name, "INS", &token_len))
+	if (Asm::IsToken(info->name, "INS", &token_len))
 		size = size + 1 - pos;
-	else if (Asm::IsToken(self->info->name, "EXT", &token_len))
+	else if (Asm::IsToken(info->name, "EXT", &token_len))
 		size++;
 	str_printf(buf_ptr, size_ptr, "0x%x", size);
 }
 
 
-static void MIPSInstDumpBufFt(MIPSInst *self, char **buf_ptr, int *size_ptr)
+void Inst::DumpBufFt(char **buf_ptr, int *size_ptr)
 {
 	unsigned int ft;
 
-	ft = self->bytes.standard.rt;
+	ft = bytes.standard.rt;
 	str_printf(buf_ptr, size_ptr, "$f%d", ft);
 }
 
 
-static void MIPSInstDumpBufFd(MIPSInst *self, char **buf_ptr, int *size_ptr)
+void Inst::DumpBufFd(char **buf_ptr, int *size_ptr)
 {
 	unsigned int fd;
 
-	fd = self->bytes.standard.sa;
+	fd = bytes.standard.sa;
 	str_printf(buf_ptr, size_ptr, "$f%d", fd);
 }
 
 
-static void MIPSInstDumpBufCode(MIPSInst *self, char **buf_ptr, int *size_ptr)
+void Inst::DumpBufCode(char **buf_ptr, int *size_ptr)
 {
 	unsigned int code;
 
-	code = self->bytes.code.code;
+	code = bytes.code.code;
 	str_printf(buf_ptr, size_ptr, "0x%x", code);
 }
 
 
-void MIPSInstDumpBuf(MIPSInst *self, char *buf, int size)
+void Inst::DumpBuf(char *buf, int size)
 {
 	char *orig_buf = buf;
 	const char *fmt_str;
@@ -365,17 +355,17 @@ void MIPSInstDumpBuf(MIPSInst *self, char *buf, int size)
 	unsigned int sa;
 
 	/* Get format string */
-	fmt_str = self->info->fmt_str;
+	fmt_str = info->fmt_str;
 	if (!fmt_str || !*fmt_str)
 		fatal("Instruction not implememted.\n");
 
 	/* Traverse format string */
 	while (*fmt_str)
 	{
-		rd = self->bytes.standard.rd;
-		rt = self->bytes.standard.rt;
-		rs = self->bytes.standard.rs;
-		sa = self->bytes.standard.sa;
+		rd = bytes.standard.rd;
+		rt = bytes.standard.rt;
+		rs = bytes.standard.rs;
+		sa = bytes.standard.sa;
 
 		/*
 		 *  DEAL WITH PSEUDO INSTRUCTIONS
@@ -396,9 +386,9 @@ void MIPSInstDumpBuf(MIPSInst *self, char *buf, int size)
 			if (rt == 0)
 			{
 				str_printf(&buf, &size, "move\t");
-				MIPSInstDumpBufRd(self, &buf, &size);
+				DumpBufRd(&buf, &size);
 				str_printf(&buf, &size, ",");
-				MIPSInstDumpBufRs(self, &buf, &size);
+				DumpBufRs(&buf, &size);
 				break;
 			}
 		}
@@ -409,7 +399,7 @@ void MIPSInstDumpBuf(MIPSInst *self, char *buf, int size)
 			if (rs == 0)
 			{
 				str_printf(&buf, &size, "bal\t");
-				MIPSInstDumpBufOffsetbr(self, &buf, &size);
+				DumpBufOffsetbr(&buf, &size);
 				break;
 			}
 		}
@@ -420,15 +410,15 @@ void MIPSInstDumpBuf(MIPSInst *self, char *buf, int size)
 			if ((rs | rt) == 0)
 			{
 				str_printf(&buf, &size, "b\t");
-				MIPSInstDumpBufOffsetbr(self, &buf, &size);
+				DumpBufOffsetbr(&buf, &size);
 				break;
 			}
 			else if (rt == 0)
 			{
 				str_printf(&buf, &size, "beqz\t");
-				MIPSInstDumpBufRs(self, &buf, &size);
+				DumpBufRs(&buf, &size);
 				str_printf(&buf, &size, ",");
-				MIPSInstDumpBufOffsetbr(self, &buf, &size);
+				DumpBufOffsetbr(&buf, &size);
 				break;
 			}
 		}
@@ -439,9 +429,9 @@ void MIPSInstDumpBuf(MIPSInst *self, char *buf, int size)
 			if (rs == 0)
 			{
 				str_printf(&buf, &size, "li\t");
-				MIPSInstDumpBufRt(self, &buf, &size);
+				DumpBufRt(&buf, &size);
 				str_printf(&buf, &size, ",");
-				MIPSInstDumpBufImm(self, &buf, &size);
+				DumpBufImm(&buf, &size);
 				break;
 			}
 		}
@@ -451,9 +441,9 @@ void MIPSInstDumpBuf(MIPSInst *self, char *buf, int size)
 			if (rs == 0)
 			{
 				str_printf(&buf, &size, "li\t");
-				MIPSInstDumpBufRt(self, &buf, &size);
+				DumpBufRt(&buf, &size);
 				str_printf(&buf, &size, ",");
-				MIPSInstDumpBufImmhex(self, &buf, &size);
+				DumpBufImmhex(&buf, &size);
 				break;
 			}
 		}
@@ -463,9 +453,9 @@ void MIPSInstDumpBuf(MIPSInst *self, char *buf, int size)
 			if (rt == 0)
 			{
 				str_printf(&buf, &size, "bnez\t");
-				MIPSInstDumpBufRs(self, &buf, &size);
+				DumpBufRs(&buf, &size);
 				str_printf(&buf, &size, ",");
-				MIPSInstDumpBufOffsetbr(self, &buf, &size);
+				DumpBufOffsetbr(&buf, &size);
 				break;
 			}
 		}
@@ -475,9 +465,9 @@ void MIPSInstDumpBuf(MIPSInst *self, char *buf, int size)
 			if (rs == 0)
 			{
 				str_printf(&buf, &size, "negu\t");
-				MIPSInstDumpBufRd(self, &buf, &size);
+				DumpBufRd(&buf, &size);
 				str_printf(&buf, &size, ",");
-				MIPSInstDumpBufRt(self, &buf, &size);
+				DumpBufRt(&buf, &size);
 				break;
 			}
 		}
@@ -503,45 +493,45 @@ void MIPSInstDumpBuf(MIPSInst *self, char *buf, int size)
 		i = 1;
 		++fmt_str;
 		if (Asm::IsToken(fmt_str, "sa", &token_len))
-			MIPSInstDumpBufSa(self, &buf, &size);
+			DumpBufSa(&buf, &size);
 		else if (Asm::IsToken(fmt_str, "rd", &token_len))
-			MIPSInstDumpBufRd(self, &buf, &size);
+			DumpBufRd(&buf, &size);
 		else if (Asm::IsToken(fmt_str, "rt", &token_len))
-			MIPSInstDumpBufRt(self, &buf, &size);
+			DumpBufRt(&buf, &size);
 		else if (Asm::IsToken(fmt_str, "rs", &token_len))
-			MIPSInstDumpBufRs(self, &buf, &size);
+			DumpBufRs(&buf, &size);
 		else if (Asm::IsToken(fmt_str, "target",
 				&token_len))
-			MIPSInstDumpBufTarget(self, &buf, &size);
+			DumpBufTarget(&buf, &size);
 		else if (Asm::IsToken(fmt_str, "offset",
 				&token_len))
-			MIPSInstDumpBufOffset(self, &buf, &size);
+			DumpBufOffset(&buf, &size);
 		else if (Asm::IsToken(fmt_str, "offsetbr",
 				&token_len))
-			MIPSInstDumpBufOffsetbr(self, &buf, &size);
+			DumpBufOffsetbr(&buf, &size);
 		else if (Asm::IsToken(fmt_str, "Imm", &token_len))
-			MIPSInstDumpBufImm(self, &buf, &size);
+			DumpBufImm(&buf, &size);
 		else if (Asm::IsToken(fmt_str, "Immhex",
 				&token_len))
-			MIPSInstDumpBufImmhex(self, &buf, &size);
+			DumpBufImmhex(&buf, &size);
 		else if (Asm::IsToken(fmt_str, "base", &token_len))
-			MIPSInstDumpBufBase(self, &buf, &size);
+			DumpBufBase(&buf, &size);
 		else if (Asm::IsToken(fmt_str, "sel", &token_len))
-			MIPSInstDumpBufSel(self, &buf, &size);
+			DumpBufSel(&buf, &size);
 		else if (Asm::IsToken(fmt_str, "cc", &token_len))
-			MIPSInstDumpBufCc(self, &buf, &size);
+			DumpBufCc(&buf, &size);
 		else if (Asm::IsToken(fmt_str, "pos", &token_len))
-			MIPSInstDumpBufPos(self, &buf, &size);
+			DumpBufPos(&buf, &size);
 		else if (Asm::IsToken(fmt_str, "size", &token_len))
-			MIPSInstDumpBufSize(self, &buf, &size);
+			DumpBufSize(&buf, &size);
 		else if (Asm::IsToken(fmt_str, "fs", &token_len))
-			MIPSInstDumpBufFs(self, &buf, &size);
+			DumpBufFs(&buf, &size);
 		else if (Asm::IsToken(fmt_str, "ft", &token_len))
-			MIPSInstDumpBufFt(self, &buf, &size);
+			DumpBufFt(&buf, &size);
 		else if (Asm::IsToken(fmt_str, "fd", &token_len))
-			MIPSInstDumpBufFd(self, &buf, &size);
+			DumpBufFd(&buf, &size);
 		else if (Asm::IsToken(fmt_str, "code", &token_len))
-			MIPSInstDumpBufCode(self, &buf, &size);
+			DumpBufCode(&buf, &size);
 		else
 			fatal("%s: token not recognized\n", fmt_str);
 
@@ -551,19 +541,20 @@ void MIPSInstDumpBuf(MIPSInst *self, char *buf, int size)
 }
 
 
-void MIPSInstDump(MIPSInst *self, std::ostream &os)
+void Inst::Dump(std::ostream &os)
 {
 	char buf[200];
 
-	MIPSInstDumpBuf(self, buf, sizeof buf);
+	DumpBuf(buf, sizeof buf);
 	os << buf;
 }
 
 
-void MIPSInstDumpHex(MIPSInst *self, std::ostream &os)
+void Inst::DumpHex(std::ostream &os)
 {
 	//fprintf(f, "\n%8x:\t%08x \t", self->addr, self->bytes.word);
-	os << "\n" << setfill('0') << setw(8) << hex << self->addr <<
-			":\t" << setfill('0') <<setw(8) << hex <<
-			self->bytes.word << " \t";
+	os << "\n" << setfill('0') << setw(8) << hex << addr <<
+			":\t" << setfill('0') << setw(8) << hex <<
+			bytes.word << " \t";
 }
+

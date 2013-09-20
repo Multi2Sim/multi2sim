@@ -23,6 +23,8 @@
 
 #include "Asm.h"
 
+using namespace Common;
+
 
 int Asm::IsToken(const char *fmt, const char *token, int *length_ptr)
 {

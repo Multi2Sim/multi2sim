@@ -20,10 +20,8 @@
 #ifndef ARCH_COMMON_ASM_H
 #define ARCH_COMMON_ASM_H
 
-
-/*
- * Class 'Asm'
- */
+namespace Common
+{
 
 class Asm
 {
@@ -31,6 +29,8 @@ public:
 	static int IsToken(const char *fmt, const char *token, int *length_ptr);
 };
 
+
+} /* namespace Common */
 
 #endif
 
