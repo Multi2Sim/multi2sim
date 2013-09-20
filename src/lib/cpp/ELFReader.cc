@@ -137,8 +137,8 @@ bool Symbol::Compare(Symbol *a, Symbol *b)
 
 	/* Sort symbol with the same address as per their
 	 * ST_BIND field in st_info (bits 4 to 8) */
-	bind_a = (a->info->st_info >> 4) & 0xf;
-	bind_b = (a->info->st_info >> 4) & 0xf;
+	bind_a = ELF32_ST_BIND(a->info->st_info);
+	bind_b = ELF32_ST_BIND(b->info->st_info);
 	if (bind_a < bind_b)
 		return true;
 	else if (bind_a > bind_b)
@@ -380,7 +380,9 @@ ostream &operator<<(ostream &os, const File &file)
 	os << setw(40) << "name" << " "
 			<< setw(15) << "section" << " "
 			<< setw(12) << "value" << " "
-			<< setw(12) << "size" << "\n";
+			<< setw(12) << "size" << " "
+			<< setw(10) << "info" << " "
+			<< setw(10) << "other" << '\n';
 	os << string(80, '-') << '\n';
 	for (auto it = file.symbol_list.begin();
 			it != file.symbol_list.end(); ++it)
@@ -403,7 +405,10 @@ ostream &operator<<(ostream &os, const File &file)
 
 		/* Rest */
 		os << setw(10) << hex << symbol->info->st_value << ' ';
-		os << setw(12) << symbol->info->st_size << '\n';
+		os << setw(12) << symbol->info->st_size << ' ';
+		os << setw(10) << (int) ELF32_ST_BIND(symbol->info->st_info) << ',' << (int) ELF32_ST_TYPE(symbol->info->st_info) << ' ';
+		os << setw(10) << (int) symbol->info->st_other << ' ';
+		os << '\n';
 	}
 	os << '\n';
 
@@ -478,12 +483,19 @@ Symbol *File::GetSymbol(unsigned int address, unsigned int &offset)
 	/* Go backwards to find first symbol with that address */
 	for (;;)
 	{
+		/* One symbol before */
 		min--;
-		prev_symbol = symbol_list[min];
-		if (!prev_symbol || prev_symbol->info->st_value !=
-				symbol->info->st_value)
+		if (min < 0)
 			break;
-		symbol = prev_symbol;
+
+		/* If address is lower, stop */
+		prev_symbol = symbol_list[min];
+		if (prev_symbol->info->st_value != symbol->info->st_value)
+			break;
+
+		/* Take symbol if it has global/local/weak binding */
+		if (ELF32_ST_BIND(prev_symbol->info->st_info) < 3)
+			symbol = prev_symbol;
 	}
 
 	/* Return the symbol and its address */

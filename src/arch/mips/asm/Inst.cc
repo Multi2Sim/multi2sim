@@ -193,8 +193,6 @@ void Inst::DumpBufRs(char **buf_ptr, int *size_ptr)
 
 void Inst::DumpBufTarget(char **buf_ptr, int *size_ptr)
 {
-	unsigned int target;
-
 	target = bytes.target.target;
 	target = target << 2;
 	target = target;
@@ -552,9 +550,8 @@ void Inst::Dump(std::ostream &os)
 
 void Inst::DumpHex(std::ostream &os)
 {
-	//fprintf(f, "\n%8x:\t%08x \t", self->addr, self->bytes.word);
-	os << "\n" << setfill('0') << setw(8) << hex << addr <<
+	os << "\n" << setfill(' ') << setw(8) << hex << addr <<
 			":\t" << setfill('0') << setw(8) << hex <<
-			bytes.word << " \t";
+			bytes.word << " \t" << setfill(' ');
 }
 
