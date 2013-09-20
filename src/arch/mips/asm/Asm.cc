@@ -288,7 +288,7 @@ void Asm::DisassembleBinary(string path)
 			continue;
 
 		/* Title */
-		cout << "\n\nDisassembly of section " << section->name << ":\n";
+		cout << "\n\nDisassembly of section " << section->name << ":";
 
 		/* Symbol */
 		curr_sym = 0;
@@ -322,15 +322,17 @@ void Asm::DisassembleBinary(string path)
 			/* Symbol name */
 			if (inst.target)
 			{
-				symbol = file.GetSymbol(inst.target);
-				if (symbol)
+				ELFReader::Symbol *print_symbol;
+				print_symbol = file.GetSymbol(inst.target);
+				if (print_symbol)
 				{
-					if (symbol->info->st_value == inst.target)
-						cout << " <" << symbol->name << ">";
+					if (print_symbol->info->st_value == inst.target)
+						cout << " <" << print_symbol->name << ">";
 					else
-						cout << " <" << symbol->name << "+0x"
+						cout << " <" << print_symbol->name << "+0x"
 								<< hex <<
-								inst.target - symbol->info->st_value
+								inst.target -
+								print_symbol->info->st_value
 								<< ">";
 				}
 			}

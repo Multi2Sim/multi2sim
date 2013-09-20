@@ -28,7 +28,7 @@ namespace Misc
  * Inline bit manipulation
  */
 
-inline unsigned int GetBit(unsigned int x, int low, int high)
+inline unsigned int GetBit(unsigned int x, int high, int low)
 {
 	return (x >> low) & ((1u << (high - low + 1)) - 1);
 }
