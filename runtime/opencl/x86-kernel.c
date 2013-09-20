@@ -446,6 +446,7 @@ void opencl_x86_ndrange_run_partial(struct opencl_x86_ndrange_t *ndrange,
 	memcpy(exec->work_group_start, work_group_start, sizeof (unsigned int) * 3);
 	memcpy(exec->work_group_count, work_group_count, sizeof (unsigned int) * 3);
 
+	exec->next_group = 0;
 	exec->num_groups = 1;
 	for (int i = 0; i < 3; i++)
 		exec->num_groups *= work_group_count[i];
