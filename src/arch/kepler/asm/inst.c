@@ -79,7 +79,7 @@ void KplInstDecode(KplInst *self, void *buf, unsigned int addr)
 
 void KplInstDumpHex(KplInst *self, FILE *f)
 {
-	fprintf(f, "\n\t/*%04x*/     /*%08x%08x*/ \t",
+	fprintf(f, "\n\t/*%04x*/     /*0x%08x%08x*/ \t",
 			self->addr,
 			self->bytes.as_uint[0],
 			self->bytes.as_uint[1]);
@@ -605,6 +605,15 @@ static void KplInstDumpOffset(KplInst *self, char **buf_ptr, int *size_ptr, int 
 	else
        		str_printf(buf_ptr, size_ptr, " 0x%x", value);
 }
+
+static void KplInstDumpTarget(KplInst *self, char **buf_ptr, int *size_ptr, int high, int low)
+{
+        int value;
+
+        value = BITS64(self->bytes.as_dword, high, low);
+       	str_printf(buf_ptr, size_ptr, " 0x%x", value);
+}
+
 void KplInstDumpBuf(KplInst *self, char *buf, int size)
 {
 	char *fmt_str;
@@ -620,13 +629,20 @@ void KplInstDumpBuf(KplInst *self, char *buf, int size)
 	fmt_str = self->info->fmt_str;
 	while (*fmt_str)
 	{
+                if (str_prefix(fmt_str, "%tgt"))
+                {
+                        KplInstDumpTarget(self, &buf, &size, 45, 23);
+                        fmt_str += 4;
+                        continue;
+                }
+                
                 if (str_prefix(fmt_str, "%offset"))
                 {
                         KplInstDumpOffset(self, &buf, &size, 53, 23);
                         fmt_str += 7;
                         continue;
                 }
-                
+
                 if (str_prefix(fmt_str, "%const"))
                 {
                         KplInstDumpEndConst(self, &buf, &size, 45, 42);
