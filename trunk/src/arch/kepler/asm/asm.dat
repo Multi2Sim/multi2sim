@@ -26,14 +26,14 @@ DEFINST(IMUL,
 		0x07)
 
 DEFINST(ISCADD,
-		"%predISCADD%_s, %dst%_cc, %srcA, %srcB, %src3;",
+		"%predISCADD%_s, %dst%_cc, %srcA, %srcB, %const;",
 		0x02,
 		0x01,
 		0x0c,
 		0x03)
 
 DEFINST(IMAD,
-		"%predIMAD%_us%_hi%_po%_sat%_x%_s, %dst%_cc, %srcA, %srcB, %src3;",
+		"%predIMAD%_us%_hi%_po%_sat%_x%_s, %dst%_cc, %srcA, %srcB, %srcC;",
 		0x02,
 		0x02,
 		0x02,
@@ -108,13 +108,13 @@ DEFINST(MOV32I,
 
 //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>FIX
 DEFINST(LD,
-		"%pred0LD%_e%_cg%_u8%_s, %dst, %srcA (with offset?);",
+		"%pred0LD%_e%_cg%_u8%_s, %dst, [%srcA]%offset;",
 		0x00,
 		0x06)
 
 //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>FIX
 DEFINST(ST,
-		"%pred0ST%_e%_cg%_u8%_s, [%srcA](with offset?), %dst;",
+		"%pred0ST%_e%_cg%_u8%_s, [%srcA]%offset, %dst;",
 		0x00,
 		0x07)
 
