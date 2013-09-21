@@ -40,7 +40,7 @@ namespace ELFReader
  */
 
 
-Section::Section(File *file, long pos)
+Section::Section(File *file, unsigned int pos)
 {
 	/* Initialize */
 	this->file = file;
@@ -49,7 +49,7 @@ Section::Section(File *file, long pos)
 
 	/* Read section header */
 	info = (Elf32_Shdr *) (file->buffer + pos);
-	if (pos < 0 || pos + (long) sizeof(Elf32_Shdr) > file->size)
+	if (pos < 0 || pos + sizeof(Elf32_Shdr) > file->size)
 		fatal("%s: invalid position for section header",
 				file->path.c_str());
 
@@ -79,14 +79,14 @@ Section::Section(File *file, long pos)
  */
 
 
-ProgramHeader::ProgramHeader(File *file, long pos)
+ProgramHeader::ProgramHeader(File *file, unsigned int pos)
 {
 	/* Initialize */
 	this->file = file;
 
 	/* Read program header */
 	info = (Elf32_Phdr *) (file->buffer + pos);
-	if (pos < 0 || pos + (long) sizeof(Elf32_Phdr) > file->size)
+	if (pos < 0 || pos + sizeof(Elf32_Phdr) > file->size)
 		fatal("%s: invalid position for program header",
 				file->path.c_str());
 }
@@ -97,7 +97,7 @@ ProgramHeader::ProgramHeader(File *file, long pos)
  * Class 'ELFSymbol'
  */
 
-Symbol::Symbol(File *file, Section *section, long pos)
+Symbol::Symbol(File *file, Section *section, unsigned int pos)
 {
 	/* Initialize */
 	this->file = file;
@@ -105,7 +105,7 @@ Symbol::Symbol(File *file, Section *section, long pos)
 
 	/* Read symbol */
 	info = (Elf32_Sym *) (section->buffer + pos);
-	if (pos < 0 || pos + (long) sizeof(Elf32_Sym) > section->size)
+	if (pos < 0 || pos + sizeof(Elf32_Sym) > section->size)
 		fatal("%s: invalid position for symbol",
 				file->path.c_str());
 
@@ -166,7 +166,7 @@ void File::ReadHeader()
 {
 	/* Read ELF header */
 	info = (Elf32_Ehdr *) buffer;
-	if (size < (long) sizeof(Elf32_Ehdr))
+	if (size < sizeof(Elf32_Ehdr))
 		fatal("%s: invalid ELF file", path.c_str());
 
 	/* Check that file is a valid ELF file */
@@ -504,7 +504,7 @@ Symbol *File::GetSymbol(unsigned int address, unsigned int &offset)
 }
 
 
-void File::GetSymbolContent(Symbol *symbol, char *&buffer, long &size)
+void File::GetSymbolContent(Symbol *symbol, char *&buffer, unsigned int &size)
 {
 	/* Symbol with no content */
 	buffer = NULL;
@@ -526,7 +526,7 @@ void File::GetSymbolContent(Symbol *symbol, char *&buffer, long &size)
 void File::GetSymbolContent(Symbol *symbol, stringstream& ss)
 {
 	char *buffer;
-	long size;
+	unsigned int size;
 
 	/* Get content */
 	GetSymbolContent(symbol, buffer, size);
