@@ -25,7 +25,7 @@
 
 struct str_map_t frm_token_map =
 {
-	65,
+	72,
 	{
 		{ "<invalid>", frm_token_invalid },
 
@@ -35,11 +35,15 @@ struct str_map_t frm_token_map =
 		{ "\%src1", frm_token_src1 },
 		{ "\%src1_offs", frm_token_src1_offs },
 		{ "\%src1_neg", frm_token_src1_neg },
+		{ "\%src1_abs_neg", frm_token_src1_abs_neg },
 		{ "\%src2", frm_token_src2 },
 		{ "\%src2_neg", frm_token_src2_neg },
+		{ "\%src2_abs_neg", frm_token_src2_abs_neg },
 		{ "\%src2_FFMA", frm_token_src2_FFMA },
 		{ "\%src3_FFMA", frm_token_src3_FFMA },
 		{ "\%src2_frm_sr", frm_token_src2_frm_sr },
+		{ "\%src2_LDC", frm_token_src2_LDC},
+		{ "\%src23", frm_token_src23},
 		{ "\%tgt", frm_token_tgt },
 		{ "\%tgt_noinc", frm_token_tgt_noinc },
 		{ "\%tgt_u", frm_token_tgt_u },
@@ -72,11 +76,14 @@ struct str_map_t frm_token_map =
 		{ "\%mod0_D_op", frm_token_mod0_D_op },
 		{ "\%mod0_D_op67", frm_token_mod0_D_op67 },
 		{ "\%mod0_D_x", frm_token_mod0_D_x },
+		{ "\%mod0_D_round", frm_tokne_mod0_D_round},
 		{ "\%gen0_mod1_B_rnd", frm_token_gen0_mod1_B_rnd },
+		{ "\%gen0_mod1_C_rnd", frm_token_gen0_mod1_C_rnd},
 		{ "\%gen0_mod1_D_cmp", frm_token_gen0_mod1_D_cmp },
 		{ "\%gen0_mod1_D", frm_token_gen0_mod1_D },
 		{ "\%gen0_src1_dtype", frm_token_gen0_src1_dtype },
 		{ "\%gen0_src1_dtype_n", frm_token_gen0_src1_dtype_n },
+		{ "\%gen0_src1_stype", frm_token_gen0_src1_stype },
 		{ "\%gen0_src1_stype_n", frm_token_gen0_src1_stype_n },
 		{ "\%offs_op1_e", frm_token_offs_op1_e },
 		{ "\%P", frm_token_P },
