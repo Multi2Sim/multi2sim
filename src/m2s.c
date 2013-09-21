@@ -52,8 +52,7 @@
 #include <arch/fermi/timing/sm.h>
 #include <arch/kepler/asm/asm.h>
 #include <arch/kepler/asm/inst.h>
-#include <arch/mips/asm/asm.h>
-#include <arch/mips/asm/inst.h>
+#include <arch/mips/asm/Asm.h>
 #include <arch/mips/emu/context.h>
 #include <arch/mips/emu/isa.h>
 #include <arch/mips/timing/cpu.h>
@@ -105,8 +104,6 @@
 #include <dram/dram-system.h>
 #include <sys/time.h>
 #include <visual/common/visual.h>
-
-#include "M2s.h"
 
 
 static char *visual_file_name = "";
@@ -176,8 +173,6 @@ static long long m2s_max_time;  /* Max. simulation time in seconds (0 = no limit
 static long long m2s_loop_iter;  /* Number of iterations in main simulation loop */
 static char m2s_sim_id[10];  /* Pseudo-unique simulation ID (5 alpha-numeric digits) */
 
-static int run_cpp;  /* Run C++ new code */
-
 static volatile int m2s_signal_received;  /* Signal received by handler (0 = none */
 
 
@@ -188,7 +183,7 @@ static EvgGpu *evg_gpu;
 static FrmAsm *frm_asm;
 static FrmEmu *frm_emu;
 
-static MIPSAsm *mips_asm;
+static struct MIPSAsmWrap *mips_asm;
 static MIPSEmu *mips_emu;
 static MIPSCpu *mips_cpu;
 
@@ -660,13 +655,6 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		/*
 		 * General Options
 		 */
-
-		/* Run new C++ code */
-		if (!strcmp(argv[argi], "--cpp"))
-		{
-			run_cpp = 1;
-			continue;
-		}
 
 		/* Context configuration file */
 		if (!strcmp(argv[argi], "--ctx-config"))
@@ -1962,9 +1950,6 @@ static void m2s_init(void)
 	CLASS_REGISTER(KplAsm);
 	CLASS_REGISTER(KplInst);
 
-	CLASS_REGISTER(MIPSAsm);
-	CLASS_REGISTER(MIPSInst);
-
 	CLASS_REGISTER(MIPSEmu);
 	CLASS_REGISTER(MIPSContext);
 
@@ -2082,13 +2067,6 @@ int main(int argc, char **argv)
 	/* Read command line */
 	m2s_read_command_line(&argc, argv);
 
-	/* C++ code */
-	if (run_cpp)
-	{
-		Main(argc, argv);
-		goto end;
-	}
-
 	/* x86 disassembler tool */
 	if (*x86_disasm_file_name)
 	{
@@ -2188,12 +2166,9 @@ int main(int argc, char **argv)
 	/* MIPS disassembler tool */
 	if (*mips_disasm_file_name)
 	{
-		MIPSAsm *as;
-
-		as = new(MIPSAsm);
-		MIPSAsmDisassembleBinary(as, mips_disasm_file_name);
-
-		delete(as);
+		struct MIPSAsmWrap *as = MIPSAsmWrapCreate();
+		MIPSAsmWrapDisassembleBinary(as, mips_disasm_file_name);
+		MIPSAsmWrapFree(as);
 		goto end;
 	}
 
@@ -2347,7 +2322,7 @@ int main(int argc, char **argv)
 	/* MIPS
 	 * FIXME
 	 */
-	mips_asm = new(MIPSAsm);
+	mips_asm = MIPSAsmWrapCreate();
 	mips_emu = new(MIPSEmu, mips_asm);
 	if (mips_sim_kind == arch_sim_kind_detailed)
 	{
@@ -2437,7 +2412,7 @@ int main(int argc, char **argv)
 
 	/* MIPS */
 	delete(mips_emu);
-	delete(mips_asm);
+	MIPSAsmWrapFree(mips_asm);
 
 	/* Southern Islands */
 	if (si_gpu)

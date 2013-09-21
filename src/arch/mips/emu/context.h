@@ -20,7 +20,6 @@
 #ifndef ARCH_MIPS_EMU_CONTEXT_H
 #define ARCH_MIPS_EMU_CONTEXT_H
 
-#include <arch/mips/asm/asm.h>
 #include <lib/util/config.h>
 
 #include "emu.h"
@@ -109,7 +108,7 @@ CLASS_BEGIN(MIPSContext, Object)
 	unsigned int n_next_ip;  /* Address for secon-next instruction */
 
 	/* Currently emulated instruction */
-	MIPSInst *inst;
+	struct MIPSInstWrap *inst;
 
 	/* Links to contexts forming a linked list. */
 	MIPSContext *context_list_next, *context_list_prev;
