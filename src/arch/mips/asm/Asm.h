@@ -20,16 +20,15 @@
 #ifndef MIPS_ASM_ASM_H
 #define MIPS_ASM_ASM_H
 
-#include <arch/common/Asm.h>
-
 #include "Inst.h"
 
+#ifdef __cplusplus
 
 namespace MIPS
 {
 
 
-class Asm : public Common::Asm
+class Asm
 {
 public:
 	/* Decoding tables */
@@ -76,5 +75,29 @@ public:
 
 } /* namespace MIPS */
 
+#endif  /* __cplusplus */
+
+
+
+/*
+ * Common C/C++ code
+ */
+
+#ifdef __cplusplus
+extern "C" {
 #endif
+
+struct MIPSAsmWrap;
+
+struct MIPSAsmWrap *MIPSAsmWrapCreate(void);
+void MIPSAsmWrapFree(struct MIPSAsmWrap *self);
+
+void MIPSAsmWrapDisassembleBinary(struct MIPSAsmWrap *self, char *path);
+
+#ifdef __cplusplus
+}
+#endif
+
+
+#endif  /* MIPS_ASM_ASM_H */
 

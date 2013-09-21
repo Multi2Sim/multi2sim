@@ -48,16 +48,16 @@
 #define MIPS_REG_C_FPC_FIR 		ctx->regs->regs_C.FIR
 
 /* Instruction fields */
-#define RS 				ctx->inst->bytes.standard.rs
-#define RD 				ctx->inst->bytes.standard.rd
-#define SA 				ctx->inst->bytes.standard.sa
-#define OFFSET 				ctx->inst->bytes.offset_imm.offset
-#define RT				ctx->inst->bytes.standard.rt
-#define IMM				ctx->inst->bytes.offset_imm.offset
-#define	FT				ctx->inst->bytes.standard.rt
-#define	FS				ctx->inst->bytes.standard.rd
-#define	FD				ctx->inst->bytes.standard.sa
-#define	TARGET				ctx->inst->bytes.target.target
+#define RS 				MIPSInstWrapGetBytes(ctx->inst)->standard.rs
+#define RD 				MIPSInstWrapGetBytes(ctx->inst)->standard.rd
+#define SA 				MIPSInstWrapGetBytes(ctx->inst)->standard.sa
+#define OFFSET 				MIPSInstWrapGetBytes(ctx->inst)->offset_imm.offset
+#define RT				MIPSInstWrapGetBytes(ctx->inst)->standard.rt
+#define IMM				MIPSInstWrapGetBytes(ctx->inst)->offset_imm.offset
+#define	FT				MIPSInstWrapGetBytes(ctx->inst)->standard.rt
+#define	FS				MIPSInstWrapGetBytes(ctx->inst)->standard.rd
+#define	FD				MIPSInstWrapGetBytes(ctx->inst)->standard.sa
+#define	TARGET				MIPSInstWrapGetBytes(ctx->inst)->target.target
 
 extern char *gpr_name[];
 extern char *fpr_name[];

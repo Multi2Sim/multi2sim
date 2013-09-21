@@ -21,6 +21,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include <arch/mips/asm/Inst.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/elf-format.h>
@@ -110,7 +111,7 @@ static void MIPSContextDoCreate(MIPSContext *self, MIPSEmu *emu)
 
 	/* Structures */
 	self->regs = mips_regs_create();
-	self->inst = new(MIPSInst, emu->as);
+	self->inst = MIPSInstWrapCreate(emu->as);
 }
 
 
@@ -524,7 +525,7 @@ void MIPSContextDestroy(MIPSContext *self)
 	MIPSContextDebug("context %d freed\n", self->pid);
 
 	/* Instruction */
-	delete(self->inst);
+	MIPSInstWrapFree(self->inst);
 }
 
 
@@ -609,13 +610,15 @@ void MIPSContextExecute(MIPSContext *self)
 	mem->safe = mem_safe_mode;
 
 	/* Disassemble */
-	MIPSInstDecode(self->inst, regs->pc, buffer_ptr);
-	if (!self->inst->info || self->inst->info->opcode == MIPSInstOpcodeInvalid)/*&& !spec_mode)*/
+	MIPSInstWrapDecode(self->inst, regs->pc, buffer_ptr);
+	if (MIPSInstWrapGetOpcode(self->inst) == MIPSInstOpcodeInvalid)
 		fatal("0x%x: instruction not implemented\nOpcode: %x\n",
-			(regs->pc), self->inst->bytes.standard.opc);
+			regs->pc,
+			MIPSInstWrapGetBytes(self->inst)->standard.opc);
 	else
 		mips_loader_debug("Instruction decoded:%8x - %s\n",
-				self->inst->addr, self->inst->info->name);
+				MIPSInstWrapGetAddress(self->inst),
+				MIPSInstWrapGetName(self->inst));
 
 	/* Execute instruction */
 	mips_isa_execute_inst(self);

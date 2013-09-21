@@ -69,6 +69,9 @@ struct class_t
 
 struct class_info_t
 {
+#ifndef NDEBUG
+	unsigned int magic;
+#endif
 	struct class_info_t *parent;
 	struct class_info_t *child;
 	struct class_t *c;

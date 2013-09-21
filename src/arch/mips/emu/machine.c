@@ -35,7 +35,7 @@ char *mips_err_note =
 
 #define __MIPS_NOT_IMPL__								  \
 	fatal("%s, Mips instruction '%s' not implemented.\nAddress: 0x%x\n", \
-		__FUNCTION__, ctx->inst->info->name, ctx->regs->pc);
+		__FUNCTION__, MIPSInstWrapGetName(ctx->inst), ctx->regs->pc);
 
 
 void mips_isa_J_impl(MIPSContext *ctx)
