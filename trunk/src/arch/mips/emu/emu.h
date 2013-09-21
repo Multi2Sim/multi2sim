@@ -23,6 +23,7 @@
 #include <pthread.h>
 
 #include <arch/common/emu.h>
+#include <arch/mips/asm/Asm.h>
 
 
 /*
@@ -33,7 +34,7 @@
 CLASS_BEGIN(MIPSEmu, Emu)
 
 	/* Disassembler */
-	MIPSAsm *as;
+	struct MIPSAsmWrap *as;
 
 	/* PID counter */
 	int current_pid;
@@ -93,7 +94,7 @@ CLASS_BEGIN(MIPSEmu, Emu)
 CLASS_END(MIPSEmu)
 
 
-void MIPSEmuCreate(MIPSEmu *self, MIPSAsm *as);
+void MIPSEmuCreate(MIPSEmu *self, struct MIPSAsmWrap *as);
 void MIPSEmuDestroy(MIPSEmu *self);
 
 void MIPSEmuDump(Object *self, FILE *f);

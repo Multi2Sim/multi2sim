@@ -343,3 +343,28 @@ void Asm::DisassembleBinary(string path)
 	cout << '\n';
 }
 
+
+
+
+/*
+ * C Wrapper
+ */
+
+struct MIPSAsmWrap *MIPSAsmWrapCreate(void)
+{
+	return (struct MIPSAsmWrap *) new Asm;
+}
+
+
+void MIPSAsmWrapFree(struct MIPSAsmWrap *self)
+{
+	delete (Asm *) self;
+}
+
+
+void MIPSAsmWrapDisassembleBinary(struct MIPSAsmWrap *self, char *path)
+{
+	Asm *as;
+	as = (Asm *) self;
+	as->DisassembleBinary(path);
+}

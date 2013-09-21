@@ -65,9 +65,6 @@ CLASS(FrmSM)
 CLASS(KplAsm)
 CLASS(KplInst)
 
-CLASS(MIPSAsm)
-CLASS(MIPSInst)
-
 CLASS(MIPSEmu)
 CLASS(MIPSContext)
 

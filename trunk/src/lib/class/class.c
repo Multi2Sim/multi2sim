@@ -152,6 +152,8 @@ static char *class_err_register =
 	"\tobjects of it. Please include a call to CLASS_REGISTER() for every class\n"
 	"\tyou use in your program.\n";
 
+#define CLASS_MAGIC  0x12345678
+
 #ifdef NDEBUG
 void class_new(void *p, struct class_t *c)
 #else
@@ -186,6 +188,9 @@ void class_new(void *p, struct class_t *c, char *file, int line, char *name)
 
 		/* Get current class info and initialize */
 		info = (struct class_info_t *) (p + c->info_offset);
+#ifndef NDEBUG
+		info->magic = CLASS_MAGIC;
+#endif
 		info->c = c;
 		info->parent = parent_info;
 		info->child = child_info;
@@ -211,6 +216,11 @@ void class_delete(void *p)
 
 	/* Find the child-most destructor */
 	info = &((Object *) p)->__info;
+#ifndef NDEBUG
+	if (info->magic != CLASS_MAGIC)
+		panic("%s: invalid class instance",
+				__FUNCTION__);
+#endif
 	while (info->child)
 		info = info->child;
 	

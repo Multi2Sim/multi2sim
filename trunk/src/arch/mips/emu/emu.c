@@ -36,7 +36,7 @@
  * Class 'MIPSEmu'
  */
 
-void MIPSEmuCreate(MIPSEmu *self, MIPSAsm *as)
+void MIPSEmuCreate(MIPSEmu *self, struct MIPSAsmWrap *as)
 {
 	/* Parent */
 	EmuCreate(asEmu(self), "MIPS");

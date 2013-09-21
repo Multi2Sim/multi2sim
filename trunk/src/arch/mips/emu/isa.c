@@ -49,6 +49,7 @@ static mips_isa_inst_func_t mips_isa_inst_func[MIPSInstOpcodeCount] =
 void mips_isa_execute_inst(MIPSContext *ctx)
 {
 	MIPSEmu *emu = ctx->emu;
+	MIPSInstOpcode opcode;
 
 	ctx->next_ip = ctx->n_next_ip;
 	ctx->n_next_ip += 4;
@@ -58,14 +59,15 @@ void mips_isa_execute_inst(MIPSContext *ctx)
 	{
 		mips_isa_inst_debug("%d %8lld %x: ", ctx->pid,
 				asEmu(emu)->instructions, ctx->regs->pc);
-		MIPSInstDump(ctx->inst, debug_file(mips_isa_inst_debug_category));
+		MIPSInstWrapDump(ctx->inst, debug_file(mips_isa_inst_debug_category));
 	}
 
 	/* Call instruction emulation function */
-	if (ctx->inst->info->opcode)
-		mips_isa_inst_func[ctx->inst->info->opcode](ctx);
+	opcode = MIPSInstWrapGetOpcode(ctx->inst);
+	if (opcode)
+		mips_isa_inst_func[opcode](ctx);
 	/* Statistics */
-	mips_inst_freq[ctx->inst->info->opcode]++;
+	mips_inst_freq[opcode]++;
 
 	/* Debug */
 	mips_isa_inst_debug("\n");
@@ -88,17 +90,6 @@ void mips_isa_execute_inst(MIPSContext *ctx)
 #define MIPS_REG_C_FPC_FIR 		ctx->regs->regs_C.FIR
 
 /* Instruction fields */
-#define RS 				ctx->inst->bytes.standard.rs
-#define RD 				ctx->inst->bytes.standard.rd
-#define SA 				ctx->inst->bytes.standard.sa
-#define OFFSET 				ctx->inst->bytes.offset_imm.offset
-#define RT				ctx->inst->bytes.standard.rt
-#define IMM				ctx->inst->bytes.offset_imm.offset
-#define	FT				ctx->inst->bytes.standard.rt
-#define	FS				ctx->inst->bytes.standard.rd
-#define	FD				ctx->inst->bytes.standard.sa
-#define	TARGET				ctx->inst->bytes.target.target
-
 unsigned int mips_gpr_get_value(MIPSContext* ctx, unsigned int reg_no)
 {
 	return (ctx->regs->regs_R[reg_no]);

@@ -10,10 +10,7 @@ SUBDIRS = \
 bin_PROGRAMS = $(top_builddir)/bin/m2s
 
 __top_builddir__bin_m2s_SOURCES = \
-	m2s.c \
-	\
-	M2s.cc \
-	M2s.h
+	m2s.c
 
 AM_LIBTOOLFLAGS = --preserve-dup-deps
 INCLUDES = @M2S_INCLUDES@

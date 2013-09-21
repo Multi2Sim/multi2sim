@@ -1320,12 +1320,12 @@ static int mips_sys_ioctl_impl(MIPSContext *ctx)
 	case 0x540d: /* TCGETS */
 	{
 		struct sim_termios {
-			uint32_t c_iflag;
-			uint32_t c_oflag;
-			uint32_t c_cflag;
-			uint32_t c_lflag;
-			uint8_t c_line;
-			uint8_t c_cc[32];
+			unsigned int c_iflag;
+			unsigned int c_oflag;
+			unsigned int c_cflag;
+			unsigned int c_lflag;
+			unsigned char c_line;
+			unsigned char c_cc[32];
 		} sbuf;
 		struct termios buf;
 		int i;
