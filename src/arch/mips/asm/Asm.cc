@@ -276,7 +276,7 @@ void Asm::DisassembleBinary(string path)
 	Inst inst(this);
 
 	unsigned int curr_sym;
-	long pos;
+	unsigned int pos;
 
 	/* Read Sections */
 	for (auto it = file.section_list.begin();

@@ -45,7 +45,7 @@ public:
 
 	/* Buffer and its size */
 	char *buffer;
-	long size;
+	unsigned int size;
 
 	/* Section information */
 	Elf32_Shdr *info;
@@ -55,7 +55,7 @@ public:
 	std::stringstream ss;
 
 	/* Constructor and destructor */
-	Section(File *file, long pos);
+	Section(File *file, unsigned int pos);
 };
 
 
@@ -69,7 +69,7 @@ public:
 	Elf32_Phdr *info;
 
 	/* Constructor and destructor */
-	ProgramHeader(File *file, long pos);
+	ProgramHeader(File *file, unsigned int pos);
 };
 
 
@@ -88,7 +88,7 @@ public:
 	Elf32_Sym *info;
 
 	/* Constructor and destructor */
-	Symbol(File *file, Section *section, long pos);
+	Symbol(File *file, Section *section, unsigned int pos);
 
 	/* Comparison between symbols */
 	static bool Compare(Symbol *a, Symbol *b);
@@ -108,7 +108,7 @@ public:
 
 	/* Full content of file and its size */
 	char *buffer;
-	long size;
+	unsigned int size;
 
 	/* String stream pointing to buffer */
 	std::stringstream ss;
@@ -145,7 +145,7 @@ public:
 
 	/* Read the content pointed to by a symbol, eather returning a pair
 	 * buffer/size, or a string stream pointing to the interal ELF buffer */
-	void GetSymbolContent(Symbol *symbol, char *&buffer, long &size);
+	void GetSymbolContent(Symbol *symbol, char *&buffer, unsigned int &size);
 	void GetSymbolContent(Symbol *symbol, std::stringstream &ss);
 };
 
