@@ -18,10 +18,8 @@
  */
 
 
-#include <arch/fermi/asm/asm.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
-#include <mem-system/memory.h>
 
 #include "emu.h"
 #include "isa.h"

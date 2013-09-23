@@ -40,9 +40,7 @@
 #include <arch/evergreen/timing/faults.h>
 #include <arch/evergreen/timing/gpu.h>
 #include <arch/evergreen/timing/uop.h>
-#include <arch/fermi/asm/asm.h>
 #include <arch/fermi/asm/Asm.h>
-#include <arch/fermi/asm/inst.h>
 #include <arch/fermi/emu/emu.h>
 #include <arch/fermi/emu/grid.h>
 #include <arch/fermi/emu/isa.h>
@@ -181,7 +179,7 @@ static EvgAsm *evg_asm;
 static EvgEmu *evg_emu;
 static EvgGpu *evg_gpu;
 
-static FrmAsm *frm_asm;
+static struct FrmAsmWrap *frm_asm;
 static FrmEmu *frm_emu;
 
 static struct MIPSAsmWrap *mips_asm;
@@ -1936,9 +1934,6 @@ static void m2s_init(void)
 	CLASS_REGISTER(EvgGpu);
 	CLASS_REGISTER(EvgComputeUnit);
 
-	CLASS_REGISTER(FrmAsm);
-	CLASS_REGISTER(FrmInst);
-
 	CLASS_REGISTER(FrmEmu);
 	CLASS_REGISTER(FrmThread);
 	CLASS_REGISTER(FrmThreadBlock);
@@ -2310,7 +2305,7 @@ int main(int argc, char **argv)
 	/* Fermi
 	 * FIXME
 	 */
-	frm_asm = new(FrmAsm);
+	frm_asm = FrmAsmWrapCreate();
 	frm_emu = new(FrmEmu, frm_asm);
 	if (frm_sim_kind == arch_sim_kind_detailed)
 	{
@@ -2408,7 +2403,7 @@ int main(int argc, char **argv)
 
 	/* Fermi */
 	delete(frm_emu);
-	delete(frm_asm);
+	FrmAsmWrapFree(frm_asm);
 
 	/* MIPS */
 	delete(mips_emu);

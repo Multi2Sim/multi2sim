@@ -578,6 +578,14 @@ void MIPSInstWrapFree(struct MIPSInstWrap *self)
 }
 
 
+void MIPSInstWrapCopy(struct MIPSInstWrap *left, struct MIPSInstWrap *right)
+{
+	Inst *ileft = (Inst *) left;
+	Inst *iright = (Inst *) right;
+	*ileft = *iright;
+}
+
+
 void MIPSInstWrapDecode(struct MIPSInstWrap *self, unsigned int addr, void *buf)
 {
 	Inst *inst = (Inst *) self;

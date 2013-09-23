@@ -20,7 +20,8 @@
 #ifndef FERMI_EMU_THREAD_H
 #define FERMI_EMU_THREAD_H
 
-#include <arch/fermi/asm/asm.h>
+#include <arch/fermi/asm/Inst.h>
+#include <lib/class/class.h>
 
 
 /*

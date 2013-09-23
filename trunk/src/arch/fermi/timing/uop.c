@@ -18,6 +18,7 @@
  */
 
 #include <arch/fermi/emu/emu.h>
+#include <arch/fermi/timing/gpu.h>
 #include <lib/util/list.h>
 #include <lib/util/repos.h>
 
@@ -93,21 +94,24 @@ void frm_uop_done()
 }
 
 
-struct frm_uop_t *frm_uop_create()
+struct frm_uop_t *frm_uop_create(FrmGpu *gpu)
 {
+	FrmEmu *emu = gpu->emu;
 	struct frm_uop_t *uop;
 
 	uop = repos_create_object(gpu_uop_repos);
 	uop->id = gpu_uop_id_counter++;
+	uop->inst = FrmInstWrapCreate(emu->as);
 	return uop;
 }
 
 
-void frm_uop_free(struct frm_uop_t *gpu_uop)
+void frm_uop_free(struct frm_uop_t *uop)
 {
-	if (!gpu_uop)
+	if (!uop)
 		return;
-	repos_free_object(gpu_uop_repos, gpu_uop);
+	FrmInstWrapFree(uop->inst);
+	repos_free_object(gpu_uop_repos, uop);
 }
 
 

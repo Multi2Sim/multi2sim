@@ -50,9 +50,6 @@ CLASS(EvgWavefront)
 CLASS(EvgGpu)
 CLASS(EvgComputeUnit)
 
-CLASS(FrmAsm)
-CLASS(FrmInst)
-
 CLASS(FrmEmu)
 CLASS(FrmThread)
 CLASS(FrmThreadBlock)

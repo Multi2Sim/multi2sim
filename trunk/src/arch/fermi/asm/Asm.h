@@ -23,6 +23,8 @@
 
 #ifdef __cplusplus
 
+#include <cassert>
+
 #include <arch/common/Asm.h>
 
 #include "Inst.h"
@@ -34,7 +36,6 @@ namespace Fermi
 
 class Asm : public Common::Asm
 {
-public:
 	static const int dec_table_size = 1024;
 
 	/* Instruction information table, indexed with an instruction opcode
@@ -45,12 +46,19 @@ public:
 	 * instruction bytes. */
 	InstInfo *dec_table[dec_table_size];
 
+public:
 	/* Constructor */
 	Asm();
 
 	/* Disassemblers */
 	void DisassembleBinary(std::string path);
 	void DisassembleBuffer(char *buffer, unsigned int size);
+
+	/* Getters */
+	InstInfo *GetInstInfo(InstOpcode opcode) { assert(opcode >= 0 &&
+			opcode < InstOpcodeCount); return &inst_info[opcode]; }
+	InstInfo *GetDecTable(int index) { assert(index >= 0 && index <
+			dec_table_size); return dec_table[index]; }
 };
 
 }  /* namespace Fermi */
@@ -67,11 +75,16 @@ public:
 extern "C" {
 #endif
 
+#include "Inst.h"
+
 struct FrmAsmWrap *FrmAsmWrapCreate(void);
 void FrmAsmWrapFree(struct FrmAsmWrap *self);
 
 void FrmAsmWrapDisassembleBinary(struct FrmAsmWrap *self, char *path);
 void FrmAsmWrapDisassembleBuffer(struct FrmAsmWrap *self, char *buffer, unsigned int size);
+
+FrmInstInfo *FrmAsmWrapGetInstInfo(struct FrmAsmWrap *self, FrmInstOpcode opcode);
+FrmInstInfo *FrmAsmWrapGetDecTable(struct FrmAsmWrap *self, int index);
 
 #ifdef __cplusplus
 }

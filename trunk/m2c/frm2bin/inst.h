@@ -22,7 +22,8 @@
 
 #include <stdio.h>
 
-#include <arch/fermi/asm/asm.h>
+#include <arch/fermi/asm/Asm.h>
+#include <arch/fermi/asm/Inst.h>
 
 
 struct frm2bin_inst_t
@@ -36,7 +37,7 @@ struct frm2bin_inst_t
 	int pred_num;		/* predicate number */
 
 	/* Instruction bytes generated */
-	FrmInstBytes inst_bytes;
+	FrmInstBytes bytes;
 
 	/* address of current instruction */
 	long long int addr;

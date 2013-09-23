@@ -33,6 +33,7 @@ LDADD = \
 	$(top_builddir)/src/arch/southern-islands/asm/libasm.a \
 	$(top_builddir)/src/lib/class/libclass.a \
 	$(top_builddir)/src/lib/util/libutil.a \
+	$(top_builddir)/src/lib/cpp/libcpp.a \
 	$(top_builddir)/src/lib/mhandle/libmhandle.a
 
 if HAVE_LLVM
