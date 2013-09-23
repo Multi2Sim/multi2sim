@@ -41,6 +41,7 @@
 #include <arch/evergreen/timing/gpu.h>
 #include <arch/evergreen/timing/uop.h>
 #include <arch/fermi/asm/asm.h>
+#include <arch/fermi/asm/Asm.h>
 #include <arch/fermi/asm/inst.h>
 #include <arch/fermi/emu/emu.h>
 #include <arch/fermi/emu/grid.h>
@@ -2132,12 +2133,11 @@ int main(int argc, char **argv)
 	/* Fermi disassembler tool */
 	if (*frm_disasm_file_name)
 	{
-		FrmAsm *as;
+		struct FrmAsmWrap *as;
 
-		as = new(FrmAsm);
-		FrmAsmDisassembleBinary(as, frm_disasm_file_name);
-
-		delete(as);
+		as = FrmAsmWrapCreate();
+		FrmAsmWrapDisassembleBinary(as, frm_disasm_file_name);
+		FrmAsmWrapFree(as);
 		goto end;
 	}
 

@@ -20,8 +20,12 @@
 #include <cstdarg>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
+#include <sstream>
 
 #include "Misc.h"
+
+using namespace std;
 
 
 namespace Misc
@@ -51,6 +55,132 @@ void str_printf(char **pbuf, int *psize, const char *fmt, ...)
 	*psize -= len;
 	*pbuf += len;
 }
+
+
+
+
+/*
+ * String maps
+ */
+
+static const char *string_map_unknown = "<unknown>";
+
+const char *StringMapValue(StringMap map, int value)
+{
+	int error;
+	return StringMapValue(map, value, error);
+}
+
+
+const char *StringMapValue(StringMap map, int value, int& error)
+{
+	int index;
+
+	/* Find value */
+	error = 0;
+	for (index = 0; map[index].text; index++)
+		if (map[index].value == value)
+			return map[index].text;
+	
+	/* Not found */
+	error = 1;
+	return string_map_unknown;
+}
+
+
+int StringMapString(StringMap map, const char *text)
+{
+	int error;
+	return StringMapString(map, text, error);
+}
+
+
+int StringMapString(StringMap map, const char *text, int& error)
+{
+	int index;
+
+	/* Find value */
+	error = 0;
+	for (index = 0; map[index].text; index++)
+		if (!strcmp(map[index].text, text))
+			return map[index].value;
+
+	/* Not found */
+	error = 1;
+	return 0;
+}
+
+
+int StringMapStringCase(StringMap map, const char *text)
+{
+	int error;
+	return StringMapStringCase(map, text, error);
+}
+
+
+int StringMapStringCase(StringMap map, const char *text, int& error)
+{
+	int index;
+
+	/* Find value */
+	error = 0;
+	for (index = 0; map[index].text; index++)
+		if (!strcasecmp(map[index].text, text))
+			return map[index].value;
+
+	/* Not found */
+	error = 1;
+	return 0;
+}
+
+
+string StringMapFlags(StringMap map, unsigned int flags)
+{
+	int i;
+	int err;
+
+	stringstream s;
+	string comma = "";
+	s << '{';
+	for (i = 0; i < 32; i++)
+	{
+		if (flags & (1 << i))
+		{
+			s << comma;
+			const char *text = StringMapValue(map, 1 << i, err);
+			if (err)
+				s << (1 << i);
+			else
+				s << text;
+			comma = "|";
+		}
+	}
+	s << '}';
+
+	/* Return created text */
+	return s.str();
+}
+
+
+string StringMapGetValues(StringMap map)
+{
+	stringstream s;
+	string comma;
+	int index;
+
+	index = 0;
+	comma = "";
+	s << '{';
+	while (map[index].text)
+	{
+		s << comma << map[index].text;
+		index++;
+		comma = ",";
+	}
+	s << '}';
+	return s.str();
+}
+
 
 
 
