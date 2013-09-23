@@ -17,81 +17,81 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef FERMI_ASM_INST_H_OLD
-#define FERMI_ASM_INST_H_OLD
+#ifndef FERMI_ASM_INST_H
+#define FERMI_ASM_INST_H
+
+#include <iostream>
 
 
-#include <lib/class/class.h>
+namespace Fermi
+{
 
-
-
-/*
- * Class 'FrmInst'
- */
+/* Forward declarations */
+class Asm;
 
 /* Special Registers */
-typedef enum
+enum InstSReg
 {
-	FrmInstSRegLaneld = 0,
-	FrmInstSRegVirtCfg = 2,
-	FrmInstSRegVirtId,
-	FrmInstSRegPM0,
-	FrmInstSRegPM1,
-	FrmInstSRegPM2,
-	FrmInstSRegPM3,
-	FrmInstSRegPM4,
-	FrmInstSRegPM5,
-	FrmInstSRegPM6,
-	FrmInstSRegPM7,
-	FrmInstSRegPrimType = 16,
-	FrmInstSRegInvocationID,
-	FrmInstSRegYDirection,
-	FrmInstSRegMachineID0 = 24,
-	FrmInstSRegMachineID1,
-	FrmInstSRegMachineID2,
-	FrmInstSRegMachineID3,
-	FrmInstSRegAffinity,
-	FrmInstSRegTid = 32,
-	FrmInstSRegTidX,
-	FrmInstSRegTidY,
-	FrmInstSRegTidZ,
-	FrmInstSRegCTAParam,
-	FrmInstSRegCTAidX,
-	FrmInstSRegCTAidY,
-	FrmInstSRegCTAidZ,
-	FrmInstSRegNTid,
-	FrmInstSRegNTidX,
-	FrmInstSRegNTidY,
-	FrmInstSRegNTidZ,
-	FrmInstSRegGridParam,
-	FrmInstSRegNCTAidX,
-	FrmInstSRegNCTAidY,
-	FrmInstSRegNCTAidZ,
-	FrmInstSRegSWinLo,
-	FrmInstSRegSWINSZ,
-	FrmInstSRegSMemSz,
-	FrmInstSRegSMemBanks,
-	FrmInstSRegLWinLo,
-	FrmInstSRegLWINSZ,
-	FrmInstSRegLMemLoSz,
-	FrmInstSRegLMemHiOff,
-	FrmInstSRegEqMask,
-	FrmInstSRegLtMask,
-	FrmInstSRegLeMask,
-	FrmInstSRegGtMask,
-	FrmInstSRegGeMask,
-	FrmInstSRegClockLo = 80,
-	FrmInstSRegClockHi,
+	InstSRegLaneld = 0,
+	InstSRegVirtCfg = 2,
+	InstSRegVirtId,
+	InstSRegPM0,
+	InstSRegPM1,
+	InstSRegPM2,
+	InstSRegPM3,
+	InstSRegPM4,
+	InstSRegPM5,
+	InstSRegPM6,
+	InstSRegPM7,
+	InstSRegPrimType = 16,
+	InstSRegInvocationID,
+	InstSRegYDirection,
+	InstSRegMachineID0 = 24,
+	InstSRegMachineID1,
+	InstSRegMachineID2,
+	InstSRegMachineID3,
+	InstSRegAffinity,
+	InstSRegTid = 32,
+	InstSRegTidX,
+	InstSRegTidY,
+	InstSRegTidZ,
+	InstSRegCTAParam,
+	InstSRegCTAidX,
+	InstSRegCTAidY,
+	InstSRegCTAidZ,
+	InstSRegNTid,
+	InstSRegNTidX,
+	InstSRegNTidY,
+	InstSRegNTidZ,
+	InstSRegGridParam,
+	InstSRegNCTAidX,
+	InstSRegNCTAidY,
+	InstSRegNCTAidZ,
+	InstSRegSWinLo,
+	InstSRegSWINSZ,
+	InstSRegSMemSz,
+	InstSRegSMemBanks,
+	InstSRegLWinLo,
+	InstSRegLWINSZ,
+	InstSRegLMemLoSz,
+	InstSRegLMemHiOff,
+	InstSRegEqMask,
+	InstSRegLtMask,
+	InstSRegLeMask,
+	InstSRegGtMask,
+	InstSRegGeMask,
+	InstSRegClockLo = 80,
+	InstSRegClockHi,
 
 	/* Max */
-	FrmInstSRegCount
-} FrmInstSReg;
+	InstSRegCount
+};
 
 
 
 /* 1st level struct */
 
-typedef struct
+struct InstBytesGeneral0
 {
 	unsigned long long int op0 : 4; /* 3:0 */
 	unsigned long long int mod0 : 6; /* 9:4 */
@@ -103,10 +103,10 @@ typedef struct
 	unsigned long long int dst_cc : 1; /* 48 */
 	unsigned long long int mod1 : 9; /* 57:49 */
 	unsigned long long int op1 : 6; /* 63:58 */
-} FrmInstBytesGeneral0;
+};
 
 
-typedef struct
+struct InstBytesGeneral1
 {
 	unsigned long long int op0 : 4; /* 3:0 */
 	unsigned long long int mod0 : 6; /* 9:4 */
@@ -121,10 +121,10 @@ typedef struct
 	unsigned long long int logic : 2; /* 54:53 */
 	unsigned long long int cmp : 4; /* 58:55 */
 	unsigned long long int op1 : 5; /* 63:59 */
-} FrmInstBytesGeneral1;
+};
 
 
-typedef struct
+struct InstBytesImm
 {
 	unsigned long long int op0 : 4; /* 3:0 */
 	unsigned long long int mod0 : 6; /* 9:4 */
@@ -133,10 +133,10 @@ typedef struct
 	unsigned long long int src1 : 6; /* 25:20 */
 	unsigned long long int imm32 : 32; /* 57:26 */
 	unsigned long long int op1 : 6; /* 63:58 */
-} FrmInstBytesImm;
+};
 
 
-typedef struct
+struct InstBytesOffs
 {
 	unsigned long long int op0 : 4; /* 3:0 */
 	unsigned long long int mod0 : 6; /* 9:4 */
@@ -146,10 +146,10 @@ typedef struct
 	unsigned long long int offset : 16; /* 41:26 */
 	unsigned long long int mod1 : 16; /* 57:42 */
 	unsigned long long int op1 : 6; /* 63:58 */
-} FrmInstBytesOffs;
+};
 
 
-typedef struct
+struct InstBytesTgt
 {
 	unsigned long long int op0 : 4; /* 3:0 */
 	unsigned long long int mod0 : 6; /* 9:4 */
@@ -161,48 +161,48 @@ typedef struct
 	unsigned long long int target : 24; /* 49:26 */
 	unsigned long long int _reserved0 : 8; /* 57:50 */
 	unsigned long long int op1 : 6; /* 63:58 */
-} FrmInstBytesTgt;
+};
 
 /* 2nd level struct */
 
-typedef struct
+struct InstBytesGeneral0Mod1A
 {
 	unsigned long long int _reserved0 : 49; /* 48:0 */
 	unsigned long long int R : 4; /* 52:49 */
 	unsigned long long int  _const0: 5; /* 57:53 */
 	unsigned long long int _reserved1 : 6; /* 63:58 */
-} FrmInstBytesGeneral0Mod1A;
+};
 
 
-typedef struct
+struct InstBytesGeneral0Mod1B
 {
 	unsigned long long int _reserved0 : 49; /* 48:0 */
 	unsigned long long int src3 : 6; /* 54:49 */
 	unsigned long long int rnd: 2; /* 56:55 */
 	unsigned long long int _const0 : 1; /* 57 */
 	unsigned long long int _reserved1 : 6; /* 63:58 */
-} FrmInstBytesGeneral0Mod1B;
+};
 
 
-typedef struct
+struct InstBytesGeneral0Mod1C
 {
 	unsigned long long int _reserved0 : 49; /* 48:0 */
 	unsigned long long int rnd : 2; /* 50:49 */
 	unsigned long long int word0 : 7; /* 57:51 */
 	unsigned long long int _reserved1 : 6; /* 63:58 */
-} FrmInstBytesGeneral0Mod1C;
+};
 
 
-typedef struct
+struct InstBytesGeneral0Mod1D
 {
 	unsigned long long int _reserved0 : 49; /* 48:0 */
 	unsigned long long int src3 : 6; /* 54:49 */
 	unsigned long long int cmp : 3; /* 57:55 */
 	unsigned long long int _reserved1 : 6; /* 63:58 */
-} FrmInstBytesGeneral0Mod1D;
+};
 
 
-typedef struct
+struct InstBytesOffsMod1A
 {
 	unsigned long long int _reserved0 : 42; /* 41:0 */
 	unsigned long long int _const0 : 8; /* 49:42 */
@@ -210,20 +210,20 @@ typedef struct
 	unsigned long long int op : 4; /* 54:51 */
 	unsigned long long int _const1 : 3; /* 57:55 */
 	unsigned long long int _reserved1 : 6; /* 63:58 */
-} FrmInstBytesOffsMod1A;
+};
 
 
-typedef struct
+struct InstBytesOffsMod1B
 {
 	unsigned long long int _reserved0 : 42; /* 41:0 */
 	unsigned long long int _const0 : 8; /* 49:42 */
 	unsigned long long int R : 3; /* 52:50 */
 	unsigned long long int _reserved1 : 5; /* 57:53 */
 	unsigned long long int _reserved2 : 6; /* 63:58 */
-} FrmInstBytesOffsMod1B;
+};
 
 
-typedef struct
+struct InstBytesMod0A
 {
 	unsigned long long int _reserved0 : 4; /* 3:0 */
 	unsigned long long int s : 1; /* 4 */
@@ -233,29 +233,29 @@ typedef struct
 	unsigned long long int neg_src2 : 1; /* 8 */
 	unsigned long long int neg_src1 : 1; /* 9 */
 	unsigned long long int _reserved1 : 54; /* 63:10 */
-} FrmInstBytesMod0A;
+};
 
 
-typedef struct
+struct InstBytesMod0B
 {
 	unsigned long long int _reserved0 : 4; /* 3:0 */
 	unsigned long long int s : 1; /* 4 */
 	unsigned long long int type : 3; /* 7:5 */
 	unsigned long long int cop : 2; /* 9:8 */
 	unsigned long long int _reserved1 : 54; /* 63:10 */
-} FrmInstBytesMod0B;
+};
 
 
-typedef struct
+struct InstBytesMod0C
 {
 	unsigned long long int _reserved0 : 4; /* 3:0 */
 	unsigned long long int s : 1; /* 4 */
 	unsigned long long int shamt : 5; /* 9:5 */
 	unsigned long long int _reserved1 : 54; /* 63:10 */
-} FrmInstBytesMod0C;
+};
 
 
-typedef struct
+struct InstBytesMod0D
 {
 	unsigned long long int _reserved0 : 4; /* 3:0 */
 	unsigned long long int s : 1; /* 4 */
@@ -263,40 +263,40 @@ typedef struct
 	unsigned long long int ftzfmz : 2; /* 7:6 */
 	unsigned long long int fma_mod : 2; /* 9:8 */
 	unsigned long long int _reserved1 : 54; /* 63:10 */
-} FrmInstBytesMod0D;
+};
 
 
-typedef enum
+enum InstCategory
 {
-	FrmInstCategoryInvalid = 0,
+	InstCategoryInvalid = 0,
 
-	FrmInstCategoryFp,  /* Floating point instructions */
-	FrmInstCategoryInt,  /* Integer instructions */
-	FrmInstCategoryConv,  /* Conversion instructions */
-	FrmInstCategoryMov,  /* Movement instructions */
-	FrmInstCategoryPred,  /* Predicate/CC instructions */
-	FrmInstCategoryTex,  /* Texture instructions */
-	FrmInstCategoryLdSt, /* Compute load/store instructions */
-	FrmInstCategorySurf, /* Surface memory instructions */
-	FrmInstCategoryCtrl, /* Control instructions */
-	FrmInstCategoryMisc, /* Miscellaneous instructions */
+	InstCategoryFp,  /* Floating point instructions */
+	InstCategoryInt,  /* Integer instructions */
+	InstCategoryConv,  /* Conversion instructions */
+	InstCategoryMov,  /* Movement instructions */
+	InstCategoryPred,  /* Predicate/CC instructions */
+	InstCategoryTex,  /* Texture instructions */
+	InstCategoryLdSt, /* Compute load/store instructions */
+	InstCategorySurf, /* Surface memory instructions */
+	InstCategoryCtrl, /* Control instructions */
+	InstCategoryMisc, /* Miscellaneous instructions */
 
-	FrmInstCategoryCount
-} FrmInstCategory;
+	InstCategoryCount
+};
 
 
-typedef enum
+enum InstOpcode
 {
-	FrmInstOpcodeInvalid = 0,
+	InstOpcodeInvalid = 0,
 
 #define DEFINST(_name, _fmt_str, _category, _opcode) \
-	FRM_INST_##_name,
+	INST_##_name,
 #include "asm.dat"
 #undef DEFINST
 
 	/* Max */
-	FrmInstOpcodeCount
-} FrmInstOpcode;
+	InstOpcodeCount
+};
 
 
 typedef union
@@ -305,31 +305,31 @@ typedef union
 	unsigned int word[2];
 	unsigned long long int dword;
 
-	FrmInstBytesGeneral0 general0;
-	FrmInstBytesGeneral1 general1;
-	FrmInstBytesImm imm;
-	FrmInstBytesOffs offs;
-	FrmInstBytesTgt tgt;
-	FrmInstBytesGeneral0Mod1A general0_mod1_A;
-	FrmInstBytesGeneral0Mod1B general0_mod1_B;
-	FrmInstBytesGeneral0Mod1C general0_mod1_C;
-	FrmInstBytesGeneral0Mod1D general0_mod1_D;
-	FrmInstBytesOffsMod1A offs_mod1_A;
-	FrmInstBytesOffsMod1B offs_mod1_B;
-	FrmInstBytesMod0A mod0_A;
-	FrmInstBytesMod0B mod0_B;
-	FrmInstBytesMod0C mod0_C;
-	FrmInstBytesMod0D mod0_D;
-} FrmInstBytes;
+	InstBytesGeneral0 general0;
+	InstBytesGeneral1 general1;
+	InstBytesImm imm;
+	InstBytesOffs offs;
+	InstBytesTgt tgt;
+	InstBytesGeneral0Mod1A general0_mod1_A;
+	InstBytesGeneral0Mod1B general0_mod1_B;
+	InstBytesGeneral0Mod1C general0_mod1_C;
+	InstBytesGeneral0Mod1D general0_mod1_D;
+	InstBytesOffsMod1A offs_mod1_A;
+	InstBytesOffsMod1B offs_mod1_B;
+	InstBytesMod0A mod0_A;
+	InstBytesMod0B mod0_B;
+	InstBytesMod0C mod0_C;
+	InstBytesMod0D mod0_D;
+} InstBytes;
 
 
-typedef struct
+struct InstInfo
 {
-	FrmInstOpcode opcode;
-	FrmInstCategory category;
+	InstOpcode opcode;
+	InstCategory category;
 
-	char *name;
-	char *fmt_str;
+	const char *name;
+	const char *fmt_str;
 
 	/* Field of the instruction containing the instruction opcode
 	 * identifier. */
@@ -337,39 +337,43 @@ typedef struct
 
 	int size;
 
-} FrmInstInfo;
+};
 
 
-CLASS_BEGIN(FrmInst, Object)
-
+class Inst
+{
 	/* Disassembler */
-	FrmAsm *as;
+	Asm *as;
 
 	/* Instruction virtual address, for branch decoding purposes */
 	unsigned int addr;
 
 	/* Instruction bytes */
-	FrmInstBytes bytes;
+	InstBytes bytes;
 
 	/* Decoded information */
-	FrmInstInfo *info;
+	InstInfo *info;
 
-CLASS_END(FrmInst)
+public:
+
+	/* Constructor */
+	Inst(Asm *as);
+
+	/* Dump functions */
+	void DumpHex(std::ostream &os);
+	void DumpBuf(char *str, int size);
+	void Dump(std::ostream &os);
+
+	/* From the buffer given in 'ptr', decode an instruction and populate fields
+	 * 'bytes' and 'info' of the instruction object. Argument 'addr' passes the
+	 * virtual address of the instruction for branch decoding purposes, and it is
+	 * copied to the 'addr' field of the instruction. */
+	void Decode(unsigned int addr, void *ptr);
+};
 
 
-void FrmInstCreate(FrmInst *self, FrmAsm *as);
-void FrmInstDestroy(FrmInst *self);
 
-void FrmInstDumpHex(FrmInst *self, FILE *f);
-void FrmInstDumpBuf(FrmInst *self, char *str, int size);
-void FrmInstDump(FrmInst *self, FILE *f);
-
-/* From the buffer given in 'ptr', decode an instruction and populate fields
- * 'bytes' and 'info' of the instruction object. Argument 'addr' passes the
- * virtual address of the instruction for branch decoding purposes, and it is
- * copied to the 'addr' field of the instruction. */
-void FrmInstDecode(FrmInst *self, unsigned int addr, void *ptr);
-
+}  /* namespace Fermi */
 
 #endif
 
