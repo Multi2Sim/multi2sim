@@ -23,7 +23,11 @@
 #include <stdio.h>
 
 #include <arch/common/emu.h>
-#include <arch/fermi/asm/inst.h>
+#include <arch/fermi/asm/Inst.h>
+
+/* Forward declarations */
+struct FrmAsmWrap;
+struct FrmInstWrap;
 
 
 /*
@@ -31,13 +35,13 @@
  */
 
 /* Function implementing an ISA instruction */
-typedef void (*FrmEmuInstFunc)(FrmThread *thread, FrmInst *inst);
+typedef void (*FrmEmuInstFunc)(FrmThread *thread, struct FrmInstWrap *inst);
 
 
 CLASS_BEGIN(FrmEmu, Emu)
 
 	/* Disassembler */
-	FrmAsm *as;
+	struct FrmAsmWrap *as;
 	
 	/* List of grids */
 	struct list_t *grids;
@@ -77,7 +81,7 @@ CLASS_BEGIN(FrmEmu, Emu)
 CLASS_END(FrmEmu)
 
 
-void FrmEmuCreate(FrmEmu *self, FrmAsm *as);
+void FrmEmuCreate(FrmEmu *self, struct FrmAsmWrap *as);
 void FrmEmuDestroy(FrmEmu *self);
 
 void FrmEmuDump(Object *self, FILE *f);

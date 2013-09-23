@@ -20,7 +20,7 @@
 #ifndef FERMI_EMU_WARP_H
 #define FERMI_EMU_WARP_H
 
-#include <arch/fermi/asm/inst.h>
+#include <arch/fermi/asm/Inst.h>
 #include <lib/class/class.h>
 #include <lib/util/string.h>
 
@@ -67,7 +67,7 @@ CLASS_BEGIN(FrmWarp, Object)
 	int inst_size;
 
 	/* Current instructions */
-	FrmInst inst;
+	struct FrmInstWrap *inst;
 
 	/* Starting/current position in buffer */
 	unsigned long long int *inst_buffer;

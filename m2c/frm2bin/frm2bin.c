@@ -20,7 +20,7 @@
 #include <stdarg.h>
 
 
-#include <arch/fermi/asm/asm.h>
+#include <arch/fermi/asm/Asm.h>
 
 #include <lib/class/class.h>
 #include <lib/mhandle/mhandle.h>
@@ -80,13 +80,13 @@ void frm2bin_yyerror_fmt(char *fmt, ...)
  * Public Functions
  */
 
-FrmAsm *frm_asm;
+struct FrmAsmWrap *frm_asm;
 
 
 void Frm2binCreate(Frm2bin *self)
 {
 	/* Initialize */
-	frm_asm = new(FrmAsm);
+	frm_asm = FrmAsmWrapCreate();
 	frm2bin_inst_info_init();
 
 	/* task list is for label processing, lable is not supported now
@@ -109,7 +109,7 @@ void Frm2binDestroy(Frm2bin *self)
 	/* This should be changed for fermi */
 	/* frm_stream_done(); */
 	frm2bin_inst_info_done();
-	delete(frm_asm);
+	FrmAsmWrapFree(frm_asm);
 }
 
 
@@ -141,10 +141,10 @@ void Frm2binCompile(Frm2bin *self,
 		/* call the Fermi disassbmler for text_section it's just a
 		 * temporarily implementation */
 		{
-			FrmAsm *as = new(FrmAsm);
-			FrmAsmDisassembleBuffer(as, text_section_buffer->ptr,
+			struct FrmAsmWrap *as = FrmAsmWrapCreate();
+			FrmAsmWrapDisassembleBuffer(as, text_section_buffer->ptr,
 					text_section_buffer->size);
-			delete(as);
+			FrmAsmWrapFree(as);
 		}
 
 		/* free the text_section buffer */

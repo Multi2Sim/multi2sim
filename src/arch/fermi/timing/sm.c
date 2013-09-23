@@ -402,7 +402,7 @@ void frm_sm_fetch(FrmSM *sm, int wiq_id)
 	warp_inst_queue_entry->ready = 0;
 
 	/* Create uop */
-	uop = frm_uop_create();
+	uop = frm_uop_create(sm->gpu);
 	uop->warp = warp;
 	uop->thread_block = warp->thread_block;
 	uop->sm = sm;
@@ -511,7 +511,7 @@ void frm_sm_issue_oldest(FrmSM *sm,
 			assert(uop);
 
 			/* Only evaluate branch instructions */
-			if (uop->inst.info->category != FrmInstCategoryCtrl)
+			if (FrmInstWrapGetCategory(uop->inst) != FrmInstCategoryCtrl)
 			{
 				list_index++;
 				continue;
@@ -574,11 +574,12 @@ void frm_sm_issue_oldest(FrmSM *sm,
 			assert(uop);
 
 			/* Only evaluate SIMD instructions */
-			if (uop->inst.info->opcode != FRM_INST_FADD &&
-					uop->inst.info->opcode != FRM_INST_IMAD &&
-					uop->inst.info->opcode != FRM_INST_ISCADD &&
-					uop->inst.info->opcode != FRM_INST_S2R &&
-					uop->inst.info->opcode != FRM_INST_EXIT)
+			FrmInstOpcode opcode = FrmInstWrapGetOpcode(uop->inst);
+			if (opcode != FRM_INST_FADD &&
+					opcode != FRM_INST_IMAD &&
+					opcode != FRM_INST_ISCADD &&
+					opcode != FRM_INST_S2R &&
+					opcode != FRM_INST_EXIT)
 			{	
 				list_index++;
 				continue;
@@ -644,9 +645,10 @@ void frm_sm_issue_oldest(FrmSM *sm,
 			assert(uop);
 
 			/* Only evaluate memory instructions */
-			if (uop->inst.info->opcode != FRM_INST_LD &&
-					uop->inst.info->opcode != FRM_INST_ST &&
-					uop->inst.info->opcode != FRM_INST_MOV)
+			FrmInstOpcode opcode = FrmInstWrapGetOpcode(uop->inst);
+			if (opcode != FRM_INST_LD &&
+					opcode != FRM_INST_ST &&
+					opcode != FRM_INST_MOV)
 			{	
 				list_index++;
 				continue;
@@ -852,7 +854,8 @@ void frm_sm_issue_first(FrmSM *sm,
 		/* Determine instruction type.  This simply decodes the 
 		 * instruction type, so that it can be issued to the proper 
 		 * hardware unit.  It is not the full decode stage */
-		switch (uop->inst.info->opcode)
+		FrmInstOpcode opcode = FrmInstWrapGetOpcode(uop->inst);
+		switch (opcode)
 		{
 
 			///* Scalar ALU or Branch */

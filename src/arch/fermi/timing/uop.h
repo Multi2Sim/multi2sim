@@ -61,7 +61,7 @@ struct frm_uop_t
 	FrmThreadBlock *thread_block;     /* Work-group it belongs to */
 	FrmSM *sm; /* Compute unit it belongs to */
 	struct frm_warp_inst_queue_entry_t *warp_inst_queue_entry;  /* IB entry where uop is located */
-	FrmInst inst;
+	struct FrmInstWrap *inst;
 
 	/* Flags */
 	unsigned int ready : 1;
@@ -108,7 +108,7 @@ struct frm_uop_t
 void frm_uop_init(void);
 void frm_uop_done(void);
 
-struct frm_uop_t *frm_uop_create(void);
+struct frm_uop_t *frm_uop_create(FrmGpu *gpu);
 void frm_uop_free(struct frm_uop_t *gpu_uop);
 
 void frm_uop_list_free(struct list_t *uop_list);

@@ -21,12 +21,13 @@
 #define M2C_FRM2BIN_INST_INFO_H
 
 #include <stdio.h>
-#include <arch/fermi/asm/asm.h>
+
+#include <arch/fermi/asm/Asm.h>
+#include <arch/fermi/asm/Inst.h>
 
 
 /* Object 'frm2bin_inst_info_t' */
 /* Forward declaration */
-struct FrmInstInfo;
 
 extern struct hash_table_t *frm2bin_inst_info_table;
 

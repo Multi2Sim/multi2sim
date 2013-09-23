@@ -122,3 +122,16 @@ void FrmAsmWrapDisassembleBuffer(struct FrmAsmWrap *self, char *buffer, unsigned
 	as->DisassembleBuffer(buffer, size);
 }
 
+
+FrmInstInfo *FrmAsmWrapGetInstInfo(struct FrmAsmWrap *self, FrmInstOpcode opcode)
+{
+	Asm *as = (Asm *) self;
+	return (FrmInstInfo *) as->GetInstInfo((InstOpcode) opcode);
+}
+
+
+FrmInstInfo *FrmAsmWrapGetDecTable(struct FrmAsmWrap *self, int index)
+{
+	Asm *as = (Asm *) self;
+	return (FrmInstInfo *) as->GetDecTable(index);
+}

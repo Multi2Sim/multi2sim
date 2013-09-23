@@ -36,11 +36,11 @@ char *frm_err_isa_note = "\tThe NVIDIA Fermi SASS instruction set is \n"
 
 
 #define __NOT_IMPL__ fatal("Fermi instruction '%s' not implemented.\n%s", \
-			inst->info->name, frm_err_isa_note);
+			FrmInstWrapGetName(inst), frm_err_isa_note);
 
 
 
-void frm_isa_FFMA_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_FFMA_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	unsigned int pred_id, dst_id, src1_id, src2_id, src3_id;
 	unsigned int active, pred;
@@ -57,7 +57,7 @@ void frm_isa_FFMA_impl(FrmThread *thread, FrmInst *inst)
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
-	pred_id = inst->bytes.general0.pred;
+	pred_id = FrmInstWrapGetBytes(inst)->general0.pred;
 	if (pred_id <= 7)
 		pred = thread->pr[pred_id];
 	else
@@ -66,21 +66,21 @@ void frm_isa_FFMA_impl(FrmThread *thread, FrmInst *inst)
 	if (active == 1 && pred == 1)
 	{
 		/* Read */
-		src1_id = inst->bytes.general0.src1;
+		src1_id = FrmInstWrapGetBytes(inst)->general0.src1;
 		src1 = thread->gpr[src1_id].f;
-		src2_id = inst->bytes.general0.src2;
-		if (inst->bytes.general0.src2_mod == 0)
+		src2_id = FrmInstWrapGetBytes(inst)->general0.src2;
+		if (FrmInstWrapGetBytes(inst)->general0.src2_mod == 0)
 			src2 = thread->gpr[src2_id].f;
-		else if (inst->bytes.general0.src2_mod == 1)
+		else if (FrmInstWrapGetBytes(inst)->general0.src2_mod == 1)
 			mem_read(emu->const_mem, src2_id, 4, &src2);
-		src3_id = inst->bytes.general0_mod1_B.src3;
+		src3_id = FrmInstWrapGetBytes(inst)->general0_mod1_B.src3;
 		src3 = thread->gpr[src3_id].f;
 
 		/* Execute */
 		dst = src1 * src2 + src3;
 
 		/* Write */
-		dst_id = inst->bytes.general0.dst;
+		dst_id = FrmInstWrapGetBytes(inst)->general0.dst;
 		thread->gpr[dst_id].f = dst;
 	}
 
@@ -93,7 +93,7 @@ void frm_isa_FFMA_impl(FrmThread *thread, FrmInst *inst)
 			src2_id, src2, src3_id, src3);
 }
 
-void frm_isa_FADD_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_FADD_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	unsigned int pred_id, dst_id, src1_id, src2_id;
 	unsigned int active, pred;
@@ -110,7 +110,7 @@ void frm_isa_FADD_impl(FrmThread *thread, FrmInst *inst)
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
-	pred_id = inst->bytes.general0.pred;
+	pred_id = FrmInstWrapGetBytes(inst)->general0.pred;
 	if (pred_id <= 7)
 		pred = thread->pr[pred_id];
 	else
@@ -120,19 +120,19 @@ void frm_isa_FADD_impl(FrmThread *thread, FrmInst *inst)
 	if (active == 1 && pred == 1)
 	{
 		/* Read */
-		src1_id = inst->bytes.general0.src1;
+		src1_id = FrmInstWrapGetBytes(inst)->general0.src1;
 		src1 = thread->gpr[src1_id].f;
-		src2_id = inst->bytes.general0.src2;
-		if (inst->bytes.general0.src2_mod == 0)
+		src2_id = FrmInstWrapGetBytes(inst)->general0.src2;
+		if (FrmInstWrapGetBytes(inst)->general0.src2_mod == 0)
 			src2 = thread->gpr[src2_id].f;
-		else if (inst->bytes.general0.src2_mod == 1)
+		else if (FrmInstWrapGetBytes(inst)->general0.src2_mod == 1)
 			mem_read(emu->const_mem, src2_id, 4, &src2);
 
 		/* Execute */
 		dst = src1 + src2;
 
 		/* Write */
-		dst_id = inst->bytes.general0.dst;
+		dst_id = FrmInstWrapGetBytes(inst)->general0.dst;
 		thread->gpr[dst_id].f = dst;
 	}
 
@@ -145,7 +145,7 @@ void frm_isa_FADD_impl(FrmThread *thread, FrmInst *inst)
 			src2_id, src2);
 }
 
-void frm_isa_FADD32I_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_FADD32I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	unsigned int pred_id, dst_id, src1_id;
 	unsigned int active, pred;
@@ -162,7 +162,7 @@ void frm_isa_FADD32I_impl(FrmThread *thread, FrmInst *inst)
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
-	pred_id = inst->bytes.imm.pred;
+	pred_id = FrmInstWrapGetBytes(inst)->imm.pred;
 	if (pred_id <= 7)
 		pred = thread->pr[pred_id];
 	else
@@ -171,15 +171,15 @@ void frm_isa_FADD32I_impl(FrmThread *thread, FrmInst *inst)
 	if (active == 1 && pred == 1)
 	{
 		/* Read */
-		src1_id = inst->bytes.imm.src1;
+		src1_id = FrmInstWrapGetBytes(inst)->imm.src1;
 		src1 = thread->gpr[src1_id].f;
-		imm32.u32 = inst->bytes.imm.imm32;
+		imm32.u32 = FrmInstWrapGetBytes(inst)->imm.imm32;
 
 		/* Execute */
 		dst = src1 + imm32.f;
 
 		/* Write */
-		dst_id = inst->bytes.imm.dst;
+		dst_id = FrmInstWrapGetBytes(inst)->imm.dst;
 		thread->gpr[dst_id].f = dst;
 	}
 
@@ -190,7 +190,7 @@ void frm_isa_FADD32I_impl(FrmThread *thread, FrmInst *inst)
 			pred_id, pred, dst_id, dst, src1_id, src1, imm32.f);
 }
 
-void frm_isa_FCMP_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_FCMP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	unsigned int pred_id, dst_id, src1_id, src2_id, src3_id;
 	unsigned int active, pred;
@@ -208,7 +208,7 @@ void frm_isa_FCMP_impl(FrmThread *thread, FrmInst *inst)
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
-	pred_id = inst->bytes.general0.pred;
+	pred_id = FrmInstWrapGetBytes(inst)->general0.pred;
 	if (pred_id <= 7)
 		pred = thread->pr[pred_id];
 	else
@@ -217,16 +217,16 @@ void frm_isa_FCMP_impl(FrmThread *thread, FrmInst *inst)
 	if (active == 1 && pred == 1)
 	{
 		/* Read */
-		src1_id = inst->bytes.general0.src1;
+		src1_id = FrmInstWrapGetBytes(inst)->general0.src1;
 		src1 = thread->gpr[src1_id].f;
-		src2_id = inst->bytes.general0.src2;
-		if (inst->bytes.general0.src2_mod == 0)
+		src2_id = FrmInstWrapGetBytes(inst)->general0.src2;
+		if (FrmInstWrapGetBytes(inst)->general0.src2_mod == 0)
 			src2 = thread->gpr[src2_id].f;
-		else if (inst->bytes.general0.src2_mod == 1)
+		else if (FrmInstWrapGetBytes(inst)->general0.src2_mod == 1)
 			mem_read(emu->const_mem, src2_id, 4, &src2);
-		src3_id = inst->bytes.general0_mod1_B.src3;
+		src3_id = FrmInstWrapGetBytes(inst)->general0_mod1_B.src3;
 		src3 = thread->gpr[src3_id].f;
-		op = inst->bytes.general1.cmp;
+		op = FrmInstWrapGetBytes(inst)->general1.cmp;
 
 		/* Execute */
 		switch (op)
@@ -249,7 +249,7 @@ void frm_isa_FCMP_impl(FrmThread *thread, FrmInst *inst)
 		dst = cmp ? src1 : src2;
 
 		/* Write */
-		dst_id = inst->bytes.general0.dst;
+		dst_id = FrmInstWrapGetBytes(inst)->general0.dst;
 		thread->gpr[dst_id].f = dst;
 	}
 
@@ -262,7 +262,7 @@ void frm_isa_FCMP_impl(FrmThread *thread, FrmInst *inst)
 			src2_id, src2, src3_id, src3);
 }
 
-void frm_isa_FMUL_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_FMUL_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	unsigned int pred_id, dst_id, src1_id, src2_id;
 	unsigned int active, pred;
@@ -279,7 +279,7 @@ void frm_isa_FMUL_impl(FrmThread *thread, FrmInst *inst)
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
-	pred_id = inst->bytes.general0.pred;
+	pred_id = FrmInstWrapGetBytes(inst)->general0.pred;
 	if (pred_id <= 7)
 		pred = thread->pr[pred_id];
 	else
@@ -288,19 +288,19 @@ void frm_isa_FMUL_impl(FrmThread *thread, FrmInst *inst)
 	if (active == 1 && pred == 1)
 	{
 		/* Read */
-		src1_id = inst->bytes.general0.src1;
+		src1_id = FrmInstWrapGetBytes(inst)->general0.src1;
 		src1 = thread->gpr[src1_id].f;
-		src2_id = inst->bytes.general0.src2;
-		if (inst->bytes.general0.src2_mod == 0)
+		src2_id = FrmInstWrapGetBytes(inst)->general0.src2;
+		if (FrmInstWrapGetBytes(inst)->general0.src2_mod == 0)
 			src2 = thread->gpr[src2_id].f;
-		else if (inst->bytes.general0.src2_mod == 1)
+		else if (FrmInstWrapGetBytes(inst)->general0.src2_mod == 1)
 			mem_read(emu->const_mem, src2_id, 4, &src2);
 
 		/* Execute */
 		dst = src1 * src2;
 
 		/* Write */
-		dst_id = inst->bytes.general0.dst;
+		dst_id = FrmInstWrapGetBytes(inst)->general0.dst;
 		thread->gpr[dst_id].f = dst;
 	}
 
@@ -313,7 +313,7 @@ void frm_isa_FMUL_impl(FrmThread *thread, FrmInst *inst)
 			src2_id, src2);
 }
 
-void frm_isa_FMUL32I_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_FMUL32I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	unsigned int pred_id, dst_id, src1_id;
 	unsigned int active, pred;
@@ -330,7 +330,7 @@ void frm_isa_FMUL32I_impl(FrmThread *thread, FrmInst *inst)
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
-	pred_id = inst->bytes.imm.pred;
+	pred_id = FrmInstWrapGetBytes(inst)->imm.pred;
 	if (pred_id <= 7)
 		pred = thread->pr[pred_id];
 	else
@@ -339,15 +339,15 @@ void frm_isa_FMUL32I_impl(FrmThread *thread, FrmInst *inst)
 	if (active == 1 && pred == 1)
 	{
 		/* Read */
-		src1_id = inst->bytes.imm.src1;
+		src1_id = FrmInstWrapGetBytes(inst)->imm.src1;
 		src1 = thread->gpr[src1_id].f;
-		imm32.u32 = inst->bytes.imm.imm32;
+		imm32.u32 = FrmInstWrapGetBytes(inst)->imm.imm32;
 
 		/* Execute */
 		dst = src1 * imm32.f;
 
 		/* Write */
-		dst_id = inst->bytes.imm.dst;
+		dst_id = FrmInstWrapGetBytes(inst)->imm.dst;
 		thread->gpr[dst_id].f = dst;
 	}
 
@@ -358,22 +358,22 @@ void frm_isa_FMUL32I_impl(FrmThread *thread, FrmInst *inst)
 			pred_id, pred, dst_id, dst, src1_id, src1, imm32.f);
 }
 
-void frm_isa_FMNMX_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_FMNMX_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_FSWZ_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_FSWZ_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_FSET_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_FSET_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_FSETP_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_FSETP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	unsigned int pred_id, p_id, q_id, src1_id, src2_id, r_id;
 	unsigned int active, pred, p, q, r;
@@ -394,7 +394,7 @@ void frm_isa_FSETP_impl(FrmThread *thread, FrmInst *inst)
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
-	pred_id = inst->bytes.general1.pred;
+	pred_id = FrmInstWrapGetBytes(inst)->general1.pred;
 	if (pred_id <= 7)
 		pred = thread->pr[pred_id];
 	else
@@ -403,18 +403,18 @@ void frm_isa_FSETP_impl(FrmThread *thread, FrmInst *inst)
 	if (active == 1 && pred == 1)
 	{
 		/* Read */
-		src1_id = inst->bytes.general1.src1;
+		src1_id = FrmInstWrapGetBytes(inst)->general1.src1;
 		src1 = thread->gpr[src1_id].f;
-		src2_id = inst->bytes.general1.src2;
-		if (inst->bytes.general1.src2_mod == 0)
+		src2_id = FrmInstWrapGetBytes(inst)->general1.src2;
+		if (FrmInstWrapGetBytes(inst)->general1.src2_mod == 0)
 			src2 = thread->gpr[src2_id].f;
-		else if (inst->bytes.general1.src2_mod == 1)
+		else if (FrmInstWrapGetBytes(inst)->general1.src2_mod == 1)
 			mem_read(emu->const_mem, src2_id, 4, &src2);
-		r_id = inst->bytes.general1.R;
+		r_id = FrmInstWrapGetBytes(inst)->general1.R;
 		r = thread->pr[r_id];
 
 		/* Compare */
-		compare_op = inst->bytes.general1.cmp;
+		compare_op = FrmInstWrapGetBytes(inst)->general1.cmp;
 		switch (compare_op)
 		{
 			case 1: compare_result = src1 < src2; break;
@@ -428,7 +428,7 @@ void frm_isa_FSETP_impl(FrmThread *thread, FrmInst *inst)
 		}
 
 		/* Logic */
-		logic_op = inst->bytes.general1.logic;
+		logic_op = FrmInstWrapGetBytes(inst)->general1.logic;
 		switch (logic_op)
 		{
 			case 0:
@@ -450,8 +450,8 @@ void frm_isa_FSETP_impl(FrmThread *thread, FrmInst *inst)
 		}
 
 		/* Write */
-		p_id = inst->bytes.general1.dst >> 3;
-		q_id = inst->bytes.general1.dst & 0x7;
+		p_id = FrmInstWrapGetBytes(inst)->general1.dst >> 3;
+		q_id = FrmInstWrapGetBytes(inst)->general1.dst & 0x7;
 		if (p_id != 7)
 			thread->pr[p_id] = p;
 		if (q_id != 7)
@@ -467,17 +467,17 @@ void frm_isa_FSETP_impl(FrmThread *thread, FrmInst *inst)
 			src2_id, src2, r_id, r);
 }
 
-void frm_isa_RRO_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_RRO_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_MUFU_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_MUFU_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_DFMA_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_DFMA_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	unsigned int pred_id, dst_id, src1_id, src2_id, src3_id;
 	unsigned int active, pred;
@@ -494,7 +494,7 @@ void frm_isa_DFMA_impl(FrmThread *thread, FrmInst *inst)
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
-	pred_id = inst->bytes.general0.pred;
+	pred_id = FrmInstWrapGetBytes(inst)->general0.pred;
 	if (pred_id <= 7)
 		pred = thread->pr[pred_id];
 	else
@@ -503,21 +503,21 @@ void frm_isa_DFMA_impl(FrmThread *thread, FrmInst *inst)
 	if (active == 1 && pred == 1)
 	{
 		/* Read */
-		src1_id = inst->bytes.general0.src1;
+		src1_id = FrmInstWrapGetBytes(inst)->general0.src1;
 		src1 = thread->gpr[src1_id].f;
-		src2_id = inst->bytes.general0.src2;
-		if (inst->bytes.general0.src2_mod == 0)
+		src2_id = FrmInstWrapGetBytes(inst)->general0.src2;
+		if (FrmInstWrapGetBytes(inst)->general0.src2_mod == 0)
 			src2 = thread->gpr[src2_id].f;
-		else if (inst->bytes.general0.src2_mod == 1)
+		else if (FrmInstWrapGetBytes(inst)->general0.src2_mod == 1)
 			mem_read(emu->const_mem, src2_id, 4, &src2);
-		src3_id = inst->bytes.general0_mod1_B.src3;
+		src3_id = FrmInstWrapGetBytes(inst)->general0_mod1_B.src3;
 		src3 = thread->gpr[src3_id].f;
 
 		/* Execute */
 		dst = src1 * src2 + src3;
 
 		/* Write */
-		dst_id = inst->bytes.general0.dst;
+		dst_id = FrmInstWrapGetBytes(inst)->general0.dst;
 		thread->gpr[dst_id].f = dst;
 	}
 
@@ -530,7 +530,7 @@ void frm_isa_DFMA_impl(FrmThread *thread, FrmInst *inst)
 			src2_id, src2, src3_id, src3);
 }
 
-void frm_isa_DADD_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_DADD_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	unsigned int pred_id, dst_id, src1_id, src2_id;
 	unsigned int active, pred;
@@ -547,7 +547,7 @@ void frm_isa_DADD_impl(FrmThread *thread, FrmInst *inst)
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
-	pred_id = inst->bytes.general0.pred;
+	pred_id = FrmInstWrapGetBytes(inst)->general0.pred;
 	if (pred_id <= 7)
 		pred = thread->pr[pred_id];
 	else
@@ -557,19 +557,19 @@ void frm_isa_DADD_impl(FrmThread *thread, FrmInst *inst)
 	if (active == 1 && pred == 1)
 	{
 		/* Read */
-		src1_id = inst->bytes.general0.src1;
+		src1_id = FrmInstWrapGetBytes(inst)->general0.src1;
 		src1 = thread->gpr[src1_id].f;
-		src2_id = inst->bytes.general0.src2;
-		if (inst->bytes.general0.src2_mod == 0)
+		src2_id = FrmInstWrapGetBytes(inst)->general0.src2;
+		if (FrmInstWrapGetBytes(inst)->general0.src2_mod == 0)
 			src2 = thread->gpr[src2_id].f;
-		else if (inst->bytes.general0.src2_mod == 1)
+		else if (FrmInstWrapGetBytes(inst)->general0.src2_mod == 1)
 			mem_read(emu->const_mem, src2_id, 4, &src2);
 
 		/* Execute */
 		dst = src1 + src2;
 
 		/* Write */
-		dst_id = inst->bytes.general0.dst;
+		dst_id = FrmInstWrapGetBytes(inst)->general0.dst;
 		thread->gpr[dst_id].f = dst;
 	}
 
@@ -583,7 +583,7 @@ void frm_isa_DADD_impl(FrmThread *thread, FrmInst *inst)
 
 }
 
-void frm_isa_DMUL_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_DMUL_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	unsigned int pred_id, dst_id, src1_id, src2_id;
 	unsigned int active, pred;
@@ -600,7 +600,7 @@ void frm_isa_DMUL_impl(FrmThread *thread, FrmInst *inst)
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
-	pred_id = inst->bytes.general0.pred;
+	pred_id = FrmInstWrapGetBytes(inst)->general0.pred;
 	if (pred_id <= 7)
 		pred = thread->pr[pred_id];
 	else
@@ -609,19 +609,19 @@ void frm_isa_DMUL_impl(FrmThread *thread, FrmInst *inst)
 	if (active == 1 && pred == 1)
 	{
 		/* Read */
-		src1_id = inst->bytes.general0.src1;
+		src1_id = FrmInstWrapGetBytes(inst)->general0.src1;
 		src1 = thread->gpr[src1_id].f;
-		src2_id = inst->bytes.general0.src2;
-		if (inst->bytes.general0.src2_mod == 0)
+		src2_id = FrmInstWrapGetBytes(inst)->general0.src2;
+		if (FrmInstWrapGetBytes(inst)->general0.src2_mod == 0)
 			src2 = thread->gpr[src2_id].f;
-		else if (inst->bytes.general0.src2_mod == 1)
+		else if (FrmInstWrapGetBytes(inst)->general0.src2_mod == 1)
 			mem_read(emu->const_mem, src2_id, 4, &src2);
 
 		/* Execute */
 		dst = src1 * src2;
 
 		/* Write */
-		dst_id = inst->bytes.general0.dst;
+		dst_id = FrmInstWrapGetBytes(inst)->general0.dst;
 		thread->gpr[dst_id].f = dst;
 	}
 
@@ -634,17 +634,17 @@ void frm_isa_DMUL_impl(FrmThread *thread, FrmInst *inst)
 			src2_id, src2);
 }
 
-void frm_isa_DMNMX_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_DMNMX_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_DSET_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_DSET_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_DSETP_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_DSETP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	unsigned int pred_id, p_id, q_id, src1_id, src2_id, r_id;
 	unsigned int active, pred, p, q, r;
@@ -665,7 +665,7 @@ void frm_isa_DSETP_impl(FrmThread *thread, FrmInst *inst)
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
-	pred_id = inst->bytes.general1.pred;
+	pred_id = FrmInstWrapGetBytes(inst)->general1.pred;
 	if (pred_id <= 7)
 		pred = thread->pr[pred_id];
 	else
@@ -674,18 +674,18 @@ void frm_isa_DSETP_impl(FrmThread *thread, FrmInst *inst)
 	if (active == 1 && pred == 1)
 	{
 		/* Read */
-		src1_id = inst->bytes.general1.src1;
+		src1_id = FrmInstWrapGetBytes(inst)->general1.src1;
 		src1 = thread->gpr[src1_id].f;
-		src2_id = inst->bytes.general1.src2;
-		if (inst->bytes.general1.src2_mod == 0)
+		src2_id = FrmInstWrapGetBytes(inst)->general1.src2;
+		if (FrmInstWrapGetBytes(inst)->general1.src2_mod == 0)
 			src2 = thread->gpr[src2_id].f;
-		else if (inst->bytes.general1.src2_mod == 1)
+		else if (FrmInstWrapGetBytes(inst)->general1.src2_mod == 1)
 			mem_read(emu->const_mem, src2_id, 4, &src2);
-		r_id = inst->bytes.general1.R;
+		r_id = FrmInstWrapGetBytes(inst)->general1.R;
 		r = thread->pr[r_id];
 
 		/* Compare */
-		compare_op = inst->bytes.general1.cmp;
+		compare_op = FrmInstWrapGetBytes(inst)->general1.cmp;
 		switch (compare_op)
 		{
 			case 1: compare_result = src1 < src2; break;
@@ -699,7 +699,7 @@ void frm_isa_DSETP_impl(FrmThread *thread, FrmInst *inst)
 		}
 
 		/* Logic */
-		logic_op = inst->bytes.general1.logic;
+		logic_op = FrmInstWrapGetBytes(inst)->general1.logic;
 		switch (logic_op)
 		{
 			case 0:
@@ -721,8 +721,8 @@ void frm_isa_DSETP_impl(FrmThread *thread, FrmInst *inst)
 		}
 
 		/* Write */
-		p_id = inst->bytes.general1.dst >> 3;
-		q_id = inst->bytes.general1.dst & 0x7;
+		p_id = FrmInstWrapGetBytes(inst)->general1.dst >> 3;
+		q_id = FrmInstWrapGetBytes(inst)->general1.dst & 0x7;
 		if (p_id != 7)
 			thread->pr[p_id] = p;
 		if (q_id != 7)
@@ -738,7 +738,7 @@ void frm_isa_DSETP_impl(FrmThread *thread, FrmInst *inst)
 			src2_id, src2, r_id, r);
 }
 
-void frm_isa_IMAD_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_IMAD_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	unsigned int pred_id, dst_id, src1_id, src2_id, src3_id;
 	unsigned int active, pred;
@@ -755,7 +755,7 @@ void frm_isa_IMAD_impl(FrmThread *thread, FrmInst *inst)
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
-	pred_id = inst->bytes.general1.pred;
+	pred_id = FrmInstWrapGetBytes(inst)->general1.pred;
 	if (pred_id <= 7)
 		pred = thread->pr[pred_id];
 	else
@@ -764,21 +764,21 @@ void frm_isa_IMAD_impl(FrmThread *thread, FrmInst *inst)
 	if (active == 1 && pred == 1)
 	{
 		/* Read */
-		src1_id = inst->bytes.general0.src1;
+		src1_id = FrmInstWrapGetBytes(inst)->general0.src1;
 		src1 = thread->gpr[src1_id].s32;
-		src2_id = inst->bytes.general0.src2;
-		if (inst->bytes.general0.src2_mod == 0)
+		src2_id = FrmInstWrapGetBytes(inst)->general0.src2;
+		if (FrmInstWrapGetBytes(inst)->general0.src2_mod == 0)
 			src2 = thread->gpr[src2_id].s32;
-		else if (inst->bytes.general0.src2_mod == 1)
+		else if (FrmInstWrapGetBytes(inst)->general0.src2_mod == 1)
 			mem_read(emu->const_mem, src2_id, 4, &src2);
-		src3_id = inst->bytes.general0_mod1_B.src3;
+		src3_id = FrmInstWrapGetBytes(inst)->general0_mod1_B.src3;
 		src3 = thread->gpr[src3_id].s32;
 
 		/* Execute */
 		dst = src1 * src2 + src3;
 
 		/* Write */
-		dst_id = inst->bytes.general0.dst;
+		dst_id = FrmInstWrapGetBytes(inst)->general0.dst;
 		thread->gpr[dst_id].s32 = dst;
 	}
 
@@ -791,7 +791,7 @@ void frm_isa_IMAD_impl(FrmThread *thread, FrmInst *inst)
 			src2_id, src2, src3_id, src3);
 }
 
-void frm_isa_IMUL_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_IMUL_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	unsigned int pred_id, dst_id, src1_id, src2_id;
 	unsigned int active, pred;
@@ -808,7 +808,7 @@ void frm_isa_IMUL_impl(FrmThread *thread, FrmInst *inst)
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
-	pred_id = inst->bytes.general0.pred;
+	pred_id = FrmInstWrapGetBytes(inst)->general0.pred;
 	if (pred_id <= 7)
 		pred = thread->pr[pred_id];
 	else
@@ -817,19 +817,19 @@ void frm_isa_IMUL_impl(FrmThread *thread, FrmInst *inst)
 	if (active == 1 && pred == 1)
 	{
 		/* Read */
-		src1_id = inst->bytes.general0.src1;
+		src1_id = FrmInstWrapGetBytes(inst)->general0.src1;
 		src1 = thread->gpr[src1_id].s32;
-		src2_id = inst->bytes.general0.src2;
-		if (inst->bytes.general0.src2_mod == 0)
+		src2_id = FrmInstWrapGetBytes(inst)->general0.src2;
+		if (FrmInstWrapGetBytes(inst)->general0.src2_mod == 0)
 			src2 = thread->gpr[src2_id].s32;
-		else if (inst->bytes.general0.src2_mod == 1)
+		else if (FrmInstWrapGetBytes(inst)->general0.src2_mod == 1)
 			mem_read(emu->const_mem, src2_id, 4, &src2);
 
 		/* Execute */
 		dst = src1 * src2;
 
 		/* Write */
-		dst_id = inst->bytes.general0.dst;
+		dst_id = FrmInstWrapGetBytes(inst)->general0.dst;
 		thread->gpr[dst_id].s32 = dst;
 	}
 
@@ -842,7 +842,7 @@ void frm_isa_IMUL_impl(FrmThread *thread, FrmInst *inst)
 			src2_id, src2);
 }
 
-void frm_isa_IADD_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_IADD_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	unsigned int pred_id, dst_id, src1_id, src2_id;
 	unsigned int active, pred;
@@ -859,7 +859,7 @@ void frm_isa_IADD_impl(FrmThread *thread, FrmInst *inst)
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
-	pred_id = inst->bytes.general0.pred;
+	pred_id = FrmInstWrapGetBytes(inst)->general0.pred;
 	if (pred_id <= 7)
 		pred = thread->pr[pred_id];
 	else
@@ -868,16 +868,16 @@ void frm_isa_IADD_impl(FrmThread *thread, FrmInst *inst)
 	if (active == 1 && pred == 1)
 	{
 		/* Read */
-		src1_id = inst->bytes.general0.src1;
+		src1_id = FrmInstWrapGetBytes(inst)->general0.src1;
 		src1 = thread->gpr[src1_id].s32;
-		src2_id = inst->bytes.general0.src2;
-		if (inst->bytes.general0.src2_mod == 0)
+		src2_id = FrmInstWrapGetBytes(inst)->general0.src2;
+		if (FrmInstWrapGetBytes(inst)->general0.src2_mod == 0)
 			src2 = thread->gpr[src2_id].s32;
-		else if (inst->bytes.general0.src2_mod == 1)
+		else if (FrmInstWrapGetBytes(inst)->general0.src2_mod == 1)
 			mem_read(emu->const_mem, src2_id, 4, &src2);
-		else if (inst->bytes.general0.src2_mod >= 2)
+		else if (FrmInstWrapGetBytes(inst)->general0.src2_mod >= 2)
 		{
-			src2 = inst->bytes.general0.src2;
+			src2 = FrmInstWrapGetBytes(inst)->general0.src2;
 			/* Sign extension */
 			if ((src2 >> 19 & 0x1) == 1)
 				src2 |= 0xfff00000;
@@ -887,7 +887,7 @@ void frm_isa_IADD_impl(FrmThread *thread, FrmInst *inst)
 		dst = src1 + src2;
 
 		/* Write */
-		dst_id = inst->bytes.general0.dst;
+		dst_id = FrmInstWrapGetBytes(inst)->general0.dst;
 		thread->gpr[dst_id].s32 = dst;
 	}
 
@@ -900,7 +900,7 @@ void frm_isa_IADD_impl(FrmThread *thread, FrmInst *inst)
 			src2_id, src2);
 }
 
-void frm_isa_IADD32I_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_IADD32I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	unsigned int pred_id, dst_id, src1_id;
 	unsigned int active, pred;
@@ -916,7 +916,7 @@ void frm_isa_IADD32I_impl(FrmThread *thread, FrmInst *inst)
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
-	pred_id = inst->bytes.general0.pred;
+	pred_id = FrmInstWrapGetBytes(inst)->general0.pred;
 	if (pred_id <= 7)
 		pred = thread->pr[pred_id];
 	else
@@ -925,15 +925,15 @@ void frm_isa_IADD32I_impl(FrmThread *thread, FrmInst *inst)
 	if (active == 1 && pred == 1)
 	{
 		/* Read */
-		src1_id = inst->bytes.imm.src1;
+		src1_id = FrmInstWrapGetBytes(inst)->imm.src1;
 		src1 = thread->gpr[src1_id].s32;
-		imm32 = (int)inst->bytes.imm.imm32;
+		imm32 = (int)FrmInstWrapGetBytes(inst)->imm.imm32;
 
 		/* Execute */
 		dst = src1 + imm32;
 
 		/* Write */
-		dst_id = inst->bytes.imm.dst;
+		dst_id = FrmInstWrapGetBytes(inst)->imm.dst;
 		thread->gpr[dst_id].s32 = dst;
 	}
 
@@ -945,7 +945,7 @@ void frm_isa_IADD32I_impl(FrmThread *thread, FrmInst *inst)
 			pred_id, pred, dst_id, dst, src1_id, src1, imm32);
 }
 
-void frm_isa_ISCADD_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_ISCADD_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	unsigned int pred_id, dst_id, src1_id, src2_id;
 	unsigned int active, pred;
@@ -963,7 +963,7 @@ void frm_isa_ISCADD_impl(FrmThread *thread, FrmInst *inst)
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
-	pred_id = inst->bytes.general0.pred;
+	pred_id = FrmInstWrapGetBytes(inst)->general0.pred;
 	if (pred_id <= 7)
 		pred = thread->pr[pred_id];
 	else
@@ -972,22 +972,22 @@ void frm_isa_ISCADD_impl(FrmThread *thread, FrmInst *inst)
 	if (active == 1 && pred == 1)
 	{
 		/* Read */
-		src1_id = inst->bytes.general0.src1;
+		src1_id = FrmInstWrapGetBytes(inst)->general0.src1;
 		src1 = thread->gpr[src1_id].s32;
-		src2_id = inst->bytes.general0.src2;
-		if (inst->bytes.general0.src2_mod == 0)
+		src2_id = FrmInstWrapGetBytes(inst)->general0.src2;
+		if (FrmInstWrapGetBytes(inst)->general0.src2_mod == 0)
 			src2 = thread->gpr[src2_id].s32;
-		else if (inst->bytes.general0.src2_mod == 1)
+		else if (FrmInstWrapGetBytes(inst)->general0.src2_mod == 1)
 			mem_read(emu->const_mem, src2_id, 4, &src2);
-		else if (inst->bytes.general0.src2_mod >= 2)
+		else if (FrmInstWrapGetBytes(inst)->general0.src2_mod >= 2)
 			src2 = src2_id;
-		shamt = inst->bytes.mod0_C.shamt;
+		shamt = FrmInstWrapGetBytes(inst)->mod0_C.shamt;
 
 		/* Execute */
 		dst = (src1 << shamt) + src2;
 
 		/* Write */
-		dst_id = inst->bytes.general0.dst;
+		dst_id = FrmInstWrapGetBytes(inst)->general0.dst;
 		thread->gpr[dst_id].s32 = dst;
 	}
 
@@ -1000,12 +1000,12 @@ void frm_isa_ISCADD_impl(FrmThread *thread, FrmInst *inst)
 			src2_id, src2, shamt);
 }
 
-void frm_isa_ISAD_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_ISAD_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_IMNMX_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_IMNMX_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	unsigned int pred_id, dst_id, src1_id, src2_id;
 	unsigned int active, pred;
@@ -1022,7 +1022,7 @@ void frm_isa_IMNMX_impl(FrmThread *thread, FrmInst *inst)
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
-	pred_id = inst->bytes.general0.pred;
+	pred_id = FrmInstWrapGetBytes(inst)->general0.pred;
 	if (pred_id <= 7)
 		pred = thread->pr[pred_id];
 	else
@@ -1031,16 +1031,16 @@ void frm_isa_IMNMX_impl(FrmThread *thread, FrmInst *inst)
 	if (active == 1 && pred == 1)
 	{
 		/* Read */
-		src1_id = inst->bytes.general0.src1;
+		src1_id = FrmInstWrapGetBytes(inst)->general0.src1;
 		src1 = thread->gpr[src1_id].s32;
-		src2_id = inst->bytes.general0.src2;
-		if (inst->bytes.general0.src2_mod == 0)
+		src2_id = FrmInstWrapGetBytes(inst)->general0.src2;
+		if (FrmInstWrapGetBytes(inst)->general0.src2_mod == 0)
 			src2 = thread->gpr[src2_id].s32;
-		else if (inst->bytes.general0.src2_mod == 1)
+		else if (FrmInstWrapGetBytes(inst)->general0.src2_mod == 1)
 			mem_read(emu->const_mem, src2_id, 4, &src2);
-		else if (inst->bytes.general0.src2_mod >= 2)
+		else if (FrmInstWrapGetBytes(inst)->general0.src2_mod >= 2)
 		{
-			src2 = inst->bytes.general0.src2;
+			src2 = FrmInstWrapGetBytes(inst)->general0.src2;
 			/* Sign extension */
 			if ((src2 >> 19 & 0x1) == 1)
 				src2 |= 0xfff00000;
@@ -1050,7 +1050,7 @@ void frm_isa_IMNMX_impl(FrmThread *thread, FrmInst *inst)
 		dst = src1 < src2 ? src1 : src2;
 
 		/* Write */
-		dst_id = inst->bytes.general0.dst;
+		dst_id = FrmInstWrapGetBytes(inst)->general0.dst;
 		thread->gpr[dst_id].s32 = dst;
 	}
 
@@ -1063,17 +1063,17 @@ void frm_isa_IMNMX_impl(FrmThread *thread, FrmInst *inst)
 			src2_id, src2);
 }
 
-void frm_isa_BFE_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_BFE_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_BFI_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_BFI_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_SHR_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_SHR_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	unsigned int pred_id, dst_id, src1_id, src2_id;
 	unsigned int active, pred;
@@ -1091,7 +1091,7 @@ void frm_isa_SHR_impl(FrmThread *thread, FrmInst *inst)
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
-	pred_id = inst->bytes.general0.pred;
+	pred_id = FrmInstWrapGetBytes(inst)->general0.pred;
 	if (pred_id <= 7)
 		pred = thread->pr[pred_id];
 	else
@@ -1100,21 +1100,21 @@ void frm_isa_SHR_impl(FrmThread *thread, FrmInst *inst)
 	if (active == 1 && pred == 1)
 	{
 		/* Read */
-		src1_id = inst->bytes.general0.src1;
+		src1_id = FrmInstWrapGetBytes(inst)->general0.src1;
 		src1 = thread->gpr[src1_id].s32;
-		src2_id = inst->bytes.general0.src2;
-		if (inst->bytes.general0.src2_mod == 0)
+		src2_id = FrmInstWrapGetBytes(inst)->general0.src2;
+		if (FrmInstWrapGetBytes(inst)->general0.src2_mod == 0)
 			src2 = thread->gpr[src2_id].u32;
-		else if (inst->bytes.general0.src2_mod == 1)
+		else if (FrmInstWrapGetBytes(inst)->general0.src2_mod == 1)
 			mem_read(emu->const_mem, src2_id, 4, &src2);
-		else if (inst->bytes.general0.src2_mod >= 2)
+		else if (FrmInstWrapGetBytes(inst)->general0.src2_mod >= 2)
 			src2 = src2_id;
 
 		/* Execute */
 		dst = src1 >> src2;
 
 		/* Write */
-		dst_id = inst->bytes.general0.dst;
+		dst_id = FrmInstWrapGetBytes(inst)->general0.dst;
 		thread->gpr[dst_id].s32 = dst;
 	}
 
@@ -1127,7 +1127,7 @@ void frm_isa_SHR_impl(FrmThread *thread, FrmInst *inst)
 			src2_id, src2);
 }
 
-void frm_isa_SHL_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_SHL_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	unsigned int pred_id, dst_id, src1_id, src2_id;
 	unsigned int active, pred;
@@ -1145,7 +1145,7 @@ void frm_isa_SHL_impl(FrmThread *thread, FrmInst *inst)
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
-	pred_id = inst->bytes.general0.pred;
+	pred_id = FrmInstWrapGetBytes(inst)->general0.pred;
 	if (pred_id <= 7)
 		pred = thread->pr[pred_id];
 	else
@@ -1154,21 +1154,21 @@ void frm_isa_SHL_impl(FrmThread *thread, FrmInst *inst)
 	if (active == 1 && pred == 1)
 	{
 		/* Read */
-		src1_id = inst->bytes.general0.src1;
+		src1_id = FrmInstWrapGetBytes(inst)->general0.src1;
 		src1 = thread->gpr[src1_id].s32;
-		src2_id = inst->bytes.general0.src2;
-		if (inst->bytes.general0.src2_mod == 0)
+		src2_id = FrmInstWrapGetBytes(inst)->general0.src2;
+		if (FrmInstWrapGetBytes(inst)->general0.src2_mod == 0)
 			src2 = thread->gpr[src2_id].u32;
-		else if (inst->bytes.general0.src2_mod == 1)
+		else if (FrmInstWrapGetBytes(inst)->general0.src2_mod == 1)
 			mem_read(emu->const_mem, src2_id, 4, &src2);
-		else if (inst->bytes.general0.src2_mod >= 2)
+		else if (FrmInstWrapGetBytes(inst)->general0.src2_mod >= 2)
 			src2 = src2_id;
 
 		/* Execute */
 		dst = src1 << src2;
 
 		/* Write */
-		dst_id = inst->bytes.general0.dst;
+		dst_id = FrmInstWrapGetBytes(inst)->general0.dst;
 		thread->gpr[dst_id].s32 = dst;
 	}
 
@@ -1181,12 +1181,12 @@ void frm_isa_SHL_impl(FrmThread *thread, FrmInst *inst)
 			src2_id, src2);
 }
 
-void frm_isa_LOP_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_LOP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_LOP32I_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_LOP32I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	unsigned int pred_id, dst_id, src1_id;
 	unsigned int active, pred;
@@ -1203,7 +1203,7 @@ void frm_isa_LOP32I_impl(FrmThread *thread, FrmInst *inst)
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
-	pred_id = inst->bytes.imm.pred;
+	pred_id = FrmInstWrapGetBytes(inst)->imm.pred;
 	if (pred_id <= 7)
 		pred = thread->pr[pred_id];
 	else
@@ -1212,10 +1212,10 @@ void frm_isa_LOP32I_impl(FrmThread *thread, FrmInst *inst)
 	if (active == 1 && pred == 1)
 	{
 		/* Read */
-		src1_id = inst->bytes.imm.src1;
+		src1_id = FrmInstWrapGetBytes(inst)->imm.src1;
 		src1 = thread->gpr[src1_id].u32;
-		imm32 = inst->bytes.imm.imm32;
-		op = inst->bytes.mod0_D.ftzfmz;
+		imm32 = FrmInstWrapGetBytes(inst)->imm.imm32;
+		op = FrmInstWrapGetBytes(inst)->mod0_D.ftzfmz;
 
 		/* Execute */
 		if (op == 0)
@@ -1229,7 +1229,7 @@ void frm_isa_LOP32I_impl(FrmThread *thread, FrmInst *inst)
 					__FILE__, __LINE__, op);
 
 		/* Write */
-		dst_id = inst->bytes.imm.dst;
+		dst_id = FrmInstWrapGetBytes(inst)->imm.dst;
 		thread->gpr[dst_id].u32 = dst;
 	}
 
@@ -1240,17 +1240,17 @@ void frm_isa_LOP32I_impl(FrmThread *thread, FrmInst *inst)
 			pred_id, pred, dst_id, dst, src1_id, src1, imm32);
 }
 
-void frm_isa_FLO_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_FLO_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_ISET_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_ISET_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_ISETP_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_ISETP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	unsigned int pred_id, p_id, q_id, src1_id, src2_id, r_id;
 	unsigned int active, pred, p, q, src1, src2, r;
@@ -1270,7 +1270,7 @@ void frm_isa_ISETP_impl(FrmThread *thread, FrmInst *inst)
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
-	pred_id = inst->bytes.general1.pred;
+	pred_id = FrmInstWrapGetBytes(inst)->general1.pred;
 	if (pred_id <= 7)
 		pred = thread->pr[pred_id];
 	else
@@ -1279,18 +1279,18 @@ void frm_isa_ISETP_impl(FrmThread *thread, FrmInst *inst)
 	if (active == 1 && pred == 1)
 	{
 		/* Read */
-		src1_id = inst->bytes.general1.src1;
+		src1_id = FrmInstWrapGetBytes(inst)->general1.src1;
 		src1 = thread->gpr[src1_id].s32;
-		src2_id = inst->bytes.general1.src2;
-		if (inst->bytes.general1.src2_mod == 0)
+		src2_id = FrmInstWrapGetBytes(inst)->general1.src2;
+		if (FrmInstWrapGetBytes(inst)->general1.src2_mod == 0)
 			src2 = thread->gpr[src2_id].s32;
-		else if (inst->bytes.general1.src2_mod == 1)
+		else if (FrmInstWrapGetBytes(inst)->general1.src2_mod == 1)
 			mem_read(emu->const_mem, src2_id, 4, &src2);
-		r_id = inst->bytes.general1.R;
+		r_id = FrmInstWrapGetBytes(inst)->general1.R;
 		r = thread->pr[r_id];
 
 		/* Compare */
-		compare_op = inst->bytes.general1.cmp;
+		compare_op = FrmInstWrapGetBytes(inst)->general1.cmp;
 		switch (compare_op)
 		{
 			case 1: compare_result = src1 < src2; break;
@@ -1304,7 +1304,7 @@ void frm_isa_ISETP_impl(FrmThread *thread, FrmInst *inst)
 		}
 
 		/* Logic */
-		logic_op = inst->bytes.general1.logic;
+		logic_op = FrmInstWrapGetBytes(inst)->general1.logic;
 		switch (logic_op)
 		{
 			case 0:
@@ -1326,8 +1326,8 @@ void frm_isa_ISETP_impl(FrmThread *thread, FrmInst *inst)
 		}
 
 		/* Write */
-		p_id = inst->bytes.general1.dst >> 3;
-		q_id = inst->bytes.general1.dst & 0x7;
+		p_id = FrmInstWrapGetBytes(inst)->general1.dst >> 3;
+		q_id = FrmInstWrapGetBytes(inst)->general1.dst & 0x7;
 		if (p_id != 7)
 			thread->pr[p_id] = p;
 		if (q_id != 7)
@@ -1343,7 +1343,7 @@ void frm_isa_ISETP_impl(FrmThread *thread, FrmInst *inst)
 			src2_id, src2, r_id, r);
 }
 
-void frm_isa_ICMP_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_ICMP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	unsigned int pred_id, dst_id, src1_id, src2_id, src3_id;
 	unsigned int active, pred;
@@ -1361,7 +1361,7 @@ void frm_isa_ICMP_impl(FrmThread *thread, FrmInst *inst)
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
-	pred_id = inst->bytes.general0.pred;
+	pred_id = FrmInstWrapGetBytes(inst)->general0.pred;
 	if (pred_id <= 7)
 		pred = thread->pr[pred_id];
 	else
@@ -1370,16 +1370,16 @@ void frm_isa_ICMP_impl(FrmThread *thread, FrmInst *inst)
 	if (active == 1 && pred == 1)
 	{
 		/* Read */
-		src1_id = inst->bytes.general0.src1;
+		src1_id = FrmInstWrapGetBytes(inst)->general0.src1;
 		src1 = thread->gpr[src1_id].s32;
-		src2_id = inst->bytes.general0.src2;
-		if (inst->bytes.general0.src2_mod == 0)
+		src2_id = FrmInstWrapGetBytes(inst)->general0.src2;
+		if (FrmInstWrapGetBytes(inst)->general0.src2_mod == 0)
 			src2 = thread->gpr[src2_id].s32;
-		else if (inst->bytes.general0.src2_mod == 1)
+		else if (FrmInstWrapGetBytes(inst)->general0.src2_mod == 1)
 			mem_read(emu->const_mem, src2_id, 4, &src2);
-		src3_id = inst->bytes.general0_mod1_B.src3;
+		src3_id = FrmInstWrapGetBytes(inst)->general0_mod1_B.src3;
 		src3 = thread->gpr[src3_id].s32;
-		op = inst->bytes.general0_mod1_D.cmp;
+		op = FrmInstWrapGetBytes(inst)->general0_mod1_D.cmp;
 
 		/* Execute */
 		switch (op)
@@ -1396,7 +1396,7 @@ void frm_isa_ICMP_impl(FrmThread *thread, FrmInst *inst)
 		dst = cmp ? src1 : src2;
 
 		/* Write */
-		dst_id = inst->bytes.general0.dst;
+		dst_id = FrmInstWrapGetBytes(inst)->general0.dst;
 		thread->gpr[dst_id].s32 = dst;
 	}
 
@@ -1409,12 +1409,12 @@ void frm_isa_ICMP_impl(FrmThread *thread, FrmInst *inst)
 			src2_id, src2, src3_id, src3);
 }
 
-void frm_isa_POPC_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_POPC_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_F2F_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_F2F_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	unsigned int pred_id, dst_id, src_id;
 	unsigned int active, pred;
@@ -1431,7 +1431,7 @@ void frm_isa_F2F_impl(FrmThread *thread, FrmInst *inst)
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
-	pred_id = inst->bytes.general0.pred;
+	pred_id = FrmInstWrapGetBytes(inst)->general0.pred;
 	if (pred_id <= 7)
 		pred = thread->pr[pred_id];
 	else
@@ -1440,17 +1440,17 @@ void frm_isa_F2F_impl(FrmThread *thread, FrmInst *inst)
 	if (active == 1 && pred == 1)
 	{
 		/* Read */
-		src_id = inst->bytes.general0.src2;
-		if (inst->bytes.general0.src2_mod == 0)
+		src_id = FrmInstWrapGetBytes(inst)->general0.src2;
+		if (FrmInstWrapGetBytes(inst)->general0.src2_mod == 0)
 			src = thread->gpr[src_id].s32;
-		else if (inst->bytes.general0.src2_mod == 1)
+		else if (FrmInstWrapGetBytes(inst)->general0.src2_mod == 1)
 			mem_read(emu->const_mem, src_id, 4, &src);
 
 		/* Execute */
 		dst = src;
 
 		/* Write */
-		dst_id = inst->bytes.general0.dst;
+		dst_id = FrmInstWrapGetBytes(inst)->general0.dst;
 		thread->gpr[dst_id].f = dst;
 	}
 
@@ -1461,7 +1461,7 @@ void frm_isa_F2F_impl(FrmThread *thread, FrmInst *inst)
 			pred_id, pred, dst_id, dst, src_id, src);
 }
 
-void frm_isa_F2I_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_F2I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	unsigned int pred_id, dst_id, src_id;
 	unsigned int active, pred;
@@ -1479,7 +1479,7 @@ void frm_isa_F2I_impl(FrmThread *thread, FrmInst *inst)
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
-	pred_id = inst->bytes.general0.pred;
+	pred_id = FrmInstWrapGetBytes(inst)->general0.pred;
 	if (pred_id <= 7)
 		pred = thread->pr[pred_id];
 	else
@@ -1488,17 +1488,17 @@ void frm_isa_F2I_impl(FrmThread *thread, FrmInst *inst)
 	if (active == 1 && pred == 1)
 	{
 		/* Read */
-		src_id = inst->bytes.general0.src2;
-		if (inst->bytes.general0.src2_mod == 0)
+		src_id = FrmInstWrapGetBytes(inst)->general0.src2;
+		if (FrmInstWrapGetBytes(inst)->general0.src2_mod == 0)
 			src = thread->gpr[src_id].f;
-		else if (inst->bytes.general0.src2_mod == 1)
+		else if (FrmInstWrapGetBytes(inst)->general0.src2_mod == 1)
 			mem_read(emu->const_mem, src_id, 4, &src);
 
 		/* Execute */
 		dst = *((int *)&src);
 
 		/* Write */
-		dst_id = inst->bytes.general0.dst;
+		dst_id = FrmInstWrapGetBytes(inst)->general0.dst;
 		thread->gpr[dst_id].s32 = dst;
 	}
 
@@ -1509,7 +1509,7 @@ void frm_isa_F2I_impl(FrmThread *thread, FrmInst *inst)
 			pred_id, pred, dst_id, dst, src_id, src);
 }
 
-void frm_isa_I2F_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_I2F_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	unsigned int pred_id, dst_id, src_id;
 	unsigned int active, pred;
@@ -1527,7 +1527,7 @@ void frm_isa_I2F_impl(FrmThread *thread, FrmInst *inst)
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
-	pred_id = inst->bytes.general0.pred;
+	pred_id = FrmInstWrapGetBytes(inst)->general0.pred;
 	if (pred_id <= 7)
 		pred = thread->pr[pred_id];
 	else
@@ -1536,17 +1536,17 @@ void frm_isa_I2F_impl(FrmThread *thread, FrmInst *inst)
 	if (active == 1 && pred == 1)
 	{
 		/* Read */
-		src_id = inst->bytes.general0.src2;
-		if (inst->bytes.general0.src2_mod == 0)
+		src_id = FrmInstWrapGetBytes(inst)->general0.src2;
+		if (FrmInstWrapGetBytes(inst)->general0.src2_mod == 0)
 			src = thread->gpr[src_id].s32;
-		else if (inst->bytes.general0.src2_mod == 1)
+		else if (FrmInstWrapGetBytes(inst)->general0.src2_mod == 1)
 			mem_read(emu->const_mem, src_id, 4, &src);
 
 		/* Execute */
 		dst = *((float *)&src);
 
 		/* Write */
-		dst_id = inst->bytes.general0.dst;
+		dst_id = FrmInstWrapGetBytes(inst)->general0.dst;
 		thread->gpr[dst_id].f = dst;
 	}
 
@@ -1557,7 +1557,7 @@ void frm_isa_I2F_impl(FrmThread *thread, FrmInst *inst)
 			pred_id, pred, dst_id, dst, src_id, src);
 }
 
-void frm_isa_I2I_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_I2I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	unsigned int pred_id, dst_id, src_id;
 	unsigned int active, pred;
@@ -1574,7 +1574,7 @@ void frm_isa_I2I_impl(FrmThread *thread, FrmInst *inst)
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
-	pred_id = inst->bytes.general0.pred;
+	pred_id = FrmInstWrapGetBytes(inst)->general0.pred;
 	if (pred_id <= 7)
 		pred = thread->pr[pred_id];
 	else
@@ -1583,17 +1583,17 @@ void frm_isa_I2I_impl(FrmThread *thread, FrmInst *inst)
 	if (active == 1 && pred == 1)
 	{
 		/* Read */
-		src_id = inst->bytes.general0.src2;
-		if (inst->bytes.general0.src2_mod == 0)
+		src_id = FrmInstWrapGetBytes(inst)->general0.src2;
+		if (FrmInstWrapGetBytes(inst)->general0.src2_mod == 0)
 			src = thread->gpr[src_id].s32;
-		else if (inst->bytes.general0.src2_mod == 1)
+		else if (FrmInstWrapGetBytes(inst)->general0.src2_mod == 1)
 			mem_read(emu->const_mem, src_id, 4, &src);
 
 		/* Execute */
 		dst = src;
 
 		/* Write */
-		dst_id = inst->bytes.general0.dst;
+		dst_id = FrmInstWrapGetBytes(inst)->general0.dst;
 		thread->gpr[dst_id].s32 = dst;
 	}
 
@@ -1604,7 +1604,7 @@ void frm_isa_I2I_impl(FrmThread *thread, FrmInst *inst)
 			pred_id, pred, dst_id, dst, src_id, src);
 }
 
-void frm_isa_MOV_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_MOV_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	unsigned int pred_id, dst_id, src_id;
 	unsigned int active, pred;
@@ -1621,7 +1621,7 @@ void frm_isa_MOV_impl(FrmThread *thread, FrmInst *inst)
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
-	pred_id = inst->bytes.general0.pred;
+	pred_id = FrmInstWrapGetBytes(inst)->general0.pred;
 	if (pred_id <= 7)
 		pred = thread->pr[pred_id];
 	else
@@ -1630,17 +1630,17 @@ void frm_isa_MOV_impl(FrmThread *thread, FrmInst *inst)
 	if (active == 1 && pred == 1)
 	{
 		/* Read */
-		src_id = inst->bytes.general0.src2;
-		if (inst->bytes.general0.src2_mod == 0)
+		src_id = FrmInstWrapGetBytes(inst)->general0.src2;
+		if (FrmInstWrapGetBytes(inst)->general0.src2_mod == 0)
 			src = thread->gpr[src_id].s32;
-		else if (inst->bytes.general0.src2_mod == 1)
+		else if (FrmInstWrapGetBytes(inst)->general0.src2_mod == 1)
 			mem_read(emu->const_mem, src_id, 4, &src);
 
 		/* Execute */
 		dst = src;
 
 		/* Write */
-		dst_id = inst->bytes.general0.dst;
+		dst_id = FrmInstWrapGetBytes(inst)->general0.dst;
 		thread->gpr[dst_id].s32 = dst;
 	}
 
@@ -1651,7 +1651,7 @@ void frm_isa_MOV_impl(FrmThread *thread, FrmInst *inst)
 			pred_id, pred, dst_id, dst, src_id, src);
 }
 
-void frm_isa_MOV32I_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_MOV32I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	unsigned int pred_id, dst_id;
 	unsigned int active, pred;
@@ -1667,7 +1667,7 @@ void frm_isa_MOV32I_impl(FrmThread *thread, FrmInst *inst)
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
-	pred_id = inst->bytes.general0.pred;
+	pred_id = FrmInstWrapGetBytes(inst)->general0.pred;
 	if (pred_id <= 7)
 		pred = thread->pr[pred_id];
 	else
@@ -1676,13 +1676,13 @@ void frm_isa_MOV32I_impl(FrmThread *thread, FrmInst *inst)
 	if (active == 1 && pred == 1)
 	{
 		/* Read */
-		imm32 = (int)inst->bytes.imm.imm32;
+		imm32 = (int)FrmInstWrapGetBytes(inst)->imm.imm32;
 
 		/* Execute */
 		dst = imm32;
 
 		/* Write */
-		dst_id = inst->bytes.imm.dst;
+		dst_id = FrmInstWrapGetBytes(inst)->imm.dst;
 		thread->gpr[dst_id].u32 = dst;
 	}
 
@@ -1693,7 +1693,7 @@ void frm_isa_MOV32I_impl(FrmThread *thread, FrmInst *inst)
 			pred_id, pred, dst_id, dst, imm32);
 }
 
-void frm_isa_SEL_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_SEL_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	unsigned int pred_id, dst_id, src1_id, src2_id, R_id;
 	unsigned int active, pred;
@@ -1710,7 +1710,7 @@ void frm_isa_SEL_impl(FrmThread *thread, FrmInst *inst)
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
-	pred_id = inst->bytes.general0.pred;
+	pred_id = FrmInstWrapGetBytes(inst)->general0.pred;
 	if (pred_id <= 7)
 		pred = thread->pr[pred_id];
 	else
@@ -1720,14 +1720,14 @@ void frm_isa_SEL_impl(FrmThread *thread, FrmInst *inst)
 	if (active == 1 && pred == 1)
 	{
 		/* Read */
-		src1_id = inst->bytes.general0.src1;
+		src1_id = FrmInstWrapGetBytes(inst)->general0.src1;
 		src1 = thread->gpr[src1_id].s32;
-		src2_id = inst->bytes.general0.src2;
-		if (inst->bytes.general0.src2_mod == 0)
+		src2_id = FrmInstWrapGetBytes(inst)->general0.src2;
+		if (FrmInstWrapGetBytes(inst)->general0.src2_mod == 0)
 			src2 = thread->gpr[src2_id].s32;
-		else if (inst->bytes.general0.src2_mod == 1)
+		else if (FrmInstWrapGetBytes(inst)->general0.src2_mod == 1)
 			mem_read(emu->const_mem, src2_id, 4, &src2);
-		R_id = inst->bytes.general0_mod1_A.R;
+		R_id = FrmInstWrapGetBytes(inst)->general0_mod1_A.R;
 		if (R_id <= 7)
 			R = thread->pr[R_id];
 		else
@@ -1737,7 +1737,7 @@ void frm_isa_SEL_impl(FrmThread *thread, FrmInst *inst)
 		dst = R > 0 ? src1 : src2;
 
 		/* Write */
-		dst_id = inst->bytes.general0.dst;
+		dst_id = FrmInstWrapGetBytes(inst)->general0.dst;
 		thread->gpr[dst_id].s32 = dst;
 	}
 
@@ -1751,62 +1751,62 @@ void frm_isa_SEL_impl(FrmThread *thread, FrmInst *inst)
 
 }
 
-void frm_isa_PRMT_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_PRMT_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_P2R_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_P2R_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_R2P_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_R2P_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_CSET_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_CSET_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_CSETP_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_CSETP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_PSET_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_PSET_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_PSETP_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_PSETP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_TEX_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_TEX_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_TLD_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_TLD_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_TLD4_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_TLD4_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_TXQ_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_TXQ_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_LDC_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_LDC_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	unsigned int pred_id, dst_id, src_id;
 	unsigned int active, pred, dst, addr;
@@ -1822,7 +1822,7 @@ void frm_isa_LDC_impl(FrmThread *thread, FrmInst *inst)
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
-	pred_id = inst->bytes.offs.pred;
+	pred_id = FrmInstWrapGetBytes(inst)->offs.pred;
 	if (pred_id <= 7)
 		pred = thread->pr[pred_id];
 	else
@@ -1832,14 +1832,14 @@ void frm_isa_LDC_impl(FrmThread *thread, FrmInst *inst)
 	if (active == 1 && pred == 1)
 	{
 		/* Read */
-		src_id = inst->bytes.offs.src1;
+		src_id = FrmInstWrapGetBytes(inst)->offs.src1;
 		addr = thread->gpr[src_id].u32;
 
 		/* Execute */
 		mem_read(emu->const_mem, addr, 4, &dst);
 
 		/* Write */
-		dst_id = inst->bytes.offs.dst;
+		dst_id = FrmInstWrapGetBytes(inst)->offs.dst;
 		thread->gpr[dst_id].u32 = dst;
 	}
 
@@ -1850,7 +1850,7 @@ void frm_isa_LDC_impl(FrmThread *thread, FrmInst *inst)
 			pred_id, pred, dst_id, dst, src_id, addr);
 }
 
-void frm_isa_LD_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_LD_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	unsigned int pred_id, dst_id, src_id;
 	unsigned int active, pred, dst, addr;
@@ -1866,7 +1866,7 @@ void frm_isa_LD_impl(FrmThread *thread, FrmInst *inst)
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
-	pred_id = inst->bytes.offs.pred;
+	pred_id = FrmInstWrapGetBytes(inst)->offs.pred;
 	if (pred_id <= 7)
 		pred = thread->pr[pred_id];
 	else
@@ -1876,14 +1876,14 @@ void frm_isa_LD_impl(FrmThread *thread, FrmInst *inst)
 	if (active == 1 && pred == 1)
 	{
 		/* Read */
-		src_id = inst->bytes.offs.src1;
+		src_id = FrmInstWrapGetBytes(inst)->offs.src1;
 		addr = thread->gpr[src_id].u32;
 
 		/* Execute */
 		mem_read(emu->global_mem, addr, 4, &dst);
 
 		/* Write */
-		dst_id = inst->bytes.offs.dst;
+		dst_id = FrmInstWrapGetBytes(inst)->offs.dst;
 		thread->gpr[dst_id].u32 = dst;
 	}
 
@@ -1894,17 +1894,17 @@ void frm_isa_LD_impl(FrmThread *thread, FrmInst *inst)
 			pred_id, pred, dst_id, dst, src_id, addr);
 }
 
-void frm_isa_LDU_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_LDU_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_LDL_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_LDL_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_LDS_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_LDS_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	unsigned int pred_id, dst_id, src_id;
 	unsigned int active, pred, dst0, dst1, dst2, dst3, addr;
@@ -1919,7 +1919,7 @@ void frm_isa_LDS_impl(FrmThread *thread, FrmInst *inst)
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
-	pred_id = inst->bytes.offs.pred;
+	pred_id = FrmInstWrapGetBytes(inst)->offs.pred;
 	if (pred_id <= 7)
 		pred = thread->pr[pred_id];
 	else
@@ -1929,25 +1929,25 @@ void frm_isa_LDS_impl(FrmThread *thread, FrmInst *inst)
 	if (active == 1 && pred == 1)
 	{
 		/* Read */
-		src_id = inst->bytes.offs.src1;
-		addr = thread->gpr[src_id].u32 + inst->bytes.offs.offset;
+		src_id = FrmInstWrapGetBytes(inst)->offs.src1;
+		addr = thread->gpr[src_id].u32 + FrmInstWrapGetBytes(inst)->offs.offset;
 
 		/* Execute */
 		mem_read(thread->thread_block->shared_mem, addr, 4, &dst0);
-		if (inst->bytes.mod0_B.type == 5 || inst->bytes.mod0_B.type == 6)
+		if (FrmInstWrapGetBytes(inst)->mod0_B.type == 5 || FrmInstWrapGetBytes(inst)->mod0_B.type == 6)
 			mem_read(thread->thread_block->shared_mem, addr + 4, 4, &dst1);
-		if (inst->bytes.mod0_B.type == 6)
+		if (FrmInstWrapGetBytes(inst)->mod0_B.type == 6)
 		{
 			mem_read(thread->thread_block->shared_mem, addr + 8, 4, &dst2);
 			mem_read(thread->thread_block->shared_mem, addr + 12, 4, &dst3);
 		}
 
 		/* Write */
-		dst_id = inst->bytes.offs.dst;
+		dst_id = FrmInstWrapGetBytes(inst)->offs.dst;
 		thread->gpr[dst_id].u32 = dst0;
-		if (inst->bytes.mod0_B.type == 5 || inst->bytes.mod0_B.type == 6)
+		if (FrmInstWrapGetBytes(inst)->mod0_B.type == 5 || FrmInstWrapGetBytes(inst)->mod0_B.type == 6)
 			thread->gpr[dst_id + 1].u32 = dst1;
-		if (inst->bytes.mod0_B.type == 6)
+		if (FrmInstWrapGetBytes(inst)->mod0_B.type == 6)
 		{
 			thread->gpr[dst_id + 2].u32 = dst2;
 			thread->gpr[dst_id + 3].u32 = dst3;
@@ -1961,27 +1961,27 @@ void frm_isa_LDS_impl(FrmThread *thread, FrmInst *inst)
 			pred_id, pred, dst_id, dst0, src_id, addr);
 }
 
-void frm_isa_LDLK_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_LDLK_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_LDSLK_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_LDSLK_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_LD_LDU_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_LD_LDU_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_LDS_LDU_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_LDS_LDU_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_ST_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_ST_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	unsigned int pred_id, value_id, addr_id;
 	unsigned int active, pred, value, addr;
@@ -1997,7 +1997,7 @@ void frm_isa_ST_impl(FrmThread *thread, FrmInst *inst)
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
-	pred_id = inst->bytes.offs.pred;
+	pred_id = FrmInstWrapGetBytes(inst)->offs.pred;
 	if (pred_id <= 7)
 		pred = thread->pr[pred_id];
 	else
@@ -2007,9 +2007,9 @@ void frm_isa_ST_impl(FrmThread *thread, FrmInst *inst)
 	if (active == 1 && pred == 1)
 	{
 		/* Read */
-		value_id = inst->bytes.offs.dst;
+		value_id = FrmInstWrapGetBytes(inst)->offs.dst;
 		value = thread->gpr[value_id].u32;
-		addr_id = inst->bytes.offs.src1;
+		addr_id = FrmInstWrapGetBytes(inst)->offs.src1;
 		addr = thread->gpr[addr_id].u32;
 
 		/* Execute */
@@ -2023,17 +2023,17 @@ void frm_isa_ST_impl(FrmThread *thread, FrmInst *inst)
 			pred_id, pred, value_id, value, addr_id, addr);
 }
 
-void frm_isa_STL_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_STL_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_STUL_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_STUL_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_STS_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_STS_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	unsigned int pred_id, value_id, addr_id;
 	unsigned int active, pred, value, addr;
@@ -2048,7 +2048,7 @@ void frm_isa_STS_impl(FrmThread *thread, FrmInst *inst)
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
-	pred_id = inst->bytes.offs.pred;
+	pred_id = FrmInstWrapGetBytes(inst)->offs.pred;
 	if (pred_id <= 7)
 		pred = thread->pr[pred_id];
 	else
@@ -2058,10 +2058,10 @@ void frm_isa_STS_impl(FrmThread *thread, FrmInst *inst)
 	if (active == 1 && pred == 1)
 	{
 		/* Read */
-		value_id = inst->bytes.offs.dst;
+		value_id = FrmInstWrapGetBytes(inst)->offs.dst;
 		value = thread->gpr[value_id].u32;
-		addr_id = inst->bytes.offs.src1;
-		addr = thread->gpr[addr_id].u32 + inst->bytes.offs.offset;
+		addr_id = FrmInstWrapGetBytes(inst)->offs.src1;
+		addr = thread->gpr[addr_id].u32 + FrmInstWrapGetBytes(inst)->offs.offset;
 
 		/* Execute */
 		mem_write(thread->thread_block->shared_mem, addr, 4, &value);
@@ -2074,62 +2074,62 @@ void frm_isa_STS_impl(FrmThread *thread, FrmInst *inst)
 			pred_id, pred, value_id, value, addr_id, addr);
 }
 
-void frm_isa_STSUL_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_STSUL_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_ATOM_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_ATOM_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_RED_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_RED_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_CCTL_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_CCTL_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_CCTLL_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_CCTLL_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_MEMBAR_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_MEMBAR_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_SULD_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_SULD_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_SULEA_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_SULEA_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_SUST_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_SUST_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_SURED_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_SURED_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_SUQ_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_SUQ_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_BRA_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_BRA_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	unsigned int pred_id;
 	unsigned int active, pred;
@@ -2147,19 +2147,19 @@ void frm_isa_BRA_impl(FrmThread *thread, FrmInst *inst)
 	active = (top_entry->active_thread_mask >> thread->id_in_warp) & 0x1;
 
 	/* Get predicate */
-	pred_id = inst->bytes.tgt.pred;
+	pred_id = FrmInstWrapGetBytes(inst)->tgt.pred;
 	if (pred_id <= 7)
 		pred = thread->pr[pred_id];
 	else
 		pred = ! thread->pr[pred_id - 8];
 
 	/* Get target */
-	target = inst->bytes.tgt.target;
+	target = FrmInstWrapGetBytes(inst)->tgt.target;
 	if ((target >> 19 & 0x1) == 1)
 		target |= 0xfff00000;
 
 	/* Update active thread mask for new entry */
-	if (inst->bytes.tgt.u != 1)
+	if (FrmInstWrapGetBytes(inst)->tgt.u != 1)
 	{
 		if (active == 1 && pred == 1)
 		{
@@ -2178,7 +2178,7 @@ void frm_isa_BRA_impl(FrmThread *thread, FrmInst *inst)
 	/* If divergent, push sync stack and go to taken path */
 	if (thread->id_in_warp == warp->thread_count - 1)
 	{
-		if (inst->bytes.tgt.u == 1 || 
+		if (FrmInstWrapGetBytes(inst)->tgt.u == 1 || 
 				top_entry->active_thread_mask == warp->taken || 
 				warp->taken == 0)
 			warp->divergent = 0;
@@ -2203,7 +2203,7 @@ void frm_isa_BRA_impl(FrmThread *thread, FrmInst *inst)
 		}
 		else
 		{
-			if (inst->bytes.tgt.u == 0 && warp->taken != 0)
+			if (FrmInstWrapGetBytes(inst)->tgt.u == 0 && warp->taken != 0)
 				warp->pc += target;
 		}
 		warp->taken = 0;
@@ -2217,58 +2217,58 @@ void frm_isa_BRA_impl(FrmThread *thread, FrmInst *inst)
 			new_entry->active_thread_mask);
 }
 
-void frm_isa_BRX_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_BRX_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_JMP_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_JMP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_JMX_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_JMX_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_CAL_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_CAL_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_JCAL_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_JCAL_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_RET_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_RET_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_BRK_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_BRK_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_CONT_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_CONT_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_LONGJMP_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_LONGJMP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_SSY_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_SSY_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	int target;
 	FrmWarp *warp = thread->warp;
 
 	/* Get target. Target is the recovergence point */
-	target = inst->bytes.tgt.target;
+	target = FrmInstWrapGetBytes(inst)->tgt.target;
 	if ((target >> 19 & 0x1) == 1)
 		target |= 0xfff00000;
 
@@ -2280,31 +2280,31 @@ void frm_isa_SSY_impl(FrmThread *thread, FrmInst *inst)
 			__FUNCTION__, __LINE__, warp->pc, thread->id, target);
 }
 
-void frm_isa_PBK_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_PBK_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_PCNT_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_PCNT_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_PRET_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_PRET_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_PLONGJMP_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_PLONGJMP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_BPT_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_BPT_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 }
 
-void frm_isa_EXIT_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_EXIT_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	FrmWarp *warp;
 
@@ -2321,7 +2321,7 @@ void frm_isa_EXIT_impl(FrmThread *thread, FrmInst *inst)
 			active_thread_mask);
 }
 
-void frm_isa_NOP_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_NOP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 //	FrmWarp *warp;
 //	FrmWarpSyncStackEntry *entry;
@@ -2349,7 +2349,7 @@ void frm_isa_NOP_impl(FrmThread *thread, FrmInst *inst)
 //			warp->sync_stack_top--;
 }
 
-void frm_isa_S2R_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_S2R_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	unsigned int pred_id, dst_id, src_id;
 	unsigned int active, pred, dst, src;
@@ -2364,7 +2364,7 @@ void frm_isa_S2R_impl(FrmThread *thread, FrmInst *inst)
 			thread->id_in_warp) & 0x1;
 
 	/* Predicate */
-	pred_id = inst->bytes.general1.pred;
+	pred_id = FrmInstWrapGetBytes(inst)->general1.pred;
 	if (pred_id <= 7)
 		pred = thread->pr[pred_id];
 	else
@@ -2373,14 +2373,14 @@ void frm_isa_S2R_impl(FrmThread *thread, FrmInst *inst)
 	if (active == 1 && pred == 1)
 	{
 		/* Read */
-		src_id = inst->bytes.general0.src2 & 0xff;
+		src_id = FrmInstWrapGetBytes(inst)->general0.src2 & 0xff;
 		src = thread->sr[src_id].u32;
 
 		/* Execute */
 		dst = src;
 
 		/* Write */
-		dst_id = inst->bytes.general0.dst;
+		dst_id = FrmInstWrapGetBytes(inst)->general0.dst;
 		thread->gpr[dst_id].u32 = dst;
 	}
 
@@ -2391,17 +2391,17 @@ void frm_isa_S2R_impl(FrmThread *thread, FrmInst *inst)
 			pred_id, pred, dst_id, dst, src_id, src);
 }
 
-void frm_isa_B2R_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_B2R_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_LEPC_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_LEPC_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
 
-void frm_isa_BAR_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_BAR_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	FrmThreadBlock *thread_block;
 	FrmWarp *warp;
@@ -2433,7 +2433,7 @@ void frm_isa_BAR_impl(FrmThread *thread, FrmInst *inst)
 			__FUNCTION__, __LINE__, warp->pc, thread->id);
 }
 
-void frm_isa_VOTE_impl(FrmThread *thread, FrmInst *inst)
+void frm_isa_VOTE_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
 	__NOT_IMPL__
 }
