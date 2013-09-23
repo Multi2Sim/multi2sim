@@ -20,6 +20,9 @@
 #ifndef LIB_CPP_MISC_H
 #define LIB_CPP_MISC_H
 
+#include <iostream>
+
+
 namespace Misc
 {
 
@@ -31,6 +34,19 @@ namespace Misc
 inline unsigned int GetBit(unsigned int x, int high, int low)
 {
 	return (x >> low) & ((1u << (high - low + 1)) - 1);
+}
+
+inline unsigned int SignExtend32(unsigned int x, unsigned int b)
+{
+	return x & (1u << (b - 1)) ? x | ~((1u << b) - 1) :
+			x & ((1u << b) - 1);
+}
+
+inline unsigned long long SignExtend64(unsigned long long x,
+		unsigned long long b)
+{
+	return x & (1ull << (b - 1)) ? x | ~((1ull << b) - 1) :
+			x & ((1ull << b) - 1);
 }
 
 
@@ -47,6 +63,34 @@ inline unsigned int GetBit(unsigned int x, int high, int low)
 void str_printf(char **pbuf, int *psize, const char *fmt, ...)
 		__attribute__ ((format (printf, 3, 4)));
 
+
+/*
+ * String maps
+ */
+
+struct StringMapItem
+{
+	const char *text;
+	int value;
+};
+
+typedef StringMapItem StringMap[];
+
+const char *StringMapValue(StringMap map, int value);
+const char *StringMapValue(StringMap map, int value, int &err);
+
+int StringMapString(StringMap map, const char *text);
+int StringMapString(StringMap map, const char *text, int &err);
+
+int StringMapStringCase(StringMap map, const char *text);
+int StringMapStringCase(StringMap map, const char *text, int &err);
+
+std::string StringMapFlags(StringMap map, unsigned int flags);
+
+/* Return a string with a list of values present in the string map, set off in
+ * brackets, and separated by commas. It is the responsibility of the caller to
+ * free the returned string. */
+std::string StringMapGetValues(StringMap map);
 
 
 
