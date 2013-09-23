@@ -158,8 +158,7 @@ void FrmWarpCreate(FrmWarp *self, FrmThreadBlock *thread_block)
 
 	/* FIXME: Remove once loop state is part of stack */
 	self->loop_depth = 0;
-
-	new_static(&self->inst, FrmInst, emu->as);
+	self->inst = FrmInstWrapCreate(emu->as);
 }
 
 
@@ -168,7 +167,7 @@ void FrmWarpDestroy(FrmWarp *self)
 	/* Free warp */
 	free(self->threads);
 	bit_map_free(self->pred);
-	delete_static(&self->inst);
+	FrmInstWrapFree(self->inst);
 }
 
 
@@ -234,7 +233,9 @@ void FrmWarpExecute(FrmWarp *self)
 	FrmThreadBlock *thread_block;
 	FrmThread *thread;
 
-	FrmInst *inst;
+	struct FrmInstWrap *inst;
+	FrmInstBytes bytes;
+	FrmInstOpcode opcode;
 
 	int thread_id;
 
@@ -259,24 +260,25 @@ void FrmWarpExecute(FrmWarp *self)
 	self->at_barrier = 0;
 
 	/* Get instruction */
-	inst = &self->inst;
-	inst->bytes.word[0] = self->inst_buffer[self->pc / self->inst_size] >> 32;
-	inst->bytes.word[1] = self->inst_buffer[self->pc / self->inst_size];
+	inst = self->inst;
+	bytes.word[0] = self->inst_buffer[self->pc / self->inst_size] >> 32;
+	bytes.word[1] = self->inst_buffer[self->pc / self->inst_size];
 	frm_isa_debug("%s:%d: warp[%d] executes instruction [0x%x] 0x%0llx\n", 
 			__FUNCTION__, __LINE__, self->id, self->pc,
-			inst->bytes.dword);
+			bytes.dword);
 
 	/* Decode instruction */
-	FrmInstDecode(inst, self->pc, &inst->bytes);
-	if (!inst->info)
+	FrmInstWrapDecode(inst, self->pc, &bytes);
+	opcode = FrmInstWrapGetOpcode(inst);
+	if (!opcode)
 		fatal("%s: unrecognized instruction (%08x %08x)",
-			__FUNCTION__, inst->bytes.word[0], inst->bytes.word[1]);
+			__FUNCTION__, bytes.word[0], bytes.word[1]);
 
 	/* Execute instruction */
 	for (thread_id = 0; thread_id < self->thread_count; thread_id++)
 	{
 		thread = self->threads[thread_id];
-		emu->inst_func[inst->info->opcode](thread, inst);
+		emu->inst_func[opcode](thread, inst);
 	}
 
 	/* Finish */

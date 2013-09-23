@@ -69,7 +69,7 @@ extern int frm2bin_yylineno;
 extern FILE *frm2bin_yyin;
 extern char *frm2bin_yytext;
 
-extern FrmAsm *frm_asm;
+extern struct FrmAsmWrap *frm_asm;
 
 
 #endif

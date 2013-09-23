@@ -210,13 +210,6 @@ public:
 
 } /* namespace MIPS */
 
-#else  /* __cplusplus */
-
-
-/*
- * C Code
- */
-
 #endif  /* __cplusplus */
 
 
@@ -326,6 +319,8 @@ typedef union
 
 struct MIPSInstWrap *MIPSInstWrapCreate(struct MIPSAsmWrap *as);
 void MIPSInstWrapFree(struct MIPSInstWrap *self);
+void MIPSInstWrapCopy(struct MIPSInstWrap *left, struct MIPSInstWrap *right);
+
 void MIPSInstWrapDecode(struct MIPSInstWrap *self, unsigned int addr, void *buf);
 void MIPSInstWrapDump(struct MIPSInstWrap *self, FILE *f);
 

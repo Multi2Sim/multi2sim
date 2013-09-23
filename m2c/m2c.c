@@ -56,7 +56,7 @@
 #endif
 
 #include <src/arch/common/asm.h>
-#include <src/arch/fermi/asm/asm.h>
+#include <src/arch/fermi/asm/Asm.h>
 #include <src/arch/southern-islands/asm/arg.h>
 #include <src/arch/southern-islands/asm/asm.h>
 
@@ -622,7 +622,6 @@ void m2c_init(void)
 	CLASS_REGISTER(ELFWriter);
 
 	CLASS_REGISTER(Asm);
-	CLASS_REGISTER(FrmAsm);
 
 	CLASS_REGISTER(SIArg);
 	CLASS_REGISTER(SIAsm);

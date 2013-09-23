@@ -53,7 +53,7 @@ void frm2bin_inst_info_init(void)
 	for (i = 0; i < FrmInstOpcodeCount; i++)
 	{
 		/* Instruction info from disassembler */
-		inst_info = &frm_asm->inst_info[i];
+		inst_info = FrmAsmWrapGetInstInfo(frm_asm, i);
 		if (!inst_info->name || !inst_info->fmt_str)
 			continue;
 

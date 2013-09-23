@@ -419,7 +419,7 @@ void frm2bin_inst_dump(struct frm2bin_inst_t *inst, FILE *f)
 	/* Print words */
 	for (i = 0; i < inst->size / 4; i++)
 	{
-		word = *(int *) &inst->inst_bytes.bytes[i * 4];
+		word = *(int *) &inst->bytes.bytes[i * 4];
 		printf("\tword %d:  hex = { %08x },  bin = {", i, word);
 		for (j = 0; j < 32; j++)
 			printf("%s%d", j % 4 ? "" : " ",
@@ -431,7 +431,7 @@ void frm2bin_inst_dump(struct frm2bin_inst_t *inst, FILE *f)
 
 void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 {
-	/* Fermi uses frm_inst_dword_t inst_bytes it's different from
+	/* Fermi uses frm_inst_dword_t bytes it's different from
 	 * southern-island */
 	FrmInstBytes *inst_bytes;
 
@@ -447,7 +447,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 	int index;
 
 	/* Initialize */
-	inst_bytes = &inst->inst_bytes;
+	inst_bytes = &inst->bytes;
 	info = inst->info;
 	assert(info);
 	inst_info = info->inst_info;
@@ -526,8 +526,8 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 	/*
 	case FRM_FMT_FP_FADD32I:
 		
-		inst_bytes->mimg.enc = 0x3c;
-		inst_bytes->mimg.op = inst_info->opcode;
+		bytes->mimg.enc = 0x3c;
+		bytes->mimg.op = inst_info->opcode;
 		break;
 	*/
 
@@ -535,8 +535,8 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 	/*
 	case FRM_FMT_FP_FCMP:
 
-		inst_bytes->smrd.enc = 0x18;
-		inst_bytes->smrd.op = inst_info->opcode;
+		bytes->smrd.enc = 0x18;
+		bytes->smrd.op = inst_info->opcode;
 		break;
 	*/
 	
@@ -544,8 +544,8 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 	/*
 	case FRM_FMT_FP_FMUL:
 		
-		inst_bytes->ds.enc = 0x36;
-		inst_bytes->ds.op = inst_info->opcode;
+		bytes->ds.enc = 0x36;
+		bytes->ds.op = inst_info->opcode;
 		break;
 	*/
 
@@ -553,8 +553,8 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 	/*
 	case FRM_FMT_FP_FMUL32I:
 		
-		inst_bytes->sopc.enc = 0x17e;
-		inst_bytes->sopc.op = inst_info->opcode;
+		bytes->sopc.enc = 0x17e;
+		bytes->sopc.op = inst_info->opcode;
 		break;
 	*/
 
@@ -562,8 +562,8 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 	/*
 	case FRM_FMT_FP_FSETP:
 
-		inst_bytes->sop1.enc = 0x17d;
-		inst_bytes->sop1.op = inst_info->opcode;
+		bytes->sop1.enc = 0x17d;
+		bytes->sop1.op = inst_info->opcode;
 		break;
 	*/
 
@@ -571,8 +571,8 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 	/*
 	case FRM_FMT_FP_MUFU:
 
-		inst_bytes->sop2.enc = 0x2;
-		inst_bytes->sop2.op = inst_info->opcode;
+		bytes->sop2.enc = 0x2;
+		bytes->sop2.op = inst_info->opcode;
 		break;
 	*/
 
@@ -580,8 +580,8 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 	/*
 	case FRM_FMT_FP_DFMA:
 
-		inst_bytes->sopp.enc = 0x17f;
-		inst_bytes->sopp.op = inst_info->opcode;
+		bytes->sopp.enc = 0x17f;
+		bytes->sopp.op = inst_info->opcode;
 		break;
 	*/
 	
@@ -902,7 +902,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 
 	//case FRM_FMT_INT_BFI:
 	//	
-	//	inst_bytes->exp.enc = 0x3e;
+	//	bytes->exp.enc = 0x3e;
 	//	/* No opcode: only 1 instruction */
 	//	break;
 
@@ -974,25 +974,25 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 
 	//case FRM_FMT_INT_LOP:
 	//	
-	//	inst_bytes->exp.enc = 0x3e;
+	//	bytes->exp.enc = 0x3e;
 	//	/* No opcode: only 1 instruction */
 	//	break;
 
 	//case FRM_FMT_INT_LOP32I:
 	//	
-	//	inst_bytes->exp.enc = 0x3e;
+	//	bytes->exp.enc = 0x3e;
 	//	/* No opcode: only 1 instruction */
 	//	break;
 
 	//case FRM_FMT_INT_FLO:
 	//	
-	//	inst_bytes->exp.enc = 0x3e;
+	//	bytes->exp.enc = 0x3e;
 	//	/* No opcode: only 1 instruction */
 	//	break;
 
 	//case FRM_FMT_INT_ISET:
 	//	
-	//	inst_bytes->exp.enc = 0x3e;
+	//	bytes->exp.enc = 0x3e;
 	//	/* No opcode: only 1 instruction */
 	//	break;
 
@@ -1019,13 +1019,13 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 
 //	case FRM_FMT_INT_INT_ICMP:
 //		
-//		inst_bytes->exp.enc = 0x3e;
+//		bytes->exp.enc = 0x3e;
 //		/* No opcode: only 1 instruction */
 //		break;
 //
 //	case FRM_FMT_CONV_F2F:
 //		
-//		inst_bytes->exp.enc = 0x3e;
+//		bytes->exp.enc = 0x3e;
 //		/* No opcode: only 1 instruction */
 //		break;
 //
@@ -1073,7 +1073,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 //
 //	case FRM_FMT_CONV_I2I:
 //		
-//		inst_bytes->exp.enc = 0x3e;
+//		bytes->exp.enc = 0x3e;
 //		/* No opcode: only 1 instruction */
 //		break;
 

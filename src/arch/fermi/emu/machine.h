@@ -25,7 +25,7 @@
 /* Declarations of function prototypes implementing Fermi ISA */
 #define DEFINST(_name, _fmt_str, _category, _opcode) \
         extern void frm_isa_##_name##_impl(FrmThread *thread, \
-                        FrmInst *inst);
+                        struct FrmInstWrap *inst);
 #include <arch/fermi/asm/asm.dat>
 #undef DEFINST
 

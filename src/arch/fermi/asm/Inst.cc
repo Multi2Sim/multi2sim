@@ -62,7 +62,7 @@ void Inst::Decode(unsigned int addr, void *ptr)
 		op = ((bytes.bytes[7] & 0xf8) << 1) |
 			((bytes.bytes[0]) & 0xf);
 
-	info = as->dec_table[op];
+	info = as->GetDecTable(op);
 	this->addr = addr;
 }
 
@@ -1070,3 +1070,61 @@ void Inst::DumpHex(ostream &os)
 	os << setfill(' ');
 }
 
+
+
+/*
+ * C Wrapper
+ */
+
+struct FrmInstWrap *FrmInstWrapCreate(struct FrmAsmWrap *as)
+{
+	return (FrmInstWrap *) new Inst((Asm *) as);
+}
+
+
+void FrmInstWrapFree(struct FrmInstWrap *self)
+{
+	delete (Inst *) self;
+}
+
+
+void FrmInstWrapCopy(struct FrmInstWrap *left, struct frmInstWrap *right)
+{
+	Inst *ileft = (Inst *) left;
+	Inst *iright = (Inst *) right;
+	*ileft = *iright;
+}
+
+
+void FrmInstWrapDecode(struct FrmInstWrap *self, unsigned int addr, void *ptr)
+{
+	Inst *inst = (Inst *) self;
+	inst->Decode(addr, ptr);
+}
+
+
+FrmInstBytes *FrmInstWrapGetBytes(struct FrmInstWrap *self)
+{
+	Inst *inst = (Inst *) self;
+	return (FrmInstBytes *) inst->GetBytes();
+}
+
+const char *FrmInstWrapGetName(struct FrmInstWrap *self)
+{
+	Inst *inst = (Inst *) self;
+	return inst->GetName();
+}
+
+
+FrmInstOpcode FrmInstWrapGetOpcode(struct FrmInstWrap *self)
+{
+	Inst *inst = (Inst *) self;
+	return (FrmInstOpcode) inst->GetOpcode();
+}
+
+
+FrmInstCategory FrmInstWrapGetCategory(struct FrmInstWrap *self)
+{
+	Inst *inst = (Inst *) self;
+	return (FrmInstCategory) inst->GetCategory();
+}

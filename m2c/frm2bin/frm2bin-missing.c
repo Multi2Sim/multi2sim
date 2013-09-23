@@ -49,7 +49,7 @@ static void frm2bin_missing(void)
  * Public Functions
  */
 
-FrmAsm *frm_asm;
+struct FrmAsmWrap *frm_asm;
 
 void Frm2binCreate(Frm2bin *self)
 {
