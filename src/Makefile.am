@@ -80,4 +80,4 @@ if HAVE_OPENGL
 LDADD += @OPENGL_LDFLAGS@
 endif
 
-LDADD += -lpthread -lz -lm
+LDADD += -lpthread -lz -lm -lstdc++
