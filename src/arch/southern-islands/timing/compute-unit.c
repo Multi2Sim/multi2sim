@@ -422,6 +422,7 @@ void SIComputeUnitFetch(SIComputeUnit *self, int active_fb)
 		if (wavefront->wavefront_pool_entry->wait_for_mem)
 		{
 			if (!wavefront->wavefront_pool_entry->lgkm_cnt &&
+				!wavefront->wavefront_pool_entry->exp_cnt &&
 				!wavefront->wavefront_pool_entry->vm_cnt)
 			{
 				wavefront->wavefront_pool_entry->wait_for_mem =
@@ -677,8 +678,6 @@ void SIComputeUnitIssueOldestInst(SIComputeUnit *self, int active_fb)
 
 			if (oldest_uop->inst.info->fmt == SIInstFormatSMRD)
 			{
-				oldest_uop->wavefront_pool_entry->
-					ready_next_cycle = 1;
 				self->scalar_mem_inst_count++;
 				oldest_uop->wavefront_pool_entry->lgkm_cnt++;
 			}
@@ -805,7 +804,6 @@ void SIComputeUnitIssueOldestInst(SIComputeUnit *self, int active_fb)
 				oldest_uop->id_in_wavefront);
 
 			self->vector_mem_inst_count++;
-			oldest_uop->wavefront_pool_entry->ready_next_cycle = 1;
 			oldest_uop->wavefront_pool_entry->lgkm_cnt++;
 		}
 	}
@@ -1023,8 +1021,6 @@ void SIComputeUnitIssueOldestWF(SIComputeUnit *self, int active_fb)
 			if (oldest_uop->inst.info->fmt == SIInstFormatSMRD)
 			{
 				self->scalar_mem_inst_count++;
-				oldest_uop->wavefront_pool_entry->
-					ready_next_cycle = 1;
 				oldest_uop->wavefront_pool_entry->lgkm_cnt++;
 			}
 			else
@@ -1150,7 +1146,6 @@ void SIComputeUnitIssueOldestWF(SIComputeUnit *self, int active_fb)
 				oldest_uop->id_in_wavefront);
 
 			self->vector_mem_inst_count++;
-			oldest_uop->wavefront_pool_entry->ready_next_cycle = 1;
 			oldest_uop->wavefront_pool_entry->lgkm_cnt++;
 		}
 	}
@@ -1491,8 +1486,6 @@ void SIComputeUnitIssueFirst(SIComputeUnit *self, int active_fb)
 			list_remove(self->fetch_buffers[active_fb], uop);
 			list_enqueue(self->scalar_unit.issue_buffer, uop);
 
-			uop->wavefront_pool_entry->ready_next_cycle = 1;
-
 			scalar_insts_issued++;
 			self->scalar_mem_inst_count++;
 			uop->wavefront_pool_entry->lgkm_cnt++;
@@ -1588,8 +1581,6 @@ void SIComputeUnitIssueFirst(SIComputeUnit *self, int active_fb)
 				si_gpu_fe_issue_latency;
 			list_remove(self->fetch_buffers[active_fb], uop);
 			list_enqueue(self->vector_mem_unit.issue_buffer, uop);
-
-			uop->wavefront_pool_entry->ready_next_cycle = 1;
 
 			mem_insts_issued++;
 			self->vector_mem_inst_count++;
