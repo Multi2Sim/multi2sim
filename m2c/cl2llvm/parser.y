@@ -850,7 +850,7 @@ func_call
 		   symbol table. */
 		if (hash_table_get(cl2llvm_built_in_func_table, $1))
 			cl2llvm_built_in_func_analyze($1, $3);
-
+	
 		/* Retrieve function specs from sybmol table */
 		function = hash_table_get(cl2llvm_symbol_table, $1);
 		if (!function)
