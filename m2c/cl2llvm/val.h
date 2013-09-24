@@ -24,7 +24,6 @@
 
 #include "type.h"
 
-struct cl2llvm_type_t;
 
 struct cl2llvm_val_t
 {
