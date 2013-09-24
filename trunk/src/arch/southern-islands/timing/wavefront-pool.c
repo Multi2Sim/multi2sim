@@ -62,17 +62,18 @@ void si_wavefront_pool_free(struct si_wavefront_pool_t *wavefront_pool)
 void si_wavefront_pool_entry_clear(
 	struct si_wavefront_pool_entry_t *wavefront_pool_entry)
 {
+	assert(!wavefront_pool_entry->vm_cnt);
+	assert(!wavefront_pool_entry->exp_cnt);
+	assert(!wavefront_pool_entry->lgkm_cnt);
+	assert(!wavefront_pool_entry->wait_for_mem);
+	assert(!wavefront_pool_entry->wait_for_barrier);
+
 	wavefront_pool_entry->wavefront = NULL;
 	wavefront_pool_entry->uop = NULL;
 	wavefront_pool_entry->valid = 0;
 	wavefront_pool_entry->ready = 0;
 	wavefront_pool_entry->ready_next_cycle = 0;
-	wavefront_pool_entry->wait_for_mem = 0;
-	wavefront_pool_entry->wait_for_barrier = 0;
 	wavefront_pool_entry->wavefront_finished = 0;
-	wavefront_pool_entry->vm_cnt = 0;
-	wavefront_pool_entry->exp_cnt = 0;
-	wavefront_pool_entry->lgkm_cnt = 0;
 }
 
 void si_wavefront_pool_map_wavefronts(

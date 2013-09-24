@@ -96,6 +96,7 @@ void si_scalar_unit_complete(struct si_scalar_unit_t *scalar_unit) {
 			 * outstanding memory accesses, set the wavefront to 
 			 * waiting */
 			uop->wavefront_pool_entry->wait_for_mem = 1;
+			uop->wavefront_pool_entry->ready = 1;
 		}
 
 		/* Check for "barrier" instruction */
@@ -135,6 +136,8 @@ void si_scalar_unit_complete(struct si_scalar_unit_t *scalar_unit) {
 						wait_for_barrier = 0;
 				}
 			}
+
+			uop->wavefront_pool_entry->ready = 1;
 		}
 
 		/* Check for "end" instruction */
@@ -490,7 +493,11 @@ void si_scalar_unit_read(struct si_scalar_unit_t *scalar_unit)
 		list_remove(scalar_unit->decode_buffer, uop);
 		list_enqueue(scalar_unit->read_buffer, uop);
 
-		uop->wavefront_pool_entry->ready_next_cycle = 1;
+		if (!uop->barrier_wait_inst && !uop->mem_wait_inst && 
+			!uop->wavefront_last_inst)
+		{
+			uop->wavefront_pool_entry->ready_next_cycle = 1;
+		}
 
 		si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld "
 			"stg=\"su-r\"\n", uop->id_in_compute_unit, 
