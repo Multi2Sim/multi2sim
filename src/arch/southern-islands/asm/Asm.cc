@@ -17,6 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#if 0
+
 #include <assert.h>
 #include <ctype.h>
 
@@ -33,154 +35,163 @@
 
 
 
-StringMap si_inst_fmt_map =
+struct str_map_t si_inst_fmt_map =
 {
-	{ "<invalid>", SIInstFormatInvalid },
-	{ "sop2", SIInstFormatSOP2 },
-	{ "sopk", SIInstFormatSOPK },
-	{ "sop1", SIInstFormatSOP1 },
-	{ "sopc", SIInstFormatSOPC },
-	{ "sopp", SIInstFormatSOPP },
-	{ "smrd", SIInstFormatSMRD },
-	{ "vop2", SIInstFormatVOP2 },
-	{ "vop1", SIInstFormatVOP1 },
-	{ "vopc", SIInstFormatVOPC },
-	{ "vop3a", SIInstFormatVOP3a },
-	{ "vop3b", SIInstFormatVOP3b },
-	{ "vintrp", SIInstFormatVINTRP },
-	{ "ds", SIInstFormatDS },
-	{ "mubuf", SIInstFormatMUBUF },
-	{ "mtbuf", SIInstFormatMTBUF },
-	{ "mimg", SIInstFormatMIMG },
-	{ "exp", SIInstFormatEXP },
-	{ 0, 0 }
+	18,
+	{
+		{ "<invalid>", SIInstFormatInvalid },
+		{ "sop2", SIInstFormatSOP2 },
+		{ "sopk", SIInstFormatSOPK },
+		{ "sop1", SIInstFormatSOP1 },
+		{ "sopc", SIInstFormatSOPC },
+		{ "sopp", SIInstFormatSOPP },
+		{ "smrd", SIInstFormatSMRD },
+		{ "vop2", SIInstFormatVOP2 },
+		{ "vop1", SIInstFormatVOP1 },
+		{ "vopc", SIInstFormatVOPC },
+		{ "vop3a", SIInstFormatVOP3a },
+		{ "vop3b", SIInstFormatVOP3b },
+		{ "vintrp", SIInstFormatVINTRP },
+		{ "ds", SIInstFormatDS },
+		{ "mubuf", SIInstFormatMUBUF },
+		{ "mtbuf", SIInstFormatMTBUF },
+		{ "mimg", SIInstFormatMIMG },
+		{ "exp", SIInstFormatEXP }
+	}
 };
 
 /* String maps for assembly dump. */
-StringMap si_inst_sdst_map = {
-	{"reserved", 0},
-	{"reserved", 1},
-	{"vcc_lo", 2},
-	{"vcc_hi", 3},
-	{"tba_lo", 4},
-	{"tba_hi", 5},
-	{"tma_lo", 6},
-	{"tma_hi", 7},
-	{"ttmp0", 8},
-	{"ttmp1", 9},
-	{"ttmp2", 10},
-	{"ttmp3", 11},
-	{"ttmp4", 12},
-	{"ttmp5", 13},
-	{"ttmp6", 14},
-	{"ttmp7", 15},
-	{"ttmp8", 16},
-	{"ttmp9", 17},
-	{"ttmp10", 18},
-	{"ttmp11", 19},
-	{"m0", 20},
-	{"reserved", 21},
-	{"exec_lo", 22},
-	{"exec_hi", 23},
-	{ 0, 0 }
+struct str_map_t si_inst_sdst_map = {
+	24, {
+		{"reserved", 0},
+		{"reserved", 1},
+		{"vcc_lo", 2},
+		{"vcc_hi", 3},
+		{"tba_lo", 4},
+		{"tba_hi", 5},
+		{"tma_lo", 6},
+		{"tma_hi", 7},
+		{"ttmp0", 8},
+		{"ttmp1", 9},
+		{"ttmp2", 10},
+		{"ttmp3", 11},
+		{"ttmp4", 12},
+		{"ttmp5", 13},
+		{"ttmp6", 14},
+		{"ttmp7", 15},
+		{"ttmp8", 16},
+		{"ttmp9", 17},
+		{"ttmp10", 18},
+		{"ttmp11", 19},
+		{"m0", 20},
+		{"reserved", 21},
+		{"exec_lo", 22},
+		{"exec_hi", 23}
+	}
 };
 
-StringMap si_inst_ssrc_map = {
-	{"0.5", 0},
-	{"-0.5", 1},
-	{"1.0", 2},
-	{"-1.0", 3},
-	{"2.0", 4},
-	{"-2.0", 5},
-	{"4.0", 6},
-	{"-4.0", 7},
-	{"reserved", 8},
-	{"reserved", 9},
-	{"reserved", 10},
-	{"vccz", 11},
-	{"execz", 12},
-	{"scc", 13},
-	{"reserved", 14},
-	{"literal constant", 15},
-	{0, 0}
+struct str_map_t si_inst_ssrc_map = {
+	16, {
+		{"0.5", 0},
+		{"-0.5", 1},
+		{"1.0", 2},
+		{"-1.0", 3},
+		{"2.0", 4},
+		{"-2.0", 5},
+		{"4.0", 6},
+		{"-4.0", 7},
+		{"reserved", 8},
+		{"reserved", 9},
+		{"reserved", 10},
+		{"vccz", 11},
+		{"execz", 12},
+		{"scc", 13},
+		{"reserved", 14},
+		{"literal constant", 15}
+	}
 };
 
-StringMap si_inst_buf_data_format_map = {
-	{"invalid", SIInstBufDataFormatInvalid },
-	{"BUF_DATA_FORMAT_8", SIInstBufDataFormat8 },
-	{"BUF_DATA_FORMAT_16", SIInstBufDataFormat16 },
-	{"BUF_DATA_FORMAT_8_8", SIInstBufDataFormat8_8 },
-	{"BUF_DATA_FORMAT_32", SIInstBufDataFormat32 },
-	{"BUF_DATA_FORMAT_16_16", SIInstBufDataFormat16_16 },
-	{"BUF_DATA_FORMAT_10_11_11", SIInstBufDataFormat10_11_11 },
-	{"BUF_DATA_FORMAT_11_10_10", SIInstBufDataFormat11_10_10 },
-	{"BUF_DATA_FORMAT_10_10_10_2", SIInstBufDataFormat10_10_10_2 },
-	{"BUF_DATA_FORMAT_2_10_10_10", SIInstBufDataFormat2_10_10_10 },
-	{"BUF_DATA_FORMAT_8_8_8_8", SIInstBufDataFormat8_8_8_8 },
-	{"BUF_DATA_FORMAT_32_32", SIInstBufDataFormat32_32 },
-	{"BUF_DATA_FORMAT_16_16_16_16", SIInstBufDataFormat16_16_16_16 },
-	{"BUF_DATA_FORMAT_32_32_32", SIInstBufDataFormat32_32_32 },
-	{"BUF_DATA_FORMAT_32_32_32_32", SIInstBufDataFormat32_32_32_32 },
-	{"reserved", SIInstBufDataFormatReserved },
-	{ 0, 0 }
+struct str_map_t si_inst_buf_data_format_map = {
+	16, {
+		{"invalid", si_inst_buf_data_format_invalid },
+		{"BUF_DATA_FORMAT_8", si_inst_buf_data_format_8 },
+		{"BUF_DATA_FORMAT_16", si_inst_buf_data_format_16 },
+		{"BUF_DATA_FORMAT_8_8", si_inst_buf_data_format_8_8 },
+		{"BUF_DATA_FORMAT_32", si_inst_buf_data_format_32 },
+		{"BUF_DATA_FORMAT_16_16", si_inst_buf_data_format_16_16 },
+		{"BUF_DATA_FORMAT_10_11_11", si_inst_buf_data_format_10_11_11 },
+		{"BUF_DATA_FORMAT_11_10_10", si_inst_buf_data_format_11_10_10 },
+		{"BUF_DATA_FORMAT_10_10_10_2", si_inst_buf_data_format_10_10_10_2 },
+		{"BUF_DATA_FORMAT_2_10_10_10", si_inst_buf_data_format_2_10_10_10 },
+		{"BUF_DATA_FORMAT_8_8_8_8", si_inst_buf_data_format_8_8_8_8 },
+		{"BUF_DATA_FORMAT_32_32", si_inst_buf_data_format_32_32 },
+		{"BUF_DATA_FORMAT_16_16_16_16", si_inst_buf_data_format_16_16_16_16 },
+		{"BUF_DATA_FORMAT_32_32_32", si_inst_buf_data_format_32_32_32 },
+		{"BUF_DATA_FORMAT_32_32_32_32", si_inst_buf_data_format_32_32_32_32 },
+		{"reserved", si_inst_buf_data_format_reserved }
+	}
 };
 
-StringMap si_inst_buf_num_format_map = {
-	{"BUF_NUM_FORMAT_UNORM", SIInstBufNumFormatUnorm },
-	{"BUF_NUM_FORMAT_SNORM", SIInstBufNumFormatSnorm },
-	{"BUF_NUM_FORMAT_UNSCALED", SIInstBufNumFormatUnscaled },
-	{"BUF_NUM_FORMAT_SSCALED", SIInstBufNumFormatSscaled },
-	{"BUF_NUM_FORMAT_UINT", SIInstBufNumFormatUint },
-	{"BUF_NUM_FORMAT_SINT", SIInstBufNumFormatSint },
-	{"BUF_NUM_FORMAT_SNORM_NZ", SIInstBufNumFormatSnormNz },
-	{"BUF_NUM_FORMAT_FLOAT", SIInstBufNumFormatFloat },
-	{"reserved", SIInstBufNumFormatReserved },
-	{"BUF_NUM_FORMAT_SRGB", SIInstBufNumFormatSrgb },
-	{"BUF_NUM_FORMAT_UBNORM", SIInstBufNumFormatUbnorm },
-	{"BUF_NUM_FORMAT_UBNORM_NZ", SIInstBufNumFormatUbnormNz },
-	{"BUF_NUM_FORMAT_UBINT", SIInstBufNumFormatUbint },
-	{"BUF_NUM_FORMAT_UBSCALED", SIInstBufNumFormatUbscaled },
-	{ 0, 0 }
+struct str_map_t si_inst_buf_num_format_map = {
+	14, {
+		{"BUF_NUM_FORMAT_UNORM", si_inst_buf_num_format_unorm },
+		{"BUF_NUM_FORMAT_SNORM", si_inst_buf_num_format_snorm },
+		{"BUF_NUM_FORMAT_UNSCALED", si_inst_buf_num_format_unscaled },
+		{"BUF_NUM_FORMAT_SSCALED", si_inst_buf_num_format_sscaled },
+		{"BUF_NUM_FORMAT_UINT", si_inst_buf_num_format_uint },
+		{"BUF_NUM_FORMAT_SINT", si_inst_buf_num_format_sint },
+		{"BUF_NUM_FORMAT_SNORM_NZ", si_inst_buf_num_format_snorm_nz },
+		{"BUF_NUM_FORMAT_FLOAT", si_inst_buf_num_format_float },
+		{"reserved", si_inst_buf_num_format_reserved },
+		{"BUF_NUM_FORMAT_SRGB", si_inst_buf_num_format_srgb },
+		{"BUF_NUM_FORMAT_UBNORM", si_inst_buf_num_format_ubnorm },
+		{"BUF_NUM_FORMAT_UBNORM_NZ", si_inst_buf_num_format_ubnorm_nz },
+		{"BUF_NUM_FORMAT_UBINT", si_inst_buf_num_format_ubint },
+		{"BUF_NUM_FORMAT_UBSCALED", si_inst_buf_num_format_ubscaled }
+	}
 };
 
-StringMap si_inst_OP16_map = {
-	{"f", 0},
-	{"lt", 1},
-	{"eq", 2},
-	{"le", 3},
-	{"gt", 4},
-	{"lg", 5},
-	{"ge", 6},
-	{"o", 7},
-	{"u", 8},
-	{"nge", 9},
-	{"nlg", 10},
-	{"ngt", 11},
-	{"nle", 12},
-	{"neq", 13},
-	{"nlt", 14},
-	{"tru", 15},
-	{ 0, 0 }
+struct str_map_t si_inst_OP16_map = {
+	16, {
+		{"f", 0},
+		{"lt", 1},
+		{"eq", 2},
+		{"le", 3},
+		{"gt", 4},
+		{"lg", 5},
+		{"ge", 6},
+		{"o", 7},
+		{"u", 8},
+		{"nge", 9},
+		{"nlg", 10},
+		{"ngt", 11},
+		{"nle", 12},
+		{"neq", 13},
+		{"nlt", 14},
+		{"tru", 15},
+	}
 };
 
-StringMap si_inst_OP8_map = {
-	{"f", 0},
-	{"lt", 1},
-	{"eq", 2},
-	{"le", 3},
-	{"gt", 4},
-	{"lg", 5},
-	{"ge", 6},
-	{"tru", 7},
-	{ 0, 0 }
+struct str_map_t si_inst_OP8_map = {
+	8, {
+		{"f", 0},
+		{"lt", 1},
+		{"eq", 2},
+		{"le", 3},
+		{"gt", 4},
+		{"lg", 5},
+		{"ge", 6},
+		{"tru", 7},
+	}
 };
 
-StringMap si_inst_special_reg_map = {
-	{ "vcc", SIInstSpecialRegVcc },
-	{ "scc", SIInstSpecialRegScc },
-	{ "exec", SIInstSpecialRegExec },
-	{ "tma", SIInstSpecialRegTma },
-	{ 0, 0 }
+struct str_map_t si_inst_special_reg_map = {
+	4, {
+		{ "vcc", si_inst_special_reg_vcc },
+		{ "scc", si_inst_special_reg_scc },
+		{ "exec", si_inst_special_reg_exec },
+		{ "tma", si_inst_special_reg_tma }
+	}
 };
 
 
@@ -222,42 +233,42 @@ void SIAsmCreate(SIAsm *self)
 		if (info->fmt == SIInstFormatSOPP)
 		{
 			assert(IN_RANGE(info->op, 0, 
-				si_inst_info_sopp_count - 1));
+				SI_INST_INFO_SOPP_MAX_VALUE));
 			self->inst_info_sopp[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == SIInstFormatSOPC)
 		{
 			assert(IN_RANGE(info->op, 0, 
-				si_inst_info_sopc_count - 1));
+				SI_INST_INFO_SOPC_MAX_VALUE));
 			self->inst_info_sopc[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == SIInstFormatSOP1)
 		{
 			assert(IN_RANGE(info->op, 0, 
-				si_inst_info_sop1_count - 1));
+				SI_INST_INFO_SOP1_MAX_VALUE));
 			self->inst_info_sop1[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == SIInstFormatSOPK)
 		{
 			assert(IN_RANGE(info->op, 0, 
-				si_inst_info_sopk_count - 1));
+				SI_INST_INFO_SOPK_MAX_VALUE));
 			self->inst_info_sopk[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == SIInstFormatSOP2)
 		{
 			assert(IN_RANGE(info->op, 0, 
-				si_inst_info_sop2_count - 1));
+				SI_INST_INFO_SOP2_MAX_VALUE));
 			self->inst_info_sop2[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == SIInstFormatSMRD) 
 		{
 			assert(IN_RANGE(info->op, 0, 
-				si_inst_info_smrd_count - 1));
+				SI_INST_INFO_SMRD_MAX_VALUE));
 			self->inst_info_smrd[info->op] = info;
 			continue;
 		}
@@ -266,7 +277,7 @@ void SIAsmCreate(SIAsm *self)
 			int i;
 
 			assert(IN_RANGE(info->op, 0, 
-				si_inst_info_vop3_count - 1));
+				SI_INST_INFO_VOP3_MAX_VALUE));
 			self->inst_info_vop3[info->op] = info;
 			if (info->flags & SIInstFlagOp8)
 			{
@@ -289,63 +300,63 @@ void SIAsmCreate(SIAsm *self)
 		else if (info->fmt == SIInstFormatVOPC)
 		{
 			assert(IN_RANGE(info->op, 0, 
-				si_inst_info_vopc_count - 1));
+				SI_INST_INFO_VOPC_MAX_VALUE));
 			self->inst_info_vopc[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == SIInstFormatVOP1)
 		{
 			assert(IN_RANGE(info->op, 0, 
-				si_inst_info_vop1_count - 1));
+				SI_INST_INFO_VOP1_MAX_VALUE));
 			self->inst_info_vop1[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == SIInstFormatVOP2)
 		{
 			assert(IN_RANGE(info->op, 0, 
-				si_inst_info_vop2_count - 1));
+				SI_INST_INFO_VOP2_MAX_VALUE));
 			self->inst_info_vop2[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == SIInstFormatVINTRP)
 		{
 			assert(IN_RANGE(info->op, 0, 
-				si_inst_info_vintrp_count - 1));
+				SI_INST_INFO_VINTRP_MAX_VALUE));
 			self->inst_info_vintrp[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == SIInstFormatDS)
 		{
 			assert(IN_RANGE(info->op, 0, 
-				si_inst_info_ds_count - 1));
+				SI_INST_INFO_DS_MAX_VALUE));
 			self->inst_info_ds[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == SIInstFormatMTBUF)
 		{
 			assert(IN_RANGE(info->op, 0, 
-				si_inst_info_mtbuf_count - 1));
+				SI_INST_INFO_MTBUF_MAX_VALUE));
 			self->inst_info_mtbuf[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == SIInstFormatMUBUF)
 		{
 			assert(IN_RANGE(info->op, 0, 
-				si_inst_info_mubuf_count - 1));
+				SI_INST_INFO_MUBUF_MAX_VALUE));
 			self->inst_info_mubuf[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == SIInstFormatMIMG)
 		{
 			assert(IN_RANGE(info->op, 0, 
-				si_inst_info_mimg_count - 1));
+				SI_INST_INFO_MIMG_MAX_VALUE));
 			self->inst_info_mimg[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == SIInstFormatEXP)
 		{
 			assert(IN_RANGE(info->op, 0, 
-				si_inst_info_exp_count - 1));
+				SI_INST_INFO_EXP_MAX_VALUE));
 			self->inst_info_exp[info->op] = info;
 			continue;
 		}
@@ -568,4 +579,6 @@ void SIAsmDisassembleOpenGLBinary(SIAsm *self, char *path, int shader_index)
 	/* Free */
 	opengl_si_program_binary_free(si_program_bin);
 }
+
+#endif
 

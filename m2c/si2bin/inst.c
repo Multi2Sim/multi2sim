@@ -182,7 +182,7 @@ void Si2binInstDump(Si2binInst *self, FILE *f)
 	/* Dump instruction opcode */
 	fprintf(f, "Instruction %s\n", self->info->name->text);
 	fprintf(f, "\tformat=%s, size=%d\n",
-			str_map_value(&si_inst_fmt_map, self->info->inst_info->fmt),
+			StringMapValue(si_inst_fmt_map, self->info->inst_info->fmt),
 			asSIInst(self)->size);
 
 	/* Dump arguments */

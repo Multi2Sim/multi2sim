@@ -17,6 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#if 0
+
 #include <ctype.h>
 #include <string.h>
 
@@ -33,6 +35,14 @@
 /* 
  * Functions to print assembly output to file
  */
+
+static int is_token(char *fmt_str, char *token_str, int *token_len)
+{
+	*token_len = strlen(token_str);
+	return !strncmp(fmt_str, token_str, *token_len) &&
+		!isalnum(fmt_str[*token_len]);
+}
+
 
 void operand_dump(char *str, int operand)
 {
@@ -51,7 +61,7 @@ void operand_dump(char *str, int operand)
 	{
 		/* sdst special registers */
 		str_printf(&pstr, &str_size, "%s", 
-			StringMapValue(si_inst_sdst_map, operand - 104));
+			str_map_value(&si_inst_sdst_map, operand - 104));
 	}
 	else if (operand <= 192)
 	{
@@ -70,7 +80,7 @@ void operand_dump(char *str, int operand)
 	else if (operand <= 255)
 	{
 		str_printf(&pstr, &str_size, "%s", 
-			StringMapValue(si_inst_ssrc_map, operand - 240));
+			str_map_value(&si_inst_ssrc_map, operand - 240));
 	}
 	else if (operand <= 511)
 	{
@@ -485,7 +495,7 @@ void SIInstDump(SIInst *self, unsigned int rel_addr, void *buf,
 
 		/* Token */
 		fmt_str++;
-		if (asm_is_token(fmt_str, "WAIT_CNT", &token_len))
+		if (is_token(fmt_str, "WAIT_CNT", &token_len))
 		{	
 			SIInstBytesSOPP *sopp = &self->bytes.sopp;
 
@@ -527,7 +537,7 @@ void SIInstDump(SIInst *self, unsigned int rel_addr, void *buf,
 				and = 1;
 			}
 		}
-		else if (asm_is_token(fmt_str, "LABEL", &token_len))
+		else if (is_token(fmt_str, "LABEL", &token_len))
 		{		
 			SIInstBytesSOPP *sopp = &self->bytes.sopp;
 	
@@ -537,45 +547,45 @@ void SIInstDump(SIInst *self, unsigned int rel_addr, void *buf,
 			str_printf(&inst_str, &str_size, "label_%04X", 
 				(rel_addr + (se_simm * 4) + 4) / 4);
 		}
-		else if (asm_is_token(fmt_str, "SSRC0", &token_len))
+		else if (is_token(fmt_str, "SSRC0", &token_len))
 		{	
 			SIInstDump_SSRC(self, self->bytes.sop2.ssrc0, 
 				operand_str, &inst_str, str_size);
 		}
-		else if (asm_is_token(fmt_str, "64_SSRC0", &token_len))
+		else if (is_token(fmt_str, "64_SSRC0", &token_len))
 		{
 			SIInstDump_64_SSRC(self, self->bytes.sop2.ssrc0, 
 				operand_str, &inst_str, str_size);
 		}
-		else if (asm_is_token(fmt_str, "SSRC1", &token_len))
+		else if (is_token(fmt_str, "SSRC1", &token_len))
 		{
 			SIInstDump_SSRC(self, self->bytes.sop2.ssrc1, 
 				operand_str, &inst_str, str_size);
 		}
-		else if (asm_is_token(fmt_str, "64_SSRC1", &token_len))
+		else if (is_token(fmt_str, "64_SSRC1", &token_len))
 		{
 			SIInstDump_64_SSRC(self, self->bytes.sop2.ssrc1, 
 				operand_str, &inst_str, str_size);
 		}
-		else if (asm_is_token(fmt_str, "SDST", &token_len))
+		else if (is_token(fmt_str, "SDST", &token_len))
 		{	
 			operand_dump_scalar(operand_str, 
 				self->bytes.sop2.sdst);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
-		else if (asm_is_token(fmt_str, "64_SDST", &token_len))
+		else if (is_token(fmt_str, "64_SDST", &token_len))
 		{
 			operand_dump_series_scalar(operand_str, 
 				self->bytes.sop2.sdst, 
 				self->bytes.sop2.sdst + 1);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
-		else if (asm_is_token(fmt_str, "SIMM16", &token_len))
+		else if (is_token(fmt_str, "SIMM16", &token_len))
 		{
 			str_printf(&inst_str, &str_size, "0x%04x", 
 				self->bytes.sopk.simm16);
 		}
-		else if (asm_is_token(fmt_str, "SRC0", &token_len))
+		else if (is_token(fmt_str, "SRC0", &token_len))
 		{
 			if (self->bytes.vopc.src0 == 0xFF)
 			{
@@ -590,7 +600,7 @@ void SIInstDump(SIInst *self, unsigned int rel_addr, void *buf,
 					operand_str);
 			}
 		}
-		else if (asm_is_token(fmt_str, "64_SRC0", &token_len))
+		else if (is_token(fmt_str, "64_SRC0", &token_len))
 		{
 			assert(self->bytes.vopc.src0 != 0xFF);
 
@@ -599,13 +609,13 @@ void SIInstDump(SIInst *self, unsigned int rel_addr, void *buf,
 				self->bytes.vopc.src0 + 1);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
-		else if (asm_is_token(fmt_str, "VSRC1", &token_len))
+		else if (is_token(fmt_str, "VSRC1", &token_len))
 		{
 			operand_dump_vector(operand_str, 
 				self->bytes.vopc.vsrc1);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
-		else if (asm_is_token(fmt_str, "64_VSRC1", &token_len))
+		else if (is_token(fmt_str, "64_VSRC1", &token_len))
 		{
 			assert(self->bytes.vopc.vsrc1 != 0xFF);
 
@@ -614,26 +624,26 @@ void SIInstDump(SIInst *self, unsigned int rel_addr, void *buf,
 				self->bytes.vopc.vsrc1 + 1);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
-		else if (asm_is_token(fmt_str, "VDST", &token_len))
+		else if (is_token(fmt_str, "VDST", &token_len))
 		{
 			operand_dump_vector(operand_str, 
 				self->bytes.vop1.vdst);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
-		else if (asm_is_token(fmt_str, "64_VDST", &token_len))
+		else if (is_token(fmt_str, "64_VDST", &token_len))
 		{
 			operand_dump_series_vector(operand_str, 
 				self->bytes.vop1.vdst, 
 				self->bytes.vop1.vdst + 1);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
-		else if (asm_is_token(fmt_str, "SVDST", &token_len))
+		else if (is_token(fmt_str, "SVDST", &token_len))
 		{
 			operand_dump_scalar(operand_str, 
 				self->bytes.vop1.vdst);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
-		else if (asm_is_token(fmt_str, "VOP3_64_SVDST", &token_len))
+		else if (is_token(fmt_str, "VOP3_64_SVDST", &token_len))
 		{
 			/* VOP3a compare operations use the VDST field to 
 			 * indicate the address of the scalar destination.*/
@@ -642,80 +652,80 @@ void SIInstDump(SIInst *self, unsigned int rel_addr, void *buf,
 				self->bytes.vop3a.vdst + 1);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
-		else if (asm_is_token(fmt_str, "VOP3_VDST", &token_len))
+		else if (is_token(fmt_str, "VOP3_VDST", &token_len))
 		{
 			operand_dump_vector(operand_str, 
 				self->bytes.vop3a.vdst);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
-		else if (asm_is_token(fmt_str, "VOP3_64_VDST", &token_len))
+		else if (is_token(fmt_str, "VOP3_64_VDST", &token_len))
 		{
 			operand_dump_series_vector(operand_str, 
 				self->bytes.vop3a.vdst, 
 				self->bytes.vop3a.vdst + 1);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
-		else if (asm_is_token(fmt_str, "VOP3_64_SDST", &token_len))
+		else if (is_token(fmt_str, "VOP3_64_SDST", &token_len))
 		{
 			operand_dump_series_scalar(operand_str, 
 				self->bytes.vop3b.sdst, 
 				self->bytes.vop3b.sdst + 1);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
-		else if (asm_is_token(fmt_str, "VOP3_SRC0", &token_len))
+		else if (is_token(fmt_str, "VOP3_SRC0", &token_len))
 		{
 			SIInstDump_VOP3_SRC(self, 
 				self->bytes.vop3a.src0, 1, operand_str, 
 				&inst_str, str_size);
 		}
-		else if (asm_is_token(fmt_str, "VOP3_64_SRC0", &token_len))
+		else if (is_token(fmt_str, "VOP3_64_SRC0", &token_len))
 		{
 			SIInstDump_VOP3_64_SRC(self, 
 				self->bytes.vop3a.src0, 1, operand_str, 
 				&inst_str, str_size);
 		}
-		else if (asm_is_token(fmt_str, "VOP3_SRC1", &token_len))
+		else if (is_token(fmt_str, "VOP3_SRC1", &token_len))
 		{
 			SIInstDump_VOP3_SRC(self, 
 				self->bytes.vop3a.src1, 2, operand_str, 
 				&inst_str, str_size);
 		}
-		else if (asm_is_token(fmt_str, "VOP3_64_SRC1", &token_len))
+		else if (is_token(fmt_str, "VOP3_64_SRC1", &token_len))
 		{
 			SIInstDump_VOP3_64_SRC(self, 
 				self->bytes.vop3a.src1, 2, operand_str, 
 				&inst_str, str_size);
 		}
-		else if (asm_is_token(fmt_str, "VOP3_SRC2", &token_len))
+		else if (is_token(fmt_str, "VOP3_SRC2", &token_len))
 		{
 			SIInstDump_VOP3_SRC(self, self->bytes.vop3a.src2, 
 				4, operand_str, &inst_str, str_size);
 		}
-		else if (asm_is_token(fmt_str, "VOP3_64_SRC2", &token_len))
+		else if (is_token(fmt_str, "VOP3_64_SRC2", &token_len))
 		{
 			SIInstDump_VOP3_64_SRC(self, 
 				self->bytes.vop3a.src2, 4, operand_str, 
 				&inst_str, str_size);
 		}
-		else if (asm_is_token(fmt_str, "VOP3_OP16", &token_len))
+		else if (is_token(fmt_str, "VOP3_OP16", &token_len))
 		{
 			str_printf(&inst_str, &str_size, "%s", 
-				StringMapValue(si_inst_OP16_map, 
+				str_map_value(&si_inst_OP16_map, 
 					(self->bytes.vop3a.op & 15)));
 		}
-		else if (asm_is_token(fmt_str, "VOP3_OP8", &token_len))
+		else if (is_token(fmt_str, "VOP3_OP8", &token_len))
 		{
 			str_printf(&inst_str, &str_size, "%s", 
-				StringMapValue(si_inst_OP8_map, 
+				str_map_value(&si_inst_OP8_map, 
 					(self->bytes.vop3a.op & 15)));
 		}
-		else if (asm_is_token(fmt_str, "SMRD_SDST", &token_len))
+		else if (is_token(fmt_str, "SMRD_SDST", &token_len))
 		{
 			operand_dump_scalar(operand_str, 
 				self->bytes.smrd.sdst);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
-		else if (asm_is_token(fmt_str, "SERIES_SDST", &token_len))
+		else if (is_token(fmt_str, "SERIES_SDST", &token_len))
 		{
 			
 			/* The sbase field is missing the LSB, 
@@ -797,7 +807,7 @@ void SIInstDump(SIInst *self, unsigned int rel_addr, void *buf,
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 
 		}
-		else if (asm_is_token(fmt_str, "SERIES_SBASE", &token_len))
+		else if (is_token(fmt_str, "SERIES_SBASE", &token_len))
 		{
 			
 			/* The sbase field is missing the LSB, 
@@ -839,12 +849,12 @@ void SIInstDump(SIInst *self, unsigned int rel_addr, void *buf,
 				sbase_end);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
-		else if (asm_is_token(fmt_str, "VOP2_LIT", &token_len))
+		else if (is_token(fmt_str, "VOP2_LIT", &token_len))
 		{
 			str_printf(&inst_str, &str_size, "0x%08x", 
 				self->bytes.vop2.lit_cnst);
 		}
-		else if (asm_is_token(fmt_str, "OFFSET", &token_len))
+		else if (is_token(fmt_str, "OFFSET", &token_len))
 		{
 			if (self->bytes.smrd.imm)
 			{
@@ -859,31 +869,31 @@ void SIInstDump(SIInst *self, unsigned int rel_addr, void *buf,
 					operand_str);
 			}
 		}
-		else if (asm_is_token(fmt_str, "DS_VDST", &token_len))
+		else if (is_token(fmt_str, "DS_VDST", &token_len))
 		{
 			operand_dump_vector(operand_str, 
 				self->bytes.ds.vdst);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
-		else if (asm_is_token(fmt_str, "ADDR", &token_len))
+		else if (is_token(fmt_str, "ADDR", &token_len))
 		{
 			operand_dump_vector(operand_str, 
 				self->bytes.ds.addr);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
-		else if (asm_is_token(fmt_str, "DATA0", &token_len))
+		else if (is_token(fmt_str, "DATA0", &token_len))
 		{
 			operand_dump_vector(operand_str, 
 				self->bytes.ds.data0);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
-		else if (asm_is_token(fmt_str, "DATA1", &token_len))
+		else if (is_token(fmt_str, "DATA1", &token_len))
 		{
 			operand_dump_vector(operand_str, 
 				self->bytes.ds.data1);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
-		else if (asm_is_token(fmt_str, "OFFSET0", &token_len))
+		else if (is_token(fmt_str, "OFFSET0", &token_len))
 		{
 			if(self->bytes.ds.offset0)
 			{
@@ -891,7 +901,7 @@ void SIInstDump(SIInst *self, unsigned int rel_addr, void *buf,
 					self->bytes.ds.offset0);
 			}
 		}
-		else if (asm_is_token(fmt_str, "DS_SERIES_VDST", &token_len))
+		else if (is_token(fmt_str, "DS_SERIES_VDST", &token_len))
 		{
 			operand_dump_series_vector(operand_str, 
 				self->bytes.ds.vdst, 
@@ -899,7 +909,7 @@ void SIInstDump(SIInst *self, unsigned int rel_addr, void *buf,
 			str_printf(&inst_str, &str_size, "%s", 
 				operand_str);
 		}
-		else if (asm_is_token(fmt_str, "OFFSET1", &token_len))
+		else if (is_token(fmt_str, "OFFSET1", &token_len))
 		{
 			if(self->bytes.ds.offset1)
 			{
@@ -907,24 +917,24 @@ void SIInstDump(SIInst *self, unsigned int rel_addr, void *buf,
 					self->bytes.ds.offset1);
 			}
 		}
-		else if (asm_is_token(fmt_str, "VINTRP_VDST", &token_len))
+		else if (is_token(fmt_str, "VINTRP_VDST", &token_len))
 		{
 			operand_dump_vector(operand_str, 
 				self->bytes.vintrp.vdst);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
-		else if (asm_is_token(fmt_str, "VSRC_I_J", &token_len))
+		else if (is_token(fmt_str, "VSRC_I_J", &token_len))
 		{
 			operand_dump_vector(operand_str, 
 				self->bytes.vintrp.vsrc);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
-		else if (asm_is_token(fmt_str, "ATTR", &token_len))
+		else if (is_token(fmt_str, "ATTR", &token_len))
 		{
 			str_printf(&inst_str, &str_size, "attr_%d", 
 				self->bytes.vintrp.attr);
 		}
-		else if (asm_is_token(fmt_str, "ATTRCHAN", &token_len))
+		else if (is_token(fmt_str, "ATTRCHAN", &token_len))
 		{
 			switch (self->bytes.vintrp.attrchan)
 			{
@@ -944,18 +954,18 @@ void SIInstDump(SIInst *self, unsigned int rel_addr, void *buf,
 					break;
 			}
 		}
-		else if (asm_is_token(fmt_str, "MU_SERIES_VDATA", &token_len))
+		else if (is_token(fmt_str, "MU_SERIES_VDATA", &token_len))
 		{
 			SIInstDump_SERIES_VDATA(self->bytes.mubuf.vdata, 
 				self->bytes.mubuf.op, operand_str, 
 				&inst_str, str_size);
 		}
-		else if (asm_is_token(fmt_str, "MU_GLC", &token_len))
+		else if (is_token(fmt_str, "MU_GLC", &token_len))
 		{
 			if (self->bytes.mubuf.glc)
 				str_printf(&inst_str, &str_size, "glc");
 		}
-		else if (asm_is_token(fmt_str, "VADDR", &token_len))
+		else if (is_token(fmt_str, "VADDR", &token_len))
 		{
 			if (self->bytes.mtbuf.offen && 
 				self->bytes.mtbuf.idxen)
@@ -974,18 +984,18 @@ void SIInstDump(SIInst *self, unsigned int rel_addr, void *buf,
 					operand_str);
 			}
 		}
-		else if (asm_is_token(fmt_str, "MU_MADDR", &token_len))
+		else if (is_token(fmt_str, "MU_MADDR", &token_len))
 		{
 			SIInstDump_MADDR(self, operand_str, &inst_str, 
 				str_size);
 		}
-		else if (asm_is_token(fmt_str, "MT_SERIES_VDATA", &token_len))
+		else if (is_token(fmt_str, "MT_SERIES_VDATA", &token_len))
 		{
 			SIInstDump_SERIES_VDATA(self->bytes.mtbuf.vdata, 
 				self->bytes.mtbuf.op, operand_str, 
 				&inst_str, str_size);
 		}
-		else if (asm_is_token(fmt_str, "SERIES_SRSRC", &token_len))
+		else if (is_token(fmt_str, "SERIES_SRSRC", &token_len))
 		{
 			assert((self->bytes.mtbuf.srsrc << 2) % 4 == 0);
 			operand_dump_series_scalar(operand_str, 
@@ -993,33 +1003,33 @@ void SIInstDump(SIInst *self, unsigned int rel_addr, void *buf,
 				(self->bytes.mtbuf.srsrc << 2) + 3);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
-		else if (asm_is_token(fmt_str, "MT_MADDR", &token_len))
+		else if (is_token(fmt_str, "MT_MADDR", &token_len))
 		{
 			SIInstDump_MADDR(self, operand_str, &inst_str, 
 				str_size);
 		
 			/* Format */
 			str_printf(&inst_str, &str_size, " format:[%s,%s]",
-				StringMapValue(si_inst_buf_data_format_map, 
+				str_map_value(&si_inst_buf_data_format_map, 
 					self->bytes.mtbuf.dfmt),
-				StringMapValue(si_inst_buf_num_format_map, 
+				str_map_value(&si_inst_buf_num_format_map, 
 					self->bytes.mtbuf.nfmt));
 		}
-		else if (asm_is_token(fmt_str, "MIMG_SERIES_VDATA", &token_len))
+		else if (is_token(fmt_str, "MIMG_SERIES_VDATA", &token_len))
 		{
 			operand_dump_series_vector(operand_str, 
 				self->bytes.mimg.vdata, 
 				self->bytes.mimg.vdata + 3);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
-		else if (asm_is_token(fmt_str, "MIMG_VADDR", &token_len))
+		else if (is_token(fmt_str, "MIMG_VADDR", &token_len))
 		{
 			operand_dump_series_vector(operand_str, 
 				self->bytes.mimg.vaddr, 
 				self->bytes.mimg.vaddr + 3);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
-		else if (asm_is_token(fmt_str, "MIMG_SERIES_SRSRC", &token_len))
+		else if (is_token(fmt_str, "MIMG_SERIES_SRSRC", &token_len))
 		{
 			assert((self->bytes.mimg.srsrc << 2) % 4 == 0);
 			operand_dump_series_scalar(operand_str, 
@@ -1027,7 +1037,7 @@ void SIInstDump(SIInst *self, unsigned int rel_addr, void *buf,
 				(self->bytes.mimg.srsrc << 2) + 7);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
-		else if (asm_is_token(fmt_str, "MIMG_DUG_SERIES_SRSRC", &token_len))
+		else if (is_token(fmt_str, "MIMG_DUG_SERIES_SRSRC", &token_len))
 		{
 			assert((self->bytes.mimg.srsrc << 2) % 4 == 0);
 			operand_dump_series_scalar(operand_str, 
@@ -1040,7 +1050,7 @@ void SIInstDump(SIInst *self, unsigned int rel_addr, void *buf,
 			SIInstDump_DUG(self, operand_str, &inst_str, 
 				str_size);
 		}
-		else if (asm_is_token(fmt_str, "MIMG_SERIES_SSAMP", &token_len))
+		else if (is_token(fmt_str, "MIMG_SERIES_SSAMP", &token_len))
 		{
 			assert((self->bytes.mimg.ssamp << 2) % 4 == 0);
 			operand_dump_series_scalar(operand_str, 
@@ -1048,7 +1058,7 @@ void SIInstDump(SIInst *self, unsigned int rel_addr, void *buf,
 				(self->bytes.mimg.ssamp << 2) + 3);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
-		else if (asm_is_token(fmt_str, "MIMG_DUG_SERIES_SSAMP", 
+		else if (is_token(fmt_str, "MIMG_DUG_SERIES_SSAMP", 
 			&token_len))
 		{
 			assert((self->bytes.mimg.ssamp << 2) % 4 == 0);
@@ -1062,13 +1072,13 @@ void SIInstDump(SIInst *self, unsigned int rel_addr, void *buf,
 			SIInstDump_DUG(self, operand_str, &inst_str, 
 				str_size);
 		}
-		else if (asm_is_token(fmt_str, "TGT", &token_len))
+		else if (is_token(fmt_str, "TGT", &token_len))
 		{
 			operand_dump_exp(operand_str, 
 				self->bytes.exp.tgt);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
-		else if (asm_is_token(fmt_str, "EXP_VSRCs", &token_len))
+		else if (is_token(fmt_str, "EXP_VSRCs", &token_len))
 		{
 			if (self->bytes.exp.compr == 0 && 
 				(self->bytes.exp.en && 0x0) == 0x0)
@@ -1401,4 +1411,6 @@ void SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 				offset, ((unsigned int*)buf)[0]);
 	}
 }
+
+#endif
 

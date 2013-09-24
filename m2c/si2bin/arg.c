@@ -28,26 +28,24 @@
 #include "si2bin.h"
 
 
-struct str_map_t si2bin_arg_type_map =
+StringMap si2bin_arg_type_map =
 {
-	13,
-	{
-		{ "invalid", Si2binArgInvalid },
-		{ "sreg", Si2binArgScalarRegister },
-		{ "vreg", Si2binArgVectorRegister },
-		{ "sreg_series", Si2binArgScalarRegisterSeries },
-		{ "vreg_series", Si2binArgVectorRegisterSeries },
-		{ "mreg", Si2binArgMemRegister },
-		{ "special_reg", Si2binArgSpecialRegister },
-		{ "literal", Si2binArgLiteral },
-		{ "literal_reduced", Si2binArgLiteralReduced },
-		{ "literal_float", Si2binArgLiteralFloat },
-		{ "literal_float_reduced", Si2binArgLiteralFloatReduced },
-		{ "waitcnt", Si2binArgWaitcnt },
-		{ "label", Si2binArgLabel },
-		{ "maddr", Si2binArgMaddr },
-		{ "maddr_qual", Si2binArgMaddrQual }
-	}
+	{ "invalid", Si2binArgInvalid },
+	{ "sreg", Si2binArgScalarRegister },
+	{ "vreg", Si2binArgVectorRegister },
+	{ "sreg_series", Si2binArgScalarRegisterSeries },
+	{ "vreg_series", Si2binArgVectorRegisterSeries },
+	{ "mreg", Si2binArgMemRegister },
+	{ "special_reg", Si2binArgSpecialRegister },
+	{ "literal", Si2binArgLiteral },
+	{ "literal_reduced", Si2binArgLiteralReduced },
+	{ "literal_float", Si2binArgLiteralFloat },
+	{ "literal_float_reduced", Si2binArgLiteralFloatReduced },
+	{ "waitcnt", Si2binArgWaitcnt },
+	{ "label", Si2binArgLabel },
+	{ "maddr", Si2binArgMaddr },
+	{ "maddr_qual", Si2binArgMaddrQual },
+	{ 0, 0 }
 };
 
 
@@ -128,7 +126,7 @@ void Si2binArgCreateVectorRegisterSeries(Si2binArg *self, int low, int high)
 }
 
 
-void Si2binArgCreateSpecialRegister(Si2binArg *self, enum si_inst_special_reg_t reg)
+void Si2binArgCreateSpecialRegister(Si2binArg *self, SIInstSpecialReg reg)
 {
 	/* Initialize */
 	self->type = Si2binArgSpecialRegister;
@@ -148,8 +146,8 @@ void Si2binArgCreateMemRegister(Si2binArg *self, int id)
 
 void Si2binArgCreateMaddr(Si2binArg *self, Si2binArg *soffset,
 		Si2binArg *qual,
-		enum si_inst_buf_data_format_t data_format,
-		enum si_inst_buf_num_format_t num_format)
+		SIInstBufDataFormat data_format,
+		SIInstBufNumFormat num_format)
 {
 	/* Initialize */
 	self->type = Si2binArgMaddr;
@@ -297,13 +295,13 @@ int Si2binArgEncodeOperand(Si2binArg *arg)
 	{
 		switch (arg->value.special_register.reg)
 		{
-		case si_inst_special_reg_vcc:
+		case SIInstSpecialRegVcc:
 			return 106;
 
-		case si_inst_special_reg_exec:
+		case SIInstSpecialRegExec:
 			return 126;
 
-		case si_inst_special_reg_scc:
+		case SIInstSpecialRegScc:
 			return 253;
 
 		default:
@@ -423,7 +421,7 @@ void Si2binArgDump(Si2binArg *arg, FILE *f)
 
 	case Si2binArgSpecialRegister:
 
-		fprintf(f, "<special_reg> %s", str_map_value(&si_inst_special_reg_map,
+		fprintf(f, "<special_reg> %s", StringMapValue(si_inst_special_reg_map,
 				arg->value.special_register.reg));
 		break;
 	
@@ -444,9 +442,9 @@ void Si2binArgDump(Si2binArg *arg, FILE *f)
 		Si2binArgDump(arg->value.maddr.qual, f);
 		fprintf(f, "}");
 
-		fprintf(f, " dfmt=%s", str_map_value(&si_inst_buf_data_format_map,
+		fprintf(f, " dfmt=%s", StringMapValue(si_inst_buf_data_format_map,
 				arg->value.maddr.data_format));
-		fprintf(f, " nfmt=%s", str_map_value(&si_inst_buf_num_format_map,
+		fprintf(f, " nfmt=%s", StringMapValue(si_inst_buf_num_format_map,
 				arg->value.maddr.num_format));
 
 		break;
@@ -501,14 +499,14 @@ void __Si2binArgValidTypes(Si2binArg *arg, const char *user_message,
 	msg_ptr = msg;
 	msg_size = sizeof msg;
 	str_printf(&msg_ptr, &msg_size, "argument of type %s found, {",
-			str_map_value(&si2bin_arg_type_map, arg->type));
+			StringMapValue(si2bin_arg_type_map, arg->type));
 
 	/* List allowed types */
 	sep = "";
 	for (i = 0; i < num_types; i++)
 	{
 		str_printf(&msg_ptr, &msg_size, "%s%s", sep,
-				str_map_value(&si2bin_arg_type_map, types[i]));
+				StringMapValue(si2bin_arg_type_map, types[i]));
 		sep = "|";
 	}
 
@@ -584,7 +582,7 @@ void Si2binArgDumpAssembly(Si2binArg *arg, FILE *f)
 	}
 
 	case Si2binArgSpecialRegister:
-		fprintf(f, "%s", str_map_value(&si_inst_special_reg_map, 
+		fprintf(f, "%s", StringMapValue(si_inst_special_reg_map, 
 			arg->value.special_register.reg));
 		break;
 
@@ -598,8 +596,8 @@ void Si2binArgDumpAssembly(Si2binArg *arg, FILE *f)
 		fprintf(f, " ");
 		Si2binArgDumpAssembly(arg->value.maddr.qual, f);
 		fprintf(f, " format:[%s,%s]", 
-			str_map_value(&si_inst_buf_data_format_map, arg->value.maddr.data_format),
-			str_map_value(&si_inst_buf_num_format_map, arg->value.maddr.num_format));
+			StringMapValue(si_inst_buf_data_format_map, arg->value.maddr.data_format),
+			StringMapValue(si_inst_buf_num_format_map, arg->value.maddr.num_format));
 		
 		break;
 	

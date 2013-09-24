@@ -21,6 +21,7 @@
 #define M2C_SI2BIN_ARG_H
 
 #include <arch/southern-islands/asm/inst.h>
+#include <lib/class/string.h>
 #include <lib/util/misc.h>
 
 
@@ -131,8 +132,8 @@ CLASS_BEGIN(Si2binArg, Object)
 			 * (memory address qualifier) */
 			Si2binArg *qual;
 
-			enum si_inst_buf_data_format_t data_format;
-			enum si_inst_buf_num_format_t num_format;
+			SIInstBufDataFormat data_format;
+			SIInstBufNumFormat num_format;
 		} maddr;
 
 		struct
@@ -144,7 +145,7 @@ CLASS_BEGIN(Si2binArg, Object)
 		
 		struct
 		{
-			enum si_inst_special_reg_t reg;
+			SIInstSpecialReg reg;
 		} special_register;
 
 		struct
@@ -165,12 +166,12 @@ void Si2binArgCreateScalarRegister(Si2binArg *self, int id);
 void Si2binArgCreateScalarRegisterSeries(Si2binArg *self, int low, int high);
 void Si2binArgCreateVectorRegister(Si2binArg *self, int id);
 void Si2binArgCreateVectorRegisterSeries(Si2binArg *self, int low, int high);
-void Si2binArgCreateSpecialRegister(Si2binArg *self, enum si_inst_special_reg_t reg);
+void Si2binArgCreateSpecialRegister(Si2binArg *self, SIInstSpecialReg reg);
 void Si2binArgCreateMemRegister(Si2binArg *self, int id);
 void Si2binArgCreateMaddr(Si2binArg *self, Si2binArg *soffset,
 		Si2binArg *qual,
-		enum si_inst_buf_data_format_t data_format,
-		enum si_inst_buf_num_format_t num_format);
+		SIInstBufDataFormat data_format,
+		SIInstBufNumFormat num_format);
 void Si2binArgCreateMaddrQual(Si2binArg *self);
 void Si2binArgCreateLabel(Si2binArg *self, char *name);
 void Si2binArgDestroy(Si2binArg *self);
@@ -198,7 +199,7 @@ void __Si2binArgValidTypes(Si2binArg *self, const char *user_message,
  * Public
  */
 
-extern struct str_map_t si2bin_arg_type_map;
+extern StringMap si2bin_arg_type_map;
 
 void Si2binArgSwap(Si2binArg **arg1_ptr, Si2binArg **arg2_ptr);
 
