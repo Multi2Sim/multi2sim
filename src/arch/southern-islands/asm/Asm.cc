@@ -18,6 +18,8 @@
  */
 
 #include <cassert>
+#include <iomanip>
+#include <sstream>
 
 #include <lib/cpp/Misc.h>
 
@@ -179,9 +181,11 @@ Asm::Asm()
 }
 
 
-void Asm::DisassembleBuffer(char *ptr, int size, FILE *f)
+void Asm::DisassembleBuffer(ostream& os, char *buffer, int size)
 {
-	char *original_ptr = ptr;
+	stringstream ss;
+
+	char *original_buffer = buffer;
 
 	int inst_count = 0;
 	int rel_addr = 0;
@@ -197,10 +201,10 @@ void Asm::DisassembleBuffer(char *ptr, int size, FILE *f)
 	Inst inst(this);
 
 	/* Read through instructions to find labels. */
-	while (ptr < original_ptr + size)
+	while (buffer < original_buffer + size)
 	{
 		/* Decode instruction */
-		inst.Decode(ptr, rel_addr);
+		inst.Decode(buffer, rel_addr);
 		format = inst.GetFormat();
 		bytes = inst.GetBytes();
 
@@ -243,20 +247,20 @@ void Asm::DisassembleBuffer(char *ptr, int size, FILE *f)
 
 		}
 
-		ptr += inst.GetSize();
+		buffer += inst.GetSize();
 		rel_addr += inst.GetSize();
 	}
 
 
 	/* Reset to disassemble. */
-	ptr = original_ptr;
+	buffer = original_buffer;
 	rel_addr = 0;
 
 	/* Disassemble */
-	while (ptr < original_ptr + size)
+	while (buffer < original_buffer + size)
 	{
 		/* Parse the instruction */
-		inst.Decode(ptr, rel_addr);
+		inst.Decode(buffer, rel_addr);
 		format = inst.GetFormat();
 		bytes = inst.GetBytes();
 		inst_count++;
@@ -264,21 +268,41 @@ void Asm::DisassembleBuffer(char *ptr, int size, FILE *f)
 		/* Dump a label if necessary. */
 		if (*next_label == rel_addr && next_label != end_label)
 		{
-			fprintf(f, "label_%04X:\n", rel_addr / 4);
+			os << "label_" << setw(4) << setfill('0') << uppercase
+					<< hex << rel_addr / 4 << ":\n"
+					<< setfill(' ') << nouppercase << dec;
 			next_label++;
 		}
 
-
 		/* Dump the instruction */
-		cout << ' ';
-		inst.Dump(cout);
+		ss.str("");
+		ss << ' ';
+		inst.Dump(ss);
+
+		/* Spaces */
+		if (ss.str().length() < 59)
+			ss << string(59 - ss.str().length(), ' ');
+
+		/* Hex dump */
+		os << ss.str();
+		os << " // " << setw(8) << setfill('0') << hex
+				<< uppercase << rel_addr << ": "
+				<< setfill(' ') << nouppercase << dec;
+		os << setw(8) << setfill('0') << hex
+				<< uppercase << bytes->word[0]
+				<< setfill(' ') << nouppercase << dec;
+		if (inst.GetSize() == 8)
+			os << ' ' << setw(8) << setfill('0') << hex
+					<< uppercase << bytes->word[1]
+					<< setfill(' ') << nouppercase << dec;
+		os << '\n';
 
 		/* Break at end of program. */
 		if (format == InstFormatSOPP && bytes->sopp.op == 1)
 			break;
 
 		/* Increment instruction pointer */
-		ptr += inst.GetSize();
+		buffer += inst.GetSize();
 		rel_addr += inst.GetSize();
 	}
 }
@@ -301,7 +325,7 @@ void Asm::DisassembleBinary(std::string path)
 
 	char kernel_name[200];
 
-	char *ptr;
+	char *buffer;
 
 	int size;
 	int i;
@@ -331,9 +355,9 @@ void Asm::DisassembleBinary(std::string path)
 			/* Get kernel name */
 			printf("**\n** Disassembly for '__kernel %s'\n**\n\n",
 					kernel_name);
-			ptr = (char *) amd_bin->enc_dict_entry_southern_islands->sec_text_buffer.ptr;
+			buffer = (char *) amd_bin->enc_dict_entry_southern_islands->sec_text_buffer.ptr;
 			size = amd_bin->enc_dict_entry_southern_islands->sec_text_buffer.size;
-			DisassembleBuffer(ptr, size, stdout);
+			DisassembleBuffer(cout, buffer, size);
 			printf("\n\n\n");
 
 			/* Free internal ELF */

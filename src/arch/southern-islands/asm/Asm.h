@@ -70,7 +70,7 @@ class Asm
 	InstInfo *dec_table_mimg[dec_table_mimg_count];
 	InstInfo *dec_table_exp[dec_table_exp_count];
 
-	void DisassembleBuffer(char *ptr, int size, FILE *f);
+	void DisassembleBuffer(std::ostream& os, char *buffer, int size);
 
 public:
 
