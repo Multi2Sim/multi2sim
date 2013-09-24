@@ -533,40 +533,6 @@ void Inst::DumpDug(ostream& os)
 }
 
 
-#if 0
-void line_dump(char *inst_str, unsigned int rel_addr, void *buf, char *line, int line_size, int inst_size)
-{
-	int dat_str_size = MAX_STRING_SIZE;
-	char inst_dat_str[MAX_STRING_SIZE];
-	char *dat_str = &inst_dat_str[0];
-
-	if (inst_size == 4)
-	{
-		str_printf(&dat_str, &dat_str_size, "// %08X: %08X", rel_addr,
-			((unsigned int*)buf)[0]);
-	}
-	else
-	{
-		str_printf(&dat_str, &dat_str_size, "// %08X: %08X %08X", 
-			rel_addr, ((unsigned int*)buf)[0], 
-			((unsigned int*)buf)[1]);
-	}
-
-	if (strlen(inst_str) < 59)
-	{
-		str_printf(&line, &line_size, "%-59s%s\n", inst_str, 
-			inst_dat_str);
-	}
-	else
-	{
-		str_printf(&line, &line_size, "%s %s\n", inst_str, 
-			inst_dat_str);
-	}
-}
-#endif
-
-
-
 Inst::Inst(Asm *as)
 {
 	/* Initialize */
@@ -632,7 +598,7 @@ void Inst::Dump(ostream& os)
 			short simm16 = sopp->simm16;
 			int se_simm = simm16;
 
-			os << "label_%04X" << setw(4) << setfill('0') << hex
+			os << "label_" << setw(4) << setfill('0') << hex
 					<< uppercase << (address + (se_simm * 4) + 4) / 4
 					<< dec << setfill(' ') << nouppercase;
 		}
@@ -1063,9 +1029,6 @@ void Inst::Dump(ostream& os)
 
 		fmt_str += token_len;
 	}
-	
-	//////////////
-	//line_dump(orig_inst_str, rel_addr, buf, line, line_size, self->size);
 }
 
 
