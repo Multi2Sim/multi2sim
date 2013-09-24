@@ -821,8 +821,8 @@ operand
 	
 	| TOK_SPECIAL_REGISTER
 	{
-		enum si_inst_special_reg_t reg;
-		reg = str_map_string(&si_inst_special_reg_map, $1->text);
+		SIInstSpecialReg reg;
+		reg = StringMapString(si_inst_special_reg_map, $1->text);
 		$$ = new_ctor(Si2binArg, CreateSpecialRegister, reg); 
 		delete($1);
 	}
@@ -952,8 +952,8 @@ arg
 		String *id_data_format;
 		String *id_num_format;
 		
-		enum si_inst_buf_data_format_t data_format;
-		enum si_inst_buf_num_format_t num_format;
+		SIInstBufDataFormat data_format;
+		SIInstBufNumFormat num_format;
 		
 		int err;
 
@@ -964,13 +964,13 @@ arg
 		id_num_format = $8;
 		
 		/* Data format */
-		data_format = str_map_string_err(&si_inst_buf_data_format_map,
+		data_format = StringMapStringErr(si_inst_buf_data_format_map,
 				id_data_format->text, &err);
 		if (err)
 			si2bin_yyerror_fmt("%s: invalid data format", id_data_format->text);
 			
 		/* Number format */
-		num_format = str_map_string_err(&si_inst_buf_num_format_map,
+		num_format = StringMapStringErr(si_inst_buf_num_format_map,
 				id_num_format->text, &err);
 		if (err)
 			si2bin_yyerror_fmt("%s: invalid number format", id_num_format->text); 

@@ -225,7 +225,7 @@ int Si2binTokenIsArgAllowed(Si2binToken *self, Si2binArg *arg)
 	
 	case Si2binTokenVcc:
 		return arg->type == Si2binArgSpecialRegister &&
-			arg->value.special_register.reg == si_inst_special_reg_vcc;
+			arg->value.special_register.reg == SIInstSpecialRegVcc;
 	
 	case Si2binTokenWaitCnt:
 		return arg->type == Si2binArgWaitcnt;

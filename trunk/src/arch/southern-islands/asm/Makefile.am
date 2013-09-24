@@ -9,6 +9,9 @@ libasm_a_SOURCES = \
 	asm.dat \
 	asm.h \
 	\
+	Asm.cc \
+	Asm.h \
+	\
 	bin-file.c \
 	bin-file.h \
 	\
@@ -17,6 +20,9 @@ libasm_a_SOURCES = \
 	\
 	inst.c \
 	inst.h \
+	\
+	Inst.cc \
+	Inst.h \
 	\
 	input.c \
 	input.h \
