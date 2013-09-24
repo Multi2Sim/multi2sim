@@ -17,11 +17,10 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_SOUTHERN_ISLANDS_ASM_INST_H_OLD
-#define ARCH_SOUTHERN_ISLANDS_ASM_INST_H_OLD
+#ifndef ARCH_SOUTHERN_ISLANDS_ASM_INST_H
+#define ARCH_SOUTHERN_ISLANDS_ASM_INST_H
 
 #include <lib/class/class.h>
-#include <lib/class/string.h>
 
 
 
@@ -79,14 +78,14 @@ typedef enum
  * String maps
  */
 
-extern StringMap si_inst_fmt_map;
-extern StringMap si_inst_sdst_map;
-extern StringMap si_inst_ssrc_map;
-extern StringMap si_inst_OP16_map;
-extern StringMap si_inst_OP8_map;
+extern struct str_map_t si_inst_fmt_map;
+extern struct str_map_t si_inst_sdst_map;
+extern struct str_map_t si_inst_ssrc_map;
+extern struct str_map_t si_inst_OP16_map;
+extern struct str_map_t si_inst_OP8_map;
 
 
-extern StringMap si_inst_category_map;
+extern struct str_map_t si_inst_category_map;
 typedef enum
 {
 	SIInstCategoryInvalid = 0,
@@ -125,57 +124,57 @@ typedef enum
 } SIInstCategory;
 
 
-extern StringMap si_inst_special_reg_map;
-typedef enum
+extern struct str_map_t si_inst_special_reg_map;
+enum si_inst_special_reg_t
 {
-	SIInstSpecialRegInvalid = 0,
-	SIInstSpecialRegVcc,
-	SIInstSpecialRegScc,
-	SIInstSpecialRegExec,
-	SIInstSpecialRegTma
-} SIInstSpecialReg;
+	si_inst_special_reg_invalid = 0,
+	si_inst_special_reg_vcc,
+	si_inst_special_reg_scc,
+	si_inst_special_reg_exec,
+	si_inst_special_reg_tma
+};
 
 
-extern StringMap si_inst_buf_data_format_map;
-typedef enum
+extern struct str_map_t si_inst_buf_data_format_map;
+enum si_inst_buf_data_format_t
 {
-	SIInstBufDataFormatInvalid = 0,
-	SIInstBufDataFormat8 = 1,
-	SIInstBufDataFormat16 = 2,
-	SIInstBufDataFormat8_8 = 3,
-	SIInstBufDataFormat32 = 4,
-	SIInstBufDataFormat16_16 = 5,
-	SIInstBufDataFormat10_11_11 = 6,
-	SIInstBufDataFormat11_10_10 = 7,
-	SIInstBufDataFormat10_10_10_2 = 8,
-	SIInstBufDataFormat2_10_10_10 = 9,
-	SIInstBufDataFormat8_8_8_8 = 10,
-	SIInstBufDataFormat32_32 = 11,
-	SIInstBufDataFormat16_16_16_16 = 12,
-	SIInstBufDataFormat32_32_32 = 13,
-	SIInstBufDataFormat32_32_32_32 = 14,
-	SIInstBufDataFormatReserved = 15
-} SIInstBufDataFormat;
+	si_inst_buf_data_format_invalid = 0,
+	si_inst_buf_data_format_8 = 1,
+	si_inst_buf_data_format_16 = 2,
+	si_inst_buf_data_format_8_8 = 3,
+	si_inst_buf_data_format_32 = 4,
+	si_inst_buf_data_format_16_16 = 5,
+	si_inst_buf_data_format_10_11_11 = 6,
+	si_inst_buf_data_format_11_10_10 = 7,
+	si_inst_buf_data_format_10_10_10_2 = 8,
+	si_inst_buf_data_format_2_10_10_10 = 9,
+	si_inst_buf_data_format_8_8_8_8 = 10,
+	si_inst_buf_data_format_32_32 = 11,
+	si_inst_buf_data_format_16_16_16_16 = 12,
+	si_inst_buf_data_format_32_32_32 = 13,
+	si_inst_buf_data_format_32_32_32_32 = 14,
+	si_inst_buf_data_format_reserved = 15
+};
 
 
-extern StringMap si_inst_buf_num_format_map;
-typedef enum
+extern struct str_map_t si_inst_buf_num_format_map;
+enum si_inst_buf_num_format_t
 {
-	SIInstBufNumFormatUnorm = 0,
-	SIInstBufNumFormatSnorm = 1,
-	SIInstBufNumFormatUnscaled = 2,
-	SIInstBufNumFormatSscaled = 3,
-	SIInstBufNumFormatUint = 4,
-	SIInstBufNumFormatSint = 5,
-	SIInstBufNumFormatSnormNz = 6,
-	SIInstBufNumFormatFloat = 7,
-	SIInstBufNumFormatReserved = 8,
-	SIInstBufNumFormatSrgb = 9,
-	SIInstBufNumFormatUbnorm = 10,
-	SIInstBufNumFormatUbnormNz = 11,
-	SIInstBufNumFormatUbint = 12,
-	SIInstBufNumFormatUbscaled = 13
-} SIInstBufNumFormat;
+	si_inst_buf_num_format_unorm = 0,
+	si_inst_buf_num_format_snorm = 1,
+	si_inst_buf_num_format_unscaled = 2,
+	si_inst_buf_num_format_sscaled = 3,
+	si_inst_buf_num_format_uint = 4,
+	si_inst_buf_num_format_sint = 5,
+	si_inst_buf_num_format_snorm_nz = 6,
+	si_inst_buf_num_format_float = 7,
+	si_inst_buf_num_format_reserved = 8,
+	si_inst_buf_num_format_srgb = 9,
+	si_inst_buf_num_format_ubnorm = 10,
+	si_inst_buf_num_format_ubnorm_nz = 11,
+	si_inst_buf_num_format_ubint = 12,
+	si_inst_buf_num_format_ubscaled = 13
+};
 
 
 typedef enum
@@ -512,6 +511,13 @@ void SIInstClear(SIInst *self);
 void SIInstDecode(SIInst *self, void *buf, unsigned int offset);
 
 void SIInstDump(SIInst *self, unsigned int rel_addr, void *buf, char *line, int line_size);
+void SIInstDump_SSRC(SIInst *self, unsigned int ssrc, char *operand_str, char **inst_str, int str_size);
+void SIInstDump_64_SSRC(SIInst *self, unsigned int ssrc, char *operand_str, char **inst_str, int str_size);
+void SIInstDump_VOP3_SRC(SIInst *self, unsigned int src, int neg, char *operand_str, char **inst_str, int str_size);
+void SIInstDump_VOP3_64_SRC(SIInst *self, unsigned int src, int neg, char *operand_str, char **inst_str, int str_size);
+void SIInstDump_SERIES_VDATA(unsigned int vdata, int op, char *operand_str, char **inst_str, int str_size);
+void SIInstDump_MADDR(SIInst *self, char *operand_str, char **inst_str, int str_size);
+void SIInstDump_DUG(SIInst *self, char *operand_str, char **inst_str, int str_size);
 
 
 #endif
