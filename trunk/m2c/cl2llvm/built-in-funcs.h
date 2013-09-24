@@ -16,7 +16,6 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
 #ifndef M2C_CL2LLVM_BUILT_IN_FUNCS_H
 #define M2C_CL2LLVM_BUILT_IN_FUNCS_H
 
@@ -25,22 +24,40 @@
 
 #include "type.h"
 
-struct cl2llvm_built_in_func_info_t
+struct cl2llvm_built_in_func_t
 {
-	int func_id;
 	int arg_count;
-	char *arg_string;
+
+	struct list_t* format_list;
+};
+
+struct cl2llvm_built_in_func_llvm_name_t
+{
+	char* llvm_name;
+
+	/* Arguments */
+	int arg_count;
+	struct cl2llvm_type_t** arg_list;
+
+	/* Return type */
+	struct cl2llvm_type_t* ret_type;
 };
 
 struct hash_table_t *built_in_func_table_create(void);
 
 void cl2llvm_built_in_func_table_free(struct hash_table_t *built_in_func_table);
 
-struct cl2llvm_built_in_func_info_t *cl2llvm_built_in_func_info_create(int, int, char*);
+struct cl2llvm_built_in_func_t *cl2llvm_built_in_func_create(int, char*, char*);
+
+void cl2llvm_built_in_func_free(struct cl2llvm_built_in_func_t* built_in_Func);
+
+struct cl2llvm_built_in_func_llvm_name_t* cl2llvm_built_in_func_llvm_name_create(void);
+
+void cl2llvm_built_in_func_llvm_name_free(struct cl2llvm_built_in_func_llvm_name_t*);
 
 void cl2llvm_built_in_func_analyze(char* name, struct list_t *param_list);
 
-void func_declare(struct list_t *arg_types, struct cl2llvm_type_t *ret_type, 
+void func_declare(int arg_count, struct cl2llvm_type_t** arg_list, struct cl2llvm_type_t *ret_type, 
 	char* name, char* param_spec_name);
 
 int *intptr(int num);
@@ -50,7 +67,7 @@ struct cl2llvm_type_t *string_to_type(char*);
 /* This function creates an error message for argument type mismatches based
    on and arg_info string and a list of the attempted argument types. */
 char *cl2llvm_error_built_in_func_arg_mismatch(struct list_t *param_list,
-	struct cl2llvm_built_in_func_info_t *func_info,  char *func_name, 
+	struct cl2llvm_built_in_func_t *func_info,  char *func_name, 
 	char *error_message);
 
 #endif

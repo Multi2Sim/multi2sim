@@ -211,7 +211,6 @@ void Cl2llvmCompile(Cl2llvm *self,
 		cl2llvm_yyparse();
 		
 		/* Verify module and optimize */
-		LLVMDumpModule(cl2llvm_module);
 		LLVMVerifyModule(cl2llvm_module, LLVMAbortProcessAction, &error);
 		LLVMPassManagerRef pm = LLVMCreatePassManager();
 

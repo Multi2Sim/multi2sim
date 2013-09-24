@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <stdio.h>
 
 #include <lib/util/hash-table.h>
 #include <lib/mhandle/mhandle.h>
@@ -65,6 +66,7 @@ struct cl2llvm_function_t *cl2llvm_func_cpy(struct cl2llvm_function_t *src_func)
 	LIST_FOR_EACH(src_func->arg_list, i)
 	{
 		src_arg = list_get(src_func->arg_list, i);
+		
 		new_arg_decl = cl2llvm_decl_list_create();
 		new_arg_decl->type_spec = cl2llvm_type_create_w_init(
 			src_arg->type_spec->llvm_type, 
