@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <arch/southern-islands/asm/asm.h>
+#include <arch/southern-islands/asm/Asm.h>
 #include <arch/southern-islands/asm/opengl-bin-file.h>
 #include <arch/x86/emu/emu.h>
 #include <driver/opencl/opencl.h>
@@ -43,7 +43,7 @@
  * Class 'SIEmu'
  */
 
-void SIEmuCreate(SIEmu *self, SIAsm *as)
+void SIEmuCreate(SIEmu *self, struct SIAsmWrap *as)
 {
 	/* Parent */
 	EmuCreate(asEmu(self), "SouthernIslands");

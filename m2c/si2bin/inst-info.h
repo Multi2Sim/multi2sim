@@ -22,7 +22,7 @@
 
 #include <stdio.h>
 
-#include <arch/southern-islands/asm/asm.h>
+#include <arch/southern-islands/asm/Inst.h>
 
 
 /*

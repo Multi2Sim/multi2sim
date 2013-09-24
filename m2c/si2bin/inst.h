@@ -21,7 +21,7 @@
 #define M2C_SI2BIN_INST_H
 
 #include <stdio.h>
-#include <arch/southern-islands/asm/inst.h>
+#include <arch/southern-islands/asm/Inst.h>
 #include <lib/class/class.h>
 
 
@@ -30,7 +30,13 @@
  * Class 'Si2binInst'
  */
 
-CLASS_BEGIN(Si2binInst, SIInst)
+CLASS_BEGIN(Si2binInst, Object)
+
+	/* FIXME - bring to parent */
+	int size;
+
+	/* FIXME - bring to parent */
+	SIInstBytes bytes;
 
 	SIInstOpcode opcode;
 	Si2binInstInfo *info;

@@ -485,9 +485,7 @@ void SIComputeUnitFetch(SIComputeUnit *self, int active_fb)
 		/* Trace */
 		if (si_tracing())
 		{
-			SIInstDump(&wavefront->inst, wavefront->pc, 
-				wavefront->work_group->ndrange->inst_buffer + 
-				wavefront->pc, inst_str, sizeof inst_str);
+			SIInstWrapDumpBuf(wavefront->inst, inst_str, sizeof inst_str);
 			str_single_spaces(inst_str_trimmed, 
 				sizeof inst_str_trimmed, 
 				inst_str);
@@ -563,12 +561,12 @@ void SIComputeUnitIssueOldestInst(SIComputeUnit *self, int active_fb)
 			assert(uop);
 
 			/* Only evaluate branch instructions */
-			if (uop->inst.info->fmt != SIInstFormatSOPP) 
+			if (SIInstWrapGetFormat(uop->inst) != SIInstFormatSOPP) 
 			{
 				continue;
 			}
-			if (uop->inst.bytes.sopp.op <= 1 || 
-				uop->inst.bytes.sopp.op >= 10)
+			if (SIInstWrapGetBytes(uop->inst)->sopp.op <= 1 || 
+				SIInstWrapGetBytes(uop->inst)->sopp.op >= 10)
 			{
 				continue;
 			}
@@ -625,19 +623,19 @@ void SIComputeUnitIssueOldestInst(SIComputeUnit *self, int active_fb)
 			assert(uop);
 
 			/* Only evaluate scalar instructions */
-			if (uop->inst.info->fmt != SIInstFormatSOPP && 
-				uop->inst.info->fmt != SIInstFormatSOP1 && 
-				uop->inst.info->fmt != SIInstFormatSOP2 && 
-				uop->inst.info->fmt != SIInstFormatSOPC && 
-				uop->inst.info->fmt != SIInstFormatSOPK && 
-				uop->inst.info->fmt != SIInstFormatSMRD)
+			if (SIInstWrapGetFormat(uop->inst) != SIInstFormatSOPP && 
+				SIInstWrapGetFormat(uop->inst) != SIInstFormatSOP1 && 
+				SIInstWrapGetFormat(uop->inst) != SIInstFormatSOP2 && 
+				SIInstWrapGetFormat(uop->inst) != SIInstFormatSOPC && 
+				SIInstWrapGetFormat(uop->inst) != SIInstFormatSOPK && 
+				SIInstWrapGetFormat(uop->inst) != SIInstFormatSMRD)
 			{	
 				continue;
 			}
 
-			if (uop->inst.info->fmt == SIInstFormatSOPP && 
-			    uop->inst.bytes.sopp.op > 1 && 
-				uop->inst.bytes.sopp.op < 10)
+			if (SIInstWrapGetFormat(uop->inst) == SIInstFormatSOPP && 
+			    SIInstWrapGetBytes(uop->inst)->sopp.op > 1 && 
+				SIInstWrapGetBytes(uop->inst)->sopp.op < 10)
 			{
 				continue;
 			}
@@ -676,7 +674,7 @@ void SIComputeUnitIssueOldestInst(SIComputeUnit *self, int active_fb)
 				oldest_uop->wavefront->id, 
 				oldest_uop->id_in_wavefront);
 
-			if (oldest_uop->inst.info->fmt == SIInstFormatSMRD)
+			if (SIInstWrapGetFormat(oldest_uop->inst) == SIInstFormatSMRD)
 			{
 				self->scalar_mem_inst_count++;
 				oldest_uop->wavefront_pool_entry->lgkm_cnt++;
@@ -704,11 +702,11 @@ void SIComputeUnitIssueOldestInst(SIComputeUnit *self, int active_fb)
 			assert(uop);
 
 			/* Only evaluate SIMD instructions */
-			if (uop->inst.info->fmt != SIInstFormatVOP2 && 
-				uop->inst.info->fmt != SIInstFormatVOP1 && 
-				uop->inst.info->fmt != SIInstFormatVOPC && 
-				uop->inst.info->fmt != SIInstFormatVOP3a && 
-				uop->inst.info->fmt != SIInstFormatVOP3b)
+			if (SIInstWrapGetFormat(uop->inst) != SIInstFormatVOP2 && 
+				SIInstWrapGetFormat(uop->inst) != SIInstFormatVOP1 && 
+				SIInstWrapGetFormat(uop->inst) != SIInstFormatVOPC && 
+				SIInstWrapGetFormat(uop->inst) != SIInstFormatVOP3a && 
+				SIInstWrapGetFormat(uop->inst) != SIInstFormatVOP3b)
 			{	
 				continue;
 			}
@@ -764,7 +762,7 @@ void SIComputeUnitIssueOldestInst(SIComputeUnit *self, int active_fb)
 			assert(uop);
 
 			/* Only evaluate memory instructions */
-			if (uop->inst.info->fmt != SIInstFormatMTBUF)
+			if (SIInstWrapGetFormat(uop->inst) != SIInstFormatMTBUF)
 			{	
 				continue;
 			}
@@ -821,7 +819,7 @@ void SIComputeUnitIssueOldestInst(SIComputeUnit *self, int active_fb)
 			assert(uop);
 
 			/* Only evaluate LDS instructions */
-			if (uop->inst.info->fmt != SIInstFormatDS)
+			if (SIInstWrapGetFormat(uop->inst) != SIInstFormatDS)
 			{	
 				continue;
 			}
@@ -907,12 +905,12 @@ void SIComputeUnitIssueOldestWF(SIComputeUnit *self, int active_fb)
 			assert(uop);
 
 			/* Only evaluate branch instructions */
-			if (uop->inst.info->fmt != SIInstFormatSOPP) 
+			if (SIInstWrapGetFormat(uop->inst) != SIInstFormatSOPP) 
 			{
 				continue;
 			}
-			if (uop->inst.bytes.sopp.op <= 1 || 
-				uop->inst.bytes.sopp.op >= 10)
+			if (SIInstWrapGetBytes(uop->inst)->sopp.op <= 1 || 
+				SIInstWrapGetBytes(uop->inst)->sopp.op >= 10)
 			{
 				continue;
 			}
@@ -968,18 +966,18 @@ void SIComputeUnitIssueOldestWF(SIComputeUnit *self, int active_fb)
 			assert(uop);
 
 			/* Only evaluate scalar instructions */
-			if (uop->inst.info->fmt != SIInstFormatSOPP && 
-				uop->inst.info->fmt != SIInstFormatSOP1 && 
-				uop->inst.info->fmt != SIInstFormatSOP2 && 
-				uop->inst.info->fmt != SIInstFormatSOPC && 
-				uop->inst.info->fmt != SIInstFormatSOPK && 
-				uop->inst.info->fmt != SIInstFormatSMRD)
+			if (SIInstWrapGetFormat(uop->inst) != SIInstFormatSOPP && 
+				SIInstWrapGetFormat(uop->inst) != SIInstFormatSOP1 && 
+				SIInstWrapGetFormat(uop->inst) != SIInstFormatSOP2 && 
+				SIInstWrapGetFormat(uop->inst) != SIInstFormatSOPC && 
+				SIInstWrapGetFormat(uop->inst) != SIInstFormatSOPK && 
+				SIInstWrapGetFormat(uop->inst) != SIInstFormatSMRD)
 			{	
 				continue;
 			}
-			if (uop->inst.info->fmt == SIInstFormatSOPP && 
-			    uop->inst.bytes.sopp.op > 1 && 
-				uop->inst.bytes.sopp.op < 10)
+			if (SIInstWrapGetFormat(uop->inst) == SIInstFormatSOPP && 
+			    SIInstWrapGetBytes(uop->inst)->sopp.op > 1 && 
+				SIInstWrapGetBytes(uop->inst)->sopp.op < 10)
 			{
 				continue;
 			}
@@ -1018,7 +1016,7 @@ void SIComputeUnitIssueOldestWF(SIComputeUnit *self, int active_fb)
 				oldest_uop->wavefront->id, 
 				oldest_uop->id_in_wavefront);
 
-			if (oldest_uop->inst.info->fmt == SIInstFormatSMRD)
+			if (SIInstWrapGetFormat(oldest_uop->inst) == SIInstFormatSMRD)
 			{
 				self->scalar_mem_inst_count++;
 				oldest_uop->wavefront_pool_entry->lgkm_cnt++;
@@ -1046,11 +1044,11 @@ void SIComputeUnitIssueOldestWF(SIComputeUnit *self, int active_fb)
 			assert(uop);
 
 			/* Only evaluate SIMD instructions */
-			if (uop->inst.info->fmt != SIInstFormatVOP2 && 
-				uop->inst.info->fmt != SIInstFormatVOP1 && 
-				uop->inst.info->fmt != SIInstFormatVOPC && 
-				uop->inst.info->fmt != SIInstFormatVOP3a && 
-				uop->inst.info->fmt != SIInstFormatVOP3b)
+			if (SIInstWrapGetFormat(uop->inst) != SIInstFormatVOP2 && 
+				SIInstWrapGetFormat(uop->inst) != SIInstFormatVOP1 && 
+				SIInstWrapGetFormat(uop->inst) != SIInstFormatVOPC && 
+				SIInstWrapGetFormat(uop->inst) != SIInstFormatVOP3a && 
+				SIInstWrapGetFormat(uop->inst) != SIInstFormatVOP3b)
 			{	
 				continue;
 			}
@@ -1106,7 +1104,7 @@ void SIComputeUnitIssueOldestWF(SIComputeUnit *self, int active_fb)
 			assert(uop);
 
 			/* Only evaluate memory instructions */
-			if (uop->inst.info->fmt != SIInstFormatMTBUF)
+			if (SIInstWrapGetFormat(uop->inst) != SIInstFormatMTBUF)
 			{	
 				continue;
 			}
@@ -1163,7 +1161,7 @@ void SIComputeUnitIssueOldestWF(SIComputeUnit *self, int active_fb)
 			assert(uop);
 
 			/* Only evaluate LDS instructions */
-			if (uop->inst.info->fmt != SIInstFormatDS)
+			if (SIInstWrapGetFormat(uop->inst) != SIInstFormatDS)
 			{	
 				continue;
 			}
@@ -1302,15 +1300,15 @@ void SIComputeUnitIssueFirst(SIComputeUnit *self, int active_fb)
 		/* Determine instruction type.  This simply decodes the 
 		 * instruction type, so that it can be issued to the proper 
 		 * hardware unit.  It is not the full decode stage */
-		switch (uop->inst.info->fmt)
+		switch (SIInstWrapGetFormat(uop->inst))
 		{
 
 		/* Scalar ALU or Branch */
 		case SIInstFormatSOPP:
 		{
 			/* Branch Unit */
-			if (uop->inst.bytes.sopp.op > 1 &&
-				uop->inst.bytes.sopp.op < 10)
+			if (SIInstWrapGetBytes(uop->inst)->sopp.op > 1 &&
+				SIInstWrapGetBytes(uop->inst)->sopp.op < 10)
 			{
 				/* Stall if max branch instructions 
 				 * already issued */

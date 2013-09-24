@@ -704,7 +704,7 @@ text_stmt
 		/* Generate code */
 		Si2binInstGenerate(inst);
 		ELFWriterBufferWrite(si2bin_entry->text_section_buffer,
-				asSIInst(inst)->bytes.byte, asSIInst(inst)->size);
+				inst->bytes.byte, inst->size);
 		
 		/* Dump Instruction Info */
 		//si2bin_inst_dump(inst, stdout);
@@ -822,7 +822,7 @@ operand
 	| TOK_SPECIAL_REGISTER
 	{
 		SIInstSpecialReg reg;
-		reg = StringMapString(si_inst_special_reg_map, $1->text);
+		reg = SIInstWrapStringToSpecialReg($1->text);
 		$$ = new_ctor(Si2binArg, CreateSpecialRegister, reg); 
 		delete($1);
 	}
@@ -964,13 +964,13 @@ arg
 		id_num_format = $8;
 		
 		/* Data format */
-		data_format = StringMapStringErr(si_inst_buf_data_format_map,
+		data_format = SIInstWrapStringToBufDataFormat(
 				id_data_format->text, &err);
 		if (err)
 			si2bin_yyerror_fmt("%s: invalid data format", id_data_format->text);
 			
 		/* Number format */
-		num_format = StringMapStringErr(si_inst_buf_num_format_map,
+		num_format = SIInstWrapStringToBufNumFormat(
 				id_num_format->text, &err);
 		if (err)
 			si2bin_yyerror_fmt("%s: invalid number format", id_num_format->text); 

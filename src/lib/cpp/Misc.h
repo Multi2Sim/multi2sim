@@ -104,6 +104,17 @@ void panic(const char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
 
 
 
+/*
+ * Miscellaneous
+ */
+
+inline bool InRange(int value, int min, int max)
+{
+	return value >= min && value <= max;
+}
+
+
+
 } /* namespace Misc */
 
 #endif

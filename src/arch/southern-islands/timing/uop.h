@@ -61,7 +61,7 @@ struct si_uop_t
 	SIWorkGroup *work_group;     /* Work-group it belongs to */
 	SIComputeUnit *compute_unit; /* Compute unit it belongs to */
 	struct si_wavefront_pool_entry_t *wavefront_pool_entry;  /* IB entry where uop is located */
-	SIInst inst;
+	struct SIInstWrap *inst;
 
 	/* Flags */
 	unsigned int ready : 1;

@@ -182,8 +182,8 @@ void Si2binInstDump(Si2binInst *self, FILE *f)
 	/* Dump instruction opcode */
 	fprintf(f, "Instruction %s\n", self->info->name->text);
 	fprintf(f, "\tformat=%s, size=%d\n",
-			StringMapValue(si_inst_fmt_map, self->info->inst_info->fmt),
-			asSIInst(self)->size);
+			SIInstWrapFormatToString(self->info->inst_info->fmt),
+			self->size);
 
 	/* Dump arguments */
 	i = 0;
@@ -196,13 +196,13 @@ void Si2binInstDump(Si2binInst *self, FILE *f)
 	}
 
 	/* Empty instruction bits */
-	if (!asSIInst(self)->size)
+	if (!self->size)
 		return;
 
 	/* Print words */
-	for (i = 0; i < asSIInst(self)->size / 4; i++)
+	for (i = 0; i < self->size / 4; i++)
 	{
-		word = * (int *) &asSIInst(self)->bytes.byte[i * 4];
+		word = * (int *) &self->bytes.byte[i * 4];
 		printf("\tword %d:  hex = { %08x },  bin = {", i, word);
 		for (j = 0; j < 32; j++)
 			printf("%s%d", j % 4 ? "" : " ", (word >> (31 - j)) & 1);
@@ -259,7 +259,7 @@ void Si2binInstGenerate(Si2binInst *self)
 	int index;
 
 	/* Initialize */
-	inst_bytes = &asSIInst(self)->bytes;
+	inst_bytes = &self->bytes;
 	info = self->info;
 	assert(info);
 	inst_info = info->inst_info;
@@ -267,7 +267,7 @@ void Si2binInstGenerate(Si2binInst *self)
 	/* By default, the instruction has the number of bytes specified by its
 	 * format. 4-bit instructions could be extended later to 8 bits upon
 	 * the presence of a literal constant. */
-	asSIInst(self)->size = inst_info->size;
+	self->size = inst_info->size;
 
 	/* Instruction opcode */
 	switch (inst_info->fmt)
@@ -464,9 +464,9 @@ void Si2binInstGenerate(Si2binInst *self)
 			{
 				/* Literal constant other than [-16...64] is encoded by adding
 				 * four more bits to the instruction. */
-				if (asSIInst(self)->size == 8)
+				if (self->size == 8)
 					si2bin_yyerror("only one literal allowed");
-				asSIInst(self)->size = 8;
+				self->size = 8;
 				inst_bytes->sop2.ssrc0 = 0xff;
 				inst_bytes->sop2.lit_cnst = arg->value.literal.val;
 			}
@@ -495,9 +495,9 @@ void Si2binInstGenerate(Si2binInst *self)
 			{
 				/* Literal constant other than [-16...64] is encoded by adding
 				 * four more bits to the instruction. */
-				if (asSIInst(self)->size == 8)
+				if (self->size == 8)
 					si2bin_yyerror("only one literal allowed");
-				asSIInst(self)->size = 8;
+				self->size = 8;
 				inst_bytes->sop2.ssrc1 = 0xff;
 				inst_bytes->sop2.lit_cnst = arg->value.literal.val;
 			}
@@ -784,9 +784,9 @@ void Si2binInstGenerate(Si2binInst *self)
 			{
 				/* Literal constant other than [-16...64] is encoded by adding
 				 * four more bits to the instruction. */
-				if (asSIInst(self)->size == 8)
+				if (self->size == 8)
 					si2bin_yyerror("only one literal allowed");
-				asSIInst(self)->size = 8;
+				self->size = 8;
 				inst_bytes->vopc.src0 = 0xff;
 				inst_bytes->vopc.lit_cnst = arg->value.literal.val;
 			}
@@ -804,9 +804,9 @@ void Si2binInstGenerate(Si2binInst *self)
 			{
 				/* Literal constant other than [-16...64] is encoded by adding
 				 * four more bits to the instruction. */
-				if (asSIInst(self)->size == 8)
+				if (self->size == 8)
 					si2bin_yyerror("only one literal allowed");
-				asSIInst(self)->size = 8;
+				self->size = 8;
 				inst_bytes->sop2.ssrc0 = 0xff;
 				inst_bytes->sop2.lit_cnst = arg->value.literal.val;
 			}
@@ -828,9 +828,9 @@ void Si2binInstGenerate(Si2binInst *self)
 			{
 				/* Literal constant other than [-16...64] is encoded by adding
 				 * four more bits to the instruction. */
-				if (asSIInst(self)->size == 8)
+				if (self->size == 8)
 					si2bin_yyerror("only one literal allowed");
-				asSIInst(self)->size = 8;
+				self->size = 8;
 				inst_bytes->sop2.ssrc1 = 0xff;
 				inst_bytes->sop2.lit_cnst = arg->value.literal.val;
 			}
