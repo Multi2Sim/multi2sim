@@ -203,10 +203,10 @@ text_stmt
 		
 		/* write instruction binary to the buffer */
 		/* This will be deleted later */
-		elf_enc_buffer_write(text_section_buffer, inst->inst_bytes.bytes, inst->size);
+		elf_enc_buffer_write(text_section_buffer, inst->bytes.bytes, inst->size);
 		
 		/* write instruction binary to text section buffer */
-		elf_enc_buffer_write(frm2bin_entry->text_section_buffer, inst->inst_bytes.bytes, inst->size);
+		elf_enc_buffer_write(frm2bin_entry->text_section_buffer, inst->bytes.bytes, inst->size);
 		
 		/* dump the instruction binary to the console */
 		/*
