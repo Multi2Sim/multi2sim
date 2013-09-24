@@ -41,7 +41,7 @@
 /* Buffer descriptor will be loaded into 4 successive SGPRs */
 static void opengl_si_create_buffer_desc(unsigned int base_addr,
 	unsigned int size, int num_elems, 
-	enum si_input_data_type_t data_type,
+	SIInputDataType data_type,
 	struct si_buffer_desc_t *buffer_desc)
 {
 	int num_format;
@@ -58,8 +58,8 @@ static void opengl_si_create_buffer_desc(unsigned int base_addr,
 	switch (data_type)
 	{
 
-	case si_input_byte:
-	case si_input_ubyte:
+	case SIInputByte:
+	case SIInputUbyte:
 
 		num_format = SI_BUF_DESC_NUM_FMT_SINT;
 		switch (num_elems)
@@ -83,8 +83,8 @@ static void opengl_si_create_buffer_desc(unsigned int base_addr,
 		elem_size = 1 * num_elems;
 		break;
 
-	case si_input_short:
-	case si_input_ushort:
+	case SIInputShort:
+	case SIInputUshort:
 
 		num_format = SI_BUF_DESC_NUM_FMT_SINT;
 		switch (num_elems)
@@ -109,8 +109,8 @@ static void opengl_si_create_buffer_desc(unsigned int base_addr,
 		elem_size = 2 * num_elems;
 		break;
 
-	case si_input_int:
-	case si_input_uint:
+	case SIInputInt:
+	case SIInputUint:
 
 		num_format = SI_BUF_DESC_NUM_FMT_SINT;
 		switch (num_elems)
@@ -139,8 +139,8 @@ static void opengl_si_create_buffer_desc(unsigned int base_addr,
 		elem_size = 4 * num_elems;
 		break;
 
-	case si_input_hfloat:
-	case si_input_float:
+	case SIInputHfloat:
+	case SIInputFloat:
 
 		num_format = SI_BUF_DESC_NUM_FMT_FLOAT;
 		switch (num_elems)
@@ -168,8 +168,8 @@ static void opengl_si_create_buffer_desc(unsigned int base_addr,
 		elem_size = 4 * num_elems;
 		break;
 
-	case si_input_int_2_10_10_10_rev:
-	case si_input_uint_2_10_10_10_rev:
+	case SIInputInt2101010Rev:
+	case SIInputUint2101010Rev:
 
 		num_format = SI_BUF_DESC_NUM_FMT_FLOAT;
 		switch (num_elems)
@@ -208,7 +208,7 @@ static void opengl_si_shader_set_inputs(struct opengl_si_shader_t *shdr)
 {
 	int i;
 	int input_count;
-	struct si_input_t *input;
+	SIInput *input;
 	struct opengl_si_enc_dict_vertex_shader_t *enc_vs;
 	struct opengl_si_enc_dict_pixel_shader_t *enc_ps;
 
@@ -220,8 +220,8 @@ static void opengl_si_shader_set_inputs(struct opengl_si_shader_t *shdr)
 		input_count = enc_vs->meta->numVsInSemantics;
 		for (i = 0; i < input_count; ++i)
 		{
-			input = si_input_create();
-			si_input_set_usage_index(input, i);
+			input = new(SIInput);
+			SIInputSetUsageIndex(input, i);
 			list_insert(shdr->input_list, i, input);
 		}
 		break;
@@ -231,8 +231,8 @@ static void opengl_si_shader_set_inputs(struct opengl_si_shader_t *shdr)
 		input_count = enc_ps->meta->numPsInSemantics;
 		for (i = 0; i < input_count; ++i)
 		{
-			input = si_input_create();
-			si_input_set_usage_index(input, i);
+			input = new(SIInput);
+			SIInputSetUsageIndex(input, i);
 			list_insert(shdr->input_list, i, input);
 		}
 		break;	
@@ -330,14 +330,14 @@ struct opengl_si_shader_t *opengl_si_shader_create(
 
 void opengl_si_shader_free(struct opengl_si_shader_t *shdr)
 {
-	struct si_input_t *input;
+	SIInput *input;
 	int index;
 
 	/* Free inputs */
 	LIST_FOR_EACH(shdr->input_list, index)
 	{
 		input = list_get(shdr->input_list, index);
-		si_input_free(input);
+		delete(input);
 	}
 	/* Free list */
 	list_free(shdr->input_list);
@@ -393,12 +393,12 @@ void opengl_si_shader_setup_ndrange_constant_buffers(
 	float f;
 
 	opengl_si_create_buffer_desc(ndrange->cb0, SI_EMU_CONST_BUF_0_SIZE, 1,
-		si_input_int, &buffer_desc);
+		SIInputInt, &buffer_desc);
 
 	SINDRangeInsertBufferIntoConstantBufferTable(ndrange, &buffer_desc, 0);
 
 	opengl_si_create_buffer_desc(ndrange->cb1, SI_EMU_CONST_BUF_1_SIZE, 1,
-		si_input_int, &buffer_desc);
+		SIInputInt, &buffer_desc);
 
 	SINDRangeInsertBufferIntoConstantBufferTable(ndrange, &buffer_desc, 1);
 
@@ -517,7 +517,7 @@ void opengl_si_shader_setup_ndrange_constant_buffers(
 void opengl_si_shader_setup_ndrange_inputs(struct opengl_si_shader_t *shdr,
 		SINDRange *ndrange)
 {
-	struct si_input_t *input;
+	SIInput *input;
 	struct si_buffer_desc_t buffer_desc;
 
 	int index;

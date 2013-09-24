@@ -28,94 +28,86 @@
  * Public Functions
  */
 
-struct si_input_t *si_input_create()
+void SIInputCreate(SIInput *self)
 {
-	struct si_input_t *input;
-
-	/* Allocate */
-	input = xcalloc(1, sizeof(struct si_input_t));
-
-	/* NOTE:  the data type input expected is configured by runtime call glVertexAttribPointer */
-
-	/* Return */	
-	return input;
+	/* Initialize */
 }
 
-void si_input_free(struct si_input_t *input)
+void SIInputDestroy(SIInput *input)
 {
-	free(input);
 }
 
-void si_input_set_usage_index(struct si_input_t *input, unsigned int usage_index)
+void SIInputSetUsageIndex(SIInput *input, unsigned int usage_index)
 {
 	if (input)
 		input->usage_index = usage_index;
 }
 
-unsigned int si_input_get_type(unsigned int gl_data_type)
+unsigned int SIInputGetType(unsigned int gl_data_type)
 {
 	switch(gl_data_type)
 	{
 
 	case GL_BYTE:
-		return si_input_byte;
+		return SIInputByte;
 	case GL_UNSIGNED_BYTE:
-		return si_input_ubyte;
+		return SIInputUbyte;
 	case GL_SHORT:
-		return si_input_short;
+		return SIInputShort;
 	case GL_UNSIGNED_SHORT:
-		return si_input_ushort;
+		return SIInputUshort;
 	case GL_INT:
-		return si_input_int;
+		return SIInputInt;
 	case GL_UNSIGNED_INT:
-		return si_input_uint;
+		return SIInputUint;
 	case GL_HALF_FLOAT:
-		return si_input_hfloat;
+		return SIInputHfloat;
 	case GL_FLOAT:
-		return si_input_float;
+		return SIInputFloat;
 	case GL_DOUBLE:
-		return si_input_double;
+		return SIInputDouble;
 	case GL_FIXED:
-		return si_input_fixed;
+		return SIInputFixed;
 	case GL_INT_2_10_10_10_REV:
-		return si_input_int_2_10_10_10_rev;
+		return SIInputInt2101010Rev;
 	case GL_UNSIGNED_INT_2_10_10_10_REV:
-		return si_input_uint_2_10_10_10_rev;
+		return SIInputUint2101010Rev;
 	default:
-		fatal("Unrecognized GLenum type=%x",gl_data_type);
+		fatal("Unrecognized GLenum type=%x", gl_data_type);
 		break;
 	}
 
 	/* Return */
 	return 0;
+
 }
 
 /* Infer inputs size from its data type */
-int si_input_get_data_size(enum si_input_data_type_t data_type)
+int SIInputGetDataSize(SIInputDataType data_type)
 {
 	switch (data_type)
 	{
-	case si_input_byte:
-	case si_input_ubyte:
+	case SIInputByte:
+	case SIInputUbyte:
 
 		return 1;
 
-	case si_input_short:
-	case si_input_ushort:
+	case SIInputShort:
+	case SIInputUshort:
 
 		return 2;
 
-	case si_input_int:
-	case si_input_uint:
-	case si_input_hfloat:
-	case si_input_float:
-	case si_input_fixed:
-	case si_input_int_2_10_10_10_rev:
-	case si_input_uint_2_10_10_10_rev:
+	case SIInputInt:
+	case SIInputUint:
+	case SIInputHfloat:
+	case SIInputFloat:
+	case SIInputFixed:
+	case SIInputInt2101010Rev:
+	case SIInputUint2101010Rev:
 
 		return 4;
 
-	case si_input_double:
+	case SIInputDouble:
 
 		return 8;
 
@@ -124,6 +116,5 @@ int si_input_get_data_size(enum si_input_data_type_t data_type)
 		panic("%s: invalid data type (%d)",
 				__FUNCTION__, data_type);
 		return 0;
-	}
+	}	
 }
-

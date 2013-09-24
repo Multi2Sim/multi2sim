@@ -74,6 +74,7 @@ CLASS(Timing)
 CLASS(SIAsm)
 CLASS(SIArg)
 CLASS(SIInst)
+CLASS(SIInput)
 
 CLASS(SIEmu)
 CLASS(SINDRange)
