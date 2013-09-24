@@ -20,7 +20,7 @@
 #ifndef ARCH_SOUTHERN_ISLANDS_EMU_WORK_ITEM_H
 #define ARCH_SOUTHERN_ISLANDS_EMU_WORK_ITEM_H
 
-#include <arch/southern-islands/asm/inst.h>
+#include <arch/southern-islands/asm/Inst.h>
 #include <lib/class/class.h>
 
 

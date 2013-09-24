@@ -17,384 +17,366 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#if 0
+#include <ext/stdio_filebuf.h>
+#include <cassert>
+#include <iomanip>
+#include <sstream>
 
-#include <ctype.h>
-#include <string.h>
+#include <arch/common/Asm.h>
+#include <lib/cpp/Misc.h>
 
-#include <lib/mhandle/mhandle.h>
-#include <lib/util/debug.h>
-#include <lib/util/misc.h>
-#include <lib/util/string.h>
-
-#include "asm.h"
-#include "inst.h"
+#include "Asm.h"
+#include "Inst.h"
 
 
+using namespace Misc;
+using namespace SI;
+using namespace std;
 
-/* 
- * Functions to print assembly output to file
- */
 
-static int is_token(char *fmt_str, char *token_str, int *token_len)
+StringMap inst_format_map =
 {
-	*token_len = strlen(token_str);
-	return !strncmp(fmt_str, token_str, *token_len) &&
-		!isalnum(fmt_str[*token_len]);
-}
+	{ "<invalid>", InstFormatInvalid },
+	{ "sop2", InstFormatSOP2 },
+	{ "sopk", InstFormatSOPK },
+	{ "sop1", InstFormatSOP1 },
+	{ "sopc", InstFormatSOPC },
+	{ "sopp", InstFormatSOPP },
+	{ "smrd", InstFormatSMRD },
+	{ "vop2", InstFormatVOP2 },
+	{ "vop1", InstFormatVOP1 },
+	{ "vopc", InstFormatVOPC },
+	{ "vop3a", InstFormatVOP3a },
+	{ "vop3b", InstFormatVOP3b },
+	{ "vintrp", InstFormatVINTRP },
+	{ "ds", InstFormatDS },
+	{ "mubuf", InstFormatMUBUF },
+	{ "mtbuf", InstFormatMTBUF },
+	{ "mimg", InstFormatMIMG },
+	{ "exp", InstFormatEXP },
+	{ 0, 0 }
+};
 
-
-void operand_dump(char *str, int operand)
+/* String maps for assembly dump. */
+StringMap inst_sdst_map =
 {
-	/* Assume operand in range. */
+	{"reserved", 0},
+	{"reserved", 1},
+	{"vcc_lo", 2},
+	{"vcc_hi", 3},
+	{"tba_lo", 4},
+	{"tba_hi", 5},
+	{"tma_lo", 6},
+	{"tma_hi", 7},
+	{"ttmp0", 8},
+	{"ttmp1", 9},
+	{"ttmp2", 10},
+	{"ttmp3", 11},
+	{"ttmp4", 12},
+	{"ttmp5", 13},
+	{"ttmp6", 14},
+	{"ttmp7", 15},
+	{"ttmp8", 16},
+	{"ttmp9", 17},
+	{"ttmp10", 18},
+	{"ttmp11", 19},
+	{"m0", 20},
+	{"reserved", 21},
+	{"exec_lo", 22},
+	{"exec_hi", 23},
+	{ 0, 0 }
+};
+
+StringMap inst_ssrc_map =
+{
+	{"0.5", 0},
+	{"-0.5", 1},
+	{"1.0", 2},
+	{"-1.0", 3},
+	{"2.0", 4},
+	{"-2.0", 5},
+	{"4.0", 6},
+	{"-4.0", 7},
+	{"reserved", 8},
+	{"reserved", 9},
+	{"reserved", 10},
+	{"vccz", 11},
+	{"execz", 12},
+	{"scc", 13},
+	{"reserved", 14},
+	{"literal constant", 15},
+	{0, 0}
+};
+
+StringMap inst_buf_data_format_map =
+{
+	{"invalid", InstBufDataFormatInvalid },
+	{"BUF_DATA_FORMAT_8", InstBufDataFormat8 },
+	{"BUF_DATA_FORMAT_16", InstBufDataFormat16 },
+	{"BUF_DATA_FORMAT_8_8", InstBufDataFormat8_8 },
+	{"BUF_DATA_FORMAT_32", InstBufDataFormat32 },
+	{"BUF_DATA_FORMAT_16_16", InstBufDataFormat16_16 },
+	{"BUF_DATA_FORMAT_10_11_11", InstBufDataFormat10_11_11 },
+	{"BUF_DATA_FORMAT_11_10_10", InstBufDataFormat11_10_10 },
+	{"BUF_DATA_FORMAT_10_10_10_2", InstBufDataFormat10_10_10_2 },
+	{"BUF_DATA_FORMAT_2_10_10_10", InstBufDataFormat2_10_10_10 },
+	{"BUF_DATA_FORMAT_8_8_8_8", InstBufDataFormat8_8_8_8 },
+	{"BUF_DATA_FORMAT_32_32", InstBufDataFormat32_32 },
+	{"BUF_DATA_FORMAT_16_16_16_16", InstBufDataFormat16_16_16_16 },
+	{"BUF_DATA_FORMAT_32_32_32", InstBufDataFormat32_32_32 },
+	{"BUF_DATA_FORMAT_32_32_32_32", InstBufDataFormat32_32_32_32 },
+	{"reserved", InstBufDataFormatReserved },
+	{ 0, 0 }
+};
+
+StringMap inst_buf_num_format_map =
+{
+	{"BUF_NUM_FORMAT_UNORM", InstBufNumFormatUnorm },
+	{"BUF_NUM_FORMAT_SNORM", InstBufNumFormatSnorm },
+	{"BUF_NUM_FORMAT_UNSCALED", InstBufNumFormatUnscaled },
+	{"BUF_NUM_FORMAT_SSCALED", InstBufNumFormatSscaled },
+	{"BUF_NUM_FORMAT_UINT", InstBufNumFormatUint },
+	{"BUF_NUM_FORMAT_SINT", InstBufNumFormatSint },
+	{"BUF_NUM_FORMAT_SNORM_NZ", InstBufNumFormatSnormNz },
+	{"BUF_NUM_FORMAT_FLOAT", InstBufNumFormatFloat },
+	{"reserved", InstBufNumFormatReserved },
+	{"BUF_NUM_FORMAT_SRGB", InstBufNumFormatSrgb },
+	{"BUF_NUM_FORMAT_UBNORM", InstBufNumFormatUbnorm },
+	{"BUF_NUM_FORMAT_UBNORM_NZ", InstBufNumFormatUbnormNz },
+	{"BUF_NUM_FORMAT_UBINT", InstBufNumFormatUbint },
+	{"BUF_NUM_FORMAT_UBSCALED", InstBufNumFormatUbscaled },
+	{ 0, 0 }
+};
+
+StringMap inst_OP16_map =
+{
+	{"f", 0},
+	{"lt", 1},
+	{"eq", 2},
+	{"le", 3},
+	{"gt", 4},
+	{"lg", 5},
+	{"ge", 6},
+	{"o", 7},
+	{"u", 8},
+	{"nge", 9},
+	{"nlg", 10},
+	{"ngt", 11},
+	{"nle", 12},
+	{"neq", 13},
+	{"nlt", 14},
+	{"tru", 15},
+	{ 0, 0 }
+};
+
+StringMap inst_OP8_map =
+{
+	{"f", 0},
+	{"lt", 1},
+	{"eq", 2},
+	{"le", 3},
+	{"gt", 4},
+	{"lg", 5},
+	{"ge", 6},
+	{"tru", 7},
+	{ 0, 0 }
+};
+
+StringMap inst_special_reg_map =
+{
+	{ "vcc", InstSpecialRegVcc },
+	{ "scc", InstSpecialRegScc },
+	{ "exec", InstSpecialRegExec },
+	{ "tma", InstSpecialRegTma },
+	{ 0, 0 }
+};
+
+
+void Inst::DumpOperand(ostream& os, int operand)
+{
 	assert(operand >= 0 && operand <= 511);
-
-	int str_size = MAX_STRING_SIZE;
-	char *pstr = str;
-
 	if (operand <= 103)
 	{
 		/* SGPR */
-		str_printf(&pstr, &str_size, "s%d", operand);
+		os << "s" << operand;
 	}
 	else if (operand <= 127)
 	{
 		/* sdst special registers */
-		str_printf(&pstr, &str_size, "%s", 
-			str_map_value(&si_inst_sdst_map, operand - 104));
+		os << StringMapValue(inst_sdst_map, operand - 104);
 	}
 	else if (operand <= 192)
 	{
 		/* Positive integer constant */
-		str_printf(&pstr, &str_size, "%d", operand - 128);
+		os << operand - 128;
 	}
 	else if (operand <= 208)
 	{
 		/* Negative integer constant */
-		str_printf(&pstr, &str_size, "-%d", operand - 192);
+		os << '-' << operand - 192;
 	}
 	else if (operand <= 239)
 	{
-		fatal("Operand code unused.");
+		fatal("%s: operand code unused (%d)",
+				__FUNCTION__, operand);
 	}
 	else if (operand <= 255)
 	{
-		str_printf(&pstr, &str_size, "%s", 
-			str_map_value(&si_inst_ssrc_map, operand - 240));
+		os << StringMapValue(inst_ssrc_map, operand - 240);
 	}
 	else if (operand <= 511)
 	{
 		/* VGPR */
-		str_printf(&pstr, &str_size, "v%d", operand - 256);
+		os << "v" << operand - 256;
 	}
 }
 
-void operand_dump_series(char *str, int operand, int operand_end)
+
+void Inst::DumpOperandSeries(ostream& os, int start, int end)
 {
-	assert(operand <= operand_end);
-	if (operand == operand_end)
+	assert(start <= end);
+	if (start == end)
 	{
-		operand_dump(str, operand);
+		DumpOperand(os, start);
 		return;
 	}
 
-	int str_size = MAX_STRING_SIZE;
-	char *pstr = str;
-
-	if (operand <= 103)
+	if (start <= 103)
 	{
-		str_printf(&pstr, &str_size, "s[%d:%d]", operand, operand_end);
+		os << "s[" << start << ':' << end << ']';
 	}
-	else if (operand <= 245)
+	else if (start <= 245)
 	{
-		if (operand >= 112 && operand <= 123)
+		if (start >= 112 && start <= 123)
 		{
-			assert(operand_end <= 123);
-			str_printf(&pstr, &str_size, "ttmp[%d:%d]", 
-				operand - 112, operand_end - 112);
+			assert(end <= 123);
+			os << "ttmp[" << start - 112 << ':' << end - 112 << ']';
 		}
 		else
 		{
-			assert(operand_end == operand + 1);
-			switch (operand)
+			assert(end == start + 1);
+			switch (start)
 			{
-				case 106:
-					str_printf(&pstr, &str_size, "vcc");
-					break;
-				case 108:
-					str_printf(&pstr, &str_size, "tba");
-					break;
-				case 110:
-					str_printf(&pstr, &str_size, "tma");
-					break;
-				case 126:
-					str_printf(&pstr, &str_size, "exec");
-					break;
-				case 128:
-					str_printf(&pstr, &str_size, "0");
-					break;
-				case 131:
-					str_printf(&pstr, &str_size, "3");
-					break;
-				case 208: 
-					str_printf(&pstr, &str_size, "-16");
-					break;
-				case 240:
-					str_printf(&pstr, &str_size, "0.5");
-					break;
-				case 242:
-					str_printf(&pstr, &str_size, "1.0");
-					break;
-				case 243:
-					str_printf(&pstr, &str_size, "-1.0");
-					break;
-				case 244:
-					str_printf(&pstr, &str_size, "2.0");
-					break;
-				case 245:
-					str_printf(&pstr, &str_size, "-2.0");
-					break;
-				default:
-					fatal("Unimplemented operand series: "
-						"[%d:%d]", operand, 
-						operand_end);
+			case 106:
+				os << "vcc";
+				break;
+			case 108:
+				os << "tba";
+				break;
+			case 110:
+				os << "tma";
+				break;
+			case 126:
+				os << "exec";
+				break;
+			case 128:
+				os << "0";
+				break;
+			case 131:
+				os << "3";
+				break;
+			case 208: 
+				os << "-16";
+				break;
+			case 240:
+				os << "0.5";
+				break;
+			case 242:
+				os << "1.0";
+				break;
+			case 243:
+				os << "-1.0";
+				break;
+			case 244:
+				os << "2.0";
+				break;
+			case 245:
+				os << "-2.0";
+				break;
+			default:
+				fatal("Unimplemented series: "
+					"[%d:%d]", start, end);
 			}
 		}
 	}
-	else if (operand <= 255)
+	else if (start <= 255)
 	{
-		fatal("Illegal operand series: [%d:%d]", operand, operand_end);
+		fatal("%s: illegal operand series: [%d:%d]",
+				__FUNCTION__, start, end);
 	}
-	else if (operand <= 511)
+	else if (start <= 511)
 	{
-		str_printf(&pstr, &str_size, "v[%d:%d]", operand - 256, 
-			operand_end - 256);
+		cout << "v[" << start - 256 << ':' << end - 256 << ']';
 	}
 }
 
-void operand_dump_scalar(char *str, int operand)
+
+void Inst::DumpScalar(ostream& os, int operand)
 {
-	operand_dump(str, operand);
+	DumpOperand(os, operand);
 }
 
-void operand_dump_series_scalar(char *str, int operand, int operand_end)
+
+void Inst::DumpScalarSeries(ostream& os, int start, int end)
 {
-	operand_dump_series(str, operand, operand_end);
+	DumpOperandSeries(os, start, end);
 }
 
-void operand_dump_vector(char *str, int operand)
+
+void Inst::DumpVector(ostream& os, int operand)
 {
-	operand_dump(str, operand + 256);
+	DumpOperand(os, operand + 256);
 }
 
-void operand_dump_series_vector(char *str, int operand, int operand_end)
+
+void Inst::DumpVectorSeries(ostream& os, int start, int end)
 {
-	operand_dump_series(str, operand + 256, operand_end + 256);
+	DumpOperandSeries(os, start + 256, end + 256);
 }
 
-void operand_dump_exp(char *str, int operand)
+
+void Inst::DumpOperandExp(ostream& os, int operand)
 {
-	/* Assume operand in range. */
 	assert(operand >= 0 && operand <= 63);
-
-	int str_size = MAX_STRING_SIZE;
-	char *pstr = str;
-
 	if (operand <= 7)
 	{
 		/* EXP_MRT */
-		str_printf(&pstr, &str_size, "exp_mrt_%d", operand);
+		os << "exp_mrt_" << operand;
 	}
 	else if (operand == 8)
 	{
 		/* EXP_Z */
-		str_printf(&pstr, &str_size, "exp_mrtz");
+		os << "exp_mrtz";
 	}
 	else if (operand == 9)
 	{
 		/* EXP_NULL */
-		str_printf(&pstr, &str_size, "exp_null");
+		os << "exp_null";
 	}
 	else if (operand < 12)
 	{
-		fatal("Operand code [%d] unused.", operand);
+		fatal("%s: operand code [%d] unused.",
+				__FUNCTION__, operand);
 	}
 	else if (operand <= 15)
 	{
 		/* EXP_POS */
-		str_printf(&pstr, &str_size, "exp_pos_%d", operand - 12);
+		os << "exp_pos_" << operand - 12;
 	}
 	else if (operand < 32)
 	{
-		fatal("Operand code [%d] unused.", operand);
+		fatal("%s: operand code [%d] unused.",
+				__FUNCTION__, operand);
 	}
 	else if (operand <= 63)
 	{
 		/* EXP_PARAM */
-		str_printf(&pstr, &str_size, "exp_prm_%d", operand - 32);
-	}
-}
-
-void line_dump(char *inst_str, unsigned int rel_addr, void *buf, char *line, int line_size, int inst_size)
-{
-	int dat_str_size = MAX_STRING_SIZE;
-	char inst_dat_str[MAX_STRING_SIZE];
-	char *dat_str = &inst_dat_str[0];
-
-	if (inst_size == 4)
-	{
-		str_printf(&dat_str, &dat_str_size, "// %08X: %08X", rel_addr,
-			((unsigned int*)buf)[0]);
-	}
-	else
-	{
-		str_printf(&dat_str, &dat_str_size, "// %08X: %08X %08X", 
-			rel_addr, ((unsigned int*)buf)[0], 
-			((unsigned int*)buf)[1]);
-	}
-
-	if (strlen(inst_str) < 59)
-	{
-		str_printf(&line, &line_size, "%-59s%s\n", inst_str, 
-			inst_dat_str);
-	}
-	else
-	{
-		str_printf(&line, &line_size, "%s %s\n", inst_str, 
-			inst_dat_str);
+		os << "exp_prm_" << operand - 32;
 	}
 }
 
 
-
-void SIInstCreate(SIInst *self, SIAsm *as)
-{
-	/* Initialize */
-	self->as = as;
-}
-
-
-void SIInstDestroy(SIInst *self)
-{
-}
-
-
-void SIInstDump_SSRC(SIInst *inst, unsigned int ssrc, 
-	char *operand_str, char **inst_str, int str_size)
-{
-	if (ssrc == 0xFF)
-	{
-		str_printf(inst_str, &str_size, "0x%08x", 
-			inst->bytes.sop2.lit_cnst);
-	}
-	else
-	{
-		operand_dump_scalar(operand_str, ssrc);
-		str_printf(inst_str, &str_size, "%s", operand_str);
-	}
-}
-
-void SIInstDump_64_SSRC(SIInst *inst, unsigned int ssrc, 
-	char *operand_str, char **inst_str, int str_size)
-{		
-	if (ssrc == 0xFF)
-	{
-		str_printf(inst_str, &str_size, "0x%08x", 
-			inst->bytes.sop2.lit_cnst);
-	}
-	else
-	{
-		operand_dump_series_scalar(operand_str, ssrc, ssrc + 1);
-		str_printf(inst_str, &str_size, "%s", operand_str);
-	}
-}
-
-void SIInstDump_VOP3_SRC(SIInst *inst, unsigned int src, int neg, 
-	char *operand_str, char **inst_str, int str_size)
-{
-	operand_dump(operand_str, src);
-
-	if (!(IN_RANGE(inst->bytes.vop3a.op, 293, 298)) && 
-		!(IN_RANGE(inst->bytes.vop3a.op, 365, 366)))
-	{
-		if ((inst->bytes.vop3a.neg & neg) && 
-			(inst->bytes.vop3a.abs & neg))
-		{
-			str_printf(inst_str, &str_size, "-abs(%s)", 
-				operand_str);
-		}
-		else if ((inst->bytes.vop3a.neg & neg) && 
-			!(inst->bytes.vop3a.abs & neg))
-		{
-			str_printf(inst_str, &str_size, "-%s", operand_str);
-		}
-		else if (!(inst->bytes.vop3a.neg & neg) && 
-			(inst->bytes.vop3a.abs & neg))
-		{
-			str_printf(inst_str, &str_size, "abs(%s)", operand_str);
-		}
-		else if (!(inst->bytes.vop3a.neg & neg) && 
-			!(inst->bytes.vop3a.abs & neg))
-		{
-			str_printf(inst_str, &str_size, "%s", operand_str);
-		}
-	}
-	else
-	{
-		if (inst->bytes.vop3a.neg & neg)
-		{
-			str_printf(inst_str, &str_size, "-%s", operand_str);
-		}
-		else if (!(inst->bytes.vop3a.neg & neg))
-		{
-			str_printf(inst_str, &str_size, "%s", operand_str);
-		}
-	}
-}
-
-void SIInstDump_VOP3_64_SRC(SIInst *inst, unsigned int src, int neg, char *operand_str, char **inst_str, int str_size)
-{
-	operand_dump_series(operand_str, src, src + 1);
-	
-	if (!(IN_RANGE(inst->bytes.vop3a.op, 293, 298)) && 
-		!(IN_RANGE(inst->bytes.vop3a.op, 365, 366)))
-	{
-		if ((inst->bytes.vop3a.neg & neg) && 
-			(inst->bytes.vop3a.abs & neg))
-		{
-			str_printf(inst_str, &str_size, "-abs(%s)", 
-				operand_str);
-		}
-		else if ((inst->bytes.vop3a.neg & neg) && 
-			!(inst->bytes.vop3a.abs & neg))
-		{
-			str_printf(inst_str, &str_size, "-%s", operand_str);
-		}
-		else if (!(inst->bytes.vop3a.neg & neg) && 
-			(inst->bytes.vop3a.abs & neg))
-		{
-			str_printf(inst_str, &str_size, "abs(%s)", operand_str);
-		}
-		else if (!(inst->bytes.vop3a.neg & neg) && 
-			!(inst->bytes.vop3a.abs & neg))
-		{
-			str_printf(inst_str, &str_size, "%s", operand_str);
-		}
-	}
-	else
-	{
-		if (inst->bytes.vop3a.neg & neg)
-		{
-			str_printf(inst_str, &str_size, "-%s", operand_str);
-		}
-		else if (!(inst->bytes.vop3a.neg & neg))
-		{
-			str_printf(inst_str, &str_size, "%s", operand_str);
-		}
-	}
-}
-void SIInstDump_SERIES_VDATA(unsigned int vdata, int op, char *operand_str, 
-	char **inst_str, int str_size)
+void Inst::DumpSeriesVdata(ostream& os, unsigned int vdata, int op)
 {
 	int vdata_end;
 
@@ -425,365 +407,410 @@ void SIInstDump_SERIES_VDATA(unsigned int vdata, int op, char *operand_str,
 			fatal("MUBUF/MTBUF opcode not recognized");
 	}
 
-	operand_dump_series_vector(operand_str, vdata, vdata_end);
-	str_printf(inst_str, &str_size, "%s", operand_str);
+	DumpVectorSeries(os, vdata, vdata_end);
 }
 
-void SIInstDump_MADDR(SIInst *inst, char *operand_str, 
-	char **inst_str, int str_size)
+
+void Inst::DumpSsrc(ostream& os, unsigned int ssrc) 
+{
+	if (ssrc == 0xff)
+		os << "0x" << setw(8) << setfill('0') << hex
+				<< bytes.sop2.lit_cnst
+				<< setfill(' ') << dec;
+	else
+		DumpScalar(os, ssrc);
+}
+
+
+void Inst::Dump64Ssrc(ostream& os, unsigned int ssrc)
+{		
+	if (ssrc == 0xff)
+		os << "0x" << setw(8) << setfill('0') << hex
+				<< bytes.sop2.lit_cnst
+				<< setfill(' ') << dec;
+	else
+		DumpScalarSeries(os, ssrc, ssrc + 1);
+}
+
+
+void Inst::DumpVop3Src(std::ostream& os, unsigned int src, int neg)
+{
+	stringstream ss;
+
+	DumpOperand(ss, src);
+	if (!(InRange(bytes.vop3a.op, 293, 298)) && 
+		!(InRange(bytes.vop3a.op, 365, 366)))
+	{
+		if ((bytes.vop3a.neg & neg) && 
+				(bytes.vop3a.abs & neg))
+			os << "-abs(" << ss.str() << ")";
+		else if ((bytes.vop3a.neg & neg) && 
+				!(bytes.vop3a.abs & neg))
+			os << '-' << ss.str();
+		else if (!(bytes.vop3a.neg & neg) && 
+				(bytes.vop3a.abs & neg))
+			os << "abs(" << ss.str() << ')';
+		else if (!(bytes.vop3a.neg & neg) && 
+				!(bytes.vop3a.abs & neg))
+			os << ss.str();
+	}
+	else
+	{
+		if (bytes.vop3a.neg & neg)
+			os << '-' << ss.str();
+		else if (!(bytes.vop3a.neg & neg))
+			os << ss.str();
+	}
+}
+
+
+void Inst::DumpVop364Src(ostream& os, unsigned int src, int neg)
+{
+	stringstream ss;
+
+	DumpOperandSeries(ss, src, src + 1);
+	if (!(InRange(bytes.vop3a.op, 293, 298)) && 
+		!(InRange(bytes.vop3a.op, 365, 366)))
+	{
+		if ((bytes.vop3a.neg & neg) && 
+				(bytes.vop3a.abs & neg))
+			os << "-abs(" << ss.str() << ')';
+		else if ((bytes.vop3a.neg & neg) && 
+				!(bytes.vop3a.abs & neg))
+			os << "-" << ss.str();
+		else if (!(bytes.vop3a.neg & neg) && 
+				(bytes.vop3a.abs & neg))
+			os << "abs(" << ss.str() << ")";
+		else if (!(bytes.vop3a.neg & neg) && 
+				!(bytes.vop3a.abs & neg))
+			os << ss.str();
+	}
+	else
+	{
+		if (bytes.vop3a.neg & neg)
+			os << '-' << ss.str();
+		else if (!(bytes.vop3a.neg & neg))
+			os << ss.str();
+	}
+}
+
+
+void Inst::DumpMaddr(ostream& os)
 {
 	/* soffset */
-	assert(inst->bytes.mtbuf.soffset <= 103 ||
-		inst->bytes.mtbuf.soffset == 124 ||
-		(inst->bytes.mtbuf.soffset >= 128 && 
-		inst->bytes.mtbuf.soffset <= 208));
-	operand_dump_scalar(operand_str, inst->bytes.mtbuf.soffset);
-	str_printf(inst_str, &str_size, "%s", operand_str);
+	assert(bytes.mtbuf.soffset <= 103 ||
+			bytes.mtbuf.soffset == 124 ||
+			(bytes.mtbuf.soffset >= 128 && 
+			bytes.mtbuf.soffset <= 208));
+	DumpScalar(os, bytes.mtbuf.soffset);
 
 	/* offen */
-	if (inst->bytes.mtbuf.offen)
-		str_printf(inst_str, &str_size, " offen");
+	if (bytes.mtbuf.offen)
+		os << " offen";
 
 	/* index */
-	if (inst->bytes.mtbuf.idxen)
-		str_printf(inst_str, &str_size, " idxen");
+	if (bytes.mtbuf.idxen)
+		os << " idxen";
 
 	/* offset */
-	if (inst->bytes.mtbuf.offset)
-		str_printf(inst_str, &str_size, " offset:%d", 
-			inst->bytes.mtbuf.offset);
+	if (bytes.mtbuf.offset)
+		os << " offset:" << bytes.mtbuf.offset;
 }
 
-void SIInstDump_DUG(SIInst *inst, char *operand_str, 
-	char **inst_str, int str_size)
+
+void Inst::DumpDug(ostream& os)
 {
 	/* DMASK */
-	str_printf(inst_str, &str_size, " dmask:0x%01x", 
-		inst->bytes.mimg.dmask);
+	os << " dmask:0x" << hex << bytes.mimg.dmask << dec;
 	
 	/* UNORM */
-	if (inst->bytes.mimg.unorm)
-		str_printf(inst_str, &str_size, " unorm");
+	if (bytes.mimg.unorm)
+		os << " unorm";
 	
 	/* GLC */
-	if (inst->bytes.mimg.glc)
-		str_printf(inst_str, &str_size, " glc");
+	if (bytes.mimg.glc)
+		os << " glc";
 }
 
-void SIInstDump(SIInst *self, unsigned int rel_addr, void *buf,
-		char *line, int line_size)
-{
-	int str_size = MAX_STRING_SIZE;
-	int token_len;
-	
-	char orig_inst_str[MAX_STRING_SIZE];
-	char orig_operand_str[MAX_STRING_SIZE];
-	
-	char *operand_str = &orig_operand_str[0];
-	char *inst_str = &orig_inst_str[0];
-	char *fmt_str = self->info->fmt_str;
 
+#if 0
+void line_dump(char *inst_str, unsigned int rel_addr, void *buf, char *line, int line_size, int inst_size)
+{
+	int dat_str_size = MAX_STRING_SIZE;
+	char inst_dat_str[MAX_STRING_SIZE];
+	char *dat_str = &inst_dat_str[0];
+
+	if (inst_size == 4)
+	{
+		str_printf(&dat_str, &dat_str_size, "// %08X: %08X", rel_addr,
+			((unsigned int*)buf)[0]);
+	}
+	else
+	{
+		str_printf(&dat_str, &dat_str_size, "// %08X: %08X %08X", 
+			rel_addr, ((unsigned int*)buf)[0], 
+			((unsigned int*)buf)[1]);
+	}
+
+	if (strlen(inst_str) < 59)
+	{
+		str_printf(&line, &line_size, "%-59s%s\n", inst_str, 
+			inst_dat_str);
+	}
+	else
+	{
+		str_printf(&line, &line_size, "%s %s\n", inst_str, 
+			inst_dat_str);
+	}
+}
+#endif
+
+
+
+Inst::Inst(Asm *as)
+{
+	/* Initialize */
+	this->as = as;
+	Clear();
+}
+
+
+void Inst::Dump(ostream& os)
+{
+	int token_len;
+	const char *fmt_str;
+	
+	/* Traverse format string */
+	fmt_str = info ? info->fmt_str : "";
 	while (*fmt_str)
 	{
 		/* Literal */
 		if (*fmt_str != '%')
 		{
-			str_printf(&inst_str, &str_size, "%c", *fmt_str);
+			os << *fmt_str;
 			fmt_str++;
 			continue;
 		}
 
 		/* Token */
 		fmt_str++;
-		if (is_token(fmt_str, "WAIT_CNT", &token_len))
+		if (Common::Asm::IsToken(fmt_str, "WAIT_CNT", &token_len))
 		{	
-			SIInstBytesSOPP *sopp = &self->bytes.sopp;
+			InstBytesSOPP *sopp = &bytes.sopp;
 
-			unsigned int and = 0;
+			unsigned int more = 0;
 			int vm_cnt = (sopp->simm16 & 0xF);
 
 			if (vm_cnt != 0xF)
 			{
-				str_printf(&inst_str, &str_size, "vmcnt(%d)",
-					vm_cnt);
-				and = 1;
+				os << "vmcnt(" << vm_cnt << ")";
+				more = 1;
 			}
 
 			int lgkm_cnt = (sopp->simm16 & 0x1f00) >> 8;
-
 			if (lgkm_cnt != 0x1f)
 			{
-				if (and)
-				{
-					str_printf(&inst_str, &str_size, " & ");
-				}
-
-				str_printf(&inst_str, &str_size, "lgkmcnt(%d)", 
-					lgkm_cnt);
-				and = 1;
+				if (more)
+					os << " & ";
+				os << "lgkmcnt(" << lgkm_cnt << ")";
+				more = 1;
 			}
 
 			int exp_cnt = (sopp->simm16 & 0x70) >> 4;
-
 			if (exp_cnt != 0x7)
 			{
-				if (and)
-				{
-					str_printf(&inst_str, &str_size, " & ");
-				}
-
-				str_printf(&inst_str, &str_size, "expcnt(%d)",
-					exp_cnt);
-				and = 1;
+				if (more)
+					os << " & ";
+				os << "expcnt(" << exp_cnt << ")";
+				more = 1;
 			}
 		}
-		else if (is_token(fmt_str, "LABEL", &token_len))
+		else if (Common::Asm::IsToken(fmt_str, "LABEL", &token_len))
 		{		
-			SIInstBytesSOPP *sopp = &self->bytes.sopp;
+			InstBytesSOPP *sopp = &bytes.sopp;
 	
 			short simm16 = sopp->simm16;
 			int se_simm = simm16;
 
-			str_printf(&inst_str, &str_size, "label_%04X", 
-				(rel_addr + (se_simm * 4) + 4) / 4);
+			os << "label_%04X" << setw(4) << setfill('0') << hex
+					<< uppercase << (address + (se_simm * 4) + 4) / 4
+					<< dec << setfill(' ') << nouppercase;
 		}
-		else if (is_token(fmt_str, "SSRC0", &token_len))
+		else if (Common::Asm::IsToken(fmt_str, "SSRC0", &token_len))
 		{	
-			SIInstDump_SSRC(self, self->bytes.sop2.ssrc0, 
-				operand_str, &inst_str, str_size);
+			DumpSsrc(os, bytes.sop2.ssrc0);
 		}
-		else if (is_token(fmt_str, "64_SSRC0", &token_len))
+		else if (Common::Asm::IsToken(fmt_str, "64_SSRC0", &token_len))
 		{
-			SIInstDump_64_SSRC(self, self->bytes.sop2.ssrc0, 
-				operand_str, &inst_str, str_size);
+			Dump64Ssrc(os, bytes.sop2.ssrc0);
 		}
-		else if (is_token(fmt_str, "SSRC1", &token_len))
+		else if (Common::Asm::IsToken(fmt_str, "SSRC1", &token_len))
 		{
-			SIInstDump_SSRC(self, self->bytes.sop2.ssrc1, 
-				operand_str, &inst_str, str_size);
+			DumpSsrc(os, bytes.sop2.ssrc1);
 		}
-		else if (is_token(fmt_str, "64_SSRC1", &token_len))
+		else if (Common::Asm::IsToken(fmt_str, "64_SSRC1", &token_len))
 		{
-			SIInstDump_64_SSRC(self, self->bytes.sop2.ssrc1, 
-				operand_str, &inst_str, str_size);
+			Dump64Ssrc(os, bytes.sop2.ssrc1);
 		}
-		else if (is_token(fmt_str, "SDST", &token_len))
+		else if (Common::Asm::IsToken(fmt_str, "SDST", &token_len))
 		{	
-			operand_dump_scalar(operand_str, 
-				self->bytes.sop2.sdst);
-			str_printf(&inst_str, &str_size, "%s", operand_str);
+			DumpScalar(os, bytes.sop2.sdst);
 		}
-		else if (is_token(fmt_str, "64_SDST", &token_len))
+		else if (Common::Asm::IsToken(fmt_str, "64_SDST", &token_len))
 		{
-			operand_dump_series_scalar(operand_str, 
-				self->bytes.sop2.sdst, 
-				self->bytes.sop2.sdst + 1);
-			str_printf(&inst_str, &str_size, "%s", operand_str);
+			DumpScalarSeries(os, bytes.sop2.sdst, bytes.sop2.sdst + 1);
 		}
-		else if (is_token(fmt_str, "SIMM16", &token_len))
+		else if (Common::Asm::IsToken(fmt_str, "SIMM16", &token_len))
 		{
-			str_printf(&inst_str, &str_size, "0x%04x", 
-				self->bytes.sopk.simm16);
+			os << "0x" << setw(4) << setfill('0') << hex
+					<< bytes.sopk.simm16
+					<< dec << setfill(' ');
 		}
-		else if (is_token(fmt_str, "SRC0", &token_len))
+		else if (Common::Asm::IsToken(fmt_str, "SRC0", &token_len))
 		{
-			if (self->bytes.vopc.src0 == 0xFF)
-			{
-				str_printf(&inst_str, &str_size, "0x%08x", 
-					self->bytes.vopc.lit_cnst);
-			}
+			if (bytes.vopc.src0 == 0xFF)
+				os << "0x" << setw(8) << setfill('0') << hex
+						<< bytes.vopc.lit_cnst
+						<< dec << setfill(' ');
 			else
-			{
-				operand_dump(operand_str, 
-					self->bytes.vopc.src0);
-				str_printf(&inst_str, &str_size, "%s", 
-					operand_str);
-			}
+				DumpOperand(os, bytes.vopc.src0);
 		}
-		else if (is_token(fmt_str, "64_SRC0", &token_len))
+		else if (Common::Asm::IsToken(fmt_str, "64_SRC0", &token_len))
 		{
-			assert(self->bytes.vopc.src0 != 0xFF);
-
-			operand_dump_series(operand_str, 
-				self->bytes.vopc.src0, 
-				self->bytes.vopc.src0 + 1);
-			str_printf(&inst_str, &str_size, "%s", operand_str);
+			assert(bytes.vopc.src0 != 0xFF);
+			DumpOperandSeries(os, bytes.vopc.src0, bytes.vopc.src0 + 1);
 		}
-		else if (is_token(fmt_str, "VSRC1", &token_len))
+		else if (Common::Asm::IsToken(fmt_str, "VSRC1", &token_len))
 		{
-			operand_dump_vector(operand_str, 
-				self->bytes.vopc.vsrc1);
-			str_printf(&inst_str, &str_size, "%s", operand_str);
+			DumpVector(os, bytes.vopc.vsrc1);
 		}
-		else if (is_token(fmt_str, "64_VSRC1", &token_len))
+		else if (Common::Asm::IsToken(fmt_str, "64_VSRC1", &token_len))
 		{
-			assert(self->bytes.vopc.vsrc1 != 0xFF);
-
-			operand_dump_series_vector(operand_str, 
-				self->bytes.vopc.vsrc1, 
-				self->bytes.vopc.vsrc1 + 1);
-			str_printf(&inst_str, &str_size, "%s", operand_str);
+			assert(bytes.vopc.vsrc1 != 0xFF);
+			DumpVectorSeries(os, bytes.vopc.vsrc1, bytes.vopc.vsrc1 + 1);
 		}
-		else if (is_token(fmt_str, "VDST", &token_len))
+		else if (Common::Asm::IsToken(fmt_str, "VDST", &token_len))
 		{
-			operand_dump_vector(operand_str, 
-				self->bytes.vop1.vdst);
-			str_printf(&inst_str, &str_size, "%s", operand_str);
+			DumpVector(os, bytes.vop1.vdst);
 		}
-		else if (is_token(fmt_str, "64_VDST", &token_len))
+		else if (Common::Asm::IsToken(fmt_str, "64_VDST", &token_len))
 		{
-			operand_dump_series_vector(operand_str, 
-				self->bytes.vop1.vdst, 
-				self->bytes.vop1.vdst + 1);
-			str_printf(&inst_str, &str_size, "%s", operand_str);
+			DumpVectorSeries(os, bytes.vop1.vdst, bytes.vop1.vdst + 1);
 		}
-		else if (is_token(fmt_str, "SVDST", &token_len))
+		else if (Common::Asm::IsToken(fmt_str, "SVDST", &token_len))
 		{
-			operand_dump_scalar(operand_str, 
-				self->bytes.vop1.vdst);
-			str_printf(&inst_str, &str_size, "%s", operand_str);
+			DumpScalar(os, bytes.vop1.vdst);
 		}
-		else if (is_token(fmt_str, "VOP3_64_SVDST", &token_len))
+		else if (Common::Asm::IsToken(fmt_str, "VOP3_64_SVDST", &token_len))
 		{
 			/* VOP3a compare operations use the VDST field to 
 			 * indicate the address of the scalar destination.*/
-			operand_dump_series_scalar(operand_str, 
-				self->bytes.vop3a.vdst, 
-				self->bytes.vop3a.vdst + 1);
-			str_printf(&inst_str, &str_size, "%s", operand_str);
+			DumpScalarSeries(os, bytes.vop3a.vdst, bytes.vop3a.vdst + 1);
 		}
-		else if (is_token(fmt_str, "VOP3_VDST", &token_len))
+		else if (Common::Asm::IsToken(fmt_str, "VOP3_VDST", &token_len))
 		{
-			operand_dump_vector(operand_str, 
-				self->bytes.vop3a.vdst);
-			str_printf(&inst_str, &str_size, "%s", operand_str);
+			DumpVector(os, bytes.vop3a.vdst);
 		}
-		else if (is_token(fmt_str, "VOP3_64_VDST", &token_len))
+		else if (Common::Asm::IsToken(fmt_str, "VOP3_64_VDST", &token_len))
 		{
-			operand_dump_series_vector(operand_str, 
-				self->bytes.vop3a.vdst, 
-				self->bytes.vop3a.vdst + 1);
-			str_printf(&inst_str, &str_size, "%s", operand_str);
+			DumpVectorSeries(os, bytes.vop3a.vdst, bytes.vop3a.vdst + 1);
 		}
-		else if (is_token(fmt_str, "VOP3_64_SDST", &token_len))
+		else if (Common::Asm::IsToken(fmt_str, "VOP3_64_SDST", &token_len))
 		{
-			operand_dump_series_scalar(operand_str, 
-				self->bytes.vop3b.sdst, 
-				self->bytes.vop3b.sdst + 1);
-			str_printf(&inst_str, &str_size, "%s", operand_str);
+			DumpScalarSeries(os, bytes.vop3b.sdst, bytes.vop3b.sdst + 1);
 		}
-		else if (is_token(fmt_str, "VOP3_SRC0", &token_len))
+		else if (Common::Asm::IsToken(fmt_str, "VOP3_SRC0", &token_len))
 		{
-			SIInstDump_VOP3_SRC(self, 
-				self->bytes.vop3a.src0, 1, operand_str, 
-				&inst_str, str_size);
+			DumpVop3Src(os, bytes.vop3a.src0, 1);
 		}
-		else if (is_token(fmt_str, "VOP3_64_SRC0", &token_len))
+		else if (Common::Asm::IsToken(fmt_str, "VOP3_64_SRC0", &token_len))
 		{
-			SIInstDump_VOP3_64_SRC(self, 
-				self->bytes.vop3a.src0, 1, operand_str, 
-				&inst_str, str_size);
+			DumpVop364Src(os, bytes.vop3a.src0, 1);
 		}
-		else if (is_token(fmt_str, "VOP3_SRC1", &token_len))
+		else if (Common::Asm::IsToken(fmt_str, "VOP3_SRC1", &token_len))
 		{
-			SIInstDump_VOP3_SRC(self, 
-				self->bytes.vop3a.src1, 2, operand_str, 
-				&inst_str, str_size);
+			DumpVop3Src(os, bytes.vop3a.src1, 2);
 		}
-		else if (is_token(fmt_str, "VOP3_64_SRC1", &token_len))
+		else if (Common::Asm::IsToken(fmt_str, "VOP3_64_SRC1", &token_len))
 		{
-			SIInstDump_VOP3_64_SRC(self, 
-				self->bytes.vop3a.src1, 2, operand_str, 
-				&inst_str, str_size);
+			DumpVop364Src(os, bytes.vop3a.src1, 2);
 		}
-		else if (is_token(fmt_str, "VOP3_SRC2", &token_len))
+		else if (Common::Asm::IsToken(fmt_str, "VOP3_SRC2", &token_len))
 		{
-			SIInstDump_VOP3_SRC(self, self->bytes.vop3a.src2, 
-				4, operand_str, &inst_str, str_size);
+			DumpVop3Src(os, bytes.vop3a.src2, 4);
 		}
-		else if (is_token(fmt_str, "VOP3_64_SRC2", &token_len))
+		else if (Common::Asm::IsToken(fmt_str, "VOP3_64_SRC2", &token_len))
 		{
-			SIInstDump_VOP3_64_SRC(self, 
-				self->bytes.vop3a.src2, 4, operand_str, 
-				&inst_str, str_size);
+			DumpVop364Src(os, bytes.vop3a.src2, 4);
 		}
-		else if (is_token(fmt_str, "VOP3_OP16", &token_len))
+		else if (Common::Asm::IsToken(fmt_str, "VOP3_OP16", &token_len))
 		{
-			str_printf(&inst_str, &str_size, "%s", 
-				str_map_value(&si_inst_OP16_map, 
-					(self->bytes.vop3a.op & 15)));
+			os << StringMapValue(inst_OP16_map, bytes.vop3a.op & 15);
 		}
-		else if (is_token(fmt_str, "VOP3_OP8", &token_len))
+		else if (Common::Asm::IsToken(fmt_str, "VOP3_OP8", &token_len))
 		{
-			str_printf(&inst_str, &str_size, "%s", 
-				str_map_value(&si_inst_OP8_map, 
-					(self->bytes.vop3a.op & 15)));
+			os << StringMapValue(inst_OP8_map, bytes.vop3a.op & 15);
 		}
-		else if (is_token(fmt_str, "SMRD_SDST", &token_len))
+		else if (Common::Asm::IsToken(fmt_str, "SMRD_SDST", &token_len))
 		{
-			operand_dump_scalar(operand_str, 
-				self->bytes.smrd.sdst);
-			str_printf(&inst_str, &str_size, "%s", operand_str);
+			DumpScalar(os, bytes.smrd.sdst);
 		}
-		else if (is_token(fmt_str, "SERIES_SDST", &token_len))
+		else if (Common::Asm::IsToken(fmt_str, "SERIES_SDST", &token_len))
 		{
-			
 			/* The sbase field is missing the LSB, 
 			 * so multiply by 2 */
-			int sdst = self->bytes.smrd.sdst;
+			int sdst = bytes.smrd.sdst;
 			int sdst_end;
-			int op = self->bytes.smrd.op;
+			int op = bytes.smrd.op;
 
 			/* S_LOAD_DWORD */
-			if (IN_RANGE(op, 0, 4))
+			if (InRange(op, 0, 4))
 			{
-				if (op != 0)
+				/* Multi-dword */
+				switch (op)
 				{
-					/* Multi-dword */
-					switch (op)
-					{
-						case 1:
-							sdst_end = sdst + 1;
-							break;
-						case 2:
-							sdst_end = sdst + 3;
-							break;
-						case 3:
-							sdst_end = sdst + 7;
-							break;
-						case 4:
-							sdst_end = sdst + 15;
-							break;
-						default:
-							fatal("Invalid smrd "
-								"opcode");
-					}
+				case 0:
+					break;
+				case 1:
+					sdst_end = sdst + 1;
+					break;
+				case 2:
+					sdst_end = sdst + 3;
+					break;
+				case 3:
+					sdst_end = sdst + 7;
+					break;
+				case 4:
+					sdst_end = sdst + 15;
+					break;
+				default:
+					fatal("Invalid smrd "
+						"opcode");
 				}
 			}
 			/* S_BUFFER_LOAD_DWORD */
-			else if (IN_RANGE(op, 8, 12))
+			else if (InRange(op, 8, 12))
 			{	
-				if (op != 8)
+				/* Multi-dword */
+				switch (op)
 				{
-					/* Multi-dword */
-					switch (op)
-					{
-						case 9:
-							sdst_end = sdst + 1;
-							break;
-						case 10:
-							sdst_end = sdst + 3;
-							break;
-						case 11:
-							sdst_end = sdst + 7;
-							break;
-						case 12:
-							sdst_end = sdst + 15;
-							break;
-						default:
-							fatal("Invalid smrd "
-								"opcode");
-					}
+				case 8:
+					break;
+				case 9:
+					sdst_end = sdst + 1;
+					break;
+				case 10:
+					sdst_end = sdst + 3;
+					break;
+				case 11:
+					sdst_end = sdst + 7;
+					break;
+				case 12:
+					sdst_end = sdst + 15;
+					break;
+				default:
+					fatal("Invalid smrd "
+						"opcode");
 				}
 			}
 			/* S_MEMTIME */
@@ -803,27 +830,26 @@ void SIInstDump(SIInst *self, unsigned int rel_addr, void *buf,
 				fatal("Invalid smrd opcode");
 			}
 
-			operand_dump_series_scalar(operand_str, sdst, sdst_end);
-			str_printf(&inst_str, &str_size, "%s", operand_str);
+			DumpScalarSeries(os, sdst, sdst_end);
 
 		}
-		else if (is_token(fmt_str, "SERIES_SBASE", &token_len))
+		else if (Common::Asm::IsToken(fmt_str, "SERIES_SBASE", &token_len))
 		{
 			
 			/* The sbase field is missing the LSB, 
 			 * so multiply by 2 */
-			int sbase = self->bytes.smrd.sbase * 2;
+			int sbase = bytes.smrd.sbase * 2;
 			int sbase_end;
-			int op = self->bytes.smrd.op;
+			int op = bytes.smrd.op;
 
 			/* S_LOAD_DWORD */
-			if (IN_RANGE(op, 0, 4))
+			if (InRange(op, 0, 4))
 			{
 				/* SBASE specifies two consecutive SGPRs */
 				sbase_end = sbase + 1;
 			}
 			/* S_BUFFER_LOAD_DWORD */
-			else if (IN_RANGE(op, 8, 12))
+			else if (InRange(op, 8, 12))
 			{
 				/* SBASE specifies four consecutive SGPRs */
 				sbase_end = sbase + 3;
@@ -845,272 +871,189 @@ void SIInstDump(SIInst *self, unsigned int rel_addr, void *buf,
 				fatal("Invalid smrd opcode");
 			}
 
-			operand_dump_series_scalar(operand_str, sbase, 
-				sbase_end);
-			str_printf(&inst_str, &str_size, "%s", operand_str);
+			DumpScalarSeries(os, sbase, sbase_end);
 		}
-		else if (is_token(fmt_str, "VOP2_LIT", &token_len))
+		else if (Common::Asm::IsToken(fmt_str, "VOP2_LIT", &token_len))
 		{
-			str_printf(&inst_str, &str_size, "0x%08x", 
-				self->bytes.vop2.lit_cnst);
+			os << "0x" << setw(8) << setfill('0') << hex
+					<< bytes.vop2.lit_cnst
+					<< setfill(' ') << dec;
 		}
-		else if (is_token(fmt_str, "OFFSET", &token_len))
+		else if (Common::Asm::IsToken(fmt_str, "OFFSET", &token_len))
 		{
-			if (self->bytes.smrd.imm)
-			{
-				str_printf(&inst_str, &str_size, "0x%02x", 
-					self->bytes.smrd.offset);
-			}
+			if (bytes.smrd.imm)
+				os << "0x" << setw(2) << setfill('0') << hex
+						<< bytes.smrd.offset
+						<< setfill(' ') << dec;
 			else
+				DumpScalar(os, bytes.smrd.offset);
+		}
+		else if (Common::Asm::IsToken(fmt_str, "DS_VDST", &token_len))
+		{
+			DumpVector(os, bytes.ds.vdst);
+		}
+		else if (Common::Asm::IsToken(fmt_str, "ADDR", &token_len))
+		{
+			DumpVector(os, bytes.ds.addr);
+		}
+		else if (Common::Asm::IsToken(fmt_str, "DATA0", &token_len))
+		{
+			DumpVector(os, bytes.ds.data0);
+		}
+		else if (Common::Asm::IsToken(fmt_str, "DATA1", &token_len))
+		{
+			DumpVector(os, bytes.ds.data1);
+		}
+		else if (Common::Asm::IsToken(fmt_str, "OFFSET0", &token_len))
+		{
+			if (bytes.ds.offset0)
+				os << "offset0:" << bytes.ds.offset0 << ' ';
+		}
+		else if (Common::Asm::IsToken(fmt_str, "DS_SERIES_VDST", &token_len))
+		{
+			DumpVectorSeries(os, bytes.ds.vdst, bytes.ds.vdst + 1);
+		}
+		else if (Common::Asm::IsToken(fmt_str, "OFFSET1", &token_len))
+		{
+			if (bytes.ds.offset1)
+				os << "offset1:" << bytes.ds.offset1 << ' ';
+		}
+		else if (Common::Asm::IsToken(fmt_str, "VINTRP_VDST", &token_len))
+		{
+			DumpVector(os, bytes.vintrp.vdst);
+		}
+		else if (Common::Asm::IsToken(fmt_str, "VSRC_I_J", &token_len))
+		{
+			DumpVector(os, bytes.vintrp.vsrc);
+		}
+		else if (Common::Asm::IsToken(fmt_str, "ATTR", &token_len))
+		{
+			os << "attr_" << bytes.vintrp.attr;
+		}
+		else if (Common::Asm::IsToken(fmt_str, "ATTRCHAN", &token_len))
+		{
+			switch (bytes.vintrp.attrchan)
 			{
-				operand_dump_scalar(operand_str, 
-					self->bytes.smrd.offset);
-				str_printf(&inst_str, &str_size, "%s", 
-					operand_str);
+			case 0:
+				os << 'x';
+				break;
+			case 1:
+				os << 'y';
+				break;
+			case 2:
+				os << 'z';
+				break;
+			case 3:
+				os << 'w';
+				break;
+			default:
+				break;
 			}
 		}
-		else if (is_token(fmt_str, "DS_VDST", &token_len))
+		else if (Common::Asm::IsToken(fmt_str, "MU_SERIES_VDATA", &token_len))
 		{
-			operand_dump_vector(operand_str, 
-				self->bytes.ds.vdst);
-			str_printf(&inst_str, &str_size, "%s", operand_str);
+			DumpSeriesVdata(os, bytes.mubuf.vdata, bytes.mubuf.op);
 		}
-		else if (is_token(fmt_str, "ADDR", &token_len))
+		else if (Common::Asm::IsToken(fmt_str, "MU_GLC", &token_len))
 		{
-			operand_dump_vector(operand_str, 
-				self->bytes.ds.addr);
-			str_printf(&inst_str, &str_size, "%s", operand_str);
+			if (bytes.mubuf.glc)
+				os << "glc";
 		}
-		else if (is_token(fmt_str, "DATA0", &token_len))
+		else if (Common::Asm::IsToken(fmt_str, "VADDR", &token_len))
 		{
-			operand_dump_vector(operand_str, 
-				self->bytes.ds.data0);
-			str_printf(&inst_str, &str_size, "%s", operand_str);
-		}
-		else if (is_token(fmt_str, "DATA1", &token_len))
-		{
-			operand_dump_vector(operand_str, 
-				self->bytes.ds.data1);
-			str_printf(&inst_str, &str_size, "%s", operand_str);
-		}
-		else if (is_token(fmt_str, "OFFSET0", &token_len))
-		{
-			if(self->bytes.ds.offset0)
-			{
-				str_printf(&inst_str, &str_size, "offset0:%u ", 
-					self->bytes.ds.offset0);
-			}
-		}
-		else if (is_token(fmt_str, "DS_SERIES_VDST", &token_len))
-		{
-			operand_dump_series_vector(operand_str, 
-				self->bytes.ds.vdst, 
-				self->bytes.ds.vdst+ 1);
-			str_printf(&inst_str, &str_size, "%s", 
-				operand_str);
-		}
-		else if (is_token(fmt_str, "OFFSET1", &token_len))
-		{
-			if(self->bytes.ds.offset1)
-			{
-				str_printf(&inst_str, &str_size, "offset1:%u ", 
-					self->bytes.ds.offset1);
-			}
-		}
-		else if (is_token(fmt_str, "VINTRP_VDST", &token_len))
-		{
-			operand_dump_vector(operand_str, 
-				self->bytes.vintrp.vdst);
-			str_printf(&inst_str, &str_size, "%s", operand_str);
-		}
-		else if (is_token(fmt_str, "VSRC_I_J", &token_len))
-		{
-			operand_dump_vector(operand_str, 
-				self->bytes.vintrp.vsrc);
-			str_printf(&inst_str, &str_size, "%s", operand_str);
-		}
-		else if (is_token(fmt_str, "ATTR", &token_len))
-		{
-			str_printf(&inst_str, &str_size, "attr_%d", 
-				self->bytes.vintrp.attr);
-		}
-		else if (is_token(fmt_str, "ATTRCHAN", &token_len))
-		{
-			switch (self->bytes.vintrp.attrchan)
-			{
-				case 0:
-					str_printf(&inst_str, &str_size, "x");
-					break;
-				case 1:
-					str_printf(&inst_str, &str_size, "y");
-					break;
-				case 2:
-					str_printf(&inst_str, &str_size, "z");
-					break;
-				case 3:
-					str_printf(&inst_str, &str_size, "w");
-					break;
-				default:
-					break;
-			}
-		}
-		else if (is_token(fmt_str, "MU_SERIES_VDATA", &token_len))
-		{
-			SIInstDump_SERIES_VDATA(self->bytes.mubuf.vdata, 
-				self->bytes.mubuf.op, operand_str, 
-				&inst_str, str_size);
-		}
-		else if (is_token(fmt_str, "MU_GLC", &token_len))
-		{
-			if (self->bytes.mubuf.glc)
-				str_printf(&inst_str, &str_size, "glc");
-		}
-		else if (is_token(fmt_str, "VADDR", &token_len))
-		{
-			if (self->bytes.mtbuf.offen && 
-				self->bytes.mtbuf.idxen)
-			{
-				operand_dump_series_vector(operand_str, 
-					self->bytes.mtbuf.vaddr, 
-					self->bytes.mtbuf.vaddr + 1);
-				str_printf(&inst_str, &str_size, "%s", 
-					operand_str);
-			}
+			if (bytes.mtbuf.offen && bytes.mtbuf.idxen)
+				DumpVectorSeries(os, bytes.mtbuf.vaddr, 
+						bytes.mtbuf.vaddr + 1);
 			else
-			{
-				operand_dump_vector(operand_str, 
-					self->bytes.mtbuf.vaddr);
-				str_printf(&inst_str, &str_size, "%s", 
-					operand_str);
-			}
+				DumpVector(os, bytes.mtbuf.vaddr);
 		}
-		else if (is_token(fmt_str, "MU_MADDR", &token_len))
+		else if (Common::Asm::IsToken(fmt_str, "MU_MADDR", &token_len))
 		{
-			SIInstDump_MADDR(self, operand_str, &inst_str, 
-				str_size);
+			DumpMaddr(os);
 		}
-		else if (is_token(fmt_str, "MT_SERIES_VDATA", &token_len))
+		else if (Common::Asm::IsToken(fmt_str, "MT_SERIES_VDATA", &token_len))
 		{
-			SIInstDump_SERIES_VDATA(self->bytes.mtbuf.vdata, 
-				self->bytes.mtbuf.op, operand_str, 
-				&inst_str, str_size);
+			DumpSeriesVdata(os, bytes.mtbuf.vdata, bytes.mtbuf.op);
 		}
-		else if (is_token(fmt_str, "SERIES_SRSRC", &token_len))
+		else if (Common::Asm::IsToken(fmt_str, "SERIES_SRSRC", &token_len))
 		{
-			assert((self->bytes.mtbuf.srsrc << 2) % 4 == 0);
-			operand_dump_series_scalar(operand_str, 
-				self->bytes.mtbuf.srsrc << 2, 
-				(self->bytes.mtbuf.srsrc << 2) + 3);
-			str_printf(&inst_str, &str_size, "%s", operand_str);
+			assert((bytes.mtbuf.srsrc << 2) % 4 == 0);
+			DumpScalarSeries(os, bytes.mtbuf.srsrc << 2, 
+					(bytes.mtbuf.srsrc << 2) + 3);
 		}
-		else if (is_token(fmt_str, "MT_MADDR", &token_len))
+		else if (Common::Asm::IsToken(fmt_str, "MT_MADDR", &token_len))
 		{
-			SIInstDump_MADDR(self, operand_str, &inst_str, 
-				str_size);
-		
-			/* Format */
-			str_printf(&inst_str, &str_size, " format:[%s,%s]",
-				str_map_value(&si_inst_buf_data_format_map, 
-					self->bytes.mtbuf.dfmt),
-				str_map_value(&si_inst_buf_num_format_map, 
-					self->bytes.mtbuf.nfmt));
+			DumpMaddr(os);
+			os << " format:["
+					<< StringMapValue(inst_buf_data_format_map, 
+					bytes.mtbuf.dfmt) << ','
+					<< StringMapValue(inst_buf_num_format_map, 
+					bytes.mtbuf.nfmt) << ']';
 		}
-		else if (is_token(fmt_str, "MIMG_SERIES_VDATA", &token_len))
+		else if (Common::Asm::IsToken(fmt_str, "MIMG_SERIES_VDATA", &token_len))
 		{
-			operand_dump_series_vector(operand_str, 
-				self->bytes.mimg.vdata, 
-				self->bytes.mimg.vdata + 3);
-			str_printf(&inst_str, &str_size, "%s", operand_str);
+			DumpVectorSeries(os, bytes.mimg.vdata,
+					bytes.mimg.vdata + 3);
 		}
-		else if (is_token(fmt_str, "MIMG_VADDR", &token_len))
+		else if (Common::Asm::IsToken(fmt_str, "MIMG_VADDR", &token_len))
 		{
-			operand_dump_series_vector(operand_str, 
-				self->bytes.mimg.vaddr, 
-				self->bytes.mimg.vaddr + 3);
-			str_printf(&inst_str, &str_size, "%s", operand_str);
+			DumpVectorSeries(os, bytes.mimg.vaddr, 
+					bytes.mimg.vaddr + 3);
 		}
-		else if (is_token(fmt_str, "MIMG_SERIES_SRSRC", &token_len))
+		else if (Common::Asm::IsToken(fmt_str, "MIMG_SERIES_SRSRC", &token_len))
 		{
-			assert((self->bytes.mimg.srsrc << 2) % 4 == 0);
-			operand_dump_series_scalar(operand_str, 
-				self->bytes.mimg.srsrc << 2, 
-				(self->bytes.mimg.srsrc << 2) + 7);
-			str_printf(&inst_str, &str_size, "%s", operand_str);
+			assert((bytes.mimg.srsrc << 2) % 4 == 0);
+			DumpScalarSeries(os, bytes.mimg.srsrc << 2, 
+					(bytes.mimg.srsrc << 2) + 7);
 		}
-		else if (is_token(fmt_str, "MIMG_DUG_SERIES_SRSRC", &token_len))
+		else if (Common::Asm::IsToken(fmt_str, "MIMG_DUG_SERIES_SRSRC", &token_len))
 		{
-			assert((self->bytes.mimg.srsrc << 2) % 4 == 0);
-			operand_dump_series_scalar(operand_str, 
-				self->bytes.mimg.srsrc << 2, 
-				(self->bytes.mimg.srsrc << 2) + 7);
-			str_printf(&inst_str, &str_size, "%s", operand_str);
-
-			/* Call SIInstDump_DUG to print 
-			 * dmask, unorm, and glc */
-			SIInstDump_DUG(self, operand_str, &inst_str, 
-				str_size);
+			assert((bytes.mimg.srsrc << 2) % 4 == 0);
+			DumpScalarSeries(os, bytes.mimg.srsrc << 2, 
+					(bytes.mimg.srsrc << 2) + 7);
+			DumpDug(os);
 		}
-		else if (is_token(fmt_str, "MIMG_SERIES_SSAMP", &token_len))
+		else if (Common::Asm::IsToken(fmt_str, "MIMG_SERIES_SSAMP", &token_len))
 		{
-			assert((self->bytes.mimg.ssamp << 2) % 4 == 0);
-			operand_dump_series_scalar(operand_str, 
-				self->bytes.mimg.ssamp << 2, 
-				(self->bytes.mimg.ssamp << 2) + 3);
-			str_printf(&inst_str, &str_size, "%s", operand_str);
+			assert((bytes.mimg.ssamp << 2) % 4 == 0);
+			DumpScalarSeries(os, bytes.mimg.ssamp << 2, 
+					(bytes.mimg.ssamp << 2) + 3);
 		}
-		else if (is_token(fmt_str, "MIMG_DUG_SERIES_SSAMP", 
+		else if (Common::Asm::IsToken(fmt_str, "MIMG_DUG_SERIES_SSAMP", 
 			&token_len))
 		{
-			assert((self->bytes.mimg.ssamp << 2) % 4 == 0);
-			operand_dump_series_scalar(operand_str, 
-				self->bytes.mimg.ssamp << 2, 
-				(self->bytes.mimg.ssamp << 2) + 3);
-			str_printf(&inst_str, &str_size, "%s", operand_str);
-			
-			/* Call SIInstDump_DUG to print 
-			 * dmask, unorm, and glc */
-			SIInstDump_DUG(self, operand_str, &inst_str, 
-				str_size);
+			assert((bytes.mimg.ssamp << 2) % 4 == 0);
+			DumpScalarSeries(os, bytes.mimg.ssamp << 2, 
+					(bytes.mimg.ssamp << 2) + 3);
+			DumpDug(os);
 		}
-		else if (is_token(fmt_str, "TGT", &token_len))
+		else if (Common::Asm::IsToken(fmt_str, "TGT", &token_len))
 		{
-			operand_dump_exp(operand_str, 
-				self->bytes.exp.tgt);
-			str_printf(&inst_str, &str_size, "%s", operand_str);
+			DumpOperandExp(os, bytes.exp.tgt);
 		}
-		else if (is_token(fmt_str, "EXP_VSRCs", &token_len))
+		else if (Common::Asm::IsToken(fmt_str, "EXP_VSRCs", &token_len))
 		{
-			if (self->bytes.exp.compr == 0 && 
-				(self->bytes.exp.en && 0x0) == 0x0)
+			if (bytes.exp.compr == 0 && 
+					(bytes.exp.en && 0x0) == 0x0)
 			{
-				operand_dump_vector(operand_str, 
-					self->bytes.exp.vsrc0);
-				str_printf(&inst_str, &str_size, 
-					"[%s ", operand_str);
-				operand_dump_vector(operand_str, 
-					self->bytes.exp.vsrc1);
-				str_printf(&inst_str, &str_size, "%s ", 
-					operand_str);
-				operand_dump_vector(operand_str, 
-					self->bytes.exp.vsrc2);
-				str_printf(&inst_str, &str_size, "%s ", 
-					operand_str);
-				operand_dump_vector(operand_str, 
-					self->bytes.exp.vsrc3);
-				str_printf(&inst_str, &str_size, "%s]", 
-					operand_str);
+				os << '[';
+				DumpVector(os, bytes.exp.vsrc0);
+				os << ' ';
+				DumpVector(os, bytes.exp.vsrc1);
+				os << ' ';
+				DumpVector(os, bytes.exp.vsrc2);
+				os << ' ';
+				DumpVector(os, bytes.exp.vsrc3);
+				os << ']';
 			}
-			else if (self->bytes.exp.compr == 1 && 
-				(self->bytes.exp.en && 0x0) == 0x0)
+			else if (bytes.exp.compr == 1 && 
+				(bytes.exp.en && 0x0) == 0x0)
 			{
-				operand_dump_vector(operand_str, 
-					self->bytes.exp.vsrc0);
-				str_printf(&inst_str, &str_size, "[%s ", 
-					operand_str);
-				operand_dump_vector(operand_str, 
-					self->bytes.exp.vsrc1);
-				str_printf(&inst_str, &str_size, "%s]", 
-					operand_str);
+				os << '[';
+				DumpVector(os, bytes.exp.vsrc0);
+				os << ' ';
+				DumpVector(os, bytes.exp.vsrc1);
+				os << ']';
 			}
 		}
 		else
@@ -1120,297 +1063,481 @@ void SIInstDump(SIInst *self, unsigned int rel_addr, void *buf,
 
 		fmt_str += token_len;
 	}
-	line_dump(orig_inst_str, rel_addr, buf, line, line_size, self->size);
+	
+	//////////////
+	//line_dump(orig_inst_str, rel_addr, buf, line, line_size, self->size);
 }
 
 
-void SIInstClear(SIInst *self)
+void Inst::Clear()
 {
-	self->info = NULL;
-	self->bytes.dword = 0;
+	info = NULL;
+	bytes.dword = 0;
+	size = 0;
+	address = 0;
 }
 
 
-void SIInstDecode(SIInst *self, void *buf, unsigned int offset)
+void Inst::Decode(char *buf, unsigned int address)
 {
-	SIAsm *as = self->as;
-
 	/* Initialize instruction */
-	SIInstClear(self);
-
-	/* Instruction is at least 4 bytes */
-	self->size = 4;
-	self->bytes.word[0] = * (unsigned int *) buf;
+	info = NULL;
+	size = 4;
+	bytes.word[0] = * (unsigned int *) buf;
+	bytes.word[1] = 0;
+	this->address = address;
 
 	/* Use the encoding field to determine the instruction type */
-	if (self->bytes.sopp.enc == 0x17F)
+	if (bytes.sopp.enc == 0x17F)
 	{
-		if (!as->inst_info_sopp[self->bytes.sopp.op])
+		if (!as->GetDecTableSopp(bytes.sopp.op))
 		{
 			fatal("Unimplemented Instruction: SOPP:%d  "
-				"// %08X: %08X\n", self->bytes.sopp.op,
-				offset, * (unsigned int *) buf);
+				"// %08X: %08X\n", bytes.sopp.op,
+				address, * (unsigned int *) buf);
 		}
 
-		self->info = as->inst_info_sopp[self->bytes.sopp.op];
+		info = as->GetDecTableSopp(bytes.sopp.op);
 	}
-	else if (self->bytes.sopc.enc == 0x17E)
+	else if (bytes.sopc.enc == 0x17E)
 	{
-		if (!as->inst_info_sopc[self->bytes.sopc.op])
+		if (!as->GetDecTableSopc(bytes.sopc.op))
 		{
 			fatal("Unimplemented Instruction: SOPC:%d  "
-				"// %08X: %08X\n", self->bytes.sopc.op,
-				offset, * (unsigned int *) buf);
+				"// %08X: %08X\n", bytes.sopc.op,
+				address, * (unsigned int *) buf);
 		}
 
-		self->info = as->inst_info_sopc[self->bytes.sopc.op];
+		info = as->GetDecTableSopc(bytes.sopc.op);
 
 		/* Only one source field may use a literal constant,
 		 * which is indicated by 0xFF. */
-		assert(!(self->bytes.sopc.ssrc0 == 0xFF &&
-			self->bytes.sopc.ssrc1 == 0xFF));
-		if (self->bytes.sopc.ssrc0 == 0xFF ||
-			self->bytes.sopc.ssrc1 == 0xFF)
+		assert(!(bytes.sopc.ssrc0 == 0xFF &&
+			bytes.sopc.ssrc1 == 0xFF));
+		if (bytes.sopc.ssrc0 == 0xFF ||
+			bytes.sopc.ssrc1 == 0xFF)
 		{
-			self->size = 8;
-			self->bytes.dword = * (unsigned long long *) buf;
+			size = 8;
+			bytes.dword = * (unsigned long long *) buf;
 		}
 	}
-	else if (self->bytes.sop1.enc == 0x17D)
+	else if (bytes.sop1.enc == 0x17D)
 	{
-		if (!as->inst_info_sop1[self->bytes.sop1.op])
+		if (!as->GetDecTableSop1(bytes.sop1.op))
 		{
 			fatal("Unimplemented Instruction: SOP1:%d  "
-				"// %08X: %08X\n", self->bytes.sop1.op,
-				offset, *(unsigned int*)buf);
+				"// %08X: %08X\n", bytes.sop1.op,
+				address, *(unsigned int*)buf);
 		}
 
-		self->info = as->inst_info_sop1[self->bytes.sop1.op];
+		info = as->GetDecTableSop1(bytes.sop1.op);
 
 		/* 0xFF indicates the use of a literal constant as a
 		 * source operand. */
-		if (self->bytes.sop1.ssrc0 == 0xFF)
+		if (bytes.sop1.ssrc0 == 0xFF)
 		{
-			self->size = 8;
-			self->bytes.dword = * (unsigned long long *) buf;		}
+			size = 8;
+			bytes.dword = * (unsigned long long *) buf;
+		}
 	}
-	else if (self->bytes.sopk.enc == 0xB)
+	else if (bytes.sopk.enc == 0xB)
 	{
-		if (!as->inst_info_sopk[self->bytes.sopk.op])
+		if (!as->GetDecTableSopk(bytes.sopk.op))
 		{
 			fatal("Unimplemented Instruction: SOPK:%d  "
-				"// %08X: %08X\n", self->bytes.sopk.op,
-				offset, * (unsigned int *) buf);
+				"// %08X: %08X\n", bytes.sopk.op,
+				address, * (unsigned int *) buf);
 		}
 
-		self->info = as->inst_info_sopk[self->bytes.sopk.op];
+		info = as->GetDecTableSopk(bytes.sopk.op);
 	}
-	else if (self->bytes.sop2.enc == 0x2)
+	else if (bytes.sop2.enc == 0x2)
 	{
-		if (!as->inst_info_sop2[self->bytes.sop2.op])
+		if (!as->GetDecTableSop2(bytes.sop2.op))
 		{
 			fatal("Unimplemented Instruction: SOP2:%d  "
-				"// %08X: %08X\n", self->bytes.sop2.op,
-				offset, *(unsigned int *)buf);
+				"// %08X: %08X\n", bytes.sop2.op,
+				address, *(unsigned int *)buf);
 		}
 
-		self->info = as->inst_info_sop2[self->bytes.sop2.op];
+		info = as->GetDecTableSop2(bytes.sop2.op);
 
 		/* Only one source field may use a literal constant,
 		 * which is indicated by 0xFF. */
-		assert(!(self->bytes.sop2.ssrc0 == 0xFF &&
-			self->bytes.sop2.ssrc1 == 0xFF));
-		if (self->bytes.sop2.ssrc0 == 0xFF ||
-			self->bytes.sop2.ssrc1 == 0xFF)
+		assert(!(bytes.sop2.ssrc0 == 0xFF &&
+			bytes.sop2.ssrc1 == 0xFF));
+		if (bytes.sop2.ssrc0 == 0xFF ||
+			bytes.sop2.ssrc1 == 0xFF)
 		{
-			self->size = 8;
-			self->bytes.dword = * (unsigned long long *) buf;		}
+			size = 8;
+			bytes.dword = * (unsigned long long *) buf;
+		}
 	}
-	else if (self->bytes.smrd.enc == 0x18)
+	else if (bytes.smrd.enc == 0x18)
 	{
-		if (!as->inst_info_smrd[self->bytes.smrd.op])
+		if (!as->GetDecTableSmrd(bytes.smrd.op))
 		{
 			fatal("Unimplemented Instruction: SMRD:%d  "
-				"// %08X: %08X\n", self->bytes.smrd.op,
-				offset, *(unsigned int *)buf);
+				"// %08X: %08X\n", bytes.smrd.op,
+				address, *(unsigned int *)buf);
 		}
 
-		self->info = as->inst_info_smrd[self->bytes.smrd.op];
+		info = as->GetDecTableSmrd(bytes.smrd.op);
 	}
-	else if (self->bytes.vop3a.enc == 0x34)
+	else if (bytes.vop3a.enc == 0x34)
 	{
 		/* 64 bit instruction. */
-		self->size = 8;
-		self->bytes.dword = * (unsigned long long *) buf;
+		size = 8;
+		bytes.dword = * (unsigned long long *) buf;
 
-		if (!as->inst_info_vop3[self->bytes.vop3a.op])
+		if (!as->GetDecTableVop3(bytes.vop3a.op))
 		{
 			fatal("Unimplemented Instruction: VOP3:%d  "
 				"// %08X: %08X %08X\n",
-				self->bytes.vop3a.op, offset,
+				bytes.vop3a.op, address,
 				*(unsigned int *)buf,
 				*(unsigned int *)(buf + 4));
 		}
 
-		self->info = as->inst_info_vop3[self->bytes.vop3a.op];
+		info = as->GetDecTableVop3(bytes.vop3a.op);
 	}
-	else if (self->bytes.vopc.enc == 0x3E)
+	else if (bytes.vopc.enc == 0x3E)
 	{
-		if (!as->inst_info_vopc[self->bytes.vopc.op])
+		if (!as->GetDecTableVopc(bytes.vopc.op))
 		{
 			fatal("Unimplemented Instruction: VOPC:%d  "
 				"// %08X: %08X\n",
-				self->bytes.vopc.op, offset,
+				bytes.vopc.op, address,
 				*(unsigned int *)buf);
 		}
 
-		self->info = as->inst_info_vopc[self->bytes.vopc.op];
+		info = as->GetDecTableVopc(bytes.vopc.op);
 
 		/* 0xFF indicates the use of a literal constant as a
 		 * source operand. */
-		if (self->bytes.vopc.src0 == 0xFF)
+		if (bytes.vopc.src0 == 0xFF)
 		{
-			self->size = 8;
-			self->bytes.dword = * (unsigned long long *) buf;		}
+			size = 8;
+			bytes.dword = * (unsigned long long *) buf;
+		}
 	}
-	else if (self->bytes.vop1.enc == 0x3F)
+	else if (bytes.vop1.enc == 0x3F)
 	{
-		if (!as->inst_info_vop1[self->bytes.vop1.op])
+		if (!as->GetDecTableVop1(bytes.vop1.op))
 		{
 			fatal("Unimplemented Instruction: VOP1:%d  "
-				"// %08X: %08X\n", self->bytes.vop1.op,
-				offset, * (unsigned int *) buf);
+				"// %08X: %08X\n", bytes.vop1.op,
+				address, * (unsigned int *) buf);
 		}
 
-		self->info = as->inst_info_vop1[self->bytes.vop1.op];
+		info = as->GetDecTableVop1(bytes.vop1.op);
 
 		/* 0xFF indicates the use of a literal constant as a
 		 * source operand. */
-		if (self->bytes.vop1.src0 == 0xFF)
+		if (bytes.vop1.src0 == 0xFF)
 		{
-			self->size = 8;
-			self->bytes.dword = * (unsigned long long *) buf;		}
+			size = 8;
+			bytes.dword = * (unsigned long long *) buf;
+		}
 	}
-	else if (self->bytes.vop2.enc == 0x0)
+	else if (bytes.vop2.enc == 0x0)
 	{
-		if (!as->inst_info_vop2[self->bytes.vop2.op])
+		if (!as->GetDecTableVop2(bytes.vop2.op))
 		{
 			fatal("Unimplemented Instruction: VOP2:%d  "
-				"// %08X: %08X\n", self->bytes.vop2.op,
-				offset, * (unsigned int *) buf);
+				"// %08X: %08X\n", bytes.vop2.op,
+				address, * (unsigned int *) buf);
 		}
 
-		self->info = as->inst_info_vop2[self->bytes.vop2.op];
+		info = as->GetDecTableVop2(bytes.vop2.op);
 
 		/* 0xFF indicates the use of a literal constant as a
 		 * source operand. */
-		if (self->bytes.vop2.src0 == 0xFF)
+		if (bytes.vop2.src0 == 0xFF)
 		{
-			self->size = 8;
-			self->bytes.dword = * (unsigned long long *) buf;		}
+			size = 8;
+			bytes.dword = * (unsigned long long *) buf;
+		}
 
 		/* Some opcodes define a 32-bit literal constant following
 		 * the instruction */
-		if (self->bytes.vop2.op == 32)
+		if (bytes.vop2.op == 32)
 		{
-			self->size = 8;
-			self->bytes.dword = * (unsigned long long *) buf;		}
+			size = 8;
+			bytes.dword = * (unsigned long long *) buf;
+		}
 	}
-	else if (self->bytes.vintrp.enc == 0x32)
+	else if (bytes.vintrp.enc == 0x32)
 	{
-		if (!as->inst_info_vintrp[self->bytes.vintrp.op])
+		if (!as->GetDecTableVintrp(bytes.vintrp.op))
 		{
 			fatal("Unimplemented Instruction: VINTRP:%d  "
-				"// %08X: %08X\n", self->bytes.vintrp.op,
-				offset, * (unsigned int *) buf);
+				"// %08X: %08X\n", bytes.vintrp.op,
+				address, * (unsigned int *) buf);
 		}
 
-		self->info = as->inst_info_vintrp[self->bytes.vintrp.op];
+		info = as->GetDecTableVintrp(bytes.vintrp.op);
 
 	}
-	else if (self->bytes.ds.enc == 0x36)
+	else if (bytes.ds.enc == 0x36)
 	{
 		/* 64 bit instruction. */
-		self->size = 8;
-		self->bytes.dword = * (unsigned long long *) buf;
-		if (!as->inst_info_ds[self->bytes.ds.op])
+		size = 8;
+		bytes.dword = * (unsigned long long *) buf;
+		if (!as->GetDecTableDs(bytes.ds.op))
 		{
 			fatal("Unimplemented Instruction: DS:%d  "
-				"// %08X: %08X %08X\n", self->bytes.ds.op,
-				offset, *(unsigned int *)buf,
+				"// %08X: %08X %08X\n", bytes.ds.op,
+				address, *(unsigned int *)buf,
 				*(unsigned int *)(buf + 4));
 		}
 
-		self->info = as->inst_info_ds[self->bytes.ds.op];
+		info = as->GetDecTableDs(bytes.ds.op);
 	}
-	else if (self->bytes.mtbuf.enc == 0x3A)
+	else if (bytes.mtbuf.enc == 0x3A)
 	{
 		/* 64 bit instruction. */
-		self->size = 8;
-		self->bytes.dword = * (unsigned long long *) buf;
+		size = 8;
+		bytes.dword = * (unsigned long long *) buf;
 
-		if (!as->inst_info_mtbuf[self->bytes.mtbuf.op])
+		if (!as->GetDecTableMtbuf(bytes.mtbuf.op))
 		{
 			fatal("Unimplemented Instruction: MTBUF:%d  "
 				"// %08X: %08X %08X\n",
-				self->bytes.mtbuf.op, offset,
+				bytes.mtbuf.op, address,
 				*(unsigned int *)buf, *(unsigned int *)(buf+4));
 		}
 
-		self->info = as->inst_info_mtbuf[self->bytes.mtbuf.op];
+		info = as->GetDecTableMtbuf(bytes.mtbuf.op);
 	}
-	else if (self->bytes.mubuf.enc == 0x38)
+	else if (bytes.mubuf.enc == 0x38)
 	{
 		/* 64 bit instruction. */
-		self->size = 8;
-		self->bytes.dword = * (unsigned long long *) buf;
+		size = 8;
+		bytes.dword = * (unsigned long long *) buf;
 
-		if (!as->inst_info_mubuf[self->bytes.mubuf.op])
+		if (!as->GetDecTableMubuf(bytes.mubuf.op))
 		{
 			fatal("Unimplemented Instruction: MUBUF:%d  "
 				"// %08X: %08X %08X\n",
-				self->bytes.mubuf.op, offset,
+				bytes.mubuf.op, address,
 				*(unsigned int *)buf,
 				*(unsigned int *)(buf+4));
 		}
 
-		self->info = as->inst_info_mubuf[self->bytes.mubuf.op];
+		info = as->GetDecTableMubuf(bytes.mubuf.op);
 	}
-	else if (self->bytes.mimg.enc == 0x3C)
+	else if (bytes.mimg.enc == 0x3C)
 	{
 		/* 64 bit instruction. */
-		self->size = 8;
-		self->bytes.dword = * (unsigned long long *) buf;
+		size = 8;
+		bytes.dword = * (unsigned long long *) buf;
 
-		if(!as->inst_info_mimg[self->bytes.mimg.op])
+		if(!as->GetDecTableMimg(bytes.mimg.op))
 		{
 			fatal("Unimplemented Instruction: MIMG:%d  "
 				"// %08X: %08X %08X\n",
-				self->bytes.mimg.op, offset,
+				bytes.mimg.op, address,
 				*(unsigned int *)buf,
 				*(unsigned int *)(buf+4));
 		}
 
-		self->info = as->inst_info_mimg[self->bytes.mimg.op];
+		info = as->GetDecTableMimg(bytes.mimg.op);
 	}
-	else if (self->bytes.exp.enc == 0x3E)
+	else if (bytes.exp.enc == 0x3E)
 	{
 		/* 64 bit instruction. */
-		self->size = 8;
-		self->bytes.dword = * (unsigned long long *) buf;
+		size = 8;
+		bytes.dword = * (unsigned long long *) buf;
 
 		/* Export is the only instruction in its kind */
-		if (!as->inst_info_exp[0])
+		if (!as->GetDecTableExp(0))
 			fatal("Unimplemented Instruction: EXP\n");
 
-		self->info = as->inst_info_exp[0];
+		info = as->GetDecTableExp(0);
 	}
 	else
 	{
 		fatal("Unimplemented format. Instruction is:  // %08X: %08X\n",
-				offset, ((unsigned int*)buf)[0]);
+				address, ((unsigned int*)buf)[0]);
 	}
 }
+	
+	
+const char *Inst::SpecialRegToString(InstSpecialReg value)
+{
+	return StringMapValue(inst_special_reg_map, value);
+}
 
-#endif
+
+const char *Inst::BufDataFormatToString(InstBufDataFormat value)
+{
+	return StringMapValue(inst_buf_data_format_map, value);
+}
+
+
+const char *Inst::BufNumFormatToString(InstBufNumFormat value)
+{
+	return StringMapValue(inst_buf_num_format_map, value);
+}
+
+
+const char *Inst::FormatToString(InstFormat value)
+{
+	return StringMapValue(inst_format_map, value);
+}
+	
+
+InstSpecialReg Inst::StringToSpecialReg(const char *text)
+{
+	return (InstSpecialReg) StringMapString(inst_special_reg_map, text);
+}
+
+
+
+/*
+ * C Wrapper
+ */
+
+
+struct SIInstWrap *SIInstWrapCreate(SIAsmWrap *as)
+{
+	Inst *inst = new Inst((Asm *) as);
+	return (SIInstWrap *) inst;
+}
+
+
+void SIInstWrapFree(struct SIInstWrap *self)
+{
+	Inst *inst = (Inst *) self;
+	delete inst;
+}
+
+
+void SIInstWrapDecode(struct SIInstWrap *self, char *buffer, unsigned int offset)
+{
+	Inst *inst = (Inst *) self;
+	inst->Decode(buffer, offset);
+}
+
+
+void SIInstWrapDump(struct SIInstWrap *self, FILE *f)
+{
+	Inst *inst = (Inst *) self;
+	__gnu_cxx::stdio_filebuf<char> filebuf(fileno(f), std::ios::out);
+	ostream os(&filebuf);
+	inst->Dump(os);
+}
+
+
+void SIInstWrapDumpBuf(struct SIInstWrap *self, char *buffer, int size)
+{
+	stringstream ss;
+	Inst *inst = (Inst *) self;
+	inst->Dump(ss);
+	snprintf(buffer, size, "%s", ss.str().c_str());
+}
+
+
+void SIInstWrapClear(struct SIInstWrap *self)
+{
+	Inst *inst = (Inst *) self;
+	inst->Clear();
+}
+
+
+int SIInstWrapGetOp(struct SIInstWrap *self)
+{
+	Inst *inst = (Inst *) self;
+	return inst->GetOp();
+}
+
+
+SIInstOpcode SIInstWrapGetOpcode(struct SIInstWrap *self)
+{
+	Inst *inst = (Inst *) self;
+	return (SIInstOpcode) inst->GetOpcode();
+}
+
+
+SIInstBytes *SIInstWrapGetBytes(struct SIInstWrap *self)
+{
+	Inst *inst = (Inst *) self;
+	return (SIInstBytes *) inst->GetBytes();
+}
+
+
+const char *SIInstWrapGetName(struct SIInstWrap *self)
+{
+	Inst *inst = (Inst *) self;
+	return inst->GetName();
+}
+
+
+SIInstFormat SIInstWrapGetFormat(struct SIInstWrap *self)
+{
+	Inst *inst = (Inst *) self;
+	return (SIInstFormat) inst->GetFormat();
+}
+
+
+int SIInstWrapGetSize(struct SIInstWrap *self)
+{
+	Inst *inst = (Inst *) self;
+	return inst->GetSize();
+}
+
+
+const char *SIInstWrapSpecialRegToString(SIInstSpecialReg value)
+{
+	return Inst::SpecialRegToString((InstSpecialReg) value);
+}
+
+
+const char *SIInstWrapBufDataFormatToString(SIInstBufDataFormat value)
+{
+	return Inst::BufDataFormatToString((InstBufDataFormat) value);
+}
+
+
+const char *SIInstWrapBufNumFormatToString(SIInstBufNumFormat value)
+{
+	return Inst::BufNumFormatToString((InstBufNumFormat) value);
+}
+
+
+const char *SIInstWrapFormatToString(SIInstFormat value)
+{
+	return Inst::FormatToString((InstFormat) value);
+}
+
+
+SIInstSpecialReg SIInstWrapStringToSpecialReg(const char *text)
+{
+	return (SIInstSpecialReg) Inst::StringToSpecialReg(text);
+}
+
+
+SIInstBufDataFormat SIInstWrapStringToBufDataFormat(const char *text, int *err_ptr)
+{
+	SIInstBufDataFormat result;
+	int err;
+
+	result = (SIInstBufDataFormat) StringMapString(inst_buf_data_format_map, text, err);
+	if (err_ptr)
+		*err_ptr = err;
+	return result;
+}
+
+
+SIInstBufNumFormat SIInstWrapStringToBufNumFormat(const char *text, int *err_ptr)
+{
+	SIInstBufNumFormat result;
+	int err;
+
+	result = (SIInstBufNumFormat) StringMapString(inst_buf_num_format_map, text, err);
+	if (err_ptr)
+		*err_ptr = err;
+	return result;
+}
 

@@ -32,7 +32,7 @@
 CLASS_BEGIN(SIEmu, Emu)
 
 	/* Associated disassembler */
-	SIAsm *as;
+	struct SIAsmWrap *as;
 
 	/* OpenCL driver */
 	OpenclDriver *opencl_driver;
@@ -73,7 +73,7 @@ CLASS_BEGIN(SIEmu, Emu)
 
 CLASS_END(SIEmu)
 
-void SIEmuCreate(SIEmu *self, SIAsm *as);
+void SIEmuCreate(SIEmu *self, struct SIAsmWrap *as);
 void SIEmuDestroy(SIEmu *self);
 
 void SIEmuDump(Object *self, FILE *f);

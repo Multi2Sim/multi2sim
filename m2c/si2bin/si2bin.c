@@ -102,7 +102,7 @@ void Si2binCreate(Si2bin *self)
 	int i;
 
 	/* Initialize parent */
-	SIAsmCreate(asSIAsm(self));
+	self->parent = SIAsmWrapCreate();
 
 	/* Initialize */
 	self->symbol_table = new(HashTable);
@@ -114,7 +114,7 @@ void Si2binCreate(Si2bin *self)
 	for (i = 0; i < SIInstOpcodeCount; i++)
 	{
 		/* Instruction info from disassembler */
-		inst_info = &asSIAsm(self)->inst_info[i];
+		inst_info = (SIInstInfo *) SIAsmWrapGetInstInfo(self->parent, i);
 		if (!inst_info->name || !inst_info->fmt_str)
 		{
 			ArrayAdd(self->inst_info_array, NULL);

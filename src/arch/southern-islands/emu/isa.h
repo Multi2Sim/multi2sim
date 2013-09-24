@@ -20,7 +20,9 @@
 #ifndef ARCH_SOUTHERN_ISLANDS_EMU_ISA_H
 #define ARCH_SOUTHERN_ISLANDS_EMU_ISA_H
 
+#include <arch/southern-islands/asm/Inst.h>
 #include <lib/class/class.h>
+
 
 enum si_isa_write_task_kind_t
 {
@@ -88,29 +90,29 @@ extern char *err_si_isa_note;
 
 
 /* Macros for fast access of instruction words */
-#define SI_INST_SMRD		inst->bytes.smrd
-#define SI_INST_SOPP		inst->bytes.sopp
-#define SI_INST_SOPK		inst->bytes.sopk
-#define SI_INST_SOPC		inst->bytes.sopc
-#define SI_INST_SOP1		inst->bytes.sop1
-#define SI_INST_SOP2		inst->bytes.sop2
-#define SI_INST_VOP1		inst->bytes.vop1
-#define SI_INST_VOP2		inst->bytes.vop2
-#define SI_INST_VOPC		inst->bytes.vopc
-#define SI_INST_VOP3b		inst->bytes.vop3b
-#define SI_INST_VOP3a		inst->bytes.vop3a
-#define SI_INST_VINTRP		inst->bytes.vintrp
-#define SI_INST_DS			inst->bytes.ds
-#define SI_INST_MTBUF		inst->bytes.mtbuf
-#define SI_INST_MUBUF		inst->bytes.mubuf
-#define SI_INST_EXP			inst->bytes.exp
+#define SI_INST_SMRD		SIInstWrapGetBytes(inst)->smrd
+#define SI_INST_SOPP		SIInstWrapGetBytes(inst)->sopp
+#define SI_INST_SOPK		SIInstWrapGetBytes(inst)->sopk
+#define SI_INST_SOPC		SIInstWrapGetBytes(inst)->sopc
+#define SI_INST_SOP1		SIInstWrapGetBytes(inst)->sop1
+#define SI_INST_SOP2		SIInstWrapGetBytes(inst)->sop2
+#define SI_INST_VOP1		SIInstWrapGetBytes(inst)->vop1
+#define SI_INST_VOP2		SIInstWrapGetBytes(inst)->vop2
+#define SI_INST_VOPC		SIInstWrapGetBytes(inst)->vopc
+#define SI_INST_VOP3b		SIInstWrapGetBytes(inst)->vop3b
+#define SI_INST_VOP3a		SIInstWrapGetBytes(inst)->vop3a
+#define SI_INST_VINTRP		SIInstWrapGetBytes(inst)->vintrp
+#define SI_INST_DS		SIInstWrapGetBytes(inst)->ds
+#define SI_INST_MTBUF		SIInstWrapGetBytes(inst)->mtbuf
+#define SI_INST_MUBUF		SIInstWrapGetBytes(inst)->mubuf
+#define SI_INST_EXP		SIInstWrapGetBytes(inst)->exp
 
 
 /* Forward declaration */
 union SIInstReg;
 
 /* List of functions implementing GPU instructions 'amd_inst_XXX_impl' */
-typedef void (*si_isa_inst_func_t)(SIWorkItem *work_item, SIInst *inst);
+typedef void (*si_isa_inst_func_t)(SIWorkItem *work_item, struct SIInstWrap *inst);
 extern si_isa_inst_func_t si_isa_inst_func[];
 
 int si_isa_get_num_elems(int data_format);

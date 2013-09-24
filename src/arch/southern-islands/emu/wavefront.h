@@ -20,7 +20,7 @@
 #ifndef ARCH_SOUTHERN_ISLANDS_EMU_WAVEFRONT_H
 #define ARCH_SOUTHERN_ISLANDS_EMU_WAVEFRONT_H
 
-#include <arch/southern-islands/asm/inst.h>
+#include <arch/southern-islands/asm/Inst.h>
 #include <lib/class/class.h>
 
 
@@ -46,7 +46,7 @@ CLASS_BEGIN(SIWavefront, Object)
 	unsigned int pc;
 
 	/* Current instruction */
-	SIInst inst;
+	struct SIInstWrap *inst;
 	int inst_size;
 
 	/* Pointer to work_items */
