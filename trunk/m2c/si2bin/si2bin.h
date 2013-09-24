@@ -20,7 +20,7 @@
 #ifndef M2C_SI2BIN_SI2BIN_H
 #define M2C_SI2BIN_SI2BIN_H
 
-#include <arch/southern-islands/asm/asm.h>
+#include <arch/southern-islands/asm/Asm.h>
 
 
 /* Forward declaration */
@@ -32,7 +32,10 @@ struct list_t;
  * Class 'Si2bin'
  */
 
-CLASS_BEGIN(Si2bin, SIAsm)
+CLASS_BEGIN(Si2bin, Object)
+
+	/* Parent - FIXME */
+	struct SIAsmWrap *parent;
 
 	/* Symbol table, elements of type 'Si2binSymbol' */
 	HashTable *symbol_table;

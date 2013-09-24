@@ -56,8 +56,8 @@
 #include <arch/mips/emu/isa.h>
 #include <arch/mips/timing/cpu.h>
 #include <arch/southern-islands/asm/arg.h>
-#include <arch/southern-islands/asm/asm.h>
-#include <arch/southern-islands/asm/inst.h>
+#include <arch/southern-islands/asm/Asm.h>
+#include <arch/southern-islands/asm/Inst.h>
 #include <arch/southern-islands/emu/emu.h>
 #include <arch/southern-islands/emu/ndrange.h>
 #include <arch/southern-islands/emu/isa.h>
@@ -190,7 +190,7 @@ static X86Asm *x86_asm;
 static X86Emu *x86_emu;
 static X86Cpu *x86_cpu;
 
-static SIAsm *si_asm;
+static struct SIAsmWrap *si_asm;
 static SIEmu *si_emu;
 static SIGpu *si_gpu;
 
@@ -1959,9 +1959,7 @@ static void m2s_init(void)
 	CLASS_REGISTER(X86Core);
 	CLASS_REGISTER(X86Thread);
 
-	CLASS_REGISTER(SIAsm);
 	CLASS_REGISTER(SIArg);
-	CLASS_REGISTER(SIInst);
 
 	CLASS_REGISTER(SIEmu);
 	CLASS_REGISTER(SINDRange);
@@ -2090,12 +2088,10 @@ int main(int argc, char **argv)
 	/* Southern Islands disassembler tool */
 	if (*si_disasm_file_name)
 	{
-		SIAsm *as;
-
-		as = new(SIAsm);
-		SIAsmDisassembleBinary(as, si_disasm_file_name);
-		delete(as)
-
+		struct SIAsmWrap *as;
+		as = SIAsmWrapCreate();
+		SIAsmWrapDisassembleBinary(as, si_disasm_file_name);
+		SIAsmWrapFree(as);
 		goto end;
 	}
 
@@ -2115,13 +2111,11 @@ int main(int argc, char **argv)
 	/* Southern Islands OpenGL disassembler tool */
 	if (*si_opengl_disasm_file_name)
 	{
-		SIAsm *as;
-
-		as = new(SIAsm);
-		SIAsmDisassembleOpenGLBinary(as, si_opengl_disasm_file_name,
+		struct SIAsmWrap *as;
+		as = SIAsmWrapCreate();
+		SIAsmWrapDisassembleOpenGLBinary(as, si_opengl_disasm_file_name,
 				si_opengl_disasm_shader_index);
-
-		delete(as);
+		SIAsmWrapFree(as);
 		goto end;
 	}
 
@@ -2328,7 +2322,7 @@ int main(int argc, char **argv)
 
 	/* Southern Islands
 	 * FIXME */
-	si_asm = new(SIAsm);
+	si_asm = SIAsmWrapCreate();
 	si_emu = new(SIEmu, si_asm);
 	if (si_sim_kind == arch_sim_kind_detailed)
 	{
@@ -2413,7 +2407,7 @@ int main(int argc, char **argv)
 	if (si_gpu)
 		delete(si_gpu);
 	delete(si_emu);
-	delete(si_asm);
+	SIAsmWrapFree(si_asm);
 
 	/* x86 */
 	if (x86_cpu)

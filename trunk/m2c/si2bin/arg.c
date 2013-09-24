@@ -421,7 +421,7 @@ void Si2binArgDump(Si2binArg *arg, FILE *f)
 
 	case Si2binArgSpecialRegister:
 
-		fprintf(f, "<special_reg> %s", StringMapValue(si_inst_special_reg_map,
+		fprintf(f, "<special_reg> %s", SIInstWrapSpecialRegToString(
 				arg->value.special_register.reg));
 		break;
 	
@@ -442,9 +442,9 @@ void Si2binArgDump(Si2binArg *arg, FILE *f)
 		Si2binArgDump(arg->value.maddr.qual, f);
 		fprintf(f, "}");
 
-		fprintf(f, " dfmt=%s", StringMapValue(si_inst_buf_data_format_map,
+		fprintf(f, " dfmt=%s", SIInstWrapBufDataFormatToString(
 				arg->value.maddr.data_format));
-		fprintf(f, " nfmt=%s", StringMapValue(si_inst_buf_num_format_map,
+		fprintf(f, " nfmt=%s", SIInstWrapBufNumFormatToString(
 				arg->value.maddr.num_format));
 
 		break;
@@ -582,7 +582,7 @@ void Si2binArgDumpAssembly(Si2binArg *arg, FILE *f)
 	}
 
 	case Si2binArgSpecialRegister:
-		fprintf(f, "%s", StringMapValue(si_inst_special_reg_map, 
+		fprintf(f, "%s", SIInstWrapSpecialRegToString(
 			arg->value.special_register.reg));
 		break;
 
@@ -596,8 +596,8 @@ void Si2binArgDumpAssembly(Si2binArg *arg, FILE *f)
 		fprintf(f, " ");
 		Si2binArgDumpAssembly(arg->value.maddr.qual, f);
 		fprintf(f, " format:[%s,%s]", 
-			StringMapValue(si_inst_buf_data_format_map, arg->value.maddr.data_format),
-			StringMapValue(si_inst_buf_num_format_map, arg->value.maddr.num_format));
+			SIInstWrapBufDataFormatToString(arg->value.maddr.data_format),
+			SIInstWrapBufNumFormatToString(arg->value.maddr.num_format));
 		
 		break;
 	

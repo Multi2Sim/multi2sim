@@ -20,65 +20,134 @@
 #ifndef ARCH_SOUTHERN_ISLANDS_ASM_H
 #define ARCH_SOUTHERN_ISLANDS_ASM_H
 
-#include <arch/common/asm.h>
 
-#include "inst.h"
+#ifdef __cplusplus
+
+#include <iostream>
+#include "Inst.h"
+
+namespace SI
+{
+
+
+class Asm
+{
+	static const int dec_table_sopp_count = 23;
+	static const int dec_table_sopc_count = 17;
+	static const int dec_table_sop1_count = 54;
+	static const int dec_table_sopk_count = 22;
+	static const int dec_table_sop2_count = 45;
+	static const int dec_table_smrd_count = 32;
+	static const int dec_table_vop3_count = 453;
+	static const int dec_table_vopc_count = 248;
+	static const int dec_table_vop1_count = 69;
+	static const int dec_table_vop2_count = 50;
+	static const int dec_table_vintrp_count = 4;
+	static const int dec_table_ds_count = 212;
+	static const int dec_table_mtbuf_count = 8;
+	static const int dec_table_mubuf_count = 114;
+	static const int dec_table_mimg_count = 97;
+	static const int dec_table_exp_count = 1;
+
+	/* Info about Southern Islands instructions. */
+	InstInfo inst_info[InstOpcodeCount];
+
+	/* Pointers to elements in 'inst_info' */
+	InstInfo *dec_table_sopp[dec_table_sopp_count];
+	InstInfo *dec_table_sopc[dec_table_sopc_count];
+	InstInfo *dec_table_sop1[dec_table_sop1_count];
+	InstInfo *dec_table_sopk[dec_table_sopk_count];
+	InstInfo *dec_table_sop2[dec_table_sop2_count];
+	InstInfo *dec_table_smrd[dec_table_smrd_count];
+	InstInfo *dec_table_vop3[dec_table_vop3_count];
+	InstInfo *dec_table_vopc[dec_table_vopc_count];
+	InstInfo *dec_table_vop1[dec_table_vop1_count];
+	InstInfo *dec_table_vop2[dec_table_vop2_count];
+	InstInfo *dec_table_vintrp[dec_table_vintrp_count];
+	InstInfo *dec_table_ds[dec_table_ds_count];
+	InstInfo *dec_table_mtbuf[dec_table_mtbuf_count];
+	InstInfo *dec_table_mubuf[dec_table_mubuf_count];
+	InstInfo *dec_table_mimg[dec_table_mimg_count];
+	InstInfo *dec_table_exp[dec_table_exp_count];
+
+	void DisassembleBuffer(char *ptr, int size, FILE *f);
+
+public:
+
+	/* Constructor */
+	Asm();
+
+	/* Disassemblers */
+	void DisassembleBinary(std::string path);
+	void DisassembleOpenGLBinary(std::string path, int shader_index);
+
+	/* Getters */
+	InstInfo *GetInstInfo(int index) { assert(index >= 0 && index <
+			InstOpcodeCount); return &inst_info[index]; }
+	InstInfo *GetDecTableSopp(int index) { assert(index >= 0 && index <
+			dec_table_sopp_count); return dec_table_sopp[index]; }
+	InstInfo *GetDecTableSopc(int index) { assert(index >= 0 && index <
+			dec_table_sopc_count); return dec_table_sopc[index]; }
+	InstInfo *GetDecTableSop1(int index) { assert(index >= 0 && index <
+			dec_table_sop1_count); return dec_table_sop1[index]; }
+	InstInfo *GetDecTableSopk(int index) { assert(index >= 0 && index <
+			dec_table_sopk_count); return dec_table_sopk[index]; }
+	InstInfo *GetDecTableSop2(int index) { assert(index >= 0 && index <
+			dec_table_sop2_count); return dec_table_sop2[index]; }
+	InstInfo *GetDecTableSmrd(int index) { assert(index >= 0 && index <
+			dec_table_smrd_count); return dec_table_smrd[index]; }
+	InstInfo *GetDecTableVop3(int index) { assert(index >= 0 && index <
+			dec_table_vop3_count); return dec_table_vop3[index]; }
+	InstInfo *GetDecTableVopc(int index) { assert(index >= 0 && index <
+			dec_table_vopc_count); return dec_table_vopc[index]; }
+	InstInfo *GetDecTableVop1(int index) { assert(index >= 0 && index <
+			dec_table_vop1_count); return dec_table_vop1[index]; }
+	InstInfo *GetDecTableVop2(int index) { assert(index >= 0 && index <
+			dec_table_vop2_count); return dec_table_vop2[index]; }
+	InstInfo *GetDecTableVintrp(int index) { assert(index >= 0 && index <
+			dec_table_vintrp_count); return dec_table_vintrp[index]; }
+	InstInfo *GetDecTableDs(int index) { assert(index >= 0 && index <
+			dec_table_ds_count); return dec_table_ds[index]; }
+	InstInfo *GetDecTableMtbuf(int index) { assert(index >= 0 && index <
+			dec_table_mtbuf_count); return dec_table_mtbuf[index]; }
+	InstInfo *GetDecTableMubuf(int index) { assert(index >= 0 && index <
+			dec_table_mubuf_count); return dec_table_mubuf[index]; }
+	InstInfo *GetDecTableMimg(int index) { assert(index >= 0 && index <
+			dec_table_mimg_count); return dec_table_mimg[index]; }
+	InstInfo *GetDecTableExp(int index) { assert(index >= 0 && index <
+			dec_table_exp_count); return dec_table_exp[index]; }
+};
+
+
+}  /* namespace SI */
+
+#endif
 
 
 
 /*
- * Class 'SIAsm'
+ * C Wrapper
  */
 
-#define SI_INST_INFO_SOPP_MAX_VALUE 22
-#define SI_INST_INFO_SOPC_MAX_VALUE 16
-#define SI_INST_INFO_SOP1_MAX_VALUE 53
-#define SI_INST_INFO_SOPK_MAX_VALUE 21
-#define SI_INST_INFO_SOP2_MAX_VALUE 44
-#define SI_INST_INFO_SMRD_MAX_VALUE 31
-#define SI_INST_INFO_VOP3_MAX_VALUE 452
-#define SI_INST_INFO_VOPC_MAX_VALUE 247
-#define SI_INST_INFO_VOP1_MAX_VALUE 68
-#define SI_INST_INFO_VOP2_MAX_VALUE 49
-#define SI_INST_INFO_VINTRP_MAX_VALUE 3
-#define SI_INST_INFO_DS_MAX_VALUE 211
-#define SI_INST_INFO_MTBUF_MAX_VALUE 7
-#define SI_INST_INFO_MUBUF_MAX_VALUE 113
-#define SI_INST_INFO_MIMG_MAX_VALUE 96
-#define SI_INST_INFO_EXP_MAX_VALUE  0
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-CLASS_BEGIN(SIAsm, Asm)
+struct SIAsmWrap;
 
-	/* Array containing 'SIInstOpcodeCount' elements with information about
-	 * the Southern Islands instructions. */
-	SIInstInfo *inst_info;
+struct SIAsmWrap *SIAsmWrapCreate();
+void SIAsmWrapFree(struct SIAsmWrap *self);
 
-	/* Pointers to elements in 'inst_info' */
-	SIInstInfo *inst_info_sopp[SI_INST_INFO_SOPP_MAX_VALUE + 1];
-	SIInstInfo *inst_info_sopc[SI_INST_INFO_SOPC_MAX_VALUE + 1];
-	SIInstInfo *inst_info_sop1[SI_INST_INFO_SOP1_MAX_VALUE + 1];
-	SIInstInfo *inst_info_sopk[SI_INST_INFO_SOPK_MAX_VALUE + 1];
-	SIInstInfo *inst_info_sop2[SI_INST_INFO_SOP2_MAX_VALUE + 1];
-	SIInstInfo *inst_info_smrd[SI_INST_INFO_SMRD_MAX_VALUE + 1];
-	SIInstInfo *inst_info_vop3[SI_INST_INFO_VOP3_MAX_VALUE + 1];
-	SIInstInfo *inst_info_vopc[SI_INST_INFO_VOPC_MAX_VALUE + 1];
-	SIInstInfo *inst_info_vop1[SI_INST_INFO_VOP1_MAX_VALUE + 1];
-	SIInstInfo *inst_info_vop2[SI_INST_INFO_VOP2_MAX_VALUE + 1];
-	SIInstInfo *inst_info_vintrp[SI_INST_INFO_VINTRP_MAX_VALUE + 1];
-	SIInstInfo *inst_info_ds[SI_INST_INFO_DS_MAX_VALUE + 1];
-	SIInstInfo *inst_info_mtbuf[SI_INST_INFO_MTBUF_MAX_VALUE + 1];
-	SIInstInfo *inst_info_mubuf[SI_INST_INFO_MUBUF_MAX_VALUE + 1];
-	SIInstInfo *inst_info_mimg[SI_INST_INFO_MIMG_MAX_VALUE + 1];
-	SIInstInfo *inst_info_exp[SI_INST_INFO_EXP_MAX_VALUE + 1];
+void SIAsmWrapDisassembleBinary(struct SIAsmWrap *self, char *path);
+void SIAsmWrapDisassembleOpenGLBinary(struct SIAsmWrap *self, char *path,
+		int shader_index);
 
-CLASS_END(SIAsm)
+void *SIAsmWrapGetInstInfo(struct SIAsmWrap *self, int index);
 
+#ifdef __cplusplus
+}
+#endif
 
-void SIAsmCreate(SIAsm *self);
-void SIAsmDestroy(SIAsm *self);
-
-void SIAsmDisassembleBinary(SIAsm *self, char *path);
-void SIAsmDisassembleOpenGLBinary(SIAsm *self, char *path, int shader_index);
 
 #endif
 

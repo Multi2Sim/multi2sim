@@ -18,7 +18,7 @@
  */
 
 
-#include <arch/southern-islands/asm/inst.h>
+#include <arch/southern-islands/asm/Inst.h>
 #include <lib/class/class.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
@@ -64,12 +64,12 @@ void SIWavefrontCreate(SIWavefront *self, int id, SIWorkGroup *work_group)
 {
 	SINDRange *ndrange = work_group->ndrange;
 	SIEmu *emu = ndrange->emu;
-	SIAsm *as = emu->as;
+	struct SIAsmWrap *as = emu->as;
 
 	int work_item_id;
 
 	/* Initialize */
-	new_static(&self->inst, SIInst, as);
+	self->inst = SIInstWrapCreate(as);
 	self->work_group = work_group;
 	self->id = id;
 	SIWavefrontInitSReg(self);
@@ -92,6 +92,7 @@ void SIWavefrontCreate(SIWavefront *self, int id, SIWorkGroup *work_group)
 void SIWavefrontDestroy(SIWavefront *self)
 {
 	free(self->work_items);
+	SIInstWrapFree(self->inst);
 }
 
 
@@ -101,19 +102,22 @@ void SIWavefrontExecute(SIWavefront *self)
 	SINDRange *ndrange;
 	SIWorkGroup *work_group;
 	SIWorkItem *work_item;
-	SIInst *inst;
+	struct SIInstWrap *inst;
 	SIEmu *emu;
 
-	char inst_dump[MAX_STRING_SIZE];
+	SIInstOpcode opcode;
+	SIInstFormat format;
+	SIInstBytes *bytes;
 
 	int work_item_id;
+	int op;
 
 	/* Get current work-group */
 	work_group = self->work_group;
 	ndrange = work_group->ndrange;
 	emu = ndrange->emu;
 	work_item = NULL;
-	inst = NULL;
+	inst = self->inst;
 
 	/* Reset instruction flags */
 	self->vector_mem_write = 0;
@@ -129,40 +133,40 @@ void SIWavefrontExecute(SIWavefront *self)
 	assert(!self->finished);
 	
 	/* Grab the instruction at PC and update the pointer */
-	SIInstDecode(&self->inst, ndrange->inst_buffer + self->pc, 0);
-	self->inst_size = self->inst.size;
+	SIInstWrapDecode(inst, ndrange->inst_buffer + self->pc, 0);
+	self->inst_size = SIInstWrapGetSize(self->inst);
+	opcode = SIInstWrapGetOpcode(self->inst);
+	format = SIInstWrapGetFormat(self->inst);
+	bytes = SIInstWrapGetBytes(self->inst);
+	op = SIInstWrapGetOp(inst);
+
 
 	/* Stats */
 	asEmu(emu)->instructions++;
 	self->emu_inst_count++;
 	self->inst_count++;
 
-	/* Set the current instruction */
-	inst = &self->inst;
+	/* Dump instruction string when debugging */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("\n");
+		SIInstWrapDump(inst, debug_file(si_isa_debug_category));
+	}
 
 	/* Execute the current instruction */
-	switch (inst->info->fmt)
+	switch (SIInstWrapGetFormat(inst))
 	{
 
 	/* Scalar ALU Instructions */
 	case SIInstFormatSOP1:
 	{
-		/* Dump instruction string when debugging */
-		if (debug_status(si_isa_debug_category))
-		{
-			SIInstDump(inst, self->pc,
-					ndrange->inst_buffer + self->pc,
-					inst_dump, sizeof inst_dump);
-			si_isa_debug("\n%s", inst_dump);
-		}
-
 		/* Stats */
 		emu->scalar_alu_inst_count++;
 		self->scalar_alu_inst_count++;
 
 		/* Only one work item executes the instruction */
 		work_item = self->scalar_work_item;
-		(*si_isa_inst_func[inst->info->opcode])(work_item, inst);
+		(*si_isa_inst_func[opcode])(work_item, inst);
 
 		if (debug_status(si_isa_debug_category))
 		{
@@ -174,22 +178,13 @@ void SIWavefrontExecute(SIWavefront *self)
 
 	case SIInstFormatSOP2:
 	{
-		/* Dump instruction string when debugging */
-		if (debug_status(si_isa_debug_category))
-		{
-			SIInstDump(inst, self->pc,
-					ndrange->inst_buffer + self->pc,
-					inst_dump, sizeof inst_dump);
-			si_isa_debug("\n%s", inst_dump);
-		}
-
 		/* Stats */
 		emu->scalar_alu_inst_count++;
 		self->scalar_alu_inst_count++;
 
 		/* Only one work item executes the instruction */
 		work_item = self->scalar_work_item;
-		(*si_isa_inst_func[inst->info->opcode])(work_item, inst);
+		(*si_isa_inst_func[opcode])(work_item, inst);
 
 		if (debug_status(si_isa_debug_category))
 		{
@@ -201,18 +196,9 @@ void SIWavefrontExecute(SIWavefront *self)
 
 	case SIInstFormatSOPP:
 	{
-		/* Dump instruction string when debugging */
-		if (debug_status(si_isa_debug_category))
-		{
-			SIInstDump(inst, self->pc,
-					ndrange->inst_buffer + self->pc,
-					inst_dump, sizeof inst_dump);
-			si_isa_debug("\n%s", inst_dump);
-		}
-
 		/* Stats */
-		if (self->inst.bytes.sopp.op > 1 &&
-			self->inst.bytes.sopp.op < 10)
+		if (bytes->sopp.op > 1 &&
+			bytes->sopp.op < 10)
 		{
 			emu->branch_inst_count++;
 			self->branch_inst_count++;
@@ -224,7 +210,7 @@ void SIWavefrontExecute(SIWavefront *self)
 
 		/* Only one work item executes the instruction */
 		work_item = self->scalar_work_item;
-		(*si_isa_inst_func[inst->info->opcode])(work_item, inst);
+		(*si_isa_inst_func[opcode])(work_item, inst);
 
 		if (debug_status(si_isa_debug_category))
 		{
@@ -236,22 +222,13 @@ void SIWavefrontExecute(SIWavefront *self)
 
 	case SIInstFormatSOPC:
 	{
-		/* Dump instruction string when debugging */
-		if (debug_status(si_isa_debug_category))
-		{
-			SIInstDump(inst, self->pc,
-					ndrange->inst_buffer + self->pc,
-					inst_dump, sizeof inst_dump);
-			si_isa_debug("\n%s", inst_dump);
-		}
-
 		/* Stats */
 		emu->scalar_alu_inst_count++;
 		self->scalar_alu_inst_count++;
 
 		/* Only one work item executes the instruction */
 		work_item = self->scalar_work_item;
-		(*si_isa_inst_func[inst->info->opcode])(work_item, inst);
+		(*si_isa_inst_func[opcode])(work_item, inst);
 
 		if (debug_status(si_isa_debug_category))
 		{
@@ -263,22 +240,13 @@ void SIWavefrontExecute(SIWavefront *self)
 
 	case SIInstFormatSOPK:
 	{
-		/* Dump instruction string when debugging */
-		if (debug_status(si_isa_debug_category))
-		{
-			SIInstDump(inst, self->pc,
-					ndrange->inst_buffer + self->pc,
-					inst_dump, sizeof inst_dump);
-			si_isa_debug("\n%s", inst_dump);
-		}
-
 		/* Stats */
 		emu->scalar_alu_inst_count++;
 		self->scalar_alu_inst_count++;
 
 		/* Only one work item executes the instruction */
 		work_item = self->scalar_work_item;
-		(*si_isa_inst_func[inst->info->opcode])(work_item, inst);
+		(*si_isa_inst_func[opcode])(work_item, inst);
 
 		if (debug_status(si_isa_debug_category))
 		{
@@ -291,22 +259,13 @@ void SIWavefrontExecute(SIWavefront *self)
 	/* Scalar Memory Instructions */
 	case SIInstFormatSMRD:
 	{
-		/* Dump instruction string when debugging */
-		if (debug_status(si_isa_debug_category))
-		{
-			SIInstDump(inst, self->pc,
-					ndrange->inst_buffer + self->pc,
-					inst_dump, sizeof inst_dump);
-			si_isa_debug("\n%s", inst_dump);
-		}
-
 		/* Stats */
 		emu->scalar_mem_inst_count++;
 		self->scalar_mem_inst_count++;
 
 		/* Only one work item executes the instruction */
 		work_item = self->scalar_work_item;
-		(*si_isa_inst_func[inst->info->opcode])(work_item, inst);
+		(*si_isa_inst_func[opcode])(work_item, inst);
 
 		if (debug_status(si_isa_debug_category))
 		{
@@ -319,15 +278,6 @@ void SIWavefrontExecute(SIWavefront *self)
 	/* Vector ALU Instructions */
 	case SIInstFormatVOP2:
 	{
-		/* Dump instruction string when debugging */
-		if (debug_status(si_isa_debug_category))
-		{
-			SIInstDump(inst, self->pc,
-					ndrange->inst_buffer + self->pc,
-					inst_dump, sizeof inst_dump);
-			si_isa_debug("\n%s", inst_dump);
-		}
-
 		/* Stats */
 		emu->vector_alu_inst_count++;
 		self->vector_alu_inst_count++;
@@ -339,7 +289,7 @@ void SIWavefrontExecute(SIWavefront *self)
 			if(SIWavefrontIsWorkItemActive(self, 
 				work_item->id_in_wavefront))
 			{
-				(*si_isa_inst_func[inst->info->opcode])(work_item,
+				(*si_isa_inst_func[opcode])(work_item,
 					inst);
 			}
 		}
@@ -354,21 +304,12 @@ void SIWavefrontExecute(SIWavefront *self)
 
 	case SIInstFormatVOP1:
 	{
-		/* Dump instruction string when debugging */
-		if (debug_status(si_isa_debug_category))
-		{
-			SIInstDump(inst, self->pc,
-					ndrange->inst_buffer + self->pc,
-					inst_dump, sizeof inst_dump);
-			si_isa_debug("\n%s", inst_dump);
-		}
-
 		/* Stats */
 		emu->vector_alu_inst_count++;
 		self->vector_alu_inst_count++;
 
 		/* Special case: V_READFIRSTLANE_B32 */
-		if (inst->bytes.vop1.op == 2)
+		if (bytes->vop1.op == 2)
 		{
 			/* Instruction ignores execution mask and is only 
 			 * executed on one work item. Execute on the first 
@@ -378,7 +319,7 @@ void SIWavefrontExecute(SIWavefront *self)
 			if (SIWorkItemReadSReg(work_item, SI_EXEC) == 0 && 
 				SIWorkItemReadSReg(work_item, SI_EXEC + 1) == 0)
 			{
-				(*si_isa_inst_func[inst->info->opcode])(work_item,
+				(*si_isa_inst_func[opcode])(work_item,
 					inst);
 			}
 			else {
@@ -392,7 +333,7 @@ void SIWavefrontExecute(SIWavefront *self)
 						work_item->id_in_wavefront))
 					{
 						(*si_isa_inst_func[
-						 	inst->info->opcode])(
+						 	opcode])(
 							work_item, inst);
 						break;
 					}
@@ -409,7 +350,7 @@ void SIWavefrontExecute(SIWavefront *self)
 				if(SIWavefrontIsWorkItemActive(self, 
 					work_item->id_in_wavefront))
 				{
-					(*si_isa_inst_func[inst->info->opcode])(
+					(*si_isa_inst_func[opcode])(
 						work_item, inst);
 				}
 			}
@@ -425,15 +366,6 @@ void SIWavefrontExecute(SIWavefront *self)
 
 	case SIInstFormatVOPC:
 	{
-		/* Dump instruction string when debugging */
-		if (debug_status(si_isa_debug_category))
-		{
-			SIInstDump(inst, self->pc,
-					ndrange->inst_buffer + self->pc,
-					inst_dump, sizeof inst_dump);
-			si_isa_debug("\n%s", inst_dump);
-		}
-
 		/* Stats */
 		emu->vector_alu_inst_count++;
 		self->vector_alu_inst_count++;
@@ -445,7 +377,7 @@ void SIWavefrontExecute(SIWavefront *self)
 			if(SIWavefrontIsWorkItemActive(self, 
 				work_item->id_in_wavefront))
 			{
-				(*si_isa_inst_func[inst->info->opcode])(work_item,
+				(*si_isa_inst_func[opcode])(work_item,
 					inst);
 			}
 		}
@@ -460,15 +392,6 @@ void SIWavefrontExecute(SIWavefront *self)
 	
 	case SIInstFormatVOP3a:
 	{
-		/* Dump instruction string when debugging */
-		if (debug_status(si_isa_debug_category))
-		{
-			SIInstDump(inst, self->pc,
-					ndrange->inst_buffer + self->pc,
-					inst_dump, sizeof inst_dump);
-			si_isa_debug("\n%s", inst_dump);
-		}
-
 		/* Stats */
 		emu->vector_alu_inst_count++;
 		self->vector_alu_inst_count++;
@@ -480,7 +403,7 @@ void SIWavefrontExecute(SIWavefront *self)
 			if(SIWavefrontIsWorkItemActive(self, 
 				work_item->id_in_wavefront))
 			{
-				(*si_isa_inst_func[inst->info->opcode])(work_item,
+				(*si_isa_inst_func[opcode])(work_item,
 					inst);
 			}
 		}
@@ -495,15 +418,6 @@ void SIWavefrontExecute(SIWavefront *self)
 
 	case SIInstFormatVOP3b:
 	{
-		/* Dump instruction string when debugging */
-		if (debug_status(si_isa_debug_category))
-		{
-			SIInstDump(inst, self->pc,
-					ndrange->inst_buffer + self->pc,
-					inst_dump, sizeof inst_dump);
-			si_isa_debug("\n%s", inst_dump);
-		}
-
 		/* Stats */
 		emu->vector_alu_inst_count++;
 		self->vector_alu_inst_count++;
@@ -515,7 +429,7 @@ void SIWavefrontExecute(SIWavefront *self)
 			if(SIWavefrontIsWorkItemActive(self, 
 				work_item->id_in_wavefront))
 			{
-				(*si_isa_inst_func[inst->info->opcode])(work_item,
+				(*si_isa_inst_func[opcode])(work_item,
 					inst);
 			}
 		}
@@ -530,29 +444,20 @@ void SIWavefrontExecute(SIWavefront *self)
 
 	case SIInstFormatDS:
 	{
-		/* Dump instruction string when debugging */
-		if (debug_status(si_isa_debug_category))
-		{
-			SIInstDump(inst, self->pc,
-					ndrange->inst_buffer + self->pc,
-					inst_dump, sizeof inst_dump);
-			si_isa_debug("\n%s", inst_dump);
-		}
-
 		/* Stats */
 		emu->lds_inst_count++;
 		self->lds_inst_count++;
 
 		/* Record access type */
-		if ((inst->info->op >= 13 && inst->info->op < 16) ||
-			(inst->info->op >= 30 && inst->info->op < 32) ||
-			(inst->info->op >= 77 && inst->info->op < 80))
+		if ((op >= 13 && op < 16) ||
+			(op >= 30 && op < 32) ||
+			(op >= 77 && op < 80))
 		{
 			self->lds_write = 1;
 		}
 		else if (
-			(inst->info->op >= 54 && inst->info->op < 61) ||
-			(inst->info->op >= 118 && inst->info->op < 120))
+			(op >= 54 && op < 61) ||
+			(op >= 118 && op < 120))
 		{
 			self->lds_read = 1;
 		}
@@ -568,7 +473,7 @@ void SIWavefrontExecute(SIWavefront *self)
 			if(SIWavefrontIsWorkItemActive(self, 
 				work_item->id_in_wavefront))
 			{
-				(*si_isa_inst_func[inst->info->opcode])(work_item,
+				(*si_isa_inst_func[opcode])(work_item,
 					inst);
 			}
 		}
@@ -584,23 +489,14 @@ void SIWavefrontExecute(SIWavefront *self)
 	/* Vector Memory Instructions */
 	case SIInstFormatMTBUF:
 	{
-		/* Dump instruction string when debugging */
-		if (debug_status(si_isa_debug_category))
-		{
-			SIInstDump(inst, self->pc,
-					ndrange->inst_buffer + self->pc,
-					inst_dump, sizeof inst_dump);
-			si_isa_debug("\n%s", inst_dump);
-		}
-
 		/* Stats */
 		emu->vector_mem_inst_count++;
 		self->vector_mem_inst_count++;
 
 		/* Record access type */
-		if (inst->info->op >= 0 && inst->info->op < 4)
+		if (op >= 0 && op < 4)
 			self->vector_mem_read = 1;
-		else if (inst->info->op >= 4 && inst->info->op < 8)
+		else if (op >= 4 && op < 8)
 			self->vector_mem_write = 1;
 		else 
 			fatal("%s: invalid mtbuf opcode", __FUNCTION__);
@@ -612,7 +508,7 @@ void SIWavefrontExecute(SIWavefront *self)
 			if (SIWavefrontIsWorkItemActive(self, 
 				work_item->id_in_wavefront))
 			{
-				(*si_isa_inst_func[inst->info->opcode])(work_item,
+				(*si_isa_inst_func[opcode])(work_item,
 					inst);
 			}
 		}
@@ -627,27 +523,18 @@ void SIWavefrontExecute(SIWavefront *self)
 
 	case SIInstFormatMUBUF:
 	{
-		/* Dump instruction string when debugging */
-		if (debug_status(si_isa_debug_category))
-		{
-			SIInstDump(inst, self->pc,
-					ndrange->inst_buffer + self->pc,
-					inst_dump, sizeof inst_dump);
-			si_isa_debug("\n%s", inst_dump);
-		}
-
 		/* Stats */
 		emu->vector_mem_inst_count++;
 		self->vector_mem_inst_count++;
 
 		/* Record access type */
-		if ((inst->info->op >= 0 && inst->info->op < 4) ||
-			(inst->info->op >= 8 && inst->info->op < 15))
+		if ((op >= 0 && op < 4) ||
+			(op >= 8 && op < 15))
 		{
 			self->vector_mem_read = 1;
 		}
-		else if ((inst->info->op >= 4 && inst->info->op < 8) ||
-			(inst->info->op >= 24 && inst->info->op < 30))
+		else if ((op >= 4 && op < 8) ||
+			(op >= 24 && op < 30))
 		{
 			self->vector_mem_write = 1;
 		}
@@ -663,7 +550,7 @@ void SIWavefrontExecute(SIWavefront *self)
 			if (SIWavefrontIsWorkItemActive(self, 
 				work_item->id_in_wavefront))
 			{
-				(*si_isa_inst_func[inst->info->opcode])
+				(*si_isa_inst_func[opcode])
 					(work_item, inst);
 			}
 		}
@@ -678,15 +565,6 @@ void SIWavefrontExecute(SIWavefront *self)
 
 	case SIInstFormatEXP:
 	{
-		/* Dump instruction string when debugging */
-		if (debug_status(si_isa_debug_category))
-		{
-			SIInstDump(inst, self->pc,
-					ndrange->inst_buffer + self->pc,
-					inst_dump, sizeof inst_dump);
-			si_isa_debug("\n%s", inst_dump);
-		}
-
 		/* Stats */
 		emu->export_inst_count++;
 		self->export_inst_count++;
@@ -701,7 +579,7 @@ void SIWavefrontExecute(SIWavefront *self)
 			if (SIWavefrontIsWorkItemActive(self, 
 				work_item->id_in_wavefront))
 			{
-				(*si_isa_inst_func[inst->info->opcode])
+				(*si_isa_inst_func[opcode])
 					(work_item, inst);
 			}
 		}
@@ -718,7 +596,7 @@ void SIWavefrontExecute(SIWavefront *self)
 	default:
 	{
 		fatal("%s: instruction type not implemented (%d)", 
-			__FUNCTION__, inst->info->fmt);
+			__FUNCTION__, format);
 		break;
 	}
 
