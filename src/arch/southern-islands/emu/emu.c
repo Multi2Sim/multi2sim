@@ -201,7 +201,7 @@ int SIEmuRun(Emu *self)
 
 		/* Let driver know that all work-groups from this nd-range
 		 * have been run */
-		if (opencl_driver)
+		if (opencl_driver && (ndrange_list == opencl_driver->si_ndrange_list))
 		{
 			OpenclDriverRequestWork(opencl_driver, ndrange);
 		}
@@ -209,7 +209,7 @@ int SIEmuRun(Emu *self)
 #ifdef HAVE_OPENGL
 		/* Let driver know that all work-groups from this nd-range
 		 * have been run */
-		if (opengl_driver)
+		if (opengl_driver && (ndrange_list == opengl_driver->opengl_si_ndrange_list))
 		{
 			OpenglDriverRequestWork(opengl_driver, ndrange);
 		}

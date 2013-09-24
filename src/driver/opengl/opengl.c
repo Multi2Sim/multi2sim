@@ -799,7 +799,7 @@ static int opengl_abi_si_shader_set_input_impl(X86Context *ctx)
 
 	struct opengl_si_shader_t *shdr;
 	struct list_t *input_list;
-	struct si_input_t *input;
+	SIInput *input;
 
 	unsigned int args[6];
 	unsigned int shader_id;
@@ -825,12 +825,12 @@ static int opengl_abi_si_shader_set_input_impl(X86Context *ctx)
 	input_list = shdr->input_list;
 	input = list_get(input_list, index);
 	if (!input || input->usage_index != index)
-		fatal("Vertex attribute array at index %d is not needed by the vertex shader\n", index);
+		panic("Vertex attribute array at index %d is not needed by the vertex shader\n", index);
 	else
 	{
 		input->set = 1;
 		input->num_elems = num_elems;
-		input->type = si_input_get_type(data_type);
+		input->type = SIInputGetType(data_type);
 		input->device_ptr = device_ptr;
 		input->size = size;
 	}
@@ -954,6 +954,7 @@ static int opengl_abi_si_ndrange_create_impl(X86Context *ctx)
 		break;
 
 	case OPENGL_SI_SHADER_PIXEL:
+		/* Some metadata from shader binary */
 		ps = (struct opengl_si_enc_dict_pixel_shader_t *)shader->bin->enc_dict;
 		ndrange->num_sgpr_used = ps->meta->u32NumSgprs;
 		ndrange->num_vgpr_used = ps->meta->u32NumVgprs;

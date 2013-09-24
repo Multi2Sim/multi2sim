@@ -58,6 +58,7 @@
 #include <arch/southern-islands/asm/arg.h>
 #include <arch/southern-islands/asm/Asm.h>
 #include <arch/southern-islands/asm/Inst.h>
+#include <arch/southern-islands/asm/input.h>
 #include <arch/southern-islands/emu/emu.h>
 #include <arch/southern-islands/emu/ndrange.h>
 #include <arch/southern-islands/emu/isa.h>
@@ -1960,6 +1961,7 @@ static void m2s_init(void)
 	CLASS_REGISTER(X86Thread);
 
 	CLASS_REGISTER(SIArg);
+	CLASS_REGISTER(SIInput);
 
 	CLASS_REGISTER(SIEmu);
 	CLASS_REGISTER(SINDRange);
