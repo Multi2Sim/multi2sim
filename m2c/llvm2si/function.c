@@ -148,6 +148,15 @@ void Llvm2siFunctionArgDump(Object *self, FILE *f)
 
 		break;
 
+	case SIArgTypeValue:
+
+		/* Type, name, offset */
+		fprintf(f, "\t%s %s %d\n",
+			str_map_value(&si_arg_data_type_map, si_arg->value.data_type),
+			si_arg->name->text, arg->index * 16);
+
+		break;
+
 	default:
 		fatal("%s: argument type not recognized (%d)",
 				__FUNCTION__, si_arg->type);
