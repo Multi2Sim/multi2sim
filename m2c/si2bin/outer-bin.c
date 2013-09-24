@@ -568,33 +568,38 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 
 
 		/* ELF_NOTE_ATI_UAV */
-		buff_size = 16 * buff_num_offset;
-		ptr = xcalloc(1, buff_size);
-		
-		buff_num_offset = 0;
-		
-		/* UAV Symbols */
-		for (k = 0; k < MAX_UAV_NUM; k++)
+		if (buff_num_offset)
 		{
-			if (!uav[k])
-				continue;
-		
-			snprintf(line, sizeof line, "uav%d", k);
-			uav_symbol = new(ELFWriterSymbol, line);
-			uav_symbol->symbol.st_value = buff_num_offset;
-			uav_symbol->symbol.st_shndx = 16;
-			ELFWriterSymbolTableAdd(entry->symbol_table, uav_symbol);
 
-			ptr[buff_num_offset * 16] = k;
-			ptr[buff_num_offset * 16 + 4] = 4;
-			ptr[buff_num_offset * 16 + 12] = 5;
+			buff_size = 16 * buff_num_offset;
+			ptr = xcalloc(1, buff_size);
 
-			buff_num_offset++;
+			buff_num_offset = 0;
+
+			/* UAV Symbols */
+			for (k = 0; k < MAX_UAV_NUM; k++)
+			{
+				if (!uav[k])
+					continue;
+
+				snprintf(line, sizeof line, "uav%d", k);
+				uav_symbol = new(ELFWriterSymbol, line);
+				uav_symbol->symbol.st_value = buff_num_offset;
+				uav_symbol->symbol.st_shndx = 16;
+				ELFWriterSymbolTableAdd(entry->symbol_table, uav_symbol);
+
+				ptr[buff_num_offset * 16] = k;
+				ptr[buff_num_offset * 16 + 4] = 4;
+				ptr[buff_num_offset * 16 + 12] = 5;
+
+				buff_num_offset++;
+			}
+
+			note = si2bin_inner_bin_note_create(16, buff_size, ptr);
+			si2bin_inner_bin_entry_add_note(entry, note);
+			free(ptr);
+
 		}
-	
-		note = si2bin_inner_bin_note_create(16, buff_size, ptr);
-		si2bin_inner_bin_entry_add_note(entry, note);
-		free(ptr);
 
 		/* ELF_NOTE_ATI_CONDOUT */
 		ptr = xcalloc(1, 4);
@@ -932,12 +937,12 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 		si2bin_inner_bin_generate(inner_bin, kernel_buffer);
 			
 		/* Output Inner ELF */
-		 FILE *f;
+		/* FILE *f;
 		snprintf(line, sizeof line, "%s_kernel", inner_bin->name);
 		f = fopen(line, "w");
 		ELFWriterBufferWriteToFile(kernel_buffer, f);
 		fclose(f); 
-
+		*/
 	
 		/* Create kernel symbol and add it to the symbol table */
 		snprintf(line, sizeof line, "__OpenCL_%s_kernel", inner_bin->name);
