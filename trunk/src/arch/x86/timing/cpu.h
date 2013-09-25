@@ -50,6 +50,10 @@ CLASS_BEGIN(X86Cpu, Timing)
 	long long uop_id_counter;  /* Counter of uop ID assignment */
 	char *stage;  /* Name of currently simulated stage */
 
+	/* Used to prevent fetching of new instructions while timing
+	 * simulator pipeline completes in-flight instructions */
+	int flushing;
+
 	/* From all contexts in the 'alloc' list of 'x86_emu', minimum value
 	 * of variable 'ctx->alloc_cycle'. This value is used to decide whether
 	 * the scheduler should be called at all to check for any context whose
@@ -59,6 +63,9 @@ CLASS_BEGIN(X86Cpu, Timing)
 	
 	/* List containing uops that need to report an 'end_inst' trace event */
 	struct linked_list_t *uop_trace_list;
+
+	/* Count of current OpenCL ND-Ranges executing on this CPU */
+	volatile int ndranges_running;
 
 	/* Statistics */
 	long long num_fast_forward_inst;  /* Fast-forwarded x86 instructions */
@@ -92,6 +99,7 @@ void X86CpuDumpUopReport(X86Cpu *self, FILE *f, long long *uop_stats,
 int X86CpuRun(Timing *self);
 void X86CpuRunStages(X86Cpu *self);
 void X86CpuFastForward(X86Cpu *self);
+void X86CpuFastForwardOpenCL(X86Cpu *self);
 
 void X86CpuAddToTraceList(X86Cpu *self, struct x86_uop_t *uop);
 void X86CpuEmptyTraceList(X86Cpu *self);
@@ -176,7 +184,7 @@ extern int x86_cpu_commit_width;
 #define x86_trace_header(...) trace_header(x86_trace_category, __VA_ARGS__)
 extern int x86_trace_category;
 extern char *x86_mmu_report_file_name;
-
+extern int x86_opencl_fast_forward;
 
 void X86CpuReadConfig(void);
 

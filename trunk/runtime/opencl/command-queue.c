@@ -105,19 +105,11 @@ void opencl_command_queue_free(struct opencl_command_queue_t *command_queue)
 void opencl_command_queue_enqueue(struct opencl_command_queue_t *command_queue, 
 	struct opencl_command_t *command)
 {
-	struct timespec t;
-
-	cl_ulong cltime;
-
 	pthread_mutex_lock(&command_queue->lock);
 
 	if (command->done_event)
 	{
-		clock_gettime(CLOCK_MONOTONIC, &t);
-		cltime = t.tv_sec;
-		cltime *= 1000000000;
-		cltime += t.tv_nsec;
-		command->done_event->time_queued = cltime;
+		opencl_event_set_status(command->done_event, CL_QUEUED);
 	}
 
 	list_add(command_queue->command_list, command);
@@ -141,9 +133,6 @@ void opencl_command_queue_flush(struct opencl_command_queue_t *command_queue)
 struct opencl_command_t *opencl_command_queue_dequeue(struct opencl_command_queue_t *command_queue)
 {
 	struct opencl_command_t *command;
-	struct timespec t;
-
-	cl_ulong cltime;
 
 	/* Lock */
 	pthread_mutex_lock(&command_queue->lock);
@@ -160,11 +149,7 @@ struct opencl_command_t *opencl_command_queue_dequeue(struct opencl_command_queu
 
 	if (command->done_event)
 	{
-		clock_gettime(CLOCK_MONOTONIC, &t);
-		cltime = t.tv_sec;
-		cltime *= 1000000000;
-		cltime += t.tv_nsec;
-		command->done_event->time_submit = cltime;
+		opencl_event_set_status(command->done_event, CL_SUBMITTED);
 	}
 
 	/* If we get an 'end' command, return NULL */

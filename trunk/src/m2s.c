@@ -335,6 +335,11 @@ static char *m2s_help =
 		"      File to dump a report of the x86 MMU. Use together with a detailed \n"
 		"      CPU simulation (option '--x86-sim detailed').\n"
 		"\n"
+		"  --x86-opencl-fast-forward\n"
+		"      Fast-forward (emulate) x86 instructions whenever an OpenCL kernel is not \n"
+		"      being executed.  This option is only valid for detailed x86 simulation\n"
+		"      (option '--x86-sim detailed').\n"
+		"\n"
 		"  --x86-report <file>\n"
 		"      File to dump a report of the x86 CPU pipeline, including statistics such\n"
 		"      as the number of instructions handled in every pipeline stage, read/write\n"
@@ -892,6 +897,13 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		{
 			m2s_need_argument(argc, argv, argi);
 			x86_mmu_report_file_name = argv[++argi];
+			continue;
+		}
+
+		/* Fast-forward when not executing an nd-range */
+		if (!strcmp(argv[argi], "--x86-opencl-fast-forward"))
+		{
+			x86_opencl_fast_forward = 1;
 			continue;
 		}
 

@@ -1123,8 +1123,6 @@ static int opencl_abi_si_ndrange_create_impl(X86Context *ctx)
 	{
 		arg_copy = SIArgCopy(arg);
 		ListAdd(ndrange->arg_list, asObject(arg_copy));
-		opencl_debug("setting arg to %p\n", asObject(arg_copy));
-		opencl_debug("device_ptr = %u\n", arg->pointer.device_ptr);
 	}
 
 	list_add(driver->si_ndrange_list, ndrange);
@@ -1659,6 +1657,61 @@ static int opencl_abi_si_ndrange_free_impl(X86Context *ctx)
 	/* Free */
 	list_remove(driver->si_ndrange_list, ndrange);
 	delete(ndrange);
+
+	return 0;
+}
+
+
+/*
+ * OpenCL ABI call #22 - ndrange_start
+ *
+ * Tell the driver that an nd-range (for any device) has
+ * started executing. 
+ *
+ * @return int
+ *
+ *	The function always returns 0.
+ */
+
+static int opencl_abi_ndrange_start_impl(X86Context *ctx)
+{
+	X86Emu *x86_emu = ctx->emu;
+	OpenclDriver *driver = x86_emu->opencl_driver;
+
+	assert(driver->ndranges_running >= 0);
+	driver->ndranges_running++;
+
+	if (driver->x86_cpu)
+		driver->x86_cpu->ndranges_running++;
+
+	return 0;
+}
+
+
+/*
+ * OpenCL ABI call #23 - ndrange_end
+ *
+ * Tell the driver that an nd-range (for any device) has
+ * finished executing. 
+ *
+ * @return int
+ *
+ *	The function always returns 0.
+ */
+
+static int opencl_abi_ndrange_end_impl(X86Context *ctx)
+{
+	X86Emu *x86_emu = ctx->emu;
+	OpenclDriver *driver = x86_emu->opencl_driver;
+
+	driver->ndranges_running--;
+	assert(driver->ndranges_running >= 0);
+
+	if (driver->x86_cpu)
+	{
+		driver->x86_cpu->ndranges_running--;
+		assert(driver->ndranges_running >= 0);
+	}
 
 	return 0;
 }

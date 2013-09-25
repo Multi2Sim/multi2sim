@@ -131,6 +131,8 @@ void X86ThreadUnmapContext(X86Thread *self, X86Context *ctx)
 
 void X86ThreadEvictContextSignal(X86Thread *self, X86Context *context)
 {
+	X86Cpu *cpu = self->cpu;
+
 	assert(context);
 	assert(self->ctx == context);
 	assert(X86ContextGetState(context, X86ContextAlloc));
@@ -142,7 +144,7 @@ void X86ThreadEvictContextSignal(X86Thread *self, X86Context *context)
 	/* Set eviction signal. */
 	context->evict_signal = 1;
 	X86ContextDebug("#%lld ctx %d signaled for eviction from thread %s\n",
-			asTiming(self)->cycle, context->pid, self->name);
+			asTiming(cpu)->cycle, context->pid, self->name);
 
 	/* If pipeline is already empty for the thread, effective eviction can
 	 * happen straight away. */
@@ -209,16 +211,48 @@ void X86ThreadSchedule(X86Thread *self)
 			X86ThreadEvictContextSignal(self, ctx);
 
 		/* Context quantum expired */
-		if (!ctx->evict_signal && asTiming(cpu)->cycle >= ctx->alloc_cycle
-				+ x86_cpu_context_quantum)
+		if (!ctx->evict_signal && asTiming(cpu)->cycle >= 
+			ctx->alloc_cycle + x86_cpu_context_quantum)
 		{
 			int found = 0;
 
 			/* Find a running context mapped to the same node */
 			DOUBLE_LINKED_LIST_FOR_EACH(self, mapped, tmp_ctx)
 			{
-				if (tmp_ctx != ctx && X86ContextGetState(tmp_ctx,
-						X86ContextRunning))
+				if (tmp_ctx != ctx && 
+					X86ContextGetState(tmp_ctx, X86ContextRunning) &&
+					tmp_ctx->sched_priority >= ctx->sched_priority)
+				{
+					found = 1;
+					break;
+				}
+			}
+
+			/* If a context was found, there are other candidates
+			 * for allocation in the node. We need to evict the
+			 * current context. If there are no other running
+			 * candidates, there is no need to evict. But we
+			 * update the allocation time, so that the
+			 * scheduler is not called constantly hereafter. */
+			if (found)
+				X86ThreadEvictContextSignal(self, ctx);
+			else
+				ctx->alloc_cycle = asTiming(cpu)->cycle;
+		}
+
+		/* Context quantum has not expired, but another thread
+		 * of higher priority will interrupt it */
+		if (!ctx->evict_signal && asTiming(cpu)->cycle <
+			ctx->alloc_cycle + x86_cpu_context_quantum)
+		{
+			int found = 0;
+
+			/* Find a running context mapped to the same node */
+			DOUBLE_LINKED_LIST_FOR_EACH(self, mapped, tmp_ctx)
+			{
+				if (tmp_ctx != ctx && 
+					X86ContextGetState(tmp_ctx, X86ContextRunning) &&
+					tmp_ctx->sched_priority >= ctx->sched_priority)
 				{
 					found = 1;
 					break;
@@ -269,8 +303,14 @@ void X86ThreadSchedule(X86Thread *self)
 				continue;
 
 			/* Good candidate */
-			if (!ctx || ctx->evict_cycle > tmp_ctx->evict_cycle)
+			if (!ctx || (ctx->evict_cycle > tmp_ctx->evict_cycle &&
+				tmp_ctx->sched_priority > ctx->sched_priority))
+			{
 				ctx = tmp_ctx;
+				X86ContextDebug("#%lld ctx %d (priority %d) in is a candidate\n",
+					asTiming(cpu)->cycle, ctx->pid, 
+					ctx->sched_priority);
+			}
 		}
 
 		/* Allocate context if found */

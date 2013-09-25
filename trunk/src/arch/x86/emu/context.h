@@ -21,6 +21,7 @@
 #define ARCH_X86_EMU_CONTEXT_H
 
 #include <pthread.h>
+#include <sched.h>
 
 #include <arch/x86/asm/asm.h>
 #include <arch/x86/asm/inst.h>
@@ -124,6 +125,8 @@ CLASS_BEGIN(X86Context, Object)
 	int core_index;
 	int thread_index;
 
+	int sched_policy;
+	int sched_priority;
 
 
 	/* For segmented memory access in glibc */

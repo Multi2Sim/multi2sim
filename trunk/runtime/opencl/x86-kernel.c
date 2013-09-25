@@ -481,14 +481,14 @@ void opencl_x86_ndrange_run(struct opencl_x86_ndrange_t *ndrange,
 	/* One-time initialization */
 	opencl_x86_ndrange_init(ndrange);
 
+	/* Tell the driver that the nd-range has started */
+	if (!opencl_native_mode)
+		syscall(OPENCL_SYSCALL_CODE, opencl_abi_ndrange_start);
+
 	/* Record start time */
 	if (event)
 	{
 		clock_gettime(CLOCK_MONOTONIC, &start);
-		cltime = (cl_ulong)start.tv_sec;
-		cltime *= 1000000000;
-		cltime += (cl_ulong)start.tv_nsec;
-		event->time_start = cltime;
 	}
 
 	/* Execute the nd-range */
@@ -504,11 +504,21 @@ void opencl_x86_ndrange_run(struct opencl_x86_ndrange_t *ndrange,
 	if (event)
 	{
 		clock_gettime(CLOCK_MONOTONIC, &end);
+
+		cltime = (cl_ulong)start.tv_sec;
+		cltime *= 1000000000;
+		cltime += (cl_ulong)start.tv_nsec;
+		event->time_start = cltime;
+
 		cltime = (cl_ulong)end.tv_sec;
 		cltime *= 1000000000;
 		cltime += (cl_ulong)end.tv_nsec;
 		event->time_end = cltime;
 	}
+
+	/* Tell the driver that the nd-range has ended */
+	if (!opencl_native_mode)
+		syscall(OPENCL_SYSCALL_CODE, opencl_abi_ndrange_end);
 
 	/* Tear-down */
 	opencl_x86_ndrange_free(ndrange);
