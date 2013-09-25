@@ -17,17 +17,20 @@ struct partition_issue_log_entry_t
 	unsigned int group_size[PARTITION_ISSUE_MAX_DIMS];
 };
 
+struct partition_issue_device_entry_t
+{
+	unsigned int num_invocations;
+	unsigned int num_groups;
+};
+
+
 struct partition_issue_kernel_entry_t
 {
 	unsigned int num_dims;
 	unsigned int groups[PARTITION_ISSUE_MAX_DIMS];
 	struct partition_issue_log_entry_t *first_part;
-};
-
-struct partition_issue_device_entry_t
-{
-	unsigned int num_invocations;
-	unsigned int num_groups;
+	struct partition_issue_device_entry_t devices[PARTITION_NUM_DEVICES];
+	long long kernel_runtime;
 };
 
 struct partition_issue_log_t
@@ -47,16 +50,16 @@ void partition_issue_log_destroy(struct partition_issue_log_t *log);
 void partition_issue_log_kernel(
 	struct partition_issue_log_t *log, 
 	unsigned int num_dims, 
-	const unsigned int *groups);
+	const unsigned int *groups,
+	long long now);
 
 void partition_issue_log_record(
 	struct partition_issue_log_t *log,
-	int device,
-	long long start, 
+	int device, 
 	const unsigned int *group_offset,
 	const unsigned int *group_size);
 	
-void partition_issue_log_done_kernel(struct partition_issue_log_t *log);
+void partition_issue_log_done_kernel(struct partition_issue_log_t *log, long long now);
 
 void partition_issue_log_write(struct partition_issue_log_t *log, FILE *file);
 

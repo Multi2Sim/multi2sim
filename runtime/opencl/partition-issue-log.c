@@ -28,13 +28,15 @@ int partition_issue_still_room(struct partition_issue_log_t *log)
 void partition_issue_log_kernel(
 	struct partition_issue_log_t *log, 
 	unsigned int num_dims, 
-	const unsigned int *groups)
+	const unsigned int *groups,
+	long long now)
 {
 	while (__sync_lock_test_and_set(&log->lock, 1));
 	if (partition_issue_still_room(log))
 	{
 		log->kernels[log->num_kernels].num_dims = num_dims;
 		log->kernels[log->num_kernels].first_part = log->parts + log->num_entries;
+		log->kernels[log->num_kernels].kernel_runtime = -now;
 		memcpy(log->kernels[log->num_kernels].groups, groups, sizeof (unsigned int) * num_dims);
 		log->num_kernels++;
 	}
@@ -44,7 +46,6 @@ void partition_issue_log_kernel(
 void partition_issue_log_record(
 	struct partition_issue_log_t *log,
 	int device,
-	long long start, 
 	const unsigned int *group_offset,
 	const unsigned int *group_size)
 {
@@ -56,14 +57,19 @@ void partition_issue_log_record(
 		unsigned int num_dims;
 		unsigned int total_groups = 1;
 		unsigned int i;
+		struct partition_issue_kernel_entry_t *kernel = log->kernels + (log->num_kernels - 1);
 
 		entry->executed = 1;
-		num_dims = log->kernels[log->num_kernels - 1].num_dims;
+		num_dims = kernel->num_dims;
+
 		
 		for (i = 0; i < num_dims; i++)
 			total_groups *= group_size[i];
 		log->devices[device].num_invocations++;
 		log->devices[device].num_groups += total_groups;
+		
+		kernel->devices[device].num_invocations++;
+		kernel->devices[device].num_groups += total_groups;
 		
 		memcpy(entry->group_offset, group_offset, sizeof (unsigned int) * num_dims);
 		memcpy(entry->group_size, group_size, sizeof (unsigned int) * num_dims);
@@ -72,8 +78,9 @@ void partition_issue_log_record(
 	__sync_lock_release(&log->lock);	
 }
 
-void partition_issue_log_done_kernel(struct partition_issue_log_t *log)
+void partition_issue_log_done_kernel(struct partition_issue_log_t *log, long long now)
 {
+	log->kernels[log->num_kernels - 1].kernel_runtime += now;
 	__sync_fetch_and_add(&log->num_entries, 1);	
 }
 
@@ -89,13 +96,26 @@ void partition_issue_log_print_vector(unsigned int dims, unsigned int *vec, FILE
 void partition_issue_log_write(struct partition_issue_log_t *log, FILE *file)
 {
 	int i;
+	int j;
+	fprintf(file, "PARTITION_LOG: devices %d\n", PARTITION_NUM_DEVICES);
 	fprintf(file, "PARTITION_LOG: kernels %d\n", log->num_kernels);
 	fprintf(file, "PARTITION_LOG: partitions %d\n", log->num_entries - log->num_kernels);
-	fprintf(file, "PARTITION_LOG: devices %d\n", PARTITION_NUM_DEVICES);
 	for (i = 0; i < PARTITION_NUM_DEVICES; i++)
 	{
 		fprintf(file, "PARTITION_LOG: invocations%d %d\n", i, log->devices[i].num_invocations);
 		fprintf(file, "PARTITION_LOG: groups%d %d\n", i, log->devices[i].num_groups);
+	}
+	if (log->num_kernels < 10)
+	{
+		for (i = 0; i < log->num_kernels; i++)
+		{
+			fprintf(file, "PARTITION_LOG: kernel%d time %lld\n", i, log->kernels[i].kernel_runtime);
+			for (j = 0; j < PARTITION_NUM_DEVICES; j++)
+			{
+				fprintf(file, "PARTITION_LOG: kernel%d invocations%d %d\n", i, j, log->kernels[i].devices[j].num_invocations);
+				fprintf(file, "PARTITION_LOG: kernel%d groups%d %d\n", i, j, log->kernels[i].devices[j].num_groups);				
+			}
+		}
 	}
 }
 
