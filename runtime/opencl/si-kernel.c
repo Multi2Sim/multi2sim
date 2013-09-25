@@ -32,7 +32,6 @@
 #include "si-program.h"
 #include "string.h"
 
-
 /*
  * Southern Islands Kernel Argument
  */
@@ -416,6 +415,8 @@ void opencl_si_ndrange_run_partial(struct opencl_si_ndrange_t *ndrange,
 void opencl_si_ndrange_run(struct opencl_si_ndrange_t *ndrange,
 	struct opencl_event_t *event)
 {
+	struct sched_param sched_param_old;
+	struct sched_param sched_param_new;
 	struct timespec start, end;
 
 	cl_ulong cltime;
@@ -424,6 +425,19 @@ void opencl_si_ndrange_run(struct opencl_si_ndrange_t *ndrange,
 	unsigned int work_group_count[3];
 
 	int i;
+	int sched_policy_new;
+	int sched_policy_old;
+
+	/* Store old scheduling policy and priority */
+	pthread_getschedparam(pthread_self(), &sched_policy_old, 
+		&sched_param_old);
+
+	/* Give dispatch threads the highest priority */
+	sched_policy_new = SCHED_RR;
+	sched_param_new.sched_priority = sched_get_priority_max(
+		sched_policy_new);
+	pthread_setschedparam(pthread_self(), sched_policy_new, 
+		&sched_param_new);
 
 	for (i = 0; i < 3; i++)
 	{
@@ -431,14 +445,12 @@ void opencl_si_ndrange_run(struct opencl_si_ndrange_t *ndrange,
 		work_group_count[i] = ndrange->group_count[i];
 	}
 
+	syscall(OPENCL_SYSCALL_CODE, opencl_abi_ndrange_start);
+
 	/* Record start time */
 	if (event)
 	{
 		clock_gettime(CLOCK_MONOTONIC, &start);
-		cltime = (cl_ulong)start.tv_sec;
-		cltime *= 1000000000;
-		cltime += (cl_ulong)start.tv_nsec;
-		event->time_start = cltime;
 	}
 
 	/* Run all of the work groups */
@@ -452,11 +464,23 @@ void opencl_si_ndrange_run(struct opencl_si_ndrange_t *ndrange,
 	if (event)
 	{
 		clock_gettime(CLOCK_MONOTONIC, &end);
+		
+		syscall(OPENCL_SYSCALL_CODE, opencl_abi_ndrange_end);
+
+		cltime = (cl_ulong)start.tv_sec;
+		cltime *= 1000000000;
+		cltime += (cl_ulong)start.tv_nsec;
+		event->time_start = cltime;
+
 		cltime = (cl_ulong)end.tv_sec;
 		cltime *= 1000000000;
 		cltime += (cl_ulong)end.tv_nsec;
 		event->time_end = cltime;
 	}
+
+	/* Reset old scheduling parameters */
+	pthread_setschedparam(pthread_self(), sched_policy_old, 
+		&sched_param_old);
 
 	/* Free the nd-range */
 	opencl_si_ndrange_free(ndrange);

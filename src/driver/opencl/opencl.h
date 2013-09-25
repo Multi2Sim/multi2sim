@@ -44,6 +44,9 @@ CLASS_BEGIN(OpenclDriver, Driver)
 	struct list_t *si_kernel_list;
 	struct list_t *si_ndrange_list;
 
+	/* Count of current OpenCL ND-Ranges executing for this driver */
+	int ndranges_running;
+
 CLASS_END(OpenclDriver)
 
 void OpenclDriverCreate(OpenclDriver *self, X86Emu *x86_emu, SIEmu *si_emu);

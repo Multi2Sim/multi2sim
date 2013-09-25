@@ -390,9 +390,15 @@ void opencl_command_run(struct opencl_command_t *command)
 {
 	if (command->num_wait_events > 0)
 		clWaitForEvents(command->num_wait_events, command->wait_events);
+	if (command->done_event)
+	{
+		opencl_event_set_status(command->done_event, CL_RUNNING);
+	}
 	if (command->func)
 		command->func(command);
 	if (command->done_event)
+	{
 		opencl_event_set_status(command->done_event, CL_COMPLETE);
+	}
 }
 

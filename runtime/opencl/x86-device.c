@@ -657,6 +657,8 @@ struct opencl_x86_device_t *opencl_x86_device_create(
 
 void opencl_x86_device_free(struct opencl_x86_device_t *device)
 {
+	opencl_x86_device_sync_destroy(&device->work_ready);
+	opencl_x86_device_sync_destroy(&device->cores_done);
 	free(device->threads);
 	free(device);
 }
