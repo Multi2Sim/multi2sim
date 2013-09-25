@@ -65,41 +65,47 @@ void opencl_event_free(struct opencl_event_t *event)
 
 void opencl_event_set_status(struct opencl_event_t *event, cl_int status)
 {
-	struct timeval t;
+	struct timespec t;
+
+	cl_ulong cltime;
 
 	/* Lock and set new status */
 	pthread_mutex_lock(&event->mutex);
 	event->status = status;
 
 	/* Update times */
-	if (event->command_queue && (event->command_queue->properties & CL_QUEUE_PROFILING_ENABLE))
+	if (event->command_queue && 
+		(event->command_queue->properties & CL_QUEUE_PROFILING_ENABLE))
 	{
-		gettimeofday(&t, NULL);
-		cl_ulong cltime = t.tv_sec;
-		cltime *= 1000000;
-		cltime += t.tv_usec;
-		cltime *= 1000;
+		clock_gettime(CLOCK_MONOTONIC, &t);
+		cltime = t.tv_sec;
+		cltime *= 1000000000;
+		cltime += t.tv_nsec;
 
-		/* If the framework has set the end time, but hasn't set any of
-		 * the earlier ones then it will fall through the cases, setting
-		 * those times too */
 		switch (status)
 		{
 		case CL_QUEUED:
-			if (!event->time_end)
-				event->time_end = cltime;
-
-		case CL_SUBMITTED:
-			if (!event->time_start)
-				event->time_start = cltime;
-
-		case CL_RUNNING:
-			if (!event->time_submit)
-				event->time_submit = cltime;
-
-		case CL_COMPLETE:
 			if (!event->time_queued)
 				event->time_queued = cltime;
+			break;
+
+		case CL_SUBMITTED:
+			if (!event->time_submit)
+				event->time_submit = cltime;
+			break;
+
+		case CL_RUNNING:
+			if (!event->time_start)
+				event->time_start = cltime;
+			break;
+
+		case CL_COMPLETE:
+			if (!event->time_end)
+				event->time_end = cltime;
+			break;
+
+		default:
+			fatal("%s: Invalid event status", __FUNCTION__);
 		}
 	}
 

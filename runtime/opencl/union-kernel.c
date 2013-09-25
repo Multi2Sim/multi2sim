@@ -41,6 +41,8 @@ void *device_ndrange_dispatch(void *ptr)
 	struct dispatch_info *info = (struct dispatch_info *)ptr;
 	struct opencl_union_ndrange_t *ndrange = info->ndrange;
 	struct timespec start, end;
+	struct sched_param sched_param_old;
+	struct sched_param sched_param_new;
 
 	void *arch_ndrange;
 
@@ -49,6 +51,8 @@ void *device_ndrange_dispatch(void *ptr)
 	long long now;
 
 	int i;
+	int sched_policy_new;
+	int sched_policy_old;
 	int work_groups_executed = 0;
 
 	assert(ptr);
@@ -57,6 +61,17 @@ void *device_ndrange_dispatch(void *ptr)
 	assert(info->device);
 	assert(info->arch_kernel);
 	assert(info->ndrange);
+
+	/* Store old scheduling policy and priority */
+	pthread_getschedparam(pthread_self(), &sched_policy_old, 
+		&sched_param_old);
+
+	/* Give dispatch threads the highest priority */
+	sched_policy_new = SCHED_RR;
+	sched_param_new.sched_priority = sched_get_priority_max(
+		sched_policy_new);
+	pthread_setschedparam(pthread_self(), sched_policy_new, 
+		&sched_param_new);
 
 	/* Allocate the maximum number of dimensions */
 	unsigned int *group_offset = xcalloc(3, sizeof (unsigned int));
@@ -87,15 +102,16 @@ void *device_ndrange_dispatch(void *ptr)
 	/* Initialize architecture-specific ND-Range */
 	info->device->arch_ndrange_init_func(arch_ndrange);
 
-	/* Record the start time */
 	pthread_barrier_wait(info->barrier);
+
+	/* Tell the driver that the nd-range has started */
+	if (!opencl_native_mode && info->id == 0)
+		syscall(OPENCL_SYSCALL_CODE, opencl_abi_ndrange_start);
+
+	/* Record the start time */
 	if (info->event && info->id == 0)
 	{
 		clock_gettime(CLOCK_MONOTONIC, &start);
-		cltime = (cl_ulong)start.tv_sec;
-		cltime *= 1000000000;
-		cltime += (cl_ulong)start.tv_nsec;
-		info->event->time_start = cltime;
 	}
 	pthread_barrier_wait(info->barrier);
 
@@ -144,11 +160,22 @@ void *device_ndrange_dispatch(void *ptr)
 	if (info->event && info->id == 0)
 	{
 		clock_gettime(CLOCK_MONOTONIC, &end);
+
+		cltime = (cl_ulong)start.tv_sec;
+		cltime *= 1000000000;
+		cltime += (cl_ulong)start.tv_nsec;
+		info->event->time_start = cltime;
+
 		cltime = (cl_ulong)end.tv_sec;
 		cltime *= 1000000000;
 		cltime += (cl_ulong)end.tv_nsec;
 		info->event->time_end = cltime;
 	}
+
+	/* Tell the driver that the nd-range has completed */
+	if (!opencl_native_mode && info->id == 0)
+		syscall(OPENCL_SYSCALL_CODE, opencl_abi_ndrange_end);
+
 	pthread_barrier_wait(info->barrier);
 
 	opencl_debug("[%s] Device %s ran %d work-groups\n",
@@ -156,6 +183,10 @@ void *device_ndrange_dispatch(void *ptr)
 
 	/* opencl_debug("[%s] calling nd-range free", __FUNCTION__); */
 	info->device->arch_ndrange_free_func(arch_ndrange);
+
+	/* Reset old scheduling parameters */
+	pthread_setschedparam(pthread_self(), sched_policy_old, 
+		&sched_param_old);
 
 	free(group_offset);
 	free(group_count);

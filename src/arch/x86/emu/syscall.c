@@ -20,6 +20,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <poll.h>
+#include <sched.h>
 #include <syscall.h>
 #include <unistd.h>
 #include <utime.h>
@@ -3514,6 +3515,77 @@ static int x86_sys_sched_getparam_impl(X86Context *ctx)
 
 
 /*
+ * System call 'sched_setscheduler' (code 156)
+ */
+
+static int x86_sys_sched_setscheduler_impl(X86Context *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
+	X86Emu *emu = ctx->emu;
+	X86Context *temp_ctx;
+
+	int pid;
+	int policy;
+	int priority;
+
+	struct sched_param param;
+
+	unsigned int param_ptr;
+
+	/* Arguments */
+	pid = regs->ebx;
+	policy = regs->ecx;
+	param_ptr = regs->edx;
+	x86_sys_debug("  pid=%d\n", pid);
+	x86_sys_debug("  policy=%d\n", policy);
+
+	mem_read(mem, param_ptr, sizeof(struct sched_param), &param);
+	priority = param.sched_priority;
+
+	x86_sys_debug("  param_ptr=0x%x (priority = %d)\n", param_ptr, 
+		param.sched_priority);
+
+	switch (policy)
+	{
+	case SCHED_OTHER:
+		if (priority != 0)
+			fatal("%s: invalid priority.\n%s",
+				__FUNCTION__, err_x86_sys_note);
+		break;
+	case SCHED_FIFO:
+		warning("%s: FIFO policy is not implemented to spec\n%s",
+			__FUNCTION__, err_sys_execve_note);
+		if (priority < 1 || priority > 99)
+			fatal("%s: invalid priority.\n%s",
+				__FUNCTION__, err_x86_sys_note);
+		break;
+	case SCHED_RR:
+		if (priority < 1 || priority > 99)
+			fatal("%s: invalid priority.\n%s",
+				__FUNCTION__, err_x86_sys_note);
+		break;
+	default:
+		fatal("%s: policy not supported (%d).\n%s",
+			__FUNCTION__, policy, err_x86_sys_note);
+	}
+
+	/* Find context referred by pid. */
+	temp_ctx = X86EmuGetContext(emu, pid);
+	if (!temp_ctx)
+		fatal("%s: invalid pid (%d)", __FUNCTION__, pid);
+
+	temp_ctx->sched_policy = policy;
+	temp_ctx->sched_priority = priority;
+
+	return 0;
+}
+
+
+
+
+/*
  * System call 'sched_getscheduler' (code 157)
  */
 
@@ -3551,16 +3623,13 @@ static int x86_sys_sched_get_priority_max_impl(X86Context *ctx)
 	switch (policy)
 	{
 
-	/* SCHED_OTHER */
-	case 0:
+	case SCHED_OTHER:
 		return 0;
 
-	/* SCHED_FIFO */
-	case 1:
+	case SCHED_FIFO:
 		return 99;
 
-	/* SCHED_RR */
-	case 2:
+	case SCHED_RR:
 		return 99;
 
 	default:
@@ -3592,16 +3661,13 @@ static int x86_sys_sched_get_priority_min_impl(X86Context *ctx)
 	switch (policy)
 	{
 
-	/* SCHED_OTHER */
-	case 0:
+	case SCHED_OTHER:
 		return 0;
 
-	/* SCHED_FIFO */
-	case 1:
+	case SCHED_FIFO:
 		return 1;
 
-	/* SCHED_RR */
-	case 2:
+	case SCHED_RR:
 		return 1;
 
 	default:
@@ -5811,7 +5877,6 @@ SYS_NOT_IMPL(mlock)
 SYS_NOT_IMPL(munlock)
 SYS_NOT_IMPL(mlockall)
 SYS_NOT_IMPL(munlockall)
-SYS_NOT_IMPL(sched_setscheduler)
 SYS_NOT_IMPL(sched_yield)
 SYS_NOT_IMPL(sched_rr_get_interval)
 SYS_NOT_IMPL(setresuid16)

@@ -53,6 +53,8 @@ static void X86ContextDoCreate(X86Context *self, X86Emu *emu)
 	/* Initialize */
 	self->emu = emu;
 	self->pid = emu->current_pid++;
+	self->sched_policy = SCHED_RR;
+	self->sched_priority = 1;  /* Lowest priority */
 
 	/* Update state so that the context is inserted in the
 	 * corresponding lists. The x86_ctx_running parameter has no

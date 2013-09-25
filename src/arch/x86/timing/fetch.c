@@ -65,6 +65,12 @@ static int X86ThreadCanFetch(X86Thread *self)
 	 * to be able to store new macro-instructions. */
 	if (self->fetchq_occ >= x86_fetch_queue_size)
 		return 0;
+
+	/* Do not fetch if the CPU is flushing the pipelines (used for
+	 * transitioning between timing simulator and emulator) */
+	if (cpu->flushing)
+		return 0;
+
 	
 	/* If the next fetch address belongs to a new block, cache system
 	 * must be accessible to read it. */

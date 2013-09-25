@@ -19,4 +19,6 @@ OPENCL_ABI_CALL(si_ndrange_pass_mem_objs, 18)
 OPENCL_ABI_CALL(si_ndrange_set_fused, 19)
 OPENCL_ABI_CALL(si_ndrange_flush, 20)
 OPENCL_ABI_CALL(si_ndrange_free, 21)
+OPENCL_ABI_CALL(ndrange_start, 22)
+OPENCL_ABI_CALL(ndrange_end, 23)
 
