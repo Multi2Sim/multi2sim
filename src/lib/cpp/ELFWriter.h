@@ -22,6 +22,7 @@
 
 #include <elf.h>
 #include <iostream>
+#include <fstream>
 #include <sstream>
 #include <vector>
 
@@ -58,6 +59,7 @@ public:
 			{ stream.write(buffer, size); }
 	void Seek(unsigned int pos) { stream.seekp(pos); }
 	unsigned int Tell() { return stream.tellp(); }
+	unsigned int Size();
 	void Clear() { stream.str(""); }
 
 	/* Hex dump */
@@ -194,7 +196,6 @@ public:
 
 class File
 {
-	std::string path;
 	Elf32_Ehdr info;
 
 	std::vector<Section *> sections;
@@ -204,7 +205,7 @@ class File
 
 public:
 
-	File(std::string path);
+	File();
 	~File();
 
 	/* Writable fields */
@@ -232,7 +233,7 @@ public:
 
 	/* Produce binary */
 	void Generate(std::ostream& os);
-	void Generate();
+	void Generate(std::string path);
 };
 
 
