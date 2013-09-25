@@ -489,10 +489,10 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count )
 	}
 
 	/* 
-	 * VAO 	 -- AttribArray[0]-VBO-Data 	Enabled
-	 *	 |- AttribArray[1]-VBO-Data 	Enabled
-	 *	 |- AttribArray[1]-VBO-Data 	Enabled
-	 *	 |- AttribArray[2]-VBO-Data 	Disabled
+	 * VAO-	AttribArray[0]-VBO-Data 	Enabled
+	 *	 |-	AttribArray[1]-VBO-Data 	Enabled
+	 *	 |-	AttribArray[1]-VBO-Data 	Enabled
+	 *	 |-	AttribArray[2]-VBO-Data 	Disabled
 	 * 	......
 	 * We need to pass the data in enabled attribute array to device memory
 	 */
