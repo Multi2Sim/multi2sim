@@ -279,43 +279,38 @@ void Asm::DisassembleBinary(string path)
 	unsigned int pos;
 
 	/* Read Sections */
-	for (auto it = file.section_list.begin();
-			it != file.section_list.end(); ++it)
+	for (int i = 0; i < file.GetNumSections(); i++)
 	{
 		/* Skip if section does not contain code */
-		ELFReader::Section *section = *it;
-		if (!(section->info->sh_flags & SHF_EXECINSTR))
+		ELFReader::Section *section = file.GetSection(i);
+		if (!(section->GetFlags() & SHF_EXECINSTR))
 			continue;
 
 		/* Title */
-		cout << "\n\nDisassembly of section " << section->name << ":";
+		cout << "\n\nDisassembly of section " << section->GetName() << ":";
 
 		/* Symbol */
 		curr_sym = 0;
-		ELFReader::Symbol *symbol = NULL;
-		if (file.symbol_list.size())
-			symbol = file.symbol_list[0];
+		ELFReader::Symbol *symbol = file.GetSymbol(0);
 
 		/* Decode and dump instructions */
-		for (pos = 0; pos < section->size; pos += 4)
+		for (pos = 0; pos < section->GetSize(); pos += 4)
 		{
 			/* Symbol */
-			while (symbol && symbol->info->st_value <
-					section->info->sh_addr + pos)
+			while (symbol && symbol->GetValue() < section->GetAddr() + pos)
 			{
 				curr_sym++;
-				symbol = curr_sym < file.symbol_list.size() ?
-						file.symbol_list[curr_sym] : NULL;
+				symbol = file.GetSymbol(curr_sym);
 			}
-			if (symbol && symbol->info->st_value ==
-					section->info->sh_addr + pos)
+			if (symbol && symbol->GetValue() ==
+					section->GetAddr() + pos)
 				cout << "\n\n" << setw(8) << setfill('0') << hex
-						<< section->info->sh_addr + pos
-						<< " <" << symbol->name << ">:";
+						<< section->GetAddr() + pos
+						<< " <" << symbol->GetName() << ">:";
 
 			/* Decode and dump */
-			inst.Decode(section->info->sh_addr + pos,
-					section->buffer + pos);
+			inst.Decode(section->GetAddr() + pos,
+					section->GetBuffer() + pos);
 			inst.DumpHex(cout);
 			inst.Dump(cout);
 
@@ -323,16 +318,16 @@ void Asm::DisassembleBinary(string path)
 			if (inst.target)
 			{
 				ELFReader::Symbol *print_symbol;
-				print_symbol = file.GetSymbol(inst.target);
+				print_symbol = file.GetSymbolByAddress(inst.target);
 				if (print_symbol)
 				{
-					if (print_symbol->info->st_value == inst.target)
-						cout << " <" << print_symbol->name << ">";
+					if (print_symbol->GetValue() == inst.target)
+						cout << " <" << print_symbol->GetName() << ">";
 					else
-						cout << " <" << print_symbol->name << "+0x"
+						cout << " <" << print_symbol->GetName() << "+0x"
 								<< hex <<
 								inst.target -
-								print_symbol->info->st_value
+								print_symbol->GetValue()
 								<< ">";
 				}
 			}
