@@ -19,6 +19,7 @@
 
 #include <cstring>
 #include <iomanip>
+#include <fstream>
 
 #include "ELFWriter.h"
 #include "Misc.h"
@@ -37,6 +38,18 @@ Buffer::Buffer(File *file, unsigned int index)
 {
 	this->file = file;
 	this->index = index;
+}
+	
+unsigned int Buffer::Size()
+{
+	unsigned int pos;
+	unsigned int size;
+
+	pos = stream.tellp();
+	stream.seekp(0, ios_base::end);
+	size = stream.tellp();
+	stream.seekp(pos, ios_base::beg);
+	return size;
 }
 
 
@@ -258,7 +271,7 @@ void SymbolTable::Generate()
 
 		/* Update offset for symbol name, pointing to the current end of
 		 * the strtab buffer. */
-		symbol->info.st_name = strtab_buffer->Tell();
+		symbol->info.st_name = strtab_buffer->Size();
 
 		/* Write symbol into symtab buffer and symbol name into the
 		 * strtab buffer */
@@ -275,7 +288,7 @@ void SymbolTable::Generate()
  */
 
 
-File::File(string path)
+File::File()
 {
 	Buffer *null_buffer;
 	Section *null_section;
@@ -284,7 +297,6 @@ File::File(string path)
 	Section *shstrtab_section;
 
 	/* Initialize */
-	this->path = path;
 	memset(&info, 0, sizeof info);
 
 	/* Create null section */
@@ -356,7 +368,7 @@ Section *File::NewSection(string name, Buffer *first, Buffer *last)
 	if (sections.size() > 2)
 	{
 		shstrtab_buffer = buffers[1];
-		section->info.sh_name = shstrtab_buffer->Tell();
+		section->info.sh_name = shstrtab_buffer->Size();
 		shstrtab_buffer->Write(name.c_str(), name.length() + 1);
 	}
 
@@ -428,7 +440,7 @@ void File::Generate(ostream& os)
 		for (j = 0; j < segment->first_buffer->index; j++)
 		{
 			buffer = buffers[j];
-			buf_offset += buffer->Tell();
+			buf_offset += buffer->Size();
 		}
 		
 		/* Add up all offsets to find segment offset */
@@ -444,9 +456,9 @@ void File::Generate(ostream& os)
 				j <= segment->last_buffer->index; j++)
 		{
 			buffer = buffers[j];
-			segment->info.p_filesz += buffer->Tell();
+			segment->info.p_filesz += buffer->Size();
 			if (segment->info.p_type == PT_LOAD)
-				segment->info.p_memsz += buffer->Tell();
+				segment->info.p_memsz += buffer->Size();
 		}
 	}
 	
@@ -458,7 +470,7 @@ void File::Generate(ostream& os)
 		for (j = 0; j < section->first_buffer->index; j++)
 		{
 			buffer = buffers[j];
-			buf_offset += buffer->Tell();
+			buf_offset += buffer->Size();
 		}
 		section->info.sh_offset = sizeof(Elf32_Ehdr) +
 				phtab_size + buf_offset;
@@ -476,7 +488,7 @@ void File::Generate(ostream& os)
 				j <= section->last_buffer->index; j++)
 		{
 			buffer = buffers[j];
-			section->info.sh_size += buffer->Tell();
+			section->info.sh_size += buffer->Size();
 		}
 	}
 
@@ -495,14 +507,24 @@ void File::Generate(ostream& os)
 	 * at the end (though not required). */
 	buf_offset = 0;
 	for (i = 0; i < buffers.size(); i++)
-		buf_offset += buffers[i]->Tell();
+		buf_offset += buffers[i]->Size();
 	info.e_shoff = sizeof(Elf32_Ehdr) + phtab_size + buf_offset;
 	
 	/* Write headers, sections, etc. into buffer */
 	os.write((char *) &info, sizeof(Elf32_Ehdr));
-	os.write((char *) &phtab, phtab_size);
+	os.write((char *) phtab, phtab_size);
 	for (i = 0; i < buffers.size(); i++)
-		os << buffers[i]->GetStream().rdbuf();
-	os.write((char *) &shtab, shtab_size);
+		os << buffers[i]->GetStream().str();
+	os.write((char *) shtab, shtab_size);
+}
+
+
+void File::Generate(string path)
+{
+	ofstream of(path);
+	if (!of)
+		fatal("%s: cannot write to file", path.c_str());
+	Generate(of);
+	of.close();
 }
 
