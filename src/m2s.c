@@ -1720,6 +1720,7 @@ static void m2s_load_programs(int argc, char **argv)
 		case EM_MIPS:
 			MIPSEmuLoadContextFromCommandLine(mips_emu, argc - 1, argv + 1);
 			break;
+
 		default:
 			fatal("%s: unsupported ELF architecture", argv[1]);
 		}
