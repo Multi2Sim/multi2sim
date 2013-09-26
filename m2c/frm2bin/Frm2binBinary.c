@@ -41,6 +41,9 @@ void Frm2binBinaryDestroy(Frm2binBinary *self)
 		delete(tmpKernel);
 	}
 
+	/* delete teh iterator */
+	delete(tmpIterator);
+
 	/* delete the kernel_list */
 	delete(self->kernel_list);
 

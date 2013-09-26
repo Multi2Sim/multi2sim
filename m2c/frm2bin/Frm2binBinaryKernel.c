@@ -32,4 +32,7 @@ void Frm2binBinaryKernelDestroy(Frm2binBinaryKernel *self)
 	/* delete string for the name */
 	delete(self->name);
 
+	/* delete the kernelInfo */
+	delete(self->kInfo);
+
 }
