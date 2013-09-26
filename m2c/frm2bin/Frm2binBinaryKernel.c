@@ -35,6 +35,4 @@ void Frm2binBinaryKernelDestroy(Frm2binBinaryKernel *self)
 	/* delete the kernelInfo object */
 	delete(self->kInfo);
 
-	/* just call parent's destructor */
-	ELFWriterDestroy(asELFWriter(self));
 }

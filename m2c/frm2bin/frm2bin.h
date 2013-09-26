@@ -41,7 +41,7 @@ void Frm2binCompile(Frm2bin *self,
 		struct list_t *source_file_list,
 		struct list_t *bin_file_list);
 
-
+void Frm2binBinaryGenerate(Frm2bin *self, Frm2binBinary *cubinary);
 
 
 /*
