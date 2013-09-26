@@ -13,7 +13,7 @@
  */
 
 /* Class definition */
-CLASS_BEGIN(Frm2binBinaryGlobalInfo, ELFWriter)
+CLASS_BEGIN(Frm2binBinaryGlobalInfo, Object)
 
 	/* each kernel has one item inside this list
 	 * type of the item is Frm2binBinaryGlobalInfoItem */

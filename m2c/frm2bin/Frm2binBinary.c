@@ -21,22 +21,30 @@ void Frm2binBinaryCreate(Frm2binBinary *self)
 	/* create the kernel_list */
 	self->kernel_list = new(List);
 
-	/* create global_info object, only one */
-	self->global_info = new(Frm2binBinaryGlobalInfo);
-
 	/* initialize numKernel to 0 */
 	self->numKernel = 0;
+
+	/* create global_info */
+	self->global_info = new(Frm2binBinaryGlobalInfo);
 }
 
 void Frm2binBinaryDestroy(Frm2binBinary *self)
 {
 	/* delete all items inside the kernel_list */
 	// TO BE FINISHED
+	ListIterator *tmpIterator = new(ListIterator, self->kernel_list);
+	Frm2binBinaryKernel *tmpKernel;
+
+	/* iterate all kernel inside the list and deletet them */
+	ListIteratorForEach(tmpIterator, tmpKernel, Frm2binBinaryKernel)
+	{
+		delete(tmpKernel);
+	}
 
 	/* delete the kernel_list */
 	delete(self->kernel_list);
 
-	/* delete the global_info */
+	/* delete global_info */
 	delete(self->global_info);
 
 }
