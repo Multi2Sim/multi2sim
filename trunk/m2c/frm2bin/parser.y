@@ -188,10 +188,15 @@ args_stmt
 		
 		/* check the size of the current argument */
 		/* format for tok_arg_type: .i32, .i64, .f32, .f64 */
-		size = (atoi(($1->name) + 2)) / 4;
+		size = (atoi(($1->name) + 2)) / 8;
 		
 		/* increase the kernel argument total size */
 		frm2bin_inner_bin->arg_totalSize += size;
+		
+		/* need to search kernel_list to find the kernel,
+		 * now we test vectorAdd.cubin example, only one
+		 * kernel, just use head of list */
+		(asFrm2binBinaryKernel)(ListHead(cubinary->kernel_list))->argSize += size;
 		
 		frm_id_free($1);
 	}
