@@ -20,6 +20,9 @@ CLASS_BEGIN(Frm2binBinaryKernel, ELFWriter)
 	/* name of the kernel */
 	String *name;
 
+	/* total size of the arguments */
+	unsigned int argSize;
+
 	/* info specific to this kernel, corresponds to
 	 * .nv.info.<name> section */
 	Frm2binBinaryKernelInfo *kInfo;

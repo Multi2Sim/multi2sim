@@ -22,6 +22,9 @@ void Frm2binBinaryKernelCreate(Frm2binBinaryKernel *self)
 
 	/* create a Frm2binBinaryKernelInfo object */
 	self->kInfo = new(Frm2binBinaryKernelInfo);
+
+	/* initialize argument size to zero */
+	self->argSize = 0;
 }
 
 void Frm2binBinaryKernelDestroy(Frm2binBinaryKernel *self)
