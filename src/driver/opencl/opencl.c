@@ -24,6 +24,7 @@
 #include <arch/x86/emu/context.h>
 #include <arch/x86/emu/emu.h>
 #include <arch/x86/emu/regs.h>
+#include <arch/x86/emu/syscall.h>
 #include <arch/x86/timing/cpu.h>
 #include <lib/class/list.h>
 #include <lib/class/string.h>
@@ -194,6 +195,7 @@ int OpenclDriverCall(X86Context *ctx)
 			__FUNCTION__, code, opencl_err_abi_call);
 
 	/* Debug */
+	x86_sys_debug("  %s (code %d)\n", opencl_abi_call_name[code], code);
 	opencl_debug("OpenCL ABI call '%s' (code %d)\n",
 		opencl_abi_call_name[code], code);
 
