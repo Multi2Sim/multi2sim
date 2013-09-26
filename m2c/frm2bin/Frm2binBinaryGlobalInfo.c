@@ -8,20 +8,23 @@
 //#include <lib/util/hash-table.h>
 //#include <lib/util/list.h>
 //#include <lib/util/string.h>
+#include <stdio.h>
 
 #include "Frm2binBinaryGlobalInfo.h"
 
 void Frm2binBinaryGlobalInfoCreate(Frm2binBinaryGlobalInfo *self)
 {
-	/* create a new list */
-	self->info_list = new(List);
 	/* just call parent's constructor */
-	ELFWriterCreate(asELFWriter(self));
+	ObjectCreate(asObject(self));
+
+	self->info_list = new(List);
+	printf("creating info_list, %p", self->info_list);
+
 }
 
 void Frm2binBinaryGlobalInfoDestroy(Frm2binBinaryGlobalInfo *self)
 {
-	/* delete the list */
+	/* do nothing now */
 	delete(self->info_list);
 
 }
