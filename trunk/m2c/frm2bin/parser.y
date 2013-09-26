@@ -146,7 +146,7 @@ global_section
 		 * it at the end of the info_list of Frm2binBinaryGlobalInfo 
 		 */
 		g_item = new(Frm2binBinaryGlobalInfoItem);
-		ListAdd(cubinary->global_info->info_list, g_item);
+		ListAdd(cubinary->global_info->info_list, asObject(g_item));
 		
 		/* increment numKernel */
 		cubinary->numKernel ++;
