@@ -39,7 +39,4 @@ void Frm2binBinaryDestroy(Frm2binBinary *self)
 	/* delete the global_info */
 	delete(self->global_info);
 
-
-	/* just call parent's destructor */
-	ELFWriterDestroy(asELFWriter(self));
 }
