@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef M2C_CL2LLVM_TYPE_H
-#define M2C_CL2LLVM_TYPE_H
+#ifndef M2C_CL2LLVM_TYPE_H_OLD
+#define M2C_CL2LLVM_TYPE_H_OLD
 
 #include <llvm-c/Core.h>
 #include <llvm-c/Analysis.h>

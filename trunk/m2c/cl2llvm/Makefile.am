@@ -49,6 +49,9 @@ libcl2llvm_a_SOURCES = \
 	type.c\
 	type.h\
 	\
+	Type.cc \
+	Type.h \
+	\
 	val.c\
 	val.h\
 	\
@@ -62,6 +65,7 @@ libcl2llvm_a_SOURCES = \
 	parser.y
 
 AM_CFLAGS = $(LLVM_CFLAGS)
+AM_CXXFLAGS = $(LLVM_CXXFLAGS)
 
 else
 
