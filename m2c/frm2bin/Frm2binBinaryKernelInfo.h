@@ -74,7 +74,8 @@ CLASS_BEGIN(Frm2binBinaryKernelInfo, ELFWriter)
 	/* parameter in constant memory bank ?? Not known yet */
 	Frm2binBinaryKernelInfoParamCBank paramCbank;
 
-	/* size of the parameter */
+	/* transform of paramSize, it's actually a value transformed
+	 * from parameter size: (0x00001903 | ParamTotalSize << 16)*/
 	unsigned int param_size;
 
 	/* list of kernel parameter info, one for each kernel

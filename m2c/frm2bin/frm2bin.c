@@ -132,6 +132,12 @@ void Frm2binCompile(Frm2bin *self,
 {
 	int index;
 
+	Frm2binBinaryKernel *tmpKernel;
+	Frm2binBinaryKernelInfo *tmpKernelInfo;
+	Frm2binBinaryKernelInfoKparamInfo tmpKparamInfo;
+	Frm2binBinaryKernelInfoKparamInfoCplx tmpCplx;
+	Frm2binBinaryKernelInfoSyncStack tmpSyncStack;
+
 	cubinary = new(Frm2binBinary);
 	LIST_FOR_EACH(source_file_list, index)
 	{
@@ -151,6 +157,42 @@ void Frm2binCompile(Frm2bin *self,
 
 		/* Parse input */
 		frm2bin_yyparse();
+		printf("argSize: %d Bytes\n",
+		((asFrm2binBinaryKernel)(ListHead(cubinary->kernel_list)))->argSize );
+
+		/* do some processing after yyparse() */
+		/* we only test vectorAdd.cubin example */
+		/* set param_size in Frm2binBinaryKernelInfo */
+		tmpKernel = (asFrm2binBinaryKernel)(ListHead(cubinary->kernel_list));
+		tmpKernelInfo = tmpKernel->kInfo;
+		tmpKernelInfo->param_size = ((tmpKernel->argSize) << 16) | 0x00001903;
+
+		tmpKernelInfo->paramCbank.id = 0x00080a04;
+		/* fixme hardcode this guy, please */
+		tmpKernelInfo->paramCbank.SymIdx = 0;
+		tmpKernelInfo->paramCbank.paramsizeX =
+				((tmpKernel->argSize) << 16) | 0x0020;
+
+		/* prepare Frm2binBinaryKernelInfoKparamInfo for vectorAdd example */
+		tmpKparamInfo.id = 0x000c1704;
+		tmpKparamInfo.index = 0; // asfermi always set it to zero
+		tmpKparamInfo.offset = 0; // please hardcode it to right value
+		tmpKparamInfo.ordinal = 0; // please hardcode it to right value
+
+		/* Please hardcode these guys! */
+		tmpCplx.logAlign = 0;
+		tmpCplx.space = 0;
+		tmpCplx.cbank = 0;
+		tmpCplx.size = 0;
+
+		tmpKparamInfo.cplx = tmpCplx;
+
+		list_add(tmpKernelInfo->kparam_info_list, &tmpKparamInfo);
+
+		tmpSyncStack.notKnownYet = 0; // please hardcode this guy!
+		tmpKernelInfo->sync_stack = tmpSyncStack;
+
+		tmpKernel->constant0Size = 0x20 + tmpKernel->argSize;
 
 		/* call the Fermi disassbmler for text_section it's just a
 		 * temporarily implementation */
