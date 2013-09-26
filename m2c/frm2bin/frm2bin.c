@@ -23,6 +23,7 @@
 #include <arch/fermi/asm/Asm.h>
 
 #include <lib/class/class.h>
+#include <lib/class/list.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/elf-encode.h>
@@ -31,6 +32,11 @@
 #include "inst-info.h"
 #include "outer-bin.h"
 #include "frm2bin.h"
+#include "Frm2binBinary.h"
+#include "Frm2binBinaryGlobalInfo.h"
+#include "Frm2binBinaryGlobalInfoItem.h"
+#include "Frm2binBinaryKernel.h"
+#include "Frm2binBinaryKernelInfo.h"
 /*
 */
 
@@ -51,7 +57,7 @@ char *frm2bin_file_name;	/* Current file */
 
 /* output text_section buffer */
 struct elf_enc_buffer_t *text_section_buffer;
-
+Frm2binBinary *cubinary;
 
 void frm2bin_yyerror(const char *s)
 {
@@ -89,6 +95,13 @@ void Frm2binCreate(Frm2bin *self)
 	frm_asm = FrmAsmWrapCreate();
 	frm2bin_inst_info_init();
 
+	/* Temporarily register class we need */
+	CLASS_REGISTER(Frm2binBinary);
+	CLASS_REGISTER(Frm2binBinaryGlobalInfo);
+	CLASS_REGISTER(Frm2binBinaryGlobalInfoItem);
+	CLASS_REGISTER(Frm2binBinaryKernel);
+	CLASS_REGISTER(Frm2binBinaryKernelInfo);
+
 	/* task list is for label processing, lable is not supported now
 	 * hence, it's commented */
 	/* frm_task_list_init(); */
@@ -119,6 +132,7 @@ void Frm2binCompile(Frm2bin *self,
 {
 	int index;
 
+	cubinary = new(Frm2binBinary);
 	LIST_FOR_EACH(source_file_list, index)
 	{
 		/* Open file */
@@ -167,5 +181,9 @@ void Frm2binCompile(Frm2bin *self,
 		frm2bin_outer_bin_free(frm2bin_outer_bin);
 		elf_enc_buffer_free(bin_buffer);
 	}
+
+	//fixme here
+	//delete(cubinary);
+	ELFWriterDestroy(asELFWriter(cubinary));
 }
 
