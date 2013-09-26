@@ -104,19 +104,19 @@ struct mod_stack_t
 	unsigned int flush_page;
 
 	/* Flags */
-	int hit : 1;
-	int err : 1;
-	int shared : 1;
-	int read : 1;
-	int write : 1;
-	int nc_write : 1;
-	int prefetch : 1;
-	int blocking : 1;
-	int writeback : 1;
-	int eviction : 1;
-	int retry : 1;
-	int coalesced : 1;
-	int port_locked : 1;
+	unsigned int hit : 1;
+	unsigned int err : 1;
+	unsigned int shared : 1;
+	unsigned int read : 1;
+	unsigned int write : 1;
+	unsigned int nc_write : 1;
+	unsigned int prefetch : 1;
+	unsigned int blocking : 1;
+	unsigned int writeback : 1;
+	unsigned int eviction : 1;
+	unsigned int retry : 1;
+	unsigned int coalesced : 1;
+	unsigned int port_locked : 1;
 
 	/* Message sent through interconnect */
 	struct net_msg_t *msg;
