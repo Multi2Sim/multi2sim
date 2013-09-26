@@ -214,6 +214,14 @@ void X86ThreadSchedule(X86Thread *self)
 		if (!ctx->evict_signal && asTiming(cpu)->cycle >= 
 			ctx->alloc_cycle + x86_cpu_context_quantum)
 		{
+			/* If there are no other contexts to run on this
+			 * node, allot a new quantum and return */
+			if (self->mapped_list_count == 1)
+			{
+				ctx->alloc_cycle = asTiming(cpu)->cycle;
+				return;
+			}
+
 			int found = 0;
 
 			/* Find a running context mapped to the same node */
@@ -252,7 +260,7 @@ void X86ThreadSchedule(X86Thread *self)
 			{
 				if (tmp_ctx != ctx && 
 					X86ContextGetState(tmp_ctx, X86ContextRunning) &&
-					tmp_ctx->sched_priority >= ctx->sched_priority)
+					tmp_ctx->sched_priority > ctx->sched_priority)
 				{
 					found = 1;
 					break;
@@ -307,7 +315,7 @@ void X86ThreadSchedule(X86Thread *self)
 				tmp_ctx->sched_priority > ctx->sched_priority))
 			{
 				ctx = tmp_ctx;
-				X86ContextDebug("#%lld ctx %d (priority %d) in is a candidate\n",
+				X86ContextDebug("#%lld ctx %d (priority %d) is a candidate\n",
 					asTiming(cpu)->cycle, ctx->pid, 
 					ctx->sched_priority);
 			}
@@ -465,10 +473,16 @@ void X86CpuSchedule(X86Cpu *self)
 	if (!quantum_expired && !emu->schedule_signal)
 		return;
 
+	X86ContextDebug("#%lld schedule: ", asTiming(self)->cycle);
+	if (quantum_expired)
+		X86ContextDebug("quantum expired (set at %lld)\n", 
+			self->min_alloc_cycle);
+	else if (emu->schedule_signal)
+		X86ContextDebug("emulator sent scheduling signal\n");
+
 	/* OK, we have to schedule. Uncheck the schedule signal here, since
 	 * upcoming actions might set it again for a second scheduler call. */
 	emu->schedule_signal = 0;
-	X86ContextDebug("#%lld schedule\n", asTiming(self)->cycle);
 
 	/* Check if there is any running context that is currently not mapped
 	 * to any node (core/thread); for example, a new context, or a
