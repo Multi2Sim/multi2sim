@@ -57,6 +57,7 @@ extern int frm2bin_assemble;
 
 /* output buffer, text_section only now */
 extern struct elf_enc_buffer_t *text_section_buffer;
+extern Frm2binBinary *cubinary;
 
 int frm2bin_yylex(void);
 

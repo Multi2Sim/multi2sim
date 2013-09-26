@@ -1,13 +1,18 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
-
 #include <string.h>
 
 #include <lib/util/debug.h>
 #include <lib/util/hash-table.h>
 #include <lib/util/elf-encode.h>
 #include <lib/util/list.h>
+#include <lib/util/string.h>
+
+#include <lib/class/list.h>
+#include <lib/class/string.h>
+#include <lib/class/class.h>
+#include <lib/mhandle/mhandle.h>
 
 #include "id.h"
 #include "frm2bin.h"
@@ -16,6 +21,10 @@
 #include "inst-info.h"
 #include "inner-bin.h"
 #include "outer-bin.h"
+#include "Frm2binBinary.h"
+#include "Frm2binBinaryKernel.h"
+#include "Frm2binBinaryGlobalInfo.h"
+#include "Frm2binBinaryGlobalInfoItem.h"
 
 /*
 #include "stream.h"
@@ -118,6 +127,29 @@ global_section
 	: TOK_GLOBAL TOK_ID TOK_NEW_LINE
 	{
 		struct frm_id_t *id = $2;
+		Frm2binBinaryKernel * g_kernel;
+		String *g_kernel_name;
+		Frm2binBinaryGlobalInfoItem *g_item;
+		
+		g_kernel = new(Frm2binBinaryKernel);
+		g_kernel_name = new(String, id->name);
+		
+		/* insert g_kernel_name to g_kernel */
+		g_kernel->name = g_kernel_name;
+		
+		/* create a new Frm2bindBinaryKernel object and insert
+		 * it into the end of the kernel_list of Frm2binBinary
+		 */
+		ListAdd(cubinary->kernel_list, asObject(g_kernel));
+		
+		/* create one Frm2binBinaryGlobalInfoItem object, insert
+		 * it at the end of the info_list of Frm2binBinaryGlobalInfo 
+		 */
+		g_item = new(Frm2binBinaryGlobalInfoItem);
+		ListAdd(cubinary->global_info->info_list, g_item);
+		
+		/* increment numKernel */
+		cubinary->numKernel ++;
 
 		frm2bin_inner_bin = frm2bin_inner_bin_create(id->name);
 		//frm2bin_metadata = frm2bin_metadata_create();
