@@ -31,6 +31,4 @@ void Frm2binBinaryKernelInfoDestroy(Frm2binBinaryKernelInfo *self)
 	/* delete the kparam_info list */
 	list_free(self->kparam_info_list);
 
-	/* just call parent's destructor */
-	ELFWriterDestroy(asELFWriter(self));
 }

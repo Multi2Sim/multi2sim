@@ -11,6 +11,7 @@
 #include <stdio.h>
 
 #include "Frm2binBinaryGlobalInfo.h"
+#include "Frm2binBinaryGlobalInfoItem.h"
 
 void Frm2binBinaryGlobalInfoCreate(Frm2binBinaryGlobalInfo *self)
 {
@@ -24,7 +25,21 @@ void Frm2binBinaryGlobalInfoCreate(Frm2binBinaryGlobalInfo *self)
 
 void Frm2binBinaryGlobalInfoDestroy(Frm2binBinaryGlobalInfo *self)
 {
-	/* do nothing now */
+	/* delete all the kernelInfoItem */
+
+	ListIterator *tmpIterator = new(ListIterator, self->info_list);
+	Frm2binBinaryGlobalInfoItem *tmpInfoItem;
+
+	/* iterate all kernel inside the list and deletet them */
+	ListIteratorForEach(tmpIterator, tmpInfoItem, Frm2binBinaryGlobalInfoItem)
+	{
+		delete(tmpInfoItem);
+	}
+
+	/* delete the iterator */
+	delete(tmpIterator);
+
+	/* delete the infoItem list */
 	delete(self->info_list);
 
 }
