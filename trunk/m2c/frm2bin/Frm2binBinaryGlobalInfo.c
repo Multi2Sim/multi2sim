@@ -23,6 +23,5 @@ void Frm2binBinaryGlobalInfoDestroy(Frm2binBinaryGlobalInfo *self)
 {
 	/* delete the list */
 	delete(self->info_list);
-	/* just call parent's destructor */
-	ELFWriterDestroy(asELFWriter(self));
+
 }

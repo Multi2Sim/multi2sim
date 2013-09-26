@@ -35,6 +35,5 @@ void Frm2binBinaryGlobalInfoItemCreate(Frm2binBinaryGlobalInfoItem *self)
 
 void Frm2binBinaryGlobalInfoItemDestroy(Frm2binBinaryGlobalInfoItem *self)
 {
-	/* just call parent's destructor */
-	ObjectDestroy(asObject(self));
+	/* do nothing now */
 }

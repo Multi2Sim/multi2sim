@@ -24,6 +24,8 @@
 
 #include <lib/class/class.h>
 #include <lib/class/list.h>
+#include <lib/class/string.h>
+#include <lib/class/elf-writer.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/elf-encode.h>
@@ -194,6 +196,9 @@ void Frm2binCompile(Frm2bin *self,
 
 		tmpKernel->constant0Size = 0x20 + tmpKernel->argSize;
 
+		/* Call this func to populate sections, segments and buffers */
+		//Frm2binBinaryGenerate(self, cubinary);
+
 		/* call the Fermi disassbmler for text_section it's just a
 		 * temporarily implementation */
 		{
@@ -225,7 +230,55 @@ void Frm2binCompile(Frm2bin *self,
 	}
 
 	//fixme here
-	//delete(cubinary);
-	ELFWriterDestroy(asELFWriter(cubinary));
+	delete(cubinary);
+	//ELFWriterDestroy(asELFWriter(cubinary));
 }
 
+void Frm2binBinaryGenerate(Frm2bin *self, Frm2binBinary *cubinary)
+{
+	/* create sections and populate them with data from sub-class */
+	ELFWriterBuffer *tmpBuffer;
+	ELFWriterSection *tmpSection;
+
+	List *GlobalInfoList;
+	Frm2binBinaryGlobalInfoItem *tmpGlobalInfoItem;
+
+	//String *tmpString;
+
+	/* only consider one kernel case */
+	GlobalInfoList = cubinary->kernel_list;
+	tmpGlobalInfoItem = (asFrm2binBinaryGlobalInfoItem)(ListHead(GlobalInfoList));
+
+	/*
+	 * * .nv.info section
+	 */
+
+	/* create a buffer */
+	tmpBuffer = new(ELFWriterBuffer);
+
+	/* create a section */
+	tmpSection = new(ELFWriterSection, ".nv.info", tmpBuffer, tmpBuffer);
+
+	/* populate globalInfoItem data to this buffer */
+	ELFWriterBufferWrite(tmpBuffer, &(tmpGlobalInfoItem->id_A), 4);
+	ELFWriterBufferWrite(tmpBuffer, &(tmpGlobalInfoItem->GlobSymIdx_A), 4);
+	ELFWriterBufferWrite(tmpBuffer, &(tmpGlobalInfoItem->MinStackSize), 4);
+	ELFWriterBufferWrite(tmpBuffer, &(tmpGlobalInfoItem->id_B), 4);
+	ELFWriterBufferWrite(tmpBuffer, &(tmpGlobalInfoItem->GlobSymIdx_B), 4);
+	ELFWriterBufferWrite(tmpBuffer, &(tmpGlobalInfoItem->FrameSize), 4);
+
+	/* add section to the binary */
+	ELFWriterAddSection(asELFWriter(cubinary), tmpSection);
+
+	/*
+	 * * .nv.info.<name> section
+	 */
+
+	/* create a buffer */
+	tmpBuffer = new(ELFWriterBuffer);
+
+	/* create a section */
+	tmpSection = new(ELFWriterSection, ".nv.info", tmpBuffer, tmpBuffer);
+
+
+}
