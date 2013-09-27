@@ -56,6 +56,17 @@ inline unsigned long long SignExtend64(unsigned long long x,
  * String manipulation
  */
 
+enum StringError
+{
+	StringErrorOK = 0,
+	StringErrorBase,
+	StringErrorFormat,
+	StringErrorRange
+};
+
+/* Return a string associated with an error code */
+const char *StringGetErrorString(StringError error);
+
 /* Dump formatted string into a buffer with a specific size. Its size is then
  * decreased, and the buffer is advanced to the end of the dumped string.
  * This function is useful for being used in other functions that dump
@@ -81,6 +92,32 @@ void StringToUpper(std::string& s);
 void StringTokenize(std::vector<std::string>& tokens, std::string s,
 		std::string set = " \t\n\r");
 
+/* Convert 'digit' in base 'base' into an integer. */
+int StringDigitToInt(char digit, int base);
+int StringDigitToInt(char digit, int base, StringError& error);
+
+/* Convert a string into an integer, accepting the following modifiers.
+ * If conversion fails due to wrong formatting of the string, an error code is
+ * returned in argument 'error' (optional).
+ *
+ * String prefixes:
+ *   Prefix '0x' - Use base 16 for conversion.
+ *   Prefix '0' - Use base 8 for conversion.
+ * String suffixes:
+ *   Suffix 'k' - Multiply by 1024.
+ *   Suffix 'K' - Multiply by 1000.
+ *   Suffix 'm' - Multiply by 1024*1024.
+ *   Suffix 'M' - Multiply by 1000*1000.
+ *   Suffix 'g' - Multiply by 1024*1024*1024.
+ *   Suffix 'G' - Multiply by 1000*1000*1000.
+ */
+int StringToInt(std::string s);
+int StringToInt(std::string s, StringError& error);
+long long StringToInt64(std::string s);
+long long StringToInt64(std::string s, StringError& error);
+
+
+
 
 /*
  * String maps
@@ -95,13 +132,13 @@ struct StringMapItem
 typedef StringMapItem StringMap[];
 
 const char *StringMapValue(StringMap map, int value);
-const char *StringMapValue(StringMap map, int value, int &err);
+const char *StringMapValue(StringMap map, int value, bool &error);
 
 int StringMapString(StringMap map, const char *text);
-int StringMapString(StringMap map, const char *text, int &err);
+int StringMapString(StringMap map, const char *text, bool &error);
 
 int StringMapStringCase(StringMap map, const char *text);
-int StringMapStringCase(StringMap map, const char *text, int &err);
+int StringMapStringCase(StringMap map, const char *text, bool &error);
 
 std::string StringMapFlags(StringMap map, unsigned int flags);
 

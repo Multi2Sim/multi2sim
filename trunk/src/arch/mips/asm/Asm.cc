@@ -269,27 +269,9 @@ Asm::~Asm()
 	delete dec_table_special3_bshfl;
 }
 
-////////////
-#include <lib/cpp/IniFile.h>
-///////////
 
 void Asm::DisassembleBinary(string path)
 {
-	{ /////////////
-		IniFile f;
-
-		f.WriteString("section1", "var1", "value1");
-		f.WriteString("section1", "var1_2", "value1_2");
-
-		f.WriteString("Section2", "Var2_1", "value2_1");
-		f.WriteString("Section2", "Var2_1", "overwrite_value");
-
-		f.WriteDouble("Section1", "var_double", 1.3);
-
-		f.Dump(cout);
-		return;
-	}
-
 	ELFReader::File file(path);
 	Inst inst(this);
 
