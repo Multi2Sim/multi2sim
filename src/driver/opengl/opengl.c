@@ -25,6 +25,7 @@
 #include <arch/southern-islands/asm/input.h>
 #include <arch/southern-islands/asm/opengl-bin-file.h>
 #include <arch/southern-islands/emu/ndrange.h>
+#include <arch/southern-islands/emu/sx.h> 
 #include <arch/southern-islands/timing/gpu.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
@@ -134,6 +135,9 @@ void OpenglDriverCreate(OpenglDriver *self, X86Emu *x86_emu, SIEmu *si_emu)
 	/* List of SI NDRanges */
 	self->opengl_si_ndrange_list = list_create();
 
+	/* Viewport */
+	self->opengl_si_vwpt = opengl_pa_viewport_create();
+
 	/* Assign driver to host emulator */
 	x86_emu->opengl_driver = self;
 }
@@ -171,6 +175,9 @@ void OpenglDriverDestroy(OpenglDriver *self)
 	/* Free list of Southern Islands nd-ranges*/
 	assert(!list_count(self->opengl_si_ndrange_list));
 	list_free(self->opengl_si_ndrange_list);
+
+	/* Free viewport */
+	opengl_pa_viewport_free(self->opengl_si_vwpt);
 
 }
 
@@ -995,9 +1002,8 @@ static int opengl_abi_si_ndrange_create_impl(X86Context *ctx)
 		SIGpuMapNDRange(si_gpu, ndrange);
 
 	list_add(driver->opengl_si_ndrange_list, ndrange);
-	opengl_debug("\tNDRange #%d add to NDRange list\n", 
+	opengl_debug("\tNDRange #%d insert into NDRange list\n", 
 		ndrange->id);
-	opengl_debug("\tNDRange list count = %d\n", list_count(driver->opengl_si_ndrange_list));
 
 	/* Return NDRange ID */
 	return ndrange->id;
@@ -1106,6 +1112,7 @@ static int opengl_abi_si_ndrange_send_work_groups_impl(X86Context *ctx)
 	X86Emu *emu = ctx->emu;
 	OpenglDriver *driver = emu->opengl_driver;
 	SINDRange *ndrange = NULL, *tmp;
+	int index;
 
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -1129,7 +1136,6 @@ static int opengl_abi_si_ndrange_send_work_groups_impl(X86Context *ctx)
 	work_group_sizes_ptr = regs->esi;
 	ndrange_id = regs->edi;
 
-	int index;
 	LIST_FOR_EACH(driver->opengl_si_ndrange_list, index)
 	{
 		tmp = (SINDRange* )list_get(driver->opengl_si_ndrange_list, index);
@@ -1138,6 +1144,10 @@ static int opengl_abi_si_ndrange_send_work_groups_impl(X86Context *ctx)
 	}
 	if (!ndrange)
 		fatal("%s: invalid ndrange ID (%d)", __FUNCTION__, ndrange_id);
+
+	opengl_debug("\tndrange %d\n", ndrange->id);
+
+	assert(ndrange);
 
 	mem_read(mem, work_group_start_ptr, 3 * 4, work_group_start);
 	mem_read(mem, work_group_count_ptr, 3 * 4, work_group_count);
@@ -1234,10 +1244,10 @@ static int opengl_abi_si_ndrange_finish_impl(X86Context *ctx)
 	struct x86_regs_t *regs = ctx->regs;
 
 	SINDRange *ndrange = NULL, *tmp;
+	int index;
 
 	int ndrange_id = regs->ecx;
 
-	int index;
 	LIST_FOR_EACH(driver->opengl_si_ndrange_list, index)
 	{
 		tmp = (SINDRange* )list_get(driver->opengl_si_ndrange_list, index);
@@ -1293,7 +1303,6 @@ static int opengl_abi_si_ndrange_pass_mem_objs_impl(X86Context *ctx)
 
 	shader_id =  regs->ecx;
 	ndrange_id = regs->edx;
-	printf("list_count = %d\n", list_count(ctx->emu->opengl_driver->opengl_si_ndrange_list));
 
 	shader = list_get(driver->opengl_si_shader_list, shader_id);
 
@@ -1324,7 +1333,6 @@ static int opengl_abi_si_ndrange_pass_mem_objs_impl(X86Context *ctx)
 	opengl_si_shader_setup_ndrange_constant_buffers(ndrange);
 	opengl_si_shader_setup_ndrange_inputs(shader, ndrange);
 	opengl_si_shader_debug_ndrange_state(shader, ndrange);
-	printf("list_count = %d\n", list_count(ctx->emu->opengl_driver->opengl_si_ndrange_list));
 
 	return 0;
 }
@@ -1340,6 +1348,8 @@ static int opengl_abi_si_ndrange_pass_mem_objs_impl(X86Context *ctx)
 static int opengl_abi_si_viewport_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	X86Emu *x86_emu = ctx->emu;
+	OpenglDriver *driver = x86_emu->opengl_driver;
 
 	unsigned int x;
 	unsigned int y;
@@ -1356,7 +1366,79 @@ static int opengl_abi_si_viewport_impl(X86Context *ctx)
 	opengl_debug("\tViewport x = %d, y = %d, width = %d, height = %d\n", 
 		x, y, width, height);
 
-	/* FIXME: Set Viewport */
+	/* Set Viewport */
+	opengl_pa_viewport_set(driver->opengl_si_vwpt, x, y, width, height);
+	
+	/* Return */
+	return 0;
+}
+
+/*
+ * OpenGL ABI call #20 - si_raster
+ *
+ * @return int
+ *
+ *	The function always returns 0.
+ */
+
+static int opengl_abi_si_raster_impl(X86Context *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;	
+	X86Emu *x86_emu = ctx->emu;
+	OpenglDriver *driver = x86_emu->opengl_driver;
+	SIEmu *si_emu = driver->si_emu;
+	int index;
+
+	unsigned int mode;
+
+	mode = regs->ecx;
+
+	float *pos;
+	int pos_idx;
+	struct list_t *pos_lst;
+	struct list_t *pixel_list;
+	struct opengl_pa_primitive_t *prmtv;
+	struct opengl_pa_triangle_t *triangle;
+	
+	opengl_debug("\tprimitive mode %d\n", mode);
+
+	/* FIXME: currently triangle only */
+	for (pos_idx = 0; pos_idx < SI_POS_COUNT; ++pos_idx)
+	{
+		pos_lst = si_emu->sx->pos[pos_idx];
+		if (list_count(pos_lst))
+		{
+			/* Start to generate pixel info */
+			prmtv = opengl_pa_primitives_create(OPENGL_PA_TRIANGLES, pos_lst, driver->opengl_si_vwpt);
+			LIST_FOR_EACH(prmtv->list, index)
+			{
+				triangle = list_get(prmtv->list, index);
+
+				/* Rasterization */
+				pixel_list = opengl_sc_rast_triangle_gen(triangle);
+				opengl_debug("\tTriangle %d generated %d pixels\n", index, list_count(pixel_list));
+
+				/* Create workitems ... */
+
+				/* Clean pixels */
+				opengl_sc_rast_triangle_done(pixel_list);
+
+			}
+			opengl_pa_primitives_free(prmtv);
+		}
+
+		/* Debug: export target */
+		opengl_debug("\texport target pos #%d\n", pos_idx);
+		LIST_FOR_EACH(pos_lst, index)
+		{
+			pos = list_get(pos_lst, index);
+			opengl_debug("\t\t%d: %f, %f, %f, %f\n", index, pos[0], pos[1], pos[2], pos[3]);
+		}
+	}
+
+
+	/* Reset Shader Export buffers */
+	SISXReset(si_emu->sx);
 
 	/* Return */
 	return 0;
