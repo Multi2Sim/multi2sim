@@ -21,6 +21,7 @@
 #define LIB_CPP_MISC_H
 
 #include <iostream>
+#include <vector>
 
 
 namespace Misc
@@ -52,7 +53,7 @@ inline unsigned long long SignExtend64(unsigned long long x,
 
 
 /*
- * Deprecated string manipulation
+ * String manipulation
  */
 
 /* Dump formatted string into a buffer with a specific size. Its size is then
@@ -62,6 +63,23 @@ inline unsigned long long SignExtend64(unsigned long long x,
  *   obj_dump(struct obj_t *obj, char *buf, int size); */
 void str_printf(char **pbuf, int *psize, const char *fmt, ...)
 		__attribute__ ((format (printf, 3, 4)));
+
+inline bool CharInSet(char c, std::string set) { return set.find(c) !=
+		std::string::npos; }
+
+void StringTrimLeft(std::string& s, std::string set = " \t\n\r");
+void StringTrimRight(std::string& s, std::string set = " \t\n\r");
+void StringTrim(std::string& s, std::string set = " \t\n\r");
+void StringSingleSpaces(std::string& s, std::string set =  " \t\n\r");
+
+void StringToLower(std::string& s);
+void StringToUpper(std::string& s);
+
+/* Split a string in tokens and place them in the list of strings passed by
+ * reference in the first argument. Optionally, argument 'set' can specify the
+ * characters considered as tokens separators. */
+void StringTokenize(std::vector<std::string>& tokens, std::string s,
+		std::string set = " \t\n\r");
 
 
 /*

@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <algorithm>
 #include <cstdarg>
 #include <cstdio>
 #include <cstdlib>
@@ -33,7 +34,7 @@ namespace Misc
 
 
 /*
- * Deprecated string manipulation
+ * String functions
  */
 
 void str_printf(char **pbuf, int *psize, const char *fmt, ...)
@@ -54,6 +55,112 @@ void str_printf(char **pbuf, int *psize, const char *fmt, ...)
 		len = *psize - 1;
 	*psize -= len;
 	*pbuf += len;
+}
+
+
+void StringTrimLeft(string& s, string set)
+{
+	size_t startpos = s.find_first_not_of(set);
+	if (string::npos != startpos)
+		s = s.substr(startpos);
+}
+
+
+void StringTrimRight(string& s, string set)
+{
+	size_t endpos = s.find_last_not_of(set);
+	if (string::npos != endpos )
+		s = s.substr(0, endpos + 1);
+}
+
+
+void StringTrim(string& s, string set)
+{
+	StringTrimLeft(s, set);
+	StringTrimRight(s, set);
+}
+
+
+void StringSingleSpaces(string& s, string set)
+{
+	int src;
+	int dest;
+
+	int is_space;
+	int was_space;
+	int started;
+
+	src = 0;
+	dest = 0;
+	is_space = 0;
+	was_space = 0;
+	started = 0;
+	for (unsigned i = 0; i < s.length(); i++)
+	{
+		is_space = CharInSet(s[i], set);
+		if (is_space)
+		{
+			src++;
+			if (!was_space && started)
+				s[dest++] = ' ';
+		}
+		else
+		{
+			s[dest++] = s[src++];
+			started = 1;
+		}
+		was_space = is_space;
+	}
+
+	/* Get rid of possible extra space at the end */
+	if (dest && is_space)
+		dest--;
+
+	/* Erase trailing characters */
+	s.erase(dest);
+}
+
+
+void StringToLower(std::string& s)
+{
+	std::transform(s.begin(), s.end(), s.begin(), ::tolower);
+}
+
+
+void StringToUpper(std::string& s)
+{
+	std::transform(s.begin(), s.end(), s.begin(), ::toupper);
+}
+
+
+void StringTokenize(vector<std::string>& tokens, string s, string set)
+{
+	string token;
+
+	int token_start;
+	int is_end;
+
+	/* Extract tokens */
+	token_start = -1;
+	token = "";
+	for (unsigned i = 0; i <= s.length(); i++)
+	{
+		/* End of string */
+		is_end = i == s.length();
+
+		/* Start a token */
+		if (!is_end && !CharInSet(s[i], set)
+				&& token_start == -1)
+			token_start = i;
+
+		/* End a token */
+		if (token_start > -1 && (is_end || CharInSet(s[i], set)))
+		{
+			token = s.substr(token_start, i - token_start);
+			tokens.push_back(token);
+			token_start = -1;
+		}
+	}
 }
 
 
