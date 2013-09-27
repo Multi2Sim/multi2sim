@@ -684,7 +684,7 @@ then
 	saved_cxxflags="$CXXFLAGS"
 	saved_ldflags="$LDFLAGS"
 	saved_libs="$LIBS"
-	CXXFLAGS="`$LLVM_CONFIG --cflags`"
+	CXXFLAGS="`$LLVM_CONFIG --cxxflags`"
 	LDFLAGS=""
 	LIBS="`$LLVM_CONFIG --libs` `$LLVM_CONFIG --ldflags`"
 
