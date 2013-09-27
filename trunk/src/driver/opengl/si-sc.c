@@ -251,8 +251,6 @@ struct opengl_sc_pixel_info_t *opengl_sc_triangle_test_and_gen_pixel(struct open
 		pixel = opengl_sc_pixel_info_create();
 		opengl_sc_pixel_info_set_wndw_cood(pixel, x, y, z);
 		opengl_sc_pixel_info_set_brctrc_cood(pixel, triangle);
-		printf("px %d %d, i = %f, j = %f\n", pixel->pos[X_COMP], pixel->pos[Y_COMP], 
-			pixel->brctrc_i, pixel->brctrc_j);
 		return pixel;
 	}
 	return NULL;
@@ -591,7 +589,7 @@ struct list_t *opengl_sc_rast_triangle_gen(struct opengl_pa_triangle_t *triangle
 				{
 					pxl_info = opengl_sc_pixel_info_create();
 					opengl_sc_pixel_info_set_wndw_cood(pxl_info, spn->x, spn->y, spn->z);
-					printf("pixel x=%d, y=%d, z=%d\n", spn->x, spn->y, spn->z);
+					// printf("pixel x=%d, y=%d, z=%d\n", spn->x, spn->y, spn->z);
 					opengl_sc_pixel_info_set_brctrc_cood(pxl_info, triangle);
 					list_add(pxl_lst, pxl_info);
 					spn->z += spn->zStep;
