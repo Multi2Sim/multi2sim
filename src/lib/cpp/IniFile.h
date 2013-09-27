@@ -32,12 +32,14 @@
 
 class IniFile
 {
+	/* Case-insensitive string hash */
 	struct KeyHash
 	{
 		size_t operator()(std::string s) const { Misc::StringToLower(s);
 				return std::hash<std::string>()(s); }
 	};
 
+	/* Case-insensitive string compare */
 	struct KeyCompare
 	{
 		bool operator()(const std::string& a, const std::string& b) const
@@ -48,19 +50,18 @@ class IniFile
 	std::string path;
 	
 	/* Hash table containing present items. The keys are strings with the
-	 * template "<section>" for sections and "<section>\n<var>" for
+	 * template "<section>" for sections and "<section>|<var>" for
 	 * variables. The data are NULL for sections, and the variable value for
 	 * variables. */
-	//std::unordered_map<std::string, std::string> items;
 	std::unordered_map<std::string, std::string, KeyHash, KeyCompare> items;
 
 	/* Hash table containing allowed items. The keys are strings
-	 * "<section>\n<variable>". */
-	std::unordered_set<std::string> allowed_items;
+	 * "<section>|<variable>". */
+	std::unordered_set<std::string, KeyHash, KeyCompare> allowed_items;
 
 	/* Table of enforced items. Each element is a string with template
-	 * "<section>\n<variable>". */
-	std::unordered_set<std::string> enforced_items;
+	 * "<section>|<variable>". */
+	std::unordered_set<std::string, KeyHash, KeyCompare> enforced_items;
 
 	/* Redundant list containing section names. This extra
 	 * information is added to keep track of the order in which sections
@@ -77,18 +78,21 @@ class IniFile
 			std::string value);
 public:
 
-	IniFile() { }
-	IniFile(std::string path) { Load(path); }
+	IniFile();
+	IniFile(std::string path);
 
 	void Load(std::string path);
 	void Save(std::string path);
 	void Dump(std::ostream& os);
 
+	/* Return true if a section or variable exists */
 	bool Exists(std::string section);
 	bool Exists(std::string section, std::string var);
 
-	void Remove(std::string section);
-	void Remove(std::string section, std::string var);
+	/* Remove a section or a variable, and return true if the section/
+	 * variable was found in the file. */
+	bool Remove(std::string section);
+	bool Remove(std::string section, std::string var);
 
 	unsigned int GetNumSections() { return sections.size(); }
 	std::string GetSection(unsigned int index) { return index <
@@ -107,13 +111,13 @@ public:
 	/* Read variables from a section. If a section or variable does not exist, the
 	 * default value in 'def' is returned. Variables read with IniFileReadXXX
 	 * functions are added automatically to the list of allowed variables. */
-	std::string ReadString(std::string section, std::string var);
-	int ReadInt(std::string section, std::string var);
-	long long ReadInt64(std::string section, std::string var);
-	bool ReadBool(std::string section, std::string var);
-	double ReadDouble(std::string section, std::string var);
-	int ReadEnum(std::string section, std::string var, Misc::StringMap map);
-	void *ReadPointer(std::string section, std::string var);
+	std::string ReadString(std::string section, std::string var, std::string def = "");
+	int ReadInt(std::string section, std::string var, int def = 0);
+	long long ReadInt64(std::string section, std::string var, long long def = 0);
+	bool ReadBool(std::string section, std::string var, bool def = false);
+	double ReadDouble(std::string section, std::string var, double def = 0.0);
+	int ReadEnum(std::string section, std::string var, Misc::StringMap map, int def = 0);
+	void *ReadPointer(std::string section, std::string var, void *def = NULL);
 
 	/* Allowed/mandatory sections/variables */
 	void Allow(std::string section);

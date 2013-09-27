@@ -18,6 +18,8 @@
  */
 
 #include <algorithm>
+#include <cassert>
+#include <climits>
 #include <cstdarg>
 #include <cstdio>
 #include <cstdlib>
@@ -36,6 +38,22 @@ namespace Misc
 /*
  * String functions
  */
+
+static StringMap string_error_map =
+{
+	{ "ok", StringErrorOK },
+	{ "invalid base", StringErrorBase },
+	{ "invalid format", StringErrorFormat },
+	{ "integer out of range", StringErrorRange },
+	{ NULL, 0 }
+};
+
+
+const char *StringGetErrorString(StringError error)
+{
+	return StringMapValue(string_error_map, error);
+}
+
 
 void str_printf(char **pbuf, int *psize, const char *fmt, ...)
 {
@@ -164,6 +182,403 @@ void StringTokenize(vector<std::string>& tokens, string s, string set)
 }
 
 
+int StringDigitToInt(char digit, int base)
+{
+	StringError error;
+	return StringDigitToInt(digit, base, error);
+}
+
+
+int StringDigitToInt(char digit, int base, StringError& error)
+{
+	int result;
+
+	/* Assume no error */
+	error = StringErrorOK;
+
+	/* Check base */
+	if (base != 2 && base != 8 && base != 10 && base != 16)
+	{
+		error = StringErrorBase;
+		return 0;
+	}
+
+	/* Parse digit */
+	result = 0;
+	digit = tolower(digit);
+	if (digit >= '0' && digit <= '9')
+	{
+		result = digit - '0';
+	}
+	else if (digit >= 'a' && digit <= 'f')
+	{
+		result = digit - 'a' + 10;
+	}
+	else
+	{
+		error = StringErrorFormat;
+		return 0;
+	}
+
+	/* Check digit range */
+	if (result >= base)
+	{
+		error = StringErrorFormat;
+		return 0;
+	}
+
+	/* Return */
+	return result;
+}
+
+
+int StringToInt(string s)
+{
+	StringError error;
+	return StringToInt(s, error);
+}
+
+
+int StringToInt(string s, StringError& error)
+{
+	int sign;
+	int base;
+	int result;
+	int digit;
+	int num_digits;
+	int factor;
+
+	/* Initialize */
+	StringTrim(s);
+	error = StringErrorOK;
+
+	/* Sign */
+	sign = 1;
+	if (s[0] == '+')
+	{
+		sign = 1;
+		s.erase(0, 1);
+	}
+	else if (s[0] == '-')
+	{
+		sign = -1;
+		s.erase(0, 1);
+	}
+
+	/* Base */
+	base = 10;
+	if (s.length() >= 2 && s[0] == '0' && s[1] == 'x')
+	{
+		base = 16;
+		s.erase(0, 2);
+	}
+	else if (s.length() >= 1 && s[0] == '0')
+	{
+		base = 8;
+		s.erase(0, 1);
+	}
+
+	/* Empty string */
+	if (s.length() == 0)
+	{
+		error = StringErrorFormat;
+		return 0;
+	}
+
+	/* Suffixes (only for base 10) */
+	factor = 1;
+	assert(s.length() > 0);
+	if (base == 10)
+	{
+		switch (s[s.length() - 1])
+		{
+		case 'k':
+			factor = 1024;
+			s.erase(s.length() - 1);
+			break;
+
+		case 'K':
+			factor = 1000;
+			s.erase(s.length() - 1);
+			break;
+
+		case 'm':
+			factor = 1024 * 1024;
+			s.erase(s.length() - 1);
+			break;
+
+		case 'M':
+			factor = 1000 * 1000;
+			s.erase(s.length() - 1);
+			break;
+
+		case 'g':
+			factor = 1024 * 1024 * 1024;
+			s.erase(s.length() - 1);
+			break;
+
+		case 'G':
+			factor = 1000 * 1000 * 1000;
+			s.erase(s.length() - 1);
+			break;
+		}
+	}
+
+	/* Remove leading 0s */
+	while (s.length() && s[0] == '0')
+		s.erase(0, 1);
+	if (!s.length())
+		return 0;
+
+	/* Start converting */
+	result = 0;
+	num_digits = 0;
+	while (s.length())
+	{
+		/* Get one digit */
+		digit = StringDigitToInt(s[0], base, error);
+		num_digits++;
+		if (error)
+			return 0;
+
+		/* Underflow */
+		if (sign < 0 && INT_MIN / base > result)
+		{
+			error = StringErrorRange;
+			return 0;
+		}
+
+		/* Overflow */
+		if (sign > 0 && UINT_MAX / base < (unsigned int) result)
+		{
+			error = StringErrorRange;
+			return 0;
+		}
+
+		/* Multiply by base */
+		result *= base;
+
+		/* Underflow */
+		if (sign < 0 && INT_MIN + digit > result)
+		{
+			error = StringErrorRange;
+			return 0;
+		}
+
+		/* Overflow */
+		if (sign > 0 && UINT_MAX - digit < (unsigned int) result)
+		{
+			error = StringErrorRange;
+			return 0;
+		}
+
+		/* Add digit */
+		result += digit * sign;
+
+		/* Next character */
+		s.erase(0, 1);
+	}
+
+	/* Multiplying factor */
+	if (factor != 1)
+	{
+		/* Underflow */
+		if (sign < 0 && INT_MIN / factor > result)
+		{
+			error = StringErrorRange;
+			return 0;
+		}
+
+		/* Overflow */
+		if (sign > 0 && UINT_MAX / factor < (unsigned int) result)
+		{
+			error = StringErrorRange;
+			return 0;
+		}
+
+		/* Multiply by factor */
+		result *= factor;
+	}
+
+	/* Return */
+	return result;
+}
+
+
+long long StringToInt64(std::string s)
+{
+	StringError error;
+	return StringToInt64(s, error);
+}
+
+
+long long StringToInt64(std::string s, StringError& error)
+{
+	int sign;
+	int base;
+	int digit;
+	int num_digits;
+	int factor;
+
+	long long result;
+
+	/* Initialize */
+	StringTrim(s);
+	error = StringErrorOK;
+
+	/* Sign */
+	sign = 1;
+	if (s[0] == '+')
+	{
+		sign = 1;
+		s.erase(0, 1);
+	}
+	else if (s[0] == '-')
+	{
+		sign = -1;
+		s.erase(0, 1);
+	}
+
+	/* Base */
+	base = 10;
+	if (s.length() >= 2 && s[0] == '0' && s[1] == 'x')
+	{
+		base = 16;
+		s.erase(0, 2);
+	}
+	else if (s.length() >= 1 && s[0] == '0')
+	{
+		base = 8;
+		s.erase(0, 1);
+	}
+
+	/* Empty string */
+	if (s.length() == 0)
+	{
+		error = StringErrorFormat;
+		return 0;
+	}
+
+	/* Suffixes (only for base 10) */
+	factor = 1;
+	assert(s.length() > 0);
+	if (base == 10)
+	{
+		switch (s[s.length() - 1])
+		{
+		case 'k':
+			factor = 1024;
+			s.erase(s.length() - 1);
+			break;
+
+		case 'K':
+			factor = 1000;
+			s.erase(s.length() - 1);
+			break;
+
+		case 'm':
+			factor = 1024 * 1024;
+			s.erase(s.length() - 1);
+			break;
+
+		case 'M':
+			factor = 1000 * 1000;
+			s.erase(s.length() - 1);
+			break;
+
+		case 'g':
+			factor = 1024 * 1024 * 1024;
+			s.erase(s.length() - 1);
+			break;
+
+		case 'G':
+			factor = 1000 * 1000 * 1000;
+			s.erase(s.length() - 1);
+			break;
+		}
+	}
+
+	/* Remove leading 0s */
+	while (s.length() && s[0] == '0')
+		s.erase(0, 1);
+	if (!s.length())
+		return 0;
+
+	/* Start converting */
+	result = 0;
+	num_digits = 0;
+	while (s.length())
+	{
+		/* Get one digit */
+		digit = StringDigitToInt(s[0], base, error);
+		num_digits++;
+		if (error)
+			return 0;
+
+		/* Underflow */
+		if (sign < 0 && LLONG_MIN / base > result)
+		{
+			error = StringErrorRange;
+			return 0;
+		}
+
+		/* Overflow */
+		if (sign > 0 && ULLONG_MAX / base < (unsigned int) result)
+		{
+			error = StringErrorRange;
+			return 0;
+		}
+
+		/* Multiply by base */
+		result *= base;
+
+		/* Underflow */
+		if (sign < 0 && LLONG_MIN + digit > result)
+		{
+			error = StringErrorRange;
+			return 0;
+		}
+
+		/* Overflow */
+		if (sign > 0 && ULLONG_MAX - digit < (unsigned int) result)
+		{
+			error = StringErrorRange;
+			return 0;
+		}
+
+		/* Add digit */
+		result += digit * sign;
+
+		/* Next character */
+		s.erase(0, 1);
+	}
+
+	/* Multiplying factor */
+	if (factor != 1)
+	{
+		/* Underflow */
+		if (sign < 0 && LLONG_MIN / factor > result)
+		{
+			error = StringErrorRange;
+			return 0;
+		}
+
+		/* Overflow */
+		if (sign > 0 && ULLONG_MAX / factor < (unsigned int) result)
+		{
+			error = StringErrorRange;
+			return 0;
+		}
+
+		/* Multiply by factor */
+		result *= factor;
+	}
+
+	/* Return */
+	return result;
+}
+
+
 
 
 /*
@@ -174,69 +589,69 @@ static const char *string_map_unknown = "<unknown>";
 
 const char *StringMapValue(StringMap map, int value)
 {
-	int error;
+	bool error;
 	return StringMapValue(map, value, error);
 }
 
 
-const char *StringMapValue(StringMap map, int value, int& error)
+const char *StringMapValue(StringMap map, int value, bool& error)
 {
 	int index;
 
 	/* Find value */
-	error = 0;
+	error = false;
 	for (index = 0; map[index].text; index++)
 		if (map[index].value == value)
 			return map[index].text;
 	
 	/* Not found */
-	error = 1;
+	error = true;
 	return string_map_unknown;
 }
 
 
 int StringMapString(StringMap map, const char *text)
 {
-	int error;
+	bool error;
 	return StringMapString(map, text, error);
 }
 
 
-int StringMapString(StringMap map, const char *text, int& error)
+int StringMapString(StringMap map, const char *text, bool& error)
 {
 	int index;
 
 	/* Find value */
-	error = 0;
+	error = false;
 	for (index = 0; map[index].text; index++)
 		if (!strcmp(map[index].text, text))
 			return map[index].value;
 
 	/* Not found */
-	error = 1;
+	error = true;
 	return 0;
 }
 
 
 int StringMapStringCase(StringMap map, const char *text)
 {
-	int error;
+	bool error;
 	return StringMapStringCase(map, text, error);
 }
 
 
-int StringMapStringCase(StringMap map, const char *text, int& error)
+int StringMapStringCase(StringMap map, const char *text, bool& error)
 {
 	int index;
 
 	/* Find value */
-	error = 0;
+	error = false;
 	for (index = 0; map[index].text; index++)
 		if (!strcasecmp(map[index].text, text))
 			return map[index].value;
 
 	/* Not found */
-	error = 1;
+	error = true;
 	return 0;
 }
 
@@ -244,7 +659,7 @@ int StringMapStringCase(StringMap map, const char *text, int& error)
 string StringMapFlags(StringMap map, unsigned int flags)
 {
 	int i;
-	int err;
+	bool error;
 
 	stringstream s;
 	string comma = "";
@@ -254,8 +669,8 @@ string StringMapFlags(StringMap map, unsigned int flags)
 		if (flags & (1 << i))
 		{
 			s << comma;
-			const char *text = StringMapValue(map, 1 << i, err);
-			if (err)
+			const char *text = StringMapValue(map, 1 << i, error);
+			if (error)
 				s << (1 << i);
 			else
 				s << text;
