@@ -8,6 +8,9 @@ libcpp_a_SOURCES = \
 	ELFWriter.cc \
 	ELFWriter.h \
 	\
+	IniFile.cc \
+	IniFile.h \
+	\
 	Misc.cc \
 	Misc.h \
 	\
