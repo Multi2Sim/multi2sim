@@ -7751,15 +7751,15 @@ void si_isa_EXPORT_impl(SIWorkItem *work_item, struct SIInstWrap *inst)
 	SISX *sx = emu->sx;
 	
 	unsigned int target_id;
-	unsigned int x;
-	unsigned int y;
-	unsigned int z;
-	unsigned int w;
+	SIInstReg x;
+	SIInstReg y;
+	SIInstReg z;
+	SIInstReg w;
 
-	x = SIWorkItemReadVReg(work_item, INST.vsrc0);
-	y = SIWorkItemReadVReg(work_item, INST.vsrc1);
-	z = SIWorkItemReadVReg(work_item, INST.vsrc2);
-	w = SIWorkItemReadVReg(work_item, INST.vsrc3);
+	x.as_uint = SIWorkItemReadVReg(work_item, INST.vsrc0);
+	y.as_uint = SIWorkItemReadVReg(work_item, INST.vsrc1);
+	z.as_uint = SIWorkItemReadVReg(work_item, INST.vsrc2);
+	w.as_uint = SIWorkItemReadVReg(work_item, INST.vsrc3);
 
 	target_id = INST.tgt;
 
@@ -7779,12 +7779,12 @@ void si_isa_EXPORT_impl(SIWorkItem *work_item, struct SIInstWrap *inst)
 	else if (target_id >= 12 && target_id <= 15)
 	{
 		/* Position 0-3 */
-		SISXExportPosition(sx, target_id, work_item->id, x, y, z, w);
+		SISXExportPosition(sx, target_id - 12, work_item->id, x.as_float, y.as_float, z.as_float, w.as_float);
 	}
 	else if (target_id >= 32 && target_id <= 63)
 	{
 		 /* Parameter 0 - 31 */
-		SISXExportParam(sx, target_id - 32, work_item->id, x, y, z, w);
+		SISXExportParam(sx, target_id - 32, work_item->id, x.as_float, y.as_float, z.as_float, w.as_float);
 	} else
 		fatal("Export target %d is not valid!\n", target_id);
 }

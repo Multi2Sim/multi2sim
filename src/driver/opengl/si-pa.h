@@ -45,7 +45,8 @@ enum opengl_pa_primitive_mode_t
 	OPENGL_PA_TRIANGLES, 
 	OPENGL_PA_TRIANGLE_STRIP_ADJACENCY, 
 	OPENGL_PA_TRIANGLES_ADJACENCY,
-	OPENGL_PA_PATCHES
+	OPENGL_PA_PATCHES,
+	OPENGL_PA_INVALID
 };
 
 
@@ -97,20 +98,29 @@ struct opengl_pa_triangle_t
 	struct opengl_pa_edge_func_t *edgfunc2;	
 };
 
+/* Primitive list */
+struct opengl_pa_primitive_t
+{
+	enum opengl_pa_primitive_mode_t mode;
+	struct list_t *list;
+};
+
 struct opengl_pa_viewport_t *opengl_pa_viewport_create();
 void opengl_pa_viewport_free(struct opengl_pa_viewport_t *vwpt);
+void opengl_pa_viewport_set(struct opengl_pa_viewport_t *vwpt, int x, int y, int height, int width);
 void opengl_pa_viewport_apply(struct opengl_pa_viewport_t *vwpt, struct opengl_pa_vertex_t *vtx);
 
 struct opengl_pa_depth_range_t *opengl_pa_depth_range_t();
 void opengl_pa_depth_range_free(struct opengl_pa_depth_range_t *vwpt);
 void opengl_pa_depth_range_apply(struct opengl_pa_depth_range_t *vwpt, struct opengl_pa_vertex_t *vtx);
 
-struct opengl_pa_vertex_t *opengl_pa_vertex_create();
+struct opengl_pa_vertex_t *opengl_pa_vertex_create(float x, float y, float z, float w);
 void opengl_pa_vertex_free(struct opengl_pa_vertex_t *vtx);
 
-struct list_t *opengl_pa_primitives_create(enum opengl_pa_primitive_mode_t mode, 
-	void *data, unsigned int data_size, unsigned int );
-void opengl_pa_primitives_free(struct list_t *prim_lst);
+/* Element in pos_lst is a 4 float array */
+struct opengl_pa_primitive_t *opengl_pa_primitives_create(enum opengl_pa_primitive_mode_t mode, 
+	struct list_t *pos_lst, struct opengl_pa_viewport_t *vwpt);
+void opengl_pa_primitives_free(struct opengl_pa_primitive_t *prmtv);
 
 struct opengl_pa_triangle_t *opengl_pa_triangle_create();
 void opengl_pa_triangle_free(struct opengl_pa_triangle_t *triangle);

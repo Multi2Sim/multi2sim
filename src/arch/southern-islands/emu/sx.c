@@ -25,31 +25,23 @@
 #include "sx.h"
 
 /*
- * Public Functions
+ * Private Functions
  */
 
-void SISXCreate(SISX *self, SIEmu *emu)
+static void SISXPositionCreate(SISX *self)
 {
 	int i;
-
-	/* Initialize */
-	self->emu = emu;
 	for (i = 0; i < SI_POS_COUNT; ++i)
 	{
 		self->pos[i] = list_create();
 	}
-	for (int i = 0; i < SI_PARAM_COUNT; ++i)
-	{
-		self->param[i] = list_create();
-	}
 }
 
-void SISXDestroy(SISX *self)
+static void SISXPositionDestroy(SISX *self)
 {
 	int i;
 	int j;
 	float *pos;
-	float *param;
 
 	/* Free */
 	for (i = 0; i < SI_POS_COUNT; ++i)
@@ -61,7 +53,32 @@ void SISXDestroy(SISX *self)
 		}
 		list_free(self->pos[i]);
 	}
-	for (int i = 0; i < SI_PARAM_COUNT; ++i)
+
+}
+
+static void SISXResetPos(SISX *self)
+{
+	SISXPositionDestroy(self);
+	SISXPositionCreate(self);
+}
+
+static void SISXParamCreate(SISX *self)
+{
+	int i;
+	for (i = 0; i < SI_PARAM_COUNT; ++i)
+	{
+		self->param[i] = list_create();
+	}
+}
+
+static void SISXParamDestroy(SISX *self)
+{
+	int i;
+	int j;
+	float *param;
+
+	/* Free */
+	for (i = 0; i < SI_PARAM_COUNT; ++i)
 	{
 		LIST_FOR_EACH(self->param[i], j)
 		{
@@ -70,10 +87,43 @@ void SISXDestroy(SISX *self)
 		}
 		list_free(self->param[i]);
 	}
+
+}
+
+static void SISXResetParam(SISX *self)
+{
+	SISXParamDestroy(self);
+	SISXParamCreate(self);
+}
+
+/*
+ * Public Functions
+ */
+
+void SISXCreate(SISX *self, SIEmu *emu)
+{
+	/* Initialize */
+	self->emu = emu;
+	SISXPositionCreate(self);
+	SISXParamCreate(self);
+}
+
+void SISXDestroy(SISX *self)
+{
+	/* Free */
+	SISXPositionDestroy(self);
+	SISXParamDestroy(self);
+}
+
+void SISXReset(SISX *self)
+{
+	/* Reset all export target */
+	SISXResetPos(self);
+	SISXResetParam(self);
 }
 
 void SISXExportPosition(SISX *self, unsigned int target, unsigned int id, 
-	unsigned int x, unsigned int y, unsigned int z, unsigned int w)
+	float x, float y, float z, float w)
 {
 	struct list_t *pos_lst;
 	float *pos;
@@ -89,8 +139,9 @@ void SISXExportPosition(SISX *self, unsigned int target, unsigned int id,
 	list_insert(pos_lst, id, pos);
 }
 
+
 void SISXExportParam(SISX *self, unsigned int target, unsigned int id, 
-	unsigned int x, unsigned int y, unsigned int z, unsigned int w)
+	float x, float y, float z, float w)
 {
 	struct list_t *param_lst;
 	float *param;

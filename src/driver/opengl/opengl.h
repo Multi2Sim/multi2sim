@@ -40,6 +40,9 @@ CLASS_BEGIN(OpenglDriver, Driver)
 	struct list_t *opengl_si_shader_list;
 	struct list_t *opengl_si_ndrange_list;	
 
+	/* Viewport */
+	struct opengl_pa_viewport_t *opengl_si_vwpt;
+
 CLASS_END(OpenglDriver)
 
 
