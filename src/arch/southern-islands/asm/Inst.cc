@@ -1484,7 +1484,7 @@ SIInstSpecialReg SIInstWrapStringToSpecialReg(const char *text)
 SIInstBufDataFormat SIInstWrapStringToBufDataFormat(const char *text, int *err_ptr)
 {
 	SIInstBufDataFormat result;
-	int err;
+	bool err;
 
 	result = (SIInstBufDataFormat) StringMapString(inst_buf_data_format_map, text, err);
 	if (err_ptr)
@@ -1496,7 +1496,7 @@ SIInstBufDataFormat SIInstWrapStringToBufDataFormat(const char *text, int *err_p
 SIInstBufNumFormat SIInstWrapStringToBufNumFormat(const char *text, int *err_ptr)
 {
 	SIInstBufNumFormat result;
-	int err;
+	bool err;
 
 	result = (SIInstBufNumFormat) StringMapString(inst_buf_num_format_map, text, err);
 	if (err_ptr)

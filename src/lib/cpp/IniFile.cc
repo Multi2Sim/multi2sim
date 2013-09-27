@@ -18,6 +18,8 @@
  */
 
 #include <cassert>
+#include <fstream>
+#include <sstream>
 
 #include "IniFile.h"
 #include "Misc.h"
@@ -25,15 +27,6 @@
 
 using namespace Misc;
 using namespace std;
-
-#if 0
-static const char *ini_file_err_format =
-	"\tA syntax error was detected while parsing a configuration INI file.\n"
-	"\tThese files are formed of sections in brackets (e.g. '[ SectionName ]')\n"
-	"\tfollowed by pairs 'VariableName = Value'. Comments preceded with ';'\n"
-	"\tor '#' characters can be used, as well as blank lines. Please verify\n"
-	"\tthe integrity of your input file and retry.\n";
-#endif
 
 
 /* Return a section and variable name from a string "<section>\n<var>" or
@@ -104,8 +97,8 @@ bool IniFile::InsertSection(string section)
 	bool exists;
 
 	/* Get sections */
-	auto it = items.find(section);
-	exists = it != items.end();
+	StringSingleSpaces(section);
+	exists = items.count(section);
 
 	/* Add section */
 	items[section] = "";
@@ -128,13 +121,22 @@ bool IniFile::InsertVariable(string section, string var, string value)
 	/* Combine section and variable */
 	item = SectionVarToItem(section, var);
 
-	/* Check if variable existed */
-	auto it = items.find(item);
-	exists = it != items.end();
-
 	/* Set new value */
+	exists = items.count(item);
 	items[item] = value;
 	return !exists;
+}
+
+
+IniFile::IniFile()
+{
+	path = "<IniFile>";
+}
+
+
+IniFile::IniFile(string path)
+{
+	Load(path);
 }
 
 
@@ -164,255 +166,156 @@ void IniFile::Dump(std::ostream& os)
 }
 
 
-#if 0
-void IniFileLoad(IniFile *self)
-{
-	FILE *f;
+static const char *ini_file_err_format =
+	"\tA syntax error was detected while parsing a configuration INI file.\n"
+	"\tThese files are formed of sections in brackets (e.g. '[ SectionName ]')\n"
+	"\tfollowed by pairs 'VariableName = Value'. Comments preceded with ';'\n"
+	"\tor '#' characters can be used, as well as blank lines. Please verify\n"
+	"\tthe integrity of your input file and retry.\n";
 
-	String *line;
-	String *section;
-	String *var;
-	String *value;
+
+void IniFile::Load(string path)
+{
+	string line;
+	string section;
+	string var;
+	string value;
 
 	int line_num;
 	bool ok;
 
-	/* Try to open file for reading */
-	f = fopen(self->path->text, "rt");
+	/* Open file */
+	this->path = path;
+	ifstream f(path);
 	if (!f)
-		fatal("%s: cannot open INI file",
-				self->path->text);
+		fatal("%s: cannot read from file", path.c_str());
 	
 	/* Read lines */
-	section = new(String, "");
-	line = new(String, "");
 	line_num = 0;
-	for (;;)
+	section = "";
+	while (getline(f, line))
 	{
-		/* Read a line */
+		/* One more line */
 		line_num++;
-		err = StringRead(line, f);
-		if (err)
-			break;
 
 		/* Comment or blank line */
-		StringTrim(line, "\n\t\r ");
-		if (!line->length || line->text[0] == ';' || line->text[0] == '#')
+		StringTrim(line);
+		if (!line.length() || line[0] == ';' || line[0] == '#')
 			continue;
 		
 		/* New "[ <section> ]" entry */
-		if (line->text[0] == '[' && line->text[line->length - 1] == ']')
+		if (line[0] == '[' && line[line.length() - 1] == ']')
 		{
 			/* Get section name */
-			delete(section);
-			section = StringSubStr(line, 1, line->length - 2);
+			section = line.substr(1, line.length() - 2);
 			StringSingleSpaces(section);
 
 			/* Insert section */
-			ok = IniFileInsertSection(self, section);
+			ok = InsertSection(section);
 			if (!ok)
 				fatal("%s: line %d: duplicated section '%s'.\n%s",
-					self->path->text, line_num,
-					section->text, ini_file_err_format);
+					path.c_str(), line_num,
+					section.c_str(), ini_file_err_format);
 
 			/* Done for this line */
 			continue;
 		}
 
 		/* Check that there is an active section */
-		if (!section->length)
+		if (section == "")
 			fatal("%s: line %d: section name expected.\n%s",
-				self->path->text, line_num, ini_file_err_format);
+				path.c_str(), line_num, ini_file_err_format);
 		
 		/* New "<var> = <value>" entry. */
-		ok = IniFileGetVarValue(line, &var, &value);
+		ok = GetVarValue(line, var, value);
 		if (!ok)
 			fatal("%s: line %d: invalid format.\n%s",
-				self->path->text, line_num, ini_file_err_format);
+				path.c_str(), line_num, ini_file_err_format);
 
 		/* New variable */
-		ok = IniFileInsertVariable(self, section, var, value);
+		ok = InsertVariable(section, var, value);
 		if (!ok)
 			fatal("%s: line %d: duplicated variable '%s'.\n%s",
-				self->path->text, line_num, var->text,
+				path.c_str(), line_num, var.c_str(),
 				ini_file_err_format);
-
-		/* Free */
-		delete(var);
-		delete(value);
 	}
 	
 	/* End */
-	delete(line);
-	delete(section);
-	fclose(f);
+	f.close();
 }
 
 
-void IniFileSave(IniFile *self)
+void IniFile::Save(string path)
 {
-	FILE *f;
-
-	/* Try to open file for writing */
-	f = fopen(self->path->text, "wt");
+	/* Open file */
+	ofstream f(path);
 	if (!f)
-		fatal("%s: cannot save configuration file",
-				self->path->text);
+		fatal("%s: cannot write to file", path.c_str());
 	
 	/* Dump */
-	IniFileDump(asObject(self), f);
-
-	/* Close */
-	fclose(f);
-	
+	Dump(f);
+	f.close();
 }
 
 
-int IniFileSectionExists(IniFile *self, char *section)
+bool IniFile::Exists(string section)
 {
-	String section_str;
-
-	new_static(&section_str, String, section);
-	StringSingleSpaces(&section_str);
-	HashTableGet(self->item_table, asObject(&section_str));
-	delete_static(&section_str);
-	return !self->item_table->error;
+	StringSingleSpaces(section);
+	return items.count(section);
 }
 
 
-int IniFileVariableExists(IniFile *self, char *section, char *var)
+bool IniFile::Exists(string section, string var)
 {
-	String *item;
-	String section_str;
-	String var_str;
-
-	new_static(&section_str, String, section);
-	new_static(&var_str, String, var);
-
-	item = IniFileSectionVariableToItem(&section_str, &var_str);
-	HashTableGet(self->item_table, asObject(item));
-
-	delete_static(&section_str);
-	delete_static(&var_str);
-	delete(item);
-
-	return !self->item_table->error;
+	string item = SectionVarToItem(section, var);
+	return items.count(item);
 }
 
 
-int IniFileRemoveSection(IniFile *self, char *section)
+bool IniFile::Remove(string section)
 {
-	List *item_list;
+	string item;
 
-	String *item;
-	String *value;
-	String *tmp_section;
+	/* Remove spaces */
+	StringSingleSpaces(section);
 
-	int length;
-
-	/* Create list of items to remove */
-	item_list = new(List);
-	length = strlen(section);
-	HashTableForEach(self->item_table, item, String)
-		if (!strncasecmp(item->text, section, length)
-				&& item->text[length] == '|')
-			ListAdd(item_list, asObject(item));
-	
-	/* Section not found */
-	if (!item_list->count)
+	/* Remove section and variables */
+	for (auto it = items.begin(); it != items.end(); )
 	{
-		delete(item_list);
-		return 1;
-	}
-
-	/* Remove items */
-	ListHead(item_list);
-	while (item_list->count)
-	{
-		item = asString(ListRemove(item_list));
-		value = asString(HashTableRemove(self->item_table, asObject(item)));
-		if (value)
-			delete(value);
-	}
-
-	/* Remove it from the list of sections */
-	ListForEach(self->section_list, tmp_section, String)
-	{
-		if (!strcasecmp(tmp_section->text, section))
+		/* Item is section name */
+		item = it->first;
+		if (!strcasecmp(item.c_str(), section.c_str()) ||
+				(!strncasecmp(item.c_str(), section.c_str(), section.length())
+				&& item[section.length()] == '|'))
 		{
-			ListRemove(self->section_list);
-			delete(tmp_section);
-			break;
+			it = items.erase(it);
+			continue;
+		}
+
+		/* Next element */
+		++it;
+	}
+
+	/* Remove section from list */
+	for (auto it = sections.begin(); it != sections.end(); ++it)
+	{
+		if (!strcasecmp(it->c_str(), section.c_str()))
+		{
+			sections.erase(it);
+			return true;
 		}
 	}
 
-	/* Success */
-	delete(item_list);
-	return 0;
+	/* Section not found */
+	return false;
 }
 
 
-int IniFileRemoveVariable(IniFile *self, char *section, char *var)
+bool IniFile::Remove(string section, string var)
 {
-	String section_str;
-	String var_str;
-
-	String *item;
-	String *value;
-
-	new_static(&section_str, String, section);
-	new_static(&var_str, String, var);
-	item = IniFileSectionVariableToItem(&section_str, &var_str);
-
-	value = asString(HashTableRemove(self->item_table, asObject(item)));
-	if (value)
-		delete(value);
-
-	delete(item);
-	delete_static(&section_str);
-	delete_static(&var_str);
-
-	return !!self->item_table->error;
+	string item = SectionVarToItem(section, var);
+	return items.erase(item);
 }
-
-
-char *IniFileFirstSection(IniFile *self)
-{
-	/* No section */
-	if (!self->section_list->count)
-	{
-		self->section_index = -1;
-		return NULL;
-	}
-
-	/* Return first section */
-	self->section_index = 0;
-	ListHead(self->section_list);
-	return asString(ListGet(self->section_list))->text;
-}
-
-
-char *IniFileNextSection(IniFile *self)
-{
-	/* Invalid iterator */
-	if (self->section_index < 0)
-		return NULL;
-
-	/* Increment */
-	self->section_index++;
-
-	/* Past the end */
-	if (self->section_index >= self->section_list->count)
-	{
-		self->section_index = -1;
-		return NULL;
-	}
-
-	/* Return current section */
-	ListGoto(self->section_list, self->section_index);
-	return asString(ListGet(self->section_list))->text;
-}
-#endif
 
 
 void IniFile::WriteString(string section, string var, string value)
@@ -434,329 +337,284 @@ void IniFile::WriteString(string section, string var, string value)
 
 void IniFile::WriteInt(string section, string var, int value)
 {
-	char s[100];
+	char buffer[100];
 	
-	snprintf(s, sizeof s, "%d", value);
-	WriteString(section, var, s);
+	snprintf(buffer, sizeof buffer, "%d", value);
+	WriteString(section, var, buffer);
 }
 
 
 void IniFile::WriteInt64(string section, string var, long long value)
 {
-	char s[100];
+	char buffer[100];
 	
-	snprintf(s, sizeof s, "%lld", value);
-	WriteString(section, var, s);
+	snprintf(buffer, sizeof buffer, "%lld", value);
+	WriteString(section, var, buffer);
 }
 
 
 void IniFile::WriteBool(string section, string var, bool value)
 {
-	char s[100];
+	char buffer[100];
 	
-	snprintf(s, sizeof s, "%s", value ? "True" : "False");
-	WriteString(section, var, s);
+	snprintf(buffer, sizeof buffer, "%s", value ? "True" : "False");
+	WriteString(section, var, buffer);
 }
 
 
 void IniFile::WriteDouble(string section, string var, double value)
 {
-	char s[100];
+	char buffer[100];
 	
-	snprintf(s, sizeof s, "%f", value);
+	snprintf(buffer, sizeof buffer, "%f", value);
+	WriteString(section, var, buffer);
+}
+
+
+void IniFile::WriteEnum(string section, string var, int value, StringMap map)
+{
+	string s;
+	bool error;
+
+	/* Translate value */
+	s = Misc::StringMapValue(map, value, error);
+	if (error)
+		fatal("%s: invalid value for enumeration (%d)",
+				__FUNCTION__, value);
+	
+	/* Write */
 	WriteString(section, var, s);
 }
 
 
-#if 0
-void IniFileWriteEnum(IniFile *self, char *section, char *var, int value, StringMap map)
+void IniFile::WritePointer(string section, string var, void *value)
 {
-	char s[100];
+	char buffer[100];
 	
-	snprintf(s, sizeof s, "%s", StringMapValue(map, value));
-	IniFileWriteString(self, section, var, s);
+	snprintf(buffer, sizeof buffer, "%p", value);
+	WriteString(section, var, buffer);
 }
 
 
-void IniFileWritePointer(IniFile *self, char *section, char *var, void *value)
+string IniFile::ReadString(string section, string var, string def)
 {
-	char s[100];
-	
-	snprintf(s, sizeof s, "%p", value);
-	IniFileWriteString(self, section, var, s);
+	Allow(section, var);
+	string item = SectionVarToItem(section, var);
+	auto it = items.find(item);
+	return it == items.end() ? def : it->second;
 }
 
 
-char *IniFileReadString(IniFile *self, char *section, char *var, char *def)
+int IniFile::ReadInt(string section, string var, int def)
 {
-	String section_str;
-	String var_str;
+	string value;
+	StringError error;
+	int result;
 
-	String *item;
-	String *value;
-
-	/* Create item, section, and variable strings */
-	new_static(&section_str, String, section);
-	new_static(&var_str, String, var);
-	item = IniFileSectionVariableToItem(&section_str, &var_str);
-	
-	/* Insert section and variable into table of allowed items */
-	HashTableInsertString(self->allowed_item_table, section, NULL);
-	HashTableInsert(self->allowed_item_table, asObject(item), NULL);
-
-	/* Read value */
-	value = asString(HashTableGet(self->item_table, asObject(item)));
-
-	/* Free strings */
-	delete_static(&section_str);
-	delete_static(&var_str);
-	delete(item);
-
-	/* Return value */
-	return value ? value->text : def;
-}
-
-
-int IniFileReadInt(IniFile *self, char *section, char *var, int def)
-{
-	String s;
-
-	char *text;
-
-	int value;
-	int err;
-
-	/* Read value */
-	text = IniFileReadString(self, section, var, NULL);
-	if (!text)
+	/* Obtain value */
+	value = ReadString(section, var);
+	if (value == "")
 		return def;
 
-	/* Convert */
-	new_static(&s, String, text);
-	value = StringToInt(&s, &err);
-	delete_static(&s);
-	if (err)
-		fatal("%s: section [%s], variable %s, value '%s': %s\n",
-				self->path->text, section, var, text,
-				StringGetErrorString(err));
+	/* Interpret */
+	result = StringToInt(value, error);
+	if (error)
+		fatal("%s: section [%s], variable '%s', value '%s': %s\n",
+				path.c_str(), section.c_str(), var.c_str(),
+				value.c_str(), StringGetErrorString(error));
 
 	/* Return */
-	return value;
+	return result;
 }
 
 
-long long IniFileReadInt64(IniFile *self, char *section, char *var, long long def)
+long long IniFile::ReadInt64(string section, string var, long long def)
 {
-	String s;
+	string value;
+	StringError error;
+	long long result;
 
-	char *text;
-
-	int value;
-	int err;
-
-	/* Read value */
-	text = IniFileReadString(self, section, var, NULL);
-	if (!text)
+	/* Obtain value */
+	value = ReadString(section, var);
+	if (value == "")
 		return def;
 
-	/* Convert */
-	new_static(&s, String, text);
-	value = StringToInt64(&s, &err);
-	delete_static(&s);
-	if (err)
-		fatal("%s: section [%s], variable %s, value '%s': %s\n",
-				self->path->text, section, var, text,
-				StringGetErrorString(err));
+	/* Interpret */
+	result = StringToInt64(value, error);
+	if (error)
+		fatal("%s: section [%s], variable '%s', value '%s': %s\n",
+				path.c_str(), section.c_str(), var.c_str(),
+				value.c_str(), StringGetErrorString(error));
 
 	/* Return */
-	return value;
+	return result;
 }
 
 
-int IniFileReadBool(IniFile *self, char *section, char *var, int def)
+bool IniFile::ReadBool(string section, string var, bool def)
 {
-	char *text;
+	string s;
 
 	/* Read variable */
-	text = IniFileReadString(self, section, var, NULL);
-	if (!text)
+	s = ReadString(section, var);
+	if (s == "")
 		return def;
 
 	/* True */
-	if (!strcasecmp(text, "t") || !strcasecmp(text, "True")
-			|| !strcasecmp(text, "On"))
-		return 1;
+	if (!strcasecmp(s.c_str(), "t") || !strcasecmp(s.c_str(), "True")
+			|| !strcasecmp(s.c_str(), "On"))
+		return true;
 	
 	/* False */
-	if (!strcasecmp(text, "f") || !strcasecmp(text, "False")
-			|| !strcasecmp(text, "Off"))
-		return 0;
+	if (!strcasecmp(s.c_str(), "f") || !strcasecmp(s.c_str(), "False")
+			|| !strcasecmp(s.c_str(), "Off"))
+		return false;
 
 	/* Invalid value */
 	fatal("%s: section [%s], variable '%s', invalid value '%s'\n"
 			"\tPossible values are {t|True|On|f|False|Off}\n",
-			self->path->text, section, var, text);
-	return 0;
+			path.c_str(), section.c_str(), var.c_str(), s.c_str());
+	return false;
 }
 
 
-double IniFileReadDouble(IniFile *self, char *section, char *var, double def)
+double IniFile::ReadDouble(string section, string var, double def)
 {
-	char *text;
+	istringstream ss;
+	string s;
 	double value;
 
 	/* Read value */
-	text = IniFileReadString(self, section, var, NULL);
-	if (!text)
+	s = ReadString(section, var);
+	if (s == "")
 		return def;
+
+	/* Convert */
+	ss.str(s);
+	ss >> value;
+	if (!ss || !ss.eof())
+		fatal("%s: section [%s], variable '%s', invalid double value '%s'\n",
+				path.c_str(), section.c_str(), var.c_str(), s.c_str());
 	
 	/* Convert */
-	sscanf(text, "%lf", &value);
 	return value;
 }
 
 
-int IniFileReadEnum(IniFile *self, char *section, char *var, int def, StringMap map)
+int IniFile::ReadEnum(string section, string var, StringMap map, int def)
 {
-	char *text;
+	string s;
 
 	int value;
-	int err;
+	bool error;
 
 	/* Read value */
-	text = IniFileReadString(self, section, var, NULL);
-	if (!text)
+	s = ReadString(section, var);
+	if (s == "")
 		return def;
 	
 	/* Convert */
-	value = StringMapStringCaseErr(map, text, &err);
-	if (!err)
+	value = StringMapStringCase(map, s.c_str(), error);
+	if (!error)
 		return value;
 
 	/* Error, show options */
 	fatal("%s: section [%s], variable '%s', invalid value '%s'\n"
 			"\tPossible values are %s",
-			self->path->text, section, var, text,
-			StringMapGetValues(map)->text);
+			path.c_str(), section.c_str(), var.c_str(), s.c_str(),
+			StringMapGetValues(map).c_str());
 	return 0;
 }
 
 
-void *IniFileReadPointer(IniFile *self, char *section, char *var, void *def)
+void *IniFile::ReadPointer(string section, string var, void *def)
 {
-	char *text;
-	void *pointer;
+	string s;
+	void *value;
 
 	/* Read value */
-	text = IniFileReadString(self, section, var, NULL);
-	if (!text)
+	s = ReadString(section, var);
+	if (s == "")
 		return def;
 	
 	/* Convert */
-	sscanf(text, "%p", &pointer);
-	return pointer;
+	sscanf(s.c_str(), "%p", &value);
+	return value;
 }
 
 
-void IniFileAllowSection(IniFile *self, char *section)
+void IniFile::Allow(string section)
 {
-	HashTableInsertString(self->allowed_item_table, section, NULL);
+	StringSingleSpaces(section);
+	allowed_items.insert(section);
 }
 
 
-void IniFileEnforceSection(IniFile *self, char *section)
+void IniFile::Allow(string section, string var)
 {
-	HashTableInsertString(self->allowed_item_table, section, NULL);
-	HashTableInsertString(self->enforced_item_table, section, NULL);
+	Allow(section);
+	string item = SectionVarToItem(section, var);
+	allowed_items.insert(item);
 }
 
 
-void IniFileAllowVariable(IniFile *self, char *section, char *var)
+void IniFile::Enforce(string section)
 {
-	String section_str;
-	String var_str;
-	String *item;
-
-	/* Create item */
-	new_static(&section_str, String, section);
-	new_static(&var_str, String, var);
-	item = IniFileSectionVariableToItem(&section_str, &var_str);
-
-	/* Insert it */
-	HashTableInsertString(self->allowed_item_table, section, NULL);
-	HashTableInsert(self->allowed_item_table, asObject(item), NULL);
-
-	/* Free */
-	delete_static(&section_str);
-	delete_static(&var_str);
-	delete(item);
+	StringSingleSpaces(section);
+	allowed_items.insert(section);
+	enforced_items.insert(section);
 }
 
 
-void IniFileEnforceVariable(IniFile *self, char *section, char *var)
+void IniFile::Enforce(string section, string var)
 {
-	String section_str;
-	String var_str;
-	String *item;
-
-	/* Create item */
-	new_static(&section_str, String, section);
-	new_static(&var_str, String, var);
-	item = IniFileSectionVariableToItem(&section_str, &var_str);
-
-	/* Insert it */
-	HashTableInsertString(self->allowed_item_table, section, NULL);
-	HashTableInsertString(self->enforced_item_table, section, NULL);
-	HashTableInsert(self->allowed_item_table, asObject(item), NULL);
-	HashTableInsert(self->enforced_item_table, asObject(item), NULL);
-
-	/* Free */
-	delete_static(&section_str);
-	delete_static(&var_str);
-	delete(item);
-} 
+	Enforce(section);
+	string item = SectionVarToItem(section, var);
+	enforced_items.insert(item);
+	allowed_items.insert(item);
+}
 
 
-void IniFileCheck(IniFile *self)
+void IniFile::Check()
 {
-	String *item;
-	String *section;
-	String *var;
+	string item;
+	string section;
+	string var;
 
 	/* Check that all mandatory items are present */
-	HashTableForEach(self->enforced_item_table, item, String)
+	for (auto it = enforced_items.begin(); it != enforced_items.end(); ++it)
 	{
 		/* Item is present */
-		HashTableGet(self->item_table, asObject(item));
-		if (!self->item_table->error)
+		item = *it;
+		if (items.count(item))
 			continue;
 
 		/* Item not present */
-		IniFileItemToSectionVariable(item, &section, &var);
-		if (var)
-			fatal("%s: section [%s], variable '%s' missing",
-				self->path->text, section->text, var->text);
-		else
+		ItemToSectionVar(item, section, var);
+		if (var == "")
 			fatal("%s: section [%s] missing",
-				self->path->text, section->text);
+				path.c_str(), section.c_str());
+		else
+			fatal("%s: section [%s], variable '%s' missing",
+				path.c_str(), section.c_str(), var.c_str());
 	}
 
 	/* Check that all present items are allowed */
-	HashTableForEach(self->item_table, item, String)
+	for (auto it = items.begin(); it != items.end(); ++it)
 	{
-		/* Item is present */
-		HashTableGet(self->allowed_item_table, asObject(item));
-		if (!self->allowed_item_table->error)
+		/* Item is allowed */
+		item = it->first;
+		if (allowed_items.count(item))
 			continue;
 
-		/* Item not present */
-		IniFileItemToSectionVariable(item, &section, &var);
-		if (var)
-			fatal("%s: section [%s], invalid variable '%s'",
-				self->path->text, section->text, var->text);
-		else
+		/* Item not allowed */
+		ItemToSectionVar(item, section, var);
+		if (var == "")
 			fatal("%s: invalid section [%s]",
-				self->path->text, section->text);
+				path.c_str(), section.c_str());
+		else
+			fatal("%s: section [%s], invalid variable '%s'",
+				path.c_str(), section.c_str(), var.c_str());
 	}
 }
-#endif
+
