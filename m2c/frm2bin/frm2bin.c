@@ -23,6 +23,7 @@
 #include <arch/fermi/asm/Asm.h>
 
 #include <lib/class/class.h>
+#include <lib/class/array.h>
 #include <lib/class/list.h>
 #include <lib/class/string.h>
 #include <lib/class/elf-writer.h>
@@ -30,6 +31,8 @@
 #include <lib/util/debug.h>
 #include <lib/util/elf-encode.h>
 #include <lib/util/list.h>
+
+#include <elf.h>
 
 #include "inst-info.h"
 #include "outer-bin.h"
@@ -159,8 +162,8 @@ void Frm2binCompile(Frm2bin *self,
 
 		/* Parse input */
 		frm2bin_yyparse();
-		printf("argSize: %d Bytes\n",
-		((asFrm2binBinaryKernel)(ListHead(cubinary->kernel_list)))->argSize );
+		//printf("argSize: %d Bytes\n",
+		//((asFrm2binBinaryKernel)(ListHead(cubinary->kernel_list)))->argSize );
 
 		/* do some processing after yyparse() */
 		/* we only test vectorAdd.cubin example */
@@ -197,7 +200,7 @@ void Frm2binCompile(Frm2bin *self,
 		tmpKernel->constant0Size = 0x20 + tmpKernel->argSize;
 
 		/* Call this func to populate sections, segments and buffers */
-		//Frm2binBinaryGenerate(self, cubinary);
+		Frm2binBinaryGenerate(self, cubinary);
 
 		/* call the Fermi disassbmler for text_section it's just a
 		 * temporarily implementation */
@@ -239,14 +242,28 @@ void Frm2binBinaryGenerate(Frm2bin *self, Frm2binBinary *cubinary)
 	/* create sections and populate them with data from sub-class */
 	ELFWriterBuffer *tmpBuffer;
 	ELFWriterSection *tmpSection;
+	ELFWriterSegment *tmpSegment;
+
+	/* used later by segment to section mapping */
+	ELFWriterSection *tmpConstantSection, *tmpTextSection;
+	ELFWriterBuffer *firstBuf, *lastBuf;
 
 	List *GlobalInfoList;
 	Frm2binBinaryGlobalInfoItem *tmpGlobalInfoItem;
 
-	//String *tmpString;
+	Frm2binBinaryKernel *tmpKernel;
+	Frm2binBinaryKernelInfo *tmpKernelInfo;
+	Frm2binBinaryKernelInfoKparamInfo *tmpKparamInfo;
+	Frm2binBinaryKernelInfoKparamInfoCplx *tmpCplx;
+	Frm2binBinaryKernelInfoSyncStack *tmpSyncStack;
+
+	String *tmpString;
+	//String *tmpStrNvInfo = new(String, ".nv.info");
+
+	int *tmpConstantBuf;
 
 	/* only consider one kernel case */
-	GlobalInfoList = cubinary->kernel_list;
+	GlobalInfoList = cubinary->global_info->info_list;
 	tmpGlobalInfoItem = (asFrm2binBinaryGlobalInfoItem)(ListHead(GlobalInfoList));
 
 	/*
@@ -270,6 +287,9 @@ void Frm2binBinaryGenerate(Frm2bin *self, Frm2binBinary *cubinary)
 	/* add section to the binary */
 	ELFWriterAddSection(asELFWriter(cubinary), tmpSection);
 
+	/* add the buffer to the buffer_array of the binary */
+	ArrayAdd((asELFWriter(cubinary))->buffer_array, asObject(tmpBuffer));
+
 	/*
 	 * * .nv.info.<name> section
 	 */
@@ -277,8 +297,154 @@ void Frm2binBinaryGenerate(Frm2bin *self, Frm2binBinary *cubinary)
 	/* create a buffer */
 	tmpBuffer = new(ELFWriterBuffer);
 
-	/* create a section */
-	tmpSection = new(ELFWriterSection, ".nv.info", tmpBuffer, tmpBuffer);
+	tmpKernel = asFrm2binBinaryKernel(ListHead(cubinary->kernel_list));
 
+	/* create name for the section, insert .nv.info before kernel_name */
+	tmpString = new(String, tmpKernel->name->text);
+	StringInsert(tmpString, 0, ".nv.info.");
+
+	/* create a section */
+	tmpSection = new(ELFWriterSection, tmpString->text, tmpBuffer, tmpBuffer);
+
+	/* populate data to this section */
+	tmpKernelInfo = tmpKernel->kInfo;
+	ELFWriterBufferWrite(tmpBuffer, &(tmpKernelInfo->paramCbank.id), 4);
+	ELFWriterBufferWrite(tmpBuffer, &(tmpKernelInfo->paramCbank.SymIdx), 4);
+	ELFWriterBufferWrite(tmpBuffer, &(tmpKernelInfo->paramCbank.paramsizeX), 4);
+
+	ELFWriterBufferWrite(tmpBuffer, &(tmpKernelInfo->param_size), 4);
+
+	/* only consider 1 kernel case in vectorAdd */
+	tmpKparamInfo = (Frm2binBinaryKernelInfoKparamInfo *)
+			(list_top(tmpKernelInfo->kparam_info_list));
+	ELFWriterBufferWrite(tmpBuffer, &(tmpKparamInfo->id), 4);
+	ELFWriterBufferWrite(tmpBuffer, &(tmpKparamInfo->index), 4);
+	ELFWriterBufferWrite(tmpBuffer, &(tmpKparamInfo->offset), 2);
+	ELFWriterBufferWrite(tmpBuffer, &(tmpKparamInfo->ordinal), 2);
+
+	tmpCplx = &(tmpKparamInfo->cplx);
+	ELFWriterBufferWrite(tmpBuffer, tmpCplx, 4);
+
+	/* add sync_stack to it */
+	tmpSyncStack = &(tmpKernelInfo->sync_stack);
+	ELFWriterBufferWrite(tmpBuffer, tmpSyncStack, 4);
+
+	/* add section to the binary */
+	ELFWriterAddSection(asELFWriter(cubinary), tmpSection);
+
+	/* add the buffer to the buffer_array of the binary */
+	ArrayAdd((asELFWriter(cubinary))->buffer_array, asObject(tmpBuffer));
+
+	/*
+	 * * .nv.constant0.<name> section
+	 */
+
+	/* create a buffer */
+	tmpBuffer = new(ELFWriterBuffer);
+
+	tmpKernel = asFrm2binBinaryKernel(ListHead(cubinary->kernel_list));
+
+	/* create name for the section, insert .nv.info before kernel_name */
+	tmpString = new(String, tmpKernel->name->text);
+	StringInsert(tmpString, 0, ".nv.constant0.");
+
+	/* create a section */
+	tmpSection = new(ELFWriterSection, tmpString->text, tmpBuffer, tmpBuffer);
+	tmpConstantSection = tmpSection;
+
+	/* populate data to this section */
+	tmpConstantBuf = (int *)xmalloc(tmpKernel->constant0Size);
+	memset(tmpConstantBuf, 0, tmpKernel->constant0Size);
+
+	ELFWriterBufferWrite(tmpBuffer, tmpConstantBuf, tmpKernel->constant0Size);
+
+	/* add section to the binary */
+	ELFWriterAddSection(asELFWriter(cubinary), tmpSection);
+
+	/* add the buffer to the buffer_array of the binary */
+	ArrayAdd((asELFWriter(cubinary))->buffer_array, asObject(tmpBuffer));
+
+
+	/*
+	 * * .text.<name> section
+	 */
+
+	/* create a buffer */
+	tmpBuffer = new(ELFWriterBuffer);
+
+	tmpKernel = asFrm2binBinaryKernel(ListHead(cubinary->kernel_list));
+
+	/* create name for the section, insert .nv.info before kernel_name */
+	tmpString = new(String, tmpKernel->name->text);
+	StringInsert(tmpString, 0, ".text.");
+
+	/* create a section */
+	tmpSection = new(ELFWriterSection, tmpString->text, tmpBuffer, tmpBuffer);
+	tmpTextSection = tmpSection;
+
+	/* populate data to this section */
+	ELFWriterBufferWrite(tmpBuffer, text_section_buffer, text_section_buffer->size);
+
+	/* add section to the binary */
+	ELFWriterAddSection(asELFWriter(cubinary), tmpSection);
+
+	/* add the buffer to the buffer_array of the binary */
+	ArrayAdd((asELFWriter(cubinary))->buffer_array, asObject(tmpBuffer));
+
+
+	/* generate program segments, there are 3 segments for vectorAdd.s example */
+
+	/*
+	 * * segments 00, no sections associated
+	 */
+	tmpBuffer = new(ELFWriterBuffer);
+	tmpSegment = new(ELFWriterSegment, "00", NULL, NULL);
+
+	/* set segment header */
+	tmpSegment->header.p_vaddr = 0x0;
+	tmpSegment->header.p_paddr = 0x0;
+	tmpSegment->header.p_flags = PF_X | PF_R; //exec + read ??
+	tmpSegment->header.p_align = 0x4;
+
+	/* add this segment to the binary */
+	ELFWriterAddSegment(asELFWriter(cubinary), tmpSegment);
+
+
+	/*
+	 * * segments 00, associated section: .nv.constant0.<name>
+	 * * and .text.<name>
+	 */
+	firstBuf = tmpConstantSection->first_buffer;
+	lastBuf = tmpTextSection->last_buffer;
+	tmpSegment = new(ELFWriterSegment, "01", firstBuf, lastBuf);
+
+	/* set segment header */
+	tmpSegment->header.p_vaddr = 0x0;
+	tmpSegment->header.p_paddr = 0x0;
+	tmpSegment->header.p_flags = PF_X | PF_R; //exec + read ??
+	tmpSegment->header.p_align = 0x4;
+
+	/* add this segment to the binary */
+	ELFWriterAddSegment(asELFWriter(cubinary), tmpSegment);
+
+
+	/*
+	 * * segments 02, no sections associated
+	 */
+	tmpSegment = new(ELFWriterSegment, "00", NULL, NULL);
+
+	/* set segment header */
+	tmpSegment->header.p_vaddr = 0x0;
+	tmpSegment->header.p_paddr = 0x0;
+	tmpSegment->header.p_flags = PF_W | PF_R;
+	tmpSegment->header.p_align = 0x4;
+
+	/* add this segment to the binary */
+	ELFWriterAddSegment(asELFWriter(cubinary), tmpSegment);
+
+
+	/* generate the ELF file */
+	//tmpBuffer = new(ELFWriterBuffer);
+	//ELFWriterGenerate(asELFWriter(cubinary), tmpBuffer);
 
 }
