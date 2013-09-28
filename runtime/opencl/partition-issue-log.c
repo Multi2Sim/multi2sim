@@ -105,16 +105,13 @@ void partition_issue_log_write(struct partition_issue_log_t *log, FILE *file)
 		fprintf(file, "PARTITION_LOG: invocations%d %d\n", i, log->devices[i].num_invocations);
 		fprintf(file, "PARTITION_LOG: groups%d %d\n", i, log->devices[i].num_groups);
 	}
-	if (log->num_kernels < 10)
+	for (i = 0; i < log->num_kernels; i++)
 	{
-		for (i = 0; i < log->num_kernels; i++)
+		fprintf(file, "PARTITION_LOG: kernel%d time %lld\n", i, log->kernels[i].kernel_runtime);
+		for (j = 0; j < PARTITION_NUM_DEVICES; j++)
 		{
-			fprintf(file, "PARTITION_LOG: kernel%d time %lld\n", i, log->kernels[i].kernel_runtime);
-			for (j = 0; j < PARTITION_NUM_DEVICES; j++)
-			{
-				fprintf(file, "PARTITION_LOG: kernel%d invocations%d %d\n", i, j, log->kernels[i].devices[j].num_invocations);
-				fprintf(file, "PARTITION_LOG: kernel%d groups%d %d\n", i, j, log->kernels[i].devices[j].num_groups);				
-			}
+			fprintf(file, "PARTITION_LOG: kernel%d invocations%d %d\n", i, j, log->kernels[i].devices[j].num_invocations);
+			fprintf(file, "PARTITION_LOG: kernel%d groups%d %d\n", i, j, log->kernels[i].devices[j].num_groups);				
 		}
 	}
 }
