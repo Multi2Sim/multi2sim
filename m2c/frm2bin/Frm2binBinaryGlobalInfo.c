@@ -19,7 +19,6 @@ void Frm2binBinaryGlobalInfoCreate(Frm2binBinaryGlobalInfo *self)
 	ObjectCreate(asObject(self));
 
 	self->info_list = new(List);
-	printf("creating info_list, %p", self->info_list);
 
 }
 

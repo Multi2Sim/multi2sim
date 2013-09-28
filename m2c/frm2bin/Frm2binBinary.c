@@ -31,7 +31,7 @@ void Frm2binBinaryCreate(Frm2binBinary *self)
 void Frm2binBinaryDestroy(Frm2binBinary *self)
 {
 	/* delete all items inside the kernel_list */
-	// TO BE FINISHED
+
 	ListIterator *tmpIterator = new(ListIterator, self->kernel_list);
 	Frm2binBinaryKernel *tmpKernel;
 
