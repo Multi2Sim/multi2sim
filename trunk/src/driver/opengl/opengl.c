@@ -1387,7 +1387,8 @@ static int opengl_abi_si_raster_impl(X86Context *ctx)
 	X86Emu *x86_emu = ctx->emu;
 	OpenglDriver *driver = x86_emu->opengl_driver;
 	SIEmu *si_emu = driver->si_emu;
-	int index;
+	int i;
+	int j;
 
 	unsigned int mode;
 
@@ -1397,6 +1398,7 @@ static int opengl_abi_si_raster_impl(X86Context *ctx)
 	int pos_idx;
 	struct list_t *pos_lst;
 	struct list_t *pixel_list;
+	struct opengl_sc_pixel_info_t *pixel;
 	struct opengl_pa_primitive_t *prmtv;
 	struct opengl_pa_triangle_t *triangle;
 	
@@ -1410,19 +1412,25 @@ static int opengl_abi_si_raster_impl(X86Context *ctx)
 		{
 			/* Start to generate pixel info */
 			prmtv = opengl_pa_primitives_create(OPENGL_PA_TRIANGLES, pos_lst, driver->opengl_si_vwpt);
-			LIST_FOR_EACH(prmtv->list, index)
+			LIST_FOR_EACH(prmtv->list, i)
 			{
-				triangle = list_get(prmtv->list, index);
+				triangle = list_get(prmtv->list, i);
 
 				/* Rasterization */
 				pixel_list = opengl_sc_rast_triangle_gen(triangle);
 				if (pixel_list)
-					opengl_debug("\tTriangle %d generated %d pixels\n", index, list_count(pixel_list));
-				
-				/* Create workitems ... */
-
+				{
+					LIST_FOR_EACH(pixel_list, j)
+					{
+						pixel = list_get(pixel_list, j);
+						SISXPSInitMetaAdd(si_emu->sx, pixel->brctrc_i, pixel->brctrc_j);
+					}
+					opengl_debug("\tTriangle %d generated %d pixels\n", i, list_count(pixel_list));
+				}
 				/* Clean pixels */
 				opengl_sc_rast_triangle_done(pixel_list);
+
+				/* Create workitems ... */
 
 			}
 			opengl_pa_primitives_free(prmtv);
@@ -1430,10 +1438,10 @@ static int opengl_abi_si_raster_impl(X86Context *ctx)
 
 		/* Debug: export target */
 		opengl_debug("\texport target pos #%d\n", pos_idx);
-		LIST_FOR_EACH(pos_lst, index)
+		LIST_FOR_EACH(pos_lst, i)
 		{
-			pos = list_get(pos_lst, index);
-			opengl_debug("\t\t%d: %f, %f, %f, %f\n", index, pos[0], pos[1], pos[2], pos[3]);
+			pos = list_get(pos_lst, i);
+			opengl_debug("\t\t%d: %f, %f, %f, %f\n", i, pos[0], pos[1], pos[2], pos[3]);
 		}
 	}
 

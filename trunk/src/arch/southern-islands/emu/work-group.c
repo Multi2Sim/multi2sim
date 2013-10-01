@@ -24,6 +24,7 @@
 
 #include "isa.h"
 #include "ndrange.h"
+#include "sx.h"
 #include "wavefront.h"
 #include "work-group.h"
 #include "work-item.h"
