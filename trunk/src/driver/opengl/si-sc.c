@@ -429,6 +429,7 @@ struct list_t *opengl_sc_rast_triangle_gen(struct opengl_pa_triangle_t *triangle
 
 		/* Free span*/
 		opengl_sc_span_free(spn);
+		list_free(pxl_lst);
 		return NULL;  /*CULLED*/
 	}
 
@@ -637,9 +638,12 @@ void opengl_sc_rast_triangle_done(struct list_t *pxl_lst)
 	struct opengl_sc_pixel_info_t *pxl_info;
 	int i;
 
-	LIST_FOR_EACH(pxl_lst,i)
+	if (pxl_lst)
 	{
-		pxl_info = list_get(pxl_lst, i);
-		opengl_sc_pixel_info_free(pxl_info);
+		LIST_FOR_EACH(pxl_lst,i)
+		{
+			pxl_info = list_get(pxl_lst, i);
+			opengl_sc_pixel_info_free(pxl_info);
+		}		
 	}
 }
