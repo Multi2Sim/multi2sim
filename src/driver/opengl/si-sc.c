@@ -430,7 +430,9 @@ struct list_t *opengl_sc_rast_triangle_gen(struct opengl_pa_triangle_t *triangle
 		/* Free span*/
 		opengl_sc_span_free(spn);
 		list_free(pxl_lst);
-		return NULL;  /*CULLED*/
+
+		/*CULLED*/
+		return NULL;  
 	}
 
 	edge_top->fsy = FixedCeil(vtx_mid_fy);
