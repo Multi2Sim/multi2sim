@@ -1416,8 +1416,9 @@ static int opengl_abi_si_raster_impl(X86Context *ctx)
 
 				/* Rasterization */
 				pixel_list = opengl_sc_rast_triangle_gen(triangle);
-				opengl_debug("\tTriangle %d generated %d pixels\n", index, list_count(pixel_list));
-
+				if (pixel_list)
+					opengl_debug("\tTriangle %d generated %d pixels\n", index, list_count(pixel_list));
+				
 				/* Create workitems ... */
 
 				/* Clean pixels */
