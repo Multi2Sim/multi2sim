@@ -56,7 +56,7 @@ static void SISXPositionDestroy(SISX *self)
 
 }
 
-static void SISXResetPos(SISX *self)
+static void SISXPosReset(SISX *self)
 {
 	SISXPositionDestroy(self);
 	SISXPositionCreate(self);
@@ -90,10 +90,54 @@ static void SISXParamDestroy(SISX *self)
 
 }
 
-static void SISXResetParam(SISX *self)
+static void SISXParamReset(SISX *self)
 {
 	SISXParamDestroy(self);
 	SISXParamCreate(self);
+}
+
+static SISXPSInitMeta *SISXPSInitMetaCreate(float brctrc_i, float brctrc_j)
+{
+	SISXPSInitMeta *meta;
+
+	/* Allocate */
+	meta = xcalloc(1, sizeof(SISXPSInitMeta));
+
+	/* Initialize */
+	meta->brctrc_i = brctrc_i;
+	meta->brctrc_j = brctrc_j;
+
+	/* Return */
+	return meta;
+}
+
+static void SISXPSInitMetaDestroy(SISXPSInitMeta *meta)
+{
+	free(meta);
+}
+
+static void SISXPSInitCreate(SISX *self)
+{
+	self->ps_init_meta = list_create();
+}
+
+static void SISXPSInitDestroy(SISX *self)
+{
+	SISXPSInitMeta *meta;
+	int i;
+
+	LIST_FOR_EACH(self->ps_init_meta, i)
+	{
+		meta = list_get(self->ps_init_meta, i);
+		SISXPSInitMetaDestroy(meta);
+	}
+	list_free(self->ps_init_meta);
+}
+
+static void SISXPSInitReset(SISX *self)
+{
+	SISXPSInitDestroy(self);
+	SISXPSInitCreate(self);
 }
 
 /*
@@ -104,8 +148,10 @@ void SISXCreate(SISX *self, SIEmu *emu)
 {
 	/* Initialize */
 	self->emu = emu;
+	self->stage = SISXCL;
 	SISXPositionCreate(self);
 	SISXParamCreate(self);
+	SISXPSInitCreate(self);
 }
 
 void SISXDestroy(SISX *self)
@@ -113,13 +159,21 @@ void SISXDestroy(SISX *self)
 	/* Free */
 	SISXPositionDestroy(self);
 	SISXParamDestroy(self);
+	SISXPSInitDestroy(self);
 }
 
 void SISXReset(SISX *self)
 {
-	/* Reset all export target */
-	SISXResetPos(self);
-	SISXResetParam(self);
+	/* Reset */
+	self->stage = SISXCL;	
+	SISXPosReset(self);
+	SISXParamReset(self);
+	SISXPSInitReset(self);
+}
+
+void SISXStageSet(SISX *self, SISXStage stage)
+{
+	self->stage = stage;
 }
 
 void SISXExportPosition(SISX *self, unsigned int target, unsigned int id, 
@@ -155,4 +209,14 @@ void SISXExportParam(SISX *self, unsigned int target, unsigned int id,
 
 	param_lst = self->param[target];
 	list_insert(param_lst, id, param);
+}
+
+void SISXPSInitMetaAdd(SISX *self, float brctrc_i, float brctrc_j)
+{
+	struct list_t *meta_list;
+	SISXPSInitMeta *meta;
+
+	meta_list = self->ps_init_meta;
+	meta = SISXPSInitMetaCreate(brctrc_i, brctrc_j);
+	list_add(meta_list, meta);
 }
