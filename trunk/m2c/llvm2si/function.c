@@ -47,8 +47,17 @@ static SIArgDataType Llvm2siFunctionArgGetDataType(LLVMTypeRef lltype)
 	int bit_width;
 
 	lltype_kind = LLVMGetTypeKind(lltype);
-	if (lltype_kind == LLVMIntegerTypeKind)
+
+	if (lltype_kind == LLVMVectorTypeKind)
 	{
+		lltype = LLVMGetElementType(lltype);
+		lltype_kind = LLVMGetTypeKind(lltype);
+	}
+
+	switch (lltype_kind)
+	{
+	case LLVMIntegerTypeKind:
+	
 		bit_width = LLVMGetIntTypeWidth(lltype);
 		switch (bit_width)
 		{
@@ -63,15 +72,35 @@ static SIArgDataType Llvm2siFunctionArgGetDataType(LLVMTypeRef lltype)
 				__FUNCTION__, bit_width);
 			return SIArgDataTypeInvalid;
 		}
-	}
-	else
-	{
+		
+	case LLVMFloatTypeKind:
+
+		return SIArgFloat;
+
+	default:
+	
 		fatal("%s: unsupported argument type kind (%d)",
 				__FUNCTION__, lltype_kind);
 		return SIArgDataTypeInvalid;
+	
 	}
 }
 
+static int Llvm2siFunctionArgGetNumElems(LLVMTypeRef lltype)
+{
+	int num_elems;
+	LLVMTypeKind lltype_kind;
+
+	lltype_kind = LLVMGetTypeKind(lltype);
+
+	if (lltype_kind == LLVMVectorTypeKind)
+		num_elems = LLVMGetVectorSize(lltype);
+	else
+		num_elems = 1;
+
+	return num_elems;
+
+}
 
 void Llvm2siFunctionArgCreate(Llvm2siFunctionArg *self, LLVMValueRef llarg)
 {
@@ -96,11 +125,13 @@ void Llvm2siFunctionArgCreate(Llvm2siFunctionArg *self, LLVMValueRef llarg)
 		si_arg = new(SIArg, SIArgTypePointer, name);
 		si_arg->pointer.scope = SIArgUAV;
 		si_arg->pointer.data_type = Llvm2siFunctionArgGetDataType(lltype);
+		si_arg->pointer.num_elems = Llvm2siFunctionArgGetNumElems(lltype);
 	}
 	else
 	{
 		si_arg = new(SIArg, SIArgTypeValue, name);
 		si_arg->value.data_type = Llvm2siFunctionArgGetDataType(lltype);
+		si_arg->value.num_elems = Llvm2siFunctionArgGetNumElems(lltype);
 	}
 
 	/* Initialize */
@@ -134,10 +165,21 @@ void Llvm2siFunctionArgDump(Object *self, FILE *f)
 
 		case SIArgUAV:
 			
-			/* Type, name, offset, UAV */
-			fprintf(f, "\t%s* %s %d uav%d\n",
-				str_map_value(&si_arg_data_type_map, si_arg->pointer.data_type),
-				si_arg->name->text, arg->index * 16, arg->uav_index + 10);
+			if (si_arg->pointer.num_elems == 1)
+			{
+				/* Type, name, offset, UAV */
+				fprintf(f, "\t%s* %s %d uav%d\n",
+						str_map_value(&si_arg_data_type_map, si_arg->pointer.data_type),
+						si_arg->name->text, arg->index * 16, arg->uav_index + 10);
+			}
+			else
+			{
+				/* Type, number of elements, name, offset, UAV */
+				fprintf(f, "\t%s[%d]* %s %d uav%d\n",
+						str_map_value(&si_arg_data_type_map, si_arg->pointer.data_type), 
+						si_arg->pointer.num_elems, si_arg->name->text, arg->index * 16,
+						arg->uav_index + 10);
+			}
 			break;
 
 		default:
@@ -150,11 +192,20 @@ void Llvm2siFunctionArgDump(Object *self, FILE *f)
 
 	case SIArgTypeValue:
 
-		/* Type, name, offset */
-		fprintf(f, "\t%s %s %d\n",
-			str_map_value(&si_arg_data_type_map, si_arg->value.data_type),
-			si_arg->name->text, arg->index * 16);
-
+		if (si_arg->value.num_elems == 1)
+		{
+			/* Type, name, offset */
+			fprintf(f, "\t%s %s %d\n",
+					str_map_value(&si_arg_data_type_map, si_arg->value.data_type),
+					si_arg->name->text, arg->index * 16);
+		}
+		else
+		{	
+			/* Type, number of elements, name, offset */
+			fprintf(f, "\t%s[%d] %s %d\n",
+					str_map_value(&si_arg_data_type_map, si_arg->value.data_type),
+					si_arg->value.num_elems, si_arg->name->text, arg->index * 16);
+		}
 		break;
 
 	default:
