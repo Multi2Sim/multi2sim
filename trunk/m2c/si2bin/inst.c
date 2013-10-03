@@ -22,6 +22,7 @@
 #include <lib/class/hash-table.h>
 #include <lib/class/list.h>
 #include <lib/class/string.h>
+#include <lib/cpp/Wrapper.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/hash-table.h>
@@ -182,7 +183,8 @@ void Si2binInstDump(Si2binInst *self, FILE *f)
 	/* Dump instruction opcode */
 	fprintf(f, "Instruction %s\n", self->info->name->text);
 	fprintf(f, "\tformat=%s, size=%d\n",
-			SIInstWrapFormatToString(self->info->inst_info->fmt),
+			StringMapValueWrap(si_inst_format_map,
+			self->info->inst_info->fmt),
 			self->size);
 
 	/* Dump arguments */
