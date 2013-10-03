@@ -78,7 +78,7 @@ CLASS_BEGIN(SINDRange, Object)
 
 	/* ABI data copied from the kernel */
 	unsigned int userElementCount;
-	struct si_bin_enc_user_element_t userElements[SI_ABI_MAX_USER_ELEMENTS];
+	struct SIBinaryUserElement userElements[SI_ABI_MAX_USER_ELEMENTS];
 
 	/* Instruction memory containing Southern Islands ISA */
 	void *inst_buffer;

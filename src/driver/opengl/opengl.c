@@ -893,7 +893,7 @@ static int opengl_abi_si_ndrange_create_impl(X86Context *ctx)
 	struct opengl_si_enc_dict_vertex_shader_t *vs;
 	struct opengl_si_enc_dict_pixel_shader_t *ps;
 	struct si_fetch_shader_t *fs;
-	struct si_bin_enc_user_element_t *user_elements;
+	struct SIBinaryUserElement *user_elements;
 	SINDRange *ndrange;
 
 	int i;

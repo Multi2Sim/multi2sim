@@ -474,7 +474,7 @@ struct opengl_si_bin_constant_usage_t
 	uint32_t X32XhConstBufferMemHandle[SC_SI_NUM_INTBUF]; \
 	uint32_t CodeLenInByte;\
 	uint32_t u32UserElementCount; /*Number of user data descriptors  */\
-	struct si_bin_enc_user_element_t pUserElement[SC_SI_NUM_USER_ELEMENT]; /*User data descriptors */\
+	struct SIBinaryUserElement pUserElement[SC_SI_NUM_USER_ELEMENT]; /*User data descriptors */\
 	/* Common HW shader info about registers and execution modes*/ \
 	uint32_t   u32NumVgprs;  \
 	uint32_t   u32NumSgprs;  \
@@ -1077,8 +1077,8 @@ void opengl_si_program_binary_free(struct opengl_si_program_binary_t *program_bi
 struct opengl_si_shader_binary_t *opengl_si_shader_binary_create(void *buffer, int size, char* name);
 void opengl_si_shader_binary_free(struct opengl_si_shader_binary_t *shdr);
 
-struct si_bin_enc_user_element_t *opengl_si_bin_enc_user_element_create();
-void opengl_si_bin_enc_user_element_free(struct si_bin_enc_user_element_t *user_elem);
+struct SIBinaryUserElement *opengl_si_bin_enc_user_element_create();
+void opengl_si_bin_enc_user_element_free(struct SIBinaryUserElement *user_elem);
 
 
 

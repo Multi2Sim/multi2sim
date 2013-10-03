@@ -264,7 +264,7 @@ metadata_stmt
 	} TOK_NEW_LINE
 	| TOK_ID TOK_OBRA TOK_DECIMAL TOK_CBRA TOK_EQ TOK_ID TOK_COMMA TOK_DECIMAL TOK_COMMA TOK_ID TOK_OBRA TOK_DECIMAL TOK_COLON TOK_DECIMAL TOK_CBRA
 	{
-		struct si_bin_enc_user_element_t *user_elem;
+		struct SIBinaryUserElement *user_elem;
 		int err;
 
 		/* check for correct syntax */
@@ -276,7 +276,7 @@ metadata_stmt
 			si2bin_yyerror_fmt("User Elements index is out of allowed range (0 to 15)");
 
 		/* Create userElement object */
-		user_elem = si_bin_enc_user_element_create();
+		user_elem = si_binary_user_element_create();
 		user_elem->dataClass = str_map_string_err(&si_bin_user_data_class, $6->text, &err);
 		if (err)
 			si2bin_yyerror_fmt("Unrecognized data class: %s", $6->text);

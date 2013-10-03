@@ -1034,7 +1034,7 @@ static int opencl_abi_si_ndrange_create_impl(X86Context *ctx)
 	struct elf_buffer_t *elf_buffer;
 	struct mem_t *mem = ctx->mem;
 	struct opencl_si_kernel_t *kernel;
-	struct si_bin_enc_user_element_t *user_elements;
+	struct SIBinaryUserElement *user_elements;
 	struct x86_regs_t *regs = ctx->regs;
 
 	int i;

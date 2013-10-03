@@ -229,21 +229,21 @@ static struct str_map_t prog_info_entry_map = {
 };
 
 
-struct pt_note_data_segment_desc_t
+struct SIBinaryNoteDataSegmentDesc
 {
 	Elf32_Word offset;  /* Offsets in bytes to start of data */
 	Elf32_Word size;  /* Size in bytes of data */
 };
 
 
-struct pt_note_constant_buffer_mask_t
+struct SIBinaryNoteConstantBufferMask
 {
 	Elf32_Word index;  /* Constant buffer identifier */
 	Elf32_Word size;  /* Size in vec4f constants of the buffer */
 };
 
 
-struct pt_note_prog_info_entry_t
+struct SIBinaryNoteProgInfoEntry
 {
 	Elf32_Word address;  /* Device address */
 	Elf32_Word value;  /* Value */
@@ -287,19 +287,19 @@ static void evg_bin_file_read_note_header(struct evg_bin_file_t *bin_file,
 	case 1:  /* ELF_NOTE_ATI_PROGINFO */
 	{
 		int prog_info_count;
-		struct pt_note_prog_info_entry_t *prog_info_entry;
+		struct SIBinaryNoteProgInfoEntry *prog_info_entry;
 		int i;
 
 		/* Get number of entries */
-		assert(header->descsz % sizeof(struct pt_note_prog_info_entry_t) == 0);
-		prog_info_count = header->descsz / sizeof(struct pt_note_prog_info_entry_t);
+		assert(header->descsz % sizeof(struct SIBinaryNoteProgInfoEntry) == 0);
+		prog_info_count = header->descsz / sizeof(struct SIBinaryNoteProgInfoEntry);
 		elf_debug("\tnote including device configuration unique to the program (%d entries)\n",
 			prog_info_count);
 
 		/* Decode entries */
 		for (i = 0; i < prog_info_count; i++)
 		{
-			prog_info_entry = desc + i * sizeof(struct pt_note_prog_info_entry_t);
+			prog_info_entry = desc + i * sizeof(struct SIBinaryNoteProgInfoEntry);
 			elf_debug("\tprog_info_entry: addr=0x%x (%s), value=%u\n",
 				prog_info_entry->address, str_map_value(&prog_info_entry_map,
 				prog_info_entry->address), prog_info_entry->value);
@@ -355,7 +355,7 @@ static void evg_bin_file_read_note_header(struct evg_bin_file_t *bin_file,
 	case 7:  /* ELF_NOTE_ATI_BOOL32CONSTS */
 	{
 		int data_segment_desc_count;
-		struct pt_note_data_segment_desc_t *data_segment_desc;
+		struct SIBinaryNoteDataSegmentDesc *data_segment_desc;
 
 		struct evg_bin_enc_dict_entry_consts_t *consts;
 		char const_value[MAX_STRING_SIZE];
@@ -364,15 +364,15 @@ static void evg_bin_file_read_note_header(struct evg_bin_file_t *bin_file,
 
 		/* Get number of entries */
 		consts = enc_dict_entry->consts;
-		assert(header->descsz % sizeof(struct pt_note_data_segment_desc_t) == 0);
-		data_segment_desc_count = header->descsz / sizeof(struct pt_note_data_segment_desc_t);
+		assert(header->descsz % sizeof(struct SIBinaryNoteDataSegmentDesc) == 0);
+		data_segment_desc_count = header->descsz / sizeof(struct SIBinaryNoteDataSegmentDesc);
 		elf_debug("\tnote including data for constant buffers (%d entries)\n",
 				data_segment_desc_count);
 
 		/* Decode entries */
 		for (j = 0; j < data_segment_desc_count; j++)
 		{
-			data_segment_desc = desc + j * sizeof(struct pt_note_data_segment_desc_t);
+			data_segment_desc = desc + j * sizeof(struct SIBinaryNoteDataSegmentDesc);
 			if (header->type == 5)
 				snprintf(const_value, sizeof(const_value), "{%g,%g,%g,%g}",
 					consts->float_consts[data_segment_desc->offset][0],
@@ -418,18 +418,18 @@ static void evg_bin_file_read_note_header(struct evg_bin_file_t *bin_file,
 	case 10:  /* ELF_NOTE_ATI_CONSTANT_BUFFERS */
 	{
 		int constant_buffer_count;
-		struct pt_note_constant_buffer_mask_t *constant_buffer_mask;
+		struct SIBinaryNoteConstantBufferMask *constant_buffer_mask;
 		int i;
 
 		/* Get number of entries */
-		assert(header->descsz % sizeof(struct pt_note_constant_buffer_mask_t) == 0);
-		constant_buffer_count = header->descsz / sizeof(struct pt_note_constant_buffer_mask_t);
+		assert(header->descsz % sizeof(struct SIBinaryNoteConstantBufferMask) == 0);
+		constant_buffer_count = header->descsz / sizeof(struct SIBinaryNoteConstantBufferMask);
 		elf_debug("\tnote including number and size of constant buffers (%d entries)\n",
 			constant_buffer_count);
 
 		/* Decode entries */
 		for (i = 0; i < constant_buffer_count; i++) {
-			constant_buffer_mask = desc + i * sizeof(struct pt_note_constant_buffer_mask_t);
+			constant_buffer_mask = desc + i * sizeof(struct SIBinaryNoteConstantBufferMask);
 			elf_debug("\tconstant_buffer[%d].size = %d (vec4f constants)\n",
 				constant_buffer_mask->index, constant_buffer_mask->size);
 		}

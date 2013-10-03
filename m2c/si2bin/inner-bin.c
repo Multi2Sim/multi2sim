@@ -200,7 +200,7 @@ struct si2bin_inner_bin_t *si2bin_inner_bin_create(char *name)
 	bin->name = xstrdup(name);
 
 	/* Set up user element list and program resource */
-	bin->pgm_rsrc2 = si_bin_compute_pgm_rsrc2_create();
+	bin->pgm_rsrc2 = si_binary_compute_pgm_rsrc2_create();
 	bin->user_element_list = list_create();
 
 	/* Return */
@@ -210,7 +210,7 @@ struct si2bin_inner_bin_t *si2bin_inner_bin_create(char *name)
 
 void si2bin_inner_bin_free(struct si2bin_inner_bin_t *bin)
 {
-	struct si_bin_enc_user_element_t *user_elem;
+	struct SIBinaryUserElement *user_elem;
 	int i;
 
 	/* Free list elements and list */
@@ -228,19 +228,19 @@ void si2bin_inner_bin_free(struct si2bin_inner_bin_t *bin)
 	LIST_FOR_EACH(bin->user_element_list, i)
 	{
 		user_elem = list_get(bin->user_element_list, i);
-		si_bin_enc_user_element_free(user_elem);
+		si_binary_user_element_free(user_elem);
 	}
 	list_free(bin->user_element_list);
 
 	/* Free Program Resource */
-	si_bin_compute_pgm_rsrc2_free(bin->pgm_rsrc2);
+	si_binary_compute_pgm_rsrc2_free(bin->pgm_rsrc2);
 
 	/* Free si2bin_inner_bin */
 	free(bin);
 }
 
 void si2bin_inner_bin_add_user_element(struct si2bin_inner_bin_t *bin, 
-		struct si_bin_enc_user_element_t *user_elem, int index)
+		struct SIBinaryUserElement *user_elem, int index)
 {
 	int count;
 	

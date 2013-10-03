@@ -23,11 +23,6 @@
 #include <lib/util/elf-format.h>
 
 
-/*
- * Global Variables
- */
-extern struct str_map_t pt_note_type_map;
-extern struct str_map_t si_bin_user_data_class;
 
 /*
  * Southern Islands Binary File
@@ -35,20 +30,20 @@ extern struct str_map_t si_bin_user_data_class;
 
 #define SI_ABI_MAX_USER_ELEMENTS 16
 
-struct pt_note_data_segment_desc_t
+struct SIBinaryNoteDataSegmentDesc
 {
 	Elf32_Word offset;  /* Offsets in bytes to start of data */
 	Elf32_Word size;  /* Size in bytes of data */
 };
 
 
-struct pt_note_constant_buffer_mask_t
+struct SIBinaryNoteConstantBufferMask
 {
 	Elf32_Word index;  /* Constant buffer identifier */
 	Elf32_Word size;  /* Size in vec4f constants of the buffer */
 };
 
-struct pt_note_uav_entry_t
+struct SIBinaryNoteUAVEntry
 {
 	Elf32_Word id;  /* UAV number */
 	Elf32_Word unknown1;  /* FIXME */
@@ -57,7 +52,7 @@ struct pt_note_uav_entry_t
 };
 
 
-struct pt_note_prog_info_entry_t
+struct SIBinaryNoteProgInfoEntry
 {
 	Elf32_Word address;  /* Device address */
 	Elf32_Word value;  /* Value */
@@ -65,7 +60,7 @@ struct pt_note_prog_info_entry_t
 
 
 /* Encoding dictionary entry header (as encoded in ELF file) */
-struct si_bin_enc_dict_entry_header_t
+struct SIBinaryDictionaryHeader
 {
 	Elf32_Word d_machine;
 	Elf32_Word d_type;
@@ -76,52 +71,52 @@ struct si_bin_enc_dict_entry_header_t
 
 
 /* Constats embedded in the '.data' section */
-struct si_bin_enc_dict_entry_consts_t
+struct SIBinaryDictionaryConsts
 {
 	float float_consts[256][4];
 	unsigned int int_consts[32][4];
 	unsigned int bool_consts[32];
 };
 
-typedef enum _E_SC_USER_DATA_CLASS
+enum SIBinaryUserData
 {
-	IMM_RESOURCE,               // immediate resource descriptor
-	IMM_SAMPLER,                // immediate sampler descriptor
-	IMM_CONST_BUFFER,           // immediate const buffer descriptor
-	IMM_VERTEX_BUFFER,          // immediate vertex buffer descriptor
-	IMM_UAV,                    // immediate UAV descriptor
-	IMM_ALU_FLOAT_CONST,        // immediate float const (scalar or vector)
-	IMM_ALU_BOOL32_CONST,       // 32 immediate bools packed into a single UINT
-	IMM_GDS_COUNTER_RANGE,      // immediate UINT with GDS address range for counters
-	IMM_GDS_MEMORY_RANGE,       // immediate UINT with GDS address range for storage
-	IMM_GWS_BASE,               // immediate UINT with GWS resource base offset
-	IMM_WORK_ITEM_RANGE,        // immediate HSAIL work item range
-	IMM_WORK_GROUP_RANGE,       // immediate HSAIL work group range
-	IMM_DISPATCH_ID,            // immediate HSAIL dispatch ID
-	IMM_SCRATCH_BUFFER,         // immediate HSAIL scratch buffer descriptor
-	IMM_HEAP_BUFFER,            // immediate HSAIL heap buffer descriptor
-	IMM_KERNEL_ARG,             // immediate HSAIL kernel argument
-	IMM_CONTEXT_BASE,           // immediate HSAIL context base-address
-	IMM_LDS_ESGS_SIZE,          // immediate LDS ESGS size used in on-chip GS
-	SUB_PTR_FETCH_SHADER,       // fetch shader subroutine pointer
-	PTR_RESOURCE_TABLE,         // flat/chunked resource table pointer
-	PTR_CONST_BUFFER_TABLE,     // flat/chunked const buffer table pointer
-	PTR_INTERNAL_RESOURCE_TABLE,// flat/chunked internal resource table pointer
-	PTR_SAMPLER_TABLE,          // flat/chunked sampler table pointer
-	PTR_UAV_TABLE,              // flat/chunked UAV resource table pointer
-	PTR_INTERNAL_GLOBAL_TABLE,  // internal driver table pointer
-	PTR_VERTEX_BUFFER_TABLE,    // flat/chunked vertex buffer table pointer
-	PTR_SO_BUFFER_TABLE,        // flat/chunked stream-out buffer table pointer
-	PTR_EXTENDED_USER_DATA,     // extended user data in video memory
-	PTR_INDIRECT_RESOURCE,      // pointer to resource indirection table
-	PTR_INDIRECT_INTERNAL_RESOURCE,// pointer to internal resource indirection table
-	PTR_INDIRECT_UAV,           // pointer to UAV indirection table
-	E_SC_USER_DATA_CLASS_LAST
-} E_SC_USER_DATA_CLASS;
+	SIBinaryUserDataResource,               // immediate resource descriptor
+	SIBinaryUserDataSampler,                // immediate sampler descriptor
+	SIBinaryUserDataConstBuffer,           // immediate const buffer descriptor
+	SIBinaryUserDataVertexBuffer,          // immediate vertex buffer descriptor
+	SIBinaryUserDataUAV,                    // immediate UAV descriptor
+	SIBinaryUserDataALUFloatConst,        // immediate float const (scalar or vector)
+	SIBinaryUserDataALUBool32Const,       // 32 immediate bools packed into a single UINT
+	SIBinaryUserDataGDSCounterRange,      // immediate UINT with GDS address range for counters
+	SIBinaryUserDataGDSMemoryRange,       // immediate UINT with GDS address range for storage
+	SIBinaryUserDataGWSBase,               // immediate UINT with GWS resource base offset
+	SIBinaryUserDataWorkItemRange,        // immediate HSAIL work item range
+	SIBinaryUserDataWorkGroupRange,       // immediate HSAIL work group range
+	SIBinaryUserDataDispatchId,            // immediate HSAIL dispatch ID
+	SIBinaryUserDataScratchBuffer,         // immediate HSAIL scratch buffer descriptor
+	SIBinaryUserDataHeapBuffer,            // immediate HSAIL heap buffer descriptor
+	SIBinaryUserDataKernelArg,             // immediate HSAIL kernel argument
+	SIBinaryUserDataContextBase,           // immediate HSAIL context base-address
+	SIBinaryUserDataLDSEsgsSize,          // immediate LDS ESGS size used in on-chip GS
+	SIBinaryUserDataPtrFetchShader,       // fetch shader subroutine pointer
+	SIBinaryUserDataPtrResourceTable,         // flat/chunked resource table pointer
+	SIBinaryUserDataConstBufferTable,     // flat/chunked const buffer table pointer
+	SIBinaryUserDataInteralResourceTable,// flat/chunked internal resource table pointer
+	SIBinaryUserDataSamplerTable,          // flat/chunked sampler table pointer
+	SIBinaryUserDataUAVTable,              // flat/chunked UAV resource table pointer
+	SIBinaryUserDataInternalGlobalTable,  // internal driver table pointer
+	SIBinaryUserDataVertexBufferTable,    // flat/chunked vertex buffer table pointer
+	SIBinaryUserDataSoBufferTable,        // flat/chunked stream-out buffer table pointer
+	SIBinaryUserDataExtendedUserData,     // extended user data in video memory
+	SIBinaryUserDataIndirectResource,      // pointer to resource indirection table
+	SIBinaryUserDataInternalResource,// pointer to internal resource indirection table
+	SIBinaryUserDataPtrIndirectUAV,           // pointer to UAV indirection table
+	SIBinaryUserDataLast
+};
 
 
 /* User Element entry */
-struct si_bin_enc_user_element_t
+struct SIBinaryUserElement
 {
 	unsigned int dataClass;
 	unsigned int apiSlot;
@@ -129,12 +124,12 @@ struct si_bin_enc_user_element_t
 	unsigned int userRegCount;
 };
 
-struct si_bin_enc_user_element_t *si_bin_enc_user_element_create();
-void si_bin_enc_user_element_free(struct si_bin_enc_user_element_t *user_elem);
+struct SIBinaryUserElement *si_binary_user_element_create();
+void si_binary_user_element_free(struct SIBinaryUserElement *user_elem);
 
 
 /* COMPUTE_PGM_RSRC2 */
-struct si_bin_compute_pgm_rsrc2_t
+struct SIBinaryComputePgmRsrc2
 {
 	unsigned int scrach_en 		: 1;
 	unsigned int user_sgpr 		: 5;
@@ -150,15 +145,15 @@ struct si_bin_compute_pgm_rsrc2_t
 	unsigned int 			: 1;
 };
 
-struct si_bin_compute_pgm_rsrc2_t *si_bin_compute_pgm_rsrc2_create();
-void si_bin_compute_pgm_rsrc2_free(struct si_bin_compute_pgm_rsrc2_t *pgm_rsrc2);
+struct SIBinaryComputePgmRsrc2 *si_binary_compute_pgm_rsrc2_create();
+void si_binary_compute_pgm_rsrc2_free(struct SIBinaryComputePgmRsrc2 *pgm_rsrc2);
 
 
 /* Encoding dictionary entry */
-struct si_bin_enc_dict_entry_t
+struct SIBinaryDictionaryEntry
 {
 	/* Header (pointer to ELF buffer contents) */
-	struct si_bin_enc_dict_entry_header_t *header;
+	struct SIBinaryDictionaryHeader *header;
 
 	/* Buffers containing PT_LOAD and PT_NOTE segments */
 	struct elf_buffer_t pt_load_buffer;
@@ -171,7 +166,7 @@ struct si_bin_enc_dict_entry_t
 	struct elf_buffer_t sec_strtab_buffer;
 
 	/* Constants extract from '.data' section */
-	struct si_bin_enc_dict_entry_consts_t *consts;
+	struct SIBinaryDictionaryConsts *consts;
 
 	/* Info read from pt_notes */
 	int num_vgpr_used;
@@ -180,14 +175,14 @@ struct si_bin_enc_dict_entry_t
 	int stack_size_used;
 
 	unsigned int userElementCount;
-	struct si_bin_enc_user_element_t userElements[16];
+	struct SIBinaryUserElement userElements[16];
 
-	struct si_bin_compute_pgm_rsrc2_t *compute_pgm_rsrc2;
+	struct SIBinaryComputePgmRsrc2 *compute_pgm_rsrc2;
 };
 
 
 /* Binary file */
-struct si_bin_file_t
+struct SIBinary
 {
 	/* Associated ELF file */
 	struct elf_file_t *elf_file;
@@ -200,10 +195,21 @@ struct si_bin_file_t
 
 	/* Encoding dictionary entry containing the Southern Islands kernel.
 	 * This is a member of the 'enc_dict' list. */
-	struct si_bin_enc_dict_entry_t *enc_dict_entry_southern_islands;
+	struct SIBinaryDictionaryEntry *enc_dict_entry_southern_islands;
 };
 
-struct si_bin_file_t *si_bin_file_create(void *ptr, int size, char *name);
-void si_bin_file_free(struct si_bin_file_t *bin);
+struct SIBinary *si_binary_create(void *ptr, int size, char *name);
+void si_binary_free(struct SIBinary *bin);
+
+
+
+
+/*
+ * Public
+ */
+
+extern struct str_map_t pt_note_type_map;
+extern struct str_map_t si_bin_user_data_class;
+
 
 #endif
