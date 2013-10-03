@@ -22,7 +22,7 @@
 
 #include <stdio.h>
 
-#include <arch/southern-islands/asm/bin-file.h>
+#include <arch/southern-islands/asm/Binary.h>
 #include <lib/class/class.h>
 
 #include "emu.h"
@@ -93,7 +93,7 @@ CLASS_BEGIN(SINDRange, Object)
 
 	/* ABI data copied from the kernel */
 	unsigned int userElementCount;
-	struct SIBinaryUserElement userElements[SI_ABI_MAX_USER_ELEMENTS];
+	struct SIBinaryUserElement userElements[SI_BINARY_MAX_USER_ELEMENTS];
 
 	/* Instruction memory containing Southern Islands ISA */
 	void *inst_buffer;

@@ -10,8 +10,8 @@ libasm_a_SOURCES = \
 	Asm.cc \
 	Asm.h \
 	\
-	bin-file.c \
-	bin-file.h \
+	Binary.cc \
+	Binary.h \
 	\
 	fetch-shader.c \
 	fetch-shader.h \
