@@ -7451,6 +7451,9 @@ void si_isa_TBUFFER_LOAD_FORMAT_XYZW_impl(SIWorkItem *work_item,
 				INST.vdata + i, addr+4*i, value.as_uint,
 				value.as_float);
 		}
+			printf("t%d: V%u<=(%u)(%u,%gf) ", work_item->id,
+				INST.vdata + i, addr+4*i, value.as_uint,
+				value.as_float);
 	}
 
 	/* Record last memory access for the detailed simulator. */
@@ -7764,8 +7767,6 @@ void si_isa_EXPORT_impl(SIWorkItem *work_item, struct SIInstWrap *inst)
 	w.as_uint = SIWorkItemReadVReg(work_item, INST.vsrc3);
 	target_id = INST.tgt;
 
-	printf("export vgpr %d %d %d %d\n", INST.vsrc0, INST.vsrc1, INST.vsrc2, INST.vsrc3);
-
 	/* FIXME: implement compression */
 	if (target_id >=0 && target_id <= 7)
 	{
@@ -7781,13 +7782,11 @@ void si_isa_EXPORT_impl(SIWorkItem *work_item, struct SIInstWrap *inst)
 	}
 	else if (target_id >= 12 && target_id <= 15)
 	{
-		printf("export to pos\n");
 		/* Position 0-3 */
 		SISXExportPosition(sx, target_id - 12, work_item->id, x.as_float, y.as_float, z.as_float, w.as_float);
 	}
 	else if (target_id >= 32 && target_id <= 63)
 	{
-		printf("export to param\n");
 		 /* Parameter 0 - 31 */
 		SISXExportParam(sx, target_id - 32, work_item->id, x.as_float, y.as_float, z.as_float, w.as_float);
 	} else

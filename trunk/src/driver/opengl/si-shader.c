@@ -221,7 +221,7 @@ static void opengl_si_shader_set_inputs(struct opengl_si_shader_t *shdr)
 		for (i = 0; i < input_count; ++i)
 		{
 			input = new(SIInput);
-			SIInputSetUsageIndex(input, i);
+			SIInputSetUsageIndex(input, enc_vs->meta->vsInSemantics[i].usageIdx);
 			list_insert(shdr->input_list, i, input);
 		}
 		break;
@@ -232,7 +232,7 @@ static void opengl_si_shader_set_inputs(struct opengl_si_shader_t *shdr)
 		for (i = 0; i < input_count; ++i)
 		{
 			input = new(SIInput);
-			SIInputSetUsageIndex(input, i);
+			SIInputSetUsageIndex(input, enc_ps->meta->psInSemantics[i].usageIdx);
 			list_insert(shdr->input_list, i, input);
 		}
 		break;	
@@ -540,8 +540,8 @@ void opengl_si_shader_setup_ndrange_inputs(struct opengl_si_shader_t *shdr,
 			input->num_elems,
 			input->type, &buffer_desc);
 
-		opengl_debug("\tinput created, device_ptr = %x, size = %d, num_elems = %d, type = %x\n", 
-			input->device_ptr, input->size, input->num_elems, input->type);
+		opengl_debug("\tinput[%d] usage_index = %d, device_ptr = %x, size = %d, num_elems = %d, type = %x\n", 
+			index, input->usage_index, input->device_ptr, input->size, input->num_elems, input->type);
 
 		/* Add to Vertex Buffer table */
 		SINDRangeInsertBufferIntoVertexBufferTable(

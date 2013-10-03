@@ -48,6 +48,76 @@ static void opengl_si_bin_pixel_shader_init(struct opengl_si_enc_dict_pixel_shad
  * Private Functions
  */
 
+/*static struct str_map_t enc_dict_input_type_map =
+{
+	8, {
+		{ "generic attribute",	OPENGL_SI_INPUT_ATTRIB },
+		{ "primary color",	OPENGL_SI_INPUT_COLOR },
+		{ "secondary color",	OPENGL_SI_INPUT_SECONDARYCOLOR },
+		{ "texture coordinate",	OPENGL_SI_INPUT_TEXCOORD },
+		{ "texture unit id",	OPENGL_SI_INPUT_TEXID },
+		{ "buffer unit id",	OPENGL_SI_INPUT_BUFFERID },
+		{ "constant buffer unit id",	OPENGL_SI_INPUT_CONSTANTBUFFERID },
+		{ "texture resource id",	OPENGL_SI_INPUT_TEXTURERESOURCEID },
+	}
+};
+*/
+static struct str_map_t enc_dict_semantic_input_type_map =
+{
+	1, {
+		{ "generic",	0 },
+	}
+};
+
+static struct str_map_t enc_dict_semantic_output_type_map =
+{
+	7, {
+		{ "generic",	0 },
+		{ "unknown 1",	1 },
+		{ "unknown 2",	2 },
+		{ "unknown 3",	3 },
+		{ "unknown 4",	4 },
+		{ "unknown 5",	5 },
+		{ "unknown 6",	6 },
+	}
+};
+
+static struct str_map_t enc_dict_user_elements_type_map = 
+{
+	30, {
+		{"unknown 0", 0},
+		{"unknown 1", 1},
+		{"unknown 2", 2},
+		{"unknown 3", 3},
+		{"unknown 4", 4},
+		{"unknown 5", 5},
+		{"unknown 6", 6},
+		{"unknown 7", 7},
+		{"unknown 8", 8},
+		{"unknown 9", 9},
+		{"unknown 10", 10},
+		{"unknown 11", 11},
+		{"unknown 12", 12},
+		{"unknown 13", 13},
+		{"unknown 14", 14},
+		{"unknown 15", 15},
+		{"SUB_PTR_FETCH_SHADER", 16},
+		{"unknown 0", 17},
+		{"unknown 0",18},
+		{"unknown 0",19},
+		{"unknown 0", 20},
+		{"PTR_VERTEX_BUFFER_TABLE", 21},
+		{"unknown 0", 22},
+		{"unknown 0", 23},
+		{"unknown 0", 24},
+		{"unknown 0", 25},
+		{"unknown 0", 26},
+		{"unknown 0", 27},
+		{"unknown 0", 28},
+		{"unknown 0", 29},
+	}
+};
+
 static int opengl_si_shader_binary_get_isa_offset(struct opengl_si_shader_binary_t *shdr)
 {
 	int isa_offset;
@@ -621,3 +691,53 @@ void opengl_si_bin_enc_user_element_free(struct SIBinaryUserElement *user_elem)
 {
 	free(user_elem);
 }
+
+void opengl_si_shader_binary_debug_meta(struct opengl_si_shader_binary_t *shdr_bin)
+{
+	int i;
+	struct opengl_si_enc_dict_vertex_shader_t *enc_vs;
+	struct opengl_si_bin_vertex_shader_metadata_t *meta_vs;
+
+	switch(shdr_bin->shader_kind)
+	{
+
+	case OPENGL_SI_SHADER_VERTEX:
+	{
+		enc_vs = (struct opengl_si_enc_dict_vertex_shader_t *)shdr_bin->enc_dict;
+		meta_vs = enc_vs->meta;
+		printf("-----------------------VS Data -------------------------\n");
+		printf("Input Semantic Mappings\n");
+		for (i = 0; i < meta_vs->numVsInSemantics; ++i)
+		{
+			printf(" [%d] %s, usageIdx %d, v[%d:%d]\n", i, 
+				str_map_value(&enc_dict_semantic_input_type_map, meta_vs->vsInSemantics[i].usage), 
+				meta_vs->vsInSemantics[i].usageIdx, meta_vs->vsInSemantics[i].dataVgpr, 
+				meta_vs->vsInSemantics[i].dataVgpr + 3);
+		}
+		printf("Output Semantic Mappings\n");
+		for (i = 0; i < meta_vs->numVsOutSemantics; ++i)
+		{
+			printf(" [%d] %s, usageIdx %d, paramIdx %d\n", i, 
+				str_map_value(&enc_dict_semantic_output_type_map, meta_vs->vsOutSemantics[i].usage), 
+				meta_vs->vsOutSemantics[i].usageIdx, meta_vs->vsOutSemantics[i].paramIdx);
+		}
+		printf("\n");
+		printf("codeLenInByte\t= %d;Bytes\n", meta_vs->CodeLenInByte);
+		printf("\n");
+		printf("userElementCount\t= %d\n", meta_vs->u32UserElementCount);
+		for (i = 0; i < meta_vs->u32UserElementCount; ++i)
+		{
+			printf(" userElements[%d]\t= %s, %d, s[%d,%d]\n", i, 
+				str_map_value(&enc_dict_user_elements_type_map, meta_vs->pUserElement[i].dataClass), 
+				meta_vs->pUserElement[i].apiSlot, meta_vs->pUserElement[i].startUserReg, 
+				meta_vs->pUserElement[i].startUserReg + meta_vs->pUserElement[i].userRegCount  - 1);
+		}
+		printf("NumVgprs\t\t= %d\n", meta_vs->u32NumVgprs);
+		printf("NumSgprs\t\t= %d\n", meta_vs->u32NumSgprs);
+		break;
+	}
+	default:
+		break;
+	}
+}
+

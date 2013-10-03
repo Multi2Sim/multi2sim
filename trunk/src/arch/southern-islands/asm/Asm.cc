@@ -404,6 +404,7 @@ void Asm::DisassembleOpenGLBinary(string path, int shader_index)
 	printf("**\n** Disassembly for shader %d\n**\n\n", shader_index);
 	DisassembleBuffer(cout, (char *)shader->isa->ptr,
 			shader->isa->size);
+	opengl_si_shader_binary_debug_meta(shader);
 	printf("\n\n\n");
 
 	/* Free */

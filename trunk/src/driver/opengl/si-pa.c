@@ -216,10 +216,6 @@ struct opengl_pa_primitive_t *opengl_pa_primitives_create(enum opengl_pa_primiti
 			vtx1 = opengl_pa_vertex_create(pos1[0], pos1[1], pos1[2], pos1[3]);
 			vtx2 = opengl_pa_vertex_create(pos2[0], pos2[1], pos2[2], pos2[3]);
 
-			opengl_debug("\t%f %f %f %f\n", vtx0->pos[0], vtx0->pos[1], vtx0->pos[2], vtx0->pos[3]);
-			opengl_debug("\t%f %f %f %f\n", vtx1->pos[0], vtx1->pos[1], vtx1->pos[2], vtx1->pos[3]);
-			opengl_debug("\t%f %f %f %f\n", vtx2->pos[0], vtx2->pos[1], vtx2->pos[2], vtx2->pos[3]);
-
 			/* Apply viewport */
 			opengl_pa_viewport_apply(vwpt, vtx0);
 			opengl_pa_viewport_apply(vwpt, vtx1);

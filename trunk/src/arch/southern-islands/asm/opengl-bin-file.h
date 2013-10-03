@@ -71,7 +71,7 @@ enum opengl_si_shader_binary_kind_t
 	OPENGL_SI_SHADER_VERTEX = 0,
 	OPENGL_SI_SHADER_GEOMETRY,
 	OPENGL_SI_SHADER_HULL, /* aka Tess Control shader */
-	OPENGL_SI_SHADER_DOMAIN, /* aka Tess Evalustion shader */
+	OPENGL_SI_SHADER_DOMAIN, /* aka Tess Evaluastion shader */
 	OPENGL_SI_SHADER_PIXEL = 4, /* aka Fragment shader */
 	OPENGL_SI_SHADER_COMPUTE,
 	OPENGL_SI_SHADER_INVALID
@@ -1080,7 +1080,7 @@ void opengl_si_shader_binary_free(struct opengl_si_shader_binary_t *shdr);
 struct SIBinaryUserElement *opengl_si_bin_enc_user_element_create();
 void opengl_si_bin_enc_user_element_free(struct SIBinaryUserElement *user_elem);
 
-
+void opengl_si_shader_binary_debug_meta(struct opengl_si_shader_binary_t *shdr_bin);
 
 
 #endif
