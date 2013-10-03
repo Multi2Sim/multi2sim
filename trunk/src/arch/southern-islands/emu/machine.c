@@ -7451,9 +7451,6 @@ void si_isa_TBUFFER_LOAD_FORMAT_XYZW_impl(SIWorkItem *work_item,
 				INST.vdata + i, addr+4*i, value.as_uint,
 				value.as_float);
 		}
-			printf("t%d: V%u<=(%u)(%u,%gf) ", work_item->id,
-				INST.vdata + i, addr+4*i, value.as_uint,
-				value.as_float);
 	}
 
 	/* Record last memory access for the detailed simulator. */
