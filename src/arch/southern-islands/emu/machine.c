@@ -7391,6 +7391,7 @@ void si_isa_TBUFFER_LOAD_FORMAT_XYZW_impl(SIWorkItem *work_item,
 	unsigned int off_vgpr = 0;
 	unsigned int stride = 0;
 	unsigned int idx_vgpr = 0;
+	unsigned int id_in_wavefront = 0;
 
 	elem_size = si_isa_get_elem_size(INST.dfmt);
 	num_elems = si_isa_get_num_elems(INST.dfmt);
@@ -7431,10 +7432,11 @@ void si_isa_TBUFFER_LOAD_FORMAT_XYZW_impl(SIWorkItem *work_item,
 			__FUNCTION__);
 	}
 
-	/* Calculate the address */
 	/* XXX Need to know when to enable id_in_wavefront */
+	id_in_wavefront = buf_desc.add_tid_enable ?  work_item->id_in_wavefront : 0;
+	/* Calculate the address */
 	addr = base + mem_offset + inst_offset + off_vgpr + 
-		stride * (idx_vgpr + 0/*work_item->id_in_wavefront*/);
+		stride * (idx_vgpr + id_in_wavefront);
 
 	for (i = 0; i < 4; i++)
 	{
@@ -7760,8 +7762,9 @@ void si_isa_EXPORT_impl(SIWorkItem *work_item, struct SIInstWrap *inst)
 	y.as_uint = SIWorkItemReadVReg(work_item, INST.vsrc1);
 	z.as_uint = SIWorkItemReadVReg(work_item, INST.vsrc2);
 	w.as_uint = SIWorkItemReadVReg(work_item, INST.vsrc3);
-
 	target_id = INST.tgt;
+
+	printf("export vgpr %d %d %d %d\n", INST.vsrc0, INST.vsrc1, INST.vsrc2, INST.vsrc3);
 
 	/* FIXME: implement compression */
 	if (target_id >=0 && target_id <= 7)
@@ -7778,11 +7781,13 @@ void si_isa_EXPORT_impl(SIWorkItem *work_item, struct SIInstWrap *inst)
 	}
 	else if (target_id >= 12 && target_id <= 15)
 	{
+		printf("export to pos\n");
 		/* Position 0-3 */
 		SISXExportPosition(sx, target_id - 12, work_item->id, x.as_float, y.as_float, z.as_float, w.as_float);
 	}
 	else if (target_id >= 32 && target_id <= 63)
 	{
+		printf("export to param\n");
 		 /* Parameter 0 - 31 */
 		SISXExportParam(sx, target_id - 32, work_item->id, x.as_float, y.as_float, z.as_float, w.as_float);
 	} else

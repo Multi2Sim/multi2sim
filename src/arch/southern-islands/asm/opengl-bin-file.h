@@ -491,11 +491,11 @@ struct opengl_si_bin_constant_usage_t
 /* SPI_SHADER_PGM_RSRC2_VS */
 struct opengl_si_bin_spi_shader_pgm_rsrc2_vs_t
 {
-	unsigned int unknown1	: 8;
+	unsigned int unknown1	: 1;
+	unsigned int user_sgpr	: 7;
 	unsigned int unknown2	: 8;
 	unsigned int unknown3	: 8;
-	unsigned int user_sgpr	: 7;
-	unsigned int unknown4	: 1;
+	unsigned int unknown4	: 8;
 }__attribute__((packed));
 
 /* PA_CL_VS_OUT_CNTL */

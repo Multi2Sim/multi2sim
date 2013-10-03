@@ -20,6 +20,7 @@
 
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
+#include <lib/util/list.h>
 #include <mem-system/memory.h>
 
 #include "isa.h"
@@ -42,6 +43,10 @@ void SIWorkGroupCreate(SIWorkGroup *self, unsigned int id, SINDRange *ndrange)
 	SIWavefront *wavefront;
 	SIWorkItem *work_item;
 	SIEmu *emu = ndrange->emu;
+
+	/* Shader Export module */
+	SISX *sx = emu->sx;
+	SISXPSInitMeta *ps_init_meta;
 
 	int i;
 	int lid;
@@ -198,17 +203,57 @@ void SIWorkGroupCreate(SIWorkGroup *self, unsigned int id, SINDRange *ndrange)
 		{
 			/* Store work-item IDs in vector registers */
 			work_item = wavefront->work_items[work_item_id];
+			switch(self->ndrange->stage)
+			{
+				/* OpenCL convention */
+				case STAGE_CL:
+				{
+					/* V0 */
+					work_item->vreg[0].as_int = 
+						work_item->id_in_work_group_3d[0];  
+					/* V1 */
+					work_item->vreg[1].as_int = 
+						work_item->id_in_work_group_3d[1]; 
+					/* V2 */
+					work_item->vreg[2].as_int = 
+						work_item->id_in_work_group_3d[2];
+					break;					
+				}
+				/* Vertex shader initialization convention */
+				case STAGE_VS:
+				{
+					/* VSes load VGPR0 with the thread's vertex index */
+					work_item->vreg[0].as_int = work_item->id;
+					break;
+				}
+				/* Pixel shader initialization convention */
+				case STAGE_PS:
+				{
+					ps_init_meta = list_dequeue(sx->ps_init_meta);
 
-			/* V0 */
-			work_item->vreg[0].as_int = 
-				work_item->id_in_work_group_3d[0];  
-			/* V1 */
-			work_item->vreg[1].as_int = 
-				work_item->id_in_work_group_3d[1]; 
-			/* V2 */
-			work_item->vreg[2].as_int = 
-				work_item->id_in_work_group_3d[2];
-
+					/* PSes load barycentric coordinates to VGPR0/1 */
+					if (ps_init_meta)
+					{
+						work_item->vreg[0].as_float = ps_init_meta->brctrc_i;
+						work_item->vreg[1].as_float = ps_init_meta->brctrc_j;
+					}
+					break;
+				}
+				/* Default is OpenCL convention */
+				default:
+				{
+					/* V0 */
+					work_item->vreg[0].as_int = 
+						work_item->id_in_work_group_3d[0];  
+					/* V1 */
+					work_item->vreg[1].as_int = 
+						work_item->id_in_work_group_3d[1]; 
+					/* V2 */
+					work_item->vreg[2].as_int = 
+						work_item->id_in_work_group_3d[2];
+					break;
+				}
+			}
 		}
 
 		/* Initialize sreg pointers to internal data structures */

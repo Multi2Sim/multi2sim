@@ -20,6 +20,7 @@
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
+#include <arch/southern-islands/emu/work-item.h>
 #include <driver/opengl/si-pa.h>
 
 #include "sx.h"
@@ -148,7 +149,6 @@ void SISXCreate(SISX *self, SIEmu *emu)
 {
 	/* Initialize */
 	self->emu = emu;
-	self->stage = SISXCL;
 	SISXPositionCreate(self);
 	SISXParamCreate(self);
 	SISXPSInitCreate(self);
@@ -165,15 +165,9 @@ void SISXDestroy(SISX *self)
 void SISXReset(SISX *self)
 {
 	/* Reset */
-	self->stage = SISXCL;	
 	SISXPosReset(self);
 	SISXParamReset(self);
 	SISXPSInitReset(self);
-}
-
-void SISXStageSet(SISX *self, SISXStage stage)
-{
-	self->stage = stage;
 }
 
 void SISXExportPosition(SISX *self, unsigned int target, unsigned int id, 
@@ -218,5 +212,5 @@ void SISXPSInitMetaAdd(SISX *self, float brctrc_i, float brctrc_j)
 
 	meta_list = self->ps_init_meta;
 	meta = SISXPSInitMetaCreate(brctrc_i, brctrc_j);
-	list_add(meta_list, meta);
+	list_enqueue(meta_list, meta);
 }
