@@ -37,7 +37,7 @@
 
 void SIWorkGroupCreate(SIWorkGroup *self, unsigned int id, SINDRange *ndrange)
 {
-	struct si_bin_enc_user_element_t *user_elements;
+	struct SIBinaryUserElement *user_elements;
 
 	SIWavefront *wavefront;
 	SIWorkItem *work_item;
@@ -216,7 +216,7 @@ void SIWorkGroupCreate(SIWorkGroup *self, unsigned int id, SINDRange *ndrange)
 		user_elements = ndrange->userElements;
 		for (i = 0; i < user_element_count; i++)
 		{
-			if (user_elements[i].dataClass == IMM_CONST_BUFFER)
+			if (user_elements[i].dataClass == SIBinaryUserDataConstBuffer)
 			{
 				/* Store CB pointer in sregs */
 				SIWavefrontInitSRegWithConstantBuffer(wavefront,
@@ -224,7 +224,7 @@ void SIWorkGroupCreate(SIWorkGroup *self, unsigned int id, SINDRange *ndrange)
 					user_elements[i].userRegCount,
 					user_elements[i].apiSlot);
 			}
-			else if (user_elements[i].dataClass == IMM_UAV)
+			else if (user_elements[i].dataClass == SIBinaryUserDataUAV)
 			{
 				/* Store UAV pointer in sregs */
 				SIWavefrontInitSRegWithUAV(wavefront,
@@ -233,14 +233,14 @@ void SIWorkGroupCreate(SIWorkGroup *self, unsigned int id, SINDRange *ndrange)
 					user_elements[i].apiSlot);
 			}
 			else if (user_elements[i].dataClass ==
-				PTR_CONST_BUFFER_TABLE)
+				SIBinaryUserDataConstBufferTable)
 			{
 				/* Store CB table in sregs */
 				SIWavefrontInitSRegWithConstantBufferTable(wavefront,
 					user_elements[i].startUserReg,
 					user_elements[i].userRegCount);
 			}
-			else if (user_elements[i].dataClass == PTR_UAV_TABLE)
+			else if (user_elements[i].dataClass == SIBinaryUserDataUAVTable)
 			{
 				/* Store UAV table in sregs */
 				SIWavefrontInitSRegWithUAVTable(
@@ -266,19 +266,19 @@ void SIWorkGroupCreate(SIWorkGroup *self, unsigned int id, SINDRange *ndrange)
 					user_elements[i].startUserReg,
 					user_elements[i].userRegCount);
 			}
-			else if (user_elements[i].dataClass == IMM_SAMPLER)
+			else if (user_elements[i].dataClass == SIBinaryUserDataSampler)
 			{
 				/* Store sampler in sregs */
 				assert(0);
 			}
 			else if (user_elements[i].dataClass ==
-				PTR_RESOURCE_TABLE)
+				SIBinaryUserDataPtrResourceTable)
 			{
 				/* Store resource table in sregs */
 				assert(0);
 			}
 			else if (user_elements[i].dataClass ==
-				PTR_INTERNAL_GLOBAL_TABLE)
+				SIBinaryUserDataInternalGlobalTable)
 			{
 				fatal("%s: PTR_INTERNAL_GLOBAL_TABLE not "
 					"supported", __FUNCTION__);

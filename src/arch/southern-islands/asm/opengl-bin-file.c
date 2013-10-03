@@ -606,18 +606,18 @@ void opengl_si_shader_binary_free(struct opengl_si_shader_binary_t *shdr)
 	free(shdr);
 }
 
-struct si_bin_enc_user_element_t *opengl_si_bin_enc_user_element_create()
+struct SIBinaryUserElement *opengl_si_bin_enc_user_element_create()
 {
-	struct si_bin_enc_user_element_t *user_elem;
+	struct SIBinaryUserElement *user_elem;
 
 	/* Initialize */
-	user_elem = xcalloc(1, sizeof(struct si_bin_enc_user_element_t));
+	user_elem = xcalloc(1, sizeof(struct SIBinaryUserElement));
 	
 	/* Return */
 	return user_elem;
 }
 
-void opengl_si_bin_enc_user_element_free(struct si_bin_enc_user_element_t *user_elem)
+void opengl_si_bin_enc_user_element_free(struct SIBinaryUserElement *user_elem)
 {
 	free(user_elem);
 }

@@ -45,38 +45,38 @@ struct pt_note_header_t
 struct str_map_t si_bin_user_data_class = 
 {
 	32, {
-		{ "IMM_RESOURCE",                      IMM_RESOURCE },
-		{ "IMM_SAMPLER",                       IMM_SAMPLER},
-		{ "IMM_CONST_BUFFER",                  IMM_CONST_BUFFER },
-		{ "IMM_VERTEX_BUFFER",                 IMM_VERTEX_BUFFER },
-		{ "IMM_UAV",                           IMM_UAV },
-		{ "IMM_ALU_FLOAT_CONST",               IMM_ALU_FLOAT_CONST},
-		{ "IMM_ALU_BOOL32_CONST",              IMM_ALU_BOOL32_CONST },
-		{ "IMM_GDS_COUNTER_RANGE",             IMM_GDS_COUNTER_RANGE },
-		{ "IMM_GDS_MEMORY_RANGE",              IMM_GDS_MEMORY_RANGE },
-		{ "IMM_GWS_BASE",                      IMM_GWS_BASE },
-		{ "IMM_WORK_ITEM_RANGE",               IMM_WORK_ITEM_RANGE },
-		{ "IMM_WORK_GROUP_RANGE",              IMM_WORK_GROUP_RANGE },
-		{ "IMM_DISPATCH_ID",                   IMM_DISPATCH_ID },
-		{ "IMM_SCRATCH_BUFFER",                IMM_SCRATCH_BUFFER },
-		{ "IMM_HEAP_BUFFER",                   IMM_HEAP_BUFFER },
-		{ "IMM_KERNEL_ARG",                    IMM_KERNEL_ARG },
-		{ "IMM_CONTEXT_BASE",                  IMM_CONTEXT_BASE},
-		{ "IMM_LDS_ESGS_SIZE",                 IMM_LDS_ESGS_SIZE },
-		{ "SUB_PTR_FETCH_SHADER",              SUB_PTR_FETCH_SHADER },
-		{ "PTR_RESOURCE_TABLE",                PTR_RESOURCE_TABLE },
-		{ "PTR_CONST_BUFFER_TABLE",            PTR_CONST_BUFFER_TABLE },
-		{ "PTR_INTERNAL_RESOURCE_TABLE",       PTR_INTERNAL_RESOURCE_TABLE },
-		{ "PTR_SAMPLER_TABLE",                 PTR_SAMPLER_TABLE },
-		{ "PTR_UAV_TABLE",                     PTR_UAV_TABLE },
-		{ "PTR_INTERNAL_GLOBAL_TABLE",         PTR_INTERNAL_GLOBAL_TABLE },
-		{ "PTR_VERTEX_BUFFER_TABLE",           PTR_VERTEX_BUFFER_TABLE },
-		{ "PTR_SO_BUFFER_TABLE",               PTR_SO_BUFFER_TABLE },
-		{ "PTR_EXTENDED_USER_DATA",            PTR_EXTENDED_USER_DATA },
-		{ "PTR_INDIRECT_RESOURCE",             PTR_INDIRECT_RESOURCE },
-		{ "PTR_INDIRECT_INTERNAL_RESOURCE",    PTR_INDIRECT_INTERNAL_RESOURCE },
-		{ "PTR_INDIRECT_UAV",                  PTR_INDIRECT_UAV },
-		{ "E_SC_USER_DATA_CLASS_LAST",         E_SC_USER_DATA_CLASS_LAST },
+		{ "IMM_RESOURCE",                      SIBinaryUserDataResource },
+		{ "IMM_SAMPLER",                       SIBinaryUserDataSampler},
+		{ "IMM_CONST_BUFFER",                  SIBinaryUserDataConstBuffer },
+		{ "IMM_VERTEX_BUFFER",                 SIBinaryUserDataVertexBuffer },
+		{ "IMM_UAV",                           SIBinaryUserDataUAV },
+		{ "IMM_ALU_FLOAT_CONST",               SIBinaryUserDataALUFloatConst},
+		{ "IMM_ALU_BOOL32_CONST",              SIBinaryUserDataALUBool32Const },
+		{ "IMM_GDS_COUNTER_RANGE",             SIBinaryUserDataGDSCounterRange },
+		{ "IMM_GDS_MEMORY_RANGE",              SIBinaryUserDataGDSMemoryRange },
+		{ "IMM_GWS_BASE",                      SIBinaryUserDataGWSBase },
+		{ "IMM_WORK_ITEM_RANGE",               SIBinaryUserDataWorkItemRange },
+		{ "IMM_WORK_GROUP_RANGE",              SIBinaryUserDataWorkGroupRange },
+		{ "IMM_DISPATCH_ID",                   SIBinaryUserDataDispatchId },
+		{ "IMM_SCRATCH_BUFFER",                SIBinaryUserDataScratchBuffer },
+		{ "IMM_HEAP_BUFFER",                   SIBinaryUserDataHeapBuffer },
+		{ "IMM_KERNEL_ARG",                    SIBinaryUserDataKernelArg },
+		{ "IMM_CONTEXT_BASE",                  SIBinaryUserDataContextBase},
+		{ "IMM_LDS_ESGS_SIZE",                 SIBinaryUserDataLDSEsgsSize },
+		{ "SUB_PTR_FETCH_SHADER",              SIBinaryUserDataPtrFetchShader },
+		{ "PTR_RESOURCE_TABLE",                SIBinaryUserDataPtrResourceTable },
+		{ "PTR_CONST_BUFFER_TABLE",            SIBinaryUserDataConstBufferTable },
+		{ "PTR_INTERNAL_RESOURCE_TABLE",       SIBinaryUserDataInteralResourceTable },
+		{ "PTR_SAMPLER_TABLE",                 SIBinaryUserDataSamplerTable },
+		{ "PTR_UAV_TABLE",                     SIBinaryUserDataUAVTable },
+		{ "PTR_INTERNAL_GLOBAL_TABLE",         SIBinaryUserDataInternalGlobalTable },
+		{ "PTR_VERTEX_BUFFER_TABLE",           SIBinaryUserDataVertexBufferTable },
+		{ "PTR_SO_BUFFER_TABLE",               SIBinaryUserDataSoBufferTable },
+		{ "PTR_EXTENDED_USER_DATA",            SIBinaryUserDataExtendedUserData },
+		{ "PTR_INDIRECT_RESOURCE",             SIBinaryUserDataIndirectResource },
+		{ "PTR_INDIRECT_INTERNAL_RESOURCE",    SIBinaryUserDataInternalResource },
+		{ "PTR_INDIRECT_UAV",                  SIBinaryUserDataPtrIndirectUAV },
+		{ "E_SC_USER_DATA_CLASS_LAST",         SIBinaryUserDataLast },
 	}
 };
 
@@ -423,7 +423,7 @@ static struct str_map_t prog_info_entry_map = {
 
 
 /* Read next note at the current position of the PT_NOTE segment */
-static void si_bin_file_read_note_header(struct si_bin_file_t *bin_file, struct si_bin_enc_dict_entry_t *enc_dict_entry)
+static void si_binary_read_note_header(struct SIBinary *bin_file, struct SIBinaryDictionaryEntry *enc_dict_entry)
 {
 	struct elf_buffer_t *buffer;
 
@@ -458,19 +458,19 @@ static void si_bin_file_read_note_header(struct si_bin_file_t *bin_file, struct 
 	case 1:  /* ELF_NOTE_ATI_PROGINFO */
 	{
 		int prog_info_count;
-		struct pt_note_prog_info_entry_t *prog_info_entry;
+		struct SIBinaryNoteProgInfoEntry *prog_info_entry;
 		int i;
 
 		/* Get number of entries */
-		assert(header->descsz % sizeof(struct pt_note_prog_info_entry_t) == 0);
-		prog_info_count = header->descsz / sizeof(struct pt_note_prog_info_entry_t);
+		assert(header->descsz % sizeof(struct SIBinaryNoteProgInfoEntry) == 0);
+		prog_info_count = header->descsz / sizeof(struct SIBinaryNoteProgInfoEntry);
 		elf_debug("\tnote including device configuration unique to the program (%d entries)\n",
 			prog_info_count);
 
 		/* Decode entries */
 		for (i = 0; i < prog_info_count; i++)
 		{
-			prog_info_entry = desc + i * sizeof(struct pt_note_prog_info_entry_t);
+			prog_info_entry = desc + i * sizeof(struct SIBinaryNoteProgInfoEntry);
 			elf_debug("\tprog_info_entry: addr=0x%x (%s), value=%u\n",
 				prog_info_entry->address, str_map_value(&prog_info_entry_map,
 				prog_info_entry->address), prog_info_entry->value);
@@ -481,7 +481,7 @@ static void si_bin_file_read_note_header(struct si_bin_file_t *bin_file, struct 
 
 			case 0x00002e13:  /* COMPUTE_PGM_RSRC2 */
 			enc_dict_entry->compute_pgm_rsrc2 = 
-				(struct si_bin_compute_pgm_rsrc2_t*)&prog_info_entry->value;
+				(struct SIBinaryComputePgmRsrc2*)&prog_info_entry->value;
 			break;
 
 			case 0x80000082:  /* AMU_ABI_LDS_SIZE_USED */
@@ -499,7 +499,7 @@ static void si_bin_file_read_note_header(struct si_bin_file_t *bin_file, struct 
 				/* Analyze user elements */
 				for(int j = 0; j < 4 * enc_dict_entry->userElementCount; j++)
 				{
-					prog_info_entry = desc + i * sizeof(struct pt_note_prog_info_entry_t);
+					prog_info_entry = desc + i * sizeof(struct SIBinaryNoteProgInfoEntry);
 					elf_debug("\tprog_info_entry: addr=0x%x (%s), value=%u\n",
 							prog_info_entry->address, str_map_value(&prog_info_entry_map,
 							prog_info_entry->address), prog_info_entry->value);
@@ -569,24 +569,24 @@ static void si_bin_file_read_note_header(struct si_bin_file_t *bin_file, struct 
 	case 7:  /* ELF_NOTE_ATI_BOOL32CONSTS */
 	{
 		int data_segment_desc_count;
-		struct pt_note_data_segment_desc_t *data_segment_desc;
+		struct SIBinaryNoteDataSegmentDesc *data_segment_desc;
 
-		struct si_bin_enc_dict_entry_consts_t *consts;
+		struct SIBinaryDictionaryConsts *consts;
 		char const_value[MAX_STRING_SIZE];
 
 		int j;
 
 		/* Get number of entries */
 		consts = enc_dict_entry->consts;
-		assert(header->descsz % sizeof(struct pt_note_data_segment_desc_t) == 0);
-		data_segment_desc_count = header->descsz / sizeof(struct pt_note_data_segment_desc_t);
+		assert(header->descsz % sizeof(struct SIBinaryNoteDataSegmentDesc) == 0);
+		data_segment_desc_count = header->descsz / sizeof(struct SIBinaryNoteDataSegmentDesc);
 		elf_debug("\tnote including data for constant buffers (%d entries)\n",
 				data_segment_desc_count);
 
 		/* Decode entries */
 		for (j = 0; j < data_segment_desc_count; j++)
 		{
-			data_segment_desc = desc + j * sizeof(struct pt_note_data_segment_desc_t);
+			data_segment_desc = desc + j * sizeof(struct SIBinaryNoteDataSegmentDesc);
 			if (header->type == 5)
 				snprintf(const_value, sizeof(const_value), "{%g,%g,%g,%g}",
 					consts->float_consts[data_segment_desc->offset][0],
@@ -632,14 +632,14 @@ static void si_bin_file_read_note_header(struct si_bin_file_t *bin_file, struct 
 	case 10:  /* ELF_NOTE_ATI_CONSTANT_BUFFERS */
 	{
 		int constant_buffer_count;
-		struct pt_note_constant_buffer_mask_t *constant_buffer_mask;
+		struct SIBinaryNoteConstantBufferMask *constant_buffer_mask;
 		int i;
 
 		/* Get number of entries */
 		assert(header->descsz % 
-			sizeof(struct pt_note_constant_buffer_mask_t) == 0);
+			sizeof(struct SIBinaryNoteConstantBufferMask) == 0);
 		constant_buffer_count = header->descsz / 
-			sizeof(struct pt_note_constant_buffer_mask_t);
+			sizeof(struct SIBinaryNoteConstantBufferMask);
 		elf_debug("\tnote including number and size of constant "
 			"buffers (%d entries)\n", constant_buffer_count);
 
@@ -647,7 +647,7 @@ static void si_bin_file_read_note_header(struct si_bin_file_t *bin_file, struct 
 		for (i = 0; i < constant_buffer_count; i++) 
 		{
 			constant_buffer_mask = desc + i * 
-				sizeof(struct pt_note_constant_buffer_mask_t);
+				sizeof(struct SIBinaryNoteConstantBufferMask);
 			elf_debug("\tconstant_buffer[%d].size = %d "
 				"(vec4f constants)\n", 
 				constant_buffer_mask->index, 
@@ -688,16 +688,16 @@ static void si_bin_file_read_note_header(struct si_bin_file_t *bin_file, struct 
 	case 16:  /* ELF_NOTE_ATI_UAV */
 	{	
 		int uav_entry_count;
-		struct pt_note_uav_entry_t *uav_entry;
+		struct SIBinaryNoteUAVEntry *uav_entry;
 		int i;
 
-		assert(header->descsz % sizeof(struct pt_note_uav_entry_t) == 0);
-		uav_entry_count = header->descsz / sizeof(struct pt_note_uav_entry_t);
+		assert(header->descsz % sizeof(struct SIBinaryNoteUAVEntry) == 0);
+		uav_entry_count = header->descsz / sizeof(struct SIBinaryNoteUAVEntry);
 		elf_debug("\tnote (%d entries)\n", uav_entry_count);
 
 		/* Decode entries */
 		for (i = 0; i < uav_entry_count; i++) {
-			uav_entry = desc + i * sizeof(struct pt_note_uav_entry_t);
+			uav_entry = desc + i * sizeof(struct SIBinaryNoteUAVEntry);
 			elf_debug("\tuav_entry[%d].uav = %d [%d, %d, %d]\n", i, uav_entry->id,
 				uav_entry->unknown1, uav_entry->unknown2, uav_entry->unknown3);
 		}
@@ -715,7 +715,7 @@ static void si_bin_file_read_note_header(struct si_bin_file_t *bin_file, struct 
 
 
 /* Decode notes in the PT_NOTE segment of the given encoding dictionary entry */
-static void si_bin_file_read_notes(struct si_bin_file_t *bin_file, struct si_bin_enc_dict_entry_t *enc_dict_entry)
+static void si_binary_read_notes(struct SIBinary *bin_file, struct SIBinaryDictionaryEntry *enc_dict_entry)
 {
 	struct elf_buffer_t *buffer;
 
@@ -727,12 +727,12 @@ static void si_bin_file_read_notes(struct si_bin_file_t *bin_file, struct si_bin
 	elf_debug("Reading notes in PT_NOTE segment (enc. dict. for machine=0x%x)\n",
 		enc_dict_entry->header->d_machine);
 	while (buffer->pos < buffer->size)
-		si_bin_file_read_note_header(bin_file, enc_dict_entry);
+		si_binary_read_note_header(bin_file, enc_dict_entry);
 	elf_debug("\n\n\n");
 }
 
 
-static void si_bin_file_read_enc_dict(struct si_bin_file_t *bin_file)
+static void si_binary_read_dictionary(struct SIBinary *bin_file)
 {
 	struct elf_file_t *elf_file;
 	struct elf_buffer_t *buffer;
@@ -740,8 +740,8 @@ static void si_bin_file_read_enc_dict(struct si_bin_file_t *bin_file)
 
 	struct elf_program_header_t *program_header;
 
-	struct si_bin_enc_dict_entry_t *enc_dict_entry;
-	struct si_bin_enc_dict_entry_header_t *enc_dict_entry_header;
+	struct SIBinaryDictionaryEntry *enc_dict_entry;
+	struct SIBinaryDictionaryHeader *enc_dict_entry_header;
 	int enc_dict_entry_count;
 
 	int i;
@@ -777,8 +777,8 @@ static void si_bin_file_read_enc_dict(struct si_bin_file_t *bin_file)
 	SI_BIN_FILE_NOT_SUPPORTED_NEQ(program_header->header->p_memsz, 0);
 	SI_BIN_FILE_NOT_SUPPORTED_NEQ(program_header->header->p_flags, 0);
 	SI_BIN_FILE_NOT_SUPPORTED_NEQ(program_header->header->p_align, 0);
-	assert(program_header->header->p_filesz % sizeof(struct si_bin_enc_dict_entry_header_t) == 0);
-	enc_dict_entry_count = program_header->header->p_filesz / sizeof(struct si_bin_enc_dict_entry_header_t);
+	assert(program_header->header->p_filesz % sizeof(struct SIBinaryDictionaryHeader) == 0);
+	enc_dict_entry_count = program_header->header->p_filesz / sizeof(struct SIBinaryDictionaryHeader);
 	elf_debug("  -> %d entries\n\n", enc_dict_entry_count);
 
 	/* Read encoding dictionary entries */
@@ -787,9 +787,9 @@ static void si_bin_file_read_enc_dict(struct si_bin_file_t *bin_file)
 	for (i = 0; i < enc_dict_entry_count; i++)
 	{
 		/* Create entry */
-		enc_dict_entry = xcalloc(1, sizeof(struct si_bin_enc_dict_entry_t));
+		enc_dict_entry = xcalloc(1, sizeof(struct SIBinaryDictionaryEntry));
 		enc_dict_entry->header = elf_buffer_tell(buffer);
-		elf_buffer_read(buffer, NULL, sizeof(struct si_bin_enc_dict_entry_header_t));
+		elf_buffer_read(buffer, NULL, sizeof(struct SIBinaryDictionaryHeader));
 		list_add(bin_file->enc_dict, enc_dict_entry);
 
 		/* Store encoding dictionary entry for Southern Islands.
@@ -865,11 +865,11 @@ static void si_bin_file_read_enc_dict(struct si_bin_file_t *bin_file)
 }
 
 
-static void si_bin_file_read_segments(struct si_bin_file_t *bin_file)
+static void si_bin_file_read_segments(struct SIBinary *bin_file)
 {
 	struct elf_file_t *elf_file;
 
-	struct si_bin_enc_dict_entry_t *enc_dict_entry;
+	struct SIBinaryDictionaryEntry *enc_dict_entry;
 	struct elf_program_header_t *program_header;
 
 	int i, j;
@@ -925,12 +925,12 @@ static void si_bin_file_read_segments(struct si_bin_file_t *bin_file)
 }
 
 
-static void si_bin_file_read_sections(struct si_bin_file_t *bin_file)
+static void si_bin_file_read_sections(struct SIBinary *bin_file)
 {
 	struct elf_file_t *elf_file;
 	struct elf_buffer_t *buffer;
 
-	struct si_bin_enc_dict_entry_t *enc_dict_entry;
+	struct SIBinaryDictionaryEntry *enc_dict_entry;
 	struct elf_section_t *section;
 
 	int i, j;
@@ -1023,19 +1023,19 @@ static void si_bin_file_read_sections(struct si_bin_file_t *bin_file)
  */
 
 
-struct si_bin_file_t *si_bin_file_create(void *ptr, int size, char *name)
+struct SIBinary *si_binary_create(void *ptr, int size, char *name)
 {
-	struct si_bin_file_t *bin_file;
+	struct SIBinary *bin_file;
 
 	/* Create structure */
-	bin_file = xcalloc(1, sizeof(struct si_bin_file_t));
+	bin_file = xcalloc(1, sizeof(struct SIBinary));
 
 	/* Read and parse ELF file */
 	bin_file->elf_file = elf_file_create_from_buffer(ptr, size, name);
 
 	/* Read encoding dictionary.
 	 * Check that a Southern Islands dictionary entry is present */
-	si_bin_file_read_enc_dict(bin_file);
+	si_binary_read_dictionary(bin_file);
 	if (!bin_file->enc_dict_entry_southern_islands)
 		fatal(
 	"%s: no encoding dictionary entry for Southern Islands.\n"
@@ -1054,7 +1054,7 @@ struct si_bin_file_t *si_bin_file_create(void *ptr, int size, char *name)
 
 	/* Read notes in PT_NOTE segment for Southern Islands 
 	 * dictionary entry */
-	si_bin_file_read_notes(bin_file, bin_file->
+	si_binary_read_notes(bin_file, bin_file->
 		enc_dict_entry_southern_islands);
 
 	/* Return */
@@ -1062,7 +1062,7 @@ struct si_bin_file_t *si_bin_file_create(void *ptr, int size, char *name)
 }
 
 
-void si_bin_file_free(struct si_bin_file_t *bin_file)
+void si_binary_free(struct SIBinary *bin_file)
 {
 	/* Free encoding dictionary */
 	while (list_count(bin_file->enc_dict))
@@ -1076,34 +1076,34 @@ void si_bin_file_free(struct si_bin_file_t *bin_file)
 	free(bin_file);
 }
 
-struct si_bin_enc_user_element_t *si_bin_enc_user_element_create()
+struct SIBinaryUserElement *si_binary_user_element_create()
 {
-	struct si_bin_enc_user_element_t *user_elem;
+	struct SIBinaryUserElement *user_elem;
 
 	/* Initialize */
-	user_elem = xcalloc(1, sizeof(struct si_bin_enc_user_element_t));
+	user_elem = xcalloc(1, sizeof(struct SIBinaryUserElement));
 	
 	/* Return */
 	return user_elem;
 }
 
-void si_bin_enc_user_element_free(struct si_bin_enc_user_element_t *user_elem)
+void si_binary_user_element_free(struct SIBinaryUserElement *user_elem)
 {
 	free(user_elem);
 }
 
-struct si_bin_compute_pgm_rsrc2_t *si_bin_compute_pgm_rsrc2_create()
+struct SIBinaryComputePgmRsrc2 *si_binary_compute_pgm_rsrc2_create()
 {
-	struct si_bin_compute_pgm_rsrc2_t *pgm_rsrc2;
+	struct SIBinaryComputePgmRsrc2 *pgm_rsrc2;
 
 	/* Initialize */
-	pgm_rsrc2 = xcalloc(1, sizeof(struct si_bin_compute_pgm_rsrc2_t));
+	pgm_rsrc2 = xcalloc(1, sizeof(struct SIBinaryComputePgmRsrc2));
 	
 	/* Return */
 	return pgm_rsrc2;
 }
 
-void si_bin_compute_pgm_rsrc2_free(struct si_bin_compute_pgm_rsrc2_t *pgm_rsrc2)
+void si_binary_compute_pgm_rsrc2_free(struct SIBinaryComputePgmRsrc2 *pgm_rsrc2)
 {
 	free(pgm_rsrc2);
 }
