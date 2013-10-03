@@ -34,7 +34,7 @@ using namespace SI;
 using namespace std;
 
 
-StringMap inst_format_map =
+StringMap SI::inst_format_map =
 {
 	{ "<invalid>", InstFormatInvalid },
 	{ "sop2", InstFormatSOP2 },
@@ -58,7 +58,7 @@ StringMap inst_format_map =
 };
 
 /* String maps for assembly dump. */
-StringMap inst_sdst_map =
+static StringMap inst_sdst_map =
 {
 	{"reserved", 0},
 	{"reserved", 1},
@@ -87,7 +87,7 @@ StringMap inst_sdst_map =
 	{ 0, 0 }
 };
 
-StringMap inst_ssrc_map =
+static StringMap inst_ssrc_map =
 {
 	{"0.5", 0},
 	{"-0.5", 1},
@@ -108,7 +108,7 @@ StringMap inst_ssrc_map =
 	{0, 0}
 };
 
-StringMap inst_buf_data_format_map =
+StringMap SI::inst_buf_data_format_map =
 {
 	{"invalid", InstBufDataFormatInvalid },
 	{"BUF_DATA_FORMAT_8", InstBufDataFormat8 },
@@ -129,7 +129,7 @@ StringMap inst_buf_data_format_map =
 	{ 0, 0 }
 };
 
-StringMap inst_buf_num_format_map =
+StringMap SI::inst_buf_num_format_map =
 {
 	{"BUF_NUM_FORMAT_UNORM", InstBufNumFormatUnorm },
 	{"BUF_NUM_FORMAT_SNORM", InstBufNumFormatSnorm },
@@ -148,7 +148,7 @@ StringMap inst_buf_num_format_map =
 	{ 0, 0 }
 };
 
-StringMap inst_OP16_map =
+static StringMap inst_OP16_map =
 {
 	{"f", 0},
 	{"lt", 1},
@@ -169,7 +169,7 @@ StringMap inst_OP16_map =
 	{ 0, 0 }
 };
 
-StringMap inst_OP8_map =
+static StringMap inst_OP8_map =
 {
 	{"f", 0},
 	{"lt", 1},
@@ -182,7 +182,7 @@ StringMap inst_OP8_map =
 	{ 0, 0 }
 };
 
-StringMap inst_special_reg_map =
+StringMap SI::inst_special_reg_map =
 {
 	{ "vcc", InstSpecialRegVcc },
 	{ "scc", InstSpecialRegScc },
@@ -1327,41 +1327,16 @@ void Inst::Decode(char *buf, unsigned int address)
 }
 	
 	
-const char *Inst::SpecialRegToString(InstSpecialReg value)
-{
-	return StringMapValue(inst_special_reg_map, value);
-}
-
-
-const char *Inst::BufDataFormatToString(InstBufDataFormat value)
-{
-	return StringMapValue(inst_buf_data_format_map, value);
-}
-
-
-const char *Inst::BufNumFormatToString(InstBufNumFormat value)
-{
-	return StringMapValue(inst_buf_num_format_map, value);
-}
-
-
-const char *Inst::FormatToString(InstFormat value)
-{
-	return StringMapValue(inst_format_map, value);
-}
-	
-
-InstSpecialReg Inst::StringToSpecialReg(const char *text)
-{
-	return (InstSpecialReg) StringMapString(inst_special_reg_map, text);
-}
-
 
 
 /*
  * C Wrapper
  */
 
+struct StringMapWrap *si_inst_special_reg_map = (StringMapWrap *) inst_special_reg_map;
+struct StringMapWrap *si_inst_buf_data_format_map = (StringMapWrap *) inst_buf_data_format_map;
+struct StringMapWrap *si_inst_buf_num_format_map = (StringMapWrap *) inst_buf_num_format_map;
+struct StringMapWrap *si_inst_format_map = (StringMapWrap *) inst_format_map;
 
 struct SIInstWrap *SIInstWrapCreate(SIAsmWrap *as)
 {
@@ -1448,59 +1423,5 @@ int SIInstWrapGetSize(struct SIInstWrap *self)
 {
 	Inst *inst = (Inst *) self;
 	return inst->GetSize();
-}
-
-
-const char *SIInstWrapSpecialRegToString(SIInstSpecialReg value)
-{
-	return Inst::SpecialRegToString((InstSpecialReg) value);
-}
-
-
-const char *SIInstWrapBufDataFormatToString(SIInstBufDataFormat value)
-{
-	return Inst::BufDataFormatToString((InstBufDataFormat) value);
-}
-
-
-const char *SIInstWrapBufNumFormatToString(SIInstBufNumFormat value)
-{
-	return Inst::BufNumFormatToString((InstBufNumFormat) value);
-}
-
-
-const char *SIInstWrapFormatToString(SIInstFormat value)
-{
-	return Inst::FormatToString((InstFormat) value);
-}
-
-
-SIInstSpecialReg SIInstWrapStringToSpecialReg(const char *text)
-{
-	return (SIInstSpecialReg) Inst::StringToSpecialReg(text);
-}
-
-
-SIInstBufDataFormat SIInstWrapStringToBufDataFormat(const char *text, int *err_ptr)
-{
-	SIInstBufDataFormat result;
-	bool err;
-
-	result = (SIInstBufDataFormat) StringMapString(inst_buf_data_format_map, text, err);
-	if (err_ptr)
-		*err_ptr = err;
-	return result;
-}
-
-
-SIInstBufNumFormat SIInstWrapStringToBufNumFormat(const char *text, int *err_ptr)
-{
-	SIInstBufNumFormat result;
-	bool err;
-
-	result = (SIInstBufNumFormat) StringMapString(inst_buf_num_format_map, text, err);
-	if (err_ptr)
-		*err_ptr = err;
-	return result;
 }
 

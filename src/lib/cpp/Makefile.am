@@ -12,7 +12,10 @@ libcpp_a_SOURCES = \
 	IniFile.h \
 	\
 	Misc.cc \
-	Misc.h
+	Misc.h \
+	\
+	Wrapper.cc \
+	Wrapper.h
 
 INCLUDES = @M2S_INCLUDES@
 

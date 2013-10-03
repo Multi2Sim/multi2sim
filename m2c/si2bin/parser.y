@@ -31,6 +31,7 @@
 #include <lib/class/hash-table.h>
 #include <lib/class/list.h>
 #include <lib/class/string.h>
+#include <lib/cpp/Wrapper.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/hash-table.h>
@@ -822,7 +823,7 @@ operand
 	| TOK_SPECIAL_REGISTER
 	{
 		SIInstSpecialReg reg;
-		reg = SIInstWrapStringToSpecialReg($1->text);
+		reg = StringMapStringWrap(si_inst_special_reg_map, $1->text);
 		$$ = new_ctor(Si2binArg, CreateSpecialRegister, reg); 
 		delete($1);
 	}
@@ -964,13 +965,13 @@ arg
 		id_num_format = $8;
 		
 		/* Data format */
-		data_format = SIInstWrapStringToBufDataFormat(
+		data_format = StringMapStringErrWrap(si_inst_buf_data_format_map,
 				id_data_format->text, &err);
 		if (err)
 			si2bin_yyerror_fmt("%s: invalid data format", id_data_format->text);
 			
 		/* Number format */
-		num_format = SIInstWrapStringToBufNumFormat(
+		num_format = StringMapStringErrWrap(si_inst_buf_num_format_map,
 				id_num_format->text, &err);
 		if (err)
 			si2bin_yyerror_fmt("%s: invalid number format", id_num_format->text); 
