@@ -128,8 +128,8 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 
 	struct si2bin_metadata_t *metadata;
 	SIArg *arg;
-	struct si_bin_enc_user_element_t *user_elem;
-	struct pt_note_prog_info_entry_t prog_info[NUM_PROG_INFO_ELEM];
+	struct SIBinaryUserElement *user_elem;
+	struct SIBinaryNoteProgInfoEntry prog_info[NUM_PROG_INFO_ELEM];
 	Si2binData *data;
 
 	char line[MAX_LONG_STRING_SIZE];
@@ -647,7 +647,7 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 		{
 			user_elem = list_get(inner_bin->user_element_list, k);
 			
-			if (user_elem->dataClass == IMM_CONST_BUFFER)
+			if (user_elem->dataClass == SIBinaryUserDataConstBuffer)
 			{
 				/* Cannot have both IMM_CONST_BUFFER and PTR_CONST_BUFFER_TABLE */
 				if (ptr_cb_table_found)
@@ -658,7 +658,7 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 				buff_num_offset++;
 				imm_cb_found = 1;
 			}
-			else if (user_elem->dataClass == PTR_CONST_BUFFER_TABLE)
+			else if (user_elem->dataClass == SIBinaryUserDataConstBufferTable)
 			{
 				/* Cannot have both IMM_CONST_BUFFER and PTR_CONST_BUFFER_TABLE */
 				if (imm_cb_found)

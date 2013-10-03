@@ -627,7 +627,7 @@ struct opencl_si_kernel_t *opencl_si_kernel_create(int id,
 	 * The internal ELF is contained in the buffer pointer to by
 	 * the 'kernel' symbol. */
 	snprintf(symbol_name, sizeof symbol_name, "kernel<%s>.InternalELF", name);
-	kernel->bin_file = si_bin_file_create(kernel->kernel_buffer.ptr,
+	kernel->bin_file = si_binary_create(kernel->kernel_buffer.ptr,
 		kernel->kernel_buffer.size, symbol_name);
 
 	/* Load metadata */
@@ -645,7 +645,7 @@ void opencl_si_kernel_free(struct opencl_si_kernel_t *kernel)
 	delete(kernel->arg_list);
 
 	/* Rest */
-	si_bin_file_free(kernel->bin_file);
+	si_binary_free(kernel->bin_file);
 	free(kernel->name);
 	free(kernel);
 }
@@ -1228,7 +1228,7 @@ void opencl_si_kernel_debug_ndrange_state(struct opencl_si_kernel_t *kernel,
         unsigned int userElementCount =
                 kernel->bin_file->enc_dict_entry_southern_islands->
                 userElementCount;
-        struct si_bin_enc_user_element_t* userElements =
+        struct SIBinaryUserElement* userElements =
                 kernel->bin_file->enc_dict_entry_southern_islands->
                 userElements;
         si_isa_debug("Scalar register initialization prior to execution:\n");
@@ -1237,7 +1237,7 @@ void opencl_si_kernel_debug_ndrange_state(struct opencl_si_kernel_t *kernel,
         si_isa_debug("\t-------------------------------------------\n");
         for (int i = 0; i < userElementCount; i++)
         {
-                if (userElements[i].dataClass == IMM_CONST_BUFFER)
+                if (userElements[i].dataClass == SIBinaryUserDataConstBuffer)
                 {
                         /* Constant buffer descriptor */
                         if (userElements[i].userRegCount > 1)
@@ -1258,7 +1258,7 @@ void opencl_si_kernel_debug_ndrange_state(struct opencl_si_kernel_t *kernel,
                         }
                 }
 
-                else if (userElements[i].dataClass == IMM_UAV)
+                else if (userElements[i].dataClass == SIBinaryUserDataUAV)
                 {
                         /* UAV buffer descriptor */
                         si_isa_debug("\t| SREG[%2d:%2d] |  UAV%-2d "
@@ -1269,7 +1269,7 @@ void opencl_si_kernel_debug_ndrange_state(struct opencl_si_kernel_t *kernel,
                                 userElements[i].apiSlot);
                 }
                 else if (userElements[i].dataClass ==
-                        PTR_CONST_BUFFER_TABLE)
+                        SIBinaryUserDataConstBufferTable)
                 {
                         si_isa_debug("\t| SREG[%2d:%2d] |  Constant Buffer "
                                 "Table    |\n",
@@ -1277,7 +1277,7 @@ void opencl_si_kernel_debug_ndrange_state(struct opencl_si_kernel_t *kernel,
                                 userElements[i].startUserReg +
                                 userElements[i].userRegCount - 1);
                 }
-                else if (userElements[i].dataClass == PTR_UAV_TABLE)
+                else if (userElements[i].dataClass == SIBinaryUserDataUAVTable)
                 {
                         si_isa_debug("\t| SREG[%2d:%2d] |  UAV "
                                 "Table                |\n",

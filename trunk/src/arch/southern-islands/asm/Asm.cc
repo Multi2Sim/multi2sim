@@ -321,7 +321,7 @@ void Asm::DisassembleBinary(std::string path)
 	struct elf_file_t *elf_file;
 	struct elf_symbol_t *symbol;
 	struct elf_section_t *section;
-	struct si_bin_file_t *amd_bin;
+	struct SIBinary *amd_bin;
 
 	char kernel_name[200];
 
@@ -348,7 +348,7 @@ void Asm::DisassembleBinary(std::string path)
 			/* Decode internal ELF */
 			str_substr(kernel_name, sizeof(kernel_name), 
 				symbol->name, 9, strlen(symbol->name) - 16);
-			amd_bin = si_bin_file_create(
+			amd_bin = si_binary_create(
 				(char *) section->buffer.ptr + symbol->value, 
 				symbol->size, kernel_name);
 
@@ -361,7 +361,7 @@ void Asm::DisassembleBinary(std::string path)
 			printf("\n\n\n");
 
 			/* Free internal ELF */
-			si_bin_file_free(amd_bin);
+			si_binary_free(amd_bin);
 		}
 	}
 
