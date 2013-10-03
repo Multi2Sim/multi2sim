@@ -166,7 +166,7 @@ public:
 	/* Dump file information into output stream */
 	friend std::ostream &operator<<(std::ostream &os, const File &file);
 
-	std::string& GetPath() { return path; }
+	const std::string& GetPath() { return path; }
 
 	/* Sections */
 	int GetNumSections() { return sections.size(); }
