@@ -40,8 +40,8 @@ static void opengl_si_bin_vertex_shader_init(struct opengl_si_enc_dict_vertex_sh
 
 /* Pixel shader */
 static struct opengl_si_enc_dict_pixel_shader_t *opengl_si_enc_dict_pixel_shader_create(struct opengl_si_shader_binary_t *parent);
-static void opengl_si_bin_pixel_shader_free(struct opengl_si_enc_dict_pixel_shader_t *fs);
-static void opengl_si_bin_pixel_shader_init(struct opengl_si_enc_dict_pixel_shader_t *fs);
+static void opengl_si_bin_pixel_shader_free(struct opengl_si_enc_dict_pixel_shader_t *ps);
+static void opengl_si_bin_pixel_shader_init(struct opengl_si_enc_dict_pixel_shader_t *ps);
 
 
 /*
@@ -429,49 +429,49 @@ static void opengl_si_bin_vertex_shader_init(struct opengl_si_enc_dict_vertex_sh
 
 static struct opengl_si_enc_dict_pixel_shader_t *opengl_si_enc_dict_pixel_shader_create(struct opengl_si_shader_binary_t *parent)
 {
-	struct opengl_si_enc_dict_pixel_shader_t *fs;
+	struct opengl_si_enc_dict_pixel_shader_t *ps;
 
 	/* Allocate */
-	fs = xcalloc(1, sizeof(struct opengl_si_enc_dict_pixel_shader_t));
-	fs->parent = parent;
-	parent->enc_dict = fs;
-	fs->meta = opengl_si_bin_pixel_shader_metadata_create();
-	fs->inputs = list_create();
-	fs->outputs = list_create();
-	fs->info = opengl_si_si_bin_info_create();
-	fs->usageinfo = opengl_si_bin_usageinfo_create();
+	ps = xcalloc(1, sizeof(struct opengl_si_enc_dict_pixel_shader_t));
+	ps->parent = parent;
+	parent->enc_dict = ps;
+	ps->meta = opengl_si_bin_pixel_shader_metadata_create();
+	ps->inputs = list_create();
+	ps->outputs = list_create();
+	ps->info = opengl_si_si_bin_info_create();
+	ps->usageinfo = opengl_si_bin_usageinfo_create();
 
 	/* Return */
-	return fs;
+	return ps;
 }
 
-static void opengl_si_bin_pixel_shader_free(struct opengl_si_enc_dict_pixel_shader_t *fs)
+static void opengl_si_bin_pixel_shader_free(struct opengl_si_enc_dict_pixel_shader_t *ps)
 {
 	struct opengl_si_bin_input_t *input;
 	struct opengl_si_bin_output_t *output;
 	int i;
 
-	opengl_si_bin_pixel_shader_metadata_free(fs->meta);
-	LIST_FOR_EACH(fs->inputs, i)
+	opengl_si_bin_pixel_shader_metadata_free(ps->meta);
+	LIST_FOR_EACH(ps->inputs, i)
 	{
-		input = list_get(fs->inputs, i);
+		input = list_get(ps->inputs, i);
 		opengl_si_bin_input_free(input);
 	}
-	list_free(fs->inputs);
-	LIST_FOR_EACH(fs->outputs, i)
+	list_free(ps->inputs);
+	LIST_FOR_EACH(ps->outputs, i)
 	{
-		output = list_get(fs->outputs, i);
+		output = list_get(ps->outputs, i);
 		opengl_si_bin_output_free(output);
 	}
-	list_free(fs->outputs);
-	opengl_si_si_bin_info_free(fs->info);
-	opengl_si_bin_usageinfo_free(fs->usageinfo);
+	list_free(ps->outputs);
+	opengl_si_si_bin_info_free(ps->info);
+	opengl_si_bin_usageinfo_free(ps->usageinfo);
 
-	free(fs);
+	free(ps);
 
 }
 
-static void opengl_si_bin_pixel_shader_init(struct opengl_si_enc_dict_pixel_shader_t *fs)
+static void opengl_si_bin_pixel_shader_init(struct opengl_si_enc_dict_pixel_shader_t *ps)
 {
 	struct opengl_si_shader_binary_t *parent;
 	struct elf_file_t *elf;
@@ -479,7 +479,7 @@ static void opengl_si_bin_pixel_shader_init(struct opengl_si_enc_dict_pixel_shad
 	int i;
 
 	/* Get parent */
-	parent = fs->parent;
+	parent = ps->parent;
 	assert(parent);
 	assert(parent->shader_kind == OPENGL_SI_SHADER_PIXEL);
 
@@ -490,15 +490,15 @@ static void opengl_si_bin_pixel_shader_init(struct opengl_si_enc_dict_pixel_shad
 	{
 		section = list_get(elf->section_list, i);
 		if (!strcmp(section->name, ".text"))
-			opengl_si_bin_pixel_shader_metadata_init_from_section(fs->meta, section);
+			opengl_si_bin_pixel_shader_metadata_init_from_section(ps->meta, section);
 		else if (!strcmp(section->name, ".inputs"))
-			opengl_si_bin_inputs_init_from_section(fs->inputs, section);
+			opengl_si_bin_inputs_init_from_section(ps->inputs, section);
 		else if (!strcmp(section->name, ".outputs"))
-			opengl_si_bin_outputs_init_from_section(fs->outputs, section);
+			opengl_si_bin_outputs_init_from_section(ps->outputs, section);
 		else if (!strcmp(section->name, ".info"))
-			opengl_si_si_bin_info_init_with_section(fs->info, section);
+			opengl_si_si_bin_info_init_with_section(ps->info, section);
 		else if(!strcmp(section->name, ".usageinfo"))
-			opengl_si_si_bin_usageinfo_init_with_section(fs->usageinfo, section);
+			opengl_si_si_bin_usageinfo_init_with_section(ps->usageinfo, section);
 	}
 
 }

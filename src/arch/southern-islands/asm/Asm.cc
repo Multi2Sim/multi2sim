@@ -313,6 +313,8 @@ extern "C" {
 #include <lib/util/string.h>
 #include <lib/util/elf-format.h>
 #include <lib/util/list.h>
+#include <lib/util/misc.h>
+#include "opengl-bin-file.h"
 #include "bin-file.h"
 }
 
@@ -372,19 +374,18 @@ void Asm::DisassembleBinary(std::string path)
 
 void Asm::DisassembleOpenGLBinary(string path, int shader_index)
 {
-#if 0
 	struct opengl_si_program_binary_t *program_bin;
 	struct opengl_si_shader_binary_t *shader;
 	void *file_buffer;
 	int file_size;
 
 	/* Load file into memory buffer */
-	file_buffer = read_buffer(path, &file_size);
+	file_buffer = read_buffer(const_cast<char *>(path.c_str()), &file_size);
 	if(!file_buffer)
-		fatal("%s:Invalid file!", path);
+		fatal("%s:Invalid file!", const_cast<char *>(path.c_str()));
 
 	/* Analyze the file and initialize structure */	
-	program_bin = opengl_si_program_binary_create(file_buffer, file_size, path);
+	program_bin = opengl_si_program_binary_create(file_buffer, file_size, const_cast<char *>(path.c_str()));
 	free_buffer(file_buffer);
 
 	/* Basic info of the shader binary */
@@ -398,16 +399,15 @@ void Asm::DisassembleOpenGLBinary(string path, int shader_index)
 	}
 
 	/* Disassemble */
-	shader = list_get(program_bin->shader_bins, 
+	shader = (struct opengl_si_shader_binary_t *)list_get(program_bin->shader_bins, 
 			shader_index - 1);
 	printf("**\n** Disassembly for shader %d\n**\n\n", shader_index);
-	AsmDisassembleBuffer(self, shader->isa->ptr,
-			shader->isa->size, stdout);
+	DisassembleBuffer(cout, (char *)shader->isa->ptr,
+			shader->isa->size);
 	printf("\n\n\n");
 
 	/* Free */
 	opengl_si_program_binary_free(program_bin);
-#endif
 }
 
 

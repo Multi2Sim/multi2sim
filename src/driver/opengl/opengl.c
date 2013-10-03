@@ -945,6 +945,7 @@ static int opengl_abi_si_ndrange_create_impl(X86Context *ctx)
 	{
 
 	case OPENGL_SI_SHADER_VERTEX:
+	{
 		/* Some metadata from shader binary */
 		vs = (struct opengl_si_enc_dict_vertex_shader_t *)shader->bin->enc_dict;
 		ndrange->num_sgpr_used = vs->meta->u32NumSgprs;
@@ -958,9 +959,14 @@ static int opengl_abi_si_ndrange_create_impl(X86Context *ctx)
 		{
 			ndrange->userElements[i] = user_elements[i];
 		}
+		/* Setup NDRange stage */
+		SINDRangeSetupStage(ndrange, STAGE_VS);
 		break;
 
+	}
+
 	case OPENGL_SI_SHADER_PIXEL:
+	{
 		/* Some metadata from shader binary */
 		ps = (struct opengl_si_enc_dict_pixel_shader_t *)shader->bin->enc_dict;
 		ndrange->num_sgpr_used = ps->meta->u32NumSgprs;
@@ -972,9 +978,12 @@ static int opengl_abi_si_ndrange_create_impl(X86Context *ctx)
 		for (i = 0; i < user_element_count; i++)
 		{
 			ndrange->userElements[i] = user_elements[i];
-		}		
-		break;
-
+		}
+		/* Setup NDRange stage */
+		SINDRangeSetupStage(ndrange, STAGE_PS);
+		break;		
+	}
+	
 	default:
 		break;
 	}
@@ -1405,6 +1414,7 @@ static int opengl_abi_si_raster_impl(X86Context *ctx)
 	opengl_debug("\tprimitive mode %d\n", mode);
 
 	/* FIXME: currently triangle only */
+
 	for (pos_idx = 0; pos_idx < SI_POS_COUNT; ++pos_idx)
 	{
 		pos_lst = si_emu->sx->pos[pos_idx];
@@ -1429,9 +1439,6 @@ static int opengl_abi_si_raster_impl(X86Context *ctx)
 				}
 				/* Clean pixels */
 				opengl_sc_rast_triangle_done(pixel_list);
-
-				/* Create workitems ... */
-
 			}
 			opengl_pa_primitives_free(prmtv);
 		}
@@ -1446,7 +1453,7 @@ static int opengl_abi_si_raster_impl(X86Context *ctx)
 	}
 
 
-	/* Reset Shader Export buffers */
+	/* Reset Shader Export */
 	SISXReset(si_emu->sx);
 
 	/* Return */

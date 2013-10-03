@@ -29,16 +29,6 @@
 #define SI_PARAM_COUNT 32
 
 struct list_t;
-typedef enum 
-{
-	SISXCL = 0,	/* OpenCL is the default */
-	SISXVS,
-	SISXGS,
-	SISXHS,
-	SISXDS,
-	SISXPS,
-	SISXCS
-} SISXStage;
 
 typedef struct 
 {
@@ -55,9 +45,6 @@ CLASS_BEGIN(SISX, Object)
 	struct list_t *pos[SI_POS_COUNT];
 	struct list_t *param[SI_PARAM_COUNT];
 
-	/* Stage indicate which OpenGL stage in use */
-	SISXStage stage;
-
 	/* List contain metadata to initialize Pixel Shader */
 	struct list_t *ps_init_meta;
 
@@ -67,8 +54,6 @@ void SISXCreate(SISX *self, SIEmu *emu);
 void SISXDestroy(SISX *self);
 void SISXReset(SISX *self);
 
-void SISXStageSet(SISX *self, SISXStage stage);
-
 void SISXExportPosition(SISX *self, unsigned int target, unsigned int id, 
 	float x, float y, float z, float w);
 void SISXExportParam(SISX *self, unsigned int target, unsigned int id, 
@@ -76,3 +61,4 @@ void SISXExportParam(SISX *self, unsigned int target, unsigned int id,
 void SISXPSInitMetaAdd(SISX *self, float brctrc_i, float brctrc_j);
 
 #endif
+
