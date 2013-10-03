@@ -24,6 +24,7 @@
 #include <lib/cpp/Misc.h>
 
 #include "Asm.h"
+#include "Binary.h"
 #include "Inst.h"
 
 
@@ -315,11 +316,11 @@ extern "C" {
 #include <lib/util/list.h>
 #include <lib/util/misc.h>
 #include "opengl-bin-file.h"
-#include "bin-file.h"
 }
 
 void Asm::DisassembleBinary(std::string path)
 {
+#if 0
 	struct elf_file_t *elf_file;
 	struct elf_symbol_t *symbol;
 	struct elf_section_t *section;
@@ -369,6 +370,7 @@ void Asm::DisassembleBinary(std::string path)
 
 	/* Free external ELF */
 	elf_file_free(elf_file);
+#endif
 }
 
 

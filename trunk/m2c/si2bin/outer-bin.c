@@ -19,7 +19,7 @@
 
 
 #include <arch/southern-islands/asm/arg.h>
-#include <arch/southern-islands/asm/bin-file.h>
+#include <arch/southern-islands/asm/Binary.h>
 #include <lib/class/elf-writer.h>
 #include <lib/class/list.h>
 #include <lib/class/string.h>

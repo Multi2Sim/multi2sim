@@ -18,9 +18,10 @@
  */
 
 
-#include <arch/southern-islands/asm/bin-file.h>
+#include <arch/southern-islands/asm/Binary.h>
 #include <lib/class/elf-writer.h>
 #include <lib/class/array.h>
+#include <lib/cpp/Wrapper.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
@@ -70,7 +71,7 @@ void si2bin_inner_bin_note_dump(ELFWriterBuffer *buffer, FILE *fp)
 	int descsz;
 	int n;
 
-	char *note_type_str;
+	const char *note_type_str;
 
 	ELFWriterBuffer *payload;
 
@@ -88,7 +89,8 @@ void si2bin_inner_bin_note_dump(ELFWriterBuffer *buffer, FILE *fp)
 		descsz = *((int *)(buffer->ptr + offset));
 		offset += 4;
 		
-		note_type_str = str_map_value(&pt_note_type_map, *((int *)(buffer->ptr + offset)));
+		note_type_str = StringMapValueWrap(si_binary_note_map,
+				*((int *)(buffer->ptr + offset)));
 		fprintf(fp, "\n Type: %s", note_type_str);
 		offset += 4;
 
@@ -200,7 +202,7 @@ struct si2bin_inner_bin_t *si2bin_inner_bin_create(char *name)
 	bin->name = xstrdup(name);
 
 	/* Set up user element list and program resource */
-	bin->pgm_rsrc2 = si_binary_compute_pgm_rsrc2_create();
+	bin->pgm_rsrc2 = xcalloc(1, sizeof(struct SIBinaryComputePgmRsrc2));
 	bin->user_element_list = list_create();
 
 	/* Return */
@@ -228,12 +230,12 @@ void si2bin_inner_bin_free(struct si2bin_inner_bin_t *bin)
 	LIST_FOR_EACH(bin->user_element_list, i)
 	{
 		user_elem = list_get(bin->user_element_list, i);
-		si_binary_user_element_free(user_elem);
+		free(user_elem);
 	}
 	list_free(bin->user_element_list);
 
 	/* Free Program Resource */
-	si_binary_compute_pgm_rsrc2_free(bin->pgm_rsrc2);
+	free(bin->pgm_rsrc2);
 
 	/* Free si2bin_inner_bin */
 	free(bin);

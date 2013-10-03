@@ -25,7 +25,7 @@
 #include <string.h>
 
 #include <arch/southern-islands/asm/arg.h>
-#include <arch/southern-islands/asm/bin-file.h>
+#include <arch/southern-islands/asm/Binary.h>
 #include <lib/class/class.h>
 #include <lib/class/elf-writer.h>
 #include <lib/class/hash-table.h>
@@ -277,8 +277,8 @@ metadata_stmt
 			si2bin_yyerror_fmt("User Elements index is out of allowed range (0 to 15)");
 
 		/* Create userElement object */
-		user_elem = si_binary_user_element_create();
-		user_elem->dataClass = str_map_string_err(&si_bin_user_data_class, $6->text, &err);
+		user_elem = xcalloc(1, sizeof(struct SIBinaryUserElement));
+		user_elem->dataClass = StringMapStringErrWrap(si_binary_user_data_map, $6->text, &err);
 		if (err)
 			si2bin_yyerror_fmt("Unrecognized data class: %s", $6->text);
 

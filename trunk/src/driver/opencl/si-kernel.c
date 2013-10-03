@@ -870,11 +870,11 @@ void opencl_si_kernel_setup_ndrange_args(struct opencl_si_kernel_t *kernel,
 	/* Initial top of local memory is determined by the static local memory
 	 * specified in the kernel binary. Number of vector and scalar 
 	 * registers used by the kernel recorded as well. */
+	struct SIBinaryDictionaryEntry *enc_dict_entry_southern_islands =
+			si_binary_get_si_dict_entry(kernel->bin_file);
 	ndrange->local_mem_top = kernel->mem_size_local;
-	ndrange->num_sgpr_used = kernel->bin_file->
-			enc_dict_entry_southern_islands->num_sgpr_used;
-	ndrange->num_vgpr_used = kernel->bin_file->
-			enc_dict_entry_southern_islands->num_vgpr_used;
+	ndrange->num_sgpr_used = enc_dict_entry_southern_islands->num_sgpr_used;
+	ndrange->num_vgpr_used = enc_dict_entry_southern_islands->num_vgpr_used;
 
 	/* Kernel arguments */
 	index = 0;
@@ -1225,12 +1225,10 @@ void opencl_si_kernel_debug_ndrange_state(struct opencl_si_kernel_t *kernel,
         si_isa_debug("\n");
 
         /* SREG initialization */
-        unsigned int userElementCount =
-                kernel->bin_file->enc_dict_entry_southern_islands->
-                userElementCount;
-        struct SIBinaryUserElement* userElements =
-                kernel->bin_file->enc_dict_entry_southern_islands->
-                userElements;
+	struct SIBinaryDictionaryEntry *enc_dict_entry_southern_islands =
+			si_binary_get_si_dict_entry(kernel->bin_file);
+        unsigned int userElementCount = enc_dict_entry_southern_islands->userElementCount;
+	struct SIBinaryUserElement* userElements = enc_dict_entry_southern_islands->userElements;
         si_isa_debug("Scalar register initialization prior to execution:\n");
         si_isa_debug("\t-------------------------------------------\n");
         si_isa_debug("\t|  Registers  |   Initialization Value    |\n");

@@ -1086,29 +1086,25 @@ static int opencl_abi_si_ndrange_create_impl(X86Context *ctx)
 	opencl_debug("\tcreated ndrange %d\n", ndrange->id);
 
 	ndrange->local_mem_top = kernel->mem_size_local;
-	ndrange->num_sgpr_used = kernel->bin_file->
-		enc_dict_entry_southern_islands->num_sgpr_used;
-	ndrange->num_vgpr_used = kernel->bin_file->
-		enc_dict_entry_southern_islands->num_vgpr_used;
-	ndrange->wg_id_sgpr = kernel->bin_file->
-		enc_dict_entry_southern_islands->compute_pgm_rsrc2->user_sgpr;
+	struct SIBinaryDictionaryEntry *enc_dict_entry_southern_islands =
+			si_binary_get_si_dict_entry(kernel->bin_file);
+	ndrange->num_sgpr_used = enc_dict_entry_southern_islands->num_sgpr_used;
+	ndrange->num_vgpr_used = enc_dict_entry_southern_islands->num_vgpr_used;
+	ndrange->wg_id_sgpr = enc_dict_entry_southern_islands->compute_pgm_rsrc2->user_sgpr;
 	SINDRangeSetupSize(ndrange, global_size, local_size, work_dim);
 	opencl_debug("\tndrange address space index = %d\n", 
 		ndrange->address_space_index);
 
 	/* Copy user elements from kernel to ND-Range */
-	user_element_count = kernel->bin_file->
-		enc_dict_entry_southern_islands->userElementCount;
-	user_elements = kernel->bin_file->enc_dict_entry_southern_islands->
-		userElements;
+	user_element_count = enc_dict_entry_southern_islands->userElementCount;
+	user_elements = enc_dict_entry_southern_islands->userElements;
 	ndrange->userElementCount = user_element_count;
 	for (i = 0; i < user_element_count; i++)
 		ndrange->userElements[i] = user_elements[i];
 
 	/* Set up instruction memory */
 	/* Initialize wavefront instruction buffer and PC */
-	elf_buffer = &kernel->bin_file->enc_dict_entry_southern_islands->
-		sec_text_buffer;
+	elf_buffer = &enc_dict_entry_southern_islands->sec_text_buffer;
 	if (!elf_buffer->size)
 		fatal("%s: cannot load kernel code", __FUNCTION__);
 

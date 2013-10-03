@@ -23,7 +23,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <lib/util/elf-format.h>
-#include <src/arch/southern-islands/asm/bin-file.h>
+
+#include "Binary.h"
+
 
 /* Common */
 #define MAX_USER_ELEMENTS 16
