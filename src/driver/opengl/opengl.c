@@ -806,7 +806,8 @@ static int opengl_abi_si_shader_set_input_impl(X86Context *ctx)
 
 	struct opengl_si_shader_t *shdr;
 	struct list_t *input_list;
-	SIInput *input;
+	SIInput *input = NULL, *tmp;
+	int i;
 
 	unsigned int args[6];
 	unsigned int shader_id;
@@ -824,15 +825,22 @@ static int opengl_abi_si_shader_set_input_impl(X86Context *ctx)
 	data_type = args[3];
 	size = args[4];
 	index = args[5];
+
 	opengl_debug("\tshader_id = %d, device_ptr = 0x%x, num_elems = %d, type = %d, size = %d, index = %d\n",
 		shader_id, device_ptr, num_elems, data_type, size, index);
 
 	/* Shader has the indices of vertex attribute array in its encoding dictionary */
 	shdr = list_get(driver->opengl_si_shader_list, shader_id);
 	input_list = shdr->input_list;
-	input = list_get(input_list, index);
-	if (!input || input->usage_index != index)
-		panic("Vertex attribute array at index %d is not needed by the vertex shader\n", index);
+	LIST_FOR_EACH(input_list, i)
+	{
+		tmp = list_get(input_list, i);
+		if (tmp->usage_index == index)
+			input = tmp;
+	}
+
+	if (!input)
+		panic("Vertex attribute array at index %d is not needed\n", index);
 	else
 	{
 		input->set = 1;
