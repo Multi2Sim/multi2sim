@@ -228,12 +228,14 @@ struct si_fetch_shader_t *si_fetch_shader_create(struct opengl_si_shader_t *shdr
 	fs->isa_list = list_create();
 
 	/* FIXME: temporary solution */
+	unsigned int usage_index;
 	for (i = 0; i < input_count; ++i)
 	{
-		/* s_load_dword4 s[sgpr_buf_desc_start ~ +3], s[userElement[VertexTableStartSGPR] ~+1], offset */
+		/* s_load_dword4 s[sgpr_buf_desc_start ~ +3], s[userElement[VertexTableStartSGPR] ~+1], offset = 32 >> 2 * usage_index */
+		usage_index = enc_dict->meta->vsInSemantics[i].usageIdx;
 		fs_inst = si_fs_inst_create(SIInstFormatSMRD);
 		si_fs_inst_as_smrd(fs_inst);
-		si_fs_inst_set_smrd(fs_inst->data, 0x2, sgpr_buf_desc_start + 4 * i, 0x4, 0x1, 0x8 * i);
+		si_fs_inst_set_smrd(fs_inst->data, 0x2, sgpr_buf_desc_start + 4 * i, 0x4, 0x1, 0x8 * usage_index);
 		list_add(fs->isa_list, fs_inst);	
 	}
 
@@ -259,7 +261,6 @@ struct si_fetch_shader_t *si_fetch_shader_create(struct opengl_si_shader_t *shdr
 	for (i = 0; i < input_count; ++i)
 	{
 		input_vs_semantic_vgpr_start = enc_dict->meta->vsInSemantics[i].dataVgpr;
-		printf("semantic maping input to vgpr %d ~ +3\n",input_vs_semantic_vgpr_start );
 		input_format = 0xe; /* FIXME: should depends on the input, hardcoded to 32_32_32_32 for now */
 		fs_inst = si_fs_inst_create(SIInstFormatMTBUF);
 		si_fs_inst_as_mtbuf(fs_inst);
