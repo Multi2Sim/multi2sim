@@ -39,6 +39,7 @@ void SINDRangeCreate(SINDRange *self, SIEmu *emu)
 	/* Initialize */
 	self->emu = emu;
 	self->id = emu->ndrange_count++;
+	self->stage = STAGE_CL;
 	self->address_space_index = emu->address_space_index++;
 
 	self->arg_list = new(List);
@@ -171,6 +172,13 @@ void SINDRangeSetupFSMem(SINDRange *self, void *buf,
 	self->inst_buffer = buffer;
 	self->inst_buffer_size +=  size;
 }
+
+void SINDRangeSetupStage(SINDRange *self,
+	enum si_ndrange_stage_t stage)
+{
+	self->stage = stage;
+}
+
 
 void SINDRangeInsertBufferIntoUAVTable(SINDRange *self,
 	struct si_buffer_desc_t *buf_desc, unsigned int uav)

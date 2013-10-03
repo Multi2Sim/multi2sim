@@ -23,6 +23,7 @@
 #include <lib/util/list.h>
 #include <lib/util/misc.h>
 
+#include "opengl.h"
 #include "si-pa.h"
 
 
@@ -205,19 +206,19 @@ struct opengl_pa_primitive_t *opengl_pa_primitives_create(enum opengl_pa_primiti
 			pos1 = list_get(pos_lst, i + 1);
 			pos2 = list_get(pos_lst, i + 2);
 
-			printf("\toriginal data\n");
-			printf("\t%f %f %f %f\n", pos0[0], pos0[1], pos0[2], pos0[3]);
-			printf("\t%f %f %f %f\n", pos1[0], pos1[1], pos1[2], pos1[3]);
-			printf("\t%f %f %f %f\n", pos2[0], pos2[1], pos2[2], pos2[3]);
+			opengl_debug("\toriginal data\n");
+			opengl_debug("\t%f %f %f %f\n", pos0[0], pos0[1], pos0[2], pos0[3]);
+			opengl_debug("\t%f %f %f %f\n", pos1[0], pos1[1], pos1[2], pos1[3]);
+			opengl_debug("\t%f %f %f %f\n", pos2[0], pos2[1], pos2[2], pos2[3]);
 
 			/* Create vertices */
 			vtx0 = opengl_pa_vertex_create(pos0[0], pos0[1], pos0[2], pos0[3]);
 			vtx1 = opengl_pa_vertex_create(pos1[0], pos1[1], pos1[2], pos1[3]);
 			vtx2 = opengl_pa_vertex_create(pos2[0], pos2[1], pos2[2], pos2[3]);
 
-			printf("\t%f %f %f %f\n", vtx0->pos[0], vtx0->pos[1], vtx0->pos[2], vtx0->pos[3]);
-			printf("\t%f %f %f %f\n", vtx1->pos[0], vtx1->pos[1], vtx1->pos[2], vtx1->pos[3]);
-			printf("\t%f %f %f %f\n", vtx2->pos[0], vtx2->pos[1], vtx2->pos[2], vtx2->pos[3]);
+			opengl_debug("\t%f %f %f %f\n", vtx0->pos[0], vtx0->pos[1], vtx0->pos[2], vtx0->pos[3]);
+			opengl_debug("\t%f %f %f %f\n", vtx1->pos[0], vtx1->pos[1], vtx1->pos[2], vtx1->pos[3]);
+			opengl_debug("\t%f %f %f %f\n", vtx2->pos[0], vtx2->pos[1], vtx2->pos[2], vtx2->pos[3]);
 
 			/* Apply viewport */
 			opengl_pa_viewport_apply(vwpt, vtx0);
@@ -228,10 +229,10 @@ struct opengl_pa_primitive_t *opengl_pa_primitives_create(enum opengl_pa_primiti
 			triangle = opengl_pa_triangle_create();
 			opengl_pa_triangle_set(triangle, vtx0, vtx1, vtx2);
 
-			printf("\tafter viewport\n");
-			printf("\t%f %f %f %f\n", vtx0->pos[0], vtx0->pos[1], vtx0->pos[2], vtx0->pos[3]);
-			printf("\t%f %f %f %f\n", vtx1->pos[0], vtx1->pos[1], vtx1->pos[2], vtx1->pos[3]);
-			printf("\t%f %f %f %f\n", vtx2->pos[0], vtx2->pos[1], vtx2->pos[2], vtx2->pos[3]);
+			opengl_debug("\tafter viewport\n");
+			opengl_debug("\t%f %f %f %f\n", vtx0->pos[0], vtx0->pos[1], vtx0->pos[2], vtx0->pos[3]);
+			opengl_debug("\t%f %f %f %f\n", vtx1->pos[0], vtx1->pos[1], vtx1->pos[2], vtx1->pos[3]);
+			opengl_debug("\t%f %f %f %f\n", vtx2->pos[0], vtx2->pos[1], vtx2->pos[2], vtx2->pos[3]);
 
 			/* Add to primitive list */
 			list_add(prmtv->list, triangle);

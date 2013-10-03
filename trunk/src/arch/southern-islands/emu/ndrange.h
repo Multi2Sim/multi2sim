@@ -46,6 +46,18 @@ struct si_ndrange_table_entry_t
 	unsigned int size;
 };
 
+/* Stage is used to determine V/SGPRs initialization convention when creating wavefronts/workitems */
+enum si_ndrange_stage_t
+{
+	STAGE_CL = 0,	/* OpenCL is the default */
+	STAGE_VS,
+	STAGE_GS,
+	STAGE_HS,
+	STAGE_DS,
+	STAGE_PS,
+	STAGE_CS,
+	STAGE_INVALID
+};
 
 CLASS_BEGIN(SINDRange, Object)
 	
@@ -54,6 +66,9 @@ CLASS_BEGIN(SINDRange, Object)
 
 	/* ID */
 	int id;  /* Sequential ND-Range ID (given by si_emu->ndrange_count) */
+
+	/* Stage */
+	enum si_ndrange_stage_t stage;
 
 	/* Work-group lists */
 	struct list_t *waiting_work_groups;
@@ -144,6 +159,8 @@ void SINDRangeSetupFSMem(SINDRange *self, void *buf,
 	int size, unsigned int pc);
 void SINDRangeSetupInstMem(SINDRange *self, void *buf, 
 	int size, unsigned int pc);
+void SINDRangeSetupStage(SINDRange *self,
+	enum si_ndrange_stage_t stage);
 
 /* Access constant buffers */
 void SINDRangeConstantBufferWrite(SINDRange *self,
