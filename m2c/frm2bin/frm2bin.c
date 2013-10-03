@@ -289,6 +289,7 @@ void Frm2binBinaryGenerate(Frm2bin *self, Frm2binBinary *cubinary)
 
 	/* add the buffer to the buffer_array of the binary */
 	ArrayAdd((asELFWriter(cubinary))->buffer_array, asObject(tmpBuffer));
+	printf("tmpBuffer1111111->idx: %d\n", tmpBuffer->index);
 
 	/*
 	 * * .nv.info.<name> section
@@ -334,6 +335,7 @@ void Frm2binBinaryGenerate(Frm2bin *self, Frm2binBinary *cubinary)
 
 	/* add the buffer to the buffer_array of the binary */
 	ArrayAdd((asELFWriter(cubinary))->buffer_array, asObject(tmpBuffer));
+	printf("tmpBuffer22222222222222->idx: %d\n", tmpBuffer->index);
 
 	/*
 	 * * .nv.constant0.<name> section
@@ -363,6 +365,7 @@ void Frm2binBinaryGenerate(Frm2bin *self, Frm2binBinary *cubinary)
 
 	/* add the buffer to the buffer_array of the binary */
 	ArrayAdd((asELFWriter(cubinary))->buffer_array, asObject(tmpBuffer));
+	printf("tmpBuffer333333->idx: %d\n", tmpBuffer->index);
 
 
 	/*
@@ -390,20 +393,27 @@ void Frm2binBinaryGenerate(Frm2bin *self, Frm2binBinary *cubinary)
 
 	/* add the buffer to the buffer_array of the binary */
 	ArrayAdd((asELFWriter(cubinary))->buffer_array, asObject(tmpBuffer));
+	printf("tmpBuffer4444444->idx: %d\n", tmpBuffer->index);
 
 
 	/* generate program segments, there are 3 segments for vectorAdd.s example */
 
 	/*
-	 * * segments 00, no sections associated
+	 * * segments 00, no sections associated, segment name is empty
 	 */
+	/* assign empty buffer to this segment now,
+	 * FIXME: may need to change later */
 	tmpBuffer = new(ELFWriterBuffer);
-	tmpSegment = new(ELFWriterSegment, "00", NULL, NULL);
+	tmpSegment = new(ELFWriterSegment, "", tmpBuffer, tmpBuffer);
+	/* add the buffer to the buffer_array of the binary */
+	ArrayAdd((asELFWriter(cubinary))->buffer_array, asObject(tmpBuffer));
+	printf("tmpBuffer5555555->idx: %d\n", tmpBuffer->index);
+
 
 	/* set segment header */
 	tmpSegment->header.p_vaddr = 0x0;
 	tmpSegment->header.p_paddr = 0x0;
-	tmpSegment->header.p_flags = PF_X | PF_R; //exec + read ??
+	tmpSegment->header.p_flags = PF_W | PF_R; //write + read ??
 	tmpSegment->header.p_align = 0x4;
 
 	/* add this segment to the binary */
@@ -411,12 +421,12 @@ void Frm2binBinaryGenerate(Frm2bin *self, Frm2binBinary *cubinary)
 
 
 	/*
-	 * * segments 00, associated section: .nv.constant0.<name>
-	 * * and .text.<name>
+	 * * segments 01, associated section: .nv.constant0.<name>
+	 * * and .text.<name>, segment name is empty
 	 */
 	firstBuf = tmpConstantSection->first_buffer;
 	lastBuf = tmpTextSection->last_buffer;
-	tmpSegment = new(ELFWriterSegment, "01", firstBuf, lastBuf);
+	tmpSegment = new(ELFWriterSegment, "", firstBuf, lastBuf);
 
 	/* set segment header */
 	tmpSegment->header.p_vaddr = 0x0;
@@ -429,14 +439,21 @@ void Frm2binBinaryGenerate(Frm2bin *self, Frm2binBinary *cubinary)
 
 
 	/*
-	 * * segments 02, no sections associated
+	 * * segments 02, no sections associated, segment name is empty
+	 * * size should be 0x60
 	 */
-	tmpSegment = new(ELFWriterSegment, "00", NULL, NULL);
+	/* assign empty buffer to this segment now,
+	 * FIXME: may need to change later */
+	tmpBuffer = new(ELFWriterBuffer);
+	tmpSegment = new(ELFWriterSegment, "", tmpBuffer, tmpBuffer);
+	/* add the buffer to the buffer_array of the binary */
+	ArrayAdd((asELFWriter(cubinary))->buffer_array, asObject(tmpBuffer));
+	printf("tmpBuffer666666->idx: %d\n", tmpBuffer->index);
 
 	/* set segment header */
 	tmpSegment->header.p_vaddr = 0x0;
 	tmpSegment->header.p_paddr = 0x0;
-	tmpSegment->header.p_flags = PF_W | PF_R;
+	tmpSegment->header.p_flags = PF_X | PF_R;
 	tmpSegment->header.p_align = 0x4;
 
 	/* add this segment to the binary */
