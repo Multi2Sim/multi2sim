@@ -30,6 +30,7 @@ class Asm;
 
 
 /* Microcode Formats */
+extern Misc::StringMap inst_format_map;
 enum InstFormat
 {
 	InstFormatInvalid = 0,
@@ -110,6 +111,7 @@ enum InstCategory
 };
 
 
+extern Misc::StringMap inst_special_reg_map;
 enum InstSpecialReg
 {
 	InstSpecialRegInvalid = 0,
@@ -120,6 +122,7 @@ enum InstSpecialReg
 };
 
 
+extern Misc::StringMap inst_buf_data_format_map;
 enum InstBufDataFormat
 {
 	InstBufDataFormatInvalid = 0,
@@ -141,6 +144,7 @@ enum InstBufDataFormat
 };
 
 
+extern Misc::StringMap inst_buf_num_format_map;
 enum InstBufNumFormat
 {
 	InstBufNumFormatUnorm = 0,
@@ -524,13 +528,6 @@ public:
 	const char *GetName() { return info ? info->name : "<unknown>"; }
 	InstBytes *GetBytes() { return &bytes; }
 	int GetSize() { return size; }
-	
-	/* String conversions */
-	static const char *SpecialRegToString(InstSpecialReg value);
-	static const char *BufDataFormatToString(InstBufDataFormat value);
-	static const char *BufNumFormatToString(InstBufNumFormat value);
-	static const char *FormatToString(InstFormat value);
-	static InstSpecialReg StringToSpecialReg(const char *text);
 };
 
 
@@ -1007,13 +1004,12 @@ SIInstFormat SIInstWrapGetFormat(struct SIInstWrap *self);
 int SIInstWrapGetSize(struct SIInstWrap *self);
 int SIInstWrapGetOp(struct SIInstWrap *self);
 
-const char *SIInstWrapSpecialRegToString(SIInstSpecialReg value);
-const char *SIInstWrapBufDataFormatToString(SIInstBufDataFormat value);
-const char *SIInstWrapBufNumFormatToString(SIInstBufNumFormat value);
-const char *SIInstWrapFormatToString(SIInstFormat value);
-SIInstSpecialReg SIInstWrapStringToSpecialReg(const char *text);
-SIInstBufDataFormat SIInstWrapStringToBufDataFormat(const char *text, int *err_ptr);
-SIInstBufNumFormat SIInstWrapStringToBufNumFormat(const char *text, int *err_ptr);
+struct StringMapWrap;
+extern struct StringMapWrap *si_inst_special_reg_map;
+extern struct StringMapWrap *si_inst_buf_data_format_map;
+extern struct StringMapWrap *si_inst_buf_num_format_map;
+extern struct StringMapWrap *si_inst_format_map;
+
 
 #ifdef __cplusplus
 }   /* extern "C" */

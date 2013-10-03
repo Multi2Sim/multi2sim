@@ -20,6 +20,7 @@
 #include <assert.h>
 #include <stdarg.h>
 
+#include <lib/cpp/Wrapper.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/string.h>
@@ -421,7 +422,8 @@ void Si2binArgDump(Si2binArg *arg, FILE *f)
 
 	case Si2binArgSpecialRegister:
 
-		fprintf(f, "<special_reg> %s", SIInstWrapSpecialRegToString(
+		fprintf(f, "<special_reg> %s", StringMapValueWrap(
+				si_inst_special_reg_map,
 				arg->value.special_register.reg));
 		break;
 	
@@ -442,9 +444,11 @@ void Si2binArgDump(Si2binArg *arg, FILE *f)
 		Si2binArgDump(arg->value.maddr.qual, f);
 		fprintf(f, "}");
 
-		fprintf(f, " dfmt=%s", SIInstWrapBufDataFormatToString(
+		fprintf(f, " dfmt=%s", StringMapValueWrap(
+				si_inst_buf_data_format_map,
 				arg->value.maddr.data_format));
-		fprintf(f, " nfmt=%s", SIInstWrapBufNumFormatToString(
+		fprintf(f, " nfmt=%s", StringMapValueWrap(
+				si_inst_buf_num_format_map,
 				arg->value.maddr.num_format));
 
 		break;
@@ -582,7 +586,7 @@ void Si2binArgDumpAssembly(Si2binArg *arg, FILE *f)
 	}
 
 	case Si2binArgSpecialRegister:
-		fprintf(f, "%s", SIInstWrapSpecialRegToString(
+		fprintf(f, "%s", StringMapValueWrap(si_inst_special_reg_map,
 			arg->value.special_register.reg));
 		break;
 
@@ -596,8 +600,8 @@ void Si2binArgDumpAssembly(Si2binArg *arg, FILE *f)
 		fprintf(f, " ");
 		Si2binArgDumpAssembly(arg->value.maddr.qual, f);
 		fprintf(f, " format:[%s,%s]", 
-			SIInstWrapBufDataFormatToString(arg->value.maddr.data_format),
-			SIInstWrapBufNumFormatToString(arg->value.maddr.num_format));
+			StringMapValueWrap(si_inst_buf_data_format_map, arg->value.maddr.data_format),
+			StringMapValueWrap(si_inst_buf_num_format_map, arg->value.maddr.num_format));
 		
 		break;
 	
