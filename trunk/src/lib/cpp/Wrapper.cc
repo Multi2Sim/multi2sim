@@ -100,3 +100,14 @@ void StringMapGetValuesWrap(StringMapWrap *map, char *text, int size)
 	snprintf(text, size, "%s", s.c_str());
 }
 
+
+
+/*
+ * Debug
+ */
+
+void DebugSetPathWrap(struct DebugWrap *self, const char *path)
+{
+	Debug *debug = (Debug *) self;
+	debug->SetPath(path);
+}

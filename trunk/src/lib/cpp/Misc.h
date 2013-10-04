@@ -163,8 +163,48 @@ void panic(const char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
 
 
 /*
- * Miscellaneous
+ * Debug
  */
+
+class Debug
+{
+	std::string path;
+	std::ostream *os;
+
+	void Close();
+public:
+	Debug();
+	~Debug();
+
+	void SetPath(const std::string& path);
+	const std::string& GetPath() { return path; }
+
+	Debug& operator<<(std::string s) { if (os) *os << s; return *this; }
+	Debug& operator<<(char val) { if (os) *os << val; return *this; }
+	Debug& operator<<(unsigned char val) { if (os) *os << val; return *this; }
+	Debug& operator<<(short val) { if (os) *os << val; return *this; }
+	Debug& operator<<(unsigned short val) { if (os) *os << val; return *this; }
+	Debug& operator<<(int val) { if (os) *os << val; return *this; }
+	Debug& operator<<(unsigned int val) { if (os) *os << val; return *this; }
+	Debug& operator<<(long val) { if (os) *os << val; return *this; }
+	Debug& operator<<(unsigned long val) { if (os) *os << val; return *this; }
+	Debug& operator<<(void *val) { if (os) *os << val; return *this; }
+	Debug& operator<<(float val) { if (os) *os << val; return *this; }
+	Debug& operator<<(double val) { if (os) *os << val; return *this; }
+	Debug& operator<<(long double val) { if (os) *os << val; return *this; }
+	Debug& operator<<(std::streambuf* sb) { if (os) *os << sb; return *this; }
+	Debug& operator<<(std::ostream& (*pf)(std::ostream&)) { if (os) *os << pf; return *this; }
+	Debug& operator<<(std::ios& (*pf)(std::ios&)) { if (os) *os << pf; return *this; }
+	Debug& operator<<(std::ios_base& (*pf)(std::ios_base&)) { if (os) *os << pf; return *this; }
+};
+
+
+
+
+/*
+ * Miscelaneous
+ */
+
 
 inline bool InRange(int value, int min, int max)
 {
@@ -176,4 +216,3 @@ inline bool InRange(int value, int min, int max)
 } /* namespace Misc */
 
 #endif
-

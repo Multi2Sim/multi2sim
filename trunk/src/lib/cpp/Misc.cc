@@ -24,6 +24,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <fstream>
 #include <sstream>
 
 #include "Misc.h"
@@ -758,6 +759,59 @@ void warning(const char *fmt, ...)
 	vfprintf(stderr, fmt, va);
 	fprintf(stderr, "\n");
 }
+
+
+
+
+/*
+ * Debug
+ */
+
+Debug::Debug()
+{
+	os = NULL;
+}
+
+Debug::~Debug()
+{
+	Close();
+}
+
+
+void Debug::Close()
+{
+	if (os && os != &std::cout && os != &std::cerr)
+		delete os;
+	os = NULL;
+}
+
+
+void Debug::SetPath(const std::string& path)
+{
+	/* Release previous output stream */
+	Close();
+	this->path = path;
+
+	/* Empty file */
+	if (path == "")
+		return;
+
+	/* File is standard output */
+	if (path == "stdout")
+		os = &std::cout;
+	else if (path == "stderr")
+		os = &std::cerr;
+	else
+		os = new std::ofstream(path.c_str());
+
+	/* Create new output stream */
+	if (!*os)
+	{
+		std::cerr << "fatal: cannot open " << path <<'\n';
+		exit(1);
+	}
+}
+
 
 
 }  /* namespace Misc */

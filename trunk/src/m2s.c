@@ -90,6 +90,7 @@
 #include <lib/class/elf-reader.h>
 #include <lib/class/list.h>
 #include <lib/class/string.h>
+#include <lib/cpp/Wrapper.h>
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
 #include <lib/mhandle/mhandle.h>
@@ -137,6 +138,7 @@ static char *evg_stack_debug_file_name = "";
 static enum arch_sim_kind_t evg_sim_kind = arch_sim_kind_functional;
 
 static char *si_disasm_file_name = "";
+static char *si_binary_debug_file_name = "";
 static char *si_isa_debug_file_name = "";
 static char *si_opengl_disasm_file_name = "";
 static int si_opengl_disasm_shader_index = 1;
@@ -1093,6 +1095,14 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		{
 			m2s_need_argument(argc, argv, argi);
 			si_gpu_calc_file_name = argv[++argi];
+			continue;
+		}
+
+		/* Southern Islands binary debug file */
+		if (!strcmp(argv[argi], "--si-debug-binary"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			si_binary_debug_file_name = argv[++argi];
 			continue;
 		}
 
@@ -2224,6 +2234,7 @@ int main(int argc, char **argv)
 	mips_isa_inst_debug_category = debug_new_category(mips_isa_debug_file_name);
 	mips_sys_debug_category = debug_new_category(mips_sys_debug_file_name);
 	mips_isa_call_debug_category = debug_new_category(mips_call_debug_file_name);
+	SIBinarySetDebugFile(si_binary_debug_file_name);
 
 	/* Initialization of runtimes */
 	runtime_init();
