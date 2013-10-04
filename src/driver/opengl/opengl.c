@@ -1460,10 +1460,10 @@ static int opengl_abi_si_raster_impl(X86Context *ctx)
 		}
 	}
 
-
 	/* Reset Shader Export */
 	SISXReset(si_emu->sx);
 
 	/* Return */
 	return 0;
 }
+
