@@ -45,7 +45,7 @@ struct str_map_t si2bin_token_map =
 		{ "\%offset", Si2binTokenOffset },
 		{ "\%sdst", Si2binTokenSdst },
 		{ "\%series_sbase", Si2binTokenSeriesSbase },
-		{"\%series_sdst", Si2binTokenSeriesSdst },
+		{ "\%series_sdst", Si2binTokenSeriesSdst },
 		{ "\%series_srsrc", Si2binTokenSeriesSrsrc },
 		{ "\%simm16", Si2binTokenSimm16 },
 		{ "\%smrd_sdst", Si2binTokenSmrdSdst },
