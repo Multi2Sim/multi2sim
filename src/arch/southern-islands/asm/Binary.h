@@ -74,7 +74,7 @@ struct BinaryNoteProgInfoEntry
 
 
 /* Encoding dictionary entry header (as encoded in ELF file) */
-struct BinaryDictionaryHeader
+struct BinaryDictHeader
 {
 	Elf32_Word d_machine;
 	Elf32_Word d_type;
@@ -85,7 +85,7 @@ struct BinaryDictionaryHeader
 
 
 /* Constats embedded in the '.data' section */
-struct BinaryDictionaryConsts
+struct BinaryDictConsts
 {
 	float float_consts[256][4];
 	unsigned int int_consts[32][4];
@@ -158,10 +158,10 @@ struct BinaryComputePgmRsrc2
 };
 
 /* Encoding dictionary entry */
-struct BinaryDictionaryEntry
+struct BinaryDictEntry
 {
 	/* Header (pointer to ELF buffer contents) */
-	BinaryDictionaryHeader *header;
+	BinaryDictHeader *header;
 
 	/* Buffers containing PT_LOAD and PT_NOTE segments */
 	struct elf_buffer_t pt_load_buffer;
@@ -174,7 +174,7 @@ struct BinaryDictionaryEntry
 	struct elf_buffer_t sec_strtab_buffer;
 
 	/* Constants extract from '.data' section */
-	BinaryDictionaryConsts *consts;
+	BinaryDictConsts *consts;
 
 	/* Info read from pt_notes */
 	int num_vgpr_used;
@@ -204,13 +204,13 @@ class Binary
 public:
 	struct elf_file_t *elf_file;
 	struct list_t *enc_dict;
-	BinaryDictionaryEntry *enc_dict_entry_southern_islands;
+	BinaryDictEntry *si_dict_entry;
 
 	Binary(void *ptr, int size, std::string name);
 	~Binary();
 
-	void ReadNoteHeader(BinaryDictionaryEntry *enc_dict_entry);
-	void ReadNotes(BinaryDictionaryEntry *enc_dict_entry);
+	void ReadNoteHeader(BinaryDictEntry *dict_entry);
+	void ReadNotes(BinaryDictEntry *dict_entry);
 	void ReadDictionary();
 	void ReadSegments();
 	void ReadSections();
@@ -354,7 +354,7 @@ struct SIBinaryComputePgmRsrc2
 
 
 /* Encoding dictionary entry */
-struct SIBinaryDictionaryEntry
+struct SIBinaryDictEntry
 {
 	/* Header (pointer to ELF buffer contents) */
 	struct SIBinaryDictionaryHeader *header;
@@ -392,10 +392,10 @@ extern struct StringMapWrap *si_binary_prog_info_map;
 /* Binary file */
 struct SIBinary;
 
-struct SIBinary *si_binary_create(void *ptr, int size, char *name);
-void si_binary_free(struct SIBinary *bin);
+struct SIBinary *SIBinaryCreate(void *ptr, int size, char *name);
+void SIBinaryFree(struct SIBinary *bin);
 
-struct SIBinaryDictionaryEntry *si_binary_get_si_dict_entry(struct SIBinary *bin);
+struct SIBinaryDictEntry *SIBinaryGetSIDictEntry(struct SIBinary *bin);
 
 
 #ifdef __cplusplus
