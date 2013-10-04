@@ -780,7 +780,6 @@ void Binary::ReadDictionary()
 	/*elf_debug("  -> %d entries\n\n", enc_dict_entry_count);*/
 
 	/* Read encoding dictionary entries */
-	enc_dict = list_create();
 	elf_buffer_seek(buffer, program_header->header->p_offset);
 	for (i = 0; i < num_dict_entries; i++)
 	{
@@ -788,7 +787,7 @@ void Binary::ReadDictionary()
 		dict_entry = new BinaryDictEntry();
 		dict_entry->header = (BinaryDictHeader *) elf_buffer_tell(buffer);
 		elf_buffer_read(buffer, NULL, sizeof(BinaryDictHeader));
-		list_add(enc_dict, dict_entry);
+		dict.push_back(dict_entry);
 
 		/* Store encoding dictionary entry for Southern Islands.
 		 * Apparently the valid code changes by driver version */
@@ -867,17 +866,17 @@ void Binary::ReadSegments()
 	BinaryDictEntry *dict_entry;
 	struct elf_program_header_t *program_header;
 
-	int i, j;
+	int i;
 
 	/*elf_debug("Reading PT_NOTE and PT_LOAD segments:\n");*/
-	for (i = 0; i < list_count(enc_dict); i++)
+	for (auto it = dict.begin(); it != dict.end(); ++it)
 	{
 		/* Get encoding dictionary entry */
-		dict_entry = (BinaryDictEntry *) list_get(enc_dict, i);
-		for (j = 0; j < list_count(elf_file->program_header_list); j++)
+		dict_entry = *it;
+		for (i = 0; i < list_count(elf_file->program_header_list); i++)
 		{
 			/* Get program header. If not in encoding dictionary segment, skip. */
-			program_header = (struct elf_program_header_t *) list_get(elf_file->program_header_list, j);
+			program_header = (struct elf_program_header_t *) list_get(elf_file->program_header_list, i);
 			if (program_header->header->p_offset < dict_entry->header->d_offset ||
 				program_header->header->p_offset >= dict_entry->header->d_offset +
 				dict_entry->header->d_size)
@@ -927,21 +926,21 @@ void Binary::ReadSections()
 	BinaryDictEntry *dict_entry;
 	struct elf_section_t *section;
 
-	int i, j;
+	int i;
 
 	unsigned int pt_load_offset;
 	unsigned int pt_load_size;
 
-	for (i = 0; i < list_count(enc_dict); i++)
+	for (auto it = dict.begin(); it != dict.end(); ++it)
 	{
 		/* Get encoding dictionary entry */
-		dict_entry = (BinaryDictEntry *) list_get(enc_dict, i);
+		dict_entry = *it;
 		pt_load_offset = (char *) dict_entry->pt_load_buffer.ptr - (char *) elf_file->buffer.ptr;
 		pt_load_size = dict_entry->pt_load_buffer.size;
-		for (j = 0; j < list_count(elf_file->section_list); j++)
+		for (i = 0; i < list_count(elf_file->section_list); i++)
 		{
 			/* Get section. If not in PT_LOAD segment, skip. */
-			section = (struct elf_section_t *) list_get(elf_file->section_list, j);
+			section = (struct elf_section_t *) list_get(elf_file->section_list, i);
 			if (section->header->sh_offset < pt_load_offset ||
 				section->header->sh_offset >= pt_load_offset + pt_load_size)
 				continue;
@@ -1012,6 +1011,7 @@ Binary::Binary(void *ptr, int size, std::string name)
 {
 	/* Initialize */
 	this->name = name;
+	this->si_dict_entry = NULL;
 
 	/* Read and parse ELF file */
 	char c_name[100];
@@ -1046,13 +1046,8 @@ Binary::Binary(void *ptr, int size, std::string name)
 Binary::~Binary()
 {
 	/* Free encoding dictionary */
-	while (list_count(enc_dict))
-	{
-		BinaryDictEntry *entry = (BinaryDictEntry *)
-				list_remove_at(enc_dict, 0);
-		delete entry;
-	}
-	list_free(enc_dict);
+	for (auto it = dict.begin(); it != dict.end(); ++it)
+		delete *it;
 
 	/* Free rest */
 	elf_file_free(elf_file);
@@ -1086,6 +1081,6 @@ void SIBinaryFree(struct SIBinary *self)
 struct SIBinaryDictEntry *SIBinaryGetSIDictEntry(struct SIBinary *self)
 {
 	Binary *bin = (Binary *) self;
-	return (SIBinaryDictEntry *) bin->si_dict_entry;
+	return (SIBinaryDictEntry *) bin->GetSIDictEntry();
 }
 
