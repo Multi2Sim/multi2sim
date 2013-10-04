@@ -317,60 +317,51 @@ extern "C" {
 #include <lib/util/misc.h>
 #include "opengl-bin-file.h"
 }
+///////////////
 
 void Asm::DisassembleBinary(std::string path)
 {
-#if 0
-	struct elf_file_t *elf_file;
-	struct elf_symbol_t *symbol;
-	struct elf_section_t *section;
-	struct SIBinary *amd_bin;
-
-	char kernel_name[200];
+	string kernel_name;
 
 	char *buffer;
 
 	int size;
-	int i;
+
+	/* Load ELF file */
+	ELFReader::File file(path);
 
 	/* Decode external ELF */
-	elf_file = elf_file_create_from_path(const_cast<char *>(path.c_str()));
-	for (i = 0; i < list_count(elf_file->symbol_table); i++)
+	for (int i = 0; i < file.GetNumSymbols(); i++)
 	{
 		/* Get symbol and section */
-		symbol = (struct elf_symbol_t *) list_get(elf_file->symbol_table, i);
-		section = (struct elf_section_t *) list_get(elf_file->section_list, symbol->section);
+		ELFReader::Symbol *symbol = file.GetSymbol(i);
+		ELFReader::Section *section = symbol->GetSection();
 		if (!section)
 			continue;
 
 		/* If symbol is '__OpenCL_XXX_kernel', it points 
 		 * to internal ELF */
-		if (str_prefix(symbol->name, (char *) "__OpenCL_") && 
-			str_suffix(symbol->name, (char *) "_kernel"))
+		std::string symbol_name = symbol->GetName();
+		if (StringPrefix(symbol_name, "__OpenCL_") &&
+				StringSuffix(symbol_name, "_kernel"))
 		{
-			/* Decode internal ELF */
-			str_substr(kernel_name, sizeof(kernel_name), 
-				symbol->name, 9, strlen(symbol->name) - 16);
-			amd_bin = si_binary_create(
-				(char *) section->buffer.ptr + symbol->value, 
-				symbol->size, kernel_name);
-
 			/* Get kernel name */
-			printf("**\n** Disassembly for '__kernel %s'\n**\n\n",
-					kernel_name);
-			buffer = (char *) amd_bin->enc_dict_entry_southern_islands->sec_text_buffer.ptr;
-			size = amd_bin->enc_dict_entry_southern_islands->sec_text_buffer.size;
-			DisassembleBuffer(cout, buffer, size);
-			printf("\n\n\n");
+			std::string kernel_name = symbol_name.substr(9,
+					symbol_name.length() - 16);
+			cout << "**\n** Disassembly for '__kernel " <<
+					kernel_name << "'\n**\n\n";
 
-			/* Free internal ELF */
-			si_binary_free(amd_bin);
+			/* Create internal ELF */
+			Binary binary(section->GetBuffer() + symbol->GetValue(),
+				symbol->GetSize(), kernel_name);
+
+			/* Disassemble */
+			buffer = (char *) binary.enc_dict_entry_southern_islands->sec_text_buffer.ptr;
+			size = binary.enc_dict_entry_southern_islands->sec_text_buffer.size;
+			DisassembleBuffer(cout, buffer, size);
+			cout << "\n\n\n";
 		}
 	}
-
-	/* Free external ELF */
-	elf_file_free(elf_file);
-#endif
 }
 
 
