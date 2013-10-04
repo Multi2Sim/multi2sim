@@ -30,6 +30,13 @@ using namespace SI;
 using namespace std;
 
 
+namespace SI
+{
+
+/* Debugger */
+Debug Binary::debug;
+
+
 #define SI_BIN_FILE_NOT_SUPPORTED(__var) \
 	fatal("%s: value 0x%x not supported for parameter '" #__var "'", __FUNCTION__, (__var))
 #define SI_BIN_FILE_NOT_SUPPORTED_NEQ(__var, __val) \
@@ -46,7 +53,7 @@ struct BinaryNoteHeader
 	char name[8];  /* Note header string. Must be "ATI CAL" */
 };
 
-StringMap SI::binary_user_data_map =
+StringMap binary_user_data_map =
 {
 	{ "IMM_RESOURCE",                      SIBinaryUserDataResource },
 	{ "IMM_SAMPLER",                       SIBinaryUserDataSampler},
@@ -84,7 +91,7 @@ StringMap SI::binary_user_data_map =
 };
 
 
-StringMap SI::binary_machine_map =
+StringMap binary_machine_map =
 {
 	{ "R600",	0 },
 	{ "RV610",	1 },
@@ -110,7 +117,7 @@ StringMap SI::binary_machine_map =
 };
 
 
-StringMap SI::binary_note_map = {
+StringMap binary_note_map = {
 	{ "ELF_NOTE_ATI_PROGINFO", 1 },
 	{ "ELF_NOTE_ATI_INPUTS", 2 },
 	{ "ELF_NOTE_ATI_OUTPUTS", 3 },
@@ -130,7 +137,7 @@ StringMap SI::binary_note_map = {
 	{ "ELF_NOTE_ATI_UAV_OP_MASK", 17 }
 };
 
-StringMap SI::binary_prog_info_map = {
+StringMap binary_prog_info_map = {
 	{ "mmSQ_DYN_GPR_CNTL_PS_FLUSH_REQ",          0x00002363 },
 	{ "mmSQ_GPR_RESOURCE_MGMT_1",                0x00002301 },
 	{ "mmSQ_GPR_RESOURCE_MGMT_3__EG",            0x00002303 },
@@ -442,8 +449,9 @@ void Binary::ReadNoteHeader(BinaryDictEntry *dict_entry)
 
 	/* Debug */
 	note_type_str = StringMapValue(binary_note_map, header->type);
-	/* elf_debug("  note: type=%d (%s), descsz=%d\n",
-		header->type, note_type_str, header->descsz); */
+	debug << "  note: type = " << header->type << " ("
+			<< note_type_str << "), descsz = "
+			<< header->descsz << '\n';
 		
 	/* Analyze note */
 	switch (header->type)
@@ -458,17 +466,19 @@ void Binary::ReadNoteHeader(BinaryDictEntry *dict_entry)
 		/* Get number of entries */
 		assert(header->descsz % sizeof(BinaryNoteProgInfoEntry) == 0);
 		prog_info_count = header->descsz / sizeof(BinaryNoteProgInfoEntry);
-		/* elf_debug("\tnote including device configuration unique to the program (%d entries)\n",
-			prog_info_count);*/
+		debug << "\tnote with device configuration unique to the"
+				<< " program (" << prog_info_count << " entries)\n";
 
 		/* Decode entries */
 		for (i = 0; i < prog_info_count; i++)
 		{
 			prog_info_entry = (BinaryNoteProgInfoEntry *)
 					(desc + i * sizeof(BinaryNoteProgInfoEntry));
-			/* elf_debug("\tprog_info_entry: addr=0x%x (%s), value=%u\n",
-				prog_info_entry->address, str_map_value(&prog_info_entry_map,
-				prog_info_entry->address), prog_info_entry->value); */
+			debug << "\tprog_info_entry: addr = 0x" << hex <<
+					prog_info_entry->address << dec << " (" <<
+					StringMapValue(binary_prog_info_map,
+							prog_info_entry->address)
+					<< "), value = " << prog_info_entry->value << '\n';
 
 			/* Analyze entry */
 			switch (prog_info_entry->address)
@@ -496,9 +506,12 @@ void Binary::ReadNoteHeader(BinaryDictEntry *dict_entry)
 				{
 					prog_info_entry = (BinaryNoteProgInfoEntry *)
 							(desc + i * sizeof(BinaryNoteProgInfoEntry));
-					/*elf_debug("\tprog_info_entry: addr=0x%x (%s), value=%u\n",
-							prog_info_entry->address, str_map_value(&prog_info_entry_map,
-							prog_info_entry->address), prog_info_entry->value);*/
+
+					debug << "\tprog_info_entry: addr = 0x" << hex <<
+							prog_info_entry->address << dec << " ("
+							<< StringMapValue(binary_prog_info_map,
+									prog_info_entry->address)
+							<< "), value = " << prog_info_entry->value << '\n';
 					switch(j % 4)
 					{
 					case 0:
@@ -576,8 +589,8 @@ void Binary::ReadNoteHeader(BinaryDictEntry *dict_entry)
 		consts = dict_entry->consts;
 		assert(header->descsz % sizeof(BinaryNoteDataSegmentDesc) == 0);
 		data_segment_desc_count = header->descsz / sizeof(BinaryNoteDataSegmentDesc);
-		/* elf_debug("\tnote including data for constant buffers (%d entries)\n",
-				data_segment_desc_count); */
+		debug << "\tnote with data for constant buffers (" << data_segment_desc_count
+				<< " entries)\n";
 
 		/* Decode entries */
 		for (j = 0; j < data_segment_desc_count; j++)
@@ -599,8 +612,10 @@ void Binary::ReadNoteHeader(BinaryDictEntry *dict_entry)
 			else
 				snprintf(const_value, sizeof(const_value), "%d",
 					consts->bool_consts[data_segment_desc->offset]);
-			/*elf_debug("\tdata_segment_desc[%d]: offset=0x%x, size=%d, value=%s\n",
-				j, data_segment_desc->offset, data_segment_desc->size, const_value);*/
+			debug << "\tdata_segment_desc[" << j << "]: offset = 0x"
+					<< hex << data_segment_desc->offset << dec
+					<< ", size = " << data_segment_desc->size
+					<< ", value = " << const_value << '\n';
 		}
 		break;
 	}
@@ -608,50 +623,45 @@ void Binary::ReadNoteHeader(BinaryDictEntry *dict_entry)
 	
 	case 8:  /* ELF_NOTE_ATI_EARLYEXIT */
 	{
-		//Elf32_Word early_exit;
+		Elf32_Word early_exit;
 
 		/* Get 'early_exit' value */
-		//early_exit = header->descsz ? * (uint32_t *) desc : 0;
-		/*elf_debug("\tearly_exit = %s\n", early_exit ? "TRUE" : "FALSE");*/
+		early_exit = header->descsz ? * (uint32_t *) desc : 0;
+		debug << "\tearly_exit = " << (early_exit ? "TRUE" : "FALSE") << '\n';
 		break;
 	}
 
 	
 	case 9:  /* ELF_NOTE_ATI_GLOBAL_BUFFERS */
 	{
-		/*Elf32_Word global_buffers;
+		Elf32_Word global_buffers;
 		global_buffers = header->descsz ? * (uint32_t *) desc : 0;
-		elf_debug("\tglobal_buffers = %s\n", global_buffers ? "TRUE" : "FALSE");*/
+		debug << "\tglobal_buffers = " << (global_buffers ? "TRUE" : "FALSE") << '\n';
 		break;
 	}
 	
 	
 	case 10:  /* ELF_NOTE_ATI_CONSTANT_BUFFERS */
 	{
-#if 0
 		int constant_buffer_count;
 		BinaryNoteConstantBufferMask *constant_buffer_mask;
 		int i;
 
 		/* Get number of entries */
-		assert(header->descsz % 
-			sizeof(BinaryNoteConstantBufferMask) == 0);
-		constant_buffer_count = header->descsz / 
-			sizeof(BinaryNoteConstantBufferMask);
-		/*elf_debug("\tnote including number and size of constant "
-			"buffers (%d entries)\n", constant_buffer_count);*/
+		assert(header->descsz % sizeof(BinaryNoteConstantBufferMask) == 0);
+		constant_buffer_count = header->descsz / sizeof(BinaryNoteConstantBufferMask);
+		debug << "\tnote including number and size of constant buffers ("
+				<< constant_buffer_count << " entries)\n";
 
 		/* Decode entries */
 		for (i = 0; i < constant_buffer_count; i++) 
 		{
 			constant_buffer_mask = (BinaryNoteConstantBufferMask *)
 					(desc + i * sizeof(BinaryNoteConstantBufferMask));
-			/*elf_debug("\tconstant_buffer[%d].size = %d "
-				"(vec4f constants)\n", 
-				constant_buffer_mask->index, 
-				constant_buffer_mask->size);*/
+			debug << "\tconstant_buffer[" << constant_buffer_mask->index
+					<< "].size = " << constant_buffer_mask->size
+					<< " (vec4f constants)\n";
 		}
-#endif
 
 		break;
 	}
@@ -662,18 +672,19 @@ void Binary::ReadNoteHeader(BinaryDictEntry *dict_entry)
 	
 	case 12:  /* ELF_NOTE_ATI_PERSISTENT_BUFFERS */
 	{
-		/*Elf32_Word persistent_buffers;
+		Elf32_Word persistent_buffers;
 		persistent_buffers = header->descsz ? * (uint32_t *) desc : 0;
-		elf_debug("\tpersistent_buffers = %s\n", persistent_buffers ? "TRUE" : "FALSE");*/
+		debug << "\tpersistent_buffers = " << (persistent_buffers ?
+				"TRUE" : "FALSE") << '\n';
 		break;
 	}
 
 	
 	case 13:  /* ELF_NOTE_ATI_SCRATCH_BUFFERS */
 	{
-		/*Elf32_Word scratch_buffers;
+		Elf32_Word scratch_buffers;
 		scratch_buffers = header->descsz ? * (uint32_t *) desc : 0;
-		elf_debug("\tscratch_buffers = %s\n", scratch_buffers ? "TRUE" : "FALSE");*/
+		debug << "\tscratch_buffers = " << (scratch_buffers ? "TRUE" : "FALSE") << '\n';
 		break;
 	}
 
@@ -686,22 +697,24 @@ void Binary::ReadNoteHeader(BinaryDictEntry *dict_entry)
 	
 	case 16:  /* ELF_NOTE_ATI_UAV */
 	{
-#if 0
 		int uav_entry_count;
 		BinaryNoteUAVEntry *uav_entry;
 		int i;
 
 		assert(header->descsz % sizeof(BinaryNoteUAVEntry) == 0);
 		uav_entry_count = header->descsz / sizeof(BinaryNoteUAVEntry);
-		/*elf_debug("\tnote (%d entries)\n", uav_entry_count);*/
-
+		debug << "\tnote (" << uav_entry_count << " entries)\n";
+		
 		/* Decode entries */
 		for (i = 0; i < uav_entry_count; i++) {
 			uav_entry = (BinaryNoteUAVEntry *) (desc + i * sizeof(BinaryNoteUAVEntry));
-			/*elf_debug("\tuav_entry[%d].uav = %d [%d, %d, %d]\n", i, uav_entry->id,
-				uav_entry->unknown1, uav_entry->unknown2, uav_entry->unknown3);*/
+			debug << "\tuav_entry[" << i << "].uav = " <<
+					uav_entry->id << " ["
+					<< uav_entry->unknown1 << ", "
+					<< uav_entry->unknown2 << ", "
+					<< uav_entry->unknown3 << "]\n";
 		}
-#endif
+
 		break;
 	}	
 
@@ -709,8 +722,8 @@ void Binary::ReadNoteHeader(BinaryDictEntry *dict_entry)
 	case 17:  /* ELF_NOTE_ATI_UAV_OP_MASK */
 		break;
 
-	/*default:
-		elf_debug("\tunknown type\n");*/
+	default:
+		debug << "\tunknown type\n";
 	}
 }
 
@@ -725,11 +738,10 @@ void Binary::ReadNotes(BinaryDictEntry *dict_entry)
 	elf_buffer_seek(buffer, 0);
 
 	/* Decode notes */
-	/*elf_debug("Reading notes in PT_NOTE segment (enc. dict. for machine=0x%x)\n",
-		enc_dict_entry->header->d_machine);*/
+	debug << "\nReading notes in PT_NOTE segment (enc. dict. for machine = 0x"
+			<< hex << dict_entry->header->d_machine << dec << ")\n";
 	while (buffer->pos < buffer->size)
 		ReadNoteHeader(dict_entry);
-	/*elf_debug("\n\n\n");*/
 }
 
 
@@ -742,13 +754,15 @@ void Binary::ReadDictionary()
 
 	BinaryDictEntry *dict_entry;
 	int num_dict_entries;
-
 	int i;
 
 	/* ELF header */
+	debug << "\n**\n"
+			<< "** Parsing AMD Binary (Internal ELF file)\n"
+			<< "** " << name << "\n"
+			<< "**\n\n";
 	elf_header = elf_file->header;
 	buffer = &elf_file->buffer;
-	/*elf_debug("**\n** Parsing AMD Binary (Internal ELF file)\n** %s\n**\n\n", elf_file->path);*/
 	SI_BIN_FILE_NOT_SUPPORTED_NEQ(elf_header->e_ident[EI_CLASS], ELFCLASS32);
 	SI_BIN_FILE_NOT_SUPPORTED_NEQ(elf_header->e_ident[EI_DATA], ELFDATA2LSB);
 	SI_BIN_FILE_NOT_SUPPORTED_NEQ(elf_header->e_ident[EI_OSABI], 0x64);
@@ -767,7 +781,7 @@ void Binary::ReadDictionary()
 	}
 	if (i == list_count(elf_file->program_header_list) || !program_header)
 		fatal("%s: no encoding dictionary", elf_file->path);
-	/*elf_debug("Encoding dictionary found in program header %d\n", i);*/
+	debug << "Encoding dictionary found in program header " << i << "\n";
 	
 	/* Parse encoding dictionary */
 	SI_BIN_FILE_NOT_SUPPORTED_NEQ(program_header->header->p_vaddr, 0);
@@ -777,7 +791,7 @@ void Binary::ReadDictionary()
 	SI_BIN_FILE_NOT_SUPPORTED_NEQ(program_header->header->p_align, 0);
 	assert(program_header->header->p_filesz % sizeof(BinaryDictHeader) == 0);
 	num_dict_entries = program_header->header->p_filesz / sizeof(BinaryDictHeader);
-	/*elf_debug("  -> %d entries\n\n", enc_dict_entry_count);*/
+	debug << "  -> " << num_dict_entries << " entries\n\n";
 
 	/* Read encoding dictionary entries */
 	elf_buffer_seek(buffer, program_header->header->p_offset);
@@ -794,8 +808,8 @@ void Binary::ReadDictionary()
 		if (dict_entry->header->d_machine == 9)
 		{
 			/* Driver XXX */
-			/*elf_debug("machine = %d (tahiti or pitcairn)\n", 
-				enc_dict_entry->header->d_machine);*/
+			debug << "machine = " << dict_entry->header->d_machine
+					<< " (tahiti or pitcairn)\n";
 			si_dict_entry = dict_entry;
 		}
 		else if (dict_entry->header->d_machine == 25)
@@ -803,26 +817,25 @@ void Binary::ReadDictionary()
 			/* This entry is always present but doesn't seem
 			 * useful information.  We should probably figure
 			 * out what is stored here. */
-			/*elf_debug("machine = 25 (skip this entry)\n");*/
+			debug << "machine = 25 (skip this entry)\n";
 		}
 		else if (dict_entry->header->d_machine == 26)
 		{
 			/* Driver XXX */
-			/*elf_debug("machine = %d (tahiti or pitcairn)\n", 
-				enc_dict_entry->header->d_machine);*/
+			debug << "machine = " << dict_entry->header->d_machine
+					<< " (tahiti or pitcairn)\n";
 			si_dict_entry = dict_entry;
 		}
 		else if (dict_entry->header->d_machine == 27)
 		{
 			/* Driver 12.4 */
-			/*elf_debug("machine = %d (tahiti or pitcairn)\n", 
-				enc_dict_entry->header->d_machine);*/
+			debug << "machine = " << dict_entry->header->d_machine
+					<< " (tahiti or pitcairn)\n";
 			si_dict_entry = dict_entry;
 		}
 		else if (dict_entry->header->d_machine == 28)
 		{
-			/*elf_debug("machine = %d (capeverde)\n", 
-				enc_dict_entry->header->d_machine);*/
+			debug << "machine = 28 (capeverde)\n";
 			si_dict_entry = dict_entry;
 		}
 		else
@@ -833,31 +846,20 @@ void Binary::ReadDictionary()
 	}
 
 	/* Debug */
-#if 0
-	elf_debug("idx %-15s %-10s %-10s %-10s %-10s\n", "d_machine", "d_type",
-		"d_offset", "d_size", "d_flags");
-	for (i = 0; i < 80; i++)
-		elf_debug("-");
-	elf_debug("\n");
-	for (i = 0; i < list_count(bin_file->enc_dict); i++)
+	debug << "Encoding dictionaries:\n";
+	for (unsigned i = 0; i < dict.size(); i++)
 	{
-		char machine_str[MAX_STRING_SIZE];
-		BinaryDictHeader *enc_dict_entry_header;
-
-		dict_entry = list_get(bin_file->enc_dict, i);
-		enc_dict_entry_header = dict_entry->header;
-		snprintf(machine_str, sizeof(machine_str), "%d (%s)",
-			enc_dict_entry_header->d_machine, str_map_value(&enc_dict_machine_map,
-			enc_dict_entry_header->d_machine - 1));
-		elf_debug("%3d %-15s 0x%-8x 0x%-8x %-10d 0x%-8x\n",
-			i, machine_str,
-			enc_dict_entry_header->d_type,
-			enc_dict_entry_header->d_offset,
-			enc_dict_entry_header->d_size,
-			enc_dict_entry_header->d_flags);
+		BinaryDictEntry *entry = dict[i];
+		BinaryDictHeader *header = entry->header;
+		debug << "[" << i << "] "
+				<< "machine = " << header->d_machine
+				<< " (" << StringMapValue(binary_machine_map,
+						header->d_machine) << "), "
+				<< "type = " << header->d_type << ", "
+				<< "offset = " << hex << header->d_offset << dec << ", "
+				<< "size = " << header->d_size << ", "
+				<< "flags = " << hex << header->d_flags << dec << '\n';
 	}
-	elf_debug("\n\n");
-#endif
 }
 
 
@@ -868,7 +870,7 @@ void Binary::ReadSegments()
 
 	int i;
 
-	/*elf_debug("Reading PT_NOTE and PT_LOAD segments:\n");*/
+	debug << "\nReading PT_NOTE and PT_LOAD segments:\n";
 	for (auto it = dict.begin(); it != dict.end(); ++it)
 	{
 		/* Get encoding dictionary entry */
@@ -908,13 +910,21 @@ void Binary::ReadSegments()
 
 		/* Check that both PT_NOTE and PT_LOAD segments were found */
 		if (!dict_entry->pt_note_buffer.size)
-			fatal("%s: no PT_NOTE segment found for encoding dictionary entry", __FUNCTION__);
+			fatal("%s: no PT_NOTE segment found for encoding dictionary entry",
+					__FUNCTION__);
 		if (!dict_entry->pt_load_buffer.size)
-			fatal("%s: no PT_LOAD segment found for encoding dictionary entry", __FUNCTION__);
-		/*elf_debug("  Dict. entry %d: PT_NOTE segment: offset=0x%x, size=%d\n", i,
-			(int) (enc_dict_entry->pt_note_buffer.ptr - elf_file->buffer.ptr), enc_dict_entry->pt_note_buffer.size);
-		elf_debug("  Dict. entry %d: PT_LOAD segment: offset=0x%x, size=%d\n", i,
-			(int) (enc_dict_entry->pt_load_buffer.ptr - elf_file->buffer.ptr), enc_dict_entry->pt_load_buffer.size);*/
+			fatal("%s: no PT_LOAD segment found for encoding dictionary entry",
+					__FUNCTION__);
+		debug << "  Dict. entry " << i
+				<< ": PT_NOTE segment: "
+				<< "offset = 0x" << hex << (int) ((char *) dict_entry->pt_note_buffer.ptr
+						- (char *) elf_file->buffer.ptr) << dec << ", "
+				<< "size = " << dict_entry->pt_note_buffer.size << '\n';
+		debug << "  Dict. entry " << i
+				<< ": PT_LOAD segment: "
+				<< "offset = 0x" << hex << (int) ((char *) dict_entry->pt_load_buffer.ptr
+						- (char *) elf_file->buffer.ptr) << dec << ", "
+				<< "size = " <<dict_entry->pt_load_buffer.size << '\n';
 	}
 }
 
@@ -1001,9 +1011,6 @@ void Binary::ReadSections()
 				" .symtab .strtab", __FUNCTION__);
 		}
 	}
-
-	/* Finish */
-	/*elf_debug("\n");*/
 }
 
 
@@ -1053,7 +1060,7 @@ Binary::~Binary()
 	elf_file_free(elf_file);
 }
 
-
+}  /* namespace SI */
 
 
 /*
@@ -1076,6 +1083,11 @@ void SIBinaryFree(struct SIBinary *self)
 {
 	Binary *bin = (Binary *) self;
 	delete bin;
+}
+
+void SIBinarySetDebugFile(const char *path)
+{
+	Binary::debug.SetPath(path);
 }
 
 struct SIBinaryDictEntry *SIBinaryGetSIDictEntry(struct SIBinary *self)

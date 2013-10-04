@@ -32,6 +32,7 @@ extern "C" {
 ////////////
 
 #include <lib/cpp/ELFReader.h>
+#include <lib/cpp/Misc.h>
 
 
 
@@ -209,6 +210,8 @@ class Binary
 	void ReadSections();
 public:
 	struct elf_file_t *elf_file;
+
+	static Misc::Debug debug;
 
 	Binary(void *ptr, int size, std::string name);
 	~Binary();
@@ -389,12 +392,12 @@ extern struct StringMapWrap *si_binary_machine_map;
 extern struct StringMapWrap *si_binary_note_map;
 extern struct StringMapWrap *si_binary_prog_info_map;
 
+
 /* Binary file */
 struct SIBinary;
-
 struct SIBinary *SIBinaryCreate(void *ptr, int size, char *name);
 void SIBinaryFree(struct SIBinary *bin);
-
+void SIBinarySetDebugFile(const char *path);
 struct SIBinaryDictEntry *SIBinaryGetSIDictEntry(struct SIBinary *bin);
 
 

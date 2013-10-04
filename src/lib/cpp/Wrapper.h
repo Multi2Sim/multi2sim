@@ -24,6 +24,11 @@
 extern "C" {
 #endif
 
+
+/*
+ * String Maps
+ */
+
 struct StringMapWrap;
 
 const char *StringMapValueWrap(struct StringMapWrap *map, int value);
@@ -37,6 +42,17 @@ int StringMapStringCaseErrWrap(struct StringMapWrap *map, const char *text, int 
 
 void StringMapFlagsWrap(struct StringMapWrap *map, unsigned int flags, char *text, int size);
 void StringMapGetValuesWrap(struct StringMapWrap *map, char *text, int size);
+
+
+
+/*
+ * Debug
+ */
+
+struct DebugWrap;
+
+void DebugSetPathWrap(struct DebugWrap *debug, const char *path);
+
 
 #ifdef __cplusplus
 }
