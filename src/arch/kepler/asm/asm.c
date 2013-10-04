@@ -612,7 +612,7 @@ void KplAsmDisassembleBinary(KplAsm *self, char *path)
 			/* Move to next instruction */
 			section->buffer->pos += 8;
 		}
-		printf("\n\t\t.................................");
+		printf("\n\t\t.................................\n\n");
 	}
 	printf("\n");
 	delete(reader);

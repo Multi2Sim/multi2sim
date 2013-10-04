@@ -21,6 +21,7 @@
 #define M2C_SI2BIN_SI2BIN_H
 
 #include <arch/southern-islands/asm/Asm.h>
+#include <lib/class/class.h>
 
 
 /* Forward declaration */

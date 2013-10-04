@@ -606,12 +606,20 @@ static void KplInstDumpOffset(KplInst *self, char **buf_ptr, int *size_ptr, int 
        		str_printf(buf_ptr, size_ptr, " 0x%x", value);
 }
 
-static void KplInstDumpTarget(KplInst *self, char **buf_ptr, int *size_ptr, int high, int low)
+static void KplInstDumpTarget(KplInst *self, char **buf_ptr, int *size_ptr, int high0, int low0, int high1, int low1)
 {
-        int value;
+        int value0;
+	int value1;
+	int value3;
 
-        value = BITS64(self->bytes.as_dword, high, low);
-       	str_printf(buf_ptr, size_ptr, " 0x%x", value);
+        value0 = BITS64(self->bytes.as_dword, high0, low0);
+        value1 = BITS64(self->bytes.as_dword, high1, low1);
+	value3 = 8388608-value0;
+
+	if (value1 == 1)
+		str_printf(buf_ptr, size_ptr, " 0x%x", value3);
+	else if (value1 ==0)
+		str_printf(buf_ptr, size_ptr, " -0x%x", value0);
 }
 
 void KplInstDumpBuf(KplInst *self, char *buf, int size)
@@ -631,7 +639,7 @@ void KplInstDumpBuf(KplInst *self, char *buf, int size)
 	{
                 if (str_prefix(fmt_str, "%tgt"))
                 {
-                        KplInstDumpTarget(self, &buf, &size, 45, 23);
+                        KplInstDumpTarget(self, &buf, &size, 45, 23, 46, 46);
                         fmt_str += 4;
                         continue;
                 }
