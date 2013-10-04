@@ -99,7 +99,6 @@ Symbol::Symbol(File *file, Section *section, unsigned int pos)
 {
 	/* Initialize */
 	this->file = file;
-	this->section = section;
 
 	/* Read symbol */
 	info = (Elf32_Sym *) (section->GetBuffer() + pos);
@@ -119,6 +118,9 @@ Symbol::Symbol(File *file, Section *section, unsigned int pos)
 		fatal("%s: invalid symbol name offset",
 				file->GetPath().c_str());
 	name = name_section->GetBuffer() + info->st_name;
+
+	/* Get section in 'st_shndx' */
+	this->section = file->GetSection(info->st_shndx);
 }
 
 
@@ -208,6 +210,11 @@ void File::ReadSections()
 
 void File::ReadProgramHeaders()
 {
+	/* Nothing if there are no program headers. Don't even check if the
+	 * program header size is the right one, it could be 0 in this case. */
+	if (!info->e_phnum)
+		return;
+	
 	/* Check program header size */
 	if (info->e_phentsize != sizeof(Elf32_Phdr))
 		fatal("%s: program header size %d (should be %d)",

@@ -86,11 +86,14 @@ void StringSingleSpaces(std::string& s, std::string set =  " \t\n\r");
 void StringToLower(std::string& s);
 void StringToUpper(std::string& s);
 
+bool StringPrefix(const std::string& s, const std::string& prefix);
+bool StringSuffix(const std::string& s, const std::string& suffix);
+
 /* Split a string in tokens and place them in the list of strings passed by
  * reference in the first argument. Optionally, argument 'set' can specify the
  * characters considered as tokens separators. */
-void StringTokenize(std::vector<std::string>& tokens, std::string s,
-		std::string set = " \t\n\r");
+void StringTokenize(const std::string& s, std::vector<std::string>& tokens,
+		const std::string& set = " \t\n\r");
 
 /* Convert 'digit' in base 'base' into an integer. */
 int StringDigitToInt(char digit, int base);

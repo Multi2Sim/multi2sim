@@ -151,7 +151,22 @@ void StringToUpper(std::string& s)
 }
 
 
-void StringTokenize(vector<std::string>& tokens, string s, string set)
+bool StringPrefix(const std::string& s, const std::string& prefix)
+{
+	return s.length() >= prefix.length() &&
+			s.substr(0, prefix.length()) == prefix;
+}
+
+
+bool StringSuffix(const std::string& s, const std::string& suffix)
+{
+	return s.length() >= suffix.length() &&
+			s.substr(s.length() - suffix.length(),
+			suffix.length()) == suffix;
+}
+
+
+void StringTokenize(string& s, vector<std::string>& tokens, string set)
 {
 	string token;
 

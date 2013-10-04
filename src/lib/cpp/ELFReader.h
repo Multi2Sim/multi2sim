@@ -60,7 +60,7 @@ public:
 	std::istringstream& GetStream() { return stream; }
 
 	/* Section header */
-	std::string& GetName() { return name; }
+	const std::string& GetName() { return name; }
 	Elf32_Word GetType() { return info->sh_type; }
 	Elf32_Word GetFlags() { return info->sh_flags; }
 	Elf32_Addr GetAddr() { return info->sh_addr; }
@@ -101,8 +101,13 @@ class Symbol
 {
 	friend class File;
 
-	/* File and section that it belongs to */
+	/* File that it belongs to */
 	File *file;
+
+	/* Section that the symbol points to. This section is not the section
+	 * passed as an argument to the constructor (i.e., the symbol table
+	 * section). It is the section pointed to by its 'st_shndx' field, or
+	 * null if this fields points to an invalid section. */
 	Section *section;
 
 	/* Symbol name */
@@ -121,7 +126,7 @@ class Symbol
 public:
 
 	Section *GetSection() { return section; }
-	std::string& GetName() { return name; }
+	const std::string& GetName() { return name; }
 
 	/* Information extracted from ELF symbol structure */
 	Elf32_Addr GetValue() { return info->st_value; }

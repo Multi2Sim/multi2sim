@@ -206,7 +206,7 @@ public:
 	struct list_t *enc_dict;
 	BinaryDictionaryEntry *enc_dict_entry_southern_islands;
 
-	Binary(void *ptr, int size, char *name);
+	Binary(void *ptr, int size, std::string name);
 	~Binary();
 
 	void ReadNoteHeader(BinaryDictionaryEntry *enc_dict_entry);

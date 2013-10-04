@@ -1008,13 +1008,15 @@ void Binary::ReadSections()
 }
 
 
-Binary::Binary(void *ptr, int size, char *name)
+Binary::Binary(void *ptr, int size, std::string name)
 {
 	/* Initialize */
 	this->name = name;
 
 	/* Read and parse ELF file */
-	elf_file = elf_file_create_from_buffer(ptr, size, name);
+	char c_name[100];
+	snprintf(c_name, sizeof c_name, "%s", name.c_str());
+	elf_file = elf_file_create_from_buffer(ptr, size, c_name);
 
 	/* Read encoding dictionary.
 	 * Check that a Southern Islands dictionary entry is present */
@@ -1029,7 +1031,7 @@ Binary::Binary(void *ptr, int size, char *name)
 	"\tarchitecture causes Southern Islands assembly not to be included\n"
 	"\tif the APP SDK is not correctly installed when compiling your\n"
 	"\town kernel sources.\n", 
-			name);
+			c_name);
 	
 	/* Read segments and sections */
 	ReadSegments();
