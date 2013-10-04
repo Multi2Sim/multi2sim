@@ -114,9 +114,6 @@ int SIEmuRun(Emu *self)
 {
 	SIEmu *emu = asSIEmu(self);
 	OpenclDriver *opencl_driver;
-#ifdef HAVE_OPENGL
-	OpenglDriver *opengl_driver;
-#endif
 	SINDRange *ndrange;
 	SIWavefront *wavefront;
 	SIWorkGroup *work_group;
@@ -131,7 +128,7 @@ int SIEmuRun(Emu *self)
 	assert(opencl_driver);
 
 #ifdef HAVE_OPENGL
-
+	OpenglDriver *opengl_driver;
 	opengl_driver = emu->opengl_driver;
 	assert(opengl_driver);
 
@@ -150,8 +147,12 @@ int SIEmuRun(Emu *self)
 			return FALSE;		
 	}
 	else
-#endif 
 		ndrange_list = opencl_driver->si_ndrange_list;
+#else
+	if (!list_count(opencl_driver->si_ndrange_list))
+		return FALSE;		
+	ndrange_list = opencl_driver->si_ndrange_list;
+#endif 
 
 	/* Iterate over each nd-range */
 	LIST_FOR_EACH(ndrange_list, ndrange_index)
