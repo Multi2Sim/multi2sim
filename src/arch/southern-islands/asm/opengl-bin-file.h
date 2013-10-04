@@ -618,8 +618,18 @@ struct opengl_si_bin_vertex_shader_metadata_t
 
 	/* SC-provided values for certain VS-specific registers */
 	uint32_t paClVsOutCntl;
-	uint32_t spiVsOutConfig;
-	uint32_t spiShaderPosFormat;
+	union
+	{
+		struct opengl_si_spi_vs_out_config_t spiVsOutConfig;
+		uint32_t spiVsOutConfigAsUint;
+	};
+	union
+	{
+		struct opengl_si_spi_shader_pos_format spiShaderPosFormat;
+		uint32_t spiShaderPosFormatAsUint;
+	};
+
+	/* FIXME: should be a struct */
 	uint32_t vgtStrmoutConfig;
 
 	/* Number of SPI-generated VGPRs referenced by the vertex shader */
@@ -692,7 +702,7 @@ enum opengl_si_bin_info_max_offset
 	MAX_PROGRAMINFO_OFFSET = 0x0ffff 
 };
 
-typedef struct
+typedef struct 
 {
 	// VS input mask
 	uint32_t inputStreamMask;                /* input stream mask (phsyical id) */
@@ -816,7 +826,7 @@ struct opengl_si_bin_info_t
 	};
 	
 	enum opengl_si_bin_info_max_offset max_valid_offset;
-};
+} ;
 
 /* ARB program parameter */
 struct opengl_si_bin_arb_program_parameter_t
@@ -838,7 +848,7 @@ struct opengl_si_bin_arb_program_parameter_t
 	uint32_t addressRegisters;          /* Number of address registers */
 	uint32_t nativeAddressRegisters;    /* Number of native address registers */
 	bool   underNativeLimits;         /* Is shader under native limits? */
-};
+}__attribute__((packed));
 
 /* Structure in .usageinfo section */
 typedef struct
@@ -860,7 +870,7 @@ typedef struct
 	bool   needSampleInfoCBs;                  /* whether the FP needs the 2 constant buffers for the SAMPLEINFO, SAMPLEPOS and EVAL_SAMPLE_INDEX. */
 	bool   earlyFragTest;                      /* true if early frag test is enabled */
 	uint8_t  conservativeZ;                      /* 0:defult, 1:less, 2:greater */
-} SIPSUsageinfo;
+} __attribute__((packed)) SIPSUsageinfo;
 
 typedef struct
 {
@@ -868,12 +878,12 @@ typedef struct
 	uint16_t gsInvocations;                      /* gs invocation number */
 	uint8_t  inputTopology;                      /* gs input topology */
 	uint8_t  outputTopology[4];                  /* gs output topology */
-} SIGSUsageinfo;
+} __attribute__((packed)) SIGSUsageinfo;
 
 typedef struct
 {
 	uint32_t tessOutputVertices;                 /* output control point number */
-} SIHSUsageinfo;
+} __attribute__((packed)) SIHSUsageinfo;
 
 typedef struct
 {
@@ -881,7 +891,7 @@ typedef struct
 	uint32_t tessGenSpacing;                     /* partition mode */
 	uint32_t tessGenVertexOrder;                 /* output primitive mode */
 	bool   tessGenPointMode;                   /* If point mode when tessellated */
-} SIDSUsageinfo;
+} __attribute__((packed)) SIDSUsageinfo;
 
 typedef struct
 {
@@ -893,7 +903,7 @@ typedef struct
 	int8_t   fsReturnAddrReg;                    /* Fetch shader subroutine return address SGPR, SI only */
 	int8_t   fsInputStreamTableReg;              /* Fetch shader input stream table start SGPR (either first data element or pointer depending on FS type), SI only */
 	int8_t   fsVertexIdChannel;                  /* Fetch shader channel(R,G,B,A) to compute the vertexID with */
-} SIVSUsageinfo;
+} __attribute__((packed)) SIVSUsageinfo;
 
 typedef struct
 {
@@ -901,7 +911,7 @@ typedef struct
 	uint32_t  workSizeX;                         /* Work size in the X dimension */
 	uint32_t  workSizeY;                         /* Work size in the Y dimension */
 	uint32_t  workSizeZ;                         /* Work size in the Z dimension */
-} SICSUsageinfo;
+} __attribute__((packed)) SICSUsageinfo;
 
 struct opengl_si_bin_usageinfo_t
 {
@@ -977,7 +987,7 @@ struct opengl_si_bin_usageinfo_t
 		int64_t   imageFormatOffset;                    /* uav image format array offset in elf section */
 	};
 
-};
+}__attribute__((packed));
 
 struct opengl_si_enc_dict_vertex_shader_t
 {

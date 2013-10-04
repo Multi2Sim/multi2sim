@@ -696,7 +696,9 @@ void opengl_si_shader_binary_debug_meta(struct opengl_si_shader_binary_t *shdr_b
 {
 	int i;
 	struct opengl_si_enc_dict_vertex_shader_t *enc_vs;
+	struct opengl_si_enc_dict_pixel_shader_t *enc_ps;
 	struct opengl_si_bin_vertex_shader_metadata_t *meta_vs;
+	struct opengl_si_bin_pixel_shader_metadata_t *meta_ps;
 
 	switch(shdr_bin->shader_kind)
 	{
@@ -734,6 +736,105 @@ void opengl_si_shader_binary_debug_meta(struct opengl_si_shader_binary_t *shdr_b
 		}
 		printf("NumVgprs\t\t= %d\n", meta_vs->u32NumVgprs);
 		printf("NumSgprs\t\t= %d\n", meta_vs->u32NumSgprs);
+		printf("FloatMode\t\t= %d\n", meta_vs->u32FloatMode);
+		printf("IeeeMode\t\t= %d\n", meta_vs->bIeeeMode);
+		printf("UsesPrimID\t\t= %d\n", meta_vs->bUsesPrimId);
+		printf("UsesVertexID\t\t= %d\n", meta_vs->bUsesVertexId);
+		printf("ScratchSize\t\t= %d\n", meta_vs->scratchSize);
+		for (i = 0; i < (MAX_NUM_RESOURCE + 31) / 32; ++i)
+		{
+			printf(" texResourceUsage[%d]\t\t= 0x%x\n", i, meta_vs->texResourceUsage[i]);
+		}
+		for (i = 0; i < (MAX_NUM_RESOURCE + 31) / 32; ++i)
+		{
+			printf(" fetch4ResourceUsage[%d]\t\t= 0x%x\n", i, meta_vs->fetch4ResourceUsage[i]);
+		}
+		for (i = 0; i < (MAX_NUM_RESOURCE + 31) / 32; ++i)
+		{
+			printf(" uavResourceUsage[%d]\t\t= 0x%x\n", i, meta_vs->uavResourceUsage[i]);
+		}
+		printf(" texSamplerUsage\t\t= 0x%x\n", meta_vs->texSamplerUsage);
+		printf(" constBufUsage\t\t\t= 0x%x\n", meta_vs->constBufUsage);
+		printf("SPI_SHADER_PGM_RSRC2_VS\t\t= 0x%08X\n", meta_vs->spiShaderPgmRsrc2Es);
+		printf(" SSPRV:USER_SGPR\t\t= %d\n", meta_vs->spiShaderPgmRsrc2Vs.user_sgpr);
+		printf("PA_CL_VS_OUT_CNTL\t\t= 0x%x\n", meta_vs->paClVsOutCntl);
+		printf("SPI_VS_OUT_CONFIG\t\t= 0x%08X\n", meta_vs->spiVsOutConfigAsUint);
+		printf(" SVOC:VS_EXPORT_COUNT\t\t= %d\n", meta_vs->spiVsOutConfig.vs_export_count);
+		printf(" SVOC:VS_HALF_PACK\t\t= %d\n", meta_vs->spiVsOutConfig.vs_half_pack);
+		printf(" SVOC:VS_EXPORTS_FOG\t\t= %d\n", meta_vs->spiVsOutConfig.vs_export_fog);
+		printf(" SVOC:VS_OUT_FOG_VEC_ADDR\t= %d\n", meta_vs->spiVsOutConfig.vs_out_fog_vec_addr);
+		printf("SPI_SHADER_POS_FORMAT\t\t= 0x%08X\n", meta_vs->spiShaderPosFormatAsUint);
+		printf(" SSPF:PSO0_EXPORT_FORMAT\t= %d\n", meta_vs->spiShaderPosFormat.pos0_export_format);
+		printf(" SSPF:PSO1_EXPORT_FORMAT\t= %d\n", meta_vs->spiShaderPosFormat.pos1_export_format);
+		printf(" SSPF:PSO2_EXPORT_FORMAT\t= %d\n", meta_vs->spiShaderPosFormat.pos2_export_format);
+		printf(" SSPF:PSO3_EXPORT_FORMAT\t= %d\n", meta_vs->spiShaderPosFormat.pos3_export_format);
+		printf("VGT_STRMOUT_CONFIG\t\t= 0x%08X\n", meta_vs->vgtStrmoutConfig);
+		printf(" VGT_STRMOUT_CONFIG:RAST_STREAM\t= %d\n", 0);
+		printf(" VGT_STRMOUT_CONFIG:STREAMOUT_0_EN = %d\n", 0);
+		printf(" VGT_STRMOUT_CONFIG:STREAMOUT_1_EN = %d\n", 0);
+		printf(" VGT_STRMOUT_CONFIG:STREAMOUT_2_EN = %d\n", 0);
+		printf(" VGT_STRMOUT_CONFIG:STREAMOUT_3_EN = %d\n", 0);
+		printf("vgprCompCnt\t\t\t= %d\n", meta_vs->vgprCompCnt);
+		printf("exportVertexSize\t\t= %d\n", meta_vs->exportVertexSize);
+		break;
+	}
+	case OPENGL_SI_SHADER_PIXEL:
+	{
+		enc_ps = (struct opengl_si_enc_dict_pixel_shader_t *)shdr_bin->enc_dict;
+		meta_ps = enc_ps->meta;
+		printf("-----------------------PS Data -------------------------\n");
+		printf("Input Semantic Mappings\n");
+		for (i = 0; i < meta_ps->numPsInSemantics; ++i)
+		{
+			printf(" [%d] %s, usageIdx %d, inputIdx %d, defaultVal %d, flatShade %d\n", i, 
+				str_map_value(&enc_dict_semantic_input_type_map, meta_ps->psInSemantics[i].usage), 
+				meta_ps->psInSemantics[i].usageIdx, meta_ps->psInSemantics[i].inputIdx, 
+				meta_ps->psInSemantics[i].defaultVal, meta_ps->psInSemantics[i].flatShade);
+		}
+		printf("\n");
+		printf("codeLenInByte\t= %d;Bytes\n", meta_ps->CodeLenInByte);
+		printf("\n");
+		printf("userElementCount\t= %d\n", meta_ps->u32UserElementCount);
+		for (i = 0; i < meta_ps->u32UserElementCount; ++i)
+		{
+			printf(" userElements[%d]\t= %s, %d, s[%d,%d]\n", i, 
+				str_map_value(&enc_dict_user_elements_type_map, meta_ps->pUserElement[i].dataClass), 
+				meta_ps->pUserElement[i].apiSlot, meta_ps->pUserElement[i].startUserReg, 
+				meta_ps->pUserElement[i].startUserReg + meta_ps->pUserElement[i].userRegCount  - 1);
+		}
+		printf("NumVgprs\t\t= %d\n", meta_ps->u32NumVgprs);
+		printf("NumSgprs\t\t= %d\n", meta_ps->u32NumSgprs);
+		printf("FloatMode\t\t= %d\n", meta_ps->u32FloatMode);
+		printf("IeeeMode\t\t= %d\n", meta_ps->bIeeeMode);
+		printf("UsesPrimID\t\t= %d\n", meta_ps->bUsesPrimId);
+		printf("UsesVertexID\t\t= %d\n", meta_ps->bUsesVertexId);
+		printf("ScratchSize\t\t= %d\n", meta_ps->scratchSize);
+		for (i = 0; i < (MAX_NUM_RESOURCE + 31) / 32; ++i)
+		{
+			printf(" texResourceUsage[%d]\t\t= 0x%x\n", i, meta_ps->texResourceUsage[i]);
+		}
+		for (i = 0; i < (MAX_NUM_RESOURCE + 31) / 32; ++i)
+		{
+			printf(" fetch4ResourceUsage[%d]\t\t= 0x%x\n", i, meta_ps->fetch4ResourceUsage[i]);
+		}
+		for (i = 0; i < (MAX_NUM_RESOURCE + 31) / 32; ++i)
+		{
+			printf(" uavResourceUsage[%d]\t\t= 0x%x\n", i, meta_ps->uavResourceUsage[i]);
+		}
+		printf(" texSamplerUsage\t\t= 0x%x\n", meta_ps->texSamplerUsage);
+		printf(" constBufUsage\t\t\t= 0x%x\n", meta_ps->constBufUsage);
+		printf("SPI_SHADER_PGM_RSRC2_PS\t\t= 0x%08X\n", meta_ps->spiShaderPgmRsrc2Ps);
+		printf("SPI_SHADER_Z_FORMAT\t\t= %d\n", meta_ps->spiShaderZFormat);
+		printf("SPI_PS_IN_CNTRL\t\t\t= %d\n", meta_ps->spiPsInControl);
+		printf("SPI_PS_INPUT_ADDR\t\t= 0x%08X\n", meta_ps->spiPsInputAddr);
+		printf("SPI_PS_INPUT_ENABLE\t\t= %d\n", meta_ps->spiPsInputEna);
+		printf("SPI_BARYCENTRIC_CONTROL\t\t= 0x%08X\n", meta_ps->spiBarycCntl);
+		printf("DEPTH_BUFFER_SHADER_CNTRL\t= 0x%08X\n", meta_ps->dbShaderControl);
+		printf("CONST_BUFFER_SHADER_MASK\t= 0x%08X\n", meta_ps->cbShaderMask);
+		printf("EXPORT_PATCH_CODE_SIZE\t\t= %d\n", meta_ps->exportPatchCodeSize);
+		printf("NUM_PS_EXPORTS\t\t\t= %d\n", meta_ps->numPsExports);
+		printf("DUAL_BLENDING\t\t\t= %d\n", meta_ps->dualBlending);
+		printf("DEFAULT_EXPORT_FMT\t\t= %d\n", meta_ps->defaultExportFmt);
 		break;
 	}
 	default:

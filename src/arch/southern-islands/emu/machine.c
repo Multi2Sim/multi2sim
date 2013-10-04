@@ -7434,6 +7434,7 @@ void si_isa_TBUFFER_LOAD_FORMAT_XYZW_impl(SIWorkItem *work_item,
 
 	/* XXX Need to know when to enable id_in_wavefront */
 	id_in_wavefront = buf_desc.add_tid_enable ?  work_item->id_in_wavefront : 0;
+	
 	/* Calculate the address */
 	addr = base + mem_offset + inst_offset + off_vgpr + 
 		stride * (idx_vgpr + id_in_wavefront);

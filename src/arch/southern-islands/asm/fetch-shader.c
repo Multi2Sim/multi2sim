@@ -218,6 +218,7 @@ struct si_fetch_shader_t *si_fetch_shader_create(struct opengl_si_shader_t *shdr
 	unsigned int input_count = enc_dict->meta->numVsInSemantics;
 	unsigned int input_vs_semantic_vgpr_start;
 	unsigned int input_format;
+	unsigned int usage_index;
 
 	/*  Instruction TBUFF_LOAD_XXX needs to right shirf it >> 2 and it's always start > 16 */
 	unsigned int sgpr_buf_desc_start;
@@ -228,7 +229,6 @@ struct si_fetch_shader_t *si_fetch_shader_create(struct opengl_si_shader_t *shdr
 	fs->isa_list = list_create();
 
 	/* FIXME: temporary solution */
-	unsigned int usage_index;
 	for (i = 0; i < input_count; ++i)
 	{
 		/* s_load_dword4 s[sgpr_buf_desc_start ~ +3], s[userElement[VertexTableStartSGPR] ~+1], offset = 32 >> 2 * usage_index */
