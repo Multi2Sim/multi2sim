@@ -28,7 +28,6 @@
 ////////////
 extern "C" {
 #include <lib/util/elf-format.h>
-#include <lib/util/list.h>
 }
 ////////////
 
@@ -192,28 +191,29 @@ struct BinaryDictEntry
 /* Binary file */
 class Binary
 {
-	/* Encoding dictionary.
-	 * Each element of the dictionary contains the binary for a different architecture
-	 * (Evergreen, x86, etc.) */
-	//std::vector<BinaryDictionaryEntry*> dictionary;
+	/* Encoding dictionary. Each element of the dictionary contains the
+	 * binary for a different architecture (Evergreen, x86, etc.) */
+	std::vector<BinaryDictEntry*> dict;
 
 	/* Encoding dictionary entry containing the Southern Islands kernel.
-	 * This is a member of the 'dictionary' vector. */
-
-	std::string name;
-public:
-	struct elf_file_t *elf_file;
-	struct list_t *enc_dict;
+	 * This is a member of the 'dict' vector. */
 	BinaryDictEntry *si_dict_entry;
 
-	Binary(void *ptr, int size, std::string name);
-	~Binary();
+	/* Binary file name */
+	std::string name;
 
 	void ReadNoteHeader(BinaryDictEntry *dict_entry);
 	void ReadNotes(BinaryDictEntry *dict_entry);
 	void ReadDictionary();
 	void ReadSegments();
 	void ReadSections();
+public:
+	struct elf_file_t *elf_file;
+
+	Binary(void *ptr, int size, std::string name);
+	~Binary();
+
+	BinaryDictEntry *GetSIDictEntry() { return si_dict_entry; }
 };
 
 
