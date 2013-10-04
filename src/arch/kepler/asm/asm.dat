@@ -106,13 +106,22 @@ DEFINST(MOV32I,
  * LD, ST
  */
 
-//>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>FIX
 DEFINST(LD,
 		"%pred0LD%_e%_cg%_u8%_s %dst, [%srcA]%offset;",
 		0x00,
 		0x06)
 
-//>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>FIX
+DEFINST(LDS,
+		"%pred0LDS %dst, [%srcA]%offset;",
+		0x02,
+		0x01,
+		0x0f,
+		0x01,
+		0x07,
+		0x00,
+		0x02,
+		0x01)
+
 DEFINST(ST,
 		"%pred0ST%_e%_cg%_u8%_s [%srcA]%offset, %dst;",
 		0x00,
@@ -130,6 +139,12 @@ DEFINST(DADD,
 		0x0c,
 		0x0e)
 
+DEFINST(FFMA,
+		"%pred0FFMA %dst, %srcA, %srcB;",
+		0x02,
+		0x03,
+		0x09,
+		0x01)
 
 /* Misc catogory instructions:
  * S2R, NOP
