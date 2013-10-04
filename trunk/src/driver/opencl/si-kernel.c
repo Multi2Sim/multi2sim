@@ -627,7 +627,7 @@ struct opencl_si_kernel_t *opencl_si_kernel_create(int id,
 	 * The internal ELF is contained in the buffer pointer to by
 	 * the 'kernel' symbol. */
 	snprintf(symbol_name, sizeof symbol_name, "kernel<%s>.InternalELF", name);
-	kernel->bin_file = si_binary_create(kernel->kernel_buffer.ptr,
+	kernel->bin_file = SIBinaryCreate(kernel->kernel_buffer.ptr,
 		kernel->kernel_buffer.size, symbol_name);
 
 	/* Load metadata */
@@ -645,7 +645,7 @@ void opencl_si_kernel_free(struct opencl_si_kernel_t *kernel)
 	delete(kernel->arg_list);
 
 	/* Rest */
-	si_binary_free(kernel->bin_file);
+	SIBinaryFree(kernel->bin_file);
 	free(kernel->name);
 	free(kernel);
 }
@@ -870,8 +870,8 @@ void opencl_si_kernel_setup_ndrange_args(struct opencl_si_kernel_t *kernel,
 	/* Initial top of local memory is determined by the static local memory
 	 * specified in the kernel binary. Number of vector and scalar 
 	 * registers used by the kernel recorded as well. */
-	struct SIBinaryDictionaryEntry *enc_dict_entry_southern_islands =
-			si_binary_get_si_dict_entry(kernel->bin_file);
+	struct SIBinaryDictEntry *enc_dict_entry_southern_islands =
+			SIBinaryGetSIDictEntry(kernel->bin_file);
 	ndrange->local_mem_top = kernel->mem_size_local;
 	ndrange->num_sgpr_used = enc_dict_entry_southern_islands->num_sgpr_used;
 	ndrange->num_vgpr_used = enc_dict_entry_southern_islands->num_vgpr_used;
@@ -1225,8 +1225,8 @@ void opencl_si_kernel_debug_ndrange_state(struct opencl_si_kernel_t *kernel,
         si_isa_debug("\n");
 
         /* SREG initialization */
-	struct SIBinaryDictionaryEntry *enc_dict_entry_southern_islands =
-			si_binary_get_si_dict_entry(kernel->bin_file);
+	struct SIBinaryDictEntry *enc_dict_entry_southern_islands =
+			SIBinaryGetSIDictEntry(kernel->bin_file);
         unsigned int userElementCount = enc_dict_entry_southern_islands->userElementCount;
 	struct SIBinaryUserElement* userElements = enc_dict_entry_southern_islands->userElements;
         si_isa_debug("Scalar register initialization prior to execution:\n");
