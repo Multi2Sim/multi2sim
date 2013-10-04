@@ -36,7 +36,7 @@ void IniFile::ItemToSectionVar(string item, string& section, string& var)
 	vector<string> tokens;
 
 	/* Extract tokens */
-	StringTokenize(tokens, item, "|");
+	StringTokenize(item, tokens, "|");
 	assert(tokens.size() == 1 || tokens.size() == 2);
 	section = tokens[0];
 	var = tokens.size() == 2 ? tokens[1] : "";
@@ -77,7 +77,7 @@ bool IniFile::GetVarValue(string& s, string& var, string& value)
 	vector<string> tokens;
 
 	/* Split string */
-	StringTokenize(tokens, s, "=");
+	StringTokenize(s, tokens, "=");
 	if (tokens.size() != 2)
 		return false;
 
