@@ -356,8 +356,8 @@ void Asm::DisassembleBinary(std::string path)
 				symbol->GetSize(), kernel_name);
 
 			/* Disassemble */
-			buffer = (char *) binary.enc_dict_entry_southern_islands->sec_text_buffer.ptr;
-			size = binary.enc_dict_entry_southern_islands->sec_text_buffer.size;
+			buffer = (char *) binary.si_dict_entry->sec_text_buffer.ptr;
+			size = binary.si_dict_entry->sec_text_buffer.size;
 			DisassembleBuffer(cout, buffer, size);
 			cout << "\n\n\n";
 		}
