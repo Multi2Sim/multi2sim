@@ -68,6 +68,7 @@ struct si_uop_t
 	unsigned int mem_wait_inst : 1;
 	unsigned int barrier_wait_inst : 1;
 	unsigned int wavefront_last_inst : 1;   /* Last instruction in the WF */
+	unsigned int vector_mem_atomic : 1;
 	unsigned int vector_mem_read : 1;
 	unsigned int vector_mem_write : 1;
 	unsigned int scalar_mem_read : 1;

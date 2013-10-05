@@ -59,6 +59,7 @@ CLASS_BEGIN(SIWavefront, Object)
 	/* Flags updated during instruction execution */
 	unsigned int vector_mem_read : 1;
 	unsigned int vector_mem_write : 1;
+	unsigned int vector_mem_atomic : 1;
 	unsigned int scalar_mem_read : 1;
 	unsigned int lds_read : 1;
 	unsigned int lds_write : 1;
