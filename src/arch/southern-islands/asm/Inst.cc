@@ -1041,7 +1041,7 @@ void Inst::Clear()
 }
 
 
-void Inst::Decode(char *buf, unsigned int address)
+void Inst::Decode(const char *buf, unsigned int address)
 {
 	/* Initialize instruction */
 	info = NULL;

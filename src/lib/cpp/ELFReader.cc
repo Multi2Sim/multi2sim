@@ -41,7 +41,7 @@ namespace ELFReader
  */
 
 
-Section::Section(File *file, unsigned int pos)
+Section::Section(File *file, int index, unsigned int pos)
 {
 	/* Read section header */
 	info = (Elf32_Shdr *) (file->GetBuffer() + pos);
@@ -51,6 +51,7 @@ Section::Section(File *file, unsigned int pos)
 
 	/* Initialize */
 	this->file = file;
+	this->index = index;
 	buffer = NULL;
 	size = info->sh_size;
 
@@ -77,17 +78,40 @@ Section::Section(File *file, unsigned int pos)
  */
 
 
-ProgramHeader::ProgramHeader(File *file, unsigned int pos)
+ProgramHeader::ProgramHeader(File *file, int index, unsigned int pos)
 {
 	/* Initialize */
 	this->file = file;
+	this->index = index;
 
 	/* Read program header */
 	info = (Elf32_Phdr *) (file->GetBuffer() + pos);
 	if (pos < 0 || pos + sizeof(Elf32_Phdr) > file->GetSize())
 		fatal("%s: invalid position for program header",
 				file->GetPath().c_str());
+
+	/* File content */
+	size = info->p_filesz;
+	buffer = file->GetBuffer() + info->p_offset;
+	streambuf *buf = stream.rdbuf();
+	buf->pubsetbuf(buffer, size);
 }
+
+
+void ProgramHeader::GetStream(std::istringstream& stream, unsigned int offset,
+		unsigned int size)
+{
+	/* Check valid offset/size */
+	if (offset + size > this->size)
+		fatal("%s: %s: invalid offset/size",
+				file->GetPath().c_str(),
+				__FUNCTION__);
+
+	/* Set substream */
+	stringbuf *buf = stream.rdbuf();
+	buf->pubsetbuf(buffer + offset, size);
+}
+
 
 
 
@@ -190,7 +214,7 @@ void File::ReadSections()
 	/* Read section headers */
 	for (int i = 0; i < info->e_shnum; i++)
 	{
-		Section *section = new Section(this, info->e_shoff +
+		Section *section = new Section(this, i, info->e_shoff +
 				i * info->e_shentsize);
 		sections.push_back(section);
 	}
@@ -224,7 +248,7 @@ void File::ReadProgramHeaders()
 	/* Read program headers */
 	for (int i = 0; i < info->e_phnum; i++)
 	{
-		ProgramHeader *ph = new ProgramHeader(this, info->e_phoff +
+		ProgramHeader *ph = new ProgramHeader(this, i, info->e_phoff +
 				i * info->e_phentsize);
 		program_headers.push_back(ph);
 	}
@@ -289,6 +313,28 @@ File::File(std::string path)
 	/* Make string stream point to buffer */
 	stringbuf *buf = stream.rdbuf();
 	buf->pubsetbuf(buffer, size);
+
+	/* Read content */
+	ReadHeader();
+	ReadSections();
+	ReadProgramHeaders();
+	ReadSymbols();
+}
+
+
+File::File(const char *buffer, unsigned int size)
+{
+	/* Initialize */
+	path = "<anonymous>";
+
+	/* Copy buffer */
+	this->size = size;
+	this->buffer = new char[size];
+	memcpy(this->buffer, buffer, size);
+
+	/* Make string stream point to buffer */
+	stringbuf *buf = stream.rdbuf();
+	buf->pubsetbuf(this->buffer, size);
 
 	/* Read content */
 	ReadHeader();
@@ -429,6 +475,20 @@ Symbol *File::GetSymbol(string name)
 	
 	/* Not found */
 	return NULL;
+}
+
+
+void File::GetStream(std::istringstream& stream, unsigned int offset,
+		unsigned int size)
+{
+	/* Check valid offset/size */
+	if (offset + size > this->size)
+		fatal("%s: %s: invalid offset/size",
+				path.c_str(), __FUNCTION__);
+
+	/* Set substream */
+	stringbuf *buf = stream.rdbuf();
+	buf->pubsetbuf(buffer + offset, size);
 }
 
 

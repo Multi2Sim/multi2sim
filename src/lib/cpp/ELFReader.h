@@ -44,22 +44,24 @@ class Section
 	/* Name of the section */
 	std::string name;
 
-	/* Buffer and its size */
+	/* File content */
 	char *buffer;
 	unsigned int size;
 	std::istringstream stream;
 
 	/* Section information */
+	int index;
 	Elf32_Shdr *info;
 
-	/* Constructor and destructor */
-	Section(File *file, unsigned int pos);
+	/* Constructor */
+	Section(File *file, int index, unsigned int pos);
 public:
 	/* Section content */
 	char *GetBuffer() { return buffer; }
 	std::istringstream& GetStream() { return stream; }
 
 	/* Section header */
+	int GetIndex() { return index; }
 	const std::string& GetName() { return name; }
 	Elf32_Word GetType() { return info->sh_type; }
 	Elf32_Word GetFlags() { return info->sh_flags; }
@@ -81,11 +83,20 @@ class ProgramHeader
 	File *file;
 
 	/* Program header information */
+	int index;
 	Elf32_Phdr *info;
 
-	/* Constructor and destructor */
-	ProgramHeader(File *file, unsigned int pos);
+	/* File content */
+	char *buffer;
+	unsigned int size;
+	std::istringstream stream;
+
+	/* Constructor */
+	ProgramHeader(File *file, int index, unsigned int pos);
 public:
+
+	/* Program header information */
+	int GetIndex() { return index; }
 	Elf32_Word GetType() { return info->p_type; }
 	Elf32_Off GetOffset() { return info->p_offset; }
 	Elf32_Addr GetVaddr() { return info->p_vaddr; }
@@ -94,6 +105,13 @@ public:
 	Elf32_Word GetMemsz() { return info->p_memsz; }
 	Elf32_Word GetFlags() { return info->p_flags; }
 	Elf32_Word GetAlign() { return info->p_align; }
+
+	/* File content pointed to by program header (segment) */
+	unsigned int GetSize() { return size; }
+	char *GetBuffer() { return buffer; }
+	void GetStream(std::istringstream& stream) { GetStream(stream, 0, size); }
+	void GetStream(std::istringstream& stream, unsigned int offset,
+			unsigned int size);
 };
 
 
@@ -166,6 +184,7 @@ class File
 public:
 
 	File(std::string path);
+	File(const char *buffer, unsigned int size);
 	~File(void);
 
 	/* Dump file information into output stream */
@@ -196,7 +215,9 @@ public:
 	/* File content */
 	unsigned int GetSize() { return size; }
 	char *GetBuffer() { return buffer; }
-	std::istringstream& GetStream() { return stream; }
+	void GetStream(std::istringstream& stream) { GetStream(stream, 0, size); }
+	void GetStream(std::istringstream& stream, unsigned int offset,
+			unsigned int size);
 
 	/* Return the first symbol at a given address/name, or the closest
 	 * one with a higher address. If argument 'offset' is passed, the
