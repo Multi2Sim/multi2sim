@@ -317,18 +317,19 @@ void Asm::DisassembleBinary(std::string path)
 	/* Decode external ELF */
 	for (int i = 0; i < file.GetNumSymbols(); i++)
 	{
-		/* Get symbol and section */
+		/* Get symbol */
 		ELFReader::Symbol *symbol = file.GetSymbol(i);
-		ELFReader::Section *section = symbol->GetSection();
-		if (!section)
-			continue;
+		std::string symbol_name = symbol->GetName();
 
 		/* If symbol is '__OpenCL_XXX_kernel', it points 
 		 * to internal ELF */
-		std::string symbol_name = symbol->GetName();
 		if (StringPrefix(symbol_name, "__OpenCL_") &&
 				StringSuffix(symbol_name, "_kernel"))
 		{
+			/* Symbol must point to valid content */
+			if (!symbol->GetBuffer())
+				fatal("%s: symbol '%s' without content",
+						path.c_str(), symbol_name.c_str());
 			/* Get kernel name */
 			std::string kernel_name = symbol_name.substr(9,
 					symbol_name.length() - 16);
@@ -336,12 +337,13 @@ void Asm::DisassembleBinary(std::string path)
 					kernel_name << "'\n**\n\n";
 
 			/* Create internal ELF */
-			Binary binary(section->GetBuffer() + symbol->GetValue(),
-				symbol->GetSize(), kernel_name);
+			Binary binary(symbol->GetBuffer(), symbol->GetSize(), kernel_name);
 
-			/* Disassemble */
+			/* Get section with Southern Islands ISA */
 			BinaryDictEntry *si_dict_entry = binary.GetSIDictEntry();
 			ELFReader::Section *section = si_dict_entry->text_section;
+
+			/* Disassemble */
 			DisassembleBuffer(cout, section->GetBuffer(), section->GetSize());
 			cout << "\n\n\n";
 		}

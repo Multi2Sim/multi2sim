@@ -47,7 +47,6 @@ class Section
 	/* File content */
 	char *buffer;
 	unsigned int size;
-	std::istringstream stream;
 
 	/* Section information */
 	int index;
@@ -56,10 +55,6 @@ class Section
 	/* Constructor */
 	Section(File *file, int index, unsigned int pos);
 public:
-	/* Section content */
-	char *GetBuffer() { return buffer; }
-	std::istringstream& GetStream() { return stream; }
-
 	/* Section header */
 	int GetIndex() { return index; }
 	const std::string& GetName() { return name; }
@@ -72,6 +67,12 @@ public:
 	Elf32_Word GetInfo() { return info->sh_info; }
 	Elf32_Word GetAddralign() { return info->sh_addralign; }
 	Elf32_Word GetEntsize() { return info->sh_entsize; }
+
+	/* Section content */
+	char *GetBuffer() { return buffer; }
+	void GetStream(std::istringstream& stream) { GetStream(stream, 0, size); }
+	void GetStream(std::istringstream& stream, unsigned int offset,
+			unsigned int size);
 };
 
 
@@ -89,7 +90,6 @@ class ProgramHeader
 	/* File content */
 	char *buffer;
 	unsigned int size;
-	std::istringstream stream;
 
 	/* Constructor */
 	ProgramHeader(File *file, int index, unsigned int pos);
@@ -131,6 +131,10 @@ class Symbol
 	/* Symbol name */
 	std::string name;
 
+	/* Content pointed to by symbol in the section, or null if it points
+	 * to an invalid region of the section, or doesn't point to any section. */
+	char *buffer;
+
 	/* Symbol information, pointing to an internal position of the ELF
 	 * file's buffer. */
 	Elf32_Sym *info;
@@ -146,12 +150,19 @@ public:
 	Section *GetSection() { return section; }
 	const std::string& GetName() { return name; }
 
-	/* Information extracted from ELF symbol structure */
+	/* Symbol information */
 	Elf32_Addr GetValue() { return info->st_value; }
 	Elf32_Word GetSize() { return info->st_size; }
 	unsigned char GetInfo() { return info->st_info; }
 	unsigned char GetOther() { return info->st_other; }
 	Elf32_Section GetShndx() { return info->st_shndx; }
+
+	/* Section content pointed to by symbol, if valid */
+	char *GetBuffer() { return buffer; }
+	void GetStream(std::istringstream& stream) { GetStream(stream, 0,
+			info->st_size); }
+	void GetStream(std::istringstream& stream, unsigned int offset,
+			unsigned int size);
 };
 
 
@@ -224,11 +235,6 @@ public:
 	 * offset of the symbol relative to the address is returned. */
 	Symbol *GetSymbolByAddress(unsigned int address);
 	Symbol *GetSymbolByAddress(unsigned int address, unsigned int &offset);
-
-	/* Read the content pointed to by a symbol, eather returning a pair
-	 * buffer/size, or a string stream pointing to the interal ELF buffer */
-	void GetSymbolContent(Symbol *symbol, char *&buffer, unsigned int& size);
-	void GetSymbolContent(Symbol *symbol, std::istringstream& stream);
 
 	/* ELF header */
 	unsigned char *GetIdent() { return info->e_ident; }

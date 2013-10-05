@@ -66,8 +66,6 @@ Section::Section(File *file, int index, unsigned int pos)
 
 		/* Set up buffer and stream */
 		buffer = file->GetBuffer() + info->sh_offset;
-		streambuf *buf = stream.rdbuf();
-		buf->pubsetbuf(buffer, size);
 	}
 }
 
@@ -93,8 +91,6 @@ ProgramHeader::ProgramHeader(File *file, int index, unsigned int pos)
 	/* File content */
 	size = info->p_filesz;
 	buffer = file->GetBuffer() + info->p_offset;
-	streambuf *buf = stream.rdbuf();
-	buf->pubsetbuf(buffer, size);
 }
 
 
@@ -145,6 +141,13 @@ Symbol::Symbol(File *file, Section *section, unsigned int pos)
 
 	/* Get section in 'st_shndx' */
 	this->section = file->GetSection(info->st_shndx);
+
+	/* If symbol points to a valid region of the section, set
+	 * variable buffer. */
+	buffer = NULL;
+	if (this->section && info->st_value + info->st_size <=
+			this->section->GetSize())
+		buffer = this->section->GetBuffer();
 }
 
 
@@ -171,6 +174,28 @@ bool Symbol::Compare(Symbol *a, Symbol *b)
 	/* Sort alphabetically */
 	return a->name < b->name;
 }
+
+
+void Symbol::GetStream(std::istringstream& stream, unsigned int offset,
+		unsigned int size)
+{
+	/* Symbol without content */
+	if (!buffer)
+		fatal("%s: %s: symbol '%s' does not have any valid content",
+				file->GetPath().c_str(), __FUNCTION__,
+				name.c_str());
+
+	/* Check valid offset/size */
+	if (offset + size > info->st_size)
+		fatal("%s: symbol '%s': %s: invalid offset/size",
+				file->GetPath().c_str(), name.c_str(),
+				__FUNCTION__);
+
+	/* Set substream */
+	stringbuf *buf = stream.rdbuf();
+	buf->pubsetbuf(buffer + offset, size);
+}
+
 
 
 
@@ -565,40 +590,6 @@ Symbol *File::GetSymbolByAddress(unsigned int address, unsigned int &offset)
 	offset = address - symbol->info->st_value;
 	return symbol;
 }
-
-
-void File::GetSymbolContent(Symbol *symbol, char *&buffer, unsigned int& size)
-{
-	/* Symbol with no content */
-	buffer = NULL;
-	size = 0;
-	if (symbol->info->st_shndx >= sections.size())
-		return;
-	
-	/* Symbol exceeds section size */
-	Section *section = sections[symbol->info->st_shndx];
-	if (symbol->info->st_value + symbol->info->st_size > section->size)
-		return;
-
-	/* Get section where the symbol is pointing */
-	buffer = section->buffer + symbol->info->st_size;
-	size = symbol->info->st_size;
-}
-
-
-void File::GetSymbolContent(Symbol *symbol, istringstream& ss)
-{
-	char *buffer;
-	unsigned int size;
-
-	/* Get content */
-	GetSymbolContent(symbol, buffer, size);
-
-	/* Set up string stream */
-	stringbuf *buf = ss.rdbuf();
-	buf->pubsetbuf(buffer, size);
-}
-
 
 
 } /* namespace ELFReader */
