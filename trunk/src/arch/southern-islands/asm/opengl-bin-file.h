@@ -1083,7 +1083,8 @@ struct opengl_si_program_binary_t
 	struct list_t *shader_bins;
 };
 
-struct opengl_si_program_binary_t *opengl_si_program_binary_create(void *buffer_ptr, int size, char *name);
+struct opengl_si_program_binary_t *opengl_si_program_binary_create(
+		const char *buffer_ptr, int size, const char *name);
 void opengl_si_program_binary_free(struct opengl_si_program_binary_t *program_bin);
 
 struct opengl_si_shader_binary_t *opengl_si_shader_binary_create(void *buffer, int size, char* name);

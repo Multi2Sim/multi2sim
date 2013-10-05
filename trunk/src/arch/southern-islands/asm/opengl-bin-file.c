@@ -621,7 +621,8 @@ static void opengl_si_shader_bin_list_free(struct list_t *shaders)
  * Public functions
  */
 
-struct opengl_si_program_binary_t *opengl_si_program_binary_create(void *buffer_ptr, int size, char *name)
+struct opengl_si_program_binary_t *opengl_si_program_binary_create(const char *buffer_ptr,
+		int size, const char *name)
 {
 	struct opengl_si_program_binary_t *program_bin;
 
@@ -630,7 +631,7 @@ struct opengl_si_program_binary_t *opengl_si_program_binary_create(void *buffer_
 
 	/* Initialize */
 	program_bin->name = xstrdup(name);
-	program_bin->binary = elf_file_create_from_buffer(buffer_ptr, size, name);
+	program_bin->binary = elf_file_create_from_buffer((char *) buffer_ptr, size, (char *) name);
 	if (!program_bin->binary)
 		fatal("Shader binary is not ELF formatted, please upgrade your AMD driver!");
 	program_bin->shader_bins = opengl_si_shader_bin_list_create(program_bin->binary);

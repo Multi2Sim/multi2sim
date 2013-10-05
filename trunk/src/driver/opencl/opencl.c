@@ -1031,7 +1031,6 @@ static int opencl_abi_si_ndrange_create_impl(X86Context *ctx)
 
 	SINDRange *ndrange;
 
-	struct elf_buffer_t *elf_buffer;
 	struct mem_t *mem = ctx->mem;
 	struct opencl_si_kernel_t *kernel;
 	struct SIBinaryUserElement *user_elements;
@@ -1088,27 +1087,28 @@ static int opencl_abi_si_ndrange_create_impl(X86Context *ctx)
 	ndrange->local_mem_top = kernel->mem_size_local;
 	struct SIBinaryDictEntry *si_dict_entry =
 			SIBinaryGetSIDictEntry(kernel->bin_file);
-	ndrange->num_sgpr_used = si_dict_entry->num_sgpr_used;
-	ndrange->num_vgpr_used = si_dict_entry->num_vgpr_used;
-	ndrange->wg_id_sgpr = si_dict_entry->compute_pgm_rsrc2->user_sgpr;
+	ndrange->num_sgpr_used = SIBinaryDictEntryGetNumSgpr(si_dict_entry);
+	ndrange->num_vgpr_used = SIBinaryDictEntryGetNumVgpr(si_dict_entry);
+	ndrange->wg_id_sgpr = SIBinaryDictEntryGetComputePgmRsrc2(si_dict_entry)->user_sgpr;
 	SINDRangeSetupSize(ndrange, global_size, local_size, work_dim);
 	opencl_debug("\tndrange address space index = %d\n", 
 		ndrange->address_space_index);
 
 	/* Copy user elements from kernel to ND-Range */
-	user_element_count = si_dict_entry->userElementCount;
-	user_elements = si_dict_entry->userElements;
+	user_element_count = SIBinaryDictEntryGetNumUserElements(si_dict_entry);
+	user_elements = SIBinaryDictEntryGetUserElements(si_dict_entry);
 	ndrange->userElementCount = user_element_count;
 	for (i = 0; i < user_element_count; i++)
 		ndrange->userElements[i] = user_elements[i];
 
 	/* Set up instruction memory */
 	/* Initialize wavefront instruction buffer and PC */
-	elf_buffer = &si_dict_entry->sec_text_buffer;
-	if (!elf_buffer->size)
+	char *text_buffer = SIBinaryDictEntryGetTextBuffer(si_dict_entry);
+	unsigned int text_size = SIBinaryDictEntryGetTextSize(si_dict_entry);
+	if (!text_size)
 		fatal("%s: cannot load kernel code", __FUNCTION__);
 
-	SINDRangeSetupInstMem(ndrange, elf_buffer->ptr, elf_buffer->size, 0);
+	SINDRangeSetupInstMem(ndrange, text_buffer, text_size, 0);
 
 	if (si_gpu)
 		SIGpuMapNDRange(si_gpu, ndrange);

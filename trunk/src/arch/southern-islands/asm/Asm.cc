@@ -19,6 +19,7 @@
 
 #include <cassert>
 #include <iomanip>
+#include <fstream>
 #include <sstream>
 
 #include <lib/cpp/Misc.h>
@@ -182,11 +183,11 @@ Asm::Asm()
 }
 
 
-void Asm::DisassembleBuffer(ostream& os, char *buffer, int size)
+void Asm::DisassembleBuffer(ostream& os, const char *buffer, int size)
 {
 	stringstream ss;
 
-	char *original_buffer = buffer;
+	const char *original_buffer = buffer;
 
 	int inst_count = 0;
 	int rel_addr = 0;
@@ -308,25 +309,8 @@ void Asm::DisassembleBuffer(ostream& os, char *buffer, int size)
 	}
 }
 
-//////////////
-extern "C" {
-#include <string.h>
-#include <lib/util/string.h>
-#include <lib/util/elf-format.h>
-#include <lib/util/list.h>
-#include <lib/util/misc.h>
-#include "opengl-bin-file.h"
-}
-///////////////
-
 void Asm::DisassembleBinary(std::string path)
 {
-	string kernel_name;
-
-	char *buffer;
-
-	int size;
-
 	/* Load ELF file */
 	ELFReader::File file(path);
 
@@ -357,49 +341,58 @@ void Asm::DisassembleBinary(std::string path)
 
 			/* Disassemble */
 			BinaryDictEntry *si_dict_entry = binary.GetSIDictEntry();
-			buffer = (char *) si_dict_entry->sec_text_buffer.ptr;
-			size = si_dict_entry->sec_text_buffer.size;
-			DisassembleBuffer(cout, buffer, size);
+			ELFReader::Section *section = si_dict_entry->text_section;
+			DisassembleBuffer(cout, section->GetBuffer(), section->GetSize());
 			cout << "\n\n\n";
 		}
 	}
 }
 
 
-void Asm::DisassembleOpenGLBinary(string path, int shader_index)
+//////////////
+extern "C" {
+#include <lib/util/list.h>
+#include "opengl-bin-file.h"
+}
+///////////////
+
+void Asm::DisassembleOpenGLBinary(std::string path, int shader_index)
 {
 	struct opengl_si_program_binary_t *program_bin;
 	struct opengl_si_shader_binary_t *shader;
-	void *file_buffer;
-	int file_size;
 
-	/* Load file into memory buffer */
-	file_buffer = read_buffer(const_cast<char *>(path.c_str()), &file_size);
-	if(!file_buffer)
-		fatal("%s:Invalid file!", const_cast<char *>(path.c_str()));
+	/* Open file */
+	std::ifstream f(path);
+	if (!f)
+		fatal("%s: cannot open file", path.c_str());
+
+	/* Load file into string */
+	std::stringstream ss;
+	ss << f.rdbuf();
+	std::string s = ss.str();
 
 	/* Analyze the file and initialize structure */	
-	program_bin = opengl_si_program_binary_create(file_buffer, file_size, const_cast<char *>(path.c_str()));
-	free_buffer(file_buffer);
+	program_bin = opengl_si_program_binary_create(s.c_str(), s.length(),
+			path.c_str());
 
 	/* Basic info of the shader binary */
-	printf("This program binary contains %d shaders\n\n", 
-		list_count(program_bin->shader_bins));
+	cout << "This program binary contains "
+			<< list_count(program_bin->shader_bins)
+			<< " shaders\n\n";
 	if (shader_index > list_count(program_bin->shader_bins) ||
 			shader_index <= 0 )
-	{
-		fatal("Shader index out of range! Please choose <index> "
+		fatal("shader index out of range.\n\tPlease choose <index> "
 			"from 1 ~ %d", list_count(program_bin->shader_bins));
-	}
 
 	/* Disassemble */
-	shader = (struct opengl_si_shader_binary_t *)list_get(program_bin->shader_bins, 
+	shader = (struct opengl_si_shader_binary_t *)
+			list_get(program_bin->shader_bins,
 			shader_index - 1);
-	printf("**\n** Disassembly for shader %d\n**\n\n", shader_index);
+	cout << "**\n** Disassembly for shader " << shader_index << "\n**\n\n";
 	DisassembleBuffer(cout, (char *)shader->isa->ptr,
 			shader->isa->size);
 	opengl_si_shader_binary_debug_meta(shader);
-	printf("\n\n\n");
+	cout << "\n\n\n";
 
 	/* Free */
 	opengl_si_program_binary_free(program_bin);
