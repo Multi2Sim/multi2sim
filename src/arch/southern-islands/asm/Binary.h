@@ -25,12 +25,6 @@
 
 #ifdef __cplusplus
 
-////////////
-extern "C" {
-#include <lib/util/elf-format.h>
-}
-////////////
-
 #include <lib/cpp/ELFReader.h>
 #include <lib/cpp/Misc.h>
 
@@ -163,34 +157,34 @@ struct BinaryDictEntry
 	/* Header (pointer to ELF buffer contents) */
 	BinaryDictHeader *header;
 
-	/* Buffers containing PT_LOAD and PT_NOTE segments */
-	struct elf_buffer_t pt_load_buffer;
-	struct elf_buffer_t pt_note_buffer;
+	/* Streams containing PT_LOAD and PT_NOTE segments */
+	ELFReader::ProgramHeader *pt_load_segment;
+	ELFReader::ProgramHeader *pt_note_segment;
 
-	/* Buffers containing sections */
-	struct elf_buffer_t sec_text_buffer;
-	struct elf_buffer_t sec_data_buffer;
-	struct elf_buffer_t sec_symtab_buffer;
-	struct elf_buffer_t sec_strtab_buffer;
+	/* Streams containing sections */
+	ELFReader::Section *text_section;
+	ELFReader::Section *data_section;
+	ELFReader::Section *symtab_section;
+	ELFReader::Section *strtab_section;
 
 	/* Constants extract from '.data' section */
 	BinaryDictConsts *consts;
 
 	/* Info read from pt_notes */
-	int num_vgpr_used;
-	int num_sgpr_used;
-	int lds_size_used;
-	int stack_size_used;
+	int num_vgpr;
+	int num_sgpr;
+	int lds_size;
+	int stack_size;
 
-	unsigned int userElementCount;
-	BinaryUserElement userElements[16];
+	unsigned int num_user_elements;
+	BinaryUserElement user_elements[16];
 
 	BinaryComputePgmRsrc2 *compute_pgm_rsrc2;
 };
 
 
 /* Binary file */
-class Binary
+class Binary : ELFReader::File
 {
 	/* Encoding dictionary. Each element of the dictionary contains the
 	 * binary for a different architecture (Evergreen, x86, etc.) */
@@ -203,17 +197,16 @@ class Binary
 	/* Binary file name */
 	std::string name;
 
-	void ReadNoteHeader(BinaryDictEntry *dict_entry);
+	void ReadNote(BinaryDictEntry *dict_entry, std::istringstream& ss,
+			char *buffer);
 	void ReadNotes(BinaryDictEntry *dict_entry);
 	void ReadDictionary();
 	void ReadSegments();
 	void ReadSections();
 public:
-	struct elf_file_t *elf_file;
-
 	static Misc::Debug debug;
 
-	Binary(void *ptr, int size, std::string name);
+	Binary(const char *buffer, unsigned int size, std::string name);
 	~Binary();
 
 	BinaryDictEntry *GetSIDictEntry() { return si_dict_entry; }
@@ -356,46 +349,25 @@ struct SIBinaryComputePgmRsrc2
 };
 
 
-/* Encoding dictionary entry */
-struct SIBinaryDictEntry
-{
-	/* Header (pointer to ELF buffer contents) */
-	struct SIBinaryDictionaryHeader *header;
-
-	/* Buffers containing PT_LOAD and PT_NOTE segments */
-	struct elf_buffer_t pt_load_buffer;
-	struct elf_buffer_t pt_note_buffer;
-
-	/* Buffers containing sections */
-	struct elf_buffer_t sec_text_buffer;
-	struct elf_buffer_t sec_data_buffer;
-	struct elf_buffer_t sec_symtab_buffer;
-	struct elf_buffer_t sec_strtab_buffer;
-
-	/* Constants extract from '.data' section */
-	struct SIBinaryDictionaryConsts *consts;
-
-	/* Info read from pt_notes */
-	int num_vgpr_used;
-	int num_sgpr_used;
-	int lds_size_used;
-	int stack_size_used;
-
-	unsigned int userElementCount;
-	struct SIBinaryUserElement userElements[16];
-
-	struct SIBinaryComputePgmRsrc2 *compute_pgm_rsrc2;
-};
-
-
 extern struct StringMapWrap *si_binary_machine_map;
 extern struct StringMapWrap *si_binary_note_map;
 extern struct StringMapWrap *si_binary_prog_info_map;
 
+/* Binary dictionary entry */
+struct SIBinaryDictEntry;
+int SIBinaryDictEntryGetNumVgpr(struct SIBinaryDictEntry *self);
+int SIBinaryDictEntryGetNumSgpr(struct SIBinaryDictEntry *self);
+int SIBinaryDictEntryGetLDSSize(struct SIBinaryDictEntry *self);
+int SIBinaryDictEntryGetStackSize(struct SIBinaryDictEntry *self);
+unsigned int SIBinaryDictEntryGetNumUserElements(struct SIBinaryDictEntry *self);
+struct SIBinaryUserElement *SIBinaryDictEntryGetUserElements(struct SIBinaryDictEntry *self);
+struct SIBinaryComputePgmRsrc2 *SIBinaryDictEntryGetComputePgmRsrc2(struct SIBinaryDictEntry *self);
+char *SIBinaryDictEntryGetTextBuffer(struct SIBinaryDictEntry *self);
+unsigned int SIBinaryDictEntryGetTextSize(struct SIBinaryDictEntry *self);
 
 /* Binary file */
 struct SIBinary;
-struct SIBinary *SIBinaryCreate(void *ptr, int size, char *name);
+struct SIBinary *SIBinaryCreate(const char *buffer, unsigned int size, char *name);
 void SIBinaryFree(struct SIBinary *bin);
 void SIBinarySetDebugFile(const char *path);
 struct SIBinaryDictEntry *SIBinaryGetSIDictEntry(struct SIBinary *bin);

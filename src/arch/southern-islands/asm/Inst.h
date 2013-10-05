@@ -513,7 +513,7 @@ public:
 	Inst(Asm *as);
 
 	/* Decode instruction from buffer */
-	void Decode(char *buffer, unsigned int offset);
+	void Decode(const char *buffer, unsigned int offset);
 
 	/* Print the instruction */
 	void Dump(std::ostream& os);
