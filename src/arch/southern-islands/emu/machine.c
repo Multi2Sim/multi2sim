@@ -7152,10 +7152,108 @@ void si_isa_BUFFER_STORE_DWORD_impl(SIWorkItem *work_item,
 
 	mem_write(emu->global_mem, addr, bytes_to_write, &value);
 	
-	/* Sign extend */
-	//value.as_int = (int) value.as_byte[0];
+	/* Record last memory access for the detailed simulator. */
+	work_item->global_mem_access_addr = addr;
+	work_item->global_mem_access_size = bytes_to_write;
 
-	SIWorkItemWriteVReg(work_item, INST.vdata, value.as_uint);
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("t%d: (%u)<=V%u(%d) ", work_item->id,
+			addr, INST.vdata, value.as_int);
+	}
+}
+#undef INST
+
+#define INST SI_INST_MUBUF
+void si_isa_BUFFER_ATOMIC_ADD_impl(SIWorkItem *work_item,
+	struct SIInstWrap *inst)
+{
+	SIWorkGroup *work_group = work_item->work_group;
+	SINDRange *ndrange = work_group->ndrange;
+	SIEmu *emu = ndrange->emu;
+
+	assert(!INST.addr64);
+	assert(!INST.slc);
+	assert(!INST.tfe);
+	assert(!INST.lds);
+
+	struct si_buffer_desc_t buf_desc;
+	SIInstReg value;
+	SIInstReg prev_value;
+
+	unsigned int addr;
+	unsigned int base;
+	unsigned int mem_offset = 0;
+	unsigned int inst_offset = 0;
+	unsigned int off_vgpr = 0;
+	unsigned int stride = 0;
+	unsigned int idx_vgpr = 0;
+
+	int bytes_to_read = 4;
+	int bytes_to_write = 4;
+
+	if (INST.glc)
+	{
+		work_item->wavefront->vector_mem_glc = 1;
+	}
+	else
+	{
+		/* NOTE Regardless of whether the glc bit is set by the AMD 
+		 * compiler, for the NMOESI protocol correctness , the glc bit
+		 * must be set. */
+		work_item->wavefront->vector_mem_glc = 1;
+	}
+
+	/* srsrc is in units of 4 registers */
+	SIWorkItemReadBufferResource(work_item, &buf_desc, INST.srsrc * 4);
+
+	/* Figure 8.1 from SI ISA defines address calculation */
+	base = buf_desc.base_addr;
+	mem_offset = SIWorkItemReadSReg(work_item, INST.soffset);
+	inst_offset = INST.offset;
+	stride = buf_desc.stride;
+
+	/* Table 8.3 from SI ISA */
+	if (!INST.idxen && INST.offen)
+	{
+		off_vgpr = SIWorkItemReadVReg(work_item, INST.vaddr);
+	}
+	else if (INST.idxen && !INST.offen)
+	{
+		idx_vgpr = SIWorkItemReadVReg(work_item, INST.vaddr);
+	}
+	else if (INST.idxen && INST.offen)
+	{
+		idx_vgpr = SIWorkItemReadVReg(work_item, INST.vaddr);
+		off_vgpr = SIWorkItemReadVReg(work_item, INST.vaddr + 1);
+	}
+
+	/* It wouldn't make sense to have a value for idxen without
+	 * having a stride */
+	if (idx_vgpr && !stride)
+	{
+		fatal("%s: the buffer descriptor is probably not correct",
+			__FUNCTION__);
+	}
+
+	addr = base + mem_offset + inst_offset + off_vgpr + 
+		stride * (idx_vgpr + work_item->id_in_wavefront);
+
+	/* Read existing value from global memory */
+	mem_read(emu->global_mem, addr, bytes_to_read, &prev_value);
+
+	/* Read value to add to existing value from a register */
+	value.as_int = SIWorkItemReadVReg(work_item, INST.vdata);
+
+	/* Compute and store the updated value */
+	value.as_int += prev_value.as_int;
+	mem_write(emu->global_mem, addr, bytes_to_write, &value);
+	
+	/* If glc bit set, retturn the previous value in a register */
+	if (INST.glc)
+	{
+		SIWorkItemWriteVReg(work_item, INST.vdata, prev_value.as_uint);
+	}
 
 	/* Record last memory access for the detailed simulator. */
 	work_item->global_mem_access_addr = addr;
@@ -7166,14 +7264,6 @@ void si_isa_BUFFER_STORE_DWORD_impl(SIWorkItem *work_item,
 		si_isa_debug("t%d: V%u<=(%u)(%d) ", work_item->id,
 			INST.vdata, addr, value.as_int);
 	}
-}
-#undef INST
-
-#define INST SI_INST_MUBUF
-void si_isa_BUFFER_ATOMIC_ADD_impl(SIWorkItem *work_item,
-	struct SIInstWrap *inst)
-{
-	NOT_IMPL();
 }
 #undef INST
 

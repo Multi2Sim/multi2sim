@@ -538,9 +538,14 @@ void SIWavefrontExecute(SIWavefront *self)
 		{
 			self->vector_mem_write = 1;
 		}
+		else if (op == 50)
+		{
+			self->vector_mem_atomic = 1;
+		}
 		else 
 		{
-			fatal("%s: unsupported mtbuf opcode", __FUNCTION__);
+			fatal("%s: unsupported mubuf opcode (%d)", 
+				__FUNCTION__, op);
 		}
 	
 		/* Execute the instruction */

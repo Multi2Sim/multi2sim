@@ -470,6 +470,7 @@ void SIComputeUnitFetch(SIComputeUnit *self, int active_fb)
 		uop->wavefront_pool_id = active_fb;
 		uop->vector_mem_read = wavefront->vector_mem_read;
 		uop->vector_mem_write = wavefront->vector_mem_write;
+		uop->vector_mem_atomic = wavefront->vector_mem_atomic;
 		uop->scalar_mem_read = wavefront->scalar_mem_read;
 		uop->lds_read = wavefront->lds_read;
 		uop->lds_write = wavefront->lds_write;
