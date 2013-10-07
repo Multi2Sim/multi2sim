@@ -44,11 +44,14 @@ typedef struct
 	/* index, not known */
 	unsigned int index;
 
-	/* offset, not known */
-	unsigned short offset;
+	/* mix of ordinal and offset */
+	unsigned int offset_ordinal;
 
 	/* ordinal, not known */
-	unsigned short ordinal;
+	//unsigned short ordinal;
+
+	/* offset, not known */
+	//unsigned short offset;
 
 	/* a complex info structure */
 	Frm2binBinaryKernelInfoKparamInfoCplx cplx;
@@ -57,7 +60,10 @@ typedef struct
 
 typedef struct
 {
-	unsigned int notKnownYet;
+	unsigned int id;
+	/* not known yet */
+	unsigned int part1;
+	unsigned int part2;
 
 } Frm2binBinaryKernelInfoSyncStack;
 
