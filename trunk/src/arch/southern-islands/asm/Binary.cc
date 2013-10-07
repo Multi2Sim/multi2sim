@@ -977,13 +977,11 @@ void Binary::ReadSections()
 
 		/* Check that all sections where read */
 		if (!dict_entry->text_section
-			|| !dict_entry->data_section
-			|| !dict_entry->symtab_section
-			|| !dict_entry->strtab_section)
-		{
+				|| !dict_entry->data_section
+				|| !dict_entry->symtab_section
+				|| !dict_entry->strtab_section)
 			fatal("%s: some section was not found: .text .data"
 				" .symtab .strtab", __FUNCTION__);
-		}
 	}
 }
 
