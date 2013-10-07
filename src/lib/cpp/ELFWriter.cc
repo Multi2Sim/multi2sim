@@ -242,8 +242,8 @@ SymbolTable::SymbolTable(File *file, string symtab, string strtab)
 SymbolTable::~SymbolTable()
 {
 	/* Free all symbols */
-	for (auto it = symbols.begin(); it != symbols.end(); ++it)
-		delete *it;
+	for (auto &symbol : symbols)
+		delete symbol;
 }
 
 
@@ -260,15 +260,11 @@ Symbol *SymbolTable::NewSymbol(std::string name)
 
 void SymbolTable::Generate()
 {
-	Symbol *symbol;
-
 	/* Populate symtab and strtab buffers */
 	symtab_buffer->Clear();
 	strtab_buffer->Clear();
-	for (auto it = symbols.begin(); it != symbols.end(); ++it)
+	for (auto &symbol : symbols)
 	{
-		symbol = *it;
-
 		/* Update offset for symbol name, pointing to the current end of
 		 * the strtab buffer. */
 		symbol->info.st_name = strtab_buffer->Size();
@@ -321,20 +317,20 @@ File::File()
 File::~File()
 {
 	/* Free buffers */
-	for (auto it = buffers.begin(); it != buffers.end(); ++it)
-		delete *it;
+	for (auto &buffer : buffers)
+		delete buffer;
 
 	/* Free sections */
-	for (auto it = sections.begin(); it != sections.end(); ++it)
-		delete *it;
+	for (auto &section : sections)
+		delete section;
 
 	/* Free segments */
-	for (auto it = segments.begin(); it != segments.end(); ++it)
-		delete *it;
+	for (auto &segment : segments)
+		delete segment;
 
 	/* Free symbol tables */
-	for (auto it = symbol_tables.begin(); it != symbol_tables.end(); ++it)
-		delete *it;
+	for (auto &symbol_table : symbol_tables)
+		delete symbol_table;
 }
 
 
@@ -387,8 +383,6 @@ SymbolTable *File::NewSymbolTable(string symtab, string strtab)
 
 void File::Generate(ostream& os)
 {
-	Section *section;
-	Segment *segment;
 	Buffer *buffer;
 
 	unsigned int phtab_size;
@@ -433,9 +427,8 @@ void File::Generate(ostream& os)
 	shtab_size = sizeof(Elf32_Shdr) * sections.size();
 
 	/* Find segment offsets */
-	for (auto it = segments.begin(); it != segments.end(); ++it)
+	for (auto &segment : segments)
 	{
-		segment = *it;
 		buf_offset = 0;
 		for (j = 0; j < segment->first_buffer->index; j++)
 		{
@@ -449,9 +442,8 @@ void File::Generate(ostream& os)
 	}
 		
 	/* Find actual segment sizes */
-	for (auto it = segments.begin(); it != segments.end(); ++it)
+	for (auto &segment : segments)
 	{
-		segment = *it;
 		for (j = segment->first_buffer->index;
 				j <= segment->last_buffer->index; j++)
 		{
@@ -463,9 +455,8 @@ void File::Generate(ostream& os)
 	}
 	
 	/* Find section offsets */
-	for (auto it = sections.begin(); it != sections.end(); ++it)
+	for (auto &section : sections)
 	{
-		section = *it;
 		buf_offset = 0;
 		for (j = 0; j < section->first_buffer->index; j++)
 		{
@@ -477,13 +468,11 @@ void File::Generate(ostream& os)
 	}
 	
 	/* Null section should not have an offset */
-	section = sections[0];
-	section->info.sh_offset = 0;
+	sections[0]->info.sh_offset = 0;
 		
 	/* Find actual section sizes */
-	for (auto it = sections.begin(); it != sections.end(); ++it)
+	for (auto &section : sections)
 	{
-		section = *it;
 		for (j = section->first_buffer->index;
 				j <= section->last_buffer->index; j++)
 		{
