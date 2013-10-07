@@ -918,10 +918,9 @@ void Binary::ReadSegments()
 
 void Binary::ReadSections()
 {
-	for (auto it = dict.begin(); it != dict.end(); ++it)
+	for (auto &dict_entry : dict)
 	{
 		/* Get encoding dictionary entry */
-		BinaryDictEntry *dict_entry = *it;
 		ELFReader::ProgramHeader *load_segment = dict_entry->pt_load_segment;
 		ELFReader::ProgramHeader *note_segment = dict_entry->pt_note_segment;
 		assert(load_segment);
@@ -1021,8 +1020,8 @@ Binary::Binary(const char *buffer, unsigned int size, std::string name)
 Binary::~Binary()
 {
 	/* Free encoding dictionary */
-	for (auto it = dict.begin(); it != dict.end(); ++it)
-		delete *it;
+	for (auto &dict_entry : dict)
+		delete dict_entry;
 }
 
 
