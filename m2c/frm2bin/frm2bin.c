@@ -139,8 +139,8 @@ void Frm2binCompile(Frm2bin *self,
 
 	Frm2binBinaryKernel *tmpKernel;
 	Frm2binBinaryKernelInfo *tmpKernelInfo;
-	Frm2binBinaryKernelInfoKparamInfo tmpKparamInfo;
-	Frm2binBinaryKernelInfoKparamInfoCplx tmpCplx;
+	Frm2binBinaryKernelInfoKparamInfo tmpKparamInfo[4];
+	Frm2binBinaryKernelInfoKparamInfoCplx tmpCplx[4];
 	Frm2binBinaryKernelInfoSyncStack tmpSyncStack;
 
 	cubinary = new(Frm2binBinary);
@@ -174,27 +174,83 @@ void Frm2binCompile(Frm2bin *self,
 
 		tmpKernelInfo->paramCbank.id = 0x00080a04;
 		/* fixme hardcode this guy, please */
-		tmpKernelInfo->paramCbank.SymIdx = 0;
+		tmpKernelInfo->paramCbank.SymIdx = 0x2;
 		tmpKernelInfo->paramCbank.paramsizeX =
 				((tmpKernel->argSize) << 16) | 0x0020;
 
-		/* prepare Frm2binBinaryKernelInfoKparamInfo for vectorAdd example */
-		tmpKparamInfo.id = 0x000c1704;
-		tmpKparamInfo.index = 0; // asfermi always set it to zero
-		tmpKparamInfo.offset = 0; // please hardcode it to right value
-		tmpKparamInfo.ordinal = 0; // please hardcode it to right value
+		/* prepare 1st Frm2binBinaryKernelInfoKparamInfo for vectorAdd example */
+		tmpKparamInfo[0].id = 0x000c1704;
+		tmpKparamInfo[0].index = 0x0; // asfermi always set it to zero
+		//tmpKparamInfo[0].ordinal = 0x3; // please hardcode it to right value
+		//tmpKparamInfo[0].offset = 0xc; // please hardcode it to right value
+		tmpKparamInfo[0].offset_ordinal = (0xc << 16) | 0x3;
 
 		/* Please hardcode these guys! */
-		tmpCplx.logAlign = 0;
-		tmpCplx.space = 0;
-		tmpCplx.cbank = 0;
-		tmpCplx.size = 0;
+		tmpCplx[0].logAlign = 0x0;
+		tmpCplx[0].space = 0x0;
+		tmpCplx[0].cbank = 0x1f;
+		tmpCplx[0].size = 0x1;
 
-		tmpKparamInfo.cplx = tmpCplx;
+		tmpKparamInfo[0].cplx = tmpCplx[0];
 
-		list_add(tmpKernelInfo->kparam_info_list, &tmpKparamInfo);
+		list_add(tmpKernelInfo->kparam_info_list, &tmpKparamInfo[0]);
 
-		tmpSyncStack.notKnownYet = 0; // please hardcode this guy!
+
+		/* prepare 2nd Frm2binBinaryKernelInfoKparamInfo for vectorAdd example */
+		tmpKparamInfo[1].id = 0x000c1704;
+		tmpKparamInfo[1].index = 0x0; // asfermi always set it to zero
+		//tmpKparamInfo[1].ordinal = 0x2; // please hardcode it to right value
+		//tmpKparamInfo[1].offset = 0x8; // please hardcode it to right value
+		tmpKparamInfo[1].offset_ordinal = (0x8 << 16) | 0x2;
+
+		/* Please hardcode these guys! */
+		tmpCplx[1].logAlign = 0x0;
+		tmpCplx[1].space = 0x0;
+		tmpCplx[1].cbank = 0x1f;
+		tmpCplx[1].size = 0x1;
+
+		tmpKparamInfo[1].cplx = tmpCplx[1];
+
+		list_add(tmpKernelInfo->kparam_info_list, &tmpKparamInfo[1]);
+
+		/* prepare 3rd Frm2binBinaryKernelInfoKparamInfo for vectorAdd example */
+		tmpKparamInfo[2].id = 0x000c1704;
+		tmpKparamInfo[2].index = 0x0; // asfermi always set it to zero
+		//tmpKparamInfo[2].ordinal = 0x1; // please hardcode it to right value
+		//tmpKparamInfo[2].offset = 0x4; // please hardcode it to right value
+		tmpKparamInfo[2].offset_ordinal = (0x4 << 16) | 0x1;
+
+		/* Please hardcode these guys! */
+		tmpCplx[2].logAlign = 0x0;
+		tmpCplx[2].space = 0x0;
+		tmpCplx[2].cbank = 0x1f;
+		tmpCplx[2].size = 0x1;
+
+		tmpKparamInfo[2].cplx = tmpCplx[2];
+
+		list_add(tmpKernelInfo->kparam_info_list, &tmpKparamInfo[2]);
+
+		/* prepare 4th Frm2binBinaryKernelInfoKparamInfo for vectorAdd example */
+		tmpKparamInfo[3].id = 0x000c1704;
+		tmpKparamInfo[3].index = 0x0; // asfermi always set it to zero
+		//tmpKparamInfo[3].ordinal = 0x0; // please hardcode it to right value
+		//tmpKparamInfo[3].offset = 0x0; // please hardcode it to right value
+		tmpKparamInfo[3].offset_ordinal = (0x0 << 16) | 0x0;
+
+		/* Please hardcode these guys! */
+		tmpCplx[3].logAlign = 0x0;
+		tmpCplx[3].space = 0x0;
+		tmpCplx[3].cbank = 0x1f;
+		tmpCplx[3].size = 0x1;
+
+		tmpKparamInfo[3].cplx = tmpCplx[3];
+
+		list_add(tmpKernelInfo->kparam_info_list, &tmpKparamInfo[3]);
+
+
+		tmpSyncStack.id = 0x80d04;
+		tmpSyncStack.part1 = 0x1000c; // please hardcode this guy!
+		tmpSyncStack.part2 = 0x1;
 		tmpKernelInfo->sync_stack = tmpSyncStack;
 
 		tmpKernel->constant0Size = 0x20 + tmpKernel->argSize;
@@ -243,10 +299,12 @@ void Frm2binBinaryGenerate(Frm2bin *self, Frm2binBinary *cubinary)
 	ELFWriterBuffer *tmpBuffer;
 	ELFWriterSection *tmpSection;
 	ELFWriterSegment *tmpSegment;
+	ELFWriterSymbolTable *tmpSymbolTable;
 
 	/* used later by segment to section mapping */
 	ELFWriterSection *tmpConstantSection, *tmpTextSection;
 	ELFWriterBuffer *firstBuf, *lastBuf;
+	ELFWriterSymbol *tmpSymbol;
 
 	List *GlobalInfoList;
 	Frm2binBinaryGlobalInfoItem *tmpGlobalInfoItem;
@@ -254,17 +312,41 @@ void Frm2binBinaryGenerate(Frm2bin *self, Frm2binBinary *cubinary)
 	Frm2binBinaryKernel *tmpKernel;
 	Frm2binBinaryKernelInfo *tmpKernelInfo;
 	Frm2binBinaryKernelInfoKparamInfo *tmpKparamInfo;
-	Frm2binBinaryKernelInfoKparamInfoCplx *tmpCplx;
+	//Frm2binBinaryKernelInfoKparamInfoCplx *tmpCplx;
 	Frm2binBinaryKernelInfoSyncStack *tmpSyncStack;
 
 	String *tmpString;
+	String *tmpConstantString;
 	//String *tmpStrNvInfo = new(String, ".nv.info");
 
 	int *tmpConstantBuf;
+	int iter;
+
+	/* configure the ELF Header info specific for .cubin */
+	(asELFWriter)(cubinary)->header.e_type = 0x2;
+	(asELFWriter)(cubinary)->header.e_machine = 0xbe;
+	(asELFWriter)(cubinary)->header.e_version = 0x1;
+	(asELFWriter)(cubinary)->header.e_entry = 0x0;
+	(asELFWriter)(cubinary)->header.e_ident[7] = 0x33;
+	(asELFWriter)(cubinary)->header.e_ident[8] = 0x6;
+
+
+	/*
+	 * * create the symtable which includes a string table
+	 */
+	tmpSymbolTable = new(ELFWriterSymbolTable, ".symtab", ".strtab");
+
+	/* add symbol table to the elf binary file */
+	ELFWriterAddSymbolTable(asELFWriter(cubinary), tmpSymbolTable);
+
 
 	/* only consider one kernel case */
 	GlobalInfoList = cubinary->global_info->info_list;
 	tmpGlobalInfoItem = (asFrm2binBinaryGlobalInfoItem)(ListHead(GlobalInfoList));
+
+	/* hardcode globalInfoItem */
+	tmpGlobalInfoItem->GlobSymIdx_A = 0x3;
+	tmpGlobalInfoItem->GlobSymIdx_B = 0x3;
 
 	/*
 	 * * .nv.info section
@@ -275,6 +357,15 @@ void Frm2binBinaryGenerate(Frm2bin *self, Frm2binBinary *cubinary)
 
 	/* create a section */
 	tmpSection = new(ELFWriterSection, ".nv.info", tmpBuffer, tmpBuffer);
+
+	/* set section header properties */
+	tmpSection->header.sh_type = 0x70000000;	//SHT_LOPROC
+	tmpSection->header.sh_flags = 0x0;
+	tmpSection->header.sh_link = 0x3;
+	tmpSection->header.sh_info = 0x0;
+	tmpSection->header.sh_addralign = 0x4;
+	tmpSection->header.sh_entsize = 0x0;
+
 
 	/* populate globalInfoItem data to this buffer */
 	ELFWriterBufferWrite(tmpBuffer, &(tmpGlobalInfoItem->id_A), 4);
@@ -288,8 +379,7 @@ void Frm2binBinaryGenerate(Frm2bin *self, Frm2binBinary *cubinary)
 	ELFWriterAddSection(asELFWriter(cubinary), tmpSection);
 
 	/* add the buffer to the buffer_array of the binary */
-	ArrayAdd((asELFWriter(cubinary))->buffer_array, asObject(tmpBuffer));
-	printf("tmpBuffer1111111->idx: %d\n", tmpBuffer->index);
+	ELFWriterAddBuffer(asELFWriter(cubinary), tmpBuffer);
 
 	/*
 	 * * .nv.info.<name> section
@@ -307,6 +397,14 @@ void Frm2binBinaryGenerate(Frm2bin *self, Frm2binBinary *cubinary)
 	/* create a section */
 	tmpSection = new(ELFWriterSection, tmpString->text, tmpBuffer, tmpBuffer);
 
+	/* set section header properties */
+	tmpSection->header.sh_type = 0x70000000;	//SHT_LOPROC
+	tmpSection->header.sh_flags = 0x0;
+	tmpSection->header.sh_link = 0x3;
+	tmpSection->header.sh_info = 0x7;
+	tmpSection->header.sh_addralign = 0x4;
+	tmpSection->header.sh_entsize = 0x0;
+
 	/* populate data to this section */
 	tmpKernelInfo = tmpKernel->kInfo;
 	ELFWriterBufferWrite(tmpBuffer, &(tmpKernelInfo->paramCbank.id), 4);
@@ -316,26 +414,26 @@ void Frm2binBinaryGenerate(Frm2bin *self, Frm2binBinary *cubinary)
 	ELFWriterBufferWrite(tmpBuffer, &(tmpKernelInfo->param_size), 4);
 
 	/* only consider 1 kernel case in vectorAdd */
-	tmpKparamInfo = (Frm2binBinaryKernelInfoKparamInfo *)
-			(list_top(tmpKernelInfo->kparam_info_list));
-	ELFWriterBufferWrite(tmpBuffer, &(tmpKparamInfo->id), 4);
-	ELFWriterBufferWrite(tmpBuffer, &(tmpKparamInfo->index), 4);
-	ELFWriterBufferWrite(tmpBuffer, &(tmpKparamInfo->offset), 2);
-	ELFWriterBufferWrite(tmpBuffer, &(tmpKparamInfo->ordinal), 2);
+	LIST_FOR_EACH(tmpKernelInfo->kparam_info_list, iter)
+	{
+		tmpKparamInfo = list_get(tmpKernelInfo->kparam_info_list, iter);
+		ELFWriterBufferWrite(tmpBuffer, &(tmpKparamInfo->id), 4);
+		ELFWriterBufferWrite(tmpBuffer, &(tmpKparamInfo->index), 4);
+		ELFWriterBufferWrite(tmpBuffer, &(tmpKparamInfo->offset_ordinal), 4);
+		ELFWriterBufferWrite(tmpBuffer, &(tmpKparamInfo->cplx), 4);
+	}
 
-	tmpCplx = &(tmpKparamInfo->cplx);
-	ELFWriterBufferWrite(tmpBuffer, tmpCplx, 4);
+
 
 	/* add sync_stack to it */
 	tmpSyncStack = &(tmpKernelInfo->sync_stack);
-	ELFWriterBufferWrite(tmpBuffer, tmpSyncStack, 4);
+	ELFWriterBufferWrite(tmpBuffer, tmpSyncStack, 12);
 
 	/* add section to the binary */
 	ELFWriterAddSection(asELFWriter(cubinary), tmpSection);
 
 	/* add the buffer to the buffer_array of the binary */
-	ArrayAdd((asELFWriter(cubinary))->buffer_array, asObject(tmpBuffer));
-	printf("tmpBuffer22222222222222->idx: %d\n", tmpBuffer->index);
+	ELFWriterAddBuffer(asELFWriter(cubinary), tmpBuffer);
 
 	/*
 	 * * .nv.constant0.<name> section
@@ -349,9 +447,19 @@ void Frm2binBinaryGenerate(Frm2bin *self, Frm2binBinary *cubinary)
 	/* create name for the section, insert .nv.info before kernel_name */
 	tmpString = new(String, tmpKernel->name->text);
 	StringInsert(tmpString, 0, ".nv.constant0.");
+	tmpConstantString = new(String, tmpString->text);
 
 	/* create a section */
 	tmpSection = new(ELFWriterSection, tmpString->text, tmpBuffer, tmpBuffer);
+
+	/* set section header properties */
+	tmpSection->header.sh_type = 0x1;	//SHT_PROGBITS
+	tmpSection->header.sh_flags = 0x2;
+	tmpSection->header.sh_link = 0x0;
+	tmpSection->header.sh_info = 0x7;
+	tmpSection->header.sh_addralign = 0x4;
+	tmpSection->header.sh_entsize = 0x0;
+
 	tmpConstantSection = tmpSection;
 
 	/* populate data to this section */
@@ -364,8 +472,9 @@ void Frm2binBinaryGenerate(Frm2bin *self, Frm2binBinary *cubinary)
 	ELFWriterAddSection(asELFWriter(cubinary), tmpSection);
 
 	/* add the buffer to the buffer_array of the binary */
-	ArrayAdd((asELFWriter(cubinary))->buffer_array, asObject(tmpBuffer));
-	printf("tmpBuffer333333->idx: %d\n", tmpBuffer->index);
+	//ArrayAdd((asELFWriter(cubinary))->buffer_array, asObject(tmpBuffer));
+	ELFWriterAddBuffer(asELFWriter(cubinary), tmpBuffer);
+
 
 
 	/*
@@ -385,6 +494,14 @@ void Frm2binBinaryGenerate(Frm2bin *self, Frm2binBinary *cubinary)
 	tmpSection = new(ELFWriterSection, tmpString->text, tmpBuffer, tmpBuffer);
 	tmpTextSection = tmpSection;
 
+	/* set section header properties */
+	tmpSection->header.sh_type = 0x1;	//SHT_PROGBITS
+	tmpSection->header.sh_flags = 0x6;
+	tmpSection->header.sh_link = 0x3;
+	tmpSection->header.sh_info = 0x4000003;
+	tmpSection->header.sh_addralign = 0x4;
+	tmpSection->header.sh_entsize = 0x0;
+
 	/* populate data to this section */
 	ELFWriterBufferWrite(tmpBuffer, text_section_buffer, text_section_buffer->size);
 
@@ -392,8 +509,55 @@ void Frm2binBinaryGenerate(Frm2bin *self, Frm2binBinary *cubinary)
 	ELFWriterAddSection(asELFWriter(cubinary), tmpSection);
 
 	/* add the buffer to the buffer_array of the binary */
-	ArrayAdd((asELFWriter(cubinary))->buffer_array, asObject(tmpBuffer));
-	printf("tmpBuffer4444444->idx: %d\n", tmpBuffer->index);
+	//ArrayAdd((asELFWriter(cubinary))->buffer_array, asObject(tmpBuffer));
+	ELFWriterAddBuffer(asELFWriter(cubinary), tmpBuffer);
+
+
+	/* create one symbol for this section, it will be
+	 * one entry in .symtab */
+	tmpSymbol = new(ELFWriterSymbol, tmpString->text);
+
+	/* set value of fields for this symbol */
+	tmpSymbol->symbol.st_value = 0x0;
+	tmpSymbol->symbol.st_size = 0x0;
+	tmpSymbol->symbol.st_info = ELF32_ST_INFO(0x0, 0x3);
+	tmpSymbol->symbol.st_other = 0x0;
+	tmpSymbol->symbol.st_shndx = 0x7;
+
+	/* add this symbol to the symbol table */
+	ELFWriterSymbolTableAdd(tmpSymbolTable, tmpSymbol);
+
+
+	/* create one symbol for .nv.constant0 section, it will be
+	 * one entry in .symtab */
+	tmpSymbol = new(ELFWriterSymbol, tmpConstantString->text);
+
+	/* set value of fields for this symbol */
+	tmpSymbol->symbol.st_value = 0x0;
+	tmpSymbol->symbol.st_size = 0x0;
+	tmpSymbol->symbol.st_info = ELF32_ST_INFO(0x0, 0x3);
+	tmpSymbol->symbol.st_other = 0x0;
+	tmpSymbol->symbol.st_shndx = 0x6;
+
+	/* add this symbol to the symbol table */
+	ELFWriterSymbolTableAdd(tmpSymbolTable, tmpSymbol);
+
+
+	/* create one symbol for global function this section,
+	 * it will be one entry in .symtab */
+	tmpSymbol = new(ELFWriterSymbol, tmpKernel->name->text);
+
+	/* set value of fields for this symbol */
+	tmpSymbol->symbol.st_value = 0x0;
+	tmpSymbol->symbol.st_size = 0x70;
+	tmpSymbol->symbol.st_info = ELF32_ST_INFO(0x1, 0x2);
+	tmpSymbol->symbol.st_other = 0x0;
+	tmpSymbol->symbol.st_shndx = 0x7;
+
+	/* add this symbol to the symbol table */
+	ELFWriterSymbolTableAdd(tmpSymbolTable, tmpSymbol);
+
+
 
 
 	/* generate program segments, there are 3 segments for vectorAdd.s example */
@@ -406,8 +570,8 @@ void Frm2binBinaryGenerate(Frm2bin *self, Frm2binBinary *cubinary)
 	tmpBuffer = new(ELFWriterBuffer);
 	tmpSegment = new(ELFWriterSegment, "", tmpBuffer, tmpBuffer);
 	/* add the buffer to the buffer_array of the binary */
-	ArrayAdd((asELFWriter(cubinary))->buffer_array, asObject(tmpBuffer));
-	printf("tmpBuffer5555555->idx: %d\n", tmpBuffer->index);
+	//ArrayAdd((asELFWriter(cubinary))->buffer_array, asObject(tmpBuffer));
+	ELFWriterAddBuffer(asELFWriter(cubinary), tmpBuffer);
 
 
 	/* set segment header */
@@ -447,8 +611,8 @@ void Frm2binBinaryGenerate(Frm2bin *self, Frm2binBinary *cubinary)
 	tmpBuffer = new(ELFWriterBuffer);
 	tmpSegment = new(ELFWriterSegment, "", tmpBuffer, tmpBuffer);
 	/* add the buffer to the buffer_array of the binary */
-	ArrayAdd((asELFWriter(cubinary))->buffer_array, asObject(tmpBuffer));
-	printf("tmpBuffer666666->idx: %d\n", tmpBuffer->index);
+	//ArrayAdd((asELFWriter(cubinary))->buffer_array, asObject(tmpBuffer));
+	ELFWriterAddBuffer(asELFWriter(cubinary), tmpBuffer);
 
 	/* set segment header */
 	tmpSegment->header.p_vaddr = 0x0;
@@ -461,7 +625,17 @@ void Frm2binBinaryGenerate(Frm2bin *self, Frm2binBinary *cubinary)
 
 
 	/* generate the ELF file */
-	//tmpBuffer = new(ELFWriterBuffer);
-	//ELFWriterGenerate(asELFWriter(cubinary), tmpBuffer);
+	tmpBuffer = new(ELFWriterBuffer);
+	ELFWriterGenerate(asELFWriter(cubinary), tmpBuffer);
+
+	/* dump the ELF file */
+	FILE *bin_file;
+	char *file_name = "myVectorAdd.cubin";
+	bin_file = fopen(file_name, "wb");
+	if (!bin_file)
+		printf("%s: cannot output output file", file_name);
+
+
+	ELFWriterBufferWriteToFile(tmpBuffer, bin_file);
 
 }
