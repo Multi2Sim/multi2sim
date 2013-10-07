@@ -122,6 +122,7 @@ void SIWavefrontExecute(SIWavefront *self)
 	/* Reset instruction flags */
 	self->vector_mem_write = 0;
 	self->vector_mem_read = 0;
+	self->vector_mem_atomic = 0;
 	self->scalar_mem_read = 0;
 	self->lds_write = 0;
 	self->lds_read = 0;
