@@ -151,7 +151,8 @@ Symbol::Symbol(File *file, Section *section, unsigned int pos)
 }
 
 
-bool Symbol::Compare(Symbol *a, Symbol *b)
+bool Symbol::Compare(const std::unique_ptr<Symbol>& a,
+		const std::unique_ptr<Symbol>& b)
 {
 	int bind_a;
 	int bind_b;
@@ -238,16 +239,13 @@ void File::ReadSections()
 
 	/* Read section headers */
 	for (int i = 0; i < info->e_shnum; i++)
-	{
-		Section *section = new Section(this, i, info->e_shoff +
-				i * info->e_shentsize);
-		sections.push_back(section);
-	}
+		sections.push_back(std::unique_ptr<Section>(new Section(this,
+				i, info->e_shoff + i * info->e_shentsize)));
 
 	/* Read string table */
 	if (info->e_shstrndx >= info->e_shnum)
 		fatal("%s: invalid string table index", path.c_str());
-	string_table = sections[info->e_shstrndx];
+	string_table = sections[info->e_shstrndx].get();
 	if (string_table->info->sh_type != 3)
 		fatal("%s: invalid string table type", path.c_str());
 
@@ -273,9 +271,9 @@ void File::ReadProgramHeaders()
 	/* Read program headers */
 	for (int i = 0; i < info->e_phnum; i++)
 	{
-		ProgramHeader *ph = new ProgramHeader(this, i, info->e_phoff +
-				i * info->e_phentsize);
-		program_headers.push_back(ph);
+		auto ph = std::unique_ptr<ProgramHeader>(new ProgramHeader(this,
+				i, info->e_phoff + i * info->e_phentsize));
+		program_headers.push_back(move(ph));
 	}
 }
 
@@ -294,18 +292,15 @@ void File::ReadSymbols()
 		for (int i = 0; i < num_symbols; i++)
 		{
 			/* Create symbol */
-			Symbol *symbol = new Symbol(this, section,
-					i * sizeof(Elf32_Sym));
+			auto symbol = unique_ptr<Symbol>(new Symbol(this,
+					section.get(), i * sizeof(Elf32_Sym)));
 
 			/* Discard empty symbol */
-			if (symbol->name == "")
-			{
-				delete symbol;
+			if (symbol->name.empty())
 				continue;
-			}
 
 			/* Add symbol */
-			symbols.push_back(symbol);
+			symbols.push_back(move(symbol));
 		}
 	}
 
@@ -370,18 +365,6 @@ File::File(const char *buffer, unsigned int size)
 
 File::~File(void)
 {
-	/* Free sections */
-	for (auto &section : sections)
-		delete section;
-
-	/* Free program headers */
-	for (auto &program_header : program_headers)
-		delete program_header;
-
-	/* Free symbols */
-	for (auto &symbol : symbols)
-		delete symbol;
-
 	/* Free content */
 	delete[] buffer;
 }
@@ -410,10 +393,9 @@ ostream &operator<<(ostream &os, const File &file)
 	os << "Section headers:\n";
 	os << "  [Nr] type flags addr     offset        size     link name\n";
 	os << string(80, '-') << '\n';
-	for (unsigned i = 0; i < file.sections.size(); i++)
+	for (auto &section : file.sections)
 	{
-		Section *section = file.sections[i];
-		os << "  [" << setw(2) << i << "] ";
+		os << "  [" << setw(2) << section->GetIndex() << "] ";
 		os << setw(4) << section->GetType() << ' ';
 		os << setw(5) << section->GetFlags() << ' ';
 		os << setfill('0') << setw(8) << section->GetAddr() << ' ';
@@ -430,10 +412,9 @@ ostream &operator<<(ostream &os, const File &file)
 	os << "idx type       offset   vaddr    paddr     "
 			<< "filesz     memsz  flags align\n";
 	os << string(80, '-') << '\n';
-	int index = 0;
 	for (auto &ph : file.program_headers)
 	{
-		os << setw(3) << index << ' ';
+		os << setw(3) << ph->GetIndex() << ' ';
 		os << setw(8) << hex << ph->GetType() << ' ' << dec;
 		os << setw(8) << hex << ph->GetOffset() << ' ' << dec;
 		os << setw(8) << hex << ph->GetVaddr() << ' ' << dec;
@@ -443,7 +424,6 @@ ostream &operator<<(ostream &os, const File &file)
 		os << setw(6) << ph->GetFlags() << ' ';
 		os << ph->GetAlign() << ' ';
 		os << '\n';
-		++index;
 	}
 	os << '\n';
 
@@ -489,7 +469,7 @@ Symbol *File::GetSymbol(string name)
 	/* Search */
 	for (auto &symbol : symbols)
 		if (symbol->name == name)
-			return symbol;
+			return symbol.get();
 	
 	/* Not found */
 	return NULL;
@@ -540,7 +520,7 @@ Symbol *File::GetSymbolByAddress(unsigned int address, unsigned int &offset)
 	while (min + 1 < max)
 	{
 		mid = (max + min) / 2;
-		symbol = symbols[mid];
+		symbol = symbols[mid].get();
 		if (symbol->info->st_value > address)
 		{
 			max = mid;
@@ -557,7 +537,7 @@ Symbol *File::GetSymbolByAddress(unsigned int address, unsigned int &offset)
 	}
 
 	/* Invalid symbol */
-	symbol = symbols[min];
+	symbol = symbols[min].get();
 	if (!symbol->info->st_value)
 		return NULL;
 
@@ -570,7 +550,7 @@ Symbol *File::GetSymbolByAddress(unsigned int address, unsigned int &offset)
 			break;
 
 		/* If address is lower, stop */
-		prev_symbol = symbols[min];
+		prev_symbol = symbols[min].get();
 		if (prev_symbol->info->st_value != symbol->info->st_value)
 			break;
 
