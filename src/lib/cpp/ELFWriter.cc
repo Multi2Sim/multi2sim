@@ -239,22 +239,11 @@ SymbolTable::SymbolTable(File *file, string symtab, string strtab)
 }
 
 
-SymbolTable::~SymbolTable()
-{
-	/* Free all symbols */
-	for (auto &symbol : symbols)
-		delete symbol;
-}
-
-
 Symbol *SymbolTable::NewSymbol(std::string name)
 {
-	Symbol *symbol;
-
-	/* Create symbol */
-	symbol = new Symbol(name);
-	symbols.push_back(symbol);
-	return symbol;
+	
+	symbols.push_back(std::unique_ptr<Symbol>(new Symbol(name)));
+	return symbols.back().get();
 }
 
 
@@ -314,56 +303,33 @@ File::File()
 }
 
 
-File::~File()
-{
-	/* Free buffers */
-	for (auto &buffer : buffers)
-		delete buffer;
-
-	/* Free sections */
-	for (auto &section : sections)
-		delete section;
-
-	/* Free segments */
-	for (auto &segment : segments)
-		delete segment;
-
-	/* Free symbol tables */
-	for (auto &symbol_table : symbol_tables)
-		delete symbol_table;
-}
-
-
 Buffer *ELFWriter::File::NewBuffer()
 {
-	Buffer *buffer = new Buffer(this, buffers.size());
-	buffers.push_back(buffer);
-	return buffer;
+	buffers.push_back(std::unique_ptr<Buffer>(new Buffer(this,
+			buffers.size())));
+	return buffers.back().get();
 }
 
 
 Segment *File::NewSegment(string name, Buffer *first, Buffer *last)
 {
-	Segment *segment = new Segment(this, name, first, last,
-			segments.size());
-	segments.push_back(segment);
-	return segment;
+	segments.push_back(std::unique_ptr<Segment>(new Segment(this, name,
+			first, last, segments.size())));
+	return segments.back().get();
 }
 
 
 Section *File::NewSection(string name, Buffer *first, Buffer *last)
 {
-	Buffer *shstrtab_buffer;
-	Section *section;
-
 	/* Add to list and set index */
-	section = new Section(this, name, first, last, sections.size());
-	sections.push_back(section);
+	sections.push_back(std::unique_ptr<Section>(new Section(this, name,
+			first, last, sections.size())));
+	Section *section = sections.back().get();
 
 	/* Store section name */
 	if (sections.size() > 2)
 	{
-		shstrtab_buffer = buffers[1];
+		Buffer *shstrtab_buffer = buffers[1].get();
 		section->info.sh_name = shstrtab_buffer->Size();
 		shstrtab_buffer->Write(name.c_str(), name.length() + 1);
 	}
@@ -375,16 +341,14 @@ Section *File::NewSection(string name, Buffer *first, Buffer *last)
 
 SymbolTable *File::NewSymbolTable(string symtab, string strtab)
 {
-	SymbolTable *symbol_table = new SymbolTable(this, symtab, strtab);
-	symbol_tables.push_back(symbol_table);
-	return symbol_table;
+	symbol_tables.push_back(std::unique_ptr<SymbolTable>(new
+			SymbolTable(this, symtab, strtab)));
+	return symbol_tables.back().get();
 }
 
 
 void File::Generate(ostream& os)
 {
-	Buffer *buffer;
-
 	unsigned int phtab_size;
 	unsigned int shtab_size;
 	unsigned int buf_offset;
@@ -431,10 +395,7 @@ void File::Generate(ostream& os)
 	{
 		buf_offset = 0;
 		for (j = 0; j < segment->first_buffer->index; j++)
-		{
-			buffer = buffers[j];
-			buf_offset += buffer->Size();
-		}
+			buf_offset += buffers[j]->Size();
 		
 		/* Add up all offsets to find segment offset */
 		segment->info.p_offset = sizeof(Elf32_Ehdr) +
@@ -447,10 +408,9 @@ void File::Generate(ostream& os)
 		for (j = segment->first_buffer->index;
 				j <= segment->last_buffer->index; j++)
 		{
-			buffer = buffers[j];
-			segment->info.p_filesz += buffer->Size();
+			segment->info.p_filesz += buffers[j]->Size();
 			if (segment->info.p_type == PT_LOAD)
-				segment->info.p_memsz += buffer->Size();
+				segment->info.p_memsz += buffers[j]->Size();
 		}
 	}
 	
@@ -459,10 +419,7 @@ void File::Generate(ostream& os)
 	{
 		buf_offset = 0;
 		for (j = 0; j < section->first_buffer->index; j++)
-		{
-			buffer = buffers[j];
-			buf_offset += buffer->Size();
-		}
+			buf_offset += buffers[j]->Size();
 		section->info.sh_offset = sizeof(Elf32_Ehdr) +
 				phtab_size + buf_offset;
 	}
@@ -475,10 +432,7 @@ void File::Generate(ostream& os)
 	{
 		for (j = section->first_buffer->index;
 				j <= section->last_buffer->index; j++)
-		{
-			buffer = buffers[j];
-			section->info.sh_size += buffer->Size();
-		}
+			section->info.sh_size += buffers[j]->Size();
 	}
 
 	/* Create Section Header Table */
