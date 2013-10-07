@@ -259,6 +259,11 @@ void si_vector_mem_mem(struct si_vector_mem_unit_t *vector_mem)
 			access_kind = mod_access_load;
 			mmu_access_kind = mmu_access_read;
 		}
+		else if (uop->vector_mem_atomic)
+		{
+			access_kind = mod_access_store;
+			mmu_access_kind = mmu_access_write;
+		}
 		else 
 		{
 			fatal("%s: invalid access kind", __FUNCTION__);
