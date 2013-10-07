@@ -132,7 +132,11 @@ global_section
 		Frm2binBinaryGlobalInfoItem *g_item;
 		
 		g_kernel = new(Frm2binBinaryKernel);
-		g_kernel_name = new(String, id->name);
+		//g_kernel_name = new(String, id->name);
+		/* hardcoe the kernel name now, nvidia use some 
+		 * special prefix and sufix 
+		 */
+		 g_kernel_name = new(String, "_Z9vectorAddPKfS0_Pfi");
 		
 		/* insert g_kernel_name to g_kernel */
 		g_kernel->name = g_kernel_name;
