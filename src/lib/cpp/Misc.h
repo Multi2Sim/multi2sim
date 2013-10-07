@@ -179,23 +179,20 @@ public:
 	void SetPath(const std::string& path);
 	const std::string& GetPath() { return path; }
 
-	Debug& operator<<(std::string s) { if (os) *os << s; return *this; }
-	Debug& operator<<(char val) { if (os) *os << val; return *this; }
-	Debug& operator<<(unsigned char val) { if (os) *os << val; return *this; }
-	Debug& operator<<(short val) { if (os) *os << val; return *this; }
-	Debug& operator<<(unsigned short val) { if (os) *os << val; return *this; }
-	Debug& operator<<(int val) { if (os) *os << val; return *this; }
-	Debug& operator<<(unsigned int val) { if (os) *os << val; return *this; }
-	Debug& operator<<(long val) { if (os) *os << val; return *this; }
-	Debug& operator<<(unsigned long val) { if (os) *os << val; return *this; }
-	Debug& operator<<(void *val) { if (os) *os << val; return *this; }
-	Debug& operator<<(float val) { if (os) *os << val; return *this; }
-	Debug& operator<<(double val) { if (os) *os << val; return *this; }
-	Debug& operator<<(long double val) { if (os) *os << val; return *this; }
-	Debug& operator<<(std::streambuf* sb) { if (os) *os << sb; return *this; }
-	Debug& operator<<(std::ostream& (*pf)(std::ostream&)) { if (os) *os << pf; return *this; }
-	Debug& operator<<(std::ios& (*pf)(std::ios&)) { if (os) *os << pf; return *this; }
-	Debug& operator<<(std::ios_base& (*pf)(std::ios_base&)) { if (os) *os << pf; return *this; }
+	/* Dump a value into the output stream currently pointed to by the
+	 * debug object. If the debugger has not been initialized with a call
+	 * to SetPath(), this call is ignored. The argument can be of any
+	 * type accepted by an std::ostream object. */
+	template<typename T> Debug& operator<<(T val) { if (os) *os << val;
+			return *this; }
+
+	/* A debugger can be cast into a bool (e.g. within an 'if' condition)
+	 * to check whether it has an active output stream or not. This is
+	 * useful when many possibly costly operations are performed just
+	 * to dump debug information. By checking whether the debugger is
+	 * active or not in beforehand, multiple dump (<<) calls can be
+	 * saved. */
+	operator bool() { return os; }
 };
 
 
