@@ -252,8 +252,8 @@ void File::ReadSections()
 		fatal("%s: invalid string table type", path.c_str());
 
 	/* Read section names */
-	for (auto it = sections.begin(); it != sections.end(); ++it)
-		(*it)->name = string_table->buffer + (*it)->info->sh_name;
+	for (auto &section : sections)
+		section->name = string_table->buffer + section->info->sh_name;
 }
 
 
@@ -283,9 +283,8 @@ void File::ReadProgramHeaders()
 void File::ReadSymbols()
 {
 	/* Load symbols from sections */
-	for (auto it = sections.begin(); it != sections.end(); ++it)
+	for (auto &section : sections)
 	{
-		Section *section = *it;
 		if (section->info->sh_type != 2 &&
 				section->info->sh_type != 11)
 			continue;
@@ -372,20 +371,19 @@ File::File(const char *buffer, unsigned int size)
 File::~File(void)
 {
 	/* Free sections */
-	for (auto it = sections.begin(); it != sections.end(); ++it)
-		delete *it;
+	for (auto &section : sections)
+		delete section;
 
 	/* Free program headers */
-	for (auto it = program_headers.begin();
-			it != program_headers.end(); ++it)
-		delete *it;
+	for (auto &program_header : program_headers)
+		delete program_header;
 
 	/* Free symbols */
-	for (auto it = symbols.begin(); it != symbols.end(); ++it)
-		delete *it;
+	for (auto &symbol : symbols)
+		delete symbol;
 
 	/* Free content */
-	delete buffer;
+	delete[] buffer;
 }
 
 
@@ -433,10 +431,8 @@ ostream &operator<<(ostream &os, const File &file)
 			<< "filesz     memsz  flags align\n";
 	os << string(80, '-') << '\n';
 	int index = 0;
-	for (auto it = file.program_headers.begin();
-			it != file.program_headers.end(); ++it)
+	for (auto &ph : file.program_headers)
 	{
-		ProgramHeader *ph = *it;
 		os << setw(3) << index << ' ';
 		os << setw(8) << hex << ph->GetType() << ' ' << dec;
 		os << setw(8) << hex << ph->GetOffset() << ' ' << dec;
@@ -460,11 +456,8 @@ ostream &operator<<(ostream &os, const File &file)
 			<< setw(10) << "info" << " "
 			<< setw(10) << "other" << '\n';
 	os << string(80, '-') << '\n';
-	for (auto it = file.symbols.begin();
-			it != file.symbols.end(); ++it)
+	for (auto &symbol : file.symbols)
 	{
-		Symbol *symbol = *it;
-		
 		/* Symbol name */
 		os << setiosflags(ios::left);
 		os << setw(40) << setiosflags(ios::left) << symbol->GetName() << " ";
@@ -494,9 +487,9 @@ ostream &operator<<(ostream &os, const File &file)
 Symbol *File::GetSymbol(string name)
 {
 	/* Search */
-	for (auto it = symbols.begin(); it != symbols.end(); ++it)
-		if ((*it)->name == name)
-			return *it;
+	for (auto &symbol : symbols)
+		if (symbol->name == name)
+			return symbol;
 	
 	/* Not found */
 	return NULL;
