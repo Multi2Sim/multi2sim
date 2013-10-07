@@ -23,6 +23,7 @@
 #include <elf.h>
 #include <iostream>
 #include <fstream>
+#include <memory>
 #include <sstream>
 #include <vector>
 
@@ -168,7 +169,7 @@ class SymbolTable
 	friend class File;
 
 	File *file;
-	std::vector<Symbol *> symbols;
+	std::vector<std::unique_ptr<Symbol>> symbols;
 
 	/* Buffer with the content of a section of type SHT_SYMTAB, containing a
 	 * list of 'Elf32_Sym' entries. This buffer is internally created when
@@ -183,7 +184,6 @@ class SymbolTable
 
 	/* Constructor */
 	SymbolTable(File *file, std::string symtab, std::string strtab);
-	~SymbolTable();
 
 	/* Populate symtab and strtab buffers */
 	void Generate();
@@ -198,15 +198,18 @@ class File
 {
 	Elf32_Ehdr info;
 
-	std::vector<Section *> sections;
-	std::vector<Segment *> segments;
-	std::vector<SymbolTable *> symbol_tables;
-	std::vector<Buffer *> buffers;
+	/* Vectors of elements. Each element contains a 'unique_ptr', which will
+	 * automatically free the pointed objects when the current class is
+	 * destructed. */
+	std::vector<std::unique_ptr<Section>> sections;
+	std::vector<std::unique_ptr<Segment>> segments;
+	std::vector<std::unique_ptr<SymbolTable>> symbol_tables;
+	std::vector<std::unique_ptr<Buffer>> buffers;
 
 public:
 
+	/* Constructor */
 	File();
-	~File();
 
 	/* Writable fields */
 	void SetIdent(int index, unsigned char value) { info.e_ident[index] = value; }
@@ -223,13 +226,14 @@ public:
 
 	/* Getters */
 	Buffer *GetBuffer(unsigned int index) { return index < buffers.size() ?
-			buffers[index] : NULL; }
+			buffers[index].get() : nullptr; }
 	Section *GetSection(unsigned int index) { return index < sections.size() ?
-			sections[index] : NULL; }
+			sections[index].get() : nullptr; }
 	Segment *GetSegment(unsigned int index) { return index < segments.size() ?
-			segments[index] : NULL; }
+			segments[index].get() : nullptr; }
 	SymbolTable *GetSymbolTable(unsigned int index) { return index <
-			symbol_tables.size() ? symbol_tables[index] : NULL; }
+			symbol_tables.size() ? symbol_tables[index].get()
+			: nullptr; }
 
 	/* Produce binary */
 	void Generate(std::ostream& os);

@@ -20,6 +20,7 @@
 #ifndef LIB_CPP_ELF_READER_H
 #define LIB_CPP_ELF_READER_H
 
+#include <memory>
 #include <vector>
 #include <list>
 #include <elf.h>
@@ -143,7 +144,8 @@ class Symbol
 	Symbol(File *file, Section *section, unsigned int pos);
 
 	/* Comparison between symbols */
-	static bool Compare(Symbol *a, Symbol *b);
+	static bool Compare(const std::unique_ptr<Symbol>& a,
+			const std::unique_ptr<Symbol>& b);
 
 public:
 
@@ -187,10 +189,12 @@ class File
 	/* String table section */
 	Section *string_table;
 
-	/* Sections, program headers, and symbols */
-	std::vector<Section *> sections;
-	std::vector<ProgramHeader *> program_headers;
-	std::vector<Symbol *> symbols;
+	/* Sections, program headers, and symbols. Each vector has exclusive
+	 * ownership of the object points. When the vector is destroyed, all
+	 * dynamically allocated objects are automatically freed as well. */
+	std::vector<std::unique_ptr<Section>> sections;
+	std::vector<std::unique_ptr<ProgramHeader>> program_headers;
+	std::vector<std::unique_ptr<Symbol>> symbols;
 
 public:
 
@@ -206,17 +210,17 @@ public:
 	/* Sections */
 	int GetNumSections() { return sections.size(); }
 	Section *GetSection(unsigned int index) { return index <
-			sections.size() ? sections[index] : NULL; }
+			sections.size() ? sections[index].get() : nullptr; }
 
 	/* Program headers */
 	int GetNumProgramHeaders() { return program_headers.size(); }
 	ProgramHeader *GetProgramHeader(unsigned int index) { return index <
-			program_headers.size() ? program_headers[index] : NULL; }
+			program_headers.size() ? program_headers[index].get() : nullptr; }
 
 	/* Symbols */
 	int GetNumSymbols() { return symbols.size(); }
 	Symbol *GetSymbol(unsigned int index) { return index < symbols.size() ?
-			symbols[index] : NULL; }
+			symbols[index].get() : nullptr; }
 	Symbol *GetSymbol(std::string name);
 
 	/* Return the section corresponding to the string table, or NULL if
