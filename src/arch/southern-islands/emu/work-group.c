@@ -30,7 +30,25 @@
 #include "work-group.h"
 #include "work-item.h"
 
+/*
+ * Private Functions
+ */
 
+
+/* Parameter cache is LDS, which has parameter data from shader export module */
+static void SIWorkGroupInitParamCache(SIWorkGroup *self, SISX *sx)
+{
+	SISXPSLDS *lds;
+
+	lds = list_dequeue(sx->ps_init_lds);
+
+	/* 
+	 * Currently, NDRange is created per primitive(triangle) for Pixel Shader
+	 * So just load lds data to LDS module
+	 */	 
+	 assert(lds);
+	 mem_write(self->lds_module, 0x0, lds->size, lds->data);
+}
 
 /*
  * Public Functions
@@ -120,6 +138,19 @@ void SIWorkGroupCreate(SIWorkGroup *self, unsigned int id, SINDRange *ndrange)
 	work_item_gidx_start = self->id_3d[0] * ndrange->local_size3[0];
 	work_item_gidy_start = self->id_3d[1] * ndrange->local_size3[1];
 	work_item_gidz_start = self->id_3d[2] * ndrange->local_size3[2];
+
+	/* For NDRange created for Pixel Shader, we need to initialize LDS */
+	switch(self->ndrange->stage)
+	{
+	case STAGE_PS:
+	{
+		/* Initialize LDS(Parameter Cache) */
+		SIWorkGroupInitParamCache(self, self->ndrange->emu->sx);
+		break;
+	}
+	default:
+		break;
+	}
 
 	/* Initialize work-item metadata */
 	lid = 0;

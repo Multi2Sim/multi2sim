@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef DRIVER_OPENGL_SI_SC_H
-#define DRIVER_OPENGL_SI_SC_H
+#ifndef DRIVER_OPENGL_SI_SCAN_CONVERTER_H
+#define DRIVER_OPENGL_SI_SCAN_CONVERTER_H
 
 #define SPAN_MAX_WIDTH 16384
 #define MAX_GLUINT	0xffffffff

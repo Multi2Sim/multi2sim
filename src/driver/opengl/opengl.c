@@ -1357,6 +1357,8 @@ static int opengl_abi_si_ndrange_pass_mem_objs_impl(X86Context *ctx)
 /*
  * OpenGL ABI call #19 - si_viewport
  *
+ * Setup viewport 
+ *
  * @return int
  *
  *	The function always returns 0.
@@ -1393,6 +1395,8 @@ static int opengl_abi_si_viewport_impl(X86Context *ctx)
 /*
  * OpenGL ABI call #20 - si_raster
  *
+ * Rasterizer works with shader export module to prepare data for fragment shader
+ *
  * @return int
  *
  *	The function always returns 0.
@@ -1423,6 +1427,9 @@ static int opengl_abi_si_raster_impl(X86Context *ctx)
 
 	/* FIXME: currently triangle only */
 
+	/* Prepare LDS data */
+	SISXPSInitLDS(si_emu->sx);
+
 	for (pos_idx = 0; pos_idx < SI_POS_COUNT; ++pos_idx)
 	{
 		pos_lst = si_emu->sx->pos[pos_idx];
@@ -1441,7 +1448,9 @@ static int opengl_abi_si_raster_impl(X86Context *ctx)
 					LIST_FOR_EACH(pixel_list, j)
 					{
 						pixel = list_get(pixel_list, j);
-						SISXPSInitMetaAdd(si_emu->sx, pixel->brctrc_i, pixel->brctrc_j);
+						SISXPSInitMetaAdd(si_emu->sx, pixel->pos[X_COMP], pixel->pos[Y_COMP], pixel->brctrc_i, pixel->brctrc_j);
+
+						/* Create NDRanges */
 					}
 					opengl_debug("\tTriangle %d generated %d pixels\n", i, list_count(pixel_list));
 				}
