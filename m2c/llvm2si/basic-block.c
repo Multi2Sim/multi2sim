@@ -45,26 +45,39 @@ static int llvm2si_get_lltype_size(LLVMTypeRef lltype)
 {
 	LLVMTypeKind lltype_kind;
 	int bit_width;
+	int num_elems;
+
 
 	/* Return size based on type kind */
 	lltype_kind = LLVMGetTypeKind(lltype);
+	
+	if (lltype_kind == LLVMVectorTypeKind)
+	{
+		num_elems = LLVMGetVectorSize(lltype);
+		lltype =  LLVMGetElementType(lltype);
+		lltype_kind = LLVMGetTypeKind(lltype);
+	}
+	else
+	{
+		num_elems = 1;
+	}
+
 	switch (lltype_kind)
 	{
 
 	case LLVMIntegerTypeKind:
 		
 		bit_width = LLVMGetIntTypeWidth(lltype);
-		return (bit_width + 7) / 8;
+		return ((bit_width + 7) / 8 * num_elems);
 
 	case LLVMPointerTypeKind:
 
 		/* Memory address is 4 bytes */
-		return 4;
+		return (4 * num_elems);
 
 	case LLVMFloatTypeKind:
 
-		/* Memory address is 4 bytes */
-		return 4;
+		return (4 * num_elems);
 	
 	default:
 
