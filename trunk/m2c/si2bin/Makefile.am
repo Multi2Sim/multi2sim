@@ -38,6 +38,9 @@ libsi2bin_a_SOURCES = \
 	symbol.c \
 	symbol.h \
 	\
+	Symbol.cc \
+	Symbol.h \
+	\
 	task.c \
 	task.h \
 	\
