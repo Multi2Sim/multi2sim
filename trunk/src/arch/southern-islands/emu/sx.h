@@ -32,9 +32,17 @@ struct list_t;
 
 typedef struct 
 {
+	int x;
+	int y;
 	float brctrc_i;
 	float brctrc_j;
 } SISXPSInitMeta;
+
+typedef struct 
+{
+	float *data;
+	int size;
+} SISXPSLDS;
 
 CLASS_BEGIN(SISX, Object)
 
@@ -45,8 +53,11 @@ CLASS_BEGIN(SISX, Object)
 	struct list_t *pos[SI_POS_COUNT];
 	struct list_t *param[SI_PARAM_COUNT];
 
-	/* List contain metadata to initialize Pixel Shader */
+	/* List contains metadata to initialize Pixel Shader */
 	struct list_t *ps_init_meta;
+
+	/* List contains data to initialize LDS for Pixel Shader */
+	struct list_t *ps_init_lds;
 
 CLASS_END(SISX)
 
@@ -58,7 +69,9 @@ void SISXExportPosition(SISX *self, unsigned int target, unsigned int id,
 	float x, float y, float z, float w);
 void SISXExportParam(SISX *self, unsigned int target, unsigned int id, 
 	float x, float y, float z, float w);
-void SISXPSInitMetaAdd(SISX *self, float brctrc_i, float brctrc_j);
+void SISXPSInitMetaAdd(SISX *self, int x, int y, float brctrc_i, float brctrc_j);
+void SISXPSInitLDS(SISX *self);
+
 
 #endif
 
