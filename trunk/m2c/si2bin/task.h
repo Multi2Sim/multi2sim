@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef M2C_SI2BIN_TASK_H
-#define M2C_SI2BIN_TASK_H
+#ifndef M2C_SI2BIN_TASK_H_OLD
+#define M2C_SI2BIN_TASK_H_OLD
 
 #include <lib/class/class.h>
 
