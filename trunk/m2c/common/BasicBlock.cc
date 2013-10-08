@@ -17,29 +17,30 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef M2C_COMMON_BASIC_BLOCK_H_OLD
-#define M2C_COMMON_BASIC_BLOCK_H_OLD
+#include <lib/cpp/Misc.h>
 
-#include <stdio.h>
-
-#include <lib/class/class.h>
+#include "BasicBlock.h"
+#include "Node.h"
 
 
+using namespace Misc;
 
-/*
- * Class 'BasicBlock'
- */
-
-CLASS_BEGIN(BasicBlock, Object)
-
-	/* Node associated in control tree */
-	LeafNode *node;
-
-CLASS_END(BasicBlock)
+namespace Common
+{
 
 
-void BasicBlockCreate(BasicBlock *self, LeafNode *node);
-void BasicBlockDestroy(BasicBlock *self);
+BasicBlock::BasicBlock(LeafNode *node)
+{
+	/* Check that 'node' doesn't have a basic block */
+	if (node->GetBasicBlock())
+		fatal("%s: node '%s' already contains a basic block",
+				__FUNCTION__, node->GetName().c_str());
+
+	/* Initialize */
+	this->node = node;
+	node->SetBasicBlock(this);
+}
 
 
-#endif
+}  /* namespace Common */
+

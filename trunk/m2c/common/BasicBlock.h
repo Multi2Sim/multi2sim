@@ -17,29 +17,28 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef M2C_COMMON_BASIC_BLOCK_H_OLD
-#define M2C_COMMON_BASIC_BLOCK_H_OLD
+#ifndef M2C_COMMON_BASIC_BLOCK_H
+#define M2C_COMMON_BASIC_BLOCK_H
 
-#include <stdio.h>
+namespace Common
+{
 
-#include <lib/class/class.h>
+/* Forward declarations */
+class LeafNode;
 
 
-
-/*
- * Class 'BasicBlock'
- */
-
-CLASS_BEGIN(BasicBlock, Object)
-
+class BasicBlock
+{
 	/* Node associated in control tree */
 	LeafNode *node;
+public:
 
-CLASS_END(BasicBlock)
+	/* Constructor */
+	BasicBlock(LeafNode *node);
+
+};
 
 
-void BasicBlockCreate(BasicBlock *self, LeafNode *node);
-void BasicBlockDestroy(BasicBlock *self);
-
+}  /* namespace Common */
 
 #endif
