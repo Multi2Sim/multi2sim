@@ -763,7 +763,8 @@ void SIComputeUnitIssueOldestInst(SIComputeUnit *self, int active_fb)
 			assert(uop);
 
 			/* Only evaluate memory instructions */
-			if (SIInstWrapGetFormat(uop->inst) != SIInstFormatMTBUF)
+			if (SIInstWrapGetFormat(uop->inst) != SIInstFormatMTBUF &&
+				SIInstWrapGetFormat(uop->inst) != SIInstFormatMUBUF)
 			{	
 				continue;
 			}
@@ -1105,7 +1106,8 @@ void SIComputeUnitIssueOldestWF(SIComputeUnit *self, int active_fb)
 			assert(uop);
 
 			/* Only evaluate memory instructions */
-			if (SIInstWrapGetFormat(uop->inst) != SIInstFormatMTBUF)
+			if (SIInstWrapGetFormat(uop->inst) != SIInstFormatMTBUF && 
+				SIInstWrapGetFormat(uop->inst) != SIInstFormatMUBUF)
 			{	
 				continue;
 			}
@@ -1543,6 +1545,7 @@ void SIComputeUnitIssueFirst(SIComputeUnit *self, int active_fb)
 
 		/* Vector memory */
 		case SIInstFormatMTBUF:
+		case SIInstFormatMUBUF:
 		{
 			/* Stall if max vector memory instructions already 
 			 * issued */
