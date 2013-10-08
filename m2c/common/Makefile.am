@@ -12,8 +12,18 @@ libcommon_a_SOURCES = \
 	\
 	ctree.c \
 	ctree.h
+	
+	BasicBlock.cc \
+	BasicBlock.h \
+	\
+	Node.cc \
+	Node.h \
+	\
+	Tree.cc \
+	Tree.h
 
 AM_CFLAGS = $(LLVM_CFLAGS)
+AM_CXXFLAGS = $(LLVM_CXXFLAGS)
 
 else
 
