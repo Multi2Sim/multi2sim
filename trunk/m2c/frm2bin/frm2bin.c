@@ -181,8 +181,6 @@ void Frm2binCompile(Frm2bin *self,
 		/* prepare 1st Frm2binBinaryKernelInfoKparamInfo for vectorAdd example */
 		tmpKparamInfo[0].id = 0x000c1704;
 		tmpKparamInfo[0].index = 0x0; // asfermi always set it to zero
-		//tmpKparamInfo[0].ordinal = 0x3; // please hardcode it to right value
-		//tmpKparamInfo[0].offset = 0xc; // please hardcode it to right value
 		tmpKparamInfo[0].offset_ordinal = (0xc << 16) | 0x3;
 
 		/* Please hardcode these guys! */
@@ -199,8 +197,6 @@ void Frm2binCompile(Frm2bin *self,
 		/* prepare 2nd Frm2binBinaryKernelInfoKparamInfo for vectorAdd example */
 		tmpKparamInfo[1].id = 0x000c1704;
 		tmpKparamInfo[1].index = 0x0; // asfermi always set it to zero
-		//tmpKparamInfo[1].ordinal = 0x2; // please hardcode it to right value
-		//tmpKparamInfo[1].offset = 0x8; // please hardcode it to right value
 		tmpKparamInfo[1].offset_ordinal = (0x8 << 16) | 0x2;
 
 		/* Please hardcode these guys! */
@@ -216,8 +212,6 @@ void Frm2binCompile(Frm2bin *self,
 		/* prepare 3rd Frm2binBinaryKernelInfoKparamInfo for vectorAdd example */
 		tmpKparamInfo[2].id = 0x000c1704;
 		tmpKparamInfo[2].index = 0x0; // asfermi always set it to zero
-		//tmpKparamInfo[2].ordinal = 0x1; // please hardcode it to right value
-		//tmpKparamInfo[2].offset = 0x4; // please hardcode it to right value
 		tmpKparamInfo[2].offset_ordinal = (0x4 << 16) | 0x1;
 
 		/* Please hardcode these guys! */
@@ -233,8 +227,6 @@ void Frm2binCompile(Frm2bin *self,
 		/* prepare 4th Frm2binBinaryKernelInfoKparamInfo for vectorAdd example */
 		tmpKparamInfo[3].id = 0x000c1704;
 		tmpKparamInfo[3].index = 0x0; // asfermi always set it to zero
-		//tmpKparamInfo[3].ordinal = 0x0; // please hardcode it to right value
-		//tmpKparamInfo[3].offset = 0x0; // please hardcode it to right value
 		tmpKparamInfo[3].offset_ordinal = (0x0 << 16) | 0x0;
 
 		/* Please hardcode these guys! */
@@ -512,6 +504,12 @@ void Frm2binBinaryGenerate(Frm2bin *self, Frm2binBinary *cubinary)
 	//ArrayAdd((asELFWriter(cubinary))->buffer_array, asObject(tmpBuffer));
 	ELFWriterAddBuffer(asELFWriter(cubinary), tmpBuffer);
 
+	// debug, print out the hex of text_buffer
+	int i;
+	printf("####\n");
+	for(i=0; i<28; i++)
+		printf("%x ", *((unsigned int *)(text_section_buffer->ptr) + i));
+
 
 	/* create one symbol for this section, it will be
 	 * one entry in .symtab */
@@ -551,7 +549,7 @@ void Frm2binBinaryGenerate(Frm2bin *self, Frm2binBinary *cubinary)
 	tmpSymbol->symbol.st_value = 0x0;
 	tmpSymbol->symbol.st_size = 0x70;
 	tmpSymbol->symbol.st_info = ELF32_ST_INFO(0x1, 0x2);
-	tmpSymbol->symbol.st_other = 0x0;
+	tmpSymbol->symbol.st_other = 0x10; //harcode, not known exact meaning
 	tmpSymbol->symbol.st_shndx = 0x7;
 
 	/* add this symbol to the symbol table */
@@ -575,6 +573,7 @@ void Frm2binBinaryGenerate(Frm2bin *self, Frm2binBinary *cubinary)
 
 
 	/* set segment header */
+	tmpSegment->header.p_type = 0x1;
 	tmpSegment->header.p_vaddr = 0x0;
 	tmpSegment->header.p_paddr = 0x0;
 	tmpSegment->header.p_flags = PF_W | PF_R; //write + read ??
@@ -593,6 +592,7 @@ void Frm2binBinaryGenerate(Frm2bin *self, Frm2binBinary *cubinary)
 	tmpSegment = new(ELFWriterSegment, "", firstBuf, lastBuf);
 
 	/* set segment header */
+	tmpSegment->header.p_type = 0x1;
 	tmpSegment->header.p_vaddr = 0x0;
 	tmpSegment->header.p_paddr = 0x0;
 	tmpSegment->header.p_flags = PF_X | PF_R; //exec + read ??
@@ -615,10 +615,15 @@ void Frm2binBinaryGenerate(Frm2bin *self, Frm2binBinary *cubinary)
 	ELFWriterAddBuffer(asELFWriter(cubinary), tmpBuffer);
 
 	/* set segment header */
+	tmpSegment->header.p_type = 0x6;
 	tmpSegment->header.p_vaddr = 0x0;
 	tmpSegment->header.p_paddr = 0x0;
 	tmpSegment->header.p_flags = PF_X | PF_R;
 	tmpSegment->header.p_align = 0x4;
+	/* following should be populated automatically by elf_enc_generate ??*/
+	tmpSegment->header.p_filesz = 0x60;
+	tmpSegment->header.p_memsz = 0x60;
+
 
 	/* add this segment to the binary */
 	ELFWriterAddSegment(asELFWriter(cubinary), tmpSegment);
