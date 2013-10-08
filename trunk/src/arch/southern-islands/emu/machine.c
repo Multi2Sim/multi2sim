@@ -42,6 +42,64 @@ char *err_si_isa_note =
 #define NOT_IMPL() fatal("GPU instruction '%s' not implemented\n%s", \
 		SIInstWrapGetName(inst), err_si_isa_note)
 
+
+/*
+ *  Private functions
+ */
+
+/* 
+ * Float32 <-> Float16
+ * Reference: http://stackoverflow.com/questions/1659440/32-bit-to-16-bit-floating-point-conversion 
+ */
+
+union Bits
+{
+	float f;
+	int32_t si;
+	uint32_t ui;
+};
+
+#define F_shift 13
+#define F_shiftSign 16
+
+#define F_infN 0x7F800000 // flt32 infinity
+#define F_maxN 0x477FE000 // max flt16 normal as a flt32
+#define F_minN 0x38800000 // min flt16 normal as a flt32
+#define F_signN 0x80000000 // flt32 sign bit
+
+#define F_infC (F_infN >> F_shift)
+#define F_nanN ((F_infC + 1) << F_shift) // minimum flt16 nan as a flt32
+#define F_maxC (F_maxN >> F_shift)
+#define F_minC (F_minN >> F_shift)
+#define F_signC (F_signN >> F_shiftSign) // flt16 sign bit
+
+#define F_mulN 0x52000000 // (1 << 23) / F_minN
+#define F_mulC 0x33800000 // F_minN / (1 << (23 - F_shift))
+
+#define F_subC 0x003FF // max flt32 subnormal down shifted
+#define F_norC 0x00400 // min flt32 normal down shifted
+
+#define F_maxD (F_infC - F_maxC - 1)
+#define F_minD (F_minC - F_subC - 1)
+
+static uint16_t Float32to16(float value)
+{
+	union Bits v, s;
+	v.f = value;
+	uint32_t sign = v.si & F_signN;
+	v.si ^= sign;
+	sign >>= F_shiftSign; // logical F_shift
+	s.si = F_mulN;
+	s.si = s.f * v.f; // correct subnormals
+	v.si ^= (s.si ^ v.si) & -(F_minN > v.si);
+	v.si ^= (F_infN ^ v.si) & -((F_infN > v.si) & (v.si > F_maxN));
+	v.si ^= (F_nanN ^ v.si) & -((F_nanN > v.si) & (v.si > F_infN));
+	v.ui >>= F_shift; // logical F_shift
+	v.si ^= ((v.si - F_maxD) ^ v.si) & -(v.si > F_maxC);
+	v.si ^= ((v.si - F_minD) ^ v.si) & -(v.si > F_subC);
+	return v.ui | sign;
+    }
+
 /*
  * SMRD
  */
@@ -3467,10 +3525,46 @@ void si_isa_V_SUBREV_I32_impl(SIWorkItem *work_item,
 
 /* D = {flt32_to_flt16(S1.f),flt32_to_flt16(S0.f)}, with round-toward-zero. */
 #define INST SI_INST_VOP2
+union hfpack
+{
+	uint32_t as_uint32;
+	struct
+	{
+		uint16_t s1f;
+		uint16_t s0f;
+	} as_f16f16;
+};
 void si_isa_V_CVT_PKRTZ_F16_F32_impl(SIWorkItem *work_item,
 	struct SIInstWrap *inst)
 {
-	NOT_IMPL();
+	SIInstReg s0;
+	SIInstReg s1;
+	uint16_t s0f;
+	uint16_t s1f;
+	union hfpack float_pack;
+
+	/* Load operands from registers or as a literal constant. */
+	if (INST.src0 == 0xFF)
+		s0.as_uint = INST.lit_cnst;
+	else
+		s0.as_uint = SIWorkItemReadReg(work_item, INST.src0);
+	s1.as_uint = SIWorkItemReadVReg(work_item, INST.vsrc1);
+
+	/* Convert to half float */
+	s0f = Float32to16(s0.as_float);
+	s1f = Float32to16(s1.as_float);
+	float_pack.as_f16f16.s0f = s0f;
+	float_pack.as_f16f16.s1f = s1f;
+
+	/* Write the results. */
+	SIWorkItemWriteVReg(work_item, INST.vdst, float_pack.as_uint32);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("t%d: V%u<=(%d) ", work_item->id, INST.vdst,
+			float_pack.as_uint32);
+	}	
 }
 #undef INST
 
