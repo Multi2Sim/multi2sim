@@ -17,33 +17,38 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <cassert>
-#include <cstring>
 #include <cctype>
-
+#include <lib/cpp/Misc.h>
 #include "Asm.h"
 
-using namespace Common;
+
+namespace Common
+{
 
 
-int Asm::IsToken(const char *fmt, const char *token, int *length_ptr)
+bool Asm::IsToken(const std::string &fmt, const std::string &token)
 {
 	int length;
-	int is_token;
-
-	assert(token);
-	assert(fmt);
-
-	/* Check for token */
-	length = strlen(token);
-	is_token = !strncmp(fmt, token, length) &&
-		!isalnum(fmt[length]);
-
-	/* Return its length if found */
-	if (is_token && length_ptr)
-		*length_ptr = length;
-
-	/* Result */
-	return is_token;
+	return IsToken(fmt, token, length);
 }
 
+
+bool Asm::IsToken(const std::string &fmt, const std::string &token,
+		int &length)
+{
+	/* Token is not prefix */
+	length = 0;
+	if (!Misc::StringPrefix(fmt, token))
+		return false;
+	
+	/* Token is not end of word */
+	if (fmt.size() > token.size() && isalnum(fmt[token.size()]))
+		return false;
+
+	/* Token found */
+	length = token.size();
+	return true;
+}
+
+
+}  /* namespace Common */

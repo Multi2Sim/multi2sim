@@ -19,35 +19,35 @@
 
 
 DEFINST(IMUL,
-		"%predIMUL%_U32%_U32%_hi%_s %dst%_cc, %srcA, %srcB;",
+		"%pred IMUL%_U32%_U32%_hi%_s %dst%_cc, %srcA, %srcB;",
 		0x01,
 		0x03,
 		0x00,
 		0x07)
 
 DEFINST(ISCADD,
-		"%predISCADD%_s %dst%_cc, %srcA, %srcB, %const;",
+		"%pred ISCADD%_s %dst%_cc, %srcA, %srcB, %const;",
 		0x02,
 		0x01,
 		0x0c,
 		0x03)
 
 DEFINST(IMAD,
-		"%predIMAD%_us%_hi%_po%_sat%_x%_s %dst%_cc, %srcA, %srcB, %srcC;",
+		"%pred IMAD%_us%_hi%_po%_sat%_x%_s %dst%_cc, %srcA, %srcB, %srcC;",
 		0x02,
 		0x02,
 		0x02,
 		0x00)
 
 DEFINST(IADD,
-		"%predIADD%_sat%_x%_s %dst%IADD_cc, %srcA, %srcB;",
+		"%pred IADD%_sat%_x%_s %dst%IADD_cc, %srcA, %srcB;",
 		0x02,
 		0x01,
 		0x0c,
 		0x02)
 
 DEFINST(ISETP,
-		"%pred0ISETP%_f%_U32%_x%_and%_s %pred1, %pred2, %srcA, %srcB, %pred3;",
+		"%pred0 ISETP%_f%_U32%_x%_and%_s %pred1, %pred2, %srcA, %srcB, %pred3;",
 		0x02,
 		0x01,    
 		0x0b,
@@ -60,13 +60,13 @@ DEFINST(ISETP,
  */
 
 DEFINST(EXIT,
-		"%predEXIT%_keeprefcount%cc;",
+		"%pred EXIT%_keeprefcount%cc;",
 		0x00,
 		0x00,
 		0x30)
 
 DEFINST(BRA,
-		"%predBRA%_u%_LMT%cc %tgt;",
+		"%pred BRA%_u%_LMT%cc %tgt;",
 		0x00,
 		0x00,
 		0x24)
@@ -78,21 +78,21 @@ DEFINST(BRA,
 
 //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>.FIX
 DEFINST(MOV_A,
-		"%predMOV%_s %dst, %src, %constant(sometimes)???;",
+		"%pred MOV%_s %dst, %src, %constant(sometimes)???;",
 		0x02,
 		0x03,
 		0x0c,
 		0x13)
 
 DEFINST(MOV_B,
-		"%predMOV%_s %dst, %srcB;",
+		"%pred MOV%_s %dst, %srcB;",
 		0x02,
 		0x01,
 		0x0c,
 		0x13)
 
 DEFINST(MOV32I,
-		"%predMOV32I%_s %dst, %src;",
+		"%pred MOV32I%_s %dst, %src;",
 		0x02,
 		0x01,
 		0x0e,
@@ -107,12 +107,12 @@ DEFINST(MOV32I,
  */
 
 DEFINST(LD,
-		"%pred0LD%_e%_cg%_u8%_s %dst, [%srcA]%offset;",
+		"%pred0 LD%_e%_cg%_u8%_s %dst, [%srcA]%offset;",
 		0x00,
 		0x06)
 
 DEFINST(LDS,
-		"%pred0LDS %dst, [%srcA]%offset;",
+		"%pred0 LDS %dst, [%srcA]%offset;",
 		0x02,
 		0x01,
 		0x0f,
@@ -123,7 +123,7 @@ DEFINST(LDS,
 		0x01)
 
 DEFINST(ST,
-		"%pred0ST%_e%_cg%_u8%_s [%srcA]%offset, %dst;",
+		"%pred0 ST%_e%_cg%_u8%_s [%srcA]%offset, %dst;",
 		0x00,
 		0x07)
 
@@ -133,14 +133,14 @@ DEFINST(ST,
  */
 
 DEFINST(DADD,
-		"%pred0DADD%_rm%_s %dst, %srcA, %srcB;",
+		"%pred0 DADD%_rm%_s %dst, %srcA, %srcB;",
 		0x02,
 		0x03,
 		0x0c,
 		0x0e)
 
 DEFINST(FFMA,
-		"%pred0FFMA %dst, %srcA, %srcB;",
+		"%pred0 FFMA %dst, %srcA, %srcB;",
 		0x02,
 		0x03,
 		0x09,
@@ -151,7 +151,7 @@ DEFINST(FFMA,
  */
 
 DEFINST(NOP,
-		"%predNOP;",
+		"%pred NOP;",
 		0x02,
 		0x02,
 		0x00,
@@ -161,7 +161,7 @@ DEFINST(NOP,
 		0x06)
 
 DEFINST(S2R,
-		"%pred0S2R%_s %dst, %src_spec;",
+		"%pred0 S2R%_s %dst, %src_spec;",
 		0x02,
 		0x02,
 		0x00,

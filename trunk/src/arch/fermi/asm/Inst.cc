@@ -336,7 +336,7 @@ void Inst::DumpBuf(char *str, int size)
 		++fmt_str;
 
 		/* 1st level token such as pred, dst, src1, src2, src2_mod, imm, offs*/
-		if (Common::Asm::IsToken(fmt_str, "pred_no@P0", &len))
+		if (Common::Asm::IsToken(fmt_str, "pred_no@P0", len))
 		{
 			unsigned long long int pred;
 			pred = bytes.general0.pred;
@@ -346,7 +346,7 @@ void Inst::DumpBuf(char *str, int size)
 				str_printf(&str, &size, "@!P%lld", pred - 8);
 		}
 
-		else if (Common::Asm::IsToken(fmt_str, "pred", &len))
+		else if (Common::Asm::IsToken(fmt_str, "pred", len))
 		{
 			unsigned long long int pred;
 			pred = bytes.general0.pred;
@@ -356,7 +356,7 @@ void Inst::DumpBuf(char *str, int size)
 				str_printf(&str, &size, "@!P%lld", pred - 8);
 		}
 
-		else if (Common::Asm::IsToken(fmt_str,"dst", &len))
+		else if (Common::Asm::IsToken(fmt_str,"dst", len))
 		{
 			unsigned long long int dst;
 			dst = bytes.general0.dst;
@@ -366,7 +366,7 @@ void Inst::DumpBuf(char *str, int size)
 				str_printf(&str, &size, "RZ");
 		}
 
-		else if (Common::Asm::IsToken(fmt_str,"src1_abs_neg", &len))
+		else if (Common::Asm::IsToken(fmt_str,"src1_abs_neg", len))
 		{
 			unsigned long long int src1;
 			unsigned long long int src1_abs;
@@ -381,7 +381,7 @@ void Inst::DumpBuf(char *str, int size)
 				str_printf(&str, &size, "RZ");
 		}
 
-		else if (Common::Asm::IsToken(fmt_str, "src1_neg", &len))
+		else if (Common::Asm::IsToken(fmt_str, "src1_neg", len))
 		{
 			unsigned long long int src1;
 			unsigned long long int src_mod;
@@ -399,7 +399,7 @@ void Inst::DumpBuf(char *str, int size)
 				str_printf(&str, &size, "RZ");
 		}
 
-		else if (Common::Asm::IsToken(fmt_str, "src1_offs", &len))
+		else if (Common::Asm::IsToken(fmt_str, "src1_offs", len))
 		{
 			unsigned long long int src1;
 			unsigned long long int offs;
@@ -423,7 +423,7 @@ void Inst::DumpBuf(char *str, int size)
 			str_printf(&str, &size, "]");
 		}
 
-		else if (Common::Asm::IsToken(fmt_str,"src1", &len))
+		else if (Common::Asm::IsToken(fmt_str,"src1", len))
 		{
 			unsigned long long int src1;
 
@@ -434,7 +434,7 @@ void Inst::DumpBuf(char *str, int size)
 				str_printf(&str, &size, "RZ");
 		}
 
-		else if (Common::Asm::IsToken(fmt_str,"src23", &len))
+		else if (Common::Asm::IsToken(fmt_str,"src23", len))
 		{
 			unsigned long long int bank_id;
 			unsigned long long int offset_in_bank;
@@ -519,7 +519,7 @@ void Inst::DumpBuf(char *str, int size)
 		/* This is a special case for src2 and src3. For FFMA,
 		   the sequence of output from cuobjdump is somehow depends on the src2_mod
 		   it prints src3 first when src2_mod > 2, however prints src2 first when src2_mod < 2 */
-		else if (Common::Asm::IsToken(fmt_str,"src2_FFMA", &len))
+		else if (Common::Asm::IsToken(fmt_str,"src2_FFMA", len))
 		{
 			unsigned long long int bank_id;
 			unsigned long long int offset_in_bank;
@@ -560,7 +560,7 @@ void Inst::DumpBuf(char *str, int size)
 		/* This is a special case for src2. 
 		 * For LDC, src2 is always a constant memory address, no matter
 		 * what the value of src2_mod is. */
-		else if (Common::Asm::IsToken(fmt_str,"src2_LDC", &len))
+		else if (Common::Asm::IsToken(fmt_str,"src2_LDC", len))
 		{
 			unsigned long long int bank_id;
 			unsigned long long int src1;
@@ -579,7 +579,7 @@ void Inst::DumpBuf(char *str, int size)
 						bank_id, src1, offset_in_bank);
 		}
 
-		else if (Common::Asm::IsToken(fmt_str,"src2_frm_sr", &len))
+		else if (Common::Asm::IsToken(fmt_str,"src2_frm_sr", len))
 		{
 			const char *sreg;
 			sreg = StringMapValue(inst_sreg_map, bytes.general0.src2 & 0xff);
@@ -587,7 +587,7 @@ void Inst::DumpBuf(char *str, int size)
 
 		}
 
-		else if (Common::Asm::IsToken(fmt_str,"src2_abs_neg", &len))
+		else if (Common::Asm::IsToken(fmt_str,"src2_abs_neg", len))
 		{
 			unsigned long long int src2;
 			unsigned long long int src2_abs;
@@ -602,7 +602,7 @@ void Inst::DumpBuf(char *str, int size)
 				str_printf(&str, &size, "RZ");
 		}
 
-		else if (Common::Asm::IsToken(fmt_str,"src2_neg", &len))
+		else if (Common::Asm::IsToken(fmt_str,"src2_neg", len))
 		{
 			unsigned long long int bank_id;
 			unsigned long long int offset_in_bank;
@@ -632,7 +632,7 @@ void Inst::DumpBuf(char *str, int size)
 				str_printf(&str, &size, "0x%llx", bytes.general0.src2);
 		}
 
-		else if (Common::Asm::IsToken(fmt_str,"src2", &len))
+		else if (Common::Asm::IsToken(fmt_str,"src2", len))
 		{
 			unsigned long long int bank_id;
 			unsigned long long int offset_in_bank;
@@ -657,7 +657,7 @@ void Inst::DumpBuf(char *str, int size)
 				str_printf(&str, &size, "0x%llx", bytes.general0.src2);
 		}
 
-		else if (Common::Asm::IsToken(fmt_str, "src3_FFMA", &len))
+		else if (Common::Asm::IsToken(fmt_str, "src3_FFMA", len))
 		{
 			unsigned long long int src3;
 			unsigned long long int bit26;
@@ -690,7 +690,7 @@ void Inst::DumpBuf(char *str, int size)
 			}
 		}
 
-		else if (Common::Asm::IsToken(fmt_str,"src3", &len))
+		else if (Common::Asm::IsToken(fmt_str,"src3", len))
 		{
 			unsigned long long int src3;
 			src3 = bytes.general0_mod1_B.src3;
@@ -700,25 +700,25 @@ void Inst::DumpBuf(char *str, int size)
 				str_printf(&str, &size, "RZ");
 		}
 
-		else if (Common::Asm::IsToken(fmt_str,"tgt_lmt", &len))
+		else if (Common::Asm::IsToken(fmt_str,"tgt_lmt", len))
 		{
 			if (bytes.tgt.noinc)
 				str_printf(&str,&size, ".LMT");
 		}
 
-		else if (Common::Asm::IsToken(fmt_str,"tgt_noinc", &len))
+		else if (Common::Asm::IsToken(fmt_str,"tgt_noinc", len))
 		{
 			if (!bytes.tgt.noinc)
 				str_printf(&str,&size, ".noinc");
 		}
 
-		else if (Common::Asm::IsToken(fmt_str,"tgt_u", &len))
+		else if (Common::Asm::IsToken(fmt_str,"tgt_u", len))
 		{
 			if (bytes.tgt.u)
 				str_printf(&str,&size, ".U");
 		}
 
-		else if (Common::Asm::IsToken(fmt_str,"tgt", &len))
+		else if (Common::Asm::IsToken(fmt_str,"tgt", len))
 		{
 			unsigned long long int target;
 
@@ -728,7 +728,7 @@ void Inst::DumpBuf(char *str, int size)
 			str_printf (&str,&size, "%#llx", target);
 		}
 
-		else if (Common::Asm::IsToken(fmt_str,"imm32", &len))
+		else if (Common::Asm::IsToken(fmt_str,"imm32", len))
 		{
 			long long int imm32;
 			/* FIXME
@@ -744,39 +744,39 @@ void Inst::DumpBuf(char *str, int size)
 			str_printf(&str, &size, "%#llx", imm32);
 		}
 
-		else if (Common::Asm::IsToken(fmt_str,"gen1_cmp", &len))
+		else if (Common::Asm::IsToken(fmt_str,"gen1_cmp", len))
 		{
 			str_printf(&str, &size, "%s", StringMapValue(inst_cmp_map,
 						bytes.general1.cmp));
 		}
 
-		else if (Common::Asm::IsToken(fmt_str,"gen1_logicftz", &len))
+		else if (Common::Asm::IsToken(fmt_str,"gen1_logicftz", len))
 		{
 			str_printf(&str, &size, ".FTZ%s", StringMapValue(inst_logic_map,
 						bytes.general1.logic));
 		}
 
-		else if (Common::Asm::IsToken(fmt_str,"gen1_logic", &len))
+		else if (Common::Asm::IsToken(fmt_str,"gen1_logic", len))
 		{
 			str_printf(&str, &size, "%s", StringMapValue(inst_logic_map,
 						bytes.general1.logic));
 		}
 
 		/* 2nd level token such as mod0, mod1, P, Q*/
-		else if (Common::Asm::IsToken(fmt_str, "mod0_A_ftz", &len))
+		else if (Common::Asm::IsToken(fmt_str, "mod0_A_ftz", len))
 		{
 			if (bytes.mod0_A.satftz)
 				str_printf(&str, &size, ".FTZ");
 		}
 
-		else if (Common::Asm::IsToken(fmt_str, "mod0_A_op", &len))
+		else if (Common::Asm::IsToken(fmt_str, "mod0_A_op", len))
 		{
 			unsigned long long int op;
 			op = bytes.mod0_A.abs_src2 << 1 || bytes.mod0_A.satftz;
 			str_printf(&str, &size, "%s", StringMapValue(inst_op56_map,op));
 		}
 
-		else if (Common::Asm::IsToken(fmt_str, "mod0_A_redarv", &len))
+		else if (Common::Asm::IsToken(fmt_str, "mod0_A_redarv", len))
 		{
 			if (bytes.mod0_A.abs_src1)
 				str_printf(&str, &size, ".ARV");
@@ -784,90 +784,90 @@ void Inst::DumpBuf(char *str, int size)
 				str_printf(&str, &size, ".RED");
 		}
 
-		else if (Common::Asm::IsToken(fmt_str, "mod0_A_s", &len))
+		else if (Common::Asm::IsToken(fmt_str, "mod0_A_s", len))
 		{
 			if (bytes.mod0_A.s)
 				str_printf(&str, &size, ".S");
 		}
 
-		else if (Common::Asm::IsToken(fmt_str, "mod0_A_u32", &len))
+		else if (Common::Asm::IsToken(fmt_str, "mod0_A_u32", len))
 		{
 			if (!bytes.mod0_A.satftz)
 				str_printf(&str, &size, ".U32");
 		}
 
-		else if (Common::Asm::IsToken(fmt_str, "mod0_A_w", &len))
+		else if (Common::Asm::IsToken(fmt_str, "mod0_A_w", len))
 		{
 			if (bytes.mod0_A.neg_src1)
 				str_printf(&str, &size, ".W");
 		}
 
-		else if (Common::Asm::IsToken(fmt_str, "mod0_B_brev", &len))
+		else if (Common::Asm::IsToken(fmt_str, "mod0_B_brev", len))
 		{
 			if (bytes.mod0_B.cop)
 				str_printf(&str, &size, ".brev");
 		}
 
-		else if (Common::Asm::IsToken(fmt_str, "mod0_B_cop", &len))
+		else if (Common::Asm::IsToken(fmt_str, "mod0_B_cop", len))
 		{
 			str_printf(&str, &size, "%s", StringMapValue(inst_cop_map, bytes.mod0_B.cop));
 		}
 
-		else if (Common::Asm::IsToken(fmt_str, "mod0_B_type", &len))
+		else if (Common::Asm::IsToken(fmt_str, "mod0_B_type", len))
 		{
 			str_printf(&str, &size, "%s", StringMapValue(inst_type_map, bytes.mod0_B.type));
 		}
 
-		else if (Common::Asm::IsToken(fmt_str, "mod0_B_u32", &len))
+		else if (Common::Asm::IsToken(fmt_str, "mod0_B_u32", len))
 		{
 			if (!bytes.mod0_B.type)
 				str_printf(&str, &size, ".U32");
 		}
 
-		else if (Common::Asm::IsToken(fmt_str, "mod0_C_ccop", &len))
+		else if (Common::Asm::IsToken(fmt_str, "mod0_C_ccop", len))
 		{
 			str_printf(&str, &size, "%s", StringMapValue(inst_ccop_map, bytes.mod0_C.shamt));
 		}
 
-		else if (Common::Asm::IsToken(fmt_str, "mod0_C_shamt", &len))
+		else if (Common::Asm::IsToken(fmt_str, "mod0_C_shamt", len))
 		{
 			unsigned long long int shamt;
 			shamt = bytes.mod0_C.shamt;
 			str_printf(&str, &size, "%#llx", shamt);
 		}
 
-		else if (Common::Asm::IsToken(fmt_str, "mod0_C_s", &len))
+		else if (Common::Asm::IsToken(fmt_str, "mod0_C_s", len))
 		{
 			if (bytes.mod0_C.s)
 				str_printf(&str, &size, ".S");
 		}
 
-		else if (Common::Asm::IsToken(fmt_str, "mod0_D_ftzfmz", &len))
+		else if (Common::Asm::IsToken(fmt_str, "mod0_D_ftzfmz", len))
 		{
 			str_printf(&str, &size, "%s", StringMapValue(inst_ftzfmz_map, bytes.mod0_D.ftzfmz));
 		}
 
-		else if (Common::Asm::IsToken(fmt_str, "mod0_D_op67", &len))
+		else if (Common::Asm::IsToken(fmt_str, "mod0_D_op67", len))
 		{
 			str_printf(&str, &size, "%s", StringMapValue(inst_op67_map, bytes.mod0_D.ftzfmz));
 		}
 
-		else if (Common::Asm::IsToken(fmt_str, "mod0_D_op", &len))
+		else if (Common::Asm::IsToken(fmt_str, "mod0_D_op", len))
 		{
 			str_printf(&str, &size, "%s", StringMapValue(inst_op_map, bytes.mod0_D.ftzfmz));
 		}
 
-		else if (Common::Asm::IsToken(fmt_str, "mod0_D_round", &len))
+		else if (Common::Asm::IsToken(fmt_str, "mod0_D_round", len))
 		{
 			str_printf(&str, &size, "%s", StringMapValue(inst_round_map, bytes.mod0_D.ftzfmz >> 1));
 		}
 
-		else if (Common::Asm::IsToken(fmt_str, "mod0_D_sat", &len))
+		else if (Common::Asm::IsToken(fmt_str, "mod0_D_sat", len))
 		{
 			str_printf(&str, &size, "%s", StringMapValue(inst_sat_map, bytes.mod0_D.sat));
 		}
 
-		else if (Common::Asm::IsToken(fmt_str, "mod0_D_x", &len))
+		else if (Common::Asm::IsToken(fmt_str, "mod0_D_x", len))
 		{
 			unsigned long long int x;
 			x = bytes.mod0_D.ftzfmz & 0x1;
@@ -875,50 +875,50 @@ void Inst::DumpBuf(char *str, int size)
 				str_printf(&str, &size, ".X");
 		}
 
-		else if (Common::Asm::IsToken(fmt_str, "gen0_mod1_B_rnd", &len))
+		else if (Common::Asm::IsToken(fmt_str, "gen0_mod1_B_rnd", len))
 		{
 			str_printf(&str, &size, "%s", StringMapValue(inst_rnd_map, bytes.general0_mod1_B.rnd));
 		}
 
-		else if (Common::Asm::IsToken(fmt_str, "gen0_mod1_C_rnd", &len))
+		else if (Common::Asm::IsToken(fmt_str, "gen0_mod1_C_rnd", len))
 		{
 			str_printf(&str, &size, "%s", StringMapValue(inst_rnd1_map, bytes.general0_mod1_C.rnd));
 		}
 
-		else if (Common::Asm::IsToken(fmt_str, "gen0_mod1_D_cmp", &len))
+		else if (Common::Asm::IsToken(fmt_str, "gen0_mod1_D_cmp", len))
 		{
 			str_printf(&str, &size, "%s", StringMapValue(inst_cmp_map, bytes.general0_mod1_D.cmp));
 		}
 
-		else if (Common::Asm::IsToken(fmt_str, "gen0_src1_dtype_n", &len))
+		else if (Common::Asm::IsToken(fmt_str, "gen0_src1_dtype_n", len))
 		{
 			unsigned long long int dtype_n;
 			dtype_n = bytes.general0.src1 & 0x3;
 			str_printf(&str, &size, "%s", StringMapValue(inst_dtype_n_map, dtype_n));
 		}
 
-		else if (Common::Asm::IsToken(fmt_str, "gen0_src1_dtype", &len))
+		else if (Common::Asm::IsToken(fmt_str, "gen0_src1_dtype", len))
 		{
 			unsigned long long int dtype;
 			dtype = bytes.general0.src1 & 0x3;
 			str_printf(&str, &size, "%s", StringMapValue(inst_dtype_map, dtype));
 		}
 
-		else if (Common::Asm::IsToken(fmt_str, "gen0_src1_stype_n", &len))
+		else if (Common::Asm::IsToken(fmt_str, "gen0_src1_stype_n", len))
 		{
 			unsigned long long int stype_n;
 			stype_n = bytes.general0.src1 >> 3 & 0x3;
 			str_printf(&str, &size, "%s", StringMapValue(inst_stype_n_map, stype_n));
 		}
 
-		else if (Common::Asm::IsToken(fmt_str, "gen0_src1_stype", &len))
+		else if (Common::Asm::IsToken(fmt_str, "gen0_src1_stype", len))
 		{
 			unsigned long long int stype;
 			stype = bytes.general0.src1 >> 3 & 0x3;
 			str_printf(&str, &size, "%s", StringMapValue(inst_stype_map, stype));
 		}
 
-		else if (Common::Asm::IsToken(fmt_str, "dtype_sn", &len))
+		else if (Common::Asm::IsToken(fmt_str, "dtype_sn", len))
 		{
 			unsigned long long int dtype_n;
 			if (bytes.mod0_A.abs_src1)
@@ -929,7 +929,7 @@ void Inst::DumpBuf(char *str, int size)
 			str_printf(&str, &size, "%s", StringMapValue(inst_stype_n_map, dtype_n));
 		}
 
-		else if (Common::Asm::IsToken(fmt_str, "stype_sn", &len))
+		else if (Common::Asm::IsToken(fmt_str, "stype_sn", len))
 		{
 			unsigned long long int stype_n;
 			if (bytes.mod0_A.neg_src1)
@@ -940,7 +940,7 @@ void Inst::DumpBuf(char *str, int size)
 			str_printf(&str, &size, "%s", StringMapValue(inst_stype_n_map, stype_n));
 		}
 
-		else if (Common::Asm::IsToken(fmt_str, "offs_op1_e", &len))
+		else if (Common::Asm::IsToken(fmt_str, "offs_op1_e", len))
 		{
 			unsigned long long int e;
 			e = bytes.offs.op1 & 0x1;
@@ -948,7 +948,7 @@ void Inst::DumpBuf(char *str, int size)
 				str_printf(&str, &size, ".e");
 		}
 
-		else if (Common::Asm::IsToken(fmt_str,"offs", &len))
+		else if (Common::Asm::IsToken(fmt_str,"offs", len))
 		{
 			unsigned long long int offs;
 			offs = bytes.offs.offset;
@@ -956,14 +956,14 @@ void Inst::DumpBuf(char *str, int size)
 				str_printf(&str, &size, "+%#llx", offs);
 		}
 
-		else if (Common::Asm::IsToken(fmt_str, "P", &len))
+		else if (Common::Asm::IsToken(fmt_str, "P", len))
 		{
 			unsigned long long int P;
 			P = bytes.general1.dst >> 3;
 			str_printf(&str, &size, "P%lld", P);
 		}
 
-		else if (Common::Asm::IsToken(fmt_str, "Q", &len))
+		else if (Common::Asm::IsToken(fmt_str, "Q", len))
 		{
 			unsigned long long int Q;
 			Q = bytes.general1.dst & 0x7;
@@ -973,7 +973,7 @@ void Inst::DumpBuf(char *str, int size)
 				str_printf(&str, &size, "pt");
 		}
 
-		else if (Common::Asm::IsToken(fmt_str, "R", &len))
+		else if (Common::Asm::IsToken(fmt_str, "R", len))
 		{
 			unsigned long long int R;
 			R = bytes.general1.R;
@@ -985,7 +985,7 @@ void Inst::DumpBuf(char *str, int size)
 				str_printf(&str, &size, "pt");
 		}
 
-		else if (Common::Asm::IsToken(fmt_str, "FADD_sat", &len))
+		else if (Common::Asm::IsToken(fmt_str, "FADD_sat", len))
 		{
 			unsigned long long int sat;
 			sat = bytes.general0_mod1_B.src3 & 0x1;
@@ -993,21 +993,21 @@ void Inst::DumpBuf(char *str, int size)
 				str_printf(&str, &size, ".SAT");
 		}
 
-		else if (Common::Asm::IsToken(fmt_str, "MUFU_op", &len))
+		else if (Common::Asm::IsToken(fmt_str, "MUFU_op", len))
 		{
 			unsigned long long int op;
 			op = bytes.imm.imm32;
 			str_printf(&str, &size, "%s", StringMapValue(inst_op_map, op));
 		}
 
-		else if (Common::Asm::IsToken(fmt_str, "NOP_op", &len))
+		else if (Common::Asm::IsToken(fmt_str, "NOP_op", len))
 		{
 			unsigned long long int op;
 			op = bytes.offs.mod1 >> 9 & 0x4;
 			str_printf(&str, &size, "%s", StringMapValue(inst_NOP_op_map, op));
 		}
 
-		else if (Common::Asm::IsToken(fmt_str, "IMAD_hi", &len))
+		else if (Common::Asm::IsToken(fmt_str, "IMAD_hi", len))
 		{
 			unsigned long long int hi;
 			hi= bytes.mod0_D.ftzfmz & 0x1;
@@ -1015,7 +1015,7 @@ void Inst::DumpBuf(char *str, int size)
 				str_printf(&str, &size, ".HI");
 		}
 
-		else if (Common::Asm::IsToken(fmt_str, "IMAD_mod1", &len))
+		else if (Common::Asm::IsToken(fmt_str, "IMAD_mod1", len))
 		{
 			unsigned long long int mod1;
 			mod1 = bytes.mod0_D.ftzfmz >> 1;
@@ -1023,7 +1023,7 @@ void Inst::DumpBuf(char *str, int size)
 				str_printf(&str, &size, ".U32");
 		}
 
-		else if (Common::Asm::IsToken(fmt_str, "IMAD_mod2", &len))
+		else if (Common::Asm::IsToken(fmt_str, "IMAD_mod2", len))
 		{
 			unsigned long long int mod2;
 			mod2 = bytes.mod0_D.sat;
@@ -1031,7 +1031,7 @@ void Inst::DumpBuf(char *str, int size)
 				str_printf(&str, &size, ".U32");
 		}
 
-		else if (Common::Asm::IsToken(fmt_str, "IMAD_sat", &len))
+		else if (Common::Asm::IsToken(fmt_str, "IMAD_sat", len))
 		{
 			unsigned long long int sat;
 			sat = bytes.general0_mod1_B.rnd >> 1;
