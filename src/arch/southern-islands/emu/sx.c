@@ -97,7 +97,7 @@ static void SISXParamReset(SISX *self)
 	SISXParamCreate(self);
 }
 
-static SISXPSInitMeta *SISXPSInitMetaCreate(float brctrc_i, float brctrc_j)
+static SISXPSInitMeta *SISXPSInitMetaCreate(int x, int y, float brctrc_i, float brctrc_j)
 {
 	SISXPSInitMeta *meta;
 
@@ -105,6 +105,8 @@ static SISXPSInitMeta *SISXPSInitMetaCreate(float brctrc_i, float brctrc_j)
 	meta = xcalloc(1, sizeof(SISXPSInitMeta));
 
 	/* Initialize */
+	meta->x = x;
+	meta->y = y;
 	meta->brctrc_i = brctrc_i;
 	meta->brctrc_j = brctrc_j;
 
@@ -117,22 +119,52 @@ static void SISXPSInitMetaDestroy(SISXPSInitMeta *meta)
 	free(meta);
 }
 
+static SISXPSLDS *SISXPSLDSCreate(unsigned int attribute_count)
+{
+	SISXPSLDS *ps_lds;
+
+	/* Allocate */
+	ps_lds = xcalloc(1, sizeof(SISXPSLDS));
+	ps_lds->data = xcalloc(1, attribute_count * 3 * 4 * sizeof(float));
+	ps_lds->size = attribute_count * 3 * 4;
+
+	/* Return */
+	return ps_lds;
+}
+
+static void SISXPSLDSDestroy(SISXPSLDS *ps_lds)
+{
+	free(ps_lds->data);
+	free(ps_lds);
+}
+
 static void SISXPSInitCreate(SISX *self)
 {
 	self->ps_init_meta = list_create();
+	self->ps_init_lds = list_create();
 }
 
 static void SISXPSInitDestroy(SISX *self)
 {
 	SISXPSInitMeta *meta;
+	SISXPSLDS *lds;
 	int i;
 
+	/* Free metadata */
 	LIST_FOR_EACH(self->ps_init_meta, i)
 	{
 		meta = list_get(self->ps_init_meta, i);
 		SISXPSInitMetaDestroy(meta);
 	}
 	list_free(self->ps_init_meta);
+
+	/* Free LDS data */
+	LIST_FOR_EACH(self->ps_init_lds, i)
+	{
+		lds = list_get(self->ps_init_lds, i);
+		SISXPSLDSDestroy(lds);
+	}
+	list_free(self->ps_init_lds);
 }
 
 static void SISXPSInitReset(SISX *self)
@@ -187,7 +219,6 @@ void SISXExportPosition(SISX *self, unsigned int target, unsigned int id,
 	list_insert(pos_lst, id, pos);
 }
 
-
 void SISXExportParam(SISX *self, unsigned int target, unsigned int id, 
 	float x, float y, float z, float w)
 {
@@ -205,12 +236,71 @@ void SISXExportParam(SISX *self, unsigned int target, unsigned int id,
 	list_insert(param_lst, id, param);
 }
 
-void SISXPSInitMetaAdd(SISX *self, float brctrc_i, float brctrc_j)
+void SISXPSInitMetaAdd(SISX *self, int x, int y, float brctrc_i, float brctrc_j)
 {
 	struct list_t *meta_list;
 	SISXPSInitMeta *meta;
 
 	meta_list = self->ps_init_meta;
-	meta = SISXPSInitMetaCreate(brctrc_i, brctrc_j);
+	meta = SISXPSInitMetaCreate(x, y, brctrc_i, brctrc_j);
 	list_enqueue(meta_list, meta);
 }
+
+/* Prepare P0 P10 P20 so we can load to LDS for interpolation in Pixel Shader */
+void SISXPSInitLDS(SISX *self)
+{
+	struct list_t *param_lst;
+	int attribute_count = 0;
+	SISXPSLDS *lds;
+	float *p_0;
+	float *p_1;
+	float *p_2;
+	int i, j;
+
+	/* Count parameter slots in use */
+	for (i = 0; i < SI_PARAM_COUNT; ++i)
+	{
+		param_lst = self->param[i];
+		if (list_count(param_lst))
+			attribute_count += 1;
+	}
+
+	/* 
+	 * LDS data size is always attribute_count * 12dwords 
+	 * The layout in LDS is:
+	 * P0: X Y Z W, P10: X Y Z W, P20: X Y Z W ------ Attribute 0, LDS base
+	 * P0: X Y Z W, P10: X Y Z W, P20: X Y Z W ------ Attribute 1, LDS base + 12 dwords
+	 */
+	lds = SISXPSLDSCreate(attribute_count);
+
+	for (i = 0; i < attribute_count; ++i)
+	{
+		param_lst = self->param[i];
+		for (j = 0; j < list_count(param_lst) / 3; ++j)
+		{
+			p_0 = list_get(param_lst, 3 * j);
+			p_1 = list_get(param_lst, 3 * j + 1);
+			p_2 = list_get(param_lst, 3 * j + 2);
+
+			/* P0, Attribute i */
+			lds->data[12 * i + 0] = p_0[0];
+			lds->data[12 * i + 1] = p_0[1];
+			lds->data[12 * i + 2] = p_0[2];
+			lds->data[12 * i + 3] = p_0[3];
+
+			/* P10, Attribute i */
+			lds->data[12 * i + 4] = p_1[0] - p_0[0];
+			lds->data[12 * i + 5] = p_1[1] - p_0[1];
+			lds->data[12 * i + 6] = p_1[2] - p_0[2];
+			lds->data[12 * i + 7] = p_1[3] - p_0[3];
+
+			/* P20, Attribute i */
+			lds->data[12 * i + 8] = p_2[0] - p_0[0];
+			lds->data[12 * i + 9] = p_2[1] - p_0[1];
+			lds->data[12 * i + 10] = p_2[2] - p_0[2];
+			lds->data[12 * i + 11] = p_2[3] - p_0[3];
+		}
+		list_add(self->ps_init_lds, lds);
+	}
+}
+

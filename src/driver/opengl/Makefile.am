@@ -11,6 +11,9 @@ libopengl_a_SOURCES = \
 	si-sc.c \
 	si-sc.h \
 	\
+	si-spi.c \
+	si-spi.h \
+	\
 	si-pa.c \
 	si-pa.h \
 	\
