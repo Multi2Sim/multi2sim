@@ -20,13 +20,20 @@
 #ifndef ARCH_COMMON_ASM_H
 #define ARCH_COMMON_ASM_H
 
+#include <string>
+
 namespace Common
 {
 
 class Asm
 {
 public:
-	static int IsToken(const char *fmt, const char *token, int *length_ptr);
+	
+	/* Return if 'token' is found in the beginning of 'fmt'. If so, the
+	 * length of 'token' is returned in optional argument 'length'. */
+	static bool IsToken(const std::string &fmt, const std::string &token);
+	static bool IsToken(const std::string &fmt, const std::string &token,
+			int &length);
 };
 
 
