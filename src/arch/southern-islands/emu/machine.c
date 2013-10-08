@@ -7457,6 +7457,14 @@ void si_isa_TBUFFER_LOAD_FORMAT_XY_impl(SIWorkItem *work_item,
 #undef INST
 
 #define INST SI_INST_MTBUF
+void si_isa_TBUFFER_LOAD_FORMAT_XYZ_impl(SIWorkItem *work_item,
+	struct SIInstWrap *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
+#define INST SI_INST_MTBUF
 void si_isa_TBUFFER_LOAD_FORMAT_XYZW_impl(SIWorkItem *work_item,
 	struct SIInstWrap *inst)
 {
