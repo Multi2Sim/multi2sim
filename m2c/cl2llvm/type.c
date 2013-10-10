@@ -53,14 +53,14 @@ void cl2llvm_type_free(struct cl2llvm_type_t *cl2llvm_type)
  */
 #define type_cmp_num_types  31
 
-struct cl2llvm_type_t *type_cmp(struct cl2llvm_val_t *type1_w_sign, struct cl2llvm_val_t *type2_w_sign)
+struct cl2llvm_type_t *type_cmp(struct cl2llvm_type_t *type1, struct cl2llvm_type_t *type2)
 {
 	struct cl2llvm_type_t *dom_type = cl2llvm_type_create();
 
-	LLVMTypeRef type1_type = LLVMTypeOf(type1_w_sign->val);
-	LLVMTypeRef type2_type = LLVMTypeOf(type2_w_sign->val);
-	int type1_sign = type1_w_sign->type->sign;
-	int type2_sign = type1_w_sign->type->sign;
+	LLVMTypeRef type1_type = type1->llvm_type;
+	LLVMTypeRef type2_type = type2->llvm_type;
+	int type1_sign = type1->sign;
+	int type2_sign = type2->sign;
 
 	dom_type->llvm_type = type1_type;
 	dom_type->sign = type1_sign;

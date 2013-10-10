@@ -31,7 +31,6 @@
 #include "built-in-funcs.h"
 #include "parser.h"
 #include "cl2llvm.h"
-#include "array.h"
 #include "format.h"
 
 #define CL2LLVM_MAX_FUNC_ARGS 64
@@ -489,7 +488,7 @@ addr_qual
 	}
 	| TOK_LOCAL
 	{
-		$$ = 2;
+		$$ = 3;
 	}
 	| TOK_PRIVATE
 	{
@@ -1127,7 +1126,17 @@ declaration
 
 					type = LLVMArrayType(type, j);
 				}
-
+				
+				/* if array is not stored in private memory */
+				if($1->addr_qual)
+				{
+					char local_name[200];
+					snprintf(local_name, sizeof(local_name),
+						"aclocal_%s", current_list_elem->name);
+					ptr = cl2llvm_val_create_w_init(LLVMAddGlobalInAddressSpace(cl2llvm_module, type, local_name, $1->addr_qual), $1->type_spec->sign);
+				}
+				else
+				{
 				/* Go to entry block and allocate array pointer */
 				LLVMPositionBuilder(cl2llvm_builder,
 					cl2llvm_current_function->entry_block,
@@ -1142,7 +1151,7 @@ declaration
 					current_basic_block);
 
 
-				
+				}
 				/* Create symbol */
 				symbol = cl2llvm_symbol_create_w_init( 
 					ptr->val , $1->type_spec->sign, 

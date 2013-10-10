@@ -908,7 +908,7 @@ void type_unify(struct cl2llvm_val_t *val1, struct cl2llvm_val_t *val2, struct c
 	}
 
 	/* Obtain dominant type */
-	struct cl2llvm_type_t *type = type_cmp(val1, val2);
+	struct cl2llvm_type_t *type = type_cmp(val1->type, val2->type);
 
 	/* Whatever operand differs from the dominant type will be typecast
 	 * to it. */
