@@ -59,6 +59,8 @@ enum si_ndrange_stage_t
 	STAGE_INVALID
 };
 
+struct si_sx_ps_init_t;
+
 CLASS_BEGIN(SINDRange, Object)
 	
 	/* Emulator */
@@ -69,6 +71,9 @@ CLASS_BEGIN(SINDRange, Object)
 
 	/* Stage */
 	enum si_ndrange_stage_t stage;
+
+	/* Initialization data for Pixel Shader, dequeue from SPI module */	
+	struct si_sx_ps_init_t *ps_init_data;  // Free in SINDRangeDestroy if set
 
 	/* Work-group lists */
 	struct list_t *waiting_work_groups;
@@ -161,6 +166,8 @@ void SINDRangeSetupInstMem(SINDRange *self, void *buf,
 	int size, unsigned int pc);
 void SINDRangeSetupStage(SINDRange *self,
 	enum si_ndrange_stage_t stage);
+void SINDRangeSetupPSInitData(SINDRange *self,
+	struct si_sx_ps_init_t *ps_init_data);
 
 /* Access constant buffers */
 void SINDRangeConstantBufferWrite(SINDRange *self,

@@ -39,6 +39,7 @@
 #include "si-program.h"
 #include "si-shader.h"
 #include "si-sc.h"
+#include "si-spi.h"
 
 /* Debug */
 int opengl_debug_category;
@@ -1408,65 +1409,32 @@ static int opengl_abi_si_raster_impl(X86Context *ctx)
 	X86Emu *x86_emu = ctx->emu;
 	OpenglDriver *driver = x86_emu->opengl_driver;
 	SIEmu *si_emu = driver->si_emu;
+
+	struct opengl_si_shader_t *shdr;
+	struct list_t *ps_ndranges_list;
+	enum opengl_pa_primitive_mode_t ps_render_mode;
+	SINDRange *ndrange;
 	int i;
-	int j;
 
 	unsigned int mode;
+	unsigned int pixel_shader_id;
 
 	mode = regs->ecx;
+	pixel_shader_id = regs->edx;
 
-	float *pos;
-	int pos_idx;
-	struct list_t *pos_lst;
-	struct list_t *pixel_list;
-	struct opengl_sc_pixel_info_t *pixel;
-	struct opengl_pa_primitive_t *prmtv;
-	struct opengl_pa_triangle_t *triangle;
-	
-	opengl_debug("\tprimitive mode %d\n", mode);
+	opengl_debug("\tprimitive mode %d, fragment shader id %d\n", mode, pixel_shader_id);
 
-	/* FIXME: currently triangle only */
+	shdr = list_get(driver->opengl_si_shader_list, pixel_shader_id);
+	ps_render_mode = opengl_pa_primitive_get_mode(mode);
 
-	/* Prepare LDS data */
-	SISXPSInitLDS(si_emu->sx);
+	ps_ndranges_list = SISpiPSNDRangesCreate(si_emu->sx, ps_render_mode, 
+		driver->opengl_si_vwpt, shdr);
 
-	for (pos_idx = 0; pos_idx < SI_POS_COUNT; ++pos_idx)
+	/* NDRanges are ready, just need to launch them */
+	LIST_FOR_EACH(ps_ndranges_list, i)
 	{
-		pos_lst = si_emu->sx->pos[pos_idx];
-		if (list_count(pos_lst))
-		{
-			/* Start to generate pixel info */
-			prmtv = opengl_pa_primitives_create(OPENGL_PA_TRIANGLES, pos_lst, driver->opengl_si_vwpt);
-			LIST_FOR_EACH(prmtv->list, i)
-			{
-				triangle = list_get(prmtv->list, i);
-
-				/* Rasterization */
-				pixel_list = opengl_sc_rast_triangle_gen(triangle);
-				if (pixel_list)
-				{
-					LIST_FOR_EACH(pixel_list, j)
-					{
-						pixel = list_get(pixel_list, j);
-						SISXPSInitMetaAdd(si_emu->sx, pixel->pos[X_COMP], pixel->pos[Y_COMP], pixel->brctrc_i, pixel->brctrc_j);
-
-						/* Create NDRanges */
-					}
-					opengl_debug("\tTriangle %d generated %d pixels\n", i, list_count(pixel_list));
-				}
-				/* Clean pixels */
-				opengl_sc_rast_triangle_done(pixel_list);
-			}
-			opengl_pa_primitives_free(prmtv);
-		}
-
-		/* Debug: export target */
-		opengl_debug("\texport target pos #%d\n", pos_idx);
-		LIST_FOR_EACH(pos_lst, i)
-		{
-			pos = list_get(pos_lst, i);
-			opengl_debug("\t\t%d: %f, %f, %f, %f\n", i, pos[0], pos[1], pos[2], pos[3]);
-		}
+		ndrange = list_dequeue(ps_ndranges_list);
+		list_add(driver->opengl_si_ndrange_list, ndrange);
 	}
 
 	/* Reset Shader Export */
