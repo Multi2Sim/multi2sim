@@ -98,7 +98,7 @@ static uint16_t Float32to16(float value)
 	v.si ^= ((v.si - F_maxD) ^ v.si) & -(v.si > F_maxC);
 	v.si ^= ((v.si - F_minD) ^ v.si) & -(v.si > F_subC);
 	return v.ui | sign;
-    }
+}
 
 /*
  * SMRD
@@ -3525,18 +3525,18 @@ void si_isa_V_SUBREV_I32_impl(SIWorkItem *work_item,
 
 /* D = {flt32_to_flt16(S1.f),flt32_to_flt16(S0.f)}, with round-toward-zero. */
 #define INST SI_INST_VOP2
-union hfpack
-{
-	uint32_t as_uint32;
-	struct
-	{
-		uint16_t s1f;
-		uint16_t s0f;
-	} as_f16f16;
-};
 void si_isa_V_CVT_PKRTZ_F16_F32_impl(SIWorkItem *work_item,
 	struct SIInstWrap *inst)
 {
+	union hfpack
+	{
+		uint32_t as_uint32;
+		struct
+		{
+			uint16_t s1f;
+			uint16_t s0f;
+		} as_f16f16;
+	};
 	SIInstReg s0;
 	SIInstReg s1;
 	uint16_t s0f;

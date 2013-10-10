@@ -18,6 +18,7 @@
  */
 
 
+#include <driver/opengl/si-spi.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
@@ -36,19 +37,20 @@
 
 
 /* Parameter cache is LDS, which has parameter data from shader export module */
-static void SIWorkGroupInitParamCache(SIWorkGroup *self, SISX *sx)
+static void SIWorkGroupInitParamCache(SIWorkGroup *self)
 {
-	SISXPSLDS *lds;
+	struct si_sx_ps_init_lds_t *lds;
 
-	lds = list_dequeue(sx->ps_init_lds);
+	lds = self->ndrange->ps_init_data->lds;
+	assert(lds);
 
 	/* 
 	 * Currently, NDRange is created per primitive(triangle) for Pixel Shader
-	 * So just load lds data to LDS module
+	 * So just load lds data to the beginning of LDS module
 	 */	 
-	 assert(lds);
-	 mem_write(self->lds_module, 0x0, lds->size, lds->data);
+	mem_write(self->lds_module, 0x0, lds->size, lds->data);
 }
+
 
 /*
  * Public Functions
@@ -61,10 +63,7 @@ void SIWorkGroupCreate(SIWorkGroup *self, unsigned int id, SINDRange *ndrange)
 	SIWavefront *wavefront;
 	SIWorkItem *work_item;
 	SIEmu *emu = ndrange->emu;
-
-	/* Shader Export module */
-	SISX *sx = emu->sx;
-	SISXPSInitMeta *ps_init_meta;
+	struct si_sx_ps_init_meta_t *ps_init_meta;
 
 	int i;
 	int lid;
@@ -145,7 +144,7 @@ void SIWorkGroupCreate(SIWorkGroup *self, unsigned int id, SINDRange *ndrange)
 	case STAGE_PS:
 	{
 		/* Initialize LDS(Parameter Cache) */
-		SIWorkGroupInitParamCache(self, self->ndrange->emu->sx);
+		SIWorkGroupInitParamCache(self);
 		break;
 	}
 	default:
@@ -260,7 +259,7 @@ void SIWorkGroupCreate(SIWorkGroup *self, unsigned int id, SINDRange *ndrange)
 				/* Pixel shader initialization convention */
 				case STAGE_PS:
 				{
-					ps_init_meta = list_dequeue(sx->ps_init_meta);
+					ps_init_meta = list_dequeue(self->ndrange->ps_init_data->meta_list);
 
 					/* PSes load barycentric coordinates to VGPR0/1 */
 					if (ps_init_meta)
@@ -268,6 +267,11 @@ void SIWorkGroupCreate(SIWorkGroup *self, unsigned int id, SINDRange *ndrange)
 						work_item->vreg[0].as_float = ps_init_meta->brctrc_i;
 						work_item->vreg[1].as_float = ps_init_meta->brctrc_j;
 					}
+
+					/* FIXME: X/Y should also load to somewhere for export instruction? */
+					/* Finishes its job */
+					SISXPSInitMetaDestroy(ps_init_meta);
+					
 					break;
 				}
 				/* Default is OpenCL convention */

@@ -316,7 +316,7 @@ struct list_t *opengl_sc_tiled_rast_triangle_gen(struct opengl_pa_triangle_t *tr
 	return pxl_lst;
 }
 
-struct list_t *opengl_sc_rast_triangle_gen(struct opengl_pa_triangle_t *triangle)
+struct list_t *opengl_sc_rast_triangle_gen_pixel_info(struct opengl_pa_triangle_t *triangle)
 {
 	/* List contains info of pixels inside this triangle */
 	struct list_t *pxl_lst;

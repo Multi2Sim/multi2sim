@@ -139,7 +139,7 @@ int opengl_sc_edge_func_test_pixel(struct opengl_pa_edge_func_t *edge_func, int 
 
 struct list_t *opengl_sc_tiled_rast_triangle_gen(struct opengl_pa_triangle_t *triangle);
 
-struct list_t *opengl_sc_rast_triangle_gen(struct opengl_pa_triangle_t *triangle);
+struct list_t *opengl_sc_rast_triangle_gen_pixel_info(struct opengl_pa_triangle_t *triangle);
 void opengl_sc_rast_triangle_done(struct list_t *pxl_lst);
 
 #endif
