@@ -13,9 +13,6 @@ libcl2llvm_a_SOURCES = \
 	arg.h\
 	arg.c\
 	\
-	array.h\
-	array.c\
-	\
 	built-in-funcs.h\
 	built-in-funcs.c\
 	\
