@@ -315,13 +315,13 @@ void Frm2binBinaryGenerate(Frm2bin *self, Frm2binBinary *cubinary)
 	int iter;
 
 	/* configure the ELF Header info specific for .cubin */
-	(asELFWriter)(cubinary)->header.e_type = 0x2;
-	(asELFWriter)(cubinary)->header.e_machine = 0xbe;
-	(asELFWriter)(cubinary)->header.e_version = 0x1;
-	(asELFWriter)(cubinary)->header.e_entry = 0x0;
-	(asELFWriter)(cubinary)->header.e_ident[7] = 0x33;
-	(asELFWriter)(cubinary)->header.e_ident[8] = 0x6;
-
+	asELFWriter(cubinary)->header.e_type = 0x2;
+	asELFWriter(cubinary)->header.e_machine = 0xbe;
+	asELFWriter(cubinary)->header.e_version = 0x1;
+	asELFWriter(cubinary)->header.e_entry = 0x0;
+	asELFWriter(cubinary)->header.e_ident[7] = 0x33;
+	asELFWriter(cubinary)->header.e_ident[8] = 0x6;
+	asELFWriter(cubinary)->header.e_flags = 0x140114;
 
 	/*
 	 * * create the symtable which includes a string table
@@ -495,33 +495,20 @@ void Frm2binBinaryGenerate(Frm2bin *self, Frm2binBinary *cubinary)
 	tmpSection->header.sh_entsize = 0x0;
 
 	/* populate data to this section */
-	//ELFWriterBufferWrite(tmpBuffer, text_section_buffer, text_section_buffer->size);
-
-	/* put instr text into tmpTextBuf */
-	//tmpTextBuf = new(ELFWriterBuffer);
-	int i;
-	for(i=0; i<28; i++)
-		ELFWriterBufferWrite(tmpBuffer, (void*)((text_section_buffer->ptr) +i), 4);
-	//for(i=1; i<28; i+=4)
-	//	ELFWriterBufferWrite(tmpBuffer, (void*)((text_section_buffer->ptr) +i), 4);
-	//for(i=2; i<28; i+=4)
-	//	ELFWriterBufferWrite(tmpBuffer, (void*)((text_section_buffer->ptr) +i), 4);
-	//for(i=3; i<28; i+=4)
-	//	ELFWriterBufferWrite(tmpBuffer, (void*)((text_section_buffer->ptr) +i), 4);
+	ELFWriterBufferWrite(tmpBuffer, text_section_buffer->ptr, text_section_buffer->size);
 
 
 	/* add section to the binary */
 	ELFWriterAddSection(asELFWriter(cubinary), tmpSection);
 
 	/* add the buffer to the buffer_array of the binary */
-	//ArrayAdd((asELFWriter(cubinary))->buffer_array, asObject(tmpBuffer));
 	ELFWriterAddBuffer(asELFWriter(cubinary), tmpBuffer);
 
 	// debug, print out the hex of text_buffer
-	//int i;
+	int i;
 	printf("####\n");
 	for(i=0; i<28; i++)
-		printf("%x \n", *((unsigned int *)(text_section_buffer->ptr) + i));
+		printf("%08x \n", *((unsigned int *)(text_section_buffer->ptr) + i));
 
 
 
