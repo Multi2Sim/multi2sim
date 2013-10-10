@@ -295,7 +295,7 @@ void Frm2binBinaryGenerate(Frm2bin *self, Frm2binBinary *cubinary)
 
 	/* used later by segment to section mapping */
 	ELFWriterSection *tmpConstantSection, *tmpTextSection;
-	ELFWriterBuffer *firstBuf, *lastBuf;
+	ELFWriterBuffer *firstBuf, *lastBuf;// *tmpTextBuf;
 	ELFWriterSymbol *tmpSymbol;
 
 	List *GlobalInfoList;
@@ -495,7 +495,20 @@ void Frm2binBinaryGenerate(Frm2bin *self, Frm2binBinary *cubinary)
 	tmpSection->header.sh_entsize = 0x0;
 
 	/* populate data to this section */
-	ELFWriterBufferWrite(tmpBuffer, text_section_buffer, text_section_buffer->size);
+	//ELFWriterBufferWrite(tmpBuffer, text_section_buffer, text_section_buffer->size);
+
+	/* put instr text into tmpTextBuf */
+	//tmpTextBuf = new(ELFWriterBuffer);
+	int i;
+	for(i=0; i<28; i++)
+		ELFWriterBufferWrite(tmpBuffer, (void*)((text_section_buffer->ptr) +i), 4);
+	//for(i=1; i<28; i+=4)
+	//	ELFWriterBufferWrite(tmpBuffer, (void*)((text_section_buffer->ptr) +i), 4);
+	//for(i=2; i<28; i+=4)
+	//	ELFWriterBufferWrite(tmpBuffer, (void*)((text_section_buffer->ptr) +i), 4);
+	//for(i=3; i<28; i+=4)
+	//	ELFWriterBufferWrite(tmpBuffer, (void*)((text_section_buffer->ptr) +i), 4);
+
 
 	/* add section to the binary */
 	ELFWriterAddSection(asELFWriter(cubinary), tmpSection);
@@ -505,10 +518,12 @@ void Frm2binBinaryGenerate(Frm2bin *self, Frm2binBinary *cubinary)
 	ELFWriterAddBuffer(asELFWriter(cubinary), tmpBuffer);
 
 	// debug, print out the hex of text_buffer
-	int i;
+	//int i;
 	printf("####\n");
 	for(i=0; i<28; i++)
-		printf("%x ", *((unsigned int *)(text_section_buffer->ptr) + i));
+		printf("%x \n", *((unsigned int *)(text_section_buffer->ptr) + i));
+
+
 
 
 	/* create one symbol for this section, it will be
