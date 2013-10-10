@@ -21,7 +21,7 @@
 #define DRIVER_OPENGL_SI_PA_H
 
 /* 
- * Primary functionality for Primitive assembler 
+ * Primary functionality for primitive assembler 
  *     1. Clipping
  *     2. Viewport tranform
  *     3. Primitive rasterization set-up
@@ -121,6 +121,7 @@ void opengl_pa_vertex_free(struct opengl_pa_vertex_t *vtx);
 struct opengl_pa_primitive_t *opengl_pa_primitives_create(enum opengl_pa_primitive_mode_t mode, 
 	struct list_t *pos_lst, struct opengl_pa_viewport_t *vwpt);
 void opengl_pa_primitives_free(struct opengl_pa_primitive_t *prmtv);
+enum opengl_pa_primitive_mode_t opengl_pa_primitive_get_mode(int mode);
 
 struct opengl_pa_triangle_t *opengl_pa_triangle_create();
 void opengl_pa_triangle_free(struct opengl_pa_triangle_t *triangle);

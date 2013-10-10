@@ -459,6 +459,7 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count )
 	struct opengl_program_obj_t *program_obj;
 	struct opengl_shader_obj_t *shader_obj;
 	unsigned int vertex_shader_id;
+	unsigned int pixel_shader_id;
 
 	unsigned int num_workitems;
 	unsigned int work_dim = 1; /* Currently always choose 1D */
@@ -485,7 +486,23 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count )
 	{
 		shader_obj = list_get(program_obj->shaders, i);
 		if (shader_obj && shader_obj->type == GL_VERTEX_SHADER )
-			vertex_shader_id = shader_obj->id;
+		{
+			switch(shader_obj->type)
+			{
+			case GL_VERTEX_SHADER:
+			{
+				vertex_shader_id = shader_obj->id;
+				break;
+			}
+			case GL_FRAGMENT_SHADER:
+			{
+				pixel_shader_id = shader_obj->id;
+				break;
+			}
+			default:
+				break;
+			}
+		}
 	}
 
 	/* 
@@ -589,7 +606,8 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count )
 
 		syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_ndrange_finish, vs_ndrange_id);
 
-		syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_raster, mode);
+		/* Launch fragment shader */
+		syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_raster, mode, pixel_shader_id);
 
 	}
 	else

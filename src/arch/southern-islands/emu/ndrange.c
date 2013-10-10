@@ -26,6 +26,7 @@
 #include <mem-system/memory.h>
 
 #include "ndrange.h"
+#include "sx.h"
 #include "work-item.h"
 
 
@@ -55,6 +56,10 @@ void SINDRangeCreate(SINDRange *self, SIEmu *emu)
 
 void SINDRangeDestroy(SINDRange *self)
 {
+	/* Free initialization data which is dequeue from SPI module */
+	if (self->ps_init_data)
+		SISXPSInitDestroy(self->ps_init_data);
+
 	/* Free instruction buffer */
 	if (self->inst_buffer)
 		free(self->inst_buffer);
@@ -179,6 +184,11 @@ void SINDRangeSetupStage(SINDRange *self,
 	self->stage = stage;
 }
 
+void SINDRangeSetupPSInitData(SINDRange *self,
+	struct si_sx_ps_init_t *ps_init_data)
+{
+	self->ps_init_data = ps_init_data;
+}
 
 void SINDRangeInsertBufferIntoUAVTable(SINDRange *self,
 	struct si_buffer_desc_t *buf_desc, unsigned int uav)

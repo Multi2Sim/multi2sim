@@ -171,7 +171,7 @@ void opengl_pa_edge_func_set(struct opengl_pa_edge_func_t *edge_func,
 	edge_func->a = vtx0->pos[Y_COMP] - vtx1->pos[Y_COMP];
 	edge_func->b = vtx1->pos[X_COMP] - vtx0->pos[X_COMP];
 	/* Reformulate to avoid precision problem */
-	// edge_func->c = vtx0->pos[X_COMP] * vtx1->pos[Y_COMP] - vtx1->pos[X_COMP] * vtx0->pos[Y_COMP];
+	/* Original: edge_func->c = vtx0->pos[X_COMP] * vtx1->pos[Y_COMP] - vtx1->pos[X_COMP] * vtx0->pos[Y_COMP] */
 	edge_func->c = -0.5 * (edge_func->a * (vtx0->pos[X_COMP] + vtx1->pos[X_COMP]) + 
 		edge_func->b * (vtx0->pos[Y_COMP] + vtx1->pos[Y_COMP]));
 }
@@ -268,3 +268,16 @@ void opengl_pa_primitives_free(struct opengl_pa_primitive_t *prmtv)
 	list_free(prmtv->list);
 	free(prmtv);
 }
+
+enum opengl_pa_primitive_mode_t opengl_pa_primitive_get_mode(int mode)
+{
+	switch(mode)
+	{
+
+	case 0x0004:
+		return OPENGL_PA_TRIANGLES;
+	default:
+		return OPENGL_PA_INVALID;
+	}
+}
+
