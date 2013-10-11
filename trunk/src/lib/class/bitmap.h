@@ -68,5 +68,6 @@ void BitmapNot(Bitmap *self);
 void BitmapAnd(Bitmap *self, Bitmap *operand);
 void BitmapOr(Bitmap *self, Bitmap *operand);
 void BitmapXor(Bitmap *self, Bitmap *operand);
+void BitmapSub(Bitmap *self, Bitmap *operand);
 
 #endif

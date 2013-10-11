@@ -37,6 +37,8 @@ struct str_map_t si2bin_token_map =
 		{ "\%64_src0", Si2binToken64Src0 },
 		{ "\%64_src1", Si2binToken64Src1 },
 		{ "\%64_src2", Si2binToken64Src2 },
+		{ "\%64_vsrc0", Si2binToken64Vsrc0 },
+		{ "\%64_vsrc1", Si2binToken64Vsrc1 },
 		{ "\%64_svdst", Si2binToken64Svdst },
 		{ "\%64_vdst", Si2binToken64Vdst },
 		{ "\%label", Si2binTokenLabel },
@@ -70,10 +72,33 @@ struct str_map_t si2bin_token_map =
 		{ "\%vsrc0", Si2binTokenVsrc0 },
 		{ "\%vsrc1", Si2binTokenVsrc1 },
 		{ "\%wait_cnt", Si2binTokenWaitCnt },
-		{ "\%addr", Si2binTokenTokenAddr },
+		{ "\%addr", Si2binTokenAddr },
 		{ "\%data0", Si2binTokenData0 },
+		{ "\%data1", Si2binTokenData1 },
 		{ "\%ds_vdst", Si2binTokenDsVdst },
-		{ "vcc", Si2binTokenVcc }
+		{ "vcc", Si2binTokenVcc },
+		{ "fixme", Si2binTokenFixme },
+		{ "\%vop2_lit", Si2binTokenVop2Lit },
+		{ "\%vintrp_vdst", Si2binTokenVIntrpVdst },
+		{ "\%vsrc_i_j", Si2binTokenVSrcIJ },
+		{ "\%attr", Si2binTokenAttr },
+		{ "\%attrchan", Si2binTokenAttrChan },
+		{ "\%offset0", Si2binTokenOffset0 },
+		{ "\%offset1", Si2binTokenOffset1 },
+		{ "\%ds_series_vdst", Si2binTokenDsSeriesVdst },
+		{ "\%mu_series_vdata_dst", Si2binTokenMuSeriesVdataDst },
+		{ "\%mu_series_vdata_src", Si2binTokenMuSeriesVdataSrc },
+		{ "\%mu_maddr", Si2binTokenMuMaddr },
+		{ "\%mu_glc", Si2binTokenMuGlc },
+		{ "\%mt_series_vdata_dst", Si2binTokenMtSeriesVdataDst },
+		{ "\%mt_series_vdata_src", Si2binTokenMtSeriesVdataSrc },
+		{ "\%mimg_series_vdata", Si2binTokenMimgSeriesVdata },
+		{ "\%mimg_vaddr", Si2binTokenMimgVaddr },
+		{ "\%mimg_series_srsrc", Si2binTokenMimgSeriesSrsrc },
+		{ "\%mimg_dug_series_srsrc", Si2binTokenMimgDugSeriesSrsrc },
+		{ "\%mimg_dug_series_ssamp", Si2binTokenMimgDugSeriesSsamp },
+		{ "\%tgt", Si2binTokenTgt },
+		{ "\%exp_vsrcs", Si2binTokenExpVSrcs }
 	}
 };
 
@@ -82,6 +107,95 @@ void Si2binTokenCreate(Si2binToken *self, Si2binTokenType type)
 {
 	/* Initialize */
 	self->type = type;
+
+	/* Set direction */
+	switch (type)
+	{
+	/* What to do?
+	 * Si2binTokenMtSeriesVdata
+	 * Si2binTokenSeriesSbase
+	 * Si2binTokenSimm16
+	 * Si2binTokenVaddr
+	 * Si2binTokenWaitCnt
+	 * Si2binTokenAddr
+	 * Si2binTokenData0
+	 * Si2binTokenVccSi2binTokenVop2Lit
+	 * Si2binTokenFixme
+	 * Si2binTokenVIntrpVdst
+	 * Si2binTokenVSrcIJ
+	 * Si2binTokenAttr
+	 * Si2binTokenAttrChan
+	 * Si2binTokenData1
+	 * Si2binTokenOffset0
+	 * Si2binTokenOffset1
+	 * Si2binTokenDsSeriesVdst
+	 * Si2binTokenMuSeriesVdataDst
+	 * Si2binTokenMuSeriesVdataSrc
+	 * Si2binTokenMuMaddr
+	 * Si2binTokenMuGlc
+	 * Si2binTokenMtSeriesVdataDst
+	 * Si2binTokenMtSeriesVdataSrc
+	 * Si2binTokenMimgSeriesVdata
+	 * Si2binTokenMimgVaddr
+	 * Si2binTokenMimgSeriesSrsrc
+	 * Si2binTokenMimgDugSeriesSrsrc
+	 * Si2binTokenMimgDugSeriesSsamp
+	 * Si2binTokenTgt
+	 * Si2binTokenExpVSrcs
+	 */
+
+	case Si2binToken64Sdst:
+	case Si2binToken64Svdst:
+	case Si2binToken64Vdst:
+	case Si2binTokenSdst:
+	case Si2binTokenSeriesSdst:
+	case Si2binTokenSmrdSdst:
+	case Si2binTokenSvdst:
+	case Si2binTokenVdst:
+	case Si2binTokenVop364Svdst:
+	case Si2binTokenVop364Sdst:
+	case Si2binTokenVop3Vdst:
+	case Si2binTokenVop364Vdst:
+	case Si2binTokenDsVdst:
+		self->direction = Si2binTokenDirectionDst;
+		break;
+
+	case Si2binToken64Ssrc0:
+	case Si2binToken64Ssrc1:
+	case Si2binToken64Src0:
+	case Si2binToken64Src1:
+	case Si2binToken64Src2:
+	case Si2binTokenSeriesSrsrc:
+	case Si2binTokenSrc0:
+	case Si2binTokenSrc1:
+	case Si2binTokenSrc2:
+	case Si2binTokenSsrc0:
+	case Si2binTokenSsrc1:
+	case Si2binTokenVop3Src0:
+	case Si2binTokenVop3Src1:
+	case Si2binTokenVop3Src2:
+	case Si2binTokenVop364Src0:
+	case Si2binTokenVop364Src1:
+	case Si2binTokenVop364Src2:
+	case Si2binTokenVsrc0:
+	case Si2binTokenVsrc1:
+	case Si2binTokenMtMaddr:
+	case Si2binToken64Vsrc0:
+	case Si2binToken64Vsrc1:
+		self->direction = Si2binTokenDirectionSrc;
+		break;
+
+	case Si2binTokenLabel:
+	case Si2binTokenOffset:
+		self->direction = Si2binTokenDirectionOther;
+		break;
+
+	/* Need the rest, finish with Rafa */
+	default:
+		self->direction = Si2binTokenDirectionInvalid;
+		//panic("%s: token type not supported", __FUNCTION__);
+	}
+
 }
 
 
@@ -230,10 +344,38 @@ int Si2binTokenIsArgAllowed(Si2binToken *self, Si2binArg *arg)
 	case Si2binTokenWaitCnt:
 		return arg->type == Si2binArgWaitcnt;
 	
-	case Si2binTokenTokenAddr:
+	case Si2binTokenAddr:
 	case Si2binTokenData0:
 	case Si2binTokenDsVdst:
 		return arg->type == Si2binArgVectorRegister;
+
+	// New tokens
+	case Si2binTokenVop2Lit:
+	case Si2binToken64Vsrc0:
+	case Si2binToken64Vsrc1:
+	case Si2binTokenFixme:
+	case Si2binTokenVIntrpVdst:
+	case Si2binTokenVSrcIJ:
+	case Si2binTokenAttr:
+	case Si2binTokenAttrChan:
+	case Si2binTokenData1:
+	case Si2binTokenOffset0:
+	case Si2binTokenOffset1:
+	case Si2binTokenDsSeriesVdst:
+	case Si2binTokenMuSeriesVdataDst:
+	case Si2binTokenMuSeriesVdataSrc:
+	case Si2binTokenMuMaddr:
+	case Si2binTokenMuGlc:
+	case Si2binTokenMtSeriesVdataDst:
+	case Si2binTokenMtSeriesVdataSrc:
+	case Si2binTokenMimgSeriesVdata:
+	case Si2binTokenMimgVaddr:
+	case Si2binTokenMimgSeriesSrsrc:
+	case Si2binTokenMimgDugSeriesSrsrc:
+	case Si2binTokenMimgDugSeriesSsamp:
+	case Si2binTokenTgt:
+	case Si2binTokenExpVSrcs:
+		return 1;
 	
 
 	default:

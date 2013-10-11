@@ -59,6 +59,7 @@ void BitmapDump(Object *self, FILE *f)
 
 	for (i = 0; i < bitmap->size; i++)
 		fprintf(f, "%d", BitmapGet(bitmap, i, 1));
+	fprintf(f, "\n");
 }
 
 
@@ -252,7 +253,7 @@ void BitmapOr(Bitmap *self, Bitmap *operand)
 		panic("%s: bitmaps have different size (%d vs. %d)",
 				__FUNCTION__, self->size, operand->size);
 
-	/* And */
+	/* Or */
 	for (i = 0; i < self->size_in_words; i++)
 		self->data[i] |= operand->data[i];
 }
@@ -267,7 +268,22 @@ void BitmapXor(Bitmap *self, Bitmap *operand)
 		panic("%s: bitmaps have different size (%d vs. %d)",
 				__FUNCTION__, self->size, operand->size);
 
-	/* And */
+	/* Xor */
 	for (i = 0; i < self->size_in_words; i++)
 		self->data[i] ^= operand->data[i];
+}
+
+void BitmapSub(Bitmap *self, Bitmap *operand)
+{
+	/* Check size */
+	if (self->size != operand->size)
+		panic("%s: bitmaps have different size (%d vs. %d)",
+				__FUNCTION__, self->size, operand->size);
+
+	/* Sub */
+	BitmapNot(operand);
+	BitmapAnd(self, operand);
+
+	/* Replace operand */
+	BitmapNot(operand);
 }

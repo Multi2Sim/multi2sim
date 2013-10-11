@@ -916,7 +916,8 @@ void Inst::Dump(ostream& os)
 				break;
 			}
 		}
-		else if (Common::Asm::IsToken(fmt_str, "MU_SERIES_VDATA", token_len))
+		else if (Common::Asm::IsToken(fmt_str, "MU_SERIES_VDATA_DST", token_len)  ||
+				Common::Asm::IsToken(fmt_str, "MU_SERIES_VDATA_SRC", token_len))
 		{
 			DumpSeriesVdata(os, bytes.mubuf.vdata, bytes.mubuf.op);
 		}
@@ -937,7 +938,8 @@ void Inst::Dump(ostream& os)
 		{
 			DumpMaddr(os);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "MT_SERIES_VDATA", token_len))
+		else if (Common::Asm::IsToken(fmt_str, "MT_SERIES_VDATA_DST", token_len) ||
+				Common::Asm::IsToken(fmt_str, "MT_SERIES_VDATA_SRC", token_len))
 		{
 			DumpSeriesVdata(os, bytes.mtbuf.vdata, bytes.mtbuf.op);
 		}

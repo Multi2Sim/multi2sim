@@ -62,6 +62,11 @@ CLASS_BEGIN(Si2binArg, Object)
 	/* Argument type */
 	Si2binArgType type;
 
+	/* Token associated with argument. This field is populated when an
+	 * instruction is created that contains the argument as part of its
+	 * argument list. */
+	Si2binToken *token;
+
 	int abs;  /* Absolute value */
 	int neg;  /* Negation */
 

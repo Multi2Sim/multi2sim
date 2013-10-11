@@ -55,6 +55,7 @@ void Si2binInstCreate(Si2binInst *self, SIInstOpcode opcode, List *arg_list)
 	self->comment = new(String, "");
 
 	/* Check valid opcode */
+	self->opcode = opcode;
 	if (!IN_RANGE(opcode, 1, SIInstOpcodeCount - 1))
 		fatal("%s: invalid opcode (%d)", __FUNCTION__, opcode);
 
@@ -74,8 +75,10 @@ void Si2binInstCreate(Si2binInst *self, SIInstOpcode opcode, List *arg_list)
 	ListHead(info->token_list);
 	ListForEach(arg_list, arg, Si2binArg)
 	{
-		/* Get formal argument from instruction info */
+		/* Get formal argument from instruction info. Associate token with the
+		 * instruction argument. */
 		token = asSi2binToken(ListGet(info->token_list));
+		arg->token = token;
 		assert(token);
 
 		/* Check that actual argument type is acceptable for token */
@@ -128,8 +131,10 @@ void Si2binInstCreateWithName(Si2binInst *self, char *name, List *arg_list)
 		ListHead(info->token_list);
 		ListForEach(arg_list, arg, Si2binArg)
 		{
-			/* Get formal argument from instruction info */
+			/* Get formal argument from instruction info. We associate the
+			 * instruction argument with the token. */
 			token = asSi2binToken(ListGet(info->token_list));
+			arg->token = token;
 			assert(token);
 
 			/* Check that actual argument type is acceptable for token */
@@ -1162,7 +1167,7 @@ void Si2binInstGenerate(Si2binInst *self)
 			}
 			break;
 
-		case Si2binTokenTokenAddr:
+		case Si2binTokenAddr:
 			
 			/* Make sure argument is a vector register */
 			assert(arg->type == Si2binArgVectorRegister);
