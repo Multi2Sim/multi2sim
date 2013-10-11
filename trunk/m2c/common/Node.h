@@ -22,6 +22,7 @@
 
 #include <iostream>
 #include <list>
+#include <memory>
 
 #include <lib/cpp/Misc.h>
 #include <llvm/BasicBlock.h>
@@ -66,7 +67,10 @@ enum NodeRole
 /* Node of the control tree */
 class Node
 {
+	friend class Tree;
+
 	std::string name;
+	NodeKind kind;
 
 	/* Control tree that the node belongs to */
 	Tree *tree;
@@ -104,7 +108,7 @@ class Node
 
 public:
 	/* Constructor */
-	explicit Node(const std::string &name);
+	Node(const std::string &name, NodeKind kind);
 
 	/* Getters */
 	Tree *GetTree() { return tree; }
@@ -116,8 +120,8 @@ public:
 
 	/* Return true if 'node' is in the linked list of nodes passed as the
 	 * second argument. */
-	bool InList(std::list<Node *> &list) { return std::find(list.begin(),
-			list.end(), this) != list.end(); }
+	bool InList(std::list<Node *> &list);
+	bool InList(std::list<std::unique_ptr<Node>> &list);
 
 	/* Try to create an edge between 'this' and 'node'. If the edge already
 	 * exist, the function will ignore the call silently. */
@@ -170,26 +174,37 @@ public:
 	/* Starting at 'this', traverse the syntax tree (not control tree) in
 	 * depth-first and return the last leaf node found (could be 'this'
 	 * itself). */
-	Node *GetLastLeaf(Node *self);
-		
+	Node *GetLastLeaf();
+
 	/* Compare two nodes */
 	virtual void Compare(Node *node);
 
 	/* Dumping lists of nodes */
-	static void DumpNodeList(std::ostream &os, std::list<Node *> &list);
-	static void DumpNodeListDetail(std::ostream &os,
-			std::list<Node *> &list);
+	static void DumpList(std::ostream &os, std::list<Node *> &list);
+	static void DumpListDetail(std::ostream &os, std::list<Node *> &list);
+	
+	/* Remove node from a list. If the node is present, return true. Return
+	 * false otherwise. The reason to make these statis functions is that
+	 * the second version (based on std::unique_ptr) would destruct the
+	 * object instance while removing it from the list, which does not seem
+	 * something safe to do while a member function is running. */
+	static bool RemoveFromList(std::list<Node *> &list, Node *node);
+	static bool RemoveFromList(std::list<std::unique_ptr<Node>> &list,
+			Node *node);
+		
 };
 
 
 class LeafNode : public Node
 {
+	friend class Tree;
+
 	BasicBlock *basic_block;
 
 	/* When the node is created automatically from an LLVM function's
 	 * control flow graph, this fields contains the associated LLVM
 	 * basic block. */
-	llvm::BasicBlock *llbb;
+	llvm::BasicBlock *llvm_basic_block;
 
 public:
 
@@ -231,6 +246,8 @@ enum AbstractNodeRegion
 
 class AbstractNode : public Node
 {
+	friend class Tree;
+
 	/* Type of region */
 	AbstractNodeRegion region;
 
@@ -240,6 +257,9 @@ public:
 	
 	/* Constructor and destructor */
 	AbstractNode(const std::string &name, AbstractNodeRegion region);
+
+	/* Getters */
+	std::list<Node *> &GetChildList() { return child_list; }
 	
 	/* Dump */
 	void Dump(std::ostream &os);

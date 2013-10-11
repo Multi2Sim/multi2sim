@@ -31,17 +31,33 @@
 namespace Common
 {
 
-/*
-#define ctree_debug(...) debug(ctree_debug_category, __VA_ARGS__)
+/* Class managing the configuration file used to debug the control flow tree,
+ * activated with option '--tree-debug <file>' in the command line. */
+class TreeConfig
+{
+	/* File name */
+	std::string path;
 
-extern char *ctree_config_file_name;
-extern char *ctree_debug_file_name;
-extern int ctree_debug_category;
-*/
+	/* List of trees loaded by configuration */
+	std::list<std::unique_ptr<Tree>> tree_list;
+
+	/* Return a created control tree given its name, or null if the tree
+	 * does not exist. */
+	Tree *GetTree(const std::string &name);
+
+	/* Process command read from the configuration file. */
+	void ProcessCommand(const std::string &command);
+public:
+	void SetPath(const std::string &path);
+};
 
 
+/* Class representing a control flow tree, obtained from a program's control
+ * flow graph after a structural analysis. */
 class Tree
 {
+	friend class TreeConfig;
+
 	/* Name of control tree */
 	std::string name;
 
@@ -65,11 +81,65 @@ class Tree
 	 * control tree. */
 	bool structural_analysis_done;
 
+	/* Depth-first search on function. This creates a depth-first spanning
+	 * tree and classifies graph edges as tree-, forward-, cross-, and
+	 * back-edges. Also, a post-order traversal of the graph is dumped in
+	 * 'postorder_list'. We follow the algorithm presented in
+	 * http://www.personal.kent.edu/~rmuhamma/Algorithms/MyAlgorithms/
+	 *        GraphAlgor/depthSearch.htm
+	 */
+	int DFS(std::list<Node *> &postorder_list, Node *node, int time);
+	void DFS(std::list<Node *> &postorder_list);
+	void DFS();
+
+	/* Discover the natural loop (interval) with header 'header_node'. The interval
+	 * is composed of all those nodes with a path from the header to the tail that
+	 * doesn't go through the header, where the tail is a node that is connected to
+	 * the header with a back-edge. */
+	void ReachUnder(Node *header_node, Node *node,
+			std::list<Node *> &reach_under_list);
+	void ReachUnder(Node *header_node,
+			std::list<Node *> &reach_under_list);
+
+	/* Given an abstract node of type 'block' that was just reduced, take its
+	 * sub-block regions and flatten them to avoid hierarchical blocks. */
+	void FlattenBlock(AbstractNode *abs_node);
+
+	/* Reduce the list of nodes in 'list' with a newly created abstract
+	 * node, returned as the function result. Argument 'name' gives the name
+	 * of the new abstract node. All incoming edges to any of the nodes in
+	 * the list will point to 'node'. Likewise, all outgoing edges from any
+	 * node in the list will come from 'this'. */
+	AbstractNode *Reduce(std::list<Node *> &list, AbstractNodeRegion region);
+
+	/* Identify a region, and return it in 'list'. The list
+	 * 'list' must be empty when the function is called. If a valid block
+	 * region is identified, the function returns true. Otherwise, it returns
+	 * false and 'list' remains empty.
+	 * List 'list' is an output list. */
+	AbstractNodeRegion Region(Node *node, std::list<Node *> &list);
+
+	/* Tree traversal */
+	void PreorderTraversal(Node *node, std::list<Node *> &list);
+	void PostorderTraversal(Node *node, std::list<Node *> &list);
+
+	/* Auxiliary function called by its public homonymous. */
+	LeafNode *AddLlvmCFG(llvm::BasicBlock *llvm_basic_block);
+
+	/* Given a list of nodes in a string format, return the nodes in the
+	 * linked list. */
+	void GetNodeList(std::list<Node *> &list, const std::string &list_str);
+
 public:
 
-	/* Constructor and destructor */
+	/* Constructors */
 	explicit Tree(const std::string &name);
-	~Tree();
+
+	/* Create the tree from the content of an INI file */
+	Tree(IniFile &f, const std::string &name) { Read(f, name); }
+
+	/* Getters */
+	const std::string &GetName() { return name; }
 
 	/* Dump */
 	void Dump(std::ostream &os);
@@ -86,7 +156,7 @@ public:
 	 * graph of the LLVM function, and they are inserted into the control
 	 * tree. The node corresponding to the LLVM entry basic block is
 	 * returned. */
-	LeafNode *AddLlvmCFG(llvm::Value *function);
+	LeafNode *AddLlvmCFG(llvm::Function *llvm_function);
 
 	/* Search node by name. Return null if node not found. */
 	Node *GetNode(const std::string &name);
@@ -104,11 +174,17 @@ public:
 	void PostorderTraversal(std::list<Node *> &list);
 
 	/* Read/write the control tree from/to an INI file */
-	void Write(IniFile *f);
-	void Read(IniFile *f, const std::string &name);
+	void Write(IniFile &f);
+	void Read(IniFile &f, const std::string &name);
 
 	/* Compare two control trees */
 	void Compare(Tree *tree);
+
+	/* Debugger */
+	static Misc::Debug debug;
+
+	/* Configuration */
+	static TreeConfig config;
 };
 
 
