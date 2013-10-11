@@ -27,9 +27,15 @@
 #include <lib/cpp/IniFile.h>
 #include <lib/cpp/Misc.h>
 
+#include "Node.h"
+
 
 namespace Common
 {
+
+/* Forward declarations */
+class Tree;
+
 
 /* Class managing the configuration file used to debug the control flow tree,
  * activated with option '--tree-debug <file>' in the command line. */
