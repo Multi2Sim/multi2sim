@@ -134,7 +134,7 @@ IniFile::IniFile()
 }
 
 
-IniFile::IniFile(string path)
+IniFile::IniFile(const std::string &path)
 {
 	Load(path);
 }
@@ -174,7 +174,7 @@ static const char *ini_file_err_format =
 	"\tthe integrity of your input file and retry.\n";
 
 
-void IniFile::Load(string path)
+void IniFile::Load(const std::string &path)
 {
 	string line;
 	string section;
@@ -245,7 +245,7 @@ void IniFile::Load(string path)
 }
 
 
-void IniFile::Save(string path)
+void IniFile::Save(const std::string &path)
 {
 	/* Open file */
 	ofstream f(path);

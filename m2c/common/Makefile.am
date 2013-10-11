@@ -11,8 +11,8 @@ libcommon_a_SOURCES = \
 	node.h \
 	\
 	ctree.c \
-	ctree.h
-	
+	ctree.h \
+	\
 	BasicBlock.cc \
 	BasicBlock.h \
 	\

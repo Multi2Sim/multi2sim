@@ -26,6 +26,7 @@
 #include <cstring>
 #include <fstream>
 #include <sstream>
+#include <stdexcept>
 
 #include "Misc.h"
 
@@ -74,6 +75,17 @@ void str_printf(char **pbuf, int *psize, const char *fmt, ...)
 		len = *psize - 1;
 	*psize -= len;
 	*pbuf += len;
+}
+
+
+std::string StringFormat(const char *fmt, ...)
+{
+	char buf[1024];
+	va_list va;
+
+	va_start(va, fmt);
+	vsnprintf(buf, sizeof buf, fmt, va);
+	return buf;
 }
 
 
@@ -626,21 +638,21 @@ const char *StringMapValue(StringMap map, int value, bool& error)
 }
 
 
-int StringMapString(StringMap map, const char *text)
+int StringMapString(StringMap map, const std::string &s)
 {
 	bool error;
-	return StringMapString(map, text, error);
+	return StringMapString(map, s, error);
 }
 
 
-int StringMapString(StringMap map, const char *text, bool& error)
+int StringMapString(StringMap map, const std::string &s, bool &error)
 {
 	int index;
 
 	/* Find value */
 	error = false;
 	for (index = 0; map[index].text; index++)
-		if (!strcmp(map[index].text, text))
+		if (!strcmp(map[index].text, s.c_str()))
 			return map[index].value;
 
 	/* Not found */
@@ -649,21 +661,21 @@ int StringMapString(StringMap map, const char *text, bool& error)
 }
 
 
-int StringMapStringCase(StringMap map, const char *text)
+int StringMapStringCase(StringMap map, const std::string &s)
 {
 	bool error;
-	return StringMapStringCase(map, text, error);
+	return StringMapStringCase(map, s, error);
 }
 
 
-int StringMapStringCase(StringMap map, const char *text, bool& error)
+int StringMapStringCase(StringMap map, const std::string &s, bool &error)
 {
 	int index;
 
 	/* Find value */
 	error = false;
 	for (index = 0; map[index].text; index++)
-		if (!strcasecmp(map[index].text, text))
+		if (!strcasecmp(map[index].text, s.c_str()))
 			return map[index].value;
 
 	/* Not found */

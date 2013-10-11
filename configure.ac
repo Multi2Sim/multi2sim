@@ -98,7 +98,7 @@ AC_COMPILE_IFELSE(
 
 debug=false
 CFLAGS="-msse2 -O3 -std=gnu99 -DNDEBUG"
-CXXFLAGS="-std=gnu++0x -O3"
+CXXFLAGS="-std=gnu++0x -O3 -DNDEBUG"
 AC_ARG_ENABLE(debug,
 [  --enable-debug    Turn on debugging],
 [
@@ -108,7 +108,7 @@ AC_ARG_ENABLE(debug,
 		
 		# Add flag '-Wno-error=deprecated-declarations' only if it is supported.
 		# This flag prevents warnings caused by newer GTK versions that would cause with -Werror
-		CXXFLAGS="-std=gnu++0x -Wall -Werror -g -O0"
+		CXXFLAGS="-msse2 -std=gnu++0x -Wall -Werror -g -O0"
 		saved_flags="-msse2 -Wall -Werror -DMHANDLE -g -O0 -std=gnu99"
 		CFLAGS="-Wno-error=deprecated-declarations"
 		AC_MSG_CHECKING([whether CC supports -Wno-error=deprecated-declarations])
@@ -742,15 +742,16 @@ then
 	# interfere with our own flags. Get rid of their -O2, -NDEBUG, and -g.
 	# We will decide if we want those with our --enable-debug.
 	LLVM_CFLAGS=`$LLVM_CONFIG --cflags | sed "s/\(\-DNDEBUG\>\)\|\(\-g\>\)\|\(\-O2\>\)//g"`
+	LLVM_CXXFLAGS=`$LLVM_CONFIG --cxxflags | sed "s/\(\-DNDEBUG\>\)\|\(\-g\>\)\|\(\-O2\>\)//g"`
 
 	# In profile mode, flag '-pg' interferes with LLVM's flags
 	# -fomit-frame-pointer.
 	if test x$profile = xtrue
 	then
 		LLVM_CFLAGS=`echo "$LLVM_CFLAGS" | sed "s/-fomit-frame-pointer\>//g"`
+		LLVM_CXXFLAGS=`echo "$LLVM_CXXFLAGS" | sed "s/-fomit-frame-pointer\>//g"`
 	fi
 
-	LLVM_CXXFLAGS=`$LLVM_CONFIG --cxxflags`
 	LLVM_LDFLAGS=`$LLVM_CONFIG --ldflags`
 	LLVM_LIBS=`$LLVM_CONFIG --libs`
 	AC_SUBST([LLVM_CFLAGS])

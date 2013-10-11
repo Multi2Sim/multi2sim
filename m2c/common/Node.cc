@@ -36,7 +36,7 @@ namespace Common
  */
 
 LeafNode::LeafNode(const std::string &name)
-		: Node(name)
+		: Node(name, NodeKindLeaf)
 {
 }
 
@@ -77,7 +77,7 @@ StringMap abstract_node_region_map =
 
 
 AbstractNode::AbstractNode(const std::string &name, AbstractNodeRegion region)
-		: Node(name)
+		: Node(name, NodeKindAbstract)
 {
 	/* Initialize */
 	this->region = region;
@@ -92,7 +92,7 @@ void AbstractNode::Dump(std::ostream &os)
 
 	/* List of child elements */
 	os << " children=";
-	DumpNodeList(os, child_list);
+	DumpList(os, child_list);
 }
 
 
@@ -157,10 +157,11 @@ StringMap node_role_map =
 };
 
 
-Node::Node(const std::string &name)
+Node::Node(const std::string &name, NodeKind kind)
 {
 	/* Initialize */
 	this->name = name;
+	this->kind = kind;
 	preorder_id = -1;
 	postorder_id = -1;
 }
@@ -171,7 +172,7 @@ void Node::Dump(std::ostream &os)
 	std::string no_name = "<no-name>";
 	os << "Node '" << (name.empty() ? "<anonymous>" : name) << "':";
 	os << " pred=";
-	DumpNodeList(os, pred_list);
+	DumpList(os, pred_list);
 
 	/* List of successors */
 	os << " succ={";
@@ -219,6 +220,21 @@ void Node::Dump(std::ostream &os)
 }
 
 
+bool Node::InList(std::list<Node *> &list)
+{
+	return std::find(list.begin(), list.end(), this) != list.end();
+}
+
+
+bool Node::InList(std::list<std::unique_ptr<Node>> &list)
+{
+	for (auto &node : list)
+		if (node.get() == this)
+			return true;
+	return false;
+}
+
+
 void Node::TryConnect(Node *node_dest)
 {
 	/* Nothing if edge already exists */
@@ -235,7 +251,7 @@ void Node::TryConnect(Node *node_dest)
 void Node::Connect(Node *node_dest)
 {
 	assert(!node_dest->InList(succ_list));
-	assert(!InList, node_dest->pred_list);
+	assert(!InList(node_dest->pred_list));
 	succ_list.push_back(node_dest);
 	node_dest->pred_list.push_back(this);
 }
@@ -244,21 +260,22 @@ void Node::Connect(Node *node_dest)
 void Node::TryDisconnect(Node *node_dest)
 {
 	/* Check if connection exists */
-	ListFind(self->succ_list, asObject(node_dest));
-	ListFind(node_dest->pred_list, asObject(self));
+	auto it1 = std::find(succ_list.begin(), succ_list.end(), node_dest);
+	auto it2 = std::find(node_dest->pred_list.begin(),
+			node_dest->pred_list.end(), this);
 
 	/* Either both are present, or none */
-	assert((self->succ_list->error && node_dest->pred_list->error)
-			|| (!self->succ_list->error &&
-			!node_dest->pred_list->error));
+	assert((it1 == succ_list.end() && it2 == node_dest->pred_list.end())
+			|| (it1 != succ_list.end() &&
+			it2 != node_dest->pred_list.end()));
 
 	/* No connection existed */
-	if (self->succ_list->error)
+	if (it1 == succ_list.end())
 		return;
 	
 	/* Remove existing connection */
-	ListRemove(self->succ_list);
-	ListRemove(node_dest->pred_list);
+	succ_list.erase(it1);
+	node_dest->pred_list.erase(it2);
 }
 
 
@@ -273,219 +290,214 @@ void Node::Disconnect(Node *node_dest)
 	
 	/* Remove it */
 	succ_list.erase(it1);
-	node_dest->pred_list.eras(it2);
+	node_dest->pred_list.erase(it2);
 }
 
 
-void NodeReconnectDest(Node *src_node, Node *dest_node, Node *new_dest_node)
+void Node::ReconnectDest(Node *dest_node, Node *new_dest_node)
 {
 	/* Old and new destination must be different */
 	if (dest_node == new_dest_node)
 		panic("%s: old and new nodes are the same", __FUNCTION__);
 
 	/* Connection must exist */
-	ListFind(src_node->succ_list, asObject(dest_node));
-	ListFind(dest_node->pred_list, asObject(src_node));
-	if (src_node->succ_list->error || dest_node->pred_list->error)
+	auto it1 = std::find(succ_list.begin(), succ_list.end(), dest_node);
+	auto it2 = std::find(dest_node->pred_list.begin(),
+			dest_node->pred_list.end(), this);
+	if (it1 == succ_list.end() || it2 == dest_node->pred_list.end())
 		panic("%s: old edge does not exist", __FUNCTION__);
 
-	/* Remove old edge */
-	ListRemove(src_node->succ_list);
-	ListRemove(dest_node->pred_list);
+	/* Remove old edge. Make iterators point to the new element at the
+	 * position where the node was removed. */
+	it1 = succ_list.erase(it1);
+	it2 = dest_node->pred_list.erase(it2);
 
 	/* If new edge does not already exists, create it here. Notice that the
 	 * successor of 'src_node' will be inserted in the exact same position.
 	 * This behavior is critical for some uses of this function. */
-	if (!NodeInList(src_node, new_dest_node->pred_list))
+	if (!InList(new_dest_node->pred_list))
 	{
-		ListInsert(src_node->succ_list, asObject(new_dest_node));
-		ListAdd(new_dest_node->pred_list, asObject(src_node));
+		succ_list.insert(it1, new_dest_node);
+		new_dest_node->pred_list.push_back(this);
 	}
 }
 
 
-void NodeReconnectSource(Node *src_node, Node *dest_node, Node *new_src_node)
+void Node::ReconnectSource(Node *dest_node, Node *new_src_node)
 {
 	/* Old and new sources must be different */
-	if (src_node == new_src_node)
+	if (this == new_src_node)
 		panic("%s: old and new nodes are the same", __FUNCTION__);
 
 	/* Connection must exist */
-	ListFind(src_node->succ_list, asObject(dest_node));
-	ListFind(dest_node->pred_list, asObject(src_node));
-	if (src_node->succ_list->error || dest_node->pred_list->error)
+	auto it1 = std::find(succ_list.begin(), succ_list.end(), dest_node);
+	auto it2 = std::find(dest_node->pred_list.begin(),
+			dest_node->pred_list.end(), this);
+	if (it1 == succ_list.end() || it2 == dest_node->pred_list.end())
 		panic("%s: old edge does not exist", __FUNCTION__);
 
 	/* Remove old edge */
-	ListRemove(src_node->succ_list);
-	ListRemove(dest_node->pred_list);
+	it1 = succ_list.erase(it1);
+	it2 = dest_node->pred_list.erase(it2);
 
 	/* If new edge does not already exists, create it here. Notice that the
 	 * predecessor of 'dst_node' will be inserted in the exact same position.
 	 * This behavior is critical for some uses of this function. */
-	if (!NodeInList(dest_node, new_src_node->succ_list))
+	if (!dest_node->InList(new_src_node->succ_list))
 	{
-		ListInsert(dest_node->pred_list, asObject(new_src_node));
-		ListAdd(new_src_node->succ_list, asObject(dest_node));
+		dest_node->pred_list.insert(it2, new_src_node);
+		new_src_node->succ_list.push_back(dest_node);
 	}
 }
 
 
-void NodeInsertBefore(Node *self, Node *before)
+void Node::InsertBefore(Node *before)
 {
-	AbstractNode *parent;
-
 	/* Check parent */
-	parent = asAbstractNode(before->parent);
+	AbstractNode *parent = dynamic_cast<AbstractNode *>(before->parent);
 	if (!parent)
 		panic("%s: node '%s' has no parent",
-				__FUNCTION__, before->name);
+				__FUNCTION__, before->name.c_str());
 
 	/* Insert in common parent */
-	self->parent = asNode(parent);
-	assert(!NodeInList(self, parent->child_list));
-	ListFind(parent->child_list, asObject(before));
-	assert(!parent->child_list->error);
-	ListInsert(parent->child_list, asObject(self));
+	this->parent = parent;
+	auto child_list = parent->GetChildList();
+	assert(!InList(child_list));
+	auto it = std::find(child_list.begin(), child_list.end(), before);
+	assert(it != child_list.end());
+	child_list.insert(it, this);
 }
 
 
-void NodeInsertAfter(Node *self, Node *after)
+void Node::InsertAfter(Node *after)
 {
-	AbstractNode *parent;
-	List *child_list;
-
 	/* Check parent */
-	parent = asAbstractNode(after->parent);
+	AbstractNode *parent = dynamic_cast<AbstractNode *>(after->parent);
 	if (!parent)
 		panic("%s: node '%s' has no parent",
-				__FUNCTION__, after->name);
+				__FUNCTION__, after->name.c_str());
 
 	/* Insert in common parent */
-	self->parent = asNode(parent);
-	child_list = parent->child_list;
-	assert(!NodeInList(self, child_list));
-	ListFind(child_list, asObject(after));
-	assert(!child_list->error);
-	ListNext(child_list);
-	ListInsert(child_list, asObject(self));
+	this->parent = parent;
+	auto child_list = parent->GetChildList();
+	assert(!InList(child_list));
+	auto it = std::find(child_list.begin(), child_list.end(), after);
+	assert(it != child_list.end());
+	child_list.insert(++it, this);
 }
 
 
-Node *NodeGetFirstLeaf(Node *self)
+Node *Node::GetFirstLeaf()
 {
-	Node *child_node;
-	Node *node;
-
 	/* Traverse syntax tree down */
-	node = self;
-	while (isAbstractNode(node))
+	Node *node = this;
+	while (node->kind == NodeKindAbstract)
 	{
-		ListHead(asAbstractNode(node)->child_list);
-		child_node = asNode(ListGet(asAbstractNode(node)->child_list));
-		assert(child_node);
-		node = child_node;
+		auto child_list = dynamic_cast<AbstractNode *>(node)
+				->GetChildList();
+		assert(child_list.size());
+		node = child_list.front();
 	}
 
 	/* Return leaf */
-	assert(isLeafNode(node));
+	assert(node->kind == NodeKindLeaf);
 	return node;
 }
 
 
-Node *NodeGetLastLeaf(Node *self)
+Node *Node::GetLastLeaf()
 {
-	Node *child_node;
-	Node *node;
-
 	/* Traverse syntax tree down */
-	node = self;
-	while (isAbstractNode(node))
+	Node *node = this;
+	while (node->kind == NodeKindAbstract)
 	{
-		ListTail(asAbstractNode(node)->child_list);
-		child_node = asNode(ListGet(asAbstractNode(node)->child_list));
-		assert(child_node);
-		node = child_node;
+		auto child_list = dynamic_cast<AbstractNode *>(node)
+				->GetChildList();
+		assert(child_list.size());
+		node = child_list.back();
 	}
 
 	/* Return leaf */
-	assert(isLeafNode(node));
+	assert(node->kind == NodeKindLeaf);
 	return node;
 }
 
 
-void NodeCompare(Node *self, Node *node2)
+void Node::Compare(Node *node2)
 {
-	CTree *ctree1;
-	CTree *ctree2;
-	Node *tmp_node;
-
-	char node_name1[MAX_STRING_SIZE];
-	char node_name2[MAX_STRING_SIZE];
-
-	int differ;
-
 	/* Store names */
-	ctree1 = self->ctree;
-	ctree2 = node2->ctree;
-	snprintf(node_name1, sizeof node_name1, "%s.%s", ctree1->name, self->name);
-	snprintf(node_name2, sizeof node_name2, "%s.%s", ctree2->name, node2->name);
+	Tree *tree2 = node2->tree;
+	std::string node_name = tree->GetName() + '.' + name;
+	std::string node_name2 = tree2->GetName() + '.' + node2->name;
 
 	/* Compare kind */
-	if (class_of(self) != class_of(node2))
+	if (kind != node2->kind)
 		fatal("node kind differs for '%s' and '%s'",
-				node_name1, node_name2);
+				node_name.c_str(), node_name2.c_str());
 
 	/* Compare successors */
-	differ = self->succ_list->count != node2->succ_list->count;
-	ListForEach(self->succ_list, tmp_node, Node)
+	bool differ = succ_list.size() != node2->succ_list.size();
+	for (auto &tmp_node : succ_list)
 	{
-		tmp_node = CTreeGetNode(ctree2, tmp_node->name);
-		assert(tmp_node);
-		if (!NodeInList(tmp_node, node2->succ_list))
-			differ = 1;
+		Node *tmp_node2 = tree2->GetNode(tmp_node->name);
+		assert(tmp_node2);
+		if (!tmp_node2->InList(node2->succ_list))
+			differ = true;
 	}
 	if (differ)
 		fatal("successors differ for '%s' and '%s'",
-				node_name1, node_name2);
+				node_name.c_str(), node_name2.c_str());
 }
 
 
-
-/*
- * Non-Class Functions
- */
-
-void NodeListDump(List *list, FILE *f)
+void Node::DumpList(std::ostream &os, std::list<Node *> &list)
 {
-	char *comma;
-	ListIterator *iter;
-	Node *node;
-
-	comma = "";
-	fprintf(f, "{");
-	iter = new(ListIterator, list);
-	ListIteratorForEach(iter, node, Node)
+	std::string comma = "";
+	os << '{';
+	for (auto &node : list)
 	{
-		fprintf(f, "%s%s", comma, node->name);
+		os << comma << node->GetName();
 		comma = ",";
 	}
-	delete(iter);
-	fprintf(f, "}");
+	os << '}';
 }
 
 
-void NodeListDumpBuf(List *list, char *buf, int size)
+void Node::DumpListDetail(std::ostream &os, std::list<Node *> &list)
 {
-	Node *node;
+	for (auto &node : list)
+		os << node->GetName() << ' ';
+}
 
-	/* Reset buffer */
-	if (size)
-		*buf = '\0';
 
-	/* Dump elements */
-	ListForEach(list, node, Node)
-		str_printf(&buf, &size, "%s ", node->name);
+bool Node::RemoveFromList(std::list<Node *> &list, Node *node)
+{
+	/* Find it */
+	auto it = std::find(list.begin(), list.end(), node);
+	if (it == list.end())
+		return false;
+
+	/* Remove it */
+	list.erase(it);
+	return true;
+}
+	
+
+bool Node::RemoveFromList(std::list<std::unique_ptr<Node>> &list,
+		Node *node)
+{
+	/* Find it */
+	auto it = list.begin();
+	while (it != list.end() && it->get() != node)
+		++it;
+	
+	/* Not found */
+	if (it == list.end())
+		return false;
+
+	/* Found */
+	list.erase(it);
+	return true;
 }
 
 

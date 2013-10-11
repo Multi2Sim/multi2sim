@@ -78,7 +78,10 @@ const char *StringGetErrorString(StringError error);
  * several strings into a buffer, with the header
  *   obj_dump(struct obj_t *obj, char *buf, int size); */
 void str_printf(char **pbuf, int *psize, const char *fmt, ...)
-		__attribute__ ((format (printf, 3, 4)));
+		__attribute__ ((format(printf, 3, 4)));
+
+std::string StringFormat(const char *fmt, ...)
+		__attribute__ ((format(printf, 1, 2)));
 
 inline bool CharInSet(char c, std::string set) { return set.find(c) !=
 		std::string::npos; }
@@ -142,11 +145,11 @@ typedef StringMapItem StringMap[];
 const char *StringMapValue(StringMap map, int value);
 const char *StringMapValue(StringMap map, int value, bool &error);
 
-int StringMapString(StringMap map, const char *text);
-int StringMapString(StringMap map, const char *text, bool &error);
+int StringMapString(StringMap map, const std::string &s);
+int StringMapString(StringMap map, const std::string &s, bool &error);
 
-int StringMapStringCase(StringMap map, const char *text);
-int StringMapStringCase(StringMap map, const char *text, bool &error);
+int StringMapStringCase(StringMap map, const std::string &s);
+int StringMapStringCase(StringMap map, const std::string &s, bool &error);
 
 std::string StringMapFlags(StringMap map, unsigned int flags);
 
@@ -198,6 +201,11 @@ public:
 	 * active or not in beforehand, multiple dump (<<) calls can be
 	 * saved. */
 	operator bool() { return os; }
+
+	/* A debugger can also be cast into an std::ostream, returning a
+	 * reference to its internal 'os' object. This should be done only when
+	 * the output stream has been initialized properly with SetPath(). */
+	operator std::ostream &() { return *os; }
 };
 
 
