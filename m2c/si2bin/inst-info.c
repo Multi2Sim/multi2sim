@@ -24,6 +24,7 @@
 #include <lib/class/list.h>
 #include <lib/class/string.h>
 #include <lib/mhandle/mhandle.h>
+#include <lib/util/debug.h>
 #include <lib/util/hash-table.h>
 #include <lib/util/list.h>
 #include <lib/util/string.h>
@@ -64,8 +65,11 @@ void Si2binInstInfoCreate(Si2binInstInfo *self, SIInstInfo *inst_info)
 		}
 
 		/* Add formal argument */
-		token_type = str_map_string_case(&si2bin_token_map,
-				token_str->text);
+		int error = 0;
+		token_type = str_map_string_case_err(&si2bin_token_map,
+				token_str->text, &error);
+		if (error)
+			panic("%s: invalid token string: %s", __FUNCTION__, token_str->text);
 		token = new(Si2binToken, token_type);
 		ListAdd(self->token_list, asObject(token));
 	}

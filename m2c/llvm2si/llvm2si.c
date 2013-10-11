@@ -85,6 +85,7 @@ static void llvm2si_compile_file(char *source_file, char *output_file)
 		Llvm2siFunctionEmitBody(function);
 		Llvm2siFunctionEmitPhi(function);
 		Llvm2siFunctionEmitControlFlow(function);
+		Llvm2siFunctionLiveRegisterAnalysis(function);
 
 		/* Dump code */
 		Llvm2siFunctionDump(asObject(function), f);

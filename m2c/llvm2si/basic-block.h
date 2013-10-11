@@ -44,6 +44,12 @@ CLASS_BEGIN(Llvm2siBasicBlock, BasicBlock)
 	 * type 'Si2binInst'. */
 	List *inst_list;
 
+	Bitmap *def;
+	Bitmap *use;
+
+	Bitmap *in;
+	Bitmap *out;
+
 CLASS_END(Llvm2siBasicBlock)
 
 

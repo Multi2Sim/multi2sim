@@ -71,17 +71,57 @@ typedef enum
 	Si2binTokenVsrc0,
 	Si2binTokenVsrc1,
 	Si2binTokenWaitCnt,
-	Si2binTokenTokenAddr,
+	Si2binTokenAddr,
 	Si2binTokenData0,
 	Si2binTokenDsVdst,
+
+	// New tokens
+	Si2binTokenVop2Lit,
+	Si2binToken64Vsrc0,
+	Si2binToken64Vsrc1,
+	Si2binTokenFixme,
+	Si2binTokenVIntrpVdst,
+	Si2binTokenVSrcIJ,
+	Si2binTokenAttr,
+	Si2binTokenAttrChan,
+	Si2binTokenData1,
+	Si2binTokenOffset0,
+	Si2binTokenOffset1,
+	Si2binTokenDsSeriesVdst,
+	Si2binTokenMuSeriesVdataDst,
+	Si2binTokenMuSeriesVdataSrc,
+	Si2binTokenMuMaddr,
+	Si2binTokenMuGlc,
+	Si2binTokenMtSeriesVdataDst,
+	Si2binTokenMtSeriesVdataSrc,
+	Si2binTokenMimgSeriesVdata,
+	Si2binTokenMimgVaddr,
+	Si2binTokenMimgSeriesSrsrc,
+	Si2binTokenMimgDugSeriesSrsrc,
+	Si2binTokenMimgDugSeriesSsamp,
+	Si2binTokenTgt,
+	Si2binTokenExpVSrcs,
 
 	Si2binTokenCount
 } Si2binTokenType;
 
 
+typedef enum
+{
+	Si2binTokenDirectionInvalid = 0,
+
+	Si2binTokenDirectionDst,
+	Si2binTokenDirectionSrc,
+	Si2binTokenDirectionOther,
+
+	Si2binTokenDirectionCount
+} Si2binTokenDirection;
+
+
 CLASS_BEGIN(Si2binToken, Object)
 
 	Si2binTokenType type;
+	Si2binTokenDirection direction;
 
 CLASS_END(Si2binToken)
 

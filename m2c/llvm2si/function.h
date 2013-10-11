@@ -175,6 +175,12 @@ void Llvm2siFunctionEmitPhi(Llvm2siFunction *function);
  * related with the function control flow. */
 void Llvm2siFunctionEmitControlFlow(Llvm2siFunction *function);
 
+/* Perform analysis on live variables inside the llvm function to allow for
+ * memory efficient register allocation */
+void Llvm2siFunctionLiveRegisterAnalysis(Llvm2siFunction *function);
+
+void Llvm2siFunctionLiveRegisterAnalysisBitmapDump(Llvm2siFunction *function);
+
 /* Create a Southern Islands instruction argument from an LLVM value. The type
  * of argument created depends on the LLVM value as follows:
  *   - If the LLVM value is an integer constant, the Southern Islands argument

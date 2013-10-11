@@ -21,9 +21,11 @@
 #include <m2c/common/ctree.h>
 #include <m2c/si2bin/arg.h>
 #include <m2c/si2bin/inst.h>
+#include <m2c/si2bin/token.h>
 #include <lib/class/array.h>
 #include <lib/class/list.h>
 #include <lib/class/string.h>
+#include <lib/class/bitmap.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
@@ -1148,6 +1150,156 @@ void Llvm2siFunctionEmitControlFlow(Llvm2siFunction *self)
 }
 
 
+void Llvm2siFunctionLiveRegisterAnalysis(Llvm2siFunction *self)
+{
+	Llvm2siBasicBlock *basic_block;
+	Node *node;
+	List *node_list;
+
+	node_list = new(List);
+	CTreeTraverse(self->ctree, node_list, NULL);
+	ListForEach(node_list, node, Node)
+	{
+		/* Skip abstract nodes */
+		if (!isLeafNode(node))
+			continue;
+
+		/* Get node's basic block */
+		basic_block = asLlvm2siBasicBlock(asLeafNode(node)->basic_block);
+		if (!basic_block)
+			continue;
+
+		/* Assigns blank bitmaps of size num_sregs to each of the
+		 * basic block's bitmap fields
+		 */
+		basic_block->def = new(Bitmap, self->num_vregs);
+		basic_block->use = new(Bitmap, self->num_vregs);
+		basic_block->in = new(Bitmap, self->num_vregs);
+		basic_block->out = new(Bitmap, self->num_vregs);
+
+		/* Read each line of basic block */
+		Si2binInst *inst;
+		ListForEach(basic_block->inst_list, inst, Si2binInst)
+		{
+			/* Get each argument in the line */
+			Si2binArg *arg;
+			ListForEach(inst->arg_list, arg, Si2binArg)
+			{
+				/* Currently only deals with scalar registers */
+				if (arg->type == Si2binArgVectorRegister) {
+
+					if (arg->token->direction == Si2binTokenDirectionDst)
+					{
+						BitmapSet(basic_block->def, arg->value.vector_register.id, 1, 1);
+					}
+					else if (arg->token->direction == Si2binTokenDirectionSrc)
+					{
+						/* If register wasn't defined in the same basic block */
+						if (!BitmapGet(basic_block->def, arg->value.vector_register.id, 1))
+						{
+							BitmapSet(basic_block->use, arg->value.vector_register.id, 1, 1);
+						}
+					}
+
+				}
+			}
+		}
+	}
+
+	/* DEBUG Function */
+	//Llvm2siFunctionLiveRegisterAnalysisBitmapDump(self);
+
+	Array *worklist = new(Array);
+
+	// Set worklist equal to return basicblocks
+
+	while(worklist->count != 0) {
+		basic_block = asLlvm2siBasicBlock(ArrayGet(worklist, 0));
+
+		/* Clones out into in so that it can be used to perform calculations */
+		basic_block->in = asBitmap(BitmapClone(asObject(basic_block->out)));
+		BitmapSub(basic_block->in, basic_block->def);
+		BitmapOr(basic_block->in, basic_block->use);
+
+		// Get predecessors
+
+
+		ArrayRemove(worklist, 0);
+	}
+
+	/* Free structures */
+	ListForEach(node_list, node, Node)
+	{
+		/* Skip abstract nodes */
+		if (!isLeafNode(node))
+			continue;
+
+		/* Get node's basic block */
+		basic_block = asLlvm2siBasicBlock(asLeafNode(node)->basic_block);
+		if (!basic_block)
+			continue;
+
+		/* Deletes allocated memory*/
+		delete(basic_block->def);
+		delete(basic_block->use);
+		delete(basic_block->in);
+		delete(basic_block->out);
+
+	}
+	delete(node_list);
+	delete(worklist);
+}
+
+
+void Llvm2siFunctionLiveRegisterAnalysisBitmapDump(Llvm2siFunction *self)
+{
+	Llvm2siBasicBlock *basic_block;
+	Node *node;
+	List *node_list;
+
+	FILE *file;
+	file = fopen("BitmapDump", "w+");
+	int i = 0;
+
+	node_list = new(List);
+	CTreeTraverse(self->ctree, node_list, NULL);
+	ListForEach(node_list, node, Node)
+	{
+		/* Skip abstract nodes */
+		if (!isLeafNode(node))
+			continue;
+
+		/* Get node's basic block */
+		basic_block = asLlvm2siBasicBlock(asLeafNode(node)->basic_block);
+		if (!basic_block)
+			continue;
+
+		fprintf(file, "Basic Block: %i\n", i);
+
+		/* Assigns blank bitmaps of size num_sregs to each of the
+		 * basic block's bitmap fields
+		 */
+		fprintf(file, "--Def Bitmap:\t");
+		BitmapDump(asObject(basic_block->def), file);
+
+		fprintf(file, "--Use Bitmap:\t");
+		BitmapDump(asObject(basic_block->use), file);
+
+		fprintf(file, "--In Bitmap:\t");
+		BitmapDump(asObject(basic_block->in), file);
+
+		fprintf(file, "--Out Bitmap:\t");
+		BitmapDump(asObject(basic_block->out), file);
+
+		i++;
+	}
+
+	/* Free structures */
+	delete(node_list);
+	fclose(file);
+}
+
+
 static Si2binArg *Llvm2siFunctionTranslateConstValue(
 		Llvm2siFunction *self, LLVMValueRef llvalue)
 {
@@ -1284,4 +1436,5 @@ int Llvm2siFunctionAllocVReg(Llvm2siFunction *self, int count, int align)
 			/ align * align;
 	self->num_vregs += count;
 	return self->num_vregs - count;
+	//return 100;
 }
