@@ -20,7 +20,10 @@ libcommon_a_SOURCES = \
 	Node.h \
 	\
 	Tree.cc \
-	Tree.h
+	Tree.h \
+	\
+	Wrapper.cc \
+	Wrapper.h
 
 AM_CFLAGS = $(LLVM_CFLAGS)
 AM_CXXFLAGS = $(LLVM_CXXFLAGS)
