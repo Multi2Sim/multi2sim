@@ -79,10 +79,12 @@ class IniFile
 public:
 
 	IniFile();
-	IniFile(std::string path);
+	IniFile(const std::string &path);
 
-	void Load(std::string path);
-	void Save(std::string path);
+	const std::string &GetPath() { return path; }
+
+	void Load(const std::string &path);
+	void Save(const std::string &path);
 	void Dump(std::ostream& os);
 
 	/* Return true if a section or variable exists */
@@ -95,8 +97,7 @@ public:
 	bool Remove(std::string section, std::string var);
 
 	unsigned int GetNumSections() { return sections.size(); }
-	std::string GetSection(unsigned int index) { return index <
-			sections.size() ? sections[index] : ""; }
+	const std::string &GetSection(unsigned int index) { return sections[index]; }
 	
 	/* Add variables in a section; if section does not exists, it is created.
 	 * If variable already exists, replace old value. */
