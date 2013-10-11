@@ -58,7 +58,7 @@ void TreeConfig::ProcessCommand(const std::string &s)
 {
 	/* Get list of tokens */
 	std::vector<std::string> tokens;
-	Misc::StringTokenize(s, tokens);
+	StringTokenize(s, tokens);
 	if (!tokens.size())
 		fatal("%s: empty command", __FUNCTION__);
 	
@@ -184,6 +184,16 @@ void TreeConfig::SetPath(const std::string &path)
 	f.Check();
 }
 
+
+
+
+/*
+ * Class 'Tree'
+ */
+
+/* Global variables */
+Misc::Debug Tree::debug;
+TreeConfig Tree::config;
 
 /* Recursive DFS traversal for a node. */
 int Tree::DFS(std::list<Node *> &postorder_list, Node *node, int time)

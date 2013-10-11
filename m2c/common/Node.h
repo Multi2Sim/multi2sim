@@ -116,7 +116,8 @@ public:
 
 	/* Dump node */
 	virtual void Dump(std::ostream &os);
-	friend std::ostream &operator<<(std::ostream &os, Node &node);
+	friend std::ostream &operator<<(std::ostream &os, Node &node) {
+			node.Dump(os); return os; }
 
 	/* Return true if 'node' is in the linked list of nodes passed as the
 	 * second argument. */

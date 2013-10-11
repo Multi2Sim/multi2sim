@@ -179,7 +179,8 @@ bool StringSuffix(const std::string& s, const std::string& suffix)
 }
 
 
-void StringTokenize(string& s, vector<std::string>& tokens, string set)
+void StringTokenize(const std::string& s, std::vector<std::string>& tokens,
+		const std::string& set)
 {
 	string token;
 

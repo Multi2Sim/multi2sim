@@ -25,6 +25,7 @@
 #include <m2c/cl2llvm/cl2llvm.h>
 #include <m2c/common/basic-block.h>
 #include <m2c/common/ctree.h>
+#include <m2c/common/Wrapper.h>
 #include <m2c/frm2bin/frm2bin.h>
 #include <m2c/llvm2si/llvm2si.h>
 #include <m2c/si2bin/arg.h>
@@ -249,6 +250,18 @@ static void m2c_process_option(const char *option, char *optarg)
 	if (!strcmp(option, "ctree-debug"))
 	{
 		ctree_debug_file_name = optarg;
+		return;
+	}
+
+	if (!strcmp(option, "tree-config"))
+	{
+		CommonTreeConfigSetPath(optarg);
+		return;
+	}
+
+	if (!strcmp(option, "tree-debug"))
+	{
+		CommonTreeDebugSetPath(optarg);
 		return;
 	}
 #endif
