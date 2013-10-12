@@ -1,6 +1,6 @@
 /*
  *  Multi2Sim
- *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
+ *  Copyright (C) 2013  Rafael Ubal (ubal@ece.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef M2C_SI2BIN_ARG_H
-#define M2C_SI2BIN_ARG_H
+#ifndef M2C_SI2BIN_ARG_H_OLD
+#define M2C_SI2BIN_ARG_H_OLD
 
 #include <arch/southern-islands/asm/Inst.h>
 #include <lib/class/string.h>
