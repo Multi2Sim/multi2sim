@@ -86,8 +86,11 @@ public:
 	/* Constructor */
 	Arg();
 	
-	/* Return true if the argument is a constant */
-	bool IsConstant() { return constant; }
+	/* Getters */
+	ArgType GetType() { return type; }
+	bool GetAbs() { return abs; }
+	bool GetNeg() { return neg; }
+	bool GetConstant() { return constant; }
 
 	/* Dump operand (pure virtual function) */
 	virtual void Dump(std::ostream &os) = 0;
