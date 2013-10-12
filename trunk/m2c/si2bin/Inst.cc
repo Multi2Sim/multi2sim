@@ -17,81 +17,67 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <lib/class/array.h>
-#include <lib/class/elf-writer.h>
-#include <lib/class/hash-table.h>
-#include <lib/class/list.h>
-#include <lib/class/string.h>
-#include <lib/cpp/Wrapper.h>
-#include <lib/mhandle/mhandle.h>
-#include <lib/util/debug.h>
-#include <lib/util/hash-table.h>
-#include <lib/util/list.h>
-#include <lib/util/string.h>
+#include <lib/cpp/Misc.h>
 
-#include "arg.h"
-#include "inner-bin.h"
-#include "inst.h"
-#include "inst-info.h"
-#include "si2bin.h"
-#include "symbol.h"
-#include "task.h"
-#include "token.h"
+#include "Arg.h"
+#include "Builder.h"
+#include "Inst.h"
+#include "Token.h"
 
 
-/*
- * Class 'Si2binInst'
- */
+using namespace Misc;
 
-void Si2binInstCreate(Si2binInst *self, SIInstOpcode opcode, List *arg_list)
+namespace si2bin
 {
-	Si2binArg *arg;
-	Si2binToken *token;
-	Si2binInstInfo *info;
-	int index;
 
-	/* Initialize */
-	self->arg_list = arg_list;
-	self->comment = new(String, "");
+Inst::Inst(SI::InstOpcode opcode, std::list<Arg *> &args)
+{
+	/* Copy argument list */
+	int arg_index = 0;
+	for (auto arg : args)
+	{
+		this->args.emplace_back(arg);
+		arg->index = arg_index++;
+	}
 
-	/* Check valid opcode */
-	self->opcode = opcode;
-	if (!IN_RANGE(opcode, 1, SIInstOpcodeCount - 1))
+	/* Initialize opcode */
+	this->opcode = opcode;
+	if (!InRange(opcode, 1, SI::InstOpcodeCount - 1))
 		fatal("%s: invalid opcode (%d)", __FUNCTION__, opcode);
 
 	/* Get instruction information */
-	self->info = asSi2binInstInfo(ArrayGet(si2bin->inst_info_array, opcode));
-	info = self->info;
+	InstInfo *info = builder.GetInstInfo(opcode);
 	if (!info)
 		fatal("%s: opcode %d not supported", __FUNCTION__, opcode);
 
 	/* Check number of arguments */
-	if (arg_list->count != info->token_list->count)
+	if (args.size() != info->tokens.size())
 		fatal("%s: invalid number of arguments (%d given, %d expected)",
-				__FUNCTION__, arg_list->count, info->token_list->count);
+				__FUNCTION__, (int) args.size(),
+				(int) info->tokens.size());
 
 	/* Check argument types */
-	index = 0;
-	ListHead(info->token_list);
-	ListForEach(arg_list, arg, Si2binArg)
+	auto tokens_iterator = info->tokens.begin();
+	for (auto arg : args)
 	{
 		/* Get formal argument from instruction info. Associate token with the
 		 * instruction argument. */
-		token = asSi2binToken(ListGet(info->token_list));
+		Token *token = tokens_iterator->get();
 		arg->token = token;
 		assert(token);
 
 		/* Check that actual argument type is acceptable for token */
-		if (!Si2binTokenIsArgAllowed(token, arg))
-			fatal("%s: invalid type for argument %d", __FUNCTION__, index);
+		if (!token->IsArgAllowed(arg))
+			fatal("%s: invalid type for argument %d", __FUNCTION__,
+					arg->index + 1);
 
 		/* Next */
-		ListNext(info->token_list);
-		index++;
+		++tokens_iterator;
 	}
 }
 
 
+#if 0
 void Si2binInstCreateWithName(Si2binInst *self, char *name, List *arg_list)
 {
 	Si2binInstInfo *info;
@@ -1205,5 +1191,6 @@ void Si2binInstGenerate(Si2binInst *self)
 		index++;
 	}
 }
+#endif
 
-
+}  /* namespace si2bin */
