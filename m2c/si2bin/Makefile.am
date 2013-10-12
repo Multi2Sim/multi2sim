@@ -48,7 +48,10 @@ libsi2bin_a_SOURCES = \
 	token.h \
 	\
 	lex.l \
-	parser.y
+	parser.y \
+	\
+	Arg.cc \
+	Arg.h
 
 LDADD = \
 	$(top_builddir)/src/arch/southern-islands/asm/libasm.a \
