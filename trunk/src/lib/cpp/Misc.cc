@@ -782,7 +782,7 @@ void warning(const char *fmt, ...)
 
 Debug::Debug()
 {
-	os = NULL;
+	os = nullptr;
 }
 
 Debug::~Debug()
@@ -795,7 +795,7 @@ void Debug::Close()
 {
 	if (os && os != &std::cout && os != &std::cerr)
 		delete os;
-	os = NULL;
+	os = nullptr;
 }
 
 
