@@ -164,7 +164,16 @@ void TreeConfig::ProcessCommand(const std::string &s)
 
 void TreeConfig::SetPath(const std::string &path)
 {
-	IniFile f(path);
+	this->path = path;
+	ini_file.reset(new IniFile(path));
+}
+
+
+void TreeConfig::Run()
+{
+	/* INI file must have been loaded */
+	if (!ini_file.get())
+		panic("%s: INI file not loaded", __FUNCTION__);
 
 	/* Process commands */
 	std::string section = "Commands";
@@ -172,7 +181,7 @@ void TreeConfig::SetPath(const std::string &path)
 	{
 		/* Read next command */
 		std::string var = StringFormat("Command[%d]", index);
-		std::string value = f.ReadString(section, var);
+		std::string value = ini_file->ReadString(section, var);
 		if (value.empty())
 			break;
 
@@ -181,7 +190,7 @@ void TreeConfig::SetPath(const std::string &path)
 	}
 	
 	/* Close configuration file */
-	f.Check();
+	ini_file->Check();
 }
 
 
@@ -794,6 +803,7 @@ Tree::Tree(const std::string &name)
 
 	/* Initialize */
 	this->name = name;
+	Clear();
 }
 
 
@@ -840,6 +850,8 @@ void Tree::Clear()
 	node_list.clear();
 	node_table.clear();
 	entry_node = nullptr;
+	structural_analysis_done = false;
+	memset(name_counter, 0, sizeof name_counter);
 }
 
 

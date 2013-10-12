@@ -243,7 +243,7 @@ struct cl2llvm_built_in_func_llvm_name_t *
 	struct cl2llvm_built_in_func_llvm_name_t *built_in_func_llvm_name;
 
 	built_in_func_llvm_name = xcalloc(1, sizeof(struct cl2llvm_built_in_func_llvm_name_t));
-	built_in_func_llvm_name->arg_list = xmalloc(3 * 
+	built_in_func_llvm_name->arg_list = xcalloc(3,
 		sizeof(struct cl2llvm_type_t*));
 	
 	return built_in_func_llvm_name;

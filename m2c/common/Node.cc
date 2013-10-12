@@ -38,6 +38,8 @@ namespace Common
 LeafNode::LeafNode(const std::string &name)
 		: Node(name, NodeKindLeaf)
 {
+	basic_block = nullptr;
+	llvm_basic_block = nullptr;
 }
 
 
@@ -162,6 +164,9 @@ Node::Node(const std::string &name, NodeKind kind)
 	/* Initialize */
 	this->name = name;
 	this->kind = kind;
+	tree = nullptr;
+	parent = nullptr;
+	role = NodeRoleInvalid;
 	preorder_id = -1;
 	postorder_id = -1;
 }

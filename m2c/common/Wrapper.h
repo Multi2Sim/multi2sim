@@ -25,6 +25,8 @@ extern "C" {
 #endif
 
 void CommonTreeConfigSetPath(char *path);
+const char *CommonTreeConfigGetPath();
+void CommonTreeConfigRun();
 void CommonTreeDebugSetPath(char *path);
 
 #ifdef __cplusplus

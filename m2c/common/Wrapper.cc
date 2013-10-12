@@ -28,9 +28,17 @@ void CommonTreeConfigSetPath(char *path)
 	Tree::config.SetPath(path);
 }
 
+const char *CommonTreeConfigGetPath()
+{
+	return Tree::config.GetPath().c_str();
+}
 
 void CommonTreeDebugSetPath(char *path)
 {
 	Tree::debug.SetPath(path);
 }
 
+void CommonTreeConfigRun()
+{
+	Tree::config.Run();
+}

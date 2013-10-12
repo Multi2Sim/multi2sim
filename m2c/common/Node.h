@@ -88,7 +88,7 @@ class Node
 	Node *parent;
 
 	/* Role that the node plays inside of its parent abstract node.
-	 * This field is other than 'node_role_invalid' only when 'parent' is
+	 * This field is other than 'NodeRoleInvalid' only when 'parent' is
 	 * not null. */
 	NodeRole role;
 

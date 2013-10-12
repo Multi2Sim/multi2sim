@@ -43,6 +43,7 @@ class TreeConfig
 {
 	/* File name */
 	std::string path;
+	std::unique_ptr<IniFile> ini_file;
 
 	/* List of trees loaded by configuration */
 	std::list<std::unique_ptr<Tree>> tree_list;
@@ -54,7 +55,10 @@ class TreeConfig
 	/* Process command read from the configuration file. */
 	void ProcessCommand(const std::string &command);
 public:
+	const std::string &GetPath() { return path; }
 	void SetPath(const std::string &path);
+
+	void Run();
 };
 
 
