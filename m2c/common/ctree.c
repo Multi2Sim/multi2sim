@@ -74,7 +74,7 @@ static void ctree_process_command(char *string)
 	command = list_get(token_list, 0);
 	if (!command)
 		fatal("%s: empty command", __FUNCTION__);
-	
+
 	/* Process command */
 	if (!strcasecmp(command, "LoadCTree"))
 	{
@@ -1379,7 +1379,8 @@ void CTreeReadFromConfig(CTree *self, struct config_t *config, char *name)
 	snprintf(section_str, sizeof section_str, "CTree.%s", name);
 	if (!config_section_exists(config, section_str))
 		fatal("%s: %s: tree not found", __FUNCTION__, name);
-
+	
+	
 	/* Read nodes */
 	file_name = config_get_file_name(config);
 	CONFIG_SECTION_FOR_EACH(config, section)

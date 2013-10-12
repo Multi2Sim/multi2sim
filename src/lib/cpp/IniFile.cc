@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <algorithm>
 #include <cassert>
 #include <fstream>
 #include <sstream>
@@ -74,16 +75,19 @@ string IniFile::SectionVarToItem(string section, string var)
  * is invalid, the function returns false. True for all ok. */
 bool IniFile::GetVarValue(string& s, string& var, string& value)
 {
-	vector<string> tokens;
-
-	/* Split string */
-	StringTokenize(s, tokens, "=");
-	if (tokens.size() != 2)
+	/* At least one '-' sign */
+	size_t count = std::count(s.begin(), s.end(), '=');
+	if (count != 1)
 		return false;
 
-	/* Assign output strings */
-	var = tokens[0];
-	value = tokens[1];
+	/* Split string */
+	size_t pos = s.find('=');
+	var = s.substr(0, pos);
+	value = s.substr(pos + 1);
+	if (var.empty())
+		return false;
+
+	/* Trim them */
 	StringTrim(var);
 	StringTrim(value);
 	return true;

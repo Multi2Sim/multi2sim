@@ -373,6 +373,8 @@ static void m2c_read_command_line(int argc, char **argv)
 		{ "cl2llvm", no_argument, 0, 0 },
 		{ "ctree-config", required_argument, 0, 0 },
 		{ "ctree-debug", required_argument, 0, 0 },
+		{ "tree-config", required_argument, 0, 0 },
+		{ "tree-debug", required_argument, 0, 0 },
 		{ "frm-asm", no_argument, 0, 0 },
 		{ "frm2bin", no_argument, 0, 0 },
 		{ "gl", no_argument, 0, 0 },
@@ -742,6 +744,13 @@ int main(int argc, char **argv)
 
 	/* Initialize */
 	m2c_init();
+
+	/* Control tree debug */
+	if (*CommonTreeConfigGetPath())
+	{
+		CommonTreeConfigRun();
+		goto out;
+	}
 
 	/* Process list of sources in 'm2c_source_file_list' and generate the
 	 * rest of the file lists. */
