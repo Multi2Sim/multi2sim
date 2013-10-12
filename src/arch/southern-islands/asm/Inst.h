@@ -22,6 +22,9 @@
 
 #ifdef __cplusplus
 
+#include <lib/cpp/Misc.h>
+
+
 namespace SI
 {
 
@@ -469,7 +472,6 @@ struct InstInfo
 	/* Size of the micro-code format in bytes, not counting a possible
 	 * additional literal added by a particular instance. */
 	int size;
-
 };
 
 

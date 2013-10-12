@@ -63,15 +63,20 @@ enum ArgType
 
 class Arg
 {
-protected:
-	/* Argument type. It determines the sub-class of the actual instance of
-	 * type 'Arg'. */
-	ArgType type;
+	friend class Inst;
 
 	/* Token associated with argument. This field is populated when an
 	 * instruction is created that contains the argument as part of its
 	 * argument list. */
 	Token *token;
+
+	/* Argument index, populated when inserted into an instruction */
+	int index;
+
+protected:
+	/* Argument type. It determines the sub-class of the actual instance of
+	 * type 'Arg'. */
+	ArgType type;
 
 	/* Absolute value */
 	bool abs;
@@ -81,6 +86,7 @@ protected:
 
 	/* True if the argument is of a constant type */
 	bool constant;
+
 public:
 
 	/* Constructor */
@@ -91,6 +97,7 @@ public:
 	bool GetAbs() { return abs; }
 	bool GetNeg() { return neg; }
 	bool GetConstant() { return constant; }
+	int GetIndex() { return index; }
 
 	/* Dump operand (pure virtual function) */
 	virtual void Dump(std::ostream &os) = 0;
