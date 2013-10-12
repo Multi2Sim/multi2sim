@@ -21,6 +21,8 @@
 #define M2C_SI2BIN_INST_H
 
 #include <iostream>
+#include <list>
+#include <memory>
 
 #include <arch/southern-islands/asm/Inst.h>
 
@@ -31,7 +33,7 @@ namespace si2bin
 {
 
 
-class InstInfo
+struct InstInfo
 {
 	/* There can be multiple instruction encodings for the same instruction
 	 * name. This points to the next one in the list. */
@@ -51,6 +53,10 @@ class InstInfo
 
 class Inst
 {
+	/* Instruction opcode. This field should match the conent of
+	 * info->info->opcode. */
+	SI::InstOpcode opcode;
+
 	/* Instruction size in bytes (4 or 8) */
 	int size;
 
@@ -62,7 +68,7 @@ class Inst
 
 	/* For LLVM-to-SI back-end: basic block that the instruction
 	 * belongs to. */
-	llvm2si::BasicBlock *basic_block;
+	//llvm2si::BasicBlock *basic_block;
 
 	/* Comment attached to the instruction, which will be dumped together
 	 * with it. */

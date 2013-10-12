@@ -56,6 +56,7 @@ Arg::Arg()
 {
 	type = ArgTypeInvalid;
 	constant = false;
+	index = -1;
 }
 
 
