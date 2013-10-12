@@ -366,7 +366,7 @@ void Node::InsertBefore(Node *before)
 
 	/* Insert in common parent */
 	this->parent = parent;
-	auto child_list = parent->GetChildList();
+	std::list<Node *> &child_list = parent->GetChildList();
 	assert(!InList(child_list));
 	auto it = std::find(child_list.begin(), child_list.end(), before);
 	assert(it != child_list.end());
@@ -384,7 +384,7 @@ void Node::InsertAfter(Node *after)
 
 	/* Insert in common parent */
 	this->parent = parent;
-	auto child_list = parent->GetChildList();
+	std::list<Node *> &child_list = parent->GetChildList();
 	assert(!InList(child_list));
 	auto it = std::find(child_list.begin(), child_list.end(), after);
 	assert(it != child_list.end());
