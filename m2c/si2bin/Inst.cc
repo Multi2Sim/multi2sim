@@ -32,6 +32,10 @@ namespace si2bin
 
 Inst::Inst(SI::InstOpcode opcode, std::list<Arg *> &args)
 {
+	/* Initialize */
+	size = 0;
+	bytes.dword = 0;
+
 	/* Copy argument list */
 	int arg_index = 0;
 	for (auto arg : args)
@@ -40,7 +44,7 @@ Inst::Inst(SI::InstOpcode opcode, std::list<Arg *> &args)
 		arg->index = arg_index++;
 	}
 
-	/* Initialize opcode */
+	/* Check opcode */
 	this->opcode = opcode;
 	if (!InRange(opcode, 1, SI::InstOpcodeCount - 1))
 		fatal("%s: invalid opcode (%d)", __FUNCTION__, opcode);
@@ -77,67 +81,60 @@ Inst::Inst(SI::InstOpcode opcode, std::list<Arg *> &args)
 }
 
 
-#if 0
-void Si2binInstCreateWithName(Si2binInst *self, char *name, List *arg_list)
+Inst::Inst(std::string name, std::list<Arg *> &args)
 {
-	Si2binInstInfo *info;
-
-	Si2binArg *arg;
-	Si2binToken *token;
-
-	char err_str[MAX_STRING_SIZE];
-	int index;
-
-	/* Create argument list if null */
-	if (!arg_list)
-		arg_list = new(List);
-	
 	/* Initialize */
-	self->arg_list = arg_list;
-	self->comment = new(String, "");
+	size = 0;
+	bytes.dword = 0;
+	
+	/* Copy argument list */
+	int arg_index = 0;
+	for (auto arg : args)
+	{
+		this->args.emplace_back(arg);
+		arg->index = arg_index++;
+	}
 	
 	/* Try to create the instruction following all possible encodings for
 	 * the same instruction name. */
-	snprintf(err_str, sizeof err_str, "invalid instruction: %s", name);
-	for (info = asSi2binInstInfo(HashTableGetString(si2bin->inst_info_table,
-			name)); info; info = info->next)
+	std::string error = "invalid instruction: " + name;
+	for (InstInfo *info = builder.GetInstInfo(name); info; info = info->next)
 	{
 		/* Check number of arguments */
-		if (arg_list->count != info->token_list->count)
+		if (args.size() != info->tokens.size())
 		{
-			snprintf(err_str, sizeof err_str,
-				"invalid number of arguments for %s (%d given, %d expected)",
-				name, arg_list->count, info->token_list->count - 1);
+			error = StringFormat("invalid number of arguments for %s "
+					"(%d given, %d expected)",
+					name.c_str(), (int) args.size(),
+					(int) info->tokens.size() - 1);
 			continue;
 		}
 
 		/* Check arguments */
-		err_str[0] = '\0';
-		index = 0;
-		ListHead(info->token_list);
-		ListForEach(arg_list, arg, Si2binArg)
+		error = "";
+		auto token_iterator = info->tokens.begin();
+		for (auto arg : args)
 		{
 			/* Get formal argument from instruction info. We associate the
 			 * instruction argument with the token. */
-			token = asSi2binToken(ListGet(info->token_list));
+			Token *token = token_iterator->get();
 			arg->token = token;
 			assert(token);
 
 			/* Check that actual argument type is acceptable for token */
-			if (!Si2binTokenIsArgAllowed(token, arg))
+			if (!token->IsArgAllowed(arg))
 			{
-				snprintf(err_str, sizeof err_str,
-					"invalid type for argument %d", index + 1);
+				error = StringFormat("invalid type for argument %d",
+						arg->index + 1);
 				break;
 			}
 
 			/* Next */
-			ListNext(info->token_list);
-			index++;
+			++token_iterator;
 		}
 
 		/* Error while processing arguments */
-		if (err_str[0])
+		if (!error.empty())
 			continue;
 	
 		/* All checks passed, instruction identified correctly as that
@@ -147,431 +144,309 @@ void Si2binInstCreateWithName(Si2binInst *self, char *name, List *arg_list)
 
 	/* Error identifying instruction */
 	if (!info)
-		si2bin_yyerror(err_str);
+		fatal("%s", error.c_str());
 
 	/* Initialize opcode */
-	self->info = info;
-	self->opcode = info->inst_info->op;
+	this->info = info;
+	this->opcode = info->info->opcode;
 }
 
 
-void Si2binInstDestroy(Si2binInst *self)
+void Inst::Dump(std::ostream &os)
 {
-	ListDeleteObjects(self->arg_list);
-	delete(self->arg_list);
-	delete(self->comment);
-}
-
-
-void Si2binInstDump(Si2binInst *self, FILE *f)
-{
-	Si2binArg *arg;
-	unsigned int word;
-	
-	int i;
-	int j;
-	
-	/* Dump instruction opcode */
-	fprintf(f, "Instruction %s\n", self->info->name->text);
-	fprintf(f, "\tformat=%s, size=%d\n",
-			StringMapValueWrap(si_inst_format_map,
-			self->info->inst_info->fmt),
-			self->size);
-
-	/* Dump arguments */
-	i = 0;
-	ListForEach(self->arg_list, arg, Si2binArg)
-	{
-		fprintf(f, "\targ %d: ", i);
-		Si2binArgDump(arg, f);
-		fprintf(f, "\n");
-		i++;
-	}
-
-	/* Empty instruction bits */
-	if (!self->size)
-		return;
-
-	/* Print words */
-	for (i = 0; i < self->size / 4; i++)
-	{
-		word = * (int *) &self->bytes.byte[i * 4];
-		printf("\tword %d:  hex = { %08x },  bin = {", i, word);
-		for (j = 0; j < 32; j++)
-			printf("%s%d", j % 4 ? "" : " ", (word >> (31 - j)) & 1);
-		printf(" }\n");
-	}
-}
-
-
-void Si2binInstDumpAssembly(Si2binInst *self, FILE *f)
-{
-        Si2binArg *arg;
-
-        int i;
-
         /* Comment attached to the instruction */
-        if (self->comment->length)
-        	fprintf(f, "\n\t# %s\n", self->comment->text);
+        if (!comment.empty())
+        	os << "\n\t# " << comment << '\n';
 
         /* Dump instruction opcode */
-        fprintf(f, "\t%s ", self->info->name->text);
+        os << '\t' << info->name << ' ';
 
         /* Dump arguments */
-	i = 0;
-	ListForEach(self->arg_list, arg, Si2binArg)
+        for (auto &arg : args)
         {
-		assert(arg);
-                Si2binArgDumpAssembly(arg, f);
-                if (i < self->arg_list->count - 1)
-			fprintf(f, ", ");
-		i++;
-			
+        	arg->Dump(os);
+                if (arg->index < (int) args.size() - 1)
+                	os << ", ";
 	}
 
-	/* New line */
-	fprintf(f, "\n");
+	/* End */
+        os << '\n';
 }
 
 
-void Si2binInstAddComment(Si2binInst *self, char *comment)
+void Inst::Encode()
 {
-	StringSet(self->comment, "%s", comment);
-}
-
-
-void Si2binInstGenerate(Si2binInst *self)
-{
-	SIInstBytes *inst_bytes;
-	SIInstInfo *inst_info;
-	Si2binInstInfo *info;
-
-	Si2binArg *arg;
-	Si2binToken *token;
-
-	int index;
-
-	/* Initialize */
-	inst_bytes = &self->bytes;
-	info = self->info;
-	assert(info);
-	inst_info = info->inst_info;
-
 	/* By default, the instruction has the number of bytes specified by its
 	 * format. 4-bit instructions could be extended later to 8 bits upon
 	 * the presence of a literal constant. */
-	self->size = inst_info->size;
+	assert(info && info->info);
+	size = info->info->size;
 
 	/* Instruction opcode */
-	switch (inst_info->fmt)
+	switch (info->info->fmt)
 	{
 
 	/* encoding in [31:26], op in [18:16] */
-	case SIInstFormatMTBUF:
+	case SI::InstFormatMTBUF:
 
-		inst_bytes->mtbuf.enc = 0x3a;
-		inst_bytes->mtbuf.op = inst_info->op;
+		bytes.mtbuf.enc = 0x3a;
+		bytes.mtbuf.op = info->info->op;
 		break;
 	
 	/* encoding in [:], op in [] */
-	case SIInstFormatMUBUF:
+	case SI::InstFormatMUBUF:
 		
-		inst_bytes->mubuf.enc = 0x38;
-		inst_bytes->mubuf.op = inst_info->op;
+		bytes.mubuf.enc = 0x38;
+		bytes.mubuf.op = info->info->op;
 		break;
 
 	/* encoding in [:], op in [] */
-	case SIInstFormatMIMG:
+	case SI::InstFormatMIMG:
 		
-		inst_bytes->mimg.enc = 0x3c;
-		inst_bytes->mimg.op = inst_info->op;
+		bytes.mimg.enc = 0x3c;
+		bytes.mimg.op = info->info->op;
 		break;
 
 	/* encoding in [31:27], op in [26:22] */
-	case SIInstFormatSMRD:
+	case SI::InstFormatSMRD:
 
-		inst_bytes->smrd.enc = 0x18;
-		inst_bytes->smrd.op = inst_info->op;
+		bytes.smrd.enc = 0x18;
+		bytes.smrd.op = info->info->op;
 		break;
 	
 	/* encoding in [31:26], op in [25:28] */
-	case SIInstFormatDS:
+	case SI::InstFormatDS:
 		
-		inst_bytes->ds.enc = 0x36;
-		inst_bytes->ds.op = inst_info->op;
+		bytes.ds.enc = 0x36;
+		bytes.ds.op = info->info->op;
 		break;
 
 	/* encoding in [31:23], op in [22:16] */
-	case SIInstFormatSOPC:
+	case SI::InstFormatSOPC:
 		
-		inst_bytes->sopc.enc = 0x17e;
-		inst_bytes->sopc.op = inst_info->op;
+		bytes.sopc.enc = 0x17e;
+		bytes.sopc.op = info->info->op;
 		break;
 
 	/* encoding in [31:23], op in [15:8] */
-	case SIInstFormatSOP1:
+	case SI::InstFormatSOP1:
 
-		inst_bytes->sop1.enc = 0x17d;
-		inst_bytes->sop1.op = inst_info->op;
+		bytes.sop1.enc = 0x17d;
+		bytes.sop1.op = info->info->op;
 		break;
 
 	/* encoding in [31:30], op in [29:23] */
-	case SIInstFormatSOP2:
+	case SI::InstFormatSOP2:
 
-		inst_bytes->sop2.enc = 0x2;
-		inst_bytes->sop2.op = inst_info->op;
+		bytes.sop2.enc = 0x2;
+		bytes.sop2.op = info->info->op;
 		break;
 
 	/* encoding in [31:23], op in [22:16] */
-	case SIInstFormatSOPP:
+	case SI::InstFormatSOPP:
 
-		inst_bytes->sopp.enc = 0x17f;
-		inst_bytes->sopp.op = inst_info->op;
+		bytes.sopp.enc = 0x17f;
+		bytes.sopp.op = info->info->op;
 		break;
 	
 	/* encoding in [:], op in [] */
-	case SIInstFormatSOPK:
+	case SI::InstFormatSOPK:
 		
-		inst_bytes->sopk.enc = 0xb;
-		inst_bytes->sopk.op = inst_info->op;
+		bytes.sopk.enc = 0xb;
+		bytes.sopk.op = info->info->op;
 		break;
 
 	/* encoding in [:], op in [] */
-	case SIInstFormatVOPC:
+	case SI::InstFormatVOPC:
 		
-		inst_bytes->vopc.enc = 0x3e;
-		inst_bytes->vopc.op = inst_info->op;
+		bytes.vopc.enc = 0x3e;
+		bytes.vopc.op = info->info->op;
 		break;
 
 	/* encoding in [31:25], op in [16:9] */
-	case SIInstFormatVOP1:
+	case SI::InstFormatVOP1:
 
-		inst_bytes->vop1.enc = 0x3f;
-		inst_bytes->vop1.op = inst_info->op;
+		bytes.vop1.enc = 0x3f;
+		bytes.vop1.op = info->info->op;
 		break;
 
 	/* encoding in [31], op in [30:25] */
-	case SIInstFormatVOP2:
+	case SI::InstFormatVOP2:
 
-		inst_bytes->vop2.enc = 0x0;
-		inst_bytes->vop2.op = inst_info->op;
+		bytes.vop2.enc = 0x0;
+		bytes.vop2.op = info->info->op;
 		break;
 
 	/* encoding in [31:26], op in [25:17] */
-	case SIInstFormatVOP3a:
+	case SI::InstFormatVOP3a:
 
-		inst_bytes->vop3a.enc = 0x34;
-		inst_bytes->vop3a.op = inst_info->op;
+		bytes.vop3a.enc = 0x34;
+		bytes.vop3a.op = info->info->op;
 		break;
 
 	/* encoding in [31:26], op in [25:17] */
-	case SIInstFormatVOP3b:
+	case SI::InstFormatVOP3b:
 
-		inst_bytes->vop3a.enc = 0x34;
-		inst_bytes->vop3a.op = inst_info->op;
+		bytes.vop3a.enc = 0x34;
+		bytes.vop3a.op = info->info->op;
 		break;
 
 	/* encoding in [:], op in [] */
-	case SIInstFormatVINTRP:
+	case SI::InstFormatVINTRP:
 		
-		inst_bytes->vintrp.enc = 0x32;
-		inst_bytes->vintrp.op = inst_info->op;
+		bytes.vintrp.enc = 0x32;
+		bytes.vintrp.op = info->info->op;
 		break;
 
 	/* encoding in [:], op in [] */
-	case SIInstFormatEXP:
+	case SI::InstFormatEXP:
 		
-		inst_bytes->exp.enc = 0x3e;
+		bytes.exp.enc = 0x3e;
 		/* No opcode: only 1 instruction */
 		break;
 
 	default:
-		si2bin_yyerror_fmt("%s: unsupported format", __FUNCTION__);
+		panic("%s: unsupported format",
+				__FUNCTION__);
 	}
 
 	/* Arguments */
-	assert(self->arg_list->count == info->token_list->count);
-	index = 0;
-	ListHead(info->token_list);
-	ListForEach(self->arg_list, arg, Si2binArg)
+	assert(args.size() == info->tokens.size());
+	auto token_iterator = info->tokens.begin();
+	for (auto &arg_ptr : args)
 	{
-		/* Get argument */
-		token = asSi2binToken(ListGet(info->token_list));
-		assert(arg);
+		/* Get argument and token */
+		Arg *arg = arg_ptr.get();
+		Token *token = arg->token;
 		assert(token);
 
 		/* Check token */
-		switch (token->type)
+		switch (token->GetType())
 		{
-		
-		case Si2binTokenSimm16:
+
+		case TokenSimm16:
 		{
 			int value;
 
-			if (arg->type == Si2binArgLiteral || 
-				arg->type == Si2binArgLiteralReduced)
+			ArgLiteral *literal = dynamic_cast<ArgLiteral *>(arg);
+			if (literal)
 			{
 				/* Literal constant other than [-16...64] */
-				if (arg->value.literal.val > 0xff00)
-					si2bin_yyerror_fmt("%s: Literal in simm16 needs to fit in 16 bit field",
+				if (literal->GetValue() > 0xff00)
+					fatal("%s: Literal in simm16 needs to fit in 16 bit field",
 						__FUNCTION__);
-				
-				inst_bytes->sopk.simm16 = arg->value.literal.val;
+				bytes.sopk.simm16 = literal->GetValue();
 			}
 			else
 			{
-
 				/* Encode */
-				value = Si2binArgEncodeOperand(arg);
-				if (!IN_RANGE(value, 0, 255))
-					si2bin_yyerror("invalid argument type");
-				inst_bytes->sopk.simm16 = value;
+				value = arg->Encode();
+				if (!InRange(value, 0, 255))
+					fatal("invalid argument type");
+				bytes.sopk.simm16 = value;
 			}
 			break;
 		}
 		
-		case Si2binToken64Sdst:
+		case Token64Sdst:
 		{
-			int low;
-			int high;
-
 			/* Check range if scalar register range given */
-			if (arg->type == Si2binArgScalarRegisterSeries)
-			{
-				low = arg->value.scalar_register_series.low;
-				high = arg->value.scalar_register_series.high;
-				if (high != low + 1)
-					si2bin_yyerror("register series must be s[x:x+1]");
-			}
+			ArgScalarRegisterSeries *srs = dynamic_cast
+					<ArgScalarRegisterSeries *>(arg);
+			if (srs && srs->GetHigh() != srs->GetLow() + 1)
+				fatal("register series must be s[x:x+1]");
 			
 			/* Encode */
-			inst_bytes->sop2.sdst = Si2binArgEncodeOperand(arg);
+			bytes.sop2.sdst = arg->Encode();
 			break;
 		}
 
-		case Si2binToken64Ssrc0:
+		case Token64Ssrc0:
 		{
-			int value;
-
-			if (arg->type == Si2binArgLiteral)
+			ArgLiteral *literal = dynamic_cast<ArgLiteral *>(arg);
+			if (literal)
 			{
 				/* Literal constant other than [-16...64] is encoded by adding
 				 * four more bits to the instruction. */
-				if (self->size == 8)
-					si2bin_yyerror("only one literal allowed");
-				self->size = 8;
-				inst_bytes->sop2.ssrc0 = 0xff;
-				inst_bytes->sop2.lit_cnst = arg->value.literal.val;
+				if (size == 8)
+					fatal("only one literal allowed");
+				size = 8;
+				bytes.sop2.ssrc0 = 0xff;
+				bytes.sop2.lit_cnst = literal->GetValue();
 			}
 			else
 			{
 				/* Check range of scalar registers */
-				if (arg->type == Si2binArgScalarRegisterSeries &&
-						arg->value.scalar_register_series.high !=
-						arg->value.scalar_register_series.low + 1)
-					si2bin_yyerror("invalid scalar register series, s[x:x+1] expected");
+				ArgScalarRegisterSeries *srs = dynamic_cast
+						<ArgScalarRegisterSeries *>(arg);
+				if (srs && srs->GetHigh() != srs->GetLow() + 1)
+					fatal("invalid scalar register series, s[x:x+1] expected");
 
 				/* Encode */
-				value = Si2binArgEncodeOperand(arg);
-				if (!IN_RANGE(value, 0, 255))
-					si2bin_yyerror("invalid argument type");
-				inst_bytes->sop2.ssrc0 = value;
+				int value = arg->Encode();
+				if (!InRange(value, 0, 255))
+					fatal("invalid argument type");
+				bytes.sop2.ssrc0 = value;
 			}
 			break;
 		}
 
-		case Si2binToken64Ssrc1:
+		case Token64Ssrc1:
 		{
-			int value;
-
-			if (arg->type == Si2binArgLiteral)
+			ArgLiteral *literal = dynamic_cast<ArgLiteral *>(arg);
+			if (literal)
 			{
 				/* Literal constant other than [-16...64] is encoded by adding
 				 * four more bits to the instruction. */
-				if (self->size == 8)
-					si2bin_yyerror("only one literal allowed");
-				self->size = 8;
-				inst_bytes->sop2.ssrc1 = 0xff;
-				inst_bytes->sop2.lit_cnst = arg->value.literal.val;
+				if (size == 8)
+					fatal("only one literal allowed");
+				size = 8;
+				bytes.sop2.ssrc1 = 0xff;
+				bytes.sop2.lit_cnst = literal->GetValue();
 			}
 			else
 			{
 				/* Check range of scalar registers */
-				if (arg->type == Si2binArgScalarRegisterSeries &&
-						arg->value.scalar_register_series.high !=
-						arg->value.scalar_register_series.low + 1)
-					si2bin_yyerror("invalid scalar register series, s[x:x+1] expected");
+				ArgScalarRegisterSeries *srs = dynamic_cast
+						<ArgScalarRegisterSeries *>(arg);
+				if (srs && srs->GetHigh() != srs->GetLow() + 1)
+					fatal("invalid scalar register series, s[x:x+1] expected");
 
 				/* Encode */
-				value = Si2binArgEncodeOperand(arg);
-				if (!IN_RANGE(value, 0, 255))
-					si2bin_yyerror("invalid argument type");
-				inst_bytes->sop2.ssrc1 = value;
+				int value = arg->Encode();
+				if (!InRange(value, 0, 255))
+					fatal("invalid argument type");
+				bytes.sop2.ssrc1 = value;
 			}
 			break;
 		}
 		
-		case Si2binTokenMtMaddr:
+		case TokenMtMaddr:
 		{
-			Si2binArg *qual;
-			int soffset;
+			/* Get argument */
+			ArgMaddr *maddr = dynamic_cast<ArgMaddr *>(arg);
+			assert(maddr);
 
 			/* Offset */
-			soffset = Si2binArgEncodeOperand(arg->value.maddr.soffset);
-			if (!IN_RANGE(soffset, 0, 253))
-				si2bin_yyerror("invalid offset");
-			inst_bytes->mtbuf.soffset = soffset;
+			int soffset = maddr->GetSoffset()->Encode();
+			if (!InRange(soffset, 0, 253))
+				fatal("invalid offset");
+			bytes.mtbuf.soffset = soffset;
 
 			/* Data and number format */
-			inst_bytes->mtbuf.dfmt = arg->value.maddr.data_format;
-			inst_bytes->mtbuf.nfmt = arg->value.maddr.num_format;
+			bytes.mtbuf.dfmt = maddr->GetDataFormat();
+			bytes.mtbuf.nfmt = maddr->GetNumFormat();
 
 			/* Qualifiers */
-			qual = arg->value.maddr.qual;
-			assert(qual->type == Si2binArgMaddrQual);
-			inst_bytes->mtbuf.offen = qual->value.maddr_qual.offen;
-			inst_bytes->mtbuf.idxen = qual->value.maddr_qual.idxen;
-			inst_bytes->mtbuf.offset = qual->value.maddr_qual.offset;
+			ArgMaddrQual *qual = maddr->GetQual();
+			bytes.mtbuf.offen = qual->GetOffen();
+			bytes.mtbuf.idxen = qual->GetIdxen();
+			bytes.mtbuf.offset = qual->GetOffset();
 
 			break;
 		}
 
-		case Si2binTokenLabel:
-		{
-			Si2binSymbol *symbol;
-			Si2binTask *task;
-
-			/* Search symbol in symbol table */
-			assert(arg->type == Si2binArgLabel);
-			symbol = asSi2binSymbol(HashTableGetString(si2bin->symbol_table,
-					arg->value.label.name));
-
-			/* Create symbol if it doesn't exist */
-			if (!symbol)
-			{
-				symbol = new(Si2binSymbol, arg->value.label.name);
-				HashTableInsert(si2bin->symbol_table, asObject(symbol->name),
-						asObject(symbol));
-			}
-
-			/* If symbol is defined, resolve label right away. Otherwise,
-			 * program a deferred task to resolve it. */
-			if (symbol->defined)
-			{
-				inst_bytes->sopp.simm16 = (symbol->value -
-						si2bin_entry->text_section_buffer
-						->offset) / 4 - 1;
-			}
-			else
-			{
-				task = new(Si2binTask, si2bin_entry->text_section_buffer
-						->offset, symbol);
-				ListAdd(si2bin->task_list, asObject(task));
-			}
-			break;
-		}
-
-		case Si2binTokenMtSeriesVdata:
+		case TokenMtSeriesVdata:
 		{
 			int low = 0;
 			int high = 0;
@@ -581,25 +456,32 @@ void Si2binInstGenerate(Si2binInst *self)
 			switch (arg->type)
 			{
 
-			case Si2binArgVectorRegister:
-
-				low = arg->value.vector_register.id;
+			case ArgTypeVectorRegister:
+			{
+				ArgVectorRegister *vr = dynamic_cast
+						<ArgVectorRegister *>(arg);
+				assert(vr);
+				low = vr->GetId();
 				high = low;
 				break;
+			}
 
-			case Si2binArgVectorRegisterSeries:
-
-				low = arg->value.vector_register_series.low;
-				high = arg->value.vector_register_series.high;
+			case ArgTypeVectorRegisterSeries:
+			{
+				ArgVectorRegisterSeries *vrs = dynamic_cast
+						<ArgVectorRegisterSeries *>(arg);
+				low = vrs->GetLow();
+				high = vrs->GetHigh();
 				break;
+			}
 
 			default:
-				panic("%s: invalid argument type for token 'mt_series_vdata'",
+				panic("%s: invalid argument for TokenMtSeriesVdata",
 						__FUNCTION__);
 			}
 
 			/* Restriction in vector register range */
-			switch (inst_info->opcode)
+			switch (opcode)
 			{
 
 			case SI_INST_TBUFFER_LOAD_FORMAT_X:
@@ -621,45 +503,49 @@ void Si2binInstGenerate(Si2binInst *self)
 				break;
 
 			default:
-				fatal("%s: MUBUF/MTBUF instruction not recognized: %s",
-						__FUNCTION__, info->name->text);
+				panic("%s: MUBUF/MTBUF instruction not recognized: %s",
+						__FUNCTION__, info->name.c_str());
 			}
 
 			/* Check range */
 			if (high != high_must)
-				si2bin_yyerror_fmt("invalid register series: v[%d:%d]", low, high);
+				fatal("invalid register series: v[%d:%d]", low, high);
 
 			/* Encode */
-			inst_bytes->mtbuf.vdata = low;
+			bytes.mtbuf.vdata = low;
 			break;
 		}
 
-		case Si2binTokenOffset:
+#if 0
+		case TokenOffset:
 
 			/* Depends of argument type */
 			switch (arg->type)
 			{
 
-			case Si2binArgLiteral:
-
-				if (arg->value.literal.val > 255)
-					si2bin_yyerror_fmt("%s: offset needs to fit in 8 bit field",
+			case ArgTypeLiteral:
+			{
+				ArgLiteral *literal = dynamic_cast
+						<ArgLiteral *>(arg);
+				if (literal->GetValue() > 255)
+					fatal("%s: offset needs to fit in 8 bit field",
 						__FUNCTION__);
 				
-				inst_bytes->smrd.imm = 1;
-				inst_bytes->smrd.offset = arg->value.literal.val;
+				bytes.smrd.imm = 1;
+				bytes.smrd.offset = literal->GetValue();
 				/* FIXME - check valid range of literal */
 				break;
+			}
 
-			case Si2binArgLiteralReduced:
+			case ArgTypeLiteralReduced:
 				
-				inst_bytes->smrd.imm = 1;
-				inst_bytes->smrd.offset = arg->value.literal.val;
+				bytes.smrd.imm = 1;
+				bytes.smrd.offset = arg->value.literal.val;
 				break;
 			
-			case Si2binArgScalarRegister:
+			case ArgTypeScalarRegister:
 
-				inst_bytes->smrd.offset = arg->value.scalar_register.id;
+				bytes.smrd.offset = arg->value.scalar_register.id;
 				break;
 
 			default:
@@ -668,20 +554,20 @@ void Si2binInstGenerate(Si2binInst *self)
 			}
 			break;
 
-		case Si2binTokenSdst:
+		case TokenSdst:
 
 			/* Encode */
-			inst_bytes->sop2.sdst = Si2binArgEncodeOperand(arg);
+			bytes.sop2.sdst = ArgTypeEncodeOperand(arg);
 			break;
 
-		case Si2binTokenSeriesSbase:
+		case TokenSeriesSbase:
 
 			/* Check that low register is multiple of 2 */
 			if (arg->value.scalar_register_series.low % 2)
 				si2bin_yyerror("base register must be multiple of 2");
 
 			/* Restrictions for high register */
-			switch (inst_info->opcode)
+			switch (info->info->opcode)
 			{
 
 			case SI_INST_S_LOAD_DWORDX2:
@@ -709,13 +595,13 @@ void Si2binInstGenerate(Si2binInst *self)
 			}
 
 			/* Encode */
-			inst_bytes->smrd.sbase = arg->value.scalar_register_series.low / 2;
+			bytes.smrd.sbase = arg->value.scalar_register_series.low / 2;
 			break;
 
-		case Si2binTokenSeriesSdst:
+		case TokenSeriesSdst:
 
 			/* Restrictions for high register */
-			switch (inst_info->opcode)
+			switch (info->info->opcode)
 			{
 
 			case SI_INST_S_LOAD_DWORDX2:
@@ -742,10 +628,10 @@ void Si2binInstGenerate(Si2binInst *self)
 			}
 
 			/* Encode */
-			inst_bytes->smrd.sdst = arg->value.scalar_register_series.low;
+			bytes.smrd.sdst = arg->value.scalar_register_series.low;
 			break;
 
-		case Si2binTokenSeriesSrsrc:
+		case TokenSeriesSrsrc:
 		{
 			int low = arg->value.scalar_register_series.low;
 			int high = arg->value.scalar_register_series.high;
@@ -761,99 +647,99 @@ void Si2binInstGenerate(Si2binInst *self)
 						low, high);
 
 			/* Encode */
-			inst_bytes->mtbuf.srsrc = low >> 2;
+			bytes.mtbuf.srsrc = low >> 2;
 			break;
 		}
 
-		case Si2binTokenSmrdSdst:
+		case TokenSmrdSdst:
 
 			/* Encode */
-			inst_bytes->smrd.sdst = arg->value.scalar_register.id;
+			bytes.smrd.sdst = arg->value.scalar_register.id;
 			break;
 
-		case Si2binTokenSrc0:
+		case TokenSrc0:
 
-			if (arg->type == Si2binArgLiteral)
+			if (arg->type == ArgTypeLiteral)
 			{
 				/* Literal constant other than [-16...64] is encoded by adding
 				 * four more bits to the instruction. */
 				if (self->size == 8)
 					si2bin_yyerror("only one literal allowed");
 				self->size = 8;
-				inst_bytes->vopc.src0 = 0xff;
-				inst_bytes->vopc.lit_cnst = arg->value.literal.val;
+				bytes.vopc.src0 = 0xff;
+				bytes.vopc.lit_cnst = arg->value.literal.val;
 			}
 			else
 			{
-				inst_bytes->vopc.src0 = Si2binArgEncodeOperand(arg);
+				bytes.vopc.src0 = ArgTypeEncodeOperand(arg);
 			}
 			break;
 
-		case Si2binTokenSsrc0:
+		case TokenSsrc0:
 		{
 			int value;
 
-			if (arg->type == Si2binArgLiteral)
+			if (arg->type == ArgTypeLiteral)
 			{
 				/* Literal constant other than [-16...64] is encoded by adding
 				 * four more bits to the instruction. */
 				if (self->size == 8)
 					si2bin_yyerror("only one literal allowed");
 				self->size = 8;
-				inst_bytes->sop2.ssrc0 = 0xff;
-				inst_bytes->sop2.lit_cnst = arg->value.literal.val;
+				bytes.sop2.ssrc0 = 0xff;
+				bytes.sop2.lit_cnst = arg->value.literal.val;
 			}
 			else
 			{
-				value = Si2binArgEncodeOperand(arg);
+				value = ArgTypeEncodeOperand(arg);
 				if (!IN_RANGE(value, 0, 255))
 					si2bin_yyerror("invalid argument type");
-				inst_bytes->sop2.ssrc0 = value;
+				bytes.sop2.ssrc0 = value;
 			}
 			break;
 		}
 
-		case Si2binTokenSsrc1:
+		case TokenSsrc1:
 		{
 			int value;
 
-			if (arg->type == Si2binArgLiteral)
+			if (arg->type == ArgTypeLiteral)
 			{
 				/* Literal constant other than [-16...64] is encoded by adding
 				 * four more bits to the instruction. */
 				if (self->size == 8)
 					si2bin_yyerror("only one literal allowed");
 				self->size = 8;
-				inst_bytes->sop2.ssrc1 = 0xff;
-				inst_bytes->sop2.lit_cnst = arg->value.literal.val;
+				bytes.sop2.ssrc1 = 0xff;
+				bytes.sop2.lit_cnst = arg->value.literal.val;
 			}
 			else
 			{
-				value = Si2binArgEncodeOperand(arg);
+				value = ArgTypeEncodeOperand(arg);
 				if (!IN_RANGE(value, 0, 255))
 					si2bin_yyerror("invalid argument type");
-				inst_bytes->sop2.ssrc1 = value;
+				bytes.sop2.ssrc1 = value;
 			}
 			break;
 		}
 
-		case Si2binTokenVaddr:
+		case TokenVaddr:
 
 			switch (arg->type)
 			{
 
-			case Si2binArgVectorRegister:
+			case ArgTypeVectorRegister:
 
-				inst_bytes->mtbuf.vaddr = arg->value.vector_register.id;
+				bytes.mtbuf.vaddr = arg->value.vector_register.id;
 				break;
 			
-			case Si2binArgVectorRegisterSeries:
+			case ArgTypeVectorRegisterSeries:
 				/* High register must be low plus 1 */
 				if (arg->value.vector_register_series.high !=
 						arg->value.vector_register_series.low + 1)
 					si2bin_yyerror("register series must be v[x:x+1]");
 				
-				inst_bytes->mtbuf.vaddr = 
+				bytes.mtbuf.vaddr =
 					arg->value.vector_register_series.low;
 
 				/* FIXME - Find way to verify that idxen and offen are set */
@@ -865,40 +751,40 @@ void Si2binInstGenerate(Si2binInst *self)
 			}
 			break;
 
-		case Si2binTokenVcc:
+		case TokenVcc:
 
 			/* Not encoded */
 			break;
 
-		case Si2binTokenSvdst:
+		case TokenSvdst:
 
 			/* Check for scalar register */
-			assert(arg->type == Si2binArgScalarRegister);
+			assert(arg->type == ArgTypeScalarRegister);
 			
 			/* Encode */
-			inst_bytes->vop1.vdst = Si2binArgEncodeOperand(arg);
+			bytes.vop1.vdst = ArgTypeEncodeOperand(arg);
 			break;
 
-		case Si2binTokenVdst:
+		case TokenVdst:
 
 			/* Encode */
-			inst_bytes->vop1.vdst = arg->value.vector_register.id;
+			bytes.vop1.vdst = arg->value.vector_register.id;
 			break;
 		
-		case Si2binToken64Src0:
+		case Token64Src0:
 		{
 			int low;
 			int high;
 
 			/* Check argument type */
-			if (arg->type == Si2binArgScalarRegisterSeries)
+			if (arg->type == ArgTypeScalarRegisterSeries)
 			{
 				low = arg->value.scalar_register_series.low;
 				high = arg->value.scalar_register_series.high;
 				if (high != low + 1)
 					si2bin_yyerror("register series must be s[low:low+1]");
 			}
-			else if (arg->type == Si2binArgVectorRegisterSeries)
+			else if (arg->type == ArgTypeVectorRegisterSeries)
 			{
 				low = arg->value.vector_register_series.low;
 				high = arg->value.vector_register_series.high;
@@ -907,17 +793,17 @@ void Si2binInstGenerate(Si2binInst *self)
 			}
 
 			/* Encode */
-			inst_bytes->vop1.src0 = Si2binArgEncodeOperand(arg);
+			bytes.vop1.src0 = ArgTypeEncodeOperand(arg);
 			break;
 		}
 	
-		case Si2binToken64Vdst:
+		case Token64Vdst:
 		{
 			int low;
 			int high;
 
 			/* Check argument type */
-			if (arg->type == Si2binArgVectorRegisterSeries)
+			if (arg->type == ArgTypeVectorRegisterSeries)
 			{
 				low = arg->value.vector_register_series.low;
 				high = arg->value.vector_register_series.high;
@@ -926,16 +812,16 @@ void Si2binInstGenerate(Si2binInst *self)
 			}
 			
 			/* Encode */
-			inst_bytes->vop1.vdst = arg->value.vector_register_series.low;
+			bytes.vop1.vdst = arg->value.vector_register_series.low;
 			break;
 		}
-		case Si2binTokenVop364Svdst:
+		case TokenVop364Svdst:
 		{
 			int low;
 			int high;
 
 			/* If operand is a scalar register series, check range */
-			if (arg->type == Si2binArgScalarRegisterSeries)
+			if (arg->type == ArgTypeScalarRegisterSeries)
 			{
 				low = arg->value.scalar_register_series.low;
 				high = arg->value.scalar_register_series.high;
@@ -944,52 +830,52 @@ void Si2binInstGenerate(Si2binInst *self)
 			}
 
 			/* Encode */
-			inst_bytes->vop3a.vdst = Si2binArgEncodeOperand(arg);
+			bytes.vop3a.vdst = ArgTypeEncodeOperand(arg);
 			break;
 		}
 
-		case Si2binTokenVop3Src0:
+		case TokenVop3Src0:
 
-			inst_bytes->vop3a.src0 = Si2binArgEncodeOperand(arg);
+			bytes.vop3a.src0 = ArgTypeEncodeOperand(arg);
 			if (arg->abs)
-				inst_bytes->vop3a.abs |= 0x1;
+				bytes.vop3a.abs |= 0x1;
 			if (arg->neg)
-				inst_bytes->vop3a.neg |= 0x1;
+				bytes.vop3a.neg |= 0x1;
 			break;
 
-		case Si2binTokenVop3Src1:
+		case TokenVop3Src1:
 
-			inst_bytes->vop3a.src1 = Si2binArgEncodeOperand(arg);
+			bytes.vop3a.src1 = ArgTypeEncodeOperand(arg);
 			if (arg->abs)
-				inst_bytes->vop3a.abs |= 0x2;
+				bytes.vop3a.abs |= 0x2;
 			if (arg->neg)
-				inst_bytes->vop3a.neg |= 0x2;
+				bytes.vop3a.neg |= 0x2;
 			break;
 
-		case Si2binTokenVop3Src2:
+		case TokenVop3Src2:
 
-			inst_bytes->vop3a.src2 = Si2binArgEncodeOperand(arg);
+			bytes.vop3a.src2 = ArgTypeEncodeOperand(arg);
 			if (arg->abs)
-				inst_bytes->vop3a.abs |= 0x4;
+				bytes.vop3a.abs |= 0x4;
 			if (arg->neg)
-				inst_bytes->vop3a.neg |= 0x4;
+				bytes.vop3a.neg |= 0x4;
 			break;
 
-		case Si2binTokenVop364Src0:
+		case TokenVop364Src0:
 		{
 			
 			int low;
 			int high;
 
 			/* If operand is a scalar register series, check range */
-			if (arg->type == Si2binArgScalarRegisterSeries)
+			if (arg->type == ArgTypeScalarRegisterSeries)
 			{
 				low = arg->value.scalar_register_series.low;
 				high = arg->value.scalar_register_series.high;
 				if (high != low + 1)
 					si2bin_yyerror("register series must be s[low:low+1]");
 			}
-			else if (arg->type == Si2binArgVectorRegisterSeries)
+			else if (arg->type == ArgTypeVectorRegisterSeries)
 			{
 				low = arg->value.vector_register_series.low;
 				high = arg->value.vector_register_series.high;
@@ -998,28 +884,28 @@ void Si2binInstGenerate(Si2binInst *self)
 			}
 
 			/* Encode */
-			inst_bytes->vop3a.src0 = Si2binArgEncodeOperand(arg);
+			bytes.vop3a.src0 = ArgTypeEncodeOperand(arg);
 			
 			if (arg->abs)
-				inst_bytes->vop3a.abs |= 0x1;
+				bytes.vop3a.abs |= 0x1;
 			if (arg->neg)
-				inst_bytes->vop3a.neg |= 0x1;
+				bytes.vop3a.neg |= 0x1;
 			break;
 		}
-		case Si2binTokenVop364Src1:
+		case TokenVop364Src1:
 		{	
 			int low;
 			int high;
 
 			/* If operand is a scalar register series, check range */
-			if (arg->type == Si2binArgScalarRegisterSeries)
+			if (arg->type == ArgTypeScalarRegisterSeries)
 			{
 				low = arg->value.scalar_register_series.low;
 				high = arg->value.scalar_register_series.high;
 				if (high != low + 1)
 					si2bin_yyerror("register series must be s[low:low+1]");
 			}
-			else if (arg->type == Si2binArgVectorRegisterSeries)
+			else if (arg->type == ArgTypeVectorRegisterSeries)
 			{
 				low = arg->value.vector_register_series.low;
 				high = arg->value.vector_register_series.high;
@@ -1028,28 +914,28 @@ void Si2binInstGenerate(Si2binInst *self)
 			}
 
 			/* Encode */
-			inst_bytes->vop3a.src1 = Si2binArgEncodeOperand(arg);
+			bytes.vop3a.src1 = ArgTypeEncodeOperand(arg);
 			
 			if (arg->abs)
-				inst_bytes->vop3a.abs |= 0x2;
+				bytes.vop3a.abs |= 0x2;
 			if (arg->neg)
-				inst_bytes->vop3a.neg |= 0x2;
+				bytes.vop3a.neg |= 0x2;
 			break;
 		}
-		case Si2binTokenVop364Src2:
+		case TokenVop364Src2:
 		{
 			int low;
 			int high;
 
 			/* If operand is a scalar register series, check range */
-			if (arg->type == Si2binArgScalarRegisterSeries)
+			if (arg->type == ArgTypeScalarRegisterSeries)
 			{
 				low = arg->value.scalar_register_series.low;
 				high = arg->value.scalar_register_series.high;
 				if (high != low + 1)
 					si2bin_yyerror("register series must be s[low:low+1]");
 			}
-			else if (arg->type == Si2binArgVectorRegisterSeries)
+			else if (arg->type == ArgTypeVectorRegisterSeries)
 			{
 				low = arg->value.vector_register_series.low;
 				high = arg->value.vector_register_series.high;
@@ -1058,35 +944,35 @@ void Si2binInstGenerate(Si2binInst *self)
 			}
 
 			/* Encode */
-			inst_bytes->vop3a.src2 = Si2binArgEncodeOperand(arg);
+			bytes.vop3a.src2 = ArgTypeEncodeOperand(arg);
 			
 			if (arg->abs)
-				inst_bytes->vop3a.abs |= 0x4;
+				bytes.vop3a.abs |= 0x4;
 			if (arg->neg)
-				inst_bytes->vop3a.neg |= 0x4;
+				bytes.vop3a.neg |= 0x4;
 			break;
 		}
 		
-		case Si2binTokenVop364Sdst:
+		case TokenVop364Sdst:
 			
 			/* Encode */
-			inst_bytes->vop3b.sdst = Si2binArgEncodeOperand(arg);
+			bytes.vop3b.sdst = ArgTypeEncodeOperand(arg);
 			
 			break;
 
-		case Si2binTokenVop3Vdst:
+		case TokenVop3Vdst:
 			
 			/* Encode */
-			inst_bytes->vop3a.vdst = arg->value.vector_register.id;
+			bytes.vop3a.vdst = arg->value.vector_register.id;
 			break;
 
-		case Si2binTokenVop364Vdst:
+		case TokenVop364Vdst:
 		{
 			int low;
 			int high;
 
 			/* Check argument type */
-			if (arg->type == Si2binArgVectorRegisterSeries)
+			if (arg->type == ArgTypeVectorRegisterSeries)
 			{
 				low = arg->value.vector_register_series.low;
 				high = arg->value.vector_register_series.high;
@@ -1095,32 +981,32 @@ void Si2binInstGenerate(Si2binInst *self)
 			}
 			
 			/* Encode */
-			inst_bytes->vop3a.vdst = arg->value.vector_register_series.low;
+			bytes.vop3a.vdst = arg->value.vector_register_series.low;
 			break;
 		}
 
-		case Si2binTokenVsrc1:
+		case TokenVsrc1:
 
 			/* Make sure argument is a vector register */
-			assert(arg->type == Si2binArgVectorRegister);
+			assert(arg->type == ArgTypeVectorRegister);
 
 			/* Encode */
-			inst_bytes->vopc.vsrc1 = arg->value.vector_register.id;
+			bytes.vopc.vsrc1 = arg->value.vector_register.id;
 			
 			break;
 
-		case Si2binTokenWaitCnt:
+		case TokenWaitCnt:
 			/* vmcnt(x) */
 			if (arg->value.wait_cnt.vmcnt_active)
 			{
 				if (!IN_RANGE(arg->value.wait_cnt.vmcnt_value, 0, 0xe))
 					si2bin_yyerror("invalid value for vmcnt");
-				inst_bytes->sopp.simm16 = SET_BITS_32(inst_bytes->sopp.simm16,
+				bytes.sopp.simm16 = SET_BITS_32(bytes.sopp.simm16,
 						3, 0, arg->value.wait_cnt.vmcnt_value);
 			}
 			else
 			{
-				inst_bytes->sopp.simm16 = SET_BITS_32(inst_bytes->sopp.simm16,
+				bytes.sopp.simm16 = SET_BITS_32(bytes.sopp.simm16,
 						3, 0, 0xf);
 			}
 
@@ -1129,12 +1015,12 @@ void Si2binInstGenerate(Si2binInst *self)
 			{
 				if (!IN_RANGE(arg->value.wait_cnt.lgkmcnt_value, 0, 0x1e))
 					si2bin_yyerror("invalid value for lgkmcnt");
-				inst_bytes->sopp.simm16 = SET_BITS_32(inst_bytes->sopp.simm16,
+				bytes.sopp.simm16 = SET_BITS_32(bytes.sopp.simm16,
 						12, 8, arg->value.wait_cnt.lgkmcnt_value);
 			}
 			else
 			{
-				inst_bytes->sopp.simm16 = SET_BITS_32(inst_bytes->sopp.simm16,
+				bytes.sopp.simm16 = SET_BITS_32(bytes.sopp.simm16,
 						12, 8, 0x1f);
 			}
 
@@ -1143,54 +1029,87 @@ void Si2binInstGenerate(Si2binInst *self)
 			{
 				if (!IN_RANGE(arg->value.wait_cnt.expcnt_value, 0, 0x6))
 					si2bin_yyerror("invalid value for expcnt");
-				inst_bytes->sopp.simm16 = SET_BITS_32(inst_bytes->sopp.simm16,
+				bytes.sopp.simm16 = SET_BITS_32(bytes.sopp.simm16,
 						6, 4, arg->value.wait_cnt.expcnt_value);
 			}
 			else
 			{
-				inst_bytes->sopp.simm16 = SET_BITS_32(inst_bytes->sopp.simm16,
+				bytes.sopp.simm16 = SET_BITS_32(bytes.sopp.simm16,
 						6, 4, 0x7);
 			}
 			break;
 
-		case Si2binTokenAddr:
+		case TokenAddr:
 			
 			/* Make sure argument is a vector register */
-			assert(arg->type == Si2binArgVectorRegister);
+			assert(arg->type == ArgTypeVectorRegister);
 			
 			/* Encode */
-			inst_bytes->ds.addr = arg->value.vector_register.id;
+			bytes.ds.addr = arg->value.vector_register.id;
 			break;
 
-		case Si2binTokenData0:
+		case TokenData0:
 
 			/* Make sure argument is a vector register */
-			assert(arg->type == Si2binArgVectorRegister);
+			assert(arg->type == ArgTypeVectorRegister);
 
 			/* Encode */
-			inst_bytes->ds.data0 = arg->value.vector_register.id;
+			bytes.ds.data0 = arg->value.vector_register.id;
 			break;
 
-		case Si2binTokenDsVdst:
+		case TokenDsVdst:
 
 			/* Make sure argument is a vector register */
-			assert(arg->type == Si2binArgVectorRegister);
+			assert(arg->type == ArgTypeVectorRegister);
 
 			/* Encode */
-			inst_bytes->ds.vdst = arg->value.vector_register.id;
+			bytes.ds.vdst = arg->value.vector_register.id;
 			break;
 		
-		
+		case TokenLabel:
+		{
+			Si2binSymbol *symbol;
+			Si2binTask *task;
+
+			/* Search symbol in symbol table */
+			assert(arg->type == ArgTypeLabel);
+			symbol = asSi2binSymbol(HashTableGetString(si2bin->symbol_table,
+					arg->value.label.name));
+
+			/* Create symbol if it doesn't exist */
+			if (!symbol)
+			{
+				symbol = new(Si2binSymbol, arg->value.label.name);
+				HashTableInsert(si2bin->symbol_table, asObject(symbol->name),
+						asObject(symbol));
+			}
+
+			/* If symbol is defined, resolve label right away. Otherwise,
+			 * program a deferred task to resolve it. */
+			if (symbol->defined)
+			{
+				bytes.sopp.simm16 = (symbol->value -
+						si2bin_entry->text_section_buffer
+						->offset) / 4 - 1;
+			}
+			else
+			{
+				task = new(Si2binTask, si2bin_entry->text_section_buffer
+						->offset, symbol);
+				ListAdd(si2bin->task_list, asObject(task));
+			}
+			break;
+		}
+#endif
+
 		default:
-			si2bin_yyerror_fmt("unsupported token for argument %d",
-				index + 1);
+			fatal("unsupported token for argument %d",
+					arg->index + 1);
 		}
 
 		/* Next */
-		ListNext(info->token_list);
-		index++;
+		++token_iterator;
 	}
 }
-#endif
 
 }  /* namespace si2bin */

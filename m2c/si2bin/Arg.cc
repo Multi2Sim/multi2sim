@@ -357,7 +357,7 @@ int ArgMemRegister::Encode()
  * Class 'ArgMaddr'
  */
 
-ArgMaddr::ArgMaddr(Arg *soffset, Arg *qual,
+ArgMaddr::ArgMaddr(Arg *soffset, ArgMaddrQual *qual,
 		SI::InstBufDataFormat data_format,
 		SI::InstBufNumFormat num_format)
 {

@@ -257,30 +257,6 @@ public:
 };
 
 
-class ArgMaddr : public Arg
-{
-	/* Sub-argument of type ArgVector, ArgScalar, ArgLiteral,
-	 * ArgLiteralReduced, ArgLiteralFloat, ArgLiteralFloatReduced. */
-	std::unique_ptr<Arg> soffset;
-
-	/* Sub-argument of type ArgMaddrQual (memory address qualifier) */
-	std::unique_ptr<Arg> qual;
-
-	SI::InstBufDataFormat data_format;
-	SI::InstBufNumFormat num_format;
-public:
-	ArgMaddr(Arg *soffset, Arg *qual, SI::InstBufDataFormat data_format,
-			SI::InstBufNumFormat num_format);
-	
-	void Dump(std::ostream &os);
-	
-	Arg *GetSoffset() { return soffset.get(); }
-	Arg *GetQual() { return qual.get(); }
-	SI::InstBufDataFormat GetDataFormat() { return data_format; }
-	SI::InstBufNumFormat GetNumFormat() { return num_format; }
-};
-
-
 class ArgMaddrQual : public Arg
 {
 	bool offen;
@@ -288,12 +264,37 @@ class ArgMaddrQual : public Arg
 	int offset;
 public:
 	ArgMaddrQual(bool offen, bool idxen, int offset);
-	
+
 	void Dump(std::ostream &os);
-	
+
 	bool GetOffen() { return offen; }
 	bool GetIdxen() { return idxen; }
 	int GetOffset() { return offset; }
+};
+
+
+class ArgMaddr : public Arg
+{
+	/* Sub-argument of type ArgVector, ArgScalar, ArgLiteral,
+	 * ArgLiteralReduced, ArgLiteralFloat, ArgLiteralFloatReduced. */
+	std::unique_ptr<Arg> soffset;
+
+	/* Sub-argument of type ArgMaddrQual (memory address qualifier) */
+	std::unique_ptr<ArgMaddrQual> qual;
+
+	SI::InstBufDataFormat data_format;
+	SI::InstBufNumFormat num_format;
+public:
+	ArgMaddr(Arg *soffset, ArgMaddrQual *qual,
+			SI::InstBufDataFormat data_format,
+			SI::InstBufNumFormat num_format);
+	
+	void Dump(std::ostream &os);
+	
+	Arg *GetSoffset() { return soffset.get(); }
+	ArgMaddrQual *GetQual() { return qual.get(); }
+	SI::InstBufDataFormat GetDataFormat() { return data_format; }
+	SI::InstBufNumFormat GetNumFormat() { return num_format; }
 };
 
 

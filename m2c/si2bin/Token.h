@@ -127,6 +127,7 @@ public:
 	Token(TokenType type);
 
 	/* Getters */
+	TokenType GetType() { return type; }
 	TokenDirection GetDirection() { return direction; }
 
 	/* Return true if this token accepts the Southern Islands argument
