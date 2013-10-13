@@ -516,14 +516,14 @@ void Inst::Encode()
 			break;
 		}
 
-#if 0
 		case TokenOffset:
-
+		{
 			/* Depends of argument type */
 			switch (arg->type)
 			{
 
 			case ArgTypeLiteral:
+			case ArgTypeLiteralReduced:
 			{
 				ArgLiteral *literal = dynamic_cast
 						<ArgLiteral *>(arg);
@@ -536,47 +536,48 @@ void Inst::Encode()
 				/* FIXME - check valid range of literal */
 				break;
 			}
-
-			case ArgTypeLiteralReduced:
-				
-				bytes.smrd.imm = 1;
-				bytes.smrd.offset = arg->value.literal.val;
-				break;
-			
 			case ArgTypeScalarRegister:
-
-				bytes.smrd.offset = arg->value.scalar_register.id;
+			{
+				ArgScalarRegister *sr = dynamic_cast
+						<ArgScalarRegister *>(arg);
+				assert(sr);
+				bytes.smrd.offset = sr->GetId();
 				break;
-
+			}
 			default:
-				panic("%s: invalid argument type for token 'offset'",
+				panic("%s: invalid argument type for TokenOffset",
 					__FUNCTION__);
 			}
 			break;
+		}
 
 		case TokenSdst:
-
+		{
 			/* Encode */
-			bytes.sop2.sdst = ArgTypeEncodeOperand(arg);
+			bytes.sop2.sdst = arg->Encode();
 			break;
+		}
 
 		case TokenSeriesSbase:
+		{
 
 			/* Check that low register is multiple of 2 */
-			if (arg->value.scalar_register_series.low % 2)
-				si2bin_yyerror("base register must be multiple of 2");
+			ArgScalarRegisterSeries *srs = dynamic_cast
+					<ArgScalarRegisterSeries *>(arg);
+			assert(srs);
+			if (srs->GetLow() % 2)
+				fatal("base register must be multiple of 2");
 
 			/* Restrictions for high register */
-			switch (info->info->opcode)
+			switch (opcode)
 			{
 
 			case SI_INST_S_LOAD_DWORDX2:
 			case SI_INST_S_LOAD_DWORDX4:
 
 				/* High register must be low plus 1 */
-				if (arg->value.scalar_register_series.high !=
-						arg->value.scalar_register_series.low + 1)
-					si2bin_yyerror("register series must be s[x:x+1]");
+				if (srs->GetHigh() != srs->GetLow() + 1)
+					fatal("register series must be s[x:x+1]");
 				break;
 
 			case SI_INST_S_BUFFER_LOAD_DWORD:
@@ -584,66 +585,74 @@ void Inst::Encode()
 			case SI_INST_S_BUFFER_LOAD_DWORDX4:
 
 				/* High register must be low plus 3 */
-				if (arg->value.scalar_register_series.high !=
-						arg->value.scalar_register_series.low + 3)
-					si2bin_yyerror("register series must be s[x:x+3]");
+				if (srs->GetHigh() != srs->GetLow() + 3)
+					fatal("register series must be s[x:x+3]");
 				break;
 
 			default:
-				si2bin_yyerror_fmt("%s: unsupported opcode for 'series_sbase' token: %s",
-						__FUNCTION__, info->name->text);
+				fatal("%s: unsupported opcode for TokenSeriesSbase: %s",
+						__FUNCTION__, info->name.c_str());
 			}
 
 			/* Encode */
-			bytes.smrd.sbase = arg->value.scalar_register_series.low / 2;
+			bytes.smrd.sbase = srs->GetLow() / 2;
 			break;
+		}
 
 		case TokenSeriesSdst:
+		{
+			/* Get argument */
+			ArgScalarRegisterSeries *srs = dynamic_cast
+					<ArgScalarRegisterSeries *>(arg);
+			assert(srs);
 
 			/* Restrictions for high register */
-			switch (info->info->opcode)
+			switch (opcode)
 			{
 
 			case SI_INST_S_LOAD_DWORDX2:
 			case SI_INST_S_BUFFER_LOAD_DWORDX2:
 
 				/* High register must be low plus 1 */
-				if (arg->value.scalar_register_series.high !=
-						arg->value.scalar_register_series.low + 1)
-					si2bin_yyerror("register series must be s[low:low+1]");
+				if (srs->GetHigh() != srs->GetLow() + 1)
+					fatal("register series must be s[low:low+1]");
 				break;
 
 			case SI_INST_S_LOAD_DWORDX4:
 			case SI_INST_S_BUFFER_LOAD_DWORDX4:
 
 				/* High register must be low plus 3 */
-				if (arg->value.scalar_register_series.high !=
-						arg->value.scalar_register_series.low + 3)
-					si2bin_yyerror("register series must be s[low:low+3]");
+				if (srs->GetHigh() != srs->GetLow() + 3)
+					fatal("register series must be s[low:low+3]");
 				break;
 
 			default:
-				si2bin_yyerror_fmt("%s: unsupported opcode for 'series_sdst' token: %s",
-						__FUNCTION__, info->name->text);
+				fatal("%s: unsupported opcode for 'series_sdst' token: %s",
+						__FUNCTION__, info->name.c_str());
 			}
 
 			/* Encode */
-			bytes.smrd.sdst = arg->value.scalar_register_series.low;
+			bytes.smrd.sdst = srs->GetLow();
 			break;
+		}
 
 		case TokenSeriesSrsrc:
 		{
-			int low = arg->value.scalar_register_series.low;
-			int high = arg->value.scalar_register_series.high;
+			/* Get argument */
+			ArgScalarRegisterSeries *srs = dynamic_cast
+					<ArgScalarRegisterSeries *>(arg);
+			assert(srs);
+			int low = srs->GetLow();
+			int high = srs->GetHigh();
 
 			/* Base register must be multiple of 4 */
 			if (low % 4)
-				si2bin_yyerror_fmt("low register must be multiple of 4 in s[%d:%d]",
+				fatal("low register must be multiple of 4 in s[%d:%d]",
 						low, high);
 
 			/* High register must be low + 3 */
 			if (high != low + 3)
-				si2bin_yyerror_fmt("register series must span 4 registers in s[%d:%d]",
+				fatal("register series must span 4 registers in s[%d:%d]",
 						low, high);
 
 			/* Encode */
@@ -652,48 +661,58 @@ void Inst::Encode()
 		}
 
 		case TokenSmrdSdst:
-
+		{
 			/* Encode */
-			bytes.smrd.sdst = arg->value.scalar_register.id;
+			ArgScalarRegister *sr = dynamic_cast<ArgScalarRegister *>(arg);
+			assert(sr);
+			bytes.smrd.sdst = sr->GetId();
 			break;
+		}
 
 		case TokenSrc0:
-
+		{
 			if (arg->type == ArgTypeLiteral)
 			{
 				/* Literal constant other than [-16...64] is encoded by adding
 				 * four more bits to the instruction. */
-				if (self->size == 8)
-					si2bin_yyerror("only one literal allowed");
-				self->size = 8;
+				if (size == 8)
+					fatal("only one literal allowed");
+				size = 8;
+
+				/* Set literal */
+				ArgLiteral *literal = dynamic_cast<ArgLiteral *>(arg);
+				assert(literal);
 				bytes.vopc.src0 = 0xff;
-				bytes.vopc.lit_cnst = arg->value.literal.val;
+				bytes.vopc.lit_cnst = literal->GetValue();
 			}
 			else
 			{
-				bytes.vopc.src0 = ArgTypeEncodeOperand(arg);
+				bytes.vopc.src0 = arg->Encode();
 			}
 			break;
+		}
 
 		case TokenSsrc0:
 		{
-			int value;
-
 			if (arg->type == ArgTypeLiteral)
 			{
 				/* Literal constant other than [-16...64] is encoded by adding
 				 * four more bits to the instruction. */
-				if (self->size == 8)
-					si2bin_yyerror("only one literal allowed");
-				self->size = 8;
+				if (size == 8)
+					fatal("only one literal allowed");
+				size = 8;
+
+				/* Set literal */
+				ArgLiteral *literal = dynamic_cast<ArgLiteral *>(arg);
+				assert(literal);
 				bytes.sop2.ssrc0 = 0xff;
-				bytes.sop2.lit_cnst = arg->value.literal.val;
+				bytes.sop2.lit_cnst = literal->GetValue();
 			}
 			else
 			{
-				value = ArgTypeEncodeOperand(arg);
-				if (!IN_RANGE(value, 0, 255))
-					si2bin_yyerror("invalid argument type");
+				int value = arg->Encode();
+				if (!InRange(value, 0, 255))
+					fatal("invalid argument type");
 				bytes.sop2.ssrc0 = value;
 			}
 			break;
@@ -701,75 +720,83 @@ void Inst::Encode()
 
 		case TokenSsrc1:
 		{
-			int value;
-
 			if (arg->type == ArgTypeLiteral)
 			{
 				/* Literal constant other than [-16...64] is encoded by adding
 				 * four more bits to the instruction. */
-				if (self->size == 8)
-					si2bin_yyerror("only one literal allowed");
-				self->size = 8;
+				if (size == 8)
+					fatal("only one literal allowed");
+				size = 8;
+				
+				/* Set literal */
+				ArgLiteral *literal = dynamic_cast<ArgLiteral *>(arg);
+				assert(literal);
 				bytes.sop2.ssrc1 = 0xff;
-				bytes.sop2.lit_cnst = arg->value.literal.val;
+				bytes.sop2.lit_cnst = literal->GetValue();
 			}
 			else
 			{
-				value = ArgTypeEncodeOperand(arg);
-				if (!IN_RANGE(value, 0, 255))
-					si2bin_yyerror("invalid argument type");
+				int value = arg->Encode();
+				if (!InRange(value, 0, 255))
+					fatal("invalid argument type");
 				bytes.sop2.ssrc1 = value;
 			}
 			break;
 		}
 
 		case TokenVaddr:
-
+		{
 			switch (arg->type)
 			{
 
 			case ArgTypeVectorRegister:
-
-				bytes.mtbuf.vaddr = arg->value.vector_register.id;
+			{
+				ArgVectorRegister *vr = dynamic_cast<ArgVectorRegister *>(arg);
+				assert(vr);
+				bytes.mtbuf.vaddr = vr->GetId();
 				break;
+			}
 			
 			case ArgTypeVectorRegisterSeries:
+			{
 				/* High register must be low plus 1 */
-				if (arg->value.vector_register_series.high !=
-						arg->value.vector_register_series.low + 1)
-					si2bin_yyerror("register series must be v[x:x+1]");
+				ArgVectorRegisterSeries *vrs = dynamic_cast
+						<ArgVectorRegisterSeries *>(arg);
+				if (vrs->GetHigh() != vrs->GetLow() + 1)
+					fatal("register series must be v[x:x+1]");
 				
-				bytes.mtbuf.vaddr =
-					arg->value.vector_register_series.low;
-
+				bytes.mtbuf.vaddr = vrs->GetLow();
 				/* FIXME - Find way to verify that idxen and offen are set */
 				break;
+			}
 
 			default:
-				si2bin_yyerror_fmt("%s: invalid argument type for token 'vaddr'",
+				fatal("%s: invalid argument type for TokenVaddr",
 					__FUNCTION__);
 			}
 			break;
+		}
 
 		case TokenVcc:
-
+		{
 			/* Not encoded */
 			break;
+		}
 
 		case TokenSvdst:
-
-			/* Check for scalar register */
+		{
 			assert(arg->type == ArgTypeScalarRegister);
-			
-			/* Encode */
-			bytes.vop1.vdst = ArgTypeEncodeOperand(arg);
+			bytes.vop1.vdst = arg->Encode();
 			break;
+		}
 
 		case TokenVdst:
-
-			/* Encode */
-			bytes.vop1.vdst = arg->value.vector_register.id;
+		{
+			ArgVectorRegister *vr = dynamic_cast<ArgVectorRegister *>(arg);
+			assert(vr);
+			bytes.vop1.vdst = vr->GetId();
 			break;
+		}
 		
 		case Token64Src0:
 		{
@@ -777,63 +804,74 @@ void Inst::Encode()
 			int high;
 
 			/* Check argument type */
-			if (arg->type == ArgTypeScalarRegisterSeries)
+			switch (arg->type)
 			{
-				low = arg->value.scalar_register_series.low;
-				high = arg->value.scalar_register_series.high;
+
+			case ArgTypeScalarRegisterSeries:
+			{
+				ArgScalarRegisterSeries *srs = dynamic_cast
+						<ArgScalarRegisterSeries *>(arg);
+				assert(srs);
+				low = srs->GetLow();
+				high = srs->GetHigh();
 				if (high != low + 1)
-					si2bin_yyerror("register series must be s[low:low+1]");
+					fatal("register series must be s[low:low+1]");
+				break;
 			}
-			else if (arg->type == ArgTypeVectorRegisterSeries)
+
+			case ArgTypeVectorRegisterSeries:
 			{
-				low = arg->value.vector_register_series.low;
-				high = arg->value.vector_register_series.high;
+				ArgVectorRegisterSeries *vrs = dynamic_cast
+						<ArgVectorRegisterSeries *>(arg);
+				assert(vrs);
+				low = vrs->GetLow();
+				high = vrs->GetHigh();
 				if (high != low + 1)
-					si2bin_yyerror("register series must be v[low:low+1]");
+					fatal("register series must be v[low:low+1]");
+				break;
+			}
+
+			default:
+				panic("%s: invalid argument type for Token64Src0",
+						__FUNCTION__);
 			}
 
 			/* Encode */
-			bytes.vop1.src0 = ArgTypeEncodeOperand(arg);
+			bytes.vop1.src0 = arg->Encode();
 			break;
 		}
 	
 		case Token64Vdst:
 		{
-			int low;
-			int high;
-
-			/* Check argument type */
-			if (arg->type == ArgTypeVectorRegisterSeries)
-			{
-				low = arg->value.vector_register_series.low;
-				high = arg->value.vector_register_series.high;
-				if (high != low + 1)
-					si2bin_yyerror("register series must be v[low:low+1]");
-			}
+			ArgVectorRegisterSeries *vrs = dynamic_cast
+					<ArgVectorRegisterSeries *>(arg);
+			assert(vrs);
+			int low = vrs->GetLow();
+			int high = vrs->GetHigh();
+			if (high != low + 1)
+				fatal("register series must be v[low:low+1]");
 			
 			/* Encode */
-			bytes.vop1.vdst = arg->value.vector_register_series.low;
+			bytes.vop1.vdst = low;
 			break;
 		}
 		case TokenVop364Svdst:
 		{
-			int low;
-			int high;
-
 			/* If operand is a scalar register series, check range */
 			if (arg->type == ArgTypeScalarRegisterSeries)
 			{
-				low = arg->value.scalar_register_series.low;
-				high = arg->value.scalar_register_series.high;
-				if (high != low + 1)
-					si2bin_yyerror("register series must be s[low:low+1]");
+				ArgScalarRegisterSeries *srs = dynamic_cast
+						<ArgScalarRegisterSeries *>(arg);
+				assert(srs);
+				if (srs->GetHigh() != srs->GetLow() + 1)
+					fatal("register series must be s[low:low+1]");
 			}
 
 			/* Encode */
-			bytes.vop3a.vdst = ArgTypeEncodeOperand(arg);
+			bytes.vop3a.vdst = arg->Encode();
 			break;
 		}
-
+#if 0
 		case TokenVop3Src0:
 
 			bytes.vop3a.src0 = ArgTypeEncodeOperand(arg);
