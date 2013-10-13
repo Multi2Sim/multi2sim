@@ -53,12 +53,17 @@ struct InstInfo
 
 class Inst
 {
-	/* Instruction opcode. This field should match the conent of
+	/* Instruction opcode. This field should match the content of
 	 * info->info->opcode. */
 	SI::InstOpcode opcode;
 
-	/* Instruction size in bytes (4 or 8) */
+	/* Instruction size in bytes (4 or 8). This value is produced after a
+	 * call to Inst::Encode() */
 	int size;
+
+	/* Instruction bytes. This value is produced after a call to
+	 * Inst::Encode(). */
+	SI::InstBytes bytes;
 
 	/* Invariable information related with this instruction */
 	InstInfo *info;
@@ -96,8 +101,9 @@ public:
 	/* Attach a comment to the instruction */
 	void SetComment(const std::string &comment) { this->comment = comment; }
 
-	/* Encode the instruction. A call to Inst::Write() can be performed
-	 * after this to dump the instructions bytes. */
+	/* Encode the instruction, internally populating the 'bytes' and 'size'
+	 * fields. A call to Inst::Write() can be performed after this to dump
+	 * the instructions bytes. */
 	void Encode();
 
 	/* Write the instruction bytes into output stream. */
