@@ -221,13 +221,37 @@ void SIWorkGroupCreate(SIWorkGroup *self, unsigned int id, SINDRange *ndrange)
 		/* Set PC */
 		wavefront->pc = 0;
 
-		/* Save work-group IDs in scalar registers */
-		wavefront->sreg[ndrange->wg_id_sgpr].as_int =
-			wavefront->work_group->id_3d[0];
-		wavefront->sreg[ndrange->wg_id_sgpr + 1].as_int =
-			wavefront->work_group->id_3d[1];
-		wavefront->sreg[ndrange->wg_id_sgpr + 2].as_int =
-			wavefront->work_group->id_3d[2];
+		switch(self->ndrange->stage)
+		{
+
+			case STAGE_CL:
+			{
+				/* Save work-group IDs in scalar registers */
+				wavefront->sreg[ndrange->wg_id_sgpr].as_int =
+					wavefront->work_group->id_3d[0];
+				wavefront->sreg[ndrange->wg_id_sgpr + 1].as_int =
+					wavefront->work_group->id_3d[1];
+				wavefront->sreg[ndrange->wg_id_sgpr + 2].as_int =
+					wavefront->work_group->id_3d[2];
+				break;
+			}
+			case STAGE_VS:
+			{
+				/* Currently hard coded as only store 1 primitive data in LDS with offset 0x0 */
+				wavefront->sreg[ndrange->wg_id_sgpr].as_int =0x0000000; 
+			}
+			default:
+			{
+				/* Save work-group IDs in scalar registers */
+				wavefront->sreg[ndrange->wg_id_sgpr].as_int =
+					wavefront->work_group->id_3d[0];
+				wavefront->sreg[ndrange->wg_id_sgpr + 1].as_int =
+					wavefront->work_group->id_3d[1];
+				wavefront->sreg[ndrange->wg_id_sgpr + 2].as_int =
+					wavefront->work_group->id_3d[2];
+				break;				
+			}
+		}
 
 		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
 		{
@@ -259,7 +283,7 @@ void SIWorkGroupCreate(SIWorkGroup *self, unsigned int id, SINDRange *ndrange)
 				/* Pixel shader initialization convention */
 				case STAGE_PS:
 				{
-					ps_init_meta = list_dequeue(self->ndrange->ps_init_data->meta_list);
+					ps_init_meta = list_get(self->ndrange->ps_init_data->meta_list, work_item->id);
 
 					/* PSes load barycentric coordinates to VGPR0/1 */
 					if (ps_init_meta)
@@ -268,10 +292,7 @@ void SIWorkGroupCreate(SIWorkGroup *self, unsigned int id, SINDRange *ndrange)
 						work_item->vreg[1].as_float = ps_init_meta->brctrc_j;
 					}
 
-					/* FIXME: X/Y should also load to somewhere for export instruction? */
-					/* Finishes its job */
-					SISXPSInitMetaDestroy(ps_init_meta);
-					
+					/* FIXME: X/Y should also load to somewhere for export instruction? */					
 					break;
 				}
 				/* Default is OpenCL convention */

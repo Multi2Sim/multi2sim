@@ -493,11 +493,65 @@ struct opengl_si_bin_constant_usage_t
 /* SPI_SHADER_PGM_RSRC2_VS */
 struct opengl_si_bin_spi_shader_pgm_rsrc2_vs_t
 {
-	unsigned int unknown1	: 1;
-	unsigned int user_sgpr	: 7;
-	unsigned int unknown2	: 8;
-	unsigned int unknown3	: 8;
-	unsigned int unknown4	: 8;
+	unsigned int scratch_en		: 1;
+	unsigned int user_sgpr		: 5;
+	unsigned int trap_present		: 1;
+	unsigned int offchip_lds_pointer_en	: 1;
+	unsigned int streamout_offset0	: 1;
+	unsigned int streamout_offset1	: 1;
+	unsigned int streamout_offset2	: 1;
+	unsigned int streamout_offset3	: 1;
+	unsigned int streamout_en		: 1;
+	unsigned int reserved			: 19;
+}__attribute__((packed));
+
+/* SPI_SHADER_PGM_RSRC2_PS */
+struct opengl_si_bin_spi_shader_pgm_rsrc2_ps_t
+{
+	unsigned int scratch_en		: 1;
+	unsigned int user_sgpr		: 5;
+	unsigned int trap_present		: 1;
+	unsigned int unknown_en		: 1;
+	unsigned int reserved 		: 24;
+}__attribute__((packed));
+
+/* SPI_SHADER_PGM_RSRC2_GS */
+struct opengl_si_bin_spi_shader_pgm_rsrc2_gs_t
+{
+	unsigned int scratch_en		: 1;
+	unsigned int user_sgpr		: 5;
+	unsigned int trap_present		: 1;
+	unsigned int reserved 		: 25;
+}__attribute__((packed));
+
+/* SPI_SHADER_PGM_RSRC2_ES */
+struct opengl_si_bin_spi_shader_pgm_rsrc2_es_t
+{
+	unsigned int scratch_en		: 1;
+	unsigned int user_sgpr		: 5;
+	unsigned int trap_present		: 1;
+	unsigned int offchip_lds_pointer_en	: 1;
+	unsigned int reserved 		: 24;
+}__attribute__((packed));
+
+/* SPI_SHADER_PGM_RSRC2_HS */
+struct opengl_si_bin_spi_shader_pgm_rsrc2_hs_t
+{
+	unsigned int scratch_en		: 1;
+	unsigned int user_sgpr		: 5;
+	unsigned int trap_present		: 1;
+	unsigned int offchip_lds_pointer_en	: 1;
+	unsigned int unknown_en		: 1;	
+	unsigned int reserved 		: 23;
+}__attribute__((packed));
+
+/* SPI_SHADER_PGM_RSRC2_LS */
+struct opengl_si_bin_spi_shader_pgm_rsrc2_ls_t
+{
+	unsigned int scratch_en		: 1;
+	unsigned int user_sgpr		: 5;
+	unsigned int trap_present		: 1;
+	unsigned int reserved 		: 25;
 }__attribute__((packed));
 
 /* PA_CL_VS_OUT_CNTL */
@@ -664,7 +718,11 @@ struct opengl_si_bin_pixel_shader_metadata_t
 	uint32_t psInTexCoordIndex[SC_SI_PS_MAX_INPUTS];
 
 	// PS specific shader resources
-	uint32_t spiShaderPgmRsrc2Ps;
+	union
+	{
+		uint32_t spiShaderPgmRsrc2PsAsUint;
+		struct opengl_si_bin_spi_shader_pgm_rsrc2_ps_t spiShaderPgmRsrc2Ps;		
+	};
 
 	uint32_t spiShaderZFormat;
 	uint32_t spiPsInControl;

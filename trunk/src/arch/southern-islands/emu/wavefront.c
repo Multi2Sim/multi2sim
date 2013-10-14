@@ -443,6 +443,32 @@ void SIWavefrontExecute(SIWavefront *self)
 		break;
 	}
 
+	case SIInstFormatVINTRP:
+	{
+		/* Stats */
+		emu->vector_alu_inst_count++;
+		self->vector_alu_inst_count++;
+
+		/* Execute the instruction */
+		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(self, work_item_id)
+		{
+			work_item = self->work_items[work_item_id];
+			if(SIWavefrontIsWorkItemActive(self, 
+				work_item->id_in_wavefront))
+			{
+				(*si_isa_inst_func[opcode])(work_item,
+					inst);
+			}
+		}
+
+		if (debug_status(si_isa_debug_category))
+		{
+			si_isa_debug("\n");
+		}
+
+		break;
+	}
+
 	case SIInstFormatDS:
 	{
 		/* Stats */
