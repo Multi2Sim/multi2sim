@@ -485,7 +485,7 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count )
 	LIST_FOR_EACH(program_obj->shaders, i)
 	{
 		shader_obj = list_get(program_obj->shaders, i);
-		if (shader_obj && shader_obj->type == GL_VERTEX_SHADER )
+		if (shader_obj)
 		{
 			switch(shader_obj->type)
 			{
@@ -608,6 +608,9 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count )
 
 		/* Launch fragment shader */
 		syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_raster, mode, pixel_shader_id);
+
+		/* Finish fragment shader */
+		syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_raster_finish);
 
 	}
 	else

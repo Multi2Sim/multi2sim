@@ -824,7 +824,8 @@ void opengl_si_shader_binary_debug_meta(struct opengl_si_shader_binary_t *shdr_b
 		}
 		printf(" texSamplerUsage\t\t= 0x%x\n", meta_ps->texSamplerUsage);
 		printf(" constBufUsage\t\t\t= 0x%x\n", meta_ps->constBufUsage);
-		printf("SPI_SHADER_PGM_RSRC2_PS\t\t= 0x%08X\n", meta_ps->spiShaderPgmRsrc2Ps);
+		printf("SPI_SHADER_PGM_RSRC2_PS\t\t= 0x%08X\n", meta_ps->spiShaderPgmRsrc2PsAsUint);
+		printf(" SSPRV:USER_SGPR\t\t= %d\n", meta_ps->spiShaderPgmRsrc2Ps.user_sgpr);		
 		printf("SPI_SHADER_Z_FORMAT\t\t= %d\n", meta_ps->spiShaderZFormat);
 		printf("SPI_PS_IN_CNTRL\t\t\t= %d\n", meta_ps->spiPsInControl);
 		printf("SPI_PS_INPUT_ADDR\t\t= 0x%08X\n", meta_ps->spiPsInputAddr);

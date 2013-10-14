@@ -1444,3 +1444,96 @@ static int opengl_abi_si_raster_impl(X86Context *ctx)
 	return 0;
 }
 
+/*
+ * OpenGL ABI call #20 - si_raster_finish
+ *
+ * Release all the NDRanges created in rasterizer
+ *
+ * @return int
+ *
+ *	The function always returns 0.
+ */
+
+static int opengl_abi_si_raster_finish_can_wakeup(X86Context *ctx, 
+	void *user_data)
+{
+	assert(user_data);
+	struct list_t *ndrange_list = (struct list_t *) user_data;
+
+	SINDRange *ndrange;
+	int can_wakeup;
+	int i;
+
+	LIST_FOR_EACH(ndrange_list, i)
+	{
+		ndrange = list_get(ndrange_list, i);
+		// assert(ndrange->last_work_group_sent);
+		can_wakeup &=
+		!list_count(ndrange->waiting_work_groups) &&
+		!list_count(ndrange->running_work_groups);
+	}
+
+	return can_wakeup;
+}
+
+static void opengl_abi_si_raster_finish_wakeup(X86Context *ctx, 
+	void *user_data)
+{
+	assert(user_data);
+
+	X86Emu *emu = ctx->emu;
+	OpenglDriver *driver = emu->opengl_driver;
+	struct list_t *ndrange_list = (struct list_t *) user_data;
+	SINDRange *ndrange;
+	int i;
+
+	LIST_FOR_EACH(ndrange_list, i)
+	{
+		ndrange = list_get(ndrange_list, i);
+
+		assert(!list_count(ndrange->waiting_work_groups));
+		assert(!list_count(ndrange->running_work_groups));
+		assert(ndrange->last_work_group_sent);
+
+		list_remove(driver->opengl_si_ndrange_list, ndrange);
+
+		delete(ndrange);
+	}
+
+	return;
+}
+
+static int opengl_abi_si_raster_finish_impl(X86Context *ctx)
+{
+	X86Emu *x86_emu = ctx->emu;
+	OpenglDriver *driver = x86_emu->opengl_driver;
+	struct list_t *ndrange_list =driver->opengl_si_ndrange_list;
+	SINDRange *ndrange;
+	int i;
+
+	LIST_FOR_EACH(ndrange_list, i)
+	{
+		ndrange = list_get(ndrange_list, i);
+
+		/* If no work-groups are left in the queues, remove the nd-range
+		 * from the driver list */
+		if (!list_count(ndrange->running_work_groups) && 
+			!list_count(ndrange->waiting_work_groups))
+		{
+			opengl_debug("\tnd-range %d finished\n", ndrange->id);
+			list_remove(driver->opengl_si_ndrange_list, ndrange);
+			delete(ndrange);
+		}
+		else
+		{
+			opengl_debug("\twaiting for nd-range %d to finish (blocking)\n", 
+					ndrange->id);
+			X86ContextSuspend(ctx, 
+				opengl_abi_si_raster_finish_can_wakeup, ndrange, 
+				opengl_abi_si_raster_finish_wakeup, ndrange);
+		}
+	}
+
+	/* Return */
+	return 0;
+}
