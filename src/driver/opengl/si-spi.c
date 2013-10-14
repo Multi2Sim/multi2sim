@@ -175,7 +175,23 @@ struct list_t *SISpiPSNDRangesCreate(SISX *sx, enum opengl_pa_primitive_mode_t m
 	struct list_t *meta_list; /* Elements have type si_sx_ps_init_meta_t  */
 	struct si_sx_ps_init_lds_t *lds;
 	struct si_sx_ps_init_t *ps_init;
-	int i;
+
+	unsigned int global_work_size[3];
+	unsigned int local_work_size[3];
+	int work_dim;
+
+	unsigned int work_group_start[3];
+	unsigned int work_group_count[3];
+	unsigned int total_num_groups;
+	long work_group_id;
+
+	struct elf_buffer_t *elf_buffer;
+	int user_element_count;
+	struct SIBinaryUserElement *user_elements;
+	struct opengl_si_enc_dict_pixel_shader_t *ps_enc;
+
+	int i, j;
+	int w_i, w_j, w_k;
 
 	ndrange_repo = list_create();
 
@@ -193,25 +209,88 @@ struct list_t *SISpiPSNDRangesCreate(SISX *sx, enum opengl_pa_primitive_mode_t m
 
 	for (i = 0; i < list_count(meta_list_repo); ++i)
 	{
+		/* Create init data for each ndrange */
 		lds = list_dequeue(lds_repo);
 		meta_list = list_dequeue(meta_list_repo);
 		ps_init = SISXPSInitCreate(lds, meta_list);
 
 		/* Create NDRange */
 		ndrange = new(SINDRange, sx->emu);
-		
-		/* Set dimensions */
 
-		/* Instruction buffer */
-
-
-		/* Pass memery object */
-
-		/* Initialize */
+		/* Setup init data */
 		SINDRangeSetupPSInitData(ndrange, ps_init);
-	}
 
-	/* Create NDRange and load */
+		/* Setup NDRange stage */
+		SINDRangeSetupStage(ndrange, STAGE_PS);
+
+		/* Set dimensions */
+		global_work_size[0] = list_count(meta_list);
+		local_work_size[0] = global_work_size[0];
+		work_group_count[0] = global_work_size[0] / local_work_size[0];
+		work_dim = 1;
+
+		/* Unused dimensions */
+		for (j = work_dim; j < 3; j++)
+		{
+			global_work_size[j] = 1;
+			local_work_size[j] = 1;
+			work_group_count[j] = global_work_size[j] / local_work_size[j];
+		}
+
+		SINDRangeSetupSize(ndrange, global_work_size, local_work_size, work_dim);
+
+		/* Setup workgroup */
+		for (j = 0; j < 3; j++)
+		{
+			work_group_start[j] = 0;
+		}
+		total_num_groups = work_group_count[2] * work_group_count[1] * 
+			work_group_count[0];
+		assert(total_num_groups <= 16 -
+			list_count(ndrange->waiting_work_groups));
+
+		/* Receive work groups (add them to the waiting queue) */
+		for (w_i = work_group_start[2]; w_i < work_group_start[2] + work_group_count[2]; w_i++)
+		{
+			for (w_j = work_group_start[1]; w_j < work_group_start[1] + work_group_count[1]; w_j++)
+			{
+				for (w_k = work_group_start[0]; w_k < work_group_start[0] + work_group_count[0]; w_k++)
+				{
+					work_group_id = (w_i * work_group_count[1] * 
+						work_group_count[0]) + (w_j * 
+						work_group_count[0]) + w_k;
+
+					list_enqueue(ndrange->waiting_work_groups, 
+						(void*)work_group_id);
+				}
+			}
+		}
+		
+		/* Instruction buffer */
+		elf_buffer = pixel_shader->bin->isa;
+		if (!elf_buffer->size)
+			fatal("%s: cannot load shader code", __FUNCTION__);
+		SINDRangeSetupInstMem(ndrange, elf_buffer->ptr, 
+			elf_buffer->size, 0);
+
+		/* Some metadata*/
+		ps_enc = pixel_shader->bin->enc_dict;
+		ndrange->num_sgpr_used = ps_enc->meta->u32NumSgprs;
+		ndrange->num_vgpr_used = ps_enc->meta->u32NumVgprs;
+		ndrange->wg_id_sgpr = ps_enc->meta->spiShaderPgmRsrc2Ps.user_sgpr;
+		
+		/* Copy user elements from shader to ND-Range */
+		user_element_count = ps_enc->meta->u32UserElementCount;
+		user_elements = ps_enc->meta->pUserElement;
+		ndrange->userElementCount = user_element_count;
+		for (i = 0; i < user_element_count; i++)
+		{
+			ndrange->userElements[i] = user_elements[i];
+		}
+
+		/* Add to NDrange list */
+		list_add(ndrange_repo, ndrange);
+	}
 
 	/* Free */
 	assert(!list_count(lds_repo)); /* Should be empty as all elments are consumed by NDRanges */
