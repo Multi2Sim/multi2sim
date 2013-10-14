@@ -42,6 +42,23 @@ inline unsigned long long GetBits64(unsigned long long x, int high, int low)
 	return (x >> low) & ((1ull << (high - low + 1)) - 1);
 }
 
+inline unsigned int ClearBits32(unsigned int x, int high, int low)
+{
+	return x & (((1ull << low) - 1) | ~((1ull << (high + 1)) - 1));
+}
+
+inline unsigned int TruncateBits32(unsigned int x, int num)
+{
+	return x & ((1ull << num) - 1);
+}
+
+inline unsigned int SetBits32(unsigned int x, int high, int low,
+		unsigned int value)
+{
+	return ClearBits32(x, high, low) | (TruncateBits32(value, high
+			- low + 1) << low);
+}
+
 inline unsigned int SignExtend32(unsigned int x, unsigned int b)
 {
 	return x & (1u << (b - 1)) ? x | ~((1u << b) - 1) :
