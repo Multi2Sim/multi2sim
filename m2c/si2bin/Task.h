@@ -17,21 +17,39 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "Symbol.h"
+#ifndef M2C_SI2BIN_TASK_H
+#define M2C_SI2BIN_TASK_H
+
+#include <iostream>
 
 
 namespace si2bin
 {
 
+/* Forward declarations */
+class Symbol;
 
-void Symbol::Dump(std::ostream &os)
+
+class Task
 {
-	if (this->GetDefined())
-		os << "name='" << name << "', value=" << value;
-	else
-		os << "name='" << name << "', value=?";
-}
+	int offset;
+	Symbol *symbol;
+public:
+	Task(int offset, Symbol *symbol) : offset(offset),
+			symbol(symbol) { };
+
+	int GetOffset() { return offset; }
+	Symbol *GetSymbol() { return symbol; }
+
+	void Dump(std::ostream &os);
+	friend std::ostream &operator<<(std::ostream &os, Task &task)
+			{ task.Dump(os); return os; }
+
+	void Process();
+};
 
 
 }  /* namespace si2bin */
+
+#endif
 

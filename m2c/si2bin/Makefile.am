@@ -56,6 +56,9 @@ libsi2bin_a_SOURCES = \
 	Inst.cc \
 	Inst.h \
 	\
+	Task.cc \
+	Task.h \
+	\
 	Token.cc \
 	Token.h
 
