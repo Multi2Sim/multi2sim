@@ -17,33 +17,38 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef M2C_SI2BIN_METADATA_H_OLD
-#define M2C_SI2BIN_METADATA_H_OLD
+#include "Data.h"
 
-#include <lib/class/class.h>
-
+namespace si2bin
+{
 
 /*
- * Metadata
+ * Class 'Data'
  */
-	
-	
-struct si2bin_metadata_t
+
+Data::Data(DataType type)
 {
-	/* Elements of type 'SIArg' */
-	List *arg_list;
-	
-	int uniqueid;
-	int uavprivate;
-	int hwregion;
-	int hwlocal;
+	this->type = type;
+}
 
-};
+DataFloat::DataFloat(DataType type, float value) : Data(type)
+{
+	this->value = value;
+}
 
-struct si2bin_metadata_t *si2bin_metadata_create(void);
-void si2bin_metadata_free(struct si2bin_metadata_t *metadata);
+DataWord::DataWord(DataType type, unsigned int value) : Data(type)
+{
+	this->value = value;
+}
 
-void si2bin_metadata_add_arg(struct si2bin_metadata_t *metadata, SIArg *arg);
+/*DataHalf::DataHalf(Datatype type, unsigned short value) : Data(type)
+{
+	this->value = value;
+}*/
 
-#endif
+DataByte::DataByte(DataType type, unsigned char value) : Data(type)
+{
+	this->value = value;
+}
 
+} /* namespace si2bin */
