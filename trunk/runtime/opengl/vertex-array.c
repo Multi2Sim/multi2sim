@@ -608,6 +608,7 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count )
 
 		/* Launch fragment shader */
 		syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_raster, mode, pixel_shader_id);
+		opengl_debug("\tPixel Shader id = %d\n", pixel_shader_id);
 
 		/* Finish fragment shader */
 		syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_raster_finish);
