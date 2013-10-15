@@ -53,8 +53,14 @@ libsi2bin_a_SOURCES = \
 	Arg.cc \
 	Arg.h \
 	\
+	Data.cc \
+	Data.h\
+	\
 	Inst.cc \
 	Inst.h \
+	\
+	Metadata.cc \
+	Metadata.h \
 	\
 	Task.cc \
 	Task.h \

@@ -17,33 +17,29 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef M2C_SI2BIN_METADATA_H_OLD
-#define M2C_SI2BIN_METADATA_H_OLD
 
-#include <lib/class/class.h>
+#include "Metadata.h"
 
+namespace si2bin
+{
 
 /*
- * Metadata
- */
-	
-	
-struct si2bin_metadata_t
+* Metadata Object
+*/
+
+Metadata::Metadata()
 {
-	/* Elements of type 'SIArg' */
-	List *arg_list;
-	
-	int uniqueid;
-	int uavprivate;
-	int hwregion;
-	int hwlocal;
+	uniqueid = 0;
+	uavprivate = 0;
+	hwregion = 0;
+	hwlocal = 0;
+}
 
-};
 
-struct si2bin_metadata_t *si2bin_metadata_create(void);
-void si2bin_metadata_free(struct si2bin_metadata_t *metadata);
+}
 
-void si2bin_metadata_add_arg(struct si2bin_metadata_t *metadata, SIArg *arg);
-
-#endif
-
+/*SIArg *newArg()
+{
+	args.push_back(std::unique_ptr<SIArg>(new SIArg()));
+	return args.back().get();
+}*/
