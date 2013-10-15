@@ -349,6 +349,9 @@ int Si2binTokenIsArgAllowed(Si2binToken *self, Si2binArg *arg)
 	case Si2binTokenDsVdst:
 		return arg->type == Si2binArgVectorRegister;
 
+	case Si2binTokenMtSeriesVdataSrc:
+		return arg->type == Si2binArgVectorRegister;
+	
 	// New tokens
 	case Si2binTokenVop2Lit:
 	case Si2binToken64Vsrc0:
@@ -367,7 +370,6 @@ int Si2binTokenIsArgAllowed(Si2binToken *self, Si2binArg *arg)
 	case Si2binTokenMuMaddr:
 	case Si2binTokenMuGlc:
 	case Si2binTokenMtSeriesVdataDst:
-	case Si2binTokenMtSeriesVdataSrc:
 	case Si2binTokenMimgSeriesVdata:
 	case Si2binTokenMimgVaddr:
 	case Si2binTokenMimgSeriesSrsrc:

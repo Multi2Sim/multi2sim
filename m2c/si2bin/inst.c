@@ -584,6 +584,13 @@ void Si2binInstGenerate(Si2binInst *self)
 			}
 			break;
 		}
+		
+		case Si2binTokenMtSeriesVdataSrc:
+		{
+			/* Encode */
+			inst_bytes->mtbuf.vdata = arg->value.vector_register.id;
+			break;
+		}
 
 		case Si2binTokenMtSeriesVdata:
 		{
@@ -1196,8 +1203,8 @@ void Si2binInstGenerate(Si2binInst *self)
 		
 		
 		default:
-			si2bin_yyerror_fmt("unsupported token for argument %d",
-				index + 1);
+			si2bin_yyerror_fmt("unsupported token for argument %d: %d",
+				index + 1, token->type);
 		}
 
 		/* Next */

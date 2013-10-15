@@ -284,7 +284,7 @@ static void Llvm2siFunctionAddUAV(Llvm2siFunction *self,
 /* Add argument 'arg' into the list of arguments of 'function', and emit code
  * to load it into 'function->basic_block_args'. */
 static void Llvm2siFunctionAddArg(Llvm2siFunction *self,
-		Llvm2siFunctionArg *arg)
+		Llvm2siFunctionArg *arg, int num_elem)
 {
 	List *arg_list;
 	Si2binInst *inst;
@@ -307,36 +307,70 @@ static void Llvm2siFunctionAddArg(Llvm2siFunction *self,
 	arg->index = self->arg_list->count - 1;
 
 	/* Allocate 1 scalar and 1 vector register for the argument */
-	arg->sreg = Llvm2siFunctionAllocSReg(self, 1, 1);
-	arg->vreg = Llvm2siFunctionAllocVReg(self, 1, 1);
+	arg->sreg = Llvm2siFunctionAllocSReg(self, num_elem, num_elem);
+	arg->vreg = Llvm2siFunctionAllocVReg(self, num_elem, num_elem);
 
 	/* Generate code to load argument into a scalar register.
 	 * s_buffer_load_dword s[arg], s[cb1:cb1+3], idx*4
 	 */
 	arg_list = new(List);
-	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegister, arg->sreg)));
-	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegisterSeries, self->sreg_cb1,
-			self->sreg_cb1 + 3)));
-	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateLiteral, arg->index * 4)));
-	inst = new(Si2binInst, SI_INST_S_BUFFER_LOAD_DWORD, arg_list);
-	Llvm2siBasicBlockAddInst(basic_block, inst);
+	switch (num_elem)
+	{
+	case 1:
+		ListAdd(arg_list, asObject(new_ctor(Si2binArg, 
+				CreateScalarRegister, arg->sreg)));
+		ListAdd(arg_list, asObject(new_ctor(Si2binArg, 
+				CreateScalarRegisterSeries, self->sreg_cb1,
+				self->sreg_cb1 + 3)));
+		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateLiteral, 
+				arg->index * 4)));
+	
+		inst = new(Si2binInst, SI_INST_S_BUFFER_LOAD_DWORD, arg_list);
+		Llvm2siBasicBlockAddInst(basic_block, inst);
+		
+		break;
+	
+	case 4:
+		ListAdd(arg_list, asObject(new_ctor(Si2binArg, 
+				CreateScalarRegisterSeries, arg->sreg, arg->sreg + 3)));
+		ListAdd(arg_list, asObject(new_ctor(Si2binArg, 
+				CreateScalarRegisterSeries, self->sreg_cb1,
+				self->sreg_cb1 + 3)));
+		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateLiteral, 
+				arg->index * 4)));
+	
+		inst = new(Si2binInst, SI_INST_S_BUFFER_LOAD_DWORDX4, arg_list);
 
-	/* Copy argument into a vector register. This vector register will be
-	 * used for convenience during code emission, so that we don't have to
-	 * worry at this point about different operand type encodings for
-	 * instructions. Optimization passes will get rid later of redundant
-	 * copies and scalar opportunities.
-	 * v_mov_b32 v[arg], s[arg]
-	 */
-	arg_list = new(List);
-	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateVectorRegister, arg->vreg)));
-	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegister, arg->sreg)));
-	inst = new(Si2binInst, SI_INST_V_MOV_B32, arg_list);
-	Llvm2siBasicBlockAddInst(basic_block, inst);
+		Llvm2siBasicBlockAddInst(basic_block, inst);
 
-	/* Insert argument name in symbol table, using its vector register. */
-	symbol = new_ctor(Llvm2siSymbol, CreateVReg, arg->name, arg->vreg);
-	Llvm2siSymbolTableAddSymbol(self->symbol_table, symbol);
+		/* Insert argument name in symbol table, using its scalar register. */
+		symbol = new_ctor(Llvm2siSymbol, CreateSRegSeries, arg->name, 
+				arg->sreg, arg->sreg + 3);
+		Llvm2siSymbolTableAddSymbol(self->symbol_table, symbol);
+		
+		break;
+	}
+	
+	
+	if (num_elem == 1)
+	{
+		/* Copy argument into a vector register. This vector register will be
+		 * used for convenience during code emission, so that we don't have to
+		 * worry at this point about different operand type encodings for
+		 * instructions. Optimization passes will get rid later of redundant
+		 * copies and scalar opportunities.
+		 * v_mov_b32 v[arg], s[arg]
+		 */
+		arg_list = new(List);
+		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateVectorRegister, arg->vreg)));
+		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegister, arg->sreg)));
+		inst = new(Si2binInst, SI_INST_V_MOV_B32, arg_list);
+		Llvm2siBasicBlockAddInst(basic_block, inst);
+
+		/* Insert argument name in symbol table, using its vector register. */
+		symbol = new_ctor(Llvm2siSymbol, CreateVReg, arg->name, arg->vreg);
+		Llvm2siSymbolTableAddSymbol(self->symbol_table, symbol);
+	}
 
 	/* If argument is an object in global memory, create a UAV
 	 * associated with it. */
@@ -652,6 +686,9 @@ void Llvm2siFunctionEmitArgs(Llvm2siFunction *self)
 {
 	LLVMValueRef llfunction;
 	LLVMValueRef llarg;
+	LLVMTypeKind lltype;
+	LLVMTypeRef lltyref;
+	int num_elem;
 
 	Llvm2siFunctionArg *arg;
 
@@ -663,9 +700,18 @@ void Llvm2siFunctionEmitArgs(Llvm2siFunction *self)
 		/* Create function argument and add it */
 		arg = new(Llvm2siFunctionArg, llarg);
 
+		lltyref = LLVMTypeOf(llarg);
+		lltype = LLVMGetTypeKind(lltyref);
+
+		if (lltype == LLVMVectorTypeKind)
+			num_elem = LLVMGetVectorSize(lltyref);
+		else
+			num_elem = 1;
+
+
 		/* Add the argument to the list. This call will cause the
 		 * corresponding code to be emitted. */
-		Llvm2siFunctionAddArg(self, arg);
+		Llvm2siFunctionAddArg(self, arg, num_elem);
 	}
 }
 
