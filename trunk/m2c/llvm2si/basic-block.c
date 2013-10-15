@@ -1143,6 +1143,67 @@ static void Llvm2siBasicBlockEmitFMul(Llvm2siBasicBlock *self,
 	inst = new(Si2binInst, SI_INST_V_MUL_F32, arg_list);
 	Llvm2siBasicBlockAddInst(self, inst);
 }
+
+static void Llvm2siBasicBlockEmitExtractElement(Llvm2siBasicBlock *self,
+		LLVMValueRef llinst)
+{
+	LLVMValueRef llarg_op1;
+	LLVMValueRef llarg_op2;
+
+	Llvm2siFunction *function;
+	Llvm2siSymbol *ret_symbol;
+	Si2binArg *arg_op1;
+	Si2binArg *arg_op2;
+	Si2binInst *inst;
+	List *arg_list;
+
+	int num_operands;
+	int ret_vreg;
+
+	char *ret_name;
+
+	/* Get function */
+	function = self->function;
+	assert(function);
+
+	/* Only supported for 2 operands (op1, op2) */
+	num_operands = LLVMGetNumOperands(llinst);
+	if (num_operands != 2)
+		fatal("%s: 2 operands supported, %d found",
+			__FUNCTION__, num_operands);
+
+	/* Get operands (vreg, literal) */
+	llarg_op1 = LLVMGetOperand(llinst, 0);
+	llarg_op2 = LLVMGetOperand(llinst, 1);
+
+	arg_op1 = Llvm2siFunctionTranslateValue(function, llarg_op1, NULL);
+	arg_op2 = Llvm2siFunctionTranslateValue(function, llarg_op2, NULL);
+
+	/* First argument must be a scalar register 
+	 * and the second must be the offset */
+	Si2binArgValidTypes(arg_op1, Si2binArgScalarRegister);
+	Si2binArgValidTypes(arg_op2, Si2binArgLiteral, Si2binArgLiteralReduced);
+
+	arg_op1->value.scalar_register.id += arg_op2->value.literal.val;
+
+	delete(arg_op2);
+
+	/* Allocate vector register and create symbol for return value */
+	ret_name = (char *) LLVMGetValueName(llinst);
+	ret_vreg = Llvm2siFunctionAllocVReg(function, 1, 1);
+	ret_symbol = new_ctor(Llvm2siSymbol, CreateVReg, ret_name, ret_vreg);
+	Llvm2siSymbolTableAddSymbol(function->symbol_table, ret_symbol);
+
+	/* Emit effective address calculation.
+	 * v_mov_b32 ret_vreg, arg_op1, arg_op2
+	 */
+	arg_list = new(List);
+	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateVectorRegister, ret_vreg)));
+	ListAdd(arg_list, asObject(arg_op1));
+	inst = new(Si2binInst, SI_INST_V_MOV_B32, arg_list);
+	Llvm2siBasicBlockAddInst(self, inst);
+}
+
 /*
  * Public Functions
  */
@@ -1302,6 +1363,11 @@ void Llvm2siBasicBlockEmit(Llvm2siBasicBlock *self, LLVMBasicBlockRef llbb)
 		case LLVMFMul:
 
 			Llvm2siBasicBlockEmitFMul(self, llinst);
+			break;
+
+		case LLVMExtractElement:
+			
+			Llvm2siBasicBlockEmitExtractElement(self, llinst);
 			break;
 		
 		default:
