@@ -17,33 +17,50 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef M2C_SI2BIN_METADATA_H_OLD
-#define M2C_SI2BIN_METADATA_H_OLD
+#ifndef M2C_SI2BIN_METADATA_H
+#define M2C_SI2BIN_METADATA_H
 
-#include <lib/class/class.h>
+//#include <memory>
 
+namespace si2bin
+{
 
 /*
  * Metadata
  */
 	
-	
-struct si2bin_metadata_t
+class Metadata
 {
-	/* Elements of type 'SIArg' */
-	List *arg_list;
+	//std::vector<std::unique_ptr<SIArg>> args;
 	
 	int uniqueid;
 	int uavprivate;
 	int hwregion;
 	int hwlocal;
 
+public:
+
+	/* Constructor */
+	Metadata();
+
+	/* Add args */
+
+	/* Getters */
+	//SIArg *GetArg(unsigned int index) { return index < args.size() ? 
+	//		args[index].get() : nullptr; }	
+	int GetUniqueId() { return uniqueid; }
+	int GetUAVPrivate() { return uavprivate; }
+	int GetHWRegion() { return hwregion; }
+	int GetHWLocalId() { return hwlocal; }
+
+	/* Setters */
+	void SetUniqueId(int uniqueid) { this->uniqueid = uniqueid; }
+	void SetUAVPrivate(int uavprivate) { this->uavprivate = uavprivate; }
+	void SetHWRegion(int hwregion) { this->hwregion = hwregion; }
+	void SetHWLocalId(int hwlocal) { this->hwlocal = hwlocal; }
 };
 
-struct si2bin_metadata_t *si2bin_metadata_create(void);
-void si2bin_metadata_free(struct si2bin_metadata_t *metadata);
-
-void si2bin_metadata_add_arg(struct si2bin_metadata_t *metadata, SIArg *arg);
+} /* namespace si2bin */
 
 #endif
 
