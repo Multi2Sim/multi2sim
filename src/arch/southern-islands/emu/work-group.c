@@ -235,7 +235,7 @@ void SIWorkGroupCreate(SIWorkGroup *self, unsigned int id, SINDRange *ndrange)
 					wavefront->work_group->id_3d[2];
 				break;
 			}
-			case STAGE_VS:
+			case STAGE_PS:
 			{
 				/* Currently hard coded as only store 1 primitive data in LDS with offset 0x0 */
 				wavefront->sreg[ndrange->wg_id_sgpr].as_int =0x0000000; 

@@ -39,7 +39,7 @@ struct si_sx_ps_init_meta_t
 struct si_sx_ps_init_lds_t
 {
 	float *data;
-	int size;
+	int size; /* Size in bytes */
 };
 
 /* Elements are created in SPI module */

@@ -165,7 +165,7 @@ struct si_sx_ps_init_lds_t *SISXPSInitLDSCreate(unsigned int attribute_count)
 	/* Allocate */
 	ps_lds = xcalloc(1, sizeof(struct si_sx_ps_init_lds_t));
 	ps_lds->data = xcalloc(1, attribute_count * 3 * 4 * sizeof(float));
-	ps_lds->size = attribute_count * 3 * 4;
+	ps_lds->size = attribute_count * 3 * 4 * sizeof(float);
 
 	/* Return */
 	return ps_lds;

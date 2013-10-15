@@ -6225,16 +6225,16 @@ void si_isa_V_INTERP_P1_F32_impl(SIWorkItem *work_item,
 	m0_vintrp.as_uint = SIWorkItemReadReg(work_item, SI_M0);
 
 	/* Read barycentric coordinates stored in VGPR */
-	s.as_float = SIWorkItemReadReg(work_item, INST.vsrc);
+	s.as_uint = SIWorkItemReadVReg(work_item, INST.vsrc);
 
 	/* 12 successive dwords contain P0 P10 P20 */
 	/* 4dwords P0: X Y Z W*/
 	mem_read(work_item->work_group->lds_module, 
-		m0_vintrp.for_vintrp.lds_param_offset + 48 * work_item->id_in_wavefront + INST.attrchan ,
+		m0_vintrp.for_vintrp.lds_param_offset + 0 + INST.attrchan ,
 		 4, &p0.as_float);
 	/* 4dwords P10: X Y Z W*/
 	mem_read(work_item->work_group->lds_module, 
-		m0_vintrp.for_vintrp.lds_param_offset + 48 * work_item->id_in_wavefront + 16 + INST.attrchan,
+		m0_vintrp.for_vintrp.lds_param_offset + 16 + INST.attrchan,
 		 4, &p10.as_float);
 
 	/* D = P10 * S + P0 */
@@ -6267,15 +6267,15 @@ void si_isa_V_INTERP_P2_F32_impl(SIWorkItem *work_item,
 	m0_vintrp.as_uint = SIWorkItemReadReg(work_item, SI_M0);
 
 	/* Read barycentric coordinates stored in VGPR */
-	s.as_float = SIWorkItemReadReg(work_item, INST.vsrc);
+	s.as_float = SIWorkItemReadVReg(work_item, INST.vsrc);
 
 	/* Read data stores in VGPR for later acclumulation */
-	data.as_float = SIWorkItemReadReg(work_item, INST.vdst);
+	data.as_float = SIWorkItemReadVReg(work_item, INST.vdst);
 
 	/* 12 successive dwords contain P0 P10 P20 */
 	/* 4dwords P20: X Y Z W*/
 	mem_read(work_item->work_group->lds_module, 
-		m0_vintrp.for_vintrp.lds_param_offset + 48 * work_item->id_in_wavefront + 32 + INST.attrchan,
+		m0_vintrp.for_vintrp.lds_param_offset + 32 + INST.attrchan,
 		 4, &p20.as_float);
 
 	/* D = P20 * S + D */

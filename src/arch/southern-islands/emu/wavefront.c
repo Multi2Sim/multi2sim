@@ -465,7 +465,7 @@ void SIWavefrontExecute(SIWavefront *self)
 		{
 			si_isa_debug("\n");
 		}
-
+ 	
 		break;
 	}
 
