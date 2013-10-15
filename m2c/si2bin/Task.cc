@@ -17,21 +17,40 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "Symbol.h"
+#include <lib/cpp/Misc.h>
 
+#include "Symbol.h"
+#include "Task.h"
+
+
+using namespace Misc;
 
 namespace si2bin
 {
 
-
-void Symbol::Dump(std::ostream &os)
+void Task::Dump(std::ostream &os)
 {
-	if (this->GetDefined())
-		os << "name='" << name << "', value=" << value;
-	else
-		os << "name='" << name << "', value=?";
+	os << "offset = 0x" << std::hex << offset << std::dec
+		<< ", symbol={" << *symbol << "}";
 }
 
+
+void Task::Process()
+{
+	panic("%s: not implemented", __FUNCTION__);
+#if 0
+	SI::InstBytes *inst;
+
+	/* Check whether symbol is resolved */
+	if (!defined)
+		fatal("undefined label: %s", symbol->GetName().c_str());
+
+	/* Resolve label */
+	assert(InRange(offset, 0, si2bin_entry->text_section_buffer->offset - 4));
+	inst = si2bin_entry->text_section_buffer->ptr + self->offset;
+	inst->sopp.simm16 = (label->value - self->offset) / 4 - 1;
+#endif
+}
 
 }  /* namespace si2bin */
 

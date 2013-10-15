@@ -20,11 +20,9 @@
 #ifndef M2C_SI2BIN_SYMBOL_H
 #define M2C_SI2BIN_SYMBOL_H
 
-#ifdef __cplusplus
+#include <iostream>
 
-#include <string>
-
-namespace S2B
+namespace si2bin
 {
 
 class Symbol 
@@ -39,10 +37,11 @@ class Symbol
 public:
 
 	/* Constructor */
-	Symbol(std::string name);
+	Symbol(const std::string &name) : name(name), value(0),
+			defined(false) { }
 
 	/* Getters */
-	std::string GetName() { return name; }
+	const std::string &GetName() { return name; }
 	int GetValue() { return value; }
 	bool GetDefined() { return defined; }
 
@@ -52,39 +51,12 @@ public:
 
 	/* Dump Function */
 	void Dump(std::ostream& os);
+	friend std::ostream &operator<<(std::ostream &os, Symbol &symbol)
+			{ symbol.Dump(os); return os; }
 };
 
 } /* Namespace S2B */
 
-#endif /* __cplusplus */
 
-
-/*
- * C Wrapper
- */
-
-#ifdef __cplusplus
-extern "C" {
 #endif
 
-struct S2BSymbolWrap;
-
-struct S2BSymbolWrap *S2BSymbolWrapCreate(char *name);
-void S2BSymbolWrapFree(struct S2BSymbolWrap *self);
-
-void S2BSymbolWrapDump(struct S2BSymbolWrap *self, FILE *f);
-
-/* Getters */
-const char *S2BSymbolWrapGetName(struct S2BSymbolWrap *self);
-int S2BSymbolWrapGetValue(struct S2BSymbolWrap *self);
-int S2BSymbolWrapGetDefined(struct S2BSymbolWrap *self);
-
-/* Setters */
-void S2BSymbolWrapSetValue(struct S2BSymbolWrap, int val);
-void S2BSymbolWrapSetDefined(struct S2BSymbolWrap, int def);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* M2C_SI2BIN_SYMBOL_H */
