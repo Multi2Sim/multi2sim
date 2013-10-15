@@ -23,7 +23,7 @@
 
 
 /*
- * Class 'Si2binData'
+ * Class 'Data'
  */
 
 void Si2binDataCreate(Si2binData *self, Si2binDataType type)
