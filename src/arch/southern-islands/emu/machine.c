@@ -1406,7 +1406,7 @@ void si_isa_S_SWAPPC_B64_impl(SIWorkItem *work_item,
 
 	/* Set the new PC */
 	pc = work_item->wavefront->pc;
-	work_item->wavefront->pc = s0_lo.as_uint - 4; /* FIXME: -4 should be unneccesary */
+	work_item->wavefront->pc = s0_lo.as_uint - 4;
 
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
@@ -6228,26 +6228,27 @@ void si_isa_V_INTERP_P1_F32_impl(SIWorkItem *work_item,
 	s.as_uint = SIWorkItemReadVReg(work_item, INST.vsrc);
 
 	/* 12 successive dwords contain P0 P10 P20 */
-	/* 4dwords P0: X Y Z W*/
+	/* 4dwords P0: X Y Z W, INST.attrchan decides which 1dword to be loaded*/
 	mem_read(work_item->work_group->lds_module, 
-		m0_vintrp.for_vintrp.lds_param_offset + 0 + INST.attrchan ,
+		m0_vintrp.for_vintrp.lds_param_offset + 0 + 4 * INST.attrchan ,
 		 4, &p0.as_float);
-	/* 4dwords P10: X Y Z W*/
+	/* 4dwords P10: X Y Z W, INST.attrchan decides which 1dword to be loaded*/
 	mem_read(work_item->work_group->lds_module, 
-		m0_vintrp.for_vintrp.lds_param_offset + 16 + INST.attrchan,
+		m0_vintrp.for_vintrp.lds_param_offset + 16 + 4 * INST.attrchan,
 		 4, &p10.as_float);
 
 	/* D = P10 * S + P0 */
 	data.as_float = p10.as_float * s.as_float + p0.as_float;
-
+	
 	/* Write the result */
 	SIWorkItemWriteVReg(work_item, INST.vdst, data.as_float);
 
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("t%d: V%u<=(%f) ", work_item->id, INST.vdst,
-			data.as_float);
+		si_isa_debug("t%d: V%u<=(%f = P10(%f) * Lamda2(%f) + P0(%f)) \n", 
+			work_item->id, INST.vdst, data.as_float, p10.as_float, 
+			s.as_float, p0.as_float);
 	}
 }
 #undef INST
@@ -6273,9 +6274,9 @@ void si_isa_V_INTERP_P2_F32_impl(SIWorkItem *work_item,
 	data.as_float = SIWorkItemReadVReg(work_item, INST.vdst);
 
 	/* 12 successive dwords contain P0 P10 P20 */
-	/* 4dwords P20: X Y Z W*/
+	/* 4dwords P20: X Y Z W, INST.attrchan decides which 1dword to be loaded*/
 	mem_read(work_item->work_group->lds_module, 
-		m0_vintrp.for_vintrp.lds_param_offset + 32 + INST.attrchan,
+		m0_vintrp.for_vintrp.lds_param_offset + 32 + 4 * INST.attrchan,
 		 4, &p20.as_float);
 
 	/* D = P20 * S + D */
@@ -6287,8 +6288,9 @@ void si_isa_V_INTERP_P2_F32_impl(SIWorkItem *work_item,
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("t%d: V%u<=(%f) ", work_item->id, INST.vdst,
-			data.as_float);
+		si_isa_debug("t%d: V%u<=(%f += P20(%f) * Lamda2(%f)) \n", 
+			work_item->id, INST.vdst, data.as_float, p20.as_float, 
+			s.as_float);
 	}
 }
 #undef INST
