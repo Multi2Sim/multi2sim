@@ -1370,6 +1370,7 @@ static int opengl_abi_si_viewport_impl(X86Context *ctx)
 	struct x86_regs_t *regs = ctx->regs;
 	X86Emu *x86_emu = ctx->emu;
 	OpenglDriver *driver = x86_emu->opengl_driver;
+	SIEmu *si_emu = driver->si_emu;
 
 	unsigned int x;
 	unsigned int y;
@@ -1389,9 +1390,12 @@ static int opengl_abi_si_viewport_impl(X86Context *ctx)
 	/* Set Viewport */
 	opengl_pa_viewport_set(driver->opengl_si_vwpt, x, y, width, height);
 
-	/* Create host viewport */
+	/* Resize host viewport */
 	glut_frame_buffer_resize(width, height);
-	
+
+	/* Resize device export target */
+	SISXMRTResizeAll(si_emu->sx, width, height);
+
 	/* Return */
 	return 0;
 }

@@ -43,62 +43,6 @@ char *err_si_isa_note =
 		SIInstWrapGetName(inst), err_si_isa_note)
 
 
-/*
- *  Private functions
- */
-
-/* 
- * Float32 <-> Float16
- * Reference: http://stackoverflow.com/questions/1659440/32-bit-to-16-bit-floating-point-conversion 
- */
-
-union Bits
-{
-	float f;
-	int32_t si;
-	uint32_t ui;
-};
-
-#define F_shift 13
-#define F_shiftSign 16
-
-#define F_infN 0x7F800000 // flt32 infinity
-#define F_maxN 0x477FE000 // max flt16 normal as a flt32
-#define F_minN 0x38800000 // min flt16 normal as a flt32
-#define F_signN 0x80000000 // flt32 sign bit
-
-#define F_infC (F_infN >> F_shift)
-#define F_nanN ((F_infC + 1) << F_shift) // minimum flt16 nan as a flt32
-#define F_maxC (F_maxN >> F_shift)
-#define F_minC (F_minN >> F_shift)
-#define F_signC (F_signN >> F_shiftSign) // flt16 sign bit
-
-#define F_mulN 0x52000000 // (1 << 23) / F_minN
-#define F_mulC 0x33800000 // F_minN / (1 << (23 - F_shift))
-
-#define F_subC 0x003FF // max flt32 subnormal down shifted
-#define F_norC 0x00400 // min flt32 normal down shifted
-
-#define F_maxD (F_infC - F_maxC - 1)
-#define F_minD (F_minC - F_subC - 1)
-
-static uint16_t Float32to16(float value)
-{
-	union Bits v, s;
-	v.f = value;
-	uint32_t sign = v.si & F_signN;
-	v.si ^= sign;
-	sign >>= F_shiftSign; // logical F_shift
-	s.si = F_mulN;
-	s.si = s.f * v.f; // correct subnormals
-	v.si ^= (s.si ^ v.si) & -(F_minN > v.si);
-	v.si ^= (F_infN ^ v.si) & -((F_infN > v.si) & (v.si > F_maxN));
-	v.si ^= (F_nanN ^ v.si) & -((F_nanN > v.si) & (v.si > F_infN));
-	v.ui >>= F_shift; // logical F_shift
-	v.si ^= ((v.si - F_maxD) ^ v.si) & -(v.si > F_maxC);
-	v.si ^= ((v.si - F_minD) ^ v.si) & -(v.si > F_subC);
-	return v.ui | sign;
-}
 
 /*
  * SMRD
@@ -3528,15 +3472,6 @@ void si_isa_V_SUBREV_I32_impl(SIWorkItem *work_item,
 void si_isa_V_CVT_PKRTZ_F16_F32_impl(SIWorkItem *work_item,
 	struct SIInstWrap *inst)
 {
-	union hfpack
-	{
-		uint32_t as_uint32;
-		struct
-		{
-			uint16_t s1f;
-			uint16_t s0f;
-		} as_f16f16;
-	};
 	SIInstReg s0;
 	SIInstReg s1;
 	uint16_t s0f;
@@ -6231,17 +6166,17 @@ void si_isa_V_INTERP_P1_F32_impl(SIWorkItem *work_item,
 	/* 4dwords P0: X Y Z W, INST.attrchan decides which 1dword to be loaded*/
 	mem_read(work_item->work_group->lds_module, 
 		m0_vintrp.for_vintrp.lds_param_offset + 0 + 4 * INST.attrchan ,
-		 4, &p0.as_float);
+		 4, &p0.as_uint);
 	/* 4dwords P10: X Y Z W, INST.attrchan decides which 1dword to be loaded*/
 	mem_read(work_item->work_group->lds_module, 
 		m0_vintrp.for_vintrp.lds_param_offset + 16 + 4 * INST.attrchan,
-		 4, &p10.as_float);
+		 4, &p10.as_uint);
 
 	/* D = P10 * S + P0 */
 	data.as_float = p10.as_float * s.as_float + p0.as_float;
 	
 	/* Write the result */
-	SIWorkItemWriteVReg(work_item, INST.vdst, data.as_float);
+	SIWorkItemWriteVReg(work_item, INST.vdst, data.as_uint);
 
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
@@ -6268,22 +6203,22 @@ void si_isa_V_INTERP_P2_F32_impl(SIWorkItem *work_item,
 	m0_vintrp.as_uint = SIWorkItemReadReg(work_item, SI_M0);
 
 	/* Read barycentric coordinates stored in VGPR */
-	s.as_float = SIWorkItemReadVReg(work_item, INST.vsrc);
+	s.as_uint = SIWorkItemReadVReg(work_item, INST.vsrc);
 
 	/* Read data stores in VGPR for later acclumulation */
-	data.as_float = SIWorkItemReadVReg(work_item, INST.vdst);
+	data.as_uint = SIWorkItemReadVReg(work_item, INST.vdst);
 
 	/* 12 successive dwords contain P0 P10 P20 */
 	/* 4dwords P20: X Y Z W, INST.attrchan decides which 1dword to be loaded*/
 	mem_read(work_item->work_group->lds_module, 
 		m0_vintrp.for_vintrp.lds_param_offset + 32 + 4 * INST.attrchan,
-		 4, &p20.as_float);
+		 4, &p20.as_uint);
 
 	/* D = P20 * S + D */
 	data.as_float += p20.as_float * s.as_float;
 
 	/* Write the result */
-	SIWorkItemWriteVReg(work_item, INST.vdst, data.as_float);
+	SIWorkItemWriteVReg(work_item, INST.vdst, data.as_uint);
 
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
@@ -7947,22 +7882,55 @@ void si_isa_EXPORT_impl(SIWorkItem *work_item, struct SIInstWrap *inst)
 	SIEmu *emu = ndrange->emu;
 	SISX *sx = emu->sx;
 	
+	unsigned int compr_en;
 	unsigned int target_id;
+	unsigned int en_bitmask;
 	SIInstReg x;
 	SIInstReg y;
 	SIInstReg z;
 	SIInstReg w;
 
-	x.as_uint = SIWorkItemReadVReg(work_item, INST.vsrc0);
-	y.as_uint = SIWorkItemReadVReg(work_item, INST.vsrc1);
-	z.as_uint = SIWorkItemReadVReg(work_item, INST.vsrc2);
-	w.as_uint = SIWorkItemReadVReg(work_item, INST.vsrc3);
+	compr_en = INST.compr;
+	en_bitmask = INST.en;
 	target_id = INST.tgt;
 
-	/* FIXME: implement compression */
+	if (!compr_en)
+	{
+		if ((en_bitmask & 0x1))
+			x.as_uint = SIWorkItemReadVReg(work_item, INST.vsrc0);
+		else
+			x.as_uint = 0;
+		if ((en_bitmask & 0x2))
+			y.as_uint = SIWorkItemReadVReg(work_item, INST.vsrc1);
+		else 
+			y.as_uint = 0;
+		if ((en_bitmask & 0x4))
+			z.as_uint = SIWorkItemReadVReg(work_item, INST.vsrc2);
+		else
+			z.as_uint = 0;
+		if ((en_bitmask & 0x8))
+			w.as_uint = SIWorkItemReadVReg(work_item, INST.vsrc3);
+		else
+			w.as_uint = 0;
+	}
+	else
+	{
+		if ((en_bitmask & 0x1))
+			x.as_uint = SIWorkItemReadVReg(work_item, INST.vsrc0);
+		else
+			x.as_uint = 0;
+		if ((en_bitmask & 0x2))
+			y.as_uint = SIWorkItemReadVReg(work_item, INST.vsrc1);
+		else 
+			y.as_uint = 0;
+		z.as_uint = 0;
+		w.as_uint = 0;
+	}
+
 	if (target_id >=0 && target_id <= 7)
 	{
 		/* Export to MRT 0-7 */
+		SISXExportMRT(sx, target_id, work_item, compr_en, x, y, z, w);
 	}
 	else if (target_id == 8)
 	{

@@ -20,8 +20,10 @@
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
+#include <lib/util/misc.h>
 #include <arch/southern-islands/emu/work-item.h>
 #include <driver/opengl/si-pa.h>
+#include <driver/glut/frame-buffer.h>
 
 #include "sx.h"
 
@@ -97,10 +99,107 @@ static void SISXParamReset(SISX *self)
 	SISXParamCreate(self);
 }
 
+static void SISXMRTCreate(SISX *self)
+{
+	int i;
+
+	for (i = 0; i < SI_MRT_COUNT; ++i)
+	{
+		self->mrt[i] = 	xcalloc(1, sizeof(SISXMRT));
+	}
+}
+
+static void SISXMRTDestroy(SISX *self)
+{
+	int i;
+	SISXMRT *mrt;
+
+	for (i = 0; i < SI_MRT_COUNT; ++i)
+	{
+		mrt = self->mrt[i];
+		if (mrt)
+		{
+			if (mrt->buffer)
+				free(mrt->buffer);
+			free(mrt);
+		}
+	}
+}
+
+static void SISXMRTReset(SISX *self)
+{
+	SISXMRTDestroy(self);
+	SISXMRTCreate(self);
+}
+
+/* FIXME: make it static */
+void SISXMRTSetPixel(SISXMRT *mrt, int x, int y, int color)
+{
+	/* Invalid color */
+	if ((unsigned int) color > 0xffffff)
+	{
+		warning("%s: invalid pixel color", __FUNCTION__);
+		return;
+	}
+
+	/* Invalid X coordinate */
+	if (!IN_RANGE(x, 0, mrt->width - 1))
+	{
+		warning("%s: invalid X coordinate", __FUNCTION__);
+		return;
+	}
+
+	/* Invalid Y coordinate */
+	if (!IN_RANGE(y, 0, mrt->height - 1))
+	{
+		warning("%s: invalid Y coordinate", __FUNCTION__);
+		return;
+	}
+
+	/* Set pixel */
+	mrt->buffer[y * mrt->width + x] = color;
+}
 
 /*
  * Public Functions
  */
+
+uint16_t Float32to16(float value)
+{
+	union Bits v, s;
+	v.f = value;
+	uint32_t sign = v.si & F_signN;
+	v.si ^= sign;
+	sign >>= F_shiftSign; // logical F_shift
+	s.si = F_mulN;
+	s.si = s.f * v.f; // correct subnormals
+	v.si ^= (s.si ^ v.si) & -(F_minN > v.si);
+	v.si ^= (F_infN ^ v.si) & -((F_infN > v.si) & (v.si > F_maxN));
+	v.si ^= (F_nanN ^ v.si) & -((F_nanN > v.si) & (v.si > F_infN));
+	v.ui >>= F_shift; // logical F_shift
+	v.si ^= ((v.si - F_maxD) ^ v.si) & -(v.si > F_maxC);
+	v.si ^= ((v.si - F_minD) ^ v.si) & -(v.si > F_subC);
+	return v.ui | sign;
+}
+
+float Float16to32(uint16_t value)
+{
+	union Bits v;
+	v.ui = value;
+	int32_t sign = v.si & F_signC;
+	v.si ^= sign;
+	sign <<= F_shiftSign;
+	v.si ^= ((v.si + F_minD) ^ v.si) & -(v.si > F_subC);
+	v.si ^= ((v.si + F_maxD) ^ v.si) & -(v.si > F_maxC);
+	union Bits s;
+	s.si = F_mulC;
+	s.f *= v.si;
+	int32_t mask = -(F_norC > v.si);
+	v.si <<= F_shift;
+	v.si ^= (s.si ^ v.si) & mask;
+	v.si |= sign;
+	return v.f;
+}
 
 void SISXCreate(SISX *self, SIEmu *emu)
 {
@@ -108,6 +207,7 @@ void SISXCreate(SISX *self, SIEmu *emu)
 	self->emu = emu;
 	SISXPositionCreate(self);
 	SISXParamCreate(self);
+	SISXMRTCreate(self);
 }
 
 void SISXDestroy(SISX *self)
@@ -115,6 +215,7 @@ void SISXDestroy(SISX *self)
 	/* Free */
 	SISXPositionDestroy(self);
 	SISXParamDestroy(self);
+	SISXMRTDestroy(self);
 }
 
 void SISXReset(SISX *self)
@@ -122,6 +223,7 @@ void SISXReset(SISX *self)
 	/* Reset */
 	SISXPosReset(self);
 	SISXParamReset(self);
+	SISXMRTReset(self);
 }
 
 void SISXExportPosition(SISX *self, unsigned int target, unsigned int id, 
@@ -156,6 +258,44 @@ void SISXExportParam(SISX *self, unsigned int target, unsigned int id,
 
 	param_lst = self->param[target];
 	list_insert(param_lst, id, param);
+}
+
+void SISXExportMRT(SISX *self, unsigned int target, SIWorkItem *work_item, unsigned int compr_en, 
+	SIInstReg x, SIInstReg y, SIInstReg z, SIInstReg w)
+{
+	// SISXMRT *mrt;
+	union hfpack rg;
+	union hfpack ba;
+	float r;
+	float g;
+	float b;
+	int color;
+
+	// mrt = self->mrt[target];
+
+	/* Calculate color */
+	if (compr_en)
+	{
+		rg.as_uint32 = x.as_int;
+		ba.as_uint32 = y.as_int;
+		r = Float16to32(rg.as_f16f16.s0f);
+		g = Float16to32(rg.as_f16f16.s1f);
+		b = Float16to32(ba.as_f16f16.s0f);
+	}
+	else
+	{
+		r = x.as_float;
+		g = y.as_float;
+		b = z.as_float;
+	}
+	color = (((int)(255 * r) << 16) + ((int)(255 * g) << 8) + (int)(255 * b));
+
+	/* Export to MRT target */
+	// SISXMRTSetPixel(mrt, work_item->vreg[16].as_int, work_item->vreg[17].as_int, color);
+
+	/* FIXME */
+	// printf("t%d:  [%d, %d]: r %f,  g %f, b %f\n", work_item->id, work_item->vreg[16].as_int, work_item->vreg[17].as_int, r, g, b);
+	glut_frame_buffer_pixel(work_item->vreg[16].as_int, work_item->vreg[17].as_int, color);
 }
 
 struct si_sx_ps_init_lds_t *SISXPSInitLDSCreate(unsigned int attribute_count)
@@ -231,3 +371,37 @@ void SISXPSInitDestroy(struct si_sx_ps_init_t *ps_init)
 	/* Free */
 	free(ps_init);
 }
+
+void SISXMRTResize(SISXMRT *mrt, unsigned int width, unsigned int height)
+{
+	/* Invalid size */
+	if (width < 1 || height < 1)
+		fatal("%s: invalid size (width = %d, height = %d)\n",
+			__FUNCTION__, width, height);
+
+	/* If same size, just clear it. */
+	if (mrt->width == width && mrt->height == height)
+	{
+		memset(mrt->buffer, 0, mrt->width *
+			mrt->height * sizeof(int));
+		return;
+	}
+
+	/* Free previous buffer */
+	if (mrt->buffer)
+		free(mrt->buffer);
+
+	/* Store new size */
+	mrt->buffer = xcalloc(width * height, sizeof(int));
+	mrt->width = width;
+	mrt->height = height;
+}
+
+void SISXMRTResizeAll(SISX *self, unsigned int width, unsigned int height)
+{
+	int i;
+
+	for (i = 0; i < SI_MRT_COUNT; ++i)
+		SISXMRTResize(self->mrt[i], width, height);
+}
+
