@@ -285,11 +285,33 @@ void SIWorkGroupCreate(SIWorkGroup *self, unsigned int id, SINDRange *ndrange)
 				{
 					ps_init_meta = list_get(self->ndrange->ps_init_data->meta_list, work_item->id);
 
-					/* PSes load barycentric coordinates to VGPR0/1 */
+					/* PSes load barycentric coordinates to VGPRs */
 					if (ps_init_meta)
 					{
-						work_item->vreg[0].as_float = ps_init_meta->brctrc_i;
-						work_item->vreg[1].as_float = ps_init_meta->brctrc_j;
+						work_item->vreg[0].as_float = ps_init_meta->brctrc_i; /* I pers sample */
+						work_item->vreg[1].as_float = ps_init_meta->brctrc_j; /* J pers sample */
+						work_item->vreg[2].as_float = 0.0f; /* I pers center */
+						work_item->vreg[3].as_float = 0.0f; /* J pers center */
+						work_item->vreg[4].as_float = 0.0f; /* I pers centroid */
+						work_item->vreg[5].as_float = 0.0f; /* J pers centroid */
+						work_item->vreg[6].as_float = 0.0f ; /* I/W */
+						work_item->vreg[7].as_float = 0.0f; /* J/W */
+						work_item->vreg[8].as_float = 0.0f; /* 1/W */
+						work_item->vreg[9].as_float = 0.0f; /* I linear sample */
+						work_item->vreg[10].as_float = 0.0f; /* J linear sample */
+						work_item->vreg[11].as_float = 0.0f; /* I linear center */
+						work_item->vreg[12].as_float = 0.0f; /* J linear center */
+						work_item->vreg[13].as_float = 0.0f; /* I linear centroid */
+						work_item->vreg[14].as_float = 0.0f; /* J linear centroid */
+						work_item->vreg[15].as_float = 0.0f; /* Line stipple */
+						work_item->vreg[16].as_int = ps_init_meta->x; /* X float */
+						work_item->vreg[17].as_int = ps_init_meta->y; /* Y float */
+						work_item->vreg[18].as_float = 0.0f; /* Z float */
+						work_item->vreg[19].as_float = 0.0f; /* W float */
+						work_item->vreg[20].as_float = 0.0f; /* Facedness */
+						work_item->vreg[21].as_float = 0.0f; /* RTA, ISN, PT */
+						work_item->vreg[22].as_float = 0.0f; /* Sample mask */
+						work_item->vreg[23].as_float = 0.0f; /* X/Y fixed */
 					}
 
 					/* FIXME: X/Y should also load to somewhere for export instruction? */					
