@@ -34,6 +34,7 @@
 #include <mem-system/memory.h>
 #include <mem-system/mmu.h>
 
+#include "../glut/frame-buffer.h"
 #include "opengl.h"
 #include "si-pa.h"
 #include "si-program.h"
@@ -179,7 +180,6 @@ void OpenglDriverDestroy(OpenglDriver *self)
 
 	/* Free viewport */
 	opengl_pa_viewport_free(self->opengl_si_vwpt);
-
 }
 
 /* This function is called when all work groups from an ND-Range have
@@ -1388,6 +1388,9 @@ static int opengl_abi_si_viewport_impl(X86Context *ctx)
 
 	/* Set Viewport */
 	opengl_pa_viewport_set(driver->opengl_si_vwpt, x, y, width, height);
+
+	/* Create host viewport */
+	glut_frame_buffer_resize(width, height);
 	
 	/* Return */
 	return 0;

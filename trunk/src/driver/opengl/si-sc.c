@@ -80,7 +80,7 @@ static void opengl_sc_pixel_info_set_brctrc_cood(struct opengl_sc_pixel_info_t *
 	lamda2 /= det;
 	lamda3 = 1 - lamda1 -lamda2;
 
-	/* Only need to store lamda2 and lamda3 as AMD rearrange the formula */
+	/* Only need to store lamda2 and lamda3 as AMD rearranges the formula */
 	pxl_info->brctrc_i = lamda2;
 	pxl_info->brctrc_j = lamda3;
 
