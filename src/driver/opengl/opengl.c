@@ -1541,6 +1541,8 @@ static int opengl_abi_si_raster_finish_impl(X86Context *ctx)
 		}
 	}
 
+	glut_frame_buffer_flush_request();
+
 	/* Return */
 	return 0;
 }
