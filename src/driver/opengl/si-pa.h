@@ -107,7 +107,7 @@ struct opengl_pa_primitive_t
 
 struct opengl_pa_viewport_t *opengl_pa_viewport_create();
 void opengl_pa_viewport_free(struct opengl_pa_viewport_t *vwpt);
-void opengl_pa_viewport_set(struct opengl_pa_viewport_t *vwpt, int x, int y, int height, int width);
+void opengl_pa_viewport_set(struct opengl_pa_viewport_t *vwpt, int x, int y, int width, int height);
 void opengl_pa_viewport_apply(struct opengl_pa_viewport_t *vwpt, struct opengl_pa_vertex_t *vtx);
 
 struct opengl_pa_depth_range_t *opengl_pa_depth_range_t();
