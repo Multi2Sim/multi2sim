@@ -53,12 +53,12 @@ void opengl_pa_viewport_free(struct opengl_pa_viewport_t *vwpt)
 	free(vwpt);
 }
 
-void opengl_pa_viewport_set(struct opengl_pa_viewport_t *vwpt, int x, int y, int height, int width)
+void opengl_pa_viewport_set(struct opengl_pa_viewport_t *vwpt, int x, int y, int width, int height)
 {
 	vwpt->x = x;
 	vwpt->y = y;
-	vwpt->height = height;
 	vwpt->width = width;
+	vwpt->height = height;
 }
 
 void opengl_pa_viewport_apply(struct opengl_pa_viewport_t *vwpt, struct opengl_pa_vertex_t *vtx)
