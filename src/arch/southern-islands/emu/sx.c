@@ -288,7 +288,15 @@ void SISXExportMRT(SISX *self, unsigned int target, SIWorkItem *work_item, unsig
 		g = y.as_float;
 		b = z.as_float;
 	}
-	color = (((int)(255 * r) << 16) + ((int)(255 * g) << 8) + (int)(255 * b));
+
+	/* Map to range [0-255] */
+	r *= 255;
+	g *= 255;
+	b *= 255;
+
+	/* Compress to a 4 bytes int */
+	color = (((int)(r) << 16) + ((int)(g) << 8) + (int)(b));
+	// printf("%08x [%d, %d, %d]\n", color, (int)r, (int)g, (int)b);
 
 	/* Export to MRT target */
 	// SISXMRTSetPixel(mrt, work_item->vreg[16].as_int, work_item->vreg[17].as_int, color);
