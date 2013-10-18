@@ -566,16 +566,16 @@ void Inst::DumpTarget(ostream &os, int high0, int low0, int high1, int low1)
 {
         int value0;
 	int value1;
-	int value3;
+	int value2;
 
         value0 = GetBits64(bytes.as_dword, high0, low0);
         value1 = GetBits64(bytes.as_dword, high1, low1);
-	value3 = 8388608 - value0;
+	value2 = 8388608 - value0;
 
-	if (value1 == 1)
-		os << " 0x" << hex << value3 << dec;
-	else if (value1 == 0)
-		os << " -0x" << hex << value0 << dec;
+	if (value1 == 0)
+		os << " 0x" << hex << value0 + address + 8 << dec;
+	else if (value1 == 1)
+		os << " 0x" << hex << value2 + address - 8 << dec;
 }
 
 void Inst::Dump(ostream &os)
