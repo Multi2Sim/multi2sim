@@ -16,6 +16,9 @@ libllvm2si_a_SOURCES = \
 	phi.c \
 	phi.h \
 	\
+	Phi.cc \
+	Phi.h \
+	\
 	symbol.c \
 	symbol.h \
 	\
@@ -23,6 +26,7 @@ libllvm2si_a_SOURCES = \
 	symbol-table.h
 
 AM_CFLAGS = $(LLVM_CFLAGS)
+AM_CXXFLAGS = $(LLVM_CXXFLAGS)
 
 else
 
