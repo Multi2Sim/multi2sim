@@ -17,45 +17,56 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef M2C_LLVM2SI_PHI_H_OLD
-#define M2C_LLVM2SI_PHI_H_OLD
+#ifndef M2C_LLVM2SI_PHI_H
+#define M2C_LLVM2SI_PHI_H
 
-#include <llvm-c/Core.h>
+#include <llvm/Value.h>
+#include <m2c/common/Node.h>
+#include <m2c/si2bin/Arg.h>
 
-#include <lib/class/class.h>
 
-
+namespace llvm2si
+{
 
 /*
- * Class 'Llvm2siPhi'
  * This class represents an entry in the list of elements of a 'phi'
  * instruction in the LLVM code.
  */
 
-CLASS_BEGIN(Llvm2siPhi, Object)
-	
+class Phi
+{
 	/* Source node in the control tree to take the source value from. This
 	 * node is extracted from the basic block argument in an entry of the
 	 * 'phi' LLVM instruction. */
-	Node *src_node;
+	Common::Node *src_node;
 
 	/* Value to take from the source basic block, as it appears in one of
 	 * the arguments of the 'phi' LLVM instruction. */
-	LLVMValueRef src_value;
+	llvm::Value *src_value;
 	
 	/* Destination value (in destination basic block) to write this value
 	 * into. This object must be created by the caller, but will be freed
 	 * internally. */
-	Si2binArg *dest_value;
+	si2bin::Arg *dest_value;
 
-CLASS_END(Llvm2siPhi);
+public:
+
+	/* Constructor */
+	Phi(Common::Node *src_node, llvm::Value *src_value,
+			si2bin::Arg *dest_value) {
+		this->src_node = src_node;
+		this->src_value = src_value;
+		this->dest_value = dest_value;
+	}
+
+	/* Getters */
+	Common::Node *GetSrcNode() { return src_node; }
+	llvm::Value *GetSrcValue() { return src_value; }
+	si2bin::Arg *GetDestValue() { return dest_value; }
+};
 
 
-void Llvm2siPhiCreate(Llvm2siPhi *self, Node *src_node,
-		LLVMValueRef src_value, Si2binArg *dest_value);
-
-void Llvm2siPhiDestroy(Llvm2siPhi *self);
-
+}  /* namespace llvm2si */
 
 #endif
 
