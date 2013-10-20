@@ -22,6 +22,9 @@ libllvm2si_a_SOURCES = \
 	symbol.c \
 	symbol.h \
 	\
+	Symbol.cc \
+	Symbol.h \
+	\
 	symbol-table.c \
 	symbol-table.h
 

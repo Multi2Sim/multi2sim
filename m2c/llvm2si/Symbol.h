@@ -1,0 +1,113 @@
+/*
+ *  Multi2Sim
+ *  Copyright (C) 2013  Rafael Ubal (ubal@ece.neu.edu)
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+#ifndef M2C_LLVM2SI_SYMBOL_H
+#define M2C_LLVM2SI_SYMBOL_H
+
+#include <iostream>
+#include <memory>
+#include <unordered_map>
+
+#include <lib/cpp/Misc.h>
+
+
+using namespace Misc;
+
+namespace llvm2si
+{
+
+extern StringMap symbol_type_map;
+enum SymbolType
+{
+	SymbolTypeInvalid = 0,
+	SymbolVectorRegister,
+	SymbolScalarRegister
+};
+
+
+class Symbol
+{
+	friend class SymbolTable;
+
+	std::string name;
+	SymbolType type;
+
+	/* Register ID and number of registers */
+	int reg;
+	int count;
+
+	/* Flag indicating whether the symbol contains a global memory
+	 * address. */
+	bool address;
+
+	/* If the symbol represents a global memory address (flag 'address'
+	 * is set to true), UAV identifier (0=uav10, 1=uav11, ...). */
+	int uav_index;
+
+	/* Constructor. They are declared as private, in such a way that
+	 * symbols can only be created by the friend class SymbolTable. */
+	Symbol(const std::string &name, SymbolType type, int reg) :
+			name(name), type(type), reg(reg), count(1),
+			address(false) { }
+	Symbol(const std::string &name, SymbolType type, int low, int high) :
+			name(name), type(type), reg(low),
+			count(high - low + 1), address(false) { }
+
+public:
+
+	/* Getters */
+	const std::string &GetName() { return name; }
+
+	/* Dump */
+	void Dump(std::ostream &os);
+	friend std::ostream &operator<<(std::ostream &os, Symbol &symbol) {
+			symbol.Dump(os); return os; }
+
+	/* Set the symbol type to an address to global memory and associate it
+	 * with a UAV as specified in 'uav_index' (0=uav10, 1=uav11, ...). */
+	void SetUAVIndex(int uav_index) { address = true;
+			this->uav_index = uav_index; }
+};
+
+
+class SymbolTable
+{
+	std::unordered_map<std::string, std::unique_ptr<Symbol>> table;
+public:
+	/* Create new symbol and add it to the list */
+	template<typename... T> Symbol *NewSymbol(T... args) {
+			std::unique_ptr<Symbol> symbol_ptr(new Symbol(args...));
+			std::string &name = symbol_ptr->GetName();
+			table[name] = std::move(symbol_ptr);
+			return symbol_ptr.get();
+	}
+
+	/* Look up symbol by name and return it, or return null if symbol is
+	 * not found. */
+	Symbol *Lookup(const std::string &name) {
+		auto it = table.find(name);
+		return it == table.end() ? nullptr : it->second.get();
+	}
+};
+
+
+}  /* namespace llvm2si */
+
+#endif
+
