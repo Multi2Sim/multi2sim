@@ -23,6 +23,8 @@
 #include <iostream>
 #include <memory>
 
+#include <llvm/InstrTypes.h>
+#include <llvm/Instructions.h>
 #include <llvm/Type.h>
 #include <m2c/common/Node.h>
 #include <m2c/si2bin/Inst.h>
@@ -54,7 +56,8 @@ class BasicBlock
 	static int GetPointerLlvmTypeSize(llvm::Type *llvm_type);
 
 	/* Emit instructions */
-	void EmitAdd(llvm::Instruction *llvm_inst);
+	void EmitAdd(llvm::BinaryOperator *llvm_inst);
+	void EmitCall(llvm::CallInst *llvm_inst);
 
 public:
 	

@@ -156,6 +156,10 @@ public:
 	/* Constructor */
 	explicit Function(llvm::Function *llvm_function);
 
+	/* Getters */
+	int GetVRegGid() { return vreg_gid; }
+	int GetSRegGSize() { return sreg_gsize; }
+
 	/* Dump */
 	void Dump(std::ostream &os);
 	friend std::ostream &operator<<(std::ostream &os, Function &function)
