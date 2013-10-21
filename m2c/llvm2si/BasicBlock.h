@@ -53,6 +53,9 @@ class BasicBlock
 	 * LLVM pointer. */
 	static int GetPointerLlvmTypeSize(llvm::Type *llvm_type);
 
+	/* Emit instructions */
+	void EmitAdd(llvm::Instruction *llvm_inst);
+
 public:
 	
 	/* Constructor */

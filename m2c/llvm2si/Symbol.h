@@ -60,16 +60,15 @@ class Symbol
 	 * is set to true), UAV identifier (0=uav10, 1=uav11, ...). */
 	int uav_index;
 
-	/* Constructor. They are declared as private, in such a way that
-	 * symbols can only be created by the friend class SymbolTable. */
+public:
+
+	/* Constructor */
 	Symbol(const std::string &name, SymbolType type, int reg) :
 			name(name), type(type), reg(reg), count(1),
 			address(false) { }
 	Symbol(const std::string &name, SymbolType type, int low, int high) :
 			name(name), type(type), reg(low),
 			count(high - low + 1), address(false) { }
-
-public:
 
 	/* Getters */
 	const std::string &GetName() { return name; }
@@ -91,11 +90,9 @@ class SymbolTable
 	std::unordered_map<std::string, std::unique_ptr<Symbol>> table;
 public:
 	/* Create new symbol and add it to the list */
-	template<typename... T> Symbol *NewSymbol(T... args) {
-			std::unique_ptr<Symbol> symbol_ptr(new Symbol(args...));
-			std::string &name = symbol_ptr->GetName();
-			table[name] = std::move(symbol_ptr);
-			return symbol_ptr.get();
+	void AddSymbol(Symbol *symbol) {
+		std::unique_ptr<Symbol> symbol_ptr(symbol);
+		table[symbol_ptr->GetName()] = std::move(symbol_ptr);
 	}
 
 	/* Look up symbol by name and return it, or return null if symbol is

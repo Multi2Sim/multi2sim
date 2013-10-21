@@ -79,17 +79,37 @@ class Inst
 	 * with it. */
 	std::string comment;
 
+	/* Construction based on opcode + argument list */
+	void Initialize(SI::InstOpcode opcode);
+	template<typename... Args> void Initialize(SI::InstOpcode opcode,
+			Arg *arg, Args&&... args)
+	{
+		this->args.emplace_back(arg);
+		Initialize(opcode, args...);
+	}
+
+	/* Construction based on name + argument list */
+	void Initialize(const std::string &name);
+	template<typename... Args> void Initialize(const std::string &name,
+			Arg *arg, Args&&... args)
+	{
+		this->args.emplace_back(arg);
+		Initialize(name, args...);
+	}
+
 public:
 
 	/* Create a new instruction with the specified opcode, as defined in the
 	 * Southern Islands disassembler. The arguments contained in the list
 	 * will be freed automatically in the destructor of this class. */
-	Inst(SI::InstOpcode opcode, std::list<Arg *> &args);
+	template<typename... Args> Inst(SI::InstOpcode opcode, Args&&... args)
+			{ Initialize(opcode, args...); }
 
 	/* Create a new instruction with one of the possible opcodes
 	 * corresponding to a name. The arguments contained in the list will be
 	 * adopted by the instruction and freed in the destructor. */
-	Inst(std::string name, std::list<Arg *> &args);
+	template<typename... Args> Inst(const std::string &name, Args&&... args)
+			{ Initialize(name, args...); }
 
 	/* Dump instruction in a human-ready way */
 	void Dump(std::ostream &os);

@@ -22,6 +22,7 @@
 #include <llvm/Type.h>
 
 #include "BasicBlock.h"
+#include "Function.h"
 
 
 using namespace Misc;
@@ -71,84 +72,56 @@ int BasicBlock::GetPointerLlvmTypeSize(llvm::Type *llvm_type)
 }
 
 
-
-#if 0
-/*
- * Private Functions
- */
-
-static void Llvm2siBasicBlockEmitAdd(Llvm2siBasicBlock *self,
-		LLVMValueRef llinst)
+void BasicBlock::EmitAdd(llvm::Instruction *llvm_inst)
 {
-	LLVMValueRef llarg_op1;
-	LLVMValueRef llarg_op2;
-	LLVMTypeRef llvm_type;
-	LLVMTypeKind llvm_type_kind;
-
-	Llvm2siFunction *function;
-	Llvm2siSymbol *ret_symbol;
-	Si2binArg *arg_op1;
-	Si2binArg *arg_op2;
-	Si2binInst *inst;
-	List *arg_list;
-
-	int num_operands;
-	int ret_vreg;
-
-	char *ret_name;
-
-	/* Get function */
-	function = self->function;
-	assert(function);
-
 	/* Only supported for 32-bit integers */
-	llvm_type = LLVMTypeOf(llinst);
-	llvm_type_kind = LLVMGetTypeKind(llvm_type);
-	if (llvm_type_kind != LLVMIntegerTypeKind ||
-			LLVMGetIntTypeWidth(llvm_type) != 32)
-		fatal("%s: only supported for 32-bit integers",
+	llvm::Type *llvm_type = llvm_inst->getType();
+	if (llvm_type->isIntegerTy(32))
+		panic("%s: only supported for 32-bit integers",
 				__FUNCTION__);
 
 	/* Only supported for 2 operands (op1, op2) */
-	num_operands = LLVMGetNumOperands(llinst);
-	if (num_operands != 2)
-		fatal("%s: 2 operands supported, %d found",
-			__FUNCTION__, num_operands);
+	if (llvm_inst->getNumOperands() != 2)
+		panic("%s: 2 operands supported, %d found",
+			__FUNCTION__, llvm_inst->getNumOperands());
 
 	/* Get operands (vreg, literal) */
-	llarg_op1 = LLVMGetOperand(llinst, 0);
-	llarg_op2 = LLVMGetOperand(llinst, 1);
-	arg_op1 = Llvm2siFunctionTranslateValue(function, llarg_op1, NULL);
-	arg_op2 = Llvm2siFunctionTranslateValue(function, llarg_op2, NULL);
+	llvm::Value *llvm_arg1 = llvm_inst->getOperand(0);
+	llvm::Value *llvm_arg2 = llvm_inst->getOperand(1);
+	si2bin::Arg *arg1 = function->TranslateValue(llvm_arg1);
+	si2bin::Arg *arg2 = function->TranslateValue(llvm_arg2);
 
 	/* Second operand cannot be a constant */
-	arg_op2 = Llvm2siFunctionConstToVReg(function, self, arg_op2);
-	Si2binArgValidTypes(arg_op1, Si2binArgVectorRegister,
-			Si2binArgLiteral, Si2binArgLiteralReduced,
-			Si2binArgLiteralFloat, Si2binArgLiteralFloatReduced);
-	Si2binArgValidTypes(arg_op2, Si2binArgVectorRegister);
+	arg2 = function->ConstToVReg(this, arg2);
+	arg1->ValidTypes(si2bin::ArgTypeVectorRegister,
+			si2bin::ArgTypeLiteral,
+			si2bin::ArgTypeLiteralReduced,
+			si2bin::ArgTypeLiteralFloat,
+			si2bin::ArgTypeLiteralFloatReduced);
+	arg2->ValidTypes(si2bin::ArgTypeVectorRegister);
 
 	/* Allocate vector register and create symbol for return value */
-	ret_name = (char *) LLVMGetValueName(llinst);
-	ret_vreg = Llvm2siFunctionAllocVReg(function, 1, 1);
-	ret_symbol = new_ctor(Llvm2siSymbol, CreateVReg, ret_name, ret_vreg);
-	Llvm2siSymbolTableAddSymbol(function->symbol_table, ret_symbol);
+	int ret_vreg = function->AllocVReg();
+	Symbol *ret_symbol = new Symbol(llvm_inst->getName(),
+			SymbolVectorRegister, ret_vreg);
+	function->AddSymbol(ret_symbol);
 
 	/* Emit addition.
 	 * v_add_i32 ret_vreg, vcc, arg_op1, arg_op2
 	 */
-	arg_list = new(List);
-	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateVectorRegister, ret_vreg)));
-	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateSpecialRegister, SIInstSpecialRegVcc)));
-	ListAdd(arg_list, asObject(arg_op1));
-	ListAdd(arg_list, asObject(arg_op2));
-	inst = new(Si2binInst, SI_INST_V_ADD_I32, arg_list);
-	Llvm2siBasicBlockAddInst(self, inst);
+	si2bin::ArgVectorRegister *arg_ret =
+			new si2bin::ArgVectorRegister(ret_vreg);
+	si2bin::ArgSpecialRegister *arg_vcc =
+			new si2bin::ArgSpecialRegister(SI::InstSpecialRegVcc);
+	si2bin::Inst *inst = new si2bin::Inst(SI::INST_V_ADD_I32, arg_ret,
+			arg_vcc, arg1, arg2);
+	AddInst(inst);
 }
 
 
+#if 0
 static void Llvm2siBasicBlockEmitCall(Llvm2siBasicBlock *self,
-		LLVMValueRef llinst)
+		LLVMValueRef llvm_inst)
 {
 	LLVMValueRef llvm_function;
 	LLVMValueRef llarg;
@@ -175,18 +148,18 @@ static void Llvm2siBasicBlockEmitCall(Llvm2siBasicBlock *self,
 	/* Check that there is only one argument. LLVMGetNumOperands returns the
 	 * number of arguments plus one (the function being called as a last
 	 * argument. */
-	num_args = LLVMGetNumOperands(llinst) - 1;
+	num_args = LLVMGetNumOperands(llvm_inst) - 1;
 	if (num_args != 1)
 		fatal("%s: 1 argument expected, %d found",
 				__FUNCTION__, num_args);
 
 	/* Get called function, found in last operand of the operand list, as
 	 * returned by LLVMGetOperand. */
-	llvm_function = LLVMGetOperand(llinst, num_args);
+	llvm_function = LLVMGetOperand(llvm_inst, num_args);
 	func_name = (char *) LLVMGetValueName(llvm_function);
 
 	/* Get return argument name */
-	var_name = (char *) LLVMGetValueName(llinst);
+	var_name = (char *) LLVMGetValueName(llvm_inst);
 	if (!*var_name)
 		fatal("%s: invalid return variable",
 				__FUNCTION__);
@@ -198,7 +171,7 @@ static void Llvm2siBasicBlockEmitCall(Llvm2siBasicBlock *self,
 			__FUNCTION__, func_name, num_args);
 
 	/* Get argument and check type */
-	llarg = LLVMGetOperand(llinst, 0);
+	llarg = LLVMGetOperand(llvm_inst, 0);
 	llvm_type = LLVMTypeOf(llarg);
 	llvm_type_kind = LLVMGetTypeKind(llvm_type);
 	if (llvm_type_kind != LLVMIntegerTypeKind || !LLVMIsConstant(llarg))
@@ -248,7 +221,7 @@ static void Llvm2siBasicBlockEmitCall(Llvm2siBasicBlock *self,
 
 
 static void Llvm2siBasicBlockEmitGetelementptr(Llvm2siBasicBlock *self,
-		LLVMValueRef llinst)
+		LLVMValueRef llvm_inst)
 {
 	LLVMValueRef llarg_ptr;
 	LLVMValueRef llarg_index;
@@ -275,13 +248,13 @@ static void Llvm2siBasicBlockEmitGetelementptr(Llvm2siBasicBlock *self,
 	assert(function);
 
 	/* Only supported for 2 operands (pointer + 1 index) */
-	num_operands = LLVMGetNumOperands(llinst);
+	num_operands = LLVMGetNumOperands(llvm_inst);
 	if (num_operands != 2)
 		fatal("%s: 2 operands supported, %d found",
 			__FUNCTION__, num_operands);
 
 	/* Get pointer operand (vreg) */
-	llarg_ptr = LLVMGetOperand(llinst, 0);
+	llarg_ptr = LLVMGetOperand(llvm_inst, 0);
 	arg_ptr = Llvm2siFunctionTranslateValue(function, llarg_ptr, &ptr_symbol);
 	Si2binArgValidTypes(arg_ptr, Si2binArgVectorRegister);
 
@@ -294,13 +267,13 @@ static void Llvm2siBasicBlockEmitGetelementptr(Llvm2siBasicBlock *self,
 	ptr_size = llvm2si_get_pointed_lltype_size(lltype_ptr);
 
 	/* Get index operand (vreg, literal) */
-	llarg_index = LLVMGetOperand(llinst, 1);
+	llarg_index = LLVMGetOperand(llvm_inst, 1);
 	arg_index = Llvm2siFunctionTranslateValue(function, llarg_index, NULL);
 	Si2binArgValidTypes(arg_index, Si2binArgVectorRegister,
 			Si2binArgLiteral, Si2binArgLiteralReduced);
 
 	/* Allocate vector register and create symbol for return value */
-	ret_name = (char *) LLVMGetValueName(llinst);
+	ret_name = (char *) LLVMGetValueName(llvm_inst);
 	ret_vreg = Llvm2siFunctionAllocVReg(function, 1, 1);
 	ret_symbol = new_ctor(Llvm2siSymbol, CreateVReg, ret_name, ret_vreg);
 	Llvm2siSymbolSetUAVIndex(ret_symbol, ptr_symbol->uav_index);
@@ -351,7 +324,7 @@ static void Llvm2siBasicBlockEmitGetelementptr(Llvm2siBasicBlock *self,
 
 
 static void Llvm2siBasicBlockEmitIcmp(Llvm2siBasicBlock *basic_block,
-		LLVMValueRef llinst)
+		LLVMValueRef llvm_inst)
 {
 	LLVMValueRef llarg_op1;
 	LLVMValueRef llarg_op2;
@@ -379,14 +352,14 @@ static void Llvm2siBasicBlockEmitIcmp(Llvm2siBasicBlock *basic_block,
 	assert(function);
 
 	/* Only supported for 2 operands (op1, op2) */
-	num_operands = LLVMGetNumOperands(llinst);
+	num_operands = LLVMGetNumOperands(llvm_inst);
 	if (num_operands != 2)
 		fatal("%s: 2 operands supported, %d found",
 			__FUNCTION__, num_operands);
 
 	/* Get operands (vreg, literal) */
-	llarg_op1 = LLVMGetOperand(llinst, 0);
-	llarg_op2 = LLVMGetOperand(llinst, 1);
+	llarg_op1 = LLVMGetOperand(llvm_inst, 0);
+	llarg_op2 = LLVMGetOperand(llvm_inst, 1);
 	arg_op1 = Llvm2siFunctionTranslateValue(function, llarg_op1, NULL);
 	arg_op2 = Llvm2siFunctionTranslateValue(function, llarg_op2, NULL);
 
@@ -415,7 +388,7 @@ static void Llvm2siBasicBlockEmitIcmp(Llvm2siBasicBlock *basic_block,
 	Si2binArgValidTypes(arg_op2, Si2binArgVectorRegister);
 
 	/* Allocate vector register and create symbol for return value */
-	ret_name = (char *) LLVMGetValueName(llinst);
+	ret_name = (char *) LLVMGetValueName(llvm_inst);
 	ret_sreg_series = Llvm2siFunctionAllocSReg(function, 2, 2);
 	ret_symbol = new_ctor(Llvm2siSymbol, CreateSRegSeries, ret_name,
 			ret_sreg_series, ret_sreg_series + 1);
@@ -423,7 +396,7 @@ static void Llvm2siBasicBlockEmitIcmp(Llvm2siBasicBlock *basic_block,
 
 	/* Choose instruction based on predicate */
 	opcode = 0;
-	llpred = LLVMGetICmpPredicate(llinst);
+	llpred = LLVMGetICmpPredicate(llvm_inst);
 	switch (llpred)
 	{
 
@@ -517,7 +490,7 @@ static void Llvm2siBasicBlockEmitIcmp(Llvm2siBasicBlock *basic_block,
 
 
 static void Llvm2siBasicBlockEmitLoad(Llvm2siBasicBlock *self,
-		LLVMValueRef llinst)
+		LLVMValueRef llvm_inst)
 {
 	LLVMValueRef llarg_address;
 	LLVMTypeRef llvm_type;
@@ -544,13 +517,13 @@ static void Llvm2siBasicBlockEmitLoad(Llvm2siBasicBlock *self,
 	assert(function);
 
 	/* Only supported for 1 operand (address) */
-	num_operands = LLVMGetNumOperands(llinst);
+	num_operands = LLVMGetNumOperands(llvm_inst);
 	if (num_operands != 1)
 		fatal("%s: 1 operands supported, %d found",
 			__FUNCTION__, num_operands);
 
 	/* Get address operand (vreg) */
-	llarg_address = LLVMGetOperand(llinst, 0);
+	llarg_address = LLVMGetOperand(llvm_inst, 0);
 	arg_addr = Llvm2siFunctionTranslateValue(function, llarg_address, &addr_symbol);
 	Si2binArgValidTypes(arg_addr, Si2binArgVectorRegister);
 
@@ -573,14 +546,14 @@ static void Llvm2siBasicBlockEmitLoad(Llvm2siBasicBlock *self,
 			__FUNCTION__, addr_space);
 
 	/* Get return type (data) - only support 4-byte types for now */
-	llvm_type = LLVMTypeOf(llinst);
+	llvm_type = LLVMTypeOf(llvm_inst);
 	llvm_type_kind = LLVMGetTypeKind(llvm_type);
 	if (!(llvm_type_kind == LLVMIntegerTypeKind && LLVMGetIntTypeWidth(llvm_type) == 32) &&
 			llvm_type_kind != LLVMFloatTypeKind)
 		fatal("%s: only 4-byte int/float types supported", __FUNCTION__);
 
 	/* Allocate vector register and create symbol for return value */
-	ret_name = (char *) LLVMGetValueName(llinst);
+	ret_name = (char *) LLVMGetValueName(llvm_inst);
 	ret_vreg = Llvm2siFunctionAllocVReg(function, 1, 1);
 	ret_symbol = new_ctor(Llvm2siSymbol, CreateVReg, ret_name, ret_vreg);
 	Llvm2siSymbolTableAddSymbol(function->symbol_table, ret_symbol);
@@ -604,7 +577,7 @@ static void Llvm2siBasicBlockEmitLoad(Llvm2siBasicBlock *self,
 
 
 static void Llvm2siBasicBlockEmitMul(Llvm2siBasicBlock *self,
-		LLVMValueRef llinst)
+		LLVMValueRef llvm_inst)
 {
 	LLVMValueRef llarg_op1;
 	LLVMValueRef llarg_op2;
@@ -628,13 +601,13 @@ static void Llvm2siBasicBlockEmitMul(Llvm2siBasicBlock *self,
 	assert(function);
 
 	/* Only supported for 2 operands (op1, op2) */
-	num_operands = LLVMGetNumOperands(llinst);
+	num_operands = LLVMGetNumOperands(llvm_inst);
 	if (num_operands != 2)
 		fatal("%s: 2 operands supported, %d found",
 			__FUNCTION__, num_operands);
 
 	/* Only supported for 32-bit integers */
-	llvm_type = LLVMTypeOf(llinst);
+	llvm_type = LLVMTypeOf(llvm_inst);
 	llvm_type_kind = LLVMGetTypeKind(llvm_type);
 	if (llvm_type_kind != LLVMIntegerTypeKind ||
 			LLVMGetIntTypeWidth(llvm_type) != 32)
@@ -642,8 +615,8 @@ static void Llvm2siBasicBlockEmitMul(Llvm2siBasicBlock *self,
 				__FUNCTION__);
 
 	/* Get operands (vreg, literal) */
-	llarg_op1 = LLVMGetOperand(llinst, 0);
-	llarg_op2 = LLVMGetOperand(llinst, 1);
+	llarg_op1 = LLVMGetOperand(llvm_inst, 0);
+	llarg_op2 = LLVMGetOperand(llvm_inst, 1);
 	arg_op1 = Llvm2siFunctionTranslateValue(function, llarg_op1, NULL);
 	arg_op2 = Llvm2siFunctionTranslateValue(function, llarg_op2, NULL);
 
@@ -657,7 +630,7 @@ static void Llvm2siBasicBlockEmitMul(Llvm2siBasicBlock *self,
 	Si2binArgValidTypes(arg_op2, Si2binArgVectorRegister);
 
 	/* Allocate vector register and create symbol for return value */
-	ret_name = (char *) LLVMGetValueName(llinst);
+	ret_name = (char *) LLVMGetValueName(llvm_inst);
 	ret_vreg = Llvm2siFunctionAllocVReg(function, 1, 1);
 	ret_symbol = new_ctor(Llvm2siSymbol, CreateVReg, ret_name, ret_vreg);
 	Llvm2siSymbolTableAddSymbol(function->symbol_table, ret_symbol);
@@ -675,7 +648,7 @@ static void Llvm2siBasicBlockEmitMul(Llvm2siBasicBlock *self,
 
 
 static void Llvm2siBasicBlockEmitPhi(Llvm2siBasicBlock *self,
-		LLVMValueRef llinst)
+		LLVMValueRef llvm_inst)
 {
 	Llvm2siFunction *function;
 	Llvm2siSymbol *ret_symbol;
@@ -701,7 +674,7 @@ static void Llvm2siBasicBlockEmitPhi(Llvm2siBasicBlock *self,
 	assert(function);
 
 	/* Only supported for 32-bit integers */
-	llvm_type = LLVMTypeOf(llinst);
+	llvm_type = LLVMTypeOf(llvm_inst);
 	llvm_type_kind = LLVMGetTypeKind(llvm_type);
 	if (llvm_type_kind != LLVMIntegerTypeKind ||
 			LLVMGetIntTypeWidth(llvm_type) != 32)
@@ -709,17 +682,17 @@ static void Llvm2siBasicBlockEmitPhi(Llvm2siBasicBlock *self,
 				__FUNCTION__);
 
 	/* Allocate vector register and create symbol for return value */
-	ret_name = (char *) LLVMGetValueName(llinst);
+	ret_name = (char *) LLVMGetValueName(llvm_inst);
 	ret_vreg = Llvm2siFunctionAllocVReg(function, 1, 1);
 	ret_symbol = new_ctor(Llvm2siSymbol, CreateVReg, ret_name, ret_vreg);
 	Llvm2siSymbolTableAddSymbol(function->symbol_table, ret_symbol);
 
 	/* Process arguments */
-	num_operands = LLVMCountIncoming(llinst);
+	num_operands = LLVMCountIncoming(llvm_inst);
 	for (i = 0; i < num_operands; i++)
 	{
 		/* Get source basic block */
-		llvm_basic_block = LLVMGetIncomingBlock(llinst, i);
+		llvm_basic_block = LLVMGetIncomingBlock(llvm_inst, i);
 		llbb_value = LLVMBasicBlockAsValue(llvm_basic_block);
 		llbb_name = (char *) LLVMGetValueName(llbb_value);
 		node = CTreeGetNode(function->ctree, llbb_name);
@@ -728,7 +701,7 @@ static void Llvm2siBasicBlockEmitPhi(Llvm2siBasicBlock *self,
 					__FUNCTION__, llbb_name);
 
 		/* Get source value */
-		llvalue = LLVMGetIncomingValue(llinst, i);
+		llvalue = LLVMGetIncomingValue(llvm_inst, i);
 
 		/* Create destination argument */
 		arg = new_ctor(Si2binArg, CreateVectorRegister, ret_vreg);
@@ -741,7 +714,7 @@ static void Llvm2siBasicBlockEmitPhi(Llvm2siBasicBlock *self,
 
 
 static void Llvm2siBasicBlockEmitRet(Llvm2siBasicBlock *self,
-		LLVMValueRef llinst)
+		LLVMValueRef llvm_inst)
 {
 	List *arg_list;
 	Si2binInst *inst;
@@ -756,7 +729,7 @@ static void Llvm2siBasicBlockEmitRet(Llvm2siBasicBlock *self,
 
 
 static void Llvm2siBasicBlockEmitStore(Llvm2siBasicBlock *self,
-		LLVMValueRef llinst)
+		LLVMValueRef llvm_inst)
 {
 	LLVMValueRef llarg_data;
 	LLVMValueRef llarg_addr;
@@ -781,19 +754,19 @@ static void Llvm2siBasicBlockEmitStore(Llvm2siBasicBlock *self,
 	assert(function);
 
 	/* Only supported for 2 operand (address, data) */
-	num_operands = LLVMGetNumOperands(llinst);
+	num_operands = LLVMGetNumOperands(llvm_inst);
 	if (num_operands != 2)
 		fatal("%s: 2 operands supported, %d found",
 			__FUNCTION__, num_operands);
 
 	/* Get data operand (vreg) */
-	llarg_data = LLVMGetOperand(llinst, 0);
+	llarg_data = LLVMGetOperand(llvm_inst, 0);
 	arg_data = Llvm2siFunctionTranslateValue(function, llarg_data, NULL);
 	arg_data = Llvm2siFunctionConstToVReg(function, self, arg_data);
 	Si2binArgValidTypes(arg_data, Si2binArgVectorRegister);
 
 	/* Get address operand (vreg) */
-	llarg_addr = LLVMGetOperand(llinst, 1);
+	llarg_addr = LLVMGetOperand(llvm_inst, 1);
 	arg_addr = Llvm2siFunctionTranslateValue(function, llarg_addr, &addr_symbol);
 	Si2binArgValidTypes(arg_addr, Si2binArgVectorRegister);
 
@@ -842,7 +815,7 @@ static void Llvm2siBasicBlockEmitStore(Llvm2siBasicBlock *self,
 
 
 static void Llvm2siBasicBlockEmitSub(Llvm2siBasicBlock *self,
-		LLVMValueRef llinst)
+		LLVMValueRef llvm_inst)
 {
 	LLVMValueRef llarg_op1;
 	LLVMValueRef llarg_op2;
@@ -866,7 +839,7 @@ static void Llvm2siBasicBlockEmitSub(Llvm2siBasicBlock *self,
 	assert(function);
 
 	/* Only supported for 32-bit integers */
-	llvm_type = LLVMTypeOf(llinst);
+	llvm_type = LLVMTypeOf(llvm_inst);
 	llvm_type_kind = LLVMGetTypeKind(llvm_type);
 	if (llvm_type_kind != LLVMIntegerTypeKind ||
 			LLVMGetIntTypeWidth(llvm_type) != 32)
@@ -874,14 +847,14 @@ static void Llvm2siBasicBlockEmitSub(Llvm2siBasicBlock *self,
 				__FUNCTION__);
 
 	/* Only supported for 2 operands (op1, op2) */
-	num_operands = LLVMGetNumOperands(llinst);
+	num_operands = LLVMGetNumOperands(llvm_inst);
 	if (num_operands != 2)
 		fatal("%s: 2 operands supported, %d found",
 			__FUNCTION__, num_operands);
 
 	/* Get operands (vreg, literal) */
-	llarg_op1 = LLVMGetOperand(llinst, 0);
-	llarg_op2 = LLVMGetOperand(llinst, 1);
+	llarg_op1 = LLVMGetOperand(llvm_inst, 0);
+	llarg_op2 = LLVMGetOperand(llvm_inst, 1);
 	arg_op1 = Llvm2siFunctionTranslateValue(function, llarg_op1, NULL);
 	arg_op2 = Llvm2siFunctionTranslateValue(function, llarg_op2, NULL);
 
@@ -893,7 +866,7 @@ static void Llvm2siBasicBlockEmitSub(Llvm2siBasicBlock *self,
 	Si2binArgValidTypes(arg_op2, Si2binArgVectorRegister);
 
 	/* Allocate vector register and create symbol for return value */
-	ret_name = (char *) LLVMGetValueName(llinst);
+	ret_name = (char *) LLVMGetValueName(llvm_inst);
 	ret_vreg = Llvm2siFunctionAllocVReg(function, 1, 1);
 	ret_symbol = new_ctor(Llvm2siSymbol, CreateVReg, ret_name, ret_vreg);
 	Llvm2siSymbolTableAddSymbol(function->symbol_table, ret_symbol);
@@ -911,7 +884,7 @@ static void Llvm2siBasicBlockEmitSub(Llvm2siBasicBlock *self,
 }
 
 static void Llvm2siBasicBlockEmitFAdd(Llvm2siBasicBlock *self,
-		LLVMValueRef llinst)
+		LLVMValueRef llvm_inst)
 {
 	LLVMValueRef llarg_op1;
 	LLVMValueRef llarg_op2;
@@ -935,21 +908,21 @@ static void Llvm2siBasicBlockEmitFAdd(Llvm2siBasicBlock *self,
 	assert(function);
 
 	/* Only supported for 32-bit integers */
-	llvm_type = LLVMTypeOf(llinst);
+	llvm_type = LLVMTypeOf(llvm_inst);
 	llvm_type_kind = LLVMGetTypeKind(llvm_type);
 	if (llvm_type_kind != LLVMFloatTypeKind)
 		fatal("%s: only supported for float type arguments",
 				__FUNCTION__);
 
 	/* Only supported for 2 operands (op1, op2) */
-	num_operands = LLVMGetNumOperands(llinst);
+	num_operands = LLVMGetNumOperands(llvm_inst);
 	if (num_operands != 2)
 		fatal("%s: 2 operands supported, %d found",
 			__FUNCTION__, num_operands);
 
 	/* Get operands (vreg, literal) */
-	llarg_op1 = LLVMGetOperand(llinst, 0);
-	llarg_op2 = LLVMGetOperand(llinst, 1);
+	llarg_op1 = LLVMGetOperand(llvm_inst, 0);
+	llarg_op2 = LLVMGetOperand(llvm_inst, 1);
 	arg_op1 = Llvm2siFunctionTranslateValue(function, llarg_op1, NULL);
 	arg_op2 = Llvm2siFunctionTranslateValue(function, llarg_op2, NULL);
 
@@ -961,7 +934,7 @@ static void Llvm2siBasicBlockEmitFAdd(Llvm2siBasicBlock *self,
 	Si2binArgValidTypes(arg_op2, Si2binArgVectorRegister);
 
 	/* Allocate vector register and create symbol for return value */
-	ret_name = (char *) LLVMGetValueName(llinst);
+	ret_name = (char *) LLVMGetValueName(llvm_inst);
 	ret_vreg = Llvm2siFunctionAllocVReg(function, 1, 1);
 	ret_symbol = new_ctor(Llvm2siSymbol, CreateVReg, ret_name, ret_vreg);
 	Llvm2siSymbolTableAddSymbol(function->symbol_table, ret_symbol);
@@ -978,7 +951,7 @@ static void Llvm2siBasicBlockEmitFAdd(Llvm2siBasicBlock *self,
 }
 
 static void Llvm2siBasicBlockEmitFSub(Llvm2siBasicBlock *self,
-		LLVMValueRef llinst)
+		LLVMValueRef llvm_inst)
 {
 	LLVMValueRef llarg_op1;
 	LLVMValueRef llarg_op2;
@@ -1002,21 +975,21 @@ static void Llvm2siBasicBlockEmitFSub(Llvm2siBasicBlock *self,
 	assert(function);
 
 	/* Only supported for 32-bit integers */
-	llvm_type = LLVMTypeOf(llinst);
+	llvm_type = LLVMTypeOf(llvm_inst);
 	llvm_type_kind = LLVMGetTypeKind(llvm_type);
 	if (llvm_type_kind != LLVMFloatTypeKind)
 		fatal("%s: only supported for float type arguments",
 				__FUNCTION__);
 
 	/* Only supported for 2 operands (op1, op2) */
-	num_operands = LLVMGetNumOperands(llinst);
+	num_operands = LLVMGetNumOperands(llvm_inst);
 	if (num_operands != 2)
 		fatal("%s: 2 operands supported, %d found",
 			__FUNCTION__, num_operands);
 
 	/* Get operands (vreg, literal) */
-	llarg_op1 = LLVMGetOperand(llinst, 0);
-	llarg_op2 = LLVMGetOperand(llinst, 1);
+	llarg_op1 = LLVMGetOperand(llvm_inst, 0);
+	llarg_op2 = LLVMGetOperand(llvm_inst, 1);
 	arg_op1 = Llvm2siFunctionTranslateValue(function, llarg_op1, NULL);
 	arg_op2 = Llvm2siFunctionTranslateValue(function, llarg_op2, NULL);
 
@@ -1028,7 +1001,7 @@ static void Llvm2siBasicBlockEmitFSub(Llvm2siBasicBlock *self,
 	Si2binArgValidTypes(arg_op2, Si2binArgVectorRegister);
 
 	/* Allocate vector register and create symbol for return value */
-	ret_name = (char *) LLVMGetValueName(llinst);
+	ret_name = (char *) LLVMGetValueName(llvm_inst);
 	ret_vreg = Llvm2siFunctionAllocVReg(function, 1, 1);
 	ret_symbol = new_ctor(Llvm2siSymbol, CreateVReg, ret_name, ret_vreg);
 	Llvm2siSymbolTableAddSymbol(function->symbol_table, ret_symbol);
@@ -1045,7 +1018,7 @@ static void Llvm2siBasicBlockEmitFSub(Llvm2siBasicBlock *self,
 }
 
 static void Llvm2siBasicBlockEmitFMul(Llvm2siBasicBlock *self,
-		LLVMValueRef llinst)
+		LLVMValueRef llvm_inst)
 {
 	LLVMValueRef llarg_op1;
 	LLVMValueRef llarg_op2;
@@ -1069,21 +1042,21 @@ static void Llvm2siBasicBlockEmitFMul(Llvm2siBasicBlock *self,
 	assert(function);
 
 	/* Only supported for 2 operands (op1, op2) */
-	num_operands = LLVMGetNumOperands(llinst);
+	num_operands = LLVMGetNumOperands(llvm_inst);
 	if (num_operands != 2)
 		fatal("%s: 2 operands supported, %d found",
 			__FUNCTION__, num_operands);
 
 	/* Only supported for 32-bit integers */
-	llvm_type = LLVMTypeOf(llinst);
+	llvm_type = LLVMTypeOf(llvm_inst);
 	llvm_type_kind = LLVMGetTypeKind(llvm_type);
 	if (llvm_type_kind != LLVMFloatTypeKind)
 		fatal("%s: only supported for float type arguments",
 				__FUNCTION__);
 
 	/* Get operands (vreg, literal) */
-	llarg_op1 = LLVMGetOperand(llinst, 0);
-	llarg_op2 = LLVMGetOperand(llinst, 1);
+	llarg_op1 = LLVMGetOperand(llvm_inst, 0);
+	llarg_op2 = LLVMGetOperand(llvm_inst, 1);
 	arg_op1 = Llvm2siFunctionTranslateValue(function, llarg_op1, NULL);
 	arg_op2 = Llvm2siFunctionTranslateValue(function, llarg_op2, NULL);
 
@@ -1097,7 +1070,7 @@ static void Llvm2siBasicBlockEmitFMul(Llvm2siBasicBlock *self,
 	Si2binArgValidTypes(arg_op2, Si2binArgVectorRegister);
 
 	/* Allocate vector register and create symbol for return value */
-	ret_name = (char *) LLVMGetValueName(llinst);
+	ret_name = (char *) LLVMGetValueName(llvm_inst);
 	ret_vreg = Llvm2siFunctionAllocVReg(function, 1, 1);
 	ret_symbol = new_ctor(Llvm2siSymbol, CreateVReg, ret_name, ret_vreg);
 	Llvm2siSymbolTableAddSymbol(function->symbol_table, ret_symbol);
@@ -1114,7 +1087,7 @@ static void Llvm2siBasicBlockEmitFMul(Llvm2siBasicBlock *self,
 }
 
 static void Llvm2siBasicBlockEmitExtractElement(Llvm2siBasicBlock *self,
-		LLVMValueRef llinst)
+		LLVMValueRef llvm_inst)
 {
 	LLVMValueRef llarg_op1;
 	LLVMValueRef llarg_op2;
@@ -1136,14 +1109,14 @@ static void Llvm2siBasicBlockEmitExtractElement(Llvm2siBasicBlock *self,
 	assert(function);
 
 	/* Only supported for 2 operands (op1, op2) */
-	num_operands = LLVMGetNumOperands(llinst);
+	num_operands = LLVMGetNumOperands(llvm_inst);
 	if (num_operands != 2)
 		fatal("%s: 2 operands supported, %d found",
 			__FUNCTION__, num_operands);
 
 	/* Get operands (vreg, literal) */
-	llarg_op1 = LLVMGetOperand(llinst, 0);
-	llarg_op2 = LLVMGetOperand(llinst, 1);
+	llarg_op1 = LLVMGetOperand(llvm_inst, 0);
+	llarg_op2 = LLVMGetOperand(llvm_inst, 1);
 
 	arg_op1 = Llvm2siFunctionTranslateValue(function, llarg_op1, NULL);
 	arg_op2 = Llvm2siFunctionTranslateValue(function, llarg_op2, NULL);
@@ -1158,7 +1131,7 @@ static void Llvm2siBasicBlockEmitExtractElement(Llvm2siBasicBlock *self,
 	delete(arg_op2);
 
 	/* Allocate vector register and create symbol for return value */
-	ret_name = (char *) LLVMGetValueName(llinst);
+	ret_name = (char *) LLVMGetValueName(llvm_inst);
 	ret_vreg = Llvm2siFunctionAllocVReg(function, 1, 1);
 	ret_symbol = new_ctor(Llvm2siSymbol, CreateVReg, ret_name, ret_vreg);
 	Llvm2siSymbolTableAddSymbol(function->symbol_table, ret_symbol);
@@ -1252,21 +1225,21 @@ void Llvm2siBasicBlockAddComment(Llvm2siBasicBlock *self, char *comment)
 
 void Llvm2siBasicBlockEmit(Llvm2siBasicBlock *self, LLVMBasicBlockRef llvm_basic_block)
 {
-	LLVMValueRef llinst;
+	LLVMValueRef llvm_inst;
 	LLVMOpcode llopcode;
 
 	/* Iterate over LLVM instructions */
 	assert(llvm_basic_block);
-	for (llinst = LLVMGetFirstInstruction(llvm_basic_block); llinst;
-			llinst = LLVMGetNextInstruction(llinst))
+	for (llvm_inst = LLVMGetFirstInstruction(llvm_basic_block); llvm_inst;
+			llvm_inst = LLVMGetNextInstruction(llvm_inst))
 	{
-		llopcode = LLVMGetInstructionOpcode(llinst);
+		llopcode = LLVMGetInstructionOpcode(llvm_inst);
 		switch (llopcode)
 		{
 
 		case LLVMAdd:
 
-			Llvm2siBasicBlockEmitAdd(self, llinst);
+			Llvm2siBasicBlockEmitAdd(self, llvm_inst);
 			break;
 
 		case LLVMBr:
@@ -1276,67 +1249,67 @@ void Llvm2siBasicBlockEmit(Llvm2siBasicBlock *self, LLVMBasicBlockRef llvm_basic
 
 		case LLVMCall:
 
-			Llvm2siBasicBlockEmitCall(self, llinst);
+			Llvm2siBasicBlockEmitCall(self, llvm_inst);
 			break;
 
 		case LLVMGetElementPtr:
 
-			Llvm2siBasicBlockEmitGetelementptr(self, llinst);
+			Llvm2siBasicBlockEmitGetelementptr(self, llvm_inst);
 			break;
 
 		case LLVMICmp:
 
-			Llvm2siBasicBlockEmitIcmp(self, llinst);
+			Llvm2siBasicBlockEmitIcmp(self, llvm_inst);
 			break;
 
 		case LLVMLoad:
 
-			Llvm2siBasicBlockEmitLoad(self, llinst);
+			Llvm2siBasicBlockEmitLoad(self, llvm_inst);
 			break;
 
 		case LLVMMul:
 
-			Llvm2siBasicBlockEmitMul(self, llinst);
+			Llvm2siBasicBlockEmitMul(self, llvm_inst);
 			break;
 
 		case LLVMPHI:
 
-			Llvm2siBasicBlockEmitPhi(self, llinst);
+			Llvm2siBasicBlockEmitPhi(self, llvm_inst);
 			break;
 
 		case LLVMRet:
 
-			Llvm2siBasicBlockEmitRet(self, llinst);
+			Llvm2siBasicBlockEmitRet(self, llvm_inst);
 			break;
 
 		case LLVMStore:
 
-			Llvm2siBasicBlockEmitStore(self, llinst);
+			Llvm2siBasicBlockEmitStore(self, llvm_inst);
 			break;
 
 		case LLVMSub:
 
-			Llvm2siBasicBlockEmitSub(self, llinst);
+			Llvm2siBasicBlockEmitSub(self, llvm_inst);
 			break;
 
 		case LLVMFAdd:
 
-			Llvm2siBasicBlockEmitFAdd(self, llinst);
+			Llvm2siBasicBlockEmitFAdd(self, llvm_inst);
 			break;
 
 		case LLVMFSub:
 
-			Llvm2siBasicBlockEmitFSub(self, llinst);
+			Llvm2siBasicBlockEmitFSub(self, llvm_inst);
 			break;
 		
 		case LLVMFMul:
 
-			Llvm2siBasicBlockEmitFMul(self, llinst);
+			Llvm2siBasicBlockEmitFMul(self, llvm_inst);
 			break;
 
 		case LLVMExtractElement:
 			
-			Llvm2siBasicBlockEmitExtractElement(self, llinst);
+			Llvm2siBasicBlockEmitExtractElement(self, llvm_inst);
 			break;
 		
 		default:

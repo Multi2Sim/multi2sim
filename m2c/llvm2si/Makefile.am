@@ -13,6 +13,9 @@ libllvm2si_a_SOURCES = \
 	function.c \
 	function.h \
 	\
+	Function.cc \
+	Function.h \
+	\
 	llvm2si.c \
 	llvm2si.h \
 	\
