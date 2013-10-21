@@ -26,6 +26,9 @@
 namespace si2bin
 {
 
+/* Forward declarations */
+class Arg;
+
 
 extern Misc::StringMap token_type_map;
 enum TokenType
