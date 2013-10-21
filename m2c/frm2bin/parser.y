@@ -136,7 +136,8 @@ global_section
 		/* hardcoe the kernel name now, nvidia use some 
 		 * special prefix and sufix 
 		 */
-		 g_kernel_name = new(String, "_Z9vectorAddPKfS0_Pfi");
+		 //g_kernel_name = new(String, "_Z9vectorAddPKfS0_Pfi");
+		 g_kernel_name = new(String, "vectorAdd");
 		
 		/* insert g_kernel_name to g_kernel */
 		g_kernel->name = g_kernel_name;
