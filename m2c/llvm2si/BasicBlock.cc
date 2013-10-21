@@ -18,7 +18,9 @@
  */
 
 #include <lib/cpp/Misc.h>
+#include <llvm/Constants.h>
 #include <llvm/DerivedTypes.h>
+#include <llvm/Function.h>
 #include <llvm/Type.h>
 
 #include "BasicBlock.h"
@@ -26,6 +28,7 @@
 
 
 using namespace Misc;
+using namespace si2bin;
 
 namespace llvm2si
 {
@@ -72,7 +75,7 @@ int BasicBlock::GetPointerLlvmTypeSize(llvm::Type *llvm_type)
 }
 
 
-void BasicBlock::EmitAdd(llvm::Instruction *llvm_inst)
+void BasicBlock::EmitAdd(llvm::BinaryOperator *llvm_inst)
 {
 	/* Only supported for 32-bit integers */
 	llvm::Type *llvm_type = llvm_inst->getType();
@@ -88,17 +91,17 @@ void BasicBlock::EmitAdd(llvm::Instruction *llvm_inst)
 	/* Get operands (vreg, literal) */
 	llvm::Value *llvm_arg1 = llvm_inst->getOperand(0);
 	llvm::Value *llvm_arg2 = llvm_inst->getOperand(1);
-	si2bin::Arg *arg1 = function->TranslateValue(llvm_arg1);
-	si2bin::Arg *arg2 = function->TranslateValue(llvm_arg2);
+	Arg *arg1 = function->TranslateValue(llvm_arg1);
+	Arg *arg2 = function->TranslateValue(llvm_arg2);
 
 	/* Second operand cannot be a constant */
 	arg2 = function->ConstToVReg(this, arg2);
-	arg1->ValidTypes(si2bin::ArgTypeVectorRegister,
-			si2bin::ArgTypeLiteral,
-			si2bin::ArgTypeLiteralReduced,
-			si2bin::ArgTypeLiteralFloat,
-			si2bin::ArgTypeLiteralFloatReduced);
-	arg2->ValidTypes(si2bin::ArgTypeVectorRegister);
+	arg1->ValidTypes(ArgTypeVectorRegister,
+			ArgTypeLiteral,
+			ArgTypeLiteralReduced,
+			ArgTypeLiteralFloat,
+			ArgTypeLiteralFloatReduced);
+	arg2->ValidTypes(ArgTypeVectorRegister);
 
 	/* Allocate vector register and create symbol for return value */
 	int ret_vreg = function->AllocVReg();
@@ -109,117 +112,87 @@ void BasicBlock::EmitAdd(llvm::Instruction *llvm_inst)
 	/* Emit addition.
 	 * v_add_i32 ret_vreg, vcc, arg_op1, arg_op2
 	 */
-	si2bin::ArgVectorRegister *arg_ret =
-			new si2bin::ArgVectorRegister(ret_vreg);
-	si2bin::ArgSpecialRegister *arg_vcc =
-			new si2bin::ArgSpecialRegister(SI::InstSpecialRegVcc);
-	si2bin::Inst *inst = new si2bin::Inst(SI::INST_V_ADD_I32, arg_ret,
-			arg_vcc, arg1, arg2);
+	ArgVectorRegister *arg_ret = new ArgVectorRegister(ret_vreg);
+	ArgSpecialRegister *arg_vcc = new ArgSpecialRegister(SI::InstSpecialRegVcc);
+	Inst *inst = new Inst(SI::INST_V_ADD_I32, arg_ret, arg_vcc, arg1, arg2);
 	AddInst(inst);
 }
 
 
-#if 0
-static void Llvm2siBasicBlockEmitCall(Llvm2siBasicBlock *self,
-		LLVMValueRef llvm_inst)
+void BasicBlock::EmitCall(llvm::CallInst *llvm_inst)
 {
-	LLVMValueRef llvm_function;
-	LLVMValueRef llarg;
-	LLVMTypeRef llvm_type;
-	LLVMTypeKind llvm_type_kind;
-
-	Llvm2siFunction *function;
-	Llvm2siSymbol *ret_symbol;
-	Si2binInst *inst;
-	Si2binArg *ret_arg;
-	List *arg_list;
-
-	int ret_vreg;
-	int num_args;
-	int dim;
-
-	char *var_name;
-	char *func_name;
-
-	/* Get function */
-	function = self->function;
-	assert(function);
-
 	/* Check that there is only one argument. LLVMGetNumOperands returns the
 	 * number of arguments plus one (the function being called as a last
 	 * argument. */
-	num_args = LLVMGetNumOperands(llvm_inst) - 1;
-	if (num_args != 1)
-		fatal("%s: 1 argument expected, %d found",
-				__FUNCTION__, num_args);
+	if (llvm_inst->getNumOperands() != 1)
+		panic("%s: 1 argument expected, %d found",
+				__FUNCTION__, llvm_inst->getNumOperands());
 
 	/* Get called function, found in last operand of the operand list, as
 	 * returned by LLVMGetOperand. */
-	llvm_function = LLVMGetOperand(llvm_inst, num_args);
-	func_name = (char *) LLVMGetValueName(llvm_function);
+	llvm::Function *llvm_function = llvm_inst->getCalledFunction();
+	std::string func_name = llvm_function->getName();
 
 	/* Get return argument name */
-	var_name = (char *) LLVMGetValueName(llvm_inst);
-	if (!*var_name)
-		fatal("%s: invalid return variable",
+	std::string var_name = llvm_inst->getName();
+	if (var_name.empty())
+		panic("%s: invalid return variable",
 				__FUNCTION__);
 
 	/* Number of arguments */
-	num_args = LLVMCountParams(llvm_function);
-	if (num_args != 1)
+	if (llvm_function->getNumOperands() != 1)
 		fatal("%s: 1 argument expected for '%s', %d found",
-			__FUNCTION__, func_name, num_args);
+			__FUNCTION__, func_name.c_str(),
+			llvm_function->getNumOperands());
 
 	/* Get argument and check type */
-	llarg = LLVMGetOperand(llvm_inst, 0);
-	llvm_type = LLVMTypeOf(llarg);
-	llvm_type_kind = LLVMGetTypeKind(llvm_type);
-	if (llvm_type_kind != LLVMIntegerTypeKind || !LLVMIsConstant(llarg))
+	llvm::Value *llvm_arg = llvm_inst->getOperand(0);
+	llvm::Type *llvm_type = llvm_arg->getType();
+	if (!llvm_type->isIntegerTy() || !llvm::isa<llvm::ConstantInt>(llvm_arg))
 		fatal("%s: argument should be an integer constant",
 				__FUNCTION__);
 
 	/* Get argument value and check bounds */
-	dim = LLVMConstIntGetZExtValue(llarg);
-	if (!IN_RANGE(dim, 0, 2))
+	llvm::ConstantInt *llvm_const = llvm::cast<llvm::ConstantInt>(llvm_arg);
+	int dim = llvm_const->getZExtValue();
+	if (!InRange(dim, 0, 2))
 		fatal("%s: constant in range [0..2] expected",
 				__FUNCTION__);
 
 	/* Built-in functions */
-	if (!strcmp(func_name, "__get_global_id_u32"))
+	if (func_name == "__get_global_id_u32")
 	{
 		/* Create new symbol associating it with the vector register
 		 * containing the global ID in the given dimension. */
-		ret_symbol = new_ctor(Llvm2siSymbol, CreateVReg, var_name,
-				function->vreg_gid + dim);
-		Llvm2siSymbolTableAddSymbol(function->symbol_table,
-				ret_symbol);
+		Symbol *ret_symbol = new Symbol(var_name, SymbolVectorRegister,
+				function->GetVRegGid() + dim);
+		function->AddSymbol(ret_symbol);
 	}
-	else if (!strcmp(func_name, "get_global_size"))
+	else if (func_name == "get_global_size")
 	{
 		/* Allocate a new vector register to copy global size. */
-		ret_vreg = Llvm2siFunctionAllocVReg(function, 1, 1);
-		ret_arg = new_ctor(Si2binArg, CreateVectorRegister, ret_vreg);
-		ret_symbol = new_ctor(Llvm2siSymbol, CreateVReg, var_name, ret_vreg);
-		Llvm2siSymbolTableAddSymbol(function->symbol_table, ret_symbol);
+		int ret_vreg = function->AllocVReg();
+		auto ret_arg = new ArgVectorRegister(ret_vreg);
+		auto ret_symbol = new Symbol(var_name, SymbolVectorRegister,
+				ret_vreg);
+		function->AddSymbol(ret_symbol);
 
 		/* Create new vector register containing the global size.
 		 * v_mov_b32 vreg, s[gsize+dim]
 		 */
-		arg_list = new(List);
-		ListAdd(arg_list, asObject(ret_arg));
-		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegister,
-				function->sreg_gsize + dim)));
-		inst = new(Si2binInst, SI_INST_V_MOV_B32, arg_list);
-		Llvm2siBasicBlockAddInst(self, inst);
+		auto src_arg = new ArgScalarRegister(function->GetSRegGSize() + dim);
+		auto inst = new Inst(SI::INST_V_MOV_B32, ret_arg, src_arg);
+		AddInst(inst);
 	}
 	else
 	{
 		fatal("%s: %s: invalid built-in function",
-			__FUNCTION__, func_name);
+			__FUNCTION__, func_name.c_str());
 	}
 }
 
 
+#if 0
 static void Llvm2siBasicBlockEmitGetelementptr(Llvm2siBasicBlock *self,
 		LLVMValueRef llvm_inst)
 {
