@@ -30,19 +30,16 @@ using namespace Misc;
 namespace si2bin
 {
 
-Inst::Inst(SI::InstOpcode opcode, std::list<Arg *> &args)
+void Inst::Initialize(SI::InstOpcode opcode)
 {
 	/* Initialize */
 	size = 0;
 	bytes.dword = 0;
 
-	/* Copy argument list */
+	/* Assign argument indices */
 	int arg_index = 0;
-	for (auto arg : args)
-	{
-		this->args.emplace_back(arg);
+	for (auto &arg : args)
 		arg->index = arg_index++;
-	}
 
 	/* Check opcode */
 	this->opcode = opcode;
@@ -62,7 +59,7 @@ Inst::Inst(SI::InstOpcode opcode, std::list<Arg *> &args)
 
 	/* Check argument types */
 	auto tokens_iterator = info->tokens.begin();
-	for (auto arg : args)
+	for (auto &arg : args)
 	{
 		/* Get formal argument from instruction info. Associate token with the
 		 * instruction argument. */
@@ -71,7 +68,7 @@ Inst::Inst(SI::InstOpcode opcode, std::list<Arg *> &args)
 		assert(token);
 
 		/* Check that actual argument type is acceptable for token */
-		if (!token->IsArgAllowed(arg))
+		if (!token->IsArgAllowed(arg.get()))
 			fatal("%s: invalid type for argument %d", __FUNCTION__,
 					arg->index + 1);
 
@@ -81,20 +78,17 @@ Inst::Inst(SI::InstOpcode opcode, std::list<Arg *> &args)
 }
 
 
-Inst::Inst(std::string name, std::list<Arg *> &args)
+void Inst::Initialize(const std::string &name)
 {
 	/* Initialize */
 	size = 0;
 	bytes.dword = 0;
 	
-	/* Copy argument list */
+	/* Assign argument indices */
 	int arg_index = 0;
-	for (auto arg : args)
-	{
-		this->args.emplace_back(arg);
+	for (auto &arg : args)
 		arg->index = arg_index++;
-	}
-	
+
 	/* Try to create the instruction following all possible encodings for
 	 * the same instruction name. */
 	std::string error = "invalid instruction: " + name;
@@ -113,7 +107,7 @@ Inst::Inst(std::string name, std::list<Arg *> &args)
 		/* Check arguments */
 		error = "";
 		auto token_iterator = info->tokens.begin();
-		for (auto arg : args)
+		for (auto &arg : args)
 		{
 			/* Get formal argument from instruction info. We associate the
 			 * instruction argument with the token. */
@@ -122,7 +116,7 @@ Inst::Inst(std::string name, std::list<Arg *> &args)
 			assert(token);
 
 			/* Check that actual argument type is acceptable for token */
-			if (!token->IsArgAllowed(arg))
+			if (!token->IsArgAllowed(arg.get()))
 			{
 				error = StringFormat("invalid type for argument %d",
 						arg->index + 1);
