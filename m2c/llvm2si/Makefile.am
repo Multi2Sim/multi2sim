@@ -7,6 +7,9 @@ libllvm2si_a_SOURCES = \
 	basic-block.c \
 	basic-block.h \
 	\
+	BasicBlock.cc \
+	BasicBlock.h \
+	\
 	function.c \
 	function.h \
 	\
