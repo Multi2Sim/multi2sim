@@ -197,6 +197,7 @@ public:
 			value << std::dec; }
 	int Encode();
 	int GetValue() { return value; }
+	void SetValue(int value) { this->value = value; }
 };
 
 
