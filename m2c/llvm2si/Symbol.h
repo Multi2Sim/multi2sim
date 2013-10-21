@@ -72,6 +72,8 @@ public:
 
 	/* Getters */
 	const std::string &GetName() { return name; }
+	bool IsAddress() { return address; }
+	int GetUAVIndex() { return uav_index; }
 
 	/* Dump */
 	void Dump(std::ostream &os);
