@@ -745,12 +745,14 @@ int main(int argc, char **argv)
 	/* Initialize */
 	m2c_init();
 
+#ifdef HAVE_FLEX_BISON_AND_LLVM
 	/* Control tree debug */
 	if (*CommonTreeConfigGetPath())
 	{
 		CommonTreeConfigRun();
 		goto out;
 	}
+#endif
 
 	/* Process list of sources in 'm2c_source_file_list' and generate the
 	 * rest of the file lists. */
