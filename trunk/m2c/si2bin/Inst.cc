@@ -92,7 +92,7 @@ void Inst::Initialize(const std::string &name)
 	/* Try to create the instruction following all possible encodings for
 	 * the same instruction name. */
 	std::string error = "invalid instruction: " + name;
-	for (InstInfo *info = builder.GetInstInfo(name); info; info = info->next)
+	for (info = builder.GetInstInfo(name); info; info = info->next)
 	{
 		/* Check number of arguments */
 		if (args.size() != info->tokens.size())
@@ -141,8 +141,7 @@ void Inst::Initialize(const std::string &name)
 		fatal("%s", error.c_str());
 
 	/* Initialize opcode */
-	this->info = info;
-	this->opcode = info->info->opcode;
+	opcode = info->info->opcode;
 }
 
 
