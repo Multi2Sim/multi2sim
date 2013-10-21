@@ -53,11 +53,13 @@ class BasicBlock
 
 	/* Return the size in bytes of the LLVM type pointed to by an
 	 * LLVM pointer. */
-	static int GetPointerLlvmTypeSize(llvm::Type *llvm_type);
+	static int GetPointedLlvmTypeSize(llvm::Type *llvm_type);
 
 	/* Emit instructions */
 	void EmitAdd(llvm::BinaryOperator *llvm_inst);
 	void EmitCall(llvm::CallInst *llvm_inst);
+	void EmitGetElementPtr(llvm::GetElementPtrInst *llvm_inst);
+	void EmitICmp(llvm::ICmpInst *llvm_inst);
 
 public:
 	
