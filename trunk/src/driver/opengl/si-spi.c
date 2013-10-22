@@ -204,7 +204,7 @@ struct list_t *SISpiPSNDRangesCreate(SISX *sx, enum opengl_pa_primitive_mode_t m
 	/* Create meta data repository for NDRange */
 	meta_list_repo = SISpiPSInitMetaListsCreate(sx->pos, vwpt);
 
-	/* Should have same amout of elements */
+	/* Should have same amount of elements */
 	assert(list_count(meta_list_repo) == list_count(lds_repo));
 
 	for (i = 0; i < list_count(meta_list_repo); ++i)
@@ -303,3 +303,8 @@ struct list_t *SISpiPSNDRangesCreate(SISX *sx, enum opengl_pa_primitive_mode_t m
 	return ndrange_repo;
 }
 
+void SISpiPSNDRangesDestroy(struct list_t *ndrange_list)
+{
+	assert(!list_count(ndrange_list));
+	list_free(ndrange_list);
+}
