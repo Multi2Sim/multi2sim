@@ -18,7 +18,6 @@
  */
 
 #include <algorithm>
-#include <cassert>
 #include <climits>
 #include <cstdarg>
 #include <cstdio>

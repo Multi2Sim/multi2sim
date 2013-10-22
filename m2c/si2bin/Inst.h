@@ -29,6 +29,12 @@
 #include "Token.h"
 
 
+/* Forward declarations */
+namespace llvm2si {
+class BasicBlock;
+}
+
+
 namespace si2bin
 {
 
@@ -73,7 +79,7 @@ class Inst
 
 	/* For LLVM-to-SI back-end: basic block that the instruction
 	 * belongs to. */
-	//llvm2si::BasicBlock *basic_block;
+	llvm2si::BasicBlock *basic_block;
 
 	/* Comment attached to the instruction, which will be dumped together
 	 * with it. */
@@ -117,6 +123,11 @@ public:
 		inst.Dump(os);
 		return os;
 	}
+
+	/* Getters/setters */
+	llvm2si::BasicBlock *GetBasicBlock() { return basic_block; }
+	void SetBasicBlock(llvm2si::BasicBlock *basic_block) {
+		this->basic_block = basic_block; }
 
 	/* Attach a comment to the instruction */
 	void SetComment(const std::string &comment) { this->comment = comment; }

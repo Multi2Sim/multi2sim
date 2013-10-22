@@ -138,6 +138,7 @@ public:
 	int Encode();
 	void Dump(std::ostream &os) { os << 's' << id; }
 	int GetId() { return id; }
+	void SetId(int id) { this->id = id; }
 };
 
 

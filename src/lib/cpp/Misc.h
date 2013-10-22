@@ -20,6 +20,7 @@
 #ifndef LIB_CPP_MISC_H
 #define LIB_CPP_MISC_H
 
+#include <cassert>
 #include <iostream>
 #include <vector>
 
@@ -262,6 +263,14 @@ public:
 inline bool InRange(int value, int min, int max)
 {
 	return value >= min && value <= max;
+}
+
+
+template<class X, class Y> inline X cast(const Y &val)
+{
+	X result = dynamic_cast<X>(val);
+	assert(result && "cast<Ty>() argument of incompatible type");
+	return result;
 }
 
 
