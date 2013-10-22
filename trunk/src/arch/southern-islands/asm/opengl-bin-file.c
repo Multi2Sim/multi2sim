@@ -120,18 +120,22 @@ static struct str_map_t enc_dict_user_elements_type_map =
 
 static int opengl_si_shader_binary_get_isa_offset(struct opengl_si_shader_binary_t *shdr)
 {
+	struct opengl_si_enc_dict_vertex_shader_t *vs_enc;
+	struct opengl_si_enc_dict_pixel_shader_t *ps_enc;
 	int isa_offset;
 
 	switch (shdr->shader_kind)
 	{
 		case OPENGL_SI_SHADER_VERTEX:
 		{
-			isa_offset = 2124;
+			vs_enc = (struct opengl_si_enc_dict_vertex_shader_t *)shdr->enc_dict;
+			isa_offset = vs_enc->meta->uSizeInBytes;
 			break;
 		}
 		case OPENGL_SI_SHADER_PIXEL:
 		{
-			isa_offset = 3436;
+			ps_enc = (struct opengl_si_enc_dict_pixel_shader_t *)shdr->enc_dict;
+			isa_offset = ps_enc->meta->uSizeInBytes;
 			break;
 		}
 		case OPENGL_SI_SHADER_GEOMETRY:
@@ -414,10 +418,10 @@ static void opengl_si_si_bin_usageinfo_init_with_section(struct opengl_si_bin_us
 	assert(!strcmp(section->name, ".usageinfo"));
 
 	/* FIXME: size doesn't match */
-	// if (section->buffer.size != sizeof(struct opengl_si_bin_usageinfo_t))
-	// 	fatal("Section size(%d) doesn't match usageinfo structure(%d).",
-	// 		section->buffer.size, sizeof(struct opengl_si_bin_usageinfo_t));
-	// else
+	if (section->buffer.size != sizeof(struct opengl_si_bin_usageinfo_t))
+		fatal("Section size(%d) doesn't match usageinfo structure(%d).",
+			section->buffer.size, sizeof(struct opengl_si_bin_usageinfo_t));
+	else
 		memcpy(usageinfo, section->buffer.ptr, sizeof(struct opengl_si_bin_usageinfo_t));
 }
 
