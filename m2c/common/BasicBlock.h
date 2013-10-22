@@ -36,6 +36,8 @@ public:
 	/* Constructor */
 	BasicBlock(LeafNode *node);
 
+	/* Getters */
+	LeafNode *GetNode() { return node; }
 };
 
 

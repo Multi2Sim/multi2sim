@@ -26,6 +26,7 @@
 #include <llvm/InstrTypes.h>
 #include <llvm/Instructions.h>
 #include <llvm/Type.h>
+#include <m2c/common/BasicBlock.h>
 #include <m2c/common/Node.h>
 #include <m2c/si2bin/Inst.h>
 
@@ -36,7 +37,7 @@ namespace llvm2si
 /* Forward declarations */
 class Function;
 
-class BasicBlock
+class BasicBlock : public Common::BasicBlock
 {
 	/* Comment stored temporarily in the basic block to be attached to the
 	 * next instruction added. */
@@ -60,11 +61,22 @@ class BasicBlock
 	void EmitCall(llvm::CallInst *llvm_inst);
 	void EmitGetElementPtr(llvm::GetElementPtrInst *llvm_inst);
 	void EmitICmp(llvm::ICmpInst *llvm_inst);
+	void EmitLoad(llvm::LoadInst *llvm_inst);
+	void EmitMul(llvm::BinaryOperator *llvm_inst);
+	void EmitPhi(llvm::PHINode *llvm_inst);
+	void EmitRet(llvm::ReturnInst *llvm_inst);
+	void EmitStore(llvm::StoreInst *llvm_inst);
+	void EmitSub(llvm::BinaryOperator *llvm_inst);
+	void EmitFAdd(llvm::BinaryOperator *llvm_inst);
+	void EmitFSub(llvm::BinaryOperator *llvm_inst);
+	void EmitFMul(llvm::BinaryOperator *llvm_inst);
+	void EmitExtractElement(llvm::ExtractElementInst *llvm_inst);
 
 public:
 	
 	/* Constructor */
-	BasicBlock(Function *function, Common::LeafNode *node);
+	BasicBlock(Function *function, Common::LeafNode *node) :
+		Common::BasicBlock(node), function(function) { }
 
 	/* Dump */
 	void Dump(std::ostream &os);
@@ -77,7 +89,7 @@ public:
 	/* Add a comment to a basic block. The comment will be attached to the
 	 * next instruction added to the block. If no other instruction is added
 	 * to the basic block, the comment won't have any effect. */
-	void AddComment(const std::string &comment);
+	void AddComment(const std::string &comment) { this->comment = comment; }
 
 	/* Emit SI code for the LLVM basic block into field 'inst_list'. */
 	void Emit(llvm::BasicBlock *llvm_basic_block);
