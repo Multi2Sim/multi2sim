@@ -433,6 +433,9 @@ static void gl_shader_binary_analyze(char *file_name)
 			file_buffer++;
 		}
 	}
+
+	elf_file_free(elf_file);
+	free_buffer(file_buffer);
 }
 
 
