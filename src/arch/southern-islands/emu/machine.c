@@ -1330,6 +1330,15 @@ void si_isa_S_NOT_B32_impl(SIWorkItem *work_item,
 }
 #undef INST
 
+#define INST SI_INST_SOP1
+/* D.u = WholeQuadMode(S0.u). SCC = 1 if result is non-zero. */
+void si_isa_S_WQM_B64_impl(SIWorkItem *work_item,
+	struct SIInstWrap *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
 /* D.u = PC + 4, PC = S0.u */
 #define INST SI_INST_SOP1
 void si_isa_S_SWAPPC_B64_impl(SIWorkItem *work_item,
@@ -4144,6 +4153,41 @@ void si_isa_V_SUBREV_F32_VOP3a_impl(SIWorkItem *work_item,
 	{
 		si_isa_debug("t%d: V%u<=(%gf) ", work_item->id, INST.vdst,
 			diff.as_float);
+	}
+}
+#undef INST
+
+/* D.f = S0.f * S1.f (DX9 rules, 0.0*x = 0.0). */
+#define INST SI_INST_VOP3a
+void si_isa_V_MUL_LEGACY_F32_VOP3a_impl(SIWorkItem *work_item,
+	struct SIInstWrap *inst)
+{
+	SIInstReg s0;
+	SIInstReg s1;
+	SIInstReg product;
+
+	/* Load operands from registers or as a literal constant. */
+	s0.as_uint = SIWorkItemReadReg(work_item, INST.src0);
+	s1.as_uint = SIWorkItemReadReg(work_item, INST.src1);
+
+	/* Calculate the product. */
+	if (s0.as_float == 0.0f || s1.as_float == 0.0f)
+	{
+		product.as_float = 0.0f;
+	}
+	else
+	{
+		product.as_float = s0.as_float * s1.as_float;
+	}
+
+	/* Write the results. */
+	SIWorkItemWriteVReg(work_item, INST.vdst, product.as_uint);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("t%d: V%u<=(%gf) (%gf * %gf) ", work_item->id, 
+			INST.vdst, product.as_float, s0.as_float, s1.as_float);
 	}
 }
 #undef INST

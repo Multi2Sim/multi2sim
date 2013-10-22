@@ -219,6 +219,14 @@ DEFINST(S_NOT_B32,
 	0
 )
 
+DEFINST(S_WQM_B64,
+	" s_wqm_b64     %SDST, %SSRC0",
+	SOP1,
+	10,
+	4,
+	0
+)
+
 DEFINST(S_SWAPPC_B64,
 	" s_swappc_b64  %64_SDST, %64_SSRC0",
 	SOP1,
@@ -1100,6 +1108,14 @@ DEFINST(V_SUBREV_F32_VOP3a,
 	" v_subrev_f32  %VOP3_64_SVDST, %VOP3_SRC0, %VOP3_SRC1, %VOP3_64_SRC2",
 	VOP3a,
 	261,
+	8,
+	0
+)
+
+DEFINST(V_MUL_LEGACY_F32_VOP3a,
+	" v_mul_legacy_f32  %VOP3_VDST, %VOP3_SRC0, %VOP3_SRC1",
+	VOP3a,
+	263,
 	8,
 	0
 )
