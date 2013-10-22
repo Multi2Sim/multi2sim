@@ -1434,8 +1434,11 @@ static int opengl_abi_si_raster_impl(X86Context *ctx)
 	shdr = list_get(driver->opengl_si_shader_list, pixel_shader_id);
 	ps_render_mode = opengl_pa_primitive_get_mode(mode);
 
-	ps_ndranges_list = SISpiPSNDRangesCreate(si_emu->sx, ps_render_mode, 
-		driver->opengl_si_vwpt, shdr);
+	if (shdr)
+		ps_ndranges_list = SISpiPSNDRangesCreate(si_emu->sx, ps_render_mode, 
+			driver->opengl_si_vwpt, shdr);
+	else
+		fatal("Pixel Shader id %d not found!", pixel_shader_id);
 
 	/* NDRanges are ready, just need to launch them */
 	LIST_FOR_EACH(ps_ndranges_list, i)
@@ -1446,6 +1449,9 @@ static int opengl_abi_si_raster_impl(X86Context *ctx)
 
 	/* Reset Shader Export */
 	SISXReset(si_emu->sx);
+
+	/* Free NDRange list */
+	list_free(ps_ndranges_list);
 
 	/* Return */
 	return 0;
