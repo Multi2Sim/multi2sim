@@ -764,7 +764,7 @@ typedef struct
 {
 	// VS input mask
 	uint32_t inputStreamMask;                /* input stream mask (phsyical id) */
-	bool   usesVertexID;                   /* tells whether this program uses VertexID */
+	uint16_t   usesVertexID;                   /* tells whether this program uses VertexID */
 	// transform feedback
 	uint32_t streamOutStrideInDWORDs0;       /* streamout stride0 */
 	uint32_t streamOutStrideInDWORDs1;       /* streamout stride1 */
@@ -785,19 +785,19 @@ typedef struct
 	uint8_t  fsReturnAddrRegForPassThruVS;            /* Fetch shader subroutine start SGPR (SVP PassThruVS) */
 	uint8_t  fsInputStreamTableRegForPassThruVS;      /* Fetch shader input stream table start SGPR (SVP PassThruVS) */
 	int32_t  fsAttribValidMaskReg;                    /* VPGR which Fetch shader should populate, if sparse buffers are used. */
-} SIVSInfo;
+} __attribute__((packed)) SIVSInfo;
 
 typedef struct
 {
 	uint32_t texKillPresent;                         /* Program uses texkill */
 	int32_t  pointCoordReg;                          /* register number of gl_PointCoord which is an input of FS */
 	uint8_t  outputColorMap[PS_MAX_OUTPUTS];  /* pixel shader color output map (from virtual to physical) */
-	bool   useFlatInterpMode;                      /* if flat has been used on a varying */
-	bool   forcePerSampleShading;                  /* true if the FS is required to run in per sample frequency */
-	bool   uncached_writes;                        /* uncached writes */
-	bool   outputDepth;                            /* true if pixel shader output depth */
+	uint16_t   useFlatInterpMode;                      /* if flat has been used on a varying */
+	uint16_t   forcePerSampleShading;                  /* true if the FS is required to run in per sample frequency */
+	uint16_t   uncached_writes;                        /* uncached writes */
+	uint16_t   outputDepth;                            /* true if pixel shader output depth */
 	uint32_t usingDualBlendMask;                     /* indicates using an index = 1 for dual blending, in glsl layout */
-} SIPSInfo;
+} __attribute__((packed)) SIPSInfo;
 
 typedef struct
 {
@@ -810,15 +810,15 @@ typedef struct
 	uint32_t numThreadPerGroupZ;  /* dimension z of NumThreadPerGroup */
 	uint32_t totalNumThreadGroup; /* total number of thread groups */
 	uint32_t NumWavefrontPerSIMD; /* wavefronts per simd */
-	bool   eCsSetupMode;        /* compute slow/fast mode */
-	bool   IsMaxNumWavePerSIMD; /* Is this the max active num wavefronts per simd */
-	bool   SetBufferForNumGroup;/* Need to set up buffer for info on number of thread groups? */
-} SICSInfo;
+	uint16_t   eCsSetupMode;        /* compute slow/fast mode */
+	uint16_t   IsMaxNumWavePerSIMD; /* Is this the max active num wavefronts per simd */
+	uint16_t   SetBufferForNumGroup;/* Need to set up buffer for info on number of thread groups? */
+} __attribute__((packed)) SICSInfo;
 
 typedef struct
 {
-	bool   usesVertexCache;      /* vertex cache used? (fetch shader only) */
-} SIFSInfo;
+	uint16_t   usesVertexCache;      /* vertex cache used? (fetch shader only) */
+} __attribute__((packed)) SIFSInfo;
 
 struct opengl_si_bin_info_t
 {
@@ -837,7 +837,7 @@ struct opengl_si_bin_info_t
 	uint32_t constantBufferMask;            /* constant buffer mask */
 	/* uav */
 	uint32_t uavOpIsUsed;                   /* mask for uav used delete!! */
-	bool   uavInCB;                       /* UAV is in CB */
+	uint16_t   uavInCB;                       /* UAV is in CB */
 	uint32_t uavResourceCount;              /* size of uav resource mask array */
 	/* atomic counter */
 	uint32_t uavAtomicOpIsUsed;             /* mask for atomic op used */
@@ -884,7 +884,7 @@ struct opengl_si_bin_info_t
 	};
 	
 	enum opengl_si_bin_info_max_offset max_valid_offset;
-} ;
+}__attribute__((packed));
 
 /* ARB program parameter */
 struct opengl_si_bin_arb_program_parameter_t
@@ -913,9 +913,9 @@ typedef struct
 {
 	/* fs input usage */
 	uint32_t usesTexCoordMask;                   /* texcoord unit usage mask */
-	bool   usesFogCoord;                       /* fogcoord usage */
-	bool   usePrimaryColor;                    /* true if primary color is used */
-	bool   useSecondaryColor;                  /* true if secondary color is used */
+	uint16_t   usesFogCoord;                       /* fogcoord usage */
+	uint16_t   usePrimaryColor;                    /* true if primary color is used */
+	uint16_t   useSecondaryColor;                  /* true if secondary color is used */
 	/* aa stipple */
 	int8_t   aaStippleTexCoord;                  /* the texture coord used by SCL to simulate aa/stipple */
 	int8_t   aaStippleTexUnit;                   /* the texture unit used by aa/stipple texture image */
@@ -925,8 +925,8 @@ typedef struct
 	int8_t   bitmapTexUnit;                      /* the texture unit used for bitmap drawing */
 	int8_t   bitmapTexVirtUnit;                  /* default logic unit for bitmap drawing */
 	/* misc fields */
-	bool   needSampleInfoCBs;                  /* whether the FP needs the 2 constant buffers for the SAMPLEINFO, SAMPLEPOS and EVAL_SAMPLE_INDEX. */
-	bool   earlyFragTest;                      /* true if early frag test is enabled */
+	uint16_t   needSampleInfoCBs;                  /* whether the FP needs the 2 constant buffers for the SAMPLEINFO, SAMPLEPOS and EVAL_SAMPLE_INDEX. */
+	uint16_t   earlyFragTest;                      /* true if early frag test is enabled */
 	uint8_t  conservativeZ;                      /* 0:defult, 1:less, 2:greater */
 } __attribute__((packed)) SIPSUsageinfo;
 
@@ -948,13 +948,13 @@ typedef struct
 	uint32_t tessGenMode;                        /* domain mode */
 	uint32_t tessGenSpacing;                     /* partition mode */
 	uint32_t tessGenVertexOrder;                 /* output primitive mode */
-	bool   tessGenPointMode;                   /* If point mode when tessellated */
+	uint16_t   tessGenPointMode;                   /* If point mode when tessellated */
 } __attribute__((packed)) SIDSUsageinfo;
 
 typedef struct
 {
-	bool   positionInvariant;                  /* Has the ARB_position_invariant option been requested */
-	bool   enableAnotherSetAttribAlias;        /* if it is cg generated program or nv_vertex_program */
+	uint16_t   positionInvariant;                  /* Has the ARB_position_invariant option been requested */
+	uint16_t   enableAnotherSetAttribAlias;        /* if it is cg generated program or nv_vertex_program */
 	uint32_t lsStride;                           /* The number of input-control-points per patch declared in HS */
 	/* SI+ fetch shader parameters */
 	int8_t   fsType;                             /* Fetch shader type (immediate vs flat), SI only */
@@ -975,8 +975,8 @@ struct opengl_si_bin_usageinfo_t
 {
 	struct opengl_si_bin_arb_program_parameter_t   arbProgramParameter;   /* ARB program parameters */
 	uint16_t layoutParamMask;                            /* layout parameters mask, see type gllShaderLayoutType for detail info */
-	bool usesPrimitiveID;                              /* Does this program use PrimitiveID */
-	bool usesClipDistance;                             /* vp outputs clip distance(s) */
+	uint16_t usesPrimitiveID;                              /* Does this program use PrimitiveID */
+	uint16_t usesClipDistance;                             /* vp outputs clip distance(s) */
 
 	uint32_t texImageMask;                               /* orignial teximage unit usage mask (without SC optimization and it isn't include patched texture stage) */
 	uint32_t usesTexImageMask;                           /* teximge unit usage returned by SC */
