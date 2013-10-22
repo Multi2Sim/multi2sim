@@ -1447,11 +1447,11 @@ static int opengl_abi_si_raster_impl(X86Context *ctx)
 		list_add(driver->opengl_si_ndrange_list, ndrange);
 	}
 
+	/* Free NDrange list */
+	SISpiPSNDRangesDestroy(ps_ndranges_list);
+	
 	/* Reset Shader Export */
 	SISXReset(si_emu->sx);
-
-	/* Free NDRange list */
-	list_free(ps_ndranges_list);
 
 	/* Return */
 	return 0;

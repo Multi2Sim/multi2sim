@@ -253,6 +253,7 @@ void opengl_pa_primitives_free(struct opengl_pa_primitive_t *prmtv)
 	{
 
 	case OPENGL_PA_TRIANGLES:
+	{
 		LIST_FOR_EACH(prmtv->list, i)
 		{
 			triangle = list_get(prmtv->list, i);
@@ -261,6 +262,9 @@ void opengl_pa_primitives_free(struct opengl_pa_primitive_t *prmtv)
 			opengl_pa_vertex_free(triangle->vtx2);
 			opengl_pa_triangle_free(triangle);
 		}
+		break;		
+	}
+	
 	default:
 		break;
 	}

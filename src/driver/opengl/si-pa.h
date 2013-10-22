@@ -54,7 +54,7 @@ enum opengl_pa_primitive_mode_t
 struct opengl_pa_edge_func_t;
 struct list_t;
 
-/* Viewport is used to transform vertex in normalized device coordinate to window coordinate */
+/* Viewport is used to transform vertex from normalized device coordinate to window coordinate */
 struct opengl_pa_viewport_t
 {
 	int x;
@@ -63,14 +63,14 @@ struct opengl_pa_viewport_t
 	int height;
 };
 
-/* DepthRange is used to transform vertex in normalized device coordinate to window coordinate */
+/* DepthRange is used to transform vertex from normalized device coordinate to window coordinate */
 struct opengl_pa_depth_range_t
 {
 	double n;
 	double f;
 };
 
-/* Intially, vertex positions are in normalized device coordinate */
+/* Initially, vertex positions are in normalized device coordinate */
 struct opengl_pa_vertex_t
 {
 	float pos[4];
