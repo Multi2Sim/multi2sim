@@ -29,7 +29,6 @@
 #include <m2c/common/Node.h>
 #include <m2c/common/Tree.h>
 #include <m2c/si2bin/Arg.h>
-//#include <arch/southern-islands/Arg.h>
 
 #include "Phi.h"
 #include "Symbol.h"
@@ -99,6 +98,8 @@ class FunctionUAV
 
 public:
 
+	/* Getters */
+	int GetSReg() { return sreg; }
 };
 
 
@@ -129,7 +130,7 @@ class Function
 
 	/* Array of UAVs, starting at uav10. Each UAV is associated with one
 	 * function argument using a buffer in global memory. */
-	std::list<std::unique_ptr<FunctionUAV>> uav_list;
+	std::vector<std::unique_ptr<FunctionUAV>> uav_list;
 
 	/* Predefined nodes */
 	Common::LeafNode *header_node;
@@ -157,8 +158,12 @@ public:
 	explicit Function(llvm::Function *llvm_function);
 
 	/* Getters */
+	Common::Tree *GetTree() { return &tree; }
 	int GetVRegGid() { return vreg_gid; }
 	int GetSRegGSize() { return sreg_gsize; }
+	FunctionUAV *GetUAV(int index) { return index >= 0 && index <
+			(int) uav_list.size() ? uav_list[index].get() :
+			nullptr; }
 
 	/* Dump */
 	void Dump(std::ostream &os);
@@ -167,6 +172,9 @@ public:
 
 	/* Add symbol to symbol table */
 	void AddSymbol(Symbol *symbol) { symbol_table.AddSymbol(symbol); }
+
+	/* Add phi node to list */
+	void AddPhi(Phi *phi) { phi_list.emplace_back(phi); }
 
 	/* Generate initialization code for the function in basic block
 	 * 'basic_block_header'. */
