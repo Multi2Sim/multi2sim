@@ -682,7 +682,16 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 		if ( (!cb[2]) &&  (list_count(outer_bin->data_list) > 0) )
 			fatal("Data values have been added but constant buffer 2 has not been specified");
 		
-		
+		/* Special case: If CB1 is specified but not CB0, add CB0 in notes and symbol but NOT 
+		 * user element list 
+		 */
+		if ( (cb[1]) && (!cb[0]) )
+		{
+			cb[0] = 1;
+			buff_num_offset ++;
+		}
+
+
 		buff_size = 8 * buff_num_offset;
 		ptr = xcalloc(1, (buff_size));
 		
@@ -937,12 +946,12 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 		si2bin_inner_bin_generate(inner_bin, kernel_buffer);
 			
 		/* Output Inner ELF */
-		/* FILE *f;
+		 FILE *f;
 		snprintf(line, sizeof line, "%s_kernel", inner_bin->name);
 		f = fopen(line, "w");
 		ELFWriterBufferWriteToFile(kernel_buffer, f);
 		fclose(f); 
-		*/
+		
 	
 		/* Create kernel symbol and add it to the symbol table */
 		snprintf(line, sizeof line, "__OpenCL_%s_kernel", inner_bin->name);
