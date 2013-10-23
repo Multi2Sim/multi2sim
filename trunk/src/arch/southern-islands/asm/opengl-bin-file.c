@@ -389,10 +389,10 @@ static void opengl_si_si_bin_info_init_with_section(struct opengl_si_bin_info_t 
 {
 	assert(!strcmp(section->name, ".info"));
 
-	if (section->buffer.size != sizeof(struct opengl_si_bin_info_t))
-		fatal("Section size(%d) doesn't match info structure(%d).",
-			section->buffer.size, (int)sizeof(struct opengl_si_bin_info_t));
-	else
+	//if (section->buffer.size != sizeof(struct opengl_si_bin_info_t))
+	//	fatal("Section size(%d) doesn't match info structure(%d).",
+	//		section->buffer.size, (int)sizeof(struct opengl_si_bin_info_t));
+	//else
 		memcpy(info, section->buffer.ptr, sizeof(struct opengl_si_bin_info_t));
 }
 
@@ -419,7 +419,7 @@ static void opengl_si_si_bin_usageinfo_init_with_section(struct opengl_si_bin_us
 
 	/* FIXME: size doesn't match */
 	if (section->buffer.size != sizeof(struct opengl_si_bin_usageinfo_t))
-		fatal("Section size(%d) doesn't match usageinfo structure(%d).",
+		fatal("Section size(%d) doesn't match usageinfo structure(%ld).",
 			section->buffer.size, sizeof(struct opengl_si_bin_usageinfo_t));
 	else
 		memcpy(usageinfo, section->buffer.ptr, sizeof(struct opengl_si_bin_usageinfo_t));
