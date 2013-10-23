@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_SOUTHERN_ISLANDS_ASM_ARG_H
-#define ARCH_SOUTHERN_ISLANDS_ASM_ARG_H
+#ifndef ARCH_SOUTHERN_ISLANDS_ASM_ARG_H_OLD
+#define ARCH_SOUTHERN_ISLANDS_ASM_ARG_H_OLD
 
 #include <lib/class/class.h>
 

@@ -352,7 +352,7 @@ static void Llvm2siFunctionAddArg(Llvm2siFunction *self,
 	}
 	
 	
-	if (num_elem == 1)
+	if (num_elem==1)
 	{
 		/* Copy argument into a vector register. This vector register will be
 		 * used for convenience during code emission, so that we don't have to
