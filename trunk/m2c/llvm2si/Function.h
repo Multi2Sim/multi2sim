@@ -24,8 +24,10 @@
 #include <memory>
 #include <list>
 
+#include <arch/southern-islands/asm/Arg.h>
 #include <llvm/Argument.h>
 #include <llvm/Value.h>
+#include <llvm/Type.h>
 #include <m2c/common/Node.h>
 #include <m2c/common/Tree.h>
 #include <m2c/si2bin/Arg.h>
@@ -80,6 +82,9 @@ public:
 	void Dump(std::ostream &os);
 	friend std::ostream &operator<<(std::ostream &os, FunctionArg &arg)
 			{ arg.Dump(os); return os; }
+
+	/* Return a Southern Islands argument type from an LLVM type. */
+	static SI::ArgDataType GetDataType(llvm::Type *llvm_type);
 };
 
 
