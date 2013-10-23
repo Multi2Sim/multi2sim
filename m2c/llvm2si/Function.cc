@@ -19,69 +19,61 @@
 
 #include "Function.h"
 
-namespace llvmsi
+namespace llvm2si
 {
 
-#if 0
+
 /*
- * Class 'Llvm2siFunctionArg'
+ * Class 'FunctionArg'
  */
 
-/* Return a Southern Islands argument type from an LLVM type. */
-static SIArgDataType Llvm2siFunctionArgGetDataType(LLVMTypeRef lltype)
+SI::ArgDataType FunctionArg::GetDataType(llvm::Type *llvm_type)
 {
-	LLVMTypeKind lltype_kind;
-	int bit_width;
+	/* Get vector element type */
+	if (llvm_type->isVectorTy())
+		llvm_type = llvm_type->getVectorElementType();
 
-	lltype_kind = LLVMGetTypeKind(lltype);
-
-	if (lltype_kind == LLVMVectorTypeKind)
+	/* Check types */
+	if (llvm_type->isIntegerTy())
 	{
-		lltype = LLVMGetElementType(lltype);
-		lltype_kind = LLVMGetTypeKind(lltype);
-	}
-
-	switch (lltype_kind)
-	{
-	case LLVMIntegerTypeKind:
-	
-		bit_width = LLVMGetIntTypeWidth(lltype);
+		int bit_width = llvm_type->getIntegerBitWidth();
 		switch (bit_width)
 		{
-		case 1: return SIArgInt1;
-		case 8: return SIArgInt8;
-		case 16: return SIArgInt16;
-		case 32: return SIArgInt32;
-		case 64: return SIArgInt64;
+		case 1: return SI::ArgInt1;
+		case 8: return SI::ArgInt8;
+		case 16: return SI::ArgInt16;
+		case 32: return SI::ArgInt32;
+		case 64: return SI::ArgInt64;
 
 		default:
-			fatal("%s: invalid argument bit width (%d)",
+			panic("%s: unsupported argument bit width (%d)",
 				__FUNCTION__, bit_width);
-			return SIArgDataTypeInvalid;
 		}
-		
-	case LLVMFloatTypeKind:
-
-		return SIArgFloat;
-
-	default:
-	
-		fatal("%s: unsupported argument type kind (%d)",
-				__FUNCTION__, lltype_kind);
-		return SIArgDataTypeInvalid;
-	
 	}
+	else if (llvm_type->isFloatTy())
+	{
+		return SI::ArgFloat;
+	}
+	else
+	{
+		panic("%s: unsupported argument type kind (%d)",
+				__FUNCTION__, llvm_type->getTypeID());
+	}
+
+	/* Unreachable */
+	return SI::ArgDataTypeInvalid;
 }
 
-static int Llvm2siFunctionArgGetNumElems(LLVMTypeRef lltype)
+#if 0
+static int Llvm2siFunctionArgGetNumElems(LLVMTypeRef llvm_type)
 {
 	int num_elems;
 	LLVMTypeKind lltype_kind;
 
-	lltype_kind = LLVMGetTypeKind(lltype);
+	lltype_kind = LLVMGetTypeKind(llvm_type);
 
 	if (lltype_kind == LLVMVectorTypeKind)
-		num_elems = LLVMGetVectorSize(lltype);
+		num_elems = LLVMGetVectorSize(llvm_type);
 	else
 		num_elems = 1;
 
@@ -89,41 +81,41 @@ static int Llvm2siFunctionArgGetNumElems(LLVMTypeRef lltype)
 
 }
 
-void Llvm2siFunctionArgCreate(Llvm2siFunctionArg *self, LLVMValueRef llarg)
+void Llvm2siFunctionArgCreate(Llvm2siFunctionArg *self, LLVMValueRef llvm_arg)
 {
 	SIArg *si_arg;
 
-	LLVMTypeRef lltype;
+	LLVMTypeRef llvm_type;
 	LLVMTypeKind lltype_kind;
 
 	char *name;
 
 	/* Get argument name */
-	name = (char *) LLVMGetValueName(llarg);
+	name = (char *) LLVMGetValueName(llvm_arg);
 	if (!*name)
 		fatal("%s: anonymous arguments not allowed", __FUNCTION__);
 
 	/* Initialize 'si_arg' object */
-	lltype = LLVMTypeOf(llarg);
-	lltype_kind = LLVMGetTypeKind(lltype);
+	llvm_type = LLVMTypeOf(llvm_arg);
+	lltype_kind = LLVMGetTypeKind(llvm_type);
 	if (lltype_kind == LLVMPointerTypeKind)
 	{
-		lltype = LLVMGetElementType(lltype);
+		llvm_type = LLVMGetElementType(llvm_type);
 		si_arg = new(SIArg, SIArgTypePointer, name);
 		si_arg->pointer.scope = SIArgUAV;
-		si_arg->pointer.data_type = Llvm2siFunctionArgGetDataType(lltype);
-		si_arg->pointer.num_elems = Llvm2siFunctionArgGetNumElems(lltype);
+		si_arg->pointer.data_type = Llvm2siFunctionArgGetDataType(llvm_type);
+		si_arg->pointer.num_elems = Llvm2siFunctionArgGetNumElems(llvm_type);
 	}
 	else
 	{
 		si_arg = new(SIArg, SIArgTypeValue, name);
-		si_arg->value.data_type = Llvm2siFunctionArgGetDataType(lltype);
-		si_arg->value.num_elems = Llvm2siFunctionArgGetNumElems(lltype);
+		si_arg->value.data_type = Llvm2siFunctionArgGetDataType(llvm_type);
+		si_arg->value.num_elems = Llvm2siFunctionArgGetNumElems(llvm_type);
 	}
 
 	/* Initialize */
 	self->name = str_set(self->name, name);
-	self->llarg = llarg;
+	self->llvm_arg = llvm_arg;
 	self->si_arg = si_arg;
 }
 
@@ -407,13 +399,13 @@ static void Llvm2siFunctionDumpData(Llvm2siFunction *self, FILE *f)
  * Public Functions
  */
 
-void Llvm2siFunctionCreate(Llvm2siFunction *self, LLVMValueRef llfunction)
+void Llvm2siFunctionCreate(Llvm2siFunction *self, LLVMValueRef llvm_function)
 {
 	CTree *ctree;
 
 	/* Initialize */
-	self->llfunction = llfunction;
-	self->name = new(String, LLVMGetValueName(llfunction));
+	self->llvm_function = llvm_function;
+	self->name = new(String, LLVMGetValueName(llvm_function));
 	self->arg_list = new(List);
 	self->uav_list = new(Array);
 	self->symbol_table = new(Llvm2siSymbolTable);
@@ -430,7 +422,7 @@ void Llvm2siFunctionCreate(Llvm2siFunction *self, LLVMValueRef llfunction)
 	ctree->entry_node = asNode(self->header_node);
 
 	/* Add all nodes from the LLVM control flow graph */
-	self->body_node = CTreeAddLlvmCFG(ctree, llfunction);
+	self->body_node = CTreeAddLlvmCFG(ctree, llvm_function);
 
 	/* Connect nodes */
 	NodeConnect(asNode(self->header_node), asNode(self->uavs_node));
@@ -669,26 +661,26 @@ void Llvm2siFunctionEmitHeader(Llvm2siFunction *self)
 
 void Llvm2siFunctionEmitArgs(Llvm2siFunction *self)
 {
-	LLVMValueRef llfunction;
-	LLVMValueRef llarg;
-	LLVMTypeKind lltype;
+	LLVMValueRef llvm_function;
+	LLVMValueRef llvm_arg;
+	LLVMTypeKind llvm_type;
 	LLVMTypeRef lltyref;
 	int num_elem;
 
 	Llvm2siFunctionArg *arg;
 
 	/* Emit code for each argument individually */
-	llfunction = self->llfunction;
-	for (llarg = LLVMGetFirstParam(llfunction); llarg;
-			llarg = LLVMGetNextParam(llarg))
+	llvm_function = self->llvm_function;
+	for (llvm_arg = LLVMGetFirstParam(llvm_function); llvm_arg;
+			llvm_arg = LLVMGetNextParam(llvm_arg))
 	{
 		/* Create function argument and add it */
-		arg = new(Llvm2siFunctionArg, llarg);
+		arg = new(Llvm2siFunctionArg, llvm_arg);
 
-		lltyref = LLVMTypeOf(llarg);
-		lltype = LLVMGetTypeKind(lltyref);
+		lltyref = LLVMTypeOf(llvm_arg);
+		llvm_type = LLVMGetTypeKind(lltyref);
 
-		if (lltype == LLVMVectorTypeKind)
+		if (llvm_type == LLVMVectorTypeKind)
 			num_elem = LLVMGetVectorSize(lltyref);
 		else
 			num_elem = 1;
@@ -732,13 +724,13 @@ void Llvm2siFunctionEmitBody(Llvm2siFunction *self)
 			continue;
 
 		/* Skip nodes with no LLVM code to translate */
-		if (!asLeafNode(node)->llbb)
+		if (!asLeafNode(node)->llvm_basic_block)
 			continue;
 
 		/* Create basic block and emit the code */
 		assert(!asLeafNode(node)->basic_block);
 		basic_block = new(Llvm2siBasicBlock, self, asLeafNode(node));
-		Llvm2siBasicBlockEmit(basic_block, asLeafNode(node)->llbb);
+		Llvm2siBasicBlockEmit(basic_block, asLeafNode(node)->llvm_basic_block);
 	}
 
 	/* Free */
@@ -797,7 +789,7 @@ static void Llvm2siFunctionEmitIfThen(Llvm2siFunction *self, Node *node)
 	List *arg_list;
 	Si2binInst *inst;
 
-	LLVMBasicBlockRef llbb;
+	LLVMBasicBlockRef llvm_basic_block;
 	LLVMValueRef llinst;
 	LLVMValueRef llcond;
 
@@ -828,8 +820,8 @@ static void Llvm2siFunctionEmitIfThen(Llvm2siFunction *self, Node *node)
 	/*** Code for 'If' block ***/
 
 	/* Get 'If' basic block terminator */
-	llbb = asLeafNode(if_node)->llbb;
-	llinst = LLVMGetBasicBlockTerminator(llbb);
+	llvm_basic_block = asLeafNode(if_node)->llvm_basic_block;
+	llinst = LLVMGetBasicBlockTerminator(llvm_basic_block);
 	assert(llinst);
 	assert(LLVMGetInstructionOpcode(llinst) == LLVMBr);
 	assert(LLVMGetNumOperands(llinst) == 3);
@@ -883,7 +875,7 @@ static void Llvm2siFunctionEmitIfThenElse(Llvm2siFunction *self, Node *node)
 	List *arg_list;
 	Si2binInst *inst;
 
-	LLVMBasicBlockRef llbb;
+	LLVMBasicBlockRef llvm_basic_block;
 	LLVMValueRef llinst;
 	LLVMValueRef llcond;
 
@@ -919,8 +911,8 @@ static void Llvm2siFunctionEmitIfThenElse(Llvm2siFunction *self, Node *node)
 	/*** Code for 'If' block ***/
 
 	/* Get 'If' basic block terminator */
-	llbb = asLeafNode(if_node)->llbb;
-	llinst = LLVMGetBasicBlockTerminator(llbb);
+	llvm_basic_block = asLeafNode(if_node)->llvm_basic_block;
+	llinst = LLVMGetBasicBlockTerminator(llvm_basic_block);
 	assert(llinst);
 	assert(LLVMGetInstructionOpcode(llinst) == LLVMBr);
 	assert(LLVMGetNumOperands(llinst) == 3);
@@ -991,7 +983,7 @@ static void Llvm2siFunctionEmitWhileLoop(Llvm2siFunction *self, Node *node)
 
 	SIInstOpcode opcode;
 
-	LLVMBasicBlockRef llbb;
+	LLVMBasicBlockRef llvm_basic_block;
 	LLVMValueRef llinst;
 	LLVMValueRef llcond;
 
@@ -1085,8 +1077,8 @@ static void Llvm2siFunctionEmitWhileLoop(Llvm2siFunction *self, Node *node)
 	/*** Code for head block ***/
 
 	/* Get head block terminator */
-	llbb = asLeafNode(head_node)->llbb;
-	llinst = LLVMGetBasicBlockTerminator(llbb);
+	llvm_basic_block = asLeafNode(head_node)->llvm_basic_block;
+	llinst = LLVMGetBasicBlockTerminator(llvm_basic_block);
 	assert(llinst);
 	assert(LLVMGetInstructionOpcode(llinst) == LLVMBr);
 	assert(LLVMGetNumOperands(llinst) == 3);
@@ -1332,13 +1324,13 @@ void Llvm2siFunctionLiveRegisterAnalysisBitmapDump(Llvm2siFunction *self)
 
 
 static Si2binArg *Llvm2siFunctionTranslateConstValue(
-		Llvm2siFunction *self, LLVMValueRef llvalue)
+		Llvm2siFunction *self, LLVMValueRef llvm_value)
 {
-	LLVMTypeRef lltype;
+	LLVMTypeRef llvm_type;
 	LLVMTypeKind lltype_kind;
 
-	lltype = LLVMTypeOf(llvalue);
-	lltype_kind = LLVMGetTypeKind(lltype);
+	llvm_type = LLVMTypeOf(llvm_value);
+	lltype_kind = LLVMGetTypeKind(llvm_type);
 	
 	/* Check constant type */
 	switch (lltype_kind)
@@ -1351,13 +1343,13 @@ static Si2binArg *Llvm2siFunctionTranslateConstValue(
 
 		/* Only 32-bit constants supported for now. We need to figure
 		 * out what to do with the sign extension otherwise. */
-		bit_width = LLVMGetIntTypeWidth(lltype);
+		bit_width = LLVMGetIntTypeWidth(llvm_type);
 		if (bit_width != 32)
 			fatal("%s: only 32-bit integer constant supported "
 				" (%d-bit found)", __FUNCTION__, bit_width);
 
 		/* Create argument */
-		value = LLVMConstIntGetZExtValue(llvalue);
+		value = LLVMConstIntGetZExtValue(llvm_value);
 		return new_ctor(Si2binArg, CreateLiteral, value);
 	}
 
@@ -1371,7 +1363,7 @@ static Si2binArg *Llvm2siFunctionTranslateConstValue(
 
 
 Si2binArg *Llvm2siFunctionTranslateValue(Llvm2siFunction *self,
-		LLVMValueRef llvalue, Llvm2siSymbol **symbol_ptr)
+		LLVMValueRef llvm_value, Llvm2siSymbol **symbol_ptr)
 {
 	Llvm2siSymbol *symbol;
 	Si2binArg *arg;
@@ -1382,11 +1374,11 @@ Si2binArg *Llvm2siFunctionTranslateValue(Llvm2siFunction *self,
 	PTR_ASSIGN(symbol_ptr, NULL);
 
 	/* Treat constants separately */
-	if (LLVMIsConstant(llvalue))
-		return Llvm2siFunctionTranslateConstValue(self, llvalue);
+	if (LLVMIsConstant(llvm_value))
+		return Llvm2siFunctionTranslateConstValue(self, llvm_value);
 
 	/* Get name */
-	name = (char *) LLVMGetValueName(llvalue);
+	name = (char *) LLVMGetValueName(llvm_value);
 	if (!name || !*name)
 		fatal("%s: anonymous values not supported", __FUNCTION__);
 
