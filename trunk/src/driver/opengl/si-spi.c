@@ -209,7 +209,7 @@ struct list_t *SISpiPSNDRangesCreate(SISX *sx, enum opengl_pa_primitive_mode_t m
 
 	for (i = 0; i < list_count(meta_list_repo); ++i)
 	{
-		/* Create init data for each ndrange */
+		/* Create init data for each Ndrange */
 		lds = list_dequeue(lds_repo);
 		meta_list = list_dequeue(meta_list_repo);
 		ps_init = SISXPSInitCreate(lds, meta_list);

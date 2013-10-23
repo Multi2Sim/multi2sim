@@ -35,9 +35,7 @@ static void SISXPositionCreate(SISX *self)
 {
 	int i;
 	for (i = 0; i < SI_POS_COUNT; ++i)
-	{
 		self->pos[i] = list_create();
-	}
 }
 
 static void SISXPositionDestroy(SISX *self)
@@ -69,9 +67,7 @@ static void SISXParamCreate(SISX *self)
 {
 	int i;
 	for (i = 0; i < SI_PARAM_COUNT; ++i)
-	{
 		self->param[i] = list_create();
-	}
 }
 
 static void SISXParamDestroy(SISX *self)
