@@ -36,60 +36,68 @@ enum ArgType
 enum ArgAccessType
 {
 	ArgAccessTypeInvalid = 0,
-	ArgReadOnly,
-	ArgWriteOnly,
-	ArgReadWrite
+	ArgAccessTypeReadOnly,
+	ArgAccessTypeWriteOnly,
+	ArgAccessTypeReadWrite
 };
 
 enum ArgScope
 {
 	ArgScopeInavlid = 0,
-	ArgGlobal,
-	ArgEmuPrivate,
-	ArgEmuLocal,
-	ArgUAV,
-	ArgEmuConstant,
-	ArgEmuGDS,
-	ArgHwLocal,
-	ArgHwPrivate,
-	ArgHwConstant,
-	ArgHwGDS
+	ArgScopeGlobal,
+	ArgScopeEmuPrivate,
+	ArgScopeEmuLocal,
+	ArgScopeUAV,
+	ArgScopeEmuConstant,
+	ArgScopeEmuGDS,
+	ArgScopeHwLocal,
+	ArgScopeHwPrivate,
+	ArgScopeHwConstant,
+	ArgScopeHwGDS
 };
 
 enum ArgDataType
 {
 	ArgDataTypeInvalid = 0,
-	ArgInt1,
-	ArgInt8,
-	ArgInt16,
-	ArgInt32,
-	ArgInt64,
-	ArgUInt1,
-	ArgUInt8,
-	ArgUInt16,
-	ArgUInt32,
-	ArgUInt64,
-	ArgFloat,
-	ArgDouble,
-	ArgStruct,
-	ArgUnion,
-	ArgEvent,
-	ArgOpaque
+	ArgDataTypeInt1,
+	ArgDataTypeInt8,
+	ArgDataTypeInt16,
+	ArgDataTypeInt32,
+	ArgDataTypeInt64,
+	ArgDataTypeUInt1,
+	ArgDataTypeUInt8,
+	ArgDataTypeUInt16,
+	ArgDataTypeUInt32,
+	ArgDataTypeUInt64,
+	ArgDataTypeFloat,
+	ArgDataTypeDouble,
+	ArgDataTypeStruct,
+	ArgDataTypeUnion,
+	ArgDataTypeEvent,
+	ArgDataTypeOpaque
 };
 
-struct ArgValue
+
+class Arg
 {
-	/* Metadata info */
-	ArgDataType data_type;
-	int num_elems;
-	int constant_buffer_num;
-	int constant_offset;
+	ArgType type;
+	std::string name;
 
-	/* Value set by user */
-	void *value_ptr;
+	bool set;  /* Set to true when it is assigned */
+	int size; /* Inferred from metadata or user calls */
+	bool constarg; /* Set to true when argument is constant */
+
+public:
+	Arg(ArgType type, const std::string &name);
+
+	ArgType GetType() { return type; }
+	std::string GetName() { return name; }
+	
+	static int GetDataSize(ArgDataType data_type);
 };
 
-struct ArgPointer
+
+class ArgPointer : public Arg
 {
 	/* Metadata info */
 	ArgDataType data_type;
@@ -103,51 +111,100 @@ struct ArgPointer
 
 	/* Value set by user */
 	unsigned int device_ptr;
+
+public:
+	ArgPointer(const std::string &name,
+			ArgDataType data_type,
+			int num_elems,
+			int constant_buffer_num,
+			int constant_offset,
+			ArgScope scope,
+			int buffer_num,
+			int alignment,
+			ArgAccessType access_type) :
+				Arg(ArgTypePointer, name),
+				data_type(data_type),
+				num_elems(num_elems),
+				constant_buffer_num(constant_buffer_num),
+				scope(scope),
+				buffer_num(buffer_num),
+				alignment(alignment) { };
+
+	void SetDevicePtr(unsigned int device_ptr) {
+		this->device_ptr = device_ptr; }
 };
 
-struct ArgImage
+
+class ArgValue : public Arg
+{
+	/* Metadata info */
+	ArgDataType data_type;
+	int num_elems;
+	int constant_buffer_num;
+	int constant_offset;
+
+	/* Value set by user */
+	std::unique_ptr<void> value;
+
+public:
+	ArgValue(const std::string &name,
+			ArgDataType data_type,
+			int num_elems,
+			int constant_buffer_num,
+			int constant_offset) :
+				Arg(ArgTypeValue, name),
+				data_type(data_type),
+				num_elems(num_elems),
+				constant_buffer_num(constant_buffer_num),
+				constant_offset(constant_offset) { }
+
+	void SetValue(void *value) { this->value.reset(value); }
+};
+
+
+class ArgImage : public Arg
 {
 	int dimension;  /* 2 or 3 */
 	ArgAccessType access_type;
 	int uav;
 	int constant_buffer_num;
 	int constant_offset;
+
+public:
+
+	ArgImage(const std::string &name,
+			int dimension,
+			ArgAccessType access_type,
+			int uav,
+			int constant_buffer_num,
+			int constant_buffer_offset) :
+				Arg(ArgTypeImage, name),
+				dimension(dimension),
+				access_type(access_type),
+				uav(uav),
+				constant_buffer_num(constant_buffer_num),
+				constant_offset(constant_offset) { }
 };
 
-struct ArgSampler
+
+class ArgSampler : public Arg
 {
 	int id;
 	unsigned int location;
 	int value;
-};
-
-
-class Arg
-{
-
-	ArgType type;
-	std::string name;
-
-	int set;  /* Set to true when it is assigned */
-	int size; /* Inferred from metadata or user calls */
-	int constarg; /*Set to true when argument is constant */
-
-	union
-	{
-		ArgValue value;
-		ArgPointer pointer;
-		ArgImage image;
-		ArgSampler sampler;
-	};
 
 public:
-	Arg(ArgType type, const std::string &name);
 
-	ArgType GetType() { return type; }
-	std::string GetName() { return name; }
-	
-	static int GetDataSize(ArgDataType data_type);
+	ArgSampler(const std::string &name,
+			int id,
+			unsigned int location,
+			int value) :
+				Arg(ArgTypeSampler, name),
+				id(id),
+				location(location),
+				value(value) { }
 };
+
 
 
 /*

@@ -39,11 +39,11 @@ SI::ArgDataType FunctionArg::GetDataType(llvm::Type *llvm_type)
 		int bit_width = llvm_type->getIntegerBitWidth();
 		switch (bit_width)
 		{
-		case 1: return SI::ArgInt1;
-		case 8: return SI::ArgInt8;
-		case 16: return SI::ArgInt16;
-		case 32: return SI::ArgInt32;
-		case 64: return SI::ArgInt64;
+		case 1: return SI::ArgDataTypeInt1;
+		case 8: return SI::ArgDataTypeInt8;
+		case 16: return SI::ArgDataTypeInt16;
+		case 32: return SI::ArgDataTypeInt32;
+		case 64: return SI::ArgDataTypeInt64;
 
 		default:
 			panic("%s: unsupported argument bit width (%d)",
@@ -52,7 +52,7 @@ SI::ArgDataType FunctionArg::GetDataType(llvm::Type *llvm_type)
 	}
 	else if (llvm_type->isFloatTy())
 	{
-		return SI::ArgFloat;
+		return SI::ArgDataTypeFloat;
 	}
 	else
 	{
@@ -64,72 +64,44 @@ SI::ArgDataType FunctionArg::GetDataType(llvm::Type *llvm_type)
 	return SI::ArgDataTypeInvalid;
 }
 
-#if 0
-static int Llvm2siFunctionArgGetNumElems(LLVMTypeRef llvm_type)
+
+int FunctionArg::GetNumElements(llvm::Type *llvm_type)
 {
-	int num_elems;
-	LLVMTypeKind lltype_kind;
-
-	lltype_kind = LLVMGetTypeKind(llvm_type);
-
-	if (lltype_kind == LLVMVectorTypeKind)
-		num_elems = LLVMGetVectorSize(llvm_type);
+	if (llvm_type->isVectorTy())
+		return llvm_type->getVectorNumElements();
 	else
-		num_elems = 1;
-
-	return num_elems;
-
+		return 1;
 }
 
-void Llvm2siFunctionArgCreate(Llvm2siFunctionArg *self, LLVMValueRef llvm_arg)
+
+FunctionArg::FunctionArg(llvm::Argument *llvm_arg)
 {
-	SIArg *si_arg;
-
-	LLVMTypeRef llvm_type;
-	LLVMTypeKind lltype_kind;
-
-	char *name;
-
 	/* Get argument name */
-	name = (char *) LLVMGetValueName(llvm_arg);
-	if (!*name)
+	name = llvm_arg->getName();
+	if (name.empty())
 		fatal("%s: anonymous arguments not allowed", __FUNCTION__);
 
-	/* Initialize 'si_arg' object */
-	llvm_type = LLVMTypeOf(llvm_arg);
-	lltype_kind = LLVMGetTypeKind(llvm_type);
-	if (lltype_kind == LLVMPointerTypeKind)
+	/* Initialize */
+	this->llvm_arg = llvm_arg;
+
+	/* Initialize SI argument */
+	llvm::Type *llvm_type = llvm_arg->getType();
+	if (llvm_type->isPointerTy())
 	{
-		llvm_type = LLVMGetElementType(llvm_type);
-		si_arg = new(SIArg, SIArgTypePointer, name);
-		si_arg->pointer.scope = SIArgUAV;
-		si_arg->pointer.data_type = Llvm2siFunctionArgGetDataType(llvm_type);
-		si_arg->pointer.num_elems = Llvm2siFunctionArgGetNumElems(llvm_type);
+		llvm_type = llvm_type->getPointerElementType();
+		arg.reset(new SI::ArgPointer(name, GetDataType(llvm_type),
+				GetNumElements(llvm_type), 0, 0, SI::ArgScopeUAV, 0, 0,
+				SI::ArgAccessTypeReadWrite));
 	}
 	else
 	{
-		si_arg = new(SIArg, SIArgTypeValue, name);
-		si_arg->value.data_type = Llvm2siFunctionArgGetDataType(llvm_type);
-		si_arg->value.num_elems = Llvm2siFunctionArgGetNumElems(llvm_type);
+		arg.reset(new SI::ArgValue(name, GetDataType(llvm_type),
+				GetNumElements(llvm_type), 0, 0));
 	}
-
-	/* Initialize */
-	self->name = str_set(self->name, name);
-	self->llvm_arg = llvm_arg;
-	self->si_arg = si_arg;
 }
 
 
-void Llvm2siFunctionArgDestroy(Llvm2siFunctionArg *self)
-{
-	assert(self->name);
-	assert(self->si_arg);
-	self->name = str_free(self->name);
-	delete(self->si_arg);
-}
-
-
-
+#if 0
 void Llvm2siFunctionArgDump(Object *self, FILE *f)
 {
 	Llvm2siFunctionArg *arg = asLlvm2siFunctionArg(self);
