@@ -20,14 +20,9 @@
 #ifndef ARCH_SOUTHERN_ISLANDS_ASM_ARG_H
 #define ARCH_SOUTHERN_ISLANDS_ASM_ARG_H
 
-#include <lib/class/class.h>
 
 namespace SI
 {
-
-/*
- * Class 'Arg'
- */
 
 enum ArgType
 {
@@ -38,7 +33,7 @@ enum ArgType
 	ArgTypeSampler
 };
 
-enum AccessType
+enum ArgAccessType
 {
 	ArgAccessTypeInvalid = 0,
 	ArgReadOnly,
@@ -131,7 +126,7 @@ class Arg
 {
 
 	ArgType type;
-	string name;
+	std::string name;
 
 	int set;  /* Set to true when it is assigned */
 	int size; /* Inferred from metadata or user calls */
@@ -146,26 +141,28 @@ class Arg
 	};
 
 public:
-	Arg(ArgType type, string name);
+	Arg(ArgType type, const std::string &name);
 
-	ArgType GetArgType() { return type; }
-	string GetName() { return name; }
-	void SetName(string name) { this->name = name; }
+	ArgType GetType() { return type; }
+	std::string GetName() { return name; }
 	
-	int GetDataSize(DataType data_type);
-}
+	static int GetDataSize(ArgDataType data_type);
+};
 
 
 /*
  * Public
  */
 
-
+/*
 struct StringMapWrap;
 extern struct StringMapWrap *si_arg_dimension_map;
 extern struct StringMapWrap *si_arg_access_type_map;
 extern struct StringMapWrap *si_arg_data_type_map;
 extern struct StringMapWrap *si_arg_scope_map;
 extern struct StringMapWrap *si_arg_reflection_map;
+*/
+
+}  /* namespace SI */
 
 #endif
