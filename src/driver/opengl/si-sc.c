@@ -646,6 +646,6 @@ void opengl_sc_rast_triangle_done(struct list_t *pxl_lst)
 			pxl_info = list_get(pxl_lst, i);
 			opengl_sc_pixel_info_free(pxl_info);
 		}		
-		free(pxl_lst);
+		list_free(pxl_lst);
 	}
 }
