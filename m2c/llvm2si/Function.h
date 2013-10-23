@@ -45,10 +45,7 @@ class Function;
 
 class FunctionArg
 {
-	/* Inherits from 'si_arg_t'.
-	 * FIXME: if we port all or part of the SI assembler to work with
-	 * classes, this should be a real inheritance. */
-	//SIArg *si_arg;
+	std::unique_ptr<SI::Arg> arg;
 
 	std::string name;
 	
@@ -85,6 +82,10 @@ public:
 
 	/* Return a Southern Islands argument type from an LLVM type. */
 	static SI::ArgDataType GetDataType(llvm::Type *llvm_type);
+
+	/* Return the number of elements in a vector type, or 1 if the LLVM
+	 * type passed is not a vector type. */
+	static int GetNumElements(llvm::Type *llvm_type);
 };
 
 
