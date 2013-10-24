@@ -313,8 +313,6 @@ void SIWorkGroupCreate(SIWorkGroup *self, unsigned int id, SINDRange *ndrange)
 						work_item->vreg[22].as_float = 0.0f; /* Sample mask */
 						work_item->vreg[23].as_float = 0.0f; /* X/Y fixed */
 					}
-
-					/* FIXME: X/Y should also load to somewhere for export instruction? */					
 					break;
 				}
 				/* Default is OpenCL convention */
