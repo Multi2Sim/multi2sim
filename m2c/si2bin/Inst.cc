@@ -53,7 +53,7 @@ void Inst::Initialize(SI::InstOpcode opcode)
 		fatal("%s: invalid opcode (%d)", __FUNCTION__, opcode);
 
 	/* Get instruction information */
-	InstInfo *info = builder.getInstInfo(opcode);
+	info = builder.getInstInfo(opcode);
 	if (!info)
 		fatal("%s: opcode %d not supported", __FUNCTION__, opcode);
 
