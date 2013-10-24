@@ -45,6 +45,8 @@ class Function;
 
 class FunctionArg
 {
+	friend class Function;
+
 	std::unique_ptr<SI::Arg> arg;
 
 	std::string name;
@@ -91,6 +93,8 @@ public:
 
 class FunctionUAV
 {
+	friend class Function;
+
 	/* Function where it belongs */
 	Function *function;
 
@@ -158,6 +162,19 @@ class Function
 	 * amount of bytes pushed into the stack for this function. */
 	unsigned int stack_size;
 
+	/* Add a UAV to the UAV list. This function allocates a series of 4
+	 * aligned scalar registers to the UAV, populating its 'index' and
+	 * 'sreg' fields. The UAV object will be freed automatically after
+	 * calling this function. Emit the code needed to load UAV into
+	 * 'function->basic_block_uavs' */
+	void AddUAV(FunctionUAV *uav);
+
+	/* Add argument 'arg' into the list of arguments of 'function', and
+	 * emit code to load it into 'function->basic_block_args'. */
+	void AddArg(FunctionArg *arg, int num_elem);
+
+	void DumpData(std::ostream &os);
+
 public:
 
 	/* Constructor */
@@ -204,11 +221,6 @@ public:
 	/* Emit additional instructions managing active masks and active mask
 	 * stacks related with the function control flow. */
 	void EmitControlFlow();
-
-	/* Perform analysis on live variables inside the llvm function to allow
-	 * for memory efficient register allocation */
-	void LiveRegisterAnalysis();
-	void LiveRegisterAnalysisBitmapDump();
 
 	/* Create a Southern Islands instruction argument from an LLVM value.
 	 * The type of argument created depends on the LLVM value as follows:
