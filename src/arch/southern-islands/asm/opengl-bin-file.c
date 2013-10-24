@@ -753,7 +753,6 @@ static void opengl_si_bin_symbol_init_with_section(struct list_t *symbol_list, s
 
 	/* Make sure section is correct */
 	assert(!strcmp(section->name, ".symbols"));
-	printf("%d\n", sizeof(struct opengl_si_bin_symbol_t) - 4 * sizeof(char*));
 
 	bin_ptr = section->buffer.ptr;
 	memcpy(&symbol_count, bin_ptr, 4);
