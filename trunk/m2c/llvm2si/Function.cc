@@ -552,76 +552,57 @@ void Function::EmitPhi()
 }
 
 
-#if 0
-static void Llvm2siFunctionEmitIfThen(Llvm2siFunction *self, Node *node)
+void Function::EmitIfThen(Common::AbstractNode *node)
 {
-	Node *if_node;
-	Node *then_node;
-
-	Llvm2siBasicBlock *if_bb;
-	Llvm2siBasicBlock *then_bb;
-
-	Llvm2siSymbol *cond_symbol;
-	List *arg_list;
-	Si2binInst *inst;
-
-	LLVMBasicBlockRef llvm_basic_block;
-	LLVMValueRef llinst;
-	LLVMValueRef llcond;
-
-	int cond_sreg;
-	int tos_sreg;
-
-	char *cond_name;
-
 	/* Identify the two nodes */
-	assert(isAbstractNode(node));
-	assert(asAbstractNode(node)->region == AbstractNodeIfThen);
-	assert(asAbstractNode(node)->child_list->count == 2);
-	if_node = asNode(ListGoto(asAbstractNode(node)->child_list, 0));
-	then_node = asNode(ListGoto(asAbstractNode(node)->child_list, 1));
+	assert(node);
+	assert(node->GetRegion() == Common::AbstractNodeIfThen);
+	assert(node->GetChildList().size() == 2);
+	Common::Node *if_node = node->GetChildList().front();
+	Common::Node *then_node = node->GetChildList().back();
 
 	/* Make sure roles match */
-	assert(if_node->role == node_role_if);
-	assert(then_node->role == node_role_then);
+	assert(if_node->GetRole() == Common::NodeRoleIf);
+	assert(then_node->GetRole() == Common::NodeRoleThen);
 
 	/* Get basic blocks. 'If' node should be a leaf. */
-	then_node = NodeGetLastLeaf(then_node);
-	assert(isLeafNode(if_node));
-	assert(isLeafNode(then_node));
-	if_bb = asLlvm2siBasicBlock(asLeafNode(if_node)->basic_block);
-	then_bb = asLlvm2siBasicBlock(asLeafNode(then_node)->basic_block);
+	then_node = then_node->GetLastLeaf();
+	assert(if_node->GetKind() == Common::NodeKindLeaf);
+	assert(then_node->GetKind() == Common::NodeKindLeaf);
+	Common::LeafNode *if_leaf_node = cast<Common::LeafNode *>(if_node);
+	Common::LeafNode *then_leaf_node = cast<Common::LeafNode *>(then_node);
+	BasicBlock *if_basic_block = cast<BasicBlock *>(if_leaf_node->GetBasicBlock());
+	BasicBlock *then_basic_block = cast<BasicBlock *>(then_leaf_node->GetBasicBlock());
 
 
 	/*** Code for 'If' block ***/
 
 	/* Get 'If' basic block terminator */
-	llvm_basic_block = asLeafNode(if_node)->llvm_basic_block;
-	llinst = LLVMGetBasicBlockTerminator(llvm_basic_block);
-	assert(llinst);
-	assert(LLVMGetInstructionOpcode(llinst) == LLVMBr);
-	assert(LLVMGetNumOperands(llinst) == 3);
+	llvm::BasicBlock *llvm_basic_block = if_leaf_node->GetLlvmBasicBlock();
+	llvm::TerminatorInst *llvm_inst = llvm_basic_block->getTerminator();
+	assert(llvm_inst);
+	assert(llvm_inst->getOpcode() == llvm::Instruction::Br);
+	assert(llvm_inst->getNumOperands() == 3);
 
 	/* Get symbol associated with condition variable */
-	llcond = LLVMGetOperand(llinst, 0);
-	cond_name = (char *) LLVMGetValueName(llcond);
-	cond_symbol = Llvm2siSymbolTableLookup(self->symbol_table, cond_name);
+	llvm::Value *llvm_cond = llvm_inst->getOperand(0);
+	std::string cond_name = llvm_cond->getName();
+	Symbol *cond_symbol = symbol_table.Lookup(cond_name);
 	assert(cond_symbol);
-	assert(cond_symbol->type == llvm2si_symbol_scalar_register);
-	assert(cond_symbol->count == 2);
-	cond_sreg = cond_symbol->reg;
+	assert(cond_symbol->GetType() == SymbolScalarRegister);
+	assert(cond_symbol->GetNumRegs() == 2);
+	int cond_sreg = cond_symbol->GetReg();
 
 	/* Allocate two scalar registers to push the active mask */
-	tos_sreg = Llvm2siFunctionAllocSReg(self, 2, 2);
+	int tos_sreg = AllocSReg(2, 2);
 
 	/* Emit active mask push and set at the end of the 'If' block.
 	 * s_and_saveexec_b64 <tos_sreg> <cond_sreg>
 	 */
-	arg_list = new(List);
-	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegisterSeries, tos_sreg, tos_sreg + 1)));
-	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegisterSeries, cond_sreg, cond_sreg + 1)));
-	inst = new(Si2binInst, SI_INST_S_AND_SAVEEXEC_B64, arg_list);
-	Llvm2siBasicBlockAddInst(if_bb, inst);
+	Inst *inst = new Inst(SI::INST_S_AND_SAVEEXEC_B64,
+			new ArgScalarRegisterSeries(tos_sreg, tos_sreg + 1),
+			new ArgScalarRegisterSeries(cond_sreg, cond_sreg + 1));
+	if_basic_block->AddInst(inst);
 
 
 	/*** Code for 'then' block ***/
@@ -629,90 +610,72 @@ static void Llvm2siFunctionEmitIfThen(Llvm2siFunction *self, Node *node)
 	/* Pop the active mask.
 	 * s_mov_b64 exec, <tos_sreg>
 	 */
-	arg_list = new(List);
-	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateSpecialRegister, SIInstSpecialRegExec)));
-	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegisterSeries, tos_sreg, tos_sreg + 1)));
-	inst = new(Si2binInst, SI_INST_S_MOV_B64, arg_list);
-	Llvm2siBasicBlockAddInst(then_bb, inst);
+	inst = new Inst(SI::INST_S_MOV_B64,
+			new ArgSpecialRegister(SI::InstSpecialRegExec),
+			new ArgScalarRegisterSeries(tos_sreg, tos_sreg + 1));
+	then_basic_block->AddInst(inst);
 }
 
 
-static void Llvm2siFunctionEmitIfThenElse(Llvm2siFunction *self, Node *node)
+void Function::EmitIfThenElse(Common::AbstractNode *node)
 {
-	Node *if_node;
-	Node *then_node;
-	Node *else_node;
-
-	Llvm2siBasicBlock *if_bb;
-	Llvm2siBasicBlock *then_bb;
-	Llvm2siBasicBlock *else_bb;
-
-	Llvm2siSymbol *cond_symbol;
-	List *arg_list;
-	Si2binInst *inst;
-
-	LLVMBasicBlockRef llvm_basic_block;
-	LLVMValueRef llinst;
-	LLVMValueRef llcond;
-
-	int cond_sreg;
-	int tos_sreg;
-
-	char *cond_name;
-
 	/* Identify the three nodes */
-	assert(isAbstractNode(node));
-	assert(asAbstractNode(node)->region == AbstractNodeIfThenElse);
-	assert(asAbstractNode(node)->child_list->count == 3);
-	if_node = asNode(ListGoto(asAbstractNode(node)->child_list, 0));
-	then_node = asNode(ListGoto(asAbstractNode(node)->child_list, 1));
-	else_node = asNode(ListGoto(asAbstractNode(node)->child_list, 2));
+	assert(node);
+	assert(node->GetRegion() == Common::AbstractNodeIfThenElse);
+	assert(node->GetChildList().size() == 3);
+	auto it = node->GetChildList().begin();
+	Common::Node *if_node = *(it++);
+	Common::Node *then_node = *(it++);
+	Common::Node *else_node = *(it++);
+	assert(it == node->GetChildList().end());
 
 	/* Make sure roles match */
-	assert(if_node->role == node_role_if);
-	assert(then_node->role == node_role_then);
-	assert(else_node->role == node_role_else);
+	assert(if_node->GetRole() == Common::NodeRoleIf);
+	assert(then_node->GetRole() == Common::NodeRoleThen);
+	assert(else_node->GetRole() == Common::NodeRoleElse);
 
 	/* Get basic blocks. 'If' node should be a leaf. */
-	then_node = NodeGetLastLeaf(then_node);
-	else_node = NodeGetLastLeaf(else_node);
-	assert(isLeafNode(if_node));
-	assert(isLeafNode(then_node));
-	assert(isLeafNode(else_node));
-	if_bb = asLlvm2siBasicBlock(asLeafNode(if_node)->basic_block);
-	then_bb = asLlvm2siBasicBlock(asLeafNode(then_node)->basic_block);
-	else_bb = asLlvm2siBasicBlock(asLeafNode(else_node)->basic_block);
+	then_node = then_node->GetLastLeaf();
+	else_node = else_node->GetLastLeaf();
+	assert(if_node->GetKind() == Common::NodeKindLeaf);
+	assert(then_node->GetKind() == Common::NodeKindLeaf);
+	assert(else_node->GetKind() == Common::NodeKindLeaf);
+	Common::LeafNode *if_leaf_node = dynamic_cast<Common::LeafNode *>(if_node);
+	Common::LeafNode *then_leaf_node = dynamic_cast<Common::LeafNode *>(then_node);
+	Common::LeafNode *else_leaf_node = dynamic_cast<Common::LeafNode *>(else_node);
+	BasicBlock *if_basic_block = dynamic_cast<BasicBlock *>(if_leaf_node->GetBasicBlock());
+	BasicBlock *then_basic_block = dynamic_cast<BasicBlock *>(then_leaf_node->GetBasicBlock());
+	BasicBlock *else_basic_block = dynamic_cast<BasicBlock *>(else_leaf_node->GetBasicBlock());
 
 
 	/*** Code for 'If' block ***/
 
 	/* Get 'If' basic block terminator */
-	llvm_basic_block = asLeafNode(if_node)->llvm_basic_block;
-	llinst = LLVMGetBasicBlockTerminator(llvm_basic_block);
-	assert(llinst);
-	assert(LLVMGetInstructionOpcode(llinst) == LLVMBr);
-	assert(LLVMGetNumOperands(llinst) == 3);
+	llvm::BasicBlock *llvm_basic_block = if_leaf_node->GetLlvmBasicBlock();
+	llvm::TerminatorInst *llvm_inst = llvm_basic_block->getTerminator();
+	assert(llvm_inst);
+	assert(llvm_inst->getOpcode() == llvm::Instruction::Br);
+	assert(llvm_inst->getNumOperands() == 3);
 
 	/* Get symbol associated with condition variable */
-	llcond = LLVMGetOperand(llinst, 0);
-	cond_name = (char *) LLVMGetValueName(llcond);
-	cond_symbol = Llvm2siSymbolTableLookup(self->symbol_table, cond_name);
+	llvm::Value *llvm_cond = llvm_inst->getOperand(0);
+	std::string cond_name = llvm_cond->getName();
+	Symbol *cond_symbol = symbol_table.Lookup(cond_name);
 	assert(cond_symbol);
-	assert(cond_symbol->type == llvm2si_symbol_scalar_register);
-	assert(cond_symbol->count == 2);
-	cond_sreg = cond_symbol->reg;
+	assert(cond_symbol->GetType() == SymbolScalarRegister);
+	assert(cond_symbol->GetNumRegs() == 2);
+	int cond_sreg = cond_symbol->GetReg();
 
 	/* Allocate two scalar registers to push the active mask */
-	tos_sreg = Llvm2siFunctionAllocSReg(self, 2, 2);
+	int tos_sreg = AllocSReg(2, 2);
 
 	/* Emit active mask push and set at the end of the 'If' block.
 	 * s_and_saveexec_b64 <tos_sreg> <cond_sreg>
 	 */
-	arg_list = new(List);
-	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegisterSeries, tos_sreg, tos_sreg + 1)));
-	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegisterSeries, cond_sreg, cond_sreg + 1)));
-	inst = new(Si2binInst, SI_INST_S_AND_SAVEEXEC_B64, arg_list);
-	Llvm2siBasicBlockAddInst(if_bb, inst);
+	Inst *inst = new Inst(SI::INST_S_AND_SAVEEXEC_B64,
+			new ArgScalarRegisterSeries(tos_sreg, tos_sreg + 1),
+			new ArgScalarRegisterSeries(cond_sreg, cond_sreg + 1));
+	if_basic_block->AddInst(inst);
 
 
 	/*** Code for 'then' block ***/
@@ -720,12 +683,11 @@ static void Llvm2siFunctionEmitIfThenElse(Llvm2siFunction *self, Node *node)
 	/* Invert active mask and-ing it with the top of the stack.
 	 * s_andn2_b64 exec, <tos_sreg>, exec
 	 */
-	arg_list = new(List);
-	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateSpecialRegister, SIInstSpecialRegExec)));
-	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegisterSeries, tos_sreg, tos_sreg + 1)));
-	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateSpecialRegister, SIInstSpecialRegExec)));
-	inst = new(Si2binInst, SI_INST_S_ANDN2_B64, arg_list);
-	Llvm2siBasicBlockAddInst(then_bb, inst);
+	inst = new Inst(SI::INST_S_ANDN2_B64,
+			new ArgSpecialRegister(SI::InstSpecialRegExec),
+			new ArgScalarRegisterSeries(tos_sreg, tos_sreg + 1),
+			new ArgSpecialRegister(SI::InstSpecialRegExec));
+	then_basic_block->AddInst(inst);
 
 
 	/*** Code for 'else' block ***/
@@ -733,14 +695,14 @@ static void Llvm2siFunctionEmitIfThenElse(Llvm2siFunction *self, Node *node)
 	/* Pop the active mask.
 	 * s_mov_b64 exec, <tos_sreg>
 	 */
-	arg_list = new(List);
-	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateSpecialRegister, SIInstSpecialRegExec)));
-	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegisterSeries, tos_sreg, tos_sreg + 1)));
-	inst = new(Si2binInst, SI_INST_S_MOV_B64, arg_list);
-	Llvm2siBasicBlockAddInst(else_bb, inst);
+	inst = new Inst(SI::INST_S_MOV_B64,
+			new ArgSpecialRegister(SI::InstSpecialRegExec),
+			new ArgScalarRegisterSeries(tos_sreg, tos_sreg + 1));
+	else_basic_block->AddInst(inst);
 }
 
 
+#if 0
 static void Llvm2siFunctionEmitWhileLoop(Llvm2siFunction *self, Node *node)
 {
 	Node *head_node;
@@ -760,7 +722,7 @@ static void Llvm2siFunctionEmitWhileLoop(Llvm2siFunction *self, Node *node)
 	SIInstOpcode opcode;
 
 	LLVMBasicBlockRef llvm_basic_block;
-	LLVMValueRef llinst;
+	LLVMValueRef llvm_inst;
 	LLVMValueRef llcond;
 
 	int cond_sreg;
@@ -854,13 +816,13 @@ static void Llvm2siFunctionEmitWhileLoop(Llvm2siFunction *self, Node *node)
 
 	/* Get head block terminator */
 	llvm_basic_block = asLeafNode(head_node)->llvm_basic_block;
-	llinst = LLVMGetBasicBlockTerminator(llvm_basic_block);
-	assert(llinst);
-	assert(LLVMGetInstructionOpcode(llinst) == LLVMBr);
-	assert(LLVMGetNumOperands(llinst) == 3);
+	llvm_inst = LLVMGetBasicBlockTerminator(llvm_basic_block);
+	assert(llvm_inst);
+	assert(LLVMGetInstructionOpcode(llvm_inst) == LLVMBr);
+	assert(LLVMGetNumOperands(llvm_inst) == 3);
 
 	/* Get symbol associated with condition variable */
-	llcond = LLVMGetOperand(llinst, 0);
+	llcond = LLVMGetOperand(llvm_inst, 0);
 	cond_name = (char *) LLVMGetValueName(llcond);
 	cond_symbol = Llvm2siSymbolTableLookup(self->symbol_table, cond_name);
 	assert(cond_symbol);
