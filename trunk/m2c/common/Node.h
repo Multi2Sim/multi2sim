@@ -217,6 +217,7 @@ public:
 
 	/* Getters */
 	BasicBlock *GetBasicBlock() { return basic_block; }
+	llvm::BasicBlock *GetLlvmBasicBlock() { return llvm_basic_block; }
 
 	/* Setters */
 	void SetBasicBlock(BasicBlock *basic_block) { this->basic_block

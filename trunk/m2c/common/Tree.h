@@ -149,6 +149,7 @@ public:
 
 	/* Getters */
 	const std::string &GetName() { return name; }
+	bool IsStructuralAnalysisDone() { return structural_analysis_done; }
 
 	/* Setters */
 	void SetEntryNode(Node *node) { assert(node->InList(node_list));
@@ -173,6 +174,16 @@ public:
 
 	/* Search node by name. Return null if node not found. */
 	Node *GetNode(const std::string &name);
+
+	/* Search leaf node by name and return null if the node is not found,
+	 * or if a node with the same name is not a leaf node. */
+	LeafNode *GetLeafNode(const std::string &name) {
+			return dynamic_cast<LeafNode *>(GetNode(name)); }
+
+	/* Search abstract node by name and return null if the node is not
+	 * found or if a node with the same name is not an abstract node. */
+	AbstractNode *GetAbstractNode(const std::string &name) {
+			return dynamic_cast<AbstractNode *>(GetNode(name)); }
 
 	/* Remove all nodes from tree and reset its entry. */
 	void Clear();
