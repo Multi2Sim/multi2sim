@@ -93,11 +93,16 @@ public:
 	Arg();
 	
 	/* Getters */
-	ArgType GetType() { return type; }
-	bool GetAbs() { return abs; }
-	bool GetNeg() { return neg; }
-	bool GetConstant() { return constant; }
-	int GetIndex() { return index; }
+	ArgType getType() { return type; }
+	bool getAbs() { return abs; }
+	bool getNeg() { return neg; }
+	bool getConstant() { return constant; }
+	int getIndex() { return index; }
+
+	bool isConstant() { return type == ArgTypeLiteral ||
+			type == ArgTypeLiteralReduced ||
+			type == ArgTypeLiteralFloat ||
+			type == ArgTypeLiteralFloatReduced; }
 
 	/* Dump operand (pure virtual function) */
 	virtual void Dump(std::ostream &os) = 0;

@@ -71,12 +71,12 @@ public:
 			num_regs(high - low + 1), address(false) { }
 
 	/* Getters */
-	const std::string &GetName() { return name; }
-	SymbolType GetType() { return type; }
-	int GetReg() { return reg; }
-	int GetNumRegs() { return num_regs; }
-	bool IsAddress() { return address; }
-	int GetUAVIndex() { return uav_index; }
+	const std::string &getName() { return name; }
+	SymbolType getType() { return type; }
+	int getReg() { return reg; }
+	int getNumRegs() { return num_regs; }
+	bool isAddress() { return address; }
+	int getUAVIndex() { return uav_index; }
 
 	/* Dump */
 	void Dump(std::ostream &os);
@@ -97,7 +97,7 @@ public:
 	/* Create new symbol and add it to the list */
 	void AddSymbol(Symbol *symbol) {
 		std::unique_ptr<Symbol> symbol_ptr(symbol);
-		table[symbol_ptr->GetName()] = std::move(symbol_ptr);
+		table[symbol_ptr->getName()] = std::move(symbol_ptr);
 	}
 
 	/* Look up symbol by name and return it, or return null if symbol is
