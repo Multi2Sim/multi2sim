@@ -27,10 +27,14 @@
 
 #ifdef __cplusplus
 
+#include <llvm/DerivedTypes.h>
 #include <llvm/Type.h>
+#include <llvm/LLVMContext.h>
 
 namespace cl2llvm
 {
+
+llvm::LLVMContext& context = llvm::getGlobalContext();
 
 class Type
 {
@@ -39,13 +43,14 @@ class Type
 
 public:
 
+	Type(llvm::Type *type) { this->type = type; sign = true; }
 	Type(llvm::Type *type, bool sign) { this->type = type;
 			this->sign = sign; }
 
-	Type();
-	
 	llvm::Type *GetType() { return type; }
 	bool GetSign() { return sign; }
+	Type Compare(Type *type2);
+
 };
 
 
@@ -70,6 +75,7 @@ struct cl2llvmTypeWrap *cl2llvmTypeWrapCreate(void *llvm_type,
 		int sign);
 void cl2llvmTypeWrapFree(struct cl2llvmTypeWrap *type);
 int cl2llvmTypeWrapGetSign(struct cl2llvmTypeWrap *type);
+void cl2llvmTypeWrapSetSign(struct cl2llvmTypeWrap *type, int Sign);
 
 #ifdef __cplusplus
 }
