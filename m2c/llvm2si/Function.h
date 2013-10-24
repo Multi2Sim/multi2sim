@@ -177,6 +177,9 @@ class Function
 
 	void EmitIfThen(Common::AbstractNode *node);
 	void EmitIfThenElse(Common::AbstractNode *node);
+	void EmitWhileLoop(Common::AbstractNode *node);
+
+	si2bin::Arg *TranslateConstant(llvm::Constant *llvm_const);
 
 public:
 
@@ -184,10 +187,10 @@ public:
 	explicit Function(llvm::Function *llvm_function);
 
 	/* Getters */
-	Common::Tree *GetTree() { return &tree; }
-	int GetVRegGid() { return vreg_gid; }
-	int GetSRegGSize() { return sreg_gsize; }
-	FunctionUAV *GetUAV(int index) { return index >= 0 && index <
+	Common::Tree *getTree() { return &tree; }
+	int getVRegGid() { return vreg_gid; }
+	int getSRegGSize() { return sreg_gsize; }
+	FunctionUAV *getUAV(int index) { return index >= 0 && index <
 			(int) uav_list.size() ? uav_list[index].get() :
 			nullptr; }
 

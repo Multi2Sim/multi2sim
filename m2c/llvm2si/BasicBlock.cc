@@ -169,7 +169,7 @@ void BasicBlock::EmitCall(llvm::CallInst *llvm_inst)
 		/* Create new symbol associating it with the vector register
 		 * containing the global ID in the given dimension. */
 		Symbol *ret_symbol = new Symbol(var_name, SymbolVectorRegister,
-				function->GetVRegGid() + dim);
+				function->getVRegGid() + dim);
 		function->AddSymbol(ret_symbol);
 	}
 	else if (func_name == "get_global_size")
@@ -186,7 +186,7 @@ void BasicBlock::EmitCall(llvm::CallInst *llvm_inst)
 		 */
 		Inst *inst = new Inst(SI::INST_V_MOV_B32,
 				ret_arg,
-				new ArgScalarRegister(function->GetSRegGSize() + dim));
+				new ArgScalarRegister(function->getSRegGSize() + dim));
 		AddInst(inst);
 	}
 	else
@@ -211,7 +211,7 @@ void BasicBlock::EmitGetElementPtr(llvm::GetElementPtrInst *llvm_inst)
 	arg_ptr->ValidTypes(ArgTypeVectorRegister);
 
 	/* Address must be a symbol with UAV */
-	if (!ptr_symbol || !ptr_symbol->IsAddress());
+	if (!ptr_symbol || !ptr_symbol->isAddress());
 		fatal("%s: no UAV for symbol", __FUNCTION__);
 	
 	/* Get size of pointed value */
@@ -229,7 +229,7 @@ void BasicBlock::EmitGetElementPtr(llvm::GetElementPtrInst *llvm_inst)
 	std::string ret_name = llvm_inst->getName();
 	int ret_vreg = function->AllocVReg();
 	Symbol *ret_symbol = new Symbol(ret_name, SymbolVectorRegister, ret_vreg);
-	ret_symbol->SetUAVIndex(ptr_symbol->GetUAVIndex());
+	ret_symbol->SetUAVIndex(ptr_symbol->getUAVIndex());
 	function->AddSymbol(ret_symbol);
 
 	/* Calculate offset as the multiplication between 'arg_index' and the
@@ -237,8 +237,8 @@ void BasicBlock::EmitGetElementPtr(llvm::GetElementPtrInst *llvm_inst)
 	 * literal, we can pre-calculate it here. If 'arg_index' is a vector
 	 * register, we need to emit an instruction. */
 	Arg *arg_offset;
-	if (arg_index->GetType() == ArgTypeLiteral ||
-			arg_index->GetType() == ArgTypeLiteralReduced)
+	if (arg_index->getType() == ArgTypeLiteral ||
+			arg_index->getType() == ArgTypeLiteralReduced)
 	{
 		/* Argument 'arg_offset' is just a modification of
 		 * 'arg_index'. */
@@ -300,7 +300,7 @@ void BasicBlock::EmitICmp(llvm::ICmpInst *llvm_inst)
 	/* Only the first argument can be a literal. If the second argument is
 	 * a literal, flip them and invert comparison predicate later. */
 	bool invert = false;
-	if (arg2->GetType() != ArgTypeVectorRegister)
+	if (arg2->getType() != ArgTypeVectorRegister)
 	{
 		std::swap(arg1, arg2);
 		invert = true;
@@ -433,14 +433,14 @@ void BasicBlock::EmitLoad(llvm::LoadInst *llvm_inst)
 	arg_addr->ValidTypes(ArgTypeVectorRegister);
 
 	/* Address must be a symbol with UAV */
-	if (!addr_symbol || !addr_symbol->IsAddress())
+	if (!addr_symbol || !addr_symbol->isAddress())
 		fatal("%s: no UAV for symbol", __FUNCTION__);
 
 	/* Get UAV */
-	FunctionUAV *uav = function->GetUAV(addr_symbol->GetUAVIndex());
+	FunctionUAV *uav = function->getUAV(addr_symbol->getUAVIndex());
 	if (!uav)
 		fatal("%s: invalid UAV index (%d)", __FUNCTION__,
-				addr_symbol->GetUAVIndex());
+				addr_symbol->getUAVIndex());
 
 	/* Get address space - only 1 (global mem.) supported for now */
 	llvm::Type *llvm_type = llvm_arg_addr->getType();
@@ -499,7 +499,7 @@ void BasicBlock::EmitMul(llvm::BinaryOperator *llvm_inst)
 
 	/* Only the first operand can be a constant, so swap them if there is
 	 * a constant in the second. */
-	if (arg2->GetType() != ArgTypeVectorRegister)
+	if (arg2->getType() != ArgTypeVectorRegister)
 		std::swap(arg1, arg2);
 	arg1->ValidTypes(ArgTypeVectorRegister,
 			ArgTypeLiteral,
@@ -548,7 +548,7 @@ void BasicBlock::EmitPhi(llvm::PHINode *llvm_inst)
 
 		/* Find node */
 		std::string name = llvm_basic_block->getName();
-		Common::Tree *tree = function->GetTree();
+		Common::Tree *tree = function->getTree();
 		Common::LeafNode *node = tree->GetLeafNode(name);
 		if (!node)
 			panic("%s: cannot find node '%s'",
@@ -594,14 +594,14 @@ void BasicBlock::EmitStore(llvm::StoreInst *llvm_inst)
 	arg_addr->ValidTypes(ArgTypeVectorRegister);
 
 	/* Address must be a symbol with UAV */
-	if (!addr_symbol || !addr_symbol->IsAddress())
+	if (!addr_symbol || !addr_symbol->isAddress())
 		panic("%s: no UAV for symbol", __FUNCTION__);
 
 	/* Get UAV */
-	FunctionUAV *uav = function->GetUAV(addr_symbol->GetUAVIndex());
+	FunctionUAV *uav = function->getUAV(addr_symbol->getUAVIndex());
 	if (!uav)
 		panic("%s: invalid UAV index (%d)", __FUNCTION__,
-				addr_symbol->GetUAVIndex());
+				addr_symbol->getUAVIndex());
 
 	/* Get address space - only 1 (global mem.) supported for now */
 	llvm::Type *llvm_type = llvm_arg_addr->getType();
@@ -791,7 +791,7 @@ void BasicBlock::EmitFMul(llvm::BinaryOperator *llvm_inst)
 
 	/* Only the first operand can be a constant, so swap them if there is
 	 * a constant in the second. */
-	if (arg2->GetType() != ArgTypeVectorRegister)
+	if (arg2->getType() != ArgTypeVectorRegister)
 		std::swap(arg1, arg2);
 	arg1->ValidTypes(ArgTypeVectorRegister,
 			ArgTypeLiteral,
@@ -868,7 +868,7 @@ void BasicBlock::Dump(std::ostream &os)
 
 	/* Label with node's name */
 	Common::LeafNode *node = GetNode();
-	os << "\n" << node->GetName() << ":\n";
+	os << "\n" << node->getName() << ":\n";
 
 	/* Print list of instructions */
 	for (auto &inst : inst_list)
