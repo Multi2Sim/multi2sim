@@ -38,23 +38,8 @@ class BasicBlock;
 namespace si2bin
 {
 
-
-struct InstInfo
-{
-	/* There can be multiple instruction encodings for the same instruction
-	 * name. This points to the next one in the list. */
-	InstInfo *next;
-
-	/* Associated info structure in disassembler */
-	SI::InstInfo *info;
-
-	/* List of tokens in format string */
-	std::list<std::string> str_tokens;
-	std::list<std::unique_ptr<Token>> tokens;
-
-	/* Instruction name. This string is equal to str_tokens[0] */
-	std::string name;
-};
+/* Forward declarations */
+class InstInfo;
 
 
 class Inst
@@ -75,7 +60,7 @@ class Inst
 	InstInfo *info;
 
 	/* List of arguments */
-	std::list<std::unique_ptr<Arg>> args;
+	std::vector<std::unique_ptr<Arg>> args;
 
 	/* For LLVM-to-SI back-end: basic block that the instruction
 	 * belongs to. */
@@ -84,6 +69,9 @@ class Inst
 	/* Comment attached to the instruction, which will be dumped together
 	 * with it. */
 	std::string comment;
+
+	/* Common construction */
+	void Initialize();
 
 	/* Construction based on opcode + argument list */
 	void Initialize(SI::InstOpcode opcode);
@@ -102,6 +90,8 @@ class Inst
 		this->args.emplace_back(arg);
 		Initialize(name, args...);
 	}
+
+	void EncodeArg(Arg *arg, Token *token);
 
 public:
 

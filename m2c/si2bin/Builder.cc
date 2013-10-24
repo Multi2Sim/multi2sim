@@ -17,10 +17,55 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <lib/cpp/Misc.h>
+
 #include "Builder.h"
+#include "Token.h"
+
+
+using namespace Misc;
 
 namespace si2bin
 {
+
+
+/*
+ * Class 'InstInfo'
+ */
+
+InstInfo::InstInfo(SI::InstInfo *info)
+{
+	/* Initialize */
+	this->info = info;
+	next = nullptr;
+	name = info->name;
+	opcode = info->opcode;
+
+	/* Create list of tokens from format string */
+	StringTokenize(info->fmt_str, str_tokens, ", ");
+	assert(str_tokens.size());
+	name = str_tokens[0];
+	for (unsigned i = 1; i < str_tokens.size(); i++)
+	{
+		/* Get token type */
+		bool error;
+		TokenType type = (TokenType) StringMapStringCase(token_type_map,
+				str_tokens[i], error);
+		if (error)
+			panic("%s: invalid token string: %s",
+					__FUNCTION__, str_tokens[i].c_str());
+
+		/* Add token */
+		tokens.emplace_back(new Token(type));
+	}
+}
+
+
+
+/*
+ * Class 'Builder'
+ */
+
 
 /* Global builder */
 Builder builder;
@@ -32,14 +77,13 @@ Builder::Builder()
 	for (int i = 0; i < SI::InstOpcodeCount; i++)
 	{
 		/* Instruction info from disassembler */
-		InstInfo *info = &inst_info_array[i];
 		SI::InstInfo *inst_info = as.getInstInfo(i);
 		if (!inst_info->name || !inst_info->fmt_str)
-		{
-			info->info = nullptr;
-			info->next = nullptr;
 			continue;
-		}
+
+		/* Craete info and add to array */
+		InstInfo *info = new InstInfo(inst_info);
+		inst_info_array[i].reset(info);
 
 		/* Insert instruction info structure into hash table. There could
 		 * be already an instruction encoding with the same name but a
@@ -49,7 +93,7 @@ Builder::Builder()
 		{
 			/* Non vop3 instructions are added first into list.
 			 * Add vop3 version to end of list */
-			prev_info->next = info;
+			info->InsertAfter(prev_info);
 
 			/* Non vop3 instructions are added first but vop3 version
 			 * is added to the front of list */
@@ -58,7 +102,7 @@ Builder::Builder()
 		}
 		else
 		{
-			inst_info_table[inst_info->name] = info;
+			inst_info_table[info->getName()] = info;
 		}
 	}
 }
