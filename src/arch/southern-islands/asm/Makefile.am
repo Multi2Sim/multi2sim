@@ -5,6 +5,9 @@ libasm_a_SOURCES = \
 	arg.c \
 	arg.h \
 	\
+	Arg.cc \
+	Arg.h \
+	\
 	asm.dat \
 	\
 	Asm.cc \

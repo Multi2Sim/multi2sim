@@ -82,39 +82,39 @@ public:
 	void DisassembleOpenGLBinary(std::string path, int shader_index);
 
 	/* Getters */
-	InstInfo *GetInstInfo(int index) { assert(index >= 0 && index <
+	InstInfo *getInstInfo(int index) { assert(index >= 0 && index <
 			InstOpcodeCount); return &inst_info[index]; }
-	InstInfo *GetDecTableSopp(int index) { assert(index >= 0 && index <
+	InstInfo *getDecTableSopp(int index) { assert(index >= 0 && index <
 			dec_table_sopp_count); return dec_table_sopp[index]; }
-	InstInfo *GetDecTableSopc(int index) { assert(index >= 0 && index <
+	InstInfo *getDecTableSopc(int index) { assert(index >= 0 && index <
 			dec_table_sopc_count); return dec_table_sopc[index]; }
-	InstInfo *GetDecTableSop1(int index) { assert(index >= 0 && index <
+	InstInfo *getDecTableSop1(int index) { assert(index >= 0 && index <
 			dec_table_sop1_count); return dec_table_sop1[index]; }
-	InstInfo *GetDecTableSopk(int index) { assert(index >= 0 && index <
+	InstInfo *getDecTableSopk(int index) { assert(index >= 0 && index <
 			dec_table_sopk_count); return dec_table_sopk[index]; }
-	InstInfo *GetDecTableSop2(int index) { assert(index >= 0 && index <
+	InstInfo *getDecTableSop2(int index) { assert(index >= 0 && index <
 			dec_table_sop2_count); return dec_table_sop2[index]; }
-	InstInfo *GetDecTableSmrd(int index) { assert(index >= 0 && index <
+	InstInfo *getDecTableSmrd(int index) { assert(index >= 0 && index <
 			dec_table_smrd_count); return dec_table_smrd[index]; }
-	InstInfo *GetDecTableVop3(int index) { assert(index >= 0 && index <
+	InstInfo *getDecTableVop3(int index) { assert(index >= 0 && index <
 			dec_table_vop3_count); return dec_table_vop3[index]; }
-	InstInfo *GetDecTableVopc(int index) { assert(index >= 0 && index <
+	InstInfo *getDecTableVopc(int index) { assert(index >= 0 && index <
 			dec_table_vopc_count); return dec_table_vopc[index]; }
-	InstInfo *GetDecTableVop1(int index) { assert(index >= 0 && index <
+	InstInfo *getDecTableVop1(int index) { assert(index >= 0 && index <
 			dec_table_vop1_count); return dec_table_vop1[index]; }
-	InstInfo *GetDecTableVop2(int index) { assert(index >= 0 && index <
+	InstInfo *getDecTableVop2(int index) { assert(index >= 0 && index <
 			dec_table_vop2_count); return dec_table_vop2[index]; }
-	InstInfo *GetDecTableVintrp(int index) { assert(index >= 0 && index <
+	InstInfo *getDecTableVintrp(int index) { assert(index >= 0 && index <
 			dec_table_vintrp_count); return dec_table_vintrp[index]; }
-	InstInfo *GetDecTableDs(int index) { assert(index >= 0 && index <
+	InstInfo *getDecTableDs(int index) { assert(index >= 0 && index <
 			dec_table_ds_count); return dec_table_ds[index]; }
-	InstInfo *GetDecTableMtbuf(int index) { assert(index >= 0 && index <
+	InstInfo *getDecTableMtbuf(int index) { assert(index >= 0 && index <
 			dec_table_mtbuf_count); return dec_table_mtbuf[index]; }
-	InstInfo *GetDecTableMubuf(int index) { assert(index >= 0 && index <
+	InstInfo *getDecTableMubuf(int index) { assert(index >= 0 && index <
 			dec_table_mubuf_count); return dec_table_mubuf[index]; }
-	InstInfo *GetDecTableMimg(int index) { assert(index >= 0 && index <
+	InstInfo *getDecTableMimg(int index) { assert(index >= 0 && index <
 			dec_table_mimg_count); return dec_table_mimg[index]; }
-	InstInfo *GetDecTableExp(int index) { assert(index >= 0 && index <
+	InstInfo *getDecTableExp(int index) { assert(index >= 0 && index <
 			dec_table_exp_count); return dec_table_exp[index]; }
 };
 

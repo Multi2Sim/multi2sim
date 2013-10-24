@@ -10,6 +10,9 @@ libllvm2si_a_SOURCES = \
 	BasicBlock.cc \
 	BasicBlock.h \
 	\
+	Builder.cc \
+	Builder.h \
+	\
 	function.c \
 	function.h \
 	\
@@ -32,7 +35,10 @@ libllvm2si_a_SOURCES = \
 	Symbol.h \
 	\
 	symbol-table.c \
-	symbol-table.h
+	symbol-table.h \
+	\
+	Wrapper.cc \
+	Wrapper.h
 
 AM_CFLAGS = $(LLVM_CFLAGS)
 AM_CXXFLAGS = $(LLVM_CXXFLAGS)

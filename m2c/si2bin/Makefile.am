@@ -14,6 +14,9 @@ libsi2bin_a_SOURCES = \
 	arg.c \
 	arg.h \
 	\
+	Builder.cc \
+	Builder.h \
+	\
 	data.h \
 	data.c \
 	\

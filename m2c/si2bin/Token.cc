@@ -339,7 +339,7 @@ bool Token::IsArgAllowed(Arg *arg)
 	{
 		ArgSpecialRegister *arg_special_register =
 				dynamic_cast<ArgSpecialRegister *>(arg);
-		return arg_special_register && arg_special_register->GetReg() ==
+		return arg_special_register && arg_special_register->getReg() ==
 				SI::InstSpecialRegVcc;
 	}
 	

@@ -19,6 +19,9 @@
 
 #include "Arg.h"
 
+
+using namespace Misc;
+
 namespace SI
 {
 
@@ -32,53 +35,53 @@ StringMap arg_dimension_map =
 
 StringMap arg_access_type_map =
 {
-	{ "RO", ArgReadOnly },
-	{ "WO", ArgWriteOnly },
-	{ "RW", ArgReadWrite },
+	{ "RO", ArgAccessTypeReadOnly },
+	{ "WO", ArgAccessTypeWriteOnly },
+	{ "RW", ArgAccessTypeReadWrite },
 	{ 0, 0 }
 };
 
 
 StringMap arg_data_type_map =
 {
-	{ "i1", ArgInt1 },
-	{ "i8", ArgInt8 },
-	{ "i16", ArgInt16 },
-	{ "i32", ArgInt32 },
-	{ "i64", ArgInt64 },
-	{ "u1", ArgUInt1 },
-	{ "u8", ArgUInt8 },
-	{ "u16", ArgUInt16 },
-	{ "u32", ArgUInt32 },
-	{ "u64", ArgUInt64 },
-	{ "float", ArgFloat },
-	{ "double", ArgDouble },
-	{ "struct", ArgStruct },
-	{ "union", ArgUnion },
-	{ "event", ArgEvent },
-	{ "opaque", ArgOpaque },
+	{ "i1", ArgDataTypeInt1 },
+	{ "i8", ArgDataTypeInt8 },
+	{ "i16", ArgDataTypeInt16 },
+	{ "i32", ArgDataTypeInt32 },
+	{ "i64", ArgDataTypeInt64 },
+	{ "u1", ArgDataTypeUInt1 },
+	{ "u8", ArgDataTypeUInt8 },
+	{ "u16", ArgDataTypeUInt16 },
+	{ "u32", ArgDataTypeUInt32 },
+	{ "u64", ArgDataTypeUInt64 },
+	{ "float", ArgDataTypeFloat },
+	{ "double", ArgDataTypeDouble },
+	{ "struct", ArgDataTypeStruct },
+	{ "union", ArgDataTypeUnion },
+	{ "event", ArgDataTypeEvent },
+	{ "opaque", ArgDataTypeOpaque },
 	{ 0, 0 }
 };
 
 
-SringMap arg_scope_map =
+StringMap arg_scope_map =
 {
-	{ "g", ArgGlobal },
-	{ "p", ArgEmuPrivate },
-	{ "l", ArgEmuLocal },
-	{ "uav", ArgUAV },
-	{ "c", ArgEmuConstant },
-	{ "r", ArgEmuGDS },
-	{ "hl", ArgHwLocal },
-	{ "hp", ArgHwPrivate },
-	{ "hc", ArgHwConstant },
-	{ "hr", ArgHwGDS },
+	{ "g", ArgScopeGlobal },
+	{ "p", ArgScopeEmuPrivate },
+	{ "l", ArgScopeEmuLocal },
+	{ "uav", ArgScopeUAV },
+	{ "c", ArgScopeEmuConstant },
+	{ "r", ArgScopeEmuGDS },
+	{ "hl", ArgScopeHwLocal },
+	{ "hp", ArgScopeHwPrivate },
+	{ "hc", ArgScopeHwConstant },
+	{ "hr", ArgScopeHwGDS },
 	{ 0, 0 }
 };
 
 
 /* FIXME: Still need to figure out reflection for i1 and u1 */
-StringMap arg_reflection_map =
+/*StringMap arg_reflection_map =
 {
 	{ "char", ArgInt8 },
 	{ "short", ArgInt16 },
@@ -95,46 +98,38 @@ StringMap arg_reflection_map =
 	{ "event", ArgEvent },
 	{ "opaque", ArgOpaque },
 	{ 0, 0 }
-};
-
-
-Arg::Arg(ArgType type, string name)
-{
-	/* Initialize */
-	this->type = type;
-	this->name = name;
-}
+};*/
 
 
 /* Infer argument size from its data type */
-Arg::GetDataSize(ArgDataType data_type)
+int Arg::getDataSize(ArgDataType data_type)
 {
 	switch (data_type)
 	{
 
-	case ArgInt8:
-	case ArgUInt8:
-	case ArgStruct:
-	case ArgUnion:
-	case ArgEvent:
-	case ArgOpaque:
+	case ArgDataTypeInt8:
+	case ArgDataTypeUInt8:
+	case ArgDataTypeStruct:
+	case ArgDataTypeUnion:
+	case ArgDataTypeEvent:
+	case ArgDataTypeOpaque:
 
 		return 1;
 
-	case ArgInt16:
-	case ArgUInt16:
+	case ArgDataTypeInt16:
+	case ArgDataTypeUInt16:
 
 		return 2;
 
-	case ArgInt32:
-	case ArgUInt32:
-	case ArgFloat:
+	case ArgDataTypeInt32:
+	case ArgDataTypeUInt32:
+	case ArgDataTypeFloat:
 
 		return 4;
 
-	case ArgInt64:
-	case ArgUInt64:
-	case ArgDouble:
+	case ArgDataTypeInt64:
+	case ArgDataTypeUInt64:
+	case ArgDataTypeDouble:
 
 		return 8;
 
@@ -152,7 +147,7 @@ void ArgPointer::Dump(std::ostream &os)
 	os << StringMapValue(arg_data_type_map, data_type);
 	if (num_elems > 1)
 		os << '[' << num_elems << ']';
-	os << "* " << name;
+	os << "* " << getName();
 }
 
 
@@ -161,11 +156,11 @@ void ArgValue::Dump(std::ostream &os)
 	os << StringMapValue(arg_data_type_map, data_type);
 	if (num_elems > 1)
 		os << '[' << num_elems << ']';
-	os << ' ' << name;
+	os << ' ' << getName();
 }
 
 
-#ifdef 0
+#if 0
 SIArg * SIArgCopy(SIArg *original)
 {
 	SIArg *copy;

@@ -20,7 +20,10 @@
 #ifndef ARCH_SOUTHERN_ISLANDS_ASM_ARG_H
 #define ARCH_SOUTHERN_ISLANDS_ASM_ARG_H
 
+#include <memory>
+
 #include <lib/cpp/Misc.h>
+
 
 namespace SI
 {
@@ -90,7 +93,8 @@ class Arg
 	bool constarg; /* Set to true when argument is constant */
 
 public:
-	Arg(ArgType type, const std::string &name);
+	Arg(ArgType type, const std::string &name) :
+			type(type), name(name) { }
 
 	/* Getters */
 	ArgType getType() { return type; }
@@ -101,7 +105,7 @@ public:
 	friend std::ostream &operator<<(std::ostream &os, Arg &arg) {
 			arg.Dump(os); return os; }
 
-	static int GetDataSize(ArgDataType data_type);
+	static int getDataSize(ArgDataType data_type);
 };
 
 
@@ -139,12 +143,12 @@ public:
 				alignment(alignment) { };
 
 	/* Getters */
-	ArgDataType GetDataType() { return data_type; }
-	int GetNumElems() { return num_elems; }
-	ArgScope GetScope() { return scope; }
+	ArgDataType getDataType() { return data_type; }
+	int getNumElems() { return num_elems; }
+	ArgScope getScope() { return scope; }
 
 	/* Setters */
-	void SetDevicePtr(unsigned int device_ptr) {
+	void setDevicePtr(unsigned int device_ptr) {
 		this->device_ptr = device_ptr; }
 
 	/* Dump */
@@ -175,10 +179,13 @@ public:
 				constant_buffer_num(constant_buffer_num),
 				constant_offset(constant_offset) { }
 
-	ArgDataType GetDataType() { return data_type; }
-	int GetNumElems() { return num_elems; }
+	ArgDataType getDataType() { return data_type; }
+	int getNumElems() { return num_elems; }
 
-	void SetValue(void *value) { this->value.reset(value); }
+	void setValue(void *value) { this->value.reset(value); }
+
+	/* Dump */
+	void Dump(std::ostream &os);
 };
 
 
