@@ -65,10 +65,11 @@ public:
 	/* Constructor */
 	Symbol(const std::string &name, SymbolType type, int reg) :
 			name(name), type(type), reg(reg), num_regs(1),
-			address(false) { }
+			address(false), uav_index(0) { }
 	Symbol(const std::string &name, SymbolType type, int low, int high) :
 			name(name), type(type), reg(low),
-			num_regs(high - low + 1), address(false) { }
+			num_regs(high - low + 1), address(false),
+			uav_index(0) { }
 
 	/* Getters */
 	const std::string &getName() { return name; }

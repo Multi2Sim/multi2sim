@@ -34,6 +34,38 @@ namespace llvm2si
  * Class 'FunctionArg'
  */
 
+FunctionArg::FunctionArg(llvm::Argument *llvm_arg) :
+		llvm_arg(llvm_arg)
+{
+	/* Initialize */
+	function = nullptr;
+	index = -1;
+	uav_index = -1;
+	sreg = 0;
+	vreg = 0;
+
+	/* Get argument name */
+	name = llvm_arg->getName();
+	if (name.empty())
+		fatal("%s: anonymous arguments not allowed", __FUNCTION__);
+
+	/* Initialize SI argument */
+	llvm::Type *llvm_type = llvm_arg->getType();
+	if (llvm_type->isPointerTy())
+	{
+		llvm_type = llvm_type->getPointerElementType();
+		arg.reset(new SI::ArgPointer(name, GetDataType(llvm_type),
+				GetNumElements(llvm_type), 0, 0, SI::ArgScopeUAV, 0, 0,
+				SI::ArgAccessTypeReadWrite));
+	}
+	else
+	{
+		arg.reset(new SI::ArgValue(name, GetDataType(llvm_type),
+				GetNumElements(llvm_type), 0, 0));
+	}
+}
+
+
 SI::ArgDataType FunctionArg::GetDataType(llvm::Type *llvm_type)
 {
 	/* Get vector element type */
@@ -81,33 +113,6 @@ int FunctionArg::GetNumElements(llvm::Type *llvm_type)
 }
 
 
-FunctionArg::FunctionArg(llvm::Argument *llvm_arg)
-{
-	/* Get argument name */
-	name = llvm_arg->getName();
-	if (name.empty())
-		fatal("%s: anonymous arguments not allowed", __FUNCTION__);
-
-	/* Initialize */
-	this->llvm_arg = llvm_arg;
-
-	/* Initialize SI argument */
-	llvm::Type *llvm_type = llvm_arg->getType();
-	if (llvm_type->isPointerTy())
-	{
-		llvm_type = llvm_type->getPointerElementType();
-		arg.reset(new SI::ArgPointer(name, GetDataType(llvm_type),
-				GetNumElements(llvm_type), 0, 0, SI::ArgScopeUAV, 0, 0,
-				SI::ArgAccessTypeReadWrite));
-	}
-	else
-	{
-		arg.reset(new SI::ArgValue(name, GetDataType(llvm_type),
-				GetNumElements(llvm_type), 0, 0));
-	}
-}
-
-
 void FunctionArg::Dump(std::ostream &os)
 {
 	switch (arg->getType())
@@ -115,13 +120,14 @@ void FunctionArg::Dump(std::ostream &os)
 
 	case SI::ArgTypePointer:
 	{
-		os << '\t' << *arg << ' ' << index * 16 << uav_index + 10 << '\n';
+		os << '\t' << *arg << ' ' << index * 16
+				<< " uav" << uav_index + 10 << '\n';
 		break;
 	}
 
 	case SI::ArgTypeValue:
 	{
-		os << '\t' << *arg << ' ' << index * 16 << uav_index + 10 << '\n';
+		os << '\t' << *arg << ' ' << index * 16 << '\n';
 		break;
 	}
 
@@ -206,7 +212,7 @@ void Function::AddArg(FunctionArg *arg, int num_elem)
 		 */
 		inst = new Inst(SI::INST_V_MOV_B32,
 				new ArgVectorRegister(arg->vreg),
-				new ArgVectorRegister(arg->sreg));
+				new ArgScalarRegister(arg->sreg));
 		basic_block->AddInst(inst);
 
 		/* Insert argument name in symbol table, using its vector register. */
@@ -261,7 +267,7 @@ void Function::DumpData(std::ostream &os)
 	os << "\tuserElements[0] = PTR_UAV_TABLE, 0, s["
 			<< sreg_uav_table << ':' << sreg_uav_table + 1 << "]\n";
 	os << "\tuserElements[1] = IMM_CONST_BUFFER, 0, s["
-			<< sreg_cb0 << ':' << sreg_cb0 + 3 << "\n";
+			<< sreg_cb0 << ':' << sreg_cb0 + 3 << "]\n";
 	os << "\tuserElements[2] = IMM_CONST_BUFFER, 1, s["
 			<< sreg_cb1 << ':' << sreg_cb1 + 3 << "]\n";
 	os << '\n';
