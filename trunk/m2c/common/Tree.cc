@@ -910,7 +910,7 @@ void Tree::PreorderTraversal(std::list<Node *> &list)
 {
 	/* A structural analysis must have been run first */
 	if (!structural_analysis_done)
-		fatal("%s: %s: tree traversal requires structural analysis",
+		panic("%s: %s: tree traversal requires structural analysis",
 				__FUNCTION__, name.c_str());
 
 	/* Traverse tree recursively */
@@ -931,7 +931,7 @@ void Tree::PostorderTraversal(std::list<Node *> &list)
 {
 	/* A structural analysis must have been run first */
 	if (!structural_analysis_done)
-		fatal("%s: %s: tree traversal requires structural analysis",
+		panic("%s: %s: tree traversal requires structural analysis",
 				__FUNCTION__, name.c_str());
 
 	/* Traverse tree recursively */

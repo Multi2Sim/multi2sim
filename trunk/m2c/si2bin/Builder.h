@@ -22,6 +22,7 @@
 
 #include <array>
 #include <unordered_map>
+#include <vector>
 
 #include <arch/southern-islands/asm/Asm.h>
 
@@ -31,14 +32,65 @@
 namespace si2bin
 {
 
+class InstInfo
+{
+	/* There can be multiple instruction encodings for the same instruction
+	 * name. This points to the next one in the list. */
+	InstInfo *next;
+
+	/* Associated info structure in disassembler */
+	SI::InstInfo *info;
+
+	/* List of tokens in format string */
+	std::vector<std::string> str_tokens;
+	std::vector<std::unique_ptr<Token>> tokens;
+
+	/* Instruction name. This string is equal to str_tokens[0] */
+	std::string name;
+
+	/* Instruction opcode as a unique integer identifier */
+	SI::InstOpcode opcode;
+
+public:
+
+	InstInfo(SI::InstInfo *info);
+
+	/* Getters */
+
+	const std::string &getName() { return name; }
+	SI::InstOpcode getOpcode() { return opcode; }
+	SI::InstInfo *getInfo() { return info; }
+	InstInfo *getNext() { return next; }
+	size_t getNumTokens() { return tokens.size(); }
+
+	const std::string &getTokenStr(size_t index) {
+		assert(index < tokens.size());
+		return str_tokens[index];
+	}
+
+	Token *getToken(size_t index) {
+		assert(index < tokens.size());
+		return tokens[index].get();
+	}
+
+	/* Insert after another object of type InstInfo with the same name in
+	 * the main hash table. */
+	void InsertAfter(InstInfo *info) {
+		assert(!info->next);
+		info->next = this;
+	}
+};
+
+
+
 class Builder
 {
 	/* Information with all Southern Islands instructions */
-	std::array<InstInfo, SI::InstOpcodeCount> inst_info_array;
+	std::array<std::unique_ptr<InstInfo>, SI::InstOpcodeCount> inst_info_array;
 
 	/* Hash table indexed by an instruction name. Each entry contains a
 	 * linked list of instructions with that name. */
-	std::unordered_map<std::string, InstInfo*> inst_info_table;
+	std::unordered_map<std::string, InstInfo *> inst_info_table;
 
 	/* Southern Islands disassembler */
 	SI::Asm as;
@@ -53,8 +105,7 @@ public:
 	InstInfo *getInstInfo(SI::InstOpcode opcode) {
 		return (opcode > SI::InstOpcodeInvalid &&
 				opcode < SI::InstOpcodeCount) ?
-			&inst_info_array[opcode] :
-			nullptr;
+			inst_info_array[opcode].get() : nullptr;
 	}
 
 	/* Return the head of a linked list of InstInfo structures associated
