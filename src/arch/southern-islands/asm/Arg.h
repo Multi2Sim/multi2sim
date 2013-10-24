@@ -93,8 +93,8 @@ public:
 	Arg(ArgType type, const std::string &name);
 
 	/* Getters */
-	ArgType GetType() { return type; }
-	std::string GetName() { return name; }
+	ArgType getType() { return type; }
+	std::string getName() { return name; }
 	
 	/* Dump */
 	virtual void Dump(std::ostream &os) { os << name; }

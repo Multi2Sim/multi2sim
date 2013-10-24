@@ -113,22 +113,22 @@ void AbstractNode::Compare(Node *node)
 	/* Compare region */
 	if (region != abs_node->region)
 		fatal("region differs for '%s' and '%s'",
-				GetName().c_str(),
-				node->GetName().c_str());
+				getName().c_str(),
+				node->getName().c_str());
 
 	/* Compare children */
 	differ = child_list.size() != abs_node->child_list.size();
 	for (auto &child : child_list)
 	{
-		Node *tmp_node = abs_node->GetTree()->GetNode(child->GetName());
+		Node *tmp_node = abs_node->getTree()->GetNode(child->getName());
 		assert(tmp_node);
 		if (!tmp_node->InList(abs_node->child_list))
 			differ = true;
 	}
 	if (differ)
 		fatal("children differ for '%s' and '%s'",
-				GetName().c_str(),
-				node->GetName().c_str());
+				getName().c_str(),
+				node->getName().c_str());
 }
 
 
@@ -193,14 +193,14 @@ void Node::Dump(std::ostream &os)
 			os << '|';
 		else if (succ_node->InList(cross_edge_list))
 			os << '*';
-		os << succ_node->GetName();
+		os << succ_node->getName();
 		comma = ",";
 	}
 
 	/* Parent */
 	os << "} structof=";
 	if (parent)
-		os << "'" << parent->GetName() << "'";
+		os << "'" << parent->getName() << "'";
 	else
 		os << '-';
 
@@ -461,7 +461,7 @@ void Node::DumpList(std::ostream &os, std::list<Node *> &list)
 	os << '{';
 	for (auto &node : list)
 	{
-		os << comma << node->GetName();
+		os << comma << node->getName();
 		comma = ",";
 	}
 	os << '}';
@@ -471,7 +471,7 @@ void Node::DumpList(std::ostream &os, std::list<Node *> &list)
 void Node::DumpListDetail(std::ostream &os, std::list<Node *> &list)
 {
 	for (auto &node : list)
-		os << node->GetName() << ' ';
+		os << node->getName() << ' ';
 }
 
 

@@ -868,9 +868,9 @@ void Inst::Encode()
 		case TokenVop3Src0:
 		{
 			bytes.vop3a.src0 = arg->Encode();
-			if (arg->GetAbs())
+			if (arg->getAbs())
 				bytes.vop3a.abs |= 0x1;
-			if (arg->GetNeg())
+			if (arg->getNeg())
 				bytes.vop3a.neg |= 0x1;
 			break;
 		}
@@ -878,9 +878,9 @@ void Inst::Encode()
 		case TokenVop3Src1:
 		{
 			bytes.vop3a.src1 = arg->Encode();
-			if (arg->GetAbs())
+			if (arg->getAbs())
 				bytes.vop3a.abs |= 0x2;
-			if (arg->GetNeg())
+			if (arg->getNeg())
 				bytes.vop3a.neg |= 0x2;
 			break;
 		}
@@ -888,9 +888,9 @@ void Inst::Encode()
 		case TokenVop3Src2:
 		{
 			bytes.vop3a.src2 = arg->Encode();
-			if (arg->GetAbs())
+			if (arg->getAbs())
 				bytes.vop3a.abs |= 0x4;
-			if (arg->GetNeg())
+			if (arg->getNeg())
 				bytes.vop3a.neg |= 0x4;
 			break;
 		}
@@ -916,9 +916,9 @@ void Inst::Encode()
 			/* Encode */
 			bytes.vop3a.src0 = arg->Encode();
 			
-			if (arg->GetAbs())
+			if (arg->getAbs())
 				bytes.vop3a.abs |= 0x1;
-			if (arg->GetNeg())
+			if (arg->getNeg())
 				bytes.vop3a.neg |= 0x1;
 			break;
 		}
@@ -942,9 +942,9 @@ void Inst::Encode()
 
 			/* Encode */
 			bytes.vop3a.src1 = arg->Encode();
-			if (arg->GetAbs())
+			if (arg->getAbs())
 				bytes.vop3a.abs |= 0x2;
-			if (arg->GetAbs())
+			if (arg->getAbs())
 				bytes.vop3a.neg |= 0x2;
 			break;
 		}
@@ -968,9 +968,9 @@ void Inst::Encode()
 
 			/* Encode */
 			bytes.vop3a.src2 = arg->Encode();
-			if (arg->GetAbs())
+			if (arg->getAbs())
 				bytes.vop3a.abs |= 0x4;
-			if (arg->GetNeg())
+			if (arg->getNeg())
 				bytes.vop3a.neg |= 0x4;
 			break;
 		}

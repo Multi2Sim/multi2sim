@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <llvm/Constants.h>
 #include <llvm/Function.h>
 
 #include "BasicBlock.h"
@@ -109,7 +110,7 @@ FunctionArg::FunctionArg(llvm::Argument *llvm_arg)
 
 void FunctionArg::Dump(std::ostream &os)
 {
-	switch (arg->GetType())
+	switch (arg->getType())
 	{
 
 	case SI::ArgTypePointer:
@@ -126,7 +127,7 @@ void FunctionArg::Dump(std::ostream &os)
 
 	default:
 		panic("%s: argument type not recognized (%d)",
-				__FUNCTION__, arg->GetType());
+				__FUNCTION__, arg->getType());
 	}
 }
 
@@ -562,13 +563,13 @@ void Function::EmitIfThen(Common::AbstractNode *node)
 	Common::Node *then_node = node->GetChildList().back();
 
 	/* Make sure roles match */
-	assert(if_node->GetRole() == Common::NodeRoleIf);
-	assert(then_node->GetRole() == Common::NodeRoleThen);
+	assert(if_node->getRole() == Common::NodeRoleIf);
+	assert(then_node->getRole() == Common::NodeRoleThen);
 
 	/* Get basic blocks. 'If' node should be a leaf. */
 	then_node = then_node->GetLastLeaf();
-	assert(if_node->GetKind() == Common::NodeKindLeaf);
-	assert(then_node->GetKind() == Common::NodeKindLeaf);
+	assert(if_node->getKind() == Common::NodeKindLeaf);
+	assert(then_node->getKind() == Common::NodeKindLeaf);
 	Common::LeafNode *if_leaf_node = cast<Common::LeafNode *>(if_node);
 	Common::LeafNode *then_leaf_node = cast<Common::LeafNode *>(then_node);
 	BasicBlock *if_basic_block = cast<BasicBlock *>(if_leaf_node->GetBasicBlock());
@@ -589,9 +590,9 @@ void Function::EmitIfThen(Common::AbstractNode *node)
 	std::string cond_name = llvm_cond->getName();
 	Symbol *cond_symbol = symbol_table.Lookup(cond_name);
 	assert(cond_symbol);
-	assert(cond_symbol->GetType() == SymbolScalarRegister);
-	assert(cond_symbol->GetNumRegs() == 2);
-	int cond_sreg = cond_symbol->GetReg();
+	assert(cond_symbol->getType() == SymbolScalarRegister);
+	assert(cond_symbol->getNumRegs() == 2);
+	int cond_sreg = cond_symbol->getReg();
 
 	/* Allocate two scalar registers to push the active mask */
 	int tos_sreg = AllocSReg(2, 2);
@@ -630,16 +631,16 @@ void Function::EmitIfThenElse(Common::AbstractNode *node)
 	assert(it == node->GetChildList().end());
 
 	/* Make sure roles match */
-	assert(if_node->GetRole() == Common::NodeRoleIf);
-	assert(then_node->GetRole() == Common::NodeRoleThen);
-	assert(else_node->GetRole() == Common::NodeRoleElse);
+	assert(if_node->getRole() == Common::NodeRoleIf);
+	assert(then_node->getRole() == Common::NodeRoleThen);
+	assert(else_node->getRole() == Common::NodeRoleElse);
 
 	/* Get basic blocks. 'If' node should be a leaf. */
 	then_node = then_node->GetLastLeaf();
 	else_node = else_node->GetLastLeaf();
-	assert(if_node->GetKind() == Common::NodeKindLeaf);
-	assert(then_node->GetKind() == Common::NodeKindLeaf);
-	assert(else_node->GetKind() == Common::NodeKindLeaf);
+	assert(if_node->getKind() == Common::NodeKindLeaf);
+	assert(then_node->getKind() == Common::NodeKindLeaf);
+	assert(else_node->getKind() == Common::NodeKindLeaf);
 	Common::LeafNode *if_leaf_node = dynamic_cast<Common::LeafNode *>(if_node);
 	Common::LeafNode *then_leaf_node = dynamic_cast<Common::LeafNode *>(then_node);
 	Common::LeafNode *else_leaf_node = dynamic_cast<Common::LeafNode *>(else_node);
@@ -662,9 +663,9 @@ void Function::EmitIfThenElse(Common::AbstractNode *node)
 	std::string cond_name = llvm_cond->getName();
 	Symbol *cond_symbol = symbol_table.Lookup(cond_name);
 	assert(cond_symbol);
-	assert(cond_symbol->GetType() == SymbolScalarRegister);
-	assert(cond_symbol->GetNumRegs() == 2);
-	int cond_sreg = cond_symbol->GetReg();
+	assert(cond_symbol->getType() == SymbolScalarRegister);
+	assert(cond_symbol->getNumRegs() == 2);
+	int cond_sreg = cond_symbol->getReg();
 
 	/* Allocate two scalar registers to push the active mask */
 	int tos_sreg = AllocSReg(2, 2);
@@ -702,49 +703,24 @@ void Function::EmitIfThenElse(Common::AbstractNode *node)
 }
 
 
-#if 0
-static void Llvm2siFunctionEmitWhileLoop(Llvm2siFunction *self, Node *node)
+void Function::EmitWhileLoop(Common::AbstractNode *node)
 {
-	Node *head_node;
-	Node *tail_node;
-	Node *pre_node;
-	Node *exit_node;
-
-	Llvm2siBasicBlock *head_bb;
-	Llvm2siBasicBlock *tail_bb;
-	Llvm2siBasicBlock *pre_bb;
-	Llvm2siBasicBlock *exit_bb;
-
-	Llvm2siSymbol *cond_symbol;
-	List *arg_list;
-	Si2binInst *inst;
-
-	SIInstOpcode opcode;
-
-	LLVMBasicBlockRef llvm_basic_block;
-	LLVMValueRef llvm_inst;
-	LLVMValueRef llcond;
-
-	int cond_sreg;
-	int tos_sreg;
-
-	char *cond_name;
-
-
 	/* Identify the two nodes */
-	assert(isAbstractNode(node));
-	assert(asAbstractNode(node)->region == AbstractNodeWhileLoop);
-	assert(asAbstractNode(node)->child_list->count == 4);
-	pre_node = asNode(ListGoto(asAbstractNode(node)->child_list, 0));
-	head_node = asNode(ListGoto(asAbstractNode(node)->child_list, 1));
-	tail_node = asNode(ListGoto(asAbstractNode(node)->child_list, 2));
-	exit_node = asNode(ListGoto(asAbstractNode(node)->child_list, 3));
+	assert(node);
+	assert(node->GetRegion() == Common::AbstractNodeWhileLoop);
+	assert(node->GetChildList().size() == 4);
+	auto it = node->GetChildList().begin();
+	Common::Node *pre_node = *(it++);
+	Common::Node *head_node = *(it++);
+	Common::Node *tail_node = *(it++);
+	Common::Node *exit_node = *(it++);
+	assert(it == node->GetChildList().end());
 
 	/* Make sure roles match */
-	assert(pre_node->role == node_role_pre);
-	assert(head_node->role == node_role_head);
-	assert(tail_node->role == node_role_tail);
-	assert(exit_node->role == node_role_exit);
+	assert(pre_node->getRole() == Common::NodeRolePre);
+	assert(head_node->getRole() == Common::NodeRoleHead);
+	assert(tail_node->getRole() == Common::NodeRoleTail);
+	assert(exit_node->getRole() == Common::NodeRoleExit);
 
 	/* Get basic blocks. Pre-header/head/exit nodes should be a leaves.
 	 * Tail node can be an abstract node, which we need to track down to
@@ -755,38 +731,37 @@ static void Llvm2siFunctionEmitWhileLoop(Llvm2siFunction *self, Node *node)
 	 * blocks have been inserted during the structural analysis, so they
 	 * contain no basic block yet.
 	 */
-	tail_node = NodeGetLastLeaf(tail_node);
-	assert(isLeafNode(pre_node));
-	assert(isLeafNode(head_node));
-	assert(isLeafNode(tail_node));
-	assert(isLeafNode(exit_node));
-	pre_bb = asLlvm2siBasicBlock(asLeafNode(pre_node)->basic_block);
-	head_bb = asLlvm2siBasicBlock(asLeafNode(head_node)->basic_block);
-	tail_bb = asLlvm2siBasicBlock(asLeafNode(tail_node)->basic_block);
-	exit_bb = asLlvm2siBasicBlock(asLeafNode(exit_node)->basic_block);
-	assert(!pre_bb);
-	assert(head_bb);
-	assert(tail_bb);
-	assert(!exit_bb);
+	tail_node = tail_node->GetLastLeaf();
+	assert(pre_node->getKind() == Common::NodeKindLeaf);
+	assert(head_node->getKind() == Common::NodeKindLeaf);
+	assert(tail_node->getKind() == Common::NodeKindLeaf);
+	assert(exit_node->getKind() == Common::NodeKindLeaf);
+	Common::LeafNode *pre_leaf_node = cast<Common::LeafNode *>(pre_node);
+	Common::LeafNode *head_leaf_node = cast<Common::LeafNode *>(head_node);
+	Common::LeafNode *tail_leaf_node = cast<Common::LeafNode *>(tail_node);
+	Common::LeafNode *exit_leaf_node = cast<Common::LeafNode *>(exit_node);
+	assert(!pre_leaf_node->GetBasicBlock());
+	BasicBlock *head_basic_block = cast<BasicBlock *>(head_leaf_node->GetBasicBlock());
+	BasicBlock *tail_basic_block = cast<BasicBlock *>(tail_leaf_node->GetBasicBlock());
+	assert(!exit_leaf_node->GetBasicBlock());
 
 	/* Create pre-header and exit basic blocks */
-	pre_bb = new(Llvm2siBasicBlock, self, asLeafNode(pre_node));
-	exit_bb = new(Llvm2siBasicBlock, self, asLeafNode(exit_node));
+	BasicBlock *pre_basic_block = new BasicBlock(this, pre_leaf_node);
+	BasicBlock *exit_basic_block = new BasicBlock(this, exit_leaf_node);
 
 
 	/*** Code for pre-header block ***/
 
 	/* Allocate two scalar registers to push the active mask */
-	tos_sreg = Llvm2siFunctionAllocSReg(self, 2, 2);
+	int tos_sreg = AllocSReg(2, 2);
 
 	/* Push active mask.
 	 * s_mov_b64 <tos_sreg>, exec
 	 */
-	arg_list = new(List);
-	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegisterSeries, tos_sreg, tos_sreg + 1)));
-	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateSpecialRegister, SIInstSpecialRegExec)));
-	inst = new(Si2binInst, SI_INST_S_MOV_B64, arg_list);
-	Llvm2siBasicBlockAddInst(pre_bb, inst);
+	Inst *inst = new Inst(SI::INST_S_MOV_B64,
+			new ArgScalarRegisterSeries(tos_sreg, tos_sreg + 1),
+			new ArgSpecialRegister(SI::InstSpecialRegExec));
+	pre_basic_block->AddInst(inst);
 
 
 	/*** Code for exit block ***/
@@ -794,11 +769,10 @@ static void Llvm2siFunctionEmitWhileLoop(Llvm2siFunction *self, Node *node)
 	/* Pop active mask.
 	 * s_mov_b64 exec, <tos_sreg>
 	 */
-	arg_list = new(List);
-	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateSpecialRegister, SIInstSpecialRegExec)));
-	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegisterSeries, tos_sreg, tos_sreg + 1)));
-	inst = new(Si2binInst, SI_INST_S_MOV_B64, arg_list);
-	Llvm2siBasicBlockAddInst(exit_bb, inst);
+	inst = new Inst(SI::INST_S_MOV_B64,
+			new ArgSpecialRegister(SI::InstSpecialRegExec),
+			new ArgScalarRegisterSeries(tos_sreg, tos_sreg + 1));
+	exit_basic_block->AddInst(inst);
 
 
 	/*** Code for tail block ***/
@@ -806,250 +780,216 @@ static void Llvm2siFunctionEmitWhileLoop(Llvm2siFunction *self, Node *node)
 	/* Jump to head block.
 	 * s_branch <head_block>
 	 */
-	arg_list = new(List);
-	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateLabel, head_node->name)));
-	inst = new(Si2binInst, SI_INST_S_BRANCH, arg_list);
-	Llvm2siBasicBlockAddInst(tail_bb, inst);
+	inst = new Inst(SI::INST_S_BRANCH,
+			new ArgLabel(head_leaf_node->getName()));
+	tail_basic_block->AddInst(inst);
 
 
 	/*** Code for head block ***/
 
 	/* Get head block terminator */
-	llvm_basic_block = asLeafNode(head_node)->llvm_basic_block;
-	llvm_inst = LLVMGetBasicBlockTerminator(llvm_basic_block);
+	llvm::BasicBlock *llvm_basic_block = head_leaf_node->GetLlvmBasicBlock();
+	llvm::TerminatorInst *llvm_inst = llvm_basic_block->getTerminator();
 	assert(llvm_inst);
-	assert(LLVMGetInstructionOpcode(llvm_inst) == LLVMBr);
-	assert(LLVMGetNumOperands(llvm_inst) == 3);
+	assert(llvm_inst->getOpcode() == llvm::Instruction::Br);
+	assert(llvm_inst->getNumOperands() == 3);
 
 	/* Get symbol associated with condition variable */
-	llcond = LLVMGetOperand(llvm_inst, 0);
-	cond_name = (char *) LLVMGetValueName(llcond);
-	cond_symbol = Llvm2siSymbolTableLookup(self->symbol_table, cond_name);
+	llvm::Value *llvm_cond = llvm_inst->getOperand(0);
+	std::string cond_name = llvm_cond->getName();
+	Symbol *cond_symbol = symbol_table.Lookup(cond_name);
 	assert(cond_symbol);
-	assert(cond_symbol->type == llvm2si_symbol_scalar_register);
-	assert(cond_symbol->count == 2);
-	cond_sreg = cond_symbol->reg;
+	assert(cond_symbol->getType() == SymbolScalarRegister);
+	assert(cond_symbol->getNumRegs() == 2);
+	int cond_sreg = cond_symbol->getReg();
 
 	/* Obtain opcode depending on whether the loop exists when the head's
 	 * condition is true or it does when it is false. */
-	opcode = SI_INST_S_AND_B64;
-	assert(head_node->exit_if_true ^ head_node->exit_if_false);
-	if (head_node->exit_if_true)
-		opcode = SI_INST_S_ANDN2_B64;
+	SI::InstOpcode opcode = SI::INST_S_AND_B64;
+	assert(head_node->getExitIfTrue() ^ head_node->getExitIfFalse());
+	if (head_node->getExitIfTrue())
+		opcode = SI::INST_S_ANDN2_B64;
 
 	/* Bitwise 'and' of active mask with condition.
 	 * s_and(n2)_b64 exec, exec, <cond_sreg>
 	 */
-	arg_list = new(List);
-	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateSpecialRegister, SIInstSpecialRegExec)));
-	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateSpecialRegister, SIInstSpecialRegExec)));
-	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegisterSeries, cond_sreg, cond_sreg + 1)));
-	inst = new(Si2binInst, opcode, arg_list);
-	Llvm2siBasicBlockAddInst(head_bb, inst);
+	inst = new Inst(opcode,
+			new ArgSpecialRegister(SI::InstSpecialRegExec),
+			new ArgSpecialRegister(SI::InstSpecialRegExec),
+			new ArgScalarRegisterSeries(cond_sreg, cond_sreg + 1));
+	head_basic_block->AddInst(inst);
 
 	/* Exit loop if no more work-items are active.
 	 * s_cbranch_execz <exit_node>
 	 */
-	arg_list = new(List);
-	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateLabel, exit_node->name)));
-	inst = new(Si2binInst, SI_INST_S_CBRANCH_EXECZ, arg_list);
-	Llvm2siBasicBlockAddInst(head_bb, inst);
+	inst = new Inst(SI::INST_S_CBRANCH_EXECZ,
+			new ArgLabel(exit_node->getName()));
+	head_basic_block->AddInst(inst);
 }
 
 
-void Llvm2siFunctionEmitControlFlow(Llvm2siFunction *self)
+void Function::EmitControlFlow()
 {
-	List *node_list;
-	Node *node;
-
 	/* Emit control flow actions using a post-order traversal of the syntax
 	 * tree (not control-flow graph), from inner to outer control flow
 	 * structures. Which specific post-order traversal does not matter. */
-	node_list = new(List);
-	CTreeTraverse(self->ctree, NULL, node_list);
+	std::list<Common::Node *> node_list;
+	tree.PostorderTraversal(node_list);
 
 	/* Traverse nodes */
-	ListForEach(node_list, node, Node)
+	for (auto &node : node_list)
 	{
 		/* Ignore leaf nodes */
-		if (isLeafNode(node))
+		Common::AbstractNode *abs_node = dynamic_cast
+				<Common::AbstractNode *>(node);
+		if (!abs_node)
 			continue;
 
 		/* Check control structure */
-		switch (asAbstractNode(node)->region)
+		switch (abs_node->GetRegion())
 		{
 
-		case AbstractNodeBlock:
+		case Common::AbstractNodeBlock:
 
 			/* Ignore blocks */
 			break;
 
-		case AbstractNodeIfThen:
+		case Common::AbstractNodeIfThen:
 
-			Llvm2siFunctionEmitIfThen(self, node);
+			EmitIfThen(abs_node);
 			break;
 
-		case AbstractNodeIfThenElse:
+		case Common::AbstractNodeIfThenElse:
 
-			Llvm2siFunctionEmitIfThenElse(self, node);
+			EmitIfThenElse(abs_node);
 			break;
 
-		case AbstractNodeWhileLoop:
+		case Common::AbstractNodeWhileLoop:
 
-			Llvm2siFunctionEmitWhileLoop(self, node);
+			EmitWhileLoop(abs_node);
 			break;
 
 		default:
-			fatal("%s: region %s not supported", __FUNCTION__,
-					str_map_value(&abstract_node_region_map,
-					asAbstractNode(node)->region));
+			panic("%s: region %s not supported", __FUNCTION__,
+					StringMapValue(Common::abstract_node_region_map,
+					abs_node->GetRegion()));
 		}
 	}
-
-	/* Free */
-	delete(node_list);
 }
 
 
-static Si2binArg *Llvm2siFunctionTranslateConstValue(
-		Llvm2siFunction *self, LLVMValueRef llvm_value)
+Arg *Function::TranslateConstant(llvm::Constant *llvm_const)
 {
-	LLVMTypeRef llvm_type;
-	LLVMTypeKind lltype_kind;
-
-	llvm_type = LLVMTypeOf(llvm_value);
-	lltype_kind = LLVMGetTypeKind(llvm_type);
-	
 	/* Check constant type */
-	switch (lltype_kind)
+	llvm::Type *llvm_type = llvm_const->getType();
+	if (llvm_type->isIntegerTy())
 	{
-	
-	case LLVMIntegerTypeKind:
-	{
-		int bit_width;
-		int value;
-
 		/* Only 32-bit constants supported for now. We need to figure
 		 * out what to do with the sign extension otherwise. */
-		bit_width = LLVMGetIntTypeWidth(llvm_type);
-		if (bit_width != 32)
-			fatal("%s: only 32-bit integer constant supported "
-				" (%d-bit found)", __FUNCTION__, bit_width);
+		if (!llvm_type->isIntegerTy(32))
+			panic("%s: only 32-bit integer constant supported "
+					" (%d-bit found)", __FUNCTION__,
+					llvm_type->getIntegerBitWidth());
 
 		/* Create argument */
-		value = LLVMConstIntGetZExtValue(llvm_value);
-		return new_ctor(Si2binArg, CreateLiteral, value);
+		llvm::ConstantInt *llvm_int_const = Misc::cast
+				<llvm::ConstantInt *>(llvm_const);
+		int value = llvm_int_const->getZExtValue();
+		return new ArgLiteral(value);
 	}
-
-	default:
-		
-		fatal("%s: constant type not supported (%d)",
-			__FUNCTION__, lltype_kind);
+	else
+	{
+		panic("%s: constant type not supported (%d)",
+				__FUNCTION__, llvm_type->getTypeID());
 		return NULL;
 	}
 }
 
 
-Si2binArg *Llvm2siFunctionTranslateValue(Llvm2siFunction *self,
-		LLVMValueRef llvm_value, Llvm2siSymbol **symbol_ptr)
+Arg *Function::TranslateValue(llvm::Value *llvm_value, Symbol *&symbol)
 {
-	Llvm2siSymbol *symbol;
-	Si2binArg *arg;
-
-	char *name;
-
-	/* Returned symbol is NULL by default */
-	PTR_ASSIGN(symbol_ptr, NULL);
+	/* Returned symbol is null by default */
+	symbol = nullptr;
 
 	/* Treat constants separately */
-	if (LLVMIsConstant(llvm_value))
-		return Llvm2siFunctionTranslateConstValue(self, llvm_value);
+	llvm::Constant *llvm_const = dynamic_cast<llvm::Constant *>(llvm_value);
+	if (llvm_const)
+		return TranslateConstant(llvm_const);
 
 	/* Get name */
-	name = (char *) LLVMGetValueName(llvm_value);
-	if (!name || !*name)
-		fatal("%s: anonymous values not supported", __FUNCTION__);
+	std::string name = llvm_value->getName();
+	if (name.empty())
+		panic("%s: anonymous value", __FUNCTION__);
 
 	/* Look up symbol */
-	symbol = Llvm2siSymbolTableLookup(self->symbol_table, name);
+	symbol = symbol_table.Lookup(name);
 	if (!symbol)
-		fatal("%s: %s: symbol not found", __FUNCTION__, name);
+		fatal("%s: %s: symbol not found", __FUNCTION__, name.c_str());
 
 	/* Create argument based on symbol type */
-	switch (symbol->type)
+	Arg *arg;
+	switch (symbol->getType())
 	{
 
-	case llvm2si_symbol_vector_register:
+	case SymbolVectorRegister:
 
-		arg = new_ctor(Si2binArg, CreateVectorRegister, symbol->reg);
+		arg = new ArgVectorRegister(symbol->getReg());
 		break;
 
-	case llvm2si_symbol_scalar_register:
+	case SymbolScalarRegister:
 
-		arg = new_ctor(Si2binArg, CreateScalarRegister, symbol->reg);
+		arg = new ArgScalarRegister(symbol->getReg());
 		break;
 
 	default:
 
-		arg = NULL;
-		fatal("%s: invalid symbol type (%d)", __FUNCTION__,
-				symbol->type);
+		arg = nullptr;
+		panic("%s: invalid symbol type (%d)", __FUNCTION__,
+				symbol->getType());
 	}
 	
 	/* Return argument and symbol */
-	PTR_ASSIGN(symbol_ptr, symbol);
 	return arg;
 }
 
 
-Si2binArg *Llvm2siFunctionConstToVReg(Llvm2siFunction *self,
-		Llvm2siBasicBlock *basic_block, Si2binArg *arg)
+Arg *Function::ConstToVReg(BasicBlock *basic_block, Arg *arg)
 {
-	Si2binArg *ret_arg;
-	List *arg_list;
-	Si2binInst *inst;
-	int vreg;
-
 	/* If argument is not a literal of any kind, don't convert. */
-	if (!Si2binArgIsConstant(arg))
+	if (!arg->isConstant())
 		return arg;
 
 	/* Allocate vector register */
-	vreg = Llvm2siFunctionAllocVReg(self, 1, 1);
-	ret_arg = new_ctor(Si2binArg, CreateVectorRegister, vreg);
+	int vreg = AllocVReg();
+	Arg *ret_arg = new ArgVectorRegister(vreg);
 
 	/* Copy constant to vector register.
 	 * v_mov_b32 <vreg>, <const>
 	 */
-	arg_list = new(List);
-	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateVectorRegister, vreg)));
-	ListAdd(arg_list, asObject(arg));
-	inst = new(Si2binInst, SI_INST_V_MOV_B32, arg_list);
-	Llvm2siBasicBlockAddInst(basic_block, inst);
+	Inst *inst = new Inst(SI::INST_V_MOV_B32,
+			new ArgVectorRegister(vreg),
+			arg);
+	basic_block->AddInst(inst);
 
 	/* Return new argument */
 	return ret_arg;
 }
 
 
-int Llvm2siFunctionAllocSReg(Llvm2siFunction *self, int count, int align)
+int Function::AllocSReg(int count, int align)
 {
-	self->num_sregs = (self->num_sregs + align - 1)
-			/ align * align;
-	self->num_sregs += count;
-	return self->num_sregs - count;
+	num_sregs = (num_sregs + align - 1) / align * align;
+	num_sregs += count;
+	return num_sregs - count;
 }
 
 
-int Llvm2siFunctionAllocVReg(Llvm2siFunction *self, int count, int align)
+int Function::AllocVReg(int count, int align)
 {
-	self->num_vregs = (self->num_vregs + align - 1)
-			/ align * align;
-	self->num_vregs += count;
-	return self->num_vregs - count;
-	//return 100;
+	num_vregs = (num_vregs + align - 1) / align * align;
+	num_vregs += count;
+	return num_vregs - count;
 }
-#endif
 
 
 }  /* namespace llvm2si */

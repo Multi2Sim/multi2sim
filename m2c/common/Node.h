@@ -112,10 +112,12 @@ public:
 	virtual ~Node() { }
 
 	/* Getters */
-	Tree *GetTree() { return tree; }
-	const std::string &GetName() { return name; }
-	NodeKind GetKind() { return kind; }
-	NodeRole GetRole() { return role; }
+	Tree *getTree() { return tree; }
+	const std::string &getName() { return name; }
+	NodeKind getKind() { return kind; }
+	NodeRole getRole() { return role; }
+	bool getExitIfTrue() { return exit_if_true; }
+	bool getExitIfFalse() { return exit_if_false; }
 
 	/* Dump node */
 	virtual void Dump(std::ostream &os);

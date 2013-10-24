@@ -208,7 +208,7 @@ bool Token::IsArgAllowed(Arg *arg)
 	 * actually should change to literal_reduced and literal_float_reduced.
 	 * Some others should extend it to literal_reduced and
 	 * literal_float_reduced (such as src0) */
-	ArgType t = arg->GetType();
+	ArgType t = arg->getType();
 	switch (type)
 	{
 
@@ -269,9 +269,9 @@ bool Token::IsArgAllowed(Arg *arg)
 	case TokenSrc0:
 
 		/* Token 'src' does not accept 'abs' of 'neg' function */
-		if (arg->GetAbs())
+		if (arg->getAbs())
 			return false;
-		if (arg->GetNeg())
+		if (arg->getNeg())
 			return false;
 
 		return t == ArgTypeLiteral ||
@@ -303,9 +303,9 @@ bool Token::IsArgAllowed(Arg *arg)
 	case TokenVsrc1:
 		
 		/* Token 'src' does not accept 'abs' of 'neg' function */
-		if (arg->GetAbs())
+		if (arg->getAbs())
 			return false;
-		if (arg->GetAbs())
+		if (arg->getAbs())
 			return false;
 		
 		return t == ArgTypeVectorRegister;
