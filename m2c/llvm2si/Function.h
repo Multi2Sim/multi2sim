@@ -175,6 +175,9 @@ class Function
 
 	void DumpData(std::ostream &os);
 
+	void EmitIfThen(Common::AbstractNode *node);
+	void EmitIfThenElse(Common::AbstractNode *node);
+
 public:
 
 	/* Constructor */
