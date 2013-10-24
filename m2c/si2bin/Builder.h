@@ -31,7 +31,7 @@
 namespace si2bin
 {
 
-class Builder : SI::Asm
+class Builder
 {
 	/* Information with all Southern Islands instructions */
 	std::array<InstInfo, SI::InstOpcodeCount> inst_info_array;
@@ -40,6 +40,9 @@ class Builder : SI::Asm
 	 * linked list of instructions with that name. */
 	std::unordered_map<std::string, InstInfo*> inst_info_table;
 
+	/* Southern Islands disassembler */
+	SI::Asm as;
+
 public:
 
 	/* Constructor */
@@ -47,11 +50,19 @@ public:
 
 	/* Return instruction information associated with a given opcode, or
 	 * null if the opcode is invalid. */
-	InstInfo *GetInstInfo(SI::InstOpcode opcode);
+	InstInfo *getInstInfo(SI::InstOpcode opcode) {
+		return (opcode > SI::InstOpcodeInvalid &&
+				opcode < SI::InstOpcodeCount) ?
+			&inst_info_array[opcode] :
+			nullptr;
+	}
 
 	/* Return the head of a linked list of InstInfo structures associated
 	 * with an instruction name, or null if the name is invalid. */
-	InstInfo *GetInstInfo(const std::string &name);
+	InstInfo *getInstInfo(const std::string &name) {
+		auto it = inst_info_table.find(name);
+		return it == inst_info_table.end() ? nullptr : it->second;
+	}
 };
 
 

@@ -30,13 +30,14 @@
 #include "phi.h"
 #include "symbol.h"
 #include "symbol-table.h"
+#include "Wrapper.h"
 
 
 /*
  * Private Functions
  */
 
-static void llvm2si_compile_file(char *source_file, char *output_file)
+void llvm2si_compile_file(char *source_file, char *output_file)
 {
 	LLVMMemoryBufferRef llmem_buf;
 	LLVMModuleRef llmodule;
@@ -136,6 +137,7 @@ void Llvm2siCompile(Llvm2si *self, struct list_t *source_file_list,
 		assert(output_file);
 
 		/* Compile one file */
-		llvm2si_compile_file(source_file, output_file);
+		//llvm2si_compile_file(source_file, output_file);
+		Llvm2siParse(source_file, output_file);
 	}
 }

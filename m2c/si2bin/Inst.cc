@@ -47,7 +47,7 @@ void Inst::Initialize(SI::InstOpcode opcode)
 		fatal("%s: invalid opcode (%d)", __FUNCTION__, opcode);
 
 	/* Get instruction information */
-	InstInfo *info = builder.GetInstInfo(opcode);
+	InstInfo *info = builder.getInstInfo(opcode);
 	if (!info)
 		fatal("%s: opcode %d not supported", __FUNCTION__, opcode);
 
@@ -92,7 +92,7 @@ void Inst::Initialize(const std::string &name)
 	/* Try to create the instruction following all possible encodings for
 	 * the same instruction name. */
 	std::string error = "invalid instruction: " + name;
-	for (info = builder.GetInstInfo(name); info; info = info->next)
+	for (info = builder.getInstInfo(name); info; info = info->next)
 	{
 		/* Check number of arguments */
 		if (args.size() != info->tokens.size())
@@ -325,10 +325,10 @@ void Inst::Encode()
 			if (literal)
 			{
 				/* Literal constant other than [-16...64] */
-				if (literal->GetValue() > 0xff00)
+				if (literal->getValue() > 0xff00)
 					fatal("%s: Literal in simm16 needs to fit in 16 bit field",
 						__FUNCTION__);
-				bytes.sopk.simm16 = literal->GetValue();
+				bytes.sopk.simm16 = literal->getValue();
 			}
 			else
 			{
@@ -346,7 +346,7 @@ void Inst::Encode()
 			/* Check range if scalar register range given */
 			ArgScalarRegisterSeries *srs = dynamic_cast
 					<ArgScalarRegisterSeries *>(arg);
-			if (srs && srs->GetHigh() != srs->GetLow() + 1)
+			if (srs && srs->getHigh() != srs->getLow() + 1)
 				fatal("register series must be s[x:x+1]");
 			
 			/* Encode */
@@ -365,14 +365,14 @@ void Inst::Encode()
 					fatal("only one literal allowed");
 				size = 8;
 				bytes.sop2.ssrc0 = 0xff;
-				bytes.sop2.lit_cnst = literal->GetValue();
+				bytes.sop2.lit_cnst = literal->getValue();
 			}
 			else
 			{
 				/* Check range of scalar registers */
 				ArgScalarRegisterSeries *srs = dynamic_cast
 						<ArgScalarRegisterSeries *>(arg);
-				if (srs && srs->GetHigh() != srs->GetLow() + 1)
+				if (srs && srs->getHigh() != srs->getLow() + 1)
 					fatal("invalid scalar register series, s[x:x+1] expected");
 
 				/* Encode */
@@ -395,14 +395,14 @@ void Inst::Encode()
 					fatal("only one literal allowed");
 				size = 8;
 				bytes.sop2.ssrc1 = 0xff;
-				bytes.sop2.lit_cnst = literal->GetValue();
+				bytes.sop2.lit_cnst = literal->getValue();
 			}
 			else
 			{
 				/* Check range of scalar registers */
 				ArgScalarRegisterSeries *srs = dynamic_cast
 						<ArgScalarRegisterSeries *>(arg);
-				if (srs && srs->GetHigh() != srs->GetLow() + 1)
+				if (srs && srs->getHigh() != srs->getLow() + 1)
 					fatal("invalid scalar register series, s[x:x+1] expected");
 
 				/* Encode */
@@ -421,20 +421,20 @@ void Inst::Encode()
 			assert(maddr);
 
 			/* Offset */
-			int soffset = maddr->GetSoffset()->Encode();
+			int soffset = maddr->getSoffset()->Encode();
 			if (!InRange(soffset, 0, 253))
 				fatal("invalid offset");
 			bytes.mtbuf.soffset = soffset;
 
 			/* Data and number format */
-			bytes.mtbuf.dfmt = maddr->GetDataFormat();
-			bytes.mtbuf.nfmt = maddr->GetNumFormat();
+			bytes.mtbuf.dfmt = maddr->getDataFormat();
+			bytes.mtbuf.nfmt = maddr->getNumFormat();
 
 			/* Qualifiers */
-			ArgMaddrQual *qual = maddr->GetQual();
-			bytes.mtbuf.offen = qual->GetOffen();
-			bytes.mtbuf.idxen = qual->GetIdxen();
-			bytes.mtbuf.offset = qual->GetOffset();
+			ArgMaddrQual *qual = maddr->getQual();
+			bytes.mtbuf.offen = qual->getOffen();
+			bytes.mtbuf.idxen = qual->getIdxen();
+			bytes.mtbuf.offset = qual->getOffset();
 
 			break;
 		}
@@ -454,7 +454,7 @@ void Inst::Encode()
 				ArgVectorRegister *vr = dynamic_cast
 						<ArgVectorRegister *>(arg);
 				assert(vr);
-				low = vr->GetId();
+				low = vr->getId();
 				high = low;
 				break;
 			}
@@ -463,8 +463,8 @@ void Inst::Encode()
 			{
 				ArgVectorRegisterSeries *vrs = dynamic_cast
 						<ArgVectorRegisterSeries *>(arg);
-				low = vrs->GetLow();
-				high = vrs->GetHigh();
+				low = vrs->getLow();
+				high = vrs->getHigh();
 				break;
 			}
 
@@ -520,12 +520,12 @@ void Inst::Encode()
 			{
 				ArgLiteral *literal = dynamic_cast
 						<ArgLiteral *>(arg);
-				if (literal->GetValue() > 255)
+				if (literal->getValue() > 255)
 					fatal("%s: offset needs to fit in 8 bit field",
 						__FUNCTION__);
 				
 				bytes.smrd.imm = 1;
-				bytes.smrd.offset = literal->GetValue();
+				bytes.smrd.offset = literal->getValue();
 				/* FIXME - check valid range of literal */
 				break;
 			}
@@ -534,7 +534,7 @@ void Inst::Encode()
 				ArgScalarRegister *sr = dynamic_cast
 						<ArgScalarRegister *>(arg);
 				assert(sr);
-				bytes.smrd.offset = sr->GetId();
+				bytes.smrd.offset = sr->getId();
 				break;
 			}
 			default:
@@ -558,7 +558,7 @@ void Inst::Encode()
 			ArgScalarRegisterSeries *srs = dynamic_cast
 					<ArgScalarRegisterSeries *>(arg);
 			assert(srs);
-			if (srs->GetLow() % 2)
+			if (srs->getLow() % 2)
 				fatal("base register must be multiple of 2");
 
 			/* Restrictions for high register */
@@ -569,7 +569,7 @@ void Inst::Encode()
 			case SI_INST_S_LOAD_DWORDX4:
 
 				/* High register must be low plus 1 */
-				if (srs->GetHigh() != srs->GetLow() + 1)
+				if (srs->getHigh() != srs->getLow() + 1)
 					fatal("register series must be s[x:x+1]");
 				break;
 
@@ -578,7 +578,7 @@ void Inst::Encode()
 			case SI_INST_S_BUFFER_LOAD_DWORDX4:
 
 				/* High register must be low plus 3 */
-				if (srs->GetHigh() != srs->GetLow() + 3)
+				if (srs->getHigh() != srs->getLow() + 3)
 					fatal("register series must be s[x:x+3]");
 				break;
 
@@ -588,7 +588,7 @@ void Inst::Encode()
 			}
 
 			/* Encode */
-			bytes.smrd.sbase = srs->GetLow() / 2;
+			bytes.smrd.sbase = srs->getLow() / 2;
 			break;
 		}
 
@@ -607,7 +607,7 @@ void Inst::Encode()
 			case SI_INST_S_BUFFER_LOAD_DWORDX2:
 
 				/* High register must be low plus 1 */
-				if (srs->GetHigh() != srs->GetLow() + 1)
+				if (srs->getHigh() != srs->getLow() + 1)
 					fatal("register series must be s[low:low+1]");
 				break;
 
@@ -615,7 +615,7 @@ void Inst::Encode()
 			case SI_INST_S_BUFFER_LOAD_DWORDX4:
 
 				/* High register must be low plus 3 */
-				if (srs->GetHigh() != srs->GetLow() + 3)
+				if (srs->getHigh() != srs->getLow() + 3)
 					fatal("register series must be s[low:low+3]");
 				break;
 
@@ -625,7 +625,7 @@ void Inst::Encode()
 			}
 
 			/* Encode */
-			bytes.smrd.sdst = srs->GetLow();
+			bytes.smrd.sdst = srs->getLow();
 			break;
 		}
 
@@ -635,8 +635,8 @@ void Inst::Encode()
 			ArgScalarRegisterSeries *srs = dynamic_cast
 					<ArgScalarRegisterSeries *>(arg);
 			assert(srs);
-			int low = srs->GetLow();
-			int high = srs->GetHigh();
+			int low = srs->getLow();
+			int high = srs->getHigh();
 
 			/* Base register must be multiple of 4 */
 			if (low % 4)
@@ -658,7 +658,7 @@ void Inst::Encode()
 			/* Encode */
 			ArgScalarRegister *sr = dynamic_cast<ArgScalarRegister *>(arg);
 			assert(sr);
-			bytes.smrd.sdst = sr->GetId();
+			bytes.smrd.sdst = sr->getId();
 			break;
 		}
 
@@ -676,7 +676,7 @@ void Inst::Encode()
 				ArgLiteral *literal = dynamic_cast<ArgLiteral *>(arg);
 				assert(literal);
 				bytes.vopc.src0 = 0xff;
-				bytes.vopc.lit_cnst = literal->GetValue();
+				bytes.vopc.lit_cnst = literal->getValue();
 			}
 			else
 			{
@@ -699,7 +699,7 @@ void Inst::Encode()
 				ArgLiteral *literal = dynamic_cast<ArgLiteral *>(arg);
 				assert(literal);
 				bytes.sop2.ssrc0 = 0xff;
-				bytes.sop2.lit_cnst = literal->GetValue();
+				bytes.sop2.lit_cnst = literal->getValue();
 			}
 			else
 			{
@@ -725,7 +725,7 @@ void Inst::Encode()
 				ArgLiteral *literal = dynamic_cast<ArgLiteral *>(arg);
 				assert(literal);
 				bytes.sop2.ssrc1 = 0xff;
-				bytes.sop2.lit_cnst = literal->GetValue();
+				bytes.sop2.lit_cnst = literal->getValue();
 			}
 			else
 			{
@@ -746,7 +746,7 @@ void Inst::Encode()
 			{
 				ArgVectorRegister *vr = dynamic_cast<ArgVectorRegister *>(arg);
 				assert(vr);
-				bytes.mtbuf.vaddr = vr->GetId();
+				bytes.mtbuf.vaddr = vr->getId();
 				break;
 			}
 			
@@ -755,10 +755,10 @@ void Inst::Encode()
 				/* High register must be low plus 1 */
 				ArgVectorRegisterSeries *vrs = dynamic_cast
 						<ArgVectorRegisterSeries *>(arg);
-				if (vrs->GetHigh() != vrs->GetLow() + 1)
+				if (vrs->getHigh() != vrs->getLow() + 1)
 					fatal("register series must be v[x:x+1]");
 				
-				bytes.mtbuf.vaddr = vrs->GetLow();
+				bytes.mtbuf.vaddr = vrs->getLow();
 				/* FIXME - Find way to verify that idxen and offen are set */
 				break;
 			}
@@ -787,7 +787,7 @@ void Inst::Encode()
 		{
 			ArgVectorRegister *vr = dynamic_cast<ArgVectorRegister *>(arg);
 			assert(vr);
-			bytes.vop1.vdst = vr->GetId();
+			bytes.vop1.vdst = vr->getId();
 			break;
 		}
 		
@@ -805,8 +805,8 @@ void Inst::Encode()
 				ArgScalarRegisterSeries *srs = dynamic_cast
 						<ArgScalarRegisterSeries *>(arg);
 				assert(srs);
-				low = srs->GetLow();
-				high = srs->GetHigh();
+				low = srs->getLow();
+				high = srs->getHigh();
 				if (high != low + 1)
 					fatal("register series must be s[low:low+1]");
 				break;
@@ -817,8 +817,8 @@ void Inst::Encode()
 				ArgVectorRegisterSeries *vrs = dynamic_cast
 						<ArgVectorRegisterSeries *>(arg);
 				assert(vrs);
-				low = vrs->GetLow();
-				high = vrs->GetHigh();
+				low = vrs->getLow();
+				high = vrs->getHigh();
 				if (high != low + 1)
 					fatal("register series must be v[low:low+1]");
 				break;
@@ -839,8 +839,8 @@ void Inst::Encode()
 			ArgVectorRegisterSeries *vrs = dynamic_cast
 					<ArgVectorRegisterSeries *>(arg);
 			assert(vrs);
-			int low = vrs->GetLow();
-			int high = vrs->GetHigh();
+			int low = vrs->getLow();
+			int high = vrs->getHigh();
 			if (high != low + 1)
 				fatal("register series must be v[low:low+1]");
 			
@@ -856,7 +856,7 @@ void Inst::Encode()
 				ArgScalarRegisterSeries *srs = dynamic_cast
 						<ArgScalarRegisterSeries *>(arg);
 				assert(srs);
-				if (srs->GetHigh() != srs->GetLow() + 1)
+				if (srs->getHigh() != srs->getLow() + 1)
 					fatal("register series must be s[low:low+1]");
 			}
 
@@ -902,14 +902,14 @@ void Inst::Encode()
 			{
 				ArgScalarRegisterSeries *srs = dynamic_cast
 						<ArgScalarRegisterSeries *>(arg);
-				if (srs->GetHigh() != srs->GetLow() + 1)
+				if (srs->getHigh() != srs->getLow() + 1)
 					fatal("register series must be s[low:low+1]");
 			}
 			else if (arg->type == ArgTypeVectorRegisterSeries)
 			{
 				ArgVectorRegisterSeries *vrs = dynamic_cast
 						<ArgVectorRegisterSeries *>(arg);
-				if (vrs->GetHigh() != vrs->GetLow() + 1)
+				if (vrs->getHigh() != vrs->getLow() + 1)
 					fatal("register series must be v[low:low+1]");
 			}
 
@@ -929,14 +929,14 @@ void Inst::Encode()
 			{
 				ArgScalarRegisterSeries *srs = dynamic_cast
 						<ArgScalarRegisterSeries *>(arg);
-				if (srs->GetHigh() != srs->GetLow() + 1)
+				if (srs->getHigh() != srs->getLow() + 1)
 					fatal("register series must be s[low:low+1]");
 			}
 			else if (arg->type == ArgTypeVectorRegisterSeries)
 			{
 				ArgVectorRegisterSeries *vrs = dynamic_cast
 						<ArgVectorRegisterSeries *>(arg);
-				if (vrs->GetHigh() != vrs->GetLow() + 1)
+				if (vrs->getHigh() != vrs->getLow() + 1)
 					fatal("register series must be v[low:low+1]");
 			}
 
@@ -955,14 +955,14 @@ void Inst::Encode()
 			{
 				ArgScalarRegisterSeries *srs = dynamic_cast
 						<ArgScalarRegisterSeries *>(arg);
-				if (srs->GetHigh() != srs->GetLow() + 1)
+				if (srs->getHigh() != srs->getLow() + 1)
 					fatal("register series must be s[low:low+1]");
 			}
 			else if (arg->type == ArgTypeVectorRegisterSeries)
 			{
 				ArgVectorRegisterSeries *vrs = dynamic_cast
 						<ArgVectorRegisterSeries *>(arg);
-				if (vrs->GetHigh() != vrs->GetLow() + 1)
+				if (vrs->getHigh() != vrs->getLow() + 1)
 					fatal("register series must be v[low:low+1]");
 			}
 
@@ -987,7 +987,7 @@ void Inst::Encode()
 			ArgVectorRegister *vr = dynamic_cast
 					<ArgVectorRegister *>(arg);
 			assert(vr);
-			bytes.vop3a.vdst = vr->GetId();
+			bytes.vop3a.vdst = vr->getId();
 			break;
 		}
 
@@ -995,10 +995,10 @@ void Inst::Encode()
 		{
 			ArgVectorRegisterSeries *vrs = dynamic_cast
 					<ArgVectorRegisterSeries *>(arg);
-			if (vrs->GetHigh() != vrs->GetLow() + 1)
+			if (vrs->getHigh() != vrs->getLow() + 1)
 				fatal("register series must be v[low:low+1]");
 			
-			bytes.vop3a.vdst = vrs->GetLow();
+			bytes.vop3a.vdst = vrs->getLow();
 			break;
 		}
 
@@ -1006,7 +1006,7 @@ void Inst::Encode()
 		{
 			ArgVectorRegister *vr = dynamic_cast
 					<ArgVectorRegister *>(arg);
-			bytes.vopc.vsrc1 = vr->GetId();
+			bytes.vopc.vsrc1 = vr->getId();
 			break;
 		}
 
@@ -1016,12 +1016,12 @@ void Inst::Encode()
 			assert(wait_cnt);
 
 			/* vmcnt(x) */
-			if (wait_cnt->GetVmcntActive())
+			if (wait_cnt->getVmcntActive())
 			{
-				if (!InRange(wait_cnt->GetVmcntValue(), 0, 0xe))
+				if (!InRange(wait_cnt->getVmcntValue(), 0, 0xe))
 					fatal("invalid value for vmcnt");
 				bytes.sopp.simm16 = SetBits32(bytes.sopp.simm16,
-						3, 0, wait_cnt->GetVmcntValue());
+						3, 0, wait_cnt->getVmcntValue());
 			}
 			else
 			{
@@ -1030,12 +1030,12 @@ void Inst::Encode()
 			}
 
 			/* lgkmcnt(x) */
-			if (wait_cnt->GetLgkmcntActive())
+			if (wait_cnt->getLgkmcntActive())
 			{
-				if (!InRange(wait_cnt->GetLgkmcntValue(), 0, 0x1e))
+				if (!InRange(wait_cnt->getLgkmcntValue(), 0, 0x1e))
 					fatal("invalid value for lgkmcnt");
 				bytes.sopp.simm16 = SetBits32(bytes.sopp.simm16,
-						12, 8, wait_cnt->GetLgkmcntValue());
+						12, 8, wait_cnt->getLgkmcntValue());
 			}
 			else
 			{
@@ -1044,12 +1044,12 @@ void Inst::Encode()
 			}
 
 			/* expcnt(x) */
-			if (wait_cnt->GetExpcntActive())
+			if (wait_cnt->getExpcntActive())
 			{
-				if (!InRange(wait_cnt->GetExpcntValue(), 0, 0x6))
+				if (!InRange(wait_cnt->getExpcntValue(), 0, 0x6))
 					fatal("invalid value for expcnt");
 				bytes.sopp.simm16 = SetBits32(bytes.sopp.simm16,
-						6, 4, wait_cnt->GetExpcntValue());
+						6, 4, wait_cnt->getExpcntValue());
 			}
 			else
 			{
@@ -1064,7 +1064,7 @@ void Inst::Encode()
 			ArgVectorRegister *vr = dynamic_cast
 					<ArgVectorRegister *>(arg);
 			assert(vr);
-			bytes.ds.addr = vr->GetId();
+			bytes.ds.addr = vr->getId();
 			break;
 		}
 
@@ -1073,7 +1073,7 @@ void Inst::Encode()
 			ArgVectorRegister *vr = dynamic_cast
 					<ArgVectorRegister *>(arg);
 			assert(vr);
-			bytes.ds.data0 = vr->GetId();
+			bytes.ds.data0 = vr->getId();
 			break;
 		}
 
@@ -1082,7 +1082,7 @@ void Inst::Encode()
 			ArgVectorRegister *vr = dynamic_cast
 					<ArgVectorRegister *>(arg);
 			assert(vr);
-			bytes.ds.vdst = vr->GetId();
+			bytes.ds.vdst = vr->getId();
 			break;
 		}
 #if 0	

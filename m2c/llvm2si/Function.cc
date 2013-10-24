@@ -238,7 +238,7 @@ void Function::AddArg(FunctionArg *arg, int num_elem)
 	 * associated with it. */
 	SI::ArgPointer *pointer = dynamic_cast<SI::ArgPointer *>
 			(arg->arg.get());
-	if (pointer && pointer->GetScope() == SI::ArgScopeUAV)
+	if (pointer && pointer->getScope() == SI::ArgScopeUAV)
 	{
 		/* New UAV */
 		FunctionUAV *uav = new FunctionUAV();
@@ -283,6 +283,8 @@ void Function::DumpData(std::ostream &os)
 Function::Function(llvm::Function *llvm_function)
 		: name(llvm_function->getName()),
 		  llvm_function(llvm_function),
+		  num_sregs(0),
+		  num_vregs(0),
 		  tree(name)
 {
 	/* Create pre-defined nodes in control tree */
