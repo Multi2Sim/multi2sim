@@ -549,7 +549,7 @@ void BasicBlock::EmitPhi(llvm::PHINode *llvm_inst)
 		/* Find node */
 		std::string name = llvm_basic_block->getName();
 		Common::Tree *tree = function->GetTree();
-		Common::Node *node = tree->GetNode(name);
+		Common::LeafNode *node = tree->GetLeafNode(name);
 		if (!node)
 			panic("%s: cannot find node '%s'",
 					__FUNCTION__, name.c_str());

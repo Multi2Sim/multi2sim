@@ -469,125 +469,90 @@ void Function::EmitHeader()
 }
 
 
-#if 0
-void Llvm2siFunctionEmitArgs(Llvm2siFunction *self)
+void Function::EmitArgs()
 {
-	LLVMValueRef llvm_function;
-	LLVMValueRef llvm_arg;
-	LLVMTypeKind llvm_type;
-	LLVMTypeRef lltyref;
-	int num_elem;
-
-	Llvm2siFunctionArg *arg;
-
 	/* Emit code for each argument individually */
-	llvm_function = self->llvm_function;
-	for (llvm_arg = LLVMGetFirstParam(llvm_function); llvm_arg;
-			llvm_arg = LLVMGetNextParam(llvm_arg))
+	for (auto &llvm_arg : llvm_function->getArgumentList())
 	{
 		/* Create function argument and add it */
-		arg = new(Llvm2siFunctionArg, llvm_arg);
-
-		lltyref = LLVMTypeOf(llvm_arg);
-		llvm_type = LLVMGetTypeKind(lltyref);
-
-		if (llvm_type == LLVMVectorTypeKind)
-			num_elem = LLVMGetVectorSize(lltyref);
-		else
-			num_elem = 1;
-
+		FunctionArg *arg = new FunctionArg(&llvm_arg);
+		llvm::Type *llvm_type = llvm_arg.getType();
+		int num_elem = llvm_type->isVectorTy() ?
+				llvm_type->getVectorNumElements() : 1;
 
 		/* Add the argument to the list. This call will cause the
 		 * corresponding code to be emitted. */
-		Llvm2siFunctionAddArg(self, arg, num_elem);
+		AddArg(arg, num_elem);
 	}
 }
 
 
-void Llvm2siFunctionEmitBody(Llvm2siFunction *self)
+void Function::EmitBody()
 {
-	Llvm2siBasicBlock *basic_block;
-	List *node_list;
-
-	CTree *ctree;
-	Node *node;
-
 	/* Code for the function body must be emitted using a depth-first
 	 * traversal of the control tree. For this, we need right here the
 	 * structural analysis that produces the control tree from the
 	 * control flow graph.
 	 */
-	ctree = self->ctree;
-	assert(!ctree->structural_analysis_done);
-	CTreeStructuralAnalysis(ctree);
+	assert(!tree.IsStructuralAnalysisDone());
+	tree.StructuralAnalysis();
 
 	/* Whether we use a pre- or a post-order traversal does not matter,
 	 * since we are only considering the leaf nodes.
 	 */
-	node_list = new(List);
-	CTreeTraverse(ctree, node_list, NULL);
+	std::list<Common::Node *> node_list;
+	tree.PreorderTraversal(node_list);
 
 	/* Emit code for basic blocks */
-	ListForEach(node_list, node, Node)
+	for (auto node : node_list)
 	{
 		/* Skip abstract nodes */
-		if (!isLeafNode(node))
+		Common::LeafNode *leaf_node = dynamic_cast
+				<Common::LeafNode *>(node);
+		if (!leaf_node)
 			continue;
 
 		/* Skip nodes with no LLVM code to translate */
-		if (!asLeafNode(node)->llvm_basic_block)
+		if (!leaf_node->GetLlvmBasicBlock())
 			continue;
 
 		/* Create basic block and emit the code */
-		assert(!asLeafNode(node)->basic_block);
-		basic_block = new(Llvm2siBasicBlock, self, asLeafNode(node));
-		Llvm2siBasicBlockEmit(basic_block, asLeafNode(node)->llvm_basic_block);
+		assert(!leaf_node->GetBasicBlock());
+		BasicBlock *basic_block = new BasicBlock(this, leaf_node);
+		basic_block->Emit(leaf_node->GetLlvmBasicBlock());
 	}
-
-	/* Free */
-	delete(node_list);
 }
 
 
-void Llvm2siFunctionEmitPhi(Llvm2siFunction *self)
+void Function::EmitPhi()
 {
-	LeafNode *node;
-	Llvm2siPhi *phi;
-	Llvm2siBasicBlock *basic_block;
-	List *arg_list;
-	Si2binInst *inst;
-	Si2binArg *src_value;
-
-	while (self->phi_list->count)
+	while (phi_list.size())
 	{
 		/* Extract element from list */
-		ListHead(self->phi_list);
-		phi = asLlvm2siPhi(ListRemove(self->phi_list));
+		Phi *phi = phi_list.front().get();
 
 		/* Get basic block */
-		node = asLeafNode(phi->src_node);
-		basic_block = asLlvm2siBasicBlock(node->basic_block);
-		assert(basic_block);
+		Common::LeafNode *node = phi->GetSrcNode();
+		BasicBlock *basic_block = cast<BasicBlock *>(node->GetBasicBlock());
 
 		/* Get source value */
-		src_value = Llvm2siFunctionTranslateValue(self,
-				phi->src_value, NULL);
+		Arg *src_value = TranslateValue(phi->GetSrcValue());
 
 		/* Copy source value to destination value.
 		 * s_mov_b32 <dest_value>, <src_value>
 		 */
-		arg_list = new(List);
-		ListAdd(arg_list, asObject(phi->dest_value));
-		ListAdd(arg_list, asObject(src_value));
-		inst = new(Si2binInst, SI_INST_V_MOV_B32, arg_list);
-		Llvm2siBasicBlockAddInst(basic_block, inst);
+		Inst *inst = new Inst(SI::INST_V_MOV_B32,
+				phi->GetDestValue(),
+				src_value);
+		basic_block->AddInst(inst);
 
 		/* Free phi object */
-		delete(phi);
+		phi_list.pop_front();
 	}
 }
 
 
+#if 0
 static void Llvm2siFunctionEmitIfThen(Llvm2siFunction *self, Node *node)
 {
 	Node *if_node;
