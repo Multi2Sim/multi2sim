@@ -101,73 +101,33 @@ FunctionArg::FunctionArg(llvm::Argument *llvm_arg)
 }
 
 
-#if 0
-void Llvm2siFunctionArgDump(Object *self, FILE *f)
+void FunctionArg::Dump(std::ostream &os)
 {
-	Llvm2siFunctionArg *arg = asLlvm2siFunctionArg(self);
-	SIArg *si_arg = arg->si_arg;
-
-	switch (si_arg->type)
+	switch (arg->GetType())
 	{
-	case SIArgTypePointer:
 
-		switch (si_arg->pointer.scope)
-		{
-
-		case SIArgUAV:
-			
-			if (si_arg->pointer.num_elems == 1)
-			{
-				/* Type, name, offset, UAV */
-				fprintf(f, "\t%s* %s %d uav%d\n",
-						str_map_value(&si_arg_data_type_map, si_arg->pointer.data_type),
-						si_arg->name->text, arg->index * 16, arg->uav_index + 10);
-			}
-			else
-			{
-				/* Type, number of elements, name, offset, UAV */
-				fprintf(f, "\t%s[%d]* %s %d uav%d\n",
-						str_map_value(&si_arg_data_type_map, si_arg->pointer.data_type), 
-						si_arg->pointer.num_elems, si_arg->name->text, arg->index * 16,
-						arg->uav_index + 10);
-			}
-			break;
-
-		default:
-
-			fatal("%s: pointer scope not supported (%d)",
-				__FUNCTION__, si_arg->pointer.scope);
-		}
-
+	case SI::ArgTypePointer:
+	{
+		os << '\t' << *arg << ' ' << index * 16 << uav_index + 10 << '\n';
 		break;
+	}
 
-	case SIArgTypeValue:
-
-		if (si_arg->value.num_elems == 1)
-		{
-			/* Type, name, offset */
-			fprintf(f, "\t%s %s %d\n",
-					str_map_value(&si_arg_data_type_map, si_arg->value.data_type),
-					si_arg->name->text, arg->index * 16);
-		}
-		else
-		{	
-			/* Type, number of elements, name, offset */
-			fprintf(f, "\t%s[%d] %s %d\n",
-					str_map_value(&si_arg_data_type_map, si_arg->value.data_type),
-					si_arg->value.num_elems, si_arg->name->text, arg->index * 16);
-		}
+	case SI::ArgTypeValue:
+	{
+		os << '\t' << *arg << ' ' << index * 16 << uav_index + 10 << '\n';
 		break;
+	}
 
 	default:
-		fatal("%s: argument type not recognized (%d)",
-				__FUNCTION__, si_arg->type);
+		panic("%s: argument type not recognized (%d)",
+				__FUNCTION__, arg->GetType());
 	}
 }
 
 
 
 
+#if 0
 /*
  * Class 'Llvm2siFunctionUAV'
  */

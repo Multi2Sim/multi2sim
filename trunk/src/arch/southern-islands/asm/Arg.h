@@ -20,6 +20,7 @@
 #ifndef ARCH_SOUTHERN_ISLANDS_ASM_ARG_H
 #define ARCH_SOUTHERN_ISLANDS_ASM_ARG_H
 
+#include <lib/cpp/Misc.h>
 
 namespace SI
 {
@@ -56,6 +57,7 @@ enum ArgScope
 	ArgScopeHwGDS
 };
 
+extern Misc::StringMap arg_data_type_map;
 enum ArgDataType
 {
 	ArgDataTypeInvalid = 0,
@@ -90,9 +92,15 @@ class Arg
 public:
 	Arg(ArgType type, const std::string &name);
 
+	/* Getters */
 	ArgType GetType() { return type; }
 	std::string GetName() { return name; }
 	
+	/* Dump */
+	virtual void Dump(std::ostream &os) { os << name; }
+	friend std::ostream &operator<<(std::ostream &os, Arg &arg) {
+			arg.Dump(os); return os; }
+
 	static int GetDataSize(ArgDataType data_type);
 };
 
@@ -130,8 +138,17 @@ public:
 				buffer_num(buffer_num),
 				alignment(alignment) { };
 
+	/* Getters */
+	ArgDataType GetDataType() { return data_type; }
+	int GetNumElems() { return num_elems; }
+	ArgScope GetScope() { return scope; }
+
+	/* Setters */
 	void SetDevicePtr(unsigned int device_ptr) {
 		this->device_ptr = device_ptr; }
+
+	/* Dump */
+	void Dump(std::ostream &os);
 };
 
 
@@ -157,6 +174,9 @@ public:
 				num_elems(num_elems),
 				constant_buffer_num(constant_buffer_num),
 				constant_offset(constant_offset) { }
+
+	ArgDataType GetDataType() { return data_type; }
+	int GetNumElems() { return num_elems; }
 
 	void SetValue(void *value) { this->value.reset(value); }
 };
@@ -215,7 +235,6 @@ public:
 struct StringMapWrap;
 extern struct StringMapWrap *si_arg_dimension_map;
 extern struct StringMapWrap *si_arg_access_type_map;
-extern struct StringMapWrap *si_arg_data_type_map;
 extern struct StringMapWrap *si_arg_scope_map;
 extern struct StringMapWrap *si_arg_reflection_map;
 */
