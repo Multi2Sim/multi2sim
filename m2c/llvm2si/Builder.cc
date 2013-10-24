@@ -79,6 +79,7 @@ void Builder::Parse(const std::string &in, const std::string &out)
 		/* Emit code for function */
 		function.EmitHeader();
 		function.EmitArgs();
+		function.EmitBody();
 		function.EmitPhi();
 		function.EmitControlFlow();
 

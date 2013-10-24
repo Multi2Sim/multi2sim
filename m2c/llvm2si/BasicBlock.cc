@@ -128,8 +128,8 @@ void BasicBlock::EmitCall(llvm::CallInst *llvm_inst)
 	/* Check that there is only one argument. LLVMGetNumOperands returns the
 	 * number of arguments plus one (the function being called as a last
 	 * argument. */
-	if (llvm_inst->getNumOperands() != 1)
-		panic("%s: 1 argument expected, %d found",
+	if (llvm_inst->getNumOperands() != 2)
+		panic("%s: 2 operands expected, %d found",
 				__FUNCTION__, llvm_inst->getNumOperands());
 
 	/* Get called function, found in last operand of the operand list, as
