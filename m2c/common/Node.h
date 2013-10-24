@@ -107,12 +107,14 @@ class Node
 	int color;
 
 public:
-	/* Constructor */
+	/* Constructor/destructor */
 	Node(const std::string &name, NodeKind kind);
+	virtual ~Node() { }
 
 	/* Getters */
 	Tree *GetTree() { return tree; }
 	const std::string &GetName() { return name; }
+	NodeKind GetKind() { return kind; }
 
 	/* Dump node */
 	virtual void Dump(std::ostream &os);

@@ -83,8 +83,7 @@ class Tree
 	/* Additional hash table storing nodes */
 	std::unordered_map<std::string, Node *> node_table;
 
-	/* Root node.
-	 * Read/Write access. */
+	/* Root node. */
 	Node *entry_node;
 
 	/* Flag indicating whether a structural analysis has been run on the
@@ -150,6 +149,10 @@ public:
 
 	/* Getters */
 	const std::string &GetName() { return name; }
+
+	/* Setters */
+	void SetEntryNode(Node *node) { assert(node->InList(node_list));
+			entry_node = node; }
 
 	/* Dump */
 	void Dump(std::ostream &os);
