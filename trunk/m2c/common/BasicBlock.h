@@ -33,8 +33,9 @@ class BasicBlock
 	LeafNode *node;
 public:
 
-	/* Constructor */
+	/* Constructor/destructor */
 	BasicBlock(LeafNode *node);
+	virtual ~BasicBlock() { }
 
 	/* Getters */
 	LeafNode *GetNode() { return node; }

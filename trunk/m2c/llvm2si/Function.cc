@@ -17,7 +17,13 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <llvm/Function.h>
+
+#include "BasicBlock.h"
 #include "Function.h"
+
+
+using namespace si2bin;
 
 namespace llvm2si
 {
@@ -125,144 +131,71 @@ void FunctionArg::Dump(std::ostream &os)
 }
 
 
-
-
-#if 0
-/*
- * Class 'Llvm2siFunctionUAV'
- */
-
-void Llvm2siFunctionUAVCreate(Llvm2siFunctionUAV *self)
+void Function::AddUAV(FunctionUAV *uav)
 {
-}
-
-
-void Llvm2siFunctionUAVDestroy(Llvm2siFunctionUAV *self)
-{
-}
-
-
-
-
-/*
- * Private Functions
- */
-
-/* Add a UAV to the UAV list. This function allocates a series of 4 aligned
- * scalar registers to the UAV, populating its 'index' and 'sreg' fields.
- * The UAV object will be freed automatically after calling this function.
- * Emit the code needed to load UAV into 'function->basic_block_uavs' */
-static void Llvm2siFunctionAddUAV(Llvm2siFunction *self,
-		Llvm2siFunctionUAV *uav)
-{
-	List *arg_list;
-	Si2binInst *inst;
-	Llvm2siBasicBlock *basic_block;
-
 	/* Associate UAV with self */
 	assert(!uav->function);
-	uav->function = self;
+	uav->function = this;
 
 	/* Get basic block or create it */
-	basic_block = asLlvm2siBasicBlock(self->uavs_node->basic_block);
+	BasicBlock *basic_block = dynamic_cast<BasicBlock *>
+			(uavs_node->GetBasicBlock());
 	if (!basic_block)
-		basic_block = new(Llvm2siBasicBlock, self,
-				self->uavs_node);
+		basic_block = new llvm2si::BasicBlock(this, uavs_node);
 
 	/* Allocate 4 aligned scalar registers */
-	uav->sreg = Llvm2siFunctionAllocSReg(self, 4, 4);
+	uav->sreg = AllocSReg(4, 4);
 
 	/* Insert to UAV list */
-	uav->index = self->uav_list->count;
-	ArrayAdd(self->uav_list, asObject(uav));
+	uav->index = uav_list.size();
+	uav_list.emplace_back(uav);
 
 	/* Emit code to load UAV.
 	 * s_load_dwordx4 s[uavX:uavX+3], s[uav_table:uav_table+1], x * 8
 	 */
-	arg_list = new(List);
-	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegisterSeries,
-			uav->sreg, uav->sreg + 3)));
-	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegisterSeries,
-			self->sreg_uav_table, self->sreg_uav_table + 1)));
-	ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateLiteral, (uav->index + 10) * 8)));
-	inst = new(Si2binInst, SI_INST_S_LOAD_DWORDX4, arg_list);
-	Llvm2siBasicBlockAddInst(basic_block, inst);
+	Inst *inst = new Inst(SI::INST_S_LOAD_DWORDX4,
+			new ArgScalarRegisterSeries(uav->sreg, uav->sreg + 3),
+			new ArgScalarRegisterSeries(sreg_uav_table, sreg_uav_table + 1),
+			new ArgLiteral((uav->index + 10) * 8));
+	basic_block->AddInst(inst);
 }
 
 
-/* Add argument 'arg' into the list of arguments of 'function', and emit code
- * to load it into 'function->basic_block_args'. */
-static void Llvm2siFunctionAddArg(Llvm2siFunction *self,
-		Llvm2siFunctionArg *arg, int num_elem)
+void Function::AddArg(FunctionArg *arg, int num_elem)
 {
-	List *arg_list;
-	Si2binInst *inst;
-	Llvm2siSymbol *symbol;
-	Llvm2siBasicBlock *basic_block;
-	Llvm2siFunctionUAV *uav;
-
 	/* Check that argument does not belong to a self yet */
 	if (arg->function)
 		panic("%s: argument already added", __FUNCTION__);
 
 	/* Get basic block, or create it */
-	basic_block = asLlvm2siBasicBlock(self->args_node->basic_block);
+	BasicBlock *basic_block = dynamic_cast<BasicBlock *>
+			(args_node->GetBasicBlock());
 	if (!basic_block)
-		basic_block = new(Llvm2siBasicBlock, self, self->args_node);
+		basic_block = new BasicBlock(this, args_node);
 
 	/* Add argument */
-	ListAdd(self->arg_list, asObject(arg));
-	arg->function = self;
-	arg->index = self->arg_list->count - 1;
+	arg_list.emplace_back(arg);
+	arg->function = this;
+	arg->index = arg_list.size() - 1;
 
 	/* Allocate 1 scalar and 1 vector register for the argument */
-	arg->sreg = Llvm2siFunctionAllocSReg(self, num_elem, num_elem);
-	arg->vreg = Llvm2siFunctionAllocVReg(self, num_elem, num_elem);
+	arg->sreg = AllocSReg(num_elem, num_elem);
+	arg->vreg = AllocVReg(num_elem, num_elem);
 
 	/* Generate code to load argument into a scalar register.
 	 * s_buffer_load_dword s[arg], s[cb1:cb1+3], idx*4
 	 */
-	arg_list = new(List);
+	Symbol *symbol = nullptr;
 	switch (num_elem)
 	{
 	case 1:
-		ListAdd(arg_list, asObject(new_ctor(Si2binArg, 
-				CreateScalarRegister, arg->sreg)));
-		ListAdd(arg_list, asObject(new_ctor(Si2binArg, 
-				CreateScalarRegisterSeries, self->sreg_cb1,
-				self->sreg_cb1 + 3)));
-		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateLiteral, 
-				arg->index * 4)));
-	
-		inst = new(Si2binInst, SI_INST_S_BUFFER_LOAD_DWORD, arg_list);
-		Llvm2siBasicBlockAddInst(basic_block, inst);
-		
-		break;
-	
-	case 4:
-		ListAdd(arg_list, asObject(new_ctor(Si2binArg, 
-				CreateScalarRegisterSeries, arg->sreg, arg->sreg + 3)));
-		ListAdd(arg_list, asObject(new_ctor(Si2binArg, 
-				CreateScalarRegisterSeries, self->sreg_cb1,
-				self->sreg_cb1 + 3)));
-		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateLiteral, 
-				arg->index * 4)));
-	
-		inst = new(Si2binInst, SI_INST_S_BUFFER_LOAD_DWORDX4, arg_list);
-
-		Llvm2siBasicBlockAddInst(basic_block, inst);
-
-		/* Insert argument name in symbol table, using its scalar register. */
-		symbol = new_ctor(Llvm2siSymbol, CreateSRegSeries, arg->name, 
-				arg->sreg, arg->sreg + 3);
-		Llvm2siSymbolTableAddSymbol(self->symbol_table, symbol);
-		
-		break;
-	}
-	
-	
-	if (num_elem == 1)
 	{
+		Inst *inst = new Inst(SI::INST_S_BUFFER_LOAD_DWORD,
+				new ArgScalarRegister(arg->sreg),
+				new ArgScalarRegisterSeries(sreg_cb1, sreg_cb1 + 3),
+				new ArgLiteral(arg->index * 4));
+		basic_block->AddInst(inst);
+
 		/* Copy argument into a vector register. This vector register will be
 		 * used for convenience during code emission, so that we don't have to
 		 * worry at this point about different operand type encodings for
@@ -270,223 +203,190 @@ static void Llvm2siFunctionAddArg(Llvm2siFunction *self,
 		 * copies and scalar opportunities.
 		 * v_mov_b32 v[arg], s[arg]
 		 */
-		arg_list = new(List);
-		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateVectorRegister, arg->vreg)));
-		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegister, arg->sreg)));
-		inst = new(Si2binInst, SI_INST_V_MOV_B32, arg_list);
-		Llvm2siBasicBlockAddInst(basic_block, inst);
+		inst = new Inst(SI::INST_V_MOV_B32,
+				new ArgVectorRegister(arg->vreg),
+				new ArgVectorRegister(arg->sreg));
+		basic_block->AddInst(inst);
 
 		/* Insert argument name in symbol table, using its vector register. */
-		symbol = new_ctor(Llvm2siSymbol, CreateVReg, arg->name, arg->vreg);
-		Llvm2siSymbolTableAddSymbol(self->symbol_table, symbol);
+		symbol = new Symbol(arg->name, SymbolVectorRegister, arg->vreg);
+		AddSymbol(symbol);
+		break;
 	}
+	
+	case 4:
+	{
+		Inst *inst = new Inst(SI::INST_S_BUFFER_LOAD_DWORDX4,
+				new ArgScalarRegisterSeries(arg->sreg, arg->sreg + 3),
+				new ArgScalarRegisterSeries(sreg_cb1, sreg_cb1 + 3),
+				new ArgLiteral(arg->index * 4));
+		basic_block->AddInst(inst);
 
+		/* Insert argument name in symbol table, using its scalar register. */
+		symbol = new Symbol(arg->name, SymbolScalarRegister, arg->sreg);
+		AddSymbol(symbol);
+		
+		break;
+	}
+	default:
+		panic("%s: not supported number of elements", __FUNCTION__);
+	}
+	
+	
 	/* If argument is an object in global memory, create a UAV
 	 * associated with it. */
-	if (arg->si_arg->type == SIArgTypePointer &&
-			arg->si_arg->pointer.scope == SIArgUAV)
+	SI::ArgPointer *pointer = dynamic_cast<SI::ArgPointer *>
+			(arg->arg.get());
+	if (pointer && pointer->GetScope() == SI::ArgScopeUAV)
 	{
 		/* New UAV */
-		uav = new(Llvm2siFunctionUAV);
-		Llvm2siFunctionAddUAV(self, uav);
+		FunctionUAV *uav = new FunctionUAV();
+		AddUAV(uav);
 
 		/* Store UAV index in argument and symbol */
-		Llvm2siSymbolSetUAVIndex(symbol, uav->index);
+		assert(symbol);
+		symbol->SetUAVIndex(uav->index);
 		arg->uav_index = uav->index;
 	}
 }
 
 
-static void Llvm2siFunctionDumpData(Llvm2siFunction *self, FILE *f)
+void Function::DumpData(std::ostream &os)
 {
 	/* Section header */
-	fprintf(f, ".metadata\n");
+	os << ".metadata\n";
 
 	/* User elements */
-	fprintf(f, "\tuserElements[0] = PTR_UAV_TABLE, 0, s[%d:%d]\n",
-			self->sreg_uav_table, self->sreg_uav_table + 1);
-	fprintf(f, "\tuserElements[1] = IMM_CONST_BUFFER, 0, s[%d:%d]\n",
-			self->sreg_cb0, self->sreg_cb0 + 3);
-	fprintf(f, "\tuserElements[2] = IMM_CONST_BUFFER, 1, s[%d:%d]\n",
-			self->sreg_cb1, self->sreg_cb1 + 3);
-	fprintf(f, "\n");
+	os << "\tuserElements[0] = PTR_UAV_TABLE, 0, s["
+			<< sreg_uav_table << ':' << sreg_uav_table + 1 << "]\n";
+	os << "\tuserElements[1] = IMM_CONST_BUFFER, 0, s["
+			<< sreg_cb0 << ':' << sreg_cb0 + 3 << "\n";
+	os << "\tuserElements[2] = IMM_CONST_BUFFER, 1, s["
+			<< sreg_cb1 << ':' << sreg_cb1 + 3 << "]\n";
+	os << '\n';
 
 	/* Floating-point mode */
-	fprintf(f, "\tFloatMode = 192\n");
-	fprintf(f, "\tIeeeMode = 0\n");
-	fprintf(f, "\n");
+	os << "\tFloatMode = 192\n";
+	os << "\tIeeeMode = 0\n";
+	os << '\n';
 
 	/* Program resources */
-	fprintf(f, "\tCOMPUTE_PGM_RSRC2:USER_SGPR = %d\n", self->sreg_wgid);
-	fprintf(f, "\tCOMPUTE_PGM_RSRC2:TGID_X_EN = %d\n", 1);
-	fprintf(f, "\tCOMPUTE_PGM_RSRC2:TGID_Y_EN = %d\n", 1);
-	fprintf(f, "\tCOMPUTE_PGM_RSRC2:TGID_Z_EN = %d\n", 1);
-	fprintf(f, "\n");
+	os << "\tCOMPUTE_PGM_RSRC2:USER_SGPR = " << sreg_wgid << '\n';
+	os << "\tCOMPUTE_PGM_RSRC2:TGID_X_EN = 1\n";
+	os << "\tCOMPUTE_PGM_RSRC2:TGID_Y_EN = 1\n";
+	os << "\tCOMPUTE_PGM_RSRC2:TGID_Z_EN = 1\n";
+	os << '\n';
 }
 
 
-
-
-/*
- * Public Functions
- */
-
-void Llvm2siFunctionCreate(Llvm2siFunction *self, LLVMValueRef llvm_function)
+Function::Function(llvm::Function *llvm_function)
+		: name(llvm_function->getName()),
+		  llvm_function(llvm_function),
+		  tree(name)
 {
-	CTree *ctree;
-
-	/* Initialize */
-	self->llvm_function = llvm_function;
-	self->name = new(String, LLVMGetValueName(llvm_function));
-	self->arg_list = new(List);
-	self->uav_list = new(Array);
-	self->symbol_table = new(Llvm2siSymbolTable);
-	self->ctree = ctree = new(CTree, self->name->text);
-	self->phi_list = new(List);
-
 	/* Create pre-defined nodes in control tree */
-	self->header_node = new(LeafNode, "header");
-	self->uavs_node = new(LeafNode, "uavs");
-	self->args_node = new(LeafNode, "args");
-	CTreeAddNode(ctree, asNode(self->header_node));
-	CTreeAddNode(ctree, asNode(self->uavs_node));
-	CTreeAddNode(ctree, asNode(self->args_node));
-	ctree->entry_node = asNode(self->header_node);
+	header_node = new Common::LeafNode("header");
+	uavs_node = new Common::LeafNode("uavs");
+	args_node = new Common::LeafNode("args");
+	tree.AddNode(header_node);
+	tree.AddNode(uavs_node);
+	tree.AddNode(args_node);
+	tree.SetEntryNode(header_node);
 
 	/* Add all nodes from the LLVM control flow graph */
-	self->body_node = CTreeAddLlvmCFG(ctree, llvm_function);
+	body_node = tree.AddLlvmCFG(llvm_function);
 
 	/* Connect nodes */
-	NodeConnect(asNode(self->header_node), asNode(self->uavs_node));
-	NodeConnect(asNode(self->uavs_node), asNode(self->args_node));
-	NodeConnect(asNode(self->args_node), asNode(self->body_node));
+	header_node->Connect(uavs_node);
+	uavs_node->Connect(args_node);
+	args_node->Connect(body_node);
 }
 
 
-void Llvm2siFunctionDestroy(Llvm2siFunction *self)
+void Function::Dump(std::ostream &os)
 {
-	/* Free list of arguments */
-	ListDeleteObjects(self->arg_list);
-	delete(self->arg_list);
-
-	/* Free list of UAVs */
-	ArrayDeleteObjects(self->uav_list);
-	delete(self->uav_list);
-
-	/* Free control tree */
-	if (self->ctree)
-		delete(self->ctree);
-
-	/* Free list of 'phi' entries */
-	assert(!self->phi_list->count);
-	delete(self->phi_list);
-
-	/* Rest */
-	delete(self->symbol_table);
-	delete(self->name);
-}
-
-
-void Llvm2siFunctionDump(Object *self, FILE *f)
-{
-	Llvm2siBasicBlock *basic_block;
-	Llvm2siFunction *function;
-	Node *node;
-
-	Llvm2siFunctionArg *function_arg;
-	List *node_list;
-
 	/* Function name */
-	function = asLlvm2siFunction(self);
-	fprintf(f, ".global %s\n\n", function->name->text);
+	os << ".global " << name << "\n\n";
 
 	/* Arguments */
-	fprintf(f, ".args\n");
-	ListForEach(function->arg_list, function_arg, Llvm2siFunctionArg)
-		Llvm2siFunctionArgDump(asObject(function_arg), f);
-	fprintf(f, "\n");
+	os << ".args\n";
+	for (auto &arg : arg_list)
+		os << *arg;
+	os << '\n';
 
 	/* Dump basic blocks */
-	fprintf(f, ".text\n");
-	node_list = new(List);
-	CTreeTraverse(function->ctree, node_list, NULL);
-	ListForEach(node_list, node, Node)
+	os << ".text\n";
+	std::list<Common::Node *> node_list;
+	tree.PreorderTraversal(node_list);
+	for (auto &node : node_list)
 	{
 		/* Skip abstract nodes */
-		if (!isLeafNode(node))
+		Common::LeafNode *leaf_node = dynamic_cast
+				<Common::LeafNode *>(node);
+		if (!leaf_node)
 			continue;
 
 		/* Get node's basic block */
-		basic_block = asLlvm2siBasicBlock(asLeafNode(node)->basic_block);
+		BasicBlock *basic_block = dynamic_cast<BasicBlock *>
+				(leaf_node->GetBasicBlock());
 		if (!basic_block)
 			continue;
 
 		/* Dump code of basic block */
-		Llvm2siBasicBlockDump(asObject(basic_block), f);
+		os << *basic_block;
 	}
-	delete(node_list);
-	fprintf(f, "\n");
+	os << '\n';
 
 	/* Dump section '.data' */
-	Llvm2siFunctionDumpData(function, f);
-	fprintf(f, "\n");
+	DumpData(os);
+	os << '\n';
 }
 
 
-void Llvm2siFunctionEmitHeader(Llvm2siFunction *self)
+void Function::EmitHeader()
 {
-	Llvm2siBasicBlock *basic_block;
-	Si2binInst *inst;
-	List *arg_list;
-
-	char comment[MAX_STRING_SIZE];
-	int index;
-
 	/* Create header basic block */
-	basic_block = new(Llvm2siBasicBlock, self, self->header_node);
+	BasicBlock *basic_block = new BasicBlock(this, header_node);
 
 	/* Function must be empty at this point */
-	assert(!self->num_sregs);
-	assert(!self->num_vregs);
+	assert(!num_sregs);
+	assert(!num_vregs);
 
 	/* Allocate 3 vector registers (v[0:2]) for local ID */
-	self->vreg_lid = Llvm2siFunctionAllocVReg(self, 3, 1);
-	if (self->vreg_lid)
+	vreg_lid = AllocVReg(3);
+	if (vreg_lid)
 		panic("%s: vreg_lid is expented to be 0", __FUNCTION__);
 
 	/* Allocate 2 scalar registers for UAV table. The value for these
 	 * registers is assigned by the runtime based on info found in the
 	 * 'userElements' metadata of the binary.*/
-	self->sreg_uav_table = Llvm2siFunctionAllocSReg(self, 2, 1);
+	sreg_uav_table = AllocSReg(2);
 
 	/* Allocate 4 scalar registers for CB0, and 4 more for CB1. The
 	 * values for these registers will be assigned by the runtime based
 	 * on info present in the 'userElements' metadata. */
-	self->sreg_cb0 = Llvm2siFunctionAllocSReg(self, 4, 1);
-	self->sreg_cb1 = Llvm2siFunctionAllocSReg(self, 4, 1);
+	sreg_cb0 = AllocSReg(4);
+	sreg_cb1 = AllocSReg(4);
 
 	/* Allocate 3 scalar registers for the work-group ID. The content of
 	 * these register will be populated by the runtime based on info found
 	 * in COMPUTE_PGM_RSRC2 metadata. */
-	self->sreg_wgid = Llvm2siFunctionAllocSReg(self, 3, 1);
+	sreg_wgid = AllocSReg(3);
 
 	/* Obtain global size in s[gsize:gsize+2].
 	 * s_buffer_load_dword s[gsize], s[cb0:cb0+3], 0x00
 	 * s_buffer_load_dword s[gsize+1], s[cb0:cb0+3], 0x01
 	 * s_buffer_load_dword s[gsize+2], s[cb0:cb0+3], 0x02
 	 */
-	Llvm2siBasicBlockAddComment(basic_block, "Obtain global size");
-	self->sreg_gsize = Llvm2siFunctionAllocSReg(self, 3, 1);
-	for (index = 0; index < 3; index++)
+	basic_block->AddComment("Obtain global size");
+	sreg_gsize = AllocSReg(3);
+	for (int index = 0; index < 3; index++)
 	{
-		arg_list = new(List);
-		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegister,
-				self->sreg_gsize + index)));
-		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegisterSeries,
-				self->sreg_cb0, self->sreg_cb0 + 3)));
-		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateLiteral, index)));
-		inst = new(Si2binInst, SI_INST_S_BUFFER_LOAD_DWORD, arg_list);
-		Llvm2siBasicBlockAddInst(basic_block, inst);
+		Inst *inst = new Inst(SI::INST_S_BUFFER_LOAD_DWORD,
+				new ArgScalarRegister(sreg_gsize + index),
+				new ArgScalarRegisterSeries(sreg_cb0, sreg_cb0 + 3),
+				new ArgLiteral(index));
+		basic_block->AddInst(inst);
 	}
 
 	/* Obtain local size in s[lsize:lsize+2].
@@ -495,18 +395,15 @@ void Llvm2siFunctionEmitHeader(Llvm2siFunction *self)
 	 * s_buffer_load_dword s[lsize+1], s[cb0:cb0+3], 0x05
 	 * s_buffer_load_dword s[lsize+2], s[cb0:cb0+3], 0x06
 	 */
-	Llvm2siBasicBlockAddComment(basic_block, "Obtain local size");
-	self->sreg_lsize = Llvm2siFunctionAllocSReg(self, 3, 1);
-	for (index = 0; index < 3; index++)
+	basic_block->AddComment("Obtain local size");
+	sreg_lsize = AllocSReg(3);
+	for (int index = 0; index < 3; index++)
 	{
-		arg_list = new(List);
-		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegister,
-				self->sreg_lsize + index)));
-		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegisterSeries,
-				self->sreg_cb0, self->sreg_cb0 + 3)));
-		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateLiteral, 4 + index)));
-		inst = new(Si2binInst, SI_INST_S_BUFFER_LOAD_DWORD, arg_list);
-		Llvm2siBasicBlockAddInst(basic_block, inst);
+		Inst *inst = new Inst(SI::INST_S_BUFFER_LOAD_DWORD,
+				new ArgScalarRegister(sreg_lsize + index),
+				new ArgScalarRegisterSeries(sreg_cb0, sreg_cb0 + 3),
+				new ArgLiteral(4 + index));
+		basic_block->AddInst(inst);
 	}
 
 	/* Obtain global offset in s[offs:offs+2].
@@ -515,18 +412,15 @@ void Llvm2siFunctionEmitHeader(Llvm2siFunction *self)
 	 * s_buffer_load_dword s[offs], s[cb0:cb0+3], 0x19
 	 * s_buffer_load_dword s[offs], s[cb0:cb0+3], 0x1a
 	 */
-	Llvm2siBasicBlockAddComment(basic_block, "Obtain global offset");
-	self->sreg_offs = Llvm2siFunctionAllocSReg(self, 3, 1);
-	for (index = 0; index < 3; index++)
+	basic_block->AddComment("Obtain global offset");
+	sreg_offs = AllocSReg(3);
+	for (int index = 0; index < 3; index++)
 	{
-		arg_list = new(List);
-		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegister,
-				self->sreg_offs + index)));
-		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegisterSeries,
-				self->sreg_cb0, self->sreg_cb0 + 3)));
-		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateLiteral, 0x18 + index)));
-		inst = new(Si2binInst, SI_INST_S_BUFFER_LOAD_DWORD, arg_list);
-		Llvm2siBasicBlockAddInst(basic_block, inst);
+		Inst *inst = new Inst(SI::INST_S_BUFFER_LOAD_DWORD,
+				new ArgScalarRegister(sreg_offs + index),
+				new ArgScalarRegisterSeries(sreg_cb0, sreg_cb0 + 3),
+				new ArgLiteral(0x18 + index));
+		basic_block->AddInst(inst);
 	}
 
 	/* Calculate global ID in dimensions [0:2] and store it in v[3:5].
@@ -536,61 +430,46 @@ void Llvm2siFunctionEmitHeader(Llvm2siFunction *self)
 	 * v_add_i32 v[gid+dim], vcc, v[gid+dim], v[lid+dim]
 	 * v_add_i32 v[gid+dim], vcc, v[gid+dim], s[offs+dim]
 	 */
-	self->vreg_gid = Llvm2siFunctionAllocVReg(self, 3, 1);
-	for (index = 0; index < 3; index++)
+	vreg_gid = AllocVReg(3);
+	for (int index = 0; index < 3; index++)
 	{
 		/* Comment */
-		snprintf(comment, sizeof comment, "Calculate global ID "
-				"in dimension %d", index);
-		Llvm2siBasicBlockAddComment(basic_block, comment);
+		basic_block->AddComment(StringFormat("Calculate global ID "
+				"in dimension %d", index));
 
 		/* v_mov_b32 */
-		arg_list = new(List);
-		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateVectorRegister,
-				self->vreg_gid + index)));
-		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegister,
-				self->sreg_lsize + index)));
-		inst = new(Si2binInst, SI_INST_V_MOV_B32, arg_list);
-		Llvm2siBasicBlockAddInst(basic_block, inst);
+		Inst *inst = new Inst(SI::INST_V_MOV_B32,
+				new ArgVectorRegister(vreg_gid + index),
+				new ArgScalarRegister(sreg_lsize + index));
+		basic_block->AddInst(inst);
 
 		/* v_mul_i32_i24 */
-		arg_list = new(List);
-		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateVectorRegister,
-				self->vreg_gid + index)));
-		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegister,
-				self->sreg_wgid + index)));
-		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateVectorRegister,
-				self->vreg_gid + index)));
-		inst = new(Si2binInst, SI_INST_V_MUL_I32_I24, arg_list);
-		Llvm2siBasicBlockAddInst(basic_block, inst);
+		inst = new Inst(SI::INST_V_MUL_I32_I24,
+				new ArgVectorRegister(vreg_gid + index),
+				new ArgScalarRegister(sreg_wgid + index),
+				new ArgVectorRegister(vreg_gid + index));
+		basic_block->AddInst(inst);
 
 		/* v_add_i32 */
-		arg_list = new(List);
-		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateVectorRegister,
-				self->vreg_gid + index)));
-		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateSpecialRegister, SIInstSpecialRegVcc)));
-		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateVectorRegister,
-				self->vreg_gid + index)));
-		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateVectorRegister,
-				self->vreg_lid + index)));
-		inst = new(Si2binInst, SI_INST_V_ADD_I32, arg_list);
-		Llvm2siBasicBlockAddInst(basic_block, inst);
+		inst = new Inst(SI::INST_V_ADD_I32,
+				new ArgVectorRegister(vreg_gid + index),
+				new ArgSpecialRegister(SI::InstSpecialRegVcc),
+				new ArgVectorRegister(vreg_gid + index),
+				new ArgVectorRegister(vreg_lid + index));
+		basic_block->AddInst(inst);
 
 		/* v_add_i32 */
-		arg_list = new(List);
-		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateVectorRegister,
-				self->vreg_gid + index)));
-		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateSpecialRegister, SIInstSpecialRegVcc)));
-		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateScalarRegister,
-				self->sreg_offs + index)));
-		ListAdd(arg_list, asObject(new_ctor(Si2binArg, CreateVectorRegister,
-				self->vreg_gid + index)));
-		inst = new(Si2binInst, SI_INST_V_ADD_I32, arg_list);
-		Llvm2siBasicBlockAddInst(basic_block, inst);
+		inst = new Inst(SI::INST_V_ADD_I32,
+				new ArgVectorRegister(vreg_gid + index),
+				new ArgSpecialRegister(SI::InstSpecialRegVcc),
+				new ArgScalarRegister(sreg_offs + index),
+				new ArgVectorRegister(vreg_gid + index));
+		basic_block->AddInst(inst);
 	}
 }
 
 
+#if 0
 void Llvm2siFunctionEmitArgs(Llvm2siFunction *self)
 {
 	LLVMValueRef llvm_function;
@@ -1102,156 +981,6 @@ void Llvm2siFunctionEmitControlFlow(Llvm2siFunction *self)
 
 	/* Free */
 	delete(node_list);
-}
-
-
-void Llvm2siFunctionLiveRegisterAnalysis(Llvm2siFunction *self)
-{
-	Llvm2siBasicBlock *basic_block;
-	Node *node;
-	List *node_list;
-
-	node_list = new(List);
-	CTreeTraverse(self->ctree, node_list, NULL);
-	ListForEach(node_list, node, Node)
-	{
-		/* Skip abstract nodes */
-		if (!isLeafNode(node))
-			continue;
-
-		/* Get node's basic block */
-		basic_block = asLlvm2siBasicBlock(asLeafNode(node)->basic_block);
-		if (!basic_block)
-			continue;
-
-		/* Assigns blank bitmaps of size num_sregs to each of the
-		 * basic block's bitmap fields
-		 */
-		basic_block->def = new(Bitmap, self->num_vregs);
-		basic_block->use = new(Bitmap, self->num_vregs);
-		basic_block->in = new(Bitmap, self->num_vregs);
-		basic_block->out = new(Bitmap, self->num_vregs);
-
-		/* Read each line of basic block */
-		Si2binInst *inst;
-		ListForEach(basic_block->inst_list, inst, Si2binInst)
-		{
-			/* Get each argument in the line */
-			Si2binArg *arg;
-			ListForEach(inst->arg_list, arg, Si2binArg)
-			{
-				/* Currently only deals with scalar registers */
-				if (arg->type == Si2binArgVectorRegister) {
-
-					if (arg->token->direction == Si2binTokenDirectionDst)
-					{
-						BitmapSet(basic_block->def, arg->value.vector_register.id, 1, 1);
-					}
-					else if (arg->token->direction == Si2binTokenDirectionSrc)
-					{
-						/* If register wasn't defined in the same basic block */
-						if (!BitmapGet(basic_block->def, arg->value.vector_register.id, 1))
-						{
-							BitmapSet(basic_block->use, arg->value.vector_register.id, 1, 1);
-						}
-					}
-
-				}
-			}
-		}
-	}
-
-	/* DEBUG Function */
-	//Llvm2siFunctionLiveRegisterAnalysisBitmapDump(self);
-
-	Array *worklist = new(Array);
-
-	// Set worklist equal to return basicblocks
-
-	while(worklist->count != 0) {
-		basic_block = asLlvm2siBasicBlock(ArrayGet(worklist, 0));
-
-		/* Clones out into in so that it can be used to perform calculations */
-		basic_block->in = asBitmap(BitmapClone(asObject(basic_block->out)));
-		BitmapSub(basic_block->in, basic_block->def);
-		BitmapOr(basic_block->in, basic_block->use);
-
-		// Get predecessors
-
-
-		ArrayRemove(worklist, 0);
-	}
-
-	/* Free structures */
-	ListForEach(node_list, node, Node)
-	{
-		/* Skip abstract nodes */
-		if (!isLeafNode(node))
-			continue;
-
-		/* Get node's basic block */
-		basic_block = asLlvm2siBasicBlock(asLeafNode(node)->basic_block);
-		if (!basic_block)
-			continue;
-
-		/* Deletes allocated memory*/
-		delete(basic_block->def);
-		delete(basic_block->use);
-		delete(basic_block->in);
-		delete(basic_block->out);
-
-	}
-	delete(node_list);
-	delete(worklist);
-}
-
-
-void Llvm2siFunctionLiveRegisterAnalysisBitmapDump(Llvm2siFunction *self)
-{
-	Llvm2siBasicBlock *basic_block;
-	Node *node;
-	List *node_list;
-
-	FILE *file;
-	file = fopen("BitmapDump", "w+");
-	int i = 0;
-
-	node_list = new(List);
-	CTreeTraverse(self->ctree, node_list, NULL);
-	ListForEach(node_list, node, Node)
-	{
-		/* Skip abstract nodes */
-		if (!isLeafNode(node))
-			continue;
-
-		/* Get node's basic block */
-		basic_block = asLlvm2siBasicBlock(asLeafNode(node)->basic_block);
-		if (!basic_block)
-			continue;
-
-		fprintf(file, "Basic Block: %i\n", i);
-
-		/* Assigns blank bitmaps of size num_sregs to each of the
-		 * basic block's bitmap fields
-		 */
-		fprintf(file, "--Def Bitmap:\t");
-		BitmapDump(asObject(basic_block->def), file);
-
-		fprintf(file, "--Use Bitmap:\t");
-		BitmapDump(asObject(basic_block->use), file);
-
-		fprintf(file, "--In Bitmap:\t");
-		BitmapDump(asObject(basic_block->in), file);
-
-		fprintf(file, "--Out Bitmap:\t");
-		BitmapDump(asObject(basic_block->out), file);
-
-		i++;
-	}
-
-	/* Free structures */
-	delete(node_list);
-	fclose(file);
 }
 
 
