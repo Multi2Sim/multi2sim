@@ -319,6 +319,90 @@ static struct str_map_t enc_dict_user_elements_type_map =
 	}
 };
 
+static struct str_map_t enc_dict_symbol_type_map =
+{
+	78, {
+		{ "GLSL uniform", OPENGL_SI_SYMBOL_UNIFORM },
+		{ "GLSL bindable uniform", OPENGL_SI_SYMBOL_BINDABLE_UNIFORM },
+		{ "GLSL uniform block", OPENGL_SI_SYMBOL_UNIFORM_BLOCK },
+		{ "Vertex position", OPENGL_SI_SYMBOL_ATTRIB_POSITION },
+		{ "Vertex normal", OPENGL_SI_SYMBOL_ATTRIB_NORMAL },
+		{ "Vertex primary color", OPENGL_SI_SYMBOL_ATTRIB_PRIMARY_COLOR },
+		{ "Vertex secondary color", OPENGL_SI_SYMBOL_ATTRIB_SECONDARY_COLOR },
+		{ "Vertex fog coord", OPENGL_SI_SYMBOL_ATTRIB_FOGCOORD },
+		{ "Vertex edge flag", OPENGL_SI_SYMBOL_ATTRIB_EDGEFLAG },
+		{ "Vertex texture coord 0", OPENGL_SI_SYMBOL_ATTRIB_TEXCOORD0 },
+		{ "Vertex texture coord 1", OPENGL_SI_SYMBOL_ATTRIB_TEXCOORD1 },
+		{ "Vertex texture coord 2", OPENGL_SI_SYMBOL_ATTRIB_TEXCOORD2 },
+		{ "Vertex texture coord 3", OPENGL_SI_SYMBOL_ATTRIB_TEXCOORD3 },
+		{ "Vertex texture coord 4", OPENGL_SI_SYMBOL_ATTRIB_TEXCOORD4 },
+		{ "Vertex texture coord 5", OPENGL_SI_SYMBOL_ATTRIB_TEXCOORD5 },
+		{ "Vertex texture coord 6", OPENGL_SI_SYMBOL_ATTRIB_TEXCOORD6 },
+		{ "Vertex texture coord 7", OPENGL_SI_SYMBOL_ATTRIB_TEXCOORD7 },
+		{ "Vertex texture coord 8", OPENGL_SI_SYMBOL_ATTRIB_TEXCOORD8 },
+		{ "Vertex texture coord 9", OPENGL_SI_SYMBOL_ATTRIB_TEXCOORD9 },
+		{ "Vertex texture coord 10", OPENGL_SI_SYMBOL_ATTRIB_TEXCOORD10 },
+		{ "Vertex texture coord 11", OPENGL_SI_SYMBOL_ATTRIB_TEXCOORD11 },
+		{ "Vertex texture coord 12", OPENGL_SI_SYMBOL_ATTRIB_TEXCOORD12 },
+		{ "Vertex texture coord 13", OPENGL_SI_SYMBOL_ATTRIB_TEXCOORD13 },
+		{ "Vertex texture coord 14", OPENGL_SI_SYMBOL_ATTRIB_TEXCOORD14 },
+		{ "Vertex texture coord 15", OPENGL_SI_SYMBOL_ATTRIB_TEXCOORD15 },
+		{ "Generic attrib 0", OPENGL_SI_SYMBOL_ATTRIB_GENERIC0 },
+		{ "Generic attrib 1", OPENGL_SI_SYMBOL_ATTRIB_GENERIC1 },
+		{ "Generic attrib 2", OPENGL_SI_SYMBOL_ATTRIB_GENERIC2 },
+		{ "Generic attrib 3", OPENGL_SI_SYMBOL_ATTRIB_GENERIC3 },
+		{ "Generic attrib 4", OPENGL_SI_SYMBOL_ATTRIB_GENERIC4 },
+		{ "Generic attrib 5", OPENGL_SI_SYMBOL_ATTRIB_GENERIC5 },
+		{ "Generic attrib 6", OPENGL_SI_SYMBOL_ATTRIB_GENERIC6 },
+		{ "Generic attrib 7", OPENGL_SI_SYMBOL_ATTRIB_GENERIC7 },
+		{ "Generic attrib 8", OPENGL_SI_SYMBOL_ATTRIB_GENERIC8 },
+		{ "Generic attrib 9", OPENGL_SI_SYMBOL_ATTRIB_GENERIC9 },
+		{ "Generic attrib 10", OPENGL_SI_SYMBOL_ATTRIB_GENERIC10 },
+		{ "Generic attrib 11", OPENGL_SI_SYMBOL_ATTRIB_GENERIC11 },
+		{ "Generic attrib 12", OPENGL_SI_SYMBOL_ATTRIB_GENERIC12 },
+		{ "Generic attrib 13", OPENGL_SI_SYMBOL_ATTRIB_GENERIC13 },
+		{ "Generic attrib 14", OPENGL_SI_SYMBOL_ATTRIB_GENERIC14 },
+		{ "Generic attrib 15", OPENGL_SI_SYMBOL_ATTRIB_GENERIC15 },
+		{ "Generic attrib 16", OPENGL_SI_SYMBOL_ATTRIB_GENERIC16 },
+		{ "Generic attrib 17", OPENGL_SI_SYMBOL_ATTRIB_GENERIC17 },
+		{ "Generic attrib 18", OPENGL_SI_SYMBOL_ATTRIB_GENERIC18 },
+		{ "Generic attrib 19", OPENGL_SI_SYMBOL_ATTRIB_GENERIC19 },
+		{ "Generic attrib 20", OPENGL_SI_SYMBOL_ATTRIB_GENERIC20 },
+		{ "Generic attrib 21", OPENGL_SI_SYMBOL_ATTRIB_GENERIC21 },
+		{ "Generic attrib 22", OPENGL_SI_SYMBOL_ATTRIB_GENERIC22 },
+		{ "Generic attrib 23", OPENGL_SI_SYMBOL_ATTRIB_GENERIC23 },
+		{ "Generic attrib 24", OPENGL_SI_SYMBOL_ATTRIB_GENERIC24 },
+		{ "Generic attrib 25", OPENGL_SI_SYMBOL_ATTRIB_GENERIC25 },
+		{ "Generic attrib 26", OPENGL_SI_SYMBOL_ATTRIB_GENERIC26 },
+		{ "Generic attrib 27", OPENGL_SI_SYMBOL_ATTRIB_GENERIC27 },
+		{ "Generic attrib 28", OPENGL_SI_SYMBOL_ATTRIB_GENERIC28 },
+		{ "Generic attrib 29", OPENGL_SI_SYMBOL_ATTRIB_GENERIC29 },
+		{ "Generic attrib 30", OPENGL_SI_SYMBOL_ATTRIB_GENERIC30 },
+		{ "Generic attrib 31", OPENGL_SI_SYMBOL_ATTRIB_GENERIC31 },
+		{ "Generic attrib 32", OPENGL_SI_SYMBOL_ATTRIB_GENERIC32 },
+		{ "Generic attrib 33", OPENGL_SI_SYMBOL_ATTRIB_GENERIC33 },
+		{ "Generic attrib 34", OPENGL_SI_SYMBOL_ATTRIB_GENERIC34 },
+		{ "Generic attrib 35", OPENGL_SI_SYMBOL_ATTRIB_GENERIC35 },
+		{ "Generic attrib 36", OPENGL_SI_SYMBOL_ATTRIB_GENERIC36 },
+		{ "Generic attrib 37", OPENGL_SI_SYMBOL_ATTRIB_GENERIC37 },
+		{ "Generic attrib 38", OPENGL_SI_SYMBOL_ATTRIB_GENERIC38 },
+		{ "Generic attrib 39", OPENGL_SI_SYMBOL_ATTRIB_GENERIC39 },
+		{ "Varying out", OPENGL_SI_SYMBOL_FSVARYINGOUT },
+		{ "VertexID", OPENGL_SI_SYMBOL_ATTRIB_VERTEXID },
+		{ "InstanceID", OPENGL_SI_SYMBOL_ATTRIB_INSTANCEID },
+		{ "GLSL Subroutine Uniform", OPENGL_SI_SYMBOL_SUBROUTINE_UNIFORM },
+		{ "GLSL Subroutine Function", OPENGL_SI_SYMBOL_SUBROUTINE_FUNCTION },
+		{ "base varying in symbol of separate mode", OPENGL_SI_SYMBOL_SEPARATE_VARYING_IN_BASE },
+		{ "base varying out symbol of sparate mode", OPENGL_SI_SYMBOL_SEPARATE_VARYING_OUT_BASE },
+		{ "derived varying in symbol of separate mode", OPENGL_SI_SYMBOL_SEPARATE_VARYING_IN_DERIVED },
+		{ "derived varying out symbol of sparate mode", OPENGL_SI_SYMBOL_SEPARATE_VARYING_OUT_DERIVED },
+		{ "varying in of nonseparate mode", OPENGL_SI_SYMBOL_NONSEPARATE_VARYING_IN },
+		{ "varying out of nonseparate mode", OPENGL_SI_SYMBOL_NONSEPARATE_VARYING_OUT },
+		{ "shader storage buffer", OPENGL_SI_SYMBOL_SHADER_STORAGE_BUFFER },
+		{ "input valide bits for sparse texture", OPENGL_SI_SYMBOL_ATTRIB_INPUTVALID },
+	}
+};
+
 static int opengl_si_shader_binary_get_isa_offset(struct opengl_si_shader_binary_t *shdr)
 {
 	struct opengl_si_enc_dict_vertex_shader_t *vs_enc;
@@ -426,8 +510,11 @@ static struct opengl_si_bin_vertex_shader_metadata_t *opengl_si_bin_vertex_shade
 	assert(!strcmp(section->name, ".text"));
 
 	/* Create and memcpy */
-	assert(sizeof(struct opengl_si_bin_vertex_shader_metadata_t) < section->buffer.size);
 	memcpy(vs_meta, section->buffer.ptr, sizeof(struct opengl_si_bin_vertex_shader_metadata_t));
+	if(sizeof(struct opengl_si_bin_vertex_shader_metadata_t) + vs_meta->CodeLenInByte != section->buffer.size)
+		warning("Vertex Shader .text section size(%d) != metadata structure size(%zu) + ISA size(%d).",
+			section->buffer.size, sizeof(struct opengl_si_bin_vertex_shader_metadata_t), 
+			vs_meta->CodeLenInByte);
 
 	/* Return */
 	return vs_meta;
@@ -459,9 +546,11 @@ static struct opengl_si_bin_pixel_shader_metadata_t *opengl_si_bin_pixel_shader_
 	assert(!strcmp(section->name, ".text"));
 
 	/* Create and memcpy */
-	/* FIXME: size doesn't match */
-	// assert(sizeof(struct opengl_si_bin_pixel_shader_metadata_t) < section->buffer.size);
 	memcpy(fs_meta, section->buffer.ptr, sizeof(struct opengl_si_bin_pixel_shader_metadata_t));
+	if (sizeof(struct opengl_si_bin_pixel_shader_metadata_t) + fs_meta->CodeLenInByte  != section->buffer.size)
+		warning("Pixel Shader .text section size(%d) != metadata structure size(%zu) + ISA size(%d).",
+				section->buffer.size, sizeof(struct opengl_si_bin_pixel_shader_metadata_t),
+				fs_meta->CodeLenInByte);
 
 	/* Return */
 	return fs_meta;
@@ -573,7 +662,7 @@ static void opengl_si_bin_outputs_init_from_section(struct list_t *lst, struct e
 }
 
 /* Structure in .info section */
-static struct opengl_si_bin_info_t *opengl_si_si_bin_info_create()
+static struct opengl_si_bin_info_t *opengl_si_bin_info_create()
 {
 	struct opengl_si_bin_info_t *info;
 
@@ -584,17 +673,17 @@ static struct opengl_si_bin_info_t *opengl_si_si_bin_info_create()
 	return info;
 }
 
-static void opengl_si_si_bin_info_free(struct opengl_si_bin_info_t *info)
+static void opengl_si_bin_info_free(struct opengl_si_bin_info_t *info)
 {
 	free(info);
 }
 
-static void opengl_si_si_bin_info_init_with_section(struct opengl_si_bin_info_t *info, struct elf_section_t *section)
+static void opengl_si_bin_info_init_with_section(struct opengl_si_bin_info_t *info, struct elf_section_t *section)
 {
 	assert(!strcmp(section->name, ".info"));
 
 	if (section->buffer.size != sizeof(struct opengl_si_bin_info_t))
-		fatal("Section size(%d) doesn't match info structure(%zu).",
+		warning("Section size(%d) doesn't match info structure(%zu).",
 			section->buffer.size, sizeof(struct opengl_si_bin_info_t));
 	else
 		memcpy(info, section->buffer.ptr, sizeof(struct opengl_si_bin_info_t));
@@ -617,7 +706,7 @@ static void opengl_si_bin_usageinfo_free(struct opengl_si_bin_usageinfo_t *usage
 	free(usageinfo);
 }
 
-static void opengl_si_si_bin_usageinfo_init_with_section(struct opengl_si_bin_usageinfo_t *usageinfo, struct elf_section_t *section)
+static void opengl_si_bin_usageinfo_init_with_section(struct opengl_si_bin_usageinfo_t *usageinfo, struct elf_section_t *section)
 {
 	assert(!strcmp(section->name, ".usageinfo"));
 
@@ -627,6 +716,70 @@ static void opengl_si_si_bin_usageinfo_init_with_section(struct opengl_si_bin_us
 	memcpy(usageinfo, section->buffer.ptr, sizeof(struct opengl_si_bin_usageinfo_t));
 }
 
+/* Structure in .symbol section */
+static struct opengl_si_bin_symbol_t *opengl_si_bin_symbol_create()
+{
+	struct opengl_si_bin_symbol_t *symbol;
+
+	/* Allocate */
+	symbol = xcalloc(1, sizeof(struct opengl_si_bin_symbol_t));
+
+	/* Return */
+	return symbol;
+}
+
+static void opengl_si_bin_symbol_free(struct opengl_si_bin_symbol_t *symbol)
+{
+	if (symbol->name)
+		free(symbol->name);
+	if (symbol->baseName)
+		free(symbol->baseName);
+	if (symbol->uniformBlockName)
+		free(symbol->uniformBlockName);
+	if (symbol->mangledName)
+		free(symbol->mangledName);
+	free(symbol);
+}
+
+static void opengl_si_bin_symbol_init_with_section(struct list_t *symbol_list, struct elf_section_t *section)
+{
+	struct opengl_si_bin_symbol_t *symbol;
+	int symbol_count;
+	char *symbol_name;
+	void *bin_ptr;
+	void *name_ptr;
+	size_t len;
+	int i;
+
+	/* Make sure section is correct */
+	assert(!strcmp(section->name, ".symbols"));
+	printf("%d\n", sizeof(struct opengl_si_bin_symbol_t) - 4 * sizeof(char*));
+
+	bin_ptr = section->buffer.ptr;
+	memcpy(&symbol_count, bin_ptr, 4);
+	bin_ptr += 4;
+
+	for (i = 0; i < symbol_count; ++i)
+	{
+		symbol = opengl_si_bin_symbol_create();
+		memcpy(symbol, bin_ptr, 136);
+
+		name_ptr = bin_ptr + 136;
+		symbol_name = (char *)name_ptr;
+		if(*symbol_name != '\0')
+		{
+			len = strlen(symbol_name) + 1;
+			symbol->name = xstrdup(symbol_name);
+			bin_ptr = name_ptr + len + 3;
+		}
+		else
+		{
+			bin_ptr = name_ptr + 3;
+			symbol->name = NULL;
+		}
+		list_add(symbol_list, symbol);
+	}
+}
 
 static struct opengl_si_enc_dict_vertex_shader_t *opengl_si_enc_dict_vertex_shader_create(struct opengl_si_shader_binary_t *parent)
 {
@@ -639,8 +792,9 @@ static struct opengl_si_enc_dict_vertex_shader_t *opengl_si_enc_dict_vertex_shad
 	vs->meta = opengl_si_bin_vertex_shader_metadata_create();
 	vs->inputs = list_create();
 	vs->outputs = list_create();
-	vs->info = opengl_si_si_bin_info_create();
+	vs->info = opengl_si_bin_info_create();
 	vs->usageinfo = opengl_si_bin_usageinfo_create();
+	vs->symbols = list_create();
 
 	/* Return */
 	return vs;
@@ -650,23 +804,35 @@ static void opengl_si_bin_vertex_shader_free(struct opengl_si_enc_dict_vertex_sh
 {
 	struct opengl_si_bin_input_t *input;
 	struct opengl_si_bin_output_t *output;
+	struct opengl_si_bin_symbol_t *symbol;
 	int i;
 
 	opengl_si_bin_vertex_shader_metadata_free(vs->meta);
+
 	LIST_FOR_EACH(vs->inputs, i)
 	{
 		input = list_get(vs->inputs, i);
 		opengl_si_bin_input_free(input);
 	}
 	list_free(vs->inputs);
+
 	LIST_FOR_EACH(vs->outputs, i)
 	{
 		output = list_get(vs->outputs, i);
 		opengl_si_bin_output_free(output);
 	}
 	list_free(vs->outputs);
-	opengl_si_si_bin_info_free(vs->info);
+
+	opengl_si_bin_info_free(vs->info);
+
 	opengl_si_bin_usageinfo_free(vs->usageinfo);
+
+	LIST_FOR_EACH(vs->symbols, i)
+	{
+		symbol = list_get(vs->symbols, i);
+		opengl_si_bin_symbol_free(symbol);
+	}
+	list_free(vs->symbols);
 
 	free(vs);
 
@@ -697,9 +863,11 @@ static void opengl_si_bin_vertex_shader_init(struct opengl_si_enc_dict_vertex_sh
 		else if (!strcmp(section->name, ".outputs"))
 			opengl_si_bin_outputs_init_from_section(vs->outputs, section);
 		else if (!strcmp(section->name, ".info"))
-			opengl_si_si_bin_info_init_with_section(vs->info, section);
+			opengl_si_bin_info_init_with_section(vs->info, section);
 		else if(!strcmp(section->name, ".usageinfo"))
-			opengl_si_si_bin_usageinfo_init_with_section(vs->usageinfo, section);
+			opengl_si_bin_usageinfo_init_with_section(vs->usageinfo, section);
+		else if(!strcmp(section->name, ".symbols"))
+			opengl_si_bin_symbol_init_with_section(vs->symbols, section);
 	}
 }
 
@@ -714,8 +882,9 @@ static struct opengl_si_enc_dict_pixel_shader_t *opengl_si_enc_dict_pixel_shader
 	ps->meta = opengl_si_bin_pixel_shader_metadata_create();
 	ps->inputs = list_create();
 	ps->outputs = list_create();
-	ps->info = opengl_si_si_bin_info_create();
+	ps->info = opengl_si_bin_info_create();
 	ps->usageinfo = opengl_si_bin_usageinfo_create();
+	ps->symbols = list_create();
 
 	/* Return */
 	return ps;
@@ -725,6 +894,7 @@ static void opengl_si_bin_pixel_shader_free(struct opengl_si_enc_dict_pixel_shad
 {
 	struct opengl_si_bin_input_t *input;
 	struct opengl_si_bin_output_t *output;
+	struct opengl_si_bin_symbol_t *symbol;
 	int i;
 
 	opengl_si_bin_pixel_shader_metadata_free(ps->meta);
@@ -740,8 +910,17 @@ static void opengl_si_bin_pixel_shader_free(struct opengl_si_enc_dict_pixel_shad
 		opengl_si_bin_output_free(output);
 	}
 	list_free(ps->outputs);
-	opengl_si_si_bin_info_free(ps->info);
+
+	opengl_si_bin_info_free(ps->info);
+
 	opengl_si_bin_usageinfo_free(ps->usageinfo);
+
+	LIST_FOR_EACH(ps->symbols, i)
+	{
+		symbol = list_get(ps->symbols, i);
+		opengl_si_bin_symbol_free(symbol);
+	}
+	list_free(ps->symbols);	
 
 	free(ps);
 
@@ -772,9 +951,9 @@ static void opengl_si_bin_pixel_shader_init(struct opengl_si_enc_dict_pixel_shad
 		else if (!strcmp(section->name, ".outputs"))
 			opengl_si_bin_outputs_init_from_section(ps->outputs, section);
 		else if (!strcmp(section->name, ".info"))
-			opengl_si_si_bin_info_init_with_section(ps->info, section);
+			opengl_si_bin_info_init_with_section(ps->info, section);
 		else if(!strcmp(section->name, ".usageinfo"))
-			opengl_si_si_bin_usageinfo_init_with_section(ps->usageinfo, section);
+			opengl_si_bin_usageinfo_init_with_section(ps->usageinfo, section);
 	}
 
 }
@@ -839,7 +1018,7 @@ struct opengl_si_program_binary_t *opengl_si_program_binary_create(const char *b
 	program_bin->name = xstrdup(name);
 	program_bin->binary = elf_file_create_from_buffer((char *) buffer_ptr, size, (char *) name);
 	if (!program_bin->binary)
-		fatal("Shader binary is not ELF formatted, please upgrade your AMD driver!");
+		fatal("Program binary is not ELF formatted, please upgrade your AMD Catalyst driver to version >= 13.1.");
 	program_bin->shader_bins = opengl_si_shader_bin_list_create(program_bin->binary);
 
 	/* Return */	
@@ -906,6 +1085,8 @@ void opengl_si_shader_binary_debug_meta(struct opengl_si_shader_binary_t *shdr_b
 	struct opengl_si_bin_input_t *input;
 	struct list_t *output_list;
 	struct opengl_si_bin_output_t *output;
+	struct list_t *symbol_list;
+	struct opengl_si_bin_symbol_t *symbol;
 	struct opengl_si_enc_dict_vertex_shader_t *enc_vs;
 	struct opengl_si_enc_dict_pixel_shader_t *enc_ps;
 	struct opengl_si_bin_vertex_shader_metadata_t *meta_vs;
@@ -924,7 +1105,7 @@ void opengl_si_shader_binary_debug_meta(struct opengl_si_shader_binary_t *shdr_b
 		LIST_FOR_EACH(input_list, i)
 		{
 			input = list_get(input_list, i);
-			printf("[%d], %s, virtual offset = %d, physical offset = %d, swizzles = %s, %s, %s, %s\n", 
+			printf(" [%d], %s, virtual offset = %d, physical offset = %d, swizzles = %s, %s, %s, %s\n", 
 				i, 
 				str_map_value(&enc_dict_input_type_map, input->type), 
 				input->voffset, input->poffset, 
@@ -940,10 +1121,20 @@ void opengl_si_shader_binary_debug_meta(struct opengl_si_shader_binary_t *shdr_b
 		LIST_FOR_EACH(output_list, i)
 		{
 			output = list_get(output_list, i);
-			printf("[%d], %s, %s, virtual offset = %d, physical offset = %d, name = %s\n", 
+			printf(" [%d], %s, %s, virtual offset = %d, physical offset = %d, name = %s\n", 
 				i, str_map_value(&enc_dict_output_type_map, output->type), 
 				str_map_value(&enc_dict_symbol_datatype_map, output->data_type),
 				output->voffset, output->poffset, output->name);
+		}
+		printf("\n");
+		printf("Symbol info\n");
+		symbol_list = enc_vs->symbols;
+		LIST_FOR_EACH(symbol_list, i)
+		{
+			symbol = list_get(symbol_list, i);
+			printf(" [%d] %s, %s, %s\n", i, symbol->name, 
+				str_map_value(&enc_dict_symbol_type_map, symbol->type), 
+				str_map_value(&enc_dict_symbol_datatype_map, symbol->dataType));
 		}
 		printf("\n");
 		printf("Input Semantic Mappings\n");
@@ -1026,7 +1217,7 @@ void opengl_si_shader_binary_debug_meta(struct opengl_si_shader_binary_t *shdr_b
 		LIST_FOR_EACH(input_list, i)
 		{
 			input = list_get(input_list, i);
-			printf("[%d] %s, virtual offset = %d, physical offset = %d, swizzles = %s, %s, %s, %s\n", 
+			printf(" [%d] %s, virtual offset = %d, physical offset = %d, swizzles = %s, %s, %s, %s\n", 
 				i, 
 				str_map_value(&enc_dict_input_type_map, input->type), 
 				input->voffset, input->poffset, 
@@ -1042,10 +1233,20 @@ void opengl_si_shader_binary_debug_meta(struct opengl_si_shader_binary_t *shdr_b
 		LIST_FOR_EACH(output_list, i)
 		{
 			output = list_get(output_list, i);
-			printf("[%d] %s, %s, virtual offset = %d, physical offset = %d, name = %s\n", 
+			printf(" [%d] %s, %s, virtual offset = %d, physical offset = %d, name = %s\n", 
 				i, str_map_value(&enc_dict_output_type_map, output->type), 
 				str_map_value(&enc_dict_symbol_datatype_map, output->data_type),
 				output->voffset, output->poffset, output->name);
+		}
+		printf("\n");
+		printf("Symbol info\n");
+		symbol_list = enc_ps->symbols;
+		LIST_FOR_EACH(symbol_list, i)
+		{
+			symbol = list_get(symbol_list, i);
+			printf(" [%d] %s, %s, %s\n", i, symbol->name, 
+				str_map_value(&enc_dict_symbol_type_map, symbol->type), 
+				str_map_value(&enc_dict_symbol_datatype_map, symbol->dataType));
 		}
 		printf("\n");
 
