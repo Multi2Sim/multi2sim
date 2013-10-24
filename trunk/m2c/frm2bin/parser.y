@@ -14,7 +14,7 @@
 #include <lib/class/class.h>
 #include <lib/mhandle/mhandle.h>
 
-#include "id.h"
+#include "Id.h"
 #include "frm2bin.h"
 #include "arg.h"
 #include "inst.h"

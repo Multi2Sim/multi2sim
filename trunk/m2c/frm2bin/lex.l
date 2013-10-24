@@ -7,7 +7,7 @@
 #include "parser.h"
 #include "frm2bin.h"
 #include "inst.h"
-#include "id.h"
+#include "Id.h"
 void yyerror_lex(const char *msg);
 
 %}
