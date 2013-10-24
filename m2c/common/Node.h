@@ -115,6 +115,7 @@ public:
 	Tree *GetTree() { return tree; }
 	const std::string &GetName() { return name; }
 	NodeKind GetKind() { return kind; }
+	NodeRole GetRole() { return role; }
 
 	/* Dump node */
 	virtual void Dump(std::ostream &os);
@@ -263,6 +264,7 @@ public:
 	AbstractNode(const std::string &name, AbstractNodeRegion region);
 
 	/* Getters */
+	AbstractNodeRegion GetRegion() { return region; }
 	std::list<Node *> &GetChildList() { return child_list; }
 	
 	/* Dump */

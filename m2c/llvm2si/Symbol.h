@@ -50,7 +50,7 @@ class Symbol
 
 	/* Register ID and number of registers */
 	int reg;
-	int count;
+	int num_regs;
 
 	/* Flag indicating whether the symbol contains a global memory
 	 * address. */
@@ -64,14 +64,17 @@ public:
 
 	/* Constructor */
 	Symbol(const std::string &name, SymbolType type, int reg) :
-			name(name), type(type), reg(reg), count(1),
+			name(name), type(type), reg(reg), num_regs(1),
 			address(false) { }
 	Symbol(const std::string &name, SymbolType type, int low, int high) :
 			name(name), type(type), reg(low),
-			count(high - low + 1), address(false) { }
+			num_regs(high - low + 1), address(false) { }
 
 	/* Getters */
 	const std::string &GetName() { return name; }
+	SymbolType GetType() { return type; }
+	int GetReg() { return reg; }
+	int GetNumRegs() { return num_regs; }
 	bool IsAddress() { return address; }
 	int GetUAVIndex() { return uav_index; }
 
