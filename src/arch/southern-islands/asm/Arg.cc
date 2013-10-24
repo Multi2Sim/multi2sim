@@ -19,8 +19,10 @@
 
 #include "Arg.h"
 
+namespace SI
+{
 
-StringMap SI::arg_dimension_map =
+StringMap arg_dimension_map =
 {
 	{ "2D", 2 },
 	{ "3D", 3 },
@@ -28,7 +30,7 @@ StringMap SI::arg_dimension_map =
 };
 
 
-StringMap SI::arg_access_type_map =
+StringMap arg_access_type_map =
 {
 	{ "RO", ArgReadOnly },
 	{ "WO", ArgWriteOnly },
@@ -37,7 +39,7 @@ StringMap SI::arg_access_type_map =
 };
 
 
-StringMap SI::arg_data_type_map =
+StringMap arg_data_type_map =
 {
 	{ "i1", ArgInt1 },
 	{ "i8", ArgInt8 },
@@ -59,7 +61,7 @@ StringMap SI::arg_data_type_map =
 };
 
 
-SringMap SI::arg_scope_map =
+SringMap arg_scope_map =
 {
 	{ "g", ArgGlobal },
 	{ "p", ArgEmuPrivate },
@@ -76,7 +78,7 @@ SringMap SI::arg_scope_map =
 
 
 /* FIXME: Still need to figure out reflection for i1 and u1 */
-StringMap SI::arg_reflection_map =
+StringMap arg_reflection_map =
 {
 	{ "char", ArgInt8 },
 	{ "short", ArgInt16 },
@@ -96,7 +98,7 @@ StringMap SI::arg_reflection_map =
 };
 
 
-SI::Arg::Arg(ArgType type, string name)
+Arg::Arg(ArgType type, string name)
 {
 	/* Initialize */
 	this->type = type;
@@ -105,7 +107,7 @@ SI::Arg::Arg(ArgType type, string name)
 
 
 /* Infer argument size from its data type */
-SI::Arg::GetDataSize(ArgDataType data_type)
+Arg::GetDataSize(ArgDataType data_type)
 {
 	switch (data_type)
 	{
@@ -145,6 +147,22 @@ SI::Arg::GetDataSize(ArgDataType data_type)
 }
 
 
+void ArgPointer::Dump(std::ostream &os)
+{
+	os << StringMapValue(arg_data_type_map, data_type);
+	if (num_elems > 1)
+		os << '[' << num_elems << ']';
+	os << "* " << name;
+}
+
+
+void ArgValue::Dump(std::ostream &os)
+{
+	os << StringMapValue(arg_data_type_map, data_type);
+	if (num_elems > 1)
+		os << '[' << num_elems << ']';
+	os << ' ' << name;
+}
 
 
 #ifdef 0
@@ -180,3 +198,5 @@ SIArg * SIArgCopy(SIArg *original)
 	return copy;
 }
 #endif
+
+}  /* namespace SI */
