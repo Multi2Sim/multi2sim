@@ -29,8 +29,8 @@ libfrm2bin_a_SOURCES = \
 	Frm2binBinaryKernelInfo.c \
 	Frm2binBinaryKernelInfo.h \
 	\
-	id.c \
-	id.h \
+	Id.cc \
+	Id.h \
 	\
 	inst.c \
 	inst.h \
