@@ -394,7 +394,96 @@ enum opengl_si_fetch_shader_type_t
 	OPENGL_SI_FETCH_SUB_PER_ATTRIB    /* SI+: Fetch shader performs a single attribute fetch per execution, vertex buffer refs stored in a flat table */
 };
 
+//
+/// Swizzle types
+//
+typedef enum {
+	OPENGL_SI_ELF_SWIZZLE_X,
+	OPENGL_SI_ELF_SWIZZLE_Y,
+	OPENGL_SI_ELF_SWIZZLE_Z,
+	OPENGL_SI_ELF_SWIZZLE_W,
+	OPENGL_SI_ELF_SWIZZLE_UNKNOWN
+} SIElfSwizzle;
 
+
+//
+/// Symbol data precision qualifier
+//
+typedef enum 
+{
+	OPENGL_SI_ELF_SYMBOL_DATAPQ_LOW,
+	OPENGL_SI_ELF_SYMBOL_DATAPQ_MEDIUM,
+	OPENGL_SI_ELF_SYMBOL_DATAPQ_HIGH,
+	OPENGL_SI_ELF_SYMBOL_DATAPQ_DOUBLE
+} SIElfSymbolDataPrecisionQualifier;
+
+//
+/// Style for layout qualifier
+//
+typedef enum
+{
+	OPENGL_SI_ELF_LAYOUT_STYLE_NONE,
+	OPENGL_SI_ELF_LAYOUT_SHARED,
+	OPENGL_SI_ELF_LAYOUT_PACKED,
+	OPENGL_SI_ELF_LAYOUT_STD140,
+} SIElfLayoutStyleQualifier;
+
+//
+/// Major for layout qualifier
+//
+typedef enum
+{
+	OPENGL_SI_ELF_LAYOUT_MAJOR_NONE,
+	OPENGL_SI_ELF_LAYOUT_ROW_MAJOR,
+	OPENGL_SI_ELF_LAYOUT_COLUMN_MAJOR,
+} SIElfLayoutMajorQualifier;
+
+//
+/// invariant qualifier
+///
+typedef enum
+{
+	OPENGL_SI_ELF_INVARIANT_OFF,
+	OPENGL_SI_ELF_INVARIANT_ON,
+}SIElfInvariantQualifier;
+
+//
+/// precise qualifier
+//
+typedef enum
+{
+	OPENGL_SI_ELF_PRECISE_OFF,
+	OPENGL_SI_ELF_PRECISE_ON,
+}SIElfPreciseQualifier;
+
+//
+/// storage qualifier
+///
+typedef enum
+{
+	OPENGL_SI_ELF_STORAGE_DEFAULT,
+	OPENGL_SI_ELF_STORAGE_CENTROID,
+	OPENGL_SI_ELF_STORAGE_SAMPLE,
+}SIElfStorageQualifier;
+
+//
+/// interpolation qualifier
+///
+typedef enum
+{
+	OPENGL_SI_ELF_INTERPOLATION_SMOOTH,
+	OPENGL_SI_ELF_INTERPOLATION_FLAT,
+	OPENGL_SI_ELF_INTERPOLATION_NOPERSPECTIVE,
+}SIElfInterpolationQualifier;
+
+//
+/// patch qualifier
+//
+typedef enum
+{
+	OPENGL_SI_ELF_PER_PATCH_OFF,
+	OPENGL_SI_ELF_PER_PATCH_ON,
+}SIElfPatchQualifier;
 
 struct opengl_si_bin_shader_stats_t
 {
@@ -489,6 +578,82 @@ struct opengl_si_bin_constant_usage_t
 #define OPENGL_SI_BIN_SHADER_SI_BASE \
 	OPENGL_SI_BIN_SHADER_COMMON \
 	OPENGL_SI_BIN_SHADER_SI_COMMON \
+
+struct opengl_si_bin_shader_common_t
+{
+	uint32_t uSizeInBytes;	/* size of structure */
+	struct opengl_si_bin_shader_stats_t stats;             /* hw-neutral stats */
+	struct opengl_si_bin_shader_dep_t dep;	/* hw-neutral dependency */
+	uint32_t X32XpPvtData;      /* SC-private data */
+	uint32_t u32PvtDataSizeInBytes; /* size of private data */
+	struct opengl_si_bin_constant_usage_t fConstantUsage;      /* float const usage */
+	struct opengl_si_bin_constant_usage_t bConstantUsage;      /* int const usage */
+	struct opengl_si_bin_constant_usage_t iConstantUsage;   
+	uint32_t uShaderType;        /* IL shader type */
+	uint32_t eInstSet;          /* Instruction set */
+	uint32_t texResourceUsage[(MAX_NUM_RESOURCE + 31) / 32];
+	uint32_t fetch4ResourceUsage[(MAX_NUM_RESOURCE + 31) / 32];
+	uint32_t uavResourceUsage[(MAX_NUM_UAV + 31) / 32];    
+	uint32_t texSamplerUsage;  
+	uint32_t constBufUsage;    
+	uint32_t texSamplerResourceMapping[MAX_NUM_SAMPLER][(MAX_NUM_RESOURCE+31)/32];
+	uint32_t NumConstOpportunities;              
+	uint32_t ResourcesAffectAlphaOutput[(MAX_NUM_RESOURCE+31)/32];       
+};
+
+struct opengl_si_bin_shader_si_common_t
+{
+	uint32_t X32XhShaderMemHandle;   
+	uint32_t X32XhConstBufferMemHandle[SC_SI_NUM_INTBUF]; 
+	uint32_t CodeLenInByte;
+	uint32_t u32UserElementCount; /*Number of user data descriptors  */
+	struct SIBinaryUserElement pUserElement[SC_SI_NUM_USER_ELEMENT]; /*User data descriptors */
+	/* Common HW shader info about registers and execution modes*/ 
+	uint32_t   u32NumVgprs;  
+	uint32_t   u32NumSgprs;  
+	uint32_t   u32FloatMode; 
+	bool     bIeeeMode;  
+	bool     bUsesPrimId; 
+	bool     bUsesVertexId; 
+	uint32_t   scratchSize;/* Scratch size in DWORDs for a single thread*/ 
+}__attribute__((packed));
+
+struct opengl_si_bin_shader_base_t
+{
+	uint32_t uSizeInBytes;	/* size of structure */
+	struct opengl_si_bin_shader_stats_t stats;             /* hw-neutral stats */
+	struct opengl_si_bin_shader_dep_t dep;	/* hw-neutral dependency */
+	uint32_t X32XpPvtData;      /* SC-private data */
+	uint32_t u32PvtDataSizeInBytes; /* size of private data */
+	struct opengl_si_bin_constant_usage_t fConstantUsage;      /* float const usage */
+	struct opengl_si_bin_constant_usage_t bConstantUsage;      /* int const usage */
+	struct opengl_si_bin_constant_usage_t iConstantUsage;   
+	uint32_t uShaderType;        /* IL shader type */
+	uint32_t eInstSet;          /* Instruction set */
+	uint32_t texResourceUsage[(MAX_NUM_RESOURCE + 31) / 32];
+	uint32_t fetch4ResourceUsage[(MAX_NUM_RESOURCE + 31) / 32];
+	uint32_t uavResourceUsage[(MAX_NUM_UAV + 31) / 32];    
+	uint32_t texSamplerUsage;  
+	uint32_t constBufUsage;    
+	uint32_t texSamplerResourceMapping[MAX_NUM_SAMPLER][(MAX_NUM_RESOURCE+31)/32];
+	uint32_t NumConstOpportunities;              
+	uint32_t ResourcesAffectAlphaOutput[(MAX_NUM_RESOURCE+31)/32];       
+
+	uint32_t X32XhShaderMemHandle;   
+	uint32_t X32XhConstBufferMemHandle[SC_SI_NUM_INTBUF]; 
+	uint32_t CodeLenInByte;
+	uint32_t u32UserElementCount; /*Number of user data descriptors  */
+	struct SIBinaryUserElement pUserElement[SC_SI_NUM_USER_ELEMENT]; /*User data descriptors */
+	/* Common HW shader info about registers and execution modes*/ 
+	uint32_t   u32NumVgprs;  
+	uint32_t   u32NumSgprs;  
+	uint32_t   u32FloatMode; 
+	bool     bIeeeMode;  
+	bool     bUsesPrimId; 
+	bool     bUsesVertexId; 
+	uint32_t   scratchSize;/* Scratch size in DWORDs for a single thread*/ 
+}__attribute__((packed));
+
 
 /* SPI_SHADER_PGM_RSRC2_VS */
 struct opengl_si_bin_spi_shader_pgm_rsrc2_vs_t
@@ -646,7 +811,6 @@ struct opengl_si_bin_compile_guide_t
 }__attribute__((packed));
 
 
-/* FIXME: size doesn't match, should be 2124 bytes */
 /* Vertex shader metadata stored in .text section */
 struct opengl_si_bin_vertex_shader_metadata_t  
 {
@@ -698,12 +862,11 @@ struct opengl_si_bin_vertex_shader_metadata_t
 	struct opengl_si_bin_compile_guide_t compileFlags;     /* compile flag */
 	uint32_t gsMode;                            /* gs mode */
 
-	bool isOnChipGs;
-	uint32_t targetLdsSize;
-
+	/* FIXME: value doesn't make sense and the size doesn't match if not commentted */
+	// bool isOnChipGs; 
+	// uint32_t targetLdsSize; 
 };
 
-/* FIXME: size doesn't match, should be 3436 bytes */
 /* Fragment shader metadata stored in .text section */
 struct opengl_si_bin_pixel_shader_metadata_t
 {
@@ -743,7 +906,6 @@ struct opengl_si_bin_pixel_shader_metadata_t
 	// Export patch info per RT
 	struct opengl_si_bin_fs_export_patch_into_t exportPatchInfo[SC_SI_PS_MAX_OUTPUTS];
 	uint32_t defaultExportFmt;
-
 };
 
 /* texture resource and sampler binding */
@@ -753,7 +915,6 @@ struct opengl_si_texture_resource_bound_t
 	uint32_t samplerMask;        /* samplers bind to resource id */
 };
 
-/* FIXME: size doesn't match binary */
 /* Info descriptor for .info section */
 enum opengl_si_bin_info_max_offset
 { 
@@ -971,6 +1132,7 @@ typedef struct
 	uint32_t  workSizeZ;                         /* Work size in the Z dimension */
 } __attribute__((packed)) SICSUsageinfo;
 
+/* FIXME: usageinfo section is 156 bytes for PS but 152 for VS */
 struct opengl_si_bin_usageinfo_t
 {
 	struct opengl_si_bin_arb_program_parameter_t   arbProgramParameter;   /* ARB program parameters */
@@ -1047,6 +1209,74 @@ struct opengl_si_bin_usageinfo_t
 
 }__attribute__((packed));
 
+
+/* structure for .symbol section */
+struct opengl_si_bin_symbol_t
+{
+	enum opengl_si_bin_symbol_type_t     type;     ///< Uniform, normal, texcoord, generic attrib, etc.
+	enum opengl_si_bin_symbol_datatype_t dataType; ///< float, vec2, mat4, etc.
+	//
+	/// union of qualifier struct
+	//
+	union
+	{
+		//
+		/// qualifier struct
+		//
+		struct
+		{
+		SIElfSymbolDataPrecisionQualifier      dataPrecQual            : 4;    ///< low, medium, high, double
+		SIElfLayoutStyleQualifier              layoutStyleQualifier    : 4;    ///< Style of layout qualifier
+		SIElfLayoutMajorQualifier              layoutMajorQualifier    : 4;    ///< Major of layout qualifier
+		SIElfInvariantQualifier                invariantQualifier      : 2;    ///< invariant qualifier
+		SIElfPreciseQualifier                  preciseQualifier        : 2;    ///< precise qualifier
+		SIElfStorageQualifier                  storageQualifier        : 3;    ///< storage qualifier
+		SIElfInterpolationQualifier            interpQualifier         : 3;    ///< interpolation qualifier
+		SIElfPatchQualifier                    patchQualifier          : 2;    ///< patch qualifier
+		};
+		uint32_t  qualifier;	///< qualifier
+	};
+
+	int                  vvalue;   ///< The value of this symbol for the vertex shader, intended to be virtual constant offset
+	int                  vcbindex; ///< The index of the bindable uniform of this symbol for vertex shader
+	SIElfSwizzle        vswizzle; ///< Destination swizzle for vertex constants
+	int                  gvalue;   ///< The value of this symbol for the geometry shader, intended to be virtual constant offset
+	int                  gcbindex; ///< The index of the bindable uniform of this symbol for geometry shader
+	SIElfSwizzle        gswizzle; ///< Destination swizzle for geometry constants
+	int                  fvalue;   ///< The value of this symbol for the fragment shader
+	int                  fcbindex; ///< The index of the bindable uniform of this symbol for fragment shader
+	SIElfSwizzle        fswizzle; ///< Destination swizzle for fragment constants
+	int                  hvalue;   ///< The value of this symbol for the hull shader
+	int                  hcbindex; ///< The index of the bindable uniform of this symbol for hull shader
+	SIElfSwizzle        hswizzle; ///< Destination swizzle for hull constants
+	int                  dvalue;   ///< The value of this symbol for the domain shader
+	int                  dcbindex; ///< The index of the bindable uniform of this symbol for domain shader
+	SIElfSwizzle        dswizzle; ///< Destination swizzle for domain constants
+	int                  cvalue;   ///< The value of this symbol for the compute shader
+	int                  ccbindex; ///< The index of the bindable uniform of this symbol for compute shader
+	SIElfSwizzle        cswizzle; ///< Destination swizzle for compute constants
+	int                  size;     ///< register_count * 4 * sizeof(float), no packing, with padding. This is for bindable uniform (GetUniformBufferSizeEXT)
+	int                  count;    ///< if this symbol is part of an array, the number of remaining elements (including this one), 1 otherwise
+						   ///< If anything is put between count and name, code in Uniform/VertexInterface ScanSymbols needs to be updated
+	bool                 isArray;         ///< TRUE if the symbol is arrayed, FALSE otherwise
+	uint32_t               matrixStride; ///< stride of columns of column major matrix or rows of row major matrix
+	uint32_t               subSize;      ///< the number of subroutine functions, all dynamic array and string must be added at the end of the sturct.
+	uint32_t               uniformBinding;  ///< Binding (versatile usages for uniform block, sampler and image, atomic counter, array buffer)
+	int16_t                layoutLocation;  ///< layout location (versatile usages for uniform variables, including opaque types, and subroutine uniforms)
+	int16_t                layoutIndex;     ///< layout Index for subroutine function
+	uint32_t               uniformOffset;   ///< Offset (currently used for atomic counter)
+	uint32_t               resourceIndex;   ///< Resource index (currently for storing GDS offset for atomic counter in DWs)
+
+	uint32_t               subroutineTypeID; ///< subroutine type id
+	uint32_t               topLevelArraySize; ///< TOP_LEVEL_ARRAY_SIZE
+	uint32_t               topLevelArrayStride; ///< TOP_LEVEL_ARRAY_STRIDE
+	char*          name;     ///< NULL-terminated string which is the name of this symbol
+	char*          baseName; ///< if this symbol is part of an array, NULL-terminated string which is the unsubscripted name of the array
+	char*          uniformBlockName;         ///< Name of uniform block
+	char*          mangledName;///< available if this sysmbol is struct or interface block, it is used to check type.
+};
+
+
 struct opengl_si_enc_dict_vertex_shader_t
 {
 	/* Parent shader binary it belongs to */
@@ -1055,9 +1285,10 @@ struct opengl_si_enc_dict_vertex_shader_t
 	/* Shader info extracted from sections in parent shader binary */
 	struct opengl_si_bin_vertex_shader_metadata_t *meta;
 	struct list_t *inputs; /* Elements with type struct opengl_si_bin_input_t */
-	struct list_t *outputs; /* Elements with type struct opengl_si_bin_output_t*/
+	struct list_t *outputs; /* Elements with type struct opengl_si_bin_output_t */
 	struct opengl_si_bin_info_t *info;
 	struct opengl_si_bin_usageinfo_t *usageinfo;
+	struct list_t *symbols; /* Elements with type struct opengl_si_bin_symbols_t */
 };
 
 struct opengl_si_enc_dict_pixel_shader_t
@@ -1071,6 +1302,7 @@ struct opengl_si_enc_dict_pixel_shader_t
 	struct list_t *outputs; /* Elements with type struct opengl_si_bin_output_t*/
 	struct opengl_si_bin_info_t *info;
 	struct opengl_si_bin_usageinfo_t *usageinfo;
+	struct list_t *symbols; /* Elements with type struct opengl_si_bin_symbols_t */	
 };
 
 /* Input descriptor for .inputs section */
