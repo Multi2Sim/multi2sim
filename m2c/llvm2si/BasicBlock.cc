@@ -81,7 +81,7 @@ void BasicBlock::EmitAdd(llvm::BinaryOperator *llvm_inst)
 {
 	/* Only supported for 32-bit integers */
 	llvm::Type *llvm_type = llvm_inst->getType();
-	if (llvm_type->isIntegerTy(32))
+	if (!llvm_type->isIntegerTy(32))
 		panic("%s: only supported for 32-bit integers",
 				__FUNCTION__);
 
@@ -125,13 +125,6 @@ void BasicBlock::EmitAdd(llvm::BinaryOperator *llvm_inst)
 
 void BasicBlock::EmitCall(llvm::CallInst *llvm_inst)
 {
-	/* Check that there is only one argument. LLVMGetNumOperands returns the
-	 * number of arguments plus one (the function being called as a last
-	 * argument. */
-	if (llvm_inst->getNumOperands() != 2)
-		panic("%s: 2 operands expected, %d found",
-				__FUNCTION__, llvm_inst->getNumOperands());
-
 	/* Get called function, found in last operand of the operand list, as
 	 * returned by LLVMGetOperand. */
 	llvm::Function *llvm_function = llvm_inst->getCalledFunction();
@@ -144,20 +137,23 @@ void BasicBlock::EmitCall(llvm::CallInst *llvm_inst)
 				__FUNCTION__);
 
 	/* Number of arguments */
-	if (llvm_function->getNumOperands() != 1)
-		fatal("%s: 1 argument expected for '%s', %d found",
-			__FUNCTION__, func_name.c_str(),
-			llvm_function->getNumOperands());
+	if (llvm_inst->getNumOperands() - 1 !=
+			llvm_function->getArgumentList().size())
+		fatal("%s: %d argument expected for '%s', %d found",
+			__FUNCTION__,
+			llvm_inst->getNumOperands() - 1,
+			func_name.c_str(),
+			(int) llvm_function->getArgumentList().size());
 
 	/* Get argument and check type */
-	llvm::Value *llvm_arg = llvm_inst->getOperand(0);
-	llvm::Type *llvm_type = llvm_arg->getType();
-	if (!llvm_type->isIntegerTy() || !llvm::isa<llvm::ConstantInt>(llvm_arg))
+	llvm::Value *llvm_op = llvm_inst->getOperand(0);
+	llvm::Type *llvm_type = llvm_op->getType();
+	if (!llvm_type->isIntegerTy() || !llvm::isa<llvm::ConstantInt>(llvm_op))
 		fatal("%s: argument should be an integer constant",
 				__FUNCTION__);
 
 	/* Get argument value and check bounds */
-	llvm::ConstantInt *llvm_const = llvm::cast<llvm::ConstantInt>(llvm_arg);
+	llvm::ConstantInt *llvm_const = llvm::cast<llvm::ConstantInt>(llvm_op);
 	int dim = llvm_const->getZExtValue();
 	if (!InRange(dim, 0, 2))
 		fatal("%s: constant in range [0..2] expected",
@@ -211,8 +207,8 @@ void BasicBlock::EmitGetElementPtr(llvm::GetElementPtrInst *llvm_inst)
 	arg_ptr->ValidTypes(ArgTypeVectorRegister);
 
 	/* Address must be a symbol with UAV */
-	if (!ptr_symbol || !ptr_symbol->isAddress());
-		fatal("%s: no UAV for symbol", __FUNCTION__);
+	assert(ptr_symbol && "symbol not found");
+	assert(ptr_symbol->isAddress() && "no UAV for symbol");
 	
 	/* Get size of pointed value */
 	llvm::Type *llvm_type_ptr = llvm_arg_ptr->getType();
@@ -294,8 +290,8 @@ void BasicBlock::EmitICmp(llvm::ICmpInst *llvm_inst)
 	/* Only supported for 32-bit integers */
 	llvm::Type *llvm_type = llvm_arg1->getType();
 	if (!llvm_type->isIntegerTy(32))
-		fatal("%s: only supported for 32-bit integers",
-				__FUNCTION__);
+		panic("%s:%d: only supported for 32-bit integers",
+				__FUNCTION__, __LINE__);
 
 	/* Only the first argument can be a literal. If the second argument is
 	 * a literal, flip them and invert comparison predicate later. */

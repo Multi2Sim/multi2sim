@@ -91,8 +91,8 @@ protected:
 public:
 
 	/* Constructor */
-	Arg(ArgType type) : type(type), index(-1),
-		constant(false) { }
+	Arg(ArgType type) : type(type), index(-1), token(nullptr),
+			abs(false), neg(false), constant(false) { }
 	
 	/* Getters */
 	ArgType getType() { return type; }

@@ -320,6 +320,12 @@ int ArgMemRegister::Encode()
 
 void ArgMaddrQual::Dump(std::ostream &os)
 {
+	if (idxen)
+		os << " idxen";
+	if (offen)
+		os << " offen";
+	if (offset)
+		os << " offset:" << offset;
 }
 	
 
@@ -344,7 +350,6 @@ ArgMaddr::ArgMaddr(Arg *soffset, ArgMaddrQual *qual,
 void ArgMaddr::Dump(std::ostream &os)
 {
 	soffset->Dump(os);
-	os << ' ';
 	qual->Dump(os);
 	os << " format:[" << StringMapValue(SI::inst_buf_data_format_map,
 			data_format) << ',' <<
