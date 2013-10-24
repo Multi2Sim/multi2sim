@@ -26,46 +26,25 @@ namespace si2bin
 Builder builder;
 
 
-#if 0
-void Si2binCreate(Si2bin *self)
+Builder::Builder()
 {
-	Si2binInstInfo *info;
-	Si2binInstInfo *prev_info;
-	SIInstInfo *inst_info;
-
-	int i;
-
-	/* Initialize parent */
-	self->parent = SIAsmWrapCreate();
-
-	/* Initialize */
-	self->symbol_table = new(HashTable);
-	self->task_list = new(List);
-
 	/* Initialize hash table and list with instruction information. */
-	self->inst_info_array = new_ctor(Array, CreateWithSize, SIInstOpcodeCount);
-	self->inst_info_table = new_ctor(HashTable, CreateWithSize, SIInstOpcodeCount);
-	for (i = 0; i < SIInstOpcodeCount; i++)
+	for (int i = 0; i < SI::InstOpcodeCount; i++)
 	{
 		/* Instruction info from disassembler */
-		inst_info = (SIInstInfo *) SIAsmWrapGetInstInfo(self->parent, i);
+		InstInfo *info = &inst_info_array[i];
+		SI::InstInfo *inst_info = as.getInstInfo(i);
 		if (!inst_info->name || !inst_info->fmt_str)
 		{
-			ArrayAdd(self->inst_info_array, NULL);
+			info->info = nullptr;
+			info->next = nullptr;
 			continue;
 		}
-
-		/* Create instruction info object */
-		info = new(Si2binInstInfo, inst_info);
-
-		/* Insert to list */
-		ArrayAdd(self->inst_info_array, asObject(info));
 
 		/* Insert instruction info structure into hash table. There could
 		 * be already an instruction encoding with the same name but a
 		 * different encoding. They all form a linked list. */
-		prev_info = asSi2binInstInfo(HashTableGet(self->inst_info_table,
-				asObject(info->name)));
+		InstInfo *prev_info = getInstInfo(inst_info->name);
 		if (prev_info)
 		{
 			/* Non vop3 instructions are added first into list.
@@ -79,13 +58,13 @@ void Si2binCreate(Si2bin *self)
 		}
 		else
 		{
-			HashTableInsert(self->inst_info_table, asObject(info->name),
-					asObject(info));
+			inst_info_table[inst_info->name] = info;
 		}
 	}
 }
 
 
+#if 0
 void Si2binDestroy(Si2bin *self)
 {
 	/* Free list and hash table */

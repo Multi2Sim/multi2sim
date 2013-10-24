@@ -439,6 +439,6 @@ void SIAsmWrapDisassembleOpenGLBinary(struct SIAsmWrap *self, char *path,
 void *SIAsmWrapGetInstInfo(struct SIAsmWrap *self, int index)
 {
 	Asm *as = (Asm *) self;
-	return (void *) as->GetInstInfo(index);
+	return (void *) as->getInstInfo(index);
 }
 

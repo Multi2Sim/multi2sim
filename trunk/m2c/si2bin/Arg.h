@@ -65,18 +65,19 @@ class Arg
 {
 	friend class Inst;
 
-	/* Token associated with argument. This field is populated when an
-	 * instruction is created that contains the argument as part of its
-	 * argument list. */
-	Token *token;
+protected:
+
+	/* Argument type. It determines the sub-class of the actual instance of
+	 * type 'Arg'. */
+	ArgType type;
 
 	/* Argument index, populated when inserted into an instruction */
 	int index;
 
-protected:
-	/* Argument type. It determines the sub-class of the actual instance of
-	 * type 'Arg'. */
-	ArgType type;
+	/* Token associated with argument. This field is populated when an
+	 * instruction is created that contains the argument as part of its
+	 * argument list. */
+	Token *token;
 
 	/* Absolute value */
 	bool abs;
@@ -90,7 +91,8 @@ protected:
 public:
 
 	/* Constructor */
-	Arg();
+	Arg(ArgType type) : type(type), index(-1),
+		constant(false) { }
 	
 	/* Getters */
 	ArgType getType() { return type; }
@@ -139,11 +141,13 @@ class ArgScalarRegister : public Arg
 	/* Register number */
 	int id;
 public:
-	ArgScalarRegister(int id);
+	ArgScalarRegister(int id) : Arg(ArgTypeScalarRegister), id(id) { }
+
 	int Encode();
 	void Dump(std::ostream &os) { os << 's' << id; }
-	int GetId() { return id; }
-	void SetId(int id) { this->id = id; }
+
+	int getId() { return id; }
+	void setId(int id) { this->id = id; }
 };
 
 
@@ -158,8 +162,8 @@ public:
 			<< high << ']'; }
 	int Encode();
 
-	int GetLow() { return low; }
-	int GetHigh() { return high; }
+	int getLow() { return low; }
+	int getHigh() { return high; }
 };
 
 
@@ -167,11 +171,12 @@ class ArgVectorRegister : public Arg
 {
 	int id;
 public:
-	ArgVectorRegister(int id);
+	ArgVectorRegister(int id) : Arg(ArgTypeVectorRegister), id(id) { }
 
 	void Dump(std::ostream &os) { os << 'v' << id; }
 	int Encode();
-	int GetId() { return id; }
+
+	int getId() { return id; }
 };
 	
 
@@ -185,9 +190,10 @@ public:
 	void Dump(std::ostream &os) { os << "v[" << low << ':'
 			<< high << ']'; }
 
-	int GetLow() { return low; }
 	int Encode();
-	int GetHigh() { return high; }
+
+	int getLow() { return low; }
+	int getHigh() { return high; }
 };
 
 
@@ -202,8 +208,9 @@ public:
 	void Dump(std::ostream &os) { os << "0x" << std::hex <<
 			value << std::dec; }
 	int Encode();
-	int GetValue() { return value; }
-	void SetValue(int value) { this->value = value; }
+
+	int getValue() { return value; }
+	void setValue(int value) { this->value = value; }
 };
 
 
@@ -217,7 +224,8 @@ public:
 
 	void Dump(std::ostream &os) { os << value; }
 	int Encode();
-	float GetValue() { return value; }
+
+	float getValue() { return value; }
 };
 
 
@@ -236,19 +244,19 @@ public:
 	
 	void Dump(std::ostream &os);
 
-	void SetVmcntActive(bool active) { vmcnt_active = active; }
-	void SetVmcntValue(int value) { vmcnt_value = value; }
-	void SetLgkmcntActive(bool active) { lgkmcnt_active = active; }
-	void SetLgkmcntValue(int value) { lgkmcnt_value = value; }
-	void SetExpcntActive(bool active) { expcnt_active = active; }
-	void SetExpcntValue(int value) { expcnt_value = value; }
+	void setVmcntActive(bool active) { vmcnt_active = active; }
+	void setVmcntValue(int value) { vmcnt_value = value; }
+	void setLgkmcntActive(bool active) { lgkmcnt_active = active; }
+	void setLgkmcntValue(int value) { lgkmcnt_value = value; }
+	void setExpcntActive(bool active) { expcnt_active = active; }
+	void setExpcntValue(int value) { expcnt_value = value; }
 
-	bool GetVmcntActive() { return vmcnt_active; }
-	int GetVmcntValue() { return vmcnt_value; }
-	bool GetLgkmcntActive() { return lgkmcnt_active; }
-	int GetLgkmcntValue() { return lgkmcnt_value; }
-	bool GetExpcntActive() { return expcnt_active; }
-	int GetExpcntValue() { return expcnt_value; }
+	bool getVmcntActive() { return vmcnt_active; }
+	int getVmcntValue() { return vmcnt_value; }
+	bool getLgkmcntActive() { return lgkmcnt_active; }
+	int getLgkmcntValue() { return lgkmcnt_value; }
+	bool getExpcntActive() { return expcnt_active; }
+	int getExpcntValue() { return expcnt_value; }
 };
 
 
@@ -256,11 +264,12 @@ class ArgMemRegister : public Arg
 {
 	int id;
 public:
-	ArgMemRegister(int id);
+	ArgMemRegister(int id) : Arg(ArgTypeMemRegister), id(id) { }
 
 	void Dump(std::ostream &os) { os << 'm' << id; }
 	int Encode();
-	int GetId() { return id; }
+
+	int getId() { return id; }
 };
 
 
@@ -270,13 +279,17 @@ class ArgMaddrQual : public Arg
 	bool idxen;
 	int offset;
 public:
-	ArgMaddrQual(bool offen, bool idxen, int offset);
+	ArgMaddrQual(bool offen, bool idxen, int offset) :
+		Arg(ArgTypeMaddrQual),
+		offen(offen),
+		idxen(idxen),
+		offset(offset) { }
+
+	bool getOffen() { return offen; }
+	bool getIdxen() { return idxen; }
+	int getOffset() { return offset; }
 
 	void Dump(std::ostream &os);
-
-	bool GetOffen() { return offen; }
-	bool GetIdxen() { return idxen; }
-	int GetOffset() { return offset; }
 };
 
 
@@ -298,10 +311,10 @@ public:
 	
 	void Dump(std::ostream &os);
 	
-	Arg *GetSoffset() { return soffset.get(); }
-	ArgMaddrQual *GetQual() { return qual.get(); }
-	SI::InstBufDataFormat GetDataFormat() { return data_format; }
-	SI::InstBufNumFormat GetNumFormat() { return num_format; }
+	Arg *getSoffset() { return soffset.get(); }
+	ArgMaddrQual *getQual() { return qual.get(); }
+	SI::InstBufDataFormat getDataFormat() { return data_format; }
+	SI::InstBufNumFormat getNumFormat() { return num_format; }
 };
 
 
@@ -309,11 +322,14 @@ class ArgSpecialRegister : public Arg
 {
 	SI::InstSpecialReg reg;
 public:
-	ArgSpecialRegister(SI::InstSpecialReg reg);
+	ArgSpecialRegister(SI::InstSpecialReg reg) :
+		Arg(ArgTypeSpecialRegister),
+		reg(reg) { }
 
 	void Dump(std::ostream &os);
 	int Encode();
-	SI::InstSpecialReg GetReg() { return reg; }
+
+	SI::InstSpecialReg getReg() { return reg; }
 };
 
 
@@ -321,9 +337,13 @@ class ArgLabel : public Arg
 {
 	std::string name;
 public:
-	ArgLabel(const std::string &name);
+	ArgLabel(const std::string &name) :
+		Arg(ArgTypeLabel),
+		name(name) { }
+
 	void Dump(std::ostream &os) { os << ' ' << name; }
-	const std::string &GetName() { return name; }
+
+	const std::string &getName() { return name; }
 };
 
 

@@ -52,14 +52,6 @@ StringMap arg_type_map =
  * Class 'Arg'
  */
 
-Arg::Arg()
-{
-	type = ArgTypeInvalid;
-	constant = false;
-	index = -1;
-}
-
-
 int Arg::Encode()
 {
 	panic("%s: cannot encode argument of type %s",
@@ -104,13 +96,6 @@ void Arg::ValidTypes(bool types[])
  * Class 'ArgScalarRegister'
  */
 
-ArgScalarRegister::ArgScalarRegister(int value)
-{
-	type = ArgTypeScalarRegister;
-	this->id = id;
-}
-
-
 int ArgScalarRegister::Encode()
 {
 	if (InRange(id, 0, 103))
@@ -127,11 +112,9 @@ int ArgScalarRegister::Encode()
  * Class 'ScalarRegisterSeries'
  */
 
-ArgScalarRegisterSeries::ArgScalarRegisterSeries(int low, int high)
+ArgScalarRegisterSeries::ArgScalarRegisterSeries(int low, int high) :
+		Arg(ArgTypeScalarRegisterSeries), low(low), high(high)
 {
-	type = ArgTypeScalarRegisterSeries;
-	this->low = low;
-	this->high = high;
 	if (low > high)
 		panic("%s: low > high", __FUNCTION__);
 }
@@ -154,13 +137,6 @@ int ArgScalarRegisterSeries::Encode()
  * Class 'ArgVectorRegister'
  */
 
-ArgVectorRegister::ArgVectorRegister(int value)
-{
-	type = ArgTypeVectorRegister;
-	this->id = id;
-}
-
-
 int ArgVectorRegister::Encode()
 {
 	if (InRange(id, 0, 255))
@@ -177,11 +153,9 @@ int ArgVectorRegister::Encode()
  * Class 'ArgVectorRegisterSeries'
  */
 
-ArgVectorRegisterSeries::ArgVectorRegisterSeries(int low, int high)
+ArgVectorRegisterSeries::ArgVectorRegisterSeries(int low, int high) :
+		Arg(ArgTypeVectorRegisterSeries), low(low), high(high)
 {
-	type = ArgTypeVectorRegisterSeries;
-	this->low = low;
-	this->high = high;
 	if (low > high)
 		panic("%s: low > high", __FUNCTION__);
 }
@@ -204,10 +178,9 @@ int ArgVectorRegisterSeries::Encode()
  * Class 'ArgLiteral'
  */
 
-ArgLiteral::ArgLiteral(int value)
+ArgLiteral::ArgLiteral(int value) :
+		Arg(ArgTypeLiteral), value(value)
 {
-	/* Initialize */
-	this->value = value;
 	constant = true;
 
 	/* Detect the special case where the literal constant is in range
@@ -215,8 +188,6 @@ ArgLiteral::ArgLiteral(int value)
 	 * efficiently. Some others even only allow for these values. */
 	if (InRange(value, -16, 64))
 		type = ArgTypeLiteralReduced;
-	else
-		type = ArgTypeLiteral;
 }
 
 
@@ -243,10 +214,10 @@ int ArgLiteral::Encode()
  * Class 'ArgLiteralFloat'
  */
 
-ArgLiteralFloat::ArgLiteralFloat(float value)
+ArgLiteralFloat::ArgLiteralFloat(float value) :
+		Arg(ArgTypeLiteralFloat), value(value)
 {
 	/* Initialize */
-	this->value = value;
 	constant = true;
 
 	/* Detect the special case where the literal float constant can
@@ -255,8 +226,6 @@ ArgLiteralFloat::ArgLiteralFloat(float value)
 		|| value == 2.0 || value == -2.0 || value == 4.0
 		|| value == -4.0)
 		type = ArgTypeLiteralFloatReduced;
-	else
-		type = ArgTypeLiteralFloat;
 }
 
 
@@ -294,10 +263,10 @@ int ArgLiteralFloat::Encode()
  * Class 'ArgWaitCnt'
  */
 
-ArgWaitCnt::ArgWaitCnt()
+ArgWaitCnt::ArgWaitCnt() :
+		Arg(ArgTypeWaitCnt)
 {
 	/* Initialize */
-	type = ArgTypeWaitCnt;
 	vmcnt_active = false;
 	vmcnt_value = 0;
 	lgkmcnt_active = false;
@@ -334,14 +303,6 @@ void ArgWaitCnt::Dump(std::ostream &os)
  * Class 'ArgMemRegister'
  */
 
-ArgMemRegister::ArgMemRegister(int id)
-{
-	/* Initialize */
-	type = ArgTypeMemRegister;
-	this->id = id;
-}
-
-
 int ArgMemRegister::Encode()
 {
 	if (!id)
@@ -349,6 +310,16 @@ int ArgMemRegister::Encode()
 
 	panic("invalid memory register (m%d)", id);
 	return 0;
+}
+
+
+
+/*
+ * Class 'ArgMaddrQual'
+ */
+
+void ArgMaddrQual::Dump(std::ostream &os)
+{
 }
 	
 
@@ -359,10 +330,10 @@ int ArgMemRegister::Encode()
 
 ArgMaddr::ArgMaddr(Arg *soffset, ArgMaddrQual *qual,
 		SI::InstBufDataFormat data_format,
-		SI::InstBufNumFormat num_format)
+		SI::InstBufNumFormat num_format) :
+		Arg(ArgTypeMaddr)
 {
 	/* Initialize */
-	type = ArgTypeMaddr;
 	this->soffset.reset(soffset);
 	this->qual.reset(qual);
 	this->data_format = data_format;
@@ -384,32 +355,8 @@ void ArgMaddr::Dump(std::ostream &os)
 
 
 /*
- * Class 'ArgMaddrQual'
- */
-
-ArgMaddrQual::ArgMaddrQual(bool offen, bool idxen, int offset)
-{
-	/* Initialize */
-	type = ArgTypeMaddrQual;
-	this->offen = offen;
-	this->idxen = idxen;
-	this->offset = offset;
-}
-
-
-
-
-/*
  * Class 'ArgSpecialRegister'
  */
-
-ArgSpecialRegister::ArgSpecialRegister(SI::InstSpecialReg reg)
-{
-	/* Initialize */
-	type = ArgTypeSpecialRegister;
-	this->reg = reg;
-}
-
 
 void ArgSpecialRegister::Dump(std::ostream &os)
 {
@@ -437,22 +384,6 @@ int ArgSpecialRegister::Encode()
 	}
 }
 	
-
-
-
-
-/*
- * Class 'ArgLabel'
- */
-
-ArgLabel::ArgLabel(const std::string &name)
-{
-	/* Initialize */
-	type = ArgTypeLabel;
-	this->name = name;
-}
-
-
 
 }  /* namespace si2bin */
 

@@ -1055,25 +1055,25 @@ void Inst::Decode(const char *buf, unsigned int address)
 	/* Use the encoding field to determine the instruction type */
 	if (bytes.sopp.enc == 0x17F)
 	{
-		if (!as->GetDecTableSopp(bytes.sopp.op))
+		if (!as->getDecTableSopp(bytes.sopp.op))
 		{
 			fatal("Unimplemented Instruction: SOPP:%d  "
 				"// %08X: %08X\n", bytes.sopp.op,
 				address, * (unsigned int *) buf);
 		}
 
-		info = as->GetDecTableSopp(bytes.sopp.op);
+		info = as->getDecTableSopp(bytes.sopp.op);
 	}
 	else if (bytes.sopc.enc == 0x17E)
 	{
-		if (!as->GetDecTableSopc(bytes.sopc.op))
+		if (!as->getDecTableSopc(bytes.sopc.op))
 		{
 			fatal("Unimplemented Instruction: SOPC:%d  "
 				"// %08X: %08X\n", bytes.sopc.op,
 				address, * (unsigned int *) buf);
 		}
 
-		info = as->GetDecTableSopc(bytes.sopc.op);
+		info = as->getDecTableSopc(bytes.sopc.op);
 
 		/* Only one source field may use a literal constant,
 		 * which is indicated by 0xFF. */
@@ -1088,14 +1088,14 @@ void Inst::Decode(const char *buf, unsigned int address)
 	}
 	else if (bytes.sop1.enc == 0x17D)
 	{
-		if (!as->GetDecTableSop1(bytes.sop1.op))
+		if (!as->getDecTableSop1(bytes.sop1.op))
 		{
 			fatal("Unimplemented Instruction: SOP1:%d  "
 				"// %08X: %08X\n", bytes.sop1.op,
 				address, *(unsigned int*)buf);
 		}
 
-		info = as->GetDecTableSop1(bytes.sop1.op);
+		info = as->getDecTableSop1(bytes.sop1.op);
 
 		/* 0xFF indicates the use of a literal constant as a
 		 * source operand. */
@@ -1107,25 +1107,25 @@ void Inst::Decode(const char *buf, unsigned int address)
 	}
 	else if (bytes.sopk.enc == 0xB)
 	{
-		if (!as->GetDecTableSopk(bytes.sopk.op))
+		if (!as->getDecTableSopk(bytes.sopk.op))
 		{
 			fatal("Unimplemented Instruction: SOPK:%d  "
 				"// %08X: %08X\n", bytes.sopk.op,
 				address, * (unsigned int *) buf);
 		}
 
-		info = as->GetDecTableSopk(bytes.sopk.op);
+		info = as->getDecTableSopk(bytes.sopk.op);
 	}
 	else if (bytes.sop2.enc == 0x2)
 	{
-		if (!as->GetDecTableSop2(bytes.sop2.op))
+		if (!as->getDecTableSop2(bytes.sop2.op))
 		{
 			fatal("Unimplemented Instruction: SOP2:%d  "
 				"// %08X: %08X\n", bytes.sop2.op,
 				address, *(unsigned int *)buf);
 		}
 
-		info = as->GetDecTableSop2(bytes.sop2.op);
+		info = as->getDecTableSop2(bytes.sop2.op);
 
 		/* Only one source field may use a literal constant,
 		 * which is indicated by 0xFF. */
@@ -1140,14 +1140,14 @@ void Inst::Decode(const char *buf, unsigned int address)
 	}
 	else if (bytes.smrd.enc == 0x18)
 	{
-		if (!as->GetDecTableSmrd(bytes.smrd.op))
+		if (!as->getDecTableSmrd(bytes.smrd.op))
 		{
 			fatal("Unimplemented Instruction: SMRD:%d  "
 				"// %08X: %08X\n", bytes.smrd.op,
 				address, *(unsigned int *)buf);
 		}
 
-		info = as->GetDecTableSmrd(bytes.smrd.op);
+		info = as->getDecTableSmrd(bytes.smrd.op);
 	}
 	else if (bytes.vop3a.enc == 0x34)
 	{
@@ -1155,7 +1155,7 @@ void Inst::Decode(const char *buf, unsigned int address)
 		size = 8;
 		bytes.dword = * (unsigned long long *) buf;
 
-		if (!as->GetDecTableVop3(bytes.vop3a.op))
+		if (!as->getDecTableVop3(bytes.vop3a.op))
 		{
 			fatal("Unimplemented Instruction: VOP3:%d  "
 				"// %08X: %08X %08X\n",
@@ -1164,11 +1164,11 @@ void Inst::Decode(const char *buf, unsigned int address)
 				*(unsigned int *)(buf + 4));
 		}
 
-		info = as->GetDecTableVop3(bytes.vop3a.op);
+		info = as->getDecTableVop3(bytes.vop3a.op);
 	}
 	else if (bytes.vopc.enc == 0x3E)
 	{
-		if (!as->GetDecTableVopc(bytes.vopc.op))
+		if (!as->getDecTableVopc(bytes.vopc.op))
 		{
 			fatal("Unimplemented Instruction: VOPC:%d  "
 				"// %08X: %08X\n",
@@ -1176,7 +1176,7 @@ void Inst::Decode(const char *buf, unsigned int address)
 				*(unsigned int *)buf);
 		}
 
-		info = as->GetDecTableVopc(bytes.vopc.op);
+		info = as->getDecTableVopc(bytes.vopc.op);
 
 		/* 0xFF indicates the use of a literal constant as a
 		 * source operand. */
@@ -1188,14 +1188,14 @@ void Inst::Decode(const char *buf, unsigned int address)
 	}
 	else if (bytes.vop1.enc == 0x3F)
 	{
-		if (!as->GetDecTableVop1(bytes.vop1.op))
+		if (!as->getDecTableVop1(bytes.vop1.op))
 		{
 			fatal("Unimplemented Instruction: VOP1:%d  "
 				"// %08X: %08X\n", bytes.vop1.op,
 				address, * (unsigned int *) buf);
 		}
 
-		info = as->GetDecTableVop1(bytes.vop1.op);
+		info = as->getDecTableVop1(bytes.vop1.op);
 
 		/* 0xFF indicates the use of a literal constant as a
 		 * source operand. */
@@ -1207,14 +1207,14 @@ void Inst::Decode(const char *buf, unsigned int address)
 	}
 	else if (bytes.vop2.enc == 0x0)
 	{
-		if (!as->GetDecTableVop2(bytes.vop2.op))
+		if (!as->getDecTableVop2(bytes.vop2.op))
 		{
 			fatal("Unimplemented Instruction: VOP2:%d  "
 				"// %08X: %08X\n", bytes.vop2.op,
 				address, * (unsigned int *) buf);
 		}
 
-		info = as->GetDecTableVop2(bytes.vop2.op);
+		info = as->getDecTableVop2(bytes.vop2.op);
 
 		/* 0xFF indicates the use of a literal constant as a
 		 * source operand. */
@@ -1234,14 +1234,14 @@ void Inst::Decode(const char *buf, unsigned int address)
 	}
 	else if (bytes.vintrp.enc == 0x32)
 	{
-		if (!as->GetDecTableVintrp(bytes.vintrp.op))
+		if (!as->getDecTableVintrp(bytes.vintrp.op))
 		{
 			fatal("Unimplemented Instruction: VINTRP:%d  "
 				"// %08X: %08X\n", bytes.vintrp.op,
 				address, * (unsigned int *) buf);
 		}
 
-		info = as->GetDecTableVintrp(bytes.vintrp.op);
+		info = as->getDecTableVintrp(bytes.vintrp.op);
 
 	}
 	else if (bytes.ds.enc == 0x36)
@@ -1249,7 +1249,7 @@ void Inst::Decode(const char *buf, unsigned int address)
 		/* 64 bit instruction. */
 		size = 8;
 		bytes.dword = * (unsigned long long *) buf;
-		if (!as->GetDecTableDs(bytes.ds.op))
+		if (!as->getDecTableDs(bytes.ds.op))
 		{
 			fatal("Unimplemented Instruction: DS:%d  "
 				"// %08X: %08X %08X\n", bytes.ds.op,
@@ -1257,7 +1257,7 @@ void Inst::Decode(const char *buf, unsigned int address)
 				*(unsigned int *)(buf + 4));
 		}
 
-		info = as->GetDecTableDs(bytes.ds.op);
+		info = as->getDecTableDs(bytes.ds.op);
 	}
 	else if (bytes.mtbuf.enc == 0x3A)
 	{
@@ -1265,7 +1265,7 @@ void Inst::Decode(const char *buf, unsigned int address)
 		size = 8;
 		bytes.dword = * (unsigned long long *) buf;
 
-		if (!as->GetDecTableMtbuf(bytes.mtbuf.op))
+		if (!as->getDecTableMtbuf(bytes.mtbuf.op))
 		{
 			fatal("Unimplemented Instruction: MTBUF:%d  "
 				"// %08X: %08X %08X\n",
@@ -1273,7 +1273,7 @@ void Inst::Decode(const char *buf, unsigned int address)
 				*(unsigned int *)buf, *(unsigned int *)(buf+4));
 		}
 
-		info = as->GetDecTableMtbuf(bytes.mtbuf.op);
+		info = as->getDecTableMtbuf(bytes.mtbuf.op);
 	}
 	else if (bytes.mubuf.enc == 0x38)
 	{
@@ -1281,7 +1281,7 @@ void Inst::Decode(const char *buf, unsigned int address)
 		size = 8;
 		bytes.dword = * (unsigned long long *) buf;
 
-		if (!as->GetDecTableMubuf(bytes.mubuf.op))
+		if (!as->getDecTableMubuf(bytes.mubuf.op))
 		{
 			fatal("Unimplemented Instruction: MUBUF:%d  "
 				"// %08X: %08X %08X\n",
@@ -1290,7 +1290,7 @@ void Inst::Decode(const char *buf, unsigned int address)
 				*(unsigned int *)(buf+4));
 		}
 
-		info = as->GetDecTableMubuf(bytes.mubuf.op);
+		info = as->getDecTableMubuf(bytes.mubuf.op);
 	}
 	else if (bytes.mimg.enc == 0x3C)
 	{
@@ -1298,7 +1298,7 @@ void Inst::Decode(const char *buf, unsigned int address)
 		size = 8;
 		bytes.dword = * (unsigned long long *) buf;
 
-		if(!as->GetDecTableMimg(bytes.mimg.op))
+		if(!as->getDecTableMimg(bytes.mimg.op))
 		{
 			fatal("Unimplemented Instruction: MIMG:%d  "
 				"// %08X: %08X %08X\n",
@@ -1307,7 +1307,7 @@ void Inst::Decode(const char *buf, unsigned int address)
 				*(unsigned int *)(buf+4));
 		}
 
-		info = as->GetDecTableMimg(bytes.mimg.op);
+		info = as->getDecTableMimg(bytes.mimg.op);
 	}
 	else if (bytes.exp.enc == 0x3E)
 	{
@@ -1316,10 +1316,10 @@ void Inst::Decode(const char *buf, unsigned int address)
 		bytes.dword = * (unsigned long long *) buf;
 
 		/* Export is the only instruction in its kind */
-		if (!as->GetDecTableExp(0))
+		if (!as->getDecTableExp(0))
 			fatal("Unimplemented Instruction: EXP\n");
 
-		info = as->GetDecTableExp(0);
+		info = as->getDecTableExp(0);
 	}
 	else
 	{

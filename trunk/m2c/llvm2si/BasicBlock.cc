@@ -244,7 +244,7 @@ void BasicBlock::EmitGetElementPtr(llvm::GetElementPtrInst *llvm_inst)
 		 * 'arg_index'. */
 		auto *arg_offset_literal = dynamic_cast<ArgLiteral *>(arg_index);
 		assert(arg_offset_literal);
-		arg_offset_literal->SetValue(arg_offset_literal->GetValue() * ptr_size);
+		arg_offset_literal->setValue(arg_offset_literal->getValue() * ptr_size);
 		arg_offset = arg_offset_literal;
 	}
 	else
@@ -841,7 +841,7 @@ void BasicBlock::EmitExtractElement(llvm::ExtractElementInst *llvm_inst)
 	ArgLiteral *arg2_literal = dynamic_cast<ArgLiteral *>(arg2);
 	assert(arg1_scalar);
 	assert(arg2_literal);
-	arg1_scalar->SetId(arg1_scalar->GetId() + arg2_literal->GetValue());
+	arg1_scalar->setId(arg1_scalar->getId() + arg2_literal->getValue());
 	delete arg2;
 
 	/* Allocate vector register and create symbol for return value */
