@@ -48,14 +48,6 @@
 #include <lib/util/list.h>
 #include <lib/util/string.h>
 
-#ifdef HAVE_FLEX_BISON_AND_LLVM
-#include <m2c/llvm2si/basic-block.h>
-#include <m2c/llvm2si/function.h>
-#include <m2c/llvm2si/phi.h>
-#include <m2c/llvm2si/symbol.h>
-#include <m2c/llvm2si/symbol-table.h>
-#endif
-
 #include <src/arch/common/asm.h>
 #include <src/arch/fermi/asm/Asm.h>
 #include <src/arch/southern-islands/asm/arg.h>
@@ -645,15 +637,6 @@ void m2c_init(void)
 	CLASS_REGISTER(Frm2bin);
 
 	CLASS_REGISTER(Llvm2si);
-#ifdef HAVE_FLEX_BISON_AND_LLVM
-	CLASS_REGISTER(Llvm2siBasicBlock);
-	CLASS_REGISTER(Llvm2siPhi);
-	CLASS_REGISTER(Llvm2siFunction);
-	CLASS_REGISTER(Llvm2siFunctionArg);
-	CLASS_REGISTER(Llvm2siFunctionUAV);
-	CLASS_REGISTER(Llvm2siSymbol);
-	CLASS_REGISTER(Llvm2siSymbolTable);
-#endif
 
 	CLASS_REGISTER(Si2bin);
 #ifdef HAVE_FLEX_BISON
