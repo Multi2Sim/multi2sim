@@ -1077,8 +1077,8 @@ struct opengl_si_enc_dict_pixel_shader_t
 struct opengl_si_bin_input_t
 {
 	enum opengl_si_bin_input_type_t type;
-	unsigned int voffset;
-	unsigned int poffset;
+	uint32_t voffset;
+	uint32_t poffset;
 	// bool isFloat16;  FIXME: has to comment this as the size will be 29 instead of 28 bytes  
 	enum opengl_si_bin_input_swizzle_type_t swizzles[4];
 }__attribute__((packed));
@@ -1087,14 +1087,11 @@ struct opengl_si_bin_input_t
 /* Output descriptor for .outputs section */
 struct opengl_si_bin_output_t 
 {
-	union
-	{
-		enum opengl_si_bin_output_type_t type;          /* Semantic type */
-		enum opengl_si_bin_symbol_datatype_t data_type;      /* Data type */
-	};
+	enum opengl_si_bin_output_type_t type;          /* Semantic type */
 	unsigned int voffset;           /* Virtual offset */
 	unsigned int poffset;           /* Physical offset */
-	unsigned int array_size;     /* Array size */
+	enum opengl_si_bin_symbol_datatype_t data_type;      /* Data type */	
+	// uint32_t array_size;     /* Array size */ FIXME: otherwise size doesn't match 
 	char* name;           /* Name of the output */
 }__attribute__((packed));;
 

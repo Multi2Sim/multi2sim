@@ -48,7 +48,7 @@ static void opengl_si_bin_pixel_shader_init(struct opengl_si_enc_dict_pixel_shad
  * Private Functions
  */
 
-/*static struct str_map_t enc_dict_input_type_map =
+static struct str_map_t enc_dict_input_type_map =
 {
 	8, {
 		{ "generic attribute",	OPENGL_SI_INPUT_ATTRIB },
@@ -61,7 +61,208 @@ static void opengl_si_bin_pixel_shader_init(struct opengl_si_enc_dict_pixel_shad
 		{ "texture resource id",	OPENGL_SI_INPUT_TEXTURERESOURCEID },
 	}
 };
-*/
+
+static struct str_map_t enc_dict_input_swizzle_type_map =
+{
+	6, {
+		{"x",	OPENGL_SI_SWIZZLE_X },
+		{"y",	OPENGL_SI_SWIZZLE_Y },
+		{"z",	OPENGL_SI_SWIZZLE_Z },
+		{"w",	OPENGL_SI_SWIZZLE_W },
+		{"0",	OPENGL_SI_SWIZZLE_0 },
+		{"1",	OPENGL_SI_SWIZZLE_1 },
+	}
+};
+static struct str_map_t enc_dict_output_type_map =
+{
+	14, {
+		{ "pos",			OPENGL_SI_OUTPUT_POS },
+		{ "point size",		OPENGL_SI_OUTPUT_POINTSIZE },
+		{ "color",		OPENGL_SI_OUTPUT_COLOR },
+		{ "secondary color",	OPENGL_SI_OUTPUT_SECONDARYCOLOR }, 
+		{ "generic",		OPENGL_SI_OUTPUT_GENERIC },
+		{ "depth",		OPENGL_SI_OUTPUT_DEPTH },
+		{ "clip distance",	OPENGL_SI_OUTPUT_CLIPDISTANCE },
+		{ "primitive id",	OPENGL_SI_OUTPUT_PRIMITIVEID },
+		{ "layer",		OPENGL_SI_OUTPUT_LAYER },
+		{ "viewport index",	OPENGL_SI_OUTPUT_VIEWPORTINDEX },
+		{ "stencil ref",		OPENGL_SI_OUTPUT_STENCIL },
+		{ "stencil value",	OPENGL_SI_OUTPUT_STENCIL_VALUE },
+		{ "sample mask",	OPENGL_SI_OUTPUT_SAMPLEMASK },
+		{ "stream id",		OPENGL_SI_OUTPUT_STREAMID},
+	}
+};
+
+static struct str_map_t enc_dict_symbol_datatype_map =
+{
+	164, {
+		{ "VOID",	OPENGL_SI_SYMBOL_DATATYPE_VOID },
+		{ "BOOL",	OPENGL_SI_SYMBOL_DATATYPE_BOOL },
+		{ "INT",		OPENGL_SI_SYMBOL_DATATYPE_INT },
+		{ "UINT",	OPENGL_SI_SYMBOL_DATATYPE_UINT },
+		{ "FLOAT",	OPENGL_SI_SYMBOL_DATATYPE_FLOAT },
+		{ "DOUBLE",	OPENGL_SI_SYMBOL_DATATYPE_DOUBLE },
+		{ "FLOAT16",	OPENGL_SI_SYMBOL_DATATYPE_FLOAT16 },
+		{ "DVEC2",	OPENGL_SI_SYMBOL_DATATYPE_DVEC2 },
+		{ "DVEC3",	OPENGL_SI_SYMBOL_DATATYPE_DVEC3 },
+		{ "DVEC4",	OPENGL_SI_SYMBOL_DATATYPE_DVEC4 },
+		{ "VEC2",	OPENGL_SI_SYMBOL_DATATYPE_VEC2 },
+		{ "VEC3",	OPENGL_SI_SYMBOL_DATATYPE_VEC3 },
+		{ "VEC4",	OPENGL_SI_SYMBOL_DATATYPE_VEC4 },
+		{ "BVEC2",	OPENGL_SI_SYMBOL_DATATYPE_BVEC2 },
+		{ "BVEC3",	OPENGL_SI_SYMBOL_DATATYPE_BVEC3 },
+		{ "BVEC4",	OPENGL_SI_SYMBOL_DATATYPE_BVEC4 },
+		{ "IVEC2",	OPENGL_SI_SYMBOL_DATATYPE_IVEC2 },
+		{ "IVEC3",	OPENGL_SI_SYMBOL_DATATYPE_IVEC3 },
+		{ "IVEC4",	OPENGL_SI_SYMBOL_DATATYPE_IVEC4 },
+		{ "UVEC2",	OPENGL_SI_SYMBOL_DATATYPE_UVEC2 },
+		{ "UVEC3",	OPENGL_SI_SYMBOL_DATATYPE_UVEC3 },
+		{ "UVEC4",	OPENGL_SI_SYMBOL_DATATYPE_UVEC4 },
+		{ "F16VEC2",	OPENGL_SI_SYMBOL_DATATYPE_F16VEC2 },
+		{ "F16VEC3",	OPENGL_SI_SYMBOL_DATATYPE_F16VEC3 },
+		{ "F16VEC4",	OPENGL_SI_SYMBOL_DATATYPE_F16VEC4 },
+		{ "MAT2",	OPENGL_SI_SYMBOL_DATATYPE_MAT2 },
+		{ "MAT2X3",	OPENGL_SI_SYMBOL_DATATYPE_MAT2X3 },
+		{ "MAT2X4",	OPENGL_SI_SYMBOL_DATATYPE_MAT2X4 },
+		{ "MAT3X2",	OPENGL_SI_SYMBOL_DATATYPE_MAT3X2 },
+		{ "MAT3",	OPENGL_SI_SYMBOL_DATATYPE_MAT3 },
+		{ "MAT3X4",	OPENGL_SI_SYMBOL_DATATYPE_MAT3X4 },
+		{ "MAT4X2",	OPENGL_SI_SYMBOL_DATATYPE_MAT4X2 },
+		{ "MAT4X3",	OPENGL_SI_SYMBOL_DATATYPE_MAT4X3 },
+		{ "MAT4",	OPENGL_SI_SYMBOL_DATATYPE_MAT4 },
+		{ "DMAT2",	OPENGL_SI_SYMBOL_DATATYPE_DMAT2 },
+		{ "DMAT2X3",	OPENGL_SI_SYMBOL_DATATYPE_DMAT2X3 },
+		{ "DMAT2X4",	OPENGL_SI_SYMBOL_DATATYPE_DMAT2X4 },
+		{ "DMAT3X2",	OPENGL_SI_SYMBOL_DATATYPE_DMAT3X2 },
+		{ "DMAT3",	OPENGL_SI_SYMBOL_DATATYPE_DMAT3 },
+		{ "DMAT3X4",	OPENGL_SI_SYMBOL_DATATYPE_DMAT3X4 },
+		{ "DMAT4X2",	OPENGL_SI_SYMBOL_DATATYPE_DMAT4X2 },
+		{ "DMAT4X3",	OPENGL_SI_SYMBOL_DATATYPE_DMAT4X3 },
+		{ "DMAT4",	OPENGL_SI_SYMBOL_DATATYPE_DMAT4 },
+		{ "F16MAT2",	OPENGL_SI_SYMBOL_DATATYPE_F16MAT2 },
+		{ "F16MAT2X3",	OPENGL_SI_SYMBOL_DATATYPE_F16MAT2X3 },
+		{ "F16MAT2X4",	OPENGL_SI_SYMBOL_DATATYPE_F16MAT2X4 },
+		{ "F16MAT3X2",	OPENGL_SI_SYMBOL_DATATYPE_F16MAT3X2 },
+		{ "F16MAT3",	OPENGL_SI_SYMBOL_DATATYPE_F16MAT3 },
+		{ "F16MAT3X4",	OPENGL_SI_SYMBOL_DATATYPE_F16MAT3X4 },
+		{ "F16MAT4X2",	OPENGL_SI_SYMBOL_DATATYPE_F16MAT4X2 },
+		{ "F16MAT4X3",	OPENGL_SI_SYMBOL_DATATYPE_F16MAT4X3 },
+		{ "F16MAT4",	OPENGL_SI_SYMBOL_DATATYPE_F16MAT4 },
+		{ "SAMPLER_1D",	OPENGL_SI_SYMBOL_DATATYPE_SAMPLER_1D },
+		{ "SAMPLER_2D",	OPENGL_SI_SYMBOL_DATATYPE_SAMPLER_2D },
+		{ "SAMPLER_2D_RECT",	OPENGL_SI_SYMBOL_DATATYPE_SAMPLER_2D_RECT },
+		{ "SAMPLER_EXTERNAL",	OPENGL_SI_SYMBOL_DATATYPE_SAMPLER_EXTERNAL },
+		{ "SAMPLER_3D",	OPENGL_SI_SYMBOL_DATATYPE_SAMPLER_3D },
+		{ "SAMPLER_CUBE",	OPENGL_SI_SYMBOL_DATATYPE_SAMPLER_CUBE },
+		{ "SAMPLER_1D_ARRAY",	OPENGL_SI_SYMBOL_DATATYPE_SAMPLER_1D_ARRAY },
+		{ "SAMPLER_2D_ARRAY",	OPENGL_SI_SYMBOL_DATATYPE_SAMPLER_2D_ARRAY },
+		{ "SAMPLER_CUBE_ARRAY",	OPENGL_SI_SYMBOL_DATATYPE_SAMPLER_CUBE_ARRAY },
+		{ "SAMPLER_BUFFER",	OPENGL_SI_SYMBOL_DATATYPE_SAMPLER_BUFFER },
+		{ "SAMPLER_RENDERBUFFER",	OPENGL_SI_SYMBOL_DATATYPE_SAMPLER_RENDERBUFFER },
+		{ "SAMPLER_2D_MS",	OPENGL_SI_SYMBOL_DATATYPE_SAMPLER_2D_MS },
+		{ "SAMPLER_2D_MS_ARRAY",	OPENGL_SI_SYMBOL_DATATYPE_SAMPLER_2D_MS_ARRAY },
+		{ "SAMPLER_1D_SHADOW",	OPENGL_SI_SYMBOL_DATATYPE_SAMPLER_1D_SHADOW },
+		{ "SAMPLER_2D_SHADOW",	OPENGL_SI_SYMBOL_DATATYPE_SAMPLER_2D_SHADOW },
+		{ "SAMPLER_2D_RECT_SHADOW",	OPENGL_SI_SYMBOL_DATATYPE_SAMPLER_2D_RECT_SHADOW },
+		{ "SAMPLER_CUBE_SHADOW",	OPENGL_SI_SYMBOL_DATATYPE_SAMPLER_CUBE_SHADOW },
+		{ "SAMPLER_1D_ARRAY_SHADOW",	OPENGL_SI_SYMBOL_DATATYPE_SAMPLER_1D_ARRAY_SHADOW },
+		{ "SAMPLER_2D_ARRAY_SHADOW",	OPENGL_SI_SYMBOL_DATATYPE_SAMPLER_2D_ARRAY_SHADOW },
+		{ "SAMPLER_CUBE_ARRAY_SHADOW",	OPENGL_SI_SYMBOL_DATATYPE_SAMPLER_CUBE_ARRAY_SHADOW },
+		{ "INT_SAMPLER_1D",	OPENGL_SI_SYMBOL_DATATYPE_INT_SAMPLER_1D },
+		{ "INT_SAMPLER_2D",	OPENGL_SI_SYMBOL_DATATYPE_INT_SAMPLER_2D },
+		{ "INT_SAMPLER_2D_RECT",	OPENGL_SI_SYMBOL_DATATYPE_INT_SAMPLER_2D_RECT },
+		{ "INT_SAMPLER_3D",	OPENGL_SI_SYMBOL_DATATYPE_INT_SAMPLER_3D },
+		{ "INT_SAMPLER_CUBE",	OPENGL_SI_SYMBOL_DATATYPE_INT_SAMPLER_CUBE },
+		{ "INT_SAMPLER_1D_ARRAY",	OPENGL_SI_SYMBOL_DATATYPE_INT_SAMPLER_1D_ARRAY },
+		{ "INT_SAMPLER_2D_ARRAY",	OPENGL_SI_SYMBOL_DATATYPE_INT_SAMPLER_2D_ARRAY },
+		{ "INT_SAMPLER_CUBE_ARRAY",	OPENGL_SI_SYMBOL_DATATYPE_INT_SAMPLER_CUBE_ARRAY },
+		{ "INT_SAMPLER_BUFFER",	OPENGL_SI_SYMBOL_DATATYPE_INT_SAMPLER_BUFFER },
+		{ "INT_SAMPLER_RENDERBUFFER",	OPENGL_SI_SYMBOL_DATATYPE_INT_SAMPLER_RENDERBUFFER },
+		{ "INT_SAMPLER_2D_MS",	OPENGL_SI_SYMBOL_DATATYPE_INT_SAMPLER_2D_MS },
+		{ "INT_SAMPLER_2D_MS_ARRAY",	OPENGL_SI_SYMBOL_DATATYPE_INT_SAMPLER_2D_MS_ARRAY },
+		{ "UNSIGNED_INT_SAMPLER_1D",	OPENGL_SI_SYMBOL_DATATYPE_UNSIGNED_INT_SAMPLER_1D },
+		{ "UNSIGNED_INT_SAMPLER_2D",	OPENGL_SI_SYMBOL_DATATYPE_UNSIGNED_INT_SAMPLER_2D },
+		{ "UNSIGNED_INT_SAMPLER_2D_RECT",	OPENGL_SI_SYMBOL_DATATYPE_UNSIGNED_INT_SAMPLER_2D_RECT },
+		{ "UNSIGNED_INT_SAMPLER_3D",	OPENGL_SI_SYMBOL_DATATYPE_UNSIGNED_INT_SAMPLER_3D },
+		{ "UNSIGNED_INT_SAMPLER_CUBE",	OPENGL_SI_SYMBOL_DATATYPE_UNSIGNED_INT_SAMPLER_CUBE },
+		{ "UNSIGNED_INT_SAMPLER_1D_ARRAY",	OPENGL_SI_SYMBOL_DATATYPE_UNSIGNED_INT_SAMPLER_1D_ARRAY },
+		{ "UNSIGNED_INT_SAMPLER_2D_ARRAY",	OPENGL_SI_SYMBOL_DATATYPE_UNSIGNED_INT_SAMPLER_2D_ARRAY },
+		{ "UNSIGNED_INT_SAMPLER_CUBE_ARRAY",	OPENGL_SI_SYMBOL_DATATYPE_UNSIGNED_INT_SAMPLER_CUBE_ARRAY },
+		{ "UNSIGNED_INT_SAMPLER_BUFFER",	OPENGL_SI_SYMBOL_DATATYPE_UNSIGNED_INT_SAMPLER_BUFFER },
+		{ "UNSIGNED_INT_SAMPLER_RENDERBUFFER",	OPENGL_SI_SYMBOL_DATATYPE_UNSIGNED_INT_SAMPLER_RENDERBUFFER },
+		{ "UNSIGNED_INT_SAMPLER_2D_MS",	OPENGL_SI_SYMBOL_DATATYPE_UNSIGNED_INT_SAMPLER_2D_MS },
+		{ "UNSIGNED_INT_SAMPLER_2D_MS_ARRAY",	OPENGL_SI_SYMBOL_DATATYPE_UNSIGNED_INT_SAMPLER_2D_MS_ARRAY },
+		{ "FLOAT16_SAMPLER_1D",	OPENGL_SI_SYMBOL_DATATYPE_FLOAT16_SAMPLER_1D },
+		{ "FLOAT16_SAMPLER_2D",	OPENGL_SI_SYMBOL_DATATYPE_FLOAT16_SAMPLER_2D },
+		{ "FLOAT16_SAMPLER_2D_RECT",	OPENGL_SI_SYMBOL_DATATYPE_FLOAT16_SAMPLER_2D_RECT },
+		{ "FLOAT16_SAMPLER_3D",	OPENGL_SI_SYMBOL_DATATYPE_FLOAT16_SAMPLER_3D },
+		{ "FLOAT16_SAMPLER_CUBE",	OPENGL_SI_SYMBOL_DATATYPE_FLOAT16_SAMPLER_CUBE },
+		{ "FLOAT16_SAMPLER_1D_ARRAY",	OPENGL_SI_SYMBOL_DATATYPE_FLOAT16_SAMPLER_1D_ARRAY },
+		{ "FLOAT16_SAMPLER_2D_ARRAY",	OPENGL_SI_SYMBOL_DATATYPE_FLOAT16_SAMPLER_2D_ARRAY },
+		{ "FLOAT16_SAMPLER_CUBE_ARRAY",	OPENGL_SI_SYMBOL_DATATYPE_FLOAT16_SAMPLER_CUBE_ARRAY },
+		{ "FLOAT16_SAMPLER_BUFFER",	OPENGL_SI_SYMBOL_DATATYPE_FLOAT16_SAMPLER_BUFFER },
+		{ "FLOAT16_SAMPLER_2D_MS",	OPENGL_SI_SYMBOL_DATATYPE_FLOAT16_SAMPLER_2D_MS },
+		{ "FLOAT16_SAMPLER_2D_MS_ARRAY",	OPENGL_SI_SYMBOL_DATATYPE_FLOAT16_SAMPLER_2D_MS_ARRAY },
+		{ "FLOAT16_SAMPLER_1D_SHADOW",	OPENGL_SI_SYMBOL_DATATYPE_FLOAT16_SAMPLER_1D_SHADOW },
+		{ "FLOAT16_SAMPLER_2D_SHADOW",	OPENGL_SI_SYMBOL_DATATYPE_FLOAT16_SAMPLER_2D_SHADOW },
+		{ "FLOAT16_SAMPLER_2D_RECT_SHADOW",	OPENGL_SI_SYMBOL_DATATYPE_FLOAT16_SAMPLER_2D_RECT_SHADOW },
+		{ "FLOAT16_SAMPLER_CUBE_SHADOW",	OPENGL_SI_SYMBOL_DATATYPE_FLOAT16_SAMPLER_CUBE_SHADOW },
+		{ "FLOAT16_SAMPLER_1D_ARRAY_SHADOW",	OPENGL_SI_SYMBOL_DATATYPE_FLOAT16_SAMPLER_1D_ARRAY_SHADOW },
+		{ "FLOAT16_SAMPLER_2D_ARRAY_SHADOW",	OPENGL_SI_SYMBOL_DATATYPE_FLOAT16_SAMPLER_2D_ARRAY_SHADOW },
+		{ "FLOAT16_SAMPLER_CUBE_ARRAY_SHADOW",	OPENGL_SI_SYMBOL_DATATYPE_FLOAT16_SAMPLER_CUBE_ARRAY_SHADOW },
+		{ "IMAGE_1D",	OPENGL_SI_SYMBOL_DATATYPE_IMAGE_1D },
+		{ "IMAGE_2D",	OPENGL_SI_SYMBOL_DATATYPE_IMAGE_2D },
+		{ "IMAGE_3D",	OPENGL_SI_SYMBOL_DATATYPE_IMAGE_3D },
+		{ "IMAGE_2D_RECT",	OPENGL_SI_SYMBOL_DATATYPE_IMAGE_2D_RECT },
+		{ "IMAGE_CUBEMAP",	OPENGL_SI_SYMBOL_DATATYPE_IMAGE_CUBEMAP },
+		{ "IMAGE_BUFFER",	OPENGL_SI_SYMBOL_DATATYPE_IMAGE_BUFFER },
+		{ "IMAGE_1D_ARRAY",	OPENGL_SI_SYMBOL_DATATYPE_IMAGE_1D_ARRAY },
+		{ "IMAGE_2D_ARRAY",	OPENGL_SI_SYMBOL_DATATYPE_IMAGE_2D_ARRAY },
+		{ "IMAGE_CUBEMAP_ARRAY",	OPENGL_SI_SYMBOL_DATATYPE_IMAGE_CUBEMAP_ARRAY },
+		{ "IMAGE_2D_MS",	OPENGL_SI_SYMBOL_DATATYPE_IMAGE_2D_MS },
+		{ "IMAGE_2D_MS_ARRAY",	OPENGL_SI_SYMBOL_DATATYPE_IMAGE_2D_MS_ARRAY },
+		{ "INT_IMAGE_1D",	OPENGL_SI_SYMBOL_DATATYPE_INT_IMAGE_1D },
+		{ "INT_IMAGE_2D",	OPENGL_SI_SYMBOL_DATATYPE_INT_IMAGE_2D },
+		{ "INT_IMAGE_3D",	OPENGL_SI_SYMBOL_DATATYPE_INT_IMAGE_3D },
+		{ "INT_IMAGE_2D_RECT",	OPENGL_SI_SYMBOL_DATATYPE_INT_IMAGE_2D_RECT },
+		{ "INT_IMAGE_CUBEMAP",	OPENGL_SI_SYMBOL_DATATYPE_INT_IMAGE_CUBEMAP },
+		{ "INT_IMAGE_BUFFER",	OPENGL_SI_SYMBOL_DATATYPE_INT_IMAGE_BUFFER },
+		{ "INT_IMAGE_1D_ARRAY",	OPENGL_SI_SYMBOL_DATATYPE_INT_IMAGE_1D_ARRAY },
+		{ "INT_IMAGE_2D_ARRAY",	OPENGL_SI_SYMBOL_DATATYPE_INT_IMAGE_2D_ARRAY },
+		{ "INT_IMAGE_CUBEMAP_ARRAY",	OPENGL_SI_SYMBOL_DATATYPE_INT_IMAGE_CUBEMAP_ARRAY },
+		{ "INT_IMAGE_2D_MS",	OPENGL_SI_SYMBOL_DATATYPE_INT_IMAGE_2D_MS },
+		{ "INT_IMAGE_2D_MS_ARRAY",	OPENGL_SI_SYMBOL_DATATYPE_INT_IMAGE_2D_MS_ARRAY },
+		{ "UNSIGNED_INT_IMAGE_1D",	OPENGL_SI_SYMBOL_DATATYPE_UNSIGNED_INT_IMAGE_1D },
+		{ "UNSIGNED_INT_IMAGE_2D",	OPENGL_SI_SYMBOL_DATATYPE_UNSIGNED_INT_IMAGE_2D },
+		{ "UNSIGNED_INT_IMAGE_3D",	OPENGL_SI_SYMBOL_DATATYPE_UNSIGNED_INT_IMAGE_3D },
+		{ "UNSIGNED_INT_IMAGE_2D_RECT",	OPENGL_SI_SYMBOL_DATATYPE_UNSIGNED_INT_IMAGE_2D_RECT },
+		{ "UNSIGNED_INT_IMAGE_CUBEMAP",	OPENGL_SI_SYMBOL_DATATYPE_UNSIGNED_INT_IMAGE_CUBEMAP },
+		{ "UNSIGNED_INT_IMAGE_BUFFER",	OPENGL_SI_SYMBOL_DATATYPE_UNSIGNED_INT_IMAGE_BUFFER },
+		{ "UNSIGNED_INT_IMAGE_1D_ARRAY",	OPENGL_SI_SYMBOL_DATATYPE_UNSIGNED_INT_IMAGE_1D_ARRAY },
+		{ "UNSIGNED_INT_IMAGE_2D_ARRAY",	OPENGL_SI_SYMBOL_DATATYPE_UNSIGNED_INT_IMAGE_2D_ARRAY },
+		{ "UNSIGNED_INT_IMAGE_CUBEMAP_ARRAY",	OPENGL_SI_SYMBOL_DATATYPE_UNSIGNED_INT_IMAGE_CUBEMAP_ARRAY },
+		{ "UNSIGNED_INT_IMAGE_2D_MS",	OPENGL_SI_SYMBOL_DATATYPE_UNSIGNED_INT_IMAGE_2D_MS },
+		{ "UNSIGNED_INT_IMAGE_2D_MS_ARRAY",	OPENGL_SI_SYMBOL_DATATYPE_UNSIGNED_INT_IMAGE_2D_MS_ARRAY },
+		{ "FLOAT16_IMAGE_1D",	OPENGL_SI_SYMBOL_DATATYPE_FLOAT16_IMAGE_1D },
+		{ "FLOAT16_IMAGE_2D",	OPENGL_SI_SYMBOL_DATATYPE_FLOAT16_IMAGE_2D },
+		{ "FLOAT16_IMAGE_3D",	OPENGL_SI_SYMBOL_DATATYPE_FLOAT16_IMAGE_3D },
+		{ "FLOAT16_IMAGE_2D_RECT",	OPENGL_SI_SYMBOL_DATATYPE_FLOAT16_IMAGE_2D_RECT },
+		{ "FLOAT16_IMAGE_CUBEMAP",	OPENGL_SI_SYMBOL_DATATYPE_FLOAT16_IMAGE_CUBEMAP },
+		{ "FLOAT16_IMAGE_BUFFER",	OPENGL_SI_SYMBOL_DATATYPE_FLOAT16_IMAGE_BUFFER },
+		{ "FLOAT16_IMAGE_1D_ARRAY",	OPENGL_SI_SYMBOL_DATATYPE_FLOAT16_IMAGE_1D_ARRAY },
+		{ "FLOAT16_IMAGE_2D_ARRAY",	OPENGL_SI_SYMBOL_DATATYPE_FLOAT16_IMAGE_2D_ARRAY },
+		{ "FLOAT16_IMAGE_CUBEMAP_ARRAY",	OPENGL_SI_SYMBOL_DATATYPE_FLOAT16_IMAGE_CUBEMAP_ARRAY },
+		{ "FLOAT16_IMAGE_2D_MS",	OPENGL_SI_SYMBOL_DATATYPE_FLOAT16_IMAGE_2D_MS },
+		{ "FLOAT16_IMAGE_2D_MS_ARRAY",	OPENGL_SI_SYMBOL_DATATYPE_FLOAT16_IMAGE_2D_MS_ARRAY },
+		{ "SAMPLER_BUFFER_AMD",	OPENGL_SI_SYMBOL_DATATYPE_SAMPLER_BUFFER_AMD },
+		{ "INT_SAMPLER_BUFFER_AMD",	OPENGL_SI_SYMBOL_DATATYPE_INT_SAMPLER_BUFFER_AMD },
+		{ "UNSIGNED_INT_SAMPLER_BUFFER_AMD",	OPENGL_SI_SYMBOL_DATATYPE_UNSIGNED_INT_SAMPLER_BUFFER_AMD },
+		{ "ATOMIC_COUNTER",	OPENGL_SI_SYMBOL_DATATYPE_ATOMIC_COUNTER },
+		{ "STRUCT",	OPENGL_SI_SYMBOL_DATATYPE_STRUCT },
+		{ "INTERFACE",	OPENGL_SI_SYMBOL_DATATYPE_INTERFACE },		
+	}
+};
+
 static struct str_map_t enc_dict_semantic_input_type_map =
 {
 	1, {
@@ -352,17 +553,20 @@ static void opengl_si_bin_outputs_init_from_section(struct list_t *lst, struct e
 		{
 			len = strlen(outname) + 1;
 			output->name = xstrdup(outname);
+			output->type = output_ptr->type;
 			output->data_type = output_ptr->data_type;
-			output->array_size = output_ptr->array_size;
+			// output->array_size = output_ptr->array_size;
 			bin_ptr += (name_offset + len);
 		}
 		else
 		{
 			bin_ptr += (name_offset + 1);
 			output->name = NULL;
-			output->type = (enum opengl_si_bin_output_type_t) output_ptr->type;
+			output->type = output_ptr->type;
+			output->data_type = output_ptr->data_type;
+			output->voffset = output_ptr->voffset;
 			output->poffset = output_ptr->poffset;
-			output->array_size = output_ptr->array_size;
+			// output->array_size = output_ptr->array_size;
 		}
 		list_add(lst, output);
 	}
@@ -418,10 +622,9 @@ static void opengl_si_si_bin_usageinfo_init_with_section(struct opengl_si_bin_us
 	assert(!strcmp(section->name, ".usageinfo"));
 
 	if (section->buffer.size != sizeof(struct opengl_si_bin_usageinfo_t))
-		fatal("Section size(%d) doesn't match usageinfo structure(%zu).",
+		warning("Section size(%d) doesn't match usageinfo structure(%zu).",
 			section->buffer.size, sizeof(struct opengl_si_bin_usageinfo_t));
-	else
-		memcpy(usageinfo, section->buffer.ptr, sizeof(struct opengl_si_bin_usageinfo_t));
+	memcpy(usageinfo, section->buffer.ptr, sizeof(struct opengl_si_bin_usageinfo_t));
 }
 
 
@@ -699,6 +902,10 @@ void opengl_si_bin_enc_user_element_free(struct SIBinaryUserElement *user_elem)
 void opengl_si_shader_binary_debug_meta(struct opengl_si_shader_binary_t *shdr_bin)
 {
 	int i;
+	struct list_t *input_list;
+	struct opengl_si_bin_input_t *input;
+	struct list_t *output_list;
+	struct opengl_si_bin_output_t *output;
 	struct opengl_si_enc_dict_vertex_shader_t *enc_vs;
 	struct opengl_si_enc_dict_pixel_shader_t *enc_ps;
 	struct opengl_si_bin_vertex_shader_metadata_t *meta_vs;
@@ -712,6 +919,33 @@ void opengl_si_shader_binary_debug_meta(struct opengl_si_shader_binary_t *shdr_b
 		enc_vs = (struct opengl_si_enc_dict_vertex_shader_t *)shdr_bin->enc_dict;
 		meta_vs = enc_vs->meta;
 		printf("-----------------------VS Data -------------------------\n");
+		printf("Input info\n");
+		input_list = enc_vs->inputs;
+		LIST_FOR_EACH(input_list, i)
+		{
+			input = list_get(input_list, i);
+			printf("[%d], %s, virtual offset = %d, physical offset = %d, swizzles = %s, %s, %s, %s\n", 
+				i, 
+				str_map_value(&enc_dict_input_type_map, input->type), 
+				input->voffset, input->poffset, 
+				str_map_value(&enc_dict_input_swizzle_type_map, input->swizzles[0]),
+				str_map_value(&enc_dict_input_swizzle_type_map, input->swizzles[1]),
+				str_map_value(&enc_dict_input_swizzle_type_map, input->swizzles[2]),
+				str_map_value(&enc_dict_input_swizzle_type_map, input->swizzles[3])
+				);
+		}
+		printf("\n");
+		printf("Output info\n");
+		output_list = enc_vs->outputs;
+		LIST_FOR_EACH(output_list, i)
+		{
+			output = list_get(output_list, i);
+			printf("[%d], %s, %s, virtual offset = %d, physical offset = %d, name = %s\n", 
+				i, str_map_value(&enc_dict_output_type_map, output->type), 
+				str_map_value(&enc_dict_symbol_datatype_map, output->data_type),
+				output->voffset, output->poffset, output->name);
+		}
+		printf("\n");
 		printf("Input Semantic Mappings\n");
 		for (i = 0; i < meta_vs->numVsInSemantics; ++i)
 		{
@@ -787,6 +1021,34 @@ void opengl_si_shader_binary_debug_meta(struct opengl_si_shader_binary_t *shdr_b
 		enc_ps = (struct opengl_si_enc_dict_pixel_shader_t *)shdr_bin->enc_dict;
 		meta_ps = enc_ps->meta;
 		printf("-----------------------PS Data -------------------------\n");
+		printf("Input info\n");
+		input_list = enc_ps->inputs;
+		LIST_FOR_EACH(input_list, i)
+		{
+			input = list_get(input_list, i);
+			printf("[%d] %s, virtual offset = %d, physical offset = %d, swizzles = %s, %s, %s, %s\n", 
+				i, 
+				str_map_value(&enc_dict_input_type_map, input->type), 
+				input->voffset, input->poffset, 
+				str_map_value(&enc_dict_input_swizzle_type_map, input->swizzles[0]),
+				str_map_value(&enc_dict_input_swizzle_type_map, input->swizzles[1]),
+				str_map_value(&enc_dict_input_swizzle_type_map, input->swizzles[2]),
+				str_map_value(&enc_dict_input_swizzle_type_map, input->swizzles[3])
+				);
+		}
+		printf("\n");
+		printf("Output info\n");
+		output_list = enc_ps->outputs;
+		LIST_FOR_EACH(output_list, i)
+		{
+			output = list_get(output_list, i);
+			printf("[%d] %s, %s, virtual offset = %d, physical offset = %d, name = %s\n", 
+				i, str_map_value(&enc_dict_output_type_map, output->type), 
+				str_map_value(&enc_dict_symbol_datatype_map, output->data_type),
+				output->voffset, output->poffset, output->name);
+		}
+		printf("\n");
+
 		printf("Input Semantic Mappings\n");
 		for (i = 0; i < meta_ps->numPsInSemantics; ++i)
 		{
