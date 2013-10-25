@@ -591,6 +591,13 @@ void Si2binInstGenerate(Si2binInst *self)
 			inst_bytes->mtbuf.vdata = arg->value.vector_register.id;
 			break;
 		}
+		
+		case Si2binTokenMtSeriesVdataDst:
+		{
+			/* Encode */
+			inst_bytes->mtbuf.vdata = arg->value.vector_register.id;
+			break;
+		}
 
 		case Si2binTokenMtSeriesVdata:
 		{
