@@ -17,12 +17,12 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "Builder.h"
+#include "Context.h"
 #include "Wrapper.h"
 
 using namespace llvm2si;
 
 void Llvm2siParse(const char *in, const char *out)
 {
-	builder.Parse(in, out);
+	context.Parse(in, out);
 }

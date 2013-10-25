@@ -20,7 +20,7 @@
 #include <lib/cpp/Misc.h>
 
 #include "Arg.h"
-#include "Builder.h"
+#include "Context.h"
 #include "Inst.h"
 #include "Token.h"
 
@@ -53,7 +53,7 @@ void Inst::Initialize(SI::InstOpcode opcode)
 		fatal("%s: invalid opcode (%d)", __FUNCTION__, opcode);
 
 	/* Get instruction information */
-	info = builder.getInstInfo(opcode);
+	info = context.getInstInfo(opcode);
 	if (!info)
 		fatal("%s: opcode %d not supported", __FUNCTION__, opcode);
 
@@ -88,7 +88,7 @@ void Inst::Initialize(const std::string &name)
 	/* Try to create the instruction following all possible encodings for
 	 * the same instruction name. */
 	std::string error = "invalid instruction: " + name;
-	for (info = builder.getInstInfo(name); info; info = info->getNext())
+	for (info = context.getInstInfo(name); info; info = info->getNext())
 	{
 		/* Check number of arguments */
 		if (args.size() != info->getNumTokens())
