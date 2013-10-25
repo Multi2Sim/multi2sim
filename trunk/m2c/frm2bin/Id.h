@@ -12,24 +12,10 @@
 
 #include <string>
 
-namespace FRM2BIN
+namespace frm2bin
 {
-/* Class definition for Id */
-class Id
-{
-	/* private members */
-	std::string name;
 
-	/* public function */
-public:
-	/* constructor */
-	Id(std::string name_string);
-
-	/* get name of the ID */
-	std::string GetName() {return name ;}
-};
-
-} /* namespace FRM2BIN */
+} /* namespace frm2bin */
 
 #endif  /* __cplusplus */
 
