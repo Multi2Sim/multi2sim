@@ -41,6 +41,9 @@ libfrm2bin_a_SOURCES = \
 	frm2bin.c \
 	frm2bin.h \
 	\
+	Symbol.cc \
+	Symbol.h \
+	\
 	symbol.c \
 	symbol.h \
 	\
