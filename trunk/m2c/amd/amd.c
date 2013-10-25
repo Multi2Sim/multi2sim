@@ -303,13 +303,10 @@ static void amd_compile_source(char *source_file_name, char *out_file_name,
 
 	cl_int err;
 		
-	/* Get source file without '.cl' or '.clp' suffix */
-	snprintf(out_file_name_root, sizeof out_file_name_root, "%s", source_file_name);
-	if (str_suffix(out_file_name_root, ".cl"))
-		out_file_name_root[strlen(out_file_name_root) - 3] = '\0';
-	else if (str_suffix(out_file_name_root, ".clp"))
+	/* Get output file name without '.bin' suffix */
+	snprintf(out_file_name_root, sizeof out_file_name_root, "%s", out_file_name);
+	if (str_suffix(out_file_name_root, ".bin"))
 		out_file_name_root[strlen(out_file_name_root) - 4] = '\0';
-
 
 	/* Read the program source */
 	program_source = read_buffer(source_file_name, &size);
