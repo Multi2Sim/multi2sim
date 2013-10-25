@@ -24,6 +24,7 @@
 #include <lib/util/misc.h>
 #include <lib/mhandle/mhandle.h>
 
+#include "si-db.h"
 #include "si-sc.h"
 #include "si-pa.h"
 
@@ -316,7 +317,7 @@ struct list_t *opengl_sc_tiled_rast_triangle_gen(struct opengl_pa_triangle_t *tr
 	return pxl_lst;
 }
 
-struct list_t *opengl_sc_rast_triangle_gen_pixel_info(struct opengl_pa_triangle_t *triangle)
+struct list_t *opengl_sc_rast_triangle_gen_pixel_info(struct opengl_pa_triangle_t *triangle, struct opengl_depth_buffer_t *db)
 {
 	/* List contains info of pixels inside this triangle */
 	struct list_t *pxl_lst;
@@ -590,10 +591,14 @@ struct list_t *opengl_sc_rast_triangle_gen_pixel_info(struct opengl_pa_triangle_
 				int i;
 				for (i = 0; i < len; ++i)
 				{
-					pxl_info = opengl_sc_pixel_info_create();
-					opengl_sc_pixel_info_set_wndw_cood(pxl_info, spn->x, spn->y, spn->z);
-					opengl_sc_pixel_info_set_brctrc_cood(pxl_info, triangle);
-					list_add(pxl_lst, pxl_info);
+					/* Add if pass depth test */
+					if(opengl_depth_buffer_test_and_set_pixel(db, spn->x, spn->y, FixedToFloat(spn->z), db->depth_func))
+					{
+						pxl_info = opengl_sc_pixel_info_create();
+						opengl_sc_pixel_info_set_wndw_cood(pxl_info, spn->x, spn->y, spn->z);
+						opengl_sc_pixel_info_set_brctrc_cood(pxl_info, triangle);
+						list_add(pxl_lst, pxl_info);
+					}
 					spn->z += spn->zStep;
 					spn->x++;
 				}

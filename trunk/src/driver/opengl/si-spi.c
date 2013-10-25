@@ -121,8 +121,21 @@ static struct list_t *SISpiPSInitLDSListCreate(struct list_t **param)
 	return lds_repo;
 }
 
+static void SISpiPSInitLDSListFree(struct list_t *lds_repo)
+{
+	struct si_sx_ps_init_lds_t *ps_lds;
+	int i;
+
+	LIST_FOR_EACH(lds_repo, i)
+	{
+		ps_lds = list_get(lds_repo, i);
+		SISXPSInitLDSDestroy(ps_lds);
+	}
+	list_free(lds_repo);
+}
+
 /* FIXME: currently only handle pos[0] */
-static struct list_t *SISpiPSInitMetaListsCreate(struct list_t **pos_lsts, struct opengl_pa_viewport_t *vwpt)
+static struct list_t *SISpiPSInitMetaListsCreate(struct list_t **pos_lsts, struct opengl_pa_viewport_t *vwpt, struct opengl_depth_buffer_t *db)
 {
 	struct list_t *pos_sub_lst;
 	struct list_t *pxl_info_lst;
@@ -142,7 +155,7 @@ static struct list_t *SISpiPSInitMetaListsCreate(struct list_t **pos_lsts, struc
 		triangle = list_get(prmtv->list, i);
 
 		/* Rasterizer creates one pixel info list per triangle */
-		pxl_info_lst = opengl_sc_rast_triangle_gen_pixel_info(triangle);
+		pxl_info_lst = opengl_sc_rast_triangle_gen_pixel_info(triangle, db);
 
 		/* Create one meta info list per triangle */
 		meta_sub_lst = opengl_spi_meta_list_create_from_pixel_info_list(pxl_info_lst);
@@ -150,8 +163,11 @@ static struct list_t *SISpiPSInitMetaListsCreate(struct list_t **pos_lsts, struc
 		/* Discard pixel info list */
 		opengl_sc_rast_triangle_done(pxl_info_lst);
 
-		/* Add sub lists to main list */
-		list_add(meta_lsts, meta_sub_lst);
+		/* Add sub lists to main list if not empty */
+		if (list_count(meta_sub_lst))
+			list_add(meta_lsts, meta_sub_lst);
+		else
+			list_free(meta_sub_lst);
 
 	}
 	/* Free */
@@ -161,18 +177,39 @@ static struct list_t *SISpiPSInitMetaListsCreate(struct list_t **pos_lsts, struc
 	return meta_lsts;
 }
 
+static void SISpiPSInitMetaListsFree(struct list_t *meta_list_repo)
+{
+	struct list_t *meta_list;
+	struct si_sx_ps_init_meta_t *meta;
+	int i;
+	int j;
+
+	LIST_FOR_EACH(meta_list_repo, i)
+	{
+		meta_list = list_get(meta_list_repo, i);
+		LIST_FOR_EACH(meta_list, j)
+		{
+			meta = list_get(meta_list, j);
+			SISXPSInitMetaDestroy(meta);
+		}
+		list_free(meta_list);
+	}
+	list_free(meta_list_repo);
+}
+
 /*
  * Public Functions
  */
 
 struct list_t *SISpiPSNDRangesCreate(SISX *sx, enum opengl_pa_primitive_mode_t mode, 
-	struct opengl_pa_viewport_t *vwpt, struct opengl_si_shader_t *pixel_shader)
+	struct opengl_pa_viewport_t *vwpt, struct opengl_depth_buffer_t *db,
+	struct opengl_si_shader_t *pixel_shader)
 {
 	SINDRange *ndrange;
 	struct list_t *ndrange_repo;
 	struct list_t *lds_repo;
 	struct list_t *meta_list_repo; /* This repo contains several sub lists */
-	struct list_t *meta_list; /* Elements have type si_sx_ps_init_meta_t  */
+	struct list_t *meta_list; /* Elements have type si_sx_ps_init_meta_t */
 	struct si_sx_ps_init_lds_t *lds;
 	struct si_sx_ps_init_t *ps_init;
 
@@ -202,10 +239,24 @@ struct list_t *SISpiPSNDRangesCreate(SISX *sx, enum opengl_pa_primitive_mode_t m
 	lds_repo = SISpiPSInitLDSListCreate(sx->param);
 
 	/* Create meta data repository for NDRange */
-	meta_list_repo = SISpiPSInitMetaListsCreate(sx->pos, vwpt);
+	meta_list_repo = SISpiPSInitMetaListsCreate(sx->pos, vwpt, db);
 
-	/* Should have same amount of elements */
-	assert(list_count(meta_list_repo) == list_count(lds_repo));
+	/* Should have same amount of elements, otherwise discard */
+	if(list_count(meta_list_repo) != list_count(lds_repo));
+	{
+		SISpiPSInitLDSListFree(lds_repo);
+		SISpiPSInitMetaListsFree(meta_list_repo);
+		return ndrange_repo;
+	}
+
+	/* If meta data empty, return an empty NDRange repo */
+	if (!list_count((struct list_t *)list_get(meta_list_repo, 0)))
+	{
+		/* */
+		SISpiPSInitLDSListFree(lds_repo);
+		SISpiPSInitMetaListsFree(meta_list_repo);
+		return ndrange_repo;		
+	}
 
 	for (i = 0; i < list_count(meta_list_repo); ++i)
 	{

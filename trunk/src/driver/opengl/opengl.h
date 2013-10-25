@@ -43,6 +43,9 @@ CLASS_BEGIN(OpenglDriver, Driver)
 	/* Viewport */
 	struct opengl_pa_viewport_t *opengl_si_vwpt;
 
+	/* Depth Buffer */
+	struct opengl_depth_buffer_t *opengl_si_db;
+
 CLASS_END(OpenglDriver)
 
 

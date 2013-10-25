@@ -1150,7 +1150,61 @@ GLboolean glIsProgram (GLuint program)
 
 void glGetProgramiv (GLuint program, GLenum pname, GLint *params)
 {
-	__OPENGL_NOT_IMPL__
+	struct opengl_program_obj_t *program_obj;
+
+	program_obj = opengl_program_obj_repo_get_program(program_repo, program);
+
+	switch(pname)
+	{
+
+	case GL_DELETE_STATUS:
+	{
+		*params = program_obj->delete_pending;
+		break;
+	}
+	case GL_LINK_STATUS:
+	{
+		__OPENGL_NOT_IMPL__
+		break;
+	}
+	case GL_VALIDATE_STATUS:
+	{
+		__OPENGL_NOT_IMPL__
+		break;
+	}
+	case GL_INFO_LOG_LENGTH:
+	{
+		*params = 0;
+		break;
+	}
+	case GL_ATTACHED_SHADERS:
+	{
+		__OPENGL_NOT_IMPL__
+		break;
+	}
+	case GL_ACTIVE_ATTRIBUTES:
+	{
+		__OPENGL_NOT_IMPL__
+		break;
+	}
+	case GL_ACTIVE_ATTRIBUTE_MAX_LENGTH:
+	{
+		__OPENGL_NOT_IMPL__
+		break;
+	}
+	case GL_ACTIVE_UNIFORMS:
+	{
+		__OPENGL_NOT_IMPL__
+		break;
+	}
+	case GL_ACTIVE_UNIFORM_MAX_LENGTH:
+	{
+		__OPENGL_NOT_IMPL__
+		break;
+	}
+	default:
+		break;
+	}
 }
 
 GLboolean glIsProgramPipeline (GLuint pipeline)

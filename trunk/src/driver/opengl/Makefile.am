@@ -7,6 +7,8 @@ libopengl_a_SOURCES = \
 	opengl.dat \
 	opengl.h \
 	\
+	si-db.c \
+	si-db.h \
 	\
 	si-sc.c \
 	si-sc.h \

@@ -352,7 +352,7 @@ void glPatchParameterfv (GLenum pname, const GLfloat *values)
 
 void glBindFragDataLocation (GLuint program, GLuint color, const GLchar *name)
 {
-	__OPENGL_NOT_IMPL__
+	opengl_debug("%s bind to Program #%d, color buffer #%d", name, program, color);
 }
 
 void glBindFragDataLocationIndexed (GLuint program, GLuint colorNumber, GLuint index, const GLchar *name)
@@ -383,7 +383,43 @@ GLboolean glIsShader (GLuint shader)
 
 void glGetShaderiv (GLuint shader, GLenum pname, GLint *params)
 {
-	__OPENGL_NOT_IMPL__
+	struct opengl_shader_obj_t *shdr;
+
+	shdr = opengl_shader_obj_repo_get_shader(shader_repo, shader);
+
+	switch(pname)
+	{
+
+	case GL_SHADER_TYPE:
+	{
+		*params = shdr->type;
+		break;
+	}
+	case GL_DELETE_STATUS:
+	{
+		*params = shdr->delete_pending;
+		break;
+	}
+	case GL_COMPILE_STATUS:
+	{
+		__OPENGL_NOT_IMPL__
+		break;
+	}
+	case GL_INFO_LOG_LENGTH:
+	{
+		*params = 0x0;
+		break;
+	}
+	case GL_SHADER_SOURCE_LENGTH:
+	{
+		__OPENGL_NOT_IMPL__
+	}
+	default:
+		break;
+	}
+
+	/* Return */
+	return;
 }
 
 void glGetShaderSource (GLuint shader, GLsizei bufSize, GLsizei *length, GLchar *source)
