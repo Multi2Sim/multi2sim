@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef M2C_SI2BIN_BUILDER_H
-#define M2C_SI2BIN_BUILDER_H
+#ifndef M2C_SI2BIN_CONTEXT_H
+#define M2C_SI2BIN_CONTEXT_H
 
 #include <array>
 #include <unordered_map>
@@ -83,7 +83,7 @@ public:
 
 
 
-class Builder
+class Context
 {
 	/* Information with all Southern Islands instructions */
 	std::array<std::unique_ptr<InstInfo>, SI::InstOpcodeCount> inst_info_array;
@@ -98,7 +98,7 @@ class Builder
 public:
 
 	/* Constructor */
-	Builder();
+	Context();
 
 	/* Return instruction information associated with a given opcode, or
 	 * null if the opcode is invalid. */
@@ -118,7 +118,7 @@ public:
 
 
 /* Global variable */
-extern Builder builder;
+extern Context context;
 
 
 }  /* namespace si2bin */
