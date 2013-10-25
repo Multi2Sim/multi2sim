@@ -36,6 +36,7 @@
 
 #include "../glut/frame-buffer.h"
 #include "opengl.h"
+#include "si-db.h"
 #include "si-pa.h"
 #include "si-program.h"
 #include "si-shader.h"
@@ -140,6 +141,9 @@ void OpenglDriverCreate(OpenglDriver *self, X86Emu *x86_emu, SIEmu *si_emu)
 	/* Viewport */
 	self->opengl_si_vwpt = opengl_pa_viewport_create();
 
+	/* Depth Buffer */
+	self->opengl_si_db = opengl_depth_buffer_create();
+
 	/* Assign driver to host emulator */
 	x86_emu->opengl_driver = self;
 }
@@ -180,6 +184,9 @@ void OpenglDriverDestroy(OpenglDriver *self)
 
 	/* Free viewport */
 	opengl_pa_viewport_free(self->opengl_si_vwpt);
+
+	/* Free depth buffer */
+	opengl_depth_buffer_free(self->opengl_si_db);
 }
 
 /* This function is called when all work groups from an ND-Range have
@@ -1390,6 +1397,9 @@ static int opengl_abi_si_viewport_impl(X86Context *ctx)
 	/* Set Viewport */
 	opengl_pa_viewport_set(driver->opengl_si_vwpt, x, y, width, height);
 
+	/* Resize depth buffer */
+	opengl_depth_buffer_resize(driver->opengl_si_db, width, height);
+
 	/* Resize host viewport */
 	glut_frame_buffer_resize(width, height);
 
@@ -1436,7 +1446,7 @@ static int opengl_abi_si_raster_impl(X86Context *ctx)
 
 	if (shdr)
 		ps_ndranges_list = SISpiPSNDRangesCreate(si_emu->sx, ps_render_mode, 
-			driver->opengl_si_vwpt, shdr);
+			driver->opengl_si_vwpt, driver->opengl_si_db, shdr);
 	else
 		fatal("Pixel Shader id %d not found!", pixel_shader_id);
 

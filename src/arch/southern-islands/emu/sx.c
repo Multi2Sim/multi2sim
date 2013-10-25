@@ -197,6 +197,7 @@ float Float16to32(uint16_t value)
 	return v.f;
 }
 
+
 void SISXCreate(SISX *self, SIEmu *emu)
 {
 	/* Initialize */

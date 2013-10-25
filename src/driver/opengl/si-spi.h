@@ -22,14 +22,17 @@
 
 #include <lib/class/class.h>
 
+/* Forward declaration */
 struct opengl_si_shader_t;
 struct opengl_pa_viewport_t;
+struct opengl_depth_buffer_t;
 
 enum opengl_pa_primitive_mode_t;
 
 /* Read from Shader Export module and create 1 NDRange per triangle */
 struct list_t *SISpiPSNDRangesCreate(SISX *sx, enum opengl_pa_primitive_mode_t mode, 
-	struct opengl_pa_viewport_t *vwpt, struct opengl_si_shader_t *pixel_shader);
+	struct opengl_pa_viewport_t *vwpt, struct opengl_depth_buffer_t *db,
+	struct opengl_si_shader_t *pixel_shader);
 
 void SISpiPSNDRangesDestroy(struct list_t *ndrange_list);
 
