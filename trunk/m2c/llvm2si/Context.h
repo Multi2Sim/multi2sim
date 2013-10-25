@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef M2C_LLVM2SI_BUILDER_H
-#define M2C_LLVM2SI_BUILDER_H
+#ifndef M2C_LLVM2SI_CONTEXT_H
+#define M2C_LLVM2SI_CONTEXT_H
 
 #include <iostream>
 
@@ -26,7 +26,7 @@
 namespace llvm2si
 {
 
-class Builder
+class Context
 {
 public:
 
@@ -36,7 +36,7 @@ public:
 
 
 /* Global variable */
-extern Builder builder;
+extern Context context;
 
 
 }  /* namespace llvm2si */

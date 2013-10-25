@@ -31,7 +31,7 @@
 #include <llvm/Support/MemoryBuffer.h>
 #include <llvm/ADT/OwningPtr.h>
 
-#include "Builder.h"
+#include "Context.h"
 #include "Function.h"
 
 
@@ -40,10 +40,10 @@ using namespace Misc;
 namespace llvm2si
 {
 
-/* Global builder */
-Builder builder;
+/* Global context */
+Context context;
 
-void Builder::Parse(const std::string &in, const std::string &out)
+void Context::Parse(const std::string &in, const std::string &out)
 {
 	/* Load file content */
 	llvm::LLVMContext &llvm_context = llvm::getGlobalContext();

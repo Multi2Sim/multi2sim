@@ -19,7 +19,7 @@
 
 #include <lib/cpp/Misc.h>
 
-#include "Builder.h"
+#include "Context.h"
 #include "Token.h"
 
 
@@ -63,15 +63,15 @@ InstInfo::InstInfo(SI::InstInfo *info)
 
 
 /*
- * Class 'Builder'
+ * Class 'Context'
  */
 
 
-/* Global builder */
-Builder builder;
+/* Global context */
+Context context;
 
 
-Builder::Builder()
+Context::Context()
 {
 	/* Initialize hash table and list with instruction information. */
 	for (int i = 0; i < SI::InstOpcodeCount; i++)
