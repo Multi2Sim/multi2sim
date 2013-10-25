@@ -2045,8 +2045,7 @@ GLenum glewInit(int *argcp, char **argv)
 
  GLboolean glewIsSupported (const char* name)
  {
- 	__GLEW_NOT_IMPL__
- 	return 0;
+ 	return 1;
  }
 
  GLboolean glewGetExtension (const char* name)

@@ -128,7 +128,6 @@ void SISXExportPosition(SISX *self, unsigned int target, unsigned int id,
 	float x, float y, float z, float w);
 void SISXExportParam(SISX *self, unsigned int target, unsigned int id, 
 	float x, float y, float z, float w);
-
 void SISXExportMRT(SISX *self, unsigned int target, SIWorkItem *work_item, unsigned int compr_en, 
 	SIInstReg x, SIInstReg y, SIInstReg z, SIInstReg w);
 
