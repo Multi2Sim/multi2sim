@@ -20,6 +20,7 @@
 #include <GL/glx.h>
 #include <sys/stat.h>
 #include <assert.h>
+#include <stdlib.h>
 
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
@@ -691,6 +692,12 @@ void gl_compile(struct list_t *source_file_list,	struct list_t *output_file_list
 {
 	struct list_t *shdr_src_lst;
 	char *output_file;
+	char *display_env;
+
+	/* Try to set display environment variable */
+	display_env = getenv("DISPLAY");
+	if (!display_env)
+		setenv("DISPLAY", ":0", 1);
 
 	/* Two sources needed for OpenGL */
 	if (source_file_list->count != 2)
