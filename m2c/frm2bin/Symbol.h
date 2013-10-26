@@ -33,6 +33,12 @@ public:
 	/* dump the symbol into file */
 	void dump(Symbol sym, FILE *f);
 };
+
+/* Class definition for symbol table */
+class SymbolTable
+{
+
+};
 } /* namespace frm2bin */
 
 #endif  /* __cplusplus */
