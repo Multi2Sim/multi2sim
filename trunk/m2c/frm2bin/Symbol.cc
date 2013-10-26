@@ -59,6 +59,9 @@ void frm_symbol_dump(struct frm_symbol_t *symbol, FILE *f)
  * Global Functions
  */
 
+/* symbol table is not used yet, but
+ * it needs to be implemented later */
+
 void frm_symbol_table_init(void)
 {
 	frm_symbol_table = hash_table_create(5, 1);

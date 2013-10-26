@@ -44,9 +44,6 @@ libfrm2bin_a_SOURCES = \
 	Symbol.cc \
 	Symbol.h \
 	\
-	symbol.c \
-	symbol.h \
-	\
 	token.c \
 	token.h \
 	\
