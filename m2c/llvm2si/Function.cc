@@ -203,6 +203,10 @@ void Function::AddArg(FunctionArg *arg, int num_elem)
 				new ArgLiteral(arg->index * 4));
 		basic_block->AddInst(inst);
 
+		inst = new Inst(SI::INST_S_WAITCNT,
+				new ArgWaitCnt(WaitCntTypeLgkmCnt));
+		basic_block->AddInst(inst);
+		
 		/* Copy argument into a vector register. This vector register will be
 		 * used for convenience during code emission, so that we don't have to
 		 * worry at this point about different operand type encodings for
@@ -227,6 +231,10 @@ void Function::AddArg(FunctionArg *arg, int num_elem)
 				new ArgScalarRegisterSeries(arg->sreg, arg->sreg + 3),
 				new ArgScalarRegisterSeries(sreg_cb1, sreg_cb1 + 3),
 				new ArgLiteral(arg->index * 4));
+		basic_block->AddInst(inst);
+		
+		inst = new Inst(SI::INST_S_WAITCNT,
+				new ArgWaitCnt(WaitCntTypeLgkmCnt));
 		basic_block->AddInst(inst);
 
 		/* Insert argument name in symbol table, using its scalar register. */
