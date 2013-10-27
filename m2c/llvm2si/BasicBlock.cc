@@ -471,6 +471,9 @@ void BasicBlock::EmitLoad(llvm::LoadInst *llvm_inst)
 					SI::InstBufNumFormatFloat)
 	);
 	AddInst(inst);
+	
+	inst = new Inst(SI::INST_S_WAITCNT, new ArgWaitCnt(WaitCntTypeVmCnt));
+	AddInst(inst);
 }
 
 
@@ -626,6 +629,9 @@ void BasicBlock::EmitStore(llvm::StoreInst *llvm_inst)
 					SI::InstBufDataFormat32,
 					SI::InstBufNumFormatFloat)
 	);
+	AddInst(inst);
+
+	inst = new Inst(SI::INST_S_WAITCNT, new ArgWaitCnt(WaitCntTypeExpCnt));
 	AddInst(inst);
 }
 

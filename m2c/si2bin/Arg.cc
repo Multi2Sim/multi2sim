@@ -275,6 +275,41 @@ ArgWaitCnt::ArgWaitCnt() :
 	expcnt_value = 0;
 }
 
+ArgWaitCnt::ArgWaitCnt(WaitCntType type) :
+		Arg(ArgTypeWaitCnt)
+{
+	/* Initialize */
+	vmcnt_value = 0;
+	lgkmcnt_value = 0;
+	expcnt_value = 0;
+
+	switch (type)
+	{
+
+	case WaitCntTypeVmCnt:
+		vmcnt_active = true;
+		lgkmcnt_active = false;
+		expcnt_active = false;
+		break;
+
+	case WaitCntTypeLgkmCnt:
+		vmcnt_active = false;
+		lgkmcnt_active = true;
+		expcnt_active = false;
+		break;
+
+	case WaitCntTypeExpCnt:
+		vmcnt_active = false;
+		lgkmcnt_active = false;
+		expcnt_active = true;
+		break;
+	
+	default:
+		panic("%s: invalid s_waitcnt token (%d)",
+			__FUNCTION__, type);
+		break;
+	}
+}
 
 void ArgWaitCnt::Dump(std::ostream &os)
 {
