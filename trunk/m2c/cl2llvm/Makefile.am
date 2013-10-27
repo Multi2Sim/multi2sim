@@ -81,10 +81,6 @@ INCLUDES = @M2S_INCLUDES@
 
 CFLAGS_NO_WERROR = `echo "$(CFLAGS)" | $(SED) "s/\-Werror\>//g"`
 
-lex.o: lex.c parser.h
-	$(AM_V_CC) $(CC) -c -o lex.o lex.c $(DEFS) $(INCLUDES) $(CFLAGS_NO_WERROR) $(AM_CFLAGS)
+parser.o: CFLAGS := $(CFLAGS_NO_WERROR)
 
-parser.o: parser.c
-	$(AM_V_CC) $(CC) -c -o parser.o parser.c $(DEFS) $(INCLUDES) $(CFLAGS_NO_WERROR) $(AM_CFLAGS)
-
-
+lex.o: CFLAGS := $(CFLAGS_NO_WERROR)
