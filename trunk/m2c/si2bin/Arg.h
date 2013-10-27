@@ -60,6 +60,16 @@ enum ArgType
 	ArgTypeCount
 };
 
+enum WaitCntType
+{
+	WaitCntTypeInvalid = 0,
+
+	WaitCntTypeVmCnt,
+	WaitCntTypeLgkmCnt,
+	WaitCntTypeExpCnt,
+
+	WaitCntTypeCount
+};
 
 class Arg
 {
@@ -241,6 +251,7 @@ class ArgWaitCnt : public Arg
 	int expcnt_value;
 public:
 	ArgWaitCnt();
+	ArgWaitCnt(WaitCntType type);
 	
 	void Dump(std::ostream &os);
 
