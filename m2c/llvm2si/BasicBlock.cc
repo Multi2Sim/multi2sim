@@ -204,7 +204,34 @@ void BasicBlock::EmitGetElementPtr(llvm::GetElementPtrInst *llvm_inst)
 	llvm::Value *llvm_arg_ptr = llvm_inst->getPointerOperand();
 	Symbol *ptr_symbol;
 	Arg *arg_ptr = function->TranslateValue(llvm_arg_ptr, ptr_symbol);
-	arg_ptr->ValidTypes(ArgTypeVectorRegister);
+	arg_ptr->ValidTypes(ArgTypeVectorRegister, ArgTypeScalarRegister);
+
+	/* If arg_ptr is a scalar register convert it to a vector register */
+	if (arg_ptr->getType() == ArgTypeScalarRegister)
+	{	
+		ArgScalarRegister *arg_scalar = 
+				dynamic_cast<ArgScalarRegister *>(arg_ptr);
+		
+		/* Allocate vector register and create symbol for return value */
+		std::string ret_name = llvm_arg_ptr->getName();
+		int ret_vreg = function->AllocVReg();
+		ptr_symbol->setType(SymbolVectorRegister);
+		ptr_symbol->setReg(ret_vreg);
+
+		/* Emit instruction
+		 * v_mov_b32 ret_vreg, arg1
+		 */
+
+		 auto inst = new Inst(SI::INST_V_MOV_B32,
+			 new ArgVectorRegister(ret_vreg), 
+			 new ArgScalarRegister(arg_scalar->getId()));
+		 AddInst(inst);
+
+		 delete arg_ptr;
+
+		 arg_ptr = new ArgVectorRegister(ret_vreg);
+	}
+
 
 	/* Address must be a symbol with UAV */
 	assert(ptr_symbol && "symbol not found");
@@ -584,7 +611,34 @@ void BasicBlock::EmitStore(llvm::StoreInst *llvm_inst)
 	llvm::Value *llvm_arg_data = llvm_inst->getOperand(0);
 	Arg *arg_data = function->TranslateValue(llvm_arg_data);
 	arg_data = function->ConstToVReg(this, arg_data);
-	arg_data->ValidTypes(ArgTypeVectorRegister);
+	arg_data->ValidTypes(ArgTypeVectorRegister, ArgTypeScalarRegister);
+
+	/* If arg_data is a scalar register convert it to a vector register */
+	if (arg_data->getType() == ArgTypeScalarRegister)
+	{	
+		ArgScalarRegister *arg_scalar = 
+				dynamic_cast<ArgScalarRegister *>(arg_data);
+		
+		/* Allocate vector register and create symbol for return value */
+		std::string ret_name = llvm_arg_data->getName();
+		int ret_vreg = function->AllocVReg();
+		Symbol *ret_symbol = new Symbol(ret_name, SymbolVectorRegister, ret_vreg);
+		function->AddSymbol(ret_symbol);
+
+
+		/* Emit instruction
+		 * v_mov_b32 ret_vreg, arg1
+		 */
+
+		 auto inst = new Inst(SI::INST_V_MOV_B32,
+			 new ArgVectorRegister(ret_vreg), 
+			 new ArgScalarRegister(arg_scalar->getId()));
+		 AddInst(inst);
+
+		 delete arg_data;
+
+		 arg_data = new ArgVectorRegister(ret_vreg);
+	}
 
 	/* Get address operand (vreg) */
 	llvm::Value *llvm_arg_addr = llvm_inst->getOperand(1);
@@ -619,6 +673,7 @@ void BasicBlock::EmitStore(llvm::StoreInst *llvm_inst)
 	 * 	s[sreg_uav,sreg_uav+3], 0 offen format:[BUF_DATA_FORMAT_32,
 	 * 	BUF_NUM_FORMAT_FLOAT]
 	 */
+
 	Inst *inst = new Inst(SI::INST_TBUFFER_STORE_FORMAT_X,
 			arg_data,
 			arg_addr,
@@ -848,17 +903,19 @@ void BasicBlock::EmitExtractElement(llvm::ExtractElementInst *llvm_inst)
 
 	/* Allocate vector register and create symbol for return value */
 	std::string ret_name = llvm_inst->getName();
-	int ret_vreg = function->AllocVReg();
-	Symbol *ret_symbol = new Symbol(ret_name, SymbolVectorRegister, ret_vreg);
+	//int ret_vreg = function->AllocVReg();
+	Symbol *ret_symbol = new Symbol(ret_name, SymbolScalarRegister, 
+			arg1_scalar->getId());
 	function->AddSymbol(ret_symbol);
 
+	
 	/* Emit instruction
 	 * v_mov_b32 ret_vreg, arg1
-	 */
+	 
 	Inst *inst = new Inst(SI::INST_V_MOV_B32,
 			new ArgVectorRegister(ret_vreg),
 			arg1);
-	AddInst(inst);
+	AddInst(inst);*/
 }
 
 
