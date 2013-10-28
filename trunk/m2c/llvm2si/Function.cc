@@ -214,13 +214,13 @@ void Function::AddArg(FunctionArg *arg, int num_elem)
 		 * copies and scalar opportunities.
 		 * v_mov_b32 v[arg], s[arg]
 		 */
-		inst = new Inst(SI::INST_V_MOV_B32,
+		/*inst = new Inst(SI::INST_V_MOV_B32,
 				new ArgVectorRegister(arg->vreg),
 				new ArgScalarRegister(arg->sreg));
-		basic_block->AddInst(inst);
-
+		basic_block->AddInst(inst);*/
+		
 		/* Insert argument name in symbol table, using its vector register. */
-		symbol = new Symbol(arg->name, SymbolVectorRegister, arg->vreg);
+		symbol = new Symbol(arg->name, SymbolScalarRegister, arg->sreg);
 		AddSymbol(symbol);
 		break;
 	}
