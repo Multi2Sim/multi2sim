@@ -46,7 +46,7 @@ protected:
 public:
 	
 	/* Constructor */
-	Data(DataType type);
+	Data(DataType type) { this->type = type };
 	
 	/* Getter */
 	DataType GetType() { return type; }
@@ -58,7 +58,8 @@ class DataFloat : public Data
 	float value;
 
 public:
-	DataFloat(DataType type, float value);
+	DataFloat(DataType type, float value) : 
+		Data(type), value(value){}
 	float GetValue() { return value; }
 
 };
@@ -68,7 +69,8 @@ class DataWord : public Data
 	unsigned int value;
 
 public:
-	DataWord(DataType type, unsigned int value);
+	DataWord(DataType type, unsigned int value) :
+		Data(type_, value(value){}
 	unsigned int GetValue() { return value; }
 
 };
@@ -78,7 +80,8 @@ class DataHalf : public Data
 	unsigned short value;
 
 public:
-	DataHalf(DataType type, unsigned short value);
+	DataHalf(DataType type, unsigned short value) :
+		Data(type_, value(value){}
 	unsigned short GetValue() { return value; }
 
 };
@@ -88,7 +91,8 @@ class DataByte : public Data
 	unsigned char value;
 
 public:
-	DataByte(DataType type, unsigned char value);
+	DataByte(DataType type, unsigned char value) :
+		Data(type_, value(value){}
 	unsigned char GetValue() { return value; }
 
 };
