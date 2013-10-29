@@ -214,10 +214,15 @@ void X86ThreadSchedule(X86Thread *self)
 		if (!ctx->evict_signal && asTiming(cpu)->cycle >= 
 			ctx->alloc_cycle + x86_cpu_context_quantum)
 		{
+			X86ContextDebug("#%lld ctx %d quantum expired\n",
+				asTiming(cpu)->cycle, ctx->pid);
+
 			/* If there are no other contexts to run on this
 			 * node, allot a new quantum and return */
 			if (self->mapped_list_count == 1)
 			{
+				X86ContextDebug("#%lld ctx %d only 1 thread mapped\n",
+					asTiming(cpu)->cycle, ctx->pid);
 				ctx->alloc_cycle = asTiming(cpu)->cycle;
 				return;
 			}
@@ -227,10 +232,13 @@ void X86ThreadSchedule(X86Thread *self)
 			/* Find a running context mapped to the same node */
 			DOUBLE_LINKED_LIST_FOR_EACH(self, mapped, tmp_ctx)
 			{
+				X86ContextDebug("#%lld tmp ctx %d\n",
+					asTiming(cpu)->cycle, tmp_ctx->pid);
 				if (tmp_ctx != ctx && 
 					X86ContextGetState(tmp_ctx, X86ContextRunning) &&
 					tmp_ctx->sched_priority >= ctx->sched_priority)
 				{
+					X86ContextDebug("\tfound\n");
 					found = 1;
 					break;
 				}
@@ -247,21 +255,29 @@ void X86ThreadSchedule(X86Thread *self)
 			else
 				ctx->alloc_cycle = asTiming(cpu)->cycle;
 		}
-
 		/* Context quantum has not expired, but another thread
-		 * of higher priority will interrupt it */
-		if (!ctx->evict_signal && asTiming(cpu)->cycle <
+		 * of higher priority may interrupt it */
+		else if (!ctx->evict_signal && asTiming(cpu)->cycle <
 			ctx->alloc_cycle + x86_cpu_context_quantum)
 		{
 			int found = 0;
 
+			X86ContextDebug("#%lld ctx %d interrupted\n",
+				asTiming(cpu)->cycle, ctx->pid);
+
 			/* Find a running context mapped to the same node */
 			DOUBLE_LINKED_LIST_FOR_EACH(self, mapped, tmp_ctx)
 			{
+				X86ContextDebug("\tctx %d is candidate\n",
+					tmp_ctx->pid);
+				X86ContextDebug("\tpriority %d\n",
+					tmp_ctx->sched_priority);
+
 				if (tmp_ctx != ctx && 
 					X86ContextGetState(tmp_ctx, X86ContextRunning) &&
 					tmp_ctx->sched_priority > ctx->sched_priority)
 				{
+					X86ContextDebug("\tfound\n");
 					found = 1;
 					break;
 				}
@@ -272,11 +288,14 @@ void X86ThreadSchedule(X86Thread *self)
 			 * current context. If there are no other running
 			 * candidates, there is no need to evict. But we
 			 * update the allocation time, so that the
-			 * scheduler is not called constantly hereafter. */
+			 * scheduler is not called constantly hereafter. 
+			 * DO NOT update the quantum if the current thread 
+			 * is not evicted. This would lead to a livelock 
+			 * in situations where the current thread is always
+			 * interrupted before its quantum expires and there
+			 * are only threads of equal priority to run. */
 			if (found)
 				X86ThreadEvictContextSignal(self, ctx);
-			else
-				ctx->alloc_cycle = asTiming(cpu)->cycle;
 		}
 	}
 
@@ -302,6 +321,9 @@ void X86ThreadSchedule(X86Thread *self)
 		ctx = NULL;
 		DOUBLE_LINKED_LIST_FOR_EACH(self, mapped, tmp_ctx)
 		{
+			X86ContextDebug("#%lld ctx %d (priority %d)\n",
+				asTiming(cpu)->cycle, tmp_ctx->pid, 
+				tmp_ctx->sched_priority);
 			/* No affinity */
 			if (!bit_map_get(tmp_ctx->affinity, node, 1))
 				continue;
@@ -312,7 +334,7 @@ void X86ThreadSchedule(X86Thread *self)
 
 			/* Good candidate */
 			if (!ctx || (ctx->evict_cycle > tmp_ctx->evict_cycle &&
-				tmp_ctx->sched_priority > ctx->sched_priority))
+				tmp_ctx->sched_priority >= ctx->sched_priority))
 			{
 				ctx = tmp_ctx;
 				X86ContextDebug("#%lld ctx %d (priority %d) is a candidate\n",
@@ -323,7 +345,10 @@ void X86ThreadSchedule(X86Thread *self)
 
 		/* Allocate context if found */
 		if (ctx)
+		{
 			X86CpuAllocateContext(cpu, ctx);
+			X86ContextDebug("Allocating ctx %d\n", ctx->pid);
+		}
 	}
 }
 
