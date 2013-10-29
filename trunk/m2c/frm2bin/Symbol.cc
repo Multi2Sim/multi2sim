@@ -10,13 +10,13 @@
 
 using namespace frm2bin;
 
-void Symbol::dump(Symbol sym, FILE *f)
+void Symbol::Dump(std::ostream &os)
 {
-	printf("C++ symbol_dump function cannot be implemented"
-			"because one argument is FILE which is not "
-			"supported in C++");
+	if (this->GetDefined())
+		os << "name='" << this->name << "', value=" << this->val;
+	else
+		os << "name='" << this->name << "', value=?";
 }
-
 
 
 /*
@@ -29,7 +29,7 @@ void Symbol::dump(Symbol sym, FILE *f)
 #include "Symbol.h"
 
 
-struct hash_table_t *frm_symbol_table;
+//struct hash_table_t *frm_symbol_table;
 
 struct frm_symbol_t *frm_symbol_create(char *name)
 {
@@ -43,13 +43,8 @@ void frm_symbol_free(struct frm_symbol_t *symbol)
 
 void frm_symbol_dump(struct frm_symbol_t *symbol, FILE *f)
 {
-	printf("C wrapper for frm_symbol_dump not supportd yet!\n");
-	//char buf[MAX_STRING_SIZE];
-
-	//fprintf(f, "name='%s', ", symbol->name);
-
-	//snprintf(buf, sizeof buf, "%d", symbol->value);
-	//fprintf(f, "value=%s", symbol->defined ? buf : "?");
+	printf("C wrapper for frm_symbol_dump with argumet FILE *f is not "
+			"supported yet!\n");
 }
 
 
@@ -62,35 +57,35 @@ void frm_symbol_dump(struct frm_symbol_t *symbol, FILE *f)
 /* symbol table is not used yet, but
  * it needs to be implemented later */
 
-void frm_symbol_table_init(void)
-{
-	frm_symbol_table = hash_table_create(5, 1);
-}
-
-
-void frm_symbol_table_done(void)
-{
-	struct frm_symbol_t *symbol;
-	char *name;
-
-	/* Free all symbols */
-	HASH_TABLE_FOR_EACH(frm_symbol_table, name, symbol)
-		frm_symbol_free(symbol);
-
-	/* Free symbol table */
-	hash_table_free(frm_symbol_table);
-}
-
-void frm_symbol_table_dump(FILE *f)
-{
-	struct frm_symbol_t *symbol;
-	char *name;
-
-	fprintf(f, "Symbol Table:\n");
-	HASH_TABLE_FOR_EACH(frm_symbol_table, name, symbol)
-	{
-		fprintf(f, "\t");
-		frm_symbol_dump(symbol, f);
-		fprintf(f, "\n");
-	}
-}
+//void frm_symbol_table_init(void)
+//{
+//	frm_symbol_table = hash_table_create(5, 1);
+//}
+//
+//
+//void frm_symbol_table_done(void)
+//{
+//	struct frm_symbol_t *symbol;
+//	char *name;
+//
+//	/* Free all symbols */
+//	HASH_TABLE_FOR_EACH(frm_symbol_table, name, symbol)
+//		frm_symbol_free(symbol);
+//
+//	/* Free symbol table */
+//	hash_table_free(frm_symbol_table);
+//}
+//
+//void frm_symbol_table_dump(FILE *f)
+//{
+//	struct frm_symbol_t *symbol;
+//	char *name;
+//
+//	fprintf(f, "Symbol Table:\n");
+//	HASH_TABLE_FOR_EACH(frm_symbol_table, name, symbol)
+//	{
+//		fprintf(f, "\t");
+//		frm_symbol_dump(symbol, f);
+//		fprintf(f, "\n");
+//	}
+//}

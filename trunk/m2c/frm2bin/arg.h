@@ -224,24 +224,6 @@ struct frm_arg_t
 		{
 			unsigned int id;
 		} scalar_register;
-
-		struct
-		{
-			int low;
-			int high;
-		} scalar_register_series;
-
-		struct
-		{
-			int low;
-			int high;
-		} vector_register_series;
-		
-		struct
-		{
-			int id;
-		} 
-		vector_register;
 		
 		struct
 		{
@@ -252,44 +234,27 @@ struct frm_arg_t
 		{
 			float val;
 		} literal_float;
-
-		struct
-		{
-			int vmcnt_active;
-			int vmcnt_value;
-
-			int lgkmcnt_active;
-			int lgkmcnt_value;
-
-			int expcnt_active;
-			int expcnt_value;
-		} wait_cnt;
 		
-		struct
-		{
-			int id;
-		} mem_register;
-		
-		struct
-		{
+//		struct
+//		{
 			/* Sub-argument of type 'vector', 'scalar', 'literal',
 			 * or 'literal_float'. */
-			struct frm_arg_t *soffset;
+//			struct frm_arg_t *soffset;
 
 			/* Sub-argument of type 'maddr_qual'
 			 * (memory address qualifier) */
-			struct frm_arg_t *qual;
+//			struct frm_arg_t *qual;
 
-			char *data_format;
-			char *num_format;
-		} maddr;
+//			char *data_format;
+//			char *num_format;
+//		} maddr;
 
-		struct
-		{
-			int offen;
-			int idxen;
-			int offset;
-		} maddr_qual;
+//		struct
+//		{
+//			int offen;
+//			int idxen;
+//			int offset;
+//		} maddr_qual;
 
 		struct
 		{
@@ -304,7 +269,6 @@ struct frm_arg_t
 			/* offset within the bank */
 			unsigned int offset;
 		} shared_maddr;
-
 
 		struct
 		{
@@ -336,10 +300,10 @@ struct frm_arg_t
 			int id;
 		} predicate_register;
 
-		struct
-		{
-			struct frm_symbol_t *symbol;
-		} label;
+//		struct
+//		{
+//			struct frm_symbol_t *symbol;
+//		} label;
 		
 	} value;
 };
@@ -358,7 +322,7 @@ struct frm_arg_t *frm_arg_create_const_maddr(int bank_idx, int offset, int negat
 struct frm_arg_t *frm_arg_create_shared_maddr(int bank_idx, int offset);
 struct frm_arg_t *frm_arg_create_glob_maddr(int reg_idx, int offset);
 struct frm_arg_t *frm_arg_create_glob_maddr_reg(int reg_idx);
-struct frm_arg_t *frm_arg_create_glob_maddr_offset(int offset);
+//struct frm_arg_t *frm_arg_create_glob_maddr_offset(int offset);
 struct frm_arg_t *frm_arg_create_pt(char* name);
 struct frm_arg_t *frm_arg_create_ccop(char* name);
 struct frm_arg_t *frm_arg_create_maddr(struct frm_arg_t *soffset,
