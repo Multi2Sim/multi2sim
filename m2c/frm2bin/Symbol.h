@@ -12,7 +12,7 @@
 #ifdef __cplusplus
 
 #include <string>
-#include <cstdio>
+#include <iostream>
 
 namespace frm2bin
 {
@@ -28,17 +28,23 @@ class Symbol
 
 public:
 	/* Constructor */
-	Symbol(const std::string &name) : name(name) {}
+	Symbol(const std::string &name) : name(name), val(0), defined(false) { }
 
-	/* dump the symbol into file */
-	void dump(Symbol sym, FILE *f);
+	/* Getters */
+	const std::string &GetName() { return name; }
+	int GetValue() { return val; }
+	bool GetDefined() { return defined; }
+
+	/* Setters */
+	void SetValue(int value) { this->val = value; }
+	void SetDefined(bool defined) { this->defined = defined; }
+
+	/* Dump Function */
+	void Dump(std::ostream& os);
+	friend std::ostream &operator<<(std::ostream &os, Symbol &symbol)
+			{ symbol.Dump(os); return os; }
 };
 
-/* Class definition for symbol table */
-class SymbolTable
-{
-
-};
 } /* namespace frm2bin */
 
 #endif  /* __cplusplus */
@@ -54,11 +60,11 @@ extern "C" {
 
 #include <stdio.h>
 
-extern struct hash_table_t *frm_symbol_table;
-
-void frm_symbol_table_init(void);
-void frm_symbol_table_done(void);
-void frm_symbol_table_dump(FILE *f);
+//extern struct hash_table_t *frm_symbol_table;
+//
+//void frm_symbol_table_init(void);
+//void frm_symbol_table_done(void);
+//void frm_symbol_table_dump(FILE *f);
 
 
 /*

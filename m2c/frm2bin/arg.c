@@ -206,16 +206,16 @@ struct frm_arg_t *frm_arg_create_glob_maddr_reg(int reg_idx)
 	return arg;
 }
 
-struct frm_arg_t *frm_arg_create_glob_maddr_offset(int offset)
-{
-	struct frm_arg_t *arg;
-
-	arg = frm_arg_create();
-	arg->type = frm_arg_literal;
-	arg->value.literal.val = offset;
-
-	return arg;
-}
+//struct frm_arg_t *frm_arg_create_glob_maddr_offset(int offset)
+//{
+//	struct frm_arg_t *arg;
+//
+//	arg = frm_arg_create();
+//	arg->type = frm_arg_literal;
+//	arg->value.literal.val = offset;
+//
+//	return arg;
+//}
 
 struct frm_arg_t *frm_arg_create_pt(char *name)
 {
@@ -315,13 +315,13 @@ void frm_arg_free(struct frm_arg_t *arg)
 	switch (arg->type)
 	{
 
-	case frm_arg_maddr:
+//	case frm_arg_maddr:
 
-		free(arg->value.maddr.data_format);
-		free(arg->value.maddr.num_format);
-		frm_arg_free(arg->value.maddr.soffset);
-		frm_arg_free(arg->value.maddr.qual);
-		break;
+//		free(arg->value.maddr.data_format);
+//		free(arg->value.maddr.num_format);
+//		frm_arg_free(arg->value.maddr.soffset);
+//		frm_arg_free(arg->value.maddr.qual);
+//		break;
 
 	default:
 		break;
@@ -461,23 +461,23 @@ void frm_arg_dump(struct frm_arg_t *arg, FILE *f)
 		break;
 	}
 
-	case frm_arg_maddr:
-	{
-		fprintf(f, "<maddr>");
-
-		fprintf(f, " soffs={");
-		frm_arg_dump(arg->value.maddr.soffset, f);
-		fprintf(f, "}");
-
-		fprintf(f, " qual={");
-		frm_arg_dump(arg->value.maddr.qual, f);
-		fprintf(f, "}");
-
-		fprintf(f, " dfmt=%s", arg->value.maddr.data_format);
-		fprintf(f, " nfmt=%s", arg->value.maddr.num_format);
-
-		break;
-	}
+//	case frm_arg_maddr:
+//	{
+//		fprintf(f, "<maddr>");
+//
+//		fprintf(f, " soffs={");
+//		frm_arg_dump(arg->value.maddr.soffset, f);
+//		fprintf(f, "}");
+//
+//		fprintf(f, " qual={");
+//		frm_arg_dump(arg->value.maddr.qual, f);
+//		fprintf(f, "}");
+//
+//		fprintf(f, " dfmt=%s", arg->value.maddr.data_format);
+//		fprintf(f, " nfmt=%s", arg->value.maddr.num_format);
+//
+//		break;
+//	}
 
 
 	/*
