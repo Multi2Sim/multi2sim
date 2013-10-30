@@ -242,17 +242,17 @@ struct list_t *SISpiPSNDRangesCreate(SISX *sx, enum opengl_pa_primitive_mode_t m
 	meta_list_repo = SISpiPSInitMetaListsCreate(sx->pos, vwpt, db);
 
 	/* Should have same amount of elements, otherwise discard */
-	if(list_count(meta_list_repo) != list_count(lds_repo));
+	if(list_count(meta_list_repo) != list_count(lds_repo))
 	{
 		SISpiPSInitLDSListFree(lds_repo);
 		SISpiPSInitMetaListsFree(meta_list_repo);
 		return ndrange_repo;
 	}
 
-	/* If meta data empty, return an empty NDRange repo */
+	/* If meta data is empty, return an empty NDRange repo */
 	if (!list_count((struct list_t *)list_get(meta_list_repo, 0)))
 	{
-		/* */
+		/* Free prvious created repo */
 		SISpiPSInitLDSListFree(lds_repo);
 		SISpiPSInitMetaListsFree(meta_list_repo);
 		return ndrange_repo;		

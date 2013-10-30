@@ -730,9 +730,129 @@ static int opengl_abi_si_program_set_binary_impl(X86Context *ctx)
 }
 
 
+/*
+ * OpenGL ABI call #11 - si_program_get_attrib_loc
+ *
+ * Get the location of an attribute variable
+ *
+ * @return int
+ *
+ *	Returns the location of an attribute variable.
+ */
+
+#define SI_MAX_CHAR_LEN 64
+static int opengl_abi_si_program_get_attrib_loc_impl(X86Context *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+	X86Emu *x86_emu = ctx->emu;
+	OpenglDriver *driver = x86_emu->opengl_driver;	
+	struct opengl_si_program_t *program;
+	struct opengl_si_shader_t *shader = NULL, *tmp;
+	struct opengl_si_enc_dict_vertex_shader_t *vs_enc;
+
+	char name[SI_MAX_CHAR_LEN];
+	unsigned int program_id;
+	unsigned int name_ptr;
+	int attrib_loc = -1;
+	int i;
+
+	/* Arguments */
+	program_id = regs->ecx;
+	name_ptr = regs->edx;
+
+	opengl_debug("\tprogram_id = %d, name_ptr = 0x%x\n",
+			program_id, name_ptr);
+
+	/* Read arguments */
+	mem_read(ctx->mem, name_ptr, SI_MAX_CHAR_LEN, name);
+	opengl_debug("\tsymbol name = %s\n", name);
+
+	/* Get program and associate vertex shader */
+	program = list_get(driver->opengl_si_program_list, program_id);
+	if (program)
+	{
+		LIST_FOR_EACH(program->program_bin->shader_bins, i)
+		{
+			tmp = list_get(program->program_bin->shader_bins, i);
+			if (tmp->shader_kind == OPENGL_SI_SHADER_VERTEX)
+				shader = tmp;
+		}
+		if (shader)
+		{
+			vs_enc = (struct opengl_si_enc_dict_vertex_shader_t *)shader->bin->enc_dict;
+			attrib_loc = opengl_si_bin_symbol_get_location(vs_enc->symbols, name);
+		}
+	}
+	else
+	{
+
+		opengl_debug("\tOpenGL program #%d is not available\n",
+			program_id);
+		return -1;
+	}
+
+	/* Return */
+	return attrib_loc;
+}
+#undef SI_MAX_CHAR_LEN
 
 /*
- * OpenGL ABI call #11 - si_shader_create
+ * OpenGL ABI call #12 - si_program_get_uniform_loc
+ *
+ * Get the location of an uniform variable
+ *
+ * @return int
+ *
+ *	Returns the location of an uniform variable.
+ */
+
+#define SI_MAX_CHAR_LEN 100
+static int opengl_abi_si_program_get_uniform_loc_impl(X86Context *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+	X86Emu *x86_emu = ctx->emu;
+	OpenglDriver *driver = x86_emu->opengl_driver;	
+	struct opengl_si_program_t *program;
+	struct opengl_si_shader_t *shader = NULL, *tmp;
+
+	char name[SI_MAX_CHAR_LEN];
+	unsigned int program_id;
+	unsigned int name_ptr;
+	int i;
+
+	/* Arguments */
+	program_id = regs->ecx;
+	name_ptr = regs->edx;
+
+	/* Read arguments */
+	mem_read(ctx->mem, name_ptr, SI_MAX_CHAR_LEN, name);
+	opengl_debug("\tsymbol name = %s\n", name);
+
+	/* Get program and associate vertex shader */
+	program = list_get(driver->opengl_si_program_list, program_id);
+	if (program)
+	{
+		LIST_FOR_EACH(program->program_bin->shader_bins, i)
+		{
+			tmp = list_get(program->program_bin->shader_bins, i);
+			if (tmp->shader_kind == OPENGL_SI_SHADER_VERTEX)
+				shader = tmp;
+		}
+		opengl_debug("%p\n", shader);
+	}
+	else
+	{
+
+		opengl_debug("\tOpenGL program #%d is not available\n",
+			program_id);
+		return -1;
+	}
+
+	/* Return */
+	return -1;
+}
+/*
+ * OpenGL ABI call #13 - si_shader_create
  *
  * Create a Southern Islands shader object and return a unique identifier
  * for it.
@@ -771,7 +891,7 @@ static int opengl_abi_si_shader_create_impl(X86Context *ctx)
 
 
 /*
- * OpenGL ABI call #12 - si_shader_free
+ * OpenGL ABI call #14 - si_shader_free
  *
  * Free a Southern Islands shader object 
  *
@@ -799,7 +919,7 @@ static int opengl_abi_si_shader_free_impl(X86Context *ctx)
 }
 
 /*
- * OpenGL ABI call #13 - si_shader_set_input
+ * OpenGL ABI call #15 - si_shader_set_input
  *
  * Set up the expected input in a shader 
  *
@@ -862,7 +982,7 @@ static int opengl_abi_si_shader_set_input_impl(X86Context *ctx)
 }
 
 /*
- * OpenGL ABI call #14- si_ndrange_create
+ * OpenGL ABI call #16- si_ndrange_create
  *
  * Create and initialize an ND-Range for the supplied shader.
  *
@@ -1038,7 +1158,7 @@ static int opengl_abi_si_ndrange_create_impl(X86Context *ctx)
 
 
 /*
- * OpenGL ABI call #15 - si_ndrange_get_num_buffer_entries
+ * OpenGL ABI call #17 - si_ndrange_get_num_buffer_entries
  *
  * Returns the number of available buffer entries in the waiting 
  * work-group queue.
@@ -1093,7 +1213,7 @@ static int opengl_abi_si_ndrange_get_num_buffer_entries_impl(
 }
 
 /*
- * OpenGL ABI call #16 - si_ndrange_send_work_groups
+ * OpenGL ABI call #18 - si_ndrange_send_work_groups
  *
  * Receives a range of work-group IDs to add to the waiting 
  * work-group queue. The x86 context performing this call
@@ -1217,7 +1337,7 @@ static int opengl_abi_si_ndrange_send_work_groups_impl(X86Context *ctx)
 }
 
 /*
- * OpenGL ABI call #17 - si_ndrange_finish
+ * OpenGL ABI call #19 - si_ndrange_finish
  *
  * Tells the driver that there are no more work groups to execute
  * from the ND-Range.
@@ -1307,7 +1427,7 @@ static int opengl_abi_si_ndrange_finish_impl(X86Context *ctx)
 
 
 /*
- * OpenGL ABI call #18 - si_ndrange_pass_mem_objs
+ * OpenGL ABI call #20 - si_ndrange_pass_mem_objs
  *
  * @return int
  *
@@ -1363,7 +1483,7 @@ static int opengl_abi_si_ndrange_pass_mem_objs_impl(X86Context *ctx)
 }
 
 /*
- * OpenGL ABI call #19 - si_viewport
+ * OpenGL ABI call #21 - si_viewport
  *
  * Setup viewport 
  *
@@ -1411,7 +1531,7 @@ static int opengl_abi_si_viewport_impl(X86Context *ctx)
 }
 
 /*
- * OpenGL ABI call #20 - si_raster
+ * OpenGL ABI call #22 - si_raster
  *
  * Rasterizer works with shader export module to prepare data for fragment shader
  *
@@ -1468,7 +1588,7 @@ static int opengl_abi_si_raster_impl(X86Context *ctx)
 }
 
 /*
- * OpenGL ABI call #20 - si_raster_finish
+ * OpenGL ABI call #23 - si_raster_finish
  *
  * Release all the NDRanges created in rasterizer
  *
@@ -1557,7 +1677,10 @@ static int opengl_abi_si_raster_finish_impl(X86Context *ctx)
 		}
 	}
 
+
 	glut_frame_buffer_flush_request();
+
+	opengl_depth_buffer_clear(driver->opengl_si_db);
 
 	/* Return */
 	return 0;

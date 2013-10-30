@@ -460,8 +460,14 @@ void glGetActiveAttrib (GLuint program, GLuint index, GLsizei bufSize, GLsizei *
 
 GLint glGetAttribLocation (GLuint program, const GLchar *name)
 {
-	__OPENGL_NOT_IMPL__
-	return 0;
+	struct opengl_program_obj_t *program_obj;
+	int attrib_loc = GL_INVALID_OPERATION;
+
+	program_obj = opengl_program_obj_repo_get_program(program_repo, program);
+	if (program_obj)
+		attrib_loc = syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_program_get_attrib_loc, program_obj->id, name);
+
+	return attrib_loc;
 }
 
 void glBindAttribLocation (GLuint program, GLuint index, const GLchar *name)
@@ -474,8 +480,14 @@ void glBindAttribLocation (GLuint program, GLuint index, const GLchar *name)
 
 GLint glGetUniformLocation (GLuint program, const GLchar *name)
 {
-	__OPENGL_NOT_IMPL__
-	return 0;
+	struct opengl_program_obj_t *program_obj;
+	int uniform_loc = GL_INVALID_OPERATION;
+
+	program_obj = opengl_program_obj_repo_get_program(program_repo, program);
+	if (program_obj)
+		uniform_loc = syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_program_get_uniform_loc, program_obj->id, name);
+
+	return uniform_loc;
 }
 
 GLuint glGetUniformBlockIndex (GLuint program, const GLchar *uniformBlockName)
