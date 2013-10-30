@@ -259,7 +259,7 @@ static struct str_map_t enc_dict_symbol_datatype_map =
 		{ "UNSIGNED_INT_SAMPLER_BUFFER_AMD",	OPENGL_SI_SYMBOL_DATATYPE_UNSIGNED_INT_SAMPLER_BUFFER_AMD },
 		{ "ATOMIC_COUNTER",	OPENGL_SI_SYMBOL_DATATYPE_ATOMIC_COUNTER },
 		{ "STRUCT",	OPENGL_SI_SYMBOL_DATATYPE_STRUCT },
-		{ "INTERFACE",	OPENGL_SI_SYMBOL_DATATYPE_INTERFACE },		
+		{ "INTERFACE",	OPENGL_SI_SYMBOL_DATATYPE_INTERFACE },
 	}
 };
 
@@ -778,6 +778,198 @@ static void opengl_si_bin_symbol_init_with_section(struct list_t *symbol_list, s
 		}
 		list_add(symbol_list, symbol);
 	}
+}
+
+int opengl_si_bin_symbol_get_location(struct list_t *symbol_list, char *name)
+{
+	struct opengl_si_bin_symbol_t *symbol;
+	int return_val = -1;
+	int i;
+
+	LIST_FOR_EACH(symbol_list, i)
+	{
+		symbol = list_get(symbol_list, i);
+		if (!strcmp(symbol->name, name))
+		{
+			switch (symbol->type)
+			{
+				case OPENGL_SI_SYMBOL_ATTRIB_TEXCOORD0:
+					return_val = 0;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_TEXCOORD1:
+					return_val = 1;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_TEXCOORD2:
+					return_val = 2;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_TEXCOORD3:
+					return_val = 3;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_TEXCOORD4:
+					return_val = 4;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_TEXCOORD5:
+					return_val = 5;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_TEXCOORD6:
+					return_val = 6;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_TEXCOORD7:
+					return_val = 7;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_TEXCOORD8:
+					return_val = 8;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_TEXCOORD9:
+					return_val = 9;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_TEXCOORD10:
+					return_val = 10;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_TEXCOORD11:
+					return_val = 11;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_TEXCOORD12:
+					return_val = 12;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_TEXCOORD13:
+					return_val = 13;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_TEXCOORD14:
+					return_val = 14;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_TEXCOORD15:
+					return_val = 15;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_GENERIC0:
+					return_val = 0;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_GENERIC1:
+					return_val = 1;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_GENERIC2:
+					return_val = 2;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_GENERIC3:
+					return_val = 3;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_GENERIC4:
+					return_val = 4;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_GENERIC5:
+					return_val = 5;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_GENERIC6:
+					return_val = 6;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_GENERIC7:
+					return_val = 7;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_GENERIC8:
+					return_val = 8;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_GENERIC9:
+					return_val = 9;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_GENERIC10:
+					return_val = 10;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_GENERIC11:
+					return_val = 11;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_GENERIC12:
+					return_val = 12;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_GENERIC13:
+					return_val = 13;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_GENERIC14:
+					return_val = 14;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_GENERIC15:
+					return_val = 15;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_GENERIC16:
+					return_val = 16;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_GENERIC17:
+					return_val = 17;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_GENERIC18:
+					return_val = 18;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_GENERIC19:
+					return_val = 19;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_GENERIC20:
+					return_val = 20;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_GENERIC21:
+					return_val = 21;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_GENERIC22:
+					return_val = 22;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_GENERIC23:
+					return_val = 23;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_GENERIC24:
+					return_val = 24;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_GENERIC25:
+					return_val = 25;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_GENERIC26:
+					return_val = 26;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_GENERIC27:
+					return_val = 27;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_GENERIC28:
+					return_val = 28;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_GENERIC29:
+					return_val = 29;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_GENERIC30:
+					return_val = 20;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_GENERIC31:
+					return_val = 31;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_GENERIC32:
+					return_val = 32;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_GENERIC33:
+					return_val = 33;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_GENERIC34:
+					return_val = 34;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_GENERIC35:
+					return_val = 35;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_GENERIC36:
+					return_val = 36;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_GENERIC37:
+					return_val = 37;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_GENERIC38:
+					return_val = 38;
+					break;
+				case OPENGL_SI_SYMBOL_ATTRIB_GENERIC39:
+					return_val = 39;
+					break;
+				default:
+					return_val = -1;
+					break;
+			}
+		}
+	}
+
+	/* Return */
+	return return_val;
 }
 
 static struct opengl_si_enc_dict_vertex_shader_t *opengl_si_enc_dict_vertex_shader_create(struct opengl_si_shader_binary_t *parent)

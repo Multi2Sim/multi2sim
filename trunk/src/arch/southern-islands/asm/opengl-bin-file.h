@@ -1380,6 +1380,8 @@ void opengl_si_shader_binary_free(struct opengl_si_shader_binary_t *shdr);
 struct SIBinaryUserElement *opengl_si_bin_enc_user_element_create();
 void opengl_si_bin_enc_user_element_free(struct SIBinaryUserElement *user_elem);
 
+int opengl_si_bin_symbol_get_location(struct list_t *symbol_list, char *name);
+
 void opengl_si_shader_binary_debug_meta(struct opengl_si_shader_binary_t *shdr_bin);
 
 
