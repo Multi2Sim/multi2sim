@@ -1981,6 +1981,8 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 			case frm_token_mod0_B_type:
 			{
 				/* data type */
+				/* ATTENTIONS: this should change, when switch to C++,
+				 * since mod0b_invalid will be 0, not */
 				if (mod->value.mod0_B_type == 0)
 					inst_bytes->mod0_B.type = 0x0;
 				else if (mod->value.mod0_B_type == 1)
