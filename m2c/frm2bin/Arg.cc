@@ -10,9 +10,11 @@
 
 using namespace Misc;
 
+extern StringMap TokenTypeMap;
+
 namespace frm2bin
 {
-StringMap arg_special_register_map =
+StringMap ArgSpecialRegisterMap =
 {
 	{ "SR_LaneId",	Fermi::InstSRegLaneld},
 	{ "SR_VirtCfg",	Fermi::InstSRegVirtCfg},
@@ -67,79 +69,132 @@ StringMap arg_special_register_map =
 	{0, 0}
 };
 
-StringMap arg_ccop_map =
+StringMap ArgCcopMap =
 {
-	{ "F", arg_ccop_f},
-	{ "LT", arg_ccop_lt},
-	{ "EQ", arg_ccop_eq},
-	{ "LE", arg_ccop_le},
-	{ "GT", arg_ccop_gt},
-	{ "NE", arg_ccop_ne},
-	{ "GE", arg_ccop_ge},
-	{ "NUM", arg_ccop_num},
-	{ "NAN", arg_ccop_nan},
-	{ "LTU", arg_ccop_ltu},
-	{ "EQU", arg_ccop_equ},
-	{ "LEU", arg_ccop_leu},
-	{ "GTU", arg_ccop_gtu},
-	{ "NEU", arg_ccop_neu},
-	{ "GEU", arg_ccop_geu},
-	{ "T", arg_ccop_t},
-	{ "OFF", arg_ccop_off},
-	{ "LO", arg_ccop_lo},
-	{ "SFF", arg_ccop_sff},
-	{ "LS", arg_ccop_ls},
-	{ "HI", arg_ccop_hi},
-	{ "SFT", arg_ccop_sft},
-	{ "HS", arg_ccop_hs},
-	{ "OFT", arg_ccop_oft},
-	{ "CSM_TA", arg_ccop_csm_ta},
-	{ "CSM_TR", arg_ccop_csm_tr},
-	{ "CSM_MX", arg_ccop_csm_mx},
-	{ "FCSM_TA", arg_ccop_fcsm_ta},
-	{ "FCSM_TR", arg_ccop_fcsm_tr},
-	{ "FCSM_MX", arg_ccop_fcsm_mx},
-	{ "RLE", arg_ccop_rle},
-	{ "RGT", arg_ccop_rgt},
+	{ "invalid", ArgCcopType::arg_ccop_invalid},
+	{ "F", ArgCcopType::arg_ccop_f},
+	{ "LT", ArgCcopType::arg_ccop_lt},
+	{ "EQ", ArgCcopType::arg_ccop_eq},
+	{ "LE", ArgCcopType::arg_ccop_le},
+	{ "GT", ArgCcopType::arg_ccop_gt},
+	{ "NE", ArgCcopType::arg_ccop_ne},
+	{ "GE", ArgCcopType::arg_ccop_ge},
+	{ "NUM", ArgCcopType::arg_ccop_num},
+	{ "NAN", ArgCcopType::arg_ccop_nan},
+	{ "LTU", ArgCcopType::arg_ccop_ltu},
+	{ "EQU", ArgCcopType::arg_ccop_equ},
+	{ "LEU", ArgCcopType::arg_ccop_leu},
+	{ "GTU", ArgCcopType::arg_ccop_gtu},
+	{ "NEU", ArgCcopType::arg_ccop_neu},
+	{ "GEU", ArgCcopType::arg_ccop_geu},
+	{ "T", ArgCcopType::arg_ccop_t},
+	{ "OFF", ArgCcopType::arg_ccop_off},
+	{ "LO", ArgCcopType::arg_ccop_lo},
+	{ "SFF", ArgCcopType::arg_ccop_sff},
+	{ "LS", ArgCcopType::arg_ccop_ls},
+	{ "HI", ArgCcopType::arg_ccop_hi},
+	{ "SFT", ArgCcopType::arg_ccop_sft},
+	{ "HS", ArgCcopType::arg_ccop_hs},
+	{ "OFT", ArgCcopType::arg_ccop_oft},
+	{ "CSM_TA", ArgCcopType::arg_ccop_csm_ta},
+	{ "CSM_TR", ArgCcopType::arg_ccop_csm_tr},
+	{ "CSM_MX", ArgCcopType::arg_ccop_csm_mx},
+	{ "FCSM_TA", ArgCcopType::arg_ccop_fcsm_ta},
+	{ "FCSM_TR", ArgCcopType::arg_ccop_fcsm_tr},
+	{ "FCSM_MX", ArgCcopType::arg_ccop_fcsm_mx},
+	{ "RLE", ArgCcopType::arg_ccop_rle},
+	{ "RGT", ArgCcopType::arg_ccop_rgt},
 	{0, 0}
 };
 
-StringMap mod_logic_type_map=
+StringMap ModLogicTypeMap=
 {
-	{ "AND", logic_and},
-	{ "OR", logic_or},
-	{ "XOR", logic_xor},
+	{ "invalid", ModLogicType::logic_invalid},
+	{ "AND", ModLogicType::logic_and},
+	{ "OR", ModLogicType::logic_or},
+	{ "XOR", ModLogicType::logic_xor},
 	{0, 0}
 };
 
-StringMap mod_data_width_map=
+StringMap ModDataWidthMap=
 {
-	{ "U16", u16},
-	{ "S16", s16},
-	{ "U32", u32},
-	{ "S32", s32},
-	{ "U64", u64},
-	{ "S64", u64},
+	{ "invalid", ModDataWidthType::width_invalid},
+	{ "U16", ModDataWidthType::width_u16},
+	{ "S16", ModDataWidthType::width_s16},
+	{ "U32", ModDataWidthType::width_u32},
+	{ "S32", ModDataWidthType::width_s32},
+	{ "U64", ModDataWidthType::width_u64},
+	{ "S64", ModDataWidthType::width_u64},
 	{0, 0}
 };
 
-StringMap mod_comp_map=
+StringMap ModCompMap=
 {
-	{ "LT", lt},
-	{ "EQ", eq},
-	{ "LE", le},
-	{ "GT", gt},
-	{ "NE", ne},
-	{ "GE", ge},
-	{ "NUM", num},
-	{ "NAN", nan},
-	{ "LTU", ltu},
-	{ "EQU", equ},
-	{ "LEU", leu},
-	{ "GTU", gtu},
-	{ "GEU", geu},
-	{ "NEU", neu},
+	{ "invalid", ModCompType::comp_invalid},
+	{ "LT", ModCompType::comp_lt},
+	{ "EQ", ModCompType::comp_eq},
+	{ "LE", ModCompType::comp_le},
+	{ "GT", ModCompType::comp_gt},
+	{ "NE", ModCompType::comp_ne},
+	{ "GE", ModCompType::comp_ge},
+	{ "NUM", ModCompType::comp_num},
+	{ "NAN", ModCompType::comp_nan},
+	{ "LTU", ModCompType::comp_ltu},
+	{ "EQU", ModCompType::comp_equ},
+	{ "LEU", ModCompType::comp_leu},
+	{ "GTU", ModCompType::comp_gtu},
+	{ "GEU", ModCompType::comp_geu},
+	{ "NEU", ModCompType::comp_neu},
 	{0, 0}
 };
+
+StringMap Mod0BTypeMap=
+{
+	{ "invalid", Mod0BType::mod0b_invalid},
+	{ "U8", Mod0BType::mod0b_u8},
+	{ "S8", Mod0BType::mod0b_s8},
+	{ "U16", Mod0BType::mod0b_u16},
+	{ "S16", Mod0BType::mod0b_s16},
+	{ "64", Mod0BType::mod0b_64},
+	{ "128", Mod0BType::mod0b_128},
+};
+
+Mod::Mod(const std::string &name)
+{
+	/* add % back to the modifier string */
+	std::string tmpStr = "%";
+
+	tmpStr.append(name);
+
+	this->type = StringMapString(TokenTypeMap, tmpStr);
+
+	if (this->type == TokenType::token_invalid)
+	{
+		std::cout<<"invalid modifier type! ["<<tmpStr<<"]"<<std::endl;
+		exit(1);
+	}
+}
+
+ModDataWidth::ModDataWidth(const std::string &name)
+{
+	this->dataWidth = Misc::StringMapString(ModDataWidthMap, name);
+
+	if (this->dataWidth == ModDataWidthType::width_invalid)
+	{
+		std::cout<<"invalid ModDataWidth! ["<<name<<"]"<<std::endl;
+		exit(1);
+	}
+}
+
+Mod0B::Mod0B(const std::string &name)
+{
+	this->type = Misc::StringMapString(Mod0BTypeMap, name);
+
+	if (this->type == Mod0BType::mod0b_invalid)
+	{
+		std::cout<<"invalid Mod0B Type! ["<<name<<"]"<<std::endl;
+		exit(1);
+	}
+}
 
 } /* namespace frm2bin */
