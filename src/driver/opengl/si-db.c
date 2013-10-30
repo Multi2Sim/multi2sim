@@ -79,7 +79,7 @@ void opengl_depth_buffer_resize(struct opengl_depth_buffer_t *db, unsigned int w
 
 	/* Store new size */
 	db->buffer = xcalloc(width * height, sizeof(float));
-	for (i = 0; i < db->width * db->height; ++i)
+	for (i = 0; i < width * height; ++i)
 		db->buffer[i] = 1.0f;
 
 	db->width = width;
