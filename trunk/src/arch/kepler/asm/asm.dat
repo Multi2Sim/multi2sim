@@ -134,7 +134,7 @@ DEFINST(LD,
 		0x06)
 
 DEFINST(LDS,
-		"%pred0 LDS %dst, [%srcA]%offset;",
+		"%pred0 LDS%u8 %dst, [%srcA+0x%offset2];",
 		0x02,
 		0x01,
 		0x0f,
@@ -173,7 +173,7 @@ DEFINST(DADD,
 		0x0e)
 
 DEFINST(FFMA,
-		"%pred0 FFMA %dst, %srcA, %srcB;",
+		"%pred0 FFMA %dst, %srcA, %srcB, %srcC;",
 		0x02,
 		0x03,
 		0x09,
