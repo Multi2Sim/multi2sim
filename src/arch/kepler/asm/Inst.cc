@@ -610,6 +610,10 @@ void Inst::Dump(ostream &os)
 		{
 			DumpOffset(os, 53, 23);
 		}
+		else if (Common::Asm::IsToken(fmt_str, "offset2", length))
+		{
+			DumpOffset(os, 34, 23);
+		}
 		else if (Common::Asm::IsToken(fmt_str, "const", length))
 		{
 			DumpEndConst(os, 45, 42);
@@ -617,6 +621,10 @@ void Inst::Dump(ostream &os)
 		else if (Common::Asm::IsToken(fmt_str, "srcC", length))
 		{
 			DumpReg(os, 49, 42);
+		}
+		else if (Common::Asm::IsToken(fmt_str, "srcB2", length))
+		{
+			DumpReg(os, 31, 23);
 		}
 		else if (Common::Asm::IsToken(fmt_str, "srcB", length))
 		{
