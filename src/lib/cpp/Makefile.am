@@ -2,6 +2,9 @@ lib_LIBRARIES = libcpp.a
 
 libcpp_a_SOURCES = \
 	\
+	Bitmap.cc \
+	Bitmap.h \
+	\
 	ELFReader.cc \
 	ELFReader.h \
 	\

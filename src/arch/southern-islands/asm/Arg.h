@@ -204,7 +204,7 @@ public:
 			ArgAccessType access_type,
 			int uav,
 			int constant_buffer_num,
-			int constant_buffer_offset) :
+			int constant_offset) :
 				Arg(ArgTypeImage, name),
 				dimension(dimension),
 				access_type(access_type),
