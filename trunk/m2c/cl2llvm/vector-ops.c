@@ -41,10 +41,10 @@ void expand_vectors(struct list_t *elem_list)
 	LIST_FOR_EACH(elem_list, index)
 	{
 		current_elem = list_get(elem_list, index);
-		if (LLVMGetTypeKind(current_elem->type->llvm_type) == LLVMVectorTypeKind)
+		if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(current_elem->type)) == LLVMVectorTypeKind)
 		{
 
-			for(vec_index = 0; vec_index < LLVMGetVectorSize(current_elem->type->llvm_type); vec_index++)
+			for(vec_index = 0; vec_index < LLVMGetVectorSize(cl2llvmTypeWrapGetLlvmType(current_elem->type)); vec_index++)
 			{
 				cl2llvm_index = cl2llvm_val_create_w_init( LLVMConstInt(
 					LLVMInt32Type(), vec_index, 0), 1);
@@ -53,7 +53,7 @@ void expand_vectors(struct list_t *elem_list)
 				snprintf(temp_var_name, sizeof(temp_var_name),
 					"tmp_%d", temp_var_count++);
 
-				current_vec_elem = cl2llvm_val_create_w_init( LLVMBuildExtractElement(cl2llvm_builder, current_elem->val, cl2llvm_index->val, temp_var_name), current_elem->type->sign);
+				current_vec_elem = cl2llvm_val_create_w_init( LLVMBuildExtractElement(cl2llvm_builder, current_elem->val, cl2llvm_index->val, temp_var_name), cl2llvmTypeWrapGetSign(current_elem->type));
 				list_insert(elem_list, index + vec_index, current_vec_elem);
 			cl2llvm_val_free(cl2llvm_index);
 			}
@@ -73,7 +73,7 @@ void cl2llvm_get_vector_indices(struct cl2llvm_val_t *value, char *string)
 	char error_message[50];
 	struct cl2llvm_val_t *index;
 
-	vector_size = LLVMGetVectorSize(LLVMGetElementType(value->type->llvm_type));
+	vector_size = LLVMGetVectorSize(LLVMGetElementType(cl2llvmTypeWrapGetLlvmType(value->type)));
 	i = 0;
 
 	if (string[0] == 's' || string[0] == 'S')
@@ -92,8 +92,8 @@ void cl2llvm_get_vector_indices(struct cl2llvm_val_t *value, char *string)
 			cl2llvm_yyerror("Too many components for vector type");
 
 		index = cl2llvm_val_create();
-		index->type->llvm_type = LLVMInt32Type();
-		index->type->sign = 1;
+		cl2llvmTypeWrapSetLlvmType(index->type, LLVMInt32Type());
+		cl2llvmTypeWrapSetSign(index->type, 1);
 
 		switch (string[i])
 		{
@@ -389,7 +389,7 @@ struct cl2llvm_val_t *cl2llvm_build_component_wise_assignment(struct cl2llvm_val
 {
 	int component_count = 0;
 	int i;
-	struct cl2llvm_type_t *component_type;
+	struct cl2llvmTypeWrap *component_type;
 	struct cl2llvm_val_t *lvalue;
 	struct cl2llvm_val_t *new_lvalue;
 	struct cl2llvm_val_t *cast_rvalue;
@@ -402,13 +402,13 @@ struct cl2llvm_val_t *cl2llvm_build_component_wise_assignment(struct cl2llvm_val
 
 	/* Load vector */
 	lvalue = cl2llvm_val_create_w_init(LLVMBuildLoad(cl2llvm_builder, lvalue_addr->val,
-		temp_var_name), lvalue_addr->type->sign);
+		temp_var_name), cl2llvmTypeWrapGetSign(lvalue_addr->type));
 	
 	new_lvalue_val = lvalue->val;
 	
 	/* Create object to  represent component type of lvalue. */
-	component_type = cl2llvm_type_create_w_init(LLVMGetElementType(lvalue->type->llvm_type), 
-		lvalue->type->sign);
+	component_type = cl2llvmTypeWrapCreate(LLVMGetElementType(cl2llvmTypeWrapGetLlvmType(lvalue->type)), 
+		cl2llvmTypeWrapGetSign(lvalue->type));
 	
 	/* Get number of components referenced by lvalue. */
 	while(lvalue_addr->vector_indices[component_count])
@@ -419,16 +419,16 @@ struct cl2llvm_val_t *cl2llvm_build_component_wise_assignment(struct cl2llvm_val
 	cl2llvm_no_repeated_component_references(lvalue_addr);
 
 	/* If rvalue is a vector */
-	if (LLVMGetTypeKind(rvalue->type->llvm_type) == LLVMVectorTypeKind)
+	if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(rvalue->type)) == LLVMVectorTypeKind)
 	{
 		/* Check that element type of rvalue vector matches element type of 
 		lvalue vector */
-		if (LLVMGetElementType(rvalue->type->llvm_type) != LLVMGetElementType(lvalue->type->llvm_type))
+		if (LLVMGetElementType(cl2llvmTypeWrapGetLlvmType(rvalue->type)) != LLVMGetElementType(cl2llvmTypeWrapGetLlvmType(lvalue->type)))
 			cl2llvm_yyerror("Type mis-match. (casts between vector types are forbidden)");
 
 		/* Check that size of vector matches number of components specified 
 		in lvalue. */
-		if (LLVMGetVectorSize(rvalue->type->llvm_type) != component_count)
+		if (LLVMGetVectorSize(cl2llvmTypeWrapGetLlvmType(rvalue->type)) != component_count)
 			cl2llvm_yyerror("Size of vector does not match number of components specified in lvalue.");
 
 		/* Extract each component from rvalue and assign it to the specified
@@ -471,10 +471,10 @@ struct cl2llvm_val_t *cl2llvm_build_component_wise_assignment(struct cl2llvm_val
 		cl2llvm_val_free(cast_rvalue);
 	}
 
-	new_lvalue = cl2llvm_val_create_w_init(new_lvalue_val, component_type->sign);
+	new_lvalue = cl2llvm_val_create_w_init(new_lvalue_val, cl2llvmTypeWrapGetSign(component_type));
 
 	/* Free pointers */
-	cl2llvm_type_free(component_type);
+	cl2llvmTypeWrapFree(component_type);
 	cl2llvm_val_free(lvalue);
 
 	return new_lvalue;

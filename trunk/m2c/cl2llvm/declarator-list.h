@@ -22,7 +22,7 @@
 
 struct cl2llvm_decl_list_t
 {
-	struct cl2llvm_type_t *type_spec;
+	struct cl2llvmTypeWrap *type_spec;
 	int addr_qual;
 	char *kernel_t;
 	char *inline_t;

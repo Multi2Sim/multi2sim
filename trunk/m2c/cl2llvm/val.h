@@ -22,13 +22,13 @@
 
 #include <llvm-c/Core.h>
 
-#include "type.h"
+#include "Type.h"
 
 
 struct cl2llvm_val_t
 {
 	LLVMValueRef val;
-	struct cl2llvm_type_t *type;
+	struct cl2llvmTypeWrap *type;
 	struct cl2llvm_val_t **vector_indices;
 } cl2llvm_val_t;
 
@@ -52,13 +52,13 @@ void cl2llvm_val_free(struct cl2llvm_val_t *cl2llvm_val);
 
 /*
  * This function takes a cl2llvm_value_t and casts it to the type of the 
- * cl2llvm_type_t specified in the second argument. A new cl2llvm_value_t which 
+ * cl2llvmTypeWrap specified in the second argument. A new cl2llvm_value_t which 
  * contains the casted value is created and returned. This new cl2llvm_value_t 
  * must be freed using cl2llvm_value_free(). If the value and the totype have the 
  * same type no type cast is made, however a new cl2llvm_value_t is still created.
  */
 
-struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t *original_val, struct cl2llvm_type_t *totype_w_sign);
+struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t *original_val, struct cl2llvmTypeWrap *totype_w_sign);
 
 /*
  * This function takes two cl2llvm_value_t's determines the dominant type and  
@@ -81,6 +81,6 @@ struct cl2llvm_val_t *cl2llvm_to_bool_eq_0(struct cl2llvm_val_t *value);
    components that are equal to 1 will be converted to -1 in accordance with the 
    OpenCL standard. */
 struct cl2llvm_val_t *cl2llvm_bool_ext(struct cl2llvm_val_t *bool_val,
-	struct cl2llvm_type_t *type);
+	struct cl2llvmTypeWrap *type);
 
 #endif

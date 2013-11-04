@@ -22,7 +22,7 @@
 
 #include "init.h"
 #include "val.h"
-
+#include "Type.h"
 
 struct cl2llvm_init_t *cl2llvm_init_create(char *name)
 {
@@ -50,8 +50,8 @@ struct cl2llvm_init_t *cl2llvm_init_create_w_init(LLVMValueRef val, int sign, ch
 	init->array_deref_list = NULL;
 
 	init->cl2llvm_val->val = val;
-	init->cl2llvm_val->type->llvm_type = LLVMTypeOf(val);
-	init->cl2llvm_val->type->sign = sign;
+	cl2llvmTypeWrapSetLlvmType(init->cl2llvm_val->type, LLVMTypeOf(val));
+	cl2llvmTypeWrapSetSign(init->cl2llvm_val->type, sign);
 
 	return init;
 }

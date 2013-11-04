@@ -38,18 +38,20 @@ llvm::LLVMContext& context = llvm::getGlobalContext();
 
 class Type
 {
-	llvm::Type *type;
+	llvm::Type *llvm_type;
 	bool sign;  /* true = signed, false = unsigned */
 
 public:
 
-	Type(llvm::Type *type) { this->type = type; sign = true; }
-	Type(llvm::Type *type, bool sign) { this->type = type;
+	Type(llvm::Type *type) { this->llvm_type = type; sign = true; }
+	Type(llvm::Type *type, bool sign) { this->llvm_type = type;
 			this->sign = sign; }
 
-	llvm::Type *GetType() { return type; }
+	llvm::Type *GetLlvmType() { return llvm_type; }
+	void SetLlvmType(llvm::Type *llvm_type) { this->llvm_type = llvm_type; }
 	bool GetSign() { return sign; }
-	Type Compare(Type *type2);
+	void SetSign(bool sign) { this->sign = sign; }
+	Type* Compare(Type *type2);
 
 };
 
@@ -75,7 +77,10 @@ struct cl2llvmTypeWrap *cl2llvmTypeWrapCreate(void *llvm_type,
 		int sign);
 void cl2llvmTypeWrapFree(struct cl2llvmTypeWrap *type);
 int cl2llvmTypeWrapGetSign(struct cl2llvmTypeWrap *type);
-void cl2llvmTypeWrapSetSign(struct cl2llvmTypeWrap *type, int Sign);
+void cl2llvmTypeWrapSetSign(struct cl2llvmTypeWrap *type, int sign);
+void* cl2llvmTypeWrapGetLlvmType(struct cl2llvmTypeWrap *type);
+void cl2llvmTypeWrapSetLlvmType(struct cl2llvmTypeWrap* type, void *llvm_type);
+struct cl2llvmTypeWrap* cl2llvmTypeWrapCompare(struct cl2llvmTypeWrap* type1, struct cl2llvmTypeWrap* type2);
 
 #ifdef __cplusplus
 }

@@ -20,6 +20,7 @@
 
 #include <lib/mhandle/mhandle.h>
 
+#include "Type.h"
 #include "declarator-list.h"
 
 struct cl2llvm_decl_list_t *cl2llvm_decl_list_create()
@@ -43,7 +44,7 @@ struct cl2llvm_decl_list_t *cl2llvm_decl_list_create()
 void cl2llvm_decl_list_free(struct cl2llvm_decl_list_t *declarator_list)
 {
 	if (declarator_list->type_spec != NULL)
-		free(declarator_list->type_spec);
+		cl2llvmTypeWrapFree(declarator_list->type_spec);
 	if (declarator_list->access_qual != NULL)
 		free(declarator_list->access_qual);
 	/*if (declarator_list->kernel_t != NULL)

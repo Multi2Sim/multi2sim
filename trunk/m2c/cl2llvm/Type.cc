@@ -33,20 +33,20 @@ using namespace std;
  */
 const int TYPE_CMP_TABLE_SIZE  = 31;
 
-Type Type::Compare(Type *type2)
+Type *Type::Compare(Type *type2)
 {
 
-	llvm::Type *type1_type = type;
-	llvm::Type *type2_type = type2->type;
+	llvm::Type *type1_type = llvm_type;
+	llvm::Type *type2_type = type2->llvm_type;
 	bool type1_sign = sign;
 	bool type2_sign = type2->sign;
 
 	/* Set return value equal to type1 */
-	Type dom_type = Type(type1_type, type1_sign);
+	Type* dom_type = this;
 
 	struct llvm_type_const
 	{
-		llvm::Type* type;
+		llvm::Type* llvm_type;
 		bool sign;
 	};
 
@@ -91,27 +91,30 @@ Type Type::Compare(Type *type2)
 
 	for (i = 0; i < TYPE_CMP_TABLE_SIZE; i++)
 	{
-		if ((type1_type == table[i].type1.type 
-				&& type1_sign == table[i].type1.sign
-				&& type2_type == table[i].type2.type 
-				&& type2_sign == table[i].type2.sign)
-			|| (type2_type == table[i].type1.type 
-				&& type2_sign == table[i].type1.sign 
-				&& type1_type == table[i].type2.type 
-				&& type1_sign == table[i].type2.sign))
+		if (type1_type == table[i].type1.llvm_type 
+			&& type1_sign == table[i].type1.sign
+			&& type2_type == table[i].type2.llvm_type 
+			&& type2_sign == table[i].type2.sign)
 		{
-			dom_type = Type(table[i].type1.type, table[i].type1.sign);
+			dom_type = this;
+		}
+		else if (type2_type == table[i].type1.llvm_type 
+			&& type2_sign == table[i].type1.sign 
+			&& type1_type == table[i].type2.llvm_type 
+			&& type1_sign == table[i].type2.sign)
+		{
+			dom_type = type2;
 		}
 	}
 
 	/* If one type is of vector type, then return it as dominant type */
 	if (type1_type->isVectorTy())
 	{
-		dom_type = Type(type1_type, type1_sign);
+		dom_type = this;
 	}
 	else if (type2_type->isVectorTy())
 	{
-		dom_type = Type(type2_type, type2_sign);
+		dom_type = type2;
 	}
 	return dom_type;
 }
@@ -142,4 +145,27 @@ int cl2llvmTypeWrapGetSign(struct cl2llvmTypeWrap *self)
 	return type->GetSign();
 }
 
+void* cl2llvmTypeWrapGetLlvmType(struct cl2llvmTypeWrap *self)
+{
+	Type *type = (Type *) self;
+	return type->GetLlvmType();
+}
 
+void cl2llvmTypeWrapSetLlvmType(struct cl2llvmTypeWrap *self, void *llvm_type)
+{
+	Type *type = (Type *) self;
+	type->SetLlvmType((llvm::Type *) llvm_type);
+}
+
+void cl2llvmTypeWrapSetSign(struct cl2llvmTypeWrap *self, int sign)
+{
+	Type *type = (Type *) self;
+	type->SetSign((bool) sign);
+}
+
+struct cl2llvmTypeWrap* cl2llvmTypeWrapCompare(struct cl2llvmTypeWrap* type1, struct cl2llvmTypeWrap* type2)
+{
+	Type* type = (Type *) type1;
+	Type* dom_type = type->Compare((Type *) type2);
+	return (cl2llvmTypeWrap *) dom_type;
+}

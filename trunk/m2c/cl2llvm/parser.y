@@ -17,6 +17,7 @@
 #include <llvm-c/Transforms/Scalar.h>
 #include <llvm-c/BitWriter.h>
 
+#include "Type.h"
 #include "vector-ops.h"
 #include "for-blocks.h"
 #include "while-blocks.h"
@@ -65,7 +66,7 @@ LLVMBasicBlockRef current_basic_block;
 	unsigned long long const_int_val_ull;
 	double  const_float_val;
 	char * identifier;
-	struct cl2llvm_type_t *llvm_type_ref;
+	struct cl2llvmTypeWrap *llvm_type_ref;
 	struct cl2llvm_val_t *llvm_value_ref;
 	struct list_t * init_list;
 	struct list_t * list_val_t;
@@ -272,7 +273,7 @@ func_def
 					$4, i);
 				if (!current_arg->name)
 					yyerror("parameter name omitted");
-				func_args[i] = current_arg->type_spec->llvm_type;
+				func_args[i] = cl2llvmTypeWrapGetLlvmType(current_arg->type_spec);
 			}
 		}
 		else 
@@ -280,7 +281,7 @@ func_def
 
 		/* Define function */
 		function_type = LLVMFunctionType(
-			$1->type_spec->llvm_type, func_args, arg_count, 0);
+			cl2llvmTypeWrapGetLlvmType($1->type_spec), func_args, arg_count, 0);
 		function = LLVMAddFunction(cl2llvm_module, $2,
 			function_type);
 		LLVMSetFunctionCallConv(function, LLVMCCallConv);
@@ -298,7 +299,7 @@ func_def
 
 		new_function->func = function;
 		new_function->func_type = function_type;
-		new_function->sign = $1->type_spec->sign;
+		new_function->sign = cl2llvmTypeWrapGetSign($1->type_spec);
 		new_function->entry_block = basic_block;
 
 		/* Set current function to newly created function */
@@ -324,18 +325,17 @@ func_def
 				struct cl2llvm_val_t *arg_pointer = 
 					cl2llvm_val_create_w_init( 
 					LLVMBuildAlloca(cl2llvm_builder, 
-					current_arg->type_spec->llvm_type, 
+					cl2llvmTypeWrapGetLlvmType(current_arg->type_spec), 
 					arg_name),
-					current_arg->type_spec->sign);
+					cl2llvmTypeWrapGetSign(current_arg->type_spec));
 
 				struct cl2llvm_symbol_t *symbol = 
 					cl2llvm_symbol_create_w_init(
 					arg_pointer->val, 
-					current_arg->type_spec->sign, 
+					cl2llvmTypeWrapGetSign(current_arg->type_spec), 
 					current_arg->name);
 
-				symbol->cl2llvm_val->type->llvm_type = 
-					current_arg->type_spec->llvm_type;
+				cl2llvmTypeWrapSetLlvmType(symbol->cl2llvm_val->type, cl2llvmTypeWrapGetLlvmType(current_arg->type_spec));
 
 				/* Name and store arguments */
 				LLVMValueRef arg_val = LLVMGetParam(
@@ -445,13 +445,12 @@ declarator_list
 			switch ($2->addr_qual)
 			{
 				case 1:
-					$1->type_spec->llvm_type = LLVMPointerType( 
-						LLVMGetElementType($1->type_spec->llvm_type), 1);
+					cl2llvmTypeWrapSetLlvmType($1->type_spec, LLVMPointerType(
+						LLVMGetElementType(cl2llvmTypeWrapGetLlvmType($1->type_spec)), 1));
 					break;
 					
 				case 2:
-					$1->type_spec->llvm_type = LLVMPointerType(  
-						LLVMGetElementType($1->type_spec->llvm_type), 2);
+					cl2llvmTypeWrapSetLlvmType($1->type_spec, LLVMPointerType(LLVMGetElementType(cl2llvmTypeWrapGetLlvmType($1->type_spec)), 2));
 						break;
 
 				default:
@@ -463,13 +462,11 @@ declarator_list
 			switch ($1->addr_qual)
 			{
 				case 1:
-					$1->type_spec->llvm_type = LLVMPointerType( 
-						LLVMGetElementType($2->type_spec->llvm_type), 1);
+					cl2llvmTypeWrapSetLlvmType($1->type_spec, LLVMPointerType(LLVMGetElementType(cl2llvmTypeWrapGetLlvmType($2->type_spec)), 1));
 						break;
 					
 				case 2:
-					$1->type_spec->llvm_type = LLVMPointerType( 	
-						LLVMGetElementType($2->type_spec->llvm_type), 2);
+					cl2llvmTypeWrapSetLlvmType($1->type_spec, LLVMPointerType(LLVMGetElementType(cl2llvmTypeWrapGetLlvmType($2->type_spec)), 2));
 						break;
 
 				default:
@@ -649,7 +646,7 @@ lvalue
 		}
 
 		ptr = cl2llvm_val_create_w_init(deref_ptr, 
-			$1->type->sign);
+			cl2llvmTypeWrapGetSign($1->type));
 
 		/*Free pointers*/
 		LIST_FOR_EACH($2, i)
@@ -706,7 +703,7 @@ lvalue
 		
 
 		ptr = cl2llvm_val_create_w_init(deref_ptr, 
-			$2->type->sign);
+			cl2llvmTypeWrapGetSign($2->type));
 
 		cl2llvm_val_free($2);
 
@@ -724,7 +721,7 @@ lvalue
 
 		/*Duplicate symbol*/
 		symbol_val_dup = cl2llvm_val_create_w_init(symbol->cl2llvm_val->val, 
-			symbol->cl2llvm_val->type->sign);
+			cl2llvmTypeWrapGetSign(symbol->cl2llvm_val->type));
 
 
 		$$ = symbol_val_dup;
@@ -740,7 +737,7 @@ lvalue
 */
 
 		/* If symbol is a vector retrieve the specified indices */
-		if (LLVMGetTypeKind(LLVMGetElementType($1->type->llvm_type))
+		if (LLVMGetTypeKind(LLVMGetElementType(cl2llvmTypeWrapGetLlvmType($1->type)))
 			== LLVMVectorTypeKind)
 		{	
 			cl2llvm_get_vector_indices($1, $3);
@@ -754,14 +751,14 @@ array_deref_list
 	{
 		struct list_t *array_deref_list = list_create();
 		
-		if (LLVMGetTypeKind($2->type->llvm_type) != LLVMIntegerTypeKind)
+		if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType($2->type)) != LLVMIntegerTypeKind)
 			yyerror("array index is not an integer");
 		list_add(array_deref_list, $2);
 		$$ = array_deref_list;
 	}
 	| array_deref_list TOK_BRACKET_OPEN expr TOK_BRACKET_CLOSE
 	{
-		if (LLVMGetTypeKind($3->type->llvm_type) != LLVMIntegerTypeKind)
+		if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType($3->type)) != LLVMIntegerTypeKind)
 			yyerror("array index is not an integer");
 		list_add($1, $3);
 		$$ = $1;
@@ -784,8 +781,8 @@ stmt
 	| TOK_RETURN maybe_expr TOK_SEMICOLON
 	{
 		struct cl2llvm_val_t *ret_val;
-		struct cl2llvm_type_t *type = cl2llvm_type_create_w_init( LLVMGetReturnType(cl2llvm_current_function->func_type), cl2llvm_current_function->sign);
-		if (type->llvm_type == LLVMVoidType())
+		struct cl2llvmTypeWrap *type = cl2llvmTypeWrapCreate( LLVMGetReturnType(cl2llvm_current_function->func_type), cl2llvm_current_function->sign);
+		if (cl2llvmTypeWrapGetLlvmType(type) == LLVMVoidType())
 		{
 			if ($2 == NULL)
 			{
@@ -796,13 +793,13 @@ stmt
 		}
 		else
 		{
-			if (type->llvm_type != $2->type->llvm_type || type->sign != $2->type->sign)
+			if (cl2llvmTypeWrapGetLlvmType(type) != cl2llvmTypeWrapGetLlvmType($2->type) || cl2llvmTypeWrapGetSign(type) != cl2llvmTypeWrapGetSign($2->type))
 				ret_val = llvm_type_cast($2, type);
 			else
 				ret_val = $2;
 		
 			LLVMBuildRet(cl2llvm_builder, ret_val->val);
-			cl2llvm_type_free(type);
+			cl2llvmTypeWrapFree(type);
 	
 			if (ret_val != $2)
 				cl2llvm_val_free(ret_val);
@@ -839,7 +836,7 @@ func_call
 		struct cl2llvm_arg_t *current_func_arg;
 		struct cl2llvm_val_t *current_param;
 		struct cl2llvm_function_t *function;
-		struct cl2llvm_type_t *type;
+		struct cl2llvmTypeWrap *type;
 		struct cl2llvm_val_t *cast_param;
 		LLVMValueRef llvm_val_func_ret;
 		struct cl2llvm_val_t *ret_val;
@@ -862,14 +859,14 @@ func_call
 			current_param = list_get($3, i);
 			if (current_func_arg == NULL)
 				cast_param_array[i] = NULL;
-			else if (current_func_arg->type_spec->llvm_type 
-				!= current_param->type->llvm_type)
+			else if (cl2llvmTypeWrapGetLlvmType(current_func_arg->type_spec) 
+				!= cl2llvmTypeWrapGetLlvmType(current_param->type))
 			{
-				type = cl2llvm_type_create_w_init( 
-					current_func_arg->type_spec->llvm_type,
-					current_func_arg->type_spec->sign);
+				type = cl2llvmTypeWrapCreate( 
+					cl2llvmTypeWrapGetLlvmType(current_func_arg->type_spec),
+					cl2llvmTypeWrapGetSign(current_func_arg->type_spec));
 				cast_param = llvm_type_cast(current_param, type);
-				cl2llvm_type_free(type);
+				cl2llvmTypeWrapFree(type);
 				cast_param_array[i] = cast_param->val;
 				cl2llvm_val_free(current_param);
 				cl2llvm_val_free(cast_param);
@@ -1038,24 +1035,24 @@ declaration
 			current_list_elem = list_get($2, i);			
 			
 			/*if variable type is a vector*/
-			if (LLVMGetTypeKind($1->type_spec->llvm_type) == LLVMVectorTypeKind)
+			if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType($1->type_spec)) == LLVMVectorTypeKind)
 			{	
 				/*Go to entry block and declare variable*/
 				LLVMPositionBuilder(cl2llvm_builder, cl2llvm_current_function->entry_block, cl2llvm_current_function->branch_instr);
 				var_addr = LLVMBuildAlloca(cl2llvm_builder, 
-					$1->type_spec->llvm_type, current_list_elem->name);
+					cl2llvmTypeWrapGetLlvmType($1->type_spec), current_list_elem->name);
 				LLVMPositionBuilderAtEnd(cl2llvm_builder, current_basic_block);
 
 				/*Create symbol*/
 				symbol = cl2llvm_symbol_create_w_init( var_addr, 
-					$1->type_spec->sign, current_list_elem->name);
+					cl2llvmTypeWrapGetSign($1->type_spec), current_list_elem->name);
 				
 				/* If initializer is present, store it. */
 				if (current_list_elem->cl2llvm_val != NULL)
 				{
 
-					if (LLVMTypeOf(current_list_elem->cl2llvm_val->val) == $1->type_spec->llvm_type 
-						&& current_list_elem->cl2llvm_val->type->sign == $1->type_spec->sign)
+					if (LLVMTypeOf(current_list_elem->cl2llvm_val->val) == cl2llvmTypeWrapGetLlvmType($1->type_spec) 
+						&& cl2llvmTypeWrapGetSign(current_list_elem->cl2llvm_val->type) == cl2llvmTypeWrapGetSign($1->type_spec))
 					{
 						LLVMBuildStore(cl2llvm_builder, 
 							current_list_elem->cl2llvm_val->val, var_addr);
@@ -1072,13 +1069,13 @@ declaration
 				/*Go to entry block and declare variable*/
 				LLVMPositionBuilder(cl2llvm_builder, cl2llvm_current_function->entry_block, cl2llvm_current_function->branch_instr);
 				var_addr = LLVMBuildAlloca(cl2llvm_builder, 
-					$1->type_spec->llvm_type, current_list_elem->name);
+					cl2llvmTypeWrapGetLlvmType($1->type_spec), current_list_elem->name);
 				LLVMPositionBuilderAtEnd(cl2llvm_builder, current_basic_block);
 
 				/*Create symbol*/
 				symbol = cl2llvm_symbol_create_w_init( var_addr, 
-					$1->type_spec->sign, current_list_elem->name);
-				symbol->cl2llvm_val->type->llvm_type = $1->type_spec->llvm_type;
+					cl2llvmTypeWrapGetSign($1->type_spec), current_list_elem->name);
+				cl2llvmTypeWrapSetLlvmType(symbol->cl2llvm_val->type, cl2llvmTypeWrapGetLlvmType($1->type_spec));
 
 				
 				/*If initializer is present, cast initializer to declarator 
@@ -1109,7 +1106,7 @@ declaration
 				}
 
 				/* Create type for pointer to array. */
-				type = $1->type_spec->llvm_type;
+				type = cl2llvmTypeWrapGetLlvmType($1->type_spec);
 
 				for (i = 0; i < list_count(
 					current_list_elem->array_deref_list); i++)
@@ -1133,7 +1130,7 @@ declaration
 					char local_name[200];
 					snprintf(local_name, sizeof(local_name),
 						"aclocal_%s", current_list_elem->name);
-					ptr = cl2llvm_val_create_w_init(LLVMAddGlobalInAddressSpace(cl2llvm_module, type, local_name, $1->addr_qual), $1->type_spec->sign);
+					ptr = cl2llvm_val_create_w_init(LLVMAddGlobalInAddressSpace(cl2llvm_module, type, local_name, $1->addr_qual), cl2llvmTypeWrapGetSign($1->type_spec));
 				}
 				else
 				{
@@ -1145,7 +1142,7 @@ declaration
 				ptr = cl2llvm_val_create_w_init( LLVMBuildAlloca( 
 					cl2llvm_builder, type,
 					current_list_elem->name), 
-					$1->type_spec->sign);
+					cl2llvmTypeWrapGetSign($1->type_spec));
 	
 				LLVMPositionBuilderAtEnd(cl2llvm_builder,
 					current_basic_block);
@@ -1154,7 +1151,7 @@ declaration
 				}
 				/* Create symbol */
 				symbol = cl2llvm_symbol_create_w_init( 
-					ptr->val , $1->type_spec->sign, 
+					ptr->val , cl2llvmTypeWrapGetSign($1->type_spec), 
 					current_list_elem->name);
 
 				
@@ -1265,7 +1262,7 @@ if_stmt
 if
 	:  TOK_IF TOK_PAR_OPEN expr TOK_PAR_CLOSE
 	{
-		struct cl2llvm_type_t *i1 = cl2llvm_type_create_w_init(LLVMInt1Type(), 1);
+		struct cl2llvmTypeWrap *i1 = cl2llvmTypeWrapCreate(LLVMInt1Type(), 1);
 		
 		/*Create endif block*/
 		snprintf(block_name, sizeof block_name,
@@ -1279,7 +1276,7 @@ if
 			cl2llvm_current_function->func, block_name);
 		
 		/*evaluate expression*/
-		if (LLVMGetTypeKind($3->type->llvm_type) == LLVMVectorTypeKind)
+		if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType($3->type)) == LLVMVectorTypeKind)
 			cl2llvm_yyerror("expression must have arithmetic, enum "
 				"or pointer type");
 		struct cl2llvm_val_t *bool_val =  cl2llvm_to_bool_ne_0($3);
@@ -1292,7 +1289,7 @@ if
 	
 		cl2llvm_val_free(bool_val);
 		cl2llvm_val_free($3);
-		cl2llvm_type_free(i1);
+		cl2llvmTypeWrapFree(i1);
 	}
 	stmt_or_stmt_list
 	{
@@ -1359,7 +1356,7 @@ for_loop_header
 		/*Build for loop conditional*/
 		if ($6 != NULL)
 		{
-			if (LLVMGetTypeKind($6->type->llvm_type)
+			if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType($6->type))
 				== LLVMVectorTypeKind)
 				cl2llvm_yyerror("expression must have "
 					"arithmetic, enum or pointer type");
@@ -1442,7 +1439,7 @@ for_loop_header
 		/*Build for loop conditional*/
 		if ($5 != NULL)
 		{
-			if (LLVMGetTypeKind($5->type->llvm_type)
+			if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType($5->type))
 				== LLVMVectorTypeKind)
 				cl2llvm_yyerror("expression must have "
 					"arithmetic, enum or pointer type");
@@ -1517,7 +1514,7 @@ do_while_loop
 	{
 		struct cl2llvm_val_t *bool_val;
 	
-		if (LLVMGetTypeKind($7->type->llvm_type)
+		if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType($7->type))
 			== LLVMVectorTypeKind)
 			cl2llvm_yyerror("expression must have "
 				"arithmetic, enum or pointer type");
@@ -1534,7 +1531,7 @@ while_loop
 	{
 		struct cl2llvm_val_t *bool_val;
 		
-		if (LLVMGetTypeKind($4->type->llvm_type)
+		if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType($4->type))
 			== LLVMVectorTypeKind)
 			cl2llvm_yyerror("expression must have "
 				"arithmetic, enum or pointer type");
@@ -1603,58 +1600,41 @@ expr
 	}
 	| expr TOK_PLUS expr
 	{
-		struct cl2llvm_type_t *switch_type;
+		struct cl2llvmTypeWrap *switch_type;
 		struct cl2llvm_val_t *value;
-		struct cl2llvm_type_t *type = cl2llvm_type_create();
 		struct cl2llvm_val_t *op1, *op2;
 		
 		/* Find out which value differs from the original and set the
 		   dominant type equal to the type of that value. */
 		type_unify($1, $3, &op1, &op2);
-		if(op1 == $1)
-		{
-			type->llvm_type = op1->type->llvm_type;
-			type->sign = op1->type->sign;
-		}
-		else
-		{
-			type->llvm_type = op2->type->llvm_type;
-			type->sign = op2->type->sign;
-		}
-
+		
 		/* Create an object that will hold the type of the operands.
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		switch_type = cl2llvm_type_create_w_init(type->llvm_type, type->sign);
-		if (LLVMGetTypeKind(type->llvm_type) == LLVMVectorTypeKind)
+		switch_type = cl2llvmTypeWrapCreate(cl2llvmTypeWrapGetLlvmType(op1->type), cl2llvmTypeWrapGetSign(op1->type));
+		if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(op1->type))  == LLVMVectorTypeKind)
 		{
-			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
+			cl2llvmTypeWrapSetLlvmType(switch_type, LLVMGetElementType(cl2llvmTypeWrapGetLlvmType(op1->type)));
 		}
 
 		snprintf(temp_var_name, sizeof temp_var_name,
 				"tmp_%d", temp_var_count++);
 		
-		value = cl2llvm_val_create();
-
 		/* Determine which type of addition to use based on type of
 		   operators. */
-		switch (LLVMGetTypeKind(switch_type->llvm_type))
+		switch (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(switch_type)))
 		{
 		case LLVMIntegerTypeKind:
 
-			value->val = LLVMBuildAdd(cl2llvm_builder, op1->val, op2->val, temp_var_name);
-			value->type->sign = type->sign;
-			value->type->llvm_type = type->llvm_type;
+			value = cl2llvm_val_create_w_init(LLVMBuildAdd(cl2llvm_builder, op1->val, op2->val, temp_var_name), cl2llvmTypeWrapGetSign(op1->type));
 			break;
 
 		case LLVMHalfTypeKind:
 		case LLVMFloatTypeKind:
 		case LLVMDoubleTypeKind:
 
-			value->val = LLVMBuildFAdd(cl2llvm_builder, op1->val, op2->val, temp_var_name);
-			value->type->sign = type->sign;
-			value->type->llvm_type = type->llvm_type;
+			value = cl2llvm_val_create_w_init(LLVMBuildFAdd(cl2llvm_builder, op1->val, op2->val, temp_var_name), cl2llvmTypeWrapGetSign(op1->type));
 			break;
 
 		default:
@@ -1669,62 +1649,46 @@ expr
 			cl2llvm_val_free( op2);
 		cl2llvm_val_free($3);
 		cl2llvm_val_free($1);
-		cl2llvm_type_free(type);
-		cl2llvm_type_free(switch_type);
+		cl2llvmTypeWrapFree(switch_type);
 
 		$$ = value;
 	}
 	| expr TOK_MINUS expr
 	{
 		struct cl2llvm_val_t *value;
-		struct cl2llvm_type_t *switch_type;
-		struct cl2llvm_type_t *type = cl2llvm_type_create();
+		struct cl2llvmTypeWrap *switch_type;
 		struct cl2llvm_val_t *op1, *op2;
 
 		/* Find out which value differs from the original and set the
 		   dominant type equal to the type of that value. */	
 		type_unify($1, $3, &op1, & op2);
-		if(op1 == $1)
-		{
-			type->llvm_type = LLVMTypeOf(op1->val);
-			type->sign = op1->type->sign;
-		}
-		else
-		{
-			type->llvm_type = LLVMTypeOf(op1->val);
-			type->sign = op1->type->sign;
-		}
 		
 		/* Create an object that will hold the type of the operands.
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		switch_type = cl2llvm_type_create_w_init(type->llvm_type, type->sign);
-		if (LLVMGetTypeKind(type->llvm_type) == LLVMVectorTypeKind)
+		if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(op1->type)) == LLVMVectorTypeKind)
 		{
-			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
+			switch_type =  cl2llvmTypeWrapCreate(LLVMGetElementType(cl2llvmTypeWrapGetLlvmType(op1->type)), cl2llvmTypeWrapGetSign(op2->type));
 		}
+		else
+			switch_type = cl2llvmTypeWrapCreate(cl2llvmTypeWrapGetLlvmType(op1->type), cl2llvmTypeWrapGetSign(op1->type));
 
 		snprintf(temp_var_name, sizeof temp_var_name,
 				"tmp_%d", temp_var_count++);
 
-		value = cl2llvm_val_create();
-		switch (LLVMGetTypeKind(switch_type->llvm_type))
+		switch (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(switch_type)))
 		{
 		case LLVMIntegerTypeKind:
 
-			value->val = LLVMBuildSub(cl2llvm_builder, op1->val, op2->val, temp_var_name);
-			value->type->sign = type->sign;
-			value->type->llvm_type = type->llvm_type;
+			value = cl2llvm_val_create_w_init(LLVMBuildSub(cl2llvm_builder, op1->val, op2->val, temp_var_name), cl2llvmTypeWrapGetSign(op1->type));
 			break;
 
 		case LLVMHalfTypeKind:
 		case LLVMFloatTypeKind:
 		case LLVMDoubleTypeKind:
 
-			value->val = LLVMBuildFSub(cl2llvm_builder, op1->val, op2->val, temp_var_name);
-			value->type->sign = type->sign;
-			value->type->llvm_type = type->llvm_type;
+			value = cl2llvm_val_create_w_init(LLVMBuildFSub(cl2llvm_builder, op1->val, op2->val, temp_var_name), cl2llvmTypeWrapGetSign(op1->type));
 			break;
 
 		default:
@@ -1738,19 +1702,15 @@ expr
 
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
-		cl2llvm_type_free(type);
-		cl2llvm_type_free(switch_type);
+		cl2llvmTypeWrapFree(switch_type);
 
 		$$ = value;
 	}
 	| expr TOK_MULT expr
 	{
-		struct cl2llvm_type_t *switch_type;
-		struct cl2llvm_type_t *type;
+		struct cl2llvmTypeWrap *switch_type;
 		struct cl2llvm_val_t *value;
 
-		type = cl2llvm_type_create();
-		value = cl2llvm_val_create();
 
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp_%d", temp_var_count++);
@@ -1758,49 +1718,32 @@ expr
 		struct cl2llvm_val_t *op1, *op2;
 		
 		type_unify($1, $3, &op1, &op2);
-		if(op1 == $1)
-		{
-			type->llvm_type = LLVMTypeOf(op1->val);
-			type->sign = op1->type->sign;
-		}
-		else
-		{
-			type->llvm_type = LLVMTypeOf(op1->val);
-			type->sign = op1->type->sign;
-		}
-		
+			
 		/* Create an object that will hold the type of the operands.
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		switch_type = cl2llvm_type_create_w_init(type->llvm_type, type->sign);
-		if (LLVMGetTypeKind(type->llvm_type) == LLVMVectorTypeKind)
+		if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(op1->type)) == LLVMVectorTypeKind)
 		{
-			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
+			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(cl2llvmTypeWrapGetLlvmType(op1->type)), cl2llvmTypeWrapGetSign(op1->type));
 		}
+		else 
+			switch_type = cl2llvmTypeWrapCreate(cl2llvmTypeWrapGetLlvmType(op1->type), cl2llvmTypeWrapGetSign(op1->type));
 
-		switch (LLVMGetTypeKind(switch_type->llvm_type))
+		switch (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(switch_type)))
 		{
 		case LLVMIntegerTypeKind:
 
-			value->val = LLVMBuildMul(cl2llvm_builder, op1->val,
-				op2->val, temp_var_name);
-
-			value->type->sign = type->sign;
-			value->type->llvm_type = type->llvm_type;
-
+			value = cl2llvm_val_create_w_init(LLVMBuildMul(cl2llvm_builder, op1->val,
+				op2->val, temp_var_name), cl2llvmTypeWrapGetSign(op1->type));
 			break;
 
 		case LLVMHalfTypeKind:
 		case LLVMFloatTypeKind:
 		case LLVMDoubleTypeKind:
 
-			value->val = LLVMBuildFMul(cl2llvm_builder, op1->val,
-				op2->val, temp_var_name);
-
-			value->type->sign = type->sign;
-			value->type->llvm_type = type->llvm_type;
-
+			value = cl2llvm_val_create_w_init(LLVMBuildFMul(cl2llvm_builder, op1->val,
+				op2->val, temp_var_name), cl2llvmTypeWrapGetSign(op1->type));
 			break;
 
 		default:
@@ -1815,72 +1758,54 @@ expr
 			cl2llvm_val_free(op2);
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
-		cl2llvm_type_free(type);
-		cl2llvm_type_free(switch_type);
+		cl2llvmTypeWrapFree(switch_type);
 
 		$$ = value;
 
 	}
 	| expr TOK_DIV expr
 	{
-		struct cl2llvm_type_t *switch_type;
-		struct cl2llvm_type_t *type;
+		struct cl2llvmTypeWrap *switch_type;
 		struct cl2llvm_val_t *value;
 		
-		type = cl2llvm_type_create();
-		value = cl2llvm_val_create();
-
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp_%d", temp_var_count++);
 
 		struct cl2llvm_val_t *op1, *op2;
 		
 		type_unify($1, $3, &op1, & op2);
-		if(op1 == $1)
-		{
-			type->llvm_type = LLVMTypeOf(op1->val);
-			type->sign = op1->type->sign;
-		}
-		else
-		{
-			type->llvm_type = LLVMTypeOf(op1->val);
-			type->sign = op1->type->sign;
-		}
-
+		
 		/* Create an object that will hold the type of the operands.
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		switch_type = cl2llvm_type_create_w_init(type->llvm_type, type->sign);
-		if (LLVMGetTypeKind(type->llvm_type) == LLVMVectorTypeKind)
+		if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(op1->type)) == LLVMVectorTypeKind)
 		{
-			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
+			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(cl2llvmTypeWrapGetLlvmType(op1->type)), cl2llvmTypeWrapGetSign(op1->type));
 		}
+		else
+			switch_type = cl2llvmTypeWrapCreate(cl2llvmTypeWrapGetLlvmType(op1->type), cl2llvmTypeWrapGetSign(op1->type));
 
-		switch (LLVMGetTypeKind(switch_type->llvm_type))
+		switch (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(switch_type)))
 		{
 		case LLVMIntegerTypeKind:
-			if (type->sign)
+			if (cl2llvmTypeWrapGetSign(switch_type))
 			{
-				value->val = LLVMBuildSDiv(cl2llvm_builder, 
-					op1->val, op2->val, temp_var_name);
+				value = cl2llvm_val_create_w_init(LLVMBuildSDiv(cl2llvm_builder, 
+					op1->val, op2->val, temp_var_name), cl2llvmTypeWrapGetSign(op1->type));
 			}
 			else
 			{
-				value->val = LLVMBuildUDiv(cl2llvm_builder, 
-					op1->val, op2->val, temp_var_name);
+				value = cl2llvm_val_create_w_init(LLVMBuildUDiv(cl2llvm_builder, 
+					op1->val, op2->val, temp_var_name), cl2llvmTypeWrapGetSign(op1->type));
 			}
-			value->type->sign = type->sign;
-			value->type->llvm_type = type->llvm_type;
 			break;
 
 		case LLVMHalfTypeKind:
 		case LLVMFloatTypeKind:
 		case LLVMDoubleTypeKind:
-			value->val = LLVMBuildFDiv(cl2llvm_builder, 
-					op1->val, op2->val, temp_var_name);
-			value->type->sign = type->sign;
-			value->type->llvm_type = type->llvm_type;
+			value = cl2llvm_val_create_w_init(LLVMBuildFDiv(cl2llvm_builder, 
+					op1->val, op2->val, temp_var_name), cl2llvmTypeWrapGetSign(op1->type));
 			break;
 
 		default:
@@ -1895,50 +1820,31 @@ expr
 			cl2llvm_val_free(op2);
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
-		cl2llvm_type_free(type);
-		cl2llvm_type_free(switch_type);
+		cl2llvmTypeWrapFree(switch_type);
 
 		$$ = value;
 	}
 	| expr TOK_MOD expr
 	{
-		struct cl2llvm_type_t *type;
 		struct cl2llvm_val_t *value;
 		
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp_%d", temp_var_count++);
 	
-		type = cl2llvm_type_create();
-		value = cl2llvm_val_create();
-
 		struct cl2llvm_val_t *op1, *op2;
 		
 		type_unify($1, $3, &op1, & op2);
-		if(op1 == $1)
-		{
-			type->llvm_type = LLVMTypeOf(op1->val);
-			type->sign = op1->type->sign;
-		}
-		else
-		{
-			type->llvm_type = LLVMTypeOf(op1->val);
-			type->sign = op1->type->sign;
-		}
 
-		switch (type->sign)
+		switch (cl2llvmTypeWrapGetSign(op1->type))
 		{
 		case 1:
-			value->val = LLVMBuildSRem(cl2llvm_builder, 
-				op1->val, op2->val, temp_var_name);
-			value->type->sign = type->sign;
-			value->type->llvm_type = type->llvm_type;
+			value = cl2llvm_val_create_w_init(LLVMBuildSRem(cl2llvm_builder, 
+				op1->val, op2->val, temp_var_name), cl2llvmTypeWrapGetSign(op1->type));
 			break;
 
 		case 0:
-			value->val = LLVMBuildURem(cl2llvm_builder, 
-				op1->val, op2->val, temp_var_name);
-			value->type->sign = type->sign;
-			value->type->llvm_type = type->llvm_type;
+			value = cl2llvm_val_create_w_init(LLVMBuildURem(cl2llvm_builder, 
+				op1->val, op2->val, temp_var_name), cl2llvmTypeWrapGetSign(op1->type));
 			break;
 
 		default:
@@ -1953,54 +1859,36 @@ expr
 			cl2llvm_val_free(op2);
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
-		cl2llvm_type_free(type);
 
 		$$ = value;
 
 	}
 	| expr TOK_SHIFT_LEFT expr
 	{
-		struct cl2llvm_type_t *switch_type;
-		struct cl2llvm_type_t *type;
+		struct cl2llvmTypeWrap *switch_type;
 		struct cl2llvm_val_t *value;
 		
-		type = cl2llvm_type_create();
-		value = cl2llvm_val_create();
-
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp_%d", temp_var_count++);
 
 		struct cl2llvm_val_t *op1, *op2;
 		
 		type_unify($1, $3, &op1, & op2);
-		if(op1 == $1)
-		{
-			type->llvm_type = LLVMTypeOf(op1->val);
-			type->sign = op1->type->sign;
-		}
-		else
-		{
-			type->llvm_type = LLVMTypeOf(op1->val);
-			type->sign = op1->type->sign;
-		}
 
 		/* Create an object that will hold the type of the operands.
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		switch_type = cl2llvm_type_create_w_init(type->llvm_type, type->sign);
-		if (LLVMGetTypeKind(type->llvm_type) == LLVMVectorTypeKind)
+		if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(op1->type)) == LLVMVectorTypeKind)
 		{
-			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
+			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(cl2llvmTypeWrapGetLlvmType(op1->type)), cl2llvmTypeWrapGetSign(op1->type));
 		}
 
-		switch (LLVMGetTypeKind(switch_type->llvm_type))
+		switch (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(switch_type)))
 		{
 		case LLVMIntegerTypeKind:
-			value->val = LLVMBuildShl(cl2llvm_builder, 
-				op1->val, op2->val, temp_var_name);
-			value->type->sign = type->sign;
-			value->type->llvm_type = type->llvm_type;
+			value = cl2llvm_val_create_w_init(LLVMBuildShl(cl2llvm_builder, 
+				op1->val, op2->val, temp_var_name), cl2llvmTypeWrapGetSign(op1->type));
 			break;
 
 
@@ -2016,58 +1904,40 @@ expr
 			cl2llvm_val_free(op2);
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
-		cl2llvm_type_free(type);
-		cl2llvm_type_free(switch_type);
+		cl2llvmTypeWrapFree(switch_type);
 
 		$$ = value;
 
 	}
 	| expr TOK_SHIFT_RIGHT expr
 	{
-		struct cl2llvm_type_t *switch_type;
-		struct cl2llvm_type_t *type;
+		struct cl2llvmTypeWrap *switch_type;
 		struct cl2llvm_val_t *value;
 		
-		type = cl2llvm_type_create();
-		value = cl2llvm_val_create();
-
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp_%d", temp_var_count++);
 
 		struct cl2llvm_val_t *op1, *op2;
 		
 		type_unify($1, $3, &op1, & op2);
-		if(op1 == $1)
-		{
-			type->llvm_type = LLVMTypeOf(op1->val);
-			type->sign = op1->type->sign;
-		}
-		else
-		{
-			type->llvm_type = LLVMTypeOf(op1->val);
-			type->sign = op1->type->sign;
-		}
 
 		/* Create an object that will hold the type of the operands.
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		switch_type = cl2llvm_type_create_w_init(type->llvm_type, type->sign);
-		if (LLVMGetTypeKind(type->llvm_type) == LLVMVectorTypeKind)
+		if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(op1->type)) == LLVMVectorTypeKind)
 		{
-			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
+			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(cl2llvmTypeWrapGetLlvmType(op1->type)), cl2llvmTypeWrapGetSign(op1->type));
 		}
-
-		switch (LLVMGetTypeKind(switch_type->llvm_type))
+		else
+			switch_type = cl2llvmTypeWrapCreate(cl2llvmTypeWrapGetLlvmType(op1->type), cl2llvmTypeWrapGetSign(op1->type));
+		
+		switch (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(switch_type)))
 		{
 		case LLVMIntegerTypeKind:
-			value->val = LLVMBuildAShr(cl2llvm_builder, 
-				op1->val, op2->val, temp_var_name);
-			value->type->sign = type->sign;
-			value->type->llvm_type = type->llvm_type;
+			value = cl2llvm_val_create_w_init(LLVMBuildAShr(cl2llvm_builder, 
+				op1->val, op2->val, temp_var_name), cl2llvmTypeWrapGetSign(op1->type));
 			break;
-
-
 		default:
 			
 			yyerror("Invalid type of operands for '>>'.");
@@ -2080,67 +1950,48 @@ expr
 			cl2llvm_val_free(op2);
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
-		cl2llvm_type_free(type);
-		cl2llvm_type_free(switch_type);
+		cl2llvmTypeWrapFree(switch_type);
 
 		$$ = value;
 	}
 	| expr TOK_EQUALITY expr
 	{
-		struct cl2llvm_type_t *switch_type;
-		struct cl2llvm_type_t *type;
+		struct cl2llvmTypeWrap *switch_type;
 		struct cl2llvm_val_t *value;
 		struct cl2llvm_val_t *bool_val;
-		
-
-		type = cl2llvm_type_create();
-		bool_val = cl2llvm_val_create();
 
 		struct cl2llvm_val_t *op1, *op2;
 		
 		type_unify($1, $3, &op1, & op2);
-		if(op1 == $1)
-		{
-			type->llvm_type = LLVMTypeOf(op1->val);
-			type->sign = op1->type->sign;
-		}
-		else
-		{
-			type->llvm_type = LLVMTypeOf(op1->val);
-			type->sign = op1->type->sign;
-		}
-
+		
 		/* Create an object that will hold the type of the operands.
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		switch_type = cl2llvm_type_create_w_init(type->llvm_type, type->sign);
-		if (LLVMGetTypeKind(switch_type->llvm_type) == LLVMVectorTypeKind)
+		if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(op1->type)) == LLVMVectorTypeKind)
 		{
-			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
+			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(cl2llvmTypeWrapGetLlvmType(op1->type)), cl2llvmTypeWrapGetSign(op1->type));
 		}
+		else
+			switch_type = cl2llvmTypeWrapCreate(cl2llvmTypeWrapGetLlvmType(op1->type), cl2llvmTypeWrapGetSign(op1->type));
 		
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp_%d", temp_var_count++);
 		
-		switch (LLVMGetTypeKind(switch_type->llvm_type))
+		switch (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(op1->type)))
 		{
 		case LLVMIntegerTypeKind:
 
-			bool_val->val = LLVMBuildICmp(cl2llvm_builder, LLVMIntEQ,
-				op1->val, op2->val, temp_var_name);
-			bool_val->type->sign = 1;
-			bool_val->type->llvm_type = LLVMInt1Type();
+			bool_val = cl2llvm_val_create_w_init(LLVMBuildICmp(cl2llvm_builder, LLVMIntEQ,
+				op1->val, op2->val, temp_var_name), cl2llvmTypeWrapGetSign(op1->type));
 			break;
 
 		case LLVMHalfTypeKind:
 		case LLVMFloatTypeKind:
 		case LLVMDoubleTypeKind:
 
-			bool_val->val = LLVMBuildFCmp(cl2llvm_builder,
-				LLVMRealOEQ, op1->val, op2->val, temp_var_name);
-			bool_val->type->sign = 1;
-			bool_val->type->llvm_type = LLVMInt1Type();
+			bool_val = cl2llvm_val_create_w_init(LLVMBuildFCmp(cl2llvm_builder,
+				LLVMRealOEQ, op1->val, op2->val, temp_var_name), cl2llvmTypeWrapGetSign(op1->type));
 			break;
 
 		default:
@@ -2159,66 +2010,49 @@ expr
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
 		cl2llvm_val_free(bool_val);
-		cl2llvm_type_free(type);
-		cl2llvm_type_free(switch_type);
+		cl2llvmTypeWrapFree(switch_type);
 
 		$$ = value;
 	}
 	| expr TOK_INEQUALITY expr
 	{
-		struct cl2llvm_type_t *switch_type;
-		struct cl2llvm_type_t *type;
+		struct cl2llvmTypeWrap *switch_type;
 		struct cl2llvm_val_t *value;
 		struct cl2llvm_val_t *bool_val;
 		
-		type = cl2llvm_type_create();
-		bool_val = cl2llvm_val_create();
 
 		struct cl2llvm_val_t *op1, *op2;
 		
 		type_unify($1, $3, &op1, & op2);
-		if(op1 == $1)
-		{
-			type->llvm_type = LLVMTypeOf(op1->val);
-			type->sign = op1->type->sign;
-		}
-		else
-		{
-			type->llvm_type = LLVMTypeOf(op1->val);
-			type->sign = op1->type->sign;
-		}
 
 		/* Create an object that will hold the type of the operands.
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		switch_type = cl2llvm_type_create_w_init(type->llvm_type, type->sign);
-		if (LLVMGetTypeKind(switch_type->llvm_type) == LLVMVectorTypeKind)
+		if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(op1->type)) == LLVMVectorTypeKind)
 		{
-			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
+			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(cl2llvmTypeWrapGetLlvmType(op1->type)), cl2llvmTypeWrapGetSign(op1->type));
 		}
+		else
+			switch_type = cl2llvmTypeWrapCreate(cl2llvmTypeWrapGetLlvmType(op1->type), cl2llvmTypeWrapGetSign(op1->type));
 		
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp_%d", temp_var_count++);
 
-		switch (LLVMGetTypeKind(switch_type->llvm_type))
+		switch (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(op1->type)))
 		{
 		case LLVMIntegerTypeKind:
 
-			bool_val->val = LLVMBuildICmp(cl2llvm_builder, LLVMIntNE,
-				op1->val, op2->val, temp_var_name);
-			bool_val->type->sign = 1;
-			bool_val->type->llvm_type = LLVMInt1Type();
+			bool_val = cl2llvm_val_create_w_init(LLVMBuildICmp(cl2llvm_builder, LLVMIntNE,
+				op1->val, op2->val, temp_var_name), cl2llvmTypeWrapGetSign(op1->type));
 			break;
 
 		case LLVMHalfTypeKind:
 		case LLVMFloatTypeKind:
 		case LLVMDoubleTypeKind:
 
-			bool_val->val = LLVMBuildFCmp(cl2llvm_builder, 
-				LLVMRealONE, op1->val, op2->val, temp_var_name);
-			bool_val->type->sign = 1;
-			bool_val->type->llvm_type = LLVMInt1Type();
+			bool_val = cl2llvm_val_create_w_init(LLVMBuildFCmp(cl2llvm_builder, 
+				LLVMRealONE, op1->val, op2->val, temp_var_name), cl2llvmTypeWrapGetSign(op1->type));
 			break;
 
 		default:
@@ -2237,78 +2071,59 @@ expr
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
 		cl2llvm_val_free(bool_val);
-		cl2llvm_type_free(type);
-		cl2llvm_type_free(switch_type);
+		cl2llvmTypeWrapFree(switch_type);
 
 		$$ = value;
 
 	}
 	| expr TOK_LESS expr
 	{
-		struct cl2llvm_type_t *switch_type;
-		struct cl2llvm_type_t *type;
+		struct cl2llvmTypeWrap *switch_type;
 		struct cl2llvm_val_t *value;
 		struct cl2llvm_val_t *bool_val;
 		
-	
-		type = cl2llvm_type_create();
-		bool_val = cl2llvm_val_create();
-
 		struct cl2llvm_val_t *op1, *op2;
 		
-		type_unify($1, $3, &op1, & op2);
-		if(op1 == $1)
-		{
-			type->llvm_type = LLVMTypeOf(op1->val);
-			type->sign = op1->type->sign;
-		}
-		else
-		{
-			type->llvm_type = LLVMTypeOf(op1->val);
-			type->sign = op1->type->sign;
-		}
+		type_unify($1, $3, &op1, & op2);	
 
 		/* Create an object that will hold the type of the operands.
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		switch_type = cl2llvm_type_create_w_init(type->llvm_type, type->sign);
-		if (LLVMGetTypeKind(switch_type->llvm_type) == LLVMVectorTypeKind)
+		if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(op1->type)) == LLVMVectorTypeKind)
 		{
-			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
+			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(cl2llvmTypeWrapGetLlvmType(op1->type)), cl2llvmTypeWrapGetSign(op1->type));
 		}
-	
+		else
+			switch_type = cl2llvmTypeWrapCreate(cl2llvmTypeWrapGetLlvmType(op1->type), cl2llvmTypeWrapGetSign(op1->type));
+		
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp_%d", temp_var_count++);
 
-		switch (LLVMGetTypeKind(switch_type->llvm_type))
+		switch (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(switch_type)))
 		{
 		case LLVMIntegerTypeKind:
 
-			if (type->sign)
+			if (cl2llvmTypeWrapGetSign(op1->type))
 			{
-				bool_val->val = LLVMBuildICmp(cl2llvm_builder, 
+				bool_val = cl2llvm_val_create_w_init(LLVMBuildICmp(cl2llvm_builder, 
 					LLVMIntSLT, op1->val, op2->val, 
-					temp_var_name);
+					temp_var_name), 1);
 			}
 			else
 			{
-				bool_val->val = LLVMBuildICmp(cl2llvm_builder, 
+				bool_val = cl2llvm_val_create_w_init(LLVMBuildICmp(cl2llvm_builder, 
 					LLVMIntULT, op1->val, op2->val, 
-					temp_var_name);
+					temp_var_name), 1);
 			}
-			bool_val->type->sign = 1;
-			bool_val->type->llvm_type = LLVMInt1Type();
 			break;
 
 		case LLVMHalfTypeKind:
 		case LLVMFloatTypeKind:
 		case LLVMDoubleTypeKind:
 
-			bool_val->val = LLVMBuildFCmp(cl2llvm_builder, 
-				LLVMRealOLT, op1->val, op2->val, temp_var_name);
-			bool_val->type->sign = 1;
-			bool_val->type->llvm_type = LLVMInt1Type();
+			bool_val = cl2llvm_val_create_w_init(LLVMBuildFCmp(cl2llvm_builder, 
+				LLVMRealOLT, op1->val, op2->val, temp_var_name), 1);
 			break;
 
 		default:
@@ -2327,78 +2142,59 @@ expr
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
 		cl2llvm_val_free(bool_val);
-		cl2llvm_type_free(type);
-		cl2llvm_type_free(switch_type);
+		cl2llvmTypeWrapFree(switch_type);
 
 		$$ = value;
 
 	}
 	| expr TOK_GREATER expr
 	{
-		struct cl2llvm_type_t *switch_type;
-		struct cl2llvm_type_t *type;
+		struct cl2llvmTypeWrap *switch_type;
 		struct cl2llvm_val_t *value;
 		struct cl2llvm_val_t *bool_val;
 		
-	
-		type = cl2llvm_type_create();
-		bool_val = cl2llvm_val_create();
-
 		struct cl2llvm_val_t *op1, *op2;
 		
 		type_unify($1, $3, &op1, & op2);
-		if(op1 == $1)
-		{
-			type->llvm_type = LLVMTypeOf(op1->val);
-			type->sign = op1->type->sign;
-		}
-		else
-		{
-			type->llvm_type = LLVMTypeOf(op1->val);
-			type->sign = op1->type->sign;
-		}
 
 		/* Create an object that will hold the type of the operands.
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		switch_type = cl2llvm_type_create_w_init(type->llvm_type, type->sign);
-		if (LLVMGetTypeKind(switch_type->llvm_type) == LLVMVectorTypeKind)
+		if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(op1->type)) == LLVMVectorTypeKind)
 		{
-			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
+			cl2llvmTypeWrapSetLlvmType(switch_type, LLVMGetElementType(cl2llvmTypeWrapGetLlvmType(op1->type)));
 		}
+		else
+			switch_type = cl2llvmTypeWrapCreate(cl2llvmTypeWrapGetLlvmType(op1->type), cl2llvmTypeWrapGetSign(op1->type));
 	
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp_%d", temp_var_count++);
 
-		switch (LLVMGetTypeKind(switch_type->llvm_type))
+		switch (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(switch_type)))
 		{
 		case LLVMIntegerTypeKind:
 
-			if (type->sign)
+			if (cl2llvmTypeWrapGetSign(op1->type))
 			{
-				bool_val->val = LLVMBuildICmp(cl2llvm_builder, 
+				bool_val = cl2llvm_val_create_w_init(LLVMBuildICmp(cl2llvm_builder, 
 					LLVMIntSGT, op1->val, op2->val, 
-					temp_var_name);
+					temp_var_name), 1);
 			}
 			else
 			{
-				bool_val->val = LLVMBuildICmp(cl2llvm_builder, 
+				bool_val = cl2llvm_val_create_w_init(LLVMBuildICmp(cl2llvm_builder, 
 					LLVMIntUGT, op1->val, op2->val, 
-					temp_var_name);
+					temp_var_name), 1);
 			}
-			bool_val->type->sign = 1;
-			bool_val->type->llvm_type = LLVMInt1Type();
 			break;
 
 		case LLVMHalfTypeKind:
 		case LLVMFloatTypeKind:
 		case LLVMDoubleTypeKind:
 
-			bool_val->val = LLVMBuildFCmp(cl2llvm_builder, 
-				LLVMRealOGT, op1->val, op2->val, temp_var_name);
-			bool_val->type->sign = 1;
-			bool_val->type->llvm_type = LLVMInt1Type();
+			bool_val = cl2llvm_val_create_w_init(LLVMBuildFCmp(cl2llvm_builder, 
+				LLVMRealOGT, op1->val, op2->val, temp_var_name), 1);
 			break;
 
 		default:
@@ -2417,77 +2213,58 @@ expr
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
 		cl2llvm_val_free(bool_val);
-		cl2llvm_type_free(type);
-		cl2llvm_type_free(switch_type);
+		cl2llvmTypeWrapFree(switch_type);
 
 		$$ = value;
 	}
 	| expr TOK_LESS_EQUAL expr
 	{
-		struct cl2llvm_type_t *switch_type;
-		struct cl2llvm_type_t *type;
+		struct cl2llvmTypeWrap *switch_type;
 		struct cl2llvm_val_t *value;
 		struct cl2llvm_val_t *bool_val;
 		
-	
-		type = cl2llvm_type_create();
-		bool_val = cl2llvm_val_create();
-
 		struct cl2llvm_val_t *op1, *op2;
 		
 		type_unify($1, $3, &op1, & op2);
-		if(op1 == $1)
-		{
-			type->llvm_type = LLVMTypeOf(op1->val);
-			type->sign = op1->type->sign;
-		}
-		else
-		{
-			type->llvm_type = LLVMTypeOf(op1->val);
-			type->sign = op1->type->sign;
-		}
-
+		
 		/* Create an object that will hold the type of the operands.
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		switch_type = cl2llvm_type_create_w_init(type->llvm_type, type->sign);
-		if (LLVMGetTypeKind(switch_type->llvm_type) == LLVMVectorTypeKind)
+		if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(op1->type)) == LLVMVectorTypeKind)
 		{
-			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
+			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(cl2llvmTypeWrapGetLlvmType(op1->type)), cl2llvmTypeWrapGetSign(op1->type));
 		}
-	
+		else
+			switch_type = cl2llvmTypeWrapCreate(cl2llvmTypeWrapGetLlvmType(op1->type), cl2llvmTypeWrapGetSign(op1->type));
+		
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp_%d", temp_var_count++);
 
-		switch (LLVMGetTypeKind(switch_type->llvm_type))
+		switch (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(switch_type)))
 		{
 		case LLVMIntegerTypeKind:
 
-			if (type->sign)
+			if (cl2llvmTypeWrapGetSign(op1->type))
 			{
-				bool_val->val = LLVMBuildICmp(cl2llvm_builder, 
+				bool_val = cl2llvm_val_create_w_init(LLVMBuildICmp(cl2llvm_builder, 
 					LLVMIntSLE, op1->val, op2->val, 
-					temp_var_name);
+					temp_var_name), 1);
 			}
 			else
 			{
-				bool_val->val = LLVMBuildICmp(cl2llvm_builder, 
+				bool_val = cl2llvm_val_create_w_init(LLVMBuildICmp(cl2llvm_builder, 
 					LLVMIntULE, op1->val, op2->val, 
-					temp_var_name);
+					temp_var_name), 1);
 			}
-			bool_val->type->sign = 1;
-			bool_val->type->llvm_type = LLVMInt1Type();
 			break;
 
 		case LLVMHalfTypeKind:
 		case LLVMFloatTypeKind:
 		case LLVMDoubleTypeKind:
 
-			bool_val->val = LLVMBuildFCmp(cl2llvm_builder, 
-				LLVMRealOLE, op1->val, op2->val, temp_var_name);
-			bool_val->type->sign = 1;
-			bool_val->type->llvm_type = LLVMInt1Type();
+			bool_val = cl2llvm_val_create_w_init(LLVMBuildFCmp(cl2llvm_builder, 
+				LLVMRealOLE, op1->val, op2->val, temp_var_name), 1);
 			break;
 
 		default:
@@ -2506,77 +2283,58 @@ expr
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
 		cl2llvm_val_free(bool_val);
-		cl2llvm_type_free(type);
-		cl2llvm_type_free(switch_type);
+		cl2llvmTypeWrapFree(switch_type);
 
 		$$ = value;
 	}
 	| expr TOK_GREATER_EQUAL expr
 	{
-		struct cl2llvm_type_t *switch_type;
-		struct cl2llvm_type_t *type;
+		struct cl2llvmTypeWrap *switch_type;
 		struct cl2llvm_val_t *value;
 		struct cl2llvm_val_t *bool_val;
 		
-	
-		type = cl2llvm_type_create();
-		bool_val = cl2llvm_val_create();
-
 		struct cl2llvm_val_t *op1, *op2;
 		
 		type_unify($1, $3, &op1, & op2);
-		if(op1 == $1)
-		{
-			type->llvm_type = LLVMTypeOf(op1->val);
-			type->sign = op1->type->sign;
-		}
-		else
-		{
-			type->llvm_type = LLVMTypeOf(op1->val);
-			type->sign = op1->type->sign;
-		}
 
 		/* Create an object that will hold the type of the operands.
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		switch_type = cl2llvm_type_create_w_init(type->llvm_type, type->sign);
-		if (LLVMGetTypeKind(switch_type->llvm_type) == LLVMVectorTypeKind)
+		if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(op1->type)) == LLVMVectorTypeKind)
 		{
-			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
+			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(cl2llvmTypeWrapGetLlvmType(op1->type)), cl2llvmTypeWrapGetSign(op1->type));
 		}
+		else
+			switch_type = cl2llvmTypeWrapCreate(cl2llvmTypeWrapGetLlvmType(op1->type), cl2llvmTypeWrapGetSign(op1->type));
 
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp_%d", temp_var_count++);
 
-		switch (LLVMGetTypeKind(switch_type->llvm_type))
+		switch (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(switch_type)))
 		{
 		case LLVMIntegerTypeKind:
 
-			if (type->sign)
+			if (cl2llvmTypeWrapGetSign(op1->type))
 			{
-				bool_val->val = LLVMBuildICmp(cl2llvm_builder, 
+				bool_val = cl2llvm_val_create_w_init(LLVMBuildICmp(cl2llvm_builder, 
 					LLVMIntSGE, op1->val, op2->val, 
-					temp_var_name);
+					temp_var_name), 1);
 			}
 			else
 			{
-				bool_val->val = LLVMBuildICmp(cl2llvm_builder, 
+				bool_val = cl2llvm_val_create_w_init(LLVMBuildICmp(cl2llvm_builder, 
 					LLVMIntUGE, op1->val, op2->val, 
-					temp_var_name);
+					temp_var_name), 1);
 			}
-			bool_val->type->sign = 1;
-			bool_val->type->llvm_type = LLVMInt1Type();
 			break;
 
 		case LLVMHalfTypeKind:
 		case LLVMFloatTypeKind:
 		case LLVMDoubleTypeKind:
 
-			bool_val->val = LLVMBuildFCmp(cl2llvm_builder, 
-				LLVMRealOGE, op1->val, op2->val, temp_var_name);
-			bool_val->type->sign = 1;
-			bool_val->type->llvm_type = LLVMInt1Type();
+			bool_val = cl2llvm_val_create_w_init(LLVMBuildFCmp(cl2llvm_builder, 
+				LLVMRealOGE, op1->val, op2->val, temp_var_name), 1);
 			break;
 
 		default:
@@ -2595,8 +2353,7 @@ expr
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
 		cl2llvm_val_free(bool_val);
-		cl2llvm_type_free(type);
-		cl2llvm_type_free(switch_type);
+		cl2llvmTypeWrapFree(switch_type);
 
 		$$ = value;
 	}
@@ -2606,30 +2363,16 @@ expr
 		struct cl2llvm_val_t *bool2;
 		struct cl2llvm_val_t *value;
 		struct cl2llvm_val_t *land_cond;
-		struct cl2llvm_type_t *type;
 		LLVMBasicBlockRef land_rhs;
 		LLVMBasicBlockRef land_end;
 		struct cl2llvm_val_t *op1, *op2;
 		
 		/* If one value is a vector */
-		if (LLVMGetTypeKind($1->type->llvm_type) == LLVMVectorTypeKind
-			|| LLVMGetTypeKind($3->type->llvm_type) == LLVMVectorTypeKind)
+		if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType($1->type)) == LLVMVectorTypeKind
+			|| LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType($3->type)) == LLVMVectorTypeKind)
 		{
-			type = cl2llvm_type_create();
-			
 			type_unify($1, $3, &op1, &op2);
 			
-			if(op1 == $1)
-			{
-				type->llvm_type = op1->type->llvm_type;
-				type->sign = op1->type->sign;
-			}
-			else
-			{
-				type->llvm_type = op2->type->llvm_type;
-				type->sign = op2->type->sign;
-			}
-
 			/* Convert to bool */
 			bool1 = cl2llvm_to_bool_ne_0(op1);
 			bool2 = cl2llvm_to_bool_ne_0(op2);
@@ -2642,10 +2385,9 @@ expr
 				cl2llvm_builder, bool1->val, bool2->val, temp_var_name), 0);
 			
 			/* Sign extend vector */
-			value = cl2llvm_bool_ext(land_cond, type);
+			value = cl2llvm_bool_ext(land_cond, op1->type);
 		
 			/* Free pointers */
-			cl2llvm_type_free(type);
 			if ($1 != op1)
 				cl2llvm_val_free(op1);
 		else if ($3 != op2)
@@ -2714,30 +2456,16 @@ expr
 		LLVMBasicBlockRef land_rhs;
 		LLVMBasicBlockRef land_end;
 		struct cl2llvm_val_t *land_cond;
-		struct cl2llvm_type_t *type;
 		struct cl2llvm_val_t *op1, *op2;
 
 
 		
 		/* If one value is a vector */
-		if (LLVMGetTypeKind($1->type->llvm_type) == LLVMVectorTypeKind
-			|| LLVMGetTypeKind($3->type->llvm_type) == LLVMVectorTypeKind)
+		if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType($1->type)) == LLVMVectorTypeKind
+			|| LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType($3->type)) == LLVMVectorTypeKind)
 		{
-			type = cl2llvm_type_create();
-			
 			type_unify($1, $3, &op1, &op2);
 			
-			if(op1 == $1)
-			{
-				type->llvm_type = op1->type->llvm_type;
-				type->sign = op1->type->sign;
-			}
-			else
-			{
-				type->llvm_type = op2->type->llvm_type;
-				type->sign = op2->type->sign;
-			}
-
 			/* Convert to bool */
 			bool1 = cl2llvm_to_bool_ne_0(op1);
 			bool2 = cl2llvm_to_bool_ne_0(op2);
@@ -2750,10 +2478,9 @@ expr
 				cl2llvm_builder, bool1->val, bool2->val, temp_var_name), 0);
 			
 			/* Sign extend vector */
-			value = cl2llvm_bool_ext(land_cond, type);
+			value = cl2llvm_bool_ext(land_cond, op1->type);
 		
 			/* Free pointers */
-			cl2llvm_type_free(type);
 			if ($1 != op1)
 				cl2llvm_val_free(op1);
 		else if ($3 != op2)
@@ -2810,9 +2537,9 @@ expr
 	| lvalue TOK_EQUAL expr
 	{
 		struct cl2llvm_val_t *value;
-		struct cl2llvm_type_t *type; 
+		struct cl2llvmTypeWrap *type; 
 		
-		type = cl2llvm_type_create_w_init(LLVMGetElementType($1->type->llvm_type) , $1->type->sign);
+		type = cl2llvmTypeWrapCreate(LLVMGetElementType(cl2llvmTypeWrapGetLlvmType($1->type)) , cl2llvmTypeWrapGetSign($1->type));
 
 		/* If lvalue is a component referenced vector. */
 		if ($1->vector_indices[0])
@@ -2827,7 +2554,7 @@ expr
 		}
 
 		/*Free pointers*/
-		cl2llvm_type_free(type);
+		cl2llvmTypeWrapFree(type);
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
 
@@ -2835,9 +2562,8 @@ expr
 	}
 	| lvalue TOK_ADD_EQUAL expr
 	{
-		struct cl2llvm_type_t *switch_type;
+		struct cl2llvmTypeWrap *switch_type;
 		struct cl2llvm_val_t *value;
-		struct cl2llvm_type_t *type = cl2llvm_type_create();
 		struct cl2llvm_val_t *op1, *op2;
 		struct cl2llvm_val_t *lval;
 		struct cl2llvm_val_t *rval;
@@ -2847,56 +2573,40 @@ expr
 			"tmp_%d", temp_var_count++);
 		lval = cl2llvm_val_create_w_init(
 			LLVMBuildLoad(cl2llvm_builder, $1->val, temp_var_name),
-			$1->type->sign);
+			cl2llvmTypeWrapGetSign($1->type));
 
 		/* Find out which value differs from the original and set the
 		   dominant type equal to the type of that value. */
 		type_unify(lval, $3, &op1, &op2);
 		
-		if(op1 == lval)
-		{
-			type->llvm_type = op1->type->llvm_type;
-			type->sign = op1->type->sign;
-		}
-		else
-		{
-			type->llvm_type = op2->type->llvm_type;
-			type->sign = op2->type->sign;
-		}
-
 		/* Create an object that will hold the type of the operands.
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		switch_type = cl2llvm_type_create_w_init(type->llvm_type, type->sign);
-		if (LLVMGetTypeKind(type->llvm_type) == LLVMVectorTypeKind)
+		if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(op1->type)) == LLVMVectorTypeKind)
 		{
-			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
+			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(cl2llvmTypeWrapGetLlvmType(op1->type)), cl2llvmTypeWrapGetSign(op1->type));
 		}
+		else
+			switch_type = cl2llvmTypeWrapCreate(cl2llvmTypeWrapGetLlvmType(op1->type), cl2llvmTypeWrapGetSign(op1->type));
 
 		snprintf(temp_var_name, sizeof temp_var_name,
 				"tmp_%d", temp_var_count++);
 		
-		rval = cl2llvm_val_create();
-
 		/* Determine which type of addition to use based on type of
 		   operators. */
-		switch (LLVMGetTypeKind(switch_type->llvm_type))
+		switch (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(switch_type)))
 		{
 		case LLVMIntegerTypeKind:
 
-			rval->val = LLVMBuildAdd(cl2llvm_builder, op1->val, op2->val, temp_var_name);
-			rval->type->sign = type->sign;
-			rval->type->llvm_type = type->llvm_type;
+			rval = cl2llvm_val_create_w_init(LLVMBuildAdd(cl2llvm_builder, op1->val, op2->val, temp_var_name), cl2llvmTypeWrapGetSign(op1->type));
 			break;
 
 		case LLVMHalfTypeKind:
 		case LLVMFloatTypeKind:
 		case LLVMDoubleTypeKind:
 
-			rval->val = LLVMBuildFAdd(cl2llvm_builder, op1->val, op2->val, temp_var_name);
-			rval->type->sign = type->sign;
-			rval->type->llvm_type = type->llvm_type;
+			rval = cl2llvm_val_create_w_init(LLVMBuildFAdd(cl2llvm_builder, op1->val, op2->val, temp_var_name), cl2llvmTypeWrapGetSign(op1->type));
 			break;
 
 		default:
@@ -2918,17 +2628,15 @@ expr
 		cl2llvm_val_free($1);
 		cl2llvm_val_free(lval);
 		cl2llvm_val_free(rval);
-		cl2llvm_type_free(type);
-		cl2llvm_type_free(switch_type);
+		cl2llvmTypeWrapFree(switch_type);
 
 		$$ = value;
 
 	}
 	| lvalue TOK_MINUS_EQUAL expr
 	{
-		struct cl2llvm_type_t *switch_type;
+		struct cl2llvmTypeWrap *switch_type;
 		struct cl2llvm_val_t *value;
-		struct cl2llvm_type_t *type = cl2llvm_type_create();
 		struct cl2llvm_val_t *op1, *op2;
 		struct cl2llvm_val_t *lval;
 		struct cl2llvm_val_t *rval;
@@ -2938,56 +2646,39 @@ expr
 			"tmp_%d", temp_var_count++);
 		lval = cl2llvm_val_create_w_init(
 			LLVMBuildLoad(cl2llvm_builder, $1->val, temp_var_name),
-			$1->type->sign);
+			cl2llvmTypeWrapGetSign($1->type));
 
 		/* Find out which value differs from the original and set the
 		   dominant type equal to the type of that value. */
 		type_unify(lval, $3, &op1, &op2);
-		
-		if(op1 == lval)
-		{
-			type->llvm_type = op1->type->llvm_type;
-			type->sign = op1->type->sign;
-		}
-		else
-		{
-			type->llvm_type = op2->type->llvm_type;
-			type->sign = op2->type->sign;
-		}
 
 		/* Create an object that will hold the type of the operands.
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		switch_type = cl2llvm_type_create_w_init(type->llvm_type, type->sign);
-		if (LLVMGetTypeKind(type->llvm_type) == LLVMVectorTypeKind)
+		if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(op1->type)) == LLVMVectorTypeKind)
 		{
-			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
+			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(cl2llvmTypeWrapGetLlvmType(op1->type)), cl2llvmTypeWrapGetSign(op1->type));
 		}
+		else
+			switch_type = cl2llvmTypeWrapCreate(cl2llvmTypeWrapGetLlvmType(op1->type), cl2llvmTypeWrapGetSign(op1->type));
 
 		snprintf(temp_var_name, sizeof temp_var_name,
 				"tmp_%d", temp_var_count++);
-		
-		rval = cl2llvm_val_create();
-
 		/* Determine which type of addition to use based on type of
 		   operators. */
-		switch (LLVMGetTypeKind(switch_type->llvm_type))
+		switch (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(switch_type)))
 		{
 		case LLVMIntegerTypeKind:
 
-			rval->val = LLVMBuildSub(cl2llvm_builder, op1->val, op2->val, temp_var_name);
-			rval->type->sign = type->sign;
-			rval->type->llvm_type = type->llvm_type;
+			rval = cl2llvm_val_create_w_init(LLVMBuildSub(cl2llvm_builder, op1->val, op2->val, temp_var_name), cl2llvmTypeWrapGetSign(op1->type));
 			break;
 
 		case LLVMHalfTypeKind:
 		case LLVMFloatTypeKind:
 		case LLVMDoubleTypeKind:
 
-			rval->val = LLVMBuildFSub(cl2llvm_builder, op1->val, op2->val, temp_var_name);
-			rval->type->sign = type->sign;
-			rval->type->llvm_type = type->llvm_type;
+			rval = cl2llvm_val_create_w_init(LLVMBuildFSub(cl2llvm_builder, op1->val, op2->val, temp_var_name), cl2llvmTypeWrapGetSign(op1->type));
 			break;
 
 		default:
@@ -3009,17 +2700,15 @@ expr
 		cl2llvm_val_free($1);
 		cl2llvm_val_free(lval);
 		cl2llvm_val_free(rval);
-		cl2llvm_type_free(type);
-		cl2llvm_type_free(switch_type);
+		cl2llvmTypeWrapFree(switch_type);
 
 		$$ = value;
 
 	}
 	| lvalue TOK_DIV_EQUAL expr
 	{
-		struct cl2llvm_type_t *switch_type;
+		struct cl2llvmTypeWrap *switch_type;
 		struct cl2llvm_val_t *value;
-		struct cl2llvm_type_t *type = cl2llvm_type_create();
 		struct cl2llvm_val_t *op1, *op2;
 		struct cl2llvm_val_t *lval;
 		struct cl2llvm_val_t *rval;
@@ -3029,62 +2718,46 @@ expr
 			"tmp_%d", temp_var_count++);
 		lval = cl2llvm_val_create_w_init(
 			LLVMBuildLoad(cl2llvm_builder, $1->val, temp_var_name),
-			$1->type->sign);
+			cl2llvmTypeWrapGetSign($1->type));
 
 		/* Find out which value differs from the original and set the
 		   dominant type equal to the type of that value. */
 		type_unify(lval, $3, &op1, &op2);
-		
-		if(op1 == lval)
-		{
-			type->llvm_type = op1->type->llvm_type;
-			type->sign = op1->type->sign;
-		}
-		else
-		{
-			type->llvm_type = op2->type->llvm_type;
-			type->sign = op2->type->sign;
-		}
 
 		/* Create an object that will hold the type of the operands.
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		switch_type = cl2llvm_type_create_w_init(type->llvm_type, type->sign);
-		if (LLVMGetTypeKind(type->llvm_type) == LLVMVectorTypeKind)
+		if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(op1->type)) == LLVMVectorTypeKind)
 		{
-			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
+			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(cl2llvmTypeWrapGetLlvmType(op1->type)), cl2llvmTypeWrapGetSign(op1->type));
 		}
+		else
+			switch_type = cl2llvmTypeWrapCreate(cl2llvmTypeWrapGetLlvmType(op1->type), cl2llvmTypeWrapGetSign(op1->type));
 
 		snprintf(temp_var_name, sizeof temp_var_name,
 				"tmp_%d", temp_var_count++);
 		
-		rval = cl2llvm_val_create();
-
-		switch (LLVMGetTypeKind(switch_type->llvm_type))
+		switch (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(switch_type)))
 		{
 		case LLVMIntegerTypeKind:
-			if (type->sign)
+			if (cl2llvmTypeWrapGetSign(op1->type))
 			{
-				rval->val = LLVMBuildSDiv(cl2llvm_builder, 
-					op1->val, op2->val, temp_var_name);
+				rval = cl2llvm_val_create_w_init(LLVMBuildSDiv(cl2llvm_builder, 
+					op1->val, op2->val, temp_var_name), cl2llvmTypeWrapGetSign(op1->type));
 			}
 			else
 			{
-				rval->val = LLVMBuildUDiv(cl2llvm_builder, 
-					op1->val, op2->val, temp_var_name);
+				rval = cl2llvm_val_create_w_init(LLVMBuildUDiv(cl2llvm_builder, 
+					op1->val, op2->val, temp_var_name), cl2llvmTypeWrapGetSign(op1->type));
 			}
-			rval->type->sign = type->sign;
-			rval->type->llvm_type = type->llvm_type;
 			break;
 
 		case LLVMHalfTypeKind:
 		case LLVMFloatTypeKind:
 		case LLVMDoubleTypeKind:
-			rval->val = LLVMBuildFDiv(cl2llvm_builder, 
-					op1->val, op2->val, temp_var_name);
-			rval->type->sign = type->sign;
-			rval->type->llvm_type = type->llvm_type;
+			rval = cl2llvm_val_create_w_init(LLVMBuildFDiv(cl2llvm_builder, 
+					op1->val, op2->val, temp_var_name), cl2llvmTypeWrapGetSign(op1->type));
 			break;
 
 		default:
@@ -3106,16 +2779,14 @@ expr
 		cl2llvm_val_free($1);
 		cl2llvm_val_free(lval);
 		cl2llvm_val_free(rval);
-		cl2llvm_type_free(type);
-		cl2llvm_type_free(switch_type);
+		cl2llvmTypeWrapFree(switch_type);
 
 		$$ = value;
 	}
 	| lvalue TOK_MULT_EQUAL expr
 	{
-		struct cl2llvm_type_t *switch_type;
+		struct cl2llvmTypeWrap *switch_type;
 		struct cl2llvm_val_t *value;
-		struct cl2llvm_type_t *type = cl2llvm_type_create();
 		struct cl2llvm_val_t *op1, *op2;
 		struct cl2llvm_val_t *lval;
 		struct cl2llvm_val_t *rval;
@@ -3125,54 +2796,38 @@ expr
 			"tmp_%d", temp_var_count++);
 		lval = cl2llvm_val_create_w_init(
 			LLVMBuildLoad(cl2llvm_builder, $1->val, temp_var_name),
-			$1->type->sign);
+			cl2llvmTypeWrapGetSign($1->type));
 
 		/* Find out which value differs from the original and set the
 		   dominant type equal to the type of that value. */
 		type_unify(lval, $3, &op1, &op2);
 		
-		if(op1 == lval)
-		{
-			type->llvm_type = op1->type->llvm_type;
-			type->sign = op1->type->sign;
-		}
-		else
-		{
-			type->llvm_type = op2->type->llvm_type;
-			type->sign = op2->type->sign;
-		}
-
 		/* Create an object that will hold the type of the operands.
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		switch_type = cl2llvm_type_create_w_init(type->llvm_type, type->sign);
-		if (LLVMGetTypeKind(type->llvm_type) == LLVMVectorTypeKind)
+		if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(op1->type)) == LLVMVectorTypeKind)
 		{
-			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
+			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(cl2llvmTypeWrapGetLlvmType(op1->type)), cl2llvmTypeWrapGetSign(op1->type));
 		}
+		else
+			switch_type = cl2llvmTypeWrapCreate(cl2llvmTypeWrapGetLlvmType(op1->type), cl2llvmTypeWrapGetSign(op1->type));
 
 		snprintf(temp_var_name, sizeof temp_var_name,
 				"tmp_%d", temp_var_count++);
 		
-		rval = cl2llvm_val_create();
-
-		switch (LLVMGetTypeKind(switch_type->llvm_type))
+		switch (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(switch_type)))
 		{
 		case LLVMIntegerTypeKind:
-			rval->val = LLVMBuildMul(cl2llvm_builder, 
-				op1->val, op2->val, temp_var_name);
-			rval->type->sign = type->sign;
-			rval->type->llvm_type = type->llvm_type;
+			rval = cl2llvm_val_create_w_init(LLVMBuildMul(cl2llvm_builder, 
+				op1->val, op2->val, temp_var_name), cl2llvmTypeWrapGetSign(op1->type));
 			break;
 
 		case LLVMHalfTypeKind:
 		case LLVMFloatTypeKind:
 		case LLVMDoubleTypeKind:
-			rval->val = LLVMBuildFMul(cl2llvm_builder, 
-					op1->val, op2->val, temp_var_name);
-			rval->type->sign = type->sign;
-			rval->type->llvm_type = type->llvm_type;
+			rval = cl2llvm_val_create_w_init(LLVMBuildFMul(cl2llvm_builder, 
+					op1->val, op2->val, temp_var_name), cl2llvmTypeWrapGetSign(op1->type));
 			break;
 
 		default:
@@ -3195,8 +2850,7 @@ expr
 		cl2llvm_val_free($1);
 		cl2llvm_val_free(lval);
 		cl2llvm_val_free(rval);
-		cl2llvm_type_free(type);
-		cl2llvm_type_free(switch_type);
+		cl2llvmTypeWrapFree(switch_type);
 
 		$$ = value;
 
@@ -3206,9 +2860,8 @@ expr
 	}
 	| lvalue TOK_MOD_EQUAL expr
 	{
-		struct cl2llvm_type_t *switch_type;
+		struct cl2llvmTypeWrap *switch_type;
 		struct cl2llvm_val_t *value;
-		struct cl2llvm_type_t *type = cl2llvm_type_create();
 		struct cl2llvm_val_t *op1, *op2;
 		struct cl2llvm_val_t *lval;
 		struct cl2llvm_val_t *rval;
@@ -3218,54 +2871,40 @@ expr
 			"tmp_%d", temp_var_count++);
 		lval = cl2llvm_val_create_w_init(
 			LLVMBuildLoad(cl2llvm_builder, $1->val, temp_var_name),
-			$1->type->sign);
+			cl2llvmTypeWrapGetSign($1->type));
 
 		/* Find out which value differs from the original and set the
 		   dominant type equal to the type of that value. */
 		type_unify(lval, $3, &op1, &op2);
-		
-		if(op1 == lval)
-		{
-			type->llvm_type = op1->type->llvm_type;
-			type->sign = op1->type->sign;
-		}
-		else
-		{
-			type->llvm_type = op2->type->llvm_type;
-			type->sign = op2->type->sign;
-		}
 
 		/* Create an object that will hold the type of the operands.
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		switch_type = cl2llvm_type_create_w_init(type->llvm_type, type->sign);
-		if (LLVMGetTypeKind(type->llvm_type) == LLVMVectorTypeKind)
+		if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(op1->type)) == LLVMVectorTypeKind)
 		{
-			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
+			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(cl2llvmTypeWrapGetLlvmType(op1->type)), cl2llvmTypeWrapGetSign(op1->type));
 		}
+		else
+			switch_type = cl2llvmTypeWrapCreate(cl2llvmTypeWrapGetLlvmType(op1->type), cl2llvmTypeWrapGetSign(op1->type));
 
 		snprintf(temp_var_name, sizeof temp_var_name,
 				"tmp_%d", temp_var_count++);
 		
-		rval = cl2llvm_val_create();
-
-		switch (LLVMGetTypeKind(switch_type->llvm_type))
+		switch (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(switch_type)))
 		{
 		case LLVMIntegerTypeKind:
 
-			if (type->sign)
+			if (cl2llvmTypeWrapGetSign(op1->type))
 			{
-				rval->val = LLVMBuildSRem(cl2llvm_builder, 
-					op1->val, op2->val, temp_var_name);
+				rval = cl2llvm_val_create_w_init(LLVMBuildSRem(cl2llvm_builder, 
+					op1->val, op2->val, temp_var_name), cl2llvmTypeWrapGetSign(op1->type));
 			}
 			else
 			{
-				rval->val = LLVMBuildURem(cl2llvm_builder, 
-					op1->val, op2->val, temp_var_name);
+				rval = cl2llvm_val_create_w_init(LLVMBuildURem(cl2llvm_builder, 
+					op1->val, op2->val, temp_var_name), cl2llvmTypeWrapGetSign(op1->type));
 			}
-			rval->type->sign = type->sign;
-			rval->type->llvm_type = type->llvm_type;
 			break;
 		
 		default:
@@ -3287,16 +2926,14 @@ expr
 		cl2llvm_val_free($1);
 		cl2llvm_val_free(lval);
 		cl2llvm_val_free(rval);
-		cl2llvm_type_free(type);
-		cl2llvm_type_free(switch_type);
+		cl2llvmTypeWrapFree(switch_type);
 
 		$$ = value;
 	}
 	| lvalue TOK_AND_EQUAL expr
 	{
-		struct cl2llvm_type_t *switch_type;
+		struct cl2llvmTypeWrap *switch_type;
 		struct cl2llvm_val_t *value;
-		struct cl2llvm_type_t *type = cl2llvm_type_create();
 		struct cl2llvm_val_t *op1, *op2;
 		struct cl2llvm_val_t *lval;
 		struct cl2llvm_val_t *rval;
@@ -3306,46 +2943,33 @@ expr
 			"tmp_%d", temp_var_count++);
 		lval = cl2llvm_val_create_w_init(
 			LLVMBuildLoad(cl2llvm_builder, $1->val, temp_var_name),
-			$1->type->sign);
+			cl2llvmTypeWrapGetSign($1->type));
  
 		/* Find out which value differs from the original and set the
 		   dominant type equal to the type of that value. */
 		type_unify(lval, $3, &op1, &op2);
-		if(op1 == lval)
-		{
-			type->llvm_type = op1->type->llvm_type;
-			type->sign = op1->type->sign;
-		}
-		else
-		{
-			type->llvm_type = op2->type->llvm_type;
-			type->sign = op2->type->sign;
-		}
-
+		
 		/* Create an object that will hold the type of the operands.
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		switch_type = cl2llvm_type_create_w_init(type->llvm_type, type->sign);
-		if (LLVMGetTypeKind(type->llvm_type) == LLVMVectorTypeKind)
+		if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(op1->type)) == LLVMVectorTypeKind)
 		{
-			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
+			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(cl2llvmTypeWrapGetLlvmType(op1->type)), cl2llvmTypeWrapGetSign(op1->type));;
 		}
+		else
+			switch_type = cl2llvmTypeWrapCreate(cl2llvmTypeWrapGetLlvmType(op1->type), cl2llvmTypeWrapGetSign(op1->type));
 
 		snprintf(temp_var_name, sizeof temp_var_name,
 				"tmp_%d", temp_var_count++);
 		
-		rval = cl2llvm_val_create();
-
 		/* Determine which type of addition to use based on type of
 		   operators. */
-		switch (LLVMGetTypeKind(switch_type->llvm_type))
+		switch (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(switch_type)))
 		{
 		case LLVMIntegerTypeKind:
 
-			rval->val = LLVMBuildAnd(cl2llvm_builder, op1->val, op2->val, temp_var_name);
-			rval->type->sign = type->sign;
-			rval->type->llvm_type = type->llvm_type;
+			rval = cl2llvm_val_create_w_init(LLVMBuildAnd(cl2llvm_builder, op1->val, op2->val, temp_var_name), cl2llvmTypeWrapGetSign(op1->type));
 			break;
 
 
@@ -3368,17 +2992,15 @@ expr
 		cl2llvm_val_free($1);
 		cl2llvm_val_free(lval);
 		cl2llvm_val_free(rval);
-		cl2llvm_type_free(type);
-		cl2llvm_type_free(switch_type);
+		cl2llvmTypeWrapFree(switch_type);
 
 		$$ = value;
 
 	}
 	| lvalue TOK_OR_EQUAL expr
 	{
-		struct cl2llvm_type_t *switch_type;
+		struct cl2llvmTypeWrap *switch_type;
 		struct cl2llvm_val_t *value;
-		struct cl2llvm_type_t *type = cl2llvm_type_create();
 		struct cl2llvm_val_t *op1, *op2;
 		struct cl2llvm_val_t *lval;
 		struct cl2llvm_val_t *rval;
@@ -3388,46 +3010,33 @@ expr
 			"tmp_%d", temp_var_count++);
 		lval = cl2llvm_val_create_w_init(
 			LLVMBuildLoad(cl2llvm_builder, $1->val, temp_var_name),
-			$1->type->sign);
+			cl2llvmTypeWrapGetSign($1->type));
  
 		/* Find out which value differs from the original and set the
 		   dominant type equal to the type of that value. */
 		type_unify(lval, $3, &op1, &op2);
-		if(op1 == lval)
-		{
-			type->llvm_type = op1->type->llvm_type;
-			type->sign = op1->type->sign;
-		}
-		else
-		{
-			type->llvm_type = op2->type->llvm_type;
-			type->sign = op2->type->sign;
-		}
 
 		/* Create an object that will hold the type of the operands.
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		switch_type = cl2llvm_type_create_w_init(type->llvm_type, type->sign);
-		if (LLVMGetTypeKind(type->llvm_type) == LLVMVectorTypeKind)
+		if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(op1->type))  == LLVMVectorTypeKind)
 		{
-			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
+			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(cl2llvmTypeWrapGetLlvmType(op1->type)), cl2llvmTypeWrapGetSign(op1->type));
 		}
+		else
+			switch_type = cl2llvmTypeWrapCreate(cl2llvmTypeWrapGetLlvmType(op1->type), cl2llvmTypeWrapGetSign(op1->type));
 
 		snprintf(temp_var_name, sizeof temp_var_name,
 				"tmp_%d", temp_var_count++);
 		
-		rval = cl2llvm_val_create();
-
 		/* Determine which type of addition to use based on type of
 		   operators. */
-		switch (LLVMGetTypeKind(switch_type->llvm_type))
+		switch (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(switch_type)))
 		{
 		case LLVMIntegerTypeKind:
 
-			rval->val = LLVMBuildOr(cl2llvm_builder, op1->val, op2->val, temp_var_name);
-			rval->type->sign = type->sign;
-			rval->type->llvm_type = type->llvm_type;
+			rval = cl2llvm_val_create_w_init(LLVMBuildOr(cl2llvm_builder, op1->val, op2->val, temp_var_name), cl2llvmTypeWrapGetSign(op1->type));
 			break;
 
 
@@ -3450,17 +3059,15 @@ expr
 		cl2llvm_val_free($1);
 		cl2llvm_val_free(lval);
 		cl2llvm_val_free(rval);
-		cl2llvm_type_free(type);
-		cl2llvm_type_free(switch_type);
+		cl2llvmTypeWrapFree(switch_type);
 
 		$$ = value;
 
 	}
 	| lvalue TOK_EXCLUSIVE_EQUAL expr
 	{
-		struct cl2llvm_type_t *switch_type;
+		struct cl2llvmTypeWrap *switch_type;
 		struct cl2llvm_val_t *value;
-		struct cl2llvm_type_t *type = cl2llvm_type_create();
 		struct cl2llvm_val_t *op1, *op2;
 		struct cl2llvm_val_t *lval;
 		struct cl2llvm_val_t *rval;
@@ -3470,46 +3077,33 @@ expr
 			"tmp_%d", temp_var_count++);
 		lval = cl2llvm_val_create_w_init(
 			LLVMBuildLoad(cl2llvm_builder, $1->val, temp_var_name),
-			$1->type->sign);
+			cl2llvmTypeWrapGetSign($1->type));
  
 		/* Find out which value differs from the original and set the
 		   dominant type equal to the type of that value. */
 		type_unify(lval, $3, &op1, &op2);
-		if(op1 == lval)
-		{
-			type->llvm_type = op1->type->llvm_type;
-			type->sign = op1->type->sign;
-		}
-		else
-		{
-			type->llvm_type = op2->type->llvm_type;
-			type->sign = op2->type->sign;
-		}
-
+		
 		/* Create an object that will hold the type of the operands.
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		switch_type = cl2llvm_type_create_w_init(type->llvm_type, type->sign);
-		if (LLVMGetTypeKind(type->llvm_type) == LLVMVectorTypeKind)
+		if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(op1->type))  == LLVMVectorTypeKind)
 		{
-			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
+			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(cl2llvmTypeWrapGetLlvmType(op1->type)), cl2llvmTypeWrapGetSign(op1->type));
 		}
+		else
+		switch_type = cl2llvmTypeWrapCreate(cl2llvmTypeWrapGetLlvmType(op1->type), cl2llvmTypeWrapGetSign(op1->type));
 
 		snprintf(temp_var_name, sizeof temp_var_name,
 				"tmp_%d", temp_var_count++);
 		
-		rval = cl2llvm_val_create();
-
 		/* Determine which type of addition to use based on type of
 		   operators. */
-		switch (LLVMGetTypeKind(switch_type->llvm_type))
+		switch (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(switch_type)))
 		{
 		case LLVMIntegerTypeKind:
 
-			rval->val = LLVMBuildXor(cl2llvm_builder, op1->val, op2->val, temp_var_name);
-			rval->type->sign = type->sign;
-			rval->type->llvm_type = type->llvm_type;
+			rval = cl2llvm_val_create_w_init(LLVMBuildXor(cl2llvm_builder, op1->val, op2->val, temp_var_name), cl2llvmTypeWrapGetSign(op1->type));
 			break;
 
 
@@ -3532,17 +3126,15 @@ expr
 		cl2llvm_val_free($1);
 		cl2llvm_val_free(lval);
 		cl2llvm_val_free(rval);
-		cl2llvm_type_free(type);
-		cl2llvm_type_free(switch_type);
+		cl2llvmTypeWrapFree(switch_type);
 
 		$$ = value;
 
 	}
 	| lvalue TOK_SHIFT_RIGHT_EQUAL expr
 	{
-		struct cl2llvm_type_t *switch_type;
+		struct cl2llvmTypeWrap *switch_type;
 		struct cl2llvm_val_t *value;
-		struct cl2llvm_type_t *type = cl2llvm_type_create();
 		struct cl2llvm_val_t *op1, *op2;
 		struct cl2llvm_val_t *lval;
 		struct cl2llvm_val_t *rval;
@@ -3552,46 +3144,33 @@ expr
 			"tmp_%d", temp_var_count++);
 		lval = cl2llvm_val_create_w_init(
 			LLVMBuildLoad(cl2llvm_builder, $1->val, temp_var_name),
-			$1->type->sign);
+			cl2llvmTypeWrapGetSign($1->type));
  
 		/* Find out which value differs from the original and set the
 		   dominant type equal to the type of that value. */
 		type_unify(lval, $3, &op1, &op2);
-		if(op1 == lval)
-		{
-			type->llvm_type = op1->type->llvm_type;
-			type->sign = op1->type->sign;
-		}
-		else
-		{
-			type->llvm_type = op2->type->llvm_type;
-			type->sign = op2->type->sign;
-		}
-
+		
 		/* Create an object that will hold the type of the operands.
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		switch_type = cl2llvm_type_create_w_init(type->llvm_type, type->sign);
-		if (LLVMGetTypeKind(type->llvm_type) == LLVMVectorTypeKind)
+		if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(op1->type))  == LLVMVectorTypeKind)
 		{
-			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
+			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(cl2llvmTypeWrapGetLlvmType(op1->type)), cl2llvmTypeWrapGetSign(op1->type));
 		}
+		else
+			switch_type = cl2llvmTypeWrapCreate(cl2llvmTypeWrapGetLlvmType(op1->type), cl2llvmTypeWrapGetSign(op1->type));
 
 		snprintf(temp_var_name, sizeof temp_var_name,
 				"tmp_%d", temp_var_count++);
 		
-		rval = cl2llvm_val_create();
-
 		/* Determine which type of addition to use based on type of
 		   operators. */
-		switch (LLVMGetTypeKind(switch_type->llvm_type))
+		switch (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(switch_type)))
 		{
 		case LLVMIntegerTypeKind:
 
-			rval->val = LLVMBuildAShr(cl2llvm_builder, op1->val, op2->val, temp_var_name);
-			rval->type->sign = type->sign;
-			rval->type->llvm_type = type->llvm_type;
+			rval = cl2llvm_val_create_w_init(LLVMBuildAShr(cl2llvm_builder, op1->val, op2->val, temp_var_name), cl2llvmTypeWrapGetSign(op1->type));
 			break;
 
 
@@ -3614,8 +3193,7 @@ expr
 		cl2llvm_val_free($1);
 		cl2llvm_val_free(lval);
 		cl2llvm_val_free(rval);
-		cl2llvm_type_free(type);
-		cl2llvm_type_free(switch_type);
+		cl2llvmTypeWrapFree(switch_type);
 
 		$$ = value;
 
@@ -3623,9 +3201,8 @@ expr
 	}
 	| lvalue TOK_SHIFT_LEFT_EQUAL expr
 	{
-		struct cl2llvm_type_t *switch_type;
+		struct cl2llvmTypeWrap *switch_type;
 		struct cl2llvm_val_t *value;
-		struct cl2llvm_type_t *type = cl2llvm_type_create();
 		struct cl2llvm_val_t *op1, *op2;
 		struct cl2llvm_val_t *lval;
 		struct cl2llvm_val_t *rval;
@@ -3635,46 +3212,33 @@ expr
 			"tmp_%d", temp_var_count++);
 		lval = cl2llvm_val_create_w_init(
 			LLVMBuildLoad(cl2llvm_builder, $1->val, temp_var_name),
-			$1->type->sign);
+			cl2llvmTypeWrapGetSign($1->type));
  
 		/* Find out which value differs from the original and set the
 		   dominant type equal to the type of that value. */
 		type_unify(lval, $3, &op1, &op2);
-		if(op1 == lval)
-		{
-			type->llvm_type = op1->type->llvm_type;
-			type->sign = op1->type->sign;
-		}
-		else
-		{
-			type->llvm_type = op2->type->llvm_type;
-			type->sign = op2->type->sign;
-		}
 
 		/* Create an object that will hold the type of the operands.
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		switch_type = cl2llvm_type_create_w_init(type->llvm_type, type->sign);
-		if (LLVMGetTypeKind(type->llvm_type) == LLVMVectorTypeKind)
+		if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(op1->type))  == LLVMVectorTypeKind)
 		{
-			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
+			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(cl2llvmTypeWrapGetLlvmType(op1->type)), cl2llvmTypeWrapGetSign(op1->type));
 		}
+		else
+			switch_type = cl2llvmTypeWrapCreate(cl2llvmTypeWrapGetLlvmType(op1->type), cl2llvmTypeWrapGetSign(op1->type));
 
 		snprintf(temp_var_name, sizeof temp_var_name,
 				"tmp_%d", temp_var_count++);
 		
-		rval = cl2llvm_val_create();
-
 		/* Determine which type of addition to use based on type of
 		   operators. */
-		switch (LLVMGetTypeKind(switch_type->llvm_type))
+		switch (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(switch_type)))
 		{
 		case LLVMIntegerTypeKind:
 
-			rval->val = LLVMBuildShl(cl2llvm_builder, op1->val, op2->val, temp_var_name);
-			rval->type->sign = type->sign;
-			rval->type->llvm_type = type->llvm_type;
+			rval = cl2llvm_val_create_w_init(LLVMBuildShl(cl2llvm_builder, op1->val, op2->val, temp_var_name), cl2llvmTypeWrapGetSign(op1->type));
 			break;
 
 
@@ -3697,8 +3261,7 @@ expr
 		cl2llvm_val_free($1);
 		cl2llvm_val_free(lval);
 		cl2llvm_val_free(rval);
-		cl2llvm_type_free(type);
-		cl2llvm_type_free(switch_type);
+		cl2llvmTypeWrapFree(switch_type);
 
 		$$ = value;
 
@@ -3736,47 +3299,32 @@ expr
 	}
 	| expr TOK_BITWISE_AND expr
 	{
-		struct cl2llvm_type_t *switch_type;
-		struct cl2llvm_type_t *type;
+		struct cl2llvmTypeWrap *switch_type;
 		struct cl2llvm_val_t *value;
 		
-		type = cl2llvm_type_create();
-		value = cl2llvm_val_create();
-
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp_%d", temp_var_count++);
 
 		struct cl2llvm_val_t *op1, *op2;
 		
 		type_unify($1, $3, &op1, & op2);
-		if(op1 == $1)
-		{
-			type->llvm_type = LLVMTypeOf(op1->val);
-			type->sign = op1->type->sign;
-		}
-		else
-		{
-			type->llvm_type = LLVMTypeOf(op1->val);
-			type->sign = op1->type->sign;
-		}
 
 		/* Create an object that will hold the type of the operands.
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		switch_type = cl2llvm_type_create_w_init(type->llvm_type, type->sign);
-		if (LLVMGetTypeKind(type->llvm_type) == LLVMVectorTypeKind)
+		if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(op1->type))  == LLVMVectorTypeKind)
 		{
-			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
+			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(cl2llvmTypeWrapGetLlvmType(op1->type)), cl2llvmTypeWrapGetSign(op1->type));
 		}
+		else
+			switch_type = cl2llvmTypeWrapCreate(cl2llvmTypeWrapGetLlvmType(op1->type), cl2llvmTypeWrapGetSign(op1->type));
 
-		switch (LLVMGetTypeKind(switch_type->llvm_type))
+		switch (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(switch_type)))
 		{
 		case LLVMIntegerTypeKind:
-			value->val = LLVMBuildAnd(cl2llvm_builder, 
-				op1->val, op2->val, temp_var_name);
-			value->type->sign = type->sign;
-			value->type->llvm_type = type->llvm_type;
+			value = cl2llvm_val_create_w_init(LLVMBuildAnd(cl2llvm_builder, 
+				op1->val, op2->val, temp_var_name), cl2llvmTypeWrapGetSign(op1->type));
 			break;
 
 
@@ -3792,55 +3340,39 @@ expr
 			cl2llvm_val_free(op2);
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
-		cl2llvm_type_free(type);
-		cl2llvm_type_free(switch_type);
+		cl2llvmTypeWrapFree(switch_type);
 
 		$$ = value;
 		
 	}
 	| expr TOK_BITWISE_OR expr
 	{
-		struct cl2llvm_type_t *switch_type;
-		struct cl2llvm_type_t *type;
+		struct cl2llvmTypeWrap *switch_type;
 		struct cl2llvm_val_t *value;
 		
-		type = cl2llvm_type_create();
-		value = cl2llvm_val_create();
-
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp_%d", temp_var_count++);
 
 		struct cl2llvm_val_t *op1, *op2;
 		
 		type_unify($1, $3, &op1, & op2);
-		if(op1 == $1)
-		{
-			type->llvm_type = LLVMTypeOf(op1->val);
-			type->sign = op1->type->sign;
-		}
-		else
-		{
-			type->llvm_type = LLVMTypeOf(op1->val);
-			type->sign = op1->type->sign;
-		}
 
 		/* Create an object that will hold the type of the operands.
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		switch_type = cl2llvm_type_create_w_init(type->llvm_type, type->sign);
-		if (LLVMGetTypeKind(type->llvm_type) == LLVMVectorTypeKind)
+		if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(op1->type))  == LLVMVectorTypeKind)
 		{
-			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
+			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(cl2llvmTypeWrapGetLlvmType(op1->type)), cl2llvmTypeWrapGetSign(op1->type));
 		}
+		else
+			switch_type = cl2llvmTypeWrapCreate(cl2llvmTypeWrapGetLlvmType(op1->type), cl2llvmTypeWrapGetSign(op1->type));
 
-		switch (LLVMGetTypeKind(switch_type->llvm_type))
+		switch (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(switch_type)))
 		{
 		case LLVMIntegerTypeKind:
-			value->val = LLVMBuildOr(cl2llvm_builder, 
-				op1->val, op2->val, temp_var_name);
-			value->type->sign = type->sign;
-			value->type->llvm_type = type->llvm_type;
+			value = cl2llvm_val_create_w_init(LLVMBuildOr(cl2llvm_builder, 
+				op1->val, op2->val, temp_var_name), cl2llvmTypeWrapGetSign(op1->type));
 			break;
 
 
@@ -3856,20 +3388,16 @@ expr
 			cl2llvm_val_free(op2);
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
-		cl2llvm_type_free(type);
-		cl2llvm_type_free(switch_type);
+		cl2llvmTypeWrapFree(switch_type);
 
 		$$ = value;
 
 	}
 	| expr TOK_BITWISE_EXCLUSIVE expr
 	{
-		struct cl2llvm_type_t *switch_type;
-		struct cl2llvm_type_t *type;
+		struct cl2llvmTypeWrap *switch_type;
 		struct cl2llvm_val_t *value;
 		
-		type = cl2llvm_type_create();
-		value = cl2llvm_val_create();
 
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp_%d", temp_var_count++);
@@ -3877,34 +3405,23 @@ expr
 		struct cl2llvm_val_t *op1, *op2;
 		
 		type_unify($1, $3, &op1, & op2);
-		if(op1 == $1)
-		{
-			type->llvm_type = LLVMTypeOf(op1->val);
-			type->sign = op1->type->sign;
-		}
-		else
-		{
-			type->llvm_type = LLVMTypeOf(op1->val);
-			type->sign = op1->type->sign;
-		}
-
+	
 		/* Create an object that will hold the type of the operands.
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		switch_type = cl2llvm_type_create_w_init(type->llvm_type, type->sign);
-		if (LLVMGetTypeKind(type->llvm_type) == LLVMVectorTypeKind)
+		if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(op1->type))  == LLVMVectorTypeKind)
 		{
-			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
+			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(cl2llvmTypeWrapGetLlvmType(op1->type)), cl2llvmTypeWrapGetSign(op1->type));
 		}
+		else
+			switch_type = cl2llvmTypeWrapCreate(cl2llvmTypeWrapGetLlvmType(op1->type), cl2llvmTypeWrapGetSign(op1->type));
 
-		switch (LLVMGetTypeKind(switch_type->llvm_type))
+		switch (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(switch_type)))
 		{
 		case LLVMIntegerTypeKind:
-			value->val = LLVMBuildXor(cl2llvm_builder, 
-				op1->val, op2->val, temp_var_name);
-			value->type->sign = type->sign;
-			value->type->llvm_type = type->llvm_type;
+			value = cl2llvm_val_create_w_init(LLVMBuildXor(cl2llvm_builder, 
+				op1->val, op2->val, temp_var_name), cl2llvmTypeWrapGetSign(op1->type));
 			break;
 
 
@@ -3920,8 +3437,7 @@ expr
 			cl2llvm_val_free(op2);
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
-		cl2llvm_type_free(type);
-		cl2llvm_type_free(switch_type);
+		cl2llvmTypeWrapFree(switch_type);
 
 		$$ = value;
 
@@ -3932,22 +3448,22 @@ expr
 unary_expr
 	: lvalue TOK_INCREMENT %prec TOK_POSTFIX
 	{
-		struct cl2llvm_type_t *switch_type;
-		struct cl2llvm_type_t *type;
+		struct cl2llvmTypeWrap *switch_type;
+		struct cl2llvmTypeWrap *type;
 		struct cl2llvm_val_t *value_plus_one;
 		struct cl2llvm_val_t *one;
 
 		/* Create constant one to add to variable */
 		one = cl2llvm_val_create_w_init(LLVMConstInt(LLVMInt32Type(), 1, 0), 1);
 
-		type = cl2llvm_type_create_w_init(LLVMGetElementType(
-			$1->type->llvm_type), $1->type->sign);
+		type = cl2llvmTypeWrapCreate(LLVMGetElementType(
+			cl2llvmTypeWrapGetLlvmType($1->type)), cl2llvmTypeWrapGetSign($1->type));
 
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp_%d", temp_var_count++);
 		struct cl2llvm_val_t *lval = cl2llvm_val_create_w_init(
 			LLVMBuildLoad(cl2llvm_builder, $1->val, temp_var_name),
-			$1->type->sign);
+			cl2llvmTypeWrapGetSign($1->type));
 
 		/* Cast constant one to type of variable */
 		struct cl2llvm_val_t *cast_one = llvm_type_cast(one, type);
@@ -3959,19 +3475,20 @@ unary_expr
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		switch_type = cl2llvm_type_create_w_init(type->llvm_type, type->sign);
-		if (LLVMGetTypeKind(switch_type->llvm_type) == LLVMVectorTypeKind)
+		if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(switch_type)) == LLVMVectorTypeKind)
 		{
-			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
+			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(cl2llvmTypeWrapGetLlvmType(type)), cl2llvmTypeWrapGetSign(type));
 		}
+		else
+			switch_type = cl2llvmTypeWrapCreate(cl2llvmTypeWrapGetLlvmType(type), cl2llvmTypeWrapGetSign(type));
 
-		switch (LLVMGetTypeKind(switch_type->llvm_type))
+		switch (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(switch_type)))
 		{
 		case LLVMIntegerTypeKind:
 
 			value_plus_one = cl2llvm_val_create_w_init(
 				LLVMBuildAdd(cl2llvm_builder, lval->val, 
-				cast_one->val, temp_var_name), type->sign);
+				cast_one->val, temp_var_name), cl2llvmTypeWrapGetSign(type));
 			break;
 
 		case LLVMHalfTypeKind:
@@ -3980,13 +3497,12 @@ unary_expr
 
 			value_plus_one = cl2llvm_val_create_w_init(
 				LLVMBuildFAdd(cl2llvm_builder, lval->val, 
-				cast_one->val, temp_var_name), type->sign);
+				cast_one->val, temp_var_name), cl2llvmTypeWrapGetSign(type));
 			break;
 
 		default:
 
 			yyerror("invalid type of operand for post '++'");
-			value_plus_one = cl2llvm_val_create();
 		}
 		
 		LLVMBuildStore(cl2llvm_builder, value_plus_one->val, $1->val);
@@ -3995,30 +3511,30 @@ unary_expr
 		cl2llvm_val_free(value_plus_one);
 		cl2llvm_val_free(cast_one);
 		cl2llvm_val_free($1);
-		cl2llvm_type_free(type);
-		cl2llvm_type_free(switch_type);
+		cl2llvmTypeWrapFree(type);
+		cl2llvmTypeWrapFree(switch_type);
 
 		$$ = lval;
 
 	}
 	| TOK_INCREMENT lvalue %prec TOK_PREFIX
 	{	
-		struct cl2llvm_type_t *switch_type;
-		struct cl2llvm_type_t *type;
+		struct cl2llvmTypeWrap *switch_type;
+		struct cl2llvmTypeWrap *type;
 		struct cl2llvm_val_t *value_plus_one;
 		struct cl2llvm_val_t *one;
 
 		/* Create constant one to add to variable */
 		one = cl2llvm_val_create_w_init(LLVMConstInt(LLVMInt32Type(), 1, 0), 1);
 
-		type = cl2llvm_type_create_w_init(LLVMGetElementType(
-			$2->type->llvm_type), $2->type->sign);
+		type = cl2llvmTypeWrapCreate(LLVMGetElementType(
+			cl2llvmTypeWrapGetLlvmType($2->type)), cl2llvmTypeWrapGetSign($2->type));
 
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp_%d", temp_var_count++);
 		struct cl2llvm_val_t *lval = cl2llvm_val_create_w_init(
 			LLVMBuildLoad(cl2llvm_builder, $2->val, temp_var_name),
-			$2->type->sign);
+			cl2llvmTypeWrapGetSign($2->type));
 
 		/* Cast constant one to type of variable */
 		struct cl2llvm_val_t *cast_one = llvm_type_cast(one, type);
@@ -4030,19 +3546,20 @@ unary_expr
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		switch_type = cl2llvm_type_create_w_init(type->llvm_type, type->sign);
-		if (LLVMGetTypeKind(switch_type->llvm_type) == LLVMVectorTypeKind)
+		if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(switch_type)) == LLVMVectorTypeKind)
 		{
-			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
+			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(cl2llvmTypeWrapGetLlvmType(type)), cl2llvmTypeWrapGetSign(type));
 		}
+		else
+			switch_type = cl2llvmTypeWrapCreate(cl2llvmTypeWrapGetLlvmType(type), cl2llvmTypeWrapGetSign(type));
 
-		switch (LLVMGetTypeKind(switch_type->llvm_type))
+		switch (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(switch_type)))
 		{
 		case LLVMIntegerTypeKind:
 
 			value_plus_one = cl2llvm_val_create_w_init(
 				LLVMBuildAdd(cl2llvm_builder, lval->val, 
-				cast_one->val, temp_var_name), type->sign);
+				cast_one->val, temp_var_name), cl2llvmTypeWrapGetSign(type));
 			break;
 
 		case LLVMHalfTypeKind:
@@ -4051,13 +3568,12 @@ unary_expr
 
 			value_plus_one = cl2llvm_val_create_w_init(
 				LLVMBuildFAdd(cl2llvm_builder, lval->val, 
-				cast_one->val, temp_var_name), type->sign);
+				cast_one->val, temp_var_name), cl2llvmTypeWrapGetSign(type));
 			break;
 
 		default:
 
 			yyerror("invalid type of operand for pre '++'");
-			value_plus_one = cl2llvm_val_create();
 		}
 		
 		LLVMBuildStore(cl2llvm_builder, value_plus_one->val, $2->val);
@@ -4066,29 +3582,29 @@ unary_expr
 		cl2llvm_val_free($2);
 		cl2llvm_val_free(cast_one);
 		cl2llvm_val_free(lval);
-		cl2llvm_type_free(type);
-		cl2llvm_type_free(switch_type);
+		cl2llvmTypeWrapFree(type);
+		cl2llvmTypeWrapFree(switch_type);
 
 		$$ = value_plus_one;
 	}
 	| TOK_DECREMENT lvalue %prec TOK_PREFIX
 	{
-		struct cl2llvm_type_t *switch_type;
-		struct cl2llvm_type_t *type;
+		struct cl2llvmTypeWrap *switch_type;
+		struct cl2llvmTypeWrap *type;
 		struct cl2llvm_val_t *value_minus_one;
 		struct cl2llvm_val_t *one;
 
 		/* Create constant one to add to variable */
 		one = cl2llvm_val_create_w_init(LLVMConstInt(LLVMInt32Type(), 1, 0), 1);
 
-		type = cl2llvm_type_create_w_init(LLVMGetElementType(
-			$2->type->llvm_type), $2->type->sign);
+		type = cl2llvmTypeWrapCreate(LLVMGetElementType(
+			cl2llvmTypeWrapGetLlvmType($2->type)), cl2llvmTypeWrapGetSign($2->type));
 
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp_%d", temp_var_count++);
 		struct cl2llvm_val_t *lval = cl2llvm_val_create_w_init(
 			LLVMBuildLoad(cl2llvm_builder, $2->val, temp_var_name),
-			$2->type->sign);
+			cl2llvmTypeWrapGetSign($2->type));
 
 		/* Cast constant one to type of variable */
 		struct cl2llvm_val_t *cast_one = llvm_type_cast(one, type);
@@ -4100,19 +3616,20 @@ unary_expr
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		switch_type = cl2llvm_type_create_w_init(type->llvm_type, type->sign);
-		if (LLVMGetTypeKind(switch_type->llvm_type) == LLVMVectorTypeKind)
+		if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(switch_type)) == LLVMVectorTypeKind)
 		{
-			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
+			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(cl2llvmTypeWrapGetLlvmType(type)), cl2llvmTypeWrapGetSign(type));
 		}
+		else
+			switch_type = cl2llvmTypeWrapCreate(cl2llvmTypeWrapGetLlvmType(type), cl2llvmTypeWrapGetSign(type));
 
-		switch (LLVMGetTypeKind(switch_type->llvm_type))
+		switch (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(switch_type)))
 		{
 		case LLVMIntegerTypeKind:
 
 			value_minus_one = cl2llvm_val_create_w_init(
 				LLVMBuildSub(cl2llvm_builder, lval->val, 
-				cast_one->val, temp_var_name), type->sign);
+				cast_one->val, temp_var_name), cl2llvmTypeWrapGetSign(type));
 			break;
 
 		case LLVMHalfTypeKind:
@@ -4121,13 +3638,12 @@ unary_expr
 
 			value_minus_one = cl2llvm_val_create_w_init(
 				LLVMBuildFSub(cl2llvm_builder, lval->val, 
-				cast_one->val, temp_var_name), type->sign);
+				cast_one->val, temp_var_name), cl2llvmTypeWrapGetSign(type));
 			break;
 
 		default:
 
 			yyerror("invalid type of operand for pre '--'");
-			value_minus_one = cl2llvm_val_create();
 		}
 		
 		LLVMBuildStore(cl2llvm_builder, value_minus_one->val, $2->val);
@@ -4136,30 +3652,30 @@ unary_expr
 		cl2llvm_val_free($2);
 		cl2llvm_val_free(cast_one);
 		cl2llvm_val_free(lval);
-		cl2llvm_type_free(type);
-		cl2llvm_type_free(switch_type);
+		cl2llvmTypeWrapFree(type);
+		cl2llvmTypeWrapFree(switch_type);
 
 		$$ = value_minus_one;
 
 	}
 	| lvalue TOK_DECREMENT %prec TOK_POSTFIX
 	{
-		struct cl2llvm_type_t *switch_type;
-		struct cl2llvm_type_t *type;
+		struct cl2llvmTypeWrap *switch_type;
+		struct cl2llvmTypeWrap *type;
 		struct cl2llvm_val_t *value_minus_one;
 		struct cl2llvm_val_t *one;
 
 		/* Create constant one to add to variable */
 		one = cl2llvm_val_create_w_init(LLVMConstInt(LLVMInt32Type(), 1, 0), 1);
 
-		type = cl2llvm_type_create_w_init(LLVMGetElementType(
-			$1->type->llvm_type), $1->type->sign);
+		type = cl2llvmTypeWrapCreate(LLVMGetElementType(
+			cl2llvmTypeWrapGetLlvmType($1->type)), cl2llvmTypeWrapGetSign($1->type));
 
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp_%d", temp_var_count++);
 		struct cl2llvm_val_t *lval = cl2llvm_val_create_w_init(
 			LLVMBuildLoad(cl2llvm_builder, $1->val, temp_var_name),
-			$1->type->sign);
+			cl2llvmTypeWrapGetSign($1->type));
 
 		/* Cast constant one to type of variable */
 		struct cl2llvm_val_t *cast_one = llvm_type_cast(one, type);
@@ -4171,19 +3687,20 @@ unary_expr
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		switch_type = cl2llvm_type_create_w_init(type->llvm_type, type->sign);
-		if (LLVMGetTypeKind(switch_type->llvm_type) == LLVMVectorTypeKind)
+		if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(switch_type)) == LLVMVectorTypeKind)
 		{
-			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
+			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(cl2llvmTypeWrapGetLlvmType(type)), cl2llvmTypeWrapGetSign(type));
 		}
+		else
+			switch_type = cl2llvmTypeWrapCreate(cl2llvmTypeWrapGetLlvmType(type), cl2llvmTypeWrapGetSign(type));
 
-		switch (LLVMGetTypeKind(switch_type->llvm_type))
+		switch (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(switch_type)))
 		{
 		case LLVMIntegerTypeKind:
 
 			value_minus_one = cl2llvm_val_create_w_init(
 				LLVMBuildSub(cl2llvm_builder, lval->val, 
-				cast_one->val, temp_var_name), type->sign);
+				cast_one->val, temp_var_name), cl2llvmTypeWrapGetSign(type));
 			break;
 
 		case LLVMHalfTypeKind:
@@ -4192,13 +3709,12 @@ unary_expr
 
 			value_minus_one = cl2llvm_val_create_w_init(
 				LLVMBuildFSub(cl2llvm_builder, lval->val, 
-				cast_one->val, temp_var_name), type->sign);
+				cast_one->val, temp_var_name), cl2llvmTypeWrapGetSign(type));
 			break;
 
 		default:
 
 			yyerror("invalid type of operand for post '--'");
-			value_minus_one = cl2llvm_val_create();
 		}
 		
 		LLVMBuildStore(cl2llvm_builder, value_minus_one->val, $1->val);
@@ -4207,8 +3723,8 @@ unary_expr
 		cl2llvm_val_free(value_minus_one);
 		cl2llvm_val_free(cast_one);
 		cl2llvm_val_free($1);
-		cl2llvm_type_free(type);
-		cl2llvm_type_free(switch_type);
+		cl2llvmTypeWrapFree(type);
+		cl2llvmTypeWrapFree(switch_type);
 
 		$$ = lval;
 
@@ -4216,7 +3732,7 @@ unary_expr
 	| TOK_MINUS expr %prec TOK_PREFIX
 	{
 		struct cl2llvm_val_t *value;
-		struct cl2llvm_type_t *switch_type;
+		struct cl2llvmTypeWrap *switch_type;
 		
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp_%d", temp_var_count++);
@@ -4225,19 +3741,20 @@ unary_expr
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		switch_type = cl2llvm_type_create_w_init($2->type->llvm_type, $2->type->sign);
-		if (LLVMGetTypeKind(switch_type->llvm_type) == LLVMVectorTypeKind)
+		if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType($2->type)) == LLVMVectorTypeKind)
 		{
-			switch_type->llvm_type = LLVMGetElementType($2->type->llvm_type);
+			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(cl2llvmTypeWrapGetLlvmType($2->type)), cl2llvmTypeWrapGetSign($2->type));
 		}
+		else
+			switch_type = cl2llvmTypeWrapCreate(cl2llvmTypeWrapGetLlvmType($2->type), cl2llvmTypeWrapGetSign($2->type));
 
-		switch (LLVMGetTypeKind(switch_type->llvm_type))
+		switch (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(switch_type)))
 		{
 		case LLVMIntegerTypeKind:
 
 			value = cl2llvm_val_create_w_init(
 				LLVMBuildNeg(cl2llvm_builder, $2->val, 
-				temp_var_name), $2->type->sign);
+				temp_var_name), cl2llvmTypeWrapGetSign($2->type));
 			break;
 
 		case LLVMHalfTypeKind:
@@ -4246,18 +3763,17 @@ unary_expr
 
 			value = cl2llvm_val_create_w_init(
 				LLVMBuildFNeg(cl2llvm_builder, $2->val, 
-				temp_var_name), $2->type->sign);
+				temp_var_name), cl2llvmTypeWrapGetSign($2->type));
 			break;
 
 		default:
 
 			yyerror("invalid type of operand for unary '-'");
-			value = cl2llvm_val_create();
 		}
 		
 		/* Free pointers */
 		cl2llvm_val_free($2);
-		cl2llvm_type_free(switch_type);
+		cl2llvmTypeWrapFree(switch_type);
 
 		$$ = value;
 	}
@@ -4273,7 +3789,7 @@ unary_expr
 	
 		/* Free pointers */
 		cl2llvm_val_free($4);
-		cl2llvm_type_free($2);
+		cl2llvmTypeWrapFree($2);
 		$$ = value;
 	}
 	| TOK_SIZEOF TOK_PAR_OPEN type_spec TOK_PAR_CLOSE %prec TOK_PREFIX
@@ -4283,12 +3799,10 @@ unary_expr
 	}
 	| TOK_BITWISE_NOT expr
 	{
-		struct cl2llvm_type_t *switch_type;
+		struct cl2llvmTypeWrap *switch_type;
 		struct cl2llvm_val_t *value;
 		struct cl2llvm_val_t *neg_one;
 		struct cl2llvm_val_t *cast_neg_one;
-
-		value = cl2llvm_val_create();
 
 		/* Create a negative one value to use in the xor operation */
 		neg_one = cl2llvm_val_create_w_init(LLVMConstInt(
@@ -4301,19 +3815,18 @@ unary_expr
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		switch_type = cl2llvm_type_create_w_init($2->type->llvm_type, $2->type->sign);
-		if (LLVMGetTypeKind($2->type->llvm_type) == LLVMVectorTypeKind)
+		if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType($2->type)) == LLVMVectorTypeKind)
 		{
-			switch_type->llvm_type = LLVMGetElementType($2->type->llvm_type);
+			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(cl2llvmTypeWrapGetLlvmType($2->type)), cl2llvmTypeWrapGetSign($2->type));
 		}
+		else
+			switch_type = cl2llvmTypeWrapCreate(cl2llvmTypeWrapGetLlvmType($2->type), cl2llvmTypeWrapGetSign($2->type));
 
-		switch (LLVMGetTypeKind(switch_type->llvm_type))
+		switch (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(switch_type)))
 		{
 		case LLVMIntegerTypeKind:
-			value->val = LLVMBuildXor(cl2llvm_builder, 
-				$2->val, cast_neg_one->val, temp_var_name);
-			value->type->sign = $2->type->sign;
-			value->type->llvm_type = $2->type->llvm_type;
+			value = cl2llvm_val_create_w_init(LLVMBuildXor(cl2llvm_builder, 
+				$2->val, cast_neg_one->val, temp_var_name), cl2llvmTypeWrapGetSign($2->type));
 			break;
 
 
@@ -4326,7 +3839,7 @@ unary_expr
 		cl2llvm_val_free($2);
 		cl2llvm_val_free(neg_one);
 		cl2llvm_val_free(cast_neg_one);
-		cl2llvm_type_free(switch_type);
+		cl2llvmTypeWrapFree(switch_type);
 
 		$$ = value;
 	}
@@ -4345,7 +3858,7 @@ vec_literal
 	{
 		int index;
 		struct cl2llvm_val_t *current_vec_elem;
-		struct cl2llvm_type_t *elem_type;
+		struct cl2llvmTypeWrap *elem_type;
 		struct cl2llvm_val_t *cast_val;
 		struct cl2llvm_val_t *value;
 		struct cl2llvm_val_t *blank_elem = cl2llvm_val_create_w_init( LLVMConstInt(LLVMInt32Type(), 0, 0), 1);
@@ -4363,11 +3876,11 @@ vec_literal
 		snprintf(temp_var_name, sizeof(temp_var_name),
 			"tmp_%d", temp_var_count++);
 		/* Create type object to represent element type */
-		elem_type = cl2llvm_type_create_w_init(LLVMGetElementType($2->llvm_type), $2->sign);
+		elem_type = cl2llvmTypeWrapCreate(LLVMGetElementType(cl2llvmTypeWrapGetLlvmType($2)), cl2llvmTypeWrapGetSign($2));
 		/*Go to entry block and declare vector*/
 		LLVMPositionBuilder(cl2llvm_builder, cl2llvm_current_function->entry_block, cl2llvm_current_function->branch_instr);
 		LLVMValueRef vec_addr = LLVMBuildAlloca(cl2llvm_builder, 
-			$2->llvm_type, temp_var_name);
+			cl2llvmTypeWrapGetLlvmType($2), temp_var_name);
 		LLVMPositionBuilderAtEnd(cl2llvm_builder, current_basic_block);
 
 		/*Expand any vectors present in list*/
@@ -4393,11 +3906,11 @@ vec_literal
 				elem_count++;
 				non_const_elem_count++;
 			}
-			if (elem_count > LLVMGetVectorSize($2->llvm_type))
+			if (elem_count > LLVMGetVectorSize(cl2llvmTypeWrapGetLlvmType($2)))
 				yyerror("Too many elements in vector literal");
 			cl2llvm_val_free(cast_val);
 		}
-		if (elem_count < LLVMGetVectorSize($2->llvm_type))
+		if (elem_count < LLVMGetVectorSize(cl2llvmTypeWrapGetLlvmType($2)))
 			yyerror("Too few elements in vector literal");
 		
 		LLVMValueRef new_vector = LLVMConstVector(vec_const_elems, elem_count);
@@ -4444,7 +3957,7 @@ vec_literal
 
 		}
 		cl2llvm_val_free(blank_elem);
-		cl2llvm_type_free(elem_type);
+		cl2llvmTypeWrapFree(elem_type);
 
 		LIST_FOR_EACH($5, index)
 		{
@@ -4452,11 +3965,11 @@ vec_literal
 		}
 		list_free($5);
 
-		value = cl2llvm_val_create_w_init(new_vector, $2->sign);
+		value = cl2llvm_val_create_w_init(new_vector, cl2llvmTypeWrapGetSign($2));
 		
 		$$ = value;
 
-		cl2llvm_type_free($2);
+		cl2llvmTypeWrapFree($2);
 	}
 	;
 
@@ -4561,18 +4074,18 @@ primary
 			"tmp_%d", temp_var_count++);
 		struct cl2llvm_val_t *value = cl2llvm_val_create_w_init(
 			LLVMBuildLoad(cl2llvm_builder, $1->val, temp_var_name),
-			$1->type->sign);
+			cl2llvmTypeWrapGetSign($1->type));
 
 		/* If value is an array element, retrieve element type */
-		if (LLVMGetTypeKind(value->type->llvm_type) == LLVMArrayTypeKind
-			|| LLVMGetTypeKind(value->type->llvm_type) == LLVMPointerTypeKind
-			|| LLVMGetTypeKind(value->type->llvm_type) == LLVMStructTypeKind)
+		if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(value->type)) == LLVMArrayTypeKind
+			|| LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(value->type)) == LLVMPointerTypeKind
+			|| LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(value->type)) == LLVMStructTypeKind)
 		{
-			value->type->llvm_type = LLVMGetElementType(value->type->llvm_type);
+			cl2llvmTypeWrapSetLlvmType(value->type, LLVMGetElementType(cl2llvmTypeWrapGetLlvmType(value->type)));
 		}
 
 		/* If element is of vector type, check for component indices. */
-		if (LLVMGetTypeKind(LLVMGetElementType($1->type->llvm_type))
+		if (LLVMGetTypeKind(LLVMGetElementType(cl2llvmTypeWrapGetLlvmType($1->type)))
 			== LLVMVectorTypeKind && $1->vector_indices[i])
 		{
 			/* Get vector component count */
@@ -4593,7 +4106,7 @@ primary
 					cl2llvm_current_function->branch_instr);
 			
 				new_vector_addr = LLVMBuildAlloca(cl2llvm_builder,
-					LLVMVectorType(LLVMGetElementType(value->type->llvm_type),
+					LLVMVectorType(LLVMGetElementType(cl2llvmTypeWrapGetLlvmType(value->type)),
 					component_count), temp_var_name);
 
 				LLVMPositionBuilderAtEnd(cl2llvm_builder, current_basic_block);
@@ -4621,7 +4134,7 @@ primary
 					i++;
 				}
 				value->val = new_vector;
-				value->type->llvm_type = LLVMTypeOf(new_vector);
+				cl2llvmTypeWrapSetLlvmType(value->type, LLVMTypeOf(new_vector));
 			}
 			else if (component_count == 1)
 			{
@@ -4632,7 +4145,7 @@ primary
 					value->val, $1->vector_indices[0]->val,
 					temp_var_name);
 				value->val = component;
-				value->type->llvm_type = LLVMTypeOf(component);
+				cl2llvmTypeWrapSetLlvmType(value->type, LLVMTypeOf(component));
 			}
 			else
 				cl2llvm_yyerror("Invalid vector type.");
@@ -4659,15 +4172,15 @@ type_spec
 	| type_spec TOK_MULT
 	{
 		LLVMTypeRef ptr_type;
-		struct cl2llvm_type_t *type;
+		struct cl2llvmTypeWrap *type;
 		
 		/* Create pointer type */
-		ptr_type = LLVMPointerType($1->llvm_type, 0);
+		ptr_type = LLVMPointerType(cl2llvmTypeWrapGetLlvmType($1), 0);
 		
-		type = cl2llvm_type_create_w_init(ptr_type, $1->sign);
+		type = cl2llvmTypeWrapCreate(ptr_type, cl2llvmTypeWrapGetSign($1));
 	
 		/* Free pointers */
-		cl2llvm_type_free($1);
+		cl2llvmTypeWrapFree($1);
 		
 		$$ = type;
 	}
@@ -4731,163 +4244,163 @@ type_name
 	}
 	| TOK_UINT
 	{
-		struct cl2llvm_type_t *type = cl2llvm_type_create_w_init(
+		struct cl2llvmTypeWrap *type = cl2llvmTypeWrapCreate(
 			LLVMInt32Type(), 0);
 		$$ = type;
 	}
 	| TOK_UINT_LONG
 	{
-		struct cl2llvm_type_t *type = cl2llvm_type_create_w_init(
+		struct cl2llvmTypeWrap *type = cl2llvmTypeWrapCreate(
 			LLVMInt32Type(), 0);
 		$$ = type;
 	}
 	| TOK_UINT_LONG_LONG
 	{
-		struct cl2llvm_type_t *type = cl2llvm_type_create_w_init(
+		struct cl2llvmTypeWrap *type = cl2llvmTypeWrapCreate(
 			LLVMInt64Type(), 0);
 		$$ = type;
 	}
 	| TOK_UCHAR
 	{
-		struct cl2llvm_type_t *type = cl2llvm_type_create_w_init(
+		struct cl2llvmTypeWrap *type = cl2llvmTypeWrapCreate(
 			LLVMInt8Type(), 0);
 		$$ = type;
 	}
 	| TOK_SHORT
 	{
-		struct cl2llvm_type_t *type = cl2llvm_type_create_w_init(
+		struct cl2llvmTypeWrap *type = cl2llvmTypeWrapCreate(
 			LLVMInt16Type(), 1);
 		$$ = type;
 	}
 	| TOK_USHORT
 	{
-		struct cl2llvm_type_t *type = cl2llvm_type_create_w_init(
+		struct cl2llvmTypeWrap *type = cl2llvmTypeWrapCreate(
 			LLVMInt16Type(), 0);
 		$$ = type;
 	}
 	| TOK_UINTN
 	{
-		struct cl2llvm_type_t *type;
-		type = cl2llvm_type_create_w_init(LLVMVectorType(LLVMInt32Type(), $1), 0);
+		struct cl2llvmTypeWrap *type;
+		type = cl2llvmTypeWrapCreate(LLVMVectorType(LLVMInt32Type(), $1), 0);
 		$$ = type;
 
 	}
 	| TOK_UCHARN
 	{
-		struct cl2llvm_type_t *type;
-		type = cl2llvm_type_create_w_init(LLVMVectorType(LLVMInt8Type(), $1), 0);
+		struct cl2llvmTypeWrap *type;
+		type = cl2llvmTypeWrapCreate(LLVMVectorType(LLVMInt8Type(), $1), 0);
 		$$ = type;
 
 	}
 	| TOK_ULONGN
 	{
-		struct cl2llvm_type_t *type;
-		type = cl2llvm_type_create_w_init(LLVMVectorType(LLVMInt32Type(), $1), 0);
+		struct cl2llvmTypeWrap *type;
+		type = cl2llvmTypeWrapCreate(LLVMVectorType(LLVMInt32Type(), $1), 0);
 		$$ = type;
 
 	}
 	| TOK_USHORTN
 	{
-		struct cl2llvm_type_t *type;
-		type = cl2llvm_type_create_w_init(LLVMVectorType(LLVMInt16Type(), $1), 0);
+		struct cl2llvmTypeWrap *type;
+		type = cl2llvmTypeWrapCreate(LLVMVectorType(LLVMInt16Type(), $1), 0);
 		$$ = type;
 
 	}
 	| TOK_SHORTN
 	{
-		struct cl2llvm_type_t *type;
-		type = cl2llvm_type_create_w_init(LLVMVectorType(LLVMInt16Type(), $1), 1);
+		struct cl2llvmTypeWrap *type;
+		type = cl2llvmTypeWrapCreate(LLVMVectorType(LLVMInt16Type(), $1), 1);
 		$$ = type;
 
 	}
 	| TOK_INTN
 	{
-		struct cl2llvm_type_t *type;
-		type = cl2llvm_type_create_w_init(LLVMVectorType(LLVMInt32Type(), $1), 1);
+		struct cl2llvmTypeWrap *type;
+		type = cl2llvmTypeWrapCreate(LLVMVectorType(LLVMInt32Type(), $1), 1);
 		$$ = type;
 	}
 	| TOK_LONGN
 	{
-		struct cl2llvm_type_t *type;
-		type = cl2llvm_type_create_w_init(LLVMVectorType(LLVMInt32Type(), $1), 1);
+		struct cl2llvmTypeWrap *type;
+		type = cl2llvmTypeWrapCreate(LLVMVectorType(LLVMInt32Type(), $1), 1);
 		$$ = type;
 	}
 	| TOK_CHARN
 	{
-		struct cl2llvm_type_t *type;
-		type = cl2llvm_type_create_w_init(LLVMVectorType(LLVMInt8Type(), $1), 1);
+		struct cl2llvmTypeWrap *type;
+		type = cl2llvmTypeWrapCreate(LLVMVectorType(LLVMInt8Type(), $1), 1);
 		$$ = type;
 	}
 	| TOK_FLOATN
 	{
-		struct cl2llvm_type_t *type;
-		type = cl2llvm_type_create_w_init(LLVMVectorType(LLVMFloatType(), $1), 1);
+		struct cl2llvmTypeWrap *type;
+		type = cl2llvmTypeWrapCreate(LLVMVectorType(LLVMFloatType(), $1), 1);
 		$$ = type;
 	}
 	| TOK_DOUBLEN
 	{
-		struct cl2llvm_type_t *type;
-		type = cl2llvm_type_create_w_init(LLVMVectorType(LLVMDoubleType(), $1), 1);
+		struct cl2llvmTypeWrap *type;
+		type = cl2llvmTypeWrapCreate(LLVMVectorType(LLVMDoubleType(), $1), 1);
 		$$ = type;
 	}
 	| TOK_INT 
 	{
-		struct cl2llvm_type_t *type = cl2llvm_type_create_w_init(
+		struct cl2llvmTypeWrap *type = cl2llvmTypeWrapCreate(
 			LLVMInt32Type(), 1);
 		$$ = type;
 	}
 	| TOK_INT_LONG
 	{
-		struct cl2llvm_type_t *type = cl2llvm_type_create_w_init(
+		struct cl2llvmTypeWrap *type = cl2llvmTypeWrapCreate(
 			LLVMInt32Type(), 1);
 		$$ = type;
 	}
 	| TOK_LONG_LONG
 	{
-		struct cl2llvm_type_t *type = cl2llvm_type_create_w_init(
+		struct cl2llvmTypeWrap *type = cl2llvmTypeWrapCreate(
 			LLVMInt64Type(), 1);
 		$$ = type;
 	}
 	| TOK_CHAR
 	{
-		struct cl2llvm_type_t *type = cl2llvm_type_create_w_init(
+		struct cl2llvmTypeWrap *type = cl2llvmTypeWrapCreate(
 			LLVMInt8Type(), 1);
 		$$ = type;
 	}
 	| TOK_FLOAT
 	{
-		struct cl2llvm_type_t *type = cl2llvm_type_create_w_init(
+		struct cl2llvmTypeWrap *type = cl2llvmTypeWrapCreate(
 			LLVMFloatType(), 1);
 		$$ = type;
 	}
 	| TOK_BOOL
 	{
-		struct cl2llvm_type_t *type = cl2llvm_type_create_w_init(
+		struct cl2llvmTypeWrap *type = cl2llvmTypeWrapCreate(
 			LLVMInt1Type(), 1);
 		$$ = type;
 	}
 	| TOK_DOUBLE
 	{
-		struct cl2llvm_type_t *type = cl2llvm_type_create_w_init(
+		struct cl2llvmTypeWrap *type = cl2llvmTypeWrapCreate(
 			LLVMDoubleType(), 1);
 		$$ = type;
 	}
 	|TOK_DOUBLE_LONG
 	{
-		struct cl2llvm_type_t *type = cl2llvm_type_create_w_init(
+		struct cl2llvmTypeWrap *type = cl2llvmTypeWrapCreate(
 			LLVMInt64Type(), 1);
 		$$ = type;
 	}
 	| TOK_VOID
 	{
-		struct cl2llvm_type_t *type = cl2llvm_type_create_w_init(
+		struct cl2llvmTypeWrap *type = cl2llvmTypeWrapCreate(
 			LLVMVoidType(), 1);
 		$$ = type;
 
 	}
 	| TOK_HALF
 	{
-		struct cl2llvm_type_t *type = cl2llvm_type_create_w_init(
+		struct cl2llvmTypeWrap *type = cl2llvmTypeWrapCreate(
 			LLVMHalfType(), 1);
 		$$ = type;
 	}
