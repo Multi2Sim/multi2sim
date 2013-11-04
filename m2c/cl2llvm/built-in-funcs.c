@@ -23,7 +23,7 @@
 #include <lib/mhandle/mhandle.h>
 
 #include "built-in-funcs.h"
-#include "type.h"
+#include "Type.h"
 #include "val.h"
 #include "arg.h"
 #include "function.h"
@@ -227,10 +227,10 @@ void cl2llvm_built_in_func_llvm_name_free(struct cl2llvm_built_in_func_llvm_name
 
 	free(built_in_func_llvm_name->llvm_name);
 	
-	cl2llvm_type_free(built_in_func_llvm_name->ret_type);
+	cl2llvmTypeWrapFree(built_in_func_llvm_name->ret_type);
 	while(built_in_func_llvm_name->arg_list[i])
 	{
-		cl2llvm_type_free(built_in_func_llvm_name->arg_list[i]);
+		cl2llvmTypeWrapFree(built_in_func_llvm_name->arg_list[i]);
 		i++;
 	}
 	free(built_in_func_llvm_name->arg_list);
@@ -244,7 +244,7 @@ struct cl2llvm_built_in_func_llvm_name_t *
 
 	built_in_func_llvm_name = xcalloc(1, sizeof(struct cl2llvm_built_in_func_llvm_name_t));
 	built_in_func_llvm_name->arg_list = xcalloc(3,
-		sizeof(struct cl2llvm_type_t*));
+		sizeof(struct cl2llvmTypeWrap*));
 	
 	return built_in_func_llvm_name;
 }
@@ -258,7 +258,7 @@ void cl2llvm_built_in_func_analyze(char* name, struct list_t *param_list)
 	int i;
 	int j;
 /*	char error_message[1000];*/
-	struct cl2llvm_type_t *type;
+	struct cl2llvmTypeWrap *type;
 	struct cl2llvm_val_t *param;
 
 	built_in_func = hash_table_get(cl2llvm_built_in_func_table, name);
@@ -277,22 +277,22 @@ void cl2llvm_built_in_func_analyze(char* name, struct list_t *param_list)
 			if (args_match)	
 			{
 				/* If type is void, Create special comparison */
-				if (type->llvm_type == LLVMVoidType() && param == NULL)
+				if (cl2llvmTypeWrapGetLlvmType(type) == LLVMVoidType() && param == NULL)
 					args_match = 1;
 				/* Only compare signs if type is a vector */
-				else if (LLVMGetTypeKind(param->type->llvm_type) ==
+				else if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(param->type)) ==
 					LLVMVectorTypeKind)
 				{
-					if (type->llvm_type == 
-						param->type->llvm_type && type->sign == 
-						param->type->sign)
+					if (cl2llvmTypeWrapGetLlvmType(type) == 
+						cl2llvmTypeWrapGetLlvmType(param->type) && cl2llvmTypeWrapGetSign(type) == 
+						cl2llvmTypeWrapGetSign(param->type))
 						{
 						args_match = 1;
 						}
 					else
 						args_match = 0;
 				}
-				else if (type->llvm_type == param->type->llvm_type)
+				else if (cl2llvmTypeWrapGetLlvmType(type) == cl2llvmTypeWrapGetLlvmType(param->type))
 					args_match = 1;
 				else
 					args_match = 0;
@@ -320,7 +320,7 @@ void cl2llvm_built_in_func_analyze(char* name, struct list_t *param_list)
 	}
 }
 
-void func_declare(int arg_count, struct cl2llvm_type_t **arg_types_list, struct cl2llvm_type_t *ret_type, 
+void func_declare(int arg_count, struct cl2llvmTypeWrap **arg_types_list, struct cl2llvmTypeWrap *ret_type, 
 	char* name, char* llvm_name)
 {
 	LLVMTypeRef args_array[50];
@@ -329,8 +329,8 @@ void func_declare(int arg_count, struct cl2llvm_type_t **arg_types_list, struct 
 	struct cl2llvm_arg_t *arg;
 	struct cl2llvm_function_t *function;
 	struct cl2llvm_function_t *test_function;
-	struct cl2llvm_type_t *current_arg_type;
-	struct cl2llvm_type_t *type_spec;
+	struct cl2llvmTypeWrap *current_arg_type;
+	struct cl2llvmTypeWrap *type_spec;
 	int i;
 	
 	function = hash_table_get(cl2llvm_declared_built_in_funcs_table, llvm_name);
@@ -356,10 +356,10 @@ void func_declare(int arg_count, struct cl2llvm_type_t **arg_types_list, struct 
 	{
 		/* Arguments */
 		current_arg_type = arg_types_list[i];
-		args_array[i] = current_arg_type->llvm_type;
+		args_array[i] = cl2llvmTypeWrapGetLlvmType(current_arg_type);
 		arg_decl = cl2llvm_decl_list_create();
-		type_spec = cl2llvm_type_create_w_init(current_arg_type->llvm_type,
-		current_arg_type->sign);
+		type_spec = cl2llvmTypeWrapCreate(cl2llvmTypeWrapGetLlvmType(current_arg_type),
+		cl2llvmTypeWrapGetSign(current_arg_type));
 		arg_decl->type_spec = type_spec;
 		arg = cl2llvm_arg_create(arg_decl, "arg");
 		list_add(arg_list, arg);
@@ -368,7 +368,7 @@ void func_declare(int arg_count, struct cl2llvm_type_t **arg_types_list, struct 
 	}
 	/* Arg list is empty */
 	type_spec = arg_types_list[0]; 
-	if (type_spec->llvm_type == LLVMVoidType())
+	if (cl2llvmTypeWrapGetLlvmType(type_spec) == LLVMVoidType())
 	{
 		cl2llvm_arg_free(list_get(arg_list, 0));
 		list_set(arg_list, 0, NULL);
@@ -377,11 +377,11 @@ void func_declare(int arg_count, struct cl2llvm_type_t **arg_types_list, struct 
 	/* Function */
 	function = cl2llvm_function_create(name, arg_list);
 		
-	function->func_type = LLVMFunctionType(ret_type->llvm_type, 
+	function->func_type = LLVMFunctionType(cl2llvmTypeWrapGetLlvmType(ret_type), 
  		args_array, function->arg_count, 0);
 	function->func = LLVMAddFunction(cl2llvm_module, 
 		llvm_name, function->func_type);
-	function->sign = ret_type->sign;
+	function->sign = cl2llvmTypeWrapGetSign(ret_type);
 	LLVMSetFunctionCallConv(function->func, LLVMCCallConv);
 	LLVMAddFunctionAttr(function->func, 1 << 5);
 	
@@ -395,7 +395,7 @@ void func_declare(int arg_count, struct cl2llvm_type_t **arg_types_list, struct 
 		llvm_name, cl2llvm_func_cpy(function));
 }
 
-struct cl2llvm_type_t *string_to_type(char* info_str)
+struct cl2llvmTypeWrap *string_to_type(char* info_str)
 {
 	int addr_space;
 	int is_int;
@@ -404,7 +404,7 @@ struct cl2llvm_type_t *string_to_type(char* info_str)
 	int i;
 	int j;
 	LLVMTypeRef type;
-	struct cl2llvm_type_t *ret_type;
+	struct cl2llvmTypeWrap *ret_type;
 
 	i = 0;
 	is_int = 0;
@@ -539,7 +539,7 @@ struct cl2llvm_type_t *string_to_type(char* info_str)
 		}
 	}
 
-	ret_type = cl2llvm_type_create_w_init(type, is_signed);
+	ret_type = cl2llvmTypeWrapCreate(type, is_signed);
 	
 	return ret_type;
 }
@@ -585,7 +585,7 @@ struct cl2llvm_type_t *string_to_type(char* info_str)
 			}
 			arg_type_string[++index2] = '\00';
 
-cl2llvm_type_to_string(string_to_type(arg_type_string), format_arg_str);
+cl2llvmTypeWrapo_string(string_to_type(arg_type_string), format_arg_str);
 
 			strcpy(error_message_cpy, error_message);
 			snprintf(error_message, 1000 * sizeof(char),
@@ -641,7 +641,7 @@ cl2llvm_type_to_string(string_to_type(arg_type_string), format_arg_str);
 	for (i = 0; i < func_info->arg_count; i++)
 	{
 		param = list_get(param_list, i);
-		cl2llvm_type_to_string(param->type, format_arg_str);
+		cl2llvmTypeWrapo_string(param->type, format_arg_str);
 
 		strcpy(error_message_cpy, error_message);
 		snprintf(error_message, 1000 * sizeof(char),

@@ -21,7 +21,7 @@
 
 #include "symbol.h"
 #include "val.h"
-
+#include "Type.h"
 
 struct cl2llvm_symbol_t *cl2llvm_symbol_create(char *name)
 {
@@ -44,8 +44,8 @@ struct cl2llvm_symbol_t *cl2llvm_symbol_create_w_init(LLVMValueRef val, int sign
 	symbol = cl2llvm_symbol_create(name);
 
 	symbol->cl2llvm_val->val = val;
-	symbol->cl2llvm_val->type->llvm_type = LLVMTypeOf(val);
-	symbol->cl2llvm_val->type->sign = sign;
+	cl2llvmTypeWrapSetLlvmType(symbol->cl2llvm_val->type, LLVMTypeOf(val));
+	cl2llvmTypeWrapSetSign(symbol->cl2llvm_val->type, sign);
 
 	return symbol;
 }

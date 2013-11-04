@@ -17,6 +17,10 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <llvm-c/Target.h>
+#include <llvm-c/Transforms/Scalar.h>
+#include <llvm-c/ExecutionEngine.h>
+#include <llvm-c/Analysis.h>
 #include <llvm-c/BitWriter.h>
 #include <stdarg.h>
 
@@ -27,7 +31,7 @@
 #include "cl2llvm.h"
 #include "function.h"
 #include "symbol.h"
-#include "type.h"
+#include "Type.h"
 #include "built-in-funcs.h"
 
 

@@ -25,7 +25,7 @@
 struct cl2llvm_arg_t
 {
 	char *name;
-	struct cl2llvm_type_t *type_spec;
+	struct cl2llvmTypeWrap *type_spec;
 	char *access_qual;
 	char *kernel_t;
 	char *inline_t;
