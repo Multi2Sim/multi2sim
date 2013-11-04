@@ -25,7 +25,7 @@
 #include "arg.h"
 #include "symbol.h"
 #include "function.h"
-#include "type.h"
+#include "Type.h"
 #include "declarator-list.h"
 #include "arg.h"
 
@@ -68,9 +68,9 @@ struct cl2llvm_function_t *cl2llvm_func_cpy(struct cl2llvm_function_t *src_func)
 		src_arg = list_get(src_func->arg_list, i);
 		
 		new_arg_decl = cl2llvm_decl_list_create();
-		new_arg_decl->type_spec = cl2llvm_type_create_w_init(
-			src_arg->type_spec->llvm_type, 
-			src_arg->type_spec->sign);
+		new_arg_decl->type_spec = cl2llvmTypeWrapCreate(
+			cl2llvmTypeWrapGetLlvmType(src_arg->type_spec), 
+			cl2llvmTypeWrapGetSign(src_arg->type_spec));
 		new_arg_decl->access_qual = src_arg->access_qual;
 
 		new_arg = cl2llvm_arg_create(new_arg_decl, "arg");

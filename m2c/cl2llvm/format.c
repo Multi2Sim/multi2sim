@@ -53,7 +53,7 @@ char *extract_file_name(char *text)
 
 /* This function takes cl2llvm_type and an empty string.  The string is
    then filled with the type of the cl2llvm_type */
-void cl2llvm_type_to_string(struct cl2llvm_type_t *type, char *type_string)
+void cl2llvm_type_to_string(struct cl2llvmTypeWrap *type, char *type_string)
 {
 	int sign;
 	int i, j;
@@ -64,8 +64,8 @@ void cl2llvm_type_to_string(struct cl2llvm_type_t *type, char *type_string)
 	char type_string_cpy[50];
 	LLVMTypeRef bit_type;
 
-	bit_type = type->llvm_type;
-	sign = type->sign;
+	bit_type = cl2llvmTypeWrapGetLlvmType(type);
+	sign = cl2llvmTypeWrapGetSign(type);
 	array_count = 0;
 	ptr_count = 0;
 	vec_size = 0;

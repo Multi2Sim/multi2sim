@@ -21,6 +21,7 @@
 #include <lib/mhandle/mhandle.h>
 
 #include "arg.h"
+#include "Type.h"
 
 struct cl2llvm_arg_t *cl2llvm_arg_create(struct cl2llvm_decl_list_t *decl_list, char *name)
 {
@@ -46,7 +47,7 @@ void cl2llvm_arg_free(struct cl2llvm_arg_t *arg)
 	if (arg)
 	{
 		if (arg->type_spec != NULL)
-			free(arg->type_spec);
+			cl2llvmTypeWrapFree(arg->type_spec);
 		if (arg->access_qual != NULL)
 			free(arg->access_qual);
 		if (arg->kernel_t != NULL)

@@ -22,7 +22,7 @@
 #include <llvm-c/Core.h>
 #include <lib/util/list.h>
 
-#include "type.h"
+#include "Type.h"
 
 struct cl2llvm_built_in_func_t
 {
@@ -37,10 +37,10 @@ struct cl2llvm_built_in_func_llvm_name_t
 
 	/* Arguments */
 	int arg_count;
-	struct cl2llvm_type_t** arg_list;
+	struct cl2llvmTypeWrap** arg_list;
 
 	/* Return type */
-	struct cl2llvm_type_t* ret_type;
+	struct cl2llvmTypeWrap* ret_type;
 };
 
 struct hash_table_t *built_in_func_table_create(void);
@@ -57,12 +57,12 @@ void cl2llvm_built_in_func_llvm_name_free(struct cl2llvm_built_in_func_llvm_name
 
 void cl2llvm_built_in_func_analyze(char* name, struct list_t *param_list);
 
-void func_declare(int arg_count, struct cl2llvm_type_t** arg_list, struct cl2llvm_type_t *ret_type, 
+void func_declare(int arg_count, struct cl2llvmTypeWrap** arg_list, struct cl2llvmTypeWrap *ret_type, 
 	char* name, char* param_spec_name);
 
 int *intptr(int num);
 
-struct cl2llvm_type_t *string_to_type(char*);
+struct cl2llvmTypeWrap *string_to_type(char*);
 
 /* This function creates an error message for argument type mismatches based
    on and arg_info string and a list of the attempted argument types. */

@@ -23,7 +23,6 @@
 #include "function.h"
 #include "val.h"
 #include "cl2llvm.h"
-
 extern int temp_var_count;
 extern char temp_var_name[50];
 
@@ -37,8 +36,8 @@ struct cl2llvm_val_t *cl2llvm_val_create(void)
 	struct cl2llvm_val_t *cl2llvm_val;
 	cl2llvm_val = xcalloc(1, sizeof(struct cl2llvm_val_t));
 
-	struct cl2llvm_type_t *cl2llvm_type;
-	cl2llvm_type = cl2llvm_type_create();
+	struct cl2llvmTypeWrap *cl2llvm_type;
+	cl2llvm_type = cl2llvmTypeWrapCreate(LLVMInt32Type(), 1);
 	
 	cl2llvm_val->type = cl2llvm_type;
 	cl2llvm_val->vector_indices = xmalloc(sizeof(struct cl2llvm_val_t *) * 17);
@@ -55,8 +54,8 @@ struct cl2llvm_val_t *cl2llvm_val_create_w_init(LLVMValueRef val, int sign)
 	struct cl2llvm_val_t *cl2llvm_val = cl2llvm_val_create();
 	
 	cl2llvm_val->val = val;
-	cl2llvm_val->type->llvm_type = LLVMTypeOf(val);
-	cl2llvm_val->type->sign = sign;
+	cl2llvmTypeWrapSetLlvmType(cl2llvm_val->type, LLVMTypeOf(val));
+	cl2llvmTypeWrapSetSign(cl2llvm_val->type, sign);
 
 	return cl2llvm_val;
 }
@@ -65,7 +64,7 @@ void cl2llvm_val_free(struct cl2llvm_val_t *cl2llvm_val)
 {
 	int i;
 
-	free(cl2llvm_val->type);
+	cl2llvmTypeWrapFree(cl2llvm_val->type);
 	for(i = 0; i < 16; i++)
 	{
 		if (cl2llvm_val->vector_indices[i])
@@ -76,26 +75,26 @@ void cl2llvm_val_free(struct cl2llvm_val_t *cl2llvm_val)
 }
 
 struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val, 
-	struct cl2llvm_type_t *totype_w_sign)
+	struct cl2llvmTypeWrap *totype_w_sign)
 {
 	struct cl2llvm_val_t *llvm_val = cl2llvm_val_create();
 
 	int i;
-	struct cl2llvm_type_t *elem_type;
+	struct cl2llvmTypeWrap *elem_type;
 	struct cl2llvm_val_t *cast_original_val;
 	LLVMValueRef index;
 	LLVMValueRef vector_addr;
 	LLVMValueRef vector;
 	LLVMValueRef const_elems[16];
-	LLVMTypeRef fromtype = original_val->type->llvm_type;
-	LLVMTypeRef totype = totype_w_sign->llvm_type;
-	int fromsign = original_val->type->sign;
-	int tosign = totype_w_sign->sign;
+	LLVMTypeRef fromtype = cl2llvmTypeWrapGetLlvmType(original_val->type);
+	LLVMTypeRef totype = cl2llvmTypeWrapGetLlvmType(totype_w_sign);
+	int fromsign = cl2llvmTypeWrapGetSign(original_val->type);
+	int tosign = cl2llvmTypeWrapGetSign(totype_w_sign);
 
 	/*By default the return value is the same as the original_val*/
 	llvm_val->val = original_val->val;
-	llvm_val->type->llvm_type = original_val->type->llvm_type;
-	llvm_val->type->sign = original_val->type->sign;
+	cl2llvmTypeWrapSetLlvmType(llvm_val->type, cl2llvmTypeWrapGetLlvmType(original_val->type));
+	cl2llvmTypeWrapSetSign(llvm_val->type, cl2llvmTypeWrapGetSign(original_val->type));
 
 	snprintf(temp_var_name, sizeof temp_var_name,
 		"tmp_%d", temp_var_count++);
@@ -138,7 +137,7 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val,
 		vector = LLVMBuildLoad(cl2llvm_builder, vector_addr, temp_var_name);
 		
 		/* Create object to represent element type of totype */
-		elem_type = cl2llvm_type_create_w_init(LLVMGetElementType(totype), tosign);
+		elem_type = cl2llvmTypeWrapCreate(LLVMGetElementType(totype), tosign);
 
 		/* If original_val is constant create a constant vector */
 		if (LLVMIsConstant(original_val->val))
@@ -168,7 +167,7 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val,
 				cl2llvm_val_free(cast_original_val);
 			}
 		}
-		cl2llvm_type_free(elem_type);
+		cl2llvmTypeWrapFree(elem_type);
 		llvm_val->val = vector;
 	}
 
@@ -191,7 +190,7 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val,
 					  original_val->val, LLVMDoubleType(),
 					temp_var_name);
 			}
-			llvm_val->type->sign = 1;
+			cl2llvmTypeWrapSetSign(llvm_val->type, 1);
 		}
 		else if (totype == LLVMFloatType())
 		{
@@ -209,7 +208,7 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val,
 					  original_val->val, LLVMFloatType(),
 					temp_var_name);
 			}
-			llvm_val->type->sign = 1;
+			cl2llvmTypeWrapSetSign(llvm_val->type, 1);
 		}
 		else if (totype == LLVMHalfType())
 		{
@@ -227,14 +226,14 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val,
 					  original_val->val, LLVMHalfType(),
 					temp_var_name);
 			}
-			llvm_val->type->sign = 1;
+			cl2llvmTypeWrapSetSign(llvm_val->type, 1);
 		}
 		else if (totype == LLVMInt64Type())
 		{
 			if (tosign)
-				llvm_val->type->sign = 1;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 1);
 			else
-				llvm_val->type->sign = 0;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 0);
 			temp_var_count--;
 		}
 		else if (totype == LLVMInt32Type())
@@ -242,36 +241,36 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val,
 			llvm_val->val = LLVMBuildTrunc(cl2llvm_builder,
 				  original_val->val, LLVMInt32Type(), temp_var_name);
 			if(tosign)
-				llvm_val->type->sign = 1;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 1);
 			else
-				llvm_val->type->sign = 0;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 0);
 		}
 		else if (totype == LLVMInt16Type())
 		{
 			llvm_val->val = LLVMBuildTrunc(cl2llvm_builder,
 				  original_val->val, LLVMInt16Type(), temp_var_name);
 			if(tosign)
-				llvm_val->type->sign = 1;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 1);
 			else
-				llvm_val->type->sign = 0;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 0);
 		}
 		else if (totype == LLVMInt8Type())
 		{
 			llvm_val->val = LLVMBuildTrunc(cl2llvm_builder,
 				  original_val->val, LLVMInt8Type(), temp_var_name);
 			if(tosign)
-				llvm_val->type->sign = 1;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 1);
 			else
-				llvm_val->type->sign = 0;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 0);
 		}
 		else if (totype == LLVMInt1Type())
 		{
 			llvm_val->val = LLVMBuildTrunc(cl2llvm_builder,
 				  original_val->val, LLVMInt1Type(), temp_var_name);
 			if(tosign)
-				llvm_val->type->sign = 1;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 1);
 			else
-				llvm_val->type->sign = 0;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 0);
 		}
 			
 	}
@@ -293,7 +292,7 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val,
 					  original_val->val, LLVMDoubleType(),
 					temp_var_name);
 			}
-			llvm_val->type->sign = 1;
+			cl2llvmTypeWrapSetSign(llvm_val->type, 1);
 		}
 		else if (totype == LLVMFloatType())
 		{
@@ -311,7 +310,7 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val,
 					  original_val->val, LLVMFloatType(),
 					temp_var_name);
 			}
-			llvm_val->type->sign = 1;
+			cl2llvmTypeWrapSetSign(llvm_val->type, 1);
 		}
 		else if (totype == LLVMHalfType())
 		{
@@ -329,7 +328,7 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val,
 					  original_val->val, LLVMHalfType(),
 					temp_var_name);
 			}
-			llvm_val->type->sign = 1;
+			cl2llvmTypeWrapSetSign(llvm_val->type, 1);
 		}
 		else if (totype == LLVMInt64Type())
 		{
@@ -346,16 +345,16 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val,
 					temp_var_name);
 			}
 			if (tosign)
-				llvm_val->type->sign = 1;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 1);
 			else
-				llvm_val->type->sign = 0;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 0);
 		}
 		else if (totype == LLVMInt32Type())
 		{
 			if(tosign)
-				llvm_val->type->sign = 1;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 1);
 			else
-				llvm_val->type->sign = 0;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 0);
 			temp_var_count--;
 		}
 		else if (totype == LLVMInt16Type())
@@ -363,27 +362,27 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val,
 			llvm_val->val = LLVMBuildTrunc(cl2llvm_builder,
 				  original_val->val, LLVMInt16Type(), temp_var_name);
 			if(tosign)
-				llvm_val->type->sign = 1;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 1);
 			else
-				llvm_val->type->sign = 0;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 0);
 		}
 		else if (totype == LLVMInt8Type())
 		{
 			llvm_val->val = LLVMBuildTrunc(cl2llvm_builder,
 				 original_val->val, LLVMInt8Type(), temp_var_name);
 			if(tosign)
-				llvm_val->type->sign = 1;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 1);
 			else
-				llvm_val->type->sign = 0;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 0);
 		}
 		else if (totype == LLVMInt1Type())
 		{
 			llvm_val->val = LLVMBuildTrunc(cl2llvm_builder,
 				  original_val->val, LLVMInt1Type(), temp_var_name);
 			if(tosign)
-				llvm_val->type->sign = 1;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 1);
 			else
-				llvm_val->type->sign = 0;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 0);
 		}
 			
 	}
@@ -405,7 +404,7 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val,
 					  original_val->val, LLVMDoubleType(),
 					temp_var_name);
 			}
-			llvm_val->type->sign = 1;
+			cl2llvmTypeWrapSetSign(llvm_val->type, 1);
 		}
 		else if (totype == LLVMFloatType())
 		{
@@ -423,7 +422,7 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val,
 					  original_val->val, LLVMFloatType(),
 					temp_var_name);
 			}
-			llvm_val->type->sign = 1;
+			cl2llvmTypeWrapSetSign(llvm_val->type, 1);
 		}
 		else if (totype == LLVMHalfType())
 		{
@@ -441,7 +440,7 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val,
 					  original_val->val, LLVMHalfType(),
 					temp_var_name);
 			}
-			llvm_val->type->sign = 1;
+			cl2llvmTypeWrapSetSign(llvm_val->type, 1);
 		}
 		else if (totype == LLVMInt64Type())
 		{
@@ -458,9 +457,9 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val,
 					temp_var_name);
 			}
 			if (tosign)
-				llvm_val->type->sign = 1;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 1);
 			else
-				llvm_val->type->sign = 0;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 0);
 		}
 		else if (totype == LLVMInt32Type())
 		{
@@ -477,16 +476,16 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val,
 					temp_var_name);
 			}
 			if(tosign)
-				llvm_val->type->sign = 1;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 1);
 			else
-				llvm_val->type->sign = 0;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 0);
 		}
 		else if (totype == LLVMInt16Type())
 		{
 			if(tosign)
-				llvm_val->type->sign = 1;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 1);
 			else
-				llvm_val->type->sign = 0;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 0);
 			temp_var_count--;
 		}
 		else if (totype == LLVMInt8Type())
@@ -494,18 +493,18 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val,
 			llvm_val->val = LLVMBuildTrunc(cl2llvm_builder,
 				  original_val->val, LLVMInt8Type(), temp_var_name);
 			if(tosign)
-				llvm_val->type->sign = 1;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 1);
 			else
-				llvm_val->type->sign = 0;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 0);
 		}
 		else if (totype == LLVMInt1Type())
 		{
 			llvm_val->val = LLVMBuildTrunc(cl2llvm_builder,
 				  original_val->val, LLVMInt1Type(), temp_var_name);
 			if(tosign)
-				llvm_val->type->sign = 1;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 1);
 			else
-				llvm_val->type->sign = 0;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 0);
 		}
 			
 	}
@@ -527,7 +526,7 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val,
 					  original_val->val, LLVMDoubleType(),
 					temp_var_name);
 			}
-			llvm_val->type->sign = 1;
+			cl2llvmTypeWrapSetSign(llvm_val->type, 1);
 		}
 		else if (totype == LLVMFloatType())
 		{
@@ -545,7 +544,7 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val,
 					  original_val->val, LLVMFloatType(),
 					temp_var_name);
 			}
-			llvm_val->type->sign = 1;
+			cl2llvmTypeWrapSetSign(llvm_val->type, 1);
 		}
 		else if (totype == LLVMHalfType())
 		{
@@ -563,7 +562,7 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val,
 					  original_val->val, LLVMHalfType(),
 					temp_var_name);
 			}
-			llvm_val->type->sign = 1;
+			cl2llvmTypeWrapSetSign(llvm_val->type, 1);
 		}
 		else if (totype == LLVMInt64Type())
 		{
@@ -580,9 +579,9 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val,
 					temp_var_name);
 			}
 			if (tosign)
-				llvm_val->type->sign = 1;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 1);
 			else
-				llvm_val->type->sign = 0;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 0);
 		}
 		else if (totype == LLVMInt32Type())
 		{
@@ -599,9 +598,9 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val,
 					temp_var_name);
 			}
 			if(tosign)
-				llvm_val->type->sign = 1;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 1);
 			else
-				llvm_val->type->sign = 0;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 0);
 		}
 		else if (totype == LLVMInt16Type())
 		{
@@ -618,16 +617,16 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val,
 					temp_var_name);
 			}
 			if(tosign)
-				llvm_val->type->sign = 1;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 1);
 			else
-				llvm_val->type->sign = 0;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 0);
 		}
 		else if (totype == LLVMInt8Type())
 		{
 			if(tosign)
-				llvm_val->type->sign = 1;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 1);
 			else
-				llvm_val->type->sign = 0;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 0);
 			temp_var_count--;
 		}
 		else if (totype == LLVMInt1Type())
@@ -635,9 +634,9 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val,
 			llvm_val->val = LLVMBuildTrunc(cl2llvm_builder,
 				  original_val->val, LLVMInt1Type(), temp_var_name);
 			if(tosign)
-				llvm_val->type->sign = 1;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 1);
 			else
-				llvm_val->type->sign = 0;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 0);
 		}
 			
 	}
@@ -659,7 +658,7 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val,
 					  original_val->val, LLVMDoubleType(),
 					temp_var_name);
 			}
-			llvm_val->type->sign = 1;
+			cl2llvmTypeWrapSetSign(llvm_val->type, 1);
 		}
 		else if (totype == LLVMFloatType())
 		{
@@ -677,7 +676,7 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val,
 					  original_val->val, LLVMFloatType(),
 					temp_var_name);
 			}
-			llvm_val->type->sign = 1;
+			cl2llvmTypeWrapSetSign(llvm_val->type, 1);
 		}
 		else if (totype == LLVMHalfType())
 		{
@@ -695,7 +694,7 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val,
 					  original_val->val, LLVMHalfType(),
 					temp_var_name);
 			}
-			llvm_val->type->sign = 1;
+			cl2llvmTypeWrapSetSign(llvm_val->type, 1);
 		}
 		else if (totype == LLVMInt64Type())
 		{
@@ -712,9 +711,9 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val,
 					temp_var_name);
 			}
 			if (tosign)
-				llvm_val->type->sign = 1;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 1);
 			else
-				llvm_val->type->sign = 0;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 0);
 		}
 		else if (totype == LLVMInt32Type())
 		{
@@ -731,9 +730,9 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val,
 					temp_var_name);
 			}
 			if(tosign)
-				llvm_val->type->sign = 1;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 1);
 			else
-				llvm_val->type->sign = 0;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 0);
 		}
 		else if (totype == LLVMInt16Type())
 		{
@@ -750,9 +749,9 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val,
 					temp_var_name);
 			}
 			if(tosign)
-				llvm_val->type->sign = 1;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 1);
 			else
-				llvm_val->type->sign = 0;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 0);
 		}
 		else if (totype == LLVMInt8Type())
 		{
@@ -769,16 +768,16 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val,
 					temp_var_name);
 			}
 			if(tosign)
-				llvm_val->type->sign = 1;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 1);
 			else
-				llvm_val->type->sign = 0;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 0);
 		}
 		else if (totype == LLVMInt1Type())
 		{
 			if(tosign)
-				llvm_val->type->sign = 1;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 1);
 			else
-				llvm_val->type->sign = 0;
+				cl2llvmTypeWrapSetSign(llvm_val->type, 0);
 			temp_var_count--;
 		}			
 	}
@@ -813,7 +812,7 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val,
 			llvm_val->val = LLVMBuildFPToSI(cl2llvm_builder, 
 				  original_val->val, LLVMInt1Type(), temp_var_name);
 		}
-		llvm_val->type->sign = 1;
+		cl2llvmTypeWrapSetSign(llvm_val->type, 1);
 	}
 	/*Floating point to unsigned integer conversions*/
 	else if (!tosign)
@@ -843,13 +842,13 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val,
 			llvm_val->val = LLVMBuildFPToUI(cl2llvm_builder, 
 				  original_val->val, LLVMInt1Type(), temp_var_name);
 		}
-		llvm_val->type->sign = 0;
+		cl2llvmTypeWrapSetSign(llvm_val->type, 0);
 	}
 	else if (totype == LLVMDoubleType())
 	{
 		llvm_val->val = LLVMBuildFPExt(cl2llvm_builder, 
 			  original_val->val, LLVMDoubleType(), temp_var_name);
-		llvm_val->type->sign = 1;
+		cl2llvmTypeWrapSetSign(llvm_val->type, 1);
 	}
 	else if (totype == LLVMFloatType())
 	{
@@ -863,16 +862,16 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val,
 			llvm_val->val = LLVMBuildFPExt(cl2llvm_builder, 
 				  original_val->val, LLVMFloatType(), temp_var_name);
 		}
-		llvm_val->type->sign = 1;
+		cl2llvmTypeWrapSetSign(llvm_val->type, 1);
 	}
 	else if (totype == LLVMHalfType())
 	{
 		llvm_val->val = LLVMBuildFPTrunc(cl2llvm_builder, 
 			  original_val->val, LLVMHalfType(), temp_var_name);
-		llvm_val->type->sign = 1;
+		cl2llvmTypeWrapSetSign(llvm_val->type, 1);
 	}
-	llvm_val->type->llvm_type = totype;
-	llvm_val->type->sign = tosign;
+	cl2llvmTypeWrapSetLlvmType(llvm_val->type, totype);
+	cl2llvmTypeWrapSetSign(llvm_val->type, tosign);
 	return llvm_val;
 }
 
@@ -897,7 +896,7 @@ void type_unify(struct cl2llvm_val_t *val1, struct cl2llvm_val_t *val2, struct c
 	*new_val2 = val2;
 
 	/* If types match, no type cast needed */
-	if (type1 == type2 && val1->type->sign == val2->type->sign)
+	if (type1 == type2 && cl2llvmTypeWrapGetSign(val1->type) == cl2llvmTypeWrapGetSign(val2->type))
 		return;
 	
 	/* If the types do not match and both are vector types, return error */
@@ -908,11 +907,11 @@ void type_unify(struct cl2llvm_val_t *val1, struct cl2llvm_val_t *val2, struct c
 	}
 
 	/* Obtain dominant type */
-	struct cl2llvm_type_t *type = type_cmp(val1->type, val2->type);
+	struct cl2llvmTypeWrap *type = cl2llvmTypeWrapCompare(val1->type, val2->type);
 
 	/* Whatever operand differs from the dominant type will be typecast
 	 * to it. */
-	if (type->llvm_type != type1 || type->sign != val1->type->sign)
+	if (cl2llvmTypeWrapGetLlvmType(type) != type1 || cl2llvmTypeWrapGetSign(type) != cl2llvmTypeWrapGetSign(val1->type))
 	{
 		*new_val1 = llvm_type_cast(val1, type);
 	}
@@ -922,7 +921,7 @@ void type_unify(struct cl2llvm_val_t *val1, struct cl2llvm_val_t *val2, struct c
 	}
 
 	/* Free pointers */
-	cl2llvm_type_free(type);
+	cl2llvmTypeWrapFree(type);
 }
 
 /* This function returns an i1 1 if the value is not equal to 0 and 
@@ -935,7 +934,7 @@ struct cl2llvm_val_t *cl2llvm_to_bool_ne_0(struct cl2llvm_val_t *value)
 	int i;
 	int veclength;
 
-	struct cl2llvm_val_t *bool_val = cl2llvm_val_create_w_init(value->val, value->type->sign);
+	struct cl2llvm_val_t *bool_val = cl2llvm_val_create_w_init(value->val, cl2llvmTypeWrapGetSign(value->type));
 	
 	/* if value is i1 no conversion necessary */
 	if (LLVMTypeOf(value->val) == LLVMInt1Type())
@@ -943,12 +942,12 @@ struct cl2llvm_val_t *cl2llvm_to_bool_ne_0(struct cl2llvm_val_t *value)
 
 	/* If value is a vector create a vector of constant zeros, else
 	   create a scalar 0. */
-	if (LLVMGetTypeKind(value->type->llvm_type) == LLVMVectorTypeKind)
+	if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(value->type)) == LLVMVectorTypeKind)
 	{
-		switch_type = LLVMGetElementType(value->type->llvm_type);
+		switch_type = LLVMGetElementType(cl2llvmTypeWrapGetLlvmType(value->type));
 
-		veclength = LLVMGetVectorSize(value->type->llvm_type);
-		switch (LLVMGetTypeKind(LLVMGetElementType(value->type->llvm_type)))
+		veclength = LLVMGetVectorSize(cl2llvmTypeWrapGetLlvmType(value->type));
+		switch (LLVMGetTypeKind(LLVMGetElementType(cl2llvmTypeWrapGetLlvmType(value->type))))
 		{
 		case LLVMIntegerTypeKind:
 		
@@ -969,17 +968,17 @@ struct cl2llvm_val_t *cl2llvm_to_bool_ne_0(struct cl2llvm_val_t *value)
 		}
 		const_zero = LLVMConstVector(zero_vec, veclength);
 	}
-	else if (LLVMGetTypeKind(value->type->llvm_type) == LLVMIntegerTypeKind)
+	else if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(value->type)) == LLVMIntegerTypeKind)
 	{
-		const_zero = LLVMConstInt(value->type->llvm_type, 0, 0);
-		switch_type = value->type->llvm_type;
+		const_zero = LLVMConstInt(cl2llvmTypeWrapGetLlvmType(value->type), 0, 0);
+		switch_type = cl2llvmTypeWrapGetLlvmType(value->type);
 	}
-	else if (LLVMGetTypeKind(value->type->llvm_type) == LLVMFloatTypeKind
-		|| LLVMGetTypeKind(value->type->llvm_type) == LLVMDoubleTypeKind
-		|| LLVMGetTypeKind(value->type->llvm_type) == LLVMHalfTypeKind)
+	else if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(value->type)) == LLVMFloatTypeKind
+		|| LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(value->type)) == LLVMDoubleTypeKind
+		|| LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(value->type)) == LLVMHalfTypeKind)
 	{
-		const_zero = LLVMConstReal(value->type->llvm_type, 0);
-		switch_type = value->type->llvm_type;
+		const_zero = LLVMConstReal(cl2llvmTypeWrapGetLlvmType(value->type), 0);
+		switch_type = cl2llvmTypeWrapGetLlvmType(value->type);
 	}
 	/* Create comparison */
 	snprintf(temp_var_name, sizeof temp_var_name,
@@ -1003,8 +1002,8 @@ struct cl2llvm_val_t *cl2llvm_to_bool_ne_0(struct cl2llvm_val_t *value)
 		cl2llvm_yyerror("unreachable code reached");
 		break;
 	}
-	bool_val->type->llvm_type = LLVMInt1Type();
-	bool_val->type->sign = 0;
+	cl2llvmTypeWrapSetLlvmType(bool_val->type, LLVMInt1Type());
+	cl2llvmTypeWrapSetSign(bool_val->type, 0);
 
 	return bool_val;
 }
@@ -1018,7 +1017,7 @@ struct cl2llvm_val_t *cl2llvm_to_bool_eq_0(struct cl2llvm_val_t *value)
 	int i;
 	int veclength;
 	LLVMTypeRef switch_type;
-	struct cl2llvm_val_t *bool_val = cl2llvm_val_create_w_init(value->val, value->type->sign);
+	struct cl2llvm_val_t *bool_val = cl2llvm_val_create_w_init(value->val, cl2llvmTypeWrapGetSign(value->type));
 	
 	/* if value is i1 no conversion necessary */
 	if (LLVMTypeOf(value->val) == LLVMInt1Type())
@@ -1026,10 +1025,10 @@ struct cl2llvm_val_t *cl2llvm_to_bool_eq_0(struct cl2llvm_val_t *value)
 
 	/* If value is a vector create a vector of constant zeros, else
 	   create a scalar 0. */
-	if (LLVMGetTypeKind(value->type->llvm_type) == LLVMVectorTypeKind)
+	if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(value->type)) == LLVMVectorTypeKind)
 	{
-		veclength = LLVMGetVectorSize(value->type->llvm_type);
-		switch_type = LLVMGetElementType(value->type->llvm_type);
+		veclength = LLVMGetVectorSize(cl2llvmTypeWrapGetLlvmType(value->type));
+		switch_type = LLVMGetElementType(cl2llvmTypeWrapGetLlvmType(value->type));
 
 		switch (LLVMGetTypeKind(switch_type))
 		{
@@ -1052,17 +1051,17 @@ struct cl2llvm_val_t *cl2llvm_to_bool_eq_0(struct cl2llvm_val_t *value)
 		}
 		const_zero = LLVMConstVector(zero_vec, veclength);
 	}
-	else if (LLVMGetTypeKind(value->type->llvm_type) == LLVMIntegerTypeKind)
+	else if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(value->type)) == LLVMIntegerTypeKind)
 	{
-		const_zero = LLVMConstInt(value->type->llvm_type, 0, 0);
-		switch_type = value->type->llvm_type;
+		const_zero = LLVMConstInt(cl2llvmTypeWrapGetLlvmType(value->type), 0, 0);
+		switch_type = cl2llvmTypeWrapGetLlvmType(value->type);
 	}
-	else if (LLVMGetTypeKind(value->type->llvm_type) == LLVMFloatTypeKind
-		|| LLVMGetTypeKind(value->type->llvm_type) == LLVMDoubleTypeKind
-		|| LLVMGetTypeKind(value->type->llvm_type) == LLVMHalfTypeKind)
+	else if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(value->type)) == LLVMFloatTypeKind
+		|| LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(value->type)) == LLVMDoubleTypeKind
+		|| LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(value->type)) == LLVMHalfTypeKind)
 	{
-		const_zero = LLVMConstReal(value->type->llvm_type, 0);
-		switch_type =  value->type->llvm_type;
+		const_zero = LLVMConstReal(cl2llvmTypeWrapGetLlvmType(value->type), 0);
+		switch_type =  cl2llvmTypeWrapGetLlvmType(value->type);
 	}
 	/* Create comparison */
 	snprintf(temp_var_name, sizeof temp_var_name,
@@ -1086,8 +1085,8 @@ struct cl2llvm_val_t *cl2llvm_to_bool_eq_0(struct cl2llvm_val_t *value)
 		cl2llvm_yyerror("unreachable code reached");
 		break;
 	}
-	bool_val->type->llvm_type = LLVMInt1Type();
-	bool_val->type->sign = 0;
+	cl2llvmTypeWrapSetLlvmType(bool_val->type, LLVMInt1Type());
+	cl2llvmTypeWrapSetSign(bool_val->type, 0);
 
 	return bool_val;
 }
@@ -1097,26 +1096,26 @@ struct cl2llvm_val_t *cl2llvm_to_bool_eq_0(struct cl2llvm_val_t *value)
    components that are equal to 1 will be converted to -1 in accordance with the 
    OpenCL standard. */
 struct cl2llvm_val_t *cl2llvm_bool_ext(struct cl2llvm_val_t *bool_val,
-	struct cl2llvm_type_t *type)
+	struct cl2llvmTypeWrap *type)
 {
 	struct cl2llvm_val_t *value;
-	struct cl2llvm_type_t *switch_type;
+	struct cl2llvmTypeWrap *switch_type;
 	LLVMTypeRef totype;
 	int vec_length;
 
-	switch_type = cl2llvm_type_create_w_init(type->llvm_type, type->sign);
+	switch_type = cl2llvmTypeWrapCreate(cl2llvmTypeWrapGetLlvmType(type), cl2llvmTypeWrapGetSign(type));
 
-	if (LLVMGetTypeKind(type->llvm_type) == LLVMVectorTypeKind)		
-		switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
+	if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(type)) == LLVMVectorTypeKind)		
+		cl2llvmTypeWrapSetLlvmType(switch_type, LLVMGetElementType(cl2llvmTypeWrapGetLlvmType(type)));
 		
 
-	if (LLVMGetTypeKind(type->llvm_type) == LLVMVectorTypeKind)
+	if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(type)) == LLVMVectorTypeKind)
 	{
-		vec_length = LLVMGetVectorSize(type->llvm_type);
-		switch (LLVMGetTypeKind(switch_type->llvm_type))
+		vec_length = LLVMGetVectorSize(cl2llvmTypeWrapGetLlvmType(type));
+		switch (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(switch_type)))
 		{
 		case LLVMIntegerTypeKind:
-			totype = type->llvm_type;
+			totype = cl2llvmTypeWrapGetLlvmType(type);
 			break;
 		case LLVMFloatTypeKind:
 			totype = LLVMVectorType(LLVMInt32Type(), vec_length);
@@ -1143,11 +1142,11 @@ struct cl2llvm_val_t *cl2llvm_bool_ext(struct cl2llvm_val_t *bool_val,
 	/* Build sign extension */
 	value->val = LLVMBuildSExt(cl2llvm_builder, 
 		bool_val->val, totype, temp_var_name);	
-	value->type->llvm_type = totype;
-	value->type->sign = 1;
+	cl2llvmTypeWrapSetLlvmType(value->type, totype);
+	cl2llvmTypeWrapSetSign(value->type, 1);
 
 	/* if value is a vector, change 1's to -1's */
-	if (LLVMGetTypeKind(type->llvm_type) == LLVMVectorTypeKind)
+	if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(type)) == LLVMVectorTypeKind)
 	{
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp_%d", temp_var_count++);
@@ -1156,7 +1155,7 @@ struct cl2llvm_val_t *cl2llvm_bool_ext(struct cl2llvm_val_t *bool_val,
 			value->val, temp_var_name);
 	}
 
-	cl2llvm_type_free(switch_type);
+	cl2llvmTypeWrapFree(switch_type);
 
 	return value;
 }
