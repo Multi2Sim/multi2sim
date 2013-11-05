@@ -58,8 +58,8 @@ libsi2bin_a_SOURCES = \
 	\
 	Data.h \
 	\
-	InnerBin.h \
 	InnerBin.cc \
+	InnerBin.h \
 	\
 	Inst.cc \
 	Inst.h \
