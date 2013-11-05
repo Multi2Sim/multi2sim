@@ -56,7 +56,10 @@ libsi2bin_a_SOURCES = \
 	Arg.cc \
 	Arg.h \
 	\
-	Data.h\
+	Data.h \
+	\
+	InnerBin.h \
+	InnerBin.cc \
 	\
 	Inst.cc \
 	Inst.h \

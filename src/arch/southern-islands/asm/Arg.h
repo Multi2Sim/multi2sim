@@ -99,7 +99,8 @@ public:
 	/* Getters */
 	ArgType getType() { return type; }
 	std::string getName() { return name; }
-	
+	bool getConstArg() { return constarg; }
+
 	/* Dump */
 	virtual void Dump(std::ostream &os) { os << name; }
 	friend std::ostream &operator<<(std::ostream &os, Arg &arg) {
@@ -146,6 +147,11 @@ public:
 	ArgDataType getDataType() { return data_type; }
 	int getNumElems() { return num_elems; }
 	ArgScope getScope() { return scope; }
+	ArgAccessType getAccessType() { return access_type; }
+	int getConstantBufferNum() { return constant_buffer_num; }
+	int getConstantOffset() { return constant_offset; }
+	int getBufferNum() { return buffer_num; }
+
 
 	/* Setters */
 	void setDevicePtr(unsigned int device_ptr) {
