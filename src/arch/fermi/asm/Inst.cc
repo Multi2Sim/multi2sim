@@ -25,10 +25,11 @@
 #include "Inst.h"
 
 
-using namespace Fermi;
 using namespace Misc;
 using namespace std;
 
+namespace Fermi
+{
 
 /*
  * Class 'Inst'
@@ -67,7 +68,7 @@ void Inst::Decode(unsigned int addr, void *ptr)
 }
 
 
-static StringMap inst_ftzfmz_map =
+StringMap inst_ftzfmz_map =
 {
 	{"", 0},
 	{ ".FTZ", 1 },
@@ -75,7 +76,7 @@ static StringMap inst_ftzfmz_map =
 	{ NULL, 0 }
 };
 
-static StringMap inst_rnd_map =
+StringMap inst_rnd_map =
 {
 	{ "", 0},
 	{ ".RM", 1 },
@@ -84,7 +85,7 @@ static StringMap inst_rnd_map =
 	{ NULL, 0 }
 };
 
-static StringMap inst_rnd1_map =
+StringMap inst_rnd1_map =
 {
 	{ "", 0},
 	{ ".FLOOR", 1 },
@@ -93,7 +94,7 @@ static StringMap inst_rnd1_map =
 	{ NULL, 0 }
 };
 
-static StringMap inst_cmp_map =
+StringMap inst_cmp_map =
 {
 	{ ".LT", 1},
 	{ ".EQ", 2},
@@ -112,21 +113,21 @@ static StringMap inst_cmp_map =
 	{ NULL, 0 }
 };
 
-static StringMap inst_round_map =
+StringMap inst_round_map =
 {
 	{ "", 0},
 	{ ".ROUND", 1 },
 	{ NULL, 0 }
 };
 
-static StringMap inst_sat_map =
+StringMap inst_sat_map =
 {
 	{ "", 0},
 	{ ".SAT", 1 },
 	{ NULL, 0 }
 };
 
-static StringMap inst_logic_map =
+StringMap inst_logic_map =
 {
 	{ ".AND", 0},
 	{ ".OR", 1},
@@ -135,7 +136,7 @@ static StringMap inst_logic_map =
 };
 
 
-static StringMap inst_op_map =
+StringMap inst_op_map =
 {
 	{ ".COS", 0},
 	{ ".SIN", 1},
@@ -148,7 +149,7 @@ static StringMap inst_op_map =
 	{ 0, 0 }
 };
 
-static StringMap inst_op56_map =
+StringMap inst_op56_map =
 {
 	{ ".POPC", 0},
 	{ ".AND", 1},
@@ -156,7 +157,7 @@ static StringMap inst_op56_map =
 	{ 0, 0 }
 };
 
-static StringMap inst_op67_map =
+StringMap inst_op67_map =
 {
 	{ ".AND", 0},
 	{ ".OR", 1},
@@ -165,7 +166,7 @@ static StringMap inst_op67_map =
 	{ 0, 0 }
 };
 
-static StringMap inst_dtype_n_map =
+StringMap inst_dtype_n_map =
 {
 	{ "", 0},
 	{ ".F16", 1},
@@ -174,7 +175,7 @@ static StringMap inst_dtype_n_map =
 	{ 0, 0, }
 };
 
-static StringMap inst_dtype_map =
+StringMap inst_dtype_map =
 {
 	{ "", 0},
 	{ ".F16", 1},
@@ -183,7 +184,7 @@ static StringMap inst_dtype_map =
 	{ 0, 0 }
 };
 
-static StringMap inst_stype_n_map =
+StringMap inst_stype_n_map =
 {
 	{ "", 0},
 	{ "16", 1},
@@ -192,7 +193,7 @@ static StringMap inst_stype_n_map =
 	{ 0, 0 }
 };
 
-static StringMap inst_stype_map =
+StringMap inst_stype_map =
 {
 	{ "", 0},
 	{ ".F16", 1},
@@ -201,7 +202,7 @@ static StringMap inst_stype_map =
 	{ 0, 0 }
 };
 
-static StringMap inst_type_map =
+StringMap inst_type_map =
 {
 	{ ".U8", 0},
 	{ ".S8", 1},
@@ -213,7 +214,7 @@ static StringMap inst_type_map =
 	{ 0, 0 }
 };
 
-static StringMap inst_cop_map =
+StringMap inst_cop_map =
 {
 	{ "", 0},
 	{ ".CG", 1},
@@ -222,7 +223,7 @@ static StringMap inst_cop_map =
 	{ 0, 0 }
 };
 
-static StringMap inst_NOP_op_map =
+StringMap inst_NOP_op_map =
 {
 	{ "", 0 },
 	{ ".FMA64", 1 },
@@ -236,7 +237,7 @@ static StringMap inst_NOP_op_map =
 	{ 0, 0 }
 };
 
-static StringMap inst_ccop_map =  // more needs to be added (look over fermi isa NOP)
+StringMap inst_ccop_map =  // more needs to be added (look over fermi isa NOP)
 {
 	{ ".F", 0 },
 	{ ".LT", 1 },
@@ -246,7 +247,7 @@ static StringMap inst_ccop_map =  // more needs to be added (look over fermi isa
 };
 
 
-static StringMap inst_sreg_map =
+StringMap inst_sreg_map =
 {
 	{ "SR_Laneld", InstSRegLaneld },
 	{ "SR_VirtCfg", InstSRegVirtCfg },
@@ -1070,6 +1071,7 @@ void Inst::DumpHex(ostream &os)
 	os << setfill(' ');
 }
 
+}  /* namespace Fermi */
 
 
 /*
@@ -1078,53 +1080,53 @@ void Inst::DumpHex(ostream &os)
 
 struct FrmInstWrap *FrmInstWrapCreate(struct FrmAsmWrap *as)
 {
-	return (FrmInstWrap *) new Inst((Asm *) as);
+	return (FrmInstWrap *) new Fermi::Inst((Fermi::Asm *) as);
 }
 
 
 void FrmInstWrapFree(struct FrmInstWrap *self)
 {
-	delete (Inst *) self;
+	delete (Fermi::Inst *) self;
 }
 
 
 void FrmInstWrapCopy(struct FrmInstWrap *left, struct frmInstWrap *right)
 {
-	Inst *ileft = (Inst *) left;
-	Inst *iright = (Inst *) right;
+	Fermi::Inst *ileft = (Fermi::Inst *) left;
+	Fermi::Inst *iright = (Fermi::Inst *) right;
 	*ileft = *iright;
 }
 
 
 void FrmInstWrapDecode(struct FrmInstWrap *self, unsigned int addr, void *ptr)
 {
-	Inst *inst = (Inst *) self;
+	Fermi::Inst *inst = (Fermi::Inst *) self;
 	inst->Decode(addr, ptr);
 }
 
 
 FrmInstBytes *FrmInstWrapGetBytes(struct FrmInstWrap *self)
 {
-	Inst *inst = (Inst *) self;
+	Fermi::Inst *inst = (Fermi::Inst *) self;
 	return (FrmInstBytes *) inst->GetBytes();
 }
 
 const char *FrmInstWrapGetName(struct FrmInstWrap *self)
 {
-	Inst *inst = (Inst *) self;
+	Fermi::Inst *inst = (Fermi::Inst *) self;
 	return inst->GetName();
 }
 
 
 FrmInstOpcode FrmInstWrapGetOpcode(struct FrmInstWrap *self)
 {
-	Inst *inst = (Inst *) self;
+	Fermi::Inst *inst = (Fermi::Inst *) self;
 	return (FrmInstOpcode) inst->GetOpcode();
 }
 
 
 FrmInstCategory FrmInstWrapGetCategory(struct FrmInstWrap *self)
 {
-	Inst *inst = (Inst *) self;
+	Fermi::Inst *inst = (Fermi::Inst *) self;
 	return (FrmInstCategory) inst->GetCategory();
 }

@@ -24,9 +24,31 @@
 #ifdef __cplusplus
 
 #include <iostream>
+#include <lib/cpp/Misc.h>
 
 namespace Fermi
 {
+
+extern Misc::StringMap inst_ftzfmz_map;
+extern Misc::StringMap inst_rnd_map;
+extern Misc::StringMap inst_rnd1_map;
+extern Misc::StringMap inst_cmp_map;
+extern Misc::StringMap inst_round_map;
+extern Misc::StringMap inst_sat_map;
+extern Misc::StringMap inst_logic_map;
+extern Misc::StringMap inst_op_map;
+extern Misc::StringMap inst_op56_map;
+extern Misc::StringMap inst_op67_map;
+extern Misc::StringMap inst_dtype_n_map;
+extern Misc::StringMap inst_dtype_map;
+extern Misc::StringMap inst_stype_n_map;
+extern Misc::StringMap inst_stype_map;
+extern Misc::StringMap inst_type_map;
+extern Misc::StringMap inst_cop_map;
+extern Misc::StringMap inst_NOP_op_map;
+extern Misc::StringMap inst_ccop_map;
+extern Misc::StringMap inst_sreg_map;
+
 
 /* Forward declarations */
 class Asm;
