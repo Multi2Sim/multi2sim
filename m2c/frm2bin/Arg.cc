@@ -130,21 +130,21 @@ StringMap ModDataWidthMap=
 
 StringMap ModCompMap=
 {
-	{ "invalid", ModCompType::comp_invalid},
-	{ "LT", ModCompType::comp_lt},
-	{ "EQ", ModCompType::comp_eq},
-	{ "LE", ModCompType::comp_le},
-	{ "GT", ModCompType::comp_gt},
-	{ "NE", ModCompType::comp_ne},
-	{ "GE", ModCompType::comp_ge},
-	{ "NUM", ModCompType::comp_num},
-	{ "NAN", ModCompType::comp_nan},
-	{ "LTU", ModCompType::comp_ltu},
-	{ "EQU", ModCompType::comp_equ},
-	{ "LEU", ModCompType::comp_leu},
-	{ "GTU", ModCompType::comp_gtu},
-	{ "GEU", ModCompType::comp_geu},
-	{ "NEU", ModCompType::comp_neu},
+	{ "invalid", ModCompType::modcomp_invalid},
+	{ "LT", ModCompType::modcomp_lt},
+	{ "EQ", ModCompType::modcomp_eq},
+	{ "LE", ModCompType::modcomp_le},
+	{ "GT", ModCompType::modcomp_gt},
+	{ "NE", ModCompType::modcomp_ne},
+	{ "GE", ModCompType::modcomp_ge},
+	{ "NUM", ModCompType::modcomp_num},
+	{ "NAN", ModCompType::modcomp_nan},
+	{ "LTU", ModCompType::modcomp_ltu},
+	{ "EQU", ModCompType::modcomp_equ},
+	{ "LEU", ModCompType::modcomp_leu},
+	{ "GTU", ModCompType::modcomp_gtu},
+	{ "GEU", ModCompType::modcomp_geu},
+	{ "NEU", ModCompType::modcomp_neu},
 	{0, 0}
 };
 
@@ -158,6 +158,76 @@ StringMap Mod0BTypeMap=
 	{ "64", Mod0BType::mod0b_64},
 	{ "128", Mod0BType::mod0b_128},
 };
+
+StringMap Mod0BCopTypeMap=
+{
+	{ "invalid", Mod0BCopType::mod0bcop_invalid},
+	{ "CA", Mod0BCopType::mod0bcop_ca},
+	{ "CG", Mod0BCopType::mod0bcop_cg},
+	{ "LU", Mod0BCopType::mod0bcop_lu},
+	{ "CV", Mod0BCopType::mod0bcop_cv},
+};
+
+StringMap ModLogicMap=
+{
+	{ "invalid", ModLogicType::modlogic_invalid},
+	{ "CA", ModLogicType::modlogic_and},
+	{ "CG", ModLogicType::modlogic_or},
+	{ "LU", ModLogicType::modlogic_xor},
+
+};
+
+StringMap ModGen0Src1DtypeMap=
+{
+	{ "invalid", ModGen0Src1DtypeType::modgen0src1dtype_invalid},
+	{ "F16", ModGen0Src1DtypeType::modgen0src1dtype_f16},
+	{ "F32", ModGen0Src1DtypeType::modgen0src1dtype_f32},
+	{ "F64", ModGen0Src1DtypeType::modgen0src1dtype_f64},
+};
+
+StringMap Mod0ARedarvTypeMap=
+{
+	{ "invalid", Mod0ARedarvType::mod0aredarv_invalid},
+	{ "RED", Mod0ARedarvType::mod0aredarv_red},
+	{ "ARV", Mod0ARedarvType::mod0aredarv_arv},
+};
+
+StringMap Mod0AOpTypeMap=
+{
+	{ "invalid", Mod0AOpType::mod0aop_invalid},
+	{ "AND", Mod0AOpType::mod0aop_and},
+	{ "OR", Mod0AOpType::mod0aop_or},
+};
+
+StringMap Mod0DFtzfmzTypeMap=
+{
+	{ "invalid", Mod0DFtzfmzType::mod0dftzfmz_invalid},
+	{ "FTZ", Mod0DFtzfmzType::mod0dftzfmz_ftz},
+	{ "FMZ", Mod0DFtzfmzType::mod0dftzfmz_fmz},
+};
+
+StringMap ModGen0Mod1BRndTypeMap=
+{
+	{ "invalid", ModGen0Mod1BRndType::modgen0mod1brnd_invalid},
+	{ "FTZ", ModGen0Mod1BRndType::modgen0mod1brnd_rn},
+	{ "FMZ", ModGen0Mod1BRndType::modgen0mod1brnd_rm},
+	{ "FMZ", ModGen0Mod1BRndType::modgen0mod1brnd_rp},
+	{ "FMZ", ModGen0Mod1BRndType::modgen0mod1brnd_rz},
+};
+
+StringMap ModOffsMod1AOpTypeMap=
+{
+	{ "invalid", ModOffsMod1AOpType::modoffsmod1aop_invalid},
+	{ "FMA64", ModOffsMod1AOpType::modoffsmod1aop_fma64},
+	{ "FMA32", ModOffsMod1AOpType::modoffsmod1aop_fma32},
+	{ "XLU", ModOffsMod1AOpType::modoffsmod1aop_xlu},
+	{ "ALU", ModOffsMod1AOpType::modoffsmod1aop_alu},
+	{ "AGU", ModOffsMod1AOpType::modoffsmod1aop_agu},
+	{ "SU", ModOffsMod1AOpType::modoffsmod1aop_su},
+	{ "FU", ModOffsMod1AOpType::modoffsmod1aop_fu},
+	{ "FMUL", ModOffsMod1AOpType::modoffsmod1aop_fmul},
+};
+
 
 Mod::Mod(const std::string &name)
 {
@@ -196,5 +266,169 @@ Mod0B::Mod0B(const std::string &name)
 		exit(1);
 	}
 }
+
+Mod0BCop::Mod0BCop(const std::string &name)
+{
+	this->type = Misc::StringMapString(Mod0BCopTypeMap, name);
+
+	if (this->type == Mod0BCopType::mod0bcop_invalid)
+	{
+		std::cout<<"invalid Mod0BCop Type! ["<<name<<"]"<<std::endl;
+		exit(1);
+	}
+}
+
+ModLogic::ModLogic(const std::string &name)
+{
+	this->type = Misc::StringMapString(ModLogicMap, name);
+
+	if (this->type == ModLogicType::modlogic_invalid)
+	{
+		std::cout<<"invalid ModLogic Type! ["<<name<<"]"<<std::endl;
+		exit(1);
+	}
+}
+
+ModComp::ModComp(const std::string &name)
+{
+	this->type = Misc::StringMapString(ModCompMap, name);
+
+	if (this->type == ModCompType::modcomp_invalid)
+	{
+		std::cout<<"invalid ModComp Type! ["<<name<<"]"<<std::endl;
+		exit(1);
+	}
+}
+
+ModBrev::ModBrev(const std::string &name)
+{
+	if (!name.compare("BREV"))
+		this->exist = true;
+	else this->exist = false;
+}
+
+ModGen0Src1Dtype::ModGen0Src1Dtype(const std::string &name)
+{
+	this->type = Misc::StringMapString(ModGen0Src1DtypeMap, name);
+
+	if (this->type == ModGen0Src1DtypeType::modgen0src1dtype_invalid)
+	{
+		std::cout<<"invalid ModGen0Src1Dtype Type! ["<<name<<"]"
+				<<std::endl;
+		exit(1);
+	}
+}
+
+ModGen0DstCc::ModGen0DstCc(const std::string &name)
+{
+	if (!name.compare("CC"))
+		this->exist = true;
+	else this->exist = false;
+}
+
+ModTgtU::ModTgtU(const std::string &name)
+{
+	if (!name.compare("U"))
+		this->exist = true;
+	else this->exist = false;
+}
+
+ModTgtLmt::ModTgtLmt(const std::string &name)
+{
+	if (!name.compare("LMT"))
+		this->exist = true;
+	else this->exist = false;
+}
+
+Mod0AW::Mod0AW(const std::string &name)
+{
+	if (!name.compare("W"))
+		this->exist = true;
+	else this->exist = false;
+}
+
+Mod0ARedarv::Mod0ARedarv(const std::string &name)
+{
+	this->type = Misc::StringMapString(Mod0ARedarvTypeMap, name);
+
+	if (this->type == Mod0ARedarvType::mod0aredarv_invalid)
+	{
+		std::cout<<"invalid Mod0ARedarv Type! ["<<name<<"]"<<std::endl;
+		exit(1);
+	}
+}
+
+Mod0AOp::Mod0AOp(const std::string &name)
+{
+	this->type = Misc::StringMapString(Mod0AOpTypeMap, name);
+
+	if (this->type == Mod0AOpType::mod0aop_invalid)
+	{
+		std::cout<<"invalid Mod0AOp Type! ["<<name<<"]"<<std::endl;
+		exit(1);
+	}
+}
+
+Mod0CS::Mod0CS(const std::string &name)
+{
+	if (!name.compare("S"))
+		this->exist = true;
+	else this->exist = false;
+}
+
+Mod0DFtzfmz::Mod0DFtzfmz(const std::string &name)
+{
+	this->type = Misc::StringMapString(Mod0DFtzfmzTypeMap, name);
+
+	if (this->type == Mod0DFtzfmzType::mod0dftzfmz_invalid)
+	{
+		std::cout<<"invalid Mod0DFtzfmz Type! ["<<name<<"]"<<std::endl;
+		exit(1);
+	}
+}
+
+ModGen0Mod1BRnd::ModGen0Mod1BRnd(const std::string &name)
+{
+	this->type = Misc::StringMapString(ModGen0Mod1BRndTypeMap, name);
+
+	if (this->type == ModGen0Mod1BRndType::modgen0mod1brnd_invalid)
+	{
+		std::cout<<"invalid ModGen0Mod1BRnd Type! ["<<name<<"]"<<std::endl;
+		exit(1);
+	}
+}
+
+Mod0DSat::Mod0DSat(const std::string &name)
+{
+	if (!name.compare("SAT"))
+		this->exist = true;
+	else this->exist = false;
+}
+
+Mod0DX::Mod0DX(const std::string &name)
+{
+	if (!name.compare("X"))
+		this->exist = true;
+	else this->exist = false;
+}
+
+Mod1ATrig::Mod1ATrig(const std::string &name)
+{
+	if (!name.compare("TRIG"))
+		this->exist = true;
+	else this->exist = false;
+}
+
+ModOffsMod1AOp::ModOffsMod1AOp(const std::string &name)
+{
+	this->type = Misc::StringMapString(ModOffsMod1AOpTypeMap, name);
+
+	if (this->type == ModOffsMod1AOpType::modoffsmod1aop_invalid)
+	{
+		std::cout<<"invalid ModOffsMod1AOp Type! ["<<name<<"]"<<std::endl;
+		exit(1);
+	}
+}
+
 
 } /* namespace frm2bin */

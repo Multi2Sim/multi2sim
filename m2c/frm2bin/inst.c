@@ -100,7 +100,7 @@ struct frm2bin_inst_t *frm2bin_inst_create(struct frm2bin_pred_t *pred, char *na
 				/* create a modifier object, then add it to
 				 * the tail of the list. We need to take care
 				 * the case of instruction IMAD */
-				if (!strcmp(mod_name, "IMAD"))
+				if (!strcmp(inst_name, "IMAD"))
 					//mod = frm_mod_create_data_width(mod_name);
 					mod = frm_mod_create_IMAD_mod(mod_name);
 				else
