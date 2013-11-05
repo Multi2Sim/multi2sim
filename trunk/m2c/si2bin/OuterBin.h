@@ -21,11 +21,13 @@
 #define M2C_SI2BIN_OUTER_BIN_H
 
 #include <memory>
+#include <vector>
 
 #include <src/lib/cpp/ELFWriter.h>
 
 #include "InnerBin.h"
 #include "Metadata.h"
+#include "Data.h"
 
 namespace si2bin
 {
@@ -48,15 +50,15 @@ class OuterBin
 	/* Device Type */
 	OuterBinDevice device;
 
-	//vector<unique_ptr<Data>> data_list;
+	std::vector<std::unique_ptr<Data>> data_list;
 
 	/* ELF file create internally.
 	 * Private field. */
-	ELFWriter::File *writer;
+	ELFWriter::File writer;
 
-	//vector<unique_ptr<InnerBin>> inner_bin_list;
+	std::vector<std::unique_ptr<InnerBin>> inner_bin_list;
 
-	//vector<unique_ptr<Metadata>> metadata_list;
+	std::vector<std::unique_ptr<Metadata>> metadata_list;
 
 public:
 
@@ -64,15 +66,23 @@ public:
 
 	/* Getter */
 	OuterBinDevice GetDevice() { return device; }
-	
+
+	InnerBin *GetInnerBin(unsigned int index) { return index < inner_bin_list.size() ?
+			inner_bin_list[index].get() : nullptr; }
+	Metadata *GetMetadata(unsigned int index) { return index < metadata_list.size() ?
+			metadata_list[index].get() : nullptr; }
+	Data *GetData(unsigned int index) { return index < data_list.size() ?
+			data_list[index].get() : nullptr; }
+	unsigned int GetDataCount() { return data_list.size(); }
+
 	/* Setter */
-	OuterBinDevice SetDevice(OuterBinDevice device) { this->device = device; }
+	void SetDevice(OuterBinDevice device) { this->device = device; }
 
-	Generate(ELFWriter::Buffer *buffer);
+	void Generate(std::ostream& os);
 
-	//void OuterBinAddData(Data *data);
+	void AddData(Data *data);
 	
-	//void OuterBinAdd(InnerBin *inner_bin, Metadata *metadata);
+	void AddKernel(InnerBin *inner_bin, Metadata *metadata);
 };
 
 } /* namespace si2bin */

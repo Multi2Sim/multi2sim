@@ -31,10 +31,10 @@ enum DataType
 {
 	DataTypeInvalid = 0,
 
-	DataFloat,
-	DataWord,
-	DataHalf,
-	DataByte
+	DataTypeFloat,
+	DataTypeWord,
+	DataTypeHalf,
+	DataTypeByte
 };
 
 class Data
@@ -46,7 +46,7 @@ protected:
 public:
 	
 	/* Constructor */
-	Data(DataType type) { this->type = type };
+	Data(DataType type) { this->type = type; }
 	
 	/* Getter */
 	DataType GetType() { return type; }
@@ -70,7 +70,7 @@ class DataWord : public Data
 
 public:
 	DataWord(DataType type, unsigned int value) :
-		Data(type_, value(value){}
+		Data(type), value(value){}
 	unsigned int GetValue() { return value; }
 
 };
@@ -81,7 +81,7 @@ class DataHalf : public Data
 
 public:
 	DataHalf(DataType type, unsigned short value) :
-		Data(type_, value(value){}
+		Data(type), value(value){}
 	unsigned short GetValue() { return value; }
 
 };
@@ -92,7 +92,7 @@ class DataByte : public Data
 
 public:
 	DataByte(DataType type, unsigned char value) :
-		Data(type_, value(value){}
+		Data(type), value(value){}
 	unsigned char GetValue() { return value; }
 
 };

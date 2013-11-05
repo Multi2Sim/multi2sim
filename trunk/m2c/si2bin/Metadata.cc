@@ -17,6 +17,10 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <memory>
+#include <vector>
+
+#include <arch/southern-islands/asm/Arg.h>
 
 #include "Metadata.h"
 
@@ -36,10 +40,9 @@ Metadata::Metadata()
 }
 
 
+void Metadata::AddArg(SI::Arg *arg) 
+{
+	arg_list.push_back(std::unique_ptr<SI::Arg>(arg));
 }
 
-/*SIArg *newArg()
-{
-	args.push_back(std::unique_ptr<SIArg>(new SIArg()));
-	return args.back().get();
-}*/
+} /* namespace si2bin */

@@ -191,6 +191,9 @@ class SymbolTable
 public:
 
 	Symbol *NewSymbol(std::string name);
+
+	Buffer *GetSymbolTableBuffer() { return symtab_buffer; }
+	Buffer *GetStringTableBuffer() { return strtab_buffer; }
 };
 
 
@@ -234,6 +237,11 @@ public:
 	SymbolTable *GetSymbolTable(unsigned int index) { return index <
 			symbol_tables.size() ? symbol_tables[index].get()
 			: nullptr; }
+
+	unsigned int GetBufferCount() { return buffers.size(); }
+	unsigned int GetSectionCount() { return sections.size(); }
+	unsigned int GetSegmentCount() { return segments.size(); }
+	unsigned int GetSymbolTableCount() { return symbol_tables.size(); }
 
 	/* Produce binary */
 	void Generate(std::ostream& os);
