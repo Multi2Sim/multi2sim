@@ -915,8 +915,81 @@ void BasicBlock::EmitExtractElement(llvm::ExtractElementInst *llvm_inst)
 	Inst *inst = new Inst(SI::INST_V_MOV_B32,
 			new ArgVectorRegister(ret_vreg),
 			arg1);
-	AddInst(inst);*/
+:q
+AddInst(inst);*/
 }
+
+void BasicBlock::EmitInsertElement(llvm::InsertElementInst *llvm_inst)
+{
+	/* Only supported for 2 operands (op1, op2) */
+	if (llvm_inst->getNumOperands() != 3)
+		panic("%s: 3 operands supported, %d found",
+			__FUNCTION__, llvm_inst->getNumOperands());
+
+	/* Get operands (vreg, literal) */
+	llvm::Value *llvm_arg1 = llvm_inst->getOperand(0);
+	llvm::Value *llvm_arg2 = llvm_inst->getOperand(1);
+	llvm::Value *llvm_arg3 = llvm_inst->getOperand(2);
+	Arg *arg1 = function->TranslateValue(llvm_arg1);
+	Arg *arg2 = function->TranslateValue(llvm_arg2);
+	Arg *arg3 = function->TranslateValue(llvm_arg3);
+
+	/* First argument must be a scalar register 
+	 * and the second must be the offset */
+	arg1->ValidTypes(ArgTypeScalarRegister, ArgTypeVectorRegister);
+	arg2->ValidTypes(ArgTypeScalarRegister, ArgTypeVectorRegister);
+	arg3->ValidTypes(ArgTypeLiteral,
+			ArgTypeLiteralReduced);
+
+	/* Rule out case where dest is vgpr and src is sgpr */
+	assert((arg1->getType() != ArgTypeScalarRegister) && 
+			(arg2->getType() != ArgTypeVectorRegister));
+
+	ArgLiteral *arg3_literal = dynamic_cast<ArgLiteral *>(arg3);
+	assert(arg3_literal);
+
+	/* Allocate vector register and create symbol for return value */
+	std::string ret_name = llvm_arg2->getName();
+	
+	if (arg1->getType() == ArgTypeScalarRegister && 
+			arg2->getType() == ArgTypeScalarRegister)
+	{
+		ArgScalarRegister *arg1_scalar = dynamic_cast<ArgScalarRegister *>(arg1);
+		arg1_scalar->setId(arg1_scalar->getId() + arg3_literal->getValue());
+		
+		Symbol *ret_symbol = new Symbol(ret_name, SymbolScalarRegister, 
+			arg1_scalar->getId());
+		function->AddSymbol(ret_symbol);
+		
+		/* Emit instruction
+		 * s_mov_b32 arg1, arg2
+		 */
+
+		 Inst *inst = new Inst(SI::INST_S_MOV_B32, arg1, arg2);
+		 AddInst(inst);
+	}
+	else
+	{
+		ArgVectorRegister *arg1_vector = dynamic_cast<ArgVectorRegister *>(arg1);
+		arg1_vector->setId(arg1_vector->getId() + arg3_literal->getValue());
+		
+		Symbol *ret_symbol = new Symbol(ret_name, SymbolVectorRegister, 
+			arg1_vector->getId());
+		function->AddSymbol(ret_symbol);
+		
+		/* Emit instruction
+		 * v_mov_b32 arg2, arg1
+		 */
+
+		 Inst *inst = new Inst(SI::INST_V_MOV_B32, arg2, arg1);
+		 AddInst(inst);
+
+	}
+	
+	delete arg3;
+	
+	
+	}
 
 
 void BasicBlock::Dump(std::ostream &os)
@@ -1040,6 +1113,12 @@ void BasicBlock::Emit(llvm::BasicBlock *llvm_basic_block)
 		case llvm::Instruction::ExtractElement:
 			
 			EmitExtractElement(Misc::cast<llvm::ExtractElementInst *>
+					(&llvm_inst));
+			break;
+		
+		case llvm::Instruction::InsertElement:
+			
+			EmitInsertElement(Misc::cast<llvm::InsertElementInst *>
 					(&llvm_inst));
 			break;
 		
