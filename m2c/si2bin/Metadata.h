@@ -20,7 +20,10 @@
 #ifndef M2C_SI2BIN_METADATA_H
 #define M2C_SI2BIN_METADATA_H
 
-//#include <memory>
+#include <memory>
+#include <vector>
+
+#include <arch/southern-islands/asm/Arg.h>
 
 namespace si2bin
 {
@@ -31,7 +34,7 @@ namespace si2bin
 	
 class Metadata
 {
-	//std::vector<std::unique_ptr<SIArg>> args;
+	std::vector<std::unique_ptr<SI::Arg>> arg_list;
 	
 	int uniqueid;
 	int uavprivate;
@@ -46,18 +49,22 @@ public:
 	/* Add args */
 
 	/* Getters */
-	//SIArg *GetArg(unsigned int index) { return index < args.size() ? 
-	//		args[index].get() : nullptr; }	
+	SI::Arg *GetArg(unsigned int index) { return index < arg_list.size() ? 
+			arg_list[index].get() : nullptr; }	
 	int GetUniqueId() { return uniqueid; }
 	int GetUAVPrivate() { return uavprivate; }
 	int GetHWRegion() { return hwregion; }
-	int GetHWLocalId() { return hwlocal; }
+	int GetHWLocal() { return hwlocal; }
+	unsigned int GetArgCount() { return arg_list.size(); }
 
 	/* Setters */
 	void SetUniqueId(int uniqueid) { this->uniqueid = uniqueid; }
 	void SetUAVPrivate(int uavprivate) { this->uavprivate = uavprivate; }
 	void SetHWRegion(int hwregion) { this->hwregion = hwregion; }
-	void SetHWLocalId(int hwlocal) { this->hwlocal = hwlocal; }
+	void SetHWLocal(int hwlocal) { this->hwlocal = hwlocal; }
+	
+	void AddArg(SI::Arg *arg);
+	
 };
 
 } /* namespace si2bin */

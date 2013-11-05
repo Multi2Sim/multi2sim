@@ -22,39 +22,79 @@
 
 #include <elf.h>
 #include <stdio.h>
-//#include <memory>
 #include <vector>
+#include <memory>
 
-#include <lib/cpp/ELFWriter>
+#include <lib/cpp/ELFWriter.h>
 
 #include <src/arch/southern-islands/asm/Binary.h>
 
 namespace si2bin
 {
 
+/* Forward Declarations */
+class InnerBinEntry;
+class InnerBin;
+
+
 /*
  * Note in the PT_NOTE segment
  */
 
+enum InnerBinNoteType
+{
+	InnerBinNoteTypeInvalid = 0,
+	
+	InnerBinNoteTypeProgInfo,
+	InnerBinNoteTypeInputs,
+	InnerBinNoteTypeOutputs,
+	InnerBinNoteTypeCondOut,
+	InnerBinNoteTypeFloat32Consts,
+	InnerBinNoteTypeInt32Consts,
+	InnerBinNoteTypeBool32Consts,
+	InnerBinNoteTypeEarlyExit,
+	InnerBinNoteTypeGlobalBuffers,
+	InnerBinNoteTypeConstantBuffers,
+	InnerBinNoteTypeInputSamplers,
+	InnerBinNoteTypePersistentBuffers,
+	InnerBinNoteTypeScratchBuffers,
+	InnerBinNoteTypeSubConstantBuffers,
+	InnerBinNoteTypeUAVMailboxSize,
+	InnerBinNoteTypeUAV,
+	InnerBinNoteTypeUAVOPMask
+};
+
 class InnerBinNote
 {
-	unsigned int type;
+	friend class InnerBinEntry;
+
+	InnerBinEntry *entry;
+
+	InnerBinNoteType type;
 	unsigned int size;
-	void *payload;
+	std::unique_ptr<void> payload;
+	
+	/* Constructor */
+	InnerBinNote(InnerBinEntry *entry, InnerBinNoteType type, unsigned int size, 
+			void *payload);
 
 public:
-	/* Constructor */
-	InnerBinNote(unsigned int type, unsigned size, void *payload);
-	
+		
 	//InnerBinNoteDump();
 
 	/* Getters */
 	unsigned int GetType() { return type; }
 	unsigned int GetSize() { return size; }
-
+	void *GetPayload() { return payload.get(); }
+};
 
 class InnerBinEntry
 {
+	
+	friend class InnerBin;
+
+	InnerBin *bin;
+	
 	/* Public fields:
 	 *	- d_machine
 	 * Private fields:
@@ -67,13 +107,13 @@ class InnerBinEntry
 	/* This will form the .text section containing the final ISA. The user
 	 * is responsible for dumping instructions in this buffer. The buffer is
 	 * created and freed internally, however. */
-	ELFWriter::Buffer text_section_buffer;  /* Public field */
-	ELFWriter::Section text_section;  /* Private field */
+	ELFWriter::Buffer *text_section_buffer;  /* Public field */
+	ELFWriter::Section *text_section;  /* Private field */
 
 	/* Section .data associated with this encoding dictionary entry. The
 	 * user can fill it out by adding data into the buffer. */
-	ELFWriter::Buffer data_section_buffer;  /* Public field */
-	ELFWriter::Section data_section;  /* Private field */
+	ELFWriter::Buffer *data_section_buffer;  /* Public field */
+	ELFWriter::Section *data_section;  /* Private field */
 
 	/* Symbol table associated with the encoding dictionary entry. It is
 	 * initialized internally, and the user can just add new symbols
@@ -82,23 +122,29 @@ class InnerBinEntry
 
 	/* List of notes. Each element is of type 'si2bin_inner_bin_note_t'.
 	 * Private field. */
-	//vector<unique_ptr<InnerBinNote>> note_list;
+	std::list<std::unique_ptr<InnerBinNote>> note_list;
 	ELFWriter::Buffer *note_buffer;
 
 
 public:
 	
 	/* Constructor */
-	InnerBinEntry();
+	InnerBinEntry(InnerBin *bin);
 
 
 	/* Getters */
 	SI::BinaryDictHeader *GetHeader() { return &header; }
-	ELFWriter::Buffer *GetTextSectionBuffer { return &text_section_buffer; }
-	ELFWriter::Buffer *GetDataSectionBuffer { return &data_section_buffer; }
-	ELFWriter::SymbolTable *GetSymbolTable { return &symbol_table; };
+	ELFWriter::Buffer *GetTextSectionBuffer() { return text_section_buffer; }
+	ELFWriter::Buffer *GetDataSectionBuffer() { return data_section_buffer; }
+	ELFWriter::SymbolTable *GetSymbolTable() { return symbol_table; };
+	unsigned int GetSize() { return header.d_size; }
 
-	//InnerBinEntryAddNote(InnerBinNote *note);
+	void SetSize(unsigned int size) { header.d_size = size; }
+	void SetOffset(unsigned int offset) { header.d_offset = offset; }
+	void SetType(unsigned int type) { header.d_type = type; }
+	void SetMachine(unsigned int machine) { header.d_machine = machine; }
+
+	InnerBinNote *NewNote(InnerBinNoteType type, unsigned int size, void *payload);
 };
 
 
@@ -123,7 +169,7 @@ class InnerBin
 	int num_sgprs;
 	int num_vgprs;
 
-	//vector<unique_ptr<BinaryUserElement>> user_element_list;
+	std::vector<std::unique_ptr<SI::BinaryUserElement>> user_element_list;
 
 	/* FloatMode */
 	int FloatMode;
@@ -131,25 +177,35 @@ class InnerBin
 	/*IeeeMode */
 	int IeeeMode;
 
-	/* ELF file created internally.
-	 * Private field. */
-	ELFWriter::File *writer;
 
-	//vector<unique_ptr<InnerBinEntry>> entry_list;
+	std::vector<std::unique_ptr<InnerBinEntry>> entry_list;
 
 	
 public:
 	
 	/* Constructor */
-	InnerBin(std::string);
+	InnerBin(const std::string &name);
 
+	/* Make ELF Writer Public so New Buffer, Section, and Segments
+	 * easily be made
+	 */
+	ELFWriter::File writer;
+	
 	/* Getters */
+	std::string GetName() { return name; }
+	SI::BinaryComputePgmRsrc2 *GetPgmRsrc2() { return pgm_rsrc2; }
 	int GetRatOp() { return rat_op; }
-	int GetNumSgpr { return num_sgprs; }
-	int GetNumVgpr { return num_vgprs; }
-	int GetFloatMode { return FloatMode; }
-	int GetIeeeMode { return IeeeMode; }
-
+	int GetNumSgpr() { return num_sgprs; }
+	int GetNumVgpr() { return num_vgprs; }
+	int GetFloatMode() { return FloatMode; }
+	int GetIeeeMode() { return IeeeMode; }
+	InnerBinEntry *GetEntry(unsigned int index) { return index < entry_list.size() ?
+			entry_list[index].get() : nullptr; }
+	SI::BinaryUserElement *GetUserElement(unsigned int index) 
+			{ return index < user_element_list.size() ? 
+			user_element_list[index].get() : nullptr; }
+	unsigned int GetUserElementCount() { return user_element_list.size(); }
+	
 	/* Setters */
 	void SetRatOp(int rat_op) { this->rat_op = rat_op; }
 	void SetNumSgpr(int num_sgprs) { this->num_sgprs = num_sgprs; }
@@ -158,10 +214,12 @@ public:
 	void SetIeeeMode(int IeeMode) { this->IeeeMode = IeeeMode; }
 
 
-	void Generate(ELFWriter::Buffer *bin_buffer);
+	void Generate(std::ostream& os);
 
-	//void AddUserElement(SI::BinaryUserElement *user_elem, int index);
-	//void AddEntry(InnerBinEntry *entry);
+	SI::BinaryUserElement *NewUserElement(unsigned int index, unsigned int dataClass, 
+			unsigned int apiSlot, unsigned int startUserReg, 
+			unsigned int userRegCount);
+	InnerBinEntry *NewEntry();
 
 };
 
