@@ -187,6 +187,7 @@ public:
 	int Encode();
 
 	int getId() { return id; }
+	void setId(int id) { this->id = id; }
 };
 	
 
