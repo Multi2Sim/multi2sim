@@ -71,6 +71,7 @@ class BasicBlock : public Common::BasicBlock
 	void EmitFSub(llvm::BinaryOperator *llvm_inst);
 	void EmitFMul(llvm::BinaryOperator *llvm_inst);
 	void EmitExtractElement(llvm::ExtractElementInst *llvm_inst);
+	void EmitInsertElement(llvm::InsertElementInst *llvm_inst);
 
 public:
 	
