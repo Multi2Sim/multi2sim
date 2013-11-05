@@ -150,10 +150,10 @@ enum ArgCcopType
 /* logic type */
 enum ModLogicType
 {
-	logic_invalid = 0,
-	logic_and,
-	logic_or,
-	logic_xor,
+	modlogic_invalid = 0,
+	modlogic_and,
+	modlogic_or,
+	modlogic_xor,
 };
 
 /* mod data width */
@@ -171,21 +171,21 @@ enum ModDataWidthType
 /* mod comparison type */
 enum ModCompType
 {
-	comp_invalid = 0,
-	comp_lt,
-	comp_eq,
-	comp_le,
-	comp_gt,
-	comp_ne,
-	comp_ge,
-	comp_num,
-	comp_nan,
-	comp_ltu,
-	comp_equ,
-	comp_leu,
-	comp_gtu,
-	comp_geu,
-	comp_neu,
+	modcomp_invalid = 0,
+	modcomp_lt,
+	modcomp_eq,
+	modcomp_le,
+	modcomp_gt,
+	modcomp_ne,
+	modcomp_ge,
+	modcomp_num,
+	modcomp_nan,
+	modcomp_ltu,
+	modcomp_equ,
+	modcomp_leu,
+	modcomp_gtu,
+	modcomp_geu,
+	modcomp_neu,
 };
 
 enum Mod0BType
@@ -198,6 +198,69 @@ enum Mod0BType
 	mod0b_64,
 	mod0b_128,
 };
+
+enum Mod0BCopType
+{
+	mod0bcop_invalid = 0,
+	mod0bcop_ca,
+	mod0bcop_cg,
+	mod0bcop_lu,
+	mod0bcop_cv,
+};
+
+enum ModGen0Src1DtypeType
+{
+	modgen0src1dtype_invalid = 0,
+	modgen0src1dtype_f16,
+	modgen0src1dtype_f32,
+	modgen0src1dtype_f64,
+};
+
+enum Mod0ARedarvType
+{
+	mod0aredarv_invalid = 0,
+	mod0aredarv_red,
+	mod0aredarv_arv,
+};
+
+enum Mod0AOpType
+{
+	mod0aop_invalid = 0,
+	mod0aop_popc,
+	mod0aop_and,
+	mod0aop_or,
+
+};
+
+enum Mod0DFtzfmzType
+{
+	mod0dftzfmz_invalid = 0,
+	mod0dftzfmz_ftz,
+	mod0dftzfmz_fmz,
+};
+
+enum ModGen0Mod1BRndType
+{
+	modgen0mod1brnd_invalid = 0,
+	modgen0mod1brnd_rn,
+	modgen0mod1brnd_rm,
+	modgen0mod1brnd_rp,
+	modgen0mod1brnd_rz,
+};
+
+enum ModOffsMod1AOpType
+{
+	modoffsmod1aop_invalid = 0,
+	modoffsmod1aop_fma64,
+	modoffsmod1aop_fma32,
+	modoffsmod1aop_xlu,
+	modoffsmod1aop_alu,
+	modoffsmod1aop_agu,
+	modoffsmod1aop_su,
+	modoffsmod1aop_fu,
+        modoffsmod1aop_fmul,
+};
+
 
 class Arg
 {
@@ -388,6 +451,18 @@ public:
 
 };
 
+/* modifier specifically for IMAD instruction */
+class ModIMAD : public Mod
+{
+	/*TODO: This needs to be modified later */
+	int val;
+public:
+	ModIMAD(int val): val(val) {}
+
+	/* Getter */
+	int getVal(void) {return val; }
+};
+
 class Mod0B : public Mod
 {
 	Mod0BType type;
@@ -399,10 +474,184 @@ public:
 
 };
 
-/* modifier specifically for IMAD instruction */
-class ModIMAD : public Mod
+class Mod0BCop : public Mod
 {
+	Mod0BCopType type;
+public:
+	Mod0BCop(const std::string &name);
 
+	/* Getter */
+	Mod0BCopType getType(void) {return type; }
+};
+
+class ModLogic : public Mod
+{
+	ModLogicType type;
+public:
+	ModLogic(const std::string &name);
+
+	/* Getter */
+	ModLogicType getType(void) {return type; }
+};
+
+class ModComp : public Mod
+{
+	ModCompType type;
+public:
+	ModComp(const std::string &name);
+
+	/* Getter */
+	ModCompType getType(void) {return type; }
+};
+
+class ModBrev : public Mod
+{
+	bool exist;
+public:
+	ModBrev(const std::string &name);
+
+	/* Getter */
+	bool getExist(void) {return exist; }
+};
+
+class ModGen0Src1Dtype : public Mod
+{
+	ModGen0Src1DtypeType type;
+public:
+	ModGen0Src1Dtype(const std::string &name);
+
+	/* Getter */
+	ModGen0Src1DtypeType getType(void) {return type; }
+};
+
+class ModGen0DstCc : public Mod
+{
+	bool exist;
+public:
+	ModGen0DstCc(const std::string &name);
+
+	/* Getter */
+	bool getExist(void) {return exist; }
+};
+
+class ModTgtU : public Mod
+{
+	bool exist;
+public:
+	ModTgtU(const std::string &name);
+
+	/* Getter */
+	bool getExist(void) {return exist; }
+};
+
+class ModTgtLmt : public Mod
+{
+	bool exist;
+public:
+	ModTgtLmt(const std::string &name);
+
+	/* Getter */
+	bool getExist(void) {return exist; }
+};
+
+class Mod0AW : public Mod
+{
+	bool exist;
+public:
+	Mod0AW(const std::string &name);
+
+	/* Getter */
+	bool getExist(void) {return exist; }
+};
+
+class Mod0ARedarv : public Mod
+{
+	Mod0ARedarvType type;
+public:
+	Mod0ARedarv(const std::string &name);
+
+	/* Getter */
+	Mod0ARedarvType getType(void) {return type; }
+};
+
+class Mod0AOp : public Mod
+{
+	Mod0AOpType type;
+public:
+	Mod0AOp(const std::string &name);
+
+	/* Getter */
+	Mod0AOpType getType(void) {return type; }
+};
+
+class Mod0CS : public Mod
+{
+	bool exist;
+public:
+	Mod0CS(const std::string &name);
+
+	/* Getter */
+	bool getExist(void) {return exist; }
+};
+
+class Mod0DFtzfmz : public Mod
+{
+	Mod0DFtzfmzType type;
+public:
+	Mod0DFtzfmz(const std::string &name);
+
+	/* Getter */
+	Mod0DFtzfmzType getType(void) {return type; }
+};
+
+class ModGen0Mod1BRnd : public Mod
+{
+	ModGen0Mod1BRndType type;
+public:
+	ModGen0Mod1BRnd(const std::string &name);
+
+	/* Getter */
+	ModGen0Mod1BRndType getType(void) {return type; }
+};
+
+class Mod0DSat : public Mod
+{
+	bool exist;
+public:
+	Mod0DSat(const std::string &name);
+
+	/* Getter */
+	bool getExist(void) {return exist; }
+};
+
+class Mod0DX : public Mod
+{
+	bool exist;
+public:
+	Mod0DX(const std::string &name);
+
+	/* Getter */
+	bool getExist(void) {return exist; }
+};
+
+class Mod1ATrig : public Mod
+{
+	bool exist;
+public:
+	Mod1ATrig(const std::string &name);
+
+	/* Getter */
+	bool getExist(void) {return exist; }
+};
+
+class ModOffsMod1AOp : public Mod
+{
+	ModOffsMod1AOpType type;
+public:
+	ModOffsMod1AOp(const std::string &name);
+
+	/* Getter */
+	ModOffsMod1AOpType getType(void) {return type; }
 };
 
 
