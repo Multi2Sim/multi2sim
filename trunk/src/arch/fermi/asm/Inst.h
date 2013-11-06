@@ -292,20 +292,14 @@ struct InstBytesMod0D
 
 enum InstCategory
 {
-	InstCategoryInvalid = 0,
-
-	InstCategoryFp,  /* Floating point instructions */
-	InstCategoryInt,  /* Integer instructions */
-	InstCategoryConv,  /* Conversion instructions */
-	InstCategoryMov,  /* Movement instructions */
-	InstCategoryPred,  /* Predicate/CC instructions */
-	InstCategoryTex,  /* Texture instructions */
-	InstCategoryLdSt, /* Compute load/store instructions */
-	InstCategorySurf, /* Surface memory instructions */
-	InstCategoryCtrl, /* Control instructions */
-	InstCategoryMisc, /* Miscellaneous instructions */
-
-	InstCategoryCount
+	InstCategorySpFp,  /* Single-precision floating point */
+	InstCategoryDpFp,  /* Double-precision floating point */
+	InstCategoryImm,  /* Immediate */
+	InstCategoryInt,  /* Integer */
+	InstCategoryOther,  /* Conversion/Movement/Predicate/CC/Miscellaneous */
+	InstCategoryLdStRW,  /* Load/Store read/write */
+	InstCategoryLdStRO, /* Load/Store read-only */
+	InstCategoryCtrl /* Control */
 };
 
 
@@ -313,7 +307,7 @@ enum InstOpcode
 {
 	InstOpcodeInvalid = 0,
 
-#define DEFINST(_name, _fmt_str, _category, _opcode) \
+#define DEFINST(_name, _fmt_str, _opcode) \
 	INST_##_name,
 #include "asm.dat"
 #undef DEFINST
@@ -352,8 +346,8 @@ struct InstInfo
 	InstOpcode opcode;
 	InstCategory category;
 
-	const char *name;
-	const char *fmt_str;
+	std::string name;
+	std::string fmt_str;
 
 	/* Field of the instruction containing the instruction opcode
 	 * identifier. */
@@ -384,8 +378,9 @@ public:
 	Inst(Asm *as);
 
 	/* Dump functions */
-	void DumpHex(std::ostream &os);
+	void DumpPC(std::ostream &os);
 	void DumpBuf(char *str, int size);
+	void DumpHex(std::ostream &os);
 	void Dump(std::ostream &os);
 
 	/* From the buffer given in 'ptr', decode an instruction and populate fields
@@ -395,9 +390,9 @@ public:
 	void Decode(unsigned int addr, void *ptr);
 
 	/* Getters */
-	const char *GetName() { return info ? info->name : "<unknown>"; }
+	std::string GetName() { return info ? info->name : "<unknown>"; }
 	InstOpcode GetOpcode() { return info ? info->opcode : InstOpcodeInvalid; }
-	InstCategory GetCategory() { return info ? info->category : InstCategoryInvalid; }
+	InstCategory GetCategory() { assert(info); return info->category; }
 	InstBytes *GetBytes() { return &bytes; }
 };
 
@@ -656,20 +651,14 @@ typedef struct
 
 typedef enum
 {
-	FrmInstCategoryInvalid = 0,
-
-	FrmInstCategoryFp,  /* Floating point instructions */
-	FrmInstCategoryInt,  /* Integer instructions */
-	FrmInstCategoryConv,  /* Conversion instructions */
-	FrmInstCategoryMov,  /* Movement instructions */
-	FrmInstCategoryPred,  /* Predicate/CC instructions */
-	FrmInstCategoryTex,  /* Texture instructions */
-	FrmInstCategoryLdSt, /* Compute load/store instructions */
-	FrmInstCategorySurf, /* Surface memory instructions */
-	FrmInstCategoryCtrl, /* Control instructions */
-	FrmInstCategoryMisc, /* Miscellaneous instructions */
-
-	FrmInstCategoryCount
+	FrmInstCategorySpFp,  /* Single-precision floating point */
+	FrmInstCategoryDpFp,  /* Double-precision floating point */
+	FrmInstCategoryImm,  /* Immediate */
+	FrmInstCategoryInt,  /* Integer */
+	FrmInstCategoryOther,  /* Conversion/Movement/Predicate/CC/Miscellaneous */
+	FrmInstCategoryLdStRW,  /* Load/Store read/write */
+	FrmInstCategoryLdStRO, /* Load/Store read-only */
+	FrmInstCategoryCtrl /* Control */
 } FrmInstCategory;
 
 
@@ -677,7 +666,7 @@ typedef enum
 {
 	FrmInstOpcodeInvalid = 0,
 
-#define DEFINST(_name, _fmt_str, _category, _opcode) \
+#define DEFINST(_name, _fmt_str, _opcode) \
 	FRM_INST_##_name,
 #include "asm.dat"
 #undef DEFINST

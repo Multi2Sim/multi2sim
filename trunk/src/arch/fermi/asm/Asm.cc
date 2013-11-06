@@ -31,20 +31,26 @@ using namespace std;
 Asm::Asm()
 {
 	InstInfo *info;
+	unsigned int cat;
+	unsigned int func;
 
 	/* Read information about all instructions */
-#define DEFINST(_name, _fmt_str, _category, _op) \
-	info = &inst_info[INST_##_name]; \
+#define DEFINST(_name, _fmt_str, _op) \
+	info = &inst_info[FRM_INST_##_name]; \
 	info->opcode = INST_##_name; \
-	info->category = InstCategory##_category; \
+	cat = _op >> 8; \
+	if (cat <= 3) \
+		func = (_op & 0xf8) >> 3; \
+	else \
+		func = (_op & 0xfc) >> 2; \
+	info->category = (InstCategory)(_op >> 8); \
 	info->name = #_name; \
 	info->fmt_str = _fmt_str; \
 	info->op = _op; \
 	info->size = 8; \
-	dec_table[_op] = info;
+	dec_table[cat][func] = info;
 #include "asm.dat"
 #undef DEFINST
-
 }
 
 
@@ -62,14 +68,21 @@ void Asm::DisassembleBinary(string path)
 		ELFReader::Section *section = file.GetSection(i);
 		if (!strncmp(section->GetName().c_str(), ".text.", 6))
 		{
-			/* Decode and dump instructions */
 			cout << "\t\tFunction : " << section->GetName().c_str() + 6 << "\n";
 			for (unsigned int pos = 0; pos < section->GetSize(); pos += 8)
 			{
+				/* Decode instruction */
 				inst.Decode(pos, section->GetBuffer() + pos);
-				inst.DumpHex(cout);
+
+				/* Dump instruction */
+				cout << "\t";
+				inst.DumpPC(cout);
+				cout << "\t";
 				inst.Dump(cout);
-				cout << ";\n";
+				cout << ";";
+				cout << "\t";
+				inst.DumpHex(cout);
+				cout << "\n";
 			}
 			cout << "\t\t" << std::string(38, '.') << "\n\n\n";
 		}
@@ -129,8 +142,8 @@ FrmInstInfo *FrmAsmWrapGetInstInfo(struct FrmAsmWrap *self, FrmInstOpcode opcode
 }
 
 
-FrmInstInfo *FrmAsmWrapGetDecTable(struct FrmAsmWrap *self, int index)
+FrmInstInfo *FrmAsmWrapGetDecTable(struct FrmAsmWrap *self, int cat, int func)
 {
 	Asm *as = (Asm *) self;
-	return (FrmInstInfo *) as->GetDecTable(index);
+	return (FrmInstInfo *) as->GetDecTable(cat, func);
 }

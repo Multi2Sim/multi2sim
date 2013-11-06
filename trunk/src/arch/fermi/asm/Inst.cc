@@ -18,6 +18,7 @@
  */
 
 #include <iomanip>
+#include <string>
 
 #include <lib/cpp/Misc.h>
 
@@ -44,26 +45,20 @@ Inst::Inst(Asm *as)
 
 void Inst::Decode(unsigned int addr, void *ptr)
 {
-	unsigned int op;
+	unsigned int cat;
+	unsigned int func;
 
-	/* 10-bit opcode by default */
+	/* Get instruction category bits */
 	bytes.dword = * (unsigned long long *) ptr;
-	op = ((bytes.bytes[7] & 0xfc) << 2) |
-			((bytes.bytes[0]) & 0xf);
-	/* 9-bit opcode */
-	if (op == 0x0e0 || op == 0x0f0 || /* FCMP */
-			op == 0x0a0 || op == 0x0b0 ||
-			op == 0x080 || op == 0x090 || /* FSETP */
-			op == 0x061 || op == 0x071 || /* DSETP */
-			op == 0x022 || op == 0x032 || /* IADD32I */
-			op == 0x063 || op == 0x073 || /* ISETP */
-			op == 0x043 || op == 0x053 || /* ISET */
-			op == 0x205 || op == 0x215 || /* LD */
-			op == 0x245 || op == 0x255)   /* ST */
-		op = ((bytes.bytes[7] & 0xf8) << 1) |
-			((bytes.bytes[0]) & 0xf);
+	cat = bytes.bytes[0] & 0xf;
 
-	info = as->GetDecTable(op);
+	/* Get function bits */
+	if (cat <= 3)
+		func = bytes.bytes[7] >> 3;  /* 5-bit func */
+	else
+		func = bytes.bytes[7] >> 2;  /* 6-bit func */
+
+	info = as->GetDecTable(cat, func);
 	this->addr = addr;
 }
 
@@ -268,22 +263,22 @@ StringMap inst_sreg_map =
 	{ "SR_MACHINE_ID_2", InstSRegMachineID2 },
 	{ "SR_MACHINE_ID_3", InstSRegMachineID3 },
 	{ "SR_AFFINITY", InstSRegAffinity },
-	{ "SR_Tid", InstSRegTid },
-	{ "SR_Tid_X", InstSRegTidX },
-	{ "SR_Tid_Y", InstSRegTidY },
-	{ "SR_Tid_Z", InstSRegTidZ },
+	{ "SR_TID", InstSRegTid },
+	{ "SR_TID_X", InstSRegTidX },
+	{ "SR_TID_Y", InstSRegTidY },
+	{ "SR_TID_Z", InstSRegTidZ },
 	{ "SR_CTAParam", InstSRegCTAParam },
-	{ "SR_CTAid_X", InstSRegCTAidX },
-	{ "SR_CTAid_Y", InstSRegCTAidY },
-	{ "SR_CTAid_Z", InstSRegCTAidZ },
-	{ "SR_NTid", InstSRegNTid },
-	{ "SR_NTid_X", InstSRegNTidX },
-	{ "SR_NTid_Y", InstSRegNTidY },
-	{ "SR_NTid_Z", InstSRegNTidZ },
+	{ "SR_CTAID_X", InstSRegCTAidX },
+	{ "SR_CTAID_Y", InstSRegCTAidY },
+	{ "SR_CTAID_Z", InstSRegCTAidZ },
+	{ "SR_NTID", InstSRegNTid },
+	{ "SR_NTID_X", InstSRegNTidX },
+	{ "SR_NTID_Y", InstSRegNTidY },
+	{ "SR_NTID_Z", InstSRegNTidZ },
 	{ "SR_GridParam", InstSRegGridParam },
-	{ "SR_NCTAid_X", InstSRegNCTAidX },
-	{ "SR_NCTAid_Y", InstSRegNCTAidY },
-	{ "SR_NCTAid_Z", InstSRegNCTAidZ },
+	{ "SR_NCTAID_X", InstSRegNCTAidX },
+	{ "SR_NCTAID_Y", InstSRegNCTAidY },
+	{ "SR_NCTAID_Z", InstSRegNCTAidZ },
 	{ "SR_SWinLo", InstSRegSWinLo },
 	{ "SR_SWINSZ", InstSRegSWINSZ },
 	{ "SR_SMemSz", InstSRegSMemSz },
@@ -315,7 +310,7 @@ void Inst::DumpBuf(char *str, int size)
 			__FUNCTION__, addr);
 
 	/* Store copy of format string and original destination buffer */
-	fmt_str = info->fmt_str;
+	fmt_str = info->fmt_str.c_str();
 	orig_str = str;
 
 	/* Process format string */
@@ -969,9 +964,9 @@ void Inst::DumpBuf(char *str, int size)
 			unsigned long long int Q;
 			Q = bytes.general1.dst & 0x7;
 			if (Q != 7)
-				str_printf(&str, &size, "p%lld", Q);
+				str_printf(&str, &size, "P%lld", Q);
 			else
-				str_printf(&str, &size, "pt");
+				str_printf(&str, &size, "PT");
 		}
 
 		else if (Common::Asm::IsToken(fmt_str, "R", len))
@@ -983,7 +978,7 @@ void Inst::DumpBuf(char *str, int size)
 			else if (R == 8)
 				str_printf(&str, &size, "!P0");
 			else
-				str_printf(&str, &size, "pt");
+				str_printf(&str, &size, "PT");
 		}
 
 		else if (Common::Asm::IsToken(fmt_str, "FADD_sat", len))
@@ -1060,15 +1055,18 @@ void Inst::Dump(ostream &os)
 }
 
 
+void Inst::DumpPC(ostream &os)
+{
+	os << "/*" << setw(4) << setfill('0') << hex << addr << "*/";
+}
+
+
 void Inst::DumpHex(ostream &os)
 {
-	/* Print offset */
-	os << "\t/*" << setw(4) << setfill('0') << hex << addr << "*/     ";
 	os << "/*0x";
 	os << setw(8) << hex << bytes.word[0];
 	os << setw(8) << hex << bytes.word[1];
-	os << "*/ \t";
-	os << setfill(' ');
+	os << "*/";
 }
 
 }  /* namespace Fermi */
@@ -1114,7 +1112,7 @@ FrmInstBytes *FrmInstWrapGetBytes(struct FrmInstWrap *self)
 const char *FrmInstWrapGetName(struct FrmInstWrap *self)
 {
 	Fermi::Inst *inst = (Fermi::Inst *) self;
-	return inst->GetName();
+	return inst->GetName().c_str();
 }
 
 
