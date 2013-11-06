@@ -29,10 +29,7 @@
 
 #include "Misc.h"
 
-using namespace std;
-
-
-namespace Misc
+namespace misc
 {
 
 
@@ -77,7 +74,7 @@ void str_printf(char **pbuf, int *psize, const char *fmt, ...)
 }
 
 
-std::string StringFormat(const char *fmt, ...)
+std::string StringFmt(const char *fmt, ...)
 {
 	char buf[1024];
 	va_list va;
@@ -88,43 +85,36 @@ std::string StringFormat(const char *fmt, ...)
 }
 
 
-void StringTrimLeft(string& s, string set)
+void StringTrimLeft(std::string &s, const std::string &set)
 {
 	size_t startpos = s.find_first_not_of(set);
-	if (string::npos != startpos)
+	if (std::string::npos != startpos)
 		s = s.substr(startpos);
 }
 
 
-void StringTrimRight(string& s, string set)
+void StringTrimRight(std::string& s, const std::string &set)
 {
 	size_t endpos = s.find_last_not_of(set);
-	if (string::npos != endpos )
+	if (std::string::npos != endpos)
 		s = s.substr(0, endpos + 1);
 }
 
 
-void StringTrim(string& s, string set)
+void StringTrim(std::string &s, const std::string &set)
 {
 	StringTrimLeft(s, set);
 	StringTrimRight(s, set);
 }
 
 
-void StringSingleSpaces(string& s, string set)
+void StringSingleSpaces(std::string &s, const std::string &set)
 {
-	int src;
-	int dest;
-
-	int is_space;
-	int was_space;
-	int started;
-
-	src = 0;
-	dest = 0;
-	is_space = 0;
-	was_space = 0;
-	started = 0;
+	int src = 0;
+	int dest = 0;
+	bool is_space = false;
+	bool was_space = false;
+	bool started = false;
 	for (unsigned i = 0; i < s.length(); i++)
 	{
 		is_space = CharInSet(s[i], set);
@@ -137,7 +127,7 @@ void StringSingleSpaces(string& s, string set)
 		else
 		{
 			s[dest++] = s[src++];
-			started = 1;
+			started = true;
 		}
 		was_space = is_space;
 	}
@@ -151,26 +141,26 @@ void StringSingleSpaces(string& s, string set)
 }
 
 
-void StringToLower(std::string& s)
+void StringToLower(std::string &s)
 {
 	std::transform(s.begin(), s.end(), s.begin(), ::tolower);
 }
 
 
-void StringToUpper(std::string& s)
+void StringToUpper(std::string &s)
 {
 	std::transform(s.begin(), s.end(), s.begin(), ::toupper);
 }
 
 
-bool StringPrefix(const std::string& s, const std::string& prefix)
+bool StringPrefix(const std::string &s, const std::string &prefix)
 {
 	return s.length() >= prefix.length() &&
 			s.substr(0, prefix.length()) == prefix;
 }
 
 
-bool StringSuffix(const std::string& s, const std::string& suffix)
+bool StringSuffix(const std::string &s, const std::string &suffix)
 {
 	return s.length() >= suffix.length() &&
 			s.substr(s.length() - suffix.length(),
@@ -178,21 +168,16 @@ bool StringSuffix(const std::string& s, const std::string& suffix)
 }
 
 
-void StringTokenize(const std::string& s, std::vector<std::string>& tokens,
-		const std::string& set)
+void StringTokenize(const std::string &s, std::vector<std::string> &tokens,
+		const std::string &set)
 {
-	string token;
-
-	int token_start;
-	int is_end;
-
 	/* Extract tokens */
-	token_start = -1;
-	token = "";
+	int token_start = -1;
+	std::string token = "";
 	for (unsigned i = 0; i <= s.length(); i++)
 	{
 		/* End of string */
-		is_end = i == s.length();
+		bool is_end = i == s.length();
 
 		/* Start a token */
 		if (!is_end && !CharInSet(s[i], set)
@@ -217,7 +202,7 @@ int StringDigitToInt(char digit, int base)
 }
 
 
-int StringDigitToInt(char digit, int base, StringError& error)
+int StringDigitToInt(char digit, int base, StringError &error)
 {
 	int result;
 
@@ -260,14 +245,14 @@ int StringDigitToInt(char digit, int base, StringError& error)
 }
 
 
-int StringToInt(string s)
+int StringToInt(const std::string &s)
 {
 	StringError error;
 	return StringToInt(s, error);
 }
 
 
-int StringToInt(string s, StringError& error)
+int StringToInt(const std::string &_s, StringError &error)
 {
 	int sign;
 	int base;
@@ -277,6 +262,7 @@ int StringToInt(string s, StringError& error)
 	int factor;
 
 	/* Initialize */
+	std::string s = _s;
 	StringTrim(s);
 	error = StringErrorOK;
 
@@ -433,14 +419,14 @@ int StringToInt(string s, StringError& error)
 }
 
 
-long long StringToInt64(std::string s)
+long long StringToInt64(const std::string &s)
 {
 	StringError error;
 	return StringToInt64(s, error);
 }
 
 
-long long StringToInt64(std::string s, StringError& error)
+long long StringToInt64(const std::string &_s, StringError &error)
 {
 	int sign;
 	int base;
@@ -451,6 +437,7 @@ long long StringToInt64(std::string s, StringError& error)
 	long long result;
 
 	/* Initialize */
+	std::string s = _s;
 	StringTrim(s);
 	error = StringErrorOK;
 
@@ -622,7 +609,7 @@ const char *StringMapValue(StringMap map, int value)
 }
 
 
-const char *StringMapValue(StringMap map, int value, bool& error)
+const char *StringMapValue(StringMap map, int value, bool &error)
 {
 	int index;
 
@@ -684,13 +671,13 @@ int StringMapStringCase(StringMap map, const std::string &s, bool &error)
 }
 
 
-string StringMapFlags(StringMap map, unsigned int flags)
+std::string StringMapFlags(StringMap map, unsigned int flags)
 {
 	int i;
 	bool error;
 
-	stringstream s;
-	string comma = "";
+	std::stringstream s;
+	std::string comma = "";
 	s << '{';
 	for (i = 0; i < 32; i++)
 	{
@@ -712,10 +699,10 @@ string StringMapFlags(StringMap map, unsigned int flags)
 }
 
 
-string StringMapGetValues(StringMap map)
+std::string StringMapGetValues(StringMap map)
 {
-	stringstream s;
-	string comma;
+	std::stringstream s;
+	std::string comma;
 	int index;
 
 	index = 0;
@@ -798,7 +785,7 @@ void Debug::Close()
 }
 
 
-void Debug::SetPath(const std::string& path)
+void Debug::setPath(const std::string& path)
 {
 	/* Release previous output stream */
 	Close();

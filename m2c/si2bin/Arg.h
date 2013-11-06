@@ -37,7 +37,7 @@ namespace si2bin
 class Token;
 
 
-extern Misc::StringMap arg_type_map;
+extern misc::StringMap arg_type_map;
 enum ArgType
 {
 	ArgTypeInvalid = 0,
@@ -134,7 +134,7 @@ public:
 	void ValidTypes(bool types[]);
 	template<typename... T> void ValidTypes(bool types[], ArgType type,
 			T... args) {
-		assert(Misc::InRange(type, 0, ArgTypeCount - 1));
+		assert(misc::InRange(type, 0, ArgTypeCount - 1));
 		types[type] = true;
 		ValidTypes(types, args...);
 	}

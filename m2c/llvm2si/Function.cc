@@ -451,7 +451,7 @@ void Function::EmitHeader()
 	for (int index = 0; index < 3; index++)
 	{
 		/* Comment */
-		basic_block->AddComment(StringFormat("Calculate global ID "
+		basic_block->AddComment(StringFmt("Calculate global ID "
 				"in dimension %d", index));
 
 		/* v_mov_b32 */
@@ -908,7 +908,7 @@ Arg *Function::TranslateConstant(llvm::Constant *llvm_const)
 					llvm_type->getIntegerBitWidth());
 
 		/* Create argument */
-		llvm::ConstantInt *llvm_int_const = Misc::cast
+		llvm::ConstantInt *llvm_int_const = misc::cast
 				<llvm::ConstantInt *>(llvm_const);
 		int value = llvm_int_const->getZExtValue();
 		return new ArgLiteral(value);

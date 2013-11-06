@@ -25,7 +25,7 @@
 #include "Misc.h"
 
 
-using namespace Misc;
+using namespace misc;
 
 
 namespace ELFWriter
@@ -62,7 +62,7 @@ void Buffer::Dump(std::ostream &os) const
 	for (unsigned i = 0; i < s.length(); i += 16)
 	{
 		// Print offset
-		os << StringFormat("%08x ", i);
+		os << StringFmt("%08x ", i);
 
 		// Print hex bytes
 		for (int j = 0; j < 16; j++)
@@ -75,7 +75,7 @@ void Buffer::Dump(std::ostream &os) const
 			if (i + j < s.length())
 			{
 				unsigned char c = s[i + j];
-				os << StringFormat("%02x ", (int) c);
+				os << StringFmt("%02x ", (int) c);
 			}
 			else
 			{

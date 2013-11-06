@@ -205,7 +205,7 @@ public:
 	void Compare(Tree *tree);
 
 	/* Debugger */
-	static Misc::Debug debug;
+	static misc::Debug debug;
 
 	/* Configuration */
 	static TreeConfig config;

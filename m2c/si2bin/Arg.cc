@@ -22,7 +22,7 @@
 #include "Arg.h"
 
 
-using namespace Misc;
+using namespace misc;
 
 namespace si2bin
 {

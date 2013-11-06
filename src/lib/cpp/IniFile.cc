@@ -26,7 +26,7 @@
 #include "Misc.h"
 
 
-using namespace Misc;
+using namespace misc;
 using namespace std;
 
 
@@ -381,7 +381,7 @@ void IniFile::WriteEnum(string section, string var, int value, StringMap map)
 	bool error;
 
 	/* Translate value */
-	s = Misc::StringMapValue(map, value, error);
+	s = misc::StringMapValue(map, value, error);
 	if (error)
 		fatal("%s: invalid value for enumeration (%d)",
 				__FUNCTION__, value);

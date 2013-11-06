@@ -39,7 +39,7 @@ class Tree;
 /* Kind of control tree node. The node can be a leaf representing a basic block
  * of the function, or an abstract node, representing a reduction of the control
  * flow graph. */
-extern Misc::StringMap node_kind_map;
+extern misc::StringMap node_kind_map;
 enum NodeKind
 {
 	NodeKindInvalid,
@@ -47,7 +47,7 @@ enum NodeKind
 	NodeKindAbstract
 };
 
-extern Misc::StringMap node_role_map;
+extern misc::StringMap node_role_map;
 enum NodeRole
 {
 	NodeRoleInvalid,
@@ -232,7 +232,7 @@ public:
 };
 
 
-extern Misc::StringMap abstract_node_region_map;
+extern misc::StringMap abstract_node_region_map;
 enum AbstractNodeRegion
 {
 	AbstractNodeRegionInvalid,

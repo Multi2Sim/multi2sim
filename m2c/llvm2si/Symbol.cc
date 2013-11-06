@@ -22,7 +22,7 @@
 #include "Symbol.h"
 
 
-using namespace Misc;
+using namespace misc;
 
 namespace llvm2si
 {

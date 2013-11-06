@@ -22,7 +22,7 @@
 #include "Misc.h"
 #include "Wrapper.h"
 
-using namespace Misc;
+using namespace misc;
 
 
 const char *StringMapValueWrap(StringMapWrap *map, int value)
@@ -109,5 +109,5 @@ void StringMapGetValuesWrap(StringMapWrap *map, char *text, int size)
 void DebugSetPathWrap(struct DebugWrap *self, const char *path)
 {
 	Debug *debug = (Debug *) self;
-	debug->SetPath(path);
+	debug->setPath(path);
 }

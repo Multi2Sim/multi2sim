@@ -38,7 +38,7 @@ bool Asm::IsToken(const std::string &fmt, const std::string &token,
 {
 	/* Token is not prefix */
 	length = 0;
-	if (!Misc::StringPrefix(fmt, token))
+	if (!misc::StringPrefix(fmt, token))
 		return false;
 	
 	/* Token is not end of word */
