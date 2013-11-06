@@ -33,7 +33,7 @@ class Asm;
 
 
 /* Microcode Formats */
-extern Misc::StringMap inst_format_map;
+extern misc::StringMap inst_format_map;
 enum InstFormat
 {
 	InstFormatInvalid = 0,
@@ -114,7 +114,7 @@ enum InstCategory
 };
 
 
-extern Misc::StringMap inst_special_reg_map;
+extern misc::StringMap inst_special_reg_map;
 enum InstSpecialReg
 {
 	InstSpecialRegInvalid = 0,
@@ -125,7 +125,7 @@ enum InstSpecialReg
 };
 
 
-extern Misc::StringMap inst_buf_data_format_map;
+extern misc::StringMap inst_buf_data_format_map;
 enum InstBufDataFormat
 {
 	InstBufDataFormatInvalid = 0,
@@ -147,7 +147,7 @@ enum InstBufDataFormat
 };
 
 
-extern Misc::StringMap inst_buf_num_format_map;
+extern misc::StringMap inst_buf_num_format_map;
 enum InstBufNumFormat
 {
 	InstBufNumFormatUnorm = 0,

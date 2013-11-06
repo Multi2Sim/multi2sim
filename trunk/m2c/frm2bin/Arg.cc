@@ -8,7 +8,7 @@
 #include <lib/cpp/Misc.h>
 #include "Arg.h"
 
-using namespace Misc;
+using namespace misc;
 
 extern StringMap TokenTypeMap;
 
@@ -247,7 +247,7 @@ Mod::Mod(const std::string &name)
 
 ModDataWidth::ModDataWidth(const std::string &name)
 {
-	this->dataWidth = Misc::StringMapString(ModDataWidthMap, name);
+	this->dataWidth = misc::StringMapString(ModDataWidthMap, name);
 
 	if (this->dataWidth == ModDataWidthType::width_invalid)
 	{
@@ -258,7 +258,7 @@ ModDataWidth::ModDataWidth(const std::string &name)
 
 Mod0B::Mod0B(const std::string &name)
 {
-	this->type = Misc::StringMapString(Mod0BTypeMap, name);
+	this->type = misc::StringMapString(Mod0BTypeMap, name);
 
 	if (this->type == Mod0BType::mod0b_invalid)
 	{
@@ -269,7 +269,7 @@ Mod0B::Mod0B(const std::string &name)
 
 Mod0BCop::Mod0BCop(const std::string &name)
 {
-	this->type = Misc::StringMapString(Mod0BCopTypeMap, name);
+	this->type = misc::StringMapString(Mod0BCopTypeMap, name);
 
 	if (this->type == Mod0BCopType::mod0bcop_invalid)
 	{
@@ -280,7 +280,7 @@ Mod0BCop::Mod0BCop(const std::string &name)
 
 ModLogic::ModLogic(const std::string &name)
 {
-	this->type = Misc::StringMapString(ModLogicMap, name);
+	this->type = misc::StringMapString(ModLogicMap, name);
 
 	if (this->type == ModLogicType::modlogic_invalid)
 	{
@@ -291,7 +291,7 @@ ModLogic::ModLogic(const std::string &name)
 
 ModComp::ModComp(const std::string &name)
 {
-	this->type = Misc::StringMapString(ModCompMap, name);
+	this->type = misc::StringMapString(ModCompMap, name);
 
 	if (this->type == ModCompType::modcomp_invalid)
 	{
@@ -309,7 +309,7 @@ ModBrev::ModBrev(const std::string &name)
 
 ModGen0Src1Dtype::ModGen0Src1Dtype(const std::string &name)
 {
-	this->type = Misc::StringMapString(ModGen0Src1DtypeMap, name);
+	this->type = misc::StringMapString(ModGen0Src1DtypeMap, name);
 
 	if (this->type == ModGen0Src1DtypeType::modgen0src1dtype_invalid)
 	{
@@ -349,7 +349,7 @@ Mod0AW::Mod0AW(const std::string &name)
 
 Mod0ARedarv::Mod0ARedarv(const std::string &name)
 {
-	this->type = Misc::StringMapString(Mod0ARedarvTypeMap, name);
+	this->type = misc::StringMapString(Mod0ARedarvTypeMap, name);
 
 	if (this->type == Mod0ARedarvType::mod0aredarv_invalid)
 	{
@@ -360,7 +360,7 @@ Mod0ARedarv::Mod0ARedarv(const std::string &name)
 
 Mod0AOp::Mod0AOp(const std::string &name)
 {
-	this->type = Misc::StringMapString(Mod0AOpTypeMap, name);
+	this->type = misc::StringMapString(Mod0AOpTypeMap, name);
 
 	if (this->type == Mod0AOpType::mod0aop_invalid)
 	{
@@ -378,7 +378,7 @@ Mod0CS::Mod0CS(const std::string &name)
 
 Mod0DFtzfmz::Mod0DFtzfmz(const std::string &name)
 {
-	this->type = Misc::StringMapString(Mod0DFtzfmzTypeMap, name);
+	this->type = misc::StringMapString(Mod0DFtzfmzTypeMap, name);
 
 	if (this->type == Mod0DFtzfmzType::mod0dftzfmz_invalid)
 	{
@@ -389,7 +389,7 @@ Mod0DFtzfmz::Mod0DFtzfmz(const std::string &name)
 
 ModGen0Mod1BRnd::ModGen0Mod1BRnd(const std::string &name)
 {
-	this->type = Misc::StringMapString(ModGen0Mod1BRndTypeMap, name);
+	this->type = misc::StringMapString(ModGen0Mod1BRndTypeMap, name);
 
 	if (this->type == ModGen0Mod1BRndType::modgen0mod1brnd_invalid)
 	{
@@ -421,7 +421,7 @@ Mod1ATrig::Mod1ATrig(const std::string &name)
 
 ModOffsMod1AOp::ModOffsMod1AOp(const std::string &name)
 {
-	this->type = Misc::StringMapString(ModOffsMod1AOpTypeMap, name);
+	this->type = misc::StringMapString(ModOffsMod1AOpTypeMap, name);
 
 	if (this->type == ModOffsMod1AOpType::modoffsmod1aop_invalid)
 	{

@@ -29,7 +29,7 @@
 #include "Function.h"
 
 
-using namespace Misc;
+using namespace misc;
 using namespace si2bin;
 
 namespace llvm2si
@@ -1041,7 +1041,7 @@ void BasicBlock::Emit(llvm::BasicBlock *llvm_basic_block)
 
 		case llvm::Instruction::Add:
 
-			EmitAdd(Misc::cast<llvm::BinaryOperator *>(&llvm_inst));
+			EmitAdd(misc::cast<llvm::BinaryOperator *>(&llvm_inst));
 			break;
 
 		case llvm::Instruction::Br:
@@ -1051,74 +1051,74 @@ void BasicBlock::Emit(llvm::BasicBlock *llvm_basic_block)
 
 		case llvm::Instruction::Call:
 
-			EmitCall(Misc::cast<llvm::CallInst *>(&llvm_inst));
+			EmitCall(misc::cast<llvm::CallInst *>(&llvm_inst));
 			break;
 
 		case llvm::Instruction::GetElementPtr:
 
-			EmitGetElementPtr(Misc::cast<llvm::GetElementPtrInst *>
+			EmitGetElementPtr(misc::cast<llvm::GetElementPtrInst *>
 					(&llvm_inst));
 			break;
 
 		case llvm::Instruction::ICmp:
 
-			EmitICmp(Misc::cast<llvm::ICmpInst *>(&llvm_inst));
+			EmitICmp(misc::cast<llvm::ICmpInst *>(&llvm_inst));
 			break;
 
 		case llvm::Instruction::Load:
 
-			EmitLoad(Misc::cast<llvm::LoadInst *>(&llvm_inst));
+			EmitLoad(misc::cast<llvm::LoadInst *>(&llvm_inst));
 			break;
 
 		case llvm::Instruction::Mul:
 
-			EmitMul(Misc::cast<llvm::BinaryOperator *>(&llvm_inst));
+			EmitMul(misc::cast<llvm::BinaryOperator *>(&llvm_inst));
 			break;
 
 		case llvm::Instruction::PHI:
 
-			EmitPhi(Misc::cast<llvm::PHINode *>(&llvm_inst));
+			EmitPhi(misc::cast<llvm::PHINode *>(&llvm_inst));
 			break;
 
 		case llvm::Instruction::Ret:
 
-			EmitRet(Misc::cast<llvm::ReturnInst *>(&llvm_inst));
+			EmitRet(misc::cast<llvm::ReturnInst *>(&llvm_inst));
 			break;
 
 		case llvm::Instruction::Store:
 
-			EmitStore(Misc::cast<llvm::StoreInst *>(&llvm_inst));
+			EmitStore(misc::cast<llvm::StoreInst *>(&llvm_inst));
 			break;
 
 		case llvm::Instruction::Sub:
 
-			EmitSub(Misc::cast<llvm::BinaryOperator *>(&llvm_inst));
+			EmitSub(misc::cast<llvm::BinaryOperator *>(&llvm_inst));
 			break;
 
 		case llvm::Instruction::FAdd:
 
-			EmitFAdd(Misc::cast<llvm::BinaryOperator *>(&llvm_inst));
+			EmitFAdd(misc::cast<llvm::BinaryOperator *>(&llvm_inst));
 			break;
 
 		case llvm::Instruction::FSub:
 
-			EmitFSub(Misc::cast<llvm::BinaryOperator *>(&llvm_inst));
+			EmitFSub(misc::cast<llvm::BinaryOperator *>(&llvm_inst));
 			break;
 		
 		case llvm::Instruction::FMul:
 
-			EmitFMul(Misc::cast<llvm::BinaryOperator *>(&llvm_inst));
+			EmitFMul(misc::cast<llvm::BinaryOperator *>(&llvm_inst));
 			break;
 
 		case llvm::Instruction::ExtractElement:
 			
-			EmitExtractElement(Misc::cast<llvm::ExtractElementInst *>
+			EmitExtractElement(misc::cast<llvm::ExtractElementInst *>
 					(&llvm_inst));
 			break;
 		
 		case llvm::Instruction::InsertElement:
 			
-			EmitInsertElement(Misc::cast<llvm::InsertElementInst *>
+			EmitInsertElement(misc::cast<llvm::InsertElementInst *>
 					(&llvm_inst));
 			break;
 		

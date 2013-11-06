@@ -23,11 +23,11 @@ namespace frm2bin
 /* Forward declarations */
 
 //extern Misc::StringMap arg_type_map;
-extern Misc::StringMap ArgCcopMap;
-extern Misc::StringMap ArgSpecialRegisterMap;
-extern Misc::StringMap ModDataWidthMap;
-extern Misc::StringMap ModCompMap;
-extern Misc::StringMap ModLogicTypeMap;
+extern misc::StringMap ArgCcopMap;
+extern misc::StringMap ArgSpecialRegisterMap;
+extern misc::StringMap ModDataWidthMap;
+extern misc::StringMap ModCompMap;
+extern misc::StringMap ModLogicTypeMap;
 
 class Token;
 

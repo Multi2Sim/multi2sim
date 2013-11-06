@@ -27,7 +27,7 @@
 #include <lib/cpp/Misc.h>
 
 
-using namespace Misc;
+using namespace misc;
 
 namespace llvm2si
 {

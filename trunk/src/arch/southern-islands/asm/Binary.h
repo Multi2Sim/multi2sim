@@ -33,9 +33,9 @@
 namespace SI
 {
 
-extern Misc::StringMap binary_machine_map;
-extern Misc::StringMap binary_note_map;
-extern Misc::StringMap binary_prog_info_map;
+extern misc::StringMap binary_machine_map;
+extern misc::StringMap binary_note_map;
+extern misc::StringMap binary_prog_info_map;
 
 
 struct BinaryNoteDataSegmentDesc
@@ -86,7 +86,7 @@ struct BinaryDictConsts
 	unsigned int bool_consts[32];
 };
 
-extern Misc::StringMap binary_user_data_map;
+extern misc::StringMap binary_user_data_map;
 enum BinaryUserData
 {
 	BinaryUserDataResource,               // immediate resource descriptor
@@ -204,7 +204,7 @@ class Binary : ELFReader::File
 	void ReadSegments();
 	void ReadSections();
 public:
-	static Misc::Debug debug;
+	static misc::Debug debug;
 
 	Binary(const char *buffer, unsigned int size, std::string name);
 	~Binary();

@@ -28,7 +28,7 @@
 #include "Asm.h"
 #include "Inst.h"
 
-using namespace Misc;
+using namespace misc;
 using namespace std;
 using namespace MIPS;
 
@@ -105,7 +105,7 @@ void Inst::Decode(unsigned int addr, const char *buf)
 	current_table_low = 26;
 	current_table_high = 31;
 	loop_iteration = 0;
-	table_arg = Misc::GetBits32(bytes.word, current_table_high,
+	table_arg = misc::GetBits32(bytes.word, current_table_high,
 			current_table_low);
 
 	/* Find next tables if the instruction belongs to another table */

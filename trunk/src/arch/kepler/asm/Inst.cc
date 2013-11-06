@@ -28,7 +28,7 @@
 #include "Inst.h"
 
 
-using namespace Misc;
+using namespace misc;
 using namespace std;
 
 namespace Kepler

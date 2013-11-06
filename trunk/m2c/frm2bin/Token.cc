@@ -12,7 +12,7 @@
 #include "Token.h"
 
 
-using namespace Misc;
+using namespace misc;
 
 using namespace frm2bin;
 

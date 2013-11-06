@@ -60,7 +60,7 @@ enum ArgScope
 	ArgScopeHwGDS
 };
 
-extern Misc::StringMap arg_data_type_map;
+extern misc::StringMap arg_data_type_map;
 enum ArgDataType
 {
 	ArgDataTypeInvalid = 0,

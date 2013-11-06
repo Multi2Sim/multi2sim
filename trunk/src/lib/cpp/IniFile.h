@@ -35,7 +35,7 @@ class IniFile
 	/* Case-insensitive string hash */
 	struct KeyHash
 	{
-		size_t operator()(std::string s) const { Misc::StringToLower(s);
+		size_t operator()(std::string s) const { misc::StringToLower(s);
 				return std::hash<std::string>()(s); }
 	};
 
@@ -106,7 +106,7 @@ public:
 	void WriteInt64(std::string section, std::string var, long long value);
 	void WriteBool(std::string section, std::string var, bool value);
 	void WriteDouble(std::string section, std::string var, double value);
-	void WriteEnum(std::string section, std::string var, int value, Misc::StringMap map);
+	void WriteEnum(std::string section, std::string var, int value, misc::StringMap map);
 	void WritePointer(std::string section, std::string var, void *value);
 
 	/* Read variables from a section. If a section or variable does not exist, the
@@ -117,7 +117,7 @@ public:
 	long long ReadInt64(std::string section, std::string var, long long def = 0);
 	bool ReadBool(std::string section, std::string var, bool def = false);
 	double ReadDouble(std::string section, std::string var, double def = 0.0);
-	int ReadEnum(std::string section, std::string var, Misc::StringMap map, int def = 0);
+	int ReadEnum(std::string section, std::string var, misc::StringMap map, int def = 0);
 	void *ReadPointer(std::string section, std::string var, void *def = NULL);
 
 	/* Allowed/mandatory sections/variables */

@@ -23,7 +23,7 @@
 #include "Node.h"
 
 
-using namespace Misc;
+using namespace misc;
 
 namespace Common
 {
