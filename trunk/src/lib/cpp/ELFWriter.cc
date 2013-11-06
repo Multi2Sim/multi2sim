@@ -25,69 +25,57 @@
 #include "Misc.h"
 
 
-using namespace ELFWriter;
 using namespace Misc;
-using namespace std;
 
+
+namespace ELFWriter
+{
 
 /*
  * Class 'Buffer'
  */
 
-Buffer::Buffer(File *file, unsigned int index)
-{
-	this->file = file;
-	this->index = index;
-}
-	
-unsigned int Buffer::Size()
+size_t Buffer::getSize()
 {
 	unsigned int pos;
 	unsigned int size;
 
 	pos = stream.tellp();
-	stream.seekp(0, ios_base::end);
+	stream.seekp(0, std::ios_base::end);
 	size = stream.tellp();
-	stream.seekp(pos, ios_base::beg);
+	stream.seekp(pos, std::ios_base::beg);
 	return size;
 }
 
 
-void Buffer::Dump(ostream& os)
+void Buffer::Dump(std::ostream &os) const
 {
-	unsigned int i;
-	unsigned int j;
-	unsigned char c;
-	string s;
-	
-	/* Empty buffer */
-	s = stream.str();
+	// Empty buffer
+	std::string s = stream.str();
 	if (!s.length())
 	{
 		os << "\nBuffer is empty\n\n";
 		return;
 	}
 
-	/* Print buffer */
-	for (i = 0; i < s.length(); i += 16)
+	// Print buffer
+	for (unsigned i = 0; i < s.length(); i += 16)
 	{
-		/* Print offset */
-		os << setw(8) << setfill('0') << hex << i << ' '
-				<< setfill(' ') << dec;
+		// Print offset
+		os << StringFormat("%08x ", i);
 
-		/* Print hex bytes */
-		for (j = 0; j < 16; j++)
+		// Print hex bytes
+		for (int j = 0; j < 16; j++)
 		{
-			/* Space every 8 bytes */
+			// Space every 8 bytes
 			if (!(j % 8))
 				os << ' ';
 
-			/* Print hex values */
+			// Print hex values
 			if (i + j < s.length())
 			{
-				c = s[i + j];
-				os << setw(2) << setfill('0') << hex << (int) c
-						<< ' ' << setfill(' ') << dec;
+				unsigned char c = s[i + j];
+				os << StringFormat("%02x ", (int) c);
 			}
 			else
 			{
@@ -95,16 +83,16 @@ void Buffer::Dump(ostream& os)
 			}
 		}
 
-		/* Print character bytes */
+		// Print character bytes
 		os << " |";
-		for (j = 0; j < 16; j++)
+		for (int j = 0; j < 16; j++)
 		{
-			/* End of buffer reached */
+			// End of buffer reached
 			if (i + j >= s.length())
 				break;
 
-			/* Print character */
-			c = s[i + j];
+			// Print character
+			unsigned char c = s[i + j];
 			if (c < 32 || c > 127)
 				c = '.';
 			os << c;
@@ -123,7 +111,7 @@ void Buffer::Dump(ostream& os)
  */
 
 Section::Section(File *file, std::string name, Buffer *first_buffer,
-		Buffer *last_buffer, unsigned int index)
+		Buffer *last_buffer, int index)
 {
 	this->file = file;
 	this->name = name;
@@ -132,28 +120,24 @@ Section::Section(File *file, std::string name, Buffer *first_buffer,
 	this->index = index;
 	info = { 0 };
 
-	/* Check ordered indices */
-	if (last_buffer->GetIndex() < first_buffer->GetIndex())
+	// Check ordered indices
+	if (last_buffer->getIndex() < first_buffer->getIndex())
 		fatal("%s: invalid buffer order", __FUNCTION__);
 }
 
 
-void Section::Dump(std::ostream& os)
+void Section::Dump(std::ostream &os) const
 {
-	Buffer *buffer;
-
-	int first;
-	int last;
-	int i;
-
-	/* Dump section */
-	first = first_buffer->GetIndex();
-	last = last_buffer->GetIndex();
+	// Dump section
+	int first = first_buffer->getIndex();
+	int last = last_buffer->getIndex();
 	os << "Dumping section '" << name << "' (buffers " << first <<
 			last << ")\n";
-	for (i = first; i <= last; i++)
+
+	// Dump buffers
+	for (int i = first; i <= last; i++)
 	{
-		buffer = file->GetBuffer(i);
+		Buffer *buffer = file->getBuffer(i);
 		os << "  Dumping buffer " << i << ":\n";
 		buffer->Dump(os);
 	}
@@ -167,7 +151,7 @@ void Section::Dump(std::ostream& os)
  */
 
 Segment::Segment(File *file, std::string name, Buffer *first_buffer,
-		Buffer *last_buffer, unsigned int index)
+		Buffer *last_buffer, int index)
 {
 	this->file = file;
 	this->name = name;
@@ -178,22 +162,18 @@ Segment::Segment(File *file, std::string name, Buffer *first_buffer,
 }
 
 
-void Segment::Dump(std::ostream& os)
+void Segment::Dump(std::ostream &os) const
 {
-	Buffer *buffer;
-
-	int first;
-	int last;
-	int i;
-
-	/* Dump section */
-	first = first_buffer->GetIndex();
-	last = last_buffer->GetIndex();
+	// Dump segment
+	int first = first_buffer->getIndex();
+	int last = last_buffer->getIndex();
 	os << "Dumping segment '" << name << "' (buffers " << first <<
 			last << ")\n";
-	for (i = first; i <= last; i++)
+
+	// Buffers
+	for (int i = first; i <= last; i++)
 	{
-		buffer = file->GetBuffer(i);
+		Buffer *buffer = file->getBuffer(i);
 		os << "  Dumping buffer " << i << ":\n";
 		buffer->Dump(os);
 	}
@@ -202,44 +182,33 @@ void Segment::Dump(std::ostream& os)
 
 
 /*
- * Class 'Symbol'
- */
-
-Symbol::Symbol(string name)
-{
-	this->name = name;
-	info = { 0 };
-}
-
-
-
-
-/*
  * Class 'SymbolTable'
  */
 
-SymbolTable::SymbolTable(File *file, string symtab, string strtab)
+SymbolTable::SymbolTable(File *file, const std::string &symtab,
+		const std::string &strtab)
 {
+	// Initialize
 	this->file = file;
 
-	/* Create associated buffers and sections */
+	// Create associated buffers and sections
 	symtab_buffer = file->NewBuffer();
 	strtab_buffer = file->NewBuffer();
 	symtab_section = file->NewSection(symtab, symtab_buffer, symtab_buffer);
 	strtab_section = file->NewSection(strtab, strtab_buffer, strtab_buffer);
 	
-	/* Set symtab and strtab properties */
-	symtab_section->SetType(SHT_SYMTAB);
-	strtab_section->SetType(SHT_STRTAB);
-	symtab_section->SetEntsize(sizeof(Elf32_Sym));
-	symtab_section->SetLink(strtab_section->GetIndex());
+	// Set symtab and strtab properties
+	symtab_section->setType(SHT_SYMTAB);
+	strtab_section->setType(SHT_STRTAB);
+	symtab_section->setEntSize(sizeof(Elf32_Sym));
+	symtab_section->setLink(strtab_section->getIndex());
 
-	/* Add a null symbol */
+	// Add a null symbol
 	NewSymbol("");
 }
 
 
-Symbol *SymbolTable::NewSymbol(std::string name)
+Symbol *SymbolTable::NewSymbol(const std::string &name)
 {
 	
 	symbols.push_back(std::unique_ptr<Symbol>(new Symbol(name)));
@@ -249,17 +218,17 @@ Symbol *SymbolTable::NewSymbol(std::string name)
 
 void SymbolTable::Generate()
 {
-	/* Populate symtab and strtab buffers */
+	// Populate symtab and strtab buffers
 	symtab_buffer->Clear();
 	strtab_buffer->Clear();
 	for (auto &symbol : symbols)
 	{
-		/* Update offset for symbol name, pointing to the current end of
-		 * the strtab buffer. */
-		symbol->info.st_name = strtab_buffer->Size();
+		// Update offset for symbol name, pointing to the current end of
+		// the strtab buffer. */
+		symbol->info.st_name = strtab_buffer->getSize();
 
-		/* Write symbol into symtab buffer and symbol name into the
-		 * strtab buffer */
+		// Write symbol into symtab buffer and symbol name into the
+		// strtab buffer */
 		symtab_buffer->Write((char *) &symbol->info, sizeof(Elf32_Sym));
 		strtab_buffer->Write(symbol->name.c_str(),
 				symbol->name.length() + 1);
@@ -275,27 +244,21 @@ void SymbolTable::Generate()
 
 File::File()
 {
-	Buffer *null_buffer;
-	Section *null_section;
-
-	Buffer *shstrtab_buffer;
-	Section *shstrtab_section;
-
-	/* Initialize */
+	// Initialize
 	memset(&info, 0, sizeof info);
 
-	/* Create null section */
-	null_buffer = NewBuffer();
-	null_section = NewSection("", null_buffer, null_buffer);
+	// Create null section
+	Buffer *null_buffer = NewBuffer();
+	Section *null_section = NewSection("", null_buffer, null_buffer);
 
-	/* Create section string table */
-	shstrtab_buffer = NewBuffer();
-	shstrtab_section = NewSection(".shstrtab", shstrtab_buffer,
+	// Create section string table
+	Buffer *shstrtab_buffer = NewBuffer();
+	Section *shstrtab_section = NewSection(".shstrtab", shstrtab_buffer,
 			shstrtab_buffer);
 	shstrtab_section->info.sh_name = 1;
 	shstrtab_section->info.sh_type = SHT_STRTAB;
 	
-	/* Write null section and shstrtab names into buffer */
+	// Write null section and shstrtab names into buffer
 	shstrtab_buffer->Write(null_section->name.c_str(),
 			null_section->name.length() + 1);
 	shstrtab_buffer->Write(shstrtab_section->name.c_str(),
@@ -311,7 +274,7 @@ Buffer *ELFWriter::File::NewBuffer()
 }
 
 
-Segment *File::NewSegment(string name, Buffer *first, Buffer *last)
+Segment *File::NewSegment(const std::string &name, Buffer *first, Buffer *last)
 {
 	segments.push_back(std::unique_ptr<Segment>(new Segment(this, name,
 			first, last, segments.size())));
@@ -319,27 +282,28 @@ Segment *File::NewSegment(string name, Buffer *first, Buffer *last)
 }
 
 
-Section *File::NewSection(string name, Buffer *first, Buffer *last)
+Section *File::NewSection(const std::string &name, Buffer *first, Buffer *last)
 {
-	/* Add to list and set index */
+	// Add to list and set index
 	sections.push_back(std::unique_ptr<Section>(new Section(this, name,
 			first, last, sections.size())));
 	Section *section = sections.back().get();
 
-	/* Store section name */
+	// Store section name
 	if (sections.size() > 2)
 	{
 		Buffer *shstrtab_buffer = buffers[1].get();
-		section->info.sh_name = shstrtab_buffer->Size();
+		section->info.sh_name = shstrtab_buffer->getSize();
 		shstrtab_buffer->Write(name.c_str(), name.length() + 1);
 	}
 
-	/* Return section */
+	// Return section
 	return section;
 }
 
 
-SymbolTable *File::NewSymbolTable(string symtab, string strtab)
+SymbolTable *File::NewSymbolTable(const std::string &symtab,
+		const std::string &strtab)
 {
 	symbol_tables.push_back(std::unique_ptr<SymbolTable>(new
 			SymbolTable(this, symtab, strtab)));
@@ -347,37 +311,30 @@ SymbolTable *File::NewSymbolTable(string symtab, string strtab)
 }
 
 
-void File::Generate(ostream& os)
+void File::Generate(std::ostream& os)
 {
-	unsigned int phtab_size;
-	unsigned int shtab_size;
-	unsigned int buf_offset;
-
-	unsigned int i;
-	unsigned int j;
-
-	/* ELF Magic Characters */
+	// ELF Magic Characters
 	info.e_ident[0] = ELFMAG0;
 	info.e_ident[1] = ELFMAG1;
 	info.e_ident[2] = ELFMAG2;
 	info.e_ident[3] = ELFMAG3;
 
-	/* Set remaining e_ident properties - e_ident[7-15] is padding */
+	// Set remaining e_ident properties - e_ident[7-15] is padding
 	info.e_ident[4] = ELFCLASS32;
 	info.e_ident[5] = ELFDATA2LSB;
 	info.e_ident[6] = EV_CURRENT;
 	info.e_ident[16] = EI_NIDENT;
 	info.e_type = ET_EXEC;
 	
-	/* Set ELF Header Properties for sections. Use elf.h structs for
-	 * shentsize and ehsize */
+	// Set ELF Header Properties for sections. Use elf.h structs for
+	// shentsize and ehsize
 	info.e_shentsize = sizeof(Elf32_Shdr);
 	info.e_shnum = sections.size();
 	info.e_shstrndx = 1;
 	info.e_ehsize = sizeof(Elf32_Ehdr);
 
-	/* Set ELF Header Properties for segments - If there are no segments,
-	 * even the phentsize should be zero */
+	// Set ELF Header Properties for segments - If there are no segments,
+	// even the phentsize should be zero
 	if (segments.size())
 	{	
 		info.e_phoff = sizeof(Elf32_Ehdr);
@@ -385,89 +342,91 @@ void File::Generate(ostream& os)
 		info.e_phentsize = sizeof(Elf32_Phdr);
 	}
 	
-	/* Calculate Program Header and Section Header table size - Actual
-	 * header tables are created at the end */
-	phtab_size = sizeof(Elf32_Phdr) * segments.size();
-	shtab_size = sizeof(Elf32_Shdr) * sections.size();
+	// Calculate Program Header and Section Header table size - Actual
+	// header tables are created at the end
+	unsigned phtab_size = sizeof(Elf32_Phdr) * segments.size();
+	unsigned shtab_size = sizeof(Elf32_Shdr) * sections.size();
 
-	/* Find segment offsets */
+	// Find segment offsets
 	for (auto &segment : segments)
 	{
-		buf_offset = 0;
-		for (j = 0; j < segment->first_buffer->index; j++)
-			buf_offset += buffers[j]->Size();
+		unsigned buf_offset = 0;
+		for (int j = 0; j < segment->first_buffer->index; j++)
+			buf_offset += buffers[j]->getSize();
 		
 		/* Add up all offsets to find segment offset */
 		segment->info.p_offset = sizeof(Elf32_Ehdr) +
 				phtab_size + buf_offset;
 	}
 		
-	/* Find actual segment sizes */
+	// Find actual segment sizes
 	for (auto &segment : segments)
 	{
-		for (j = segment->first_buffer->index;
+		for (int j = segment->first_buffer->index;
 				j <= segment->last_buffer->index; j++)
 		{
-			segment->info.p_filesz += buffers[j]->Size();
+			segment->info.p_filesz += buffers[j]->getSize();
 			if (segment->info.p_type == PT_LOAD)
-				segment->info.p_memsz += buffers[j]->Size();
+				segment->info.p_memsz += buffers[j]->getSize();
 		}
 	}
 	
-	/* Find section offsets */
+	// Find section offsets
 	for (auto &section : sections)
 	{
-		buf_offset = 0;
-		for (j = 0; j < section->first_buffer->index; j++)
-			buf_offset += buffers[j]->Size();
+		unsigned buf_offset = 0;
+		for (int j = 0; j < section->first_buffer->index; j++)
+			buf_offset += buffers[j]->getSize();
 		section->info.sh_offset = sizeof(Elf32_Ehdr) +
 				phtab_size + buf_offset;
 	}
 	
-	/* Null section should not have an offset */
+	// Null section should not have an offset
 	sections[0]->info.sh_offset = 0;
 		
-	/* Find actual section sizes */
+	// Find actual section sizes
 	for (auto &section : sections)
 	{
-		for (j = section->first_buffer->index;
+		for (int j = section->first_buffer->index;
 				j <= section->last_buffer->index; j++)
-			section->info.sh_size += buffers[j]->Size();
+			section->info.sh_size += buffers[j]->getSize();
 	}
 
-	/* Create Section Header Table */
+	// Create Section Header Table
 	Elf32_Shdr shtab[sections.size()];
-	for (i = 0; i < sections.size(); i++)
+	for (unsigned i = 0; i < sections.size(); i++)
 		shtab[i] = sections[i]->info;
 
-	/* Create program header table */
+	// Create program header table
 	Elf32_Phdr phtab[segments.size()];
-	for (i = 0; i < segments.size(); i++)
+	for (unsigned i = 0; i < segments.size(); i++)
 		phtab[i] = segments[i]->info;
 	
-	/* Calculate total size of buffers. Needed to calculate offset 
-	 * for section header table. Section header table is typically 
-	 * at the end (though not required). */
-	buf_offset = 0;
-	for (i = 0; i < buffers.size(); i++)
-		buf_offset += buffers[i]->Size();
+	// Calculate total size of buffers. Needed to calculate offset
+	// for section header table. Section header table is typically
+	// at the end (though not required).
+	unsigned buf_offset = 0;
+	for (unsigned i = 0; i < buffers.size(); i++)
+		buf_offset += buffers[i]->getSize();
 	info.e_shoff = sizeof(Elf32_Ehdr) + phtab_size + buf_offset;
 	
-	/* Write headers, sections, etc. into buffer */
+	// Write headers, sections, etc. into buffer
 	os.write((char *) &info, sizeof(Elf32_Ehdr));
 	os.write((char *) phtab, phtab_size);
-	for (i = 0; i < buffers.size(); i++)
-		os << buffers[i]->GetStream().str();
+	for (unsigned i = 0; i < buffers.size(); i++)
+		os << buffers[i]->getStream().str();
 	os.write((char *) shtab, shtab_size);
 }
 
 
-void File::Generate(string path)
+void File::Generate(const std::string &path)
 {
-	ofstream of(path);
+	std::ofstream of(path);
 	if (!of)
 		fatal("%s: cannot write to file", path.c_str());
 	Generate(of);
 	of.close();
 }
 
+
+}  /* namespace ELFWriter */
