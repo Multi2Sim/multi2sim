@@ -7,10 +7,9 @@
 
 #include <lib/cpp/Misc.h>
 #include "Arg.h"
+#include "Token.h"
 
 using namespace misc;
-
-extern StringMap TokenTypeMap;
 
 namespace frm2bin
 {
