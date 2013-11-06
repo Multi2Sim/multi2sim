@@ -499,15 +499,15 @@ void Asm::DisassembleBinary(const std::string &path)
 	Inst inst(this);
 
 	/* Read Sections */
-	for (int i = 0; i < f.GetNumSections(); i++)
+	for (int i = 0; i < f.getNumSections(); i++)
 	{
 		/* Get section and skip it if it does not contain code */
-		ELFReader::Section *section = f.GetSection(i);
-		if (!(section->GetFlags() & SHF_EXECINSTR))
+		ELFReader::Section *section = f.getSection(i);
+		if (!(section->getFlags() & SHF_EXECINSTR))
 			continue;
 
 		/* Set section name (get rid of .text.) */
-		std::string title = section->GetName();
+		std::string title = section->getName();
 		if (Misc::StringPrefix(title, ".text."))
 			title.erase(0, 6);
 
@@ -516,10 +516,10 @@ void Asm::DisassembleBinary(const std::string &path)
 		std::cout << "\n\t\tFunction : " << title;
 
 		/* Decode and dump instructions */
-		for (size_t pos = 0; pos < section->GetSize(); pos += 8)
+		for (size_t pos = 0; pos < section->getSize(); pos += 8)
 		{
 			/* Decode and dump */
-			inst.Decode(section->GetBuffer() + pos, section->GetAddr() + pos);
+			inst.Decode(section->getBuffer() + pos, section->getAddr() + pos);
 			inst.DumpHex(std::cout);
 			inst.Dump(std::cout);
 		}

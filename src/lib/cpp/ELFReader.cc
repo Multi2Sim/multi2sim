@@ -27,7 +27,6 @@
 #include "Misc.h"
 
 
-using namespace std;
 using namespace Misc;
 
 
@@ -44,10 +43,10 @@ namespace ELFReader
 Section::Section(File *file, int index, unsigned int pos)
 {
 	/* Read section header */
-	info = (Elf32_Shdr *) (file->GetBuffer() + pos);
-	if (pos < 0 || pos + sizeof(Elf32_Shdr) > file->GetSize())
+	info = (Elf32_Shdr *) (file->getBuffer() + pos);
+	if (pos < 0 || pos + sizeof(Elf32_Shdr) > file->getSize())
 		fatal("%s: invalid position for section header",
-				file->GetPath().c_str());
+				file->getPath().c_str());
 
 	/* Initialize */
 	this->file = file;
@@ -60,12 +59,12 @@ Section::Section(File *file, int index, unsigned int pos)
 	if (info->sh_type != 8)
 	{
 		/* Check valid range */
-		if (info->sh_offset + info->sh_size > file->GetSize())
+		if (info->sh_offset + info->sh_size > file->getSize())
 			fatal("%s: section out of range",
-					file->GetPath().c_str());
+					file->getPath().c_str());
 
 		/* Set up buffer and stream */
-		buffer = file->GetBuffer() + info->sh_offset;
+		buffer = file->getBuffer() + info->sh_offset;
 	}
 }
 
@@ -83,28 +82,28 @@ ProgramHeader::ProgramHeader(File *file, int index, unsigned int pos)
 	this->index = index;
 
 	/* Read program header */
-	info = (Elf32_Phdr *) (file->GetBuffer() + pos);
-	if (pos < 0 || pos + sizeof(Elf32_Phdr) > file->GetSize())
+	info = (Elf32_Phdr *) (file->getBuffer() + pos);
+	if (pos < 0 || pos + sizeof(Elf32_Phdr) > file->getSize())
 		fatal("%s: invalid position for program header",
-				file->GetPath().c_str());
+				file->getPath().c_str());
 
 	/* File content */
 	size = info->p_filesz;
-	buffer = file->GetBuffer() + info->p_offset;
+	buffer = file->getBuffer() + info->p_offset;
 }
 
 
-void ProgramHeader::GetStream(std::istringstream& stream, unsigned int offset,
-		unsigned int size)
+void ProgramHeader::getStream(std::istringstream &stream, unsigned int offset,
+		unsigned int size) const
 {
 	/* Check valid offset/size */
 	if (offset + size > this->size)
 		fatal("%s: %s: invalid offset/size",
-				file->GetPath().c_str(),
+				file->getPath().c_str(),
 				__FUNCTION__);
 
 	/* Set substream */
-	stringbuf *buf = stream.rdbuf();
+	std::stringbuf *buf = stream.rdbuf();
 	buf->pubsetbuf(buffer + offset, size);
 }
 
@@ -121,33 +120,33 @@ Symbol::Symbol(File *file, Section *section, unsigned int pos)
 	this->file = file;
 
 	/* Read symbol */
-	info = (Elf32_Sym *) (section->GetBuffer() + pos);
-	if (pos < 0 || pos + sizeof(Elf32_Sym) > section->GetSize())
+	info = (Elf32_Sym *) (section->getBuffer() + pos);
+	if (pos < 0 || pos + sizeof(Elf32_Sym) > section->getSize())
 		fatal("%s: invalid position for symbol",
-				file->GetPath().c_str());
+				file->getPath().c_str());
 
 	/* Get section with symbol name */
-	unsigned name_section_index = section->GetLink();
-	Section *name_section = file->GetSection(name_section_index);
+	unsigned name_section_index = section->getLink();
+	Section *name_section = file->getSection(name_section_index);
 	if (!name_section)
 		fatal("%s: invalid index for symbol name section",
-				file->GetPath().c_str());
+				file->getPath().c_str());
 
 	/* Get symbol name */
-	if (info->st_name >= name_section->GetSize())
+	if (info->st_name >= name_section->getSize())
 		fatal("%s: invalid symbol name offset",
-				file->GetPath().c_str());
-	name = name_section->GetBuffer() + info->st_name;
+				file->getPath().c_str());
+	name = name_section->getBuffer() + info->st_name;
 
 	/* Get section in 'st_shndx' */
-	this->section = file->GetSection(info->st_shndx);
+	this->section = file->getSection(info->st_shndx);
 
 	/* If symbol points to a valid region of the section, set
 	 * variable buffer. */
 	buffer = NULL;
 	if (this->section && info->st_value + info->st_size <=
-			this->section->GetSize())
-		buffer = this->section->GetBuffer();
+			this->section->getSize())
+		buffer = this->section->getBuffer();
 }
 
 
@@ -177,24 +176,24 @@ bool Symbol::Compare(const std::unique_ptr<Symbol>& a,
 }
 
 
-void Symbol::GetStream(std::istringstream& stream, unsigned int offset,
-		unsigned int size)
+void Symbol::getStream(std::istringstream &stream, unsigned int offset,
+		unsigned int size) const
 {
 	/* Symbol without content */
 	if (!buffer)
 		fatal("%s: %s: symbol '%s' does not have any valid content",
-				file->GetPath().c_str(), __FUNCTION__,
+				file->getPath().c_str(), __FUNCTION__,
 				name.c_str());
 
 	/* Check valid offset/size */
 	if (offset + size > info->st_size)
 		fatal("%s: symbol '%s': %s: invalid offset/size",
-				file->GetPath().c_str(), name.c_str(),
+				file->getPath().c_str(), name.c_str(),
 				__FUNCTION__);
 
 	/* Set substream */
-	stringbuf *buf = stream.rdbuf();
-	buf->pubsetbuf(buffer + offset, size);
+	std::stringbuf *buf = stream.rdbuf();
+	buf->pubsetbuf(const_cast<char *>(buffer) + offset, size);
 }
 
 
@@ -292,7 +291,7 @@ void File::ReadSymbols()
 		for (int i = 0; i < num_symbols; i++)
 		{
 			/* Create symbol */
-			auto symbol = unique_ptr<Symbol>(new Symbol(this,
+			auto symbol = std::unique_ptr<Symbol>(new Symbol(this,
 					section.get(), i * sizeof(Elf32_Sym)));
 
 			/* Discard empty symbol */
@@ -300,7 +299,7 @@ void File::ReadSymbols()
 				continue;
 
 			/* Add symbol */
-			symbols.push_back(move(symbol));
+			symbols.push_back(std::move(symbol));
 		}
 	}
 
@@ -315,14 +314,14 @@ File::File(std::string path)
 	this->path = path;
 
 	/* Open file */
-	ifstream f(path);
+	std::ifstream f(path);
 	if (!f)
 		fatal("%s: cannot open file", path.c_str());
 
 	/* Get file size */
-	f.seekg(0, ios_base::end);
+	f.seekg(0, std::ios_base::end);
 	size = f.tellg();
-	f.seekg(0, ios_base::beg);
+	f.seekg(0, std::ios_base::beg);
 
 	/* Load entire file into buffer and close */
 	buffer = new char[size];
@@ -330,7 +329,7 @@ File::File(std::string path)
 	f.close();
 
 	/* Make string stream point to buffer */
-	stringbuf *buf = stream.rdbuf();
+	std::stringbuf *buf = stream.rdbuf();
 	buf->pubsetbuf(buffer, size);
 
 	/* Read content */
@@ -352,7 +351,7 @@ File::File(const char *buffer, unsigned int size)
 	memcpy(this->buffer, buffer, size);
 
 	/* Make string stream point to buffer */
-	stringbuf *buf = stream.rdbuf();
+	std::stringbuf *buf = stream.rdbuf();
 	buf->pubsetbuf(this->buffer, size);
 
 	/* Read content */
@@ -370,7 +369,7 @@ File::~File(void)
 }
 
 
-ostream &operator<<(ostream &os, const File &file)
+std::ostream &operator<<(std::ostream &os, const File &file)
 {
 	/* Header */
 	os << "ELF header:\n";
@@ -379,7 +378,7 @@ ostream &operator<<(ostream &os, const File &file)
 			", EI_VERSION=" << (int) file.info->e_ident[6] << "\n";
 	os << "  ehdr.e_type: " << file.info->e_type << "\n";
 	os << "  ehdr.e_machine: " << file.info->e_machine << "\n";
-	os << "  ehdr.e_entry: 0x" << hex << file.info->e_entry << "\n";
+	os << StringFormat("  ehdr.e_entry: 0x%x\n", file.info->e_entry);
 	os << "  ehdr.e_phoff: " << file.info->e_phoff << "\n";
 	os << "  ehdr.e_shoff: " << file.info->e_shoff << "\n";
 	os << "  ehdr.e_phentsize: " << file.info->e_phentsize << "\n";
@@ -392,17 +391,17 @@ ostream &operator<<(ostream &os, const File &file)
 	/* Dump section headers */
 	os << "Section headers:\n";
 	os << "  [Nr] type flags addr     offset        size     link name\n";
-	os << string(80, '-') << '\n';
+	os << std::string(80, '-') << '\n';
 	for (auto &section : file.sections)
 	{
-		os << "  [" << setw(2) << section->GetIndex() << "] ";
-		os << setw(4) << section->GetType() << ' ';
-		os << setw(5) << section->GetFlags() << ' ';
-		os << setfill('0') << setw(8) << section->GetAddr() << ' ';
-		os << setw(8) << section->GetOffset() << ' ';
-		os << setfill(' ') << setw(9) << section->GetSize() << ' ';
-		os << setw(8) << section->GetLink() << ' ';
-		os << section->GetName();
+		os << StringFormat("  [%2d]", section->getIndex());
+		os << StringFormat("%4d ", section->getType());
+		os << StringFormat("%5x ", section->getFlags());
+		os << StringFormat("%08x ", section->getAddr());
+		os << StringFormat("%08x ", section->getOffset());
+		os << StringFormat("%9x ", section->getSize());
+		os << StringFormat("%8d ", section->getLink());
+		os << section->getName();
 		os << '\n';
 	}
 	os << '\n';
@@ -411,50 +410,44 @@ ostream &operator<<(ostream &os, const File &file)
 	os << "Program headers:\n";
 	os << "idx type       offset   vaddr    paddr     "
 			<< "filesz     memsz  flags align\n";
-	os << string(80, '-') << '\n';
+	os << std::string(80, '-') << '\n';
 	for (auto &ph : file.program_headers)
 	{
-		os << setw(3) << ph->GetIndex() << ' ';
-		os << setw(8) << hex << ph->GetType() << ' ' << dec;
-		os << setw(8) << hex << ph->GetOffset() << ' ' << dec;
-		os << setw(8) << hex << ph->GetVaddr() << ' ' << dec;
-		os << setw(8) << hex << ph->GetPaddr() << ' ' << dec;
-		os << setw(9) << ph->GetFilesz() << ' ';
-		os << setw(9) << ph->GetMemsz() << ' ';
-		os << setw(6) << ph->GetFlags() << ' ';
-		os << ph->GetAlign() << ' ';
+		os << StringFormat("%3d ", ph->getIndex());
+		os << StringFormat("%8x ", ph->getType());
+		os << StringFormat("%8x ", ph->getOffset());
+		os << StringFormat("%8x ", ph->getVaddr());
+		os << StringFormat("%8x ", ph->getPaddr());
+		os << StringFormat("%9u ", ph->getFilesz());
+		os << StringFormat("%9u ", ph->getMemsz());
+		os << StringFormat("%6u ", ph->getFlags());
+		os << ph->getAlign() << ' ';
 		os << '\n';
 	}
 	os << '\n';
 
 	/* Dump */
 	os << "Symbol table:\n";
-	os << setw(40) << "name" << " "
-			<< setw(15) << "section" << " "
-			<< setw(12) << "value" << " "
-			<< setw(12) << "size" << " "
-			<< setw(10) << "info" << " "
-			<< setw(10) << "other" << '\n';
-	os << string(80, '-') << '\n';
+	os << StringFormat("%-40s %-15s %-12s %-12s %-10s %-10s",
+			"name", "section", "value", "size", "info", "other");
+	os << std::string(80, '-') << '\n';
 	for (auto &symbol : file.symbols)
 	{
 		/* Symbol name */
-		os << setiosflags(ios::left);
-		os << setw(40) << setiosflags(ios::left) << symbol->GetName() << " ";
-		os << resetiosflags(ios::left);
+		os << StringFormat("%-40s ", symbol->getName().c_str());
 
 		/* Print section */
-		Section *section = symbol->GetSection();
+		Section *section = symbol->getSection();
 		if (section)
-			os << setw(15) << section->GetName() << " ";
+			os << StringFormat("%-15s ", section->getName().c_str());
 		else
-			os << setw(15) << symbol->GetShndx() << " ";
+			os << StringFormat("%-15d ", symbol->getShndx());
 
 		/* Rest */
-		os << setw(10) << hex << symbol->GetValue() << ' ';
-		os << setw(12) << symbol->GetSize() << ' ';
-		os << setw(10) << (int) symbol->GetInfo() << ' ';
-		os << setw(10) << (int) symbol->GetOther() << ' ';
+		os << StringFormat("%-10x ", symbol->getValue());
+		os << StringFormat("%-12u ", symbol->getSize());
+		os << StringFormat("%-10u ", symbol->getInfo());
+		os << StringFormat("%-10u ", symbol->getOther());
 		os << '\n';
 	}
 	os << '\n';
@@ -464,7 +457,7 @@ ostream &operator<<(ostream &os, const File &file)
 }
 
 
-Symbol *File::GetSymbol(string name)
+Symbol *File::getSymbol(const std::string &name) const
 {
 	/* Search */
 	for (auto &symbol : symbols)
@@ -476,8 +469,8 @@ Symbol *File::GetSymbol(string name)
 }
 
 
-void File::GetStream(std::istringstream& stream, unsigned int offset,
-		unsigned int size)
+void File::getStream(std::istringstream &stream, unsigned int offset,
+		unsigned int size) const
 {
 	/* Check valid offset/size */
 	if (offset + size > this->size)
@@ -485,27 +478,21 @@ void File::GetStream(std::istringstream& stream, unsigned int offset,
 				path.c_str(), __FUNCTION__);
 
 	/* Set substream */
-	stringbuf *buf = stream.rdbuf();
+	std::stringbuf *buf = stream.rdbuf();
 	buf->pubsetbuf(buffer + offset, size);
 }
 
 
-Symbol *File::GetSymbolByAddress(unsigned int address)
+Symbol *File::getSymbolByAddress(unsigned int address) const
 {
 	unsigned int offset;
-	return GetSymbolByAddress(address, offset);
+	return getSymbolByAddress(address, offset);
 }
 
 
-Symbol *File::GetSymbolByAddress(unsigned int address, unsigned int &offset)
+Symbol *File::getSymbolByAddress(unsigned int address,
+		unsigned int &offset) const
 {
-	Symbol *symbol;
-	Symbol *prev_symbol;
-	
-	int min;
-	int max;
-	int mid;
-
 	/* Empty symbol table */
 	if (!symbols.size())
 		return NULL;
@@ -515,12 +502,12 @@ Symbol *File::GetSymbolByAddress(unsigned int address, unsigned int &offset)
 		return NULL;
 
 	/* Binary search */
-	min = 0;
-	max = symbols.size();
+	int min = 0;
+	int max = symbols.size();
 	while (min + 1 < max)
 	{
-		mid = (max + min) / 2;
-		symbol = symbols[mid].get();
+		int mid = (max + min) / 2;
+		Symbol *symbol = symbols[mid].get();
 		if (symbol->info->st_value > address)
 		{
 			max = mid;
@@ -537,7 +524,7 @@ Symbol *File::GetSymbolByAddress(unsigned int address, unsigned int &offset)
 	}
 
 	/* Invalid symbol */
-	symbol = symbols[min].get();
+	Symbol *symbol = symbols[min].get();
 	if (!symbol->info->st_value)
 		return NULL;
 
@@ -550,7 +537,7 @@ Symbol *File::GetSymbolByAddress(unsigned int address, unsigned int &offset)
 			break;
 
 		/* If address is lower, stop */
-		prev_symbol = symbols[min].get();
+		Symbol *prev_symbol = symbols[min].get();
 		if (prev_symbol->info->st_value != symbol->info->st_value)
 			break;
 

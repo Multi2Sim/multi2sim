@@ -1103,7 +1103,7 @@ static int opencl_abi_si_ndrange_create_impl(X86Context *ctx)
 
 	/* Set up instruction memory */
 	/* Initialize wavefront instruction buffer and PC */
-	char *text_buffer = SIBinaryDictEntryGetTextBuffer(si_dict_entry);
+	const char *text_buffer = SIBinaryDictEntryGetTextBuffer(si_dict_entry);
 	unsigned int text_size = SIBinaryDictEntryGetTextSize(si_dict_entry);
 	if (!text_size)
 		fatal("%s: cannot load kernel code", __FUNCTION__);

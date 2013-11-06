@@ -387,7 +387,7 @@ public:
 	 * 'bytes' and 'info' of the instruction object. Argument 'addr' passes the
 	 * virtual address of the instruction for branch decoding purposes, and it is
 	 * copied to the 'addr' field of the instruction. */
-	void Decode(unsigned int addr, void *ptr);
+	void Decode(unsigned int addr, const char *ptr);
 
 	/* Getters */
 	std::string GetName() { return info ? info->name : "<unknown>"; }
