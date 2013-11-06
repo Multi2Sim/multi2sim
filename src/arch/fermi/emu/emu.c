@@ -56,7 +56,7 @@ void FrmEmuCreate(FrmEmu *self, struct FrmAsmWrap *as)
         self->const_mem->safe = 0;
 
 	/* Initialize instruction execution table */
-#define DEFINST(_name, _fmt_str, _category, _opcode) \
+#define DEFINST(_name, _fmt_str, _opcode) \
 	self->inst_func[FRM_INST_##_name] = frm_isa_##_name##_impl;
 #include <arch/fermi/asm/asm.dat>
 #undef DEFINST
