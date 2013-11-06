@@ -162,7 +162,7 @@ void SINDRangeSetupSize(SINDRange *self,
 	unsigned int *global_size, unsigned int *local_size, int work_dim);
 void SINDRangeSetupFSMem(SINDRange *self, void *buf, 
 	int size, unsigned int pc);
-void SINDRangeSetupInstMem(SINDRange *self, void *buf, 
+void SINDRangeSetupInstMem(SINDRange *self, const char *buf,
 	int size, unsigned int pc);
 void SINDRangeSetupStage(SINDRange *self,
 	enum si_ndrange_stage_t stage);

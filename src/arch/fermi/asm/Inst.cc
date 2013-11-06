@@ -43,7 +43,7 @@ Inst::Inst(Asm *as)
 }
 
 
-void Inst::Decode(unsigned int addr, void *ptr)
+void Inst::Decode(unsigned int addr, const char *ptr)
 {
 	unsigned int cat;
 	unsigned int func;
@@ -1099,7 +1099,7 @@ void FrmInstWrapCopy(struct FrmInstWrap *left, struct frmInstWrap *right)
 void FrmInstWrapDecode(struct FrmInstWrap *self, unsigned int addr, void *ptr)
 {
 	Fermi::Inst *inst = (Fermi::Inst *) self;
-	inst->Decode(addr, ptr);
+	inst->Decode(addr, (const char *) ptr);
 }
 
 

@@ -31,7 +31,6 @@
 namespace ELFReader
 {
 
-/* Forward declarations */
 class File;
 
 
@@ -39,41 +38,43 @@ class Section
 {
 	friend class File;
 
-	/* File that it belongs to */
+	// File that it belongs to
 	File *file;
 
-	/* Name of the section */
+	// Name of the section
 	std::string name;
 
-	/* File content */
+	// File content
 	char *buffer;
 	unsigned int size;
 
-	/* Section information */
+	// Section information
 	int index;
 	Elf32_Shdr *info;
 
-	/* Constructor */
+	// Constructor
 	Section(File *file, int index, unsigned int pos);
+
 public:
+
 	/* Section header */
-	int GetIndex() { return index; }
-	const std::string& GetName() { return name; }
-	Elf32_Word GetType() { return info->sh_type; }
-	Elf32_Word GetFlags() { return info->sh_flags; }
-	Elf32_Addr GetAddr() { return info->sh_addr; }
-	Elf32_Off GetOffset() { return info->sh_offset; }
-	Elf32_Word GetSize() { return info->sh_size; }
-	Elf32_Word GetLink() { return info->sh_link; }
-	Elf32_Word GetInfo() { return info->sh_info; }
-	Elf32_Word GetAddralign() { return info->sh_addralign; }
-	Elf32_Word GetEntsize() { return info->sh_entsize; }
+	int getIndex() const { return index; }
+	const std::string &getName() const { return name; }
+	Elf32_Word getType() const { return info->sh_type; }
+	Elf32_Word getFlags() const { return info->sh_flags; }
+	Elf32_Addr getAddr() const { return info->sh_addr; }
+	Elf32_Off getOffset() const { return info->sh_offset; }
+	Elf32_Word getSize() const { return info->sh_size; }
+	Elf32_Word getLink() const { return info->sh_link; }
+	Elf32_Word getInfo() const { return info->sh_info; }
+	Elf32_Word getAddrAlign() const { return info->sh_addralign; }
+	Elf32_Word getEntSize() const { return info->sh_entsize; }
 
 	/* Section content */
-	char *GetBuffer() { return buffer; }
-	void GetStream(std::istringstream& stream) { GetStream(stream, 0, size); }
-	void GetStream(std::istringstream& stream, unsigned int offset,
-			unsigned int size);
+	const char *getBuffer() const { return buffer; }
+	void getStream(std::istringstream &stream) const { getStream(stream, 0, size); }
+	void getStream(std::istringstream &stream, unsigned int offset,
+			unsigned int size) const;
 };
 
 
@@ -97,22 +98,24 @@ class ProgramHeader
 public:
 
 	/* Program header information */
-	int GetIndex() { return index; }
-	Elf32_Word GetType() { return info->p_type; }
-	Elf32_Off GetOffset() { return info->p_offset; }
-	Elf32_Addr GetVaddr() { return info->p_vaddr; }
-	Elf32_Addr GetPaddr() { return info->p_paddr; }
-	Elf32_Word GetFilesz() { return info->p_filesz; }
-	Elf32_Word GetMemsz() { return info->p_memsz; }
-	Elf32_Word GetFlags() { return info->p_flags; }
-	Elf32_Word GetAlign() { return info->p_align; }
+	int getIndex() const { return index; }
+	Elf32_Word getType() const { return info->p_type; }
+	Elf32_Off getOffset() const { return info->p_offset; }
+	Elf32_Addr getVaddr() const { return info->p_vaddr; }
+	Elf32_Addr getPaddr() const { return info->p_paddr; }
+	Elf32_Word getFilesz() const { return info->p_filesz; }
+	Elf32_Word getMemsz() const { return info->p_memsz; }
+	Elf32_Word getFlags() const { return info->p_flags; }
+	Elf32_Word getAlign() const { return info->p_align; }
 
 	/* File content pointed to by program header (segment) */
-	unsigned int GetSize() { return size; }
-	char *GetBuffer() { return buffer; }
-	void GetStream(std::istringstream& stream) { GetStream(stream, 0, size); }
-	void GetStream(std::istringstream& stream, unsigned int offset,
-			unsigned int size);
+	unsigned int getSize() const { return size; }
+	const char *getBuffer() const { return buffer; }
+	void getStream(std::istringstream &stream) const {
+		getStream(stream, 0, size);
+	}
+	void getStream(std::istringstream &stream, unsigned int offset,
+			unsigned int size) const;
 };
 
 
@@ -134,7 +137,7 @@ class Symbol
 
 	/* Content pointed to by symbol in the section, or null if it points
 	 * to an invalid region of the section, or doesn't point to any section. */
-	char *buffer;
+	const char *buffer;
 
 	/* Symbol information, pointing to an internal position of the ELF
 	 * file's buffer. */
@@ -144,27 +147,28 @@ class Symbol
 	Symbol(File *file, Section *section, unsigned int pos);
 
 	/* Comparison between symbols */
-	static bool Compare(const std::unique_ptr<Symbol>& a,
-			const std::unique_ptr<Symbol>& b);
+	static bool Compare(const std::unique_ptr<Symbol> &a,
+			const std::unique_ptr<Symbol> &b);
 
 public:
 
-	Section *GetSection() { return section; }
-	const std::string& GetName() { return name; }
+	Section *getSection() const { return section; }
+	const std::string &getName() const { return name; }
 
 	/* Symbol information */
-	Elf32_Addr GetValue() { return info->st_value; }
-	Elf32_Word GetSize() { return info->st_size; }
-	unsigned char GetInfo() { return info->st_info; }
-	unsigned char GetOther() { return info->st_other; }
-	Elf32_Section GetShndx() { return info->st_shndx; }
+	Elf32_Addr getValue() const { return info->st_value; }
+	Elf32_Word getSize() const { return info->st_size; }
+	unsigned char getInfo() const { return info->st_info; }
+	unsigned char getOther() const { return info->st_other; }
+	Elf32_Section getShndx() const { return info->st_shndx; }
 
 	/* Section content pointed to by symbol, if valid */
-	char *GetBuffer() { return buffer; }
-	void GetStream(std::istringstream& stream) { GetStream(stream, 0,
-			info->st_size); }
-	void GetStream(std::istringstream& stream, unsigned int offset,
-			unsigned int size);
+	const char *getBuffer() const { return buffer; }
+	void getStream(std::istringstream &stream) const {
+		getStream(stream, 0, info->st_size);
+	}
+	void getStream(std::istringstream &stream, unsigned int offset,
+			unsigned int size) const;
 };
 
 
@@ -205,56 +209,73 @@ public:
 	/* Dump file information into output stream */
 	friend std::ostream &operator<<(std::ostream &os, const File &file);
 
-	const std::string& GetPath() { return path; }
+	const std::string &getPath() const { return path; }
 
 	/* Sections */
-	int GetNumSections() { return sections.size(); }
-	Section *GetSection(unsigned int index) { return index <
-			sections.size() ? sections[index].get() : nullptr; }
+	int getNumSections() const { return sections.size(); }
+
+	Section *getSection(unsigned int index) const {
+		return index < sections.size() ? sections[index].get()
+				: nullptr;
+	}
+
+	const std::vector<std::unique_ptr<Section>> &getSections() const {
+		return sections;
+	}
 
 	/* Program headers */
-	int GetNumProgramHeaders() { return program_headers.size(); }
-	ProgramHeader *GetProgramHeader(unsigned int index) { return index <
-			program_headers.size() ? program_headers[index].get() : nullptr; }
+	int getNumProgramHeaders() const { return program_headers.size(); }
+
+	ProgramHeader *getProgramHeader(unsigned int index) const {
+		return index < program_headers.size() ?
+				program_headers[index].get() : nullptr;
+	}
 
 	/* Symbols */
-	int GetNumSymbols() { return symbols.size(); }
-	Symbol *GetSymbol(unsigned int index) { return index < symbols.size() ?
-			symbols[index].get() : nullptr; }
-	Symbol *GetSymbol(std::string name);
+	int getNumSymbols() const { return symbols.size(); }
+
+	Symbol *getSymbol(unsigned int index) const {
+		return index < symbols.size() ?
+				symbols[index].get() : nullptr;
+	}
+
+	Symbol *getSymbol(const std::string &name) const;
 
 	/* Return the section corresponding to the string table, or NULL if
 	 * the ELF file doesn't contain one. */
-	Section *GetStringTable() { return string_table; }
+	Section *getStringTable() const { return string_table; }
 
 	/* File content */
-	unsigned int GetSize() { return size; }
-	char *GetBuffer() { return buffer; }
-	void GetStream(std::istringstream& stream) { GetStream(stream, 0, size); }
-	void GetStream(std::istringstream& stream, unsigned int offset,
-			unsigned int size);
+	unsigned int getSize() const { return size; }
+	char *getBuffer() const { return buffer; }
+	void getStream(std::istringstream& stream) const {
+		getStream(stream, 0, size);
+	}
+	void getStream(std::istringstream& stream, unsigned int offset,
+			unsigned int size) const;
 
 	/* Return the first symbol at a given address/name, or the closest
 	 * one with a higher address. If argument 'offset' is passed, the
 	 * offset of the symbol relative to the address is returned. */
-	Symbol *GetSymbolByAddress(unsigned int address);
-	Symbol *GetSymbolByAddress(unsigned int address, unsigned int &offset);
+	Symbol *getSymbolByAddress(unsigned int address) const;
+	Symbol *getSymbolByAddress(unsigned int address,
+			unsigned int &offset) const;
 
 	/* ELF header */
-	unsigned char *GetIdent() { return info->e_ident; }
-	Elf32_Half GetType() { return info->e_type; }
-	Elf32_Half GetMachine() { return info->e_machine; }
-	Elf32_Word GetVersion() { return info->e_version; }
-	Elf32_Addr GetEntry() { return info->e_entry; }
-	Elf32_Off GetPhoff() { return info->e_phoff; }
-	Elf32_Off GetShoff() { return info->e_shoff; }
-	Elf32_Word GetFlags() { return info->e_flags; }
-	Elf32_Half GetEhsize() { return info->e_ehsize; }
-	Elf32_Half GetPhentsize() { return info->e_phentsize; }
-	Elf32_Half GetPhnum() { return info->e_phnum; }
-	Elf32_Half GetShentsize() { return info->e_shentsize; }
-	Elf32_Half GetShnum() { return info->e_shnum; }
-	Elf32_Half GetShstrndx() { return info->e_shstrndx; }
+	unsigned char *getIdent() const { return info->e_ident; }
+	Elf32_Half getType() const { return info->e_type; }
+	Elf32_Half getMachine() const { return info->e_machine; }
+	Elf32_Word getVersion() const { return info->e_version; }
+	Elf32_Addr getEntry() const { return info->e_entry; }
+	Elf32_Off getPhoff() const { return info->e_phoff; }
+	Elf32_Off getShoff() const { return info->e_shoff; }
+	Elf32_Word getFlags() const { return info->e_flags; }
+	Elf32_Half getEhsize() const { return info->e_ehsize; }
+	Elf32_Half getPhentsize() const { return info->e_phentsize; }
+	Elf32_Half getPhnum() const { return info->e_phnum; }
+	Elf32_Half getShentsize() const { return info->e_shentsize; }
+	Elf32_Half getShnum() const { return info->e_shnum; }
+	Elf32_Half getShstrndx() const { return info->e_shstrndx; }
 };
 
 

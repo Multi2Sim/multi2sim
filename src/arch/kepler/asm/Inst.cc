@@ -232,7 +232,7 @@ Inst::Inst(Asm *as)
 }
 
 
-void Inst::Decode(char *buffer, unsigned int address)
+void Inst::Decode(const char *buffer, unsigned int address)
 {
 	/* Populate */
 	this->address = address;

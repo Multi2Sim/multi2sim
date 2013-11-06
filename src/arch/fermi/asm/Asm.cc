@@ -62,17 +62,17 @@ void Asm::DisassembleBinary(string path)
 
 	/* Dump disassembly */
 	cout << "\n\tcode for sm_20\n";
-	for (int i = 0; i < file.GetNumSections(); i++)
+	for (int i = 0; i < file.getNumSections(); i++)
 	{
 		/* Determine if section is .text.kernel_name */
-		ELFReader::Section *section = file.GetSection(i);
-		if (!strncmp(section->GetName().c_str(), ".text.", 6))
+		ELFReader::Section *section = file.getSection(i);
+		if (!strncmp(section->getName().c_str(), ".text.", 6))
 		{
-			cout << "\t\tFunction : " << section->GetName().c_str() + 6 << "\n";
-			for (unsigned int pos = 0; pos < section->GetSize(); pos += 8)
+			cout << "\t\tFunction : " << section->getName().c_str() + 6 << "\n";
+			for (unsigned int pos = 0; pos < section->getSize(); pos += 8)
 			{
 				/* Decode instruction */
-				inst.Decode(pos, section->GetBuffer() + pos);
+				inst.Decode(pos, section->getBuffer() + pos);
 
 				/* Dump instruction */
 				cout << "\t";

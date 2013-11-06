@@ -84,7 +84,7 @@ Inst::Inst(Asm *as)
 }
 
 
-void Inst::Decode(unsigned int addr, void *buf)
+void Inst::Decode(unsigned int addr, const char *buf)
 {
 	InstInfo *current_table;
 
@@ -588,7 +588,7 @@ void MIPSInstWrapCopy(struct MIPSInstWrap *left, struct MIPSInstWrap *right)
 void MIPSInstWrapDecode(struct MIPSInstWrap *self, unsigned int addr, void *buf)
 {
 	Inst *inst = (Inst *) self;
-	inst->Decode(addr, buf);
+	inst->Decode(addr, (const char *) buf);
 }
 
 

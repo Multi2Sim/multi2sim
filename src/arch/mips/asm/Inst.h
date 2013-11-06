@@ -186,7 +186,7 @@ public:
 	 * instruction object, and decode it by populating the 'info' field. The value
 	 * in 'addr' gives the virtual address of the instruction, needed to print
 	 * branch addresses. */
-	void Decode(unsigned int addr, void *buf);
+	void Decode(unsigned int addr, const char *buf);
 
 	/* Dump an instruction. This function sets the 'target' field of the
 	 * instruction offset to a value other than 0 if a target address has been
