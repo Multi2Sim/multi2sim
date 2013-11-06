@@ -30,11 +30,11 @@ DEFINST(FCMP,
 	0x038)
 
 //DEFINST(FCCO, 
-//	"%pred, FCCO", 
+//	"%pred FCCO", 
 //	0x040)
 
 //DEFINST(FSWZ, 
-//	"%pred, FSWZ", 
+//	"%pred FSWZ", 
 //	0x048)
 
 DEFINST(FADD, 
@@ -522,7 +522,7 @@ DEFINST(LDC,
 //	0x708)
 
 DEFINST(JCAL, 
-	"%pred_no@P0 JCAL%tgt_noinc %tgt", 
+	"JCAL%tgt_noinc %tgt", 
 	0x710)
 	
 DEFINST(BRA, 
@@ -534,27 +534,27 @@ DEFINST(BRA,
 //	0x748)
 
 DEFINST(CAL, 
-	"%pred_no@P0 CAL%tgt_noinc %tgt", 
+	"CAL%tgt_noinc %tgt", 
 	0x750)
 	
 //DEFINST(PLONGJMP, 
-//	"%pred PLONGJMP", 
+//	"PLONGJMP", 
 //	0x758)
 	
 DEFINST(SSY, 
-	"%pred_no@P0 SSY %tgt", 
+	"SSY %tgt", 
 	0x760)
 	
 DEFINST(PBK, 
-	"%pred PBK %tgt", 
+	"PBK %tgt", 
 	0x768)
 
 DEFINST(PCNT,
-	"%pred_no@P0 PCNT %tgt",
+	"PCNT %tgt",
 	0x770)
 
 //DEFINST(PRET, 
-//	"%pred PRET", 
+//	"PRET", 
 //	0x778)
 
 DEFINST(EXIT, 
@@ -574,7 +574,7 @@ DEFINST(RET,
 //	0x798)
 
 //DEFINST(RTT, 
-//	"%pred RTT", 
+//	"RTT", 
 //	0x7a0)
 
 //DEFINST(BRK, 
@@ -586,15 +586,15 @@ DEFINST(CONT,
 	0x7b0)
 
 //DEFINST(SAM,
-//	"%pred SAM",
+//	"SAM",
 //	0x7c0)
 
 //DEFINST(RAM,
-//	"%pred RAM",
+//	"RAM",
 //	0x7c8)
 
 DEFINST(BPT,
-	"%pred_no@P0 BPT %tgt",
+	"BPT %tgt",
 	0x7d0)
 
 // this instruction is not supported in CUDA 5.5
