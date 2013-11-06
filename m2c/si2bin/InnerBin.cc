@@ -105,13 +105,13 @@ InnerBinEntry::InnerBinEntry(InnerBin *bin)
 	text_section_buffer = this->bin->writer.NewBuffer();
 	text_section = this->bin->writer.NewSection(".text", text_section_buffer, 
 			text_section_buffer);
-	text_section->SetType(SHT_PROGBITS);
+	text_section->setType(SHT_PROGBITS);
 
 	/* Data Section Initialization */
 	data_section_buffer = this->bin->writer.NewBuffer();
 	data_section = this->bin->writer.NewSection(".data", data_section_buffer, 
 			data_section_buffer);
-	data_section->SetType(SHT_PROGBITS);
+	data_section->setType(SHT_PROGBITS);
 	
 	/* Symbol Table Initialization */
 	symbol_table = this->bin->writer.NewSymbolTable(".symtab", ".strtab");
@@ -122,11 +122,11 @@ InnerBinEntry::InnerBinEntry(InnerBin *bin)
 	/* Crete Note and Load Segments */
 	note_segment = this->bin->writer.NewSegment("Note Segment", note_buffer,
 			note_buffer);
-	note_segment->SetType(PT_NOTE);
+	note_segment->setType(PT_NOTE);
 	
 	load_segment = this->bin->writer.NewSegment("Load Segment", text_section_buffer,
-			symbol_table->GetStringTableBuffer());
-	load_segment->SetType(PT_LOAD);
+			symbol_table->getStringTableBuffer());
+	load_segment->setType(PT_LOAD);
 
 	
 }
@@ -158,7 +158,7 @@ InnerBin::InnerBin(const std::string &name)
 	
 	segment = writer.NewSegment("Encoding Dictionary", buffer, buffer);
 
-	segment->SetType(PT_LOPROC + 2);
+	segment->setType(PT_LOPROC + 2);
 
 }
 
@@ -229,9 +229,9 @@ void InnerBin::Generate(std::ostream& os)
 	namesz = 8;
 	name = "ATI CAL";
 
-	enc_dict = writer.GetBuffer(2);
+	enc_dict = writer.getBuffer(2);
 
-	phtab_size = sizeof(Elf32_Phdr) * writer.GetSegmentCount();
+	phtab_size = sizeof(Elf32_Phdr) * writer.getSegmentCount();
 
 	for (auto &entry : entry_list)
 	{
@@ -248,22 +248,22 @@ void InnerBin::Generate(std::ostream& os)
 					note->GetSize());
 		}
 
-		start = entry->note_buffer->GetIndex();
-		end = entry->symbol_table->GetStringTableBuffer()->GetIndex();
+		start = entry->note_buffer->getIndex();
+		end = entry->symbol_table->getStringTableBuffer()->getIndex();
 		
 		/* Calculate offset and type for enc_dict */
 		for(i = start; i <= end; i++)
 		{
-			buffer = writer.GetBuffer(i);
-			entry->SetSize(entry->GetSize() + buffer->Size());
+			buffer = writer.getBuffer(i);
+			entry->SetSize(entry->GetSize() + buffer->getSize());
 		}
 		
 		buf_offset = 0;
 		
 		for(i = 0; i < start; i++)
 		{	
-			buffer = writer.GetBuffer(i);
-			buf_offset += buffer->Size();
+			buffer = writer.getBuffer(i);
+			buf_offset += buffer->getSize();
 		}
 
 		entry->SetOffset(sizeof(Elf32_Ehdr) + phtab_size +
