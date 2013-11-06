@@ -198,7 +198,7 @@ class Binary : ELFReader::File
 	std::string name;
 
 	void ReadNote(BinaryDictEntry *dict_entry, std::istringstream& ss,
-			char *buffer);
+			const char *buffer);
 	void ReadNotes(BinaryDictEntry *dict_entry);
 	void ReadDictionary();
 	void ReadSegments();
@@ -362,7 +362,7 @@ int SIBinaryDictEntryGetStackSize(struct SIBinaryDictEntry *self);
 unsigned int SIBinaryDictEntryGetNumUserElements(struct SIBinaryDictEntry *self);
 struct SIBinaryUserElement *SIBinaryDictEntryGetUserElements(struct SIBinaryDictEntry *self);
 struct SIBinaryComputePgmRsrc2 *SIBinaryDictEntryGetComputePgmRsrc2(struct SIBinaryDictEntry *self);
-char *SIBinaryDictEntryGetTextBuffer(struct SIBinaryDictEntry *self);
+const char *SIBinaryDictEntryGetTextBuffer(struct SIBinaryDictEntry *self);
 unsigned int SIBinaryDictEntryGetTextSize(struct SIBinaryDictEntry *self);
 
 /* Binary file */

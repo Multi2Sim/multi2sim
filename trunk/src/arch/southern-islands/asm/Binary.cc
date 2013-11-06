@@ -426,7 +426,7 @@ StringMap binary_prog_info_map = {
 /* Read note at the current position of the stream. Argument 'buffer' takes a
  * base pointer to the beginning of the string buffer content. */
 void Binary::ReadNote(BinaryDictEntry *dict_entry, std::istringstream& ss,
-		char *buffer)
+		const char *buffer)
 {
 	/* Read note header */
 	BinaryNoteHeader *header = (BinaryNoteHeader *) (buffer + ss.tellg());
@@ -435,7 +435,7 @@ void Binary::ReadNote(BinaryDictEntry *dict_entry, std::istringstream& ss,
 		fatal("%s: error decoding note header", name.c_str());
 	
 	/* Read note description (payload) */
-	char *desc = buffer + ss.tellg();
+	const char *desc = buffer + ss.tellg();
 	ss.seekg(header->descsz, ios_base::cur);
 	if (!ss)
 		fatal("%s: error decoding note description", name.c_str());
@@ -727,13 +727,13 @@ void Binary::ReadNotes(BinaryDictEntry *dict_entry)
 	/* Get buffer and set position */
 	ELFReader::ProgramHeader *ph = dict_entry->pt_note_segment;
 	std::istringstream ss;
-	ph->GetStream(ss);
-	char *buffer = ph->GetBuffer();
+	ph->getStream(ss);
+	const char *buffer = ph->getBuffer();
 
 	/* Decode notes */
 	debug << "\nReading notes in PT_NOTE segment (enc. dict. for machine = 0x"
 			<< hex << dict_entry->header->d_machine << dec << ")\n";
-	while (ss.tellg() < ph->GetSize())
+	while (ss.tellg() < ph->getSize())
 		ReadNote(dict_entry, ss, buffer);
 }
 
@@ -748,41 +748,41 @@ void Binary::ReadDictionary()
 			<< "** Parsing AMD Binary (Internal ELF file)\n"
 			<< "** " << name << "\n"
 			<< "**\n\n";
-	SI_BIN_FILE_NOT_SUPPORTED_NEQ(GetIdent()[EI_CLASS], ELFCLASS32);
-	SI_BIN_FILE_NOT_SUPPORTED_NEQ(GetIdent()[EI_DATA], ELFDATA2LSB);
-	SI_BIN_FILE_NOT_SUPPORTED_NEQ(GetIdent()[EI_OSABI], 0x64);
-	SI_BIN_FILE_NOT_SUPPORTED_NEQ(GetIdent()[EI_ABIVERSION], 1);
-	SI_BIN_FILE_NOT_SUPPORTED_NEQ(GetType(), ET_EXEC);
-	SI_BIN_FILE_NOT_SUPPORTED_NEQ(GetMachine(), 0x7d);
-	SI_BIN_FILE_NOT_SUPPORTED_NEQ(GetEntry(), 0);
+	SI_BIN_FILE_NOT_SUPPORTED_NEQ(getIdent()[EI_CLASS], ELFCLASS32);
+	SI_BIN_FILE_NOT_SUPPORTED_NEQ(getIdent()[EI_DATA], ELFDATA2LSB);
+	SI_BIN_FILE_NOT_SUPPORTED_NEQ(getIdent()[EI_OSABI], 0x64);
+	SI_BIN_FILE_NOT_SUPPORTED_NEQ(getIdent()[EI_ABIVERSION], 1);
+	SI_BIN_FILE_NOT_SUPPORTED_NEQ(getType(), ET_EXEC);
+	SI_BIN_FILE_NOT_SUPPORTED_NEQ(getMachine(), 0x7d);
+	SI_BIN_FILE_NOT_SUPPORTED_NEQ(getEntry(), 0);
 	
 	/* Look for encoding dictionary (program header with type 'PT_LOPROC+2') */
 	ELFReader::ProgramHeader *ph = NULL;
-	for (int i = 0; i < GetNumProgramHeaders(); i++)
+	for (int i = 0; i < getNumProgramHeaders(); i++)
 	{
-		ph = GetProgramHeader(i);
-		if (ph->GetType() == PT_LOPROC + 2)
+		ph = getProgramHeader(i);
+		if (ph->getType() == PT_LOPROC + 2)
 			break;
 		ph = NULL;
 	}
 	if (!ph)
 		fatal("%s: no encoding dictionary", name.c_str());
 	debug << "Encoding dictionary found in program header "
-			<< ph->GetIndex() << "\n";
+			<< ph->getIndex() << "\n";
 	
 	/* Parse encoding dictionary */
-	SI_BIN_FILE_NOT_SUPPORTED_NEQ(ph->GetVaddr(), 0);
-	SI_BIN_FILE_NOT_SUPPORTED_NEQ(ph->GetPaddr(), 0);
-	SI_BIN_FILE_NOT_SUPPORTED_NEQ(ph->GetMemsz(), 0);
-	SI_BIN_FILE_NOT_SUPPORTED_NEQ(ph->GetFlags(), 0);
-	SI_BIN_FILE_NOT_SUPPORTED_NEQ(ph->GetAlign(), 0);
-	assert(ph->GetFilesz() % sizeof(BinaryDictHeader) == 0);
-	num_dict_entries = ph->GetFilesz() / sizeof(BinaryDictHeader);
+	SI_BIN_FILE_NOT_SUPPORTED_NEQ(ph->getVaddr(), 0);
+	SI_BIN_FILE_NOT_SUPPORTED_NEQ(ph->getPaddr(), 0);
+	SI_BIN_FILE_NOT_SUPPORTED_NEQ(ph->getMemsz(), 0);
+	SI_BIN_FILE_NOT_SUPPORTED_NEQ(ph->getFlags(), 0);
+	SI_BIN_FILE_NOT_SUPPORTED_NEQ(ph->getAlign(), 0);
+	assert(ph->getFilesz() % sizeof(BinaryDictHeader) == 0);
+	num_dict_entries = ph->getFilesz() / sizeof(BinaryDictHeader);
 	debug << "  -> " << num_dict_entries << " entries\n\n";
 
 	/* Read encoding dictionary entries */
 	istringstream ss;
-	ph->GetStream(ss);
+	ph->getStream(ss);
 	for (int i = 0; i < num_dict_entries; i++)
 	{
 		/* Create entry and insert into dictionary */
@@ -790,7 +790,7 @@ void Binary::ReadDictionary()
 		dict.push_back(dict_entry);
 
 		/* Read header */
-		dict_entry->header = (BinaryDictHeader *) (ph->GetBuffer() + ss.tellg());
+		dict_entry->header = (BinaryDictHeader *) (ph->getBuffer() + ss.tellg());
 		ss.seekg(sizeof(BinaryDictHeader), ios_base::cur);
 
 		/* Store encoding dictionary entry for Southern Islands.
@@ -860,20 +860,20 @@ void Binary::ReadSegments()
 	{
 		/* Get encoding dictionary entry */
 		BinaryDictEntry *dict_entry = dict[i];
-		for (int j = 0; j < GetNumProgramHeaders(); j++)
+		for (int j = 0; j < getNumProgramHeaders(); j++)
 		{
 			/* Get program header. If not in encoding dictionary segment, skip. */
-			ELFReader::ProgramHeader *ph = GetProgramHeader(j);
-			if (ph->GetOffset() < dict_entry->header->d_offset ||
-					ph->GetOffset() >= dict_entry->header->d_offset +
+			ELFReader::ProgramHeader *ph = getProgramHeader(j);
+			if (ph->getOffset() < dict_entry->header->d_offset ||
+					ph->getOffset() >= dict_entry->header->d_offset +
 					dict_entry->header->d_size)
 				continue;
-			assert(ph->GetOffset() + ph->GetFilesz() <=
+			assert(ph->getOffset() + ph->getFilesz() <=
 					dict_entry->header->d_offset +
 					dict_entry->header->d_size);
 
 			/* Segment PT_NOTE */
-			if (ph->GetType() == PT_NOTE)
+			if (ph->getType() == PT_NOTE)
 			{
 				if (dict_entry->pt_note_segment)
 					fatal("%s: more than one PT_NOTE segment",
@@ -882,7 +882,7 @@ void Binary::ReadSegments()
 			}
 
 			/* Segment PT_LOAD */
-			if (ph->GetType() == PT_LOAD)
+			if (ph->getType() == PT_LOAD)
 			{
 				if (dict_entry->pt_load_segment)
 					fatal("%s: more than one PT_LOAD segment",
@@ -899,18 +899,18 @@ void Binary::ReadSegments()
 		debug << "  Dict. entry " << i
 				<< ": PT_NOTE segment: "
 				<< "offset = 0x" << hex
-				<< dict_entry->pt_note_segment->GetOffset()
+				<< dict_entry->pt_note_segment->getOffset()
 				<< dec << ", "
 				<< "size = "
-				<< dict_entry->pt_note_segment->GetSize()
+				<< dict_entry->pt_note_segment->getSize()
 				<< '\n';
 		debug << "  Dict. entry " << i
 				<< ": PT_LOAD segment: "
 				<< "offset = 0x" << hex <<
-				dict_entry->pt_load_segment->GetOffset()
+				dict_entry->pt_load_segment->getOffset()
 				<< dec << ", "
 				<< "size = "
-				<< dict_entry->pt_load_segment->GetSize()
+				<< dict_entry->pt_load_segment->getSize()
 				<< '\n';
 	}
 }
@@ -927,41 +927,41 @@ void Binary::ReadSections()
 		assert(note_segment);
 
 		/* Traverse sections */
-		for (int i = 0; i < GetNumSections(); i++)
+		for (int i = 0; i < getNumSections(); i++)
 		{
 			/* Get section. If not in PT_LOAD segment, skip. */
-			ELFReader::Section *section = GetSection(i);
-			if (section->GetOffset() < load_segment->GetOffset() ||
-					section->GetOffset() >= load_segment->GetOffset()
-					+ load_segment->GetSize())
+			ELFReader::Section *section = getSection(i);
+			if (section->getOffset() < load_segment->getOffset() ||
+					section->getOffset() >= load_segment->getOffset()
+					+ load_segment->getSize())
 				continue;
-			assert(section->GetOffset() + section->GetSize() <=
-					load_segment->GetOffset() +
-					load_segment->GetSize());
+			assert(section->getOffset() + section->getSize() <=
+					load_segment->getOffset() +
+					load_segment->getSize());
 
 			/* Process section */
-			if (section->GetName() == ".text")
+			if (section->getName() == ".text")
 			{
 				if (dict_entry->text_section)
 					fatal("%s: duplicated '.text' section", __FUNCTION__);
 				dict_entry->text_section = section;
 			}
-			else if (section->GetName() == ".data")
+			else if (section->getName() == ".data")
 			{
 				if (dict_entry->data_section)
 					fatal("%s: duplicated '.data' section", __FUNCTION__);
 				dict_entry->data_section = section;
-				if (section->GetSize() != 4736)
+				if (section->getSize() != 4736)
 					fatal("%s: '.data' section != 4736 bytes", __FUNCTION__);
-				dict_entry->consts = (BinaryDictConsts *) section->GetBuffer();
+				dict_entry->consts = (BinaryDictConsts *) section->getBuffer();
 			}
-			else if (section->GetName() == ".symtab")
+			else if (section->getName() == ".symtab")
 			{
 				if (dict_entry->symtab_section)
 					fatal("%s: duplicated '.symtab' section", __FUNCTION__);
 				dict_entry->symtab_section = section;
 			}
-			else if (section->GetName() == ".strtab")
+			else if (section->getName() == ".strtab")
 			{
 				if (dict_entry->strtab_section)
 					fatal("%s: duplicated '.strtab' section", __FUNCTION__);
@@ -970,7 +970,7 @@ void Binary::ReadSections()
 			else
 			{
 				fatal("%s: not recognized section name: '%s'",
-					__FUNCTION__, section->GetName().c_str());
+					__FUNCTION__, section->getName().c_str());
 			}
 		}
 
@@ -1081,16 +1081,16 @@ struct SIBinaryComputePgmRsrc2 *SIBinaryDictEntryGetComputePgmRsrc2(struct SIBin
 	return (SIBinaryComputePgmRsrc2 *) entry->compute_pgm_rsrc2;
 }
 
-char *SIBinaryDictEntryGetTextBuffer(struct SIBinaryDictEntry *self)
+const char *SIBinaryDictEntryGetTextBuffer(struct SIBinaryDictEntry *self)
 {
 	BinaryDictEntry *entry = (BinaryDictEntry *) self;
-	return entry->text_section->GetBuffer();
+	return entry->text_section->getBuffer();
 }
 
 unsigned int SIBinaryDictEntryGetTextSize(struct SIBinaryDictEntry *self)
 {
 	BinaryDictEntry *entry = (BinaryDictEntry *) self;
-	return entry->text_section->GetSize();
+	return entry->text_section->getSize();
 }
 
 struct SIBinary *SIBinaryCreate(const char *buffer, unsigned int size, char *name)

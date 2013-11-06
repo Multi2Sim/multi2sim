@@ -331,7 +331,7 @@ public:
 	explicit Inst(Asm *as);
 
 	/* Decode */
-	void Decode(char *buffer, unsigned int address);
+	void Decode(const char *buffer, unsigned int address);
 
 	/* Dump */
 	void DumpHex(std::ostream &os);

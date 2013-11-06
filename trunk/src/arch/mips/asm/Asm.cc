@@ -279,38 +279,38 @@ void Asm::DisassembleBinary(string path)
 	unsigned int pos;
 
 	/* Read Sections */
-	for (int i = 0; i < file.GetNumSections(); i++)
+	for (int i = 0; i < file.getNumSections(); i++)
 	{
 		/* Skip if section does not contain code */
-		ELFReader::Section *section = file.GetSection(i);
-		if (!(section->GetFlags() & SHF_EXECINSTR))
+		ELFReader::Section *section = file.getSection(i);
+		if (!(section->getFlags() & SHF_EXECINSTR))
 			continue;
 
 		/* Title */
-		cout << "\n\nDisassembly of section " << section->GetName() << ":";
+		cout << "\n\nDisassembly of section " << section->getName() << ":";
 
 		/* Symbol */
 		curr_sym = 0;
-		ELFReader::Symbol *symbol = file.GetSymbol(0);
+		ELFReader::Symbol *symbol = file.getSymbol(0);
 
 		/* Decode and dump instructions */
-		for (pos = 0; pos < section->GetSize(); pos += 4)
+		for (pos = 0; pos < section->getSize(); pos += 4)
 		{
 			/* Symbol */
-			while (symbol && symbol->GetValue() < section->GetAddr() + pos)
+			while (symbol && symbol->getValue() < section->getAddr() + pos)
 			{
 				curr_sym++;
-				symbol = file.GetSymbol(curr_sym);
+				symbol = file.getSymbol(curr_sym);
 			}
-			if (symbol && symbol->GetValue() ==
-					section->GetAddr() + pos)
+			if (symbol && symbol->getValue() ==
+					section->getAddr() + pos)
 				cout << "\n\n" << setw(8) << setfill('0') << hex
-						<< section->GetAddr() + pos
-						<< " <" << symbol->GetName() << ">:";
+						<< section->getAddr() + pos
+						<< " <" << symbol->getName() << ">:";
 
 			/* Decode and dump */
-			inst.Decode(section->GetAddr() + pos,
-					section->GetBuffer() + pos);
+			inst.Decode(section->getAddr() + pos,
+					section->getBuffer() + pos);
 			inst.DumpHex(cout);
 			inst.Dump(cout);
 
@@ -318,16 +318,16 @@ void Asm::DisassembleBinary(string path)
 			if (inst.target)
 			{
 				ELFReader::Symbol *print_symbol;
-				print_symbol = file.GetSymbolByAddress(inst.target);
+				print_symbol = file.getSymbolByAddress(inst.target);
 				if (print_symbol)
 				{
-					if (print_symbol->GetValue() == inst.target)
-						cout << " <" << print_symbol->GetName() << ">";
+					if (print_symbol->getValue() == inst.target)
+						cout << " <" << print_symbol->getName() << ">";
 					else
-						cout << " <" << print_symbol->GetName() << "+0x"
+						cout << " <" << print_symbol->getName() << "+0x"
 								<< hex <<
 								inst.target -
-								print_symbol->GetValue()
+								print_symbol->getValue()
 								<< ">";
 				}
 			}
