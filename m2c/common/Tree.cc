@@ -31,7 +31,7 @@
 #include "Tree.h"
 
 
-using namespace Misc;
+using namespace misc;
 
 
 namespace Common
@@ -180,7 +180,7 @@ void TreeConfig::Run()
 	for (int index = 0;; index++)
 	{
 		/* Read next command */
-		std::string var = StringFormat("Command[%d]", index);
+		std::string var = StringFmt("Command[%d]", index);
 		std::string value = ini_file->ReadString(section, var);
 		if (value.empty())
 			break;
@@ -201,7 +201,7 @@ void TreeConfig::Run()
  */
 
 /* Global variables */
-Misc::Debug Tree::debug;
+misc::Debug Tree::debug;
 TreeConfig Tree::config;
 
 /* Recursive DFS traversal for a node. */
@@ -408,7 +408,7 @@ AbstractNode *Tree::Reduce(std::list<Node *> &list, AbstractNodeRegion region)
 
 	/* Figure out a name for the new abstract node */
 	assert(region);
-	std::string abs_node_name = StringFormat("__%s_%d",
+	std::string abs_node_name = StringFmt("__%s_%d",
 			StringMapValue(abstract_node_region_map, region),
 			name_counter[region]);
 	name_counter[region]++;
@@ -1027,7 +1027,7 @@ void Tree::GetNodeList(std::list<Node *> &list, const std::string &list_str)
 
 	/* Extract nodes */
 	std::vector<std::string> tokens;
-	Misc::StringTokenize(list_str, tokens);
+	misc::StringTokenize(list_str, tokens);
 	for (auto &token : tokens)
 	{
 		Node *node = GetNode(token);
@@ -1115,7 +1115,7 @@ void Tree::Read(IniFile &f, const std::string &name)
 
 		/* Section name must be "Tree.<tree>.Node.<node>" */
 		std::vector<std::string> tokens;
-		Misc::StringTokenize(section, tokens, ".");
+		misc::StringTokenize(section, tokens, ".");
 		if (tokens.size() != 4 ||
 				strcasecmp(tokens[0].c_str(), "Tree") ||
 				strcasecmp(tokens[1].c_str(), name.c_str()) ||
@@ -1125,7 +1125,7 @@ void Tree::Read(IniFile &f, const std::string &name)
 		/* Get node properties */
 		std::string node_name = tokens[3];
 		std::string kind_str = f.ReadString(section, "Kind", "Leaf");
-		NodeKind kind = (NodeKind) Misc::StringMapStringCase(
+		NodeKind kind = (NodeKind) misc::StringMapStringCase(
 				node_kind_map, kind_str);
 		if (!kind)
 			fatal("%s: %s: invalid value for 'Kind'",
@@ -1142,7 +1142,7 @@ void Tree::Read(IniFile &f, const std::string &name)
 			/* Read region */
 			std::string region_str = f.ReadString(section, "Region");
 			AbstractNodeRegion region = (AbstractNodeRegion)
-					Misc::StringMapStringCase(
+					misc::StringMapStringCase(
 					abstract_node_region_map,
 					region_str);
 			if (!region)

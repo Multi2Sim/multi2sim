@@ -25,7 +25,7 @@
 #include <vector>
 
 
-namespace Misc
+namespace misc
 {
 
 
@@ -98,19 +98,20 @@ const char *StringGetErrorString(StringError error);
 void str_printf(char **pbuf, int *psize, const char *fmt, ...)
 		__attribute__ ((format(printf, 3, 4)));
 
-std::string StringFormat(const char *fmt, ...)
+std::string StringFmt(const char *fmt, ...)
 		__attribute__ ((format(printf, 1, 2)));
 
-inline bool CharInSet(char c, std::string set) { return set.find(c) !=
-		std::string::npos; }
+inline bool CharInSet(char c, const std::string &set) {
+	return set.find(c) != std::string::npos;
+}
 
-void StringTrimLeft(std::string& s, std::string set = " \t\n\r");
-void StringTrimRight(std::string& s, std::string set = " \t\n\r");
-void StringTrim(std::string& s, std::string set = " \t\n\r");
-void StringSingleSpaces(std::string& s, std::string set =  " \t\n\r");
+void StringTrimLeft(std::string &s, const std::string &set = " \t\n\r");
+void StringTrimRight(std::string &s, const std::string &set = " \t\n\r");
+void StringTrim(std::string &s, const std::string &set = " \t\n\r");
+void StringSingleSpaces(std::string &s, const std::string &set =  " \t\n\r");
 
-void StringToLower(std::string& s);
-void StringToUpper(std::string& s);
+void StringToLower(std::string &s);
+void StringToUpper(std::string &s);
 
 bool StringPrefix(const std::string& s, const std::string& prefix);
 bool StringSuffix(const std::string& s, const std::string& suffix);
@@ -118,12 +119,12 @@ bool StringSuffix(const std::string& s, const std::string& suffix);
 /* Split a string in tokens and place them in the list of strings passed by
  * reference in the first argument. Optionally, argument 'set' can specify the
  * characters considered as tokens separators. */
-void StringTokenize(const std::string& s, std::vector<std::string>& tokens,
-		const std::string& set = " \t\n\r");
+void StringTokenize(const std::string &s, std::vector<std::string> &tokens,
+		const std::string &set = " \t\n\r");
 
 /* Convert 'digit' in base 'base' into an integer. */
 int StringDigitToInt(char digit, int base);
-int StringDigitToInt(char digit, int base, StringError& error);
+int StringDigitToInt(char digit, int base, StringError &error);
 
 /* Convert a string into an integer, accepting the following modifiers.
  * If conversion fails due to wrong formatting of the string, an error code is
@@ -140,10 +141,10 @@ int StringDigitToInt(char digit, int base, StringError& error);
  *   Suffix 'g' - Multiply by 1024*1024*1024.
  *   Suffix 'G' - Multiply by 1000*1000*1000.
  */
-int StringToInt(std::string s);
-int StringToInt(std::string s, StringError& error);
-long long StringToInt64(std::string s);
-long long StringToInt64(std::string s, StringError& error);
+int StringToInt(const std::string &s);
+int StringToInt(const std::string &s, StringError &error);
+long long StringToInt64(const std::string &s);
+long long StringToInt64(const std::string &s, StringError &error);
 
 
 
@@ -202,15 +203,18 @@ public:
 	Debug();
 	~Debug();
 
-	void SetPath(const std::string& path);
-	const std::string& GetPath() { return path; }
+	void setPath(const std::string &path);
+	const std::string &getPath() { return path; }
 
 	/* Dump a value into the output stream currently pointed to by the
 	 * debug object. If the debugger has not been initialized with a call
 	 * to SetPath(), this call is ignored. The argument can be of any
 	 * type accepted by an std::ostream object. */
-	template<typename T> Debug& operator<<(T val) { if (os) *os << val;
-			return *this; }
+	template<typename T> Debug& operator<<(T val) {
+		if (os)
+			*os << val;
+		return *this;
+	}
 
 	/* A debugger can be cast into a bool (e.g. within an 'if' condition)
 	 * to check whether it has an active output stream or not. This is

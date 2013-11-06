@@ -25,7 +25,7 @@
 #include "Binary.h"
 
 
-using namespace Misc;
+using namespace misc;
 using namespace SI;
 using namespace std;
 
@@ -1107,7 +1107,7 @@ void SIBinaryFree(struct SIBinary *self)
 
 void SIBinarySetDebugFile(const char *path)
 {
-	Binary::debug.SetPath(path);
+	Binary::debug.setPath(path);
 }
 
 struct SIBinaryDictEntry *SIBinaryGetSIDictEntry(struct SIBinary *self)

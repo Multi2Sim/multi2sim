@@ -30,7 +30,7 @@ namespace si2bin
 class Arg;
 
 
-extern Misc::StringMap token_type_map;
+extern misc::StringMap token_type_map;
 enum TokenType
 {
 	TokenInvalid = 0,

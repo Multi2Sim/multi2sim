@@ -18,7 +18,7 @@ namespace frm2bin
 /* Forward declarations */
 class Arg;
 
-extern Misc::StringMap TokenTypeMap;
+extern misc::StringMap TokenTypeMap;
 
 enum TokenType
 {

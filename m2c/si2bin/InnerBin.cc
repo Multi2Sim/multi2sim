@@ -182,7 +182,7 @@ SI::BinaryUserElement *InnerBin::NewUserElement(unsigned int index, unsigned int
 		if (user_element_list.at(index).get())
 		{
 			delete user_elem;
-			Misc::fatal("userElement[%d] defined twice", index);
+			misc::fatal("userElement[%d] defined twice", index);
 		}
 		
 		user_element_list.at(index) = 

@@ -25,7 +25,7 @@
 #include "Token.h"
 
 
-using namespace Misc;
+using namespace misc;
 
 namespace si2bin
 {
@@ -93,7 +93,7 @@ void Inst::Initialize(const std::string &name)
 		/* Check number of arguments */
 		if (args.size() != info->getNumTokens())
 		{
-			error = StringFormat("invalid number of arguments for %s "
+			error = StringFmt("invalid number of arguments for %s "
 					"(%d given, %d expected)",
 					name.c_str(), (int) args.size(),
 					(int) info->getNumTokens() - 1);
@@ -114,7 +114,7 @@ void Inst::Initialize(const std::string &name)
 			/* Check that actual argument type is acceptable for token */
 			if (!token->IsArgAllowed(arg))
 			{
-				error = StringFormat("invalid type for argument %d",
+				error = StringFmt("invalid type for argument %d",
 						arg->index + 1);
 				break;
 			}

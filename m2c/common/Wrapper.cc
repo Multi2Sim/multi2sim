@@ -35,7 +35,7 @@ const char *CommonTreeConfigGetPath()
 
 void CommonTreeDebugSetPath(char *path)
 {
-	Tree::debug.SetPath(path);
+	Tree::debug.setPath(path);
 }
 
 void CommonTreeConfigRun()

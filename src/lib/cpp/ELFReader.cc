@@ -27,7 +27,7 @@
 #include "Misc.h"
 
 
-using namespace Misc;
+using namespace misc;
 
 
 namespace ELFReader
@@ -378,7 +378,7 @@ std::ostream &operator<<(std::ostream &os, const File &file)
 			", EI_VERSION=" << (int) file.info->e_ident[6] << "\n";
 	os << "  ehdr.e_type: " << file.info->e_type << "\n";
 	os << "  ehdr.e_machine: " << file.info->e_machine << "\n";
-	os << StringFormat("  ehdr.e_entry: 0x%x\n", file.info->e_entry);
+	os << StringFmt("  ehdr.e_entry: 0x%x\n", file.info->e_entry);
 	os << "  ehdr.e_phoff: " << file.info->e_phoff << "\n";
 	os << "  ehdr.e_shoff: " << file.info->e_shoff << "\n";
 	os << "  ehdr.e_phentsize: " << file.info->e_phentsize << "\n";
@@ -394,13 +394,13 @@ std::ostream &operator<<(std::ostream &os, const File &file)
 	os << std::string(80, '-') << '\n';
 	for (auto &section : file.sections)
 	{
-		os << StringFormat("  [%2d]", section->getIndex());
-		os << StringFormat("%4d ", section->getType());
-		os << StringFormat("%5x ", section->getFlags());
-		os << StringFormat("%08x ", section->getAddr());
-		os << StringFormat("%08x ", section->getOffset());
-		os << StringFormat("%9x ", section->getSize());
-		os << StringFormat("%8d ", section->getLink());
+		os << StringFmt("  [%2d]", section->getIndex());
+		os << StringFmt("%4d ", section->getType());
+		os << StringFmt("%5x ", section->getFlags());
+		os << StringFmt("%08x ", section->getAddr());
+		os << StringFmt("%08x ", section->getOffset());
+		os << StringFmt("%9x ", section->getSize());
+		os << StringFmt("%8d ", section->getLink());
 		os << section->getName();
 		os << '\n';
 	}
@@ -413,14 +413,14 @@ std::ostream &operator<<(std::ostream &os, const File &file)
 	os << std::string(80, '-') << '\n';
 	for (auto &ph : file.program_headers)
 	{
-		os << StringFormat("%3d ", ph->getIndex());
-		os << StringFormat("%8x ", ph->getType());
-		os << StringFormat("%8x ", ph->getOffset());
-		os << StringFormat("%8x ", ph->getVaddr());
-		os << StringFormat("%8x ", ph->getPaddr());
-		os << StringFormat("%9u ", ph->getFilesz());
-		os << StringFormat("%9u ", ph->getMemsz());
-		os << StringFormat("%6u ", ph->getFlags());
+		os << StringFmt("%3d ", ph->getIndex());
+		os << StringFmt("%8x ", ph->getType());
+		os << StringFmt("%8x ", ph->getOffset());
+		os << StringFmt("%8x ", ph->getVaddr());
+		os << StringFmt("%8x ", ph->getPaddr());
+		os << StringFmt("%9u ", ph->getFilesz());
+		os << StringFmt("%9u ", ph->getMemsz());
+		os << StringFmt("%6u ", ph->getFlags());
 		os << ph->getAlign() << ' ';
 		os << '\n';
 	}
@@ -428,26 +428,26 @@ std::ostream &operator<<(std::ostream &os, const File &file)
 
 	/* Dump */
 	os << "Symbol table:\n";
-	os << StringFormat("%-40s %-15s %-12s %-12s %-10s %-10s",
+	os << StringFmt("%-40s %-15s %-12s %-12s %-10s %-10s",
 			"name", "section", "value", "size", "info", "other");
 	os << std::string(80, '-') << '\n';
 	for (auto &symbol : file.symbols)
 	{
 		/* Symbol name */
-		os << StringFormat("%-40s ", symbol->getName().c_str());
+		os << StringFmt("%-40s ", symbol->getName().c_str());
 
 		/* Print section */
 		Section *section = symbol->getSection();
 		if (section)
-			os << StringFormat("%-15s ", section->getName().c_str());
+			os << StringFmt("%-15s ", section->getName().c_str());
 		else
-			os << StringFormat("%-15d ", symbol->getShndx());
+			os << StringFmt("%-15d ", symbol->getShndx());
 
 		/* Rest */
-		os << StringFormat("%-10x ", symbol->getValue());
-		os << StringFormat("%-12u ", symbol->getSize());
-		os << StringFormat("%-10u ", symbol->getInfo());
-		os << StringFormat("%-10u ", symbol->getOther());
+		os << StringFmt("%-10x ", symbol->getValue());
+		os << StringFmt("%-12u ", symbol->getSize());
+		os << StringFmt("%-10u ", symbol->getInfo());
+		os << StringFmt("%-10u ", symbol->getOther());
 		os << '\n';
 	}
 	os << '\n';
