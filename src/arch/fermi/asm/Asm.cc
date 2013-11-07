@@ -95,7 +95,7 @@ void Asm::DisassembleBinary(string path)
 			for (unsigned int j = 0; j < inst_vector.size(); ++j)
 			{
 				Inst *inst = inst_vector[j];
-				cout << "\t";
+				cout << "        ";
 				inst->DumpPC(cout);
 				inst->Dump(cout, max_inst_len);
 				inst->DumpHex(cout);

@@ -266,21 +266,21 @@ StringMap inst_sreg_map =
 	{ "SR_MACHINE_ID_3", InstSRegMachineID3 },
 	{ "SR_AFFINITY", InstSRegAffinity },
 	{ "SR_TID", InstSRegTid },
-	{ "SR_TID_X", InstSRegTidX },
-	{ "SR_TID_Y", InstSRegTidY },
-	{ "SR_TID_Z", InstSRegTidZ },
+	{ "SR_TID.X", InstSRegTidX },
+	{ "SR_TID.Y", InstSRegTidY },
+	{ "SR_TID.Z", InstSRegTidZ },
 	{ "SR_CTAParam", InstSRegCTAParam },
-	{ "SR_CTAID_X", InstSRegCTAidX },
-	{ "SR_CTAID_Y", InstSRegCTAidY },
-	{ "SR_CTAID_Z", InstSRegCTAidZ },
+	{ "SR_CTAID.X", InstSRegCTAidX },
+	{ "SR_CTAID.Y", InstSRegCTAidY },
+	{ "SR_CTAID.Z", InstSRegCTAidZ },
 	{ "SR_NTID", InstSRegNTid },
-	{ "SR_NTID_X", InstSRegNTidX },
-	{ "SR_NTID_Y", InstSRegNTidY },
-	{ "SR_NTID_Z", InstSRegNTidZ },
+	{ "SR_NTID.X", InstSRegNTidX },
+	{ "SR_NTID.Y", InstSRegNTidY },
+	{ "SR_NTID.Z", InstSRegNTidZ },
 	{ "SR_GridParam", InstSRegGridParam },
-	{ "SR_NCTAID_X", InstSRegNCTAidX },
-	{ "SR_NCTAID_Y", InstSRegNCTAidY },
-	{ "SR_NCTAID_Z", InstSRegNCTAidZ },
+	{ "SR_NCTAID.X", InstSRegNCTAidX },
+	{ "SR_NCTAID.Y", InstSRegNCTAidY },
+	{ "SR_NCTAID.Z", InstSRegNCTAidZ },
 	{ "SR_SWinLo", InstSRegSWinLo },
 	{ "SR_SWINSZ", InstSRegSWINSZ },
 	{ "SR_SMemSz", InstSRegSMemSz },
@@ -338,13 +338,8 @@ void Inst::DumpPred(ostream &os)
 void Inst::DumpToBuf(void)
 {
 	const char *fmt_str;
-	//char *orig_str;
 	int len;
-	//char buf[200];
 	int size = 200;
-	//char *str = buf;
-	//string &str = info->str;
-	//string &orig_str = str;
 
 	/* Check if instruction is supported */
 	if (!info)
@@ -353,7 +348,6 @@ void Inst::DumpToBuf(void)
 
 	/* Store copy of format string and original destination buffer */
 	fmt_str = info->fmt_str.c_str();
-	//orig_str = str;
 
 	/* Process format string */
 	while (*fmt_str && size)
@@ -505,7 +499,7 @@ void Inst::DumpToBuf(void)
 				offset_in_bank= bytes.general0.src2 &
 					0xfffc;
 				stringstream ss;
-				ss << "c [0x" << hex << bank_id << "] [0x" << hex << offset_in_bank << "], ";
+				ss << "c[0x" << hex << bank_id << "][0x" << hex << offset_in_bank << "], ";
 				str += ss.str();
 				if (src3 != 63)
 				{
@@ -533,7 +527,7 @@ void Inst::DumpToBuf(void)
 				offset_in_bank= bytes.general0.src2 &
 					0xfffc;
 				stringstream ss;
-				ss << "c [0x" << hex << bank_id << "] [0x" << hex << offset_in_bank << "]";
+				ss << "c[0x" << hex << bank_id << "][0x" << hex << offset_in_bank << "]";
 				str += ss.str();
 			}
 			else if (bytes.general0.src2_mod == 3)
@@ -574,7 +568,7 @@ void Inst::DumpToBuf(void)
 				else if (bytes.general0.src2_mod == 1)
 				{
 					stringstream ss;
-					ss << "c [0x" << hex << bank_id << "] [0x" << hex << offset_in_bank << "]";
+					ss << "c[0x" << hex << bank_id << "][0x" << hex << offset_in_bank << "]";
 					str += ss.str();
 				}
 			}
@@ -604,10 +598,10 @@ void Inst::DumpToBuf(void)
 
 			/* print out src2 */
 			stringstream ss;
-			if (offset_in_bank == 0)
-				ss << "c [0x" << hex << bank_id << "] [R" << src1 << "]";
-			else
-				ss << "c [0x" << hex << bank_id << "] [R" << src1 << "+0x" << hex << offset_in_bank << "]";
+			ss << "c[0x" << hex << bank_id << "][R" << src1;
+			if (offset_in_bank != 0)
+				ss << "+0x" << hex << offset_in_bank;
+			ss << "]";
 			str += ss.str();
 		}
 
@@ -650,7 +644,7 @@ void Inst::DumpToBuf(void)
 			{
 				bank_id = bytes.general0.src2 >> 16;
 				offset_in_bank= bytes.general0.src2 & 0xffff;
-				ss << "c [0x" << hex << bank_id << "] [0x" << hex << offset_in_bank << "]";
+				ss << "c[0x" << hex << bank_id << "][0x" << hex << offset_in_bank << "]";
 				str += ss.str();
 			}
 			else if (bytes.general0.src2_mod == 2)
@@ -685,7 +679,7 @@ void Inst::DumpToBuf(void)
 					(bytes.general0.src2 >> 16);
 				offset_in_bank= bytes.general0.src2 &
 					0xfffc;
-				ss << "c [0x" << hex << bank_id << "] [0x" << hex << offset_in_bank << "]";
+				ss << "c[0x" << hex << bank_id << "][0x" << hex << offset_in_bank << "]";
 				str += ss.str();
 			}
 			else if (bytes.general0.src2_mod == 3)
@@ -718,13 +712,13 @@ void Inst::DumpToBuf(void)
 			{
 				/* FIXME : we need to figure out how bit26 and bit28 control src2*/
 				if (bit26 == 0 && bit28 == 0)
-					str += "c [0x0] [0x0]";
+					str += "c[0x0][0x0]";
 				else if (bit26 == 1 && bit28 == 0)
-					str += "c [0x10] [0x0]";
+					str += "c[0x10][0x0]";
 				else if (bit26 == 0 && bit28 == 1)
-					str += "c [0x0] [0x4]";
+					str += "c[0x0][0x4]";
 				else
-					str += "c [0x10] [0x4]";
+					str += "c[0x10][0x4]";
 			}
 		}
 
@@ -1104,9 +1098,9 @@ void Inst::Dump(ostream &os, unsigned int max_inst_len)
 
 void Inst::DumpHex(ostream &os)
 {
-	os << "/*0x";
+	os << "/* 0x";
 	os << setfill('0') << setw(8) << hex << bytes.dword;
-	os << "*/";
+	os << " */";
 }
 
 }  /* namespace Fermi */
