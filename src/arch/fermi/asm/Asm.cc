@@ -18,6 +18,7 @@
  */
 
 #include <cstring>
+#include <vector>
 
 #include <lib/cpp/ELFReader.h>
 
@@ -58,7 +59,9 @@ void Asm::DisassembleBinary(string path)
 {
 	/* Initialization */
 	ELFReader::File file(path);
-	Inst inst(this);
+	vector<Inst *> inst_vector;
+	unsigned int max_inst_len;
+	Inst *inst;
 
 	/* Dump disassembly */
 	cout << "\n\tcode for sm_20\n";
@@ -68,21 +71,37 @@ void Asm::DisassembleBinary(string path)
 		ELFReader::Section *section = file.getSection(i);
 		if (!strncmp(section->getName().c_str(), ".text.", 6))
 		{
-			cout << "\t\tFunction : " << section->getName().c_str() + 6 << "\n";
+			max_inst_len = 0;
 			for (unsigned int pos = 0; pos < section->getSize(); pos += 8)
 			{
-				/* Decode instruction */
-				inst.Decode(pos, section->getBuffer() + pos);
+				inst = new Inst(this);
 
-				/* Dump instruction */
+				/* Decode instruction */
+				inst->Decode(pos, section->getBuffer() + pos);
+				inst->DumpToBuf();
+
+				inst_vector.push_back(inst);
+			}
+
+			for (unsigned int j = 0; j < inst_vector.size(); ++j)
+			{
+				unsigned int inst_len = inst_vector[j]->GetString().length();
+				if (inst_len > max_inst_len)
+					max_inst_len = inst_len;
+			}
+
+			/* Dump */
+			cout << "\t\tFunction : " << section->getName().c_str() + 6 << "\n";
+			for (unsigned int j = 0; j < inst_vector.size(); ++j)
+			{
+				Inst *inst = inst_vector[j];
 				cout << "\t";
-				inst.DumpPC(cout);
-				cout << "\t";
-				inst.Dump(cout);
-				cout << ";";
-				cout << "\t";
-				inst.DumpHex(cout);
+				inst->DumpPC(cout);
+				inst->Dump(cout, max_inst_len);
+				inst->DumpHex(cout);
 				cout << "\n";
+
+				delete inst;
 			}
 			cout << "\t\t" << std::string(38, '.') << "\n\n\n";
 		}
@@ -97,7 +116,7 @@ void Asm::DisassembleBuffer(char *ptr, unsigned int size)
 	{
 		inst.Decode(pos, ptr + pos);
 		inst.DumpHex(cout);
-		inst.Dump(cout);
+		inst.Dump(cout, 100);
 		cout << ";\n";
 	}
 }

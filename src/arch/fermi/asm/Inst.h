@@ -349,6 +349,8 @@ struct InstInfo
 	std::string name;
 	std::string fmt_str;
 
+	std::string str;
+
 	/* Field of the instruction containing the instruction opcode
 	 * identifier. */
 	unsigned int op;
@@ -372,6 +374,8 @@ class Inst
 	/* Decoded information */
 	InstInfo *info;
 
+	std::string str;
+
 public:
 
 	/* Constructor */
@@ -379,9 +383,10 @@ public:
 
 	/* Dump functions */
 	void DumpPC(std::ostream &os);
-	void DumpBuf(char *str, int size);
+	void DumpPred(std::ostream &os);
+	void DumpToBuf(void);
+	void Dump(std::ostream &os, unsigned int max_inst_len);
 	void DumpHex(std::ostream &os);
-	void Dump(std::ostream &os);
 
 	/* From the buffer given in 'ptr', decode an instruction and populate fields
 	 * 'bytes' and 'info' of the instruction object. Argument 'addr' passes the
@@ -394,6 +399,7 @@ public:
 	InstOpcode GetOpcode() { return info ? info->opcode : InstOpcodeInvalid; }
 	InstCategory GetCategory() { assert(info); return info->category; }
 	InstBytes *GetBytes() { return &bytes; }
+	std::string GetString() { return str; }
 };
 
 
