@@ -261,9 +261,17 @@ DEFINST(NOP,
 //	"%pred LEPC", 
 //	0x444)
 
+//DEFINST(VOTE, 
+//	"%pred VOTE", 
+//	0x448)
+
 //DEFINST(STP, 
 //	"%pred STP", 
 //	0x44c)
+
+DEFINST(BAR, 
+	"%pred BAR%mod0_A_redarv%mod0_A_op %dst, %src1",
+	0x450)
 
 //DEFINST(POPC, 
 //	"%pred POPC", 
@@ -596,9 +604,4 @@ DEFINST(CONT,
 DEFINST(BPT,
 	"BPT %tgt",
 	0x7d0)
-
-// this instruction is not supported in CUDA 5.5
-DEFINST(BAR, 
-	"%pred BAR%mod0_A_redarv%mod0_A_op %dst, %src1",
-	0x144)
 
