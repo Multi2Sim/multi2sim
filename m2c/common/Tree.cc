@@ -1108,10 +1108,10 @@ void Tree::Read(IniFile &f, const std::string &name)
 
 	/* Read nodes */
 	std::string path = f.GetPath();
-	for (unsigned int i = 0; i < f.GetNumSections(); i++)
+	for (int i = 0; i < f.getNumSections(); i++)
 	{
 		/* Get section */
-		section = f.GetSection(i);
+		section = f.getSection(i);
 
 		/* Section name must be "Tree.<tree>.Node.<node>" */
 		std::vector<std::string> tokens;
