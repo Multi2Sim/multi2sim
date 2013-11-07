@@ -17,8 +17,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_SOUTHERN_ISLANDS_EMU_NDRANGE_OLD_H
-#define ARCH_SOUTHERN_ISLANDS_EMU_NDRANGE_OLD_H
+#ifndef ARCH_SOUTHERN_ISLANDS_EMU_NDRANGE_H
+#define ARCH_SOUTHERN_ISLANDS_EMU_NDRANGE_H
+
+
+#if 0
 
 #include <stdio.h>
 
@@ -184,6 +187,8 @@ void SINDRangeInsertBufferIntoConstantBufferTable(SINDRange *self,
         struct si_buffer_desc_t *buf_desc, unsigned int const_buf_num);
 void SINDRangeInsertImageIntoUAVTable(SINDRange *self,
         struct si_image_desc_t *image_desc, unsigned int uav);
+
+#endif
 
 #endif
 

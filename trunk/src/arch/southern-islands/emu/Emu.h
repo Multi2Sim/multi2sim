@@ -17,9 +17,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_SOUTHERN_ISLANDS_EMU_EMU_OLD_H
-#define ARCH_SOUTHERN_ISLANDS_EMU_EMU_OLD_H
+#ifndef ARCH_SOUTHERN_ISLANDS_EMU_EMU_H
+#define ARCH_SOUTHERN_ISLANDS_EMU_EMU_H
 
+
+#if 0
 #include <stdio.h>
 
 #include <arch/common/emu.h>
@@ -256,6 +258,8 @@ extern int si_emu_max_kernels;
 extern char *si_emu_opengl_binary_name;
 
 extern int si_emu_wavefront_size;
+
+#endif
 
 #endif
 

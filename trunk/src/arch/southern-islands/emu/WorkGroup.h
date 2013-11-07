@@ -17,10 +17,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_SOUTHERN_ISLANDS_EMU_WORK_GROUP_OLD_H
-#define ARCH_SOUTHERN_ISLANDS_EMU_WORK_GROUP_OLD_H
+#ifndef ARCH_SOUTHERN_ISLANDS_EMU_WORK_GROUP_H
+#define ARCH_SOUTHERN_ISLANDS_EMU_WORK_GROUP_H
 
 
+#if 0
 /*
  * Class 'SIWorkGroup'
  */
@@ -69,5 +70,7 @@ void SIWorkGroupCreate(SIWorkGroup *self, unsigned int id, SINDRange *ndrange);
 void SIWorkGroupDestroy(SIWorkGroup *self);
 
 void SIWorkGroupDump(Object *self, FILE *f);
+
+#endif
 
 #endif
