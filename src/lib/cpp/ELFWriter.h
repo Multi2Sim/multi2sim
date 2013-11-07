@@ -60,38 +60,38 @@ class Buffer
 
 public:
 
-	/// \brief Return reference to internal stream.
+	/// Return reference to internal stream.
 	/// The stream can then be used to read or write content into the
 	/// buffer.
 	std::ostringstream &getStream() { return stream; }
 
-	/// \brief Writes \a size bytes from \a buffer into the buffer. This
+	/// Writes \a size bytes from \a buffer into the buffer. This
 	/// is a shortcut operation equivalent to retrieving the stream with
 	/// getStream() and writing into it with standard I/O operators.
 	void Write(const char *buffer, size_t size) {
 		stream.write(buffer, size);
 	}
 
-	/// \brief Set the current position in the buffer.
+	/// Set the current position in the buffer.
 	/// Equivalent to getStream().seekp()
 	void setPosition(size_t pos) { stream.seekp(pos); }
 
-	/// \brief Set the current position in the buffer.
+	/// Set the current position in the buffer.
 	/// Equivalent to getStream().tellp()
 	size_t getPosition() { return stream.tellp(); }
 
-	/// \brief Return the number of bytes in the buffer
+	/// Return the number of bytes in the buffer
 	size_t getSize();
 
-	/// \brief reset the content of the buffer.
+	/// reset the content of the buffer.
 	void Clear() { stream.str(""); }
 
 
-	/// \brief Get the index of this buffer in the list of buffers of the
+	/// Get the index of this buffer in the list of buffers of the
 	/// File object that it belongs to.
 	int getIndex() const { return index; }
 
-	/// \brief Dump the content of the buffer in a format identical to
+	/// Dump the content of the buffer in a format identical to
 	/// UNIX command <tt> hexdump -C </tt>.
 	void Dump(std::ostream& os) const;
 };
@@ -125,33 +125,33 @@ class Section
 
 public:
 
-	/// \brief Dump the content of the section into an output stream. The
+	/// Dump the content of the section into an output stream. The
 	/// section is dumped by calling function Buffer::Dump() for every
 	/// buffer that it contains.
 	void Dump(std::ostream &os) const;
 
-	/// \brief Set the \a sh_type field of the section header
+	/// Set the \a sh_type field of the section header
 	void setType(Elf32_Word type) { info.sh_type = type; }
 
-	/// \brief Set the \a sh_flags field of the section header
+	/// Set the \a sh_flags field of the section header
 	void setFlags(Elf32_Word flags) { info.sh_flags = flags; }
 
-	/// \brief Set the \a sh_addr field of the section header
+	/// Set the \a sh_addr field of the section header
 	void setAddr(Elf32_Addr addr) { info.sh_addr = addr; }
 
-	/// \brief Set the \a sh_link field of the section header
+	/// Set the \a sh_link field of the section header
 	void setLink(Elf32_Word link) { info.sh_link = link; }
 
-	/// \brief Set the \a sh_info field of the section header
+	/// Set the \a sh_info field of the section header
 	void setInfo(Elf32_Word info) { this->info.sh_info = info; }
 
-	/// \brief Set the \a sh_addralign field of the section header
+	/// Set the \a sh_addralign field of the section header
 	void setAddrAlign(Elf32_Word addralign) { info.sh_addralign = addralign; }
 
-	/// \brief Set the \a sh_entsize field of the section header
+	/// Set the \a sh_entsize field of the section header
 	void setEntSize(Elf32_Word entsize) { info.sh_entsize = entsize; }
 
-	/// \brief Return the index of the section in the section list of the
+	/// Return the index of the section in the section list of the
 	/// File object that it belongs to.
 	int getIndex() const { return index; }
 };
@@ -187,27 +187,27 @@ class Segment
 			Buffer *last_buffer, int index);
 public:
 
-	/// \brief Dump the content of a segment into an output stream.
+	/// Dump the content of a segment into an output stream.
 	/// The segment is dumped by internally calling function
 	/// Buffer::Dump() for every buffer forming the segment.
 	void Dump(std::ostream& os) const;
 
-	/// \brief Set the \a p_type field of the associated ELF program header
+	/// Set the \a p_type field of the associated ELF program header
 	void setType(Elf32_Word type) { info.p_type = type; }
 
-	/// \brief Set the \a p_vaddr field of the program header
+	/// Set the \a p_vaddr field of the program header
 	void setVaddr(Elf32_Addr vaddr) { info.p_vaddr = vaddr; }
 
-	/// \brief Set the \a p_addr field of the program header
+	/// Set the \a p_addr field of the program header
 	void setPaddr(Elf32_Addr paddr) { info.p_paddr = paddr; }
 
-	/// \brief Set the \a p_flags field of the program header
+	/// Set the \a p_flags field of the program header
 	void setFlags(Elf32_Word flags) { info.p_flags = flags; }
 
-	/// \brief Set the \a p_align field of the program header
+	/// Set the \a p_align field of the program header
 	void setAlign(Elf32_Word align) { info.p_align = align; }
 
-	/// \brief Return the index of this segment in the list of segments
+	/// Return the index of this segment in the list of segments
 	/// of the File object where it belongs.
 	int getIndex() const { return index; }
 };
@@ -232,27 +232,27 @@ class Symbol
 
 public:
 
-	/// \brief Set the \a st_value field of the associated ELF symbol
+	/// Set the \a st_value field of the associated ELF symbol
 	/// data structure
 	void setValue(Elf32_Addr value) { info.st_value = value; }
 
-	/// \brief Set the \a st_size field of the ELF symbol
+	/// Set the \a st_size field of the ELF symbol
 	void setSize(Elf32_Word size) { info.st_size = size; }
 
-	/// \brief Set the \a st_info field of the ELF symbol
+	/// Set the \a st_info field of the ELF symbol
 	void setInfo(unsigned char info) { this->info.st_info = info; }
 
-	/// \brief Set the \a st_other field of the ELF symbol
+	/// Set the \a st_other field of the ELF symbol
 	void setOther(unsigned char other) { info.st_other = other; }
 
-	/// \brief Set the \a st_shndx field of the ELF symbol. Notice that
+	/// Set the \a st_shndx field of the ELF symbol. Notice that
 	/// this value points to a certain section in the ELF file, and should
 	/// be a number between 0 and the number of sections minus 1. To
 	/// make the symbol point to a Section instance, use setSection()
 	/// instead.
 	void setShndx(Elf32_Section shndx) { info.st_shndx = shndx; }
 
-	/// \brief Set the \a st_shndx field of the ELF symbol, making it point
+	/// Set the \a st_shndx field of the ELF symbol, making it point
 	/// to a section previously created.
 	void setSection(Section *section) { info.st_shndx =
 			section->getIndex(); }
@@ -286,24 +286,24 @@ class SymbolTable
 
 public:
 
-	/// \brief Create a new symbol named \a name. This is the only way to
+	/// Create a new symbol named \a name. This is the only way to
 	/// create a new instance of class Symbol.
 	Symbol *NewSymbol(const std::string &name);
 
-	/// \brief Return the Buffer object associated with the symbol table
+	/// Return the Buffer object associated with the symbol table
 	/// section automatically created for this symbol table.
 	Buffer *getSymbolTableBuffer() const { return symtab_buffer; }
 
-	/// \brief Return the Buffer object associated with the string table
+	/// Return the Buffer object associated with the string table
 	/// section automatically created for this symbol table.
 	Buffer *getStringTableBuffer() const { return strtab_buffer; }
 
-	/// \brief Return the Section object containing the ELF symbol data
+	/// Return the Section object containing the ELF symbol data
 	/// structures in the symbol table. This section is automatically
 	/// created and managed by the symbol table.
 	Section *getSymbolTableSection() const { return symtab_section; }
 
-	/// \brief Return the Section object containing the string table
+	/// Return the Section object containing the string table
 	/// with the symbol names. This section is created and managed
 	/// automatically by the symbol table.
 	Section *getStringTableSection() const { return symtab_section; }
@@ -328,27 +328,27 @@ class File
 
 public:
 
-	/// \brief Constructor
+	/// Constructor
 	File();
 
-	/// \brief Set field \a e_ident of the ELF header
+	/// Set field \a e_ident of the ELF header
 	void setIdent(int index, unsigned char value) {
 		info.e_ident[index] = value;
 	}
 
-	/// \brief Set field \a e_type of the ELF header
+	/// Set field \a e_type of the ELF header
 	void setType(Elf32_Half type) { info.e_type = type; }
 
-	/// \brief Set field \a e_machine of the ELF header
+	/// Set field \a e_machine of the ELF header
 	void setMachine(Elf32_Half machine) { info.e_machine = machine; }
 
-	/// \brief Set field \a e_version of the ELF header
+	/// Set field \a e_version of the ELF header
 	void setVersion(Elf32_Word version) { info.e_version = version; }
 
-	/// \brief Set field \a e_entry of the ELF header
+	/// Set field \a e_entry of the ELF header
 	void setEntry(Elf32_Addr entry) { info.e_entry = entry; }
 
-	/// \brief Add a new buffer object to an internal list of buffers.
+	/// Add a new buffer object to an internal list of buffers.
 	/// Buffers of type Buffer can only be instantiated through this function.
 	Buffer *NewBuffer();
 
@@ -396,52 +396,48 @@ public:
 	SymbolTable *NewSymbolTable(const std::string &symtab,
 			const std::string &strtab);
 
-	/// \brief Return buffer at position \a index from the buffer list
+	/// Return buffer at position \a index from the buffer list
 	Buffer *getBuffer(int index) const {
 		return index >= 0 && index < (int) buffers.size() ?
 				buffers[index].get() : nullptr;
 	}
 
-	/// \brief Return section at position \a index in the section list
+	/// Return section at position \a index in the section list
 	Section *getSection(int index) const {
 		return index >= 0 && index < (int) sections.size() ?
 				sections[index].get() : nullptr;
 	}
 
-	/// \brief Return segment at position \a index in the segment list
+	/// Return segment at position \a index in the segment list
 	Segment *getSegment(int index) const {
 		return index >= 0 && index < (int) segments.size() ?
 				segments[index].get() : nullptr;
 	}
 
-	/// \brief Return symbol table at position \a index in the list of
+	/// Return symbol table at position \a index in the list of
 	/// symbol tables.
 	SymbolTable *getSymbolTable(int index) const {
 		return index >= 0 && index < (int) symbol_tables.size() ?
 				symbol_tables[index].get() : nullptr;
 	}
 
-	/// \brief Return the number of buffers created with calls to
-	/// NewBuffer()
+	/// Return the number of buffers created with calls to NewBuffer()
 	int getBufferCount() const { return buffers.size(); }
 
-	/// \brief Return the number of sections created with calls to
-	/// NewSection()
+	/// Return the number of sections created with calls to NewSection()
 	int getSectionCount() const { return sections.size(); }
 
-	/// \brief Return the number of segments created with calls to
-	/// NewSegment()
+	/// Return the number of segments created with calls to NewSegment()
 	int getSegmentCount() const { return segments.size(); }
 
-	/// \brief Return the number of symbol tables created with calls to
+	/// Return the number of symbol tables created with calls to
 	/// NewSymbolTable()
 	int getSymbolTableCount() const { return symbol_tables.size(); }
 
-	/// \brief Produce a complete ELF binary into the output stream given
-	/// in \a os
+	/// Produce a complete ELF binary into the output stream given in \a os
 	void Generate(std::ostream &os);
 
-	/// \brief Produce a complete ELF binary and dump it into the output
+	/// Produce a complete ELF binary and dump it into the output
 	/// file given in \a path
 	void Generate(const std::string &path);
 };
