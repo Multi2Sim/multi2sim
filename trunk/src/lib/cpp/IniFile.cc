@@ -27,16 +27,14 @@
 
 
 using namespace misc;
-using namespace std;
 
 
-/* Return a section and variable name from a string "<section>\n<var>" or
- * "<section>". In the latter case, the variable name is an empty string. */
-void IniFile::ItemToSectionVar(string item, string& section, string& var)
+void IniFile::ItemToSectionVar(const std::string &item, std::string &section,
+		std::string &var)
 {
-	vector<string> tokens;
+	std::vector<std::string> tokens;
 
-	/* Extract tokens */
+	// Extract tokens
 	StringTokenize(item, tokens, "|");
 	assert(tokens.size() == 1 || tokens.size() == 2);
 	section = tokens[0];
@@ -44,50 +42,45 @@ void IniFile::ItemToSectionVar(string item, string& section, string& var)
 }
 
 
-/* Create string "<section>\n<var>" from separate strings.
- * String "<section>" is created if 'var' is an empty string.
- * Remove any spaces on the left or right of both the section and variable
- * names. */
-string IniFile::SectionVarToItem(string section, string var)
+std::string IniFile::SectionVarToItem(const std::string &_section,
+		const std::string &_var)
 {
-	string item;
-
-	/* Trim section and variable strings */
+	// Trim section and variable strings
+	std::string section = _section;
+	std::string var = _var;
 	StringSingleSpaces(section);
 	StringTrim(var);
 
-	/* Check section name */
+	// Check section name
 	if (!section.length())
 		panic("%s: invalid section name", __FUNCTION__);
 
-	/* Create return string */
-	item = section;
+	// Create return std::string
+	std::string item = section;
 	if (var.length())
 		item += '|' + var;
 	
-	/* Return */
+	// Return
 	return item;
 }
 
 
-/* Given a string in the format "<var>=<value>", return a string containing the
- * variable and another string containing the value. If the input string format
- * is invalid, the function returns false. True for all ok. */
-bool IniFile::GetVarValue(string& s, string& var, string& value)
+bool IniFile::GetVarValue(const std::string &s, std::string &var,
+		std::string &value)
 {
-	/* At least one '-' sign */
+	// At least one '-' sign
 	size_t count = std::count(s.begin(), s.end(), '=');
 	if (count != 1)
 		return false;
 
-	/* Split string */
+	// Split std::string
 	size_t pos = s.find('=');
 	var = s.substr(0, pos);
 	value = s.substr(pos + 1);
 	if (var.empty())
 		return false;
 
-	/* Trim them */
+	// Trim them
 	StringTrim(var);
 	StringTrim(value);
 	return true;
@@ -96,20 +89,20 @@ bool IniFile::GetVarValue(string& s, string& var, string& value)
 
 /* Insert a new section into the 'item_table' hash table. If the section already
  * exists, return false. Return true on success. */
-bool IniFile::InsertSection(string section)
+bool IniFile::InsertSection(std::string section)
 {
 	bool exists;
 
-	/* Get sections */
+	// Get sections
 	StringSingleSpaces(section);
 	exists = items.count(section);
 
-	/* Add section */
+	// Add section
 	items[section] = "";
 	if (!exists)
 		sections.push_back(section);
 
-	/* Return value */
+	// Return value
 	return !exists;
 }
 
@@ -117,15 +110,15 @@ bool IniFile::InsertSection(string section)
 /* Insert a variable and its value into the 'items' hash table.
  * If 'var' already existed, the previous value is replaced by the
  * new value, returning false. If 'var' did not exist, return true. */
-bool IniFile::InsertVariable(string section, string var, string value)
+bool IniFile::InsertVariable(std::string section, std::string var, std::string value)
 {
-	string item;
+	std::string item;
 	bool exists;
 
-	/* Combine section and variable */
+	// Combine section and variable
 	item = SectionVarToItem(section, var);
 
-	/* Set new value */
+	// Set new value
 	exists = items.count(item);
 	items[item] = value;
 	return !exists;
@@ -144,13 +137,13 @@ IniFile::IniFile(const std::string &path)
 }
 
 
-void IniFile::Dump(std::ostream& os)
+void IniFile::Dump(std::ostream &os) const
 {
-	string tmp_section;
-	string section;
-	string item;
-	string var;
-	string value;
+	std::string tmp_section;
+	std::string section;
+	std::string item;
+	std::string var;
+	std::string value;
 
 	for (auto it = sections.begin(); it != sections.end(); ++it)
 	{
@@ -158,7 +151,7 @@ void IniFile::Dump(std::ostream& os)
 		os << "[ " << section << " ]\n";
 		for (auto it2 = items.begin(); it2 != items.end(); ++it2)
 		{
-			item = it2->first;
+			std::string item = it2->first;
 			ItemToSectionVar(item, tmp_section, var);
 			if (!strcasecmp(section.c_str(), tmp_section.c_str())
 					&& item.length() > section.length()
@@ -180,63 +173,63 @@ static const char *ini_file_err_format =
 
 void IniFile::Load(const std::string &path)
 {
-	string line;
-	string section;
-	string var;
-	string value;
+	std::string line;
+	std::string section;
+	std::string var;
+	std::string value;
 
 	int line_num;
 	bool ok;
 
-	/* Open file */
+	// Open file
 	this->path = path;
-	ifstream f(path);
+	std::ifstream f(path);
 	if (!f)
 		fatal("%s: cannot read from file", path.c_str());
 	
-	/* Read lines */
+	// Read lines
 	line_num = 0;
 	section = "";
 	while (getline(f, line))
 	{
-		/* One more line */
+		// One more line
 		line_num++;
 
-		/* Comment or blank line */
+		// Comment or blank line
 		StringTrim(line);
 		if (!line.length() || line[0] == ';' || line[0] == '#')
 			continue;
 		
-		/* New "[ <section> ]" entry */
+		// New "[ <section> ]" entry
 		if (line[0] == '[' && line[line.length() - 1] == ']')
 		{
-			/* Get section name */
+			// Get section name
 			section = line.substr(1, line.length() - 2);
 			StringSingleSpaces(section);
 
-			/* Insert section */
+			// Insert section
 			ok = InsertSection(section);
 			if (!ok)
 				fatal("%s: line %d: duplicated section '%s'.\n%s",
 					path.c_str(), line_num,
 					section.c_str(), ini_file_err_format);
 
-			/* Done for this line */
+			// Done for this line
 			continue;
 		}
 
-		/* Check that there is an active section */
+		// Check that there is an active section
 		if (section == "")
 			fatal("%s: line %d: section name expected.\n%s",
 				path.c_str(), line_num, ini_file_err_format);
 		
-		/* New "<var> = <value>" entry. */
+		// New "<var> = <value>" entry.
 		ok = GetVarValue(line, var, value);
 		if (!ok)
 			fatal("%s: line %d: invalid format.\n%s",
 				path.c_str(), line_num, ini_file_err_format);
 
-		/* New variable */
+		// New variable
 		ok = InsertVariable(section, var, value);
 		if (!ok)
 			fatal("%s: line %d: duplicated variable '%s'.\n%s",
@@ -244,50 +237,51 @@ void IniFile::Load(const std::string &path)
 				ini_file_err_format);
 	}
 	
-	/* End */
+	// End
 	f.close();
 }
 
 
-void IniFile::Save(const std::string &path)
+void IniFile::Save(const std::string &path) const
 {
-	/* Open file */
-	ofstream f(path);
+	// Open file
+	std::ofstream f(path);
 	if (!f)
 		fatal("%s: cannot write to file", path.c_str());
 	
-	/* Dump */
+	// Dump
 	Dump(f);
 	f.close();
 }
 
 
-bool IniFile::Exists(string section)
+bool IniFile::Exists(const std::string &_section) const
 {
+	std::string section = _section;
 	StringSingleSpaces(section);
 	return items.count(section);
 }
 
 
-bool IniFile::Exists(string section, string var)
+bool IniFile::Exists(const std::string &section,
+		const std::string &var) const
 {
-	string item = SectionVarToItem(section, var);
+	std::string item = SectionVarToItem(section, var);
 	return items.count(item);
 }
 
 
-bool IniFile::Remove(string section)
+bool IniFile::Remove(const std::string &_section)
 {
-	string item;
-
-	/* Remove spaces */
+	// Remove spaces
+	std::string section = _section;
 	StringSingleSpaces(section);
 
-	/* Remove section and variables */
+	// Remove section and variables
 	for (auto it = items.begin(); it != items.end(); )
 	{
-		/* Item is section name */
-		item = it->first;
+		// Item is section name
+		std::string item = it->first;
 		if (!strcasecmp(item.c_str(), section.c_str()) ||
 				(!strncasecmp(item.c_str(), section.c_str(), section.length())
 				&& item[section.length()] == '|'))
@@ -296,11 +290,11 @@ bool IniFile::Remove(string section)
 			continue;
 		}
 
-		/* Next element */
+		// Next element
 		++it;
 	}
 
-	/* Remove section from list */
+	// Remove section from list
 	for (auto it = sections.begin(); it != sections.end(); ++it)
 	{
 		if (!strcasecmp(it->c_str(), section.c_str()))
@@ -310,36 +304,36 @@ bool IniFile::Remove(string section)
 		}
 	}
 
-	/* Section not found */
+	// Section not found
 	return false;
 }
 
 
-bool IniFile::Remove(string section, string var)
+bool IniFile::Remove(const std::string &section, const std::string &var)
 {
-	string item = SectionVarToItem(section, var);
+	std::string item = SectionVarToItem(section, var);
 	return items.erase(item);
 }
 
 
-void IniFile::WriteString(string section, string var, string value)
+void IniFile::WriteString(const std::string &section, const std::string &var,
+		const std::string &value)
 {
-	string item;
-
-	/* Create item, section, and variable strings */
-	item = SectionVarToItem(section, var);
+	// Create item, section, and variable strings
+	std::string item = SectionVarToItem(section, var);
 	
-	/* Insert section and variable into table of allowed items */
+	// Insert section and variable into table of allowed items
 	allowed_items.insert(section);
 	allowed_items.insert(item);
 
-	/* Write value */
+	// Write value
 	InsertSection(section);
 	InsertVariable(section, var, value);
 }
 
 
-void IniFile::WriteInt(string section, string var, int value)
+void IniFile::WriteInt(const std::string &section, const std::string &var,
+		int value)
 {
 	char buffer[100];
 	
@@ -348,7 +342,8 @@ void IniFile::WriteInt(string section, string var, int value)
 }
 
 
-void IniFile::WriteInt64(string section, string var, long long value)
+void IniFile::WriteInt64(const std::string &section, const std::string &var,
+		long long value)
 {
 	char buffer[100];
 	
@@ -357,7 +352,8 @@ void IniFile::WriteInt64(string section, string var, long long value)
 }
 
 
-void IniFile::WriteBool(string section, string var, bool value)
+void IniFile::WriteBool(const std::string &section, const std::string &var,
+		bool value)
 {
 	char buffer[100];
 	
@@ -366,7 +362,8 @@ void IniFile::WriteBool(string section, string var, bool value)
 }
 
 
-void IniFile::WriteDouble(string section, string var, double value)
+void IniFile::WriteDouble(const std::string &section, const std::string &var,
+		double value)
 {
 	char buffer[100];
 	
@@ -375,23 +372,25 @@ void IniFile::WriteDouble(string section, string var, double value)
 }
 
 
-void IniFile::WriteEnum(string section, string var, int value, StringMap map)
+void IniFile::WriteEnum(const std::string &section, const std::string &var,
+		int value, StringMap map)
 {
-	string s;
+	std::string s;
 	bool error;
 
-	/* Translate value */
+	// Translate value
 	s = misc::StringMapValue(map, value, error);
 	if (error)
 		fatal("%s: invalid value for enumeration (%d)",
 				__FUNCTION__, value);
 	
-	/* Write */
+	// Write
 	WriteString(section, var, s);
 }
 
 
-void IniFile::WritePointer(string section, string var, void *value)
+void IniFile::WritePointer(const std::string &section, const std::string &var,
+		void *value)
 {
 	char buffer[100];
 	
@@ -400,81 +399,85 @@ void IniFile::WritePointer(string section, string var, void *value)
 }
 
 
-string IniFile::ReadString(string section, string var, string def)
+std::string IniFile::ReadString(const std::string &section,
+		const std::string &var, const std::string &def)
 {
 	Allow(section, var);
-	string item = SectionVarToItem(section, var);
+	std::string item = SectionVarToItem(section, var);
 	auto it = items.find(item);
 	return it == items.end() ? def : it->second;
 }
 
 
-int IniFile::ReadInt(string section, string var, int def)
+int IniFile::ReadInt(const std::string &section, const std::string &var,
+		int def)
 {
-	string value;
+	std::string value;
 	StringError error;
 	int result;
 
-	/* Obtain value */
+	// Obtain value
 	value = ReadString(section, var);
 	if (value == "")
 		return def;
 
-	/* Interpret */
+	// Interpret
 	result = StringToInt(value, error);
 	if (error)
 		fatal("%s: section [%s], variable '%s', value '%s': %s\n",
 				path.c_str(), section.c_str(), var.c_str(),
 				value.c_str(), StringGetErrorString(error));
 
-	/* Return */
+	// Return
 	return result;
 }
 
 
-long long IniFile::ReadInt64(string section, string var, long long def)
+long long IniFile::ReadInt64(const std::string &section,
+		const std::string &var, long long def)
 {
-	string value;
+	std::string value;
 	StringError error;
 	long long result;
 
-	/* Obtain value */
+	// Obtain value
 	value = ReadString(section, var);
 	if (value == "")
 		return def;
 
-	/* Interpret */
+	// Interpret
 	result = StringToInt64(value, error);
 	if (error)
 		fatal("%s: section [%s], variable '%s', value '%s': %s\n",
 				path.c_str(), section.c_str(), var.c_str(),
 				value.c_str(), StringGetErrorString(error));
 
-	/* Return */
+	// Return
 	return result;
 }
 
 
-bool IniFile::ReadBool(string section, string var, bool def)
+bool IniFile::ReadBool(const std::string &section, const std::string &var,
+		bool def)
 {
-	string s;
+	std::string s;
 
-	/* Read variable */
+	// Read variable
 	s = ReadString(section, var);
 	if (s == "")
 		return def;
 
-	/* True */
+	// True
 	if (!strcasecmp(s.c_str(), "t") || !strcasecmp(s.c_str(), "True")
 			|| !strcasecmp(s.c_str(), "On"))
 		return true;
 	
-	/* False */
+	// False
 	if (!strcasecmp(s.c_str(), "f") || !strcasecmp(s.c_str(), "False")
 			|| !strcasecmp(s.c_str(), "Off"))
 		return false;
 
-	/* Invalid value */
+	// Invalid value
 	fatal("%s: section [%s], variable '%s', invalid value '%s'\n"
 			"\tPossible values are {t|True|On|f|False|Off}\n",
 			path.c_str(), section.c_str(), var.c_str(), s.c_str());
@@ -482,47 +485,49 @@ bool IniFile::ReadBool(string section, string var, bool def)
 }
 
 
-double IniFile::ReadDouble(string section, string var, double def)
+double IniFile::ReadDouble(const std::string &section,
+		const std::string &var, double def)
 {
-	istringstream ss;
-	string s;
+	std::istringstream ss;
+	std::string s;
 	double value;
 
-	/* Read value */
+	// Read value
 	s = ReadString(section, var);
 	if (s == "")
 		return def;
 
-	/* Convert */
+	// Convert
 	ss.str(s);
 	ss >> value;
 	if (!ss || !ss.eof())
 		fatal("%s: section [%s], variable '%s', invalid double value '%s'\n",
 				path.c_str(), section.c_str(), var.c_str(), s.c_str());
 	
-	/* Convert */
+	// Convert
 	return value;
 }
 
 
-int IniFile::ReadEnum(string section, string var, StringMap map, int def)
+int IniFile::ReadEnum(const std::string &section, const std::string &var,
+		StringMap map, int def)
 {
-	string s;
+	std::string s;
 
 	int value;
 	bool error;
 
-	/* Read value */
+	// Read value
 	s = ReadString(section, var);
 	if (s == "")
 		return def;
 	
-	/* Convert */
+	// Convert
 	value = StringMapStringCase(map, s.c_str(), error);
 	if (!error)
 		return value;
 
-	/* Error, show options */
+	// Error, show options
 	fatal("%s: section [%s], variable '%s', invalid value '%s'\n"
 			"\tPossible values are %s",
 			path.c_str(), section.c_str(), var.c_str(), s.c_str(),
@@ -531,69 +536,72 @@ int IniFile::ReadEnum(string section, string var, StringMap map, int def)
 }
 
 
-void *IniFile::ReadPointer(string section, string var, void *def)
+void *IniFile::ReadPointer(const std::string &section, const std::string &var,
+		void *def)
 {
-	string s;
+	std::string s;
 	void *value;
 
-	/* Read value */
+	// Read value
 	s = ReadString(section, var);
 	if (s == "")
 		return def;
 	
-	/* Convert */
+	// Convert
 	sscanf(s.c_str(), "%p", &value);
 	return value;
 }
 
 
-void IniFile::Allow(string section)
+void IniFile::Allow(const std::string &_section)
 {
+	std::string section = _section;
 	StringSingleSpaces(section);
 	allowed_items.insert(section);
 }
 
 
-void IniFile::Allow(string section, string var)
+void IniFile::Allow(const std::string &section, const std::string &var)
 {
 	Allow(section);
-	string item = SectionVarToItem(section, var);
+	std::string item = SectionVarToItem(section, var);
 	allowed_items.insert(item);
 }
 
 
-void IniFile::Enforce(string section)
+void IniFile::Enforce(const std::string &_section)
 {
+	std::string section = _section;
 	StringSingleSpaces(section);
 	allowed_items.insert(section);
 	enforced_items.insert(section);
 }
 
 
-void IniFile::Enforce(string section, string var)
+void IniFile::Enforce(const std::string &section, const std::string &var)
 {
 	Enforce(section);
-	string item = SectionVarToItem(section, var);
+	std::string item = SectionVarToItem(section, var);
 	enforced_items.insert(item);
 	allowed_items.insert(item);
 }
 
 
-void IniFile::Check()
+void IniFile::Check() const
 {
-	string item;
-	string section;
-	string var;
+	std::string item;
+	std::string section;
+	std::string var;
 
-	/* Check that all mandatory items are present */
+	// Check that all mandatory items are present
 	for (auto it = enforced_items.begin(); it != enforced_items.end(); ++it)
 	{
-		/* Item is present */
+		// Item is present
 		item = *it;
 		if (items.count(item))
 			continue;
 
-		/* Item not present */
+		// Item not present
 		ItemToSectionVar(item, section, var);
 		if (var == "")
 			fatal("%s: section [%s] missing",
@@ -603,15 +611,15 @@ void IniFile::Check()
 				path.c_str(), section.c_str(), var.c_str());
 	}
 
-	/* Check that all present items are allowed */
+	// Check that all present items are allowed
 	for (auto it = items.begin(); it != items.end(); ++it)
 	{
-		/* Item is allowed */
+		// Item is allowed
 		item = it->first;
 		if (allowed_items.count(item))
 			continue;
 
-		/* Item not allowed */
+		// Item not allowed
 		ItemToSectionVar(item, section, var);
 		if (var == "")
 			fatal("%s: invalid section [%s]",

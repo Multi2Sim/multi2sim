@@ -20,6 +20,7 @@
 #ifndef LIB_CLASS_INI_FILE_H
 #define LIB_CLASS_INI_FILE_H
 
+#include <cassert>
 #include <cstring>
 #include <functional>
 #include <string>
@@ -32,104 +33,207 @@
 
 class IniFile
 {
-	/* Case-insensitive string hash */
+	// Case-insensitive string hash
 	struct KeyHash
 	{
 		size_t operator()(std::string s) const { misc::StringToLower(s);
 				return std::hash<std::string>()(s); }
 	};
 
-	/* Case-insensitive string compare */
+	// Case-insensitive string compare
 	struct KeyCompare
 	{
 		bool operator()(const std::string& a, const std::string& b) const
 				{ return !strcasecmp(a.c_str(), b.c_str()); }
 	};
 
-	/* File name */
+	// File name
 	std::string path;
 	
-	/* Hash table containing present items. The keys are strings with the
-	 * template "<section>" for sections and "<section>|<var>" for
-	 * variables. The data are NULL for sections, and the variable value for
-	 * variables. */
+	// Hash table containing present items. The keys are strings with the
+	// template "<section>" for sections and "<section>|<var>" for
+	// variables. The data are NULL for sections, and the variable value for
+	// variables.
 	std::unordered_map<std::string, std::string, KeyHash, KeyCompare> items;
 
-	/* Hash table containing allowed items. The keys are strings
-	 * "<section>|<variable>". */
+	// Hash table containing allowed items. The keys are strings
+	// "<section>|<variable>".
 	std::unordered_set<std::string, KeyHash, KeyCompare> allowed_items;
 
-	/* Table of enforced items. Each element is a string with template
-	 * "<section>|<variable>". */
+	// Table of enforced items. Each element is a string with template
+	// "<section>|<variable>".
 	std::unordered_set<std::string, KeyHash, KeyCompare> enforced_items;
 
-	/* Redundant list containing section names. This extra
-	 * information is added to keep track of the order in which sections
-	 * were loaded from a file or created by the user. Altering this order
-	 * when saving the file could be annoying. */
+	// Redundant list containing section names. This extra
+	// information is added to keep track of the order in which sections
+	// were loaded from a file or created by the user. Altering this order
+	// when saving the file could be annoying.
 	std::vector<std::string> sections;
 
-	void ItemToSectionVar(std::string item, std::string& section,
-			std::string& var);
-	std::string SectionVarToItem(std::string section, std::string var);
-	bool GetVarValue(std::string& s, std::string& var, std::string& value);
+	/// Extract the section and variable fields from an item. The item has
+	/// the format "<section>|<variable>" or "<section>". In the latter case,
+	/// output argument \a var is an empty string.
+	static void ItemToSectionVar(const std::string &item,
+			std::string &section, std::string &var);
+	
+	/// Create a string "<section>|<var>" from separate strings. String
+	/// "<section>" is created if \a var is an empty string. Remove any
+	/// spaces on the left or right of both the section and variable names.
+	static std::string SectionVarToItem(const std::string &section,
+			const std::string &var);
+
+	/// Given a string in the format "<var>=<value>", return a string
+	/// containing the variable and another string containing the value. If
+	/// the input string format is invalid, the function returns false.
+	static bool GetVarValue(const std::string &s, std::string &var,
+			std::string &value);
+
 	bool InsertSection(std::string section);
+
 	bool InsertVariable(std::string section, std::string var,
 			std::string value);
 public:
 
+	/// Create an empty INI file
 	IniFile();
+
+	/// Create an INI file and load its content from the file system
 	IniFile(const std::string &path);
 
-	const std::string &GetPath() { return path; }
+	/// If the content of the INI file was loaded from the file system,
+	/// return the file name. Otherwise, return an empty string.
+	const std::string &GetPath() const { return path; }
 
+	/// Load the INI file content from the file system
 	void Load(const std::string &path);
-	void Save(const std::string &path);
-	void Dump(std::ostream& os);
 
-	/* Return true if a section or variable exists */
-	bool Exists(std::string section);
-	bool Exists(std::string section, std::string var);
+	/// Store the INI file into the file system
+	void Save(const std::string &path) const;
 
-	/* Remove a section or a variable, and return true if the section/
-	 * variable was found in the file. */
-	bool Remove(std::string section);
-	bool Remove(std::string section, std::string var);
+	/// Dump the content of the INI file into an output stream
+	void Dump(std::ostream &os) const;
 
-	unsigned int GetNumSections() { return sections.size(); }
-	const std::string &GetSection(unsigned int index) { return sections[index]; }
+	/// Alternative syntax to dump file into output stream
+	friend std::ostream &operator<<(std::ostream &os,
+			const IniFile &ini_file) {
+		ini_file.Dump(os);
+		return os;
+	}
+
+	/// Return \a true if the section exists
+	bool Exists(const std::string &section) const;
+
+	/// Return \a true if a variable exists
+	bool Exists(const std::string &section, const std::string &var) const;
+
+	/// Remove a section, returning \a false if the section was not found
+	bool Remove(const std::string &section);
+
+	/// Remove a variable, returning \a false if it wasn't found
+	bool Remove(const std::string &section, const std::string &var);
+
+	/// Return the number of sections
+	int getNumSections() const { return sections.size(); }
+
+	/// Return the name of the section at position \a index. The result is
+	/// undefined if \a index is an invalid position.
+	const std::string &getSection(int index) const {
+		assert(index >= 0 && index < (int) sections.size());
+		return sections[index];
+	}
 	
-	/* Add variables in a section; if section does not exists, it is created.
-	 * If variable already exists, replace old value. */
-	void WriteString(std::string section, std::string var, std::string value);
-	void WriteInt(std::string section, std::string var, int value);
-	void WriteInt64(std::string section, std::string var, long long value);
-	void WriteBool(std::string section, std::string var, bool value);
-	void WriteDouble(std::string section, std::string var, double value);
-	void WriteEnum(std::string section, std::string var, int value, misc::StringMap map);
-	void WritePointer(std::string section, std::string var, void *value);
+	/// Add a new variable to a section. If the section doesn't exist, it
+	/// will be created. Sections and variables added with \a WriteXXX()
+	/// calls are automatically added to the list of allowed sections and
+	/// variables.
+	void WriteString(const std::string &section, const std::string &var,
+			const std::string &value);
 
-	/* Read variables from a section. If a section or variable does not exist, the
-	 * default value in 'def' is returned. Variables read with IniFileReadXXX
-	 * functions are added automatically to the list of allowed variables. */
-	std::string ReadString(std::string section, std::string var, std::string def = "");
-	int ReadInt(std::string section, std::string var, int def = 0);
-	long long ReadInt64(std::string section, std::string var, long long def = 0);
-	bool ReadBool(std::string section, std::string var, bool def = false);
-	double ReadDouble(std::string section, std::string var, double def = 0.0);
-	int ReadEnum(std::string section, std::string var, misc::StringMap map, int def = 0);
-	void *ReadPointer(std::string section, std::string var, void *def = NULL);
+	/// Write an integer variable
+	void WriteInt(const std::string &section, const std::string &var,
+			int value);
 
-	/* Allowed/mandatory sections/variables */
-	void Allow(std::string section);
-	void Allow(std::string section, std::string var);
-	void Enforce(std::string section);
-	void Enforce(std::string section, std::string var);
+	/// Write a 64-bit integer variable
+	void WriteInt64(const std::string &section, const std::string &var,
+			long long value);
 
-	/* Check that all enforced variables and sections are present in the
-	 * file, and that all variables/sections present in the file are
-	 * allowed. */
-	void Check();
+	/// Write a boolean value, stored as a string <tt>True|False</tt>
+	void WriteBool(const std::string &section, const std::string &var,
+			bool value);
+
+	/// Write a variable of type \a double
+	void WriteDouble(const std::string &section, const std::string &var,
+			double value);
+
+	/// Write a value that is member of the enumeration represented in \a
+	/// map.
+	void WriteEnum(const std::string &section, const std::string &var,
+			int value, misc::StringMap map);
+
+	/// Write a variable of type pointer
+	void WritePointer(const std::string &section, const std::string &var,
+			void *value);
+
+	/// Read a string variable from the INI file. If the variable is not
+	/// found, return the default value specified in \a def.
+	std::string ReadString(const std::string &section,
+			const std::string &var,
+			const std::string &def = "");
+	
+	/// Read an integer variable
+	int ReadInt(const std::string &section, const std::string &var,
+			int def = 0);
+
+	/// Read a 64-bit integer variable
+	long long ReadInt64(const std::string &section, const std::string &var,
+			long long def = 0);
+
+	/// Read a boolean variable. String values accepted are
+	/// <tt>t|True|On|f|False|Off</tt> and all their combinations of lower
+	/// and upper case
+	bool ReadBool(const std::string &section, const std::string &var,
+			bool def = false);
+
+	/// Read a variable of type \a double.
+	double ReadDouble(const std::string &section, const std::string &var,
+			double def = 0.0);
+
+	/// Read a string representing a constant integer value, as specified in
+	/// the string \a map. If the string does not map to any value, or the
+	/// variable was not present, return the default value specified in \a
+	/// def.
+	int ReadEnum(const std::string &section, const std::string &var,
+			misc::StringMap map, int def = 0);
+
+	/// Read a pointer from a file, represented as an hexadecimal number,
+	/// with the optional <tt>0x</tt> prefix.
+	void *ReadPointer(const std::string &section, const std::string &var,
+			void *def = nullptr);
+
+	/// Allow the presence of a section in the file. A section is implicitly
+	/// allowed with any call to ReadString() or similar, or any call to
+	/// WriteString() or similar, using that section.
+	void Allow(const std::string &section);
+
+	/// Allow the presence of a variable in the file. A variable is
+	/// implicitly allowed every time it is read or written with calls to
+	/// ReadString(), WriteString(), and similar.
+	void Allow(const std::string &section, const std::string &var);
+
+	/// Enforce the presence of a section in the file. If a mandatory
+	/// section is not present when the programmer invokes Check(), a fatal
+	/// message is produced.
+	void Enforce(const std::string &section);
+
+	/// Enforce the presence of a variable in the file. If a mandatory
+	/// variable is not present when the programmer invoked Check(), a fatal
+	/// message is produced.
+	void Enforce(const std::string &section, const std::string &var);
+
+	/// Check that all enforced variables and sections are present in the
+	/// file, and that all variables/sections present in the file are
+	/// allowed.
+	void Check() const;
 };
 
 
