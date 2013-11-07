@@ -24,7 +24,26 @@ libemu_a_SOURCES = \
 	work-group.h \
 	\
 	work-item.c \
-	work-item.h
+	work-item.h \
+	\
+	\
+	Emu.cc \
+	Emu.h \
+	\
+	NDRange.cc \
+	NDRange.h \
+	\
+	Wavefront.cc \
+	Wavefront.h \
+	\
+	WorkGroup.cc \
+	WorkGroup.h \
+	\
+	WorkItem.cc \
+	WorkItem.h \
+	\
+	Wrapper.cc \
+	Wrapper.h
 
 INCLUDES = @M2S_INCLUDES@
 
