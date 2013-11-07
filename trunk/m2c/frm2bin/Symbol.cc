@@ -42,6 +42,7 @@ void Symbol::Dump(std::ostream &os)
 #include <lib/util/string.h>
 #include "Symbol.h"
 
+using namespace frm2bin;
 
 //struct hash_table_t *frm_symbol_table;
 
