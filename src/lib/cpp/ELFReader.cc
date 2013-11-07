@@ -42,28 +42,28 @@ namespace ELFReader
 
 Section::Section(File *file, int index, unsigned int pos)
 {
-	/* Read section header */
+	// Read section header
 	info = (Elf32_Shdr *) (file->getBuffer() + pos);
 	if (pos < 0 || pos + sizeof(Elf32_Shdr) > file->getSize())
 		fatal("%s: invalid position for section header",
 				file->getPath().c_str());
 
-	/* Initialize */
+	// Initialize
 	this->file = file;
 	this->index = index;
 	buffer = NULL;
 	size = info->sh_size;
 
-	/* Get section contents, if section type is not SHT_NOBITS
-	 * (sh_type = 8). */
+	// Get section contents, if section type is not SHT_NOBITS
+	// (sh_type = 8).
 	if (info->sh_type != 8)
 	{
-		/* Check valid range */
+		// Check valid range
 		if (info->sh_offset + info->sh_size > file->getSize())
 			fatal("%s: section out of range",
 					file->getPath().c_str());
 
-		/* Set up buffer and stream */
+		// Set up buffer and stream
 		buffer = file->getBuffer() + info->sh_offset;
 	}
 }
@@ -77,17 +77,17 @@ Section::Section(File *file, int index, unsigned int pos)
 
 ProgramHeader::ProgramHeader(File *file, int index, unsigned int pos)
 {
-	/* Initialize */
+	// Initialize
 	this->file = file;
 	this->index = index;
 
-	/* Read program header */
+	// Read program header
 	info = (Elf32_Phdr *) (file->getBuffer() + pos);
 	if (pos < 0 || pos + sizeof(Elf32_Phdr) > file->getSize())
 		fatal("%s: invalid position for program header",
 				file->getPath().c_str());
 
-	/* File content */
+	// File content
 	size = info->p_filesz;
 	buffer = file->getBuffer() + info->p_offset;
 }
@@ -96,15 +96,15 @@ ProgramHeader::ProgramHeader(File *file, int index, unsigned int pos)
 void ProgramHeader::getStream(std::istringstream &stream, unsigned int offset,
 		unsigned int size) const
 {
-	/* Check valid offset/size */
+	// Check valid offset/size
 	if (offset + size > this->size)
 		fatal("%s: %s: invalid offset/size",
 				file->getPath().c_str(),
 				__FUNCTION__);
 
-	/* Set substream */
+	// Set substream
 	std::stringbuf *buf = stream.rdbuf();
-	buf->pubsetbuf(buffer + offset, size);
+	buf->pubsetbuf(const_cast<char *>(buffer) + offset, size);
 }
 
 
@@ -116,33 +116,33 @@ void ProgramHeader::getStream(std::istringstream &stream, unsigned int offset,
 
 Symbol::Symbol(File *file, Section *section, unsigned int pos)
 {
-	/* Initialize */
+	// Initialize
 	this->file = file;
 
-	/* Read symbol */
+	// Read symbol
 	info = (Elf32_Sym *) (section->getBuffer() + pos);
 	if (pos < 0 || pos + sizeof(Elf32_Sym) > section->getSize())
 		fatal("%s: invalid position for symbol",
 				file->getPath().c_str());
 
-	/* Get section with symbol name */
+	// Get section with symbol name
 	unsigned name_section_index = section->getLink();
 	Section *name_section = file->getSection(name_section_index);
 	if (!name_section)
 		fatal("%s: invalid index for symbol name section",
 				file->getPath().c_str());
 
-	/* Get symbol name */
+	// Get symbol name
 	if (info->st_name >= name_section->getSize())
 		fatal("%s: invalid symbol name offset",
 				file->getPath().c_str());
 	name = name_section->getBuffer() + info->st_name;
 
-	/* Get section in 'st_shndx' */
+	// Get section in 'st_shndx'
 	this->section = file->getSection(info->st_shndx);
 
-	/* If symbol points to a valid region of the section, set
-	 * variable buffer. */
+	// If symbol points to a valid region of the section, set
+	// variable buffer.
 	buffer = NULL;
 	if (this->section && info->st_value + info->st_size <=
 			this->section->getSize())
@@ -156,14 +156,14 @@ bool Symbol::Compare(const std::unique_ptr<Symbol>& a,
 	int bind_a;
 	int bind_b;
 
-	/* Sort by value */
+	// Sort by value
 	if (a->info->st_value < b->info->st_value)
 		return true;
 	else if (a->info->st_value > b->info->st_value)
 		return false;
 
-	/* Sort symbol with the same address as per their
-	 * ST_BIND field in st_info (bits 4 to 8) */
+	// Sort symbol with the same address as per their
+	// ST_BIND field in st_info (bits 4 to 8)
 	bind_a = ELF32_ST_BIND(a->info->st_info);
 	bind_b = ELF32_ST_BIND(b->info->st_info);
 	if (bind_a < bind_b)
@@ -171,7 +171,7 @@ bool Symbol::Compare(const std::unique_ptr<Symbol>& a,
 	else if (bind_a > bind_b)
 		return false;
 	
-	/* Sort alphabetically */
+	// Sort alphabetically
 	return a->name < b->name;
 }
 
@@ -179,19 +179,19 @@ bool Symbol::Compare(const std::unique_ptr<Symbol>& a,
 void Symbol::getStream(std::istringstream &stream, unsigned int offset,
 		unsigned int size) const
 {
-	/* Symbol without content */
+	// Symbol without content
 	if (!buffer)
 		fatal("%s: %s: symbol '%s' does not have any valid content",
 				file->getPath().c_str(), __FUNCTION__,
 				name.c_str());
 
-	/* Check valid offset/size */
+	// Check valid offset/size
 	if (offset + size > info->st_size)
 		fatal("%s: symbol '%s': %s: invalid offset/size",
 				file->getPath().c_str(), name.c_str(),
 				__FUNCTION__);
 
-	/* Set substream */
+	// Set substream
 	std::stringbuf *buf = stream.rdbuf();
 	buf->pubsetbuf(const_cast<char *>(buffer) + offset, size);
 }
@@ -213,16 +213,16 @@ static const char *err_64bit =
 
 void File::ReadHeader()
 {
-	/* Read ELF header */
+	// Read ELF header
 	info = (Elf32_Ehdr *) buffer;
 	if (size < sizeof(Elf32_Ehdr))
 		fatal("%s: invalid ELF file", path.c_str());
 
-	/* Check that file is a valid ELF file */
+	// Check that file is a valid ELF file
 	if (strncmp((char *) info->e_ident, ELFMAG, 4))
 		fatal("%s: invalid ELF file", path.c_str());
 
-	/* Check that ELF file is a 32-bit object */
+	// Check that ELF file is a 32-bit object
 	if (info->e_ident[EI_CLASS] == ELFCLASS64)
 		fatal("%s: 64-bit ELF not supported.\n%s",
 			path.c_str(), err_64bit);
@@ -231,24 +231,24 @@ void File::ReadHeader()
 
 void File::ReadSections()
 {
-	/* Check section size and number */
+	// Check section size and number
 	if (!info->e_shnum || info->e_shentsize != sizeof(Elf32_Shdr))
 		fatal("%s: number of sections is 0 or section size is not %d",
 			path.c_str(), (int) sizeof(Elf32_Shdr));
 
-	/* Read section headers */
+	// Read section headers
 	for (int i = 0; i < info->e_shnum; i++)
 		sections.push_back(std::unique_ptr<Section>(new Section(this,
 				i, info->e_shoff + i * info->e_shentsize)));
 
-	/* Read string table */
+	// Read string table
 	if (info->e_shstrndx >= info->e_shnum)
 		fatal("%s: invalid string table index", path.c_str());
 	string_table = sections[info->e_shstrndx].get();
 	if (string_table->info->sh_type != 3)
 		fatal("%s: invalid string table type", path.c_str());
 
-	/* Read section names */
+	// Read section names
 	for (auto &section : sections)
 		section->name = string_table->buffer + section->info->sh_name;
 }
@@ -256,18 +256,18 @@ void File::ReadSections()
 
 void File::ReadProgramHeaders()
 {
-	/* Nothing if there are no program headers. Don't even check if the
-	 * program header size is the right one, it could be 0 in this case. */
+	// Nothing if there are no program headers. Don't even check if the
+	// program header size is the right one, it could be 0 in this case.
 	if (!info->e_phnum)
 		return;
 	
-	/* Check program header size */
+	// Check program header size
 	if (info->e_phentsize != sizeof(Elf32_Phdr))
 		fatal("%s: program header size %d (should be %d)",
 				path.c_str(), info->e_phentsize,
 				(int) sizeof(Elf32_Phdr));
 	
-	/* Read program headers */
+	// Read program headers
 	for (int i = 0; i < info->e_phnum; i++)
 	{
 		auto ph = std::unique_ptr<ProgramHeader>(new ProgramHeader(this,
@@ -279,60 +279,60 @@ void File::ReadProgramHeaders()
 
 void File::ReadSymbols()
 {
-	/* Load symbols from sections */
+	// Load symbols from sections
 	for (auto &section : sections)
 	{
 		if (section->info->sh_type != 2 &&
 				section->info->sh_type != 11)
 			continue;
 
-		/* Read symbol table */
+		// Read symbol table
 		int num_symbols = section->info->sh_size / sizeof(Elf32_Sym);
 		for (int i = 0; i < num_symbols; i++)
 		{
-			/* Create symbol */
+			// Create symbol
 			auto symbol = std::unique_ptr<Symbol>(new Symbol(this,
 					section.get(), i * sizeof(Elf32_Sym)));
 
-			/* Discard empty symbol */
+			// Discard empty symbol
 			if (symbol->name.empty())
 				continue;
 
-			/* Add symbol */
+			// Add symbol
 			symbols.push_back(std::move(symbol));
 		}
 	}
 
-	/* Sort */
+	// Sort
 	sort(symbols.begin(), symbols.end(), Symbol::Compare);
 }
 
 
-File::File(std::string path)
+File::File(const std::string &path)
 {
-	/* Initialize */
+	// Initialize
 	this->path = path;
 
-	/* Open file */
+	// Open file
 	std::ifstream f(path);
 	if (!f)
 		fatal("%s: cannot open file", path.c_str());
 
-	/* Get file size */
+	// Get file size
 	f.seekg(0, std::ios_base::end);
 	size = f.tellg();
 	f.seekg(0, std::ios_base::beg);
 
-	/* Load entire file into buffer and close */
+	// Load entire file into buffer and close
 	buffer = new char[size];
 	f.read(buffer, size);
 	f.close();
 
-	/* Make string stream point to buffer */
+	// Make string stream point to buffer
 	std::stringbuf *buf = stream.rdbuf();
 	buf->pubsetbuf(buffer, size);
 
-	/* Read content */
+	// Read content
 	ReadHeader();
 	ReadSections();
 	ReadProgramHeaders();
@@ -342,19 +342,19 @@ File::File(std::string path)
 
 File::File(const char *buffer, unsigned int size)
 {
-	/* Initialize */
+	// Initialize
 	path = "<anonymous>";
 
-	/* Copy buffer */
+	// Copy buffer
 	this->size = size;
 	this->buffer = new char[size];
 	memcpy(this->buffer, buffer, size);
 
-	/* Make string stream point to buffer */
+	// Make string stream point to buffer
 	std::stringbuf *buf = stream.rdbuf();
 	buf->pubsetbuf(this->buffer, size);
 
-	/* Read content */
+	// Read content
 	ReadHeader();
 	ReadSections();
 	ReadProgramHeaders();
@@ -364,14 +364,14 @@ File::File(const char *buffer, unsigned int size)
 
 File::~File(void)
 {
-	/* Free content */
+	// Free content
 	delete[] buffer;
 }
 
 
 std::ostream &operator<<(std::ostream &os, const File &file)
 {
-	/* Header */
+	// Header
 	os << "ELF header:\n";
 	os << "  ehdr.e_ident: EI_CLASS=" << (int) file.info->e_ident[5] <<
 			", EI_DATA=" << (int) file.info->e_ident[5] <<
@@ -388,7 +388,7 @@ std::ostream &operator<<(std::ostream &os, const File &file)
 	os << "  ehdr.e_shstrndx: " << file.info->e_shstrndx << "\n";
 	os << '\n';
 
-	/* Dump section headers */
+	// Dump section headers
 	os << "Section headers:\n";
 	os << "  [Nr] type flags addr     offset        size     link name\n";
 	os << std::string(80, '-') << '\n';
@@ -406,7 +406,7 @@ std::ostream &operator<<(std::ostream &os, const File &file)
 	}
 	os << '\n';
 	
-	/* Dump program headers */
+	// Dump program headers
 	os << "Program headers:\n";
 	os << "idx type       offset   vaddr    paddr     "
 			<< "filesz     memsz  flags align\n";
@@ -426,24 +426,24 @@ std::ostream &operator<<(std::ostream &os, const File &file)
 	}
 	os << '\n';
 
-	/* Dump */
+	// Dump
 	os << "Symbol table:\n";
 	os << StringFmt("%-40s %-15s %-12s %-12s %-10s %-10s",
 			"name", "section", "value", "size", "info", "other");
 	os << std::string(80, '-') << '\n';
 	for (auto &symbol : file.symbols)
 	{
-		/* Symbol name */
+		// Symbol name
 		os << StringFmt("%-40s ", symbol->getName().c_str());
 
-		/* Print section */
+		// Print section
 		Section *section = symbol->getSection();
 		if (section)
 			os << StringFmt("%-15s ", section->getName().c_str());
 		else
 			os << StringFmt("%-15d ", symbol->getShndx());
 
-		/* Rest */
+		// Rest
 		os << StringFmt("%-10x ", symbol->getValue());
 		os << StringFmt("%-12u ", symbol->getSize());
 		os << StringFmt("%-10u ", symbol->getInfo());
@@ -452,19 +452,19 @@ std::ostream &operator<<(std::ostream &os, const File &file)
 	}
 	os << '\n';
 
-	/* Done */
+	// Done
 	return os;
 }
 
 
 Symbol *File::getSymbol(const std::string &name) const
 {
-	/* Search */
+	// Search
 	for (auto &symbol : symbols)
 		if (symbol->name == name)
 			return symbol.get();
 	
-	/* Not found */
+	// Not found
 	return NULL;
 }
 
@@ -472,12 +472,12 @@ Symbol *File::getSymbol(const std::string &name) const
 void File::getStream(std::istringstream &stream, unsigned int offset,
 		unsigned int size) const
 {
-	/* Check valid offset/size */
+	// Check valid offset/size
 	if (offset + size > this->size)
 		fatal("%s: %s: invalid offset/size",
 				path.c_str(), __FUNCTION__);
 
-	/* Set substream */
+	// Set substream
 	std::stringbuf *buf = stream.rdbuf();
 	buf->pubsetbuf(buffer + offset, size);
 }
@@ -493,15 +493,15 @@ Symbol *File::getSymbolByAddress(unsigned int address) const
 Symbol *File::getSymbolByAddress(unsigned int address,
 		unsigned int &offset) const
 {
-	/* Empty symbol table */
+	// Empty symbol table
 	if (!symbols.size())
 		return NULL;
 
-	/* All symbols in the table have a higher address */
+	// All symbols in the table have a higher address
 	if (address < symbols[0]->info->st_value)
 		return NULL;
 
-	/* Binary search */
+	// Binary search
 	int min = 0;
 	int max = symbols.size();
 	while (min + 1 < max)
@@ -523,34 +523,34 @@ Symbol *File::getSymbolByAddress(unsigned int address,
 		}
 	}
 
-	/* Invalid symbol */
+	// Invalid symbol
 	Symbol *symbol = symbols[min].get();
 	if (!symbol->info->st_value)
 		return NULL;
 
-	/* Go backwards to find first symbol with that address */
+	// Go backwards to find first symbol with that address
 	for (;;)
 	{
-		/* One symbol before */
+		// One symbol before
 		min--;
 		if (min < 0)
 			break;
 
-		/* If address is lower, stop */
+		// If address is lower, stop
 		Symbol *prev_symbol = symbols[min].get();
 		if (prev_symbol->info->st_value != symbol->info->st_value)
 			break;
 
-		/* Take symbol if it has global/local/weak binding */
+		// Take symbol if it has global/local/weak binding
 		if (ELF32_ST_BIND(prev_symbol->info->st_info) < 3)
 			symbol = prev_symbol;
 	}
 
-	/* Return the symbol and its address */
+	// Return the symbol and its address
 	offset = address - symbol->info->st_value;
 	return symbol;
 }
 
 
-} /* namespace ELFReader */
+} // namespace ELFReader
 
