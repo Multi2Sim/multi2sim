@@ -319,6 +319,36 @@ cudaError_t cudaDeviceSetCacheConfig(enum cudaFuncCache cacheConfig)
 	return cudaSuccess;
 }
 
+cudaError_t cudaIpcGetEventHandle(cudaIpcEventHandle_t *handle, cudaEvent_t event)
+{
+	__CUDART_NOT_IMPL__;
+	return cudaSuccess;
+}
+
+cudaError_t cudaIpcOpenEventHandle(cudaEvent_t *event, cudaIpcEventHandle_t handle)
+{
+	__CUDART_NOT_IMPL__;
+	return cudaSuccess;
+}
+
+cudaError_t cudaIpcGetMemHandle(cudaIpcMemHandle_t *handle, void *devPtr)
+{
+	__CUDART_NOT_IMPL__;
+	return cudaSuccess;
+}
+
+cudaError_t cudaIpcOpenMemHandle(void **devPtr, cudaIpcMemHandle_t handle, unsigned int flags)
+{
+	__CUDART_NOT_IMPL__;
+	return cudaSuccess;
+}
+
+cudaError_t cudaIpcCloseMemHandle(void *devPtr)
+{
+	__CUDART_NOT_IMPL__;
+	return cudaSuccess;
+}
+
 cudaError_t cudaThreadExit(void)
 {
 	__CUDART_NOT_IMPL__;
@@ -632,6 +662,12 @@ cudaError_t cudaStreamDestroy(cudaStream_t stream)
 cudaError_t cudaStreamWaitEvent(cudaStream_t stream, 
 		cudaEvent_t event, 
 		unsigned int flags)
+{
+	__CUDART_NOT_IMPL__;
+	return cudaSuccess;
+}
+
+cudaError_t cudaStreamAddCallback(cudaStream_t stream, cudaStreamCallback_t callback, void *userData, unsigned int flags)
 {
 	__CUDART_NOT_IMPL__;
 	return cudaSuccess;
