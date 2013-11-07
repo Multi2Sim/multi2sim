@@ -17,9 +17,10 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_SOUTHERN_ISLANDS_EMU_WORK_ITEM_OLD_H
-#define ARCH_SOUTHERN_ISLANDS_EMU_WORK_ITEM_OLD_H
+#ifndef ARCH_SOUTHERN_ISLANDS_EMU_WORK_ITEM_H
+#define ARCH_SOUTHERN_ISLANDS_EMU_WORK_ITEM_H
 
+#if 0
 #include <arch/southern-islands/asm/Inst.h>
 #include <lib/class/class.h>
 
@@ -101,4 +102,5 @@ void SIWorkItemReadBufferResource(SIWorkItem *self,
 void SIWorkItemReadMemPtr(SIWorkItem *self, 
 	struct si_mem_ptr_t *mem_ptr, int sreg);
 
+#endif
 #endif

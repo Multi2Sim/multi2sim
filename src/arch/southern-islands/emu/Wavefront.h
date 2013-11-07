@@ -17,8 +17,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_SOUTHERN_ISLANDS_EMU_WAVEFRONT_OLD_H
-#define ARCH_SOUTHERN_ISLANDS_EMU_WAVEFRONT_OLD_H
+#ifndef ARCH_SOUTHERN_ISLANDS_EMU_WAVEFRONT_H
+#define ARCH_SOUTHERN_ISLANDS_EMU_WAVEFRONT_H
+
+
+#if 0
 
 #include <arch/southern-islands/asm/Inst.h>
 #include <lib/class/class.h>
@@ -123,5 +126,6 @@ void SIWavefrontInitSRegWithBufferTable(SIWavefront *self,
 void SIWavefrontInitSRegWithFetchShader(SIWavefront *self, 
 	int first_reg, int num_regs);
 
+#endif
 
 #endif
