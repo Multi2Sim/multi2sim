@@ -20,16 +20,10 @@
 #ifndef ARCH_SOUTHERN_ISLANDS_EMU_WORK_ITEM_H
 #define ARCH_SOUTHERN_ISLANDS_EMU_WORK_ITEM_H
 
-#if 0
-#include <arch/southern-islands/asm/Inst.h>
-#include <lib/class/class.h>
 
+namespace SI
+{
 
-/*
- * Class 'SIWorkItem'
- */
-
-#define SI_MAX_LDS_ACCESSES_PER_INST  2
 
 /* Structure describing a memory access definition */
 struct si_mem_access_t
@@ -40,7 +34,10 @@ struct si_mem_access_t
 };
 
 
-CLASS_BEGIN(SIWorkItem, Object)
+class WorkItem
+{
+
+	static int MaxLDSAccessesPerInst = 2;
 	
 	/* IDs */
 	int id;  /* global ID */
@@ -102,5 +99,4 @@ void SIWorkItemReadBufferResource(SIWorkItem *self,
 void SIWorkItemReadMemPtr(SIWorkItem *self, 
 	struct si_mem_ptr_t *mem_ptr, int sreg);
 
-#endif
 #endif
