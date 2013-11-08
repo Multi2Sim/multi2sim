@@ -18,6 +18,7 @@
  */
 
 #include <cstring>
+#include <iomanip>
 #include <vector>
 
 #include <lib/cpp/ELFReader.h>
@@ -103,7 +104,7 @@ void Asm::DisassembleBinary(string path)
 
 				delete inst;
 			}
-			cout << "\t\t" << std::string(38, '.') << "\n\n\n";
+			cout << "\t\t" << setfill('.') << setw(32) << "." << "\n\n\n";
 		}
 	}
 }

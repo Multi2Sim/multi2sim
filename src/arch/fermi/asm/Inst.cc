@@ -355,6 +355,8 @@ void Inst::DumpToBuf(void)
 		/* Character is a literal symbol */
 		if (*fmt_str != '%')
 		{
+			if (fmt_str == info->fmt_str.c_str())
+				str += "        ";
 			str += *fmt_str;
 			++fmt_str;
 			continue;
@@ -748,6 +750,16 @@ void Inst::DumpToBuf(void)
 		{
 			if (bytes.tgt.u)
 				str += ".U";
+		}
+
+		else if (Common::Asm::IsToken(fmt_str,"abs_target", len))
+		{
+			unsigned long long int target;
+
+			target = bytes.tgt.target;
+			stringstream ss;
+			ss << "0x" << hex << target;
+			str += ss.str();
 		}
 
 		else if (Common::Asm::IsToken(fmt_str,"tgt", len))
