@@ -21,56 +21,72 @@
 #define ARCH_SOUTHERN_ISLANDS_EMU_WORK_GROUP_H
 
 
-#if 0
-/*
- * Class 'SIWorkGroup'
- */
+namespace SI
+{
 
-CLASS_BEGIN(SIWorkGroup, Object)
+class NDRange;
 
-	/* ID */
-	int id;  /* Group ID */
-	int id_3d[3];  /* 3-dimensional Group ID */
+class WorkGroup
+{
+	// Identifiers
+	int id;
+	int id_3d[3];
 
-	/* Status */
-	int wavefronts_at_barrier;
-	int wavefronts_completed_emu;
-	int wavefronts_completed_timing;
-	int finished_emu;
-	int finished_timing;
+	// Status
+	bool wavefronts_at_barrier;
+	bool wavefronts_completed_emu;
+	bool wavefronts_completed_timing;
+	bool finished_emu;
+	bool finished_timing;
 
-	/* ND-Range that it belongs to */
-	SINDRange *ndrange;
+	// ND-Range that it belongs to
+	NDRange *ndrange;
 
-	/* Pointers to wavefronts and work-items */
-	int work_item_count;
-	int wavefront_count;
-	SIWorkItem **work_items;  /* Pointer to first work_item in 
-						'kernel->work_items' */
-	SIWavefront **wavefronts;  /* Pointer to first wavefront in 
-						'kernel->wavefronts' */
-	struct si_wavefront_pool_t *wavefront_pool;
+	// List of work-items in the work-group
+	std::vector<std::unique_ptr<WorkItem>> work_items;
 
-	/* Fields introduced for architectural simulation */
+	// List of wavefronts in the work-group
+	std::vector<std::unique_ptr<Wavefront>> wavefronts;
+
+	// Pool of wavefronts
+	WavefrontPool wavefront_pool;
+
+	// Field introduced for architectural simulation
 	int id_in_compute_unit;
 
-	/* LDS */
-	struct mem_t *lds_module;
+	// Local memory
+	Memory lds;
 
-	/* Statistics */
-	long long int sreg_read_count;
-	long long int sreg_write_count;
-	long long int vreg_read_count;
-	long long int vreg_write_count;
+	// Statistics
+	long long sreg_read_count;
+	long long sreg_write_count;
+	long long vreg_read_count;
+	long long vreg_write_count;
 
-CLASS_END(SIWorkGroup)
+public:
+
+	/// Constructor
+	///
+	/// \param ndrange Instance of class NDRange that it belongs to.
+	/// \param id Work-group global 1D identifier
+	WorkGroup(NDRange *ndrange, unsigned id);
+
+	/// Dump work-group in human readable format into output stream
+	void Dump(std::ostream &os);
+
+	/// Equivalent to WorkGroup::Dump()
+	friend std::ostream &operator<<(std::ostream &os,
+			const WorkGroup &work_group) {
+		work_group.Dump(os);
+		return os;
+	}
+
+	/// Statistic showing the number of reads from scalar registers
+	long long getSRegReadCount() { return sreg_read_count; }
+
+	// FIXME - getters for other statistics
 
 
-void SIWorkGroupCreate(SIWorkGroup *self, unsigned int id, SINDRange *ndrange);
-void SIWorkGroupDestroy(SIWorkGroup *self);
-
-void SIWorkGroupDump(Object *self, FILE *f);
-
-#endif
+}  // namespace
 
 #endif

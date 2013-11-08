@@ -21,174 +21,190 @@
 #define ARCH_SOUTHERN_ISLANDS_EMU_NDRANGE_H
 
 
-#if 0
-
-#include <stdio.h>
-
-#include <arch/southern-islands/asm/Binary.h>
-#include <lib/class/class.h>
-
-#include "emu.h"
-
-
-/*
- * Class 'SINDRange'
- */
-
-enum si_ndrange_table_entry_kind_t
+namespace SI
 {
-	SI_TABLE_ENTRY_KIND_BUFFER_DESC = 1,
-	SI_TABLE_ENTRY_KIND_IMAGE_DESC,
-	SI_TABLE_ENTRY_KIND_SAMPLER_DESC
+
+/// Stage is used to determine V/SGPRs initialization convention when creating
+/// wavefronts/workitems.
+enum NDRangeStage
+{	
+	NDRangeStageInvalid = 0,
+	NDRangeStageCompute,
+	NDRangeStageVertexShader,
+	NDRangeStageGeometryShader,
+	NDRangeStagePixelShader
 };
 
-struct si_ndrange_table_entry_t
+
+/// ?
+class NDRange
 {
-	unsigned int valid : 1;
-	enum si_ndrange_table_entry_kind_t kind;
-	unsigned int size;
-};
+	enum TableEntryKind
+	{
+		TableEntryKindInvalid = 0,
+		TableEntryKindBufferDesc,
+		TableEntryKindImageDesc,
+		TableEntryKindSamplerDesc
+	};
 
-/* Stage is used to determine V/SGPRs initialization convention when creating wavefronts/workitems */
-enum si_ndrange_stage_t
-{
-	STAGE_CL = 0,	/* OpenCL is the default */
-	STAGE_VS,
-	STAGE_GS,
-	STAGE_HS,
-	STAGE_DS,
-	STAGE_PS,
-	STAGE_CS,
-	STAGE_INVALID
-};
+	struct TableEntry
+	{
+		bool valid;
+		TableEntryKind kind;
+		unsigned size;
+	};
 
-struct si_sx_ps_init_t;
+	// Southern Islands emulator
+	Emu *emu;
 
-CLASS_BEGIN(SINDRange, Object)
-	
-	/* Emulator */
-	SIEmu *emu;
+	// Unique ND-range ID
+	int id;
 
-	/* ID */
-	int id;  /* Sequential ND-Range ID (given by si_emu->ndrange_count) */
+	// Stage that the ND-range operates on
+	NDRangeStage stage;
 
-	/* Stage */
-	enum si_ndrange_stage_t stage;
+	// Initialization data for Pixel Shader, dequeue from SPI module
+	SxPsInit sc_ps_init;  // FIXME - confusing names
 
-	/* Initialization data for Pixel Shader, dequeue from SPI module */	
-	struct si_sx_ps_init_t *ps_init_data;  // Free in SINDRangeDestroy if set
+	// Work-group lists
+	std::list<WorkGroup *> waiting_work_groups;
+	std::list<WorkGroup *> running_work_groups;
+	std::list<WorkGroup *> completed_work_groups;
 
-	/* Work-group lists */
-	struct list_t *waiting_work_groups;
-	struct list_t *running_work_groups;
-	struct list_t *completed_work_groups;
+	// Used by the driver
+	bool last_work_group_sent;
 
-	int last_work_group_sent;  /* Used by the driver */
+	// Number of work dimensions
+	unsigned work_dim;
 
-	/* Number of work dimensions */
-	unsigned int work_dim;
+	// 3D work size counters
+	unsigned global_size3[3];  // Total number of work_items
+	unsigned local_size3[3];  // Number of work_items in a group
+	unsigned group_count3[3];  // Number of work_item groups
 
-	/* 3D work size counters */
-	unsigned int global_size3[3];  /* Total number of work_items */
-	unsigned int local_size3[3];  /* Number of work_items in a group */
-	unsigned int group_count3[3];  /* Number of work_item groups */
+	// 1D work size counters. Each counter is equal to the multiplication
+	// of each component in the corresponding 3D counter.
+	unsigned global_size;
+	unsigned local_size;
+	unsigned group_count;
 
-	/* 1D work size counters. Each counter is equal to the multiplication
-	 * of each component in the corresponding 3D counter. */
-	unsigned int global_size;
-	unsigned int local_size;
-	unsigned int group_count;
+	// ABI data copied from the kernel
+	unsigned user_element_count;
+	BinaryUserElement user_elements[BinaryMaxUserElements];
 
-	/* ABI data copied from the kernel */
-	unsigned int userElementCount;
-	struct SIBinaryUserElement userElements[SI_BINARY_MAX_USER_ELEMENTS];
-
-	/* Instruction memory containing Southern Islands ISA */
+	// Instruction memory containing Southern Islands ISA
 	void *inst_buffer;
-	unsigned int inst_buffer_size;
+	unsigned inst_buffer_size;
 
-	/* Fetch shader memory containing Fetch shader instructions */
+	// Fetch shader memory containing Fetch shader instructions
 	int fs_buffer_initialized;
-	unsigned int fs_buffer_ptr; /* Relative offset */
-	unsigned int fs_buffer_size;
+	unsigned fs_buffer_ptr; // Relative offset
+	unsigned fs_buffer_size;
 
-	/* Local memory top to assign to local arguments.
-	 * Initially it is equal to the size of local variables in 
-	 * kernel function. */
-	unsigned int local_mem_top;
+	// Local memory top to assign to local arguments.
+	// Initially it is equal to the size of local variables in 
+	// kernel function.
+	unsigned local_mem_top;
 
-	/* Each ND-Range has it's own address space */
+	// Each ND-Range has its own address space
 	int address_space_index;
 
-	/* A non-zero value indicates that a flush of the caches
-	 * is being performed, evicting data modified by this kernel */
-	int flushing;
+	// If true, it indicates that a flush of the caches is being performed,
+	// evicting data modified by this kernel
+	bool flushing;
 
-	/* Number of register used by each work-item. This fields determines
-	 * how many work-groups can be allocated per compute unit, among
-	 * others. */
-	unsigned int num_vgpr_used;
-	unsigned int num_sgpr_used;
-	unsigned int wg_id_sgpr;
+	// Number of register used by each work-item. This fields determines
+	// how many work-groups can be allocated per compute unit, among
+	// others.
+	unsigned num_vgpr_used;
+	unsigned num_sgpr_used;
+	unsigned wg_id_sgpr;
 
-	/* Addresses and entries of tables that reside in global memory */
-	unsigned int const_buf_table;
-	struct si_ndrange_table_entry_t
-		const_buf_table_entries[SI_EMU_MAX_NUM_CONST_BUFS];
-	unsigned int resource_table;
-	struct si_ndrange_table_entry_t
-		resource_table_entries[SI_EMU_MAX_NUM_RESOURCES];
-	unsigned int uav_table;
-	struct si_ndrange_table_entry_t
-		uav_table_entries[SI_EMU_MAX_NUM_UAVS];
-	unsigned int vertex_buffer_table;
-	struct si_ndrange_table_entry_t
-		vertex_buffer_table_entries[SI_EMU_MAX_NUM_VERTEX_BUFFERS];
+	// Addresses and entries of tables that reside in global memory
+	unsigned const_buf_table;
+	NDRangeTableEntry const_buf_table_entries[EmuMaxNumConstBufs];
 
-	/* Addresses of the constant buffers */
-	unsigned int cb0;
-	unsigned int cb1;
+	// ?
+	unsigned resource_table;
+	NDRangeTableEntry resource_table_entries[EmuMaxNumResources];
 
-	/* List of kernel arguments, elements of type 'SIArg' */
-	List *arg_list;
+	// ?
+	unsigned uav_table;
+	NDRangeTableEntry uav_table_entries[EmuMaxNumUAVs];
 
-CLASS_END(SINDRange)
+	// ?
+	unsigned vertex_buffer_table;
+	NDRangeTableEntry vertex_buffer_table_entries[EmuMaxNumVertexBuffers];
 
+	// Addresses of the constant buffers
+	unsigned cb0;
+	unsigned cb1;
 
-void SINDRangeCreate(SINDRange *self, SIEmu *emu);
-void SINDRangeDestroy(SINDRange *self);
+	// List of kernel arguments with their values
+	std::vector<std::unique_ptr<Arg>> args;
 
-void SINDRangeDump(Object *self, FILE *f);
+public:
 
-/* Functions to set up ND-Range after initialization */
-void SINDRangeSetupSize(SINDRange *self, 
-	unsigned int *global_size, unsigned int *local_size, int work_dim);
-void SINDRangeSetupFSMem(SINDRange *self, void *buf, 
-	int size, unsigned int pc);
-void SINDRangeSetupInstMem(SINDRange *self, const char *buf,
-	int size, unsigned int pc);
-void SINDRangeSetupStage(SINDRange *self,
-	enum si_ndrange_stage_t stage);
-void SINDRangeSetupPSInitData(SINDRange *self,
-	struct si_sx_ps_init_t *ps_init_data);
+	/// Constructor
+	NDRange(Emu *emu);
 
-/* Access constant buffers */
-void SINDRangeConstantBufferWrite(SINDRange *self,
-		int const_buf_num, int offset, void *pvalue, unsigned int size);
-void SINDRangeConstantBufferRead(SINDRange *self, int const_buf_num,
-		int offset, void *pvalue, unsigned int size);
+	/// Dump the state of the ND-range in a plain-text format into an output
+	/// stream.
+	void Dump(std::ostream &os);
 
-/* Access internal tables */
-void SINDRangeInsertBufferIntoUAVTable(SINDRange *self,
-        struct si_buffer_desc_t *buf_desc, unsigned int uav);
-void SINDRangeInsertBufferIntoVertexBufferTable(SINDRange *self,
-	struct si_buffer_desc_t *buf_desc, unsigned int vertex_buffer);
-void SINDRangeInsertBufferIntoConstantBufferTable(SINDRange *self,
-        struct si_buffer_desc_t *buf_desc, unsigned int const_buf_num);
-void SINDRangeInsertImageIntoUAVTable(SINDRange *self,
-        struct si_image_desc_t *image_desc, unsigned int uav);
+	/// Short-hand notation for dumping ND-range.
+	friend std::ostream &operator<<(std::ostream &os,
+			const NDRange &ndrange) {
+		ndrange.Dump(os);
+		return os;
+	}
 
-#endif
+	/// Set new size parameters of the ND-Range before it gets launched.
+	///
+	/// \param global_size Array of \a work_dim elements (3 at most)
+	///        representing the global size.
+	/// \param local_size Array of \a work-dim elements (3 at most)
+	///        representing the local size.
+	/// \param work_dim Number of dimensions in the ND-range.
+	void SetupSize(unsigned *global_size, unsigned *local_size,
+			int work_dim);
+
+	/// ?
+	void SetupFSMem(const char *buf, unsigned size, unsigned pc);
+
+	/// Set up content of instruction memory
+	///
+	/// \param buf Buffer containing Southern Islands ISA instructions. This
+	///        buffer must be loaded from the .text section of an internal
+	///        binary by the caller.
+	/// \param size Number of bytes in the instruction buffer
+	/// \param pc Initial value of the program counter, relative to the
+	///        beginning of the instruction buffer.
+	void SetupInstMem(const char *buf, unsigned size, unsigned pc);
+
+	/// ?
+	void ConstantBufferWrite(int const_buf_num, unsigned offset,
+			void *pvalue, unsigned size);
+
+	/// ?
+	void ConstantBufferRead(int const_buf_num, unsigned offset,
+			void *pvalue, unsigned size);
+
+	/// ?
+	void InsertBufferIntoUAVTable(BufferDesc *buffer_desc, unsigned uav);
+
+	/// ?
+	void InsertBufferIntoVertexBufferTable(BufferDesc *buffer_desc,
+			unsigned vertex_buffer);
+
+	/// ?
+	void InsertBufferIntoConstantBufferTable(BufferDesc *buffer_desc,
+			unsigned const_buffer_num);
+
+	/// ?
+	void ImageIntoUAVTable(ImageDesc *image_desc, unsigned uav);
+
+}  // namespace
 
 #endif
 
