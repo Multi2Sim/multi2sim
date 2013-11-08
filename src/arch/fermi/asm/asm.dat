@@ -530,7 +530,7 @@ DEFINST(LDC,
 //	0x708)
 
 DEFINST(JCAL, 
-	"JCAL%tgt_noinc %tgt", 
+	"JCAL%tgt_noinc %abs_target", 
 	0x710)
 	
 DEFINST(BRA, 

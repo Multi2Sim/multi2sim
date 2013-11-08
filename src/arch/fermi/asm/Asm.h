@@ -42,7 +42,9 @@ class Asm : public Common::Asm
 	/* Instruction information table */
 	InstInfo inst_info[InstOpcodeCount];
 
-	/* Decoding table. The 1st level is indexed by the instruction category bits, and the 2nd level is indexed by the function bits in the category. */
+	/* Decoding table. The 1st level is indexed by the instruction category
+	 * bits, and the 2nd level is indexed by the function bits in the
+	 * category. */
 	InstInfo *dec_table[inst_cat_count][func_count];
 
 public:
