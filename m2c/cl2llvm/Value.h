@@ -28,7 +28,7 @@
 #ifdef __cplusplus
 
 #include "Type.h"
-#include <llvm::Value.h>
+#include <llvm/Value.h>
 
 namespace cl2llvm
 {
@@ -36,18 +36,25 @@ namespace cl2llvm
 class Value
 {
 	llvm::Value *llvm_value;
-	Type *type;
+	Type type;
 
 public:
 
-	Value(llvm::Value *llvm_value, bool sign) { this->value = llvm_value;
-		this->type->llvm_type = llvm_value->getType(); this->type->sign = sign; }
+	Value(llvm::Value *llvm_value, bool sign) :
+			llvm_value(llvm_value),
+			type(llvm_value->getType(), sign) { }
 
-	Value *GetLlvmValue() { return llvm_value; }
-	void SetLlvmValue(llvm::Value *llvm_value) { this->llvm_value = llvm_value; }
-	Type *GetType() { return type; }
-	void SetType(Type *type) { this->type = type; }
+	Value *getLlvmValue() { return llvm_value; }
 
+	void setLlvmValue(llvm::Value *llvm_value) {
+			this->llvm_value = llvm_value;
+	}
+	
+	void setType(Type *type) { this->type = type; }
+
+	Type *getType() { return &type; }
+
+	bool getSign() { return type.getSign(); }
 };
 
 
