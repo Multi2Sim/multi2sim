@@ -104,6 +104,9 @@ public:
 	Arg(ArgType type) : type(type), index(-1), token(nullptr),
 			abs(false), neg(false), constant(false) { }
 	
+	/* Virtual Destructor */
+	virtual ~Arg() {}
+
 	/* Getters */
 	ArgType getType() { return type; }
 	bool getAbs() { return abs; }
