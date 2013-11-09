@@ -20,70 +20,93 @@
 #ifndef ARCH_SOUTHERN_ISLANDS_EMU_WAVEFRONT_H
 #define ARCH_SOUTHERN_ISLANDS_EMU_WAVEFRONT_H
 
-
-#if 0
+#include <memory>
+#include <vector>
 
 #include <arch/southern-islands/asm/Inst.h>
-#include <lib/class/class.h>
+
+namespace SI
+{
+
+class WorkGroup;
+class WorkItem;
+
+/// Polymorphic class used to attach data to a work-group. The timing simulator
+/// can use an object derived from this class, instead of adding fields to the
+/// Wavefront class.
+class WavefrontData
+{
+public:
+	virtual ~WavefrontData();
+};
 
 
-/*
- * Class 'SIWavefront'
- */
-
-CLASS_BEGIN(SIWavefront, Object)
-
-	/* ID */
+/// This class represents a wavefront, the SIMD execution unit. In AMD, a
+/// wavefront is composed of 64 work-items that fetch one instruction and
+/// execute it multiple times.
+class Wavefront
+{
+	// Global wavefront identifier
 	int id;
 
-	/* IDs of work-items it contains */
+	// IDs of work-items it contains
 	int work_item_id_first;
 	int work_item_id_last;
 	int work_item_count;
 
-	/* Work-group it belongs to */
-	SIWorkGroup *work_group;
+	// Work-group it belongs to
+	WorkGroup *work_group;
 
-	/* Program counter. Offset in 'inst_buffer' where we can find the next
-	 * instruction to be executed. */
-	unsigned int pc;
+	// Additional data added by timing simulator
+	std::unique_ptr<WavefrontData> data;
 
-	/* Current instruction */
+	// Program counter. Offset in 'inst_buffer' where we can find the next
+	// instruction to be executed.
+	unsigned pc;
+
+	// Current instruction
 	struct SIInstWrap *inst;
 	int inst_size;
 
-	/* Pointer to work_items */
-	SIWorkItem *scalar_work_item;
-	SIWorkItem **work_items;  
+	// Associated scalar work-item
+	WorkItem *scalar_work_item;
 
-	/* Scalar registers */
-	SIInstReg sreg[256];
+	// Iterator to the first work-item in the wavefront, pointing to a
+	// work-item in the list of work-items from the work-group. Work-items
+	// within the wavefront can be conveniently accessed with the []
+	// operator on this iterator.
+	std::vector<std::unique_ptr<WorkItem>>::iterator work_items_begin;
 
-	/* Flags updated during instruction execution */
-	unsigned int vector_mem_read : 1;
-	unsigned int vector_mem_write : 1;
-	unsigned int vector_mem_atomic : 1;
-	unsigned int scalar_mem_read : 1;
-	unsigned int lds_read : 1;
-	unsigned int lds_write : 1;
-	unsigned int mem_wait : 1;
-	unsigned int at_barrier : 1;  // Used for emu synchronization
-	unsigned int finished : 1;
-	unsigned int vector_mem_glc : 1;
+	// Past-the end iterator to the list of work-items forming the
+	// work-group. This iterator could be an iterator to valid work-item in
+	// the array of work-items of the work-group (pointing to the first
+	// work-item that doesn't belong to this wavefront), or it could be a
+	// past-the-end iterator to the work-group's work-item list.
+	std::vector<std::unique_ptr<WorkItem>>::iterator work_items_end;
 
-	/* To measure simulation performance */
-	long long emu_inst_count;  /* Total emulated instructions */
-	long long emu_time_start;
-	long long emu_time_end;
+	// Scalar registers
+	InstReg sreg[256];
 
-	/* Fields introduced for timing simulation */
+	// Flags updated during instruction execution
+	bool vector_mem_read;
+	bool vector_mem_write;
+	bool vector_mem_atomic;
+	bool scalar_mem_read;
+	bool lds_read;
+	bool lds_write;
+	bool mem_wait;
+	bool at_barrier;  // Used for emu synchronization
+	bool finished;
+	bool vector_mem_glc;
+
+	// Fields introduced for timing simulation
 	int id_in_compute_unit;
 	int uop_id_counter;
 	struct si_wavefront_pool_entry_t *wavefront_pool_entry;
-	unsigned int barrier_inst : 1;
+	bool barrier_inst;
 
-	/* Statistics */
-	long long inst_count;  /* Total number of instructions */
+	// Statistics
+	long long inst_count;  // Total number of instructions
 	long long scalar_mem_inst_count;
 	long long scalar_alu_inst_count;
 	long long branch_inst_count;
@@ -93,39 +116,103 @@ CLASS_BEGIN(SIWavefront, Object)
 	long long lds_inst_count;
 	long long export_inst_count;
 
-CLASS_END(SIWavefront)
+	// Statistics to measure simulation performance
+	long long emu_inst_count;  // Total emulated instructions
+	long long emu_time_start;
+	long long emu_time_end;
+
+public:
+
+	/// Constructor
+	///
+	/// \param work_group Work-group that the wavefront belongs to
+	/// \param id Global 1D identifier of the wavefront
+	Wavefront(WorkGroup *work_group, int id);
+
+	/// Dump wavefront in a human-readable format into output stream \a os
+	void Dump(std::ostream &os) const;
+
+	/// Dump wavefront into output stream
+	friend std::ostream &operator<<(std::ostream &os,
+			const Wavefront &wavefront) {
+		os << wavefront;
+		return os;
+	}
+
+	/// Emulate the next instruction in the wavefront at the current
+	/// position of the program counter
+	void Execute();
+
+	/// Return true if work-item is active. The work-item identifier is
+	/// given relative to the first work-item in the wavefront
+	bool getWorkItemActive(int id_in_wavefront);
+
+	/// Assign additional data to the wavefront. This operation is typically
+	/// done by the timing simulator. Argument \a data is given as a newly
+	/// allocated pointer of a class derived from WavefrontData, that the
+	/// wavefront will take ownership from.
+	void setData(WavefrontData *data) { this->data.reset(data); }
+
+	/// Set value of a scalar register
+	/// \param id sreg Scalar register identifier
+	/// \param value given as an \a unsigned typed value
+	void setSReg(int sreg, unsigned value);
+
+	/// ???
+	/// \param first_reg
+	/// \param num_regs
+	/// \param cb
+	void setSRegWithConstantBuffer(int first_reg, int num_regs,
+			int cb);
+
+	/// ???
+	/// \param first_reg
+	/// \param num_regs
+	void setSRegWithConstantBufferTable(int first_reg, int num_regs);
+
+	/// ???
+	/// \param first_reg
+	/// \param num_regs
+	void setSRegWithUAVTable(int first_reg, int num_regs);
+
+	/// ???
+	/// \param first_reg
+	/// \param num_regs
+	/// \param uav
+	void setSRegWithUAV(int first_reg, int num_regs, int uav);
+
+	/// ???
+	/// \param first_reg
+	/// \param num_regs
+	void setSRegWithBufferTable(int first_reg, int num_regs);
+
+	/// ???
+	/// \param first_reg
+	/// \param num_regs
+	void setSRegWithFetchShader(int first_reg, int num_regs);
+
+	/// Return an iterator to the first work-item in the wavefront. The
+	/// work-items can be conveniently traversed with a loop using these
+	/// iterators. This is an example of how to dump all work-items in the
+	/// wavefront:
+	/// \code
+	///	for (auto i = wavefront->WorkkItemsBegin(),
+	///			e = wavefront->WorkItemsEnd(); i != e; ++i)
+	///		i->Dump(std::cout);
+	/// \endcode
+	std::vector<std::unique_ptr<WorkItem>>::iterator WorkItemsBegin() {
+		return work_items_begin;
+	}
+
+	/// Return a past-the-end iterator for the list of work-items in the
+	/// wavefront.
+	std::vector<std::unique_ptr<WorkItem>>::iterator WorkItemsEnd() {
+		return work_items_end;
+	}
+};
 
 
-#define SI_FOREACH_WAVEFRONT_IN_WORK_GROUP(WORK_GROUP, WAVEFRONT_ID) \
-	for ((WAVEFRONT_ID) = 0; \
-		(WAVEFRONT_ID) < (WORK_GROUP)->wavefront_count; \
-		(WAVEFRONT_ID)++)
-
-void SIWavefrontCreate(SIWavefront *self, int id, SIWorkGroup *work_group);
-void SIWavefrontDestroy(SIWavefront *self);
-
-void SIWavefrontDump(Object *self, FILE *f);
-
-void SIWavefrontExecute(SIWavefront *self);
-
-int SIWavefrontIsWorkItemActive(SIWavefront *self, 
-	int id_in_wavefront);
-
-void SIWavefrontInitSRegWithValue(SIWavefront *self, 
-	int sreg, unsigned int value);
-void SIWavefrontInitSRegWithConstantBuffer(SIWavefront *self, 
-	int first_reg, int num_regs, int cb);
-void SIWavefrontInitSRegWithConstantBufferTable(SIWavefront *self,
-        int first_reg, int num_regs);
-void SIWavefrontInitSRegWithUAVTable(SIWavefront *self, 
-	int first_reg, int num_regs);
-void SIWavefrontInitSRegWithUAV(SIWavefront *self,
-	int first_reg, int num_regs, int uav);
-void SIWavefrontInitSRegWithBufferTable(SIWavefront *self, 
-	int first_reg, int num_regs);
-void SIWavefrontInitSRegWithFetchShader(SIWavefront *self, 
-	int first_reg, int num_regs);
+}  // namespace
 
 #endif
 
-#endif

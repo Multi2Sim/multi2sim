@@ -20,8 +20,6 @@
 #ifndef ARCH_SOUTHERN_ISLANDS_ASM_BINARY_H
 #define ARCH_SOUTHERN_ISLANDS_ASM_BINARY_H
 
-#define SI_BINARY_MAX_USER_ELEMENTS 16
-
 
 #ifdef __cplusplus
 
@@ -125,6 +123,7 @@ enum BinaryUserData
 
 
 /* User Element entry */
+const int BinaryMaxUserElements = 16;
 struct BinaryUserElement
 {
 	unsigned int dataClass;
@@ -177,7 +176,7 @@ struct BinaryDictEntry
 	int stack_size;
 
 	unsigned int num_user_elements;
-	BinaryUserElement user_elements[16];
+	BinaryUserElement user_elements[BinaryMaxUserElements];
 
 	BinaryComputePgmRsrc2 *compute_pgm_rsrc2;
 };
@@ -226,6 +225,8 @@ public:
 /*
  * C Wrapper
  */
+
+#define SI_BINARY_MAX_USER_ELEMENTS  16
 
 #ifdef __cplusplus
 extern "C" {
