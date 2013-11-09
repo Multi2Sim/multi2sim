@@ -20,12 +20,34 @@
 #ifndef ARCH_SOUTHERN_ISLANDS_EMU_WORK_GROUP_H
 #define ARCH_SOUTHERN_ISLANDS_EMU_WORK_GROUP_H
 
+#include <memory>
+#include <vector>
+
+#include <mem-system/Memory.h>
+
 
 namespace SI
 {
 
+class Wavefront;
+class WorkItem;
 class NDRange;
 
+/// This is a polymorphic class used to attach additional information
+/// to a work-group. It is used by the timing simulator to associate timing
+/// simulation information per work-group.
+class WorkGroupData
+{
+public:
+	/// Virtual destructor to guarantee polymorphism
+	virtual ~WorkGroupData();
+};
+
+
+/// This class represents an OpenCL work-group, as set up by the host program
+/// running on Multi2Sim with a call to \a clEnqueueNDRangeKernel(). The
+/// work-group is composed of a set of work-items (grouped in chunks of 64,
+/// forming wavefronts). Work-groups can run in any order.
 class WorkGroup
 {
 	// Identifiers
@@ -48,14 +70,11 @@ class WorkGroup
 	// List of wavefronts in the work-group
 	std::vector<std::unique_ptr<Wavefront>> wavefronts;
 
-	// Pool of wavefronts
-	WavefrontPool wavefront_pool;
-
-	// Field introduced for architectural simulation
-	int id_in_compute_unit;
-
 	// Local memory
-	Memory lds;
+	MemSystem::Memory lds;
+
+	// Additional work-group data
+	std::unique_ptr<WorkGroupData> data;
 
 	// Statistics
 	long long sreg_read_count;
@@ -72,7 +91,7 @@ public:
 	WorkGroup(NDRange *ndrange, unsigned id);
 
 	/// Dump work-group in human readable format into output stream
-	void Dump(std::ostream &os);
+	void Dump(std::ostream &os) const;
 
 	/// Equivalent to WorkGroup::Dump()
 	friend std::ostream &operator<<(std::ostream &os,
@@ -82,10 +101,53 @@ public:
 	}
 
 	/// Statistic showing the number of reads from scalar registers
-	long long getSRegReadCount() { return sreg_read_count; }
+	long long getSRegReadCount() const { return sreg_read_count; }
+
+	/// Attach additional data to the work-group, passing an object derived
+	/// from class WorkGroupData. The object passed to it must be
+	/// dynamically allocated with \a new. The WorkGroup object will take
+	/// ownership of that pointer and free it automatically when the
+	/// work-group is destructed.
+	void setData(WorkGroupData *data);
+
+	/// Return an iterator to the first work-item in the work-group. The
+	/// following code can then be used to iterate over all work-items (and
+	/// print them)
+	///
+	/// \code
+	/// for (auto i = work_group->WorkItemsBegin(),
+	///		e = work_group->WorkItemsEnd(); i != e; ++i)
+	///	i->Dump(std::cout);
+	/// \endcode
+	std::vector<std::unique_ptr<WorkItem>>::iterator WorkItemsBegin() {
+		return work_items.begin();
+	}
+	
+	/// Return a past-the-end iterator to the list of work-items
+	std::vector<std::unique_ptr<WorkItem>>::iterator WorkItemsEnd() {
+		return work_items.end();
+	}
+
+	/// Return an iterator to the first wavefront in the work-group. The
+	/// following code can then be used to iterate over all wavefronts (and
+	/// print them)
+	///
+	/// \code
+	/// for (auto i = work_group->WavefrontsBegin(),
+	///		e = work_group->WavefrontsEnd(); i != e; ++i)
+	///	i->Dump(std::cout);
+	/// \endcode
+	std::vector<std::unique_ptr<Wavefront>>::iterator WavefrontsBegin() {
+		return wavefronts.begin();
+	}
+	
+	/// Return a past-the-end iterator to the list of wavefronts
+	std::vector<std::unique_ptr<Wavefront>>::iterator WavefrontsEnd() {
+		return wavefronts.end();
+	}
 
 	// FIXME - getters for other statistics
-
+};
 
 }  // namespace
 

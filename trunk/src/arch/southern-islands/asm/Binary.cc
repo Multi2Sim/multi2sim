@@ -26,9 +26,6 @@
 
 
 using namespace misc;
-using namespace SI;
-using namespace std;
-
 
 namespace SI
 {
@@ -430,13 +427,13 @@ void Binary::ReadNote(BinaryDictEntry *dict_entry, std::istringstream& ss,
 {
 	/* Read note header */
 	BinaryNoteHeader *header = (BinaryNoteHeader *) (buffer + ss.tellg());
-	ss.seekg(sizeof(BinaryNoteHeader), ios_base::cur);
+	ss.seekg(sizeof(BinaryNoteHeader), std::ios_base::cur);
 	if (!ss)
 		fatal("%s: error decoding note header", name.c_str());
 	
 	/* Read note description (payload) */
 	const char *desc = buffer + ss.tellg();
-	ss.seekg(header->descsz, ios_base::cur);
+	ss.seekg(header->descsz, std::ios_base::cur);
 	if (!ss)
 		fatal("%s: error decoding note description", name.c_str());
 
@@ -467,8 +464,8 @@ void Binary::ReadNote(BinaryDictEntry *dict_entry, std::istringstream& ss,
 		{
 			prog_info_entry = (BinaryNoteProgInfoEntry *)
 					(desc + i * sizeof(BinaryNoteProgInfoEntry));
-			debug << "\tprog_info_entry: addr = 0x" << hex <<
-					prog_info_entry->address << dec << " (" <<
+			debug << "\tprog_info_entry: addr = 0x" << std::hex <<
+					prog_info_entry->address << std::dec << " (" <<
 					StringMapValue(binary_prog_info_map,
 							prog_info_entry->address)
 					<< "), value = " << prog_info_entry->value << '\n';
@@ -500,8 +497,8 @@ void Binary::ReadNote(BinaryDictEntry *dict_entry, std::istringstream& ss,
 					prog_info_entry = (BinaryNoteProgInfoEntry *)
 							(desc + i * sizeof(BinaryNoteProgInfoEntry));
 
-					debug << "\tprog_info_entry: addr = 0x" << hex <<
-							prog_info_entry->address << dec << " ("
+					debug << "\tprog_info_entry: addr = 0x" << std::hex <<
+							prog_info_entry->address << std::dec << " ("
 							<< StringMapValue(binary_prog_info_map,
 									prog_info_entry->address)
 							<< "), value = " << prog_info_entry->value << '\n';
@@ -606,7 +603,7 @@ void Binary::ReadNote(BinaryDictEntry *dict_entry, std::istringstream& ss,
 				snprintf(const_value, sizeof(const_value), "%d",
 					consts->bool_consts[data_segment_desc->offset]);
 			debug << "\tdata_segment_desc[" << j << "]: offset = 0x"
-					<< hex << data_segment_desc->offset << dec
+					<< std::hex << data_segment_desc->offset << std::dec
 					<< ", size = " << data_segment_desc->size
 					<< ", value = " << const_value << '\n';
 		}
@@ -732,7 +729,7 @@ void Binary::ReadNotes(BinaryDictEntry *dict_entry)
 
 	/* Decode notes */
 	debug << "\nReading notes in PT_NOTE segment (enc. dict. for machine = 0x"
-			<< hex << dict_entry->header->d_machine << dec << ")\n";
+			<< std::hex << dict_entry->header->d_machine << std::dec << ")\n";
 	while (ss.tellg() < ph->getSize())
 		ReadNote(dict_entry, ss, buffer);
 }
@@ -781,7 +778,7 @@ void Binary::ReadDictionary()
 	debug << "  -> " << num_dict_entries << " entries\n\n";
 
 	/* Read encoding dictionary entries */
-	istringstream ss;
+	std::istringstream ss;
 	ph->getStream(ss);
 	for (int i = 0; i < num_dict_entries; i++)
 	{
@@ -791,7 +788,7 @@ void Binary::ReadDictionary()
 
 		/* Read header */
 		dict_entry->header = (BinaryDictHeader *) (ph->getBuffer() + ss.tellg());
-		ss.seekg(sizeof(BinaryDictHeader), ios_base::cur);
+		ss.seekg(sizeof(BinaryDictHeader), std::ios_base::cur);
 
 		/* Store encoding dictionary entry for Southern Islands.
 		 * Apparently the valid code changes by driver version */
@@ -846,9 +843,11 @@ void Binary::ReadDictionary()
 				<< " (" << StringMapValue(binary_machine_map,
 						header->d_machine) << "), "
 				<< "type = " << header->d_type << ", "
-				<< "offset = " << hex << header->d_offset << dec << ", "
+				<< "offset = " << std::hex << header->d_offset
+				<< std::dec << ", "
 				<< "size = " << header->d_size << ", "
-				<< "flags = " << hex << header->d_flags << dec << '\n';
+				<< "flags = " << std::hex << header->d_flags
+				<< std::dec << '\n';
 	}
 }
 
@@ -898,17 +897,17 @@ void Binary::ReadSegments()
 			fatal("%s: no PT_LOAD segment", __FUNCTION__);
 		debug << "  Dict. entry " << i
 				<< ": PT_NOTE segment: "
-				<< "offset = 0x" << hex
+				<< "offset = 0x" << std::hex
 				<< dict_entry->pt_note_segment->getOffset()
-				<< dec << ", "
+				<< std::dec << ", "
 				<< "size = "
 				<< dict_entry->pt_note_segment->getSize()
 				<< '\n';
 		debug << "  Dict. entry " << i
 				<< ": PT_LOAD segment: "
-				<< "offset = 0x" << hex <<
+				<< "offset = 0x" << std::hex <<
 				dict_entry->pt_load_segment->getOffset()
-				<< dec << ", "
+				<< std::dec << ", "
 				<< "size = "
 				<< dict_entry->pt_load_segment->getSize()
 				<< '\n';
@@ -1028,9 +1027,13 @@ Binary::~Binary()
 }  /* namespace SI */
 
 
+
+
 /*
  * C Wrapper
  */
+
+using namespace SI;
 
 StringMapWrap *si_binary_machine_map = (StringMapWrap *) binary_machine_map;
 StringMapWrap *si_binary_note_map = (StringMapWrap *) binary_note_map;

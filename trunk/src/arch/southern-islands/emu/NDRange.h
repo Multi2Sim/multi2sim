@@ -20,9 +20,24 @@
 #ifndef ARCH_SOUTHERN_ISLANDS_EMU_NDRANGE_H
 #define ARCH_SOUTHERN_ISLANDS_EMU_NDRANGE_H
 
+#include <list>
+#include <memory>
+
+#include <arch/southern-islands/asm/Arg.h>
+#include <arch/southern-islands/asm/Binary.h>
+
+#include "Emu.h"
+
 
 namespace SI
 {
+
+class Emu;
+class WorkGroup;
+
+struct BufferDesc;
+struct ImageDesc;
+
 
 /// Stage is used to determine V/SGPRs initialization convention when creating
 /// wavefronts/workitems.
@@ -64,12 +79,12 @@ class NDRange
 	NDRangeStage stage;
 
 	// Initialization data for Pixel Shader, dequeue from SPI module
-	SxPsInit sc_ps_init;  // FIXME - confusing names
+	//SxPsInit sc_ps_init;  // FIXME - confusing names
 
 	// Work-group lists
-	std::list<WorkGroup *> waiting_work_groups;
-	std::list<WorkGroup *> running_work_groups;
-	std::list<WorkGroup *> completed_work_groups;
+	std::list<std::unique_ptr<WorkGroup>> waiting_work_groups;
+	std::list<std::unique_ptr<WorkGroup>> running_work_groups;
+	std::list<std::unique_ptr<WorkGroup>> completed_work_groups;
 
 	// Used by the driver
 	bool last_work_group_sent;
@@ -122,19 +137,19 @@ class NDRange
 
 	// Addresses and entries of tables that reside in global memory
 	unsigned const_buf_table;
-	NDRangeTableEntry const_buf_table_entries[EmuMaxNumConstBufs];
+	TableEntry const_buf_table_entries[EmuMaxNumConstBufs];
 
 	// ?
 	unsigned resource_table;
-	NDRangeTableEntry resource_table_entries[EmuMaxNumResources];
+	TableEntry resource_table_entries[EmuMaxNumResources];
 
 	// ?
 	unsigned uav_table;
-	NDRangeTableEntry uav_table_entries[EmuMaxNumUAVs];
+	TableEntry uav_table_entries[EmuMaxNumUAVs];
 
 	// ?
 	unsigned vertex_buffer_table;
-	NDRangeTableEntry vertex_buffer_table_entries[EmuMaxNumVertexBuffers];
+	TableEntry vertex_buffer_table_entries[EmuMaxNumVertexBuffers];
 
 	// Addresses of the constant buffers
 	unsigned cb0;
@@ -150,7 +165,7 @@ public:
 
 	/// Dump the state of the ND-range in a plain-text format into an output
 	/// stream.
-	void Dump(std::ostream &os);
+	void Dump(std::ostream &os) const;
 
 	/// Short-hand notation for dumping ND-range.
 	friend std::ostream &operator<<(std::ostream &os,
@@ -163,7 +178,7 @@ public:
 	///
 	/// \param global_size Array of \a work_dim elements (3 at most)
 	///        representing the global size.
-	/// \param local_size Array of \a work-dim elements (3 at most)
+	/// \param local_size Array of \a work_dim elements (3 at most)
 	///        representing the local size.
 	/// \param work_dim Number of dimensions in the ND-range.
 	void SetupSize(unsigned *global_size, unsigned *local_size,
@@ -203,6 +218,8 @@ public:
 
 	/// ?
 	void ImageIntoUAVTable(ImageDesc *image_desc, unsigned uav);
+
+};
 
 }  // namespace
 

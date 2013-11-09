@@ -36,6 +36,7 @@ x86
 Southern Islands
 ********************************************************************************
 
-- Review code to adhere to coding guidelines in README.
-
+- Fields removed from emu/WorkGroup.h that need to be added in timing simulator:
+	* WavefrontPool wavefront_pool
+	* int id_in_compute_unit
 

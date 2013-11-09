@@ -25,71 +25,82 @@ namespace SI
 {
 
 
-/* Structure describing a memory access definition */
-struct si_mem_access_t
+/// Abstract polymorphic class used to attach additional information to the
+/// work-item. The timing simulator can created objects derived from this class
+/// and link them with the work-item.
+class WorkItemData
 {
-	int type;  /* 0-none, 1-read, 2-write */
-	unsigned int addr;
-	int size;
+public:
+	virtual ~WorkItemData();
 };
 
 
 class WorkItem
 {
+public:
 
+	/// Memory accesses types
+	enum MemoryAccessType
+	{
+		MemoryAccessInvalid = 0,
+		MemoryAccessRead,
+		MemoryAccessWrite
+	};
+
+	/// Used for local memory accesses
+	struct MemoryAccess
+	{
+		MemoryAccessType type;
+		unsigned addr;
+		unsigned size;
+	};
+
+private:
 	static int MaxLDSAccessesPerInst = 2;
 	
-	/* IDs */
-	int id;  /* global ID */
+	// IDs
+	int id;  // global ID
 	int id_in_wavefront;
-	int id_in_work_group;  /* local ID */
+	int id_in_work_group;  // local ID
 
-	/* 3-dimensional IDs */
-	int id_3d[3];  /* global 3D IDs */
-	int id_in_work_group_3d[3];  /* local 3D IDs */
+	// 3-dimensional IDs
+	int id_3d[3];  // global 3D IDs
+	int id_in_work_group_3d[3];  // local 3D IDs
 
-	/* Wavefront, work-group, and NDRange where it belongs */
-	SIWavefront *wavefront;
-	SIWorkGroup *work_group;
+	// Wavefront, work-group, and NDRange where it belongs
+	Wavefront *wavefront;
+	WorkGroup *work_group;
+	NDRange *ndrange;
 
-	/* Work-item state */
-	SIInstReg vreg[256];  /* Vector general purpose registers */
+	// Vector registers
+	InstReg vreg[256];
 
-	/* Last global memory access */
-	unsigned int global_mem_access_addr;
-	unsigned int global_mem_access_size;
+	// Last global memory access
+	unsigned global_mem_access_addr;
+	unsigned global_mem_access_size;
 
-	/* Last LDS access */
-	int lds_access_count;  /* Number of LDS access by last instruction */
-	unsigned int lds_access_addr[SI_MAX_LDS_ACCESSES_PER_INST];
-	unsigned int lds_access_size[SI_MAX_LDS_ACCESSES_PER_INST];
-	int lds_access_type[SI_MAX_LDS_ACCESSES_PER_INST];  /* 0-none, 1-read, 2-write */
+	// Last LDS accesses by last instruction
+	int lds_access_count;  // Number of LDS access by last instruction
+	MemoryAccess lds_access[MaxLDSAccessesPerInst];
 
-CLASS_END(SIWorkItem)
+public:
 
-#define SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(WAVEFRONT, WORK_ITEM_ID) \
-	for ((WORK_ITEM_ID) = 0; \
-		(WORK_ITEM_ID) < si_emu_wavefront_size; \
-		(WORK_ITEM_ID)++)
+	/// Constructor
+	/// \param Wavefront Wavefront that it belongs to
+	/// \id Global 1D identifier of the work-item
+	WorkItem(Wavefront *wavefront, int id);
 
-void SIWorkItemCreate(SIWorkItem *self, int id, SIWavefront *wavefront);
-void SIWorkItemDestroy(SIWorkItem *self);
+	/// 
 
-/* FIXME
- * Some older compilers need the 'union' type to be not only declared but 
- * also defined to allow for the declaration below. This forces us to 
- * #include 'asm.h' from this file.  To avoid this extra dependence, 
- * 'union' types below could be replaced by 'unsigned int', and then all 
- * callers updated accordingly. */
-unsigned int SIWorkItemReadSReg(SIWorkItem *self, int sreg);
+unsigned SIWorkItemReadSReg(SIWorkItem *self, int sreg);
 void SIWorkItemWriteSReg(SIWorkItem *self, int sreg, 
-	unsigned int value);
-unsigned int SIWorkItemReadVReg(SIWorkItem *self, int vreg);
+	unsigned value);
+unsigned SIWorkItemReadVReg(SIWorkItem *self, int vreg);
 void SIWorkItemWriteVReg(SIWorkItem *self, int vreg, 
-	unsigned int value);
-unsigned int SIWorkItemReadReg(SIWorkItem *self, int reg);
+	unsigned value);
+unsigned SIWorkItemReadReg(SIWorkItem *self, int reg);
 void SIWorkItemWriteBitmaskSReg(SIWorkItem *self, int sreg, 
-	unsigned int value);
+	unsigned value);
 int SIWorkItemReadBitmaskSReg(SIWorkItem *self, int sreg);
 
 struct si_buffer_desc_t;
