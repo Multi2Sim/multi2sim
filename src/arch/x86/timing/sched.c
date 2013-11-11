@@ -341,6 +341,12 @@ void X86ThreadSchedule(X86Thread *self)
 					asTiming(cpu)->cycle, ctx->pid, 
 					ctx->sched_priority);
 			}
+			else
+			{
+				X86ContextDebug("#%lld ctx %d (priority %d) is NOT a candidate\n",
+					asTiming(cpu)->cycle, tmp_ctx->pid, 
+					tmp_ctx->sched_priority);
+			}
 		}
 
 		/* Allocate context if found */

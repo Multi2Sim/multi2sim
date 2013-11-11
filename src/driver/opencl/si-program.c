@@ -36,15 +36,18 @@
  */
 
 struct opencl_si_constant_buffer_t *opencl_si_constant_buffer_create(int id,
-	unsigned int device_ptr, unsigned int size)
+	unsigned int size, void *data)
 {
+	assert(size <= SI_EMU_CONST_BUF_SIZE);
+
 	struct opencl_si_constant_buffer_t *constant_buffer;
 
 	/* Initialize */
 	constant_buffer = xcalloc(1, sizeof(struct opencl_si_constant_buffer_t));
 	constant_buffer->id = id;
-	constant_buffer->device_ptr = device_ptr;
 	constant_buffer->size = size;
+	constant_buffer->data = xcalloc(1, SI_EMU_CONST_BUF_SIZE);
+	memcpy(constant_buffer->data, data, size);
 
 	/* Return */
 	return constant_buffer;
@@ -81,15 +84,16 @@ static void opencl_si_program_initialize_constant_buffers(
 	assert(elf_file);
 
 	/* Constant buffers encoded in ELF file */
-	program->constant_buffer_list = list_create_with_size(25);
-	for (i = 0; i < 25; i++) 
+	program->constant_buffer_list = list_create_with_size(
+		SI_EMU_MAX_CONST_BUFS);
+	for (i = 0; i < SI_EMU_MAX_CONST_BUFS; i++) 
 		list_add(program->constant_buffer_list, NULL);
 
 	/* We can't tell how many constant buffers exist in advance, but we
 	 * know they should be enumerated, starting with '2'.  This loop
 	 * searches until a constant buffer matching the format is not 
 	 * found. */
-	for (i = 2; i < 25; i++) 
+	for (i = 2; i < SI_EMU_MAX_CONST_BUFS; i++) 
 	{
 		/* Create string of symbol name */
 		sprintf(symbol_name, "__OpenCL_%d_global", i);
@@ -104,17 +108,9 @@ static void opencl_si_program_initialize_constant_buffers(
 		opencl_debug("\tconstant buffer '%s' found with size %d\n",
 			symbol->name, symbol->size);
 
-		/* Allocate memory for constant buffers */
-		mem_map(emu->video_mem, emu->video_mem_top, symbol->size,
-			mem_access_read | mem_access_write);
-
-		/* Copy constant buffer into device memory */
-		mem_write(emu->video_mem, emu->video_mem_top,
-			symbol->size, elf_buffer.ptr);
-
 		/* Create buffer */
 		constant_buffer = opencl_si_constant_buffer_create(i,
-			emu->video_mem_top, symbol->size);
+			symbol->size, elf_buffer.ptr);
 		emu->video_mem_top += symbol->size;
 
 		/* Add the constant buffer to the list */
@@ -122,7 +118,8 @@ static void opencl_si_program_initialize_constant_buffers(
 	}
 } 
 
-struct opencl_si_program_t *opencl_si_program_create(OpenclDriver *driver, int id)
+struct opencl_si_program_t *opencl_si_program_create(OpenclDriver *driver, 
+	int id)
 {
 	struct opencl_si_program_t *program;
 

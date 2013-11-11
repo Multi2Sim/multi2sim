@@ -400,5 +400,9 @@ void opencl_command_run(struct opencl_command_t *command)
 	{
 		opencl_event_set_status(command->done_event, CL_COMPLETE);
 	}
+	if (command->done_event)
+		opencl_debug("Command execution time: %lld", 
+			command->done_event->time_end - 
+			command->done_event->time_start);
 }
 

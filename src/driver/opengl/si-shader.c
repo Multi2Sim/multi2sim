@@ -350,10 +350,6 @@ void opengl_si_shader_create_ndrange_constant_buffers(SINDRange *ndrange,
 	MMU *gpu_mmu)
 {
 	SIEmu *emu = ndrange->emu;
-	unsigned int size_of_constant_buffers;
-
-	size_of_constant_buffers = SI_EMU_CONST_BUF_0_SIZE + 
-		SI_EMU_CONST_BUF_1_SIZE;
 
 	if (gpu_mmu)
 	{
@@ -366,21 +362,17 @@ void opengl_si_shader_create_ndrange_constant_buffers(SINDRange *ndrange,
 	}
 
 	/* Map new pages */
-	mem_map(emu->video_mem, emu->video_mem_top, size_of_constant_buffers, 
+	mem_map(emu->video_mem, emu->video_mem_top, SI_EMU_TOTAL_CONST_BUF_SIZE,
 		mem_access_read | mem_access_write);
 
 	opengl_debug("\t%u bytes of device memory allocated at " 
-		"0x%x for SI constant buffers\n", size_of_constant_buffers,
+		"0x%x for SI constant buffers\n", SI_EMU_TOTAL_CONST_BUF_SIZE,
 		emu->video_mem_top);
 
 
-	/* Create constant buffer 0 */
-	ndrange->cb0 = emu->video_mem_top;
-	emu->video_mem_top += SI_EMU_CONST_BUF_0_SIZE;
-
-	/* Create constant buffer 1 */
-	ndrange->cb1 = emu->video_mem_top;
-	emu->video_mem_top += SI_EMU_CONST_BUF_1_SIZE;
+	/* Create constant buffers */
+	ndrange->cb_start = emu->video_mem_top;
+	emu->video_mem_top += SI_EMU_TOTAL_CONST_BUF_SIZE;
 }
 
 void opengl_si_shader_setup_ndrange_constant_buffers(
@@ -392,17 +384,20 @@ void opengl_si_shader_setup_ndrange_constant_buffers(
 
 	float f;
 
-	opengl_si_create_buffer_desc(ndrange->cb0, SI_EMU_CONST_BUF_0_SIZE, 1,
-		SIInputInt, &buffer_desc);
+	/* Constant buffer 0 */
+	opengl_si_create_buffer_desc(ndrange->cb_start, SI_EMU_CONST_BUF_SIZE, 
+		1, SIInputInt, &buffer_desc);
 
 	SINDRangeInsertBufferIntoConstantBufferTable(ndrange, &buffer_desc, 0);
 
-	opengl_si_create_buffer_desc(ndrange->cb1, SI_EMU_CONST_BUF_1_SIZE, 1,
-		SIInputInt, &buffer_desc);
+	/* Constant buffer 1 */
+	opengl_si_create_buffer_desc(
+		ndrange->cb_start + 1*SI_EMU_CONST_BUF_SIZE, 
+		SI_EMU_CONST_BUF_SIZE, 1, SIInputInt, &buffer_desc);
 
 	SINDRangeInsertBufferIntoConstantBufferTable(ndrange, &buffer_desc, 1);
 
-	/* Initialize constant buffers */
+	/* Initialize constant buffer 0 */
 
 	/* CB0 bytes 0:15 */
 

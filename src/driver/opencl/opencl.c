@@ -1474,8 +1474,7 @@ static int opencl_abi_si_ndrange_pass_mem_objs_impl(X86Context *ctx)
 		ndrange->uav_table = (ndrange->resource_table +
 			SI_EMU_RESOURCE_TABLE_SIZE + 16) & 0xFFFFFFF0;
 
-		ndrange->cb0 = constant_buffers_ptr;
-		ndrange->cb1 = ndrange->cb0 + SI_EMU_CONST_BUF_0_SIZE;
+		ndrange->cb_start = constant_buffers_ptr;
 		
 		opencl_si_ndrange_setup_mmu(ndrange, driver->x86_cpu->mmu, 
 			ctx->address_space_index, si_gpu->mmu, tables_ptr, 
