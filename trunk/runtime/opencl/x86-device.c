@@ -308,6 +308,10 @@ void opencl_x86_device_work_group_launch(
 	opencl_nd_address(nd->work_dim, num, exec->work_group_count, core->group_id);
 	for (int i = 0; i < 3; i++)
 		core->group_global[i] = (core->group_id[i] + exec->work_group_start[i]) * local_size[i] + nd->global_work_offset[i];
+
+	opencl_debug("[%s] running group (%d,%d,%d)", __FUNCTION__,
+		core->group_global[0], core->group_global[1], 
+		core->group_global[2]);
 	
 	assert(core->num_items > 0);
 

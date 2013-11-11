@@ -656,11 +656,6 @@ void opencl_si_kernel_create_ndrange_constant_buffers(SINDRange *ndrange,
 {
 	SIEmu *emu = ndrange->emu;
 
-	unsigned int size_of_constant_buffers;
-
-	size_of_constant_buffers = SI_EMU_CONST_BUF_0_SIZE + 
-		SI_EMU_CONST_BUF_1_SIZE;
-
 	if (gpu_mmu)
 	{
 		/* Allocate starting from nearest page boundary */
@@ -672,20 +667,16 @@ void opencl_si_kernel_create_ndrange_constant_buffers(SINDRange *ndrange,
 	}
 
 	/* Map new pages */
-	mem_map(emu->video_mem, emu->video_mem_top, size_of_constant_buffers, 
+	mem_map(emu->video_mem, emu->video_mem_top, SI_EMU_TOTAL_CONST_BUF_SIZE,
 		mem_access_read | mem_access_write);
 
 	opencl_debug("\t%u bytes of device memory allocated at " 
-		"0x%x for SI constant buffers\n", size_of_constant_buffers,
+		"0x%x for SI constant buffers\n", SI_EMU_TOTAL_CONST_BUF_SIZE,
 		emu->video_mem_top);
 
-	/* Create constant buffer 0 */
-	ndrange->cb0 = emu->video_mem_top;
-	emu->video_mem_top += SI_EMU_CONST_BUF_0_SIZE;
-
-	/* Create constant buffer 1 */
-	ndrange->cb1 = emu->video_mem_top;
-	emu->video_mem_top += SI_EMU_CONST_BUF_1_SIZE;
+	/* Create constant buffers */
+	ndrange->cb_start = emu->video_mem_top;
+	emu->video_mem_top += SI_EMU_TOTAL_CONST_BUF_SIZE;
 }
 
 void opencl_si_kernel_setup_ndrange_constant_buffers(
@@ -697,17 +688,20 @@ void opencl_si_kernel_setup_ndrange_constant_buffers(
 
 	float f;
 
-	opencl_si_create_buffer_desc(ndrange->cb0, SI_EMU_CONST_BUF_0_SIZE, 1,
-		SIArgInt32, &buffer_desc);
+	/* Constant buffer 0 */
+	opencl_si_create_buffer_desc(ndrange->cb_start, SI_EMU_CONST_BUF_SIZE, 
+		1, SIArgInt32, &buffer_desc);
 
 	SINDRangeInsertBufferIntoConstantBufferTable(ndrange, &buffer_desc, 0);
 
-	opencl_si_create_buffer_desc(ndrange->cb1, SI_EMU_CONST_BUF_1_SIZE, 1,
-		SIArgInt32, &buffer_desc);
+	/* Constant buffer 1 */
+	opencl_si_create_buffer_desc(
+		ndrange->cb_start + 1*SI_EMU_CONST_BUF_SIZE, 
+		SI_EMU_CONST_BUF_SIZE, 1, SIArgInt32, &buffer_desc);
 
 	SINDRangeInsertBufferIntoConstantBufferTable(ndrange, &buffer_desc, 1);
 
-	/* Initialize constant buffers */
+	/* Initialize constant buffer 0 */
 
 	/* CB0 bytes 0:15 */
 
@@ -837,6 +831,7 @@ void opencl_si_kernel_create_ndrange_tables(SINDRange *ndrange, MMU *gpu_mmu)
 		}
 
 	}
+
 	/* Map new pages */
 	mem_map(emu->video_mem, emu->video_mem_top, size_of_tables,
 		mem_access_read | mem_access_write);
@@ -1011,7 +1006,7 @@ void opencl_si_kernel_setup_ndrange_args(struct opencl_si_kernel_t *kernel,
 
 	/* Add program-wide constant buffers to the ND-range. 
 	 * Program-wide constant buffers start at number 2. */
-	for (index = 2; index < 25; index++) 
+	for (index = 2; index < SI_EMU_MAX_CONST_BUFS; index++) 
 	{
 		constant_buffer = list_get(
 			kernel->program->constant_buffer_list, index);
@@ -1020,7 +1015,7 @@ void opencl_si_kernel_setup_ndrange_args(struct opencl_si_kernel_t *kernel,
 			break;
 
 		opencl_si_create_buffer_desc(
-			constant_buffer->device_ptr,
+			ndrange->cb_start + SI_EMU_CONST_BUF_SIZE*index,
 			constant_buffer->size,
 			4,
 			SIArgFloat,
@@ -1181,8 +1176,9 @@ static void opencl_si_create_buffer_desc(unsigned int base_addr,
 	buffer_desc->base_addr = base_addr;
 	buffer_desc->num_format = num_format;
 	buffer_desc->data_format = data_format;
+	assert(!(size % elem_size));  
 	buffer_desc->elem_size = elem_size;
-	buffer_desc->num_records = size;
+	buffer_desc->num_records = size/elem_size;
 
 	return;
 }

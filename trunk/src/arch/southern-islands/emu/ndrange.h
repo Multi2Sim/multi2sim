@@ -143,8 +143,7 @@ CLASS_BEGIN(SINDRange, Object)
 		vertex_buffer_table_entries[SI_EMU_MAX_NUM_VERTEX_BUFFERS];
 
 	/* Addresses of the constant buffers */
-	unsigned int cb0;
-	unsigned int cb1;
+	unsigned int cb_start;
 
 	/* List of kernel arguments, elements of type 'SIArg' */
 	List *arg_list;

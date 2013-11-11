@@ -294,7 +294,7 @@ struct opencl_si_ndrange_t *opencl_si_ndrange_create(
 
 	static int ndrange_count = 0;
 
-	const int cb_size = 4096;
+	const int cb_size = 16*16384;  /* Matches arch/si/emu/emu.h */
 	const int table_size = 4096;
 
 	assert(ndrange);
@@ -311,8 +311,8 @@ struct opencl_si_ndrange_t *opencl_si_ndrange_create(
 	arch_ndrange->arch_kernel = si_kernel;
 	arch_ndrange->fused = fused;
 	arch_ndrange->work_dim = work_dim;
-	arch_ndrange->table_ptr = xcalloc(1, table_size + 16);  // FIXME
-	arch_ndrange->cb_ptr = xcalloc(1, cb_size + 16);   // FIXME
+	arch_ndrange->table_ptr = xcalloc(1, table_size + 16);  // FIXME align
+	arch_ndrange->cb_ptr = xcalloc(1, cb_size + 16);   // FIXME align
 
 	/* Work sizes */
 	for (i = 0; i < work_dim; i++)
