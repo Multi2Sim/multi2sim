@@ -379,12 +379,15 @@ struct opencl_x86_ndrange_t *opencl_x86_ndrange_create(
 			fatal("%s: argument %d not set", __FUNCTION__, i);
 	}
 
-
 	opencl_debug("[%s] dims = %d", __FUNCTION__, work_dim);
 	opencl_debug("[%s] local size = (%d, %d, %d)", __FUNCTION__,
-		arch_ndrange->local_work_size[0], arch_ndrange->local_work_size[1], arch_ndrange->local_work_size[2]);
+		arch_ndrange->local_work_size[0], 
+		arch_ndrange->local_work_size[1], 
+		arch_ndrange->local_work_size[2]);
 	opencl_debug("[%s] global size = (%d, %d, %d)", __FUNCTION__,
-		global_work_size[0], global_work_size[1], global_work_size[2]);
+		arch_ndrange->global_work_size[0], 
+		arch_ndrange->global_work_size[1], 
+		arch_ndrange->global_work_size[2]);
 
 	/* copy over register arguments */
 	size_t reg_size = sizeof x86_kernel->cur_register_params[0] * MAX_SSE_REG_PARAMS;

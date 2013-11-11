@@ -277,14 +277,7 @@ void SINDRangeConstantBufferWrite(SINDRange *self,
 
 	/* Sanity check */
 	assert(const_buf_num < 2);
-	if (const_buf_num == 0)
-	{
-		assert(offset + size < SI_EMU_CONST_BUF_0_SIZE);
-	}
-	else if (const_buf_num == 1)
-	{
-		assert(offset + size < SI_EMU_CONST_BUF_1_SIZE);
-	}
+	assert(offset + size < SI_EMU_CONST_BUF_SIZE);
 
 	mem_read(emu->global_mem, self->const_buf_table +
 		const_buf_num*SI_EMU_CONST_BUF_TABLE_ENTRY_SIZE, 
@@ -308,14 +301,7 @@ void SINDRangeConstantBufferRead(SINDRange *self, int const_buf_num,
 
 	/* Sanity check */
 	assert(const_buf_num < 2);
-	if (const_buf_num == 0)
-	{
-		assert(offset + size < SI_EMU_CONST_BUF_0_SIZE);
-	}
-	else if (const_buf_num == 1)
-	{
-		assert(offset + size < SI_EMU_CONST_BUF_1_SIZE);
-	}
+	assert(offset+size < SI_EMU_CONST_BUF_SIZE);
 
 	mem_read(emu->global_mem, self->const_buf_table +
 		const_buf_num*SI_EMU_CONST_BUF_TABLE_ENTRY_SIZE, 
