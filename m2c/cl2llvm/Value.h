@@ -37,15 +37,23 @@ class Value
 {
 	llvm::Value *llvm_value;
 	Type type;
+	Value* vector_indices[17];
 
 public:
 
-	Value(llvm::Value *llvm_value, bool sign) :
-			llvm_value(llvm_value),
-			type(llvm_value->getType(), sign) { }
+	Value(llvm::Value *llvm_value, bool sign) : 
+		llvm_value(llvm_value),
+		type(llvm_value->getType(), sign) { }
 
+	~Value() { for (int i = 0; i< 16; i++) if(vector_indices[i] != NULL) 
+		delete vector_indices [i]; }
 	Value *getLlvmValue() { return llvm_value; }
-
+	void setLlvmValue(llvm::Value *llvm_value) 
+		{ this->llvm_value = llvm_value; }
+	Type *getType() { return &type; }
+	void setType(Type *type) { this->type = type; }
+	void setSign(bool sign) { this->sign = sign; }
+	bool getSign() { return sign; }
 	void setLlvmValue(llvm::Value *llvm_value) {
 			this->llvm_value = llvm_value;
 	}
@@ -82,6 +90,8 @@ void* cl2llvmValueWrapGetLlvmValue(struct cl2llvmValueWrap *value);
 void cl2llvmValueWrapSetLlvmValue(struct cl2llvmValueWrap* value, void *llvm_value);
 void* cl2llvmValueWrapGetType(struct cl2llvmValueWrap *value);
 void cl2llvmValueWrapSetType(struct cl2llvmValueWrap* value, Type *type);
+void cl2llvmValueWrapSetSign(struct cl2llvmValueWrap* value, int sign);
+bool cl2llvmValueWrapGetSign(struct cl2llvmValueWrap* value);
 
 #ifdef __cplusplus
 }
