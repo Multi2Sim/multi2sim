@@ -312,6 +312,7 @@ DEFINST(hlt, 0xf4, SKIP, SKIP, SKIP, SKIP, 0)
 DEFINST(idiv_rm32, 0xf7, SKIP, SKIP, 7, SKIP, 0)
 
 DEFINST(imul_rm32, 0xf7, SKIP, SKIP, 5, SKIP, 0)
+DEFINST(imul_r16_rm16, 0x0f, 0xaf, SKIP, REG, SKIP, X86InstPrefixOp)
 DEFINST(imul_r32_rm32, 0x0f, 0xaf, SKIP, REG, SKIP, 0)
 DEFINST(imul_r32_rm32_imm8, 0x6b, SKIP, SKIP, REG, IB, 0)
 DEFINST(imul_r32_rm32_imm32, 0x69, SKIP, SKIP, REG, ID, 0)
