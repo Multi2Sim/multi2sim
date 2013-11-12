@@ -54,63 +54,123 @@ extern misc::StringMap inst_sreg_map;
 class Asm;
 
 /* Special Registers */
-enum InstSReg
+//enum InstSReg
+//{
+//	InstSRegLaneld = 0,
+//	InstSRegVirtCfg = 2,
+//	InstSRegVirtId,
+//	InstSRegPM0,
+//	InstSRegPM1,
+//	InstSRegPM2,
+//	InstSRegPM3,
+//	InstSRegPM4,
+//	InstSRegPM5,
+//	InstSRegPM6,
+//	InstSRegPM7,
+//	InstSRegPrimType = 16,
+//	InstSRegInvocationID,
+//	InstSRegYDirection,
+//	InstSRegMachineID0 = 24,
+//	InstSRegMachineID1,
+//	InstSRegMachineID2,
+//	InstSRegMachineID3,
+//	InstSRegAffinity,
+//	InstSRegTid = 32,
+//	InstSRegTidX,
+//	InstSRegTidY,
+//	InstSRegTidZ,
+//	InstSRegCTAParam,
+//	InstSRegCTAidX,
+//	InstSRegCTAidY,
+//	InstSRegCTAidZ,
+//	InstSRegNTid,
+//	InstSRegNTidX,
+//	InstSRegNTidY,
+//	InstSRegNTidZ,
+//	InstSRegGridParam,
+//	InstSRegNCTAidX,
+//	InstSRegNCTAidY,
+//	InstSRegNCTAidZ,
+//	InstSRegSWinLo,
+//	InstSRegSWINSZ,
+//	InstSRegSMemSz,
+//	InstSRegSMemBanks,
+//	InstSRegLWinLo,
+//	InstSRegLWINSZ,
+//	InstSRegLMemLoSz,
+//	InstSRegLMemHiOff,
+//	InstSRegEqMask,
+//	InstSRegLtMask,
+//	InstSRegLeMask,
+//	InstSRegGtMask,
+//	InstSRegGeMask,
+//	InstSRegClockLo = 80,
+//	InstSRegClockHi,
+//
+//	/* Max */
+//	InstSRegCount
+//};
+
+
+struct FmtReg
 {
-	InstSRegLaneld = 0,
-	InstSRegVirtCfg = 2,
-	InstSRegVirtId,
-	InstSRegPM0,
-	InstSRegPM1,
-	InstSRegPM2,
-	InstSRegPM3,
-	InstSRegPM4,
-	InstSRegPM5,
-	InstSRegPM6,
-	InstSRegPM7,
-	InstSRegPrimType = 16,
-	InstSRegInvocationID,
-	InstSRegYDirection,
-	InstSRegMachineID0 = 24,
-	InstSRegMachineID1,
-	InstSRegMachineID2,
-	InstSRegMachineID3,
-	InstSRegAffinity,
-	InstSRegTid = 32,
-	InstSRegTidX,
-	InstSRegTidY,
-	InstSRegTidZ,
-	InstSRegCTAParam,
-	InstSRegCTAidX,
-	InstSRegCTAidY,
-	InstSRegCTAidZ,
-	InstSRegNTid,
-	InstSRegNTidX,
-	InstSRegNTidY,
-	InstSRegNTidZ,
-	InstSRegGridParam,
-	InstSRegNCTAidX,
-	InstSRegNCTAidY,
-	InstSRegNCTAidZ,
-	InstSRegSWinLo,
-	InstSRegSWINSZ,
-	InstSRegSMemSz,
-	InstSRegSMemBanks,
-	InstSRegLWinLo,
-	InstSRegLWINSZ,
-	InstSRegLMemLoSz,
-	InstSRegLMemHiOff,
-	InstSRegEqMask,
-	InstSRegLtMask,
-	InstSRegLeMask,
-	InstSRegGtMask,
-	InstSRegGeMask,
-	InstSRegClockLo = 80,
-	InstSRegClockHi,
-
-	/* Max */
-	InstSRegCount
+	unsigned long long int cat : 4; /* 3:0 */
+	unsigned long long int mixed0 : 6; /* 9:4 */
+	unsigned long long int pred : 4; /* 13:10 */
+	unsigned long long int dst : 6; /* 19:14 */
+	unsigned long long int src1 : 6; /* 25:20 */
+	unsigned long long int src2 : 20; /* 45:26 */
+	unsigned long long int src2_mod : 2; /* 47:46 */
+	unsigned long long int dst_mod : 1; /* 48 */
+	unsigned long long int mixed1 : 10; /* 58:49 */
+	unsigned long long int func : 5; /* 63:59 */
 };
-
+struct FmtImm
+{
+	unsigned long long int cat : 4; /* 3:0 */
+	unsigned long long int suffix0 : 6; /* 9:4 */
+	unsigned long long int pred : 4; /* 13:10 */
+	unsigned long long int dst : 6; /* 19:14 */
+	unsigned long long int src1 : 6; /* 25:20 */
+	unsigned long long int imm32 : 32; /* 57:26 */
+	unsigned long long int dst_mod : 1; /* 58 */
+	unsigned long long int func : 5; /* 63:59 */
+};
+struct FmtOther
+{
+	unsigned long long int cat : 4; /* 3:0 */
+	unsigned long long int mixed0 : 6; /* 9:4 */
+	unsigned long long int pred : 4; /* 13:10 */
+	unsigned long long int dst : 6; /* 19:14 */
+	unsigned long long int src1 : 6; /* 25:20 */
+	unsigned long long int src2 : 20; /* 45:26 */
+	unsigned long long int src2_mod : 2; /* 47:46 */
+	unsigned long long int dst_mod : 1; /* 48 */
+	unsigned long long int mixed1 : 9; /* 57:49 */
+	unsigned long long int func : 6; /* 63:58 */
+};
+struct FmtLdSt
+{
+	unsigned long long int cat : 4; /* 3:0 */
+	unsigned long long int suffix0 : 6; /* 9:4 */
+	unsigned long long int pred : 4; /* 13:10 */
+	unsigned long long int dst : 6; /* 19:14 */
+	unsigned long long int src1 : 6; /* 25:20 */
+	unsigned long long int off16 : 16; /* 41:26 */
+	unsigned long long int suffix1 : 16; /* 57:42 */
+	unsigned long long int func : 6; /* 63:58 */
+};
+struct FmtCtrl
+{
+	unsigned long long int cat : 4; /* 3:0 */
+	unsigned long long int suffix0 : 6; /* 9:4 */
+	unsigned long long int pred : 4; /* 13:10 */
+	unsigned long long int target_mod : 1; /* 14 */
+	unsigned long long int suffix1 : 11; /* 25:15 */
+	unsigned long long int target : 20; /* 45:26 */
+	unsigned long long int suffix2 : 13; /* 58:46 */
+	unsigned long long int func : 5; /* 63:59 */
+};
 
 
 /* 1st level struct */
@@ -323,21 +383,11 @@ typedef union
 	unsigned int word[2];
 	unsigned long long int dword;
 
-	InstBytesGeneral0 general0;
-	InstBytesGeneral1 general1;
-	InstBytesImm imm;
-	InstBytesOffs offs;
-	InstBytesTgt tgt;
-	InstBytesGeneral0Mod1A general0_mod1_A;
-	InstBytesGeneral0Mod1B general0_mod1_B;
-	InstBytesGeneral0Mod1C general0_mod1_C;
-	InstBytesGeneral0Mod1D general0_mod1_D;
-	InstBytesOffsMod1A offs_mod1_A;
-	InstBytesOffsMod1B offs_mod1_B;
-	InstBytesMod0A mod0_A;
-	InstBytesMod0B mod0_B;
-	InstBytesMod0C mod0_C;
-	InstBytesMod0D mod0_D;
+	FmtReg fmt_reg;
+	FmtImm fmt_imm;
+	FmtOther fmt_other;
+	FmtLdSt fmt_ldst;
+	FmtCtrl fmt_ctrl;
 } InstBytes;
 
 
@@ -383,7 +433,11 @@ public:
 
 	/* Dump functions */
 	void DumpPC(std::ostream &os);
-	void DumpPred(std::ostream &os);
+	void DumpToBufWithFmtReg(void);
+	void DumpToBufWithFmtImm(void);
+	void DumpToBufWithFmtOther(void);
+	void DumpToBufWithFmtLdSt(void);
+	void DumpToBufWithFmtCtrl(void);
 	void DumpToBuf(void);
 	void Dump(std::ostream &os, unsigned int max_inst_len);
 	void DumpHex(std::ostream &os);
