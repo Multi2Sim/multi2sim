@@ -618,7 +618,7 @@ const char *StringMapValue(StringMap map, int value, bool &error)
 	for (index = 0; map[index].text; index++)
 		if (map[index].value == value)
 			return map[index].text;
-	
+
 	/* Not found */
 	error = true;
 	return string_map_unknown;
