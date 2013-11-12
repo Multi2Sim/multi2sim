@@ -93,6 +93,7 @@ void Asm::DisassembleBinary(string path)
 
 			/* Dump */
 			cout << "\t\tFunction : " << section->getName().c_str() + 6 << "\n";
+			cout << "\t.headerflags    @\"EF_CUDA_SM20 EF_CUDA_PTX_SM(EF_CUDA_SM20)\"" << "\n";
 			for (unsigned int j = 0; j < inst_vector.size(); ++j)
 			{
 				Inst *inst = inst_vector[j];
