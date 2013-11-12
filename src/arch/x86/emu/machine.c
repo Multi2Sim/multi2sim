@@ -810,6 +810,37 @@ void x86_isa_imul_rm32_impl(X86Context *ctx)
 }
 
 
+void x86_isa_imul_r16_rm16_impl(X86Context *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+
+	unsigned int r16 = X86ContextLoadR16(ctx);
+	unsigned int rm16 = X86ContextLoadRm16(ctx);
+	unsigned long flags = regs->eflags;
+
+	__X86_ISA_ASM_START__
+	asm volatile (
+		"push %4\n\t"
+		"popf\n\t"
+		"mov %2, %%ax\n\t"
+		"mov %3, %%bx\n\t"
+		"imul %%bx, %%ax\n\t"
+		"mov %%ax, %1\n\t"
+		"pushf\n\t"
+		"pop %0\n\t"
+		: "=g" (flags), "=m" (r16)
+		: "m" (r16), "m" (rm16), "g" (flags)
+		: "ax", "bx"
+	);
+	__X86_ISA_ASM_END__
+
+	X86ContextStoreR16(ctx, r16);
+	regs->eflags = flags;
+
+	x86_uinst_new(ctx, x86_uinst_mult, x86_dep_r16, x86_dep_rm16, 0, x86_dep_r16, 0, x86_dep_cf, x86_dep_of);
+}
+
+
 void x86_isa_imul_r32_rm32_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
