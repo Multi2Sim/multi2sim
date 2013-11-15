@@ -407,6 +407,8 @@ struct InstInfo
 
 	int size;
 
+	unsigned int cat;
+	unsigned int func;
 };
 
 
