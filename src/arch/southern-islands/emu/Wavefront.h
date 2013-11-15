@@ -123,11 +123,51 @@ class Wavefront
 
 public:
 
+	friend class WorkItem;
+
 	/// Constructor
 	///
 	/// \param work_group Work-group that the wavefront belongs to
 	/// \param id Global 1D identifier of the wavefront
 	Wavefront(WorkGroup *work_group, int id);
+
+	/// Getters
+	///
+	/// Statistics showing the total number of instuctions
+	long long getInstCount() { return inst_count; }
+
+	/// Statistics showing the total number of calar memory instuctions
+	long long getScalarMemInstCount() { return scalar_mem_inst_count; }
+
+	/// Statistics showing the total number of scalar alu instuctions
+	long long getScalarAluInstCount() { return scalar_alu_inst_count; }
+
+	/// Statistics showing the total number of branch instuctions
+	long long getIBranchInstCount() { return branch_inst_count; }
+
+	/// Statistics showing the total number of vector memory instuctions
+	long long getVectorMemInstCount() { return vector_mem_inst_count; }
+
+	/// Statistics showing the total number of instuctions
+	long long getVectorAluInstCount() { return vector_alu_inst_count; }
+
+	/// Statistics showing the total number of global memory instuctions
+	long long getGlobalMemInstCount() { return global_mem_inst_count; }
+
+	/// Statistics showing the total number of LDS instuctions
+	long long getLdsInstCount() { return lds_inst_count; }
+
+	/// Statistics showing the total number of export instuctions
+	long long getExportInstCount() { return export_inst_count; }
+
+	/// Statistics showing the total number of emulated instuctions
+	long long getEmuInstCount() { return emu_inst_count; }
+
+	/// Statistics showing the start time of emulation
+	long long getEmuTimeStart() { return emu_time_start; }
+
+	/// Statistics showing the end tim eof emulation
+	long long getEmuTimeEnd() { return emu_time_end; }
 
 	/// Dump wavefront in a human-readable format into output stream \a os
 	void Dump(std::ostream &os) const;
@@ -212,7 +252,7 @@ public:
 };
 
 
-}  // namespace
+}  // namespace SI
 
 #endif
 

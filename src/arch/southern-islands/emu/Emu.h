@@ -295,7 +295,7 @@ extern int si_emu_wavefront_size;
 #endif
 
 
-}  // namespace
+}  // namespace SI
 
 #endif
 
