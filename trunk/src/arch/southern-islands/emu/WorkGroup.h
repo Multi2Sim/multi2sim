@@ -100,8 +100,19 @@ public:
 		return os;
 	}
 
+	/// Getters
+	///
 	/// Statistic showing the number of reads from scalar registers
 	long long getSRegReadCount() const { return sreg_read_count; }
+
+	/// Statistic showing the number of writes from scalar registers
+	long long getSRegWriteCount() const { return sreg_write_count; }
+
+	/// Statistic showing the number of reads from vector registers
+	long long getVRegReadCount() const { return vreg_read_count; }
+
+	/// Statistic showing the number of writes from vector registers
+	long long getVRegWriteCount() const { return vreg_write_count; }
 
 	/// Attach additional data to the work-group, passing an object derived
 	/// from class WorkGroupData. The object passed to it must be
@@ -145,8 +156,6 @@ public:
 	std::vector<std::unique_ptr<Wavefront>>::iterator WavefrontsEnd() {
 		return wavefronts.end();
 	}
-
-	// FIXME - getters for other statistics
 };
 
 }  // namespace

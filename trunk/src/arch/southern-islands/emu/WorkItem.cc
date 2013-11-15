@@ -13,9 +13,23 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
+ *  along with self program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+
+#include "Wavefront.h"
+#include "WorkItem.h"
+#include "WorkGroup.h"
+
+namespace SI
+{
+
+WorkItem::WorkItem(Wavefront *wavefront, int id)
+{
+	/* Initialization */
+	this->id = id;
+	this->wavefront = wavefront;
+}
 
 #if 0
 
@@ -221,3 +235,4 @@ void SIWorkItemReadMemPtr(SIWorkItem *self,
 
 #endif
 
+}  /* namespace SI */

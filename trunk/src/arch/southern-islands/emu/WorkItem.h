@@ -20,10 +20,15 @@
 #ifndef ARCH_SOUTHERN_ISLANDS_EMU_WORK_ITEM_H
 #define ARCH_SOUTHERN_ISLANDS_EMU_WORK_ITEM_H
 
+#include <src/arch/southern-islands/asm/Inst.h>
 
 namespace SI
 {
 
+/// Forward declarations
+class Wavefront;
+class WorkGroup;
+class NDRange;
 
 /// Abstract polymorphic class used to attach additional information to the
 /// work-item. The timing simulator can created objects derived from this class
@@ -56,7 +61,7 @@ public:
 	};
 
 private:
-	static int MaxLDSAccessesPerInst = 2;
+	static const int MaxLDSAccessesPerInst = 2;
 	
 	// IDs
 	int id;  // global ID
@@ -92,22 +97,22 @@ public:
 
 	/// 
 
-unsigned SIWorkItemReadSReg(SIWorkItem *self, int sreg);
-void SIWorkItemWriteSReg(SIWorkItem *self, int sreg, 
-	unsigned value);
-unsigned SIWorkItemReadVReg(SIWorkItem *self, int vreg);
-void SIWorkItemWriteVReg(SIWorkItem *self, int vreg, 
-	unsigned value);
-unsigned SIWorkItemReadReg(SIWorkItem *self, int reg);
-void SIWorkItemWriteBitmaskSReg(SIWorkItem *self, int sreg, 
-	unsigned value);
-int SIWorkItemReadBitmaskSReg(SIWorkItem *self, int sreg);
+	unsigned ReadSReg(int sreg);
+	void WriteSReg(int sreg, unsigned value);
+	unsigned ReadVReg(int vreg);
+	void WriteVReg(int vreg, unsigned value);
+	unsigned ReadReg(int reg);
+	void WriteBitmaskSReg(int sreg, unsigned value);
+	int ReadBitmaskSReg(int sreg);
 
-struct si_buffer_desc_t;
-struct si_mem_ptr_t;
-void SIWorkItemReadBufferResource(SIWorkItem *self, 
-	struct si_buffer_desc_t *buf_desc, int sreg);
-void SIWorkItemReadMemPtr(SIWorkItem *self, 
-	struct si_mem_ptr_t *mem_ptr, int sreg);
+	struct si_buffer_desc_t;
+	struct si_mem_ptr_t;
+	void ReadBufferResource(struct si_buffer_desc_t *buf_desc, 
+		int sreg);
+	void ReadMemPtr(struct si_mem_ptr_t *mem_ptr, int sreg);
+
+};
+
+}  /* namespace SI */
 
 #endif

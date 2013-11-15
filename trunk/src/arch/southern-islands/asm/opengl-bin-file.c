@@ -745,6 +745,7 @@ static void opengl_si_bin_symbol_init_with_section(struct list_t *symbol_list, s
 {
 	struct opengl_si_bin_symbol_t *symbol;
 	int symbol_count;
+	const int symbol_len = 136;
 	char *symbol_name;
 	void *bin_ptr;
 	void *name_ptr;
@@ -761,9 +762,9 @@ static void opengl_si_bin_symbol_init_with_section(struct list_t *symbol_list, s
 	for (i = 0; i < symbol_count; ++i)
 	{
 		symbol = opengl_si_bin_symbol_create();
-		memcpy(symbol, bin_ptr, 136);
+		memcpy(symbol, bin_ptr, symbol_len);
 
-		name_ptr = bin_ptr + 136;
+		name_ptr = bin_ptr + symbol_len;
 		symbol_name = (char *)name_ptr;
 		if(*symbol_name != '\0')
 		{
