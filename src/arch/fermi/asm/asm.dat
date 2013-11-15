@@ -9,24 +9,24 @@
  * FMNMX, FSET, FSETP, FFMA, FCMP, FCCO, FSWZ, FADD, FMUL, RRO, IPA, MUFU
  */
 
-//DEFINST(FMNMX, 
-//	"%pred FMNMX", 
-//	0x008)
+DEFINST(FMNMX, 
+	"%pred FMNMX %dst, %nasrc1, %src2, %R", 
+	0x008)
 
-//DEFINST(FSET, 
-//	"%pred FSET", 
-//	0x010)
+DEFINST(FSET, 
+	"%pred FSET", 
+	0x010)
 
 DEFINST(FSETP, 
-	"%pred FSETP%cmp%logic %P, %Q, %src1, %src2, %R", 
+	"%pred FSETP%cmp%logic %P, %Q, %nasrc1, %nasrc2, %R", 
 	0x020)
 
 DEFINST(FFMA, 
-	"%pred FFMA%ftzfmz%rnd%sat %dst, %src1, %src2, %src3", 
+	"%pred FFMA%ftzfmz%rnd%sat_01 %dst, %src1, %nsrc2_05, %nsrc3", 
 	0x030)
 
 DEFINST(FCMP, 
-	"%pred FCMP%cmp%ftz %dst, %src1, %src2, %src3", 
+	"%pred FCMP%cmp%ftz_ %dst, %src1, %src2, %src3", 
 	0x038)
 
 //DEFINST(FCCO, 
@@ -38,15 +38,15 @@ DEFINST(FCMP,
 //	0x048)
 
 DEFINST(FADD, 
-	"%pred FADD%ftz%rnd%sat %dst, %src1, %src2", 
+	"%pred FADD%ftz_%rnd%sat_10 %dst, %nasrc1, %nasrc2", 
 	0x050)
 
 DEFINST(FMUL, 
-	"%pred FMUL%ftzfmz%rnd%sat %dst, %src1, %src2", 
+	"%pred FMUL%ftzfmz%rnd%sat_01 %dst, %src1, %nsrc2_18", 
 	0x058)
 
 DEFINST(RRO, 
-	"%pred RRO%op%sat %dst, %src1", 
+	"%pred RRO %dst, %src1", 
 	0x060)
 
 //DEFINST(IPA, 
@@ -54,7 +54,7 @@ DEFINST(RRO,
 //	0x0c0)
 
 DEFINST(MUFU, 
-	"%pred MUFU%op%sat %dst, %src1", 
+	"%pred MUFU%mufu_op%sat_01 %dst, %nasrc1", 
 	0x0c8)
 
 /* Double-Precision Floating Point category:
@@ -70,19 +70,19 @@ DEFINST(DMNMX,
 //	0x110)
 
 DEFINST(DSETP, 
-	"%pred DSETP%cmp%logic %P, %Q, %src1, %src2, %R", 
+	"%pred DSETP%cmp%logic %P, %Q, %nasrc1, %nasrc2, %R", 
 	0x118)
 
 DEFINST(DFMA, 
-	"%pred DFMA %dst, %src1, %src2, %src3", 
+	"%pred DFMA %dst, %src1, %nsrc2_05, %nsrc3", 
 	0x120)
 
 DEFINST(DADD, 
-	"%pred DADD%rnd %dst, %src1, %src2", 
+	"%pred DADD%rnd %dst, %nasrc1, %nasrc2", 
 	0x148)
 
 DEFINST(DMUL, 
-	"%pred DMUL%rnd %dst, %src1, %src2", 
+	"%pred DMUL%rnd %dst, %src1, %nsrc2_05", 
 	0x150)
 
 /* Immediate category:
@@ -110,7 +110,7 @@ DEFINST(MOV32I,
 //	0x220)
 
 DEFINST(FADD32I, 
-	"%pred FADD32I%ftz %dst, %src1, %imm32", 
+	"%pred FADD32I%ftz %dst, %nsrc1, %imm32", 
 	0x228)
 
 DEFINST(FMUL32I, 
@@ -118,7 +118,7 @@ DEFINST(FMUL32I,
 	0x230)
 
 DEFINST(LOP32I, 
-	"%pred LOP32I%op %dst, %src1, %imm32", 
+	"%pred LOP32I%lop_op %dst, %src1, %imm32", 
 	0x238)
 
 //DEFINST(ISCADD32I, 
@@ -142,7 +142,7 @@ DEFINST(ISETP,
 	0x318)
 
 DEFINST(IMAD, 
-	"%pred IMAD%type1%type2%hi%imad_sat %dst%cc, %src1, %src2, %src3", 
+	"%pred IMAD%type1%type2%hi%sat_17 %dst%cc, %src1, %src2, %src3", 
 	0x320)
 
 DEFINST(BFI, 
@@ -162,23 +162,23 @@ DEFINST(ISCADD,
 	0x340)
 
 DEFINST(IADD, 
-	"%pred IADD%sat%x %dst, %src1, %src2", 
+	"%pred IADD%sat_01%x %dst, %src1, %src2", 
 	0x348)
 
 DEFINST(IMUL, 
-	"%pred IMUL%type1%type2%hi%sat %dst, %src1, %src2", 
+	"%pred IMUL%type1%type2%hi %dst, %src1, %src2", 
 	0x350)
 
 DEFINST(SHR, 
-	"%pred SHR%s32%w %dst%cc, %src1, %src2", 
+	"%pred SHR%u32%w %dst%cc, %src1, %src2", 
 	0x358)
 
 DEFINST(SHL, 
-	"%pred SHL%s32%w %dst%cc, %src1, %src2", 
+	"%pred SHL%u32%w %dst%cc, %src1, %src2", 
 	0x360)
 
 DEFINST(LOP, 
-	"%pred LOP%op %dst, %src1, %src2", 
+	"%pred LOP%lop_op %dst, %src1, %src2", 
 	0x368)
 
 DEFINST(BFE, 
@@ -186,7 +186,7 @@ DEFINST(BFE,
 	0x370)
 
 DEFINST(FLO,
-	"FLO%u32 %dst, %src2",
+	"FLO %dst, %src2",
 	0x378)
 
 /* Other category: 
@@ -205,24 +205,24 @@ DEFINST(FLO,
 //	"%pred CSET", 
 //	0x408)
 
-//DEFINST(PSETP, 
-//	"%pred CSETP", 
-//	0x40c)
+DEFINST(PSETP, 
+	"%pred CSETP", 
+	0x40c)
 
 DEFINST(F2F, 
-	"%pred F2F%dtype%stype%rnd %dst, %src2", 
+	"%pred F2F%ftz%dtype_f%stype_f%rop%sat %dst, %nasrc2", 
 	0x410)
 
 DEFINST(F2I, 
-	"%pred F2I%dtype%stype%rnd %dst, %src2", 
+	"%pred F2I%ftz%dtype_i%stype_f%rnd_f %dst, %src2", 
 	0x414)
 
 DEFINST(I2F, 
-	"%pred I2F%dtype%stype%rnd %dst, %src2", 
+	"%pred I2F%dtype_f%stype_i%rnd_i %dst, %src2", 
 	0x418)
 
 DEFINST(I2I, 
-	"%pred I2I%dtype%stype%sat %dst, %src2", 
+	"%pred I2I%stype_i%stype_i%sat %dst%cc, %src2%b_", 
 	0x41c)
 
 DEFINST(SEL, 
@@ -238,7 +238,7 @@ DEFINST(MOV,
 	0x428)
 
 DEFINST(S2R, 
-	"%pred S2R%s_ %dst, %sreg", 
+	"%pred S2R %dst, %sreg", 
 	0x42c)
 
 //DEFINST(P2R, 
@@ -249,28 +249,28 @@ DEFINST(S2R,
 //	"%pred R2P", 
 //	0x434)
 
-//DEFINST(B2R, 
-//	"%pred B2R", 
-//	0x438)
+DEFINST(B2R, 
+	"%pred B2R%b2r_op%s_ %dst, %src1", 
+	0x438)
 
 DEFINST(NOP, 
-	"%pred NOP%s%op CC%ccop", 
+	"%pred NOP%trig%nop_op%s_ CC%cc_op", 
 	0x440)
 
-//DEFINST(LEPC, 
-//	"%pred LEPC", 
-//	0x444)
+DEFINST(LEPC, 
+	"%pred LEPC %dst", 
+	0x444)
 
-//DEFINST(VOTE, 
-//	"%pred VOTE", 
-//	0x448)
+DEFINST(VOTE, 
+	"%pred VOTE%vote_op %dst, %P_75, %Q_s", 
+	0x448)
 
 //DEFINST(STP, 
 //	"%pred STP", 
 //	0x44c)
 
 DEFINST(BAR, 
-	"%pred BAR%mod%op %dst, %src1",
+	"%pred BAR%bar_mode%bar_op %dst, %P_64, %dst, %src1, %src2, %Q_m",
 	0x450)
 
 //DEFINST(POPC, 
@@ -489,9 +489,9 @@ DEFINST(LDC,
 //	"%pred OUT", 
 //	0x61c)
 
-//DEFINST(TEX, 
-//	"%pred TEX", 
-//	0x680)
+DEFINST(TEX, 
+	"%pred TEX %dst, %src1, %src2, %geom", 
+	0x680)
 
 //DEFINST(TLD, 
 //	"%pred TLD", 

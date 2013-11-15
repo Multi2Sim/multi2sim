@@ -33,24 +33,19 @@ using namespace std;
 Asm::Asm()
 {
 	InstInfo *info;
-	unsigned int cat;
-	unsigned int func;
 
 	/* Read information about all instructions */
 #define DEFINST(_name, _fmt_str, _op) \
 	info = &inst_info[FRM_INST_##_name]; \
 	info->opcode = INST_##_name; \
-	cat = _op >> 8; \
-	if (cat <= 3) \
-		func = (_op & 0xf8) >> 3; \
-	else \
-		func = (_op & 0xfc) >> 2; \
+	info->cat = _op >> 8; \
+	info->func = (info->cat <= 3) ? (_op & 0xf8) >> 3 : (_op & 0xfc) >> 2; \
 	info->category = (InstCategory)(_op >> 8); \
 	info->name = #_name; \
 	info->fmt_str = _fmt_str; \
 	info->op = _op; \
 	info->size = 8; \
-	dec_table[cat][func] = info;
+	dec_table[info->cat][info->func] = info;
 #include "asm.dat"
 #undef DEFINST
 }
