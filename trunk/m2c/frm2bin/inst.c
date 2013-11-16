@@ -304,7 +304,7 @@ struct frm2bin_inst_t *frm2bin_inst_create(struct frm2bin_pred_t *pred, char *na
 			printf("invalid # of args\n");
 			snprintf(err_str, sizeof err_str,
 				"invalid number of arguments for %s \
-				(%d given, %d expected)", name, 
+				(%d given, %d expected)", name,
 				arg_list->count, info->token_list->count - 1);
 			continue;
 		}
@@ -391,7 +391,7 @@ void frm2bin_inst_dump(struct frm2bin_inst_t *inst, FILE *f)
 {
 	struct frm_arg_t *arg;
 	unsigned int word;
-	
+
 	int i;
 	int j;
 
@@ -399,7 +399,7 @@ void frm2bin_inst_dump(struct frm2bin_inst_t *inst, FILE *f)
 	fprintf(f, "Instruction %s\n", inst->info->name);
 	/*
 	fprintf(f, "\tformat=%s, size=%d\n",
-			str_map_value(&frm_inst_fmt_map, inst->info->inst_info->fmt), 
+			str_map_value(&frm_inst_fmt_map, inst->info->inst_info->fmt),
 			inst->size);
 	*/
 
@@ -525,7 +525,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 	/* encoding in [:], op in [] */
 	/*
 	case FRM_FMT_FP_FADD32I:
-		
+
 		bytes->mimg.enc = 0x3c;
 		bytes->mimg.op = inst_info->opcode;
 		break;
@@ -539,11 +539,11 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 		bytes->smrd.op = inst_info->opcode;
 		break;
 	*/
-	
+
 	/* encoding in [:], op in [] */
 	/*
 	case FRM_FMT_FP_FMUL:
-		
+
 		bytes->ds.enc = 0x36;
 		bytes->ds.op = inst_info->opcode;
 		break;
@@ -552,7 +552,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 	/* encoding in [31:23], op in [22:16] */
 	/*
 	case FRM_FMT_FP_FMUL32I:
-		
+
 		bytes->sopc.enc = 0x17e;
 		bytes->sopc.op = inst_info->opcode;
 		break;
@@ -584,7 +584,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 		bytes->sopp.op = inst_info->opcode;
 		break;
 	*/
-	
+
 
 	case FRM_INST_DADD:
 
@@ -901,7 +901,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 		break;
 
 	//case FRM_FMT_INT_BFI:
-	//	
+	//
 	//	bytes->exp.enc = 0x3e;
 	//	/* No opcode: only 1 instruction */
 	//	break;
@@ -973,31 +973,31 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 		break;
 
 	//case FRM_FMT_INT_LOP:
-	//	
+	//
 	//	bytes->exp.enc = 0x3e;
 	//	/* No opcode: only 1 instruction */
 	//	break;
 
 	//case FRM_FMT_INT_LOP32I:
-	//	
+	//
 	//	bytes->exp.enc = 0x3e;
 	//	/* No opcode: only 1 instruction */
 	//	break;
 
 	//case FRM_FMT_INT_FLO:
-	//	
+	//
 	//	bytes->exp.enc = 0x3e;
 	//	/* No opcode: only 1 instruction */
 	//	break;
 
 	//case FRM_FMT_INT_ISET:
-	//	
+	//
 	//	bytes->exp.enc = 0x3e;
 	//	/* No opcode: only 1 instruction */
 	//	break;
 
 	case FRM_INST_ISETP:
-		
+
 		inst_bytes->general1.op0 = 0x3;
 		/* bit [4] = 0, [9:6] = 0, others default */
 		inst_bytes->general1.mod0 = 0x2;
@@ -1018,13 +1018,13 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 		break;
 
 //	case FRM_FMT_INT_INT_ICMP:
-//		
+//
 //		bytes->exp.enc = 0x3e;
 //		/* No opcode: only 1 instruction */
 //		break;
 //
 //	case FRM_FMT_CONV_F2F:
-//		
+//
 //		bytes->exp.enc = 0x3e;
 //		/* No opcode: only 1 instruction */
 //		break;
@@ -1072,7 +1072,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 		break;
 //
 //	case FRM_FMT_CONV_I2I:
-//		
+//
 //		bytes->exp.enc = 0x3e;
 //		/* No opcode: only 1 instruction */
 //		break;
@@ -1188,59 +1188,59 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 		}
 		break;
 
-	case FRM_INST_LDL:
-
-		/* [3:0]: 0101 */
-		inst_bytes->offs.op0 = 0x5;
-
-		/* [9:4]: 001000, default value */
-		inst_bytes->offs.mod0 = 0x8;
-
-		/* [13:10]: pred */
-		if (inst->pred_num >= 0)
-		{
-			inst_bytes->offs.pred = inst->pred_num;
-		}
-		else
-		{
-			/* no predicate, value=7 */
-			inst_bytes->offs.pred = 0x7;
-		}
-
-		/* [57:42]: all 0s except [56] */
-		inst_bytes->offs.mod1 = 0x4000;
-
-		/* [63:58]: 110000 */
-		inst_bytes->offs.op1 = 0x30;
-
-		break;
-
-	case FRM_INST_LDS:
-
-		/* [3:0]: 0101 */
-		inst_bytes->offs.op0 = 0x5;
-
-		/* [9:4]: 001000, default value */
-		inst_bytes->offs.mod0 = 0x8;
-
-		/* [13:10]: pred */
-		if (inst->pred_num >= 0)
-		{
-			inst_bytes->offs.pred = inst->pred_num;
-		}
-		else
-		{
-			/* no predicate, value=7 */
-			inst_bytes->offs.pred = 0x7;
-		}
-
-		/* [57:42]: all 0s except [56] */
-		inst_bytes->offs.mod1 = 0x4000;
-
-		/* [63:58]: 110000 */
-		inst_bytes->offs.op1 = 0x30;
-
-		break;
+//	case FRM_INST_LDL:
+//
+//		/* [3:0]: 0101 */
+//		inst_bytes->offs.op0 = 0x5;
+//
+//		/* [9:4]: 001000, default value */
+//		inst_bytes->offs.mod0 = 0x8;
+//
+//		/* [13:10]: pred */
+//		if (inst->pred_num >= 0)
+//		{
+//			inst_bytes->offs.pred = inst->pred_num;
+//		}
+//		else
+//		{
+//			/* no predicate, value=7 */
+//			inst_bytes->offs.pred = 0x7;
+//		}
+//
+//		/* [57:42]: all 0s except [56] */
+//		inst_bytes->offs.mod1 = 0x4000;
+//
+//		/* [63:58]: 110000 */
+//		inst_bytes->offs.op1 = 0x30;
+//
+//		break;
+//
+//	case FRM_INST_LDS:
+//
+//		/* [3:0]: 0101 */
+//		inst_bytes->offs.op0 = 0x5;
+//
+//		/* [9:4]: 001000, default value */
+//		inst_bytes->offs.mod0 = 0x8;
+//
+//		/* [13:10]: pred */
+//		if (inst->pred_num >= 0)
+//		{
+//			inst_bytes->offs.pred = inst->pred_num;
+//		}
+//		else
+//		{
+//			/* no predicate, value=7 */
+//			inst_bytes->offs.pred = 0x7;
+//		}
+//
+//		/* [57:42]: all 0s except [56] */
+//		inst_bytes->offs.mod1 = 0x4000;
+//
+//		/* [63:58]: 110000 */
+//		inst_bytes->offs.op1 = 0x30;
+//
+//		break;
 
 	case FRM_INST_ST:
 
@@ -1265,55 +1265,55 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 		/* No opcode: only 1 instruction */
 		break;
 
-	case FRM_INST_STL:
-
-		inst_bytes->offs.op0 = 0x5;
-		/* [4]=0, others default */
-		inst_bytes->offs.mod0 = 0x8;
-		inst_bytes->offs.mod1 = 0x0;
-
-		/* [13:10]: pred */
-		if (inst->pred_num >= 0)
-		{
-			inst_bytes->offs.pred = inst->pred_num;
-		}
-		else
-		{
-			/* no predicate, value=7 */
-			inst_bytes->offs.pred = 0x7;
-		}
-
-		/* [63:59] = 10010, [58] default */
-		inst_bytes->offs.op1 = 0x32;
-		/* No opcode: only 1 instruction */
-		break;
-
-	case FRM_INST_STS:
-
-		/* [3:0]: 0101 */
-		inst_bytes->offs.op0 = 0x5;
-
-		/* [9:4]: 001000, default value */
-		inst_bytes->offs.mod0 = 0x8;
-
-		/* [13:10]: pred */
-		if (inst->pred_num >= 0)
-		{
-			inst_bytes->offs.pred = inst->pred_num;
-		}
-		else
-		{
-			/* no predicate, value=7 */
-			inst_bytes->offs.pred = 0x7;
-		}
-
-		/* [57:42]: all 0s, except [56] */
-		inst_bytes->offs.mod1 = 0x4000;
-
-		/* [63:58]: 110010 */
-		inst_bytes->offs.op1 = 0x32;
-
-		break;
+//	case FRM_INST_STL:
+//
+//		inst_bytes->offs.op0 = 0x5;
+//		/* [4]=0, others default */
+//		inst_bytes->offs.mod0 = 0x8;
+//		inst_bytes->offs.mod1 = 0x0;
+//
+//		/* [13:10]: pred */
+//		if (inst->pred_num >= 0)
+//		{
+//			inst_bytes->offs.pred = inst->pred_num;
+//		}
+//		else
+//		{
+//			/* no predicate, value=7 */
+//			inst_bytes->offs.pred = 0x7;
+//		}
+//
+//		/* [63:59] = 10010, [58] default */
+//		inst_bytes->offs.op1 = 0x32;
+//		/* No opcode: only 1 instruction */
+//		break;
+//
+//	case FRM_INST_STS:
+//
+//		/* [3:0]: 0101 */
+//		inst_bytes->offs.op0 = 0x5;
+//
+//		/* [9:4]: 001000, default value */
+//		inst_bytes->offs.mod0 = 0x8;
+//
+//		/* [13:10]: pred */
+//		if (inst->pred_num >= 0)
+//		{
+//			inst_bytes->offs.pred = inst->pred_num;
+//		}
+//		else
+//		{
+//			/* no predicate, value=7 */
+//			inst_bytes->offs.pred = 0x7;
+//		}
+//
+//		/* [57:42]: all 0s, except [56] */
+//		inst_bytes->offs.mod1 = 0x4000;
+//
+//		/* [63:58]: 110010 */
+//		inst_bytes->offs.op1 = 0x32;
+//
+//		break;
 
 	case FRM_INST_BRA:
 
@@ -1334,7 +1334,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 			inst_bytes->tgt.pred = 0x7;
 		}
 
-		/* [14]: tgt_mod, immediate or const mem addr, check the type 
+		/* [14]: tgt_mod, immediate or const mem addr, check the type
 		 * of the 1st argument */
 		arg = list_get(inst->arg_list, 0);
 
@@ -1543,7 +1543,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 			inst_bytes->tgt.pred = 0x0;
 		}
 
-		/* [14]: tgt_mod, immediate or const mem addr, check the type 
+		/* [14]: tgt_mod, immediate or const mem addr, check the type
 		 * of the 1st argument */
 		arg = list_get(inst->arg_list, 0);
 
@@ -1629,7 +1629,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 			inst_bytes->tgt.pred = 0x0;
 		}
 
-		/* [14]: tgt_mod, immediate or const mem addr, check the type 
+		/* [14]: tgt_mod, immediate or const mem addr, check the type
 		 * of the 1st argument */
 		arg = list_get(inst->arg_list, 0);
 
@@ -1771,7 +1771,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 			int data_width_cnt = 0;
 
 			mod = list_get(inst->mod_list, index);
-			/* take actions according to the type of the modifier 
+			/* take actions according to the type of the modifier
 			 */
 			switch (mod->type)
 			{
@@ -2407,7 +2407,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 			break;
 		}
 
-			/* these tokens are specifically for FFMA instruction 
+			/* these tokens are specifically for FFMA instruction
 			 */
 		case frm_token_src2_FFMA:
 		{
