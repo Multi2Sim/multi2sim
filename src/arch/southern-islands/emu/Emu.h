@@ -20,9 +20,24 @@
 #ifndef ARCH_SOUTHERN_ISLANDS_EMU_EMU_H
 #define ARCH_SOUTHERN_ISLANDS_EMU_EMU_H
 
+#include <iostream>
+#include <list>
+
+#include <lib/cpp/Misc.h>
+
+
 
 namespace SI
 {
+
+class Asm;
+class Memory;
+class NDRange;
+class OpenCLDriver;
+class OpenGLDriver;
+class ShaderExport;
+class WorkGroup;
+
 
 /// UAV Table
 const int EmuMaxNumUAVs = 16;
@@ -54,138 +69,42 @@ const int EmuConstBuf1Size = 1024; // FIXME
 
 const int EmuTotalConstBufSize = EmuConstBuf0Size + EmuConstBuf1Size;
 
-#if 0
-#include <stdio.h>
 
-#include <arch/common/emu.h>
-
-
-/*
- * Class 'SIEmu'
- */
-
-CLASS_BEGIN(SIEmu, Emu)
-
-	// Associated disassembler
-	struct SIAsmWrap *as;
-
-	// OpenCL driver
-	OpenclDriver *opencl_driver;
-
-	// OpenGL driver
-	OpenglDriver *opengl_driver;
-
-	// Memory spaces
-	struct mem_t *video_mem;  // local to the GPU
-	unsigned int video_mem_top;
-	struct mem_t *shared_mem; // shared with the CPU
-	struct mem_t *global_mem; // will point to video_mem or shared_mem
-	int address_space_index;
-
-	// Current ND-Range
-	SINDRange *ndrange;
-
-	// Work-group lists
-	struct list_t *waiting_work_groups;
-	struct list_t *running_work_groups;
-
-	// Repository of deferred tasks
-	struct repos_t *write_task_repos;
-
-	// Shader export module
-	SISX *sx;
-
-	// Statistics
-	int ndrange_count;  // Number of OpenCL kernels executed
-	long long work_group_count;  // Number of OpenCL work groups executed
-	long long scalar_alu_inst_count;  // Scalar ALU instructions executed
-	long long scalar_mem_inst_count;  // Scalar mem instructions executed
-	long long branch_inst_count;  // Branch instructions executed
-	long long vector_alu_inst_count;  // Vector ALU instructions executed
-	long long lds_inst_count;  // LDS instructions executed
-	long long vector_mem_inst_count;  // Vector mem instructions executed
-	long long export_inst_count; // Export instructions executed
-
-CLASS_END(SIEmu)
-
-void SIEmuCreate(SIEmu *self, struct SIAsmWrap *as);
-void SIEmuDestroy(SIEmu *self);
-
-void SIEmuDump(Object *self, FILE *f);
-void SIEmuDumpSummary(Emu *self, FILE *f);
-
-// Virtual function from class 'Emu'
-int SIEmuRun(Emu *self);
-
-
-
-
-/*
- * Non-Class Stuff
- */
-
-// UAV table
-#define SI_EMU_MAX_NUM_UAVS 16
-#define SI_EMU_UAV_TABLE_ENTRY_SIZE 32
-#define SI_EMU_UAV_TABLE_SIZE (SI_EMU_MAX_NUM_UAVS * SI_EMU_UAV_TABLE_ENTRY_SIZE)
-
-// Vertex buffer table
-#define SI_EMU_MAX_NUM_VERTEX_BUFFERS 16
-#define SI_EMU_VERTEX_BUFFER_TABLE_ENTRY_SIZE 32
-#define SI_EMU_VERTEX_BUFFER_TABLE_SIZE (SI_EMU_MAX_NUM_VERTEX_BUFFERS * SI_EMU_VERTEX_BUFFER_TABLE_ENTRY_SIZE)
-
-// Constant buffer table
-#define SI_EMU_MAX_NUM_CONST_BUFS 16
-#define SI_EMU_CONST_BUF_TABLE_ENTRY_SIZE 16
-#define SI_EMU_CONST_BUF_TABLE_SIZE (SI_EMU_MAX_NUM_CONST_BUFS * SI_EMU_CONST_BUF_TABLE_ENTRY_SIZE)
-
-// Resource table
-#define SI_EMU_MAX_NUM_RESOURCES 16
-#define SI_EMU_RESOURCE_TABLE_ENTRY_SIZE 32
-#define SI_EMU_RESOURCE_TABLE_SIZE (SI_EMU_MAX_NUM_RESOURCES * SI_EMU_RESOURCE_TABLE_ENTRY_SIZE)
-
-#define SI_EMU_TOTAL_TABLE_SIZE (SI_EMU_UAV_TABLE_SIZE + SI_EMU_CONST_BUF_TABLE_SIZE + SI_EMU_RESOURCE_TABLE_SIZE + SI_EMU_VERTEX_BUFFER_TABLE_SIZE)
-
-// Constant buffers
-#define SI_EMU_CONST_BUF_0_SIZE 160  // Defined in Metadata.pdf
-#define SI_EMU_CONST_BUF_1_SIZE 1024 // FIXME
-
-#define SI_EMU_TOTAL_CONST_BUF_SIZE (SI_EMU_CONST_BUF_0_SIZE + SI_EMU_CONST_BUF_1_SIZE)
-
-
-enum si_buf_desc_data_fmt_t
+/// Buffer descriptor data format
+enum EmuBufDescDataFmt
 {
-	SI_BUF_DESC_DATA_FMT_INVALID = 0,
-	SI_BUF_DESC_DATA_FMT_8,
-	SI_BUF_DESC_DATA_FMT_16,
-	SI_BUF_DESC_DATA_FMT_8_8,
-	SI_BUF_DESC_DATA_FMT_32,
-	SI_BUF_DESC_DATA_FMT_16_16,
-	SI_BUF_DESC_DATA_FMT_10_11_11,
-	SI_BUF_DESC_DATA_FMT_10_10_10_2,
-	SI_BUF_DESC_DATA_FMT_2_10_10_10,
-	SI_BUF_DESC_DATA_FMT_8_8_8_8,
-	SI_BUF_DESC_DATA_FMT_32_32,
-	SI_BUF_DESC_DATA_FMT_16_16_16_16,
-	SI_BUF_DESC_DATA_FMT_32_32_32,
-	SI_BUF_DESC_DATA_FMT_32_32_32_32
+	EmuBufDescDataFmtInvalid = 0,
+	EmuBufDescDataFmt8,
+	EmuBufDescDataFmt16,
+	EmuBufDescDataFmt8_8,
+	EmuBufDescDataFmt32,
+	EmuBufDescDataFmt16_16,
+	EmuBufDescDataFmt10_11_11,
+	EmuBufDescDataFmt10_10_10_2,
+	EmuBufDescDataFmt2_10_10_10,
+	EmuBufDescDataFmt8_8_8_8,
+	EmuBufDescDataFmt32_32,
+	EmuBufDescDataFmt16_16_16_16,
+	EmuBufDescDataFmt32_32_32,
+	EmuBufDescDataFmt32_32_32_32
 };
 
-enum si_buf_desc_num_fmt_t
+/// Buffer descriptor number format
+enum EmuBufDescNumFmt
 {
-	SI_BUF_DESC_NUM_FMT_INVALID = -1,  // Not part of SI spec
-	SI_BUF_DESC_NUM_FMT_UNORM = 0,
-	SI_BUF_DESC_NUM_FMT_SNORM,
-	SI_BUF_DESC_NUM_FMT_USCALED,
-	SI_BUF_DESC_NUM_FMT_SSCALED,
-	SI_BUF_DESC_NUM_FMT_UINT,
-	SI_BUF_DESC_NUM_FMT_SINT,
-	SI_BUF_DESC_NUM_FMT_SNORM_OGL,
-	SI_BUF_DESC_NUM_FMT_FLOAT
+	EmuBufDescNumFmtInvalid = -1,  // Not part of SI spec
+	EmuBufDescNumFmtUnorm = 0,
+	EmuBufDescNumFmtSnorm,
+	EmuBufDescNumFmtUscaled,
+	EmuBufDescNumFmtSscaled,
+	EmuBufDescNumFmtUint,
+	EmuBufDescNumFmtSint,
+	EmuBufDescNumFmtSnormOgl,
+	EmuBufDescNumFmtFloat
 };
 
-// Table 8.5 in SI documentation
-struct si_buffer_desc_t
+/// Table 8.5 in SI documentation
+struct EmuBufferDesc
 {
 	unsigned long long base_addr : 48;   //    [47:0]
 	unsigned int stride          : 14;   //   [61:48]
@@ -209,8 +128,8 @@ struct si_buffer_desc_t
 }__attribute__((packed));
 
 
-// Table 8.11 in SI documentation
-struct si_image_desc_t
+/// Table 8.11 in SI documentation
+struct EmuImageDesc
 {
 	unsigned long long base_addr : 40;   //    [39:0]
 	unsigned int mid_lod         : 12;   //   [51:40]
@@ -242,7 +161,7 @@ struct si_image_desc_t
 }__attribute__((packed));
 
 // Table 8.12 in SI documentation
-struct si_sampler_desc_t
+struct EmuSamplerDesc
 {
 	unsigned int clamp_x            : 3;    //     [2:0]
 	unsigned int clamp_y            : 3;    //     [5:3]
@@ -277,25 +196,96 @@ struct si_sampler_desc_t
 }__attribute__((packed));
 
 // Pointers get stored in 2 consecutive 32-bit registers
-struct si_mem_ptr_t
+struct EmuMemPtr
 {
 	unsigned long long addr : 48;
 	unsigned int unused     : 16;
 }__attribute__((packed));
 
 
-extern long long si_emu_max_cycles;
-extern long long si_emu_max_inst;
-extern int si_emu_max_kernels;
+/// Configuration of the Southern Islands emulator
+class EmuConfig
+{
+	long long max_cycles;
+	long long max_inst;
+	int max_kernels;
 
-extern char *si_emu_opengl_binary_name;
+	std::string opengl_binary_name;
 
-extern int si_emu_wavefront_size;
+	int wavefront_size;
+public:
 
-#endif
+	long long getMaxCycles() { return max_cycles; }
+	long long getMaxInst() { return max_inst; }
+	int getMaxKernels() { return max_kernels; }
+
+	const std::string &getOpenGLBinaryName() { return opengl_binary_name; }
+	int getWavefrontSize() { return wavefront_size; }
+};
 
 
-}  // namespace SI
+/// Southern Islands emulator.
+class Emu
+{
+	// Associated disassembler
+	Asm *as;
+
+	OpenCLDriver *opencl_driver;
+	OpenGLDriver *opengl_driver;
+
+	// Memory spaces
+	Memory *video_mem;  // local to the GPU
+	unsigned int video_mem_top;
+	Memory *shared_mem; // shared with the CPU
+	Memory *global_mem; // will point to video_mem or shared_mem
+	int address_space_index;
+
+	// Current ND-Range
+	NDRange *ndrange;
+
+	// Work-group lists
+	std::list<WorkGroup *> waiting_work_groups;
+	std::list<WorkGroup *> running_work_groups;
+
+	// Shader export module
+	ShaderExport *shader_export;
+
+	// Statistics
+	int ndrange_count;  // Number of OpenCL kernels executed
+	long long work_group_count;  // Number of OpenCL work groups executed
+	long long scalar_alu_inst_count;  // Scalar ALU instructions executed
+	long long scalar_mem_inst_count;  // Scalar mem instructions executed
+	long long branch_inst_count;  // Branch instructions executed
+	long long vector_alu_inst_count;  // Vector ALU instructions executed
+	long long lds_inst_count;  // LDS instructions executed
+	long long vector_mem_inst_count;  // Vector mem instructions executed
+	long long export_inst_count; // Export instructions executed
+
+public:
+
+	/// Debugger for ISA traces
+	static misc::Debug debug;
+
+	/// Emulator configuration;
+	static EmuConfig config;
+
+	/// Constructor
+	Emu(Asm *as);
+
+	/// Dump emulator state
+	void Dump(std::ostream &os);
+
+	/// Dump the statistics summary
+	void DumpSummary(std::ostream &os);
+
+	/// Run one iteration of the emulation loop
+	void Run();
+};
+
+
+
+
+}  // namespace
 
 #endif
 
