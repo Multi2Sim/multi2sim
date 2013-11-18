@@ -14,7 +14,7 @@ DEFINST(FMNMX,
 	0x008)
 
 DEFINST(FSET, 
-	"%pred FSET", 
+	"%pred FSET%cmp%logic %dst, %src1, %src2, %R", 
 	0x010)
 
 DEFINST(FSETP, 
@@ -206,7 +206,7 @@ DEFINST(FLO,
 //	0x408)
 
 DEFINST(PSETP, 
-	"%pred PSETP", 
+	"%pred PSETP%cmp%logic %P__, %Q__, %P1, %P2, %R", 
 	0x40c)
 
 DEFINST(F2F, 
