@@ -1180,7 +1180,17 @@ void Inst::DumpToBufWithFmtOther(void)
 		/* Character is a token */
 		++fmt_str;
 
-		if (Common::Asm::IsToken(fmt_str, "P_75", len))
+		if (Common::Asm::IsToken(fmt_str, "P__", len))
+		{
+			unsigned int p;
+			p = (fmt.dst & 0x38) >> 3;
+			ss << "P";
+			if (p != 7)
+				ss << p;
+			else
+				ss << "T";
+		}
+		else if (Common::Asm::IsToken(fmt_str, "P_75", len))
 		{
 			unsigned int p;
 			p = (fmt.mixed1 >> 5) & 0x7;
@@ -1197,6 +1207,36 @@ void Inst::DumpToBufWithFmtOther(void)
 			ss << "P";
 			if (p != 7)
 				ss << p;
+			else
+				ss << "T";
+		}
+		else if (Common::Asm::IsToken(fmt_str, "P1", len))
+		{
+			unsigned int p1;
+			p1 = fmt.src1 & 0x7;
+			ss << "P";
+			if (p1 != 7)
+				ss << p1;
+			else
+				ss << "T";
+		}
+		else if (Common::Asm::IsToken(fmt_str, "P2", len))
+		{
+			unsigned int p2;
+			p2 = fmt.src2 & 0x7;
+			ss << "P";
+			if (p2 != 7)
+				ss << p2;
+			else
+				ss << "T";
+		}
+		else if (Common::Asm::IsToken(fmt_str, "Q__", len))
+		{
+			unsigned int q;
+			q = fmt.dst & 0x7;
+			ss << "P";
+			if (q != 7)
+				ss << q;
 			else
 				ss << "T";
 		}
@@ -1279,6 +1319,15 @@ void Inst::DumpToBufWithFmtOther(void)
 			op_str = StringMapValue(cc_op_map, op, found);
 			ss << (found ? op_str : ".INVALID");
 		}
+		else if (Common::Asm::IsToken(fmt_str, "cmp", len))
+		{
+			unsigned int cmp;
+			string cmp_str;
+			bool found;
+			cmp = (fmt.src2 >> 4) & 0x3;
+			cmp_str = StringMapValue(logic_map, cmp, found);
+			ss << (found ? cmp_str : "");
+		}
 		else if (Common::Asm::IsToken(fmt_str, "dst", len))
 		{
 			unsigned int dst;
@@ -1315,6 +1364,15 @@ void Inst::DumpToBufWithFmtOther(void)
 			bool ftz;
 			ftz = ((fmt.mixed1 & 0x40) != 0);
 			ss << (ftz ? ".FTZ" : "");
+		}
+		else if (Common::Asm::IsToken(fmt_str, "logic", len))
+		{
+			unsigned int logic;
+			string logic_str;
+			bool found;
+			logic = (fmt.mixed1 >> 4) & 0x3;
+			logic_str = StringMapValue(logic_map, logic, found);
+			ss << (found ? logic_str : "");
 		}
 		else if (Common::Asm::IsToken(fmt_str, "nasrc2", len))
 		{
