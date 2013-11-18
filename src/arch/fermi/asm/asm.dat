@@ -10,7 +10,7 @@
  */
 
 DEFINST(FMNMX, 
-	"%pred FMNMX %dst, %nasrc1, %src2, %R", 
+	"%pred FMNMX %dst, %nasrc1, %nasrc2, %R", 
 	0x008)
 
 DEFINST(FSET, 
@@ -22,7 +22,7 @@ DEFINST(FSETP,
 	0x020)
 
 DEFINST(FFMA, 
-	"%pred FFMA%ftzfmz%rnd%sat_01 %dst, %nsrc1_05, %nsrc2, %nsrc3", 
+	"%pred FFMA%ftzfmz%rnd%sat_01 %dst, %nsrc1_05, %msrc", 
 	0x030)
 
 DEFINST(FCMP, 
@@ -102,7 +102,7 @@ DEFINST(IADD32I,
 //	0x210)
 
 DEFINST(MOV32I, 
-	"%pred MOV32I %dst, %imm32", 
+	"%pred MOV32I %dst, %uimm32", 
 	0x218)
 
 //DEFINST(FFMA32I, 
@@ -118,7 +118,7 @@ DEFINST(FMUL32I,
 	0x230)
 
 DEFINST(LOP32I, 
-	"%pred LOP32I%lop_op %dst, %src1, %imm32", 
+	"%pred LOP32I%lop_op %dst, %src1, %uimm32", 
 	0x238)
 
 //DEFINST(ISCADD32I, 
@@ -142,7 +142,7 @@ DEFINST(ISETP,
 	0x318)
 
 DEFINST(IMAD, 
-	"%pred IMAD%type1%type2%hi%sat_17 %dst%cc, %src1, %src2, %src3", 
+	"%pred IMAD%type1%type2%hi%sat_17 %dst%cc, %src1, %src2, %nsrc3", 
 	0x320)
 
 DEFINST(BFI, 
@@ -158,11 +158,11 @@ DEFINST(ICMP,
 //	0x338)
 
 DEFINST(ISCADD, 
-	"%pred ISCADD%s_ %dst%cc, %src1, %src2, %shamt", 
+	"%pred ISCADD%po%s_ %dst%cc, %nsrc1_176, %neg_176%src2, %shamt", 
 	0x340)
 
 DEFINST(IADD, 
-	"%pred IADD%sat_01%x %dst, %src1, %src2", 
+	"%pred I%ADD_SUB%sat_01%x %dst, %src1, %src2", 
 	0x348)
 
 DEFINST(IMUL, 
@@ -206,7 +206,7 @@ DEFINST(FLO,
 //	0x408)
 
 DEFINST(PSETP, 
-	"%pred CSETP", 
+	"%pred PSETP", 
 	0x40c)
 
 DEFINST(F2F, 
@@ -482,7 +482,7 @@ DEFINST(LDC,
 //	0x61c)
 
 DEFINST(TEX, 
-	"%pred TEX %dst, %src1, %src2, %geom", 
+	"%pred TEX%lz%dc%nodep%btoff03%phase3%s_%i_ %dst, %src1, %imm8, %imm5, %geom, %imm4", 
 	0x680)
 
 //DEFINST(TLD, 

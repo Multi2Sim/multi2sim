@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <cmath>
 #include <cstring>
 #include <iomanip>
 #include <iostream>
@@ -146,6 +147,13 @@ map<string, int> cc_op_map =
 	{ ".RGT", 31 }
 };
 
+map<string, int> btoff03_map =
+{
+	{ "", 0 },
+	{ ".AOFFI", 1 },
+	{ ".PTP", 2 }
+};
+
 map<string, int> cc_cop_map =
 {
 	{ ".QRY1", 0 },
@@ -195,6 +203,18 @@ map<string, int> ftzfmz_map =
 	{ ".FTZ", 1 },
 	{ ".FMZ", 2 },
 	{ ".INVALID", 3 }
+};
+
+map<string, int> geom_map =
+{
+	{ "1D", 0 },
+	{ "ARRAY_1D", 1 },
+	{ "2D", 2 },
+	{ "ARRAY_2D", 3 },
+	{ "3D", 4 },
+	{ "ARRAY_3D", 5 },
+	{ "CUBE", 6 },
+	{ "ARRAY_CUBE", 7 }
 };
 
 map<string, int> itype_map =
@@ -263,6 +283,13 @@ map<string, int> nop_op_map =
 	{ ".SU", 6 },
 	{ ".FU", 7 },
 	{ ".FMUL", 8 }
+};
+
+map<string, int> phase3_map =
+{
+	{ "", 0 },
+	{ ".T", 1 },
+	{ ".P", 2 }
 };
 
 map<string, int> red_op_map =
@@ -443,7 +470,13 @@ void Inst::DumpToBufWithFmtReg(void)
 		/* Character is a token */
 		++fmt_str;
 
-		if (Common::Asm::IsToken(fmt_str, "P", len))
+		if (Common::Asm::IsToken(fmt_str, "ADD_SUB", len))
+		{
+			unsigned int sign_src2;
+			sign_src2 = ((fmt.mixed0 & 0x10) != 0);
+			ss << (sign_src2 ? "SUB" : "ADD");
+		}
+		else if (Common::Asm::IsToken(fmt_str, "P", len))
 		{
 			unsigned int p;
 			p = (fmt.dst & 0x38) >> 3;
@@ -546,6 +579,92 @@ void Inst::DumpToBufWithFmtReg(void)
 			op_str = StringMapValue(lop_op_map, op, found);
 			ss << (found ? op_str : ".INVALID");
 		}
+		else if (Common::Asm::IsToken(fmt_str, "msrc", len))
+		{
+			unsigned int src2_mod;
+			union {unsigned int i; float f;} src2;
+			unsigned int src3;
+			unsigned int bank_id;
+			unsigned int offset_in_bank;
+			bool neg_src3;
+			unsigned int cat;
+
+			src2_mod = fmt.src2_mod;
+			src3 = fmt.mixed1 & 0x3f;
+			neg_src3 = ((fmt.mixed0 & 0x10) != 0);
+
+			if (src2_mod == 0)
+			{
+				src2.i = fmt.src2;
+				ss << "R";
+				if (src2.i != 63)
+					ss << src2.i;
+				else
+					ss << "Z";
+				ss << ", ";
+				ss << (neg_src3 ? "-" : "");
+				ss << "R";
+				if (src3 != 63)
+					ss << src3;
+				else
+					ss << "Z";
+			}
+			else if (src2_mod == 1)
+			{
+				src2.i = fmt.src2;
+				bank_id = ((src2.i & 0x1) << 4) | (src2.i >> 16);
+				offset_in_bank = src2.i & 0xfffc;
+				ss << hex << "c[0x" << bank_id << "][0x" << offset_in_bank << "]";
+				ss << ", ";
+				ss << (neg_src3 ? "-" : "");
+				ss << "R";
+				if (src3 != 63)
+					ss << src3;
+				else
+					ss << "Z";
+			}
+			else if (src2_mod == 2)
+			{
+				ss << (neg_src3 ? "-" : "");
+				ss << "R";
+				if (src3 != 63)
+					ss << src3;
+				else
+					ss << "Z";
+				ss << ", ";
+				src2.i = fmt.src2;
+				bank_id = ((src2.i & 0x1) << 4) | (src2.i >> 16);
+				offset_in_bank = src2.i & 0xfffc;
+				ss << hex << "c[0x" << bank_id << "][0x" << offset_in_bank << "]";
+			}
+			else if (src2_mod == 3)
+			{
+				cat = bytes.bytes[0] & 0xf;
+				if (cat == 0 || cat == 1)
+				{
+					src2.i = fmt.src2 << 12;
+					if (src2.f > 1e9)
+						ss << scientific << setprecision(20);
+					ss << src2.f;
+				}
+				else if (cat == 3)
+				{
+					src2.i = fmt.src2;
+					ss << hex;
+					if (src2.i >> 19 == 0)  /* positive value */
+						ss << "0x" << src2.i;
+					else  /* negative value */
+						ss << "-0x" << (0x100000 - src2.i);
+				}
+				ss << ", ";
+				ss << (neg_src3 ? "-" : "");
+				ss << "R";
+				if (src3 != 63)
+					ss << src3;
+				else
+					ss << "Z";
+			}
+		}
 		else if (Common::Asm::IsToken(fmt_str, "mufu_op", len))
 		{
 			unsigned int op;
@@ -611,12 +730,14 @@ void Inst::DumpToBufWithFmtReg(void)
 				if (cat == 0 || cat == 1)
 				{
 					src2.i = fmt.src2 << 12;
+					if (isinf(src2.f))
+						ss << showpos << uppercase;
 					ss << src2.f;
 				}
 				else if (cat == 3)
 				{
 					src2.i = fmt.src2;
-					ss << hex;
+					ss << showpos << uppercase << hex;
 					if (src2.i >> 19 == 0)  /* positive value */
 						ss << "0x" << src2.i;
 					else  /* negative value */
@@ -631,6 +752,19 @@ void Inst::DumpToBufWithFmtReg(void)
 			src1 = fmt.src1;
 			sign = ((fmt.mixed0 & 0x20) != 0);
 			ss << (sign ? "-" : "");
+			ss << "R";
+			if (src1 != 63)
+				ss << src1;
+			else
+				ss << "Z";
+		}
+		else if (Common::Asm::IsToken(fmt_str, "nsrc1_176", len))
+		{
+			unsigned int src1;
+			bool neg;
+			src1 = fmt.src1;
+			neg = ((fmt.mixed1 & 0x80) != 0) && ((fmt.mixed1 & 0x40) == 0);
+			ss << (neg ? "-" : "");
 			ss << "R";
 			if (src1 != 63)
 				ss << src1;
@@ -699,6 +833,12 @@ void Inst::DumpToBufWithFmtReg(void)
 				}
 			}
 		}
+		else if (Common::Asm::IsToken(fmt_str, "neg_176", len))
+		{
+			bool neg;
+			neg = ((fmt.mixed1 & 0x40) != 0) && ((fmt.mixed1 & 0x80) == 0);
+			ss << (neg ? "-" : "");
+		}
 		else if (Common::Asm::IsToken(fmt_str, "nsrc3", len))
 		{
 			unsigned int src3;
@@ -711,6 +851,12 @@ void Inst::DumpToBufWithFmtReg(void)
 				ss << src3;
 			else
 				ss << "Z";
+		}
+		else if (Common::Asm::IsToken(fmt_str, "po", len))
+		{
+			bool po;
+			po = ((fmt.mixed1 & 0xc0) == 0xc0);
+			ss << (po ? ".PO" : "");
 		}
 		else if (Common::Asm::IsToken(fmt_str, "pred", len))
 		{
@@ -765,7 +911,7 @@ void Inst::DumpToBufWithFmtReg(void)
 		else if (Common::Asm::IsToken(fmt_str, "shamt", len))
 		{
 			unsigned int shamt;
-			shamt = (fmt.mixed0 & 0x1f) >> 1;
+			shamt = (fmt.mixed0 >> 1) & 0x1f;
 			ss << hex << "0x" << shamt;
 		}
 		else if (Common::Asm::IsToken(fmt_str, "src1", len))
@@ -848,14 +994,14 @@ void Inst::DumpToBufWithFmtReg(void)
 		else if (Common::Asm::IsToken(fmt_str, "type1", len))
 		{
 			bool type1;
-			type1 = ((fmt.mixed0 & 0x8) != 0);
-			ss << (type1 ? "" : ".S32");
+			type1 = ((fmt.mixed0 & 0x8) == 0);
+			ss << (type1 ? ".U32" : "");
 		}
 		else if (Common::Asm::IsToken(fmt_str, "type2", len))
 		{
 			bool type2;
-			type2 = ((fmt.mixed0 & 0x2) != 0);
-			ss << (type2 ? "" : ".S32");
+			type2 = ((fmt.mixed0 & 0x2) == 0);
+			ss << (type2 ? ".U32" : "");
 		}
 		else if (Common::Asm::IsToken(fmt_str, "x", len))
 		{
@@ -976,6 +1122,12 @@ void Inst::DumpToBufWithFmtImm(void)
 				ss << src1;
 			else
 				ss << "Z";
+		}
+		else if (Common::Asm::IsToken(fmt_str, "uimm32", len))
+		{
+			unsigned int imm32;
+			imm32 = fmt.imm32;
+			ss << hex << "0x" << imm32;
 		}
 		else if (Common::Asm::IsToken(fmt_str, "x", len))
 		{
@@ -1440,6 +1592,15 @@ void Inst::DumpToBufWithFmtLdSt(void)
 			if (bank)
 				ss << hex << "0x" << bank;
 		}
+		else if (Common::Asm::IsToken(fmt_str, "btoff03", len))
+		{
+			unsigned int btoff03;
+			string btoff03_str;
+			bool found;
+			btoff03 = (fmt.suffix1 >> 12) & 0x3;
+			btoff03_str = StringMapValue(btoff03_map, btoff03, found);
+			ss << (found ? btoff03_str : ".INVALIDBTOFF03");
+		}
 		else if (Common::Asm::IsToken(fmt_str, "cc_cop", len))
 		{
 			unsigned int op;
@@ -1457,6 +1618,12 @@ void Inst::DumpToBufWithFmtLdSt(void)
 			op = fmt.off16 & 0x3;
 			op_str = StringMapValue(cctl_op_map, op, found);
 			ss << (found ? op_str : "");
+		}
+		else if (Common::Asm::IsToken(fmt_str, "dc", len))
+		{
+			unsigned int dc;
+			dc = ((fmt.suffix1 & 0x8000) != 0);
+			ss << ((dc != 0) ? ".DC" : "");
 		}
 		else if (Common::Asm::IsToken(fmt_str, "dst", len))
 		{
@@ -1476,6 +1643,36 @@ void Inst::DumpToBufWithFmtLdSt(void)
 		}
 		else if (Common::Asm::IsToken(fmt_str, "geom", len))
 		{
+			unsigned int geom;
+			string geom_str;
+			bool found;
+			geom = (fmt.suffix1 >> 9) & 0x7;
+			geom_str = StringMapValue(geom_map, geom, found);
+			ss << (found ? geom_str : "");
+		}
+		else if (Common::Asm::IsToken(fmt_str, "i_", len))
+		{
+			unsigned int i;
+			i = ((fmt.suffix1 & 0x100) != 0);
+			ss << ((i != 0) ? ".I" : "");
+		}
+		else if (Common::Asm::IsToken(fmt_str, "imm4", len))
+		{
+			unsigned int imm4;
+			imm4 = (fmt.suffix1 >> 4) & 0xf;
+			ss << hex << "0x" << imm4;
+		}
+		else if (Common::Asm::IsToken(fmt_str, "imm5", len))
+		{
+			unsigned int imm5;
+			imm5 = ((fmt.suffix1 & 0x7) << 2) | ((fmt.off16 >> 14) & 0x3);
+			ss << hex << "0x" << imm5;
+		}
+		else if (Common::Asm::IsToken(fmt_str, "imm8", len))
+		{
+			unsigned int imm8;
+			imm8 = (fmt.off16 >> 6) & 0xff;
+			ss << hex << "0x" << imm8;
 		}
 		else if (Common::Asm::IsToken(fmt_str, "ld_cop", len))
 		{
@@ -1504,6 +1701,24 @@ void Inst::DumpToBufWithFmtLdSt(void)
 			lvl_str = StringMapValue(lvl_map, lvl, found);
 			ss << (found ? lvl_str : ".INVALID");
 		}
+		else if (Common::Asm::IsToken(fmt_str, "lz", len))
+		{
+			unsigned int lz;
+			lz = ((fmt.suffix1 & 0x4000) != 0);
+			ss << ((lz != 0) ? ".LZ" : "");
+		}
+		else if (Common::Asm::IsToken(fmt_str, "ndv", len))
+		{
+			unsigned int ndv;
+			ndv = ((fmt.suffix1 & 0x8) != 0);
+			ss << ((ndv != 0) ? ".NDV" : "");
+		}
+		else if (Common::Asm::IsToken(fmt_str, "nodep", len))
+		{
+			unsigned int nodep;
+			nodep = ((fmt.suffix0 & 0x20) != 0);
+			ss << ((nodep != 0) ? ".NODEP" : "");
+		}
 		else if (Common::Asm::IsToken(fmt_str, "off16", len))
 		{
 			unsigned int off16;
@@ -1531,6 +1746,15 @@ void Inst::DumpToBufWithFmtLdSt(void)
 			off30 = ((fmt.suffix1 & 0xffff) << 14) | (fmt.off16 >> 2);
 			if (off30)
 				ss << hex << "+0x" << off30;
+		}
+		else if (Common::Asm::IsToken(fmt_str, "phase3", len))
+		{
+			unsigned int phase3;
+			string phase3_str;
+			bool found;
+			phase3 = (fmt.suffix0 >> 3) & 0x3;
+			phase3_str = StringMapValue(phase3_map, phase3, found);
+			ss << (found ? phase3_str : ".INVALIDPHASE3");
 		}
 		else if (Common::Asm::IsToken(fmt_str, "pred", len))
 		{
@@ -1704,6 +1928,12 @@ void Inst::DumpToBufWithFmtCtrl(void)
 			else
 				ss << "       ";
 		}
+		else if (Common::Asm::IsToken(fmt_str, "s", len))
+		{
+			unsigned int s;
+			s = fmt.suffix0 & 0x1;
+			ss << ((s != 0) ? ".S" : "");
+		}
 		else if (Common::Asm::IsToken(fmt_str, "target", len))
 		{
 			unsigned int target;
@@ -1770,7 +2000,7 @@ void Inst::Dump(ostream &os, unsigned int max_inst_len)
 void Inst::DumpHex(ostream &os)
 {
 	os << "/* 0x";
-	os << setfill('0') << setw(8) << hex << bytes.dword;
+	os << setfill('0') << setw(16) << right << hex << bytes.dword;
 	os << " */";
 }
 
