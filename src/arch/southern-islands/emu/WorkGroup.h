@@ -102,6 +102,9 @@ public:
 
 	/// Getters
 	///
+	/// Workgroup ID
+	int getId() const { return id; }
+
 	/// Statistic showing the number of reads from scalar registers
 	long long getSRegReadCount() const { return sreg_read_count; }
 
@@ -113,6 +116,24 @@ public:
 
 	/// Statistic showing the number of writes from vector registers
 	long long getVRegWriteCount() const { return vreg_write_count; }
+
+
+	/// Setters
+	///
+	/// Set wavefront_at_barrier flag
+	void setWavefrontAtBarrier() { wavefronts_at_barrier = 1; }
+
+	/// Set wavefronts_completed_emu flag
+	void setWavefrontCompletedEmu() { wavefronts_completed_emu = 1; }
+
+	/// Set wavefronts_completed_timing flag
+	void setWavefrontCompletedTiming() { wavefronts_completed_timing = 1; }
+
+	/// Set finished_emu flag
+	void setFinishedEmu() { finished_emu = 1; }
+
+	/// Set finished_timing flag
+	void setFinishedTiming() { finished_timing = 1; }
 
 	/// Attach additional data to the work-group, passing an object derived
 	/// from class WorkGroupData. The object passed to it must be

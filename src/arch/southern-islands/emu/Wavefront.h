@@ -210,7 +210,7 @@ public:
 	/// Statistics showing the start time of emulation
 	long long getEmuTimeStart() { return emu_time_start; }
 
-	/// Statistics showing the end tim eof emulation
+	/// Statistics showing the end time of emulation
 	long long getEmuTimeEnd() { return emu_time_end; }
 
 	/// Dump wavefront in a human-readable format into output stream \a os
