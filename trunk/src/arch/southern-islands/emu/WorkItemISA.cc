@@ -19,6 +19,7 @@
 
 #include "Emu.h"
 #include "Wavefront.h"
+#include "WorkGroup.h"
 #include "WorkItem.h"
 
 using namespace misc;
@@ -45,7 +46,21 @@ namespace SI
 #define INST_MUBUF  inst->getBytes()->mubuf
 #define INST_EXP  inst->getBytes()->exp
 
+// Macros for special registers
+#define SI_M0 124
+#define SI_VCC 106
+#define SI_VCCZ 251
+#define SI_EXEC 126
+#define SI_EXECZ 252
+#define SI_SCC 253
 
+const char *err_si_isa_note =
+	"\tThe AMD Southern Islands instruction set is partially supported by\n"
+	"\tMulti2Sim. If your program is using an unimplemented instruction,\n"
+	"\tplease email development@multi2sim.org' to request support for it.\n";
+
+#define NOT_IMPL() fatal("GPU instruction '%s' not implemented\n%s", \
+		inst->getName(), err_si_isa_note)
 
 
 /*
@@ -88,8 +103,1748 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORD_Impl(Inst *inst)
 }
 #undef INST
 
+#define INST INST_SMRD
+void WorkItem::ISA_S_BUFFER_LOAD_DWORDX2_Impl(Inst *inst)
+{
+
+	// Record access
+	wavefront->setScalarMemRead();
+	int sbase = INST.sbase << 1;
+
+	EmuMemPtr mem_ptr;
+	ReadMemPtr(sbase, mem_ptr);
+
+	// Calculate effective address
+	unsigned m_base = mem_ptr.addr;
+	unsigned m_offset = (INST.imm) ? (INST.offset * 4) : ReadSReg(INST.offset);
+	unsigned addr = m_base + m_offset;
+
+	int i;
+	InstReg value[2];
+	for (i = 0; i < 2; i++)
+	{
+		// Read value from global memory
+		global_mem->Read(addr + i * 4, 4, value[i].as_byte);
+		// Store the data in the destination register
+		WriteSReg(INST.sdst + i, value[i].as_uint);
+	}
+
+	// Debug
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("wf%d: ", wavefront->getId());
+		for (i = 0; i < 2; i++)
+		{
+			Emu::debug << StringFmt("S%u<=(%u)(%u,%gf) ", INST.sdst + i, 
+				addr + i * 4, value[i].as_uint, 
+				value[i].as_float);
+		}
+	}
+
+	// Record last memory access for the detailed simulator.
+	global_mem_access_addr = addr;
+	global_mem_access_size = 4 * 2;
+}
+#undef INST
+
+
+#define INST INST_SMRD
+void WorkItem::ISA_S_BUFFER_LOAD_DWORDX4_Impl(Inst *inst)
+{
+	// Record access
+	wavefront->setScalarMemRead();
+	int sbase = INST.sbase << 1;
+
+	EmuMemPtr mem_ptr;
+	ReadMemPtr(sbase, mem_ptr);
+
+	// Calculate effective address
+	unsigned m_base = mem_ptr.addr;
+	unsigned m_offset = (INST.imm) ? (INST.offset * 4) : ReadSReg(INST.offset);
+	unsigned addr = m_base + m_offset;
+
+	int i;
+	InstReg value[4];
+	for (i = 0; i < 4; i++)
+	{
+		// Read value from global memory
+		global_mem->Read(addr + i * 4, 4, value[i].as_byte);
+		// Store the data in the destination register
+		WriteSReg(INST.sdst + i, value[i].as_uint);
+	}
+
+	// Debug
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("wf%d: ", wavefront->getId());
+		for (i = 0; i < 4; i++)
+		{
+			Emu::debug << StringFmt("S%u<=(%u)(%u,%gf) ", INST.sdst + i, 
+				addr + i*4, value[i].as_uint, 
+				value[i].as_float);
+		}
+	}
+
+	// Record last memory access for the detailed simulator.
+	global_mem_access_addr = addr;
+	global_mem_access_size = 4 * 4;
+}
+#undef INST
+
+#define INST INST_SMRD
+void WorkItem::ISA_S_BUFFER_LOAD_DWORDX8_Impl(Inst *inst)
+{
+	// Record access
+	wavefront->setScalarMemRead();
+	int sbase = INST.sbase << 1;
+
+	EmuMemPtr mem_ptr;
+	ReadMemPtr(sbase, mem_ptr);
+
+	// Calculate effective address
+	unsigned m_base = mem_ptr.addr;
+	unsigned m_offset = (INST.imm) ? (INST.offset * 4) : ReadSReg(INST.offset);
+	unsigned addr = m_base + m_offset;
+
+	int i;
+	InstReg value[8];
+	for (i = 0; i < 8; i++)
+	{
+		// Read value from global memory
+		global_mem->Read(addr + i * 4, 4, value[i].as_byte);
+		// Store the data in the destination register
+		WriteSReg(INST.sdst + i, value[i].as_uint);
+	}
+
+	// Debug
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("wf%d: ", wavefront->getId());
+		for (i = 0; i < 8; i++)
+		{
+			Emu::debug << StringFmt("S%u<=(%u)(%u,%gf) ", INST.sdst + i, 
+				addr + i*4, value[i].as_uint, 
+				value[i].as_float);
+		}
+	}
+
+	// Record last memory access for the detailed simulator.
+	global_mem_access_addr = addr;
+	global_mem_access_size = 4 * 8;
+}
+#undef INST
+
+#define INST INST_SMRD
+void WorkItem::ISA_S_BUFFER_LOAD_DWORDX16_Impl(Inst *inst)
+{
+	// Record access
+	wavefront->setScalarMemRead();
+	int sbase = INST.sbase << 1;
+
+	EmuMemPtr mem_ptr;
+	ReadMemPtr(sbase, mem_ptr);
+
+	// Calculate effective address
+	unsigned m_base = mem_ptr.addr;
+	unsigned m_offset = (INST.imm) ? (INST.offset * 4) : ReadSReg(INST.offset);
+	unsigned addr = m_base + m_offset;
+
+	int i;
+	InstReg value[16];
+	for (i = 0; i < 16; i++)
+	{
+		// Read value from global memory
+		global_mem->Read(addr + i * 4, 4, value[i].as_byte);
+		// Store the data in the destination register
+		WriteSReg(INST.sdst + i, value[i].as_uint);
+	}
+
+	// Debug
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("wf%d: ", wavefront->getId());
+		for (i = 0; i < 16; i++)
+		{
+			Emu::debug << StringFmt("S%u<=(%u)(%u,%gf) ", INST.sdst + i, 
+				addr + i*4, value[i].as_uint, 
+				value[i].as_float);
+		}
+	}
+
+	// Record last memory access for the detailed simulator.
+	global_mem_access_addr = addr;
+	global_mem_access_size = 4 * 16;
+}
+#undef INST
+
+#define INST INST_SMRD
+void WorkItem::ISA_S_LOAD_DWORDX2_Impl(Inst *inst)
+{
+	// Record access
+	wavefront->setScalarMemRead();
+
+	assert(INST.imm);
+
+	int sbase = INST.sbase << 1;
+
+	EmuMemPtr mem_ptr;
+	ReadMemPtr(sbase, mem_ptr);
+
+	// Calculate effective address
+	unsigned m_base = mem_ptr.addr;
+	unsigned m_offset = INST.offset * 4;
+	unsigned m_addr = m_base + m_offset;
+
+	assert(!(m_addr & 0x3));
+
+	int i;
+	InstReg value[2];
+	for (i = 0; i < 2; i++)
+	{
+		// Read value from global memory		
+		global_mem->Read(m_addr + i * 4, 4, value[i].as_byte);
+		// Store the data in the destination register
+		WriteSReg(INST.sdst + i, value[i].as_uint);
+	}
+
+	// Debug
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("S[%u,%u] <= (addr %u): ", INST.sdst, INST.sdst+3, 
+			m_addr);
+		for (i = 0; i < 2; i++)
+		{
+			Emu::debug << StringFmt("S%u<=(%u,%gf) ", INST.sdst + i,
+				value[i].as_uint, value[i].as_float);
+		}
+	}
+
+	// Record last memory access for the detailed simulator.
+	global_mem_access_addr = m_addr;
+	global_mem_access_size = 4 * 2;
+}
+
+#define INST INST_SMRD
+void WorkItem::ISA_S_LOAD_DWORDX4_Impl(Inst *inst)
+{
+	// Record access
+	wavefront->setScalarMemRead();
+
+	assert(INST.imm);
+
+	int sbase = INST.sbase << 1;
+
+	EmuMemPtr mem_ptr;
+	ReadMemPtr(sbase, mem_ptr);
+
+	// Calculate effective address
+	unsigned m_base = mem_ptr.addr;
+	unsigned m_offset = INST.offset * 4;
+	unsigned m_addr = m_base + m_offset;
+
+	assert(!(m_addr & 0x3));
+
+	int i;
+	InstReg value[4];
+	for (i = 0; i < 4; i++)
+	{
+		// Read value from global memory		
+		global_mem->Read(m_addr + i * 4, 4, value[i].as_byte);
+		// Store the data in the destination register
+		WriteSReg(INST.sdst + i, value[i].as_uint);
+	}
+
+	// Debug
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("S[%u,%u] <= (addr %u): ", INST.sdst, INST.sdst+3, 
+			m_addr);
+		for (i = 0; i < 4; i++)
+		{
+			Emu::debug << StringFmt("S%u<=(%u,%gf) ", INST.sdst + i,
+				value[i].as_uint, value[i].as_float);
+		}
+	}
+
+	// Record last memory access for the detailed simulator.
+	global_mem_access_addr = m_addr;
+	global_mem_access_size = 4 * 4;
+}
+#undef INST
+
+#define INST INST_SMRD
+void WorkItem::ISA_S_LOAD_DWORDX8_Impl(Inst *inst)
+{
+	// Record access
+	wavefront->setScalarMemRead();
+
+	assert(INST.imm);
+
+	int sbase = INST.sbase << 1;
+
+	EmuMemPtr mem_ptr;
+	ReadMemPtr(sbase, mem_ptr);
+
+	// Calculate effective address
+	unsigned m_base = mem_ptr.addr;
+	unsigned m_offset = INST.offset * 4;
+	unsigned m_addr = m_base + m_offset;
+
+	assert(!(m_addr & 0x3));
+
+	int i;
+	InstReg value[8];
+	for (i = 0; i < 8; i++)
+	{
+		// Read value from global memory		
+		global_mem->Read(m_addr + i * 4, 4, value[i].as_byte);
+		// Store the data in the destination register
+		WriteSReg(INST.sdst + i, value[i].as_uint);
+	}
+
+	// Debug
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("S[%u,%u] <= (addr %u): ", INST.sdst, INST.sdst+3, 
+			m_addr);
+		for (i = 0; i < 8; i++)
+		{
+			Emu::debug << StringFmt("S%u<=(%u,%gf) ", INST.sdst + i,
+				value[i].as_uint, value[i].as_float);
+		}
+	}
+
+	// Record last memory access for the detailed simulator.
+	global_mem_access_addr = m_addr;
+	global_mem_access_size = 4 * 8;
+}
+#undef INST
+
+
+/*
+ * SOP2
+ */
+
+// D.u = S0.u + S1.u. SCC = carry out.
+#define INST INST_SOP2
+void WorkItem::ISA_S_ADD_U32_Impl(Inst *inst)
+{
+	InstReg s0;
+	InstReg s1;
+	InstReg sum;
+	InstReg carry;
+
+	// Load operands from registers or as a literal constant.
+	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
+	if (INST.ssrc0 == 0xFF)
+		s0.as_uint = INST.lit_cnst;
+	else
+		s0.as_uint = ReadSReg(INST.ssrc0);
+	if (INST.ssrc1 == 0xFF)
+		s1.as_uint = INST.lit_cnst;
+	else
+		s1.as_uint = ReadSReg(INST.ssrc1);
+
+	// Calculate the sum and carry out.
+	sum.as_uint = s0.as_uint + s1.as_uint;
+	carry.as_uint = ((unsigned long long) s0.as_uint + 
+		(unsigned long long) s1.as_uint) >> 32;
+
+	// Write the results.
+	// Store the data in the destination register
+	WriteSReg(INST.sdst, sum.as_uint);
+	// Store the data in the destination register
+	WriteSReg(SI_SCC, carry.as_uint);
+
+	// Print isa debug information.
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("S%u<=(%u) ", INST.sdst, sum.as_uint);
+		Emu::debug << StringFmt("scc<=(%u) ", carry.as_uint);
+	}
+}
+#undef INST
+
+
+// D.u = S0.i + S1.i. scc = overflow.
+#define INST INST_SOP2
+void WorkItem::ISA_S_ADD_I32_Impl(Inst *inst)
+{
+	InstReg s0;
+	InstReg s1;
+	InstReg sum;
+	InstReg ovf;
+
+	// Load operands from registers or as a literal constant.
+	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
+	if (INST.ssrc0 == 0xFF)
+		s0.as_uint = INST.lit_cnst;
+	else
+		s0.as_uint = ReadSReg(INST.ssrc0);
+	if (INST.ssrc1 == 0xFF)
+		s1.as_uint = INST.lit_cnst;
+	else
+		s1.as_uint = ReadSReg(INST.ssrc1);
+
+	// Calculate the sum and overflow.
+	sum.as_int = s0.as_int + s1.as_int;
+	ovf.as_uint = (s0.as_int >> 31 != s1.as_int >> 31) ? 0 : 
+		((s0.as_int > 0 && sum.as_int < 0) || 
+		(s0.as_int < 0 && sum.as_int > 0));
+
+	// Write the results.
+	// Store the data in the destination register
+	WriteSReg(INST.sdst, sum.as_uint);
+	// Store the data in the destination register
+	WriteSReg(SI_SCC, ovf.as_uint);
+
+	// Print isa debug information.
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("S%u<=(%u) ", INST.sdst, sum.as_uint);
+		Emu::debug << StringFmt("scc<=(%u) ", ovf.as_uint);
+	}
+}
+#undef INST
+
+// D.u = S0.i - S1.i. scc = overflow.
+#define INST INST_SOP2
+void WorkItem::ISA_S_SUB_I32_Impl(Inst *inst)
+{
+	InstReg s0;
+	InstReg s1;
+	InstReg diff;
+	InstReg ovf;
+
+	// Load operands from registers or as a literal constant.
+	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
+	if (INST.ssrc0 == 0xFF)
+		s0.as_uint = INST.lit_cnst;
+	else
+		s0.as_uint = ReadSReg(INST.ssrc0);
+	if (INST.ssrc1 == 0xFF)
+		s1.as_uint = INST.lit_cnst;
+	else
+		s1.as_uint = ReadSReg(INST.ssrc1);
+
+	// Calculate the sum and overflow.
+	diff.as_int = s0.as_int - s1.as_int;
+	ovf.as_uint = (s0.as_int >> 31 != s1.as_int >> 31) ? 
+		((s0.as_int > 0 && diff.as_int < 0) ||
+		(s0.as_int < 0 && diff.as_int > 0)) : 0;
+
+	// Write the results.
+		// Store the data in the destination register
+	WriteSReg(INST.sdst, diff.as_uint);
+	// Store the data in the destination register
+	WriteSReg(SI_SCC, ovf.as_uint);
+
+	// Print isa debug information.
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("S%u<=(%d) ", INST.sdst, diff.as_int);
+		Emu::debug << StringFmt("scc<=(%u) ", ovf.as_uint);
+	}
+}
+#undef INST
+
+// D.u = (S0.u < S1.u) ? S0.u : S1.u, scc = 1 if S0 is min.
+#define INST INST_SOP2
+void WorkItem::ISA_S_MIN_U32_Impl(Inst *inst)
+{
+	InstReg s0;
+	InstReg s1;
+	InstReg min;
+	InstReg s0_min;
+
+	// Load operands from registers or as a literal constant.
+	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
+	if (INST.ssrc0 == 0xFF)
+		s0.as_uint = INST.lit_cnst;
+	else
+		s0.as_uint = ReadSReg(INST.ssrc0);
+	if (INST.ssrc1 == 0xFF)
+		s1.as_uint = INST.lit_cnst;
+	else
+		s1.as_uint = ReadSReg(INST.ssrc1);
+
+	// Calculate the minimum operand.
+	if (s0.as_uint < s1.as_uint)
+	{
+		min.as_uint = s0.as_uint;
+		s0_min.as_uint = 1;
+	}
+	else
+	{
+		min.as_uint = s1.as_uint;
+		s0_min.as_uint = 0;
+	}
+
+	// Write the results.
+	// Store the data in the destination register
+	WriteSReg(INST.sdst, min.as_uint);
+	// Store the data in the destination register
+	WriteSReg(SI_SCC, s0_min.as_uint);
+
+	// Print isa debug information.
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("S%u<=(%u) ", INST.sdst, min.as_uint);
+		Emu::debug << StringFmt("scc<=(%d) ", s0_min.as_uint);
+	}
+}
+#undef INST
+
+// D.i = (S0.i > S1.i) ? S0.i : S1.i, scc = 1 if S0 is max.
+#define INST INST_SOP2
+void WorkItem::ISA_S_MAX_I32_Impl(Inst *inst)
+{
+	InstReg s0;
+	InstReg s1;
+	InstReg max;
+	InstReg s0_max;
+
+	// Load operands from registers or as a literal constant.
+	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
+	if (INST.ssrc0 == 0xFF)
+		s0.as_uint = INST.lit_cnst;
+	else
+		s0.as_uint = ReadSReg(INST.ssrc0);
+	if (INST.ssrc1 == 0xFF)
+		s1.as_uint = INST.lit_cnst;
+	else
+		s1.as_uint = ReadSReg(INST.ssrc1);
+
+	// Calculate the maximum operand.
+	// Is max defined as GT or GTE?
+	if (s0.as_int > s1.as_int)
+	{
+		max.as_int = s0.as_int;
+		s0_max.as_uint = 1;
+	}
+	else
+	{
+		max.as_int = s1.as_int;
+		s0_max.as_uint = 0;
+	}
+
+	// Write the results.
+	// Store the data in the destination register
+	WriteSReg(INST.sdst, max.as_uint);
+	// Store the data in the destination register
+	WriteSReg(SI_SCC, s0_max.as_uint);
+
+	// Print isa debug information.
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("S%u<=(%d) ", INST.sdst, max.as_int);
+		Emu::debug << StringFmt("scc<=(%u) ", s0_max.as_uint);
+	}
+}
+#undef INST
+
+// D.u = (S0.u > S1.u) ? S0.u : S1.u, scc = 1 if S0 is max.
+#define INST INST_SOP2
+void WorkItem::ISA_S_MAX_U32_Impl(Inst *inst)
+{
+	InstReg s0;
+	InstReg s1;
+	InstReg max;
+	InstReg s0_max;
+
+	// Load operands from registers or as a literal constant.
+	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
+	if (INST.ssrc0 == 0xFF)
+		s0.as_uint = INST.lit_cnst;
+	else
+		s0.as_uint = ReadSReg(INST.ssrc0);
+	if (INST.ssrc1 == 0xFF)
+		s1.as_uint = INST.lit_cnst;
+	else
+		s1.as_uint = ReadSReg(INST.ssrc1);
+
+	// Calculate the maximum operand.
+	if (s0.as_uint > s1.as_uint)
+	{
+		max.as_uint = s0.as_uint;
+		s0_max.as_uint = 1;
+	}
+	else
+	{
+		max.as_uint = s1.as_uint;
+		s0_max.as_uint = 0;
+	}
+
+	// Write the results.
+	// Store the data in the destination register
+	WriteSReg(INST.sdst, max.as_uint);
+	// Store the data in the destination register
+	WriteSReg(SI_SCC, s0_max.as_uint);
+
+	// Print isa debug information.
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("S%u<=(%u) ", INST.sdst, max.as_uint);
+		Emu::debug << StringFmt("scc<=(%u) ", s0_max.as_uint);
+	}
+}
+#undef INST
+
+// D.u = SCC ? S0.u : S1.u
+#define INST INST_SOP2
+void WorkItem::ISA_S_CSELECT_B32_Impl(Inst *inst)
+{
+	InstReg s0;
+	InstReg s1;
+	InstReg scc;
+	InstReg result;
+
+	// Load operands from registers or as a literal constant.
+	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
+	if (INST.ssrc0 == 0xFF)
+		s0.as_uint = INST.lit_cnst;
+	else
+		s0.as_uint = ReadSReg(INST.ssrc0);
+	if (INST.ssrc1 == 0xFF)
+		s1.as_uint = INST.lit_cnst;
+	else
+		s1.as_uint = ReadSReg(INST.ssrc1);
+	scc.as_uint = ReadSReg(SI_SCC);
+
+	// Calculate the result
+	result.as_uint = scc.as_uint ? s0.as_uint : s1.as_uint;
+
+	// Write the results.
+	// Store the data in the destination register
+	WriteSReg(INST.sdst, result.as_uint);
+
+	// Print isa debug information.
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("S%u<=(0x%x) ", INST.sdst, result.as_uint);
+	}
+}
+#undef INST
+
+// D.u = S0.u & S1.u. scc = 1 if result is non-zero.
+#define INST INST_SOP2
+void WorkItem::ISA_S_AND_B32_Impl(Inst *inst)
+{
+	InstReg s0;
+	InstReg s1;
+	InstReg result;
+	InstReg nonzero;
+
+	// Load operands from registers or as a literal constant.
+	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
+	if (INST.ssrc0 == 0xFF)
+		s0.as_uint = INST.lit_cnst;
+	else
+		s0.as_uint = ReadSReg(INST.ssrc0);
+	if (INST.ssrc1 == 0xFF)
+		s1.as_uint = INST.lit_cnst;
+	else
+		s1.as_uint = ReadSReg(INST.ssrc1);
+
+	/* Bitwise AND the two operands and determine if the result is
+	 * non-zero. */
+	result.as_uint = s0.as_uint & s1.as_uint;
+	nonzero.as_uint = ! !result.as_uint;
+
+	// Write the results.
+	// Store the data in the destination register
+	WriteSReg(INST.sdst, result.as_uint);
+	// Store the data in the destination register
+	WriteSReg(SI_SCC, nonzero.as_uint);
+
+	// Print isa debug information.
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("S%u<=(0x%x) ", INST.sdst, result.as_uint);
+		Emu::debug << StringFmt("scc<=(%u) ", nonzero.as_uint);
+	}
+}
+#undef INST
+
+// D.u = S0.u & S1.u. scc = 1 if result is non-zero.
+#define INST INST_SOP2
+void WorkItem::ISA_S_AND_B64_Impl(Inst *inst)
+{
+	// Assert no literal constants for a 64 bit instruction.
+	assert(!(INST.ssrc0 == 0xFF || INST.ssrc1 == 0xFF));
+
+	InstReg s0_lo;
+	InstReg s0_hi;
+	InstReg s1_lo;
+	InstReg s1_hi;
+	InstReg result_lo;
+	InstReg result_hi;
+	InstReg nonzero;
+
+	// Load operands from registers.
+	s0_lo.as_uint = ReadSReg(INST.ssrc0);
+	s0_hi.as_uint = ReadSReg(INST.ssrc0 + 1);
+	s1_lo.as_uint = ReadSReg(INST.ssrc1);
+	s1_hi.as_uint = ReadSReg(INST.ssrc1 + 1);
+
+	/* Bitwise AND the two operands and determine if the result is
+	 * non-zero. */
+	result_lo.as_uint = s0_lo.as_uint & s1_lo.as_uint;
+	result_hi.as_uint = s0_hi.as_uint & s1_hi.as_uint;
+	nonzero.as_uint = result_lo.as_uint || result_hi.as_uint;
+
+	// Write the results.
+	// Store the data in the destination register
+	WriteSReg(INST.sdst, result_lo.as_uint);
+	// Store the data in the destination register
+	WriteSReg(INST.sdst + 1, result_hi.as_uint);
+	// Store the data in the destination register
+	WriteSReg(SI_SCC, nonzero.as_uint);
+
+	// Print isa debug information.
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("S%u<=(0x%x) ", INST.sdst, result_lo.as_uint);
+		Emu::debug << StringFmt("S%u<=(0x%x) ", INST.sdst + 1, result_hi.as_uint);
+		Emu::debug << StringFmt("scc<=(%u) ", nonzero.as_uint);
+	}
+}
+#undef INST
+
+// D.u = S0.u | S1.u. scc = 1 if result is non-zero.
+#define INST INST_SOP2
+void WorkItem::ISA_S_OR_B32_Impl(Inst *inst)
+{
+	InstReg s0;
+	InstReg s1;
+	InstReg result;
+	InstReg nonzero;
+
+	// Load operands from registers or as a literal constant.
+	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
+	if (INST.ssrc0 == 0xFF)
+		s0.as_uint = INST.lit_cnst;
+	else
+		s0.as_uint = ReadSReg(INST.ssrc0);
+	if (INST.ssrc1 == 0xFF)
+		s1.as_uint = INST.lit_cnst;
+	else
+		s1.as_uint = ReadSReg(INST.ssrc1);
+
+	/* Bitwise AND the two operands and determine if the result is
+	 * non-zero. */
+	result.as_uint = s0.as_uint | s1.as_uint;
+	nonzero.as_uint = ! !result.as_uint;
+
+	// Write the results.
+	// Store the data in the destination register
+	WriteSReg(INST.sdst, result.as_uint);
+	// Store the data in the destination register
+	WriteSReg(SI_SCC, nonzero.as_uint);
+
+	// Print isa debug information.
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("S%u<=(0x%x) ", INST.sdst, result.as_uint);
+		Emu::debug << StringFmt("scc<=(%u) ", nonzero.as_uint);
+	}
+}
+#undef INST
+
+// D.u = S0.u | S1.u. scc = 1 if result is non-zero.
+#define INST INST_SOP2
+void WorkItem::ISA_S_OR_B64_Impl(Inst *inst)
+{
+	// Assert no literal constants for a 64 bit instruction.
+	assert(!(INST.ssrc0 == 0xFF || INST.ssrc1 == 0xFF));
+
+	InstReg s0_lo;
+	InstReg s0_hi;
+	InstReg s1_lo;
+	InstReg s1_hi;
+	InstReg result_lo;
+	InstReg result_hi;
+	InstReg nonzero;
+
+	// Load operands from registers.
+	s0_lo.as_uint = ReadSReg(INST.ssrc0);
+	s0_hi.as_uint = ReadSReg(INST.ssrc0 + 1);
+	s1_lo.as_uint = ReadSReg(INST.ssrc1);
+	s1_hi.as_uint = ReadSReg(INST.ssrc1 + 1);
+
+	/* Bitwise OR the two operands and determine if the result is
+	 * non-zero. */
+	result_lo.as_uint = s0_lo.as_uint | s1_lo.as_uint;
+	result_hi.as_uint = s0_hi.as_uint | s1_hi.as_uint;
+	nonzero.as_uint = result_lo.as_uint || result_hi.as_uint;
+
+	// Write the results.
+	// Store the data in the destination register
+	WriteSReg(INST.sdst, result_lo.as_uint);
+	// Store the data in the destination register
+	WriteSReg(INST.sdst + 1, result_hi.as_uint);
+	// Store the data in the destination register
+	WriteSReg(SI_SCC, nonzero.as_uint);
+
+	// Print isa debug information.
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("S%u<=(0x%x) ", INST.sdst, result_lo.as_uint);
+		Emu::debug << StringFmt("S%u<=(0x%x) ", INST.sdst + 1, result_hi.as_uint);
+		Emu::debug << StringFmt("scc<=(%u) ", nonzero.as_uint);
+	}
+}
+#undef INST
+
+// D.u = S0.u ^ S1.u. scc = 1 if result is non-zero.
+#define INST INST_SOP2
+void WorkItem::ISA_S_XOR_B64_Impl(Inst *inst)
+{
+	// Assert no literal constants for a 64 bit instruction.
+	assert(!(INST.ssrc0 == 0xFF || INST.ssrc1 == 0xFF));
+
+	InstReg s0_lo;
+	InstReg s0_hi;
+	InstReg s1_lo;
+	InstReg s1_hi;
+	InstReg result_lo;
+	InstReg result_hi;
+	InstReg nonzero;
+
+	// Load operands from registers.
+	s0_lo.as_uint = ReadSReg(INST.ssrc0);
+	s0_hi.as_uint = ReadSReg(INST.ssrc0 + 1);
+	s1_lo.as_uint = ReadSReg(INST.ssrc1);
+	s1_hi.as_uint = ReadSReg(INST.ssrc1 + 1);
+
+	/* Bitwise OR the two operands and determine if the result is
+	 * non-zero. */
+	result_lo.as_uint = s0_lo.as_uint ^ s1_lo.as_uint;
+	result_hi.as_uint = s0_hi.as_uint ^ s1_hi.as_uint;
+	nonzero.as_uint = result_lo.as_uint || result_hi.as_uint;
+
+	// Write the results.
+	// Store the data in the destination register
+	WriteSReg(INST.sdst, result_lo.as_uint);
+	// Store the data in the destination register
+	WriteSReg(INST.sdst + 1, result_hi.as_uint);
+	// Store the data in the destination register
+	WriteSReg(SI_SCC, nonzero.as_uint);
+
+	// Print isa debug information.
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("S%u<=(0x%x) ", INST.sdst, result_lo.as_uint);
+		Emu::debug << StringFmt("S%u<=(0x%x) ", INST.sdst + 1, result_hi.as_uint);
+		Emu::debug << StringFmt("scc<=(%u) ", nonzero.as_uint);
+	}
+}
+#undef INST
+
+// D.u = S0.u & ~S1.u. scc = 1 if result is non-zero.
+#define INST INST_SOP2
+void WorkItem::ISA_S_ANDN2_B64_Impl(Inst *inst)
+{
+	// Assert no literal constants for a 64 bit instruction.
+	assert(!(INST.ssrc0 == 0xFF || INST.ssrc1 == 0xFF));
+
+	InstReg s0_lo;
+	InstReg s0_hi;
+	InstReg s1_lo;
+	InstReg s1_hi;
+	InstReg result_lo;
+	InstReg result_hi;
+	InstReg nonzero;
+
+	// Load operands from registers.
+	s0_lo.as_uint = ReadSReg(INST.ssrc0);
+	s0_hi.as_uint = ReadSReg(INST.ssrc0 + 1);
+	s1_lo.as_uint = ReadSReg(INST.ssrc1);
+	s1_hi.as_uint = ReadSReg(INST.ssrc1 + 1);
+
+	/* Bitwise AND the first operand with the negation of the second and
+	 * determine if the result is non-zero. */
+	result_lo.as_uint = s0_lo.as_uint & ~s1_lo.as_uint;
+	result_hi.as_uint = s0_hi.as_uint & ~s1_hi.as_uint;
+	nonzero.as_uint = result_lo.as_uint || result_hi.as_uint;
+
+	// Write the results.
+	// Store the data in the destination register
+	WriteSReg(INST.sdst, result_lo.as_uint);
+	// Store the data in the destination register
+	WriteSReg(INST.sdst + 1, result_hi.as_uint);
+	// Store the data in the destination register
+	WriteSReg(SI_SCC, nonzero.as_uint);
+
+	// Print isa debug information.
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("S%u<=(0x%x) ", INST.sdst, result_lo.as_uint);
+		Emu::debug << StringFmt("S%u<=(0x%x) ", INST.sdst + 1, result_hi.as_uint);
+		Emu::debug << StringFmt("scc<=(%u)", nonzero.as_uint);
+	}
+}
+#undef INST
+
+// D.u = ~(S0.u & S1.u). scc = 1 if result is non-zero.
+#define INST INST_SOP2
+void WorkItem::ISA_S_NAND_B64_Impl(Inst *inst)
+{
+	// Assert no literal constants for a 64 bit instruction.
+	assert(!(INST.ssrc0 == 0xFF || INST.ssrc1 == 0xFF));
+
+	InstReg s0_lo;
+	InstReg s0_hi;
+	InstReg s1_lo;
+	InstReg s1_hi;
+	InstReg result_lo;
+	InstReg result_hi;
+	InstReg nonzero;
+
+	// Load operands from registers.
+	s0_lo.as_uint = ReadSReg(INST.ssrc0);
+	s0_hi.as_uint = ReadSReg(INST.ssrc0 + 1);
+	s1_lo.as_uint = ReadSReg(INST.ssrc1);
+	s1_hi.as_uint = ReadSReg(INST.ssrc1 + 1);
+
+	/* Bitwise AND the two operands and determine if the result is
+	 * non-zero. */
+	result_lo.as_uint = ~(s0_lo.as_uint & s1_lo.as_uint);
+	result_hi.as_uint = ~(s0_hi.as_uint & s1_hi.as_uint);
+	nonzero.as_uint = result_lo.as_uint || result_hi.as_uint;
+
+	// Write the results.
+	// Store the data in the destination register
+	WriteSReg(INST.sdst, result_lo.as_uint);
+	// Store the data in the destination register
+	WriteSReg(INST.sdst + 1, result_hi.as_uint);
+	// Store the data in the destination register
+	WriteSReg(SI_SCC, nonzero.as_uint);
+
+	// Print isa debug information.
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("S%u<=(0x%x) ", INST.sdst, result_lo.as_uint);
+		Emu::debug << StringFmt("S%u<=(0x%x) ", INST.sdst + 1, result_hi.as_uint);
+		Emu::debug << StringFmt("scc<=(%u) ", nonzero.as_uint);
+	}
+}
+#undef INST
+
+// D.u = S0.u << S1.u[4:0]. scc = 1 if result is non-zero.
+#define INST INST_SOP2
+void WorkItem::ISA_S_LSHL_B32_Impl(Inst *inst)
+{
+	InstReg s0;
+	InstReg s1;
+	InstReg result;
+	InstReg nonzero;
+
+	// Load operands from registers or as a literal constant.
+	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
+	if (INST.ssrc0 == 0xFF)
+	{
+		s0.as_uint = INST.lit_cnst;
+	}
+	else
+	{
+		s0.as_uint = ReadSReg(INST.ssrc0);
+	}
+	if (INST.ssrc1 == 0xFF)
+	{
+		assert(INST.lit_cnst < 32);
+		s1.as_uint = INST.lit_cnst;
+	}
+	else
+	{
+		s1.as_uint = ReadSReg(INST.ssrc1) & 0x1F;
+	}
+
+	/* Left shift the first operand by the second and determine if the
+	 * result is non-zero. */
+	result.as_uint = s0.as_uint << s1.as_uint;
+	nonzero.as_uint = result.as_uint != 0;
+
+	// Write the results.
+	// Store the data in the destination register
+	WriteSReg(INST.sdst, result.as_uint);
+	// Store the data in the destination register
+	WriteSReg(SI_SCC, nonzero.as_uint);
+
+	// Print isa debug information.
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("S%u<=(0x%x) ", INST.sdst, result.as_uint);
+		Emu::debug << StringFmt("scc<=(%u)", nonzero.as_uint);
+	}
+}
+#undef INST
+
+// D.u = S0.u >> S1.u[4:0]. scc = 1 if result is non-zero.
+#define INST INST_SOP2
+void WorkItem::ISA_S_LSHR_B32_Impl(Inst *inst)
+{
+	InstReg s0;
+	InstReg s1;
+	InstReg result;
+	InstReg nonzero;
+
+	// Load operands from registers or as a literal constant.
+	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
+	if (INST.ssrc0 == 0xFF)
+	{
+		s0.as_uint = INST.lit_cnst;
+	}
+	else
+	{
+		s0.as_uint = ReadSReg(INST.ssrc0);
+	}
+	if (INST.ssrc1 == 0xFF)
+	{
+		assert(INST.lit_cnst < 32);
+		s1.as_uint = INST.lit_cnst;
+	}
+	else
+	{
+		s1.as_uint = ReadSReg(INST.ssrc1) & 0x1F;
+	}
+
+	/* Right shift the first operand by the second and determine if the
+	 * result is non-zero. */
+	result.as_uint = s0.as_uint >> s1.as_uint;
+	nonzero.as_uint = result.as_uint != 0;
+
+	// Write the results.
+	// Store the data in the destination register
+	WriteSReg(INST.sdst, result.as_uint);
+	// Store the data in the destination register
+	WriteSReg(SI_SCC, nonzero.as_uint);
+
+	// Print isa debug information.
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("S%u<=(0x%x) ", INST.sdst, result.as_uint);
+		Emu::debug << StringFmt("scc<=(%u)", nonzero.as_uint);
+	}
+}
+#undef INST
+
+// D.i = signext(S0.i) >> S1.i[4:0]. scc = 1 if result is non-zero.
+#define INST INST_SOP2
+void WorkItem::ISA_S_ASHR_I32_Impl(Inst *inst)
+{
+	InstReg s0;
+	InstReg s1;
+	InstReg result;
+	InstReg nonzero;
+
+	// Load operands from registers or as a literal constant.
+	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
+	if (INST.ssrc0 == 0xFF)
+	{
+		s0.as_uint = INST.lit_cnst;
+	}
+	else
+	{
+		s0.as_uint = ReadSReg(INST.ssrc0);
+	}
+	if (INST.ssrc1 == 0xFF)
+	{
+		assert(INST.lit_cnst < 32);
+		s1.as_uint = INST.lit_cnst;
+	}
+	else
+	{
+		s1.as_uint = ReadSReg(INST.ssrc1) & 0x1F;
+	}
+
+	/* Right shift the first operand sign extended by the second and
+	 * determine if the result is non-zero. */
+	result.as_int = s0.as_int >> s1.as_int;
+	nonzero.as_uint = result.as_uint != 0;
+
+	// Write the results.
+	// Store the data in the destination register
+	WriteSReg(INST.sdst, result.as_uint);
+	// Store the data in the destination register
+	WriteSReg(SI_SCC, nonzero.as_uint);
+
+	// Print isa debug information.
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("S%u<=(%d) ", INST.sdst, result.as_int);
+		Emu::debug << StringFmt("scc<=(%u)", nonzero.as_uint);
+	}
+}
+#undef INST
+
+// D.i = S0.i * S1.i.
+#define INST INST_SOP2
+void WorkItem::ISA_S_MUL_I32_Impl(Inst *inst)
+{
+	InstReg s0;
+	InstReg s1;
+	InstReg result;
+
+	// Load operands from registers or as a literal constant.
+	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
+	if (INST.ssrc0 == 0xFF)
+		s0.as_uint = INST.lit_cnst;
+	else
+		s0.as_uint = ReadSReg(INST.ssrc0);
+	if (INST.ssrc1 == 0xFF)
+		s1.as_uint = INST.lit_cnst;
+	else
+		s1.as_uint = ReadSReg(INST.ssrc1);
+
+	// Multiply the two operands.
+	result.as_int = s0.as_int * s1.as_int;
+
+	// Write the results.
+	// Store the data in the destination register
+	WriteSReg(INST.sdst, result.as_uint);
+
+	// Print isa debug information.
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("S%u<=(%d)", INST.sdst, result.as_int);
+	}
+}
+#undef INST
+
+/* D.i = (S0.i >> S1.u[4:0]) & ((1 << S2.u[4:0]) - 1); bitfield extract,
+ * S0=data, S1=field_offset, S2=field_width. */
+#define INST INST_SOP2
+void WorkItem::ISA_S_BFE_I32_Impl(Inst *inst)
+{
+	InstReg s0;
+	InstReg s1;
+	InstReg s2;
+	InstReg result;
+	InstReg full_reg;
+	InstReg nonzero;
+
+	// Load operands from registers.
+	s0.as_uint = ReadSReg(INST.ssrc0);
+	full_reg.as_uint = ReadSReg(INST.ssrc1);
+
+	/* s1 (offset) should be [4:0] of ssrc1 and s2 (width) should be [22:16] of ssrc1*/
+	s1.as_uint = full_reg.as_uint & 0x1F;
+	s2.as_uint = (full_reg.as_uint >> 16) & 0x7F;
+
+	// Calculate the result.
+	if (s2.as_uint == 0)
+	{
+		result.as_int = 0;
+	}
+	else if (s2.as_uint + s1.as_uint < 32)
+	{
+		result.as_int = (s0.as_int << (32 - s1.as_uint - s2.as_uint)) >> 
+			(32 - s2.as_uint);
+	}
+	else
+	{
+		result.as_int = s0.as_int >> s1.as_uint;
+	}
+
+	nonzero.as_uint = result.as_uint != 0;
+	
+	// Write the results.
+	// Store the data in the destination register
+	WriteSReg(INST.sdst, result.as_uint);
+	// Store the data in the destination register
+	WriteSReg(SI_SCC, nonzero.as_uint);
+
+
+	// Print isa debug information.
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("S%u<=(0x%x) ", INST.sdst, result.as_uint);
+		Emu::debug << StringFmt("scc<=(%u)", nonzero.as_uint);
+	}
+	
+}
+#undef INST
+
+
+
+/*
+ * SOPK
+ */
+
+// D.i = signext(simm16).
+#define INST INST_SOPK
+void WorkItem::ISA_S_MOVK_I32_Impl(Inst *inst)
+{
+	InstReg simm16;
+	InstReg result;
+
+	// Load constant operand from instruction.
+	simm16.as_ushort[0] = INST.simm16;
+
+	// Sign extend the short constant to an integer.
+	result.as_int = (int) simm16.as_short[0];
+
+	// Write the results.
+	// Store the data in the destination register
+	WriteSReg(INST.sdst, result.as_uint);
+
+	// Print isa debug information.
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("S%u<=(%d)", INST.sdst, result.as_int);
+	}
+}
+#undef INST
+
+//
+#define INST INST_SOPK
+void WorkItem::ISA_S_CMPK_LE_U32_Impl(Inst *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
+// D.i = D.i + signext(SIMM16). scc = overflow.
+#define INST INST_SOPK
+void WorkItem::ISA_S_ADDK_I32_Impl(Inst *inst)
+{
+	InstReg simm16;
+	InstReg sum;
+	InstReg ovf;
+	InstReg dst;
+
+	int se_simm16;
+
+	/* Load short constant operand from instruction and sign extend to an 
+	 * integer. */
+	simm16.as_ushort[0] = INST.simm16;
+	se_simm16 = (int) simm16.as_short[0];
+
+	// Load operand from destination register.
+	dst.as_uint = ReadSReg(INST.sdst);
+
+	// Add the two operands and determine overflow.
+	sum.as_int = dst.as_int + se_simm16;
+	ovf.as_uint = (dst.as_int >> 31 != se_simm16 >> 31) ? 0 :
+		((dst.as_int > 0 && sum.as_int < 0) || 
+		 (dst.as_int < 0 && sum.as_int > 0));
+
+	// Write the results.
+		// Store the data in the destination register
+	WriteSReg(INST.sdst, sum.as_uint);
+	// Store the data in the destination register
+	WriteSReg(SI_SCC, ovf.as_uint);
+
+	// Print isa debug information.
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("S%u<=(%d)", INST.sdst, sum.as_int);
+		Emu::debug << StringFmt("scc<=(%u)", ovf.as_uint);
+	}
+}
+#undef INST
+
+// D.i = D.i * signext(SIMM16). scc = overflow.
+#define INST INST_SOPK
+void WorkItem::ISA_S_MULK_I32_Impl(Inst *inst)
+{
+	InstReg simm16;
+	InstReg product;
+	InstReg ovf;
+	InstReg dst;
+
+	int se_simm16;
+
+	/* Load short constant operand from instruction and sign extend to an 
+	 * integer. */
+	simm16.as_ushort[0] = INST.simm16;
+	se_simm16 = (int) simm16.as_short[0];
+
+	// Load operand from destination register.
+	dst.as_uint = ReadSReg(INST.sdst);
+
+	// Multiply the two operands and determine overflow.
+	product.as_int = dst.as_int * se_simm16;
+	ovf.as_uint = ((long long) dst.as_int * (long long) se_simm16) > 
+		(long long) product.as_int;
+
+	// Write the results.
+		// Store the data in the destination register
+	WriteSReg(INST.sdst, product.as_uint);
+	// Store the data in the destination register
+	WriteSReg(SI_SCC, ovf.as_uint);
+
+	// Print isa debug information.
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("S%u<=(%d)", INST.sdst, product.as_int);
+		Emu::debug << StringFmt("scc<=(%u)", ovf.as_uint);
+	}
+}
+#undef INST
+
+// D.u = S0.u.
+#define INST INST_SOP1
+void WorkItem::ISA_S_MOV_B64_Impl(Inst *inst)
+{
+	// Assert no literal constant with a 64 bit instruction.
+	assert(!(INST.ssrc0 == 0xFF));
+
+	InstReg s0_lo;
+	InstReg s0_hi;
+
+	// Load operand from registers.
+	s0_lo.as_uint = ReadSReg(INST.ssrc0);
+	s0_hi.as_uint = ReadSReg(INST.ssrc0 + 1);
+
+	// Write the results.
+	// Store the data in the destination register
+	WriteSReg(INST.sdst, s0_lo.as_uint);
+	// Store the data in the destination register
+	WriteSReg(INST.sdst + 1, s0_hi.as_uint);
+
+	// Print isa debug information.
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("S%u<=(0x%x) ", INST.sdst, s0_lo.as_uint);
+		Emu::debug << StringFmt("S%u<=(0x%x)", INST.sdst + 1, s0_hi.as_uint);
+	}
+}
+#undef INST
+
+/*
+ * SOP1
+ */
+
+// D.u = S0.u.
+#define INST INST_SOP1
+void WorkItem::ISA_S_MOV_B32_Impl(Inst *inst)
+{
+	InstReg s0;
+
+	// Load operand from registers or as a literal constant.
+	if (INST.ssrc0 == 0xFF)
+		s0.as_uint = INST.lit_cnst;
+	else
+		s0.as_uint = ReadSReg(INST.ssrc0);
+
+	// Write the results.
+	// Store the data in the destination register
+	WriteSReg(INST.sdst, s0.as_uint);
+
+	// Print isa debug information.
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("S%u<=(0x%x) ", INST.sdst, s0.as_uint);
+	}
+}
+#undef INST
+
+// D.u = ~S0.u SCC = 1 if result non-zero.
+#define INST INST_SOP1
+void WorkItem::ISA_S_NOT_B32_Impl(Inst *inst)
+{
+	InstReg s0;
+	InstReg nonzero;
+
+	// Load operand from registers or as a literal constant.
+	if (INST.ssrc0 == 0xFF)
+		s0.as_uint = ~INST.lit_cnst;
+	else
+		s0.as_uint = ~ReadSReg(INST.ssrc0);
+	nonzero.as_uint = ! !s0.as_uint;
+
+	// Write the results.
+	// Store the data in the destination register
+	WriteSReg(INST.sdst, s0.as_uint);
+	// Store the data in the destination register
+	WriteSReg(SI_SCC, nonzero.as_uint);
+
+	// Print isa debug information.
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("S%u<=(0x%x) ", INST.sdst, s0.as_uint);
+	}
+}
+#undef INST
+
+#define INST INST_SOP1
+// D.u = WholeQuadMode(S0.u). SCC = 1 if result is non-zero.
+void WorkItem::ISA_S_WQM_B64_Impl(Inst *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
+// D.u = PC + 4, PC = S0.u
+#define INST INST_SOP1
+void WorkItem::ISA_S_SWAPPC_B64_Impl(Inst *inst)
+{
+	unsigned pc;
+	InstReg s0_lo;
+	InstReg s0_hi;
+
+	// FIXME: cuurently PC is implemented as 32-bit offset
+	// Load operands from registers
+	s0_lo.as_uint = ReadSReg(INST.ssrc0);
+	s0_hi.as_uint = ReadSReg(INST.ssrc0 + 1);
+
+	// Write the results
+	// Store the data in the destination register
+	WriteSReg(INST.sdst, wavefront->pc + 4);
+	// Store the data in the destination register
+	WriteSReg(INST.sdst + 1, 0);
+
+	// Set the new PC
+	pc = wavefront->pc;
+	wavefront->pc = s0_lo.as_uint - 4;
+
+	// Print isa debug information.
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("S%u<=(0x%x) ", INST.sdst, pc + 4);
+		Emu::debug << StringFmt("S%u<=(0x%x) ", INST.sdst + 1, s0_hi.as_uint);
+		Emu::debug << StringFmt("PC<=(0x%x)", wavefront->pc);
+	}
+}
+#undef INST
+
+/* D.u = EXEC, EXEC = S0.u & EXEC. scc = 1 if the new value of EXEC is
+ * non-zero. */
+#define INST INST_SOP1
+void WorkItem::ISA_S_AND_SAVEEXEC_B64_Impl(Inst *inst)
+{
+	// Assert no literal constant with a 64 bit instruction.
+	assert(!(INST.ssrc0 == 0xFF));
+
+	InstReg exec_lo;
+	InstReg exec_hi;
+	InstReg s0_lo;
+	InstReg s0_hi;
+	InstReg exec_new_lo;
+	InstReg exec_new_hi;
+	InstReg nonzero;
+
+	// Load operands from registers.
+	exec_lo.as_uint = ReadSReg(SI_EXEC);
+	exec_hi.as_uint = ReadSReg(SI_EXEC + 1);
+	s0_lo.as_uint = ReadSReg(INST.ssrc0);
+	s0_hi.as_uint = ReadSReg(INST.ssrc0 + 1);
+
+	/* Bitwise AND exec and the first operand and determine if the result 
+	 * is non-zero. */
+	exec_new_lo.as_uint = s0_lo.as_uint & exec_lo.as_uint;
+	exec_new_hi.as_uint = s0_hi.as_uint & exec_hi.as_uint;
+	nonzero.as_uint = exec_new_lo.as_uint || exec_new_hi.as_uint;
+
+	// Write the results.
+	// Store the data in the destination register
+	WriteSReg(INST.sdst, exec_lo.as_uint);
+	// Store the data in the destination register
+	WriteSReg(INST.sdst + 1, exec_hi.as_uint);
+	// Store the data in the destination register
+	WriteSReg(SI_EXEC, exec_new_lo.as_uint);
+	// Store the data in the destination register
+	WriteSReg(SI_EXEC + 1, exec_new_hi.as_uint);
+	// Store the data in the destination register
+	WriteSReg(SI_SCC, nonzero.as_uint);
+
+	// Print isa debug information.
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("S%u<=(0x%x) ", INST.sdst, exec_lo.as_uint);
+		Emu::debug << StringFmt("S%u<=(0x%x) ", INST.sdst + 1, exec_hi.as_uint);
+		Emu::debug << StringFmt("exec_lo<=(0x%x) ", exec_new_lo.as_uint);
+		Emu::debug << StringFmt("exec_hi<=(0x%x) ", exec_new_hi.as_uint);
+		Emu::debug << StringFmt("scc<=(%u)", nonzero.as_uint);
+	}
+}
+#undef INST
+
+/*
+ * SOPC
+ */
+
+// scc = (S0.i == S1.i).
+#define INST INST_SOPC
+void WorkItem::ISA_S_CMP_EQ_I32_Impl(Inst *inst)
+{
+	InstReg s0;
+	InstReg s1;
+	InstReg result;
+
+	// Load operands from registers or as a literal constant.
+	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
+	if (INST.ssrc0 == 0xFF)
+		s0.as_uint = INST.lit_cnst;
+	else
+		s0.as_uint = ReadSReg(INST.ssrc0);
+	if (INST.ssrc1 == 0xFF)
+		s1.as_uint = INST.lit_cnst;
+	else
+		s1.as_uint = ReadSReg(INST.ssrc1);
+
+	// Compare the operands.
+	result.as_uint = (s0.as_int == s1.as_int);
+
+	// Write the results.
+	// Store the data in the destination register
+	WriteSReg(SI_SCC, result.as_uint);
+
+	// Print isa debug information.
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("wf%d: scc<=(%u) (%u ==? %u)", 
+			wavefront->getId(), result.as_uint, s0.as_int,
+			s1.as_int);
+	}
+}
+#undef INST
+
+// scc = (S0.i > S1.i).
+#define INST INST_SOPC
+void WorkItem::ISA_S_CMP_GT_I32_Impl(Inst *inst)
+{
+	InstReg s0;
+	InstReg s1;
+	InstReg result;
+
+	// Load operands from registers or as a literal constant.
+	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
+	if (INST.ssrc0 == 0xFF)
+		s0.as_uint = INST.lit_cnst;
+	else
+		s0.as_uint = ReadSReg(INST.ssrc0);
+	if (INST.ssrc1 == 0xFF)
+		s1.as_uint = INST.lit_cnst;
+	else
+		s1.as_uint = ReadSReg(INST.ssrc1);
+
+	// Compare the operands.
+	result.as_uint = (s0.as_int > s1.as_int);
+
+	// Write the results.
+	// Store the data in the destination register
+	WriteSReg(SI_SCC, result.as_uint);
+
+	// Print isa debug information.
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("scc<=(%u) (%u >? %u) ", result.as_uint,
+			s0.as_uint, s1.as_uint);
+	}
+}
+#undef INST
+
+// scc = (S0.i >= S1.i).
+#define INST INST_SOPC
+void WorkItem::ISA_S_CMP_GE_I32_Impl(Inst *inst)
+{
+	InstReg s0;
+	InstReg s1;
+	InstReg result;
+
+	// Load operands from registers or as a literal constant.
+	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
+	if (INST.ssrc0 == 0xFF)
+		s0.as_uint = INST.lit_cnst;
+	else
+		s0.as_uint = ReadSReg(INST.ssrc0);
+	if (INST.ssrc1 == 0xFF)
+		s1.as_uint = INST.lit_cnst;
+	else
+		s1.as_uint = ReadSReg(INST.ssrc1);
+
+	// Compare the operands.
+	result.as_uint = (s0.as_int >= s1.as_int);
+
+	// Write the results.
+	// Store the data in the destination register
+	WriteSReg(SI_SCC, result.as_uint);
+
+	// Print isa debug information.
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("scc<=(%u) ", result.as_uint);
+	}
+}
+#undef INST
+
+// scc = (S0.i < S1.i).
+#define INST INST_SOPC
+void WorkItem::ISA_S_CMP_LT_I32_Impl(Inst *inst)
+{
+	InstReg s0;
+	InstReg s1;
+	InstReg result;
+
+	// Load operands from registers or as a literal constant.
+	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
+	if (INST.ssrc0 == 0xFF)
+		s0.as_uint = INST.lit_cnst;
+	else
+		s0.as_uint = ReadSReg(INST.ssrc0);
+	if (INST.ssrc1 == 0xFF)
+		s1.as_uint = INST.lit_cnst;
+	else
+		s1.as_uint = ReadSReg(INST.ssrc1);
+
+	// Compare the operands.
+	result.as_uint = (s0.as_int < s1.as_int);
+
+	// Write the results.
+	// Store the data in the destination register
+	WriteSReg(SI_SCC, result.as_uint);
+
+	// Print isa debug information.
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("scc<=(%u) ", result.as_uint);
+	}
+}
+#undef INST
+
+// scc = (S0.i <= S1.i).
+#define INST INST_SOPC
+void WorkItem::ISA_S_CMP_LE_I32_Impl(Inst *inst)
+{
+	InstReg s0;
+	InstReg s1;
+	InstReg result;
+
+	// Load operands from registers or as a literal constant.
+	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
+	if (INST.ssrc0 == 0xFF)
+		s0.as_uint = INST.lit_cnst;
+	else
+		s0.as_uint = ReadSReg(INST.ssrc0);
+	if (INST.ssrc1 == 0xFF)
+		s1.as_uint = INST.lit_cnst;
+	else
+		s1.as_uint = ReadSReg(INST.ssrc1);
+
+	// Compare the operands.
+	result.as_uint = (s0.as_int <= s1.as_int);
+
+	// Write the results.
+	// Store the data in the destination register
+	WriteSReg(SI_SCC, result.as_uint);
+
+	// Print isa debug information.
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("scc<=(%u) ", result.as_uint);
+	}
+}
+#undef INST
+
+// scc = (S0.u > S1.u).
+#define INST INST_SOPC
+void WorkItem::ISA_S_CMP_GT_U32_Impl(Inst *inst)
+{
+	InstReg s0;
+	InstReg s1;
+	InstReg result;
+
+	// Load operands from registers or as a literal constant.
+	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
+	if (INST.ssrc0 == 0xFF)
+		s0.as_uint = INST.lit_cnst;
+	else
+		s0.as_uint = ReadSReg(INST.ssrc0);
+	if (INST.ssrc1 == 0xFF)
+		s1.as_uint = INST.lit_cnst;
+	else
+		s1.as_uint = ReadSReg(INST.ssrc1);
+
+	// Compare the operands.
+	result.as_uint = (s0.as_uint > s1.as_uint);
+
+	// Write the results.
+	// Store the data in the destination register
+	WriteSReg(SI_SCC, result.as_uint);
+
+	// Print isa debug information.
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("scc<=(%u) ", result.as_uint);
+	}
+}
+#undef INST
+
+// scc = (S0.u >= S1.u).
+#define INST INST_SOPC
+void WorkItem::ISA_S_CMP_GE_U32_Impl(Inst *inst)
+{
+	InstReg s0;
+	InstReg s1;
+	InstReg result;
+
+	// Load operands from registers or as a literal constant.
+	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
+	if (INST.ssrc0 == 0xFF)
+		s0.as_uint = INST.lit_cnst;
+	else
+		s0.as_uint = ReadSReg(INST.ssrc0);
+	if (INST.ssrc1 == 0xFF)
+		s1.as_uint = INST.lit_cnst;
+	else
+		s1.as_uint = ReadSReg(INST.ssrc1);
+
+	// Compare the operands.
+	result.as_uint = (s0.as_uint >= s1.as_uint);
+
+	// Write the results.
+	// Store the data in the destination register
+	WriteSReg(SI_SCC, result.as_uint);
+
+	// Print isa debug information.
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("scc<=(%u) ", result.as_uint);
+	}
+}
+#undef INST
+
+// scc = (S0.u <= S1.u).
+#define INST INST_SOPC
+void WorkItem::ISA_S_CMP_LE_U32_Impl(Inst *inst)
+{
+	InstReg s0;
+	InstReg s1;
+	InstReg result;
+
+	// Load operands from registers or as a literal constant.
+	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
+	if (INST.ssrc0 == 0xFF)
+		s0.as_uint = INST.lit_cnst;
+	else
+		s0.as_uint = ReadSReg(INST.ssrc0);
+	if (INST.ssrc1 == 0xFF)
+		s1.as_uint = INST.lit_cnst;
+	else
+		s1.as_uint = ReadSReg(INST.ssrc1);
+
+	// Compare the operands.
+	result.as_uint = (s0.as_uint <= s1.as_uint);
+
+	// Write the results.
+	// Store the data in the destination register
+	WriteSReg(SI_SCC, result.as_uint);
+
+	// Print isa debug information.
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("scc<=(%u) ", result.as_uint);
+	}
+}
+#undef INST
+
+
 
 #if 0
+
 
 #include <limits.h>
 #include <math.h>
@@ -117,148 +1872,11 @@ char *err_si_isa_note =
 		SIInstWrapGetName(inst), err_si_isa_note)
 
 
-
-#define INST INST_SMRD
-void si_isa_S_BUFFER_LOAD_DWORDX2_impl(SIWorkItem *work_item,
-	struct SIInstWrap *inst)
-{
-	SIInstReg value[2];
-
-	unsigned m_base;
-	unsigned m_offset;
-	unsigned addr;
-
-	struct si_mem_ptr_t mem_ptr;
-	SIWavefront *wavefront;
-	SIWorkGroup *work_group = work_item->work_group;
-	SINDRange *ndrange = work_group->ndrange;
-	SIEmu *emu = ndrange->emu;
-
-	int sbase;
-	int i;
-
-	wavefront = work_item->wavefront;
-
-	// Record access
-	wavefront->scalar_mem_read = 1;
-
-	sbase = INST.sbase << 1;
-
-	SIWorkItemReadMemPtr(work_item, &mem_ptr, sbase);
-
-	// assert(uav_table_ptr.addr < UINT32_MAX)
-
-	m_base = mem_ptr.addr;
-	m_offset =
-		(INST.imm) ? (INST.offset * 4) : SIWorkItemReadSReg(work_item,
-		INST.offset);
-	addr = m_base + m_offset;
-
-	assert(!(addr & 0x3));
-
-	for (i = 0; i < 2; i++)
-	{
-		mem_read(emu->global_mem, addr + i * 4, 4, &value[i]);
-		SIWorkItemWriteSReg(work_item, INST.sdst + i, value[i].as_uint);
-	}
-
-	// FIXME Set value based on type
-	if (debug_status(si_isa_debug_category))
-	{
-		si_isa_debug("wf%d: ", work_item->wavefront->id);
-		for (i = 0; i < 2; i++)
-		{
-			si_isa_debug("S%u<=(%u)(%u,%gf) ", INST.sdst + i, 
-				addr + i * 4, value[i].as_uint, 
-				value[i].as_float);
-		}
-	}
-
-	// Record last memory access for the detailed simulator.
-	work_item->global_mem_access_addr = addr;
-	work_item->global_mem_access_size = 4 * 2;
-}
-#undef INST
-
-#define INST INST_SMRD
-void si_isa_S_BUFFER_LOAD_DWORDX4_impl(SIWorkItem *work_item,
-	struct SIInstWrap *inst)
-{
-	SIInstReg value[4];
-
-	unsigned m_base;
-	unsigned m_offset;
-	unsigned addr;
-
-	struct si_mem_ptr_t mem_ptr;
-
-	SIWavefront *wavefront;
-	SIWorkGroup *work_group = work_item->work_group;
-	SINDRange *ndrange = work_group->ndrange;
-	SIEmu *emu = ndrange->emu;
-
-	int sbase;
-	int i;
-
-	wavefront = work_item->wavefront;
-
-	// Record access
-	wavefront->scalar_mem_read = 1;
-
-	sbase = INST.sbase << 1;
-
-	SIWorkItemReadMemPtr(work_item, &mem_ptr, sbase);
-
-	// assert(uav_table_ptr.addr < UINT32_MAX)
-
-	m_base = mem_ptr.addr;
-	m_offset =
-		(INST.imm) ? (INST.offset * 4) : SIWorkItemReadSReg(work_item,
-		INST.offset);
-	addr = m_base + m_offset;
-
-	assert(!(addr & 0x3));
-
-	for (i = 0; i < 4; i++)
-	{
-		mem_read(emu->global_mem, addr + i * 4, 4,
-			&value[i]);
-		SIWorkItemWriteSReg(work_item, INST.sdst + i, value[i].as_uint);
-	}
-
-	// FIXME Set value based on type
-	if (debug_status(si_isa_debug_category))
-	{
-		si_isa_debug("wf%d: ", work_item->wavefront->id);
-		for (i = 0; i < 4; i++)
-		{
-			si_isa_debug("S%u<=(%u)(%u,%gf) ", INST.sdst + i, 
-				addr + i*4, value[i].as_uint, 
-				value[i].as_float);
-		}
-	}
-
-	// Record last memory access for the detailed simulator.
-	work_item->global_mem_access_addr = addr;
-	work_item->global_mem_access_size = 4 * 4;
-}
-#undef INST
-
-#define INST INST_SMRD
-void si_isa_S_LOAD_DWORDX2_impl(SIWorkItem *work_item,
-	struct SIInstWrap *inst)
-{
-	// Record access
-	work_item->wavefront->scalar_mem_read = 1;
-
-	NOT_IMPL();
-}
-
 #define INST INST_SMRD
 void si_isa_S_LOAD_DWORDX4_impl(SIWorkItem *work_item,
 	struct SIInstWrap *inst)
 {
-	SIWorkGroup *work_group = work_item->work_group;
+	SIWorkGroup *work_group = work_group;
 	SINDRange *ndrange = work_group->ndrange;
 	SIEmu *emu = ndrange->emu;
 
@@ -271,7 +1889,7 @@ void si_isa_S_LOAD_DWORDX4_impl(SIWorkItem *work_item,
 	int i;
 
 	// Record access
-	work_item->wavefront->scalar_mem_read = 1;
+	wavefront->scalar_mem_read = 1;
 
 	assert(INST.imm);
 
@@ -290,7 +1908,7 @@ void si_isa_S_LOAD_DWORDX4_impl(SIWorkItem *work_item,
 	for (i = 0; i < 4; i++)
 	{
 		mem_read(emu->global_mem, m_addr + i * 4, 4, &value[i]);
-		SIWorkItemWriteSReg(work_item, INST.sdst + i, value[i].as_uint);
+		WriteSReg(INST.sdst + i, value[i].as_uint);
 	}
 
 	// FIXME Set value based on type
@@ -316,7 +1934,7 @@ void si_isa_S_LOAD_DWORDX8_impl(SIWorkItem *work_item,
 	struct SIInstWrap *inst)
 {
 	// Record access
-	work_item->wavefront->scalar_mem_read = 1;
+	wavefront->scalar_mem_read = 1;
 
 	NOT_IMPL();
 }
@@ -353,8 +1971,8 @@ void si_isa_S_ADD_U32_impl(SIWorkItem *work_item,
 		(unsigned long long) s1.as_uint) >> 32;
 
 	// Write the results.
-	SIWorkItemWriteSReg(work_item, INST.sdst, sum.as_uint);
-	SIWorkItemWriteSReg(work_item, SI_SCC, carry.as_uint);
+	WriteSReg(INST.sdst, sum.as_uint);
+	WriteSReg(SI_SCC, carry.as_uint);
 
 	// Print isa debug information.
 	if (debug_status(si_isa_debug_category))
@@ -393,8 +2011,8 @@ void si_isa_S_ADD_I32_impl(SIWorkItem *work_item,
 		(s0.as_int < 0 && sum.as_int > 0));
 
 	// Write the results.
-	SIWorkItemWriteSReg(work_item, INST.sdst, sum.as_uint);
-	SIWorkItemWriteSReg(work_item, SI_SCC, ovf.as_uint);
+	WriteSReg(INST.sdst, sum.as_uint);
+	WriteSReg(SI_SCC, ovf.as_uint);
 
 	// Print isa debug information.
 	if (debug_status(si_isa_debug_category))
@@ -433,8 +2051,8 @@ void si_isa_S_SUB_I32_impl(SIWorkItem *work_item,
 		(s0.as_int < 0 && diff.as_int > 0)) : 0;
 
 	// Write the results.
-	SIWorkItemWriteSReg(work_item, INST.sdst, diff.as_uint);
-	SIWorkItemWriteSReg(work_item, SI_SCC, ovf.as_uint);
+	WriteSReg(INST.sdst, diff.as_uint);
+	WriteSReg(SI_SCC, ovf.as_uint);
 
 	// Print isa debug information.
 	if (debug_status(si_isa_debug_category))
@@ -479,8 +2097,8 @@ void si_isa_S_MIN_U32_impl(SIWorkItem *work_item,
 	}
 
 	// Write the results.
-	SIWorkItemWriteSReg(work_item, INST.sdst, min.as_uint);
-	SIWorkItemWriteSReg(work_item, SI_SCC, s0_min.as_uint);
+	WriteSReg(INST.sdst, min.as_uint);
+	WriteSReg(SI_SCC, s0_min.as_uint);
 
 	// Print isa debug information.
 	if (debug_status(si_isa_debug_category))
@@ -526,8 +2144,8 @@ void si_isa_S_MAX_I32_impl(SIWorkItem *work_item,
 	}
 
 	// Write the results.
-	SIWorkItemWriteSReg(work_item, INST.sdst, max.as_uint);
-	SIWorkItemWriteSReg(work_item, SI_SCC, s0_max.as_uint);
+	WriteSReg(INST.sdst, max.as_uint);
+	WriteSReg(SI_SCC, s0_max.as_uint);
 
 	// Print isa debug information.
 	if (debug_status(si_isa_debug_category))
@@ -572,8 +2190,8 @@ void si_isa_S_MAX_U32_impl(SIWorkItem *work_item,
 	}
 
 	// Write the results.
-	SIWorkItemWriteSReg(work_item, INST.sdst, max.as_uint);
-	SIWorkItemWriteSReg(work_item, SI_SCC, s0_max.as_uint);
+	WriteSReg(INST.sdst, max.as_uint);
+	WriteSReg(SI_SCC, s0_max.as_uint);
 
 	// Print isa debug information.
 	if (debug_status(si_isa_debug_category))
@@ -610,7 +2228,7 @@ void si_isa_S_CSELECT_B32_impl(SIWorkItem *work_item,
 	result.as_uint = scc.as_uint ? s0.as_uint : s1.as_uint;
 
 	// Write the results.
-	SIWorkItemWriteSReg(work_item, INST.sdst, result.as_uint);
+	WriteSReg(INST.sdst, result.as_uint);
 
 	// Print isa debug information.
 	if (debug_status(si_isa_debug_category))
@@ -647,8 +2265,8 @@ void si_isa_S_AND_B32_impl(SIWorkItem *work_item,
 	nonzero.as_uint = ! !result.as_uint;
 
 	// Write the results.
-	SIWorkItemWriteSReg(work_item, INST.sdst, result.as_uint);
-	SIWorkItemWriteSReg(work_item, SI_SCC, nonzero.as_uint);
+	WriteSReg(INST.sdst, result.as_uint);
+	WriteSReg(SI_SCC, nonzero.as_uint);
 
 	// Print isa debug information.
 	if (debug_status(si_isa_debug_category))
@@ -688,9 +2306,9 @@ void si_isa_S_AND_B64_impl(SIWorkItem *work_item,
 	nonzero.as_uint = result_lo.as_uint || result_hi.as_uint;
 
 	// Write the results.
-	SIWorkItemWriteSReg(work_item, INST.sdst, result_lo.as_uint);
-	SIWorkItemWriteSReg(work_item, INST.sdst + 1, result_hi.as_uint);
-	SIWorkItemWriteSReg(work_item, SI_SCC, nonzero.as_uint);
+	WriteSReg(INST.sdst, result_lo.as_uint);
+	WriteSReg(INST.sdst + 1, result_hi.as_uint);
+	WriteSReg(SI_SCC, nonzero.as_uint);
 
 	// Print isa debug information.
 	if (debug_status(si_isa_debug_category))
@@ -729,8 +2347,8 @@ void si_isa_S_OR_B32_impl(SIWorkItem *work_item,
 	nonzero.as_uint = ! !result.as_uint;
 
 	// Write the results.
-	SIWorkItemWriteSReg(work_item, INST.sdst, result.as_uint);
-	SIWorkItemWriteSReg(work_item, SI_SCC, nonzero.as_uint);
+	WriteSReg(INST.sdst, result.as_uint);
+	WriteSReg(SI_SCC, nonzero.as_uint);
 
 	// Print isa debug information.
 	if (debug_status(si_isa_debug_category))
@@ -770,9 +2388,9 @@ void si_isa_S_OR_B64_impl(SIWorkItem *work_item,
 	nonzero.as_uint = result_lo.as_uint || result_hi.as_uint;
 
 	// Write the results.
-	SIWorkItemWriteSReg(work_item, INST.sdst, result_lo.as_uint);
-	SIWorkItemWriteSReg(work_item, INST.sdst + 1, result_hi.as_uint);
-	SIWorkItemWriteSReg(work_item, SI_SCC, nonzero.as_uint);
+	WriteSReg(INST.sdst, result_lo.as_uint);
+	WriteSReg(INST.sdst + 1, result_hi.as_uint);
+	WriteSReg(SI_SCC, nonzero.as_uint);
 
 	// Print isa debug information.
 	if (debug_status(si_isa_debug_category))
@@ -813,9 +2431,9 @@ void si_isa_S_XOR_B64_impl(SIWorkItem *work_item,
 	nonzero.as_uint = result_lo.as_uint || result_hi.as_uint;
 
 	// Write the results.
-	SIWorkItemWriteSReg(work_item, INST.sdst, result_lo.as_uint);
-	SIWorkItemWriteSReg(work_item, INST.sdst + 1, result_hi.as_uint);
-	SIWorkItemWriteSReg(work_item, SI_SCC, nonzero.as_uint);
+	WriteSReg(INST.sdst, result_lo.as_uint);
+	WriteSReg(INST.sdst + 1, result_hi.as_uint);
+	WriteSReg(SI_SCC, nonzero.as_uint);
 
 	// Print isa debug information.
 	if (debug_status(si_isa_debug_category))
@@ -856,9 +2474,9 @@ void si_isa_S_ANDN2_B64_impl(SIWorkItem *work_item,
 	nonzero.as_uint = result_lo.as_uint || result_hi.as_uint;
 
 	// Write the results.
-	SIWorkItemWriteSReg(work_item, INST.sdst, result_lo.as_uint);
-	SIWorkItemWriteSReg(work_item, INST.sdst + 1, result_hi.as_uint);
-	SIWorkItemWriteSReg(work_item, SI_SCC, nonzero.as_uint);
+	WriteSReg(INST.sdst, result_lo.as_uint);
+	WriteSReg(INST.sdst + 1, result_hi.as_uint);
+	WriteSReg(SI_SCC, nonzero.as_uint);
 
 	// Print isa debug information.
 	if (debug_status(si_isa_debug_category))
@@ -899,9 +2517,9 @@ void si_isa_S_NAND_B64_impl(SIWorkItem *work_item,
 	nonzero.as_uint = result_lo.as_uint || result_hi.as_uint;
 
 	// Write the results.
-	SIWorkItemWriteSReg(work_item, INST.sdst, result_lo.as_uint);
-	SIWorkItemWriteSReg(work_item, INST.sdst + 1, result_hi.as_uint);
-	SIWorkItemWriteSReg(work_item, SI_SCC, nonzero.as_uint);
+	WriteSReg(INST.sdst, result_lo.as_uint);
+	WriteSReg(INST.sdst + 1, result_hi.as_uint);
+	WriteSReg(SI_SCC, nonzero.as_uint);
 
 	// Print isa debug information.
 	if (debug_status(si_isa_debug_category))
@@ -949,8 +2567,8 @@ void si_isa_S_LSHL_B32_impl(SIWorkItem *work_item,
 	nonzero.as_uint = result.as_uint != 0;
 
 	// Write the results.
-	SIWorkItemWriteSReg(work_item, INST.sdst, result.as_uint);
-	SIWorkItemWriteSReg(work_item, SI_SCC, nonzero.as_uint);
+	WriteSReg(INST.sdst, result.as_uint);
+	WriteSReg(SI_SCC, nonzero.as_uint);
 
 	// Print isa debug information.
 	if (debug_status(si_isa_debug_category))
@@ -997,8 +2615,8 @@ void si_isa_S_LSHR_B32_impl(SIWorkItem *work_item,
 	nonzero.as_uint = result.as_uint != 0;
 
 	// Write the results.
-	SIWorkItemWriteSReg(work_item, INST.sdst, result.as_uint);
-	SIWorkItemWriteSReg(work_item, SI_SCC, nonzero.as_uint);
+	WriteSReg(INST.sdst, result.as_uint);
+	WriteSReg(SI_SCC, nonzero.as_uint);
 
 	// Print isa debug information.
 	if (debug_status(si_isa_debug_category))
@@ -1045,8 +2663,8 @@ void si_isa_S_ASHR_I32_impl(SIWorkItem *work_item,
 	nonzero.as_uint = result.as_uint != 0;
 
 	// Write the results.
-	SIWorkItemWriteSReg(work_item, INST.sdst, result.as_uint);
-	SIWorkItemWriteSReg(work_item, SI_SCC, nonzero.as_uint);
+	WriteSReg(INST.sdst, result.as_uint);
+	WriteSReg(SI_SCC, nonzero.as_uint);
 
 	// Print isa debug information.
 	if (debug_status(si_isa_debug_category))
@@ -1081,7 +2699,7 @@ void si_isa_S_MUL_I32_impl(SIWorkItem *work_item,
 	result.as_int = s0.as_int * s1.as_int;
 
 	// Write the results.
-	SIWorkItemWriteSReg(work_item, INST.sdst, result.as_uint);
+	WriteSReg(INST.sdst, result.as_uint);
 
 	// Print isa debug information.
 	if (debug_status(si_isa_debug_category))
@@ -1130,8 +2748,8 @@ void si_isa_S_BFE_I32_impl(SIWorkItem *work_item,
 	nonzero.as_uint = result.as_uint != 0;
 	
 	// Write the results.
-	SIWorkItemWriteSReg(work_item, INST.sdst, result.as_uint);
-	SIWorkItemWriteSReg(work_item, SI_SCC, nonzero.as_uint);
+	WriteSReg(INST.sdst, result.as_uint);
+	WriteSReg(SI_SCC, nonzero.as_uint);
 
 
 	// Print isa debug information.
@@ -1164,7 +2782,7 @@ void si_isa_S_MOVK_I32_impl(SIWorkItem *work_item,
 	result.as_int = (int) simm16.as_short[0];
 
 	// Write the results.
-	SIWorkItemWriteSReg(work_item, INST.sdst, result.as_uint);
+	WriteSReg(INST.sdst, result.as_uint);
 
 	// Print isa debug information.
 	if (debug_status(si_isa_debug_category))
@@ -1210,8 +2828,8 @@ void si_isa_S_ADDK_I32_impl(SIWorkItem *work_item,
 		 (dst.as_int < 0 && sum.as_int > 0));
 
 	// Write the results.
-	SIWorkItemWriteSReg(work_item, INST.sdst, sum.as_uint);
-	SIWorkItemWriteSReg(work_item, SI_SCC, ovf.as_uint);
+	WriteSReg(INST.sdst, sum.as_uint);
+	WriteSReg(SI_SCC, ovf.as_uint);
 
 	// Print isa debug information.
 	if (debug_status(si_isa_debug_category))
@@ -1248,8 +2866,8 @@ void si_isa_S_MULK_I32_impl(SIWorkItem *work_item,
 		(long long) product.as_int;
 
 	// Write the results.
-	SIWorkItemWriteSReg(work_item, INST.sdst, product.as_uint);
-	SIWorkItemWriteSReg(work_item, SI_SCC, ovf.as_uint);
+	WriteSReg(INST.sdst, product.as_uint);
+	WriteSReg(SI_SCC, ovf.as_uint);
 
 	// Print isa debug information.
 	if (debug_status(si_isa_debug_category))
@@ -1276,8 +2894,8 @@ void si_isa_S_MOV_B64_impl(SIWorkItem *work_item,
 	s0_hi.as_uint = SIWorkItemReadSReg(work_item, INST.ssrc0 + 1);
 
 	// Write the results.
-	SIWorkItemWriteSReg(work_item, INST.sdst, s0_lo.as_uint);
-	SIWorkItemWriteSReg(work_item, INST.sdst + 1, s0_hi.as_uint);
+	WriteSReg(INST.sdst, s0_lo.as_uint);
+	WriteSReg(INST.sdst + 1, s0_hi.as_uint);
 
 	// Print isa debug information.
 	if (debug_status(si_isa_debug_category))
@@ -1306,7 +2924,7 @@ void si_isa_S_MOV_B32_impl(SIWorkItem *work_item,
 		s0.as_uint = SIWorkItemReadSReg(work_item, INST.ssrc0);
 
 	// Write the results.
-	SIWorkItemWriteSReg(work_item, INST.sdst, s0.as_uint);
+	WriteSReg(INST.sdst, s0.as_uint);
 
 	// Print isa debug information.
 	if (debug_status(si_isa_debug_category))
@@ -1332,8 +2950,8 @@ void si_isa_S_NOT_B32_impl(SIWorkItem *work_item,
 	nonzero.as_uint = ! !s0.as_uint;
 
 	// Write the results.
-	SIWorkItemWriteSReg(work_item, INST.sdst, s0.as_uint);
-	SIWorkItemWriteSReg(work_item, SI_SCC, nonzero.as_uint);
+	WriteSReg(INST.sdst, s0.as_uint);
+	WriteSReg(SI_SCC, nonzero.as_uint);
 
 	// Print isa debug information.
 	if (debug_status(si_isa_debug_category))
@@ -1367,19 +2985,19 @@ void si_isa_S_SWAPPC_B64_impl(SIWorkItem *work_item,
 	s0_hi.as_uint = SIWorkItemReadSReg(work_item, INST.ssrc0 + 1);
 
 	// Write the results
-	SIWorkItemWriteSReg(work_item, INST.sdst, work_item->wavefront->pc + 4);
-	SIWorkItemWriteSReg(work_item, INST.sdst + 1, 0);
+	WriteSReg(INST.sdst, wavefront->pc + 4);
+	WriteSReg(INST.sdst + 1, 0);
 
 	// Set the new PC
-	pc = work_item->wavefront->pc;
-	work_item->wavefront->pc = s0_lo.as_uint - 4;
+	pc = wavefront->pc;
+	wavefront->pc = s0_lo.as_uint - 4;
 
 	// Print isa debug information.
 	if (debug_status(si_isa_debug_category))
 	{
 		si_isa_debug("S%u<=(0x%x) ", INST.sdst, pc + 4);
 		si_isa_debug("S%u<=(0x%x) ", INST.sdst + 1, s0_hi.as_uint);
-		si_isa_debug("PC<=(0x%x)", work_item->wavefront->pc);
+		si_isa_debug("PC<=(0x%x)", wavefront->pc);
 	}
 }
 #undef INST
@@ -1414,11 +3032,11 @@ void si_isa_S_AND_SAVEEXEC_B64_impl(SIWorkItem *work_item,
 	nonzero.as_uint = exec_new_lo.as_uint || exec_new_hi.as_uint;
 
 	// Write the results.
-	SIWorkItemWriteSReg(work_item, INST.sdst, exec_lo.as_uint);
-	SIWorkItemWriteSReg(work_item, INST.sdst + 1, exec_hi.as_uint);
-	SIWorkItemWriteSReg(work_item, SI_EXEC, exec_new_lo.as_uint);
-	SIWorkItemWriteSReg(work_item, SI_EXEC + 1, exec_new_hi.as_uint);
-	SIWorkItemWriteSReg(work_item, SI_SCC, nonzero.as_uint);
+	WriteSReg(INST.sdst, exec_lo.as_uint);
+	WriteSReg(INST.sdst + 1, exec_hi.as_uint);
+	WriteSReg(SI_EXEC, exec_new_lo.as_uint);
+	WriteSReg(SI_EXEC + 1, exec_new_hi.as_uint);
+	WriteSReg(SI_SCC, nonzero.as_uint);
 
 	// Print isa debug information.
 	if (debug_status(si_isa_debug_category))
@@ -1460,13 +3078,13 @@ void si_isa_S_CMP_EQ_I32_impl(SIWorkItem *work_item,
 	result.as_uint = (s0.as_int == s1.as_int);
 
 	// Write the results.
-	SIWorkItemWriteSReg(work_item, SI_SCC, result.as_uint);
+	WriteSReg(SI_SCC, result.as_uint);
 
 	// Print isa debug information.
 	if (debug_status(si_isa_debug_category))
 	{
 		si_isa_debug("wf%d: scc<=(%u) (%u ==? %u)", 
-			work_item->wavefront->id, result.as_uint, s0.as_int,
+			wavefront->id, result.as_uint, s0.as_int,
 			s1.as_int);
 	}
 }
@@ -1496,7 +3114,7 @@ void si_isa_S_CMP_GT_I32_impl(SIWorkItem *work_item,
 	result.as_uint = (s0.as_int > s1.as_int);
 
 	// Write the results.
-	SIWorkItemWriteSReg(work_item, SI_SCC, result.as_uint);
+	WriteSReg(SI_SCC, result.as_uint);
 
 	// Print isa debug information.
 	if (debug_status(si_isa_debug_category))
@@ -1531,7 +3149,7 @@ void si_isa_S_CMP_GE_I32_impl(SIWorkItem *work_item,
 	result.as_uint = (s0.as_int >= s1.as_int);
 
 	// Write the results.
-	SIWorkItemWriteSReg(work_item, SI_SCC, result.as_uint);
+	WriteSReg(SI_SCC, result.as_uint);
 
 	// Print isa debug information.
 	if (debug_status(si_isa_debug_category))
@@ -1565,7 +3183,7 @@ void si_isa_S_CMP_LT_I32_impl(SIWorkItem *work_item,
 	result.as_uint = (s0.as_int < s1.as_int);
 
 	// Write the results.
-	SIWorkItemWriteSReg(work_item, SI_SCC, result.as_uint);
+	WriteSReg(SI_SCC, result.as_uint);
 
 	// Print isa debug information.
 	if (debug_status(si_isa_debug_category))
@@ -1599,7 +3217,7 @@ void si_isa_S_CMP_LE_I32_impl(SIWorkItem *work_item,
 	result.as_uint = (s0.as_int <= s1.as_int);
 
 	// Write the results.
-	SIWorkItemWriteSReg(work_item, SI_SCC, result.as_uint);
+	WriteSReg(SI_SCC, result.as_uint);
 
 	// Print isa debug information.
 	if (debug_status(si_isa_debug_category))
@@ -1633,7 +3251,7 @@ void si_isa_S_CMP_GT_U32_impl(SIWorkItem *work_item,
 	result.as_uint = (s0.as_uint > s1.as_uint);
 
 	// Write the results.
-	SIWorkItemWriteSReg(work_item, SI_SCC, result.as_uint);
+	WriteSReg(SI_SCC, result.as_uint);
 
 	// Print isa debug information.
 	if (debug_status(si_isa_debug_category))
@@ -1667,7 +3285,7 @@ void si_isa_S_CMP_GE_U32_impl(SIWorkItem *work_item,
 	result.as_uint = (s0.as_uint >= s1.as_uint);
 
 	// Write the results.
-	SIWorkItemWriteSReg(work_item, SI_SCC, result.as_uint);
+	WriteSReg(SI_SCC, result.as_uint);
 
 	// Print isa debug information.
 	if (debug_status(si_isa_debug_category))
@@ -1701,7 +3319,7 @@ void si_isa_S_CMP_LE_U32_impl(SIWorkItem *work_item,
 	result.as_uint = (s0.as_uint <= s1.as_uint);
 
 	// Write the results.
-	SIWorkItemWriteSReg(work_item, SI_SCC, result.as_uint);
+	WriteSReg(SI_SCC, result.as_uint);
 
 	// Print isa debug information.
 	if (debug_status(si_isa_debug_category))
@@ -1719,8 +3337,8 @@ void si_isa_S_CMP_LE_U32_impl(SIWorkItem *work_item,
 void si_isa_S_ENDPGM_impl(SIWorkItem *work_item,
 	struct SIInstWrap *inst)
 {
-	work_item->wavefront->finished = 1;
-	work_item->work_group->wavefronts_completed_emu++;
+	wavefront->finished = 1;
+	work_group->wavefronts_completed_emu++;
 }
 
 // PC = PC + signext(SIMM16 * 4) + 4
@@ -1736,7 +3354,7 @@ void si_isa_S_BRANCH_impl(SIWorkItem *work_item,
 	se_simm16 = simm16;
 
 	// Relative jump
-	work_item->wavefront->pc += se_simm16 * 4 + 4 - SIInstWrapGetSize(inst);
+	wavefront->pc += se_simm16 * 4 + 4 - inst->getSize();
 }
 #undef INST
 
@@ -1756,8 +3374,8 @@ void si_isa_S_CBRANCH_SCC0_impl(SIWorkItem *work_item,
 		se_simm16 = simm16;
 
 		// Determine the program counter to branch to.
-		work_item->wavefront->pc +=
-			se_simm16 * 4 + 4 - SIInstWrapGetSize(inst);
+		wavefront->pc +=
+			se_simm16 * 4 + 4 - inst->getSize();
 	}
 }
 #undef INST
@@ -1785,14 +3403,14 @@ void si_isa_S_CBRANCH_SCC1_impl(SIWorkItem *work_item,
 		se_simm16 = simm16;
 
 		// Determine the program counter to branch to.
-		work_item->wavefront->pc +=
-			se_simm16 * 4 + 4 - SIInstWrapGetSize(inst);
+		wavefront->pc +=
+			se_simm16 * 4 + 4 - inst->getSize();
 
 		// Print isa debug information.
 		if (debug_status(si_isa_debug_category))
 		{
 			si_isa_debug("wf%d: SCC=%u (taken)", 
-				work_item->wavefront->id, scc.as_uint);
+				wavefront->id, scc.as_uint);
 		}
 	}
 	else
@@ -1801,7 +3419,7 @@ void si_isa_S_CBRANCH_SCC1_impl(SIWorkItem *work_item,
 		if (debug_status(si_isa_debug_category))
 		{
 			si_isa_debug("wf%d: SCC=%u (not taken)", 
-				work_item->wavefront->id, scc.as_uint);
+				wavefront->id, scc.as_uint);
 		}
 	}
 }
@@ -1823,8 +3441,8 @@ void si_isa_S_CBRANCH_VCCZ_impl(SIWorkItem *work_item,
 		se_simm16 = simm16;
 
 		// Determine the program counter to branch to.
-		work_item->wavefront->pc +=
-			se_simm16 * 4 + 4 - SIInstWrapGetSize(inst);
+		wavefront->pc +=
+			se_simm16 * 4 + 4 - inst->getSize();
 	}
 }
 #undef INST
@@ -1845,8 +3463,8 @@ void si_isa_S_CBRANCH_VCCNZ_impl(SIWorkItem *work_item,
 		se_simm16 = simm16;
 
 		// Determine the program counter to branch to.
-		work_item->wavefront->pc +=
-			se_simm16 * 4 + 4 - SIInstWrapGetSize(inst);
+		wavefront->pc +=
+			se_simm16 * 4 + 4 - inst->getSize();
 	}
 }
 #undef INST
@@ -1874,14 +3492,14 @@ void si_isa_S_CBRANCH_EXECZ_impl(SIWorkItem *work_item,
 		se_simm16 = simm16;
 
 		// Determine the program counter to branch to.
-		work_item->wavefront->pc +=
-			se_simm16 * 4 + 4 - SIInstWrapGetSize(inst);
+		wavefront->pc +=
+			se_simm16 * 4 + 4 - inst->getSize();
 
 		// Print isa debug information.
 		if (debug_status(si_isa_debug_category))
 		{
 			si_isa_debug("wf%d: EXEC=0x%x, EXECZ=%u (taken)", 
-				work_item->wavefront->id, exec.as_uint, 
+				wavefront->id, exec.as_uint, 
 				execz.as_uint);
 		}
 	}
@@ -1891,7 +3509,7 @@ void si_isa_S_CBRANCH_EXECZ_impl(SIWorkItem *work_item,
 		if (debug_status(si_isa_debug_category))
 		{
 			si_isa_debug("wf%d: EXEC=0x%x, EXECZ=%u " 
-				"(not taken)", work_item->wavefront->id, 
+				"(not taken)", wavefront->id, 
 				exec.as_uint, execz.as_uint);
 		}
 	}
@@ -1915,8 +3533,8 @@ void si_isa_S_CBRANCH_EXECNZ_impl(SIWorkItem *work_item,
 		se_simm16 = simm16;
 
 		// Determine the program counter to branch to.
-		work_item->wavefront->pc +=
-			se_simm16 * 4 + 4 - SIInstWrapGetSize(inst);
+		wavefront->pc +=
+			se_simm16 * 4 + 4 - inst->getSize();
 	}
 }
 #undef INST
@@ -1926,8 +3544,8 @@ void si_isa_S_CBRANCH_EXECNZ_impl(SIWorkItem *work_item,
 void si_isa_S_BARRIER_impl(SIWorkItem *work_item,
 	struct SIInstWrap *inst)
 {
-	SIWavefront *wavefront = work_item->wavefront;
-	SIWorkGroup *work_group = work_item->work_group;
+	t *wavefront = wavefront;
+	SIWorkGroup *work_group = work_group;
 
 	int wavefront_id;
 
@@ -1960,7 +3578,7 @@ void si_isa_S_WAITCNT_impl(SIWorkItem *work_item,
 	struct SIInstWrap *inst)
 {
 	// Nothing to do in emulation
-	work_item->wavefront->mem_wait = 1;
+	wavefront->mem_wait = 1;
 }
 
 /*
@@ -2013,7 +3631,7 @@ void si_isa_V_READFIRSTLANE_B32_impl(SIWorkItem *work_item,
 	value.as_uint = SIWorkItemReadReg(work_item, INST.src0);
 
 	// Write the results.
-	SIWorkItemWriteSReg(work_item, INST.vdst, value.as_uint);
+	WriteSReg(INST.vdst, value.as_uint);
 
 	// Print isa debug information.
 	if (debug_status(si_isa_debug_category))
@@ -6221,11 +7839,11 @@ void si_isa_V_INTERP_P1_F32_impl(SIWorkItem *work_item,
 
 	// 12 successive dwords contain P0 P10 P20
 	/* 4dwords P0: X Y Z W, INST.attrchan decides which 1dword to be loaded*/
-	mem_read(work_item->work_group->lds_module, 
+	mem_read(work_group->lds_module, 
 		m0_vintrp.for_vintrp.lds_param_offset + 0 + 4 * INST.attrchan ,
 		 4, &p0.as_uint);
 	/* 4dwords P10: X Y Z W, INST.attrchan decides which 1dword to be loaded*/
-	mem_read(work_item->work_group->lds_module, 
+	mem_read(work_group->lds_module, 
 		m0_vintrp.for_vintrp.lds_param_offset + 16 + 4 * INST.attrchan,
 		 4, &p10.as_uint);
 
@@ -6267,7 +7885,7 @@ void si_isa_V_INTERP_P2_F32_impl(SIWorkItem *work_item,
 
 	// 12 successive dwords contain P0 P10 P20
 	/* 4dwords P20: X Y Z W, INST.attrchan decides which 1dword to be loaded*/
-	mem_read(work_item->work_group->lds_module, 
+	mem_read(work_group->lds_module, 
 		m0_vintrp.for_vintrp.lds_param_offset + 32 + 4 * INST.attrchan,
 		 4, &p20.as_uint);
 
@@ -6329,12 +7947,12 @@ void si_isa_DS_WRITE2_B32_impl(SIWorkItem *work_item,
 	data0.as_uint = SIWorkItemReadVReg(work_item, INST.data0);
 	data1.as_uint = SIWorkItemReadVReg(work_item, INST.data1);
 
-	if (addr0.as_uint > MIN(work_item->work_group->ndrange->local_mem_top,
+	if (addr0.as_uint > MIN(work_group->ndrange->local_mem_top,
 		SIWorkItemReadSReg(work_item, SI_M0)))
 	{
 		fatal("%s: invalid address\n", __FUNCTION__);
 	}
-	if (addr1.as_uint > MIN(work_item->work_group->ndrange->local_mem_top,
+	if (addr1.as_uint > MIN(work_group->ndrange->local_mem_top,
 		SIWorkItemReadSReg(work_item, SI_M0)))
 	{
 		fatal("%s: invalid address\n", __FUNCTION__);
@@ -6347,9 +7965,9 @@ void si_isa_DS_WRITE2_B32_impl(SIWorkItem *work_item,
 	}
 	else
 	{
-		mem_write(work_item->work_group->lds_module, addr0.as_uint, 4,
+		mem_write(work_group->lds_module, addr0.as_uint, 4,
 			&data0.as_uint);
-		mem_write(work_item->work_group->lds_module, addr1.as_uint, 4,
+		mem_write(work_group->lds_module, addr1.as_uint, 4,
 			&data1.as_uint);
 	}
 
@@ -6406,7 +8024,7 @@ void si_isa_DS_WRITE_B32_impl(SIWorkItem *work_item,
 	addr.as_uint = SIWorkItemReadVReg(work_item, INST.addr);
 	data0.as_uint = SIWorkItemReadVReg(work_item, INST.data0);
 
-	if (addr.as_uint > MIN(work_item->work_group->ndrange->local_mem_top, 
+	if (addr.as_uint > MIN(work_group->ndrange->local_mem_top, 
 		SIWorkItemReadSReg(work_item, SI_M0)))
 	{
 		fatal("%s: invalid address\n", __FUNCTION__);
@@ -6422,7 +8040,7 @@ void si_isa_DS_WRITE_B32_impl(SIWorkItem *work_item,
 	}
 	else
 	{
-		mem_write(work_item->work_group->lds_module, addr.as_uint, 4, 
+		mem_write(work_group->lds_module, addr.as_uint, 4, 
 			&data0.as_uint);
 	}
 
@@ -6479,7 +8097,7 @@ void si_isa_DS_WRITE_B8_impl(SIWorkItem *work_item,
 	}
 	else
 	{
-		mem_write(work_item->work_group->lds_module, addr.as_uint, 1, 
+		mem_write(work_group->lds_module, addr.as_uint, 1, 
 			&data0.as_ubyte[0]);
 	}
 
@@ -6536,7 +8154,7 @@ void si_isa_DS_WRITE_B16_impl(SIWorkItem *work_item,
 	}
 	else
 	{
-		mem_write(work_item->work_group->lds_module, addr.as_uint, 2, 
+		mem_write(work_group->lds_module, addr.as_uint, 2, 
 			&data0.as_ushort[0]);
 	}
 
@@ -6593,7 +8211,7 @@ void si_isa_DS_READ_B32_impl(SIWorkItem *work_item,
 	}
 	else
 	{
-		mem_read(work_item->work_group->lds_module, addr.as_uint, 4,
+		mem_read(work_group->lds_module, addr.as_uint, 4,
 			&data.as_uint);
 	}
 
@@ -6647,9 +8265,9 @@ void si_isa_DS_READ2_B32_impl(SIWorkItem *work_item,
 	}
 	else
 	{
-		mem_read(work_item->work_group->lds_module, 
+		mem_read(work_group->lds_module, 
 			addr.as_uint + INST.offset0*4, 4, &data0.as_uint);
-		mem_read(work_item->work_group->lds_module, 
+		mem_read(work_group->lds_module, 
 			addr.as_uint + INST.offset1*4, 4, &data1.as_uint);
 	}
 
@@ -6713,7 +8331,7 @@ void si_isa_DS_READ_I8_impl(SIWorkItem *work_item,
 	}
 	else
 	{
-		mem_read(work_item->work_group->lds_module, addr.as_uint, 1,
+		mem_read(work_group->lds_module, addr.as_uint, 1,
 			&data.as_byte[0]);
 	}
 
@@ -6770,7 +8388,7 @@ void si_isa_DS_READ_U8_impl(SIWorkItem *work_item,
 	}
 	else
 	{
-		mem_read(work_item->work_group->lds_module, addr.as_uint, 1,
+		mem_read(work_group->lds_module, addr.as_uint, 1,
 			&data.as_ubyte[0]);
 	}
 
@@ -6827,7 +8445,7 @@ void si_isa_DS_READ_I16_impl(SIWorkItem *work_item,
 	}
 	else
 	{
-		mem_read(work_item->work_group->lds_module, addr.as_uint, 2,
+		mem_read(work_group->lds_module, addr.as_uint, 2,
 			&data.as_short[0]);
 	}
 
@@ -6885,7 +8503,7 @@ void si_isa_DS_READ_U16_impl(SIWorkItem *work_item,
 	}
 	else
 	{
-		mem_read(work_item->work_group->lds_module, addr.as_uint, 2,
+		mem_read(work_group->lds_module, addr.as_uint, 2,
 			&data.as_ushort[0]);
 	}
 
@@ -6925,7 +8543,7 @@ void si_isa_DS_READ_U16_impl(SIWorkItem *work_item,
 void si_isa_BUFFER_LOAD_SBYTE_impl(SIWorkItem *work_item,
 	struct SIInstWrap *inst)
 {
-	SIWorkGroup *work_group = work_item->work_group;
+	SIWorkGroup *work_group = work_group;
 	SINDRange *ndrange = work_group->ndrange;
 	SIEmu *emu = ndrange->emu;
 
@@ -7006,7 +8624,7 @@ void si_isa_BUFFER_LOAD_SBYTE_impl(SIWorkItem *work_item,
 void si_isa_BUFFER_LOAD_DWORD_impl(SIWorkItem *work_item,
 	struct SIInstWrap *inst)
 {
-	SIWorkGroup *work_group = work_item->work_group;
+	SIWorkGroup *work_group = work_group;
 	SINDRange *ndrange = work_group->ndrange;
 	SIEmu *emu = ndrange->emu;
 
@@ -7087,7 +8705,7 @@ void si_isa_BUFFER_LOAD_DWORD_impl(SIWorkItem *work_item,
 void si_isa_BUFFER_STORE_BYTE_impl(SIWorkItem *work_item,
 	struct SIInstWrap *inst)
 {
-	SIWorkGroup *work_group = work_item->work_group;
+	SIWorkGroup *work_group = work_group;
 	SINDRange *ndrange = work_group->ndrange;
 	SIEmu *emu = ndrange->emu;
 
@@ -7111,7 +8729,7 @@ void si_isa_BUFFER_STORE_BYTE_impl(SIWorkItem *work_item,
 
 	if (INST.glc)
 	{
-		work_item->wavefront->vector_mem_glc = 1; // FIXME redundant
+		wavefront->vector_mem_glc = 1; // FIXME redundant
 	}
 
 	// srsrc is in units of 4 registers
@@ -7174,7 +8792,7 @@ void si_isa_BUFFER_STORE_BYTE_impl(SIWorkItem *work_item,
 void si_isa_BUFFER_STORE_DWORD_impl(SIWorkItem *work_item,
 	struct SIInstWrap *inst)
 {
-	SIWorkGroup *work_group = work_item->work_group;
+	SIWorkGroup *work_group = work_group;
 	SINDRange *ndrange = work_group->ndrange;
 	SIEmu *emu = ndrange->emu;
 
@@ -7198,7 +8816,7 @@ void si_isa_BUFFER_STORE_DWORD_impl(SIWorkItem *work_item,
 
 	if (INST.glc)
 	{
-		work_item->wavefront->vector_mem_glc = 1; // FIXME redundant
+		wavefront->vector_mem_glc = 1; // FIXME redundant
 	}
 
 	// srsrc is in units of 4 registers
@@ -7256,7 +8874,7 @@ void si_isa_BUFFER_STORE_DWORD_impl(SIWorkItem *work_item,
 void si_isa_BUFFER_ATOMIC_ADD_impl(SIWorkItem *work_item,
 	struct SIInstWrap *inst)
 {
-	SIWorkGroup *work_group = work_item->work_group;
+	SIWorkGroup *work_group = work_group;
 	SINDRange *ndrange = work_group->ndrange;
 	SIEmu *emu = ndrange->emu;
 
@@ -7282,14 +8900,14 @@ void si_isa_BUFFER_ATOMIC_ADD_impl(SIWorkItem *work_item,
 
 	if (INST.glc)
 	{
-		work_item->wavefront->vector_mem_glc = 1;
+		wavefront->vector_mem_glc = 1;
 	}
 	else
 	{
 		/* NOTE Regardless of whether the glc bit is set by the AMD 
 		 * compiler, for the NMOESI protocol correctness , the glc bit
 		 * must be set. */
-		work_item->wavefront->vector_mem_glc = 1;
+		wavefront->vector_mem_glc = 1;
 	}
 
 	// srsrc is in units of 4 registers
@@ -7363,7 +8981,7 @@ void si_isa_BUFFER_ATOMIC_ADD_impl(SIWorkItem *work_item,
 void si_isa_TBUFFER_LOAD_FORMAT_X_impl(SIWorkItem *work_item,
 	struct SIInstWrap *inst)
 {
-	SIWorkGroup *work_group = work_item->work_group;
+	SIWorkGroup *work_group = work_group;
 	SINDRange *ndrange = work_group->ndrange;
 	SIEmu *emu = ndrange->emu;
 
@@ -7457,7 +9075,7 @@ void si_isa_TBUFFER_LOAD_FORMAT_X_impl(SIWorkItem *work_item,
 void si_isa_TBUFFER_LOAD_FORMAT_XY_impl(SIWorkItem *work_item,
 	struct SIInstWrap *inst)
 {
-	SIWorkGroup *work_group = work_item->work_group;
+	SIWorkGroup *work_group = work_group;
 	SINDRange *ndrange = work_group->ndrange;
 	SIEmu *emu = ndrange->emu;
 
@@ -7556,7 +9174,7 @@ void si_isa_TBUFFER_LOAD_FORMAT_XYZ_impl(SIWorkItem *work_item,
 void si_isa_TBUFFER_LOAD_FORMAT_XYZW_impl(SIWorkItem *work_item,
 	struct SIInstWrap *inst)
 {
-	SIWorkGroup *work_group = work_item->work_group;
+	SIWorkGroup *work_group = work_group;
 	SINDRange *ndrange = work_group->ndrange;
 	SIEmu *emu = ndrange->emu;
 
@@ -7650,7 +9268,7 @@ void si_isa_TBUFFER_LOAD_FORMAT_XYZW_impl(SIWorkItem *work_item,
 void si_isa_TBUFFER_STORE_FORMAT_X_impl(SIWorkItem *work_item,
 	struct SIInstWrap *inst)
 {
-	SIWorkGroup *work_group = work_item->work_group;
+	SIWorkGroup *work_group = work_group;
 	SINDRange *ndrange = work_group->ndrange;
 	SIEmu *emu = ndrange->emu;
 
@@ -7735,7 +9353,7 @@ void si_isa_TBUFFER_STORE_FORMAT_X_impl(SIWorkItem *work_item,
 void si_isa_TBUFFER_STORE_FORMAT_XY_impl(SIWorkItem *work_item,
 	struct SIInstWrap *inst)
 {
-	SIWorkGroup *work_group = work_item->work_group;
+	SIWorkGroup *work_group = work_group;
 	SINDRange *ndrange = work_group->ndrange;
 	SIEmu *emu = ndrange->emu;
 
@@ -7823,7 +9441,7 @@ void si_isa_TBUFFER_STORE_FORMAT_XY_impl(SIWorkItem *work_item,
 void si_isa_TBUFFER_STORE_FORMAT_XYZW_impl(SIWorkItem *work_item,
 	struct SIInstWrap *inst)
 {
-	SIWorkGroup *work_group = work_item->work_group;
+	SIWorkGroup *work_group = work_group;
 	SINDRange *ndrange = work_group->ndrange;
 	SIEmu *emu = ndrange->emu;
 
@@ -7934,7 +9552,7 @@ void si_isa_IMAGE_SAMPLE_impl(SIWorkItem *work_item, struct SIInstWrap *inst)
 #define INST INST_EXP
 void si_isa_EXPORT_impl(SIWorkItem *work_item, struct SIInstWrap *inst)
 {
-	SIWorkGroup *work_group = work_item->work_group;
+	SIWorkGroup *work_group = work_group;
 	SINDRange *ndrange = work_group->ndrange;
 	SIEmu *emu = ndrange->emu;
 	SISX *sx = emu->sx;

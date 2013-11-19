@@ -232,13 +232,187 @@ void si_isa_S_BUFFER_LOAD_DWORDX4_impl(SIWorkItem *work_item,
 #undef INST
 
 #define INST SI_INST_SMRD
+void si_isa_S_BUFFER_LOAD_DWORDX8_impl(SIWorkItem *work_item,
+	struct SIInstWrap *inst)
+{
+	SIInstReg value[8];
+
+	unsigned int m_base;
+	unsigned int m_offset;
+	unsigned int addr;
+
+	struct si_mem_ptr_t mem_ptr;
+
+	SIWavefront *wavefront;
+	SIWorkGroup *work_group = work_item->work_group;
+	SINDRange *ndrange = work_group->ndrange;
+	SIEmu *emu = ndrange->emu;
+
+	int sbase;
+	int i;
+
+	wavefront = work_item->wavefront;
+
+	/* Record access */
+	wavefront->scalar_mem_read = 1;
+
+	sbase = INST.sbase << 1;
+
+	SIWorkItemReadMemPtr(work_item, &mem_ptr, sbase);
+
+	/* assert(uav_table_ptr.addr < UINT32_MAX) */
+
+	m_base = mem_ptr.addr;
+	m_offset =
+		(INST.imm) ? (INST.offset * 4) : SIWorkItemReadSReg(work_item,
+		INST.offset);
+	addr = m_base + m_offset;
+
+	assert(!(addr & 0x3));
+
+	for (i = 0; i < 8; i++)
+	{
+		mem_read(emu->global_mem, addr + i * 4, 4,
+			&value[i]);
+		SIWorkItemWriteSReg(work_item, INST.sdst + i, value[i].as_uint);
+	}
+
+	/* FIXME Set value based on type */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("wfd: ", work_item->wavefront->id);
+		for (i = 0; i < 8; i++)
+		{
+			si_isa_debug("S%u<=(%u)(%u,%gf) ", INST.sdst + i, 
+				addr + i*4, value[i].as_uint, 
+				value[i].as_float);
+		}
+	}
+
+	/* Record last memory access for the detailed simulator. */
+	work_item->global_mem_access_addr = addr;
+	work_item->global_mem_access_size = 4 * 8;
+}
+#undef INST
+
+#define INST SI_INST_SMRD
+void si_isa_S_BUFFER_LOAD_DWORDX16_impl(SIWorkItem *work_item,
+	struct SIInstWrap *inst)
+{
+	SIInstReg value[16];
+
+	unsigned int m_base;
+	unsigned int m_offset;
+	unsigned int addr;
+
+	struct si_mem_ptr_t mem_ptr;
+
+	SIWavefront *wavefront;
+	SIWorkGroup *work_group = work_item->work_group;
+	SINDRange *ndrange = work_group->ndrange;
+	SIEmu *emu = ndrange->emu;
+
+	int sbase;
+	int i;
+
+	wavefront = work_item->wavefront;
+
+	/* Record access */
+	wavefront->scalar_mem_read = 1;
+
+	sbase = INST.sbase << 1;
+
+	SIWorkItemReadMemPtr(work_item, &mem_ptr, sbase);
+
+	/* assert(uav_table_ptr.addr < UINT32_MAX) */
+
+	m_base = mem_ptr.addr;
+	m_offset =
+		(INST.imm) ? (INST.offset * 4) : SIWorkItemReadSReg(work_item,
+		INST.offset);
+	addr = m_base + m_offset;
+
+	assert(!(addr & 0x3));
+
+	for (i = 0; i < 16; i++)
+	{
+		mem_read(emu->global_mem, addr + i * 4, 4,
+			&value[i]);
+		SIWorkItemWriteSReg(work_item, INST.sdst + i, value[i].as_uint);
+	}
+
+	/* FIXME Set value based on type */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("wf%d: ", work_item->wavefront->id);
+		for (i = 0; i < 16; i++)
+		{
+			si_isa_debug("S%u<=(%u)(%u,%gf) ", INST.sdst + i, 
+				addr + i*4, value[i].as_uint, 
+				value[i].as_float);
+		}
+	}
+
+	/* Record last memory access for the detailed simulator. */
+	work_item->global_mem_access_addr = addr;
+	work_item->global_mem_access_size = 4 * 16;
+}
+#undef INST
+
+#define INST SI_INST_SMRD
 void si_isa_S_LOAD_DWORDX2_impl(SIWorkItem *work_item,
 	struct SIInstWrap *inst)
 {
+	SIWorkGroup *work_group = work_item->work_group;
+	SINDRange *ndrange = work_group->ndrange;
+	SIEmu *emu = ndrange->emu;
+
+	SIInstReg value[2];
+	unsigned int m_base;
+	unsigned int m_offset;
+	unsigned int m_addr;
+	struct si_mem_ptr_t mem_ptr;
+	int sbase;
+	int i;
+
 	/* Record access */
 	work_item->wavefront->scalar_mem_read = 1;
 
-	NOT_IMPL();
+	assert(INST.imm);
+
+	sbase = INST.sbase << 1;
+
+	SIWorkItemReadMemPtr(work_item, &mem_ptr, sbase);
+
+	/* assert(uav_table_ptr.addr < UINT32_MAX) */
+
+	m_base = mem_ptr.addr;
+	m_offset = INST.offset * 4;
+	m_addr = m_base + m_offset;
+
+	assert(!(m_addr & 0x3));
+
+	for (i = 0; i < 2; i++)
+	{
+		mem_read(emu->global_mem, m_addr + i * 4, 4, &value[i]);
+		SIWorkItemWriteSReg(work_item, INST.sdst + i, value[i].as_uint);
+	}
+
+	/* FIXME Set value based on type */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("S[%u,%u] <= (addr %u): ", INST.sdst, INST.sdst+3, 
+			m_addr);
+		for (i = 0; i < 2; i++)
+		{
+			si_isa_debug("S%u<=(%u,%gf) ", INST.sdst + i,
+				value[i].as_uint, value[i].as_float);
+		}
+	}
+
+	/* Record last memory access for the detailed simulator. */
+	work_item->global_mem_access_addr = m_addr;
+	work_item->global_mem_access_size = 4 * 2;
 }
 
 #define INST SI_INST_SMRD
@@ -298,14 +472,117 @@ void si_isa_S_LOAD_DWORDX4_impl(SIWorkItem *work_item,
 }
 #undef INST
 
-#define iNST SI_INST_SMRD
+#define INST SI_INST_SMRD
 void si_isa_S_LOAD_DWORDX8_impl(SIWorkItem *work_item,
 	struct SIInstWrap *inst)
 {
+	SIWorkGroup *work_group = work_item->work_group;
+	SINDRange *ndrange = work_group->ndrange;
+	SIEmu *emu = ndrange->emu;
+
+	SIInstReg value[8];
+	unsigned int m_base;
+	unsigned int m_offset;
+	unsigned int m_addr;
+	struct si_mem_ptr_t mem_ptr;
+	int sbase;
+	int i;
+
 	/* Record access */
 	work_item->wavefront->scalar_mem_read = 1;
 
-	NOT_IMPL();
+	assert(INST.imm);
+
+	sbase = INST.sbase << 1;
+
+	SIWorkItemReadMemPtr(work_item, &mem_ptr, sbase);
+
+	/* assert(uav_table_ptr.addr < UINT32_MAX) */
+
+	m_base = mem_ptr.addr;
+	m_offset = INST.offset * 4;
+	m_addr = m_base + m_offset;
+
+	assert(!(m_addr & 0x3));
+
+	for (i = 0; i < 8; i++)
+	{
+		mem_read(emu->global_mem, m_addr + i * 4, 4, &value[i]);
+		SIWorkItemWriteSReg(work_item, INST.sdst + i, value[i].as_uint);
+	}
+
+	/* FIXME Set value based on type */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("S[%u,%u] <= (addr %u): ", INST.sdst, INST.sdst+3, 
+			m_addr);
+		for (i = 0; i < 8; i++)
+		{
+			si_isa_debug("S%u<=(%u,%gf) ", INST.sdst + i,
+				value[i].as_uint, value[i].as_float);
+		}
+	}
+
+	/* Record last memory access for the detailed simulator. */
+	work_item->global_mem_access_addr = m_addr;
+	work_item->global_mem_access_size = 4 * 8;
+}
+#undef INST
+
+#define INST SI_INST_SMRD
+void si_isa_S_LOAD_DWORDX16_impl(SIWorkItem *work_item,
+	struct SIInstWrap *inst)
+{
+	SIWorkGroup *work_group = work_item->work_group;
+	SINDRange *ndrange = work_group->ndrange;
+	SIEmu *emu = ndrange->emu;
+
+	SIInstReg value[16];
+	unsigned int m_base;
+	unsigned int m_offset;
+	unsigned int m_addr;
+	struct si_mem_ptr_t mem_ptr;
+	int sbase;
+	int i;
+
+	/* Record access */
+	work_item->wavefront->scalar_mem_read = 1;
+
+	assert(INST.imm);
+
+	sbase = INST.sbase << 1;
+
+	SIWorkItemReadMemPtr(work_item, &mem_ptr, sbase);
+
+	/* assert(uav_table_ptr.addr < UINT32_MAX) */
+
+	m_base = mem_ptr.addr;
+	m_offset = INST.offset * 4;
+	m_addr = m_base + m_offset;
+
+	assert(!(m_addr & 0x3));
+
+	for (i = 0; i < 16; i++)
+	{
+		mem_read(emu->global_mem, m_addr + i * 4, 4, &value[i]);
+		SIWorkItemWriteSReg(work_item, INST.sdst + i, value[i].as_uint);
+	}
+
+	/* FIXME Set value based on type */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("S[%u,%u] <= (addr %u): ", INST.sdst, INST.sdst+3, 
+			m_addr);
+		for (i = 0; i < 16; i++)
+		{
+			si_isa_debug("S%u<=(%u,%gf) ", INST.sdst + i,
+				value[i].as_uint, value[i].as_float);
+		}
+	}
+
+	/* Record last memory access for the detailed simulator. */
+	work_item->global_mem_access_addr = m_addr;
+	work_item->global_mem_access_size = 4 * 16;
 }
 #undef INST
 
