@@ -30,9 +30,10 @@
 
 
 using namespace misc;
-using namespace SI;
-using namespace std;
 
+
+namespace SI
+{
 
 Asm::Asm()
 {
@@ -176,16 +177,16 @@ Asm::Asm()
 		}
 		else 
 		{
-			cerr << "warning: '" << info->name
+			std::cerr << "warning: '" << info->name
 					<< "' not indexed\n";
 		}
 	}
 }
 
 
-void Asm::DisassembleBuffer(ostream& os, const char *buffer, int size)
+void Asm::DisassembleBuffer(std::ostream& os, const char *buffer, int size)
 {
-	stringstream ss;
+	std::stringstream ss;
 
 	const char *original_buffer = buffer;
 
@@ -207,8 +208,8 @@ void Asm::DisassembleBuffer(ostream& os, const char *buffer, int size)
 	{
 		/* Decode instruction */
 		inst.Decode(buffer, rel_addr);
-		format = inst.GetFormat();
-		bytes = inst.GetBytes();
+		format = inst.getFormat();
+		bytes = inst.getBytes();
 
 		/* If ENDPGM, break. */
 		if (format == InstFormatSOPP && bytes->sopp.op == 1)
@@ -249,8 +250,8 @@ void Asm::DisassembleBuffer(ostream& os, const char *buffer, int size)
 
 		}
 
-		buffer += inst.GetSize();
-		rel_addr += inst.GetSize();
+		buffer += inst.getSize();
+		rel_addr += inst.getSize();
 	}
 
 
@@ -263,16 +264,14 @@ void Asm::DisassembleBuffer(ostream& os, const char *buffer, int size)
 	{
 		/* Parse the instruction */
 		inst.Decode(buffer, rel_addr);
-		format = inst.GetFormat();
-		bytes = inst.GetBytes();
+		format = inst.getFormat();
+		bytes = inst.getBytes();
 		inst_count++;
 
 		/* Dump a label if necessary. */
 		if (*next_label == rel_addr && next_label != end_label)
 		{
-			os << "label_" << setw(4) << setfill('0') << uppercase
-					<< hex << rel_addr / 4 << ":\n"
-					<< setfill(' ') << nouppercase << dec;
+			os << StringFmt("label_%0X:\n", rel_addr);
 			next_label++;
 		}
 
@@ -283,20 +282,13 @@ void Asm::DisassembleBuffer(ostream& os, const char *buffer, int size)
 
 		/* Spaces */
 		if (ss.str().length() < 59)
-			ss << string(59 - ss.str().length(), ' ');
+			ss << std::string(59 - ss.str().length(), ' ');
 
 		/* Hex dump */
 		os << ss.str();
-		os << " // " << setw(8) << setfill('0') << hex
-				<< uppercase << rel_addr << ": "
-				<< setfill(' ') << nouppercase << dec;
-		os << setw(8) << setfill('0') << hex
-				<< uppercase << bytes->word[0]
-				<< setfill(' ') << nouppercase << dec;
-		if (inst.GetSize() == 8)
-			os << ' ' << setw(8) << setfill('0') << hex
-					<< uppercase << bytes->word[1]
-					<< setfill(' ') << nouppercase << dec;
+		os << StringFmt(" // %08X: %08X", rel_addr, bytes->word[0]);
+		if (inst.getSize() == 8)
+			os << StringFmt(" %08X", bytes->word[1]);
 		os << '\n';
 
 		/* Break at end of program. */
@@ -304,8 +296,8 @@ void Asm::DisassembleBuffer(ostream& os, const char *buffer, int size)
 			break;
 
 		/* Increment instruction pointer */
-		buffer += inst.GetSize();
-		rel_addr += inst.GetSize();
+		buffer += inst.getSize();
+		rel_addr += inst.getSize();
 	}
 }
 
@@ -333,7 +325,7 @@ void Asm::DisassembleBinary(std::string path)
 			/* Get kernel name */
 			std::string kernel_name = symbol_name.substr(9,
 					symbol_name.length() - 16);
-			cout << "**\n** Disassembly for '__kernel " <<
+			std::cout << "**\n** Disassembly for '__kernel " <<
 					kernel_name << "'\n**\n\n";
 
 			/* Create internal ELF */
@@ -344,11 +336,14 @@ void Asm::DisassembleBinary(std::string path)
 			ELFReader::Section *section = si_dict_entry->text_section;
 
 			/* Disassemble */
-			DisassembleBuffer(cout, section->getBuffer(), section->getSize());
-			cout << "\n\n\n";
+			DisassembleBuffer(std::cout, section->getBuffer(), section->getSize());
+			std::cout << "\n\n\n";
 		}
 	}
 }
+
+}  // namespace SI
+
 
 
 //////////////
@@ -357,6 +352,8 @@ extern "C" {
 #include "opengl-bin-file.h"
 }
 ///////////////
+
+using namespace SI;
 
 void Asm::DisassembleOpenGLBinary(std::string path, int shader_index)
 {
@@ -378,7 +375,7 @@ void Asm::DisassembleOpenGLBinary(std::string path, int shader_index)
 			path.c_str());
 
 	/* Basic info of the shader binary */
-	cout << "This program binary contains "
+	std::cout << "This program binary contains "
 			<< list_count(program_bin->shader_bins)
 			<< " shaders\n\n";
 	if (shader_index > list_count(program_bin->shader_bins) ||
@@ -390,16 +387,15 @@ void Asm::DisassembleOpenGLBinary(std::string path, int shader_index)
 	shader = (struct opengl_si_shader_binary_t *)
 			list_get(program_bin->shader_bins,
 			shader_index - 1);
-	cout << "**\n** Disassembly for shader " << shader_index << "\n**\n\n";
-	DisassembleBuffer(cout, (char *)shader->isa->ptr,
+	std::cout << "**\n** Disassembly for shader " << shader_index << "\n**\n\n";
+	DisassembleBuffer(std::cout, (char *)shader->isa->ptr,
 			shader->isa->size);
 	opengl_si_shader_binary_debug_meta(shader);
-	cout << "\n\n\n";
+	std::cout << "\n\n\n";
 
 	/* Free */
 	opengl_si_program_binary_free(program_bin);
 }
-
 
 
 

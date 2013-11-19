@@ -20,7 +20,11 @@
 #ifndef ARCH_SOUTHERN_ISLANDS_EMU_WORK_ITEM_H
 #define ARCH_SOUTHERN_ISLANDS_EMU_WORK_ITEM_H
 
-#include <src/arch/southern-islands/asm/Inst.h>
+#include <arch/southern-islands/asm/Inst.h>
+#include <mem-system/Memory.h>
+
+#include "Emu.h"
+
 
 namespace SI
 {
@@ -77,6 +81,10 @@ private:
 	WorkGroup *work_group;
 	NDRange *ndrange;
 
+	// Global and local memory
+	Memory::Memory *global_mem;
+	Memory::Memory *lds;
+
 	// Vector registers
 	InstReg vreg[256];
 
@@ -88,6 +96,13 @@ private:
 	int lds_access_count;  // Number of LDS access by last instruction
 	MemoryAccess lds_access[MaxLDSAccessesPerInst];
 
+	// Emulation of ISA. This code expands to one function per ISA
+	// instruction. For example: ISA_s_mov_b32_Impl(Inst *inst)
+#define DEFINST(_name, _fmt_str, _fmt, _opcode, _size, _flags) \
+	void ISA_##_name##_Impl(Inst *inst);
+#include <arch/southern-islands/asm/asm.dat>
+#undef DEFINST
+
 public:
 
 	/// Constructor
@@ -95,22 +110,34 @@ public:
 	/// \id Global 1D identifier of the work-item
 	WorkItem(Wavefront *wavefront, int id);
 
-	/// 
+	// FIXME - probably most functions below can be inline
 
+	/// FIXME ???
 	unsigned ReadSReg(int sreg);
+
+	/// FIXME ???
 	void WriteSReg(int sreg, unsigned value);
+
+	/// FIXME ???
 	unsigned ReadVReg(int vreg);
+
+	/// FIXME ???
 	void WriteVReg(int vreg, unsigned value);
+
+	/// FIXME ???
 	unsigned ReadReg(int reg);
+
+	/// FIXME ???
 	void WriteBitmaskSReg(int sreg, unsigned value);
+
+	/// FIXME ???
 	int ReadBitmaskSReg(int sreg);
 
-	struct si_buffer_desc_t;
-	struct si_mem_ptr_t;
-	void ReadBufferResource(struct si_buffer_desc_t *buf_desc, 
-		int sreg);
-	void ReadMemPtr(struct si_mem_ptr_t *mem_ptr, int sreg);
-
+	/// FIXME ???
+	void ReadBufferResource(int sreg, EmuBufferDesc &buffer_desc); 
+	
+	/// FIXME ???
+	void ReadMemPtr(int sreg, EmuMemPtr &mem_ptr);
 };
 
 }  /* namespace SI */
