@@ -24,14 +24,13 @@
 #include <list>
 
 #include <lib/cpp/Misc.h>
-
+#include <mem-system/Memory.h>
 
 
 namespace SI
 {
 
 class Asm;
-class Memory;
 class NDRange;
 class OpenCLDriver;
 class OpenGLDriver;
@@ -234,10 +233,17 @@ class Emu
 	OpenGLDriver *opengl_driver;
 
 	// Memory spaces
-	Memory *video_mem;  // local to the GPU
+
+	// Local to the GPU
+	Memory::Memory *video_mem;
 	unsigned int video_mem_top;
-	Memory *shared_mem; // shared with the CPU
-	Memory *global_mem; // will point to video_mem or shared_mem
+
+	// Shared with the CPU
+	Memory::Memory *shared_mem;
+	
+	// Will point to video_mem or shared_mem
+	Memory::Memory *global_mem;
+
 	int address_space_index;
 
 	// Current ND-Range
@@ -273,7 +279,13 @@ public:
 	Emu(Asm *as);
 
 	/// Dump emulator state
-	void Dump(std::ostream &os);
+	void Dump(std::ostream &os) const;
+
+	/// Dump emulator state (equivalent to Dump())
+	friend std::ostream &operator<<(std::ostream &os, const Emu &emu) {
+		emu.Dump(os);
+		return os;
+	}
 
 	/// Dump the statistics summary
 	void DumpSummary(std::ostream &os);

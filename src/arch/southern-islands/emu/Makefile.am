@@ -40,6 +40,7 @@ libemu_a_SOURCES = \
 	WorkGroup.h \
 	\
 	WorkItem.cc \
+	WorkItemISA.cc \
 	WorkItem.h \
 	\
 	Wrapper.cc \

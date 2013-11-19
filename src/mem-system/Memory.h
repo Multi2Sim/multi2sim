@@ -22,7 +22,7 @@
 
 #include <iostream>
 
-namespace MemSystem
+namespace Memory
 {
 
 enum MemoryAccess

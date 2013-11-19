@@ -445,13 +445,13 @@ union InstBytes
 
 union InstReg
 {
-	signed int as_int;
+	int as_int;
 	unsigned int as_uint;
 
-	signed short int as_short[2];
+	short int as_short[2];
 	unsigned short int as_ushort[2];
 
-	signed char as_byte[4];
+	char as_byte[4];
 	unsigned char as_ubyte[4];
 
 	float as_float;
@@ -494,42 +494,47 @@ class Inst
 	int address;
 
 	/* Dump functions */
-	static void DumpOperand(std::ostream& os, int operand);
-	static void DumpOperandSeries(std::ostream& os, int start, int end);
-	static void DumpScalar(std::ostream& os, int operand);
-	static void DumpScalarSeries(std::ostream& os, int start, int end);
-	static void DumpVector(std::ostream& os, int operand);
-	static void DumpVectorSeries(std::ostream& os, int start, int end);
-	static void DumpOperandExp(std::ostream& os, int operand);
-	static void DumpSeriesVdata(std::ostream& os, unsigned int vdata, int op);
-	void DumpSsrc(std::ostream& os, unsigned int ssrc);
-	void Dump64Ssrc(std::ostream& os, unsigned int ssrc);
-	void DumpVop3Src(std::ostream& os, unsigned int src, int neg);
-	void DumpVop364Src(std::ostream& os, unsigned int src, int neg);
-	void DumpMaddr(std::ostream& os);
-	void DumpDug(std::ostream& os);
+	static void DumpOperand(std::ostream &os, int operand);
+	static void DumpOperandSeries(std::ostream &os, int start, int end);
+	static void DumpScalar(std::ostream &os, int operand);
+	static void DumpScalarSeries(std::ostream &os, int start, int end);
+	static void DumpVector(std::ostream &os, int operand);
+	static void DumpVectorSeries(std::ostream &os, int start, int end);
+	static void DumpOperandExp(std::ostream &os, int operand);
+	static void DumpSeriesVdata(std::ostream &os, unsigned int vdata, int op);
+	void DumpSsrc(std::ostream &os, unsigned int ssrc) const;
+	void Dump64Ssrc(std::ostream &os, unsigned int ssrc) const;
+	void DumpVop3Src(std::ostream &os, unsigned int src, int neg) const;
+	void DumpVop364Src(std::ostream &os, unsigned int src, int neg) const;
+	void DumpMaddr(std::ostream &os) const;
+	void DumpDug(std::ostream &os) const;
 
 public:
 
-	/* Constructor */
+	/// Constructor
 	Inst(Asm *as);
 
-	/* Decode instruction from buffer */
+	/// Decode instruction from buffer
 	void Decode(const char *buffer, unsigned int offset);
 
-	/* Print the instruction */
-	void Dump(std::ostream& os);
+	/// Print instruction
+	void Dump(std::ostream &os) const;
+
+	/// Print instruction (equivalent to Dump())
+	friend std::ostream &operator<<(std::ostream &os, const Inst &inst) {
+		inst.Dump(os);
+		return os;
+	}
 
 	/* Reset instruction content */
 	void Clear();
 
-	/* Getters */
-	int GetOp() { return info ? info->op : 0; }
-	InstOpcode GetOpcode() { return info ? info->opcode : InstOpcodeInvalid; }
-	InstFormat GetFormat() { return info ? info->fmt : InstFormatInvalid; }
-	const char *GetName() { return info ? info->name : "<unknown>"; }
-	InstBytes *GetBytes() { return &bytes; }
-	int GetSize() { return size; }
+	int getOp() { return info ? info->op : 0; }
+	InstOpcode getOpcode() { return info ? info->opcode : InstOpcodeInvalid; }
+	InstFormat getFormat() { return info ? info->fmt : InstFormatInvalid; }
+	const char *getName() { return info ? info->name : "<unknown>"; }
+	InstBytes *getBytes() { return &bytes; }
+	int getSize() { return size; }
 };
 
 
@@ -956,13 +961,13 @@ typedef union
 
 typedef union
 {
-	signed int as_int;
+	int as_int;
 	unsigned int as_uint;
 
-	signed short int as_short[2];
+	short int as_short[2];
 	unsigned short int as_ushort[2];
 
-	signed char as_byte[4];
+	char as_byte[4];
 	unsigned char as_ubyte[4];
 
 	float as_float;
