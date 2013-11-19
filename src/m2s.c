@@ -105,6 +105,8 @@
 #include <sys/time.h>
 #include <visual/common/visual.h>
 
+#include "Wrapper.h"
+
 
 static char *visual_file_name = "";
 static char *ctx_config_file_name = "";
@@ -2076,6 +2078,10 @@ static void m2s_loop(void)
 
 int main(int argc, char **argv)
 {
+	/* C++ version of Multi2Sim. This call will terminate execution as new
+	 * functionality gets supported in C++. */
+	main_cpp(argc, argv);
+
 	/* Global initialization and welcome message */
 	m2s_init();
 

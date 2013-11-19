@@ -78,6 +78,17 @@ public:
 
 	/// Dump help message related with this option
 	void DumpHelp(std::ostream &os);
+
+	/// Read value of the option from the command-line option given in \a
+	/// argc and \a argv. The element in \a argv pointed to by \a index
+	/// should be the option itself, optionally followed by its arguments in
+	/// the following positions of \a argv. If \a argv does not have enough
+	/// elements as what the option expects, an error message will
+	/// terminate execution.
+	///
+	/// The return value specifies the number of arguments consumed from the
+	/// command line by this option, not including the option itself.
+	virtual int Read(int argc, char **argv, int index) = 0;
 };
 
 
@@ -92,6 +103,9 @@ public:
 			const std::string &help)
 			: CommandLineOption(TypeBool, name, help),
 			var(var) { }
+	
+	/// Read option from command line. See CommandLineOption::Read().
+	int Read(int argc, char **argv, int index);
 };
 
 
@@ -106,6 +120,9 @@ public:
 			const std::string &help)
 			: CommandLineOption(TypeString, name, help),
 			var(var) { }
+	
+	/// Read option from command line. See CommandLineOption::Read().
+	int Read(int argc, char **argv, int index);
 };
 
 
@@ -119,6 +136,9 @@ public:
 			const std::string &help)
 		: CommandLineOption(TypeInt32, name, help),
 		var(var) { }
+	
+	/// Read option from command line. See CommandLineOption::Read().
+	int Read(int argc, char **argv, int index);
 };
 
 
@@ -132,12 +152,25 @@ public:
 			const std::string &help)
 		: CommandLineOption(TypeInt64, name, help),
 		var(var) { }
+	
+	/// Read option from command line. See CommandLineOption::Read().
+	int Read(int argc, char **argv, int index);
 };
 
 
 /// Class representing the command-line used to invoke Multi2Sim.
 class CommandLine
 {
+	// Original arguments
+	int argc;
+	char **argv;
+
+	// Error message to show when finding invalid options
+	std::string error_message;
+
+	// Program name, originally found in argv[0]
+	std::string program_name;
+
 	// Arguments left after removing program name and command-line options
 	std::vector<std::string> args;
 
@@ -153,28 +186,44 @@ class CommandLine
 	// automatically freed.
 	void Register(CommandLineOption *option);
 
+	// Set to true when function Process() is invoked.
+	bool processed;
+
 public:
 
 	/// Constructor to be invoked in the beginning of the execution of
 	/// function \a main(), passing its \a argc and \a argv arguments
 	/// directly for post-processing.
-	CommandLine(int argc, char **argv);
+	CommandLine(int argc, char **argv) :
+			argc(argc), argv(argv), processed(false)
+	{ }
 
 	/// Return the number of arguments left after getting rid of the
-	/// command-line options, and the program name.
+	/// command-line options, and the program name. The command-line must
+	/// have been processed with a call to Process().
 	int getNumArguments() const {
+		assert(processed);
 		return args.size();
 	}
 
-	/// Return the program name used to invoke Multi2Sim
+	/// Set the error message to be displayed when an invalid option is
+	/// found in the command line during the execution of function
+	/// Process().
+	void setErrorMessage(const std::string &msg) {
+		error_message = msg;
+	}
+
+	/// Return the program name used to invoke Multi2Sim. The command line
+	/// must have been processed with a call to Process().
 	const std::string &getProgramName() const {
-		assert(args.size() > 0);
-		return args[0];
+		assert(processed);
+		return program_name;
 	}
 
 	/// Return the argument with a specific \a index. A value of 0 for \a
 	/// index specifies the first argument without considering all
-	/// command-line options or the program name.
+	/// command-line options or the program name. The command line must have
+	/// been processed with a call to Process().
 	const std::string &getArgument(int index) const {
 		assert(index >= 0 && index < (int) args.size());
 		return args[index];
@@ -192,6 +241,9 @@ public:
 	/// present, the original content of \a var is not modified. The value
 	/// passed in argument \a help is the help string shown to the user when
 	/// invoking Help().
+	///
+	/// All Register<tt>xxx</tt>() calls must be invoked before processing
+	/// the actual command line with a call to Process().
 	void RegisterString(const std::string &name, std::string &var,
 			const std::string &help) {
 		Register(new CommandLineOptionString(name, &var, help));
@@ -229,6 +281,9 @@ public:
 
 	/// Dump help for all registered command-line options.
 	void Help(std::ostream &os);
+
+	/// Process command line.
+	void Process();
 };
 
 

@@ -10,7 +10,12 @@ SUBDIRS = \
 bin_PROGRAMS = $(top_builddir)/bin/m2s
 
 __top_builddir__bin_m2s_SOURCES = \
-	m2s.c
+	\
+	m2s.c \
+	m2s-cpp.cc \
+	\
+	Wrapper.c \
+	Wrapper.h
 
 AM_LIBTOOLFLAGS = --preserve-dup-deps
 INCLUDES = @M2S_INCLUDES@
@@ -81,3 +86,4 @@ LDADD += @OPENGL_LDFLAGS@
 endif
 
 LDADD += -lpthread -lz -lm -lstdc++
+
