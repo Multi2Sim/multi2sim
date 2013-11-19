@@ -29,7 +29,7 @@
 
 using namespace misc;
 
-namespace MemSystem
+namespace Memory
 {
 
 bool Memory::safe_mode = true;

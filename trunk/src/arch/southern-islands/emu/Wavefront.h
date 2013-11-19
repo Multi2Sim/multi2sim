@@ -95,7 +95,7 @@ class Wavefront
 	bool lds_read;
 	bool lds_write;
 	bool mem_wait;
-	bool at_barrier;  // Used for emu synchronization
+	bool at_barrier;
 	bool finished;
 	bool vector_mem_glc;
 
@@ -131,8 +131,52 @@ public:
 	/// \param id Global 1D identifier of the wavefront
 	Wavefront(WorkGroup *work_group, int id);
 
-	/// Getters
-	///
+	/// Return the global wavefront 1D identifier
+	int getId() { return id; }
+
+	/// Flag set during instruction emulation indicating that there was a
+	/// vector memory read.
+	void setVectorMemRead() { vector_mem_read = true; }
+
+	/// Flag set during instruction emulation indicating that there was a
+	/// vector memory write.
+	void setVectorMemWrite() { vector_mem_write = true; }
+
+	/// Flags set during instruction emulation to indicate that there was an
+	/// atomic vector memory operation.
+	void setVectorMemAtomic() { vector_mem_atomic = true; }
+
+	/// Flag set during instruction emulation to indicate that the
+	/// instruction performed a scalar memory read operation.
+	void setScalarMemRead() { scalar_mem_read = true; }
+
+	/// Flag set during instruction emulation to indicate that the
+	/// instruction performed a local memory read.
+	void setLDSRead() { lds_read = true; }
+
+	/// Flag set during instruction emulation to indicate that the
+	/// instruction performed a local memory write.
+	void setLDSWrite() { lds_write = true; }
+
+	/// Flag set during instruction emulation to indicate that the
+	/// instruction performed a memory wait operation.
+	void setMemWait() { mem_wait = true; }
+
+	/// Flag set during instruction emulation to indicate that the wavefront
+	/// got stalled at a barrier.
+	void setAtBarrier() { at_barrier = true; }
+
+	/// Flag set during instruction emulation to indicate that the wavefront
+	/// finished execution.
+	void setFinished() { finished = true; }
+
+	/// Flag set during instruction emulation.
+	// FIXME ??? Expand variable name to clarify meaning
+	void setVectorMemGLC() { vector_mem_glc = true; }
+
+
+	// Getters for statistics
+
 	/// Statistics showing the total number of instuctions
 	long long getInstCount() { return inst_count; }
 

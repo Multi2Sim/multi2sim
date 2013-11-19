@@ -30,11 +30,12 @@
 
 
 using namespace misc;
-using namespace SI;
-using namespace std;
 
 
-StringMap SI::inst_format_map =
+namespace SI
+{
+
+StringMap inst_format_map =
 {
 	{ "<invalid>", InstFormatInvalid },
 	{ "sop2", InstFormatSOP2 },
@@ -108,7 +109,7 @@ static StringMap inst_ssrc_map =
 	{0, 0}
 };
 
-StringMap SI::inst_buf_data_format_map =
+StringMap inst_buf_data_format_map =
 {
 	{"invalid", InstBufDataFormatInvalid },
 	{"BUF_DATA_FORMAT_8", InstBufDataFormat8 },
@@ -129,7 +130,7 @@ StringMap SI::inst_buf_data_format_map =
 	{ 0, 0 }
 };
 
-StringMap SI::inst_buf_num_format_map =
+StringMap inst_buf_num_format_map =
 {
 	{"BUF_NUM_FORMAT_UNORM", InstBufNumFormatUnorm },
 	{"BUF_NUM_FORMAT_SNORM", InstBufNumFormatSnorm },
@@ -182,7 +183,7 @@ static StringMap inst_OP8_map =
 	{ 0, 0 }
 };
 
-StringMap SI::inst_special_reg_map =
+StringMap inst_special_reg_map =
 {
 	{ "vcc", InstSpecialRegVcc },
 	{ "scc", InstSpecialRegScc },
@@ -192,7 +193,7 @@ StringMap SI::inst_special_reg_map =
 };
 
 
-void Inst::DumpOperand(ostream& os, int operand)
+void Inst::DumpOperand(std::ostream& os, int operand)
 {
 	assert(operand >= 0 && operand <= 511);
 	if (operand <= 103)
@@ -232,7 +233,7 @@ void Inst::DumpOperand(ostream& os, int operand)
 }
 
 
-void Inst::DumpOperandSeries(ostream& os, int start, int end)
+void Inst::DumpOperandSeries(std::ostream& os, int start, int end)
 {
 	assert(start <= end);
 	if (start == end)
@@ -306,36 +307,36 @@ void Inst::DumpOperandSeries(ostream& os, int start, int end)
 	}
 	else if (start <= 511)
 	{
-		cout << "v[" << start - 256 << ':' << end - 256 << ']';
+		os << "v[" << start - 256 << ':' << end - 256 << ']';
 	}
 }
 
 
-void Inst::DumpScalar(ostream& os, int operand)
+void Inst::DumpScalar(std::ostream& os, int operand)
 {
 	DumpOperand(os, operand);
 }
 
 
-void Inst::DumpScalarSeries(ostream& os, int start, int end)
+void Inst::DumpScalarSeries(std::ostream& os, int start, int end)
 {
 	DumpOperandSeries(os, start, end);
 }
 
 
-void Inst::DumpVector(ostream& os, int operand)
+void Inst::DumpVector(std::ostream& os, int operand)
 {
 	DumpOperand(os, operand + 256);
 }
 
 
-void Inst::DumpVectorSeries(ostream& os, int start, int end)
+void Inst::DumpVectorSeries(std::ostream& os, int start, int end)
 {
 	DumpOperandSeries(os, start + 256, end + 256);
 }
 
 
-void Inst::DumpOperandExp(ostream& os, int operand)
+void Inst::DumpOperandExp(std::ostream& os, int operand)
 {
 	assert(operand >= 0 && operand <= 63);
 	if (operand <= 7)
@@ -376,7 +377,7 @@ void Inst::DumpOperandExp(ostream& os, int operand)
 }
 
 
-void Inst::DumpSeriesVdata(ostream& os, unsigned int vdata, int op)
+void Inst::DumpSeriesVdata(std::ostream& os, unsigned int vdata, int op)
 {
 	int vdata_end;
 
@@ -411,31 +412,27 @@ void Inst::DumpSeriesVdata(ostream& os, unsigned int vdata, int op)
 }
 
 
-void Inst::DumpSsrc(ostream& os, unsigned int ssrc) 
+void Inst::DumpSsrc(std::ostream& os, unsigned int ssrc) const
 {
 	if (ssrc == 0xff)
-		os << "0x" << setw(8) << setfill('0') << hex
-				<< bytes.sop2.lit_cnst
-				<< setfill(' ') << dec;
+		os << StringFmt("0x%08x", bytes.sop2.lit_cnst);
 	else
 		DumpScalar(os, ssrc);
 }
 
 
-void Inst::Dump64Ssrc(ostream& os, unsigned int ssrc)
+void Inst::Dump64Ssrc(std::ostream& os, unsigned int ssrc) const
 {		
 	if (ssrc == 0xff)
-		os << "0x" << setw(8) << setfill('0') << hex
-				<< bytes.sop2.lit_cnst
-				<< setfill(' ') << dec;
+		os << StringFmt("0x%08x", bytes.sop2.lit_cnst);
 	else
 		DumpScalarSeries(os, ssrc, ssrc + 1);
 }
 
 
-void Inst::DumpVop3Src(std::ostream& os, unsigned int src, int neg)
+void Inst::DumpVop3Src(std::ostream& os, unsigned int src, int neg) const
 {
-	stringstream ss;
+	std::stringstream ss;
 
 	DumpOperand(ss, src);
 	if (!(InRange(bytes.vop3a.op, 293, 298)) && 
@@ -464,9 +461,9 @@ void Inst::DumpVop3Src(std::ostream& os, unsigned int src, int neg)
 }
 
 
-void Inst::DumpVop364Src(ostream& os, unsigned int src, int neg)
+void Inst::DumpVop364Src(std::ostream& os, unsigned int src, int neg) const
 {
-	stringstream ss;
+	std::stringstream ss;
 
 	DumpOperandSeries(ss, src, src + 1);
 	if (!(InRange(bytes.vop3a.op, 293, 298)) && 
@@ -495,7 +492,7 @@ void Inst::DumpVop364Src(ostream& os, unsigned int src, int neg)
 }
 
 
-void Inst::DumpMaddr(ostream& os)
+void Inst::DumpMaddr(std::ostream& os) const
 {
 	/* soffset */
 	assert(bytes.mtbuf.soffset <= 103 ||
@@ -518,10 +515,10 @@ void Inst::DumpMaddr(ostream& os)
 }
 
 
-void Inst::DumpDug(ostream& os)
+void Inst::DumpDug(std::ostream& os) const
 {
 	/* DMASK */
-	os << " dmask:0x" << hex << bytes.mimg.dmask << dec;
+	os << StringFmt(" dmask:0x%x", bytes.mimg.dmask);
 	
 	/* UNORM */
 	if (bytes.mimg.unorm)
@@ -541,7 +538,7 @@ Inst::Inst(Asm *as)
 }
 
 
-void Inst::Dump(ostream& os)
+void Inst::Dump(std::ostream &os) const
 {
 	int token_len;
 	const char *fmt_str;
@@ -562,7 +559,7 @@ void Inst::Dump(ostream& os)
 		fmt_str++;
 		if (Common::Asm::IsToken(fmt_str, "WAIT_CNT", token_len))
 		{	
-			InstBytesSOPP *sopp = &bytes.sopp;
+			const InstBytesSOPP *sopp = &bytes.sopp;
 
 			unsigned int more = 0;
 			int vm_cnt = (sopp->simm16 & 0xF);
@@ -593,14 +590,13 @@ void Inst::Dump(ostream& os)
 		}
 		else if (Common::Asm::IsToken(fmt_str, "LABEL", token_len))
 		{		
-			InstBytesSOPP *sopp = &bytes.sopp;
+			const InstBytesSOPP *sopp = &bytes.sopp;
 	
 			short simm16 = sopp->simm16;
 			int se_simm = simm16;
 
-			os << "label_" << setw(4) << setfill('0') << hex
-					<< uppercase << (address + (se_simm * 4) + 4) / 4
-					<< dec << setfill(' ') << nouppercase;
+			os << StringFmt("label_%04X",
+					(address + (se_simm * 4) + 4) / 4);
 		}
 		else if (Common::Asm::IsToken(fmt_str, "SSRC0", token_len))
 		{	
@@ -628,16 +624,12 @@ void Inst::Dump(ostream& os)
 		}
 		else if (Common::Asm::IsToken(fmt_str, "SIMM16", token_len))
 		{
-			os << "0x" << setw(4) << setfill('0') << hex
-					<< bytes.sopk.simm16
-					<< dec << setfill(' ');
+			os << StringFmt("0x%04x", bytes.sopk.simm16);
 		}
 		else if (Common::Asm::IsToken(fmt_str, "SRC0", token_len))
 		{
 			if (bytes.vopc.src0 == 0xFF)
-				os << "0x" << setw(8) << setfill('0') << hex
-						<< bytes.vopc.lit_cnst
-						<< dec << setfill(' ');
+				os << StringFmt("0x%08x", bytes.vopc.lit_cnst);
 			else
 				DumpOperand(os, bytes.vopc.src0);
 		}
@@ -841,16 +833,12 @@ void Inst::Dump(ostream& os)
 		}
 		else if (Common::Asm::IsToken(fmt_str, "VOP2_LIT", token_len))
 		{
-			os << "0x" << setw(8) << setfill('0') << hex
-					<< bytes.vop2.lit_cnst
-					<< setfill(' ') << dec;
+			os << StringFmt("0x%08x", bytes.vop2.lit_cnst);
 		}
 		else if (Common::Asm::IsToken(fmt_str, "OFFSET", token_len))
 		{
 			if (bytes.smrd.imm)
-				os << "0x" << setw(2) << setfill('0') << hex
-						<< bytes.smrd.offset
-						<< setfill(' ') << dec;
+				os << StringFmt("0x%02x", bytes.smrd.offset);
 			else
 				DumpScalar(os, bytes.smrd.offset);
 		}
@@ -1327,13 +1315,18 @@ void Inst::Decode(const char *buf, unsigned int address)
 				address, ((unsigned int*)buf)[0]);
 	}
 }
-	
+
+
+}  // namespace SI
+
 	
 
 
 /*
  * C Wrapper
  */
+
+using namespace SI;
 
 struct StringMapWrap *si_inst_special_reg_map = (StringMapWrap *) inst_special_reg_map;
 struct StringMapWrap *si_inst_buf_data_format_map = (StringMapWrap *) inst_buf_data_format_map;
@@ -1365,14 +1358,14 @@ void SIInstWrapDump(struct SIInstWrap *self, FILE *f)
 {
 	Inst *inst = (Inst *) self;
 	__gnu_cxx::stdio_filebuf<char> filebuf(fileno(f), std::ios::out);
-	ostream os(&filebuf);
+	std::ostream os(&filebuf);
 	inst->Dump(os);
 }
 
 
 void SIInstWrapDumpBuf(struct SIInstWrap *self, char *buffer, int size)
 {
-	stringstream ss;
+	std::stringstream ss;
 	Inst *inst = (Inst *) self;
 	inst->Dump(ss);
 	snprintf(buffer, size, "%s", ss.str().c_str());
@@ -1389,41 +1382,41 @@ void SIInstWrapClear(struct SIInstWrap *self)
 int SIInstWrapGetOp(struct SIInstWrap *self)
 {
 	Inst *inst = (Inst *) self;
-	return inst->GetOp();
+	return inst->getOp();
 }
 
 
 SIInstOpcode SIInstWrapGetOpcode(struct SIInstWrap *self)
 {
 	Inst *inst = (Inst *) self;
-	return (SIInstOpcode) inst->GetOpcode();
+	return (SIInstOpcode) inst->getOpcode();
 }
 
 
 SIInstBytes *SIInstWrapGetBytes(struct SIInstWrap *self)
 {
 	Inst *inst = (Inst *) self;
-	return (SIInstBytes *) inst->GetBytes();
+	return (SIInstBytes *) inst->getBytes();
 }
 
 
 const char *SIInstWrapGetName(struct SIInstWrap *self)
 {
 	Inst *inst = (Inst *) self;
-	return inst->GetName();
+	return inst->getName();
 }
 
 
 SIInstFormat SIInstWrapGetFormat(struct SIInstWrap *self)
 {
 	Inst *inst = (Inst *) self;
-	return (SIInstFormat) inst->GetFormat();
+	return (SIInstFormat) inst->getFormat();
 }
 
 
 int SIInstWrapGetSize(struct SIInstWrap *self)
 {
 	Inst *inst = (Inst *) self;
-	return inst->GetSize();
+	return inst->getSize();
 }
 
