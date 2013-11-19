@@ -113,8 +113,8 @@ void StringSingleSpaces(std::string &s, const std::string &set =  " \t\n\r");
 void StringToLower(std::string &s);
 void StringToUpper(std::string &s);
 
-bool StringPrefix(const std::string& s, const std::string& prefix);
-bool StringSuffix(const std::string& s, const std::string& suffix);
+bool StringPrefix(const std::string &s, const std::string &prefix);
+bool StringSuffix(const std::string &s, const std::string &suffix);
 
 /* Split a string in tokens and place them in the list of strings passed by
  * reference in the first argument. Optionally, argument 'set' can specify the

@@ -5,6 +5,9 @@ libcpp_a_SOURCES = \
 	Bitmap.cc \
 	Bitmap.h \
 	\
+	CommandLine.cc \
+	CommandLine.h \
+	\
 	ELFReader.cc \
 	ELFReader.h \
 	\
