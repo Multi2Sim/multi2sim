@@ -17,15 +17,17 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <iomanip>
-
 #include <lib/cpp/ELFReader.h>
+#include <lib/cpp/String.h>
 
 #include "Asm.h"
 #include "Inst.h"
 
-using namespace MIPS;
-using namespace std;
+using namespace misc;
+
+namespace MIPS
+{
+
 
 /* Opcodes and secondary opcodes */
 #define OPCODE_SPECIAL              0x00
@@ -270,7 +272,7 @@ Asm::~Asm()
 }
 
 
-void Asm::DisassembleBinary(string path)
+void Asm::DisassembleBinary(std::string path)
 {
 	ELFReader::File file(path);
 	Inst inst(this);
@@ -287,7 +289,7 @@ void Asm::DisassembleBinary(string path)
 			continue;
 
 		/* Title */
-		cout << "\n\nDisassembly of section " << section->getName() << ":";
+		std::cout << "\n\nDisassembly of section " << section->getName() << ":";
 
 		/* Symbol */
 		curr_sym = 0;
@@ -304,15 +306,15 @@ void Asm::DisassembleBinary(string path)
 			}
 			if (symbol && symbol->getValue() ==
 					section->getAddr() + pos)
-				cout << "\n\n" << setw(8) << setfill('0') << hex
-						<< section->getAddr() + pos
-						<< " <" << symbol->getName() << ">:";
+				std::cout << StringFmt("\n\n%08x <%s>:",
+						section->getAddr() + pos,
+						symbol->getName().c_str());
 
 			/* Decode and dump */
 			inst.Decode(section->getAddr() + pos,
 					section->getBuffer() + pos);
-			inst.DumpHex(cout);
-			inst.Dump(cout);
+			inst.DumpHex(std::cout);
+			inst.Dump(std::cout);
 
 			/* Symbol name */
 			if (inst.target)
@@ -322,44 +324,21 @@ void Asm::DisassembleBinary(string path)
 				if (print_symbol)
 				{
 					if (print_symbol->getValue() == inst.target)
-						cout << " <" << print_symbol->getName() << ">";
+						std::cout << " <" << print_symbol->getName() << ">";
 					else
-						cout << " <" << print_symbol->getName() << "+0x"
-								<< hex <<
+						std::cout << StringFmt(" <%s+0x%x>",
+								print_symbol->getName().c_str(),
 								inst.target -
-								print_symbol->getValue()
-								<< ">";
+								print_symbol->getValue());
 				}
 			}
 		}
 	}
 
 	/* End */
-	cout << '\n';
+	std::cout << '\n';
 }
 
 
+}  // namespace MIPS
 
-
-/*
- * C Wrapper
- */
-
-struct MIPSAsmWrap *MIPSAsmWrapCreate(void)
-{
-	return (struct MIPSAsmWrap *) new Asm;
-}
-
-
-void MIPSAsmWrapFree(struct MIPSAsmWrap *self)
-{
-	delete (Asm *) self;
-}
-
-
-void MIPSAsmWrapDisassembleBinary(struct MIPSAsmWrap *self, char *path)
-{
-	Asm *as;
-	as = (Asm *) self;
-	as->DisassembleBinary(path);
-}

@@ -37,16 +37,8 @@ enum StringError
 	StringErrorRange
 };
 
-/* Return a string associated with an error code */
+// Return a string associated with an error code
 const char *StringGetErrorString(StringError error);
-
-/* Dump formatted string into a buffer with a specific size. Its size is then
- * decreased, and the buffer is advanced to the end of the dumped string.
- * This function is useful for being used in other functions that dump
- * several strings into a buffer, with the header
- *   obj_dump(struct obj_t *obj, char *buf, int size); */
-void str_printf(char **pbuf, int *psize, const char *fmt, ...)
-		__attribute__ ((format(printf, 3, 4)));
 
 std::string StringFmt(const char *fmt, ...)
 		__attribute__ ((format(printf, 1, 2)));
@@ -72,7 +64,7 @@ bool StringSuffix(const std::string &s, const std::string &suffix);
 void StringTokenize(const std::string &s, std::vector<std::string> &tokens,
 		const std::string &set = " \t\n\r");
 
-/* Convert 'digit' in base 'base' into an integer. */
+// Convert 'digit' in base 'base' into an integer.
 int StringDigitToInt(char digit, int base);
 int StringDigitToInt(char digit, int base, StringError &error);
 

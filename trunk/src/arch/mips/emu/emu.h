@@ -23,7 +23,7 @@
 #include <pthread.h>
 
 #include <arch/common/emu.h>
-#include <arch/mips/asm/Asm.h>
+#include <arch/mips/asm/Wrapper.h>
 
 
 /*

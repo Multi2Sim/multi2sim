@@ -22,8 +22,6 @@
 
 #include "Inst.h"
 
-#ifdef __cplusplus
-
 namespace MIPS
 {
 
@@ -31,7 +29,7 @@ namespace MIPS
 class Asm
 {
 public:
-	/* Decoding tables */
+	// Decoding tables
 	InstInfo *dec_table;
 	InstInfo *dec_table_special;
 	InstInfo *dec_table_special_movci;
@@ -63,41 +61,18 @@ public:
 	InstInfo *dec_table_special3;
 	InstInfo *dec_table_special3_bshfl;
 
-	/* Creator and destructor */
+	// Creator and destructor
 	Asm();
 	~Asm();
 
-	/* Disassemble binary file given a path */
+	// Disassemble binary file given a path
 	void DisassembleBinary(std::string path);
 };
 
 
 
-} /* namespace MIPS */
-
-#endif  /* __cplusplus */
+} // namespace MIPS
 
 
-
-/*
- * Common C/C++ code
- */
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-struct MIPSAsmWrap;
-
-struct MIPSAsmWrap *MIPSAsmWrapCreate(void);
-void MIPSAsmWrapFree(struct MIPSAsmWrap *self);
-
-void MIPSAsmWrapDisassembleBinary(struct MIPSAsmWrap *self, char *path);
-
-#ifdef __cplusplus
-}
-#endif
-
-
-#endif  /* MIPS_ASM_ASM_H */
+#endif  // MIPS_ASM_ASM_H
 
