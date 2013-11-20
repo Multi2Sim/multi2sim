@@ -97,7 +97,7 @@ class Wavefront
 	bool mem_wait;
 	bool at_barrier;
 	bool finished;
-	bool vector_mem_glc;
+	bool vector_mem_global_coherency;
 
 	// Fields introduced for timing simulation
 	int id_in_compute_unit;
@@ -123,8 +123,6 @@ class Wavefront
 
 public:
 
-	friend class WorkItem;
-
 	/// Constructor
 	///
 	/// \param work_group Work-group that the wavefront belongs to
@@ -132,7 +130,22 @@ public:
 	Wavefront(WorkGroup *work_group, int id);
 
 	/// Return the global wavefront 1D identifier
-	int getId() { return id; }
+	int getId() const { return id; }
+
+	/// Return PC of wavefront
+	unsigned getPC() const { return pc; }
+
+	/// Set PC
+	void setPC(unsigned new_pc) { pc = new_pc; }
+
+	/// Increase PC
+	void incPC(int increment) { pc += increment; }
+
+	/// Setters
+	///
+	/// Flag set during instruction emulation indicating that there was a
+	/// barrier instruction
+	void setBarrierInst() { barrier_inst = true; }
 
 	/// Flag set during instruction emulation indicating that there was a
 	/// vector memory read.
@@ -167,16 +180,18 @@ public:
 	void setAtBarrier() { at_barrier = true; }
 
 	/// Flag set during instruction emulation to indicate that the wavefront
+	/// no longer stalled at a barrier.
+	void unsetAtBarrier() { at_barrier = false; }	
+
+	/// Flag set during instruction emulation to indicate that the wavefront
 	/// finished execution.
 	void setFinished() { finished = true; }
 
 	/// Flag set during instruction emulation.
-	// FIXME ??? Expand variable name to clarify meaning
-	void setVectorMemGLC() { vector_mem_glc = true; }
+	void setVectorMemGlobalCoherency() { vector_mem_global_coherency = true; }
 
-
-	// Getters for statistics
-
+	/// Getters for statistics
+	///
 	/// Statistics showing the total number of instuctions
 	long long getInstCount() { return inst_count; }
 

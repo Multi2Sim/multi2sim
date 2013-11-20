@@ -280,7 +280,7 @@ void si_isa_S_BUFFER_LOAD_DWORDX8_impl(SIWorkItem *work_item,
 	/* FIXME Set value based on type */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("wf%d: ", work_item->wavefront->id);
+		si_isa_debug("wfd: ", work_item->wavefront->id);
 		for (i = 0; i < 8; i++)
 		{
 			si_isa_debug("S%u<=(%u)(%u,%gf) ", INST.sdst + i, 

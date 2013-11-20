@@ -17,9 +17,13 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <lib/cpp/Misc.h>
+
 #include "Wavefront.h"
 #include "WorkItem.h"
 #include "WorkGroup.h"
+
+using namespace misc;
 
 namespace SI
 {
@@ -30,6 +34,96 @@ WorkItem::WorkItem(Wavefront *wavefront, int id)
 	this->id = id;
 	this->wavefront = wavefront;
 }
+
+int WorkItem::IsaGetNumElems(int data_format) const
+{
+	int num_elems;
+
+	switch (data_format)
+	{
+
+	case 1:
+	case 2:
+	case 4:
+	{
+		num_elems = 1;
+		break;
+	}
+
+	case 3:
+	case 5:
+	case 11:
+	{
+		num_elems = 2;
+		break;
+	}
+
+	case 13:
+	{
+		num_elems = 3;	
+		break;
+	}
+
+	case 10:
+	case 12:
+	case 14:
+	{
+		num_elems = 4;
+		break;
+	}
+
+	default:
+		fatal("%s: Invalid or unsupported data format", __FUNCTION__);
+
+	}
+
+	return num_elems;
+}
+
+int WorkItem::IsaGetElemSize(int data_format) const
+{
+	int elem_size;
+
+	switch (data_format)
+	{
+
+	/* 8-bit data */
+	case 1:
+	case 3:
+	case 10:
+	{
+		elem_size = 1;
+		break;
+	}
+
+	/* 16-bit data */
+	case 2:
+	case 5:
+	case 12:
+	{
+		elem_size = 2;
+		break;
+	}
+
+	/* 32-bit data */
+	case 4:
+	case 11:
+	case 13:
+	case 14:
+	{
+		elem_size = 4;	
+		break;
+	}
+
+	default:
+	{
+		fatal("%s: Invalid or unsupported data format", __FUNCTION__);
+	}
+	}
+
+	return elem_size;
+}
+
 
 #if 0
 
