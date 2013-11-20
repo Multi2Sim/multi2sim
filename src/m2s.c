@@ -40,7 +40,7 @@
 #include <arch/evergreen/timing/faults.h>
 #include <arch/evergreen/timing/gpu.h>
 #include <arch/evergreen/timing/uop.h>
-#include <arch/fermi/asm/Asm.h>
+#include <arch/fermi/asm/Wrapper.h>
 #include <arch/fermi/emu/emu.h>
 #include <arch/fermi/emu/grid.h>
 #include <arch/fermi/emu/isa.h>

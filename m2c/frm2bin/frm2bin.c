@@ -20,7 +20,7 @@
 #include <stdarg.h>
 
 
-#include <arch/fermi/asm/Asm.h>
+#include <arch/fermi/asm/Wrapper.h>
 
 #include <lib/class/class.h>
 #include <lib/class/array.h>

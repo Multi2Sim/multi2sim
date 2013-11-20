@@ -33,7 +33,6 @@
 
 
 using namespace misc;
-using namespace std;
 
 namespace Fermi
 {
@@ -44,7 +43,7 @@ namespace Fermi
 
 Inst::Inst(Asm *as)
 {
-	/* Initialize */
+	// Initialize
 	this->as = as;
 }
 
@@ -55,21 +54,21 @@ void Inst::Decode(unsigned int addr, const char *ptr)
 	unsigned int func;
 	unsigned int func_idx;
 
-	/* Get instruction category bits */
+	// Get instruction category bits
 	bytes.dword = * (unsigned long long *) ptr;
 	cat = bytes.bytes[0] & 0xf;
 
-	/* Get function bits */
+	// Get function bits
 	if (cat <= 3)
-		func = bytes.bytes[7] >> 3;  /* 5-bit func */
+		func = bytes.bytes[7] >> 3;  // 5-bit func
 	else
-		func = bytes.bytes[7] >> 2;  /* 6-bit func */
+		func = bytes.bytes[7] >> 2;  // 6-bit func
 	func_idx = func;
 
-	/* Special cases */
-	if (cat == 5 && ((func & 0x30) >> 4) == 0)  /* RED */
+	// Special cases
+	if (cat == 5 && ((func & 0x30) >> 4) == 0)  // RED
 		func_idx = func & 0x30;
-	else if (cat == 5 && ((func & 0x30) >> 4) == 1)  /* ATOM */
+	else if (cat == 5 && ((func & 0x30) >> 4) == 1)  // ATOM
 		func_idx = func & 0x30;
 
 	info = as->GetDecTable(cat, func_idx);
@@ -77,7 +76,7 @@ void Inst::Decode(unsigned int addr, const char *ptr)
 }
 
 
-map<string, int> atom_op_map =
+std::map<std::string, int> atom_op_map =
 {
 	{ ".ADD", 0 },
 	{ ".MIN", 1 },
@@ -91,27 +90,27 @@ map<string, int> atom_op_map =
 	{ ".CAS", 9 }
 };
 
-map<string, int> atom_type_map =
+std::map<std::string, int> atom_type_map =
 {
 	{ ".U64", 5 },
 	{ ".S32", 7 },
 	{ ".F32.FTZ.RN", 11 }
 };
 
-map<string, int> b2r_op_map =
+std::map<std::string, int> b2r_op_map =
 {
 	{ ".XLU", 1 },
 	{ ".ALU", 2 }
 };
 
-map<string, int> bar_op_map =
+std::map<std::string, int> bar_op_map =
 {
 	{ ".POPC", 0 },
 	{ ".AND", 1 },
 	{ ".OR", 2 }
 };
 
-map<string, int> cc_op_map =
+std::map<std::string, int> cc_op_map =
 {
 	{ ".F", 0 },
 	{ ".LT", 1 },
@@ -147,14 +146,14 @@ map<string, int> cc_op_map =
 	{ ".RGT", 31 }
 };
 
-map<string, int> btoff03_map =
+std::map<std::string, int> btoff03_map =
 {
 	{ "", 0 },
 	{ ".AOFFI", 1 },
 	{ ".PTP", 2 }
 };
 
-map<string, int> cc_cop_map =
+std::map<std::string, int> cc_cop_map =
 {
 	{ ".QRY1", 0 },
 	{ ".PF1", 1 },
@@ -166,14 +165,14 @@ map<string, int> cc_cop_map =
 	{ ".RS", 7 }
 };
 
-map<string, int> cctl_op_map =
+std::map<std::string, int> cctl_op_map =
 {
 	{ ".U", 1 },
 	{ ".C", 2 },
 	{ ".I", 3 }
 };
 
-map<string, int> cmp_map =
+std::map<std::string, int> cmp_map =
 {
 	{ ".LT", 1 },
 	{ ".EQ", 2 },
@@ -191,21 +190,21 @@ map<string, int> cmp_map =
 	{ ".GEU", 14 }
 };
 
-map<string, int> ftype_map =
+std::map<std::string, int> ftype_map =
 {
 	{ ".F16", 1 },
 	{ ".F32", 2 },
 	{ ".F64", 3 }
 };
 
-map<string, int> ftzfmz_map =
+std::map<std::string, int> ftzfmz_map =
 {
 	{ ".FTZ", 1 },
 	{ ".FMZ", 2 },
 	{ ".INVALID", 3 }
 };
 
-map<string, int> geom_map =
+std::map<std::string, int> geom_map =
 {
 	{ "1D", 0 },
 	{ "ARRAY_1D", 1 },
@@ -217,21 +216,21 @@ map<string, int> geom_map =
 	{ "ARRAY_CUBE", 7 }
 };
 
-map<string, int> itype_map =
+std::map<std::string, int> itype_map =
 {
 	{ "16", 1 },
 	{ "32", 2 },
 	{ "64", 3 }
 };
 
-map<string, int> ld_cop_map =
+std::map<std::string, int> ld_cop_map =
 {
 	{ ".CG", 1 },
 	{ ".CS", 2 },
 	{ ".CV", 3 }
 };
 
-map<string, int> ldx_cop_map =
+std::map<std::string, int> ldx_cop_map =
 {
 	{ ".CA", 0 },
 	{ ".CG", 1 },
@@ -239,14 +238,14 @@ map<string, int> ldx_cop_map =
 	{ ".CV", 3 }
 };
 
-map<string, int> logic_map =
+std::map<std::string, int> logic_map =
 {
 	{ ".AND", 0 },
 	{ ".OR", 1 },
 	{ ".XOR", 2 }
 };
 
-map<string, int> lop_op_map =
+std::map<std::string, int> lop_op_map =
 {
 	{ ".AND", 0 },
 	{ ".OR", 1 },
@@ -254,14 +253,14 @@ map<string, int> lop_op_map =
 	{ ".PASS_B", 3 }
 };
 
-map<string, int> lvl_map =
+std::map<std::string, int> lvl_map =
 {
 	{ ".CTA", 0 },
 	{ ".GL", 1 },
 	{ ".SYS", 2 }
 };
 
-map<string, int> mufu_op_map =
+std::map<std::string, int> mufu_op_map =
 {
 	{ ".COS", 0 },
 	{ ".SIN", 1 },
@@ -273,7 +272,7 @@ map<string, int> mufu_op_map =
 	{ ".RSQ64H", 7 }
 };
 
-map<string, int> nop_op_map =
+std::map<std::string, int> nop_op_map =
 {
 	{ ".FMA64", 1 },
 	{ ".FMA32", 2 },
@@ -285,14 +284,14 @@ map<string, int> nop_op_map =
 	{ ".FMUL", 8 }
 };
 
-map<string, int> phase3_map =
+std::map<std::string, int> phase3_map =
 {
 	{ "", 0 },
 	{ ".T", 1 },
 	{ ".P", 2 }
 };
 
-map<string, int> red_op_map =
+std::map<std::string, int> red_op_map =
 {
 	{ ".ADD", 0 },
 	{ ".MIN", 1 },
@@ -304,28 +303,28 @@ map<string, int> red_op_map =
 	{ ".XOR", 7 }
 };
 
-map<string, int> red_type_map =
+std::map<std::string, int> red_type_map =
 {
 	{ ".U64", 5 },
 	{ ".S32", 7 },
 	{ ".F32.FTZ.RN", 11 }
 };
 
-map<string, int> rnd_f_map =
+std::map<std::string, int> rnd_f_map =
 {
 	{ ".FLOOR", 1 },
 	{ ".CEIL", 2 },
 	{ ".TRUNC", 3 }
 };
 
-map<string, int> rnd_i_map =
+std::map<std::string, int> rnd_i_map =
 {
 	{ ".RM", 1 },
 	{ ".RP", 2 },
 	{ ".RZ", 3 }
 };
 
-map<string, int> sreg_map =
+std::map<std::string, int> sreg_map =
 {
 	{ "_LANEID", 0 },
 	{ "_CLOCK", 1 },
@@ -385,21 +384,21 @@ map<string, int> sreg_map =
 	{ "_CLOCKHI", 81 }
 };
 
-map<string, int> st_cop_map =
+std::map<std::string, int> st_cop_map =
 {
 	{ ".CG", 1 },
 	{ ".CS", 2 },
 	{ ".WT", 3 }
 };
 
-map<string, int> stx_cop_map =
+std::map<std::string, int> stx_cop_map =
 {
 	{ ".CG", 1 },
 	{ ".CS", 2 },
 	{ ".WT", 3 }
 };
 
-map<string, int> type_map =
+std::map<std::string, int> type_map =
 {
 	{ ".U8", 0 },
 	{ ".S8", 1 },
@@ -409,7 +408,7 @@ map<string, int> type_map =
 	{ ".128", 6 }
 };
 
-map<string, int> vote_op_map =
+std::map<std::string, int> vote_op_map =
 {
 	{ ".ALL", 0 },
 	{ ".ANY", 1 },
@@ -420,23 +419,23 @@ map<string, int> vote_op_map =
 };
 
 
-const string StringMapValue(map<string, int> &suffix_map, int value, bool &found)
+const std::string StringMapValue(std::map<std::string, int> &suffix_map, int value, bool &found)
 {
-	/* Find value */
+	// Find value
 	found = true;
-	for (map<string, int>::iterator i = suffix_map.begin(); i != suffix_map.end(); ++i)
+	for (std::map<std::string, int>::iterator i = suffix_map.begin(); i != suffix_map.end(); ++i)
 		if (i->second == value)
 			return i->first;
 
-	/* Not found */
+	// Not found
 	found = false;
 	return "";
 }
 
 
-void Inst::DumpPC(ostream &os)
+void Inst::DumpPC(std::ostream &os)
 {
-	os << "/*" << setfill('0') << setw(4) << right << hex << addr << "*/";
+	os << StringFmt("/*%04x*/", addr);
 }
 
 
@@ -446,18 +445,18 @@ void Inst::DumpToBufWithFmtReg(void)
 	const char *fmt_str;
 	int len;
 
-	/* Get instruction format/encoding */
+	// Get instruction format/encoding
 	fmt = bytes.fmt_reg;
 
-	/* Get format string */
+	// Get format string
 	fmt_str = info->fmt_str.c_str();
 
-	/* Process format string */
+	// Process format string
 	while (*fmt_str)
 	{
-		stringstream ss;
+		std::stringstream ss;
 
-		/* Character is a literal symbol */
+		// Character is a literal symbol
 		if (*fmt_str != '%')
 		{
 			if (fmt_str == info->fmt_str.c_str())
@@ -467,7 +466,7 @@ void Inst::DumpToBufWithFmtReg(void)
 			continue;
 		}
 
-		/* Character is a token */
+		// Character is a token
 		++fmt_str;
 
 		if (Common::Asm::IsToken(fmt_str, "ADD_SUB", len))
@@ -524,7 +523,7 @@ void Inst::DumpToBufWithFmtReg(void)
 		else if (Common::Asm::IsToken(fmt_str, "cmp", len))
 		{
 			unsigned int cmp;
-			string cmp_str;
+			std::string cmp_str;
 			bool found;
 			cmp = (fmt.mixed1 & 0x3c0) >> 6;
 			cmp_str = StringMapValue(cmp_map, cmp, found);
@@ -564,7 +563,7 @@ void Inst::DumpToBufWithFmtReg(void)
 		else if (Common::Asm::IsToken(fmt_str, "logic", len))
 		{
 			unsigned int logic;
-			string logic_str;
+			std::string logic_str;
 			bool found;
 			logic = (fmt.mixed1 >> 4) & 0x3;
 			logic_str = StringMapValue(logic_map, logic, found);
@@ -573,7 +572,7 @@ void Inst::DumpToBufWithFmtReg(void)
 		else if (Common::Asm::IsToken(fmt_str, "lop_op", len))
 		{
 			unsigned int op;
-			string op_str;
+			std::string op_str;
 			bool found;
 			op = (fmt.mixed0 >> 2) & 0x3;
 			op_str = StringMapValue(lop_op_map, op, found);
@@ -614,7 +613,7 @@ void Inst::DumpToBufWithFmtReg(void)
 				src2.i = fmt.src2;
 				bank_id = ((src2.i & 0x1) << 4) | (src2.i >> 16);
 				offset_in_bank = src2.i & 0xfffc;
-				ss << hex << "c[0x" << bank_id << "][0x" << offset_in_bank << "]";
+				ss << StringFmt("c[0x%x][0x%x]", bank_id, offset_in_bank);
 				ss << ", ";
 				ss << (neg_src3 ? "-" : "");
 				ss << "R";
@@ -635,7 +634,7 @@ void Inst::DumpToBufWithFmtReg(void)
 				src2.i = fmt.src2;
 				bank_id = ((src2.i & 0x1) << 4) | (src2.i >> 16);
 				offset_in_bank = src2.i & 0xfffc;
-				ss << hex << "c[0x" << bank_id << "][0x" << offset_in_bank << "]";
+				ss << StringFmt("c[0x%x][0x%x]", bank_id, offset_in_bank);
 			}
 			else if (src2_mod == 3)
 			{
@@ -644,17 +643,16 @@ void Inst::DumpToBufWithFmtReg(void)
 				{
 					src2.i = fmt.src2 << 12;
 					if (src2.f > 1e9)
-						ss << scientific << setprecision(20);
+						ss << std::scientific << std::setprecision(20);
 					ss << src2.f;
 				}
 				else if (cat == 3)
 				{
 					src2.i = fmt.src2;
-					ss << hex;
-					if (src2.i >> 19 == 0)  /* positive value */
-						ss << "0x" << src2.i;
-					else  /* negative value */
-						ss << "-0x" << (0x100000 - src2.i);
+					if (src2.i >> 19 == 0)  // positive value
+						ss << StringFmt("0x%x", src2.i);
+					else  // negative value
+						ss << StringFmt("-0x%x", 0x100000 - src2.i);
 				}
 				ss << ", ";
 				ss << (neg_src3 ? "-" : "");
@@ -668,7 +666,7 @@ void Inst::DumpToBufWithFmtReg(void)
 		else if (Common::Asm::IsToken(fmt_str, "mufu_op", len))
 		{
 			unsigned int op;
-			string op_str;
+			std::string op_str;
 			bool found;
 			op = fmt.src2 & 0xf;
 			op_str = StringMapValue(mufu_op_map, op, found);
@@ -722,7 +720,7 @@ void Inst::DumpToBufWithFmtReg(void)
 				src2.i = fmt.src2;
 				bank_id = ((src2.i & 0x1) << 4) | (src2.i >> 16);
 				offset_in_bank = src2.i & 0xfffc;
-				ss << hex << "c[0x" << bank_id << "][0x" << offset_in_bank << "]";
+				ss << StringFmt("c[0x%x][0x%x]", bank_id, offset_in_bank);
 			}
 			else if (src2_mod == 3)
 			{
@@ -731,16 +729,16 @@ void Inst::DumpToBufWithFmtReg(void)
 				{
 					src2.i = fmt.src2 << 12;
 					if (isinf(src2.f))
-						ss << showpos << uppercase;
+						ss << std::showpos << std::uppercase;
 					ss << src2.f;
 				}
 				else if (cat == 3)
 				{
 					src2.i = fmt.src2;
-					ss << showpos << uppercase << hex;
-					if (src2.i >> 19 == 0)  /* positive value */
+					ss << std::showpos << std::uppercase << std::hex;
+					if (src2.i >> 19 == 0)  // positive value
 						ss << "0x" << src2.i;
-					else  /* negative value */
+					else  // negative value
 						ss << "-0x" << (0x100000 - src2.i);
 				}
 			}
@@ -811,7 +809,7 @@ void Inst::DumpToBufWithFmtReg(void)
 				src2.i = fmt.src2;
 				bank_id = ((src2.i & 0x1) << 4) | (src2.i >> 16);
 				offset_in_bank = src2.i & 0xfffc;
-				ss << hex << "c[0x" << bank_id << "][0x" << offset_in_bank << "]";
+				ss << std::hex << "c[0x" << bank_id << "][0x" << offset_in_bank << "]";
 			}
 			else if (src2_mod == 3)
 			{
@@ -825,10 +823,10 @@ void Inst::DumpToBufWithFmtReg(void)
 				else if (cat == 3)
 				{
 					src2.i = fmt.src2;
-					ss << hex;
-					if (src2.i >> 19 == 0)  /* positive value */
+					ss << std::hex;
+					if (src2.i >> 19 == 0)  // positive value
 						ss << "0x" << src2.i;
-					else  /* negative value */
+					else  // negative value
 						ss << "-0x" << (0x100000 - src2.i);
 				}
 			}
@@ -872,7 +870,7 @@ void Inst::DumpToBufWithFmtReg(void)
 		else if (Common::Asm::IsToken(fmt_str, "rnd", len))
 		{
 			unsigned int rnd;
-			string rnd_str;
+			std::string rnd_str;
 			bool found;
 			rnd = (fmt.mixed1 >> 6) & 0x3;
 			rnd_str = StringMapValue(rnd_i_map, rnd, found);
@@ -912,7 +910,7 @@ void Inst::DumpToBufWithFmtReg(void)
 		{
 			unsigned int shamt;
 			shamt = (fmt.mixed0 >> 1) & 0x1f;
-			ss << hex << "0x" << shamt;
+			ss << std::hex << "0x" << shamt;
 		}
 		else if (Common::Asm::IsToken(fmt_str, "src1", len))
 		{
@@ -948,7 +946,7 @@ void Inst::DumpToBufWithFmtReg(void)
 				src2.i = fmt.src2;
 				bank_id = ((src2.i & 0x1) << 4) | (src2.i >> 16);
 				offset_in_bank = src2.i & 0xfffc;
-				ss << hex << "c[0x" << bank_id << "][0x" << offset_in_bank << "]";
+				ss << std::hex << "c[0x" << bank_id << "][0x" << offset_in_bank << "]";
 			}
 			else if (src2_mod == 3)
 			{
@@ -961,10 +959,10 @@ void Inst::DumpToBufWithFmtReg(void)
 				else if (cat == 3)
 				{
 					src2.i = fmt.src2;
-					ss << hex;
-					if (src2.i >> 19 == 0)  /* positive value */
+					ss << std::hex;
+					if (src2.i >> 19 == 0)  // positive value
 						ss << "0x" << src2.i;
-					else  /* negative value */
+					else  // negative value
 						ss << "-0x" << (0x100000 - src2.i);
 				}
 			}
@@ -1017,7 +1015,7 @@ void Inst::DumpToBufWithFmtReg(void)
 
 		str += ss.str();
 
-		/* Skip processed token */
+		// Skip processed token
 		fmt_str += len;
 	}
 	str += ";";
@@ -1030,18 +1028,18 @@ void Inst::DumpToBufWithFmtImm(void)
 	const char *fmt_str;
 	int len;
 
-	/* Get instruction format/encoding */
+	// Get instruction format/encoding
 	fmt = bytes.fmt_imm;
 
-	/* Get format string */
+	// Get format string
 	fmt_str = info->fmt_str.c_str();
 
-	/* Process format string */
+	// Process format string
 	while (*fmt_str)
 	{
-		stringstream ss;
+		std::stringstream ss;
 
-		/* Character is a literal symbol */
+		// Character is a literal symbol
 		if (*fmt_str != '%')
 		{
 			if (fmt_str == info->fmt_str.c_str())
@@ -1051,7 +1049,7 @@ void Inst::DumpToBufWithFmtImm(void)
 			continue;
 		}
 
-		/* Character is a token */
+		// Character is a token
 		++fmt_str;
 
 		if (Common::Asm::IsToken(fmt_str, "dst", len))
@@ -1068,16 +1066,16 @@ void Inst::DumpToBufWithFmtImm(void)
 		{
 			unsigned int imm32;
 			imm32 = fmt.imm32;
-			ss << hex;
-			if (imm32 <= 0x80000000)  /* positive value */
+			ss << std::hex;
+			if (imm32 <= 0x80000000)  // positive value
 				ss << "0x" << imm32;
-			else  /* negative value */
+			else  // negative value
 				ss << "-0x" << ((unsigned long long int)0x100000000 - imm32);
 		}
 		else if (Common::Asm::IsToken(fmt_str, "lop_op", len))
 		{
 			unsigned int op;
-			string op_str;
+			std::string op_str;
 			bool found;
 			op = (fmt.suffix0 >> 2) & 0x3;
 			op_str = StringMapValue(lop_op_map, op, found);
@@ -1127,7 +1125,7 @@ void Inst::DumpToBufWithFmtImm(void)
 		{
 			unsigned int imm32;
 			imm32 = fmt.imm32;
-			ss << hex << "0x" << imm32;
+			ss << std::hex << "0x" << imm32;
 		}
 		else if (Common::Asm::IsToken(fmt_str, "x", len))
 		{
@@ -1143,7 +1141,7 @@ void Inst::DumpToBufWithFmtImm(void)
 
 		str += ss.str();
 
-		/* Skip processed token */
+		// Skip processed token
 		fmt_str += len;
 	}
 	str += ";";
@@ -1156,18 +1154,18 @@ void Inst::DumpToBufWithFmtOther(void)
 	const char *fmt_str;
 	int len;
 
-	/* Get instruction format/encoding */
+	// Get instruction format/encoding
 	fmt = bytes.fmt_other;
 
-	/* Get format string */
+	// Get format string
 	fmt_str = info->fmt_str.c_str();
 
-	/* Process format string */
+	// Process format string
 	while (*fmt_str)
 	{
-		stringstream ss;
+		std::stringstream ss;
 
-		/* Character is a literal symbol */
+		// Character is a literal symbol
 		if (*fmt_str != '%')
 		{
 			if (fmt_str == info->fmt_str.c_str())
@@ -1177,7 +1175,7 @@ void Inst::DumpToBufWithFmtOther(void)
 			continue;
 		}
 
-		/* Character is a token */
+		// Character is a token
 		++fmt_str;
 
 		if (Common::Asm::IsToken(fmt_str, "P__", len))
@@ -1283,7 +1281,7 @@ void Inst::DumpToBufWithFmtOther(void)
 		else if (Common::Asm::IsToken(fmt_str, "b2r_op", len))
 		{
 			unsigned int op;
-			string op_str;
+			std::string op_str;
 			bool found;
 			op = (fmt.mixed0 >> 4) & 0x3;
 			op_str = StringMapValue(b2r_op_map, op, found);
@@ -1298,7 +1296,7 @@ void Inst::DumpToBufWithFmtOther(void)
 		else if (Common::Asm::IsToken(fmt_str, "bar_op", len))
 		{
 			unsigned int op;
-			string op_str;
+			std::string op_str;
 			bool found;
 			op = (fmt.mixed0 >> 1) & 0x3;
 			op_str = StringMapValue(bar_op_map, op, found);
@@ -1313,7 +1311,7 @@ void Inst::DumpToBufWithFmtOther(void)
 		else if (Common::Asm::IsToken(fmt_str, "cc_op", len))
 		{
 			unsigned int op;
-			string op_str;
+			std::string op_str;
 			bool found;
 			op = (fmt.mixed0 >> 1) & 0x1f;
 			op_str = StringMapValue(cc_op_map, op, found);
@@ -1322,7 +1320,7 @@ void Inst::DumpToBufWithFmtOther(void)
 		else if (Common::Asm::IsToken(fmt_str, "cmp", len))
 		{
 			unsigned int cmp;
-			string cmp_str;
+			std::string cmp_str;
 			bool found;
 			cmp = (fmt.src2 >> 4) & 0x3;
 			cmp_str = StringMapValue(logic_map, cmp, found);
@@ -1341,7 +1339,7 @@ void Inst::DumpToBufWithFmtOther(void)
 		else if (Common::Asm::IsToken(fmt_str, "dtype_f", len))
 		{
 			unsigned int dtype;
-			string dtype_str;
+			std::string dtype_str;
 			bool found;
 			dtype = fmt.src1 & 0x3;
 			dtype_str = StringMapValue(ftype_map, dtype, found);
@@ -1351,7 +1349,7 @@ void Inst::DumpToBufWithFmtOther(void)
 		{
 			bool sign;
 			unsigned int dtype;
-			string dtype_str;
+			std::string dtype_str;
 			bool found;
 			sign = ((fmt.mixed0 & 0x8) == 0);
 			ss << (sign ? ".U" : ".S");
@@ -1368,7 +1366,7 @@ void Inst::DumpToBufWithFmtOther(void)
 		else if (Common::Asm::IsToken(fmt_str, "logic", len))
 		{
 			unsigned int logic;
-			string logic_str;
+			std::string logic_str;
 			bool found;
 			logic = (fmt.mixed1 >> 4) & 0x3;
 			logic_str = StringMapValue(logic_map, logic, found);
@@ -1405,7 +1403,7 @@ void Inst::DumpToBufWithFmtOther(void)
 				src2.i = fmt.src2;
 				bank_id = (src2.i & 0xf0000) >> 16;
 				offset_in_bank = src2.i & 0xffff;
-				ss << hex << "c[0x" << bank_id << "][0x" << offset_in_bank << "]";
+				ss << std::hex << "c[0x" << bank_id << "][0x" << offset_in_bank << "]";
 			}
 			else if (src2_mod == 3)
 			{
@@ -1418,10 +1416,10 @@ void Inst::DumpToBufWithFmtOther(void)
 				else if (cat == 3)
 				{
 					src2.i = fmt.src2;
-					ss << hex;
-					if (src2.i >> 19 == 0)  /* positive value */
+					ss << std::hex;
+					if (src2.i >> 19 == 0)  // positive value
 						ss << "0x" << src2.i;
-					else  /* negative value */
+					else  // negative value
 						ss << "-0x" << (0x100000 - src2.i);
 				}
 			}
@@ -1429,7 +1427,7 @@ void Inst::DumpToBufWithFmtOther(void)
 		else if (Common::Asm::IsToken(fmt_str, "nop_op", len))
 		{
 			unsigned int op;
-			string op_str;
+			std::string op_str;
 			bool found;
 			op = (fmt.mixed1 >> 2) & 0x7;
 			op_str = StringMapValue(nop_op_map, op, found);
@@ -1449,7 +1447,7 @@ void Inst::DumpToBufWithFmtOther(void)
 		else if (Common::Asm::IsToken(fmt_str, "rnd_f", len))
 		{
 			unsigned int rnd;
-			string rnd_str;
+			std::string rnd_str;
 			bool found;
 			rnd = fmt.mixed1 & 0x3;
 			rnd_str = StringMapValue(rnd_f_map, rnd, found);
@@ -1458,7 +1456,7 @@ void Inst::DumpToBufWithFmtOther(void)
 		else if (Common::Asm::IsToken(fmt_str, "rnd_i", len))
 		{
 			unsigned int rnd;
-			string rnd_str;
+			std::string rnd_str;
 			bool found;
 			rnd = fmt.mixed1 & 0x3;
 			rnd_str = StringMapValue(rnd_i_map, rnd, found);
@@ -1504,21 +1502,21 @@ void Inst::DumpToBufWithFmtOther(void)
 			{
 				bank_id = (src2 & 0xf0000) >> 16;
 				offset_in_bank = src2 &	0xffff;
-				ss << hex << "c[0x" << bank_id << "][0x" << offset_in_bank << "]";
+				ss << std::hex << "c[0x" << bank_id << "][0x" << offset_in_bank << "]";
 			}
 			else if (src2_mod == 3)
 			{
-				ss << hex;
-				if (src2 >> 19 == 0)  /* positive value */
+				ss << std::hex;
+				if (src2 >> 19 == 0)  // positive value
 					ss << "0x" << src2;
-				else  /* negative value */
+				else  // negative value
 					ss << "-0x" << (0x100000 - src2);
 			}
 		}
 		else if (Common::Asm::IsToken(fmt_str, "sreg", len))
 		{
 			unsigned int sreg_idx;
-			string sreg_str;
+			std::string sreg_str;
 			bool found;
 			sreg_idx = fmt.src2 & 0xff;
 			sreg_str = StringMapValue(sreg_map, sreg_idx, found);
@@ -1531,7 +1529,7 @@ void Inst::DumpToBufWithFmtOther(void)
 		else if (Common::Asm::IsToken(fmt_str, "stype_f", len))
 		{
 			unsigned int stype;
-			string stype_str;
+			std::string stype_str;
 			bool found;
 			stype = fmt.src1 & 0x3;
 			stype_str = StringMapValue(ftype_map, stype, found);
@@ -1541,7 +1539,7 @@ void Inst::DumpToBufWithFmtOther(void)
 		{
 			unsigned int sign;
 			unsigned int stype;
-			string stype_str;
+			std::string stype_str;
 			bool found;
 			sign = fmt.mixed0 & 0x20;
 			ss << (sign == 0 ? ".U" : ".S");
@@ -1558,7 +1556,7 @@ void Inst::DumpToBufWithFmtOther(void)
 		else if (Common::Asm::IsToken(fmt_str, "vote_op", len))
 		{
 			unsigned int op;
-			string op_str;
+			std::string op_str;
 			bool found;
 			op = (fmt.mixed0 >> 1) & 0x7;
 			op_str = StringMapValue(vote_op_map, op, found);
@@ -1572,7 +1570,7 @@ void Inst::DumpToBufWithFmtOther(void)
 
 		str += ss.str();
 
-		/* Skip processed token */
+		// Skip processed token
 		fmt_str += len;
 	}
 	str += ";";
@@ -1585,18 +1583,18 @@ void Inst::DumpToBufWithFmtLdSt(void)
 	const char *fmt_str;
 	int len;
 
-	/* Get instruction format/encoding */
+	// Get instruction format/encoding
 	fmt = bytes.fmt_ldst;
 
-	/* Get format string */
+	// Get format string
 	fmt_str = info->fmt_str.c_str();
 
-	/* Process format string */
+	// Process format string
 	while (*fmt_str)
 	{
-		stringstream ss;
+		std::stringstream ss;
 
-		/* Character is a literal symbol */
+		// Character is a literal symbol
 		if (*fmt_str != '%')
 		{
 			if (fmt_str == info->fmt_str.c_str())
@@ -1606,7 +1604,7 @@ void Inst::DumpToBufWithFmtLdSt(void)
 			continue;
 		}
 
-		/* Character is a token */
+		// Character is a token
 		++fmt_str;
 
 		if (Common::Asm::IsToken(fmt_str, "Q", len))
@@ -1628,7 +1626,7 @@ void Inst::DumpToBufWithFmtLdSt(void)
 		else if (Common::Asm::IsToken(fmt_str, "atom_op", len))
 		{
 			unsigned int op;
-			string op_str;
+			std::string op_str;
 			bool found;
 			op = (fmt.suffix0 >> 1) & 0xf;
 			op_str = StringMapValue(atom_op_map, op, found);
@@ -1637,7 +1635,7 @@ void Inst::DumpToBufWithFmtLdSt(void)
 		else if (Common::Asm::IsToken(fmt_str, "atom_type", len))
 		{
 			unsigned int type;
-			string type_str;
+			std::string type_str;
 			bool found;
 			type = (fmt.func & 0xe) | ((fmt.suffix0 >> 5) & 0x1);
 			type_str = StringMapValue(atom_type_map, type, found);
@@ -1648,12 +1646,12 @@ void Inst::DumpToBufWithFmtLdSt(void)
 			unsigned int bank;
 			bank = fmt.suffix1 & 0xf;
 			if (bank)
-				ss << hex << "0x" << bank;
+				ss << std::hex << "0x" << bank;
 		}
 		else if (Common::Asm::IsToken(fmt_str, "btoff03", len))
 		{
 			unsigned int btoff03;
-			string btoff03_str;
+			std::string btoff03_str;
 			bool found;
 			btoff03 = (fmt.suffix1 >> 12) & 0x3;
 			btoff03_str = StringMapValue(btoff03_map, btoff03, found);
@@ -1662,7 +1660,7 @@ void Inst::DumpToBufWithFmtLdSt(void)
 		else if (Common::Asm::IsToken(fmt_str, "cc_cop", len))
 		{
 			unsigned int op;
-			string op_str;
+			std::string op_str;
 			bool found;
 			op = (fmt.suffix0 >> 1) & 0x7;
 			op_str = StringMapValue(cc_cop_map, op, found);
@@ -1671,7 +1669,7 @@ void Inst::DumpToBufWithFmtLdSt(void)
 		else if (Common::Asm::IsToken(fmt_str, "cctl_op", len))
 		{
 			unsigned int op;
-			string op_str;
+			std::string op_str;
 			bool found;
 			op = fmt.off16 & 0x3;
 			op_str = StringMapValue(cctl_op_map, op, found);
@@ -1702,7 +1700,7 @@ void Inst::DumpToBufWithFmtLdSt(void)
 		else if (Common::Asm::IsToken(fmt_str, "geom", len))
 		{
 			unsigned int geom;
-			string geom_str;
+			std::string geom_str;
 			bool found;
 			geom = (fmt.suffix1 >> 9) & 0x7;
 			geom_str = StringMapValue(geom_map, geom, found);
@@ -1718,24 +1716,24 @@ void Inst::DumpToBufWithFmtLdSt(void)
 		{
 			unsigned int imm4;
 			imm4 = (fmt.suffix1 >> 4) & 0xf;
-			ss << hex << "0x" << imm4;
+			ss << std::hex << "0x" << imm4;
 		}
 		else if (Common::Asm::IsToken(fmt_str, "imm5", len))
 		{
 			unsigned int imm5;
 			imm5 = ((fmt.suffix1 & 0x7) << 2) | ((fmt.off16 >> 14) & 0x3);
-			ss << hex << "0x" << imm5;
+			ss << std::hex << "0x" << imm5;
 		}
 		else if (Common::Asm::IsToken(fmt_str, "imm8", len))
 		{
 			unsigned int imm8;
 			imm8 = (fmt.off16 >> 6) & 0xff;
-			ss << hex << "0x" << imm8;
+			ss << std::hex << "0x" << imm8;
 		}
 		else if (Common::Asm::IsToken(fmt_str, "ld_cop", len))
 		{
 			unsigned int cop;
-			string cop_str;
+			std::string cop_str;
 			bool found;
 			cop = (fmt.suffix0 >> 4) & 0x3;
 			cop_str = StringMapValue(ld_cop_map, cop, found);
@@ -1744,7 +1742,7 @@ void Inst::DumpToBufWithFmtLdSt(void)
 		else if (Common::Asm::IsToken(fmt_str, "ldx_cop", len))
 		{
 			unsigned int cop;
-			string cop_str;
+			std::string cop_str;
 			bool found;
 			cop = (fmt.suffix0 >> 4) & 0x3;
 			cop_str = StringMapValue(ldx_cop_map, cop, found);
@@ -1753,7 +1751,7 @@ void Inst::DumpToBufWithFmtLdSt(void)
 		else if (Common::Asm::IsToken(fmt_str, "lvl", len))
 		{
 			unsigned int lvl;
-			string lvl_str;
+			std::string lvl_str;
 			bool found;
 			lvl = (fmt.suffix0 >> 1) & 0x3;
 			lvl_str = StringMapValue(lvl_map, lvl, found);
@@ -1782,33 +1780,33 @@ void Inst::DumpToBufWithFmtLdSt(void)
 			unsigned int off16;
 			off16 = fmt.off16;
 			if (off16)
-				ss << hex << "+0x" << off16;
+				ss << std::hex << "+0x" << off16;
 		}
 		else if (Common::Asm::IsToken(fmt_str, "off20", len))
 		{
 			unsigned int off20;
 			off20 = ((fmt.suffix1 & 0xe000) << 4) | fmt.off16;
 			if (off20)
-				ss << hex << "+0x" << off20;
+				ss << std::hex << "+0x" << off20;
 		}
 		else if (Common::Asm::IsToken(fmt_str, "off24", len))
 		{
 			unsigned int off24;
 			off24 = ((fmt.suffix1 & 0xff) << 16) | fmt.off16;
 			if (off24)
-				ss << hex << "+0x" << off24;
+				ss << std::hex << "+0x" << off24;
 		}
 		else if (Common::Asm::IsToken(fmt_str, "off30", len))
 		{
 			unsigned int off30;
 			off30 = ((fmt.suffix1 & 0xffff) << 14) | (fmt.off16 >> 2);
 			if (off30)
-				ss << hex << "+0x" << off30;
+				ss << std::hex << "+0x" << off30;
 		}
 		else if (Common::Asm::IsToken(fmt_str, "phase3", len))
 		{
 			unsigned int phase3;
-			string phase3_str;
+			std::string phase3_str;
 			bool found;
 			phase3 = (fmt.suffix0 >> 3) & 0x3;
 			phase3_str = StringMapValue(phase3_map, phase3, found);
@@ -1828,7 +1826,7 @@ void Inst::DumpToBufWithFmtLdSt(void)
 		else if (Common::Asm::IsToken(fmt_str, "red_op", len))
 		{
 			unsigned int op;
-			string op_str;
+			std::string op_str;
 			bool found;
 			op = (fmt.suffix0 >> 1) & 0xf;
 			op_str = StringMapValue(red_op_map, op, found);
@@ -1837,7 +1835,7 @@ void Inst::DumpToBufWithFmtLdSt(void)
 		else if (Common::Asm::IsToken(fmt_str, "red_type", len))
 		{
 			unsigned int type;
-			string type_str;
+			std::string type_str;
 			bool found;
 			type = (fmt.func & 0xe) | ((fmt.suffix0 & 0x20) >> 5);
 			type_str = StringMapValue(red_type_map, type, found);
@@ -1888,7 +1886,7 @@ void Inst::DumpToBufWithFmtLdSt(void)
 		else if (Common::Asm::IsToken(fmt_str, "st_cop", len))
 		{
 			unsigned int cop;
-			string cop_str;
+			std::string cop_str;
 			bool found;
 			cop = (fmt.suffix0 >> 4) & 0x3;
 			cop_str = StringMapValue(st_cop_map, cop, found);
@@ -1897,7 +1895,7 @@ void Inst::DumpToBufWithFmtLdSt(void)
 		else if (Common::Asm::IsToken(fmt_str, "stx_cop", len))
 		{
 			unsigned int cop;
-			string cop_str;
+			std::string cop_str;
 			bool found;
 			cop = (fmt.suffix0 >> 4) & 0x3;
 			cop_str = StringMapValue(stx_cop_map, cop, found);
@@ -1906,7 +1904,7 @@ void Inst::DumpToBufWithFmtLdSt(void)
 		else if (Common::Asm::IsToken(fmt_str, "type", len))
 		{
 			unsigned int type;
-			string type_str;
+			std::string type_str;
 			bool found;
 			type = (fmt.suffix0 >> 1) & 0x7;
 			type_str = StringMapValue(type_map, type, found);
@@ -1920,7 +1918,7 @@ void Inst::DumpToBufWithFmtLdSt(void)
 
 		str += ss.str();
 
-		/* Skip processed token */
+		// Skip processed token
 		fmt_str += len;
 	}
 	str += ";";
@@ -1933,18 +1931,18 @@ void Inst::DumpToBufWithFmtCtrl(void)
 	const char *fmt_str;
 	int len;
 
-	/* Get instruction format/encoding */
+	// Get instruction format/encoding
 	fmt = bytes.fmt_ctrl;
 
-	/* Get format string */
+	// Get format string
 	fmt_str = info->fmt_str.c_str();
 
-	/* Process format string */
+	// Process format string
 	while (*fmt_str)
 	{
-		stringstream ss;
+		std::stringstream ss;
 
-		/* Character is a literal symbol */
+		// Character is a literal symbol
 		if (*fmt_str != '%')
 		{
 			if (fmt_str == info->fmt_str.c_str())
@@ -1954,7 +1952,7 @@ void Inst::DumpToBufWithFmtCtrl(void)
 			continue;
 		}
 
-		/* Character is a token */
+		// Character is a token
 		++fmt_str;
 
 		if (Common::Asm::IsToken(fmt_str, "lmt", len))
@@ -1973,7 +1971,7 @@ void Inst::DumpToBufWithFmtCtrl(void)
 		{
 			unsigned int target;
 			target = fmt.target;
-			ss << hex << "0x" << addr + 8 + target;
+			ss << std::hex << "0x" << addr + 8 + target;
 		}
 		else if (Common::Asm::IsToken(fmt_str, "pred", len))
 		{
@@ -1996,7 +1994,7 @@ void Inst::DumpToBufWithFmtCtrl(void)
 		{
 			unsigned int target;
 			target = fmt.target;
-			ss << hex << "0x" << target;
+			ss << std::hex << "0x" << target;
 		}
 		else if (Common::Asm::IsToken(fmt_str, "u", len))
 		{
@@ -2012,7 +2010,7 @@ void Inst::DumpToBufWithFmtCtrl(void)
 
 		str += ss.str();
 
-		/* Skip processed token */
+		// Skip processed token
 		fmt_str += len;
 	}
 	str += ";";
@@ -2023,15 +2021,15 @@ void Inst::DumpToBuf(void)
 {
 	int cat;
 
-	/* Check if instruction is supported */
+	// Check if instruction is supported
 	if (!info)
 		fatal("%s: instruction not supported (offset=0x%x)",
 				__FUNCTION__, addr);
 
-	/* Get instruction category */
+	// Get instruction category
 	cat = bytes.bytes[0] & 0xf;
 
-	/* Dump to buffer based on format */
+	// Dump to buffer based on format
 	if (cat == 0 || cat == 1 || cat == 3)
 		DumpToBufWithFmtReg();
 	else if (cat == 2)
@@ -2048,76 +2046,20 @@ void Inst::DumpToBuf(void)
 }
 
 
-void Inst::Dump(ostream &os, unsigned int max_inst_len)
+void Inst::Dump(std::ostream &os, unsigned int max_inst_len)
 {
-	os << setfill(' ') << setw(max_inst_len + 1) << left;
+	os << std::setfill(' ') << std::setw(max_inst_len + 1) << std::left;
 	os << str;
 }
 
 
-void Inst::DumpHex(ostream &os)
+void Inst::DumpHex(std::ostream &os)
 {
 	os << "/* 0x";
-	os << setfill('0') << setw(16) << right << hex << bytes.dword;
+	os << std::setfill('0') << std::setw(16) << std::right << std::hex << bytes.dword;
 	os << " */";
 }
 
-}  /* namespace Fermi */
+}  // namespace Fermi
 
 
-/*
- * C Wrapper
- */
-
-struct FrmInstWrap *FrmInstWrapCreate(struct FrmAsmWrap *as)
-{
-	return (FrmInstWrap *) new Fermi::Inst((Fermi::Asm *) as);
-}
-
-
-void FrmInstWrapFree(struct FrmInstWrap *self)
-{
-	delete (Fermi::Inst *) self;
-}
-
-
-void FrmInstWrapCopy(struct FrmInstWrap *left, struct frmInstWrap *right)
-{
-	Fermi::Inst *ileft = (Fermi::Inst *) left;
-	Fermi::Inst *iright = (Fermi::Inst *) right;
-	*ileft = *iright;
-}
-
-
-void FrmInstWrapDecode(struct FrmInstWrap *self, unsigned int addr, void *ptr)
-{
-	Fermi::Inst *inst = (Fermi::Inst *) self;
-	inst->Decode(addr, (const char *) ptr);
-}
-
-
-FrmInstBytes *FrmInstWrapGetBytes(struct FrmInstWrap *self)
-{
-	Fermi::Inst *inst = (Fermi::Inst *) self;
-	return (FrmInstBytes *) inst->GetBytes();
-}
-
-const char *FrmInstWrapGetName(struct FrmInstWrap *self)
-{
-	Fermi::Inst *inst = (Fermi::Inst *) self;
-	return inst->GetName().c_str();
-}
-
-
-FrmInstOpcode FrmInstWrapGetOpcode(struct FrmInstWrap *self)
-{
-	Fermi::Inst *inst = (Fermi::Inst *) self;
-	return (FrmInstOpcode) inst->GetOpcode();
-}
-
-
-FrmInstCategory FrmInstWrapGetCategory(struct FrmInstWrap *self)
-{
-	Fermi::Inst *inst = (Fermi::Inst *) self;
-	return (FrmInstCategory) inst->GetCategory();
-}
