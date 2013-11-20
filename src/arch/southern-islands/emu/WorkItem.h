@@ -103,6 +103,12 @@ private:
 #include <arch/southern-islands/asm/asm.dat>
 #undef DEFINST
 
+	/// FIXME ??? isa.h
+	int IsaGetNumElems(int data_format) const;
+
+	/// FIXME ??? isa.h
+	int IsaGetElemSize(int data_format) const;
+
 public:
 
 	/// Constructor
