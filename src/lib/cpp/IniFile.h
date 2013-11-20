@@ -28,7 +28,11 @@
 #include <unordered_set>
 #include <vector>
 
-#include "Misc.h"
+#include "String.h"
+
+
+namespace misc
+{
 
 
 class IniFile
@@ -236,6 +240,8 @@ public:
 	void Check() const;
 };
 
+
+}  // namespace misc
 
 #endif
 

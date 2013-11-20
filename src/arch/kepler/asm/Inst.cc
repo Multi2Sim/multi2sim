@@ -23,6 +23,7 @@
 
 #include <arch/common/Asm.h>
 #include <lib/cpp/Misc.h>
+#include <lib/cpp/String.h>
 
 #include "Asm.h"
 #include "Inst.h"

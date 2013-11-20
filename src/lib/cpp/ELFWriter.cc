@@ -23,6 +23,7 @@
 
 #include "ELFWriter.h"
 #include "Misc.h"
+#include "String.h"
 
 
 using namespace misc;

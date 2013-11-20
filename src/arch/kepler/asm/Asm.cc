@@ -23,8 +23,12 @@
 
 #include <lib/cpp/ELFReader.h>
 #include <lib/cpp/Misc.h>
+#include <lib/cpp/String.h>
 
 #include "Asm.h"
+
+
+using namespace misc;
 
 
 namespace Kepler
@@ -508,7 +512,7 @@ void Asm::DisassembleBinary(const std::string &path)
 
 		/* Set section name (get rid of .text.) */
 		std::string title = section->getName();
-		if (misc::StringPrefix(title, ".text."))
+		if (StringPrefix(title, ".text."))
 			title.erase(0, 6);
 
 		/* Title */

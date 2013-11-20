@@ -24,7 +24,7 @@
 #include <list>
 #include <memory>
 
-#include <lib/cpp/Misc.h>
+#include <lib/cpp/String.h>
 #include <llvm/BasicBlock.h>
 
 

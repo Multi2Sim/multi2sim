@@ -24,7 +24,9 @@
 #ifdef __cplusplus
 
 #include <iostream>
-#include <lib/cpp/Misc.h>
+
+#include <lib/cpp/String.h>
+
 
 namespace Fermi
 {

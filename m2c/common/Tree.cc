@@ -22,6 +22,7 @@
 #include <list>
 #include <sstream>
 
+#include <lib/cpp/Misc.h>
 #include <llvm/BasicBlock.h>
 #include <llvm/Function.h>
 #include <llvm/InstrTypes.h>
