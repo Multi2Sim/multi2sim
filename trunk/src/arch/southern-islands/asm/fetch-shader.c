@@ -24,9 +24,8 @@
 #include <lib/util/list.h>
 #include <src/driver/opengl/si-shader.h>
 
-#include "Asm.h"
-#include "Inst.h"
 #include "fetch-shader.h"
+#include "Wrapper.h"
 
 
 struct si_fs_inst_t

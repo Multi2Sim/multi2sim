@@ -55,8 +55,7 @@
 #include <arch/mips/emu/isa.h>
 #include <arch/mips/timing/cpu.h>
 #include <arch/southern-islands/asm/arg.h>
-#include <arch/southern-islands/asm/Asm.h>
-#include <arch/southern-islands/asm/Inst.h>
+#include <arch/southern-islands/asm/Wrapper.h>
 #include <arch/southern-islands/asm/input.h>
 #include <arch/southern-islands/emu/emu.h>
 #include <arch/southern-islands/emu/ndrange.h>

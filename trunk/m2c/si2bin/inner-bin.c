@@ -18,7 +18,7 @@
  */
 
 
-#include <arch/southern-islands/asm/Binary.h>
+#include <arch/southern-islands/asm/Wrapper.h>
 #include <lib/class/elf-writer.h>
 #include <lib/class/array.h>
 #include <lib/cpp/Wrapper.h>

@@ -18,7 +18,6 @@
  */
 
 
-#include <arch/southern-islands/asm/Inst.h>
 #include <lib/class/class.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>

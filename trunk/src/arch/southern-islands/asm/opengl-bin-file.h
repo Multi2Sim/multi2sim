@@ -24,7 +24,7 @@
 #include <stdbool.h>
 #include <lib/util/elf-format.h>
 
-#include "Binary.h"
+#include "Wrapper.h"
 
 
 /* Common */

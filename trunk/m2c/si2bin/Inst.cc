@@ -326,20 +326,20 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 		switch (opcode)
 		{
 
-		case SI_INST_TBUFFER_LOAD_FORMAT_X:
-		case SI_INST_TBUFFER_STORE_FORMAT_X:
+		case SI::INST_TBUFFER_LOAD_FORMAT_X:
+		case SI::INST_TBUFFER_STORE_FORMAT_X:
 
 			high_must = low;
 			break;
 
-		case SI_INST_TBUFFER_LOAD_FORMAT_XY:
-		case SI_INST_TBUFFER_STORE_FORMAT_XY:
+		case SI::INST_TBUFFER_LOAD_FORMAT_XY:
+		case SI::INST_TBUFFER_STORE_FORMAT_XY:
 
 			high_must = low + 1;
 			break;
 
-		case SI_INST_TBUFFER_LOAD_FORMAT_XYZW:
-		case SI_INST_TBUFFER_STORE_FORMAT_XYZW:
+		case SI::INST_TBUFFER_LOAD_FORMAT_XYZW:
+		case SI::INST_TBUFFER_STORE_FORMAT_XYZW:
 
 			high_must = low + 3;
 			break;
@@ -414,17 +414,17 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 		switch (opcode)
 		{
 
-		case SI_INST_S_LOAD_DWORDX2:
-		case SI_INST_S_LOAD_DWORDX4:
+		case SI::INST_S_LOAD_DWORDX2:
+		case SI::INST_S_LOAD_DWORDX4:
 
 			/* High register must be low plus 1 */
 			if (srs->getHigh() != srs->getLow() + 1)
 				fatal("register series must be s[x:x+1]");
 			break;
 
-		case SI_INST_S_BUFFER_LOAD_DWORD:
-		case SI_INST_S_BUFFER_LOAD_DWORDX2:
-		case SI_INST_S_BUFFER_LOAD_DWORDX4:
+		case SI::INST_S_BUFFER_LOAD_DWORD:
+		case SI::INST_S_BUFFER_LOAD_DWORDX2:
+		case SI::INST_S_BUFFER_LOAD_DWORDX4:
 
 			/* High register must be low plus 3 */
 			if (srs->getHigh() != srs->getLow() + 3)
@@ -452,16 +452,16 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 		switch (opcode)
 		{
 
-		case SI_INST_S_LOAD_DWORDX2:
-		case SI_INST_S_BUFFER_LOAD_DWORDX2:
+		case SI::INST_S_LOAD_DWORDX2:
+		case SI::INST_S_BUFFER_LOAD_DWORDX2:
 
 			/* High register must be low plus 1 */
 			if (srs->getHigh() != srs->getLow() + 1)
 				fatal("register series must be s[low:low+1]");
 			break;
 
-		case SI_INST_S_LOAD_DWORDX4:
-		case SI_INST_S_BUFFER_LOAD_DWORDX4:
+		case SI::INST_S_LOAD_DWORDX4:
+		case SI::INST_S_BUFFER_LOAD_DWORDX4:
 
 			/* High register must be low plus 3 */
 			if (srs->getHigh() != srs->getLow() + 3)

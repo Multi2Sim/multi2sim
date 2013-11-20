@@ -22,7 +22,7 @@
 
 #include <stdio.h>
 
-#include <arch/southern-islands/asm/Binary.h>
+#include <arch/southern-islands/asm/Wrapper.h>
 #include <lib/class/class.h>
 
 #include "emu.h"
