@@ -18,7 +18,6 @@
  */
 
 #include <cstring>
-#include <iomanip>
 #include <vector>
 
 #include <lib/cpp/ELFReader.h>

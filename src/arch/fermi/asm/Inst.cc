@@ -19,7 +19,6 @@
 
 #include <cmath>
 #include <cstring>
-#include <iomanip>
 #include <iostream>
 #include <map>
 #include <sstream>
@@ -643,8 +642,7 @@ void Inst::DumpToBufWithFmtReg(void)
 				{
 					src2.i = fmt.src2 << 12;
 					if (src2.f > 1e9)
-						ss << std::scientific << std::setprecision(20);
-					ss << src2.f;
+						ss << StringFmt("%.20e", src2.f);
 				}
 				else if (cat == 3)
 				{
@@ -2048,16 +2046,15 @@ void Inst::DumpToBuf(void)
 
 void Inst::Dump(std::ostream &os, unsigned int max_inst_len)
 {
-	os << std::setfill(' ') << std::setw(max_inst_len + 1) << std::left;
 	os << str;
+	for (unsigned int i = str.length(); i <= max_inst_len; ++i)
+		os << " ";
 }
 
 
 void Inst::DumpHex(std::ostream &os)
 {
-	os << "/* 0x";
-	os << std::setfill('0') << std::setw(16) << std::right << std::hex << bytes.dword;
-	os << " */";
+	os << StringFmt("/* 0x%016llx */", bytes.dword);
 }
 
 }  // namespace Fermi
