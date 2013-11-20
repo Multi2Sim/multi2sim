@@ -17,7 +17,6 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <ext/stdio_filebuf.h>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -30,12 +29,13 @@
 #include "Inst.h"
 
 using namespace misc;
-using namespace std;
-using namespace MIPS;
 
 
+namespace MIPS
+{
 
-/* Register names */
+
+// Register names
 #define MIPS_INST_REG_COUNT 32
 static const char *inst_reg_name[MIPS_INST_REG_COUNT] =
 {
@@ -85,7 +85,7 @@ Inst::Inst(Asm *as)
 }
 
 
-void Inst::Decode(unsigned int addr, const char *buf)
+void Inst::Decode(unsigned addr, const char *buf)
 {
 	InstInfo *current_table;
 
@@ -93,10 +93,10 @@ void Inst::Decode(unsigned int addr, const char *buf)
 	int current_table_high;
 	int loop_iteration;
 
-	unsigned int table_arg;
+	unsigned table_arg;
 
-	/* Store the instruction */
-	bytes.word = * (unsigned int *) buf;
+	// Store the instruction
+	bytes.word = * (unsigned *) buf;
 	this->addr = addr;
 	target = 0;
 
@@ -109,7 +109,7 @@ void Inst::Decode(unsigned int addr, const char *buf)
 	table_arg = misc::GetBits32(bytes.word, current_table_high,
 			current_table_low);
 
-	/* Find next tables if the instruction belongs to another table */
+	// Find next tables if the instruction belongs to another table
 	while (1)
 	{
 		if (current_table[table_arg].next_table
@@ -132,408 +132,346 @@ void Inst::Decode(unsigned int addr, const char *buf)
 		}
 	}
 
-	/* Instruction found */
+	// Instruction found
 	info = &current_table[table_arg];
 }
 
 
-void Inst::DumpBufSa(char **buf_ptr, int *size_ptr)
+void Inst::DumpSa(std::ostream &os) const
 {
-	unsigned int sa;
+	unsigned sa;
 
 	sa = bytes.standard.sa;
 	if (sa != 0)
-		str_printf(buf_ptr, size_ptr, "0x%x", sa);
+		os << StringFmt("0x%x", sa);
 	else
-		str_printf(buf_ptr, size_ptr, "%d", sa);
+		os << '0';
 }
 
 
-void Inst::DumpBufRd(char **buf_ptr, int *size_ptr)
+void Inst::DumpRd(std::ostream &os) const
 {
-	unsigned int rd;
+	unsigned rd;
 	int token_len;
 
 	rd = bytes.standard.rd;
 
 	if (Common::Asm::IsToken(info->name, "RDHWR", token_len))
 	{
-		str_printf(buf_ptr, size_ptr, "$%d", rd);
+		os << '$' << rd;
 	}
 	else if (Common::Asm::IsToken(info->name, "JALR", token_len))
 	{
-		if (rd == (int) 31)
-		{
-		}
-		else
-		{
-			str_printf(buf_ptr, size_ptr, ",");
-			str_printf(buf_ptr, size_ptr, "%s",
-				inst_reg_name[rd]);
-		}
+		if (rd != 31)
+			os << ',' << inst_reg_name[rd];
 	}
 	else
-		str_printf(buf_ptr, size_ptr, "%s",
-			inst_reg_name[rd]);
+		os << inst_reg_name[rd];
 }
 
 
-void Inst::DumpBufRt(char **buf_ptr, int *size_ptr)
+void Inst::DumpRt(std::ostream &os) const
 {
-	unsigned int rt;
-
-	rt = bytes.standard.rt;
-	str_printf(buf_ptr, size_ptr, "%s", inst_reg_name[rt]);
+	unsigned rt = bytes.standard.rt;
+	os << inst_reg_name[rt];
 }
 
 
-void Inst::DumpBufRs(char **buf_ptr, int *size_ptr)
+void Inst::DumpRs(std::ostream &os) const
 {
-	unsigned int rs;
-
-	rs = bytes.standard.rs;
-	str_printf(buf_ptr, size_ptr, "%s", inst_reg_name[rs]);
+	unsigned rs = bytes.standard.rs;
+	os << inst_reg_name[rs];
 }
 
 
-void Inst::DumpBufTarget(char **buf_ptr, int *size_ptr)
+void Inst::DumpTarget(std::ostream &os)
 {
-	target = bytes.target.target;
-	target = target << 2;
-	target = target;
-	str_printf(buf_ptr, size_ptr, "%x", target);
+	target = bytes.target.target << 2;
+	os << StringFmt("%x", target);
 }
 
 
-void Inst::DumpBufOffset(char **buf_ptr, int *size_ptr)
+void Inst::DumpOffset(std::ostream &os) const
 {
-	unsigned int offset;
-
-	offset = bytes.offset_imm.offset;
-	if (offset & 0x8000)
-		offset = -((offset ^ 0xffff) + 1);
-	str_printf(buf_ptr, size_ptr, "%d", (int) offset);
+	int offset = SignExtend32(bytes.offset_imm.offset, 16);
+	os << offset;
 }
 
 
-void Inst::DumpBufOffsetbr(char **buf_ptr, int *size_ptr)
+void Inst::DumpOffsetbr(std::ostream &os)
 {
-	unsigned int offsetbr;
-
-	offsetbr = bytes.cc.offsetbr;
-	if (offsetbr & 0x8000)
-		offsetbr = -((offsetbr ^ 0xffff) + 1);
+	int offsetbr = SignExtend32(bytes.cc.offsetbr, 16);
 	offsetbr = (offsetbr << 2) + addr + 4;
 	target = offsetbr;
-	str_printf(buf_ptr, size_ptr, "%x", offsetbr);
+	os << StringFmt("%x", offsetbr);
 }
 
 
-void Inst::DumpBufImm(char **buf_ptr, int *size_ptr)
+void Inst::DumpImm(std::ostream &os) const
 {
-	unsigned int imm;
-
-	imm = bytes.offset_imm.offset;
-	if (imm & 0x8000)
-		imm = -((imm ^ 0xffff) + 1);
-	str_printf(buf_ptr, size_ptr, "%d", (int) imm);
+	int imm = SignExtend32(bytes.offset_imm.offset, 16);
+	os << imm;
 }
 
 
-void Inst::DumpBufImmhex(char **buf_ptr, int *size_ptr)
+void Inst::DumpImmhex(std::ostream &os) const
 {
-	unsigned int immhex;
-
-	immhex = bytes.offset_imm.offset;
-	str_printf(buf_ptr, size_ptr, "0x%x", immhex);
+	unsigned immhex = bytes.offset_imm.offset;
+	os << StringFmt("0x%x", immhex);
 }
 
 
-void Inst::DumpBufBase(char **buf_ptr, int *size_ptr)
+void Inst::DumpBase(std::ostream &os) const
 {
-	unsigned int base;
-
-	base = bytes.offset_imm.base;
-	str_printf(buf_ptr, size_ptr, "%s", inst_reg_name[base]);
+	unsigned base = bytes.offset_imm.base;
+	os << inst_reg_name[base];
 }
 
 
-void Inst::DumpBufSel(char **buf_ptr, int *size_ptr)
+void Inst::DumpSel(std::ostream &os) const
 {
-	unsigned int sel;
-
-	sel = bytes.sel.sel;
-	str_printf(buf_ptr, size_ptr, "%d", sel);
+	unsigned sel = bytes.sel.sel;
+	os << sel;
 }
 
 
-void Inst::DumpBufCc(char **buf_ptr, int *size_ptr)
+void Inst::DumpCc(std::ostream &os) const
 {
-	unsigned int cc;
-
-	cc = bytes.cc.cc;
-	str_printf(buf_ptr, size_ptr, "$fcc%d", cc);
+	unsigned cc = bytes.cc.cc;
+	os << "$fcc" << cc;
 }
 
 
-void Inst::DumpBufPos(char **buf_ptr, int *size_ptr)
+void Inst::DumpPos(std::ostream &os) const
 {
-	unsigned int pos;
-
-	pos = bytes.standard.sa;
-	str_printf(buf_ptr, size_ptr, "0x%x", pos);
+	unsigned pos = bytes.standard.sa;
+	os << StringFmt("0x%x", pos);
 }
 
 
-void Inst::DumpBufFs(char **buf_ptr, int *size_ptr)
+void Inst::DumpFs(std::ostream &os) const
 {
-	unsigned int fs;
-	int token_len;
-
-	fs = bytes.standard.rd;
-	if ((Common::Asm::IsToken(info->name, "CFC1", token_len)) ||
-		(Common::Asm::IsToken(info->name, "CTC1", token_len)))
-		str_printf(buf_ptr, size_ptr, "$%d", fs);
+	unsigned fs = bytes.standard.rd;
+	if ((Common::Asm::IsToken(info->name, "CFC1")) ||
+			(Common::Asm::IsToken(info->name, "CTC1")))
+		os << '$' << fs;
 	else
-		str_printf(buf_ptr, size_ptr, "$f%d", fs);
+		os << "$f" << fs;
 }
 
 
-void Inst::DumpBufSize(char **buf_ptr, int *size_ptr)
+void Inst::DumpSize(std::ostream &os) const
 {
-	unsigned int size;
-	unsigned int pos;
+	unsigned pos = bytes.standard.sa;
+	unsigned size = bytes.standard.rd;
 
-	int token_len;
-
-	pos = bytes.standard.sa;
-	size = bytes.standard.rd;
-
-	if (Common::Asm::IsToken(info->name, "INS", token_len))
+	if (Common::Asm::IsToken(info->name, "INS"))
 		size = size + 1 - pos;
-	else if (Common::Asm::IsToken(info->name, "EXT", token_len))
+	else if (Common::Asm::IsToken(info->name, "EXT"))
 		size++;
-	str_printf(buf_ptr, size_ptr, "0x%x", size);
+	os << StringFmt("0x%x", size);
 }
 
 
-void Inst::DumpBufFt(char **buf_ptr, int *size_ptr)
+void Inst::DumpFt(std::ostream &os) const
 {
-	unsigned int ft;
-
-	ft = bytes.standard.rt;
-	str_printf(buf_ptr, size_ptr, "$f%d", ft);
+	unsigned ft = bytes.standard.rt;
+	os << "$f" << ft;
 }
 
 
-void Inst::DumpBufFd(char **buf_ptr, int *size_ptr)
+void Inst::DumpFd(std::ostream &os) const
 {
-	unsigned int fd;
-
-	fd = bytes.standard.sa;
-	str_printf(buf_ptr, size_ptr, "$f%d", fd);
+	unsigned fd = bytes.standard.sa;
+	os << "$f" << fd;
 }
 
 
-void Inst::DumpBufCode(char **buf_ptr, int *size_ptr)
+void Inst::DumpCode(std::ostream &os) const
 {
-	unsigned int code;
-
-	code = bytes.code.code;
-	str_printf(buf_ptr, size_ptr, "0x%x", code);
+	unsigned code = bytes.code.code;
+	os << StringFmt("0x%x", code);
 }
 
 
-void Inst::DumpBuf(char *buf, int size)
+void Inst::Dump(std::ostream &os)
 {
-	char *orig_buf = buf;
-	const char *fmt_str;
-
-	int i = 0;
 	int token_len;
 
-	unsigned int rd;
-	unsigned int rt;
-	unsigned int rs;
-	unsigned int sa;
-
-	/* Get format string */
-	fmt_str = info->fmt_str;
+	// Get format string
+	const char *fmt_str = info->fmt_str;
 	if (!fmt_str || !*fmt_str)
-		fatal("Instruction not implememted.\n");
+		fatal("%s: instruction not implemented",
+				__FUNCTION__);
 
-	/* Traverse format string */
+	// Traverse format string
+	bool first_token = true;
 	while (*fmt_str)
 	{
-		rd = bytes.standard.rd;
-		rt = bytes.standard.rt;
-		rs = bytes.standard.rs;
-		sa = bytes.standard.sa;
+		unsigned rd = bytes.standard.rd;
+		unsigned rt = bytes.standard.rt;
+		unsigned rs = bytes.standard.rs;
+		unsigned sa = bytes.standard.sa;
 
-		/*
-		 *  DEAL WITH PSEUDO INSTRUCTIONS
-		 */
+		//
+		//  PSEUDO INSTRUCTIONS
+		//
 
-		/* SLL ZERO, ZERO, ZERO => NOP */
+		// SLL ZERO, ZERO, ZERO => NOP
 		if (Common::Asm::IsToken(fmt_str, "sll", token_len))
 		{
 			if ((rd | rt | sa) == 0)
 			{
-				str_printf(&buf, &size, "nop");
+				os << "nop";
 				break;
 			}
 		}
-		/* ADDU RD, RS, ZERO => MOVE RD, RS */
+		// ADDU RD, RS, ZERO => MOVE RD, RS
 		else if (Common::Asm::IsToken(fmt_str, "addu", token_len))
 		{
 			if (rt == 0)
 			{
-				str_printf(&buf, &size, "move\t");
-				DumpBufRd(&buf, &size);
-				str_printf(&buf, &size, ",");
-				DumpBufRs(&buf, &size);
+				os << "move\t";
+				DumpRd(os);
+				os << ',';
+				DumpRs(os);
 				break;
 			}
 		}
-		/* BGEZAL ZERO, OFFSET => BAL OFFSET */
+		// BGEZAL ZERO, OFFSET => BAL OFFSET
 		else if (Common::Asm::IsToken(fmt_str, "bgezal", token_len))
 		{
 			if (rs == 0)
 			{
-				str_printf(&buf, &size, "bal\t");
-				DumpBufOffsetbr(&buf, &size);
+				os << "bal\t";
+				DumpOffsetbr(os);
 				break;
 			}
 		}
-		/* BEQ ZERO, ZERO, OFFSET => B OFFSET */
-		/* BEQ RS, ZERO, OFFSET => BEQZ RS, OFFSET */
+		// BEQ ZERO, ZERO, OFFSET => B OFFSET
+		// BEQ RS, ZERO, OFFSET => BEQZ RS, OFFSET
 		else if (Common::Asm::IsToken(fmt_str, "beq", token_len))
 		{
 			if ((rs | rt) == 0)
 			{
-				str_printf(&buf, &size, "b\t");
-				DumpBufOffsetbr(&buf, &size);
+				os << "b\t";
+				DumpOffsetbr(os);
 				break;
 			}
 			else if (rt == 0)
 			{
-				str_printf(&buf, &size, "beqz\t");
-				DumpBufRs(&buf, &size);
-				str_printf(&buf, &size, ",");
-				DumpBufOffsetbr(&buf, &size);
+				os << "beqz\t";
+				DumpRs(os);
+				os << ',';
+				DumpOffsetbr(os);
 				break;
 			}
 		}
-		/* ADDIU RT, ZERO, IMM => LI RT, IMM */
+		// ADDIU RT, ZERO, IMM => LI RT, IMM
 		else if (Common::Asm::IsToken(fmt_str, "addiu",
 				token_len))
 		{
 			if (rs == 0)
 			{
-				str_printf(&buf, &size, "li\t");
-				DumpBufRt(&buf, &size);
-				str_printf(&buf, &size, ",");
-				DumpBufImm(&buf, &size);
+				os << "li\t";
+				DumpRt(os);
+				os << ',';
+				DumpImm(os);
 				break;
 			}
 		}
-		/* ORI RT, ZERO, IMM => LI RT, IMM */
+		// ORI RT, ZERO, IMM => LI RT, IMM
 		else if (Common::Asm::IsToken(fmt_str, "ori", token_len))
 		{
 			if (rs == 0)
 			{
-				str_printf(&buf, &size, "li\t");
-				DumpBufRt(&buf, &size);
-				str_printf(&buf, &size, ",");
-				DumpBufImmhex(&buf, &size);
+				os << "li\t";
+				DumpRt(os);
+				os << ',';
+				DumpImmhex(os);
 				break;
 			}
 		}
-		/* BNE RS, ZERO, OFFSET => BNEZ RS, OFFSET */
+		// BNE RS, ZERO, OFFSET => BNEZ RS, OFFSET
 		else if (Common::Asm::IsToken(fmt_str, "bne", token_len))
 		{
 			if (rt == 0)
 			{
-				str_printf(&buf, &size, "bnez\t");
-				DumpBufRs(&buf, &size);
-				str_printf(&buf, &size, ",");
-				DumpBufOffsetbr(&buf, &size);
+				os << "bnez\t";
+				DumpRs(os);
+				os << ',';
+				DumpOffsetbr(os);
 				break;
 			}
 		}
-		/* SUBU RD, ZERO, RT => NEGU RD, RT */
+		// SUBU RD, ZERO, RT => NEGU RD, RT
 		else if (Common::Asm::IsToken(fmt_str, "subu", token_len))
 		{
 			if (rs == 0)
 			{
-				str_printf(&buf, &size, "negu\t");
-				DumpBufRd(&buf, &size);
-				str_printf(&buf, &size, ",");
-				DumpBufRt(&buf, &size);
+				os << "negu\t";
+				DumpRd(os);
+				os << ',';
+				DumpRt(os);
 				break;
 			}
 		}
-		/* DONE WITH PSEUDO INSTRUCTIONS */
+		// DONE WITH PSEUDO INSTRUCTIONS
 
 		if (*fmt_str != '%')
 		{
-			if (*fmt_str != ' ' || buf != orig_buf)
-			{
-				if (*fmt_str == '_')
-					str_printf(&buf,
-							&size, ".");
-				else
-					str_printf(&buf,
-							&size, "%c",
-							*fmt_str);
-			}
+			if (*fmt_str == '_')
+				os << '.';
+			else if (*fmt_str != ' ')
+				os << *fmt_str;
 			++fmt_str;
 			continue;
 		}
-		if (i == 0)
-			str_printf(&buf, &size, "\t");
-		i = 1;
+
+		if (first_token)
+			os << '\t';
+		first_token = false;
 		++fmt_str;
 		if (Common::Asm::IsToken(fmt_str, "sa", token_len))
-			DumpBufSa(&buf, &size);
+			DumpSa(os);
 		else if (Common::Asm::IsToken(fmt_str, "rd", token_len))
-			DumpBufRd(&buf, &size);
+			DumpRd(os);
 		else if (Common::Asm::IsToken(fmt_str, "rt", token_len))
-			DumpBufRt(&buf, &size);
+			DumpRt(os);
 		else if (Common::Asm::IsToken(fmt_str, "rs", token_len))
-			DumpBufRs(&buf, &size);
+			DumpRs(os);
 		else if (Common::Asm::IsToken(fmt_str, "target",
 				token_len))
-			DumpBufTarget(&buf, &size);
+			DumpTarget(os);
 		else if (Common::Asm::IsToken(fmt_str, "offset",
 				token_len))
-			DumpBufOffset(&buf, &size);
+			DumpOffset(os);
 		else if (Common::Asm::IsToken(fmt_str, "offsetbr",
 				token_len))
-			DumpBufOffsetbr(&buf, &size);
+			DumpOffsetbr(os);
 		else if (Common::Asm::IsToken(fmt_str, "Imm", token_len))
-			DumpBufImm(&buf, &size);
+			DumpImm(os);
 		else if (Common::Asm::IsToken(fmt_str, "Immhex",
 				token_len))
-			DumpBufImmhex(&buf, &size);
+			DumpImmhex(os);
 		else if (Common::Asm::IsToken(fmt_str, "base", token_len))
-			DumpBufBase(&buf, &size);
+			DumpBase(os);
 		else if (Common::Asm::IsToken(fmt_str, "sel", token_len))
-			DumpBufSel(&buf, &size);
+			DumpSel(os);
 		else if (Common::Asm::IsToken(fmt_str, "cc", token_len))
-			DumpBufCc(&buf, &size);
+			DumpCc(os);
 		else if (Common::Asm::IsToken(fmt_str, "pos", token_len))
-			DumpBufPos(&buf, &size);
+			DumpPos(os);
 		else if (Common::Asm::IsToken(fmt_str, "size", token_len))
-			DumpBufSize(&buf, &size);
+			DumpSize(os);
 		else if (Common::Asm::IsToken(fmt_str, "fs", token_len))
-			DumpBufFs(&buf, &size);
+			DumpFs(os);
 		else if (Common::Asm::IsToken(fmt_str, "ft", token_len))
-			DumpBufFt(&buf, &size);
+			DumpFt(os);
 		else if (Common::Asm::IsToken(fmt_str, "fd", token_len))
-			DumpBufFd(&buf, &size);
+			DumpFd(os);
 		else if (Common::Asm::IsToken(fmt_str, "code", token_len))
-			DumpBufCode(&buf, &size);
+			DumpCode(os);
 		else
 			fatal("%s: token not recognized\n", fmt_str);
 
@@ -543,88 +481,12 @@ void Inst::DumpBuf(char *buf, int size)
 }
 
 
-void Inst::Dump(std::ostream &os)
-{
-	char buf[200];
-
-	DumpBuf(buf, sizeof buf);
-	os << buf;
-}
-
-
 void Inst::DumpHex(std::ostream &os)
 {
-	os << "\n" << setfill(' ') << setw(8) << hex << addr <<
-			":\t" << setfill('0') << setw(8) << hex <<
-			bytes.word << " \t" << setfill(' ');
+	os << StringFmt("\n%8x:\t%08x \t", addr, bytes.word);
 }
 
 
+} // namespace MIPS
 
 
-/*
- * C Wrapper
- */
-
-struct MIPSInstWrap *MIPSInstWrapCreate(struct MIPSAsmWrap *as)
-{
-	return (MIPSInstWrap *) new Inst((Asm *) as);
-}
-
-
-void MIPSInstWrapFree(struct MIPSInstWrap *self)
-{
-	delete (Inst *) self;
-}
-
-
-void MIPSInstWrapCopy(struct MIPSInstWrap *left, struct MIPSInstWrap *right)
-{
-	Inst *ileft = (Inst *) left;
-	Inst *iright = (Inst *) right;
-	*ileft = *iright;
-}
-
-
-void MIPSInstWrapDecode(struct MIPSInstWrap *self, unsigned int addr, void *buf)
-{
-	Inst *inst = (Inst *) self;
-	inst->Decode(addr, (const char *) buf);
-}
-
-
-void MIPSInstWrapDump(struct MIPSInstWrap *self, FILE *f)
-{
-	Inst *inst = (Inst *) self;
-	__gnu_cxx::stdio_filebuf<char> filebuf(fileno(f), std::ios::out);
-	ostream os(&filebuf);
-	inst->Dump(os);
-}
-
-
-MIPSInstOpcode MIPSInstWrapGetOpcode(struct MIPSInstWrap *self)
-{
-	Inst *inst = (Inst *) self;
-	return (MIPSInstOpcode) inst->GetOpcode();
-}
-
-
-const char *MIPSInstWrapGetName(struct MIPSInstWrap *self)
-{
-	Inst *inst = (Inst *) self;
-	return inst->GetName().c_str();
-}
-
-
-unsigned int MIPSInstWrapGetAddress(struct MIPSInstWrap *self)
-{
-	Inst *inst = (Inst *) self;
-	return inst->GetAddress();
-}
-
-
-MIPSInstBytes *MIPSInstWrapGetBytes(struct MIPSInstWrap *self)
-{
-	Inst *inst = (Inst *) self;
-	return (MIPSInstBytes *) inst->GetBytes();
-}

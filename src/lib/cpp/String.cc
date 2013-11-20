@@ -48,27 +48,6 @@ const char *StringGetErrorString(StringError error)
 }
 
 
-void str_printf(char **pbuf, int *psize, const char *fmt, ...)
-{
-	va_list va;
-	int len;
-
-	if (*psize <= 0)
-		return;
-	if (*psize == 1)
-	{
-		**pbuf = '\0';
-		return;
-	}
-	va_start(va, fmt);
-	len = vsnprintf(*pbuf, *psize, fmt, va);
-	if (len >= *psize)
-		len = *psize - 1;
-	*psize -= len;
-	*pbuf += len;
-}
-
-
 std::string StringFmt(const char *fmt, ...)
 {
 	char buf[1024];
