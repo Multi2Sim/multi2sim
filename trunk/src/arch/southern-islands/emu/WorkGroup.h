@@ -55,9 +55,13 @@ class WorkGroup
 	int id_3d[3];
 
 	// Status
-	bool wavefronts_at_barrier;
-	bool wavefronts_completed_emu;
-	bool wavefronts_completed_timing;
+	// FIXME: Should not be bool
+	// bool wavefronts_at_barrier;
+	// bool wavefronts_completed_emu;
+	// bool wavefronts_completed_timing;
+	unsigned wavefronts_at_barrier;
+	unsigned wavefronts_completed_emu;
+	unsigned wavefronts_completed_timing;
 	bool finished_emu;
 	bool finished_timing;
 
@@ -102,8 +106,14 @@ public:
 
 	/// Getters
 	///
-	/// Workgroup ID
+	/// Get workgroup ID
 	int getId() const { return id; }
+
+	/// Get counter of wavefronts in workgroup
+	int getWavefrontsInWorkgroup() const { return wavefronts.size(); }
+
+	/// Get counter of wavefronts at barrier
+	int getWavefrontsAtBarrier() const { return wavefronts_at_barrier; }
 
 	/// Statistic showing the number of reads from scalar registers
 	long long getSRegReadCount() const { return sreg_read_count; }
@@ -120,17 +130,23 @@ public:
 
 	/// Setters
 	///
-	/// Set wavefront_at_barrier flag
-	void setWavefrontAtBarrier() { wavefronts_at_barrier = 1; }
+	/// Increase wavefronts_at_barrier counter
+	void incWavefrontsAtBarrier() { wavefronts_at_barrier++; }
 
-	/// Set wavefronts_completed_emu flag
-	void setWavefrontCompletedEmu() { wavefronts_completed_emu = 1; }
+	/// Increase wavefronts_completed_emu counter
+	void incWavefrontsCompletedEmu() { wavefronts_completed_emu++; }
 
-	/// Set wavefronts_completed_timing flag
-	void setWavefrontCompletedTiming() { wavefronts_completed_timing = 1; }
+	/// Increase wavefronts_completed_timing 
+	void incWavefrontsCompletedTiming() { wavefronts_completed_timing++; }
+
+	/// Set wavefront_at_barrier counter
+	void setWavefrontsAtBarrier(unsigned counter) { wavefronts_at_barrier = counter; }
+
+	/// Set wavefronts_completed_emu counter
+	void setWavefrontsCompletedEmu(unsigned counter) { wavefronts_completed_emu = counter; }
 
 	/// Set finished_emu flag
-	void setFinishedEmu() { finished_emu = 1; }
+	void setFinishedEmu() { finished_emu = true; }
 
 	/// Set finished_timing flag
 	void setFinishedTiming() { finished_timing = 1; }
