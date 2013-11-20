@@ -24,8 +24,8 @@
 #include <memory>
 #include <unordered_map>
 
+#include <lib/cpp/Debug.h>
 #include <lib/cpp/IniFile.h>
-#include <lib/cpp/Misc.h>
 
 #include "Node.h"
 
@@ -43,7 +43,7 @@ class TreeConfig
 {
 	/* File name */
 	std::string path;
-	std::unique_ptr<IniFile> ini_file;
+	std::unique_ptr<misc::IniFile> ini_file;
 
 	/* List of trees loaded by configuration */
 	std::list<std::unique_ptr<Tree>> tree_list;
@@ -145,7 +145,7 @@ public:
 	explicit Tree(const std::string &name);
 
 	/* Create the tree from the content of an INI file */
-	Tree(IniFile &f, const std::string &name) { Read(f, name); }
+	Tree(misc::IniFile &f, const std::string &name) { Read(f, name); }
 
 	/* Getters */
 	const std::string &GetName() { return name; }
@@ -198,8 +198,8 @@ public:
 	void PostorderTraversal(std::list<Node *> &list);
 
 	/* Read/write the control tree from/to an INI file */
-	void Write(IniFile &f);
-	void Read(IniFile &f, const std::string &name);
+	void Write(misc::IniFile &f);
+	void Read(misc::IniFile &f, const std::string &name);
 
 	/* Compare two control trees */
 	void Compare(Tree *tree);

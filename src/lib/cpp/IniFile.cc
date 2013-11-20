@@ -26,7 +26,8 @@
 #include "Misc.h"
 
 
-using namespace misc;
+namespace misc
+{
 
 
 void IniFile::ItemToSectionVar(const std::string &item, std::string &section,
@@ -629,4 +630,7 @@ void IniFile::Check() const
 				path.c_str(), section.c_str(), var.c_str());
 	}
 }
+
+
+}  // namespace misc
 

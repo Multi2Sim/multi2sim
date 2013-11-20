@@ -19,8 +19,11 @@
 
 #include <string>
 
+#include "Debug.h"
 #include "Misc.h"
+#include "String.h"
 #include "Wrapper.h"
+
 
 using namespace misc;
 
@@ -111,3 +114,4 @@ void DebugSetPathWrap(struct DebugWrap *self, const char *path)
 	Debug *debug = (Debug *) self;
 	debug->setPath(path);
 }
+

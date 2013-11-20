@@ -8,6 +8,9 @@ libcpp_a_SOURCES = \
 	CommandLine.cc \
 	CommandLine.h \
 	\
+	Debug.cc \
+	Debug.h \
+	\
 	ELFReader.cc \
 	ELFReader.h \
 	\
@@ -19,6 +22,9 @@ libcpp_a_SOURCES = \
 	\
 	Misc.cc \
 	Misc.h \
+	\
+	String.cc \
+	String.h \
 	\
 	Wrapper.cc \
 	Wrapper.h

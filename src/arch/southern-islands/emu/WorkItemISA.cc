@@ -17,10 +17,15 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <cassert>
+
+#include <lib/cpp/Misc.h>
+
 #include "Emu.h"
 #include "Wavefront.h"
 #include "WorkGroup.h"
 #include "WorkItem.h"
+
 
 using namespace misc;
 
