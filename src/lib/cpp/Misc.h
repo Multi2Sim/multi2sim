@@ -146,6 +146,9 @@ int StringToInt(const std::string &s, StringError &error);
 long long StringToInt64(const std::string &s);
 long long StringToInt64(const std::string &s, StringError &error);
 
+std::string StringParagraph(const std::string &text,
+		int indent = 0, int first_indent = 0,
+		int width = 80);
 
 
 

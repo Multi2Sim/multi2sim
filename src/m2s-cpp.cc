@@ -21,6 +21,7 @@
 #include <iostream>
 
 #include <lib/cpp/CommandLine.h>
+#include <lib/cpp/Misc.h>
 
 #include "Wrapper.h"
 
