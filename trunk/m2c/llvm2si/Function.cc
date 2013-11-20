@@ -17,13 +17,14 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <lib/cpp/Misc.h>
 #include <llvm/Constants.h>
 #include <llvm/Function.h>
 
 #include "BasicBlock.h"
 #include "Function.h"
 
-
+using namespace misc;
 using namespace si2bin;
 
 namespace llvm2si

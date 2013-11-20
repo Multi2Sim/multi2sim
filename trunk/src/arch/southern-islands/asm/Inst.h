@@ -22,7 +22,7 @@
 
 #ifdef __cplusplus
 
-#include <lib/cpp/Misc.h>
+#include <lib/cpp/String.h>
 
 
 namespace SI

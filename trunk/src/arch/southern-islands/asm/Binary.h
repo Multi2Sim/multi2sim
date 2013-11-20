@@ -23,8 +23,9 @@
 
 #ifdef __cplusplus
 
+#include <lib/cpp/Debug.h>
 #include <lib/cpp/ELFReader.h>
-#include <lib/cpp/Misc.h>
+#include <lib/cpp/String.h>
 
 
 

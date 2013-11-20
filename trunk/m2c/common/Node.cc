@@ -19,6 +19,8 @@
 
 #include <iostream>
 
+#include <lib/cpp/Misc.h>
+
 #include "BasicBlock.h"
 #include "Node.h"
 #include "Tree.h"

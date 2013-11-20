@@ -24,15 +24,13 @@
 #include <memory>
 #include <unordered_map>
 
-#include <lib/cpp/Misc.h>
+#include <lib/cpp/String.h>
 
-
-using namespace misc;
 
 namespace llvm2si
 {
 
-extern StringMap symbol_type_map;
+extern misc::StringMap symbol_type_map;
 enum SymbolType
 {
 	SymbolTypeInvalid = 0,
