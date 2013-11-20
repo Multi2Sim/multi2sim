@@ -20,7 +20,7 @@
 #ifndef ARCH_SOUTHERN_ISLANDS_EMU_MACHINE_H
 #define ARCH_SOUTHERN_ISLANDS_EMU_MACHINE_H
 
-#include <arch/southern-islands/asm/Inst.h>
+#include <arch/southern-islands/asm/Wrapper.h>
 
 
 #define DEFINST(_name, _fmt_str, _fmt, _opcode, _size, _flags) \

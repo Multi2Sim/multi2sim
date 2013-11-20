@@ -239,19 +239,7 @@ public:
 };
 
 
-
-/*
- * Public
- */
-
-/*
-struct StringMapWrap;
-extern struct StringMapWrap *si_arg_dimension_map;
-extern struct StringMapWrap *si_arg_access_type_map;
-extern struct StringMapWrap *si_arg_scope_map;
-extern struct StringMapWrap *si_arg_reflection_map;
-*/
-
 }  /* namespace SI */
 
 #endif
+

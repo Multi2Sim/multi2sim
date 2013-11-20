@@ -23,7 +23,7 @@
 
 #include <lib/class/class.h>
 #include <stdint.h>
-#include <src/arch/southern-islands/asm/Inst.h>
+#include <src/arch/southern-islands/asm/Wrapper.h>
 #include "emu.h"
 
 #define SI_POS_COUNT 4
