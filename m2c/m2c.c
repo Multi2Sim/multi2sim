@@ -51,7 +51,7 @@
 #include <src/arch/common/asm.h>
 #include <src/arch/fermi/asm/Asm.h>
 #include <src/arch/southern-islands/asm/arg.h>
-#include <src/arch/southern-islands/asm/Asm.h>
+#include <src/arch/southern-islands/asm/Wrapper.h>
 
 
 /*

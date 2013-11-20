@@ -30,7 +30,7 @@ using namespace misc;
 namespace SI
 {
 
-/* Debugger */
+// Debugger
 Debug Binary::debug;
 
 
@@ -41,49 +41,49 @@ Debug Binary::debug;
 		fatal("%s: parameter '" #__var "' was expected to be 0x%x", __FUNCTION__, (__val))
 
 
-/* Note header */
+// Note header
 struct BinaryNoteHeader
 {
-	Elf32_Word namesz;  /* Size of the name field. Must be 8 */
-	Elf32_Word descsz;  /* Size of the data payload */
-	Elf32_Word type;  /* Type of the payload */
-	char name[8];  /* Note header string. Must be "ATI CAL" */
+	Elf32_Word namesz;  // Size of the name field. Must be 8
+	Elf32_Word descsz;  // Size of the data payload
+	Elf32_Word type;  // Type of the payload
+	char name[8];  // Note header string. Must be "ATI CAL"
 };
 
 StringMap binary_user_data_map =
 {
-	{ "IMM_RESOURCE",                      SIBinaryUserDataResource },
-	{ "IMM_SAMPLER",                       SIBinaryUserDataSampler},
-	{ "IMM_CONST_BUFFER",                  SIBinaryUserDataConstBuffer },
-	{ "IMM_VERTEX_BUFFER",                 SIBinaryUserDataVertexBuffer },
-	{ "IMM_UAV",                           SIBinaryUserDataUAV },
-	{ "IMM_ALU_FLOAT_CONST",               SIBinaryUserDataALUFloatConst},
-	{ "IMM_ALU_BOOL32_CONST",              SIBinaryUserDataALUBool32Const },
-	{ "IMM_GDS_COUNTER_RANGE",             SIBinaryUserDataGDSCounterRange },
-	{ "IMM_GDS_MEMORY_RANGE",              SIBinaryUserDataGDSMemoryRange },
-	{ "IMM_GWS_BASE",                      SIBinaryUserDataGWSBase },
-	{ "IMM_WORK_ITEM_RANGE",               SIBinaryUserDataWorkItemRange },
-	{ "IMM_WORK_GROUP_RANGE",              SIBinaryUserDataWorkGroupRange },
-	{ "IMM_DISPATCH_ID",                   SIBinaryUserDataDispatchId },
-	{ "IMM_SCRATCH_BUFFER",                SIBinaryUserDataScratchBuffer },
-	{ "IMM_HEAP_BUFFER",                   SIBinaryUserDataHeapBuffer },
-	{ "IMM_KERNEL_ARG",                    SIBinaryUserDataKernelArg },
-	{ "IMM_CONTEXT_BASE",                  SIBinaryUserDataContextBase},
-	{ "IMM_LDS_ESGS_SIZE",                 SIBinaryUserDataLDSEsgsSize },
-	{ "SUB_PTR_FETCH_SHADER",              SIBinaryUserDataPtrFetchShader },
-	{ "PTR_RESOURCE_TABLE",                SIBinaryUserDataPtrResourceTable },
-	{ "PTR_CONST_BUFFER_TABLE",            SIBinaryUserDataConstBufferTable },
-	{ "PTR_INTERNAL_RESOURCE_TABLE",       SIBinaryUserDataInteralResourceTable },
-	{ "PTR_SAMPLER_TABLE",                 SIBinaryUserDataSamplerTable },
-	{ "PTR_UAV_TABLE",                     SIBinaryUserDataUAVTable },
-	{ "PTR_INTERNAL_GLOBAL_TABLE",         SIBinaryUserDataInternalGlobalTable },
-	{ "PTR_VERTEX_BUFFER_TABLE",           SIBinaryUserDataVertexBufferTable },
-	{ "PTR_SO_BUFFER_TABLE",               SIBinaryUserDataSoBufferTable },
-	{ "PTR_EXTENDED_USER_DATA",            SIBinaryUserDataExtendedUserData },
-	{ "PTR_INDIRECT_RESOURCE",             SIBinaryUserDataIndirectResource },
-	{ "PTR_INDIRECT_INTERNAL_RESOURCE",    SIBinaryUserDataInternalResource },
-	{ "PTR_INDIRECT_UAV",                  SIBinaryUserDataPtrIndirectUAV },
-	{ "E_SC_USER_DATA_CLASS_LAST",         SIBinaryUserDataLast },
+	{ "IMM_RESOURCE",                      BinaryUserDataResource },
+	{ "IMM_SAMPLER",                       BinaryUserDataSampler},
+	{ "IMM_CONST_BUFFER",                  BinaryUserDataConstBuffer },
+	{ "IMM_VERTEX_BUFFER",                 BinaryUserDataVertexBuffer },
+	{ "IMM_UAV",                           BinaryUserDataUAV },
+	{ "IMM_ALU_FLOAT_CONST",               BinaryUserDataALUFloatConst},
+	{ "IMM_ALU_BOOL32_CONST",              BinaryUserDataALUBool32Const },
+	{ "IMM_GDS_COUNTER_RANGE",             BinaryUserDataGDSCounterRange },
+	{ "IMM_GDS_MEMORY_RANGE",              BinaryUserDataGDSMemoryRange },
+	{ "IMM_GWS_BASE",                      BinaryUserDataGWSBase },
+	{ "IMM_WORK_ITEM_RANGE",               BinaryUserDataWorkItemRange },
+	{ "IMM_WORK_GROUP_RANGE",              BinaryUserDataWorkGroupRange },
+	{ "IMM_DISPATCH_ID",                   BinaryUserDataDispatchId },
+	{ "IMM_SCRATCH_BUFFER",                BinaryUserDataScratchBuffer },
+	{ "IMM_HEAP_BUFFER",                   BinaryUserDataHeapBuffer },
+	{ "IMM_KERNEL_ARG",                    BinaryUserDataKernelArg },
+	{ "IMM_CONTEXT_BASE",                  BinaryUserDataContextBase},
+	{ "IMM_LDS_ESGS_SIZE",                 BinaryUserDataLDSEsgsSize },
+	{ "SUB_PTR_FETCH_SHADER",              BinaryUserDataPtrFetchShader },
+	{ "PTR_RESOURCE_TABLE",                BinaryUserDataPtrResourceTable },
+	{ "PTR_CONST_BUFFER_TABLE",            BinaryUserDataConstBufferTable },
+	{ "PTR_INTERNAL_RESOURCE_TABLE",       BinaryUserDataInteralResourceTable },
+	{ "PTR_SAMPLER_TABLE",                 BinaryUserDataSamplerTable },
+	{ "PTR_UAV_TABLE",                     BinaryUserDataUAVTable },
+	{ "PTR_INTERNAL_GLOBAL_TABLE",         BinaryUserDataInternalGlobalTable },
+	{ "PTR_VERTEX_BUFFER_TABLE",           BinaryUserDataVertexBufferTable },
+	{ "PTR_SO_BUFFER_TABLE",               BinaryUserDataSoBufferTable },
+	{ "PTR_EXTENDED_USER_DATA",            BinaryUserDataExtendedUserData },
+	{ "PTR_INDIRECT_RESOURCE",             BinaryUserDataIndirectResource },
+	{ "PTR_INDIRECT_INTERNAL_RESOURCE",    BinaryUserDataInternalResource },
+	{ "PTR_INDIRECT_UAV",                  BinaryUserDataPtrIndirectUAV },
+	{ "E_SC_USER_DATA_CLASS_LAST",         BinaryUserDataLast },
 	{ 0, 0 }
 };
 
@@ -280,7 +280,7 @@ StringMap binary_prog_info_map = {
 	{ "AMU_ABI_CACHED_FETCH_CONST128_UAV10",     (int) 0x800000aa },
 	{ "AMU_ABI_CACHED_FETCH_CONST128_UAV11",     (int) 0x800000ab },
 
-	/* Southern Islands Related Fields */
+	// Southern Islands Related Fields
 
 	{ "AMU_ABI_USER_ELEMENT_COUNT",              (int) 0x80001000 },
 	{ "AMU_ABI_USER_ELEMENTS_0_DWORD0",          (int) 0x80001001 },
@@ -373,10 +373,10 @@ StringMap binary_prog_info_map = {
 	 * AMU_ABI_EXPORT_PATCH_CODE_EXPORT7_FMT9_DWORD3
 	 */
 	{ "AMU_ABI_VS_IN_SEMANTICS_0",                (int) 0x80001800 },
-	/*", There are 32 input semantics */
+	//", There are 32 input semantics
 	{ "AMU_ABI_VS_IN_SEMANTICS_31",               (int) 0x8000181f },
 	{ "AMU_ABI_VS_OUT_SEMANTICS_0",               (int) 0x80001820 },
-	/*", There are 32 output semantics */
+	//", There are 32 output semantics
 	{ "AMU_ABI_VS_OUT_SEMANTICS_31",              (int) 0x8000183f },
 	{ "AMU_ABI_DX9_TEX_CUBE_MASK",                (int) 0x80001840 },
 	{ "AMU_ABI_ORDERED_APPEND_ENABLE",            (int) 0x80001841 },
@@ -425,41 +425,41 @@ StringMap binary_prog_info_map = {
 void Binary::ReadNote(BinaryDictEntry *dict_entry, std::istringstream& ss,
 		const char *buffer)
 {
-	/* Read note header */
+	// Read note header
 	BinaryNoteHeader *header = (BinaryNoteHeader *) (buffer + ss.tellg());
 	ss.seekg(sizeof(BinaryNoteHeader), std::ios_base::cur);
 	if (!ss)
 		fatal("%s: error decoding note header", name.c_str());
 	
-	/* Read note description (payload) */
+	// Read note description (payload)
 	const char *desc = buffer + ss.tellg();
 	ss.seekg(header->descsz, std::ios_base::cur);
 	if (!ss)
 		fatal("%s: error decoding note description", name.c_str());
 
-	/* Debug */
+	// Debug
 	const char *note_str = StringMapValue(binary_note_map, header->type);
 	debug << "  note: type = " << header->type << " ("
 			<< note_str << "), descsz = "
 			<< header->descsz << '\n';
 		
-	/* Analyze note */
+	// Analyze note
 	switch (header->type)
 	{
 
-	case 1:  /* ELF_NOTE_ATI_PROGINFO */
+	case 1:  // ELF_NOTE_ATI_PROGINFO
 	{
 		int prog_info_count;
 		BinaryNoteProgInfoEntry *prog_info_entry;
 		int i;
 
-		/* Get number of entries */
+		// Get number of entries
 		assert(header->descsz % sizeof(BinaryNoteProgInfoEntry) == 0);
 		prog_info_count = header->descsz / sizeof(BinaryNoteProgInfoEntry);
 		debug << "\tnote with device configuration unique to the"
 				<< " program (" << prog_info_count << " entries)\n";
 
-		/* Decode entries */
+		// Decode entries
 		for (i = 0; i < prog_info_count; i++)
 		{
 			prog_info_entry = (BinaryNoteProgInfoEntry *)
@@ -470,28 +470,28 @@ void Binary::ReadNote(BinaryDictEntry *dict_entry, std::istringstream& ss,
 							prog_info_entry->address)
 					<< "), value = " << prog_info_entry->value << '\n';
 
-			/* Analyze entry */
+			// Analyze entry
 			switch (prog_info_entry->address)
 			{
 
-			case 0x00002e13:  /* COMPUTE_PGM_RSRC2 */
+			case 0x00002e13:  // COMPUTE_PGM_RSRC2
 			dict_entry->compute_pgm_rsrc2 = 
 				(BinaryComputePgmRsrc2*) &prog_info_entry->value;
 			break;
 
-			case 0x80000082:  /* AMU_ABI_LDS_SIZE_USED */
+			case 0x80000082:  // AMU_ABI_LDS_SIZE_USED
 				dict_entry->lds_size = prog_info_entry->value;
 				break;
 
-			case 0x80000084:  /* AMU_ABI_STACK_SIZE_USED */
+			case 0x80000084:  // AMU_ABI_STACK_SIZE_USED
 				dict_entry->stack_size = prog_info_entry->value;
 				break;
 
-			case 0x80001000:  /* AMU_ABI_USER_ELEMENT_COUNT */
+			case 0x80001000:  // AMU_ABI_USER_ELEMENT_COUNT
 				dict_entry->num_user_elements = prog_info_entry->value;
 				i++;
 
-				/* Analyze user elements */
+				// Analyze user elements
 				for(unsigned int j = 0; j < 4 * dict_entry->num_user_elements; j++)
 				{
 					prog_info_entry = (BinaryNoteProgInfoEntry *)
@@ -522,11 +522,11 @@ void Binary::ReadNote(BinaryDictEntry *dict_entry, std::istringstream& ss,
 				}
 				break;
 
-			case 0x80001041:  /* NUM VGPRS */
+			case 0x80001041:  // NUM VGPRS
 				dict_entry->num_vgpr = prog_info_entry->value;
 				break;
 
-			case 0x80001042:  /* NUM SGPRS */
+			case 0x80001042:  // NUM SGPRS
 				dict_entry->num_sgpr = prog_info_entry->value;
 				break;
 
@@ -538,9 +538,9 @@ void Binary::ReadNote(BinaryDictEntry *dict_entry, std::istringstream& ss,
 	}
 
 	
-	case 2:  /* ELF_NOTE_ATI_INPUTS */
+	case 2:  // ELF_NOTE_ATI_INPUTS
 	{
-		/* FIXME: Analyze program inputs */
+		// FIXME: Analyze program inputs
 		if (header->descsz) 
 			warning("%s: pt_note '%s' with descsz != 0 ignored (desc value = 0x%x)",
 				note_str, __FUNCTION__, * (unsigned int *) desc);
@@ -549,9 +549,9 @@ void Binary::ReadNote(BinaryDictEntry *dict_entry, std::istringstream& ss,
 	}
 
 
-	case 3:  /* ELF_NOTE_ATI_OUTPUTS */
+	case 3:  // ELF_NOTE_ATI_OUTPUTS
 	{
-		/* FIXME: Analyze program inputs */
+		// FIXME: Analyze program inputs
 		if (header->descsz) 
 			warning("%s: pt_note '%s' with descsz != 0 ignored (desc value = 0x%x)",
 				note_str, __FUNCTION__, * (unsigned int *) desc);
@@ -560,12 +560,12 @@ void Binary::ReadNote(BinaryDictEntry *dict_entry, std::istringstream& ss,
 	}
 
 	
-	case 4:  /* ELF_NOTE_ATI_CONDOUT */
+	case 4:  // ELF_NOTE_ATI_CONDOUT
 		break;
 	
-	case 5:  /* ELF_NOTE_ATI_FLOAT32CONSTS */
-	case 6:  /* ELF_NOTE_ATI_INT32CONSTS */
-	case 7:  /* ELF_NOTE_ATI_BOOL32CONSTS */
+	case 5:  // ELF_NOTE_ATI_FLOAT32CONSTS
+	case 6:  // ELF_NOTE_ATI_INT32CONSTS
+	case 7:  // ELF_NOTE_ATI_BOOL32CONSTS
 	{
 		int data_segment_desc_count;
 		BinaryNoteDataSegmentDesc *data_segment_desc;
@@ -575,14 +575,14 @@ void Binary::ReadNote(BinaryDictEntry *dict_entry, std::istringstream& ss,
 
 		int j;
 
-		/* Get number of entries */
+		// Get number of entries
 		consts = dict_entry->consts;
 		assert(header->descsz % sizeof(BinaryNoteDataSegmentDesc) == 0);
 		data_segment_desc_count = header->descsz / sizeof(BinaryNoteDataSegmentDesc);
 		debug << "\tnote with data for constant buffers (" << data_segment_desc_count
 				<< " entries)\n";
 
-		/* Decode entries */
+		// Decode entries
 		for (j = 0; j < data_segment_desc_count; j++)
 		{
 			data_segment_desc = (BinaryNoteDataSegmentDesc *)
@@ -611,18 +611,18 @@ void Binary::ReadNote(BinaryDictEntry *dict_entry, std::istringstream& ss,
 	}
 
 	
-	case 8:  /* ELF_NOTE_ATI_EARLYEXIT */
+	case 8:  // ELF_NOTE_ATI_EARLYEXIT
 	{
 		Elf32_Word early_exit;
 
-		/* Get 'early_exit' value */
+		// Get 'early_exit' value
 		early_exit = header->descsz ? * (uint32_t *) desc : 0;
 		debug << "\tearly_exit = " << (early_exit ? "TRUE" : "FALSE") << '\n';
 		break;
 	}
 
 	
-	case 9:  /* ELF_NOTE_ATI_GLOBAL_BUFFERS */
+	case 9:  // ELF_NOTE_ATI_GLOBAL_BUFFERS
 	{
 		Elf32_Word global_buffers;
 		global_buffers = header->descsz ? * (uint32_t *) desc : 0;
@@ -631,19 +631,19 @@ void Binary::ReadNote(BinaryDictEntry *dict_entry, std::istringstream& ss,
 	}
 	
 	
-	case 10:  /* ELF_NOTE_ATI_CONSTANT_BUFFERS */
+	case 10:  // ELF_NOTE_ATI_CONSTANT_BUFFERS
 	{
 		int constant_buffer_count;
 		BinaryNoteConstantBufferMask *constant_buffer_mask;
 		int i;
 
-		/* Get number of entries */
+		// Get number of entries
 		assert(header->descsz % sizeof(BinaryNoteConstantBufferMask) == 0);
 		constant_buffer_count = header->descsz / sizeof(BinaryNoteConstantBufferMask);
 		debug << "\tnote including number and size of constant buffers ("
 				<< constant_buffer_count << " entries)\n";
 
-		/* Decode entries */
+		// Decode entries
 		for (i = 0; i < constant_buffer_count; i++) 
 		{
 			constant_buffer_mask = (BinaryNoteConstantBufferMask *)
@@ -657,10 +657,10 @@ void Binary::ReadNote(BinaryDictEntry *dict_entry, std::istringstream& ss,
 	}
 
 	
-	case 11:  /* ELF_NOTE_ATI_INPUT_SAMPLERS */
+	case 11:  // ELF_NOTE_ATI_INPUT_SAMPLERS
 		break;
 	
-	case 12:  /* ELF_NOTE_ATI_PERSISTENT_BUFFERS */
+	case 12:  // ELF_NOTE_ATI_PERSISTENT_BUFFERS
 	{
 		Elf32_Word persistent_buffers;
 		persistent_buffers = header->descsz ? * (uint32_t *) desc : 0;
@@ -670,7 +670,7 @@ void Binary::ReadNote(BinaryDictEntry *dict_entry, std::istringstream& ss,
 	}
 
 	
-	case 13:  /* ELF_NOTE_ATI_SCRATCH_BUFFERS */
+	case 13:  // ELF_NOTE_ATI_SCRATCH_BUFFERS
 	{
 		Elf32_Word scratch_buffers;
 		scratch_buffers = header->descsz ? * (uint32_t *) desc : 0;
@@ -679,13 +679,13 @@ void Binary::ReadNote(BinaryDictEntry *dict_entry, std::istringstream& ss,
 	}
 
 	
-	case 14:  /* ELF_NOTE_ATI_SUB_CONSTANT_BUFFERS */
+	case 14:  // ELF_NOTE_ATI_SUB_CONSTANT_BUFFERS
 		break;
 	
-	case 15:  /* ELF_NOTE_ATI_UAV_MAILBOX_SIZE */
+	case 15:  // ELF_NOTE_ATI_UAV_MAILBOX_SIZE
 		break;
 	
-	case 16:  /* ELF_NOTE_ATI_UAV */
+	case 16:  // ELF_NOTE_ATI_UAV
 	{
 		int uav_entry_count;
 		BinaryNoteUAVEntry *uav_entry;
@@ -695,7 +695,7 @@ void Binary::ReadNote(BinaryDictEntry *dict_entry, std::istringstream& ss,
 		uav_entry_count = header->descsz / sizeof(BinaryNoteUAVEntry);
 		debug << "\tnote (" << uav_entry_count << " entries)\n";
 		
-		/* Decode entries */
+		// Decode entries
 		for (i = 0; i < uav_entry_count; i++) {
 			uav_entry = (BinaryNoteUAVEntry *) (desc + i * sizeof(BinaryNoteUAVEntry));
 			debug << "\tuav_entry[" << i << "].uav = " <<
@@ -709,7 +709,7 @@ void Binary::ReadNote(BinaryDictEntry *dict_entry, std::istringstream& ss,
 	}	
 
 
-	case 17:  /* ELF_NOTE_ATI_UAV_OP_MASK */
+	case 17:  // ELF_NOTE_ATI_UAV_OP_MASK
 		break;
 
 	default:
@@ -718,16 +718,16 @@ void Binary::ReadNote(BinaryDictEntry *dict_entry, std::istringstream& ss,
 }
 
 
-/* Decode notes in the PT_NOTE segment of the given encoding dictionary entry */
+// Decode notes in the PT_NOTE segment of the given encoding dictionary entry
 void Binary::ReadNotes(BinaryDictEntry *dict_entry)
 {
-	/* Get buffer and set position */
+	// Get buffer and set position
 	ELFReader::ProgramHeader *ph = dict_entry->pt_note_segment;
 	std::istringstream ss;
 	ph->getStream(ss);
 	const char *buffer = ph->getBuffer();
 
-	/* Decode notes */
+	// Decode notes
 	debug << "\nReading notes in PT_NOTE segment (enc. dict. for machine = 0x"
 			<< std::hex << dict_entry->header->d_machine << std::dec << ")\n";
 	while (ss.tellg() < ph->getSize())
@@ -740,7 +740,7 @@ void Binary::ReadDictionary()
 	BinaryDictEntry *dict_entry;
 	int num_dict_entries;
 
-	/* ELF header */
+	// ELF header
 	debug << "\n**\n"
 			<< "** Parsing AMD Binary (Internal ELF file)\n"
 			<< "** " << name << "\n"
@@ -753,7 +753,7 @@ void Binary::ReadDictionary()
 	SI_BIN_FILE_NOT_SUPPORTED_NEQ(getMachine(), 0x7d);
 	SI_BIN_FILE_NOT_SUPPORTED_NEQ(getEntry(), 0);
 	
-	/* Look for encoding dictionary (program header with type 'PT_LOPROC+2') */
+	// Look for encoding dictionary (program header with type 'PT_LOPROC+2')
 	ELFReader::ProgramHeader *ph = NULL;
 	for (int i = 0; i < getNumProgramHeaders(); i++)
 	{
@@ -767,7 +767,7 @@ void Binary::ReadDictionary()
 	debug << "Encoding dictionary found in program header "
 			<< ph->getIndex() << "\n";
 	
-	/* Parse encoding dictionary */
+	// Parse encoding dictionary
 	SI_BIN_FILE_NOT_SUPPORTED_NEQ(ph->getVaddr(), 0);
 	SI_BIN_FILE_NOT_SUPPORTED_NEQ(ph->getPaddr(), 0);
 	SI_BIN_FILE_NOT_SUPPORTED_NEQ(ph->getMemsz(), 0);
@@ -777,16 +777,16 @@ void Binary::ReadDictionary()
 	num_dict_entries = ph->getFilesz() / sizeof(BinaryDictHeader);
 	debug << "  -> " << num_dict_entries << " entries\n\n";
 
-	/* Read encoding dictionary entries */
+	// Read encoding dictionary entries
 	std::istringstream ss;
 	ph->getStream(ss);
 	for (int i = 0; i < num_dict_entries; i++)
 	{
-		/* Create entry and insert into dictionary */
+		// Create entry and insert into dictionary
 		dict_entry = new BinaryDictEntry();
 		dict.push_back(dict_entry);
 
-		/* Read header */
+		// Read header
 		dict_entry->header = (BinaryDictHeader *) (ph->getBuffer() + ss.tellg());
 		ss.seekg(sizeof(BinaryDictHeader), std::ios_base::cur);
 
@@ -794,7 +794,7 @@ void Binary::ReadDictionary()
 		 * Apparently the valid code changes by driver version */
 		if (dict_entry->header->d_machine == 9)
 		{
-			/* Driver XXX */
+			// Driver XXX
 			debug << "machine = " << dict_entry->header->d_machine
 					<< " (tahiti or pitcairn)\n";
 			si_dict_entry = dict_entry;
@@ -808,14 +808,14 @@ void Binary::ReadDictionary()
 		}
 		else if (dict_entry->header->d_machine == 26)
 		{
-			/* Driver XXX */
+			// Driver XXX
 			debug << "machine = " << dict_entry->header->d_machine
 					<< " (tahiti or pitcairn)\n";
 			si_dict_entry = dict_entry;
 		}
 		else if (dict_entry->header->d_machine == 27)
 		{
-			/* Driver 12.4 */
+			// Driver 12.4
 			debug << "machine = " << dict_entry->header->d_machine
 					<< " (tahiti or pitcairn)\n";
 			si_dict_entry = dict_entry;
@@ -832,7 +832,7 @@ void Binary::ReadDictionary()
 		}
 	}
 
-	/* Debug */
+	// Debug
 	debug << "Encoding dictionaries:\n";
 	for (unsigned i = 0; i < dict.size(); i++)
 	{
@@ -857,11 +857,11 @@ void Binary::ReadSegments()
 	debug << "\nReading PT_NOTE and PT_LOAD segments:\n";
 	for (unsigned i = 0; i < dict.size(); i++)
 	{
-		/* Get encoding dictionary entry */
+		// Get encoding dictionary entry
 		BinaryDictEntry *dict_entry = dict[i];
 		for (int j = 0; j < getNumProgramHeaders(); j++)
 		{
-			/* Get program header. If not in encoding dictionary segment, skip. */
+			// Get program header. If not in encoding dictionary segment, skip.
 			ELFReader::ProgramHeader *ph = getProgramHeader(j);
 			if (ph->getOffset() < dict_entry->header->d_offset ||
 					ph->getOffset() >= dict_entry->header->d_offset +
@@ -871,7 +871,7 @@ void Binary::ReadSegments()
 					dict_entry->header->d_offset +
 					dict_entry->header->d_size);
 
-			/* Segment PT_NOTE */
+			// Segment PT_NOTE
 			if (ph->getType() == PT_NOTE)
 			{
 				if (dict_entry->pt_note_segment)
@@ -880,7 +880,7 @@ void Binary::ReadSegments()
 				dict_entry->pt_note_segment = ph;
 			}
 
-			/* Segment PT_LOAD */
+			// Segment PT_LOAD
 			if (ph->getType() == PT_LOAD)
 			{
 				if (dict_entry->pt_load_segment)
@@ -890,7 +890,7 @@ void Binary::ReadSegments()
 			}
 		}
 
-		/* Check that both PT_NOTE and PT_LOAD segments were found */
+		// Check that both PT_NOTE and PT_LOAD segments were found
 		if (!dict_entry->pt_note_segment)
 			fatal("%s: no PT_NOTE segment", __FUNCTION__);
 		if (!dict_entry->pt_load_segment)
@@ -919,16 +919,16 @@ void Binary::ReadSections()
 {
 	for (auto &dict_entry : dict)
 	{
-		/* Get encoding dictionary entry */
+		// Get encoding dictionary entry
 		ELFReader::ProgramHeader *load_segment = dict_entry->pt_load_segment;
 		ELFReader::ProgramHeader *note_segment = dict_entry->pt_note_segment;
 		assert(load_segment);
 		assert(note_segment);
 
-		/* Traverse sections */
+		// Traverse sections
 		for (int i = 0; i < getNumSections(); i++)
 		{
-			/* Get section. If not in PT_LOAD segment, skip. */
+			// Get section. If not in PT_LOAD segment, skip.
 			ELFReader::Section *section = getSection(i);
 			if (section->getOffset() < load_segment->getOffset() ||
 					section->getOffset() >= load_segment->getOffset()
@@ -938,7 +938,7 @@ void Binary::ReadSections()
 					load_segment->getOffset() +
 					load_segment->getSize());
 
-			/* Process section */
+			// Process section
 			if (section->getName() == ".text")
 			{
 				if (dict_entry->text_section)
@@ -973,7 +973,7 @@ void Binary::ReadSections()
 			}
 		}
 
-		/* Check that all sections where read */
+		// Check that all sections where read
 		if (!dict_entry->text_section
 				|| !dict_entry->data_section
 				|| !dict_entry->symtab_section
@@ -987,7 +987,7 @@ void Binary::ReadSections()
 Binary::Binary(const char *buffer, unsigned int size, std::string name)
 		: ELFReader::File(buffer, size)
 {
-	/* Initialize */
+	// Initialize
 	this->name = name;
 
 	/* Read encoding dictionary.
@@ -1006,7 +1006,7 @@ Binary::Binary(const char *buffer, unsigned int size, std::string name)
 	"\town kernel sources.\n", 
 			name.c_str());
 	
-	/* Read segments and sections */
+	// Read segments and sections
 	ReadSegments();
 	ReadSections();
 
@@ -1018,104 +1018,11 @@ Binary::Binary(const char *buffer, unsigned int size, std::string name)
 
 Binary::~Binary()
 {
-	/* Free encoding dictionary */
+	// Free encoding dictionary
 	for (auto &dict_entry : dict)
 		delete dict_entry;
 }
 
 
-}  /* namespace SI */
-
-
-
-
-/*
- * C Wrapper
- */
-
-using namespace SI;
-
-StringMapWrap *si_binary_machine_map = (StringMapWrap *) binary_machine_map;
-StringMapWrap *si_binary_note_map = (StringMapWrap *) binary_note_map;
-StringMapWrap *si_binary_prog_info_map = (StringMapWrap *) binary_prog_info_map;
-StringMapWrap *si_binary_user_data_map = (StringMapWrap *) binary_user_data_map;
-
-int SIBinaryDictEntryGetNumVgpr(struct SIBinaryDictEntry *self)
-{
-	BinaryDictEntry *entry = (BinaryDictEntry *) self;
-	return entry->num_vgpr;
-}
-
-int SIBinaryDictEntryGetNumSgpr(struct SIBinaryDictEntry *self)
-{
-	BinaryDictEntry *entry = (BinaryDictEntry *) self;
-	return entry->num_sgpr;
-}
-
-int SIBinaryDictEntryGetLDSSize(struct SIBinaryDictEntry *self)
-{
-	BinaryDictEntry *entry = (BinaryDictEntry *) self;
-	return entry->lds_size;
-}
-
-int SIBinaryDictEntryGetStackSize(struct SIBinaryDictEntry *self)
-{
-	BinaryDictEntry *entry = (BinaryDictEntry *) self;
-	return entry->stack_size;
-}
-
-unsigned int SIBinaryDictEntryGetNumUserElements(struct SIBinaryDictEntry *self)
-{
-	BinaryDictEntry *entry = (BinaryDictEntry *) self;
-	return entry->num_user_elements;
-}
-
-struct SIBinaryUserElement *SIBinaryDictEntryGetUserElements(struct SIBinaryDictEntry *self)
-{
-	BinaryDictEntry *entry = (BinaryDictEntry *) self;
-	assert(sizeof(SIBinaryUserElement) == sizeof(BinaryUserElement));
-	return (SIBinaryUserElement *) &entry->user_elements;
-}
-
-struct SIBinaryComputePgmRsrc2 *SIBinaryDictEntryGetComputePgmRsrc2(struct SIBinaryDictEntry *self)
-{
-	BinaryDictEntry *entry = (BinaryDictEntry *) self;
-	assert(sizeof(SIBinaryComputePgmRsrc2) == sizeof(BinaryComputePgmRsrc2));
-	return (SIBinaryComputePgmRsrc2 *) entry->compute_pgm_rsrc2;
-}
-
-const char *SIBinaryDictEntryGetTextBuffer(struct SIBinaryDictEntry *self)
-{
-	BinaryDictEntry *entry = (BinaryDictEntry *) self;
-	return entry->text_section->getBuffer();
-}
-
-unsigned int SIBinaryDictEntryGetTextSize(struct SIBinaryDictEntry *self)
-{
-	BinaryDictEntry *entry = (BinaryDictEntry *) self;
-	return entry->text_section->getSize();
-}
-
-struct SIBinary *SIBinaryCreate(const char *buffer, unsigned int size, char *name)
-{
-	Binary *self = new Binary(buffer, size, name);
-	return (struct SIBinary *) self;
-}
-
-void SIBinaryFree(struct SIBinary *self)
-{
-	Binary *bin = (Binary *) self;
-	delete bin;
-}
-
-void SIBinarySetDebugFile(const char *path)
-{
-	Binary::debug.setPath(path);
-}
-
-struct SIBinaryDictEntry *SIBinaryGetSIDictEntry(struct SIBinary *self)
-{
-	Binary *bin = (Binary *) self;
-	return (SIBinaryDictEntry *) bin->GetSIDictEntry();
-}
+}  // namespace SI
 

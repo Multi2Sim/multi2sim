@@ -20,11 +20,11 @@
 #ifndef ARCH_SOUTHERN_ISLANDS_ASM_H
 #define ARCH_SOUTHERN_ISLANDS_ASM_H
 
-
-#ifdef __cplusplus
-
+#include <cassert>
 #include <iostream>
+
 #include "Inst.h"
+
 
 namespace SI
 {
@@ -49,10 +49,10 @@ class Asm
 	static const int dec_table_mimg_count = 97;
 	static const int dec_table_exp_count = 1;
 
-	/* Info about Southern Islands instructions. */
+	// Info about Southern Islands instructions.
 	InstInfo inst_info[InstOpcodeCount];
 
-	/* Pointers to elements in 'inst_info' */
+	// Pointers to elements in 'inst_info'
 	InstInfo *dec_table_sopp[dec_table_sopp_count];
 	InstInfo *dec_table_sopc[dec_table_sopc_count];
 	InstInfo *dec_table_sop1[dec_table_sop1_count];
@@ -74,14 +74,14 @@ class Asm
 
 public:
 
-	/* Constructor */
+	// Constructor
 	Asm();
 
-	/* Disassemblers */
+	// Disassemblers
 	void DisassembleBinary(std::string path);
 	void DisassembleOpenGLBinary(std::string path, int shader_index);
 
-	/* Getters */
+	// Getters
 	InstInfo *getInstInfo(int index) { assert(index >= 0 && index <
 			InstOpcodeCount); return &inst_info[index]; }
 	InstInfo *getDecTableSopp(int index) { assert(index >= 0 && index <
@@ -119,35 +119,7 @@ public:
 };
 
 
-}  /* namespace SI */
-
-#endif
-
-
-
-/*
- * C Wrapper
- */
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-struct SIAsmWrap;
-
-struct SIAsmWrap *SIAsmWrapCreate();
-void SIAsmWrapFree(struct SIAsmWrap *self);
-
-void SIAsmWrapDisassembleBinary(struct SIAsmWrap *self, char *path);
-void SIAsmWrapDisassembleOpenGLBinary(struct SIAsmWrap *self, char *path,
-		int shader_index);
-
-void *SIAsmWrapGetInstInfo(struct SIAsmWrap *self, int index);
-
-#ifdef __cplusplus
-}
-#endif
-
+}  // namespace SI
 
 #endif
 

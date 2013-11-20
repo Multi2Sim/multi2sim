@@ -17,7 +17,6 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <ext/stdio_filebuf.h>
 #include <cassert>
 #include <iomanip>
 #include <sstream>
@@ -1318,105 +1317,4 @@ void Inst::Decode(const char *buf, unsigned int address)
 
 
 }  // namespace SI
-
-	
-
-
-/*
- * C Wrapper
- */
-
-using namespace SI;
-
-struct StringMapWrap *si_inst_special_reg_map = (StringMapWrap *) inst_special_reg_map;
-struct StringMapWrap *si_inst_buf_data_format_map = (StringMapWrap *) inst_buf_data_format_map;
-struct StringMapWrap *si_inst_buf_num_format_map = (StringMapWrap *) inst_buf_num_format_map;
-struct StringMapWrap *si_inst_format_map = (StringMapWrap *) inst_format_map;
-
-struct SIInstWrap *SIInstWrapCreate(SIAsmWrap *as)
-{
-	Inst *inst = new Inst((Asm *) as);
-	return (SIInstWrap *) inst;
-}
-
-
-void SIInstWrapFree(struct SIInstWrap *self)
-{
-	Inst *inst = (Inst *) self;
-	delete inst;
-}
-
-
-void SIInstWrapDecode(struct SIInstWrap *self, char *buffer, unsigned int offset)
-{
-	Inst *inst = (Inst *) self;
-	inst->Decode(buffer, offset);
-}
-
-
-void SIInstWrapDump(struct SIInstWrap *self, FILE *f)
-{
-	Inst *inst = (Inst *) self;
-	__gnu_cxx::stdio_filebuf<char> filebuf(fileno(f), std::ios::out);
-	std::ostream os(&filebuf);
-	inst->Dump(os);
-}
-
-
-void SIInstWrapDumpBuf(struct SIInstWrap *self, char *buffer, int size)
-{
-	std::stringstream ss;
-	Inst *inst = (Inst *) self;
-	inst->Dump(ss);
-	snprintf(buffer, size, "%s", ss.str().c_str());
-}
-
-
-void SIInstWrapClear(struct SIInstWrap *self)
-{
-	Inst *inst = (Inst *) self;
-	inst->Clear();
-}
-
-
-int SIInstWrapGetOp(struct SIInstWrap *self)
-{
-	Inst *inst = (Inst *) self;
-	return inst->getOp();
-}
-
-
-SIInstOpcode SIInstWrapGetOpcode(struct SIInstWrap *self)
-{
-	Inst *inst = (Inst *) self;
-	return (SIInstOpcode) inst->getOpcode();
-}
-
-
-SIInstBytes *SIInstWrapGetBytes(struct SIInstWrap *self)
-{
-	Inst *inst = (Inst *) self;
-	return (SIInstBytes *) inst->getBytes();
-}
-
-
-const char *SIInstWrapGetName(struct SIInstWrap *self)
-{
-	Inst *inst = (Inst *) self;
-	return inst->getName();
-}
-
-
-SIInstFormat SIInstWrapGetFormat(struct SIInstWrap *self)
-{
-	Inst *inst = (Inst *) self;
-	return (SIInstFormat) inst->getFormat();
-}
-
-
-int SIInstWrapGetSize(struct SIInstWrap *self)
-{
-	Inst *inst = (Inst *) self;
-	return inst->getSize();
-}
 

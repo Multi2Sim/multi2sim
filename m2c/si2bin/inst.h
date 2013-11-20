@@ -21,7 +21,7 @@
 #define M2C_SI2BIN_INST_H_OLD
 
 #include <stdio.h>
-#include <arch/southern-islands/asm/Inst.h>
+#include <arch/southern-islands/asm/Wrapper.h>
 #include <lib/class/class.h>
 
 

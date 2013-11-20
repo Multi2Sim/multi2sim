@@ -20,7 +20,7 @@
 #ifndef M2C_SI2BIN_ARG_H_OLD
 #define M2C_SI2BIN_ARG_H_OLD
 
-#include <arch/southern-islands/asm/Inst.h>
+#include <arch/southern-islands/asm/Wrapper.h>
 #include <lib/class/string.h>
 #include <lib/util/misc.h>
 

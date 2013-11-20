@@ -25,7 +25,7 @@
 #include <string.h>
 
 #include <arch/southern-islands/asm/arg.h>
-#include <arch/southern-islands/asm/Binary.h>
+#include <arch/southern-islands/asm/Wrapper.h>
 #include <lib/class/class.h>
 #include <lib/class/elf-writer.h>
 #include <lib/class/hash-table.h>

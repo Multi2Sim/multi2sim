@@ -19,7 +19,7 @@
 
 #include <assert.h>
 
-#include <arch/southern-islands/asm/Inst.h>
+#include <arch/southern-islands/asm/Wrapper.h>
 #include <lib/class/elf-writer.h>
 #include <lib/class/string.h>
 #include <lib/mhandle/mhandle.h>

@@ -19,8 +19,6 @@
 
 #include <assert.h>
 
-#include <arch/southern-islands/asm/Asm.h>
-#include <arch/southern-islands/asm/Inst.h>
 #include <lib/class/list.h>
 #include <lib/class/string.h>
 #include <lib/mhandle/mhandle.h>
