@@ -20,7 +20,7 @@
 #ifndef FERMI_EMU_WARP_H
 #define FERMI_EMU_WARP_H
 
-#include <arch/fermi/asm/Inst.h>
+#include <arch/fermi/asm/Wrapper.h>
 #include <lib/class/class.h>
 #include <lib/util/string.h>
 

@@ -21,8 +21,6 @@
 #define FERMI_ASM_ASM_H
 
 
-#ifdef __cplusplus
-
 #include <cassert>
 
 #include <arch/common/Asm.h>
@@ -39,23 +37,23 @@ class Asm : public Common::Asm
 	static const int inst_cat_count = 16;
 	static const int func_count = 64;
 
-	/* Instruction information table */
+	// Instruction information table
 	InstInfo inst_info[InstOpcodeCount];
 
-	/* Decoding table. The 1st level is indexed by the instruction category
-	 * bits, and the 2nd level is indexed by the function bits in the
-	 * category. */
+	// Decoding table. The 1st level is indexed by the instruction category
+	// bits, and the 2nd level is indexed by the function bits in the
+	// category.
 	InstInfo *dec_table[inst_cat_count][func_count];
 
 public:
-	/* Constructor */
+	// Constructor
 	Asm();
 
-	/* Disassemblers */
+	// Disassemblers
 	void DisassembleBinary(std::string path);
 	void DisassembleBuffer(char *buffer, unsigned int size);
 
-	/* Getters */
+	// Getters
 	InstInfo *GetInstInfo(InstOpcode opcode) { assert(opcode >= 0 &&
 			opcode < InstOpcodeCount); return &inst_info[opcode]; }
 	InstInfo *GetDecTable(int cat, int func) { assert(cat >= 0 && 
@@ -63,36 +61,7 @@ public:
 				func < func_count); return dec_table[cat][func]; }
 };
 
-}  /* namespace Fermi */
-
-#endif  /* __cplusplus */
+}  // namespace Fermi
 
 
-
-/*
- * C Wrapper
- */
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include "Inst.h"
-
-struct FrmAsmWrap *FrmAsmWrapCreate(void);
-void FrmAsmWrapFree(struct FrmAsmWrap *self);
-
-void FrmAsmWrapDisassembleBinary(struct FrmAsmWrap *self, char *path);
-void FrmAsmWrapDisassembleBuffer(struct FrmAsmWrap *self, char *buffer, unsigned int size);
-
-FrmInstInfo *FrmAsmWrapGetInstInfo(struct FrmAsmWrap *self, FrmInstOpcode opcode);
-FrmInstInfo *FrmAsmWrapGetDecTable(struct FrmAsmWrap *self, int cat, int func);
-
-#ifdef __cplusplus
-}
-#endif
-
-
-
-
-#endif  /* FERMI_ASM_ASM_H */
+#endif  // FERMI_ASM_ASM_H
