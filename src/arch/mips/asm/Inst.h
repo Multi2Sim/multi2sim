@@ -20,20 +20,12 @@
 #ifndef MIPS_ASM_INST_H
 #define MIPS_ASM_INST_H
 
-
-#ifdef __cplusplus
-
-
-/*
- * C++ Code
- */
-
 #include <iostream>
 
 namespace MIPS
 {
 
-/* Forward declarations */
+// Forward declarations
 class Asm;
 
 
@@ -46,7 +38,7 @@ enum InstOpcode
 #include "asm.dat"
 #undef DEFINST
 
-	/* Max */
+	// Max
 	InstOpcodeCount
 
 };
@@ -66,64 +58,64 @@ struct InstInfo
 
 struct InstBytesStandard
 {
-	unsigned int function     :6;	/* [5:0] */
-	unsigned int sa           :5;	/* [10:6] */
-	unsigned int rd           :5;	/* [15:11] */
-	unsigned int rt           :5;	/* [20:16] */
-	unsigned int rs           :5;	/* [25:21] */
-	unsigned int opc          :6;	/* [31:26] */
+	unsigned int function     :6;	// [5:0]
+	unsigned int sa           :5;	// [10:6]
+	unsigned int rd           :5;	// [15:11]
+	unsigned int rt           :5;	// [20:16]
+	unsigned int rs           :5;	// [25:21]
+	unsigned int opc          :6;	// [31:26]
 
 };
 
 
 struct InstBytesTarget
 {
-	unsigned int target       :26;	/* [25:0] */
-	unsigned int opc          :6;	/* [31:26] */
+	unsigned int target       :26;	// [25:0]
+	unsigned int opc          :6;	// [31:26]
 
 };
 
 
 struct InstBytesOffsetImm
 {
-	unsigned int offset       :16;	/* [15:0] */
-	unsigned int rt           :5;	/* [20:16] */
-	unsigned int base         :5;	/* [25:21] */
-	unsigned int opc          :6;	/* [31:26] */
+	unsigned int offset       :16;	// [15:0]
+	unsigned int rt           :5;	// [20:16]
+	unsigned int base         :5;	// [25:21]
+	unsigned int opc          :6;	// [31:26]
 
 };
 
 
 struct InstBytesCC
 {
-	unsigned int offsetbr    :16;	/* [15:0] */
-	unsigned int tf           :1;	/* [16] */
-	unsigned int nd           :1;	/* [17] */
-	unsigned int cc           :3;	/* [20:18] */
-	unsigned int rs           :5;	/* [25:21] */
-	unsigned int opc          :6;	/* [31:26] */
+	unsigned int offsetbr    :16;	// [15:0]
+	unsigned int tf           :1;	// [16]
+	unsigned int nd           :1;	// [17]
+	unsigned int cc           :3;	// [20:18]
+	unsigned int rs           :5;	// [25:21]
+	unsigned int opc          :6;	// [31:26]
 
 };
 
 
 struct InstBytesCode
 {
-	unsigned int function     :6;	/* [5:0] */
-	unsigned int code         :10;	/* [15:6] */
-	unsigned int rs_rt        :10;	/* [25:16] */
-	unsigned int opc          :6;	/* [31:26] */
+	unsigned int function     :6;	// [5:0]
+	unsigned int code         :10;	// [15:6]
+	unsigned int rs_rt        :10;	// [25:16]
+	unsigned int opc          :6;	// [31:26]
 
 };
 
 
 struct InstBytesSel
 {
-	unsigned int sel          :3;	/* [2:0] */
-	unsigned int impl         :8;	/* [10:3] */
-	unsigned int rd           :5;	/* [15:11] */
-	unsigned int rt           :5;	/* [20:16] */
-	unsigned int rs           :5;	/* [25:21] */
-	unsigned int opc          :6;	/* [31:26] */
+	unsigned int sel          :3;	// [2:0]
+	unsigned int impl         :8;	// [10:3]
+	unsigned int rd           :5;	// [15:11]
+	unsigned int rt           :5;	// [20:16]
+	unsigned int rs           :5;	// [25:21]
+	unsigned int opc          :6;	// [31:26]
 
 };
 
@@ -144,42 +136,42 @@ union InstBytes
 
 class Inst
 {
-	/* Disassembler */
+	// Disassembler
 	Asm *as;
 
-	/* Decoded instruction information */
+	// Decoded instruction information
 	InstInfo *info;
 
-	/* Virtual address of the instruction, as loaded from the ELF file */
+	// Virtual address of the instruction, as loaded from the ELF file
 	unsigned int addr;
 
-	/* Instruction bytes */
+	// Instruction bytes
 	InstBytes bytes;
 
-	void DumpBufSa(char **buf_ptr, int *size_ptr);
-	void DumpBufRd(char **buf_ptr, int *size_ptr);
-	void DumpBufRt(char **buf_ptr, int *size_ptr);
-	void DumpBufRs(char **buf_ptr, int *size_ptr);
-	void DumpBufTarget(char **buf_ptr, int *size_ptr);
-	void DumpBufOffset(char **buf_ptr, int *size_ptr);
-	void DumpBufOffsetbr(char **buf_ptr, int *size_ptr);
-	void DumpBufImm(char **buf_ptr, int *size_ptr);
-	void DumpBufImmhex(char **buf_ptr, int *size_ptr);
-	void DumpBufBase(char **buf_ptr, int *size_ptr);
-	void DumpBufSel(char **buf_ptr, int *size_ptr);
-	void DumpBufCc(char **buf_ptr, int *size_ptr);
-	void DumpBufPos(char **buf_ptr, int *size_ptr);
-	void DumpBufFs(char **buf_ptr, int *size_ptr);
-	void DumpBufSize(char **buf_ptr, int *size_ptr);
-	void DumpBufFt(char **buf_ptr, int *size_ptr);
-	void DumpBufFd(char **buf_ptr, int *size_ptr);
-	void DumpBufCode(char **buf_ptr, int *size_ptr);
+	void DumpSa(std::ostream &os) const;
+	void DumpRd(std::ostream &os) const;
+	void DumpRt(std::ostream &os) const;
+	void DumpRs(std::ostream &os) const;
+	void DumpTarget(std::ostream &os);
+	void DumpOffset(std::ostream &os) const;
+	void DumpOffsetbr(std::ostream &os);
+	void DumpImm(std::ostream &os) const;
+	void DumpImmhex(std::ostream &os) const;
+	void DumpBase(std::ostream &os) const;
+	void DumpSel(std::ostream &os) const;
+	void DumpCc(std::ostream &os) const;
+	void DumpPos(std::ostream &os) const;
+	void DumpFs(std::ostream &os) const;
+	void DumpSize(std::ostream &os) const;
+	void DumpFt(std::ostream &os) const;
+	void DumpFd(std::ostream &os) const;
+	void DumpCode(std::ostream &os) const;
 
 public:
-	/* Target address used for instruction dump */
+	// Target address used for instruction dump
 	unsigned int target;
 
-	/* Constructor */
+	// Constructor
 	Inst(Asm *as);
 
 	/* Read an instruction from the buffer 'buf' into the 'bytes' field of the
@@ -191,13 +183,16 @@ public:
 	/* Dump an instruction. This function sets the 'target' field of the
 	 * instruction offset to a value other than 0 if a target address has been
 	 * printed. */
-	void DumpBuf(char *buf, int size);
+	// FIXME - Fritz, the behavior of this function should be modified to
+	// not alter the 'target' field. We want to be able to declare this
+	// function as 'const'. Instead, it should be the 'Decode()' function
+	// the one setting this field.
 	void Dump(std::ostream &os);
 	
-	/* Print address and hexadecimal characters for instruction */
+	// Print address and hexadecimal characters for instruction
 	void DumpHex(std::ostream &os);
 
-	/* Getters */
+	// Getters
 	std::string GetName() { return info ? info->name : "<unknwon>"; }
 	InstOpcode GetOpcode() { return info ? info->opcode :
 			InstOpcodeInvalid; }
@@ -206,133 +201,7 @@ public:
 };
 
 
+} // namespace MIPS
 
-
-} /* namespace MIPS */
-
-#endif  /* __cplusplus */
-
-
-/*
- * C Wrapper
- */
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include <stdio.h>
-
-struct MIPSAsmWrap;
-struct MIPSInstWrap;
-
-typedef enum
-{
-	MIPSInstOpcodeInvalid = 0,
-
-#define DEFINST(_name, _fmt_str, _op0, _op1, _op2, _op3) \
-	MIPS_INST_##_name,
-#include "asm.dat"
-#undef DEFINST
-
-	/* Max */
-	MIPSInstOpcodeCount
-
-} MIPSInstOpcode;
-
-typedef struct
-{
-	unsigned int function     :6;	/* [5:0] */
-	unsigned int sa           :5;	/* [10:6] */
-	unsigned int rd           :5;	/* [15:11] */
-	unsigned int rt           :5;	/* [20:16] */
-	unsigned int rs           :5;	/* [25:21] */
-	unsigned int opc          :6;	/* [31:26] */
-
-} MIPSInstBytesStandard;
-
-
-typedef struct
-{
-	unsigned int target       :26;	/* [25:0] */
-	unsigned int opc          :6;	/* [31:26] */
-
-} MIPSInstBytesTarget;
-
-
-typedef struct
-{
-	unsigned int offset       :16;	/* [15:0] */
-	unsigned int rt           :5;	/* [20:16] */
-	unsigned int base         :5;	/* [25:21] */
-	unsigned int opc          :6;	/* [31:26] */
-
-} MIPSInstBytesOffsetImm;
-
-
-typedef struct
-{
-	unsigned int offsetbr    :16;	/* [15:0] */
-	unsigned int tf           :1;	/* [16] */
-	unsigned int nd           :1;	/* [17] */
-	unsigned int cc           :3;	/* [20:18] */
-	unsigned int rs           :5;	/* [25:21] */
-	unsigned int opc          :6;	/* [31:26] */
-
-} MIPSInstBytesCC;
-
-
-typedef struct
-{
-	unsigned int function     :6;	/* [5:0] */
-	unsigned int code         :10;	/* [15:6] */
-	unsigned int rs_rt        :10;	/* [25:16] */
-	unsigned int opc          :6;	/* [31:26] */
-
-} MIPSInstBytesCode;
-
-
-typedef struct
-{
-	unsigned int sel          :3;	/* [2:0] */
-	unsigned int impl         :8;	/* [10:3] */
-	unsigned int rd           :5;	/* [15:11] */
-	unsigned int rt           :5;	/* [20:16] */
-	unsigned int rs           :5;	/* [25:21] */
-	unsigned int opc          :6;	/* [31:26] */
-
-} MIPSInstBytesSel;
-
-
-typedef union
-{
-	unsigned int word;
-
-	MIPSInstBytesStandard standard;
-	MIPSInstBytesTarget target;
-	MIPSInstBytesOffsetImm offset_imm;
-	MIPSInstBytesCC cc;
-	MIPSInstBytesCode code;
-	MIPSInstBytesSel sel;
-
-} MIPSInstBytes;
-
-struct MIPSInstWrap *MIPSInstWrapCreate(struct MIPSAsmWrap *as);
-void MIPSInstWrapFree(struct MIPSInstWrap *self);
-void MIPSInstWrapCopy(struct MIPSInstWrap *left, struct MIPSInstWrap *right);
-
-void MIPSInstWrapDecode(struct MIPSInstWrap *self, unsigned int addr, void *buf);
-void MIPSInstWrapDump(struct MIPSInstWrap *self, FILE *f);
-
-MIPSInstOpcode MIPSInstWrapGetOpcode(struct MIPSInstWrap *self);
-const char *MIPSInstWrapGetName(struct MIPSInstWrap *self);
-unsigned int MIPSInstWrapGetAddress(struct MIPSInstWrap *self);
-MIPSInstBytes *MIPSInstWrapGetBytes(struct MIPSInstWrap *self);
-
-#ifdef __cplusplus
-}
-#endif
-
-
-#endif  /* MIPS_ASM_INST_H */
+#endif  // MIPS_ASM_INST_H
 

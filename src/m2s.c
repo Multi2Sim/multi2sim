@@ -50,7 +50,7 @@
 #include <arch/fermi/timing/gpu.h>
 #include <arch/fermi/timing/sm.h>
 #include <arch/kepler/asm/Asm.h>
-#include <arch/mips/asm/Asm.h>
+#include <arch/mips/asm/Wrapper.h>
 #include <arch/mips/emu/context.h>
 #include <arch/mips/emu/isa.h>
 #include <arch/mips/timing/cpu.h>
