@@ -132,11 +132,11 @@ void StringSingleSpaces(std::string &s, const std::string &set)
 		was_space = is_space;
 	}
 
-	/* Get rid of possible extra space at the end */
+	// Get rid of possible extra space at the end
 	if (dest && is_space)
 		dest--;
 
-	/* Erase trailing characters */
+	// Erase trailing characters
 	s.erase(dest);
 }
 
@@ -171,20 +171,20 @@ bool StringSuffix(const std::string &s, const std::string &suffix)
 void StringTokenize(const std::string &s, std::vector<std::string> &tokens,
 		const std::string &set)
 {
-	/* Extract tokens */
+	// Extract tokens
 	int token_start = -1;
 	std::string token = "";
 	for (unsigned i = 0; i <= s.length(); i++)
 	{
-		/* End of string */
+		// End of string
 		bool is_end = i == s.length();
 
-		/* Start a token */
+		// Start a token
 		if (!is_end && !CharInSet(s[i], set)
 				&& token_start == -1)
 			token_start = i;
 
-		/* End a token */
+		// End a token
 		if (token_start > -1 && (is_end || CharInSet(s[i], set)))
 		{
 			token = s.substr(token_start, i - token_start);
@@ -206,17 +206,17 @@ int StringDigitToInt(char digit, int base, StringError &error)
 {
 	int result;
 
-	/* Assume no error */
+	// Assume no error
 	error = StringErrorOK;
 
-	/* Check base */
+	// Check base
 	if (base != 2 && base != 8 && base != 10 && base != 16)
 	{
 		error = StringErrorBase;
 		return 0;
 	}
 
-	/* Parse digit */
+	// Parse digit
 	result = 0;
 	digit = tolower(digit);
 	if (digit >= '0' && digit <= '9')
@@ -233,14 +233,14 @@ int StringDigitToInt(char digit, int base, StringError &error)
 		return 0;
 	}
 
-	/* Check digit range */
+	// Check digit range
 	if (result >= base)
 	{
 		error = StringErrorFormat;
 		return 0;
 	}
 
-	/* Return */
+	// Return
 	return result;
 }
 
@@ -261,12 +261,12 @@ int StringToInt(const std::string &_s, StringError &error)
 	int num_digits;
 	int factor;
 
-	/* Initialize */
+	// Initialize
 	std::string s = _s;
 	StringTrim(s);
 	error = StringErrorOK;
 
-	/* Sign */
+	// Sign
 	sign = 1;
 	if (s[0] == '+')
 	{
@@ -279,7 +279,7 @@ int StringToInt(const std::string &_s, StringError &error)
 		s.erase(0, 1);
 	}
 
-	/* Base */
+	// Base
 	base = 10;
 	if (s.length() >= 2 && s[0] == '0' && s[1] == 'x')
 	{
@@ -292,14 +292,14 @@ int StringToInt(const std::string &_s, StringError &error)
 		s.erase(0, 1);
 	}
 
-	/* Empty string */
+	// Empty string
 	if (s.length() == 0)
 	{
 		error = StringErrorFormat;
 		return 0;
 	}
 
-	/* Suffixes (only for base 10) */
+	// Suffixes (only for base 10)
 	factor = 1;
 	assert(s.length() > 0);
 	if (base == 10)
@@ -338,83 +338,83 @@ int StringToInt(const std::string &_s, StringError &error)
 		}
 	}
 
-	/* Remove leading 0s */
+	// Remove leading 0s
 	while (s.length() && s[0] == '0')
 		s.erase(0, 1);
 	if (!s.length())
 		return 0;
 
-	/* Start converting */
+	// Start converting
 	result = 0;
 	num_digits = 0;
 	while (s.length())
 	{
-		/* Get one digit */
+		// Get one digit
 		digit = StringDigitToInt(s[0], base, error);
 		num_digits++;
 		if (error)
 			return 0;
 
-		/* Underflow */
+		// Underflow
 		if (sign < 0 && INT_MIN / base > result)
 		{
 			error = StringErrorRange;
 			return 0;
 		}
 
-		/* Overflow */
+		// Overflow
 		if (sign > 0 && UINT_MAX / base < (unsigned int) result)
 		{
 			error = StringErrorRange;
 			return 0;
 		}
 
-		/* Multiply by base */
+		// Multiply by base
 		result *= base;
 
-		/* Underflow */
+		// Underflow
 		if (sign < 0 && INT_MIN + digit > result)
 		{
 			error = StringErrorRange;
 			return 0;
 		}
 
-		/* Overflow */
+		// Overflow
 		if (sign > 0 && UINT_MAX - digit < (unsigned int) result)
 		{
 			error = StringErrorRange;
 			return 0;
 		}
 
-		/* Add digit */
+		// Add digit
 		result += digit * sign;
 
-		/* Next character */
+		// Next character
 		s.erase(0, 1);
 	}
 
-	/* Multiplying factor */
+	// Multiplying factor
 	if (factor != 1)
 	{
-		/* Underflow */
+		// Underflow
 		if (sign < 0 && INT_MIN / factor > result)
 		{
 			error = StringErrorRange;
 			return 0;
 		}
 
-		/* Overflow */
+		// Overflow
 		if (sign > 0 && UINT_MAX / factor < (unsigned int) result)
 		{
 			error = StringErrorRange;
 			return 0;
 		}
 
-		/* Multiply by factor */
+		// Multiply by factor
 		result *= factor;
 	}
 
-	/* Return */
+	// Return
 	return result;
 }
 
@@ -436,12 +436,12 @@ long long StringToInt64(const std::string &_s, StringError &error)
 
 	long long result;
 
-	/* Initialize */
+	// Initialize
 	std::string s = _s;
 	StringTrim(s);
 	error = StringErrorOK;
 
-	/* Sign */
+	// Sign
 	sign = 1;
 	if (s[0] == '+')
 	{
@@ -454,7 +454,7 @@ long long StringToInt64(const std::string &_s, StringError &error)
 		s.erase(0, 1);
 	}
 
-	/* Base */
+	// Base
 	base = 10;
 	if (s.length() >= 2 && s[0] == '0' && s[1] == 'x')
 	{
@@ -467,14 +467,14 @@ long long StringToInt64(const std::string &_s, StringError &error)
 		s.erase(0, 1);
 	}
 
-	/* Empty string */
+	// Empty string
 	if (s.length() == 0)
 	{
 		error = StringErrorFormat;
 		return 0;
 	}
 
-	/* Suffixes (only for base 10) */
+	// Suffixes (only for base 10)
 	factor = 1;
 	assert(s.length() > 0);
 	if (base == 10)
@@ -513,85 +513,173 @@ long long StringToInt64(const std::string &_s, StringError &error)
 		}
 	}
 
-	/* Remove leading 0s */
+	// Remove leading 0s
 	while (s.length() && s[0] == '0')
 		s.erase(0, 1);
 	if (!s.length())
 		return 0;
 
-	/* Start converting */
+	// Start converting
 	result = 0;
 	num_digits = 0;
 	while (s.length())
 	{
-		/* Get one digit */
+		// Get one digit
 		digit = StringDigitToInt(s[0], base, error);
 		num_digits++;
 		if (error)
 			return 0;
 
-		/* Underflow */
+		// Underflow
 		if (sign < 0 && LLONG_MIN / base > result)
 		{
 			error = StringErrorRange;
 			return 0;
 		}
 
-		/* Overflow */
+		// Overflow
 		if (sign > 0 && ULLONG_MAX / base < (unsigned int) result)
 		{
 			error = StringErrorRange;
 			return 0;
 		}
 
-		/* Multiply by base */
+		// Multiply by base
 		result *= base;
 
-		/* Underflow */
+		// Underflow
 		if (sign < 0 && LLONG_MIN + digit > result)
 		{
 			error = StringErrorRange;
 			return 0;
 		}
 
-		/* Overflow */
+		// Overflow
 		if (sign > 0 && ULLONG_MAX - digit < (unsigned int) result)
 		{
 			error = StringErrorRange;
 			return 0;
 		}
 
-		/* Add digit */
+		// Add digit
 		result += digit * sign;
 
-		/* Next character */
+		// Next character
 		s.erase(0, 1);
 	}
 
-	/* Multiplying factor */
+	// Multiplying factor
 	if (factor != 1)
 	{
-		/* Underflow */
+		// Underflow
 		if (sign < 0 && LLONG_MIN / factor > result)
 		{
 			error = StringErrorRange;
 			return 0;
 		}
 
-		/* Overflow */
+		// Overflow
 		if (sign > 0 && ULLONG_MAX / factor < (unsigned int) result)
 		{
 			error = StringErrorRange;
 			return 0;
 		}
 
-		/* Multiply by factor */
+		// Multiply by factor
 		result *= factor;
 	}
 
-	/* Return */
+	// Return
 	return result;
 }
+
+
+std::string StringParagraph(const std::string &text,
+		int indent, int first_indent, int width)
+{
+	std::string word;
+	bool first_word_in_line = true;
+	bool first_word_in_paragraph = true;
+
+	// Check good values for 'first_indent' and 'indent'
+	if (first_indent >= width || indent >= width)
+		panic("%s: invalid indentation values", __FUNCTION__);
+
+	// Add initial indentation
+	std::string output = std::string(first_indent, ' ');
+	int line_length = first_indent;
+
+	// Process text
+	char last = 0;
+	char curr = 0;
+	for (int i = 0; i <= (int) text.length(); i++)
+	{
+		// Current character
+		last = curr;
+		curr = i == (int) text.length() ? 0 : text[i];
+
+		// New paragraph
+		if (curr == '\n' && last == '\n' && !first_word_in_paragraph)
+		{
+			first_word_in_paragraph = true;
+			first_word_in_line = true;
+			output += "\n\n";
+			output += std::string(indent, ' ');
+			line_length = indent;
+		}
+
+		// Space-like character
+		if (curr == ' ' || curr == '\t' || curr == '\n' || !curr)
+		{
+			// No new word, ignore
+			if (!word.length())
+				continue;
+
+			// If word doesn't fit, add new line
+			if (line_length + 1 + (int) word.length() > width)
+			{
+				output += '\n';
+				output += std::string(indent, ' ');
+				line_length = indent;
+				first_word_in_line = true;
+			}
+
+			// Split word in chunks that fit in line
+			while (line_length + (int) word.length() > width)
+			{
+				output += word.substr(0, width - line_length);
+				output += '\n';
+				word.erase(0, width - line_length);
+				output += std::string(indent, ' ');
+				line_length = indent;
+				first_word_in_line = true;
+			}
+			
+			// Space if needed
+			if (!first_word_in_line)
+			{
+				output += ' ';
+				line_length++;
+			}
+
+			// Rest of the word
+			first_word_in_line = false;
+			first_word_in_paragraph = false;
+			output += word;
+			line_length += word.length();
+			word.clear();
+			continue;
+		}
+
+		// Other character just gets added to the current word
+		word += curr;
+	}
+
+	// Final output
+	output += '\n';
+	return output;
+}
+
 
 
 
@@ -613,13 +701,13 @@ const char *StringMapValue(StringMap map, int value, bool &error)
 {
 	int index;
 
-	/* Find value */
+	// Find value
 	error = false;
 	for (index = 0; map[index].text; index++)
 		if (map[index].value == value)
 			return map[index].text;
 
-	/* Not found */
+	// Not found
 	error = true;
 	return string_map_unknown;
 }
@@ -636,13 +724,13 @@ int StringMapString(StringMap map, const std::string &s, bool &error)
 {
 	int index;
 
-	/* Find value */
+	// Find value
 	error = false;
 	for (index = 0; map[index].text; index++)
 		if (!strcmp(map[index].text, s.c_str()))
 			return map[index].value;
 
-	/* Not found */
+	// Not found
 	error = true;
 	return 0;
 }
@@ -659,13 +747,13 @@ int StringMapStringCase(StringMap map, const std::string &s, bool &error)
 {
 	int index;
 
-	/* Find value */
+	// Find value
 	error = false;
 	for (index = 0; map[index].text; index++)
 		if (!strcasecmp(map[index].text, s.c_str()))
 			return map[index].value;
 
-	/* Not found */
+	// Not found
 	error = true;
 	return 0;
 }
@@ -694,7 +782,7 @@ std::string StringMapFlags(StringMap map, unsigned int flags)
 	}
 	s << '}';
 
-	/* Return created text */
+	// Return created text
 	return s.str();
 }
 
@@ -728,35 +816,55 @@ std::string StringMapGetValues(StringMap map)
 
 void fatal(const char *fmt, ...)
 {
+	char buf[4096];  // 4KB
 	va_list va;
+
+	// Construct message
 	va_start(va, fmt);
-	fprintf(stderr, "fatal: ");
-	vfprintf(stderr, fmt, va);
-	fprintf(stderr, "\n");
-	fflush(NULL);
+	vsnprintf(buf, sizeof buf, fmt, va);
+
+	// Print in clean paragraphs
+	std::string msg = "fatal: ";
+	std::cerr << StringParagraph(msg + buf, 8);
+	std::cerr << '\n';
+
+	// Exit with error code 1
 	exit(1);
 }
 
 
 void panic(const char *fmt, ...)
 {
+	char buf[4096];  // 4KB
 	va_list va;
+
+	// Construct message
 	va_start(va, fmt);
-	fprintf(stderr, "panic: ");
-	vfprintf(stderr, fmt, va);
-	fprintf(stderr, "\n");
-	fflush(NULL);
+	vsnprintf(buf, sizeof buf, fmt, va);
+
+	// Print in clean paragraphs
+	std::string msg = "panic: ";
+	std::cerr << StringParagraph(msg + buf, 8);
+	std::cerr << '\n';
+
+	// Abort program
 	abort();
 }
 
 
 void warning(const char *fmt, ...)
 {
+	char buf[4096];  // 4KB
 	va_list va;
+
+	// Construct message
 	va_start(va, fmt);
-	fprintf(stderr, "warning: ");
-	vfprintf(stderr, fmt, va);
-	fprintf(stderr, "\n");
+	vsnprintf(buf, sizeof buf, fmt, va);
+
+	// Print in clean paragraphs
+	std::string msg = "warning: ";
+	std::cerr << StringParagraph(msg + buf, 8);
+	std::cerr << '\n';
 }
 
 
@@ -787,15 +895,15 @@ void Debug::Close()
 
 void Debug::setPath(const std::string& path)
 {
-	/* Release previous output stream */
+	// Release previous output stream
 	Close();
 	this->path = path;
 
-	/* Empty file */
+	// Empty file
 	if (path == "")
 		return;
 
-	/* File is standard output */
+	// File is standard output
 	if (path == "stdout")
 		os = &std::cout;
 	else if (path == "stderr")
@@ -803,7 +911,7 @@ void Debug::setPath(const std::string& path)
 	else
 		os = new std::ofstream(path.c_str());
 
-	/* Create new output stream */
+	// Create new output stream
 	if (!*os)
 	{
 		std::cerr << "fatal: cannot open " << path <<'\n';
@@ -813,5 +921,5 @@ void Debug::setPath(const std::string& path)
 
 
 
-}  /* namespace Misc */
+}  // namespace Misc
 
