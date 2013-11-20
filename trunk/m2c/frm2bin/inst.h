@@ -22,8 +22,7 @@
 
 #include <stdio.h>
 
-#include <arch/fermi/asm/Asm.h>
-#include <arch/fermi/asm/Inst.h>
+#include <arch/fermi/asm/Wrapper.h>
 
 
 struct frm2bin_inst_t

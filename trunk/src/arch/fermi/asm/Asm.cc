@@ -26,17 +26,16 @@
 #include "Asm.h"
 
 
-using namespace Fermi;
-using namespace std;
-
+namespace Fermi
+{
 
 Asm::Asm()
 {
 	InstInfo *info;
 
-	/* Read information about all instructions */
+	// Read information about all instructions
 #define DEFINST(_name, _fmt_str, _op) \
-	info = &inst_info[FRM_INST_##_name]; \
+	info = &inst_info[INST_##_name]; \
 	info->opcode = INST_##_name; \
 	info->cat = _op >> 8; \
 	info->func = (info->cat <= 3) ? (_op & 0xf8) >> 3 : (_op & 0xfc) >> 2; \
@@ -51,19 +50,19 @@ Asm::Asm()
 }
 
 
-void Asm::DisassembleBinary(string path)
+void Asm::DisassembleBinary(std::string path)
 {
-	/* Initialization */
+	// Initialization
 	ELFReader::File file(path);
-	vector<Inst *> inst_vector;
+	std::vector<Inst *> inst_vector;
 	unsigned int max_inst_len;
 	Inst *inst;
 
-	/* Dump disassembly */
-	cout << "\n\tcode for sm_20\n";
+	// Dump disassembly
+	std::cout << "\n\tcode for sm_20\n";
 	for (int i = 0; i < file.getNumSections(); i++)
 	{
-		/* Determine if section is .text.kernel_name */
+		// Determine if section is .text.kernel_name
 		ELFReader::Section *section = file.getSection(i);
 		if (!strncmp(section->getName().c_str(), ".text.", 6))
 		{
@@ -72,7 +71,7 @@ void Asm::DisassembleBinary(string path)
 			{
 				inst = new Inst(this);
 
-				/* Decode instruction */
+				// Decode instruction
 				inst->Decode(pos, section->getBuffer() + pos);
 				inst->DumpToBuf();
 
@@ -86,21 +85,21 @@ void Asm::DisassembleBinary(string path)
 					max_inst_len = inst_len;
 			}
 
-			/* Dump */
-			cout << "\t\tFunction : " << section->getName().c_str() + 6 << "\n";
-			cout << "\t.headerflags    @\"EF_CUDA_SM20 EF_CUDA_PTX_SM(EF_CUDA_SM20)\"" << "\n";
+			// Dump
+			std::cout << "\t\tFunction : " << section->getName().c_str() + 6 << "\n";
+			std::cout << "\t.headerflags    @\"EF_CUDA_SM20 EF_CUDA_PTX_SM(EF_CUDA_SM20)\"" << "\n";
 			for (unsigned int j = 0; j < inst_vector.size(); ++j)
 			{
 				Inst *inst = inst_vector[j];
-				cout << "        ";
-				inst->DumpPC(cout);
-				inst->Dump(cout, max_inst_len);
-				inst->DumpHex(cout);
-				cout << "\n";
+				std::cout << "        ";
+				inst->DumpPC(std::cout);
+				inst->Dump(std::cout, max_inst_len);
+				inst->DumpHex(std::cout);
+				std::cout << "\n";
 
 				delete inst;
 			}
-			cout << "\t\t" << setfill('.') << setw(32) << "." << "\n\n\n";
+			std::cout << "\t\t" << std::string(32, '.') << "\n\n\n";
 		}
 	}
 }
@@ -112,54 +111,12 @@ void Asm::DisassembleBuffer(char *ptr, unsigned int size)
 	for (unsigned int pos = 0; pos < size; pos += 8)
 	{
 		inst.Decode(pos, ptr + pos);
-		inst.DumpHex(cout);
-		inst.Dump(cout, 100);
-		cout << ";\n";
+		inst.DumpHex(std::cout);
+		inst.Dump(std::cout, 100);
+		std::cout << ";\n";
 	}
 }
 
 
+}  // namespace Fermi
 
-
-/*
- * C Wrapper
- */
-
-struct FrmAsmWrap *FrmAsmWrapCreate(void)
-{
-	return (struct FrmAsmWrap *) new Asm();
-}
-
-
-void FrmAsmWrapFree(struct FrmAsmWrap *self)
-{
-	delete (Asm *) self;
-}
-
-
-void FrmAsmWrapDisassembleBinary(struct FrmAsmWrap *self, char *path)
-{
-	Asm *as = (Asm *) self;
-	as->DisassembleBinary(path);
-}
-
-
-void FrmAsmWrapDisassembleBuffer(struct FrmAsmWrap *self, char *buffer, unsigned int size)
-{
-	Asm *as = (Asm *) self;
-	as->DisassembleBuffer(buffer, size);
-}
-
-
-FrmInstInfo *FrmAsmWrapGetInstInfo(struct FrmAsmWrap *self, FrmInstOpcode opcode)
-{
-	Asm *as = (Asm *) self;
-	return (FrmInstInfo *) as->GetInstInfo((InstOpcode) opcode);
-}
-
-
-FrmInstInfo *FrmAsmWrapGetDecTable(struct FrmAsmWrap *self, int cat, int func)
-{
-	Asm *as = (Asm *) self;
-	return (FrmInstInfo *) as->GetDecTable(cat, func);
-}

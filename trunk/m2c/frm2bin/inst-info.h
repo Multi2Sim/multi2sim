@@ -22,8 +22,7 @@
 
 #include <stdio.h>
 
-#include <arch/fermi/asm/Asm.h>
-#include <arch/fermi/asm/Inst.h>
+#include <arch/fermi/asm/Wrapper.h>
 
 
 /* Object 'frm2bin_inst_info_t' */

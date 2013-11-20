@@ -23,11 +23,7 @@
 #include <stdio.h>
 
 #include <arch/common/emu.h>
-#include <arch/fermi/asm/Inst.h>
-
-/* Forward declarations */
-struct FrmAsmWrap;
-struct FrmInstWrap;
+#include <arch/fermi/asm/Wrapper.h>
 
 
 /*
