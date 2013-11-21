@@ -42,7 +42,7 @@ static StringMap string_error_map =
 };
 
 
-const char *StringGetErrorString(StringError error)
+const char *StringErrorToString(StringError error)
 {
 	return StringMapValue(string_error_map, error);
 }
@@ -91,7 +91,7 @@ void StringSingleSpaces(std::string &s, const std::string &set)
 	bool started = false;
 	for (unsigned i = 0; i < s.length(); i++)
 	{
-		is_space = CharInSet(s[i], set);
+		is_space = StringHasChar(set, s[i]);
 		if (is_space)
 		{
 			src++;
@@ -154,12 +154,12 @@ void StringTokenize(const std::string &s, std::vector<std::string> &tokens,
 		bool is_end = i == s.length();
 
 		// Start a token
-		if (!is_end && !CharInSet(s[i], set)
+		if (!is_end && !StringHasChar(set, s[i])
 				&& token_start == -1)
 			token_start = i;
 
 		// End a token
-		if (token_start > -1 && (is_end || CharInSet(s[i], set)))
+		if (token_start > -1 && (is_end || StringHasChar(set, s[i])))
 		{
 			token = s.substr(token_start, i - token_start);
 			tokens.push_back(token);
