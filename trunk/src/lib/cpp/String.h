@@ -28,7 +28,7 @@ namespace misc
 {
 
 
-
+/// Possible error codes returned by string-related functions
 enum StringError
 {
 	StringErrorOK = 0,
@@ -37,13 +37,17 @@ enum StringError
 	StringErrorRange
 };
 
-// Return a string associated with an error code
-const char *StringGetErrorString(StringError error);
+/// Return a string associated with an error code of type StringError
+const char *StringErrorToString(StringError error);
 
+/// Return a string obtained by formating the input in argument \a fmt, which
+/// follows the standard \c printf formatting rules. The number and type of
+/// arguments following \a fmt depend on the special characters used in the
+/// format string itself.
 std::string StringFmt(const char *fmt, ...)
 		__attribute__ ((format(printf, 1, 2)));
 
-inline bool CharInSet(char c, const std::string &set) {
+inline bool StringHasChar(const std::string &set, char c) {
 	return set.find(c) != std::string::npos;
 }
 
@@ -68,25 +72,28 @@ void StringTokenize(const std::string &s, std::vector<std::string> &tokens,
 int StringDigitToInt(char digit, int base);
 int StringDigitToInt(char digit, int base, StringError &error);
 
-/* Convert a string into an integer, accepting the following modifiers.
- * If conversion fails due to wrong formatting of the string, an error code is
- * returned in argument 'error' (optional).
- *
- * String prefixes:
- *   Prefix '0x' - Use base 16 for conversion.
- *   Prefix '0' - Use base 8 for conversion.
- * String suffixes:
- *   Suffix 'k' - Multiply by 1024.
- *   Suffix 'K' - Multiply by 1000.
- *   Suffix 'm' - Multiply by 1024*1024.
- *   Suffix 'M' - Multiply by 1000*1000.
- *   Suffix 'g' - Multiply by 1024*1024*1024.
- *   Suffix 'G' - Multiply by 1000*1000*1000.
- */
-int StringToInt(const std::string &s);
+/// Convert a string into an integer, accepting the following modifiers.
+/// If conversion fails due to wrong formatting of the string, an error code is
+/// returned in optional argument \a error.
+///
+/// - Possible string prefixes are:
+///   - Prefix \c 0x - Use base 16 for conversion.
+///   - Prefix \c 0 - Use base 8 for conversion.
+/// - String suffixes:
+///   - Suffix \c k - Multiply by 1024.
+///   - Suffix \c K - Multiply by 1000.
+///   - Suffix \c m - Multiply by 1024*1024.
+///   - Suffix \c M - Multiply by 1000*1000.
+///   - Suffix \c g - Multiply by 1024*1024*1024.
+///   - Suffix \c G - Multiply by 1000*1000*1000.
+///
 int StringToInt(const std::string &s, StringError &error);
-long long StringToInt64(const std::string &s);
+int StringToInt(const std::string &s);
+
+/// Convert a string to a 64-bit signed integer. The same set of prefixes and
+/// suffixes can be used as in StringToInt() to specify radix, sign, or factors.
 long long StringToInt64(const std::string &s, StringError &error);
+long long StringToInt64(const std::string &s);
 
 std::string StringParagraph(const std::string &text,
 		int indent = 0, int first_indent = 0,
@@ -126,3 +133,4 @@ std::string StringMapGetValues(StringMap map);
 } // namespace misc
 
 #endif
+
