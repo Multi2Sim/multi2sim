@@ -295,7 +295,7 @@ public:
 	/// iterators. This is an example of how to dump all work-items in the
 	/// wavefront:
 	/// \code
-	///	for (auto i = wavefront->WorkkItemsBegin(),
+	///	for (auto i = wavefront->WorkItemsBegin(),
 	///			e = wavefront->WorkItemsEnd(); i != e; ++i)
 	///		i->Dump(std::cout);
 	/// \endcode

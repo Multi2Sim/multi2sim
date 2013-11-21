@@ -130,6 +130,11 @@ public:
 	/// Get NDRange it belongs to
 	NDRange *getNDRange() const { return ndrange; }
 
+	/// Get list of work-items in the work-group
+	const std::vector<std::unique_ptr<WorkItem>> &getWorkitems() const { return work_items; }
+
+	/// Get list of wavefronts in the work-group
+	const std::vector<std::unique_ptr<Wavefront>> &getWavefronts() const { return wavefronts; }
 
 	/// Setters
 	///

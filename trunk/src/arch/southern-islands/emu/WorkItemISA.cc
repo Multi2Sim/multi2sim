@@ -153,6 +153,20 @@ float Float16to32(uint16_t value)
 	return v.f;
 }
 
+// FIXME: move this to somewhere else
+// M0 must be intialized before using any VINTRP instruction
+struct si_m0_for_vintrp_t
+{
+	unsigned b0 : 1;
+	unsigned new_prim_mask : 15;
+	unsigned lds_param_offset : 16;
+}__attribute__((packed));
+
+union si_isa_v_interp_m0_t
+{
+	unsigned as_uint;
+	struct si_m0_for_vintrp_t for_vintrp;
+};
 
 /*
  * SMRD
@@ -2152,11 +2166,8 @@ void WorkItem::ISA_S_BARRIER_Impl(Inst *inst)
 	// If all wavefronts in work-group reached the barrier, wake them up
 	if (work_group->getWavefrontsAtBarrier() == work_group->getWavefrontsInWorkgroup())
 	{
-		// FIXME: friend workitem in wavefront?
-		// for( auto &wavefront : work_group->wavefronts)
-		// {
-		//		wavefront->unsetAtBarrier();
-		// }
+		for( auto &wavefront : work_group->getWavefronts())
+			wavefront->unsetAtBarrier();
 
 		work_group->setWavefrontsAtBarrier(0);
 
@@ -6210,21 +6221,6 @@ void WorkItem::ISA_V_DIV_SCALE_F64_Impl(Inst *inst)
 /* 
  * VINTRP
  */
-
-// FIXME: move this to some header file
-// M0 must be intialized before VINTRP instructions
-struct si_m0_for_vintrp_t
-{
-	unsigned b0 : 1;
-	unsigned new_prim_mask : 15;
-	unsigned lds_param_offset : 16;
-}__attribute__((packed));
-
-union si_isa_v_interp_m0_t
-{
-	unsigned as_uint;
-	struct si_m0_for_vintrp_t for_vintrp;
-};
 
 // D = P10 * S + P0
 #define INST INST_VINTRP
