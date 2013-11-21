@@ -8,7 +8,10 @@ libasm_a_SOURCES = \
 	Asm.h \
 	\
 	Inst.cc \
-	Inst.h
+	Inst.h \
+	\
+	Wrapper.cc \
+	Wrapper.h
 
 INCLUDES = @M2S_INCLUDES@
 

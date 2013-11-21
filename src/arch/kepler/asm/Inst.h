@@ -27,7 +27,7 @@
 namespace Kepler
 {
 
-/* Forward declarations */
+// Forward declarations
 class Asm;
 
 
@@ -40,7 +40,7 @@ enum InstOpcode
 #include "asm.dat"
 #undef DEFINST
 
-	/* Max */
+	// Max
 	InstOpcodeCount
 };
 
@@ -55,7 +55,7 @@ struct InstInfo
 
 struct InstDecodeInfo
 {
-	/* Fields used when the table entry points to another table. */
+	// Fields used when the table entry points to another table.
 	int next_table_low;
 	int next_table_high;
 	InstDecodeInfo *next_table;
@@ -68,33 +68,33 @@ struct InstDecodeInfo
 
 
 
-/* 1st level struct */
+// 1st level struct
 /* BFE, POPC, IADD, IASCADD, IMNMX, SHR, IMUL, LOP, SHL, DMUL, DMNMX, FADD,
    FMNMX, FMUL, DADD, SEL, P2R, RRO, MOV, F2F, F2I, I2F, I2I, FLO, DCHK, FCHK */
 struct InstBytesGeneral0
 {
-	unsigned long long int op0 	: 2; 	/* 1:0 */
-	unsigned long long int dst 	: 8; 	/* 9:2 */
-	unsigned long long int mod0 	: 8; 	/* 17:10 */
-	unsigned long long int pred 	: 4; 	/* 21:18 */
-	unsigned long long int s 	: 1; 	/* 22 */
-	unsigned long long int srcB 	: 9; 	/* 41:23 */
-	unsigned long long int mod1 	: 12;	/* 53:42 */
-	unsigned long long int op1 	: 9; 	/* 62:54 */
-	unsigned long long int srcB_mod	: 1; 	/* 63 */
+	unsigned long long int op0 	: 2; 	// 1:0
+	unsigned long long int dst 	: 8; 	// 9:2
+	unsigned long long int mod0 	: 8; 	// 17:10
+	unsigned long long int pred 	: 4; 	// 21:18
+	unsigned long long int s 	: 1; 	// 22
+	unsigned long long int srcB 	: 9; 	// 41:23
+	unsigned long long int mod1 	: 12;	// 53:42
+	unsigned long long int op1 	: 9; 	// 62:54
+	unsigned long long int srcB_mod	: 1; 	// 63
 };
 
 
-/* BRA, JMX, JMP, JCAL, BRX, CAL, PRET, PLONGJMP, SSY, PBK */
+// BRA, JMX, JMP, JCAL, BRX, CAL, PRET, PLONGJMP, SSY, PBK
 struct InstBytesGeneral1
 {
-	unsigned long long int op0 	: 2; 	/* 1:0 */
-	unsigned long long int mod0 	: 16;	/* 17:2 */
-	unsigned long long int pred 	: 4; 	/* 21:18 */
-	unsigned long long int unused 	: 1; 	/* 22 */
-	unsigned long long int srcB 	: 21; 	/* 43:23 */
-	unsigned long long int mod1 	: 11;	/* 54:44 */
-	unsigned long long int op1 	: 9; 	/* 63:55 */
+	unsigned long long int op0 	: 2; 	// 1:0
+	unsigned long long int mod0 	: 16;	// 17:2
+	unsigned long long int pred 	: 4; 	// 21:18
+	unsigned long long int unused 	: 1; 	// 22
+	unsigned long long int srcB 	: 21; 	// 43:23
+	unsigned long long int mod1 	: 11;	// 54:44
+	unsigned long long int op1 	: 9; 	// 63:55
 };
 
 
@@ -102,171 +102,171 @@ struct InstBytesGeneral1
  * BRK, CONT, RTT, SAM, RAM  */
 struct InstBytesGeneral2
 {
-	unsigned long long int op0     	: 2; 	/* 1:0 */
-	unsigned long long int mod     	: 8; 	/* 9:2 */
-	unsigned long long int src     	: 8; 	/* 17:10 */
-	unsigned long long int pred    	: 4; 	/* 21:18 */
-	unsigned long long int unused   : 33; 	/* 54:22 */
-	unsigned long long int op1     	: 9; 	/* 63:55 */
+	unsigned long long int op0     	: 2; 	// 1:0
+	unsigned long long int mod     	: 8; 	// 9:2
+	unsigned long long int src     	: 8; 	// 17:10
+	unsigned long long int pred    	: 4; 	// 21:18
+	unsigned long long int unused   : 33; 	// 54:22
+	unsigned long long int op1     	: 9; 	// 63:55
 };
 
 
-/* MOV32I, FADD32I, LOP32I, FFMA32I, IMAD32I, ISCADD32I, FMUL32I, IMUL32I  */
+// MOV32I, FADD32I, LOP32I, FFMA32I, IMAD32I, ISCADD32I, FMUL32I, IMUL32I 
 struct InstBytesImm
 {
-	unsigned long long int op0      : 2; 	/* 1:0 */
-	unsigned long long int dst      : 8; 	/* 9:2 */
-	unsigned long long int mod0     : 8; 	/* 17:10 */
-	unsigned long long int pred     : 4; 	/* 21:18 */
-	unsigned long long int s        : 1; 	/* 22 */
-	unsigned long long int srcB     : 9; 	/* 54:23 */
-	unsigned long long int mod1    	: 6; 	/* 60:55 */
-	unsigned long long int op1 	: 3; 	/* 63:61 */
+	unsigned long long int op0      : 2; 	// 1:0
+	unsigned long long int dst      : 8; 	// 9:2
+	unsigned long long int mod0     : 8; 	// 17:10
+	unsigned long long int pred     : 4; 	// 21:18
+	unsigned long long int s        : 1; 	// 22
+	unsigned long long int srcB     : 9; 	// 54:23
+	unsigned long long int mod1    	: 6; 	// 60:55
+	unsigned long long int op1 	: 3; 	// 63:61
 };
 
 
-/* 2nd level struct */
+// 2nd level struct
 
 /* BFE, POPC, IADD, IASCADD, IMNMX, SHR, IMUL, LOP, SHL, DMUL, DMNMX, FADD,
  * FMNMX, FMUL, DADD, SEL, P2R */
 struct InstBytesGeneral0Mod0A
 {
-	unsigned long long int reserved0: 10; 	/* 9:0 */
-	unsigned long long int srcA 	: 8; 	/* 17:10 */
-	unsigned long long int reserved1: 46;	/* 63:18 */
+	unsigned long long int reserved0: 10; 	// 9:0
+	unsigned long long int srcA 	: 8; 	// 17:10
+	unsigned long long int reserved1: 46;	// 63:18
 };
 
 
-/* RRO, MOV, F2F, F2I, I2F, I2I, FLO, DCHK, FCHK */
+// RRO, MOV, F2F, F2I, I2F, I2I, FLO, DCHK, FCHK
 struct InstBytesGeneral0Mod0B
 {
-	unsigned long long int reserved0: 10;   /* 9:0 */
-	unsigned long long int mod2     : 8;    /* 17:10 */
-	unsigned long long int reserved1: 46;   /* 63:18 */
+	unsigned long long int reserved0: 10;   // 9:0
+	unsigned long long int mod2     : 8;    // 17:10
+	unsigned long long int reserved1: 46;   // 63:18
 };
 
 
-/* JCAL, CAL, PRET */
+// JCAL, CAL, PRET
 struct InstBytesGeneral1Mod0A
 {
-	unsigned long long int reserved0: 2; 	/* 1:0 */
-	unsigned long long int unused0	: 5; 	/* 6:2 */
-	unsigned long long int srcB_mod : 1; 	/* 7 */
-	unsigned long long int noinc 	: 1; 	/* 8 */
-	unsigned long long int unused1	: 9; 	/* 17:9 */
-	unsigned long long int reserved1: 46; 	/* 63:18 */
+	unsigned long long int reserved0: 2; 	// 1:0
+	unsigned long long int unused0	: 5; 	// 6:2
+	unsigned long long int srcB_mod : 1; 	// 7
+	unsigned long long int noinc 	: 1; 	// 8
+	unsigned long long int unused1	: 9; 	// 17:9
+	unsigned long long int reserved1: 46; 	// 63:18
 };
 
 
-/* BRA, JMX, JMP, BRX */
+// BRA, JMX, JMP, BRX
 struct InstBytesGeneral1Mod0B
 {
-	unsigned long long int reserved0: 2;    /* 1:0 */
-	unsigned long long int cc   	: 5;    /* 6:2 */
-	unsigned long long int srcB_mod : 1;    /* 7 */
-	unsigned long long int lmt    	: 1;    /* 8 */
-	unsigned long long int u	: 1;	/* 9 */
-	unsigned long long int srcB   	: 8;    /* 17:10 */
-	unsigned long long int reserved1: 46;   /* 63:18 */
+	unsigned long long int reserved0: 2;    // 1:0
+	unsigned long long int cc   	: 5;    // 6:2
+	unsigned long long int srcB_mod : 1;    // 7
+	unsigned long long int lmt    	: 1;    // 8
+	unsigned long long int u	: 1;	// 9
+	unsigned long long int srcB   	: 8;    // 17:10
+	unsigned long long int reserved1: 46;   // 63:18
 };
 
 
-/* BRA, BRX, CAL, PRET */
+// BRA, BRX, CAL, PRET
 struct InstBytesGeneral1Mod1A
 {
-	unsigned long long int reserved0: 44;  	/* 43:0 */
-	unsigned long long int srcB     : 2;    /* 45:44 */
-	unsigned long long int neg_srcB	: 1;    /* 46 */
-	unsigned long long int unused  	: 8;    /* 54:47 */
-	unsigned long long int reserved1: 9;   	/* 63:55 */
+	unsigned long long int reserved0: 44;  	// 43:0
+	unsigned long long int srcB     : 2;    // 45:44
+	unsigned long long int neg_srcB	: 1;    // 46
+	unsigned long long int unused  	: 8;    // 54:47
+	unsigned long long int reserved1: 9;   	// 63:55
 };
 
 
-/* JMP, JCAL */
+// JMP, JCAL
 struct InstBytesGeneral1Mod1B
 {
-	unsigned long long int reserved0: 44;   /* 43:0 */
-	unsigned long long int srcB   	: 11;    /* 54:44 */
-	unsigned long long int reserved1: 9;    /* 63:55 */
+	unsigned long long int reserved0: 44;   // 43:0
+	unsigned long long int srcB   	: 11;    // 54:44
+	unsigned long long int reserved1: 9;    // 63:55
 };
 
 
-/* JMX */
+// JMX
 struct InstBytesGeneral1Mod1C
 {
-	unsigned long long int reserved0: 44;  	/* 43:0 */
-	unsigned long long int srcB     : 10;  	/* 53:44 */
-	unsigned long long int neg_srcB	: 1;	/* 54 */
-	unsigned long long int reserved1: 9;   	/* 63:55 */
+	unsigned long long int reserved0: 44;  	// 43:0
+	unsigned long long int srcB     : 10;  	// 53:44
+	unsigned long long int neg_srcB	: 1;	// 54
+	unsigned long long int reserved1: 9;   	// 63:55
 };
 
 
-/* GETCRSPTR, GETLMEMBASE, SETCRSPTR, SETMEMLBASE */
+// GETCRSPTR, GETLMEMBASE, SETCRSPTR, SETMEMLBASE
 struct InstBytesGeneral2ModA
 {
-	unsigned long long int reserved0: 2;   	/* 41:0 */
-	unsigned long long int dst     	: 8;    /* 9:2 */
-	unsigned long long int reserved1: 54;  	/* 63:10 */
+	unsigned long long int reserved0: 2;   	// 41:0
+	unsigned long long int dst     	: 8;    // 9:2
+	unsigned long long int reserved1: 54;  	// 63:10
 };
 
 
-/* EXIT, LONGJUMP, RET, KIL, BRK, CONT, RTT, SAM, RAM */
+// EXIT, LONGJUMP, RET, KIL, BRK, CONT, RTT, SAM, RAM
 struct InstBytesGeneral2ModB
 {
-	unsigned long long int reserved0: 2;  	/* 41:0 */
-	unsigned long long int cc  	: 8;    /* 6:2 */
-	unsigned long long int unused	: 3;	/* 9:7 */
-	unsigned long long int reserved1: 54;  	/* 63:10 */
+	unsigned long long int reserved0: 2;  	// 41:0
+	unsigned long long int cc  	: 8;    // 6:2
+	unsigned long long int unused	: 3;	// 9:7
+	unsigned long long int reserved1: 54;  	// 63:10
 };
 
 
-/* Need to figure out how to re-label constant once I know what this field represents */
-/* MOV32I */
+// Need to figure out how to re-label constant once I know what this field represents
+// MOV32I
 struct InstBytesImmMod0A
 {
-	unsigned long long int reserved0: 10;  	/* 9:0 */
-	unsigned long long int unused  	: 4;    /* 13:10 */
-	unsigned long long int constant	: 4;	/* 17:14 */     /* ????????????????? */
-	unsigned long long int reserved1: 46;  	/* 63:18 */
+	unsigned long long int reserved0: 10;  	// 9:0
+	unsigned long long int unused  	: 4;    // 13:10
+	unsigned long long int constant	: 4;	// 17:14 */     /* ?????????????????
+	unsigned long long int reserved1: 46;  	// 63:18
 };
 
 
-/* FADD32I, LOP32I, FFMA32I, IMAD32I, ISCADD32I, FMUL32I, IMUL32I */
+// FADD32I, LOP32I, FFMA32I, IMAD32I, ISCADD32I, FMUL32I, IMUL32I
 struct InstBytesImmMod0B
 {
-	unsigned long long int reserved0: 10;  	/* 9:0 */
-	unsigned long long int src	: 8;	/* 17:10 */
-	unsigned long long int reserved1: 46;  	/* 63:18 */
+	unsigned long long int reserved0: 10;  	// 9:0
+	unsigned long long int src	: 8;	// 17:10
+	unsigned long long int reserved1: 46;  	// 63:18
 };
 
 
-/* MOV32I */
+// MOV32I
 struct InstBytesImmMod1A
 {
-	unsigned long long int reserved0: 55;	/* 54:0 */
-	unsigned long long int op1	: 6;	/* 60:55 */
-	unsigned long long int reserved1: 3;	/* 63:61 */
+	unsigned long long int reserved0: 55;	// 54:0
+	unsigned long long int op1	: 6;	// 60:55
+	unsigned long long int reserved1: 3;	// 63:61
 };
 
 
-/* FADD32I, LOP32I, FFMA32I, IMAD32I, ISCADD32I */
+// FADD32I, LOP32I, FFMA32I, IMAD32I, ISCADD32I
 struct InstBytesImmMod1B
 {
-	unsigned long long int reserved0: 55;	/* 54:0 */
-	unsigned long long int cc	: 1;	/* 55 */
-	unsigned long long int mod2	: 5;	/* 60:56 */
-	unsigned long long int reserved1: 3;	/* 63:61 */
+	unsigned long long int reserved0: 55;	// 54:0
+	unsigned long long int cc	: 1;	// 55
+	unsigned long long int mod2	: 5;	// 60:56
+	unsigned long long int reserved1: 3;	// 63:61
 };
 
 
-/* FMUL321, IMUL32I */
+// FMUL321, IMUL32I
 struct InstBytesImmMod1C
 {
-	unsigned long long int reserved0: 55;	/* 54:0 */
-	unsigned long long int cc	: 1;	/* 55 */
-	unsigned long long int mod2	: 3;	/* 58:56 */
-	unsigned long long int op1	: 2;	/* 60:59 */
-	unsigned long long int reserved1: 3;	/* 63:61 */
+	unsigned long long int reserved0: 55;	// 54:0
+	unsigned long long int cc	: 1;	// 55
+	unsigned long long int mod2	: 3;	// 58:56
+	unsigned long long int op1	: 2;	// 60:59
+	unsigned long long int reserved1: 3;	// 63:61
 };
 
 
@@ -285,61 +285,67 @@ union InstBytes
 
 class Inst
 {
-	/* Disassembler */
-	Asm *as;
+	// Disassembler
+	const Asm *as;
 
-	/* Instruction offset within .text section */
+	// Instruction offset within .text section
 	unsigned int address;
 
-	/* Instruction bytes */
+	// Instruction bytes
 	InstBytes bytes;
 
-	/* Decoded information */
+	// Decoded information
 	InstInfo *info;
 
-	void DumpPredShort(std::ostream &os, int high, int low);
-	void DumpPredNoat(std::ostream &os, int high, int low);
-	void DumpPred(std::ostream &os, int high, int low);
-	void DumpReg(std::ostream &os, int high, int low);
-	void DumpSpecReg(std::ostream &os, int high, int low);
-	void DumpS(std::ostream &os, int high, int low);
-	void DumpF(std::ostream &os, int high, int low);
-	void DumpAnd(std::ostream &os, int high, int low);
-	void DumpU8(std::ostream &os, int high, int low);
-	void DumpX(std::ostream &os, int high, int low);
-	void DumpU32(std::ostream &os, int high, int low);
-	void DumpHi(std::ostream &os, int high, int low);
-	void DumpSat(std::ostream &os, int high, int low);
-	void DumpPo(std::ostream &os, int high, int low);
-	void DumpUs(std::ostream &os, int high0, int low0, int high1, int low1);
-	void DumpCc(std::ostream &os, int high, int low);
-	void DumpE(std::ostream &os, int high, int low);
-	void DumpCv(std::ostream &os, int high, int low);
-	void DumpLmt(std::ostream &os, int high, int low);
-	void DumpU(std::ostream &os, int high, int low);
-	void DumpRm(std::ostream &os, int high, int low);
-	void DumpKeepRefCount(std::ostream &os, int high, int low);
-	void DumpCc2(std::ostream &os, int high, int low);
-	void DumpSRCB(std::ostream &os, int high0, int low0, int high1, int low1,
-			int high2, int low2, int high3, int low3);
-	void DumpEndConst(std::ostream &os, int high, int low);
-	void DumpOffset(std::ostream &os, int high, int low);
-	void DumpTarget(std::ostream &os, int high0, int low0, int high1, int low1);
+	void DumpPredShort(std::ostream &os, int high, int low) const;
+	void DumpPredNoat(std::ostream &os, int high, int low) const;
+	void DumpPred(std::ostream &os, int high, int low) const;
+	void DumpReg(std::ostream &os, int high, int low) const;
+	void DumpSpecReg(std::ostream &os, int high, int low) const;
+	void DumpS(std::ostream &os, int high, int low) const;
+	void DumpF(std::ostream &os, int high, int low) const;
+	void DumpAnd(std::ostream &os, int high, int low) const;
+	void DumpU8(std::ostream &os, int high, int low) const;
+	void DumpX(std::ostream &os, int high, int low) const;
+	void DumpU32(std::ostream &os, int high, int low) const;
+	void DumpHi(std::ostream &os, int high, int low) const;
+	void DumpSat(std::ostream &os, int high, int low) const;
+	void DumpPo(std::ostream &os, int high, int low) const;
+	void DumpUs(std::ostream &os, int high0, int low0, int high1,
+			int low1) const;
+	void DumpCc(std::ostream &os, int high, int low) const;
+	void DumpE(std::ostream &os, int high, int low) const;
+	void DumpCv(std::ostream &os, int high, int low) const;
+	void DumpLmt(std::ostream &os, int high, int low) const;
+	void DumpU(std::ostream &os, int high, int low) const;
+	void DumpRm(std::ostream &os, int high, int low) const;
+	void DumpKeepRefCount(std::ostream &os, int high, int low) const;
+	void DumpCc2(std::ostream &os, int high, int low) const;
+	void DumpSRCB(std::ostream &os, int high0, int low0, int high1,
+			int low1, int high2, int low2, int high3,
+			int low3) const;
+	void DumpEndConst(std::ostream &os, int high, int low) const;
+	void DumpOffset(std::ostream &os, int high, int low) const;
+	void DumpTarget(std::ostream &os, int high0, int low0, int high1,
+			int low1) const;
 
 public:
-	/* Constructor */
-	explicit Inst(Asm *as);
+	/// Constructor
+	explicit Inst(const Asm *as);
 
-	/* Decode */
+	/// Decode the instruction in \a buffer at the offset specified by \a
+	/// address.
 	void Decode(const char *buffer, unsigned int address);
 
-	/* Dump */
-	void DumpHex(std::ostream &os);
-	void Dump(std::ostream &os);
+	/// Dump instruction as a sequence of hexadecimal digits
+	void DumpHex(std::ostream &os) const;
+
+	/// Dump instruction name into output stream.
+	void Dump(std::ostream &os) const;
 };
 
 
-}  /* namespace Kepler */
+}  // namespace Kepler
 
 
 #endif
