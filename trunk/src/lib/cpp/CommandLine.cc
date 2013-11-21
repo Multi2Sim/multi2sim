@@ -22,9 +22,24 @@
 #include "String.h"
 
 using namespace misc;
+
+void CommandLineOption::Help(std::ostream &os) const
+{
+	// Option name
+	os << "  " << name;
+
+	// Arguments
+	if (num_args == 1)
+		os << " <arg>";
+	else
+		for (int i = 1; i <= num_args; i++)
+			os << " <arg" << i << ">";
+
+	// Description
+	os << "\n\n" << StringParagraph(help, 8, 8) << '\n';
+}
 	
-	
-int CommandLineOptionBool::Read(int argc, char **argv, int index)
+void CommandLineOptionBool::Read(int argc, char **argv, int index)
 {
 	// Checks
 	assert(index < argc);
@@ -32,65 +47,25 @@ int CommandLineOptionBool::Read(int argc, char **argv, int index)
 
 	// If option is present, set boolean variable
 	*var = true;
-
-	// No extra argument consumed
-	return 0;
 }
 
 
-int CommandLineOptionString::Read(int argc, char **argv, int index)
+void CommandLineOptionString::Read(int argc, char **argv, int index)
 {
 	// Checks
-	assert(index < argc);
+	assert(index < argc - 1);
 	assert(argv[index] == getName());
 
-	// Check extra argument
-	if (index == argc - 1)
-		fatal("command-line option '%s' expects one argument",
-				getName().c_str());
-	
 	// Read value
 	*var = argv[index + 1];
-
-	// One extra argument consumed
-	return 1;
 }
 
 
-int CommandLineOptionInt32::Read(int argc, char **argv, int index)
+void CommandLineOptionInt32::Read(int argc, char **argv, int index)
 {
 	// Checks
-	assert(index < argc);
+	assert(index < argc - 1);
 	assert(argv[index] == getName());
-
-	// Check extra argument
-	if (index == argc - 1)
-		fatal("command-line option '%s' expects one argument",
-				getName().c_str());
-	
-	// Read value
-	StringError error;
-	*var = StringToInt(argv[index + 1], error);
-	if (error)
-		fatal("invalid value of option '%s': %s",
-				getName().c_str(),
-				StringErrorToString(error));
-
-	// One extra argument consumed
-	return 1;
-}
-
-
-int CommandLineOptionInt64::Read(int argc, char **argv, int index)
-{
-	// Checks
-	assert(index < argc);
-	assert(argv[index] == getName());
-
-	// Check extra argument
-	if (index == argc - 1)
-		fatal("command-line option '%s' expects one argument",
-				getName().c_str());
 
 	// Read value
 	StringError error;
@@ -99,9 +74,22 @@ int CommandLineOptionInt64::Read(int argc, char **argv, int index)
 		fatal("invalid value of option '%s': %s",
 				getName().c_str(),
 				StringErrorToString(error));
+}
 
-	// One extra argument consumed
-	return 1;
+
+void CommandLineOptionInt64::Read(int argc, char **argv, int index)
+{
+	// Checks
+	assert(index < argc - 1);
+	assert(argv[index] == getName());
+
+	// Read value
+	StringError error;
+	*var = StringToInt(argv[index + 1], error);
+	if (error)
+		fatal("invalid value of option '%s': %s",
+				getName().c_str(),
+				StringErrorToString(error));
 }
 
 
@@ -130,10 +118,16 @@ void CommandLine::Help(std::ostream &os)
 {
 	// Command-line must have been processed
 	assert(processed);
+
+	// Print help message for every option
+	for (auto &option : option_list)
+	{
+		option->Help(os);
+	}
 }
 
 
-void CommandLine::Process()
+bool CommandLine::Process(bool fatal_on_bad_option)
 {
 	// Processed
 	assert(!processed);
@@ -154,16 +148,35 @@ void CommandLine::Process()
 		// Find command-line option
 		auto it = option_table.find(argv[index]);
 		if (it == option_table.end())
-			fatal("command-line option '%s' is not recognized.\n%s",
-					argv[index], error_message.c_str());
+		{
+			if (fatal_on_bad_option)
+				fatal("command-line option '%s' is not "
+						"recognized. %s",
+						argv[index],
+						error_message.c_str());
+			else
+				return false;
+		}
 
-		// Read value of command-line option
+		// Check extra arguments
 		CommandLineOption *option = it->second;
-		index += option->Read(argc, argv, index);
+		if (index + option->getNumArguments() >= argc)
+			fatal("option '%s' expects %d argument(s)",
+					option->getName().c_str(),
+					option->getNumArguments());
+
+		// Process command-line option
+		option->Read(argc, argv, index);
+
+		// Consume extra arguments
+		index += option->getNumArguments();
 	}
 
 	// Save rest of the arguments
 	for (; index < argc; index++)
 		args.push_back(argv[index]);
+
+	// Command line successfully processed
+	return true;
 }
 
