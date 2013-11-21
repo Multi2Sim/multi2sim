@@ -50,8 +50,7 @@ void fatal(const char *fmt, ...)
 
 	// Print in clean paragraphs
 	std::string msg = "fatal: ";
-	std::cerr << StringParagraph(msg + buf, 8);
-	std::cerr << '\n';
+	std::cerr << '\n' << StringParagraph(msg + buf, 7) << '\n';
 
 	// Exit with error code 1
 	exit(1);
@@ -69,8 +68,7 @@ void panic(const char *fmt, ...)
 
 	// Print in clean paragraphs
 	std::string msg = "panic: ";
-	std::cerr << StringParagraph(msg + buf, 8);
-	std::cerr << '\n';
+	std::cerr << '\n' << StringParagraph(msg + buf, 7) << '\n';
 
 	// Abort program
 	abort();
@@ -88,8 +86,7 @@ void warning(const char *fmt, ...)
 
 	// Print in clean paragraphs
 	std::string msg = "warning: ";
-	std::cerr << StringParagraph(msg + buf, 8);
-	std::cerr << '\n';
+	std::cerr << '\n' << StringParagraph(msg + buf, 9) << '\n';
 }
 
 
