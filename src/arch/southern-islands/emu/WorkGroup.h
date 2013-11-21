@@ -127,6 +127,9 @@ public:
 	/// Statistic showing the number of writes from vector registers
 	long long getVRegWriteCount() const { return vreg_write_count; }
 
+	/// Get NDRange it belongs to
+	NDRange *getNDRange() const { return ndrange; }
+
 
 	/// Setters
 	///
