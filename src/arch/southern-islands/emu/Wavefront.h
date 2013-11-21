@@ -28,6 +28,14 @@
 namespace SI
 {
 
+// Macros for special registers
+#define SI_M0 124
+#define SI_VCC 106
+#define SI_VCCZ 251
+#define SI_EXEC 126
+#define SI_EXECZ 252
+#define SI_SCC 253
+
 class WorkGroup;
 class WorkItem;
 
@@ -129,12 +137,19 @@ public:
 	/// \param id Global 1D identifier of the wavefront
 	Wavefront(WorkGroup *work_group, int id);
 
+	/// Getters
+	///
 	/// Return the global wavefront 1D identifier
 	int getId() const { return id; }
 
 	/// Return PC of wavefront
 	unsigned getPC() const { return pc; }
 
+	/// Get reference of a scaler register
+	InstReg &getSReg(unsigned idx) { return sreg[idx]; }
+
+	/// Setters
+	///
 	/// Set PC
 	void setPC(unsigned new_pc) { pc = new_pc; }
 

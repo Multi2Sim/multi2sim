@@ -119,31 +119,32 @@ public:
 	// FIXME - probably most functions below can be inline
 
 	/// FIXME ???
-	unsigned ReadSReg(int sreg);
+	unsigned ReadSReg(int sreg_idx);
 
 	/// FIXME ???
-	void WriteSReg(int sreg, unsigned value);
+	void WriteSReg(int sreg_idx, unsigned value);
 
 	/// FIXME ???
-	unsigned ReadVReg(int vreg);
+	unsigned ReadVReg(int vreg_idx);
 
 	/// FIXME ???
-	void WriteVReg(int vreg, unsigned value);
+	void WriteVReg(int vreg_idx, unsigned value);
 
 	/// FIXME ???
 	unsigned ReadReg(int reg);
 
 	/// FIXME ???
-	void WriteBitmaskSReg(int sreg, unsigned value);
+	void WriteBitmaskSReg(int sreg_idx, unsigned value);
 
 	/// FIXME ???
-	int ReadBitmaskSReg(int sreg);
+	int ReadBitmaskSReg(int sreg_idx);
 
 	/// FIXME ???
-	void ReadBufferResource(int sreg, EmuBufferDesc &buffer_desc); 
+	void ReadBufferResource(int sreg_idx, EmuBufferDesc &buffer_desc); 
 	
 	/// FIXME ???
-	void ReadMemPtr(int sreg, EmuMemPtr &mem_ptr);
+	void ReadMemPtr(int sreg_idx, EmuMemPtr &mem_ptr);
+
 };
 
 }  /* namespace SI */

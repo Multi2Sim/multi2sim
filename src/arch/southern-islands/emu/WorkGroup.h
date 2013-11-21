@@ -115,7 +115,19 @@ public:
 	/// Get counter of wavefronts at barrier
 	int getWavefrontsAtBarrier() const { return wavefronts_at_barrier; }
 
-	/// Get NDRange it belongs to
+	/// Return reference of sreg_read_count
+	long long &getSregReadCount() { return sreg_read_count; }
+
+	/// Return reference of sreg_write_count
+	long long &getSregWriteCount() { return sreg_write_count; }
+
+	/// Return reference of vreg_read_count
+	long long &getVregReadCount() { return vreg_read_count; }
+
+	/// Return reference of vreg_read_count
+	long long &getVregWriteCount() { return vreg_write_count; }
+
+	/// Get NDRange that it belongs to
 	const NDRange *getNDRange() const { return ndrange; }
 
 	/// Get list of wavefronts in the work-group
