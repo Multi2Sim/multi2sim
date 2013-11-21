@@ -74,7 +74,7 @@ int CommandLineOptionInt32::Read(int argc, char **argv, int index)
 	if (error)
 		fatal("invalid value of option '%s': %s",
 				getName().c_str(),
-				StringGetErrorString(error));
+				StringErrorToString(error));
 
 	// One extra argument consumed
 	return 1;
@@ -98,7 +98,7 @@ int CommandLineOptionInt64::Read(int argc, char **argv, int index)
 	if (error)
 		fatal("invalid value of option '%s': %s",
 				getName().c_str(),
-				StringGetErrorString(error));
+				StringErrorToString(error));
 
 	// One extra argument consumed
 	return 1;

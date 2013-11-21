@@ -427,7 +427,7 @@ int IniFile::ReadInt(const std::string &section, const std::string &var,
 	if (error)
 		fatal("%s: section [%s], variable '%s', value '%s': %s\n",
 				path.c_str(), section.c_str(), var.c_str(),
-				value.c_str(), StringGetErrorString(error));
+				value.c_str(), StringErrorToString(error));
 
 	// Return
 	return result;
@@ -451,7 +451,7 @@ long long IniFile::ReadInt64(const std::string &section,
 	if (error)
 		fatal("%s: section [%s], variable '%s', value '%s': %s\n",
 				path.c_str(), section.c_str(), var.c_str(),
-				value.c_str(), StringGetErrorString(error));
+				value.c_str(), StringErrorToString(error));
 
 	// Return
 	return result;

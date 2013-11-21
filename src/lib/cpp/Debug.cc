@@ -74,5 +74,5 @@ void Debug::setPath(const std::string& path)
 
 
 
-}  // namespace Misc
+}  // namespace misc
 
