@@ -47,30 +47,61 @@ const char *StringErrorToString(StringError error);
 std::string StringFmt(const char *fmt, ...)
 		__attribute__ ((format(printf, 1, 2)));
 
+/// Return \c true if the character given in \a c is present in string \a set.
 inline bool StringHasChar(const std::string &set, char c) {
 	return set.find(c) != std::string::npos;
 }
 
+/// Remove any character in \a set on the left of string \a s. If argument \a
+/// set is not given, newline, tab, and space characters are removed from the
+/// left of the string.
 void StringTrimLeft(std::string &s, const std::string &set = " \t\n\r");
+
+/// Remove any character in \a set on the right of string \a s. If argument \a
+/// set is not given, newline, tab, and space characters are removed from the
+/// right of the string.
 void StringTrimRight(std::string &s, const std::string &set = " \t\n\r");
+
+/// Remove any character in \a set from both left and right ends of string \a s.
+/// If argument \a set is not given, newline, tab, and space characters are
+/// trimmed from both sides of the string.
 void StringTrim(std::string &s, const std::string &set = " \t\n\r");
+
+/// Remove consecutive occurrences of characters in \a set from string \a s and
+/// replace them by one single space each time. If argument \a set is not given,
+/// newline, tab, and space characters are replaced by one single space.
 void StringSingleSpaces(std::string &s, const std::string &set =  " \t\n\r");
 
+/// Convert string to lower case
 void StringToLower(std::string &s);
+
+/// Convert string to upper case
 void StringToUpper(std::string &s);
 
+/// Return \c true if string \a s starts with \a prefix.
 bool StringPrefix(const std::string &s, const std::string &prefix);
+
+/// Return \c true if string \a s ends with \a suffix.
 bool StringSuffix(const std::string &s, const std::string &suffix);
 
-/* Split a string in tokens and place them in the list of strings passed by
- * reference in the first argument. Optionally, argument 'set' can specify the
- * characters considered as tokens separators. */
+/// Split a string in tokens and place them in a vector of strings passed by
+/// reference in argument \a token. Optionally, argument \a set can specify the
+/// characters considered as tokens separators. If \a set is not given, newline,
+/// space, and tab characters are considered as token separators.
 void StringTokenize(const std::string &s, std::vector<std::string> &tokens,
 		const std::string &set = " \t\n\r");
 
-// Convert 'digit' in base 'base' into an integer.
-int StringDigitToInt(char digit, int base);
+/// Convert \a digit in base \a base into an integer. The digit must be a
+/// character between 0-9 or a-z (lower and upper case are valid). On success,
+/// the functions returns the value represented by the digit. The following
+/// errors can be returned in optional argument \a error:
+///
+/// - \c StringErrorOK - No error.
+/// - \c StringErrorBase - The base is not valid (2, 8, 10, or 16).
+/// - \c StringErrorFormat - The digit is equal or greater than \a base, or the
+///   digit is an invalid value.
 int StringDigitToInt(char digit, int base, StringError &error);
+int StringDigitToInt(char digit, int base);
 
 /// Convert a string into an integer, accepting the following modifiers.
 /// If conversion fails due to wrong formatting of the string, an error code is
@@ -87,6 +118,13 @@ int StringDigitToInt(char digit, int base, StringError &error);
 ///   - Suffix \c g - Multiply by 1024*1024*1024.
 ///   - Suffix \c G - Multiply by 1000*1000*1000.
 ///
+/// The following errors can occur during the conversion, returned in optional
+/// argument \a error:
+///
+/// - \c StringErrorOK - No error.
+/// - \c StringErrorFormat - Invalid character found.
+/// - \c StringErrorRange - The number represented in the string exceeds the
+///   range of the integer format used to capture it.
 int StringToInt(const std::string &s, StringError &error);
 int StringToInt(const std::string &s);
 
@@ -95,38 +133,102 @@ int StringToInt(const std::string &s);
 long long StringToInt64(const std::string &s, StringError &error);
 long long StringToInt64(const std::string &s);
 
+/// Organize the string in \a text with a nice layout, removing redundant spaces
+/// and adjusting it to a fixed text width. This function is ideal to format
+/// error messages, or help messages provided to the user.
+///
+/// Argument \a indent specifies the number of spaces to include in the
+/// beginning of each line, starting at the second line. Argument \a
+/// first_indent indicates the number of spaces on the left of the first line.
+/// Argument \a width specifies the maximum number of characters in one line,
+/// including indentation spaces.
 std::string StringParagraph(const std::string &text,
 		int indent = 0, int first_indent = 0,
 		int width = 80);
 
 
 
-/*
- * String maps
- */
+////////////////////////////////////////////////////////////////////////////////
+// String maps
+////////////////////////////////////////////////////////////////////////////////
 
+/// Data structure representing one element of a string map. Internal use only.
 struct StringMapItem
 {
 	const char *text;
 	int value;
 };
 
+/// Data structure representing a null-terminated string map. This is an example
+/// of a string map declaration, associating strings with integer values:
+///
+/// \code
+///	StringMap my_map = {
+///		{ "element1", 1 },
+///		{ "second_element", 2 },
+///		{ "last item", 3 },
+///		{ 0, 0 }
+///	};
+/// \endcode
+///
 typedef StringMapItem StringMap[];
 
-const char *StringMapValue(StringMap map, int value);
+/// Obtain the string associated with \a value in the string map. If value is
+/// not present, an empty string (<tt>""</tt>) is returned, and optional
+/// argument \a error is set to \c true. If the value is found in the string
+/// map, optional argument \a error is set to \c false.
 const char *StringMapValue(StringMap map, int value, bool &error);
+const char *StringMapValue(StringMap map, int value);
 
-int StringMapString(StringMap map, const std::string &s);
+/// Return the value associated with string \a s in the string map. Optional
+/// argument \a error will be set to \c true or \c false depending on whether
+/// the string was found or not in the string map. If the string is not found,
+/// the function returns 0.
 int StringMapString(StringMap map, const std::string &s, bool &error);
+int StringMapString(StringMap map, const std::string &s);
 
-int StringMapStringCase(StringMap map, const std::string &s);
+/// Same as StringMapString(), but ignoring case.
 int StringMapStringCase(StringMap map, const std::string &s, bool &error);
+int StringMapStringCase(StringMap map, const std::string &s);
 
+
+/// Construct a string containing the set of flags in bitmap \a flags, as
+/// specified in the string map. The string map is assumed to contain only
+/// integer values that are powers of 2 (only one bit is set). For example,
+/// given the following bitmap:
+///
+/// \code
+///	StringMap my_flags = {
+///		{ "Read", 1 },
+///		{ "Write", 2 },
+///		{ "Modify", 4 },
+///		{ "Execute", 8 },
+///		{ 0, 0 }
+///	};
+/// \endcode
+///
+/// a call to <tt>StringMapFlags(my_flags, 1|4|8)</tt> returns string
+/// <tt>{Read|Modify|Execute}</tt>.
+///
 std::string StringMapFlags(StringMap map, unsigned int flags);
 
-/* Return a string with a list of values present in the string map, set off in
- * brackets, and separated by commas. It is the responsibility of the caller to
- * free the returned string. */
+
+/// Return a string with all strings present in a string map, set off in
+/// brackets and separated by commas. For example, given the following bitmap:
+///
+/// \code
+///	StringMap my_map = {
+///		{ "Fetch", 1 },
+///		{ "Decode", 2 },
+///		{ "Issue", 3 },
+///		{ "Writeback", 4 },
+///		{ 0, 0 }
+///	};
+/// \endcode
+///
+/// a call to <tt>StringMapGetValues(my_map)</tt> returns string
+/// <tt>{Fetch,Decode,Issue,Writeback}</tt>.
+///
 std::string StringMapGetValues(StringMap map);
 
 

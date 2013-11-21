@@ -22,7 +22,7 @@
 
 #include <cassert>
 #include <memory>
-#include <string>
+#include <iostream>
 #include <unordered_map>
 #include <vector>
 
@@ -47,6 +47,7 @@ private:
 
 	Type type;
 	std::string name;
+	int num_args;
 	std::string help;
 	bool present;
 
@@ -56,11 +57,14 @@ public:
 	///
 	/// \param name Option name. It must start with a double dash
 	///        (<tt>--</tt>)
+	/// \param num_args Number of additional arguments required by the
+	///        command-line option.
 	/// \param help String to print as a help message related with the
 	///        option.
-	CommandLineOption(Type type, const std::string &name,
+	CommandLineOption(Type type, const std::string &name, int num_args,
 			const std::string &help) :
-			type(type), name(name), help(help), present(false)
+			type(type), name(name), num_args(num_args),
+			help(help), present(false)
 		{ }
 
 	/// Virtual destructor to make class polymorphic.
@@ -68,27 +72,30 @@ public:
 
 	/// Return the type of the command-line option. This type determines the
 	/// actual instantiated subclass.
-	Type getType() { return type; }
+	Type getType() const { return type; }
 
 	// Return the option name
-	const std::string &getName() { return name; }
+	const std::string &getName() const { return name; }
 
 	/// Return \a true if the command-line option was specified by the user.
-	bool isPresent() { return present; }
+	bool isPresent() const { return present; }
+
+	/// Return the number of arguments that the option expects
+	int getNumArguments() const { return num_args; }
 
 	/// Dump help message related with this option
-	void DumpHelp(std::ostream &os);
+	void DumpHelp(std::ostream &os) const;
 
 	/// Read value of the option from the command-line option given in \a
 	/// argc and \a argv. The element in \a argv pointed to by \a index
 	/// should be the option itself, optionally followed by its arguments in
 	/// the following positions of \a argv. If \a argv does not have enough
-	/// elements as what the option expects, an error message will
+	/// arguments as per what the option expects, an error message will
 	/// terminate execution.
-	///
-	/// The return value specifies the number of arguments consumed from the
-	/// command line by this option, not including the option itself.
-	virtual int Read(int argc, char **argv, int index) = 0;
+	virtual void Read(int argc, char **argv, int index) = 0;
+
+	/// Dump help about command line option into output stream
+	void Help(std::ostream &os = std::cout) const;
 };
 
 
@@ -101,11 +108,11 @@ public:
 	/// Constructor
 	CommandLineOptionBool(const std::string &name, bool *var,
 			const std::string &help)
-			: CommandLineOption(TypeBool, name, help),
+			: CommandLineOption(TypeBool, name, 0, help),
 			var(var) { }
 	
 	/// Read option from command line. See CommandLineOption::Read().
-	int Read(int argc, char **argv, int index);
+	void Read(int argc, char **argv, int index);
 };
 
 
@@ -118,11 +125,11 @@ public:
 	/// Constructor
 	CommandLineOptionString(const std::string &name, std::string *var,
 			const std::string &help)
-			: CommandLineOption(TypeString, name, help),
+			: CommandLineOption(TypeString, name, 1, help),
 			var(var) { }
 	
 	/// Read option from command line. See CommandLineOption::Read().
-	int Read(int argc, char **argv, int index);
+	void Read(int argc, char **argv, int index);
 };
 
 
@@ -134,11 +141,11 @@ public:
 	/// Constructor
 	CommandLineOptionInt32(const std::string &name, int *var,
 			const std::string &help)
-		: CommandLineOption(TypeInt32, name, help),
+		: CommandLineOption(TypeInt32, name, 1, help),
 		var(var) { }
 	
 	/// Read option from command line. See CommandLineOption::Read().
-	int Read(int argc, char **argv, int index);
+	void Read(int argc, char **argv, int index);
 };
 
 
@@ -150,11 +157,11 @@ public:
 	/// Constructor
 	CommandLineOptionInt64(const std::string &name, long long *var,
 			const std::string &help)
-		: CommandLineOption(TypeInt64, name, help),
+		: CommandLineOption(TypeInt64, name, 1, help),
 		var(var) { }
 	
 	/// Read option from command line. See CommandLineOption::Read().
-	int Read(int argc, char **argv, int index);
+	void Read(int argc, char **argv, int index);
 };
 
 
@@ -280,10 +287,15 @@ public:
 	}
 
 	/// Dump help for all registered command-line options.
-	void Help(std::ostream &os);
+	void Help(std::ostream &os = std::cout);
 
 	/// Process command line.
-	void Process();
+	/// Optional argument \a fatal_on_bad_option specified whether a fatal
+	/// message should be issued when a command-line option is found that is
+	/// not recognized. If this value is \c false and a bad command-line
+	/// option is found, this error is indicated by the return value: \c
+	/// true if no error, and \c false on error.
+	bool Process(bool fatal_on_bad_option = true);
 };
 
 
