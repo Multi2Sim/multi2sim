@@ -174,6 +174,13 @@ public:
 		return os;
 	}
 
+	/// Getters
+	///
+	/// Get local memory top address
+	unsigned getLocalMemTop() const { return local_mem_top; }
+
+	/// Setters
+	///
 	/// Set new size parameters of the ND-Range before it gets launched.
 	///
 	/// \param global_size Array of \a work_dim elements (3 at most)

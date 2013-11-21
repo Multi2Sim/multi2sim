@@ -23,13 +23,13 @@
 #include <lib/cpp/Misc.h>
 
 #include "Emu.h"
+#include "NDRange.h"
 #include "Wavefront.h"
 #include "WorkGroup.h"
 #include "WorkItem.h"
 
 
 using namespace misc;
-
 
 namespace SI
 {
@@ -177,7 +177,7 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORD_Impl(Inst *inst)
 
 	// Read value from global memory
 	InstReg value;
-	global_mem->Read(addr, 4, value.as_byte);
+	global_mem->Read(addr, 4, (char *)&value);
 
 	// Store the data in the destination register
 	WriteSReg(INST.sdst, value.as_uint);
@@ -197,7 +197,6 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORD_Impl(Inst *inst)
 #define INST INST_SMRD
 void WorkItem::ISA_S_BUFFER_LOAD_DWORDX2_Impl(Inst *inst)
 {
-
 	// Record access
 	wavefront->setScalarMemRead();
 	int sbase = INST.sbase << 1;
@@ -215,7 +214,7 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORDX2_Impl(Inst *inst)
 	for (i = 0; i < 2; i++)
 	{
 		// Read value from global memory
-		global_mem->Read(addr + i * 4, 4, value[i].as_byte);
+		global_mem->Read(addr + i * 4, 4, (char *)&value[i]);
 		// Store the data in the destination register
 		WriteSReg(INST.sdst + i, value[i].as_uint);
 	}
@@ -259,7 +258,7 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORDX4_Impl(Inst *inst)
 	for (i = 0; i < 4; i++)
 	{
 		// Read value from global memory
-		global_mem->Read(addr + i * 4, 4, value[i].as_byte);
+		global_mem->Read(addr + i * 4, 4, (char *)&value[i]);
 		// Store the data in the destination register
 		WriteSReg(INST.sdst + i, value[i].as_uint);
 	}
@@ -302,7 +301,7 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORDX8_Impl(Inst *inst)
 	for (i = 0; i < 8; i++)
 	{
 		// Read value from global memory
-		global_mem->Read(addr + i * 4, 4, value[i].as_byte);
+		global_mem->Read(addr + i * 4, 4, (char *)&value[i]);
 		// Store the data in the destination register
 		WriteSReg(INST.sdst + i, value[i].as_uint);
 	}
@@ -345,7 +344,7 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORDX16_Impl(Inst *inst)
 	for (i = 0; i < 16; i++)
 	{
 		// Read value from global memory
-		global_mem->Read(addr + i * 4, 4, value[i].as_byte);
+		global_mem->Read(addr + i * 4, 4, (char *)&value[i]);
 		// Store the data in the destination register
 		WriteSReg(INST.sdst + i, value[i].as_uint);
 	}
@@ -393,7 +392,7 @@ void WorkItem::ISA_S_LOAD_DWORDX2_Impl(Inst *inst)
 	for (i = 0; i < 2; i++)
 	{
 		// Read value from global memory		
-		global_mem->Read(m_addr + i * 4, 4, value[i].as_byte);
+		global_mem->Read(m_addr + i * 4, 4, (char *)&value[i]);
 		// Store the data in the destination register
 		WriteSReg(INST.sdst + i, value[i].as_uint);
 	}
@@ -440,7 +439,7 @@ void WorkItem::ISA_S_LOAD_DWORDX4_Impl(Inst *inst)
 	for (i = 0; i < 4; i++)
 	{
 		// Read value from global memory		
-		global_mem->Read(m_addr + i * 4, 4, value[i].as_byte);
+		global_mem->Read(m_addr + i * 4, 4, (char *)&value[i]);
 		// Store the data in the destination register
 		WriteSReg(INST.sdst + i, value[i].as_uint);
 	}
@@ -488,7 +487,7 @@ void WorkItem::ISA_S_LOAD_DWORDX8_Impl(Inst *inst)
 	for (i = 0; i < 8; i++)
 	{
 		// Read value from global memory		
-		global_mem->Read(m_addr + i * 4, 4, value[i].as_byte);
+		global_mem->Read(m_addr + i * 4, 4, (char *)&value[i]);
 		// Store the data in the destination register
 		WriteSReg(INST.sdst + i, value[i].as_uint);
 	}
@@ -6236,24 +6235,23 @@ void WorkItem::ISA_V_INTERP_P1_F32_Impl(Inst *inst)
 	InstReg p10;
 	InstReg data;
 
-	// union si_isa_v_interp_m0_t m0_vintrp;
+	union si_isa_v_interp_m0_t m0_vintrp;
 
 	// Get lds offset and primitive mask information
-	// m0_vintrp.as_uint = ReadReg(SI_M0);
+	m0_vintrp.as_uint = ReadReg(SI_M0);
 
 	// Read barycentric coordinates stored in VGPR
 	s.as_uint = ReadVReg(INST.vsrc);
 
-	// FIXME: cannot access private member
-	// // 12 successive dwords contain P0 P10 P20
-	// /* 4dwords P0: X Y Z W, INST.attrchan decides which 1dword to be loaded*/
-	// work_group->lds->Read( 
-	// 	m0_vintrp.for_vintrp.lds_param_offset + 0 + 4 * INST.attrchan ,
-	// 	 4, &p0.as_uint);
-	// /* 4dwords P10: X Y Z W, INST.attrchan decides which 1dword to be loaded*/
-	// work_group->lds->Read( 
-	// 	m0_vintrp.for_vintrp.lds_param_offset + 16 + 4 * INST.attrchan,
-	// 	 4, &p10.as_uint);
+	// 12 successive dwords contain P0 P10 P20
+	// 4dwords P0: X Y Z W, INST.attrchan decides which 1dword to be loaded
+	lds->Read( 
+		m0_vintrp.for_vintrp.lds_param_offset + 0 + 4 * INST.attrchan ,
+		 4, (char *)&p0.as_uint);
+	// 4dwords P10: X Y Z W, INST.attrchan decides which 1dword to be loaded
+	lds->Read( 
+		m0_vintrp.for_vintrp.lds_param_offset + 16 + 4 * INST.attrchan,
+		 4, (char *)&p10.as_uint);
 
 	// D = P10 * S + P0
 	data.as_float = p10.as_float * s.as_float + p0.as_float;
@@ -6279,10 +6277,10 @@ void WorkItem::ISA_V_INTERP_P2_F32_Impl(Inst *inst)
 	InstReg p20;
 	InstReg data;
 
-	// union si_isa_v_interp_m0_t m0_vintrp;
+	union si_isa_v_interp_m0_t m0_vintrp;
 
 	// Get lds offset and primitive mask information
-	// m0_vintrp.as_uint = ReadReg(SI_M0);
+	m0_vintrp.as_uint = ReadReg(SI_M0);
 
 	// Read barycentric coordinates stored in VGPR
 	s.as_uint = ReadVReg(INST.vsrc);
@@ -6290,12 +6288,10 @@ void WorkItem::ISA_V_INTERP_P2_F32_Impl(Inst *inst)
 	// Read data stores in VGPR for later acclumulation
 	data.as_uint = ReadVReg(INST.vdst);
 
-	// FIXME: cannot access private members 
-	// // 12 successive dwords contain P0 P10 P20
-	// // 4dwords P20: X Y Z W, INST.attrchan decides which 1dword to be loaded 
-	// work_group->lds->Read( 
-	// 	m0_vintrp.for_vintrp.lds_param_offset + 32 + 4 * INST.attrchan,
-	// 	 4, &p20.as_uint);
+	// 12 successive dwords contain P0 P10 P20
+	// 4dwords P20: X Y Z W, INST.attrchan decides which 1dword to be loaded 
+	lds->Read( m0_vintrp.for_vintrp.lds_param_offset + 32 + 4 * INST.attrchan,
+		 4, (char *)&p20.as_uint);
 
 	// D = P20 * S + D
 	data.as_float += p20.as_float * s.as_float;
@@ -6322,615 +6318,614 @@ void WorkItem::ISA_V_INTERP_MOV_F32_Impl(Inst *inst)
 #undef INST
 
 
-// /* 
-//  * DS
-//  */
-
-// // DS[A] = (DS[A] >= D0 ? 0 : DS[A] + 1); uint increment.
-// #define INST INST_DS
-// void WorkItem::ISA_DS_INC_U32_Impl(Inst *inst)
-// {
-// 	NOT_IMPL();
-// }
-// #undef INST
-
-// // DS[ADDR+offset0*4] = D0; DS[ADDR+offset1*4] = D1; Write 2 Dwords
-// #define INST INST_DS
-// void WorkItem::ISA_DS_WRITE2_B32_Impl(Inst *inst)
-// {
-// 	InstReg addr0;
-// 	InstReg addr1;
-// 	InstReg data0;
-// 	InstReg data1;
-
-// 	assert(!INST.gds);
-
-// 	// Load address and data from registers.
-// 	addr0.as_uint = ReadVReg(INST.addr);
-// 	addr0.as_uint += INST.offset0*4;
-// 	addr1.as_uint = ReadVReg(INST.addr);
-// 	addr1.as_uint += INST.offset1*4;
-// 	data0.as_uint = ReadVReg(INST.data0);
-// 	data1.as_uint = ReadVReg(INST.data1);
-
-// 	if (addr0.as_uint > MIN(work_item->work_group->ndrange->local_mem_top,
-// 		ReadSReg(SI_M0)))
-// 	{
-// 		fatal("%s: invalid address\n", __FUNCTION__);
-// 	}
-// 	if (addr1.as_uint > MIN(work_item->work_group->ndrange->local_mem_top,
-// 		ReadSReg(SI_M0)))
-// 	{
-// 		fatal("%s: invalid address\n", __FUNCTION__);
-// 	}
-
-// 	// Write Dword.
-// 	if (INST.gds)
-// 	{
-// 		assert(0);
-// 	}
-// 	else
-// 	{
-// 		mem_write(work_item->work_group->lds_module, addr0.as_uint, 4,
-// 			&data0.as_uint);
-// 		mem_write(work_item->work_group->lds_module, addr1.as_uint, 4,
-// 			&data1.as_uint);
-// 	}
-
-// 	// Record last memory access for the detailed simulator.
-// 	if (INST.gds)
-// 	{
-// 		assert(0);
-// 	}
-// 	else
-// 	{
-// 		// If offset1 != 1, then the following is incorrect
-// 		assert(INST.offset0 == 0);
-// 		assert(INST.offset1 == 1);
-// 		work_item->lds_access_count = 2;
-// 		work_item->lds_access_type[0] = 2;
-// 		work_item->lds_access_addr[0] = addr0.as_uint;
-// 		work_item->lds_access_size[0] = 4;
-// 		work_item->lds_access_type[1] = 2;
-// 		work_item->lds_access_addr[1] = addr0.as_uint + 4;
-// 		work_item->lds_access_size[1] = 4;
-// 	}
-
-// 	// Print isa debug information.
-// 	if (Emu::debug && INST.gds)
-// 	{
-// 		Emu::debug << StringFmt("t%d: GDS[%u]<=(%u,%f) ", id, 
-// 			addr0.as_uint, data0.as_uint, data0.as_float);
-// 		Emu::debug << StringFmt("GDS[%u]<=(%u,%f) ", addr1.as_uint, data0.as_uint,
-// 			data0.as_float);
-// 	}
-// 	else
-// 	{
-// 		Emu::debug << StringFmt("t%d: LDS[%u]<=(%u,%f) ", id, 
-// 			addr0.as_uint, data0.as_uint, data0.as_float);
-// 		Emu::debug << StringFmt("LDS[%u]<=(%u,%f) ", addr1.as_uint, data1.as_uint, 
-// 			data1.as_float);
-// 	}
-// }
-// #undef INST
-
-// // DS[A] = D0; write a Dword.
-// #define INST INST_DS
-// void WorkItem::ISA_DS_WRITE_B32_Impl(Inst *inst)
-// {
-// 	InstReg addr;
-// 	InstReg data0;
-
-// 	assert(!INST.offset0);
-// 	//assert(!INST.offset1);
-// 	assert(!INST.gds);
-
-// 	// Load address and data from registers.
-// 	addr.as_uint = ReadVReg(INST.addr);
-// 	data0.as_uint = ReadVReg(INST.data0);
-
-// 	if (addr.as_uint > MIN(work_item->work_group->ndrange->local_mem_top, 
-// 		ReadSReg(SI_M0)))
-// 	{
-// 		fatal("%s: invalid address\n", __FUNCTION__);
-// 	}
-
-// 	// Global data store not supported
-// 	assert(!INST.gds);
-
-// 	// Write Dword.
-// 	if (INST.gds)
-// 	{
-// 		assert(0);
-// 	}
-// 	else
-// 	{
-// 		mem_write(work_item->work_group->lds_module, addr.as_uint, 4, 
-// 			&data0.as_uint);
-// 	}
-
-// 	// Record last memory access for the detailed simulator.
-// 	if (INST.gds)
-// 	{
-// 		assert(0);
-// 	}
-// 	else
-// 	{
-// 		work_item->lds_access_count = 1;
-// 		work_item->lds_access_type[0] = 2;
-// 		work_item->lds_access_addr[0] = addr.as_uint;
-// 		work_item->lds_access_size[0] = 4;
-// 	}
-
-// 	// Print isa debug information.
-// 	if (Emu::debug && INST.gds)
-// 	{
-// 		Emu::debug << StringFmt("t%d: GDS[%u]<=(%u,%f) ", id, 
-// 			addr.as_uint, data0.as_uint, data0.as_float);
-// 	}
-// 	else
-// 	{
-// 		Emu::debug << StringFmt("t%d: LDS[%u]<=(%u,%f) ", id, 
-// 			addr.as_uint, data0.as_uint, data0.as_float);
-// 	}
-// }
-// #undef INST
-
-// // DS[A] = D0[7:0]; byte write. 
-// #define INST INST_DS
-// void WorkItem::ISA_DS_WRITE_B8_Impl(Inst *inst)
-// {
-// 	InstReg addr;
-// 	InstReg data0;
-
-// 	assert(!INST.offset0);
-// 	assert(!INST.offset1);
-// 	assert(!INST.gds);
-
-// 	// Load address and data from registers.
-// 	addr.as_uint = ReadVReg(INST.addr);
-// 	data0.as_uint = ReadVReg(INST.data0);
-
-// 	// Global data store not supported
-// 	assert(!INST.gds);
-
-// 	// Write Dword.
-// 	if (INST.gds)
-// 	{
-// 		assert(0);
-// 	}
-// 	else
-// 	{
-// 		mem_write(work_item->work_group->lds_module, addr.as_uint, 1, 
-// 			&data0.as_ubyte[0]);
-// 	}
-
-// 	// Record last memory access for the detailed simulator.
-// 	if (INST.gds)
-// 	{
-// 		assert(0);
-// 	}
-// 	else
-// 	{
-// 		work_item->lds_access_count = 1;
-// 		work_item->lds_access_type[0] = 2;
-// 		work_item->lds_access_addr[0] = addr.as_uint;
-// 		work_item->lds_access_size[0] = 1;
-// 	}
-
-// 	// Print isa debug information.
-// 	if (Emu::debug && INST.gds)
-// 	{
-// 		Emu::debug << StringFmt("t%d: GDS[%u]<=(0x%x) ", id, 
-// 			addr.as_uint, data0.as_ubyte[0]);
-// 	}
-// 	else
-// 	{
-// 		Emu::debug << StringFmt("t%d: LDS[%u]<=(0x%x) ", id, 
-// 			addr.as_uint, data0.as_ubyte[0]);
-// 	}
-// }
-// #undef INST
-
-// // DS[A] = D0[15:0]; short write. 
-// #define INST INST_DS
-// void WorkItem::ISA_DS_WRITE_B16_Impl(Inst *inst)
-// {
-// 	InstReg addr;
-// 	InstReg data0;
-
-// 	assert(!INST.offset0);
-// 	assert(!INST.offset1);
-// 	assert(!INST.gds);
-
-// 	// Load address and data from registers.
-// 	addr.as_uint = ReadVReg(INST.addr);
-// 	data0.as_uint = ReadVReg(INST.data0);
-
-// 	// Global data store not supported
-// 	assert(!INST.gds);
-
-// 	// Write Dword.
-// 	if (INST.gds)
-// 	{
-// 		assert(0);
-// 	}
-// 	else
-// 	{
-// 		mem_write(work_item->work_group->lds_module, addr.as_uint, 2, 
-// 			&data0.as_ushort[0]);
-// 	}
-
-// 	// Record last memory access for the detailed simulator.
-// 	if (INST.gds)
-// 	{
-// 		assert(0);
-// 	}
-// 	else
-// 	{
-// 		work_item->lds_access_count = 1;
-// 		work_item->lds_access_type[0] = 2;
-// 		work_item->lds_access_addr[0] = addr.as_uint;
-// 		work_item->lds_access_size[0] = 2;
-// 	}
-
-// 	// Print isa debug information.
-// 	if (Emu::debug && INST.gds)
-// 	{
-// 		Emu::debug << StringFmt("t%d: GDS[%u]<=(0x%x) ", id, 
-// 			addr.as_uint, data0.as_ushort[0]);
-// 	}
-// 	else
-// 	{
-// 		Emu::debug << StringFmt("t%d: LDS[%u]<=(0x%x) ", id, 
-// 			addr.as_uint, data0.as_ushort[0]);
-// 	}
-
-// }
-// #undef INST
-
-// // R = DS[A]; Dword read.
-// #define INST INST_DS
-// void WorkItem::ISA_DS_READ_B32_Impl(Inst *inst)
-// {
-// 	InstReg addr;
-// 	InstReg data;
-
-// 	assert(!INST.offset0);
-// 	//assert(!INST.offset1);
-// 	assert(!INST.gds);
-
-// 	// Load address from register.
-// 	addr.as_uint = ReadVReg(INST.addr);
-
-// 	// Global data store not supported
-// 	assert(!INST.gds);
-
-// 	// Read Dword.
-// 	if (INST.gds)
-// 	{
-// 		assert(0);
-// 	}
-// 	else
-// 	{
-// 		mem_read(work_item->work_group->lds_module, addr.as_uint, 4,
-// 			&data.as_uint);
-// 	}
-
-// 	// Write results.
-// 	WriteVReg(INST.vdst, data.as_uint);
-
-// 	// Record last memory access for the detailed simulator.
-// 	if (INST.gds)
-// 	{
-// 		assert(0);
-// 	}
-// 	else
-// 	{
-// 		work_item->lds_access_count = 1;
-// 		work_item->lds_access_type[0] = 1;
-// 		work_item->lds_access_addr[0] = addr.as_uint;
-// 		work_item->lds_access_size[0] = 4;
-// 	}
-
-// 	// Print isa debug information.
-// 	if (Emu::debug)
-// 	{
-// 		Emu::debug << StringFmt("t%d: V%u<=(0x%x)(0x%x) ", id, 
-// 			INST.vdst, addr.as_uint, data.as_uint);
-// 	}
-
-// }
-// #undef INST
-
-// // R = DS[ADDR+offset0*4], R+1 = DS[ADDR+offset1*4]. Read 2 Dwords.
-// #define INST INST_DS
-// void WorkItem::ISA_DS_READ2_B32_Impl(Inst *inst)
-// {
-// 	InstReg addr;
-// 	InstReg data0;
-// 	InstReg data1;
-
-// 	assert(!INST.gds);
-
-// 	// Load address from register.
-// 	addr.as_uint = ReadVReg(INST.addr);
-
-// 	// Global data store not supported
-// 	assert(!INST.gds);
-
-// 	// Read Dword.
-// 	if (INST.gds)
-// 	{
-// 		assert(0);
-// 	}
-// 	else
-// 	{
-// 		mem_read(work_item->work_group->lds_module, 
-// 			addr.as_uint + INST.offset0*4, 4, &data0.as_uint);
-// 		mem_read(work_item->work_group->lds_module, 
-// 			addr.as_uint + INST.offset1*4, 4, &data1.as_uint);
-// 	}
-
-// 	// Write results.
-// 	WriteVReg(INST.vdst, data0.as_uint);
-// 	WriteVReg(INST.vdst+1, data1.as_uint);
-
-// 	// Record last memory access for the detailed simulator.
-// 	if (INST.gds)
-// 	{
-// 		assert(0);
-// 	}
-// 	else
-// 	{
-// 		// If offset1 != 1, then the following is incorrect
-// 		assert(INST.offset0 == 0);
-// 		assert(INST.offset1 == 1);
-// 		work_item->lds_access_count = 2;
-// 		work_item->lds_access_type[0] = 1;
-// 		work_item->lds_access_addr[0] = addr.as_uint;
-// 		work_item->lds_access_size[0] = 4;
-// 		work_item->lds_access_type[1] = 1;
-// 		work_item->lds_access_addr[1] = addr.as_uint + 4;
-// 		work_item->lds_access_size[1] = 4;
-// 	}
-
-// 	// Print isa debug information.
-// 	if (Emu::debug)
-// 	{
-// 		Emu::debug << StringFmt("t%d: V%u<=(0x%x)(0x%x) ", id, 
-// 			INST.vdst, addr.as_uint+INST.offset0*4, 
-// 			data0.as_uint);
-// 		Emu::debug << StringFmt("V%u<=(0x%x)(0x%x) ", INST.vdst+1, 
-// 			addr.as_uint+INST.offset1*4, data1.as_uint);
-// 	}
-// }
-// #undef INST
-
-// // R = signext(DS[A][7:0]}; signed byte read.
-// #define INST INST_DS
-// void WorkItem::ISA_DS_READ_I8_Impl(Inst *inst)
-// {
-// 	InstReg addr;
-// 	InstReg data;
-
-// 	assert(!INST.offset0);
-// 	assert(!INST.offset1);
-// 	assert(!INST.gds);
-
-// 	// Load address from register.
-// 	addr.as_uint = ReadVReg(INST.addr);
-
-// 	// Global data store not supported
-// 	assert(!INST.gds);
-
-// 	// Read Dword.
-// 	if (INST.gds)
-// 	{
-// 		assert(0);
-// 	}
-// 	else
-// 	{
-// 		mem_read(work_item->work_group->lds_module, addr.as_uint, 1,
-// 			&data.as_byte[0]);
-// 	}
-
-// 	// Extend the sign.
-// 	data.as_int = (int) data.as_byte[0];
-
-// 	// Write results.
-// 	WriteVReg(INST.vdst, data.as_uint);
-
-// 	// Record last memory access for the detailed simulator.
-// 	if (INST.gds)
-// 	{
-// 		assert(0);
-// 	}
-// 	else
-// 	{
-// 		work_item->lds_access_count = 1;
-// 		work_item->lds_access_type[0] = 1;
-// 		work_item->lds_access_addr[0] = addr.as_uint;
-// 		work_item->lds_access_size[0] = 1;
-// 	}
-
-// 	// Print isa debug information.
-// 	if (Emu::debug)
-// 	{
-// 		Emu::debug << StringFmt("t%d: V%u<=(0x%x)(%d) ", id, INST.vdst,
-// 			addr.as_uint, data.as_int);
-// 	}
-// }
-// #undef INST
-
-// // R = {24’h0,DS[A][7:0]}; unsigned byte read.
-// #define INST INST_DS
-// void WorkItem::ISA_DS_READ_U8_Impl(Inst *inst)
-// {
-// 	InstReg addr;
-// 	InstReg data;
-
-// 	assert(!INST.offset0);
-// 	assert(!INST.offset1);
-// 	assert(!INST.gds);
-
-// 	// Load address from register.
-// 	addr.as_uint = ReadVReg(INST.addr);
-
-// 	// Global data store not supported
-// 	assert(!INST.gds);
-
-// 	// Read Dword.
-// 	if (INST.gds)
-// 	{
-// 		assert(0);
-// 	}
-// 	else
-// 	{
-// 		mem_read(work_item->work_group->lds_module, addr.as_uint, 1,
-// 			&data.as_ubyte[0]);
-// 	}
-
-// 	// Make sure to use only bits [7:0].
-// 	data.as_uint = (unsigned) data.as_ubyte[0];
-
-// 	// Write results.
-// 	WriteVReg(INST.vdst, data.as_uint);
-
-// 	// Record last memory access for the detailed simulator.
-// 	if (INST.gds)
-// 	{
-// 		assert(0);
-// 	}
-// 	else
-// 	{
-// 		work_item->lds_access_count = 1;
-// 		work_item->lds_access_type[0] = 1;
-// 		work_item->lds_access_addr[0] = addr.as_uint;
-// 		work_item->lds_access_size[0] = 1;
-// 	}
-
-// 	// Print isa debug information.
-// 	if (Emu::debug)
-// 	{
-// 		Emu::debug << StringFmt("t%d: V%u<=(0x%x)(%u) ", id, INST.vdst,
-// 			addr.as_uint, data.as_uint);
-// 	}
-// }
-// #undef INST
-
-// // R = signext(DS[A][15:0]}; signed short read.
-// #define INST INST_DS
-// void WorkItem::ISA_DS_READ_I16_Impl(Inst *inst)
-// {
-// 	InstReg addr;
-// 	InstReg data;
-
-// 	assert(!INST.offset0);
-// 	assert(!INST.offset1);
-// 	assert(!INST.gds);
-
-// 	// Load address from register.
-// 	addr.as_uint = ReadVReg(INST.addr);
-
-// 	// Global data store not supported
-// 	assert(!INST.gds);
-
-// 	// Read Dword.
-// 	if (INST.gds)
-// 	{
-// 		assert(0);
-// 	}
-// 	else
-// 	{
-// 		mem_read(work_item->work_group->lds_module, addr.as_uint, 2,
-// 			&data.as_short[0]);
-// 	}
-
-// 	// Extend the sign.
-// 	data.as_int = (int) data.as_short[0];
-
-// 	// Write results.
-// 	WriteVReg(INST.vdst, data.as_uint);
-
-// 	// Record last memory access for the detailed simulator.
-// 	if (INST.gds)
-// 	{
-// 		assert(0);
-// 	}
-// 	else
-// 	{
-// 		work_item->lds_access_count = 1;
-// 		work_item->lds_access_type[0] = 1;
-// 		work_item->lds_access_addr[0] = addr.as_uint;
-// 		work_item->lds_access_size[0] = 2;
-// 	}
-
-// 	// Print isa debug information.
-// 	if (Emu::debug)
-// 	{
-// 		Emu::debug << StringFmt("t%d: V%u<=(0x%x)(%d) ", id, INST.vdst,
-// 			addr.as_uint, data.as_int);
-// 	}
-
-// }
-// #undef INST
-
-// // R = {16’h0,DS[A][15:0]}; unsigned short read.
-// #define INST INST_DS
-// void WorkItem::ISA_DS_READ_U16_Impl(Inst *inst)
-// {
-// 	InstReg addr;
-// 	InstReg data;
-
-// 	assert(!INST.offset0);
-// 	assert(!INST.offset1);
-// 	assert(!INST.gds);
-
-// 	// Load address from register.
-// 	addr.as_uint = ReadVReg(INST.addr);
-
-// 	// Global data store not supported
-// 	assert(!INST.gds);
-
-// 	// Read Dword.
-// 	if (INST.gds)
-// 	{
-// 		assert(0);
-// 	}
-// 	else
-// 	{
-// 		mem_read(work_item->work_group->lds_module, addr.as_uint, 2,
-// 			&data.as_ushort[0]);
-// 	}
-
-// 	// Make sure to use only bits [15:0].
-// 	data.as_uint = (unsigned) data.as_ushort[0];
-
-// 	// Write results.
-// 	WriteVReg(INST.vdst, data.as_uint);
-
-// 	// Record last memory access for the detailed simulator.
-// 	if (INST.gds)
-// 	{
-// 		assert(0);
-// 	}
-// 	else
-// 	{
-// 		work_item->lds_access_count = 1;
-// 		work_item->lds_access_type[0] = 1;
-// 		work_item->lds_access_addr[0] = addr.as_uint;
-// 		work_item->lds_access_size[0] = 2;
-// 	}
-
-// 	// Print isa debug information.
-// 	if (Emu::debug)
-// 	{
-// 		Emu::debug << StringFmt("t%d: V%u<=(0x%x)(%u) ", id, INST.vdst,
-// 			addr.as_uint, data.as_uint);
-// 	}
-// }
-// #undef INST
+/* 
+ * DS
+ */
+
+// DS[A] = (DS[A] >= D0 ? 0 : DS[A] + 1); uint increment.
+#define INST INST_DS
+void WorkItem::ISA_DS_INC_U32_Impl(Inst *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
+// DS[ADDR+offset0*4] = D0; DS[ADDR+offset1*4] = D1; Write 2 Dwords
+#define INST INST_DS
+void WorkItem::ISA_DS_WRITE2_B32_Impl(Inst *inst)
+{
+	InstReg addr0;
+	InstReg addr1;
+	InstReg data0;
+	InstReg data1;
+
+	assert(!INST.gds);
+
+	// Load address and data from registers.
+	addr0.as_uint = ReadVReg(INST.addr);
+	addr0.as_uint += INST.offset0*4;
+	addr1.as_uint = ReadVReg(INST.addr);
+	addr1.as_uint += INST.offset1*4;
+	data0.as_uint = ReadVReg(INST.data0);
+	data1.as_uint = ReadVReg(INST.data1);
+
+	if (addr0.as_uint > std::min(work_group->getNDRange()->getLocalMemTop(),
+		ReadSReg(SI_M0)))
+	{
+		fatal("%s: invalid address\n", __FUNCTION__);
+	}
+	if (addr1.as_uint > std::min(work_group->getNDRange()->getLocalMemTop(),
+		ReadSReg(SI_M0)))
+	{
+		fatal("%s: invalid address\n", __FUNCTION__);
+	}
+
+	// Write Dword.
+	if (INST.gds)
+	{
+		assert(0);
+	}
+	else
+	{
+		lds->Write(addr0.as_uint, 4,
+			(char *)&data0.as_uint);
+		lds->Write(addr1.as_uint, 4,
+			(char *)&data1.as_uint);
+	}
+
+	// Record last memory access for the detailed simulator.
+	if (INST.gds)
+	{
+		assert(0);
+	}
+	else
+	{
+		// If offset1 != 1, then the following is incorrect
+		assert(INST.offset0 == 0);
+		assert(INST.offset1 == 1);
+		lds_access_count = 2;
+		lds_access[0].type = MemoryAccessWrite;
+		lds_access[0].addr = addr0.as_uint;
+		lds_access[0].size = 4;
+		lds_access[1].type = MemoryAccessWrite;
+		lds_access[1].addr = addr0.as_uint + 4;
+		lds_access[1].size = 4;
+	}
+
+	// Print isa debug information.
+	if (Emu::debug && INST.gds)
+	{
+		Emu::debug << StringFmt("t%d: GDS[%u]<=(%u,%f) ", id, 
+			addr0.as_uint, data0.as_uint, data0.as_float);
+		Emu::debug << StringFmt("GDS[%u]<=(%u,%f) ", addr1.as_uint, data0.as_uint,
+			data0.as_float);
+	}
+	else
+	{
+		Emu::debug << StringFmt("t%d: LDS[%u]<=(%u,%f) ", id, 
+			addr0.as_uint, data0.as_uint, data0.as_float);
+		Emu::debug << StringFmt("LDS[%u]<=(%u,%f) ", addr1.as_uint, data1.as_uint, 
+			data1.as_float);
+	}
+}
+#undef INST
+
+// DS[A] = D0; write a Dword.
+#define INST INST_DS
+void WorkItem::ISA_DS_WRITE_B32_Impl(Inst *inst)
+{
+	InstReg addr;
+	InstReg data0;
+
+	assert(!INST.offset0);
+	//assert(!INST.offset1);
+	assert(!INST.gds);
+
+	// Load address and data from registers.
+	addr.as_uint = ReadVReg(INST.addr);
+	data0.as_uint = ReadVReg(INST.data0);
+
+	if (addr.as_uint > std::min(work_group->getNDRange()->getLocalMemTop(), 
+		ReadSReg(SI_M0)))
+	{
+		fatal("%s: invalid address\n", __FUNCTION__);
+	}
+
+	// Global data store not supported
+	assert(!INST.gds);
+
+	// Write Dword.
+	if (INST.gds)
+	{
+		assert(0);
+	}
+	else
+	{
+		lds->Write(addr.as_uint, 4, 
+			(char *)&data0.as_uint);
+	}
+
+	// Record last memory access for the detailed simulator.
+	if (INST.gds)
+	{
+		assert(0);
+	}
+	else
+	{
+		lds_access_count = 1;
+		lds_access[0].type = MemoryAccessWrite;
+		lds_access[0].addr = addr.as_uint;
+		lds_access[0].size = 4;
+	}
+
+	// Print isa debug information.
+	if (Emu::debug && INST.gds)
+	{
+		Emu::debug << StringFmt("t%d: GDS[%u]<=(%u,%f) ", id, 
+			addr.as_uint, data0.as_uint, data0.as_float);
+	}
+	else
+	{
+		Emu::debug << StringFmt("t%d: LDS[%u]<=(%u,%f) ", id, 
+			addr.as_uint, data0.as_uint, data0.as_float);
+	}
+}
+#undef INST
+
+// DS[A] = D0[7:0]; byte write. 
+#define INST INST_DS
+void WorkItem::ISA_DS_WRITE_B8_Impl(Inst *inst)
+{
+	InstReg addr;
+	InstReg data0;
+
+	assert(!INST.offset0);
+	assert(!INST.offset1);
+	assert(!INST.gds);
+
+	// Load address and data from registers.
+	addr.as_uint = ReadVReg(INST.addr);
+	data0.as_uint = ReadVReg(INST.data0);
+
+	// Global data store not supported
+	assert(!INST.gds);
+
+	// Write Dword.
+	if (INST.gds)
+	{
+		assert(0);
+	}
+	else
+	{
+		lds->Write(addr.as_uint, 1, 
+			(char *)data0.as_ubyte);
+	}
+
+	// Record last memory access for the detailed simulator.
+	if (INST.gds)
+	{
+		assert(0);
+	}
+	else
+	{
+		lds_access_count = 1;
+		lds_access[0].type = MemoryAccessWrite;
+		lds_access[0].addr = addr.as_uint;
+		lds_access[0].size = 1;
+	}
+
+	// Print isa debug information.
+	if (Emu::debug && INST.gds)
+	{
+		Emu::debug << StringFmt("t%d: GDS[%u]<=(0x%x) ", id, 
+			addr.as_uint, data0.as_ubyte[0]);
+	}
+	else
+	{
+		Emu::debug << StringFmt("t%d: LDS[%u]<=(0x%x) ", id, 
+			addr.as_uint, data0.as_ubyte[0]);
+	}
+}
+#undef INST
+
+// DS[A] = D0[15:0]; short write. 
+#define INST INST_DS
+void WorkItem::ISA_DS_WRITE_B16_Impl(Inst *inst)
+{
+	InstReg addr;
+	InstReg data0;
+
+	assert(!INST.offset0);
+	assert(!INST.offset1);
+	assert(!INST.gds);
+
+	// Load address and data from registers.
+	addr.as_uint = ReadVReg(INST.addr);
+	data0.as_uint = ReadVReg(INST.data0);
+
+	// Global data store not supported
+	assert(!INST.gds);
+
+	// Write Dword.
+	if (INST.gds)
+	{
+		assert(0);
+	}
+	else
+	{
+		lds->Write(addr.as_uint, 2, 
+			(char *)data0.as_ushort);
+	}
+
+	// Record last memory access for the detailed simulator.
+	if (INST.gds)
+	{
+		assert(0);
+	}
+	else
+	{
+		lds_access_count = 1;
+		lds_access[0].type = MemoryAccessWrite;
+		lds_access[0].addr = addr.as_uint;
+		lds_access[0].size = 2;
+	}
+
+	// Print isa debug information.
+	if (Emu::debug && INST.gds)
+	{
+		Emu::debug << StringFmt("t%d: GDS[%u]<=(0x%x) ", id, 
+			addr.as_uint, data0.as_ushort[0]);
+	}
+	else
+	{
+		Emu::debug << StringFmt("t%d: LDS[%u]<=(0x%x) ", id, 
+			addr.as_uint, data0.as_ushort[0]);
+	}
+
+}
+#undef INST
+
+// R = DS[A]; Dword read.
+#define INST INST_DS
+void WorkItem::ISA_DS_READ_B32_Impl(Inst *inst)
+{
+	InstReg addr;
+	InstReg data;
+
+	assert(!INST.offset0);
+	//assert(!INST.offset1);
+	assert(!INST.gds);
+
+	// Load address from register.
+	addr.as_uint = ReadVReg(INST.addr);
+
+	// Global data store not supported
+	assert(!INST.gds);
+
+	// Read Dword.
+	if (INST.gds)
+	{
+		assert(0);
+	}
+	else
+	{
+		lds->Read(addr.as_uint, 4,
+			(char *)&data.as_uint);
+	}
+
+	// Write results.
+	WriteVReg(INST.vdst, data.as_uint);
+
+	// Record last memory access for the detailed simulator.
+	if (INST.gds)
+	{
+		assert(0);
+	}
+	else
+	{
+		lds_access_count = 1;
+		lds_access[0].type = MemoryAccessRead;
+		lds_access[0].addr = addr.as_uint;
+		lds_access[0].size = 4;
+	}
+
+	// Print isa debug information.
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("t%d: V%u<=(0x%x)(0x%x) ", id, 
+			INST.vdst, addr.as_uint, data.as_uint);
+	}
+
+}
+#undef INST
+
+// R = DS[ADDR+offset0*4], R+1 = DS[ADDR+offset1*4]. Read 2 Dwords.
+#define INST INST_DS
+void WorkItem::ISA_DS_READ2_B32_Impl(Inst *inst)
+{
+	InstReg addr;
+	InstReg data0;
+	InstReg data1;
+
+	assert(!INST.gds);
+
+	// Load address from register.
+	addr.as_uint = ReadVReg(INST.addr);
+
+	// Global data store not supported
+	assert(!INST.gds);
+
+	// Read Dword.
+	if (INST.gds)
+	{
+		assert(0);
+	}
+	else
+	{
+		lds->Read(
+			addr.as_uint + INST.offset0*4, 4, (char *)&data0.as_uint);
+		lds->Read(
+			addr.as_uint + INST.offset1*4, 4, (char *)&data1.as_uint);
+	}
+
+	// Write results.
+	WriteVReg(INST.vdst, data0.as_uint);
+	WriteVReg(INST.vdst+1, data1.as_uint);
+
+	// Record last memory access for the detailed simulator.
+	if (INST.gds)
+	{
+		assert(0);
+	}
+	else
+	{
+		// If offset1 != 1, then the following is incorrect
+		assert(INST.offset0 == 0);
+		assert(INST.offset1 == 1);
+		lds_access_count = 2;
+		lds_access[0].type = MemoryAccessRead;
+		lds_access[0].addr = addr.as_uint;
+		lds_access[0].size = 4;
+		lds_access[1].type = MemoryAccessRead;
+		lds_access[1].addr = addr.as_uint + 4;
+		lds_access[1].size = 4;
+	}
+
+	// Print isa debug information.
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("t%d: V%u<=(0x%x)(0x%x) ", id, 
+			INST.vdst, addr.as_uint+INST.offset0*4, 
+			data0.as_uint);
+		Emu::debug << StringFmt("V%u<=(0x%x)(0x%x) ", INST.vdst+1, 
+			addr.as_uint+INST.offset1*4, data1.as_uint);
+	}
+}
+#undef INST
+
+// R = signext(DS[A][7:0]}; signed byte read.
+#define INST INST_DS
+void WorkItem::ISA_DS_READ_I8_Impl(Inst *inst)
+{
+	InstReg addr;
+	InstReg data;
+
+	assert(!INST.offset0);
+	assert(!INST.offset1);
+	assert(!INST.gds);
+
+	// Load address from register.
+	addr.as_uint = ReadVReg(INST.addr);
+
+	// Global data store not supported
+	assert(!INST.gds);
+
+	// Read Dword.
+	if (INST.gds)
+	{
+		assert(0);
+	}
+	else
+	{
+		lds->Read(addr.as_uint, 1,
+			&data.as_byte[0]);
+	}
+
+	// Extend the sign.
+	data.as_int = (int) data.as_byte[0];
+
+	// Write results.
+	WriteVReg(INST.vdst, data.as_uint);
+
+	// Record last memory access for the detailed simulator.
+	if (INST.gds)
+	{
+		assert(0);
+	}
+	else
+	{
+		lds_access_count = 1;
+		lds_access[0].type = MemoryAccessRead;
+		lds_access[0].addr = addr.as_uint;
+		lds_access[0].size = 1;
+	}
+
+	// Print isa debug information.
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("t%d: V%u<=(0x%x)(%d) ", id, INST.vdst,
+			addr.as_uint, data.as_int);
+	}
+}
+#undef INST
+
+// R = {24’h0,DS[A][7:0]}; unsigned byte read.
+#define INST INST_DS
+void WorkItem::ISA_DS_READ_U8_Impl(Inst *inst)
+{
+	InstReg addr;
+	InstReg data;
+
+	assert(!INST.offset0);
+	assert(!INST.offset1);
+	assert(!INST.gds);
+
+	// Load address from register.
+	addr.as_uint = ReadVReg(INST.addr);
+
+	// Global data store not supported
+	assert(!INST.gds);
+
+	// Read Dword.
+	if (INST.gds)
+	{
+		assert(0);
+	}
+	else
+	{
+		lds->Read(addr.as_uint, 1,
+			(char *)&data.as_ubyte[0]);
+	}
+
+	// Make sure to use only bits [7:0].
+	data.as_uint = (unsigned) data.as_ubyte[0];
+
+	// Write results.
+	WriteVReg(INST.vdst, data.as_uint);
+
+	// Record last memory access for the detailed simulator.
+	if (INST.gds)
+	{
+		assert(0);
+	}
+	else
+	{
+		lds_access_count = 1;
+		lds_access[0].type = MemoryAccessRead;
+		lds_access[0].addr = addr.as_uint;
+		lds_access[0].size = 1;
+	}
+
+	// Print isa debug information.
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("t%d: V%u<=(0x%x)(%u) ", id, INST.vdst,
+			addr.as_uint, data.as_uint);
+	}
+}
+#undef INST
+
+// R = signext(DS[A][15:0]}; signed short read.
+#define INST INST_DS
+void WorkItem::ISA_DS_READ_I16_Impl(Inst *inst)
+{
+	InstReg addr;
+	InstReg data;
+
+	assert(!INST.offset0);
+	assert(!INST.offset1);
+	assert(!INST.gds);
+
+	// Load address from register.
+	addr.as_uint = ReadVReg(INST.addr);
+
+	// Global data store not supported
+	assert(!INST.gds);
+
+	// Read Dword.
+	if (INST.gds)
+	{
+		assert(0);
+	}
+	else
+	{
+		lds->Read(addr.as_uint, 2, (char *)&data.as_short[0]);
+	}
+
+	// Extend the sign.
+	data.as_int = (int) data.as_short[0];
+
+	// Write results.
+	WriteVReg(INST.vdst, data.as_uint);
+
+	// Record last memory access for the detailed simulator.
+	if (INST.gds)
+	{
+		assert(0);
+	}
+	else
+	{
+		lds_access_count = 1;
+		lds_access[0].type = MemoryAccessRead;
+		lds_access[0].addr = addr.as_uint;
+		lds_access[0].size = 2;
+	}
+
+	// Print isa debug information.
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("t%d: V%u<=(0x%x)(%d) ", id, INST.vdst,
+			addr.as_uint, data.as_int);
+	}
+
+}
+#undef INST
+
+// R = {16’h0,DS[A][15:0]}; unsigned short read.
+#define INST INST_DS
+void WorkItem::ISA_DS_READ_U16_Impl(Inst *inst)
+{
+	InstReg addr;
+	InstReg data;
+
+	assert(!INST.offset0);
+	assert(!INST.offset1);
+	assert(!INST.gds);
+
+	// Load address from register.
+	addr.as_uint = ReadVReg(INST.addr);
+
+	// Global data store not supported
+	assert(!INST.gds);
+
+	// Read Dword.
+	if (INST.gds)
+	{
+		assert(0);
+	}
+	else
+	{
+		lds->Read(addr.as_uint, 2,
+			(char *)&data.as_ushort[0]);
+	}
+
+	// Make sure to use only bits [15:0].
+	data.as_uint = (unsigned) data.as_ushort[0];
+
+	// Write results.
+	WriteVReg(INST.vdst, data.as_uint);
+
+	// Record last memory access for the detailed simulator.
+	if (INST.gds)
+	{
+		assert(0);
+	}
+	else
+	{
+		lds_access_count = 1;
+		lds_access[0].type = MemoryAccessRead;
+		lds_access[0].addr = addr.as_uint;
+		lds_access[0].size = 2;
+	}
+
+	// Print isa debug information.
+	if (Emu::debug)
+	{
+		Emu::debug << StringFmt("t%d: V%u<=(0x%x)(%u) ", id, INST.vdst,
+			addr.as_uint, data.as_uint);
+	}
+}
+#undef INST
 
 
 /*
@@ -6995,7 +6990,7 @@ void WorkItem::ISA_BUFFER_LOAD_SBYTE_Impl(Inst *inst)
 		stride * (idx_vgpr + id_in_wavefront);
 
 	
-	global_mem->Read(addr, bytes_to_read, value.as_byte);
+	global_mem->Read(addr, bytes_to_read, (char *)&value);
 	
 	// Sign extend
 	value.as_int = (int) value.as_byte[0];
@@ -7072,7 +7067,7 @@ void WorkItem::ISA_BUFFER_LOAD_DWORD_Impl(Inst *inst)
 		stride * (idx_vgpr + id_in_wavefront);
 
 	
-	global_mem->Read(addr, bytes_to_read, value.as_byte);
+	global_mem->Read(addr, bytes_to_read, (char *)&value);
 	
 	// Sign extend
 	value.as_int = (int) value.as_byte[0];
@@ -7154,7 +7149,7 @@ void WorkItem::ISA_BUFFER_STORE_BYTE_Impl(Inst *inst)
 
 	value.as_int = ReadVReg(INST.vdata);
 
-	global_mem->Write(addr, bytes_to_write, value.as_byte);
+	global_mem->Write(addr, bytes_to_write, (char *)&value);
 	
 	// Sign extend
 	//value.as_int = (int) value.as_byte[0];
@@ -7236,7 +7231,7 @@ void WorkItem::ISA_BUFFER_STORE_DWORD_Impl(Inst *inst)
 
 	value.as_int = ReadVReg(INST.vdata);
 
-	global_mem->Write(addr, bytes_to_write, value.as_byte);
+	global_mem->Write(addr, bytes_to_write, (char *)&value);
 	
 	// Record last memory access for the detailed simulator.
 	global_mem_access_addr = addr;
@@ -7329,7 +7324,7 @@ void WorkItem::ISA_BUFFER_ATOMIC_ADD_Impl(Inst *inst)
 
 	// Compute and store the updated value
 	value.as_int += prev_value.as_int;
-	global_mem->Write(addr, bytes_to_write, value.as_byte);
+	global_mem->Write(addr, bytes_to_write, (char *)&value);
 	
 	// If glc bit set, retturn the previous value in a register
 	if (INST.glc)
@@ -7421,7 +7416,7 @@ void WorkItem::ISA_TBUFFER_LOAD_FORMAT_X_Impl(Inst *inst)
 		stride * (idx_vgpr + 0/*work_item->id_in_wavefront*/);
 
 	
-	global_mem->Read(addr, bytes_to_read, value.as_byte);
+	global_mem->Read(addr, bytes_to_read, (char *)&value);
 
 	WriteVReg(INST.vdata, value.as_uint);
 
@@ -7512,7 +7507,7 @@ void WorkItem::ISA_TBUFFER_LOAD_FORMAT_XY_Impl(Inst *inst)
 	for (i = 0; i < 2; i++)
 	{
 		
-		global_mem->Read(addr+4*i, 4, value.as_byte);
+		global_mem->Read(addr+4*i, 4, (char *)&value);
 
 		WriteVReg(INST.vdata + i, value.as_uint);
 
@@ -7609,7 +7604,7 @@ void WorkItem::ISA_TBUFFER_LOAD_FORMAT_XYZW_Impl(Inst *inst)
 	for (i = 0; i < 4; i++)
 	{
 		
-		global_mem->Read(addr+4*i, 4, value.as_byte);
+		global_mem->Read(addr+4*i, 4, (char *)&value);
 
 		WriteVReg(INST.vdata + i, value.as_uint);
 
@@ -7692,7 +7687,7 @@ void WorkItem::ISA_TBUFFER_STORE_FORMAT_X_Impl(Inst *inst)
 
 	value.as_uint = ReadVReg(INST.vdata);
 
-	global_mem->Write(addr, bytes_to_write, value.as_byte);
+	global_mem->Write(addr, bytes_to_write, (char *)&value);
 
 	// Record last memory access for the detailed simulator.
 	global_mem_access_addr = addr;
@@ -7774,7 +7769,7 @@ void WorkItem::ISA_TBUFFER_STORE_FORMAT_XY_Impl(Inst *inst)
 	{
 		value.as_uint = ReadVReg(INST.vdata + i);
 
-		global_mem->Write(addr+4*i, 4, value.as_byte);
+		global_mem->Write(addr+4*i, 4, (char *)&value);
 
 		// TODO Print value based on type
 		if (Emu::debug)
@@ -7858,7 +7853,7 @@ void WorkItem::ISA_TBUFFER_STORE_FORMAT_XYZW_Impl(Inst *inst)
 	{
 		value.as_uint = ReadVReg(INST.vdata + i);
 
-		global_mem->Write(addr+4*i, 4, value.as_byte);
+		global_mem->Write(addr+4*i, 4, (char *)&value);
 
 		// TODO Print value based on type
 		if (Emu::debug)
