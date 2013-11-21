@@ -49,7 +49,7 @@
 #include <arch/fermi/emu/warp.h>
 #include <arch/fermi/timing/gpu.h>
 #include <arch/fermi/timing/sm.h>
-#include <arch/kepler/asm/Asm.h>
+#include <arch/kepler/asm/Wrapper.h>
 #include <arch/mips/asm/Wrapper.h>
 #include <arch/mips/emu/context.h>
 #include <arch/mips/emu/isa.h>

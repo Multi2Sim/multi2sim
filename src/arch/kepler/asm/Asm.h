@@ -20,8 +20,6 @@
 #ifndef ARCH_KEPLER_ASM_ASM_H
 #define ARCH_KEPLER_ASM_ASM_H
 
-#ifdef __cplusplus
-
 #include "Inst.h"
 
 
@@ -30,11 +28,11 @@ namespace Kepler
 
 class Asm
 {
-	/* Instruction information */
+	// Instruction information
 	InstInfo inst_info[InstOpcodeCount];
 
 
-	/* Decoding tables */
+	// Decoding tables
 
 	InstDecodeInfo dec_table[4];
 
@@ -146,26 +144,5 @@ public:
 
 }  // namespace Kepler
 
-#endif  /* __cplusplus */
-
-
-/*
- * C Wrapper
- */
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-struct KplAsm;
-struct KplAsm *KplAsmCreate();
-void KplAsmFree(struct KplAsm *as);
-void KplAsmDisassembleBinary(struct KplAsm *as, const char *path);
-
-#ifdef __cplusplus
-}
-#endif
-
-
-#endif  /* ARCH_KEPLER_ASM_ASM_H */
+#endif  // ARCH_KEPLER_ASM_ASM_H
 
