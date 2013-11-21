@@ -110,23 +110,41 @@ class Asm
 
 	InstDecodeInfo dec_table_c_b_e_b_a_a[16];
 
-	void InitTable(InstOpcode opcode, const char *name,
-			const char *fmt_str, int num_args, ...);
+	template<typename... Args> void InitTable(InstOpcode opcode,
+			const char *name, const char *fmt_str, Args&&... args)
+	{
+		int argv[sizeof...(args)];
+		InitTableWithArray(opcode, name, fmt_str, 0,
+				argv, args...);
+	}
+
+	template<typename... Args> void InitTableWithArray(InstOpcode opcode,
+			const char *name, const char *fmt_str, int argc,
+			int argv[], int arg, Args&&... args)
+	{
+		argv[argc] = arg;
+		InitTableWithArray(opcode, name, fmt_str, argc + 1, argv, args...);
+	}
+	
+	void InitTableWithArray(InstOpcode opcode, const char *name,
+			const char *fmt_str, int argc, int argv[]);
 
 public:
 
-	/* Constructor */
+	/// Constructor
 	Asm();
 
-	/* Getters */
-	InstDecodeInfo *GetDecTable() { return dec_table; }
+	/// Return a pointer to the decoding table, which will be indexed by
+	/// instruction bits for instruction decoding purposes.
+	const InstDecodeInfo *getDecTable() const { return dec_table; }
 
-	/* Disassembler */
-	void DisassembleBinary(const std::string &path);
+	/// Disassemble the \c .cubin file in \a path, using the same format as
+	/// NVIDIA's \c cuobjdump tool.
+	void DisassembleBinary(const std::string &path) const;
 };
 
 
-}  /* namespace Kepler */
+}  // namespace Kepler
 
 #endif  /* __cplusplus */
 
