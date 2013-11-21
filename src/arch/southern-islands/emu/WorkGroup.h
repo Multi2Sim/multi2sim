@@ -115,23 +115,8 @@ public:
 	/// Get counter of wavefronts at barrier
 	int getWavefrontsAtBarrier() const { return wavefronts_at_barrier; }
 
-	/// Statistic showing the number of reads from scalar registers
-	long long getSRegReadCount() const { return sreg_read_count; }
-
-	/// Statistic showing the number of writes from scalar registers
-	long long getSRegWriteCount() const { return sreg_write_count; }
-
-	/// Statistic showing the number of reads from vector registers
-	long long getVRegReadCount() const { return vreg_read_count; }
-
-	/// Statistic showing the number of writes from vector registers
-	long long getVRegWriteCount() const { return vreg_write_count; }
-
 	/// Get NDRange it belongs to
-	NDRange *getNDRange() const { return ndrange; }
-
-	/// Get list of work-items in the work-group
-	const std::vector<std::unique_ptr<WorkItem>> &getWorkitems() const { return work_items; }
+	const NDRange *getNDRange() const { return ndrange; }
 
 	/// Get list of wavefronts in the work-group
 	const std::vector<std::unique_ptr<Wavefront>> &getWavefronts() const { return wavefronts; }
@@ -144,20 +129,8 @@ public:
 	/// Increase wavefronts_completed_emu counter
 	void incWavefrontsCompletedEmu() { wavefronts_completed_emu++; }
 
-	/// Increase wavefronts_completed_timing 
-	void incWavefrontsCompletedTiming() { wavefronts_completed_timing++; }
-
 	/// Set wavefront_at_barrier counter
 	void setWavefrontsAtBarrier(unsigned counter) { wavefronts_at_barrier = counter; }
-
-	/// Set wavefronts_completed_emu counter
-	void setWavefrontsCompletedEmu(unsigned counter) { wavefronts_completed_emu = counter; }
-
-	/// Set finished_emu flag
-	void setFinishedEmu() { finished_emu = true; }
-
-	/// Set finished_timing flag
-	void setFinishedTiming() { finished_timing = 1; }
 
 	/// Attach additional data to the work-group, passing an object derived
 	/// from class WorkGroupData. The object passed to it must be

@@ -147,29 +147,9 @@ public:
 	/// barrier instruction
 	void setBarrierInst() { barrier_inst = true; }
 
-	/// Flag set during instruction emulation indicating that there was a
-	/// vector memory read.
-	void setVectorMemRead() { vector_mem_read = true; }
-
-	/// Flag set during instruction emulation indicating that there was a
-	/// vector memory write.
-	void setVectorMemWrite() { vector_mem_write = true; }
-
-	/// Flags set during instruction emulation to indicate that there was an
-	/// atomic vector memory operation.
-	void setVectorMemAtomic() { vector_mem_atomic = true; }
-
 	/// Flag set during instruction emulation to indicate that the
 	/// instruction performed a scalar memory read operation.
 	void setScalarMemRead() { scalar_mem_read = true; }
-
-	/// Flag set during instruction emulation to indicate that the
-	/// instruction performed a local memory read.
-	void setLDSRead() { lds_read = true; }
-
-	/// Flag set during instruction emulation to indicate that the
-	/// instruction performed a local memory write.
-	void setLDSWrite() { lds_write = true; }
 
 	/// Flag set during instruction emulation to indicate that the
 	/// instruction performed a memory wait operation.
@@ -189,44 +169,6 @@ public:
 
 	/// Flag set during instruction emulation.
 	void setVectorMemGlobalCoherency() { vector_mem_global_coherency = true; }
-
-	/// Getters for statistics
-	///
-	/// Statistics showing the total number of instuctions
-	long long getInstCount() { return inst_count; }
-
-	/// Statistics showing the total number of calar memory instuctions
-	long long getScalarMemInstCount() { return scalar_mem_inst_count; }
-
-	/// Statistics showing the total number of scalar alu instuctions
-	long long getScalarAluInstCount() { return scalar_alu_inst_count; }
-
-	/// Statistics showing the total number of branch instuctions
-	long long getIBranchInstCount() { return branch_inst_count; }
-
-	/// Statistics showing the total number of vector memory instuctions
-	long long getVectorMemInstCount() { return vector_mem_inst_count; }
-
-	/// Statistics showing the total number of instuctions
-	long long getVectorAluInstCount() { return vector_alu_inst_count; }
-
-	/// Statistics showing the total number of global memory instuctions
-	long long getGlobalMemInstCount() { return global_mem_inst_count; }
-
-	/// Statistics showing the total number of LDS instuctions
-	long long getLdsInstCount() { return lds_inst_count; }
-
-	/// Statistics showing the total number of export instuctions
-	long long getExportInstCount() { return export_inst_count; }
-
-	/// Statistics showing the total number of emulated instuctions
-	long long getEmuInstCount() { return emu_inst_count; }
-
-	/// Statistics showing the start time of emulation
-	long long getEmuTimeStart() { return emu_time_start; }
-
-	/// Statistics showing the end time of emulation
-	long long getEmuTimeEnd() { return emu_time_end; }
 
 	/// Dump wavefront in a human-readable format into output stream \a os
 	void Dump(std::ostream &os) const;
