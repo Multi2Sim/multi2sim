@@ -52,14 +52,6 @@ namespace SI
 #define INST_MUBUF  inst->getBytes()->mubuf
 #define INST_EXP  inst->getBytes()->exp
 
-// Macros for special registers
-#define SI_M0 124
-#define SI_VCC 106
-#define SI_VCCZ 251
-#define SI_EXEC 126
-#define SI_EXECZ 252
-#define SI_SCC 253
-
 const char *err_si_isa_note =
 	"\tThe AMD Southern Islands instruction set is partially supported by\n"
 	"\tMulti2Sim. If your program is using an unimplemented instruction,\n"
