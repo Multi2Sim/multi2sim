@@ -227,7 +227,7 @@ StringMap inst_u8_map =
 };
 
 
-Inst::Inst(Asm *as)
+Inst::Inst(const Asm *as)
 {
 	this->as = as;
 }
@@ -240,7 +240,7 @@ void Inst::Decode(const char *buffer, unsigned int address)
 	bytes.as_dword = * (unsigned long long *) buffer;
 
 	/* Start with master table */
-	InstDecodeInfo *table = as->GetDecTable();
+	const InstDecodeInfo *table = as->getDecTable();
 	int low = 0;
 	int high = 1;
 
@@ -262,39 +262,33 @@ void Inst::Decode(const char *buffer, unsigned int address)
 }
 
 
-void Inst::DumpHex(ostream &os)
+void Inst::DumpHex(ostream &os) const
 {
-	os << "\n\t/*" << setw(4) << hex << setfill('0') << address
-			<< "*/     /*0x" << setw(8) << bytes.as_uint[0]
-			<< setw(8) << bytes.as_uint[1] << "*/ \t"
-			<< dec << setfill(' ');
+	os << StringFmt("\n\t/*%04x*/     /*0x%08x%08x*/ \t",
+			address, bytes.as_uint[0], bytes.as_uint[1]);
 }
 
 
-void Inst::DumpPredShort(ostream &os, int high, int low)
+void Inst::DumpPredShort(ostream &os, int high, int low) const
 {
-        int value;
-
-        value = GetBits64(bytes.as_dword, high, low);
-        if (value == 7)
+	int value = GetBits64(bytes.as_dword, high, low);
+	if (value == 7)
 		os << "PT";
 	else
 		os << "P" << (value & 7);
 }
 
 
-void Inst::DumpPredNoat(ostream &os, int high, int low)
+void Inst::DumpPredNoat(ostream &os, int high, int low) const
 {
-        int value;
-
-        value = GetBits64(bytes.as_dword, high, low);
-        if (value != 7)
-        {
-                if (value >> 3)
-                        os << '!';
-                if (value == 15)
+	int value = GetBits64(bytes.as_dword, high, low);
+	if (value != 7)
+	{
+		if (value >> 3)
+			os << '!';
+		if (value == 15)
 			os << "PT";
-                else
+		else
 			os << 'P' << (value & 7);
 	}
 	else
@@ -302,11 +296,9 @@ void Inst::DumpPredNoat(ostream &os, int high, int low)
 }
 
 
-void Inst::DumpPred(ostream &os, int high, int low)
+void Inst::DumpPred(ostream &os, int high, int low) const
 {
-	int value;
-
-	value = GetBits64(bytes.as_dword, high, low);
+	int value = GetBits64(bytes.as_dword, high, low);
 	if (value != 7)
 	{
 		os << '@';
@@ -320,11 +312,9 @@ void Inst::DumpPred(ostream &os, int high, int low)
 }
 
 
-void Inst::DumpReg(ostream &os, int high, int low)
+void Inst::DumpReg(ostream &os, int high, int low) const
 {
-	int value;
-
-	value = GetBits64(bytes.as_dword, high, low);
+	int value = GetBits64(bytes.as_dword, high, low);
 	if (value == 255)
 		os << "RZ";
 	else
@@ -332,106 +322,84 @@ void Inst::DumpReg(ostream &os, int high, int low)
 }
 
 
-void Inst::DumpSpecReg(ostream &os, int high, int low)
+void Inst::DumpSpecReg(ostream &os, int high, int low) const
 {
-        int value;
-
-        value = GetBits64(bytes.as_dword, high, low);
-        if (value == 61)
+	int value = GetBits64(bytes.as_dword, high, low);
+	if (value == 61)
 		os << "SR_RegAlloc";
 	else if (value == 62)
 		os << "SR_CtxAddr";
-        else
+	else
 		os << "SR" << value;
 }
 
 
-void Inst::DumpS(ostream &os, int high, int low)
+void Inst::DumpS(ostream &os, int high, int low) const
 {
-	int value;
-
-	value = GetBits64(bytes.as_dword, high, low);
+	int value = GetBits64(bytes.as_dword, high, low);
 	os << StringMapValue(inst_s_map, value);
 }
 
 
-void Inst::DumpF(ostream &os, int high, int low)
+void Inst::DumpF(ostream &os, int high, int low) const
 {
-	int value;
-
-	value = GetBits64(bytes.as_dword, high, low);
+	int value = GetBits64(bytes.as_dword, high, low);
 	os << StringMapValue(inst_f_map, value);
 }
 
 
-void Inst::DumpAnd(ostream &os, int high, int low)
+void Inst::DumpAnd(ostream &os, int high, int low) const
 {
-	int value;
-
-	value = GetBits64(bytes.as_dword, high, low);
+	int value = GetBits64(bytes.as_dword, high, low);
 	os << StringMapValue(inst_and_map, value);
 }
 
-void Inst::DumpU8(ostream &os, int high, int low)
+void Inst::DumpU8(ostream &os, int high, int low) const
 {
-        int value;
-
-        value = GetBits64(bytes.as_dword, high, low);
+	int value = GetBits64(bytes.as_dword, high, low);
 	os << StringMapValue(inst_u8_map, value);
 }
 
-void Inst::DumpX(ostream &os, int high, int low)
+void Inst::DumpX(ostream &os, int high, int low) const
 {
-	int value;
-
-	value = GetBits64(bytes.as_dword, high, low);
+	int value = GetBits64(bytes.as_dword, high, low);
 	os << StringMapValue(inst_x_map, value);
 }
 
 
-void Inst::DumpU32(ostream &os, int high, int low)
+void Inst::DumpU32(ostream &os, int high, int low) const
 {
-	int value;
-
-	value = GetBits64(bytes.as_dword, high, low);
+	int value = GetBits64(bytes.as_dword, high, low);
 	os << StringMapValue(inst_u32_map, value);
 }
 
 
-void Inst::DumpHi(ostream &os, int high, int low)
+void Inst::DumpHi(ostream &os, int high, int low) const
 {
-	int value;
-
-	value = GetBits64(bytes.as_dword, high, low);
+	int value = GetBits64(bytes.as_dword, high, low);
 	os << StringMapValue(inst_hi_map, value);
 }
 
 
-void Inst::DumpSat(ostream &os, int high, int low)
+void Inst::DumpSat(ostream &os, int high, int low) const
 {
-	int value;
-
-	value = GetBits64(bytes.as_dword, high, low);
+	int value = GetBits64(bytes.as_dword, high, low);
 	os << StringMapValue(inst_sat_map, value);
 }
 
 
-void Inst::DumpPo(ostream &os, int high, int low)
+void Inst::DumpPo(ostream &os, int high, int low) const
 {
-	int value;
-
-	value = GetBits64(bytes.as_dword, high, low);
+	int value = GetBits64(bytes.as_dword, high, low);
 	os << StringMapValue(inst_po_map, value);
 }
 
 
-void Inst::DumpUs(ostream &os, int high0, int low0, int high1, int low1)
+void Inst::DumpUs(ostream &os, int high0, int low0, int high1,
+		int low1) const
 {
-	int value0;
-	int value1;
-
-	value0 = GetBits64(bytes.as_dword, high0, low0);
-	value1 = GetBits64(bytes.as_dword, high1, low1);
+	int value0 = GetBits64(bytes.as_dword, high0, low0);
+	int value1 = GetBits64(bytes.as_dword, high1, low1);
 
 	if (value0 == 1 && value1 == 1)
 	{
@@ -444,134 +412,102 @@ void Inst::DumpUs(ostream &os, int high0, int low0, int high1, int low1)
 }
 
 
-void Inst::DumpCc(ostream &os, int high, int low)
+void Inst::DumpCc(ostream &os, int high, int low) const
 {
-        int value;
-
-        value = GetBits64(bytes.as_dword, high, low);
-        os << StringMapValue(inst_cc_map, value);
+	int value = GetBits64(bytes.as_dword, high, low);
+	os << StringMapValue(inst_cc_map, value);
 }
 
 
-void Inst::DumpE(ostream &os, int high, int low)
+void Inst::DumpE(ostream &os, int high, int low) const
 {
-        int value;
-
-        value = GetBits64(bytes.as_dword, high, low);
-        os << StringMapValue(inst_e_map, value);
+	int value = GetBits64(bytes.as_dword, high, low);
+	os << StringMapValue(inst_e_map, value);
 }
 
 
-void Inst::DumpCv(ostream &os, int high, int low)
+void Inst::DumpCv(ostream &os, int high, int low) const
 {
-        int value;
-
-        value = GetBits64(bytes.as_dword, high, low);
-        os << StringMapValue(inst_cv_map, value);
+	int value = GetBits64(bytes.as_dword, high, low);
+	os << StringMapValue(inst_cv_map, value);
 }
 
 
-void Inst::DumpLmt(ostream &os, int high, int low)
+void Inst::DumpLmt(ostream &os, int high, int low) const
 {
-        int value;
-
-        value = GetBits64(bytes.as_dword, high, low);
-        os << StringMapValue(inst_lmt_map, value);
+	int value = GetBits64(bytes.as_dword, high, low);
+	os << StringMapValue(inst_lmt_map, value);
 }
 
 
-void Inst::DumpU(ostream &os, int high, int low)
+void Inst::DumpU(ostream &os, int high, int low) const
 {
-        int value;
-
-        value = GetBits64(bytes.as_dword, high, low);
-        os << StringMapValue(inst_u_map, value);
+	int value = GetBits64(bytes.as_dword, high, low);
+	os << StringMapValue(inst_u_map, value);
 }
 
 
-void Inst::DumpRm(ostream &os, int high, int low)
+void Inst::DumpRm(ostream &os, int high, int low) const
 {
-        int value;
-
-        value = GetBits64(bytes.as_dword, high, low);
-        os << StringMapValue(inst_rm_map, value);
+	int value = GetBits64(bytes.as_dword, high, low);
+	os << StringMapValue(inst_rm_map, value);
 }
 
 
-void Inst::DumpKeepRefCount(ostream &os, int high, int low)
+void Inst::DumpKeepRefCount(ostream &os, int high, int low) const
 {
-        int value;
-
-        value = GetBits64(bytes.as_dword, high, low);
-        os << StringMapValue(inst_keeprefcount_map, value);
+	int value = GetBits64(bytes.as_dword, high, low);
+	os << StringMapValue(inst_keeprefcount_map, value);
 }
 
 
-void Inst::DumpCc2(ostream &os, int high, int low)
+void Inst::DumpCc2(ostream &os, int high, int low) const
 {
-        int value;
-
-        value = GetBits64(bytes.as_dword, high, low);
-        os << StringMapValue(inst_cc2_map, value);
+	int value = GetBits64(bytes.as_dword, high, low);
+	os << StringMapValue(inst_cc2_map, value);
 }
 
-void Inst::DumpSRCB(ostream &os, int high0, int low0, int high1, int low1, int high2, int low2, int high3, int low3)
+void Inst::DumpSRCB(ostream &os, int high0, int low0, int high1, int low1,
+		int high2, int low2, int high3, int low3) const
 {
-        int value0;
-	int value1;
-	int value2;
-	int value3;
-	int value4;
-	int valueConst;
+	int value0 = GetBits64(bytes.as_dword, high0, low0);
+	int value1 = GetBits64(bytes.as_dword, high1, low1);
+	int value2 = GetBits64(bytes.as_dword, high2, low2);
+	int value3 = GetBits64(bytes.as_dword, high3, low3);
+	int value4 = GetBits64(bytes.as_dword, high3 - 1, low3);
+	long long valueConst = 4 * (value2 * 1000000000ll + value3);
 
-        value0 = GetBits64(bytes.as_dword, high0, low0);
-        value1 = GetBits64(bytes.as_dword, high1, low1);
-        value2 = GetBits64(bytes.as_dword, high2, low2);
-        value3 = GetBits64(bytes.as_dword, high3, low3);
-        value4 = GetBits64(bytes.as_dword, high3 - 1, low3);
-	valueConst = 4 * (value2 * 1000000000 + value3);
-	
 	if (value0 == 0)
-		os << "c [0x" << hex << value1 << dec << "] [0x"
-				<< hex << valueConst << dec << "]";
+		os << StringFmt("c [0x%x] [0x%llx]", value1,
+				valueConst);
 	else if (value0 == 1)
 	{
-        	if (value4 == 255)
+		if (value4 == 255)
 			os << "RZ";
-        	else
+		else
 			os << 'R' << value4;
 	}
 }
 
-void Inst::DumpEndConst(ostream &os, int high, int low)
+void Inst::DumpEndConst(ostream &os, int high, int low) const
 {
-        int value;
-
-        value = GetBits64(bytes.as_dword, high, low);
+	int value = GetBits64(bytes.as_dword, high, low);
 	os << "0x" << hex << value << dec;
 }
 
-void Inst::DumpOffset(ostream &os, int high, int low)
+void Inst::DumpOffset(ostream &os, int high, int low) const
 {
-        int value;
-
-        value = GetBits64(bytes.as_dword, high, low);
-	if (value == 0)
-	{
-	}
-	else
-		os << " 0x" << hex << value << dec;
+	int value = GetBits64(bytes.as_dword, high, low);
+	if (value)
+		os << StringFmt(" 0x%x", value);
 }
 
-void Inst::DumpTarget(ostream &os, int high0, int low0, int high1, int low1)
+void Inst::DumpTarget(ostream &os, int high0, int low0, int high1,
+		int low1) const
 {
-        int value0;
-	int value1;
-	int value2;
-
-        value0 = GetBits64(bytes.as_dword, high0, low0);
-        value1 = GetBits64(bytes.as_dword, high1, low1);
-	value2 = 8388608 - value0;
+	int value0 = GetBits64(bytes.as_dword, high0, low0);
+	int value1 = GetBits64(bytes.as_dword, high1, low1);
+	int value2 = 8388608 - value0;
 
 	if (value1 == 0)
 		os << " 0x" << hex << value0 + address + 8 << dec;
@@ -579,7 +515,7 @@ void Inst::DumpTarget(ostream &os, int high0, int low0, int high1, int low1)
 		os << " 0x" << hex << value2 + address - 8 << dec;
 }
 
-void Inst::Dump(ostream &os)
+void Inst::Dump(ostream &os) const
 {
 	/* Invalid instruction */
 	if (!info || !info->fmt_str)
