@@ -43,8 +43,7 @@ StringMap arg_type_map =
 	{ "waitcnt", ArgTypeWaitCnt },
 	{ "label", ArgTypeLabel },
 	{ "maddr", ArgTypeMaddr },
-	{ "maddr_qual", ArgTypeMaddrQual },
-	{ 0, 0 }
+	{ "maddr_qual", ArgTypeMaddrQual }
 };
 
 
@@ -55,7 +54,7 @@ StringMap arg_type_map =
 int Arg::Encode()
 {
 	panic("%s: cannot encode argument of type %s",
-			__FUNCTION__, StringMapValue(arg_type_map, type));
+			__FUNCTION__, arg_type_map.MapValue(type));
 	return 0;
 }
 
@@ -69,7 +68,7 @@ void Arg::ValidTypes(bool types[])
 	/* Construct error message */
 	std::stringstream msg;
 	msg << "argument of type " <<
-			StringMapValue(arg_type_map, type)
+			arg_type_map.MapValue(type)
 			<< " found, {";
 
 	/* List allowed types */
@@ -78,7 +77,7 @@ void Arg::ValidTypes(bool types[])
 	{
 		if (types[i])
 		{
-			msg << sep << StringMapValue(arg_type_map,
+			msg << sep << arg_type_map.MapValue(
 					(ArgType) i);
 			sep = "|";
 		}
@@ -386,9 +385,9 @@ void ArgMaddr::Dump(std::ostream &os)
 {
 	soffset->Dump(os);
 	qual->Dump(os);
-	os << " format:[" << StringMapValue(SI::inst_buf_data_format_map,
+	os << " format:[" << SI::inst_buf_data_format_map.MapValue(
 			data_format) << ',' <<
-			StringMapValue(SI::inst_buf_num_format_map, num_format)
+			SI::inst_buf_num_format_map.MapValue(num_format)
 			<< ']';
 }
 
@@ -400,7 +399,7 @@ void ArgMaddr::Dump(std::ostream &os)
 
 void ArgSpecialRegister::Dump(std::ostream &os)
 {
-	os << StringMapValue(SI::inst_special_reg_map, reg);
+	os << SI::inst_special_reg_map.MapValue(reg);
 }
 	
 

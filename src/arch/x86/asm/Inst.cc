@@ -64,8 +64,7 @@ StringMap inst_reg_map =
 	{ "ss", InstRegSs },
 	{ "ds", InstRegDs },
 	{ "fs", InstRegFs },
-	{ "gs", InstRegGs },
-	{ 0, 0 }
+	{ "gs", InstRegGs }
 };
 
 
@@ -127,7 +126,7 @@ static const unsigned inst_ea_scale_table[4] = { 1, 2, 4, 8 };
 void Inst::DumpMoffsAddr(std::ostream &os) const
 {
 	InstReg reg = segment ? segment : InstRegDs;
-	os << StringFmt("%s:0x%x", StringMapValue(inst_reg_map, reg), imm.d);
+	os << StringFmt("%s:0x%x", inst_reg_map.MapValue(reg), imm.d);
 }
 
 
@@ -139,7 +138,7 @@ void Inst::DumpAddr(std::ostream &os) const
 	if (segment)
 	{
 		assert(segment >= 0 && segment < InstRegCount);
-		segment_str = StringMapValue(inst_reg_map, segment);
+		segment_str = inst_reg_map.MapValue(segment);
 		segment_str += ':';
 	}
 
@@ -157,14 +156,14 @@ void Inst::DumpAddr(std::ostream &os) const
 	os << segment_str << '[';
 	if (ea_base)
 	{
-		os << StringMapValue(inst_reg_map, ea_base);
+		os << inst_reg_map.MapValue(ea_base);
 		write_sign = true;
 	}
 	if (ea_index)
 	{
 		if (write_sign)
 			os << '+';
-		os << StringMapValue(inst_reg_map, ea_index);
+		os << inst_reg_map.MapValue(ea_index);
 		if (ea_scale > 1)
 			os << '*' << ea_scale;
 		write_sign = true;
@@ -200,24 +199,24 @@ void Inst::Dump(std::ostream &os) const
 		int length = 0;
 		if (Common::Asm::IsToken(fmt, "r8", length))
 		{
-			os << StringMapValue(inst_reg_map, modrm_reg
+			os << inst_reg_map.MapValue(modrm_reg
 					+ InstRegAl);
 		}
 		else if (Common::Asm::IsToken(fmt, "r16", length))
 		{
-			os << StringMapValue(inst_reg_map, modrm_reg
+			os << inst_reg_map.MapValue(modrm_reg
 					+ InstRegAx);
 		}
 		else if (Common::Asm::IsToken(fmt, "r32", length))
 		{
-			os << StringMapValue(inst_reg_map, modrm_reg
+			os << inst_reg_map.MapValue(modrm_reg
 					+ InstRegEax);
 		}
 		else if (Common::Asm::IsToken(fmt, "rm8", length))
 		{
 			if (modrm_mod == 0x03)
-				os << StringMapValue(inst_reg_map,
-						modrm_rm + InstRegAl);
+				os << inst_reg_map.MapValue(modrm_rm
+						+ InstRegAl);
 			else
 			{
 				os << "BYTE PTR ";
@@ -227,8 +226,8 @@ void Inst::Dump(std::ostream &os) const
 		else if (Common::Asm::IsToken(fmt, "rm16", length))
 		{
 			if (modrm_mod == 0x03)
-				os << StringMapValue(inst_reg_map,
-						modrm_rm + InstRegAx);
+				os << inst_reg_map.MapValue(modrm_rm
+						+ InstRegAx);
 			else
 			{
 				os << "WORD PTR ";
@@ -238,8 +237,8 @@ void Inst::Dump(std::ostream &os) const
 		else if (Common::Asm::IsToken(fmt, "rm32", length))
 		{
 			if (modrm_mod == 0x03)
-				os << StringMapValue(inst_reg_map,
-						modrm_rm + InstRegEax);
+				os << inst_reg_map.MapValue(modrm_rm
+						+ InstRegEax);
 			else
 			{
 				os << "DWORD PTR ";
@@ -249,8 +248,8 @@ void Inst::Dump(std::ostream &os) const
 		else if (Common::Asm::IsToken(fmt, "r32m8", length))
 		{
 			if (modrm_mod == 3)
-				os << StringMapValue(inst_reg_map,
-						modrm_rm + InstRegEax);
+				os << inst_reg_map.MapValue(modrm_rm
+						+ InstRegEax);
 			else
 			{
 				os << "BYTE PTR ";
@@ -260,8 +259,8 @@ void Inst::Dump(std::ostream &os) const
 		else if (Common::Asm::IsToken(fmt, "r32m16", length))
 		{
 			if (modrm_mod == 3)
-				os << StringMapValue(inst_reg_map,
-						modrm_rm + InstRegEax);
+				os << inst_reg_map.MapValue(modrm_rm
+						+ InstRegEax);
 			else
 			{
 				os << "WORD PTR ";
@@ -348,19 +347,19 @@ void Inst::Dump(std::ostream &os) const
 		}
 		else if (Common::Asm::IsToken(fmt, "ir8", length))
 		{
-			os << StringMapValue(inst_reg_map, opindex + InstRegAl);
+			os << inst_reg_map.MapValue(opindex + InstRegAl);
 		}
 		else if (Common::Asm::IsToken(fmt, "ir16", length))
 		{
-			os << StringMapValue(inst_reg_map, opindex + InstRegAx);
+			os << inst_reg_map.MapValue(opindex + InstRegAx);
 		}
 		else if (Common::Asm::IsToken(fmt, "ir32", length))
 		{
-			os << StringMapValue(inst_reg_map, opindex + InstRegEax);
+			os << inst_reg_map.MapValue(opindex + InstRegEax);
 		}
 		else if (Common::Asm::IsToken(fmt, "sreg", length))
 		{
-			os << StringMapValue(inst_reg_map, reg + InstRegEs);
+			os << inst_reg_map.MapValue(reg + InstRegEs);
 		}
 		else if (Common::Asm::IsToken(fmt, "xmmm32", length))
 		{

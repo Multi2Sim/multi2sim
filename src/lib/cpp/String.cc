@@ -37,14 +37,13 @@ static StringMap string_error_map =
 	{ "ok", StringErrorOK },
 	{ "invalid base", StringErrorBase },
 	{ "invalid format", StringErrorFormat },
-	{ "integer out of range", StringErrorRange },
-	{ NULL, 0 }
+	{ "integer out of range", StringErrorRange }
 };
 
 
 const char *StringErrorToString(StringError error)
 {
-	return StringMapValue(string_error_map, error);
+	return string_error_map.MapValue(error);
 }
 
 
@@ -657,96 +656,85 @@ std::string StringParagraph(const std::string &text,
 
 
 
-
 //
-// String maps
+// StringMap Class
 //
 
-static const char *string_map_unknown = "<unknown>";
 
-const char *StringMapValue(StringMap map, int value)
+void StringMap::Dump(std::ostream &os) const
 {
-	bool error;
-	return StringMapValue(map, value, error);
+	os << '{';
+	std::string sep;
+	for (auto &item : items)
+	{
+		if (!item.text)
+			continue;
+		os << sep << item.text;
+		sep = ",";
+	}
+	os << '}';
 }
 
-
-const char *StringMapValue(StringMap map, int value, bool &error)
+std::string StringMap::toString()
 {
-	int index;
+	std::ostringstream ss;
+	ss << *this;
+	return ss.str();
+}
+	
 
+const char *StringMap::MapValue(int value, bool &error)
+{
 	// Find value
 	error = false;
-	for (index = 0; map[index].text; index++)
-		if (map[index].value == value)
-			return map[index].text;
+	for (auto &item : items)
+		if (item.value == value)
+			return item.text;
 
 	// Not found
 	error = true;
-	return string_map_unknown;
+	return "<unknown>";
 }
 
-
-int StringMapString(StringMap map, const std::string &s)
+int StringMap::MapString(const std::string &s, bool &error)
 {
-	bool error;
-	return StringMapString(map, s, error);
-}
-
-
-int StringMapString(StringMap map, const std::string &s, bool &error)
-{
-	int index;
-
-	// Find value
+	// Find string
 	error = false;
-	for (index = 0; map[index].text; index++)
-		if (!strcmp(map[index].text, s.c_str()))
-			return map[index].value;
+	for (auto &item : items)
+		if (item.text == s)
+			return item.value;
+	
+	// Not found
+	error = true;
+	return 0;
+}
 
+int StringMap::MapStringCase(const std::string &s, bool &error)
+{
+	// Find string
+	error = false;
+	for (auto &item : items)
+		if (!strcasecmp(item.text, s.c_str()))
+			return item.value;
+	
 	// Not found
 	error = true;
 	return 0;
 }
 
 
-int StringMapStringCase(StringMap map, const std::string &s)
+std::string StringMap::MapFlags(unsigned flags)
 {
-	bool error;
-	return StringMapStringCase(map, s, error);
-}
-
-
-int StringMapStringCase(StringMap map, const std::string &s, bool &error)
-{
-	int index;
-
-	// Find value
-	error = false;
-	for (index = 0; map[index].text; index++)
-		if (!strcasecmp(map[index].text, s.c_str()))
-			return map[index].value;
-
-	// Not found
-	error = true;
-	return 0;
-}
-
-
-std::string StringMapFlags(StringMap map, unsigned int flags)
-{
-	int i;
-	bool error;
-
 	std::stringstream s;
-	std::string comma = "";
+	std::string comma;
 	s << '{';
-	for (i = 0; i < 32; i++)
+	for (int i = 0; i < 32; i++)
 	{
 		if (flags & (1 << i))
 		{
 			s << comma;
-			const char *text = StringMapValue(map, 1 << i, error);
+			bool error;
+			const char *text = MapValue(1 << i, error);
 			if (error)
 				s << (1 << i);
 			else
@@ -759,27 +747,6 @@ std::string StringMapFlags(StringMap map, unsigned int flags)
 	// Return created text
 	return s.str();
 }
-
-
-std::string StringMapGetValues(StringMap map)
-{
-	std::stringstream s;
-	std::string comma;
-	int index;
-
-	index = 0;
-	comma = "";
-	s << '{';
-	while (map[index].text)
-	{
-		s << comma << map[index].text;
-		index++;
-		comma = ",";
-	}
-	s << '}';
-	return s.str();
-}
-
 
 
 }  // namespace Misc

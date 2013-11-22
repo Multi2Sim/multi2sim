@@ -30,8 +30,7 @@ namespace SI
 StringMap arg_dimension_map =
 {
 	{ "2D", 2 },
-	{ "3D", 3 },
-	{ 0, 0 }
+	{ "3D", 3 }
 };
 
 
@@ -39,8 +38,7 @@ StringMap arg_access_type_map =
 {
 	{ "RO", ArgAccessTypeReadOnly },
 	{ "WO", ArgAccessTypeWriteOnly },
-	{ "RW", ArgAccessTypeReadWrite },
-	{ 0, 0 }
+	{ "RW", ArgAccessTypeReadWrite }
 };
 
 
@@ -61,8 +59,7 @@ StringMap arg_data_type_map =
 	{ "struct", ArgDataTypeStruct },
 	{ "union", ArgDataTypeUnion },
 	{ "event", ArgDataTypeEvent },
-	{ "opaque", ArgDataTypeOpaque },
-	{ 0, 0 }
+	{ "opaque", ArgDataTypeOpaque }
 };
 
 
@@ -77,8 +74,7 @@ StringMap arg_scope_map =
 	{ "hl", ArgScopeHwLocal },
 	{ "hp", ArgScopeHwPrivate },
 	{ "hc", ArgScopeHwConstant },
-	{ "hr", ArgScopeHwGDS },
-	{ 0, 0 }
+	{ "hr", ArgScopeHwGDS }
 };
 
 
@@ -146,7 +142,7 @@ int Arg::getDataSize(ArgDataType data_type)
 
 void ArgPointer::Dump(std::ostream &os)
 {
-	os << StringMapValue(arg_data_type_map, data_type);
+	os << arg_data_type_map.MapValue(data_type);
 	if (num_elems > 1)
 		os << '[' << num_elems << ']';
 	os << "* " << getName();
@@ -155,7 +151,7 @@ void ArgPointer::Dump(std::ostream &os)
 
 void ArgValue::Dump(std::ostream &os)
 {
-	os << StringMapValue(arg_data_type_map, data_type);
+	os << arg_data_type_map.MapValue(data_type);
 	if (num_elems > 1)
 		os << '[' << num_elems << ']';
 	os << ' ' << getName();

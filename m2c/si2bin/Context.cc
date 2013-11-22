@@ -49,7 +49,7 @@ InstInfo::InstInfo(SI::InstInfo *info)
 	{
 		/* Get token type */
 		bool error;
-		TokenType type = (TokenType) StringMapStringCase(token_type_map,
+		TokenType type = (TokenType) token_type_map.MapStringCase(
 				str_tokens[i], error);
 		if (error)
 			panic("%s: invalid token string: %s",

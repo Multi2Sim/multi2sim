@@ -53,8 +53,7 @@ StringMap inst_format_map =
 	{ "mubuf", InstFormatMUBUF },
 	{ "mtbuf", InstFormatMTBUF },
 	{ "mimg", InstFormatMIMG },
-	{ "exp", InstFormatEXP },
-	{ 0, 0 }
+	{ "exp", InstFormatEXP }
 };
 
 /* String maps for assembly dump. */
@@ -83,8 +82,7 @@ static StringMap inst_sdst_map =
 	{"m0", 20},
 	{"reserved", 21},
 	{"exec_lo", 22},
-	{"exec_hi", 23},
-	{ 0, 0 }
+	{"exec_hi", 23}
 };
 
 static StringMap inst_ssrc_map =
@@ -104,8 +102,7 @@ static StringMap inst_ssrc_map =
 	{"execz", 12},
 	{"scc", 13},
 	{"reserved", 14},
-	{"literal constant", 15},
-	{0, 0}
+	{"literal constant", 15}
 };
 
 StringMap inst_buf_data_format_map =
@@ -125,8 +122,7 @@ StringMap inst_buf_data_format_map =
 	{"BUF_DATA_FORMAT_16_16_16_16", InstBufDataFormat16_16_16_16 },
 	{"BUF_DATA_FORMAT_32_32_32", InstBufDataFormat32_32_32 },
 	{"BUF_DATA_FORMAT_32_32_32_32", InstBufDataFormat32_32_32_32 },
-	{"reserved", InstBufDataFormatReserved },
-	{ 0, 0 }
+	{"reserved", InstBufDataFormatReserved }
 };
 
 StringMap inst_buf_num_format_map =
@@ -144,8 +140,7 @@ StringMap inst_buf_num_format_map =
 	{"BUF_NUM_FORMAT_UBNORM", InstBufNumFormatUbnorm },
 	{"BUF_NUM_FORMAT_UBNORM_NZ", InstBufNumFormatUbnormNz },
 	{"BUF_NUM_FORMAT_UBINT", InstBufNumFormatUbint },
-	{"BUF_NUM_FORMAT_UBSCALED", InstBufNumFormatUbscaled },
-	{ 0, 0 }
+	{"BUF_NUM_FORMAT_UBSCALED", InstBufNumFormatUbscaled }
 };
 
 static StringMap inst_OP16_map =
@@ -165,8 +160,7 @@ static StringMap inst_OP16_map =
 	{"nle", 12},
 	{"neq", 13},
 	{"nlt", 14},
-	{"tru", 15},
-	{ 0, 0 }
+	{"tru", 15}
 };
 
 static StringMap inst_OP8_map =
@@ -178,8 +172,7 @@ static StringMap inst_OP8_map =
 	{"gt", 4},
 	{"lg", 5},
 	{"ge", 6},
-	{"tru", 7},
-	{ 0, 0 }
+	{"tru", 7}
 };
 
 StringMap inst_special_reg_map =
@@ -187,8 +180,7 @@ StringMap inst_special_reg_map =
 	{ "vcc", InstSpecialRegVcc },
 	{ "scc", InstSpecialRegScc },
 	{ "exec", InstSpecialRegExec },
-	{ "tma", InstSpecialRegTma },
-	{ 0, 0 }
+	{ "tma", InstSpecialRegTma }
 };
 
 
@@ -203,7 +195,7 @@ void Inst::DumpOperand(std::ostream& os, int operand)
 	else if (operand <= 127)
 	{
 		/* sdst special registers */
-		os << StringMapValue(inst_sdst_map, operand - 104);
+		os << inst_sdst_map.MapValue(operand - 104);
 	}
 	else if (operand <= 192)
 	{
@@ -222,7 +214,7 @@ void Inst::DumpOperand(std::ostream& os, int operand)
 	}
 	else if (operand <= 255)
 	{
-		os << StringMapValue(inst_ssrc_map, operand - 240);
+		os << inst_ssrc_map.MapValue(operand - 240);
 	}
 	else if (operand <= 511)
 	{
@@ -702,11 +694,11 @@ void Inst::Dump(std::ostream &os) const
 		}
 		else if (Common::Asm::IsToken(fmt_str, "VOP3_OP16", token_len))
 		{
-			os << StringMapValue(inst_OP16_map, bytes.vop3a.op & 15);
+			os << inst_OP16_map.MapValue(bytes.vop3a.op & 15);
 		}
 		else if (Common::Asm::IsToken(fmt_str, "VOP3_OP8", token_len))
 		{
-			os << StringMapValue(inst_OP8_map, bytes.vop3a.op & 15);
+			os << inst_OP8_map.MapValue(bytes.vop3a.op & 15);
 		}
 		else if (Common::Asm::IsToken(fmt_str, "SMRD_SDST", token_len))
 		{
@@ -940,9 +932,9 @@ void Inst::Dump(std::ostream &os) const
 		{
 			DumpMaddr(os);
 			os << " format:["
-					<< StringMapValue(inst_buf_data_format_map, 
+					<< inst_buf_data_format_map.MapValue(
 					bytes.mtbuf.dfmt) << ','
-					<< StringMapValue(inst_buf_num_format_map, 
+					<< inst_buf_num_format_map.MapValue(
 					bytes.mtbuf.nfmt) << ']';
 		}
 		else if (Common::Asm::IsToken(fmt_str, "MIMG_SERIES_VDATA", token_len))

@@ -888,7 +888,7 @@ void Function::EmitControlFlow()
 
 		default:
 			panic("%s: region %s not supported", __FUNCTION__,
-					StringMapValue(Common::abstract_node_region_map,
+					Common::abstract_node_region_map.MapValue(
 					abs_node->GetRegion()));
 		}
 	}

@@ -83,8 +83,7 @@ StringMap binary_user_data_map =
 	{ "PTR_INDIRECT_RESOURCE",             BinaryUserDataIndirectResource },
 	{ "PTR_INDIRECT_INTERNAL_RESOURCE",    BinaryUserDataInternalResource },
 	{ "PTR_INDIRECT_UAV",                  BinaryUserDataPtrIndirectUAV },
-	{ "E_SC_USER_DATA_CLASS_LAST",         BinaryUserDataLast },
-	{ 0, 0 }
+	{ "E_SC_USER_DATA_CLASS_LAST",         BinaryUserDataLast }
 };
 
 
@@ -109,8 +108,7 @@ StringMap binary_machine_map =
 	{ "Kauai",	16 },
 	{ "Barts",	17 },
 	{ "Turks",	18 },
-	{ "Caicos",	19 },
-	{ 0, 0 }
+	{ "Caicos",	19 }
 };
 
 
@@ -414,9 +412,7 @@ StringMap binary_prog_info_map = {
 	{ "AMU_ABI_UAV_RESOURCE_MASK_30",             (int) 0x80001861 },
 	{ "AMU_ABI_UAV_RESOURCE_MASK_31",             (int) 0x80001862 },
 	{ "AMU_ABI_SI_NUM_SGPRS_AVAIL",               (int) 0x80001863 },
-	{ "AMU_ABI_SI_NUM_VGPRS_AVAIL",               (int) 0x80001864 },
-
-	{ 0, 0 }
+	{ "AMU_ABI_SI_NUM_VGPRS_AVAIL",               (int) 0x80001864 }
 };
 
 
@@ -438,7 +434,7 @@ void Binary::ReadNote(BinaryDictEntry *dict_entry, std::istringstream& ss,
 		fatal("%s: error decoding note description", name.c_str());
 
 	// Debug
-	const char *note_str = StringMapValue(binary_note_map, header->type);
+	const char *note_str = binary_note_map.MapValue(header->type);
 	debug << "  note: type = " << header->type << " ("
 			<< note_str << "), descsz = "
 			<< header->descsz << '\n';
@@ -466,8 +462,7 @@ void Binary::ReadNote(BinaryDictEntry *dict_entry, std::istringstream& ss,
 					(desc + i * sizeof(BinaryNoteProgInfoEntry));
 			debug << "\tprog_info_entry: addr = 0x" << std::hex <<
 					prog_info_entry->address << std::dec << " (" <<
-					StringMapValue(binary_prog_info_map,
-							prog_info_entry->address)
+					binary_prog_info_map.MapValue(prog_info_entry->address)
 					<< "), value = " << prog_info_entry->value << '\n';
 
 			// Analyze entry
@@ -499,8 +494,7 @@ void Binary::ReadNote(BinaryDictEntry *dict_entry, std::istringstream& ss,
 
 					debug << "\tprog_info_entry: addr = 0x" << std::hex <<
 							prog_info_entry->address << std::dec << " ("
-							<< StringMapValue(binary_prog_info_map,
-									prog_info_entry->address)
+							<< binary_prog_info_map.MapValue(prog_info_entry->address)
 							<< "), value = " << prog_info_entry->value << '\n';
 					switch(j % 4)
 					{
@@ -840,8 +834,7 @@ void Binary::ReadDictionary()
 		BinaryDictHeader *header = entry->header;
 		debug << "[" << i << "] "
 				<< "machine = " << header->d_machine
-				<< " (" << StringMapValue(binary_machine_map,
-						header->d_machine) << "), "
+				<< " (" << binary_machine_map.MapValue(header->d_machine) << "), "
 				<< "type = " << header->d_type << ", "
 				<< "offset = " << std::hex << header->d_offset
 				<< std::dec << ", "
