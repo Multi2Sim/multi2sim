@@ -39,15 +39,13 @@ namespace Kepler
 StringMap inst_sat_map =
 {
 	{ "", 0},
-	{ ".SAT", 1},
-	{ 0, 0 }
+	{ ".SAT", 1}
 };
 
 StringMap inst_x_map =
 {
 	{ "", 0},
-	{ ".X", 1},
-	{ 0, 0 }
+	{ ".X", 1}
 };
 
 StringMap inst_cc2_map =
@@ -83,36 +81,31 @@ StringMap inst_cc2_map =
 	{ "CC.FCSM_TR", 28},
 	{ "CC.FCSM_MX", 29},
 	{ "CC.RLE", 30},
-	{ "CC.RGT", 31},
-	{ 0, 0 }
+	{ "CC.RGT", 31}
 };
 
 StringMap inst_cc_map =
 {
 	{ "", 0},
-	{ ".CC", 1},
-	{ 0, 0 }
+	{ ".CC", 1}
 };
 
 StringMap inst_hi_map =
 {
 	{ "", 0},
-	{ ".HI", 1},
-	{ 0, 0 }
+	{ ".HI", 1}
 };
 
 StringMap inst_keeprefcount_map =
 {
 	{ "", 0},
-	{ ".KEEPREFCOUNT", 1},
-	{ 0, 0 }
+	{ ".KEEPREFCOUNT", 1}
 };
 
 StringMap inst_s_map =
 {
 	{ "", 0},
-	{ ".S", 1},
-	{ 0, 0 }
+	{ ".S", 1}
 };
 
 StringMap inst_and_map =
@@ -120,8 +113,7 @@ StringMap inst_and_map =
 	{ ".AND", 0},
 	{ ".OR", 1},
 	{ ".XOR", 2},
-	{ ".INVALIDBOP3", 3},
-	{ 0, 0 }
+	{ ".INVALIDBOP3", 3}
 };
 
 StringMap inst_cv_map =
@@ -129,8 +121,7 @@ StringMap inst_cv_map =
 	{ "", 0},
 	{ ".CG", 1},
 	{ ".CS", 2},
-	{ ".CV", 3},
-	{ 0, 0 }
+	{ ".CV", 3}
 };
 
 StringMap inst_wt_map =
@@ -138,22 +129,19 @@ StringMap inst_wt_map =
 	{ "", 0},
 	{ ".CG", 1},
 	{ ".CS", 2},
-	{ ".WT", 3},
-	{ 0, 0 }
+	{ ".WT", 3}
 };
 
 StringMap inst_po_map =
 {
 	{ "", 0},
-	{ ".PO", 1},
-	{ 0, 0 }
+	{ ".PO", 1}
 };
 
 StringMap inst_u1_map =
 {
 	{ ".U32.U32", 0},
-	{ ".U32.S32", 1},
-	{ 0, 0 }
+	{ ".U32.S32", 1}
 };
 
 StringMap inst_f_map=
@@ -165,36 +153,31 @@ StringMap inst_f_map=
 	{ ".GT", 4},
 	{ ".NE", 5},
 	{ ".GE", 6},
-	{ ".T", 7},
-	{ 0, 0 }
+	{ ".T", 7}
 };
 
 StringMap inst_u_map =
 {
 	{ "", 0},
-	{ ".U", 1},
-	{ 0, 0 }
+	{ ".U", 1}
 };
 
 StringMap inst_lmt_map =
 {
 	{ "", 0},
-	{ ".LMT", 1},
-	{ 0, 0 }
+	{ ".LMT", 1}
 };
 
 StringMap inst_e_map =
 {
 	{ "", 0},
-	{ ".E", 1},
-	{ 0, 0 }
+	{ ".E", 1}
 };
 
 StringMap inst_u32_map =
 {
 	{ ".U32", 0},
-	{ "", 1},
-	{ 0, 0 }
+	{ "", 1}
 };
 
 StringMap inst_rm_map =
@@ -202,15 +185,13 @@ StringMap inst_rm_map =
 	{ "", 0},
 	{ ".RM", 1},
 	{ ".RP", 2},
-	{ ".RZ", 3},
-	{ 0, 0 }
+	{ ".RZ", 3}
 };
 
 StringMap inst_us_map =
 {
 	{ ".U32", 0},
-	{ ".S32", 1},
-	{ 0, 0 }
+	{ ".S32", 1}
 };
 
 StringMap inst_u8_map =
@@ -222,8 +203,7 @@ StringMap inst_u8_map =
 	{ "", 4},
 	{ ".64", 5},
 	{ ".128", 6},
-	{ ".U.128", 7},
-	{ 0, 0 }
+	{ ".U.128", 7}
 };
 
 
@@ -337,61 +317,61 @@ void Inst::DumpSpecReg(ostream &os, int high, int low) const
 void Inst::DumpS(ostream &os, int high, int low) const
 {
 	int value = GetBits64(bytes.as_dword, high, low);
-	os << StringMapValue(inst_s_map, value);
+	os << inst_s_map.MapValue(value);
 }
 
 
 void Inst::DumpF(ostream &os, int high, int low) const
 {
 	int value = GetBits64(bytes.as_dword, high, low);
-	os << StringMapValue(inst_f_map, value);
+	os << inst_f_map.MapValue(value);
 }
 
 
 void Inst::DumpAnd(ostream &os, int high, int low) const
 {
 	int value = GetBits64(bytes.as_dword, high, low);
-	os << StringMapValue(inst_and_map, value);
+	os << inst_and_map.MapValue(value);
 }
 
 void Inst::DumpU8(ostream &os, int high, int low) const
 {
 	int value = GetBits64(bytes.as_dword, high, low);
-	os << StringMapValue(inst_u8_map, value);
+	os << inst_u8_map.MapValue(value);
 }
 
 void Inst::DumpX(ostream &os, int high, int low) const
 {
 	int value = GetBits64(bytes.as_dword, high, low);
-	os << StringMapValue(inst_x_map, value);
+	os << inst_x_map.MapValue(value);
 }
 
 
 void Inst::DumpU32(ostream &os, int high, int low) const
 {
 	int value = GetBits64(bytes.as_dword, high, low);
-	os << StringMapValue(inst_u32_map, value);
+	os << inst_u32_map.MapValue(value);
 }
 
 
 void Inst::DumpHi(ostream &os, int high, int low) const
 {
 	int value = GetBits64(bytes.as_dword, high, low);
-	os << StringMapValue(inst_hi_map, value);
+	os << inst_hi_map.MapValue(value);
 }
 
 
 void Inst::DumpSat(ostream &os, int high, int low) const
 {
 	int value = GetBits64(bytes.as_dword, high, low);
-	os << StringMapValue(inst_sat_map, value);
+	os << inst_sat_map.MapValue(value);
 }
 
 
 void Inst::DumpPo(ostream &os, int high, int low) const
 {
 	int value = GetBits64(bytes.as_dword, high, low);
-	os << StringMapValue(inst_po_map, value);
+	os << inst_po_map.MapValue(value);
 }
 
 
@@ -406,8 +386,8 @@ void Inst::DumpUs(ostream &os, int high0, int low0, int high1,
 	}
 	else
 	{
-		os << StringMapValue(inst_us_map, value1);
-		os << StringMapValue(inst_us_map, value0);
+		os << inst_us_map.MapValue(value1);
+		os << inst_us_map.MapValue(value0);
 	}
 }
 
@@ -415,56 +395,56 @@ void Inst::DumpUs(ostream &os, int high0, int low0, int high1,
 void Inst::DumpCc(ostream &os, int high, int low) const
 {
 	int value = GetBits64(bytes.as_dword, high, low);
-	os << StringMapValue(inst_cc_map, value);
+	os << inst_cc_map.MapValue(value);
 }
 
 
 void Inst::DumpE(ostream &os, int high, int low) const
 {
 	int value = GetBits64(bytes.as_dword, high, low);
-	os << StringMapValue(inst_e_map, value);
+	os << inst_e_map.MapValue(value);
 }
 
 
 void Inst::DumpCv(ostream &os, int high, int low) const
 {
 	int value = GetBits64(bytes.as_dword, high, low);
-	os << StringMapValue(inst_cv_map, value);
+	os << inst_cv_map.MapValue(value);
 }
 
 
 void Inst::DumpLmt(ostream &os, int high, int low) const
 {
 	int value = GetBits64(bytes.as_dword, high, low);
-	os << StringMapValue(inst_lmt_map, value);
+	os << inst_lmt_map.MapValue(value);
 }
 
 
 void Inst::DumpU(ostream &os, int high, int low) const
 {
 	int value = GetBits64(bytes.as_dword, high, low);
-	os << StringMapValue(inst_u_map, value);
+	os << inst_u_map.MapValue(value);
 }
 
 
 void Inst::DumpRm(ostream &os, int high, int low) const
 {
 	int value = GetBits64(bytes.as_dword, high, low);
-	os << StringMapValue(inst_rm_map, value);
+	os << inst_rm_map.MapValue(value);
 }
 
 
 void Inst::DumpKeepRefCount(ostream &os, int high, int low) const
 {
 	int value = GetBits64(bytes.as_dword, high, low);
-	os << StringMapValue(inst_keeprefcount_map, value);
+	os << inst_keeprefcount_map.MapValue(value);
 }
 
 
 void Inst::DumpCc2(ostream &os, int high, int low) const
 {
 	int value = GetBits64(bytes.as_dword, high, low);
-	os << StringMapValue(inst_cc2_map, value);
+	os << inst_cc2_map.MapValue(value);
 }
 
 void Inst::DumpSRCB(ostream &os, int high0, int low0, int high1, int low1,

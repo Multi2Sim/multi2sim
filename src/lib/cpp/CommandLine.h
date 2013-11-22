@@ -26,6 +26,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "String.h"
+
 
 namespace misc
 {
@@ -40,7 +42,8 @@ public:
 		TypeBool,
 		TypeString,
 		TypeInt32,
-		TypeInt64
+		TypeInt64,
+		TypeEnum
 	};
 
 private:
@@ -161,6 +164,23 @@ public:
 		var(var) { }
 	
 	/// Read option from command line. See CommandLineOption::Read().
+	void Read(int argc, char **argv, int index);
+};
+
+
+/// Command-line option taking an identifier as an argument
+class CommandLineOptionEnum : public CommandLineOption
+{
+	int *var;
+	StringMap &map;
+public:
+	/// Constructor
+	CommandLineOptionEnum(const std::string &name, int *var,
+			StringMap map, const std::string &help)
+		: CommandLineOption(TypeEnum, name, 1, help),
+		var(var), map(map) { }
+	
+	/// Read option from command line. See CommandLineOption::Read()
 	void Read(int argc, char **argv, int index);
 };
 

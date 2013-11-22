@@ -108,9 +108,7 @@ StringMap TokenTypeMap =
 	{ "\%gen0_mod_data_width",	frm_token_mod_data_width },
 	{ "\%gen0_mod_logic",		frm_token_mod_logic },
 	{ "\%gen0_mod_comparison",	frm_token_mod_comparison },
-	{ "\%src1+\%offs",		frm_token_src1_offs },
-
-	{0, 0}
+	{ "\%src1+\%offs",		frm_token_src1_offs }
 };
 
 Token::Token(TokenType type)

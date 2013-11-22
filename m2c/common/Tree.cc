@@ -410,7 +410,7 @@ AbstractNode *Tree::Reduce(std::list<Node *> &list, AbstractNodeRegion region)
 	/* Figure out a name for the new abstract node */
 	assert(region);
 	std::string abs_node_name = StringFmt("__%s_%d",
-			StringMapValue(abstract_node_region_map, region),
+			abstract_node_region_map.MapValue(region),
 			name_counter[region]);
 	name_counter[region]++;
 
@@ -422,7 +422,7 @@ AbstractNode *Tree::Reduce(std::list<Node *> &list, AbstractNodeRegion region)
 	if (debug)
 	{
 		debug << "\nReducing " <<
-				StringMapValue(abstract_node_region_map,
+				abstract_node_region_map.MapValue(
 				region) << " region: ";
 		Node::DumpList(debug, list);
 		debug << " -> '" << abs_node->name << "'\n";
@@ -1081,8 +1081,8 @@ void Tree::Write(IniFile &f)
 			f.WriteString(section, "Child", stream.str());
 
 			/* Region */
-			f.WriteString(section, "Region", StringMapValue(
-					abstract_node_region_map,
+			f.WriteString(section, "Region",
+					abstract_node_region_map.MapValue(
 					abs_node->region));
 		}
 
@@ -1126,8 +1126,8 @@ void Tree::Read(IniFile &f, const std::string &name)
 		/* Get node properties */
 		std::string node_name = tokens[3];
 		std::string kind_str = f.ReadString(section, "Kind", "Leaf");
-		NodeKind kind = (NodeKind) misc::StringMapStringCase(
-				node_kind_map, kind_str);
+		NodeKind kind = (NodeKind)
+				node_kind_map.MapStringCase(kind_str);
 		if (!kind)
 			fatal("%s: %s: invalid value for 'Kind'",
 					path.c_str(), section.c_str());
@@ -1143,8 +1143,7 @@ void Tree::Read(IniFile &f, const std::string &name)
 			/* Read region */
 			std::string region_str = f.ReadString(section, "Region");
 			AbstractNodeRegion region = (AbstractNodeRegion)
-					misc::StringMapStringCase(
-					abstract_node_region_map,
+					abstract_node_region_map.MapStringCase(
 					region_str);
 			if (!region)
 				fatal("%s: %s: invalid or missing 'Region'",

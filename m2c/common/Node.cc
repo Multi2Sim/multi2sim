@@ -75,8 +75,7 @@ StringMap abstract_node_region_map =
 	{ "proper_interval", AbstractNodeProperInterval },
 	{ "improper_interval", AbstractNodeImproperInterval },
 	{ "proper_outer_interval", AbstractNodeProperOuterInterval },
-	{ "improper_outer_interval", AbstractNodeImproperOuterInterval },
-	{ 0, 0 }
+	{ "improper_outer_interval", AbstractNodeImproperOuterInterval }
 };
 
 
@@ -143,8 +142,7 @@ void AbstractNode::Compare(Node *node)
 StringMap node_kind_map =
 {
 	{ "Leaf", NodeKindLeaf },
-	{ "Abstract", NodeKindAbstract },
-	{ 0, 0 }
+	{ "Abstract", NodeKindAbstract }
 };
 
 
@@ -156,8 +154,7 @@ StringMap node_role_map =
 	{ "head", NodeRoleHead },
 	{ "tail", NodeRoleTail },
 	{ "pre", NodeRolePre },
-	{ "exit", NodeRoleExit },
-	{ 0, 0 }
+	{ "exit", NodeRoleExit }
 };
 
 
@@ -208,7 +205,7 @@ void Node::Dump(std::ostream &os)
 
 	/* Role */
 	if (role)
-		os << " role=" << StringMapValue(node_role_map, role);
+		os << " role=" << node_role_map.MapValue(role);
 
 	/* Loop head nodes exit if false/true */
 	if (role == NodeRoleHead)
