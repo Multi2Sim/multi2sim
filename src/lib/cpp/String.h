@@ -218,16 +218,16 @@ public:
 	/// a call to <tt>my_map.toString()</tt> returns string
 	/// <tt>{Fetch,Decode,Issue,Writeback}</tt>.
 	///
-	std::string toString();
+	std::string toString() const;
 
 	/// Obtain the string associated with \a value in the string map. If
 	/// value is not present, an empty string (<tt>""</tt>) is returned, and
 	/// optional argument \a error is set to \c true. If the value is found
 	/// in the string map, optional argument \a error is set to \c false.
-	const char *MapValue(int value, bool &error);
+	const char *MapValue(int value, bool &error) const;
 
 	/// Overloaded version of MapValue() that omits the \a error argument.
-	const char *MapValue(int value) {
+	const char *MapValue(int value) const {
 		bool error;
 		return MapValue(value, error);
 	}
@@ -236,20 +236,20 @@ public:
 	/// value is not present, an empty string (<tt>""</tt>) is returned, and
 	/// optional argument \a error is set to \c true. If the value is found
 	/// in the string map, optional argument \a error is set to \c false.
-	int MapString(const std::string &s, bool &error);
+	int MapString(const std::string &s, bool &error) const;
 
 	/// Overloaded version of MapString() that omits the \a error argument.
-	int MapString(const std::string &s) {
+	int MapString(const std::string &s) const {
 		bool error;
 		return MapString(s, error);
 	}
 
 	/// Same as MapString(), but case insensitive.
-	int MapStringCase(const std::string &s, bool &error);
+	int MapStringCase(const std::string &s, bool &error) const;
 
 	/// Overloaded version of MapStringCase() that omits the \a error
 	/// argument.
-	int MapStringCase(const std::string &s) {
+	int MapStringCase(const std::string &s) const {
 		bool error;
 		return MapStringCase(s, error);
 	}
@@ -272,7 +272,7 @@ public:
 	/// a call to <tt>my_flags.MapFlags(my_flags, 1|4|8)</tt> returns string
 	/// <tt>{Read|Modify|Execute}</tt>.
 	///
-	std::string MapFlags(unsigned flags);
+	std::string MapFlags(unsigned flags) const;
 };
 
 

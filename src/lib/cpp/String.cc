@@ -675,7 +675,7 @@ void StringMap::Dump(std::ostream &os) const
 	os << '}';
 }
 
-std::string StringMap::toString()
+std::string StringMap::toString() const
 {
 	std::ostringstream ss;
 	ss << *this;
@@ -683,7 +683,7 @@ std::string StringMap::toString()
 }
 	
 
-const char *StringMap::MapValue(int value, bool &error)
+const char *StringMap::MapValue(int value, bool &error) const
 {
 	// Find value
 	error = false;
@@ -696,7 +696,7 @@ const char *StringMap::MapValue(int value, bool &error)
 	return "<unknown>";
 }
 
-int StringMap::MapString(const std::string &s, bool &error)
+int StringMap::MapString(const std::string &s, bool &error) const
 {
 	// Find string
 	error = false;
@@ -709,7 +709,7 @@ int StringMap::MapString(const std::string &s, bool &error)
 	return 0;
 }
 
-int StringMap::MapStringCase(const std::string &s, bool &error)
+int StringMap::MapStringCase(const std::string &s, bool &error) const
 {
 	// Find string
 	error = false;
@@ -723,7 +723,7 @@ int StringMap::MapStringCase(const std::string &s, bool &error)
 }
 
 
-std::string StringMap::MapFlags(unsigned flags)
+std::string StringMap::MapFlags(unsigned flags) const
 {
 	std::stringstream s;
 	std::string comma;

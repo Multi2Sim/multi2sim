@@ -24,6 +24,7 @@
 #include <memory>
 #include <iostream>
 #include <unordered_map>
+#include <list>
 #include <vector>
 
 #include "String.h"
@@ -52,7 +53,12 @@ private:
 	std::string name;
 	int num_args;
 	std::string help;
+
+	// True if option was specified by the user
 	bool present;
+
+	// True if option is incompatible with any other option
+	bool incompatible;
 
 public:
 
@@ -67,7 +73,8 @@ public:
 	CommandLineOption(Type type, const std::string &name, int num_args,
 			const std::string &help) :
 			type(type), name(name), num_args(num_args),
-			help(help), present(false)
+			help(help), present(false),
+			incompatible(false)
 		{ }
 
 	/// Virtual destructor to make class polymorphic.
@@ -85,6 +92,13 @@ public:
 
 	/// Return the number of arguments that the option expects
 	int getNumArguments() const { return num_args; }
+
+	/// Make option incompatible with any other option.
+	void setIncompatible() { incompatible = true; }
+
+	/// Return whether the option has been labeled as incompatible with any
+	/// other option.
+	bool isIncompatible() { return incompatible; }
 
 	/// Dump help message related with this option
 	void DumpHelp(std::ostream &os) const;
@@ -172,11 +186,11 @@ public:
 class CommandLineOptionEnum : public CommandLineOption
 {
 	int *var;
-	StringMap &map;
+	const StringMap &map;
 public:
 	/// Constructor
 	CommandLineOptionEnum(const std::string &name, int *var,
-			StringMap map, const std::string &help)
+			const StringMap &map, const std::string &help)
 		: CommandLineOption(TypeEnum, name, 1, help),
 		var(var), map(map) { }
 	
@@ -201,11 +215,11 @@ class CommandLine
 	// Arguments left after removing program name and command-line options
 	std::vector<std::string> args;
 
-	// Hash table of command-line options
+	// Hash table of registered command-line options.
 	std::unordered_map<std::string, CommandLineOption *> option_table;
 
-	// Sequential list of command-line options. We keep the sequential order
-	// of registration to show an organized help message
+	// Sequential list of registered command-line options. We keep the
+	// sequential order of registration to show an organized help message.
 	std::vector<std::unique_ptr<CommandLineOption>> option_list;
 
 	// Register a newly created command-line option. The dynamically created
@@ -306,6 +320,14 @@ public:
 				(long long *) &var, help));
 	}
 
+	void RegisterEnum(const std::string &name, int &var,
+			const StringMap &map, const std::string &help) {
+		Register(new CommandLineOptionEnum(name, &var, map, help));
+	}
+
+	/// Make option \a name incompatible with any other option.
+	void setIncompatible(const std::string &name);
+	
 	/// Dump help for all registered command-line options.
 	void Help(std::ostream &os = std::cout);
 

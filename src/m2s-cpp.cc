@@ -69,10 +69,24 @@ void main_cpp(int argc, char **argv)
 	bool m2s_show_help = false;
 	command_line.Register("--help", m2s_show_help,
 			"Show this help message.");
+	command_line.setIncompatible("--help");
 
 	std::string x86_disasm_file;
 	command_line.RegisterString("--x86-disasm", x86_disasm_file,
 			"Disassemble x86 ELF binary.");
+
+	enum SimKind {
+		SimKindInvalid = 0,
+		SimKindFunctional,
+		SimKindDetailed
+	};
+	StringMap sim_kind_map = {
+		{ "functional", SimKindFunctional },
+		{ "detailed", SimKindDetailed }
+	};
+	int x86_sim_kind = SimKindFunctional;
+	command_line.RegisterEnum("--x86-sim", x86_sim_kind, sim_kind_map,
+			"Level of accuracy of x86 simulation.");
 
 	// Process command line. Return to C version of Multi2Sim if a
 	// command-line option was not recognized.

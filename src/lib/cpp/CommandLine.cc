@@ -38,7 +38,8 @@ void CommandLineOption::Help(std::ostream &os) const
 	// Description
 	os << "\n\n" << StringParagraph(help, 8, 8) << '\n';
 }
-	
+
+
 void CommandLineOptionBool::Read(int argc, char **argv, int index)
 {
 	// Checks
@@ -93,6 +94,24 @@ void CommandLineOptionInt64::Read(int argc, char **argv, int index)
 }
 
 
+void CommandLineOptionEnum::Read(int argc, char **argv, int index)
+{
+	// Checks
+	assert(index < argc - 1);
+	assert(argv[index] == getName());
+
+	// Read value
+	bool error;
+	*var = map.MapString(argv[index + 1], error);
+	if (error)
+		fatal("'%s' is not a valid value of option '%s'.\n"
+				"Possible values are %s.",
+				argv[index + 1],
+				getName().c_str(),
+				map.toString().c_str());
+}
+
+
 void CommandLine::Register(CommandLineOption *option)
 {
 	// Command-line must not have been processed yet
@@ -127,6 +146,20 @@ void CommandLine::Help(std::ostream &os)
 }
 
 
+void CommandLine::setIncompatible(const std::string &name)
+{
+	// Find option
+	auto it = option_table.find(name);
+	if (it == option_table.end())
+		panic("%s: option '%s' has not been registered",
+				__FUNCTION__, name.c_str());
+	
+	// Set incompatibility
+	CommandLineOption *option = it->second;
+	option->setIncompatible();
+}
+
+
 bool CommandLine::Process(bool fatal_on_bad_option)
 {
 	// Processed
@@ -139,6 +172,7 @@ bool CommandLine::Process(bool fatal_on_bad_option)
 
 	// Process command-line options
 	int index;
+	std::unordered_map<std::string, CommandLineOption *> options;
 	for (index = 1; index < argc; index++)
 	{
 		// No more command-line options
@@ -165,11 +199,31 @@ bool CommandLine::Process(bool fatal_on_bad_option)
 					option->getName().c_str(),
 					option->getNumArguments());
 
+		// Check if option was already specified
+		if (options.find(argv[index]) != options.end())
+			fatal("options '%s' found multiple times",
+					option->getName().c_str());
+		options[argv[index]] = option;
+
 		// Process command-line option
 		option->Read(argc, argv, index);
 
 		// Consume extra arguments
 		index += option->getNumArguments();
+	}
+
+	// If the user specified more than one option, check that none of them
+	// has been defines as incompatible.
+	if (options.size() > 1)
+	{
+		for (auto &it : options)
+		{
+			CommandLineOption *option = it.second;
+			if (option->isIncompatible())
+				fatal("option '%s' is incompatible with any "
+						"other option.",
+						option->getName().c_str());
+		}
 	}
 
 	// Save rest of the arguments
