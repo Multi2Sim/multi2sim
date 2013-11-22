@@ -20,6 +20,7 @@
 #include <cstdlib>
 #include <iostream>
 
+#include <arch/x86/asm/Asm.h>
 #include <lib/cpp/CommandLine.h>
 #include <lib/cpp/Misc.h>
 
@@ -69,6 +70,10 @@ void main_cpp(int argc, char **argv)
 	command_line.Register("--help", m2s_show_help,
 			"Show this help message.");
 
+	std::string x86_disasm_file;
+	command_line.RegisterString("--x86-disasm", x86_disasm_file,
+			"Disassemble x86 ELF binary.");
+
 	// Process command line. Return to C version of Multi2Sim if a
 	// command-line option was not recognized.
 	if (!command_line.Process(false))
@@ -82,6 +87,14 @@ void main_cpp(int argc, char **argv)
 	if (m2s_show_help)
 	{
 		command_line.Help(std::cout);
+		exit(0);
+	}
+
+	// x86 disassembler
+	if (!x86_disasm_file.empty())
+	{
+		x86::Asm as;
+		as.DisassembleBinary(x86_disasm_file);
 		exit(0);
 	}
 

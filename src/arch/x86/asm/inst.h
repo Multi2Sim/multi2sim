@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef X86_INST_H
-#define X86_INST_H
+#ifndef ARCH_X86_ASM_INST_OLD_H
+#define ARCH_X86_ASM_INST_OLD_H
 
 #include <stdio.h>
 
