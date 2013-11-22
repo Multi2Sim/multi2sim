@@ -30,8 +30,7 @@ namespace llvm2si
 StringMap symbol_type_map =
 {
 	{ "vreg", SymbolVectorRegister },
-	{ "sreg", SymbolScalarRegister },
-	{ 0, 0 }
+	{ "sreg", SymbolScalarRegister }
 };
 
 
@@ -39,7 +38,7 @@ void Symbol::Dump(std::ostream &os)
 {
 	/* Basic info */
 	os << "name = '" << name << "', "
-			<< "type = " << StringMapValue(symbol_type_map, type)
+			<< "type = " << symbol_type_map.MapValue(type)
 			<< ", reg = " << reg;
 
 	/* UAV index */

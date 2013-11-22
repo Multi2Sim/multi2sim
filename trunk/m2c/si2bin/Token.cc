@@ -99,9 +99,7 @@ StringMap token_type_map =
 	{ "\%mimg_dug_series_srsrc", TokenMimgDugSeriesSrsrc },
 	{ "\%mimg_dug_series_ssamp", TokenMimgDugSeriesSsamp },
 	{ "\%tgt", TokenTgt },
-	{ "\%exp_vsrcs", TokenExpVSrcs },
-
-	{ 0, 0 }
+	{ "\%exp_vsrcs", TokenExpVSrcs }
 };
 
 
@@ -383,7 +381,7 @@ bool Token::IsArgAllowed(Arg *arg)
 	default:
 		panic("%s: unsupported token (%s)",
 				__FUNCTION__,
-				StringMapValue(token_type_map, type));
+				token_type_map.MapValue(type));
 		return 0;
 	}
 }

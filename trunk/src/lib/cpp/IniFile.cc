@@ -374,13 +374,13 @@ void IniFile::WriteDouble(const std::string &section, const std::string &var,
 
 
 void IniFile::WriteEnum(const std::string &section, const std::string &var,
-		int value, StringMap map)
+		int value, StringMap &map)
 {
 	std::string s;
 	bool error;
 
 	// Translate value
-	s = misc::StringMapValue(map, value, error);
+	s = map.MapValue(value, error);
 	if (error)
 		fatal("%s: invalid value for enumeration (%d)",
 				__FUNCTION__, value);
@@ -511,7 +511,7 @@ double IniFile::ReadDouble(const std::string &section,
 
 
 int IniFile::ReadEnum(const std::string &section, const std::string &var,
-		StringMap map, int def)
+		StringMap &map, int def)
 {
 	std::string s;
 
@@ -524,7 +524,7 @@ int IniFile::ReadEnum(const std::string &section, const std::string &var,
 		return def;
 	
 	// Convert
-	value = StringMapStringCase(map, s.c_str(), error);
+	value = map.MapStringCase(s, error);
 	if (!error)
 		return value;
 
@@ -532,7 +532,7 @@ int IniFile::ReadEnum(const std::string &section, const std::string &var,
 	fatal("%s: section [%s], variable '%s', invalid value '%s'\n"
 			"\tPossible values are %s",
 			path.c_str(), section.c_str(), var.c_str(), s.c_str(),
-			StringMapGetValues(map).c_str());
+			map.toString().c_str());
 	return 0;
 }
 

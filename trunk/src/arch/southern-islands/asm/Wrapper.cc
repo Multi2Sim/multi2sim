@@ -34,10 +34,10 @@ using namespace SI;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-struct StringMapWrap *si_inst_special_reg_map = (StringMapWrap *) inst_special_reg_map;
-struct StringMapWrap *si_inst_buf_data_format_map = (StringMapWrap *) inst_buf_data_format_map;
-struct StringMapWrap *si_inst_buf_num_format_map = (StringMapWrap *) inst_buf_num_format_map;
-struct StringMapWrap *si_inst_format_map = (StringMapWrap *) inst_format_map;
+struct StringMapWrap *si_inst_special_reg_map = (StringMapWrap *) &inst_special_reg_map;
+struct StringMapWrap *si_inst_buf_data_format_map = (StringMapWrap *) &inst_buf_data_format_map;
+struct StringMapWrap *si_inst_buf_num_format_map = (StringMapWrap *) &inst_buf_num_format_map;
+struct StringMapWrap *si_inst_format_map = (StringMapWrap *) &inst_format_map;
 
 struct SIInstWrap *SIInstWrapCreate(SIAsmWrap *as)
 {
@@ -174,10 +174,10 @@ void *SIAsmWrapGetInstInfo(struct SIAsmWrap *self, int index)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-StringMapWrap *si_binary_machine_map = (StringMapWrap *) binary_machine_map;
-StringMapWrap *si_binary_note_map = (StringMapWrap *) binary_note_map;
-StringMapWrap *si_binary_prog_info_map = (StringMapWrap *) binary_prog_info_map;
-StringMapWrap *si_binary_user_data_map = (StringMapWrap *) binary_user_data_map;
+StringMapWrap *si_binary_machine_map = (StringMapWrap *) &binary_machine_map;
+StringMapWrap *si_binary_note_map = (StringMapWrap *) &binary_note_map;
+StringMapWrap *si_binary_prog_info_map = (StringMapWrap *) &binary_prog_info_map;
+StringMapWrap *si_binary_user_data_map = (StringMapWrap *) &binary_user_data_map;
 
 int SIBinaryDictEntryGetNumVgpr(struct SIBinaryDictEntry *self)
 {

@@ -172,7 +172,7 @@ public:
 	/// Write a value that is member of the enumeration represented in \a
 	/// map.
 	void WriteEnum(const std::string &section, const std::string &var,
-			int value, misc::StringMap map);
+			int value, misc::StringMap &map);
 
 	/// Write a variable of type pointer
 	void WritePointer(const std::string &section, const std::string &var,
@@ -207,7 +207,7 @@ public:
 	/// variable was not present, return the default value specified in \a
 	/// def.
 	int ReadEnum(const std::string &section, const std::string &var,
-			misc::StringMap map, int def = 0);
+			misc::StringMap &map, int def = 0);
 
 	/// Read a pointer from a file, represented as an hexadecimal number,
 	/// with the optional <tt>0x</tt> prefix.

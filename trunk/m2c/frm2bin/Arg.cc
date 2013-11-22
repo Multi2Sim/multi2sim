@@ -64,8 +64,7 @@ StringMap ArgSpecialRegisterMap =
 	{ "SR_GtMask",	Fermi::InstSRegGtMask},
 	{ "SR_GeMask",	Fermi::InstSRegGeMask},
 	{ "SR_ClockLo",	Fermi::InstSRegClockLo},
-	{ "SR_ClockHi",	Fermi::InstSRegClockHi},
-	{0, 0}
+	{ "SR_ClockHi",	Fermi::InstSRegClockHi}
 };
 
 StringMap ArgCcopMap =
@@ -102,8 +101,7 @@ StringMap ArgCcopMap =
 	{ "FCSM_TR", ArgCcopType::arg_ccop_fcsm_tr},
 	{ "FCSM_MX", ArgCcopType::arg_ccop_fcsm_mx},
 	{ "RLE", ArgCcopType::arg_ccop_rle},
-	{ "RGT", ArgCcopType::arg_ccop_rgt},
-	{0, 0}
+	{ "RGT", ArgCcopType::arg_ccop_rgt}
 };
 
 StringMap ModLogicTypeMap=
@@ -111,8 +109,7 @@ StringMap ModLogicTypeMap=
 	{ "invalid", ModLogicType::logic_invalid},
 	{ "AND", ModLogicType::logic_and},
 	{ "OR", ModLogicType::logic_or},
-	{ "XOR", ModLogicType::logic_xor},
-	{0, 0}
+	{ "XOR", ModLogicType::logic_xor}
 };
 
 StringMap ModDataWidthMap=
@@ -123,8 +120,7 @@ StringMap ModDataWidthMap=
 	{ "U32", ModDataWidthType::width_u32},
 	{ "S32", ModDataWidthType::width_s32},
 	{ "U64", ModDataWidthType::width_u64},
-	{ "S64", ModDataWidthType::width_u64},
-	{0, 0}
+	{ "S64", ModDataWidthType::width_u64}
 };
 
 StringMap ModCompMap=
@@ -143,8 +139,7 @@ StringMap ModCompMap=
 	{ "LEU", ModCompType::modcomp_leu},
 	{ "GTU", ModCompType::modcomp_gtu},
 	{ "GEU", ModCompType::modcomp_geu},
-	{ "NEU", ModCompType::modcomp_neu},
-	{0, 0}
+	{ "NEU", ModCompType::modcomp_neu}
 };
 
 StringMap Mod0BTypeMap=

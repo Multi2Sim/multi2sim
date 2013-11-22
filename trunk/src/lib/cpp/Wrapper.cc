@@ -30,8 +30,8 @@ using namespace misc;
 
 const char *StringMapValueWrap(StringMapWrap *map, int value)
 {
-	StringMapItem *item = (StringMapItem *) map;
-	return StringMapValue(item, value);
+	StringMap *_map = (StringMap *) map;
+	return _map->MapValue(value);
 }
 
 
@@ -40,8 +40,8 @@ const char *StringMapValueErrWrap(StringMapWrap *map, int value, int *error_ptr)
 	const char *result;
 	bool error;
 
-	StringMapItem *item = (StringMapItem *) map;
-	result = StringMapValue(item, value, error);
+	StringMap *_map = (StringMap *) map;
+	result = _map->MapValue(value, error);
 	if (error_ptr)
 		*error_ptr = error;
 	return result;
@@ -50,8 +50,8 @@ const char *StringMapValueErrWrap(StringMapWrap *map, int value, int *error_ptr)
 
 int StringMapStringWrap(StringMapWrap *map, const char *text)
 {
-	StringMapItem *item = (StringMapItem *) map;
-	return StringMapString(item, text);
+	StringMap *_map = (StringMap *) map;
+	return _map->MapString(text);
 }
 
 
@@ -60,8 +60,8 @@ int StringMapStringErrWrap(StringMapWrap *map, const char *text, int *error_ptr)
 	int result;
 	bool error;
 
-	StringMapItem *item = (StringMapItem *) map;
-	result = StringMapString(item, text, error);
+	StringMap *_map = (StringMap *) map;
+	result = _map->MapString(text, error);
 	if (error_ptr)
 		*error_ptr = error;
 	return result;
@@ -70,8 +70,8 @@ int StringMapStringErrWrap(StringMapWrap *map, const char *text, int *error_ptr)
 
 int StringMapStringCaseWrap(StringMapWrap *map, const char *text)
 {
-	StringMapItem *item = (StringMapItem *) map;
-	return StringMapStringCase(item, text);
+	StringMap *_map = (StringMap *) map;
+	return _map->MapStringCase(text);
 }
 
 
@@ -80,8 +80,8 @@ int StringMapStringCaseErrWrap(StringMapWrap *map, const char *text, int *error_
 	int result;
 	bool error;
 
-	StringMapItem *item = (StringMapItem *) map;
-	result = StringMapStringCase(item, text, error);
+	StringMap *_map = (StringMap *) map;
+	result = _map->MapStringCase(text, error);
 	if (error_ptr)
 		*error_ptr = error;
 	return result;
@@ -90,16 +90,16 @@ int StringMapStringCaseErrWrap(StringMapWrap *map, const char *text, int *error_
 
 void StringMapFlagsWrap(StringMapWrap *map, unsigned int flags, char *text, int size)
 {
-	StringMapItem *item = (StringMapItem *) map;
-	std::string s = StringMapFlags(item, flags);
+	StringMap *_map = (StringMap *) map;
+	std::string s = _map->MapFlags(flags);
 	snprintf(text, size, "%s", s.c_str());
 }
 
 
 void StringMapGetValuesWrap(StringMapWrap *map, char *text, int size)
 {
-	StringMapItem *item = (StringMapItem *) map;
-	std::string s = StringMapGetValues(item);
+	StringMap *_map = (StringMap *) map;
+	std::string s = _map->toString();
 	snprintf(text, size, "%s", s.c_str());
 }
 
