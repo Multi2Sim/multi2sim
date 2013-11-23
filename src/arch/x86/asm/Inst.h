@@ -117,26 +117,6 @@ enum InstFlag
 };
 
 
-/// XMM register value
-union InstXMMReg
-{
-	unsigned char as_uchar[16];
-	char as_char[16];
-
-	unsigned short as_ushort[8];
-	short as_short[8];
-
-	unsigned int as_uint[4];
-	int as_int[4];
-
-	unsigned long long as_uint64[2];
-	long long as_int64[2];
-
-	float as_float[4];
-	double as_double[2];
-};
-
-
 /// This structure represents information for one x86 instruction
 struct InstInfo
 {

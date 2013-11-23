@@ -21,6 +21,7 @@
 #include <iostream>
 
 #include <arch/x86/asm/Asm.h>
+#include <arch/x86/emu/XMMValue.h>
 #include <lib/cpp/CommandLine.h>
 #include <lib/cpp/Misc.h>
 
