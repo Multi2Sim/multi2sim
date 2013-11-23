@@ -22,11 +22,26 @@
 
 #include <cassert>
 
+#include <lib/cpp/CommandLine.h>
+
 #include "Inst.h"
 
 
 namespace x86
 {
+
+
+class AsmConfig : public misc::CommandLineConfig
+{
+	std::string path;
+public:
+	/// Register command-line options related with x86 disassembler
+	void Register(misc::CommandLine &command_line);
+
+	/// Process command-line options related with the x86 disassembler
+	void Process();
+};
+
 
 class Asm
 {
@@ -96,6 +111,8 @@ public:
 	void DisassembleBinary(const std::string &path,
 			std::ostream &os = std::cout) const;
 
+	/// Configuration for x86 disassembler
+	static AsmConfig config;
 };
 
 
