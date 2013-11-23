@@ -43,7 +43,19 @@ libemu_a_SOURCES = \
 	syscall.h \
 	\
 	uinst.c \
-	uinst.h
+	uinst.h \
+	\
+	\
+	\
+	\
+	Extended.cc \
+	Extended.h \
+	\
+	Regs.cc \
+	Regs.h \
+	\
+	XMMValue.cc \
+	XMMValue.h
 
 INCLUDES = @M2S_INCLUDES@
 
