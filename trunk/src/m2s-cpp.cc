@@ -35,11 +35,16 @@ void main_cpp(int argc, char **argv)
 	CommandLine command_line(argc, argv);
 	command_line.setErrorMessage("Please type 'm2s --help' for a list of "
 			"valid Multi2Sim command-line options.\n");
-
-	// Command-line option to run C++ version of Multi2Sim
-	bool cpp_multi2sim = false;
-	command_line.Register("--cpp", cpp_multi2sim,
-			"Run C++ version of Multi2Sim");
+	command_line.setHelp("Syntax:"
+			"\n\n"
+			"$ m2s [<options>] [<exe>] [<args>]"
+			"\n\n"
+			"Multi2Sim's command line can take a program "
+			"executable <exe> as an argument, given as a binary "
+			"file in any of the supported CPU architectures, and "
+			"optionally followed by its arguments <args>. The "
+			"following list of command-line options can be used "
+			"for <options>:");
 
 	// Register three sample command-line options
 	long long m2s_max_time = 0;
@@ -66,15 +71,6 @@ void main_cpp(int argc, char **argv)
 			"available on systems with support for GTK 3.0 or "
 			"higher.");
 
-	bool m2s_show_help = false;
-	command_line.Register("--help", m2s_show_help,
-			"Show this help message.");
-	command_line.setIncompatible("--help");
-
-	std::string x86_disasm_file;
-	command_line.RegisterString("--x86-disasm", x86_disasm_file,
-			"Disassemble x86 ELF binary.");
-
 	enum SimKind {
 		SimKindInvalid = 0,
 		SimKindFunctional,
@@ -87,6 +83,9 @@ void main_cpp(int argc, char **argv)
 	int x86_sim_kind = SimKindFunctional;
 	command_line.RegisterEnum("--x86-sim", x86_sim_kind, sim_kind_map,
 			"Level of accuracy of x86 simulation.");
+	
+	// Register module configurations
+	command_line.AddConfig(x86::Asm::config);
 
 	// Process command line. Return to C version of Multi2Sim if a
 	// command-line option was not recognized.
@@ -94,23 +93,8 @@ void main_cpp(int argc, char **argv)
 		return;
 
 	// Finish if C++ version of Multi2Sim is not activated
-	if (!cpp_multi2sim)
+	if (!command_line.getUseCpp())
 		return;
-
-	// Show help message
-	if (m2s_show_help)
-	{
-		command_line.Help(std::cout);
-		exit(0);
-	}
-
-	// x86 disassembler
-	if (!x86_disasm_file.empty())
-	{
-		x86::Asm as;
-		as.DisassembleBinary(x86_disasm_file);
-		exit(0);
-	}
 
 	// Multi2Sim C++
 	std::cerr << "; Multi2Sim C++\n";
