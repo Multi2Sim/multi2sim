@@ -33,14 +33,20 @@ namespace misc
  * Inline bit manipulation
  */
 
-inline unsigned GetBits32(unsigned x, int high, int low)
-{
+inline unsigned GetBits32(unsigned x, int high, int low) {
 	return (x >> low) & ((1u << (high - low + 1)) - 1);
 }
 
-inline unsigned long long GetBits64(unsigned long long x, int high, int low)
-{
+inline bool GetBit32(unsigned x, int bit) {
+	return x & (1u << bit);
+}
+
+inline unsigned long long GetBits64(unsigned long long x, int high, int low) {
 	return (x >> low) & ((1ull << (high - low + 1)) - 1);
+}
+
+inline bool GetBit64(unsigned long long x, int bit) {
+	return x & (1ull << bit);
 }
 
 inline unsigned ClearBits32(unsigned x, int high, int low)
@@ -91,14 +97,12 @@ void panic(const char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
  */
 
 
-inline bool InRange(int value, int min, int max)
-{
+inline bool InRange(int value, int min, int max) {
 	return value >= min && value <= max;
 }
 
 
-template<class X, class Y> inline X cast(const Y &val)
-{
+template<class X, class Y> inline X cast(const Y &val) {
 	X result = dynamic_cast<X>(val);
 	assert(result && "cast<Ty>() argument of incompatible type");
 	return result;
@@ -106,6 +110,7 @@ template<class X, class Y> inline X cast(const Y &val)
 
 
 
-} /* namespace misc */
+} // namespace misc
 
 #endif
+
