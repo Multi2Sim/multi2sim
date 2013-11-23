@@ -17,9 +17,12 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <cstring>
+
 #include "CommandLine.h"
 #include "Misc.h"
 #include "String.h"
+
 
 using namespace misc;
 
@@ -138,16 +141,25 @@ void CommandLine::Help(std::ostream &os)
 	// Command-line must have been processed
 	assert(processed);
 
-	// Print help message for every option
-	for (auto &option : option_list)
+	// Header
+	if (!help.empty())
 	{
-		option->Help(os);
+		os << '\n';
+		os << StringParagraph(help);
 	}
+
+	// Print help message for every option
+	os << '\n';
+	for (auto &option : option_list)
+		option->Help(os);
 }
 
 
 void CommandLine::setIncompatible(const std::string &name)
 {
+	// Command-line must not have been processed yet
+	assert(!processed);
+
 	// Find option
 	auto it = option_table.find(name);
 	if (it == option_table.end())
@@ -157,6 +169,19 @@ void CommandLine::setIncompatible(const std::string &name)
 	// Set incompatibility
 	CommandLineOption *option = it->second;
 	option->setIncompatible();
+}
+
+
+void CommandLine::AddConfig(CommandLineConfig &config)
+{
+	// Command-line must not have been processed yet
+	assert(!processed);
+
+	// Add configurable module to list
+	configs.push_back(&config);
+
+	// Register command-line options for this module
+	config.Register(*this);
 }
 
 
@@ -178,6 +203,20 @@ bool CommandLine::Process(bool fatal_on_bad_option)
 		// No more command-line options
 		if (!StringPrefix(argv[index], "-"))
 			break;
+
+		// Special option --cpp
+		if (!strcmp(argv[index], "--cpp"))
+		{
+			use_cpp = true;
+			continue;
+		}
+
+		// Special option --help
+		if (!strcmp(argv[index], "--help"))
+		{
+			show_help = true;
+			continue;
+		}
 
 		// Find command-line option
 		auto it = option_table.find(argv[index]);
@@ -229,6 +268,20 @@ bool CommandLine::Process(bool fatal_on_bad_option)
 	// Save rest of the arguments
 	for (; index < argc; index++)
 		args.push_back(argv[index]);
+
+	// Option --help was specified
+	if (use_cpp && show_help)
+	{
+		if (args.size() || options.size())
+			fatal("option '--help' is incompatible with any other"
+					"command-line option or argument.");
+		Help();
+		exit(0);
+	}
+
+	// Process all module configurations
+	for (CommandLineConfig *config : configs)
+		config->Process();
 
 	// Command line successfully processed
 	return true;

@@ -165,320 +165,255 @@ Asm::Asm()
 	dec_table[AsmOpcode_A].next_table_low = 61;
 	dec_table[AsmOpcode_A].next_table_high = 63;
 
-	dec_table[AsmOpcode_B].next_table =
-		dec_table_b;
+	dec_table[AsmOpcode_B].next_table = dec_table_b;
 	dec_table[AsmOpcode_B].next_table_low = 62;
 	dec_table[AsmOpcode_B].next_table_high = 63;
 
-	dec_table[AsmOpcode_C].next_table =
-		dec_table_c;
+	dec_table[AsmOpcode_C].next_table = dec_table_c;
 	dec_table[AsmOpcode_C].next_table_low = 62;
 	dec_table[AsmOpcode_C].next_table_high = 63;
 
-	dec_table_a[AsmOpcode_A_A].next_table =
-		dec_table_a_a;
+	dec_table_a[AsmOpcode_A_A].next_table = dec_table_a_a;
 	dec_table_a[AsmOpcode_A_A].next_table_low = 55;
 	dec_table_a[AsmOpcode_A_A].next_table_high = 60;
 
-	dec_table_b[AsmOpcode_B_A].next_table =
-		dec_table_b_a;
+	dec_table_b[AsmOpcode_B_A].next_table = dec_table_b_a;
 	dec_table_b[AsmOpcode_B_A].next_table_low = 61;
 	dec_table_b[AsmOpcode_B_A].next_table_high = 61;
 
-	dec_table_b[AsmOpcode_B_B].next_table =
-		dec_table_b_b;
+	dec_table_b[AsmOpcode_B_B].next_table = dec_table_b_b;
 	dec_table_b[AsmOpcode_B_B].next_table_low = 60;
 	dec_table_b[AsmOpcode_B_B].next_table_high = 61;
 
-	dec_table_b[AsmOpcode_B_C].next_table =
-		dec_table_b_c;
+	dec_table_b[AsmOpcode_B_C].next_table = dec_table_b_c;
 	dec_table_b[AsmOpcode_B_C].next_table_low = 60;
 	dec_table_b[AsmOpcode_B_C].next_table_high = 61;
 
-	dec_table_b[AsmOpcode_B_D].next_table =
-		dec_table_b_d;
+	dec_table_b[AsmOpcode_B_D].next_table = dec_table_b_d;
 	dec_table_b[AsmOpcode_B_D].next_table_low = 60;
 	dec_table_b[AsmOpcode_B_D].next_table_high = 61;
 
-	dec_table_b_c[AsmOpcode_B_C_A].next_table =
-		dec_table_b_c_a;
+	dec_table_b_c[AsmOpcode_B_C_A].next_table = dec_table_b_c_a;
 	dec_table_b_c[AsmOpcode_B_C_A].next_table_low = 58;
 	dec_table_b_c[AsmOpcode_B_C_A].next_table_high = 58;
 
-	dec_table_b_c[AsmOpcode_B_C_B].next_table =
-		dec_table_b_c_b;
+	dec_table_b_c[AsmOpcode_B_C_B].next_table = dec_table_b_c_b;
 	dec_table_b_c[AsmOpcode_B_C_B].next_table_low = 58;
 	dec_table_b_c[AsmOpcode_B_C_B].next_table_high = 58;
 
-	dec_table_b_c[AsmOpcode_B_C_C].next_table =
-		dec_table_b_c_c;
+	dec_table_b_c[AsmOpcode_B_C_C].next_table = dec_table_b_c_c;
 	dec_table_b_c[AsmOpcode_B_C_C].next_table_low = 58;
 	dec_table_b_c[AsmOpcode_B_C_C].next_table_high = 58;
 
-	dec_table_b_c[AsmOpcode_B_C_D].next_table =
-		dec_table_b_c_d;
+	dec_table_b_c[AsmOpcode_B_C_D].next_table = dec_table_b_c_d;
 	dec_table_b_c[AsmOpcode_B_C_D].next_table_low = 57;
 	dec_table_b_c[AsmOpcode_B_C_D].next_table_high = 58;
 
-	dec_table_b_c_d[AsmOpcode_B_C_D_A].next_table =
-		dec_table_b_c_d_a;
+	dec_table_b_c_d[AsmOpcode_B_C_D_A].next_table = dec_table_b_c_d_a;
 	dec_table_b_c_d[AsmOpcode_B_C_D_A].next_table_low = 55;
 	dec_table_b_c_d[AsmOpcode_B_C_D_A].next_table_high = 56;
 
-	dec_table_b_c_d[AsmOpcode_B_C_D_B].next_table =
-		dec_table_b_c_d_b;
+	dec_table_b_c_d[AsmOpcode_B_C_D_B].next_table = dec_table_b_c_d_b;
 	dec_table_b_c_d[AsmOpcode_B_C_D_B].next_table_low = 55;
 	dec_table_b_c_d[AsmOpcode_B_C_D_B].next_table_high = 56;
 
-	dec_table_b_c_d[AsmOpcode_B_C_D_C].next_table =
-		dec_table_b_c_d_c;
+	dec_table_b_c_d[AsmOpcode_B_C_D_C].next_table = dec_table_b_c_d_c;
 	dec_table_b_c_d[AsmOpcode_B_C_D_C].next_table_low = 55;
 	dec_table_b_c_d[AsmOpcode_B_C_D_C].next_table_high = 56;
 
-	dec_table_b_c_d_c[AsmOpcode_B_C_D_C_A].next_table =
-		dec_table_b_c_d_c_a;
+	dec_table_b_c_d_c[AsmOpcode_B_C_D_C_A].next_table = dec_table_b_c_d_c_a;
 	dec_table_b_c_d_c[AsmOpcode_B_C_D_C_A].next_table_low = 54;
 	dec_table_b_c_d_c[AsmOpcode_B_C_D_C_A].next_table_high = 54;
 
-	dec_table_b_c_d_c[AsmOpcode_B_C_D_C_B].next_table =
-		dec_table_b_c_d_c_b;
+	dec_table_b_c_d_c[AsmOpcode_B_C_D_C_B].next_table = dec_table_b_c_d_c_b;
 	dec_table_b_c_d_c[AsmOpcode_B_C_D_C_B].next_table_low = 54;
 	dec_table_b_c_d_c[AsmOpcode_B_C_D_C_B].next_table_high = 54;
 
-	dec_table_b_c_d_c[AsmOpcode_B_C_D_C_C].next_table =
-		dec_table_b_c_d_c_c;
+	dec_table_b_c_d_c[AsmOpcode_B_C_D_C_C].next_table = dec_table_b_c_d_c_c;
 	dec_table_b_c_d_c[AsmOpcode_B_C_D_C_C].next_table_low = 54;
 	dec_table_b_c_d_c[AsmOpcode_B_C_D_C_C].next_table_high = 54;
 
-	dec_table_b_d[AsmOpcode_B_D_A].next_table =
-		dec_table_b_d_a;
+	dec_table_b_d[AsmOpcode_B_D_A].next_table = dec_table_b_d_a;
 	dec_table_b_d[AsmOpcode_B_D_A].next_table_low = 54;
 	dec_table_b_d[AsmOpcode_B_D_A].next_table_high = 58;
 
-
-
-	dec_table_c[AsmOpcode_C_A].next_table =
-		dec_table_c_a;
+	dec_table_c[AsmOpcode_C_A].next_table = dec_table_c_a;
 	dec_table_c[AsmOpcode_C_A].next_table_low = 60;
 	dec_table_c[AsmOpcode_C_A].next_table_high = 61;
 
-	dec_table_c[AsmOpcode_C_B_0].next_table =
-		dec_table_c_b;
+	dec_table_c[AsmOpcode_C_B_0].next_table = dec_table_c_b;
 	dec_table_c[AsmOpcode_C_B_0].next_table_low = 59;
 	dec_table_c[AsmOpcode_C_B_0].next_table_high = 62;
 
-	dec_table_c[AsmOpcode_C_B_1].next_table =
-		dec_table_c_b;
+	dec_table_c[AsmOpcode_C_B_1].next_table = dec_table_c_b;
 	dec_table_c[AsmOpcode_C_B_1].next_table_low = 59;
 	dec_table_c[AsmOpcode_C_B_1].next_table_high = 62;
 
-	dec_table_c[AsmOpcode_C_B_2].next_table =
-		dec_table_c_b;
+	dec_table_c[AsmOpcode_C_B_2].next_table = dec_table_c_b;
 	dec_table_c[AsmOpcode_C_B_2].next_table_low = 59;
 	dec_table_c[AsmOpcode_C_B_2].next_table_high = 62;
 
-	dec_table_c_a[AsmOpcode_C_A_A].next_table =
-		dec_table_c_a_a;
+	dec_table_c_a[AsmOpcode_C_A_A].next_table = dec_table_c_a_a;
 	dec_table_c_a[AsmOpcode_C_A_A].next_table_low = 59;
 	dec_table_c_a[AsmOpcode_C_A_A].next_table_high = 59;
 
-	dec_table_c_a[AsmOpcode_C_A_B].next_table =
-		dec_table_c_a_b;
+	dec_table_c_a[AsmOpcode_C_A_B].next_table = dec_table_c_a_b;
 	dec_table_c_a[AsmOpcode_C_A_B].next_table_low = 59;
 	dec_table_c_a[AsmOpcode_C_A_B].next_table_high = 59;
 
-	dec_table_c_b[AsmOpcode_C_B_A_0].next_table =
-		dec_table_c_b_a;
+	dec_table_c_b[AsmOpcode_C_B_A_0].next_table = dec_table_c_b_a;
 	dec_table_c_b[AsmOpcode_C_B_A_0].next_table_low = 58;
 	dec_table_c_b[AsmOpcode_C_B_A_0].next_table_high = 58;
 
-	dec_table_c_b[AsmOpcode_C_B_A_1].next_table =
-		dec_table_c_b_a;
+	dec_table_c_b[AsmOpcode_C_B_A_1].next_table = dec_table_c_b_a;
 	dec_table_c_b[AsmOpcode_C_B_A_1].next_table_low = 58;
 	dec_table_c_b[AsmOpcode_C_B_A_1].next_table_high = 58;
 
-	dec_table_c_b[AsmOpcode_C_B_B_0].next_table =
-		dec_table_c_b_b;
+	dec_table_c_b[AsmOpcode_C_B_B_0].next_table = dec_table_c_b_b;
 	dec_table_c_b[AsmOpcode_C_B_B_0].next_table_low = 58;
 	dec_table_c_b[AsmOpcode_C_B_B_0].next_table_high = 58;
 
-	dec_table_c_b[AsmOpcode_C_B_B_1].next_table =
-		dec_table_c_b_b;
+	dec_table_c_b[AsmOpcode_C_B_B_1].next_table = dec_table_c_b_b;
 	dec_table_c_b[AsmOpcode_C_B_B_1].next_table_low = 58;
 	dec_table_c_b[AsmOpcode_C_B_B_1].next_table_high = 58;
 
-	dec_table_c_b[AsmOpcode_C_B_C_0].next_table =
-		dec_table_c_b_c;
+	dec_table_c_b[AsmOpcode_C_B_C_0].next_table = dec_table_c_b_c;
 	dec_table_c_b[AsmOpcode_C_B_C_0].next_table_low = 57;
 	dec_table_c_b[AsmOpcode_C_B_C_0].next_table_high = 58;
 
-	dec_table_c_b[AsmOpcode_C_B_C_1].next_table =
-		dec_table_c_b_c;
+	dec_table_c_b[AsmOpcode_C_B_C_1].next_table = dec_table_c_b_c;
 	dec_table_c_b[AsmOpcode_C_B_C_1].next_table_low = 57;
 	dec_table_c_b[AsmOpcode_C_B_C_1].next_table_high = 58;
 
-	dec_table_c_b[AsmOpcode_C_B_D].next_table =
-		dec_table_c_b_d;
+	dec_table_c_b[AsmOpcode_C_B_D].next_table = dec_table_c_b_d;
 	dec_table_c_b[AsmOpcode_C_B_D].next_table_low = 54;
 	dec_table_c_b[AsmOpcode_C_B_D].next_table_high = 58;
 
-	dec_table_c_b[AsmOpcode_C_B_E_0].next_table =
-		dec_table_c_b_e;
+	dec_table_c_b[AsmOpcode_C_B_E_0].next_table = dec_table_c_b_e;
 	dec_table_c_b[AsmOpcode_C_B_E_0].next_table_low = 62;
 	dec_table_c_b[AsmOpcode_C_B_E_0].next_table_high = 63;
 
-	dec_table_c_b[AsmOpcode_C_B_E_1].next_table =
-		dec_table_c_b_e;
+	dec_table_c_b[AsmOpcode_C_B_E_1].next_table = dec_table_c_b_e;
 	dec_table_c_b[AsmOpcode_C_B_E_1].next_table_low = 62;
 	dec_table_c_b[AsmOpcode_C_B_E_1].next_table_high = 63;
 
-	dec_table_c_b[AsmOpcode_C_B_E_2].next_table =
-		dec_table_c_b_e;
+	dec_table_c_b[AsmOpcode_C_B_E_2].next_table = dec_table_c_b_e;
 	dec_table_c_b[AsmOpcode_C_B_E_2].next_table_low = 62;
 	dec_table_c_b[AsmOpcode_C_B_E_2].next_table_high = 63;
 
-	dec_table_c_b[AsmOpcode_C_B_E_3].next_table =
-		dec_table_c_b_e;
+	dec_table_c_b[AsmOpcode_C_B_E_3].next_table = dec_table_c_b_e;
 	dec_table_c_b[AsmOpcode_C_B_E_3].next_table_low = 62;
 	dec_table_c_b[AsmOpcode_C_B_E_3].next_table_high = 63;
 
-	dec_table_c_b[AsmOpcode_C_B_E_4].next_table =
-		dec_table_c_b_e;
+	dec_table_c_b[AsmOpcode_C_B_E_4].next_table = dec_table_c_b_e;
 	dec_table_c_b[AsmOpcode_C_B_E_4].next_table_low = 62;
 	dec_table_c_b[AsmOpcode_C_B_E_4].next_table_high = 63;
 
-	dec_table_c_b[AsmOpcode_C_B_E_5].next_table =
-		dec_table_c_b_e;
+	dec_table_c_b[AsmOpcode_C_B_E_5].next_table = dec_table_c_b_e;
 	dec_table_c_b[AsmOpcode_C_B_E_5].next_table_low = 62;
 	dec_table_c_b[AsmOpcode_C_B_E_5].next_table_high = 63;
 
-	dec_table_c_b[AsmOpcode_C_B_E_6].next_table =
-		dec_table_c_b_e;
+	dec_table_c_b[AsmOpcode_C_B_E_6].next_table = dec_table_c_b_e;
 	dec_table_c_b[AsmOpcode_C_B_E_6].next_table_low = 62;
 	dec_table_c_b[AsmOpcode_C_B_E_6].next_table_high = 63;
 
-	dec_table_c_b[AsmOpcode_C_B_E_7].next_table =
-		dec_table_c_b_e;
+	dec_table_c_b[AsmOpcode_C_B_E_7].next_table = dec_table_c_b_e;
 	dec_table_c_b[AsmOpcode_C_B_E_7].next_table_low = 62;
 	dec_table_c_b[AsmOpcode_C_B_E_7].next_table_high = 63;
 
-	dec_table_c_b_c[AsmOpcode_C_B_C_A].next_table =
-		dec_table_c_b_c_a;
+	dec_table_c_b_c[AsmOpcode_C_B_C_A].next_table = dec_table_c_b_c_a;
 	dec_table_c_b_c[AsmOpcode_C_B_C_A].next_table_low = 55;
 	dec_table_c_b_c[AsmOpcode_C_B_C_A].next_table_high = 56;
 
-	dec_table_c_b_c[AsmOpcode_C_B_C_B].next_table =
-		dec_table_c_b_c_b;
+	dec_table_c_b_c[AsmOpcode_C_B_C_B].next_table = dec_table_c_b_c_b;
 	dec_table_c_b_c[AsmOpcode_C_B_C_B].next_table_low = 55;
 	dec_table_c_b_c[AsmOpcode_C_B_C_B].next_table_high = 56;
 
-	dec_table_c_b_c[AsmOpcode_C_B_C_C].next_table =
-		dec_table_c_b_c_c;
+	dec_table_c_b_c[AsmOpcode_C_B_C_C].next_table = dec_table_c_b_c_c;
 	dec_table_c_b_c[AsmOpcode_C_B_C_C].next_table_low = 56;
 	dec_table_c_b_c[AsmOpcode_C_B_C_C].next_table_high = 55;
 
-	dec_table_c_b_c_c[AsmOpcode_C_B_C_C_A].next_table =
-		dec_table_c_b_c_c_a;
+	dec_table_c_b_c_c[AsmOpcode_C_B_C_C_A].next_table = dec_table_c_b_c_c_a;
 	dec_table_c_b_c_c[AsmOpcode_C_B_C_C_A].next_table_low = 54;
 	dec_table_c_b_c_c[AsmOpcode_C_B_C_C_A].next_table_high = 54;
 
-	dec_table_c_b_c_c[AsmOpcode_C_B_C_C_B].next_table =
-		dec_table_c_b_c_c_b;
+	dec_table_c_b_c_c[AsmOpcode_C_B_C_C_B].next_table = dec_table_c_b_c_c_b;
 	dec_table_c_b_c_c[AsmOpcode_C_B_C_C_B].next_table_low = 54;
 	dec_table_c_b_c_c[AsmOpcode_C_B_C_C_B].next_table_high = 54;
 
-	dec_table_c_b_c_c[AsmOpcode_C_B_C_C_C].next_table =
-		dec_table_c_b_c_c_c;
+	dec_table_c_b_c_c[AsmOpcode_C_B_C_C_C].next_table = dec_table_c_b_c_c_c;
 	dec_table_c_b_c_c[AsmOpcode_C_B_C_C_C].next_table_low = 54;
 	dec_table_c_b_c_c[AsmOpcode_C_B_C_C_C].next_table_high = 54;
 
-	dec_table_c_b_e[AsmOpcode_C_B_E_A].next_table =
-		dec_table_c_b_e_a;
+	dec_table_c_b_e[AsmOpcode_C_B_E_A].next_table = dec_table_c_b_e_a;
 	dec_table_c_b_e[AsmOpcode_C_B_E_A].next_table_low = 59;
 	dec_table_c_b_e[AsmOpcode_C_B_E_A].next_table_high = 61;
 
-	dec_table_c_b_e[AsmOpcode_C_B_E_B].next_table =
-		dec_table_c_b_e_b;
+	dec_table_c_b_e[AsmOpcode_C_B_E_B].next_table = dec_table_c_b_e_b;
 	dec_table_c_b_e[AsmOpcode_C_B_E_B].next_table_low = 61;
 	dec_table_c_b_e[AsmOpcode_C_B_E_B].next_table_high = 61;
 
-	dec_table_c_b_e[AsmOpcode_C_B_E_C].next_table =
-		dec_table_c_b_e_c;
+	dec_table_c_b_e[AsmOpcode_C_B_E_C].next_table = dec_table_c_b_e_c;
 	dec_table_c_b_e[AsmOpcode_C_B_E_C].next_table_low = 59;
 	dec_table_c_b_e[AsmOpcode_C_B_E_C].next_table_high = 59;
 
-	dec_table_c_b_e_a[AsmOpcode_C_B_E_A_A].next_table =
-		dec_table_c_b_e_a_a;
+	dec_table_c_b_e_a[AsmOpcode_C_B_E_A_A].next_table = dec_table_c_b_e_a_a;
 	dec_table_c_b_e_a[AsmOpcode_C_B_E_A_A].next_table_low = 56;
 	dec_table_c_b_e_a[AsmOpcode_C_B_E_A_A].next_table_high = 58;
 
-	dec_table_c_b_e_a[AsmOpcode_C_B_E_A_B].next_table =
-		dec_table_c_b_e_a_b;
+	dec_table_c_b_e_a[AsmOpcode_C_B_E_A_B].next_table = dec_table_c_b_e_a_b;
 	dec_table_c_b_e_a[AsmOpcode_C_B_E_A_B].next_table_low = 58;
 	dec_table_c_b_e_a[AsmOpcode_C_B_E_A_B].next_table_high = 58;
 
-	dec_table_c_b_e_a_a[AsmOpcode_C_B_E_A_A_A].next_table =
-		dec_table_c_b_e_a_a_a;
+	dec_table_c_b_e_a_a[AsmOpcode_C_B_E_A_A_A].next_table = dec_table_c_b_e_a_a_a;
 	dec_table_c_b_e_a_a[AsmOpcode_C_B_E_A_A_A].next_table_low = 55;
 	dec_table_c_b_e_a_a[AsmOpcode_C_B_E_A_A_A].next_table_high = 55;
 
-	dec_table_c_b_e_a_a[AsmOpcode_C_B_E_A_A_B].next_table =
-		dec_table_c_b_e_a_a_b;
+	dec_table_c_b_e_a_a[AsmOpcode_C_B_E_A_A_B].next_table = dec_table_c_b_e_a_a_b;
 	dec_table_c_b_e_a_a[AsmOpcode_C_B_E_A_A_B].next_table_low = 53;
 	dec_table_c_b_e_a_a[AsmOpcode_C_B_E_A_A_B].next_table_high = 55;
 
-	dec_table_c_b_e_a_a[AsmOpcode_C_B_E_A_A_C].next_table =
-		dec_table_c_b_e_a_a_c;
+	dec_table_c_b_e_a_a[AsmOpcode_C_B_E_A_A_C].next_table = dec_table_c_b_e_a_a_c;
 	dec_table_c_b_e_a_a[AsmOpcode_C_B_E_A_A_C].next_table_low = 55;
 	dec_table_c_b_e_a_a[AsmOpcode_C_B_E_A_A_C].next_table_high = 55;
 
-	dec_table_c_b_e_a_a[AsmOpcode_C_B_E_A_A_D].next_table =
-		dec_table_c_b_e_a_a_d;
+	dec_table_c_b_e_a_a[AsmOpcode_C_B_E_A_A_D].next_table = dec_table_c_b_e_a_a_d;
 	dec_table_c_b_e_a_a[AsmOpcode_C_B_E_A_A_D].next_table_low = 54;
 	dec_table_c_b_e_a_a[AsmOpcode_C_B_E_A_A_D].next_table_high = 55;
 
-	dec_table_c_b_e_a_a_c[AsmOpcode_C_B_E_A_A_C_A].next_table =
-		dec_table_c_b_e_a_a_c_a;
+	dec_table_c_b_e_a_a_c[AsmOpcode_C_B_E_A_A_C_A].next_table = dec_table_c_b_e_a_a_c_a;
 	dec_table_c_b_e_a_a_c[AsmOpcode_C_B_E_A_A_C_A].next_table_low = 54;
 	dec_table_c_b_e_a_a_c[AsmOpcode_C_B_E_A_A_C_A].next_table_high = 54;
 
-	dec_table_c_b_e_a_b[AsmOpcode_C_B_E_A_B_A].next_table =
-		dec_table_c_b_e_a_b_a;
+	dec_table_c_b_e_a_b[AsmOpcode_C_B_E_A_B_A].next_table = dec_table_c_b_e_a_b_a;
 	dec_table_c_b_e_a_b[AsmOpcode_C_B_E_A_B_A].next_table_low = 56;
 	dec_table_c_b_e_a_b[AsmOpcode_C_B_E_A_B_A].next_table_high = 57;
 
-	dec_table_c_b_e_a_b[AsmOpcode_C_B_E_A_B_B].next_table =
-		dec_table_c_b_e_a_b_b;
+	dec_table_c_b_e_a_b[AsmOpcode_C_B_E_A_B_B].next_table = dec_table_c_b_e_a_b_b;
 	dec_table_c_b_e_a_b[AsmOpcode_C_B_E_A_B_B].next_table_low = 54;
 	dec_table_c_b_e_a_b[AsmOpcode_C_B_E_A_B_B].next_table_high = 57;
 
-	dec_table_c_b_e_a_b_a[AsmOpcode_C_B_E_A_B_A_A].next_table =
-		dec_table_c_b_e_a_b_a_a;
+	dec_table_c_b_e_a_b_a[AsmOpcode_C_B_E_A_B_A_A].next_table = dec_table_c_b_e_a_b_a_a;
 	dec_table_c_b_e_a_b_a[AsmOpcode_C_B_E_A_B_A_A].next_table_low = 54;
 	dec_table_c_b_e_a_b_a[AsmOpcode_C_B_E_A_B_A_A].next_table_high = 55;
 
-	dec_table_c_b_e_a_b_a[AsmOpcode_C_B_E_A_B_A_B].next_table =
-		dec_table_c_b_e_a_b_a_b;
+	dec_table_c_b_e_a_b_a[AsmOpcode_C_B_E_A_B_A_B].next_table = dec_table_c_b_e_a_b_a_b;
 	dec_table_c_b_e_a_b_a[AsmOpcode_C_B_E_A_B_A_B].next_table_low = 55;
 	dec_table_c_b_e_a_b_a[AsmOpcode_C_B_E_A_B_A_B].next_table_high = 55;
 
-	dec_table_c_b_e_a_b_a[AsmOpcode_C_B_E_A_B_A_C].next_table =
-		dec_table_c_b_e_a_b_a_c;
+	dec_table_c_b_e_a_b_a[AsmOpcode_C_B_E_A_B_A_C].next_table = dec_table_c_b_e_a_b_a_c;
 	dec_table_c_b_e_a_b_a[AsmOpcode_C_B_E_A_B_A_C].next_table_low = 54;
 	dec_table_c_b_e_a_b_a[AsmOpcode_C_B_E_A_B_A_C].next_table_high = 55;
 
-	dec_table_c_b_e_b[AsmOpcode_C_B_E_B_A].next_table =
-		dec_table_c_b_e_b_a;
+	dec_table_c_b_e_b[AsmOpcode_C_B_E_B_A].next_table = dec_table_c_b_e_b_a;
 	dec_table_c_b_e_b[AsmOpcode_C_B_E_B_A].next_table_low = 58;
 	dec_table_c_b_e_b[AsmOpcode_C_B_E_B_A].next_table_high = 58;
 
-	dec_table_c_b_e_b[AsmOpcode_C_B_E_B_B].next_table =
-		dec_table_c_b_e_b_b;
+	dec_table_c_b_e_b[AsmOpcode_C_B_E_B_B].next_table = dec_table_c_b_e_b_b;
 	dec_table_c_b_e_b[AsmOpcode_C_B_E_B_B].next_table_low = 59;
 	dec_table_c_b_e_b[AsmOpcode_C_B_E_B_B].next_table_high = 60;
 
-	dec_table_c_b_e_b_a[AsmOpcode_C_B_E_B_A_A].next_table =
-		dec_table_c_b_e_b_a_a;
+	dec_table_c_b_e_b_a[AsmOpcode_C_B_E_B_A_A].next_table = dec_table_c_b_e_b_a_a;
 	dec_table_c_b_e_b_a[AsmOpcode_C_B_E_B_A_A].next_table_low = 54;
 	dec_table_c_b_e_b_a[AsmOpcode_C_B_E_B_A_A].next_table_high = 57;
 

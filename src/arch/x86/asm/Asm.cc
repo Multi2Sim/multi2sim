@@ -32,6 +32,30 @@ using namespace misc;
 namespace x86
 {
 
+
+void AsmConfig::Register(CommandLine &command_line)
+{
+	// Option --x86-disasm <file>
+	command_line.RegisterString("--x86-disasm", path,
+			"Disassemble the x86 ELF file provided in <arg>, "
+			"using the internal x86 disassembler. This option is "
+			"incompatible with any other option.");
+	command_line.setIncompatible("--x86-disasm");
+}
+
+
+void AsmConfig::Process()
+{
+	// Run x86 disassembler
+	if (!path.empty())
+	{
+		Asm as;
+		as.DisassembleBinary(path);
+		exit(0);
+	}
+}
+
+
 // List of possible prefixes
 static const unsigned char asm_prefixes[] =
 {
@@ -105,6 +129,10 @@ void Asm::FreeInstDecodeInfo(InstDecodeInfo *elem)
 		elem = next;
 	}
 }
+
+
+// x86 diassembler configuration
+AsmConfig Asm::config;
 
 
 Asm::Asm()

@@ -33,6 +33,27 @@
 namespace misc
 {
 
+class CommandLine;
+
+
+/// Base class used for configurable modules.
+class CommandLineConfig
+{
+public:
+	/// Register options associated with this configurable module. This
+	/// function is invoked automatically when a configurable module is
+	/// attached to object \a command_line with a call to
+	/// \c CommandLine::AddConfig().
+	virtual void Register(CommandLine &command_line) { }
+
+	/// Process command-line options specific for this configurable module.
+	/// This function is automatically invoked after all options in the
+	/// command line have been read.
+	virtual void Process() { }
+};
+
+
+/// Base abstract class for command-line options.
 class CommandLineOption
 {
 public:
@@ -74,8 +95,7 @@ public:
 			const std::string &help) :
 			type(type), name(name), num_args(num_args),
 			help(help), present(false),
-			incompatible(false)
-		{ }
+			incompatible(false) { }
 
 	/// Virtual destructor to make class polymorphic.
 	virtual ~CommandLineOption() { }
@@ -230,13 +250,26 @@ class CommandLine
 	// Set to true when function Process() is invoked.
 	bool processed;
 
+	// Configure modules
+	std::list<CommandLineConfig *> configs;
+
+	// Command-line option indicating whether to use C++
+	bool use_cpp;
+
+	// Show help message with command-line options
+	bool show_help;
+
+	// Help message header
+	std::string help;
+
 public:
 
 	/// Constructor to be invoked in the beginning of the execution of
 	/// function \a main(), passing its \a argc and \a argv arguments
 	/// directly for post-processing.
 	CommandLine(int argc, char **argv) :
-			argc(argc), argv(argv), processed(false)
+			argc(argc), argv(argv), processed(false),
+			use_cpp(false), show_help(false)
 	{ }
 
 	/// Return the number of arguments left after getting rid of the
@@ -251,7 +284,15 @@ public:
 	/// found in the command line during the execution of function
 	/// Process().
 	void setErrorMessage(const std::string &msg) {
+		assert(!processed);
 		error_message = msg;
+	}
+
+	/// Set the help message to be displayed when option '--help' is
+	/// present, preceding the help for all command-line options.
+	void setHelp(const std::string &msg) {
+		assert(!processed);
+		help = msg;
 	}
 
 	/// Return the program name used to invoke Multi2Sim. The command line
@@ -269,6 +310,11 @@ public:
 		assert(index >= 0 && index < (int) args.size());
 		return args[index];
 	}
+
+	/// Return \c true if the user specified command-line option \c --cpp.
+	/// This option is temporarily used to activate the C++ version of
+	/// Multi2Sim.
+	bool getUseCpp() const { assert(processed); return use_cpp; }
 
 	/// Register a command-line option that takes no argument. If present,
 	/// variable \a var will be set to \a true. If not, to \a false.
@@ -330,6 +376,14 @@ public:
 	
 	/// Dump help for all registered command-line options.
 	void Help(std::ostream &os = std::cout);
+
+	/// Add a configurable module to the command line object. A configurable
+	/// module is an object derived from class CommandLineConfig with
+	/// virtual functions \c Register() and \c Process(). Function \c
+	/// Register() will be invoked on the configurable module during the
+	/// call to AddConfig(). Function \c Process() will be invoked after a
+	/// call to CommandLine::Process().
+	void AddConfig(CommandLineConfig &config);
 
 	/// Process command line.
 	/// Optional argument \a fatal_on_bad_option specified whether a fatal
