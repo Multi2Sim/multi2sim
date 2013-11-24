@@ -2050,8 +2050,9 @@ void WorkItem::ISA_S_BARRIER_Impl(Inst *inst)
 	// If all wavefronts in work-group reached the barrier, wake them up
 	if (work_group->getWavefrontsAtBarrier() == work_group->getWavefrontsInWorkgroup())
 	{
-		for( auto &wavefront : work_group->getWavefronts())
-			wavefront->setAtBarrier(false);
+		for (auto i = work_group->WavefrontsBegin(),
+			e = work_group->WavefrontsEnd(); i != e; ++i)
+			(*i)->setAtBarrier(false);
 
 		work_group->setWavefrontsAtBarrier(0);
 
@@ -6190,7 +6191,7 @@ void WorkItem::ISA_V_INTERP_P2_F32_Impl(Inst *inst)
 		unsigned as_uint;
 		struct M0ForInterp for_vintrp;
 	};
-	
+
 	InstReg s;
 	InstReg p20;
 	InstReg data;

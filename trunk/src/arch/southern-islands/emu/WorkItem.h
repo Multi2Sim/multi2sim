@@ -103,7 +103,7 @@ private:
 #include <arch/southern-islands/asm/asm.dat>
 #undef DEFINST
 
-	/// Error massage indicateing unimplemented instructions
+	/// Error massage for unimplemented instructions
 	static void ISAUnimplemented(Inst *inst);
 
 	/// Get number of elements based on data format
@@ -128,31 +128,31 @@ public:
 	// FIXME - probably most functions below can be inline
 
 	/// FIXME ???
-	unsigned ReadSReg(int sreg_id);
+	unsigned ReadSReg(int sreg);
 
 	/// FIXME ???
-	void WriteSReg(int sreg_id, unsigned value);
+	void WriteSReg(int sreg, unsigned value);
 
 	/// FIXME ???
-	unsigned ReadVReg(int vreg_idx);
+	unsigned ReadVReg(int vreg);
 
 	/// FIXME ???
-	void WriteVReg(int vreg_idx, unsigned value);
+	void WriteVReg(int vreg, unsigned value);
 
 	/// FIXME ???
 	unsigned ReadReg(int reg);
 
 	/// FIXME ???
-	void WriteBitmaskSReg(int sreg_id, unsigned value);
+	void WriteBitmaskSReg(int sreg, unsigned value);
 
 	/// FIXME ???
-	int ReadBitmaskSReg(int sreg_id);
+	int ReadBitmaskSReg(int sreg);
 
 	/// FIXME ???
-	void ReadBufferResource(int sreg_id, EmuBufferDesc &buffer_desc); 
+	void ReadBufferResource(int sreg, EmuBufferDesc &buffer_desc); 
 	
 	/// FIXME ???
-	void ReadMemPtr(int sreg_id, EmuMemPtr &mem_ptr);
+	void ReadMemPtr(int sreg, EmuMemPtr &mem_ptr);
 
 };
 
