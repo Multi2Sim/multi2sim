@@ -21,7 +21,7 @@
 #include <iostream>
 
 #include <arch/x86/asm/Asm.h>
-#include <arch/x86/emu/XMMValue.h>
+#include <arch/x86/emu/Regs.h>
 #include <lib/cpp/CommandLine.h>
 #include <lib/cpp/Misc.h>
 
@@ -102,6 +102,10 @@ void main_cpp(int argc, char **argv)
 	std::cerr << "m2s_max_time = " << m2s_max_time << '\n';
 	std::cerr << "m2s_trace_file = " << m2s_trace_file << '\n';
 	std::cerr << "m2s_visual_file = " << m2s_visual_file << '\n';
+
+	// Test Regs
+	x86::Regs regs;
+	std::cout << regs;
 
 	// End
 	exit(0);
