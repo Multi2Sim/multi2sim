@@ -18,6 +18,19 @@
  */
 
 #include "WorkGroup.h"
+#include "Wavefront.h"
+#include "WorkItem.h"
+
+namespace SI
+{
+
+WorkGroup::WorkGroup(NDRange *ndrange, unsigned id)
+{
+	this->id = id;
+	this->ndrange = ndrange;
+}
+	
+}  // namespace SI
 
 #if 0
 #include <driver/opengl/si-spi.h>

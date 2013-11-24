@@ -243,41 +243,38 @@ WorkItem::WorkItem(Wavefront *wavefront, int id)
 	this->wavefront = wavefront;
 }
 
-unsigned WorkItem::ReadSReg(int sreg_id)
+unsigned WorkItem::ReadSReg(int sreg)
 {
-	return wavefront->getSregUint(sreg_id);
+	return wavefront->getSregUint(sreg);
 }
 
 
-void WorkItem::WriteSReg(int sreg_id, 
+void WorkItem::WriteSReg(int sreg, 
 	unsigned value)
 {
 	// Set scalar register and update VCCZ and EXECZ if necessary.
-	wavefront->setSregUint(sreg_id, value);
-
-	// Statistics
-	work_group->incSregWriteCount();
+	wavefront->setSregUint(sreg, value);
 }
 
 
-unsigned WorkItem::ReadVReg(int vreg_idx)
+unsigned WorkItem::ReadVReg(int vreg)
 {
-	assert(vreg_idx >= 0);
-	assert(vreg_idx < 256);
+	assert(vreg >= 0);
+	assert(vreg < 256);
 
 	// Statistics
 	work_group->incVregReadCount();
 
-	return vreg[vreg_idx].as_uint;
+	return this->vreg[vreg].as_uint;
 }
 
 
-void WorkItem::WriteVReg(int vreg_idx, 
+void WorkItem::WriteVReg(int vreg, 
 	unsigned value)
 {
-	assert(vreg_idx >= 0);
-	assert(vreg_idx < 256);
-	vreg[vreg_idx].as_uint = value;
+	assert(vreg >= 0);
+	assert(vreg < 256);
+	this->vreg[vreg].as_uint = value;
 
 	// Statistics
 	work_group->incVregWriteCount();
@@ -297,7 +294,7 @@ unsigned WorkItem::ReadReg(int reg)
 }
 
 
-void WorkItem::WriteBitmaskSReg(int sreg_id, 
+void WorkItem::WriteBitmaskSReg(int sreg, 
 	unsigned value)
 {
 	unsigned mask = 1;
@@ -306,33 +303,33 @@ void WorkItem::WriteBitmaskSReg(int sreg_id,
 	if (id_in_wavefront < 32)
 	{
 		mask <<= id_in_wavefront;
-		bitfield = ReadSReg(sreg_id);
+		bitfield = ReadSReg(sreg);
 		new_field.as_uint = (value) ? bitfield | mask: bitfield & ~mask;
-		WriteSReg(sreg_id, new_field.as_uint);
+		WriteSReg(sreg, new_field.as_uint);
 	}
 	else
 	{
 		mask <<= (id_in_wavefront - 32);
-		bitfield = ReadSReg(sreg_id + 1);
+		bitfield = ReadSReg(sreg + 1);
 		new_field.as_uint = (value) ? bitfield | mask: bitfield & ~mask;
-		WriteSReg(sreg_id + 1, new_field.as_uint);
+		WriteSReg(sreg + 1, new_field.as_uint);
 	}
 }
 
 
-int WorkItem::ReadBitmaskSReg(int sreg_id)
+int WorkItem::ReadBitmaskSReg(int sreg)
 {
 	unsigned mask = 1;
 	if (id_in_wavefront < 32)
 	{
 		mask <<= id_in_wavefront;
-		return (ReadSReg(sreg_id) & mask) >> 
+		return (ReadSReg(sreg) & mask) >> 
 			id_in_wavefront;
 	}
 	else
 	{
 		mask <<= (id_in_wavefront - 32);
-		return (ReadSReg(sreg_id + 1) & mask) >> 
+		return (ReadSReg(sreg + 1) & mask) >> 
 			(id_in_wavefront - 32);
 	}
 }
@@ -340,23 +337,23 @@ int WorkItem::ReadBitmaskSReg(int sreg_id)
 
 // Initialize a buffer resource descriptor
 void WorkItem::ReadBufferResource(
-	int sreg_id, EmuBufferDesc &buf_desc)
+	int sreg, EmuBufferDesc &buf_desc)
 {
 	// Buffer resource descriptor is stored in 4 succesive scalar registers
-	((unsigned *)&buf_desc)[0] = wavefront->getSregUint(sreg_id);
-	((unsigned *)&buf_desc)[1] = wavefront->getSregUint(sreg_id + 1);
-	((unsigned *)&buf_desc)[2] = wavefront->getSregUint(sreg_id + 2);
-	((unsigned *)&buf_desc)[3] = wavefront->getSregUint(sreg_id + 3);
+	((unsigned *)&buf_desc)[0] = wavefront->getSregUint(sreg);
+	((unsigned *)&buf_desc)[1] = wavefront->getSregUint(sreg + 1);
+	((unsigned *)&buf_desc)[2] = wavefront->getSregUint(sreg + 2);
+	((unsigned *)&buf_desc)[3] = wavefront->getSregUint(sreg + 3);
 }
 
 
 // Initialize a mempry pointer descriptor
 void WorkItem::ReadMemPtr(
-	int sreg_id, EmuMemPtr &mem_ptr)
+	int sreg, EmuMemPtr &mem_ptr)
 {
 	// Memory pointer descriptor is stored in 2 succesive scalar registers
-	((unsigned *)&mem_ptr)[0] = wavefront->getSregUint(sreg_id);
-	((unsigned *)&mem_ptr)[1] = wavefront->getSregUint(sreg_id + 1);
+	((unsigned *)&mem_ptr)[0] = wavefront->getSregUint(sreg);
+	((unsigned *)&mem_ptr)[1] = wavefront->getSregUint(sreg + 1);
 }
 
 

@@ -35,38 +35,38 @@ namespace SI
 /*
  * Public functions
  */
-unsigned Wavefront::getSregUint(int id) const
+unsigned Wavefront::getSregUint(int sreg) const
 {
 	unsigned value;
 
-	assert(id >= 0);
-	assert(id != 104);
-	assert(id != 105);
-	assert(id != 125);
-	assert((id < 209) || (id > 239));
-	assert((id < 248) || (id > 250));
-	assert(id != 254);
-	assert(id < 256);
+	assert(sreg >= 0);
+	assert(sreg != 104);
+	assert(sreg != 105);
+	assert(sreg != 125);
+	assert((sreg < 209) || (sreg > 239));
+	assert((sreg < 248) || (sreg > 250));
+	assert(sreg != 254);
+	assert(sreg < 256);
 
-	if (id == SI_VCCZ)
+	if (sreg == SI_VCCZ)
 	{
-		if (sreg[SI_VCC].as_uint == 0 && 
-			sreg[SI_VCC+1].as_uint == 0)
+		if (this->sreg[SI_VCC].as_uint == 0 && 
+			this->sreg[SI_VCC+1].as_uint == 0)
 			value = 1;
 		else 
 			value = 0;
 	}
-	if (id == SI_EXECZ)
+	if (sreg == SI_EXECZ)
 	{
-		if (sreg[SI_EXEC].as_uint == 0 && 
-			sreg[SI_EXEC+1].as_uint == 0)
+		if (this->sreg[SI_EXEC].as_uint == 0 && 
+			this->sreg[SI_EXEC+1].as_uint == 0)
 			value = 1;
 		else 
 			value = 0;
 	}
 	else
 	{
-		value = sreg[id].as_uint;
+		value = this->sreg[sreg].as_uint;
 	}
 
 	// Statistics
@@ -75,35 +75,58 @@ unsigned Wavefront::getSregUint(int id) const
 	return value;
 }
 
-void Wavefront::setSregUint(int id, unsigned int value)
+void Wavefront::setSregUint(int sreg, unsigned int value)
 {
-	assert(id >= 0);
-	assert(id != 104);
-	assert(id != 105);
-	assert(id != 125);
-	assert((id < 209) || (id > 239));
-	assert((id < 248) || (id > 250));
-	assert(id != 254);
-	assert(id < 256);
+	assert(sreg >= 0);
+	assert(sreg != 104);
+	assert(sreg != 105);
+	assert(sreg != 125);
+	assert((sreg < 209) || (sreg > 239));
+	assert((sreg < 248) || (sreg > 250));
+	assert(sreg != 254);
+	assert(sreg < 256);
 
-	sreg[id].as_uint = value;
+	this->sreg[sreg].as_uint = value;
 
 	// Update VCCZ and EXECZ if necessary.
-	if (id == SI_VCC || id == SI_VCC + 1)
+	if (sreg == SI_VCC || sreg == SI_VCC + 1)
 	{
-		sreg[SI_VCCZ].as_uint = 
-			!sreg[SI_VCC].as_uint &
-			!sreg[SI_VCC + 1].as_uint;
+		this->sreg[SI_VCCZ].as_uint = 
+			!this->sreg[SI_VCC].as_uint &
+			!this->sreg[SI_VCC + 1].as_uint;
 	}
-	if (id == SI_EXEC || id == SI_EXEC + 1)
+	if (sreg == SI_EXEC || sreg == SI_EXEC + 1)
 	{
-		sreg[SI_EXECZ].as_uint = 
-			!sreg[SI_EXEC].as_uint &
-			!sreg[SI_EXEC + 1].as_uint;
+		this->sreg[SI_EXECZ].as_uint = 
+			!this->sreg[SI_EXEC].as_uint &
+			!this->sreg[SI_EXEC + 1].as_uint;
 	}
 
 	// Statistics
 	work_group->incSregWriteCount();
+
+}
+
+Wavefront::Wavefront(WorkGroup *work_group, int id)
+{
+	this->work_group = work_group;
+	this->id = id;
+
+	/* Integer inline constants. */
+	for(int i = 128; i < 193; i++)
+		sreg[i].as_int = i - 128;
+	for(int i = 193; i < 209; i++)
+		sreg[i].as_int = -(i - 192);
+
+	/* Inline floats. */
+	sreg[240].as_float = 0.5;
+	sreg[241].as_float = -0.5;
+	sreg[242].as_float = 1.0;
+	sreg[243].as_float = -1.0;
+	sreg[244].as_float = 2.0;
+	sreg[245].as_float = -2.0;
+	sreg[246].as_float = 4.0;
+	sreg[247].as_float = -4.0;
 
 }
 
@@ -151,7 +174,7 @@ static void SIWavefrontInitSReg(SIWavefront *self)
 }
 
 
-void SIWavefrontCreate(SIWavefront *self, int id, SIWorkGroup *work_group)
+void SIWavefrontCreate(SIWavefront *self, int sreg, SIWorkGroup *work_group)
 {
 	SINDRange *ndrange = work_group->ndrange;
 	SIEmu *emu = ndrange->emu;
@@ -162,7 +185,7 @@ void SIWavefrontCreate(SIWavefront *self, int id, SIWorkGroup *work_group)
 	/* Initialize */
 	self->inst = SIInstWrapCreate(as);
 	self->work_group = work_group;
-	self->id = id;
+	self->sreg = sreg;
 	SIWavefrontInitSReg(self);
 
 	/* Create work items */
@@ -171,7 +194,7 @@ void SIWavefrontCreate(SIWavefront *self, int id, SIWorkGroup *work_group)
 	{
 		self->work_items[work_item_id] = new(SIWorkItem, work_item_id, self);
 		self->work_items[work_item_id]->work_group = work_group;
-		self->work_items[work_item_id]->id_in_wavefront = work_item_id;
+		self->work_items[work_item_id]->sreg_in_wavefront = work_item_id;
 	}
 
 	/* Create scalar work item */
@@ -379,7 +402,7 @@ void SIWavefrontExecute(SIWavefront *self)
 		{
 			work_item = self->work_items[work_item_id];
 			if(SIWavefrontIsWorkItemActive(self, 
-				work_item->id_in_wavefront))
+				work_item->sreg_in_wavefront))
 			{
 				(*si_isa_inst_func[opcode])(work_item,
 					inst);
@@ -422,7 +445,7 @@ void SIWavefrontExecute(SIWavefront *self)
 						work_items[work_item_id];
 					if(SIWavefrontIsWorkItemActive(
 						self, 
-						work_item->id_in_wavefront))
+						work_item->sreg_in_wavefront))
 					{
 						(*si_isa_inst_func[
 						 	opcode])(
@@ -440,7 +463,7 @@ void SIWavefrontExecute(SIWavefront *self)
 			{
 				work_item = self->work_items[work_item_id];
 				if(SIWavefrontIsWorkItemActive(self, 
-					work_item->id_in_wavefront))
+					work_item->sreg_in_wavefront))
 				{
 					(*si_isa_inst_func[opcode])(
 						work_item, inst);
@@ -467,7 +490,7 @@ void SIWavefrontExecute(SIWavefront *self)
 		{
 			work_item = self->work_items[work_item_id];
 			if(SIWavefrontIsWorkItemActive(self, 
-				work_item->id_in_wavefront))
+				work_item->sreg_in_wavefront))
 			{
 				(*si_isa_inst_func[opcode])(work_item,
 					inst);
@@ -493,7 +516,7 @@ void SIWavefrontExecute(SIWavefront *self)
 		{
 			work_item = self->work_items[work_item_id];
 			if(SIWavefrontIsWorkItemActive(self, 
-				work_item->id_in_wavefront))
+				work_item->sreg_in_wavefront))
 			{
 				(*si_isa_inst_func[opcode])(work_item,
 					inst);
@@ -519,7 +542,7 @@ void SIWavefrontExecute(SIWavefront *self)
 		{
 			work_item = self->work_items[work_item_id];
 			if(SIWavefrontIsWorkItemActive(self, 
-				work_item->id_in_wavefront))
+				work_item->sreg_in_wavefront))
 			{
 				(*si_isa_inst_func[opcode])(work_item,
 					inst);
@@ -545,7 +568,7 @@ void SIWavefrontExecute(SIWavefront *self)
 		{
 			work_item = self->work_items[work_item_id];
 			if(SIWavefrontIsWorkItemActive(self, 
-				work_item->id_in_wavefront))
+				work_item->sreg_in_wavefront))
 			{
 				(*si_isa_inst_func[opcode])(work_item,
 					inst);
@@ -589,7 +612,7 @@ void SIWavefrontExecute(SIWavefront *self)
 		{
 			work_item = self->work_items[work_item_id];
 			if(SIWavefrontIsWorkItemActive(self, 
-				work_item->id_in_wavefront))
+				work_item->sreg_in_wavefront))
 			{
 				(*si_isa_inst_func[opcode])(work_item,
 					inst);
@@ -617,14 +640,14 @@ void SIWavefrontExecute(SIWavefront *self)
 		else if (op >= 4 && op < 8)
 			self->vector_mem_write = 1;
 		else 
-			fatal("%s: invalid mtbuf opcode", __FUNCTION__);
+			fatal("%s: invalsreg mtbuf opcode", __FUNCTION__);
 	
 		/* Execute the instruction */
 		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(self, work_item_id)
 		{
 			work_item = self->work_items[work_item_id];
 			if (SIWavefrontIsWorkItemActive(self, 
-				work_item->id_in_wavefront))
+				work_item->sreg_in_wavefront))
 			{
 				(*si_isa_inst_func[opcode])(work_item,
 					inst);
@@ -671,7 +694,7 @@ void SIWavefrontExecute(SIWavefront *self)
 		{
 			work_item = self->work_items[work_item_id];
 			if (SIWavefrontIsWorkItemActive(self, 
-				work_item->id_in_wavefront))
+				work_item->sreg_in_wavefront))
 			{
 				(*si_isa_inst_func[opcode])
 					(work_item, inst);
@@ -700,7 +723,7 @@ void SIWavefrontExecute(SIWavefront *self)
 		{
 			work_item = self->work_items[work_item_id];
 			if (SIWavefrontIsWorkItemActive(self, 
-				work_item->id_in_wavefront))
+				work_item->sreg_in_wavefront))
 			{
 				(*si_isa_inst_func[opcode])
 					(work_item, inst);
@@ -743,27 +766,27 @@ void SIWavefrontExecute(SIWavefront *self)
 }
 
 int SIWavefrontIsWorkItemActive(SIWavefront *self, 
-	int id_in_wavefront) 
+	int sreg_in_wavefront) 
 {
 	int mask = 1;
-	if(id_in_wavefront < 32)
+	if(sreg_in_wavefront < 32)
 	{
-		mask <<= id_in_wavefront;
+		mask <<= sreg_in_wavefront;
 		return (self->sreg[SI_EXEC].as_uint & mask) >> 
-			id_in_wavefront;
+			sreg_in_wavefront;
 	}
 	else
 	{
-		mask <<= (id_in_wavefront - 32);
+		mask <<= (sreg_in_wavefront - 32);
 		return (self->sreg[SI_EXEC + 1].as_uint & mask) >> 
-			(id_in_wavefront - 32);
+			(sreg_in_wavefront - 32);
 	}
 }
 
 void SIWavefrontInitSRegWithValue(SIWavefront *self, 
 	int sreg, unsigned int value)
 {
-	self->sreg[sreg].as_uint = value;
+	self->this->sreg[sreg].as_uint = value;
 }
 
 /* Puts a memory descriptor for a constant buffer (e.g. CB0) into sregs
@@ -780,7 +803,7 @@ void SIWavefrontInitSRegWithConstantBuffer(SIWavefront *self,
 	assert(num_regs == 4);
 	assert(sizeof(buf_desc) == 16);
 	assert(const_buf_num < SI_EMU_MAX_NUM_CONST_BUFS);
-	assert(ndrange->const_buf_table_entries[const_buf_num].valid);
+	assert(ndrange->const_buf_table_entries[const_buf_num].valsreg);
 
 	buf_desc_addr = ndrange->const_buf_table +
 		const_buf_num*SI_EMU_CONST_BUF_TABLE_ENTRY_SIZE;
@@ -824,7 +847,7 @@ void SIWavefrontInitSRegWithUAV(SIWavefront *self,
 	assert(num_regs == 4);
 	assert(sizeof(buf_desc) == 16);
 	assert(uav < SI_EMU_MAX_NUM_UAVS);
-	assert(ndrange->uav_table_entries[uav].valid);
+	assert(ndrange->uav_table_entries[uav].valsreg);
 
 	buf_desc_addr = ndrange->uav_table + uav*SI_EMU_UAV_TABLE_ENTRY_SIZE;
 
