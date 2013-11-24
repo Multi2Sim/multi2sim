@@ -115,17 +115,17 @@ public:
 	/// Get counter of wavefronts at barrier
 	int getWavefrontsAtBarrier() const { return wavefronts_at_barrier; }
 
-	/// Return reference of sreg_read_count
-	long long &getSregReadCount() { return sreg_read_count; }
+	/// Return value of sreg_read_count
+	long long getSregReadCount() const{ return sreg_read_count; }
 
-	/// Return reference of sreg_write_count
-	long long &getSregWriteCount() { return sreg_write_count; }
+	/// Return value of sreg_write_count
+	long long getSregWriteCount() const { return sreg_write_count; }
 
-	/// Return reference of vreg_read_count
-	long long &getVregReadCount() { return vreg_read_count; }
+	/// Return value of vreg_read_count
+	long long getVregReadCount() const { return vreg_read_count; }
 
-	/// Return reference of vreg_read_count
-	long long &getVregWriteCount() { return vreg_write_count; }
+	/// Return value of vreg_read_count
+	long long getVregWriteCount() const { return vreg_write_count; }
 
 	/// Get NDRange that it belongs to
 	const NDRange *getNDRange() const { return ndrange; }
@@ -140,6 +140,18 @@ public:
 
 	/// Increase wavefronts_completed_emu counter
 	void incWavefrontsCompletedEmu() { wavefronts_completed_emu++; }
+
+	/// Increase scalar register read counter
+	void incSregReadCount() { sreg_read_count++; }
+
+	/// Increase scalar register write counter
+	void incSregWriteCount() { sreg_write_count++; }
+
+	/// Increase vector register read counter
+	void incVregReadCount() { vreg_read_count++; }
+
+	/// Increase vector register write counter
+	void incVregWriteCount() { vreg_write_count++; }
 
 	/// Set wavefront_at_barrier counter
 	void setWavefrontsAtBarrier(unsigned counter) { wavefronts_at_barrier = counter; }

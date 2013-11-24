@@ -145,8 +145,9 @@ public:
 	/// Return PC of wavefront
 	unsigned getPC() const { return pc; }
 
-	/// Get reference of a scaler register
-	InstReg &getSReg(unsigned idx) { return sreg[idx]; }
+	/// Return content in scalar register as unsigned integer
+	unsigned getSregUint(int sreg_id) const;
+
 
 	/// Setters
 	///
@@ -179,26 +180,8 @@ public:
 	/// Flag set during instruction emulation.
 	void setVectorMemGlobalCoherency(bool vector_mem_global_coherency) { this->vector_mem_global_coherency = vector_mem_global_coherency; }
 
-	/// Set scalar register, date type int
-	void setSregInt(int id, int value);
-
-	/// Set scalar register, data type unsigned int
-	void setSregUInt(int id, unsigned int value);
-
-	/// Set scalar register, data type float
-	void setSregFloat(int id, float value);
-
-	/// Set scalar register, data type short
-	void setSregShort(int id, int slot, short value);
-	
-	/// Set scalar register, data type unsigned short
-	void setSregUShort(int id, int slot, unsigned short value);
-	
-	/// Set scalar register, data type char
-	void setSregByte(int id, int slot, char value);
-	
-	/// Set scalar register, data type unsigned char
-	void setSregUbyte(int id, int slot, unsigned char value);
+	/// Set scalar register as an unsigned int
+	void setSregUint(int id, unsigned int value);
 
 	/// Dump wavefront in a human-readable format into output stream \a os
 	void Dump(std::ostream &os) const;

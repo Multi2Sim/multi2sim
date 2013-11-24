@@ -17,7 +17,95 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <lib/cpp/Misc.h>
+
 #include "Wavefront.h"
+#include "WorkGroup.h"
+
+using namespace misc;
+
+namespace SI
+{
+
+/*
+ * Private functions
+ */
+
+
+/*
+ * Public functions
+ */
+unsigned Wavefront::getSregUint(int id) const
+{
+	unsigned value;
+
+	assert(id >= 0);
+	assert(id != 104);
+	assert(id != 105);
+	assert(id != 125);
+	assert((id < 209) || (id > 239));
+	assert((id < 248) || (id > 250));
+	assert(id != 254);
+	assert(id < 256);
+
+	if (id == SI_VCCZ)
+	{
+		if (sreg[SI_VCC].as_uint == 0 && 
+			sreg[SI_VCC+1].as_uint == 0)
+			value = 1;
+		else 
+			value = 0;
+	}
+	if (id == SI_EXECZ)
+	{
+		if (sreg[SI_EXEC].as_uint == 0 && 
+			sreg[SI_EXEC+1].as_uint == 0)
+			value = 1;
+		else 
+			value = 0;
+	}
+	else
+	{
+		value = sreg[id].as_uint;
+	}
+
+	// Statistics
+	work_group->incSregReadCount();
+
+	return value;
+}
+
+void Wavefront::setSregUint(int id, unsigned int value)
+{
+	assert(id >= 0);
+	assert(id != 104);
+	assert(id != 105);
+	assert(id != 125);
+	assert((id < 209) || (id > 239));
+	assert((id < 248) || (id > 250));
+	assert(id != 254);
+	assert(id < 256);
+
+	sreg[id].as_uint = value;
+
+	// Update VCCZ and EXECZ if necessary.
+	if (id == SI_VCC || id == SI_VCC + 1)
+	{
+		sreg[SI_VCCZ].as_uint = 
+			!sreg[SI_VCC].as_uint &
+			!sreg[SI_VCC + 1].as_uint;
+	}
+	if (id == SI_EXEC || id == SI_EXEC + 1)
+	{
+		sreg[SI_EXECZ].as_uint = 
+			!sreg[SI_EXEC].as_uint &
+			!sreg[SI_EXEC + 1].as_uint;
+	}
+
+	// Statistics
+	work_group->incSregWriteCount();
+
+}
 
 #if 0
 
@@ -795,4 +883,5 @@ void SIWavefrontInitSRegWithFetchShader(SIWavefront *self,
 }
 
 #endif
-
+	
+}  // namespace SI 

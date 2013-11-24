@@ -245,75 +245,18 @@ WorkItem::WorkItem(Wavefront *wavefront, int id)
 
 unsigned WorkItem::ReadSReg(int sreg_id)
 {
-	unsigned value;
-
-	assert(sreg_id >= 0);
-	assert(sreg_id != 104);
-	assert(sreg_id != 105);
-	assert(sreg_id != 125);
-	assert((sreg_id < 209) || (sreg_id > 239));
-	assert((sreg_id < 248) || (sreg_id > 250));
-	assert(sreg_id != 254);
-	assert(sreg_id < 256);
-
-	if (sreg_id == SI_VCCZ)
-	{
-		if (wavefront->getSReg(SI_VCC).as_uint == 0 && 
-			wavefront->getSReg(SI_VCC+1).as_uint == 0)
-			value = 1;
-		else 
-			value = 0;
-	}
-	if (sreg_id == SI_EXECZ)
-	{
-		if (wavefront->getSReg(SI_EXEC).as_uint == 0 && 
-			wavefront->getSReg(SI_EXEC+1).as_uint == 0)
-			value = 1;
-		else 
-			value = 0;
-	}
-	else
-	{
-		value = wavefront->getSReg(sreg_id).as_uint;
-	}
-
-	// Statistics
-	work_group->getSregReadCount()++;
-
-	return value;
+	return wavefront->getSregUint(sreg_id);
 }
 
 
 void WorkItem::WriteSReg(int sreg_id, 
 	unsigned value)
 {
-	assert(sreg_id >= 0);
-	assert(sreg_id != 104);
-	assert(sreg_id != 105);
-	assert(sreg_id != 125);
-	assert((sreg_id < 209) || (sreg_id > 239));
-	assert((sreg_id < 248) || (sreg_id > 250));
-	assert(sreg_id != 254);
-	assert(sreg_id < 256);
-
-	wavefront->getSReg(sreg_id).as_uint = value;
-
-	// Update VCCZ and EXECZ if necessary.
-	if (sreg_id == SI_VCC || sreg_id == SI_VCC + 1)
-	{
-		wavefront->getSReg(SI_VCCZ).as_uint = 
-			!wavefront->getSReg(SI_VCC).as_uint &
-			!wavefront->getSReg(SI_VCC + 1).as_uint;
-	}
-	if (sreg_id == SI_EXEC || sreg_id == SI_EXEC + 1)
-	{
-		wavefront->getSReg(SI_EXECZ).as_uint = 
-			!wavefront->getSReg(SI_EXEC).as_uint &
-			!wavefront->getSReg(SI_EXEC + 1).as_uint;
-	}
+	// Set scalar register and update VCCZ and EXECZ if necessary.
+	wavefront->setSregUint(sreg_id, value);
 
 	// Statistics
-	work_group->getSregWriteCount()++;
+	work_group->incSregWriteCount();
 }
 
 
@@ -323,7 +266,7 @@ unsigned WorkItem::ReadVReg(int vreg_idx)
 	assert(vreg_idx < 256);
 
 	// Statistics
-	work_group->getVregReadCount()++;
+	work_group->incVregReadCount();
 
 	return vreg[vreg_idx].as_uint;
 }
@@ -337,7 +280,7 @@ void WorkItem::WriteVReg(int vreg_idx,
 	vreg[vreg_idx].as_uint = value;
 
 	// Statistics
-	work_group->getVregWriteCount()++;
+	work_group->incVregWriteCount();
 }
 
 
@@ -399,19 +342,21 @@ int WorkItem::ReadBitmaskSReg(int sreg_id)
 void WorkItem::ReadBufferResource(
 	int sreg_id, EmuBufferDesc &buf_desc)
 {
-	// ((unsigned *)&buf_desc)[0] = wavefront->getSReg(sreg_id);
+	// Buffer resource descriptor is stored in 4 succesive scalar registers
+	((unsigned *)&buf_desc)[0] = wavefront->getSregUint(sreg_id);
+	((unsigned *)&buf_desc)[1] = wavefront->getSregUint(sreg_id + 1);
+	((unsigned *)&buf_desc)[2] = wavefront->getSregUint(sreg_id + 2);
+	((unsigned *)&buf_desc)[3] = wavefront->getSregUint(sreg_id + 3);
 }
 
 
-// Initialize a buffer resource descriptor
+// Initialize a mempry pointer descriptor
 void WorkItem::ReadMemPtr(
 	int sreg_id, EmuMemPtr &mem_ptr)
 {
-	// FIXME
-	// assert(mem_ptr);
-
-	// memcpy(mem_ptr, &wavefront->getSReg(sreg_id).as_uint, 
-	// 	sizeof(unsigned int)*2);
+	// Memory pointer descriptor is stored in 2 succesive scalar registers
+	((unsigned *)&mem_ptr)[0] = wavefront->getSregUint(sreg_id);
+	((unsigned *)&mem_ptr)[1] = wavefront->getSregUint(sreg_id + 1);
 }
 
 
