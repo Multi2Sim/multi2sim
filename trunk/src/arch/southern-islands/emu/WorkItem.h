@@ -103,11 +103,20 @@ private:
 #include <arch/southern-islands/asm/asm.dat>
 #undef DEFINST
 
-	/// FIXME ??? isa.h
-	int IsaGetNumElems(int data_format) const;
+	/// Error massage indicateing unimplemented instructions
+	static void ISAUnimplemented(Inst *inst);
 
-	/// FIXME ??? isa.h
-	int IsaGetElemSize(int data_format) const;
+	/// Get number of elements based on data format
+	static int ISAGetNumElems(int data_format);
+
+	/// Get element size based on data format
+	static int ISAGetElemSize(int data_format);
+
+	/// Float32 to Float16 conversion
+	static uint16_t Float32to16(float value);
+
+	/// Float16 to Float32 conversion
+	static float Float16to32(uint16_t value);
 
 public:
 
@@ -119,10 +128,10 @@ public:
 	// FIXME - probably most functions below can be inline
 
 	/// FIXME ???
-	unsigned ReadSReg(int sreg_idx);
+	unsigned ReadSReg(int sreg_id);
 
 	/// FIXME ???
-	void WriteSReg(int sreg_idx, unsigned value);
+	void WriteSReg(int sreg_id, unsigned value);
 
 	/// FIXME ???
 	unsigned ReadVReg(int vreg_idx);
@@ -134,16 +143,16 @@ public:
 	unsigned ReadReg(int reg);
 
 	/// FIXME ???
-	void WriteBitmaskSReg(int sreg_idx, unsigned value);
+	void WriteBitmaskSReg(int sreg_id, unsigned value);
 
 	/// FIXME ???
-	int ReadBitmaskSReg(int sreg_idx);
+	int ReadBitmaskSReg(int sreg_id);
 
 	/// FIXME ???
-	void ReadBufferResource(int sreg_idx, EmuBufferDesc &buffer_desc); 
+	void ReadBufferResource(int sreg_id, EmuBufferDesc &buffer_desc); 
 	
 	/// FIXME ???
-	void ReadMemPtr(int sreg_idx, EmuMemPtr &mem_ptr);
+	void ReadMemPtr(int sreg_id, EmuMemPtr &mem_ptr);
 
 };
 

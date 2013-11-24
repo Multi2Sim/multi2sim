@@ -151,39 +151,54 @@ public:
 	/// Setters
 	///
 	/// Set PC
-	void setPC(unsigned new_pc) { pc = new_pc; }
+	void setPC(unsigned pc) { this->pc = pc; }
 
 	/// Increase PC
 	void incPC(int increment) { pc += increment; }
 
-	/// Setters
-	///
 	/// Flag set during instruction emulation indicating that there was a
 	/// barrier instruction
-	void setBarrierInst() { barrier_inst = true; }
+	void setBarrierInst(bool barrier_inst) { this->barrier_inst = barrier_inst; }
 
 	/// Flag set during instruction emulation to indicate that the
 	/// instruction performed a scalar memory read operation.
-	void setScalarMemRead() { scalar_mem_read = true; }
+	void setScalarMemRead(bool scalar_mem_read) { this->scalar_mem_read = scalar_mem_read; }
 
 	/// Flag set during instruction emulation to indicate that the
 	/// instruction performed a memory wait operation.
-	void setMemWait() { mem_wait = true; }
+	void setMemWait(bool mem_wait) { this->mem_wait = mem_wait; }
 
 	/// Flag set during instruction emulation to indicate that the wavefront
 	/// got stalled at a barrier.
-	void setAtBarrier() { at_barrier = true; }
-
-	/// Flag set during instruction emulation to indicate that the wavefront
-	/// no longer stalled at a barrier.
-	void unsetAtBarrier() { at_barrier = false; }	
+	void setAtBarrier(bool at_barrier) { this->at_barrier = at_barrier; }
 
 	/// Flag set during instruction emulation to indicate that the wavefront
 	/// finished execution.
-	void setFinished() { finished = true; }
+	void setFinished(bool finished) { this->finished = finished; }
 
 	/// Flag set during instruction emulation.
-	void setVectorMemGlobalCoherency() { vector_mem_global_coherency = true; }
+	void setVectorMemGlobalCoherency(bool vector_mem_global_coherency) { this->vector_mem_global_coherency = vector_mem_global_coherency; }
+
+	/// Set scalar register, date type int
+	void setSregInt(int id, int value);
+
+	/// Set scalar register, data type unsigned int
+	void setSregUInt(int id, unsigned int value);
+
+	/// Set scalar register, data type float
+	void setSregFloat(int id, float value);
+
+	/// Set scalar register, data type short
+	void setSregShort(int id, int slot, short value);
+	
+	/// Set scalar register, data type unsigned short
+	void setSregUShort(int id, int slot, unsigned short value);
+	
+	/// Set scalar register, data type char
+	void setSregByte(int id, int slot, char value);
+	
+	/// Set scalar register, data type unsigned char
+	void setSregUbyte(int id, int slot, unsigned char value);
 
 	/// Dump wavefront in a human-readable format into output stream \a os
 	void Dump(std::ostream &os) const;

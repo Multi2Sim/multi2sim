@@ -32,7 +32,19 @@ namespace SI
  * Private functions
  */
 
-int WorkItem::IsaGetNumElems(int data_format) const
+void WorkItem::ISAUnimplemented(Inst *inst)
+{
+	static const char*err_si_isa_note =
+	"The AMD Southern Islands instruction set is partially supported by"
+	"Multi2Sim. If your program is using an unimplemented instruction,"
+	"please email development@multi2sim.org' to request support for it.";
+
+	fatal("GPU instruction '%s' not implemented\n%s",
+		inst->getName(), err_si_isa_note);
+
+}
+
+int WorkItem::ISAGetNumElems(int data_format)
 {
 	int num_elems;
 
@@ -77,14 +89,14 @@ int WorkItem::IsaGetNumElems(int data_format) const
 	return num_elems;
 }
 
-int WorkItem::IsaGetElemSize(int data_format) const
+int WorkItem::ISAGetElemSize(int data_format)
 {
 	int elem_size;
 
 	switch (data_format)
 	{
 
-	/* 8-bit data */
+	// 8-bit data
 	case 1:
 	case 3:
 	case 10:
@@ -93,7 +105,7 @@ int WorkItem::IsaGetElemSize(int data_format) const
 		break;
 	}
 
-	/* 16-bit data */
+	// 16-bit data
 	case 2:
 	case 5:
 	case 12:
@@ -102,7 +114,7 @@ int WorkItem::IsaGetElemSize(int data_format) const
 		break;
 	}
 
-	/* 32-bit data */
+	// 32-bit data
 	case 4:
 	case 11:
 	case 13:
@@ -121,31 +133,130 @@ int WorkItem::IsaGetElemSize(int data_format) const
 	return elem_size;
 }
 
+union hfpack
+{
+	uint32_t as_uint32;
+	struct
+	{
+		uint16_t s1f;
+		uint16_t s0f;
+	} as_f16f16;
+};
+
+uint16_t WorkItem::Float32to16(float value)
+{
+	union Bits
+	{
+		float f;
+		int32_t si;
+		uint32_t ui;
+	};
+
+	const unsigned F_shift= 13;
+	const unsigned F_shiftSign = 16;
+
+	const int F_infN = 0x7F800000; // flt32 infinity
+	const int F_maxN = 0x477FE000; // max flt16 normal as a flt32
+	const int F_minN = 0x38800000; // min flt16 normal as a flt32
+	const int F_signN = 0x80000000; // flt32 sign bit
+
+	const int F_infC = F_infN >> F_shift;
+	const int F_nanN = (F_infC + 1) << F_shift; // minimum flt16 nan as a flt32
+	const int F_maxC = F_maxN >> F_shift;
+	const int F_minC = F_minN >> F_shift;
+	const int F_mulN = 0x52000000; // (1 << 23) / F_minN
+	const int F_subC = 0x003FF; // max flt32 subnormal down shifted
+	const int F_maxD = F_infC - F_maxC - 1;
+	const int F_minD = F_minC - F_subC - 1;
+
+	union Bits v, s;
+	v.f = value;
+	uint32_t sign = v.si & F_signN;
+	v.si ^= sign;
+	sign >>= F_shiftSign; // logical F_shift
+	s.si = F_mulN;
+	s.si = s.f * v.f; // correct subnormals
+	v.si ^= (s.si ^ v.si) & -(F_minN > v.si);
+	v.si ^= (F_infN ^ v.si) & -((F_infN > v.si) & (v.si > F_maxN));
+	v.si ^= (F_nanN ^ v.si) & -((F_nanN > v.si) & (v.si > F_infN));
+	v.ui >>= F_shift; // logical F_shift
+	v.si ^= ((v.si - F_maxD) ^ v.si) & -(v.si > F_maxC);
+	v.si ^= ((v.si - F_minD) ^ v.si) & -(v.si > F_subC);
+	return v.ui | sign;
+}
+
+float WorkItem::Float16to32(uint16_t value)
+{
+	union Bits
+	{
+		float f;
+		int32_t si;
+		uint32_t ui;
+	};
+
+	const unsigned F_shift = 13;
+	const unsigned F_shiftSign = 16;
+
+	const int F_infN = 0x7F800000; // flt32 infinity
+	const int F_maxN = 0x477FE000; // max flt16 normal as a flt32
+	const int F_minN = 0x38800000; // min flt16 normal as a flt32
+	const int F_signN = 0x80000000; // flt32 sign bit
+
+	const int F_infC = F_infN >> F_shift;
+	const int F_maxC = F_maxN >> F_shift;
+	const int F_minC = F_minN >> F_shift;
+	const int F_signC = F_signN >> F_shiftSign; // flt16 sign bit
+
+	const int F_mulC =  0x33800000; // F_minN / (1 << (23 - F_shift))
+
+	const int F_subC = 0x003FF; // max flt32 subnormal down shifted
+	const int F_norC = 0x00400; // min flt32 normal down shifted
+
+	const int F_maxD = F_infC - F_maxC - 1;
+	const int F_minD = F_minC - F_subC - 1;
+
+	union Bits v;
+	v.ui = value;
+	int32_t sign = v.si & F_signC;
+	v.si ^= sign;
+	sign <<= F_shiftSign;
+	v.si ^= ((v.si + F_minD) ^ v.si) & -(v.si > F_subC);
+	v.si ^= ((v.si + F_maxD) ^ v.si) & -(v.si > F_maxC);
+	union Bits s;
+	s.si = F_mulC;
+	s.f *= v.si;
+	int32_t mask = -(F_norC > v.si);
+	v.si <<= F_shift;
+	v.si ^= (s.si ^ v.si) & mask;
+	v.si |= sign;
+	return v.f;
+}
+
 /*
  * Public functions
  */
 
 WorkItem::WorkItem(Wavefront *wavefront, int id)
 {
-	/* Initialization */
+	// Initialization
 	this->id = id;
 	this->wavefront = wavefront;
 }
 
-unsigned WorkItem::ReadSReg(int sreg_idx)
+unsigned WorkItem::ReadSReg(int sreg_id)
 {
 	unsigned value;
 
-	assert(sreg_idx >= 0);
-	assert(sreg_idx != 104);
-	assert(sreg_idx != 105);
-	assert(sreg_idx != 125);
-	assert((sreg_idx < 209) || (sreg_idx > 239));
-	assert((sreg_idx < 248) || (sreg_idx > 250));
-	assert(sreg_idx != 254);
-	assert(sreg_idx < 256);
+	assert(sreg_id >= 0);
+	assert(sreg_id != 104);
+	assert(sreg_id != 105);
+	assert(sreg_id != 125);
+	assert((sreg_id < 209) || (sreg_id > 239));
+	assert((sreg_id < 248) || (sreg_id > 250));
+	assert(sreg_id != 254);
+	assert(sreg_id < 256);
 
-	if (sreg_idx == SI_VCCZ)
+	if (sreg_id == SI_VCCZ)
 	{
 		if (wavefront->getSReg(SI_VCC).as_uint == 0 && 
 			wavefront->getSReg(SI_VCC+1).as_uint == 0)
@@ -153,7 +264,7 @@ unsigned WorkItem::ReadSReg(int sreg_idx)
 		else 
 			value = 0;
 	}
-	if (sreg_idx == SI_EXECZ)
+	if (sreg_id == SI_EXECZ)
 	{
 		if (wavefront->getSReg(SI_EXEC).as_uint == 0 && 
 			wavefront->getSReg(SI_EXEC+1).as_uint == 0)
@@ -163,45 +274,45 @@ unsigned WorkItem::ReadSReg(int sreg_idx)
 	}
 	else
 	{
-		value = wavefront->getSReg(sreg_idx).as_uint;
+		value = wavefront->getSReg(sreg_id).as_uint;
 	}
 
-	/* Statistics */
+	// Statistics
 	work_group->getSregReadCount()++;
 
 	return value;
 }
 
 
-void WorkItem::WriteSReg(int sreg_idx, 
+void WorkItem::WriteSReg(int sreg_id, 
 	unsigned value)
 {
-	assert(sreg_idx >= 0);
-	assert(sreg_idx != 104);
-	assert(sreg_idx != 105);
-	assert(sreg_idx != 125);
-	assert((sreg_idx < 209) || (sreg_idx > 239));
-	assert((sreg_idx < 248) || (sreg_idx > 250));
-	assert(sreg_idx != 254);
-	assert(sreg_idx < 256);
+	assert(sreg_id >= 0);
+	assert(sreg_id != 104);
+	assert(sreg_id != 105);
+	assert(sreg_id != 125);
+	assert((sreg_id < 209) || (sreg_id > 239));
+	assert((sreg_id < 248) || (sreg_id > 250));
+	assert(sreg_id != 254);
+	assert(sreg_id < 256);
 
-	wavefront->getSReg(sreg_idx).as_uint = value;
+	wavefront->getSReg(sreg_id).as_uint = value;
 
-	/* Update VCCZ and EXECZ if necessary. */
-	if (sreg_idx == SI_VCC || sreg_idx == SI_VCC + 1)
+	// Update VCCZ and EXECZ if necessary.
+	if (sreg_id == SI_VCC || sreg_id == SI_VCC + 1)
 	{
 		wavefront->getSReg(SI_VCCZ).as_uint = 
 			!wavefront->getSReg(SI_VCC).as_uint &
 			!wavefront->getSReg(SI_VCC + 1).as_uint;
 	}
-	if (sreg_idx == SI_EXEC || sreg_idx == SI_EXEC + 1)
+	if (sreg_id == SI_EXEC || sreg_id == SI_EXEC + 1)
 	{
 		wavefront->getSReg(SI_EXECZ).as_uint = 
 			!wavefront->getSReg(SI_EXEC).as_uint &
 			!wavefront->getSReg(SI_EXEC + 1).as_uint;
 	}
 
-	/* Statistics */
+	// Statistics
 	work_group->getSregWriteCount()++;
 }
 
@@ -211,7 +322,7 @@ unsigned WorkItem::ReadVReg(int vreg_idx)
 	assert(vreg_idx >= 0);
 	assert(vreg_idx < 256);
 
-	/* Statistics */
+	// Statistics
 	work_group->getVregReadCount()++;
 
 	return vreg[vreg_idx].as_uint;
@@ -225,7 +336,7 @@ void WorkItem::WriteVReg(int vreg_idx,
 	assert(vreg_idx < 256);
 	vreg[vreg_idx].as_uint = value;
 
-	/* Statistics */
+	// Statistics
 	work_group->getVregWriteCount()++;
 }
 
@@ -243,7 +354,7 @@ unsigned WorkItem::ReadReg(int reg)
 }
 
 
-void WorkItem::WriteBitmaskSReg(int sreg_idx, 
+void WorkItem::WriteBitmaskSReg(int sreg_id, 
 	unsigned value)
 {
 	unsigned mask = 1;
@@ -252,264 +363,56 @@ void WorkItem::WriteBitmaskSReg(int sreg_idx,
 	if (id_in_wavefront < 32)
 	{
 		mask <<= id_in_wavefront;
-		bitfield = ReadSReg(sreg_idx);
+		bitfield = ReadSReg(sreg_id);
 		new_field.as_uint = (value) ? bitfield | mask: bitfield & ~mask;
-		WriteSReg(sreg_idx, new_field.as_uint);
+		WriteSReg(sreg_id, new_field.as_uint);
 	}
 	else
 	{
 		mask <<= (id_in_wavefront - 32);
-		bitfield = ReadSReg(sreg_idx + 1);
+		bitfield = ReadSReg(sreg_id + 1);
 		new_field.as_uint = (value) ? bitfield | mask: bitfield & ~mask;
-		WriteSReg(sreg_idx + 1, new_field.as_uint);
+		WriteSReg(sreg_id + 1, new_field.as_uint);
 	}
 }
 
 
-int WorkItem::ReadBitmaskSReg(int sreg_idx)
+int WorkItem::ReadBitmaskSReg(int sreg_id)
 {
 	unsigned mask = 1;
 	if (id_in_wavefront < 32)
 	{
 		mask <<= id_in_wavefront;
-		return (ReadSReg(sreg_idx) & mask) >> 
+		return (ReadSReg(sreg_id) & mask) >> 
 			id_in_wavefront;
 	}
 	else
 	{
 		mask <<= (id_in_wavefront - 32);
-		return (ReadSReg(sreg_idx + 1) & mask) >> 
+		return (ReadSReg(sreg_id + 1) & mask) >> 
 			(id_in_wavefront - 32);
 	}
 }
 
 
-/* Initialize a buffer resource descriptor */
+// Initialize a buffer resource descriptor
 void WorkItem::ReadBufferResource(
-	int sreg_idx, EmuBufferDesc &buf_desc)
+	int sreg_id, EmuBufferDesc &buf_desc)
 {
-	// FIXME
-	// assert(buf_desc);
-
-	// memcpy(buf_desc, &wavefront->getSReg(sreg_idx).as_uint, 
-	// 	sizeof(unsigned int)*4);
+	// ((unsigned *)&buf_desc)[0] = wavefront->getSReg(sreg_id);
 }
 
 
-/* Initialize a buffer resource descriptor */
+// Initialize a buffer resource descriptor
 void WorkItem::ReadMemPtr(
-	int sreg_idx, EmuMemPtr &mem_ptr)
+	int sreg_id, EmuMemPtr &mem_ptr)
 {
 	// FIXME
 	// assert(mem_ptr);
 
-	// memcpy(mem_ptr, &wavefront->getSReg(sreg_idx).as_uint, 
+	// memcpy(mem_ptr, &wavefront->getSReg(sreg_id).as_uint, 
 	// 	sizeof(unsigned int)*2);
 }
 
 
-#if 0
-
-#include <lib/mhandle/mhandle.h>
-
-#include "isa.h"
-#include "wavefront.h"
-#include "work-group.h"
-#include "work-item.h"
-
-
-
-/*
- * Class 'SIWorkItem'
- */
-
-void SIWorkItemCreate(SIWorkItem *self, int id, SIWavefront *wavefront)
-{
-	/* Initialize */
-	self->id = id;
-	self->wavefront = wavefront;
-}
-
-
-void SIWorkItemDestroy(SIWorkItem *self)
-{
-}
-
-
-unsigned int SIWorkItemReadSReg(SIWorkItem *self, int sreg_idx)
-{
-	unsigned int value;
-
-	assert(sreg_idx >= 0);
-	assert(sreg_idx != 104);
-	assert(sreg_idx != 105);
-	assert(sreg_idx != 125);
-	assert((sreg_idx < 209) || (sreg_idx > 239));
-	assert((sreg_idx < 248) || (sreg_idx > 250));
-	assert(sreg_idx != 254);
-	assert(sreg_idx < 256);
-
-	if (sreg_idx == SI_VCCZ)
-	{
-		if (self->wavefront->sreg_idx[SI_VCC].as_uint == 0 && 
-			self->wavefront->sreg_idx[SI_VCC+1].as_uint == 0)
-			value = 1;
-		else 
-			value = 0;
-	}
-	if (sreg_idx == SI_EXECZ)
-	{
-		if (self->wavefront->sreg_idx[SI_EXEC].as_uint == 0 && 
-			self->wavefront->sreg_idx[SI_EXEC+1].as_uint == 0)
-			value = 1;
-		else 
-			value = 0;
-	}
-	else
-	{
-		value = self->wavefront->sreg_idx[sreg_idx].as_uint;
-	}
-
-	/* Statistics */
-	self->work_group->sreg_idx_read_count++;
-
-	return value;
-}
-
-
-void SIWorkItemWriteSReg(SIWorkItem *self, int sreg_idx, 
-	unsigned int value)
-{
-	assert(sreg_idx >= 0);
-	assert(sreg_idx != 104);
-	assert(sreg_idx != 105);
-	assert(sreg_idx != 125);
-	assert((sreg_idx < 209) || (sreg_idx > 239));
-	assert((sreg_idx < 248) || (sreg_idx > 250));
-	assert(sreg_idx != 254);
-	assert(sreg_idx < 256);
-
-	self->wavefront->sreg_idx[sreg_idx].as_uint = value;
-
-	/* Update VCCZ and EXECZ if necessary. */
-	if (sreg_idx == SI_VCC || sreg_idx == SI_VCC + 1)
-	{
-		self->wavefront->sreg_idx[SI_VCCZ].as_uint = 
-			!self->wavefront->sreg_idx[SI_VCC].as_uint &
-			!self->wavefront->sreg_idx[SI_VCC + 1].as_uint;
-	}
-	if (sreg_idx == SI_EXEC || sreg_idx == SI_EXEC + 1)
-	{
-		self->wavefront->sreg_idx[SI_EXECZ].as_uint = 
-			!self->wavefront->sreg_idx[SI_EXEC].as_uint &
-			!self->wavefront->sreg_idx[SI_EXEC + 1].as_uint;
-	}
-
-	/* Statistics */
-	self->work_group->sreg_idx_write_count++;
-}
-
-
-unsigned int SIWorkItemReadVReg(SIWorkItem *self, int vreg)
-{
-	assert(vreg >= 0);
-	assert(vreg < 256);
-
-	/* Statistics */
-	self->work_group->vreg_read_count++;
-
-	return self->vreg[vreg_idx].as_uint;
-}
-
-
-void SIWorkItemWriteVReg(SIWorkItem *self, int vreg_idx, 
-	unsigned int value)
-{
-	assert(vreg >= 0);
-	assert(vreg < 256);
-	self->vreg[vreg_idx].as_uint = value;
-
-	/* Statistics */
-	self->work_group->vreg_write_count++;
-}
-
-
-unsigned int SIWorkItemReadReg(SIWorkItem *self, int reg)
-{
-	if (reg < 256)
-	{
-		return SIWorkItemReadSReg(self, reg);
-	}
-	else
-	{
-		return SIWorkItemReadVReg(reg - 256);
-	}
-}
-
-
-void SIWorkItemWriteBitmaskSReg(SIWorkItem *self, int sreg_idx, 
-	unsigned int value)
-{
-	unsigned int mask = 1;
-	unsigned int bitfield;
-	SIInstReg new_field;
-	if (self->id_in_wavefront < 32)
-	{
-		mask <<= self->id_in_wavefront;
-		bitfield = SIWorkItemReadSReg(self, sreg_idx);
-		new_field.as_uint = (value) ? bitfield | mask: bitfield & ~mask;
-		SIWorkItemWriteSReg(self, sreg_idx, new_field.as_uint);
-	}
-	else
-	{
-		mask <<= (self->id_in_wavefront - 32);
-		bitfield = SIWorkItemReadSReg(self, sreg_idx + 1);
-		new_field.as_uint = (value) ? bitfield | mask: bitfield & ~mask;
-		SIWorkItemWriteSReg(self, sreg_idx + 1, new_field.as_uint);
-	}
-}
-
-
-int SIWorkItemReadBitmaskSReg(SIWorkItem *self, int sreg_idx)
-{
-	unsigned int mask = 1;
-	if (self->id_in_wavefront < 32)
-	{
-		mask <<= self->id_in_wavefront;
-		return (SIWorkItemReadSReg(self, sreg_idx) & mask) >> 
-			self->id_in_wavefront;
-	}
-	else
-	{
-		mask <<= (self->id_in_wavefront - 32);
-		return (SIWorkItemReadSReg(self, sreg_idx + 1) & mask) >> 
-			(self->id_in_wavefront - 32);
-	}
-}
-
-
-/* Initialize a buffer resource descriptor */
-void SIWorkItemReadBufferResource(SIWorkItem *self, 
-	struct si_buffer_desc_t *buf_desc, int sreg_idx)
-{
-	assert(buf_desc);
-
-	memcpy(buf_desc, &self->wavefront->sreg_idx[sreg_idx].as_uint, 
-		sizeof(unsigned int)*4);
-}
-
-
-/* Initialize a buffer resource descriptor */
-void SIWorkItemReadMemPtr(SIWorkItem *self, 
-	struct si_mem_ptr_t *mem_ptr, int sreg_idx)
-{
-	assert(mem_ptr);
-
-	memcpy(mem_ptr, &self->wavefront->sreg_idx[sreg_idx].as_uint, 
-		sizeof(unsigned int)*2);
-}
-
-
-#endif
-
-}  /* namespace SI */
+}  // namespace SI

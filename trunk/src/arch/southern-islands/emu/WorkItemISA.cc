@@ -52,98 +52,6 @@ namespace SI
 #define INST_MUBUF  inst->getBytes()->mubuf
 #define INST_EXP  inst->getBytes()->exp
 
-const char *err_si_isa_note =
-	"\tThe AMD Southern Islands instruction set is partially supported by\n"
-	"\tMulti2Sim. If your program is using an unimplemented instruction,\n"
-	"\tplease email development@multi2sim.org' to request support for it.\n";
-
-#define NOT_IMPL() fatal("GPU instruction '%s' not implemented\n%s", \
-		inst->getName(), err_si_isa_note)
-
-
-// FIXME: Move to somewhere else
-
-/* 
- * Float32 <-> Float16
- * Reference: http://stackoverflow.com/questions/1659440/32-bit-to-16-bit-floating-point-conversion 
- */
-
-union Bits
-{
-	float f;
-	int32_t si;
-	uint32_t ui;
-};
-
-#define F_shift 13
-#define F_shiftSign 16
-
-#define F_infN 0x7F800000 // flt32 infinity
-#define F_maxN 0x477FE000 // max flt16 normal as a flt32
-#define F_minN 0x38800000 // min flt16 normal as a flt32
-#define F_signN 0x80000000 // flt32 sign bit
-
-#define F_infC (F_infN >> F_shift)
-#define F_nanN ((F_infC + 1) << F_shift) // minimum flt16 nan as a flt32
-#define F_maxC (F_maxN >> F_shift)
-#define F_minC (F_minN >> F_shift)
-#define F_signC (F_signN >> F_shiftSign) // flt16 sign bit
-
-#define F_mulN 0x52000000 // (1 << 23) / F_minN
-#define F_mulC 0x33800000 // F_minN / (1 << (23 - F_shift))
-
-#define F_subC 0x003FF // max flt32 subnormal down shifted
-#define F_norC 0x00400 // min flt32 normal down shifted
-
-#define F_maxD (F_infC - F_maxC - 1)
-#define F_minD (F_minC - F_subC - 1)
-
-union hfpack
-{
-	uint32_t as_uint32;
-	struct
-	{
-		uint16_t s1f;
-		uint16_t s0f;
-	} as_f16f16;
-};
-
-uint16_t Float32to16(float value)
-{
-	union Bits v, s;
-	v.f = value;
-	uint32_t sign = v.si & F_signN;
-	v.si ^= sign;
-	sign >>= F_shiftSign; // logical F_shift
-	s.si = F_mulN;
-	s.si = s.f * v.f; // correct subnormals
-	v.si ^= (s.si ^ v.si) & -(F_minN > v.si);
-	v.si ^= (F_infN ^ v.si) & -((F_infN > v.si) & (v.si > F_maxN));
-	v.si ^= (F_nanN ^ v.si) & -((F_nanN > v.si) & (v.si > F_infN));
-	v.ui >>= F_shift; // logical F_shift
-	v.si ^= ((v.si - F_maxD) ^ v.si) & -(v.si > F_maxC);
-	v.si ^= ((v.si - F_minD) ^ v.si) & -(v.si > F_subC);
-	return v.ui | sign;
-}
-
-float Float16to32(uint16_t value)
-{
-	union Bits v;
-	v.ui = value;
-	int32_t sign = v.si & F_signC;
-	v.si ^= sign;
-	sign <<= F_shiftSign;
-	v.si ^= ((v.si + F_minD) ^ v.si) & -(v.si > F_subC);
-	v.si ^= ((v.si + F_maxD) ^ v.si) & -(v.si > F_maxC);
-	union Bits s;
-	s.si = F_mulC;
-	s.f *= v.si;
-	int32_t mask = -(F_norC > v.si);
-	v.si <<= F_shift;
-	v.si ^= (s.si ^ v.si) & mask;
-	v.si |= sign;
-	return v.f;
-}
 
 // FIXME: move this to somewhere else
 // M0 must be intialized before using any VINTRP instruction
@@ -168,7 +76,7 @@ union si_isa_v_interp_m0_t
 void WorkItem::ISA_S_BUFFER_LOAD_DWORD_Impl(Inst *inst)
 {
 	// Record access
-	wavefront->setScalarMemRead();
+	wavefront->setScalarMemRead(true);
 	int sbase = INST.sbase << 1;
 
 	// sbase holds the first of 4 registers containing the buffer
@@ -204,7 +112,7 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORD_Impl(Inst *inst)
 void WorkItem::ISA_S_BUFFER_LOAD_DWORDX2_Impl(Inst *inst)
 {
 	// Record access
-	wavefront->setScalarMemRead();
+	wavefront->setScalarMemRead(true);
 	int sbase = INST.sbase << 1;
 
 	EmuMemPtr mem_ptr;
@@ -248,7 +156,7 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORDX2_Impl(Inst *inst)
 void WorkItem::ISA_S_BUFFER_LOAD_DWORDX4_Impl(Inst *inst)
 {
 	// Record access
-	wavefront->setScalarMemRead();
+	wavefront->setScalarMemRead(true);
 	int sbase = INST.sbase << 1;
 
 	EmuMemPtr mem_ptr;
@@ -291,7 +199,7 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORDX4_Impl(Inst *inst)
 void WorkItem::ISA_S_BUFFER_LOAD_DWORDX8_Impl(Inst *inst)
 {
 	// Record access
-	wavefront->setScalarMemRead();
+	wavefront->setScalarMemRead(true);
 	int sbase = INST.sbase << 1;
 
 	EmuMemPtr mem_ptr;
@@ -334,7 +242,7 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORDX8_Impl(Inst *inst)
 void WorkItem::ISA_S_BUFFER_LOAD_DWORDX16_Impl(Inst *inst)
 {
 	// Record access
-	wavefront->setScalarMemRead();
+	wavefront->setScalarMemRead(true);
 	int sbase = INST.sbase << 1;
 
 	EmuMemPtr mem_ptr;
@@ -377,7 +285,7 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORDX16_Impl(Inst *inst)
 void WorkItem::ISA_S_LOAD_DWORDX2_Impl(Inst *inst)
 {
 	// Record access
-	wavefront->setScalarMemRead();
+	wavefront->setScalarMemRead(true);
 
 	assert(INST.imm);
 
@@ -424,7 +332,7 @@ void WorkItem::ISA_S_LOAD_DWORDX2_Impl(Inst *inst)
 void WorkItem::ISA_S_LOAD_DWORDX4_Impl(Inst *inst)
 {
 	// Record access
-	wavefront->setScalarMemRead();
+	wavefront->setScalarMemRead(true);
 
 	assert(INST.imm);
 
@@ -472,7 +380,7 @@ void WorkItem::ISA_S_LOAD_DWORDX4_Impl(Inst *inst)
 void WorkItem::ISA_S_LOAD_DWORDX8_Impl(Inst *inst)
 {
 	// Record access
-	wavefront->setScalarMemRead();
+	wavefront->setScalarMemRead(true);
 
 	assert(INST.imm);
 
@@ -1397,7 +1305,7 @@ void WorkItem::ISA_S_MOVK_I32_Impl(Inst *inst)
 #define INST INST_SOPK
 void WorkItem::ISA_S_CMPK_LE_U32_Impl(Inst *inst)
 {
-	NOT_IMPL();
+	ISAUnimplemented(inst);
 }
 #undef INST
 
@@ -1569,7 +1477,7 @@ void WorkItem::ISA_S_NOT_B32_Impl(Inst *inst)
 // D.u = WholeQuadMode(S0.u). SCC = 1 if result is non-zero.
 void WorkItem::ISA_S_WQM_B64_Impl(Inst *inst)
 {
-	NOT_IMPL();
+	ISAUnimplemented(inst);
 }
 #undef INST
 
@@ -1577,7 +1485,6 @@ void WorkItem::ISA_S_WQM_B64_Impl(Inst *inst)
 #define INST INST_SOP1
 void WorkItem::ISA_S_SWAPPC_B64_Impl(Inst *inst)
 {
-	unsigned pc;
 	InstReg s0_lo;
 	InstReg s0_hi;
 
@@ -1593,7 +1500,7 @@ void WorkItem::ISA_S_SWAPPC_B64_Impl(Inst *inst)
 	WriteSReg(INST.sdst + 1, 0);
 
 	// Set the new PC
-	pc = wavefront->getPC();
+	unsigned pc = wavefront->getPC();
 	wavefront->setPC(s0_lo.as_uint - 4);
 
 	// Print isa debug information.
@@ -1944,7 +1851,7 @@ void WorkItem::ISA_S_CMP_LE_U32_Impl(Inst *inst)
 // End the program.
 void WorkItem::ISA_S_ENDPGM_Impl(Inst *inst)
 {
-	wavefront->setFinished();
+	wavefront->setFinished(true);
 	work_group->incWavefrontsCompletedEmu();
 }
 
@@ -2143,8 +2050,8 @@ void WorkItem::ISA_S_CBRANCH_EXECNZ_Impl(Inst *inst)
 void WorkItem::ISA_S_BARRIER_Impl(Inst *inst)
 {
 	// Suspend current wavefront at the barrier
-	wavefront->setBarrierInst();
-	wavefront->setAtBarrier();
+	wavefront->setBarrierInst(true);
+	wavefront->setAtBarrier(true);
 	work_group->incWavefrontsAtBarrier();
 
 	Emu::debug << StringFmt("Group %d wavefront %d reached barrier "
@@ -2159,7 +2066,7 @@ void WorkItem::ISA_S_BARRIER_Impl(Inst *inst)
 	if (work_group->getWavefrontsAtBarrier() == work_group->getWavefrontsInWorkgroup())
 	{
 		for( auto &wavefront : work_group->getWavefronts())
-			wavefront->unsetAtBarrier();
+			wavefront->setAtBarrier(false);
 
 		work_group->setWavefrontsAtBarrier(0);
 
@@ -2170,7 +2077,7 @@ void WorkItem::ISA_S_BARRIER_Impl(Inst *inst)
 void WorkItem::ISA_S_WAITCNT_Impl(Inst *inst)
 {
 	// Nothing to do in emulation
-	wavefront->setMemWait();
+	wavefront->setMemWait(true);
 }
 
 
@@ -2237,7 +2144,7 @@ void WorkItem::ISA_V_READFIRSTLANE_B32_Impl(Inst *inst)
 #define INST INST_VOP1
 void WorkItem::ISA_V_CVT_I32_F64_Impl(Inst *inst)
 {
-	NOT_IMPL();
+	ISAUnimplemented(inst);
 }
 #undef INST
 
@@ -2489,7 +2396,7 @@ void WorkItem::ISA_V_CVT_F64_F32_Impl(Inst *inst)
 #define INST INST_VOP1
 void WorkItem::ISA_V_CVT_F64_U32_Impl(Inst *inst)
 {
-	NOT_IMPL();
+	ISAUnimplemented(inst);
 }
 #undef INST
 
@@ -2525,7 +2432,7 @@ void WorkItem::ISA_V_TRUNC_F32_Impl(Inst *inst)
 #define INST INST_VOP1
 void WorkItem::ISA_V_FLOOR_F32_Impl(Inst *inst)
 {
-	NOT_IMPL();
+	ISAUnimplemented(inst);
 }
 #undef INST
 
@@ -2533,7 +2440,7 @@ void WorkItem::ISA_V_FLOOR_F32_Impl(Inst *inst)
 #define INST INST_VOP1
 void WorkItem::ISA_V_LOG_F32_Impl(Inst *inst)
 {
-	NOT_IMPL();
+	ISAUnimplemented(inst);
 }
 #undef INST
 
@@ -2568,7 +2475,7 @@ void WorkItem::ISA_V_RCP_F32_Impl(Inst *inst)
 #define INST INST_VOP1
 void WorkItem::ISA_V_RCP_F64_Impl(Inst *inst)
 {
-	NOT_IMPL();
+	ISAUnimplemented(inst);
 }
 #undef INST
 
@@ -2576,7 +2483,7 @@ void WorkItem::ISA_V_RCP_F64_Impl(Inst *inst)
 #define INST INST_VOP1
 void WorkItem::ISA_V_RSQ_F64_Impl(Inst *inst)
 {
-	NOT_IMPL();
+	ISAUnimplemented(inst);
 }
 #undef INST
 
@@ -2717,14 +2624,14 @@ void WorkItem::ISA_V_NOT_B32_Impl(Inst *inst)
 #define INST INST_VOP1
 void WorkItem::ISA_V_FFBH_U32_Impl(Inst *inst)
 {
-	NOT_IMPL();
+	ISAUnimplemented(inst);
 }
 
 // D.d = FRAC64(S0.d);
 #define INST INST_VOP1
 void WorkItem::ISA_V_FRACT_F64_Impl(Inst *inst)
 {
-	NOT_IMPL();
+	ISAUnimplemented(inst);
 }
 #undef INST
 
@@ -2918,7 +2825,7 @@ void WorkItem::ISA_V_SUBREV_F32_Impl(Inst *inst)
 #define INST INST_VOP2
 void WorkItem::ISA_V_MAC_LEGACY_F32_Impl(Inst *inst)
 {
-	NOT_IMPL();
+	ISAUnimplemented(inst);
 }
 #undef INST
 
@@ -3480,7 +3387,7 @@ void WorkItem::ISA_V_XOR_B32_Impl(Inst *inst)
 #define INST INST_VOP2
 void WorkItem::ISA_V_BFM_B32_Impl(Inst *inst)
 {
-	NOT_IMPL();
+	ISAUnimplemented(inst);
 }
 #undef INST
 
@@ -3653,6 +3560,16 @@ void WorkItem::ISA_V_SUBREV_I32_Impl(Inst *inst)
 #define INST INST_VOP2
 void WorkItem::ISA_V_CVT_PKRTZ_F16_F32_Impl(Inst *inst)
 {
+	union hfpack
+	{
+		uint32_t as_uint32;
+		struct
+		{
+			uint16_t s1f;
+			uint16_t s0f;
+		} as_f16f16;
+	};
+
 	InstReg s0;
 	InstReg s1;
 	uint16_t s0f;
@@ -3753,7 +3670,7 @@ void WorkItem::ISA_V_CMP_GT_F32_Impl(Inst *inst)
 #define INST INST_VOPC
 void WorkItem::ISA_V_CMP_GE_F32_Impl(Inst *inst)
 {
-	NOT_IMPL();
+	ISAUnimplemented(inst);
 }
 #undef INST
 
@@ -3821,7 +3738,7 @@ void WorkItem::ISA_V_CMP_NEQ_F32_Impl(Inst *inst)
 #define INST INST_VOPC
 void WorkItem::ISA_V_CMP_LT_F64_Impl(Inst *inst)
 {
-	NOT_IMPL();
+	ISAUnimplemented(inst);
 }
 #undef INST
 
@@ -3829,7 +3746,7 @@ void WorkItem::ISA_V_CMP_LT_F64_Impl(Inst *inst)
 #define INST INST_VOPC
 void WorkItem::ISA_V_CMP_EQ_F64_Impl(Inst *inst)
 {
-	NOT_IMPL();
+	ISAUnimplemented(inst);
 }
 #undef INST
 
@@ -3837,7 +3754,7 @@ void WorkItem::ISA_V_CMP_EQ_F64_Impl(Inst *inst)
 #define INST INST_VOPC
 void WorkItem::ISA_V_CMP_LE_F64_Impl(Inst *inst)
 {
-	NOT_IMPL();
+	ISAUnimplemented(inst);
 }
 #undef INST
 
@@ -3845,7 +3762,7 @@ void WorkItem::ISA_V_CMP_LE_F64_Impl(Inst *inst)
 #define INST INST_VOPC
 void WorkItem::ISA_V_CMP_GT_F64_Impl(Inst *inst)
 {
-	NOT_IMPL();
+	ISAUnimplemented(inst);
 }
 #undef INST
 
@@ -3853,7 +3770,7 @@ void WorkItem::ISA_V_CMP_GT_F64_Impl(Inst *inst)
 #define INST INST_VOPC
 void WorkItem::ISA_V_CMP_NGE_F64_Impl(Inst *inst)
 {
-	NOT_IMPL();
+	ISAUnimplemented(inst);
 }
 #undef INST
 
@@ -3861,7 +3778,7 @@ void WorkItem::ISA_V_CMP_NGE_F64_Impl(Inst *inst)
 #define INST INST_VOPC
 void WorkItem::ISA_V_CMP_NEQ_F64_Impl(Inst *inst)
 {
-	NOT_IMPL();
+	ISAUnimplemented(inst);
 }
 #undef INST
 
@@ -4049,7 +3966,7 @@ void WorkItem::ISA_V_CMP_GE_I32_Impl(Inst *inst)
 #define INST INST_VOPC
 void WorkItem::ISA_V_CMP_CLASS_F64_Impl(Inst *inst)
 {
-	NOT_IMPL();
+	ISAUnimplemented(inst);
 }
 #undef INST
 
@@ -4087,7 +4004,7 @@ void WorkItem::ISA_V_CMP_LT_U32_Impl(Inst *inst)
 #define INST INST_VOPC
 void WorkItem::ISA_V_CMP_EQ_U32_Impl(Inst *inst)
 {
-	NOT_IMPL();
+	ISAUnimplemented(inst);
 }
 
 // vcc = (S0.u <= S1.u).
@@ -4154,7 +4071,7 @@ void WorkItem::ISA_V_CMP_GT_U32_Impl(Inst *inst)
 #define INST INST_VOPC
 void WorkItem::ISA_V_CMP_NE_U32_Impl(Inst *inst)
 {
-	NOT_IMPL();
+	ISAUnimplemented(inst);
 }
 #undef INST
 
@@ -4162,7 +4079,7 @@ void WorkItem::ISA_V_CMP_NE_U32_Impl(Inst *inst)
 #define INST INST_VOPC
 void WorkItem::ISA_V_CMP_GE_U32_Impl(Inst *inst)
 {
-	NOT_IMPL();
+	ISAUnimplemented(inst);
 }
 #undef INST
 
@@ -4724,7 +4641,7 @@ void WorkItem::ISA_V_FMA_F32_Impl(Inst *inst)
 #define INST INST_VOP3a
 void WorkItem::ISA_V_FMA_F64_Impl(Inst *inst)
 {
-	NOT_IMPL();
+	ISAUnimplemented(inst);
 }
 #undef INST
 
@@ -4776,7 +4693,7 @@ void WorkItem::ISA_V_ALIGNBIT_B32_Impl(Inst *inst)
 #define INST INST_VOP3a
 void WorkItem::ISA_V_DIV_FIXUP_F64_Impl(Inst *inst)
 {
-	NOT_IMPL();
+	ISAUnimplemented(inst);
 }
 #undef INST
 
@@ -4784,7 +4701,7 @@ void WorkItem::ISA_V_DIV_FIXUP_F64_Impl(Inst *inst)
 #define INST INST_VOP3a
 void WorkItem::ISA_V_MIN_F64_Impl(Inst *inst)
 {
-	NOT_IMPL();
+	ISAUnimplemented(inst);
 }
 #undef INST
 
@@ -4792,7 +4709,7 @@ void WorkItem::ISA_V_MIN_F64_Impl(Inst *inst)
 #define INST INST_VOP3a
 void WorkItem::ISA_V_MAX_F64_Impl(Inst *inst)
 {
-	NOT_IMPL();
+	ISAUnimplemented(inst);
 }
 #undef INST
 
@@ -4835,7 +4752,7 @@ void WorkItem::ISA_V_MUL_LO_U32_Impl(Inst *inst)
 #define INST INST_VOP3a
 void WorkItem::ISA_V_DIV_FMAS_F64_Impl(Inst *inst)
 {
-	NOT_IMPL();
+	ISAUnimplemented(inst);
 }
 #undef INST
 
@@ -4843,7 +4760,7 @@ void WorkItem::ISA_V_DIV_FMAS_F64_Impl(Inst *inst)
 #define INST INST_VOP3a
 void WorkItem::ISA_V_TRIG_PREOP_F64_Impl(Inst *inst)
 {
-	NOT_IMPL();
+	ISAUnimplemented(inst);
 }
 #undef INST
 
@@ -5047,7 +4964,7 @@ void WorkItem::ISA_V_CMP_EQ_F32_VOP3a_Impl(Inst *inst)
 #define INST INST_VOP3a
 void WorkItem::ISA_V_CMP_LE_F32_VOP3a_Impl(Inst *inst)
 {
-	NOT_IMPL();
+	ISAUnimplemented(inst);
 }
 
 // D.u = (S0.f > S1.f).
@@ -5099,7 +5016,7 @@ void WorkItem::ISA_V_CMP_GT_F32_VOP3a_Impl(Inst *inst)
 #define INST INST_VOP3a
 void WorkItem::ISA_V_CMP_NLE_F32_VOP3a_Impl(Inst *inst)
 {
-	NOT_IMPL();
+	ISAUnimplemented(inst);
 }
 #undef INST
 
@@ -5197,7 +5114,7 @@ void WorkItem::ISA_V_CMP_NLT_F32_VOP3a_Impl(Inst *inst)
 #define INST INST_VOP3a
 void WorkItem::ISA_V_CMP_OP16_F64_VOP3a_Impl(Inst *inst)
 {
-	NOT_IMPL();
+	ISAUnimplemented(inst);
 }
 #undef INST
 
@@ -5523,7 +5440,7 @@ void WorkItem::ISA_V_CMPX_EQ_I32_VOP3a_Impl(Inst *inst)
 #define INST INST_VOP3a
 void WorkItem::ISA_V_CMP_CLASS_F64_VOP3a_Impl(Inst *inst)
 {
-	NOT_IMPL();
+	ISAUnimplemented(inst);
 }
 #undef INST
 
@@ -5696,7 +5613,7 @@ void WorkItem::ISA_V_CMP_GE_U32_VOP3a_Impl(Inst *inst)
 #define INST INST_VOP3a
 void WorkItem::ISA_V_CMP_LT_U64_VOP3a_Impl(Inst *inst)
 {
-	NOT_IMPL();
+	ISAUnimplemented(inst);
 }
 #undef INST
 
@@ -6150,7 +6067,7 @@ void WorkItem::ISA_V_MUL_F64_Impl(Inst *inst)
 #define INST INST_VOP3a
 void WorkItem::ISA_V_LDEXP_F64_Impl(Inst *inst)
 {
-	NOT_IMPL();
+	ISAUnimplemented(inst);
 }
 #undef INST
 
@@ -6205,7 +6122,7 @@ void WorkItem::ISA_V_ADDC_U32_VOP3b_Impl(Inst *inst)
 #define INST INST_VOP3b
 void WorkItem::ISA_V_DIV_SCALE_F64_Impl(Inst *inst)
 {
-	NOT_IMPL();
+	ISAUnimplemented(inst);
 }
 #undef INST
 
@@ -6301,7 +6218,7 @@ void WorkItem::ISA_V_INTERP_P2_F32_Impl(Inst *inst)
 #define INST INST_VINTRP
 void WorkItem::ISA_V_INTERP_MOV_F32_Impl(Inst *inst)
 {
-	NOT_IMPL();
+	ISAUnimplemented(inst);
 }
 #undef INST
 
@@ -6314,7 +6231,7 @@ void WorkItem::ISA_V_INTERP_MOV_F32_Impl(Inst *inst)
 #define INST INST_DS
 void WorkItem::ISA_DS_INC_U32_Impl(Inst *inst)
 {
-	NOT_IMPL();
+	ISAUnimplemented(inst);
 }
 #undef INST
 
@@ -6933,11 +6850,7 @@ void WorkItem::ISA_BUFFER_LOAD_SBYTE_Impl(Inst *inst)
 	EmuBufferDesc buf_desc;
 	InstReg value;
 
-	unsigned base;
-	unsigned mem_offset = 0;
-	unsigned inst_offset = 0;
 	unsigned off_vgpr = 0;
-	unsigned stride = 0;
 	unsigned idx_vgpr = 0;
 
 	int bytes_to_read = 1;
@@ -6946,10 +6859,10 @@ void WorkItem::ISA_BUFFER_LOAD_SBYTE_Impl(Inst *inst)
 	ReadBufferResource(INST.srsrc * 4, buf_desc);
 
 	// Figure 8.1 from SI ISA defines address calculation
-	base = buf_desc.base_addr;
-	mem_offset = ReadSReg(INST.soffset);
-	inst_offset = INST.offset;
-	stride = buf_desc.stride;
+	unsigned base = buf_desc.base_addr;
+	unsigned mem_offset = ReadSReg(INST.soffset);
+	unsigned inst_offset = INST.offset;
+	unsigned stride = buf_desc.stride;
 
 	// Table 8.3 from SI ISA
 	if (!INST.idxen && INST.offen)
@@ -7010,11 +6923,7 @@ void WorkItem::ISA_BUFFER_LOAD_DWORD_Impl(Inst *inst)
 	EmuBufferDesc buf_desc;
 	InstReg value;
 
-	unsigned base;
-	unsigned mem_offset = 0;
-	unsigned inst_offset = 0;
 	unsigned off_vgpr = 0;
-	unsigned stride = 0;
 	unsigned idx_vgpr = 0;
 
 	int bytes_to_read = 4;
@@ -7023,10 +6932,10 @@ void WorkItem::ISA_BUFFER_LOAD_DWORD_Impl(Inst *inst)
 	ReadBufferResource(INST.srsrc * 4, buf_desc);
 
 	// Figure 8.1 from SI ISA defines address calculation
-	base = buf_desc.base_addr;
-	mem_offset = ReadSReg(INST.soffset);
-	inst_offset = INST.offset;
-	stride = buf_desc.stride;
+	unsigned base = buf_desc.base_addr;
+	unsigned mem_offset = ReadSReg(INST.soffset);
+	unsigned inst_offset = INST.offset;
+	unsigned stride = buf_desc.stride;
 
 	// Table 8.3 from SI ISA
 	if (!INST.idxen && INST.offen)
@@ -7086,28 +6995,24 @@ void WorkItem::ISA_BUFFER_STORE_BYTE_Impl(Inst *inst)
 	EmuBufferDesc buf_desc;
 	InstReg value;
 
-	unsigned base;
-	unsigned mem_offset = 0;
-	unsigned inst_offset = 0;
 	unsigned off_vgpr = 0;
-	unsigned stride = 0;
 	unsigned idx_vgpr = 0;
 
 	int bytes_to_write = 1;
 
 	if (INST.glc)
 	{
-		wavefront->setVectorMemGlobalCoherency(); // FIXME redundant
+		wavefront->setVectorMemGlobalCoherency(true); // FIXME redundant
 	}
 
 	// srsrc is in units of 4 registers
 	ReadBufferResource(INST.srsrc * 4, buf_desc);
 
 	// Figure 8.1 from SI ISA defines address calculation
-	base = buf_desc.base_addr;
-	mem_offset = ReadSReg(INST.soffset);
-	inst_offset = INST.offset;
-	stride = buf_desc.stride;
+	unsigned base = buf_desc.base_addr;
+	unsigned mem_offset = ReadSReg(INST.soffset);
+	unsigned inst_offset = INST.offset;
+	unsigned stride = buf_desc.stride;
 
 	// Table 8.3 from SI ISA
 	if (!INST.idxen && INST.offen)
@@ -7168,28 +7073,24 @@ void WorkItem::ISA_BUFFER_STORE_DWORD_Impl(Inst *inst)
 	EmuBufferDesc buf_desc;
 	InstReg value;
 
-	unsigned base;
-	unsigned mem_offset = 0;
-	unsigned inst_offset = 0;
 	unsigned off_vgpr = 0;
-	unsigned stride = 0;
 	unsigned idx_vgpr = 0;
 
 	int bytes_to_write = 4;
 
 	if (INST.glc)
 	{
-		wavefront->setVectorMemGlobalCoherency(); // FIXME redundant
+		wavefront->setVectorMemGlobalCoherency(true); // FIXME redundant
 	}
 
 	// srsrc is in units of 4 registers
 	ReadBufferResource(INST.srsrc * 4, buf_desc);
 
 	// Figure 8.1 from SI ISA defines address calculation
-	base = buf_desc.base_addr;
-	mem_offset = ReadSReg(INST.soffset);
-	inst_offset = INST.offset;
-	stride = buf_desc.stride;
+	unsigned base = buf_desc.base_addr;
+	unsigned mem_offset = ReadSReg(INST.soffset);
+	unsigned inst_offset = INST.offset;
+	unsigned stride = buf_desc.stride;
 
 	// Table 8.3 from SI ISA
 	if (!INST.idxen && INST.offen)
@@ -7246,11 +7147,7 @@ void WorkItem::ISA_BUFFER_ATOMIC_ADD_Impl(Inst *inst)
 	InstReg value;
 	InstReg prev_value;
 
-	unsigned base;
-	unsigned mem_offset = 0;
-	unsigned inst_offset = 0;
 	unsigned off_vgpr = 0;
-	unsigned stride = 0;
 	unsigned idx_vgpr = 0;
 
 	int bytes_to_read = 4;
@@ -7258,24 +7155,24 @@ void WorkItem::ISA_BUFFER_ATOMIC_ADD_Impl(Inst *inst)
 
 	if (INST.glc)
 	{
-		wavefront->setVectorMemGlobalCoherency();
+		wavefront->setVectorMemGlobalCoherency(true);
 	}
 	else
 	{
 		/* NOTE Regardless of whether the glc bit is set by the AMD 
 		 * compiler, for the NMOESI protocol correctness , the glc bit
 		 * must be set. */
-		wavefront->setVectorMemGlobalCoherency();
+		wavefront->setVectorMemGlobalCoherency(true);
 	}
 
 	// srsrc is in units of 4 registers
 	ReadBufferResource(INST.srsrc * 4, buf_desc);
 
 	// Figure 8.1 from SI ISA defines address calculation
-	base = buf_desc.base_addr;
-	mem_offset = ReadSReg(INST.soffset);
-	inst_offset = INST.offset;
-	stride = buf_desc.stride;
+	unsigned base = buf_desc.base_addr;
+	unsigned mem_offset = ReadSReg(INST.soffset);
+	unsigned inst_offset = INST.offset;
+	unsigned stride = buf_desc.stride;
 
 	// Table 8.3 from SI ISA
 	if (!INST.idxen && INST.offen)
@@ -7348,19 +7245,13 @@ void WorkItem::ISA_TBUFFER_LOAD_FORMAT_X_Impl(Inst *inst)
 	EmuBufferDesc buf_desc;
 	InstReg value;
 
-	int elem_size;
-	int num_elems;
 	int bytes_to_read;
 
-	unsigned base;
-	unsigned mem_offset = 0;
-	unsigned inst_offset = 0;
 	unsigned off_vgpr = 0;
-	unsigned stride = 0;
 	unsigned idx_vgpr = 0;
 
-	elem_size = IsaGetElemSize(INST.dfmt);
-	num_elems = IsaGetNumElems(INST.dfmt);
+	int elem_size = ISAGetElemSize(INST.dfmt);
+	int num_elems = ISAGetNumElems(INST.dfmt);
 	bytes_to_read = elem_size * num_elems;
 
 	assert(num_elems == 1);
@@ -7370,10 +7261,10 @@ void WorkItem::ISA_TBUFFER_LOAD_FORMAT_X_Impl(Inst *inst)
 	ReadBufferResource(INST.srsrc * 4, buf_desc);
 
 	// Figure 8.1 from SI ISA defines address calculation
-	base = buf_desc.base_addr;
-	mem_offset = ReadSReg(INST.soffset);
-	inst_offset = INST.offset;
-	stride = buf_desc.stride;
+	unsigned base = buf_desc.base_addr;
+	unsigned mem_offset = ReadSReg(INST.soffset);
+	unsigned inst_offset = INST.offset;
+	unsigned stride = buf_desc.stride;
 
 	// Table 8.3 from SI ISA
 	if (!INST.idxen && INST.offen)
@@ -7437,19 +7328,13 @@ void WorkItem::ISA_TBUFFER_LOAD_FORMAT_XY_Impl(Inst *inst)
 	InstReg value;
 
 	int i;
-	int elem_size;
-	int num_elems;
 	int bytes_to_read;
 
-	unsigned base;
-	unsigned mem_offset = 0;
-	unsigned inst_offset = 0;
 	unsigned off_vgpr = 0;
-	unsigned stride = 0;
 	unsigned idx_vgpr = 0;
 
-	elem_size = IsaGetElemSize(INST.dfmt);
-	num_elems = IsaGetNumElems(INST.dfmt);
+	int elem_size = ISAGetElemSize(INST.dfmt);
+	int num_elems = ISAGetNumElems(INST.dfmt);
 	bytes_to_read = elem_size * num_elems;
 
 	assert(num_elems == 2);
@@ -7459,10 +7344,10 @@ void WorkItem::ISA_TBUFFER_LOAD_FORMAT_XY_Impl(Inst *inst)
 	ReadBufferResource(INST.srsrc * 4, buf_desc);
 
 	// Figure 8.1 from SI ISA defines address calculation
-	base = buf_desc.base_addr;
-	mem_offset = ReadSReg(INST.soffset);
-	inst_offset = INST.offset;
-	stride = buf_desc.stride;
+	unsigned base = buf_desc.base_addr;
+	unsigned mem_offset = ReadSReg(INST.soffset);
+	unsigned inst_offset = INST.offset;
+	unsigned stride = buf_desc.stride;
 
 	// Table 8.3 from SI ISA
 	if (!INST.idxen && INST.offen)
@@ -7517,7 +7402,7 @@ void WorkItem::ISA_TBUFFER_LOAD_FORMAT_XY_Impl(Inst *inst)
 #define INST INST_MTBUF
 void WorkItem::ISA_TBUFFER_LOAD_FORMAT_XYZ_Impl(Inst *inst)
 {
-	NOT_IMPL();
+	ISAUnimplemented(inst);
 }
 #undef INST
 
@@ -7531,20 +7416,14 @@ void WorkItem::ISA_TBUFFER_LOAD_FORMAT_XYZW_Impl(Inst *inst)
 	InstReg value;
 
 	int i;
-	int elem_size;
-	int num_elems;
 	int bytes_to_read;
 
-	unsigned base;
-	unsigned mem_offset = 0;
-	unsigned inst_offset = 0;
 	unsigned off_vgpr = 0;
-	unsigned stride = 0;
 	unsigned idx_vgpr = 0;
 	unsigned id_in_wavefront = 0;
 
-	elem_size = IsaGetElemSize(INST.dfmt);
-	num_elems = IsaGetNumElems(INST.dfmt);
+	int elem_size = ISAGetElemSize(INST.dfmt);
+	int num_elems = ISAGetNumElems(INST.dfmt);
 	bytes_to_read = elem_size * num_elems;
 
 	assert(num_elems == 4);
@@ -7554,10 +7433,10 @@ void WorkItem::ISA_TBUFFER_LOAD_FORMAT_XYZW_Impl(Inst *inst)
 	ReadBufferResource(INST.srsrc * 4, buf_desc);
 
 	// Figure 8.1 from SI ISA defines address calculation
-	base = buf_desc.base_addr;
-	mem_offset = ReadSReg(INST.soffset);
-	inst_offset = INST.offset;
-	stride = buf_desc.stride;
+	unsigned base = buf_desc.base_addr;
+	unsigned mem_offset = ReadSReg(INST.soffset);
+	unsigned inst_offset = INST.offset;
+	unsigned stride = buf_desc.stride;
 
 	// Table 8.3 from SI ISA
 	if (!INST.idxen && INST.offen)
@@ -7620,20 +7499,12 @@ void WorkItem::ISA_TBUFFER_STORE_FORMAT_X_Impl(Inst *inst)
 	EmuBufferDesc buf_desc;
 	InstReg value;
 
-	int elem_size;
-	int num_elems;
-	int bytes_to_write;
-
-	unsigned base;
-	unsigned mem_offset = 0;
-	unsigned inst_offset = 0;
 	unsigned off_vgpr = 0;
-	unsigned stride = 0;
 	unsigned idx_vgpr = 0;
 
-	elem_size = IsaGetElemSize(INST.dfmt);
-	num_elems = IsaGetNumElems(INST.dfmt);
-	bytes_to_write = elem_size * num_elems;
+	int elem_size = ISAGetElemSize(INST.dfmt);
+	int num_elems = ISAGetNumElems(INST.dfmt);
+	int bytes_to_write = elem_size * num_elems;
 
 	assert(num_elems == 1);
 	assert(elem_size == 4);
@@ -7642,10 +7513,10 @@ void WorkItem::ISA_TBUFFER_STORE_FORMAT_X_Impl(Inst *inst)
 	ReadBufferResource(INST.srsrc * 4, buf_desc);
 
 	// Figure 8.1 from SI ISA defines address calculation
-	base = buf_desc.base_addr;
-	mem_offset = ReadSReg(INST.soffset);
-	inst_offset = INST.offset;
-	stride = buf_desc.stride;
+	unsigned base = buf_desc.base_addr;
+	unsigned mem_offset = ReadSReg(INST.soffset);
+	unsigned inst_offset = INST.offset;
+	unsigned stride = buf_desc.stride;
 
 	// Table 8.3 from SI ISA
 	if (!INST.idxen && INST.offen)
@@ -7700,20 +7571,13 @@ void WorkItem::ISA_TBUFFER_STORE_FORMAT_XY_Impl(Inst *inst)
 	EmuBufferDesc buf_desc;
 	InstReg value;
 
-	int elem_size;
-	int num_elems;
-	int bytes_to_write;
 
-	unsigned base;
-	unsigned mem_offset = 0;
-	unsigned inst_offset = 0;
 	unsigned off_vgpr = 0;
-	unsigned stride = 0;
 	unsigned idx_vgpr = 0;
 
-	elem_size = IsaGetElemSize(INST.dfmt);
-	num_elems = IsaGetNumElems(INST.dfmt);
-	bytes_to_write = elem_size * num_elems;
+	int elem_size = ISAGetElemSize(INST.dfmt);
+	int num_elems = ISAGetNumElems(INST.dfmt);
+	int bytes_to_write = elem_size * num_elems;
 
 	assert(num_elems == 2);
 	assert(elem_size == 4);
@@ -7722,10 +7586,10 @@ void WorkItem::ISA_TBUFFER_STORE_FORMAT_XY_Impl(Inst *inst)
 	ReadBufferResource(INST.srsrc * 4, buf_desc);
 
 	// Figure 8.1 from SI ISA defines address calculation
-	base = buf_desc.base_addr;
-	mem_offset = ReadSReg(INST.soffset);
-	inst_offset = INST.offset;
-	stride = buf_desc.stride;
+	unsigned base = buf_desc.base_addr;
+	unsigned mem_offset = ReadSReg(INST.soffset);
+	unsigned inst_offset = INST.offset;
+	unsigned stride = buf_desc.stride;
 
 	// Table 8.3 from SI ISA
 	if (!INST.idxen && INST.offen)
@@ -7783,20 +7647,12 @@ void WorkItem::ISA_TBUFFER_STORE_FORMAT_XYZW_Impl(Inst *inst)
 	EmuBufferDesc buf_desc;
 	InstReg value;
 
-	int elem_size;
-	int num_elems;
-	int bytes_to_write;
-
-	unsigned base;
-	unsigned mem_offset = 0;
-	unsigned inst_offset = 0;
 	unsigned off_vgpr = 0;
-	unsigned stride = 0;
 	unsigned idx_vgpr = 0;
 
-	elem_size = IsaGetElemSize(INST.dfmt);
-	num_elems = IsaGetNumElems(INST.dfmt);
-	bytes_to_write = elem_size * num_elems;
+	int elem_size = ISAGetElemSize(INST.dfmt);
+	int num_elems = ISAGetNumElems(INST.dfmt);
+	int bytes_to_write = elem_size * num_elems;
 
 	assert(num_elems == 4);
 	assert(elem_size == 4);
@@ -7805,10 +7661,10 @@ void WorkItem::ISA_TBUFFER_STORE_FORMAT_XYZW_Impl(Inst *inst)
 	ReadBufferResource(INST.srsrc * 4, buf_desc);
 
 	// Figure 8.1 from SI ISA defines address calculation
-	base = buf_desc.base_addr;
-	mem_offset = ReadSReg(INST.soffset);
-	inst_offset = INST.offset;
-	stride = buf_desc.stride;
+	unsigned base = buf_desc.base_addr;
+	unsigned mem_offset = ReadSReg(INST.soffset);
+	unsigned inst_offset = INST.offset;
+	unsigned stride = buf_desc.stride;
 
 	// Table 8.3 from SI ISA
 	if (!INST.idxen && INST.offen)
@@ -7865,14 +7721,14 @@ void WorkItem::ISA_TBUFFER_STORE_FORMAT_XYZW_Impl(Inst *inst)
 #define INST INST_MIMG
 void WorkItem::ISA_IMAGE_STORE_Impl(Inst *inst)
 {
-	NOT_IMPL();
+	ISAUnimplemented(inst);
 }
 #undef INST
 
 #define INST INST_MIMG
 void WorkItem::ISA_IMAGE_SAMPLE_Impl(Inst *inst)
 {
-	NOT_IMPL();
+	ISAUnimplemented(inst);
 }
 #undef INST
 
