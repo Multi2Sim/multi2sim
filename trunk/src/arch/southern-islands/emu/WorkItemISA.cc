@@ -53,21 +53,6 @@ namespace SI
 #define INST_EXP  inst->getBytes()->exp
 
 
-// FIXME: move this to somewhere else
-// M0 must be intialized before using any VINTRP instruction
-struct si_m0_for_vintrp_t
-{
-	unsigned b0 : 1;
-	unsigned new_prim_mask : 15;
-	unsigned lds_param_offset : 16;
-}__attribute__((packed));
-
-union si_isa_v_interp_m0_t
-{
-	unsigned as_uint;
-	struct si_m0_for_vintrp_t for_vintrp;
-};
-
 /*
  * SMRD
  */
@@ -6135,12 +6120,26 @@ void WorkItem::ISA_V_DIV_SCALE_F64_Impl(Inst *inst)
 #define INST INST_VINTRP
 void WorkItem::ISA_V_INTERP_P1_F32_Impl(Inst *inst)
 {
+	// M0 must be intialized before using any VINTRP instruction
+	struct M0ForInterp
+	{
+		unsigned b0 : 1;
+		unsigned new_prim_mask : 15;
+		unsigned lds_param_offset : 16;
+	}__attribute__((packed));
+
+	union VInterpM0
+	{
+		unsigned as_uint;
+		struct M0ForInterp for_vintrp;
+	};
+
 	InstReg s;
 	InstReg p0;
 	InstReg p10;
 	InstReg data;
 
-	union si_isa_v_interp_m0_t m0_vintrp;
+	union VInterpM0 m0_vintrp;
 
 	// Get lds offset and primitive mask information
 	m0_vintrp.as_uint = ReadReg(SI_M0);
@@ -6178,11 +6177,25 @@ void WorkItem::ISA_V_INTERP_P1_F32_Impl(Inst *inst)
 #define INST INST_VINTRP
 void WorkItem::ISA_V_INTERP_P2_F32_Impl(Inst *inst)
 {
+	// M0 must be intialized before using any VINTRP instruction
+	struct M0ForInterp
+	{
+		unsigned b0 : 1;
+		unsigned new_prim_mask : 15;
+		unsigned lds_param_offset : 16;
+	}__attribute__((packed));
+
+	union VInterpM0
+	{
+		unsigned as_uint;
+		struct M0ForInterp for_vintrp;
+	};
+	
 	InstReg s;
 	InstReg p20;
 	InstReg data;
 
-	union si_isa_v_interp_m0_t m0_vintrp;
+	union VInterpM0 m0_vintrp;
 
 	// Get lds offset and primitive mask information
 	m0_vintrp.as_uint = ReadReg(SI_M0);
