@@ -31,8 +31,59 @@ using namespace misc;
 namespace x86
 {
 
+const Regs::Info Regs::info[InstRegCount] =
+{
+	{ 0, 0 },
+	{ 0, 4 },	// 1. eax
+	{ 4, 4 },	// 2. ecx
+	{ 8, 4 },	// 3. edx
+	{ 12, 4 },	// 4. ebx
+	{ 16, 4 },	// 5. esp
+	{ 20, 4 },	// 6. ebp
+	{ 24, 4 },	// 7. esi
+	{ 28, 4 },	// 8. edi
+	{ 0, 2 },	// 9. ax
+	{ 4, 2 },	// 10. cx
+	{ 8, 2 },	// 11. dx
+	{ 12, 2 },	// 12. bx
+	{ 16, 2 },	// 13. sp
+	{ 20, 2 },	// 14. bp
+	{ 24, 2 },	// 15. si
+	{ 28, 2 },	// 16. di
+	{ 0, 1 },	// 17. al
+	{ 4, 1 },	// 18. cl
+	{ 8, 1 },	// 19. dl
+	{ 12, 1 },	// 20. bl
+	{ 1, 1 },	// 21. ah
+	{ 5, 1 },	// 22. ch
+	{ 9, 1 },	// 23. dh
+	{ 13, 1 },	// 24. bh
+	{ 32, 2 },	// 25. es
+	{ 34, 2 },	// 26. cs
+	{ 36, 2 },	// 27. ss
+	{ 38, 2 },	// 28. ds
+	{ 40, 2 },	// 29. fs
+	{ 42, 2 },	// 30. gs
+};
+
+
+const unsigned Regs::mask[5] =
+{
+	0,		// 0-bit
+	0xff,		// 8-bit
+	0xffff,		// 16-bit
+	0,		// unused
+	0xffffffff	// 32-bit
+};
+
+
 Regs::Regs()
 {
+	// Make sure that the structure containing the main registers (eax to
+	// gs) is packed. This is critical for correct access of registers using
+	// the register info table.
+	assert((char *) &gs - (char *) &eax == 42);
+
 	// General-purpose registers
 	eax = 0;
 	ecx = 0;
@@ -68,7 +119,73 @@ Regs::Regs()
 }
 
 
-void Regs::DumpFPUStack(std::ostream &os)
+unsigned Regs::Read(InstReg reg) const
+{
+	assert(InRange(reg, InstRegNone, InstRegCount - 1));
+	unsigned *value_ptr = (unsigned *) ((char *) &eax + info[reg].offset);
+	return *value_ptr & mask[info[reg].size];
+}
+
+
+void Regs::Write(InstReg reg, unsigned value)
+{
+	assert(InRange(reg, InstRegNone, InstRegCount - 1));
+	unsigned mask = this->mask[info[reg].size];
+	unsigned *value_ptr = (unsigned *) ((char *) &eax + info[reg].offset);
+	*value_ptr = (*value_ptr & ~mask) | (value & mask);
+}
+
+
+Extended Regs::ReadFpu(int index) const
+{
+	// Invalid index
+	if (!InRange(index, 0, 7))
+		return 0.0;
+
+	// Calculate effective index
+	index = (fpu_top + index) % 8;
+	if (!fpu_stack[index].valid)
+		return 0.0;
+
+	// Return
+	return fpu_stack[index].value;
+}
+
+
+void Regs::WriteFpu(int index, const Extended &value)
+{
+	// Invalid index
+	if (!InRange(index, 0, 7))
+		return;
+
+	// Calculate effective index
+	index = (fpu_top + index) % 8;
+	if (!fpu_stack[index].valid)
+		return;
+
+	// Write value
+	fpu_stack[index].value = value;
+}
+	
+	
+void Regs::PushFpu(const Extended &value)
+{
+	fpu_top = (fpu_top + 7) % 8;
+	fpu_stack[fpu_top].valid = true;
+	fpu_stack[fpu_top].value = value;
+}
+
+
+Extended Regs::PopFpu()
+{
+	Extended &value = fpu_stack[fpu_top].value;
+	fpu_stack[fpu_top].valid = false;
+	fpu_top = (fpu_top + 1) % 8;
+	return value;
+}
+
+
+void Regs::DumpFpuStack(std::ostream &os) const
 {
 	os << '{';
 	int index = (fpu_top + 7) % 8;
@@ -86,7 +203,7 @@ void Regs::DumpFPUStack(std::ostream &os)
 }
 
 
-void Regs::Dump(std::ostream &os)
+void Regs::Dump(std::ostream &os) const
 {
 	// Integer registers
 	os << StringFmt("  eax=%08x  ecx=%08x  edx=%08x  ebx=%08x\n",
@@ -108,7 +225,7 @@ void Regs::Dump(std::ostream &os)
 	
 	// Floating-point stack
 	os << "  fpu_stack (last=top): ";
-	DumpFPUStack(os);
+	DumpFpuStack(os);
 
 	// Floating point code (part from status register)
 	os << StringFmt("  fpu_code (C3-C2-C1-C0): %d-%d-%d-%d\n",
