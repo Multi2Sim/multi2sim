@@ -55,10 +55,6 @@ class WorkGroup
 	int id_3d[3];
 
 	// Status
-	// FIXME: Should not be bool
-	// bool wavefronts_at_barrier;
-	// bool wavefronts_completed_emu;
-	// bool wavefronts_completed_timing;
 	unsigned wavefronts_at_barrier;
 	unsigned wavefronts_completed_emu;
 	unsigned wavefronts_completed_timing;
@@ -104,6 +100,7 @@ public:
 		return os;
 	}
 
+
 	/// Getters
 	///
 	/// Get workgroup ID
@@ -130,8 +127,6 @@ public:
 	/// Get NDRange that it belongs to
 	const NDRange *getNDRange() const { return ndrange; }
 
-	/// Get list of wavefronts in the work-group
-	const std::vector<std::unique_ptr<Wavefront>> &getWavefronts() const { return wavefronts; }
 
 	/// Setters
 	///
