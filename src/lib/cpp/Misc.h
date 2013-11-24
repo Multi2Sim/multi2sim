@@ -66,6 +66,16 @@ inline unsigned SetBits32(unsigned x, int high, int low,
 			- low + 1) << low);
 }
 
+inline unsigned SetBit32(unsigned x, int bit)
+{
+	return x | (1u << bit);
+}
+
+inline unsigned ClearBit32(unsigned x, int bit)
+{
+	return x & ~(1u << bit);
+}
+
 inline unsigned SignExtend32(unsigned x, unsigned b)
 {
 	return x & (1u << (b - 1)) ? x | ~((1u << b) - 1) :
