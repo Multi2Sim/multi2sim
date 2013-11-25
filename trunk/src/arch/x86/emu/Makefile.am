@@ -64,6 +64,9 @@ libemu_a_SOURCES = \
 	Regs.cc \
 	Regs.h \
 	\
+	Signal.cc \
+	Signal.h \
+	\
 	XMMValue.cc \
 	XMMValue.h
 
