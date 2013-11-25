@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_X86_EMU_EMU_H
-#define ARCH_X86_EMU_EMU_H
+#ifndef ARCH_X86_EMU_EMU_OLD_H
+#define ARCH_X86_EMU_EMU_OLD_H
 
 #include <pthread.h>
 #include <stdio.h>

@@ -48,6 +48,13 @@ libemu_a_SOURCES = \
 	\
 	\
 	\
+	Context.cc \
+	ContextLoader.cc \
+	Context.h \
+	\
+	Emu.cc \
+	Emu.h \
+	\
 	Extended.cc \
 	Extended.h \
 	\
