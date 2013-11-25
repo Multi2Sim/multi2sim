@@ -37,8 +37,8 @@ bool Memory::safe_mode = true;
 
 MemoryPage *Memory::getPage(unsigned addr)
 {
-	unsigned tag = addr & ~(MEMORY_PAGE_SIZE - 1);
-	unsigned index = (addr >> MEMORY_LOG_PAGE_SIZE) % MEMORY_PAGE_COUNT;
+	unsigned tag = addr & ~(MemoryPageSize - 1);
+	unsigned index = (addr >> MemoryLogPageSize) % MemoryPageCount;
 	MemoryPage *page = page_table[index];
 	MemoryPage *prev = nullptr;
 	
@@ -65,10 +65,10 @@ MemoryPage *Memory::getPage(unsigned addr)
 MemoryPage *Memory::getNextPage(unsigned addr)
 {
 	// Get tag of the page just following addr
-	unsigned tag = (addr + MEMORY_PAGE_SIZE) & ~(MEMORY_PAGE_SIZE - 1);
+	unsigned tag = (addr + MemoryPageSize) & ~(MemoryPageSize - 1);
 	if (!tag)
 		return nullptr;
-	unsigned index = (tag >> MEMORY_LOG_PAGE_SIZE) % MEMORY_PAGE_COUNT;
+	unsigned index = (tag >> MemoryLogPageSize) % MemoryPageCount;
 	MemoryPage *page = page_table[index];
 
 	// Look for a page exactly following addr. If it is found, return it.
@@ -81,7 +81,7 @@ MemoryPage *Memory::getNextPage(unsigned addr)
 	// the one with the lowest tag following addr.
 	unsigned mintag = 0xffffffff;
 	MemoryPage *minpage = nullptr;
-	for (index = 0; index < MEMORY_PAGE_COUNT; index++)
+	for (index = 0; index < MemoryPageCount; index++)
 	{
 		for (page = page_table[index]; page; page = page->next)
 		{
@@ -101,8 +101,8 @@ MemoryPage *Memory::NewPage(unsigned addr, unsigned perm)
 {
 	// Initialize
 	MemoryPage *page = new MemoryPage;
-	unsigned tag = addr & ~(MEMORY_PAGE_SIZE - 1);
-	unsigned index = (addr >> MEMORY_LOG_PAGE_SIZE) % MEMORY_PAGE_COUNT;
+	unsigned tag = addr & ~(MemoryPageSize - 1);
+	unsigned index = (addr >> MemoryLogPageSize) % MemoryPageCount;
 	page->tag = tag;
 	page->perm = perm;
 	page->data = nullptr;
@@ -118,8 +118,8 @@ MemoryPage *Memory::NewPage(unsigned addr, unsigned perm)
 
 void Memory::FreePage(unsigned addr)
 {
-	unsigned tag = addr & ~(MEMORY_PAGE_SIZE - 1);
-	unsigned index = (addr >> MEMORY_LOG_PAGE_SIZE) % MEMORY_PAGE_COUNT;
+	unsigned tag = addr & ~(MemoryPageSize - 1);
+	unsigned index = (addr >> MemoryLogPageSize) % MemoryPageCount;
 	MemoryPage *prev = nullptr;
 
 	// Find page
@@ -146,9 +146,9 @@ void Memory::FreePage(unsigned addr)
 void Memory::Copy(unsigned dest, unsigned src, unsigned size)
 {
 	// Restrictions. No overlapping allowed.
-	assert(!(dest & (MEMORY_PAGE_SIZE-1)));
-	assert(!(src & (MEMORY_PAGE_SIZE-1)));
-	assert(!(size & (MEMORY_PAGE_SIZE-1)));
+	assert(!(dest & (MemoryPageSize-1)));
+	assert(!(src & (MemoryPageSize-1)));
+	assert(!(size & (MemoryPageSize-1)));
 	if ((src < dest && src + size > dest) ||
 			(dest < src && dest + size > src))
 		panic("%s: cannot copy overlapping regions", __FUNCTION__);
@@ -166,19 +166,19 @@ void Memory::Copy(unsigned dest, unsigned src, unsigned size)
 		if (page_src->data)
 		{
 			if (!page_dest->data)
-				page_dest->data = new char[MEMORY_PAGE_SIZE];
-			memcpy(page_dest->data, page_src->data, MEMORY_PAGE_SIZE);
+				page_dest->data = new char[MemoryPageSize];
+			memcpy(page_dest->data, page_src->data, MemoryPageSize);
 		}
 		else
 		{
 			if (page_dest->data)
-				memset(page_dest->data, 0, MEMORY_PAGE_SIZE);
+				memset(page_dest->data, 0, MemoryPageSize);
 		}
 
 		// Advance pointers
-		src += MEMORY_PAGE_SIZE;
-		dest += MEMORY_PAGE_SIZE;
-		size -= MEMORY_PAGE_SIZE;
+		src += MemoryPageSize;
+		dest += MemoryPageSize;
+		size -= MemoryPageSize;
 	}
 }
 
@@ -186,8 +186,8 @@ void Memory::Copy(unsigned dest, unsigned src, unsigned size)
 char *Memory::getBuffer(unsigned addr, unsigned size, MemoryAccess access)
 {
 	// Get page offset and check page bounds
-	unsigned offset = addr & (MEMORY_PAGE_SIZE - 1);
-	if (offset + size > MEMORY_PAGE_SIZE)
+	unsigned offset = addr & (MemoryPageSize - 1);
+	if (offset + size > MemoryPageSize)
 		return nullptr;
 	
 	// Look for page
@@ -201,7 +201,7 @@ char *Memory::getBuffer(unsigned addr, unsigned size, MemoryAccess access)
 	
 	// Allocate and initialize page data if it does not exist yet.
 	if (!page->data)
-		page->data = new char[MEMORY_PAGE_SIZE]();
+		page->data = new char[MemoryPageSize]();
 	
 	// Return pointer to page data
 	return page->data + offset;
@@ -213,8 +213,8 @@ void Memory::AccessAtPageBoundary(unsigned addr, unsigned size, char *buf,
 {
 	// Find memory page and compute offset.
 	MemoryPage *page = getPage(addr);
-	unsigned offset = addr & (MEMORY_PAGE_SIZE - 1);
-	assert(offset + size <= MEMORY_PAGE_SIZE);
+	unsigned offset = addr & (MemoryPageSize - 1);
+	assert(offset + size <= MemoryPageSize);
 
 	// On nonexistent page, raise segmentation fault in safe mode,
 	// or create page with full privileges for writes in unsafe mode.
@@ -260,7 +260,7 @@ void Memory::AccessAtPageBoundary(unsigned addr, unsigned size, char *buf,
 	if (access == MemoryAccessWrite || access == MemoryAccessInit)
 	{
 		if (!page->data)
-			page->data = new char[MEMORY_PAGE_SIZE]();
+			page->data = new char[MemoryPageSize]();
 		memcpy(page->data + offset, buf, size);
 		return;
 	}
@@ -276,8 +276,8 @@ void Memory::Access(unsigned addr, unsigned size, char *buf,
 	last_address = addr;
 	while (size)
 	{
-		unsigned offset = addr & (MEMORY_PAGE_SIZE - 1);
-		int chunksize = std::min(size, MEMORY_PAGE_SIZE - offset);
+		unsigned offset = addr & (MemoryPageSize - 1);
+		int chunksize = std::min(size, MemoryPageSize - offset);
 		AccessAtPageBoundary(addr, chunksize, buf, access);
 
 		size -= chunksize;
@@ -295,7 +295,7 @@ Memory::Memory()
 	last_address = 0;
 
 	// Reset page table
-	for (int i = 0; i < MEMORY_PAGE_COUNT; ++i)
+	for (unsigned i = 0; i < MemoryPageCount; ++i)
 		page_table[i] = nullptr;
 }
 
@@ -303,19 +303,19 @@ Memory::Memory()
 Memory::Memory(const Memory &memory)
 {
 	// Reset page table
-	for (int i = 0; i < MEMORY_PAGE_COUNT; ++i)
+	for (unsigned i = 0; i < MemoryPageCount; ++i)
 		page_table[i] = nullptr;
 
 	// Copy pages
 	safe = false;
-	for (unsigned i = 0; i < MEMORY_PAGE_COUNT; i++)
+	for (unsigned i = 0; i < MemoryPageCount; i++)
 	{
 		for (MemoryPage *page = memory.page_table[i]; page;
 				page = page->next)
 		{
 			NewPage(page->tag, page->perm);
 			if (page->data)
-				Access(page->tag, MEMORY_PAGE_SIZE,
+				Access(page->tag, MemoryPageSize,
 					page->data, MemoryAccessInit);
 		}
 	}
@@ -335,7 +335,7 @@ Memory::~Memory()
 
 void Memory::Clear()
 {
-	for (int i = 0; i < MEMORY_PAGE_COUNT; i++)
+	for (unsigned i = 0; i < MemoryPageCount; i++)
 		while (page_table[i])
 			FreePage(page_table[i]->tag);
 }
@@ -343,8 +343,8 @@ void Memory::Clear()
 
 unsigned Memory::MapSpace(unsigned addr, unsigned size)
 {
-	assert(!(addr & (MEMORY_PAGE_SIZE - 1)));
-	assert(!(size & (MEMORY_PAGE_SIZE - 1)));
+	assert(!(addr & (MemoryPageSize - 1)));
+	assert(!(size & (MemoryPageSize - 1)));
 	unsigned tag_start = addr;
 	unsigned tag_end = addr;
 	for (;;)
@@ -356,18 +356,18 @@ unsigned Memory::MapSpace(unsigned addr, unsigned size)
 		// Not enough free pages in current region
 		if (getPage(tag_end))
 		{
-			tag_end += MEMORY_PAGE_SIZE;
+			tag_end += MemoryPageSize;
 			tag_start = tag_end;
 			continue;
 		}
 		
 		// Enough free pages
-		if (tag_end - tag_start + MEMORY_PAGE_SIZE == size)
+		if (tag_end - tag_start + MemoryPageSize == size)
 			break;
-		assert(tag_end - tag_start + MEMORY_PAGE_SIZE < size);
+		assert(tag_end - tag_start + MemoryPageSize < size);
 		
 		// we have a new free page
-		tag_end += MEMORY_PAGE_SIZE;
+		tag_end += MemoryPageSize;
 	}
 
 	// Return the start of the free space
@@ -377,8 +377,8 @@ unsigned Memory::MapSpace(unsigned addr, unsigned size)
 
 unsigned Memory::MapSpaceDown(unsigned addr, unsigned size)
 {
-	assert(!(addr & (MEMORY_PAGE_SIZE - 1)));
-	assert(!(size & (MEMORY_PAGE_SIZE - 1)));
+	assert(!(addr & (MemoryPageSize - 1)));
+	assert(!(size & (MemoryPageSize - 1)));
 	unsigned tag_start = addr;
 	unsigned tag_end = addr;
 	for (;;)
@@ -390,18 +390,18 @@ unsigned Memory::MapSpaceDown(unsigned addr, unsigned size)
 		// Not enough free pages in current region
 		if (getPage(tag_start))
 		{
-			tag_start -= MEMORY_PAGE_SIZE;
+			tag_start -= MemoryPageSize;
 			tag_end = tag_start;
 			continue;
 		}
 		
 		// Enough free pages
-		if (tag_end - tag_start + MEMORY_PAGE_SIZE == size)
+		if (tag_end - tag_start + MemoryPageSize == size)
 			break;
-		assert(tag_end - tag_start + MEMORY_PAGE_SIZE < size);
+		assert(tag_end - tag_start + MemoryPageSize < size);
 		
 		// we have a new free page
-		tag_start -= MEMORY_PAGE_SIZE;
+		tag_start -= MemoryPageSize;
 	}
 
 	// Return the start of the free space
@@ -412,11 +412,11 @@ unsigned Memory::MapSpaceDown(unsigned addr, unsigned size)
 void Memory::Map(unsigned addr, unsigned size, unsigned perm)
 {
 	// Calculate page boundaries
-	unsigned tag1 = addr & ~(MEMORY_PAGE_SIZE-1);
-	unsigned tag2 = (addr + size - 1) & ~(MEMORY_PAGE_SIZE-1);
+	unsigned tag1 = addr & ~(MemoryPageSize-1);
+	unsigned tag2 = (addr + size - 1) & ~(MemoryPageSize-1);
 
 	// Allocate pages
-	for (unsigned tag = tag1; tag <= tag2; tag += MEMORY_PAGE_SIZE)
+	for (unsigned tag = tag1; tag <= tag2; tag += MemoryPageSize)
 	{
 		MemoryPage *page = getPage(tag);
 		if (!page)
@@ -429,13 +429,13 @@ void Memory::Map(unsigned addr, unsigned size, unsigned perm)
 void Memory::Unmap(unsigned addr, unsigned size)
 {
 	// Calculate page boundaries
-	assert(!(addr & (MEMORY_PAGE_SIZE - 1)));
-	assert(!(size & (MEMORY_PAGE_SIZE - 1)));
-	unsigned tag1 = addr & ~(MEMORY_PAGE_SIZE-1);
-	unsigned tag2 = (addr + size - 1) & ~(MEMORY_PAGE_SIZE-1);
+	assert(!(addr & (MemoryPageSize - 1)));
+	assert(!(size & (MemoryPageSize - 1)));
+	unsigned tag1 = addr & ~(MemoryPageSize-1);
+	unsigned tag2 = (addr + size - 1) & ~(MemoryPageSize-1);
 
 	// Deallocate pages
-	for (unsigned tag = tag1; tag <= tag2; tag += MEMORY_PAGE_SIZE)
+	for (unsigned tag = tag1; tag <= tag2; tag += MemoryPageSize)
 		FreePage(tag);
 }
 
@@ -443,13 +443,13 @@ void Memory::Unmap(unsigned addr, unsigned size)
 void Memory::Protect(unsigned addr, unsigned size, unsigned perm)
 {
 	// Calculate page boundaries
-	assert(!(addr & (MEMORY_PAGE_SIZE - 1)));
-	assert(!(size & (MEMORY_PAGE_SIZE - 1)));
-	unsigned tag1 = addr & ~(MEMORY_PAGE_SIZE-1);
-	unsigned tag2 = (addr + size - 1) & ~(MEMORY_PAGE_SIZE-1);
+	assert(!(addr & (MemoryPageSize - 1)));
+	assert(!(size & (MemoryPageSize - 1)));
+	unsigned tag1 = addr & ~(MemoryPageSize-1);
+	unsigned tag2 = (addr + size - 1) & ~(MemoryPageSize-1);
 
 	// Assign new permissions
-	for (unsigned tag = tag1; tag <= tag2; tag += MEMORY_PAGE_SIZE)
+	for (unsigned tag = tag1; tag <= tag2; tag += MemoryPageSize)
 	{
 		MemoryPage *page = getPage(tag);
 		if (!page)
@@ -505,8 +505,8 @@ void Memory::Save(const std::string &path, unsigned start, unsigned end)
 	safe = false;
 	while (start < end)
 	{
-		char buf[MEMORY_PAGE_SIZE];
-		unsigned size = std::min(MEMORY_PAGE_SIZE, end - start);
+		char buf[MemoryPageSize];
+		unsigned size = std::min(MemoryPageSize, end - start);
 		Read(start, size, buf);
 		f.write(buf, size);
 		start += size;
@@ -530,8 +530,8 @@ void Memory::Load(const std::string &path, unsigned start)
 	safe = false;
 	while (f)
 	{
-		char buf[MEMORY_PAGE_SIZE];
-		f.read(buf, MEMORY_PAGE_SIZE);
+		char buf[MemoryPageSize];
+		f.read(buf, MemoryPageSize);
 		unsigned size = f.gcount();
 		Write(start, size, buf);
 		start += size;

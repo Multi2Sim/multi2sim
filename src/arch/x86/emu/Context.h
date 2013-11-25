@@ -25,6 +25,9 @@
 #include <lib/cpp/ELFReader.h>
 #include <mem-system/Memory.h>
 
+#include "Regs.h"
+#include "Signal.h"
+
 
 namespace x86
 {
@@ -62,15 +65,23 @@ class Context
 	// Emulator that it belongs to
 	Emu *emu;
 
+	// Process ID
+	int pid;
+
 	// Context memory. This object can be shared by multiple contexts, so it
 	// is declared as a shared pointer. The las freed context pointing to
 	// this memory object will be the one automatically freeing it.
 	std::shared_ptr<Memory::Memory> memory;
+
+	// Register file. Each context has its own copy always.
+	Regs regs;
 	
 
 	///////////////////////////////////////////////////////////////////////
+	//
 	// Functions implemented in ContextLoader.cc. These are the functions
 	// related with the program loading process.
+	//
 	///////////////////////////////////////////////////////////////////////
 
 	/// Structure containing information initialized by the program loader,
@@ -158,6 +169,40 @@ class Context
 
 	// Load ELF binary
 	void LoadExe();
+
+	
+	///////////////////////////////////////////////////////////////////////
+	//
+	// Fields and functions related with signal handling. The functions are
+	// implemented in ContextSignal.cc.
+	//
+	///////////////////////////////////////////////////////////////////////
+
+	// Table of signal handlers, possibly shared by multiple contexts
+	std::shared_ptr<SignalHandlerTable> signal_handler_table;
+
+	// Table of signal masks, each context has its own
+	SignalMaskTable signal_mask_table;
+
+	// Run a signal handler for signal \a sig. The value of \a sig must be
+	// between 1 and 64.
+	void RunSignalHandler(int sig);
+
+	// Return from a signal handler
+	void ReturnFromSignalHandler();
+
+	void CheckSignalHandler();
+
+	// Check any pending signal, and run the corresponding signal handler by
+	// considering that the signal interrupted a system call
+	// (\c syscall_intr). This has the following implication on the return
+	// address from the signal handler:
+	//   -If flag \c SA_RESTART is set for the handler, the return address
+	//    is the system call itself, which must be repeated.
+	//   -If flag \c SA_RESTART is not set, the return address is the
+	//    instruction next to the system call, and register 'eax' is set to
+	//    \c -EINTR.
+	void CheckSignalHandlerIntr();
 
 public:
 
