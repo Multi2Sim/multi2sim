@@ -179,6 +179,12 @@ public:
 	/// Get local memory top address
 	unsigned getLocalMemTop() const { return local_mem_top; }
 
+	/// Get size of local size
+	unsigned getLocalSize(unsigned dim) { 
+		assert(dim >= 0 && dim <= 2);
+		return local_size3[dim];
+	}
+
 	/// Setters
 	///
 	/// Set new size parameters of the ND-Range before it gets launched.
@@ -204,26 +210,48 @@ public:
 	///        beginning of the instruction buffer.
 	void SetupInstMem(const char *buf, unsigned size, unsigned pc);
 
-	/// ?
+	/// Write to constant buffer(as a part of global memory)
+	///
+	/// \param const_buf_num Number of constant buffer, 0 or 1
+	/// \param offset Offset from beginning of a contant buffer
+	/// \param pvalue Source of data
+	/// \param size Size of data
 	void ConstantBufferWrite(int const_buf_num, unsigned offset,
 			void *pvalue, unsigned size);
 
-	/// ?
+	/// Read from constant buffer
+	///
+	/// \param const_buf_num Index of constant buffer, 0 or 1
+	/// \param offset Offset from beginning of a constant buffer
+	/// \param pvalue Destination of data
+	/// \param size Size of data
 	void ConstantBufferRead(int const_buf_num, unsigned offset,
 			void *pvalue, unsigned size);
 
-	/// ?
+	/// Insert a buffer descriptor into UAV(universal access view) table
+	///
+	/// \param buffer_desc Buffer descriptor
+	/// \param uav Index in UAV table
 	void InsertBufferIntoUAVTable(BufferDesc *buffer_desc, unsigned uav);
 
-	/// ?
+	/// Insert a buffer descriptor into vertex buffer table
+	///
+	/// \param buffer_desc Buffer descriptor
+	/// \param vertex_buffer Index in vertex buffer table
 	void InsertBufferIntoVertexBufferTable(BufferDesc *buffer_desc,
 			unsigned vertex_buffer);
 
-	/// ?
+	/// Insert a buffer descriptor into constant buffer table
+	///
+	/// \param buffer_desc Buffer descriptor
+	/// \param const_buffer_num Number of contant buffer, 0 or 1
 	void InsertBufferIntoConstantBufferTable(BufferDesc *buffer_desc,
 			unsigned const_buffer_num);
 
-	/// ?
+	/// Insert a image descriptor into UAV(universal access view) table
+	///
+	/// \param image_desc Image descriptor
+	/// \param uav Index in UAV table
 	void ImageIntoUAVTable(ImageDesc *image_desc, unsigned uav);
 
 };

@@ -20,6 +20,7 @@
 #ifndef ARCH_SOUTHERN_ISLANDS_EMU_WORK_GROUP_H
 #define ARCH_SOUTHERN_ISLANDS_EMU_WORK_GROUP_H
 
+#include <cassert>
 #include <memory>
 #include <vector>
 
@@ -32,6 +33,8 @@ namespace SI
 class Wavefront;
 class WorkItem;
 class NDRange;
+
+const unsigned wavefront_size = 64;
 
 /// This is a polymorphic class used to attach additional information
 /// to a work-group. It is used by the timing simulator to associate timing
@@ -127,6 +130,11 @@ public:
 	/// Get NDRange that it belongs to
 	const NDRange *getNDRange() const { return ndrange; }
 
+	/// Get pointer of a workitem in this workgroup
+	WorkItem *getWorkItem(int id_in_work_group) {
+		assert(id_in_work_group >= 0 && id_in_work_group < (int)work_items.size());
+		return work_items[id_in_work_group].get();
+	}
 
 	/// Setters
 	///

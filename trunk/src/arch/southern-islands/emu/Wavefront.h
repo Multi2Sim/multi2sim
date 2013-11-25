@@ -148,6 +148,11 @@ public:
 	/// Return content in scalar register as unsigned integer
 	unsigned getSregUint(int sreg_id) const;
 
+	/// Return pointer to a workitem inside this wavefront
+	WorkItem *getWorkItem(int id_in_wavefront) {
+		assert(id_in_wavefront >= 0 && id_in_wavefront < (int) work_item_count);
+		return work_items_begin[id_in_wavefront].get();
+	}
 
 	/// Setters
 	///
@@ -178,7 +183,8 @@ public:
 	void setFinished(bool finished) { this->finished = finished; }
 
 	/// Flag set during instruction emulation.
-	void setVectorMemGlobalCoherency(bool vector_mem_global_coherency) { this->vector_mem_global_coherency = vector_mem_global_coherency; }
+	void setVectorMemGlobalCoherency(bool vector_mem_global_coherency) 
+		{ this->vector_mem_global_coherency = vector_mem_global_coherency; }
 
 	/// Set scalar register as an unsigned int
 	void setSregUint(int id, unsigned int value);
@@ -208,7 +214,7 @@ public:
 	void setData(WavefrontData *data) { this->data.reset(data); }
 
 	/// Set value of a scalar register
-	/// \param id sreg Scalar register identifier
+	/// \param sreg Scalar register identifier
 	/// \param value given as an \a unsigned typed value
 	void setSReg(int sreg, unsigned value);
 
