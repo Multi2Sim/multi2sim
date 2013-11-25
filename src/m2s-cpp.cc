@@ -23,6 +23,7 @@
 #include <arch/x86/asm/Asm.h>
 #include <arch/x86/emu/Context.h>
 #include <arch/x86/emu/Emu.h>
+#include <arch/x86/emu/FileTable.h>
 #include <lib/cpp/CommandLine.h>
 #include <lib/cpp/Misc.h>
 
@@ -109,6 +110,8 @@ void main_cpp(int argc, char **argv)
 	{
 		x86::Emu emu;
 		emu.NewContext(command_line.getArguments());
+		x86::FileTable table;
+		table.Dump();
 	}
 
 	// End

@@ -25,8 +25,6 @@
 #include <lib/cpp/ELFReader.h>
 #include <mem-system/Memory.h>
 
-#include "Emu.h"
-
 
 namespace x86
 {
@@ -69,13 +67,6 @@ class Context
 	// this memory object will be the one automatically freeing it.
 	std::shared_ptr<Memory::Memory> memory;
 	
-	// Create a context from a command line, given as a vector of arguments.
-	// We don't want contexts to be instantiated anywhere other than by the
-	// emulator, so we make the constructor private, and give access to it
-	// only to function Emu::NewContext().
-	Context(Emu *emu, const std::vector<std::string> &args);
-	friend Context *Emu::NewContext(const std::vector<std::string> &args);
-
 
 	///////////////////////////////////////////////////////////////////////
 	// Functions implemented in ContextLoader.cc. These are the functions
@@ -169,6 +160,11 @@ class Context
 	void LoadExe();
 
 public:
+
+	// Create a context from a command line, given as a vector of arguments.
+	// Contexts should be created directly only internally in class Emu. To
+	// create a context, function Emu::NewContext() should be used instead.
+	Context(Emu *emu, const std::vector<std::string> &args);
 
 	/// Given a file name, return its full path based on the current working
 	/// directory for the context.
