@@ -22,6 +22,9 @@
 #include "Bitmap.h"
 
 
+namespace misc
+{
+
 void Bitmap::getBlockBit(size_t at, size_t &block, size_t &bit) const
 {
 	assert(at < size);
@@ -269,4 +272,7 @@ Bitmap Bitmap::operator-(const Bitmap &b) const
 	Bitmap b2 = *this;
 	return b2 -= b;
 }
+
+
+}  // namespace misc
 
