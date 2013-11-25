@@ -272,14 +272,6 @@ public:
 			use_cpp(false), show_help(false)
 	{ }
 
-	/// Return the number of arguments left after getting rid of the
-	/// command-line options, and the program name. The command-line must
-	/// have been processed with a call to Process().
-	int getNumArguments() const {
-		assert(processed);
-		return args.size();
-	}
-
 	/// Set the error message to be displayed when an invalid option is
 	/// found in the command line during the execution of function
 	/// Process().
@@ -302,6 +294,14 @@ public:
 		return program_name;
 	}
 
+	/// Return the number of arguments left after getting rid of the
+	/// command-line options, and the program name. The command-line must
+	/// have been processed with a call to Process().
+	int getNumArguments() const {
+		assert(processed);
+		return args.size();
+	}
+
 	/// Return the argument with a specific \a index. A value of 0 for \a
 	/// index specifies the first argument without considering all
 	/// command-line options or the program name. The command line must have
@@ -309,6 +309,15 @@ public:
 	const std::string &getArgument(int index) const {
 		assert(index >= 0 && index < (int) args.size());
 		return args[index];
+	}
+
+	/// Return a constant reference to the internal vector containing the
+	/// list of command-line arguments, after having gotten rid of all
+	/// command-line options. The command line must have been processed with
+	/// a call to Process().
+	const std::vector<std::string> &getArguments() const {
+		assert(processed);
+		return args;
 	}
 
 	/// Return \c true if the user specified command-line option \c --cpp.

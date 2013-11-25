@@ -111,6 +111,15 @@ inline bool InRange(int value, int min, int max) {
 	return value >= min && value <= max;
 }
 
+inline unsigned RoundUp(unsigned n, unsigned align) {
+	assert(!(n & (n - 1)));
+	return (n + (align - 1)) & ~(align - 1);
+}
+
+inline unsigned RoundDown(unsigned n, unsigned align) {
+	assert(!(n & (n - 1)));
+	return n & ~(align - 1);
+}
 
 template<class X, class Y> inline X cast(const Y &val) {
 	X result = dynamic_cast<X>(val);

@@ -21,7 +21,8 @@
 #include <iostream>
 
 #include <arch/x86/asm/Asm.h>
-#include <arch/x86/emu/Regs.h>
+#include <arch/x86/emu/Context.h>
+#include <arch/x86/emu/Emu.h>
 #include <lib/cpp/CommandLine.h>
 #include <lib/cpp/Misc.h>
 
@@ -104,8 +105,11 @@ void main_cpp(int argc, char **argv)
 	std::cerr << "m2s_visual_file = " << m2s_visual_file << '\n';
 
 	// Test Regs
-	x86::Regs regs;
-	std::cout << regs;
+	if (command_line.getNumArguments())
+	{
+		x86::Emu emu;
+		emu.NewContext(command_line.getArguments());
+	}
 
 	// End
 	exit(0);
