@@ -19,6 +19,9 @@
 
 #include "Context.h"
 
+#include <lib/cpp/String.h>
+
+
 using namespace misc;
 
 
