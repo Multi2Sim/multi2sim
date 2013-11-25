@@ -111,6 +111,8 @@ void main_cpp(int argc, char **argv)
 	{
 		x86::Emu emu;
 		emu.NewContext(command_line.getArguments());
+		x86::SignalHandler handler;
+		std::cout << handler << '\n';
 	}
 
 	// End

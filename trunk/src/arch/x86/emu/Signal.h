@@ -20,8 +20,10 @@
 #ifndef ARCH_X86_EMU_SIGNAL_H
 #define ARCH_X86_EMU_SIGNAL_H
 
-#include "lib/cpp/Bitmap.h"
-#include "lib/cpp/String.h"
+#include <lib/cpp/Bitmap.h>
+#include <lib/cpp/String.h>
+
+#include "Regs.h"
 
 
 namespace x86
@@ -31,31 +33,56 @@ namespace x86
 class Regs;
 
 
-#if 0
-
-// Run a signal handler
-void X86ContextRunSignalHandler(X86Context *self, int sig);
-
-// Return from a signal handler
-void X86ContextReturnFromSignalHandler(X86Context *self);
-
-void X86ContextCheckSignalHandler(X86Context *self);
-
-/* Check any pending signal, and run the corresponding signal handler by
- * considering that the signal interrupted a system call ('syscall_intr').
- * This has the following implication on the return address from the signal
- * handler:
- *   -If flag 'SA_RESTART' is set for the handler, the return address is the
- *    system call itself, which must be repeated.
- *   -If flag 'SA_RESTART' is not set, the return address is the instruction
- *    next to the system call, and register 'eax' is set to -EINTR. */
-void X86ContextCheckSignalHandlerIntr(X86Context *self);
-
-#endif
-
-
 extern const misc::StringMap signal_map;
-extern const misc::StringMap signal_action_flags_map;
+extern const misc::StringMap signal_handler_flags_map;
+
+
+/// Structure representing the signal stack frame set up when a signal handler
+/// is launched.
+struct SignalFrame
+{
+	// Pointer to return code
+	unsigned ret_code_ptr;
+
+	// Signal received
+	unsigned sig;
+
+	unsigned gs;
+	unsigned fs;
+	unsigned es;
+	unsigned ds;
+
+	unsigned edi;
+	unsigned esi;
+	unsigned ebp;
+	unsigned esp;
+
+	unsigned ebx;
+	unsigned edx;
+	unsigned ecx;
+	unsigned eax;
+
+	unsigned trapno;
+	unsigned err;
+	unsigned eip;
+	unsigned cs;
+
+	unsigned eflags;
+	unsigned esp_at_signal;
+	unsigned ss;
+	unsigned pfpstate;  // Pointer to floating-point state
+	unsigned oldmask;
+	unsigned cr2;
+};
+
+
+/// Signal return code. The return address in the signal handler points
+/// to this code, which performs system call 'sigreturn'. The disassembled
+/// corresponding code is:
+///     mov eax, 0x77
+///     int 0x80
+static const char signal_ret_code[] = "\x58\xb8\x77\x00\x00\x00\xcd\x80";
+
 
 /// Set of signals
 class SignalSet
@@ -111,8 +138,51 @@ class SignalMaskTable
 	// Backup of register file while executing signal handler
 	std::unique_ptr<Regs> regs;
 
-	// Base address of a memory page allocated for retcode execution
-	unsigned retcode_ptr;
+	// Base address of a memory page allocated for execution of return code
+	unsigned ret_code_ptr;
+
+public:
+
+	/// Store a backup copy of the register file passed as an argument.
+	void setRegs(const Regs &regs) { this->regs.reset(new Regs(regs)); }
+
+	/// Set the address where the return code can be found.
+	void setRetCodePtr(unsigned ret_code_ptr) {
+			this->ret_code_ptr = ret_code_ptr;
+	}
+
+	/// Return address where the return code can be found.
+	unsigned getRetCodePtr() const { return ret_code_ptr; }
+};
+
+
+/// Signal handler information. This structure corresponds to the Unix \c
+/// sigaction data structure.
+class SignalHandler
+{
+	unsigned handler;
+	unsigned flags;
+	unsigned restorer;
+	SignalSet mask;
+
+public:
+
+	/// Contructor
+	SignalHandler() : handler(0), flags(0), restorer(0) { }
+
+	/// Dump information about signal handler
+	void Dump(std::ostream &os = std::cout) const;
+
+	/// Same as Dump()
+	friend std::ostream &operator<<(std::ostream &os,
+			const SignalHandler &handler) {
+		handler.Dump();
+		return os;
+	}
+
+	/// Return the address in the guest program where the handler for the
+	/// signal has been installed.
+	unsigned getHandler() { return handler; }
 };
 
 
@@ -120,31 +190,19 @@ class SignalMaskTable
 /// will be conveniently referenced using \c std::shared_ptr.
 class SignalHandlerTable
 {
-	// Signal handlers
-	struct SignalHandler
-	{
-		unsigned handler;
-		unsigned flags;
-		unsigned restorer;
-		SignalSet mask;
-	};
-	
 	// Table of signal handlers
 	SignalHandler signal_handler[64];
+
+public:
+
+	/// Return signal handler for signal \a sig, an integer value between 1
+	/// and 64. This number should not be out of range.
+	SignalHandler *getSignalHandler(int sig) {
+		assert(misc::InRange(sig, 1, 64));
+		return &signal_handler[sig];
+	}
 };
 
-
-
-#if 0
-/*
- * Public Functions
- */
-
-void x86_sigaction_dump(struct x86_sigaction_t *sim_sigaction, FILE *f);
-void x86_sigset_dump(unsigned long long sim_sigset, FILE *f);
-
-
-#endif
 
 }  // namespace x86
 

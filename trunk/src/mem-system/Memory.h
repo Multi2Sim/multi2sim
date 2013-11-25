@@ -35,12 +35,11 @@ enum MemoryAccess
 	MemoryAccessModif = 1 << 4
 };
 
-
-#define MEMORY_LOG_PAGE_SIZE  12
-#define MEMORY_PAGE_SHIFT  MEMORY_LOG_PAGE_SIZE
-#define MEMORY_PAGE_SIZE  (1u << MEMORY_LOG_PAGE_SIZE)
-#define MEMORY_PAGE_MASK  (~(MEMORY_PAGE_SIZE - 1))
-#define MEMORY_PAGE_COUNT  1024
+static const unsigned MemoryLogPageSize = 12;
+static const unsigned MemoryPageShift = MemoryLogPageSize;
+static const unsigned MemoryPageSize = (1u << MemoryLogPageSize);
+static const unsigned MemoryPageMask = (~(MemoryPageSize - 1));
+static const unsigned MemoryPageCount = 1024;
 
 
 /// A 4KB page of memory
@@ -59,7 +58,7 @@ class Memory
 	static bool safe_mode;
 
 	/// Hash table of memory pages
-	MemoryPage *page_table[MEMORY_PAGE_COUNT];
+	MemoryPage *page_table[MemoryPageCount];
 
 	/// Safe mode
 	bool safe;
@@ -85,36 +84,6 @@ class Memory
 	/// pages.
 	MemoryPage *getNextPage(unsigned addr);
 
-	/// Allocate memory.
-	///
-	/// \param addr Address to start looking for free memory. If the end of
-	///        the memory space is reached, the function will continue
-	///        circularly with the lowest memory addresses. The address must
-	///        be aligned to the page boundary.
-	/// \param size Number of bytes to allocate. Must be a multiple of the
-	///        page size.
-	/// \param perm Bitmap of constants of type \a MemoryAccess containing
-	///        the permission assigned to the allocated pages.
-	/// \returns The function returns the base address of the allocated
-	///          memory region, or (unsigned) -1 if no free region was found
-	///          with the requested size.
-	unsigned MapSpace(unsigned addr, unsigned size);
-	
-	/// Allocate memory downwoard.
-	///
-	/// \param addr Address to start checking for available free memory. If
-	///        not available, the function will keep trying to look for free
-	///        regions circularly in a decreasing order. The address must be
-	///        align to the page boundary.
-	/// \param size Number of bytes to allocate. Thie value must be a
-	///        multiple of the page size.
-	/// \param perm Bitmap of constants of type \a MemoryAccess containing
-	///        the permission assigned to the allocated pages.
-	/// \returns The base address of the allocated memory region, or
-	///          (unsigned) -1 if no free space was found with \a size
-	///          bytes.
-	unsigned MapSpaceDown(unsigned addr, unsigned size);
-	
 	// Access memory without exceeding page boundaries
 	void AccessAtPageBoundary(unsigned addr, unsigned size, char *buf,
 			MemoryAccess access);
@@ -159,6 +128,36 @@ public:
 	/// \param size Number of bytes, multiple of page size.
 	void Unmap(unsigned addr, unsigned size);
 
+	/// Allocate memory.
+	///
+	/// \param addr Address to start looking for free memory. If the end of
+	///        the memory space is reached, the function will continue
+	///        circularly with the lowest memory addresses. The address must
+	///        be aligned to the page boundary.
+	/// \param size Number of bytes to allocate. Must be a multiple of the
+	///        page size.
+	/// \param perm Bitmap of constants of type \a MemoryAccess containing
+	///        the permission assigned to the allocated pages.
+	/// \returns The function returns the base address of the allocated
+	///          memory region, or (unsigned) -1 if no free region was found
+	///          with the requested size.
+	unsigned MapSpace(unsigned addr, unsigned size);
+	
+	/// Allocate memory downwoard.
+	///
+	/// \param addr Address to start checking for available free memory. If
+	///        not available, the function will keep trying to look for free
+	///        regions circularly in a decreasing order. The address must be
+	///        align to the page boundary.
+	/// \param size Number of bytes to allocate. Thie value must be a
+	///        multiple of the page size.
+	/// \param perm Bitmap of constants of type \a MemoryAccess containing
+	///        the permission assigned to the allocated pages.
+	/// \returns The base address of the allocated memory region, or
+	///          (unsigned) -1 if no free space was found with \a size
+	///          bytes.
+	unsigned MapSpaceDown(unsigned addr, unsigned size);
+	
 	/// Assign protection attributes to pages. If a page in the range is not
 	/// allocated, it is silently skipped.
 	///
@@ -187,8 +186,15 @@ public:
 	/// \param addr Address
 	/// \param size Number of bytes
 	/// \param buf Input buffer to read data from
-	void Write(unsigned addr, unsigned size, char *buf) {
-		Access(addr, size, buf, MemoryAccessWrite);
+	void Write(unsigned addr, unsigned size, const char *buf) {
+		Access(addr, size, const_cast<char *>(buf), MemoryAccessWrite);
+	}
+
+	/// Initialize memory with no alignment of size restrictions. The
+	/// operation is equivalent to writing, but this operation must have a
+	/// different category of permissions grantes.
+	void Init(unsigned addr, unsigned size, const char *buf) {
+		Access(addr, size, const_cast<char *>(buf), MemoryAccessInit);
 	}
 
 	/// Read a string from memory at \a addr, with a maximum length of \a
