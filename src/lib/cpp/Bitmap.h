@@ -23,6 +23,9 @@
 #include <iostream>
 #include <memory>
 
+namespace misc
+{
+
 class Bitmap
 {
 	size_t size;
@@ -75,6 +78,9 @@ public:
 	Bitmap operator^(const Bitmap &b) const;
 	Bitmap operator-(const Bitmap &b) const;
 };
+
+
+}  // namespace misc
 
 #endif
 
