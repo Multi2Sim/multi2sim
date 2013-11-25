@@ -103,19 +103,19 @@ private:
 #include <arch/southern-islands/asm/asm.dat>
 #undef DEFINST
 
-	/// Error massage for unimplemented instructions
+	// Error massage for unimplemented instructions
 	static void ISAUnimplemented(Inst *inst);
 
-	/// Get number of elements based on data format
+	// Get number of elements based on data format
 	static int ISAGetNumElems(int data_format);
 
-	/// Get element size based on data format
+	// Get element size based on data format
 	static int ISAGetElemSize(int data_format);
 
-	/// Float32 to Float16 conversion
+	// Float32 to Float16 conversion
 	static uint16_t Float32to16(float value);
 
-	/// Float16 to Float32 conversion
+	// Float16 to Float32 conversion
 	static float Float16to32(uint16_t value);
 
 public:
@@ -127,31 +127,45 @@ public:
 
 	// FIXME - probably most functions below can be inline
 
-	/// FIXME ???
+	/// Get value of a scalar register
+	/// \param sreg Scalar register identifier
 	unsigned ReadSReg(int sreg);
 
-	/// FIXME ???
+	/// Set value of a scalar register
+	/// \param sreg Scalar register identifier
+	/// \param value Value given as an \a unsigned typed value
 	void WriteSReg(int sreg, unsigned value);
 
-	/// FIXME ???
+	/// Get value of a vector register
+	/// \param vreg Vector register identifier
 	unsigned ReadVReg(int vreg);
 
-	/// FIXME ???
+	/// Set value of a vector register
+	/// \param vreg Vector register idendifier
+	/// \param value Value given as an \a unsigned typed value
 	void WriteVReg(int vreg, unsigned value);
 
-	/// FIXME ???
+	/// Get value of a register, register type unspecified
+	/// \param reg Register identifier
 	unsigned ReadReg(int reg);
 
-	/// FIXME ???
+	/// Set bitmask of scalar registers
+	/// \param sreg Scalar register identifier
+	/// \param value Value given as an \a unsigned typed value
 	void WriteBitmaskSReg(int sreg, unsigned value);
 
-	/// FIXME ???
+	/// Get bitmask from scalar registers
+	/// \param sreg Scalar register identifier
 	int ReadBitmaskSReg(int sreg);
 
-	/// FIXME ???
+	/// Get buffer resource descriptor from 4 successive scalar registers
+	/// \param sreg Scalar register identifier of the 1st scalar registers
+	/// \param &buffer_desc Reference of a buffer resource descriptor
 	void ReadBufferResource(int sreg, EmuBufferDesc &buffer_desc); 
 	
-	/// FIXME ???
+	/// Get memory pointer from 2 succesive scalar registers
+	/// \param sreg Sclalar register identifier of the 1st scalar registers
+	/// \param &mem_prt Reference of a memory pointer descripter
 	void ReadMemPtr(int sreg, EmuMemPtr &mem_ptr);
 
 };
