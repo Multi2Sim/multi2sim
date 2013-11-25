@@ -21,7 +21,7 @@
 #define ARCH_X86_EMU_EMU_H
 
 #include <lib/cpp/CommandLine.h>
-
+#include <lib/cpp/Debug.h>
 
 namespace x86
 {
@@ -45,7 +45,12 @@ public:
 
 	/// Create a new context associated with the emulator
 	Context *NewContext(const std::vector<std::string> &args);
-		
+	
+	/// Debug category for x86 ISA emulation
+	static misc::Debug isa_debug;
+
+	/// Debug category for system calls
+	static misc::Debug syscall_debug;
 };
 
 
