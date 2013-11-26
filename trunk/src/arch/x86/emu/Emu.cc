@@ -17,11 +17,35 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <arch/x86/asm/Asm.h>
+
 #include "Context.h"
 #include "Emu.h"
 
+
 namespace x86
 {
+
+std::unique_ptr<Emu> Emu::instance;
+
+Emu::Emu()
+{
+	// Obtain instance to disassembler
+	as = Asm::getInstance();
+}
+
+
+Emu *Emu::getInstance()
+{
+	// Instance already exists
+	if (instance.get())
+		return instance.get();
+
+	// Create instance
+	instance.reset(new Emu());
+	return instance.get();
+}
+
 
 Context *Emu::NewContext(const std::vector<std::string> &args)
 {

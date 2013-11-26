@@ -49,8 +49,8 @@ void AsmConfig::Process()
 	// Run x86 disassembler
 	if (!path.empty())
 	{
-		Asm as;
-		as.DisassembleBinary(path);
+		Asm *as = Asm::getInstance();
+		as->DisassembleBinary(path);
 		exit(0);
 	}
 }
@@ -71,6 +71,9 @@ static const unsigned char asm_prefixes[] =
 	0x64,  // use fs
 	0x65   // use gs
 };
+
+
+std::unique_ptr<Asm> Asm::instance;
 
 
 void Asm::InsertInstInfo(InstDecodeInfo **table, InstDecodeInfo *elem, int at)
@@ -260,6 +263,18 @@ Asm::~Asm()
 }
 
 
+Asm *Asm::getInstance()
+{
+	// Instance already exists
+	if (instance.get())
+		return instance.get();
+	
+	// Create instance
+	instance.reset(new Asm());
+	return instance.get();
+}
+
+
 void Asm::DisassembleBinary(const std::string &path, std::ostream &os) const
 {
 	// Traverse sections of ELF file
@@ -280,7 +295,7 @@ void Asm::DisassembleBinary(const std::string &path, std::ostream &os) const
 		ELFReader::Symbol *symbol = file.getSymbol(current_symbol);
 
 		// Disassemble
-		Inst inst(this);
+		Inst inst;
 		unsigned offset = 0;
 		while (offset < section->getSize())
 		{

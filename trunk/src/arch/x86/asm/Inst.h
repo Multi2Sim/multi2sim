@@ -227,9 +227,7 @@ class Inst
 
 public:
 	/// Constructor
-	Inst(const Asm *as) : as(as) {
-		Clear();
-	}
+	Inst();
 
 	/// Read the bytes in the beginning of \a buffer and decode the x86
 	/// instruction represented by them. The value given in \a address
