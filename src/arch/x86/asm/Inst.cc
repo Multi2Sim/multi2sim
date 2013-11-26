@@ -123,6 +123,13 @@ static const InstModRMTableEntry inst_modrm_table[32] =
 static const unsigned inst_ea_scale_table[4] = { 1, 2, 4, 8 };
 
 
+Inst::Inst()
+{
+	as = Asm::getInstance();
+	Clear();
+}
+
+
 void Inst::DumpMoffsAddr(std::ostream &os) const
 {
 	InstReg reg = segment ? segment : InstRegDs;
@@ -364,7 +371,7 @@ void Inst::Dump(std::ostream &os) const
 		else if (Common::Asm::IsToken(fmt, "xmmm32", length))
 		{
 			if (modrm_mod == 3)
-				os << "xmm" << modrm_rm;
+				os << "xmm" << (unsigned) modrm_rm;
 			else
 			{
 				os << "DWORD PTR ";
@@ -374,7 +381,7 @@ void Inst::Dump(std::ostream &os) const
 		else if (Common::Asm::IsToken(fmt, "xmmm64", length))
 		{
 			if (modrm_mod == 3)
-				os << "xmm" << modrm_rm;
+				os << "xmm" << (unsigned) modrm_rm;
 			else
 			{
 				os << "QWORD PTR ";
@@ -384,7 +391,7 @@ void Inst::Dump(std::ostream &os) const
 		else if (Common::Asm::IsToken(fmt, "xmmm128", length))
 		{
 			if (modrm_mod == 3)
-				os << "xmm" << modrm_rm;
+				os << "xmm" << (unsigned) modrm_rm;
 			else
 			{
 				os << "XMMWORD PTR ";
@@ -393,7 +400,7 @@ void Inst::Dump(std::ostream &os) const
 		}
 		else if (Common::Asm::IsToken(fmt, "xmm", length))
 		{
-			os << "xmm" << modrm_reg;
+			os << "xmm" << (unsigned) modrm_reg;
 		}
 
 		// Token was found, advance format string and continue
@@ -419,8 +426,9 @@ void Inst::Dump(std::ostream &os) const
 				else
 				{
 					name_printed = true;
-					for (int i = 0; i < 7 - name_length; i++)
+					for (int i = 0; i < 6 - name_length; i++)
 						os << ' ';
+					os << ' ';
 				}
 			}
 			else

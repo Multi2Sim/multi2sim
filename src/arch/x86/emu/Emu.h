@@ -37,11 +37,25 @@ class EmuConfig : public misc::CommandLineConfig
 /// x86 Emulator
 class Emu
 {
+	// Unique instance of x86 emulator
+	static std::unique_ptr<Emu> instance;
+
+	// Disassembler
+	Asm *as;
 
 	// List of allocated contexts
 	std::list<std::unique_ptr<Context>> contexts;
 
+	// Private constructor. The only possible instance of the x86 emulator
+	// can be obtained with a call to getInstance()
+	Emu();
+
 public:
+
+	/// Get the only instance of the x86 emulator. If the instance does not
+	/// exist yet, it will be created, and will remain allocated until the
+	/// end of the execution.
+	static Emu *getInstance();
 
 	/// Create a new context associated with the emulator
 	Context *NewContext(const std::vector<std::string> &args);

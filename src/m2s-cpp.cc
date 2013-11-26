@@ -109,8 +109,8 @@ void main_cpp(int argc, char **argv)
 	// Test Regs
 	if (command_line.getNumArguments())
 	{
-		x86::Emu emu;
-		emu.NewContext(command_line.getArguments());
+		x86::Emu *emu = x86::Emu::getInstance();
+		emu->NewContext(command_line.getArguments());
 		x86::SignalHandler handler;
 		std::cout << handler << '\n';
 	}

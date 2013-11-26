@@ -62,6 +62,9 @@ class Asm
 	static const int IW = 0x4000;
 	static const int ID = 0x8000;
 
+	// Unique instance of x86 disassembler
+	static std::unique_ptr<Asm> instance;
+
 	// Instruction information
 	InstInfo inst_info[InstOpcodeCount];
 
@@ -80,13 +83,20 @@ class Asm
 	// Free decoding tables
 	void FreeInstDecodeInfo(InstDecodeInfo *elem);
 
-public:
-
-	/// Constructor
+	// Constructor. Made public to avoid any external instantiations of the
+	// x86 disassembler. Instead, the only instance can be obtain with a
+	// call to getInstance().
 	Asm();
+
+public:
 
 	/// Destructor
 	~Asm();
+
+	/// Return a unique instance of the x86 disassembler. This instance will
+	/// be created only upon the first call to getInstance(), and will be
+	/// alive util the end of the execution.
+	static Asm *getInstance();
 
 	/// Get instruction information for a given opcode
 	const InstInfo *getInstInfo(InstOpcode opcode) const {
