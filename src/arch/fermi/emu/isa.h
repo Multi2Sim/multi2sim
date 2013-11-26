@@ -62,7 +62,7 @@ extern char *err_frm_isa_note;
 	__FUNCTION__, frm_isa_inst->info->name, (v), err_frm_isa_note); }
 #define FRM_ISA_ARG_NOT_SUPPORTED_RANGE(p, min, max) \
 	{ if ((p) < (min) || (p) > (max)) fatal("%s: %s: not supported for '" #p "' out of range [%d:%d]\n%s", \
-	__FUNCTION__, frm_isa_inst->info->name, (min), (max), err_frm_opencl_param_note); }
+	__FUNCTION__, frm_isa_inst->info->name, (min), (max), err_frm_cuda_param_note); }
 
 
 
