@@ -50,7 +50,7 @@ libemu_a_SOURCES = \
 	\
 	Context.cc \
 	ContextLoader.cc \
-	ContextSignal.cc \\
+	ContextSignal.cc \
 	Context.h \
 	\
 	Emu.cc \
