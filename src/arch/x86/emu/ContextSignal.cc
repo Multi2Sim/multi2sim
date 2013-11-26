@@ -34,7 +34,6 @@ namespace x86
 {
 
 
-#if 0
 void Context::RunSignalHandler(int sig)
 {
 	// Debug
@@ -44,7 +43,7 @@ void Context::RunSignalHandler(int sig)
 
 	// Signal SIGCHLD ignored if no signal handler installed
 	SignalHandler *signal_handler = signal_handler_table->
-			getSignalHandler(sig - 1);
+			getSignalHandler(sig);
 	if (sig == SIGCHLD && !signal_handler->getHandler())
 		return;
 
@@ -65,134 +64,133 @@ void Context::RunSignalHandler(int sig)
 
 	// Initialize stack frame
 	SignalFrame signal_frame;
-	signal_frame.ret_code_ptr = signal_mask_table->getRetCodePtr();
+	signal_frame.ret_code_ptr = signal_mask_table.getRetCodePtr();
 	signal_frame.sig = sig;
-	signal_frame.gs = ctx->regs->gs;
-	signal_frame.fs = ctx->regs->fs;
-	signal_frame.es = ctx->regs->es;
-	signal_frame.ds = ctx->regs->ds;
-	signal_frame.edi = ctx->regs->edi;
-	signal_frame.esi = ctx->regs->esi;
-	signal_frame.ebp = ctx->regs->ebp;
-	signal_frame.esp = ctx->regs->esp;
-	signal_frame.ebx = ctx->regs->ebx;
-	signal_frame.edx = ctx->regs->edx;
-	signal_frame.ecx = ctx->regs->ecx;
-	signal_frame.eax = ctx->regs->eax;
+	signal_frame.gs = regs.getGs();
+	signal_frame.fs = regs.getFs();
+	signal_frame.es = regs.getEs();
+	signal_frame.ds = regs.getDs();
+	signal_frame.edi = regs.getEdi();
+	signal_frame.esi = regs.getEsi();
+	signal_frame.ebp = regs.getEbp();
+	signal_frame.esp = regs.getEsp();
+	signal_frame.ebx = regs.getEbx();
+	signal_frame.edx = regs.getEdx();
+	signal_frame.ecx = regs.getEcx();
+	signal_frame.eax = regs.getEax();
 	signal_frame.trapno = 0;
 	signal_frame.err = 0;
-	signal_frame.eip = ctx->regs->eip;
-	signal_frame.cs = ctx->regs->cs;
-	signal_frame.eflags = ctx->regs->eflags;
-	signal_frame.esp_at_signal = ctx->regs->esp;
-	signal_frame.ss = ctx->regs->ss;
+	signal_frame.eip = regs.getEip();
+	signal_frame.cs = regs.getCs();
+	signal_frame.eflags = regs.getEflags();
+	signal_frame.esp_at_signal = regs.getEsp();
+	signal_frame.ss = regs.getSs();
 	signal_frame.pfpstate = 0;
 	signal_frame.oldmask = 0;
 	signal_frame.cr2 = 0;
 
 	// Push signal frame
-	ctx->regs->esp -= sizeof(signal_frame);
-	mem_write(ctx->mem, ctx->regs->esp, sizeof(signal_frame), &signal_frame);
+	regs.decEsp(sizeof signal_frame);
+	memory->Write(regs.getEsp(), sizeof signal_frame,
+			(char *) &signal_frame);
 	
-	/* The program will continue now executing the signal handler.
-	 * In the current implementation, we do not allow other signals to
-	 * interrupt the signal handler, so we notify it in the context status. */
-	if (X86ContextGetState(ctx, X86ContextHandler))
-		fatal("signal_handler_run: already running a handler");
-	X86ContextSetState(ctx, X86ContextHandler);
+	// The program will continue now executing the signal handler.
+	// In the current implementation, we do not allow other signals to
+	// interrupt the signal handler, so we notify it in the context status.
+	if (getState(ContextHandler))
+		fatal("%s: already running a handler", __FUNCTION__);
+	setState(ContextHandler);
 
 	// Set eip to run handler
-	unsigned handler = ctx->signal_handler_table->sigaction[sig - 1].handler;
+	unsigned handler = signal_handler->getHandler();
 	if (!handler)
 		fatal("%s: invalid signal handler", __FUNCTION__);
-	ctx->regs->eip = handler;
+	regs.setEip(handler);
 }
 
 
-void X86ContextReturnFromSignalHandler(X86Context *ctx)
+void Context::ReturnFromSignalHandler()
 {
 	// Change context status
-	if (!X86ContextGetState(ctx, X86ContextHandler))
-		fatal("signal_handler_return: not handling a signal");
-	X86ContextClearState(ctx, X86ContextHandler);
+	if (!getState(ContextHandler))
+		fatal("%s: not handling a signal", __FUNCTION__);
+	clearState(ContextHandler);
 
 	// Free signal frame
-	mem_unmap(ctx->mem, ctx->signal_mask_table->pretcode, MEM_PAGE_SIZE);
-	x86_sys_debug("  signal handler return code at 0x%x deallocated\n",
-		ctx->signal_mask_table->pretcode);
+	memory->Unmap(signal_mask_table.getRetCodePtr(), MemoryPageSize);
+	Emu::syscall_debug << "  signal handler return code at " <<
+			StringFmt("0x%x", signal_mask_table.getRetCodePtr())
+			<< " deallocated\n";
 
 	// Restore saved register file and free backup
-	x86_regs_copy(ctx->regs, ctx->signal_mask_table->regs);
-	x86_regs_free(ctx->signal_mask_table->regs);
+	regs = signal_mask_table.getRegs();
+	signal_mask_table.freeRegs();
 }
 
 
-void X86ContextCheckSignalHandlerIntr(X86Context *ctx)
+void Context::CheckSignalHandlerIntr()
 {
-	int sig;
-
-	// Context cannot be running a signal handler
-	// A signal must be pending and unblocked
-	assert(!X86ContextGetState(ctx, X86ContextHandler));
-	assert(ctx->signal_mask_table->pending & ~ctx->signal_mask_table->blocked);
+	// Context cannot be running a signal handler. A signal must be pending
+	// and unblocked.
+	assert(!getState(ContextHandler));
+	assert((signal_mask_table.getPending().getBitmap() &
+			~signal_mask_table.getBlocked().getBitmap()).Any());
 
 	// Get signal number
+	int sig;
 	for (sig = 1; sig <= 64; sig++)
-		if (x86_sigset_member(&ctx->signal_mask_table->pending, sig) &&
-			!x86_sigset_member(&ctx->signal_mask_table->blocked, sig))
+		if (signal_mask_table.getPending().isMember(sig) &&
+				!signal_mask_table.getBlocked().isMember(sig))
 			break;
 	assert(sig <= 64);
 
-	/* If signal handling uses 'SA_RESTART' flag, set return address to
-	 * system call. */
-	if (ctx->signal_handler_table->sigaction[sig - 1].flags & 0x10000000u)
+	// If signal handling uses 'SA_RESTART' flag, set return address to
+	// system call.
+	SignalHandler *signal_handler = signal_handler_table->
+			getSignalHandler(sig);
+	if (signal_handler->getFlags() & 0x10000000u)
 	{
-		unsigned char buf[2];
-
-		ctx->regs->eip -= 2;
-		mem_read(ctx->mem, ctx->regs->eip, 2, buf);
+		char buf[2];
+		regs.decEip(2);
+		memory->Read(regs.getEip(), 2, buf);
 		assert(buf[0] == 0xcd && buf[1] == 0x80);  // 'int 0x80'
 	}
 	else
 	{
-		
 		// Otherwise, return -EINTR
-		ctx->regs->eax = -EINTR;
+		regs.setEax(-EINTR);
 	}
 
 	// Run the signal handler
-	X86ContextRunSignalHandler(ctx, sig);
-	x86_sigset_del(&ctx->signal_mask_table->pending, sig);
-
+	RunSignalHandler(sig);
+	signal_mask_table.getPending().Delete(sig);
 }
 
 
-void X86ContextCheckSignalHandler(X86Context *ctx)
+void Context::CheckSignalHandler()
 {
-	int sig;
-
 	// If context is already running a signal handler, do nothing.
-	if (X86ContextGetState(ctx, X86ContextHandler))
+	if (getState(ContextHandler))
 		return;
 	
 	// If there is no pending unblocked signal, do nothing.
-	if (!(ctx->signal_mask_table->pending & ~ctx->signal_mask_table->blocked))
+	if ((signal_mask_table.getPending().getBitmap() &
+			~signal_mask_table.getBlocked().getBitmap()).None())
 		return;
 	
 	/* There is some unblocked pending signal, prepare signal handler to
 	 * be executed. */
-	for (sig = 1; sig <= 64; sig++)
+	for (int sig = 1; sig <= 64; sig++)
 	{
-		if (x86_sigset_member(&ctx->signal_mask_table->pending, sig) &&
-			!x86_sigset_member(&ctx->signal_mask_table->blocked, sig))
+		if (signal_mask_table.getPending().isMember(sig) &&
+				!signal_mask_table.getBlocked().isMember(sig))
 		{
-			X86ContextRunSignalHandler(ctx, sig);
-			x86_sigset_del(&ctx->signal_mask_table->pending, sig);
+			RunSignalHandler(sig);
+			signal_mask_table.getPending().Delete(sig);
 			break;
 		}
 	}
 }
-#endif
 
 }  // namespace x86
 
