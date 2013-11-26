@@ -218,37 +218,40 @@ public:
 	/// \param value given as an \a unsigned typed value
 	void setSReg(int sreg, unsigned value);
 
-	/// ???
-	/// \param first_reg
-	/// \param num_regs
-	/// \param cb
+	/// Puts a memory descriptor for a constant buffer (e.g. CB0) into sregs
+	/// It requires 4 consecutive registers to store the 128-bit structure
+	/// \param first_reg Id of the first scalar register
+	/// \param num_regs Number of scalar registers to be used, must be 4
+	/// \param cb Id of constant buffer, must be 0 or 1
 	void setSRegWithConstantBuffer(int first_reg, int num_regs,
 			int cb);
 
-	/// ???
-	/// \param first_reg
-	/// \param num_regs
+	/// Put a pointer to the constant buffer table into 2 consecutive sregs
+	/// \param first_reg Id of first scalar register 
+	/// \param num_regs Number of scalar registers to be used, must be 2
 	void setSRegWithConstantBufferTable(int first_reg, int num_regs);
 
-	/// ???
-	/// \param first_reg
-	/// \param num_regs
+	/// Puts a memory descriptor for a UAV table into sregs
+	/// It requires 2 consecutive registers to store the 128-bit structure
+	/// \param first_reg Id of the first scalar register
+	/// \param num_regs Number of scalar registers to be used, must be 2
 	void setSRegWithUAVTable(int first_reg, int num_regs);
 
-	/// ???
-	/// \param first_reg
-	/// \param num_regs
-	/// \param uav
+	/// Puts a memory descriptor for a UAV into sregs
+	/// It requires 4 consecutive registers to store the 128-bit structure
+	/// \param first_reg Id of the first scalar register
+	/// \param num_regs Number of scalar registers to be used, must be 4
+	/// \param uav Id of UAV
 	void setSRegWithUAV(int first_reg, int num_regs, int uav);
 
-	/// ???
-	/// \param first_reg
-	/// \param num_regs
+	/// Put a pointer to the Vertex Buffer table into 2 consecutive sregs
+	/// \param first_reg Id of the first scalar register
+	/// \param num_regs Number of scalar registers to be used, must be 2
 	void setSRegWithBufferTable(int first_reg, int num_regs);
 
-	/// ???
-	/// \param first_reg
-	/// \param num_regs
+	/// Put a pointer to the Fetch Shader into 2 consecutive sregs
+	/// \param first_reg Id of the first scalar register
+	/// \param num_regs Number of scalar registers to be used, must be 2
 	void setSRegWithFetchShader(int first_reg, int num_regs);
 
 	/// Return an iterator to the first work-item in the wavefront. The

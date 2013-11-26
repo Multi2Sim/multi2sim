@@ -128,6 +128,7 @@ Wavefront::Wavefront(WorkGroup *work_group, int id)
 	sreg[246].as_float = 4.0;
 	sreg[247].as_float = -4.0;
 
+	// FIXME
 }
 
 #if 0

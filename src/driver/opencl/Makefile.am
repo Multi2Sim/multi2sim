@@ -10,7 +10,17 @@ libopencl_a_SOURCES = \
 	si-kernel.h \
 	\
 	si-program.c \
-	si-program.h
+	si-program.h \
+	\
+	Opencl.cc \
+	Opencl.dat \
+	Opencl.h \
+	\
+	SI-kernel.cc \
+	SI-kernel.h \
+	\
+	SI-program.cc \
+	SI-program.h
 
 INCLUDES = @M2S_INCLUDES@
 
