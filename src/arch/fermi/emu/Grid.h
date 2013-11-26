@@ -84,14 +84,14 @@ class Grid
 	std::list<std::unique_ptr<ThreadBlock>> finished_thread_blocks;
 
 	// List of Grid
-        Grid *grid_list_prev;
-        Grid *grid_list_next;
-        Grid *pending_grid_list_prev;
-        Grid *pending_grid_list_next;
-        Grid *running_grid_list_prev;
-        Grid *running_grid_list_next;
-        Grid *finished_grid_list_prev;
-        Grid *finished_grid_list_next;
+	Grid *grid_list_prev;
+	Grid *grid_list_next;
+	Grid *pending_grid_list_prev;
+	Grid *pending_grid_list_next;
+	Grid *running_grid_list_prev;
+	Grid *running_grid_list_next;
+	Grid *finished_grid_list_prev;
+	Grid *finished_grid_list_next;
 
 	void *inst_buffer;
 	unsigned int inst_buffer_size;
