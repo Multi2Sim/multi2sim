@@ -20,6 +20,8 @@
 #ifndef ARCH_X86_EMU_SIGNAL_H
 #define ARCH_X86_EMU_SIGNAL_H
 
+#include <cassert>
+
 #include <lib/cpp/Bitmap.h>
 #include <lib/cpp/String.h>
 
@@ -114,6 +116,9 @@ public:
 				bitmap.Test(sig - 1) : false;
 	}
 
+	/// Return the bitmap representing the signal set
+	const misc::Bitmap &getBitmap() const { return bitmap; }
+
 	/// Dump into output stream, or \c std::cout if \a os is omitted.
 	void Dump(std::ostream &os = std::cout) const;
 
@@ -146,10 +151,39 @@ public:
 	/// Store a backup copy of the register file passed as an argument.
 	void setRegs(const Regs &regs) { this->regs.reset(new Regs(regs)); }
 
+	/// Return a constant reference to the registers storing a copy. Before
+	/// calling this function, the user has to make sure that registers have
+	/// been stored with a previous call to setRegs().
+	const Regs &getRegs() {
+		assert(regs.get());
+		return *regs;
+	}
+
+	/// Free the copy of the register file stored. The caller must be sure
+	/// that a register file was previously stored with a call to setRegs().
+	/// The call to freeRegs() is optional for optimization. Not calling it
+	/// will not cause any memory leak.
+	void freeRegs() {
+		assert(regs.get());
+		regs.reset();
+	}
+
 	/// Set the address where the return code can be found.
 	void setRetCodePtr(unsigned ret_code_ptr) {
 			this->ret_code_ptr = ret_code_ptr;
 	}
+
+	/// Return reference to pending signal mask
+	const SignalSet &getPending() const { return pending; }
+	SignalSet &getPending() { return pending; }
+
+	/// Return reference to blocked signal mask
+	const SignalSet &getBlocked() const { return blocked; }
+	SignalSet &getBlocked() { return blocked; }
+
+	/// Return backed up signal mask
+	const SignalSet &getBackup() const { return backup; }
+	SignalSet &getBackup() { return backup; }
 
 	/// Return address where the return code can be found.
 	unsigned getRetCodePtr() const { return ret_code_ptr; }
@@ -183,6 +217,9 @@ public:
 	/// Return the address in the guest program where the handler for the
 	/// signal has been installed.
 	unsigned getHandler() { return handler; }
+
+	/// Return the flags associated with the signal handler
+	unsigned getFlags() { return flags; }
 };
 
 
@@ -199,7 +236,7 @@ public:
 	/// and 64. This number should not be out of range.
 	SignalHandler *getSignalHandler(int sig) {
 		assert(misc::InRange(sig, 1, 64));
-		return &signal_handler[sig];
+		return &signal_handler[sig - 1];
 	}
 };
 
