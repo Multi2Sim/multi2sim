@@ -68,6 +68,10 @@ class Context
 	// Process ID
 	int pid;
 
+	// Context state, expressed as a bitmap of flags, e.g.,
+	// ContextSuspended | ContextFutex
+	unsigned state;
+
 	// Context memory. This object can be shared by multiple contexts, so it
 	// is declared as a shared pointer. The las freed context pointing to
 	// this memory object will be the one automatically freeing it.
@@ -75,6 +79,10 @@ class Context
 
 	// Register file. Each context has its own copy always.
 	Regs regs;
+
+
+	// Update the context state
+	void UpdateState(unsigned state);
 	
 
 	///////////////////////////////////////////////////////////////////////
@@ -215,6 +223,16 @@ public:
 	/// directory for the context.
 	std::string getFullPath(const std::string &path);
 
+	/// Return \c true if flag \a state is part of the context state
+	bool getState(ContextState state) const { return this->state & state; }
+
+	/// Set flag \a state in the context state
+	void setState(ContextState state) { UpdateState(this->state | state); }
+
+	/// Clear flag \a state in the context state
+	void clearState(ContextState state) {
+		UpdateState(this->state & ~state);
+	}
 };
 
 }  // namespace x86
