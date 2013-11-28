@@ -14,7 +14,7 @@ __top_builddir__bin_m2s_SOURCES = \
 	m2s.c \
 	m2s-cpp.cc \
 	\
-	Wrapper.c \
+	Wrapper.cc \
 	Wrapper.h
 
 AM_LIBTOOLFLAGS = --preserve-dup-deps
