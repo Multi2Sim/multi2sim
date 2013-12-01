@@ -25,10 +25,10 @@
 
 using namespace ELFReader;
 
-namespace SIDriver
+namespace SI
 {
 
-class OpenclDriver;
+class OpenCLDriver;
 	
 class ConstantBuffer
 {
@@ -48,7 +48,7 @@ class Program
 	int id;
 
 	// Opencl driver it belongs to
-	OpenclDriver *driver;
+	OpenCLDriver *driver;
 
 	// ELF binary
 	File elf_file;
@@ -57,7 +57,7 @@ class Program
 	std::vector<std::unique_ptr<ConstantBuffer>> constant_buffers;
 
 public:
-	Program(int id, OpenclDriver *driver);
+	Program(int id, OpenCLDriver *driver);
 
 	void SetBinary();
 
@@ -91,7 +91,7 @@ void opencl_si_constant_buffer_free(struct opencl_si_constant_buffer_t *constant
 struct opencl_si_program_t
 {
 	int id;
-	OpenclDriver *driver;
+	OpenCLDriver *driver;
 	
 	/* ELF binary */
 	struct elf_file_t *elf_file;
@@ -102,7 +102,7 @@ struct opencl_si_program_t
 	struct list_t *constant_buffer_list;
 };
 
-struct opencl_si_program_t *opencl_si_program_create(OpenclDriver *driver, int id);
+struct opencl_si_program_t *opencl_si_program_create(OpenCLDriver *driver, int id);
 void opencl_si_program_free(struct opencl_si_program_t *program);
 
 void opencl_si_program_set_binary(struct opencl_si_program_t *program,
