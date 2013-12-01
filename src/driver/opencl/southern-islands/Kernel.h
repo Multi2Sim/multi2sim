@@ -25,11 +25,10 @@
 #include <string>
 
 #include <src/arch/southern-islands/asm/Arg.h>
-#include <src/mem-system/Memory.h>
 
-#include "SI-program.h"
+#include "Program.h"
 
-namespace SIDriver
+namespace SI
 {
 
 class NDRange;
@@ -47,7 +46,6 @@ class Kernel
 
 	// List of kernel arguments
 	std::vector<std::unique_ptr<SI::Arg>> args;
-
 
 	// Memory requirements 
 	int mem_size_local;
@@ -70,8 +68,8 @@ public:
 
 	/// FIXME
 	void flushNDRangeBuffers(NDRange *ndrange /*SIGpu *gpu, X86Emu *x86_emu*/);
-	void createNDRangeTables(NDRange *ndrange, Memory::Memory *gpu_mmu);
-	void createNDRangeConstantBuffers(NDRange *ndrange, Memory::Memory *gpu_mmu);
+	void createNDRangeTables(NDRange *ndrange /* MMU *gpu_mmu */);
+	void createNDRangeConstantBuffers(NDRange *ndrange /*MMU *gpu_mmu*/);
 	void NDRangeSetupMMU(NDRange *ndrange);
 	
 };

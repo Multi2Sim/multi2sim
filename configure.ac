@@ -894,7 +894,7 @@ AC_CONFIG_FILES([
 		runtime/opengl/Makefile
 		runtime/include/Makefile
 
-                src/Makefile
+		src/Makefile
 
 		src/arch/Makefile
 		src/driver/Makefile
@@ -951,6 +951,7 @@ AC_CONFIG_FILES([
 		src/driver/glut/Makefile
 		src/driver/glew/Makefile
 		src/driver/opencl/Makefile
+		src/driver/opencl/southern-islands/Makefile
 		src/driver/opencl-old/Makefile
 		src/driver/opencl-old/evergreen/Makefile
 		src/driver/opengl/Makefile

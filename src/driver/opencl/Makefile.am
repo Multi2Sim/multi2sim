@@ -1,3 +1,6 @@
+SUBDIRS = \
+	southern-islands
+
 lib_LIBRARIES = libopencl.a
 
 libopencl_a_SOURCES = \
@@ -12,15 +15,14 @@ libopencl_a_SOURCES = \
 	si-program.c \
 	si-program.h \
 	\
-	Opencl.cc \
-	Opencl.dat \
-	Opencl.h \
+	OpenCLDriver.cc \
+	OpenCLDriver.h \
 	\
-	SI-kernel.cc \
-	SI-kernel.h \
-	\
-	SI-program.cc \
-	SI-program.h
+	ABI.cc \
+	ABI.h
 
 INCLUDES = @M2S_INCLUDES@
+
+LDADD = \
+	$(top_builddir)/src/driver/opencl/southern-islands/libsi.a
 
