@@ -17,144 +17,140 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <src/driver/opencl/ABI.h>
+
 #include "ABI.h"
 
 namespace SI
 {
 
-int OpenCLDriver::OpenCLABIInitImpl(/*FIXME: X86Context *ctx*/)
+int OpenCLABIMemAllocImpl(/*FIXME: X86Context *ctx*/)
 {
 	// Return
 	return 0;
 }
 
-int OpenCLDriver::OpenCLABIMemAllocImpl(/*FIXME: X86Context *ctx*/)
+int OpenCLABIMemReadImpl(/*FIXME: X86Context *ctx*/)
 {
 	// Return
 	return 0;
 }
 
-int OpenCLDriver::OpenCLABIMemReadImpl(/*FIXME: X86Context *ctx*/)
+int OpenCLABIMemWriteImpl(/*FIXME: X86Context *ctx*/)
 {
 	// Return
 	return 0;
 }
 
-int OpenCLDriver::OpenCLABIMemWriteImpl(/*FIXME: X86Context *ctx*/)
+int OpenCLABIMemCopyImpl(/*FIXME: X86Context *ctx*/)
 {
 	// Return
 	return 0;
 }
 
-int OpenCLDriver::OpenCLABIMemCopyImpl(/*FIXME: X86Context *ctx*/)
+int OpenCLABIMemFreeImpl(/*FIXME: X86Context *ctx*/)
 {
 	// Return
 	return 0;
 }
 
-int OpenCLDriver::OpenCLABIMemFreeImpl(/*FIXME: X86Context *ctx*/)
+int OpenCLABIProgramCreateImpl(/*FIXME: X86Context *ctx*/)
 {
 	// Return
 	return 0;
 }
 
-int OpenCLDriver::OpenCLABIProgramCreateImpl(/*FIXME: X86Context *ctx*/)
+int OpenCLABIProgramSetBinaryImpl(/*FIXME: X86Context *ctx*/)
 {
 	// Return
 	return 0;
 }
 
-int OpenCLDriver::OpenCLABIProgramSetBinaryImpl(/*FIXME: X86Context *ctx*/)
+int OpenCLABIKernalCreateImpl(/*FIXME: X86Context *ctx*/)
 {
 	// Return
 	return 0;
 }
 
-int OpenCLDriver::OpenCLABIKernalCreateImpl(/*FIXME: X86Context *ctx*/)
+int OpenCLABIKernelSetArgValueImpl(/*FIXME: X86Context *ctx*/)
 {
 	// Return
 	return 0;
 }
 
-int OpenCLDriver::OpenCLABIKernelSetArgValueImpl(/*FIXME: X86Context *ctx*/)
+int OpenCLABIKernelSetArgPointerImpl(/*FIXME: X86Context *ctx*/)
 {
 	// Return
 	return 0;
 }
 
-int OpenCLDriver::OpenCLABIKernelSetArgPointerImpl(/*FIXME: X86Context *ctx*/)
+int OpenCLABIKernelSetArgImageImpl(/*FIXME: X86Context *ctx*/)
 {
 	// Return
 	return 0;
 }
 
-int OpenCLDriver::OpenCLABIKernelSetArgImageImpl(/*FIXME: X86Context *ctx*/)
+int OpenCLABIKernelSetArgSamplerImpl(/*FIXME: X86Context *ctx*/)
 {
 	// Return
 	return 0;
 }
 
-int OpenCLDriver::OpenCLABIKernelSetArgSamplerImpl(/*FIXME: X86Context *ctx*/)
+int OpenCLABINDRangeCreateImpl(/*FIXME: X86Context *ctx*/)
 {
 	// Return
 	return 0;
 }
 
-int OpenCLDriver::OpenCLABINDRangeCreateImpl(/*FIXME: X86Context *ctx*/)
+int OpenCLABINDRangeGetBufferEntriesImpl(/*FIXME: X86Context *ctx*/)
 {
 	// Return
 	return 0;
 }
 
-int OpenCLDriver::OpenCLABINDRangeGetBufferEntriesImpl(/*FIXME: X86Context *ctx*/)
+int OpenCLABINDRangeSendWorkGoupsImpl(/*FIXME: X86Context *ctx*/)
 {
 	// Return
 	return 0;
 }
 
-int OpenCLDriver::OpenCLABINDRangeSendWorkGoupsImpl(/*FIXME: X86Context *ctx*/)
+int OpenCLABINDRangeFinishImpl(/*FIXME: X86Context *ctx*/)
 {
 	// Return
 	return 0;
 }
 
-int OpenCLDriver::OpenCLABINDRangeFinishImpl(/*FIXME: X86Context *ctx*/)
+int OpenCLABINDRangePassMemObjsImpl(/*FIXME: X86Context *ctx*/)
 {
 	// Return
 	return 0;
 }
 
-int OpenCLDriver::OpenCLABINDRangePassMemObjsImpl(/*FIXME: X86Context *ctx*/)
+int OpenCLABINDRangeSetFusedImpl(/*FIXME: X86Context *ctx*/)
 {
 	// Return
 	return 0;
 }
 
-int OpenCLDriver::OpenCLABINDRangeSetFusedImpl(/*FIXME: X86Context *ctx*/)
+int OpenCLABINDRangeFlushImpl(/*FIXME: X86Context *ctx*/)
 {
 	// Return
 	return 0;
 }
 
-int OpenCLDriver::OpenCLABINDRangeFlushImpl(/*FIXME: X86Context *ctx*/)
+int OpenCLABINDRangeFreeImpl(/*FIXME: X86Context *ctx*/)
 {
 	// Return
 	return 0;
 }
 
-int OpenCLDriver::OpenCLABINDRangeFreeImpl(/*FIXME: X86Context *ctx*/)
+int OpenCLABINDRangeStartImpl(/*FIXME: X86Context *ctx*/)
 {
 	// Return
 	return 0;
 }
 
-int OpenCLDriver::OpenCLABINDRangeStartImpl(/*FIXME: X86Context *ctx*/)
-{
-	// Return
-	return 0;
-}
-
-int OpenCLDriver::OpenCLABINDRangeEndImpl(/*FIXME: X86Context *ctx*/)
+int OpenCLABINDRangeEndImpl(/*FIXME: X86Context *ctx*/)
 {
 	// Return
 	return 0;
@@ -162,10 +158,10 @@ int OpenCLDriver::OpenCLABINDRangeEndImpl(/*FIXME: X86Context *ctx*/)
 
 #if 0
 /*
- * Class 'OpenCLDriver'
+ * Class 'SI'
  */
 
-void OpenCLDriverCreate(OpenCLDriver *self, X86Emu *x86_emu, SIEmu *si_emu)
+void SICreate(SI *self, X86Emu *x86_emu, SIEmu *si_emu)
 {
 	/* Parent */
 	DriverCreate(asDriver(self), x86_emu);
@@ -190,7 +186,7 @@ void OpenCLDriverCreate(OpenCLDriver *self, X86Emu *x86_emu, SIEmu *si_emu)
 }
 
 
-void OpenCLDriverDestroy(OpenCLDriver *self)
+void SIDestroy(SI *self)
 {
 	struct opencl_si_program_t *program;
 	struct opencl_si_kernel_t *kernel;
@@ -217,7 +213,7 @@ void OpenCLDriverDestroy(OpenCLDriver *self)
 
 /* This function is called when all work groups from an ND-Range have
  * been scheduled (i.e., ndrange->waiting_work_groups is empty) */
-void OpenCLDriverRequestWork(OpenCLDriver *self, SINDRange *ndrange)
+void SIRequestWork(SI *self, SINDRange *ndrange)
 {
 	X86Emu *emu = asDriver(self)->emu;
 
@@ -231,7 +227,7 @@ void OpenCLDriverRequestWork(OpenCLDriver *self, SINDRange *ndrange)
 /* This function is called when all work groups from an ND-Range have
  * been scheduled and completed (i.e., ndrange->waiting_work_groups and 
  * ndrange->running_work_groups are both empty) */
-void OpenCLDriverNDRangeComplete(OpenCLDriver *self, SINDRange *ndrange)
+void SINDRangeComplete(SI *self, SINDRange *ndrange)
 {
 	X86Emu *emu = asDriver(self)->emu;
 
@@ -300,7 +296,7 @@ int opencl_debug_category;
 
 
 
-int OpenCLDriverCall(X86Context *ctx)
+int SICall(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -409,7 +405,7 @@ static int opencl_abi_init_impl(X86Context *ctx)
 static int opencl_abi_si_mem_alloc_impl(X86Context *ctx)
 {
 	X86Emu *x86_emu = ctx->emu;
-	OpenCLDriver *driver = x86_emu->opencl_driver;
+	SI *driver = x86_emu->opencl_driver;
 	SIEmu *si_emu = driver->si_emu;
 	SIGpu *si_gpu = driver->si_gpu;
 
@@ -486,7 +482,7 @@ static int opencl_abi_si_mem_alloc_impl(X86Context *ctx)
 static int opencl_abi_si_mem_read_impl(X86Context *ctx)
 {
 	X86Emu *x86_emu = ctx->emu;
-	OpenCLDriver *driver = x86_emu->opencl_driver;
+	SI *driver = x86_emu->opencl_driver;
 	SIEmu *si_emu = driver->si_emu;
 
 	struct x86_regs_t *regs = ctx->regs;
@@ -554,7 +550,7 @@ static int opencl_abi_si_mem_read_impl(X86Context *ctx)
 static int opencl_abi_si_mem_write_impl(X86Context *ctx)
 {
 	X86Emu *x86_emu = ctx->emu;
-	OpenCLDriver *driver = x86_emu->opencl_driver;
+	SI *driver = x86_emu->opencl_driver;
 	SIEmu *si_emu = driver->si_emu;
 
 	struct x86_regs_t *regs = ctx->regs;
@@ -623,7 +619,7 @@ static int opencl_abi_si_mem_write_impl(X86Context *ctx)
 static int opencl_abi_si_mem_copy_impl(X86Context *ctx)
 {
 	X86Emu *x86_emu = ctx->emu;
-	OpenCLDriver *driver = x86_emu->opencl_driver;
+	SI *driver = x86_emu->opencl_driver;
 	SIEmu *si_emu = driver->si_emu;
 
 	struct x86_regs_t *regs = ctx->regs;
@@ -712,7 +708,7 @@ static int opencl_abi_si_mem_free_impl(X86Context *ctx)
 static int opencl_abi_si_program_create_impl(X86Context *ctx)
 {
 	X86Emu *emu = ctx->emu;
-	OpenCLDriver *driver = emu->opencl_driver;
+	SI *driver = emu->opencl_driver;
 
 	struct opencl_si_program_t *program;
 
@@ -753,7 +749,7 @@ static int opencl_abi_si_program_create_impl(X86Context *ctx)
 static int opencl_abi_si_program_set_binary_impl(X86Context *ctx)
 {
 	X86Emu *emu = ctx->emu;
-	OpenCLDriver *driver = emu->opencl_driver;
+	SI *driver = emu->opencl_driver;
 
 	struct x86_regs_t *regs = ctx->regs;
 	struct opencl_si_program_t *program;
@@ -811,7 +807,7 @@ static int opencl_abi_si_program_set_binary_impl(X86Context *ctx)
 static int opencl_abi_si_kernel_create_impl(X86Context *ctx)
 {
 	X86Emu *emu = ctx->emu;
-	OpenCLDriver *driver = emu->opencl_driver;
+	SI *driver = emu->opencl_driver;
 
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -889,7 +885,7 @@ static int opencl_abi_si_kernel_create_impl(X86Context *ctx)
 static int opencl_abi_si_kernel_set_arg_value_impl(X86Context *ctx)
 {
 	X86Emu *emu = ctx->emu;
-	OpenCLDriver *driver = emu->opencl_driver;
+	SI *driver = emu->opencl_driver;
 
 	struct x86_regs_t *regs = ctx->regs;
 	struct opencl_si_kernel_t *kernel;
@@ -980,7 +976,7 @@ static int opencl_abi_si_kernel_set_arg_value_impl(X86Context *ctx)
 static int opencl_abi_si_kernel_set_arg_pointer_impl(X86Context *ctx)
 {
 	X86Emu *emu = ctx->emu;
-	OpenCLDriver *driver = emu->opencl_driver;
+	SI *driver = emu->opencl_driver;
 
 	struct x86_regs_t *regs = ctx->regs;
 	struct opencl_si_kernel_t *kernel;
@@ -1145,7 +1141,7 @@ static int opencl_abi_si_ndrange_create_impl(X86Context *ctx)
 {
 	SIArg *arg, *arg_copy;
 	X86Emu *x86_emu = ctx->emu;
-	OpenCLDriver *driver = x86_emu->opencl_driver;
+	SI *driver = x86_emu->opencl_driver;
 	SIEmu *si_emu = driver->si_emu;
 	SIGpu *si_gpu = driver->si_gpu;
 
@@ -1276,7 +1272,7 @@ static int opencl_abi_si_ndrange_get_num_buffer_entries_impl(
 	struct mem_t *mem = ctx->mem;
 
 	X86Emu *x86_emu = ctx->emu;
-	OpenCLDriver *driver = x86_emu->opencl_driver;
+	SI *driver = x86_emu->opencl_driver;
 	SIGpu *si_gpu = driver->si_gpu;
 
 	unsigned int host_ptr;
@@ -1357,7 +1353,7 @@ static void opencl_abi_si_ndrange_send_work_groups_wakeup(
 static int opencl_abi_si_ndrange_send_work_groups_impl(X86Context *ctx)
 {
 	X86Emu *emu = ctx->emu;
-	OpenCLDriver *driver = emu->opencl_driver;
+	SI *driver = emu->opencl_driver;
 	SINDRange *ndrange = NULL, *tmp;
 
 	struct x86_regs_t *regs = ctx->regs;
@@ -1482,7 +1478,7 @@ static void opencl_abi_si_ndrange_finish_wakeup(X86Context *ctx,
 static int opencl_abi_si_ndrange_finish_impl(X86Context *ctx)
 {
 	X86Emu *emu = ctx->emu;
-	OpenCLDriver *driver = emu->opencl_driver;
+	SI *driver = emu->opencl_driver;
 	struct x86_regs_t *regs = ctx->regs;
 
 	SINDRange *ndrange = NULL, *tmp;
@@ -1548,7 +1544,7 @@ static int opencl_abi_si_ndrange_finish_impl(X86Context *ctx)
 static int opencl_abi_si_ndrange_pass_mem_objs_impl(X86Context *ctx)
 {
 	X86Emu *emu = ctx->emu;
-	OpenCLDriver *driver = emu->opencl_driver;
+	SI *driver = emu->opencl_driver;
 	SIGpu *si_gpu = driver->si_gpu;
 	SINDRange *ndrange = NULL, *tmp_ndrange;
 
@@ -1640,7 +1636,7 @@ static int opencl_abi_si_ndrange_set_fused_impl(X86Context *ctx)
 	struct x86_regs_t *regs = ctx->regs;
 
 	X86Emu *x86_emu = ctx->emu;
-	OpenCLDriver *driver = x86_emu->opencl_driver;
+	SI *driver = x86_emu->opencl_driver;
 	SIGpu *si_gpu = driver->si_gpu;
 
 	driver->fused = regs->ecx;
@@ -1699,7 +1695,7 @@ static int opencl_abi_si_ndrange_flush_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	X86Emu *x86_emu = ctx->emu;
-	OpenCLDriver *driver = x86_emu->opencl_driver;
+	SI *driver = x86_emu->opencl_driver;
 	SIGpu *si_gpu = driver->si_gpu;
 
 	/* If there's not a timing simulator, no need to flush */
@@ -1751,7 +1747,7 @@ static int opencl_abi_si_ndrange_free_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	X86Emu *x86_emu = ctx->emu;
-	OpenCLDriver *driver = x86_emu->opencl_driver;
+	SI *driver = x86_emu->opencl_driver;
 
 	SINDRange *ndrange = NULL, *tmp_ndrange;
 
@@ -1793,7 +1789,7 @@ static int opencl_abi_si_ndrange_free_impl(X86Context *ctx)
 static int opencl_abi_ndrange_start_impl(X86Context *ctx)
 {
 	X86Emu *x86_emu = ctx->emu;
-	OpenCLDriver *driver = x86_emu->opencl_driver;
+	SI *driver = x86_emu->opencl_driver;
 
 	assert(driver->ndranges_running >= 0);
 	driver->ndranges_running++;
@@ -1819,7 +1815,7 @@ static int opencl_abi_ndrange_start_impl(X86Context *ctx)
 static int opencl_abi_ndrange_end_impl(X86Context *ctx)
 {
 	X86Emu *x86_emu = ctx->emu;
-	OpenCLDriver *driver = x86_emu->opencl_driver;
+	SI *driver = x86_emu->opencl_driver;
 
 	driver->ndranges_running--;
 	assert(driver->ndranges_running >= 0);

@@ -19,6 +19,7 @@ libopencl_a_SOURCES = \
 	OpenCLDriver.h \
 	\
 	ABI.cc \
+	ABI.dat \
 	ABI.h
 
 INCLUDES = @M2S_INCLUDES@
