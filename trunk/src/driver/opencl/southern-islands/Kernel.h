@@ -20,7 +20,6 @@
 #ifndef DRIVER_OPENCL_SI_KERNEL_H
 #define DRIVER_OPENCL_SI_KERNEL_H
 
-
 #include <memory>
 #include <string>
 
@@ -42,7 +41,7 @@ class Kernel
 	std::string name;
 
 	// Program it belongs to
-	Program *program;
+	const Program *program;
 
 	// List of kernel arguments
 	std::vector<std::unique_ptr<SI::Arg>> args;
@@ -74,7 +73,7 @@ public:
 	
 };
 
-}  // namespace SIDriver
+}  // namespace SI
 
 #if 0
 /*

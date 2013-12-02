@@ -28,12 +28,10 @@
 #include "Program.h"
 #include "Kernel.h"
 
-using namespace SI;
-
 namespace SI
 {
 
-/* List of OpenCL Runtime calls */
+// List of OpenCL Runtime calls
 enum OpenCLABICall
 {
 	OpenCLABIInvalid = 0,
@@ -43,49 +41,34 @@ enum OpenCLABICall
 	OpenCLABICallCount
 };
 
-
-class OpenCLDriver
-{
-	// Device emulators
-	SI::Emu *si_emu;
-	// x86::Emu *x86; // FIXME: move to common driver class?
-
-	// Device timing simulators
-	// SI::Gpu *gpu;
-	// x86::Cpu *cpu;
-
-	// List of Southern Islands programs and kernels
-	std::vector<std::unique_ptr<Program>> programs;
-	std::vector<std::unique_ptr<Kernel>> kernels;
-	std::vector<std::unique_ptr<NDRange>> ndranges;
-
-	// FIXME: OpenCL ABI calls
+// Forward declarations of OpenCL Runtime functions
 #define OPENCL_ABI_CALL(name, code) \
-	int OpenCLABI##name##Impl(/*FIXME: X86Context *ctx*/);
+	int OpenCLABI##name##Impl();
 #include "ABI.dat"
 #undef OPENCL_ABI_CALL
 
+// List of OpenCL ABI call names 
+std::string OpenCLABICallName[OpenCLABICallCount + 1] =
+{
+	NULL,
+#define OPENCL_ABI_CALL(name, code) #name,
+#include "ABI.dat"
+#undef OPENCL_ABI_CALL
+	NULL
+};
 
-public:
-	OpenCLDriver(SI::Emu *si_emu);
+// List of OpenCL Runtime functions 
+typedef int (*OpenCLABICallFuncPtr)();
+OpenCLABICallFuncPtr OpenCLABICallTable[OpenCLABICallCount + 1] =
+{
+	NULL,
+#define OPENCL_ABI_CALL(name, code) OpenCLABI##name##Impl,
+#include "ABI.dat"
+#undef OPENCL_ABI_CALL
+	NULL
+};
 
-	/// This function is called when all work groups from an ND-Range have
-	/// been scheduled (i.e., ndrange->waiting_work_groups is empty)
-	/// \param ndrange  
-	void RequestWork(NDRange *ndrange);
-
-	/// This function is called when all work groups from an ND-Range have
-	/// been scheduled and completed (i.e., ndrange->waiting_work_groups and 
-	/// ndrange->running_work_groups are both empty)
-	/// \param ndrange 
-	void NDRangeComplete(NDRange *ndrange);
-
-	/// OpenCL driver call
-	int DriverCall(/*x86Context *x86_ctx*/);
-
-};	
-
-}  // namespace Driver
+}  // namespace SI
 
 
 #if 0
