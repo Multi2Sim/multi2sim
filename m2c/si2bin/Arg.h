@@ -119,6 +119,10 @@ public:
 			type == ArgTypeLiteralFloat ||
 			type == ArgTypeLiteralFloatReduced; }
 
+	/* Setters */
+	bool setAbs(bool abs) { return this->abs = abs; }
+	bool setNeg(bool neg) { return this->neg = neg; }
+	
 	/* Dump operand (pure virtual function) */
 	virtual void Dump(std::ostream &os) = 0;
 	friend std::ostream &operator<<(std::ostream &os, Arg &arg) {
@@ -300,9 +304,15 @@ public:
 		idxen(idxen),
 		offset(offset) { }
 
+	/* Getters */
 	bool getOffen() { return offen; }
 	bool getIdxen() { return idxen; }
 	int getOffset() { return offset; }
+	
+	/* Setters */
+	bool setOffen(bool offen) { return this->offen = offen; }
+	bool setIdxen(bool idxen) { return this->idxen = idxen; }
+	int setOffset(int offset) { return this->offset = offset; }
 
 	void Dump(std::ostream &os);
 };

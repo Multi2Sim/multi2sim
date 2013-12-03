@@ -25,7 +25,7 @@
 
 #include <src/lib/cpp/ELFWriter.h>
 
-#include "InnerBin.h"
+#include "InternalBinary.h"
 #include "Metadata.h"
 
 namespace si2bin

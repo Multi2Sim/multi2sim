@@ -121,6 +121,10 @@ public:
 	std::string getName() { return name; }
 	bool getConstArg() { return constarg; }
 
+	/* Setters */
+	void setName(const std::string &name) { this->name = name; }
+	void setConstArg(bool constarg) { this->constarg = constarg; }
+
 	/* Dump */
 	virtual void Dump(std::ostream &os) { os << name; }
 	friend std::ostream &operator<<(std::ostream &os, Arg &arg) {
@@ -180,6 +184,14 @@ public:
 	/* Setters */
 	void setDevicePtr(unsigned int device_ptr) {
 		this->device_ptr = device_ptr; }
+	void setDataType(ArgDataType data_type) { this->data_type = data_type; }
+	void setNumElems(int num_elems) { this->num_elems = num_elems; }
+	void setConstantBufferNum(int constant_buffer_num) { this->constant_buffer_num = constant_buffer_num; }
+	void setConstantOffset(int constant_offset) { this->constant_offset = constant_offset; }
+	void setScope(ArgScope scope) { this->scope = scope; }
+	void setBufferNum(int buffer_num) { this->buffer_num = buffer_num; }
+	void setAlignment(int alignment) { this->alignment = alignment; }
+	void setAccessType(ArgAccessType access_type) { this->access_type = access_type; }
 
 	/* Dump */
 	void Dump(std::ostream &os);
@@ -216,6 +228,11 @@ public:
 	ArgDataType getDataType() { return data_type; }
 	int getNumElems() { return num_elems; }
 
+	/* Setters */
+	void setDataType(ArgDataType data_type) { this->data_type = data_type; }
+	void setNumElems(int num_elems) { this->num_elems = num_elems; }
+	void setConstantBufferNum(int constant_buffer_num) { this->constant_buffer_num = constant_buffer_num; }
+	void setConstantOffset(int constant_offset) { this->constant_offset = constant_offset; }
 	void setValue(void *value) { this->value.reset(value); }
 
 	/* Dump */

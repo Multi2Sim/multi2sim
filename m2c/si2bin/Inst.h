@@ -26,6 +26,7 @@
 
 #include <arch/southern-islands/asm/Inst.h>
 
+#include "Context.h"
 #include "Token.h"
 
 
@@ -40,6 +41,7 @@ namespace si2bin
 
 /* Forward declarations */
 class InstInfo;
+class Context;
 
 
 class Inst
@@ -69,6 +71,8 @@ class Inst
 	/* Comment attached to the instruction, which will be dumped together
 	 * with it. */
 	std::string comment;
+
+	Context *context;
 
 	/* Common construction */
 	void Initialize();

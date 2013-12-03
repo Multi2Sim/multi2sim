@@ -40,9 +40,4 @@ Metadata::Metadata()
 }
 
 
-void Metadata::AddArg(SI::Arg *arg) 
-{
-	arg_list.push_back(std::unique_ptr<SI::Arg>(arg));
-}
-
 } /* namespace si2bin */
