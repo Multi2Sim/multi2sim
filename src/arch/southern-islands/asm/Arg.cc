@@ -97,7 +97,6 @@ StringMap arg_reflection_map =
 	{ "union", ArgReflectionUnion },
 	{ "event", ArgReflectionEvent },
 	{ "opaque", ArgReflectionOpaque },
-	{ 0, 0 }
 };
 
 
