@@ -17,6 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <string>
+
 #include <lib/cpp/Misc.h>
 
 #include "Arg.h"
@@ -79,24 +81,24 @@ StringMap arg_scope_map =
 
 
 /* FIXME: Still need to figure out reflection for i1 and u1 */
-/*StringMap arg_reflection_map =
+StringMap arg_reflection_map =
 {
-	{ "char", ArgInt8 },
-	{ "short", ArgInt16 },
-	{ "int", ArgInt32 },
-	{ "long", ArgInt64 },
-	{ "uchar", ArgUInt8 },
-	{ "ushort", ArgUInt16 },
-	{ "uint", ArgUInt32 },
-	{ "ulong", ArgUInt64 },
-	{ "float", ArgFloat },
-	{ "double", ArgDouble },
-	{ "struct", ArgStruct },
-	{ "union", ArgUnion },
-	{ "event", ArgEvent },
-	{ "opaque", ArgOpaque },
+	{ "char", ArgReflectionInt8 },
+	{ "short", ArgReflectionInt16 },
+	{ "int", ArgReflectionInt32 },
+	{ "long", ArgReflectionInt64 },
+	{ "uchar", ArgReflectionUInt8 },
+	{ "ushort", ArgReflectionUInt16 },
+	{ "uint", ArgReflectionUInt32 },
+	{ "ulong", ArgReflectionUInt64 },
+	{ "float", ArgReflectionFloat },
+	{ "double", ArgReflectionDouble },
+	{ "struct", ArgReflectionStruct },
+	{ "union", ArgReflectionUnion },
+	{ "event", ArgReflectionEvent },
+	{ "opaque", ArgReflectionOpaque },
 	{ 0, 0 }
-};*/
+};
 
 
 /* Infer argument size from its data type */
@@ -148,6 +150,85 @@ void ArgPointer::Dump(std::ostream &os)
 	os << "* " << getName();
 }
 
+void ArgPointer::WriteInfo(ELFWriter::Buffer *buffer, unsigned int index, 
+		unsigned int &offset, int *uav)
+{
+	std::string data_type_str;
+	std::string scope_str;
+	std::string access_type_str;
+	std::string line;
+	std::string name_str;
+
+	int data_size;
+
+
+	data_type_str = arg_data_type_map.MapValue(getDataType());
+	data_size = Arg::getDataSize(data_type) * num_elems;
+	scope_str = arg_scope_map.MapValue(getScope());
+	access_type_str = arg_access_type_map.MapValue(getAccessType());
+
+	line =
+		";pointer:" + 
+		getName() + ":" + data_type_str + ":" +
+		std::to_string(constant_buffer_num) + ":" +
+		std::to_string(constant_offset) + ":" + scope_str + ":" +
+		std::to_string(buffer_num) + ":" + std::to_string(data_size) + ":" +
+		access_type_str + ":0:0\n";
+
+
+	/* Check for 16 byte alignment */
+	if (((constant_offset - offset) < 16) && index)
+		misc::fatal("16 byte alignment not maintained in argument: %s - Expected offset of %d or higher",
+				getName().c_str(), offset + 16);
+
+	offset = constant_offset;
+
+	/* Mark which uav's are being used */
+	if (scope == ArgScopeUAV
+			&& !(uav[buffer_num]))
+	{
+		uav[buffer_num] = 1;
+	}
+
+	buffer->Write(line.c_str(), line.size());
+
+	/* Include const_arg line only if pointer is marked with "const" */
+	if (getConstArg())
+	{
+		line = ";constarg:" + std::to_string(index) + ":" + getName() + "\n";
+		buffer->Write(line.c_str(), line.size());
+	}
+
+}
+
+void ArgPointer::WriteReflection(ELFWriter::Buffer *buffer, unsigned int index)
+{
+	std::string line;
+	std::string reflection;
+
+	reflection = arg_reflection_map.MapValue(getDataType());
+
+	if (num_elems == 1)
+	{
+		line =
+			";reflection:" + std::to_string(index)
+			+ ":" + reflection + "*\n";
+	}
+	else if (num_elems > 1)
+	{
+		line =
+			";reflection:%d:%s%d*\n" + std::to_string(index)+
+			":" + reflection + std::to_string(num_elems)
+			+ "*\n";
+	}
+	else
+	{
+		misc::fatal("Invalid number of elements in argument: %s", getName().c_str());
+	}
+
+	buffer->Write(line.c_str(), line.size());
+
+}
 
 void ArgValue::Dump(std::ostream &os)
 {
@@ -155,6 +236,71 @@ void ArgValue::Dump(std::ostream &os)
 	if (num_elems > 1)
 		os << '[' << num_elems << ']';
 	os << ' ' << getName();
+}
+
+
+void ArgValue::WriteInfo(ELFWriter::Buffer *buffer, unsigned int index, 
+		unsigned int &offset, int *uav)
+{
+	
+	std::string data_type_str;
+	std::string line;
+
+	data_type_str = arg_data_type_map.MapValue(getDataType());
+
+	line = 
+		";value:" + getName() + ":" +
+		data_type_str + ":" + std::to_string(num_elems) + ":" +
+		std::to_string(constant_buffer_num) + ":" +
+		std::to_string(constant_offset) + "\n";
+	
+	/* Check for 16 byte alignment */
+	if (((constant_offset - offset) < 16) && index)
+		misc::fatal("16 byte alignment not maintained in argument: %s - Expected offset of %d or higher",
+				getName().c_str(), offset + 16);
+
+	offset = constant_offset;
+
+	buffer->Write(line.c_str(), line.size());
+
+	/* Include const_arg line only if pointer is marked with "const" */
+	if (getConstArg())
+	{
+		line = ";constarg:" + std::to_string(index) + ":" + getName() + "\n";
+
+		buffer->Write(line.c_str(), line.size());
+	}
+
+}
+
+void ArgValue::WriteReflection(ELFWriter::Buffer *buffer, unsigned int index)
+{
+
+	std::string line;
+	std::string reflection;
+
+	reflection = arg_reflection_map.MapValue(getDataType());
+
+	if (num_elems == 1)
+	{
+		line =
+			";reflection:" + std::to_string(index)
+			+ ":" + reflection + "*\n";
+	}
+	else if (num_elems > 1)
+	{
+		line =
+			";reflection:%d:%s%d\n" + std::to_string(index)+
+			":" + reflection + std::to_string(num_elems)
+			+ "*\n";
+	}
+	else
+	{
+		misc::fatal("Invalid number of elements in argument: %s", getName().c_str());
+	}
+
+	buffer->Write(line.c_str(), line.size());
+
 }
 
 

@@ -131,13 +131,12 @@ InnerBinEntry::InnerBinEntry(InnerBin *bin)
 	
 }
 
-InnerBinNote *InnerBinEntry::NewNote(InnerBinNoteType type, unsigned int size, 
+void InnerBinEntry::NewNote(InnerBinNoteType type, unsigned int size, 
 		void *payload)
 {
 	note_list.push_back(std::unique_ptr<InnerBinNote>(new InnerBinNote(this, 
 			type, size, payload)));
 
-	return note_list.back().get();
 }
 
 
