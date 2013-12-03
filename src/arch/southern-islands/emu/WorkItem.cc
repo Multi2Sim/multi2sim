@@ -135,21 +135,21 @@ int WorkItem::ISAGetElemSize(int data_format)
 
 union hfpack
 {
-	uint32_t as_uint32;
+	unsigned as_uint32;
 	struct
 	{
-		uint16_t s1f;
-		uint16_t s0f;
+		unsigned short s1f;
+		unsigned short s0f;
 	} as_f16f16;
 };
 
-uint16_t WorkItem::Float32to16(float value)
+unsigned short WorkItem::Float32to16(float value)
 {
 	union Bits
 	{
 		float f;
-		int32_t si;
-		uint32_t ui;
+		int si;
+		unsigned ui;
 	};
 
 	const unsigned F_shift= 13;
@@ -171,7 +171,7 @@ uint16_t WorkItem::Float32to16(float value)
 
 	union Bits v, s;
 	v.f = value;
-	uint32_t sign = v.si & F_signN;
+	unsigned sign = v.si & F_signN;
 	v.si ^= sign;
 	sign >>= F_shiftSign; // logical F_shift
 	s.si = F_mulN;
@@ -185,13 +185,13 @@ uint16_t WorkItem::Float32to16(float value)
 	return v.ui | sign;
 }
 
-float WorkItem::Float16to32(uint16_t value)
+float WorkItem::Float16to32(unsigned short value)
 {
 	union Bits
 	{
 		float f;
-		int32_t si;
-		uint32_t ui;
+		int si;
+		unsigned ui;
 	};
 
 	const unsigned F_shift = 13;
@@ -217,7 +217,7 @@ float WorkItem::Float16to32(uint16_t value)
 
 	union Bits v;
 	v.ui = value;
-	int32_t sign = v.si & F_signC;
+	int sign = v.si & F_signC;
 	v.si ^= sign;
 	sign <<= F_shiftSign;
 	v.si ^= ((v.si + F_minD) ^ v.si) & -(v.si > F_subC);
@@ -225,7 +225,7 @@ float WorkItem::Float16to32(uint16_t value)
 	union Bits s;
 	s.si = F_mulC;
 	s.f *= v.si;
-	int32_t mask = -(F_norC > v.si);
+	int mask = -(F_norC > v.si);
 	v.si <<= F_shift;
 	v.si ^= (s.si ^ v.si) & mask;
 	v.si |= sign;
