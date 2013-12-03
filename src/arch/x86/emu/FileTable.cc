@@ -18,6 +18,7 @@
  */
 
 #include "FileTable.h"
+#include <unistd.h>
 
 using namespace misc;
 
