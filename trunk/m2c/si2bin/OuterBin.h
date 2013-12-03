@@ -27,10 +27,95 @@
 
 #include "InnerBin.h"
 #include "Metadata.h"
-#include "Data.h"
 
 namespace si2bin
 {
+
+enum DataType
+{
+	DataTypeInvalid = 0,
+
+	DataTypeFloat,
+	DataTypeWord,
+	DataTypeHalf,
+	DataTypeByte
+};
+
+class Data
+{
+
+protected:
+
+	friend class OuterBin;
+	
+	/* Constructor */
+	Data(DataType type) { this->type = type; }
+	
+	virtual void Write(ELFWriter::Buffer *buffer) = 0;
+	
+	DataType type;
+
+public:
+	/* Getter */
+	DataType GetType() { return type; }
+
+};
+
+class DataFloat : public Data
+{
+	friend class OuterBin;
+	
+	float value;
+
+	DataFloat(float value) :
+	Data(DataTypeFloat), value(value) { }
+
+	void Write(ELFWriter::Buffer *buffer) { buffer->Write((char *) &value, sizeof(float)); }
+};
+
+class DataWord : public Data
+{
+	friend class OuterBin;
+	
+	unsigned int value;
+
+	DataWord(unsigned int value) :
+		Data(DataTypeWord), value(value) { }
+
+	void Write(ELFWriter::Buffer *buffer) { buffer->Write((char *) &value, 
+			sizeof(unsigned int)); }
+};
+
+
+class DataHalf : public Data
+{
+	friend class OuterBin;
+	
+	unsigned short value;
+
+	DataHalf(unsigned short value) :
+		Data(DataTypeHalf), value(value) { }
+
+	void Write(ELFWriter::Buffer *buffer) { buffer->Write((char *) &value, 
+			sizeof(unsigned short)); }
+};
+
+class DataByte : public Data
+{
+	friend class OuterBin;
+	
+	unsigned char value;
+
+	DataByte(unsigned char value) :
+		Data(DataTypeByte), value(value) { }
+	
+	void Write(ELFWriter::Buffer *buffer) { buffer->Write((char *) &value, 
+			sizeof(unsigned char)); }
+
+};
+
+
+
 
 enum OuterBinDevice
 {
@@ -59,7 +144,7 @@ class OuterBin
 	std::vector<std::unique_ptr<InnerBin>> inner_bin_list;
 
 	std::vector<std::unique_ptr<Metadata>> metadata_list;
-
+	
 public:
 
 	OuterBin();
@@ -80,8 +165,19 @@ public:
 
 	void Generate(std::ostream& os);
 
-	void AddData(Data *data);
-	
+	void NewDataFloat(float value) {
+		data_list.push_back(std::unique_ptr<Data>(new DataFloat(value)));
+	}
+	void NewDataWord(unsigned int value) {
+		data_list.push_back(std::unique_ptr<Data>(new DataWord(value)));
+	}
+	void NewDataHalf(unsigned short value) {
+		data_list.push_back(std::unique_ptr<Data>(new DataHalf(value)));
+	}
+	void NewDataByte(unsigned char value) {
+		data_list.push_back(std::unique_ptr<Data>(new DataByte(value)));
+	}
+
 	void AddKernel(InnerBin *inner_bin, Metadata *metadata);
 };
 

@@ -22,6 +22,7 @@
 
 #include <memory>
 
+#include <lib/cpp/ELFWriter.h>
 #include <lib/cpp/String.h>
 
 
@@ -58,6 +59,25 @@ enum ArgScope
 	ArgScopeHwPrivate,
 	ArgScopeHwConstant,
 	ArgScopeHwGDS
+};
+
+enum ArgReflection
+{
+	ArgReflectionInvalid = 0,
+	ArgReflectionInt8,
+	ArgReflectionInt16,
+	ArgReflectionInt32,
+	ArgReflectionInt64,
+	ArgReflectionUInt8,
+	ArgReflectionUInt16,
+	ArgReflectionUInt32,
+	ArgReflectionUInt64,
+	ArgReflectionFloat,
+	ArgReflectionDouble,
+	ArgReflectionStruct,
+	ArgReflectionUnion,
+	ArgReflectionEvent,
+	ArgReflectionOpaque
 };
 
 extern misc::StringMap arg_data_type_map;
@@ -107,6 +127,10 @@ public:
 			arg.Dump(os); return os; }
 
 	static int getDataSize(ArgDataType data_type);
+
+	virtual void WriteInfo(ELFWriter::Buffer *buffer, unsigned int index, 
+			unsigned int &offset, int *uav) = 0;
+	virtual void WriteReflection(ELFWriter::Buffer *buffer, unsigned int index) = 0;
 };
 
 
@@ -159,6 +183,10 @@ public:
 
 	/* Dump */
 	void Dump(std::ostream &os);
+	
+	void WriteInfo(ELFWriter::Buffer *buffer, unsigned int index,
+			unsigned int &offset, int *uav);
+	void WriteReflection(ELFWriter::Buffer *buffer, unsigned int index);
 };
 
 
@@ -192,6 +220,10 @@ public:
 
 	/* Dump */
 	void Dump(std::ostream &os);
+	
+	void WriteInfo(ELFWriter::Buffer *buffer, unsigned int index,
+			unsigned int &offset, int *uav);
+	void WriteReflection(ELFWriter::Buffer *buffer, unsigned int index);
 };
 
 

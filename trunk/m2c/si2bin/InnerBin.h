@@ -144,7 +144,7 @@ public:
 	void SetType(unsigned int type) { header.d_type = type; }
 	void SetMachine(unsigned int machine) { header.d_machine = machine; }
 
-	InnerBinNote *NewNote(InnerBinNoteType type, unsigned int size, void *payload);
+	void NewNote(InnerBinNoteType type, unsigned int size, void *payload);
 };
 
 
@@ -157,6 +157,8 @@ public:
 
 class InnerBin
 {
+	friend class OuterBin;
+
 	std::string name;
 
 	/* Program Resource */
@@ -180,12 +182,12 @@ class InnerBin
 
 	std::vector<std::unique_ptr<InnerBinEntry>> entry_list;
 
-	
-public:
-	
 	/* Constructor */
 	InnerBin(const std::string &name);
 
+
+public:
+	
 	/* Make ELF Writer Public so New Buffer, Section, and Segments
 	 * easily be made
 	 */
