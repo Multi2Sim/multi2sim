@@ -28,6 +28,27 @@ using namespace misc;
 namespace si2bin
 {
 
+void Si2binConfig::Register(CommandLine &command_line)
+{
+	// Option --si2bin <file>
+	command_line.RegisterString("--si2bin", path,
+			"Creates an AMD Southern Islands GPU compliant ELF "
+			"from the assembly file provided in <arg> using the "
+			"internal Southern Islands Assembler.");
+}
+
+void Si2binConfig::Process()
+{
+	// Run Southern Islands Assembler
+	if (!path.empty())
+	{
+		Context *context = Context::getInstance();
+		context->Compile(path);
+		exit(0);
+	}
+}
+
+
 
 /*
  * Class 'InstInfo'
@@ -68,8 +89,10 @@ InstInfo::InstInfo(SI::InstInfo *info)
 
 
 /* Global context */
-Context context;
+std::unique_ptr<Context> Context::instance;
 
+/* Config */
+Si2binConfig Context::config;
 
 Context::Context()
 {
@@ -81,7 +104,7 @@ Context::Context()
 		if (!inst_info->name || !inst_info->fmt_str)
 			continue;
 
-		/* Craete info and add to array */
+		/* Create info and add to array */
 		InstInfo *info = new InstInfo(inst_info);
 		inst_info_array[i].reset(info);
 
@@ -105,6 +128,22 @@ Context::Context()
 			inst_info_table[info->getName()] = info;
 		}
 	}
+}
+
+Context *Context::getInstance()
+{
+	//Instance already exists
+	if (instance.get())
+		return instance.get();
+
+	//Create Instance
+	instance.reset(new Context());
+	return instance.get();
+}
+
+void Context::Compile(const std::string &path)
+{
+
 }
 
 

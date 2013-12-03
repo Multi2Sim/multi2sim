@@ -178,7 +178,16 @@ public:
 		data_list.push_back(std::unique_ptr<Data>(new DataByte(value)));
 	}
 
-	void AddKernel(InnerBin *inner_bin, Metadata *metadata);
+	InnerBin *NewInnerBin(const std::string &name) { 
+		inner_bin_list.push_back(std::unique_ptr<InnerBin>(new InnerBin(name)));
+		return inner_bin_list.back().get();
+	}
+	
+	Metadata *NewMetadata() { 
+		metadata_list.push_back(std::unique_ptr<Metadata>(new Metadata()));
+		return metadata_list.back().get();
+	}
+
 };
 
 } /* namespace si2bin */

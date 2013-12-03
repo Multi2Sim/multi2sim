@@ -51,12 +51,6 @@ misc::StringMap OuterBinDeviceMap =
 	{ 0, 0 }
 };
 
-void OuterBin::AddKernel(InnerBin *inner_bin, Metadata *metadata)
-{
-	inner_bin_list.push_back(std::unique_ptr<InnerBin>(inner_bin));
-	metadata_list.push_back(std::unique_ptr<Metadata>(metadata));
-}
-
 void OuterBin::Generate(std::ostream& os)
 {
 	InnerBin *inner_bin;
