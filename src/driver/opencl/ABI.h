@@ -42,24 +42,24 @@ enum OpenCLABICall
 // List of OpenCL ABI call names 
 std::string OpenCLABICallName[OpenCLABICallCount + 1] =
 {
-	NULL,
+	nullptr,
 #define OPENCL_ABI_CALL(name, code) #name,
 #include "ABI.dat"
 #undef OPENCL_ABI_CALL
-	NULL
+	nullptr
 };
 
-// List of OpenCL Runtime functions, initially it's all NULL.
-// Element OpenCLABICallTable[OpenCLABIInit] will be initialized 
-// when OpenCLDriver is instantiated 
+/// List of OpenCL Runtime functions, initially it's all nullptr except 
+/// OpenCLABICallTable[OpenGLABIInit].
+/// Note that there's no nullptr following '#undef OPENCL_ABI_CALL'
 typedef int (*OpenCLABICallFuncPtr)();
 OpenCLABICallFuncPtr OpenCLABICallTable[OpenCLABICallCount + 1] =
 {
-	NULL,
-#define OPENCL_ABI_CALL(name, code) NULL,
+	nullptr,
+	&OpenCLABIInitImpl,
+#define OPENCL_ABI_CALL(name, code) nullptr,
 #include "ABI.dat"
 #undef OPENCL_ABI_CALL
-	NULL
 };
 
 }  // namespace Driver
