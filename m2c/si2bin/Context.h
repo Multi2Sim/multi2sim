@@ -29,6 +29,7 @@
 #include <lib/cpp/CommandLine.h>
 
 #include "Inst.h"
+#include "Token.h"
 
 
 namespace si2bin

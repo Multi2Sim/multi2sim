@@ -21,6 +21,7 @@
 #define M2C_LLVM2SI_CONTEXT_H
 
 #include <iostream>
+#include <memory>
 
 
 namespace llvm2si
@@ -28,15 +29,20 @@ namespace llvm2si
 
 class Context
 {
+
+	static std::unique_ptr<Context> instance;
+
 public:
 
 	/* Parse a file */
 	void Parse(const std::string &in, const std::string &out);
+
+	static Context *getInstance();
 };
 
 
 /* Global variable */
-extern Context context;
+//extern Context context;
 
 
 }  /* namespace llvm2si */

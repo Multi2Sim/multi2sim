@@ -24,5 +24,6 @@ using namespace llvm2si;
 
 void Llvm2siParse(const char *in, const char *out)
 {
-	context.Parse(in, out);
+	Context *context = Context::getInstance();
+	context->Parse(in, out);
 }

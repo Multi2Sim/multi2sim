@@ -29,8 +29,8 @@
 #include <lib/cpp/Misc.h>
 
 #include "Metadata.h"
-#include "InnerBin.h"
-#include "OuterBin.h"
+#include "InternalBinary.h"
+#include "Binary.h"
 
 namespace si2bin
 {
