@@ -258,7 +258,7 @@ enum ModOffsMod1AOpType
 	modoffsmod1aop_agu,
 	modoffsmod1aop_su,
 	modoffsmod1aop_fu,
-        modoffsmod1aop_fmul,
+	modoffsmod1aop_fmul,
 };
 
 
