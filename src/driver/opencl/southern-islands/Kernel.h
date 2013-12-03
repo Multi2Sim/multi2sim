@@ -53,6 +53,16 @@ class Kernel
 	// Kernel function metadata
 	int func_uniqueid;  // Id of kernel function
 
+	void Expect(std::vector<std::string> &token_list, std::string head_token);
+
+	void ExpectInt(std::vector<std::string> &token_list);
+
+	void ExpectCount(std::vector<std::string> &token_list);
+
+	void LoadMetaDataV3();
+
+	void LoadMetaData();
+
 public:
 	Kernel(int id, std::string name);
 

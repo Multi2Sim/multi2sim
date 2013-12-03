@@ -23,8 +23,6 @@
 #include <memory>
 #include <src/lib/cpp/ELFReader.h>
 
-using namespace ELFReader;
-
 namespace SI
 {
 
@@ -36,10 +34,11 @@ class ConstantBuffer
 	int id;
 
 	unsigned size;
-	void *data;
+	char *data;
 
 public:
-	ConstantBuffer();
+	ConstantBuffer(int id, unsigned size, const char *data);
+	~ConstantBuffer();
 
 };
 
@@ -51,15 +50,18 @@ class Program
 	OpenCLDriver *driver;
 
 	// ELF binary
-	File elf_file;
+	std::unique_ptr<ELFReader::File> elf_file;
 
 	// List of constant buffers
 	std::vector<std::unique_ptr<ConstantBuffer>> constant_buffers;
 
+	// 
+	void InitializeConstantBuffers();
+
 public:
 	Program(int id, OpenCLDriver *driver);
 
-	void SetBinary();
+	void SetBinary(const char *buf, unsigned int size);
 
 };
 

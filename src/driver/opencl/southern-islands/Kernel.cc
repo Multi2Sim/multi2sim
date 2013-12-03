@@ -23,6 +23,36 @@
 namespace SI
 {
 
+// Private functions
+
+void Kernel::Expect(std::vector<std::string> &token_list, std::string head_token)
+{
+
+}
+
+void Kernel::ExpectInt(std::vector<std::string> &token_list)
+{
+
+}
+
+void Kernel::ExpectCount(std::vector<std::string> &token_list)
+{
+
+}
+
+void Kernel::LoadMetaDataV3()
+{
+
+}
+
+void Kernel::LoadMetaData()
+{
+
+}
+
+
+// Public functions
+
 Kernel::Kernel(int id, std::string name)
 {
 	this->id = id;
