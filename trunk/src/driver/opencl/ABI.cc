@@ -29,7 +29,6 @@ namespace Driver
 
 int OpenCLABIInitImpl()
 {
-	
 	std::string spacename;
 
 	struct OpenCLVersion

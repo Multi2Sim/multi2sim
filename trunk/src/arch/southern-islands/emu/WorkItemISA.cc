@@ -3548,18 +3548,18 @@ void WorkItem::ISA_V_CVT_PKRTZ_F16_F32_Impl(Inst *inst)
 {
 	union hfpack
 	{
-		uint32_t as_uint32;
+		unsigned as_uint32;
 		struct
 		{
-			uint16_t s1f;
-			uint16_t s0f;
+			unsigned short s1f;
+			unsigned short s0f;
 		} as_f16f16;
 	};
 
 	InstReg s0;
 	InstReg s1;
-	uint16_t s0f;
-	uint16_t s1f;
+	unsigned short s0f;
+	unsigned short s1f;
 	union hfpack float_pack;
 
 	// Load operands from registers or as a literal constant.

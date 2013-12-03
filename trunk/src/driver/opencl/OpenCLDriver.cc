@@ -57,8 +57,27 @@ void OpenCLDriver::NDRangeComplete(SI::NDRange *ndrange)
 int OpenCLDriver::DriverCall()
 {
 	// FIXME
-	// Get x86 context and read parameters, function code in ebx
+	// struct x86_regs_t *regs = ctx->regs;
 
+	// Variables
+
+	// Function code
+	// int code = regs->ebx;
+	// if (code <= OpenCLABIInvalid || code >= OpenCLABICallCount)
+	// 	fatal("%s: invalid OpenCL ABI call (code %d).\n%s",
+	// 		__FUNCTION__, code, opencl_err_abi_call);
+
+	// Debug
+	// x86_sys_debug("  %s (code %d)\n", OpenCLABICallName[code], code);
+	// opencl_debug("OpenCL ABI call '%s' (code %d)\n",
+		// OpenCLABICallName[code], code);
+
+	// Call OpenCL Runtime function
+	// assert(OpenCLABICallTable[code]);
+	// int ret = OpenCLABICallTable[code]();
+
+	// Return value
+	// return ret;
 	return 0;
 }
 

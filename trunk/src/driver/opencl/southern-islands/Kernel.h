@@ -57,18 +57,18 @@ public:
 	Kernel(int id, std::string name);
 
 	///
-	void setupNDRangeConstantBuffers(NDRange *ndrange);
+	void SetupNDRangeConstantBuffers(NDRange *ndrange);
 
 	/// 
-	void setupNDRangeArgs(NDRange *ndrange);
+	void SetupNDRangeArgs(NDRange *ndrange);
 
 	///
-	void debugNDRangeState(NDRange *ndrange);
+	void DebugNDRangeState(NDRange *ndrange);
 
 	/// FIXME
-	void flushNDRangeBuffers(NDRange *ndrange /*SIGpu *gpu, X86Emu *x86_emu*/);
-	void createNDRangeTables(NDRange *ndrange /* MMU *gpu_mmu */);
-	void createNDRangeConstantBuffers(NDRange *ndrange /*MMU *gpu_mmu*/);
+	void FlushNDRangeBuffers(NDRange *ndrange /*SIGpu *gpu, X86Emu *x86_emu*/);
+	void CreateNDRangeTables(NDRange *ndrange /* MMU *gpu_mmu */);
+	void CreateNDRangeConstantBuffers(NDRange *ndrange /*MMU *gpu_mmu*/);
 	void NDRangeSetupMMU(NDRange *ndrange);
 	
 };
