@@ -53,6 +53,7 @@
 #include <src/arch/southern-islands/asm/arg.h>
 #include <src/arch/southern-islands/asm/Wrapper.h>
 
+#include "Wrapper.h"
 
 /*
  * Global Variables
@@ -721,6 +722,11 @@ void m2c_done(void)
 
 int main(int argc, char **argv)
 {
+
+	/* C++ version of Multi2Sim. This call will terminate execution as new
+	 * functionality gets supported in C++. */
+	main_cpp(argc, argv);
+
 	/* Read command line */
 	m2c_pre_init();
 	m2c_read_command_line(argc, argv);

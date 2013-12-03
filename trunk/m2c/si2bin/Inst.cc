@@ -52,8 +52,9 @@ void Inst::Initialize(SI::InstOpcode opcode)
 	if (!InRange(opcode, 1, SI::InstOpcodeCount - 1))
 		fatal("%s: invalid opcode (%d)", __FUNCTION__, opcode);
 
+	Context *context = Context::getInstance();
 	/* Get instruction information */
-	info = context.getInstInfo(opcode);
+	info = context->getInstInfo(opcode);
 	if (!info)
 		fatal("%s: opcode %d not supported", __FUNCTION__, opcode);
 
@@ -88,7 +89,8 @@ void Inst::Initialize(const std::string &name)
 	/* Try to create the instruction following all possible encodings for
 	 * the same instruction name. */
 	std::string error = "invalid instruction: " + name;
-	for (info = context.getInstInfo(name); info; info = info->getNext())
+	Context *context = Context::getInstance();
+	for (info = context->getInstInfo(name); info; info = info->getNext())
 	{
 		/* Check number of arguments */
 		if (args.size() != info->getNumTokens())

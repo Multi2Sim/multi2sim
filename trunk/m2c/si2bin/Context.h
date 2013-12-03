@@ -21,16 +21,27 @@
 #define M2C_SI2BIN_CONTEXT_H
 
 #include <array>
+#include <string>
 #include <unordered_map>
 #include <vector>
 
 #include <arch/southern-islands/asm/Asm.h>
+#include <lib/cpp/CommandLine.h>
 
 #include "Inst.h"
 
 
 namespace si2bin
 {
+
+class Si2binConfig : public misc::CommandLineConfig
+{
+	std::string path;
+public:
+	void Register(misc::CommandLine &command_line);
+
+	void Process();
+};
 
 class InstInfo
 {
@@ -95,6 +106,8 @@ class Context
 	/* Southern Islands disassembler */
 	SI::Asm as;
 
+	static std::unique_ptr<Context> instance;
+
 public:
 
 	/* Constructor */
@@ -114,11 +127,12 @@ public:
 		auto it = inst_info_table.find(name);
 		return it == inst_info_table.end() ? nullptr : it->second;
 	}
+	
+	static Context *getInstance();
+	static Si2binConfig config;
+	
+	void Compile(const std::string &path);
 };
-
-
-/* Global variable */
-extern Context context;
 
 
 }  /* namespace si2bin */

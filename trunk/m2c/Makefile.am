@@ -16,7 +16,13 @@ endif
 
 __top_builddir__bin_m2c_LINK = $(CXX) -o $@
 __top_builddir__bin_m2c_SOURCES = \
-	m2c.c
+	\
+	m2c.c \
+	m2c-cpp.cc \
+	\
+	Wrapper.cc \
+	Wrapper.h
+
 
 INCLUDES = @M2S_INCLUDES@
 
