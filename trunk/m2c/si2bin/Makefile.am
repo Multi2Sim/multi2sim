@@ -56,11 +56,12 @@ libsi2bin_a_SOURCES = \
 	Arg.cc \
 	Arg.h \
 	\
-	InnerBin.cc \
-	InnerBin.h \
+	InternalBinary.cc \
+	InternalBinary.h \
 	\
 	Inst.cc \
 	Inst.h \
+	\
 	\
 	Metadata.cc \
 	Metadata.h \
@@ -71,8 +72,8 @@ libsi2bin_a_SOURCES = \
 	Token.cc \
 	Token.h \
 	\
-	OuterBin.cc
-	OuterBin.h
+	Binary.cc
+	Binary.h
 
 LDADD = \
 	$(top_builddir)/src/arch/southern-islands/asm/libasm.a \

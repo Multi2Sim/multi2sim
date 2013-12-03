@@ -41,7 +41,20 @@ namespace llvm2si
 {
 
 /* Global context */
-Context context;
+//Context context;
+std::unique_ptr<Context> Context::instance;
+
+Context *Context::getInstance()
+{
+	//Instance already exists
+	if (instance.get())
+		return instance.get();
+
+	//Create Instance
+	instance.reset(new Context());
+	return instance.get();
+}
+
 
 void Context::Parse(const std::string &in, const std::string &out)
 {

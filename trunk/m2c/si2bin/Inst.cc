@@ -39,6 +39,9 @@ void Inst::Initialize()
 	/* Assign argument indices */
 	for (unsigned i = 0; i < args.size(); i++)
 		args[i]->index = i;
+	
+	/* Assign context */
+	context = Context::getInstance();
 }
 
 
@@ -52,7 +55,6 @@ void Inst::Initialize(SI::InstOpcode opcode)
 	if (!InRange(opcode, 1, SI::InstOpcodeCount - 1))
 		fatal("%s: invalid opcode (%d)", __FUNCTION__, opcode);
 
-	Context *context = Context::getInstance();
 	/* Get instruction information */
 	info = context->getInstInfo(opcode);
 	if (!info)
@@ -89,7 +91,6 @@ void Inst::Initialize(const std::string &name)
 	/* Try to create the instruction following all possible encodings for
 	 * the same instruction name. */
 	std::string error = "invalid instruction: " + name;
-	Context *context = Context::getInstance();
 	for (info = context->getInstInfo(name); info; info = info->getNext())
 	{
 		/* Check number of arguments */
