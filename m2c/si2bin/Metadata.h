@@ -25,6 +25,7 @@
 
 #include <arch/southern-islands/asm/Arg.h>
 
+
 namespace si2bin
 {
 
@@ -34,6 +35,8 @@ namespace si2bin
 	
 class Metadata
 {
+	friend class OuterBin;
+
 	std::vector<std::unique_ptr<SI::Arg>> arg_list;
 	
 	int uniqueid;
@@ -41,27 +44,29 @@ class Metadata
 	int hwregion;
 	int hwlocal;
 
-public:
-
 	/* Constructor */
 	Metadata();
 
+public:
+
+	
 	/* Add args */
 
-	/* Getters */
-	SI::Arg *GetArg(unsigned int index) { return index < arg_list.size() ? 
+	/* getters */
+	SI::Arg *getArg(unsigned int index) { return index < arg_list.size() ? 
 			arg_list[index].get() : nullptr; }	
-	int GetUniqueId() { return uniqueid; }
-	int GetUAVPrivate() { return uavprivate; }
-	int GetHWRegion() { return hwregion; }
-	int GetHWLocal() { return hwlocal; }
-	unsigned int GetArgCount() { return arg_list.size(); }
+	unsigned int getArgCount() { return arg_list.size(); }
+	const std::vector<std::unique_ptr<SI::Arg>> &getArgList() { return arg_list; }
+	int getUniqueId() { return uniqueid; }
+	int getUAVPrivate() { return uavprivate; }
+	int getHWRegion() { return hwregion; }
+	int getHWLocal() { return hwlocal; }
 
-	/* Setters */
-	void SetUniqueId(int uniqueid) { this->uniqueid = uniqueid; }
-	void SetUAVPrivate(int uavprivate) { this->uavprivate = uavprivate; }
-	void SetHWRegion(int hwregion) { this->hwregion = hwregion; }
-	void SetHWLocal(int hwlocal) { this->hwlocal = hwlocal; }
+	/* setters */
+	void setUniqueId(int uniqueid) { this->uniqueid = uniqueid; }
+	void setUAVPrivate(int uavprivate) { this->uavprivate = uavprivate; }
+	void setHWRegion(int hwregion) { this->hwregion = hwregion; }
+	void setHWLocal(int hwlocal) { this->hwlocal = hwlocal; }
 	
 	void AddArg(SI::Arg *arg);
 	
