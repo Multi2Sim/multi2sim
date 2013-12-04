@@ -46,6 +46,7 @@
 #include "issue.h"
 #include "load-store-queue.h"
 #include "mem-config.h"
+#include "recover.h"
 #include "reg-file.h"
 #include "rob.h"
 #include "sched.h"
@@ -1061,64 +1062,91 @@ void X86CpuFastForward(X86Cpu *self)
 void X86CpuFastForwardOpenCL(X86Cpu *self)
 {
 	X86Emu *emu = self->emu;
+	X86Context *ctx;
 	X86Core *core;
 	X86Thread *thread;
 
 	int i, j;
-	int flush_complete = 0;
 
 	self->flushing = 1;
 
-	/* Wait for the pipeline to clear */
-	while (!flush_complete)
-	{
-		flush_complete = 1;
+	X86ContextDebug("#%lld Entering fast forward\n", asTiming(self)->cycle);
 
-		/* Tell the threads to stop fetching instructions */
+	/* Clear the pipelines */
+	for (i = 0; i < x86_cpu_num_cores; i++)
+	{
+		core = self->cores[i];
+		for (j = 0; j < x86_cpu_num_threads; j++)
+		{
+			thread = core->threads[j];
+			if (thread)
+			{
+				X86ThreadRecover(thread);
+				X86CoreReleaseAllFunctionalUnits(core);
+			}
+		}
+	}
+		
+	DOUBLE_LINKED_LIST_FOR_EACH(emu, context, ctx)
+	{
+		if (X86ContextGetState(ctx, X86ContextSpecMode))
+		{
+			X86ContextDebug("#%lld ctx %d in spec mode\n",
+					asTiming(self)->cycle, ctx->pid); 
+			X86ContextRecover(ctx);
+		}
+		else
+		{
+			X86ContextDebug("#%lld ctx %d not in spec mode\n",
+					asTiming(self)->cycle, ctx->pid); 
+		}
+	}
+
+	self->flushing = 0;
+
+	/* Fast forward */
+	while (!self->ndranges_running && !esim_finish)
+	{
+		X86EmuRun(asEmu(emu));
+		if (!emu->context_list_count)
+			esim_finish = esim_finish_ctx;
+	}
+
+	X86ContextDebug("#%lld Exiting fast forward\n", asTiming(self)->cycle);
+	X86ContextDebug("#%lld NDRanges running: %d, finish %d\n", 
+		asTiming(self)->cycle, self->ndranges_running, esim_finish);
+
+	if (!esim_finish)
+	{
+		/* Clear the pipelines */
 		for (i = 0; i < x86_cpu_num_cores; i++)
 		{
 			core = self->cores[i];
 			for (j = 0; j < x86_cpu_num_threads; j++)
 			{
 				thread = core->threads[j];
-				if (thread && thread->ctx)
+				if (thread)
 				{
-					if (!X86ThreadIsPipelineEmpty(thread))
-					{
-						flush_complete = 0;
-					}
+					X86ThreadRecover(thread);
+					X86CoreReleaseAllFunctionalUnits(core);
 				}
 			}
 		}
-		
-		if (!flush_complete)
+			
+		DOUBLE_LINKED_LIST_FOR_EACH(emu, context, ctx)
 		{
-			/* One more cycle of x86 timing simulation */
-			asTiming(self)->cycle++;
-
-			/* Empty uop trace list. This dumps the last trace 
-			 * line for instructions that were freed in the 
-			 * previous simulation cycle. */
-			X86CpuEmptyTraceList(self);
-
-			/* Processor stages */
-			X86CpuRunStages(self);
-
-			/* Process host threads generating events */
-			X86EmuProcessEvents(emu);
-
-			esim_process_events(1);
+			if (X86ContextGetState(ctx, X86ContextSpecMode))
+			{
+				X86ContextDebug("#%lld ctx %d in spec mode\n",
+					asTiming(self)->cycle, ctx->pid); 
+				X86ContextRecover(ctx);
+			}
+			else
+			{
+				X86ContextDebug("#%lld ctx %d not in spec mode\n",
+					asTiming(self)->cycle, ctx->pid); 
+			}
 		}
-	}
-	self->flushing = 0;
-
-	/* Fast forward */
-	while (x86_opencl_fast_forward && !self->ndranges_running &&
-		!esim_finish)
-	{
-		X86EmuRun(asEmu(emu));
-		if (!emu->context_list_count)
-			esim_finish = esim_finish_ctx;
 	}
 }
 

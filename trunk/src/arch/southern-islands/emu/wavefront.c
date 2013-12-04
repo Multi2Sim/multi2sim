@@ -150,7 +150,10 @@ void SIWavefrontExecute(SIWavefront *self)
 	if (debug_status(si_isa_debug_category))
 	{
 		si_isa_debug("\n");
-		SIInstWrapDump(inst, debug_file(si_isa_debug_category));
+		assert(debug_file(si_isa_debug_category));
+		////// FIXME Breaking the ISA dump by mixing C++ ostream with
+		///// C file descriptor
+		//SIInstWrapDump(inst, debug_file(si_isa_debug_category));
 	}
 
 	/* Execute the current instruction */

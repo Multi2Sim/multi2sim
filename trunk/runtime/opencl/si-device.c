@@ -32,6 +32,8 @@ struct opencl_si_device_t *opencl_si_device_create(struct opencl_device_t *paren
 {
 	struct opencl_si_device_t *device;
 
+	char *opencl_shared_memory_str;
+
 	/* Initialize */
 	device = xcalloc(1, sizeof(struct opencl_si_device_t));
 	device->type = opencl_runtime_type_si;
@@ -113,18 +115,46 @@ struct opencl_si_device_t *opencl_si_device_create(struct opencl_device_t *paren
 			opencl_si_device_free;
 
 	/* Memory */
-	parent->arch_device_mem_alloc_func = 
-		(opencl_arch_device_mem_alloc_func_t)
-		opencl_si_device_mem_alloc;
-	parent->arch_device_mem_free_func = (opencl_arch_device_mem_free_func_t)
-		opencl_si_device_mem_free;
-	parent->arch_device_mem_read_func = (opencl_arch_device_mem_read_func_t)
-		opencl_si_device_mem_read;
-	parent->arch_device_mem_write_func = 
-		(opencl_arch_device_mem_write_func_t)
-		opencl_si_device_mem_write;
-	parent->arch_device_mem_copy_func = (opencl_arch_device_mem_copy_func_t)
-		opencl_si_device_mem_copy;
+	opencl_shared_memory_str = getenv("M2S_OPENCL_SHARED_MEMORY");
+	if (opencl_shared_memory_str && !strcmp(opencl_shared_memory_str, "1"))
+		opencl_device_shared_memory = 1;
+
+	if (opencl_device_shared_memory)
+	{
+		parent->arch_device_mem_alloc_func = 
+			(opencl_arch_device_mem_alloc_func_t)
+			opencl_x86_device_mem_alloc;
+		parent->arch_device_mem_free_func = 
+			(opencl_arch_device_mem_free_func_t)
+			opencl_x86_device_mem_free;
+		parent->arch_device_mem_read_func = 
+			(opencl_arch_device_mem_read_func_t)
+			opencl_x86_device_mem_read;
+		parent->arch_device_mem_write_func = 
+			(opencl_arch_device_mem_write_func_t)
+			opencl_x86_device_mem_write;
+		parent->arch_device_mem_copy_func = 
+			(opencl_arch_device_mem_copy_func_t)
+			opencl_x86_device_mem_copy;
+	}
+	else
+	{
+		parent->arch_device_mem_alloc_func = 
+			(opencl_arch_device_mem_alloc_func_t)
+			opencl_si_device_mem_alloc;
+		parent->arch_device_mem_free_func = 
+			(opencl_arch_device_mem_free_func_t)
+			opencl_si_device_mem_free;
+		parent->arch_device_mem_read_func = 
+			(opencl_arch_device_mem_read_func_t)
+			opencl_si_device_mem_read;
+		parent->arch_device_mem_write_func = 
+			(opencl_arch_device_mem_write_func_t)
+			opencl_si_device_mem_write;
+		parent->arch_device_mem_copy_func = 
+			(opencl_arch_device_mem_copy_func_t)
+			opencl_si_device_mem_copy;
+	}
 
 	/* Call-back functions for kernel */
 	parent->arch_kernel_create_func = (opencl_arch_kernel_create_func_t)
