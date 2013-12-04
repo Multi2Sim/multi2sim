@@ -57,6 +57,8 @@ char *opencl_err_param_note =
 	"\tfail with an error code.\n";
 
 
+int opencl_device_shared_memory;
+
 /* Native mode */
 int opencl_native_mode;
 

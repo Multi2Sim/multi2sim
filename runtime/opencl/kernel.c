@@ -344,7 +344,7 @@ struct opencl_ndrange_t *opencl_ndrange_create(
 
 	ndrange->arch_ndrange = device->arch_ndrange_create_func(ndrange,
 		arch_kernel, work_dim, global_work_offset, global_work_size,
-		local_work_size, 0);
+		local_work_size, opencl_device_shared_memory);
 
 	return ndrange;
 }

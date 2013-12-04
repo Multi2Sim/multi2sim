@@ -310,8 +310,7 @@ void opencl_x86_device_work_group_launch(
 		core->group_global[i] = (core->group_id[i] + exec->work_group_start[i]) * local_size[i] + nd->global_work_offset[i];
 
 	opencl_debug("[%s] running group (%d,%d,%d)", __FUNCTION__,
-		core->group_global[0], core->group_global[1], 
-		core->group_global[2]);
+		core->group_id[0], core->group_id[1], core->group_id[2]);
 	
 	assert(core->num_items > 0);
 
