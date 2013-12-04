@@ -39,7 +39,9 @@ int pthread_setaffinity_np(pthread_t thread, size_t cpusetsize,
 		const cpu_set_t *cpuset);
 #endif
 
-
+/* Set if the user specifies a shared-memory system 
+ * using an M2S_OPENCL_SHARED_MEM=1 environment variable */
+extern int opencl_device_shared_memory;
 
 
 /*
