@@ -274,25 +274,39 @@ void si_vector_mem_mem(struct si_vector_mem_unit_t *vector_mem)
 		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(uop->wavefront, work_item_id)
 		{
 			work_item = uop->wavefront->work_items[work_item_id];
-			work_item_uop = 
-				&uop->work_item_uop[work_item->id_in_wavefront];
 
-			/* Translate virtual address to physical address */
-			phys_addr = MMUTranslate(
-				vector_mem->compute_unit->gpu->mmu,
-				uop->work_group->ndrange->address_space_index,
-				work_item_uop->global_mem_access_addr);
+			/* Access memory for each active work-item */
+			if (SIWavefrontIsWorkItemActive(uop->wavefront, 
+				work_item->id_in_wavefront))
+			{
+				work_item_uop = 
+					&uop->work_item_uop[
+						work_item->id_in_wavefront];
 
-			/* Submit the access */
-			mod_access(vector_mem->compute_unit->vector_cache, 
-				access_kind, phys_addr,
-				&uop->global_mem_witness, NULL, NULL, NULL);
+				/* Translate virtual address to 
+				 * physical address */
+				phys_addr = MMUTranslate(
+					vector_mem->compute_unit->gpu->mmu,
+					uop->work_group->ndrange->
+						address_space_index,
+					work_item_uop->
+						global_mem_access_addr);
 
-			/* MMU statistics */
-			MMUAccessPage(vector_mem->compute_unit->gpu->mmu, 
-				phys_addr, mmu_access_kind);
+				/* Submit the access */
+				mod_access(
+					vector_mem->compute_unit->
+						vector_cache, 
+					access_kind, phys_addr,
+					&uop->global_mem_witness, 
+					NULL, NULL, NULL);
 
-			uop->global_mem_witness--;
+				/* MMU statistics */
+				MMUAccessPage(
+					vector_mem->compute_unit->gpu->mmu, 
+					phys_addr, mmu_access_kind);
+
+				uop->global_mem_witness--;
+			}
 		}
 
 		if(si_spatial_report_active)
