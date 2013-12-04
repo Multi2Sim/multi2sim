@@ -24,7 +24,7 @@
 
 #include <src/arch/southern-islands/emu/Emu.h>
 #include <src/arch/southern-islands/emu/NDRange.h>
-
+#include <src/driver/opencl/ABI.h>
 #include "Program.h"
 #include "Kernel.h"
 
@@ -35,85 +35,28 @@ namespace SI
 enum OpenCLABICall
 {
 	OpenCLABIInvalid = 0,
-#define OPENCL_ABI_CALL(name, code) OpenCLABI##name = code,
-#include "ABI.dat"
+#define OPENCL_ABI_CALL(space, name, code) OpenCLABI##space##name = code,
+#include "../ABI.dat"
 #undef OPENCL_ABI_CALL
 	OpenCLABICallCount
 };
 
 // Forward declarations of OpenCL Runtime functions
-#define OPENCL_ABI_CALL(name, code) \
+#define OPENCL_ABI_CALL(space, name, code) \
 	int OpenCLABI##name##Impl();
-#include "ABI.dat"
+#include "../ABI.dat"
 #undef OPENCL_ABI_CALL
 
-// List of OpenCL ABI call names 
+// List of OpenCL ABI call names
 std::string OpenCLABICallName[OpenCLABICallCount + 1] =
 {
-	NULL,
-#define OPENCL_ABI_CALL(name, code) #name,
-#include "ABI.dat"
+	nullptr,
+#define OPENCL_ABI_CALL(space, name, code) #space #name,
+#include "../ABI.dat"
 #undef OPENCL_ABI_CALL
-	NULL
-};
-
-// List of OpenCL Runtime functions 
-typedef int (*OpenCLABICallFuncPtr)();
-OpenCLABICallFuncPtr OpenCLABICallTable[OpenCLABICallCount + 1] =
-{
-	NULL,
-#define OPENCL_ABI_CALL(name, code) OpenCLABI##name##Impl,
-#include "ABI.dat"
-#undef OPENCL_ABI_CALL
-	NULL
+	nullptr
 };
 
 }  // namespace SI
-
-
-#if 0
-/*
- * Class 'OpenCLDriver'
- */
-
-CLASS_BEGIN(OpenCLDriver, Driver)
-
-	/* Device emulators */
-	SIEmu *si_emu;
-
-	/* Device timing simulators */
-	X86Cpu *x86_cpu;
-	SIGpu *si_gpu;
-	int fused : 1;
-
-	/* List of Southern Islands programs and kernels */
-	struct list_t *si_program_list;
-	struct list_t *si_kernel_list;
-	struct list_t *si_ndrange_list;
-
-	/* Count of current OpenCL ND-Ranges executing for this driver */
-	int ndranges_running;
-
-CLASS_END(OpenCLDriver)
-
-void OpenCLDriverCreate(OpenCLDriver *self, X86Emu *x86_emu, SIEmu *si_emu);
-void OpenCLDriverDestroy(OpenCLDriver *self);
-
-void OpenCLDriverRequestWork(OpenCLDriver *self, SINDRange *ndrange);
-void OpenCLDriverNDRangeComplete(OpenCLDriver *self, SINDRange *ndrange);
-
-
-/*
- * Public
- */
-
-#define opencl_debug(...) debug(opencl_debug_category, __VA_ARGS__)
-extern int opencl_debug_category;
-
-int OpenCLDriverCall(X86Context *ctx);
-
-#endif
-
-
 
 #endif

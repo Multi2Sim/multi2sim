@@ -41,15 +41,6 @@ int OpenCLABIInitImpl()
 	// OpenCLDriver *driver = OpenCLDriver::getInstance();
 	// OpenCLVersion version = 
 
-	// Pass namespace as the 2nd parameter, use it to initialize function table
-
-	// Initialize function table, ignore OpenCLABICallInvalid and OpenCLABICallInit
-	if (spacename == "SI")
-	{
-		for (int i = 2; i < Driver::OpenCLABICallCount; ++i)
-			Driver::OpenCLABICallTable[i] = OpenCLABICallTable[i];
-	}
-
 	// Return Success
 	return 0;
 }
