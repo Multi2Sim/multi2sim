@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef DRIVER_OPENCL_SI_KERNEL_H
-#define DRIVER_OPENCL_SI_KERNEL_H
+#ifndef DRIVER_OPENCL_SI_KERNEL_OLD_H
+#define DRIVER_OPENCL_SI_KERNEL_OLD_H
 
 #include <lib/class/class.h>
 #include <lib/util/elf-format.h>
