@@ -22,44 +22,46 @@
 
 
 #include <string>
-
+#include "southern-islands/ABI.h"
 
 namespace Driver
 {
-
-int OpenCLABIInitImpl();
 
 // List of OpenCL Runtime calls
 enum OpenCLABICall
 {
 	OpenCLABIInvalid = 0,
-#define OPENCL_ABI_CALL(name, code) OpenCLABI##name = code,
+#define OPENCL_ABI_CALL(space, name, code) OpenCLABI##space##name = code,
 #include "ABI.dat"
 #undef OPENCL_ABI_CALL
 	OpenCLABICallCount
 };
 
-// List of OpenCL ABI call names 
+// Forward declarations of OpenCL Runtime functions
+#define OPENCL_ABI_CALL(space, name, code) \
+	int OpenCLABI##name##Impl();
+#include "ABI.dat"
+#undef OPENCL_ABI_CALL
+
+// List of OpenCL ABI call names
 std::string OpenCLABICallName[OpenCLABICallCount + 1] =
 {
 	nullptr,
-#define OPENCL_ABI_CALL(name, code) #name,
+#define OPENCL_ABI_CALL(space, name, code) #space #name,
 #include "ABI.dat"
 #undef OPENCL_ABI_CALL
 	nullptr
 };
 
-/// List of OpenCL Runtime functions, initially it's all nullptr except 
-/// OpenCLABICallTable[OpenGLABIInit].
-/// Note that there's no nullptr following '#undef OPENCL_ABI_CALL'
+/// List of OpenCL Runtime functions
 typedef int (*OpenCLABICallFuncPtr)();
 OpenCLABICallFuncPtr OpenCLABICallTable[OpenCLABICallCount + 1] =
 {
 	nullptr,
-	&OpenCLABIInitImpl,
-#define OPENCL_ABI_CALL(name, code) nullptr,
+#define OPENCL_ABI_CALL(space, name, code) &space::OpenCLABI##name##Impl,
 #include "ABI.dat"
 #undef OPENCL_ABI_CALL
+	nullptr
 };
 
 }  // namespace Driver

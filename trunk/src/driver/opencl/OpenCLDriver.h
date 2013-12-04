@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef DRIVER_OPENCL_SI_ABI_H
-#define DRIVER_OPENCL_SI_ABI_H
+#ifndef DRIVER_OPENCL_SI_DRIVER_H
+#define DRIVER_OPENCL_SI_DRIVER_H
 
 #include <string>
 

@@ -24,133 +24,133 @@
 namespace SI
 {
 
-int OpenCLABIMemAllocImpl(/*FIXME: X86Context *ctx*/)
+int OpenCLABIMemAllocImpl()
 {
 	// Return
 	return 0;
 }
 
-int OpenCLABIMemReadImpl(/*FIXME: X86Context *ctx*/)
+int OpenCLABIMemReadImpl()
 {
 	// Return
 	return 0;
 }
 
-int OpenCLABIMemWriteImpl(/*FIXME: X86Context *ctx*/)
+int OpenCLABIMemWriteImpl()
 {
 	// Return
 	return 0;
 }
 
-int OpenCLABIMemCopyImpl(/*FIXME: X86Context *ctx*/)
+int OpenCLABIMemCopyImpl()
 {
 	// Return
 	return 0;
 }
 
-int OpenCLABIMemFreeImpl(/*FIXME: X86Context *ctx*/)
+int OpenCLABIMemFreeImpl()
 {
 	// Return
 	return 0;
 }
 
-int OpenCLABIProgramCreateImpl(/*FIXME: X86Context *ctx*/)
+int OpenCLABIProgramCreateImpl()
 {
 	// Return
 	return 0;
 }
 
-int OpenCLABIProgramSetBinaryImpl(/*FIXME: X86Context *ctx*/)
+int OpenCLABIProgramSetBinaryImpl()
 {
 	// Return
 	return 0;
 }
 
-int OpenCLABIKernalCreateImpl(/*FIXME: X86Context *ctx*/)
+int OpenCLABIKernalCreateImpl()
 {
 	// Return
 	return 0;
 }
 
-int OpenCLABIKernelSetArgValueImpl(/*FIXME: X86Context *ctx*/)
+int OpenCLABIKernelSetArgValueImpl()
 {
 	// Return
 	return 0;
 }
 
-int OpenCLABIKernelSetArgPointerImpl(/*FIXME: X86Context *ctx*/)
+int OpenCLABIKernelSetArgPointerImpl()
 {
 	// Return
 	return 0;
 }
 
-int OpenCLABIKernelSetArgImageImpl(/*FIXME: X86Context *ctx*/)
+int OpenCLABIKernelSetArgImageImpl()
 {
 	// Return
 	return 0;
 }
 
-int OpenCLABIKernelSetArgSamplerImpl(/*FIXME: X86Context *ctx*/)
+int OpenCLABIKernelSetArgSamplerImpl()
 {
 	// Return
 	return 0;
 }
 
-int OpenCLABINDRangeCreateImpl(/*FIXME: X86Context *ctx*/)
+int OpenCLABINDRangeCreateImpl()
 {
 	// Return
 	return 0;
 }
 
-int OpenCLABINDRangeGetBufferEntriesImpl(/*FIXME: X86Context *ctx*/)
+int OpenCLABINDRangeGetBufferEntriesImpl()
 {
 	// Return
 	return 0;
 }
 
-int OpenCLABINDRangeSendWorkGoupsImpl(/*FIXME: X86Context *ctx*/)
+int OpenCLABINDRangeSendWorkGoupsImpl()
 {
 	// Return
 	return 0;
 }
 
-int OpenCLABINDRangeFinishImpl(/*FIXME: X86Context *ctx*/)
+int OpenCLABINDRangeFinishImpl()
 {
 	// Return
 	return 0;
 }
 
-int OpenCLABINDRangePassMemObjsImpl(/*FIXME: X86Context *ctx*/)
+int OpenCLABINDRangePassMemObjsImpl()
 {
 	// Return
 	return 0;
 }
 
-int OpenCLABINDRangeSetFusedImpl(/*FIXME: X86Context *ctx*/)
+int OpenCLABINDRangeSetFusedImpl()
 {
 	// Return
 	return 0;
 }
 
-int OpenCLABINDRangeFlushImpl(/*FIXME: X86Context *ctx*/)
+int OpenCLABINDRangeFlushImpl()
 {
 	// Return
 	return 0;
 }
 
-int OpenCLABINDRangeFreeImpl(/*FIXME: X86Context *ctx*/)
+int OpenCLABINDRangeFreeImpl()
 {
 	// Return
 	return 0;
 }
 
-int OpenCLABINDRangeStartImpl(/*FIXME: X86Context *ctx*/)
+int OpenCLABINDRangeStartImpl()
 {
 	// Return
 	return 0;
 }
 
-int OpenCLABINDRangeEndImpl(/*FIXME: X86Context *ctx*/)
+int OpenCLABINDRangeEndImpl()
 {
 	// Return
 	return 0;
