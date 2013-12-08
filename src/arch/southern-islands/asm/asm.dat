@@ -1002,6 +1002,14 @@ DEFINST(V_CMP_NEQ_F64,
 	0
 )
 
+DEFINST(V_CMP_NLT_F64,
+	" v_cmp_nlt_f64  vcc, %64_SRC0, %64_VSRC1",
+	VOPC,
+	46,
+	4,
+	0
+)
+
 DEFINST(V_CMP_LT_I32,
 	" v_cmp_lt_i32  vcc, %SRC0, %VSRC1",
 	VOPC,
@@ -1244,6 +1252,14 @@ DEFINST(V_DIV_FIXUP_F64,
 	" v_div_fixup_f64  %VOP3_64_VDST, %VOP3_64_SRC0, %VOP3_64_SRC1, %VOP3_64_SRC2",
 	VOP3a,
 	352,
+	8,
+	0
+)
+
+DEFINST(V_LSHL_B64,
+	" v_lshl_b64  %VOP3_64_VDST, %VOP3_64_SRC0, %VOP3_64_SRC1",
+	VOP3a,
+	353,
 	8,
 	0
 )
