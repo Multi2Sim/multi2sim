@@ -3980,6 +3980,15 @@ void si_isa_V_CMP_NEQ_F64_impl(SIWorkItem *work_item,
 }
 #undef INST
 
+/* vcc = !(S0.d < S1.d). */
+#define INST SI_INST_VOPC
+void si_isa_V_CMP_NLT_F64_impl(SIWorkItem *work_item,
+	struct SIInstWrap *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
 /* vcc = (S0.i < S1.i). */
 #define INST SI_INST_VOPC
 void si_isa_V_CMP_LT_I32_impl(SIWorkItem *work_item,
@@ -4923,6 +4932,15 @@ void si_isa_V_DIV_FIXUP_F64_impl(SIWorkItem *work_item,
 	NOT_IMPL();
 }
 #undef INST
+
+#define INST SI_INST_VOP3a
+void si_isa_V_LSHL_B64_impl(SIWorkItem *work_item,
+	struct SIInstWrap *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
 
 /* D.d = min(S0.d, S1.d). */
 #define INST SI_INST_VOP3a
