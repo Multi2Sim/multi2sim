@@ -2448,3 +2448,23 @@ void frm_isa_VOTE_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	__NOT_IMPL__
 }
 
+void frm_isa_IMAD32I_impl(FrmThread *thread, struct FrmInstWrap *inst)
+{
+	__NOT_IMPL__
+}
+
+void frm_isa_IMUL32I_impl(FrmThread *thread, struct FrmInstWrap *inst)
+{
+	__NOT_IMPL__
+}
+
+void frm_isa_FFMA32I_impl(FrmThread *thread, struct FrmInstWrap *inst)
+{
+	__NOT_IMPL__
+}
+
+void frm_isa_ISCADD32I_impl(FrmThread *thread, struct FrmInstWrap *inst)
+{
+	__NOT_IMPL__
+}
+
