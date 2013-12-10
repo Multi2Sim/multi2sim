@@ -1009,7 +1009,7 @@ StringMap xlu_map =
 // operand modifiers
 StringMap cc_map =
 {
-	{ ".", 0 },
+	{ "", 0 },
 	{ ".CC", 1 }
 };
 
@@ -1287,6 +1287,8 @@ void Inst::DumpToBufWithFmtReg(void)
 			unsigned v;
 			if (info->opcode == INST_FADD)
 				v = fmt.fmod1_srco & 0x1;
+			else if (info->opcode == INST_IMAD)
+				v = (fmt.fmod1_srco >> 7) & 0x1;
 			else
 				v = (fmt.fmod0 >> 1) & 0x1;
 			ss << sat_map.MapValue(v);
@@ -1750,7 +1752,7 @@ void Inst::DumpToBufWithFmtReg(void)
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 1) & 0x1f;
-			ss << v;
+			ss << std::hex << "0x" << v;
 		}
 		else if (Common::Asm::IsToken(fmt_str, "pat", len))
 		{
@@ -2057,7 +2059,7 @@ void Inst::DumpToBufWithFmtImm(void)
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 1) & 0x1f;
-			ss << v;
+			ss << std::hex << "0x" << v;
 		}
 		else
 		{
@@ -3111,7 +3113,7 @@ void Inst::DumpToBufWithFmtLdSt(void)
 		else if (Common::Asm::IsToken(fmt_str, "src1", len))
 		{
 			unsigned src;
-			src = fmt.fmod1_srco;
+			src = fmt.src1;
 			ss << "R";
 			if (src != 63)
 				ss << src;
@@ -3175,33 +3177,57 @@ void Inst::DumpToBufWithFmtLdSt(void)
 		}
 		else if (Common::Asm::IsToken(fmt_str, "off16", len))
 		{
-			unsigned v;
+			int v, s;
 			v = fmt.fmod1_srco & 0xffff;
-			ss << std::hex << "0x" << v;
+			s = v >> 15;
+			if (v != 0)
+			{
+				if (s == 0)
+					ss << std::hex << "+0x" << v;
+				else
+					ss << std::hex << "-0x" << (0x10000 - v);
+			}
 		}
 		else if (Common::Asm::IsToken(fmt_str, "off20", len))
 		{
-			unsigned v;
+			int v, s;
 			v = (((fmt.fmod1_srco >> 29) & 0x7) << 17) | (fmt.fmod1_srco & 0x1ffff);
-			ss << std::hex << "0x" << v;
+			s = v >> 19;
+			if (v != 0)
+			{
+				if (s == 0)
+					ss << std::hex << "+0x" << v;
+				else
+					ss << std::hex << "-0x" << (0x100000 - v);
+			}
 		}
 		else if (Common::Asm::IsToken(fmt_str, "off24", len))
 		{
-			unsigned v;
+			int v, s;
 			if (info->opcode == INST_CCTLL)
 				v = fmt.fmod1_srco & 0xfffffc;
 			else
 				v = fmt.fmod1_srco & 0xffffff;
-			ss << std::hex << "0x" << v;
+			s = v >> 23;
+			if (v != 0)
+			{
+				if (s == 0)
+					ss << std::hex << "+0x" << v;
+				else
+					ss << std::hex << "-0x" << (0x1000000 - v);
+			}
 		}
 		else if (Common::Asm::IsToken(fmt_str, "off32", len))
 		{
-			unsigned v;
+			int v;
 			if (info->opcode == INST_CCTL)
 				v = fmt.fmod1_srco & 0xfffffffc;
 			else
 				v = fmt.fmod1_srco & 0xffffffff;
-			ss << std::hex << "0x" << v;
+			if (v > 0)
+				ss << std::hex << "+0x" << v;
+			else if (v < 0)
+				ss << std::hex << "-0x" << (~v + 1);
 		}
 		else if (Common::Asm::IsToken(fmt_str, "imm41", len))
 		{
@@ -3326,17 +3352,99 @@ void Inst::DumpToBufWithFmtCtrl(void)
 			v = (fmt.mmod >> 1) & 0x1;
 			ss << u_map.MapValue(v);
 		}
+		else if (Common::Asm::IsToken(fmt_str, "cccopatarget", len))
+		{
+			unsigned cccop;
+			unsigned mode;
+			unsigned target;
+			unsigned bank, offset;
+
+			cccop = (fmt.fmod0 >> 1) & 0x1f;
+			mode = fmt.mmod & 0x1;
+			target = fmt.imm32;
+			bank = (fmt.imm32 >> 16) & 0x1f;
+			offset = fmt.imm32 & 0xffff;
+
+			if (cccop != 15)
+				ss << cccop_map.MapValue(cccop) << ", ";
+			if (mode == 0)
+				ss << std::hex << "0x" << target;
+			else
+				ss << std::hex
+						<< "c[0x" << bank << "]"
+						<< "[0x" << offset << "]";
+		}
+		else if (Common::Asm::IsToken(fmt_str, "cccoprtarget", len))
+		{
+			unsigned cccop;
+			unsigned mode;
+			unsigned target;
+			unsigned bank, offset;
+
+			cccop = (fmt.fmod0 >> 1) & 0x1f;
+			mode = fmt.mmod & 0x1;
+			target = fmt.imm32 & 0xffffff;
+			bank = (fmt.imm32 >> 16) & 0x1f;
+			offset = fmt.imm32 & 0xffff;
+
+			if (cccop != 15)
+				ss << cccop_map.MapValue(cccop) << ", ";
+			if (mode == 0)
+				ss << std::hex << "0x" << target + addr + 8;
+			else
+				ss << std::hex
+						<< "c[0x" << bank << "]"
+						<< "[0x" << offset << "]";
+		}
+		else if (Common::Asm::IsToken(fmt_str, "cccopritarget", len))
+		{
+			unsigned cccop;
+			unsigned mode;
+			unsigned src;
+			unsigned target;
+			unsigned bank, offset;
+
+			cccop = (fmt.fmod0 >> 1) & 0x1f;
+			mode = fmt.mmod & 0x1;
+			src = fmt.src1;
+			target = fmt.imm32 & 0xffffff;
+			bank = (fmt.imm32 >> 16) & 0x1f;
+			offset = fmt.imm32 & 0xffff;
+
+			if (cccop != 15)
+				ss << cccop_map.MapValue(cccop) << ", ";
+			if (mode == 0)
+			{
+				ss << "R" << src << " ";
+				ss << std::hex << "0x" << target + addr + 8;
+			}
+			else
+			{
+				ss << "c[R" << src << "+0x" << std::hex << bank << "]"
+						<< "[0x" << offset << "]";
+			}
+		}
+		else if (Common::Asm::IsToken(fmt_str, "cccopsrc1", len))
+		{
+			unsigned cccop;
+			unsigned src;
+
+			cccop = (fmt.fmod0 >> 1) & 0x1f;
+			src = fmt.src1;
+
+			if (cccop != 15)
+				ss << cccop_map.MapValue(cccop) << ", ";
+			ss << "R";
+			if (src != 63)
+				ss << src;
+			else
+				ss << "Z";
+		}
 		else if (Common::Asm::IsToken(fmt_str, "cccop", len))
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 1) & 0x1f;
 			ss << cccop_map.MapValue(v);
-		}
-		else if (Common::Asm::IsToken(fmt_str, "cop", len))
-		{
-			unsigned v;
-			v = (fmt.fmod0 >> 1) & 0x1f;
-			ss << cop_map.MapValue(v);
 		}
 		else if (Common::Asm::IsToken(fmt_str, "src1", len))
 		{
