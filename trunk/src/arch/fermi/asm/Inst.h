@@ -114,60 +114,63 @@ class Asm;
 struct FmtReg
 {
 	unsigned long long int cat : 4; // 3:0
-	unsigned long long int mixed0 : 6; // 9:4
+	unsigned long long int fmod0 : 6; // 9:4
 	unsigned long long int pred : 4; // 13:10
 	unsigned long long int dst : 6; // 19:14
 	unsigned long long int src1 : 6; // 25:20
 	unsigned long long int src2 : 20; // 45:26
-	unsigned long long int src2_mod : 2; // 47:46
-	unsigned long long int dst_mod : 1; // 48
-	unsigned long long int mixed1 : 10; // 58:49
+	unsigned long long int s2mod : 2; // 47:46
+	unsigned long long int dmod : 1; // 48
+	unsigned long long int fmod1_srco : 10; // 58:49
 	unsigned long long int func : 5; // 63:59
 };
+
 struct FmtImm
 {
 	unsigned long long int cat : 4; // 3:0
-	unsigned long long int suffix0 : 6; // 9:4
+	unsigned long long int fmod0 : 6; // 9:4
 	unsigned long long int pred : 4; // 13:10
 	unsigned long long int dst : 6; // 19:14
 	unsigned long long int src1 : 6; // 25:20
 	unsigned long long int imm32 : 32; // 57:26
-	unsigned long long int dst_mod : 1; // 58
+	unsigned long long int dmod : 1; // 58
 	unsigned long long int func : 5; // 63:59
 };
+
 struct FmtOther
 {
 	unsigned long long int cat : 4; // 3:0
-	unsigned long long int mixed0 : 6; // 9:4
+	unsigned long long int fmod0 : 6; // 9:4
 	unsigned long long int pred : 4; // 13:10
 	unsigned long long int dst : 6; // 19:14
-	unsigned long long int src1 : 6; // 25:20
+	unsigned long long int fmod1_src1 : 6; // 25:20
 	unsigned long long int src2 : 20; // 45:26
-	unsigned long long int src2_mod : 2; // 47:46
-	unsigned long long int dst_mod : 1; // 48
-	unsigned long long int mixed1 : 9; // 57:49
+	unsigned long long int s2mod : 2; // 47:46
+	unsigned long long int dmod : 1; // 48
+	unsigned long long int fmod2_srco : 9; // 57:49
 	unsigned long long int func : 6; // 63:58
 };
+
 struct FmtLdSt
 {
 	unsigned long long int cat : 4; // 3:0
-	unsigned long long int suffix0 : 6; // 9:4
+	unsigned long long int fmod0 : 6; // 9:4
 	unsigned long long int pred : 4; // 13:10
 	unsigned long long int dst : 6; // 19:14
 	unsigned long long int src1 : 6; // 25:20
-	unsigned long long int off16 : 16; // 41:26
-	unsigned long long int suffix1 : 16; // 57:42
+	unsigned long long int fmod1_srco : 32; // 57:26
 	unsigned long long int func : 6; // 63:58
 };
+
 struct FmtCtrl
 {
 	unsigned long long int cat : 4; // 3:0
-	unsigned long long int suffix0 : 6; // 9:4
+	unsigned long long int fmod0 : 6; // 9:4
 	unsigned long long int pred : 4; // 13:10
-	unsigned long long int target_mod : 1; // 14
-	unsigned long long int suffix1 : 11; // 25:15
-	unsigned long long int target : 20; // 45:26
-	unsigned long long int suffix2 : 13; // 58:46
+	unsigned long long int mmod : 6; // 19:14
+	unsigned long long int src1 : 6; // 25:20
+	unsigned long long int imm32 : 32; // 57:26
+	unsigned long long int x : 1; // 58
 	unsigned long long int func : 5; // 63:59
 };
 
