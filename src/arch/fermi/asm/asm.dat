@@ -514,11 +514,11 @@ DEFINST(TXQ,
  */
 
 DEFINST(JMP, 
-	"%pred JMP%lmt CC%cop, %atarget", 
+	"%pred JMP%lmt %cccopatarget", 
 	0x700)
 
 DEFINST(JMX, 
-	"%pred JMX%lmt CC%cop, %src1", 
+	"%pred JMX%lmt %cccopsrc1", 
 	0x708)
 
 DEFINST(JCAL, 
@@ -526,11 +526,11 @@ DEFINST(JCAL,
 	0x710)
 	
 DEFINST(BRA, 
-	"%pred BRA%u%lmt CC%cop, %rtarget", 
+	"%pred BRA%u%lmt %cccoprtarget", 
 	0x740)
 
 DEFINST(BRX, 
-	"%pred BRX%lmt CC%cop, %ritarget",
+	"%pred BRX%lmt %cccopritarget",
 	0x748)
 
 DEFINST(CAL, 
