@@ -54,7 +54,7 @@ DEFINST(RRO,
 //	0x0c0)
 
 DEFINST(MUFU, 
-	"%pred MUFU%mufuocodep%sat%s %dst, %nasrc1", 
+	"%pred MUFU%mufuopcode%sat%s %dst, %nasrc1", 
 	0x0c8)
 
 /* Double-Precision Floating Point category:
@@ -206,15 +206,15 @@ DEFINST(PSET,
 	0x408)
 
 DEFINST(PSETP, 
-	"%pred PSETP%bop1%bop2%s %pdst1, %pdst2. %psrc1, %psrc2, %r", 
+	"%pred PSETP%bop1%bop2%s %pdst1, %pdst2. %psrc1, %psrc2, %psrc3", 
 	0x40c)
 
 DEFINST(F2F, 
-	"%pred F2F%ftz%fpdest%fpsrc%frnd3%sat%s %dst%cc, %nah1src2", 
+	"%pred F2F%ftz%fpdest%fpsrc%frnd3%sat%s %dst%cc, %nahisrc2", 
 	0x410)
 
 DEFINST(F2I, 
-	"%pred F2I%ftz%idest%fpsrc%frnd2%s %dst%cc, %nah1src2", 
+	"%pred F2I%ftz%idest%fpsrc%frnd2%s %dst%cc, %nahisrc2", 
 	0x414)
 
 DEFINST(I2F, 
@@ -558,15 +558,15 @@ DEFINST(PRET,
 	0x778)
 
 DEFINST(EXIT, 
-	"%pred EXIT CC%cop", 
+	"%pred EXIT %cccop", 
 	0x780)
 
 DEFINST(LONGJMP, 
-	"%pred LONGJMP CC%cop", 
+	"%pred LONGJMP %cccop", 
 	0x788)
 
 DEFINST(RET, 
-	"%pred RET CC%cop", 
+	"%pred RET %cccop", 
 	0x790)
 
 //DEFINST(KIL, 
@@ -578,11 +578,11 @@ DEFINST(RET,
 //	0x7a0)
 
 DEFINST(BRK, 
-	"%pred BRK CC%cop", 
+	"%pred BRK %cccop", 
 	0x7a8)
 
 DEFINST(CONT,
-	"%pred CONT CC%cop",
+	"%pred CONT %cccop",
 	0x7b0)
 
 //DEFINST(SAM,
@@ -594,6 +594,6 @@ DEFINST(CONT,
 //	0x7c8)
 
 DEFINST(BPT,
-	"BPT CC%cop",
+	"BPT %cccop",
 	0x7d0)
 

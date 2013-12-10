@@ -320,6 +320,42 @@ StringMap cop4_map =
 	{ ".T", 15 }
 };
 
+StringMap cop_map =
+{
+	{ ".F", 0 },
+	{ ".LT", 1 },
+	{ ".EQ", 2 },
+	{ ".LE", 3 },
+	{ ".GT", 4 },
+	{ ".NE", 5 },
+	{ ".GE", 6 },
+	{ ".NUM", 7 },
+	{ ".NAN", 8 },
+	{ ".LTU", 9 },
+	{ ".EQU", 10 },
+	{ ".LEU", 11 },
+	{ ".GTU", 12 },
+	{ ".NEU", 13 },
+	{ ".GEU", 14 },
+	{ "", 15 },
+	{ ".OFF", 16 },
+	{ ".LO", 17 },
+	{ ".SFF", 18 },
+	{ ".LS", 19 },
+	{ ".HI", 20 },
+	{ ".SFT", 21 },
+	{ ".HS", 22 },
+	{ ".OFT", 23 },
+	{ ".CSM_TA", 24 },
+	{ ".CSM_TR", 25 },
+	{ ".CSM_MX", 26 },
+	{ ".FCSM_TA", 27 },
+	{ ".FCSM_TR", 28 },
+	{ ".FCSM_MX", 29 },
+	{ ".RLE", 30 },
+	{ ".RGT", 31 }
+};
+
 StringMap dc_map =
 {
 	{ "", 0 },
@@ -964,7 +1000,7 @@ StringMap xlo_map =
 
 StringMap xlu_map =
 {
-	{ ".", 0 },
+	{ "", 0 },
 	{ ".XLU", 1 },
 	{ ".ALU", 2 },
 	{ ".INVALID", 3 }
@@ -977,40 +1013,40 @@ StringMap cc_map =
 	{ ".CC", 1 }
 };
 
-StringMap cop_map =
+StringMap cccop_map =
 {
-	{ ".F", 0 },
-	{ ".LT", 1 },
-	{ ".EQ", 2 },
-	{ ".LE", 3 },
-	{ ".GT", 4 },
-	{ ".NE", 5 },
-	{ ".GE", 6 },
-	{ ".NUM", 7 },
-	{ ".NAN", 8 },
-	{ ".LTU", 9 },
-	{ ".EQU", 10 },
-	{ ".LEU", 11 },
-	{ ".GTU", 12 },
-	{ ".NEU", 13 },
-	{ ".GEU", 14 },
+	{ "CC.F", 0 },
+	{ "CC.LT", 1 },
+	{ "CC.EQ", 2 },
+	{ "CC.LE", 3 },
+	{ "CC.GT", 4 },
+	{ "CC.NE", 5 },
+	{ "CC.GE", 6 },
+	{ "CC.NUM", 7 },
+	{ "CC.NAN", 8 },
+	{ "CC.LTU", 9 },
+	{ "CC.EQU", 10 },
+	{ "CC.LEU", 11 },
+	{ "CC.GTU", 12 },
+	{ "CC.NEU", 13 },
+	{ "CC.GEU", 14 },
 	{ "", 15 },
-	{ ".OFF", 16 },
-	{ ".LO", 17 },
-	{ ".SFF", 18 },
-	{ ".LS", 19 },
-	{ ".HI", 20 },
-	{ ".SFT", 21 },
-	{ ".HS", 22 },
-	{ ".OFT", 23 },
-	{ ".CSM_TA", 24 },
-	{ ".CSM_TR", 25 },
-	{ ".CSM_MX", 26 },
-	{ ".FCSM_TA", 27 },
-	{ ".FCSM_TR", 28 },
-	{ ".FCSM_MX", 29 },
-	{ ".RLE", 30 },
-	{ ".RGT", 31 }
+	{ "CC.OFF", 16 },
+	{ "CC.LO", 17 },
+	{ "CC.SFF", 18 },
+	{ "CC.LS", 19 },
+	{ "CC.HI", 20 },
+	{ "CC.SFT", 21 },
+	{ "CC.HS", 22 },
+	{ "CC.OFT", 23 },
+	{ "CC.CSM_TA", 24 },
+	{ "CC.CSM_TR", 25 },
+	{ "CC.CSM_MX", 26 },
+	{ "CC.FCSM_TA", 27 },
+	{ "CC.FCSM_TR", 28 },
+	{ "CC.FCSM_MX", 29 },
+	{ "CC.RLE", 30 },
+	{ "CC.RGT", 31 }
 };
 
 StringMap ssrc_map =
@@ -3289,6 +3325,12 @@ void Inst::DumpToBufWithFmtCtrl(void)
 			unsigned v;
 			v = (fmt.mmod >> 1) & 0x1;
 			ss << u_map.MapValue(v);
+		}
+		else if (Common::Asm::IsToken(fmt_str, "cccop", len))
+		{
+			unsigned v;
+			v = (fmt.fmod0 >> 1) & 0x1f;
+			ss << cccop_map.MapValue(v);
 		}
 		else if (Common::Asm::IsToken(fmt_str, "cop", len))
 		{
