@@ -1453,7 +1453,7 @@ void Inst::DumpToBufWithFmtReg(void)
 							ss << StringFmt("-0x%x", 0x100000 - src2.i);
 					}
 				}
-				ss << "R";
+				ss << ", R";
 				if (src1 != 63)
 					ss << src1;
 				else
@@ -1466,6 +1466,7 @@ void Inst::DumpToBufWithFmtReg(void)
 					ss << src1;
 				else
 					ss << "Z";
+				ss << ", ";
 				if (s2mode == 0)
 				{
 					ss << "R";
@@ -1593,6 +1594,96 @@ void Inst::DumpToBufWithFmtReg(void)
 			mode = fmt.s2mod;
 			src3 = fmt.fmod1_srco & 0x3f;
 			n = (fmt.fmod0 >> 4) & 0x1;
+
+			if (mode == 0)
+			{
+				ss << "R";
+				if (src2.i != 63)
+					ss << src2.i;
+				else
+					ss << "Z";
+				ss << ", ";
+				if (n == 1)
+					ss << "-";
+				ss << "R";
+				if (src3 != 63)
+					ss << src3;
+				else
+					ss << "Z";
+			}
+			else if (mode == 1)
+			{
+				unsigned bank = ((src2.i & 0x1) << 4) | (src2.i >> 16);
+				int offset = src2.i & 0xfffe;
+				ss << std::hex
+						<< "c[0x" << bank << "]"
+						<< "[0x" << offset << "]";
+				ss << ", ";
+				ss << std::dec;
+				if (n == 1)
+					ss << "-";
+				ss << "R";
+				if (src3 != 63)
+					ss << src3;
+				else
+					ss << "Z";
+			}
+			else if (mode == 2)
+			{
+				unsigned bank = ((src2.i & 0x1) << 4) | (src2.i >> 16);
+				int offset = src2.i & 0xfffe;
+				if (n == 1)
+					ss << "-";
+				ss << "R";
+				if (src3 != 63)
+					ss << src3;
+				else
+					ss << "Z";
+				ss << ", ";
+				ss << std::hex
+						<< "c[0x" << bank << "]"
+						<< "[0x" << offset << "]";
+			}
+			else if (mode == 3)
+			{
+				unsigned cat = info->cat;
+				if (cat == 0 || cat == 1)  // floating-points
+				{
+					src2.i = fmt.src2 << 12;
+					if (src2.f > 1e9)
+						ss << StringFmt("%.20e", src2.f);
+					else
+						ss << StringFmt("%g", src2.f);
+				}
+				else if (cat == 3)  // integers
+				{
+					src2.i = fmt.src2;
+					if (src2.i >> 19 == 0)  // positive value
+						ss << StringFmt("0x%x", src2.i);
+					else  // negative value
+						ss << StringFmt("-0x%x", 0x100000 - src2.i);
+				}
+				ss << ", ";
+				if (n == 1)
+					ss << "-";
+				ss << "R";
+				if (src3 != 63)
+					ss << src3;
+				else
+					ss << "Z";
+			}
+		}
+		else if (Common::Asm::IsToken(fmt_str, "src2n2src3", len))
+		{
+			union {unsigned i; float f;} src2;
+			unsigned mode;
+			unsigned src3;
+			unsigned n;
+
+			src2.i = fmt.src2;
+			mode = fmt.s2mod;
+			src3 = fmt.fmod1_srco & 0x3f;
+			n = (fmt.fmod0 >> 4) & 0x3;
 
 			if (mode == 0)
 			{
@@ -2501,6 +2592,19 @@ void Inst::DumpToBufWithFmtOther(void)
 					ss << "T";
 			}
 		}
+		else if (Common::Asm::IsToken(fmt_str, "dstpsrc4", len))
+		{
+			unsigned dst, p;
+			dst = fmt.dst;
+			p = (fmt.fmod2_srco >> 5) & 0x7;
+			if (dst != 63)
+				ss << "R" << dst << ", ";
+			ss << "P";
+			if (p != 7)
+				ss << p;
+			else
+				ss << "T";
+		}
 		else if (Common::Asm::IsToken(fmt_str, "dst", len))
 		{
 			unsigned dst;
@@ -2657,23 +2761,11 @@ void Inst::DumpToBufWithFmtOther(void)
 			}
 			else if (mode == 3)
 			{
-				unsigned cat = info->cat;
-				if (cat == 0 || cat == 1)  // floating-points
-				{
-					src.i = fmt.src2 << 12;
-					if (src.f > 1e9)
-						ss << StringFmt("%.20e", src.f);
-					else
-						ss << StringFmt("%g", src.f);
-				}
-				else if (cat == 3)  // integers
-				{
-					src.i = fmt.src2;
-					if (src.i >> 19 == 0)  // positive value
-						ss << StringFmt("0x%x", src.i);
-					else  // negative value
-						ss << StringFmt("-0x%x", 0x100000 - src.i);
-				}
+				src.i = fmt.src2;
+				if (src.i >> 19 == 0)  // positive value
+					ss << StringFmt("0x%x", src.i);
+				else  // negative value
+					ss << StringFmt("-0x%x", 0x100000 - src.i);
 			}
 		}
 		else if (Common::Asm::IsToken(fmt_str, "isrc2", len))
@@ -3261,7 +3353,27 @@ void Inst::DumpToBufWithFmtLdSt(void)
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 1) & 0x7;
-			ss << size3_map.MapValue(v);
+			if (v != 7)
+				ss << size3_map.MapValue(v);
+			else
+			{
+				if (info->opcode == INST_LD)
+				{
+					if (((fmt.fmod0 >> 5) & 0x1) == 0)
+						ss << ".64";
+					else
+						ss << ".128";
+				}
+				else if (info->opcode == INST_LDX && ((fmt.fmod1_srco >> 30) & 0x1) == 1)  // LDS
+				{
+					if (((fmt.fmod0 >> 4) & 0x3) == 0)
+						ss << ".BV.64";
+					else if (((fmt.fmod0 >> 4) & 0x3) == 2)
+						ss << ".BV.128";
+				}
+				else
+					ss << ".INVALIDSIZE7";
+			}
 		}
 		else if (Common::Asm::IsToken(fmt_str, "size5", len))
 		{
@@ -3272,11 +3384,11 @@ void Inst::DumpToBufWithFmtLdSt(void)
 		else if (Common::Asm::IsToken(fmt_str, "stcachectrl", len))
 		{
 			unsigned v;
-			if (info->opcode == INST_STX)
-				v = (((fmt.fmod1_srco >> 30) & 0x1) << 2) | ((fmt.fmod0 >> 4) & 0x3);
-			else
+			if (!((info->opcode == INST_STX) && (((fmt.fmod1_srco >> 30) & 0x1) == 1)))  // !STS
+			{
 				v = (fmt.fmod0 >> 4) & 0x3;
-			ss << stcachectrl_map.MapValue(v);
+				ss << stcachectrl_map.MapValue(v);
+			}
 		}
 		else if (Common::Asm::IsToken(fmt_str, "sucachectrl", len))
 		{
@@ -3369,6 +3481,22 @@ void Inst::DumpToBufWithFmtLdSt(void)
 					ss << "Z";
 			}
 		}
+		else if (Common::Asm::IsToken(fmt_str, "src1imm41imm42", len))
+		{
+			unsigned src, imm41, imm42;
+			src = fmt.src1;
+			imm41 = (fmt.fmod1_srco >> 6) & 0xf;
+			imm42 = (fmt.fmod1_srco >> 10) & 0xf;
+			ss << "R";
+			if (src != 63)
+				ss << src;
+			else
+				ss << "Z";
+			if (imm41 != 0 || imm42 != 0)
+			{
+				ss << std::hex << ", 0x" << imm41 << ", 0x" << imm42;
+			}
+		}
 		else if (Common::Asm::IsToken(fmt_str, "src1", len))
 		{
 			unsigned src;
@@ -3398,6 +3526,23 @@ void Inst::DumpToBufWithFmtLdSt(void)
 				ss << src;
 			else
 				ss << "Z";
+		}
+		else if (Common::Asm::IsToken(fmt_str, "risrc2", len))
+		{
+			unsigned src;
+			unsigned mode;
+			src = fmt.fmod1_srco & 0x3f;
+			mode = (fmt.fmod1_srco >> 20) & 0x1;
+			if (mode == 0)
+			{
+				ss << "R";
+				if (src != 63)
+					ss << src;
+				else
+					ss << "Z";
+			}
+			else
+				ss << std::hex << "0x" << src;
 		}
 		else if (Common::Asm::IsToken(fmt_str, "src3", len))
 		{
