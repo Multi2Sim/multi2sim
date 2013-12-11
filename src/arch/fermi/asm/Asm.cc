@@ -53,9 +53,6 @@ void Asm::DisassembleBinary(std::string path)
 {
 	// Initialization
 	ELFReader::File file(path);
-	std::vector<Inst *> inst_vector;
-	unsigned int max_inst_len;
-	Inst *inst;
 
 	// Dump disassembly
 	std::cout << "\n\tcode for sm_20\n";
@@ -65,7 +62,9 @@ void Asm::DisassembleBinary(std::string path)
 		ELFReader::Section *section = file.getSection(i);
 		if (!strncmp(section->getName().c_str(), ".text.", 6))
 		{
-			max_inst_len = 0;
+			std::vector<std::unique_ptr<Inst>> instructions;
+			Inst *inst;
+			unsigned max_inst_len = 0;
 			for (unsigned int pos = 0; pos < section->getSize(); pos += 8)
 			{
 				inst = new Inst(this);
@@ -74,12 +73,13 @@ void Asm::DisassembleBinary(std::string path)
 				inst->Decode(pos, section->getBuffer() + pos);
 				inst->DumpToBuf();
 
-				inst_vector.push_back(inst);
+				instructions.push_back(std::unique_ptr<Inst>(inst));
 			}
 
-			for (unsigned int j = 0; j < inst_vector.size(); ++j)
+			for (std::vector<std::unique_ptr<Inst>>::iterator it = instructions.begin();
+					it != instructions.end(); ++it)
 			{
-				unsigned int inst_len = inst_vector[j]->GetString().length();
+				unsigned inst_len = (*it)->GetString().length();
 				if (inst_len > max_inst_len)
 					max_inst_len = inst_len;
 			}
@@ -87,16 +87,14 @@ void Asm::DisassembleBinary(std::string path)
 			// Dump
 			std::cout << "\t\tFunction : " << section->getName().c_str() + 6 << "\n";
 			std::cout << "\t.headerflags    @\"EF_CUDA_SM20 EF_CUDA_PTX_SM(EF_CUDA_SM20)\"" << "\n";
-			for (unsigned int j = 0; j < inst_vector.size(); ++j)
+			for (std::vector<std::unique_ptr<Inst>>::iterator it = instructions.begin();
+					it != instructions.end(); ++it)
 			{
-				Inst *inst = inst_vector[j];
 				std::cout << "        ";
-				inst->DumpPC(std::cout);
-				inst->Dump(std::cout, max_inst_len);
-				inst->DumpHex(std::cout);
+				(*it)->DumpPC(std::cout);
+				(*it)->Dump(std::cout, max_inst_len);
+				(*it)->DumpHex(std::cout);
 				std::cout << "\n";
-
-				delete inst;
 			}
 			std::cout << "\t\t" << std::string(32, '.') << "\n\n\n";
 		}

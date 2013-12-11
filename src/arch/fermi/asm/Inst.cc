@@ -512,8 +512,8 @@ StringMap ldcachectrl_map =
 
 StringMap ldlcachectrl_map =
 {
-	{ ".CG", 0 },
-	{ "", 1 },
+	{ "", 0 },
+	{ ".CG", 1 },
 	{ ".LU", 2 },
 	{ ".CV", 3 }
 };
@@ -1403,6 +1403,107 @@ void Inst::DumpToBufWithFmtReg(void)
 			else
 				ss << "T";
 		}
+		else if (Common::Asm::IsToken(fmt_str, "src1src2", len))
+		{
+			unsigned src1;
+			union {unsigned i; float f;} src2;
+			unsigned s2mode;
+			unsigned mode;
+
+			src1 = fmt.src1;
+			src2.i = fmt.src2;
+			s2mode = fmt.s2mod;
+			mode = (fmt.fmod0 >> 4) & 0x3;
+
+			if (mode == 2)
+			{
+				if (s2mode == 0)
+				{
+					ss << "R";
+					if (src2.i != 63)
+						ss << src2.i;
+					else
+						ss << "Z";
+				}
+				else if (s2mode == 1 || s2mode == 2)
+				{
+					unsigned bank = ((src2.i & 0x1) << 4) | (src2.i >> 16);
+					int offset = src2.i & 0xfffe;
+					ss << std::hex
+							<< "c[0x" << bank << "]"
+							<< "[0x" << offset << "]";
+				}
+				else if (s2mode == 3)
+				{
+					unsigned cat = info->cat;
+					if (cat == 0 || cat == 1)  // floating-points
+					{
+						src2.i = fmt.src2 << 12;
+						if (src2.f > 1e9)
+							ss << StringFmt("%.20e", src2.f);
+						else
+							ss << StringFmt("%g", src2.f);
+					}
+					else if (cat == 3)  // integers
+					{
+						src2.i = fmt.src2;
+						if (src2.i >> 19 == 0)  // positive value
+							ss << StringFmt("0x%x", src2.i);
+						else  // negative value
+							ss << StringFmt("-0x%x", 0x100000 - src2.i);
+					}
+				}
+				ss << "R";
+				if (src1 != 63)
+					ss << src1;
+				else
+					ss << "Z";
+			}
+			else
+			{
+				ss << "R";
+				if (src1 != 63)
+					ss << src1;
+				else
+					ss << "Z";
+				if (s2mode == 0)
+				{
+					ss << "R";
+					if (src2.i != 63)
+						ss << src2.i;
+					else
+						ss << "Z";
+				}
+				else if (s2mode == 1 || s2mode == 2)
+				{
+					unsigned bank = ((src2.i & 0x1) << 4) | (src2.i >> 16);
+					int offset = src2.i & 0xfffe;
+					ss << std::hex
+							<< "c[0x" << bank << "]"
+							<< "[0x" << offset << "]";
+				}
+				else if (s2mode == 3)
+				{
+					unsigned cat = info->cat;
+					if (cat == 0 || cat == 1)  // floating-points
+					{
+						src2.i = fmt.src2 << 12;
+						if (src2.f > 1e9)
+							ss << StringFmt("%.20e", src2.f);
+						else
+							ss << StringFmt("%g", src2.f);
+					}
+					else if (cat == 3)  // integers
+					{
+						src2.i = fmt.src2;
+						if (src2.i >> 19 == 0)  // positive value
+							ss << StringFmt("0x%x", src2.i);
+						else  // negative value
+							ss << StringFmt("-0x%x", 0x100000 - src2.i);
+					}
+				}
+			}
+		}
 		else if (Common::Asm::IsToken(fmt_str, "src1", len))
 		{
 			unsigned src;
@@ -1517,6 +1618,7 @@ void Inst::DumpToBufWithFmtReg(void)
 						<< "c[0x" << bank << "]"
 						<< "[0x" << offset << "]";
 				ss << ", ";
+				ss << std::dec;
 				if (n == 1)
 					ss << "-";
 				ss << "R";
@@ -2146,13 +2248,24 @@ void Inst::DumpToBufWithFmtImm(void)
 		}
 		else if (Common::Asm::IsToken(fmt_str, "imm32", len))
 		{
-			unsigned imm32, s;
-			imm32 = fmt.imm32;
-			s = imm32 >> 31;
-			if (s == 0)
-				ss << std::hex << "0x" << imm32;
+			union {unsigned i; float f;} imm32;
+			unsigned s;
+			imm32.i = fmt.imm32;
+			s = imm32.i >> 31;
+			if (info->opcode == INST_FFMA32I || info->opcode == INST_FADD32I || info->opcode == INST_FMUL32I)
+			{
+				if (imm32.f > 1e9)
+					ss << StringFmt("%.20e", imm32.f);
+				else
+					ss << StringFmt("%.20g", imm32.f);
+			}
 			else
-				ss << std::hex << "-0x" << (~imm32 + 1);
+			{
+				if (s == 0)
+					ss << std::hex << "0x" << imm32.i;
+				else
+					ss << std::hex << "-0x" << (~imm32.i + 1);
+			}
 		}
 		else if (Common::Asm::IsToken(fmt_str, "neg", len))
 		{
