@@ -142,7 +142,7 @@ DEFINST(ISETP,
 	0x318)
 
 DEFINST(IMAD, 
-	"%pred IMAD%type%hi%po%sat%x%s %dst%cc, %n2src1, %src2, %n2src3", 
+	"%pred IMAD%type%hi%po%sat%x%s %dst%cc, %n2src1, %src2n2src3", 
 	0x320)
 
 DEFINST(BFI, 
@@ -262,7 +262,7 @@ DEFINST(LEPC,
 	0x444)
 
 DEFINST(VOTE, 
-	"%pred VOTE%vmode%s %dst, %psrc4, %psrc1", 
+	"%pred VOTE%vmode%s %dstpsrc4, %psrc1", 
 	0x448)
 
 //DEFINST(STP, 
@@ -270,7 +270,7 @@ DEFINST(VOTE,
 //	0x44c)
 
 DEFINST(BAR, 
-	"%pred BAR%barmode %dstpdst, %src1, %src2, %psrc3",
+	"%pred BAR.RED%barmode %dstpdst, %src1, %src2, %psrc3",
 	0x450)
 
 DEFINST(POPC, 
@@ -434,7 +434,7 @@ DEFINST(SURED,
 	0x5d8)
 
 DEFINST(SUST, 
-	"%pred SUST%1d%b4%sucachectrl%r4%size3%surfaceclamp%s %src2, %src1, %imm41, %imm42, %dst", 
+	"%pred SUST%1d%b4%sucachectrl%r4%size3%surfaceclamp%s %risrc2, %src1imm41imm42, %dst", 
 	0x5dc)
 
 DEFINST(MEMBAR, 
