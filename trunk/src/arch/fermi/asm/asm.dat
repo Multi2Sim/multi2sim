@@ -22,7 +22,7 @@ DEFINST(FSETP,
 	0x020)
 
 DEFINST(FFMA, 
-	"%pred FFMA%fmz%rnd%sat%fma%s %dst%cc, %n1src1, %src2, %n1src3", 
+	"%pred FFMA%fmz%rnd%sat%fma%s %dst%cc, %n1src1, %src2n1src3", 
 	0x030)
 
 DEFINST(FCMP, 
@@ -118,7 +118,7 @@ DEFINST(FMUL32I,
 	0x230)
 
 DEFINST(LOP32I, 
-	"%pred LOP32I%bop%x%s %dst%cc, %isrc1, %imm32%inv", 
+	"%pred LOP32I%bop%x%s %dst%cc, %isrc1, %uimm32%inv", 
 	0x238)
 
 DEFINST(ISCADD32I, 
@@ -206,7 +206,7 @@ DEFINST(PSET,
 	0x408)
 
 DEFINST(PSETP, 
-	"%pred PSETP%bop1%bop2%s %pdst1, %pdst2. %psrc1, %psrc2, %psrc3", 
+	"%pred PSETP%bop1%bop2%s %pdst1, %pdst2, %psrc1, %psrc2, %psrc3", 
 	0x40c)
 
 DEFINST(F2F, 
@@ -482,7 +482,7 @@ DEFINST(LDC,
 //	0x61c)
 
 DEFINST(TEX, 
-	"%pred TEX%i%blod%dc%ndv%nodep%btoff%phase%s %dst, %src1, %src2, %imm8, %imm5, %geom, %imm43", 
+	"%pred TEX%i%blod%dc%ndv%nodep%btoff%phase%s %dst, %src1, %src2imm8, %imm5, %geom, %imm43", 
 	0x680)
 
 DEFINST(TLD, 
