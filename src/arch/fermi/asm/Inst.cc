@@ -65,7 +65,9 @@ void Inst::Decode(unsigned addr, const char *ptr)
 	func_idx = func;
 
 	// Special cases
-	if (cat == 5 && ((func & 0x30) >> 4) == 0)  // RED
+	if (cat == 0 && ((func >> 1) & 0xf) == 2)  // FSETP
+		func_idx = func & 0x1e;
+	else if (cat == 5 && ((func & 0x30) >> 4) == 0)  // RED
 		func_idx = func & 0x30;
 	else if (cat == 5 && ((func & 0x30) >> 4) == 1)  // ATOM
 		func_idx = func & 0x30;
@@ -306,7 +308,6 @@ StringMap cop4_map =
 	{ ".LT", 1 },
 	{ ".EQ", 2 },
 	{ ".LE", 3 },
-	{ "", 4 },
 	{ ".NE", 5 },
 	{ ".GE", 6 },
 	{ ".NUM", 7 },
@@ -1220,7 +1221,13 @@ void Inst::DumpToBufWithFmtReg(void)
 		{
 			unsigned v;
 			v = (fmt.fmod1_srco >> 6) & 0xf;
-			ss << cop4_map.MapValue(v);
+			if (v != 4)
+				ss << cop4_map.MapValue(v);
+			else
+			{
+				if (info->opcode == INST_FSETP)
+					ss << ".GT";
+			}
 		}
 		else if (Common::Asm::IsToken(fmt_str, "fma", len))
 		{
@@ -1240,7 +1247,10 @@ void Inst::DumpToBufWithFmtReg(void)
 		else if (Common::Asm::IsToken(fmt_str, "ftz", len))
 		{
 			unsigned v;
-			v = (fmt.fmod0 >> 1) & 0x1;
+			if (info->opcode == INST_FSETP)
+				v = fmt.func & 0x1;
+			else
+				v = (fmt.fmod0 >> 1) & 0x1;
 			ss << ftz_map.MapValue(v);
 		}
 		else if (Common::Asm::IsToken(fmt_str, "hi", len))
@@ -1439,10 +1449,10 @@ void Inst::DumpToBufWithFmtReg(void)
 					if (cat == 0 || cat == 1)  // floating-points
 					{
 						src2.i = fmt.src2 << 12;
-						if (src2.f > 1e9)
+						if (std::abs(src2.f) < 1e-4 || std::abs(src2.f) > 1e9)
 							ss << StringFmt("%.20e", src2.f);
 						else
-							ss << StringFmt("%g", src2.f);
+							ss << StringFmt("%.20g", src2.f);
 					}
 					else if (cat == 3)  // integers
 					{
@@ -1489,10 +1499,10 @@ void Inst::DumpToBufWithFmtReg(void)
 					if (cat == 0 || cat == 1)  // floating-points
 					{
 						src2.i = fmt.src2 << 12;
-						if (src2.f > 1e9)
+						if (std::abs(src2.f) < 1e-4 || std::abs(src2.f) > 1e9)
 							ss << StringFmt("%.20e", src2.f);
 						else
-							ss << StringFmt("%g", src2.f);
+							ss << StringFmt("%.20g", src2.f);
 					}
 					else if (cat == 3)  // integers
 					{
@@ -1650,10 +1660,10 @@ void Inst::DumpToBufWithFmtReg(void)
 				if (cat == 0 || cat == 1)  // floating-points
 				{
 					src2.i = fmt.src2 << 12;
-					if (src2.f > 1e9)
+					if (std::abs(src2.f) < 1e-4 || std::abs(src2.f) > 1e9)
 						ss << StringFmt("%.20e", src2.f);
 					else
-						ss << StringFmt("%g", src2.f);
+						ss << StringFmt("%.20g", src2.f);
 				}
 				else if (cat == 3)  // integers
 				{
@@ -1740,10 +1750,10 @@ void Inst::DumpToBufWithFmtReg(void)
 				if (cat == 0 || cat == 1)  // floating-points
 				{
 					src2.i = fmt.src2 << 12;
-					if (src2.f > 1e9)
+					if (std::abs(src2.f) < 1e-4 || std::abs(src2.f) > 1e9)
 						ss << StringFmt("%.20e", src2.f);
 					else
-						ss << StringFmt("%g", src2.f);
+						ss << StringFmt("%.20g", src2.f);
 				}
 				else if (cat == 3)  // integers
 				{
@@ -1793,10 +1803,10 @@ void Inst::DumpToBufWithFmtReg(void)
 				if (cat == 0 || cat == 1)  // floating-points
 				{
 					src.i = fmt.src2 << 12;
-					if (src.f > 1e9)
+					if ((std::abs(src.f) < 1e-4) || (std::abs(src.f) > 1e9))
 						ss << StringFmt("%.20e", src.f);
 					else
-						ss << StringFmt("%g", src.f);
+						ss << StringFmt("%.20g", src.f);
 				}
 				else if (cat == 3)  // integers
 				{
@@ -1844,10 +1854,10 @@ void Inst::DumpToBufWithFmtReg(void)
 				if (cat == 0 || cat == 1)  // floating-points
 				{
 					src.i = fmt.src2 << 12;
-					if (src.f > 1e9)
+					if (std::abs(src.f) < 1e-4 || std::abs(src.f) > 1e9)
 						ss << StringFmt("%.20e", src.f);
 					else
-						ss << StringFmt("%g", src.f);
+						ss << StringFmt("%.20g", src.f);
 				}
 				else if (cat == 3)  // integers
 				{
@@ -1897,10 +1907,10 @@ void Inst::DumpToBufWithFmtReg(void)
 				if (cat == 0 || cat == 1)  // floating-points
 				{
 					src.i = fmt.src2 << 12;
-					if (src.f > 1e9)
+					if (std::abs(src.f) < 1e-4 || std::abs(src.f) > 1e9)
 						ss << StringFmt("%.20e", src.f);
 					else
-						ss << StringFmt("%g", src.f);
+						ss << StringFmt("%.20g", src.f);
 				}
 				else if (cat == 3)  // integers
 				{
@@ -1969,10 +1979,10 @@ void Inst::DumpToBufWithFmtReg(void)
 					}
 					else
 					{
-						if (src.f > 1e9)
+						if (std::abs(src.f) < 1e-4 || std::abs(src.f) > 1e9)
 							ss << StringFmt("%.20e", src.f);
 						else
-							ss << StringFmt("%g", src.f);
+							ss << StringFmt("%.20g", src.f);
 					}
 				}
 				else if (cat == 3)  // integers
@@ -2345,7 +2355,7 @@ void Inst::DumpToBufWithFmtImm(void)
 			s = imm32.i >> 31;
 			if (info->opcode == INST_FFMA32I || info->opcode == INST_FADD32I || info->opcode == INST_FMUL32I)
 			{
-				if (imm32.f > 1e9)
+				if (std::abs(imm32.f) < 1e-4 || std::abs(imm32.f) > 1e9)
 					ss << StringFmt("%.20e", imm32.f);
 				else
 					ss << StringFmt("%.20g", imm32.f);
@@ -2365,7 +2375,7 @@ void Inst::DumpToBufWithFmtImm(void)
 			if (n == 1)
 				ss << ".NEG";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "abs", len))
+		else if (Common::Asm::IsToken(fmt_str, "std::abs", len))
 		{
 			unsigned a;
 			a = (fmt.fmod0 >> 2) & 0x1;
@@ -2468,10 +2478,7 @@ void Inst::DumpToBufWithFmtOther(void)
 		else if (Common::Asm::IsToken(fmt_str, "cop", len))
 		{
 			unsigned v;
-			if (info->opcode == INST_CSET || info->opcode == INST_CSETP)
-				v = fmt.fmod1_src1 & 0x1f;
-			else
-				v = (fmt.fmod0 >> 1) & 0x1f;
+			v = fmt.fmod1_src1 & 0x1f;
 			ss << cop_map.MapValue(v);
 		}
 		else if (Common::Asm::IsToken(fmt_str, "fpdest", len))
@@ -2572,6 +2579,17 @@ void Inst::DumpToBufWithFmtOther(void)
 			else
 				v = (fmt.fmod0 >> 4) & 0x3;
 			ss << xlu_map.MapValue(v);
+		}
+		else if (Common::Asm::IsToken(fmt_str, "cccopsrc2", len))
+		{
+			unsigned cccop;
+			unsigned imm16;
+			cccop = (fmt.fmod0 >> 1) & 0x1f;
+			imm16 = fmt.src2 & 0xffff;
+			if (cccop != 15)
+				ss << cop_map.MapValue(cccop);
+			if (imm16 != 0)
+				ss << std::hex << ", 0x" << imm16;
 		}
 		else if (Common::Asm::IsToken(fmt_str, "dstpdst", len))
 		{
@@ -2717,10 +2735,10 @@ void Inst::DumpToBufWithFmtOther(void)
 				if (cat == 0 || cat == 1)  // floating-points
 				{
 					src.i = fmt.src2 << 12;
-					if (src.f > 1e9)
+					if (std::abs(src.f) < 1e-4 || std::abs(src.f) > 1e9)
 						ss << StringFmt("%.20e", src.f);
 					else
-						ss << StringFmt("%g", src.f);
+						ss << StringFmt("%.20g", src.f);
 				}
 				else if (cat == 3)  // integers
 				{
@@ -2804,10 +2822,10 @@ void Inst::DumpToBufWithFmtOther(void)
 				if (cat == 0 || cat == 1)  // floating-points
 				{
 					src.i = fmt.src2 << 12;
-					if (src.f > 1e9)
+					if (std::abs(src.f) < 1e-4 || std::abs(src.f) > 1e9)
 						ss << StringFmt("%.20e", src.f);
 					else
-						ss << StringFmt("%g", src.f);
+						ss << StringFmt("%.20g", src.f);
 				}
 				else if (cat == 3)  // integers
 				{
@@ -2866,10 +2884,10 @@ void Inst::DumpToBufWithFmtOther(void)
 				if (cat == 0 || cat == 1)  // floating-points
 				{
 					src.i = fmt.src2 << 12;
-					if (src.f > 1e9)
+					if (std::abs(src.f) < 1e-4 || std::abs(src.f) > 1e9)
 						ss << StringFmt("%.20e", src.f);
 					else
-						ss << StringFmt("%g", src.f);
+						ss << StringFmt("%.20g", src.f);
 				}
 				else if (cat == 3)  // integers
 				{
@@ -2935,10 +2953,10 @@ void Inst::DumpToBufWithFmtOther(void)
 				if (cat == 0 || cat == 1)  // floating-points
 				{
 					src.i = fmt.src2 << 12;
-					if (src.f > 1e9)
+					if (std::abs(src.f) < 1e-4 || std::abs(src.f) > 1e9)
 						ss << StringFmt("%.20e", src.f);
 					else
-						ss << StringFmt("%g", src.f);
+						ss << StringFmt("%.20g", src.f);
 				}
 				else if (cat == 3)  // integers
 				{
@@ -3002,10 +3020,10 @@ void Inst::DumpToBufWithFmtOther(void)
 				if (cat == 0 || cat == 1)  // floating-points
 				{
 					src.i = fmt.src2 << 12;
-					if (src.f > 1e9)
+					if (std::abs(src.f) < 1e-4 || std::abs(src.f) > 1e9)
 						ss << StringFmt("%.20e", src.f);
 					else
-						ss << StringFmt("%g", src.f);
+						ss << StringFmt("%.20g", src.f);
 				}
 				else if (cat == 3)  // integers
 				{
@@ -3063,7 +3081,7 @@ void Inst::DumpToBufWithFmtOther(void)
 		{
 			unsigned p, i;
 			p = fmt.src2 & 0x7;
-			i = (fmt.fmod1_src1 >> 3) & 0x1;
+			i = (fmt.src2 >> 3) & 0x1;
 			if (i == 1)
 				ss << "!";
 			ss << "P";
@@ -3481,6 +3499,27 @@ void Inst::DumpToBufWithFmtLdSt(void)
 					ss << "Z";
 			}
 		}
+		else if (Common::Asm::IsToken(fmt_str, "src1off24", len))
+		{
+			unsigned src, off24, s;
+			src = fmt.src1;
+			off24 = fmt.fmod1_srco & 0xffffff;
+			s = off24 >> 23;
+			if (src != 63 && off24 != 0)
+			{
+				ss << "R" << src;
+				if (s == 0)
+					ss << std::hex << "+0x" << off24;
+				else
+					ss << std::hex << "+-0x" << (0x1000000 - off24);
+			}
+			else if (src == 63 && off24 != 0)
+				ss << std::hex << "0x" << off24;
+			else if (src != 63 && off24 == 0)
+				ss << "R" << src;
+			else
+				ss << "RZ";
+		}
 		else if (Common::Asm::IsToken(fmt_str, "src1imm41imm42", len))
 		{
 			unsigned src, imm41, imm42;
@@ -3641,7 +3680,7 @@ void Inst::DumpToBufWithFmtLdSt(void)
 			if (v > 0)
 				ss << std::hex << "+0x" << v;
 			else if (v < 0)
-				ss << std::hex << "-0x" << (~v + 1);
+				ss << std::hex << "+-0x" << (~v + 1);
 		}
 		else if (Common::Asm::IsToken(fmt_str, "imm41", len))
 		{

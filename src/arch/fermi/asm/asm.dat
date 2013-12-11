@@ -18,7 +18,7 @@ DEFINST(FSET,
 	0x010)
 
 DEFINST(FSETP, 
-	"%pred FSETP%cop4%bop%s %pdst1, %pdst2, %nasrc1, %nasrc2, %psrc3", 
+	"%pred FSETP%cop4%ftz%bop%s %pdst1, %pdst2, %nasrc1, %nasrc2, %psrc3", 
 	0x020)
 
 DEFINST(FFMA, 
@@ -254,7 +254,7 @@ DEFINST(B2R,
 	0x438)
 
 DEFINST(NOP, 
-	"%pred NOP%trig%op%s CC%cop, %src2", 
+	"%pred NOP%trig%op%s %cccopsrc2", 
 	0x440)
 
 DEFINST(LEPC, 
@@ -406,7 +406,7 @@ DEFINST(LD_LDU,
 	0x5b0)
 
 DEFINST(LDX, 
-	"%pred LD%ls%ldlcachectrl%size3%s %dst, [%src1%off24]", 
+	"%pred LD%ls%ldlcachectrl%size3%s %dst, [%src1off24]", 
 	0x5c0)
 
 DEFINST(LDSLK, 
@@ -414,7 +414,7 @@ DEFINST(LDSLK,
 	0x5c4)
 
 DEFINST(STX,
-	"%pred ST%ls%stcachectrl%size3 [%src1%off24], %dst",
+	"%pred ST%ls%stcachectrl%size3%s [%src1off24], %dst",
 	0x5c8)
 
 DEFINST(STSUL, 
