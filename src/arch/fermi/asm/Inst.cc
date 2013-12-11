@@ -1225,7 +1225,7 @@ void Inst::DumpToBufWithFmtReg(void)
 		else if (Common::Asm::IsToken(fmt_str, "fma", len))
 		{
 			unsigned v;
-			if (info->opcode == INST_FADD)
+			if (info->opcode == INST_FADD || info->opcode == INST_FFMA)
 				v = (fmt.fmod1_srco >> 8) & 0x3;
 			else
 				v = (fmt.fmod0 >> 4) & 0x3;
@@ -1361,6 +1361,8 @@ void Inst::DumpToBufWithFmtReg(void)
 			unsigned v;
 			if (info->opcode == INST_LOP)
 				v = (fmt.fmod0 >> 1) & 0x1;
+			else if (info->opcode == INST_IMAD)
+				v = (fmt.fmod1_srco >> 6) & 0x1;
 			else
 				v = (fmt.fmod0 >> 2) & 0x1;
 			ss << x_map.MapValue(v);
@@ -1479,6 +1481,95 @@ void Inst::DumpToBufWithFmtReg(void)
 			if (a == 1)
 				ss << "|";
 		}
+		else if (Common::Asm::IsToken(fmt_str, "src2n1src3", len))
+		{
+			union {unsigned i; float f;} src2;
+			unsigned mode;
+			unsigned src3;
+			unsigned n;
+
+			src2.i = fmt.src2;
+			mode = fmt.s2mod;
+			src3 = fmt.fmod1_srco & 0x3f;
+			n = (fmt.fmod0 >> 4) & 0x1;
+
+			if (mode == 0)
+			{
+				ss << "R";
+				if (src2.i != 63)
+					ss << src2.i;
+				else
+					ss << "Z";
+				ss << ", ";
+				if (n == 1)
+					ss << "-";
+				ss << "R";
+				if (src3 != 63)
+					ss << src3;
+				else
+					ss << "Z";
+			}
+			else if (mode == 1)
+			{
+				unsigned bank = ((src2.i & 0x1) << 4) | (src2.i >> 16);
+				int offset = src2.i & 0xfffe;
+				ss << std::hex
+						<< "c[0x" << bank << "]"
+						<< "[0x" << offset << "]";
+				ss << ", ";
+				if (n == 1)
+					ss << "-";
+				ss << "R";
+				if (src3 != 63)
+					ss << src3;
+				else
+					ss << "Z";
+			}
+			else if (mode == 2)
+			{
+				unsigned bank = ((src2.i & 0x1) << 4) | (src2.i >> 16);
+				int offset = src2.i & 0xfffe;
+				if (n == 1)
+					ss << "-";
+				ss << "R";
+				if (src3 != 63)
+					ss << src3;
+				else
+					ss << "Z";
+				ss << ", ";
+				ss << std::hex
+						<< "c[0x" << bank << "]"
+						<< "[0x" << offset << "]";
+			}
+			else if (mode == 3)
+			{
+				unsigned cat = info->cat;
+				if (cat == 0 || cat == 1)  // floating-points
+				{
+					src2.i = fmt.src2 << 12;
+					if (src2.f > 1e9)
+						ss << StringFmt("%.20e", src2.f);
+					else
+						ss << StringFmt("%g", src2.f);
+				}
+				else if (cat == 3)  // integers
+				{
+					src2.i = fmt.src2;
+					if (src2.i >> 19 == 0)  // positive value
+						ss << StringFmt("0x%x", src2.i);
+					else  // negative value
+						ss << StringFmt("-0x%x", 0x100000 - src2.i);
+				}
+				ss << ", ";
+				if (n == 1)
+					ss << "-";
+				ss << "R";
+				if (src3 != 63)
+					ss << src3;
+				else
+					ss << "Z";
+			}
+		}
 		else if (Common::Asm::IsToken(fmt_str, "src2", len))
 		{
 			union {unsigned i; float f;} src;
@@ -1511,6 +1602,8 @@ void Inst::DumpToBufWithFmtReg(void)
 					src.i = fmt.src2 << 12;
 					if (src.f > 1e9)
 						ss << StringFmt("%.20e", src.f);
+					else
+						ss << StringFmt("%g", src.f);
 				}
 				else if (cat == 3)  // integers
 				{
@@ -1560,6 +1653,8 @@ void Inst::DumpToBufWithFmtReg(void)
 					src.i = fmt.src2 << 12;
 					if (src.f > 1e9)
 						ss << StringFmt("%.20e", src.f);
+					else
+						ss << StringFmt("%g", src.f);
 				}
 				else if (cat == 3)  // integers
 				{
@@ -1611,6 +1706,8 @@ void Inst::DumpToBufWithFmtReg(void)
 					src.i = fmt.src2 << 12;
 					if (src.f > 1e9)
 						ss << StringFmt("%.20e", src.f);
+					else
+						ss << StringFmt("%g", src.f);
 				}
 				else if (cat == 3)  // integers
 				{
@@ -1669,8 +1766,21 @@ void Inst::DumpToBufWithFmtReg(void)
 				if (cat == 0 || cat == 1)  // floating-points
 				{
 					src.i = fmt.src2 << 12;
-					if (src.f > 1e9)
-						ss << StringFmt("%.20e", src.f);
+					if (std::isinf(src.f))
+					{
+						if (src.f > 0)
+							ss << "+";
+						else
+							ss << "-";
+						ss << "INF";
+					}
+					else
+					{
+						if (src.f > 1e9)
+							ss << StringFmt("%.20e", src.f);
+						else
+							ss << StringFmt("%g", src.f);
+					}
 				}
 				else if (cat == 3)  // integers
 				{
@@ -2020,7 +2130,7 @@ void Inst::DumpToBufWithFmtImm(void)
 		}
 		else if (Common::Asm::IsToken(fmt_str, "imm32imm4", len))
 		{
-			int imm32;
+			unsigned imm32;
 			unsigned imm4;
 			imm32 = fmt.imm32;
 			imm4 = (fmt.fmod0 >> 1) & 0xf;
@@ -2028,11 +2138,21 @@ void Inst::DumpToBufWithFmtImm(void)
 			if (imm4 != 15)
 				ss << std::hex << ", " << imm4;
 		}
-		else if (Common::Asm::IsToken(fmt_str, "imm32", len))
+		else if (Common::Asm::IsToken(fmt_str, "uimm32", len))
 		{
-			int imm32;
+			unsigned imm32;
 			imm32 = fmt.imm32;
 			ss << std::hex << "0x" << imm32;
+		}
+		else if (Common::Asm::IsToken(fmt_str, "imm32", len))
+		{
+			unsigned imm32, s;
+			imm32 = fmt.imm32;
+			s = imm32 >> 31;
+			if (s == 0)
+				ss << std::hex << "0x" << imm32;
+			else
+				ss << std::hex << "-0x" << (~imm32 + 1);
 		}
 		else if (Common::Asm::IsToken(fmt_str, "neg", len))
 		{
@@ -2165,7 +2285,7 @@ void Inst::DumpToBufWithFmtOther(void)
 		else if (Common::Asm::IsToken(fmt_str, "frnd2", len))
 		{
 			unsigned v;
-			v = fmt.fmod1_src1 & 0x3;
+			v = fmt.fmod2_srco & 0x3;
 			ss << frnd2_map.MapValue(v);
 		}
 		else if (Common::Asm::IsToken(fmt_str, "frnd3", len))
@@ -2189,19 +2309,19 @@ void Inst::DumpToBufWithFmtOther(void)
 		else if (Common::Asm::IsToken(fmt_str, "idest", len))
 		{
 			unsigned v;
-			v = (((fmt.fmod0 >> 3) & 0x1) << 2) | (fmt.fmod2_srco & 0x3);
+			v = (((fmt.fmod0 >> 3) & 0x1) << 2) | (fmt.fmod1_src1 & 0x3);
 			ss << idest_map.MapValue(v);
 		}
 		else if (Common::Asm::IsToken(fmt_str, "irnd", len))
 		{
 			unsigned v;
-			v = fmt.fmod1_src1 & 0x3;
+			v = fmt.fmod2_srco & 0x3;
 			ss << irnd_map.MapValue(v);
 		}
 		else if (Common::Asm::IsToken(fmt_str, "isrc", len))
 		{
 			unsigned v;
-			v = (((fmt.fmod0 >> 5) & 0x1) << 2) | ((fmt.fmod2_srco >> 3) & 0x3);
+			v = (((fmt.fmod0 >> 5) & 0x1) << 2) | ((fmt.fmod1_src1 >> 3) & 0x3);
 			ss << isrc_map.MapValue(v);
 		}
 		else if (Common::Asm::IsToken(fmt_str, "op", len))
@@ -2304,6 +2424,16 @@ void Inst::DumpToBufWithFmtOther(void)
 			else
 				ss << "T";
 		}
+		else if (Common::Asm::IsToken(fmt_str, "src1", len))
+		{
+			unsigned src;
+			src = fmt.fmod1_src1;
+			ss << "R";
+			if (src != 63)
+				ss << src;
+			else
+				ss << "Z";
+		}
 		else if (Common::Asm::IsToken(fmt_str, "isrc1", len))
 		{
 			unsigned src;
@@ -2372,6 +2502,8 @@ void Inst::DumpToBufWithFmtOther(void)
 					src.i = fmt.src2 << 12;
 					if (src.f > 1e9)
 						ss << StringFmt("%.20e", src.f);
+					else
+						ss << StringFmt("%g", src.f);
 				}
 				else if (cat == 3)  // integers
 				{
@@ -2418,6 +2550,8 @@ void Inst::DumpToBufWithFmtOther(void)
 					src.i = fmt.src2 << 12;
 					if (src.f > 1e9)
 						ss << StringFmt("%.20e", src.f);
+					else
+						ss << StringFmt("%g", src.f);
 				}
 				else if (cat == 3)  // integers
 				{
@@ -2467,6 +2601,8 @@ void Inst::DumpToBufWithFmtOther(void)
 					src.i = fmt.src2 << 12;
 					if (src.f > 1e9)
 						ss << StringFmt("%.20e", src.f);
+					else
+						ss << StringFmt("%g", src.f);
 				}
 				else if (cat == 3)  // integers
 				{
@@ -2527,6 +2663,8 @@ void Inst::DumpToBufWithFmtOther(void)
 					src.i = fmt.src2 << 12;
 					if (src.f > 1e9)
 						ss << StringFmt("%.20e", src.f);
+					else
+						ss << StringFmt("%g", src.f);
 				}
 				else if (cat == 3)  // integers
 				{
@@ -2565,6 +2703,8 @@ void Inst::DumpToBufWithFmtOther(void)
 					ss << src.i;
 				else
 					ss << "Z";
+				if (b != 0)
+					ss << ".B" << b;
 				if (a == 1)
 					ss << "|";
 			}
@@ -2579,6 +2719,8 @@ void Inst::DumpToBufWithFmtOther(void)
 				ss << std::hex
 						<< "c[0x" << bank << "]"
 						<< "[0x" << offset << "]";
+				if (b != 0)
+					ss << ".B" << b;
 				if (a == 1)
 					ss << "|";
 			}
@@ -2590,6 +2732,8 @@ void Inst::DumpToBufWithFmtOther(void)
 					src.i = fmt.src2 << 12;
 					if (src.f > 1e9)
 						ss << StringFmt("%.20e", src.f);
+					else
+						ss << StringFmt("%g", src.f);
 				}
 				else if (cat == 3)  // integers
 				{
@@ -2599,13 +2743,13 @@ void Inst::DumpToBufWithFmtOther(void)
 					else  // negative value
 						ss << StringFmt("-0x%x", 0x100000 - src.i);
 				}
+				if (b != 0)
+					ss << ".B" << b;
 				if (n == 1)
 					ss << ".NEG";
 				if (a == 1)
 					ss << ".ABS";
 			}
-
-			ss << ".B" << b;
 		}
 		else if (Common::Asm::IsToken(fmt_str, "nahisrc2", len))
 		{
@@ -2655,6 +2799,8 @@ void Inst::DumpToBufWithFmtOther(void)
 					src.i = fmt.src2 << 12;
 					if (src.f > 1e9)
 						ss << StringFmt("%.20e", src.f);
+					else
+						ss << StringFmt("%g", src.f);
 				}
 				else if (cat == 3)  // integers
 				{
@@ -2711,7 +2857,7 @@ void Inst::DumpToBufWithFmtOther(void)
 		else if (Common::Asm::IsToken(fmt_str, "psrc2", len))
 		{
 			unsigned p, i;
-			p = fmt.src2 & 0xf;
+			p = fmt.src2 & 0x7;
 			i = (fmt.fmod1_src1 >> 3) & 0x1;
 			if (i == 1)
 				ss << "!";
@@ -2724,8 +2870,8 @@ void Inst::DumpToBufWithFmtOther(void)
 		else if (Common::Asm::IsToken(fmt_str, "psrc3", len))
 		{
 			unsigned p, i;
-			p = fmt.fmod2_srco & 0xf;
-			i = (fmt.fmod1_src1 >> 3) & 0x1;
+			p = fmt.fmod2_srco & 0x7;
+			i = (fmt.fmod2_srco >> 3) & 0x1;
 			if (i == 1)
 				ss << "!";
 			ss << "P";
@@ -3120,6 +3266,16 @@ void Inst::DumpToBufWithFmtLdSt(void)
 			else
 				ss << "Z";
 		}
+		else if (Common::Asm::IsToken(fmt_str, "src2imm8", len))
+		{
+			unsigned src;
+			unsigned i;
+			src = fmt.fmod1_srco & 0x3f;
+			i = (fmt.fmod1_srco >> 6) & 0xff;
+			if (src != 63)
+				ss << "R" << src << ", ";
+			ss << std::hex << "0x" << i;
+		}
 		else if (Common::Asm::IsToken(fmt_str, "src2", len))
 		{
 			unsigned src;
@@ -3378,19 +3534,26 @@ void Inst::DumpToBufWithFmtCtrl(void)
 		{
 			unsigned cccop;
 			unsigned mode;
-			unsigned target;
+			unsigned target, s;
 			unsigned bank, offset;
 
 			cccop = (fmt.fmod0 >> 1) & 0x1f;
 			mode = fmt.mmod & 0x1;
 			target = fmt.imm32 & 0xffffff;
+			s = target >> 23;
 			bank = (fmt.imm32 >> 16) & 0x1f;
 			offset = fmt.imm32 & 0xffff;
 
 			if (cccop != 15)
 				ss << cccop_map.MapValue(cccop) << ", ";
 			if (mode == 0)
-				ss << std::hex << "0x" << target + addr + 8;
+			{
+				ss << std::hex << "0x";
+				if (s == 0)
+					ss << target + addr + 8;
+				else
+					ss << -(0x1000000 - target) + addr + 8;
+			}
 			else
 				ss << std::hex
 						<< "c[0x" << bank << "]"
@@ -3401,13 +3564,14 @@ void Inst::DumpToBufWithFmtCtrl(void)
 			unsigned cccop;
 			unsigned mode;
 			unsigned src;
-			unsigned target;
+			unsigned target, s;
 			unsigned bank, offset;
 
 			cccop = (fmt.fmod0 >> 1) & 0x1f;
 			mode = fmt.mmod & 0x1;
 			src = fmt.src1;
 			target = fmt.imm32 & 0xffffff;
+			s = target >> 23;
 			bank = (fmt.imm32 >> 16) & 0x1f;
 			offset = fmt.imm32 & 0xffff;
 
@@ -3416,7 +3580,11 @@ void Inst::DumpToBufWithFmtCtrl(void)
 			if (mode == 0)
 			{
 				ss << "R" << src << " ";
-				ss << std::hex << "0x" << target + addr + 8;
+				ss << std::hex << "0x";
+				if (s == 0)
+					ss << target + addr + 8;
+				else
+					ss << -(0x1000000 - target) + addr + 8;
 			}
 			else
 			{
@@ -3497,14 +3665,21 @@ void Inst::DumpToBufWithFmtCtrl(void)
 		else if (Common::Asm::IsToken(fmt_str, "rtarget", len))
 		{
 			unsigned mode;
-			unsigned target;
+			unsigned target, s;
 			unsigned bank, offset;
 			mode = fmt.mmod & 0x1;
 			target = fmt.imm32 & 0xffffff;
+			s = target >> 23;
 			bank = (fmt.imm32 >> 16) & 0x1f;
 			offset = fmt.imm32 & 0xffff;
 			if (mode == 0)
-				ss << std::hex << "0x" << target + addr + 8;
+			{
+				ss << std::hex << "0x";
+				if (s == 0)
+					ss << target + addr + 8;
+				else
+					ss << -(0x1000000 - target) + addr + 8;
+			}
 			else
 				ss << std::hex
 						<< "c[0x" << bank << "]"
@@ -3514,17 +3689,22 @@ void Inst::DumpToBufWithFmtCtrl(void)
 		{
 			unsigned mode;
 			unsigned src;
-			unsigned target;
+			unsigned target, s;
 			unsigned bank, offset;
 			mode = fmt.mmod & 0x1;
 			src = fmt.src1;
 			target = fmt.imm32 & 0xffffff;
+			s = target >> 23;
 			bank = (fmt.imm32 >> 16) & 0x1f;
 			offset = fmt.imm32 & 0xffff;
 			if (mode == 0)
 			{
 				ss << "R" << src << " ";
-				ss << std::hex << "0x" << target + addr + 8;
+				ss << std::hex << "0x";
+				if (s == 0)
+					ss << target + addr + 8;
+				else
+					ss << -(0x1000000 - target) + addr + 8;
 			}
 			else
 			{
