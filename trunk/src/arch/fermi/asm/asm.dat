@@ -474,7 +474,7 @@ DEFINST(SULEA,
 //	0x610)
 
 DEFINST(LDC, 
-	"%pred LDC%size3%il%s %dst, c[%bank][%src1%off16]", 
+	"%pred LDC%size3%il%s %dst, c[%bank][%src1off16]", 
 	0x614)
 	
 //DEFINST(OUT, 
@@ -530,7 +530,7 @@ DEFINST(BRA,
 	0x740)
 
 DEFINST(BRX, 
-	"%pred BRX%lmt %cccopritarget",
+	"%pred BRX%lmt %cccopaitarget",
 	0x748)
 
 DEFINST(CAL, 
