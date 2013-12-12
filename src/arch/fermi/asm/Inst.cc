@@ -363,6 +363,14 @@ StringMap dc_map =
 	{ ".DC", 1 }
 };
 
+StringMap drain_map =
+{
+	{ ".DRAIN", 0 },
+	{ ".CAL", 1 },
+	{ ".PAUSE", 2 },
+	{ ".TRAP", 3 }
+};
+
 StringMap e_map =
 {
 	{ "", 0 },
@@ -2020,7 +2028,7 @@ void Inst::DumpToBufWithFmtReg(void)
 					}
 					else
 					{
-						if (std::abs(src.d) < 1e-4 || std::abs(src.d) > 1e9)
+						if ((std::abs(src.d) < 1e-4 || std::abs(src.d) > 1e9) && (src.d != 0))
 							ss << StringFmt("%.20e", src.d);
 						else
 							ss << StringFmt("%.20g", src.d);
@@ -3849,6 +3857,12 @@ void Inst::DumpToBufWithFmtCtrl(void)
 			else
 				ss << "       ";
 		}
+		else if (Common::Asm::IsToken(fmt_str, "drain", len))
+		{
+			unsigned v;
+			v = fmt.mmod & 0x3;
+			ss << drain_map.MapValue(v);
+		}
 		else if (Common::Asm::IsToken(fmt_str, "lmt", len))
 		{
 			unsigned v;
@@ -4069,6 +4083,13 @@ void Inst::DumpToBufWithFmtCtrl(void)
 				ss << "c[R" << src << "+0x" << std::hex << bank << "]"
 						<< "[0x" << offset << "]";
 			}
+		}
+		else if (Common::Asm::IsToken(fmt_str, "imm20", len))
+		{
+			unsigned i;
+			i = fmt.imm32 & 0xfffff;
+			if (i != 0)
+				ss << std::hex << "0x" << i;
 		}
 		else
 		{
