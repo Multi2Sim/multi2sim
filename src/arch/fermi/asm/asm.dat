@@ -594,6 +594,6 @@ DEFINST(CONT,
 //	0x7c8)
 
 DEFINST(BPT,
-	"BPT %cccop",
+	"BPT%drain %imm20",
 	0x7d0)
 
