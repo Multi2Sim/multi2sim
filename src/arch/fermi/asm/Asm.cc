@@ -96,7 +96,7 @@ void Asm::DisassembleBinary(std::string path)
 				(*it)->DumpHex(std::cout);
 				std::cout << "\n";
 			}
-			std::cout << "\t\t" << std::string(32, '.') << "\n\n\n";
+			std::cout << "\t\t" << std::string(11 + section->getName().length(), '.') << "\n\n\n";
 		}
 	}
 }
