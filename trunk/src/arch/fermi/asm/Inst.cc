@@ -1225,7 +1225,7 @@ void Inst::DumpToBufWithFmtReg(void)
 				ss << cop4_map.MapValue(v);
 			else
 			{
-				if (info->opcode == INST_FSETP)
+				if ((info->opcode == INST_FSETP) || (info->opcode == INST_DSETP))
 					ss << ".GT";
 			}
 		}
@@ -1660,7 +1660,9 @@ void Inst::DumpToBufWithFmtReg(void)
 				if (cat == 0 || cat == 1)  // floating-points
 				{
 					src2.i = fmt.src2 << 12;
-					if (std::abs(src2.f) < 1e-4 || std::abs(src2.f) > 1e9)
+					if (std::abs(src2.f) < 1e-4)
+						ss << StringFmt("%.19e", src2.f);
+					else if (std::abs(src2.f) > 1e9)
 						ss << StringFmt("%.20e", src2.f);
 					else
 						ss << StringFmt("%.20g", src2.f);
@@ -1775,7 +1777,7 @@ void Inst::DumpToBufWithFmtReg(void)
 		}
 		else if (Common::Asm::IsToken(fmt_str, "src2", len))
 		{
-			union {unsigned i; float f;} src;
+			union {unsigned i; float f; unsigned long long l; double d;} src;
 			unsigned mode;
 
 			src.i = fmt.src2;
@@ -1800,13 +1802,28 @@ void Inst::DumpToBufWithFmtReg(void)
 			else if (mode == 3)
 			{
 				unsigned cat = info->cat;
-				if (cat == 0 || cat == 1)  // floating-points
+				if (cat == 0)  // single-precision floating-points
 				{
 					src.i = fmt.src2 << 12;
 					if ((std::abs(src.f) < 1e-4) || (std::abs(src.f) > 1e9))
-						ss << StringFmt("%.20e", src.f);
+					{
+						if (info->opcode == INST_FMUL)
+							ss << StringFmt("%.19e", src.f);
+						else
+							ss << StringFmt("%.20e", src.f);
+					}
 					else
 						ss << StringFmt("%.20g", src.f);
+				}
+				else if (cat == 1)  // double-precision floating-points
+				{
+					src.l = (unsigned long long)fmt.src2 << 44;
+					if (std::abs(src.d) < 1e-4)
+						ss << StringFmt("%.11e", src.d);
+					else if (std::abs(src.d) > 1e9)
+						ss << StringFmt("%.20e", src.d);
+					else
+						ss << StringFmt("%.11g", src.d);
 				}
 				else if (cat == 3)  // integers
 				{
@@ -1926,7 +1943,7 @@ void Inst::DumpToBufWithFmtReg(void)
 		}
 		else if (Common::Asm::IsToken(fmt_str, "nasrc2", len))
 		{
-			union {unsigned i; float f;} src;
+			union {unsigned i; float f; unsigned long long l; double d;} src;
 			unsigned mode;
 			unsigned n, a;
 
@@ -1966,7 +1983,7 @@ void Inst::DumpToBufWithFmtReg(void)
 			else if (mode == 3)
 			{
 				unsigned cat = info->cat;
-				if (cat == 0 || cat == 1)  // floating-points
+				if (cat == 0)  // single-precision floating-points
 				{
 					src.i = fmt.src2 << 12;
 					if (std::isinf(src.f))
@@ -1980,9 +1997,33 @@ void Inst::DumpToBufWithFmtReg(void)
 					else
 					{
 						if (std::abs(src.f) < 1e-4 || std::abs(src.f) > 1e9)
-							ss << StringFmt("%.20e", src.f);
+						{
+							if (info->opcode == INST_FSETP)
+								ss << StringFmt("%.18e", src.f);
+							else
+								ss << StringFmt("%.20e", src.f);
+						}
 						else
 							ss << StringFmt("%.20g", src.f);
+					}
+				}
+				if (cat == 1)  // double-precision floating-points
+				{
+					src.l = (unsigned long long)fmt.src2 << 44;
+					if (std::isinf(src.d))
+					{
+						if (src.d > 0)
+							ss << "+";
+						else
+							ss << "-";
+						ss << "INF";
+					}
+					else
+					{
+						if (std::abs(src.d) < 1e-4 || std::abs(src.d) > 1e9)
+							ss << StringFmt("%.20e", src.d);
+						else
+							ss << StringFmt("%.20g", src.d);
 					}
 				}
 				else if (cat == 3)  // integers
@@ -2375,7 +2416,7 @@ void Inst::DumpToBufWithFmtImm(void)
 			if (n == 1)
 				ss << ".NEG";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "std::abs", len))
+		else if (Common::Asm::IsToken(fmt_str, "abs", len))
 		{
 			unsigned a;
 			a = (fmt.fmod0 >> 2) & 0x1;
