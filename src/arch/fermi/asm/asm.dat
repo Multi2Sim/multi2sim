@@ -530,7 +530,7 @@ DEFINST(BRA,
 	0x740)
 
 DEFINST(BRX, 
-	"%pred BRX%lmt %cccopaitarget",
+	"%pred BRX%lmt %cccopaitarget24",
 	0x748)
 
 DEFINST(CAL, 
