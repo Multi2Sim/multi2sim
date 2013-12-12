@@ -74,7 +74,7 @@ DEFINST(DSETP,
 	0x118)
 
 DEFINST(DFMA, 
-	"%pred DFMA%rnd%s %dst%cc, %n1src1, %src2, %n1src3", 
+	"%pred DFMA%rnd%s %dst%cc, %n1src1, %src2n1src3", 
 	0x120)
 
 DEFINST(DADD, 
