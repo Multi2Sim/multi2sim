@@ -29,7 +29,7 @@
  * Class 'FrmWarp'
  */
 
-#define FRM_WARP_SYNC_STACK_FrmZE  32
+#define FRM_WARP_SYNC_STACK_SIZE  32
 
 typedef struct
 {
@@ -41,7 +41,7 @@ typedef struct
 
 typedef struct
 {
-	FrmWarpSyncStackEntry entries[FRM_WARP_SYNC_STACK_FrmZE];
+	FrmWarpSyncStackEntry entries[FRM_WARP_SYNC_STACK_SIZE];
 } FrmWarpSyncStack;
 
 

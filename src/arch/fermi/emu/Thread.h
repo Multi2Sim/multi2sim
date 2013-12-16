@@ -20,7 +20,10 @@
 #ifndef ARCH_FERMI_EMU_THREAD_H
 #define ARCH_FERMI_EMU_THREAD_H
 
+#include <list>
+
 #include <arch/fermi/asm/Inst.h>
+#include <arch/fermi/asm/Wrapper.h>
 #include <mem-system/Memory.h>
 
 #include "Emu.h"
@@ -29,7 +32,6 @@
 namespace Frm
 {
 
-/// Forward declarations
 class Warp;
 class ThreadBlock;
 class Grid;
@@ -43,20 +45,26 @@ public:
 	virtual ~ThreadData();
 };
 
-
 class Thread
 {
 public:
-
-	/// Memory accesses types
-	union ThreadReg 
+	/// GPR value
+	union RegValue
 	{
 		unsigned u32;
 		int s32;
 		float f;
 	};
 
-	/// Used for local memory accesses
+	/// Memory accesses types
+	enum MemoryAccessType
+	{
+		MemoryAccessInvalid = 0,
+		MemoryAccessRead,
+		MemoryAccessWrite
+	};
+
+	/// Memory accesses attributes
 	struct MemoryAccess
 	{
 		MemoryAccessType type;
@@ -66,48 +74,33 @@ public:
 
 private:
 	// IDs
-	int id;  // global ID
+	int id;
+	int id_in_thread_block;
 	int id_in_warp;
-	int id_in_thread_block;  // local ID
 
-	// 3-dimensional IDs
-	int id_3d[3];  // global 3D IDs
-	int id_in_thread_block_3d[3];  // local 3D IDs
+	// 3D IDs
+	int id_3d[3];
+	int id_in_thread_block_3d[3];
 
-	// Warp, work-group, and Grid where it belongs
+	// Warp, thread-block, and grid where it belongs
 	Warp *warp;
 	ThreadBlock *thread_block;
 	Grid *grid;
 
-	// Thread state
-	ThreadReg gpr[128];  // General purpose registers
-	ThreadReg sr[InstSRegCount];  // Special registers
-	unsigned int pr[8];  // Predicate registers
+	// GPR
+	RegValue gpr[128];
 
-	/* This is a digest of the active mask updates for this thread. Every time
-	 * an instruction updates the active mask of a warp, this digest is updated
-	 * for active threads by XORing a random number common for the warp.
-	 * At the end, threads with different 'branch_digest' numbers can be considered
-	 * divergent threads. */
-	unsigned int branch_digest;
+	// Special registers
+	RegValue sr[FrmInstSRegCount];
 
-	/* Last global memory access */
-	unsigned int global_mem_access_addr;
-	unsigned int global_mem_access_size;
+	// Predicate registers
+	unsigned pr[8];
 
-	/* Last local memory access */
-	int lds_access_count;  /* Number of local memory access performed by last instruction */
-	unsigned int lds_access_addr[FRM_MAX_LOCAL_MEM_ACCESSES_PER_INST];
-	unsigned int lds_access_size[FRM_MAX_LOCAL_MEM_ACCESSES_PER_INST];
-	int lds_access_type[FRM_MAX_LOCAL_MEM_ACCESSES_PER_INST];  /* 0-none, 1-read, 2-write */
-
-
-	// Last LDS accesses by last instruction
-	int lds_access_count;  // Number of LDS access by last instruction
-	MemoryAccess lds_access[MaxLDSAccessesPerInst];
+	// Last global memory access
+	unsigned global_mem_access_addr;
+	unsigned global_mem_access_size;
 
 public:
-
 	/// Constructor
 	/// \param Warp Warp that it belongs to
 	/// \id Global 1D identifier of the thread
@@ -120,7 +113,7 @@ public:
 	unsigned ReadGPR(int gpr);
 
 	/// Set value of a GPR
-	/// \param gpr GPR idendifier
+	/// \param gpr GPR idenfifier
 	/// \param value Value given as an \a unsigned typed value
 	void WriteGPR(int gpr, unsigned value);
 
@@ -136,12 +129,9 @@ public:
 	int GetPred(int pr);
 
 	/// Set value of a predicate register
-	/// \param pr Predicate register idendifier
+	/// \param pr Predicate register identifier
 	/// \param value Value given as an \a unsigned typed value
 	void SetPred(int pr, unsigned value);
-
-	/// ?
-	void UpdateBranchDigest(long long inst_count, unsigned int inst_addr);
 };
 
 }  /* namespace Frm */

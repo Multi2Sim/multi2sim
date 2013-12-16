@@ -21,7 +21,22 @@ libemu_a_SOURCES = \
 	thread-block.h \
 	\
 	warp.c \
-	warp.h
+	warp.h \
+	\
+	Emu.cc \
+	Emu.h \
+	\
+	Grid.cc \
+	Grid.h \
+	\
+	Thread.cc \
+	Thread.h \
+	\
+	ThreadBlock.cc \
+	ThreadBlock.h \
+	\
+	Warp.cc \
+	Warp.h
 
 INCLUDES = @M2S_INCLUDES@
 
