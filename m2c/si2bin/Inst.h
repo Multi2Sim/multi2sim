@@ -23,14 +23,16 @@
 #include <iostream>
 #include <list>
 #include <memory>
+#include <vector>
 
 #include <arch/southern-islands/asm/Inst.h>
 
+#include "Arg.h"
 #include "Context.h"
 #include "Token.h"
 
 
-/* Forward declarations */
+// Forward declarations
 namespace llvm2si {
 class BasicBlock;
 }
@@ -39,7 +41,7 @@ class BasicBlock;
 namespace si2bin
 {
 
-/* Forward declarations */
+// Forward declarations
 class InstInfo;
 class Context;
 
@@ -58,10 +60,10 @@ class Inst
 	 * Inst::Encode(). */
 	SI::InstBytes bytes;
 
-	/* Invariable information related with this instruction */
+	// Invariable information related with this instruction
 	InstInfo *info;
 
-	/* List of arguments */
+	// List of arguments
 	std::vector<std::unique_ptr<Arg>> args;
 
 	/* For LLVM-to-SI back-end: basic block that the instruction
@@ -74,10 +76,10 @@ class Inst
 
 	Context *context;
 
-	/* Common construction */
+	// Common construction
 	void Initialize();
 
-	/* Construction based on opcode + argument list */
+	// Construction based on opcode + argument list
 	void Initialize(SI::InstOpcode opcode);
 	template<typename... Args> void Initialize(SI::InstOpcode opcode,
 			Arg *arg, Args&&... args)
@@ -85,8 +87,8 @@ class Inst
 		this->args.emplace_back(arg);
 		Initialize(opcode, args...);
 	}
-
-	/* Construction based on name + argument list */
+	
+	// Construction based on name + argument list
 	void Initialize(const std::string &name);
 	template<typename... Args> void Initialize(const std::string &name,
 			Arg *arg, Args&&... args)
@@ -97,6 +99,7 @@ class Inst
 
 	void EncodeArg(Arg *arg, Token *token);
 
+
 public:
 
 	/* Create a new instruction with the specified opcode, as defined in the
@@ -104,26 +107,37 @@ public:
 	 * will be freed automatically in the destructor of this class. */
 	template<typename... Args> Inst(SI::InstOpcode opcode, Args&&... args)
 			{ Initialize(opcode, args...); }
-
+	
 	/* Create a new instruction with one of the possible opcodes
 	 * corresponding to a name. The arguments contained in the list will be
 	 * adopted by the instruction and freed in the destructor. */
 	template<typename... Args> Inst(const std::string &name, Args&&... args)
 			{ Initialize(name, args...); }
 
-	/* Dump instruction in a human-ready way */
+	// Construction based on opcode + argument list as vector
+	Inst(SI::InstOpcode opcode, std::vector<std::unique_ptr<Arg>> &arg_list)
+	{
+		for (auto &arg : arg_list)
+		{
+			args.push_back(std::move(arg));
+		}
+		Initialize(opcode);
+	}
+	
+
+	// Dump instruction in a human-ready way
 	void Dump(std::ostream &os);
 	friend std::ostream &operator<<(std::ostream &os, Inst &inst) {
 		inst.Dump(os);
 		return os;
 	}
 
-	/* Getters/setters */
+	// Getters/setters
 	llvm2si::BasicBlock *GetBasicBlock() { return basic_block; }
 	void SetBasicBlock(llvm2si::BasicBlock *basic_block) {
 		this->basic_block = basic_block; }
 
-	/* Attach a comment to the instruction */
+	// Attach a comment to the instruction
 	void SetComment(const std::string &comment) { this->comment = comment; }
 
 	/* Encode the instruction, internally populating the 'bytes' and 'size'
@@ -131,11 +145,11 @@ public:
 	 * the instructions bytes. */
 	void Encode();
 
-	/* Write the instruction bytes into output stream. */
+	// Write the instruction bytes into output stream.
 	void Write(std::ostream &os);
 };
 
 
-}  /* namespace si2bin */
+}  // namespace si2bin
 
 #endif

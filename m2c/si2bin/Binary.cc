@@ -51,6 +51,8 @@ misc::StringMap OuterBinDeviceMap =
 	{ 0, 0 }
 };
 
+OuterBin::OuterBin(){}
+
 void OuterBin::Generate(std::ostream& os)
 {
 	InnerBin *inner_bin;

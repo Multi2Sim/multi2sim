@@ -17,9 +17,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <lib/cpp/ELFWriter.h>
 #include <lib/cpp/Misc.h>
 
 #include "Context.h"
+#include "Binary.h"
 #include "Token.h"
 
 
@@ -31,7 +33,7 @@ namespace si2bin
 void Si2binConfig::Register(CommandLine &command_line)
 {
 	// Option --si2bin <file>
-	command_line.RegisterString("--si2bin", path,
+	command_line.RegisterString("--si2bin", source_file,
 			"Creates an AMD Southern Islands GPU compliant ELF "
 			"from the assembly file provided in <arg> using the "
 			"internal Southern Islands Assembler.");
@@ -40,10 +42,12 @@ void Si2binConfig::Register(CommandLine &command_line)
 void Si2binConfig::Process()
 {
 	// Run Southern Islands Assembler
-	if (!path.empty())
+	if (!source_file.empty())
 	{
+		output_file = "output.bin";
+
 		Context *context = Context::getInstance();
-		context->Compile(path);
+		context->Compile(source_file, output_file);
 		exit(0);
 	}
 }
@@ -56,19 +60,19 @@ void Si2binConfig::Process()
 
 InstInfo::InstInfo(SI::InstInfo *info)
 {
-	/* Initialize */
+	// Initialize
 	this->info = info;
 	next = nullptr;
 	name = info->name;
 	opcode = info->opcode;
 
-	/* Create list of tokens from format string */
+	// Create list of tokens from format string
 	StringTokenize(info->fmt_str, str_tokens, ", ");
 	assert(str_tokens.size());
 	name = str_tokens[0];
 	for (unsigned i = 1; i < str_tokens.size(); i++)
 	{
-		/* Get token type */
+		// Get token type
 		bool error;
 		TokenType type = (TokenType) token_type_map.MapStringCase(
 				str_tokens[i], error);
@@ -76,7 +80,7 @@ InstInfo::InstInfo(SI::InstInfo *info)
 			panic("%s: invalid token string: %s",
 					__FUNCTION__, str_tokens[i].c_str());
 
-		/* Add token */
+		// Add token
 		tokens.emplace_back(new Token(type));
 	}
 }
@@ -88,23 +92,23 @@ InstInfo::InstInfo(SI::InstInfo *info)
  */
 
 
-/* Global context */
+// Global context
 std::unique_ptr<Context> Context::instance;
 
-/* Config */
+// Config
 Si2binConfig Context::config;
 
 Context::Context()
 {
-	/* Initialize hash table and list with instruction information. */
+	// Initialize hash table and list with instruction information.
 	for (int i = 0; i < SI::InstOpcodeCount; i++)
 	{
-		/* Instruction info from disassembler */
+		// Instruction info from disassembler
 		SI::InstInfo *inst_info = as.getInstInfo(i);
 		if (!inst_info->name || !inst_info->fmt_str)
 			continue;
 
-		/* Create info and add to array */
+		// Create info and add to array
 		InstInfo *info = new InstInfo(inst_info);
 		inst_info_array[i].reset(info);
 
@@ -141,74 +145,43 @@ Context *Context::getInstance()
 	return instance.get();
 }
 
-void Context::Compile(const std::string &path)
+void Context::Compile(const std::string &source_file, const std::string &output_file)
 {
+
+	FILE *f;
+	
+		// Open source file
+		yyin = fopen(source_file.c_str(), "r");
+		if (!yyin)
+			fatal("%s: cannot open input file", source_file.c_str());
+
+		// Open output file
+		f = fopen(output_file.c_str(), "wb");
+		if (!f)
+			fatal("%s: cannot output output file", output_file.c_str());
+		
+		std::ofstream of(output_file);
+
+		// Create output buffer
+		this->outer_bin = new OuterBin();
+
+		// Parse input
+		//yyparse();
+
+		// Close source file
+		fclose(yyin);
+		
+		// Dump output
+		this->outer_bin->Generate(of);
+		
+		of.close();
+
+		delete outer_bin;
 
 }
 
 
 #if 0
-void Si2binDestroy(Si2bin *self)
-{
-	/* Free list and hash table */
-	ArrayDeleteObjects(self->inst_info_array);
-	delete(self->inst_info_array);
-	delete(self->inst_info_table);
-
-	/* Symbol table */
-	HashTableDeleteObjects(self->symbol_table);
-	delete(self->symbol_table);
-
-	/* List of tasks */
-	ListDeleteObjects(self->task_list);
-	delete(self->task_list);
-}
-
-
-void Si2binCompile(Si2bin *self, struct list_t *source_file_list,
-		struct list_t *bin_file_list)
-{
-	int index;
-	char *output_file;
-	FILE *f;
-	
-	LIST_FOR_EACH(source_file_list, index)
-	{
-		/* Open source file */
-		si2bin_source_file = list_get(source_file_list, index);
-		si2bin_yyin = fopen(si2bin_source_file, "r");
-		if (!si2bin_yyin)
-			fatal("%s: cannot open input file", si2bin_source_file);
-
-		/* Open output file */
-		output_file = list_get(bin_file_list, index);
-		f = fopen(output_file, "wb");
-		if (!f)
-			fatal("%s: cannot output output file", output_file);
-
-		/* Create output buffer */
-		si2bin_outer_bin = si2bin_outer_bin_create();
-		bin_buffer = new(ELFWriterBuffer);
-
-		/* Parse input */
-		si2bin_yyparse();
-
-		/* Close source file */
-		fclose(si2bin_yyin);
-		
-		/* Dump output buffer and free it */
-		si2bin_outer_bin_generate(si2bin_outer_bin, bin_buffer);
-		
-		/* Write contents of buffer to file */
-		ELFWriterBufferWriteToFile(bin_buffer, f);
-
-		/* Free Outer ELF and bin_buffer */
-		si2bin_outer_bin_free(si2bin_outer_bin);
-		delete(bin_buffer);
-	}
-}
-
-
 void Si2binDumpSymbolTable(Si2bin *self, FILE *f)
 {
 	Si2binSymbol *symbol;
@@ -243,4 +216,4 @@ void Si2binDumpTaskList(Si2bin *self, FILE *f)
 }
 #endif
 
-}  /* namespace si2bin */
+}  // namespace si2bin

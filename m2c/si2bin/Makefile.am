@@ -17,9 +17,6 @@ libsi2bin_a_SOURCES = \
 	data.h \
 	data.c \
 	\
-	Context.cc \
-	Context.h \
-	\
 	inner-bin.c \
 	inner-bin.h \
 	\
@@ -56,12 +53,17 @@ libsi2bin_a_SOURCES = \
 	Arg.cc \
 	Arg.h \
 	\
+	Binary.cc \
+	Binary.h \
+	\
+	Context.cc \
+	Context.h \
+	\
 	InternalBinary.cc \
 	InternalBinary.h \
 	\
 	Inst.cc \
 	Inst.h \
-	\
 	\
 	Metadata.cc \
 	Metadata.h \
@@ -70,10 +72,7 @@ libsi2bin_a_SOURCES = \
 	Task.h \
 	\
 	Token.cc \
-	Token.h \
-	\
-	Binary.cc
-	Binary.h
+	Token.h
 
 LDADD = \
 	$(top_builddir)/src/arch/southern-islands/asm/libasm.a \
