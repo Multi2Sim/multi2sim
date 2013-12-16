@@ -1447,9 +1447,7 @@ void Inst::DumpToBufWithFmtReg(void)
 				{
 					unsigned bank = ((src2.i & 0x1) << 4) | (src2.i >> 16);
 					int offset = src2.i & 0xfffe;
-					ss << std::hex
-							<< "c[0x" << bank << "]"
-							<< "[0x" << offset << "]";
+					ss << StringFmt("c[0x%x][0x%x]", bank, offset);
 				}
 				else if (s2mode == 3)
 				{
@@ -1497,9 +1495,7 @@ void Inst::DumpToBufWithFmtReg(void)
 				{
 					unsigned bank = ((src2.i & 0x1) << 4) | (src2.i >> 16);
 					int offset = src2.i & 0xfffe;
-					ss << std::hex
-							<< "c[0x" << bank << "]"
-							<< "[0x" << offset << "]";
+					ss << StringFmt("c[0x%x][0x%x]", bank, offset);
 				}
 				else if (s2mode == 3)
 				{
@@ -1633,9 +1629,7 @@ void Inst::DumpToBufWithFmtReg(void)
 			{
 				unsigned bank = ((src2.i & 0x1) << 4) | (src2.i >> 16);
 				int offset = src2.i & 0xfffe;
-				ss << std::hex
-						<< "c[0x" << bank << "]"
-						<< "[0x" << offset << "]";
+				ss << StringFmt("c[0x%x][0x%x]", bank, offset);
 				ss << ", ";
 				ss << std::dec;
 				if (n == 1)
@@ -1658,9 +1652,7 @@ void Inst::DumpToBufWithFmtReg(void)
 				else
 					ss << "Z";
 				ss << ", ";
-				ss << std::hex
-						<< "c[0x" << bank << "]"
-						<< "[0x" << offset << "]";
+				ss << StringFmt("c[0x%x][0x%x]", bank, offset);
 			}
 			else if (mode == 3)
 			{
@@ -1725,9 +1717,7 @@ void Inst::DumpToBufWithFmtReg(void)
 			{
 				unsigned bank = ((src2.i & 0x1) << 4) | (src2.i >> 16);
 				int offset = src2.i & 0xfffe;
-				ss << std::hex
-						<< "c[0x" << bank << "]"
-						<< "[0x" << offset << "]";
+				ss << StringFmt("c[0x%x][0x%x]", bank, offset);
 				ss << ", ";
 				ss << std::dec;
 				if (n == 1)
@@ -1750,9 +1740,7 @@ void Inst::DumpToBufWithFmtReg(void)
 				else
 					ss << "Z";
 				ss << ", ";
-				ss << std::hex
-						<< "c[0x" << bank << "]"
-						<< "[0x" << offset << "]";
+				ss << StringFmt("c[0x%x][0x%x]", bank, offset);
 			}
 			else if (mode == 3)
 			{
@@ -1803,9 +1791,7 @@ void Inst::DumpToBufWithFmtReg(void)
 			{
 				unsigned bank = ((src.i & 0x1) << 4) | (src.i >> 16);
 				int offset = src.i & 0xfffe;
-				ss << std::hex
-						<< "c[0x" << bank << "]"
-						<< "[0x" << offset << "]";
+				ss << StringFmt("c[0x%x][0x%x]", bank, offset);
 			}
 			else if (mode == 3)
 			{
@@ -1869,9 +1855,7 @@ void Inst::DumpToBufWithFmtReg(void)
 				int offset = src.i & 0xfffe;
 				if (i == 1)
 					ss << "~";
-				ss << std::hex
-						<< "c[0x" << bank << "]"
-						<< "[0x" << offset << "]";
+				ss << StringFmt("c[0x%x][0x%x]", bank, offset);
 			}
 			else if (mode == 3)
 			{
@@ -1922,9 +1906,7 @@ void Inst::DumpToBufWithFmtReg(void)
 				int offset = src.i & 0xfffe;
 				if (n == 1)
 					ss << "-";
-				ss << std::hex
-						<< "c[0x" << bank << "]"
-						<< "[0x" << offset << "]";
+				ss << StringFmt("c[0x%x][0x%x]", bank, offset);
 			}
 			else if (mode == 3)
 			{
@@ -1982,9 +1964,7 @@ void Inst::DumpToBufWithFmtReg(void)
 					ss << "-";
 				if (a == 1)
 					ss << "|";
-				ss << std::hex
-						<< "c[0x" << bank << "]"
-						<< "[0x" << offset << "]";
+				ss << StringFmt("c[0x%x][0x%x]", bank, offset);
 				if (a == 1)
 					ss << "|";
 			}
@@ -2114,7 +2094,7 @@ void Inst::DumpToBufWithFmtReg(void)
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 1) & 0x1f;
-			ss << std::hex << "0x" << v;
+			ss << StringFmt("0x%x", v);
 		}
 		else if (Common::Asm::IsToken(fmt_str, "pat", len))
 		{
@@ -2386,15 +2366,15 @@ void Inst::DumpToBufWithFmtImm(void)
 			unsigned imm4;
 			imm32 = fmt.imm32;
 			imm4 = (fmt.fmod0 >> 1) & 0xf;
-			ss << std::hex << "0x" << imm32;
+			ss << StringFmt("0x%x", imm32);
 			if (imm4 != 15)
-				ss << std::hex << ", " << imm4;
+				ss << StringFmt(", 0x%x", imm4);
 		}
 		else if (Common::Asm::IsToken(fmt_str, "uimm32", len))
 		{
 			unsigned imm32;
 			imm32 = fmt.imm32;
-			ss << std::hex << "0x" << imm32;
+			ss << StringFmt("0x%x", imm32);
 		}
 		else if (Common::Asm::IsToken(fmt_str, "imm32", len))
 		{
@@ -2412,9 +2392,9 @@ void Inst::DumpToBufWithFmtImm(void)
 			else
 			{
 				if (s == 0)
-					ss << std::hex << "0x" << imm32.i;
+					ss << StringFmt("0x%x", imm32.i);
 				else
-					ss << std::hex << "-0x" << (~imm32.i + 1);
+					ss << StringFmt("-0x%x", ~imm32.i + 1);
 			}
 		}
 		else if (Common::Asm::IsToken(fmt_str, "neg", len))
@@ -2442,7 +2422,7 @@ void Inst::DumpToBufWithFmtImm(void)
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 1) & 0x1f;
-			ss << std::hex << "0x" << v;
+			ss << StringFmt("0x%x", v);
 		}
 		else
 		{
@@ -2638,7 +2618,7 @@ void Inst::DumpToBufWithFmtOther(void)
 			if (cccop != 15)
 				ss << cop_map.MapValue(cccop);
 			if (imm16 != 0)
-				ss << std::hex << ", 0x" << imm16;
+				ss << StringFmt(", 0x%x", imm16);
 		}
 		else if (Common::Asm::IsToken(fmt_str, "dstpdst", len))
 		{
@@ -2774,9 +2754,7 @@ void Inst::DumpToBufWithFmtOther(void)
 			{
 				unsigned bank = ((src.i & 0x1) << 4) | (src.i >> 16);
 				int offset = src.i & 0xfffe;
-				ss << std::hex
-						<< "c[0x" << bank << "]"
-						<< "[0x" << offset << "]";
+				ss << StringFmt("c[0x%x][0x%x]", bank, offset);
 			}
 			else if (mode == 3)
 			{
@@ -2822,9 +2800,7 @@ void Inst::DumpToBufWithFmtOther(void)
 			{
 				unsigned bank = ((src.i & 0x1) << 4) | (src.i >> 16);
 				int offset = src.i & 0xfffe;
-				ss << std::hex
-						<< "c[0x" << bank << "]"
-						<< "[0x" << offset << "]";
+				ss << StringFmt("c[0x%x][0x%x]", bank, offset);
 			}
 			else if (mode == 3)
 			{
@@ -2861,9 +2837,7 @@ void Inst::DumpToBufWithFmtOther(void)
 				int offset = src.i & 0xfffe;
 				if (i == 1)
 					ss << "~";
-				ss << std::hex
-						<< "c[0x" << bank << "]"
-						<< "[0x" << offset << "]";
+				ss << StringFmt("c[0x%x][0x%x]", bank, offset);
 			}
 			else if (mode == 3)
 			{
@@ -2921,9 +2895,7 @@ void Inst::DumpToBufWithFmtOther(void)
 					ss << "-";
 				if (a == 1)
 					ss << "|";
-				ss << std::hex
-						<< "c[0x" << bank << "]"
-						<< "[0x" << offset << "]";
+				ss << StringFmt("c[0x%x][0x%x]", bank, offset);
 				if (a == 1)
 					ss << "|";
 			}
@@ -2988,9 +2960,7 @@ void Inst::DumpToBufWithFmtOther(void)
 					ss << "-";
 				if (a == 1)
 					ss << "|";
-				ss << std::hex
-						<< "c[0x" << bank << "]"
-						<< "[0x" << offset << "]";
+				ss << StringFmt("c[0x%x][0x%x]", bank, offset);
 				if (b != 0)
 					ss << ".B" << b;
 				if (a == 1)
@@ -3057,9 +3027,7 @@ void Inst::DumpToBufWithFmtOther(void)
 					ss << "-";
 				if (a == 1)
 					ss << "|";
-				ss << std::hex
-						<< "c[0x" << bank << "]"
-						<< "[0x" << offset << "]";
+				ss << StringFmt("c[0x%x][0x%x]", bank, offset);
 				if (a == 1)
 					ss << "|";
 			}
@@ -3111,7 +3079,7 @@ void Inst::DumpToBufWithFmtOther(void)
 		{
 			unsigned i;
 			i = fmt.fmod1_src1;
-			ss << std::hex << i;
+			ss << StringFmt("0x%x", i);
 		}
 		else if (Common::Asm::IsToken(fmt_str, "psrc1", len))
 		{
@@ -3558,12 +3526,12 @@ void Inst::DumpToBufWithFmtLdSt(void)
 			{
 				ss << "R" << src << "+";
 				if (s == 0)
-					ss << std::hex << "0x" << off16;
+					ss << StringFmt("0x%x", off16);
 				else
-					ss << std::hex << "-0x" << (0x1000000 - off16);
+					ss << StringFmt("-0x%x", 0x1000000 - off16);
 			}
 			else if (src == 63 && off16 != 0)
-				ss << std::hex << "0x" << off16;
+				ss << StringFmt("0x%x", off16);
 			else if (src != 63 && off16 == 0)
 				ss << "R" << src;
 			else
@@ -3579,12 +3547,12 @@ void Inst::DumpToBufWithFmtLdSt(void)
 			{
 				ss << "R" << src;
 				if (s == 0)
-					ss << std::hex << "+0x" << off24;
+					ss << StringFmt("+0x%x", off24);
 				else
-					ss << std::hex << "+-0x" << (0x1000000 - off24);
+					ss << StringFmt("+-0x%x", 0x1000000 - off24);
 			}
 			else if (src == 63 && off24 != 0)
-				ss << std::hex << "0x" << off24;
+				ss << StringFmt("0x%x", off24);
 			else if (src != 63 && off24 == 0)
 				ss << "R" << src;
 			else
@@ -3603,7 +3571,7 @@ void Inst::DumpToBufWithFmtLdSt(void)
 				ss << "Z";
 			if (imm41 != 0 || imm42 != 0)
 			{
-				ss << std::hex << ", 0x" << imm41 << ", 0x" << imm42;
+				ss << StringFmt(", 0x%x, 0x%x", imm41, imm42);
 			}
 		}
 		else if (Common::Asm::IsToken(fmt_str, "src1", len))
@@ -3624,7 +3592,7 @@ void Inst::DumpToBufWithFmtLdSt(void)
 			i = (fmt.fmod1_srco >> 6) & 0xff;
 			if (src != 63)
 				ss << "R" << src << ", ";
-			ss << std::hex << "0x" << i;
+			ss << StringFmt("0x%x", i);
 		}
 		else if (Common::Asm::IsToken(fmt_str, "src2", len))
 		{
@@ -3651,7 +3619,7 @@ void Inst::DumpToBufWithFmtLdSt(void)
 					ss << "Z";
 			}
 			else
-				ss << std::hex << "0x" << src;
+				ss << StringFmt("0x%x", src);
 		}
 		else if (Common::Asm::IsToken(fmt_str, "src3", len))
 		{
@@ -3706,9 +3674,9 @@ void Inst::DumpToBufWithFmtLdSt(void)
 			if (v != 0)
 			{
 				if (s == 0)
-					ss << std::hex << "+0x" << v;
+					ss << StringFmt("+0x%x", v);
 				else
-					ss << std::hex << "-0x" << (0x10000 - v);
+					ss << StringFmt("-0x%x", 0x10000 - v);
 			}
 		}
 		else if (Common::Asm::IsToken(fmt_str, "off20", len))
@@ -3719,9 +3687,9 @@ void Inst::DumpToBufWithFmtLdSt(void)
 			if (v != 0)
 			{
 				if (s == 0)
-					ss << std::hex << "+0x" << v;
+					ss << StringFmt("+0x%x", v);
 				else
-					ss << std::hex << "-0x" << (0x100000 - v);
+					ss << StringFmt("-0x%x", 0x100000 - v);
 			}
 		}
 		else if (Common::Asm::IsToken(fmt_str, "off24", len))
@@ -3735,9 +3703,9 @@ void Inst::DumpToBufWithFmtLdSt(void)
 			if (v != 0)
 			{
 				if (s == 0)
-					ss << std::hex << "+0x" << v;
+					ss << StringFmt("+0x%x", v);
 				else
-					ss << std::hex << "-0x" << (0x1000000 - v);
+					ss << StringFmt("-0x%x", 0x1000000 - v);
 			}
 		}
 		else if (Common::Asm::IsToken(fmt_str, "off32", len))
@@ -3748,45 +3716,45 @@ void Inst::DumpToBufWithFmtLdSt(void)
 			else
 				v = fmt.fmod1_srco & 0xffffffff;
 			if (v > 0)
-				ss << std::hex << "+0x" << v;
+				ss << StringFmt("+0x%x", v);
 			else if (v < 0)
-				ss << std::hex << "+-0x" << (~v + 1);
+				ss << StringFmt("+-0x%x", ~v + 1);
 		}
 		else if (Common::Asm::IsToken(fmt_str, "imm41", len))
 		{
 			unsigned v;
 			v = (fmt.fmod1_srco >> 6) & 0xf;
-			ss << std::hex << "0x" << v;
+			ss << StringFmt("0x%x", v);
 		}
 		else if (Common::Asm::IsToken(fmt_str, "imm42", len))
 		{
 			unsigned v;
 			v = (fmt.fmod1_srco >> 10) & 0xf;
-			ss << std::hex << "0x" << v;
+			ss << StringFmt("0x%x", v);
 		}
 		else if (Common::Asm::IsToken(fmt_str, "imm43", len))
 		{
 			unsigned v;
 			v = (fmt.fmod1_srco >> 20) & 0xf;
-			ss << std::hex << "0x" << v;
+			ss << StringFmt("0x%x", v);
 		}
 		else if (Common::Asm::IsToken(fmt_str, "imm5", len))
 		{
 			unsigned v;
 			v = (fmt.fmod1_srco >> 14) & 0x1f;
-			ss << std::hex << "0x" << v;
+			ss << StringFmt("0x%x", v);
 		}
 		else if (Common::Asm::IsToken(fmt_str, "imm8", len))
 		{
 			unsigned v;
 			v = (fmt.fmod1_srco >> 6) & 0xff;
-			ss << std::hex << "0x" << v;
+			ss << StringFmt("0x%x", v);
 		}
 		else if (Common::Asm::IsToken(fmt_str, "bank", len))
 		{
 			unsigned v;
 			v = (fmt.fmod1_srco >> 16) & 0x1f;
-			ss << std::hex << "0x" << v;
+			ss << StringFmt("0x%x", v);
 		}
 		else if (Common::Asm::IsToken(fmt_str, "psrc", len))
 		{
@@ -3897,11 +3865,9 @@ void Inst::DumpToBufWithFmtCtrl(void)
 			if (cccop != 15)
 				ss << cccop_map.MapValue(cccop) << ", ";
 			if (mode == 0)
-				ss << std::hex << "0x" << target;
+				ss << StringFmt("0x%x", target);
 			else
-				ss << std::hex
-						<< "c[0x" << bank << "]"
-						<< "[0x" << offset << "]";
+				ss << StringFmt("c[0x%x][0x%x]", bank, offset);
 		}
 		else if (Common::Asm::IsToken(fmt_str, "cccopaitarget24", len))
 		{
@@ -3925,14 +3891,13 @@ void Inst::DumpToBufWithFmtCtrl(void)
 			{
 				ss << "R" << src << " ";
 				if (s == 0)
-					ss << std::hex << "0x" << target;
+					ss << StringFmt("0x%x", target);
 				else
-					ss << std::hex << "-0x" << (0x1000000 - target);
+					ss << StringFmt("-0x%x", 0x1000000 - target);
 			}
 			else
 			{
-				ss << "c[R" << src << "+0x" << std::hex << bank << "]"
-						<< "[0x" << offset << "]";
+				ss << StringFmt("c[R%d+0x%x][0x%x]", src, bank, offset);
 			}
 		}
 		else if (Common::Asm::IsToken(fmt_str, "cccoprtarget", len))
@@ -3953,16 +3918,13 @@ void Inst::DumpToBufWithFmtCtrl(void)
 				ss << cccop_map.MapValue(cccop) << ", ";
 			if (mode == 0)
 			{
-				ss << std::hex << "0x";
 				if (s == 0)
-					ss << target + addr + 8;
+					ss << StringFmt("0x%x", target + addr + 8);
 				else
-					ss << -(0x1000000 - target) + addr + 8;
+					ss << StringFmt("0x%x", -(0x1000000 - target) + addr + 8);
 			}
 			else
-				ss << std::hex
-						<< "c[0x" << bank << "]"
-						<< "[0x" << offset << "]";
+				ss << StringFmt("c[0x%x][0x%x]", bank, offset);
 		}
 		else if (Common::Asm::IsToken(fmt_str, "cccopsrc1", len))
 		{
@@ -4006,11 +3968,9 @@ void Inst::DumpToBufWithFmtCtrl(void)
 			bank = (fmt.imm32 >> 16) & 0x1f;
 			offset = fmt.imm32 & 0xffff;
 			if (mode == 0)
-				ss << std::hex << "0x" << target;
+				ss << StringFmt("0x%x", target);
 			else
-				ss << std::hex
-						<< "c[0x" << bank << "]"
-						<< "[0x" << offset << "]";
+				ss << StringFmt("c[0x%x][0x%x]", bank, offset);
 		}
 		else if (Common::Asm::IsToken(fmt_str, "aitarget", len))
 		{
@@ -4026,12 +3986,11 @@ void Inst::DumpToBufWithFmtCtrl(void)
 			if (mode == 0)
 			{
 				ss << "R" << src << " ";
-				ss << std::hex << "0x" << target;
+				ss << StringFmt("0x%x", target);
 			}
 			else
 			{
-				ss << "c[R" << src << "+0x" << std::hex << bank << "]"
-						<< "[0x" << offset << "]";
+				ss << StringFmt("c[R%d+0x%x][0x%x]", src, bank, offset);
 			}
 		}
 		else if (Common::Asm::IsToken(fmt_str, "rtarget", len))
@@ -4046,16 +4005,13 @@ void Inst::DumpToBufWithFmtCtrl(void)
 			offset = fmt.imm32 & 0xffff;
 			if (mode == 0)
 			{
-				ss << std::hex << "0x";
 				if (s == 0)
-					ss << target + addr + 8;
+					ss << StringFmt("0x%x", target + addr + 8);
 				else
-					ss << -(0x1000000 - target) + addr + 8;
+					ss << StringFmt("0x%x", -(0x1000000 - target) + addr + 8);
 			}
 			else
-				ss << std::hex
-						<< "c[0x" << bank << "]"
-						<< "[0x" << offset << "]";
+				ss << StringFmt("c[0x%x][0x%x]", bank, offset);
 		}
 		else if (Common::Asm::IsToken(fmt_str, "ritarget", len))
 		{
@@ -4072,16 +4028,14 @@ void Inst::DumpToBufWithFmtCtrl(void)
 			if (mode == 0)
 			{
 				ss << "R" << src << " ";
-				ss << std::hex << "0x";
 				if (s == 0)
-					ss << target + addr + 8;
+					ss << StringFmt("0x%x", target + addr + 8);
 				else
-					ss << -(0x1000000 - target) + addr + 8;
+					ss << StringFmt("0x%x", -(0x1000000 - target) + addr + 8);
 			}
 			else
 			{
-				ss << "c[R" << src << "+0x" << std::hex << bank << "]"
-						<< "[0x" << offset << "]";
+				ss << StringFmt("c[R%d+0x%x][0x%x]", src, bank, offset);
 			}
 		}
 		else if (Common::Asm::IsToken(fmt_str, "imm20", len))
@@ -4089,7 +4043,7 @@ void Inst::DumpToBufWithFmtCtrl(void)
 			unsigned i;
 			i = fmt.imm32 & 0xfffff;
 			if (i != 0)
-				ss << std::hex << "0x" << i;
+				ss << StringFmt("0x%x", i);
 		}
 		else
 		{
