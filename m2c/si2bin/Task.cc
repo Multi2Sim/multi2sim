@@ -17,16 +17,27 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <arch/southern-islands/asm/Inst.h>
 #include <lib/cpp/Misc.h>
 
 #include "Symbol.h"
 #include "Task.h"
 
 
+
 using namespace misc;
 
 namespace si2bin
 {
+
+Task::Task(int offset, Symbol *symbol, ELFWriter::Buffer *buffer)
+{
+	this->offset = offset;
+	this->symbol = symbol;
+	this->buffer = buffer;
+
+}
+
 
 void Task::Dump(std::ostream &os)
 {
@@ -37,19 +48,16 @@ void Task::Dump(std::ostream &os)
 
 void Task::Process()
 {
-	panic("%s: not implemented", __FUNCTION__);
-#if 0
 	SI::InstBytes *inst;
 
 	/* Check whether symbol is resolved */
-	if (!defined)
+	if (!symbol->GetDefined())
 		fatal("undefined label: %s", symbol->GetName().c_str());
 
 	/* Resolve label */
-	assert(InRange(offset, 0, si2bin_entry->text_section_buffer->offset - 4));
-	inst = si2bin_entry->text_section_buffer->ptr + self->offset;
-	inst->sopp.simm16 = (label->value - self->offset) / 4 - 1;
-#endif
+	assert((offset >= 0) && (buffer->getPosition() - 4));
+	inst = (SI::InstBytes *)((char *)(buffer->getStream().rdbuf()) + offset);
+	inst->sopp.simm16 = (symbol->GetValue() - offset) / 4 - 1;
 }
 
 }  /* namespace si2bin */

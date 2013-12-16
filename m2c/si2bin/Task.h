@@ -22,6 +22,8 @@
 
 #include <iostream>
 
+#include <lib/cpp/ELFWriter.h>
+
 
 namespace si2bin
 {
@@ -32,11 +34,16 @@ class Symbol;
 
 class Task
 {
+	friend class Context;
+
 	int offset;
 	Symbol *symbol;
+	
+	ELFWriter::Buffer *buffer;
+	
+	Task(int offset, Symbol *symbol, ELFWriter::Buffer *buffer);
+
 public:
-	Task(int offset, Symbol *symbol) : offset(offset),
-			symbol(symbol) { };
 
 	int GetOffset() { return offset; }
 	Symbol *GetSymbol() { return symbol; }
