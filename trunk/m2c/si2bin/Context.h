@@ -22,13 +22,20 @@
 
 #include <array>
 #include <string>
+#include <utility>
 #include <unordered_map>
 #include <vector>
 
 #include <arch/southern-islands/asm/Asm.h>
 #include <lib/cpp/CommandLine.h>
+#include <lib/cpp/ELFWriter.h>
 
+#include "Binary.h"
 #include "Inst.h"
+#include "InternalBinary.h"
+#include "Metadata.h"
+#include "Symbol.h"
+#include "Task.h"
 #include "Token.h"
 
 
@@ -37,7 +44,8 @@ namespace si2bin
 
 class Si2binConfig : public misc::CommandLineConfig
 {
-	std::string path;
+	std::string source_file;
+	std::string output_file;
 public:
 	void Register(misc::CommandLine &command_line);
 
@@ -50,24 +58,24 @@ class InstInfo
 	 * name. This points to the next one in the list. */
 	InstInfo *next;
 
-	/* Associated info structure in disassembler */
+	// Associated info structure in disassembler
 	SI::InstInfo *info;
 
-	/* List of tokens in format string */
+	// List of tokens in format string
 	std::vector<std::string> str_tokens;
 	std::vector<std::unique_ptr<Token>> tokens;
 
-	/* Instruction name. This string is equal to str_tokens[0] */
+	// Instruction name. This string is equal to str_tokens[0]
 	std::string name;
 
-	/* Instruction opcode as a unique integer identifier */
+	// Instruction opcode as a unique integer identifier
 	SI::InstOpcode opcode;
 
 public:
 
 	InstInfo(SI::InstInfo *info);
 
-	/* Getters */
+	// Getters
 
 	const std::string &getName() { return name; }
 	SI::InstOpcode getOpcode() { return opcode; }
@@ -97,21 +105,35 @@ public:
 
 class Context
 {
-	/* Information with all Southern Islands instructions */
+	// Information with all Southern Islands instructions
 	std::array<std::unique_ptr<InstInfo>, SI::InstOpcodeCount> inst_info_array;
 
 	/* Hash table indexed by an instruction name. Each entry contains a
 	 * linked list of instructions with that name. */
 	std::unordered_map<std::string, InstInfo *> inst_info_table;
+	
+	/* Hash table indexed by a symbol name. Each entry contains a
+	 * linked list of symbols with that name. */
+	std::unordered_map<std::string, std::unique_ptr<Symbol>> symbol_table;
 
-	/* Southern Islands disassembler */
+	std::vector<std::unique_ptr<Task>> task_list;
+
+	// Variables needed for parsing
+	OuterBin *outer_bin;
+	Metadata *metadata;
+	InnerBin *inner_bin;
+	InnerBinEntry *entry;
+	ELFWriter::Buffer *text_buffer;
+	int uniqueid;
+
+	// Southern Islands disassembler
 	SI::Asm as;
 
 	static std::unique_ptr<Context> instance;
 
 public:
 
-	/* Constructor */
+	// Constructor
 	Context();
 
 	/* Return instruction information associated with a given opcode, or
@@ -131,11 +153,50 @@ public:
 	
 	static Context *getInstance();
 	static Si2binConfig config;
+
+	//int yylex(void);
+	//int yyparse(void);
+	//void yyerror(const char *s);
+	//void yyerror_fmt(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
+
+	//int yylineno;
+	FILE *yyin;
+	char *yytext;
 	
-	void Compile(const std::string &path);
+
+	Symbol *getSymbol(const std::string &name){
+		auto it = symbol_table.find(name);
+		return it == symbol_table.end() ? nullptr : it->second.get();
+	}
+
+	Symbol *NewSymbol(const std::string &name){
+		symbol_table.insert(std::make_pair(name, std::unique_ptr<Symbol>(new Symbol(name))));
+		return symbol_table.at(name).get();
+	}
+
+	int GetUniqueId() { return this->uniqueid; }
+	OuterBin *GetOuterBin() { return this->outer_bin; }
+	Metadata *GetMetadata() { return this->metadata; }
+	InnerBin *GetInnerBin() { return this->inner_bin; }
+	InnerBinEntry *GetEntry() { return this->entry; }
+	ELFWriter::Buffer *GetTextBuffer() { return this->text_buffer; }
+	
+
+	void SetUniqueId(int uniqueid) { this->uniqueid = uniqueid; }
+	void SetOuterBin(OuterBin *outer_bin) { this->outer_bin = outer_bin; }
+	void SetMetadata(Metadata *metadata) { this->metadata = metadata; }
+	void SetInnerBin(InnerBin *inner_bin) { this->inner_bin = inner_bin; }
+	void SetEntry(InnerBinEntry *entry) { this->entry = entry; }
+	void SetTextBuffer(ELFWriter::Buffer *text_buffer) { this->text_buffer = text_buffer; }
+
+	void NewTask(int offset, Symbol *symbol, ELFWriter::Buffer *buffer){
+		task_list.push_back(std::unique_ptr<Task>(new Task(offset, symbol, buffer)));
+	}
+	
+	void Compile(const std::string &source_file, const std::string &output_file);
 };
 
 
-}  /* namespace si2bin */
+}  // namespace si2bin
 
 #endif

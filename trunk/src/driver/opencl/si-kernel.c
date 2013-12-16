@@ -1159,6 +1159,25 @@ static void opencl_si_create_buffer_desc(unsigned int base_addr,
 		elem_size = 4 * num_elems;
 		break;
 
+	case SIArgDouble:
+
+		num_format = SI_BUF_DESC_NUM_FMT_FLOAT;
+		switch (num_elems)
+		{
+		case 1:
+			data_format = SI_BUF_DESC_DATA_FMT_32_32;
+			break;
+
+		case 2:
+			data_format = SI_BUF_DESC_DATA_FMT_32_32_32_32;
+			break;
+
+		default:
+			fatal("%s: invalid number of double elements (%d)",
+					__FUNCTION__, num_elems);
+		}
+		elem_size = 8 * num_elems;
+		break;
 	case SIArgStruct:
 
 		num_format = SI_BUF_DESC_NUM_FMT_UINT;
