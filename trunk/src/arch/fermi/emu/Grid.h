@@ -23,9 +23,6 @@
 #include <list>
 #include <memory>
 
-#include <arch/fermi/asm/Arg.h>
-#include <arch/fermi/asm/Binary.h>
-
 #include "Emu.h"
 
 
@@ -35,17 +32,14 @@ namespace Frm
 class Emu;
 class ThreadBlock;
 
-
 enum GridState
-{	
+{
 	GridStateInvalid = 0,
-        GridPending = 0x1,
-        GridRunning = 0x2,
-        GridFinished = 0x4
+	GridPending = 0x1,
+    GridRunning = 0x2,
+    GridFinished = 0x4
 };
 
-
-/// ?
 class Grid
 {
 	// Emulator
@@ -53,85 +47,75 @@ class Grid
 
 	// ID
 	int id;
-	String name;
+
+	// Name
+	std::string name;
 
 	// State
 	GridState state;
 
-	// CUDA function
-	CUDAFunction *function;
+	// 3D counters
+	unsigned thread_count3[3];
+	unsigned thread_block_size3[3];
+	unsigned thread_block_count3[3];
 
-	// Number of register used by each thread
-	unsigned int num_gpr;
-
-	// 3D work size counters
-	int thread_count3[3];  // Total number of threads
-	int thread_block_size3[3];  // Number of threads in a thread block
-	int thread_block_count3[3];  // Number of thread blocks
-
-	// 1D work size counters. Each counter is equal to the multiplication
+	// 1D counters. Each counter is equal to the multiplication
 	// of each component in the corresponding 3D counter
-	int thread_count;
-	int thread_block_size;
+	unsigned thread_count;
+	unsigned thread_block_size;
+	unsigned thread_block_count;
 
-	// Array of thread blocks
-	int thread_block_count;
-	ThreadBlock **thread_blocks;
+	// GPR usage by a thread
+	unsigned gpr_count;
 
-	// Lists of thread blocks
+	// Thread blocks
 	std::list<std::unique_ptr<ThreadBlock>> pending_thread_blocks;
 	std::list<std::unique_ptr<ThreadBlock>> running_thread_blocks;
 	std::list<std::unique_ptr<ThreadBlock>> finished_thread_blocks;
 
-	// List of Grid
-	Grid *grid_list_prev;
-	Grid *grid_list_next;
-	Grid *pending_grid_list_prev;
-	Grid *pending_grid_list_next;
-	Grid *running_grid_list_prev;
-	Grid *running_grid_list_next;
-	Grid *finished_grid_list_prev;
-	Grid *finished_grid_list_next;
+	// Iterators
+	std::list<Grid *>::iterator grid_list_iter;
+	std::list<Grid *>::iterator pending_grid_list_iter;
+	std::list<Grid *>::iterator running_grid_list_iter;
+	std::list<Grid *>::iterator finished_grid_list_iter;
 
+	// Instruction buffer
 	void *inst_buffer;
-	unsigned int inst_buffer_size;
+	unsigned inst_buffer_size;
 
-	// Local memory top to assign to local arguments.
-	// Initially it is equal to the size of local variables in 
-	// kernel function.
-	unsigned local_mem_top;
+	// Shared memory top pointer
+	unsigned shared_mem_top;
 
 public:
-
 	/// Constructor
-	Grid(Emu *emu, CUDAFunction *function);
+	Grid(Emu *emu);
 
-	/// Dump the state of the Grid in a plain-text format into an output
+	/// Dump the state of the grid in a plain-text format into an output
 	/// stream.
-	void Dump(std::ostream &os) const;
+	void Dump(std::ostream &os = std::cout) const;
 
-	/// Short-hand notation for dumping ND-range.
+	/// Short-hand notation for dumping grid.
 	friend std::ostream &operator<<(std::ostream &os,
 			const Grid &grid) {
 		grid.Dump(os);
 		return os;
 	}
 
-	/// Getters
-	///
-	/// Get local memory top address
-	unsigned getLocalMemTop() const { return local_mem_top; }
+	// Getters
+	//
+	// Get shared memory top address
+	unsigned getSharedMemTop() const { return shared_mem_top; }
 
-	/// Setters
-	///
-	/// Set new size parameters of the Grid before it gets launched.
+	// Setters
+	//
+
+	/// Set new sizes of a grid before it is launched.
 	///
 	/// \param global_size Array of 3 elements
 	///        representing the global size.
 	/// \param local_size Array of 3 elements
 	///        representing the local size.
 	void SetupSize(unsigned *global_size, unsigned *local_size);
-
 };
 
 }  // namespace
