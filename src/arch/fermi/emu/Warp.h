@@ -20,26 +20,22 @@
 #ifndef ARCH_FERMI_EMU_WARP_H
 #define ARCH_FERMI_EMU_WARP_H
 
+#include <list>
 #include <memory>
 #include <vector>
 
 #include <arch/fermi/asm/Inst.h>
 
+
 namespace Frm
 {
 
-// Macros for special registers
-#define Frm_M0 124
-#define Frm_VCC 106
-#define Frm_VCCZ 251
-#define Frm_EXEC 126
-#define Frm_EXECZ 252
-#define Frm_SCC 253
-
+class Grid;
 class ThreadBlock;
 class Thread;
+struct FrmInstWrap;
 
-/// Polymorphic class used to attach data to a work-group. The timing simulator
+/// Polymorphic class used to attach data to a warp. The timing simulator
 /// can use an object derived from this class, instead of adding fields to the
 /// Warp class.
 class WarpData
@@ -48,22 +44,33 @@ public:
 	virtual ~WarpData();
 };
 
-
-/// This class represents a warp, the FrmMD execution unit. In AMD, a
-/// warp is composed of 64 threads that fetch one instruction and
-/// execute it multiple times.
 class Warp
 {
-	// Global warp identifier
+	struct SyncStackEntry
+	{
+		unsigned int reconv_pc;
+		unsigned int next_path_pc;
+		unsigned int active_thread_mask;
+	};
+
+	struct SyncStack
+	{
+		SyncStackEntry entries[32];
+	};
+
+	// IDs
 	int id;
 	int id_in_thread_block;
 
 	// Name
-	String name;
+	std::string name;
 
 	// grid and thread-block it belongs to
 	Grid *grid;
 	ThreadBlock *thread_block;
+
+	// threads
+	unsigned thread_count;
 
 	// Additional data added by timing simulator
 	std::unique_ptr<WarpData> data;
@@ -74,160 +81,90 @@ class Warp
 	int inst_size;
 
 	// Current instruction
-	InstWrap *inst;
+	FrmInstWrap *inst;
 
 	// Starting/current position in buffer 
-	unsigned long long int *inst_buffer;
-	unsigned int inst_buffer_index;
-	unsigned int inst_buffer_size;
+	unsigned long long *inst_buffer;
+	unsigned inst_buffer_index;
+	unsigned inst_buffer_size;
 
 	// Sync stack 
-	WarpSyncStackEntry new_entry;
-	WarpSyncStack sync_stack;
+	SyncStackEntry new_entry;
+	SyncStack sync_stack;
 	int sync_stack_top;
 	int sync_stack_pushed;
 	int sync_stack_popped;
 	unsigned int divergent;
 	unsigned int taken;
 
-	unsigned int at_barrier_thread_count;
-	unsigned int finished_thread_count;
-
 	// Predicate mask 
-	struct bit_map_t *pred;  // thread_count elements 
+	struct bit_map_t *pred;
 
 	// Flags updated during instruction execution 
-	unsigned int vector_mem_read : 1;
-	unsigned int vector_mem_write : 1;
-	unsigned int scalar_mem_read : 1;
-	unsigned int lds_read : 1;
-	unsigned int lds_write : 1;
-	unsigned int mem_wait : 1;
-	unsigned int at_barrier : 1;
-	unsigned int barrier : 1;
-	unsigned int finished : 1;
-	unsigned int vector_mem_glc : 1;
+	int active_mask_push;
+	int active_mask_pop;
+	unsigned at_barrier_thread_count;
+	unsigned finished_thread_count;
 
-	// Loop counters 
-	// FIXME: Include this as part of the stack to handle nested loops 
-	int loop_depth;
-	int loop_max_trip_count;
-	int loop_trip_count;
-	int loop_start;
-	int loop_step;
-	int loop_index;
-
-	// Flags updated during instruction execution 
-	unsigned int global_mem_read : 1;
-	unsigned int global_mem_write : 1;
-	unsigned int local_mem_read : 1;
-	unsigned int local_mem_write : 1;
-	unsigned int pred_mask_update : 1;
-	unsigned int push_before_done : 1;  // Indicates whether the stack has been pushed after PRED_SET* instr. 
-	unsigned int active_mask_update : 1;
-	int active_mask_push;  // Number of entries the stack was pushed 
-	int active_mask_pop;  // Number of entries the stack was popped 
-
-	// Linked lists 
-	std::list<Warp *> running_list_next;
-	std::list<Warp *> running_list_prev;
-	std::list<Warp *> barrier_list_next;
-	std::list<Warp *> barrier_list_prev;
-	std::list<Warp *> finished_list_next;
-	std::list<Warp *> finished_list_prev;
+	// iterators
+	std::list<Warp *>::iterator running_list_iter;
+	std::list<Warp *>::iterator barrier_list_iter;
+	std::list<Warp *>::iterator finished_list_iter;
 
 	// To measure simulation performance 
-	long long emu_inst_count;  // Total emulated instructions 
+	long long emu_inst_count;
 	long long emu_time_start;
 	long long emu_time_end;
 
-
-	// Fields introduced for architectural simulation 
-	int id_in_sm;
-	int alu_engine_in_flight;  // Number of in-flight uops in ALU engine 
-	long long sched_when;  // GPU cycle when warp was last scheduled 
-	int uop_id_counter;
-	struct frm_warp_inst_queue_t *warp_inst_queue;
-	struct frm_warp_inst_queue_entry_t *warp_inst_queue_entry;
-
-
-	// Periodic report - used by architectural simulation 
-	FILE *periodic_report_file;  // File where report is dumped 
-	long long periodic_report_cycle;  // Last cycle when periodic report was updated 
-	int periodic_report_inst_count;  // Number of instructions in this interval 
-	int periodic_report_local_mem_accesses;  // Number of local memory accesses in this interval 
-	int periodic_report_global_mem_writes;  // Number of global memory writes in this interval 
-	int periodic_report_global_mem_reads;  // Number of global memory reads in this interval 
-
-
 	// Statistics 
-	long long inst_count;  // Total number of instructions 
-	long long global_mem_inst_count;  // Instructions accessing global memory 
-	long long local_mem_inst_count;  // Instructions accessing local memory 
+	long long inst_count;
+	long long global_mem_inst_count;
+	long long shared_mem_inst_count;
 
+	// Iterator to the first thread in the warp, pointing to a
+	// thread in the list of thread from the warp. Threads
+	// within the warp can be conveniently accessed with the []
+	// operator on this iterator.
+	std::vector<std::unique_ptr<Thread>>::iterator threads_begin;
+
+	// Past-the end iterator to the list of threads forming the
+	// thread-block. This iterator could be an iterator to valid thread in
+	// the array of threads of the thread-block (pointing to the first
+	// thread that doesn't belong to this warp), or it could be a
+	// past-the-end iterator to the thread-block's thread list.
+	std::vector<std::unique_ptr<Thread>>::iterator threads_end;
 
 public:
-
 	/// Constructor
 	///
 	/// \param thread_block Thead-block that the warp belongs to
 	/// \param id Global 1D identifier of the warp
 	Warp(ThreadBlock *thread_block, int id);
 
-	/// Getters
-	///
-	/// Return the global warp 1D identifier
+	// Getters
+	//
+	// Return the global warp 1D ID
 	int getId() const { return id; }
 
-	/// Return PC of warp
+	// Return PC
 	unsigned getPC() const { return pc; }
 
-	/// Return content in scalar register as unsigned integer
-	unsigned getSregUint(int sreg_id) const;
-
-	/// Return pointer to a workitem inside this warp
+	// Return pointer to a thread inside this warp
 	Thread *getThread(int id_in_warp) {
 		assert(id_in_warp >= 0 && id_in_warp < (int) thread_count);
 		return threads_begin[id_in_warp].get();
 	}
 
-	/// Setters
-	///
-	/// Set PC
+	// Setters
+	//
+	// Set PC
 	void setPC(unsigned pc) { this->pc = pc; }
 
-	/// Increase PC
+	// Increase PC
 	void incPC(int increment) { pc += increment; }
 
-	/// Flag set during instruction emulation indicating that there was a
-	/// barrier instruction
-	void setBarrierInst(bool barrier_inst) { this->barrier_inst = barrier_inst; }
-
-	/// Flag set during instruction emulation to indicate that the
-	/// instruction performed a scalar memory read operation.
-	void setScalarMemRead(bool scalar_mem_read) { this->scalar_mem_read = scalar_mem_read; }
-
-	/// Flag set during instruction emulation to indicate that the
-	/// instruction performed a memory wait operation.
-	void setMemWait(bool mem_wait) { this->mem_wait = mem_wait; }
-
-	/// Flag set during instruction emulation to indicate that the warp
-	/// got stalled at a barrier.
-	void setAtBarrier(bool at_barrier) { this->at_barrier = at_barrier; }
-
-	/// Flag set during instruction emulation to indicate that the warp
-	/// finished execution.
-	void setFinished(bool finished) { this->finished = finished; }
-
-	/// Flag set during instruction emulation.
-	void setVectorMemGlobalCoherency(bool vector_mem_global_coherency) 
-		{ this->vector_mem_global_coherency = vector_mem_global_coherency; }
-
-	/// Set scalar register as an unsigned int
-	void setSregUint(int id, unsigned int value);
-
 	/// Dump warp in a human-readable format into output stream \a os
-	void Dump(std::ostream &os) const;
+	void Dump(std::ostream &os = std::cout) const;
 
 	/// Dump warp into output stream
 	friend std::ostream &operator<<(std::ostream &os,
@@ -250,11 +187,6 @@ public:
 	/// warp will take ownership from.
 	void setData(WarpData *data) { this->data.reset(data); }
 
-	/// Set value of a scalar register
-	/// \param sreg Scalar register identifier
-	/// \param value given as an \a unsigned typed value
-	void setSReg(int sreg, unsigned value);
-
 	/// Return an iterator to the first thread in the warp. The
 	/// threads can be conveniently traversed with a loop using these
 	/// iterators. This is an example of how to dump all threads in the
@@ -274,7 +206,6 @@ public:
 		return threads_end;
 	}
 };
-
 
 }  // namespace Frm
 
