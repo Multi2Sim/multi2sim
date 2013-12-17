@@ -25,6 +25,7 @@
 #include <lib/util/bit-map.h>
 #include <lib/util/debug.h>
 #include <lib/util/misc.h>
+#include <lib/util/string.h>
 
 #include "core.h"
 #include "cpu.h"
@@ -221,8 +222,8 @@ void X86ThreadSchedule(X86Thread *self)
 			 * node, allot a new quantum and return */
 			if (self->mapped_list_count == 1)
 			{
-				X86ContextDebug("#%lld ctx %d only 1 thread mapped\n",
-					asTiming(cpu)->cycle, ctx->pid);
+				X86ContextDebug("\tonly ctx %d mapped\n",
+					ctx->pid);
 				ctx->alloc_cycle = asTiming(cpu)->cycle;
 				return;
 			}
@@ -232,8 +233,13 @@ void X86ThreadSchedule(X86Thread *self)
 			/* Find a running context mapped to the same node */
 			DOUBLE_LINKED_LIST_FOR_EACH(self, mapped, tmp_ctx)
 			{
-				X86ContextDebug("#%lld tmp ctx %d\n",
-					asTiming(cpu)->cycle, tmp_ctx->pid);
+				char state_str[MAX_STRING_SIZE];
+				str_map_flags(&x86_context_state_map, 
+					tmp_ctx->state, state_str, 
+					sizeof state_str);
+				X86ContextDebug("\ttmp ctx %d (%s)\n",
+					tmp_ctx->pid, state_str);
+
 				if (tmp_ctx != ctx && 
 					X86ContextGetState(tmp_ctx, X86ContextRunning) &&
 					tmp_ctx->sched_priority >= ctx->sched_priority)
@@ -268,10 +274,14 @@ void X86ThreadSchedule(X86Thread *self)
 			/* Find a running context mapped to the same node */
 			DOUBLE_LINKED_LIST_FOR_EACH(self, mapped, tmp_ctx)
 			{
+				char state_str[MAX_STRING_SIZE];
+				str_map_flags(&x86_context_state_map, 
+					tmp_ctx->state, state_str, 
+					sizeof state_str);
 				X86ContextDebug("\tctx %d is candidate\n",
 					tmp_ctx->pid);
-				X86ContextDebug("\tpriority %d\n",
-					tmp_ctx->sched_priority);
+				X86ContextDebug("\tpriority %d, state %s\n",
+					tmp_ctx->sched_priority, state_str);
 
 				if (tmp_ctx != ctx && 
 					X86ContextGetState(tmp_ctx, X86ContextRunning) &&
@@ -295,11 +305,21 @@ void X86ThreadSchedule(X86Thread *self)
 			 * interrupted before its quantum expires and there
 			 * are only threads of equal priority to run. */
 			if (found)
+			{
 				X86ThreadEvictContextSignal(self, ctx);
+				X86ContextDebug("\tctx %d being evicted\n",
+					ctx->pid);
+			}
+			else
+			{
+				X86ContextDebug("\tctx %d continuing\n",
+					ctx->pid);
+			}
 		}
 	}
 
-	/* Actions for mapped contexts, other than the allocated context if any. */
+	/* Actions for mapped contexts, other than the allocated 
+	 * context if any. */
 	DOUBLE_LINKED_LIST_FOR_EACH(self, mapped, ctx)
 	{
 		/* Ignore the currently allocated context */

@@ -45,7 +45,6 @@ CLASS_BEGIN(SIEmu, Emu)
 	unsigned int video_mem_top;
 	struct mem_t *shared_mem; /* shared with the CPU */
 	struct mem_t *global_mem; /* will point to video_mem or shared_mem */
-	int address_space_index;
 
 	/* Current ND-Range */
 	SINDRange *ndrange;

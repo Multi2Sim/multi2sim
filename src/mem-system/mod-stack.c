@@ -64,8 +64,14 @@ void mod_stack_return(struct mod_stack_t *stack)
 	mod_stack_wakeup_stack(stack);
 
 	/* Execute the callback if one was provided */
+	/* FIXME When FIND_AND_LOCK fails, mod_stack_return is called,
+	 * which invokes this callback.  The callback should only be
+	 * invoked upon successful completion.  For now, just inlined 
+	 * callback call into nmoesi-protocol.c where needed */
+	/*
 	if (stack->callback_function)
 		stack->callback_function(stack->callback_data);
+	*/
 
 	/* Free */
 	free(stack);

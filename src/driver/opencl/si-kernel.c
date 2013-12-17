@@ -924,7 +924,7 @@ void opencl_si_kernel_setup_ndrange_args(struct opencl_si_kernel_t *kernel,
 			/* UAV */
 			case SIArgUAV:
 			{
-				opencl_debug("(%x0x)", arg->pointer.device_ptr);
+				opencl_debug("(0x%x)", arg->pointer.device_ptr);
 				/* Create descriptor for argument */
 				opencl_si_create_buffer_desc(
 					arg->pointer.device_ptr,
@@ -1430,6 +1430,11 @@ void opencl_si_ndrange_setup_mmu(SINDRange *ndrange, MMU *cpu_mmu,
 {
 	SIArg *arg;
 
+	/* With our SVM implementation, the ndrange ASID should match
+	 * the cpu context ASID.  However, this is not a general requirement
+	 * so we leave the option of passing the cpu ASID as a parameter */
+	assert(ndrange->address_space_index == cpu_address_space_index);
+
 	/* Map constant buffers to MMU */
 	MMUCopyTranslation(gpu_mmu, ndrange->address_space_index, cpu_mmu, 
 		cpu_address_space_index, constant_buffers_ptr, 
@@ -1462,9 +1467,11 @@ void opencl_si_ndrange_setup_mmu(SINDRange *ndrange, MMU *cpu_mmu,
 			/* UAV */
 			case SIArgUAV:
 			{
-				opencl_debug("\tmapping uav %d (addr 0x%x)\n",
+				opencl_debug("\tmapping uav %d (addr 0x%x, "
+					"size %u) to GPU asid %d\n",
 					arg->pointer.buffer_num, 
-					arg->pointer.device_ptr);
+					arg->pointer.device_ptr, arg->size,
+					ndrange->address_space_index);
 				MMUCopyTranslation(gpu_mmu, 
 					ndrange->address_space_index, 
 					cpu_mmu, cpu_address_space_index, 
@@ -1568,6 +1575,7 @@ void opencl_si_kernel_flush_ndrange_buffers(SINDRange *ndrange, SIGpu *gpu,
 						arg->pointer.device_ptr, 
 						ndrange->id, 
 						ndrange->address_space_index);
+
 					assert(!(arg->pointer.device_ptr %
 						mmu->page_size));
 

@@ -174,6 +174,11 @@ static struct mmu_page_t *MMUGetPage(MMU *self, int address_space_index,
 	/* Not found */
 	if (!page)
 	{
+		/* If page is not found, it will be allocated.  If the MMU
+		 * is in read-only mode, it is likely that the simulator is
+		 * using a unified memory configuration and the GPU is trying
+		 * to access a page that has not been initialized by its 
+		 * driver */
 		if (self->read_only)
 		{
 			if (self->report_file)
@@ -350,6 +355,7 @@ void MMUCopyTranslation(MMU *self, int self_address_space_index, MMU *other,
 		/* Insert in page list (may need to insert empty pages
 		 * in the list first) */
 		phy_index = other_page->phy_addr >> self->log_page_size;
+
 		if (list_count(self->page_list) <= phy_index)
 		{
 			/* Page doesn't exist yet.  Create NULL pages

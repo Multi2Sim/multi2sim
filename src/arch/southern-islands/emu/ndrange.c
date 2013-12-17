@@ -41,7 +41,6 @@ void SINDRangeCreate(SINDRange *self, SIEmu *emu)
 	self->emu = emu;
 	self->id = emu->ndrange_count++;
 	self->stage = STAGE_CL;
-	self->address_space_index = emu->address_space_index++;
 
 	self->arg_list = new(List);
 
