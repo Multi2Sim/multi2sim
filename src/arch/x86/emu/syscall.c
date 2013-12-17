@@ -3469,6 +3469,8 @@ static int x86_sys_sched_setparam_impl(X86Context *ctx)
 
 	unsigned int param_ptr;
 
+	int max_priority = 99;
+	int min_priority = 0;
 	int sched_priority;
 	int pid;
 
@@ -3478,6 +3480,36 @@ static int x86_sys_sched_setparam_impl(X86Context *ctx)
 	x86_sys_debug("  param_ptr=0x%x\n", param_ptr);
 	mem_read(mem, param_ptr, 4, &sched_priority);
 	x86_sys_debug("    param.sched_priority=%d\n", sched_priority);
+
+	/* Currently only works when pid matches calling context */
+	assert(pid == ctx->pid);
+
+	switch (ctx->sched_policy)
+	{
+
+	case SCHED_OTHER:
+		max_priority = 0;
+		min_priority = 0;
+
+	case SCHED_FIFO:
+		max_priority = 99;
+		min_priority = 1;
+
+	case SCHED_RR:
+		max_priority = 99;
+		min_priority = 1;
+
+	default:
+		fatal("%s: policy not supported.\n%s",
+			__FUNCTION__, err_x86_sys_note);
+	}
+
+	if (sched_priority < min_priority || sched_priority > max_priority)
+	{
+		fatal("%s: invalid scheduling priority supplied (%d: "
+			"min = %d, max = %d)\n", __FUNCTION__,
+			sched_priority, min_priority, max_priority);
+	}
 
 	/* Ignore system call */
 	return 0;
@@ -3496,18 +3528,23 @@ static int x86_sys_sched_getparam_impl(X86Context *ctx)
 	struct mem_t *mem = ctx->mem;
 
 	unsigned int param_ptr;
-	unsigned int zero = 0;
 
 	int pid;
-
+	
 	/* Arguments */
 	pid = regs->ebx;
 	param_ptr = regs->ecx;
 	x86_sys_debug("  pid=%d\n", pid);
 	x86_sys_debug("  param_ptr=0x%x\n", param_ptr);
 
-	/* Return 0 in param_ptr->sched_priority */
-	mem_write(mem, param_ptr, 4, &zero);
+	/* Currently only works when pid matches calling context */
+	assert(ctx->pid == pid);
+
+	x86_sys_debug("  returning sched priority %d\n", ctx->sched_priority);
+
+	/* Return scheduling priority */
+	mem_write(mem, param_ptr, 4, &ctx->sched_priority);
+
 	return 0;
 }
 
@@ -3599,8 +3636,13 @@ static int x86_sys_sched_getscheduler_impl(X86Context *ctx)
 	pid = regs->ebx;
 	x86_sys_debug("  pid=%d\n", pid);
 
+	/* Currently only works when pid matches calling context */
+	assert(pid == ctx->pid);
+
+	x86_sys_debug("  returning scheduling policy %d\n", ctx->sched_policy);
+
 	/* System call ignored */
-	return 0;
+	return ctx->sched_policy;
 }
 
 

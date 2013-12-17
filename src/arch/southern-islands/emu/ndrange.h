@@ -114,7 +114,8 @@ CLASS_BEGIN(SINDRange, Object)
 	 * kernel function. */
 	unsigned int local_mem_top;
 
-	/* Each ND-Range has it's own address space */
+	/* Each ND-Range has the same address space ID as the
+	 * context to which it belongs */
 	int address_space_index;
 
 	/* A non-zero value indicates that a flush of the caches

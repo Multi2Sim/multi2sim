@@ -120,7 +120,6 @@ struct opencl_x86_device_t
 	struct opencl_x86_device_sync_t work_ready;
 	int core_done_count;
 
-	int set_queue_affinity;
 	int num_cores;
 	pthread_t *threads;
 
