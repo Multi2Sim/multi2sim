@@ -493,7 +493,6 @@ struct opencl_x86_device_t *opencl_x86_device_create(
 	opencl_x86_device_sync_init(&device->cores_done);
 	device->exec = NULL;
 	device->core_done_count = 0;
-	device->set_queue_affinity = 0;
 
 	/* Initialize parent device */
 	parent->address_bits = 8 * sizeof (void *);

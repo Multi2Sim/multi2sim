@@ -454,15 +454,13 @@ void opencl_x86_ndrange_run_partial(struct opencl_x86_ndrange_t *ndrange,
 	for (int i = 0; i < 3; i++)
 		exec->num_groups *= work_group_count[i];
 
-	/* we can use the queue thread a a worker thread, but we should set it's affinity */
-	if (!device->set_queue_affinity)
-	{
-		cpu_set_t cpu_set;
-		CPU_ZERO(&cpu_set);
-		CPU_SET(device->num_cores - 1, &cpu_set);
-		pthread_setaffinity_np(pthread_self(), sizeof cpu_set, &cpu_set);
-		device->set_queue_affinity = 1;
-	}
+	/* With a fused device, the thread that is generated to 
+	 * execute the nd-range may be new each time.  To ensure proper 
+	 * execution, we should always set its affinity. */
+	cpu_set_t cpu_set;
+	CPU_ZERO(&cpu_set);
+	CPU_SET(device->num_cores - 1, &cpu_set);
+	pthread_setaffinity_np(pthread_self(), sizeof cpu_set, &cpu_set);
 
 	device->exec = exec;
 	opencl_x86_device_sync_post(&device->work_ready);

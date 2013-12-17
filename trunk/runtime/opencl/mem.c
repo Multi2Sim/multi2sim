@@ -132,6 +132,7 @@ cl_mem clCreateBuffer(
 	/* Allocate the memory object in the device. */
 	assert(device->arch_device_mem_alloc_func);
 	mem->device_ptr = device->arch_device_mem_alloc_func(device->arch_device, size);
+	opencl_debug("\tdevice_ptr = %p", mem->device_ptr);
 	mem->device = device;
 	mem->size = size;
 

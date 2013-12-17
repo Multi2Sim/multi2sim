@@ -1084,6 +1084,13 @@ static int opencl_abi_si_ndrange_create_impl(X86Context *ctx)
 	ndrange = new(SINDRange, si_emu);
 	opencl_debug("\tcreated ndrange %d\n", ndrange->id);
 
+	/* Initialize address space ID.  Our current SVM implementation sets
+	 * the ndrange ASID to the CPU context's ASID */
+	ndrange->address_space_index = ctx->address_space_index;
+	opencl_debug("\tndrange address space index = %d\n", 
+		ndrange->address_space_index);
+
+	/* Initialize registers and local memory requirements */
 	ndrange->local_mem_top = kernel->mem_size_local;
 	struct SIBinaryDictEntry *si_dict_entry =
 			SIBinaryGetSIDictEntry(kernel->bin_file);
@@ -1091,8 +1098,6 @@ static int opencl_abi_si_ndrange_create_impl(X86Context *ctx)
 	ndrange->num_vgpr_used = SIBinaryDictEntryGetNumVgpr(si_dict_entry);
 	ndrange->wg_id_sgpr = SIBinaryDictEntryGetComputePgmRsrc2(si_dict_entry)->user_sgpr;
 	SINDRangeSetupSize(ndrange, global_size, local_size, work_dim);
-	opencl_debug("\tndrange address space index = %d\n", 
-		ndrange->address_space_index);
 
 	/* Copy user elements from kernel to ND-Range */
 	user_element_count = SIBinaryDictEntryGetNumUserElements(si_dict_entry);
@@ -1459,9 +1464,12 @@ static int opencl_abi_si_ndrange_pass_mem_objs_impl(X86Context *ctx)
 	if (!kernel)
 		fatal("%s: invalid kernel ID (%d)", __FUNCTION__, kernel_id);
 
+	/* When a fused device is present, the driver needs to set up
+	 * the addresses of the internal buffers for the GPU as well
+	 * as the MMU for both the internal buffers and kernel arguments */
 	if (driver->fused)
 	{
-		/* 16 extra bytes allocated */
+		/* 16 extra bytes allocated for alignment */
 		tables_ptr = (regs->esi + 15) & 0xFFFFFFF0;
 		constant_buffers_ptr = (regs->edi + 15) & 0xFFFFFFF0;
 
@@ -1476,6 +1484,9 @@ static int opencl_abi_si_ndrange_pass_mem_objs_impl(X86Context *ctx)
 
 		ndrange->cb_start = constant_buffers_ptr;
 		
+		/* Initialize the GPU MMU with the pages required for
+		 * ndrange execution using the same translations as the
+		 * CPU MMU */
 		opencl_si_ndrange_setup_mmu(ndrange, driver->x86_cpu->mmu, 
 			ctx->address_space_index, si_gpu->mmu, tables_ptr, 
 			constant_buffers_ptr);
@@ -1557,7 +1568,7 @@ static int opencl_abi_si_ndrange_flush_can_wakeup(X86Context *ctx,
 	void *user_data)
 {
 	assert(user_data);
-	
+
 	int* witness_ptr = user_data;
 	int can_wakeup = !(*witness_ptr);
 
