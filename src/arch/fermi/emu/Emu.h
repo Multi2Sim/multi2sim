@@ -73,9 +73,17 @@ class Emu
 	long long branch_inst_count;  // Branch instructions executed 
 	long long ldst_inst_count;  // LDST instructions executed
 
-public:
 	/// Constructor
 	Emu(Asm *as);
+
+	// Unique instance of Fermi emulator
+	static std::unique_ptr<Emu> instance;
+
+public:
+	/// Get the only instance of the Fermi emulator. If the instance does not
+	/// exist yet, it will be created, and will remain allocated until the
+	/// end of the execution.
+	static Emu *getInstance();
 
 	/// Dump emulator state
 	void Dump(std::ostream &os = std::cout) const;
@@ -88,7 +96,7 @@ public:
 
 	/// Dump the statistics summary
 	void DumpSummary(std::ostream &os);
-	
+
 	/// Run one iteration of the emulation loop
 	void Run();
 };

@@ -47,17 +47,17 @@ void FrmEmuCreate(FrmEmu *self, struct FrmAsmWrap *as)
 	self->pending_grids = list_create();
 	self->running_grids = list_create();
 	self->finished_grids = list_create();
-        self->global_mem = mem_create();
-        self->global_mem->safe = 0;
-        self->global_mem_top = 0;
-        self->total_global_mem_size = 1 << 30; /* 2GB */
-        self->free_global_mem_size = 1 << 30; /* 2GB */
-        self->const_mem = mem_create();
-        self->const_mem->safe = 0;
+	self->global_mem = mem_create();
+	self->global_mem->safe = 0;
+	self->global_mem_top = 0;
+	self->total_global_mem_size = 1 << 30; /* 2GB */
+	self->free_global_mem_size = 1 << 30; /* 2GB */
+	self->const_mem = mem_create();
+	self->const_mem->safe = 0;
 
 	/* Initialize instruction execution table */
 #define DEFINST(_name, _fmt_str, _opcode) \
-	self->inst_func[FRM_INST_##_name] = frm_isa_##_name##_impl;
+	self->inst_func[_opcode] = frm_isa_##_name##_impl;
 #include <arch/fermi/asm/asm.dat>
 #undef DEFINST
 

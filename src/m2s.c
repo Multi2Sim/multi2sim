@@ -2149,10 +2149,8 @@ int main(int argc, char **argv)
 	if (*frm_disasm_file_name)
 	{
 		struct FrmAsmWrap *as;
-
 		as = FrmAsmWrapCreate();
 		FrmAsmWrapDisassembleBinary(as, frm_disasm_file_name);
-		FrmAsmWrapFree(as);
 		goto end;
 	}
 
@@ -2455,7 +2453,7 @@ int main(int argc, char **argv)
 	debug_done();
 
 
-end:
+	end:
 	/* End */
 	mhandle_done();
 	return 0;
