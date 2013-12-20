@@ -2,7 +2,6 @@ lib_LIBRARIES = libsi.a
 
 libsi_a_SOURCES = \
 	ABI.cc \
-	ABI.dat \
 	ABI.h \
 	\
 	Kernel.cc \
