@@ -49,11 +49,11 @@ void frm2bin_inst_info_init(void)
 	int i;
 
 	/* Initialize hash table with instruction names. */
-	frm2bin_inst_info_table = hash_table_create(FrmInstOpcodeCount, 1);
-	for (i = 1; i < FrmInstOpcodeCount; i++)
+	frm2bin_inst_info_table = hash_table_create(FrmInstOpCount, 1);
+	for (i = 1; i < FrmInstOpCount; i++)
 	{
 		/* Instruction info from disassembler */
-		inst_info = FrmAsmWrapGetInstInfo(frm_asm, i);
+		inst_info = 0; //FrmAsmWrapGetInstInfo(frm_asm, i);
 		if (!inst_info->name || !inst_info->fmt_str)
 			continue;
 

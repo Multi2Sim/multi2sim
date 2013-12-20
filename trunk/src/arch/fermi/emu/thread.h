@@ -64,7 +64,7 @@ CLASS_BEGIN(FrmThread, Object)
 
 	/* Thread state */
 	FrmThreadReg gpr[128];  /* General purpose registers */
-	FrmThreadReg sr[FrmInstSRegCount];  /* Special registers */
+	FrmThreadReg sr[82];  /* Special registers */
 	unsigned int pr[8];  /* Predicate registers */
 
 	/* Linked list of write tasks. They are enqueued by machine instructions

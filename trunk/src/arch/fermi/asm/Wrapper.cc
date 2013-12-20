@@ -25,54 +25,8 @@ using namespace Fermi;
 
 
 ////////////////////////////////////////////////////////////////////////////////
-// Wrapper for class Asm
-////////////////////////////////////////////////////////////////////////////////
-
-struct FrmAsmWrap *FrmAsmWrapCreate(void)
-{
-	return (struct FrmAsmWrap *) new Asm();
-}
-
-
-void FrmAsmWrapFree(struct FrmAsmWrap *self)
-{
-	delete (Asm *) self;
-}
-
-
-void FrmAsmWrapDisassembleBinary(struct FrmAsmWrap *self, char *path)
-{
-	Asm *as = (Asm *) self;
-	as->DisassembleBinary(path);
-}
-
-
-void FrmAsmWrapDisassembleBuffer(struct FrmAsmWrap *self, char *buffer, unsigned int size)
-{
-	Asm *as = (Asm *) self;
-	as->DisassembleBuffer(buffer, size);
-}
-
-
-FrmInstInfo *FrmAsmWrapGetInstInfo(struct FrmAsmWrap *self, FrmInstOpcode opcode)
-{
-	Asm *as = (Asm *) self;
-	return (FrmInstInfo *) as->GetInstInfo((InstOpcode) opcode);
-}
-
-
-FrmInstInfo *FrmAsmWrapGetDecTable(struct FrmAsmWrap *self, int cat, int func)
-{
-	Asm *as = (Asm *) self;
-	return (FrmInstInfo *) as->GetDecTable(cat, func);
-}
-
-
-
-////////////////////////////////////////////////////////////////////////////////
 // Wrapper for class Inst
 ////////////////////////////////////////////////////////////////////////////////
-
 
 struct FrmInstWrap *FrmInstWrapCreate(struct FrmAsmWrap *as)
 {
@@ -86,7 +40,7 @@ void FrmInstWrapFree(struct FrmInstWrap *self)
 }
 
 
-void FrmInstWrapCopy(struct FrmInstWrap *left, struct frmInstWrap *right)
+void FrmInstWrapCopy(struct FrmInstWrap *left, struct FrmInstWrap *right)
 {
 	Fermi::Inst *ileft = (Fermi::Inst *) left;
 	Fermi::Inst *iright = (Fermi::Inst *) right;
@@ -94,7 +48,7 @@ void FrmInstWrapCopy(struct FrmInstWrap *left, struct frmInstWrap *right)
 }
 
 
-void FrmInstWrapDecode(struct FrmInstWrap *self, unsigned int addr, void *ptr)
+void FrmInstWrapDecode(struct FrmInstWrap *self, unsigned addr, void *ptr)
 {
 	Fermi::Inst *inst = (Fermi::Inst *) self;
 	inst->Decode(addr, (const char *) ptr);
@@ -104,25 +58,57 @@ void FrmInstWrapDecode(struct FrmInstWrap *self, unsigned int addr, void *ptr)
 FrmInstBytes *FrmInstWrapGetBytes(struct FrmInstWrap *self)
 {
 	Fermi::Inst *inst = (Fermi::Inst *) self;
-	return (FrmInstBytes *) inst->GetBytes();
-}
-
-const char *FrmInstWrapGetName(struct FrmInstWrap *self)
-{
-	Fermi::Inst *inst = (Fermi::Inst *) self;
-	return inst->GetName().c_str();
+	return (FrmInstBytes *) inst->getBytes();
 }
 
 
-FrmInstOpcode FrmInstWrapGetOpcode(struct FrmInstWrap *self)
+FrmInstOp FrmInstWrapGetOpcode(struct FrmInstWrap *self)
 {
 	Fermi::Inst *inst = (Fermi::Inst *) self;
-	return (FrmInstOpcode) inst->GetOpcode();
+	return (FrmInstOp) inst->getOp();
 }
 
 
 FrmInstCategory FrmInstWrapGetCategory(struct FrmInstWrap *self)
 {
 	Fermi::Inst *inst = (Fermi::Inst *) self;
-	return (FrmInstCategory) inst->GetCategory();
+	return (FrmInstCategory) inst->getCategory();
+}
+
+
+char *FrmInstWrapGetName(struct FrmInstWrap *self)
+{
+	Fermi::Inst *inst = (Fermi::Inst *) self;
+	return (char *) inst->getName().c_str();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Wrapper for class Asm
+////////////////////////////////////////////////////////////////////////////////
+
+struct FrmAsmWrap *FrmAsmWrapCreate(void)
+{
+	return (struct FrmAsmWrap *) Asm::getInstance();
+}
+
+
+void FrmAsmWrapFree(struct FrmAsmWrap *self)
+{
+}
+
+
+void FrmAsmWrapDisassembleBinary(struct FrmAsmWrap *self, char *path)
+{
+	Asm *as = (Asm *) self;
+	as->DisassembleBinary(path);
+}
+
+
+
+FrmInstInfo *FrmAsmWrapGetInstInfo(struct FrmAsmWrap *self, unsigned cat,
+		unsigned op)
+{
+	Asm *as = (Asm *) self;
+	return (FrmInstInfo *) as->GetInstInfo(cat, op);
 }

@@ -36,1113 +36,1080 @@ using namespace misc;
 namespace Fermi
 {
 
-/*
- * Class 'Inst'
- */
-
-Inst::Inst(Asm *as)
-{
-	// Initialize
-	this->as = as;
-}
-
-
-void Inst::Decode(unsigned addr, const char *ptr)
-{
-	unsigned cat;
-	unsigned func;
-	unsigned func_idx;
-
-	// Get instruction category bits
-	bytes.dword = * (unsigned long long *) ptr;
-	cat = bytes.bytes[0] & 0xf;
-
-	// Get function bits
-	if (cat <= 3)
-		func = bytes.bytes[7] >> 3;  // 5-bit func
-	else
-		func = bytes.bytes[7] >> 2;  // 6-bit func
-	func_idx = func;
-
-	// Special cases
-	if (cat == 0 && ((func >> 1) & 0xf) == 2)  // FSETP
-		func_idx = func & 0x1e;
-	else if (cat == 5 && ((func & 0x30) >> 4) == 0)  // RED
-		func_idx = func & 0x30;
-	else if (cat == 5 && ((func & 0x30) >> 4) == 1)  // ATOM
-		func_idx = func & 0x30;
-
-	info = as->GetDecTable(cat, func_idx);
-	this->addr = addr;
-}
 
 StringMap _1d_map =
 {
-	{ ".1D", 0 },
-	{ ".2D", 1 },
-	{ ".3D", 2 },
-	{ ".E2D", 3 }
+		{ ".1D", 0 },
+		{ ".2D", 1 },
+		{ ".3D", 2 },
+		{ ".E2D", 3 }
 };
 
 StringMap addsub_map =
 {
-	{ "ADD", 0 },
-	{ "SUB", 1 },
-	{ "SUB", 2 },
-	{ "ADD", 3 }
+		{ "ADD", 0 },
+		{ "SUB", 1 },
+		{ "SUB", 2 },
+		{ "ADD", 3 }
 };
 
 StringMap aoffi_map =
 {
-	{ "", 0 },
-	{ ".AOFFI", 1 }
+		{ "", 0 },
+		{ ".AOFFI", 1 }
 };
 
 StringMap atomicsize_map =
 {
-	{ ".U8", 0 },
-	{ ".S8", 1 },
-	{ ".U16", 2 },
-	{ ".S16", 3 },
-	{ "", 4 },
-	{ ".U64", 5 },
-	{ ".U128", 6 },
-	{ ".S32", 7 },
-	{ ".S64", 8 },
-	{ ".S128", 9 },
-	{ ".F16", 10 },
-	{ ".F32.FTZ.RN", 11 },
-	{ ".F64", 12 },
-	{ ".INVALIDATOMICSIZE13", 13 },
-	{ ".INVALIDATOMICSIZE14", 14 },
-	{ ".INVALIDATOMICSIZE15", 15 }
+		{ ".U8", 0 },
+		{ ".S8", 1 },
+		{ ".U16", 2 },
+		{ ".S16", 3 },
+		{ "", 4 },
+		{ ".U64", 5 },
+		{ ".U128", 6 },
+		{ ".S32", 7 },
+		{ ".S64", 8 },
+		{ ".S128", 9 },
+		{ ".F16", 10 },
+		{ ".F32.FTZ.RN", 11 },
+		{ ".F64", 12 },
+		{ ".INVALIDATOMICSIZE13", 13 },
+		{ ".INVALIDATOMICSIZE14", 14 },
+		{ ".INVALIDATOMICSIZE15", 15 }
 };
 
 StringMap atomop_map =
 {
-	{ ".ADD", 0 },
-	{ ".MIN", 1 },
-	{ ".MAX", 2 },
-	{ ".INC", 3 },
-	{ ".DEC", 4 },
-	{ ".AND", 5 },
-	{ ".OR", 6 },
-	{ ".XOR", 7 },
-	{ ".EXCH", 8 },
-	{ ".CAS", 9 },
-	{ ".INVALIDATOMOP10", 10 },
-	{ ".INVALIDATOMOP11", 11 },
-	{ ".INVALIDATOMOP12", 12 },
-	{ ".INVALIDATOMOP13", 13 },
-	{ ".INVALIDATOMOP14", 14 },
-	{ ".INVALIDATOMOP15", 15 },
+		{ ".ADD", 0 },
+		{ ".MIN", 1 },
+		{ ".MAX", 2 },
+		{ ".INC", 3 },
+		{ ".DEC", 4 },
+		{ ".AND", 5 },
+		{ ".OR", 6 },
+		{ ".XOR", 7 },
+		{ ".EXCH", 8 },
+		{ ".CAS", 9 },
+		{ ".INVALIDATOMOP10", 10 },
+		{ ".INVALIDATOMOP11", 11 },
+		{ ".INVALIDATOMOP12", 12 },
+		{ ".INVALIDATOMOP13", 13 },
+		{ ".INVALIDATOMOP14", 14 },
+		{ ".INVALIDATOMOP15", 15 },
 };
 
 StringMap b1_map =
 {
-	{ ".B", 0 },
-	{ ".P", 1 }
+		{ ".B", 0 },
+		{ ".P", 1 }
 };
 
 StringMap b4_map =
 {
-	{ ".B", 0 },
-	{ ".P", 1 },
-	{ ".P", 2 },
-	{ ".P", 3 },
-	{ ".P", 4 },
-	{ ".P", 5 },
-	{ ".P", 6 },
-	{ ".P", 7 },
-	{ ".P", 8 },
-	{ ".P", 9 },
-	{ ".P", 10 },
-	{ ".P", 11 },
-	{ ".P", 12 },
-	{ ".P", 13 },
-	{ ".P", 14 },
-	{ ".P", 15 }
+		{ ".B", 0 },
+		{ ".P", 1 },
+		{ ".P", 2 },
+		{ ".P", 3 },
+		{ ".P", 4 },
+		{ ".P", 5 },
+		{ ".P", 6 },
+		{ ".P", 7 },
+		{ ".P", 8 },
+		{ ".P", 9 },
+		{ ".P", 10 },
+		{ ".P", 11 },
+		{ ".P", 12 },
+		{ ".P", 13 },
+		{ ".P", 14 },
+		{ ".P", 15 }
 };
 
 StringMap barmode_map =
 {
-	{ ".POPC", 0 },
-	{ ".AND", 1 },
-	{ ".OR", 2 },
-	{ ".INVALIDBARMOD3", 3 }
+		{ ".POPC", 0 },
+		{ ".AND", 1 },
+		{ ".OR", 2 },
+		{ ".INVALIDBARMOD3", 3 }
 };
 
 StringMap bf_map =
 {
-	{ "", 0 },
-	{ ".BF", 1 }
+		{ "", 0 },
+		{ ".BF", 1 }
 };
 
 StringMap blod_map =
 {
-	{ "", 0 },
-	{ ".LZ", 1 },
-	{ ".LB", 2 },
-	{ ".LL", 3 },
-	{ ".INVALIDBLOD4", 4 },
-	{ ".INVALIDBLOD5", 5 },
-	{ ".LBA", 6 },
-	{ ".LLA", 7 }
+		{ "", 0 },
+		{ ".LZ", 1 },
+		{ ".LB", 2 },
+		{ ".LL", 3 },
+		{ ".INVALIDBLOD4", 4 },
+		{ ".INVALIDBLOD5", 5 },
+		{ ".LBA", 6 },
+		{ ".LLA", 7 }
 };
 
 StringMap bop_map =
 {
-	{ ".AND", 0 },
-	{ ".OR", 1 },
-	{ ".XOR", 2 },
-	{ ".PASS_B", 3 }
+		{ ".AND", 0 },
+		{ ".OR", 1 },
+		{ ".XOR", 2 },
+		{ ".PASS_B", 3 }
 };
 
 StringMap brev_map =
 {
-	{ "", 0 },
-	{ ".BREV", 1 }
+		{ "", 0 },
+		{ ".BREV", 1 }
 };
 
 StringMap btoff_map =
 {
-	{ "", 0 },
-	{ ".AOFFI", 1 },
-	{ ".PTP", 2 },
-	{ ".INVALIDBTOFF03", 3 }
+		{ "", 0 },
+		{ ".AOFFI", 1 },
+		{ ".PTP", 2 },
+		{ ".INVALIDBTOFF03", 3 }
 };
 
 StringMap cachectrl_map =
 {
-	{ "", 0 },
-	{ "", 1 },
-	{ "", 2 },
-	{ "", 3 },
-	{ "", 4 },
-	{ "", 5 },
-	{ "", 6 },
-	{ ".BV", 7 },
-	{ ".CG", 8 },
-	{ ".CG", 9 },
-	{ ".CG", 10 },
-	{ ".CG", 11 },
-	{ ".CG", 12 },
-	{ ".CG", 13 },
-	{ ".CG", 14 },
-	{ ".BV.CG", 15 },
-	{ ".CS", 16 },
-	{ ".CS", 17 },
-	{ ".CS", 18 },
-	{ ".CS", 19 },
-	{ ".CS", 20 },
-	{ ".CS", 21 },
-	{ ".CS", 22 },
-	{ ".BV", 23 },
-	{ ".CV", 24 },
-	{ ".CV", 25 },
-	{ ".CV", 26 },
-	{ ".CV", 27 },
-	{ ".CV", 28 },
-	{ ".CV", 29 },
-	{ ".CV", 30 },
-	{ ".BV.CG", 31 }
+		{ "", 0 },
+		{ "", 1 },
+		{ "", 2 },
+		{ "", 3 },
+		{ "", 4 },
+		{ "", 5 },
+		{ "", 6 },
+		{ ".BV", 7 },
+		{ ".CG", 8 },
+		{ ".CG", 9 },
+		{ ".CG", 10 },
+		{ ".CG", 11 },
+		{ ".CG", 12 },
+		{ ".CG", 13 },
+		{ ".CG", 14 },
+		{ ".BV.CG", 15 },
+		{ ".CS", 16 },
+		{ ".CS", 17 },
+		{ ".CS", 18 },
+		{ ".CS", 19 },
+		{ ".CS", 20 },
+		{ ".CS", 21 },
+		{ ".CS", 22 },
+		{ ".BV", 23 },
+		{ ".CV", 24 },
+		{ ".CV", 25 },
+		{ ".CV", 26 },
+		{ ".CV", 27 },
+		{ ".CV", 28 },
+		{ ".CV", 29 },
+		{ ".CV", 30 },
+		{ ".BV.CG", 31 }
 };
 
 StringMap cctlop_map =
 {
-	{ ".QRY1", 0 },
-	{ ".PF1", 1 },
-	{ ".PF1_5", 2 },
-	{ ".PR2", 3 },
-	{ ".WB", 4 },
-	{ ".IV", 5 },
-	{ ".IVALL", 6 },
-	{ ".RS", 7 },
-	{ ".INVALIDCCTLOP8", 8 },
-	{ ".INVALIDCCTLOP9", 9 },
-	{ ".INVALIDCCTLOP10", 10 },
-	{ ".INVALIDCCTLOP11", 11 },
-	{ ".INVALIDCCTLOP12", 12 },
-	{ ".INVALIDCCTLOP13", 13 },
-	{ ".INVALIDCCTLOP14", 14 },
-	{ ".INVALIDCCTLOP15", 15 },
-	{ ".INVALIDCCTLOP16", 16 },
-	{ ".INVALIDCCTLOP17", 17 },
-	{ ".INVALIDCCTLOP18", 18 },
-	{ ".INVALIDCCTLOP19", 19 },
-	{ ".INVALIDCCTLOP20", 20 },
-	{ ".INVALIDCCTLOP21", 21 },
-	{ ".INVALIDCCTLOP22", 22 },
-	{ ".INVALIDCCTLOP23", 23 },
-	{ ".INVALIDCCTLOP24", 24 },
-	{ ".INVALIDCCTLOP25", 25 },
-	{ ".INVALIDCCTLOP26", 26 },
-	{ ".INVALIDCCTLOP27", 27 },
-	{ ".INVALIDCCTLOP28", 28 },
-	{ ".INVALIDCCTLOP29", 29 },
-	{ ".INVALIDCCTLOP30", 30 },
-	{ ".INVALIDCCTLOP31", 31 }
+		{ ".QRY1", 0 },
+		{ ".PF1", 1 },
+		{ ".PF1_5", 2 },
+		{ ".PR2", 3 },
+		{ ".WB", 4 },
+		{ ".IV", 5 },
+		{ ".IVALL", 6 },
+		{ ".RS", 7 },
+		{ ".INVALIDCCTLOP8", 8 },
+		{ ".INVALIDCCTLOP9", 9 },
+		{ ".INVALIDCCTLOP10", 10 },
+		{ ".INVALIDCCTLOP11", 11 },
+		{ ".INVALIDCCTLOP12", 12 },
+		{ ".INVALIDCCTLOP13", 13 },
+		{ ".INVALIDCCTLOP14", 14 },
+		{ ".INVALIDCCTLOP15", 15 },
+		{ ".INVALIDCCTLOP16", 16 },
+		{ ".INVALIDCCTLOP17", 17 },
+		{ ".INVALIDCCTLOP18", 18 },
+		{ ".INVALIDCCTLOP19", 19 },
+		{ ".INVALIDCCTLOP20", 20 },
+		{ ".INVALIDCCTLOP21", 21 },
+		{ ".INVALIDCCTLOP22", 22 },
+		{ ".INVALIDCCTLOP23", 23 },
+		{ ".INVALIDCCTLOP24", 24 },
+		{ ".INVALIDCCTLOP25", 25 },
+		{ ".INVALIDCCTLOP26", 26 },
+		{ ".INVALIDCCTLOP27", 27 },
+		{ ".INVALIDCCTLOP28", 28 },
+		{ ".INVALIDCCTLOP29", 29 },
+		{ ".INVALIDCCTLOP30", 30 },
+		{ ".INVALIDCCTLOP31", 31 }
 };
 
 StringMap cl_map =
 {
-	{ "", 0 },
-	{ ".CL", 1 }
+		{ "", 0 },
+		{ ".CL", 1 }
 };
 
 StringMap cop3_map =
 {
-	{ ".F", 0 },
-	{ ".LT", 1 },
-	{ ".EQ", 2 },
-	{ ".LE", 3 },
-	{ ".GT", 4 },
-	{ ".NE", 5 },
-	{ ".GE", 6 },
-	{ ".T", 7 }
+		{ ".F", 0 },
+		{ ".LT", 1 },
+		{ ".EQ", 2 },
+		{ ".LE", 3 },
+		{ ".GT", 4 },
+		{ ".NE", 5 },
+		{ ".GE", 6 },
+		{ ".T", 7 }
 };
 
 StringMap cop4_map =
 {
-	{ ".F", 0 },
-	{ ".LT", 1 },
-	{ ".EQ", 2 },
-	{ ".LE", 3 },
-	{ ".NE", 5 },
-	{ ".GE", 6 },
-	{ ".NUM", 7 },
-	{ ".NAN", 8 },
-	{ ".LTU", 9 },
-	{ ".EQU", 10 },
-	{ ".LEU", 11 },
-	{ ".GTU", 12 },
-	{ ".NEU", 13 },
-	{ ".GEU", 14 },
-	{ ".T", 15 }
+		{ ".F", 0 },
+		{ ".LT", 1 },
+		{ ".EQ", 2 },
+		{ ".LE", 3 },
+		{ ".NE", 5 },
+		{ ".GE", 6 },
+		{ ".NUM", 7 },
+		{ ".NAN", 8 },
+		{ ".LTU", 9 },
+		{ ".EQU", 10 },
+		{ ".LEU", 11 },
+		{ ".GTU", 12 },
+		{ ".NEU", 13 },
+		{ ".GEU", 14 },
+		{ ".T", 15 }
 };
 
 StringMap cop_map =
 {
-	{ ".F", 0 },
-	{ ".LT", 1 },
-	{ ".EQ", 2 },
-	{ ".LE", 3 },
-	{ ".GT", 4 },
-	{ ".NE", 5 },
-	{ ".GE", 6 },
-	{ ".NUM", 7 },
-	{ ".NAN", 8 },
-	{ ".LTU", 9 },
-	{ ".EQU", 10 },
-	{ ".LEU", 11 },
-	{ ".GTU", 12 },
-	{ ".NEU", 13 },
-	{ ".GEU", 14 },
-	{ "", 15 },
-	{ ".OFF", 16 },
-	{ ".LO", 17 },
-	{ ".SFF", 18 },
-	{ ".LS", 19 },
-	{ ".HI", 20 },
-	{ ".SFT", 21 },
-	{ ".HS", 22 },
-	{ ".OFT", 23 },
-	{ ".CSM_TA", 24 },
-	{ ".CSM_TR", 25 },
-	{ ".CSM_MX", 26 },
-	{ ".FCSM_TA", 27 },
-	{ ".FCSM_TR", 28 },
-	{ ".FCSM_MX", 29 },
-	{ ".RLE", 30 },
-	{ ".RGT", 31 }
+		{ ".F", 0 },
+		{ ".LT", 1 },
+		{ ".EQ", 2 },
+		{ ".LE", 3 },
+		{ ".GT", 4 },
+		{ ".NE", 5 },
+		{ ".GE", 6 },
+		{ ".NUM", 7 },
+		{ ".NAN", 8 },
+		{ ".LTU", 9 },
+		{ ".EQU", 10 },
+		{ ".LEU", 11 },
+		{ ".GTU", 12 },
+		{ ".NEU", 13 },
+		{ ".GEU", 14 },
+		{ "", 15 },
+		{ ".OFF", 16 },
+		{ ".LO", 17 },
+		{ ".SFF", 18 },
+		{ ".LS", 19 },
+		{ ".HI", 20 },
+		{ ".SFT", 21 },
+		{ ".HS", 22 },
+		{ ".OFT", 23 },
+		{ ".CSM_TA", 24 },
+		{ ".CSM_TR", 25 },
+		{ ".CSM_MX", 26 },
+		{ ".FCSM_TA", 27 },
+		{ ".FCSM_TR", 28 },
+		{ ".FCSM_MX", 29 },
+		{ ".RLE", 30 },
+		{ ".RGT", 31 }
 };
 
 StringMap dc_map =
 {
-	{ "", 0 },
-	{ ".DC", 1 }
+		{ "", 0 },
+		{ ".DC", 1 }
 };
 
 StringMap drain_map =
 {
-	{ ".DRAIN", 0 },
-	{ ".CAL", 1 },
-	{ ".PAUSE", 2 },
-	{ ".TRAP", 3 }
+		{ ".DRAIN", 0 },
+		{ ".CAL", 1 },
+		{ ".PAUSE", 2 },
+		{ ".TRAP", 3 }
 };
 
 StringMap e_map =
 {
-	{ "", 0 },
-	{ ".E", 1 }
+		{ "", 0 },
+		{ ".E", 1 }
 };
 
 StringMap eu_map =
 {
-	{ "", 0 },
-	{ ".EU", 1 }
+		{ "", 0 },
+		{ ".EU", 1 }
 };
 
 StringMap fma_map =
 {
-	{ "", 0 },
-	{ ".FMA", 1 },
-	{ ".FMA2", 2 },
-	{ ".INVALID", 3 }
+		{ "", 0 },
+		{ ".FMA", 1 },
+		{ ".FMA2", 2 },
+		{ ".INVALID", 3 }
 };
 
 StringMap fmz_map =
 {
-	{ "", 0 },
-	{ ".FTZ", 1 },
-	{ ".FMZ", 2 },
-	{ ".INVALIDFMZ3", 3 }
+		{ "", 0 },
+		{ ".FTZ", 1 },
+		{ ".FMZ", 2 },
+		{ ".INVALIDFMZ3", 3 }
 };
 
 StringMap fpdest_map =
 {
-	{ ".INVALIDFPDEST0", 0 },
-	{ ".F16", 1 },
-	{ ".F32", 2 },
-	{ ".F64", 3 }
+		{ ".INVALIDFPDEST0", 0 },
+		{ ".F16", 1 },
+		{ ".F32", 2 },
+		{ ".F64", 3 }
 };
 
 StringMap fpsrc_map =
 {
-	{ ".INVALIDFPSRC0", 0 },
-	{ ".F16", 1 },
-	{ ".F32", 2 },
-	{ ".F64", 3 }
+		{ ".INVALIDFPSRC0", 0 },
+		{ ".F16", 1 },
+		{ ".F32", 2 },
+		{ ".F64", 3 }
 };
 
 StringMap frnd2_map =
 {
-	{ "", 0 },
-	{ ".FLOOR", 1 },
-	{ ".CEIL", 2 },
-	{ ".TRUNC", 3 }
+		{ "", 0 },
+		{ ".FLOOR", 1 },
+		{ ".CEIL", 2 },
+		{ ".TRUNC", 3 }
 };
 
 StringMap frnd3_map =
 {
-	{ "", 0 },
-	{ ".PASS", 1 },
-	{ ".PASS", 2 },
-	{ ".PASS", 3 },
-	{ ".ROUND", 4 },
-	{ ".FLOOR", 5 },
-	{ ".CEIL", 6 },
-	{ ".TRUNC", 7 }
+		{ "", 0 },
+		{ ".PASS", 1 },
+		{ ".PASS", 2 },
+		{ ".PASS", 3 },
+		{ ".ROUND", 4 },
+		{ ".FLOOR", 5 },
+		{ ".CEIL", 6 },
+		{ ".TRUNC", 7 }
 };
 
 StringMap ftz_map =
 {
-	{ "", 0 },
-	{ ".FTZ", 1 }
+		{ "", 0 },
+		{ ".FTZ", 1 }
 };
 
 StringMap geom_map =
 {
-	{ "1D", 0 },
-	{ "ARRAY_1D", 1 },
-	{ "2D", 2 },
-	{ "ARRAY_2D", 3 },
-	{ "3D", 4 },
-	{ "ARRAY_3D", 5 },
-	{ "CUBE", 6 },
-	{ "ARRAY_CUBE", 7 }
+		{ "1D", 0 },
+		{ "ARRAY_1D", 1 },
+		{ "2D", 2 },
+		{ "ARRAY_2D", 3 },
+		{ "3D", 4 },
+		{ "ARRAY_3D", 5 },
+		{ "CUBE", 6 },
+		{ "ARRAY_CUBE", 7 }
 };
 
 StringMap h1_map =
 {
-	{ "", 0 },
-	{ ".H1", 1 }
+		{ "", 0 },
+		{ ".H1", 1 }
 };
 
 StringMap hi_map =
 {
-	{ "", 0 },
-	{ ".HI", 1 }
+		{ "", 0 },
+		{ ".HI", 1 }
 };
 
 StringMap i_map =
 {
-	{ "", 0 },
-	{ ".I", 1 }
+		{ "", 0 },
+		{ ".I", 1 }
 };
 
 StringMap idest_map =
 {
-	{ ".U8", 0 },
-	{ ".U16", 1 },
-	{ ".U32", 2 },
-	{ ".U64", 3 },
-	{ ".S8", 4 },
-	{ ".S16", 5 },
-	{ ".S32", 6 },
-	{ ".S64", 7 }
+		{ ".U8", 0 },
+		{ ".U16", 1 },
+		{ ".U32", 2 },
+		{ ".U64", 3 },
+		{ ".S8", 4 },
+		{ ".S16", 5 },
+		{ ".S32", 6 },
+		{ ".S64", 7 }
 };
 
 StringMap il_map =
 {
-	{ "", 0 },
-	{ ".IL", 1 },
-	{ ".IS", 2 },
-	{ ".ISL", 3 }
+		{ "", 0 },
+		{ ".IL", 1 },
+		{ ".IS", 2 },
+		{ ".ISL", 3 }
 };
 
 StringMap irnd_map =
 {
-	{ "", 0 },
-	{ ".RM", 1 },
-	{ ".RP", 2 },
-	{ ".RZ", 3 }
+		{ "", 0 },
+		{ ".RM", 1 },
+		{ ".RP", 2 },
+		{ ".RZ", 3 }
 };
 
 StringMap isrc_map =
 {
-	{ ".U8", 0 },
-	{ ".U16", 1 },
-	{ ".U32", 2 },
-	{ ".U64", 3 },
-	{ ".S8", 4 },
-	{ ".S16", 5 },
-	{ ".S32", 6 },
-	{ ".S64", 7 }
+		{ ".U8", 0 },
+		{ ".U16", 1 },
+		{ ".U32", 2 },
+		{ ".U64", 3 },
+		{ ".S8", 4 },
+		{ ".S16", 5 },
+		{ ".S32", 6 },
+		{ ".S64", 7 }
 };
 
 StringMap ldcachectrl_map =
 {
-	{ ".CA", 0 },
-	{ "", 1 },
-	{ ".CS", 2 },
-	{ ".CV", 3 }
+		{ ".CA", 0 },
+		{ "", 1 },
+		{ ".CS", 2 },
+		{ ".CV", 3 }
 };
 
 StringMap ldlcachectrl_map =
 {
-	{ "", 0 },
-	{ ".CG", 1 },
-	{ ".LU", 2 },
-	{ ".CV", 3 }
+		{ "", 0 },
+		{ ".CG", 1 },
+		{ ".LU", 2 },
+		{ ".CV", 3 }
 };
 
 StringMap lmt_map =
 {
-	{ "", 0 },
-	{ ".LMT", 1 }
+		{ "", 0 },
+		{ ".LMT", 1 }
 };
 
 StringMap ls_map =
 {
-	{ "L", 0 },
-	{ "S", 1 }
+		{ "L", 0 },
+		{ "S", 1 }
 };
 
 StringMap lz_map =
 {
-	{ ".LZ", 0 },
-	{ ".LL", 1 }
+		{ ".LZ", 0 },
+		{ ".LL", 1 }
 };
 
 StringMap membar_map =
 {
-	{ ".CTA", 0 },
-	{ ".GL", 1 },
-	{ ".SYS", 2 },
-	{ ".INVALIDMEMBAR3", 3 }
+		{ ".CTA", 0 },
+		{ ".GL", 1 },
+		{ ".SYS", 2 },
+		{ ".INVALIDMEMBAR3", 3 }
 };
 
 StringMap mode_map =
 {
-	{ "0", 0 },
-	{ "TEX_HEADER_TEXTURE_TYPE", 1 },
-	{ "2", 2 },
-	{ "3", 3 },
-	{ "4", 4 },
-	{ "5", 5 },
-	{ "6", 6 },
-	{ "7", 7 },
-	{ "TEX_SAMPLER_FILTER", 8 },
-	{ "TEX_SAMPLER_LOD", 9 },
-	{ "TEX_SAMPLER_WRAP", 10 },
-	{ "TEX_SAMPLER_BORDER_COLOR", 11 },
-	{ "12", 12 },
-	{ "13", 13 },
-	{ "14", 14 },
-	{ "15", 15 },
-	{ "16", 16 },
-	{ "17", 17 },
-	{ "18", 18 },
-	{ "19", 19 },
-	{ "20", 20 },
-	{ "21", 21 },
-	{ "22", 22 },
-	{ "23", 23 },
-	{ "24", 24 },
-	{ "25", 25 },
-	{ "26", 26 },
-	{ "27", 27 },
-	{ "28", 28 },
-	{ "29", 29 },
-	{ "30", 30 },
-	{ "31", 31 }
+		{ "0", 0 },
+		{ "TEX_HEADER_TEXTURE_TYPE", 1 },
+		{ "2", 2 },
+		{ "3", 3 },
+		{ "4", 4 },
+		{ "5", 5 },
+		{ "6", 6 },
+		{ "7", 7 },
+		{ "TEX_SAMPLER_FILTER", 8 },
+		{ "TEX_SAMPLER_LOD", 9 },
+		{ "TEX_SAMPLER_WRAP", 10 },
+		{ "TEX_SAMPLER_BORDER_COLOR", 11 },
+		{ "12", 12 },
+		{ "13", 13 },
+		{ "14", 14 },
+		{ "15", 15 },
+		{ "16", 16 },
+		{ "17", 17 },
+		{ "18", 18 },
+		{ "19", 19 },
+		{ "20", 20 },
+		{ "21", 21 },
+		{ "22", 22 },
+		{ "23", 23 },
+		{ "24", 24 },
+		{ "25", 25 },
+		{ "26", 26 },
+		{ "27", 27 },
+		{ "28", 28 },
+		{ "29", 29 },
+		{ "30", 30 },
+		{ "31", 31 }
 };
 
 StringMap ms_map =
 {
-	{ "", 0 },
-	{ ".MS", 1 }
+		{ "", 0 },
+		{ ".MS", 1 }
 };
 
 StringMap mufuopcode_map =
 {
-	{ ".COS", 0 },
-	{ ".SIN", 1 },
-	{ ".EX2", 2 },
-	{ ".LG2", 3 },
-	{ ".RCP", 4 },
-	{ ".RSQ", 5 },
-	{ ".RCP64H", 6 },
-	{ ".RSQ64H", 7 },
-	{ ".INVALIDMUFUOPCODE8", 8 },
-	{ ".INVALIDMUFUOPCODE9", 9 },
-	{ ".INVALIDMUFUOPCODEA", 10 },
-	{ ".INVALIDMUFUOPCODEB", 11 },
-	{ ".INVALIDMUFUOPCODEC", 12 },
-	{ ".INVALIDMUFUOPCODED", 13 },
-	{ ".INVALIDMUFUOPCODEE", 14 },
-	{ ".INVALIDMUFUOPCODEF", 15 }
+		{ ".COS", 0 },
+		{ ".SIN", 1 },
+		{ ".EX2", 2 },
+		{ ".LG2", 3 },
+		{ ".RCP", 4 },
+		{ ".RSQ", 5 },
+		{ ".RCP64H", 6 },
+		{ ".RSQ64H", 7 },
+		{ ".INVALIDMUFUOPCODE8", 8 },
+		{ ".INVALIDMUFUOPCODE9", 9 },
+		{ ".INVALIDMUFUOPCODEA", 10 },
+		{ ".INVALIDMUFUOPCODEB", 11 },
+		{ ".INVALIDMUFUOPCODEC", 12 },
+		{ ".INVALIDMUFUOPCODED", 13 },
+		{ ".INVALIDMUFUOPCODEE", 14 },
+		{ ".INVALIDMUFUOPCODEF", 15 }
 };
 
 StringMap ndv_map =
 {
-	{ "", 0 },
-	{ ".NDV", 1 }
+		{ "", 0 },
+		{ ".NDV", 1 }
 };
 
 StringMap nodep_map =
 {
-	{ "", 0 },
-	{ ".NODEP", 1 }
+		{ "", 0 },
+		{ ".NODEP", 1 }
 };
 
 StringMap noinc_map =
 {
-	{ ".NOINC", 0 },
-	{ "", 1 }
+		{ ".NOINC", 0 },
+		{ "", 1 }
 };
 
 StringMap op_map =
 {
-	{ "", 0 },
-	{ ".FMA64", 1 },
-	{ ".FMA32", 2 },
-	{ ".XLU", 3 },
-	{ ".ALU", 4 },
-	{ ".AGU", 5 },
-	{ ".SU", 6 },
-	{ ".FU", 7 },
-	{ ".FMUL", 8 },
-	{ ".INVALID9", 9 },
-	{ ".INVALID0A", 10 },
-	{ ".INVALID0B", 11 },
-	{ ".INVALID0C", 12 },
-	{ ".INVALID0D", 13 },
-	{ ".INVALID0E", 14 },
-	{ ".INVALID0F", 15 }
+		{ "", 0 },
+		{ ".FMA64", 1 },
+		{ ".FMA32", 2 },
+		{ ".XLU", 3 },
+		{ ".ALU", 4 },
+		{ ".AGU", 5 },
+		{ ".SU", 6 },
+		{ ".FU", 7 },
+		{ ".FMUL", 8 },
+		{ ".INVALID9", 9 },
+		{ ".INVALID0A", 10 },
+		{ ".INVALID0B", 11 },
+		{ ".INVALID0C", 12 },
+		{ ".INVALID0D", 13 },
+		{ ".INVALID0E", 14 },
+		{ ".INVALID0F", 15 }
 };
 
 StringMap phase_map =
 {
-	{ "", 0 },
-	{ ".T", 1 },
-	{ ".P", 2 },
-	{ ".INVALIDPHASE3", 3 }
+		{ "", 0 },
+		{ ".T", 1 },
+		{ ".P", 2 },
+		{ ".INVALIDPHASE3", 3 }
 };
 
 StringMap pmode_map =
 {
-	{ "", 0 },
-	{ ".F4E", 1 },
-	{ ".B4E", 2 },
-	{ ".RC8", 3 },
-	{ ".ECL", 4 },
-	{ ".ECR", 5 },
-	{ ".EC16", 6 },
-	{ ".INVALIDPMODE7", 7 },
-	{ ".???8", 8 },
-	{ ".???9", 9 },
-	{ ".???10", 10 },
-	{ ".???11", 11 },
-	{ ".???12", 12 },
-	{ ".???13", 13 },
-	{ ".???14", 14 },
-	{ ".???15", 15 }
+		{ "", 0 },
+		{ ".F4E", 1 },
+		{ ".B4E", 2 },
+		{ ".RC8", 3 },
+		{ ".ECL", 4 },
+		{ ".ECR", 5 },
+		{ ".EC16", 6 },
+		{ ".INVALIDPMODE7", 7 },
+		{ ".???8", 8 },
+		{ ".???9", 9 },
+		{ ".???10", 10 },
+		{ ".???11", 11 },
+		{ ".???12", 12 },
+		{ ".???13", 13 },
+		{ ".???14", 14 },
+		{ ".???15", 15 }
 };
 
 StringMap po_map =
 {
-	{ "", 0 },
-	{ "", 1 },
-	{ "", 2 },
-	{ ".PO", 3 }
+		{ "", 0 },
+		{ "", 1 },
+		{ "", 2 },
+		{ ".PO", 3 }
 };
 
 StringMap r2_map =
 {
-	{ ".R", 0 },
-	{ ".G", 1 },
-	{ ".B", 2 },
-	{ ".A", 3 }
+		{ ".R", 0 },
+		{ ".G", 1 },
+		{ ".B", 2 },
+		{ ".A", 3 }
 };
 
 StringMap r4_map =
 {
-	{ "", 0 },
-	{ ".R", 1 },
-	{ ".G", 2 },
-	{ ".RG", 3 },
-	{ ".B", 4 },
-	{ ".RB", 5 },
-	{ ".GB", 6 },
-	{ ".RGB", 7 },
-	{ ".A", 8 },
-	{ ".RA", 9 },
-	{ ".GA", 10 },
-	{ ".RGA", 11 },
-	{ ".BA", 12 },
-	{ ".RBA", 13 },
-	{ ".GBA", 14 },
-	{ "", 15 }
+		{ "", 0 },
+		{ ".R", 1 },
+		{ ".G", 2 },
+		{ ".RG", 3 },
+		{ ".B", 4 },
+		{ ".RB", 5 },
+		{ ".GB", 6 },
+		{ ".RGB", 7 },
+		{ ".A", 8 },
+		{ ".RA", 9 },
+		{ ".GA", 10 },
+		{ ".RGA", 11 },
+		{ ".BA", 12 },
+		{ ".RBA", 13 },
+		{ ".GBA", 14 },
+		{ "", 15 }
 };
 
 StringMap redop_map =
 {
-	{ ".ADD", 0 },
-	{ ".MIN", 1 },
-	{ ".MAX", 2 },
-	{ ".INC", 3 },
-	{ ".DEC", 4 },
-	{ ".AND", 5 },
-	{ ".OR", 6 },
-	{ ".XOR", 7 },
-	{ ".INVALIDREDOP8", 8 },
-	{ ".INVALIDREDOP9", 9 },
-	{ ".INVALIDREDOP10", 10 },
-	{ ".INVALIDREDOP11", 11 },
-	{ ".INVALIDREDOP12", 12 },
-	{ ".INVALIDREDOP13", 13 },
-	{ ".INVALIDREDOP14", 14 },
-	{ ".INVALIDREDOP15", 15 }
+		{ ".ADD", 0 },
+		{ ".MIN", 1 },
+		{ ".MAX", 2 },
+		{ ".INC", 3 },
+		{ ".DEC", 4 },
+		{ ".AND", 5 },
+		{ ".OR", 6 },
+		{ ".XOR", 7 },
+		{ ".INVALIDREDOP8", 8 },
+		{ ".INVALIDREDOP9", 9 },
+		{ ".INVALIDREDOP10", 10 },
+		{ ".INVALIDREDOP11", 11 },
+		{ ".INVALIDREDOP12", 12 },
+		{ ".INVALIDREDOP13", 13 },
+		{ ".INVALIDREDOP14", 14 },
+		{ ".INVALIDREDOP15", 15 }
 };
 
 StringMap rf2_map =
 {
-	{ "", 0 },
-	{ ".INVALIDRF1", 1 },
-	{ ".INVALIDRF2", 2 },
-	{ ".INVALIDRF3", 3 }
+		{ "", 0 },
+		{ ".INVALIDRF1", 1 },
+		{ ".INVALIDRF2", 2 },
+		{ ".INVALIDRF3", 3 }
 };
 
 StringMap rf3_map =
 {
-	{ "", 0 },
-	{ ".INVALIDRF1", 1 },
-	{ ".INVALIDRF2", 2 },
-	{ ".INVALIDRF3", 3 },
-	{ ".32", 4 },
-	{ ".64", 5 },
-	{ ".128", 6 },
-	{ ".INVALIDRF7", 7 }
+		{ "", 0 },
+		{ ".INVALIDRF1", 1 },
+		{ ".INVALIDRF2", 2 },
+		{ ".INVALIDRF3", 3 },
+		{ ".32", 4 },
+		{ ".64", 5 },
+		{ ".128", 6 },
+		{ ".INVALIDRF7", 7 }
 };
 
 StringMap rnd_map =
 {
-	{ "", 0 },
-	{ ".RM", 1 },
-	{ ".RP", 2 },
-	{ ".RZ", 3 }
+		{ "", 0 },
+		{ ".RM", 1 },
+		{ ".RP", 2 },
+		{ ".RZ", 3 }
 };
 
 StringMap rroop_map =
 {
-	{ ".SINCOS", 0 },
-	{ ".EX2", 1 }
+		{ ".SINCOS", 0 },
+		{ ".EX2", 1 }
 };
 
 StringMap s_map =
 {
-	{ "", 0 },
-	{ ".S", 1 }
+		{ "", 0 },
+		{ ".S", 1 }
 };
 
 StringMap sat_map =
 {
-	{ "", 0 },
-	{ ".SAT", 1 }
+		{ "", 0 },
+		{ ".SAT", 1 }
 };
 
 StringMap scale3_map =
 {
-	{ "", 0 },
-	{ ".D2", 1 },
-	{ ".D4", 2 },
-	{ ".D8", 3 },
-	{ ".M8", 4 },
-	{ ".M4", 5 },
-	{ ".M2", 6 },
-	{ ".INVALIDSCALE37", 7 }
+		{ "", 0 },
+		{ ".D2", 1 },
+		{ ".D4", 2 },
+		{ ".D8", 3 },
+		{ ".M8", 4 },
+		{ ".M4", 5 },
+		{ ".M2", 6 },
+		{ ".INVALIDSCALE37", 7 }
 };
 
 StringMap sh_map =
 {
-	{ "", 0 },
-	{ ".SH", 1 }
+		{ "", 0 },
+		{ ".SH", 1 }
 };
 
 StringMap shrxmode_map =
 {
-	{ "", 0 },
-	{ ".INVALIDSHRXMODE1", 1 },
-	{ ".X", 2 },
-	{ ".XHI", 3 }
+		{ "", 0 },
+		{ ".INVALIDSHRXMODE1", 1 },
+		{ ".X", 2 },
+		{ ".XHI", 3 }
 };
 
 StringMap size3_map =
 {
-	{ ".U8", 0 },
-	{ ".S8", 1 },
-	{ ".U16", 2 },
-	{ ".S16", 3 },
-	{ "", 4 },
-	{ ".64", 5 },
-	{ ".128", 6 }
+		{ ".U8", 0 },
+		{ ".S8", 1 },
+		{ ".U16", 2 },
+		{ ".S16", 3 },
+		{ "", 4 },
+		{ ".64", 5 },
+		{ ".128", 6 }
 };
 
 StringMap size5_map =
 {
-	{ ".U8.U8", 0 },
-	{ ".S8.S8", 1 },
-	{ ".U8.U16", 2 },
-	{ ".U8.S16", 3 },
-	{ ".U8.32", 4 },
-	{ ".S8.U8", 5 },
-	{ ".S8.S8", 6 },
-	{ ".S8.U16", 7 },
-	{ ".S8.S16", 8 },
-	{ ".S8.32", 9 },
-	{ ".U16.U8", 10 },
-	{ ".U16.S8", 11 },
-	{ ".U16.U16", 12 },
-	{ ".U16.S16", 13 },
-	{ ".U16.32", 14 },
-	{ ".S16.U8", 15 },
-	{ ".S16.S8", 16 },
-	{ ".S16.U16", 17 },
-	{ ".S16.U16", 18 },
-	{ ".S16.32", 19 },
-	{ ".32.U8", 20 },
-	{ ".32.S8", 21 },
-	{ ".32.U16", 22 },
-	{ ".32.S16", 23 },
-	{ "", 24 },
-	{ ".32.64", 25 },
-	{ ".32.128", 26 },
-	{ ".64.32", 27 },
-	{ ".64.64", 28 },
-	{ ".64.128", 29 },
-	{ ".128.32", 30 },
-	{ ".128.64", 31 },
+		{ ".U8.U8", 0 },
+		{ ".S8.S8", 1 },
+		{ ".U8.U16", 2 },
+		{ ".U8.S16", 3 },
+		{ ".U8.32", 4 },
+		{ ".S8.U8", 5 },
+		{ ".S8.S8", 6 },
+		{ ".S8.U16", 7 },
+		{ ".S8.S16", 8 },
+		{ ".S8.32", 9 },
+		{ ".U16.U8", 10 },
+		{ ".U16.S8", 11 },
+		{ ".U16.U16", 12 },
+		{ ".U16.S16", 13 },
+		{ ".U16.32", 14 },
+		{ ".S16.U8", 15 },
+		{ ".S16.S8", 16 },
+		{ ".S16.U16", 17 },
+		{ ".S16.U16", 18 },
+		{ ".S16.32", 19 },
+		{ ".32.U8", 20 },
+		{ ".32.S8", 21 },
+		{ ".32.U16", 22 },
+		{ ".32.S16", 23 },
+		{ "", 24 },
+		{ ".32.64", 25 },
+		{ ".32.128", 26 },
+		{ ".64.32", 27 },
+		{ ".64.64", 28 },
+		{ ".64.128", 29 },
+		{ ".128.32", 30 },
+		{ ".128.64", 31 },
 };
 
 StringMap stcachectrl_map =
 {
-	{ "", 0 },
-	{ ".CG", 1 },
-	{ ".CS", 2 },
-	{ ".WT", 3 }
+		{ "", 0 },
+		{ ".CG", 1 },
+		{ ".CS", 2 },
+		{ ".WT", 3 }
 };
 
 StringMap sucachectrl_map =
 {
-	{ ".WB", 0 },
-	{ "", 1 },
-	{ ".CS", 2 },
-	{ ".WT", 3 }
+		{ ".WB", 0 },
+		{ "", 1 },
+		{ ".CS", 2 },
+		{ ".WT", 3 }
 };
 
 StringMap suqop_map =
 {
-	{ ".RANK", 0 },
-	{ ".PIXFMT", 1 },
-	{ ".SMPLSZ", 2 },
-	{ ".DIM", 3 },
-	{ ".RGBA", 4 },
-	{ ".BLKSZ", 5 },
-	{ ".INVALIDSUQOP6", 6 },
-	{ ".INVALIDSUQOP7", 7 },
-	{ ".INVALIDSUQOP8", 8 },
-	{ ".INVALIDSUQOP9", 9 },
-	{ ".INVALIDSUQOP10", 10 },
-	{ ".INVALIDSUQOP11", 11 },
-	{ ".INVALIDSUQOP12", 12 },
-	{ ".INVALIDSUQOP13", 13 },
-	{ ".INVALIDSUQOP14", 14 },
-	{ ".INVALIDSUQOP15", 15 },
-	{ ".INVALIDSUQOP16", 16 },
-	{ ".INVALIDSUQOP17", 17 },
-	{ ".INVALIDSUQOP18", 18 },
-	{ ".INVALIDSUQOP19", 19 },
-	{ ".INVALIDSUQOP20", 20 },
-	{ ".INVALIDSUQOP21", 21 },
-	{ ".INVALIDSUQOP22", 22 },
-	{ ".INVALIDSUQOP23", 23 },
-	{ ".INVALIDSUQOP24", 24 },
-	{ ".INVALIDSUQOP25", 25 },
-	{ ".INVALIDSUQOP26", 26 },
-	{ ".INVALIDSUQOP27", 27 },
-	{ ".INVALIDSUQOP28", 28 },
-	{ ".INVALIDSUQOP29", 29 },
-	{ ".INVALIDSUQOP30", 30 },
-	{ ".INVALIDSUQOP31", 31 },
+		{ ".RANK", 0 },
+		{ ".PIXFMT", 1 },
+		{ ".SMPLSZ", 2 },
+		{ ".DIM", 3 },
+		{ ".RGBA", 4 },
+		{ ".BLKSZ", 5 },
+		{ ".INVALIDSUQOP6", 6 },
+		{ ".INVALIDSUQOP7", 7 },
+		{ ".INVALIDSUQOP8", 8 },
+		{ ".INVALIDSUQOP9", 9 },
+		{ ".INVALIDSUQOP10", 10 },
+		{ ".INVALIDSUQOP11", 11 },
+		{ ".INVALIDSUQOP12", 12 },
+		{ ".INVALIDSUQOP13", 13 },
+		{ ".INVALIDSUQOP14", 14 },
+		{ ".INVALIDSUQOP15", 15 },
+		{ ".INVALIDSUQOP16", 16 },
+		{ ".INVALIDSUQOP17", 17 },
+		{ ".INVALIDSUQOP18", 18 },
+		{ ".INVALIDSUQOP19", 19 },
+		{ ".INVALIDSUQOP20", 20 },
+		{ ".INVALIDSUQOP21", 21 },
+		{ ".INVALIDSUQOP22", 22 },
+		{ ".INVALIDSUQOP23", 23 },
+		{ ".INVALIDSUQOP24", 24 },
+		{ ".INVALIDSUQOP25", 25 },
+		{ ".INVALIDSUQOP26", 26 },
+		{ ".INVALIDSUQOP27", 27 },
+		{ ".INVALIDSUQOP28", 28 },
+		{ ".INVALIDSUQOP29", 29 },
+		{ ".INVALIDSUQOP30", 30 },
+		{ ".INVALIDSUQOP31", 31 },
 };
 
 StringMap suredop_map =
 {
-	{ ".ADD", 0 },
-	{ ".MIN", 1 },
-	{ ".MAX", 2 },
-	{ ".INC", 3 },
-	{ ".DEC", 4 },
-	{ ".AND", 5 },
-	{ ".OR", 6 },
-	{ ".XOR", 7 },
-	{ ".INVALIDSUREDOP8", 8 },
-	{ ".INVALIDSUREDOP9", 9 },
-	{ ".INVALIDSUREDOP10", 10 },
-	{ ".INVALIDSUREDOP11", 11 },
-	{ ".INVALIDSUREDOP12", 12 },
-	{ ".INVALIDSUREDOP13", 13 },
-	{ ".INVALIDSUREDOP14", 14 },
-	{ ".INVALIDSUREDOP15", 15 }
+		{ ".ADD", 0 },
+		{ ".MIN", 1 },
+		{ ".MAX", 2 },
+		{ ".INC", 3 },
+		{ ".DEC", 4 },
+		{ ".AND", 5 },
+		{ ".OR", 6 },
+		{ ".XOR", 7 },
+		{ ".INVALIDSUREDOP8", 8 },
+		{ ".INVALIDSUREDOP9", 9 },
+		{ ".INVALIDSUREDOP10", 10 },
+		{ ".INVALIDSUREDOP11", 11 },
+		{ ".INVALIDSUREDOP12", 12 },
+		{ ".INVALIDSUREDOP13", 13 },
+		{ ".INVALIDSUREDOP14", 14 },
+		{ ".INVALIDSUREDOP15", 15 }
 };
 
 StringMap surfaceclamp_map =
 {
-	{ "", 1 },
-	{ ".TRAP", 2 },
-	{ ".INVALIDSURFACECLAMP3", 3 }
+		{ "", 1 },
+		{ ".TRAP", 2 },
+		{ ".INVALIDSURFACECLAMP3", 3 }
 };
 
 StringMap swizzlemode_map =
 {
-	{ ".0000", 0 },
-	{ ".1111", 1 },
-	{ ".2222", 2 },
-	{ ".3333", 3 },
-	{ ".1032", 4 },
-	{ ".2301", 5 },
-	{ ".INVALIDSWIZZLEMODE6", 6 },
-	{ ".INVALIDSWIZZLEMODE7", 7 }
+		{ ".0000", 0 },
+		{ ".1111", 1 },
+		{ ".2222", 2 },
+		{ ".3333", 3 },
+		{ ".1032", 4 },
+		{ ".2301", 5 },
+		{ ".INVALIDSWIZZLEMODE6", 6 },
+		{ ".INVALIDSWIZZLEMODE7", 7 }
 };
 
 StringMap trig_map =
 {
-	{ "", 0 },
-	{ ".TRIG", 1 }
+		{ "", 0 },
+		{ ".TRIG", 1 }
 };
 
 StringMap type_map =
 {
-	{ ".U32.U32", 0 },
-	{ ".U32.S32", 1 },
-	{ ".S32.U32", 2 },
-	{ "", 3 }
+		{ ".U32.U32", 0 },
+		{ ".U32.S32", 1 },
+		{ ".S32.U32", 2 },
+		{ "", 3 }
 };
 
 StringMap u_map =
 {
-	{ "", 0 },
-	{ ".U", 1 },
-	{ ".C", 2 },
-	{ ".I", 3 },
+		{ "", 0 },
+		{ ".U", 1 },
+		{ ".C", 2 },
+		{ ".I", 3 },
 };
 
 StringMap u32_map =
 {
-	{ ".U32", 0 },
-	{ "", 1 }
+		{ ".U32", 0 },
+		{ "", 1 }
 };
 
 StringMap vmode_map =
 {
-	{ ".ALL", 0 },
-	{ ".ANY", 1 },
-	{ ".EQ", 2 },
-	{ ".INVALIDVMODE3", 3 },
-	{ ".INVALIDVMODE4", 4 },
-	{ ".VTG.R", 5 },
-	{ ".VTG.A", 6 },
-	{ ".VTG.RA", 7 }
+		{ ".ALL", 0 },
+		{ ".ANY", 1 },
+		{ ".EQ", 2 },
+		{ ".INVALIDVMODE3", 3 },
+		{ ".INVALIDVMODE4", 4 },
+		{ ".VTG.R", 5 },
+		{ ".VTG.A", 6 },
+		{ ".VTG.RA", 7 }
 };
 
 StringMap w_map =
 {
-	{ "", 0 },
-	{ ".W", 1 }
+		{ "", 0 },
+		{ ".W", 1 }
 };
 
 StringMap x_map =
 {
-	{ "", 0 },
-	{ ".X", 1 }
+		{ "", 0 },
+		{ ".X", 1 }
 };
 
 StringMap xlo_map =
 {
-	{ "", 0 },
-	{ ".XLO", 1 },
-	{ ".XMED", 2 },
-	{ ".XHI", 3 }
+		{ "", 0 },
+		{ ".XLO", 1 },
+		{ ".XMED", 2 },
+		{ ".XHI", 3 }
 };
 
 StringMap xlu_map =
 {
-	{ "", 0 },
-	{ ".XLU", 1 },
-	{ ".ALU", 2 },
-	{ ".INVALID", 3 }
+		{ "", 0 },
+		{ ".XLU", 1 },
+		{ ".ALU", 2 },
+		{ ".INVALID", 3 }
 };
 
 // operand modifiers
 StringMap cc_map =
 {
-	{ "", 0 },
-	{ ".CC", 1 }
+		{ "", 0 },
+		{ ".CC", 1 }
 };
 
 StringMap cccop_map =
 {
-	{ "CC.F", 0 },
-	{ "CC.LT", 1 },
-	{ "CC.EQ", 2 },
-	{ "CC.LE", 3 },
-	{ "CC.GT", 4 },
-	{ "CC.NE", 5 },
-	{ "CC.GE", 6 },
-	{ "CC.NUM", 7 },
-	{ "CC.NAN", 8 },
-	{ "CC.LTU", 9 },
-	{ "CC.EQU", 10 },
-	{ "CC.LEU", 11 },
-	{ "CC.GTU", 12 },
-	{ "CC.NEU", 13 },
-	{ "CC.GEU", 14 },
-	{ "", 15 },
-	{ "CC.OFF", 16 },
-	{ "CC.LO", 17 },
-	{ "CC.SFF", 18 },
-	{ "CC.LS", 19 },
-	{ "CC.HI", 20 },
-	{ "CC.SFT", 21 },
-	{ "CC.HS", 22 },
-	{ "CC.OFT", 23 },
-	{ "CC.CSM_TA", 24 },
-	{ "CC.CSM_TR", 25 },
-	{ "CC.CSM_MX", 26 },
-	{ "CC.FCSM_TA", 27 },
-	{ "CC.FCSM_TR", 28 },
-	{ "CC.FCSM_MX", 29 },
-	{ "CC.RLE", 30 },
-	{ "CC.RGT", 31 }
+		{ "CC.F", 0 },
+		{ "CC.LT", 1 },
+		{ "CC.EQ", 2 },
+		{ "CC.LE", 3 },
+		{ "CC.GT", 4 },
+		{ "CC.NE", 5 },
+		{ "CC.GE", 6 },
+		{ "CC.NUM", 7 },
+		{ "CC.NAN", 8 },
+		{ "CC.LTU", 9 },
+		{ "CC.EQU", 10 },
+		{ "CC.LEU", 11 },
+		{ "CC.GTU", 12 },
+		{ "CC.NEU", 13 },
+		{ "CC.GEU", 14 },
+		{ "", 15 },
+		{ "CC.OFF", 16 },
+		{ "CC.LO", 17 },
+		{ "CC.SFF", 18 },
+		{ "CC.LS", 19 },
+		{ "CC.HI", 20 },
+		{ "CC.SFT", 21 },
+		{ "CC.HS", 22 },
+		{ "CC.OFT", 23 },
+		{ "CC.CSM_TA", 24 },
+		{ "CC.CSM_TR", 25 },
+		{ "CC.CSM_MX", 26 },
+		{ "CC.FCSM_TA", 27 },
+		{ "CC.FCSM_TR", 28 },
+		{ "CC.FCSM_MX", 29 },
+		{ "CC.RLE", 30 },
+		{ "CC.RGT", 31 }
 };
 
 StringMap ssrc_map =
 {
-	{ "SR_LANEID", 0 },
-	{ "SR_CLOCK", 1 },
-	{ "SR_VIRTCFG", 2 },
-	{ "SR_VIRTID", 3 },
-	{ "SR_PM0", 4 },
-	{ "SR_PM1", 5 },
-	{ "SR_PM2", 6 },
-	{ "SR_PM3", 7 },
-	{ "SR_PM4", 8 },
-	{ "SR_PM5", 9 },
-	{ "SR_PM6", 10 },
-	{ "SR_PM7", 11 },
-	{ "SR12", 12 },
-	{ "SR13", 13 },
-	{ "SR14", 14 },
-	{ "SR15", 15 },
-	{ "SR_PRIM_TYPE", 16 },
-	{ "SR_INVOCATION_ID", 17 },
-	{ "SR_Y_DIRECTION", 18 },
-	{ "SR_THREAD_KILL", 19 },
-	{ "SR_SHADER_TYPE", 20 },
-	{ "SR21", 21 },
-	{ "SR22", 22 },
-	{ "SR23", 23 },
-	{ "SR_MACHINE_ID_0", 24 },
-	{ "SR_MACHINE_ID_1", 25 },
-	{ "SR_MACHINE_ID_2", 26 },
-	{ "SR_MACHINE_ID_3", 27 },
-	{ "SR_AFFINITY", 28 },
-	{ "SR29", 29 },
-	{ "SR30", 30 },
-	{ "SR31", 31 },
-	{ "SR_TID", 32 },
-	{ "SR_TID.X", 33 },
-	{ "SR_TID.Y", 34 },
-	{ "SR_TID.Z", 35 },
-	{ "SR_CTA_PARAM", 36 },
-	{ "SR_CTAID.X", 37 },
-	{ "SR_CTAID.Y", 38 },
-	{ "SR_CTAID.Z", 39 },
-	{ "SR_NTID", 40 },
-	{ "SR_NTID.X", 41 },
-	{ "SR_NTID.Y", 42 },
-	{ "SR_NTID.Z", 43 },
-	{ "SR_GRIDPARAM", 44 },
-	{ "SR_NCTAID.X", 45 },
-	{ "SR_NCTAID.Y", 46 },
-	{ "SR_NCTAID.Z", 47 },
-	{ "SR_SWINLO", 48 },
-	{ "SR_SWINSZ", 49 },
-	{ "SR_SMEMSZ", 50 },
-	{ "SR_SMEMBANKS", 51 },
-	{ "SR_LWINLO", 52 },
-	{ "SR_LWINSZ", 53 },
-	{ "SR_LMEMLOSZ", 54 },
-	{ "SR_LMEMHIOFF", 55 },
-	{ "SR_EQMASK", 56 },
-	{ "SR_LTMASK", 57 },
-	{ "SR_LEMASK", 58 },
-	{ "SR_GTMASK", 59 },
-	{ "SR_GEMASK", 60 },
-	{ "SR61", 61 },
-	{ "SR62", 62 },
-	{ "SR63", 63 },
-	{ "SR_GLOBALERRORSTATUS", 64 },
-	{ "SR65", 65 },
-	{ "SR_WARPERRORSTATUS", 66 },
-	{ "SR_WARPERRORSTATUSCLEAR", 67 },
-	{ "SR68", 68 },
-	{ "SR69", 69 },
-	{ "SR70", 70 },
-	{ "SR71", 71 },
-	{ "SR72", 72 },
-	{ "SR73", 73 },
-	{ "SR74", 74 },
-	{ "SR75", 75 },
-	{ "SR76", 76 },
-	{ "SR77", 77 },
-	{ "SR78", 78 },
-	{ "SR79", 79 },
-	{ "SR_CLOCKLO", 80 },
-	{ "SR_CLOCKHI", 81 }
+		{ "SR_LANEID", 0 },
+		{ "SR_CLOCK", 1 },
+		{ "SR_VIRTCFG", 2 },
+		{ "SR_VIRTID", 3 },
+		{ "SR_PM0", 4 },
+		{ "SR_PM1", 5 },
+		{ "SR_PM2", 6 },
+		{ "SR_PM3", 7 },
+		{ "SR_PM4", 8 },
+		{ "SR_PM5", 9 },
+		{ "SR_PM6", 10 },
+		{ "SR_PM7", 11 },
+		{ "SR12", 12 },
+		{ "SR13", 13 },
+		{ "SR14", 14 },
+		{ "SR15", 15 },
+		{ "SR_PRIM_TYPE", 16 },
+		{ "SR_INVOCATION_ID", 17 },
+		{ "SR_Y_DIRECTION", 18 },
+		{ "SR_THREAD_KILL", 19 },
+		{ "SR_SHADER_TYPE", 20 },
+		{ "SR21", 21 },
+		{ "SR22", 22 },
+		{ "SR23", 23 },
+		{ "SR_MACHINE_ID_0", 24 },
+		{ "SR_MACHINE_ID_1", 25 },
+		{ "SR_MACHINE_ID_2", 26 },
+		{ "SR_MACHINE_ID_3", 27 },
+		{ "SR_AFFINITY", 28 },
+		{ "SR29", 29 },
+		{ "SR30", 30 },
+		{ "SR31", 31 },
+		{ "SR_TID", 32 },
+		{ "SR_TID.X", 33 },
+		{ "SR_TID.Y", 34 },
+		{ "SR_TID.Z", 35 },
+		{ "SR_CTA_PARAM", 36 },
+		{ "SR_CTAID.X", 37 },
+		{ "SR_CTAID.Y", 38 },
+		{ "SR_CTAID.Z", 39 },
+		{ "SR_NTID", 40 },
+		{ "SR_NTID.X", 41 },
+		{ "SR_NTID.Y", 42 },
+		{ "SR_NTID.Z", 43 },
+		{ "SR_GRIDPARAM", 44 },
+		{ "SR_NCTAID.X", 45 },
+		{ "SR_NCTAID.Y", 46 },
+		{ "SR_NCTAID.Z", 47 },
+		{ "SR_SWINLO", 48 },
+		{ "SR_SWINSZ", 49 },
+		{ "SR_SMEMSZ", 50 },
+		{ "SR_SMEMBANKS", 51 },
+		{ "SR_LWINLO", 52 },
+		{ "SR_LWINSZ", 53 },
+		{ "SR_LMEMLOSZ", 54 },
+		{ "SR_LMEMHIOFF", 55 },
+		{ "SR_EQMASK", 56 },
+		{ "SR_LTMASK", 57 },
+		{ "SR_LEMASK", 58 },
+		{ "SR_GTMASK", 59 },
+		{ "SR_GEMASK", 60 },
+		{ "SR61", 61 },
+		{ "SR62", 62 },
+		{ "SR63", 63 },
+		{ "SR_GLOBALERRORSTATUS", 64 },
+		{ "SR65", 65 },
+		{ "SR_WARPERRORSTATUS", 66 },
+		{ "SR_WARPERRORSTATUSCLEAR", 67 },
+		{ "SR68", 68 },
+		{ "SR69", 69 },
+		{ "SR70", 70 },
+		{ "SR71", 71 },
+		{ "SR72", 72 },
+		{ "SR73", 73 },
+		{ "SR74", 74 },
+		{ "SR75", 75 },
+		{ "SR76", 76 },
+		{ "SR77", 77 },
+		{ "SR78", 78 },
+		{ "SR79", 79 },
+		{ "SR_CLOCKLO", 80 },
+		{ "SR_CLOCKHI", 81 }
 };
+
+
+Inst::Inst(Asm *as)
+{
+	this->as = as;
+}
 
 
 void Inst::DumpPC(std::ostream &os)
@@ -1207,7 +1174,7 @@ void Inst::DumpToBufWithFmtReg(void)
 		else if (Common::Asm::IsToken(fmt_str, "bop", len))
 		{
 			unsigned v;
-			if (info->opcode == INST_LOP)
+			if (info->op == InstOpLOP)
 				v = (fmt.fmod0 >> 2) & 0x3;
 			else
 				v = (fmt.fmod1_srco >> 4) & 0x3;
@@ -1233,14 +1200,14 @@ void Inst::DumpToBufWithFmtReg(void)
 				ss << cop4_map.MapValue(v);
 			else
 			{
-				if ((info->opcode == INST_FSETP) || (info->opcode == INST_DSETP))
+				if ((info->op == InstOpFSETP) || (info->op == InstOpDSETP))
 					ss << ".GT";
 			}
 		}
 		else if (Common::Asm::IsToken(fmt_str, "fma", len))
 		{
 			unsigned v;
-			if (info->opcode == INST_FADD || info->opcode == INST_FFMA)
+			if (info->op == InstOpFADD || info->op == InstOpFFMA)
 				v = (fmt.fmod1_srco >> 8) & 0x3;
 			else
 				v = (fmt.fmod0 >> 4) & 0x3;
@@ -1255,7 +1222,7 @@ void Inst::DumpToBufWithFmtReg(void)
 		else if (Common::Asm::IsToken(fmt_str, "ftz", len))
 		{
 			unsigned v;
-			if (info->opcode == INST_FSETP)
+			if (info->op == InstOpFSETP)
 				v = fmt.func & 0x1;
 			else
 				v = (fmt.fmod0 >> 1) & 0x1;
@@ -1282,7 +1249,7 @@ void Inst::DumpToBufWithFmtReg(void)
 		else if (Common::Asm::IsToken(fmt_str, "po", len))
 		{
 			unsigned v;
-			if (info->opcode == INST_ISCADD)
+			if (info->op == InstOpISCADD)
 				v = (fmt.fmod1_srco >> 6) & 0x3;
 			else
 				v = (fmt.fmod0 >> 4) & 0x3;
@@ -1303,9 +1270,9 @@ void Inst::DumpToBufWithFmtReg(void)
 		else if (Common::Asm::IsToken(fmt_str, "sat", len))
 		{
 			unsigned v;
-			if (info->opcode == INST_FADD)
+			if (info->op == InstOpFADD)
 				v = fmt.fmod1_srco & 0x1;
-			else if (info->opcode == INST_IMAD)
+			else if (info->op == InstOpIMAD)
 				v = (fmt.fmod1_srco >> 7) & 0x1;
 			else
 				v = (fmt.fmod0 >> 1) & 0x1;
@@ -1368,7 +1335,7 @@ void Inst::DumpToBufWithFmtReg(void)
 		else if (Common::Asm::IsToken(fmt_str, "xlu", len))
 		{
 			unsigned v;
-			if (info->opcode == INST_ISETP)
+			if (info->op == InstOpISETP)
 				v = (fmt.fmod0 >> 4) & 0x3;
 			else
 				v = (fmt.fmod1_srco >> 6) & 0x3;
@@ -1377,9 +1344,9 @@ void Inst::DumpToBufWithFmtReg(void)
 		else if (Common::Asm::IsToken(fmt_str, "x", len))
 		{
 			unsigned v;
-			if (info->opcode == INST_LOP)
+			if (info->op == InstOpLOP)
 				v = (fmt.fmod0 >> 1) & 0x1;
-			else if (info->opcode == INST_IMAD)
+			else if (info->op == InstOpIMAD)
 				v = (fmt.fmod1_srco >> 6) & 0x1;
 			else
 				v = (fmt.fmod0 >> 2) & 0x1;
@@ -1451,8 +1418,8 @@ void Inst::DumpToBufWithFmtReg(void)
 				}
 				else if (s2mode == 3)
 				{
-					unsigned cat = info->cat;
-					if (cat == 0 || cat == 1)  // floating-points
+					InstCategory cat = info->category;
+					if (cat == InstCategorySpFp || cat == InstCategoryDpFp)
 					{
 						src2.i = fmt.src2 << 12;
 						if (std::abs(src2.f) < 1e-4 || std::abs(src2.f) > 1e9)
@@ -1460,7 +1427,7 @@ void Inst::DumpToBufWithFmtReg(void)
 						else
 							ss << StringFmt("%.20g", src2.f);
 					}
-					else if (cat == 3)  // integers
+					else if (cat == InstCategoryInt)
 					{
 						src2.i = fmt.src2;
 						if (src2.i >> 19 == 0)  // positive value
@@ -1499,8 +1466,8 @@ void Inst::DumpToBufWithFmtReg(void)
 				}
 				else if (s2mode == 3)
 				{
-					unsigned cat = info->cat;
-					if (cat == 0 || cat == 1)  // floating-points
+					InstCategory cat = info->category;
+					if (cat == InstCategorySpFp || cat == InstCategoryDpFp)
 					{
 						src2.i = fmt.src2 << 12;
 						if (std::abs(src2.f) < 1e-4 || std::abs(src2.f) > 1e9)
@@ -1508,7 +1475,7 @@ void Inst::DumpToBufWithFmtReg(void)
 						else
 							ss << StringFmt("%.20g", src2.f);
 					}
-					else if (cat == 3)  // integers
+					else if (cat == InstCategoryInt)
 					{
 						src2.i = fmt.src2;
 						if (src2.i >> 19 == 0)  // positive value
@@ -1548,7 +1515,7 @@ void Inst::DumpToBufWithFmtReg(void)
 			unsigned src;
 			unsigned n;
 			src = fmt.src1;
-			if (info->opcode == INST_FMUL)
+			if (info->op == InstOpFMUL)
 				n = (fmt.fmod1_srco >> 8) & 0x1;
 			else
 				n = (fmt.fmod0 >> 5) & 0x1;
@@ -1565,7 +1532,7 @@ void Inst::DumpToBufWithFmtReg(void)
 			unsigned src;
 			unsigned n;
 			src = fmt.src1;
-			if (info->opcode == INST_IMAD)
+			if (info->op == InstOpIMAD)
 				n = (fmt.fmod0 >> 4) & 0x3;
 			else
 				n = (fmt.fmod1_srco >> 6) & 0x3;
@@ -1656,8 +1623,8 @@ void Inst::DumpToBufWithFmtReg(void)
 			}
 			else if (mode == 3)
 			{
-				unsigned cat = info->cat;
-				if (cat == 0 || cat == 1)  // floating-points
+				InstCategory cat = info->category;
+				if (cat == InstCategorySpFp || cat == InstCategoryDpFp)
 				{
 					src2.i = fmt.src2 << 12;
 					if (std::abs(src2.f) < 1e-4)
@@ -1667,7 +1634,7 @@ void Inst::DumpToBufWithFmtReg(void)
 					else
 						ss << StringFmt("%.20g", src2.f);
 				}
-				else if (cat == 3)  // integers
+				else if (cat == InstCategoryInt)
 				{
 					src2.i = fmt.src2;
 					if (src2.i >> 19 == 0)  // positive value
@@ -1744,8 +1711,8 @@ void Inst::DumpToBufWithFmtReg(void)
 			}
 			else if (mode == 3)
 			{
-				unsigned cat = info->cat;
-				if (cat == 0 || cat == 1)  // floating-points
+				InstCategory cat = info->category;
+				if (cat == InstCategorySpFp || cat == InstCategoryDpFp)
 				{
 					src2.i = fmt.src2 << 12;
 					if (std::abs(src2.f) < 1e-4 || std::abs(src2.f) > 1e9)
@@ -1753,7 +1720,7 @@ void Inst::DumpToBufWithFmtReg(void)
 					else
 						ss << StringFmt("%.20g", src2.f);
 				}
-				else if (cat == 3)  // integers
+				else if (cat == InstCategoryInt)
 				{
 					src2.i = fmt.src2;
 					if (src2.i >> 19 == 0)  // positive value
@@ -1795,13 +1762,13 @@ void Inst::DumpToBufWithFmtReg(void)
 			}
 			else if (mode == 3)
 			{
-				unsigned cat = info->cat;
-				if (cat == 0)  // single-precision floating-points
+				InstCategory cat = info->category;
+				if (cat == InstCategorySpFp)
 				{
 					src.i = fmt.src2 << 12;
 					if ((std::abs(src.f) < 1e-4) || (std::abs(src.f) > 1e9))
 					{
-						if (info->opcode == INST_FMUL)
+						if (info->op == InstOpFMUL)
 							ss << StringFmt("%.19e", src.f);
 						else
 							ss << StringFmt("%.20e", src.f);
@@ -1809,7 +1776,7 @@ void Inst::DumpToBufWithFmtReg(void)
 					else
 						ss << StringFmt("%.20g", src.f);
 				}
-				else if (cat == 1)  // double-precision floating-points
+				else if (cat == InstCategoryDpFp)
 				{
 					src.l = (unsigned long long)fmt.src2 << 44;
 					if (std::abs(src.d) < 1e-4)
@@ -1819,7 +1786,7 @@ void Inst::DumpToBufWithFmtReg(void)
 					else
 						ss << StringFmt("%.11g", src.d);
 				}
-				else if (cat == 3)  // integers
+				else if (cat == InstCategoryInt)
 				{
 					src.i = fmt.src2;
 					if (src.i >> 19 == 0)  // positive value
@@ -1859,8 +1826,8 @@ void Inst::DumpToBufWithFmtReg(void)
 			}
 			else if (mode == 3)
 			{
-				unsigned cat = info->cat;
-				if (cat == 0 || cat == 1)  // floating-points
+				InstCategory cat = info->category;
+				if (cat == InstCategorySpFp || cat == InstCategoryDpFp)
 				{
 					src.i = fmt.src2 << 12;
 					if (std::abs(src.f) < 1e-4 || std::abs(src.f) > 1e9)
@@ -1868,7 +1835,7 @@ void Inst::DumpToBufWithFmtReg(void)
 					else
 						ss << StringFmt("%.20g", src.f);
 				}
-				else if (cat == 3)  // integers
+				else if (cat == InstCategoryInt)
 				{
 					src.i = fmt.src2;
 					if (src.i >> 19 == 0)  // positive value
@@ -1910,8 +1877,8 @@ void Inst::DumpToBufWithFmtReg(void)
 			}
 			else if (mode == 3)
 			{
-				unsigned cat = info->cat;
-				if (cat == 0 || cat == 1)  // floating-points
+				InstCategory cat = info->category;
+				if (cat == InstCategorySpFp || cat == InstCategoryDpFp)
 				{
 					src.i = fmt.src2 << 12;
 					if (std::abs(src.f) < 1e-4 || std::abs(src.f) > 1e9)
@@ -1919,7 +1886,7 @@ void Inst::DumpToBufWithFmtReg(void)
 					else
 						ss << StringFmt("%.20g", src.f);
 				}
-				else if (cat == 3)  // integers
+				else if (cat == InstCategoryInt)
 				{
 					src.i = fmt.src2;
 					if (src.i >> 19 == 0)  // positive value
@@ -1970,8 +1937,8 @@ void Inst::DumpToBufWithFmtReg(void)
 			}
 			else if (mode == 3)
 			{
-				unsigned cat = info->cat;
-				if (cat == 0)  // single-precision floating-points
+				InstCategory cat = info->category;
+				if (cat == InstCategorySpFp)
 				{
 					src.i = fmt.src2 << 12;
 					if (std::isinf(src.f))
@@ -1986,7 +1953,7 @@ void Inst::DumpToBufWithFmtReg(void)
 					{
 						if (std::abs(src.f) < 1e-4 || std::abs(src.f) > 1e9)
 						{
-							if (info->opcode == INST_FSETP)
+							if (info->op == InstOpFSETP)
 								ss << StringFmt("%.18e", src.f);
 							else
 								ss << StringFmt("%.20e", src.f);
@@ -1995,7 +1962,7 @@ void Inst::DumpToBufWithFmtReg(void)
 							ss << StringFmt("%.20g", src.f);
 					}
 				}
-				if (cat == 1)  // double-precision floating-points
+				if (cat == InstCategoryDpFp)
 				{
 					src.l = (unsigned long long)fmt.src2 << 44;
 					if (std::isinf(src.d))
@@ -2014,7 +1981,7 @@ void Inst::DumpToBufWithFmtReg(void)
 							ss << StringFmt("%.20g", src.d);
 					}
 				}
-				else if (cat == 3)  // integers
+				else if (cat == InstCategoryInt)
 				{
 					src.i = fmt.src2;
 					if (src.i >> 19 == 0)  // positive value
@@ -2238,7 +2205,7 @@ void Inst::DumpToBufWithFmtImm(void)
 		else if (Common::Asm::IsToken(fmt_str, "x", len))
 		{
 			unsigned v;
-			if (info->opcode == INST_IADD32I)
+			if (info->op == InstOpIADD32I)
 				v = (fmt.fmod0 >> 2) & 0x1;
 			else
 				v = (fmt.fmod0 >> 1) & 0x1;
@@ -2382,7 +2349,7 @@ void Inst::DumpToBufWithFmtImm(void)
 			unsigned s;
 			imm32.i = fmt.imm32;
 			s = imm32.i >> 31;
-			if (info->opcode == INST_FFMA32I || info->opcode == INST_FADD32I || info->opcode == INST_FMUL32I)
+			if (info->op == InstOpFFMA32I || info->op == InstOpFADD32I || info->op == InstOpFMUL32I)
 			{
 				if (std::abs(imm32.f) < 1e-4 || std::abs(imm32.f) > 1e9)
 					ss << StringFmt("%.20e", imm32.f);
@@ -2603,7 +2570,7 @@ void Inst::DumpToBufWithFmtOther(void)
 		else if (Common::Asm::IsToken(fmt_str, "xlu", len))
 		{
 			unsigned v;
-			if (info->opcode == INST_MOV)
+			if (info->op == InstOpMOV)
 				v = (fmt.fmod2_srco >> 6) & 0x3;
 			else
 				v = (fmt.fmod0 >> 4) & 0x3;
@@ -2758,8 +2725,8 @@ void Inst::DumpToBufWithFmtOther(void)
 			}
 			else if (mode == 3)
 			{
-				unsigned cat = info->cat;
-				if (cat == 0 || cat == 1)  // floating-points
+				InstCategory cat = info->category;
+				if (cat == InstCategorySpFp || cat == InstCategoryDpFp)
 				{
 					src.i = fmt.src2 << 12;
 					if (std::abs(src.f) < 1e-4 || std::abs(src.f) > 1e9)
@@ -2767,7 +2734,7 @@ void Inst::DumpToBufWithFmtOther(void)
 					else
 						ss << StringFmt("%.20g", src.f);
 				}
-				else if (cat == 3)  // integers
+				else if (cat == InstCategoryInt)
 				{
 					src.i = fmt.src2;
 					if (src.i >> 19 == 0)  // positive value
@@ -2841,8 +2808,8 @@ void Inst::DumpToBufWithFmtOther(void)
 			}
 			else if (mode == 3)
 			{
-				unsigned cat = info->cat;
-				if (cat == 0 || cat == 1)  // floating-points
+				InstCategory cat = info->category;
+				if (cat == InstCategorySpFp || cat == InstCategoryDpFp)
 				{
 					src.i = fmt.src2 << 12;
 					if (std::abs(src.f) < 1e-4 || std::abs(src.f) > 1e9)
@@ -2850,7 +2817,7 @@ void Inst::DumpToBufWithFmtOther(void)
 					else
 						ss << StringFmt("%.20g", src.f);
 				}
-				else if (cat == 3)  // integers
+				else if (cat == InstCategoryInt)
 				{
 					src.i = fmt.src2;
 					if (src.i >> 19 == 0)  // positive value
@@ -2901,8 +2868,8 @@ void Inst::DumpToBufWithFmtOther(void)
 			}
 			else if (mode == 3)
 			{
-				unsigned cat = info->cat;
-				if (cat == 0 || cat == 1)  // floating-points
+				InstCategory cat = info->category;
+				if (cat == InstCategorySpFp || cat == InstCategoryDpFp)
 				{
 					src.i = fmt.src2 << 12;
 					if (std::abs(src.f) < 1e-4 || std::abs(src.f) > 1e9)
@@ -2910,7 +2877,7 @@ void Inst::DumpToBufWithFmtOther(void)
 					else
 						ss << StringFmt("%.20g", src.f);
 				}
-				else if (cat == 3)  // integers
+				else if (cat == InstCategoryInt)
 				{
 					src.i = fmt.src2;
 					if (src.i >> 19 == 0)  // positive value
@@ -2968,8 +2935,8 @@ void Inst::DumpToBufWithFmtOther(void)
 			}
 			else if (mode == 3)
 			{
-				unsigned cat = info->cat;
-				if (cat == 0 || cat == 1)  // floating-points
+				InstCategory cat = info->category;
+				if (cat == InstCategorySpFp || cat == InstCategoryDpFp)
 				{
 					src.i = fmt.src2 << 12;
 					if (std::abs(src.f) < 1e-4 || std::abs(src.f) > 1e9)
@@ -2977,7 +2944,7 @@ void Inst::DumpToBufWithFmtOther(void)
 					else
 						ss << StringFmt("%.20g", src.f);
 				}
-				else if (cat == 3)  // integers
+				else if (cat == InstCategoryInt)
 				{
 					src.i = fmt.src2;
 					if (src.i >> 19 == 0)  // positive value
@@ -3033,8 +3000,8 @@ void Inst::DumpToBufWithFmtOther(void)
 			}
 			else if (mode == 3)
 			{
-				unsigned cat = info->cat;
-				if (cat == 0 || cat == 1)  // floating-points
+				InstCategory cat = info->category;
+				if (cat == InstCategorySpFp || cat == InstCategoryDpFp)
 				{
 					src.i = fmt.src2 << 12;
 					if (std::abs(src.f) < 1e-4 || std::abs(src.f) > 1e9)
@@ -3042,7 +3009,7 @@ void Inst::DumpToBufWithFmtOther(void)
 					else
 						ss << StringFmt("%.20g", src.f);
 				}
-				else if (cat == 3)  // integers
+				else if (cat == InstCategoryInt)
 				{
 					src.i = fmt.src2;
 					if (src.i >> 19 == 0)  // positive value
@@ -3360,7 +3327,7 @@ void Inst::DumpToBufWithFmtLdSt(void)
 		else if (Common::Asm::IsToken(fmt_str, "r4", len))
 		{
 			unsigned v;
-			if (info->opcode == INST_SURED)
+			if (info->op == InstOpSURED)
 				v = (fmt.fmod1_srco >> 6) & 0xf;
 			else
 				v = (fmt.fmod1_srco >> 23) & 0xf;
@@ -3392,14 +3359,14 @@ void Inst::DumpToBufWithFmtLdSt(void)
 				ss << size3_map.MapValue(v);
 			else
 			{
-				if (info->opcode == INST_LD)
+				if (info->op == InstOpLD)
 				{
 					if (((fmt.fmod0 >> 5) & 0x1) == 0)
 						ss << ".64";
 					else
 						ss << ".128";
 				}
-				else if (info->opcode == INST_LDX && ((fmt.fmod1_srco >> 30) & 0x1) == 1)  // LDS
+				else if (info->op == InstOpLDX && ((fmt.fmod1_srco >> 30) & 0x1) == 1)  // LDS
 				{
 					if (((fmt.fmod0 >> 4) & 0x3) == 0)
 						ss << ".BV.64";
@@ -3419,7 +3386,7 @@ void Inst::DumpToBufWithFmtLdSt(void)
 		else if (Common::Asm::IsToken(fmt_str, "stcachectrl", len))
 		{
 			unsigned v;
-			if (!((info->opcode == INST_STX) && (((fmt.fmod1_srco >> 30) & 0x1) == 1)))  // !STS
+			if (!((info->op == InstOpSTX) && (((fmt.fmod1_srco >> 30) & 0x1) == 1)))  // !STS
 			{
 				v = (fmt.fmod0 >> 4) & 0x3;
 				ss << stcachectrl_map.MapValue(v);
@@ -3624,7 +3591,7 @@ void Inst::DumpToBufWithFmtLdSt(void)
 		else if (Common::Asm::IsToken(fmt_str, "src3", len))
 		{
 			unsigned src;
-			if (info->opcode == INST_ATOM)
+			if (info->op == InstOpATOM)
 				src = (fmt.fmod1_srco >> 17) & 0x3f;
 			else
 				src = (fmt.fmod1_srco >> 6) & 0x3f;
@@ -3695,7 +3662,7 @@ void Inst::DumpToBufWithFmtLdSt(void)
 		else if (Common::Asm::IsToken(fmt_str, "off24", len))
 		{
 			int v, s;
-			if (info->opcode == INST_CCTLL)
+			if (info->op == InstOpCCTLL)
 				v = fmt.fmod1_srco & 0xfffffc;
 			else
 				v = fmt.fmod1_srco & 0xffffff;
@@ -3711,7 +3678,7 @@ void Inst::DumpToBufWithFmtLdSt(void)
 		else if (Common::Asm::IsToken(fmt_str, "off32", len))
 		{
 			int v;
-			if (info->opcode == INST_CCTL)
+			if (info->op == InstOpCCTL)
 				v = fmt.fmod1_srco & 0xfffffffc;
 			else
 				v = fmt.fmod1_srco & 0xffffffff;
@@ -3759,7 +3726,7 @@ void Inst::DumpToBufWithFmtLdSt(void)
 		else if (Common::Asm::IsToken(fmt_str, "psrc", len))
 		{
 			unsigned p;
-			if (info->opcode == INST_LDLK)
+			if (info->op == InstOpLDLK)
 				p = ((fmt.func & 0x1) << 2) | ((fmt.fmod0 >> 4) & 0x3);
 			else
 				p = (fmt.fmod1_srco >> 24) & 0x7;
@@ -4073,15 +4040,15 @@ void Inst::DumpToBuf(void)
 	cat = bytes.bytes[0] & 0xf;
 
 	// Dump to buffer based on format
-	if (cat == 0 || cat == 1 || cat == 3)
+	if (cat == InstCategorySpFp || cat == InstCategoryDpFp || cat == InstCategoryInt)
 		DumpToBufWithFmtReg();
-	else if (cat == 2)
+	else if (cat == InstCategoryImm)
 		DumpToBufWithFmtImm();
-	else if (cat == 4)
+	else if (cat == InstCategoryOther)
 		DumpToBufWithFmtOther();
-	else if (cat == 5 || cat == 6)
+	else if (cat == InstCategoryLdSt || cat == InstCategoryLdRO)
 		DumpToBufWithFmtLdSt();
-	else if (cat == 7)
+	else if (cat == InstCategoryCtrl)
 		DumpToBufWithFmtCtrl();
 	else
 		fatal("%s: instruction category %d (offset=0x%x)",
@@ -4089,10 +4056,10 @@ void Inst::DumpToBuf(void)
 }
 
 
-void Inst::Dump(std::ostream &os, unsigned max_inst_len)
+void Inst::Dump(std::ostream &os, unsigned width)
 {
 	os << str;
-	for (unsigned i = str.length(); i <= max_inst_len; ++i)
+	for (unsigned i = str.length(); i <= width; ++i)
 		os << " ";
 }
 
@@ -4101,6 +4068,38 @@ void Inst::DumpHex(std::ostream &os)
 {
 	os << StringFmt("/* 0x%016llx */", bytes.dword);
 }
+
+
+void Inst::Decode(unsigned addr, const char *ptr)
+{
+	unsigned cat;
+	unsigned op_in_cat;
+
+	// Get instruction category
+	bytes.dword = * (unsigned long long *) ptr;
+	cat = bytes.bytes[0] & 0xf;
+
+	// Get opcode bits
+	if (cat <= 3)
+		op_in_cat = bytes.bytes[7] >> 3;  // 5-bit
+	else
+		op_in_cat = bytes.bytes[7] >> 2;  // 6-bit
+
+	// Get opcode bits: special cases
+	if (cat == InstCategorySpFp && ((op_in_cat >> 1) & 0xf) == 2)  // FSETP
+		op_in_cat = op_in_cat & 0x1e;
+	else if (cat == InstCategoryLdSt && ((op_in_cat & 0x30) >> 4) == 0)  // RED
+		op_in_cat = op_in_cat & 0x30;
+	else if (cat == InstCategoryLdSt && ((op_in_cat & 0x30) >> 4) == 1)  // ATOM
+		op_in_cat = op_in_cat & 0x30;
+
+	// Get instruction information
+	info = as->GetInstInfo(cat, op_in_cat);
+
+	// Set virtual address
+	this->addr = addr;
+}
+
 
 }  // namespace Fermi
 

@@ -62,7 +62,7 @@ CLASS_BEGIN(FrmEmu, Emu)
 	unsigned int total_global_mem_size;
 
 	/* Instruction emulation table */
-	FrmEmuInstFunc inst_func[FrmInstOpcodeCount];
+	FrmEmuInstFunc inst_func[FrmInstOpCount];
 
 	/* Stats */
 	int grid_count;  /* Number of CUDA functions executed */

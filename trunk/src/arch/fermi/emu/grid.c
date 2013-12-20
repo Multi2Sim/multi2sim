@@ -243,20 +243,20 @@ static void FrmGridSetupArrays(FrmGrid *self)
 			thread->id_in_thread_block = tid;
 
 			/* Save thread IDs in special register R0 */
-			thread->sr[FrmInstSRegTidX].u32 = tid %
+			thread->sr[33].u32 = tid %
 				self->thread_block_size3[0];
-			thread->sr[FrmInstSRegTidY].u32 = tid /
+			thread->sr[34].u32 = tid /
 				self->thread_block_size3[0];
-			thread->sr[FrmInstSRegTidZ].u32 = tid /
+			thread->sr[35].u32 = tid /
 				(self->thread_block_size3[0] *
 				 self->thread_block_size3[1]);
 
 			/* Save thread block IDs in special register R1 */
-			thread->sr[FrmInstSRegCTAidX].u32 = bid %
+			thread->sr[37].u32 = bid %
 				self->thread_block_count3[0];
-			thread->sr[FrmInstSRegCTAidY].u32 = bid /
+			thread->sr[38].u32 = bid /
 				self->thread_block_count3[0];
-			thread->sr[FrmInstSRegCTAidZ].u32 = bid /
+			thread->sr[39].u32 = bid /
 				(self->thread_block_count3[0] *
 				 self->thread_block_count3[1]);
 
