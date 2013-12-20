@@ -422,13 +422,13 @@ void frm_sm_fetch(FrmSM *sm, int wiq_id)
 	assert(warp->thread_block && uop->thread_block);
 
 	/* Debug */
-	//frm_inst_dump(inst_str, sizeof inst_str, 
+	//FrmInstOpdump(inst_str, sizeof inst_str,
 	//	warp->grid->inst_buffer, warp->pc / 8);
 
 	/* Trace */
 	if (frm_tracing())
 	{
-		//frm_inst_dump(&warp->inst, warp->inst_size, 
+		//FrmInstOpdump(&warp->inst, warp->inst_size,
 		//	warp->pc, 
 		//	warp->grid->inst_buffer + warp->pc,
 		//	inst_str, sizeof inst_str);
@@ -574,12 +574,12 @@ void frm_sm_issue_oldest(FrmSM *sm,
 			assert(uop);
 
 			/* Only evaluate SIMD instructions */
-			FrmInstOpcode opcode = FrmInstWrapGetOpcode(uop->inst);
-			if (opcode != FRM_INST_FADD &&
-					opcode != FRM_INST_IMAD &&
-					opcode != FRM_INST_ISCADD &&
-					opcode != FRM_INST_S2R &&
-					opcode != FRM_INST_EXIT)
+			FrmInstOp opcode = FrmInstWrapGetOpcode(uop->inst);
+			if (opcode != FrmInstOpFADD &&
+					opcode != FrmInstOpIMAD &&
+					opcode != FrmInstOpISCADD &&
+					opcode != FrmInstOpS2R &&
+					opcode != FrmInstOpEXIT)
 			{	
 				list_index++;
 				continue;
@@ -645,10 +645,10 @@ void frm_sm_issue_oldest(FrmSM *sm,
 			assert(uop);
 
 			/* Only evaluate memory instructions */
-			FrmInstOpcode opcode = FrmInstWrapGetOpcode(uop->inst);
-			if (opcode != FRM_INST_LD &&
-					opcode != FRM_INST_ST &&
-					opcode != FRM_INST_MOV)
+			FrmInstOp opcode = FrmInstWrapGetOpcode(uop->inst);
+			if (opcode != FrmInstOpLD &&
+					opcode != FrmInstOpST &&
+					opcode != FrmInstOpMOV)
 			{	
 				list_index++;
 				continue;
@@ -854,7 +854,7 @@ void frm_sm_issue_first(FrmSM *sm,
 		/* Determine instruction type.  This simply decodes the 
 		 * instruction type, so that it can be issued to the proper 
 		 * hardware unit.  It is not the full decode stage */
-		FrmInstOpcode opcode = FrmInstWrapGetOpcode(uop->inst);
+		FrmInstOp opcode = FrmInstWrapGetOpcode(uop->inst);
 		switch (opcode)
 		{
 
@@ -1051,11 +1051,11 @@ void frm_sm_issue_first(FrmSM *sm,
 			//}
 
 			/* Vector ALU */
-			case FRM_INST_FADD:
-			case FRM_INST_IMAD:
-			case FRM_INST_MOV:
-			case FRM_INST_S2R:
-			case FRM_INST_EXIT:
+			case FrmInstOpFADD:
+			case FrmInstOpIMAD:
+			case FrmInstOpMOV:
+			case FrmInstOpS2R:
+			case FrmInstOpEXIT:
 				{
 					/* Stall if max SIMD instructions already issued */
 					assert(simd_insts_issued <= 
@@ -1103,8 +1103,8 @@ void frm_sm_issue_first(FrmSM *sm,
 				}
 
 				/* Memory instruction */
-			case FRM_INST_LD:
-			case FRM_INST_ST:
+			case FrmInstOpLD:
+			case FrmInstOpST:
 				{
 					/* Stall if max vector memory instructions already 
 					 * issued */

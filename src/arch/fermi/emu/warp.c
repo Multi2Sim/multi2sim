@@ -235,7 +235,7 @@ void FrmWarpExecute(FrmWarp *self)
 
 	struct FrmInstWrap *inst;
 	FrmInstBytes bytes;
-	FrmInstOpcode opcode;
+	FrmInstOp opcode;
 
 	int thread_id;
 

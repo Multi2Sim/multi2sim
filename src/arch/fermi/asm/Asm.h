@@ -20,8 +20,8 @@
 #ifndef FERMI_ASM_ASM_H
 #define FERMI_ASM_ASM_H
 
-
 #include <cassert>
+#include <memory>
 
 #include <arch/common/Asm.h>
 
@@ -32,36 +32,41 @@ namespace Fermi
 {
 
 
-class Asm : public Common::Asm
+class Asm: public Common::Asm
 {
-	static const int inst_cat_count = 16;
-	static const int func_count = 64;
+	// Max number of operations per category
+	static const unsigned InstOpCountPerCategory = 64;
 
-	// Instruction information table
-	InstInfo inst_info[InstOpcodeCount];
-
-	// Decoding table. The 1st level is indexed by the instruction category
-	// bits, and the 2nd level is indexed by the function bits in the
+	// Instruction information table. The 1st level is indexed by the
+	// instruction category. The 2nd level is indexed by the opcode bits in the
 	// category.
-	InstInfo *dec_table[inst_cat_count][func_count];
+	InstInfo inst_info_table[InstCategoryCount][InstOpCountPerCategory];
 
-public:
 	// Constructor
 	Asm();
 
-	// Disassemblers
-	void DisassembleBinary(std::string path);
-	void DisassembleBuffer(char *buffer, unsigned int size);
+	// Unique instance of Fermi disassembler
+	static std::unique_ptr<Asm> instance;
 
-	// Getters
-	InstInfo *GetInstInfo(InstOpcode opcode) { assert(opcode >= 0 &&
-			opcode < InstOpcodeCount); return &inst_info[opcode]; }
-	InstInfo *GetDecTable(int cat, int func) { assert(cat >= 0 && 
-			cat < inst_cat_count); assert(func >= 0 && 
-				func < func_count); return dec_table[cat][func]; }
+public:
+	/// Get the only instance of the Fermi disassembler. If the instance does
+	/// not exist yet, it will be created, and will remain allocated until the
+	/// end of the execution.
+	static Asm *getInstance();
+
+	/// Disassembler
+	void DisassembleBinary(std::string path);
+
+	/// Get instruction information
+	InstInfo *GetInstInfo(unsigned cat, unsigned op_in_cat)
+	{
+		assert(cat >= 0 && cat < InstCategoryCount);
+		assert(op_in_cat >= 0 && op_in_cat < InstOpCountPerCategory);
+		return &inst_info_table[cat][op_in_cat];
+	}
 };
 
-}  // namespace Fermi
 
+}  // namespace Fermi
 
 #endif  // FERMI_ASM_ASM_H

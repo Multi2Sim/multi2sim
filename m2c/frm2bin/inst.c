@@ -399,7 +399,7 @@ void frm2bin_inst_dump(struct frm2bin_inst_t *inst, FILE *f)
 	fprintf(f, "Instruction %s\n", inst->info->name);
 	/*
 	fprintf(f, "\tformat=%s, size=%d\n",
-			str_map_value(&frm_inst_fmt_map, inst->info->inst_info->fmt),
+			str_map_value(&FrmInstOpfmt_map, inst->info->inst_info->fmt),
 			inst->size);
 	*/
 
@@ -431,9 +431,9 @@ void frm2bin_inst_dump(struct frm2bin_inst_t *inst, FILE *f)
 
 void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 {
-	/* Fermi uses frm_inst_dword_t bytes it's different from
+	/* Fermi uses FrmInstOpdword_t bytes it's different from
 	 * southern-island */
-	FrmInstBytes *inst_bytes;
+	//FrmInstBytes *inst_bytes;
 
 	FrmInstInfo *inst_info;
 	struct frm2bin_inst_info_t *info;
@@ -447,7 +447,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 	int index;
 
 	/* Initialize */
-	inst_bytes = &inst->bytes;
+	//inst_bytes = &inst->bytes;
 	info = inst->info;
 	assert(info);
 	inst_info = info->inst_info;
@@ -456,69 +456,69 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 	 * its format. 4-bit instructions could be extended later to 8 bits
 	 * upon the presence of a literal constant. right now for fermi, all
 	 * of them are 8 bytes */
-	inst->size = inst_info->size;
+	//inst->size = inst_info->size;
 
 	/* Instruction opcode */
-	switch (inst_info->opcode)
+	switch (inst_info->op)
 	{
 
 		/* encoding in [31:26], op in [18:16] */
 
-	case FRM_INST_FFMA:
+	case FrmInstOpFFMA:
 
-		/* [3:0]: 0000 */
-		inst_bytes->general0.op0 = 0x0;
-
-		/* [9:4]: all 0s, default value */
-		inst_bytes->general0.mod0 = 0x0;
-
-		/* [13:10]: pred */
-		if (inst->pred_num >= 0)
-		{
-			inst_bytes->general0.pred = inst->pred_num;
-		}
-		else
-		{
-			/* no predicate, value=7 */
-			inst_bytes->general0.pred = 0x7;
-		}
-
-		/* [48]: 0 */
-		inst_bytes->general0.dst_cc = 0x0;
-
-		/* [56:55]: 00, default value */
-		inst_bytes->general0_mod1_B.rnd = 0x0;
-
-		/* [57]: 0 */
-		inst_bytes->general0_mod1_B._const0 = 0x0;
-
-		/* [63:58]: 001100 */
-		inst_bytes->general0.op1 = 0xc;
+//		/* [3:0]: 0000 */
+//		inst_bytes->general0.op0 = 0x0;
+//
+//		/* [9:4]: all 0s, default value */
+//		inst_bytes->general0.mod0 = 0x0;
+//
+//		/* [13:10]: pred */
+//		if (inst->pred_num >= 0)
+//		{
+//			inst_bytes->general0.pred = inst->pred_num;
+//		}
+//		else
+//		{
+//			/* no predicate, value=7 */
+//			inst_bytes->general0.pred = 0x7;
+//		}
+//
+//		/* [48]: 0 */
+//		inst_bytes->general0.dst_cc = 0x0;
+//
+//		/* [56:55]: 00, default value */
+//		inst_bytes->general0_mod1_B.rnd = 0x0;
+//
+//		/* [57]: 0 */
+//		inst_bytes->general0_mod1_B._const0 = 0x0;
+//
+//		/* [63:58]: 001100 */
+//		inst_bytes->general0.op1 = 0xc;
 
 		break;
 
 
 		/* encoding in [:], op in [] */
-	case FRM_INST_FADD:
+	case FrmInstOpFADD:
 
-		inst_bytes->general0.op0 = 0x0;
-		/* [4] = 0, default value for other bits */
-		inst_bytes->general0.mod0 = 0x0;
-		inst_bytes->general0.dst_cc = 0x0;
-		/* [54:50] = 0, default value for other bits */
-		inst_bytes->general0.mod1 = 0x0;
-		inst_bytes->general0.op1 = 0x14;
+//		inst_bytes->general0.op0 = 0x0;
+//		/* [4] = 0, default value for other bits */
+//		inst_bytes->general0.mod0 = 0x0;
+//		inst_bytes->general0.dst_cc = 0x0;
+//		/* [54:50] = 0, default value for other bits */
+//		inst_bytes->general0.mod1 = 0x0;
+//		inst_bytes->general0.op1 = 0x14;
 
-		/* set the predicate */
-		if (inst->pred_num >= 0)
-		{
-			inst_bytes->general0.pred = inst->pred_num;
-		}
-		else
-		{
-			/* no predicate, value=7 */
-			inst_bytes->general0.pred = 0x7;
-		}
+//		/* set the predicate */
+//		if (inst->pred_num >= 0)
+//		{
+//			inst_bytes->general0.pred = inst->pred_num;
+//		}
+//		else
+//		{
+//			/* no predicate, value=7 */
+//			inst_bytes->general0.pred = 0x7;
+//		}
 
 		break;
 
@@ -586,317 +586,317 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 	*/
 
 
-	case FRM_INST_DADD:
+	case FrmInstOpDADD:
 
-		/* [3:0]: 0001 */
-		inst_bytes->general0.op0 = 0x1;
-
-		/* [9:4]: 000000, default value */
-		inst_bytes->general0.mod0 = 0x0;
-
-		/* [13:10]: pred */
-		if (inst->pred_num >= 0)
-		{
-			inst_bytes->general0.pred = inst->pred_num;
-		}
-		else
-		{
-			/* no predicate, value=7 */
-			inst_bytes->general0.pred = 0x7;
-		}
-
-		/* [47:46]: src2_mod, don't know the default value yet */
-
-		/* [48]: 0 , dst.cc, default value */
-		inst_bytes->general0.dst_cc = 0x0;
-
-		/* [57:49]: 000000000, default */
-		inst_bytes->general0.mod1 = 0x0;
-
-		/* [63:58]: 010100 */
-		inst_bytes->general0.op1 = 0x13;
-
-		break;
-
-	case FRM_INST_DMUL:
-
-		/* [3:0]: 0001 */
-		inst_bytes->general0.op0 = 0x1;
-
-		/* [9:4]: 000000, default value */
-		inst_bytes->general0.mod0 = 0x0;
-
-		/* [13:10]: pred */
-		if (inst->pred_num >= 0)
-		{
-			inst_bytes->general0.pred = inst->pred_num;
-		}
-		else
-		{
-			/* no predicate, value=7 */
-			inst_bytes->general0.pred = 0x7;
-		}
-
-		/* [47:46]: src2_mod, don't know the default value yet */
-
-		/* [48]: 0 , dst.cc, default value */
-		inst_bytes->general0.dst_cc = 0x0;
-
-		/* [57:49]: 000000000, default */
-		inst_bytes->general0.mod1 = 0x0;
-
-		/* [63:58]: 010100 */
-		inst_bytes->general0.op1 = 0x14;
+//		/* [3:0]: 0001 */
+//		inst_bytes->general0.op0 = 0x1;
+//
+//		/* [9:4]: 000000, default value */
+//		inst_bytes->general0.mod0 = 0x0;
+//
+//		/* [13:10]: pred */
+//		if (inst->pred_num >= 0)
+//		{
+//			inst_bytes->general0.pred = inst->pred_num;
+//		}
+//		else
+//		{
+//			/* no predicate, value=7 */
+//			inst_bytes->general0.pred = 0x7;
+//		}
+//
+//		/* [47:46]: src2_mod, don't know the default value yet */
+//
+//		/* [48]: 0 , dst.cc, default value */
+//		inst_bytes->general0.dst_cc = 0x0;
+//
+//		/* [57:49]: 000000000, default */
+//		inst_bytes->general0.mod1 = 0x0;
+//
+//		/* [63:58]: 010100 */
+//		inst_bytes->general0.op1 = 0x13;
 
 		break;
 
-	case FRM_INST_DMNMX:
+	case FrmInstOpDMUL:
 
-		/* [3:0]: 0001 */
-		inst_bytes->general0.op0 = 0x1;
-
-		/* [9:4]: 000000, default value */
-		inst_bytes->general0.mod0 = 0x0;
-
-		/* [13:10]: pred */
-		if (inst->pred_num >= 0)
-		{
-			inst_bytes->general0.pred = inst->pred_num;
-		}
-		else
-		{
-			/* no predicate, value=7 */
-			inst_bytes->general0.pred = 0x7;
-		}
-
-		/* [47:46]: src2_mod, don't know the default value yet */
-
-		/* [48]: 0 , dst.cc, default value */
-		inst_bytes->general0.dst_cc = 0x0;
-
-		/* [57:49]: 000000000, default */
-		inst_bytes->general0.mod1 = 0x0;
-
-		/* [63:58]: 000010, [58] is default */
-		inst_bytes->general0.op1 = 0x2;
+//		/* [3:0]: 0001 */
+//		inst_bytes->general0.op0 = 0x1;
+//
+//		/* [9:4]: 000000, default value */
+//		inst_bytes->general0.mod0 = 0x0;
+//
+//		/* [13:10]: pred */
+//		if (inst->pred_num >= 0)
+//		{
+//			inst_bytes->general0.pred = inst->pred_num;
+//		}
+//		else
+//		{
+//			/* no predicate, value=7 */
+//			inst_bytes->general0.pred = 0x7;
+//		}
+//
+//		/* [47:46]: src2_mod, don't know the default value yet */
+//
+//		/* [48]: 0 , dst.cc, default value */
+//		inst_bytes->general0.dst_cc = 0x0;
+//
+//		/* [57:49]: 000000000, default */
+//		inst_bytes->general0.mod1 = 0x0;
+//
+//		/* [63:58]: 010100 */
+//		inst_bytes->general0.op1 = 0x14;
 
 		break;
 
-	case FRM_INST_DSETP:
+	case FrmInstOpDMNMX:
 
-		/* [3:0]: 0001 */
-		inst_bytes->general0.op0 = 0x1;
+//		/* [3:0]: 0001 */
+//		inst_bytes->general0.op0 = 0x1;
+//
+//		/* [9:4]: 000000, default value */
+//		inst_bytes->general0.mod0 = 0x0;
+//
+//		/* [13:10]: pred */
+//		if (inst->pred_num >= 0)
+//		{
+//			inst_bytes->general0.pred = inst->pred_num;
+//		}
+//		else
+//		{
+//			/* no predicate, value=7 */
+//			inst_bytes->general0.pred = 0x7;
+//		}
+//
+//		/* [47:46]: src2_mod, don't know the default value yet */
+//
+//		/* [48]: 0 , dst.cc, default value */
+//		inst_bytes->general0.dst_cc = 0x0;
+//
+//		/* [57:49]: 000000000, default */
+//		inst_bytes->general0.mod1 = 0x0;
+//
+//		/* [63:58]: 000010, [58] is default */
+//		inst_bytes->general0.op1 = 0x2;
 
-		/* [9:4]: 000000, default value */
-		inst_bytes->general0.mod0 = 0x0;
+		break;
 
-		/* [13:10]: pred */
-		if (inst->pred_num >= 0)
-		{
-			inst_bytes->general0.pred = inst->pred_num;
-		}
-		else
-		{
-			/* no predicate, value=7 */
-			inst_bytes->general0.pred = 0x7;
-		}
+	case FrmInstOpDSETP:
 
-		/* [47:46]: src2_mod, don't know the default value yet */
-
-		/* [48]: 0 , dst.cc, default value */
-		inst_bytes->general0.dst_cc = 0x0;
-
-		/* [57:49]: 000000000, default */
-		inst_bytes->general0.mod1 = 0x0;
-
-		/* [63:58]: 000110 */
-		inst_bytes->general0.op1 = 0x6;
+//		/* [3:0]: 0001 */
+//		inst_bytes->general0.op0 = 0x1;
+//
+//		/* [9:4]: 000000, default value */
+//		inst_bytes->general0.mod0 = 0x0;
+//
+//		/* [13:10]: pred */
+//		if (inst->pred_num >= 0)
+//		{
+//			inst_bytes->general0.pred = inst->pred_num;
+//		}
+//		else
+//		{
+//			/* no predicate, value=7 */
+//			inst_bytes->general0.pred = 0x7;
+//		}
+//
+//		/* [47:46]: src2_mod, don't know the default value yet */
+//
+//		/* [48]: 0 , dst.cc, default value */
+//		inst_bytes->general0.dst_cc = 0x0;
+//
+//		/* [57:49]: 000000000, default */
+//		inst_bytes->general0.mod1 = 0x0;
+//
+//		/* [63:58]: 000110 */
+//		inst_bytes->general0.op1 = 0x6;
 
 		break;
 
 
 		/* encoding in [31], op in [30:25] */
-	case FRM_INST_IMAD:
+	case FrmInstOpIMAD:
 
-		inst_bytes->general0.op0 = 0x3;
-		/* [4] = 0, others are default value */
-		inst_bytes->general0.mod0 = 0x0;
-		/* default value */
-		inst_bytes->general0.dst_cc = 0x0;	/* only 5 bits here */
-		/* [55]=0, [57]=0, [56] default */
-		inst_bytes->general0.mod1 &= 0x1f;
-		inst_bytes->general0.op1 = 0x8;
-
-
-		/* set the predicate */
-		if (inst->pred_num >= 0)
-		{
-			inst_bytes->general0.pred = inst->pred_num;
-		}
-		else
-		{
-			/* no predicate, value=7 */
-			inst_bytes->general0.pred = 0x7;
-		}
-
-		break;
-
-	case FRM_INST_IMUL:
-
-		/* [3:0]: 0011 */
-		inst_bytes->general0.op0 = 0x3;
-
-		/* [9:4]: 001010, default value */
-		inst_bytes->general0.mod0 = 0xa;
-
-		/* [13:10]: pred */
-		if (inst->pred_num >= 0)
-		{
-			inst_bytes->general0.pred = inst->pred_num;
-		}
-		else
-		{
-			/* no predicate, value=7 */
-			inst_bytes->general0.pred = 0x7;
-		}
-
-		/* [47:46]: src2_mod, don't know the default value yet */
-
-		/* [48]: 0 , dst.cc, default value */
-		inst_bytes->general0.dst_cc = 0x0;
-
-		/* [57:49]: 000000000 */
-		inst_bytes->general0.mod1 = 0x0;
-
-		/* [63:58]: 010100 */
-		inst_bytes->general0.op1 = 0x14;
+//		inst_bytes->general0.op0 = 0x3;
+//		/* [4] = 0, others are default value */
+//		inst_bytes->general0.mod0 = 0x0;
+//		/* default value */
+//		inst_bytes->general0.dst_cc = 0x0;	/* only 5 bits here */
+//		/* [55]=0, [57]=0, [56] default */
+//		inst_bytes->general0.mod1 &= 0x1f;
+//		inst_bytes->general0.op1 = 0x8;
+//
+//
+//		/* set the predicate */
+//		if (inst->pred_num >= 0)
+//		{
+//			inst_bytes->general0.pred = inst->pred_num;
+//		}
+//		else
+//		{
+//			/* no predicate, value=7 */
+//			inst_bytes->general0.pred = 0x7;
+//		}
 
 		break;
 
+	case FrmInstOpIMUL:
 
-	case FRM_INST_IADD:
-
-		/* [3:0]: 0011 */
-		inst_bytes->general0.op0 = 0x3;
-
-		/* [9:4]: 000000, default value */
-		inst_bytes->general0.mod0 = 0x0;
-
-		/* [13:10]: pred */
-		if (inst->pred_num >= 0)
-		{
-			inst_bytes->general0.pred = inst->pred_num;
-		}
-		else
-		{
-			/* no predicate, value=7 */
-			inst_bytes->general0.pred = 0x7;
-		}
-
-		/* [19:14]: all 0s, src, no default value */
-		inst_bytes->general0.dst = 0x0;
-
-		/* [25:20]: all 0s, dst, no default value */
-		inst_bytes->general0.src1 = 0x0;
-
-		/* [45:26]: all 0s */
-		inst_bytes->general0.src2 = 0x0;
-
-		/* [47:46]: all 0s */
-		inst_bytes->general0.src2_mod = 0x0;
-
-		/* [48]: all 0s */
-		inst_bytes->general0.dst_cc = 0x0;
-
-		/* [57:49]: all 0s, manually default */
-		inst_bytes->general0.mod1 = 0x0;
-
-		/* [63:58]: 010010 */
-		inst_bytes->general0.op1 = 0x12;
+//		/* [3:0]: 0011 */
+//		inst_bytes->general0.op0 = 0x3;
+//
+//		/* [9:4]: 001010, default value */
+//		inst_bytes->general0.mod0 = 0xa;
+//
+//		/* [13:10]: pred */
+//		if (inst->pred_num >= 0)
+//		{
+//			inst_bytes->general0.pred = inst->pred_num;
+//		}
+//		else
+//		{
+//			/* no predicate, value=7 */
+//			inst_bytes->general0.pred = 0x7;
+//		}
+//
+//		/* [47:46]: src2_mod, don't know the default value yet */
+//
+//		/* [48]: 0 , dst.cc, default value */
+//		inst_bytes->general0.dst_cc = 0x0;
+//
+//		/* [57:49]: 000000000 */
+//		inst_bytes->general0.mod1 = 0x0;
+//
+//		/* [63:58]: 010100 */
+//		inst_bytes->general0.op1 = 0x14;
 
 		break;
 
-	case FRM_INST_IADD32I:
 
-		/* [3:0]: 0010 */
-		inst_bytes->imm.op0 = 0x2;
+	case FrmInstOpIADD:
 
-		/* [9:4]: all 0s, default */
-		inst_bytes->imm.mod0 = 0x0;
-
-		/* [13:10]: pred */
-		if (inst->pred_num >= 0)
-		{
-			inst_bytes->imm.pred = inst->pred_num;
-		}
-		else
-		{
-			/* no predicate, value=7 */
-			inst_bytes->imm.pred = 0x7;
-		}
-
-		/* [25:20]: 000000, src, manully default */
-		inst_bytes->imm.src1 = 0x0;
-
-		/* [63:58]: 000010 */
-		inst_bytes->imm.op1 = 0x2;
-
-		break;
-
-	case FRM_INST_ISCADD:
-
-		inst_bytes->general0.op0 = 0x3;
-		/* [4] = 0 */
-		inst_bytes->general0.mod0 &= 0xfffe;
-		/* default value */
-		inst_bytes->general0.dst_cc = 0x0;
-		/* [54:49] = 0 [57] = 0, others default value */
-		inst_bytes->general0.mod1 = 0x0;
-		inst_bytes->general0.op1 = 0x10;
-
-		/* set the predicate */
-		if (inst->pred_num >= 0)
-		{
-			inst_bytes->general0.pred = inst->pred_num;
-		}
-		else
-		{
-			/* no predicate, value=7 */
-			inst_bytes->general0.pred = 0x7;
-		}
+//		/* [3:0]: 0011 */
+//		inst_bytes->general0.op0 = 0x3;
+//
+//		/* [9:4]: 000000, default value */
+//		inst_bytes->general0.mod0 = 0x0;
+//
+//		/* [13:10]: pred */
+//		if (inst->pred_num >= 0)
+//		{
+//			inst_bytes->general0.pred = inst->pred_num;
+//		}
+//		else
+//		{
+//			/* no predicate, value=7 */
+//			inst_bytes->general0.pred = 0x7;
+//		}
+//
+//		/* [19:14]: all 0s, src, no default value */
+//		inst_bytes->general0.dst = 0x0;
+//
+//		/* [25:20]: all 0s, dst, no default value */
+//		inst_bytes->general0.src1 = 0x0;
+//
+//		/* [45:26]: all 0s */
+//		inst_bytes->general0.src2 = 0x0;
+//
+//		/* [47:46]: all 0s */
+//		inst_bytes->general0.src2_mod = 0x0;
+//
+//		/* [48]: all 0s */
+//		inst_bytes->general0.dst_cc = 0x0;
+//
+//		/* [57:49]: all 0s, manually default */
+//		inst_bytes->general0.mod1 = 0x0;
+//
+//		/* [63:58]: 010010 */
+//		inst_bytes->general0.op1 = 0x12;
 
 		break;
 
-	case FRM_INST_BFE:
+	case FrmInstOpIADD32I:
 
-		/* [3:0]: 0011 */
-		inst_bytes->general0.op0 = 0x3;
+//		/* [3:0]: 0010 */
+//		inst_bytes->imm.op0 = 0x2;
+//
+//		/* [9:4]: all 0s, default */
+//		inst_bytes->imm.mod0 = 0x0;
+//
+//		/* [13:10]: pred */
+//		if (inst->pred_num >= 0)
+//		{
+//			inst_bytes->imm.pred = inst->pred_num;
+//		}
+//		else
+//		{
+//			/* no predicate, value=7 */
+//			inst_bytes->imm.pred = 0x7;
+//		}
+//
+//		/* [25:20]: 000000, src, manully default */
+//		inst_bytes->imm.src1 = 0x0;
+//
+//		/* [63:58]: 000010 */
+//		inst_bytes->imm.op1 = 0x2;
 
-		/* [9:4]: 000010, [5], [8] are default value */
-		inst_bytes->general0.mod0 = 0x2;
+		break;
 
-		/* [13:10]: pred */
-		if (inst->pred_num >= 0)
-		{
-			inst_bytes->general0.pred = inst->pred_num;
-		}
-		else
-		{
-			/* no predicate, value=7 */
-			inst_bytes->general0.pred = 0x7;
-		}
+	case FrmInstOpISCADD:
 
-		/* [47:46]: 00, (default value not sure) */
-		inst_bytes->general0.src2_mod = 0x0;
+//		inst_bytes->general0.op0 = 0x3;
+//		/* [4] = 0 */
+//		inst_bytes->general0.mod0 &= 0xfffe;
+//		/* default value */
+//		inst_bytes->general0.dst_cc = 0x0;
+//		/* [54:49] = 0 [57] = 0, others default value */
+//		inst_bytes->general0.mod1 = 0x0;
+//		inst_bytes->general0.op1 = 0x10;
+//
+//		/* set the predicate */
+//		if (inst->pred_num >= 0)
+//		{
+//			inst_bytes->general0.pred = inst->pred_num;
+//		}
+//		else
+//		{
+//			/* no predicate, value=7 */
+//			inst_bytes->general0.pred = 0x7;
+//		}
 
-		/* [48]: 0, dst.cc (default value) */
-		inst_bytes->general0.dst_cc = 0x0;
+		break;
 
-		/* [57:49]: 000000000 */
-		inst_bytes->general0.mod1 = 0x0;
+	case FrmInstOpBFE:
 
-		/* [63:58]: 011100 */
-		inst_bytes->general0.op1 = 0x1c;
+//		/* [3:0]: 0011 */
+//		inst_bytes->general0.op0 = 0x3;
+//
+//		/* [9:4]: 000010, [5], [8] are default value */
+//		inst_bytes->general0.mod0 = 0x2;
+//
+//		/* [13:10]: pred */
+//		if (inst->pred_num >= 0)
+//		{
+//			inst_bytes->general0.pred = inst->pred_num;
+//		}
+//		else
+//		{
+//			/* no predicate, value=7 */
+//			inst_bytes->general0.pred = 0x7;
+//		}
+//
+//		/* [47:46]: 00, (default value not sure) */
+//		inst_bytes->general0.src2_mod = 0x0;
+//
+//		/* [48]: 0, dst.cc (default value) */
+//		inst_bytes->general0.dst_cc = 0x0;
+//
+//		/* [57:49]: 000000000 */
+//		inst_bytes->general0.mod1 = 0x0;
+//
+//		/* [63:58]: 011100 */
+//		inst_bytes->general0.op1 = 0x1c;
 
 		break;
 
@@ -906,69 +906,69 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 	//	/* No opcode: only 1 instruction */
 	//	break;
 
-	case FRM_INST_SHR:
+	case FrmInstOpSHR:
 
-		/* [3:0]: 0011 */
-		inst_bytes->general0.op0 = 0x3;
-
-		/* [9:4]: 000010, [5], [9] are default values */
-		inst_bytes->general0.mod0 = 0x2;
-
-		/* [13:10]: pred */
-		if (inst->pred_num >= 0)
-		{
-			inst_bytes->general0.pred = inst->pred_num;
-		}
-		else
-		{
-			/* no predicate, value=7 */
-			inst_bytes->general0.pred = 0x7;
-		}
-
-		/* [47:46]: 00, (default value not sure) */
-		inst_bytes->general0.src2_mod = 0x0;
-
-		/* [48]: 0, dst.cc (default value) */
-		inst_bytes->general0.dst_cc = 0x0;
-
-		/* [57:49]: 000000000 */
-		inst_bytes->general0.mod1 = 0x0;
-
-		/* [63:58]: 010110 */
-		inst_bytes->general0.op1 = 0x16;
+//		/* [3:0]: 0011 */
+//		inst_bytes->general0.op0 = 0x3;
+//
+//		/* [9:4]: 000010, [5], [9] are default values */
+//		inst_bytes->general0.mod0 = 0x2;
+//
+//		/* [13:10]: pred */
+//		if (inst->pred_num >= 0)
+//		{
+//			inst_bytes->general0.pred = inst->pred_num;
+//		}
+//		else
+//		{
+//			/* no predicate, value=7 */
+//			inst_bytes->general0.pred = 0x7;
+//		}
+//
+//		/* [47:46]: 00, (default value not sure) */
+//		inst_bytes->general0.src2_mod = 0x0;
+//
+//		/* [48]: 0, dst.cc (default value) */
+//		inst_bytes->general0.dst_cc = 0x0;
+//
+//		/* [57:49]: 000000000 */
+//		inst_bytes->general0.mod1 = 0x0;
+//
+//		/* [63:58]: 010110 */
+//		inst_bytes->general0.op1 = 0x16;
 
 		break;
 
-	case FRM_INST_SHL:
+	case FrmInstOpSHL:
 
-		/* [3:0]: 0011 */
-		inst_bytes->general0.op0 = 0x3;
-
-		/* [9:4]: 000000, [5], [9] are default values */
-		inst_bytes->general0.mod0 = 0x0;
-
-		/* [13:10]: pred */
-		if (inst->pred_num >= 0)
-		{
-			inst_bytes->general0.pred = inst->pred_num;
-		}
-		else
-		{
-			/* no predicate, value=7 */
-			inst_bytes->general0.pred = 0x7;
-		}
-
-		/* [47:46]: 00, (default value not sure) */
-		inst_bytes->general0.src2_mod = 0x0;
-
-		/* [48]: 0, dst.cc (default value) */
-		inst_bytes->general0.dst_cc = 0x0;
-
-		/* [57:49]: 000000000 */
-		inst_bytes->general0.mod1 = 0x0;
-
-		/* [63:58]: 011000 */
-		inst_bytes->general0.op1 = 0x18;
+//		/* [3:0]: 0011 */
+//		inst_bytes->general0.op0 = 0x3;
+//
+//		/* [9:4]: 000000, [5], [9] are default values */
+//		inst_bytes->general0.mod0 = 0x0;
+//
+//		/* [13:10]: pred */
+//		if (inst->pred_num >= 0)
+//		{
+//			inst_bytes->general0.pred = inst->pred_num;
+//		}
+//		else
+//		{
+//			/* no predicate, value=7 */
+//			inst_bytes->general0.pred = 0x7;
+//		}
+//
+//		/* [47:46]: 00, (default value not sure) */
+//		inst_bytes->general0.src2_mod = 0x0;
+//
+//		/* [48]: 0, dst.cc (default value) */
+//		inst_bytes->general0.dst_cc = 0x0;
+//
+//		/* [57:49]: 000000000 */
+//		inst_bytes->general0.mod1 = 0x0;
+//
+//		/* [63:58]: 011000 */
+//		inst_bytes->general0.op1 = 0x18;
 
 		break;
 
@@ -996,24 +996,24 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 	//	/* No opcode: only 1 instruction */
 	//	break;
 
-	case FRM_INST_ISETP:
+	case FrmInstOpISETP:
 
-		inst_bytes->general1.op0 = 0x3;
-		/* bit [4] = 0, [9:6] = 0, others default */
-		inst_bytes->general1.mod0 = 0x2;
-		inst_bytes->general1.dst_cc = 0x0;
-		inst_bytes->general1.op1 = 0x3;
-
-		/* set the predicate */
-		if (inst->pred_num >= 0)
-		{
-			inst_bytes->general1.pred = inst->pred_num;
-		}
-		else
-		{
-			/* no predicate, value=7 */
-			inst_bytes->general1.pred = 0x7;
-		}
+//		inst_bytes->general1.op0 = 0x3;
+//		/* bit [4] = 0, [9:6] = 0, others default */
+//		inst_bytes->general1.mod0 = 0x2;
+//		inst_bytes->general1.dst_cc = 0x0;
+//		inst_bytes->general1.op1 = 0x3;
+//
+//		/* set the predicate */
+//		if (inst->pred_num >= 0)
+//		{
+//			inst_bytes->general1.pred = inst->pred_num;
+//		}
+//		else
+//		{
+//			/* no predicate, value=7 */
+//			inst_bytes->general1.pred = 0x7;
+//		}
 
 		break;
 
@@ -1029,45 +1029,45 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 //		/* No opcode: only 1 instruction */
 //		break;
 //
-	case FRM_INST_I2F:
+	case FrmInstOpI2F:
 
-		/* [3:0]: 0100 */
-		inst_bytes->general0.op0 = 0x4;
-
-		/* [9:4]: 000000 */
-		inst_bytes->general0.mod0 = 0x0;
-
-		/* [13:10]: pred */
-		if (inst->pred_num >= 0)
-		{
-			inst_bytes->general0.pred = inst->pred_num;
-		}
-		else
-		{
-			/* no predicate, value=7 */
-			inst_bytes->general0.pred = 0x7;
-		}
-
-		/* [19:14]: all 0s */
-		inst_bytes->general0.dst = 0x0;
-
-		/* [25:20]: 00010, default */
-		inst_bytes->general0.src1 = 0x2;
-
-		/* [45:26]: all 0s */
-		inst_bytes->general0.src2 = 0x0;
-
-		/* [47:46]: all 0s */
-		inst_bytes->general0.src2_mod = 0x0;
-
-		/* [48]: all 0s */
-		inst_bytes->general0.dst_cc = 0x0;
-
-		/* [57:49]: all 0s */
-		inst_bytes->general0.mod1 = 0x0;
-
-		/* [63:58]: 000110 */
-		inst_bytes->general0.op1 = 0x6;
+//		/* [3:0]: 0100 */
+//		inst_bytes->general0.op0 = 0x4;
+//
+//		/* [9:4]: 000000 */
+//		inst_bytes->general0.mod0 = 0x0;
+//
+//		/* [13:10]: pred */
+//		if (inst->pred_num >= 0)
+//		{
+//			inst_bytes->general0.pred = inst->pred_num;
+//		}
+//		else
+//		{
+//			/* no predicate, value=7 */
+//			inst_bytes->general0.pred = 0x7;
+//		}
+//
+//		/* [19:14]: all 0s */
+//		inst_bytes->general0.dst = 0x0;
+//
+//		/* [25:20]: 00010, default */
+//		inst_bytes->general0.src1 = 0x2;
+//
+//		/* [45:26]: all 0s */
+//		inst_bytes->general0.src2 = 0x0;
+//
+//		/* [47:46]: all 0s */
+//		inst_bytes->general0.src2_mod = 0x0;
+//
+//		/* [48]: all 0s */
+//		inst_bytes->general0.dst_cc = 0x0;
+//
+//		/* [57:49]: all 0s */
+//		inst_bytes->general0.mod1 = 0x0;
+//
+//		/* [63:58]: 000110 */
+//		inst_bytes->general0.op1 = 0x6;
 
 		break;
 //
@@ -1077,118 +1077,118 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 //		/* No opcode: only 1 instruction */
 //		break;
 
-	case FRM_INST_MOV:
+	case FrmInstOpMOV:
 
-		inst_bytes->general0.op0 = 0x4;
-		inst_bytes->general0.op1 = 0xa;
-		inst_bytes->general0.mod0 = 0x1e;
-
-		/* set the predicate */
-		if (inst->pred_num >= 0)
-		{
-			inst_bytes->general0.pred = inst->pred_num;
-		}
-		else
-		{
-			/* no predicate, value=7 */
-			inst_bytes->general0.pred = 0x7;
-		}
-
-		break;
-
-	case FRM_INST_MOV32I:
-
-		/* [3:0]: 0010 */
-		inst_bytes->imm.op0 = 0x2;
-
-		/* [9:4]: 011110 */
-		inst_bytes->imm.mod0 = 0x1e;
-
-		/* [13:10]: pred */
-		if (inst->pred_num >= 0)
-		{
-			inst_bytes->imm.pred = inst->pred_num;
-		}
-		else
-		{
-			/* no predicate, value=7 */
-			inst_bytes->imm.pred = 0x7;
-		}
-
-		/* [25:20]: 000000 */
-		inst_bytes->imm.src1 = 0x0;
-
-		/* [63:58]: 000110 */
-		inst_bytes->imm.op1 = 0x6;
+//		inst_bytes->general0.op0 = 0x4;
+//		inst_bytes->general0.op1 = 0xa;
+//		inst_bytes->general0.mod0 = 0x1e;
+//
+//		/* set the predicate */
+//		if (inst->pred_num >= 0)
+//		{
+//			inst_bytes->general0.pred = inst->pred_num;
+//		}
+//		else
+//		{
+//			/* no predicate, value=7 */
+//			inst_bytes->general0.pred = 0x7;
+//		}
 
 		break;
 
-	case FRM_INST_SEL:
+	case FrmInstOpMOV32I:
 
-		/* [3:0]: 0100 */
-		inst_bytes->general0.op0 = 0x4;
-
-		/* [9:4]: 000000 */
-		inst_bytes->general0.mod0 = 0x1e;
-
-		/* [13:10]: pred */
-		if (inst->pred_num >= 0)
-		{
-			inst_bytes->general0.pred = inst->pred_num;
-		}
-		else
-		{
-			/* no predicate, value=7 */
-			inst_bytes->general0.pred = 0x7;
-		}
-
-		/* [19:14]: all 0s */
-		inst_bytes->general0.dst = 0x0;
-
-		/* [25:20]: 00010, default */
-		inst_bytes->general0.src1 = 0x2;
-
-		/* [45:26]: all 0s */
-		inst_bytes->general0.src2 = 0x0;
-
-		/* [47:46]: all 0s */
-		inst_bytes->general0.src2_mod = 0x0;
-
-		/* [48]: all 0s */
-		inst_bytes->general0.dst_cc = 0x0;
-
-		/* [57:49]: all 0s */
-		inst_bytes->general0.mod1 = 0x0;
-
-		/* [63:58]: 001000 */
-		inst_bytes->general0.op1 = 0x8;
+//		/* [3:0]: 0010 */
+//		inst_bytes->imm.op0 = 0x2;
+//
+//		/* [9:4]: 011110 */
+//		inst_bytes->imm.mod0 = 0x1e;
+//
+//		/* [13:10]: pred */
+//		if (inst->pred_num >= 0)
+//		{
+//			inst_bytes->imm.pred = inst->pred_num;
+//		}
+//		else
+//		{
+//			/* no predicate, value=7 */
+//			inst_bytes->imm.pred = 0x7;
+//		}
+//
+//		/* [25:20]: 000000 */
+//		inst_bytes->imm.src1 = 0x0;
+//
+//		/* [63:58]: 000110 */
+//		inst_bytes->imm.op1 = 0x6;
 
 		break;
 
-	case FRM_INST_LD:
+	case FrmInstOpSEL:
 
-		/* use offset format */
-		inst_bytes->offs.op0 = 0x5;
-		/* [4] = 0, others default */
-		inst_bytes->offs.mod0 = 0x8;
-		inst_bytes->offs.mod1 = 0x0;
-		/* [63:59] = 10000, [58] default */
-		inst_bytes->offs.op1 = 0x20;
-		/* No opcode: only 1 instruction */
+//		/* [3:0]: 0100 */
+//		inst_bytes->general0.op0 = 0x4;
+//
+//		/* [9:4]: 000000 */
+//		inst_bytes->general0.mod0 = 0x1e;
+//
+//		/* [13:10]: pred */
+//		if (inst->pred_num >= 0)
+//		{
+//			inst_bytes->general0.pred = inst->pred_num;
+//		}
+//		else
+//		{
+//			/* no predicate, value=7 */
+//			inst_bytes->general0.pred = 0x7;
+//		}
+//
+//		/* [19:14]: all 0s */
+//		inst_bytes->general0.dst = 0x0;
+//
+//		/* [25:20]: 00010, default */
+//		inst_bytes->general0.src1 = 0x2;
+//
+//		/* [45:26]: all 0s */
+//		inst_bytes->general0.src2 = 0x0;
+//
+//		/* [47:46]: all 0s */
+//		inst_bytes->general0.src2_mod = 0x0;
+//
+//		/* [48]: all 0s */
+//		inst_bytes->general0.dst_cc = 0x0;
+//
+//		/* [57:49]: all 0s */
+//		inst_bytes->general0.mod1 = 0x0;
+//
+//		/* [63:58]: 001000 */
+//		inst_bytes->general0.op1 = 0x8;
 
-		/* set the predicate */
-		if (inst->pred_num >= 0)
-		{
-			inst_bytes->offs.pred = inst->pred_num;
-		}
-		else
-		{
-			/* no predicate, value=7 */
-			inst_bytes->offs.pred = 0x7;
-		}
 		break;
 
-//	case FRM_INST_LDL:
+	case FrmInstOpLD:
+
+//		/* use offset format */
+//		inst_bytes->offs.op0 = 0x5;
+//		/* [4] = 0, others default */
+//		inst_bytes->offs.mod0 = 0x8;
+//		inst_bytes->offs.mod1 = 0x0;
+//		/* [63:59] = 10000, [58] default */
+//		inst_bytes->offs.op1 = 0x20;
+//		/* No opcode: only 1 instruction */
+//
+//		/* set the predicate */
+//		if (inst->pred_num >= 0)
+//		{
+//			inst_bytes->offs.pred = inst->pred_num;
+//		}
+//		else
+//		{
+//			/* no predicate, value=7 */
+//			inst_bytes->offs.pred = 0x7;
+//		}
+		break;
+
+//	case FrmInstOpLDL:
 //
 //		/* [3:0]: 0101 */
 //		inst_bytes->offs.op0 = 0x5;
@@ -1215,7 +1215,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 //
 //		break;
 //
-//	case FRM_INST_LDS:
+//	case FrmInstOpLDS:
 //
 //		/* [3:0]: 0101 */
 //		inst_bytes->offs.op0 = 0x5;
@@ -1242,30 +1242,30 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 //
 //		break;
 
-	case FRM_INST_ST:
+	case FrmInstOpST:
 
-		inst_bytes->offs.op0 = 0x5;
-		/* [4]=0, others default */
-		inst_bytes->offs.mod0 = 0x8;
-		inst_bytes->offs.mod1 = 0x0;
-
-		/* [13:10]: pred */
-		if (inst->pred_num >= 0)
-		{
-			inst_bytes->offs.pred = inst->pred_num;
-		}
-		else
-		{
-			/* no predicate, value=7 */
-			inst_bytes->offs.pred = 0x7;
-		}
-
-		/* [63:59] = 10010, [58] default */
-		inst_bytes->offs.op1 = 0x24;
-		/* No opcode: only 1 instruction */
+//		inst_bytes->offs.op0 = 0x5;
+//		/* [4]=0, others default */
+//		inst_bytes->offs.mod0 = 0x8;
+//		inst_bytes->offs.mod1 = 0x0;
+//
+//		/* [13:10]: pred */
+//		if (inst->pred_num >= 0)
+//		{
+//			inst_bytes->offs.pred = inst->pred_num;
+//		}
+//		else
+//		{
+//			/* no predicate, value=7 */
+//			inst_bytes->offs.pred = 0x7;
+//		}
+//
+//		/* [63:59] = 10010, [58] default */
+//		inst_bytes->offs.op1 = 0x24;
+//		/* No opcode: only 1 instruction */
 		break;
 
-//	case FRM_INST_STL:
+//	case FrmInstOpSTL:
 //
 //		inst_bytes->offs.op0 = 0x5;
 //		/* [4]=0, others default */
@@ -1288,7 +1288,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 //		/* No opcode: only 1 instruction */
 //		break;
 //
-//	case FRM_INST_STS:
+//	case FrmInstOpSTS:
 //
 //		/* [3:0]: 0101 */
 //		inst_bytes->offs.op0 = 0x5;
@@ -1315,446 +1315,446 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 //
 //		break;
 
-	case FRM_INST_BRA:
+	case FrmInstOpBRA:
 
-		/* [3:0]: 0111 */
-		inst_bytes->tgt.op0 = 0x7;
-
-		/* [9:4]: 011110 */
-		inst_bytes->tgt.mod0 = 0x1e;
-
-		/* [13:10]: pred */
-		if (inst->pred_num >= 0)
-		{
-			inst_bytes->tgt.pred = inst->pred_num;
-		}
-		else
-		{
-			/* no predicate, value=7 */
-			inst_bytes->tgt.pred = 0x7;
-		}
-
-		/* [14]: tgt_mod, immediate or const mem addr, check the type
-		 * of the 1st argument */
-		arg = list_get(inst->arg_list, 0);
-
-		if (arg->type == frm_arg_literal)
-			inst_bytes->tgt.tgt_mod = 0x0;
-		else if (arg->type == frm_arg_const_maddr)
-			inst_bytes->tgt.tgt_mod = 0x1;
-		else
-			frm2bin_yyerror_fmt("BRA: wrong target type!\n");
-
-		/* [15]: 0, default value */
-		inst_bytes->tgt.u = 0x0;
-
-		/* [16]: 0, default value */
-		inst_bytes->tgt.noinc = 0x0;
-
-		/* [25:17]: all 0s */
-		inst_bytes->tgt._const0 = 0x0;
-
-		/* [49:26]: target, manually default */
-		inst_bytes->tgt.target = 0x0;
-
-		/* [57:46]: all 0s */
-		inst_bytes->tgt._reserved0 = 0x0;
-
-		/* [63:58]: 010000 */
-		inst_bytes->tgt.op1 = 0x10;
-
-		break;
-
-	case FRM_INST_CAL:
-
-		/* [3:0]: 0111 */
-		inst_bytes->tgt.op0 = 0x7;
-
-		/* [9:4]: 011110 */
-		inst_bytes->tgt.mod0 = 0x1e;
-
-		/* [13:10]: pred */
-		if (inst->pred_num >= 0)
-		{
-			inst_bytes->tgt.pred = inst->pred_num;
-		}
-		else
-		{
-			/* no predicate, value=7 */
-			inst_bytes->tgt.pred = 0x7;
-		}
-
-		/* [14]: tgt_mod, immediate or const mem addr, check the type
-		 * of the 1st argument */
-		arg = list_get(inst->arg_list, 0);
-
-		if (arg->type == frm_arg_literal)
-			inst_bytes->tgt.tgt_mod = 0x0;
-		else if (arg->type == frm_arg_const_maddr)
-			inst_bytes->tgt.tgt_mod = 0x1;
-		else
-			frm2bin_yyerror_fmt("CAL: wrong target type!\n");
-
-		/* [15]: 0, default value */
-		inst_bytes->tgt.u = 0x0;
-
-		/* [16]: 0, default value */
-		inst_bytes->tgt.noinc = 0x0;
-
-		/* [25:17]: all 0s */
-		inst_bytes->tgt._const0 = 0x0;
-
-		/* [49:26]: target, manually default */
-		inst_bytes->tgt.target = 0x0;
-
-		/* [57:46]: all 0s */
-		inst_bytes->tgt._reserved0 = 0x0;
-
-		/* [63:58]: 010100 */
-		inst_bytes->tgt.op1 = 0x14;
+//		/* [3:0]: 0111 */
+//		inst_bytes->tgt.op0 = 0x7;
+//
+//		/* [9:4]: 011110 */
+//		inst_bytes->tgt.mod0 = 0x1e;
+//
+//		/* [13:10]: pred */
+//		if (inst->pred_num >= 0)
+//		{
+//			inst_bytes->tgt.pred = inst->pred_num;
+//		}
+//		else
+//		{
+//			/* no predicate, value=7 */
+//			inst_bytes->tgt.pred = 0x7;
+//		}
+//
+//		/* [14]: tgt_mod, immediate or const mem addr, check the type
+//		 * of the 1st argument */
+//		arg = list_get(inst->arg_list, 0);
+//
+//		if (arg->type == frm_arg_literal)
+//			inst_bytes->tgt.tgt_mod = 0x0;
+//		else if (arg->type == frm_arg_const_maddr)
+//			inst_bytes->tgt.tgt_mod = 0x1;
+//		else
+//			frm2bin_yyerror_fmt("BRA: wrong target type!\n");
+//
+//		/* [15]: 0, default value */
+//		inst_bytes->tgt.u = 0x0;
+//
+//		/* [16]: 0, default value */
+//		inst_bytes->tgt.noinc = 0x0;
+//
+//		/* [25:17]: all 0s */
+//		inst_bytes->tgt._const0 = 0x0;
+//
+//		/* [49:26]: target, manually default */
+//		inst_bytes->tgt.target = 0x0;
+//
+//		/* [57:46]: all 0s */
+//		inst_bytes->tgt._reserved0 = 0x0;
+//
+//		/* [63:58]: 010000 */
+//		inst_bytes->tgt.op1 = 0x10;
 
 		break;
 
-	case FRM_INST_RET:
+	case FrmInstOpCAL:
 
-		/* [3:0]: 0111 */
-		inst_bytes->general0.op0 = 0x7;
-
-		/* [9:4]: 011110 */
-		inst_bytes->general0.mod0 = 0x1e;
-
-		/* [13:10]: pred */
-		if (inst->pred_num >= 0)
-		{
-			inst_bytes->general0.pred = inst->pred_num;
-		}
-		else
-		{
-			/* no predicate, value=7 */
-			inst_bytes->general0.pred = 0x7;
-		}
-
-		/* [19:14]: all 0s */
-		inst_bytes->general0.dst = 0x0;
-
-		/* [25:20]: all 0s */
-		inst_bytes->general0.src1 = 0x0;
-
-		/* [45:26]: all 0s */
-		inst_bytes->general0.src2 = 0x0;
-
-		/* [47:46]: all 0s */
-		inst_bytes->general0.src2_mod = 0x0;
-
-		/* [48]: all 0s */
-		inst_bytes->general0.dst_cc = 0x0;
-
-		/* [57:49]: all 0s */
-		inst_bytes->general0.mod1 = 0x0;
-
-		/* [63:58]: 100100 */
-		inst_bytes->general0.op1 = 0x24;
-
-		break;
-
-	case FRM_INST_CONT:
-
-		/* [3:0]: 0111 */
-		inst_bytes->general0.op0 = 0x7;
-
-		/* [9:4]: 011110 */
-		inst_bytes->general0.mod0 = 0x1e;
-
-		/* [13:10]: pred */
-		if (inst->pred_num >= 0)
-		{
-			inst_bytes->general0.pred = inst->pred_num;
-		}
-		else
-		{
-			/* no predicate, value=7 */
-			inst_bytes->general0.pred = 0x7;
-		}
-
-		/* [19:14]: all 0s */
-		inst_bytes->general0.dst = 0x0;
-
-		/* [25:20]: all 0s */
-		inst_bytes->general0.src1 = 0x0;
-
-		/* [45:26]: all 0s */
-		inst_bytes->general0.src2 = 0x0;
-
-		/* [47:46]: all 0s */
-		inst_bytes->general0.src2_mod = 0x0;
-
-		/* [48]: all 0s */
-		inst_bytes->general0.dst_cc = 0x0;
-
-		/* [57:49]: all 0s */
-		inst_bytes->general0.mod1 = 0x0;
-
-		/* [63:58]: 101100 */
-		inst_bytes->general0.op1 = 0x2c;
+//		/* [3:0]: 0111 */
+//		inst_bytes->tgt.op0 = 0x7;
+//
+//		/* [9:4]: 011110 */
+//		inst_bytes->tgt.mod0 = 0x1e;
+//
+//		/* [13:10]: pred */
+//		if (inst->pred_num >= 0)
+//		{
+//			inst_bytes->tgt.pred = inst->pred_num;
+//		}
+//		else
+//		{
+//			/* no predicate, value=7 */
+//			inst_bytes->tgt.pred = 0x7;
+//		}
+//
+//		/* [14]: tgt_mod, immediate or const mem addr, check the type
+//		 * of the 1st argument */
+//		arg = list_get(inst->arg_list, 0);
+//
+//		if (arg->type == frm_arg_literal)
+//			inst_bytes->tgt.tgt_mod = 0x0;
+//		else if (arg->type == frm_arg_const_maddr)
+//			inst_bytes->tgt.tgt_mod = 0x1;
+//		else
+//			frm2bin_yyerror_fmt("CAL: wrong target type!\n");
+//
+//		/* [15]: 0, default value */
+//		inst_bytes->tgt.u = 0x0;
+//
+//		/* [16]: 0, default value */
+//		inst_bytes->tgt.noinc = 0x0;
+//
+//		/* [25:17]: all 0s */
+//		inst_bytes->tgt._const0 = 0x0;
+//
+//		/* [49:26]: target, manually default */
+//		inst_bytes->tgt.target = 0x0;
+//
+//		/* [57:46]: all 0s */
+//		inst_bytes->tgt._reserved0 = 0x0;
+//
+//		/* [63:58]: 010100 */
+//		inst_bytes->tgt.op1 = 0x14;
 
 		break;
 
-	case FRM_INST_EXIT:
+	case FrmInstOpRET:
 
-		inst_bytes->general0.op0 = 0x7;
-		inst_bytes->general0.mod0 = 0x1e;
-		inst_bytes->general0.dst = 0x0;
-		inst_bytes->general0.src1 = 0x0;
-		inst_bytes->general0.src2 = 0x0;
-		inst_bytes->general0.src2_mod = 0x0;
-		inst_bytes->general0.dst_cc = 0x0;
-		inst_bytes->general0.mod1 = 0x0;
-		inst_bytes->general0.op1 = 0x20;
-
-		/* set the predicate */
-		if (inst->pred_num >= 0)
-		{
-			inst_bytes->general0.pred = inst->pred_num;
-		}
-		else
-		{
-			/* no predicate, value=7 */
-			inst_bytes->general0.pred = 0x7;
-		}
-
-		break;
-
-	case FRM_INST_SSY:
-
-		/* [3:0]: 0111 */
-		inst_bytes->tgt.op0 = 0x7;
-
-		/* [9:4]: 000000 */
-		inst_bytes->tgt.mod0 = 0x0;
-
-		/* [13:10]: pred */
-		if (inst->pred_num >= 0)
-		{
-			inst_bytes->tgt.pred = inst->pred_num;
-		}
-		else
-		{
-			/* no predicate, value=7 */
-			inst_bytes->tgt.pred = 0x0;
-		}
-
-		/* [14]: tgt_mod, immediate or const mem addr, check the type
-		 * of the 1st argument */
-		arg = list_get(inst->arg_list, 0);
-
-		if (arg->type == frm_arg_literal)
-			inst_bytes->tgt.tgt_mod = 0x0;
-		else if (arg->type == frm_arg_const_maddr)
-			inst_bytes->tgt.tgt_mod = 0x1;
-		else
-			frm2bin_yyerror_fmt("SSY: wrong target type!\n");
-
-		/* [25:15]: all 0s */
-		inst_bytes->tgt.u = 0x0;
-		inst_bytes->tgt.noinc = 0x0;
-		inst_bytes->tgt._const0 = 0x0;
-
-		/* [57:46]: all 0s */
-		inst_bytes->tgt._reserved0 = 0x0;
-
-		/* [63:58]: 011000 */
-		inst_bytes->tgt.op1 = 0x18;
+//		/* [3:0]: 0111 */
+//		inst_bytes->general0.op0 = 0x7;
+//
+//		/* [9:4]: 011110 */
+//		inst_bytes->general0.mod0 = 0x1e;
+//
+//		/* [13:10]: pred */
+//		if (inst->pred_num >= 0)
+//		{
+//			inst_bytes->general0.pred = inst->pred_num;
+//		}
+//		else
+//		{
+//			/* no predicate, value=7 */
+//			inst_bytes->general0.pred = 0x7;
+//		}
+//
+//		/* [19:14]: all 0s */
+//		inst_bytes->general0.dst = 0x0;
+//
+//		/* [25:20]: all 0s */
+//		inst_bytes->general0.src1 = 0x0;
+//
+//		/* [45:26]: all 0s */
+//		inst_bytes->general0.src2 = 0x0;
+//
+//		/* [47:46]: all 0s */
+//		inst_bytes->general0.src2_mod = 0x0;
+//
+//		/* [48]: all 0s */
+//		inst_bytes->general0.dst_cc = 0x0;
+//
+//		/* [57:49]: all 0s */
+//		inst_bytes->general0.mod1 = 0x0;
+//
+//		/* [63:58]: 100100 */
+//		inst_bytes->general0.op1 = 0x24;
 
 		break;
 
-	case FRM_INST_PBK:
+	case FrmInstOpCONT:
 
-		/* [3:0]: 0111 */
-		inst_bytes->tgt.op0 = 0x7;
-
-		/* [9:4]: 000000 */
-		inst_bytes->tgt.mod0 = 0x0;
-
-		/* [13:10]: pred */
-		if (inst->pred_num >= 0)
-		{
-			inst_bytes->tgt.pred = inst->pred_num;
-		}
-		else
-		{
-			/* no predicate, value=7 */
-			inst_bytes->tgt.pred = 0x0;
-		}
-
-		/* [14]: tgt_mod, immediate or const mem addr, check the type
-		 * of the 1st argument */
-		arg = list_get(inst->arg_list, 0);
-
-		if (arg->type == frm_arg_literal)
-			inst_bytes->tgt.tgt_mod = 0x0;
-		else if (arg->type == frm_arg_const_maddr)
-			inst_bytes->tgt.tgt_mod = 0x1;
-		else
-			frm2bin_yyerror_fmt("PBK: wrong target type!\n");
-
-		/* [25:15]: all 0s */
-		inst_bytes->tgt.u = 0x0;
-		inst_bytes->tgt.noinc = 0x0;
-		inst_bytes->tgt._const0 = 0x0;
-
-		/* [57:46]: all 0s */
-		inst_bytes->tgt._reserved0 = 0x0;
-
-		/* [63:58]: 011000 */
-		inst_bytes->tgt.op1 = 0x1a;
-
-		break;
-
-	case FRM_INST_PCNT:
-
-		/* [3:0]: 0111 */
-		inst_bytes->tgt.op0 = 0x7;
-
-		/* [9:4]: 000000 */
-		inst_bytes->tgt.mod0 = 0x0;
-
-		/* [13:10]: pred */
-		if (inst->pred_num >= 0)
-		{
-			inst_bytes->tgt.pred = inst->pred_num;
-		}
-		else
-		{
-			/* no predicate, value=7 */
-			inst_bytes->tgt.pred = 0x0;
-		}
-
-		/* [14]: tgt_mod, immediate or const mem addr, check the type
-		 * of the 1st argument */
-		arg = list_get(inst->arg_list, 0);
-
-		if (arg->type == frm_arg_literal)
-			inst_bytes->tgt.tgt_mod = 0x0;
-		else if (arg->type == frm_arg_const_maddr)
-			inst_bytes->tgt.tgt_mod = 0x1;
-		else
-			frm2bin_yyerror_fmt("PCNT: wrong target type!, name: %s\n", inst->info->name);
-
-		/* [15]: 0, default value */
-		inst_bytes->tgt.u = 0x0;
-
-		/* [16]: 0, default value */
-		inst_bytes->tgt.noinc = 0x0;
-
-		/* [25:17]: all 0s */
-		inst_bytes->tgt._const0 = 0x0;
-
-		/* [57:46]: all 0s */
-		inst_bytes->tgt._reserved0 = 0x0;
-
-		/* [63:58]: 011100 */
-		inst_bytes->tgt.op1 = 0x1c;
+//		/* [3:0]: 0111 */
+//		inst_bytes->general0.op0 = 0x7;
+//
+//		/* [9:4]: 011110 */
+//		inst_bytes->general0.mod0 = 0x1e;
+//
+//		/* [13:10]: pred */
+//		if (inst->pred_num >= 0)
+//		{
+//			inst_bytes->general0.pred = inst->pred_num;
+//		}
+//		else
+//		{
+//			/* no predicate, value=7 */
+//			inst_bytes->general0.pred = 0x7;
+//		}
+//
+//		/* [19:14]: all 0s */
+//		inst_bytes->general0.dst = 0x0;
+//
+//		/* [25:20]: all 0s */
+//		inst_bytes->general0.src1 = 0x0;
+//
+//		/* [45:26]: all 0s */
+//		inst_bytes->general0.src2 = 0x0;
+//
+//		/* [47:46]: all 0s */
+//		inst_bytes->general0.src2_mod = 0x0;
+//
+//		/* [48]: all 0s */
+//		inst_bytes->general0.dst_cc = 0x0;
+//
+//		/* [57:49]: all 0s */
+//		inst_bytes->general0.mod1 = 0x0;
+//
+//		/* [63:58]: 101100 */
+//		inst_bytes->general0.op1 = 0x2c;
 
 		break;
 
-	case FRM_INST_NOP:
+	case FrmInstOpEXIT:
 
-		/* [3:0]: 0100 */
-		inst_bytes->offs.op0 = 0x4;
-
-		/* [9:4]: all 0s, default value */
-		inst_bytes->offs.mod0 = 0x0;
-
-		/* [13:10]: pred */
-		if (inst->pred_num >= 0)
-		{
-			inst_bytes->offs.pred = inst->pred_num;
-		}
-		else
-		{
-			/* no predicate, value=7 */
-			inst_bytes->offs.pred = 0x7;
-		}
-
-		/* [19:14]: all 0s */
-		inst_bytes->offs.dst = 0x0;
-
-		/* [25:20]: all 0s */
-		inst_bytes->offs.src1 = 0x0;
-
-		/* [41:26]: all 0s, default value */
-		inst_bytes->offs.offset = 0x0;
-
-		/* [57:42]: default value */
-		inst_bytes->offs.mod1 = 0x0;
-
-		/* [63:58]: 010000 */
-		inst_bytes->offs.op1 = 0x10;
+//		inst_bytes->general0.op0 = 0x7;
+//		inst_bytes->general0.mod0 = 0x1e;
+//		inst_bytes->general0.dst = 0x0;
+//		inst_bytes->general0.src1 = 0x0;
+//		inst_bytes->general0.src2 = 0x0;
+//		inst_bytes->general0.src2_mod = 0x0;
+//		inst_bytes->general0.dst_cc = 0x0;
+//		inst_bytes->general0.mod1 = 0x0;
+//		inst_bytes->general0.op1 = 0x20;
+//
+//		/* set the predicate */
+//		if (inst->pred_num >= 0)
+//		{
+//			inst_bytes->general0.pred = inst->pred_num;
+//		}
+//		else
+//		{
+//			/* no predicate, value=7 */
+//			inst_bytes->general0.pred = 0x7;
+//		}
 
 		break;
 
-	case FRM_INST_S2R:
+	case FrmInstOpSSY:
 
-		inst_bytes->general0.op0 = 0x4;
-		inst_bytes->general0.mod0 = 0x0;
-		inst_bytes->general0.src1 = 0x0;
-		inst_bytes->general0.src2_mod = 0x0;
-		inst_bytes->general0.dst_cc = 0x0;
-		inst_bytes->general0.mod1 = 0x0;
-		inst_bytes->general0.op1 = 0xb;
-
-		/* set the predicate */
-		if (inst->pred_num >= 0)
-		{
-			inst_bytes->general0.pred = inst->pred_num;
-		}
-		else
-		{
-			/* no predicate, value=7 */
-			inst_bytes->general0.pred = 0x7;
-		}
+//		/* [3:0]: 0111 */
+//		inst_bytes->tgt.op0 = 0x7;
+//
+//		/* [9:4]: 000000 */
+//		inst_bytes->tgt.mod0 = 0x0;
+//
+//		/* [13:10]: pred */
+//		if (inst->pred_num >= 0)
+//		{
+//			inst_bytes->tgt.pred = inst->pred_num;
+//		}
+//		else
+//		{
+//			/* no predicate, value=7 */
+//			inst_bytes->tgt.pred = 0x0;
+//		}
+//
+//		/* [14]: tgt_mod, immediate or const mem addr, check the type
+//		 * of the 1st argument */
+//		arg = list_get(inst->arg_list, 0);
+//
+//		if (arg->type == frm_arg_literal)
+//			inst_bytes->tgt.tgt_mod = 0x0;
+//		else if (arg->type == frm_arg_const_maddr)
+//			inst_bytes->tgt.tgt_mod = 0x1;
+//		else
+//			frm2bin_yyerror_fmt("SSY: wrong target type!\n");
+//
+//		/* [25:15]: all 0s */
+//		inst_bytes->tgt.u = 0x0;
+//		inst_bytes->tgt.noinc = 0x0;
+//		inst_bytes->tgt._const0 = 0x0;
+//
+//		/* [57:46]: all 0s */
+//		inst_bytes->tgt._reserved0 = 0x0;
+//
+//		/* [63:58]: 011000 */
+//		inst_bytes->tgt.op1 = 0x18;
 
 		break;
 
-	case FRM_INST_BAR:
+	case FrmInstOpPBK:
 
-		/* [3:0]: 0100 */
-		inst_bytes->general0.op0 = 0x4;
+//		/* [3:0]: 0111 */
+//		inst_bytes->tgt.op0 = 0x7;
+//
+//		/* [9:4]: 000000 */
+//		inst_bytes->tgt.mod0 = 0x0;
+//
+//		/* [13:10]: pred */
+//		if (inst->pred_num >= 0)
+//		{
+//			inst_bytes->tgt.pred = inst->pred_num;
+//		}
+//		else
+//		{
+//			/* no predicate, value=7 */
+//			inst_bytes->tgt.pred = 0x0;
+//		}
+//
+//		/* [14]: tgt_mod, immediate or const mem addr, check the type
+//		 * of the 1st argument */
+//		arg = list_get(inst->arg_list, 0);
+//
+//		if (arg->type == frm_arg_literal)
+//			inst_bytes->tgt.tgt_mod = 0x0;
+//		else if (arg->type == frm_arg_const_maddr)
+//			inst_bytes->tgt.tgt_mod = 0x1;
+//		else
+//			frm2bin_yyerror_fmt("PBK: wrong target type!\n");
+//
+//		/* [25:15]: all 0s */
+//		inst_bytes->tgt.u = 0x0;
+//		inst_bytes->tgt.noinc = 0x0;
+//		inst_bytes->tgt._const0 = 0x0;
+//
+//		/* [57:46]: all 0s */
+//		inst_bytes->tgt._reserved0 = 0x0;
+//
+//		/* [63:58]: 011000 */
+//		inst_bytes->tgt.op1 = 0x1a;
 
-		/* [9:4]: 000000, some are default value */
-		inst_bytes->general0.mod0 = 0x0;
+		break;
 
-		/* [13:10]: pred */
-		if (inst->pred_num >= 0)
-		{
-			inst_bytes->general0.pred = inst->pred_num;
-		}
-		else
-		{
-			/* no predicate, value=7 */
-			inst_bytes->general0.pred = 0x7;
-		}
+	case FrmInstOpPCNT:
 
-		/* [19:14]: all 0s */
-		inst_bytes->general0.dst = 0x0;
+//		/* [3:0]: 0111 */
+//		inst_bytes->tgt.op0 = 0x7;
+//
+//		/* [9:4]: 000000 */
+//		inst_bytes->tgt.mod0 = 0x0;
+//
+//		/* [13:10]: pred */
+//		if (inst->pred_num >= 0)
+//		{
+//			inst_bytes->tgt.pred = inst->pred_num;
+//		}
+//		else
+//		{
+//			/* no predicate, value=7 */
+//			inst_bytes->tgt.pred = 0x0;
+//		}
+//
+//		/* [14]: tgt_mod, immediate or const mem addr, check the type
+//		 * of the 1st argument */
+//		arg = list_get(inst->arg_list, 0);
+//
+//		if (arg->type == frm_arg_literal)
+//			inst_bytes->tgt.tgt_mod = 0x0;
+//		else if (arg->type == frm_arg_const_maddr)
+//			inst_bytes->tgt.tgt_mod = 0x1;
+//		else
+//			frm2bin_yyerror_fmt("PCNT: wrong target type!, name: %s\n", inst->info->name);
+//
+//		/* [15]: 0, default value */
+//		inst_bytes->tgt.u = 0x0;
+//
+//		/* [16]: 0, default value */
+//		inst_bytes->tgt.noinc = 0x0;
+//
+//		/* [25:17]: all 0s */
+//		inst_bytes->tgt._const0 = 0x0;
+//
+//		/* [57:46]: all 0s */
+//		inst_bytes->tgt._reserved0 = 0x0;
+//
+//		/* [63:58]: 011100 */
+//		inst_bytes->tgt.op1 = 0x1c;
 
-		/* [25:20]: all 0s, no default value */
-		inst_bytes->general0.src1 = 0x0;
+		break;
 
-		/* [45:26]: 00--111111, default */
-		inst_bytes->general0.src2 = 0x3f;
+	case FrmInstOpNOP:
 
-		/* [47:46]: all 0s */
-		inst_bytes->general0.src2_mod = 0x0;
+//		/* [3:0]: 0100 */
+//		inst_bytes->offs.op0 = 0x4;
+//
+//		/* [9:4]: all 0s, default value */
+//		inst_bytes->offs.mod0 = 0x0;
+//
+//		/* [13:10]: pred */
+//		if (inst->pred_num >= 0)
+//		{
+//			inst_bytes->offs.pred = inst->pred_num;
+//		}
+//		else
+//		{
+//			/* no predicate, value=7 */
+//			inst_bytes->offs.pred = 0x7;
+//		}
+//
+//		/* [19:14]: all 0s */
+//		inst_bytes->offs.dst = 0x0;
+//
+//		/* [25:20]: all 0s */
+//		inst_bytes->offs.src1 = 0x0;
+//
+//		/* [41:26]: all 0s, default value */
+//		inst_bytes->offs.offset = 0x0;
+//
+//		/* [57:42]: default value */
+//		inst_bytes->offs.mod1 = 0x0;
+//
+//		/* [63:58]: 010000 */
+//		inst_bytes->offs.op1 = 0x10;
 
-		/* [48]: all 0s */
-		inst_bytes->general0.dst_cc = 0x0;
+		break;
 
-		/* [57:49]: 001110111, default value */
-		inst_bytes->general0.mod1 = 0x77;
+	case FrmInstOpS2R:
 
-		/* [63:58]: 010100 */
-		inst_bytes->general0.op1 = 0x14;
+//		inst_bytes->general0.op0 = 0x4;
+//		inst_bytes->general0.mod0 = 0x0;
+//		inst_bytes->general0.src1 = 0x0;
+//		inst_bytes->general0.src2_mod = 0x0;
+//		inst_bytes->general0.dst_cc = 0x0;
+//		inst_bytes->general0.mod1 = 0x0;
+//		inst_bytes->general0.op1 = 0xb;
+//
+//		/* set the predicate */
+//		if (inst->pred_num >= 0)
+//		{
+//			inst_bytes->general0.pred = inst->pred_num;
+//		}
+//		else
+//		{
+//			/* no predicate, value=7 */
+//			inst_bytes->general0.pred = 0x7;
+//		}
+
+		break;
+
+	case FrmInstOpBAR:
+
+//		/* [3:0]: 0100 */
+//		inst_bytes->general0.op0 = 0x4;
+//
+//		/* [9:4]: 000000, some are default value */
+//		inst_bytes->general0.mod0 = 0x0;
+//
+//		/* [13:10]: pred */
+//		if (inst->pred_num >= 0)
+//		{
+//			inst_bytes->general0.pred = inst->pred_num;
+//		}
+//		else
+//		{
+//			/* no predicate, value=7 */
+//			inst_bytes->general0.pred = 0x7;
+//		}
+//
+//		/* [19:14]: all 0s */
+//		inst_bytes->general0.dst = 0x0;
+//
+//		/* [25:20]: all 0s, no default value */
+//		inst_bytes->general0.src1 = 0x0;
+//
+//		/* [45:26]: 00--111111, default */
+//		inst_bytes->general0.src2 = 0x3f;
+//
+//		/* [47:46]: all 0s */
+//		inst_bytes->general0.src2_mod = 0x0;
+//
+//		/* [48]: all 0s */
+//		inst_bytes->general0.dst_cc = 0x0;
+//
+//		/* [57:49]: 001110111, default value */
+//		inst_bytes->general0.mod1 = 0x77;
+//
+//		/* [63:58]: 010100 */
+//		inst_bytes->general0.op1 = 0x14;
 
 		break;
 
@@ -1768,7 +1768,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 	{
 		LIST_FOR_EACH(inst->mod_list, index)
 		{
-			int data_width_cnt = 0;
+			//int data_width_cnt = 0;
 
 			mod = list_get(inst->mod_list, index);
 			/* take actions according to the type of the modifier
@@ -1777,74 +1777,73 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 			{
 			case frm_token_mod_data_width:
 			{
-				/* right now I only care about IMADD inst, *
-				 * this should be improved later */
-				if (data_width_cnt == 0)
-				{
-					data_width_cnt++;
-					/* for wide1 */
-					if (mod->value.data_width == u32)
-					{
-						inst_bytes->general0.mod0
-							&= 0xfffd;
-					}
-					else
-					{
-						inst_bytes->general0.mod0
-							|= 0x2;
-					}
-				}
-				else if (data_width_cnt == 1)
-				{
-					/* reset the counter */
-					data_width_cnt = 0;
-					/* for wide2 */
-					if (mod->value.data_width == u32)
-					{
-						inst_bytes->general0.mod0
-							&= 0xfff7;
-					}
-					else
-					{
-						inst_bytes->general0.mod0
-							|= 0x8;
-					}
-				}
-				else
-				{
-					frm2bin_yyerror_fmt
-						("Error unrecognized \
-							mod data_width \n");
-				}
+//				/* right now I only care about IMADD inst, *
+//				 * this should be improved later */
+//				if (data_width_cnt == 0)
+//				{
+//					data_width_cnt++;
+//					/* for wide1 */
+//					if (mod->value.data_width == u32)
+//					{
+//						inst_bytes->general0.mod0
+//							&= 0xfffd;
+//					}
+//					else
+//					{
+//						inst_bytes->general0.mod0
+//							|= 0x2;
+//					}
+//				}
+//				else if (data_width_cnt == 1)
+//				{
+//					/* reset the counter */
+//					data_width_cnt = 0;
+//					/* for wide2 */
+//					if (mod->value.data_width == u32)
+//					{
+//						inst_bytes->general0.mod0
+//							&= 0xfff7;
+//					}
+//					else
+//					{
+//						inst_bytes->general0.mod0
+//							|= 0x8;
+//					}
+//				}
+//				else
+//				{
+//					frm2bin_yyerror_fmt
+//						("Error unrecognized mod data_width \n");
+//				}
 				break;
 			}
 
 			case frm_token_IMAD_mod1:
 			{
-				if (mod->value.IMAD_mod == 0)
-					inst_bytes->general0.mod0 &= 0xfff7;
-				else if (mod->value.IMAD_mod == 1)
-					inst_bytes->general0.mod0 |= 0x8;
-				else
-				{
-					frm2bin_yyerror_fmt
-						(" Error unrecognized IMAD_mod1 \n");
-				}
+//				if (mod->value.IMAD_mod == 0)
+//					inst_bytes->general0.mod0 &= 0xfff7;
+//				else if (mod->value.IMAD_mod == 1)
+//					inst_bytes->general0.mod0 |= 0x8;
+//				else
+//				{
+//					frm2bin_yyerror_fmt
+//						(" Error unrecognized IMAD_mod1 \n");
+//				}
 
 				break;
 			}
 
 			case frm_token_IMAD_mod2:
 			{
-				if (mod->value.IMAD_mod == 0)
-					inst_bytes->general0.mod0 &= 0xfffd;
-				else if (mod->value.IMAD_mod == 1)
-					inst_bytes->general0.mod0 |= 0x2;
-				else
-				{
-					frm2bin_yyerror_fmt
-						(" Error unrecognized IMAD_mod2 \n");
-				}
+//				if (mod->value.IMAD_mod == 0)
+//					inst_bytes->general0.mod0 &= 0xfffd;
+//				else if (mod->value.IMAD_mod == 1)
+//					inst_bytes->general0.mod0 |= 0x2;
+//				else
+//				{
+//					frm2bin_yyerror_fmt
+//						(" Error unrecognized IMAD_mod2 \n");
+//				}
 
 				break;
 			}
@@ -1852,327 +1851,324 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 
 			case frm_token_mod_logic:
 			{
-				/* right now only cares about isetp inst,
-				 * need improvement later */
-				if (mod->value.logic == logic_and)
-				{
-					inst_bytes->general1.logic = 0x0;
-				}
-				else if (mod->value.logic == logic_or)
-				{
-					inst_bytes->general1.logic = 0x1;
-				}
-				else if (mod->value.logic == logic_xor)
-				{
-					inst_bytes->general1.logic = 0x2;
-				}
-				else
-				{
-					frm2bin_yyerror_fmt
-						("Error unrecognized \
-							mod logic \n");
-				}
+//				/* right now only cares about isetp inst,
+//				 * need improvement later */
+//				if (mod->value.logic == logic_and)
+//				{
+//					inst_bytes->general1.logic = 0x0;
+//				}
+//				else if (mod->value.logic == logic_or)
+//				{
+//					inst_bytes->general1.logic = 0x1;
+//				}
+//				else if (mod->value.logic == logic_xor)
+//				{
+//					inst_bytes->general1.logic = 0x2;
+//				}
+//				else
+//				{
+//					frm2bin_yyerror_fmt
+//						("Error unrecognized mod logic \n");
+//				}
 
 				break;
 			}
 
 			case frm_token_mod_comparison:
 			{
-				/* right now only cares about isetp inst,
-				 * need improvement later */
-				if (mod->value.comparison == frm_lt)
-				{
-					inst_bytes->general1.cmp = 0x1;
-				}
-				else if (mod->value.comparison == frm_eq)
-				{
-					inst_bytes->general1.cmp = 0x2;
-				}
-				else if (mod->value.comparison == frm_le)
-				{
-					inst_bytes->general1.cmp = 0x3;
-				}
-				else if (mod->value.comparison == frm_gt)
-				{
-					inst_bytes->general1.cmp = 0x4;
-				}
-				else if (mod->value.comparison == frm_ne)
-				{
-					inst_bytes->general1.cmp = 0x5;
-				}
-				else if (mod->value.comparison == frm_ge)
-				{
-					inst_bytes->general1.cmp = 0x6;
-				}
-				else if (mod->value.comparison == frm_num)
-				{
-					inst_bytes->general1.cmp = 0x7;
-				}
-				else if (mod->value.comparison == frm_nan)
-				{
-					inst_bytes->general1.cmp = 0x8;
-				}
-				else if (mod->value.comparison == frm_ltu)
-				{
-					inst_bytes->general1.cmp = 0x9;
-				}
-				else if (mod->value.comparison == frm_equ)
-				{
-					inst_bytes->general1.cmp = 0xa;
-				}
-				else if (mod->value.comparison == frm_leu)
-				{
-					inst_bytes->general1.cmp = 0xb;
-				}
-				else if (mod->value.comparison == frm_gtu)
-				{
-					inst_bytes->general1.cmp = 0xc;
-				}
-				else if (mod->value.comparison == frm_geu)
-				{
-					inst_bytes->general1.cmp = 0xd;
-				}
-				else if (mod->value.comparison == frm_neu)
-				{
-					inst_bytes->general1.cmp = 0xe;
-				}
-				else
-				{
-					frm2bin_yyerror_fmt
-						("Error unrecognized \
-							mod comparison \n");
-				}
+//				/* right now only cares about isetp inst,
+//				 * need improvement later */
+//				if (mod->value.comparison == frm_lt)
+//				{
+//					inst_bytes->general1.cmp = 0x1;
+//				}
+//				else if (mod->value.comparison == frm_eq)
+//				{
+//					inst_bytes->general1.cmp = 0x2;
+//				}
+//				else if (mod->value.comparison == frm_le)
+//				{
+//					inst_bytes->general1.cmp = 0x3;
+//				}
+//				else if (mod->value.comparison == frm_gt)
+//				{
+//					inst_bytes->general1.cmp = 0x4;
+//				}
+//				else if (mod->value.comparison == frm_ne)
+//				{
+//					inst_bytes->general1.cmp = 0x5;
+//				}
+//				else if (mod->value.comparison == frm_ge)
+//				{
+//					inst_bytes->general1.cmp = 0x6;
+//				}
+//				else if (mod->value.comparison == frm_num)
+//				{
+//					inst_bytes->general1.cmp = 0x7;
+//				}
+//				else if (mod->value.comparison == frm_nan)
+//				{
+//					inst_bytes->general1.cmp = 0x8;
+//				}
+//				else if (mod->value.comparison == frm_ltu)
+//				{
+//					inst_bytes->general1.cmp = 0x9;
+//				}
+//				else if (mod->value.comparison == frm_equ)
+//				{
+//					inst_bytes->general1.cmp = 0xa;
+//				}
+//				else if (mod->value.comparison == frm_leu)
+//				{
+//					inst_bytes->general1.cmp = 0xb;
+//				}
+//				else if (mod->value.comparison == frm_gtu)
+//				{
+//					inst_bytes->general1.cmp = 0xc;
+//				}
+//				else if (mod->value.comparison == frm_geu)
+//				{
+//					inst_bytes->general1.cmp = 0xd;
+//				}
+//				else if (mod->value.comparison == frm_neu)
+//				{
+//					inst_bytes->general1.cmp = 0xe;
+//				}
+//				else
+//				{
+//					frm2bin_yyerror_fmt
+//						("Error unrecognized mod comparison \n");
+//				}
 
 				break;
 			}
 
 			case frm_token_mod0_B_brev:
 			{
-				/* bit reverse */
-				if (mod->value.brev == 1)
-					inst_bytes->mod0_B.cop |= 0x1;
-				else
-					inst_bytes->mod0_B.cop &= 0xfe;
+//				/* bit reverse */
+//				if (mod->value.brev == 1)
+//					inst_bytes->mod0_B.cop |= 0x1;
+//				else
+//					inst_bytes->mod0_B.cop &= 0xfe;
 
 				break;
 			}
 
 			case frm_token_mod0_B_cop:
 			{
-				/* data type */
-				if (mod->value.mod0_B_cop == 0)
-					inst_bytes->mod0_B.cop = 0x0;
-				else if (mod->value.mod0_B_cop == 1)
-					inst_bytes->mod0_B.cop = 0x1;
-				else if (mod->value.mod0_B_cop == 2)
-					inst_bytes->mod0_B.cop = 0x2;
-				else if (mod->value.mod0_B_cop == 3)
-					inst_bytes->mod0_B.cop = 0x3;
-				else
-				{
-					frm2bin_yyerror_fmt
-						("Error unrecognized \
-							mod0_B_cop \n");
-				}
+//				/* data type */
+//				if (mod->value.mod0_B_cop == 0)
+//					inst_bytes->mod0_B.cop = 0x0;
+//				else if (mod->value.mod0_B_cop == 1)
+//					inst_bytes->mod0_B.cop = 0x1;
+//				else if (mod->value.mod0_B_cop == 2)
+//					inst_bytes->mod0_B.cop = 0x2;
+//				else if (mod->value.mod0_B_cop == 3)
+//					inst_bytes->mod0_B.cop = 0x3;
+//				else
+//				{
+//					frm2bin_yyerror_fmt
+//						("Error unrecognized mod0_B_cop \n");
+//				}
 
 				break;
 			}
 
 			case frm_token_mod0_B_type:
 			{
-				/* data type */
-				/* ATTENTIONS: this should change, when switch to C++,
-				 * since mod0b_invalid will be 0, not */
-				if (mod->value.mod0_B_type == 0)
-					inst_bytes->mod0_B.type = 0x0;
-				else if (mod->value.mod0_B_type == 1)
-					inst_bytes->mod0_B.type = 0x1;
-				else if (mod->value.mod0_B_type == 2)
-					inst_bytes->mod0_B.type = 0x2;
-				else if (mod->value.mod0_B_type == 3)
-					inst_bytes->mod0_B.type = 0x3;
-				else if (mod->value.mod0_B_type == 4)
-					inst_bytes->mod0_B.type = 0x4;
-				else if (mod->value.mod0_B_type == 5)
-					inst_bytes->mod0_B.type = 0x5;
-				else if (mod->value.mod0_B_type == 6)
-					inst_bytes->mod0_B.type = 0x6;
-				else
-				{
-					frm2bin_yyerror_fmt
-						("Error unrecognized \
-							mod0_B_type \n");
-				}
+//				/* data type */
+//				/* ATTENTIONS: this should change, when switch to C++,
+//				 * since mod0b_invalid will be 0, not */
+//				if (mod->value.mod0_B_type == 0)
+//					inst_bytes->mod0_B.type = 0x0;
+//				else if (mod->value.mod0_B_type == 1)
+//					inst_bytes->mod0_B.type = 0x1;
+//				else if (mod->value.mod0_B_type == 2)
+//					inst_bytes->mod0_B.type = 0x2;
+//				else if (mod->value.mod0_B_type == 3)
+//					inst_bytes->mod0_B.type = 0x3;
+//				else if (mod->value.mod0_B_type == 4)
+//					inst_bytes->mod0_B.type = 0x4;
+//				else if (mod->value.mod0_B_type == 5)
+//					inst_bytes->mod0_B.type = 0x5;
+//				else if (mod->value.mod0_B_type == 6)
+//					inst_bytes->mod0_B.type = 0x6;
+//				else
+//				{
+//					frm2bin_yyerror_fmt
+//						("Error unrecognized mod0_B_type \n");
+//				}
 
 				break;
 			}
 
 			case frm_token_tgt_u:
 			{
-				/* target u? */
-				if (mod->value.tgt_u == 1)
-					inst_bytes->tgt.u = 0x1;
-				else
-					inst_bytes->tgt.u = 0x0;
+//				/* target u? */
+//				if (mod->value.tgt_u == 1)
+//					inst_bytes->tgt.u = 0x1;
+//				else
+//					inst_bytes->tgt.u = 0x0;
 
 				break;
 			}
 
 			case frm_token_tgt_lmt:
 			{
-				/* target lmt? */
-				if (mod->value.tgt_lmt == 1)
-					inst_bytes->tgt.noinc = 0x1;
-				else
-					inst_bytes->tgt.noinc = 0x0;
+//				/* target lmt? */
+//				if (mod->value.tgt_lmt == 1)
+//					inst_bytes->tgt.noinc = 0x1;
+//				else
+//					inst_bytes->tgt.noinc = 0x0;
 
 				break;
 			}
 
 			case frm_token_mod0_A_w:
 			{
-				/* width? only mod0_A.neg_src1 matches,
-				 * change later? */
-				if (mod->value.mod0_A_w == 1)
-					inst_bytes->mod0_A.neg_src1 = 0x1;
-				else
-					inst_bytes->mod0_A.neg_src1 = 0x0;
+//				/* width? only mod0_A.neg_src1 matches,
+//				 * change later? */
+//				if (mod->value.mod0_A_w == 1)
+//					inst_bytes->mod0_A.neg_src1 = 0x1;
+//				else
+//					inst_bytes->mod0_A.neg_src1 = 0x0;
 
 				break;
 			}
 
 			case frm_token_mod0_A_redarv:
 			{
-				/* width? only mod0_A.abs_src1 matches,
-				 * change later? */
-				inst_bytes->mod0_A.abs_src1 =
-					mod->value.mod0_A_redarv;
+//				/* width? only mod0_A.abs_src1 matches,
+//				 * change later? */
+//				inst_bytes->mod0_A.abs_src1 =
+//					mod->value.mod0_A_redarv;
 
 				break;
 			}
 
 			case frm_token_mod0_A_op:
 			{
-				/* width? only mod0_A.abs_src2 and satftz
-				 * matches, change later? */
-				if (mod->value.mod0_A_op == 0)
-				{
-					inst_bytes->mod0_A.satftz = 0;
-					inst_bytes->mod0_A.abs_src2 = 0;
-				}
-				else if (mod->value.mod0_A_op == 1)
-				{
-					inst_bytes->mod0_A.satftz = 1;
-					inst_bytes->mod0_A.abs_src2 = 0;
-				}
-				else if (mod->value.mod0_A_op == 2)
-				{
-					inst_bytes->mod0_A.satftz = 0;
-					inst_bytes->mod0_A.abs_src2 = 1;
-				}
-				else
-				{
-					inst_bytes->mod0_A.satftz = 1;
-					inst_bytes->mod0_A.abs_src2 = 1;
-				}
+//				/* width? only mod0_A.abs_src2 and satftz
+//				 * matches, change later? */
+//				if (mod->value.mod0_A_op == 0)
+//				{
+//					inst_bytes->mod0_A.satftz = 0;
+//					inst_bytes->mod0_A.abs_src2 = 0;
+//				}
+//				else if (mod->value.mod0_A_op == 1)
+//				{
+//					inst_bytes->mod0_A.satftz = 1;
+//					inst_bytes->mod0_A.abs_src2 = 0;
+//				}
+//				else if (mod->value.mod0_A_op == 2)
+//				{
+//					inst_bytes->mod0_A.satftz = 0;
+//					inst_bytes->mod0_A.abs_src2 = 1;
+//				}
+//				else
+//				{
+//					inst_bytes->mod0_A.satftz = 1;
+//					inst_bytes->mod0_A.abs_src2 = 1;
+//				}
 
 				break;
 			}
 
 			case frm_token_mod0_C_s:
 			{
-				inst_bytes->mod0_C.s = mod->value.mod0_C_s;
+//				inst_bytes->mod0_C.s = mod->value.mod0_C_s;
 
 				break;
 			}
 
 			case frm_token_mod0_D_ftzfmz:
 			{
-				if (mod->value.mod0_D_ftzfmz == 1)
-					inst_bytes->mod0_D.ftzfmz = 0x1;
-				else if (mod->value.mod0_D_ftzfmz == 2)
-					inst_bytes->mod0_D.ftzfmz = 0x2;
-				else
-					/* invalid mod0_D_ftzfmz */
-					inst_bytes->mod0_D.ftzfmz = 0x3;
+//				if (mod->value.mod0_D_ftzfmz == 1)
+//					inst_bytes->mod0_D.ftzfmz = 0x1;
+//				else if (mod->value.mod0_D_ftzfmz == 2)
+//					inst_bytes->mod0_D.ftzfmz = 0x2;
+//				else
+//					/* invalid mod0_D_ftzfmz */
+//					inst_bytes->mod0_D.ftzfmz = 0x3;
 
 				break;
 			}
 
 			case frm_token_mod0_D_sat:
 			{
-				if (mod->value.mod0_D_sat == 1)
-					inst_bytes->mod0_D.sat = 0x1;
-				else
-					inst_bytes->mod0_D.sat = 0x0;
+//				if (mod->value.mod0_D_sat == 1)
+//					inst_bytes->mod0_D.sat = 0x1;
+//				else
+//					inst_bytes->mod0_D.sat = 0x0;
 
 				break;
 			}
 
 			case frm_token_mod0_D_x:
 			{
-				inst_bytes->mod0_D.sat = mod->value.mod0_D_x;
+//				inst_bytes->mod0_D.sat = mod->value.mod0_D_x;
 
 				break;
 			}
 
 			case frm_token_gen0_src1_dtype:
 			{
-				/* [[21:20] gen0_src1_dtype */
-				if (mod->value.gen0_src1_dtype == 1)
-					inst_bytes->general0.src1 |= 0x1;
-				else if (mod->value.gen0_src1_dtype == 2)
-					inst_bytes->general0.src1 |= 0x2;
-				else if (mod->value.gen0_src1_dtype == 3)
-					inst_bytes->general0.src1 |= 0x3;
-				else
-					inst_bytes->general0.src1 |= 0x0;
+//				/* [[21:20] gen0_src1_dtype */
+//				if (mod->value.gen0_src1_dtype == 1)
+//					inst_bytes->general0.src1 |= 0x1;
+//				else if (mod->value.gen0_src1_dtype == 2)
+//					inst_bytes->general0.src1 |= 0x2;
+//				else if (mod->value.gen0_src1_dtype == 3)
+//					inst_bytes->general0.src1 |= 0x3;
+//				else
+//					inst_bytes->general0.src1 |= 0x0;
+				break;
 			}
 
 			case frm_token_gen0_mod1_B_rnd:
 			{
-				if (mod->value.gen0_mod1_B_rnd == 0)
-					inst_bytes->general0_mod1_B.rnd = 0x0;
-				else if (mod->value.gen0_mod1_B_rnd == 1)
-					inst_bytes->general0_mod1_B.rnd = 0x1;
-				else if (mod->value.gen0_mod1_B_rnd == 2)
-					inst_bytes->general0_mod1_B.rnd = 0x2;
-				else
-					inst_bytes->general0_mod1_B.rnd = 0x3;
+//				if (mod->value.gen0_mod1_B_rnd == 0)
+//					inst_bytes->general0_mod1_B.rnd = 0x0;
+//				else if (mod->value.gen0_mod1_B_rnd == 1)
+//					inst_bytes->general0_mod1_B.rnd = 0x1;
+//				else if (mod->value.gen0_mod1_B_rnd == 2)
+//					inst_bytes->general0_mod1_B.rnd = 0x2;
+//				else
+//					inst_bytes->general0_mod1_B.rnd = 0x3;
 
 				break;
 			}
 
 			case frm_token_offs_mod1_A_trig:
 			{
-				if (mod->value.offs_mod1_A_trig == 1)
-					inst_bytes->offs_mod1_A.trig = 0x1;
-				else
-					inst_bytes->offs_mod1_A.trig = 0x0;
+//				if (mod->value.offs_mod1_A_trig == 1)
+//					inst_bytes->offs_mod1_A.trig = 0x1;
+//				else
+//					inst_bytes->offs_mod1_A.trig = 0x0;
 
 				break;
 			}
 
 			case frm_token_offs_mod1_A_op:
 			{
-				if (mod->value.offs_mod1_A_op == 1)
-					inst_bytes->offs_mod1_A.op = 0x1;
-				else if (mod->value.offs_mod1_A_op == 2)
-					inst_bytes->offs_mod1_A.op = 0x2;
-				else if (mod->value.offs_mod1_A_op == 3)
-					inst_bytes->offs_mod1_A.op = 0x3;
-				else if (mod->value.offs_mod1_A_op == 4)
-					inst_bytes->offs_mod1_A.op = 0x4;
-				else if (mod->value.offs_mod1_A_op == 5)
-					inst_bytes->offs_mod1_A.op = 0x5;
-				else if (mod->value.offs_mod1_A_op == 6)
-					inst_bytes->offs_mod1_A.op = 0x6;
-				else if (mod->value.offs_mod1_A_op == 7)
-					inst_bytes->offs_mod1_A.op = 0x7;
-				else if (mod->value.offs_mod1_A_op == 8)
-					inst_bytes->offs_mod1_A.op = 0x8;
-				else
-					inst_bytes->offs_mod1_A.op = 0x0;
+//				if (mod->value.offs_mod1_A_op == 1)
+//					inst_bytes->offs_mod1_A.op = 0x1;
+//				else if (mod->value.offs_mod1_A_op == 2)
+//					inst_bytes->offs_mod1_A.op = 0x2;
+//				else if (mod->value.offs_mod1_A_op == 3)
+//					inst_bytes->offs_mod1_A.op = 0x3;
+//				else if (mod->value.offs_mod1_A_op == 4)
+//					inst_bytes->offs_mod1_A.op = 0x4;
+//				else if (mod->value.offs_mod1_A_op == 5)
+//					inst_bytes->offs_mod1_A.op = 0x5;
+//				else if (mod->value.offs_mod1_A_op == 6)
+//					inst_bytes->offs_mod1_A.op = 0x6;
+//				else if (mod->value.offs_mod1_A_op == 7)
+//					inst_bytes->offs_mod1_A.op = 0x7;
+//				else if (mod->value.offs_mod1_A_op == 8)
+//					inst_bytes->offs_mod1_A.op = 0x8;
+//				else
+//					inst_bytes->offs_mod1_A.op = 0x0;
 
 				break;
 			}
@@ -2204,205 +2200,198 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 			/* only support the argument I need now */
 		case frm_token_dst:
 		{
-			/* [19:14]dst, both general0 and general1 use it */
-			if (arg->type == frm_arg_scalar_register)
-			{
-				inst_bytes->general0.dst =
-					arg->value.scalar_register.id;
-			}
-			else if (arg->type == frm_arg_zero_register)
-				inst_bytes->general0.dst = 0x3f;
-			else
-			{
-				frm2bin_yyerror_fmt("Wrong frm_token_dst. \
-					[inst.c]\n");
-			}
+//			/* [19:14]dst, both general0 and general1 use it */
+//			if (arg->type == frm_arg_scalar_register)
+//			{
+//				inst_bytes->general0.dst =
+//					arg->value.scalar_register.id;
+//			}
+//			else if (arg->type == frm_arg_zero_register)
+//				inst_bytes->general0.dst = 0x3f;
+//			else
+//			{
+//				frm2bin_yyerror_fmt("Wrong frm_token_dst. [inst.c]\n");
+//			}
 
 			break;
 		}
 
 		case frm_token_src1:
 		{
-			/* [25:20] src2 */
-			if (arg->type == frm_arg_scalar_register)
-			{
-				/* for scalar register */
-				inst_bytes->general0.src1 =
-					arg->value.scalar_register.id;
-			}
-			else if (arg->type == frm_arg_zero_register)
-				inst_bytes->general0.src1 = 0x3f;
-			else
-			{
-				frm2bin_yyerror_fmt("Wrong frm_token_src1. \
-					[inst.c]\n");
-			}
+//			/* [25:20] src2 */
+//			if (arg->type == frm_arg_scalar_register)
+//			{
+//				/* for scalar register */
+//				inst_bytes->general0.src1 =
+//					arg->value.scalar_register.id;
+//			}
+//			else if (arg->type == frm_arg_zero_register)
+//				inst_bytes->general0.src1 = 0x3f;
+//			else
+//			{
+//				frm2bin_yyerror_fmt("Wrong frm_token_src1. [inst.c]\n");
+//			}
 			break;
 		}
 
 		case frm_token_src2:
 		{
-			/* [45:26] src2 */
-			if (arg->type == frm_arg_const_maddr)
-			{
-				/* for const mem */
-				inst_bytes->general0.src2_mod = 0x1;
-				inst_bytes->general0.src2 =
-					(arg->value.glob_maddr.reg_idx
-					<< 16)
-					| (arg->value.glob_maddr.offset);
-			}
-
-			else if (arg->type == frm_arg_scalar_register)
-			{
-				/* for scalar register */
-				inst_bytes->general0.src2_mod = 0x0;
-				inst_bytes->general0.src2 =
-					arg->value.scalar_register.id;
-			}
-
-			else if (arg->type == frm_arg_zero_register)
-			{
-				/* [45:26]: src2, all 0s Register Zero, reg
-				 * that contains const value of 0 */
-				inst_bytes->general0.src2_mod = 0x0;
-				inst_bytes->general0.src2 = 0x3f;
-			}
-
-			else if (arg->type == frm_arg_literal)
-			{
-				/* for immediate value */
-				inst_bytes->general0.src2_mod = 0x3;
-				inst_bytes->general0.src2 =
-					arg->value.literal.val;
-			}
-			else
-			{
-				frm2bin_yyerror_fmt("Wrong frm_token_src2. \
-					[inst.c], arg->type:%d\n", arg->type);
-			}
+//			/* [45:26] src2 */
+//			if (arg->type == frm_arg_const_maddr)
+//			{
+//				/* for const mem */
+//				inst_bytes->general0.src2_mod = 0x1;
+//				inst_bytes->general0.src2 =
+//					(arg->value.glob_maddr.reg_idx
+//					<< 16)
+//					| (arg->value.glob_maddr.offset);
+//			}
+//
+//			else if (arg->type == frm_arg_scalar_register)
+//			{
+//				/* for scalar register */
+//				inst_bytes->general0.src2_mod = 0x0;
+//				inst_bytes->general0.src2 =
+//					arg->value.scalar_register.id;
+//			}
+//
+//			else if (arg->type == frm_arg_zero_register)
+//			{
+//				/* [45:26]: src2, all 0s Register Zero, reg
+//				 * that contains const value of 0 */
+//				inst_bytes->general0.src2_mod = 0x0;
+//				inst_bytes->general0.src2 = 0x3f;
+//			}
+//
+//			else if (arg->type == frm_arg_literal)
+//			{
+//				/* for immediate value */
+//				inst_bytes->general0.src2_mod = 0x3;
+//				inst_bytes->general0.src2 =
+//					arg->value.literal.val;
+//			}
+//			else
+//			{
+//				frm2bin_yyerror_fmt("Wrong frm_token_src2. [inst.c], arg->type:%d\n", arg->type);
+//			}
 			break;
 		}
 
 		case frm_token_src1_neg:
 		{
-			/* [25:20] src2 */
-			if (arg->type == frm_arg_scalar_register)
-			{
-				/* for scalar register */
-				inst_bytes->general0.src1 =
-					arg->value.scalar_register.id;
-			}
-			else
-			{
-				frm2bin_yyerror_fmt
-					("Wrong frm_token_src1_neg. \
-					[inst.c]\n");
-			}
+//			/* [25:20] src2 */
+//			if (arg->type == frm_arg_scalar_register)
+//			{
+//				/* for scalar register */
+//				inst_bytes->general0.src1 =
+//					arg->value.scalar_register.id;
+//			}
+//			else
+//			{
+//				frm2bin_yyerror_fmt
+//					("Wrong frm_token_src1_neg. [inst.c]\n");
+//			}
 
 			break;
 		}
 		case frm_token_src2_neg:
 		{
-			/* [45:26] src2 */
-			if (arg->type == frm_arg_const_maddr)
-			{
-				/* for const mem */
-				inst_bytes->general0.src2_mod = 0x1;
-				inst_bytes->general0.src2 =
-					(arg->value.glob_maddr.reg_idx
-					<< 16)
-					| (arg->value.glob_maddr.offset);
-			}
-
-			else if (arg->type == frm_arg_scalar_register)
-			{
-				/* for scalar register */
-				inst_bytes->general0.src2_mod = 0x0;
-				inst_bytes->general0.src2 =
-					arg->value.scalar_register.id;
-			}
-
-			else if (arg->type == frm_arg_zero_register)
-			{
-				/* [45:26]: src2, all 0s Register Zero, reg
-				 * that contains const value of 0 */
-				inst_bytes->general0.src2_mod = 0x0;
-				inst_bytes->general0.src2 = 0x3f;
-			}
-
-			else if (arg->type == frm_arg_literal)
-			{
-				/* for immediate value */
-				inst_bytes->general0.src2_mod = 0x3;
-				inst_bytes->general0.src2 =
-					arg->value.literal.val;
-			}
-			else
-			{
-				frm2bin_yyerror_fmt
-					("Wrong frm_token_src2_neg. \
-					[inst.c]\n");
-			}
+//			/* [45:26] src2 */
+//			if (arg->type == frm_arg_const_maddr)
+//			{
+//				/* for const mem */
+//				inst_bytes->general0.src2_mod = 0x1;
+//				inst_bytes->general0.src2 =
+//					(arg->value.glob_maddr.reg_idx
+//					<< 16)
+//					| (arg->value.glob_maddr.offset);
+//			}
+//
+//			else if (arg->type == frm_arg_scalar_register)
+//			{
+//				/* for scalar register */
+//				inst_bytes->general0.src2_mod = 0x0;
+//				inst_bytes->general0.src2 =
+//					arg->value.scalar_register.id;
+//			}
+//
+//			else if (arg->type == frm_arg_zero_register)
+//			{
+//				/* [45:26]: src2, all 0s Register Zero, reg
+//				 * that contains const value of 0 */
+//				inst_bytes->general0.src2_mod = 0x0;
+//				inst_bytes->general0.src2 = 0x3f;
+//			}
+//
+//			else if (arg->type == frm_arg_literal)
+//			{
+//				/* for immediate value */
+//				inst_bytes->general0.src2_mod = 0x3;
+//				inst_bytes->general0.src2 =
+//					arg->value.literal.val;
+//			}
+//			else
+//			{
+//				frm2bin_yyerror_fmt
+//					("Wrong frm_token_src2_neg. [inst.c]\n");
+//			}
 
 			break;
 		}
 
 		case frm_token_src3:
 		{
-			if (arg->type == frm_arg_scalar_register)
-			{
-				/* [54:49] */
-				inst_bytes->general0_mod1_B.src3 =
-					arg->value.scalar_register.id;
-			}
-			else if (arg->type == frm_arg_zero_register)
-				inst_bytes->general0_mod1_B.src3 = 0x3f;
-			else
-			{
-				frm2bin_yyerror_fmt("Wrong frm_token_src3. \
-					[inst.c]\n");
-			}
+//			if (arg->type == frm_arg_scalar_register)
+//			{
+//				/* [54:49] */
+//				inst_bytes->general0_mod1_B.src3 =
+//					arg->value.scalar_register.id;
+//			}
+//			else if (arg->type == frm_arg_zero_register)
+//				inst_bytes->general0_mod1_B.src3 = 0x3f;
+//			else
+//			{
+//				frm2bin_yyerror_fmt("Wrong frm_token_src3. [inst.c]\n");
+//			}
 			break;
 		}
 
 		case frm_token_src2_frm_sr:
 		{
 
-			inst_bytes->imm.imm32 = arg->value.special_register.type;
+//			inst_bytes->imm.imm32 = arg->value.special_register.type;
 
 			break;
 		}
 
 		case frm_token_src1_offs:
 		{
-			if (arg->type == frm_arg_glob_maddr)
-			{
-				if (arg->value.glob_maddr.reg_idx == -1)
-					inst_bytes->offs.src1 = 0x3f;
-				else
-					inst_bytes->offs.src1 =
-						arg->value.glob_maddr.reg_idx;
-
-				inst_bytes->offs.offset =
-					arg->value.glob_maddr.offset;
-			}
-			else if (arg->type == frm_arg_shared_maddr)
-			{
-				if (arg->value.shared_maddr.bank_idx == -1)
-					inst_bytes->offs.src1 = 0x3f;
-				else
-					inst_bytes->offs.src1 =
-						arg->value.shared_maddr.bank_idx;
-				inst_bytes->offs.offset =
-					arg->value.shared_maddr.offset;
-			}
-			else
-			{
-				frm2bin_yyerror_fmt
-					("Wrong tokne_src1_offs, expected \
-						glob_mme or shared_mem.\n");
-			}
+//			if (arg->type == frm_arg_glob_maddr)
+//			{
+//				if (arg->value.glob_maddr.reg_idx == -1)
+//					inst_bytes->offs.src1 = 0x3f;
+//				else
+//					inst_bytes->offs.src1 =
+//						arg->value.glob_maddr.reg_idx;
+//
+//				inst_bytes->offs.offset =
+//					arg->value.glob_maddr.offset;
+//			}
+//			else if (arg->type == frm_arg_shared_maddr)
+//			{
+//				if (arg->value.shared_maddr.bank_idx == -1)
+//					inst_bytes->offs.src1 = 0x3f;
+//				else
+//					inst_bytes->offs.src1 =
+//						arg->value.shared_maddr.bank_idx;
+//				inst_bytes->offs.offset =
+//					arg->value.shared_maddr.offset;
+//			}
+//			else
+//			{
+//				frm2bin_yyerror_fmt
+//					("Wrong tokne_src1_offs, expected glob_mme or shared_mem.\n");
+//			}
 
 			break;
 		}
@@ -2411,168 +2400,164 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 			 */
 		case frm_token_src2_FFMA:
 		{
-			if (arg->type == frm_arg_scalar_register)
-			{
-				inst_bytes->general0.src2 =
-					arg->value.scalar_register.id;
-			}
-			else
-			{
-				frm2bin_yyerror_fmt
-					("Wrong token for src2_FFMA \n");
-			}
+//			if (arg->type == frm_arg_scalar_register)
+//			{
+//				inst_bytes->general0.src2 =
+//					arg->value.scalar_register.id;
+//			}
+//			else
+//			{
+//				frm2bin_yyerror_fmt
+//					("Wrong token for src2_FFMA \n");
+//			}
 
 			break;
 		}
 
 		case frm_token_src3_FFMA:
 		{
-			if (arg->type == frm_arg_scalar_register)
-			{
-				inst_bytes->general0_mod1_D.src3 =
-					arg->value.scalar_register.id;
-			}
-			else
-			{
-				frm2bin_yyerror_fmt
-					("Wrong token for src2_FFMA \n");
-			}
+//			if (arg->type == frm_arg_scalar_register)
+//			{
+//				inst_bytes->general0_mod1_D.src3 =
+//					arg->value.scalar_register.id;
+//			}
+//			else
+//			{
+//				frm2bin_yyerror_fmt
+//					("Wrong token for src2_FFMA \n");
+//			}
 
 			break;
 		}
 
 		case frm_token_tgt:
 		{
-			if (arg->type == frm_arg_literal)
-			{
-				/* [45:26], tgt is only [49:26], improve
-				 * laster */
-				inst_bytes->tgt.tgt_mod = 0x0;
-				inst_bytes->tgt.target =
-					((unsigned int)arg->value.literal.val - inst->addr - 8) ;
-			}
-			else if (arg->type == frm_arg_const_maddr)
-			{
-				/* [14] */
-				inst_bytes->tgt.tgt_mod = 0x1;
-				/* [45:42]: bank_id, [41:26]: offset */
-				inst_bytes->tgt.target =
-					(arg->value.const_maddr.bank_idx << 16)
-					+ arg->value.const_maddr.offset;
-			}
-			else
-				frm2bin_yyerror_fmt
-					("Illegal frm_token_tgt type!\n");
+//			if (arg->type == frm_arg_literal)
+//			{
+//				/* [45:26], tgt is only [49:26], improve
+//				 * laster */
+//				inst_bytes->tgt.tgt_mod = 0x0;
+//				inst_bytes->tgt.target =
+//					((unsigned int)arg->value.literal.val - inst->addr - 8) ;
+//			}
+//			else if (arg->type == frm_arg_const_maddr)
+//			{
+//				/* [14] */
+//				inst_bytes->tgt.tgt_mod = 0x1;
+//				/* [45:42]: bank_id, [41:26]: offset */
+//				inst_bytes->tgt.target =
+//					(arg->value.const_maddr.bank_idx << 16)
+//					+ arg->value.const_maddr.offset;
+//			}
+//			else
+//				frm2bin_yyerror_fmt
+//					("Illegal frm_token_tgt type!\n");
 			break;
 		}
 
 		case frm_token_offs:
 		{
-			/* [41:26]: offs */
-			if (arg->type == frm_arg_literal)
-			{
-				inst_bytes->offs.offset =
-					arg->value.literal.val;
-			}
-			else
-				frm2bin_yyerror_fmt
-					("Illegal frm_token_offs type!\n");
+//			/* [41:26]: offs */
+//			if (arg->type == frm_arg_literal)
+//			{
+//				inst_bytes->offs.offset =
+//					arg->value.literal.val;
+//			}
+//			else
+//				frm2bin_yyerror_fmt
+//					("Illegal frm_token_offs type!\n");
 
 			break;
 		}
 
 		case frm_token_imm32:
 		{
-			/* [57:26]: imm32 */
-			if (arg->type == frm_arg_literal)
-			{
-				inst_bytes->imm.imm32 =
-					arg->value.literal.val;
-			}
+//			/* [57:26]: imm32 */
+//			if (arg->type == frm_arg_literal)
+//			{
+//				inst_bytes->imm.imm32 =
+//					arg->value.literal.val;
+//			}
 			break;
 		}
 
 		case frm_token_mod0_C_shamt:
 		{
-			if (arg->type == frm_arg_literal)
-			{
-				/* [9:5] */
-				inst_bytes->mod0_C.shamt =
-					arg->value.literal.val;
-			}
-			else
-			{
-				frm2bin_yyerror_fmt("Wrong frm_token_shamt. \
-					[dis-inst.c]\n");
-			}
+//			if (arg->type == frm_arg_literal)
+//			{
+//				/* [9:5] */
+//				inst_bytes->mod0_C.shamt =
+//					arg->value.literal.val;
+//			}
+//			else
+//			{
+//				frm2bin_yyerror_fmt("Wrong frm_token_shamt. [dis-inst.c]\n");
+//			}
 			break;
 		}
 
 		case frm_token_Q:
 		{
-			if (arg->type == frm_arg_pt)
-			{
-				/* [16:14], general0.dst[19:14] */
-				inst_bytes->general0.dst =
-					arg->value.pt.idx
-					| (inst_bytes->general0.dst & 0x38);
-			}
-			else
-			{
-				frm2bin_yyerror_fmt("Wrong frm_token_Q. \
-					[dis-inst.c]\n");
-			}
+//			if (arg->type == frm_arg_pt)
+//			{
+//				/* [16:14], general0.dst[19:14] */
+//				inst_bytes->general0.dst =
+//					arg->value.pt.idx
+//					| (inst_bytes->general0.dst & 0x38);
+//			}
+//			else
+//			{
+//				frm2bin_yyerror_fmt("Wrong frm_token_Q. [dis-inst.c]\n");
+//			}
 			break;
 		}
 
 		case frm_token_P:
 		{
-			/* a new frm_fmt need to be created in asm.h to
-			 * handle the case of P */
-			if (arg->type == frm_arg_predicate_register)
-			{
-				/* [19:17], general0.dst is [19:14] */
-				inst_bytes->general0.dst =
-					(arg->value.predicate_register.id
-					<< 3)
-					| (inst_bytes->general0.dst & 0x7);
-			}
-			else
-			{
-				frm2bin_yyerror_fmt("Wrong frm_token_P. \
-					[dis-inst.c]\n");
-			}
+//			/* a new frm_fmt need to be created in asm.h to
+//			 * handle the case of P */
+//			if (arg->type == frm_arg_predicate_register)
+//			{
+//				/* [19:17], general0.dst is [19:14] */
+//				inst_bytes->general0.dst =
+//					(arg->value.predicate_register.id
+//					<< 3)
+//					| (inst_bytes->general0.dst & 0x7);
+//			}
+//			else
+//			{
+//				frm2bin_yyerror_fmt("Wrong frm_token_P. [dis-inst.c]\n");
+//			}
 			break;
 		}
 
 		case frm_token_R:
 		{
-			if (arg->type == frm_arg_pt)
-			{
-				/* [51:49] */
-				/* will be improved later */
-				inst_bytes->general1.R = arg->value.pt.idx;
-			}
-			else if (arg->type == frm_arg_predicate_register)
-			{
-				/* [51:49] */
-				inst_bytes->general1.R =
-					arg->value.predicate_register.id;
-			}
-			else
-			{
-				frm2bin_yyerror_fmt("Wrong token. expected:token_R, but %d \
-					[dis-inst.c]\n", arg->type);
-			}
+//			if (arg->type == frm_arg_pt)
+//			{
+//				/* [51:49] */
+//				/* will be improved later */
+//				inst_bytes->general1.R = arg->value.pt.idx;
+//			}
+//			else if (arg->type == frm_arg_predicate_register)
+//			{
+//				/* [51:49] */
+//				inst_bytes->general1.R =
+//					arg->value.predicate_register.id;
+//			}
+//			else
+//			{
+//				frm2bin_yyerror_fmt("Wrong token. expected:token_R, but %d [dis-inst.c]\n", arg->type);
+//			}
 			break;
 		}
 
 		case frm_token_mod0_C_ccop:
 		{
-			if (arg->type == frm_arg_ccop)
-				/* maybe name "shamt" shoule be changed
-				 * later? */
-				inst_bytes->mod0_C.shamt = arg->value.ccop.op;
+//			if (arg->type == frm_arg_ccop)
+//				/* maybe name "shamt" shoule be changed
+//				 * later? */
+//				inst_bytes->mod0_C.shamt = arg->value.ccop.op;
 
 			break;
 		}

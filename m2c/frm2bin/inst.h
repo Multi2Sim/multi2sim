@@ -28,7 +28,7 @@
 struct frm2bin_inst_t
 {
 	/* si use: si_inst_opcode_t, frm use: frm_inst_enum, see asm.h */
-	FrmInstOpcode opcode;
+	FrmInstOp opcode;
 	struct frm2bin_inst_info_t *info;
 	struct list_t *arg_list;
 	/* modifier list */

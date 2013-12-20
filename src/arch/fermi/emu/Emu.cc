@@ -19,3 +19,20 @@
 
 #include "Emu.h"
 
+namespace Fermi
+{
+
+std::unique_ptr<Emu> Emu::instance;
+
+Emu *Emu::getInstance()
+{
+        // Instance already exists
+        if (instance.get())
+                return instance.get();
+
+        // Create instance
+        instance.reset(new Emu());
+        return instance.get();
+}
+
+}  // namespace Fermi

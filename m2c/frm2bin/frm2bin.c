@@ -254,8 +254,8 @@ void Frm2binCompile(Frm2bin *self,
 		 * temporarily implementation */
 		{
 			struct FrmAsmWrap *as = FrmAsmWrapCreate();
-			FrmAsmWrapDisassembleBuffer(as, text_section_buffer->ptr,
-					text_section_buffer->size);
+//			FrmAsmWrapDisassembleBuffer(as, text_section_buffer->ptr,
+//					text_section_buffer->size);
 			FrmAsmWrapFree(as);
 		}
 
