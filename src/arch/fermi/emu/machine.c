@@ -2333,43 +2333,68 @@ void frm_isa_STL_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_STS_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	//	unsigned int pred_id, value_id, addr_id;
-	//	unsigned int active, pred, value, addr;
-	//
-	//	FrmWarp *warp;
-	//	FrmWarpSyncStackEntry entry;
-	//
-	//	/* Active */
-	//	warp = thread->warp;
-	//	entry = warp->sync_stack.entries[warp->sync_stack_top];
-	//	active = (entry.active_thread_mask >>
-	//			thread->id_in_warp) & 0x1;
-	//
-	//	/* Predicate */
-	//	pred_id = FrmInstWrapGetBytes(inst)->offs.pred;
-	//	if (pred_id <= 7)
-	//		pred = thread->pr[pred_id];
-	//	else
-	//		pred = ! thread->pr[pred_id - 8];
-	//
-	//	/* Execute */
-	//	if (active == 1 && pred == 1)
-	//	{
-	//		/* Read */
-	//		value_id = FrmInstWrapGetBytes(inst)->offs.dst;
-	//		value = thread->gpr[value_id].u32;
-	//		addr_id = FrmInstWrapGetBytes(inst)->offs.src1;
-	//		addr = thread->gpr[addr_id].u32 + FrmInstWrapGetBytes(inst)->offs.offset;
-	//
-	//		/* Execute */
-	//		mem_write(thread->thread_block->shared_mem, addr, 4, &value);
-	//	}
-	//
-	//	/* Debug */
-	//	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
-	//			"value = [0x%x] 0x%08x addr = [0x%x] 0x%08x\n",
-	//			__FUNCTION__, __LINE__, warp->pc, thread->id, active,
-	//			pred_id, pred, value_id, value, addr_id, addr);
+	// Format
+	FrmFmtLdSt fmt = FrmInstWrapGetBytes(inst)->fmt_ldst;
+
+	// Active and predicate
+	FrmWarp *warp = thread->warp;
+	FrmWarpSyncStackEntry entry;
+	unsigned active;
+	unsigned pred_id, pred;
+
+	// Operands
+	unsigned value_id, src1_id;
+	int value[4], src1;
+	unsigned addr;
+
+	struct mem_t *shared_mem = thread->thread_block->shared_mem;
+
+	/* Active */
+	entry = warp->sync_stack.entries[warp->sync_stack_top];
+	active = (entry.active_thread_mask >> thread->id_in_warp) & 0x1;
+
+	/* Predicate */
+	pred_id = fmt.pred;
+	if (pred_id <= 7)
+		pred = thread->pr[pred_id];
+	else
+		pred = ! thread->pr[pred_id - 8];
+
+	/* Execute */
+	if (active == 1 && pred == 1)
+	{
+		/* Read */
+		src1_id = fmt.src1;
+		src1 = thread->gpr[src1_id].s32;
+		addr = src1 + (fmt.fmod1_srco & 0xffffff);
+		value_id = fmt.dst;
+		value[0] = thread->gpr[value_id].s32;
+		if (((fmt.fmod0 >> 1) & 0x7) == 5)
+			value[1] = thread->gpr[value_id + 1].s32;
+		if (((fmt.fmod0 >> 1) & 0x7) == 6)
+		{
+			value[1] = thread->gpr[value_id + 1].s32;
+			value[2] = thread->gpr[value_id + 2].s32;
+			value[3] = thread->gpr[value_id + 3].s32;
+		}
+
+		/* Execute */
+		mem_write(shared_mem, addr, 4, value);
+		if (((fmt.fmod0 >> 1) & 0x7) == 5)
+			mem_write(shared_mem, addr + 4, 4, value + 1);
+		if (((fmt.fmod0 >> 1) & 0x7) == 6)
+		{
+			mem_write(shared_mem, addr + 4, 4, value + 1);
+			mem_write(shared_mem, addr + 8, 4, value + 2);
+			mem_write(shared_mem, addr + 12, 4, value + 3);
+		}
+	}
+
+	/* Debug */
+	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
+			"value[0] = [0x%x] 0x%08x src1 = [0x%x] 0x%08x addr = 0x%08x\n",
+			__FUNCTION__, __LINE__, warp->pc, thread->id, active,
+			pred_id, pred, value_id, value[0], src1_id, src1, addr);
 }
 
 void frm_isa_STSUL_impl(FrmThread *thread, struct FrmInstWrap *inst)
@@ -2419,46 +2444,54 @@ void frm_isa_SULEA_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_LDC_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	//	unsigned int pred_id, dst_id, src_id;
-	//	unsigned int active, pred, dst, addr;
-	//
-	//	FrmWarp *warp = thread->warp;
-	//	FrmGrid *grid = thread->grid;
-	//	FrmEmu *emu = grid->emu;
-	//	FrmWarpSyncStackEntry entry;
-	//
-	//	/* Active */
-	//	entry = warp->sync_stack.entries[warp->sync_stack_top];
-	//	active = (entry.active_thread_mask >>
-	//			thread->id_in_warp) & 0x1;
-	//
-	//	/* Predicate */
-	//	pred_id = FrmInstWrapGetBytes(inst)->offs.pred;
-	//	if (pred_id <= 7)
-	//		pred = thread->pr[pred_id];
-	//	else
-	//		pred = ! thread->pr[pred_id - 8];
-	//
-	//	/* Execute */
-	//	if (active == 1 && pred == 1)
-	//	{
-	//		/* Read */
-	//		src_id = FrmInstWrapGetBytes(inst)->offs.src1;
-	//		addr = thread->gpr[src_id].u32;
-	//
-	//		/* Execute */
-	//		mem_read(emu->const_mem, addr, 4, &dst);
-	//
-	//		/* Write */
-	//		dst_id = FrmInstWrapGetBytes(inst)->offs.dst;
-	//		thread->gpr[dst_id].u32 = dst;
-	//	}
-	//
-	//	/* Debug */
-	//	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
-	//			"dst = [0x%x] 0x%08x src = [0x%x] 0x%08x\n",
-	//			__FUNCTION__, __LINE__, warp->pc, thread->id, active,
-	//			pred_id, pred, dst_id, dst, src_id, addr);
+	// Format
+	FrmFmtLdSt fmt = FrmInstWrapGetBytes(inst)->fmt_ldst;
+
+	// Active and predicate
+	FrmWarp *warp = thread->warp;
+	FrmWarpSyncStackEntry entry;
+	unsigned active;
+	unsigned pred_id, pred;
+
+	// Operands
+	unsigned dst_id, src1_id;
+	int dst, src1;
+	unsigned addr;
+
+	struct mem_t *const_mem = thread->grid->emu->const_mem;
+
+	/* Active */
+	entry = warp->sync_stack.entries[warp->sync_stack_top];
+	active = (entry.active_thread_mask >> thread->id_in_warp) & 0x1;
+
+	/* Predicate */
+	pred_id = fmt.pred;
+	if (pred_id <= 7)
+		pred = thread->pr[pred_id];
+	else
+		pred = ! thread->pr[pred_id - 8];
+
+	/* Execute */
+	if (active == 1 && pred == 1)
+	{
+		/* Read */
+		src1_id = fmt.src1;
+		src1 = thread->gpr[src1_id].s32;
+		addr = src1 + (fmt.fmod1_srco & 0xffff);
+
+		/* Execute */
+		mem_read(const_mem, addr, 4, &dst);
+
+		/* Write */
+		dst_id = fmt.dst;
+		thread->gpr[dst_id].s32 = dst;
+	}
+
+	/* Debug */
+	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
+			"dst = [0x%x] 0x%08x src1 = [0x%x] 0x%08x addr = 0x%08x\n",
+			__FUNCTION__, __LINE__, warp->pc, thread->id, active,
+			pred_id, pred, dst_id, dst, src1_id, src1, addr);
 }
 
 void frm_isa_TEX_impl(FrmThread *thread, struct FrmInstWrap *inst)
