@@ -41,55 +41,48 @@ void FrmEmuCreate(FrmEmu *self, struct FrmAsmWrap *as)
 	/* Parent */
 	EmuCreate(asEmu(self), "Fermi");
 
-        /* Initialize */
+	/* Initialize */
 	self->as = as;
 	self->grids = list_create();
 	self->pending_grids = list_create();
 	self->running_grids = list_create();
 	self->finished_grids = list_create();
-	self->global_mem = mem_create();
-	self->global_mem->safe = 0;
-	self->global_mem_top = 0;
-	self->total_global_mem_size = 1 << 30; /* 2GB */
-	self->free_global_mem_size = 1 << 30; /* 2GB */
-	self->const_mem = mem_create();
-	self->const_mem->safe = 0;
-
-	/* Initialize instruction execution table */
-#define DEFINST(_name, _fmt_str, _opcode) \
-	self->inst_func[_opcode] = frm_isa_##_name##_impl;
+#define DEFINST(_op, _fmt_str, _opcode) \
+		self->inst_func[FrmInstId##_op] = frm_isa_##_op##_impl;
 #include <arch/fermi/asm/asm.dat>
 #undef DEFINST
+	self->global_mem = mem_create();
+	self->global_mem_top = 0;
+	self->total_global_mem_size = 1 << 30; /* 1GB */
+	self->free_global_mem_size = self->total_global_mem_size;
+	self->const_mem = mem_create();
 
-        /* Virtual functions */
-        asObject(self)->Dump = FrmEmuDump;
-        asEmu(self)->DumpSummary = FrmEmuDumpSummary;
-        asEmu(self)->Run = FrmEmuRun;
+	/* Virtual functions */
+	asObject(self)->Dump = FrmEmuDump;
+	asEmu(self)->DumpSummary = FrmEmuDumpSummary;
+	asEmu(self)->Run = FrmEmuRun;
 }
 
 
 void FrmEmuDestroy(FrmEmu *self)
 {
-	/* Free grids */
 	list_free(self->grids);
 	list_free(self->pending_grids);
 	list_free(self->running_grids);
 	list_free(self->finished_grids);
-        mem_free(self->const_mem);
-        mem_free(self->global_mem);
+	mem_free(self->global_mem);
+	mem_free(self->const_mem);
 }
 
 
 void FrmEmuDump(Object *self, FILE *f)
 {
-	/* Call parent */
 	EmuDump(self, f);
 }
 
 
 void FrmEmuDumpSummary(Emu *self, FILE *f)
 {
-	/* Call parent */
 	EmuDumpSummary(self, f);
 }
 
@@ -102,40 +95,44 @@ int FrmEmuRun(Emu *self)
 	FrmThreadBlock *thread_block;
 	FrmWarp *warp;
 
-	int warp_id;
+	int grid_id, thread_block_id, warp_id;
 
-	/* Stop emulation if no grid needs running */
-	if (!list_count(emu->grids))
+	/* Stop emulation if no grids */
+	if (! list_count(emu->grids))
 		return FALSE;
 
-	/* Remove grid and its thread blocks from pending list, and add them to
-	 * running list */
-	while ((grid = list_head(emu->pending_grids)))
+	/* Remove all pending grids and their thread blocks from the pending list,
+	 * and add them to running list */
+	for (grid_id = 0; grid_id < list_count(emu->pending_grids); ++grid_id)
 	{
-		while ((thread_block = list_head(grid->pending_thread_blocks)))
+		grid = list_get(emu->pending_grids, grid_id);
+		for (thread_block_id = 0; thread_block_id < list_count(
+				grid->pending_thread_blocks); ++thread_block_id)
 		{
+			thread_block = list_get(grid->pending_thread_blocks,
+					thread_block_id);
 			list_remove(grid->pending_thread_blocks, thread_block);
 			list_add(grid->running_thread_blocks, thread_block);
 		}
-
 		list_remove(emu->pending_grids, grid);
 		list_add(emu->running_grids, grid);
 	}
 
-	/* Run one instruction */
-	while ((grid = list_head(emu->running_grids)))
+	/* Run one instruction in the whole grid */
+	for (grid_id = 0; grid_id < list_count(emu->running_grids); ++grid_id)
 	{
-		while ((thread_block = list_head(grid->running_thread_blocks)))
+		grid = list_get(emu->running_grids, grid_id);
+		for (thread_block_id = 0; thread_block_id < list_count(
+				grid->running_thread_blocks); ++thread_block_id)
 		{
-			for (warp_id = 0; warp_id <
-					list_count(thread_block->running_warps);
-					warp_id++)
+			thread_block = list_get(grid->running_thread_blocks,
+					thread_block_id);
+			for (warp_id = 0; warp_id <	list_count(thread_block->running_warps);
+					++warp_id)
 			{
-				warp = list_get(thread_block->running_warps,
-						warp_id);
+				warp = list_get(thread_block->running_warps, warp_id);
 				if (warp->finished || warp->at_barrier)
 					continue;
-
 				FrmWarpExecute(warp);
 			}
 		}
@@ -144,12 +141,10 @@ int FrmEmuRun(Emu *self)
 	/* Free finished grids */
 	assert(list_count(emu->pending_grids) == 0 &&
 			list_count(emu->running_grids) == 0);
-	while ((grid = list_head(emu->finished_grids)))
+	for (grid_id = 0; grid_id < list_count(emu->finished_grids); ++grid_id)
 	{
-		/* Remove grid from finished list */
+		grid = list_get(emu->finished_grids, grid_id);
 		list_remove(emu->finished_grids, grid);
-
-		/* Free grid */
 		delete(grid);
 	}
 
@@ -158,28 +153,16 @@ int FrmEmuRun(Emu *self)
 }
 
 
-void FrmEmuConstMemWrite(FrmEmu *self, unsigned int addr, void *value_ptr)
+void FrmEmuConstMemWrite(FrmEmu *self, unsigned addr, void *value_ptr)
 {
-	/* Mark c[0][0..1c] as initialized */
-	if (addr < 0x20)
-		self->const_mem_init[addr] = 1;
-
-	/* Write */
-	mem_write(self->const_mem, addr, sizeof(unsigned int), value_ptr);
+	mem_write(self->const_mem, addr, sizeof(unsigned), value_ptr);
 }
 
 
-void FrmEmuConstMemRead(FrmEmu *self, unsigned int addr, void *value_ptr)
+void FrmEmuConstMemRead(FrmEmu *self, unsigned addr, void *value_ptr)
 {
-	/* Warn if c[0][0..1c] is used uninitialized */
-	if (addr < 0x20 && !self->const_mem_init[addr])
-		warning("c [0] [0x%x] is used uninitialized", addr);
-
-	/* Read */
-	mem_read(self->const_mem, addr, sizeof(unsigned int), value_ptr);
+	mem_read(self->const_mem, addr, sizeof(unsigned), value_ptr);
 }
-
-
 
 
 /*
@@ -189,7 +172,4 @@ void FrmEmuConstMemRead(FrmEmu *self, unsigned int addr, void *value_ptr)
 long long frm_emu_max_cycles;
 long long frm_emu_max_inst;
 int frm_emu_max_functions;
-
-char *frm_emu_cuda_binary_name = "";
-
-int frm_emu_warp_size = 32;
+const int frm_emu_warp_size = 32;

@@ -30,81 +30,59 @@
  * Class 'FrmEmu'
  */
 
-/* Function implementing an ISA instruction */
-typedef void (*FrmEmuInstFunc)(FrmThread *thread, struct FrmInstWrap *inst);
-
+/* Function implementing an instruction */
+typedef void (*FrmEmuInstFunc)(FrmThread *, struct FrmInstWrap *);
 
 CLASS_BEGIN(FrmEmu, Emu)
 
 	/* Disassembler */
 	struct FrmAsmWrap *as;
 	
-	/* List of grids */
+	/* Lists of grids */
 	struct list_t *grids;
 	struct list_t *pending_grids;
 	struct list_t *running_grids;
 	struct list_t *finished_grids;
 
+	/* Array of pointers to instruction implementation functions */
+	FrmEmuInstFunc inst_func[FrmInstIdCount];
+
 	/* Global memory */
 	struct mem_t *global_mem;
-	unsigned int global_mem_top;
-	struct mem_t *shared_mem; /* shared with the CPU */
+	unsigned global_mem_top;
+	unsigned total_global_mem_size;
+	unsigned free_global_mem_size;
 
-	/* Constant memory, which is organized as 16 banks of 64KB each. */
+	/* Constant memory */
 	struct mem_t *const_mem;
 
-	/* Flags indicating whether the first 32 bytes of constant memory
-	 * are initialized. A warning will be issued by the simulator
-	 * if an uninitialized element is used by the kernel. */
-	int const_mem_init[32];
-
-	unsigned int free_global_mem_size;
-	unsigned int total_global_mem_size;
-
-	/* Instruction emulation table */
-	FrmEmuInstFunc inst_func[FrmInstOpCount];
-
 	/* Stats */
-	int grid_count;  /* Number of CUDA functions executed */
-	long long scalar_alu_inst_count;  /* Scalar ALU instructions executed */
-	long long scalar_mem_inst_count;  /* Scalar mem instructions executed */
-	long long branch_inst_count;  /* Branch instructions executed */
-	long long vector_alu_inst_count;  /* Vector ALU instructions executed */
-	long long lds_inst_count;  /* LDS instructions executed */
-	long long vector_mem_inst_count;  /* Vector mem instructions executed */
-	long long export_inst_count; /* Export instruction executed */
+	int grid_count;
+	long long branch_inst_count;
+	long long alu_inst_count;
+	long long shared_mem_inst_count;
+	long long global_mem_inst_count;
 
 CLASS_END(FrmEmu)
 
 
 void FrmEmuCreate(FrmEmu *self, struct FrmAsmWrap *as);
 void FrmEmuDestroy(FrmEmu *self);
-
 void FrmEmuDump(Object *self, FILE *f);
 void FrmEmuDumpSummary(Emu *self, FILE *f);
-
-/* Virtual function from class 'Emu' */
 int FrmEmuRun(Emu *emu);
-
-/* Access to constant memory */
-void FrmEmuConstMemWrite(FrmEmu *self, unsigned int addr, void *pvalue);
-void FrmEmuConstMemRead(FrmEmu *self, unsigned int addr, void *pvalue);
-
-
+void FrmEmuConstMemWrite(FrmEmu *self, unsigned addr, void *pvalue);
+void FrmEmuConstMemRead(FrmEmu *self, unsigned addr, void *pvalue);
 
 
 /*
- * Public Stuff
+ * Public Variables
  */
 
 extern long long frm_emu_max_cycles;
 extern long long frm_emu_max_inst;
 extern int frm_emu_max_functions;
-
-extern char *frm_emu_cuda_binary_name;
-
-extern int frm_emu_warp_size;
-extern char *err_frm_cuda_note;
+extern const int frm_emu_warp_size;
 
 
 #endif

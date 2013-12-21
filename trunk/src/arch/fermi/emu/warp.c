@@ -235,7 +235,7 @@ void FrmWarpExecute(FrmWarp *self)
 
 	struct FrmInstWrap *inst;
 	FrmInstBytes bytes;
-	FrmInstOp opcode;
+	FrmInstId id;
 
 	int thread_id;
 
@@ -269,8 +269,8 @@ void FrmWarpExecute(FrmWarp *self)
 
 	/* Decode instruction */
 	FrmInstWrapDecode(inst, self->pc, &bytes);
-	opcode = FrmInstWrapGetOpcode(inst);
-	if (!opcode)
+	id = FrmInstWrapGetId(inst);
+	if (!id)
 		fatal("%s: unrecognized instruction (%08x %08x)",
 			__FUNCTION__, bytes.word[0], bytes.word[1]);
 
@@ -278,7 +278,7 @@ void FrmWarpExecute(FrmWarp *self)
 	for (thread_id = 0; thread_id < self->thread_count; thread_id++)
 	{
 		thread = self->threads[thread_id];
-		emu->inst_func[opcode](thread, inst);
+		emu->inst_func[id](thread, inst);
 	}
 
 	/* Finish */
