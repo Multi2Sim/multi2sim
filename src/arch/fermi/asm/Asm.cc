@@ -41,6 +41,7 @@ Asm::Asm()
 		cat = _opcode >> 8; \
 		op_in_cat = (cat <= 3) ? (_opcode & 0xf8) >> 3 : (_opcode & 0xfc) >> 2; \
 		info = &inst_info_table[cat][op_in_cat]; \
+		info->id = InstId##_op; \
 		info->op = InstOp##_op; \
 		info->category = (InstCategory) cat; \
 		info->name = #_op; \

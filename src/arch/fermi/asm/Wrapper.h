@@ -112,14 +112,24 @@ typedef enum
 
 typedef enum
 {
-	FrmInstOpInvalid = 0,
+	FrmInstIdInvalid = 0,
 
 #define DEFINST(_op, _fmt_str, _opcode) \
-		FrmInstOp##_op,
+		FrmInstId##_op,
 #include "asm.dat"
 #undef DEFINST
 
-	FrmInstOpCount
+	FrmInstIdCount
+} FrmInstId;
+
+typedef enum
+{
+	FrmInstOpInvalid = 0,
+
+#define DEFINST(_op, _fmt_str, _opcode) \
+		FrmInstOp##_op = _opcode,
+#include "asm.dat"
+#undef DEFINST
 } FrmInstOp;
 
 typedef union
@@ -149,6 +159,7 @@ void FrmInstWrapCopy(struct FrmInstWrap *left, struct FrmInstWrap *right);
 
 void FrmInstWrapDecode(struct FrmInstWrap *self, unsigned int addr, void *ptr);
 FrmInstBytes *FrmInstWrapGetBytes(struct FrmInstWrap *self);
+FrmInstId FrmInstWrapGetId(struct FrmInstWrap *self);
 FrmInstOp FrmInstWrapGetOpcode(struct FrmInstWrap *self);
 FrmInstCategory FrmInstWrapGetCategory(struct FrmInstWrap *self);
 char *FrmInstWrapGetName(struct FrmInstWrap *self);

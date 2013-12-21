@@ -33,6 +33,7 @@
 #include "warp.h"
 
 
+/* Create a grid */
 void FrmGridCreate(FrmGrid *self, FrmEmu *emu, struct cuda_function_t *function)
 {
 	/* Initialize grid */
