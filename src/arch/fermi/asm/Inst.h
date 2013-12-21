@@ -111,11 +111,22 @@ typedef enum
 	InstCategoryCount
 } InstCategory;
 
+// Instruction ID
+typedef enum
+{
+	InstIdInvalid = 0,
+
+#define DEFINST(_op, _fmt_str, _opcode) \
+		InstId##_op,
+#include "asm.dat"
+#undef DEFINST
+
+	InstIdCount
+} InstId;
+
 // Instruction operations
 typedef enum
 {
-	InstOpInvalid = 0,
-
 #define DEFINST(_op, _fmt_str, _opcode) \
 		InstOp##_op = _opcode,
 #include "asm.dat"
@@ -137,6 +148,7 @@ typedef union
 
 struct InstInfo
 {
+	InstId id;
 	InstOp op;
 	InstCategory category;
 	std::string name;
@@ -183,8 +195,11 @@ public:
 	InstInfo *getInfo() { return info; }
 	std::string getStr() { return str; }
 
+	/// Get ID
+	InstId getId() { return info ? info->id : InstIdInvalid; }
+
 	/// Get operation
-	InstOp getOp() { return info ? info->op : InstOpInvalid; }
+	InstOp getOp() { assert(info); return info->op; }
 
 	/// Get opcode
 	unsigned getOpcode() { return info ? (unsigned) info->op : 0; }
@@ -200,4 +215,3 @@ public:
 }  // namespace Fermi
 
 #endif
-

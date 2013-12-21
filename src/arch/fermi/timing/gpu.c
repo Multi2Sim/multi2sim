@@ -1051,9 +1051,9 @@ void FrmGpuDumpReport(FrmGpu *self)
 	fprintf(f, "GridCount = %d\n", emu->grid_count);
 	fprintf(f, "Instructions = %lld\n", asEmu(emu)->instructions);
 	fprintf(f, "BranchInstructions = %lld\n", emu->branch_inst_count);
-	fprintf(f, "ALUInstructions = %lld\n", emu->vector_alu_inst_count);
-	fprintf(f, "SharedMemInstructions = %lld\n", emu->lds_inst_count);
-	fprintf(f, "GlobalMemInstructions = %lld\n", emu->vector_mem_inst_count);
+	fprintf(f, "ALUInstructions = %lld\n", emu->alu_inst_count);
+	fprintf(f, "SharedMemInstructions = %lld\n", emu->shared_mem_inst_count);
+	fprintf(f, "GlobalMemInstructions = %lld\n", emu->global_mem_inst_count);
 	fprintf(f, "Cycles = %lld\n", asTiming(frm_gpu)->cycle);
 	fprintf(f, "InstructionsPerCycle = %.4g\n", inst_per_cycle);
 	fprintf(f, "\n\n");

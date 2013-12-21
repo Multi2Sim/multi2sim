@@ -62,6 +62,13 @@ FrmInstBytes *FrmInstWrapGetBytes(struct FrmInstWrap *self)
 }
 
 
+FrmInstId FrmInstWrapGetId(struct FrmInstWrap *self)
+{
+	Fermi::Inst *inst = (Fermi::Inst *) self;
+	return (FrmInstId) inst->getId();
+}
+
+
 FrmInstOp FrmInstWrapGetOpcode(struct FrmInstWrap *self)
 {
 	Fermi::Inst *inst = (Fermi::Inst *) self;
