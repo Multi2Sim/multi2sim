@@ -1191,7 +1191,6 @@ int FrmGpuRun(Timing *self)
 		}
 
 		/* Finalize and free Grid */
-		assert(grid->state == FrmGridFinished);
 		frm_gpu_unmap_grid();
 		FrmGridDestroy(grid);
 	}
