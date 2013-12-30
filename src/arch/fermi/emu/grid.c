@@ -39,8 +39,6 @@ void FrmGridCreate(FrmGrid *self, FrmEmu *emu, struct cuda_function_t *function)
 	/* Initialize grid */
 	self->emu = emu;
 	self->id = list_count(emu->grids);
-	self->name = new(String, function->name);
-	self->state = FrmGridPending;
 	self->function = function;
 	self->num_gpr = function->num_gpr;
 
@@ -71,9 +69,6 @@ void FrmGridDestroy(FrmGrid *self)
 	list_free(self->pending_thread_blocks);
 	list_free(self->running_thread_blocks);
 	list_free(self->finished_thread_blocks);
-
-        /* Rest */
-	delete(self->name);
 }
 
 
