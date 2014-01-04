@@ -87,19 +87,25 @@ static void opencl_command_run_map_buffer(struct opencl_command_t *command)
 		fatal("%s: cl_mem no longer mapped - race condition?",
 				__FUNCTION__);
 
-	/* If the CL_MAP_READ flag was set, copy buffer from device to host */
+	/* If the CL_MAP_READ flag was set and not unified memory,
+	 * copy buffer from device to host */
 	assert(mem->host_ptr);
-	if (mem->map_flags & 1)
+	if (!opencl_device_shared_memory && (mem->map_flags & 1))
 	{
 		device->arch_device_mem_read_func(
 				device->arch_device,
 				mem->host_ptr + mem->map_offset,
 				mem->device_ptr + mem->map_offset,
 				mem->map_size);
-		opencl_debug("\t%d bytes copied from device [%p+%u] to host [%p+%u]",
+		opencl_debug("\t[opencl_command_run_map_buffer] %d bytes "
+				"copied from device [%p+%u] to host [%p+%u]",
 				mem->map_size, mem->device_ptr, mem->map_offset,
 				mem->host_ptr, mem->map_offset);
 	}
+	opencl_debug("\t[opencl_command_run_map_buffer] host [%p+%u], "
+			"device [%p+%u]",
+			mem->host_ptr, mem->map_offset,
+			mem->device_ptr, mem->map_offset);
 }
 
 
@@ -115,29 +121,38 @@ static void opencl_command_run_unmap_buffer(struct opencl_command_t *command)
 		fatal("%s: cl_mem no longer mapped - race condition?",
 				__FUNCTION__);
 
-	/* If the CL_MAP_WRITE flag was set, copy buffer from host to device */
+	/* If the CL_MAP_WRITE flag was se tand not unified memory,
+	 * copy buffer from host to device */
 	assert(mem->host_ptr);
-	if (mem->map_flags & 2)
+	if (!opencl_device_shared_memory && (mem->map_flags & 2))
 	{
 		device->arch_device_mem_write_func(
 				device->arch_device,
 				mem->device_ptr + mem->map_offset,
 				mem->host_ptr + mem->map_offset,
 				mem->map_size);
-		opencl_debug("\t%d bytes copied from host [%p+%u] to devicem [%p+%u]",
+		opencl_debug("\t[opencl_command_run_unmap_buffer] %d bytes "
+				"copied from host [%p+%u] to devicem [%p+%u]",
 				mem->map_size, mem->host_ptr, mem->map_offset,
 				mem->device_ptr, mem->map_offset);
 	}
 
-	/* Free host memory, but only if the host buffer was allocated with a call
+	/* Free host memory, but only if host buffer was allocated with a call
 	 * to clMapBuffer. This is not the case when the buffer used a host
 	 * pointer given by the user in clCreateBuffer. */
 	assert(mem->host_ptr);
-	if (!mem->use_host_ptr)
+	if (!mem->use_host_ptr && !opencl_device_shared_memory)
 	{
+		/* Free host pointer if not unified memory and not using
+		 * host memory. */
 		free(mem->host_ptr);
 		mem->host_ptr = NULL;
 	}
+
+	opencl_debug("\t[opencl_command_run_unmap_buffer] host [%p+%u], "
+			"device [%p+%u]",
+			mem->host_ptr, mem->map_offset,
+			mem->device_ptr, mem->map_offset);
 }
 
 
@@ -184,7 +199,8 @@ struct opencl_command_t *opencl_command_create(
 	/* The command has a reference to all the prerequisite events */
 	for (i = 0; i < num_wait_events; i++)
 		if (clRetainEvent(wait_events[i]) != CL_SUCCESS)
-			fatal("%s: clRetainEvent failed on prerequisite event", __FUNCTION__);
+			fatal("%s: clRetainEvent failed on prerequisite event",
+					__FUNCTION__);
 
 	/* Completion event */
 	if (done_event_ptr)
@@ -192,7 +208,8 @@ struct opencl_command_t *opencl_command_create(
 		command->done_event = opencl_event_create(command_queue, type);
 		*done_event_ptr = command->done_event;
 		if (clRetainEvent(*done_event_ptr) != CL_SUCCESS)
-			fatal("%s: clRetainEvent failed on done event", __FUNCTION__);
+			fatal("%s: clRetainEvent failed on done event",
+					__FUNCTION__);
 	}
 
 	/* Return */
@@ -372,13 +389,15 @@ void opencl_command_free(struct opencl_command_t *command)
 	/* Release events */
 	for (i = 0; i < command->num_wait_events; i++)
 		if (clReleaseEvent(command->wait_events[i]) != CL_SUCCESS)
-			fatal("%s: clReleaseEvent failed on prerequisite event", __FUNCTION__);
+			fatal("%s: clReleaseEvent failed on prerequisite event",
+					__FUNCTION__);
 
 	/* Completion event */
 	if (command->done_event)
 	{
 		if (clReleaseEvent(command->done_event) != CL_SUCCESS)
-			fatal("%s: clReleaseEvent failed on done event", __FUNCTION__);
+			fatal("%s: clReleaseEvent failed on done event",
+					__FUNCTION__);
 	}
 
 	/* Free */
