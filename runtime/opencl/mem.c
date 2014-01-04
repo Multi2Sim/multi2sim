@@ -122,7 +122,8 @@ cl_mem clCreateBuffer(
 
 	/* Get device */
 	if (context->device_list->count != 1)
-		fatal("%s: only supported for contexts with 1 associated device",
+		fatal("%s: only supported for contexts with 1 "
+				"associated device",
 				__FUNCTION__);
 	device = list_get(context->device_list, 0);
 
@@ -131,8 +132,6 @@ cl_mem clCreateBuffer(
 
 	/* Allocate the memory object in the device. */
 	assert(device->arch_device_mem_alloc_func);
-	mem->device_ptr = device->arch_device_mem_alloc_func(device->arch_device, size);
-	opencl_debug("\tdevice_ptr = %p", mem->device_ptr);
 	mem->device = device;
 	mem->size = size;
 
@@ -141,9 +140,23 @@ cl_mem clCreateBuffer(
 	if (mem->use_host_ptr)
 		mem->host_ptr = host_ptr;
 
-	/* Copy buffer contents */
+	/* Set device pointer. */
+	if (opencl_device_shared_memory && mem->use_host_ptr)
+	{
+		/* For shared memory using host pointer, use host pointer. */
+		mem->device_ptr = host_ptr;
+	}
+	else
+	{
+		/* For all other cases we need to allocate device buffer. */
+		mem->device_ptr =
+		device->arch_device_mem_alloc_func(device->arch_device, size);
+	}
+
+	/* Copy buffer contents if not shared memory. */
 	assert(device->arch_device_mem_write_func);
-	if ((flags & CL_MEM_USE_HOST_PTR) || (flags & CL_MEM_COPY_HOST_PTR))
+	if (!opencl_device_shared_memory && ((flags & CL_MEM_USE_HOST_PTR) ||
+			(flags & CL_MEM_COPY_HOST_PTR)))
 		device->arch_device_mem_write_func(device->arch_device,
 				mem->device_ptr, host_ptr, size);
 
@@ -203,14 +216,16 @@ cl_mem clCreateImage3D(
 cl_int clRetainMemObject(
 	cl_mem memobj)
 {
-	return opencl_object_retain(memobj, OPENCL_OBJECT_MEM, CL_INVALID_MEM_OBJECT);
+	return opencl_object_retain(memobj, OPENCL_OBJECT_MEM,
+			CL_INVALID_MEM_OBJECT);
 }
 
 
 cl_int clReleaseMemObject(
 	cl_mem memobj)
 {
-	return opencl_object_release(memobj, OPENCL_OBJECT_MEM, CL_INVALID_MEM_OBJECT);
+	return opencl_object_release(memobj, OPENCL_OBJECT_MEM,
+			CL_INVALID_MEM_OBJECT);
 }
 
 
