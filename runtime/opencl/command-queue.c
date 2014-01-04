@@ -130,7 +130,8 @@ void opencl_command_queue_flush(struct opencl_command_queue_t *command_queue)
 }
 
 
-struct opencl_command_t *opencl_command_queue_dequeue(struct opencl_command_queue_t *command_queue)
+struct opencl_command_t *
+opencl_command_queue_dequeue(struct opencl_command_queue_t *command_queue)
 {
 	struct opencl_command_t *command;
 
@@ -140,7 +141,8 @@ struct opencl_command_t *opencl_command_queue_dequeue(struct opencl_command_queu
 	/* In order to proceed, the list must be processable
 	 * and there must be at least one item present */
 	while (!command_queue->process || !command_queue->command_list->count)
-		pthread_cond_wait(&command_queue->cond_process, &command_queue->lock);
+		pthread_cond_wait(&command_queue->cond_process,
+				&command_queue->lock);
 	
 	/* Dequeue an item */
 	command = list_remove_at(command_queue->command_list, 0);
@@ -272,7 +274,8 @@ cl_int clGetCommandQueueInfo(
 			param_value_size_ret);
 
 	case CL_QUEUE_REFERENCE_COUNT:
-		object = opencl_object_find(command_queue, OPENCL_OBJECT_COMMAND_QUEUE);
+		object = opencl_object_find(command_queue,
+				OPENCL_OBJECT_COMMAND_QUEUE);
 		return opencl_set_param(
 			&object->ref_count,
 			sizeof object->ref_count,
@@ -340,13 +343,17 @@ cl_int clEnqueueReadBuffer(
 		return CL_INVALID_VALUE;
 	
 	/* Check events before they are needed */
-	status = opencl_event_wait_list_check(num_events_in_wait_list, event_wait_list);
+	status = opencl_event_wait_list_check(num_events_in_wait_list,
+			event_wait_list);
 	if (status != CL_SUCCESS)
 		return status;
 
 	/* Create command */
-	command = opencl_command_create_mem_read(ptr, buffer->device_ptr + offset, cb,
-			command_queue, event, num_events_in_wait_list, (cl_event *) event_wait_list);
+	command = opencl_command_create_mem_read(ptr,
+			buffer->device_ptr + offset, cb,
+			command_queue, event,
+			num_events_in_wait_list,
+			(cl_event *) event_wait_list);
 	opencl_command_queue_enqueue(command_queue, command);
 
 	/* Flush command queue if blocking */
@@ -413,13 +420,16 @@ cl_int clEnqueueWriteBuffer(
 		return CL_INVALID_VALUE;
 	
 	/* Check events before they are needed */
-	status = opencl_event_wait_list_check(num_events_in_wait_list, event_wait_list);
+	status = opencl_event_wait_list_check(num_events_in_wait_list,
+			event_wait_list);
 	if (status != CL_SUCCESS)
 		return status;
 
 	/* Create command */
-	command = opencl_command_create_mem_write(buffer->device_ptr + offset, (void *) ptr, cb,
-			command_queue, event, num_events_in_wait_list, (cl_event *) event_wait_list);
+	command = opencl_command_create_mem_write(buffer->device_ptr + offset,
+			(void *) ptr, cb,
+			command_queue, event, num_events_in_wait_list,
+			(cl_event *) event_wait_list);
 	opencl_command_queue_enqueue(command_queue, command);
 
 	/* If it is a blocking write, wait for command queue completion */
@@ -484,7 +494,8 @@ cl_int clEnqueueCopyBuffer(
 		return CL_INVALID_MEM_OBJECT;
 	if (!opencl_object_verify(dst_buffer, OPENCL_OBJECT_MEM))
 		return CL_INVALID_MEM_OBJECT;
-	if ((src_buffer->size < src_offset + cb) || (dst_buffer->size < dst_offset + cb))
+	if ((src_buffer->size < src_offset + cb) ||
+		(dst_buffer->size < dst_offset + cb))
 		return CL_INVALID_VALUE;
 	if (!cb)
 		return CL_INVALID_VALUE;
@@ -494,12 +505,14 @@ cl_int clEnqueueCopyBuffer(
 		return CL_MEM_COPY_OVERLAP;  
 	
 	/* Check events before they are needed */
-	status = opencl_event_wait_list_check(num_events_in_wait_list, event_wait_list);
+	status = opencl_event_wait_list_check(num_events_in_wait_list,
+			event_wait_list);
 	if (status != CL_SUCCESS)
 		return status;
 
 	/* Create command */
-	command = opencl_command_create_mem_copy(dst_buffer->device_ptr + dst_offset,
+	command = opencl_command_create_mem_copy(
+			dst_buffer->device_ptr + dst_offset,
 			src_buffer->device_ptr + src_offset, cb,
 			command_queue, event, num_events_in_wait_list,
 			(cl_event *) event_wait_list);
@@ -693,8 +706,18 @@ void *clEnqueueMapBuffer(
 	 * the host pointer right away. */
 	if (!mem->host_ptr)
 	{
-		assert(!mem->use_host_ptr);
-		mem->host_ptr = xcalloc(1, mem->size);
+		if (opencl_device_shared_memory)
+		{
+			/* In unified memory, device and host use same memory
+			 * with no copy. */
+			mem->host_ptr = mem->device_ptr;
+		}
+		else
+		{
+			// We need to allocate host memory.
+			assert(!mem->use_host_ptr);
+			mem->host_ptr = xcalloc(1, mem->size);
+		}
 	}
 
 	/* Create command */
@@ -771,7 +794,8 @@ cl_int clEnqueueUnmapMemObject(
 		return CL_INVALID_VALUE;
 
 	/* Check events before they are needed */
-	status = opencl_event_wait_list_check(num_events_in_wait_list, event_wait_list);
+	status = opencl_event_wait_list_check(num_events_in_wait_list,
+			event_wait_list);
 	if (status != CL_SUCCESS)
 		return status;
 
