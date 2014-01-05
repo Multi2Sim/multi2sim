@@ -18,11 +18,10 @@
  */
 
 #include <math.h>
+#include <stdlib.h>
 
-#include <lib/util/bit-map.h>
 #include <lib/util/debug.h>
 #include <mem-system/memory.h>
-#include <arch/fermi/asm/Wrapper.h>
 
 #include "emu.h"
 #include "grid.h"
@@ -34,11 +33,12 @@
 
 char *frm_err_isa_note = "\tThe NVIDIA Fermi SASS instruction set is \n"
 		"\tpartially supported by Multi2Sim. If your program is using an \n"
-		"\tunimplemented instruction, please email 'development@multi2sim.org' \n"
-		"\tto request support for it.\n";
+		"\tunimplemented instruction, please email \n"
+		"\t'development@multi2sim.org' to request support for it.\n";
 
 #define __NOT_IMPL__ fatal("Fermi instruction '%s' not implemented.\n%s", \
 		FrmInstWrapGetName(inst), frm_err_isa_note);
+
 
 void frm_isa_FMNMX_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
@@ -52,22 +52,22 @@ void frm_isa_FSET_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_FSETP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	// Format
+	/* Format */
 	FrmFmtReg fmt = FrmInstWrapGetBytes(inst)->fmt_reg;
 
-	// Active and predicate
+	/* Active and predicate */
 	FrmWarp *warp = thread->warp;
 	FrmWarpSyncStackEntry entry;
 	unsigned active;
 	unsigned pred_id, pred;
 
-	// Operands
+	/* Operands */
 	unsigned p_id, p, q_id, q, r_id, r;
 	unsigned src1_id, src2_id;
 	float src1, src2;
 	union {unsigned i; float f;} gpr;
 
-	// Operations and intermediate values
+	/* Operations and intermediate values */
 	unsigned cop;
 	unsigned bop;
 	unsigned cop_res;
@@ -171,16 +171,16 @@ void frm_isa_FSETP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_FFMA_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	// Format
+	/* Format */
 	FrmFmtReg fmt = FrmInstWrapGetBytes(inst)->fmt_reg;
 
-	// Active and predicate
+	/* Active and predicate */
 	FrmWarp *warp = thread->warp;
 	FrmWarpSyncStackEntry entry;
 	unsigned active;
 	unsigned pred_id, pred;
 
-	// Operands
+	/* Operands */
 	unsigned dst_id, src1_id, src2_id, src3_id;
 	float dst, src1, src2, src3;
 	union {unsigned i; float f;} gpr;
@@ -244,21 +244,21 @@ void frm_isa_FFMA_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_FCMP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	// Format
+	/* Format */
 	FrmFmtReg fmt = FrmInstWrapGetBytes(inst)->fmt_reg;
 
-	// Active and predicate
+	/* Active and predicate */
 	FrmWarp *warp = thread->warp;
 	FrmWarpSyncStackEntry entry;
 	unsigned active;
 	unsigned pred_id, pred;
 
-	// Operands
+	/* Operands */
 	unsigned dst_id, src1_id, src2_id, src3_id;
 	float dst, src1, src2, src3;
 	union {unsigned i; float f;} gpr;
 
-	// Operations and intermediate values
+	/* Operations and intermediate values */
 	unsigned cop;
 	unsigned cop_res;
 
@@ -335,16 +335,16 @@ void frm_isa_FSWZ_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_FADD_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	// Format
+	/* Format */
 	FrmFmtReg fmt = FrmInstWrapGetBytes(inst)->fmt_reg;
 
-	// Active and predicate
+	/* Active and predicate */
 	FrmWarp *warp = thread->warp;
 	FrmWarpSyncStackEntry entry;
 	unsigned active;
 	unsigned pred_id, pred;
 
-	// Operands
+	/* Operands */
 	unsigned dst_id, src1_id, src2_id;
 	float dst, src1, src2;
 	union {unsigned i; float f;} gpr;
@@ -404,16 +404,16 @@ void frm_isa_FADD_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_FMUL_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	// Format
+	/* Format */
 	FrmFmtReg fmt = FrmInstWrapGetBytes(inst)->fmt_reg;
 
-	// Active and predicate
+	/* Active and predicate */
 	FrmWarp *warp = thread->warp;
 	FrmWarpSyncStackEntry entry;
 	unsigned active;
 	unsigned pred_id, pred;
 
-	// Operands
+	/* Operands */
 	unsigned dst_id, src1_id, src2_id;
 	float dst, src1, src2;
 	union {unsigned i; float f;} gpr;
@@ -518,16 +518,16 @@ void frm_isa_IMAD32I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_IADD32I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	// Format
+	/* Format */
 	FrmFmtImm fmt = FrmInstWrapGetBytes(inst)->fmt_imm;
 
-	// Active and predicate
+	/* Active and predicate */
 	FrmWarp *warp;
 	FrmWarpSyncStackEntry entry;
 	unsigned active;
 	unsigned pred_id, pred;
 
-	// Operands
+	/* Operands */
 	unsigned dst_id, src1_id;
 	int dst, src1, imm;
 
@@ -570,16 +570,16 @@ void frm_isa_IADD32I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_IMUL32I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	// Format
+	/* Format */
 	FrmFmtImm fmt = FrmInstWrapGetBytes(inst)->fmt_imm;
 
-	// Active and predicate
+	/* Active and predicate */
 	FrmWarp *warp;
 	FrmWarpSyncStackEntry entry;
 	unsigned active;
 	unsigned pred_id, pred;
 
-	// Operands
+	/* Operands */
 	unsigned dst_id, src1_id;
 	int dst, src1, imm;
 
@@ -622,16 +622,16 @@ void frm_isa_IMUL32I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_MOV32I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	// Format
+	/* Format */
 	FrmFmtImm fmt = FrmInstWrapGetBytes(inst)->fmt_imm;
 
-	// Active and predicate
+	/* Active and predicate */
 	FrmWarp *warp;
 	FrmWarpSyncStackEntry entry;
 	unsigned active;
 	unsigned pred_id, pred;
 
-	// Operands
+	/* Operands */
 	unsigned dst_id;
 	int dst, imm;
 
@@ -675,16 +675,16 @@ void frm_isa_FFMA32I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_FADD32I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	// Format
+	/* Format */
 	FrmFmtImm fmt = FrmInstWrapGetBytes(inst)->fmt_imm;
 
-	// Active and predicate
+	/* Active and predicate */
 	FrmWarp *warp;
 	FrmWarpSyncStackEntry entry;
 	unsigned active;
 	unsigned pred_id, pred;
 
-	// Operands
+	/* Operands */
 	unsigned dst_id, src1_id;
 	float dst, src1;
 	union {unsigned i; float f;} imm;
@@ -734,16 +734,16 @@ void frm_isa_FADD32I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_FMUL32I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	// Format
+	/* Format */
 	FrmFmtImm fmt = FrmInstWrapGetBytes(inst)->fmt_imm;
 
-	// Active and predicate
+	/* Active and predicate */
 	FrmWarp *warp;
 	FrmWarpSyncStackEntry entry;
 	unsigned active;
 	unsigned pred_id, pred;
 
-	// Operands
+	/* Operands */
 	unsigned dst_id, src1_id;
 	float dst, src1;
 	union {unsigned i; float f;} imm;
@@ -785,20 +785,20 @@ void frm_isa_FMUL32I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_LOP32I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	// Format
+	/* Format */
 	FrmFmtImm fmt = FrmInstWrapGetBytes(inst)->fmt_imm;
 
-	// Active and predicate
+	/* Active and predicate */
 	FrmWarp *warp;
 	FrmWarpSyncStackEntry entry;
 	unsigned active;
 	unsigned pred_id, pred;
 
-	// Operands
+	/* Operands */
 	unsigned dst_id, src1_id;
 	int dst, src1, imm;
 
-	// Operation
+	/* Operation */
 	int bop;
 
 	/* Active */
@@ -849,16 +849,16 @@ void frm_isa_LOP32I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_ISCADD32I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	// Format
+	/* Format */
 	FrmFmtImm fmt = FrmInstWrapGetBytes(inst)->fmt_imm;
 
-	// Active and predicate
+	/* Active and predicate */
 	FrmWarp *warp;
 	FrmWarpSyncStackEntry entry;
 	unsigned active;
 	unsigned pred_id, pred;
 
-	// Operands
+	/* Operands */
 	unsigned dst_id, src1_id;
 	int dst, src1, imm, shamt;
 
@@ -911,21 +911,21 @@ void frm_isa_ISET_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_ISETP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	// Format
+	/* Format */
 	FrmFmtReg fmt = FrmInstWrapGetBytes(inst)->fmt_reg;
 
-	// Active and predicate
+	/* Active and predicate */
 	FrmWarp *warp = thread->warp;
 	FrmWarpSyncStackEntry entry;
 	unsigned active;
 	unsigned pred_id, pred;
 
-	// Operands
+	/* Operands */
 	unsigned p_id, p, q_id, q, r_id, r;
 	unsigned src1_id, src2_id;
 	int src1, src2;
 
-	// Operations and intermediate values
+	/* Operations and intermediate values */
 	unsigned cop;
 	unsigned bop;
 	unsigned cop_res;
@@ -1020,16 +1020,16 @@ void frm_isa_ISETP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_IMAD_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	// Format
+	/* Format */
 	FrmFmtReg fmt = FrmInstWrapGetBytes(inst)->fmt_reg;
 
-	// Active and predicate
+	/* Active and predicate */
 	FrmWarp *warp = thread->warp;
 	FrmWarpSyncStackEntry entry;
 	unsigned active;
 	unsigned pred_id, pred;
 
-	// Operands
+	/* Operands */
 	unsigned dst_id, src1_id, src2_id, src3_id;
 	int dst, src1, src2, src3;
 
@@ -1090,20 +1090,20 @@ void frm_isa_BFI_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_ICMP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	// Format
+	/* Format */
 	FrmFmtReg fmt = FrmInstWrapGetBytes(inst)->fmt_reg;
 
-	// Active and predicate
+	/* Active and predicate */
 	FrmWarp *warp = thread->warp;
 	FrmWarpSyncStackEntry entry;
 	unsigned active;
 	unsigned pred_id, pred;
 
-	// Operands
+	/* Operands */
 	unsigned dst_id, src1_id, src2_id, src3_id;
 	int dst, src1, src2, src3;
 
-	// Operations and intermediate values
+	/* Operations and intermediate values */
 	unsigned cop;
 	unsigned cop_res;
 
@@ -1177,16 +1177,16 @@ void frm_isa_ISAD_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_ISCADD_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	// Format
+	/* Format */
 	FrmFmtReg fmt = FrmInstWrapGetBytes(inst)->fmt_reg;
 
-	// Active and predicate
+	/* Active and predicate */
 	FrmWarp *warp;
 	FrmWarpSyncStackEntry entry;
 	unsigned active;
 	unsigned pred_id, pred;
 
-	// Operands
+	/* Operands */
 	unsigned dst_id, src1_id, src2_id;
 	int dst, src1, src2, shamt;
 
@@ -1241,16 +1241,16 @@ void frm_isa_ISCADD_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_IADD_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	// Format
+	/* Format */
 	FrmFmtReg fmt = FrmInstWrapGetBytes(inst)->fmt_reg;
 
-	// Active and predicate
+	/* Active and predicate */
 	FrmWarp *warp = thread->warp;
 	FrmWarpSyncStackEntry entry;
 	unsigned active;
 	unsigned pred_id, pred;
 
-	// Operands
+	/* Operands */
 	unsigned dst_id, src1_id, src2_id;
 	int dst, src1, src2;
 
@@ -1300,16 +1300,16 @@ void frm_isa_IADD_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_IMUL_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	// Format
+	/* Format */
 	FrmFmtReg fmt = FrmInstWrapGetBytes(inst)->fmt_reg;
 
-	// Active and predicate
+	/* Active and predicate */
 	FrmWarp *warp = thread->warp;
 	FrmWarpSyncStackEntry entry;
 	unsigned active;
 	unsigned pred_id, pred;
 
-	// Operands
+	/* Operands */
 	unsigned dst_id, src1_id, src2_id;
 	int dst, src1, src2;
 
@@ -1357,16 +1357,16 @@ void frm_isa_IMUL_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_SHR_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	// Format
+	/* Format */
 	FrmFmtReg fmt = FrmInstWrapGetBytes(inst)->fmt_reg;
 
-	// Active and predicate
+	/* Active and predicate */
 	FrmWarp *warp = thread->warp;
 	FrmWarpSyncStackEntry entry;
 	unsigned active;
 	unsigned pred_id, pred;
 
-	// Operands
+	/* Operands */
 	unsigned dst_id, src1_id, src2_id;
 	int dst, src1, src2;
 
@@ -1414,16 +1414,16 @@ void frm_isa_SHR_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_SHL_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	// Format
+	/* Format */
 	FrmFmtReg fmt = FrmInstWrapGetBytes(inst)->fmt_reg;
 
-	// Active and predicate
+	/* Active and predicate */
 	FrmWarp *warp = thread->warp;
 	FrmWarpSyncStackEntry entry;
 	unsigned active;
 	unsigned pred_id, pred;
 
-	// Operands
+	/* Operands */
 	unsigned dst_id, src1_id, src2_id;
 	int dst, src1, src2;
 
@@ -1471,20 +1471,20 @@ void frm_isa_SHL_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_LOP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	// Format
+	/* Format */
 	FrmFmtReg fmt = FrmInstWrapGetBytes(inst)->fmt_reg;
 
-	// Active and predicate
+	/* Active and predicate */
 	FrmWarp *warp = thread->warp;
 	FrmWarpSyncStackEntry entry;
 	unsigned active;
 	unsigned pred_id, pred;
 
-	// Operands
+	/* Operands */
 	unsigned dst_id, src1_id, src2_id;
 	int dst, src1, src2;
 
-	// Operation
+	/* Operation */
 	unsigned bop;
 
 	struct mem_t *const_mem = thread->grid->emu->const_mem;
@@ -1574,21 +1574,21 @@ void frm_isa_PSETP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_F2F_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	// Format
+	/* Format */
 	FrmFmtOther fmt = FrmInstWrapGetBytes(inst)->fmt_other;
 
-	// Active and predicate
+	/* Active and predicate */
 	FrmWarp *warp = thread->warp;
 	FrmWarpSyncStackEntry entry;
 	unsigned active;
 	unsigned pred_id, pred;
 
-	// Operands
+	/* Operands */
 	unsigned dst_id, src_id;
 	float dst;
 	union {unsigned i; float f;} src;
 
-	// Operation
+	/* Operation */
 	unsigned rnd;
 
 	struct mem_t *const_mem = thread->grid->emu->const_mem;
@@ -1649,21 +1649,21 @@ void frm_isa_F2F_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_F2I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	// Format
+	/* Format */
 	FrmFmtOther fmt = FrmInstWrapGetBytes(inst)->fmt_other;
 
-	// Active and predicate
+	/* Active and predicate */
 	FrmWarp *warp = thread->warp;
 	FrmWarpSyncStackEntry entry;
 	unsigned active;
 	unsigned pred_id, pred;
 
-	// Operands
+	/* Operands */
 	unsigned dst_id, src_id;
 	int dst;
 	union {unsigned i; float f;} src;
 
-	// Operation
+	/* Operation */
 	unsigned rnd;
 
 	struct mem_t *const_mem = thread->grid->emu->const_mem;
@@ -1722,16 +1722,16 @@ void frm_isa_F2I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_I2F_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	// Format
+	/* Format */
 	FrmFmtOther fmt = FrmInstWrapGetBytes(inst)->fmt_other;
 
-	// Active and predicate
+	/* Active and predicate */
 	FrmWarp *warp = thread->warp;
 	FrmWarpSyncStackEntry entry;
 	unsigned active;
 	unsigned pred_id, pred;
 
-	// Operands
+	/* Operands */
 	unsigned dst_id, src_id;
 	float dst;
 	int src;
@@ -1782,16 +1782,16 @@ void frm_isa_I2F_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_I2I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	// Format
+	/* Format */
 	FrmFmtOther fmt = FrmInstWrapGetBytes(inst)->fmt_other;
 
-	// Active and predicate
+	/* Active and predicate */
 	FrmWarp *warp = thread->warp;
 	FrmWarpSyncStackEntry entry;
 	unsigned active;
 	unsigned pred_id, pred;
 
-	// Operands
+	/* Operands */
 	unsigned dst_id, src_id;
 	int dst, src;
 
@@ -1841,16 +1841,16 @@ void frm_isa_I2I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_SEL_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	// Format
+	/* Format */
 	FrmFmtOther fmt = FrmInstWrapGetBytes(inst)->fmt_other;
 
-	// Active and predicate
+	/* Active and predicate */
 	FrmWarp *warp = thread->warp;
 	FrmWarpSyncStackEntry entry;
 	unsigned active;
 	unsigned pred_id, pred;
 
-	// Operands
+	/* Operands */
 	unsigned dst_id, src1_id, src2_id, src3_id;
 	int dst, src1, src2, src3;
 
@@ -1910,16 +1910,16 @@ void frm_isa_PRMT_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_MOV_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	// Format
+	/* Format */
 	FrmFmtOther fmt = FrmInstWrapGetBytes(inst)->fmt_other;
 
-	// Active and predicate
+	/* Active and predicate */
 	FrmWarp *warp = thread->warp;
 	FrmWarpSyncStackEntry entry;
 	unsigned active;
 	unsigned pred_id, pred;
 
-	// Operands
+	/* Operands */
 	unsigned dst_id, src_id;
 	int dst, src;
 
@@ -1965,16 +1965,16 @@ void frm_isa_MOV_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_S2R_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	// Format
+	/* Format */
 	FrmFmtOther fmt = FrmInstWrapGetBytes(inst)->fmt_other;
 
-	// Active and predicate
+	/* Active and predicate */
 	FrmWarp *warp = thread->warp;
 	FrmWarpSyncStackEntry entry;
 	unsigned active;
 	unsigned pred_id, pred;
 
-	// Operands
+	/* Operands */
 	unsigned dst_id, src_id;
 	int dst, src;
 
@@ -2028,30 +2028,30 @@ void frm_isa_B2R_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_NOP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	//	FrmWarp *warp;
-	//	FrmWarpSyncStackEntry *entry;
-	//	static int first_time = 1;
-	//
-	//	warp = thread->warp;
-	//
-	//	if (first_time == 1)
-	//	{
-	//		entry = &(warp->sync_stack.entries[warp->sync_stack_top]);
-	//
-	//		/* Reverse thread mask */
-	//		entry->active_thread_mask ^= 1 << thread->id_in_warp;
-	//
-	//		/* Go to not taken path */
-	//		warp->pc = entry->next_path_pc - 8;
-	//
-	//		if (thread->id_in_warp == warp->thread_count - 1)
-	//			first_time = 0;
-	//	}
-	//	else
-	//	{
-	//		/* Pop sync stack */
-	//		if (thread->id_in_warp == warp->thread_count - 1)
-	//			warp->sync_stack_top--;
+//	FrmWarp *warp;
+//	FrmWarpSyncStackEntry *entry;
+//	static int first_time = 1;
+//
+//	warp = thread->warp;
+//
+//	if (first_time == 1)
+//	{
+//		entry = &(warp->sync_stack.entries[warp->sync_stack_top]);
+//
+//		/* Reverse thread mask */
+//		entry->active_thread_mask ^= 1 << thread->id_in_warp;
+//
+//		/* Go to not taken path */
+//		warp->pc = entry->next_path_pc - 8;
+//
+//		if (thread->id_in_warp == warp->thread_count - 1)
+//			first_time = 0;
+//	}
+//	else
+//	{
+//		/* Pop sync stack */
+//		if (thread->id_in_warp == warp->thread_count - 1)
+//			warp->sync_stack_top--;
 }
 
 void frm_isa_LEPC_impl(FrmThread *thread, struct FrmInstWrap *inst)
@@ -2066,34 +2066,34 @@ void frm_isa_VOTE_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_BAR_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	//	FrmThreadBlock *thread_block;
-	//	FrmWarp *warp;
-	//
-	//	int warp_id;
-	//
-	//	thread_block = thread->thread_block;
-	//	warp = thread->warp;
-	//
-	//	/* Set flag to suspend warp execution */
-	//	warp->at_barrier = 1;
-	//
-	//	if (thread->id_in_warp == warp->thread_count - 1)
-	//		thread_block->num_warps_at_barrier++;
-	//
-	//	/* Continue execution when all warps in the thread block reach the
-	//	 * barrier*/
-	//	if (thread_block->num_warps_at_barrier == thread_block->warp_count)
-	//	{
-	//		for (warp_id = 0; warp_id < thread_block->warp_count;
-	//				warp_id++)
-	//			thread_block->warps[warp_id]->at_barrier = 0;
-	//
-	//		thread_block->num_warps_at_barrier = 0;
-	//	}
-	//
-	//	/* Debug */
-	//	frm_isa_debug("%s:%d: PC = 0x%x thread[%d]\n",
-	//			__FUNCTION__, __LINE__, warp->pc, thread->id);
+//	FrmThreadBlock *thread_block;
+//	FrmWarp *warp;
+//
+//	int warp_id;
+//
+//	thread_block = thread->thread_block;
+//	warp = thread->warp;
+//
+//	/* Set flag to suspend warp execution */
+//	warp->at_barrier = 1;
+//
+//	if (thread->id_in_warp == warp->thread_count - 1)
+//		thread_block->num_warps_at_barrier++;
+//
+//	/* Continue execution when all warps in the thread-block reach the
+//	 * barrier*/
+//	if (thread_block->num_warps_at_barrier == thread_block->warp_count)
+//	{
+//		for (warp_id = 0; warp_id < thread_block->warp_count;
+//				warp_id++)
+//			thread_block->warps[warp_id]->at_barrier = 0;
+//
+//		thread_block->num_warps_at_barrier = 0;
+//	}
+//
+//	/* Debug */
+//	frm_isa_debug("%s:%d: PC = 0x%x thread[%d]\n",
+//			__FUNCTION__, __LINE__, warp->pc, thread->id);
 }
 
 void frm_isa_POPC_impl(FrmThread *thread, struct FrmInstWrap *inst)
@@ -2113,16 +2113,16 @@ void frm_isa_ATOM_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_LD_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	// Format
+	/* Format */
 	FrmFmtLdSt fmt = FrmInstWrapGetBytes(inst)->fmt_ldst;
 
-	// Active and predicate
+	/* Active and predicate */
 	FrmWarp *warp = thread->warp;
 	FrmWarpSyncStackEntry entry;
 	unsigned active;
 	unsigned pred_id, pred;
 
-	// Operands
+	/* Operands */
 	unsigned dst_id, src1_id;
 	int dst, src1;
 	unsigned addr;
@@ -2170,16 +2170,16 @@ void frm_isa_LDU_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_ST_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	// Format
+	/* Format */
 	FrmFmtLdSt fmt = FrmInstWrapGetBytes(inst)->fmt_ldst;
 
-	// Active and predicate
+	/* Active and predicate */
 	FrmWarp *warp = thread->warp;
 	FrmWarpSyncStackEntry entry;
 	unsigned active;
 	unsigned pred_id, pred;
 
-	// Operands
+	/* Operands */
 	unsigned value_id, src1_id;
 	int value, src1;
 	unsigned addr;
@@ -2250,16 +2250,16 @@ void frm_isa_LDL_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_LDS_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	// Format
+	/* Format */
 	FrmFmtLdSt fmt = FrmInstWrapGetBytes(inst)->fmt_ldst;
 
-	// Active and predicate
+	/* Active and predicate */
 	FrmWarp *warp = thread->warp;
 	FrmWarpSyncStackEntry entry;
 	unsigned active;
 	unsigned pred_id, pred;
 
-	// Operands
+	/* Operands */
 	unsigned dst_id, src1_id;
 	int dst[4], src1;
 	unsigned addr;
@@ -2333,16 +2333,16 @@ void frm_isa_STL_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_STS_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	// Format
+	/* Format */
 	FrmFmtLdSt fmt = FrmInstWrapGetBytes(inst)->fmt_ldst;
 
-	// Active and predicate
+	/* Active and predicate */
 	FrmWarp *warp = thread->warp;
 	FrmWarpSyncStackEntry entry;
 	unsigned active;
 	unsigned pred_id, pred;
 
-	// Operands
+	/* Operands */
 	unsigned value_id, src1_id;
 	int value[4], src1;
 	unsigned addr;
@@ -2444,16 +2444,16 @@ void frm_isa_SULEA_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_LDC_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	// Format
+	/* Format */
 	FrmFmtLdSt fmt = FrmInstWrapGetBytes(inst)->fmt_ldst;
 
-	// Active and predicate
+	/* Active and predicate */
 	FrmWarp *warp = thread->warp;
 	FrmWarpSyncStackEntry entry;
 	unsigned active;
 	unsigned pred_id, pred;
 
-	// Operands
+	/* Operands */
 	unsigned dst_id, src1_id;
 	int dst, src1;
 	unsigned addr;
@@ -2531,90 +2531,90 @@ void frm_isa_JCAL_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_BRA_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	//	unsigned int pred_id;
-	//	unsigned int active, pred;
-	//	int target;
-	//
-	//	FrmWarp *warp;
-	//	FrmWarpSyncStackEntry *top_entry;
-	//	FrmWarpSyncStackEntry *new_entry;
-	//
-	//	warp = thread->warp;
-	//	top_entry = &(warp->sync_stack.entries[warp->sync_stack_top]);
-	//	new_entry = &(warp->new_entry);
-	//
-	//	/* Get active bit */
-	//	active = (top_entry->active_thread_mask >> thread->id_in_warp) & 0x1;
-	//
-	//	/* Get predicate */
-	//	pred_id = FrmInstWrapGetBytes(inst)->tgt.pred;
-	//	if (pred_id <= 7)
-	//		pred = thread->pr[pred_id];
-	//	else
-	//		pred = ! thread->pr[pred_id - 8];
-	//
-	//	/* Get target */
-	//	target = FrmInstWrapGetBytes(inst)->tgt.target;
-	//	if ((target >> 19 & 0x1) == 1)
-	//		target |= 0xfff00000;
-	//
-	//	/* Update active thread mask for new entry */
-	//	if (FrmInstWrapGetBytes(inst)->tgt.u != 1)
-	//	{
-	//		if (active == 1 && pred == 1)
-	//		{
-	//			new_entry->active_thread_mask |=
-	//					1 << thread->id_in_warp;
-	//			warp->taken |= 1 << thread->id_in_warp;
-	//		}
-	//		else
-	//		{
-	//			new_entry->active_thread_mask |=
-	//					0 << thread->id_in_warp;
-	//			warp->taken |= 0 << thread->id_in_warp;
-	//		}
-	//	}
-	//
-	//	/* If divergent, push sync stack and go to taken path */
-	//	if (thread->id_in_warp == warp->thread_count - 1)
-	//	{
-	//		if (FrmInstWrapGetBytes(inst)->tgt.u == 1 ||
-	//				top_entry->active_thread_mask == warp->taken ||
-	//				warp->taken == 0)
-	//			warp->divergent = 0;
-	//		else
-	//			warp->divergent = 1;
-	//
-	//		if (warp->divergent)
-	//		{
-	//			new_entry->next_path_pc = warp->pc + 8;
-	//			warp->sync_stack.entries[warp->sync_stack_top + 1].reconv_pc =
-	//					new_entry->reconv_pc;
-	//			warp->sync_stack.entries[warp->sync_stack_top + 1].next_path_pc =
-	//					new_entry->next_path_pc;
-	//			warp->sync_stack.entries[warp->sync_stack_top + 1].active_thread_mask =
-	//					new_entry->active_thread_mask;
-	//			warp->sync_stack_top++;
-	//			new_entry->reconv_pc = 0;
-	//			new_entry->next_path_pc = 0;
-	//			new_entry->active_thread_mask = 0;
-	//			if (warp->taken != 0)
-	//				warp->pc += target;
-	//		}
-	//		else
-	//		{
-	//			if (FrmInstWrapGetBytes(inst)->tgt.u == 0 && warp->taken != 0)
-	//				warp->pc += target;
-	//		}
-	//		warp->taken = 0;
-	//	}
-	//
-	//	/* Debug */
-	//	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
-	//			"target = 0x%x active_thread_mask = 0x%08x\n",
-	//			__FUNCTION__, __LINE__, warp->pc, thread->id,
-	//			active, pred_id, pred, target,
-	//			new_entry->active_thread_mask);
+//	unsigned int pred_id;
+//	unsigned int active, pred;
+//	int target;
+//
+//	FrmWarp *warp;
+//	FrmWarpSyncStackEntry *top_entry;
+//	FrmWarpSyncStackEntry *new_entry;
+//
+//	warp = thread->warp;
+//	top_entry = &(warp->sync_stack.entries[warp->sync_stack_top]);
+//	new_entry = &(warp->new_entry);
+//
+//	/* Get active bit */
+//	active = (top_entry->active_thread_mask >> thread->id_in_warp) & 0x1;
+//
+//	/* Get predicate */
+//	pred_id = FrmInstWrapGetBytes(inst)->tgt.pred;
+//	if (pred_id <= 7)
+//		pred = thread->pr[pred_id];
+//	else
+//		pred = ! thread->pr[pred_id - 8];
+//
+//	/* Get target */
+//	target = FrmInstWrapGetBytes(inst)->tgt.target;
+//	if ((target >> 19 & 0x1) == 1)
+//		target |= 0xfff00000;
+//
+//	/* Update active thread mask for new entry */
+//	if (FrmInstWrapGetBytes(inst)->tgt.u != 1)
+//	{
+//		if (active == 1 && pred == 1)
+//		{
+//			new_entry->active_thread_mask |=
+//					1 << thread->id_in_warp;
+//			warp->taken |= 1 << thread->id_in_warp;
+//		}
+//		else
+//		{
+//			new_entry->active_thread_mask |=
+//					0 << thread->id_in_warp;
+//			warp->taken |= 0 << thread->id_in_warp;
+//		}
+//	}
+//
+//	/* If divergent, push sync stack and go to taken path */
+//	if (thread->id_in_warp == warp->thread_count - 1)
+//	{
+//		if (FrmInstWrapGetBytes(inst)->tgt.u == 1 ||
+//				top_entry->active_thread_mask == warp->taken ||
+//				warp->taken == 0)
+//			warp->divergent = 0;
+//		else
+//			warp->divergent = 1;
+//
+//		if (warp->divergent)
+//		{
+//			new_entry->next_path_pc = warp->pc + 8;
+//			warp->sync_stack.entries[warp->sync_stack_top + 1].reconv_pc =
+//					new_entry->reconv_pc;
+//			warp->sync_stack.entries[warp->sync_stack_top + 1].next_path_pc =
+//					new_entry->next_path_pc;
+//			warp->sync_stack.entries[warp->sync_stack_top + 1].active_thread_mask =
+//					new_entry->active_thread_mask;
+//			warp->sync_stack_top++;
+//			new_entry->reconv_pc = 0;
+//			new_entry->next_path_pc = 0;
+//			new_entry->active_thread_mask = 0;
+//			if (warp->taken != 0)
+//				warp->pc += target;
+//		}
+//		else
+//		{
+//			if (FrmInstWrapGetBytes(inst)->tgt.u == 0 && warp->taken != 0)
+//				warp->pc += target;
+//		}
+//		warp->taken = 0;
+//	}
+//
+//	/* Debug */
+//	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
+//			"target = 0x%x active_thread_mask = 0x%08x\n",
+//			__FUNCTION__, __LINE__, warp->pc, thread->id,
+//			active, pred_id, pred, target,
+//			new_entry->active_thread_mask);
 }
 
 void frm_isa_BRX_impl(FrmThread *thread, struct FrmInstWrap *inst)
@@ -2634,20 +2634,20 @@ void frm_isa_PLONGJMP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_SSY_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	//	int target;
-	//	FrmWarp *warp = thread->warp;
-	//
-	//	/* Get target. Target is the recovergence point */
-	//	target = FrmInstWrapGetBytes(inst)->tgt.target;
-	//	if ((target >> 19 & 0x1) == 1)
-	//		target |= 0xfff00000;
-	//
-	//	/* Set reconvergence PC */
-	//	warp->new_entry.reconv_pc = target;
-	//
-	//	/* Debug */
-	//	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] target = 0x%x\n",
-	//			__FUNCTION__, __LINE__, warp->pc, thread->id, target);
+//	int target;
+//	FrmWarp *warp = thread->warp;
+//
+//	/* Get target. Target is the recovergence point */
+//	target = FrmInstWrapGetBytes(inst)->tgt.target;
+//	if ((target >> 19 & 0x1) == 1)
+//		target |= 0xfff00000;
+//
+//	/* Set reconvergence PC */
+//	warp->new_entry.reconv_pc = target;
+//
+//	/* Debug */
+//	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] target = 0x%x\n",
+//			__FUNCTION__, __LINE__, warp->pc, thread->id, target);
 }
 
 void frm_isa_PBK_impl(FrmThread *thread, struct FrmInstWrap *inst)
@@ -2667,19 +2667,19 @@ void frm_isa_PRET_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_EXIT_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	//	FrmWarp *warp;
-	//
-	//	warp = thread->warp;
-	//
-	//	/* Execute */
-	//	if (thread->id_in_warp == warp->thread_count - 1)
-	//		warp->finished = 1;
-	//
-	//	/* Debug */
-	//	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active_thread_mask = 0x%08x\n",
-	//			__FUNCTION__, __LINE__, warp->pc, thread->id,
-	//			warp->sync_stack.entries[warp->sync_stack_top].
-	//			active_thread_mask);
+//	FrmWarp *warp;
+//
+//	warp = thread->warp;
+//
+//	/* Execute */
+//	if (thread->id_in_warp == warp->thread_count - 1)
+//		warp->finished = 1;
+//
+//	/* Debug */
+//	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active_thread_mask = 0x%08x\n",
+//			__FUNCTION__, __LINE__, warp->pc, thread->id,
+//			warp->sync_stack.entries[warp->sync_stack_top].
+//			active_thread_mask);
 }
 
 void frm_isa_LONGJMP_impl(FrmThread *thread, struct FrmInstWrap *inst)

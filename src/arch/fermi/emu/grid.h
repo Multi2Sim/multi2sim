@@ -20,9 +20,7 @@
 #ifndef FERMI_EMU_GRID_H
 #define FERMI_EMU_GRID_H
 
-#include <driver/cuda/function.h>
 #include <lib/class/class.h>
-#include <lib/util/string.h>
 
 
 /*
@@ -40,15 +38,15 @@ CLASS_BEGIN(FrmGrid, Object)
 	/* CUDA function associated */
 	struct cuda_function_t *function;
 
-	/* Number of register used by each thread. */
+	/* Number of general purpose registers used by a thread */
 	unsigned num_gpr;
 
-	/* Call-back function run right before freeing grid, using the value in
-	 * 'free_notify_data' as an argument. */
-	void (*free_notify_func)(void *);
-	void *free_notify_data;
+	/* Lists of thread-blocks */
+	struct list_t *pending_thread_blocks;
+	struct list_t *running_thread_blocks;
+	struct list_t *finished_thread_blocks;
 
-	/* Counters */
+	/* Sizes */
 	int thread_count3[3];
 	int thread_count;
 	int thread_block_size3[3];
@@ -56,21 +54,14 @@ CLASS_BEGIN(FrmGrid, Object)
 	int thread_block_count3[3];
 	int thread_block_count;
 
-	/* Thread blocks */
-	FrmThreadBlock **thread_blocks;
+	/* Call-back function run right before freeing grid, using the value in
+	 * 'free_notify_data' as an argument. */
+	void (*free_notify_func)(void *);
+	void *free_notify_data;
 
-	/* Lists of thread blocks */
-	struct list_t *pending_thread_blocks;
-	struct list_t *running_thread_blocks;
-	struct list_t *finished_thread_blocks;
+	/* The following fields are used by architectural simulation only. */
 
-	void *inst_buffer;
-	unsigned inst_buffer_size;
-
-	/* Local memory top to assign to local arguments.
-	 * Initially it is equal to the size of local variables in
-	 * kernel function. */
-	unsigned local_mem_top;
+	unsigned shared_mem_top;
 
 CLASS_END(FrmGrid)
 
@@ -79,12 +70,9 @@ void FrmGridCreate(FrmGrid *self, FrmEmu *emu,
 		struct cuda_function_t *function);
 void FrmGridDestroy(FrmGrid *self);
 void FrmGridDump(FrmGrid *self, FILE *f);
-void FrmGridRun(FrmGrid *self);
-void FrmGridSetupThreads(FrmGrid *self);
-void FrmGridSetupConstantMemory(FrmGrid *self);
-void FrmGridSetupArguments(FrmGrid *self);
+
 void FrmGridSetupSize(FrmGrid *self, unsigned *global_size,
 		unsigned *local_size);
-
+void FrmGridSetupConstantMemory(FrmGrid *self);
 
 #endif

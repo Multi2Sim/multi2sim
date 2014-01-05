@@ -44,7 +44,7 @@ struct cuda_device_t *device;
 
 /* Version */
 #define CUDA_VERSION_MAJOR 1
-#define CUDA_VERSION_MINOR 910
+#define CUDA_VERSION_MINOR 1010
 struct cuda_version_t
 {
 	int major;
@@ -57,19 +57,21 @@ static int cuda_debugging;
 
 /* Error */
 char *cuda_err_not_impl = "\tMulti2Sim provides partial support for CUDA\n"
-"\tdriver library. To request the implementation of a certain functionality,\n"
-"\tplease email development@multi2sim.org.\n";
+		"\tdriver library. To request the implementation of a certain\n"
+		"\tfunctionality, please email development@multi2sim.org.\n";
 
 char *cuda_err_version = "\tYour guest application is using a version of the\n"
-"\tCUDA driver library that is incompatible with this version of Multi2Sim.\n"
-"\tPlease download the latest Multi2Sim version, and recompile your\n"
-"\tapplication with the latest CUDA driver library ('libm2s-cuda').\n";
+		"\tCUDA driver library that is incompatible with this version of\n"
+		"\tMulti2Sim. Please download the latest Multi2Sim version, and\n"
+		"\trecompile your application with the latest CUDA driver library\n"
+		"\t('libm2s-cuda').\n";
 
 char *cuda_err_native = "\tYou are trying to run natively an application\n"
-"\tusing the Multi2Sim CUDA driver library implementation ('libm2s-cuda').\n"
-"\tPlease run this program on top of Multi2Sim.\n";
-#define __CUDA_NOT_IMPL__  warning("%s: not implemented.\n%s", __FUNCTION__, \
-		cuda_err_not_impl)
+		"\tusing the Multi2Sim CUDA driver library implementation\n"
+		"\t('libm2s-cuda'). Please run this program on top of Multi2Sim.\n";
+
+#define __CUDA_NOT_IMPL__  warning("%s: not implemented.\n%s", \
+		__FUNCTION__, cuda_err_not_impl)
 
 
 
@@ -214,7 +216,7 @@ CUresult cuDeviceGet(CUdevice *device, int ordinal)
 
 	/* Get device */
 	*device = ((struct cuda_device_t *)list_get(
-				device_list, ordinal))->device;
+			device_list, ordinal))->device;
 
 	cuda_debug("\t(driver) out: device = [%p] %d", 
 			device, *device);
@@ -250,7 +252,7 @@ CUresult cuDeviceGetName(char *name, int len, CUdevice dev)
 	}
 
 	strncpy(name, ((struct cuda_device_t *)list_get(
-					device_list, dev))->name, len);
+			device_list, dev))->name, len);
 
 	cuda_debug("\t(driver) out: name = [%p] %s", 
 			name, name);
@@ -274,15 +276,11 @@ CUresult cuDeviceComputeCapability(int *major, int *minor, CUdevice dev)
 	}
 
 	device = (struct cuda_device_t *)list_get(device_list, dev);
-	*major =
-		device->attributes[CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR];
-	*minor =
-		device->attributes[CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR];
+	*major = device->attributes[CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR];
+	*minor = device->attributes[CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR];
 
-	cuda_debug("\t(driver) out: major = [%p] %d", 
-			major, *major);
-	cuda_debug("\t(driver) out: minor = [%p] %d", 
-			minor, *minor);
+	cuda_debug("\t(driver) out: major = [%p] %d", major, *major);
+	cuda_debug("\t(driver) out: minor = [%p] %d", minor, *minor);
 	cuda_debug("\t(driver) out: return = %d", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
@@ -336,30 +334,30 @@ CUresult cuDeviceGetProperties(CUdevprop *prop, CUdevice dev)
 
 	/* Get properties */
 	prop->maxThreadsPerBlock =
-		device->attributes[CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK];
+			device->attributes[CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK];
 	prop->maxThreadsDim[0] =
-		device->attributes[CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_X];
+			device->attributes[CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_X];
 	prop->maxThreadsDim[1] =
-		device->attributes[CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Y];
+			device->attributes[CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Y];
 	prop->maxThreadsDim[2] =
-		device->attributes[CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Z];
+			device->attributes[CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Z];
 	prop->maxGridSize[0] =
-		device->attributes[CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_X];
+			device->attributes[CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_X];
 	prop->maxGridSize[1] =
-		device->attributes[CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_Y];
+			device->attributes[CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_Y];
 	prop->maxGridSize[2] =
-		device->attributes[CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_Z];
+			device->attributes[CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_Z];
 	prop->sharedMemPerBlock =
-		device->attributes[CU_DEVICE_ATTRIBUTE_MAX_SHARED_MEMORY_PER_BLOCK];
+			device->attributes[CU_DEVICE_ATTRIBUTE_MAX_SHARED_MEMORY_PER_BLOCK];
 	prop->totalConstantMemory =
-		device->attributes[CU_DEVICE_ATTRIBUTE_TOTAL_CONSTANT_MEMORY];
+			device->attributes[CU_DEVICE_ATTRIBUTE_TOTAL_CONSTANT_MEMORY];
 	prop->SIMDWidth = device->attributes[CU_DEVICE_ATTRIBUTE_WARP_SIZE];
 	prop->memPitch = device->attributes[CU_DEVICE_ATTRIBUTE_MAX_PITCH];
 	prop->regsPerBlock =
-		device->attributes[CU_DEVICE_ATTRIBUTE_MAX_REGISTERS_PER_BLOCK];
+			device->attributes[CU_DEVICE_ATTRIBUTE_MAX_REGISTERS_PER_BLOCK];
 	prop->clockRate = device->attributes[CU_DEVICE_ATTRIBUTE_CLOCK_RATE];
 	prop->textureAlign =
-		device->attributes[CU_DEVICE_ATTRIBUTE_TEXTURE_ALIGNMENT];
+			device->attributes[CU_DEVICE_ATTRIBUTE_TEXTURE_ALIGNMENT];
 
 	cuda_debug("\t(driver) out: prop = %p", prop);
 	cuda_debug("\t(driver) out: return = %d", CUDA_SUCCESS);
@@ -382,7 +380,7 @@ CUresult cuDeviceGetAttribute(int *pi, CUdevice_attribute attrib, CUdevice dev)
 
 	/* Get attribute */
 	*pi = (((struct cuda_device_t *)list_get(
-					device_list, dev))->attributes)[attrib];
+			device_list, dev))->attributes)[attrib];
 
 	cuda_debug("\t(driver) out: pi = [%p] %d", pi, *pi);
 	cuda_debug("\t(driver) out: return = %d", CUDA_SUCCESS);

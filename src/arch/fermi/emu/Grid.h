@@ -68,7 +68,7 @@ class Grid
 	// GPR usage by a thread
 	unsigned gpr_count;
 
-	// Thread blocks
+	// Thread-blocks
 	std::list<std::unique_ptr<ThreadBlock>> pending_thread_blocks;
 	std::list<std::unique_ptr<ThreadBlock>> running_thread_blocks;
 	std::list<std::unique_ptr<ThreadBlock>> finished_thread_blocks;

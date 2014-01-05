@@ -22,6 +22,8 @@
 #include <lib/util/list.h>
 #include <mem-system/memory.h>
 
+#include "emu.h"
+#include "grid.h"
 #include "thread-block.h"
 #include "thread.h"
 #include "warp.h"
@@ -31,13 +33,42 @@
  * Public Functions
  */
 
-void FrmThreadBlockCreate(FrmThreadBlock *self, FrmGrid *grid)
+void FrmThreadBlockCreate(FrmThreadBlock *self, int id, FrmGrid *grid)
 {
-	/* Initialize */
+	FrmWarp *warp;
+	FrmThread *thread;
+	int i;
+
+	/* Initialization */
+	self->id = id;
 	self->grid = grid;
+
+	/* Create warps */
+	self->warp_count = (grid->thread_block_size + frm_emu_warp_size - 1) /
+			frm_emu_warp_size;
+	self->warps = (FrmWarp **) xcalloc(self->warp_count, sizeof(FrmWarp *));
+	self->running_warps = list_create();
+	self->finished_warps = list_create();
+	for (i = 0; i < self->warp_count; ++i)
+	{
+		warp = new(FrmWarp, i, self, grid);
+		self->warps[i] = warp;
+		list_add(self->running_warps, warp);
+	}
+
+	/* Create threads */
+	self->thread_count = grid->thread_block_size;
+	self->threads = (FrmThread **) xcalloc(self->thread_count,
+			sizeof(FrmThread *));
+	for (i = 0; i < self->thread_count; ++i)
+	{
+		thread = new(FrmThread, i, self->warps[i / frm_emu_warp_size]);
+		self->threads[i] = thread;
+	}
+
+	/* Create shared memory */
 	self->shared_mem = mem_create();
 	self->shared_mem->safe = 0;
-	self->num_warps_at_barrier = 0;
 }
 
 
@@ -46,13 +77,13 @@ void FrmThreadBlockDestroy(FrmThreadBlock *self)
 	int i;
 
 	for (i = 0; i < self->warp_count; i++)
-                delete(self->warps[i]);
+		delete(self->warps[i]);
 	free(self->warps);
 	list_free(self->running_warps);
 	list_free(self->finished_warps);
 
 	for (i = 0; i < self->thread_count; i++)
-                delete(self->threads[i]);
+		delete(self->threads[i]);
 	free(self->threads);
 
 	mem_free(self->shared_mem);
@@ -61,24 +92,5 @@ void FrmThreadBlockDestroy(FrmThreadBlock *self)
 
 void FrmThreadBlockDump(FrmThreadBlock *self, FILE *f)
 {
-//	struct frm_grid_t *grid = self->grid;
-//	struct frm_warp_t *warp;
-//	int warp_id;
-//
-//	if (!f)
-//		return;
-//	
-//	fprintf(f, "[ Grid[%d].ThreadBlock[%d] ]\n\n", grid->id, thread_block->id);
-//	fprintf(f, "Name = %s\n", thread_block->name);
-//	fprintf(f, "WarpCount = %d\n", thread_block->warp_count);
-//	fprintf(f, "ThreadCount = %d\n", thread_block->thread_count);
-//	fprintf(f, "\n");
-//
-//	/* Dump warps */
-//	FRM_FOREACH_WARP_IN_THREADBLOCK(thread_block, warp_id)
-//	{
-//		warp = grid->warps[warp_id];
-//		frm_warp_dump(warp, f);
-//	}
 }
 

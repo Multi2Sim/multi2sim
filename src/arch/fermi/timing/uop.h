@@ -32,6 +32,9 @@ extern int frm_stack_debug_category;
 
 
 /* Part of a GPU instruction specific for each thread within warp. */
+
+#define FRM_MAX_LOCAL_MEM_ACCESSES_PER_INST  2
+
 struct frm_thread_uop_t
 {
 	/* For global memory accesses */

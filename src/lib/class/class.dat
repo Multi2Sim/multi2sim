@@ -51,10 +51,10 @@ CLASS(EvgGpu)
 CLASS(EvgComputeUnit)
 
 CLASS(FrmEmu)
-CLASS(FrmThread)
+CLASS(FrmGrid)
 CLASS(FrmThreadBlock)
 CLASS(FrmWarp)
-CLASS(FrmGrid)
+CLASS(FrmThread)
 
 CLASS(FrmGpu)
 CLASS(FrmSM)

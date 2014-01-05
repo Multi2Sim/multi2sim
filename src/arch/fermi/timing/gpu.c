@@ -29,6 +29,7 @@
 #include <lib/util/file.h>
 #include <lib/util/list.h>
 #include <lib/util/misc.h>
+#include <lib/util/string.h>
 
 #include "calc.h"
 #include "cycle-interval-report.h"
@@ -67,14 +68,14 @@ char *frm_gpu_config_help =
 	"  NumSMs = <num> (Default = 14)\n"
 	"      Number of SMs in the GPU.\n"
 	"  MaxWarpsPerThreadBlock = <num> (Default = 16)\n"
-	"      The maximum size of a thread block.\n"
+	"      The maximum size of a thread-block.\n"
 	"\n"
 	"Section '[ SM ]': parameters for the SMs.\n"
 	"\n"
 	"  NumWarpSchedulersPerSM = <num> (Default = 2)\n"
 	"      Number of warp schedulers per SM.\n"
 	"  MaxThreadBlocksPerSM = <num> (Default = 8)\n"
-	"      The maximum number of thread blocks that can be scheduled to a\n"
+	"      The maximum number of thread-blocks that can be scheduled to a\n"
 	"      SM at a time.\n"
 	"  MaxWarpsPerSM = <num> (Default = 48)\n"
 	"      The maximum number of warps that can be scheduled to a\n"
@@ -501,25 +502,25 @@ static void frm_gpu_map_grid(FrmGrid *grid)
 	assert(!frm_gpu->grid);
 	frm_gpu->grid = grid;
 
-	/* Calculate the number of thread blocks per SM */
+	/* Calculate the number of thread-blocks per SM */
 	frm_gpu->thread_blocks_per_sm =
 		frm_calc_get_thread_blocks_per_sm(
 				grid->thread_block_size, grid->num_gpr,
-				grid->local_mem_top);
+				grid->shared_mem_top);
 
-	/* Thread block cannot be assigned to SM */
+	/* Thread-block cannot be assigned to SM */
 	if (!frm_gpu->thread_blocks_per_sm)
 	{
-		fatal("Thread blocks cannot be assigned to SMs.\n"
+		fatal("Thread-blocks cannot be assigned to SMs.\n"
 				"\tA SM in the GPU has a limit in number of warps,\n"
 				"\tnumber of registers, and amount of shared memory.\n"
-				"\tIf a thread block requires more resources than\n"
+				"\tIf a thread-block requires more resources than\n"
 				"\tthese limits, it cannot be assigned to a SM.\n");
 	}
 
 	/* Calculate limit of warps and threads per SM */
-	frm_gpu->warps_per_sm = frm_gpu->thread_blocks_per_sm *
-		grid->thread_blocks[0]->warp_count;
+//	frm_gpu->warps_per_sm = frm_gpu->thread_blocks_per_sm *
+//		grid->thread_blocks[0]->warp_count;
 	frm_gpu->threads_per_sm = frm_gpu->warps_per_sm * frm_emu_warp_size;
 }
 
@@ -1124,11 +1125,6 @@ int FrmGpuRun(Timing *self)
 		list_remove(emu->pending_grids, grid);
 		list_add(emu->running_grids, grid);
 
-		/* Trace */
-		frm_trace("frm.new_grid id=%d tb_first=%d tb_count=%d\n", 
-				grid->id, grid->thread_blocks[0]->id, 
-				grid->thread_block_count);
-
 		/* Map grid to GPU */
 		frm_gpu_map_grid(grid);
 		frm_calc_plot();
@@ -1138,7 +1134,7 @@ int FrmGpuRun(Timing *self)
 	grid = gpu->grid;
 	assert(grid);
 
-	/* Assign thread blocks to SMs */
+	/* Assign thread-blocks to SMs */
 	while (list_head(gpu->sm_ready_list) && 
 			list_head(grid->pending_thread_blocks))
 	{
