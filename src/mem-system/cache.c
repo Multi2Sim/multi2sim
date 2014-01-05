@@ -41,6 +41,14 @@ struct str_map_t cache_policy_map =
 	}
 };
 
+struct str_map_t cache_writepolicy_map =
+{
+	2, {
+		{ "WriteBack", cache_writepolicy_writeback },
+		{ "WriteThrough", cache_writepolicy_writethrough }
+	}
+};
+
 struct str_map_t cache_block_state_map =
 {
 	6, {
@@ -125,8 +133,9 @@ static void cache_update_waylist(struct cache_set_t *set,
  */
 
 
-struct cache_t *cache_create(char *name, unsigned int num_sets, unsigned int block_size,
-	unsigned int assoc, enum cache_policy_t policy)
+struct cache_t *cache_create(char *name, unsigned int num_sets,
+	unsigned int block_size, unsigned int assoc,
+	enum cache_policy_t policy, enum cache_writepolicy_t writepolicy)
 {
 	struct cache_t *cache;
 	struct cache_block_t *block;
@@ -139,6 +148,7 @@ struct cache_t *cache_create(char *name, unsigned int num_sets, unsigned int blo
 	cache->block_size = block_size;
 	cache->assoc = assoc;
 	cache->policy = policy;
+	cache->writepolicy = writepolicy;
 
 	/* Derived fields */
 	assert(!(num_sets & (num_sets - 1)));

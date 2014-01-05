@@ -22,6 +22,7 @@
 
 
 extern struct str_map_t cache_policy_map;
+extern struct str_map_t cache_writepolicy_map;
 extern struct str_map_t cache_block_state_map;
 
 enum cache_policy_t
@@ -30,6 +31,13 @@ enum cache_policy_t
 	cache_policy_lru,
 	cache_policy_fifo,
 	cache_policy_random
+};
+
+enum cache_writepolicy_t
+{
+	cache_writepolicy_invalid = 0,
+	cache_writepolicy_writeback,
+	cache_writepolicy_writethrough
 };
 
 enum cache_block_state_t
@@ -70,6 +78,7 @@ struct cache_t
 	unsigned int block_size;
 	unsigned int assoc;
 	enum cache_policy_t policy;
+	enum cache_writepolicy_t writepolicy;
 
 	struct cache_set_t *sets;
 	unsigned int block_mask;
@@ -79,8 +88,9 @@ struct cache_t
 };
 
 
-struct cache_t *cache_create(char *name, unsigned int num_sets, unsigned int block_size,
-	unsigned int assoc, enum cache_policy_t policy);
+struct cache_t *cache_create(char *name, unsigned int num_sets,
+	unsigned int block_size, unsigned int assoc, enum cache_policy_t policy,
+	enum cache_writepolicy_t writepolicy);
 void cache_free(struct cache_t *cache);
 
 void cache_decode_address(struct cache_t *cache, unsigned int addr,
