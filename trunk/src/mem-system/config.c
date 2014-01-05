@@ -168,6 +168,8 @@ char *mem_config_help =
 	"      Hit latency for a cache in number of cycles.\n"
 	"  Policy = {LRU|FIFO|Random} (Default = LRU)\n"
 	"      Block replacement policy.\n"
+	"  WritePolicy = {WriteBack|WriteThrough} (Default = WriteBack)\n"
+	"      Cache write policy.\n"
 	"  MSHR = <size> (Default = 16)\n"
 	"      Miss status holding register (MSHR) size in number of entries. This\n"
 	"      value determines the maximum number of accesses that can be in flight\n"
@@ -517,7 +519,9 @@ static struct mod_t *mem_config_read_cache(struct config_t *config,
 	int dir_latency;
 
 	char *policy_str;
+	char *writepolicy_str;
 	enum cache_policy_t policy;
+	enum cache_writepolicy_t writepolicy;
 
 	int mshr_size;
 	int num_ports;
@@ -554,6 +558,8 @@ static struct mod_t *mem_config_read_cache(struct config_t *config,
 	latency = config_read_int(config, buf, "Latency", 1);
 	dir_latency = config_read_int(config, buf, "DirectoryLatency", 1);
 	policy_str = config_read_string(config, buf, "Policy", "LRU");
+	writepolicy_str = config_read_string(config, buf, "WritePolicy",
+		"WriteBack");
 	mshr_size = config_read_int(config, buf, "MSHR", 16);
 	num_ports = config_read_int(config, buf, "Ports", 2);
 	enable_prefetcher = config_read_bool(config, buf, 
@@ -569,10 +575,21 @@ static struct mod_t *mem_config_read_cache(struct config_t *config,
 
 	/* Checks */
 	policy = str_map_string_case(&cache_policy_map, policy_str);
+	writepolicy = str_map_string_case(&cache_writepolicy_map,
+		writepolicy_str);
 	if (policy == cache_policy_invalid)
 		fatal("%s: cache %s: %s: invalid block replacement policy.\n%s",
 			mem_config_file_name, mod_name,
 			policy_str, mem_err_config_note);
+	if (writepolicy == cache_writepolicy_invalid)
+		fatal("%s: cache %s: %s: invalid write policy.\n%s",
+			mem_config_file_name, mod_name,
+			writepolicy_str, mem_err_config_note);
+	if (writepolicy == cache_writepolicy_writethrough)
+		warning("%s: cache %s: %s: write policy "
+			"not yet implemented.\n"
+			"WriteBack policy being used.\n",
+			mem_config_file_name, mod_name, writepolicy_str);
 	if (num_sets < 1 || (num_sets & (num_sets - 1)))
 		fatal("%s: cache %s: number of sets must be a power of two "
 			"greater than 1.\n%s", mem_config_file_name, mod_name, 
@@ -645,7 +662,7 @@ static struct mod_t *mem_config_read_cache(struct config_t *config,
 
 	/* Create cache */
 	mod->cache = cache_create(mod->name, num_sets, block_size, assoc, 
-		policy);
+		policy, writepolicy);
 
 	/* Fill in prefetcher parameters */
 	if (enable_prefetcher)
@@ -728,7 +745,7 @@ static struct mod_t *mem_config_read_main_memory(struct config_t *config,
 
 	/* Create cache and directory */
 	mod->cache = cache_create(mod->name, dir_size / dir_assoc, block_size,
-		dir_assoc, cache_policy_lru);
+		dir_assoc, cache_policy_lru, cache_writepolicy_writeback);
 
 	/* Return */
 	return mod;
