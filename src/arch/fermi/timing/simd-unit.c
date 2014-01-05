@@ -57,11 +57,11 @@ void frm_simd_complete(struct frm_simd_t *simd)
 		if (uop->warp_last_inst)
 		{
 			uop->warp_inst_queue_entry->warp_finished = 1;
-			uop->thread_block->sm_finished_count++;
+			uop->thread_block->finished_sm_count++;
 
 			/* Check if warp finishes a work-group */
 			assert(uop->thread_block);
-			assert(uop->thread_block->sm_finished_count <=
+			assert(uop->thread_block->finished_sm_count <=
 				uop->thread_block->warp_count);
 			//if (uop->thread_block->sm_finished_count == 
 			//		uop->thread_block->warp_count)

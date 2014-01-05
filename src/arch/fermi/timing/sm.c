@@ -25,6 +25,7 @@
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
+#include <lib/util/string.h>
 
 #include "sm.h"
 #include "gpu.h"
@@ -224,16 +225,16 @@ void FrmSMMapThreadBlock(FrmSM *sm,
 	assert(sm->thread_block_count < frm_gpu->thread_blocks_per_sm);
 	assert(!thread_block->id_in_sm);
 
-	/* Assign thread block ID */
+	/* Assign thread-block ID */
 	while (thread_block->id_in_sm < frm_gpu->thread_blocks_per_sm &&
 			sm->thread_blocks[thread_block->id_in_sm])
 		thread_block->id_in_sm++;
 
-	/* Assign thread block to a SM */
+	/* Assign thread-block to a SM */
 	sm->thread_blocks[thread_block->id_in_sm] = thread_block;
 	sm->thread_block_count++;
 
-	/* Remove fully-loaded SM to 'sm_ready' list so that thread blocks
+	/* Remove fully-loaded SM to 'sm_ready' list so that thread-blocks
 	 * cannot be assigned to it any more */
 	if (sm->thread_block_count == frm_gpu->thread_blocks_per_sm)
 		list_remove(frm_gpu->sm_ready_list, sm);
@@ -265,7 +266,7 @@ void FrmSMMapThreadBlock(FrmSM *sm,
 		warp->warp_inst_queue_entry->warp = warp;
 	}
 
-	/* Change thread block status to running */
+	/* Change thread-block status to running */
 	grid = thread_block->grid;
 	list_remove(grid->pending_thread_blocks, thread_block);
 	list_add(grid->running_thread_blocks, thread_block);
@@ -312,13 +313,13 @@ void FrmSMUnmapThreadBlock(FrmSM *sm, FrmThreadBlock *thread_block)
 
 void frm_sm_fetch(FrmSM *sm, int wiq_id)
 {
-	int j;
+	//int j;
 	int instructions_processed = 0;
 	int thread_id;
 	FrmWarp *warp;
-	FrmThread *thread;
+	//FrmThread *thread;
 	struct frm_uop_t *uop;
-	struct frm_thread_uop_t *thread_uop;
+	//struct frm_thread_uop_t *thread_uop;
 	struct frm_warp_inst_queue_entry_t *warp_inst_queue_entry;
 	char inst_str[1024];
 	char inst_str_trimmed[1024];
@@ -357,7 +358,7 @@ void frm_sm_fetch(FrmSM *sm, int wiq_id)
 		return;
 	}
 
-	/* Warp is finished but other warps from thread block
+	/* Warp is finished but other warps from thread-block
 	 * remain.  There may still be outstanding memory operations, 
 	 * but no more instructions should be fetched. */
 	if (warp->finished)
@@ -409,14 +410,8 @@ void frm_sm_fetch(FrmSM *sm, int wiq_id)
 	uop->id_in_sm = sm->uop_id_counter++;
 	uop->id_in_warp = warp->uop_id_counter++;
 	uop->warp_inst_queue_id = wiq_id;
-	uop->vector_mem_read = warp->vector_mem_read;
-	uop->vector_mem_write = warp->vector_mem_write;
-	uop->lds_read = warp->lds_read;
-	uop->lds_write = warp->lds_write;
 	uop->warp_inst_queue_entry = warp->warp_inst_queue_entry;
 	uop->warp_last_inst = warp->finished;
-	uop->mem_wait_inst = warp->mem_wait;
-	uop->barrier_wait_inst = warp->barrier;
 	uop->inst = warp->inst;
 	uop->cycle_created = asTiming(frm_gpu)->cycle;
 	assert(warp->thread_block && uop->thread_block);
@@ -448,28 +443,28 @@ void frm_sm_fetch(FrmSM *sm, int wiq_id)
 			thread_id < uop->warp->thread_count; 
 			thread_id++)
 	{
-		thread = uop->warp->threads[thread_id];
-		thread_uop = 
-			&uop->thread_uop[thread->id_in_warp];
+//		thread = uop->warp->threads[thread_id];
+//		thread_uop =
+//			&uop->thread_uop[thread->id_in_warp];
 
 		/* Global memory */
-		thread_uop->global_mem_access_addr = 
-			thread->global_mem_access_addr;
-		thread_uop->global_mem_access_size = 
-			thread->global_mem_access_size;
+//		thread_uop->global_mem_access_addr =
+//			thread->global_mem_access_addr;
+//		thread_uop->global_mem_access_size =
+//			thread->global_mem_access_size;
 
 		/* LDS */
-		thread_uop->lds_access_count = 
-			thread->lds_access_count;
-		for (j = 0; j < thread->lds_access_count; j++)
-		{
-			thread_uop->lds_access_kind[j] = 
-				thread->lds_access_type[j];
-			thread_uop->lds_access_addr[j] = 
-				thread->lds_access_addr[j];
-			thread_uop->lds_access_size[j] = 
-				thread->lds_access_size[j];
-		}
+//		thread_uop->lds_access_count =
+//			thread->lds_access_count;
+//		for (j = 0; j < thread->lds_access_count; j++)
+//		{
+//			thread_uop->lds_access_kind[j] =
+//				thread->lds_access_type[j];
+//			thread_uop->lds_access_addr[j] =
+//				thread->lds_access_addr[j];
+//			thread_uop->lds_access_size[j] =
+//				thread->lds_access_size[j];
+//		}
 	}
 
 	/* Access instruction cache. Record the time when the 

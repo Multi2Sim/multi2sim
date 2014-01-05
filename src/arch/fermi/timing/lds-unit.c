@@ -213,19 +213,20 @@ void frm_lds_mem(struct frm_lds_t *lds)
 
 			for (j = 0; j < thread_uop->lds_access_count; j++)
 			{
-				if (thread->lds_access_type[j] == 1)
-				{
-					access_type = mod_access_load;
-				}
-				else if (thread->lds_access_type[j] == 2)
-				{
-					access_type = mod_access_store;
-				}
-				else
-				{
-					fatal("%s: invalid lds access type", 
-						__FUNCTION__);
-				}
+				access_type = mod_access_load; // FIXME
+//				if (thread->lds_access_type[j] == 1)
+//				{
+//					access_type = mod_access_load;
+//				}
+//				else if (thread->lds_access_type[j] == 2)
+//				{
+//					access_type = mod_access_store;
+//				}
+//				else
+//				{
+//					fatal("%s: invalid lds access type",
+//						__FUNCTION__);
+//				}
 
 				mod_access(lds->sm->lds_module, 
 					access_type, 

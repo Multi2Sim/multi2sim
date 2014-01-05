@@ -21,49 +21,9 @@
 #define FERMI_EMU_ISA_H
 
 
-/* Global variables referring to the instruction that is currently being emulated.
- * There variables are set before calling the instruction emulation function in
- * 'machine.c' to avoid passing pointers. */
-extern struct frm_grid_t *frm_isa_grid;
-extern struct frm_thread_block_t *frm_isa_thread_block;
-extern struct frm_warp_t *frm_isa_warp;
-extern struct frm_thread_t *frm_isa_thread;
-extern struct frm_inst_t *frm_isa_inst;
-
-/* Macros for quick access */
-#define FRM_GPR_ELEM(_gpr, _elem)  (frm_isa_thread->gpr[(_gpr)].elem[(_elem)])
-#define FRM_GPR_X(_gpr)  FRM_GPR_ELEM((_gpr), 0)
-#define FRM_GPR_Y(_gpr)  FRM_GPR_ELEM((_gpr), 1)
-#define FRM_GPR_Z(_gpr)  FRM_GPR_ELEM((_gpr), 2)
-#define FRM_GPR_W(_gpr)  FRM_GPR_ELEM((_gpr), 3)
-#define FRM_GPR_T(_gpr)  FRM_GPR_ELEM((_gpr), 4)
-
-#define FRM_GPR_FLOAT_ELEM(_gpr, _elem)  (* (float *) &frm_isa_thread->gpr[(_gpr)].elem[(_elem)])
-#define FRM_GPR_FLOAT_X(_gpr)  FRM_GPR_FLOAT_ELEM((_gpr), 0)
-#define FRM_GPR_FLOAT_Y(_gpr)  FRM_GPR_FLOAT_ELEM((_gpr), 1)
-#define FRM_GPR_FLOAT_Z(_gpr)  FRM_GPR_FLOAT_ELEM((_gpr), 2)
-#define FRM_GPR_FLOAT_W(_gpr)  FRM_GPR_FLOAT_ELEM((_gpr), 3)
-#define FRM_GPR_FLOAT_T(_gpr)  FRM_GPR_FLOAT_ELEM((_gpr), 4)
-
-
 /* Debugging */
-#define frm_isa_debugging() debug_status(frm_isa_debug_category)
-#define frm_isa_debug(...) debug(frm_isa_debug_category, __VA_ARGS__)
 extern int frm_isa_debug_category;
-
-
-/* Macros for unsupported parameters */
-extern char *err_frm_isa_note;
-#define FRM_ISA_ARG_NOT_SUPPORTED(p) \
-	fatal("%s: %s: not supported for '" #p "' = 0x%x\n%s", \
-	__FUNCTION__, frm_isa_inst->info->name, (p), err_frm_isa_note);
-#define FRM_ISA_ARG_NOT_SUPPORTED_NEQ(p, v) \
-	{ if ((p) != (v)) fatal("%s: %s: not supported for '" #p "' != 0x%x\n%s", \
-	__FUNCTION__, frm_isa_inst->info->name, (v), err_frm_isa_note); }
-#define FRM_ISA_ARG_NOT_SUPPORTED_RANGE(p, min, max) \
-	{ if ((p) < (min) || (p) > (max)) fatal("%s: %s: not supported for '" #p "' out of range [%d:%d]\n%s", \
-	__FUNCTION__, frm_isa_inst->info->name, (min), (max), err_frm_cuda_param_note); }
-
+#define frm_isa_debug(...) debug(frm_isa_debug_category, __VA_ARGS__)
 
 
 #endif

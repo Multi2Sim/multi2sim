@@ -20,12 +20,11 @@
 #ifndef FERMI_EMU_MACHINE_H
 #define FERMI_EMU_MACHINE_H
 
-#include <lib/class/class.h>
 
 /* Declarations of function prototypes implementing Fermi ISA */
 #define DEFINST(_name, _fmt_str, _opcode) \
-        extern void frm_isa_##_name##_impl(FrmThread *thread, \
-                        struct FrmInstWrap *inst);
+		extern void frm_isa_##_name##_impl(FrmThread *thread, \
+				struct FrmInstWrap *inst);
 #include <arch/fermi/asm/asm.dat>
 #undef DEFINST
 

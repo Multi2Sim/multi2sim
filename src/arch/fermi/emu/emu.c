@@ -18,18 +18,15 @@
  */
 
 #include <lib/mhandle/mhandle.h>
-#include <lib/util/debug.h>
-#include <lib/util/file.h>
 #include <lib/util/list.h>
 #include <lib/util/misc.h>
 #include <mem-system/memory.h>
 
 #include "emu.h"
-#include "isa.h"
 #include "grid.h"
 #include "machine.h"
-#include "warp.h"
 #include "thread-block.h"
+#include "warp.h"
 
 
 /*
@@ -95,38 +92,35 @@ int FrmEmuRun(Emu *self)
 	FrmThreadBlock *thread_block;
 	FrmWarp *warp;
 
-	int grid_id, thread_block_id, warp_id;
+	int thread_block_id, warp_id;
+	int i;
 
 	/* Stop emulation if no grids */
 	if (! list_count(emu->grids))
 		return FALSE;
 
-	/* Remove all pending grids and their thread blocks from the pending list,
+	/* Remove all pending grids and their thread-blocks from the pending list,
 	 * and add them to running list */
-	for (grid_id = 0; grid_id < list_count(emu->pending_grids); ++grid_id)
+	while (list_count(emu->pending_grids))
 	{
-		grid = list_get(emu->pending_grids, grid_id);
-		for (thread_block_id = 0; thread_block_id < list_count(
-				grid->pending_thread_blocks); ++thread_block_id)
+		grid = list_dequeue(emu->pending_grids);
+		while (list_count(grid->pending_thread_blocks))
 		{
-			thread_block = list_get(grid->pending_thread_blocks,
-					thread_block_id);
-			list_remove(grid->pending_thread_blocks, thread_block);
-			list_add(grid->running_thread_blocks, thread_block);
+			thread_block_id = (long) list_dequeue(grid->pending_thread_blocks);
+			list_enqueue(grid->running_thread_blocks,
+					(void *)((long)thread_block_id));
 		}
-		list_remove(emu->pending_grids, grid);
-		list_add(emu->running_grids, grid);
+		list_enqueue(emu->running_grids, grid);
 	}
 
 	/* Run one instruction in the whole grid */
-	for (grid_id = 0; grid_id < list_count(emu->running_grids); ++grid_id)
+	while (list_count(emu->running_grids))
 	{
-		grid = list_get(emu->running_grids, grid_id);
-		for (thread_block_id = 0; thread_block_id < list_count(
-				grid->running_thread_blocks); ++thread_block_id)
+		grid = list_dequeue(emu->running_grids);
+		for (i = 0; i < list_count(grid->running_thread_blocks); ++i)
 		{
-			thread_block = list_get(grid->running_thread_blocks,
-					thread_block_id);
+			thread_block_id = (long) list_get(grid->running_thread_blocks, i);
+			thread_block = new(FrmThreadBlock, thread_block_id, grid);
 			for (warp_id = 0; warp_id <	list_count(thread_block->running_warps);
 					++warp_id)
 			{
@@ -135,16 +129,15 @@ int FrmEmuRun(Emu *self)
 					continue;
 				FrmWarpExecute(warp);
 			}
+			free(thread_block);
 		}
 	}
 
 	/* Free finished grids */
-	assert(list_count(emu->pending_grids) == 0 &&
-			list_count(emu->running_grids) == 0);
-	for (grid_id = 0; grid_id < list_count(emu->finished_grids); ++grid_id)
+	assert(!list_count(emu->pending_grids) && !list_count(emu->running_grids));
+	while (list_count(emu->finished_grids))
 	{
-		grid = list_get(emu->finished_grids, grid_id);
-		list_remove(emu->finished_grids, grid);
+		grid = list_dequeue(emu->finished_grids);
 		delete(grid);
 	}
 
@@ -172,4 +165,5 @@ void FrmEmuConstMemRead(FrmEmu *self, unsigned addr, void *value_ptr)
 long long frm_emu_max_cycles;
 long long frm_emu_max_inst;
 int frm_emu_max_functions;
+
 const int frm_emu_warp_size = 32;

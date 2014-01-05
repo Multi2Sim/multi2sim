@@ -24,6 +24,7 @@
 #include <lib/util/debug.h>
 #include <lib/util/file.h>
 #include <lib/util/misc.h>
+#include <lib/util/string.h>
 
 #include "calc.h"
 #include "gpu.h"
@@ -53,16 +54,16 @@ int frm_calc_get_thread_blocks_per_sm(int threads_per_thread_block,
 	int max_thread_blocks_limitted_by_shared_mem;
 	int max_thread_blocks_per_sm;
 
-	/* Get maximum number of thread blocks per SM as limited by the 
+	/* Get maximum number of thread-blocks per SM as limited by the
 	 * maximum number of warps, given the number of warps per 
-	 * thread block in the grid */
+	 * thread-block in the grid */
 	assert(frm_emu_warp_size > 0);
 	warps_per_thread_block = (threads_per_thread_block + 
 		frm_emu_warp_size - 1) / frm_emu_warp_size;
 	max_thread_blocks_limitted_by_max_warps = 
 		frm_gpu_max_warps_per_sm / warps_per_thread_block;
 
-	/* Get maximum number of thread blocks per SM as limited by the number 
+	/* Get maximum number of thread-blocks per SM as limited by the number
 	 * of available registers, given the number of registers used per 
 	 * thread. */
 	registers_per_thread_block = registers_per_thread *
@@ -71,9 +72,9 @@ int frm_calc_get_thread_blocks_per_sm(int threads_per_thread_block,
 		frm_gpu_num_registers_per_sm / registers_per_thread_block :
 		frm_gpu_max_thread_blocks_per_sm;
 
-	/* Get maximum number of thread blocks per SM as limited by the 
+	/* Get maximum number of thread-blocks per SM as limited by the
 	 * amount of available shared memory, given the shared memory used 
-	 * per thread block in the grid */
+	 * per thread-block in the grid */
 	max_thread_blocks_limitted_by_shared_mem = shared_mem_per_thread_block ?
 		frm_gpu_shared_mem_size / shared_mem_per_thread_block :
 		frm_gpu_max_thread_blocks_per_sm;
@@ -332,7 +333,7 @@ static void frm_calc_plot_local_mem_per_thread_block(void)
 	fclose(data_file);
 
 	/* Current data point */
-	local_mem_per_thread_block = frm_gpu->grid->local_mem_top;
+	local_mem_per_thread_block = frm_gpu->grid->shared_mem_top;
 	//thread_blocks_per_warp_pool = 
 	//	frm_calc_get_thread_blocks_per_warp_pool(
 	//		threads_per_thread_block, registers_per_thread, 

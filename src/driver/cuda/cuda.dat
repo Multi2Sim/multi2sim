@@ -10,4 +10,3 @@ CUDA_DEFINE_CALL(cuMemFree)
 CUDA_DEFINE_CALL(cuMemcpyHtoD)
 CUDA_DEFINE_CALL(cuMemcpyDtoH)
 CUDA_DEFINE_CALL(cuLaunchKernel)
-
