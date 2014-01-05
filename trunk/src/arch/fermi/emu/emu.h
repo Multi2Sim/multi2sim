@@ -20,8 +20,6 @@
 #ifndef ARCH_FERMI_EMU_EMU_H
 #define ARCH_FERMI_EMU_EMU_H
 
-#include <stdio.h>
-
 #include <arch/common/emu.h>
 #include <arch/fermi/asm/Wrapper.h>
 
@@ -68,9 +66,11 @@ CLASS_END(FrmEmu)
 
 void FrmEmuCreate(FrmEmu *self, struct FrmAsmWrap *as);
 void FrmEmuDestroy(FrmEmu *self);
+
 void FrmEmuDump(Object *self, FILE *f);
 void FrmEmuDumpSummary(Emu *self, FILE *f);
 int FrmEmuRun(Emu *emu);
+
 void FrmEmuConstMemWrite(FrmEmu *self, unsigned addr, void *pvalue);
 void FrmEmuConstMemRead(FrmEmu *self, unsigned addr, void *pvalue);
 
@@ -83,7 +83,6 @@ extern long long frm_emu_max_cycles;
 extern long long frm_emu_max_inst;
 extern int frm_emu_max_functions;
 extern const int frm_emu_warp_size;
-
 
 #endif
 

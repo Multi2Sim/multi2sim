@@ -30,7 +30,7 @@ struct cuda_version_t
 	int minor;
 };
 #define CUDA_VERSION_MAJOR 1
-#define CUDA_VERSION_MINOR 950
+#define CUDA_VERSION_MINOR 1000
 
 /* Debug */
 extern int cuda_debug_category;
@@ -39,7 +39,7 @@ extern int cuda_debug_category;
 /* Error */
 extern char *cuda_err_code;
 
-/* List of CUDA driver calls */
+/* Enumeration of ABI calls */
 enum cuda_call_t
 {
 	cuda_call_invalid = 0,

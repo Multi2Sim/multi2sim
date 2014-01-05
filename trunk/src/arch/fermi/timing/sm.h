@@ -71,7 +71,7 @@ CLASS_BEGIN(FrmSM, Object)
 	long long vector_mem_inst_count;
 	long long lds_inst_count;
 
-	/* List of currently mapped thread blocks */
+	/* List of currently mapped thread-blocks */
 	FrmThreadBlock **thread_blocks;
 	int thread_block_count;
 

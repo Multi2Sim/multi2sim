@@ -17,19 +17,5 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
-#include <lib/mhandle/mhandle.h>
-#include <lib/util/debug.h>
-
-#include "emu.h"
-#include "isa.h"
-#include "machine.h"
-
-
-
 /* Debug */
 int frm_isa_debug_category = 1;
-
-
-
-

@@ -21,79 +21,43 @@
 #define FERMI_EMU_THREADBLOCK_H
 
 #include <lib/class/class.h>
-#include <lib/util/string.h>
 
 
 /*
  * Class 'FrmThreadBlock'
  */
 
-typedef enum
-{
-	FrmThreadBlockInvalid = 0,
-	FrmThreadBlockPending = 0x0001,
-	FrmThreadBlockRunning = 0x0002,
-	FrmThreadBlockFinished = 0x0004
-} FrmThreadBlockState;
-
-
 CLASS_BEGIN(FrmThreadBlock, Object)
 
 	/* ID */
 	int id;
-	int id_3d[3];
-
-	/* Name */
-	char name[MAX_STRING_SIZE];
-
-	/* Status */
-	FrmThreadBlockState state;
 
 	/* Grid it belongs to */
 	FrmGrid *grid;
 
-	/* SM it is mapped to */
-	struct frm_sm_t *sm;
-
-	/* Double linked lists of thread_blocks */
-	FrmThreadBlock *pending_list_prev;
-	FrmThreadBlock *pending_list_next;
-	FrmThreadBlock *running_list_prev;
-	FrmThreadBlock *running_list_next;
-	FrmThreadBlock *finished_list_prev;
-	FrmThreadBlock *finished_list_next;
-
-	/* Array of warps */
+	/* Warps */
 	int warp_count;
 	FrmWarp **warps;
-
-	/* List of warps */
 	struct list_t *running_warps;
 	struct list_t *finished_warps;
 
-	/* Array of threads */
+	/* Threads */
 	int thread_count;
 	FrmThread **threads;
-
-	/* Barrier information */
-	unsigned int num_warps_at_barrier;
-
-	/* Fields introduced for architectural simulation */
-	int id_in_sm;
-	int sm_finished_count;  /* like 'finished_list_count', but when warp reaches Complete stage */
 
 	/* Shared memory */
 	struct mem_t *shared_mem;
 
+	/* Fields for architectural simulation only */
+
+	int id_in_sm;
+
+	int finished_sm_count;
+
 CLASS_END(FrmThreadBlock)
 
 
-#define FRM_FOR_EACH_THREADBLOCK_IN_GRID(GRID, THREADBLOCK_ID) \
-	for ((THREADBLOCK_ID) = (GRID)->thread_block_id_first; \
-		(THREADBLOCK_ID) <= (GRID)->thread_block_id_last; \
-		(THREADBLOCK_ID)++)
-
-void FrmThreadBlockCreate(FrmThreadBlock *self, FrmGrid *grid);
+void FrmThreadBlockCreate(FrmThreadBlock *self, int id, FrmGrid *grid);
 void FrmThreadBlockDestroy(FrmThreadBlock *self);
 
 void FrmThreadBlockDump(FrmThreadBlock *self, FILE *f);
