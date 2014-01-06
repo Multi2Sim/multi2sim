@@ -95,7 +95,6 @@ int FrmEmuRun(Emu *self)
 	FrmWarp *warp;
 
 	int thread_block_id, warp_id;
-	int i;
 
 	/* Stop emulation if no grids */
 	if (! list_count(emu->grids))
@@ -119,9 +118,9 @@ int FrmEmuRun(Emu *self)
 	while (list_count(emu->running_grids))
 	{
 		grid = list_dequeue(emu->running_grids);
-		for (i = 0; i < list_count(grid->running_thread_blocks); ++i)
+		while (list_count(grid->running_thread_blocks))
 		{
-			thread_block_id = (long) list_get(grid->running_thread_blocks, i);
+			thread_block_id = (long) list_dequeue(grid->running_thread_blocks);
 			thread_block = new(FrmThreadBlock, thread_block_id, grid);
 			while (!thread_block->finished)
 			{
@@ -132,6 +131,14 @@ int FrmEmuRun(Emu *self)
 					if (warp->finished || warp->at_barrier)
 						continue;
 					FrmWarpExecute(warp);
+				}
+
+				if (list_count(thread_block->finished_warps) == thread_block->
+						warp_count)
+				{
+					list_enqueue(grid->finished_thread_blocks, (void *)
+							((long) thread_block_id));
+					thread_block->finished = 1;
 				}
 			}
 			delete(thread_block);
