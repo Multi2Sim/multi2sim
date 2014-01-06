@@ -58,9 +58,6 @@ void FrmWarpCreate(FrmWarp *self, int id, FrmThreadBlock *thread_block,
 	self->threads = (FrmThread **) xcalloc(self->thread_count,
 			sizeof(FrmThread *));
 
-	/* Predicate mask */
-	self->pred = bit_map_create(frm_emu_warp_size);
-
 	/* Instruction */
 	self->inst = FrmInstWrapCreate(emu->as);
 	self->inst_size = 8;
@@ -68,19 +65,27 @@ void FrmWarpCreate(FrmWarp *self, int id, FrmThreadBlock *thread_block,
 	self->inst_buffer_size = grid->function->inst_bin_size;
 
 	/* Sync stack */
-	self->sync_stack.entries[0].active_thread_mask = ((unsigned long long)1 <<
-			self->thread_count) - 1;
 	self->sync_stack_top = 0;
+	self->sync_stack.entries[self->sync_stack_top].active_thread_mask =
+			bit_map_create(self->thread_count);
+	bit_map_set(self->sync_stack.entries[self->sync_stack_top].
+			active_thread_mask, 0, self->thread_count,
+			((unsigned long long)1 << self->thread_count) - 1);
 
 	/* Reset flags */
 	self->at_barrier = 0;
+	self->finished_thread_count = 0;
+	self->finished = 0;
 }
 
 void FrmWarpDestroy(FrmWarp *self)
 {
+	int i;
+
 	free(self->threads);
-	bit_map_free(self->pred);
 	FrmInstWrapFree(self->inst);
+	for (i = self->sync_stack_top; i >=0 ; --i)
+		bit_map_free(self->sync_stack.entries[i].active_thread_mask);
 }
 
 void FrmWarpDump(FrmWarp *self, FILE *f)
@@ -128,37 +133,34 @@ void FrmWarpExecute(FrmWarp *self)
 	/* Finish */
 	if (self->finished)
 	{
-		/* Check if warp finished kernel execution */
+		/* Check if warp finishes */
 		assert(list_index_of(thread_block->running_warps, self) != -1);
 		assert(list_index_of(thread_block->finished_warps, self) == -1);
 		list_remove(thread_block->running_warps, self);
 		list_add(thread_block->finished_warps, self);
 
-		/* Check if thread-block finished kernel execution */
-		if (list_count(thread_block->finished_warps) ==
-				thread_block->warp_count)
+		/* Check if thread-block finishes */
+		if (list_count(thread_block->finished_warps) == thread_block->
+				warp_count)
 		{
-			assert(list_index_of(grid->running_thread_blocks, thread_block) !=
-					-1);
-			assert(list_index_of(grid->finished_thread_blocks, thread_block) ==
-					-1);
-			list_remove(grid->running_thread_blocks, thread_block);
-			list_add(grid->finished_thread_blocks, thread_block);
+			assert(list_index_of(grid->running_thread_blocks, (void *)
+					((long) thread_block->id)) != -1);
+			assert(list_index_of(grid->finished_thread_blocks, (void *)
+					((long) thread_block->id)) == -1);
+			list_remove(grid->running_thread_blocks, (void *)
+					((long) thread_block->id));
+			list_add(grid->finished_thread_blocks, (void *)
+					((long) thread_block->id));
 
-			/* Check if grid finished kernel execution */
-			if (list_count(grid->finished_thread_blocks) == 
-					grid->thread_block_count)
-			{
-				assert(list_index_of(emu->running_grids, grid) != -1);
-				assert(list_index_of(emu->finished_grids, grid) == -1);
-				list_remove(emu->running_grids, grid);
-				list_add(emu->finished_grids, grid);
-			}
+			thread_block->finished = 1;
 		}
 	}
 
-	/* Increment the PC */
-	self->pc += self->inst_size;
+	/* Update PC */
+	if (FrmInstWrapGetCategory(inst) != FrmInstCategoryCtrl)
+		self->pc += self->inst_size;
+	else
+		self->pc = self->target_pc;
 
 	/* Stats */
 	asEmu(emu)->instructions++;

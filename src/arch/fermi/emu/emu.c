@@ -49,10 +49,12 @@ void FrmEmuCreate(FrmEmu *self, struct FrmAsmWrap *as)
 #include <arch/fermi/asm/asm.dat>
 #undef DEFINST
 	self->global_mem = mem_create();
+	self->global_mem->safe = 0;
 	self->global_mem_top = 0;
 	self->total_global_mem_size = 1 << 30; /* 1GB */
 	self->free_global_mem_size = self->total_global_mem_size;
 	self->const_mem = mem_create();
+	self->const_mem->safe = 0;
 
 	/* Virtual functions */
 	asObject(self)->Dump = FrmEmuDump;
@@ -121,16 +123,20 @@ int FrmEmuRun(Emu *self)
 		{
 			thread_block_id = (long) list_get(grid->running_thread_blocks, i);
 			thread_block = new(FrmThreadBlock, thread_block_id, grid);
-			for (warp_id = 0; warp_id <	list_count(thread_block->running_warps);
-					++warp_id)
+			while (!thread_block->finished)
 			{
-				warp = list_get(thread_block->running_warps, warp_id);
-				if (warp->finished || warp->at_barrier)
-					continue;
-				FrmWarpExecute(warp);
+				for (warp_id = 0; warp_id <	list_count(thread_block->
+						running_warps); ++warp_id)
+				{
+					warp = list_get(thread_block->running_warps, warp_id);
+					if (warp->finished || warp->at_barrier)
+						continue;
+					FrmWarpExecute(warp);
+				}
 			}
-			free(thread_block);
+			delete(thread_block);
 		}
+		list_enqueue(emu->finished_grids, grid);
 	}
 
 	/* Free finished grids */

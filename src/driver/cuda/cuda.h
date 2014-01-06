@@ -30,7 +30,7 @@ struct cuda_version_t
 	int minor;
 };
 #define CUDA_VERSION_MAJOR 1
-#define CUDA_VERSION_MINOR 1000
+#define CUDA_VERSION_MINOR 1020
 
 /* Debug */
 extern int cuda_debug_category;

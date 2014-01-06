@@ -69,6 +69,9 @@ void FrmThreadBlockCreate(FrmThreadBlock *self, int id, FrmGrid *grid)
 	/* Create shared memory */
 	self->shared_mem = mem_create();
 	self->shared_mem->safe = 0;
+
+	/* Flags */
+	self->finished = 0;
 }
 
 
