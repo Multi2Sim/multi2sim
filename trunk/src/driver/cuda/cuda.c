@@ -429,13 +429,12 @@ int cuda_func_cuMemAlloc(X86Context *ctx)
 
 	cuda_debug("\tin: dev_mem_size=%u\n", dev_mem_size);
 
-	/* Assign position in device global memory */
-	frm_emu->global_mem_top += dev_mem_size;
+	mem_write(mem, dev_mem_ptr, sizeof(unsigned), &(frm_emu->global_mem_top));
 	frm_emu->free_global_mem_size -= dev_mem_size;
 
 	cuda_debug("\tout: dev_mem_ptr=0x%08x\n", frm_emu->global_mem_top);
 
-	mem_write(mem, dev_mem_ptr, sizeof(unsigned), &(frm_emu->global_mem_top));
+	frm_emu->global_mem_top += dev_mem_size;
 
 	return 0;
 }
@@ -505,7 +504,7 @@ int cuda_func_cuMemcpyHtoD(X86Context *ctx)
 	cuda_debug("\tin: size=%u\n", size);
 
 	/* Copy */
-	buf = xmalloc(size);
+	buf = xcalloc(1, size);
 	mem_read(mem, host_mem_ptr, size, buf);
 	mem_write(frm_emu->global_mem, dev_mem_ptr, size, buf);
 	free(buf);
@@ -552,7 +551,7 @@ int cuda_func_cuMemcpyDtoH(X86Context *ctx)
 	cuda_debug("\tin: size=%u\n", size);
 
 	/* Copy */
-	buf = xmalloc(size);
+	buf = xcalloc(1, size);
 	mem_read(frm_emu->global_mem, dev_mem_ptr, size, buf);
 	mem_write(mem, host_mem_ptr, size, buf);
 	free(buf);

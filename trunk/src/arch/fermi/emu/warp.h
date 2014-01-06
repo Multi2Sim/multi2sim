@@ -31,9 +31,9 @@
 
 typedef struct
 {
-	unsigned int reconv_pc;
-	unsigned int next_path_pc;
-	unsigned int active_thread_mask;
+	unsigned reconv_pc;
+	unsigned next_path_pc;
+	struct bit_map_t *active_thread_mask;
 } FrmWarpSyncStackEntry;
 
 typedef struct
@@ -57,9 +57,8 @@ CLASS_BEGIN(FrmWarp, Object)
 
 	/* PC */
 	unsigned pc;
-
-	/* Predicate mask, 'thread_count' elements */
-	struct bit_map_t *pred;
+	int target_pc;
+	struct bit_map_t *taken_threads;
 
 	/* Instructions to execute */
 	struct FrmInstWrap *inst;
@@ -72,10 +71,12 @@ CLASS_BEGIN(FrmWarp, Object)
 	int sync_stack_top;
 
 	/* Flags updated during instruction execution */
-	unsigned at_barrier : 1;
-	unsigned finished : 1;
+	unsigned at_barrier;
+	unsigned divergent;
+	unsigned finished_thread_count;
+	unsigned finished;
 
-	/* Fields for architectural simulation only */
+	/* Fields below are used for architectural simulation only */
 
 	int id_in_sm;
 	int uop_id_counter;

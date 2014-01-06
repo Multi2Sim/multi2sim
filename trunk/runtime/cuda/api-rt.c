@@ -239,11 +239,10 @@ void __cudaRegisterFunction(void **fatCubinHandle,
 	/* Check for Fermi binary. Support for Fermi only for now. */
 	elf_buffer_seek(&(dev_func_bin->buffer), 8);
 	elf_buffer_read(&(dev_func_bin->buffer), &abi_version, 1);
-	if (abi_version < 4 || abi_version > 6)
-		fatal("%s: The cubin has a unrecognized ABI version (0x%x). "
-				"Multi2Sim CUDA library is currently "
-				"compatible with Fermi binary only.",
-				__FUNCTION__, abi_version);
+	if (abi_version < 4 || abi_version > 7)
+		fatal("%s:%d: The cubin has a unrecognized ABI version (0x%x).\n"
+				"\tMulti2Sim CUDA library is currently compatible with Fermi\n"
+				"\tbinary only.", __FILE__, __LINE__, abi_version);
 
 	/* Load module */
 	cuModuleLoad(&module, cubin_path);
