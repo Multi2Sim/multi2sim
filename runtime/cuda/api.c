@@ -129,9 +129,9 @@ void versionCheck(void)
 	/* Check that exact major version matches */
 	if (version.major != CUDA_VERSION_MAJOR
 			|| version.minor < CUDA_VERSION_MINOR)
-		fatal("%s: incompatible CUDA versions. Guest library v. %d.%d "
-				"/ Host implementation v. %d.%d. %s",
-				__FUNCTION__, 
+		fatal("%s:%d: incompatible CUDA versions.\n"
+				"\tGuest library v. %d.%d / Host implementation v. %d.%d.\n"
+				"\t%s", __FILE__, __LINE__,
 				CUDA_VERSION_MAJOR, CUDA_VERSION_MINOR,
 				version.major, version.minor, cuda_err_version);
 }

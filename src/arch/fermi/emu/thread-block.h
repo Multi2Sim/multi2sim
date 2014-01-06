@@ -48,6 +48,9 @@ CLASS_BEGIN(FrmThreadBlock, Object)
 	/* Shared memory */
 	struct mem_t *shared_mem;
 
+	/* Flags */
+	unsigned finished;
+
 	/* Fields for architectural simulation only */
 
 	int id_in_sm;

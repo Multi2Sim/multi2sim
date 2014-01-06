@@ -758,7 +758,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
-		/* CUDA runtime debug file */
+		/* Dump CUDA runtime debug information to file */
 		if (!strcmp(argv[argi], "--x86-debug-cuda"))
 		{
 			m2s_need_argument(argc, argv, argi);
@@ -1219,7 +1219,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		 * Fermi GPU Options
 		 */
 
-		/* Fermi ISA debug file */
+		/* Dump emulation debug information to file */
 		if (!strcmp(argv[argi], "--frm-debug-isa"))
 		{
 			m2s_need_argument(argc, argv, argi);
@@ -1227,7 +1227,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
-		/* Fermi detailed simulation debug file */
+		/* Dump architectural simulation debug information to file */
 		if (!strcmp(argv[argi], "--frm-debug-gpu"))
 		{
 			m2s_need_argument(argc, argv, argi);
@@ -1235,7 +1235,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
-		/* Fermi GPU configuration file */
+		/* Use configurations in file */
 		if (!strcmp(argv[argi], "--frm-config"))
 		{
 			m2s_need_argument(argc, argv, argi);
@@ -1243,19 +1243,19 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
-		/* Dump Fermi default configuration file */
-		if (!strcmp(argv[argi], "--frm-dump-default-config"))
-		{
-			m2s_need_argument(argc, argv, argi);
-			frm_gpu_dump_default_config_file_name = argv[++argi];
-			continue;
-		}
-
-		/* Fermi disassembler */
+		/* Disassembler */
 		if (!strcmp(argv[argi], "--frm-disasm"))
 		{
 			m2s_need_argument(argc, argv, argi);
 			frm_disasm_file_name = argv[++argi];
+			continue;
+		}
+
+		/* Dump default configurations to file */
+		if (!strcmp(argv[argi], "--frm-dump-default-config"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			frm_gpu_dump_default_config_file_name = argv[++argi];
 			continue;
 		}
 
@@ -1283,7 +1283,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
-		/* Fermi GPU timing report */
+		/* Generate simulation report in file */
 		if (!strcmp(argv[argi], "--frm-report"))
 		{
 			m2s_need_argument(argc, argv, argi);
@@ -1291,7 +1291,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
-		/* Fermi simulation accuracy */
+		/* Simulation mode */
 		if (!strcmp(argv[argi], "--frm-sim"))
 		{
 			m2s_need_argument(argc, argv, argi);
