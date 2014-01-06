@@ -889,7 +889,7 @@ cudaError_t cudaMalloc(void **devPtr, size_t size)
 
 cudaError_t cudaMallocHost(void **ptr, size_t size)
 {
-	__CUDART_NOT_IMPL__;
+	cudaMalloc(ptr, size);
 	return cudaSuccess;
 }
 
