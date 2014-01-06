@@ -133,27 +133,12 @@ void FrmWarpExecute(FrmWarp *self)
 	/* Finish */
 	if (self->finished)
 	{
-		/* Check if warp finishes */
 		assert(list_index_of(thread_block->running_warps, self) != -1);
 		assert(list_index_of(thread_block->finished_warps, self) == -1);
 		list_remove(thread_block->running_warps, self);
 		list_add(thread_block->finished_warps, self);
 
-		/* Check if thread-block finishes */
-		if (list_count(thread_block->finished_warps) == thread_block->
-				warp_count)
-		{
-			assert(list_index_of(grid->running_thread_blocks, (void *)
-					((long) thread_block->id)) != -1);
-			assert(list_index_of(grid->finished_thread_blocks, (void *)
-					((long) thread_block->id)) == -1);
-			list_remove(grid->running_thread_blocks, (void *)
-					((long) thread_block->id));
-			list_add(grid->finished_thread_blocks, (void *)
-					((long) thread_block->id));
-
-			thread_block->finished = 1;
-		}
+		return;
 	}
 
 	/* Update PC */
