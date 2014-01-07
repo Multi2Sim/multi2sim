@@ -193,47 +193,57 @@ struct mod_t
 
 	/* Statistics */
 	long long accesses;
-	long long hits;
+	long long retry_accesses;
 
+	long long evictions;
+
+	long long dir_entry_conflicts;
+	long long retry_dir_entry_conflicts;
+
+	long long conflict_invalidations;
+
+	/* Statistics for up-down accesses */
 	long long reads;
+	long long read_hits;
+	long long read_misses;
 	long long coalesced_reads;
-	long long effective_reads;
-	long long effective_read_hits;
 	long long writes;
+	long long write_hits;
+	long long write_misses;
 	long long coalesced_writes;
-	long long effective_writes;
-	long long effective_write_hits;
 	long long nc_writes;
+	long long nc_write_hits;
+	long long nc_write_misses;
 	long long coalesced_nc_writes;
-	long long effective_nc_writes;
-	long long effective_nc_write_hits;
 	long long prefetches;
 	long long prefetch_aborts;
 	long long useless_prefetches;
-	long long evictions;
+	long long retry_reads;
+	long long retry_read_hits;
+	long long retry_read_misses;
+	long long retry_writes;
+	long long retry_write_hits;
+	long long retry_write_misses;
+	long long retry_nc_writes;
+	long long retry_nc_write_hits;
+	long long retry_nc_write_misses;
+	long long retry_prefetches;
 
-	long long blocking_reads;
-	long long non_blocking_reads;
-	long long read_hits;
-	long long blocking_writes;
-	long long non_blocking_writes;
-	long long write_hits;
-	long long blocking_nc_writes;
-	long long non_blocking_nc_writes;
-	long long nc_write_hits;
+	/* Statistics for down-up accesses */
+	long long read_probes;
+	long long write_probes;
+	long long retry_read_probes;
+	long long retry_write_probes;
 
-	long long read_retries;
-	long long write_retries;
-	long long nc_write_retries;
+	/* Statistics for other coherence traffic 
+	 * (e.g. data received from a block in a higher-level cache 
+	 * getting evicted)
+	 */
+	long long other_traffic;
 
-	long long no_retry_accesses;
-	long long no_retry_hits;
-	long long no_retry_reads;
-	long long no_retry_read_hits;
-	long long no_retry_writes;
-	long long no_retry_write_hits;
-	long long no_retry_nc_writes;
-	long long no_retry_nc_write_hits;
+	/* FIXME Update the local memory protocol and remove these */
+	long long effective_reads;
+	long long effective_writes;
 };
 
 struct mod_t *mod_create(char *name, enum mod_kind_t kind, int num_ports,
