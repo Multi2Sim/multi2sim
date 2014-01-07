@@ -1,51 +1,24 @@
 /*
- * Copyright 1993-2012 NVIDIA Corporation.  All rights reserved.
+ *  Multi2Sim
+ *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
  *
- * NOTICE TO LICENSEE:
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
  *
- * This source code and/or documentation ("Licensed Deliverables") are
- * subject to NVIDIA intellectual property rights under U.S. and
- * international Copyright laws.
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
  *
- * These Licensed Deliverables contained herein is PROPRIETARY and
- * CONFIDENTIAL to NVIDIA and is being provided under the terms and
- * conditions of a form of NVIDIA software license agreement by and
- * between NVIDIA and Licensee ("License Agreement") or electronically
- * accepted by Licensee.  Notwithstanding any terms or conditions to
- * the contrary in the License Agreement, reproduction or disclosure
- * of the Licensed Deliverables to any third party without the express
- * written consent of NVIDIA is prohibited.
- *
- * NOTWITHSTANDING ANY TERMS OR CONDITIONS TO THE CONTRARY IN THE
- * LICENSE AGREEMENT, NVIDIA MAKES NO REPRESENTATION ABOUT THE
- * SUITABILITY OF THESE LICENSED DELIVERABLES FOR ANY PURPOSE.  IT IS
- * PROVIDED "AS IS" WITHOUT EXPRESS OR IMPLIED WARRANTY OF ANY KIND.
- * NVIDIA DISCLAIMS ALL WARRANTIES WITH REGARD TO THESE LICENSED
- * DELIVERABLES, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY,
- * NONINFRINGEMENT, AND FITNESS FOR A PARTICULAR PURPOSE.
- * NOTWITHSTANDING ANY TERMS OR CONDITIONS TO THE CONTRARY IN THE
- * LICENSE AGREEMENT, IN NO EVENT SHALL NVIDIA BE LIABLE FOR ANY
- * SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, OR ANY
- * DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
- * WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS
- * ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
- * OF THESE LICENSED DELIVERABLES.
- *
- * U.S. Government End Users.  These Licensed Deliverables are a
- * "commercial item" as that term is defined at 48 C.F.R. 2.101 (OCT
- * 1995), consisting of "commercial computer software" and "commercial
- * computer software documentation" as such terms are used in 48
- * C.F.R. 12.212 (SEPT 1995) and is provided to the U.S. Government
- * only as a commercial end item.  Consistent with 48 C.F.R.12.212 and
- * 48 C.F.R. 227.7202-1 through 227.7202-4 (JUNE 1995), all
- * U.S. Government End Users acquire the Licensed Deliverables with
- * only those rights set forth herein.
- *
- * Any use of the Licensed Deliverables in individual and commercial
- * software must include, in the user documentation and internal
- * comments to the code, the above Disclaimer and U.S. Government End
- * Users Notice.
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+
+#ifndef RUNTIME_INCLUDE_CUDA_RUNTIME_H
+#define RUNTIME_INCLUDE_CUDA_RUNTIME_H
 
 #if !defined(__CUDA_RUNTIME_H__)
 #define __CUDA_RUNTIME_H__
@@ -89,6 +62,9 @@
 *                                                                              *
 *******************************************************************************/
 
+namespace
+{
+
 /**
  * \addtogroup CUDART_HIGHLEVEL
  * @{
@@ -123,7 +99,7 @@ __inline__ __host__ cudaError_t cudaSetupArgument(
   size_t offset
 )
 {
-  return cudaSetupArgument((const void*)&arg, sizeof(T), offset);
+  return ::cudaSetupArgument((const void*)&arg, sizeof(T), offset);
 }
 
 /**
@@ -161,7 +137,7 @@ static __inline__ __host__ cudaError_t cudaEventCreate(
   unsigned int  flags
 )
 {
-  return cudaEventCreateWithFlags(event, flags);
+  return ::cudaEventCreateWithFlags(event, flags);
 }
 
 /**
@@ -219,13 +195,13 @@ static __inline__ __host__ cudaError_t cudaEventCreate(
  * \ref ::cudaMallocHost(void**, size_t) "cudaMallocHost (C API)",
  * ::cudaFreeHost, ::cudaHostAlloc
  */
-static __inline__ __host__ cudaError_t cudaMallocHost(
+__inline__ __host__ cudaError_t cudaMallocHost(
   void         **ptr,
   size_t         size,
   unsigned int   flags
 )
 {
-  return cudaHostAlloc(ptr, size, flags);
+  return ::cudaHostAlloc(ptr, size, flags);
 }
 
 template<class T>
@@ -235,7 +211,7 @@ __inline__ __host__ cudaError_t cudaHostAlloc(
   unsigned int   flags
 )
 {
-  return cudaHostAlloc((void**)(void*)ptr, size, flags);
+  return ::cudaHostAlloc((void**)(void*)ptr, size, flags);
 }
 
 template<class T>
@@ -245,7 +221,7 @@ __inline__ __host__ cudaError_t cudaHostGetDevicePointer(
   unsigned int   flags
 )
 {
-  return cudaHostGetDevicePointer((void**)(void*)pDevice, pHost, flags);
+  return ::cudaHostGetDevicePointer((void**)(void*)pDevice, pHost, flags);
 }
 
 template<class T>
@@ -254,7 +230,7 @@ __inline__ __host__ cudaError_t cudaMalloc(
   size_t   size
 )
 {
-  return cudaMalloc((void**)(void*)devPtr, size);
+  return ::cudaMalloc((void**)(void*)devPtr, size);
 }
 
 template<class T>
@@ -275,7 +251,7 @@ __inline__ __host__ cudaError_t cudaMallocPitch(
   size_t   height
 )
 {
-  return cudaMallocPitch((void**)(void*)devPtr, pitch, width, height);
+  return ::cudaMallocPitch((void**)(void*)devPtr, pitch, width, height);
 }
 
 #if defined(__CUDACC__)
@@ -322,7 +298,7 @@ __inline__ __host__ cudaError_t cudaMemcpyToSymbol(
         enum cudaMemcpyKind  kind   = cudaMemcpyHostToDevice
 )
 {
-  return cudaMemcpyToSymbol((const void*)&symbol, src, count, offset, kind);
+  return ::cudaMemcpyToSymbol((const void*)&symbol, src, count, offset, kind);
 }
 
 /**
@@ -375,7 +351,7 @@ __inline__ __host__ cudaError_t cudaMemcpyToSymbolAsync(
         cudaStream_t         stream = 0
 )
 {
-  return cudaMemcpyToSymbolAsync((const void*)&symbol, src, count, offset, kind, stream);
+  return ::cudaMemcpyToSymbolAsync((const void*)&symbol, src, count, offset, kind, stream);
 }
 
 /**
@@ -420,7 +396,7 @@ __inline__ __host__ cudaError_t cudaMemcpyFromSymbol(
         enum cudaMemcpyKind  kind   = cudaMemcpyDeviceToHost
 )
 {
-  return cudaMemcpyFromSymbol(dst, (const void*)&symbol, count, offset, kind);
+  return ::cudaMemcpyFromSymbol(dst, (const void*)&symbol, count, offset, kind);
 }
 
 /**
@@ -473,7 +449,7 @@ __inline__ __host__ cudaError_t cudaMemcpyFromSymbolAsync(
         cudaStream_t         stream = 0
 )
 {
-  return cudaMemcpyFromSymbolAsync(dst, (const void*)&symbol, count, offset, kind, stream);
+  return ::cudaMemcpyFromSymbolAsync(dst, (const void*)&symbol, count, offset, kind, stream);
 }
 
 /**
@@ -502,7 +478,7 @@ __inline__ __host__ cudaError_t cudaGetSymbolAddress(
   const T     &symbol
 )
 {
-  return cudaGetSymbolAddress(devPtr, (const void*)&symbol);
+  return ::cudaGetSymbolAddress(devPtr, (const void*)&symbol);
 }
 
 /**
@@ -531,7 +507,7 @@ __inline__ __host__ cudaError_t cudaGetSymbolSize(
   const T      &symbol
 )
 {
-  return cudaGetSymbolSize(size, (const void*)&symbol);
+  return ::cudaGetSymbolSize(size, (const void*)&symbol);
 }
 
 /**
@@ -577,7 +553,7 @@ __inline__ __host__ cudaError_t cudaBindTexture(
         size_t                            size = UINT_MAX
 )
 {
-  return cudaBindTexture(offset, &tex, devPtr, &desc, size);
+  return ::cudaBindTexture(offset, &tex, devPtr, &desc, size);
 }
 
 /**
@@ -680,7 +656,7 @@ __inline__ __host__ cudaError_t cudaBindTexture2D(
   size_t                                  pitch
 )
 {
-  return cudaBindTexture2D(offset, &tex, devPtr, &desc, width, height, pitch);
+  return ::cudaBindTexture2D(offset, &tex, devPtr, &desc, width, height, pitch);
 }
 
 /**
@@ -737,7 +713,7 @@ __inline__ __host__ cudaError_t cudaBindTexture2D(
   size_t                                  pitch
 )
 {
-  return cudaBindTexture2D(offset, &tex, devPtr, &tex.channelDesc, width, height, pitch);
+  return ::cudaBindTexture2D(offset, &tex, devPtr, &tex.channelDesc, width, height, pitch);
 }
 
 /**
@@ -776,7 +752,7 @@ __inline__ __host__ cudaError_t cudaBindTextureToArray(
   const struct cudaChannelFormatDesc     &desc
 )
 {
-  return cudaBindTextureToArray(&tex, array, &desc);
+  return ::cudaBindTextureToArray(&tex, array, &desc);
 }
 
 /**
@@ -814,7 +790,7 @@ __inline__ __host__ cudaError_t cudaBindTextureToArray(
 )
 {
   struct cudaChannelFormatDesc desc;
-  cudaError_t                  err = cudaGetChannelDesc(&desc, array);
+  cudaError_t                  err = ::cudaGetChannelDesc(&desc, array);
 
   return err == cudaSuccess ? cudaBindTextureToArray(tex, array, desc) : err;
 }
@@ -855,7 +831,7 @@ __inline__ __host__ cudaError_t cudaBindTextureToMipmappedArray(
   const struct cudaChannelFormatDesc     &desc
 )
 {
-  return cudaBindTextureToMipmappedArray(&tex, mipmappedArray, &desc);
+  return ::cudaBindTextureToMipmappedArray(&tex, mipmappedArray, &desc);
 }
 
 /**
@@ -894,12 +870,12 @@ __inline__ __host__ cudaError_t cudaBindTextureToMipmappedArray(
 {
   struct cudaChannelFormatDesc desc;
   cudaArray_t                  levelArray;
-  cudaError_t                  err = cudaGetMipmappedArrayLevel(&levelArray, mipmappedArray, 0);
+  cudaError_t                  err = ::cudaGetMipmappedArrayLevel(&levelArray, mipmappedArray, 0);
   
   if (err != cudaSuccess) {
       return err;
   }
-  err = cudaGetChannelDesc(&desc, levelArray);
+  err = ::cudaGetChannelDesc(&desc, levelArray);
 
   return err == cudaSuccess ? cudaBindTextureToMipmappedArray(tex, mipmappedArray, desc) : err;
 }
@@ -930,7 +906,7 @@ __inline__ __host__ cudaError_t cudaUnbindTexture(
   const struct texture<T, dim, readMode> &tex
 )
 {
-  return cudaUnbindTexture(&tex);
+  return ::cudaUnbindTexture(&tex);
 }
 
 /**
@@ -965,7 +941,7 @@ __inline__ __host__ cudaError_t cudaGetTextureAlignmentOffset(
   const struct texture<T, dim, readMode> &tex
 )
 {
-  return cudaGetTextureAlignmentOffset(offset, &tex);
+  return ::cudaGetTextureAlignmentOffset(offset, &tex);
 }
 
 /**
@@ -1018,7 +994,7 @@ __inline__ __host__ cudaError_t cudaFuncSetCacheConfig(
   enum cudaFuncCache  cacheConfig
 )
 {
-  return cudaFuncSetCacheConfig((const void*)func, cacheConfig);
+  return ::cudaFuncSetCacheConfig((const void*)func, cacheConfig);
 }
 
 template<class T>
@@ -1027,7 +1003,7 @@ __inline__ __host__ cudaError_t cudaFuncSetSharedMemConfig(
   enum cudaSharedMemConfig  config
 )
 {
-  return cudaFuncSetSharedMemConfig((const void*)func, config);
+  return ::cudaFuncSetSharedMemConfig((const void*)func, config);
 }
 
 /**
@@ -1069,7 +1045,7 @@ __inline__ __host__ cudaError_t cudaLaunch(
   T *func
 )
 {
-  return cudaLaunch((const void*)func);
+  return ::cudaLaunch((const void*)func);
 }
 
 /**
@@ -1108,7 +1084,7 @@ __inline__ __host__ cudaError_t cudaFuncGetAttributes(
   T                         *entry
 )
 {
-  return cudaFuncGetAttributes(attr, (const void*)entry);
+  return ::cudaFuncGetAttributes(attr, (const void*)entry);
 }
 
 /**
@@ -1138,7 +1114,7 @@ __inline__ __host__ cudaError_t cudaBindSurfaceToArray(
   const struct cudaChannelFormatDesc &desc
 )
 {
-  return cudaBindSurfaceToArray(&surf, array, &desc);
+  return ::cudaBindSurfaceToArray(&surf, array, &desc);
 }
 
 /**
@@ -1167,7 +1143,7 @@ __inline__ __host__ cudaError_t cudaBindSurfaceToArray(
 )
 {
   struct cudaChannelFormatDesc desc;
-  cudaError_t                  err = cudaGetChannelDesc(&desc, array);
+  cudaError_t                  err = ::cudaGetChannelDesc(&desc, array);
 
   return err == cudaSuccess ? cudaBindSurfaceToArray(surf, array, desc) : err;
 }
@@ -1176,6 +1152,11 @@ __inline__ __host__ cudaError_t cudaBindSurfaceToArray(
 
 /** @} */ /* END CUDART_HIGHLEVEL */
 
+} // namespace anonymous
+
 #endif /* __cplusplus */
 
 #endif /* !__CUDA_RUNTIME_H__ */
+
+#endif
+

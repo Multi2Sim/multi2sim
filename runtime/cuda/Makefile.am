@@ -28,6 +28,9 @@ __top_builddir__lib_libm2s_cuda_la_SOURCES = \
 	device.c \
 	device.h \
 	\
+	event.c \
+	event.h \
+	\
 	function.c \
 	function.h \
 	\
