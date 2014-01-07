@@ -93,7 +93,7 @@ static void opencl_si_program_initialize_constant_buffers(
 	 * know they should be enumerated, starting with '2'.  This loop
 	 * searches until a constant buffer matching the format is not 
 	 * found. */
-	for (i = 2; i < SI_EMU_MAX_CONST_BUFS; i++) 
+	for (i = 2; i < SI_EMU_MAX_CONST_BUFS; i++)
 	{
 		/* Create string of symbol name */
 		sprintf(symbol_name, "__OpenCL_%d_global", i);

@@ -229,6 +229,7 @@ class Emu
 	// Associated disassembler
 	Asm *as;
 
+	// Associated drivers
 	OpenCLDriver *opencl_driver;
 	OpenGLDriver *opengl_driver;
 
@@ -292,6 +293,9 @@ public:
 
 	/// Run one iteration of the emulation loop
 	void Run();
+
+	/// Increase video memory top
+	void IncVideoMemTop(unsigned inc) { video_mem_top += inc; }
 };
 
 

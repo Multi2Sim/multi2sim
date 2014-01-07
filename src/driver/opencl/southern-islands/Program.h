@@ -21,13 +21,19 @@
 #define DRIVER_OPENCL_SI_PROGRAM_H
 
 #include <memory>
+#include <driver/opencl/OpenCLDriver.h> 
 #include <src/lib/cpp/ELFReader.h>
+
+
+// Forward declaration
+namespace Driver
+{
+	class OpenCLDriver;
+}  // namespace Driver
 
 namespace SI
 {
 
-class OpenCLDriver;
-	
 class ConstantBuffer
 {
 	// Constant buffer ID (2-24)
@@ -47,7 +53,7 @@ class Program
 	int id;
 
 	// Opencl driver it belongs to
-	OpenCLDriver *driver;
+	Driver::OpenCLDriver *driver;
 
 	// ELF binary
 	std::unique_ptr<ELFReader::File> elf_file;
@@ -59,7 +65,7 @@ class Program
 	void InitializeConstantBuffers();
 
 public:
-	Program(int id, OpenCLDriver *driver);
+	Program(int id, Driver::OpenCLDriver *driver);
 
 	void SetBinary(const char *buf, unsigned int size);
 

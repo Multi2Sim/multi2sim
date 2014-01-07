@@ -28,7 +28,7 @@ std::unique_ptr<OpenCLDriver> OpenCLDriver::instance;
 
 OpenCLDriver::OpenCLDriver()
 {
-	// Obtain instance of SI emulator
+	// Obtain instance of emulators
 	// si_emu = SI::Emu::getInstance();
 	x86_emu = x86::Emu::getInstance();
 }

@@ -25,12 +25,11 @@
 
 #include <src/arch/southern-islands/asm/Arg.h>
 
-#include "Program.h"
-
 namespace SI
 {
 
 class NDRange;
+class Program;
 
 class Kernel
 {
