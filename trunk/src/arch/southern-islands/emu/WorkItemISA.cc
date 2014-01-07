@@ -35,22 +35,22 @@ namespace SI
 {
 
 // Macros for instruction format interpretation
-#define INST_SMRD  inst->getBytes()->smrd
-#define INST_SOPP  inst->getBytes()->sopp
-#define INST_SOPK  inst->getBytes()->sopk
-#define INST_SOPC  inst->getBytes()->sopc
-#define INST_SOP1  inst->getBytes()->sop1
-#define INST_SOP2  inst->getBytes()->sop2
-#define INST_VOP1  inst->getBytes()->vop1
-#define INST_VOP2  inst->getBytes()->vop2
-#define INST_VOPC  inst->getBytes()->vopc
+#define INST_SMRD   inst->getBytes()->smrd
+#define INST_SOPP   inst->getBytes()->sopp
+#define INST_SOPK   inst->getBytes()->sopk
+#define INST_SOPC   inst->getBytes()->sopc
+#define INST_SOP1   inst->getBytes()->sop1
+#define INST_SOP2   inst->getBytes()->sop2
+#define INST_VOP1   inst->getBytes()->vop1
+#define INST_VOP2   inst->getBytes()->vop2
+#define INST_VOPC   inst->getBytes()->vopc
 #define INST_VOP3b  inst->getBytes()->vop3b
 #define INST_VOP3a  inst->getBytes()->vop3a
-#define INST_VINTRP  inst->getBytes()->vintrp
-#define INST_DS  inst->getBytes()->ds
+#define INST_VINTRP inst->getBytes()->vintrp
+#define INST_DS     inst->getBytes()->ds
 #define INST_MTBUF  inst->getBytes()->mtbuf
 #define INST_MUBUF  inst->getBytes()->mubuf
-#define INST_EXP  inst->getBytes()->exp
+#define INST_EXP    inst->getBytes()->exp
 
 
 /*
