@@ -18,6 +18,7 @@
  */
 
 #include <src/driver/opencl/ABI.h>
+#include <src/driver/opencl/OpenCLDriver.h>
 
 #include "ABI.h"
 
@@ -26,6 +27,8 @@ namespace SI
 
 int OpenCLABIMemAllocImpl()
 {
+	// Driver::OpenCLDriver *driver = Driver::OpenCLDriver::getInstance();
+	
 	// Return
 	return 0;
 }

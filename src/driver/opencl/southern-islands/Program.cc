@@ -19,14 +19,16 @@
 
  
 #include <string.h>
-#include <src/lib/cpp/ELFReader.h>
+#include <lib/cpp/ELFReader.h>
+#include <lib/cpp/String.h>
+
 #include "Program.h"
 
+using namespace misc;
 using namespace ELFReader;
 
 namespace SI
 {
-
 
 /* 
  * Class ConstantBuffer 
@@ -52,11 +54,43 @@ ConstantBuffer::~ConstantBuffer()
 
 void Program::InitializeConstantBuffers()
 {
+	ELFReader::Symbol *symbol;
+	std::string symbol_name;
 
+	assert(elf_file);
+
+	/* Constant buffers encoded in ELF file */
+	for (int i = 0; i < EmuMaxNumConstBufs; i++) 
+		constant_buffers.push_back(nullptr);
+
+	/* We can't tell how many constant buffers exist in advance, but we
+	 * know they should be enumerated, starting with '2'.  This loop
+	 * searches until a constant buffer matching the format is not 
+	 * found. */
+	for (int i = 2; i < EmuMaxNumConstBufs; i++) 
+	{
+		/* Create string of symbol name */
+		symbol_name = misc::StringFmt("__OpenCL_%d_global", i);
+
+		/* Check to see if symbol exists */
+		symbol = elf_file->getSymbol(symbol_name);
+		if (!symbol)
+			break;
+
+		/* Read the elf symbol into a buffer */
+		Emu::debug << StringFmt("\tconstant buffer '%s' found with size %d\n",
+			symbol->getName().c_str(), symbol->getSize());
+
+		/* Create buffer and add constant buffer to list */
+		constant_buffers[i] = std::unique_ptr<ConstantBuffer>(new ConstantBuffer(i, symbol->getSize(), symbol->getBuffer()));
+		
+		/* Increase video memory top */
+		driver->getEmuGpu()->IncVideoMemTop(symbol->getSize());
+	}
 }
 
 
-Program::Program(int id, OpenCLDriver *driver)
+Program::Program(int id, Driver::OpenCLDriver *driver)
 {
 	this->id = id;
 	this->driver = driver;
@@ -64,7 +98,7 @@ Program::Program(int id, OpenCLDriver *driver)
 
 void Program::SetBinary(const char *buf, unsigned int size)
 {
-	elf_file = std::unique_ptr<ELFReader::File>(new File(buf, size));
+	elf_file = std::unique_ptr<File>(new File(buf, size));
 
 	InitializeConstantBuffers();
 }

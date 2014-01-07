@@ -50,8 +50,9 @@ class OpenCLDriver
 	OpenCLDriver();
 
 	// Device emulators
-	const SI::Emu *si_emu;
-	const x86::Emu *x86_emu;
+	SI::Emu *si_emu;
+	x86::Emu *x86_emu;
+	bool fused;
 
 	// Device timing simulators
 	// SI::Gpu *gpu;
@@ -68,6 +69,9 @@ public:
 	/// exist yet, it will be created, and will remain allocated until the
 	/// end of the execution.
 	static OpenCLDriver *getInstance();
+
+	/// Getters
+	SI::Emu *getEmuGpu() const { return si_emu; }
 
 	/// This function is called when all work groups from an ND-Range have
 	/// been scheduled (i.e., ndrange->waiting_work_groups is empty)
