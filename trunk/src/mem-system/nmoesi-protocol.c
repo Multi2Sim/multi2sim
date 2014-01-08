@@ -288,8 +288,9 @@ void mod_handler_nmoesi_load(int event, void *data)
 		dir_entry_unlock(mod->dir, stack->set, stack->way);
 
 		/* Impose the access latency before continuing */
+		mod->data_accesses++;
 		esim_schedule_event(EV_MOD_NMOESI_LOAD_FINISH, stack, 
-			mod->latency);
+			mod->data_latency);
 		return;
 	}
 
@@ -473,8 +474,9 @@ void mod_handler_nmoesi_store(int event, void *data)
 		dir_entry_unlock(mod->dir, stack->set, stack->way);
 
 		/* Impose the access latency before continuing */
+		mod->data_accesses++;
 		esim_schedule_event(EV_MOD_NMOESI_STORE_FINISH, stack, 
-			mod->latency);
+			mod->data_latency);
 		return;
 	}
 
@@ -729,8 +731,9 @@ void mod_handler_nmoesi_nc_store(int event, void *data)
 		dir_entry_unlock(mod->dir, stack->set, stack->way);
 
 		/* Impose the access latency before continuing */
+		mod->data_accesses++;
 		esim_schedule_event(EV_MOD_NMOESI_NC_STORE_FINISH, stack, 
-			mod->latency);
+			mod->data_latency);
 		return;
 	}
 
@@ -1237,6 +1240,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 		cache_access_block(mod->cache, stack->set, stack->way);
 
 		/* Access latency */
+		mod->dir_accesses++;
 		esim_schedule_event(EV_MOD_NMOESI_FIND_AND_LOCK_ACTION, stack, 
 			mod->dir_latency);
 		return;
@@ -1564,8 +1568,9 @@ void mod_handler_nmoesi_evict(int event, void *data)
 		dir = target_mod->dir;
 		dir_entry_unlock(dir, stack->set, stack->way);
 
+		target_mod->data_accesses++;
 		esim_schedule_event(EV_MOD_NMOESI_EVICT_REPLY, stack, 
-			target_mod->latency);
+			target_mod->data_latency);
 		return;
 	}
 
@@ -1642,7 +1647,9 @@ void mod_handler_nmoesi_evict(int event, void *data)
 		dir = target_mod->dir;
 		dir_entry_unlock(dir, stack->set, stack->way);
 
-		esim_schedule_event(EV_MOD_NMOESI_EVICT_REPLY, stack, target_mod->latency);
+		target_mod->data_accesses++;
+		esim_schedule_event(EV_MOD_NMOESI_EVICT_REPLY, stack, 
+			target_mod->data_latency);
 		return;
 	}
 
@@ -2018,8 +2025,17 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 
 		dir_entry_unlock(dir, stack->set, stack->way);
 
-		int latency = stack->reply == reply_ack_data_sent_to_peer ? 0 : target_mod->latency;
-		esim_schedule_event(EV_MOD_NMOESI_READ_REQUEST_REPLY, stack, latency);
+		if (stack->reply == reply_ack_data_sent_to_peer)
+		{
+			esim_schedule_event(EV_MOD_NMOESI_READ_REQUEST_REPLY, 
+				stack, 0);
+		}
+		else
+		{
+			target_mod->data_accesses++;
+			esim_schedule_event(EV_MOD_NMOESI_READ_REQUEST_REPLY, 
+				stack, target_mod->data_latency);
+		}
 		return;
 	}
 
@@ -2271,8 +2287,17 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 
 		dir_entry_unlock(target_mod->dir, stack->set, stack->way);
 
-		int latency = stack->reply == reply_ack_data_sent_to_peer ? 0 : target_mod->latency;
-		esim_schedule_event(EV_MOD_NMOESI_READ_REQUEST_REPLY, stack, latency);
+		if (stack->reply == reply_ack_data_sent_to_peer)
+		{
+			esim_schedule_event(EV_MOD_NMOESI_READ_REQUEST_REPLY, 
+				stack, 0);
+		}
+		else
+		{
+			target_mod->data_accesses++;
+			esim_schedule_event(EV_MOD_NMOESI_READ_REQUEST_REPLY, 
+				stack, target_mod->data_latency);
+		}
 		return;
 	}
 
@@ -2572,8 +2597,17 @@ void mod_handler_nmoesi_write_request(int event, void *data)
 		/* Unlock, reply_size is the data of the size of the requester's block. */
 		dir_entry_unlock(target_mod->dir, stack->set, stack->way);
 
-		int latency = stack->reply == reply_ack_data_sent_to_peer ? 0 : target_mod->latency;
-		esim_schedule_event(EV_MOD_NMOESI_WRITE_REQUEST_REPLY, stack, latency);
+		if (stack->reply == reply_ack_data_sent_to_peer)
+		{
+			esim_schedule_event(EV_MOD_NMOESI_WRITE_REQUEST_REPLY,
+				stack, 0);
+		}
+		else
+		{
+			target_mod->data_accesses++;
+			esim_schedule_event(EV_MOD_NMOESI_WRITE_REQUEST_REPLY,
+				stack, target_mod->data_latency);
+		}
 		return;
 	}
 
@@ -2653,8 +2687,18 @@ void mod_handler_nmoesi_write_request(int event, void *data)
 		cache_set_block(target_mod->cache, stack->set, stack->way, 0, cache_block_invalid);
 		dir_entry_unlock(target_mod->dir, stack->set, stack->way);
 
-		int latency = ret->reply == reply_ack_data_sent_to_peer ? 0 : target_mod->latency;
-		esim_schedule_event(EV_MOD_NMOESI_WRITE_REQUEST_REPLY, stack, latency);
+		if (ret->reply == reply_ack_data_sent_to_peer)
+		{
+			esim_schedule_event(EV_MOD_NMOESI_WRITE_REQUEST_REPLY,
+				stack, 0);
+		}
+		else
+		{
+			target_mod->data_accesses++;
+			esim_schedule_event(EV_MOD_NMOESI_WRITE_REQUEST_REPLY,
+				stack, target_mod->data_latency);
+		}
+
 		return;
 	}
 

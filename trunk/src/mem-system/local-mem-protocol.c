@@ -301,7 +301,7 @@ void mod_handler_local_mem_find_and_lock(int event, void *data)
 		}
 
 		/* Access latency */
-		esim_schedule_event(EV_MOD_LOCAL_MEM_FIND_AND_LOCK_ACTION, stack, mod->latency);
+		esim_schedule_event(EV_MOD_LOCAL_MEM_FIND_AND_LOCK_ACTION, stack, mod->data_latency);
 		return;
 	}
 

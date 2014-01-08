@@ -61,7 +61,7 @@ struct mod_t *mod_create(char *name, enum mod_kind_t kind, int num_ports,
 	mod = xcalloc(1, sizeof(struct mod_t));
 	mod->name = xstrdup(name);
 	mod->kind = kind;
-	mod->latency = latency;
+	mod->data_latency = latency;
 
 	/* Ports */
 	mod->num_ports = num_ports;
@@ -549,7 +549,7 @@ struct mod_t *mod_get_low_mod(struct mod_t *mod, unsigned int addr)
 
 int mod_get_retry_latency(struct mod_t *mod)
 {
-	return random() % mod->latency + mod->latency;
+	return random() % mod->data_latency + mod->data_latency;
 }
 
 
