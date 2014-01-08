@@ -67,7 +67,18 @@ class Program
 public:
 	Program(int id, Driver::OpenCLDriver *driver);
 
+	/// Load ELF binary into program object
+	///
+	/// \param buf Buffer containing OpenCL ELF program binary
+	/// \param size Size of buffer
 	void SetBinary(const char *buf, unsigned int size);
+
+
+	/// Getters
+	///
+	/// Get the symbol in the Program ELF file by symbol name
+	/// \param name Name of the symbol
+	ELFReader::Symbol *getSymbol(std::string name) const { return elf_file->getSymbol(name); };
 
 };
 
