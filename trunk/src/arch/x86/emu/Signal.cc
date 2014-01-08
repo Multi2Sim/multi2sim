@@ -63,15 +63,15 @@ const StringMap signal_map =
 
 const StringMap signal_handler_flags_map =
 {
-	{ "SA_NOCLDSTOP",    0x00000001u },
-	{ "SA_NOCLDWAIT",    0x00000002u },
-	{ "SA_SIGINFO",      0x00000004u },
-	{ "SA_ONSTACK",      0x08000000u },
-	{ "SA_RESTART",      0x10000000u },
-	{ "SA_NODEFER",      0x40000000u },
-	{ "SA_RESETHAND",    0x80000000u },
-	{ "SA_INTERRUPT",    0x20000000u },
-	{ "SA_RESTORER",     0x04000000u }
+	{ "SA_NOCLDSTOP",       0x00000001u },
+	{ "SA_NOCLDWAIT",       0x00000002u },
+	{ "SA_SIGINFO",         0x00000004u },
+	{ "SA_ONSTACK",         0x08000000u },
+	{ "SA_RESTART",         0x10000000u },
+	{ "SA_NODEFER",         0x40000000u },
+	{ "SA_RESETHAND", (int) 0x80000000u },
+	{ "SA_INTERRUPT",       0x20000000u },
+	{ "SA_RESTORER",        0x04000000u }
 };
 
 
