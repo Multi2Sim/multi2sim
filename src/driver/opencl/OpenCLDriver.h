@@ -65,6 +65,9 @@ class OpenCLDriver
 
 public:
 
+	/// Debugger
+	static misc::Debug debug;
+
 	/// Get the only instance of the OpenCL Driver. If the instance does not
 	/// exist yet, it will be created, and will remain allocated until the
 	/// end of the execution.

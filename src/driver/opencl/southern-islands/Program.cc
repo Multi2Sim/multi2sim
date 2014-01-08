@@ -78,7 +78,7 @@ void Program::InitializeConstantBuffers()
 			break;
 
 		/* Read the elf symbol into a buffer */
-		Emu::debug << StringFmt("\tconstant buffer '%s' found with size %d\n",
+		Driver::OpenCLDriver::debug << StringFmt("\tconstant buffer '%s' found with size %d\n",
 			symbol->getName().c_str(), symbol->getSize());
 
 		/* Create buffer and add constant buffer to list */

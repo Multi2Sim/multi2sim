@@ -24,6 +24,7 @@
 #include <string>
 
 #include <src/arch/southern-islands/asm/Arg.h>
+#include <src/arch/southern-islands/asm/Binary.h>
 
 namespace SI
 {
@@ -43,8 +44,16 @@ class Kernel
 	// Program it belongs to
 	Program *program;
 
+	// Excerpts of program binary
+	ELFReader::Symbol *metadata_symbol;
+	ELFReader::Symbol *header_symbol;
+	ELFReader::Symbol *kernel_symbol;
+
 	// List of kernel arguments
 	std::vector<std::unique_ptr<SI::Arg>> args;
+
+	// AMD kernel binary (internal ELF)
+	std::unique_ptr<SI::Binary> bin_file;
 
 	// Memory requirements 
 	int mem_size_local;
