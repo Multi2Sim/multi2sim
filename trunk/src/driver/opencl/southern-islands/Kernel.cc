@@ -63,7 +63,7 @@ void Kernel::ExpectCount(std::vector<std::string> &token_list, unsigned count)
 	if (token_list.size() != count)
 	{
 		misc::fatal("%s: %d tokens expected for '%s', %d found.\n%s",
-				__FUNCTION__, count, head_token.c_str(), token_list.size(),
+				__FUNCTION__, count, head_token.c_str(), (unsigned)token_list.size(),
 				OpenCLErrSIKernelMetadata);
 	}
 }
