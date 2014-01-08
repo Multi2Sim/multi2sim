@@ -7225,7 +7225,7 @@ void WorkItem::ISA_BUFFER_ATOMIC_ADD_Impl(Inst *inst)
 	value.as_int += prev_value.as_int;
 	global_mem->Write(addr, bytes_to_write, (char *)&value);
 	
-	// If glc bit set, retturn the previous value in a register
+	// If glc bit set, return the previous value in a register
 	if (INST.glc)
 	{
 		WriteVReg(INST.vdata, prev_value.as_uint);

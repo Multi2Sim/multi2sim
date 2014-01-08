@@ -28,6 +28,7 @@
 namespace SI
 {
 
+// Forward declaration
 class NDRange;
 class Program;
 
@@ -40,7 +41,7 @@ class Kernel
 	std::string name;
 
 	// Program it belongs to
-	const Program *program;
+	Program *program;
 
 	// List of kernel arguments
 	std::vector<std::unique_ptr<SI::Arg>> args;
@@ -56,14 +57,14 @@ class Kernel
 
 	void ExpectInt(std::vector<std::string> &token_list);
 
-	void ExpectCount(std::vector<std::string> &token_list);
+	void ExpectCount(std::vector<std::string> &token_list, unsigned count);
 
 	void LoadMetaDataV3();
 
 	void LoadMetaData();
 
 public:
-	Kernel(int id, std::string name);
+	Kernel(int id, std::string name, Program *program);
 
 	///
 	void SetupNDRangeConstantBuffers(NDRange *ndrange);
