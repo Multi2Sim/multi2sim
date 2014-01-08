@@ -88,7 +88,7 @@ struct mod_t
 	char *name;
 	int block_size;
 	int log_block_size;
-	int latency;
+	int data_latency;
 	int dir_latency;
 	int mshr_size;
 
@@ -244,6 +244,10 @@ struct mod_t
 	/* FIXME Update the local memory protocol and remove these */
 	long long effective_reads;
 	long long effective_writes;
+
+	/* Statistics that are possibly power related */
+	long long dir_accesses;
+	long long data_accesses;
 };
 
 struct mod_t *mod_create(char *name, enum mod_kind_t kind, int num_ports,

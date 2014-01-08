@@ -376,7 +376,7 @@ void mem_system_dump_report(void)
 				&cache_policy_map, cache->policy));
 		}
 		fprintf(f, "BlockSize = %d\n", mod->block_size);
-		fprintf(f, "Latency = %d\n", mod->latency);
+		fprintf(f, "Latency = %d\n", mod->data_latency);
 		fprintf(f, "Ports = %d\n", mod->num_ports);
 		fprintf(f, "\n");
 
@@ -471,6 +471,11 @@ void mem_system_dump_report(void)
 		fprintf(f, "ConflictInvalidations = %lld\n", 
 			mod->conflict_invalidations);
 		fprintf(f, "OtherTraffic = %lld\n", mod->other_traffic);
+		/*
+		fprintf(f, "\n");
+		fprintf(f, "DirectoryAccesses = %lld\n", mod->dir_accesses);
+		fprintf(f, "DataAccesses = %lld\n", mod->data_accesses);
+		*/
 		fprintf(f, "\n\n");
 	}
 
