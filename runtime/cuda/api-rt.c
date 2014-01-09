@@ -18,7 +18,6 @@
  */
 
 #include <assert.h>
-#include <elf.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -312,7 +311,37 @@ cudaError_t cudaDeviceGetCacheConfig(enum cudaFuncCache *pCacheConfig)
 	return cudaSuccess;
 }
 
+cudaError_t cudaDeviceGetStreamPriorityRange(int *leastPriority, int *greatestPriority)
+{
+	__CUDART_NOT_IMPL__;
+	return cudaSuccess;
+}
+
 cudaError_t cudaDeviceSetCacheConfig(enum cudaFuncCache cacheConfig)
+{
+	__CUDART_NOT_IMPL__;
+	return cudaSuccess;
+}
+
+cudaError_t cudaDeviceGetSharedMemConfig(enum cudaSharedMemConfig *pConfig)
+{
+	__CUDART_NOT_IMPL__;
+	return cudaSuccess;
+}
+
+cudaError_t cudaDeviceSetSharedMemConfig(enum cudaSharedMemConfig config)
+{
+	__CUDART_NOT_IMPL__;
+	return cudaSuccess;
+}
+
+cudaError_t cudaDeviceGetByPCIBusId(int *device, char *pciBusId)
+{
+	__CUDART_NOT_IMPL__;
+	return cudaSuccess;
+}
+
+cudaError_t cudaDeviceGetPCIBusId(char *pciBusId, int len, int device)
 {
 	__CUDART_NOT_IMPL__;
 	return cudaSuccess;
@@ -607,6 +636,12 @@ cudaError_t cudaGetDeviceProperties(struct cudaDeviceProp *prop_ptr, int device)
 	return cudaSuccess;
 }
 
+cudaError_t cudaDeviceGetAttribute(int *value, enum cudaDeviceAttr attr, int device)
+{
+	__CUDART_NOT_IMPL__;
+	return cudaSuccess;
+}
+
 cudaError_t cudaChooseDevice(int *device, const struct cudaDeviceProp *prop)
 {
 	__CUDART_NOT_IMPL__;
@@ -619,17 +654,17 @@ cudaError_t cudaSetDevice(int device)
 	return cudaSuccess;
 }
 
-cudaError_t cudaGetDevice(int *device_ptr)
+cudaError_t cudaGetDevice(int *device)
 {
 	/* Check valid device pointer */
-	if (!device_ptr)
+	if (!device)
 		fatal("%s: invalid device pointer.\n%s", __func__,
 				cuda_rt_err_param_note);
 
 	/* We allow temporarily for only the Fermi device. We assigned a
 	 * hardcoded device identifier equal to 0 (Fermi). This function will be
 	 * extended later with support to Kepler. */
-	*device_ptr = 0;
+	*device = 0;
 
 	return cudaSuccess;
 }
@@ -647,6 +682,30 @@ cudaError_t cudaSetDeviceFlags( unsigned int flags )
 }
 
 cudaError_t cudaStreamCreate(cudaStream_t *pStream)
+{
+	__CUDART_NOT_IMPL__;
+	return cudaSuccess;
+}
+
+cudaError_t cudaStreamCreateWithFlags(cudaStream_t *pStream, unsigned int flags)
+{
+	__CUDART_NOT_IMPL__;
+	return cudaSuccess;
+}
+
+cudaError_t cudaStreamCreateWithPriority(cudaStream_t *pStream, unsigned int flags, int priority)
+{
+	__CUDART_NOT_IMPL__;
+	return cudaSuccess;
+}
+
+cudaError_t cudaStreamGetPriority(cudaStream_t hStream, int *priority)
+{
+	__CUDART_NOT_IMPL__;
+	return cudaSuccess;
+}
+
+cudaError_t cudaStreamGetFlags(cudaStream_t hStream, unsigned int *flags)
 {
 	__CUDART_NOT_IMPL__;
 	return cudaSuccess;
@@ -825,6 +884,12 @@ cudaError_t cudaFuncSetCacheConfig(const void *func,
 	return cudaSuccess;
 }
 
+cudaError_t cudaFuncSetSharedMemConfig(const void *func, enum cudaSharedMemConfig config)
+{
+	__CUDART_NOT_IMPL__;
+	return cudaSuccess;
+}
+
 cudaError_t cudaLaunch(const void *func)
 {
 	CUfunction function;
@@ -948,7 +1013,7 @@ cudaError_t cudaMallocPitch(void **devPtr,
 	return cudaSuccess;
 }
 
-cudaError_t cudaMallocArray(struct cudaArray **array, 
+cudaError_t cudaMallocArray(cudaArray_t *array, 
 		const struct cudaChannelFormatDesc *desc, 
 		size_t width, 
 		size_t height __dv(0), 
@@ -978,7 +1043,13 @@ cudaError_t cudaFreeHost(void *ptr)
 	return cudaSuccess;
 }
 
-cudaError_t cudaFreeArray(struct cudaArray *array)
+cudaError_t cudaFreeArray(cudaArray_t array)
+{
+	__CUDART_NOT_IMPL__;
+	return cudaSuccess;
+}
+
+cudaError_t cudaFreeMipmappedArray(cudaMipmappedArray_t mipmappedArray)
 {
 	__CUDART_NOT_IMPL__;
 	return cudaSuccess;
@@ -1023,10 +1094,22 @@ cudaError_t cudaMalloc3D(struct cudaPitchedPtr* pitchedDevPtr,
 	return cudaSuccess;
 }
 
-cudaError_t cudaMalloc3DArray(struct cudaArray** array, 
+cudaError_t cudaMalloc3DArray(cudaArray_t *array, 
 		const struct cudaChannelFormatDesc* desc, 
 		struct cudaExtent extent, 
 		unsigned int flags __dv(0))
+{
+	__CUDART_NOT_IMPL__;
+	return cudaSuccess;
+}
+
+cudaError_t cudaMallocMipmappedArray(cudaMipmappedArray_t *mipmappedArray, const struct cudaChannelFormatDesc* desc, struct cudaExtent extent, unsigned int numLevels, unsigned int flags __dv(0))
+{
+	__CUDART_NOT_IMPL__;
+	return cudaSuccess;
+}
+
+cudaError_t cudaGetMipmappedArrayLevel(cudaArray_t *levelArray, cudaMipmappedArray_const_t mipmappedArray, unsigned int level)
 {
 	__CUDART_NOT_IMPL__;
 	return cudaSuccess;
@@ -1059,6 +1142,12 @@ cudaError_t cudaMemcpy3DPeerAsync(const struct cudaMemcpy3DPeerParms *p,
 }
 
 cudaError_t cudaMemGetInfo(size_t *free, size_t *total)
+{
+	__CUDART_NOT_IMPL__;
+	return cudaSuccess;
+}
+
+cudaError_t cudaArrayGetInfo(struct cudaChannelFormatDesc *desc, struct cudaExtent *extent, unsigned int *flags, cudaArray_t array)
 {
 	__CUDART_NOT_IMPL__;
 	return cudaSuccess;
@@ -1098,7 +1187,7 @@ cudaError_t cudaMemcpyPeer(void *dst,
 	return cudaSuccess;
 }
 
-cudaError_t cudaMemcpyToArray(struct cudaArray *dst, 
+cudaError_t cudaMemcpyToArray(cudaArray_t dst, 
 		size_t wOffset, 
 		size_t hOffset, 
 		const void *src, 
@@ -1110,7 +1199,7 @@ cudaError_t cudaMemcpyToArray(struct cudaArray *dst,
 }
 
 cudaError_t cudaMemcpyFromArray(void *dst, 
-		const struct cudaArray *src, 
+		cudaArray_const_t src, 
 		size_t wOffset, 
 		size_t hOffset, 
 		size_t count, 
@@ -1120,10 +1209,10 @@ cudaError_t cudaMemcpyFromArray(void *dst,
 	return cudaSuccess;
 }
 
-cudaError_t cudaMemcpyArrayToArray(struct cudaArray *dst, 
+cudaError_t cudaMemcpyArrayToArray(cudaArray_t dst, 
 		size_t wOffsetDst, 
 		size_t hOffsetDst, 
-		const struct cudaArray *src, 
+		cudaArray_const_t src, 
 		size_t wOffsetSrc, 
 		size_t hOffsetSrc, 
 		size_t count, 
@@ -1145,7 +1234,7 @@ cudaError_t cudaMemcpy2D(void *dst,
 	return cudaSuccess;
 }
 
-cudaError_t cudaMemcpy2DToArray(struct cudaArray *dst, 
+cudaError_t cudaMemcpy2DToArray(cudaArray_t dst, 
 		size_t wOffset, 
 		size_t hOffset, 
 		const void *src, 
@@ -1160,7 +1249,7 @@ cudaError_t cudaMemcpy2DToArray(struct cudaArray *dst,
 
 cudaError_t cudaMemcpy2DFromArray(void *dst, 
 		size_t dpitch, 
-		const struct cudaArray *src, 
+		cudaArray_const_t src, 
 		size_t wOffset, 
 		size_t hOffset, 
 		size_t width, 
@@ -1171,10 +1260,10 @@ cudaError_t cudaMemcpy2DFromArray(void *dst,
 	return cudaSuccess;
 }
 
-cudaError_t cudaMemcpy2DArrayToArray(struct cudaArray *dst, 
+cudaError_t cudaMemcpy2DArrayToArray(cudaArray_t dst, 
 		size_t wOffsetDst, 
 		size_t hOffsetDst, 
-		const struct cudaArray *src, 
+		cudaArray_const_t src, 
 		size_t wOffsetSrc, 
 		size_t hOffsetSrc, 
 		size_t width, 
@@ -1241,7 +1330,7 @@ cudaError_t cudaMemcpyPeerAsync(void *dst,
 	return cudaSuccess;
 }
 
-cudaError_t cudaMemcpyToArrayAsync(struct cudaArray *dst, 
+cudaError_t cudaMemcpyToArrayAsync(cudaArray_t dst, 
 		size_t wOffset, 
 		size_t hOffset, 
 		const void *src, 
@@ -1254,7 +1343,7 @@ cudaError_t cudaMemcpyToArrayAsync(struct cudaArray *dst,
 }
 
 cudaError_t cudaMemcpyFromArrayAsync(void *dst, 
-		const struct cudaArray *src, 
+		cudaArray_const_t src, 
 		size_t wOffset, 
 		size_t hOffset, 
 		size_t count, 
@@ -1278,7 +1367,7 @@ cudaError_t cudaMemcpy2DAsync(void *dst,
 	return cudaSuccess;
 }
 
-cudaError_t cudaMemcpy2DToArrayAsync(struct cudaArray *dst, 
+cudaError_t cudaMemcpy2DToArrayAsync(cudaArray_t dst, 
 		size_t wOffset, 
 		size_t hOffset, 
 		const void *src, 
@@ -1294,7 +1383,7 @@ cudaError_t cudaMemcpy2DToArrayAsync(struct cudaArray *dst,
 
 cudaError_t cudaMemcpy2DFromArrayAsync(void *dst, 
 		size_t dpitch, 
-		const struct cudaArray *src, 
+		cudaArray_const_t src, 
 		size_t wOffset, 
 		size_t hOffset, 
 		size_t width, 
@@ -1462,7 +1551,7 @@ cudaError_t cudaGraphicsResourceGetMappedPointer(void **devPtr,
 	return cudaSuccess;
 }
 
-cudaError_t cudaGraphicsSubResourceGetMappedArray(struct cudaArray **array, 
+cudaError_t cudaGraphicsSubResourceGetMappedArray(cudaArray_t *array, 
 		cudaGraphicsResource_t resource, 
 		unsigned int arrayIndex, 
 		unsigned int mipLevel)
@@ -1471,8 +1560,14 @@ cudaError_t cudaGraphicsSubResourceGetMappedArray(struct cudaArray **array,
 	return cudaSuccess;
 }
 
+cudaError_t cudaGraphicsResourceGetMappedMipmappedArray(cudaMipmappedArray_t *mipmappedArray, cudaGraphicsResource_t resource)
+{
+	__CUDART_NOT_IMPL__;
+	return cudaSuccess;
+}
+
 cudaError_t cudaGetChannelDesc(struct cudaChannelFormatDesc *desc, 
-		const struct cudaArray *array)
+		cudaArray_const_t array)
 {
 	__CUDART_NOT_IMPL__;
 	return cudaSuccess;
@@ -1513,8 +1608,14 @@ cudaError_t cudaBindTexture2D(size_t *offset,
 }
 
 cudaError_t cudaBindTextureToArray(const struct textureReference *texref, 
-		const struct cudaArray *array, 
+		cudaArray_const_t array, 
 		const struct cudaChannelFormatDesc *desc)
+{
+	__CUDART_NOT_IMPL__;
+	return cudaSuccess;
+}
+
+cudaError_t cudaBindTextureToMipmappedArray(const struct textureReference *texref, cudaMipmappedArray_const_t mipmappedArray, const struct cudaChannelFormatDesc *desc)
 {
 	__CUDART_NOT_IMPL__;
 	return cudaSuccess;
@@ -1541,7 +1642,7 @@ cudaError_t cudaGetTextureReference(const struct textureReference **texref,
 }
 
 cudaError_t cudaBindSurfaceToArray(const struct surfaceReference *surfref, 
-		const struct cudaArray *array, 
+		cudaArray_const_t array, 
 		const struct cudaChannelFormatDesc *desc)
 {
 	__CUDART_NOT_IMPL__;
@@ -1550,6 +1651,54 @@ cudaError_t cudaBindSurfaceToArray(const struct surfaceReference *surfref,
 
 cudaError_t cudaGetSurfaceReference(const struct surfaceReference **surfref, 
 		const void *symbol)
+{
+	__CUDART_NOT_IMPL__;
+	return cudaSuccess;
+}
+
+cudaError_t cudaCreateTextureObject(cudaTextureObject_t *pTexObject, const struct cudaResourceDesc *pResDesc, const struct cudaTextureDesc *pTexDesc, const struct cudaResourceViewDesc *pResViewDesc)
+{
+	__CUDART_NOT_IMPL__;
+	return cudaSuccess;
+}
+
+cudaError_t cudaDestroyTextureObject(cudaTextureObject_t texObject)
+{
+	__CUDART_NOT_IMPL__;
+	return cudaSuccess;
+}
+
+cudaError_t cudaGetTextureObjectResourceDesc(struct cudaResourceDesc *pResDesc, cudaTextureObject_t texObject)
+{
+	__CUDART_NOT_IMPL__;
+	return cudaSuccess;
+}
+
+cudaError_t cudaGetTextureObjectTextureDesc(struct cudaTextureDesc *pTexDesc, cudaTextureObject_t texObject)
+{
+	__CUDART_NOT_IMPL__;
+	return cudaSuccess;
+}
+
+cudaError_t cudaGetTextureObjectResourceViewDesc(struct cudaResourceViewDesc *pResViewDesc, cudaTextureObject_t texObject)
+{
+	__CUDART_NOT_IMPL__;
+	return cudaSuccess;
+}
+
+cudaError_t cudaCreateSurfaceObject(cudaSurfaceObject_t *pSurfObject, const struct cudaResourceDesc *pResDesc)
+{
+	__CUDART_NOT_IMPL__;
+	return cudaSuccess;
+}
+
+cudaError_t cudaDestroySurfaceObject(cudaSurfaceObject_t surfObject)
+{
+	__CUDART_NOT_IMPL__;
+	return cudaSuccess;
+}
+
+cudaError_t cudaGetSurfaceObjectResourceDesc(struct cudaResourceDesc *pResDesc, cudaSurfaceObject_t surfObject)
 {
 	__CUDART_NOT_IMPL__;
 	return cudaSuccess;
