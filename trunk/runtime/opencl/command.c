@@ -149,6 +149,9 @@ static void opencl_command_run_unmap_buffer(struct opencl_command_t *command)
 		mem->host_ptr = NULL;
 	}
 
+	/* Flag the buffer is no longer mapped. */
+	mem->mapped = 0;
+
 	opencl_debug("\t[opencl_command_run_unmap_buffer] host [%p+%u], "
 			"device [%p+%u]",
 			mem->host_ptr, mem->map_offset,
