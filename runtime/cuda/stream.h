@@ -23,13 +23,43 @@
 
 extern struct list_t *stream_list;
 
+enum cuda_stream_command_type
+{
+	cuda_stream_command_invalid = 0,
+	cuda_stream_command_mem_read
+};
+
+struct cuda_stream_command_t;
+
+typedef void (*cuda_stream_command_func_t)(
+		struct cuda_stream_command_t *command);
+
+struct cuda_stream_command_t
+{
+	unsigned id;
+
+	enum cuda_stream_command_type type;
+	cuda_stream_command_func_t func;
+
+	unsigned completed;
+};
+
 struct CUstream_st
 {
-	unsigned int id;
+	unsigned id;
+
+	struct list_t *command_list;
+
+	pthread_t thread;
+	pthread_mutex_t lock;
+	pthread_cond_t cond;
 };
 
 CUstream cuda_stream_create(void);
 void cuda_stream_free(CUstream stream);
+void cuda_stream_enqueue(CUstream stream,
+		struct cuda_stream_command_t *command);
+struct cuda_stream_command_t *cuda_stream_dequeue(CUstream stream);
 
 
 #endif

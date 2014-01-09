@@ -29,7 +29,6 @@
 #include "context.h"
 #include "debug.h"
 #include "device.h"
-#include "elf-format.h"
 #include "event.h"
 #include "function.h"
 #include "list.h"
@@ -264,31 +263,6 @@ CUresult cuDeviceGetName(char *name, int len, CUdevice dev)
 	return CUDA_SUCCESS;
 }
 
-CUresult cuDeviceComputeCapability(int *major, int *minor, CUdevice dev)
-{
-	struct cuda_device_t *device;
-
-	cuda_debug("CUDA driver API '%s'", __func__);
-	cuda_debug("\t(driver) in: dev = %d", dev);
-
-	if (dev >= list_count(device_list))
-	{
-		cuda_debug("\t(driver) out: return = %d",
-				CUDA_ERROR_INVALID_VALUE);
-		return CUDA_ERROR_INVALID_VALUE;
-	}
-
-	device = (struct cuda_device_t *)list_get(device_list, dev);
-	*major = device->attributes[CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR];
-	*minor = device->attributes[CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR];
-
-	cuda_debug("\t(driver) out: major = [%p] %d", major, *major);
-	cuda_debug("\t(driver) out: minor = [%p] %d", minor, *minor);
-	cuda_debug("\t(driver) out: return = %d", CUDA_SUCCESS);
-
-	return CUDA_SUCCESS;
-}
-
 CUresult cuDeviceTotalMem(size_t *bytes, CUdevice dev)
 {
 	int ret;
@@ -313,6 +287,29 @@ CUresult cuDeviceTotalMem(size_t *bytes, CUdevice dev)
 		fatal("native execution not supported.\n%s", cuda_err_native);
 
 	cuda_debug("\t(driver) out: bytes = %d", *bytes);
+	cuda_debug("\t(driver) out: return = %d", CUDA_SUCCESS);
+
+	return CUDA_SUCCESS;
+}
+
+CUresult cuDeviceGetAttribute(int *pi, CUdevice_attribute attrib, CUdevice dev)
+{
+	cuda_debug("CUDA driver API '%s'", __func__);
+	cuda_debug("\t(driver) in: attrib = %d", attrib);
+	cuda_debug("\t(driver) in: dev = %d", dev);
+
+	if (dev >= list_count(device_list))
+	{
+		cuda_debug("\t(driver) out: return = %d",
+				CUDA_ERROR_INVALID_VALUE);
+		return CUDA_ERROR_INVALID_VALUE;
+	}
+
+	/* Get attribute */
+	*pi = (((struct cuda_device_t *)list_get(
+			device_list, dev))->attributes)[attrib];
+
+	cuda_debug("\t(driver) out: pi = [%p] %d", pi, *pi);
 	cuda_debug("\t(driver) out: return = %d", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
@@ -368,10 +365,11 @@ CUresult cuDeviceGetProperties(CUdevprop *prop, CUdevice dev)
 	return CUDA_SUCCESS;
 }
 
-CUresult cuDeviceGetAttribute(int *pi, CUdevice_attribute attrib, CUdevice dev)
+CUresult cuDeviceComputeCapability(int *major, int *minor, CUdevice dev)
 {
+	struct cuda_device_t *device;
+
 	cuda_debug("CUDA driver API '%s'", __func__);
-	cuda_debug("\t(driver) in: attrib = %d", attrib);
 	cuda_debug("\t(driver) in: dev = %d", dev);
 
 	if (dev >= list_count(device_list))
@@ -381,11 +379,12 @@ CUresult cuDeviceGetAttribute(int *pi, CUdevice_attribute attrib, CUdevice dev)
 		return CUDA_ERROR_INVALID_VALUE;
 	}
 
-	/* Get attribute */
-	*pi = (((struct cuda_device_t *)list_get(
-			device_list, dev))->attributes)[attrib];
+	device = (struct cuda_device_t *)list_get(device_list, dev);
+	*major = device->attributes[CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR];
+	*minor = device->attributes[CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR];
 
-	cuda_debug("\t(driver) out: pi = [%p] %d", pi, *pi);
+	cuda_debug("\t(driver) out: major = [%p] %d", major, *major);
+	cuda_debug("\t(driver) out: minor = [%p] %d", minor, *minor);
 	cuda_debug("\t(driver) out: return = %d", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
@@ -414,18 +413,6 @@ CUresult cuCtxDestroy(CUcontext ctx)
 
 	cuda_debug("\t(driver) out: return = %d", CUDA_SUCCESS);
 
-	return CUDA_SUCCESS;
-}
-
-CUresult cuCtxAttach(CUcontext *pctx, unsigned int flags)
-{
-	__CUDA_NOT_IMPL__;
-	return CUDA_SUCCESS;
-}
-
-CUresult cuCtxDetach(CUcontext ctx)
-{
-	__CUDA_NOT_IMPL__;
 	return CUDA_SUCCESS;
 }
 
@@ -512,6 +499,24 @@ CUresult cuCtxGetApiVersion(CUcontext ctx, unsigned int *version)
 			version, *version);
 	cuda_debug("\t(driver) out: return = %d", CUDA_SUCCESS);
 
+	return CUDA_SUCCESS;
+}
+
+CUresult cuCtxGetStreamPriorityRange(int *leastPriority, int *greatestPriority)
+{
+	__CUDA_NOT_IMPL__;
+	return CUDA_SUCCESS;
+}
+
+CUresult cuCtxAttach(CUcontext *pctx, unsigned int flags)
+{
+	__CUDA_NOT_IMPL__;
+	return CUDA_SUCCESS;
+}
+
+CUresult CUDAAPI cuCtxDetach(CUcontext ctx)
+{
+	__CUDA_NOT_IMPL__;
 	return CUDA_SUCCESS;
 }
 
@@ -633,6 +638,37 @@ CUresult cuModuleGetTexRef(CUtexref *pTexRef, CUmodule hmod, const char *name)
 CUresult cuModuleGetSurfRef(CUsurfref *pSurfRef, 
 		CUmodule hmod, 
 		const char *name)
+{
+	__CUDA_NOT_IMPL__;
+	return CUDA_SUCCESS;
+}
+
+
+CUresult cuLinkCreate(unsigned int numOptions, CUjit_option *options, void **optionValues, CUlinkState *stateOut)
+{
+	__CUDA_NOT_IMPL__;
+	return CUDA_SUCCESS;
+}
+
+CUresult cuLinkAddData(CUlinkState state, CUjitInputType type, void *data, size_t size, const char *name, unsigned int numOptions, CUjit_option *options, void **optionValues)
+{
+	__CUDA_NOT_IMPL__;
+	return CUDA_SUCCESS;
+}
+
+CUresult cuLinkAddFile(CUlinkState state, CUjitInputType type, const char *path, unsigned int numOptions, CUjit_option *options, void **optionValues)
+{
+	__CUDA_NOT_IMPL__;
+	return CUDA_SUCCESS;
+}
+
+CUresult cuLinkComplete(CUlinkState state, void **cubinOut, size_t *sizeOut)
+{
+	__CUDA_NOT_IMPL__;
+	return CUDA_SUCCESS;
+}
+
+CUresult cuLinkDestroy(CUlinkState state)
 {
 	__CUDA_NOT_IMPL__;
 	return CUDA_SUCCESS;
@@ -1214,6 +1250,24 @@ CUresult cuArray3DGetDescriptor(CUDA_ARRAY3D_DESCRIPTOR *pArrayDescriptor,
 	return CUDA_SUCCESS;
 }
 
+CUresult cuMipmappedArrayCreate(CUmipmappedArray *pHandle, const CUDA_ARRAY3D_DESCRIPTOR *pMipmappedArrayDesc, unsigned int numMipmapLevels)
+{
+	__CUDA_NOT_IMPL__;
+	return CUDA_SUCCESS;
+}
+
+CUresult cuMipmappedArrayGetLevel(CUarray *pLevelArray, CUmipmappedArray hMipmappedArray, unsigned int level)
+{
+	__CUDA_NOT_IMPL__;
+	return CUDA_SUCCESS;
+}
+
+CUresult cuMipmappedArrayDestroy(CUmipmappedArray hMipmappedArray)
+{
+	__CUDA_NOT_IMPL__;
+	return CUDA_SUCCESS;
+}
+
 CUresult cuPointerGetAttribute(void *data, 
 		CUpointer_attribute attribute, 
 		CUdeviceptr ptr)
@@ -1228,7 +1282,31 @@ CUresult cuStreamCreate(CUstream *phStream, unsigned int Flags)
 	return CUDA_SUCCESS;
 }
 
+CUresult cuStreamCreateWithPriority(CUstream *phStream, unsigned int flags, int priority)
+{
+	__CUDA_NOT_IMPL__;
+	return CUDA_SUCCESS;
+}
+
+CUresult cuStreamGetPriority(CUstream hStream, int *priority)
+{
+	__CUDA_NOT_IMPL__;
+	return CUDA_SUCCESS;
+}
+
+CUresult cuStreamGetFlags(CUstream hStream, unsigned int *flags)
+{
+	__CUDA_NOT_IMPL__;
+	return CUDA_SUCCESS;
+}
+
 CUresult cuStreamWaitEvent(CUstream hStream, CUevent hEvent, unsigned int Flags)
+{
+	__CUDA_NOT_IMPL__;
+	return CUDA_SUCCESS;
+}
+
+CUresult cuStreamAddCallback(CUstream hStream, CUstreamCallback callback, void *userData, unsigned int flags)
 {
 	__CUDA_NOT_IMPL__;
 	return CUDA_SUCCESS;
@@ -1464,6 +1542,12 @@ CUresult cuTexRefSetArray(CUtexref hTexRef, CUarray hArray, unsigned int Flags)
 	return CUDA_SUCCESS;
 }
 
+CUresult cuTexRefSetMipmappedArray(CUtexref hTexRef, CUmipmappedArray hMipmappedArray, unsigned int Flags)
+{
+	__CUDA_NOT_IMPL__;
+	return CUDA_SUCCESS;
+}
+
 CUresult cuTexRefSetAddress(size_t *ByteOffset, 
 		CUtexref hTexRef, 
 		CUdeviceptr dptr, 
@@ -1502,6 +1586,30 @@ CUresult cuTexRefSetFilterMode(CUtexref hTexRef, CUfilter_mode fm)
 	return CUDA_SUCCESS;
 }
 
+CUresult cuTexRefSetMipmapFilterMode(CUtexref hTexRef, CUfilter_mode fm)
+{
+	__CUDA_NOT_IMPL__;
+	return CUDA_SUCCESS;
+}
+
+CUresult cuTexRefSetMipmapLevelBias(CUtexref hTexRef, float bias)
+{
+	__CUDA_NOT_IMPL__;
+	return CUDA_SUCCESS;
+}
+
+CUresult cuTexRefSetMipmapLevelClamp(CUtexref hTexRef, float minMipmapLevelClamp, float maxMipmapLevelClamp)
+{
+	__CUDA_NOT_IMPL__;
+	return CUDA_SUCCESS;
+}
+
+CUresult cuTexRefSetMaxAnisotropy(CUtexref hTexRef, unsigned int maxAniso)
+{
+	__CUDA_NOT_IMPL__;
+	return CUDA_SUCCESS;
+}
+
 CUresult cuTexRefSetFlags(CUtexref hTexRef, unsigned int Flags)
 {
 	__CUDA_NOT_IMPL__;
@@ -1515,6 +1623,12 @@ CUresult cuTexRefGetAddress(CUdeviceptr *pdptr, CUtexref hTexRef)
 }
 
 CUresult cuTexRefGetArray(CUarray *phArray, CUtexref hTexRef)
+{
+	__CUDA_NOT_IMPL__;
+	return CUDA_SUCCESS;
+}
+
+CUresult cuTexRefGetMipmappedArray(CUmipmappedArray *phMipmappedArray, CUtexref hTexRef)
 {
 	__CUDA_NOT_IMPL__;
 	return CUDA_SUCCESS;
@@ -1535,6 +1649,30 @@ CUresult cuTexRefGetFilterMode(CUfilter_mode *pfm, CUtexref hTexRef)
 CUresult cuTexRefGetFormat(CUarray_format *pFormat, 
 		int *pNumChannels, 
 		CUtexref hTexRef)
+{
+	__CUDA_NOT_IMPL__;
+	return CUDA_SUCCESS;
+}
+
+CUresult cuTexRefGetMipmapFilterMode(CUfilter_mode *pfm, CUtexref hTexRef)
+{
+	__CUDA_NOT_IMPL__;
+	return CUDA_SUCCESS;
+}
+
+CUresult cuTexRefGetMipmapLevelBias(float *pbias, CUtexref hTexRef)
+{
+	__CUDA_NOT_IMPL__;
+	return CUDA_SUCCESS;
+}
+
+CUresult cuTexRefGetMipmapLevelClamp(float *pminMipmapLevelClamp, float *pmaxMipmapLevelClamp, CUtexref hTexRef)
+{
+	__CUDA_NOT_IMPL__;
+	return CUDA_SUCCESS;
+}
+
+CUresult cuTexRefGetMaxAnisotropy(int *pmaxAniso, CUtexref hTexRef)
 {
 	__CUDA_NOT_IMPL__;
 	return CUDA_SUCCESS;
@@ -1572,6 +1710,54 @@ CUresult cuSurfRefGetArray(CUarray *phArray, CUsurfref hSurfRef)
 	return CUDA_SUCCESS;
 }
 
+CUresult cuTexObjectCreate(CUtexObject *pTexObject, const CUDA_RESOURCE_DESC *pResDesc, const CUDA_TEXTURE_DESC *pTexDesc, const CUDA_RESOURCE_VIEW_DESC *pResViewDesc)
+{
+	__CUDA_NOT_IMPL__;
+	return CUDA_SUCCESS;
+}
+
+CUresult cuTexObjectDestroy(CUtexObject texObject)
+{
+	__CUDA_NOT_IMPL__;
+	return CUDA_SUCCESS;
+}
+
+CUresult cuTexObjectGetResourceDesc(CUDA_RESOURCE_DESC *pResDesc, CUtexObject texObject)
+{
+	__CUDA_NOT_IMPL__;
+	return CUDA_SUCCESS;
+}
+
+CUresult cuTexObjectGetTextureDesc(CUDA_TEXTURE_DESC *pTexDesc, CUtexObject texObject)
+{
+	__CUDA_NOT_IMPL__;
+	return CUDA_SUCCESS;
+}
+
+CUresult cuTexObjectGetResourceViewDesc(CUDA_RESOURCE_VIEW_DESC *pResViewDesc, CUtexObject texObject)
+{
+	__CUDA_NOT_IMPL__;
+	return CUDA_SUCCESS;
+}
+
+CUresult cuSurfObjectCreate(CUsurfObject *pSurfObject, const CUDA_RESOURCE_DESC *pResDesc)
+{
+	__CUDA_NOT_IMPL__;
+	return CUDA_SUCCESS;
+}
+
+CUresult cuSurfObjectDestroy(CUsurfObject surfObject)
+{
+	__CUDA_NOT_IMPL__;
+	return CUDA_SUCCESS;
+}
+
+CUresult cuSurfObjectGetResourceDesc(CUDA_RESOURCE_DESC *pResDesc, CUsurfObject surfObject)
+{
+	__CUDA_NOT_IMPL__;
+	return CUDA_SUCCESS;
+}
+
 CUresult cuDeviceCanAccessPeer(int *canAccessPeer, 
 		CUdevice dev, 
 		CUdevice peerDev)
@@ -1602,6 +1788,12 @@ CUresult cuGraphicsSubResourceGetMappedArray(CUarray *pArray,
 		CUgraphicsResource resource, 
 		unsigned int arrayIndex, 
 		unsigned int mipLevel)
+{
+	__CUDA_NOT_IMPL__;
+	return CUDA_SUCCESS;
+}
+
+CUresult cuGraphicsResourceGetMappedMipmappedArray(CUmipmappedArray *pMipmappedArray, CUgraphicsResource resource)
 {
 	__CUDA_NOT_IMPL__;
 	return CUDA_SUCCESS;
