@@ -374,6 +374,8 @@ void mem_system_dump_report(void)
 			fprintf(f, "Assoc = %d\n", cache->assoc);
 			fprintf(f, "Policy = %s\n", str_map_value(
 				&cache_policy_map, cache->policy));
+			fprintf(f, "WritePolicy = %s\n", str_map_value(
+				&cache_writepolicy_map, cache->writepolicy));
 		}
 		fprintf(f, "BlockSize = %d\n", mod->block_size);
 		fprintf(f, "Latency = %d\n", mod->data_latency);
