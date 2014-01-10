@@ -21,7 +21,7 @@
 #define RUNTIME_CUDA_DEVICE_H
 
 
-extern struct list_t *device_list;
+#include "api.h"
 
 struct cuda_device_t
 {
@@ -33,7 +33,7 @@ struct cuda_device_t
 	int attributes[CU_DEVICE_ATTRIBUTE_MAX];
 };
 
-struct cuda_device_t *cuda_device_create(int device_type);
+struct cuda_device_t *cuda_device_create(enum cuda_device_type_t dev_type);
 void cuda_device_free(struct cuda_device_t *device);
 
 

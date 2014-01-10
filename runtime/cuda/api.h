@@ -21,13 +21,13 @@
 #define RUNTIME_CUDA_API_H
 
 
-/* Debug */
-void cuda_debug(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
-
 /* Syscall code */
 #define CUDA_SYS_CODE 328
 
-/* List of CUDA calls */
+/* Debug */
+void cuda_debug(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
+
+/* List of CUDA driver calls */
 enum cuda_call_t
 {
 	cuda_call_invalid,
@@ -37,17 +37,22 @@ enum cuda_call_t
 	cuda_call_count
 };
 
-/* For CUDA runtime */
-#define __dv(v)
+/* CUDA device */
+enum cuda_device_type_t
+{
+	CUDA_DEVICE_FERMI = 0,
+	CUDA_DEVICE_KEPLER = 1
+};
 
-/* For CUDA driver */
-extern struct cuda_device_t *device;
+struct cuda_device_t *device;
 
-/* CUDA lists */
-extern struct list_t *context_list;
-extern struct list_t *device_list;
-extern struct list_t *module_list;
-extern struct list_t *function_list;
+/* Lists of CUDA objects */
+struct list_t *context_list;
+struct list_t *device_list;
+struct list_t *module_list;
+struct list_t *function_list;
+struct list_t *stream_list;
+struct list_t *event_list;
 
 
 #endif

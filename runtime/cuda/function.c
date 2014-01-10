@@ -31,8 +31,6 @@
 #include "module.h"
 
 
-struct list_t *function_list;
-
 CUfunction cuda_function_create(CUmodule module, const char *function_name)
 {
 	CUfunction function;
