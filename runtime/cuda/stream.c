@@ -25,8 +25,6 @@
 #include "stream.h"
 
 
-struct list_t *stream_list;
-
 struct cuda_stream_command_t *cuda_stream_command_create(CUstream stream,
 		enum cuda_stream_command_type type, cuda_stream_command_func_t func)
 {

@@ -25,8 +25,6 @@
 #include "mhandle.h"
 
 
-struct list_t *event_list;
-
 /* Create an event */
 CUevent cuda_event_create(unsigned flags)
 {

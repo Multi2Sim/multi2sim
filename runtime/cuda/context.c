@@ -23,8 +23,6 @@
 #include "mhandle.h"
 
 
-struct list_t *context_list;
-
 /* Create a context */
 CUcontext cuda_context_create(CUdevice device)
 {
