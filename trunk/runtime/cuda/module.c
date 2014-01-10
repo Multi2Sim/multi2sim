@@ -26,8 +26,6 @@
 #include "module.h"
 
 
-struct list_t *module_list;
-
 /* Create a module */
 CUmodule cuda_module_create(const char *cubin_path)
 {
