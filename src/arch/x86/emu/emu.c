@@ -56,6 +56,7 @@ long long x86_emu_max_cycles = 0;
 char x86_emu_last_inst_bytes[20];
 int x86_emu_last_inst_size = 0;
 int x86_emu_process_prefetch_hints = 0;
+int x86_emu_use_nc_store = 0;
 
 
 

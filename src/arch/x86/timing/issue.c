@@ -75,8 +75,11 @@ static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 		client_info->prefetcher_eip = store->eip;
 
 		/* Issue store */
-		mod_access(self->data_mod, mod_access_store,
-		       store->phy_addr, NULL, core->event_queue, store, client_info);
+		mod_access(self->data_mod,
+			x86_emu_use_nc_store ?
+				mod_access_nc_store : mod_access_store,
+			store->phy_addr, NULL, core->event_queue,
+			store, client_info);
 
 		/* The cache system will place the store at the head of the
 		 * event queue when it is ready. For now, mark "in_event_queue" to
