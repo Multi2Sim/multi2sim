@@ -113,6 +113,9 @@ char *x86_config_help =
 	"      Set these options to true to simulate a perfect data/instruction caches,\n"
 	"      respectively, where every access results in a hit. If set to false, the\n"
 	"      parameters of the caches are given in the memory configuration file\n"
+	"  UseNCStore =  = {t|f} (Default = False)\n"
+	"      Normally the CPU uses cohnerency-enabled Store commands.  Setting this to True\n"
+	"      causes the CPU to issue NCStore commands to reduce protocol overhead.\n"
 	"\n"
 	"Section '[ Pipeline ]':\n"
 	"\n"
@@ -357,6 +360,16 @@ void X86CpuReadConfig(void)
 	x86_cpu_recover_penalty = config_read_int(config, section, "RecoverPenalty", 0);
 
 	x86_emu_process_prefetch_hints = config_read_bool(config, section, "ProcessPrefetchHints", 1);
+
+	x86_emu_use_nc_store = config_read_bool(config, section,
+		"UseNCStore", 0);
+
+	if (x86_emu_use_nc_store &&
+		(x86_cpu_num_cores * x86_cpu_num_threads > 1))
+	{
+		fatal("When UseNCStore = True, Cores and Threads must be 1.");
+	}
+
 	prefetch_history_size = config_read_int(config, section, "PrefetchHistorySize", 10);
 
 
@@ -657,8 +670,11 @@ static void X86DumpCpuConfig(FILE *f)
 	fprintf(f, "ThreadSwitchPenalty = %d\n", x86_cpu_thread_switch_penalty);
 	fprintf(f, "RecoverKind = %s\n", x86_cpu_recover_kind_map[x86_cpu_recover_kind]);
 	fprintf(f, "RecoverPenalty = %d\n", x86_cpu_recover_penalty);
-	fprintf(f, "ProcessPrefetchHints = %d\n", x86_emu_process_prefetch_hints);
+	fprintf(f, "ProcessPrefetchHints = %s\n",
+		x86_emu_process_prefetch_hints ? "True" : "False");
 	fprintf(f, "PrefetchHistorySize = %d\n", prefetch_history_size);
+	fprintf(f, "UseNCStore = %s\n",
+		x86_emu_use_nc_store ? "True" : "False");
 	fprintf(f, "\n");
 
 	/* Pipeline */
