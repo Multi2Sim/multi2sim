@@ -132,6 +132,7 @@ extern long long x86_emu_max_inst;
 extern char x86_emu_last_inst_bytes[20];
 extern int x86_emu_last_inst_size;
 extern int x86_emu_process_prefetch_hints;
+extern int x86_emu_use_nc_store;
 
 #endif
 
