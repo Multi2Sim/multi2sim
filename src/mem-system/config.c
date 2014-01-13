@@ -702,8 +702,8 @@ static struct mod_t *mem_config_read_main_memory(struct config_t *config,
 	block_size = config_read_int(config, section, "BlockSize", 64);
 	latency = config_read_int(config, section, "Latency", 1);
 	num_ports = config_read_int(config, section, "Ports", 2);
-	dir_size = config_read_int(config, section, "DirectorySize", 1024);
-	dir_assoc = config_read_int(config, section, "DirectoryAssoc", 8);
+	dir_size = config_read_int(config, section, "DirectorySize", 131072);
+	dir_assoc = config_read_int(config, section, "DirectoryAssoc", 16);
 
 	/* Check parameters */
 	if (block_size < 1 || (block_size & (block_size - 1)))
