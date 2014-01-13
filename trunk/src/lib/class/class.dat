@@ -59,6 +59,12 @@ CLASS(FrmThread)
 CLASS(FrmGpu)
 CLASS(FrmSM)
 
+CLASS(KplEmu)
+CLASS(KplGrid)
+CLASS(KplWarp)
+CLASS(KplThreadBlock)
+CLASS(KplThread)
+
 CLASS(KplAsm)
 CLASS(KplInst)
 

@@ -49,8 +49,17 @@
 #include <arch/fermi/emu/warp.h>
 #include <arch/fermi/timing/gpu.h>
 #include <arch/fermi/timing/sm.h>
+
 #include <arch/kepler/asm/Wrapper.h>
 #include <arch/mips/asm/Wrapper.h>
+
+#include <arch/kepler/emu/Emu.h>
+#include <arch/kepler/emu/Grid.h>
+#include <arch/kepler/emu/isa.h>
+#include <arch/kepler/emu/Thread.h>
+#include <arch/kepler/emu/ThreadBlock.h>
+#include <arch/kepler/emu/Warp.h>
+
 #include <arch/mips/emu/context.h>
 #include <arch/mips/emu/isa.h>
 #include <arch/mips/timing/cpu.h>
@@ -184,6 +193,8 @@ static EvgGpu *evg_gpu;
 
 static struct FrmAsmWrap *frm_asm;
 static FrmEmu *frm_emu;
+
+static KplEmu *kpl_emu;
 
 static struct MIPSAsmWrap *mips_asm;
 static MIPSEmu *mips_emu;
@@ -1967,6 +1978,12 @@ static void m2s_init(void)
 	CLASS_REGISTER(FrmGpu);
 	CLASS_REGISTER(FrmSM);
 
+	//CLASS_REGISTER(KplEmu);
+	//CLASS_REGISTER(KplThread);
+	//CLASS_REGISTER(KplThreadBlock);
+	//CLASS_REGISTER(KplWarp);
+	//CLASS_REGISTER(KplGrid);
+
 	CLASS_REGISTER(MIPSEmu);
 	CLASS_REGISTER(MIPSContext);
 
@@ -2357,6 +2374,8 @@ int main(int argc, char **argv)
 	opencl_driver = new(OpenclDriver, x86_emu, si_emu);
 	opencl_old_driver = new(OpenclOldDriver, x86_emu, evg_emu);
 	cuda_driver = new(CudaDriver, x86_emu, frm_emu);
+	/* Adding Kpl parameter */
+	//cuda_driver = new(CudaDriver, x86_emu, frm_emu, kpl_emu);
 
 #ifdef HAVE_OPENGL
 	opengl_driver = new(OpenglDriver, x86_emu, si_emu);
@@ -2420,6 +2439,8 @@ int main(int argc, char **argv)
 	/* Fermi */
 	delete(frm_emu);
 	FrmAsmWrapFree(frm_asm);
+
+	//delete(kpl_emu);
 
 	/* MIPS */
 	delete(mips_emu);
