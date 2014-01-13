@@ -117,7 +117,7 @@ void KplGridSetupArguments(KplGrid *self);
 /* Not implemented in Fermi device */
 //void FrmGridRun(FrmGrid *self);
 
-static void KplGridSetupArrays(KplGrid *self);
+//static void KplGridSetupArrays(KplGrid *self);
 
 void KplGridSetupSize(KplGrid *self, unsigned int *thread_block_count,
 		unsigned int *thread_block_size);

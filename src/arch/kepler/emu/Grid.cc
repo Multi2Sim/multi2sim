@@ -103,126 +103,125 @@ void KplGridSetupArguments(KplGrid *self)
 }
 
 
-static void KplGridSetupArrays(KplGrid *self)
-{
-	KplThreadBlock *thread_block;
-	KplWarp *warp;
-	KplThread *thread;
+//static void KplGridSetupArrays(KplGrid *self)
+//{
+//	KplThreadBlock *thread_block;
+//	KplWarp *warp;
+//	KplThread *thread;
 
-	int bid;  /* Thread block ID */
-	int wid;  /* Warp ID iterator */
-	int tid;  /* Thread ID iterator */
+//	int bid;  /* Thread block ID */
+//	int wid;  /* Warp ID iterator */
+//	int tid;  /* Thread ID iterator */
 
 	/* Create array/lists of thread blocks */
-	self->thread_blocks = (KplThreadBlock **)xcalloc(
-			self->thread_block_count, 
-			sizeof(KplThreadBlock *));
-	self->pending_thread_blocks = list_create();
-	self->running_thread_blocks = list_create();
-	self->finished_thread_blocks = list_create();
+//	self->thread_blocks = (KplThreadBlock **)xcalloc(
+//			self->thread_block_count, 
+//			sizeof(KplThreadBlock *));
+//	self->pending_thread_blocks = list_create();
+//	self->running_thread_blocks = list_create();
+//	self->finished_thread_blocks = list_create();
 
-	for (bid = 0; bid < self->thread_block_count; bid++)
-	{
+//	for (bid = 0; bid < self->thread_block_count; bid++)
+//	{
 		/* Create new thread block */
 		//thread_block = new(KplThreadBlock, self);
-		self->thread_blocks[bid] = thread_block;
+//		self->thread_blocks[bid] = thread_block;
 
 		/* Initialize thread block */
-		thread_block->id = bid;
-		snprintf(thread_block->name, sizeof(thread_block->name), 
-				"thread-block[g%d-b%d]", 
-				self->id, thread_block->id);
+//		thread_block->id = bid;
+//		snprintf(thread_block->name, sizeof(thread_block->name), 
+//				"thread-block[g%d-b%d]", 
+//				self->id, thread_block->id);
 
 		/* Add to pending list */
-		list_add(self->pending_thread_blocks, thread_block);
+//		list_add(self->pending_thread_blocks, thread_block);
 
 		/* Create array/lists of warps */
-		thread_block->warp_count = 
-			(self->thread_block_size + kpl_emu_warp_size - 1) /
-			kpl_emu_warp_size;
-		thread_block->warps = (KplWarp **)xcalloc(
-				thread_block->warp_count, 
-				sizeof(KplWarp *));
-		thread_block->running_warps = list_create();
-		thread_block->finished_warps = list_create();
+//		thread_block->warp_count = 
+//			(self->thread_block_size + kpl_emu_warp_size - 1) /
+//			kpl_emu_warp_size;
+//		thread_block->warps = (KplWarp **)xcalloc(
+//				thread_block->warp_count, 
+//				sizeof(KplWarp *));
+//		thread_block->running_warps = list_create();
+//		thread_block->finished_warps = list_create();
 
-		for (wid = 0; wid < thread_block->warp_count; wid++)
-		{
+//		for (wid = 0; wid < thread_block->warp_count; wid++)
+//		{
 			/* Create new warp */
 			//warp = new(KplWarp, thread_block);
-			thread_block->warps[wid] = warp;
+//			thread_block->warps[wid] = warp;
 
 			/* Initialize warp */
-			warp->id = wid + bid * thread_block->warp_count;
-			warp->id_in_thread_block = wid;
-			snprintf(warp->name, sizeof(warp->name),
-					"warp[g%d-b%d-w%d]",
-					self->id, thread_block->id,
-					warp->id_in_thread_block);
-			warp->inst_buffer = self->function->inst_bin;
-			warp->inst_buffer_size =
-				self->function->inst_bin_size;
-			if (wid < thread_block->warp_count - 1)
-				warp->thread_count = kpl_emu_warp_size;
-			else
-				warp->thread_count = self->thread_block_size - 
-					(thread_block->warp_count - 1) *
-					kpl_emu_warp_size;
-			warp->threads = (KplThread **)xcalloc(
-					warp->thread_count, 
-					sizeof(KplThread *));
-			warp->sync_stack.entries[0].active_thread_mask
-				= ((unsigned long long int)1 << warp->thread_count) - 1;
+//			warp->id = wid + bid * thread_block->warp_count;
+//			warp->id_in_thread_block = wid;
+//			snprintf(warp->name, sizeof(warp->name),
+//					"warp[g%d-b%d-w%d]",
+//					self->id, thread_block->id,
+//					warp->id_in_thread_block);
+//			warp->inst_buffer = self->function->inst_bin;
+//			warp->inst_buffer_size =
+//				self->function->inst_bin_size;
+//			if (wid < thread_block->warp_count - 1)
+//				warp->thread_count = kpl_emu_warp_size;
+//			else
+//				warp->thread_count = self->thread_block_size - 
+//					(thread_block->warp_count - 1) *
+//					kpl_emu_warp_size;
+//			warp->threads = (KplThread **)xcalloc(
+//					warp->thread_count, 
+//					sizeof(KplThread *));
+//			warp->sync_stack.entries[0].active_thread_mask
+//				= ((unsigned long long int)1 << warp->thread_count) - 1;
 
 			/* Add to running list */
-			list_add(thread_block->running_warps, warp);
-		}
+//			list_add(thread_block->running_warps, warp);
+//		}
 
 		/* Create array/lists of threads */
-		thread_block->thread_count = self->thread_block_size;
-		thread_block->threads = (KplThread **) xcalloc(
-				thread_block->thread_count, 
-				sizeof(KplThread *));
+//		thread_block->thread_count = self->thread_block_size;
+//		thread_block->threads = (KplThread **) xcalloc(
+//				thread_block->thread_count, 
+//				sizeof(KplThread *));
 
-		for (tid = 0; tid < thread_block->thread_count; tid++)
-		{
+//		for (tid = 0; tid < thread_block->thread_count; tid++)
+//		{
 			/* Create new thread */
 			//thread = new(KplThread, thread_block->
 			//		warps[tid / kpl_emu_warp_size]);
-			thread_block->threads[tid] = thread;
+//			thread_block->threads[tid] = thread;
 
 			/* Initialize thread */
-			thread->id = tid + bid * thread_block->thread_count;
-			thread->id_in_warp = tid % kpl_emu_warp_size;
-			thread->id_in_thread_block = tid;
+//			thread->id = tid + bid * thread_block->thread_count;
+//			thread->id_in_warp = tid % kpl_emu_warp_size;
+//			thread->id_in_thread_block = tid;
 
 			/* Save thread IDs in special register R0 */
-			thread->sr[33].u32 = tid %
-				self->thread_block_size3[0];
-			thread->sr[34].u32 = tid /
-				self->thread_block_size3[0];
-			thread->sr[35].u32 = tid /
-				(self->thread_block_size3[0] *
-				 self->thread_block_size3[1]);
+//			thread->sr[33].u32 = tid %
+//				self->thread_block_size3[0];
+//			thread->sr[34].u32 = tid /
+//				self->thread_block_size3[0];
+//			thread->sr[35].u32 = tid /
+//				(self->thread_block_size3[0] *
+//				 self->thread_block_size3[1]);
 
 			/* Save thread block IDs in special register R1 */
-			thread->sr[37].u32 = bid %
-				self->thread_block_count3[0];
-			thread->sr[38].u32 = bid /
-				self->thread_block_count3[0];
-			thread->sr[39].u32 = bid /
-				(self->thread_block_count3[0] *
-				 self->thread_block_count3[1]);
+//			thread->sr[37].u32 = bid %
+//				self->thread_block_count3[0];
+//			thread->sr[38].u32 = bid /
+//				self->thread_block_count3[0];
+//			thread->sr[39].u32 = bid /
+//				(self->thread_block_count3[0] *
+//				 self->thread_block_count3[1]);
 
 			/* Set predicate register #7 to 1 */
-			thread->pr[7] = 1;
+//			thread->pr[7] = 1;
 
 			/* Link thread with warp */
-			thread->warp->threads[thread->id_in_warp] = thread;
-		}
-	}
-}
-
+//			thread->warp->threads[thread->id_in_warp] = thread;
+//		}
+//	}
+//}
 
 void KplGridSetupSize(KplGrid *self, unsigned int *thread_block_count,
 		unsigned int *thread_block_size)
