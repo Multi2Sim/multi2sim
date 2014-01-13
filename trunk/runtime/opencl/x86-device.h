@@ -23,7 +23,10 @@
 #include <pthread.h>
 
 #include "opencl.h"
-#define X86_MAX_WORK_GROUP_SIZE 1024
+/* FIXME For SI, the max work group size is set to 512.  Leave it
+ * as 512 here also so that when we're comparing benchmark execution
+ * times it will be an equal comparison. */
+#define X86_MAX_WORK_GROUP_SIZE 512
 
 typedef void (*opencl_x86_device_fiber_func_t)(void);
 typedef void (*opencl_x86_device_fiber_return_func_t)(void);
