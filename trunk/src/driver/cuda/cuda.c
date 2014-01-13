@@ -898,137 +898,137 @@ int cuda_func_cuFrmLaunchKernel(X86Context *ctx)
  *	The return value is always 0 on success.
  */
 
-void kpl_grid_set_free_notify_func(KplGrid *grid, void (*func)(void *),
-		void *user_data)
-{
-	grid->free_notify_func = func;
-	grid->free_notify_data = user_data;
-}
+//void kpl_grid_set_free_notify_func(KplGrid *grid, void (*func)(void *),
+//		void *user_data)
+//{
+//	grid->free_notify_func = func;
+//	grid->free_notify_data = user_data;
+//}
 
-static void cuda_abi_kpl_kernel_launch_finish(void *user_data)
-{
-	struct cuda_abi_kpl_kernel_launch_info_t *info = user_data;
-	struct cuda_function_t *kernel = info->function;
-
-	X86Context *ctx = info->context;
-	KplGrid *grid = info->grid;
-
+//static void cuda_abi_kpl_kernel_launch_finish(void *user_data)
+//{
+//	struct cuda_abi_kpl_kernel_launch_info_t *info = user_data;
+//	struct cuda_function_t *kernel = info->function;
+//
+//	X86Context *ctx = info->context;
+//	KplGrid *grid = info->grid;
+//
 	/* Debug */
-	cuda_debug("Grid %d running kernel '%s' finished\n",
-			grid->id, kernel->name);
+//	cuda_debug("Grid %d running kernel '%s' finished\n",
+//			grid->id, kernel->name);
 
 	/* Set 'finished' flag in launch info */
-	info->finished = 1;
+//	info->finished = 1;
 
 	/* Force the x86 emulator to check which suspended contexts can wakeup,
 	 * based on their new state. */
-	X86EmuProcessEventsSchedule(ctx->emu);
-}
+//	X86EmuProcessEventsSchedule(ctx->emu);
+//}
 
-static int cuda_abi_kpl_kernel_launch_can_wakeup(X86Context *ctx,
-		void *user_data)
-{
-	struct cuda_abi_kpl_kernel_launch_info_t *info = user_data;
+//static int cuda_abi_kpl_kernel_launch_can_wakeup(X86Context *ctx,
+//		void *user_data)
+//{
+//	struct cuda_abi_kpl_kernel_launch_info_t *info = user_data;
 
 	/* NOTE: the grid has been freed at this point if it finished
 	 * execution, so field 'info->grid' should not be accessed. We
 	 * use flag 'info->finished' instead. */
-	return info->finished;
-}
+//	return info->finished;
+//}
 
-static void cuda_abi_kpl_kernel_launch_wakeup(X86Context *ctx,
-		void *user_data)
-{
-	struct cuda_abi_kpl_kernel_launch_info_t *info = user_data;
+//static void cuda_abi_kpl_kernel_launch_wakeup(X86Context *ctx,
+//		void *user_data)
+//{
+//	struct cuda_abi_kpl_kernel_launch_info_t *info = user_data;
 
 	/* Free info object */
-	free(info);
-}
+//	free(info);
+//}
 
 int cuda_func_cuKplLaunchKernel(X86Context *ctx)
 {
-	struct x86_regs_t *regs = ctx->regs;
-	struct mem_t *mem = ctx->mem;
+//	struct x86_regs_t *regs = ctx->regs;
+//	struct mem_t *mem = ctx->mem;
 
-	unsigned args[11];
-	unsigned function_id;
-	unsigned grid_dim[3];
-	unsigned block_dim[3];
-	unsigned shared_mem_usage;
-	unsigned stream_handle;
-	unsigned kernel_args;
-	unsigned extra;
+//	unsigned args[11];
+//	unsigned function_id;
+//	unsigned grid_dim[3];
+//	unsigned block_dim[3];
+//	unsigned shared_mem_usage;
+//	unsigned stream_handle;
+//	unsigned kernel_args;
+//	unsigned extra;
 
-	struct cuda_function_t *function;
-	int i;
-	struct cuda_function_arg_t *arg;
-	unsigned arg_ptr;
-	int offset = 0x20;
-	KplGrid *grid;
-	KplEmu *kpl_emu = ctx->emu->cuda_driver->kpl_emu;
-	struct cuda_abi_kpl_kernel_launch_info_t *info;
+//	struct cuda_function_t *function;
+//	int i;
+//	struct cuda_function_arg_t *arg;
+//	unsigned arg_ptr;
+//	int offset = 0x20;
+//	KplGrid *grid;
+//	KplEmu *kpl_emu = ctx->emu->cuda_driver->kpl_emu;
+//	struct cuda_abi_kpl_kernel_launch_info_t *info;
 
 	/* Read arguments */
-	mem_read(mem, regs->ecx, 11 * sizeof *args, args);
-	function_id = args[0];
-	grid_dim[0] = args[1];
-	grid_dim[1] = args[2];
-	grid_dim[2] = args[3];
-	block_dim[0] = args[4];
-	block_dim[1] = args[5];
-	block_dim[2] = args[6];
-	shared_mem_usage = args[7];
-	stream_handle = args[8];
-	kernel_args = args[9];
-	extra = args[10];
+//	mem_read(mem, regs->ecx, 11 * sizeof *args, args);
+//	function_id = args[0];
+//	grid_dim[0] = args[1];
+//	grid_dim[1] = args[2];
+//	grid_dim[2] = args[3];
+//	block_dim[0] = args[4];
+//	block_dim[1] = args[5];
+//	block_dim[2] = args[6];
+//	shared_mem_usage = args[7];
+//	stream_handle = args[8];
+//	kernel_args = args[9];
+//	extra = args[10];
 
 	/* Debug */
-	cuda_debug("\tfunction_id = 0x%08x\n", function_id);
-	cuda_debug("\tgrid_dimX = %u\n", grid_dim[0]);
-	cuda_debug("\tgrid_dimY = %u\n", grid_dim[1]);
-	cuda_debug("\tgrid_dimZ = %u\n", grid_dim[2]);
-	cuda_debug("\tblock_dimX = %u\n", block_dim[0]);
-	cuda_debug("\tblock_dimY = %u\n", block_dim[1]);
-	cuda_debug("\tblock_dimZ = %u\n", block_dim[2]);
-	cuda_debug("\tshared_mem_usage = %u\n", shared_mem_usage);
-	cuda_debug("\tstream_handle = 0x%08x\n", stream_handle);
-	cuda_debug("\tkernel_args = 0x%08x\n", kernel_args);
-	cuda_debug("\textra = 0x%08x\n", extra);
+//	cuda_debug("\tfunction_id = 0x%08x\n", function_id);
+//	cuda_debug("\tgrid_dimX = %u\n", grid_dim[0]);
+//	cuda_debug("\tgrid_dimY = %u\n", grid_dim[1]);
+//	cuda_debug("\tgrid_dimZ = %u\n", grid_dim[2]);
+//	cuda_debug("\tblock_dimX = %u\n", block_dim[0]);
+//	cuda_debug("\tblock_dimY = %u\n", block_dim[1]);
+//	cuda_debug("\tblock_dimZ = %u\n", block_dim[2]);
+//	cuda_debug("\tshared_mem_usage = %u\n", shared_mem_usage);
+//	cuda_debug("\tstream_handle = 0x%08x\n", stream_handle);
+//	cuda_debug("\tkernel_args = 0x%08x\n", kernel_args);
+//	cuda_debug("\textra = 0x%08x\n", extra);
 
 	/* Get function */
-	function = list_get(function_list, function_id);
+//	function = list_get(function_list, function_id);
 
 	/* Set up arguments */
-	for (i = 0; i < function->arg_count; ++i)
-	{
-		arg = function->arg_array[i];
-		mem_read(mem, kernel_args + i * 4, sizeof(unsigned), &arg_ptr);
-		mem_read(mem, arg_ptr, sizeof(unsigned), &(arg->value));
-		//KplEmuConstMemWrite(kpl_emu, offset, &(arg->value));
-		offset += 0x4;
-	}
+//	for (i = 0; i < function->arg_count; ++i)
+//	{
+//		arg = function->arg_array[i];
+//		mem_read(mem, kernel_args + i * 4, sizeof(unsigned), &arg_ptr);
+//		mem_read(mem, arg_ptr, sizeof(unsigned), &(arg->value));
+//		KplEmuConstMemWrite(kpl_emu, offset, &(arg->value));
+//		offset += 0x4;
+//	}
 
 	/* Create grid */
-	//grid = new(KplGrid, kpl_emu, function);
+//	grid = new(KplGrid, kpl_emu, function);
 
 	/* Set up grid */
-	//KplGridSetupSize(grid, grid_dim, block_dim);
-	//KplGridSetupConstantMemory(grid);
+//	KplGridSetupSize(grid, grid_dim, block_dim);
+//	KplGridSetupConstantMemory(grid);
 
 	/* Add to pending list */
-	list_add(kpl_emu->pending_grids, grid);
+	//list_add(kpl_emu->pending_grids, grid);
 
 	/* Set up call-back function to be run when grid finishes */
-	info = xcalloc(1, sizeof(struct cuda_abi_kpl_kernel_launch_info_t));
-	info->function= function;
-	info->context = ctx;
-	info->grid = grid;
-	kpl_grid_set_free_notify_func(grid, cuda_abi_kpl_kernel_launch_finish,
-			info);
+//	info = xcalloc(1, sizeof(struct cuda_abi_kpl_kernel_launch_info_t));
+//	info->function= function;
+//	info->context = ctx;
+//	info->grid = grid;
+//	kpl_grid_set_free_notify_func(grid, cuda_abi_kpl_kernel_launch_finish,
+//		info);
 
 	/* Suspend x86 context until grid finishes */
-	X86ContextSuspend(ctx, cuda_abi_kpl_kernel_launch_can_wakeup, info,
-			cuda_abi_kpl_kernel_launch_wakeup, info);
+//	X86ContextSuspend(ctx, cuda_abi_kpl_kernel_launch_can_wakeup, info,
+//			cuda_abi_kpl_kernel_launch_wakeup, info);
 
 	return 0;
 }

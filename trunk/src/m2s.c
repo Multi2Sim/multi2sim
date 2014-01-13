@@ -194,7 +194,7 @@ static EvgGpu *evg_gpu;
 static struct FrmAsmWrap *frm_asm;
 static FrmEmu *frm_emu;
 
-static KplEmu *kpl_emu;
+//static KplEmu *kpl_emu;
 
 static struct MIPSAsmWrap *mips_asm;
 static MIPSEmu *mips_emu;
