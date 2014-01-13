@@ -26,6 +26,7 @@ struct opencl_union_device_t *opencl_union_device_create(struct opencl_device_t 
 	}
 
 	*(parent) = *(struct opencl_device_t *)list_get(devices, 0); // just copy over the parameters from someone - we'll do a better job later.
+	parent->max_work_group_size = 512;
 	parent->name = "Multi2Sim Union Device";
 	parent->type = CL_DEVICE_TYPE_ACCELERATOR;
 
