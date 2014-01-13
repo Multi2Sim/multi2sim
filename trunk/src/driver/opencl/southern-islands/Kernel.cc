@@ -85,11 +85,481 @@ void Kernel::ExpectCount(std::vector<std::string> &token_list, unsigned count)
 
 void Kernel::LoadMetaDataV3()
 {
+	// Load metadata content
+	std::istringstream metadata_stream;
+	metadata_symbol->getStream(metadata_stream);
+ 
+ 	bool err;
+	std::string line;
+	std::string token;
+	std::vector<std::string> token_list;
+ 
+	for (;;)
+	{
+		//  Read the next line
+		std::getline(metadata_stream, line);
+		Driver::OpenCLDriver::debug << StringFmt("\t%s\n", line.c_str());
+		misc::StringTokenize(line, token_list, ";:");
 
+		//  Stop when ARGEND is found or line is empty
+		if (!token_list.size() || token_list.front() != "ARGEND")
+		{
+			token_list.clear();
+			break;
+		}
+
+		// Kernel argument metadata
+
+		// Value
+		if (token_list.front() == "value")
+		{
+			// 6 tokens expected 
+			ExpectCount(token_list, 6);
+
+			// Token 1 - Name 
+			token_list.erase(token_list.begin());
+			std::string name = *token_list.begin();
+
+			// Token 2 - Data type 
+			token_list.erase(token_list.begin());
+			int data_type_int = StringToInt(*token_list.begin());
+			ArgDataType data_type = static_cast<ArgDataType>(data_type_int);
+			const char *data_type_string = arg_data_type_map.MapValue(data_type, err);
+			if (err)
+				fatal("%s: invalid data type '%s'.\n%s",
+					__FUNCTION__, data_type_string, 
+					OpenCLErrSIKernelMetadata);
+
+			// Token 3 - Number of elements 
+			token_list.erase(token_list.begin());
+			ExpectInt(token_list);
+			int num_elems = StringToInt(*token_list.begin());
+			assert(num_elems > 0);
+
+			// Token 4 - Constant buffer 
+			token_list.erase(token_list.begin());
+			ExpectInt(token_list);
+			Expect(token_list, "1");
+			int constant_buffer_num = StringToInt(*token_list.begin());
+
+			// Token 5 - Conastant offset 
+			token_list.erase(token_list.begin());
+			ExpectInt(token_list);
+			int constant_offset = StringToInt(*token_list.begin());
+
+			// Create argument object
+			std::unique_ptr<SI::Arg> arg(new SI::ArgValue(name, data_type, num_elems, 
+				constant_buffer_num, constant_offset));
+
+			// Debug 
+			Driver::OpenCLDriver::debug << StringFmt("\targument '%s' - value stored in "
+				"constant buffer %d at offset %d\n",
+				name.c_str(), constant_buffer_num,
+				constant_offset);
+
+			// Add argument and clear token list
+			args.push_back(std::move(arg));
+			token_list.clear();
+			continue;
+		}
+
+		// Pointer 
+		if (token_list.front() == "pointer")
+		{
+			// APP SDK 2.5 supplies 9 tokens, 2.6 supplies
+			// 10 tokens. Metadata version 3:1:104 (as specified
+			// in entry 'version') uses 12 items. 
+			ExpectCount(token_list, 12);
+
+			/* Token 1 - Name */
+			token_list.erase(token_list.begin());
+			std::string name = *token_list.begin();
+
+			/* Token 2 - Data type */
+			token_list.erase(token_list.begin());
+			int data_type_int = StringToInt(*token_list.begin());
+			ArgDataType data_type = static_cast<ArgDataType>(data_type_int);
+			const char *data_type_string = arg_data_type_map.MapValue(data_type, err);
+			if (err)
+				fatal("%s: invalid data type '%s'.\n%s",
+					__FUNCTION__, data_type_string, 
+					OpenCLErrSIKernelMetadata);
+
+			// Token 3 - Number of elements
+			// Arrays of pointers not supported, 
+			// only "1" allowed. 
+			token_list.erase(token_list.begin());
+			ExpectInt(token_list);
+			Expect(token_list, "1");
+			int num_elems = StringToInt(*token_list.begin());
+
+			// Token 4 - Constant buffer 
+			token_list.erase(token_list.begin());
+			ExpectInt(token_list);
+			Expect(token_list, "1");
+			int constant_buffer_num = StringToInt(*token_list.begin());
+
+			// Token 5 - Conastant offset 
+			token_list.erase(token_list.begin());
+			ExpectInt(token_list);
+			int constant_offset = StringToInt(*token_list.begin());
+
+			// Token 6 - Memory scope 
+			token_list.erase(token_list.begin());
+			int arg_scope_int = StringToInt(*token_list.begin());
+			ArgScope arg_scope = static_cast<ArgScope>(arg_scope_int);
+			const char *arg_scope_string = arg_scope_map.MapValue(arg_scope, err);
+			if (err)
+				fatal("%s: invalid scope '%s'.\n%s",
+					__FUNCTION__, arg_scope_string, 
+					OpenCLErrSIKernelMetadata);
+
+			// Token 7 - Buffer number 
+			token_list.erase(token_list.begin());
+			ExpectInt(token_list);
+			int buffer_num = StringToInt(*token_list.begin());
+
+			// Token 8 - Alignment 
+			token_list.erase(token_list.begin());
+			ExpectInt(token_list);
+			int alignment = StringToInt(*token_list.begin());
+
+			// Token 9 - Access type 
+			token_list.erase(token_list.begin());
+			int access_type_int = StringToInt(*token_list.begin());
+			ArgAccessType access_type = static_cast<ArgAccessType>(access_type_int);
+			if (err)
+				fatal("%s: invalid access type '%s'.\n%s",
+					__FUNCTION__, token.c_str(), 
+					OpenCLErrSIKernelMetadata);
+
+			// Token 10 - ??? 
+			token_list.erase(token_list.begin());
+			Expect(token_list, "0");
+
+			// Token 11 - ??? 
+			token_list.erase(token_list.begin());
+			Expect(token_list, "0");
+
+			// Create argument object
+			std::unique_ptr<SI::Arg> arg(new SI::ArgPointer(name, data_type, num_elems, 
+				constant_buffer_num, constant_offset, arg_scope, buffer_num, alignment, 
+				access_type));
+
+			// Debug 
+			Driver::OpenCLDriver::debug << StringFmt("\targument '%s' - Pointer stored in "
+				"constant buffer %d at offset %d\n",
+				name.c_str(), constant_buffer_num,
+				constant_offset);
+
+			// Add argument and clear token list
+			args.push_back(std::move(arg));
+			token_list.clear();
+			continue;
+		}
+
+		// Image 
+		if (token_list.front() == "image")
+		{
+			// 7 tokens expected 
+			ExpectCount(token_list, 7);
+
+			// Token 1 - Name 
+			token_list.erase(token_list.begin());
+			std::string name = *token_list.begin();
+
+			// Token 2 - Dimension 
+			token_list.erase(token_list.begin());
+			int dimension = StringToInt(*token_list.begin());
+			const char*dimension_string = arg_dimension_map.MapValue(dimension, err);
+			if (err)
+				fatal("%s: invalid image dimensions '%s'.\n%s",
+					__FUNCTION__, dimension_string, OpenCLErrSIKernelMetadata);
+
+			// Token 3 - Access type 
+			token_list.erase(token_list.begin());
+			int access_type_int = StringToInt(*token_list.begin());
+			ArgAccessType access_type = static_cast<ArgAccessType>(access_type_int);
+			if (err)
+				fatal("%s: invalid access type '%s'.\n%s",
+					__FUNCTION__, token.c_str(), 
+					OpenCLErrSIKernelMetadata);
+
+			// Token 4 - UAV 
+			token_list.erase(token_list.begin());
+			ExpectInt(token_list);
+			int uav = StringToInt(*token_list.begin());
+
+			// Token 5 - Constant buffer 
+			token_list.erase(token_list.begin());
+			ExpectInt(token_list);
+			Expect(token_list, "1");
+			int constant_buffer_num = StringToInt(*token_list.begin());
+
+			// Token 6 - Conastant offset 
+			token_list.erase(token_list.begin());
+			ExpectInt(token_list);
+			int constant_offset = StringToInt(*token_list.begin());
+
+			// Create argument object
+			std::unique_ptr<SI::Arg> arg(new SI::ArgImage(name, dimension, access_type,
+				uav, constant_buffer_num, constant_offset));
+
+			// Debug 
+			Driver::OpenCLDriver::debug << StringFmt("\targument '%s' - Image stored in "
+				"constant buffer %d at offset %d\n",
+				name.c_str(), constant_buffer_num,
+				constant_offset);
+
+			// Add argument and clear token list
+			args.push_back(std::move(arg));
+			token_list.clear();
+			continue;
+		}
+
+		// Sampler
+		if (token_list.front() == "sampler")
+		{
+			// 5 tokens expected 
+			ExpectCount(token_list, 5);
+
+			// Token 1 - Name 
+			token_list.erase(token_list.begin());
+			std::string name = *token_list.begin();
+
+			// Token 2 - ID 
+			token_list.erase(token_list.begin());
+			ExpectInt(token_list);
+			int id = StringToInt(*token_list.begin());
+
+			// Token 3 - Location 
+			token_list.erase(token_list.begin());
+			ExpectInt(token_list);
+			int location = StringToInt(*token_list.begin());
+
+			// Token 4 - Value 
+			token_list.erase(token_list.begin());
+			ExpectInt(token_list);
+			int value = StringToInt(*token_list.begin());
+
+			// Create argument object
+			std::unique_ptr<SI::Arg> arg(new SI::ArgSampler(name, id, location, 
+				value));
+
+			// Add argument and clear token list
+			args.push_back(std::move(arg));
+			token_list.clear();
+		}
+
+		/*
+		 * Non-kernel argument metadata
+		 */
+
+		/* Memory
+		 * Used to let the GPU know how much local and private memory
+		 * is required for a kernel, where it should be allocated,
+		 * as well as other information. */
+		if (token_list.front() == "memory")
+		{
+			/* Token 1 - Memory scope */
+			token_list.erase(token_list.begin());
+			if (token_list.front() == "hwprivate")
+			{
+				/* FIXME Add support for private memory by
+				 * adding space in global memory */
+
+				/* Token 2 - ??? */
+				token_list.erase(token_list.begin());
+				Expect(token_list, "0");
+			}
+			else if (token_list.front() == "hwregion")
+			{
+				/* 2 more tokens expected */
+				ExpectCount(token_list, 2);
+
+				/* Token 2 - ??? */
+				token_list.erase(token_list.begin());
+				Expect(token_list, "0");
+			}
+			else if (token_list.front() == "hwlocal")
+			{
+				/* 2 more tokens expected */
+				ExpectCount(token_list, 2);
+
+				/* Token 2 - Size of local memory */
+				token_list.erase(token_list.begin());
+				ExpectInt(token_list);
+				mem_size_local = StringToInt(*token_list.begin());
+			}
+			else if (token_list.front() == "datareqd")
+			{
+				/* 1 more token expected */
+				ExpectCount(token_list, 1);
+			}
+			else if (token_list.front() == "uavprivate")
+			{
+				/* 2 more tokens expected */
+				ExpectCount(token_list, 2);
+			}
+			else
+			{
+				fatal("%s: not supported metadata '%s'.\n%s",
+						__FUNCTION__, token.c_str(), OpenCLErrSIKernelMetadata);
+			}
+
+			/* Next */
+			token_list.clear();
+			continue;
+		}
+
+		/* Function
+		 * Used for multi-kernel compilation units. */
+		if (token_list.front() == "function")
+		{
+			/* Expect 3 token */
+			ExpectCount(token_list, 3);
+
+			/* Token 1 - ??? */
+			token_list.erase(token_list.begin());
+			Expect(token_list, "1");
+
+			/* Token 2 - Function ID */
+			token_list.erase(token_list.begin());
+			ExpectInt(token_list);
+			func_uniqueid = StringToInt(*token_list.begin());
+
+			/* Next */
+			token_list.clear();
+			continue;
+		}
+
+		/* Reflection
+		 * Format: reflection:<arg_id>:<type>
+		 * Observed first in version 3:1:104 of metadata.
+		 * This entry specifies the type of the argument, as
+		 * specified in the OpenCL kernel function header. It is
+		 * currently ignored, since this information is extracted from
+		 * the argument descriptions in 'value' and 'pointer' entries.
+		 */
+		if (token_list.front() == "reflection")
+		{
+			/* Expect 3 tokens */
+			ExpectCount(token_list, 3);
+
+			/* Next */
+			token_list.clear();
+			continue;
+		}
+
+		/* Privateid
+		 * Format: privateid:<id>
+		 * Observed first in version 3:1:104 of metadata.
+		 * Not sure what this entry is for.
+		 */
+		if (token_list.front() == "privateid")
+		{
+			/* Expect 2 tokens */
+			ExpectCount(token_list, 2);
+
+			/* Next */
+			token_list.clear();
+			continue;
+		}
+
+		/* Constarg
+		 * Format: constarg:<arg_id>:<arg_name>
+		 * Observed first in version 3:1:104 of metadata.
+		 * It shows up when an argument is declared as
+		 * '__global const'. Entry ignored here. */
+		if (token_list.front() == "constarg")
+		{
+			/* Expect 3 tokens */
+			ExpectCount(token_list, 3);
+
+			/* Next */
+			token_list.clear();
+			continue;
+		}
+
+		/* Device
+		 * Device that the kernel was compiled for. */
+		if (token_list.front() == "device")
+		{
+			/* Expect 2 tokens */
+			ExpectCount(token_list, 2);
+
+			/* Next */
+			token_list.clear();
+			continue;
+		}
+
+		/* Uniqueid
+		 * A mapping between a kernel and its unique ID */
+		if (token_list.front() == "uniqueid")
+		{
+			/* Expect 2 tokens */
+			ExpectCount(token_list, 2);
+
+			/* Next */
+			token_list.clear();
+			continue;
+		}
+
+		/* Uavid 
+		 * ID of a raw UAV */
+		if (token_list.front() == "uavid")
+		{
+			/* Expect 2 tokens */
+			ExpectCount(token_list, 2);
+
+			/* Next */
+			token_list.clear();
+			continue;
+		}
+
+		/* Crash when uninterpreted entries appear */
+		fatal("kernel '%s': unknown metadata entry '%s'",
+			this->name.c_str(), token.c_str());
+	}
 }
 
 void Kernel::LoadMetaData()
 {
+	// Load metadata content
+	std::istringstream metadata_stream;
+	metadata_symbol->getStream(metadata_stream);
+ 
+	// First line example:
+	// ;ARGSTART:__OpenCL_opencl_mmul_kernel
+	std::string line;
+	std::vector<std::string> token_list;
+	std::getline(metadata_stream, line);
+	misc::StringTokenize(line, token_list, ";:");
+	Expect(token_list, "ARGSTART");
+	ExpectCount(token_list, 2);
+	token_list.clear();
+
+	// Second line contains version info. Example:
+	// ;version:3:1:104 
+	std::getline(metadata_stream, line);
+	misc::StringTokenize(line, token_list, ";:");
+	Expect(token_list, "version");
+	ExpectCount(token_list, 4);
+	int version = StringToInt(token_list[1]);
+	token_list.clear();
+
+	// Parse rest of the metadata based on version number 
+	switch (version)
+	{
+	case 3:
+
+		LoadMetaDataV3();
+		break;
+
+	default:
+		misc::fatal("%s: metadata version %d not supported.\n%s",
+				__FUNCTION__, version, OpenCLErrSIKernelMetadata);
+	}
 
 }
 
@@ -127,7 +597,5 @@ Kernel::Kernel(int id, std::string name, Program *program)
 	// Load metadata
 	LoadMetaData();
 }
-
-
 
 }  // namespace SI
