@@ -975,7 +975,7 @@ cudaError_t cudaMallocHost(void **ptr, size_t size)
 	cuda_debug("\t(runtime) in: ptr = [%p]", ptr);
 	cuda_debug("\t(runtime) in: size = %d", size);
 
-	*ptr = xcalloc(1, size);
+	cuMemAllocHost(ptr, size);
 
 	cuda_rt_last_error = cudaSuccess;
 
@@ -1242,13 +1242,7 @@ cudaError_t cudaMemcpyAsync(void *dst, const void *src, size_t count,
 	cuda_debug("\t(runtime) in: kind = %d", kind);
 	cuda_debug("\t(runtime) in: stream = [%p]", stream);
 
-	if (kind == cudaMemcpyHostToDevice)
-		cuMemcpyHtoD((CUdeviceptr)dst, src, count);
-	else if (kind == cudaMemcpyDeviceToHost)
-		cuMemcpyDtoH(dst, (CUdeviceptr)src, count);
-	else
-		warning("%s: kind = %d not implemented.\n%s", __func__, kind,
-				cuda_rt_err_not_impl);
+	cuMemcpyAsync((CUdeviceptr)dst, (CUdeviceptr)src, count, stream);
 
 	cuda_rt_last_error = cudaSuccess;
 
@@ -1320,6 +1314,7 @@ cudaError_t cudaMemcpyFromSymbolAsync(void *dst, const void *symbol,
 	return cudaSuccess;
 }
 
+/* TODO: Asynchronous when the target memory is pinned host memory. */
 cudaError_t cudaMemset(void *devPtr, int value, size_t count)
 {
 	cuda_debug("CUDA runtime API '%s'", __func__);

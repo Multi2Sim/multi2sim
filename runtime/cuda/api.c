@@ -169,7 +169,7 @@ CUresult cuInit(unsigned int Flags)
 
 	/* Frm is selected by default. This could change if the user specificies
 	 * which device should be used in cuDeviceGet function */
-	device = frm_device;
+	active_devices = frm_device;
 
 	/* Syscall */
 	ret = syscall(CUDA_SYS_CODE, cuda_call_cuInit);
@@ -208,10 +208,10 @@ CUresult cuDriverGetVersion(int *driverVersion)
 
 /* First function parameter changed from 'device' to
  * 'ret_device' to avoid confusion with the global variable 'device' */
-CUresult cuDeviceGet(CUdevice *ret_device, int ordinal)
+CUresult cuDeviceGet(CUdevice *device, int ordinal)
 {
 	cuda_debug("CUDA driver API '%s'", __func__);
-	cuda_debug("\t(driver) in: device = [%p]", ret_device);
+	cuda_debug("\t(driver) in: device = [%p]", device);
 	cuda_debug("\t(driver) in: ordinal = %d", ordinal);
 
 	/* Check input */
@@ -222,14 +222,14 @@ CUresult cuDeviceGet(CUdevice *ret_device, int ordinal)
 	}
 
 	/* Get device */
-	*ret_device = ((struct cuda_device_t *)list_get(device_list, ordinal))->device;
+	*device = ((struct cuda_device_t *)list_get(device_list, ordinal))->device;
 
 	/* Set the global variable 'device' with Frm or Kpl
 	 * attributes taking into account the user's choice */
-	if (*ret_device == 0)
-		device = frm_device;
-	else if (*ret_device == 1)
-		device = kpl_device;
+	if (*device == 0)
+		active_devices = frm_device;
+	else if (*device == 1)
+		active_devices = kpl_device;
 	else
 	{
 		cuda_debug("\t(driver) out: return = %d",
@@ -237,7 +237,7 @@ CUresult cuDeviceGet(CUdevice *ret_device, int ordinal)
 		return CUDA_ERROR_INVALID_VALUE;
 	}
 
-	cuda_debug("\t(driver) out: device = %d", *ret_device);
+	cuda_debug("\t(driver) out: device = %d", *device);
 	cuda_debug("\t(driver) out: return = %d", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
@@ -737,9 +737,9 @@ CUresult cuMemAlloc(CUdeviceptr *dptr, size_t bytesize)
 	/* Syscall */
 	/* ret = syscall(CUDA_SYS_CODE, cuda_call_cuMemAlloc, dptr, bytesize); */
 	/* Different syscalls for Frm and Kpl */
-	if (device->device == 0)
+	if (active_devices->device == 0)
 		ret = syscall(CUDA_SYS_CODE, cuda_call_cuFrmMemAlloc, dptr, bytesize);
-	else if (device->device == 1)
+	else if (active_devices->device == 1)
 		ret = syscall(CUDA_SYS_CODE, cuda_call_cuKplMemAlloc, dptr, bytesize);
 	else
 		fatal("device not supported.\n");
@@ -794,7 +794,15 @@ CUresult cuMemGetAddressRange(CUdeviceptr *pbase, size_t *psize,
 
 CUresult cuMemAllocHost(void **pp, size_t bytesize)
 {
-	__CUDA_NOT_IMPL__;
+	cuda_debug("CUDA driver API '%s'", __func__);
+	cuda_debug("\t(driver) in: pp = [%p]", pp);
+	cuda_debug("\t(driver) in: bytesize = %d", bytesize);
+
+	*pp = xcalloc(1, bytesize);
+
+	cuda_debug("\t(driver) out: pp = %p", *pp);
+	cuda_debug("\t(driver) out: return = %d", CUDA_SUCCESS);
+
 	return CUDA_SUCCESS;
 }
 
@@ -905,10 +913,10 @@ CUresult cuMemcpyHtoD(CUdeviceptr dstDevice, const void *srcHost,
 	/*ret = syscall(CUDA_SYS_CODE, cuda_call_cuMemcpyHtoD, dstDevice, srcHost,
 			ByteCount); */
 	/* Different syscalls for Frm and Kpl */
-	if (device->device == 0)
+	if (active_devices->device == 0)
 		ret = syscall(CUDA_SYS_CODE, cuda_call_cuFrmMemcpyHtoD, 
 				dstDevice, srcHost, ByteCount);
-	else if (device->device == 1)
+	else if (active_devices->device == 1)
 		ret = syscall(CUDA_SYS_CODE, cuda_call_cuKplMemcpyHtoD, 
 				dstDevice, srcHost, ByteCount);
 	else
@@ -938,10 +946,10 @@ CUresult cuMemcpyDtoH(void *dstHost, CUdeviceptr srcDevice, size_t ByteCount)
 	/*ret = syscall(CUDA_SYS_CODE, cuda_call_cuMemcpyDtoH, dstHost, srcDevice,
 			ByteCount);*/
 	/* Different syscalls for Frm and Kpl */
-	if (device->device == 0)
+	if (active_devices->device == 0)
 		ret = syscall(CUDA_SYS_CODE, cuda_call_cuFrmMemcpyDtoH, dstHost,
 				srcDevice, ByteCount);
-	else if (device->device == 1)
+	else if (active_devices->device == 1)
 		ret = syscall(CUDA_SYS_CODE, cuda_call_cuKplMemcpyDtoH, dstHost,
 				srcDevice, ByteCount);
 	else
@@ -1108,10 +1116,10 @@ CUresult cuMemsetD8(CUdeviceptr dstDevice, unsigned char uc, size_t N)
 	/*ret = syscall(CUDA_SYS_CODE, cuda_call_cuMemcpyHtoD, dstDevice, src_host,
 			N);*/
 	/* Different syscalls for Frm and Kpl */
-	if (device->device == 0)
+	if (active_devices->device == 0)
 		ret = syscall(CUDA_SYS_CODE, cuda_call_cuFrmMemcpyHtoD, dstDevice,
 			src_host, N);
-	else if (device->device == 1)
+	else if (active_devices->device == 1)
 		ret = syscall(CUDA_SYS_CODE, cuda_call_cuKplMemcpyHtoD, dstDevice,
 			src_host, N);
 	else
@@ -1448,9 +1456,9 @@ CUresult cuLaunchKernel(CUfunction f, unsigned int gridDimX,
 	/* Syscall */
 	/*ret = syscall(CUDA_SYS_CODE, cuda_call_cuLaunchKernel, sys_args);*/
 	/* Different syscalls for Frm and Kpl */
-	if (device->device == 0)
+	if (active_devices->device == 0)
 		ret = syscall(CUDA_SYS_CODE, cuda_call_cuFrmLaunchKernel, sys_args);
-	else if (device->device == 1)
+	else if (active_devices->device == 1)
 		ret = syscall(CUDA_SYS_CODE, cuda_call_cuKplLaunchKernel, sys_args);
 	else
 		fatal("device not supported.\n");
