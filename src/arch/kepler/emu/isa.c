@@ -17,45 +17,16 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef RUNTIME_CUDA_API_H
-#define RUNTIME_CUDA_API_H
+
+#include <lib/mhandle/mhandle.h>
+#include <lib/util/debug.h>
+
+#include "Emu.h"
+#include "isa.h"
+//#include "machine.h"
 
 
-/* Syscall code */
-#define CUDA_SYS_CODE 328
 
 /* Debug */
-void cuda_debug(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
-
-/* List of CUDA driver calls */
-enum cuda_call_t
-{
-	cuda_call_invalid,
-#define CUDA_DEFINE_CALL(name) cuda_call_##name,
-#include "../../src/driver/cuda/cuda.dat"
-#undef CUDA_DEFINE_CALL
-	cuda_call_count
-};
-
-/* CUDA device */
-enum cuda_device_type_t
-{
-	CUDA_DEVICE_FERMI = 0,
-	CUDA_DEVICE_KEPLER = 1
-};
-
-struct cuda_device_t *device;
-struct cuda_device_t *frm_device;
-struct cuda_device_t *kpl_device;
-
-/* Lists of CUDA objects */
-struct list_t *context_list;
-struct list_t *device_list;
-struct list_t *module_list;
-struct list_t *function_list;
-struct list_t *stream_list;
-struct list_t *event_list;
-
-
-#endif
+int kpl_isa_debug_category = 1;
 

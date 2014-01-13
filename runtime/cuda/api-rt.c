@@ -218,7 +218,7 @@ void __cudaRegisterFunction(void **fatCubinHandle, const char *hostFun,
 		fclose(dev_func_bin_f);
 	}
 
-	/* Check for Fermi binary. Support for Fermi only for now. */
+	/* Check for Fermi and Kepler binary. */
 	elf_buffer_seek(&(dev_func_bin->buffer), 8);
 	elf_buffer_read(&(dev_func_bin->buffer), &abi_version, 1);
 	if (abi_version < 4 || abi_version > 7)

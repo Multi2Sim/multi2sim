@@ -17,45 +17,45 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef RUNTIME_CUDA_API_H
-#define RUNTIME_CUDA_API_H
+
+#include <lib/mhandle/mhandle.h>
+#include <lib/util/list.h>
+#include <mem-system/memory.h>
+
+#include "ThreadBlock.h"
+#include "Thread.h"
+#include "Warp.h"
 
 
-/* Syscall code */
-#define CUDA_SYS_CODE 328
+/*
+ * Public Functions
+ */
 
-/* Debug */
-void cuda_debug(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
-
-/* List of CUDA driver calls */
-enum cuda_call_t
+void KplThreadBlockCreate(KplThreadBlock *self, KplGrid *grid)
 {
-	cuda_call_invalid,
-#define CUDA_DEFINE_CALL(name) cuda_call_##name,
-#include "../../src/driver/cuda/cuda.dat"
-#undef CUDA_DEFINE_CALL
-	cuda_call_count
-};
+	/* Initialize */
+	self->grid = grid;
+	self->shared_mem = mem_create();
+	self->shared_mem->safe = 0;
+	self->num_warps_at_barrier = 0;
+}
 
-/* CUDA device */
-enum cuda_device_type_t
+
+void KplThreadBlockDestroy(KplThreadBlock *self)
 {
-	CUDA_DEVICE_FERMI = 0,
-	CUDA_DEVICE_KEPLER = 1
-};
+	int i;
 
-struct cuda_device_t *device;
-struct cuda_device_t *frm_device;
-struct cuda_device_t *kpl_device;
+	for (i = 0; i < self->warp_count; i++)
+                delete(self->warps[i]);
+	free(self->warps);
+	list_free(self->running_warps);
+	list_free(self->finished_warps);
 
-/* Lists of CUDA objects */
-struct list_t *context_list;
-struct list_t *device_list;
-struct list_t *module_list;
-struct list_t *function_list;
-struct list_t *stream_list;
-struct list_t *event_list;
+	for (i = 0; i < self->thread_count; i++)
+                delete(self->threads[i]);
+	free(self->threads);
 
+	mem_free(self->shared_mem);
+}
 
-#endif
 

@@ -17,6 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <arch/kepler/emu/Emu.h>
+#include <arch/kepler/emu/Grid.h>
 
 #include <arch/fermi/emu/emu.h>
 #include <arch/fermi/emu/grid.h>
@@ -84,6 +86,14 @@ struct cuda_abi_frm_kernel_launch_info_t
 	int finished;
 };
 
+struct cuda_abi_kpl_kernel_launch_info_t
+{
+	struct cuda_function_t *function;
+	X86Context *context;
+	KplGrid *grid;
+	int finished;
+};
+
 
 
 
@@ -91,6 +101,8 @@ struct cuda_abi_frm_kernel_launch_info_t
  * Class 'CudaDriver'
  */
 
+
+//void CudaDriverCreate(CudaDriver *self, X86Emu *x86_emu, FrmEmu *frm_emu, KplEmu *kpl_emu)
 void CudaDriverCreate(CudaDriver *self, X86Emu *x86_emu, FrmEmu *frm_emu)
 {
 	/* Parent */
@@ -98,6 +110,7 @@ void CudaDriverCreate(CudaDriver *self, X86Emu *x86_emu, FrmEmu *frm_emu)
 
 	/* Initialize */
 	self->frm_emu = frm_emu;
+	//self->kpl_emu = kpl_emu;
 
 	/* Assign driver to host emulator */
 	x86_emu->cuda_driver = self;
@@ -403,7 +416,7 @@ int cuda_func_cuMemGetInfo(X86Context *ctx)
 
 
 /*
- * CUDA call - cuMemAlloc
+ * CUDA call - cuFrmMemAlloc
  *
  * @param unsigned dev_mem_ptr;
  *  Returned device pointer.
@@ -414,8 +427,7 @@ int cuda_func_cuMemGetInfo(X86Context *ctx)
  * @return
  *	The return value is always 0 on success.
  */
-
-int cuda_func_cuMemAlloc(X86Context *ctx)
+int cuda_func_cuFrmMemAlloc(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -435,6 +447,46 @@ int cuda_func_cuMemAlloc(X86Context *ctx)
 	cuda_debug("\tout: dev_mem_ptr=0x%08x\n", frm_emu->global_mem_top);
 
 	frm_emu->global_mem_top += dev_mem_size;
+
+	return 0;
+}
+
+
+
+
+/*
+ * CUDA call - cuKplMemAlloc
+ *
+ * @param unsigned dev_mem_ptr;
+ *  Returned device pointer.
+ *
+ * @param unsigned dev_mem_size;
+ *  Requested allocation size in bytes.
+ *
+ * @return
+ *	The return value is always 0 on success.
+ */
+int cuda_func_cuKplMemAlloc(X86Context *ctx)
+{
+
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
+	unsigned dev_mem_ptr;
+	unsigned dev_mem_size;
+	KplEmu *kpl_emu = ctx->emu->cuda_driver->kpl_emu;
+
+	dev_mem_ptr = regs->ecx;
+	dev_mem_size = regs->edx;
+
+	cuda_debug("\tin: dev_mem_size=%u\n", dev_mem_size);
+
+	mem_write(mem, dev_mem_ptr, sizeof(unsigned), &(kpl_emu->global_mem_top));
+	kpl_emu->free_global_mem_size -= dev_mem_size;
+
+	cuda_debug("\tout: dev_mem_ptr=0x%08x\n", kpl_emu->global_mem_top);
+
+	kpl_emu->global_mem_top += dev_mem_size;
 
 	return 0;
 }
@@ -469,7 +521,7 @@ int cuda_func_cuMemFree(X86Context *ctx)
 
 
 /*
- * CUDA call - cuMemcpyHtoD
+ * CUDA call - cuFrmMemcpyHtoD
  *
  * @param unsigned dev_mem_ptr;
  *  Pointer of destination device memory.
@@ -483,8 +535,7 @@ int cuda_func_cuMemFree(X86Context *ctx)
  * @return
  *	The return value is always 0 on success.
  */
-
-int cuda_func_cuMemcpyHtoD(X86Context *ctx)
+int cuda_func_cuFrmMemcpyHtoD(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -516,7 +567,53 @@ int cuda_func_cuMemcpyHtoD(X86Context *ctx)
 
 
 /*
- * CUDA call - cuMemcpyDtoH
+ * CUDA call - cuKplMemcpyHtoD
+ *
+ * @param unsigned dev_mem_ptr;
+ *  Pointer of destination device memory.
+ *
+ * @param unsigned host_mem_ptr;
+ *  Pointer of source host memory.
+ *
+ * @param unsigned size;
+ *  Size of memory copy in bytes.
+ *
+ * @return
+ *	The return value is always 0 on success.
+ */
+int cuda_func_cuKplMemcpyHtoD(X86Context *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
+	unsigned dev_mem_ptr;
+	unsigned host_mem_ptr;
+	unsigned size;
+	void *buf;
+	KplEmu *kpl_emu = ctx->emu->cuda_driver->kpl_emu;
+
+	dev_mem_ptr = regs->ecx;
+	host_mem_ptr = regs->edx;
+	size = regs->esi;
+
+	cuda_debug("\tin: dev_mem_ptr=0x%08x\n", dev_mem_ptr);
+	cuda_debug("\tin: host_mem_ptr=0x%08x\n", host_mem_ptr);
+	cuda_debug("\tin: size=%u\n", size);
+
+	/* Copy */
+	buf = xcalloc(1, size);
+	mem_read(mem, host_mem_ptr, size, buf);
+	mem_write(kpl_emu->global_mem, dev_mem_ptr, size, buf);
+	free(buf);
+
+	return 0;
+}
+
+
+
+
+/*
+ * CUDA call - cuFrmMemcpyDtoH
  *
  * @param unsigned host_mem_ptr;
  *  Destination host pointer.
@@ -530,8 +627,7 @@ int cuda_func_cuMemcpyHtoD(X86Context *ctx)
  * @return
  *	The return value is always 0 on success.
  */
-
-int cuda_func_cuMemcpyDtoH(X86Context *ctx)
+int cuda_func_cuFrmMemcpyDtoH(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -563,7 +659,53 @@ int cuda_func_cuMemcpyDtoH(X86Context *ctx)
 
 
 /*
- * CUDA call - cuLaunchKernel
+ * CUDA call - cuKplMemcpyDtoH
+ *
+ * @param unsigned host_mem_ptr;
+ *  Destination host pointer.
+ *
+ * @param unsigned dev_mem_ptr;
+ *  Source device pointer.
+ *
+ * @param unsigned size;
+ *  Size of memory copy in bytes.
+ *
+ * @return
+ *	The return value is always 0 on success.
+ */
+int cuda_func_cuKplMemcpyDtoH(X86Context *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
+	unsigned host_mem_ptr;
+	unsigned dev_mem_ptr;
+	unsigned size;
+	void *buf;
+	KplEmu *kpl_emu = ctx->emu->cuda_driver->kpl_emu;
+
+	host_mem_ptr = regs->ecx;
+	dev_mem_ptr = regs->edx;
+	size = regs->esi;
+
+	cuda_debug("\tin: host_mem_ptr=0x%08x\n", host_mem_ptr);
+	cuda_debug("\tin: dev_mem_ptr=0x%08x\n", dev_mem_ptr);
+	cuda_debug("\tin: size=%u\n", size);
+
+	/* Copy */
+	buf = xcalloc(1, size);
+	mem_read(kpl_emu->global_mem, dev_mem_ptr, size, buf);
+	mem_write(mem, host_mem_ptr, size, buf);
+	free(buf);
+
+	return 0;
+}
+
+
+
+
+/*
+ * CUDA call - cuFrmLaunchKernel
  *
  * @param unsigned function_id;
  *  ID of the function to launch.
@@ -637,7 +779,7 @@ static void cuda_abi_frm_kernel_launch_wakeup(X86Context *ctx,
 	free(info);
 }
 
-int cuda_func_cuLaunchKernel(X86Context *ctx)
+int cuda_func_cuFrmLaunchKernel(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -721,6 +863,172 @@ int cuda_func_cuLaunchKernel(X86Context *ctx)
 	/* Suspend x86 context until grid finishes */
 	X86ContextSuspend(ctx, cuda_abi_frm_kernel_launch_can_wakeup, info,
 			cuda_abi_frm_kernel_launch_wakeup, info);
+
+	return 0;
+}
+
+
+
+
+/*
+ * CUDA call - cuKplLaunchKernel
+ *
+ * @param unsigned function_id;
+ *  ID of the function to launch.
+ *
+ * @param unsigned grid_dim[3];
+ *  Dimensions of the grid in blocks.
+ *
+ * @param unsigned block_dim[3];
+ *  Dimensions of the thread-block.
+ *
+ * @param unsigned shared_mem_usage;
+ *  Size of the shared memory per thread-block in bytes.
+ *
+ * @param unsigned stream_handle;
+ *  Handle of the stream.
+ *
+ * @param unsigned kernel_args;
+ *  Array of pointers to kernel parameters.
+ *
+ * @param unsigned extra;
+ *  Extra kernel parameters.
+ *
+ * @return
+ *	The return value is always 0 on success.
+ */
+
+void kpl_grid_set_free_notify_func(KplGrid *grid, void (*func)(void *),
+		void *user_data)
+{
+	grid->free_notify_func = func;
+	grid->free_notify_data = user_data;
+}
+
+static void cuda_abi_kpl_kernel_launch_finish(void *user_data)
+{
+	struct cuda_abi_kpl_kernel_launch_info_t *info = user_data;
+	struct cuda_function_t *kernel = info->function;
+
+	X86Context *ctx = info->context;
+	KplGrid *grid = info->grid;
+
+	/* Debug */
+	cuda_debug("Grid %d running kernel '%s' finished\n",
+			grid->id, kernel->name);
+
+	/* Set 'finished' flag in launch info */
+	info->finished = 1;
+
+	/* Force the x86 emulator to check which suspended contexts can wakeup,
+	 * based on their new state. */
+	X86EmuProcessEventsSchedule(ctx->emu);
+}
+
+static int cuda_abi_kpl_kernel_launch_can_wakeup(X86Context *ctx,
+		void *user_data)
+{
+	struct cuda_abi_kpl_kernel_launch_info_t *info = user_data;
+
+	/* NOTE: the grid has been freed at this point if it finished
+	 * execution, so field 'info->grid' should not be accessed. We
+	 * use flag 'info->finished' instead. */
+	return info->finished;
+}
+
+static void cuda_abi_kpl_kernel_launch_wakeup(X86Context *ctx,
+		void *user_data)
+{
+	struct cuda_abi_kpl_kernel_launch_info_t *info = user_data;
+
+	/* Free info object */
+	free(info);
+}
+
+int cuda_func_cuKplLaunchKernel(X86Context *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
+	unsigned args[11];
+	unsigned function_id;
+	unsigned grid_dim[3];
+	unsigned block_dim[3];
+	unsigned shared_mem_usage;
+	unsigned stream_handle;
+	unsigned kernel_args;
+	unsigned extra;
+
+	struct cuda_function_t *function;
+	int i;
+	struct cuda_function_arg_t *arg;
+	unsigned arg_ptr;
+	int offset = 0x20;
+	KplGrid *grid;
+	KplEmu *kpl_emu = ctx->emu->cuda_driver->kpl_emu;
+	struct cuda_abi_kpl_kernel_launch_info_t *info;
+
+	/* Read arguments */
+	mem_read(mem, regs->ecx, 11 * sizeof *args, args);
+	function_id = args[0];
+	grid_dim[0] = args[1];
+	grid_dim[1] = args[2];
+	grid_dim[2] = args[3];
+	block_dim[0] = args[4];
+	block_dim[1] = args[5];
+	block_dim[2] = args[6];
+	shared_mem_usage = args[7];
+	stream_handle = args[8];
+	kernel_args = args[9];
+	extra = args[10];
+
+	/* Debug */
+	cuda_debug("\tfunction_id = 0x%08x\n", function_id);
+	cuda_debug("\tgrid_dimX = %u\n", grid_dim[0]);
+	cuda_debug("\tgrid_dimY = %u\n", grid_dim[1]);
+	cuda_debug("\tgrid_dimZ = %u\n", grid_dim[2]);
+	cuda_debug("\tblock_dimX = %u\n", block_dim[0]);
+	cuda_debug("\tblock_dimY = %u\n", block_dim[1]);
+	cuda_debug("\tblock_dimZ = %u\n", block_dim[2]);
+	cuda_debug("\tshared_mem_usage = %u\n", shared_mem_usage);
+	cuda_debug("\tstream_handle = 0x%08x\n", stream_handle);
+	cuda_debug("\tkernel_args = 0x%08x\n", kernel_args);
+	cuda_debug("\textra = 0x%08x\n", extra);
+
+	/* Get function */
+	function = list_get(function_list, function_id);
+
+	/* Set up arguments */
+	for (i = 0; i < function->arg_count; ++i)
+	{
+		arg = function->arg_array[i];
+		mem_read(mem, kernel_args + i * 4, sizeof(unsigned), &arg_ptr);
+		mem_read(mem, arg_ptr, sizeof(unsigned), &(arg->value));
+		//KplEmuConstMemWrite(kpl_emu, offset, &(arg->value));
+		offset += 0x4;
+	}
+
+	/* Create grid */
+	//grid = new(KplGrid, kpl_emu, function);
+
+	/* Set up grid */
+	//KplGridSetupSize(grid, grid_dim, block_dim);
+	//KplGridSetupConstantMemory(grid);
+
+	/* Add to pending list */
+	list_add(kpl_emu->pending_grids, grid);
+
+	/* Set up call-back function to be run when grid finishes */
+	info = xcalloc(1, sizeof(struct cuda_abi_kpl_kernel_launch_info_t));
+	info->function= function;
+	info->context = ctx;
+	info->grid = grid;
+	kpl_grid_set_free_notify_func(grid, cuda_abi_kpl_kernel_launch_finish,
+			info);
+
+	/* Suspend x86 context until grid finishes */
+	X86ContextSuspend(ctx, cuda_abi_kpl_kernel_launch_can_wakeup, info,
+			cuda_abi_kpl_kernel_launch_wakeup, info);
 
 	return 0;
 }
