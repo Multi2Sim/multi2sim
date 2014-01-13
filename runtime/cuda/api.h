@@ -44,7 +44,7 @@ enum cuda_device_type_t
 	CUDA_DEVICE_KEPLER = 1
 };
 
-struct cuda_device_t *device;
+struct cuda_device_t *active_devices;
 struct cuda_device_t *frm_device;
 struct cuda_device_t *kpl_device;
 
