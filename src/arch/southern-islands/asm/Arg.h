@@ -38,6 +38,8 @@ enum ArgType
 	ArgTypeSampler
 };
 
+extern misc::StringMap arg_dimension_map;
+
 enum ArgAccessType
 {
 	ArgAccessTypeInvalid = 0,
@@ -46,6 +48,7 @@ enum ArgAccessType
 	ArgAccessTypeReadWrite
 };
 
+extern misc::StringMap arg_scope_map;
 enum ArgScope
 {
 	ArgScopeInavlid = 0,
@@ -266,6 +269,14 @@ public:
 				uav(uav),
 				constant_buffer_num(constant_buffer_num),
 				constant_offset(constant_offset) { }
+
+	/* Dump */
+	void Dump(std::ostream &os);
+	
+	void WriteInfo(ELFWriter::Buffer *buffer, unsigned int index,
+			unsigned int &offset, int *uav);
+	void WriteReflection(ELFWriter::Buffer *buffer, unsigned int index);
+
 };
 
 
@@ -285,6 +296,13 @@ public:
 				id(id),
 				location(location),
 				value(value) { }
+
+	/* Dump */
+	void Dump(std::ostream &os);
+	
+	void WriteInfo(ELFWriter::Buffer *buffer, unsigned int index,
+			unsigned int &offset, int *uav);
+	void WriteReflection(ELFWriter::Buffer *buffer, unsigned int index);
 };
 
 

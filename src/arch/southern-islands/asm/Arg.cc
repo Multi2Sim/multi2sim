@@ -302,6 +302,45 @@ void ArgValue::WriteReflection(ELFWriter::Buffer *buffer, unsigned int index)
 
 }
 
+void ArgImage::Dump(std::ostream &os)
+{
+	os << arg_dimension_map.MapValue(dimension);
+	if (dimension > 1)
+		os << '[' << dimension << ']';
+	os << ' ' << getName();
+}
+
+void ArgImage::WriteInfo(ELFWriter::Buffer *buffer, unsigned int index, 
+		unsigned int &offset, int *uav)
+{
+	// FIXME: an empty implementation to pass compilation
+	fatal("%s: Not Implemented!", __FUNCTION__);
+}
+
+void ArgImage::WriteReflection(ELFWriter::Buffer *buffer, unsigned int index)
+{
+	// FIXME: an empty implementation to pass compilation
+	fatal("%s: Not Implemented!", __FUNCTION__);
+}
+
+void ArgSampler::Dump(std::ostream &os)
+{
+	// FIXME: an empty implementation to pass compilation
+	fatal("%s: Not Implemented!", __FUNCTION__);
+}
+
+void ArgSampler::WriteInfo(ELFWriter::Buffer *buffer, unsigned int index, 
+		unsigned int &offset, int *uav)
+{
+	// FIXME: an empty implementation to pass compilation
+	fatal("%s: Not Implemented!", __FUNCTION__);
+}
+
+void ArgSampler::WriteReflection(ELFWriter::Buffer *buffer, unsigned int index)
+{
+	// FIXME: an empty implementation to pass compilation
+	fatal("%s: Not Implemented!", __FUNCTION__);
+}
 
 #if 0
 SIArg * SIArgCopy(SIArg *original)
