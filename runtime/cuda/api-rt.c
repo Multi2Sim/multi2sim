@@ -68,8 +68,6 @@ char *cuda_rt_err_param_note =
 		cuda_rt_err_not_impl)
 
 
-
-
 /*
  * CUDA Runtime Internal Functions
  */
@@ -224,7 +222,7 @@ void __cudaRegisterFunction(void **fatCubinHandle, const char *hostFun,
 	if (abi_version < 4 || abi_version > 7)
 		fatal("%s:%d: The cubin has a unrecognized ABI version (0x%x).\n"
 				"\tMulti2Sim CUDA library is currently compatible with Fermi\n"
-				"\tbinary only.", __FILE__, __LINE__, abi_version);
+				"\tor Kepler binary only.", __FILE__, __LINE__, abi_version);
 
 	/* Load module */
 	cuModuleLoad(&module, cubin_path);
@@ -248,8 +246,6 @@ void __cudaRegisterFunction(void **fatCubinHandle, const char *hostFun,
 
 	cuda_debug("\t(runtime) out: return");
 }
-
-
 
 
 /*
@@ -433,7 +429,7 @@ cudaError_t cudaGetDeviceCount(int *count)
 	cuda_debug("CUDA runtime API '%s'", __func__);
 	cuda_debug("\t(runtime) in: count = [%p]", count);
 
-	*count = 1;	
+	*count = 2;
 
 	cuda_rt_last_error = cudaSuccess;
 
@@ -467,8 +463,8 @@ cudaError_t cudaGetDeviceProperties(struct cudaDeviceProp *prop_ptr, int device)
 			CU_DEVICE_ATTRIBUTE_MAX_REGISTERS_PER_BLOCK, device);
 	cuDeviceGetAttribute(&prop_ptr->warpSize, CU_DEVICE_ATTRIBUTE_WARP_SIZE,
 			device);
-	cuDeviceGetAttribute((int *)&prop_ptr->memPitch, CU_DEVICE_ATTRIBUTE_MAX_PITCH,
-			device);
+	cuDeviceGetAttribute((int *)&prop_ptr->memPitch,
+			CU_DEVICE_ATTRIBUTE_MAX_PITCH, device);
 	cuDeviceGetAttribute(&prop_ptr->maxThreadsPerBlock,
 			CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK, device);
 	cuDeviceGetAttribute(&(prop_ptr->maxThreadsDim[0]),
@@ -647,7 +643,7 @@ cudaError_t cudaGetDevice(int *device)
 
 	/* We allow temporarily for only the Fermi device. This function will be
 	 * extended later with support to Kepler. */
-	*device = CUDA_DEVICE_FERMI;
+	cuDeviceGet(device, 0);
 
 	cuda_debug("\t(runtime) out: device = %d", *device);
 	cuda_debug("\t(runtime) out: return = %d", cudaSuccess);
