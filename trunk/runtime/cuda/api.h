@@ -37,13 +37,12 @@ enum cuda_call_t
 	cuda_call_count
 };
 
-/* CUDA device */
+/* CUDA devices */
 enum cuda_device_type_t
 {
 	CUDA_DEVICE_FERMI = 0,
 	CUDA_DEVICE_KEPLER = 1
 };
-
 struct cuda_device_t *active_devices;
 struct cuda_device_t *frm_device;
 struct cuda_device_t *kpl_device;

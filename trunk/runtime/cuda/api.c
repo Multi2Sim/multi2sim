@@ -163,11 +163,11 @@ CUresult cuInit(unsigned int Flags)
 	stream_list = list_create();
 	event_list = list_create();
 
-	/* Create a Fermi device */
+	/* Create one Fermi device and one Kepler device */
 	frm_device = cuda_device_create(CUDA_DEVICE_FERMI);
 	kpl_device = cuda_device_create(CUDA_DEVICE_KEPLER);
 
-	/* Frm is selected by default. This could change if the user specificies
+	/* Fermi is selected by default. This could change if the user specifies
 	 * which device should be used in cuDeviceGet function */
 	active_devices = frm_device;
 
@@ -206,8 +206,6 @@ CUresult cuDriverGetVersion(int *driverVersion)
 	return CUDA_SUCCESS;
 }
 
-/* First function parameter changed from 'device' to
- * 'ret_device' to avoid confusion with the global variable 'device' */
 CUresult cuDeviceGet(CUdevice *device, int ordinal)
 {
 	cuda_debug("CUDA driver API '%s'", __func__);
@@ -222,20 +220,9 @@ CUresult cuDeviceGet(CUdevice *device, int ordinal)
 	}
 
 	/* Get device */
-	*device = ((struct cuda_device_t *)list_get(device_list, ordinal))->device;
+	active_devices = list_get(device_list, ordinal);
+	*device = active_devices->device;
 
-	/* Set the global variable 'device' with Frm or Kpl
-	 * attributes taking into account the user's choice */
-	if (*device == 0)
-		active_devices = frm_device;
-	else if (*device == 1)
-		active_devices = kpl_device;
-	else
-	{
-		cuda_debug("\t(driver) out: return = %d",
-				CUDA_ERROR_INVALID_VALUE);
-		return CUDA_ERROR_INVALID_VALUE;
-	}
 
 	cuda_debug("\t(driver) out: device = %d", *device);
 	cuda_debug("\t(driver) out: return = %d", CUDA_SUCCESS);
