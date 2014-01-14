@@ -21,13 +21,14 @@
 #define RUNTIME_CUDA_MEMORY_H
 
 
-extern struct list_t *memory_object_list;
+#include "api.h"
 
 struct cuda_memory_object_t
 {
 	unsigned int id;
 
 	unsigned int size;
+
 	unsigned int host_ptr;
 	unsigned int device_ptr;
 };

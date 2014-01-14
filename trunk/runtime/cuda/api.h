@@ -52,6 +52,7 @@ struct list_t *context_list;
 struct list_t *device_list;
 struct list_t *module_list;
 struct list_t *function_list;
+struct list_t *memory_object_list;
 struct list_t *stream_list;
 struct list_t *event_list;
 

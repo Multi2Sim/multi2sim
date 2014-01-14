@@ -25,11 +25,11 @@ extern struct list_t *context_list;
 
 struct CUctx_st
 {
-	unsigned int id;
+	unsigned id;
 
 	CUdevice device;
 
-	unsigned int version;
+	unsigned version;
 };
 
 CUcontext cuda_context_create(CUdevice device);
