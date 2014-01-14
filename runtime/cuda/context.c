@@ -34,8 +34,9 @@ CUcontext cuda_context_create(CUdevice device)
 	/* Initialize */
 	context->id = list_count(context_list);
 	context->device = device;
-	context->version = 5000;
+	context->version = 5050;
 
+	/* Add to context list */
 	list_add(context_list, context);
 
 	return context;

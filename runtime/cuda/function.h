@@ -21,7 +21,7 @@
 #define RUNTIME_CUDA_FUNCTION_H
 
 
-extern struct list_t *function_list;
+#include "api.h"
 
 struct CUfunc_st
 {
@@ -33,20 +33,20 @@ struct CUfunc_st
 	struct elf_file_t *bin;
 
 	/* Instruction buffer, i.e., .text section in cubin */
-	unsigned int inst_buf_size;
-	unsigned long long int *inst_buf;
+	unsigned inst_buf_size;
+	unsigned long long *inst_buf;
 
 	/* Mandatory fields according to NVIDIA's docs */
-	int binaryVersion;
+	int maxThreadsPerBlock;
+	int sharedSizeBytes;
 	int constSizeBytes;
 	int localSizeBytes;
-	int maxThreadsPerBlock;
 	int numRegs;
 	int ptxVersion;
-	int sharedSizeBytes;
+	int binaryVersion;
 
 	/* Used to find the function in the function list */
-	unsigned int host_func_ptr;
+	unsigned host_func_ptr;
 };
 
 CUfunction cuda_function_create(CUmodule module, const char *function_name);

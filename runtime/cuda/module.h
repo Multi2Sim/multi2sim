@@ -21,13 +21,13 @@
 #define RUNTIME_CUDA_MODULE_H
 
 
-extern struct list_t *module_list;
+#include "api.h"
 
 struct CUmod_st
 {
-	unsigned int id;
+	unsigned id;
 
-	/* Cubin */
+	/* Cubin associated */
 	struct elf_file_t *elf_file;
 };
 
