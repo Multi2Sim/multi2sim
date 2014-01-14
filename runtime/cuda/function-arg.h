@@ -24,12 +24,15 @@
 struct cuda_function_arg_t
 {
 	void *ptr;
+
 	int size;
+
+	/* Offset in constant memory where argument is saved */
 	int offset;
 };
 
-struct cuda_function_arg_t *cuda_function_arg_create(const void *ptr, 
-		int size, int offset);
+struct cuda_function_arg_t *cuda_function_arg_create(const void *ptr, int size,
+		int offset);
 void cuda_function_arg_free(CUfunction function, 
 		struct cuda_function_arg_t *arg);
 

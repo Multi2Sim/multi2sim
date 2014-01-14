@@ -17,8 +17,6 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <assert.h>
-
 #include "../include/cuda.h"
 #include "elf-format.h"
 #include "list.h"
@@ -38,6 +36,7 @@ CUmodule cuda_module_create(const char *cubin_path)
 	module->id = list_count(module_list);
 	module->elf_file = elf_file_create_from_path(cubin_path);
 
+	/* Add to module list */
 	list_add(module_list, module);
 
 	return module;

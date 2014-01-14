@@ -24,8 +24,8 @@
 #include "mhandle.h"
 
 
-struct cuda_function_arg_t *cuda_function_arg_create(const void *ptr, 
-		int size, int offset)
+struct cuda_function_arg_t *cuda_function_arg_create(const void *ptr, int size,
+		int offset)
 {
 	struct cuda_function_arg_t *arg;
 
