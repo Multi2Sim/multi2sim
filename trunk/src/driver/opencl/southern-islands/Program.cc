@@ -19,6 +19,8 @@
 
  
 #include <string.h>
+
+#include <arch/southern-islands/emu/Emu.h>
 #include <lib/cpp/ELFReader.h>
 #include <lib/cpp/String.h>
 
@@ -60,14 +62,14 @@ void Program::InitializeConstantBuffers()
 	assert(elf_file);
 
 	/* Constant buffers encoded in ELF file */
-	for (int i = 0; i < EmuMaxNumConstBufs; i++) 
+	for (unsigned i = 0; i < EmuMaxNumConstBufs; i++) 
 		constant_buffers.push_back(nullptr);
 
 	/* We can't tell how many constant buffers exist in advance, but we
 	 * know they should be enumerated, starting with '2'.  This loop
 	 * searches until a constant buffer matching the format is not 
 	 * found. */
-	for (int i = 2; i < EmuMaxNumConstBufs; i++) 
+	for (unsigned i = 2; i < EmuMaxNumConstBufs; i++) 
 	{
 		/* Create string of symbol name */
 		symbol_name = misc::StringFmt("__OpenCL_%d_global", i);
