@@ -22,16 +22,21 @@
 
 #include <string>
 
-#include <src/arch/x86/asm/Asm.h>
-#include <src/arch/x86/emu/Emu.h>
-#include <src/arch/southern-islands/emu/Emu.h>
-#include <src/arch/southern-islands/emu/NDRange.h>
-#include <src/arch/southern-islands/emu/WorkGroup.h>
-#include <src/arch/southern-islands/emu/Wavefront.h>
-#include <src/arch/southern-islands/emu/WorkItem.h>
-
 #include "southern-islands/Kernel.h"
 #include "southern-islands/Program.h"
+
+// Forward declaration
+namespace x86
+{
+	class Asm;
+	class Emu;
+}  // namespace x86
+
+namespace SI
+{
+	class Emu;
+	class NDRange;
+}  // namespace SI
 
 namespace Driver
 {

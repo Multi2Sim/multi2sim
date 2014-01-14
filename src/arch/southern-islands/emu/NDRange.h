@@ -25,6 +25,9 @@
 
 #include <arch/southern-islands/asm/Arg.h>
 #include <arch/southern-islands/asm/Binary.h>
+#include <arch/southern-islands/emu/WorkGroup.h>
+#include <arch/southern-islands/emu/Wavefront.h>
+#include <arch/southern-islands/emu/WorkItem.h>
 
 #include "Emu.h"
 
@@ -32,10 +35,13 @@
 namespace SI
 {
 
+// Forward declaration
 class Emu;
+class Arg;
 class WorkGroup;
 
-struct BufferDesc;
+struct BinaryUserElement;
+struct EmuBufferDesc;
 struct ImageDesc;
 
 
@@ -57,7 +63,7 @@ class NDRange
 	enum TableEntryKind
 	{
 		TableEntryKindInvalid = 0,
-		TableEntryKindBufferDesc,
+		TableEntryKindEmuBufferDesc,
 		TableEntryKindImageDesc,
 		TableEntryKindSamplerDesc
 	};
@@ -108,8 +114,7 @@ class NDRange
 	BinaryUserElement user_elements[BinaryMaxUserElements];
 
 	// Instruction memory containing Southern Islands ISA
-	void *inst_buffer;
-	unsigned inst_buffer_size;
+	Memory::Memory inst_buffer;
 
 	// Fetch shader memory containing Fetch shader instructions
 	int fs_buffer_initialized;
@@ -163,6 +168,10 @@ public:
 	/// Constructor
 	NDRange(Emu *emu);
 
+	// FIXME
+	/// Destructor
+	// ~NDRange();
+
 	/// Dump the state of the ND-range in a plain-text format into an output
 	/// stream.
 	void Dump(std::ostream &os) const;
@@ -197,7 +206,14 @@ public:
 	void SetupSize(unsigned *global_size, unsigned *local_size,
 			int work_dim);
 
-	/// ?
+	/// Set up stage of NDRange
+	void SetupStage(NDRangeStage stage) { this->stage = stage; }
+
+	/// Set up content of fetch shader instruction
+	///
+	/// \param buf Buffer containing instructions from fetch shader generator
+	/// \param size Number of bytes in the instruction buffer
+	/// \param pc Initial value of the program counter
 	void SetupFSMem(const char *buf, unsigned size, unsigned pc);
 
 	/// Set up content of instruction memory
@@ -206,8 +222,7 @@ public:
 	///        buffer must be loaded from the .text section of an internal
 	///        binary by the caller.
 	/// \param size Number of bytes in the instruction buffer
-	/// \param pc Initial value of the program counter, relative to the
-	///        beginning of the instruction buffer.
+	/// \param pc Initial value of the program counter
 	void SetupInstMem(const char *buf, unsigned size, unsigned pc);
 
 	/// Write to constant buffer(as a part of global memory)
@@ -232,27 +247,27 @@ public:
 	///
 	/// \param buffer_desc Buffer descriptor
 	/// \param uav Index in UAV table
-	void InsertBufferIntoUAVTable(BufferDesc *buffer_desc, unsigned uav);
+	void InsertBufferIntoUAVTable(EmuBufferDesc *buffer_desc, unsigned uav);
 
 	/// Insert a buffer descriptor into vertex buffer table
 	///
 	/// \param buffer_desc Buffer descriptor
 	/// \param vertex_buffer Index in vertex buffer table
-	void InsertBufferIntoVertexBufferTable(BufferDesc *buffer_desc,
+	void InsertBufferIntoVertexBufferTable(EmuBufferDesc *buffer_desc,
 			unsigned vertex_buffer);
 
 	/// Insert a buffer descriptor into constant buffer table
 	///
 	/// \param buffer_desc Buffer descriptor
 	/// \param const_buffer_num Number of contant buffer, 0 or 1
-	void InsertBufferIntoConstantBufferTable(BufferDesc *buffer_desc,
+	void InsertBufferIntoConstantBufferTable(EmuBufferDesc *buffer_desc,
 			unsigned const_buffer_num);
 
 	/// Insert a image descriptor into UAV(universal access view) table
 	///
 	/// \param image_desc Image descriptor
 	/// \param uav Index in UAV table
-	void ImageIntoUAVTable(ImageDesc *image_desc, unsigned uav);
+	void ImageIntoUAVTable(EmuImageDesc *image_desc, unsigned uav);
 
 };
 
