@@ -28,22 +28,22 @@ namespace SI
 {
 
 static const char *OpenCLErrSIKernelSymbol =
-	"\tThe ELF file analyzer is trying to find a name in the ELF symbol table.\n"
-	"\tIf it is not found, it probably means that your application is requesting\n"
-	"\texecution of a kernel function that is not present in the encoded binary.\n"
-	"\tPlease, check the parameters passed to the 'clCreateKernel' function in\n"
+	"\tThe ELF file analyzer is trying to find a name in the ELF symbol table."
+	"\tIf it is not found, it probably means that your application is requesting"
+	"\texecution of a kernel function that is not present in the encoded binary."
+	"\tPlease, check the parameters passed to the 'clCreateKernel' function in"
 	"\tyour application.\n"
-	"\tThis could be also a symptom of compiling an OpenCL kernel source on a\n"
-	"\tmachine with an installation of the AMD SDK (using 'm2s-clcc') but\n"
-	"\twith an incorrect or missing installation of the GPU driver. In this case,\n"
-	"\tthe tool will still compile the kernel into LLVM, but the ISA section will\n"
-	"\tbe missing in the kernel binary.\n";
+	"\tThis could be also a symptom of compiling an OpenCL kernel source on a"
+	"\tmachine with an installation of the AMD SDK (using 'm2s-clcc') but"
+	"\twith an incorrect or missing installation of the GPU driver. In this case,"
+	"\tthe tool will still compile the kernel into LLVM, but the ISA section will"
+	"\tbe missing in the kernel binary.";
 
 static const char *OpenCLErrSIKernelMetadata =
-	"\tThe kernel binary loaded by your application is a valid ELF file. In this\n"
-	"\tfile, a '.rodata' section contains specific information about the OpenCL\n"
-	"\tkernel. However, this information is only partially supported by Multi2Sim.\n"
-	"\tTo request support for this error, please email 'development@multi2sim.org'.\n";
+	"\tThe kernel binary loaded by your application is a valid ELF file. In this"
+	"\tfile, a '.rodata' section contains specific information about the OpenCL"
+	"\tkernel. However, this information is only partially supported by Multi2Sim."
+	"\tTo request support for this error, please email 'development@multi2sim.org'.";
 
 // Private functions
 
@@ -171,11 +171,11 @@ void Kernel::LoadMetaDataV3()
 			// in entry 'version') uses 12 items. 
 			ExpectCount(token_list, 12);
 
-			/* Token 1 - Name */
+			// Token 1 - Name
 			token_list.erase(token_list.begin());
 			std::string name = *token_list.begin();
 
-			/* Token 2 - Data type */
+			// Token 2 - Data type
 			token_list.erase(token_list.begin());
 			int data_type_int = StringToInt(*token_list.begin());
 			ArgDataType data_type = static_cast<ArgDataType>(data_type_int);
@@ -351,54 +351,52 @@ void Kernel::LoadMetaDataV3()
 			token_list.clear();
 		}
 
-		/*
-		 * Non-kernel argument metadata
-		 */
+		// Non-kernel argument metadata
 
-		/* Memory
-		 * Used to let the GPU know how much local and private memory
-		 * is required for a kernel, where it should be allocated,
-		 * as well as other information. */
+		// Memory
+		// Used to let the GPU know how much local and private memory
+		// is required for a kernel, where it should be allocated,
+		// as well as other information. 
 		if (token_list.front() == "memory")
 		{
-			/* Token 1 - Memory scope */
+			// Token 1 - Memory scope
 			token_list.erase(token_list.begin());
 			if (token_list.front() == "hwprivate")
 			{
-				/* FIXME Add support for private memory by
-				 * adding space in global memory */
+				// FIXME Add support for private memory by
+				// adding space in global memory 
 
-				/* Token 2 - ??? */
+				// Token 2 - ???
 				token_list.erase(token_list.begin());
 				Expect(token_list, "0");
 			}
 			else if (token_list.front() == "hwregion")
 			{
-				/* 2 more tokens expected */
+				// 2 more tokens expected
 				ExpectCount(token_list, 2);
 
-				/* Token 2 - ??? */
+				// Token 2 - ???
 				token_list.erase(token_list.begin());
 				Expect(token_list, "0");
 			}
 			else if (token_list.front() == "hwlocal")
 			{
-				/* 2 more tokens expected */
+				// 2 more tokens expected
 				ExpectCount(token_list, 2);
 
-				/* Token 2 - Size of local memory */
+				// Token 2 - Size of local memory
 				token_list.erase(token_list.begin());
 				ExpectInt(token_list);
-				mem_size_local = StringToInt(*token_list.begin());
+				this->mem_size_local = StringToInt(*token_list.begin());
 			}
 			else if (token_list.front() == "datareqd")
 			{
-				/* 1 more token expected */
+				// 1 more token expected
 				ExpectCount(token_list, 1);
 			}
 			else if (token_list.front() == "uavprivate")
 			{
-				/* 2 more tokens expected */
+				// 2 more tokens expected
 				ExpectCount(token_list, 2);
 			}
 			else
@@ -407,117 +405,116 @@ void Kernel::LoadMetaDataV3()
 						__FUNCTION__, token.c_str(), OpenCLErrSIKernelMetadata);
 			}
 
-			/* Next */
+			// Next
 			token_list.clear();
 			continue;
 		}
 
-		/* Function
-		 * Used for multi-kernel compilation units. */
+		// Function
+		// Used for multi-kernel compilation units. 
 		if (token_list.front() == "function")
 		{
-			/* Expect 3 token */
+			// Expect 3 token
 			ExpectCount(token_list, 3);
 
-			/* Token 1 - ??? */
+			// Token 1 - ???
 			token_list.erase(token_list.begin());
 			Expect(token_list, "1");
 
-			/* Token 2 - Function ID */
+			// Token 2 - Function ID
 			token_list.erase(token_list.begin());
 			ExpectInt(token_list);
-			func_uniqueid = StringToInt(*token_list.begin());
+			this->func_uniqueid = StringToInt(*token_list.begin());
 
-			/* Next */
+			// Next
 			token_list.clear();
 			continue;
 		}
 
-		/* Reflection
-		 * Format: reflection:<arg_id>:<type>
-		 * Observed first in version 3:1:104 of metadata.
-		 * This entry specifies the type of the argument, as
-		 * specified in the OpenCL kernel function header. It is
-		 * currently ignored, since this information is extracted from
-		 * the argument descriptions in 'value' and 'pointer' entries.
-		 */
+		// Reflection
+		// Format: reflection:<arg_id>:<type>
+		// Observed first in version 3:1:104 of metadata.
+		// This entry specifies the type of the argument, as
+		// specified in the OpenCL kernel function header. It is
+		// currently ignored, since this information is extracted from
+		// the argument descriptions in 'value' and 'pointer' entries.
+ 
 		if (token_list.front() == "reflection")
 		{
-			/* Expect 3 tokens */
+			// Expect 3 tokens
 			ExpectCount(token_list, 3);
 
-			/* Next */
+			// Next
 			token_list.clear();
 			continue;
 		}
 
-		/* Privateid
-		 * Format: privateid:<id>
-		 * Observed first in version 3:1:104 of metadata.
-		 * Not sure what this entry is for.
-		 */
+		// Privateid
+		// Format: privateid:<id>
+		// Observed first in version 3:1:104 of metadata.
+		// Not sure what this entry is for.
 		if (token_list.front() == "privateid")
 		{
-			/* Expect 2 tokens */
+			// Expect 2 tokens
 			ExpectCount(token_list, 2);
 
-			/* Next */
+			// Next
 			token_list.clear();
 			continue;
 		}
 
-		/* Constarg
-		 * Format: constarg:<arg_id>:<arg_name>
-		 * Observed first in version 3:1:104 of metadata.
-		 * It shows up when an argument is declared as
-		 * '__global const'. Entry ignored here. */
+		// Constarg
+		// Format: constarg:<arg_id>:<arg_name>
+		// Observed first in version 3:1:104 of metadata.
+		// It shows up when an argument is declared as
+		// '__global const'. Entry ignored here. 
 		if (token_list.front() == "constarg")
 		{
-			/* Expect 3 tokens */
+			// Expect 3 tokens
 			ExpectCount(token_list, 3);
 
-			/* Next */
+			// Next
 			token_list.clear();
 			continue;
 		}
 
-		/* Device
-		 * Device that the kernel was compiled for. */
+		// Device
+		// Device that the kernel was compiled for. 
 		if (token_list.front() == "device")
 		{
-			/* Expect 2 tokens */
+			// Expect 2 tokens
 			ExpectCount(token_list, 2);
 
-			/* Next */
+			// Next
 			token_list.clear();
 			continue;
 		}
 
-		/* Uniqueid
-		 * A mapping between a kernel and its unique ID */
+		// Uniqueid
+		// A mapping between a kernel and its unique ID 
 		if (token_list.front() == "uniqueid")
 		{
-			/* Expect 2 tokens */
+			// Expect 2 tokens
 			ExpectCount(token_list, 2);
 
-			/* Next */
+			// Next
 			token_list.clear();
 			continue;
 		}
 
-		/* Uavid 
-		 * ID of a raw UAV */
+		// Uavid 
+		// ID of a raw UAV 
 		if (token_list.front() == "uavid")
 		{
-			/* Expect 2 tokens */
+			// Expect 2 tokens
 			ExpectCount(token_list, 2);
 
-			/* Next */
+			// Next
 			token_list.clear();
 			continue;
 		}
 
-		/* Crash when uninterpreted entries appear */
+		// Crash when uninterpreted entries appear
 		fatal("kernel '%s': unknown metadata entry '%s'",
 			this->name.c_str(), token.c_str());
 	}

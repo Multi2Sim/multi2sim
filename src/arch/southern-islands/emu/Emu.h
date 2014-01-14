@@ -39,34 +39,34 @@ class WorkGroup;
 
 
 /// UAV Table
-const int EmuMaxNumUAVs = 16;
-const int EmuUAVTableEntrySize = 32;
-const int EmuUAVTableSize = EmuMaxNumUAVs * EmuUAVTableEntrySize;
+const unsigned EmuMaxNumUAVs = 16;
+const unsigned EmuUAVTableEntrySize = 32;
+const unsigned EmuUAVTableSize = EmuMaxNumUAVs * EmuUAVTableEntrySize;
 
 /// Vertex buffer table
-const int EmuMaxNumVertexBuffers = 16;
-const int EmuVertexBufferTableEntrySize = 32;
-const int EmuVertexBufferTableSize = EmuMaxNumVertexBuffers *
+const unsigned EmuMaxNumVertexBuffers = 16;
+const unsigned EmuVertexBufferTableEntrySize = 32;
+const unsigned EmuVertexBufferTableSize = EmuMaxNumVertexBuffers *
 		EmuVertexBufferTableEntrySize;
 
 // Constant buffer table
-const int EmuMaxNumConstBufs = 16;
-const int EmuConstBufTableEntrySize = 16;
-const int EmuConstBufTableSize = EmuMaxNumConstBufs * EmuConstBufTableEntrySize;
+const unsigned EmuMaxNumConstBufs = 16;
+const unsigned EmuConstBufTableEntrySize = 16;
+const unsigned EmuConstBufTableSize = EmuMaxNumConstBufs * EmuConstBufTableEntrySize;
 
 // Resource table
-const int EmuMaxNumResources = 16;
-const int EmuResourceTableEntrySize = 32;
-const int EmuResourceTableSize = EmuMaxNumResources * EmuResourceTableEntrySize;
+const unsigned EmuMaxNumResources = 16;
+const unsigned EmuResourceTableEntrySize = 32;
+const unsigned EmuResourceTableSize = EmuMaxNumResources * EmuResourceTableEntrySize;
 
-const int EmuTotalTableSize = EmuUAVTableSize + EmuConstBufTableSize +
+const unsigned EmuTotalTableSize = EmuUAVTableSize + EmuConstBufTableSize +
 		EmuResourceTableSize + EmuVertexBufferTableSize;
 
 // Constant buffers
-const int EmuConstBuf0Size = 160;  // Defined in Metadata.pdf
-const int EmuConstBuf1Size = 1024; // FIXME
+const unsigned EmuConstBuf0Size = 160;  // Defined in Metadata.pdf
+const unsigned EmuConstBuf1Size = 1024; // FIXME
 
-const int EmuTotalConstBufSize = EmuConstBuf0Size + EmuConstBuf1Size;
+const unsigned EmuTotalConstBufSize = EmuConstBuf0Size + EmuConstBuf1Size;
 
 
 /// Buffer descriptor data format
@@ -255,7 +255,7 @@ class Emu
 	std::list<WorkGroup *> running_work_groups;
 
 	// Shader export module
-	ShaderExport *shader_export;
+	// ShaderExport *shader_export;
 
 	// Statistics
 	int ndrange_count;  // Number of OpenCL kernels executed
@@ -287,6 +287,17 @@ public:
 		emu.Dump(os);
 		return os;
 	}
+
+	/// Getters
+	///
+	/// Get a new NDRange ID
+	unsigned getNewNDRangeID() { return ndrange_count++; }
+
+	/// Get a new address space index
+	unsigned getNewAddressSpaceIdx() { return address_space_index++; }
+
+	/// Get global memory
+	Memory::Memory *getGlobalMem() { return global_mem; }
 
 	/// Dump the statistics summary
 	void DumpSummary(std::ostream &os);
