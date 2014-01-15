@@ -168,10 +168,6 @@ public:
 	/// Constructor
 	NDRange(Emu *emu);
 
-	// FIXME
-	/// Destructor
-	// ~NDRange();
-
 	/// Dump the state of the ND-range in a plain-text format into an output
 	/// stream.
 	void Dump(std::ostream &os) const;
