@@ -52,7 +52,7 @@ class Buffer
 	int index;
 
 	// Stream with content
-	std::ostringstream stream;
+	std::stringstream stream;
 
 	// Constructor
 	Buffer(File *file, int index) :
@@ -63,7 +63,15 @@ public:
 	/// Return reference to internal stream.
 	/// The stream can then be used to read or write content into the
 	/// buffer.
-	std::ostringstream &getStream() { return stream; }
+	std::stringstream &getStream() { return stream; }
+
+	/// Reads \a size bytes from the buffer object and copies them into \a
+	/// buffer. This is a shortcut operation equivalent to retrievent the
+	/// stream with getStream() and reading from it with standard I/O
+	/// operators.
+	void Read(char *buffer, size_t size) {
+		stream.read(buffer, size);
+	}
 
 	/// Writes \a size bytes from \a buffer into the buffer. This
 	/// is a shortcut operation equivalent to retrieving the stream with
@@ -72,13 +80,21 @@ public:
 		stream.write(buffer, size);
 	}
 
-	/// Set the current position in the buffer.
+	/// Set the current position in the buffer for write operations.
 	/// Equivalent to getStream().seekp()
-	void setPosition(size_t pos) { stream.seekp(pos); }
+	void setWritePosition(size_t pos) { stream.seekp(pos); }
 
-	/// Set the current position in the buffer.
+	/// Get the current position in the buffer for write operations.
 	/// Equivalent to getStream().tellp()
-	size_t getPosition() { return stream.tellp(); }
+	size_t getWritePosition() { return stream.tellp(); }
+
+	/// Set the current position in the buffer for read operations.
+	/// Equivalent to getStream().seekg()
+	void setReadPosition(size_t pos) { stream.seekg(pos); }
+
+	/// Get the current position in the buffer for read operations.
+	/// Equivalent to getStream().tellg()
+	size_t getReadPosition() { return stream.tellg(); }
 
 	/// Return the number of bytes in the buffer
 	size_t getSize();
@@ -281,10 +297,10 @@ class SymbolTable
 	SymbolTable(File *file, const std::string &symtab,
 			const std::string &strtab);
 
+	
+public:
 	// Populate symtab and strtab buffers
 	void Generate();
-
-public:
 
 	/// Create a new symbol named \a name. This is the only way to
 	/// create a new instance of class Symbol.

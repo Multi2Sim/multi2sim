@@ -271,7 +271,7 @@ void Asm::DisassembleBuffer(std::ostream& os, const char *buffer, int size)
 		/* Dump a label if necessary. */
 		if (*next_label == rel_addr && next_label != end_label)
 		{
-			os << StringFmt("label_%0X:\n", rel_addr);
+			os << StringFmt("label_%04X:\n", rel_addr / 4);
 			next_label++;
 		}
 

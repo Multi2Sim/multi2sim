@@ -86,15 +86,17 @@ extern struct si2bin_inner_bin_t *si2bin_inner_bin;
 extern struct si2bin_metadata_t *si2bin_metadata;
 extern int si2bin_uniqueid;
 
+/*
 int si2bin_yylex(void);
 int si2bin_yyparse(void);
 void si2bin_yyerror(const char *s);
 void si2bin_yyerror_fmt(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
 
-/* Variables used by parser */
+/ Variables used by parser /
 extern int si2bin_yylineno;
 extern FILE *si2bin_yyin;
 extern char *si2bin_yytext;
+*/
 
 /* Global Southern Islands assembler variable */
 extern Si2bin *si2bin;

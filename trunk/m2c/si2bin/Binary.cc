@@ -31,6 +31,7 @@
 #include "Metadata.h"
 #include "InternalBinary.h"
 #include "Binary.h"
+#include "Context.h"
 
 namespace si2bin
 {
@@ -39,19 +40,17 @@ namespace si2bin
 const unsigned int NUM_PROG_INFO_ELEM = 114;
 const unsigned int MAX_UAV_NUM = 25;
 const unsigned int MAX_CB_NUM = 25;
+const unsigned int NUM_NOTES = 17;
 
-std::string OuterBinMachineName = "tahiti";
 
 misc::StringMap OuterBinDeviceMap = 
 {
 	{"invalid", OuterBinInvalid },
 	{"capeverde", OuterBinCapeVerde },
 	{"pitcairn", OuterBinPitcairn },
-	{"tahiti", OuterBinTahiti },
-	{ 0, 0 }
+	{"tahiti", OuterBinTahiti }
 };
 
-OuterBin::OuterBin(){}
 
 void OuterBin::Generate(std::ostream& os)
 {
@@ -61,6 +60,7 @@ void OuterBin::Generate(std::ostream& os)
 	ELFWriter::Section *text_section;
 	ELFWriter::Section *rodata_section;
 	ELFWriter::SymbolTable *symbol_table;
+	ELFWriter::SymbolTable *inner_symbol_table;
 	ELFWriter::Buffer *rodata_buffer;
 	ELFWriter::Buffer *text_buffer;
 	ELFWriter::Symbol *global_symbol;
@@ -72,7 +72,7 @@ void OuterBin::Generate(std::ostream& os)
 
 	Metadata *metadata;
 	SI::BinaryUserElement *user_elem;
-	SI::BinaryNoteProgInfoEntry prog_info[NUM_PROG_INFO_ELEM];
+	//SI::BinaryNoteProgInfoEntry prog_info[NUM_PROG_INFO_ELEM];
 
 	std::string line;
 	std::string data_type;
@@ -80,6 +80,7 @@ void OuterBin::Generate(std::ostream& os)
 	std::string access_type;
 	std::string kernel_str;
 	char *ptr;
+	char *note_ptr[NUM_NOTES];
 	char byte;
 
 	unsigned int i;
@@ -101,20 +102,14 @@ void OuterBin::Generate(std::ostream& os)
 
 	/* Set machine type */
 	SetDevice(static_cast<OuterBinDevice> 
-			(OuterBinDeviceMap.MapStringCase(OuterBinMachineName)));
+			(OuterBinDeviceMap.MapStringCase(MachineName)));
 
 	if(GetDevice() == OuterBinInvalid)
 	{
 		misc::fatal("Invalid machine type");
 	}
 
-
-	/* Create Text Section */
-	text_buffer = writer.NewBuffer();
-	text_section = writer.NewSection(".text", text_buffer, text_buffer);
-	text_section->setType(SHT_PROGBITS);
-	text_section->setFlags(SHF_EXECINSTR | SHF_ALLOC);
-
+	
 	/* Create .symtab section and .strtab section */
 	symbol_table = writer.NewSymbolTable(".symtab", ".strtab");
 
@@ -122,6 +117,12 @@ void OuterBin::Generate(std::ostream& os)
 	rodata_buffer = writer.NewBuffer();
 	rodata_section = writer.NewSection(".rodata", rodata_buffer, rodata_buffer);
 	rodata_section->setType(SHT_PROGBITS);
+	
+	/* Create Text Section */
+	text_buffer = writer.NewBuffer();
+	text_section = writer.NewSection(".text", text_buffer, text_buffer);
+	text_section->setType(SHT_PROGBITS);
+	text_section->setFlags(SHF_EXECINSTR | SHF_ALLOC);
 	rodata_section->setFlags(SHF_ALLOC);
 
 	rodata_size = 0;
@@ -132,30 +133,29 @@ void OuterBin::Generate(std::ostream& os)
 	{
 		for (auto &data : data_list)
 			data->Write(rodata_buffer);
+
+		/* Global section has to have a size that is a multiple of 16 */
+		while ((rodata_buffer->getSize() % 16) != 0)
+		{
+			rodata_buffer->Write(&byte, sizeof(unsigned char));
+		}
+
+
+		/* Get number of elements to be used later in cb2 */
+		glob_size = rodata_buffer->getSize() / 16;
+
+		/* Add global symbol correspoding to data elements */
+		line = "__OpenCL_" + std::to_string(2) + "_global";
+
+		global_symbol = symbol_table->NewSymbol(line);
+		global_symbol->setShndx(4);
+		global_symbol->setSize(rodata_buffer->getSize() - rodata_size);
+		global_symbol->setValue(rodata_size);
+		global_symbol->setInfo(ELF32_ST_TYPE(STT_OBJECT));
+
+		rodata_size = rodata_buffer->getSize();
+
 	}
-
-
-	/* Global section has to have a size that is a multiple of 16 */
-	while ((rodata_buffer->getSize() % 16) != 0)
-	{
-		rodata_buffer->Write(&byte, sizeof(unsigned char));
-	}
-
-
-	/* Get number of elements to be used later in cb2 */
-	glob_size = rodata_buffer->getSize() / 16;
-
-	/* Add global symbol correspoding to data elements */
-	line = "__OpenCL_" + std::to_string(2) + "_global";
-
-	global_symbol = symbol_table->NewSymbol(line);
-	global_symbol->setShndx(4);
-	global_symbol->setSize(rodata_buffer->getSize() - rodata_size);
-	global_symbol->setValue(rodata_size);
-	global_symbol->setInfo(ELF32_ST_TYPE(STT_OBJECT));
-
-	rodata_size = rodata_buffer->getSize();
-
 
 	for(i = 0; i < inner_bin_list.size(); i++)
 	{
@@ -176,6 +176,7 @@ void OuterBin::Generate(std::ostream& os)
 		inner_bin = GetInnerBin(i);
 		metadata = GetMetadata(i);
 		entry = inner_bin->GetEntry(0);
+		inner_symbol_table = entry->GetSymbolTable();
 
 		inner_bin->writer.setMachine(0x7d);
 		inner_bin->writer.setVersion(1);
@@ -310,13 +311,14 @@ void OuterBin::Generate(std::ostream& os)
 		/* Kernel -> .text section */
 	        
 		/* Create Notes */
-		ptr = 0;
 
 		/* ELF_NOTE_ATI_INPUTS */
-		entry->NewNote(InnerBinNoteTypeInputs, 0, ptr);
+		note_ptr[0] = NULL;
+		entry->NewNote(InnerBinNoteTypeInputs, 0, note_ptr[0]);
 
 		/* ELF_NOTE_ATI_OUTPUTS */
-		entry->NewNote(InnerBinNoteTypeOutputs, 0, ptr);
+		note_ptr[1] = NULL;
+		entry->NewNote(InnerBinNoteTypeOutputs, 0, note_ptr[1]);
 
 
 		buff_num_offset = 0;
@@ -333,7 +335,7 @@ void OuterBin::Generate(std::ostream& os)
 		{
 
 			buff_size = 16 * buff_num_offset;
-			ptr = new char[buff_size]();
+			note_ptr[2] = new char[buff_size]();
 
 			buff_num_offset = 0;
 
@@ -344,47 +346,46 @@ void OuterBin::Generate(std::ostream& os)
 					continue;
 
 				line = "uav" + std::to_string(k);
-				uav_symbol = symbol_table->NewSymbol(line);
+				uav_symbol = inner_symbol_table->NewSymbol(line);
 				uav_symbol->setValue(buff_num_offset);
 				uav_symbol->setShndx(16);
 
-				ptr[buff_num_offset * 16] = k;
-				ptr[buff_num_offset * 16 + 4] = 4;
-				ptr[buff_num_offset * 16 + 12] = 5;
+				note_ptr[2][buff_num_offset * 16] = k;
+				note_ptr[2][buff_num_offset * 16 + 4] = 4;
+				note_ptr[2][buff_num_offset * 16 + 12] = 5;
 
 				buff_num_offset++;
 			}
 
-			entry->NewNote(InnerBinNoteTypeUAV, buff_size, ptr);
-			delete[] ptr;
+			entry->NewNote(InnerBinNoteTypeUAV, buff_size, note_ptr[2]);
 
 		}
 
 		/* ELF_NOTE_ATI_CONDOUT */
-		ptr = new char[4]();
-		entry->NewNote(InnerBinNoteTypeCondOut, 4, ptr);
-		delete[] ptr;
+		note_ptr[3] = new char[4]();
+		entry->NewNote(InnerBinNoteTypeCondOut, 4, note_ptr[3]);
 
-		ptr = 0;
 
 		/* ELF_NOTE_ATI_FLOAT32CONSTS */
-		entry->NewNote(InnerBinNoteTypeFloat32Consts, 0, ptr);
+		note_ptr[4] = NULL;
+		entry->NewNote(InnerBinNoteTypeFloat32Consts, 0, note_ptr[4]);
 
 		/* ELF_NOTE_ATI_INT32CONSTS */
-		entry->NewNote(InnerBinNoteTypeInt32Consts, 0, ptr);
+		note_ptr[5] = NULL;
+		entry->NewNote(InnerBinNoteTypeInt32Consts, 0, note_ptr[5]);
 
 		/* ELF_NOTE_ATI_BOOL32CONSTS */
-		entry->NewNote(InnerBinNoteTypeBool32Consts, 0, ptr);
+		note_ptr[6] = NULL;
+		entry->NewNote(InnerBinNoteTypeBool32Consts, 0, note_ptr[6]);
 
 		/* ELF_NOTE_ATI_EARLYEXIT */
-		ptr = new char[4]();
-		entry->NewNote(InnerBinNoteTypeEarlyExit, 4, ptr);
-		delete[] ptr;
+		note_ptr[7] = new char[4]();
+		entry->NewNote(InnerBinNoteTypeEarlyExit, 4, note_ptr[7]);
 
-		ptr = 0;
 
 		/* ELF_NOTE_ATI_GLOBAL_BUFFERS */
-		entry->NewNote(InnerBinNoteTypeGlobalBuffers, 0, ptr);
+		note_ptr[8] = NULL;
+		entry->NewNote(InnerBinNoteTypeGlobalBuffers, 0, note_ptr[8]);
 
 	
 		/* ELF_NOTE_ATI_CONSTANT_BUFFERS */
@@ -440,7 +441,7 @@ void OuterBin::Generate(std::ostream& os)
 		
 		
 		buff_size = 8 * buff_num_offset;
-		ptr = new char[buff_size]();
+		note_ptr[9] = new char[buff_size]();
 		
 		/* CB Symbols */
 		for (k = 0; k < MAX_CB_NUM; k++)
@@ -449,17 +450,17 @@ void OuterBin::Generate(std::ostream& os)
 			{
 				line = "cb" + std::to_string(k);
 
-				cb_symbol = symbol_table->NewSymbol(line);
+				cb_symbol = inner_symbol_table->NewSymbol(line);
 				cb_symbol->setValue(buff_num_offset - 1);
 				cb_symbol->setShndx(10);
 			
-				ptr[(buff_num_offset - 1) * 8] = k;
+				note_ptr[9][(buff_num_offset - 1) * 8] = k;
 			
 				if (k == 0)
-					ptr[(buff_num_offset - 1) * 8 + 4] = 0xf;
+					note_ptr[9][(buff_num_offset - 1) * 8 + 4] = 0xf;
 
 				if (k == 1)
-					ptr[(buff_num_offset - 1) * 8 + 4] = 
+					note_ptr[9][(buff_num_offset - 1) * 8 + 4] = 
 						metadata->getArgCount();
 				
 				if (k == 2)
@@ -468,7 +469,7 @@ void OuterBin::Generate(std::ostream& os)
 						misc::fatal("%s: Constant Buffer 2 is used but nothing has been added to a global symbol",
 							 __FUNCTION__);
 
-					ptr[(buff_num_offset - 1) * 8 + 4] = glob_size;
+					note_ptr[9][(buff_num_offset - 1) * 8 + 4] = glob_size;
 				}
 
 				buff_num_offset--;
@@ -476,25 +477,26 @@ void OuterBin::Generate(std::ostream& os)
 
 		}
 		
-		entry->NewNote(InnerBinNoteTypeConstantBuffers, buff_size, ptr);
-		delete[] ptr;
+		entry->NewNote(InnerBinNoteTypeConstantBuffers, buff_size, note_ptr[9]);
 
-		ptr = 0;
 
 		/* ELF_NOTE_ATI_INPUT_SAMPLERS */
-		entry->NewNote(InnerBinNoteTypeInputSamplers, 0, ptr);
+		note_ptr[10] = NULL;
+		entry->NewNote(InnerBinNoteTypeInputSamplers, 0, note_ptr[10]);
 
 		/* ELF_NOTE_ATI_SCRATCH_BUFFERS */
-		ptr = new char[4]();
-		entry->NewNote(InnerBinNoteTypeScratchBuffers, 4, ptr);
-		delete[] ptr;
+		note_ptr[11] = new char[4]();
+		entry->NewNote(InnerBinNoteTypeScratchBuffers, 4, note_ptr[11]);
 
-		ptr = 0;
 
 		/* ELF_NOTE_ATI_PERSISTENT_BUFFERS */
-		entry->NewNote(InnerBinNoteTypePersistentBuffers, 0, ptr);
+		note_ptr[12] = NULL;
+		entry->NewNote(InnerBinNoteTypePersistentBuffers, 0, note_ptr[12]);
 
 		/* ELF_NOTE_ATI_PROGINFO */
+		
+		SI::BinaryNoteProgInfoEntry *prog_info = 
+			new SI::BinaryNoteProgInfoEntry[NUM_PROG_INFO_ELEM]();
 		
 		/* AMU_ABI_USER_ELEMENT_COUNT */
 		prog_info[0].address = 0x80001000;
@@ -662,29 +664,33 @@ void OuterBin::Generate(std::ostream& os)
 		entry->NewNote(InnerBinNoteTypeProgInfo, 912, prog_info);
 
 		/* ELF_NOTE_ATI_SUB_CONSTANT_BUFFERS */
-		entry->NewNote(InnerBinNoteTypeSubConstantBuffers, 0, ptr);
+		note_ptr[14] = NULL;
+		entry->NewNote(InnerBinNoteTypeSubConstantBuffers, 0, note_ptr[14]);
 
 		/* ELF_NOTE_ATI_UAV_MAILBOX_SIZE */
-		ptr = new char[4]();
-		entry->NewNote(InnerBinNoteTypeUAVMailboxSize, 4, ptr);
-		delete[] ptr;
+		note_ptr[15] = new char[4]();
+		entry->NewNote(InnerBinNoteTypeUAVMailboxSize, 4, note_ptr[15]);
 
 		/* ELF_NOTE_ATI_UAV_OP_MASK */
-		ptr = new char[128]();
+		note_ptr[16] = new char[128]();
 		
-		*((int*)ptr) = inner_bin->GetRatOp();
+		*((int*)note_ptr[16]) = inner_bin->GetRatOp();
 
-		entry->NewNote(InnerBinNoteTypeUAVOPMask, 128, ptr);
-		delete[] ptr;
+		entry->NewNote(InnerBinNoteTypeUAVOPMask, 128, note_ptr[16]);
 
 		/* Data Section - Not supported yet (section is empty right now) */
 		ptr = new char[4736]();
 		entry->GetDataSectionBuffer()->Write(ptr, 4736);
-		delete[] ptr;
 
 
 		/* Generate Inner Bin File */
 		std::ostringstream oss;
+	
+		/* Output Inner ELF */
+		//std::ofstream of("kernel.bin");
+		//inner_bin->Generate(of);
+		//of.close();
+		
 
 		inner_bin->Generate(oss);
 
@@ -695,14 +701,7 @@ void OuterBin::Generate(std::ostream& os)
 
 		kernel_str = oss.str();
 			
-		/* Output Inner ELF */
-		/* FILE *f;
-		snprintf(line, sizeof line, "%s_kernel", inner_bin->name);
-		f = fopen(line, "w");
-		ELFWriterBufferWriteToFile(kernel_buffer, f);
-		fclose(f); 
-		*/
-	
+			
 		/* Create kernel symbol and add it to the symbol table */
 		line = "__OpenCL_" + inner_bin->GetName() + "_kernel";
 
@@ -738,6 +737,8 @@ void OuterBin::Generate(std::ostream& os)
         
 	writer.setVersion(1);
 	
+	symbol_table->Generate();
+
 	/* Generate final binary */
         writer.Generate(os);
 }

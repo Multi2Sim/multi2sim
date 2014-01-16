@@ -33,6 +33,7 @@
 #include "inner-bin.h"
 #include "inst.h"
 #include "inst-info.h"
+#include "PVars.h"
 #include "si2bin.h"
 #include "symbol.h"
 #include "task.h"

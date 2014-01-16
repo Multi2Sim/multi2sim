@@ -162,7 +162,7 @@ class InnerBin
 	std::string name;
 
 	/* Program Resource */
-	SI::BinaryComputePgmRsrc2 *pgm_rsrc2;
+	SI::BinaryComputePgmRsrc2 pgm_rsrc2;
 
 	/* RAT_OP */
 	int rat_op;
@@ -195,7 +195,7 @@ public:
 	
 	/* Getters */
 	std::string GetName() { return name; }
-	SI::BinaryComputePgmRsrc2 *GetPgmRsrc2() { return pgm_rsrc2; }
+	SI::BinaryComputePgmRsrc2 *GetPgmRsrc2() { return &pgm_rsrc2; }
 	int GetRatOp() { return rat_op; }
 	int GetNumSgpr() { return num_sgprs; }
 	int GetNumVgpr() { return num_vgprs; }
@@ -209,6 +209,7 @@ public:
 	unsigned int GetUserElementCount() { return user_element_list.size(); }
 	
 	/* Setters */
+	void SetPgmRsrc2(SI::BinaryComputePgmRsrc2 &pgm_rsrc2) { this->pgm_rsrc2 = pgm_rsrc2; }
 	void SetRatOp(int rat_op) { this->rat_op = rat_op; }
 	void SetNumSgpr(int num_sgprs) { this->num_sgprs = num_sgprs; }
 	void SetNumVgpr(int num_vgprs) { this->num_vgprs = num_vgprs; }

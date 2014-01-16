@@ -147,9 +147,6 @@ class OuterBin
 	
 public:
 	
-	///Contstructor
-	OuterBin();
-
 	// Getters
 
 	///Returns the device type for the Outer Bin object

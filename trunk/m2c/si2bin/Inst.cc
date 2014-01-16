@@ -117,8 +117,8 @@ void Inst::Initialize(const std::string &name)
 			// Check that actual argument type is acceptable for token
 			if (!token->IsArgAllowed(arg))
 			{
-				error = StringFmt("invalid type for argument %d",
-						arg->index + 1);
+				error = StringFmt("line:%d: invalid type for argument %d",
+						si2bin_yylineno, arg->index + 1);
 				break;
 			}
 		}
@@ -289,6 +289,147 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 
 		break;
 	}
+
+	case TokenMtSeriesVdataSrc:
+	{
+		int low = 0;
+		int high = 0;
+		int high_must = 0;
+
+		// Get registers
+		switch (arg->type)
+		{
+
+		case ArgTypeVectorRegister:
+		{
+			ArgVectorRegister *vr = dynamic_cast
+					<ArgVectorRegister *>(arg);
+			assert(vr);
+			low = vr->getId();
+			high = low;
+			break;
+		}
+
+		case ArgTypeVectorRegisterSeries:
+		{
+			ArgVectorRegisterSeries *vrs = dynamic_cast
+					<ArgVectorRegisterSeries *>(arg);
+			low = vrs->getLow();
+			high = vrs->getHigh();
+			break;
+		}
+
+		default:
+			panic("%s: invalid argument for TokenMtSeriesVdata",
+					__FUNCTION__);
+		}
+
+		// Restriction in vector register range
+		switch (opcode)
+		{
+
+		case SI::INST_TBUFFER_LOAD_FORMAT_X:
+		case SI::INST_TBUFFER_STORE_FORMAT_X:
+
+			high_must = low;
+			break;
+
+		case SI::INST_TBUFFER_LOAD_FORMAT_XY:
+		case SI::INST_TBUFFER_STORE_FORMAT_XY:
+
+			high_must = low + 1;
+			break;
+
+		case SI::INST_TBUFFER_LOAD_FORMAT_XYZW:
+		case SI::INST_TBUFFER_STORE_FORMAT_XYZW:
+
+			high_must = low + 3;
+			break;
+
+		default:
+			panic("%s: MUBUF/MTBUF instruction not recognized: %s",
+					__FUNCTION__, info->getName().c_str());
+		}
+
+		// Check range
+		if (high != high_must)
+			fatal("invalid register series: v[%d:%d]", low, high);
+
+		// Encode
+		bytes.mtbuf.vdata = low;
+		break;
+	}
+	
+	case TokenMtSeriesVdataDst:
+	{
+		int low = 0;
+		int high = 0;
+		int high_must = 0;
+
+		// Get registers
+		switch (arg->type)
+		{
+
+		case ArgTypeVectorRegister:
+		{
+			ArgVectorRegister *vr = dynamic_cast
+					<ArgVectorRegister *>(arg);
+			assert(vr);
+			low = vr->getId();
+			high = low;
+			break;
+		}
+
+		case ArgTypeVectorRegisterSeries:
+		{
+			ArgVectorRegisterSeries *vrs = dynamic_cast
+					<ArgVectorRegisterSeries *>(arg);
+			low = vrs->getLow();
+			high = vrs->getHigh();
+			break;
+		}
+
+		default:
+			panic("%s: invalid argument for TokenMtSeriesVdata",
+					__FUNCTION__);
+		}
+
+		// Restriction in vector register range
+		switch (opcode)
+		{
+
+		case SI::INST_TBUFFER_LOAD_FORMAT_X:
+		case SI::INST_TBUFFER_STORE_FORMAT_X:
+
+			high_must = low;
+			break;
+
+		case SI::INST_TBUFFER_LOAD_FORMAT_XY:
+		case SI::INST_TBUFFER_STORE_FORMAT_XY:
+
+			high_must = low + 1;
+			break;
+
+		case SI::INST_TBUFFER_LOAD_FORMAT_XYZW:
+		case SI::INST_TBUFFER_STORE_FORMAT_XYZW:
+
+			high_must = low + 3;
+			break;
+
+		default:
+			panic("%s: MUBUF/MTBUF instruction not recognized: %s",
+					__FUNCTION__, info->getName().c_str());
+		}
+
+		// Check range
+		if (high != high_must)
+			fatal("invalid register series: v[%d:%d]", low, high);
+
+		// Encode
+		bytes.mtbuf.vdata = low;
+		break;
+	}
+
 
 	case TokenMtSeriesVdata:
 	{
@@ -950,7 +1091,7 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 		// Create symbol if it doesn't exist
 		if (!symbol)
 		{
-			context->NewSymbol(label->getName());
+			symbol = context->NewSymbol(label->getName());
 		}
 
 		/* If symbol is defined, resolve label right away. Otherwise,
@@ -958,18 +1099,18 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 		if (symbol->GetDefined())
 		{
 			bytes.sopp.simm16 = (symbol->GetValue() -
-					context->GetTextBuffer()->getPosition()) / 4 - 1;
+					context->GetTextBuffer()->getWritePosition()) / 4 - 1;
 		}
 		else
 		{
-			context->NewTask(context->GetTextBuffer()->getPosition(), 
+			context->NewTask(context->GetTextBuffer()->getWritePosition(), 
 					symbol, context->GetTextBuffer());
 		}
 		break;
 	}
 
 	default:
-		fatal("unsupported token for argument %d",
+		si2bin_yyerror_fmt("unsupported token for argument %d",
 				arg->index + 1);
 	}
 }

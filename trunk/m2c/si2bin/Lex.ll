@@ -19,13 +19,10 @@
 
 %{
 
-#include <lib/class/class.h>
-#include <lib/class/string.h>
-#include <lib/mhandle/mhandle.h>
+#include <cstdlib>
 
-#include "si2bin.h"
-#include "PVars.h"
-#include "parser.h"
+#include "Context.h"
+#include "Parser.h"
 
 extern long offset;
 %}
@@ -91,27 +88,27 @@ extern long offset;
 }
 
 s[0-9]+ {
-	si2bin_yylval.id = new(String, yytext);
+	si2bin_yylval.id = strdup(yytext);
 	return TOK_SCALAR_REGISTER;
 }
 
 v[0-9]+ {
-	si2bin_yylval.id = new(String, yytext);
+	si2bin_yylval.id = strdup(yytext);
 	return TOK_VECTOR_REGISTER;
 }
 
 vcc|scc|exec {
-	si2bin_yylval.id = new(String, yytext);
+	si2bin_yylval.id = strdup(yytext);
 	return TOK_SPECIAL_REGISTER;
 }
 
 m[0-9]+ {
-	si2bin_yylval.id = new(String, yytext);
+	si2bin_yylval.id = strdup(yytext);
 	return TOK_MEMORY_REGISTER;
 }
 
 uav[0-9]+ {
-	si2bin_yylval.id = new(String, yytext);
+	si2bin_yylval.id = strdup(yytext);
 	return TOK_UAV;
 }
 
@@ -181,12 +178,12 @@ uav[0-9]+ {
 
 
 [a-zA-Z_][a-zA-Z0-9_]* {   
-	si2bin_yylval.id = new(String, yytext);
+	si2bin_yylval.id = strdup(yytext);
 	return TOK_ID; 
 }
 
 0x[0-9a-z]+ { 
-	si2bin_yylval.id = new(String, yytext);
+	si2bin_yylval.id = strdup(yytext);
 	return TOK_HEX;	
 }
 
@@ -213,8 +210,10 @@ uav[0-9]+ {
 }
 
 . {
+
 	/* Lexical error */
-	si2bin_yyerror_fmt("unexpected character: %s\n", yytext);
+	/*si2bin_yyerror_fmt("unexpected character: %s\n", yytext);*/
+	si2bin_yyerror(yytext);
 }
 
 %%

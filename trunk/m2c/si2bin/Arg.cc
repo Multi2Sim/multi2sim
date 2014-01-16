@@ -51,6 +51,9 @@ StringMap arg_type_map =
  * Class 'Arg'
  */
 
+/* Virtual Destructor */
+Arg::~Arg() {}
+
 int Arg::Encode()
 {
 	panic("%s: cannot encode argument of type %s",
