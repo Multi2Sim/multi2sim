@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <arch/kepler/emu/Emu.h>
-#include <arch/kepler/emu/Grid.h>
+#include <arch/kepler/emu/emu.h>
+#include <arch/kepler/emu/grid.h>
 
 #include <arch/fermi/emu/emu.h>
 #include <arch/fermi/emu/grid.h>
@@ -947,66 +947,66 @@ int cuda_func_cuFrmLaunchKernel(X86Context *ctx)
 
 int cuda_func_cuKplLaunchKernel(X86Context *ctx)
 {
-//	struct x86_regs_t *regs = ctx->regs;
-//	struct mem_t *mem = ctx->mem;
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
-//	unsigned args[11];
-//	unsigned function_id;
-//	unsigned grid_dim[3];
-//	unsigned block_dim[3];
-//	unsigned shared_mem_usage;
-//	unsigned stream_handle;
-//	unsigned kernel_args;
-//	unsigned extra;
+	unsigned args[11];
+	unsigned function_id;
+	unsigned grid_dim[3];
+	unsigned block_dim[3];
+	unsigned shared_mem_usage;
+	unsigned stream_handle;
+	unsigned kernel_args;
+	unsigned extra;
 
-//	struct cuda_function_t *function;
-//	int i;
-//	struct cuda_function_arg_t *arg;
-//	unsigned arg_ptr;
-//	int offset = 0x20;
+	struct cuda_function_t *function;
+	int i;
+	struct cuda_function_arg_t *arg;
+	unsigned arg_ptr;
+	int offset = 0x20;
 //	KplGrid *grid;
 //	KplEmu *kpl_emu = ctx->emu->cuda_driver->kpl_emu;
 //	struct cuda_abi_kpl_kernel_launch_info_t *info;
 
 	/* Read arguments */
-//	mem_read(mem, regs->ecx, 11 * sizeof *args, args);
-//	function_id = args[0];
-//	grid_dim[0] = args[1];
-//	grid_dim[1] = args[2];
-//	grid_dim[2] = args[3];
-//	block_dim[0] = args[4];
-//	block_dim[1] = args[5];
-//	block_dim[2] = args[6];
-//	shared_mem_usage = args[7];
-//	stream_handle = args[8];
-//	kernel_args = args[9];
-//	extra = args[10];
+	mem_read(mem, regs->ecx, 11 * sizeof *args, args);
+	function_id = args[0];
+	grid_dim[0] = args[1];
+	grid_dim[1] = args[2];
+	grid_dim[2] = args[3];
+	block_dim[0] = args[4];
+	block_dim[1] = args[5];
+	block_dim[2] = args[6];
+	shared_mem_usage = args[7];
+	stream_handle = args[8];
+	kernel_args = args[9];
+	extra = args[10];
 
 	/* Debug */
-//	cuda_debug("\tfunction_id = 0x%08x\n", function_id);
-//	cuda_debug("\tgrid_dimX = %u\n", grid_dim[0]);
-//	cuda_debug("\tgrid_dimY = %u\n", grid_dim[1]);
-//	cuda_debug("\tgrid_dimZ = %u\n", grid_dim[2]);
-//	cuda_debug("\tblock_dimX = %u\n", block_dim[0]);
-//	cuda_debug("\tblock_dimY = %u\n", block_dim[1]);
-//	cuda_debug("\tblock_dimZ = %u\n", block_dim[2]);
-//	cuda_debug("\tshared_mem_usage = %u\n", shared_mem_usage);
-//	cuda_debug("\tstream_handle = 0x%08x\n", stream_handle);
-//	cuda_debug("\tkernel_args = 0x%08x\n", kernel_args);
-//	cuda_debug("\textra = 0x%08x\n", extra);
+	cuda_debug("\tfunction_id = 0x%08x\n", function_id);
+	cuda_debug("\tgrid_dimX = %u\n", grid_dim[0]);
+	cuda_debug("\tgrid_dimY = %u\n", grid_dim[1]);
+	cuda_debug("\tgrid_dimZ = %u\n", grid_dim[2]);
+	cuda_debug("\tblock_dimX = %u\n", block_dim[0]);
+	cuda_debug("\tblock_dimY = %u\n", block_dim[1]);
+	cuda_debug("\tblock_dimZ = %u\n", block_dim[2]);
+	cuda_debug("\tshared_mem_usage = %u\n", shared_mem_usage);
+	cuda_debug("\tstream_handle = 0x%08x\n", stream_handle);
+	cuda_debug("\tkernel_args = 0x%08x\n", kernel_args);
+	cuda_debug("\textra = 0x%08x\n", extra);
 
 	/* Get function */
-//	function = list_get(function_list, function_id);
+	function = list_get(function_list, function_id);
 
 	/* Set up arguments */
-//	for (i = 0; i < function->arg_count; ++i)
-//	{
-//		arg = function->arg_array[i];
-//		mem_read(mem, kernel_args + i * 4, sizeof(unsigned), &arg_ptr);
-//		mem_read(mem, arg_ptr, sizeof(unsigned), &(arg->value));
+	for (i = 0; i < function->arg_count; ++i)
+	{
+		arg = function->arg_array[i];
+		mem_read(mem, kernel_args + i * 4, sizeof(unsigned), &arg_ptr);
+		mem_read(mem, arg_ptr, sizeof(unsigned), &(arg->value));
 //		KplEmuConstMemWrite(kpl_emu, offset, &(arg->value));
-//		offset += 0x4;
-//	}
+		offset += 0x4;
+	}
 
 	/* Create grid */
 //	grid = new(KplGrid, kpl_emu, function);
@@ -1016,7 +1016,7 @@ int cuda_func_cuKplLaunchKernel(X86Context *ctx)
 //	KplGridSetupConstantMemory(grid);
 
 	/* Add to pending list */
-	//list_add(kpl_emu->pending_grids, grid);
+//	list_add(kpl_emu->pending_grids, grid);
 
 	/* Set up call-back function to be run when grid finishes */
 //	info = xcalloc(1, sizeof(struct cuda_abi_kpl_kernel_launch_info_t));

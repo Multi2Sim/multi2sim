@@ -17,14 +17,49 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef KEPLER_EMU_ISA_H
-#define KEPLER_EMU_ISA_H
+#ifndef KEPLER_EMU_THREAD_H
+#define KEPLER_EMU_THREAD_H
+
+#include <arch/kepler/asm/Wrapper.h>
+#include <lib/class/class.h>
 
 
-/* Debugging */
-extern int kpl_isa_debug_category;
-#define kpl_isa_debug(...) debug(kpl_isa_debug_category, __VA_ARGS__)
+/*
+ * Class 'KplThread'
+ */
 
+
+typedef union
+{
+	unsigned u32;
+	int s32;
+	float f;
+} KplThreadReg;
+
+
+CLASS_BEGIN(KplThread, Object)
+
+	/* IDs */
+	int id;
+	int id_in_warp;
+
+	/* Warp, thread-block, and grid where it belongs */
+	KplWarp *warp;
+	KplThreadBlock *thread_block;
+	KplGrid *grid;
+
+	/* Registers */
+	KplThreadReg gpr[64];  /* General purpose registers */
+	KplThreadReg sr[82];  /* Special registers */
+	unsigned pr[8];  /* Predicate registers */
+
+	/* Fields below are used for architectural simulation only. */
+
+CLASS_END(KplThread)
+
+
+void KplThreadCreate(KplThread *self, int id, KplWarp *warp);
+void KplThreadDestroy(KplThread *self);
 
 #endif
 

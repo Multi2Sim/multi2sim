@@ -53,12 +53,12 @@
 #include <arch/kepler/asm/Wrapper.h>
 #include <arch/mips/asm/Wrapper.h>
 
-#include <arch/kepler/emu/Emu.h>
-#include <arch/kepler/emu/Grid.h>
+#include <arch/kepler/emu/emu.h>
+#include <arch/kepler/emu/grid.h>
 #include <arch/kepler/emu/isa.h>
-#include <arch/kepler/emu/Thread.h>
-#include <arch/kepler/emu/ThreadBlock.h>
-#include <arch/kepler/emu/Warp.h>
+#include <arch/kepler/emu/thread.h>
+#include <arch/kepler/emu/thread-block.h>
+#include <arch/kepler/emu/warp.h>
 
 #include <arch/mips/emu/context.h>
 #include <arch/mips/emu/isa.h>
