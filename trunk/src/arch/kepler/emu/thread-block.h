@@ -17,13 +17,52 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef KEPLER_EMU_ISA_H
-#define KEPLER_EMU_ISA_H
+#ifndef KEPLER_EMU_THREADBLOCK_H
+#define KEPLER_EMU_THREADBLOCK_H
+
+#include <lib/class/class.h>
 
 
-/* Debugging */
-extern int kpl_isa_debug_category;
-#define kpl_isa_debug(...) debug(kpl_isa_debug_category, __VA_ARGS__)
+/*
+ * Class 'KplThreadBlock'
+ */
+
+
+CLASS_BEGIN(KplThreadBlock, Object)
+
+	/* ID */
+	int id;
+
+	/* Grid it belongs to */
+	KplGrid *grid;
+
+	/* Warps */
+	int warp_count;
+	KplWarp **warps;
+	struct list_t *running_warps;
+	struct list_t *finished_warps;
+
+	/* Threads */
+	int thread_count;
+	KplThread **threads;
+
+	/* Shared memory */
+	struct mem_t *shared_mem;
+
+	/* Flags */
+	unsigned finished;
+
+	/* Fields for architectural simulation only */
+	int id_in_sm;
+	int finished_sm_count;
+
+CLASS_END(KplThreadBlock)
+
+
+void KplThreadBlockCreate(KplThreadBlock *self, int id, KplGrid *grid);
+void KplThreadBlockDestroy(KplThreadBlock *self);
+
+void KplThreadBlockDump(KplThreadBlock *self, FILE *f);
 
 
 #endif
