@@ -101,7 +101,9 @@ class Inst
 
 
 public:
+	
 
+	
 	/* Create a new instruction with the specified opcode, as defined in the
 	 * Southern Islands disassembler. The arguments contained in the list
 	 * will be freed automatically in the destructor of this class. */
@@ -115,15 +117,24 @@ public:
 			{ Initialize(name, args...); }
 
 	// Construction based on opcode + argument list as vector
-	Inst(SI::InstOpcode opcode, std::vector<std::unique_ptr<Arg>> &arg_list)
+	Inst(SI::InstOpcode opcode, std::vector<Arg *> &arg_list)
 	{
 		for (auto &arg : arg_list)
 		{
-			args.push_back(std::move(arg));
+			args.push_back(static_cast<std::unique_ptr<Arg>>(arg));
 		}
 		Initialize(opcode);
 	}
 	
+	// Construction based on opcode + argument list as vector
+	Inst(const std::string &name, std::vector<Arg *> &arg_list)
+	{
+		for (auto &arg : arg_list)
+		{
+			args.push_back(static_cast<std::unique_ptr<Arg>>(arg));
+		}
+		Initialize(name);
+	}
 
 	// Dump instruction in a human-ready way
 	void Dump(std::ostream &os);
@@ -146,7 +157,7 @@ public:
 	void Encode();
 
 	// Write the instruction bytes into output stream.
-	void Write(std::ostream &os);
+	void Write(std::ostream &os) { os.write((char *)(bytes.byte), size); };
 };
 
 

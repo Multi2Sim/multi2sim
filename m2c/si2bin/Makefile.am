@@ -7,48 +7,10 @@ lib_LIBRARIES = libsi2bin.a
 
 if HAVE_FLEX_BISON
 
-BUILT_SOURCES = parser.h
+#BUILT_SOURCES = parser.h
+BUILT_SOURCES = Parser.h
 
 libsi2bin_a_SOURCES = \
-	\
-	arg.c \
-	arg.h \
-	\
-	data.h \
-	data.c \
-	\
-	inner-bin.c \
-	inner-bin.h \
-	\
-	inst.c \
-	inst.h \
-	\
-	inst-info.c \
-	inst-info.h \
-	\
-	metadata.c\
-	metadata.h\
-	\
-	outer-bin.c \
-	outer-bin.h \
-	\
-	si2bin.c \
-	si2bin.h \
-	\
-	symbol.c \
-	symbol.h \
-	\
-	Symbol.cc \
-	Symbol.h \
-	\
-	task.c \
-	task.h \
-	\
-	token.c \
-	token.h \
-	\
-	lex.l \
-	parser.y \
 	\
 	Arg.cc \
 	Arg.h \
@@ -68,11 +30,17 @@ libsi2bin_a_SOURCES = \
 	Metadata.cc \
 	Metadata.h \
 	\
+	Symbol.cc \
+	Symbol.h \
+	\
 	Task.cc \
 	Task.h \
 	\
 	Token.cc \
-	Token.h
+	Token.h \
+	\
+	Lex.ll \
+	Parser.yy
 
 LDADD = \
 	$(top_builddir)/src/arch/southern-islands/asm/libasm.a \
@@ -81,9 +49,9 @@ LDADD = \
 
 else
 
-libsi2bin_a_SOURCES = \
-	si2bin-missing.c \
-	si2bin.h
+#libsi2bin_a_SOURCES = \
+#	si2bin-missing.c \
+#	si2bin.h
 
 endif
 

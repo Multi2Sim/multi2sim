@@ -64,26 +64,6 @@ enum ArgScope
 	ArgScopeHwGDS
 };
 
-enum ArgReflection
-{
-	ArgReflectionInvalid = 0,
-	ArgReflectionInt8,
-	ArgReflectionInt16,
-	ArgReflectionInt32,
-	ArgReflectionInt64,
-	ArgReflectionUInt8,
-	ArgReflectionUInt16,
-	ArgReflectionUInt32,
-	ArgReflectionUInt64,
-	ArgReflectionFloat,
-	ArgReflectionDouble,
-	ArgReflectionStruct,
-	ArgReflectionUnion,
-	ArgReflectionEvent,
-	ArgReflectionOpaque
-};
-
-extern misc::StringMap arg_data_type_map;
 enum ArgDataType
 {
 	ArgDataTypeInvalid = 0,
@@ -105,6 +85,8 @@ enum ArgDataType
 	ArgDataTypeOpaque
 };
 
+extern misc::StringMap arg_access_type_map;
+extern misc::StringMap arg_data_type_map;
 
 class Arg
 {
@@ -172,7 +154,8 @@ public:
 				constant_buffer_num(constant_buffer_num),
 				scope(scope),
 				buffer_num(buffer_num),
-				alignment(alignment) { };
+				alignment(alignment),
+				access_type(access_type) { };
 
 	/* Getters */
 	ArgDataType getDataType() { return data_type; }

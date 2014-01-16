@@ -38,9 +38,21 @@
 #include "Task.h"
 #include "Token.h"
 
+//Global Variables and functions for Parser.yy
+int si2bin_yylex(void);
+int si2bin_yyparse(void);
+void si2bin_yyerror(const char *s);
+void si2bin_yyerror_fmt(const char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
+
+extern int si2bin_yylineno;
+extern FILE *si2bin_yyin;
+extern char *si2bin_yytext;
+extern char *si2bin_source_file;
 
 namespace si2bin
 {
+
+extern std::string MachineName;
 
 class Si2binConfig : public misc::CommandLineConfig
 {
@@ -154,15 +166,6 @@ public:
 	static Context *getInstance();
 	static Si2binConfig config;
 
-	//int yylex(void);
-	//int yyparse(void);
-	//void yyerror(const char *s);
-	//void yyerror_fmt(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
-
-	//int yylineno;
-	FILE *yyin;
-	char *yytext;
-	
 
 	Symbol *getSymbol(const std::string &name){
 		auto it = symbol_table.find(name);
@@ -193,10 +196,15 @@ public:
 		task_list.push_back(std::unique_ptr<Task>(new Task(offset, symbol, buffer)));
 	}
 	
+	void TaskProcess() { for (auto &task : task_list) task->Process(); };
+	void SymbolTableClear() { symbol_table.clear(); };
+	
+	
 	void Compile(const std::string &source_file, const std::string &output_file);
 };
 
-
 }  // namespace si2bin
+
+
 
 #endif

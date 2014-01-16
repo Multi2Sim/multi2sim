@@ -44,6 +44,7 @@
 #include "inst.h"
 #include "metadata.h"
 #include "outer-bin.h"
+#include "PVars.h"
 #include "si2bin.h"
 #include "string.h"
 #include "symbol.h"

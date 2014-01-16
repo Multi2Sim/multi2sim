@@ -18,6 +18,7 @@
  */
 
 #include "Symbol.h"
+#include <lib/cpp/Misc.h>
 
 
 namespace si2bin
@@ -26,6 +27,9 @@ namespace si2bin
 
 void Symbol::Dump(std::ostream &os)
 {
+	if (!this)
+		misc::fatal("Undefined symbol");
+
 	if (this->GetDefined())
 		os << "name='" << name << "', value=" << value;
 	else
