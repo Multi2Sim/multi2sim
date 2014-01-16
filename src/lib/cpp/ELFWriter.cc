@@ -348,6 +348,11 @@ void File::Generate(std::ostream& os)
 	unsigned phtab_size = sizeof(Elf32_Phdr) * segments.size();
 	unsigned shtab_size = sizeof(Elf32_Shdr) * sections.size();
 
+	//Write symbols into symbol table buffers
+	//for (auto &symtab : symbol_tables)
+	//	symtab->Generate();
+
+
 	// Find segment offsets
 	for (auto &segment : segments)
 	{

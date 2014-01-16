@@ -83,20 +83,20 @@ StringMap arg_scope_map =
 /* FIXME: Still need to figure out reflection for i1 and u1 */
 StringMap arg_reflection_map =
 {
-	{ "char", ArgReflectionInt8 },
-	{ "short", ArgReflectionInt16 },
-	{ "int", ArgReflectionInt32 },
-	{ "long", ArgReflectionInt64 },
-	{ "uchar", ArgReflectionUInt8 },
-	{ "ushort", ArgReflectionUInt16 },
-	{ "uint", ArgReflectionUInt32 },
-	{ "ulong", ArgReflectionUInt64 },
-	{ "float", ArgReflectionFloat },
-	{ "double", ArgReflectionDouble },
-	{ "struct", ArgReflectionStruct },
-	{ "union", ArgReflectionUnion },
-	{ "event", ArgReflectionEvent },
-	{ "opaque", ArgReflectionOpaque },
+	{ "char", ArgDataTypeInt8 },
+	{ "short", ArgDataTypeInt16 },
+	{ "int", ArgDataTypeInt32 },
+	{ "long", ArgDataTypeInt64 },
+	{ "uchar", ArgDataTypeUInt8 },
+	{ "ushort", ArgDataTypeUInt16 },
+	{ "uint", ArgDataTypeUInt32 },
+	{ "ulong", ArgDataTypeUInt64 },
+	{ "float", ArgDataTypeFloat },
+	{ "double", ArgDataTypeDouble },
+	{ "struct", ArgDataTypeStruct },
+	{ "union", ArgDataTypeUnion },
+	{ "event", ArgDataTypeEvent },
+	{ "opaque", ArgDataTypeOpaque }
 };
 
 
@@ -168,7 +168,7 @@ void ArgPointer::WriteInfo(ELFWriter::Buffer *buffer, unsigned int index,
 
 	line =
 		";pointer:" + 
-		getName() + ":" + data_type_str + ":" +
+		getName() + ":" + data_type_str + ":1:" +
 		std::to_string(constant_buffer_num) + ":" +
 		std::to_string(constant_offset) + ":" + scope_str + ":" +
 		std::to_string(buffer_num) + ":" + std::to_string(data_size) + ":" +
@@ -216,7 +216,7 @@ void ArgPointer::WriteReflection(ELFWriter::Buffer *buffer, unsigned int index)
 	else if (num_elems > 1)
 	{
 		line =
-			";reflection:%d:%s%d*\n" + std::to_string(index)+
+			";reflection:" + std::to_string(index)+
 			":" + reflection + std::to_string(num_elems)
 			+ "*\n";
 	}

@@ -105,7 +105,7 @@ public:
 			abs(false), neg(false), constant(false) { }
 	
 	/* Virtual Destructor */
-	virtual ~Arg() {}
+	virtual ~Arg();
 
 	/* Getters */
 	ArgType getType() { return type; }

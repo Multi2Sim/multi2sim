@@ -31,6 +31,7 @@
 
 #include "inst-info.h"
 #include "outer-bin.h"
+#include "PVars.h"
 #include "si2bin.h"
 #include "symbol.h"
 #include "task.h"
@@ -45,7 +46,7 @@ char *si2bin_machine_name = "tahiti";
 
 /* Current source file name being assembled. Set internally in function
  * 'si2bin_compile()' */
-char *si2bin_source_file;
+/*char *si2bin_source_file;*/
 
 /* Current output binary buffer being assembled. Set internally in function
  * 'si2bin_compile()' */
@@ -66,7 +67,7 @@ Si2bin *si2bin;
 /*
  * Public Functions
  */
-
+/*
 void si2bin_yyerror(const char *s)
 {
 	fprintf(stderr, "%s:%d: error: %s\n",
@@ -86,7 +87,7 @@ void si2bin_yyerror_fmt(char *fmt, ...)
 	fflush(NULL);
 	exit(1);
 }
-
+*/
 
 
 /*

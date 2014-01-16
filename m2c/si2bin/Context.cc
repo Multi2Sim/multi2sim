@@ -20,15 +20,47 @@
 #include <lib/cpp/ELFWriter.h>
 #include <lib/cpp/Misc.h>
 
-#include "Context.h"
 #include "Binary.h"
+#include "Context.h"
 #include "Token.h"
+
+#include <cstdarg>
+#include <cstdio>
+#include <cstdlib>
+
+//char *si2bin_yytext;
+
+
+void si2bin_yyerror(const char *s)
+{
+	fprintf(stderr, "INPUT_FILE:%d: error: %s\n",
+			si2bin_yylineno, s);
+	exit(1);
+}
+
+
+void si2bin_yyerror_fmt(const char *fmt, ...)
+{
+
+	va_list va;
+	va_start(va, fmt);
+	fprintf(stderr, "INPUT_FILE:%d: error: ",
+			si2bin_yylineno);
+	vfprintf(stderr, fmt, va);
+	fprintf(stderr, "\n");
+	fflush(NULL);
+	exit(1);
+}
+
 
 
 using namespace misc;
 
 namespace si2bin
 {
+
+std::string MachineName = "tahiti";
+
 
 void Si2binConfig::Register(CommandLine &command_line)
 {
@@ -132,6 +164,10 @@ Context::Context()
 			inst_info_table[info->getName()] = info;
 		}
 	}
+
+	//Set Unique Id default
+	uniqueid = 1024;
+
 }
 
 Context *Context::getInstance()
@@ -148,17 +184,17 @@ Context *Context::getInstance()
 void Context::Compile(const std::string &source_file, const std::string &output_file)
 {
 
-	FILE *f;
-	
+		//FILE *f;
+		
 		// Open source file
-		yyin = fopen(source_file.c_str(), "r");
-		if (!yyin)
+		si2bin_yyin = fopen(source_file.c_str(), "r");
+		if (!si2bin_yyin)
 			fatal("%s: cannot open input file", source_file.c_str());
 
 		// Open output file
-		f = fopen(output_file.c_str(), "wb");
-		if (!f)
-			fatal("%s: cannot output output file", output_file.c_str());
+		//f = fopen(output_file.c_str(), "wb");
+		//if (!f)
+		//	fatal("%s: cannot output output file", output_file.c_str());
 		
 		std::ofstream of(output_file);
 
@@ -166,10 +202,10 @@ void Context::Compile(const std::string &source_file, const std::string &output_
 		this->outer_bin = new OuterBin();
 
 		// Parse input
-		//yyparse();
+		si2bin_yyparse();
 
 		// Close source file
-		fclose(yyin);
+		fclose(si2bin_yyin);
 		
 		// Dump output
 		this->outer_bin->Generate(of);
@@ -179,41 +215,5 @@ void Context::Compile(const std::string &source_file, const std::string &output_
 		delete outer_bin;
 
 }
-
-
-#if 0
-void Si2binDumpSymbolTable(Si2bin *self, FILE *f)
-{
-	Si2binSymbol *symbol;
-	String *name;
-
-	fprintf(f, "Symbol Table:\n");
-	HashTableForEach(self->symbol_table, name, String)
-	{
-		symbol = asSi2binSymbol(HashTableGet(self->symbol_table,
-				asObject(name)));
-		fprintf(f, "\t");
-		Si2binSymbolDump(symbol, f);
-		fprintf(f, "\n");
-	}
-}
-
-
-void Si2binDumpTaskList(Si2bin *self, FILE *f)
-{
-	Si2binTask *task;
-	int index;
-
-	index = 0;
-	fprintf(f, "Task list:\n");
-	ListForEach(self->task_list, task, Si2binTask)
-	{
-		fprintf(f, "\ttask %d: ", index);
-		Si2binTaskDump(task, f);
-		fprintf(f, "\n");
-		index++;
-	}
-}
-#endif
 
 }  // namespace si2bin

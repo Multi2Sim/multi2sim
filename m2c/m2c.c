@@ -309,7 +309,7 @@ static void m2c_process_option(const char *option, char *optarg)
 
 	if (!strcmp(option, "m"))
 	{
-		si2bin_machine_name = optarg;
+		//si2bin_machine_name = optarg;
 		return;
 	}
 
@@ -592,7 +592,7 @@ static void m2c_preprocess(struct list_t *source_file_list,
 /* Compilers */
 static Cl2llvm *cl2llvm;
 static Llvm2si *llvm2si;
-static Frm2bin *frm2bin;
+//static Frm2bin *frm2bin;
 
 
 /* Initialization before reading command line */
@@ -639,15 +639,15 @@ void m2c_init(void)
 
 	CLASS_REGISTER(Llvm2si);
 
-	CLASS_REGISTER(Si2bin);
+	//CLASS_REGISTER(Si2bin);
 #ifdef HAVE_FLEX_BISON
-	CLASS_REGISTER(Si2binArg);
+	/*CLASS_REGISTER(Si2binArg);
 	CLASS_REGISTER(Si2binData);
 	CLASS_REGISTER(Si2binInst);
 	CLASS_REGISTER(Si2binInstInfo);
 	CLASS_REGISTER(Si2binSymbol);
 	CLASS_REGISTER(Si2binTask);
-	CLASS_REGISTER(Si2binToken);
+	CLASS_REGISTER(Si2binToken);*/
 #endif
 
 	/* Libraries */
@@ -662,8 +662,8 @@ void m2c_init(void)
 	/* Initialize compilers */
 	cl2llvm = new(Cl2llvm);
 	llvm2si = new(Llvm2si);
-	si2bin = new(Si2bin);
-	frm2bin = new(Frm2bin);
+	//si2bin = new(Si2bin);
+	//frm2bin = new(Frm2bin);
 
 #ifdef HAVE_FLEX_BISON_AND_LLVM
 	ctree_init();
@@ -708,8 +708,8 @@ void m2c_done(void)
 	/* Finalize compilers */
 	delete(cl2llvm);
 	delete(llvm2si);
-	delete(si2bin);
-	delete(frm2bin);
+	//delete(si2bin);
+	//delete(frm2bin);
 
 #ifdef HAVE_FLEX_BISON_AND_LLVM
 	ctree_done();
@@ -805,7 +805,7 @@ int main(int argc, char **argv)
 	if (m2c_si2bin_run)
 	{
 		m2c_replace_out_file_name(m2c_bin_file_list);
-		Si2binCompile(si2bin, m2c_source_file_list, m2c_bin_file_list);
+		//Si2binCompile(si2bin, m2c_source_file_list, m2c_bin_file_list);
 		goto out;
 	}
 
@@ -813,7 +813,7 @@ int main(int argc, char **argv)
 	if (m2c_frm2bin_run)
 	{
 		m2c_replace_out_file_name(m2c_bin_file_list);
-		Frm2binCompile(frm2bin, m2c_source_file_list, m2c_bin_file_list);
+		//Frm2binCompile(frm2bin, m2c_source_file_list, m2c_bin_file_list);
 		goto out;
 	}
 
@@ -838,7 +838,7 @@ int main(int argc, char **argv)
 	m2c_preprocess(m2c_source_file_list, m2c_clp_file_list);
 	Cl2llvmCompile(cl2llvm, m2c_clp_file_list, m2c_llvm_file_list, m2c_opt_level);
 	Llvm2siCompile(llvm2si, m2c_llvm_file_list, m2c_asm_file_list);
-	Si2binCompile(si2bin, m2c_asm_file_list, m2c_bin_file_list);
+	//Si2binCompile(si2bin, m2c_asm_file_list, m2c_bin_file_list);
 
 	/* Remove temporary files */
 	m2c_remove_temp_file_name(m2c_clp_file_list);

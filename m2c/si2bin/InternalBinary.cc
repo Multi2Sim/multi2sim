@@ -99,7 +99,14 @@ InnerBinEntry::InnerBinEntry(InnerBin *bin)
 	ELFWriter::Segment *load_segment;
 
 	this->bin = bin;
-
+	
+	/* Make note list buffer for note segment */
+	note_buffer = this->bin->writer.NewBuffer();
+	
+	/* Crete Note and Load Segments */
+	note_segment = this->bin->writer.NewSegment("Note Segment", note_buffer,
+			note_buffer);
+	note_segment->setType(PT_NOTE);
 
 	/* Text Section Initialization */
 	text_section_buffer = this->bin->writer.NewBuffer();
@@ -116,14 +123,7 @@ InnerBinEntry::InnerBinEntry(InnerBin *bin)
 	/* Symbol Table Initialization */
 	symbol_table = this->bin->writer.NewSymbolTable(".symtab", ".strtab");
 
-	/* Make note list buffer for note segment */
-	note_buffer = this->bin->writer.NewBuffer();
-	
-	/* Crete Note and Load Segments */
-	note_segment = this->bin->writer.NewSegment("Note Segment", note_buffer,
-			note_buffer);
-	note_segment->setType(PT_NOTE);
-	
+		
 	load_segment = this->bin->writer.NewSegment("Load Segment", text_section_buffer,
 			symbol_table->getStringTableBuffer());
 	load_segment->setType(PT_LOAD);
@@ -151,6 +151,8 @@ InnerBin::InnerBin(const std::string &name)
 {
 	ELFWriter::Buffer *buffer;
 	ELFWriter::Segment *segment;
+
+	this->name = name;
 
 	/* Create buffer and segment for encoding dictionary */
 	buffer = writer.NewBuffer();
@@ -250,6 +252,8 @@ void InnerBin::Generate(std::ostream& os)
 		start = entry->note_buffer->getIndex();
 		end = entry->symbol_table->getStringTableBuffer()->getIndex();
 		
+		entry->GetSymbolTable()->Generate();
+
 		/* Calculate offset and type for enc_dict */
 		for(i = start; i <= end; i++)
 		{
@@ -275,8 +279,6 @@ void InnerBin::Generate(std::ostream& os)
 				sizeof(SI::BinaryDictHeader));
 
 	}
-
-	
 
 	
 	/* Write elf_enc_file to buffer */

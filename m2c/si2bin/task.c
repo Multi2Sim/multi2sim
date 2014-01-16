@@ -27,6 +27,7 @@
 #include <lib/util/misc.h>
 
 #include "outer-bin.h"
+#include "PVars.h"
 #include "si2bin.h"
 #include "symbol.h"
 #include "task.h"

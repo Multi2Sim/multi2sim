@@ -26,6 +26,7 @@
 #include <lib/util/string.h>
 
 #include "arg.h"
+#include "PVars.h"
 #include "si2bin.h"
 
 
