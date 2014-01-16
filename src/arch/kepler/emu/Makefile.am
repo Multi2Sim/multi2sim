@@ -2,16 +2,16 @@ lib_LIBRARIES = libemu.a
 
 libemu_a_SOURCES = \
 	\
-	Emu.cc \
-	Emu.h \
-        Grid.cc \
-        Grid.h \
-	Warp.cc \
-	Warp.h \
-	ThreadBlock.cc \
-	ThreadBlock.h \
-	Thread.cc \
-	Thread.h \
+	emu.c \
+	emu.h \
+        grid.c \
+        grid.h \
+	warp.c \
+	warp.h \
+	thread-block.c \
+	thread-block.h \
+	thread.c \
+	thread.h \
 	isa.c \
 	isa.h
 INCLUDES = @M2S_INCLUDES@

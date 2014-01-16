@@ -18,15 +18,6 @@
  */
 
 
-#include <lib/mhandle/mhandle.h>
-#include <lib/util/debug.h>
-
-#include "Emu.h"
-#include "isa.h"
-//#include "machine.h"
-
-
-
 /* Debug */
 int kpl_isa_debug_category = 1;
 

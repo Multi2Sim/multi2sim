@@ -337,6 +337,9 @@ public:
 	/// address.
 	void Decode(const char *buffer, unsigned int address);
 
+	/// Get ID
+	//InstId getId() { return info ? info->id : InstIdInvalid; }
+
 	/// Dump instruction as a sequence of hexadecimal digits
 	void DumpHex(std::ostream &os) const;
 

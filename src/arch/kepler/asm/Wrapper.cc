@@ -18,8 +18,32 @@
  */
 
 #include "Asm.h"
+#include "Inst.h"
 #include "Wrapper.h"
 
+using namespace Kepler; 
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Wrapper for class Inst
+////////////////////////////////////////////////////////////////////////////////
+
+struct KplInstWrap *KplInstWrapCreate(struct KplAsm *as)
+{
+	return (KplInstWrap *) new Kepler::Inst((Kepler::Asm *) as);
+}
+
+void KplInstWrapDecode(struct KplInstWrap *self, unsigned addr, void *ptr)
+{
+	Kepler::Inst *inst = (Kepler::Inst *) self;
+	inst->Decode((const char *) ptr, addr);
+}
+
+//KplInstId KplInstWrapGetId(struct KplInstWrap *self)
+//{
+//	Kepler::Inst *inst = (Kepler::Inst *) self;
+//	return (KplInstId) inst->getId();
+//}
 
 ////////////////////////////////////////////////////////////////////////////////
 // Wrapper for class Asm

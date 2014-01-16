@@ -24,10 +24,87 @@
 extern "C" {
 #endif
 
+struct KplInstWrap;
 struct KplAsm;
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Wrapper for class Asm
+////////////////////////////////////////////////////////////////////////////////
+
+
+// 1st level struct
+/* BFE, POPC, IADD, IASCADD, IMNMX, SHR, IMUL, LOP, SHL, DMUL, DMNMX, FADD,
+   FMNMX, FMUL, DADD, SEL, P2R, RRO, MOV, F2F, F2I, I2F, I2I, FLO, DCHK, FCHK */
+typedef struct
+{
+	unsigned long long int op0 	: 2; 	// 1:0
+	unsigned long long int dst 	: 8; 	// 9:2
+	unsigned long long int mod0 	: 8; 	// 17:10
+	unsigned long long int pred 	: 4; 	// 21:18
+	unsigned long long int s 	: 1; 	// 22
+	unsigned long long int srcB 	: 9; 	// 41:23
+	unsigned long long int mod1 	: 12;	// 53:42
+	unsigned long long int op1 	: 9; 	// 62:54
+	unsigned long long int srcB_mod	: 1; 	// 63
+} KplInstBytesGeneral0;
+
+
+// BRA, JMX, JMP, JCAL, BRX, CAL, PRET, PLONGJMP, SSY, PBK
+typedef struct
+{
+	unsigned long long int op0 	: 2; 	// 1:0
+	unsigned long long int mod0 	: 16;	// 17:2
+	unsigned long long int pred 	: 4; 	// 21:18
+	unsigned long long int unused 	: 1; 	// 22
+	unsigned long long int srcB 	: 21; 	// 43:23
+	unsigned long long int mod1 	: 11;	// 54:44
+	unsigned long long int op1 	: 9; 	// 63:55
+} KplInstBytesGeneral1;
+
+
+/* GETCRSPTR, GETLMEMBASE, SETCRSPTR, SETLMEMBASE, EXIT, LONGJUMP, RET, KIL,
+ * BRK, CONT, RTT, SAM, RAM  */
+typedef struct
+{
+	unsigned long long int op0     	: 2; 	// 1:0
+	unsigned long long int mod     	: 8; 	// 9:2
+	unsigned long long int src     	: 8; 	// 17:10
+	unsigned long long int pred    	: 4; 	// 21:18
+	unsigned long long int unused   : 33; 	// 54:22
+	unsigned long long int op1     	: 9; 	// 63:55
+} KplInstBytesGeneral2;
+
+
+typedef union
+{
+	unsigned char as_uchar[8];
+	unsigned int as_uint[2];
+	unsigned long long as_dword;
+
+	KplInstBytesGeneral0 general0;
+	KplInstBytesGeneral1 general1;
+	KplInstBytesGeneral2 general2;
+
+} KplInstBytes;
+
+
+struct KplInstWrap *KplInstWrapCreate(struct KplAsm *as);
+void KplInstWrapDecode(struct KplInstWrap *self, unsigned int addr, void *ptr);
+//KplInstId KplInstWrapGetId(struct KplInstWrap *self);
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Wrapper for class Asm
+////////////////////////////////////////////////////////////////////////////////
+
+
 struct KplAsm *KplAsmCreate();
 void KplAsmFree(struct KplAsm *as);
 void KplAsmDisassembleBinary(struct KplAsm *as, const char *path);
+
+
+
 
 #ifdef __cplusplus
 }
