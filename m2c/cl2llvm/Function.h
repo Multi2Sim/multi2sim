@@ -23,24 +23,54 @@
 #include <llvm-c/Core.h>
 #include <lib/util/list.h>
 
-struct cl2llvm_function_t
+namespace cl2llvm
 {
-	LLVMValueRef func;
-	LLVMTypeRef func_type;
-	int sign;
-	char *name;
-	struct hash_table_t *symbol_table;
-	struct list_t *arg_list;
+
+class Function
+{
+	llvm::Value *func;
+	llvm::Type *func_type;
+	bool sign;
+	string name;
+	unordered_map<string, Symbol> symbol_table;
+	vector<Type> arg_list;
 	int arg_count;
-	LLVMBasicBlockRef entry_block;
-	LLVMValueRef branch_instr;
+	llvm::Value *entry_block;
+	llvm::Value *branch_instr;
+public:
+	// Constructors
+	Function(string name, vector<Type> arg_list):
+		name(name), arg_list(arg_list) { }
+	Function(Function& function): func(function.func),
+		func_type(function.func_type), sign(function.sign),
+		name(function.name), symbol_table(function.symbol_table),
+		arg_list(function.arg_list), arg_count(arg_count),
+		entry_block(function.entry_block), 
+		branch_instr(function.branch_instr) { }
+	// Getters
+	llvm::Value *getLlvmFunction() { return func; }
+	llvm::Type *getLlvmFunctionType() { return func_type; }
+	bool getSign() { return sign; }
+	string getName() { return name; }
+	vector<Type> getArgList() { return arg_list; }
+	int getArgCount() { return arg_count; }
+	llvm::Value *getEntryBlock() { return entry_block; }
+	llvm::Value *getBranchInstr() { return branch_instr; }
+
+	// Setters
+	void setLlvmFunction(llvm::Value *func) {
+		this->func = func; }
+	void setLlvmFunctionType(llvm::Type *func_type) {
+		this->func_type = func_type; }
+	void setSign(bool sign) { this->sign = sign; }
+	void setName(string name) { this->name = name; }
+	void AddSymbol(Symbol);
+	void AddArg(Arg);
+	void setEntryBlock(llvm::Value *entry_block) {
+		this->entry_block = entry_block; }
+	void setBranchInstr(llvm::Value *branch_instr) {
+		this->branch_instr = branch_instr; }
 };
 
-struct cl2llvm_function_t *cl2llvm_function_create(char *name, struct list_t *arg_list);
-
-/* Creates a copy of a function can only be used on OpenCL built-in functions. */
-struct cl2llvm_function_t * cl2llvm_func_cpy(struct cl2llvm_function_t *src_func);
-
-void cl2llvm_function_free(struct cl2llvm_function_t *function);
-	
+}
 #endif

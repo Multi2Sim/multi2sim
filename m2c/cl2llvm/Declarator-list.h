@@ -20,20 +20,41 @@
 #ifndef M2C_CL2LLVM_DECLARATOR_LIST_H
 #define M2C_CL2LLVM_DECLARATOR_LIST_H
 
-struct cl2llvm_decl_list_t
+namespace cl2llvm
 {
-	struct cl2llvmTypeWrap *type_spec;
+
+class DeclaratorList
+{
+	Type type_spec;
 	int addr_qual;
-	char *kernel_t;
-	char *inline_t;
-	char *sc_spec;
-	char *access_qual;
-	char *type_qual;
+	string kernel_t;
+	string inline_t;
+	string sc_spec;
+	string access_qual;
+	string type_qual;
+
+public:
+	// Constructors
+	DeclaratorList() {}
+
+	// Setters
+	void setName(string name) { this->name = name; }
+	void setTypeSpec(Type type_spec) { return type_spec; }
+	void setAddrQual(int addr_qual) { return addr_qual; }
+
+	// Getters
+	string getName() { return name; }
+ 	Type getTypeSpec() { return type_spec; }
+	string getAccessQual() { return access_qual; }
+	string getKernelT() { return kernel_t; }
+	string getInlineT() { return inline_t; }
+	string getScSpec() { return sc_spec; }
+	int getAddrQual() { return addr_qual; }
+	string getTypeQual() { return type_qual; }
+
+	// Other Member Functions
+	void Merge(DeclaratorList&);
 };
-
-struct cl2llvm_decl_list_t *cl2llvm_decl_list_create();
-
-void cl2llvm_decl_list_free(struct cl2llvm_decl_list_t *declarator_list);
 
 
 /*frees just the struct pointer and not its fields*/
