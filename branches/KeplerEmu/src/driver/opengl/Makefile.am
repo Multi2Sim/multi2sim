@@ -1,0 +1,38 @@
+lib_LIBRARIES = libopengl.a
+
+if HAVE_OPENGL
+libopengl_a_SOURCES = \
+	\
+	opengl.c \
+	opengl.dat \
+	opengl.h \
+	\
+	si-db.c \
+	si-db.h \
+	\
+	si-sc.c \
+	si-sc.h \
+	\
+	si-spi.c \
+	si-spi.h \
+	\
+	si-pa.c \
+	si-pa.h \
+	\
+	si-shader.c \
+	si-shader.h \
+	\
+	si-program.c \
+	si-program.h 
+
+else
+
+libopengl_a_SOURCES = \
+	\
+	opengl.h \
+	opengl-missing.c
+
+endif
+
+INCLUDES = @M2S_INCLUDES@
+

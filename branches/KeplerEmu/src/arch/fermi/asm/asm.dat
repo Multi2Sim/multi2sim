@@ -1,0 +1,599 @@
+/*
+ * DEFINST format
+ *      name: Instruction name
+ *      fmt_str: String representing the format for dissasembly
+ *      opcode: Instruction opcode
+ */
+
+/* Single-Precision Floating Point category:
+ * FMNMX, FSET, FSETP, FFMA, FCMP, FCCO, FSWZ, FADD, FMUL, RRO, IPA, MUFU
+ */
+
+DEFINST(FMNMX, 
+	"%pred FMNMX%ftz%s %dst%cc, %nasrc1, %nasrc2, %npsrc3", 
+	0x008)
+
+DEFINST(FSET, 
+	"%pred FSET%bf%cop4%bop%s %dst%cc, %nasrc1, %nasrc2, %npsrc3", 
+	0x010)
+
+DEFINST(FSETP, 
+	"%pred FSETP%cop4%ftz%bop%s %pdst1, %pdst2, %nasrc1, %nasrc2, %psrc3", 
+	0x020)
+
+DEFINST(FFMA, 
+	"%pred FFMA%fmz%rnd%sat%fma%s %dst%cc, %n1src1, %src2n1src3", 
+	0x030)
+
+DEFINST(FCMP, 
+	"%pred FCMP%cop4%ftz%s %dst, %src1, %src2, %src3", 
+	0x038)
+
+//DEFINST(FCCO, 
+//	"%pred FCCO", 
+//	0x040)
+
+DEFINST(FSWZ, 
+	"%pred FSWZ%swizzlemode%ftz%rnd%ndv%s %dst%cc, %src1, %src2, %pat", 
+	0x048)
+
+DEFINST(FADD, 
+	"%pred FADD%ftz%rnd%sat%s %dst%cc, %nasrc1, %nasrc2", 
+	0x050)
+
+DEFINST(FMUL, 
+	"%pred FMUL%fmz%scale3%rnd%sat%fma%s %dst%cc, %n1src1, %src2", 
+	0x058)
+
+DEFINST(RRO, 
+	"%pred RRO%rroop%s %dst, %nasrc2", 
+	0x060)
+
+//DEFINST(IPA, 
+//	"%pred IPA", 
+//	0x0c0)
+
+DEFINST(MUFU, 
+	"%pred MUFU%mufuopcode%sat%s %dst, %nasrc1", 
+	0x0c8)
+
+/* Double-Precision Floating Point category:
+ * DMNMX, DSET, DSETP, DFMA, DADD, DMUL
+ */
+
+DEFINST(DMNMX,
+	"%pred DMNMX%s %dst%cc, %nasrc1, %nasrc2, %npsrc3",
+	0x108)
+
+DEFINST(DSET,
+	"%pred DSET%bf%cop4%bop%s %dst%cc, %nasrc1, %nasrc2, %npsrc3", 
+	0x110)
+
+DEFINST(DSETP, 
+	"%pred DSETP%cop4%bop%s %pdst1, %pdst2, %nasrc1, %nasrc2, %npsrc3", 
+	0x118)
+
+DEFINST(DFMA, 
+	"%pred DFMA%rnd%s %dst%cc, %n1src1, %src2n1src3", 
+	0x120)
+
+DEFINST(DADD, 
+	"%pred DADD%rnd%s %dst%cc, %nasrc1, %nasrc2", 
+	0x148)
+
+DEFINST(DMUL, 
+	"%pred DMUL%rnd%s %dst%cc, %n1src1, %src2", 
+	0x150)
+
+/* Immediate category:
+ * IMAD32I, IADD32I, IMUL32I, MOV32I, FFMA32I, FADD32I, FMUL32I, LOP32I, ISCADD32I
+ */
+
+DEFINST(IMAD32I, 
+	"%pred IMAD32I%type%hi%po%s %dst%cc, %n2src1, %imm32, %n2dst", 
+	0x200)
+
+DEFINST(IADD32I, 
+	"%pred IADD32I%po%sat%x%s %dst%cc, %n2src1, %imm32", 
+	0x208)
+
+DEFINST(IMUL32I, 
+	"%pred IMUL32I%type%hi%s %dst%cc, %n1src1, %imm32", 
+	0x210)
+
+DEFINST(MOV32I, 
+	"%pred MOV32I%s %dst, %imm32imm4", 
+	0x218)
+
+DEFINST(FFMA32I, 
+	"%pred FFMA32I%fmz%sat%s %dst%cc, %n1src1, %imm32, %n1dst", 
+	0x220)
+
+DEFINST(FADD32I, 
+	"%pred FADD32I%ftz%s %dst%cc, %nasrc1, %imm32%neg%abs", 
+	0x228)
+
+DEFINST(FMUL32I, 
+	"%pred FMUL32I%fmz%sat%s %dst%cc, %src1, %imm32", 
+	0x230)
+
+DEFINST(LOP32I, 
+	"%pred LOP32I%bop%x%s %dst%cc, %isrc1, %uimm32%inv", 
+	0x238)
+
+DEFINST(ISCADD32I, 
+	"%pred ISCADD32I%s %dst%cc, %src1, %imm32, %shamt", 
+	0x240)
+
+/* Integer category:
+ * IMNMX, ISET, ISETP, IMAD, BFI, ICMP, ISAD, ISCADD, ISUB, IMUL, SHR, SHL, LOP, BFE, FLO
+ */
+
+DEFINST(IMNMX, 
+	"%pred IMNMX%u32%xlo%s %dst%cc, %src1, %src2, %npsrc3", 
+	0x308)
+
+DEFINST(ISET,
+	"%pred ISET%bf%cop3%u32%x%bop%s %dst%cc, %src1, %src2, %npsrc3", 
+	0x310)
+
+DEFINST(ISETP, 
+	"%pred ISETP%cop3%u32%x%bop%xlu%s %pdst1, %pdst2, %src1, %src2, %npsrc3", 
+	0x318)
+
+DEFINST(IMAD, 
+	"%pred IMAD%type%hi%po%sat%x%s %dst%cc, %n2src1, %src2n2src3", 
+	0x320)
+
+DEFINST(BFI, 
+	"%pred BFI%s %dst%cc, %src1, %src2, %src3", 
+	0x328)
+
+DEFINST(ICMP, 
+	"%pred ICMP%cop3%u32%s %dst, %src1, %src2, %src3", 
+	0x330)
+
+DEFINST(ISAD, 
+	"%pred ISAD%u32%s %dst%cc, %src1, %src2, %src3", 
+	0x338)
+
+DEFINST(ISCADD, 
+	"%pred ISCADD%po%s %dst%cc, %n2src1, %n2src2, %shamt", 
+	0x340)
+
+DEFINST(IADD, 
+	"%pred I%addsub%po%sat%x%xlu%s %dst%cc, %src1src2", 
+	0x348)
+
+DEFINST(IMUL, 
+	"%pred IMUL%type%hi%s %dst%cc, %src1, %src2", 
+	0x350)
+
+DEFINST(SHR, 
+	"%pred SHR%u32%w%shrxmode%brev%s %dst%cc, %src1, %src2", 
+	0x358)
+
+DEFINST(SHL, 
+	"%pred SHL%w%x%s %dst%cc, %src1, %src2", 
+	0x360)
+
+DEFINST(LOP, 
+	"%pred LOP%bop%x%xlu%s %dst%cc, %isrc1, %isrc2", 
+	0x368)
+
+DEFINST(BFE, 
+	"%pred BFE%u32%brev%s %dst%cc, %src1, %src2", 
+	0x370)
+
+DEFINST(FLO,
+	"%pred FLO%u32%sh%s %dst%cc, %isrc2",
+	0x378)
+
+/* Other category: 
+ * CSET, CSETP, PSET, PSETP, F2F, F2I, I2F, I2I, SEL, PRMT, MOV, S2R, P2R, R2P, B2R, NOP, LEPC, STP, POPC, VADD4, VMNMX4, VABSDIFF4, VSET4, VSHR4, VSHL4, VSEL4, VADD2, VMNMX2, VABSDIFF2, VSET2, VSHR2, VSHL2, VSEL2, VADD, VMNMX, VABSDIFF, VSET, VSHR, VSHL, VMAD, VSETP
+ */
+
+DEFINST(CSET, 
+	"%pred CSET%bf%cop%bop2%s %dst%cc, CC, %psrc3", 
+	0x400)
+
+DEFINST(CSETP, 
+	"%pred CSETP%cop%bop2%s %pdst1, %pdst2, CC, %psrc3",
+	0x404)
+
+DEFINST(PSET, 
+	"%pred PSET%bf%bop1%bop2%s %dst%cc, %psrc1, %psrc2, %psrc3", 
+	0x408)
+
+DEFINST(PSETP, 
+	"%pred PSETP%bop1%bop2%s %pdst1, %pdst2, %psrc1, %psrc2, %psrc3", 
+	0x40c)
+
+DEFINST(F2F, 
+	"%pred F2F%ftz%fpdest%fpsrc%frnd3%sat%s %dst%cc, %nahisrc2", 
+	0x410)
+
+DEFINST(F2I, 
+	"%pred F2I%ftz%idest%fpsrc%frnd2%s %dst%cc, %nahisrc2", 
+	0x414)
+
+DEFINST(I2F, 
+	"%pred I2F%fpdest%isrc%irnd%s %dst%cc, %nabsrc2", 
+	0x418)
+
+DEFINST(I2I, 
+	"%pred I2I%idest%isrc%irnd%sat%s %dst%cc, %nabsrc2", 
+	0x41c)
+
+DEFINST(SEL, 
+	"%pred SEL%s %dst, %src1, %src2, %psrc3", 
+	0x420)
+
+DEFINST(PRMT, 
+	"%pred PRMT%s %dst, %src1, %src2, %src3", 
+	0x424)
+
+DEFINST(MOV, 
+	"%pred MOV%xlu%s %dst, %src2imm4", 
+	0x428)
+
+DEFINST(S2R, 
+	"%pred S2R%s %dst, %ssrc", 
+	0x42c)
+
+DEFINST(P2R, 
+	"%pred P2R%h1%s %dst, PR, %src1, %src2", 
+	0x430)
+
+DEFINST(R2P, 
+	"%pred R2P%h1%s PR, %src1, %src2", 
+	0x434)
+
+DEFINST(B2R, 
+	"%pred B2R%xlu%s %dst, %imm6", 
+	0x438)
+
+DEFINST(NOP, 
+	"%pred NOP%trig%op%s %cccopsrc2", 
+	0x440)
+
+DEFINST(LEPC, 
+	"%pred LEPC%s %dst", 
+	0x444)
+
+DEFINST(VOTE, 
+	"%pred VOTE%vmode%s %dstpsrc4, %psrc1", 
+	0x448)
+
+//DEFINST(STP, 
+//	"%pred STP", 
+//	0x44c)
+
+DEFINST(BAR, 
+	"%pred BAR.RED%barmode %dstpdst, %src1, %src2, %psrc3",
+	0x450)
+
+DEFINST(POPC, 
+	"%pred POPC%s %dst, %isrc1, %isrc2", 
+	0x454)
+
+//DEFINST(VADD4, 
+//	"%pred VADD4", 
+//	0x480)
+
+//DEFINST(VMNMX4, 
+//	"%pred VMNMX4", 
+//	0x484)
+
+//DEFINST(VABSDIFF4, 
+//	"%pred VABSDIFF4", 
+//	0x488)
+
+//DEFINST(VSET4, 
+//	"%pred VSET4", 
+//	0x48c)
+
+//DEFINST(VSHR4, 
+//	"%pred VSHR4", 
+//	0x490)
+
+//DEFINST(VSHL4, 
+//	"%pred VSHL4", 
+//	0x494)
+
+//DEFINST(VSEL4, 
+//	"%pred VSEL4", 
+//	0x498)
+
+//DEFINST(VADD2, 
+//	"%pred VADD2", 
+//	0x4a0)
+
+//DEFINST(VMNMX2, 
+//	"%pred VMNMX2", 
+//	0x4a4)
+
+//DEFINST(VABSDIFF2, 
+//	"%pred VABSDIFF2", 
+//	0x4a8)
+
+//DEFINST(VSET2, 
+//	"%pred VSET2", 
+//	0x4ac)
+
+//DEFINST(VSHR2, 
+//	"%pred VSHR2", 
+//	0x4b0)
+
+//DEFINST(VSHL2, 
+//	"%pred VSHL2", 
+//	0x4b4)
+
+//DEFINST(VSEL2, 
+//	"%pred VSEL2", 
+//	0x4b8)
+
+//DEFINST(VADD, 
+//	"%pred VADD", 
+//	0x4c0)
+
+//DEFINST(VMNMX, 
+//	"%pred VMNMX", 
+//	0x4c8)
+
+//DEFINST(VABSDIFF, 
+//	"%pred VABSDIFF", 
+//	0x4d0)
+
+//DEFINST(VSET, 
+//	"%pred VSET", 
+//	0x4d8)
+
+//DEFINST(VSHR, 
+//	"%pred VSHR", 
+//	0x4e0)
+
+//DEFINST(VSHL, 
+//	"%pred VSHL", 
+//	0x4e8)
+
+//DEFINST(VMAD, 
+//	"%pred VMAD", 
+//	0x4f0)
+
+//DEFINST(VSETP, 
+//	"%pred VSETP", 
+//	0x4f8)
+
+/* Load/Store From/To Read/Write Memory category: 
+ * RED, ATOM, LD, LDU, ST, CCTL, LDLK, LDS_LDU, LD_LDU, LDL, LDS, LDSLK, STL, STS, STSUL, CCTLL, SULD, SURED, SUST, MEMBAR, SUQ, STUL, SULEA
+ */
+
+DEFINST(RED, 
+	"%pred RED%e%redop%atomicsize%s [%src1%off32], %dst", 
+	0x500)
+
+DEFINST(ATOM, 
+	"%pred ATOM%e%atomop%atomicsize%s %src3, [%src1%off20], %dstsrc4", 
+	0x540)
+
+DEFINST(LD, 
+	"%pred LD%e%cachectrl%size3%s %dst, [%src1%off32]", 
+	0x580)
+	
+DEFINST(LDU, 
+	"%pred LDU%e%size3 %dst, [%src1%off32]", 
+	0x588)
+
+DEFINST(ST, 
+	"%pred ST%e%stcachectrl%size3%s [%src1%off32], %dst", 
+	0x590)
+	
+DEFINST(CCTL, 
+	"%pred CCTL%e%u%cctlop%s %dst, [%src1%off32]", 
+	0x598)
+
+DEFINST(LDLK, 
+	"%pred LDLK%size3%s %psrc, %dst, [%src1%off32]", 
+	0x5a0)
+
+DEFINST(LDS_LDU, 
+	"%pred LDS_LDU%e%size5%s %src3, %dst, [%src1%off141], [%src2%off142]", 
+	0x5a8)
+
+DEFINST(LD_LDU, 
+	"%pred LD_LDU%eu%size5%s %src3, %dst, [%src1%off141], [%src2%off142]",
+	0x5b0)
+
+DEFINST(LDX, 
+	"%pred LD%ls%ldlcachectrl%size3%s %dst, [%src1off24]", 
+	0x5c0)
+
+DEFINST(LDSLK, 
+	"%pred LDSLK%size3%s %psrc, %dst, [%src1%off24]", 
+	0x5c4)
+
+DEFINST(STX,
+	"%pred ST%ls%stcachectrl%size3%s [%src1off24], %dst",
+	0x5c8)
+
+DEFINST(STSUL, 
+	"%pred STSUL%size3%s [%src1%off24], %dst", 
+	0x5cc)
+
+DEFINST(CCTLL, 
+	"%pred CCTLL%cctlop%s [%src1%off24]", 
+	0x5d0)
+
+DEFINST(SULD, 
+	"%pred SULD%1d%b4%ldcachectrl%r4%rf3%surfaceclamp%s %dst, %src2, %src1, %imm41, %imm42", 
+	0x5d4)
+
+DEFINST(SURED, 
+	"%pred SURED%suredop%1d%b4%r4%rf2%surfaceclamp%s %src2, %src1, %dst", 
+	0x5d8)
+
+DEFINST(SUST, 
+	"%pred SUST%1d%b4%sucachectrl%r4%size3%surfaceclamp%s %risrc2, %src1imm41imm42, %dst", 
+	0x5dc)
+
+DEFINST(MEMBAR, 
+	"%pred MEMBAR%membar", 
+	0x5e0)
+
+DEFINST(SUQ, 
+	"%pred SUQ%suqop%s, %dst, %src2", 
+	0x5e4)
+
+DEFINST(STUL, 
+	"%pred STUL%size3%s [%src1%off32], %dst", 
+	0x5e8)
+
+DEFINST(SULEA, 
+	"%pred SULEA%1d%b1%cachectrl%r4%size3%surfaceclamp%s %pdst, %src2, %src1, %imm41, %imm42", 
+	0x5f0)
+
+/* Load From Read-Only Memory category:
+ * VILD, ALD, AST, PIXLD, LDC, OUT, TEX, TLD, TLD4, TMML, TXQ, TXA, TXD
+ */
+
+//DEFINST(VILD, 
+//	"%pred VILD", 
+//	0x600)
+
+//DEFINST(ALD, 
+//	"%pred ALD", 
+//	0x604)
+
+//DEFINST(AST, 
+//	"%pred AST", 
+//	0x608)
+
+//DEFINST(PIXLD, 
+//	"%pred PIXLD", 
+//	0x610)
+
+DEFINST(LDC, 
+	"%pred LDC%size3%il%s %dst, c[%bank][%src1off16]", 
+	0x614)
+	
+//DEFINST(OUT, 
+//	"%pred OUT", 
+//	0x61c)
+
+DEFINST(TEX, 
+	"%pred TEX%i%blod%dc%ndv%nodep%btoff%phase%s %dst, %src1, %src2imm8, %imm5, %geom, %imm43", 
+	0x680)
+
+DEFINST(TLD, 
+	"%pred TLD%i%lz%aoffi%ms%cl%nodep%phase%s %dst, %src1src2, %imm8, %geom, %imm43",
+	0x690)
+
+DEFINST(TLD4, 
+	"%pred TDL4%r2%i%btoff%ndv%nodep%phase%s %dst, %src1src2, %imm8, %imm5, %geom, %imm43", 
+	0x6a0)
+
+//DEFINST(TMML, 
+//	"%pred TMML", 
+//	0x6b0)
+
+DEFINST(TXQ, 
+	"%pred TXQ%i%btoff%ndv%nodep%phase%s %dst, %src1, %src2, %mode, %imm8, %imm5, %imm43", 
+	0x6c0)
+
+//DEFINST(TXA, 
+//	"%pred TXA", 
+//	0x6d0)
+
+//DEFINST(TXD, 
+//	"%pred TXD", 
+//	0x6e0)
+
+/* Control category: 
+ * JMP, JMX, JCAL, BRA, BRX, CAL, PLONGJMP, SSY, PBK, PCNT, PRET, EXIT, LONGJMP, RET, KIL, RTT, BRK, CONT, SAM, RAM, BPT
+ */
+
+DEFINST(JMP, 
+	"%pred JMP%lmt %cccopatarget", 
+	0x700)
+
+DEFINST(JMX, 
+	"%pred JMX%lmt %cccopsrc1", 
+	0x708)
+
+DEFINST(JCAL, 
+	"JCAL%noinc %atarget", 
+	0x710)
+	
+DEFINST(BRA, 
+	"%pred BRA%u%lmt %cccoprtarget", 
+	0x740)
+
+DEFINST(BRX, 
+	"%pred BRX%lmt %cccopaitarget24",
+	0x748)
+
+DEFINST(CAL, 
+	"CAL%noinc %rtarget", 
+	0x750)
+
+DEFINST(PLONGJMP, 
+	"PLONGJMP %rtarget", 
+	0x758)
+
+DEFINST(SSY, 
+	"SSY %rtarget", 
+	0x760)
+
+DEFINST(PBK, 
+	"PBK %rtarget", 
+	0x768)
+
+DEFINST(PCNT,
+	"PCNT %rtarget",
+	0x770)
+
+DEFINST(PRET, 
+	"PRET%noinc %rtarget", 
+	0x778)
+
+DEFINST(EXIT, 
+	"%pred EXIT %cccop", 
+	0x780)
+
+DEFINST(LONGJMP, 
+	"%pred LONGJMP %cccop", 
+	0x788)
+
+DEFINST(RET, 
+	"%pred RET %cccop", 
+	0x790)
+
+//DEFINST(KIL, 
+//	"%pred KIL", 
+//	0x798)
+
+//DEFINST(RTT, 
+//	"RTT", 
+//	0x7a0)
+
+DEFINST(BRK, 
+	"%pred BRK %cccop", 
+	0x7a8)
+
+DEFINST(CONT,
+	"%pred CONT %cccop",
+	0x7b0)
+
+//DEFINST(SAM,
+//	"SAM",
+//	0x7c0)
+
+//DEFINST(RAM,
+//	"RAM",
+//	0x7c8)
+
+DEFINST(BPT,
+	"BPT%drain %imm20",
+	0x7d0)
+

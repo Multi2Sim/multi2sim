@@ -1,0 +1,243 @@
+/*
+ *  Multi2Sim
+ *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+#include <src/lib/cpp/Misc.h>
+#include "NDRange.h"
+
+using namespace misc;
+
+namespace SI
+{
+
+NDRange::NDRange(Emu *emu)
+{
+	this->emu = emu;
+	this->stage = NDRangeStageCompute;
+	this->id = emu->getNewNDRangeID();
+	this->address_space_index = emu->getNewNDRangeID();
+
+	this->last_work_group_sent = false;
+}
+
+// FIXME
+// NDRange::~NDRange()
+// {
+// 	if (inst_buffer)
+// 		free(inst_buffer);
+// }
+
+void NDRange::SetupSize(unsigned *global_size, unsigned *local_size,
+	int work_dim)
+{
+	/* Default value */
+	this->global_size3[1] = 1;
+	this->global_size3[2] = 1;
+	this->local_size3[1] = 1;
+	this->local_size3[2] = 1;
+	this->work_dim = work_dim;
+
+	/* Global work sizes */
+	for (int i = 0; i < work_dim; i++)
+	{
+		this->global_size3[i] = global_size[i];
+	}
+	this->global_size = this->global_size3[0] *
+		this->global_size3[1] * this->global_size3[2];
+
+	/* Local work sizes */
+	for (int i = 0; i < work_dim; i++)
+	{
+		this->local_size3[i] = local_size[i];
+		if (this->local_size3[i] < 1)
+		{
+			fatal("%s: local work size must be greater than 0",
+					__FUNCTION__);
+		}
+	}
+	this->local_size = this->local_size3[0] * 
+		this->local_size3[1] * this->local_size3[2];
+
+	/* Check valid global/local sizes */
+	if (this->global_size3[0] < 1 || this->global_size3[1] < 1
+			|| this->global_size3[2] < 1)
+		fatal("%s: invalid global size", __FUNCTION__);
+	if (this->local_size3[0] < 1 || this->local_size3[1] < 1
+			|| this->local_size3[2] < 1)
+		fatal("%s: invalid local size", __FUNCTION__);
+
+	/* Check divisibility of global by local sizes */
+	if ((this->global_size3[0] % this->local_size3[0])
+		|| (this->global_size3[1] % this->local_size3[1])
+		|| (this->global_size3[2] % this->local_size3[2]))
+	{
+		fatal("%s: global work sizes must be multiples of local sizes",
+				__FUNCTION__);
+	}
+
+	/* Calculate number of groups */
+	for (int i = 0; i < 3; i++)
+	{
+		this->group_count3[i] = this->global_size3[i] / 
+			this->local_size3[i];
+	}
+	this->group_count = this->group_count3[0] * 
+		this->group_count3[1] * this->group_count3[2];
+
+}
+
+void NDRange::SetupFSMem(const char *buf, unsigned size, unsigned pc)
+{
+	inst_buffer.Write(pc, size, buf);
+}
+
+void NDRange::SetupInstMem(const char *buf, unsigned size, unsigned pc)
+{
+	inst_buffer.Write(pc, size, buf);
+}
+
+void NDRange::ConstantBufferWrite(int const_buffer_num, unsigned offset,
+	void *pvalue, unsigned size)
+{
+	EmuBufferDesc buffer_desc;
+
+	// Sanity check 
+	assert(const_buffer_num < 2);
+	if (const_buffer_num == 0)
+	{
+		assert(offset + size < EmuConstBuf0Size);
+	}
+	else if (const_buffer_num == 1)
+	{
+		assert(offset + size < EmuConstBuf1Size);
+	}
+
+	unsigned addr = this->const_buf_table +
+		const_buffer_num*EmuConstBufTableEntrySize;
+
+	emu->getGlobalMem()->Read(addr, (unsigned)sizeof(EmuBufferDesc), 
+		(char *)&buffer_desc);
+
+	addr = (unsigned)buffer_desc.base_addr;
+	addr += offset;
+
+	// Write 
+	emu->getGlobalMem()->Write(addr, size, (const char *)pvalue);
+}
+
+void NDRange::ConstantBufferRead(int const_buffer_num, unsigned offset,
+	void *pvalue, unsigned size)
+{
+	EmuBufferDesc buffer_desc;
+
+	// Sanity check 
+	assert(const_buffer_num < 2);
+	if (const_buffer_num == 0)
+	{
+		assert(offset + size < EmuConstBuf0Size);
+	}
+	else if (const_buffer_num == 1)
+	{
+		assert(offset + size < EmuConstBuf1Size);
+	}
+
+	unsigned addr = this->const_buf_table +
+		const_buffer_num*EmuConstBufTableEntrySize;
+
+	emu->getGlobalMem()->Read(addr, (unsigned)sizeof(EmuBufferDesc), 
+		(char *)&buffer_desc);
+
+	addr = (unsigned)buffer_desc.base_addr;
+	addr += offset;
+
+	// Read 
+	emu->getGlobalMem()->Read(addr, size, (char *)pvalue);
+
+}
+
+void NDRange::InsertBufferIntoUAVTable(EmuBufferDesc *buffer_desc, unsigned uav)
+{
+	assert(uav < EmuMaxNumUAVs);
+	assert(sizeof(*buffer_desc) <= EmuUAVTableEntrySize);
+
+	/* Write the buffer resource descriptor into the UAV table */
+	unsigned addr = uav_table + uav*EmuUAVTableEntrySize;
+
+	emu->getGlobalMem()->Write(addr, (unsigned)sizeof(*buffer_desc),
+		(char *)buffer_desc);
+
+	uav_table_entries[uav].valid = 1;
+	uav_table_entries[uav].kind = 
+		TableEntryKindEmuBufferDesc;
+	uav_table_entries[uav].size = (unsigned)sizeof(*buffer_desc);
+}
+
+void NDRange::InsertBufferIntoVertexBufferTable(EmuBufferDesc *buffer_desc, 
+	unsigned vertex_buffer)
+{
+	assert(vertex_buffer < EmuMaxNumVertexBuffers);
+	assert(sizeof(*buffer_desc) <= EmuVertexBufferTableEntrySize);
+
+	/* Write the buffer resource descriptor into the Vertex Buffer table */
+	unsigned addr = vertex_buffer_table + vertex_buffer*EmuVertexBufferTableEntrySize;
+
+	emu->getGlobalMem()->Write(addr, (unsigned)sizeof(*buffer_desc),
+		(char *)buffer_desc);
+
+	vertex_buffer_table_entries[vertex_buffer].valid = 1;
+	vertex_buffer_table_entries[vertex_buffer].kind = 
+		TableEntryKindEmuBufferDesc;
+	vertex_buffer_table_entries[vertex_buffer].size = (unsigned)sizeof(*buffer_desc);
+}
+
+void NDRange::InsertBufferIntoConstantBufferTable(EmuBufferDesc *buffer_desc,
+	unsigned const_buffer_num)
+{
+	assert(const_buffer_num < EmuMaxNumConstBufs);
+	assert(sizeof(*buffer_desc) <= EmuConstBufTableEntrySize);
+
+	/* Write the buffer resource descriptor into the constant buffer table */
+	unsigned addr = const_buf_table + const_buffer_num*EmuConstBufTableEntrySize;
+
+	emu->getGlobalMem()->Write(addr, (unsigned)sizeof(*buffer_desc), 
+		(char *)buffer_desc);
+
+	const_buf_table_entries[const_buffer_num].valid = 1;
+	const_buf_table_entries[const_buffer_num].kind = 
+		TableEntryKindEmuBufferDesc;
+	uav_table_entries[const_buffer_num].size = sizeof(*buffer_desc);	
+}
+
+void NDRange::ImageIntoUAVTable(EmuImageDesc *image_desc, unsigned uav)
+{
+	assert(uav < EmuMaxNumUAVs);
+	assert(sizeof(*image_desc) <= EmuUAVTableEntrySize);
+
+	/* Write the buffer resource descriptor into the UAV table */
+	unsigned addr = uav_table + uav*EmuUAVTableEntrySize;
+
+	emu->getGlobalMem()->Write(addr, (unsigned)sizeof(*image_desc), 
+		(char *)image_desc);
+
+	uav_table_entries[uav].valid = 1;
+	uav_table_entries[uav].kind = TableEntryKindImageDesc;
+	uav_table_entries[uav].size = sizeof(*image_desc);
+
+}
+
+}  // namespace SI
