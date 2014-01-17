@@ -20,46 +20,9 @@
 
 #include <lib/mhandle/mhandle.h>
 
-#include "arg.h"
+#include "Arg.h"
 #include "Type.h"
 
-struct cl2llvm_arg_t *cl2llvm_arg_create(struct cl2llvm_decl_list_t *decl_list, char *name)
-{
-	struct cl2llvm_arg_t *arg;
-	
-	arg = xcalloc(1, sizeof(struct cl2llvm_arg_t));
-	arg->name = xstrdup(name);
-
-	/*merge declarators to arg*/
-	arg->type_spec = decl_list->type_spec;
-	arg->access_qual = decl_list->access_qual;
-	arg->kernel_t = decl_list->kernel_t;
-	arg->inline_t = decl_list->inline_t;
-	arg->sc_spec = decl_list->sc_spec;
-	arg->addr_qual = decl_list->addr_qual;
-	arg->type_qual = decl_list->type_qual;
-
-	return arg;
-}
-
-void cl2llvm_arg_free(struct cl2llvm_arg_t *arg)
-{
-	if (arg)
-	{
-		if (arg->type_spec != NULL)
-			cl2llvmTypeWrapFree(arg->type_spec);
-		if (arg->access_qual != NULL)
-			free(arg->access_qual);
-		if (arg->kernel_t != NULL)
-			free(arg->kernel_t);
-		if (arg->inline_t != NULL)
-			free(arg->inline_t);
-		if (arg->sc_spec != NULL)
-			free(arg->sc_spec);
-		if (arg->type_qual != NULL)
-			free(arg->type_qual);
-		free(arg->name);
-		free(arg);
-	}
-}
+using namespace std;
+using namespace cl2llvm;
 

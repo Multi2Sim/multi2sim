@@ -39,13 +39,13 @@ extern struct hash_table_t *cl2llvm_symbol_table;
 extern struct hash_table_t *cl2llvm_built_in_func_table;
 extern struct hash_table_t *cl2llvm_declared_built_in_funcs_table;
 
+using namespace cl2llvm;
 
 
-
-struct hash_table_t *built_in_func_table_create(void)
+hash_table<string, BuiltInFunction> BuiltInFuncTableCreate(void)
 {
 	int i;
-	struct cl2llvm_built_in_func_t *built_in_func;
+	BuiltInFunction built_in_func;
 /*	
 	char built_in_func_info_list[BUILT_IN_FUNC_COUNT][3][1400] = {
 		{"get_work_dim", "1", "void u32 get_work_dim"},
@@ -95,8 +95,8 @@ struct hash_table_t *built_in_func_table_create(void)
 
 	struct {
 		int arg_count;
-		char name[20];
-		char format[400];
+		string name;
+		string format;
 	} function_list[BUILT_IN_FUNC_COUNT] =
 	{
 		{1, "get_work_dim", "void u32"},
@@ -111,62 +111,41 @@ struct hash_table_t *built_in_func_table_create(void)
 		{1, "acos", GENTYPE}
 	};
 	/* Create hash table */
-	struct hash_table_t *built_in_func_table = hash_table_create(200, 1);
+	hash_table<string, BuiltInFunction> built_in_func_table;
 	
 	/* Insert function names and id numbers into hash table. */
 	for(i = 0; i < BUILT_IN_FUNC_COUNT; i++)
 	{
-		built_in_func = cl2llvm_built_in_func_create(function_list[i].arg_count, function_list[i].format, function_list[i].name);
-		hash_table_insert(built_in_func_table, function_list[i].name,
-			built_in_func);
+		built_in_func = BuiltInFuncCreate(function_list[i].arg_count, function_list[i].format, function_list[i].name);
+		built_in_func_table.iinsert( { function_list[i].name,
+			built_in_func } );
 	}
 	return built_in_func_table;
 }
 
-void cl2llvm_built_in_func_table_free(struct hash_table_t *built_in_func_table)
-{
-	char* name;
-	int i;
-	struct cl2llvm_built_in_func_t *built_in_func;
-	struct cl2llvm_built_in_func_llvm_name_t *list_elem;
-	
-	HASH_TABLE_FOR_EACH(built_in_func_table, name, built_in_func)
-	{
-		built_in_func = hash_table_get(built_in_func_table, name);
 
-		LIST_FOR_EACH(built_in_func->format_list, i)
-		{
-			list_elem = list_get(built_in_func->format_list, i);
-			cl2llvm_built_in_func_llvm_name_free(list_elem);
-		}
-
-		list_free(built_in_func->format_list);
-		free(built_in_func);
-	}
-	hash_table_free(built_in_func_table);
-}
-
-struct cl2llvm_built_in_func_t *cl2llvm_built_in_func_create(int arg_count, char* arg_string,
-char *name)
+BuiltInFunction::BuiltInFunction(int arg_count, string arg_string,
+string name)
 {
 	struct cl2llvm_built_in_func_t *built_in_func;
-	char* pch;
-	char* previous_type;
-	char type_suffix[30];
-	char arg_types_as_strings[3][10];
-	char llvm_name[30];
-	struct cl2llvm_built_in_func_llvm_name_t *built_in_func_llvm_name;
+	string token;
+	string previous_type;
+	string type_suffix;
+	string arg_types_as_strings[3];
+	string llvm_name;
+	BuiltInFunctionInst built_in_func_inst;
+	stringstream ss;
 	int i;
 
-	built_in_func = xcalloc(1, sizeof(struct cl2llvm_built_in_func_t));
-	
-	built_in_func->arg_count = arg_count;
-	built_in_func->format_list = list_create();
+	this->arg_count = arg_count;
 
 	/* Populate format_list */
 	pch = strtok(arg_string, " ");
 	while(pch)
 	{
+
+		getline(ss, token, " ");
+
 		built_in_func_llvm_name = cl2llvm_built_in_func_llvm_name_create();
 
 		/* iterate through arguments and add to array */
@@ -358,7 +337,7 @@ void func_declare(int arg_count, Type *arg_types_list, Type ret_type,
 		current_arg_type = arg_types_list[i];
 		args_array[i] = current_arg_type.getType();
 		arg_decl = cl2llvm_decl_list_create();
-		type_spec = cl2llvmTypeWrapCreate(current_arg_type.getType(),
+		type_spec.setType(current_arg_type.getType(),
 		current_arg_type.getSign());
 		arg_decl->type_spec = type_spec;
 		arg = cl2llvm_arg_create(arg_decl, "arg");
@@ -539,7 +518,7 @@ Type string_to_type(char* info_str)
 		}
 	}
 
-	ret_type = cl2llvmTypeWrapCreate(type, is_signed);
+	ret_type.setType(type, is_signed);
 	
 	return ret_type;
 }

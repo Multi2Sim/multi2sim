@@ -19,41 +19,9 @@
 
 #include <lib/mhandle/mhandle.h>
 
-#include "symbol.h"
+#include "Symbol.h"
 #include "val.h"
 #include "Type.h"
 
-struct cl2llvm_symbol_t *cl2llvm_symbol_create(char *name)
-{
-	struct cl2llvm_symbol_t *symbol;
 
-	/* Initialize */
-	symbol = xcalloc(1, sizeof(struct cl2llvm_symbol_t));
-	symbol->name = xstrdup(name);
-
-	symbol->cl2llvm_val = cl2llvm_val_create();
-
-	/* Return */
-	return symbol;
-}
-
-struct cl2llvm_symbol_t *cl2llvm_symbol_create_w_init(LLVMValueRef val, int sign, char *name)
-{
-	struct cl2llvm_symbol_t *symbol;
-
-	symbol = cl2llvm_symbol_create(name);
-
-	symbol->cl2llvm_val->val = val;
-	cl2llvmTypeWrapSetLlvmType(symbol->cl2llvm_val->type, val.getType());
-	symbol->cl2llvm_val->type.setSign( sign);
-
-	return symbol;
-}
-
-void cl2llvm_symbol_free(struct cl2llvm_symbol_t *symbol)
-{
-	cl2llvm_val_free(symbol->cl2llvm_val);
-	free(symbol->name);
-	free(symbol);
-}
 
