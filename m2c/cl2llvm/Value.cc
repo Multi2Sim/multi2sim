@@ -34,37 +34,36 @@ using namespace std;
  */
 
 
-extern int temp_var_count;
-extern char temp_var_name[50];
+extern string temp_var_name;
 
 extern LLVMBuilderRef cl2llvm_builder;
 extern struct cl2llvm_function_t *cl2llvm_current_function;
 extern LLVMBasicBlockRef current_basic_block;
 
-Value Value::TypeCast(Type to_type)
+Value Value::Cast(Type to_type)
 {
 	llvm::Value llvm_value;
 	int i;
 	Type elem_type;
 	Value cast_original_val;
-	LLVMValueRef index;
-	LLVMValueRef vector_addr;
-	LLVMValueRef vector;
-	LLVMValueRef const_elems[16];
+	llvm::Value index;
+	llvm::Value vector_addr;
+	llvm::Value vector;
+	llvm::Value const_elems[16];
 
-	/*By default the return value is the same as the original_val*/
-	llvm_val = this->llvm_value;
-	sign = this->type.getSign();
+	/*By default the return value is the same as the original value*/
+	new_llvm_value = llvm_value;
+	new_sign = type.getSign();
 
 	temp_var_name = TempVarName();
 
 	/* Check that fromtype is not a vector, unless both types are identical. */
-	if (this->type.getLlvmType().getTypeID() == VectorTyID)
+	if (type.getLlvmType().getTypeID() == VectorTyID)
 	{
-		if ((LLVMGetVectorSize(this->type.getLlvmType()) != LLVMGetVectorSize(to_type.getLlvmType()) 
-			|| LLVMGetElementType(this->type.getLlvmType()) 
-			!= LLVMGetElementType(to_type.getLlvmType())) 
-			|| this->getSign() != to_type.getSign())
+		if ((type.getLlvmType().getNumElements() != to_type.getLlvmType().getNumElements() 
+			|| type.getLlvmType().getElementType() 
+			!= to_type.getLlvmType().getElementType()) 
+			|| getSign() != to_type.getSign())
 		{
 			if (to_type.getLlvmType().getTypeID() == VectorTyID)
 				cl2llvm_yyerror("Casts between vector types are forbidden");
@@ -73,48 +72,46 @@ Value Value::TypeCast(Type to_type)
 	}
 
 	/* If to_type.getLlvmType() is a vector, create a vector whose components are equal to 
-	original_val */
+	original value */
 
 	if (to_type.getLlvmType().getTypeID() == VectorTyID
-		&& this->type.getLlvmType().getTypeID() != VectorTyID)
+		&& type.getLlvmType().getTypeID() != VectorTyID)
 	{
 		/*Go to entry block and declare vector*/
-		LLVMPositionBuilder(cl2llvm_builder, cl2llvm_current_function->entry_block,
-			cl2llvm_current_function->branch_instr);
+		cl2llvm_builder.setInsertPoint( cl2llvm_current_function->branch_instr);
 		
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp_%d", temp_var_count++);
 			
-		vector_addr = LLVMBuildAlloca(cl2llvm_builder, 
-			to_type.getLlvmType(), temp_var_name);
-		LLVMPositionBuilderAtEnd(cl2llvm_builder, current_basic_block);
+		vector_addr = cl2llvm_builder.CreateAlloca( to_type.getLlvmType(), temp_var_name);
+		cl2llvm_builder.setInsertPoint( current_basic_block);
 
 		/* Load vector */
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp_%d", temp_var_count++);
 	
-		vector = LLVMBuildLoad(cl2llvm_builder, vector_addr, temp_var_name);
+		vector = cl2llvm_builder.CreateLoad(vector_addr, temp_var_name);
 		
 		/* Create object to represent element type of totype */
-		elem_type = cl2llvmTypeWrapCreate(LLVMGetElementType(to_type.getLlvmType()), to_type.getSign());
+		elem_type.setType(to_type.getLlvmType().getElementType(), to_type.getSign());
 
 		/* If original_val is constant create a constant vector */
 		if (LLVMIsConstant(this->llvm_value))
 		{
 			cast_original_val = llvm_type_cast(original_val, elem_type);
-			for (i = 0; i < LLVMGetVectorSize(to_type.getLlvmType()); i++)
+			for (i = 0; i < to_type.getLlvmType().getNumElements(); i++)
 				const_elems[i] = cast_original_val->val;
 
 			vector = LLVMConstVector(const_elems, 	
-				LLVMGetVectorSize(to_type.getLlvmType()));
-			llvm_val = vector;
+				to_type.getLlvmType().getNumElements());
+			new_llvm_value = vector;
 
 			cl2llvm_val_free(cast_original_val);
 		}
 		/* If original value is not constant insert elements */
 		else
 		{
-			for (i = 0; i < LLVMGetVectorSize(to_type.getLlvmType()); i++)
+			for (i = 0; i < to_type.getLlvmType().getNumElements(); i++)
 			{
 				index = LLVMConstInt(LLVMInt32Type(), i, 0);
 				cast_original_val = llvm_type_cast(original_val, elem_type);
@@ -127,7 +124,7 @@ Value Value::TypeCast(Type to_type)
 			}
 		}
 		cl2llvmTypeWrapFree(elem_type);
-		llvm_val = vector;
+		new_llvm_value = vector;
 	}
 
 
@@ -137,99 +134,99 @@ Value Value::TypeCast(Type to_type)
 		{
 			if (this->getSign())
 			{
-				llvm_val =
+				new_llvm_value =
 						LLVMBuildSIToFP(cl2llvm_builder,
 						  this->llvm_value, LLVMDoubleType(),
 					temp_var_name);
 			}
 			else
 			{
-				llvm_val =
+				new_llvm_value =
 					LLVMBuildUIToFP(cl2llvm_builder,
 					  this->llvm_value, LLVMDoubleType(),
 					temp_var_name);
 			}
-			llvm_val->type.setSign( 1);
+			new_llvm_value->type.setSign( 1);
 		}
 		else if (to_type.getLlvmType() == LLVMFloatType())
 		{
 			if (this->getSign())
 			{
-				llvm_val =
+				new_llvm_value =
 					LLVMBuildSIToFP(cl2llvm_builder,
 					  this->llvm_value, LLVMFloatType(),
 					temp_var_name);
 			}
 			else
 			{
-				llvm_val =
+				new_llvm_value =
 					LLVMBuildUIToFP(cl2llvm_builder,
 					  this->llvm_value, LLVMFloatType(),
 					temp_var_name);
 			}
-			llvm_val->type.setSign( 1);
+			new_llvm_value->type.setSign( 1);
 		}
 		else if (to_type.getLlvmType() == LLVMHalfType())
 		{
 			if (this->getSign())
 			{
-				llvm_val =
+				new_llvm_value =
 					LLVMBuildSIToFP(cl2llvm_builder,
 					  this->llvm_value, LLVMHalfType(),
 					temp_var_name);
 			}
 			else
 			{
-				llvm_val =
+				new_llvm_value =
 					LLVMBuildUIToFP(cl2llvm_builder,
 					  this->llvm_value, LLVMHalfType(),
 					temp_var_name);
 			}
-			llvm_val->type.setSign( 1);
+			new_llvm_value->type.setSign( 1);
 		}
 		else if (to_type.getLlvmType() == LLVMInt64Type())
 		{
 			if (to_type.getSign())
-				llvm_val->type.setSign( 1);
+				new_llvm_value->type.setSign( 1);
 			else
-				llvm_val->type.setSign( 0);
+				new_llvm_value->type.setSign( 0);
 			temp_var_count--;
 		}
 		else if (to_type.getLlvmType() == LLVMInt32Type())
 		{
-			llvm_val = LLVMBuildTrunc(cl2llvm_builder,
+			new_llvm_value = LLVMBuildTrunc(cl2llvm_builder,
 				  this->llvm_value, LLVMInt32Type(), temp_var_name);
 			if(to_type.getSign())
-				llvm_val->type.setSign( 1);
+				new_llvm_value->type.setSign( 1);
 			else
-				llvm_val->type.setSign( 0);
+				new_llvm_value->type.setSign( 0);
 		}
 		else if (to_type.getLlvmType() == LLVMInt16Type())
 		{
-			llvm_val = LLVMBuildTrunc(cl2llvm_builder,
+			new_llvm_value = LLVMBuildTrunc(cl2llvm_builder,
 				  this->llvm_value, LLVMInt16Type(), temp_var_name);
 			if(to_type.getSign())
-				llvm_val->type.setSign( 1);
+				new_llvm_value->type.setSign( 1);
 			else
-				llvm_val->type.setSign( 0);
+				new_llvm_value->type.setSign( 0);
 		}
 		else if (to_type.getLlvmType() == LLVMInt8Type())
 		{
-			llvm_val = LLVMBuildTrunc(cl2llvm_builder,
+			new_llvm_value = LLVMBuildTrunc(cl2llvm_builder,
 				  this->llvm_value, LLVMInt8Type(), temp_var_name);
 			if(to_type.getSign())
-				llvm_val->type.setSign( 1);
+				new_llvm_value->type.setSign( 1);
 			else
-				llvm_val->type.setSign( 0);
+				new_llvm_value->type.setSign( 0);
 		}
 		else if (to_type.getLlvmType() == LLVMInt1Type())
 		{
-			llvm_val = LLVMBuildTrunc(cl2llvm_builder,
+			new_llvm_value = LLVMBuildTrunc(cl2llvm_builder,
 				  this->llvm_value, LLVMInt1Type(), temp_var_name);
 			if(to_type.getSign())
-				llvm_val->type.setSign( 1);
+				new_llvm_value->type.setSign( 1);
 			else
-				llvm_val->type.setSign( 0);
+				new_llvm_value->type.setSign( 0);
 		}
 			
 	}
@@ -239,109 +236,109 @@ Value Value::TypeCast(Type to_type)
 		{
 			if (this->getSign())
 			{
-				llvm_val =
+				new_llvm_value =
 					LLVMBuildSIToFP(cl2llvm_builder,
 					  this->llvm_value, LLVMDoubleType(),
 					temp_var_name);
 			}
 			else
 			{
-				llvm_val =
+				new_llvm_value =
 					LLVMBuildUIToFP(cl2llvm_builder,
 					  this->llvm_value, LLVMDoubleType(),
 					temp_var_name);
 			}
-			llvm_val->type.setSign( 1);
+			new_llvm_value->type.setSign( 1);
 		}
 		else if (to_type.getLlvmType() == LLVMFloatType())
 		{
 			if (this->getSign())
 			{
-				llvm_val =
+				new_llvm_value =
 					LLVMBuildSIToFP(cl2llvm_builder,
 					  this->llvm_value, LLVMFloatType(),
 					temp_var_name);
 			}
 			else
 			{
-				llvm_val =
+				new_llvm_value =
 					LLVMBuildUIToFP(cl2llvm_builder,
 					  this->llvm_value, LLVMFloatType(),
 					temp_var_name);
 			}
-			llvm_val->type.setSign( 1);
+			new_llvm_value->type.setSign( 1);
 		}
 		else if (to_type.getLlvmType() == LLVMHalfType())
 		{
 			if (this->getSign())
 			{
-				llvm_val =
+				new_llvm_value =
 					LLVMBuildSIToFP(cl2llvm_builder,
 					  this->llvm_value, LLVMHalfType(),
 					temp_var_name);
 			}
 			else
 			{
-				llvm_val =
+				new_llvm_value =
 					LLVMBuildUIToFP(cl2llvm_builder,
 					  this->llvm_value, LLVMHalfType(),
 					temp_var_name);
 			}
-			llvm_val->type.setSign( 1);
+			new_llvm_value->type.setSign( 1);
 		}
 		else if (to_type.getLlvmType() == LLVMInt64Type())
 		{
 			if (this->getSign())
 			{
-				llvm_val = LLVMBuildSExt(cl2llvm_builder,
+				new_llvm_value = LLVMBuildSExt(cl2llvm_builder,
 					  this->llvm_value, LLVMInt64Type(),
 					temp_var_name);
 			}
 			else
 			{
-				llvm_val = LLVMBuildZExt(cl2llvm_builder,
+				new_llvm_value = LLVMBuildZExt(cl2llvm_builder,
 					  this->llvm_value, LLVMInt64Type(),
 					temp_var_name);
 			}
 			if (to_type.getSign())
-				llvm_val->type.setSign( 1);
+				new_llvm_value->type.setSign( 1);
 			else
-				llvm_val->type.setSign( 0);
+				new_llvm_value->type.setSign( 0);
 		}
 		else if (to_type.getLlvmType() == LLVMInt32Type())
 		{
 			if(to_type.getSign())
-				llvm_val->type.setSign( 1);
+				new_llvm_value->type.setSign( 1);
 			else
-				llvm_val->type.setSign( 0);
+				new_llvm_value->type.setSign( 0);
 			temp_var_count--;
 		}
 		else if (to_type.getLlvmType() == LLVMInt16Type())
 		{
-			llvm_val = LLVMBuildTrunc(cl2llvm_builder,
+			new_llvm_value = LLVMBuildTrunc(cl2llvm_builder,
 				  this->llvm_value, LLVMInt16Type(), temp_var_name);
 			if(to_type.getSign())
-				llvm_val->type.setSign( 1);
+				new_llvm_value->type.setSign( 1);
 			else
-				llvm_val->type.setSign( 0);
+				new_llvm_value->type.setSign( 0);
 		}
 		else if (to_type.getLlvmType() == LLVMInt8Type())
 		{
-			llvm_val = LLVMBuildTrunc(cl2llvm_builder,
+			new_llvm_value = LLVMBuildTrunc(cl2llvm_builder,
 				 this->llvm_value, LLVMInt8Type(), temp_var_name);
 			if(to_type.getSign())
-				llvm_val->type.setSign( 1);
+				new_llvm_value->type.setSign( 1);
 			else
-				llvm_val->type.setSign( 0);
+				new_llvm_value->type.setSign( 0);
 		}
 		else if (to_type.getLlvmType() == LLVMInt1Type())
 		{
-			llvm_val = LLVMBuildTrunc(cl2llvm_builder,
+			new_llvm_value = LLVMBuildTrunc(cl2llvm_builder,
 				  this->llvm_value, LLVMInt1Type(), temp_var_name);
 			if(to_type.getSign())
-				llvm_val->type.setSign( 1);
+				new_llvm_value->type.setSign( 1);
 			else
-				llvm_val->type.setSign( 0);
+				new_llvm_value->type.setSign( 0);
 		}
 			
 	}
@@ -351,119 +348,119 @@ Value Value::TypeCast(Type to_type)
 		{
 			if (this->getSign())
 			{
-				llvm_val =
+				new_llvm_value =
 					LLVMBuildSIToFP(cl2llvm_builder,
 					  this->llvm_value, LLVMDoubleType(),
 					temp_var_name);
 			}
 			else
 			{
-				llvm_val =
+				new_llvm_value =
 					LLVMBuildUIToFP(cl2llvm_builder,
 					  this->llvm_value, LLVMDoubleType(),
 					temp_var_name);
 			}
-			llvm_val->type.setSign( 1);
+			new_llvm_value->type.setSign( 1);
 		}
 		else if (to_type.getLlvmType() == LLVMFloatType())
 		{
 			if (this->getSign())
 			{
-				llvm_val =
+				new_llvm_value =
 					LLVMBuildSIToFP(cl2llvm_builder,
 					  this->llvm_value, LLVMFloatType(),
 					temp_var_name);
 			}
 			else
 			{
-				llvm_val =
+				new_llvm_value =
 					LLVMBuildUIToFP(cl2llvm_builder,
 					  this->llvm_value, LLVMFloatType(),
 					temp_var_name);
 			}
-			llvm_val->type.setSign( 1);
+			new_llvm_value->type.setSign( 1);
 		}
 		else if (to_type.getLlvmType() == LLVMHalfType())
 		{
 			if (this->getSign())
 			{
-				llvm_val =
+				new_llvm_value =
 					LLVMBuildSIToFP(cl2llvm_builder,
 					  this->llvm_value, LLVMHalfType(),
 					temp_var_name);
 			}
 			else
 			{
-				llvm_val =
+				new_llvm_value =
 					LLVMBuildUIToFP(cl2llvm_builder,
 					  this->llvm_value, LLVMHalfType(),
 					temp_var_name);
 			}
-			llvm_val->type.setSign( 1);
+			new_llvm_value->type.setSign( 1);
 		}
 		else if (to_type.getLlvmType() == LLVMInt64Type())
 		{
 			if (this->getSign())
 			{
-				llvm_val = LLVMBuildSExt(cl2llvm_builder,
+				new_llvm_value = LLVMBuildSExt(cl2llvm_builder,
 					  this->llvm_value, LLVMInt64Type(),
 					temp_var_name);
 			}
 			else
 			{
-				llvm_val = LLVMBuildZExt(cl2llvm_builder,
+				new_llvm_value = LLVMBuildZExt(cl2llvm_builder,
 					  this->llvm_value, LLVMInt64Type(),
 					temp_var_name);
 			}
 			if (to_type.getSign())
-				llvm_val->type.setSign( 1);
+				new_llvm_value->type.setSign( 1);
 			else
-				llvm_val->type.setSign( 0);
+				new_llvm_value->type.setSign( 0);
 		}
 		else if (to_type.getLlvmType() == LLVMInt32Type())
 		{
 			if (this->getSign())
 			{
-				llvm_val = LLVMBuildSExt(cl2llvm_builder,
+				new_llvm_value = LLVMBuildSExt(cl2llvm_builder,
 					  this->llvm_value, LLVMInt32Type(),
 					temp_var_name);
 			}
 			else
 			{
-				llvm_val = LLVMBuildZExt(cl2llvm_builder,
+				new_llvm_value = LLVMBuildZExt(cl2llvm_builder,
 					  this->llvm_value, LLVMInt32Type(),
 					temp_var_name);
 			}
 			if(to_type.getSign())
-				llvm_val->type.setSign( 1);
+				new_llvm_value->type.setSign( 1);
 			else
-				llvm_val->type.setSign( 0);
+				new_llvm_value->type.setSign( 0);
 		}
 		else if (to_type.getLlvmType() == LLVMInt16Type())
 		{
 			if(to_type.getSign())
-				llvm_val->type.setSign( 1);
+				new_llvm_value->type.setSign( 1);
 			else
-				llvm_val->type.setSign( 0);
+				new_llvm_value->type.setSign( 0);
 			temp_var_count--;
 		}
 		else if (to_type.getLlvmType() == LLVMInt8Type())
 		{
-			llvm_val = LLVMBuildTrunc(cl2llvm_builder,
+			new_llvm_value = LLVMBuildTrunc(cl2llvm_builder,
 				  this->llvm_value, LLVMInt8Type(), temp_var_name);
 			if(to_type.getSign())
-				llvm_val->type.setSign( 1);
+				new_llvm_value->type.setSign( 1);
 			else
-				llvm_val->type.setSign( 0);
+				new_llvm_value->type.setSign( 0);
 		}
 		else if (to_type.getLlvmType() == LLVMInt1Type())
 		{
-			llvm_val = LLVMBuildTrunc(cl2llvm_builder,
+			new_llvm_value = LLVMBuildTrunc(cl2llvm_builder,
 				  this->llvm_value, LLVMInt1Type(), temp_var_name);
 			if(to_type.getSign())
-				llvm_val->type.setSign( 1);
+				new_llvm_value->type.setSign( 1);
 			else
-				llvm_val->type.setSign( 0);
+				new_llvm_value->type.setSign( 0);
 		}
 			
 	}
@@ -473,129 +470,129 @@ Value Value::TypeCast(Type to_type)
 		{
 			if (this->getSign())
 			{
-				llvm_val =
+				new_llvm_value =
 					LLVMBuildSIToFP(cl2llvm_builder,
 					  this->llvm_value, LLVMDoubleType(),
 					temp_var_name);
 			}
 			else
 			{
-				llvm_val =
+				new_llvm_value =
 					LLVMBuildUIToFP(cl2llvm_builder,
 					  this->llvm_value, LLVMDoubleType(),
 					temp_var_name);
 			}
-			llvm_val->type.setSign( 1);
+			new_llvm_value->type.setSign( 1);
 		}
 		else if (to_type.getLlvmType() == LLVMFloatType())
 		{
 			if (this->getSign())
 			{
-				llvm_val =
+				new_llvm_value =
 					LLVMBuildSIToFP(cl2llvm_builder,
 					  this->llvm_value, LLVMFloatType(),
 					temp_var_name);
 			}
 			else
 			{
-				llvm_val =
+				new_llvm_value =
 					LLVMBuildUIToFP(cl2llvm_builder,
 					  this->llvm_value, LLVMFloatType(),
 					temp_var_name);
 			}
-			llvm_val->type.setSign( 1);
+			new_llvm_value->type.setSign( 1);
 		}
 		else if (to_type.getLlvmType() == LLVMHalfType())
 		{
 			if (this->getSign())
 			{
-				llvm_val =
+				new_llvm_value =
 					LLVMBuildSIToFP(cl2llvm_builder,
 					  this->llvm_value, LLVMHalfType(),
 					temp_var_name);
 			}
 			else
 			{
-				llvm_val =
+				new_llvm_value =
 					LLVMBuildUIToFP(cl2llvm_builder,
 					  this->llvm_value, LLVMHalfType(),
 					temp_var_name);
 			}
-			llvm_val->type.setSign( 1);
+			new_llvm_value->type.setSign( 1);
 		}
 		else if (to_type.getLlvmType() == LLVMInt64Type())
 		{
 			if (this->getSign())
 			{
-				llvm_val = LLVMBuildSExt(cl2llvm_builder,
+				new_llvm_value = LLVMBuildSExt(cl2llvm_builder,
 					  this->llvm_value, LLVMInt64Type(),
 					temp_var_name);
 			}
 			else
 			{
-				llvm_val = LLVMBuildZExt(cl2llvm_builder,
+				new_llvm_value = LLVMBuildZExt(cl2llvm_builder,
 					  this->llvm_value, LLVMInt64Type(),
 					temp_var_name);
 			}
 			if (to_type.getSign())
-				llvm_val->type.setSign( 1);
+				new_llvm_value->type.setSign( 1);
 			else
-				llvm_val->type.setSign( 0);
+				new_llvm_value->type.setSign( 0);
 		}
 		else if (to_type.getLlvmType() == LLVMInt32Type())
 		{
 			if (this->getSign())
 			{
-				llvm_val = LLVMBuildSExt(cl2llvm_builder,
+				new_llvm_value = LLVMBuildSExt(cl2llvm_builder,
 					  this->llvm_value, LLVMInt32Type(),
 					temp_var_name);
 			}
 			else
 			{
-				llvm_val = LLVMBuildZExt(cl2llvm_builder,
+				new_llvm_value = LLVMBuildZExt(cl2llvm_builder,
 					  this->llvm_value, LLVMInt32Type(),
 					temp_var_name);
 			}
 			if(to_type.getSign())
-				llvm_val->type.setSign( 1);
+				new_llvm_value->type.setSign( 1);
 			else
-				llvm_val->type.setSign( 0);
+				new_llvm_value->type.setSign( 0);
 		}
 		else if (to_type.getLlvmType() == LLVMInt16Type())
 		{
 			if (this->getSign())
 			{
-				llvm_val = LLVMBuildSExt(cl2llvm_builder,
+				new_llvm_value = LLVMBuildSExt(cl2llvm_builder,
 					  this->llvm_value, LLVMInt16Type(),
 					temp_var_name);
 			}
 			else
 			{
-				llvm_val = LLVMBuildZExt(cl2llvm_builder,
+				new_llvm_value = LLVMBuildZExt(cl2llvm_builder,
 					  this->llvm_value, LLVMInt16Type(),
 					temp_var_name);
 			}
 			if(to_type.getSign())
-				llvm_val->type.setSign( 1);
+				new_llvm_value->type.setSign( 1);
 			else
-				llvm_val->type.setSign( 0);
+				new_llvm_value->type.setSign( 0);
 		}
 		else if (to_type.getLlvmType() == LLVMInt8Type())
 		{
 			if(to_type.getSign())
-				llvm_val->type.setSign( 1);
+				new_llvm_value->type.setSign( 1);
 			else
-				llvm_val->type.setSign( 0);
+				new_llvm_value->type.setSign( 0);
 			temp_var_count--;
 		}
 		else if (to_type.getLlvmType() == LLVMInt1Type())
 		{
-			llvm_val = LLVMBuildTrunc(cl2llvm_builder,
+			new_llvm_value = LLVMBuildTrunc(cl2llvm_builder,
 				  this->llvm_value, LLVMInt1Type(), temp_var_name);
 			if(to_type.getSign())
-				llvm_val->type.setSign( 1);
+				new_llvm_value->type.setSign( 1);
 			else
-				llvm_val->type.setSign( 0);
+				new_llvm_value->type.setSign( 0);
 		}
 			
 	}
@@ -605,138 +602,138 @@ Value Value::TypeCast(Type to_type)
 		{
 			if (this->getSign())
 			{
-				llvm_val =
+				new_llvm_value =
 					LLVMBuildSIToFP(cl2llvm_builder,
 					  this->llvm_value, LLVMDoubleType(),
 					temp_var_name);
 			}
 			else
 			{
-				llvm_val =
+				new_llvm_value =
 					LLVMBuildUIToFP(cl2llvm_builder,
 					  this->llvm_value, LLVMDoubleType(),
 					temp_var_name);
 			}
-			llvm_val->type.setSign( 1);
+			new_llvm_value->type.setSign( 1);
 		}
 		else if (to_type.getLlvmType() == LLVMFloatType())
 		{
 			if (this->getSign())
 			{
-				llvm_val =
+				new_llvm_value =
 					LLVMBuildSIToFP(cl2llvm_builder,
 					  this->llvm_value, LLVMFloatType(),
 					temp_var_name);
 			}
 			else
 			{
-				llvm_val =
+				new_llvm_value =
 					LLVMBuildUIToFP(cl2llvm_builder,
 					  this->llvm_value, LLVMFloatType(),
 					temp_var_name);
 			}
-			llvm_val->type.setSign( 1);
+			new_llvm_value->type.setSign( 1);
 		}
 		else if (to_type.getLlvmType() == LLVMHalfType())
 		{
 			if (this->getSign())
 			{
-				llvm_val =
+				new_llvm_value =
 					LLVMBuildSIToFP(cl2llvm_builder,
 					  this->llvm_value, LLVMHalfType(),
 					temp_var_name);
 			}
 			else
 			{
-				llvm_val =
+				new_llvm_value =
 					LLVMBuildUIToFP(cl2llvm_builder,
 					  this->llvm_value, LLVMHalfType(),
 					temp_var_name);
 			}
-			llvm_val->type.setSign( 1);
+			new_llvm_value->type.setSign( 1);
 		}
 		else if (to_type.getLlvmType() == LLVMInt64Type())
 		{
 			if (this->getSign())
 			{
-				llvm_val = LLVMBuildSExt(cl2llvm_builder,
+				new_llvm_value = LLVMBuildSExt(cl2llvm_builder,
 					  this->llvm_value, LLVMInt64Type(),
 					temp_var_name);
 			}
 			else
 			{
-				llvm_val = LLVMBuildZExt(cl2llvm_builder,
+				new_llvm_value = LLVMBuildZExt(cl2llvm_builder,
 					  this->llvm_value, LLVMInt64Type(),
 					temp_var_name);
 			}
 			if (to_type.getSign())
-				llvm_val->type.setSign( 1);
+				new_llvm_value->type.setSign( 1);
 			else
-				llvm_val->type.setSign( 0);
+				new_llvm_value->type.setSign( 0);
 		}
 		else if (to_type.getLlvmType() == LLVMInt32Type())
 		{
 			if (this->getSign())
 			{
-				llvm_val = LLVMBuildSExt(cl2llvm_builder,
+				new_llvm_value = LLVMBuildSExt(cl2llvm_builder,
 					  this->llvm_value, LLVMInt32Type(),
 					temp_var_name);
 			}
 			else
 			{
-				llvm_val = LLVMBuildZExt(cl2llvm_builder,
+				new_llvm_value = LLVMBuildZExt(cl2llvm_builder,
 					  this->llvm_value, LLVMInt32Type(),
 					temp_var_name);
 			}
 			if(to_type.getSign())
-				llvm_val->type.setSign( 1);
+				new_llvm_value->type.setSign( 1);
 			else
-				llvm_val->type.setSign( 0);
+				new_llvm_value->type.setSign( 0);
 		}
 		else if (to_type.getLlvmType() == LLVMInt16Type())
 		{
 			if (this->getSign())
 			{
-				llvm_val = LLVMBuildSExt(cl2llvm_builder,
+				new_llvm_value = LLVMBuildSExt(cl2llvm_builder,
 					  this->llvm_value, LLVMInt16Type(),
 					temp_var_name);
 			}
 			else
 			{
-				llvm_val = LLVMBuildZExt(cl2llvm_builder,
+				new_llvm_value = LLVMBuildZExt(cl2llvm_builder,
 					  this->llvm_value, LLVMInt16Type(),
 					temp_var_name);
 			}
 			if(to_type.getSign())
-				llvm_val->type.setSign( 1);
+				new_llvm_value->type.setSign( 1);
 			else
-				llvm_val->type.setSign( 0);
+				new_llvm_value->type.setSign( 0);
 		}
 		else if (to_type.getLlvmType() == LLVMInt8Type())
 		{
 			if (this->getSign())
 			{
-				llvm_val = LLVMBuildSExt(cl2llvm_builder,
+				new_llvm_value = LLVMBuildSExt(cl2llvm_builder,
 					  this->llvm_value, LLVMInt8Type(),
 					temp_var_name);
 			}
 			else
 			{
-				llvm_val = LLVMBuildZExt(cl2llvm_builder,
+				new_llvm_value = LLVMBuildZExt(cl2llvm_builder,
 					  this->llvm_value, LLVMInt8Type(),
 					temp_var_name);
 			}
 			if(to_type.getSign())
-				llvm_val->type.setSign( 1);
+				new_llvm_value->type.setSign( 1);
 			else
-				llvm_val->type.setSign( 0);
+				new_llvm_value->type.setSign( 0);
 		}
 		else if (to_type.getLlvmType() == LLVMInt1Type())
 		{
 			if(to_type.getSign())
-				llvm_val->type.setSign( 1);
+				new_llvm_value->type.setSign( 1);
 			else
-				llvm_val->type.setSign( 0);
+				new_llvm_value->type.setSign( 0);
 			temp_var_count--;
 		}			
 	}
@@ -748,90 +745,90 @@ Value Value::TypeCast(Type to_type)
 	{
 		if (to_type.getLlvmType() == LLVMInt64Type())
 		{
-			llvm_val = LLVMBuildFPToSI(cl2llvm_builder, 
+			new_llvm_value = LLVMBuildFPToSI(cl2llvm_builder, 
 				  this->llvm_value, LLVMInt64Type(), temp_var_name);
 		}
 		else if (to_type.getLlvmType() == LLVMInt32Type())
 		{
-			llvm_val = LLVMBuildFPToSI(cl2llvm_builder, 
+			new_llvm_value = LLVMBuildFPToSI(cl2llvm_builder, 
 				  this->llvm_value, LLVMInt32Type(), temp_var_name);
 		}
 		else if (to_type.getLlvmType() == LLVMInt16Type())
 		{
-			llvm_val = LLVMBuildFPToSI(cl2llvm_builder, 
+			new_llvm_value = LLVMBuildFPToSI(cl2llvm_builder, 
 				  this->llvm_value, LLVMInt16Type(), temp_var_name);
 		}
 		else if (to_type.getLlvmType() == LLVMInt8Type())
 		{
-			llvm_val = LLVMBuildFPToSI(cl2llvm_builder, 
+			new_llvm_value = LLVMBuildFPToSI(cl2llvm_builder, 
 				  this->llvm_value, LLVMInt8Type(), temp_var_name);
 		}
 		else if (to_type.getLlvmType() == LLVMInt1Type())
 		{
-			llvm_val = LLVMBuildFPToSI(cl2llvm_builder, 
+			new_llvm_value = LLVMBuildFPToSI(cl2llvm_builder, 
 				  this->llvm_value, LLVMInt1Type(), temp_var_name);
 		}
-		llvm_val->type.setSign( 1);
+		new_llvm_value->type.setSign( 1);
 	}
 	/*Floating point to unsigned integer conversions*/
 	else if (!to_type.getSign())
 	{
 		if (to_type.getLlvmType() == LLVMInt64Type())
 		{
-			llvm_val = LLVMBuildFPToUI(cl2llvm_builder, 
+			new_llvm_value = LLVMBuildFPToUI(cl2llvm_builder, 
 				  this->llvm_value, LLVMInt64Type(), temp_var_name);
 		}
 		else if (to_type.getLlvmType() == LLVMInt32Type())
 		{
-			llvm_val = LLVMBuildFPToUI(cl2llvm_builder, 
+			new_llvm_value = LLVMBuildFPToUI(cl2llvm_builder, 
 				  this->llvm_value, LLVMInt32Type(), temp_var_name);
 		}
 		else if (to_type.getLlvmType() == LLVMInt16Type())
 		{
-			llvm_val = LLVMBuildFPToUI(cl2llvm_builder, 
+			new_llvm_value = LLVMBuildFPToUI(cl2llvm_builder, 
 				  this->llvm_value, LLVMInt16Type(), temp_var_name);
 		}
 		else if (to_type.getLlvmType() == LLVMInt8Type())
 		{
-			llvm_val = LLVMBuildFPToUI(cl2llvm_builder, 
+			new_llvm_value = LLVMBuildFPToUI(cl2llvm_builder, 
 				  this->llvm_value, LLVMInt8Type(), temp_var_name);
 		}
 		else if (to_type.getLlvmType() == LLVMInt1Type())
 		{
-			llvm_val = LLVMBuildFPToUI(cl2llvm_builder, 
+			new_llvm_value = LLVMBuildFPToUI(cl2llvm_builder, 
 				  this->llvm_value, LLVMInt1Type(), temp_var_name);
 		}
-		llvm_val->type.setSign( 0);
+		new_llvm_value->type.setSign( 0);
 	}
 	else if (to_type.getLlvmType() == LLVMDoubleType())
 	{
-		llvm_val = LLVMBuildFPExt(cl2llvm_builder, 
+		new_llvm_value = LLVMBuildFPExt(cl2llvm_builder, 
 			  this->llvm_value, LLVMDoubleType(), temp_var_name);
-		llvm_val->type.setSign( 1);
+		new_llvm_value->type.setSign( 1);
 	}
 	else if (to_type.getLlvmType() == LLVMFloatType())
 	{
 		if (this->type.getLlvmType() == LLVMDoubleType())
 		{
-			llvm_val = LLVMBuildFPTrunc(cl2llvm_builder, 
+			new_llvm_value = LLVMBuildFPTrunc(cl2llvm_builder, 
 				  this->llvm_value, LLVMFloatType(), temp_var_name);
 		}
 		else if (this->type.getLlvmType() == LLVMHalfType())
 		{
-			llvm_val = LLVMBuildFPExt(cl2llvm_builder, 
+			new_llvm_value = LLVMBuildFPExt(cl2llvm_builder, 
 				  this->llvm_value, LLVMFloatType(), temp_var_name);
 		}
-		llvm_val->type.setSign( 1);
+		new_llvm_value->type.setSign( 1);
 	}
 	else if (to_type.getLlvmType() == LLVMHalfType())
 	{
-		llvm_val = LLVMBuildFPTrunc(cl2llvm_builder, 
+		new_llvm_value = LLVMBuildFPTrunc(cl2llvm_builder, 
 			  this->llvm_value, LLVMHalfType(), temp_var_name);
-		llvm_val->type.setSign( 1);
+		new_llvm_value->type.setSign( 1);
 	}
-	cl2llvmTypeWrapSetLlvmType(llvm_val->type, to_type.getLlvmType());
-	cl2llvmTypeWrapSetSign(llvm_val->type, to_type.getSign());
-	return llvm_val;
+	cl2llvmTypeWrapSetLlvmType(new_llvm_value->type, to_type.getLlvmType());
+	cl2llvmTypeWrapSetSign(new_llvm_value->type, to_type.getSign());
+	return new_llvm_value;
 }
 
 /*
@@ -846,8 +843,8 @@ Value Value::TypeCast(Type to_type)
 
 void type_unify(Value val1, Value val2, Value *new_val1, Value *new_val2)
 {
-	LLVMTypeRef type1 = val1->val.getType();
-	LLVMTypeRef type2 = val2->val.getType();
+	llvm::Type type1 = val1->val.getType();
+	llvm::Type type2 = val2->val.getType();
 
 	/* By default, new values returned are the same as the original
 	 * values. */
@@ -855,7 +852,7 @@ void type_unify(Value val1, Value val2, Value *new_val1, Value *new_val2)
 	*new_val2 = val2;
 
 	/* If types match, no type cast needed */
-	if (type1 == type2 && val1->type.getSign() == val2->type.getSign())
+	if (type1 == type2 && val1.getSign() == val2.getSign())
 		return;
 	
 	/* If the types do not match and both are vector types, return error */
@@ -870,7 +867,7 @@ void type_unify(Value val1, Value val2, Value *new_val1, Value *new_val2)
 
 	/* Whatever operand differs from the dominant type will be typecast
 	 * to it. */
-	if (type.getType() != type1 || type.getSign() != val1->type.getSign())
+	if (type.getType() != type1 || type.getSign() != val1.getSign())
 	{
 		*new_val1 = llvm_type_cast(val1, type);
 	}
@@ -887,13 +884,13 @@ void type_unify(Value val1, Value val2, Value *new_val1, Value *new_val2)
    an i1 0 if the value is equal to 0. */
 Value cl2llvm_to_bool_ne_0(Value value)
 {
-	LLVMValueRef const_zero;
-	LLVMValueRef zero_vec[16];
-	LLVMTypeRef switch_type;
+	llvm::Value const_zero;
+	llvm::Value zero_vec[16];
+	llvm::Type switch_type;
 	int i;
 	int veclength;
 
-	Value bool_val = cl2llvm_val_create_w_init(value->val, value->type.getSign());
+	Value bool_val = cl2llvm_val_create_w_init(value->val, value.getSign());
 	
 	/* if value is i1 no conversion necessary */
 	if (value->val.getType() == LLVMInt1Type())
@@ -901,12 +898,12 @@ Value cl2llvm_to_bool_ne_0(Value value)
 
 	/* If value is a vector create a vector of constant zeros, else
 	   create a scalar 0. */
-	if (value->type.getType().getTypeID() == VectorTyID)
+	if (value.getLlvmType().getTypeID() == VectorTyID)
 	{
-		switch_type = LLVMGetElementType(value->type.getType());
+		switch_type = value.getLlvmType().getElementType();
 
-		veclength = LLVMGetVectorSize(value->type.getType());
-		switch (LLVMGetElementType(value->type.getType()).getTypeID())
+		veclength = value.getLlvmType().getNumElements();
+		switch (value.getLlvmType().getElementType().getTypeID())
 		{
 		case IntegerTyID:
 		
@@ -927,17 +924,17 @@ Value cl2llvm_to_bool_ne_0(Value value)
 		}
 		const_zero = LLVMConstVector(zero_vec, veclength);
 	}
-	else if (value->type.getType().getTypeID() == IntegerTyID)
+	else if (value.getLlvmType().getTypeID() == IntegerTyID)
 	{
-		const_zero = LLVMConstInt(value->type.getType(), 0, 0);
-		switch_type = value->type.getType();
+		const_zero = LLVMConstInt(value.getLlvmType(), 0, 0);
+		switch_type = value.getLlvmType();
 	}
-	else if (value->type.getType().getTypeID() == FloatTyID
-		|| value->type.getType().getTypeID() == DoubleTyID
-		|| value->type.getType().getTypeID() == HalfTyID)
+	else if (value.getLlvmType().getTypeID() == FloatTyID
+		|| value.getLlvmType().getTypeID() == DoubleTyID
+		|| value.getLlvmType().getTypeID() == HalfTyID)
 	{
-		const_zero = LLVMConstReal(value->type.getType(), 0);
-		switch_type = value->type.getType();
+		const_zero = LLVMConstReal(value.getLlvmType(), 0);
+		switch_type = value.getLlvmType();
 	}
 	/* Create comparison */
 	snprintf(temp_var_name, sizeof temp_var_name,
@@ -971,12 +968,12 @@ Value cl2llvm_to_bool_ne_0(Value value)
    an i1 0 if the value is not equal to 0. */
 Value cl2llvm_to_bool_eq_0(Value value)
 {
-	LLVMValueRef const_zero;
-	LLVMValueRef zero_vec[16];
+	llvm::Value const_zero;
+	llvm::Value zero_vec[16];
 	int i;
 	int veclength;
-	LLVMTypeRef switch_type;
-	Value bool_val = cl2llvm_val_create_w_init(value->val, value->type.getSign());
+	llvm::Type switch_type;
+	Value bool_val = cl2llvm_val_create_w_init(value->val, value.getSign());
 	
 	/* if value is i1 no conversion necessary */
 	if (value->val.getType() == LLVMInt1Type())
@@ -984,10 +981,10 @@ Value cl2llvm_to_bool_eq_0(Value value)
 
 	/* If value is a vector create a vector of constant zeros, else
 	   create a scalar 0. */
-	if (value->type.getType().getTypeID() == VectorTyID)
+	if (value.getLlvmType().getTypeID() == VectorTyID)
 	{
-		veclength = LLVMGetVectorSize(value->type.getType());
-		switch_type = LLVMGetElementType(value->type.getType());
+		veclength = value.getLlvmType().getNumElements();
+		switch_type = value.getLlvmType().getElementType();
 
 		switch (switch_type.getTypeID())
 		{
@@ -1010,17 +1007,17 @@ Value cl2llvm_to_bool_eq_0(Value value)
 		}
 		const_zero = LLVMConstVector(zero_vec, veclength);
 	}
-	else if (value->type.getType().getTypeID() == IntegerTyID)
+	else if (value.getLlvmType().getTypeID() == IntegerTyID)
 	{
-		const_zero = LLVMConstInt(value->type.getType(), 0, 0);
-		switch_type = value->type.getType();
+		const_zero = LLVMConstInt(value.getLlvmType(), 0, 0);
+		switch_type = value.getLlvmType();
 	}
-	else if (value->type.getType().getTypeID() == FloatTyID
-		|| value->type.getType().getTypeID() == DoubleTyID
-		|| value->type.getType().getTypeID() == HalfTyID)
+	else if (value.getLlvmType().getTypeID() == FloatTyID
+		|| value.getLlvmType().getTypeID() == DoubleTyID
+		|| value.getLlvmType().getTypeID() == HalfTyID)
 	{
-		const_zero = LLVMConstReal(value->type.getType(), 0);
-		switch_type =  value->type.getType();
+		const_zero = LLVMConstReal(value.getLlvmType(), 0);
+		switch_type =  value.getLlvmType();
 	}
 	/* Create comparison */
 	snprintf(temp_var_name, sizeof temp_var_name,
@@ -1059,18 +1056,18 @@ Value cl2llvm_bool_ext(Value bool_val,
 {
 	Value value;
 	Type switch_type;
-	LLVMTypeRef totype;
+	llvm::Type totype;
 	int vec_length;
 
-	switch_type = cl2llvmTypeWrapCreate(type.getType(), type.getSign());
+	switch_type.setType(type.getType(), type.getSign());
 
 	if (type.getType().getTypeID() == VectorTyID)		
-		cl2llvmTypeWrapSetLlvmType(switch_type, LLVMGetElementType(type.getType()));
+		cl2llvmTypeWrapSetLlvmType(switch_type, type.getType().getElementType());
 		
 
 	if (type.getType().getTypeID() == VectorTyID)
 	{
-		vec_length = LLVMGetVectorSize(type.getType());
+		vec_length = type.getType().getNumElements();
 		switch (switch_type.getType().getTypeID())
 		{
 		case IntegerTyID:

@@ -20,63 +20,26 @@
 
 #include <lib/mhandle/mhandle.h>
 
-#include "Type.h"
-#include "declarator-list.h"
+#include "Type.h"d#include "declarator-list.h"
+#include "Declarator-list.h"
 
-struct cl2llvm_decl_list_t *cl2llvm_decl_list_create()
+using namespace std;
+using namespace cl2llvm;
+
+void DeclaratorList::Merge(DeclaratorList& decl_list)
 {
-	struct cl2llvm_decl_list_t *decl_list;
-	
-	decl_list = xcalloc(1, sizeof(struct cl2llvm_decl_list_t));
-
-	/*initialize pointers to null*/
-	decl_list->type_spec = NULL;
-	decl_list->access_qual = NULL;
-	decl_list->kernel_t = NULL;
-	decl_list->inline_t = NULL;
-	decl_list->sc_spec = NULL;
-	decl_list->addr_qual = 0;
-	decl_list->type_qual = NULL;
-
-	return decl_list;
-}
-
-void cl2llvm_decl_list_free(struct cl2llvm_decl_list_t *declarator_list)
-{
-	if (declarator_list->type_spec != NULL)
-		cl2llvmTypeWrapFree(declarator_list->type_spec);
-	if (declarator_list->access_qual != NULL)
-		free(declarator_list->access_qual);
-	/*if (declarator_list->kernel_t != NULL)
-		free(declarator_list->kernel_t);*/
-	if (declarator_list->inline_t != NULL)
-		free(declarator_list->inline_t);
-	if (declarator_list->sc_spec != NULL)
-		free(declarator_list->sc_spec);
-	if (declarator_list->type_qual != NULL)
-		free(declarator_list->type_qual);
-	free(declarator_list);
-}
-
-void cl2llvm_decl_list_struct_free(struct cl2llvm_decl_list_t *declarator_list)
-{
-	free(declarator_list);
-}
-
-void cl2llvm_attach_decl_to_list(struct cl2llvm_decl_list_t *declarator, struct cl2llvm_decl_list_t *declarator_list) 
-{
-	if (declarator->type_spec != NULL)
-		declarator_list->type_spec = declarator->type_spec;
-	if (declarator->access_qual != NULL)
-		declarator_list->access_qual = declarator->access_qual;
-	if (declarator->kernel_t != NULL)
-		declarator_list->kernel_t = declarator->kernel_t;
-	if (declarator->inline_t != NULL)
-		declarator_list->inline_t = declarator->inline_t;
-	if (declarator->sc_spec != NULL)
-		declarator_list->sc_spec = declarator->sc_spec;	
-	if (declarator->addr_qual != 0)
-		declarator_list->addr_qual = declarator->addr_qual;	
-	if (declarator->type_qual != NULL)
-		declarator_list->type_qual = declarator->type_qual;
+	if (decl_list.getTypeSpec() != NULL)
+		this->type_spec = decl_list.getTypeSpec();
+	if (decl_list.getAccessQual() != NULL)
+		this->access_qual = decl_list.getAccessQual();
+	if (decl_list.getKernelT() != NULL)
+		this->kernel_t = decl_list.getKernelT();
+	if (decl_list.getInlineT() != NULL)
+		this->inline_t = decl_list.getInlineT();
+	if (decl_list.getScSpec() != NULL)
+		this->sc_spec = decl_list.getScSpec();	
+	if (decl_list.getAddrQual() != 0)
+		this->addr_qual = decl_list.getAddrQual();	
+	if (decl_list.getTypeQual() != NULL)
+		this->type_qual = decl_list.getTypeQual();
 }

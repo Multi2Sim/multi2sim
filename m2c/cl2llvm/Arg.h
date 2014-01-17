@@ -22,20 +22,41 @@
 
 #include "declarator-list.h"
 
-struct cl2llvm_arg_t
+namespace cl2llvm
 {
-	char *name;
-	struct cl2llvmTypeWrap *type_spec;
-	char *access_qual;
-	char *kernel_t;
-	char *inline_t;
-	char *sc_spec;
+
+class Arg
+{
+	string name;
+	Type type_spec;
+	string access_qual;
+	string kernel_t;
+	string inline_t;
+	string sc_spec;
 	int addr_qual;
-	char *type_qual;
+	string type_qual;
+
+	// Constructors
+	Arg() {}
+	Arg(DeclaratorList& decl_list, string name):
+		name(name), type_spec(decl_list.type_spec),
+		access_qual(decl_list.access_qual), kernel_t(decl_list.kernel_t)
+		inline_t(decl_list.inline_t), sc_spec(decl_list.sc_spec),
+		addr_qual(decl_list.addr_qual), type_qual(decl_list.type_qual) {}
+
+	// Setters
+	void setName(string name) { this->name = name; }
+	
+	// Getters
+	string getName() { return name; }
+ 	Type getTypeSpec() { return type_spec; }
+	string getAccessQual() { return access_qual; }
+	string getKernelT() { return kernel_t; }
+	string getInlineT() { return inline_t; }
+	string getScSpec() { return sc_spec; }
+	int getAddrQual() { return addr_qual; }
+	string getTypeQual() { return type_qual; }
 };
 
-struct cl2llvm_arg_t *cl2llvm_arg_create(struct cl2llvm_decl_list_t *decl_list, char *name);
-
-void cl2llvm_arg_free(struct cl2llvm_arg_t *arg);
-
+}
 #endif

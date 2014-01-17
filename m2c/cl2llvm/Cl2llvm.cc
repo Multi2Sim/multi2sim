@@ -46,8 +46,8 @@ extern int temp_var_count;
 extern int block_count;
 
 /* Global variables */
-LLVMBuilderRef cl2llvm_builder;
-LLVMModuleRef cl2llvm_module;
+llvm::IRBuilder builder(getGlobalContext());
+llvm::Module *module 
 
 /* Built-in function table */
 struct hash_table_t *cl2llvm_built_in_func_table;
@@ -133,8 +133,7 @@ void cl2llvm_init_global_vars(void)
 	block_count = 0;
 
 	/* Initialize LLVM */
-	cl2llvm_builder = LLVMCreateBuilder();
-	cl2llvm_module = LLVMModuleCreateWithName("module");
+	llvm::Module *module = new llvm::Module("module", getGlobalContext());
 
 	/* Initialize preprocessor file list */
 	cl2llvm_preprcr_file_list = list_create();

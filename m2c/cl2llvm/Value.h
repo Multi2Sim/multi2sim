@@ -37,7 +37,7 @@ class Value
 {
 	llvm::Value *llvm_value;
 	Type type;
-	Value* vector_indices[17];
+	vector<Value> vector_indices;
 
 public:
 
@@ -54,6 +54,8 @@ public:
 	void setType(Type *type) { this->type = type; }
 	void setSign(bool sign) { this->sign = sign; }
 	bool getSign() { return sign; }
+	void setLlvmType(llvm::Type *llvm_type) {
+		this->type->llvm_type = llvm_type; }
 	void setLlvmValue(llvm::Value *llvm_value) {
 			this->llvm_value = llvm_value;
 	}

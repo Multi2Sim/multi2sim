@@ -40,7 +40,7 @@
 
 extern LLVMBuilderRef cl2llvm_builder;
 extern LLVMModuleRef cl2llvm_module;
-extern LLVMValueRef cl2llvm_function;
+extern llvm::Value cl2llvm_function;
 extern LLVMBasicBlockRef cl2llvm_basic_block;
 
 extern int temp_var_count;
@@ -244,9 +244,9 @@ func_def
 		int err;
 		struct cl2llvm_function_t *new_function;	
 		char arg_name[CL2LLVM_MAX_ARG_NAME_LEN];
-		LLVMTypeRef func_args[CL2LLVM_MAX_FUNC_ARGS];
-		LLVMTypeRef function_type;
-		LLVMValueRef function;
+		llvm::Type func_args[CL2LLVM_MAX_FUNC_ARGS];
+		llvm::Type function_type;
+		llvm::Value function;
 		int arg_count;
 		int i;
 
@@ -291,7 +291,7 @@ func_def
 			function, block_name);
 		
 		/* Position builder at start of function */
-		LLVMPositionBuilderAtEnd(cl2llvm_builder, basic_block);
+		cl2llvm_builder.setInsertPoint( basic_block);
 			current_basic_block = basic_block;
 
 		/* Create and initialize function object */
@@ -324,10 +324,7 @@ func_def
 
 				Value arg_pointer = 
 					cl2llvm_val_create_w_init( 
-					LLVMBuildAlloca(cl2llvm_builder, 
-					current_arg->type_spec.getType(), 
-					arg_name),
-					current_arg->type_spec.getSign());
+					cl2llvm_builder.CreateAlloca(current_arg->type_spec.getType(), arg_name), current_arg->type_spec.getSign());
 
 				struct cl2llvm_symbol_t *symbol = 
 					cl2llvm_symbol_create_w_init(
@@ -338,7 +335,7 @@ func_def
 				cl2llvmTypeWrapSetLlvmType(symbol->cl2llvm_val->type, current_arg->type_spec.getType());
 
 				/* Name and store arguments */
-				LLVMValueRef arg_val = LLVMGetParam(
+				llvm::Value arg_val = LLVMGetParam(
 					new_function->func, i);
 				LLVMSetValueName(arg_val, current_arg->name);
 
@@ -357,9 +354,9 @@ func_def
 
 		LLVMBasicBlockRef first_block = LLVMAppendBasicBlock( 
 			new_function->func, block_name);
-		LLVMValueRef branch = LLVMBuildBr(cl2llvm_builder, 
+		llvm::Value branch = LLVMBuildBr(cl2llvm_builder, 
 			first_block);
-		LLVMPositionBuilderAtEnd(cl2llvm_builder, first_block);
+		cl2llvm_builder.setInsertPoint( first_block);
 
 		/* Set current basic block */
 		current_basic_block = first_block;
@@ -446,11 +443,11 @@ declarator_list
 			{
 				case 1:
 					cl2llvmTypeWrapSetLlvmType($1->type_spec, LLVMPointerType(
-						LLVMGetElementType($1->type_spec.getType()), 1));
+						$1->type_spec.getType().getElementType(), 1));
 					break;
 					
 				case 2:
-					cl2llvmTypeWrapSetLlvmType($1->type_spec, LLVMPointerType(LLVMGetElementType($1->type_spec.getType()), 2));
+					cl2llvmTypeWrapSetLlvmType($1->type_spec, LLVMPointerType($1->type_spec.getType().getElementType(), 2));
 						break;
 
 				default:
@@ -462,11 +459,11 @@ declarator_list
 			switch ($1->addr_qual)
 			{
 				case 1:
-					cl2llvmTypeWrapSetLlvmType($1->type_spec, LLVMPointerType(LLVMGetElementType($2->type_spec.getType()), 1));
+					cl2llvmTypeWrapSetLlvmType($1->type_spec, LLVMPointerType($2->type_spec.getType().getElementType(), 1));
 						break;
 					
 				case 2:
-					cl2llvmTypeWrapSetLlvmType($1->type_spec, LLVMPointerType(LLVMGetElementType($2->type_spec.getType()), 2));
+					cl2llvmTypeWrapSetLlvmType($1->type_spec, LLVMPointerType($2->type_spec.getType().getElementType(), 2));
 						break;
 
 				default:
@@ -585,8 +582,8 @@ lvalue
 		Value ptr;
 		int i;
 		Value current_index;
-		LLVMValueRef deref_ptr;
-		LLVMValueRef indices[CL2LLVM_MAX_NUM_ARRAY_INDEX_DIM];
+		llvm::Value deref_ptr;
+		llvm::Value indices[CL2LLVM_MAX_NUM_ARRAY_INDEX_DIM];
 
 		/*Retrieve symbol from table*/
 	 	/*symbol = hash_table_get(cl2llvm_current_function->symbol_table, $1);
@@ -598,13 +595,12 @@ lvalue
 		/* Loop through all dereference operators */	
 		for (i = 0; i < list_count($2); i++)
 		{
-			if  (LLVMGetElementType(deref_ptr.getType()).getTypeID() == PointerTyID)
+			if  (deref_ptr.getType().getElementType().getTypeID() == PointerTyID)
 			{
 				snprintf(temp_var_name, sizeof temp_var_name,
 					"tmp_%d", temp_var_count++);
 			
-				deref_ptr = LLVMBuildLoad(cl2llvm_builder, 
-					deref_ptr, temp_var_name);
+				deref_ptr = cl2llvm_builder.CreateLoad(deref_ptr, temp_var_name);
 
 				current_index = list_get($2, i);
 				indices[0] = current_index->val;
@@ -616,7 +612,7 @@ lvalue
 					temp_var_name);
 				
 			}
-			else if (LLVMGetElementType(deref_ptr.getType()).getTypeID() == ArrayTyID)
+			else if (deref_ptr.getType().getElementType().getTypeID() == ArrayTyID)
 
 			{
 				indices[0] = LLVMConstInt(LLVMInt32Type(), 0, 0);
@@ -644,7 +640,7 @@ lvalue
 		}
 
 		ptr = cl2llvm_val_create_w_init(deref_ptr, 
-			$1->type.getSign());
+			$1.getSign());
 
 		/*Free pointers*/
 		LIST_FOR_EACH($2, i)
@@ -659,21 +655,20 @@ lvalue
 	| TOK_MULT lvalue %prec TOK_MINUS
 	{
 		Value ptr;
-		LLVMValueRef deref_ptr;
-		LLVMValueRef indices[CL2LLVM_MAX_NUM_ARRAY_INDEX_DIM];
+		llvm::Value deref_ptr;
+		llvm::Value indices[CL2LLVM_MAX_NUM_ARRAY_INDEX_DIM];
 
 		deref_ptr = $2->val;
 
-		if  (LLVMGetElementType(deref_ptr.getType()).getTypeID() == PointerTyID)
+		if  (deref_ptr.getType().getElementType().getTypeID() == PointerTyID)
 		{
 			snprintf(temp_var_name, sizeof temp_var_name,
 				"tmp_%d", temp_var_count++);
 			
-			deref_ptr = LLVMBuildLoad(cl2llvm_builder, 
-				deref_ptr, temp_var_name);
+			deref_ptr = cl2llvm_builder.CreateLoad(deref_ptr, temp_var_name);
 
 		}
-		else if (LLVMGetElementType(deref_ptr.getType()).getTypeID() == ArrayTyID)
+		else if (deref_ptr.getType().getElementType().getTypeID() == ArrayTyID)
 
 		{
 			indices[0] = LLVMConstInt(LLVMInt32Type(), 0, 0);
@@ -699,7 +694,7 @@ lvalue
 		
 
 		ptr = cl2llvm_val_create_w_init(deref_ptr, 
-			$2->type.getSign());
+			$2.getSign());
 
 		cl2llvm_val_free($2);
 
@@ -717,7 +712,7 @@ lvalue
 
 		/*Duplicate symbol*/
 		symbol_val_dup = cl2llvm_val_create_w_init(symbol->cl2llvm_val->val, 
-			symbol->cl2llvm_val->type.getSign());
+			symbol->cl2llvm_val.getSign());
 
 
 		$$ = symbol_val_dup;
@@ -733,7 +728,7 @@ lvalue
 */
 
 		/* If symbol is a vector retrieve the specified indices */
-		if (LLVMGetElementType($1->type.getType()).getTypeID()
+		if ($1.getLlvmType().getElementType().getTypeID()
 			== VectorTyID)
 		{	
 			cl2llvm_get_vector_indices($1, $3);
@@ -747,14 +742,14 @@ array_deref_list
 	{
 		struct list_t *array_deref_list = list_create();
 		
-		if ($2->type.getType().getTypeID() != IntegerTyID)
+		if ($2.getLlvmType().getTypeID() != IntegerTyID)
 			yyerror("array index is not an integer");
 		list_add(array_deref_list, $2);
 		$$ = array_deref_list;
 	}
 	| array_deref_list TOK_BRACKET_OPEN expr TOK_BRACKET_CLOSE
 	{
-		if ($3->type.getType().getTypeID() != IntegerTyID)
+		if ($3.getLlvmType().getTypeID() != IntegerTyID)
 			yyerror("array index is not an integer");
 		list_add($1, $3);
 		$$ = $1;
@@ -777,7 +772,7 @@ stmt
 	| TOK_RETURN maybe_expr TOK_SEMICOLON
 	{
 		Value ret_val;
-		Type type = cl2llvmTypeWrapCreate( LLVMGetReturnType(cl2llvm_current_function->func_type), cl2llvm_current_function->sign);
+		Type type( LLVMGetReturnType(cl2llvm_current_function->func_type), cl2llvm_current_function->sign);
 		if (type.getType() == LLVMVoidType())
 		{
 			if ($2 == NULL)
@@ -789,7 +784,7 @@ stmt
 		}
 		else
 		{
-			if (type.getType() != $2->type.getType() || type.getSign() != $2->type.getSign())
+			if (type.getType() != $2.getLlvmType() || type.getSign() != $2.getSign())
 				ret_val = llvm_type_cast($2, type);
 			else
 				ret_val = $2;
@@ -828,13 +823,13 @@ func_call
 	: TOK_ID TOK_PAR_OPEN param_list TOK_PAR_CLOSE
 	{
 		int i;
-		LLVMValueRef cast_param_array[100];
+		llvm::Value cast_param_array[100];
 		struct cl2llvm_arg_t *current_func_arg;
 		Value current_param;
 		struct cl2llvm_function_t *function;
 		Type type;
 		Value cast_param;
-		LLVMValueRef llvm_val_func_ret;
+		llvm::Value llvm_val_func_ret;
 		Value ret_val;
 
 		/* If function is found in the built-in function table but not the
@@ -856,9 +851,9 @@ func_call
 			if (current_func_arg == NULL)
 				cast_param_array[i] = NULL;
 			else if (current_func_arg->type_spec.getType() 
-				!= current_param->type.getType())
+				!= current_param.getLlvmType())
 			{
-				type = cl2llvmTypeWrapCreate( 
+				type.setType( 
 					current_func_arg->type_spec.getType(),
 					current_func_arg->type_spec.getSign());
 				cast_param = llvm_type_cast(current_param, type);
@@ -1012,7 +1007,7 @@ declaration
 	: declarator_list init_list TOK_SEMICOLON
 	{
 		Value cl2llvm_index;
-		LLVMTypeRef type;
+		llvm::Type type;
 		Value ptr;
 		Value value;
 		int i;
@@ -1022,7 +1017,7 @@ declaration
 		struct cl2llvm_init_t *current_list_elem;
 		struct cl2llvm_symbol_t *err_symbol;
 		char error_message[50];
-		LLVMValueRef var_addr;
+		llvm::Value var_addr;
 
 		/*Create each sybmol in the init_list*/
 		for(i = 0; i < init_count; i++)
@@ -1034,10 +1029,9 @@ declaration
 			if ($1->type_spec.getType().getTypeID() == VectorTyID)
 			{	
 				/*Go to entry block and declare variable*/
-				LLVMPositionBuilder(cl2llvm_builder, cl2llvm_current_function->entry_block, cl2llvm_current_function->branch_instr);
-				var_addr = LLVMBuildAlloca(cl2llvm_builder, 
-					$1->type_spec.getType(), current_list_elem->name);
-				LLVMPositionBuilderAtEnd(cl2llvm_builder, current_basic_block);
+				cl2llvm_builder.setInsertPoint( cl2llvm_current_function->branch_instr);
+				var_addr = cl2llvm_builder.CreateAlloca($1->type_spec.getType(), current_list_elem->name);
+				cl2llvm_builder.setInsertPoint( current_basic_block);
 
 				/*Create symbol*/
 				symbol = cl2llvm_symbol_create_w_init( var_addr, 
@@ -1048,7 +1042,7 @@ declaration
 				{
 
 					if (current_list_elem->cl2llvm_val->val.getType() == $1->type_spec.getType() 
-						&& current_list_elem->cl2llvm_val->type.getSign() == $1->type_spec.getSign())
+						&& current_list_elem->cl2llvm_val.getSign() == $1->type_spec.getSign())
 					{
 						LLVMBuildStore(cl2llvm_builder, 
 							current_list_elem->cl2llvm_val->val, var_addr);
@@ -1063,10 +1057,9 @@ declaration
 			else if (current_list_elem->array_deref_list == NULL)
 			{
 				/*Go to entry block and declare variable*/
-				LLVMPositionBuilder(cl2llvm_builder, cl2llvm_current_function->entry_block, cl2llvm_current_function->branch_instr);
-				var_addr = LLVMBuildAlloca(cl2llvm_builder, 
-					$1->type_spec.getType(), current_list_elem->name);
-				LLVMPositionBuilderAtEnd(cl2llvm_builder, current_basic_block);
+				cl2llvm_builder.setInsertPoint( cl2llvm_current_function->branch_instr);
+				var_addr = cl2llvm_builder.CreateAlloca($1->type_spec.getType(), current_list_elem->name);
+				cl2llvm_builder.setInsertPoint( current_basic_block);
 
 				/*Create symbol*/
 				symbol = cl2llvm_symbol_create_w_init( var_addr, 
@@ -1131,17 +1124,13 @@ declaration
 				else
 				{
 				/* Go to entry block and allocate array pointer */
-				LLVMPositionBuilder(cl2llvm_builder,
-					cl2llvm_current_function->entry_block,
-					cl2llvm_current_function->branch_instr);
+				cl2llvm_builder.setInsertPoint( cl2llvm_current_function->branch_instr);
 
-				ptr = cl2llvm_val_create_w_init( LLVMBuildAlloca( 
-					cl2llvm_builder, type,
+				ptr = cl2llvm_val_create_w_init(cl2llvm_builderCreateAlloca( type,
 					current_list_elem->name), 
 					$1->type_spec.getSign());
 	
-				LLVMPositionBuilderAtEnd(cl2llvm_builder,
-					current_basic_block);
+				cl2llvm_builder.setInsertPoint( current_basic_block);
 
 
 				}
@@ -1225,7 +1214,7 @@ if_stmt
 		/* goto endif block*/
 		if (check_for_ret());
 			LLVMBuildBr(cl2llvm_builder, $1);
-		LLVMPositionBuilderAtEnd(cl2llvm_builder, $1);
+		cl2llvm_builder.setInsertPoint( $1);
 		current_basic_block = $1;
 	}
 	| if TOK_ELSE
@@ -1239,7 +1228,7 @@ if_stmt
 		if (check_for_ret())
 			LLVMBuildBr(cl2llvm_builder, endif);
 		/*position builder at if false block*/
-		LLVMPositionBuilderAtEnd(cl2llvm_builder, $1);
+		cl2llvm_builder.setInsertPoint( $1);
 		current_basic_block = $1;
 
 		$<basic_block_ref>$ = endif;
@@ -1249,7 +1238,7 @@ if_stmt
 		/*branch to endif block and prepare to write code for endif block*/
 		if (check_for_ret())
 			LLVMBuildBr(cl2llvm_builder, $<basic_block_ref>3);
-		LLVMPositionBuilderAtEnd(cl2llvm_builder, $<basic_block_ref>3);
+		cl2llvm_builder.setInsertPoint( $<basic_block_ref>3);
 		current_basic_block = $<basic_block_ref>3;
 
 	}
@@ -1258,7 +1247,7 @@ if_stmt
 if
 	:  TOK_IF TOK_PAR_OPEN expr TOK_PAR_CLOSE
 	{
-		Type i1 = cl2llvmTypeWrapCreate(LLVMInt1Type(), 1);
+		Type i1(LLVMInt1Type(), 1);
 		
 		/*Create endif block*/
 		snprintf(block_name, sizeof block_name,
@@ -1272,7 +1261,7 @@ if
 			cl2llvm_current_function->func, block_name);
 		
 		/*evaluate expression*/
-		if ($3->type.getType().getTypeID() == VectorTyID)
+		if ($3.getLlvmType().getTypeID() == VectorTyID)
 			cl2llvm_yyerror("expression must have arithmetic, enum "
 				"or pointer type");
 		Value bool_val =  cl2llvm_to_bool_ne_0($3);
@@ -1280,7 +1269,7 @@ if
 		$<basic_block_ref>$ = endif;
 		
 		/*prepare to write if_true block*/
-		LLVMPositionBuilderAtEnd(cl2llvm_builder, if_true);
+		cl2llvm_builder.setInsertPoint( if_true);
 		current_basic_block = if_true;
 	
 		cl2llvm_val_free(bool_val);
@@ -1300,7 +1289,7 @@ for_loop
 		LLVMBuildBr(cl2llvm_builder, $1->for_incr);
 
 		/*Prepare to build for end*/
-		LLVMPositionBuilderAtEnd(cl2llvm_builder, $1->for_end);
+		cl2llvm_builder.setInsertPoint( $1->for_end);
 		current_basic_block = $1->for_end;
 
 		/*Free for_blocks*/
@@ -1341,7 +1330,7 @@ for_loop_header
 
 		/*Prepare to build for loop conditional*/
 		LLVMBuildBr(cl2llvm_builder, for_blocks->for_cond);
-		LLVMPositionBuilderAtEnd(cl2llvm_builder, for_blocks->for_cond);
+		cl2llvm_builder.setInsertPoint( for_blocks->for_cond);
 
 		$<llvm_for_blocks>$ = for_blocks;
 	}
@@ -1352,7 +1341,7 @@ for_loop_header
 		/*Build for loop conditional*/
 		if ($6 != NULL)
 		{
-			if ($6->type.getType().getTypeID()
+			if ($6.getLlvmType().getTypeID()
 				== VectorTyID)
 				cl2llvm_yyerror("expression must have "
 					"arithmetic, enum or pointer type");
@@ -1366,7 +1355,7 @@ for_loop_header
 		}
 		
 		/*Prepare to build for loop increment*/
-		LLVMPositionBuilderAtEnd(cl2llvm_builder, $<llvm_for_blocks>5->for_incr);
+		cl2llvm_builder.setInsertPoint( $<llvm_for_blocks>5->for_incr);
 
 			
 		/*Free pointers*/
@@ -1383,7 +1372,7 @@ for_loop_header
 		LLVMBuildBr(cl2llvm_builder, $<llvm_for_blocks>5->for_cond);
 			
 		/*Prepare to build for loop statements*/
-		LLVMPositionBuilderAtEnd(cl2llvm_builder, $<llvm_for_blocks>5->for_stmt);
+		cl2llvm_builder.setInsertPoint( $<llvm_for_blocks>5->for_stmt);
 		current_basic_block = $<llvm_for_blocks>5->for_stmt;
 
 		/*Free pointers*/
@@ -1423,7 +1412,7 @@ for_loop_header
 
 		/*Prepare to build for loop conditional*/
 		LLVMBuildBr(cl2llvm_builder, for_blocks->for_cond);
-		LLVMPositionBuilderAtEnd(cl2llvm_builder, for_blocks->for_cond);
+		cl2llvm_builder.setInsertPoint( for_blocks->for_cond);
 
 		$<llvm_for_blocks>$ = for_blocks;
 		
@@ -1435,7 +1424,7 @@ for_loop_header
 		/*Build for loop conditional*/
 		if ($5 != NULL)
 		{
-			if ($5->type.getType().getTypeID()
+			if ($5.getLlvmType().getTypeID()
 				== VectorTyID)
 				cl2llvm_yyerror("expression must have "
 					"arithmetic, enum or pointer type");
@@ -1449,7 +1438,7 @@ for_loop_header
 		}
 
 		/*Prepare to build for loop increment*/
-		LLVMPositionBuilderAtEnd(cl2llvm_builder, $<llvm_for_blocks>4->for_incr);
+		cl2llvm_builder.setInsertPoint( $<llvm_for_blocks>4->for_incr);
 		
 		/*Free pointers*/
 		if (bool_val != NULL)
@@ -1463,7 +1452,7 @@ for_loop_header
 		LLVMBuildBr(cl2llvm_builder, $<llvm_for_blocks>4->for_cond);
 
 		/*Prepare to build for loop statements*/
-		LLVMPositionBuilderAtEnd(cl2llvm_builder, $<llvm_for_blocks>4->for_stmt);
+		cl2llvm_builder.setInsertPoint( $<llvm_for_blocks>4->for_stmt);
 		current_basic_block = $<llvm_for_blocks>4->for_stmt;
 		/*Free pointers*/
 		if ($8 != NULL)
@@ -1491,7 +1480,7 @@ do_while_loop
 		LLVMBasicBlockRef while_end = LLVMAppendBasicBlock(cl2llvm_current_function->func, block_name);
 		
 		LLVMBuildBr(cl2llvm_builder, while_stmt);
-		LLVMPositionBuilderAtEnd(cl2llvm_builder, while_stmt);
+		cl2llvm_builder.setInsertPoint( while_stmt);
 		current_basic_block = while_stmt;
 
 		while_blocks->while_stmt = while_stmt;
@@ -1503,21 +1492,21 @@ do_while_loop
 	stmt_or_stmt_list TOK_WHILE TOK_PAR_OPEN
 	{
 		LLVMBuildBr(cl2llvm_builder, $<llvm_while_blocks>2->while_cond);
-		LLVMPositionBuilderAtEnd(cl2llvm_builder, $<llvm_while_blocks>2->while_cond);
+		cl2llvm_builder.setInsertPoint( $<llvm_while_blocks>2->while_cond);
 		current_basic_block = $<llvm_while_blocks>2->while_cond;
 	}
 	expr TOK_PAR_CLOSE TOK_SEMICOLON 
 	{
 		Value bool_val;
 	
-		if ($7->type.getType().getTypeID()
+		if ($7.getLlvmType().getTypeID()
 			== VectorTyID)
 			cl2llvm_yyerror("expression must have "
 				"arithmetic, enum or pointer type");
 		bool_val = cl2llvm_to_bool_ne_0($7);
 		LLVMBuildCondBr(cl2llvm_builder, bool_val->val, $<llvm_while_blocks>2->while_stmt,
 			$<llvm_while_blocks>2->while_end);
-		LLVMPositionBuilderAtEnd(cl2llvm_builder, $<llvm_while_blocks>2->while_end);
+		cl2llvm_builder.setInsertPoint( $<llvm_while_blocks>2->while_end);
 		current_basic_block = $<llvm_while_blocks>2->while_end;
 	}
 	;
@@ -1527,14 +1516,14 @@ while_loop
 	{
 		Value bool_val;
 		
-		if ($4->type.getType().getTypeID()
+		if ($4.getLlvmType().getTypeID()
 			== VectorTyID)
 			cl2llvm_yyerror("expression must have "
 				"arithmetic, enum or pointer type");
 		bool_val = cl2llvm_to_bool_ne_0($4);
 		LLVMBuildCondBr(cl2llvm_builder, bool_val->val, $3->while_stmt, $3->while_end);
 
-		LLVMPositionBuilderAtEnd(cl2llvm_builder, $3->while_stmt);
+		cl2llvm_builder.setInsertPoint( $3->while_stmt);
 	
 		current_basic_block = $3->while_stmt;
 	
@@ -1544,7 +1533,7 @@ while_loop
 	stmt_or_stmt_list
 	{
 		LLVMBuildBr(cl2llvm_builder, $3->while_cond);
-		LLVMPositionBuilderAtEnd(cl2llvm_builder, $3->while_end);
+		cl2llvm_builder.setInsertPoint( $3->while_end);
 		current_basic_block = $3->while_end;
 		cl2llvm_while_blocks_free($3);
 	}
@@ -1567,7 +1556,7 @@ while_block_init
 		LLVMBasicBlockRef while_end = LLVMAppendBasicBlock(cl2llvm_current_function->func, block_name);
 		
 		LLVMBuildBr(cl2llvm_builder, while_cond);
-		LLVMPositionBuilderAtEnd(cl2llvm_builder, while_cond);
+		cl2llvm_builder.setInsertPoint( while_cond);
 
 		while_blocks->while_stmt = while_stmt;
 		while_blocks->while_cond = while_cond;
@@ -1608,10 +1597,10 @@ expr
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		switch_type = cl2llvmTypeWrapCreate(op1->type.getType(), op1->type.getSign());
-		if (op1->type.getType().getTypeID()  == VectorTyID)
+		switch_type.setType(op1.getLlvmType(), op1.getSign());
+		if (op1.getLlvmType().getTypeID()  == VectorTyID)
 		{
-			cl2llvmTypeWrapSetLlvmType(switch_type, LLVMGetElementType(op1->type.getType()));
+			cl2llvmTypeWrapSetLlvmType(switch_type, op1.getLlvmType().getElementType());
 		}
 
 		snprintf(temp_var_name, sizeof temp_var_name,
@@ -1623,14 +1612,14 @@ expr
 		{
 		case IntegerTyID:
 
-			value = cl2llvm_val_create_w_init(LLVMBuildAdd(cl2llvm_builder, op1->val, op2->val, temp_var_name), op1->type.getSign());
+			value = cl2llvm_val_create_w_init(LLVMBuildAdd(cl2llvm_builder, op1->val, op2->val, temp_var_name), op1.getSign());
 			break;
 
 		case HalfTyID:
 		case FloatTyID:
 		case DoubleTyID:
 
-			value = cl2llvm_val_create_w_init(LLVMBuildFAdd(cl2llvm_builder, op1->val, op2->val, temp_var_name), op1->type.getSign());
+			value = cl2llvm_val_create_w_init(LLVMBuildFAdd(cl2llvm_builder, op1->val, op2->val, temp_var_name), op1.getSign());
 			break;
 
 		default:
@@ -1663,12 +1652,12 @@ expr
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		if (op1->type.getType().getTypeID() == VectorTyID)
+		if (op1.getLlvmType().getTypeID() == VectorTyID)
 		{
-			switch_type =  cl2llvmTypeWrapCreate(LLVMGetElementType(op1->type.getType()), op2->type.getSign());
+			switch_type.setType(op1.getLlvmType().getElementType(), op2.getSign());
 		}
 		else
-			switch_type = cl2llvmTypeWrapCreate(op1->type.getType(), op1->type.getSign());
+			switch_type.setType(op1.getLlvmType(), op1.getSign());
 
 		snprintf(temp_var_name, sizeof temp_var_name,
 				"tmp_%d", temp_var_count++);
@@ -1677,14 +1666,14 @@ expr
 		{
 		case IntegerTyID:
 
-			value = cl2llvm_val_create_w_init(LLVMBuildSub(cl2llvm_builder, op1->val, op2->val, temp_var_name), op1->type.getSign());
+			value = cl2llvm_val_create_w_init(LLVMBuildSub(cl2llvm_builder, op1->val, op2->val, temp_var_name), op1.getSign());
 			break;
 
 		case HalfTyID:
 		case FloatTyID:
 		case DoubleTyID:
 
-			value = cl2llvm_val_create_w_init(LLVMBuildFSub(cl2llvm_builder, op1->val, op2->val, temp_var_name), op1->type.getSign());
+			value = cl2llvm_val_create_w_init(LLVMBuildFSub(cl2llvm_builder, op1->val, op2->val, temp_var_name), op1.getSign());
 			break;
 
 		default:
@@ -1719,19 +1708,19 @@ expr
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		if (op1->type.getType().getTypeID() == VectorTyID)
+		if (op1.getLlvmType().getTypeID() == VectorTyID)
 		{
-			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(op1->type.getType()), op1->type.getSign());
+			switch_type.setType(op1.getLlvmType().getElementType(), op1.getSign());
 		}
 		else 
-			switch_type = cl2llvmTypeWrapCreate(op1->type.getType(), op1->type.getSign());
+			switch_type.setType(op1.getLlvmType(), op1.getSign());
 
 		switch (switch_type.getType().getTypeID())
 		{
 		case IntegerTyID:
 
 			value = cl2llvm_val_create_w_init(LLVMBuildMul(cl2llvm_builder, op1->val,
-				op2->val, temp_var_name), op1->type.getSign());
+				op2->val, temp_var_name), op1.getSign());
 			break;
 
 		case HalfTyID:
@@ -1739,7 +1728,7 @@ expr
 		case DoubleTyID:
 
 			value = cl2llvm_val_create_w_init(LLVMBuildFMul(cl2llvm_builder, op1->val,
-				op2->val, temp_var_name), op1->type.getSign());
+				op2->val, temp_var_name), op1.getSign());
 			break;
 
 		default:
@@ -1775,12 +1764,12 @@ expr
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		if (op1->type.getType().getTypeID() == VectorTyID)
+		if (op1.getLlvmType().getTypeID() == VectorTyID)
 		{
-			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(op1->type.getType()), op1->type.getSign());
+			switch_type.setType(op1.getLlvmType().getElementType(), op1.getSign());
 		}
 		else
-			switch_type = cl2llvmTypeWrapCreate(op1->type.getType(), op1->type.getSign());
+			switch_type.setType(op1.getLlvmType(), op1.getSign());
 
 		switch (switch_type.getType().getTypeID())
 		{
@@ -1788,12 +1777,12 @@ expr
 			if (switch_type.getSign())
 			{
 				value = cl2llvm_val_create_w_init(LLVMBuildSDiv(cl2llvm_builder, 
-					op1->val, op2->val, temp_var_name), op1->type.getSign());
+					op1->val, op2->val, temp_var_name), op1.getSign());
 			}
 			else
 			{
 				value = cl2llvm_val_create_w_init(LLVMBuildUDiv(cl2llvm_builder, 
-					op1->val, op2->val, temp_var_name), op1->type.getSign());
+					op1->val, op2->val, temp_var_name), op1.getSign());
 			}
 			break;
 
@@ -1801,7 +1790,7 @@ expr
 		case FloatTyID:
 		case DoubleTyID:
 			value = cl2llvm_val_create_w_init(LLVMBuildFDiv(cl2llvm_builder, 
-					op1->val, op2->val, temp_var_name), op1->type.getSign());
+					op1->val, op2->val, temp_var_name), op1.getSign());
 			break;
 
 		default:
@@ -1831,16 +1820,16 @@ expr
 		
 		type_unify($1, $3, &op1, & op2);
 
-		switch (op1->type.getSign())
+		switch (op1.getSign())
 		{
 		case 1:
 			value = cl2llvm_val_create_w_init(LLVMBuildSRem(cl2llvm_builder, 
-				op1->val, op2->val, temp_var_name), op1->type.getSign());
+				op1->val, op2->val, temp_var_name), op1.getSign());
 			break;
 
 		case 0:
 			value = cl2llvm_val_create_w_init(LLVMBuildURem(cl2llvm_builder, 
-				op1->val, op2->val, temp_var_name), op1->type.getSign());
+				op1->val, op2->val, temp_var_name), op1.getSign());
 			break;
 
 		default:
@@ -1875,16 +1864,16 @@ expr
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		if (op1->type.getType().getTypeID() == VectorTyID)
+		if (op1.getLlvmType().getTypeID() == VectorTyID)
 		{
-			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(op1->type.getType()), op1->type.getSign());
+			switch_type.setType(op1.getLlvmType().getElementType(), op1.getSign());
 		}
 
 		switch (switch_type.getType().getTypeID())
 		{
 		case IntegerTyID:
 			value = cl2llvm_val_create_w_init(LLVMBuildShl(cl2llvm_builder, 
-				op1->val, op2->val, temp_var_name), op1->type.getSign());
+				op1->val, op2->val, temp_var_name), op1.getSign());
 			break;
 
 
@@ -1921,18 +1910,18 @@ expr
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		if (op1->type.getType().getTypeID() == VectorTyID)
+		if (op1.getLlvmType().getTypeID() == VectorTyID)
 		{
-			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(op1->type.getType()), op1->type.getSign());
+			switch_type.setType(op1.getLlvmType().getElementType(), op1.getSign());
 		}
 		else
-			switch_type = cl2llvmTypeWrapCreate(op1->type.getType(), op1->type.getSign());
+			switch_type.setType(op1.getLlvmType(), op1.getSign());
 		
 		switch (switch_type.getType().getTypeID())
 		{
 		case IntegerTyID:
 			value = cl2llvm_val_create_w_init(LLVMBuildAShr(cl2llvm_builder, 
-				op1->val, op2->val, temp_var_name), op1->type.getSign());
+				op1->val, op2->val, temp_var_name), op1.getSign());
 			break;
 		default:
 			
@@ -1964,22 +1953,22 @@ expr
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		if (op1->type.getType().getTypeID() == VectorTyID)
+		if (op1.getLlvmType().getTypeID() == VectorTyID)
 		{
-			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(op1->type.getType()), op1->type.getSign());
+			switch_type.setType(op1.getLlvmType().getElementType(), op1.getSign());
 		}
 		else
-			switch_type = cl2llvmTypeWrapCreate(op1->type.getType(), op1->type.getSign());
+			switch_type.setType(op1.getLlvmType(), op1.getSign());
 		
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp_%d", temp_var_count++);
 		
-		switch (op1->type.getType().getTypeID())
+		switch (op1.getLlvmType().getTypeID())
 		{
 		case IntegerTyID:
 
 			bool_val = cl2llvm_val_create_w_init(LLVMBuildICmp(cl2llvm_builder, LLVMIntEQ,
-				op1->val, op2->val, temp_var_name), op1->type.getSign());
+				op1->val, op2->val, temp_var_name), op1.getSign());
 			break;
 
 		case HalfTyID:
@@ -1987,7 +1976,7 @@ expr
 		case DoubleTyID:
 
 			bool_val = cl2llvm_val_create_w_init(LLVMBuildFCmp(cl2llvm_builder,
-				LLVMRealOEQ, op1->val, op2->val, temp_var_name), op1->type.getSign());
+				LLVMRealOEQ, op1->val, op2->val, temp_var_name), op1.getSign());
 			break;
 
 		default:
@@ -2025,22 +2014,22 @@ expr
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		if (op1->type.getType().getTypeID() == VectorTyID)
+		if (op1.getLlvmType().getTypeID() == VectorTyID)
 		{
-			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(op1->type.getType()), op1->type.getSign());
+			switch_type.setType(op1.getLlvmType().getElementType(), op1.getSign());
 		}
 		else
-			switch_type = cl2llvmTypeWrapCreate(op1->type.getType(), op1->type.getSign());
+			switch_type.setType(op1.getLlvmType(), op1.getSign());
 		
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp_%d", temp_var_count++);
 
-		switch (op1->type.getType().getTypeID())
+		switch (op1.getLlvmType().getTypeID())
 		{
 		case IntegerTyID:
 
 			bool_val = cl2llvm_val_create_w_init(LLVMBuildICmp(cl2llvm_builder, LLVMIntNE,
-				op1->val, op2->val, temp_var_name), op1->type.getSign());
+				op1->val, op2->val, temp_var_name), op1.getSign());
 			break;
 
 		case HalfTyID:
@@ -2048,7 +2037,7 @@ expr
 		case DoubleTyID:
 
 			bool_val = cl2llvm_val_create_w_init(LLVMBuildFCmp(cl2llvm_builder, 
-				LLVMRealONE, op1->val, op2->val, temp_var_name), op1->type.getSign());
+				LLVMRealONE, op1->val, op2->val, temp_var_name), op1.getSign());
 			break;
 
 		default:
@@ -2086,12 +2075,12 @@ expr
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		if (op1->type.getType().getTypeID() == VectorTyID)
+		if (op1.getLlvmType().getTypeID() == VectorTyID)
 		{
-			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(op1->type.getType()), op1->type.getSign());
+			switch_type.setType(op1.getLlvmType().getElementType(), op1.getSign());
 		}
 		else
-			switch_type = cl2llvmTypeWrapCreate(op1->type.getType(), op1->type.getSign());
+			switch_type.setType(op1.getLlvmType(), op1.getSign());
 		
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp_%d", temp_var_count++);
@@ -2100,7 +2089,7 @@ expr
 		{
 		case IntegerTyID:
 
-			if (op1->type.getSign())
+			if (op1.getSign())
 			{
 				bool_val = cl2llvm_val_create_w_init(LLVMBuildICmp(cl2llvm_builder, 
 					LLVMIntSLT, op1->val, op2->val, 
@@ -2157,12 +2146,12 @@ expr
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		if (op1->type.getType().getTypeID() == VectorTyID)
+		if (op1.getLlvmType().getTypeID() == VectorTyID)
 		{
-			cl2llvmTypeWrapSetLlvmType(switch_type, LLVMGetElementType(op1->type.getType()));
+			cl2llvmTypeWrapSetLlvmType(switch_type, op1.getLlvmType().getElementType());
 		}
 		else
-			switch_type = cl2llvmTypeWrapCreate(op1->type.getType(), op1->type.getSign());
+			switch_type.setType(op1.getLlvmType(), op1.getSign());
 	
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp_%d", temp_var_count++);
@@ -2171,7 +2160,7 @@ expr
 		{
 		case IntegerTyID:
 
-			if (op1->type.getSign())
+			if (op1.getSign())
 			{
 				bool_val = cl2llvm_val_create_w_init(LLVMBuildICmp(cl2llvm_builder, 
 					LLVMIntSGT, op1->val, op2->val, 
@@ -2227,12 +2216,12 @@ expr
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		if (op1->type.getType().getTypeID() == VectorTyID)
+		if (op1.getLlvmType().getTypeID() == VectorTyID)
 		{
-			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(op1->type.getType()), op1->type.getSign());
+			switch_type.setType(op1.getLlvmType().getElementType(), op1.getSign());
 		}
 		else
-			switch_type = cl2llvmTypeWrapCreate(op1->type.getType(), op1->type.getSign());
+			switch_type.setType(op1.getLlvmType(), op1.getSign());
 		
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp_%d", temp_var_count++);
@@ -2241,7 +2230,7 @@ expr
 		{
 		case IntegerTyID:
 
-			if (op1->type.getSign())
+			if (op1.getSign())
 			{
 				bool_val = cl2llvm_val_create_w_init(LLVMBuildICmp(cl2llvm_builder, 
 					LLVMIntSLE, op1->val, op2->val, 
@@ -2297,12 +2286,12 @@ expr
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		if (op1->type.getType().getTypeID() == VectorTyID)
+		if (op1.getLlvmType().getTypeID() == VectorTyID)
 		{
-			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(op1->type.getType()), op1->type.getSign());
+			switch_type.setType(op1.getLlvmType().getElementType(), op1.getSign());
 		}
 		else
-			switch_type = cl2llvmTypeWrapCreate(op1->type.getType(), op1->type.getSign());
+			switch_type.setType(op1.getLlvmType(), op1.getSign());
 
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp_%d", temp_var_count++);
@@ -2311,7 +2300,7 @@ expr
 		{
 		case IntegerTyID:
 
-			if (op1->type.getSign())
+			if (op1.getSign())
 			{
 				bool_val = cl2llvm_val_create_w_init(LLVMBuildICmp(cl2llvm_builder, 
 					LLVMIntSGE, op1->val, op2->val, 
@@ -2364,8 +2353,8 @@ expr
 		Value op1, *op2;
 		
 		/* If one value is a vector */
-		if ($1->type.getType().getTypeID() == VectorTyID
-			|| $3->type.getType().getTypeID() == VectorTyID)
+		if ($1.getLlvmType().getTypeID() == VectorTyID
+			|| $3.getLlvmType().getTypeID() == VectorTyID)
 		{
 			type_unify($1, $3, &op1, &op2);
 			
@@ -2407,19 +2396,19 @@ expr
 			LLVMBuildCondBr(cl2llvm_builder, bool1->val, land_rhs, land_end);
 		
 			/* Move builder to RHS block */
-			LLVMPositionBuilderAtEnd(cl2llvm_builder, land_rhs);
+			cl2llvm_builder.setInsertPoint( land_rhs);
 
 			/* Convert RHS to Bool */
 			bool2 = cl2llvm_to_bool_ne_0($3);
 
 			/* Build branch to end block */
 			LLVMBuildBr(cl2llvm_builder, land_end);
-			LLVMPositionBuilderAtEnd(cl2llvm_builder, land_end);
+			cl2llvm_builder.setInsertPoint( land_end);
 
 			/* Position builder at end block */
 		
 			/* Build Phi node */
-			LLVMValueRef phi_vals[] = {LLVMConstInt(
+			llvm::Value phi_vals[] = {LLVMConstInt(
 				LLVMInt1Type(), 0, 0), bool2->val};
 			LLVMBasicBlockRef phi_blocks[] = 
 				{current_basic_block, land_rhs};
@@ -2457,8 +2446,8 @@ expr
 
 		
 		/* If one value is a vector */
-		if ($1->type.getType().getTypeID() == VectorTyID
-			|| $3->type.getType().getTypeID() == VectorTyID)
+		if ($1.getLlvmType().getTypeID() == VectorTyID
+			|| $3.getLlvmType().getTypeID() == VectorTyID)
 		{
 			type_unify($1, $3, &op1, &op2);
 			
@@ -2498,7 +2487,7 @@ expr
 			LLVMBuildCondBr(cl2llvm_builder, bool1->val, land_end, land_rhs);
 		
 			/* Move builder to RHS block */
-			LLVMPositionBuilderAtEnd(cl2llvm_builder, land_rhs);
+			cl2llvm_builder.setInsertPoint( land_rhs);
 
 			/* Convert RHS to Bool */
 			bool2 = cl2llvm_to_bool_ne_0($3);
@@ -2507,10 +2496,10 @@ expr
 			LLVMBuildBr(cl2llvm_builder, land_end);
 	
 			/* Position builder at end block */
-			LLVMPositionBuilderAtEnd(cl2llvm_builder, land_end);
+			cl2llvm_builder.setInsertPoint( land_end);
 		
 			/* Build Phi node */
-			LLVMValueRef phi_vals[] = {LLVMConstInt(LLVMInt1Type(), 1, 0), bool2->val};
+			llvm::Value phi_vals[] = {LLVMConstInt(LLVMInt1Type(), 1, 0), bool2->val};
 			LLVMBasicBlockRef phi_blocks[] = {current_basic_block, land_rhs};
 			land_cond = cl2llvm_val_create_w_init(LLVMBuildPhi(
 				cl2llvm_builder, LLVMInt1Type(), "land_cond"), 0);
@@ -2535,7 +2524,7 @@ expr
 		Value value;
 		Type type; 
 		
-		type = cl2llvmTypeWrapCreate(LLVMGetElementType($1->type.getType()) , $1->type.getSign());
+		type.setType($1.getLlvmType().getElementType() , $1.getSign());
 
 		/* If lvalue is a component referenced vector. */
 		if ($1->vector_indices[0])
@@ -2568,8 +2557,8 @@ expr
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp_%d", temp_var_count++);
 		lval = cl2llvm_val_create_w_init(
-			LLVMBuildLoad(cl2llvm_builder, $1->val, temp_var_name),
-			$1->type.getSign());
+			cl2llvm_builder.CreateLoad($1->val, temp_var_name),
+			$1.getSign());
 
 		/* Find out which value differs from the original and set the
 		   dominant type equal to the type of that value. */
@@ -2579,12 +2568,12 @@ expr
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		if (op1->type.getType().getTypeID() == VectorTyID)
+		if (op1.getLlvmType().getTypeID() == VectorTyID)
 		{
-			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(op1->type.getType()), op1->type.getSign());
+			switch_type.setType(op1.getLlvmType().getElementType(), op1.getSign());
 		}
 		else
-			switch_type = cl2llvmTypeWrapCreate(op1->type.getType(), op1->type.getSign());
+			switch_type.setType(op1.getLlvmType(), op1.getSign());
 
 		snprintf(temp_var_name, sizeof temp_var_name,
 				"tmp_%d", temp_var_count++);
@@ -2595,14 +2584,14 @@ expr
 		{
 		case IntegerTyID:
 
-			rval = cl2llvm_val_create_w_init(LLVMBuildAdd(cl2llvm_builder, op1->val, op2->val, temp_var_name), op1->type.getSign());
+			rval = cl2llvm_val_create_w_init(LLVMBuildAdd(cl2llvm_builder, op1->val, op2->val, temp_var_name), op1.getSign());
 			break;
 
 		case HalfTyID:
 		case FloatTyID:
 		case DoubleTyID:
 
-			rval = cl2llvm_val_create_w_init(LLVMBuildFAdd(cl2llvm_builder, op1->val, op2->val, temp_var_name), op1->type.getSign());
+			rval = cl2llvm_val_create_w_init(LLVMBuildFAdd(cl2llvm_builder, op1->val, op2->val, temp_var_name), op1.getSign());
 			break;
 
 		default:
@@ -2641,8 +2630,8 @@ expr
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp_%d", temp_var_count++);
 		lval = cl2llvm_val_create_w_init(
-			LLVMBuildLoad(cl2llvm_builder, $1->val, temp_var_name),
-			$1->type.getSign());
+			cl2llvm_builder.CreateLoad($1->val, temp_var_name),
+			$1.getSign());
 
 		/* Find out which value differs from the original and set the
 		   dominant type equal to the type of that value. */
@@ -2652,12 +2641,12 @@ expr
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		if (op1->type.getType().getTypeID() == VectorTyID)
+		if (op1.getLlvmType().getTypeID() == VectorTyID)
 		{
-			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(op1->type.getType()), op1->type.getSign());
+			switch_type.setType(op1.getLlvmType().getElementType(), op1.getSign());
 		}
 		else
-			switch_type = cl2llvmTypeWrapCreate(op1->type.getType(), op1->type.getSign());
+			switch_type.setType(op1.getLlvmType(), op1.getSign());
 
 		snprintf(temp_var_name, sizeof temp_var_name,
 				"tmp_%d", temp_var_count++);
@@ -2667,14 +2656,14 @@ expr
 		{
 		case IntegerTyID:
 
-			rval = cl2llvm_val_create_w_init(LLVMBuildSub(cl2llvm_builder, op1->val, op2->val, temp_var_name), op1->type.getSign());
+			rval = cl2llvm_val_create_w_init(LLVMBuildSub(cl2llvm_builder, op1->val, op2->val, temp_var_name), op1.getSign());
 			break;
 
 		case HalfTyID:
 		case FloatTyID:
 		case DoubleTyID:
 
-			rval = cl2llvm_val_create_w_init(LLVMBuildFSub(cl2llvm_builder, op1->val, op2->val, temp_var_name), op1->type.getSign());
+			rval = cl2llvm_val_create_w_init(LLVMBuildFSub(cl2llvm_builder, op1->val, op2->val, temp_var_name), op1.getSign());
 			break;
 
 		default:
@@ -2713,8 +2702,8 @@ expr
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp_%d", temp_var_count++);
 		lval = cl2llvm_val_create_w_init(
-			LLVMBuildLoad(cl2llvm_builder, $1->val, temp_var_name),
-			$1->type.getSign());
+			cl2llvm_builder.CreateLoad($1->val, temp_var_name),
+			$1.getSign());
 
 		/* Find out which value differs from the original and set the
 		   dominant type equal to the type of that value. */
@@ -2724,12 +2713,12 @@ expr
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		if (op1->type.getType().getTypeID() == VectorTyID)
+		if (op1.getLlvmType().getTypeID() == VectorTyID)
 		{
-			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(op1->type.getType()), op1->type.getSign());
+			switch_type.setType(op1.getLlvmType().getElementType(), op1.getSign());
 		}
 		else
-			switch_type = cl2llvmTypeWrapCreate(op1->type.getType(), op1->type.getSign());
+			switch_type.setType(op1.getLlvmType(), op1.getSign());
 
 		snprintf(temp_var_name, sizeof temp_var_name,
 				"tmp_%d", temp_var_count++);
@@ -2737,15 +2726,15 @@ expr
 		switch (switch_type.getType().getTypeID())
 		{
 		case IntegerTyID:
-			if (op1->type.getSign())
+			if (op1.getSign())
 			{
 				rval = cl2llvm_val_create_w_init(LLVMBuildSDiv(cl2llvm_builder, 
-					op1->val, op2->val, temp_var_name), op1->type.getSign());
+					op1->val, op2->val, temp_var_name), op1.getSign());
 			}
 			else
 			{
 				rval = cl2llvm_val_create_w_init(LLVMBuildUDiv(cl2llvm_builder, 
-					op1->val, op2->val, temp_var_name), op1->type.getSign());
+					op1->val, op2->val, temp_var_name), op1.getSign());
 			}
 			break;
 
@@ -2753,7 +2742,7 @@ expr
 		case FloatTyID:
 		case DoubleTyID:
 			rval = cl2llvm_val_create_w_init(LLVMBuildFDiv(cl2llvm_builder, 
-					op1->val, op2->val, temp_var_name), op1->type.getSign());
+					op1->val, op2->val, temp_var_name), op1.getSign());
 			break;
 
 		default:
@@ -2791,8 +2780,8 @@ expr
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp_%d", temp_var_count++);
 		lval = cl2llvm_val_create_w_init(
-			LLVMBuildLoad(cl2llvm_builder, $1->val, temp_var_name),
-			$1->type.getSign());
+			cl2llvm_builder.CreateLoad($1->val, temp_var_name),
+			$1.getSign());
 
 		/* Find out which value differs from the original and set the
 		   dominant type equal to the type of that value. */
@@ -2802,12 +2791,12 @@ expr
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		if (op1->type.getType().getTypeID() == VectorTyID)
+		if (op1.getLlvmType().getTypeID() == VectorTyID)
 		{
-			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(op1->type.getType()), op1->type.getSign());
+			switch_type.setType(op1.getLlvmType().getElementType(), op1.getSign());
 		}
 		else
-			switch_type = cl2llvmTypeWrapCreate(op1->type.getType(), op1->type.getSign());
+			switch_type.setType(op1.getLlvmType(), op1.getSign());
 
 		snprintf(temp_var_name, sizeof temp_var_name,
 				"tmp_%d", temp_var_count++);
@@ -2816,14 +2805,14 @@ expr
 		{
 		case IntegerTyID:
 			rval = cl2llvm_val_create_w_init(LLVMBuildMul(cl2llvm_builder, 
-				op1->val, op2->val, temp_var_name), op1->type.getSign());
+				op1->val, op2->val, temp_var_name), op1.getSign());
 			break;
 
 		case HalfTyID:
 		case FloatTyID:
 		case DoubleTyID:
 			rval = cl2llvm_val_create_w_init(LLVMBuildFMul(cl2llvm_builder, 
-					op1->val, op2->val, temp_var_name), op1->type.getSign());
+					op1->val, op2->val, temp_var_name), op1.getSign());
 			break;
 
 		default:
@@ -2866,8 +2855,8 @@ expr
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp_%d", temp_var_count++);
 		lval = cl2llvm_val_create_w_init(
-			LLVMBuildLoad(cl2llvm_builder, $1->val, temp_var_name),
-			$1->type.getSign());
+			cl2llvm_builder.CreateLoad($1->val, temp_var_name),
+			$1.getSign());
 
 		/* Find out which value differs from the original and set the
 		   dominant type equal to the type of that value. */
@@ -2877,12 +2866,12 @@ expr
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		if (op1->type.getType().getTypeID() == VectorTyID)
+		if (op1.getLlvmType().getTypeID() == VectorTyID)
 		{
-			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(op1->type.getType()), op1->type.getSign());
+			switch_type.setType(op1.getLlvmType().getElementType(), op1.getSign());
 		}
 		else
-			switch_type = cl2llvmTypeWrapCreate(op1->type.getType(), op1->type.getSign());
+			switch_type.setType(op1.getLlvmType(), op1.getSign());
 
 		snprintf(temp_var_name, sizeof temp_var_name,
 				"tmp_%d", temp_var_count++);
@@ -2891,15 +2880,15 @@ expr
 		{
 		case IntegerTyID:
 
-			if (op1->type.getSign())
+			if (op1.getSign())
 			{
 				rval = cl2llvm_val_create_w_init(LLVMBuildSRem(cl2llvm_builder, 
-					op1->val, op2->val, temp_var_name), op1->type.getSign());
+					op1->val, op2->val, temp_var_name), op1.getSign());
 			}
 			else
 			{
 				rval = cl2llvm_val_create_w_init(LLVMBuildURem(cl2llvm_builder, 
-					op1->val, op2->val, temp_var_name), op1->type.getSign());
+					op1->val, op2->val, temp_var_name), op1.getSign());
 			}
 			break;
 		
@@ -2938,8 +2927,8 @@ expr
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp_%d", temp_var_count++);
 		lval = cl2llvm_val_create_w_init(
-			LLVMBuildLoad(cl2llvm_builder, $1->val, temp_var_name),
-			$1->type.getSign());
+			cl2llvm_builder.CreateLoad($1->val, temp_var_name),
+			$1.getSign());
  
 		/* Find out which value differs from the original and set the
 		   dominant type equal to the type of that value. */
@@ -2949,12 +2938,12 @@ expr
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		if (op1->type.getType().getTypeID() == VectorTyID)
+		if (op1.getLlvmType().getTypeID() == VectorTyID)
 		{
-			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(op1->type.getType()), op1->type.getSign());;
+			switch_type.setType(op1.getLlvmType().getElementType(), op1.getSign());;
 		}
 		else
-			switch_type = cl2llvmTypeWrapCreate(op1->type.getType(), op1->type.getSign());
+			switch_type.setType(op1.getLlvmType(), op1.getSign());
 
 		snprintf(temp_var_name, sizeof temp_var_name,
 				"tmp_%d", temp_var_count++);
@@ -2965,7 +2954,7 @@ expr
 		{
 		case IntegerTyID:
 
-			rval = cl2llvm_val_create_w_init(LLVMBuildAnd(cl2llvm_builder, op1->val, op2->val, temp_var_name), op1->type.getSign());
+			rval = cl2llvm_val_create_w_init(LLVMBuildAnd(cl2llvm_builder, op1->val, op2->val, temp_var_name), op1.getSign());
 			break;
 
 
@@ -3005,8 +2994,8 @@ expr
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp_%d", temp_var_count++);
 		lval = cl2llvm_val_create_w_init(
-			LLVMBuildLoad(cl2llvm_builder, $1->val, temp_var_name),
-			$1->type.getSign());
+			cl2llvm_builder.CreateLoad($1->val, temp_var_name),
+			$1.getSign());
  
 		/* Find out which value differs from the original and set the
 		   dominant type equal to the type of that value. */
@@ -3016,12 +3005,12 @@ expr
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		if (op1->type.getType().getTypeID()  == VectorTyID)
+		if (op1.getLlvmType().getTypeID()  == VectorTyID)
 		{
-			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(op1->type.getType()), op1->type.getSign());
+			switch_type.setType(op1.getLlvmType().getElementType(), op1.getSign());
 		}
 		else
-			switch_type = cl2llvmTypeWrapCreate(op1->type.getType(), op1->type.getSign());
+			switch_type.setType(op1.getLlvmType(), op1.getSign());
 
 		snprintf(temp_var_name, sizeof temp_var_name,
 				"tmp_%d", temp_var_count++);
@@ -3032,7 +3021,7 @@ expr
 		{
 		case IntegerTyID:
 
-			rval = cl2llvm_val_create_w_init(LLVMBuildOr(cl2llvm_builder, op1->val, op2->val, temp_var_name), op1->type.getSign());
+			rval = cl2llvm_val_create_w_init(LLVMBuildOr(cl2llvm_builder, op1->val, op2->val, temp_var_name), op1.getSign());
 			break;
 
 
@@ -3072,8 +3061,8 @@ expr
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp_%d", temp_var_count++);
 		lval = cl2llvm_val_create_w_init(
-			LLVMBuildLoad(cl2llvm_builder, $1->val, temp_var_name),
-			$1->type.getSign());
+			cl2llvm_builder.CreateLoad($1->val, temp_var_name),
+			$1.getSign());
  
 		/* Find out which value differs from the original and set the
 		   dominant type equal to the type of that value. */
@@ -3083,12 +3072,12 @@ expr
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		if (op1->type.getType().getTypeID()  == VectorTyID)
+		if (op1.getLlvmType().getTypeID()  == VectorTyID)
 		{
-			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(op1->type.getType()), op1->type.getSign());
+			switch_type.setType(op1.getLlvmType().getElementType(), op1.getSign());
 		}
 		else
-		switch_type = cl2llvmTypeWrapCreate(op1->type.getType(), op1->type.getSign());
+		switch_type.setType(op1.getLlvmType(), op1.getSign());
 
 		snprintf(temp_var_name, sizeof temp_var_name,
 				"tmp_%d", temp_var_count++);
@@ -3099,7 +3088,7 @@ expr
 		{
 		case IntegerTyID:
 
-			rval = cl2llvm_val_create_w_init(LLVMBuildXor(cl2llvm_builder, op1->val, op2->val, temp_var_name), op1->type.getSign());
+			rval = cl2llvm_val_create_w_init(LLVMBuildXor(cl2llvm_builder, op1->val, op2->val, temp_var_name), op1.getSign());
 			break;
 
 
@@ -3139,8 +3128,8 @@ expr
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp_%d", temp_var_count++);
 		lval = cl2llvm_val_create_w_init(
-			LLVMBuildLoad(cl2llvm_builder, $1->val, temp_var_name),
-			$1->type.getSign());
+			cl2llvm_builder.CreateLoad($1->val, temp_var_name),
+			$1.getSign());
  
 		/* Find out which value differs from the original and set the
 		   dominant type equal to the type of that value. */
@@ -3150,12 +3139,12 @@ expr
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		if (op1->type.getType().getTypeID()  == VectorTyID)
+		if (op1.getLlvmType().getTypeID()  == VectorTyID)
 		{
-			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(op1->type.getType()), op1->type.getSign());
+			switch_type.setType(op1.getLlvmType().getElementType(), op1.getSign());
 		}
 		else
-			switch_type = cl2llvmTypeWrapCreate(op1->type.getType(), op1->type.getSign());
+			switch_type.setType(op1.getLlvmType(), op1.getSign());
 
 		snprintf(temp_var_name, sizeof temp_var_name,
 				"tmp_%d", temp_var_count++);
@@ -3166,7 +3155,7 @@ expr
 		{
 		case IntegerTyID:
 
-			rval = cl2llvm_val_create_w_init(LLVMBuildAShr(cl2llvm_builder, op1->val, op2->val, temp_var_name), op1->type.getSign());
+			rval = cl2llvm_val_create_w_init(LLVMBuildAShr(cl2llvm_builder, op1->val, op2->val, temp_var_name), op1.getSign());
 			break;
 
 
@@ -3207,8 +3196,8 @@ expr
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp_%d", temp_var_count++);
 		lval = cl2llvm_val_create_w_init(
-			LLVMBuildLoad(cl2llvm_builder, $1->val, temp_var_name),
-			$1->type.getSign());
+			cl2llvm_builder.CreateLoad($1->val, temp_var_name),
+			$1.getSign());
  
 		/* Find out which value differs from the original and set the
 		   dominant type equal to the type of that value. */
@@ -3218,12 +3207,12 @@ expr
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		if (op1->type.getType().getTypeID()  == VectorTyID)
+		if (op1.getLlvmType().getTypeID()  == VectorTyID)
 		{
-			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(op1->type.getType()), op1->type.getSign());
+			switch_type.setType(op1.getLlvmType().getElementType(), op1.getSign());
 		}
 		else
-			switch_type = cl2llvmTypeWrapCreate(op1->type.getType(), op1->type.getSign());
+			switch_type.setType(op1.getLlvmType(), op1.getSign());
 
 		snprintf(temp_var_name, sizeof temp_var_name,
 				"tmp_%d", temp_var_count++);
@@ -3234,7 +3223,7 @@ expr
 		{
 		case IntegerTyID:
 
-			rval = cl2llvm_val_create_w_init(LLVMBuildShl(cl2llvm_builder, op1->val, op2->val, temp_var_name), op1->type.getSign());
+			rval = cl2llvm_val_create_w_init(LLVMBuildShl(cl2llvm_builder, op1->val, op2->val, temp_var_name), op1.getSign());
 			break;
 
 
@@ -3309,18 +3298,18 @@ expr
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		if (op1->type.getType().getTypeID()  == VectorTyID)
+		if (op1.getLlvmType().getTypeID()  == VectorTyID)
 		{
-			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(op1->type.getType()), op1->type.getSign());
+			switch_type.setType(op1.getLlvmType().getElementType(), op1.getSign());
 		}
 		else
-			switch_type = cl2llvmTypeWrapCreate(op1->type.getType(), op1->type.getSign());
+			switch_type.setType(op1.getLlvmType(), op1.getSign());
 
 		switch (switch_type.getType().getTypeID())
 		{
 		case IntegerTyID:
 			value = cl2llvm_val_create_w_init(LLVMBuildAnd(cl2llvm_builder, 
-				op1->val, op2->val, temp_var_name), op1->type.getSign());
+				op1->val, op2->val, temp_var_name), op1.getSign());
 			break;
 
 
@@ -3357,18 +3346,18 @@ expr
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		if (op1->type.getType().getTypeID()  == VectorTyID)
+		if (op1.getLlvmType().getTypeID()  == VectorTyID)
 		{
-			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(op1->type.getType()), op1->type.getSign());
+			switch_type.setType(op1.getLlvmType().getElementType(), op1.getSign());
 		}
 		else
-			switch_type = cl2llvmTypeWrapCreate(op1->type.getType(), op1->type.getSign());
+			switch_type.setType(op1.getLlvmType(), op1.getSign());
 
 		switch (switch_type.getType().getTypeID())
 		{
 		case IntegerTyID:
 			value = cl2llvm_val_create_w_init(LLVMBuildOr(cl2llvm_builder, 
-				op1->val, op2->val, temp_var_name), op1->type.getSign());
+				op1->val, op2->val, temp_var_name), op1.getSign());
 			break;
 
 
@@ -3406,18 +3395,18 @@ expr
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		if (op1->type.getType().getTypeID()  == VectorTyID)
+		if (op1.getLlvmType().getTypeID()  == VectorTyID)
 		{
-			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(op1->type.getType()), op1->type.getSign());
+			switch_type.setType(op1.getLlvmType().getElementType(), op1.getSign());
 		}
 		else
-			switch_type = cl2llvmTypeWrapCreate(op1->type.getType(), op1->type.getSign());
+			switch_type.setType(op1.getLlvmType(), op1.getSign());
 
 		switch (switch_type.getType().getTypeID())
 		{
 		case IntegerTyID:
 			value = cl2llvm_val_create_w_init(LLVMBuildXor(cl2llvm_builder, 
-				op1->val, op2->val, temp_var_name), op1->type.getSign());
+				op1->val, op2->val, temp_var_name), op1.getSign());
 			break;
 
 
@@ -3452,14 +3441,13 @@ unary_expr
 		/* Create constant one to add to variable */
 		one = cl2llvm_val_create_w_init(LLVMConstInt(LLVMInt32Type(), 1, 0), 1);
 
-		type = cl2llvmTypeWrapCreate(LLVMGetElementType(
-			$1->type.getType()), $1->type.getSign());
+		type.setType($1.getLlvmType().getElementType(), $1.getSign());
 
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp_%d", temp_var_count++);
 		Value lval = cl2llvm_val_create_w_init(
-			LLVMBuildLoad(cl2llvm_builder, $1->val, temp_var_name),
-			$1->type.getSign());
+			cl2llvm_builder.CreateLoad($1->val, temp_var_name),
+			$1.getSign());
 
 		/* Cast constant one to type of variable */
 		Value cast_one = llvm_type_cast(one, type);
@@ -3473,10 +3461,10 @@ unary_expr
 		   resultant type of the operation is a vector. */
 		if (switch_type.getType().getTypeID() == VectorTyID)
 		{
-			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(type.getType()), type.getSign());
+			switch_type.setType(type.getType().getElementType(), type.getSign());
 		}
 		else
-			switch_type = cl2llvmTypeWrapCreate(type.getType(), type.getSign());
+			switch_type.setType(type.getType(), type.getSign());
 
 		switch (switch_type.getType().getTypeID())
 		{
@@ -3523,14 +3511,13 @@ unary_expr
 		/* Create constant one to add to variable */
 		one = cl2llvm_val_create_w_init(LLVMConstInt(LLVMInt32Type(), 1, 0), 1);
 
-		type = cl2llvmTypeWrapCreate(LLVMGetElementType(
-			$2->type.getType()), $2->type.getSign());
+		type.setType($2.getLlvmType().getElementType(), $2.getSign());
 
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp_%d", temp_var_count++);
 		Value lval = cl2llvm_val_create_w_init(
-			LLVMBuildLoad(cl2llvm_builder, $2->val, temp_var_name),
-			$2->type.getSign());
+			cl2llvm_builder.CreateLoad($2->val, temp_var_name),
+			$2.getSign());
 
 		/* Cast constant one to type of variable */
 		Value cast_one = llvm_type_cast(one, type);
@@ -3544,10 +3531,10 @@ unary_expr
 		   resultant type of the operation is a vector. */
 		if (switch_type.getType().getTypeID() == VectorTyID)
 		{
-			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(type.getType()), type.getSign());
+			switch_type.setType(type.getType().getElementType(), type.getSign());
 		}
 		else
-			switch_type = cl2llvmTypeWrapCreate(type.getType(), type.getSign());
+			switch_type.setType(type.getType(), type.getSign());
 
 		switch (switch_type.getType().getTypeID())
 		{
@@ -3593,14 +3580,13 @@ unary_expr
 		/* Create constant one to add to variable */
 		one = cl2llvm_val_create_w_init(LLVMConstInt(LLVMInt32Type(), 1, 0), 1);
 
-		type = cl2llvmTypeWrapCreate(LLVMGetElementType(
-			$2->type.getType()), $2->type.getSign());
+		type.setType($2.getLlvmType().getElementType(), $2.getSign());
 
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp_%d", temp_var_count++);
 		Value lval = cl2llvm_val_create_w_init(
-			LLVMBuildLoad(cl2llvm_builder, $2->val, temp_var_name),
-			$2->type.getSign());
+			cl2llvm_builder.CreateLoad($2->val, temp_var_name),
+			$2.getSign());
 
 		/* Cast constant one to type of variable */
 		Value cast_one = llvm_type_cast(one, type);
@@ -3614,10 +3600,10 @@ unary_expr
 		   resultant type of the operation is a vector. */
 		if (switch_type.getType().getTypeID() == VectorTyID)
 		{
-			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(type.getType()), type.getSign());
+			switch_type.setType(type.getType().getElementType(), type.getSign());
 		}
 		else
-			switch_type = cl2llvmTypeWrapCreate(type.getType(), type.getSign());
+			switch_type.setType(type.getType(), type.getSign());
 
 		switch (switch_type.getType().getTypeID())
 		{
@@ -3664,14 +3650,13 @@ unary_expr
 		/* Create constant one to add to variable */
 		one = cl2llvm_val_create_w_init(LLVMConstInt(LLVMInt32Type(), 1, 0), 1);
 
-		type = cl2llvmTypeWrapCreate(LLVMGetElementType(
-			$1->type.getType()), $1->type.getSign());
+		type.setType($1.getLlvmType().getElementType(), $1.getSign());
 
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp_%d", temp_var_count++);
 		Value lval = cl2llvm_val_create_w_init(
-			LLVMBuildLoad(cl2llvm_builder, $1->val, temp_var_name),
-			$1->type.getSign());
+			cl2llvm_builder.CreateLoad($1->val, temp_var_name),
+			$1.getSign());
 
 		/* Cast constant one to type of variable */
 		Value cast_one = llvm_type_cast(one, type);
@@ -3685,10 +3670,10 @@ unary_expr
 		   resultant type of the operation is a vector. */
 		if (switch_type.getType().getTypeID() == VectorTyID)
 		{
-			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(type.getType()), type.getSign());
+			switch_type.setType(type.getType().getElementType(), type.getSign());
 		}
 		else
-			switch_type = cl2llvmTypeWrapCreate(type.getType(), type.getSign());
+			switch_type.setType(type.getType(), type.getSign());
 
 		switch (switch_type.getType().getTypeID())
 		{
@@ -3737,12 +3722,12 @@ unary_expr
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		if ($2->type.getType().getTypeID() == VectorTyID)
+		if ($2.getLlvmType().getTypeID() == VectorTyID)
 		{
-			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType($2->type.getType()), $2->type.getSign());
+			switch_type.setType($2.getLlvmType().getElementType(), $2.getSign());
 		}
 		else
-			switch_type = cl2llvmTypeWrapCreate($2->type.getType(), $2->type.getSign());
+			switch_type.setType($2.getLlvmType(), $2.getSign());
 
 		switch (switch_type.getType().getTypeID())
 		{
@@ -3750,7 +3735,7 @@ unary_expr
 
 			value = cl2llvm_val_create_w_init(
 				LLVMBuildNeg(cl2llvm_builder, $2->val, 
-				temp_var_name), $2->type.getSign());
+				temp_var_name), $2.getSign());
 			break;
 
 		case HalfTyID:
@@ -3759,7 +3744,7 @@ unary_expr
 
 			value = cl2llvm_val_create_w_init(
 				LLVMBuildFNeg(cl2llvm_builder, $2->val, 
-				temp_var_name), $2->type.getSign());
+				temp_var_name), $2.getSign());
 			break;
 
 		default:
@@ -3811,18 +3796,18 @@ unary_expr
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		if ($2->type.getType().getTypeID() == VectorTyID)
+		if ($2.getLlvmType().getTypeID() == VectorTyID)
 		{
-			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType($2->type.getType()), $2->type.getSign());
+			switch_type.setType($2.getLlvmType().getElementType(), $2.getSign());
 		}
 		else
-			switch_type = cl2llvmTypeWrapCreate($2->type.getType(), $2->type.getSign());
+			switch_type.setType($2.getLlvmType(), $2.getSign());
 
 		switch (switch_type.getType().getTypeID())
 		{
 		case IntegerTyID:
 			value = cl2llvm_val_create_w_init(LLVMBuildXor(cl2llvm_builder, 
-				$2->val, cast_neg_one->val, temp_var_name), $2->type.getSign());
+				$2->val, cast_neg_one->val, temp_var_name), $2.getSign());
 			break;
 
 
@@ -3860,7 +3845,7 @@ vec_literal
 		Value blank_elem = cl2llvm_val_create_w_init( LLVMConstInt(LLVMInt32Type(), 0, 0), 1);
 		Value cast_index;
 		Value cl2llvm_index;
-		LLVMValueRef vec_const_elems[16];
+		llvm::Value vec_const_elems[16];
 		int vec_nonconst_elems[16];
 		int elem_count = 0;
 		int non_const_elem_count = 0;
@@ -3872,12 +3857,11 @@ vec_literal
 		snprintf(temp_var_name, sizeof(temp_var_name),
 			"tmp_%d", temp_var_count++);
 		/* Create type object to represent element type */
-		elem_type = cl2llvmTypeWrapCreate(LLVMGetElementType($2.getType()), $2.getSign());
+		elem_type.setType($2.getType().getElementType(), $2.getSign());
 		/*Go to entry block and declare vector*/
-		LLVMPositionBuilder(cl2llvm_builder, cl2llvm_current_function->entry_block, cl2llvm_current_function->branch_instr);
-		LLVMValueRef vec_addr = LLVMBuildAlloca(cl2llvm_builder, 
-			$2.getType(), temp_var_name);
-		LLVMPositionBuilderAtEnd(cl2llvm_builder, current_basic_block);
+		cl2llvm_builder.setInsertPoint( cl2llvm_current_function->branch_instr);
+		llvm::Value vec_addr = cl2llvm_builder.CreateAlloca($2.getType(), temp_var_name);
+		cl2llvm_builder.setInsertPoint( current_basic_block);
 
 		/*Expand any vectors present in list*/
 		expand_vectors($5);
@@ -3902,14 +3886,14 @@ vec_literal
 				elem_count++;
 				non_const_elem_count++;
 			}
-			if (elem_count > LLVMGetVectorSize($2.getType()))
+			if (elem_count > $2.getType().getNumElements())
 				yyerror("Too many elements in vector literal");
 			cl2llvm_val_free(cast_val);
 		}
-		if (elem_count < LLVMGetVectorSize($2.getType()))
+		if (elem_count < $2.getType().getNumElements())
 			yyerror("Too few elements in vector literal");
 		
-		LLVMValueRef new_vector = LLVMConstVector(vec_const_elems, elem_count);
+		llvm::Value new_vector = LLVMConstVector(vec_const_elems, elem_count);
 
 		/*Store constant vector*/
 		if(non_const_elem_count < elem_count)
@@ -3933,7 +3917,7 @@ vec_literal
 					snprintf(temp_var_name, sizeof(temp_var_name),
 						"tmp_%d", temp_var_count++);
 
-					LLVMValueRef vector_load = LLVMBuildLoad( cl2llvm_builder, vec_addr, temp_var_name);
+					llvm::Value vector_load =  cl2llvm_builder.CreateLoad(vec_addr, temp_var_name);
 
 					snprintf(temp_var_name, sizeof(temp_var_name),
 						"tmp_%d", temp_var_count++);
@@ -4062,26 +4046,26 @@ primary
 	{
 		int i;
 		int component_count = 0;
-		LLVMValueRef new_vector_addr;
-		LLVMValueRef new_vector;
-		LLVMValueRef component;
+		llvm::Value new_vector_addr;
+		llvm::Value new_vector;
+		llvm::Value component;
 		
 		snprintf(temp_var_name, sizeof(temp_var_name),
 			"tmp_%d", temp_var_count++);
 		Value value = cl2llvm_val_create_w_init(
-			LLVMBuildLoad(cl2llvm_builder, $1->val, temp_var_name),
-			$1->type.getSign());
+			cl2llvm_builder.CreateLoad($1->val, temp_var_name),
+			$1.getSign());
 
 		/* If value is an array element, retrieve element type */
-		if (value->type.getType().getTypeID() == ArrayTyID
-			|| value->type.getType().getTypeID() == PointerTyID
-			|| value->type.getType().getTypeID() == StructTyID)
+		if (value.getLlvmType().getTypeID() == ArrayTyID
+			|| value.getLlvmType().getTypeID() == PointerTyID
+			|| value.getLlvmType().getTypeID() == StructTyID)
 		{
-			cl2llvmTypeWrapSetLlvmType(value->type, LLVMGetElementType(value->type.getType()));
+			cl2llvmTypeWrapSetLlvmType(value->type, value.getLlvmType().getElementType());
 		}
 
 		/* If element is of vector type, check for component indices. */
-		if (LLVMGetElementType($1->type.getType()).getTypeID()
+		if ($1.getLlvmType().getElementType().getTypeID()
 			== VectorTyID && $1->vector_indices[i])
 		{
 			/* Get vector component count */
@@ -4097,21 +4081,17 @@ primary
 					"tmp_%d", temp_var_count++);
 
 				/* Go to entry block and allocate new vector */
-				LLVMPositionBuilder(cl2llvm_builder, 
-					cl2llvm_current_function->entry_block,
-					cl2llvm_current_function->branch_instr);
+				cl2llvm_builder.setInsertPoint( cl2llvm_current_function->branch_instr);
 			
-				new_vector_addr = LLVMBuildAlloca(cl2llvm_builder,
-					LLVMVectorType(LLVMGetElementType(value->type.getType()),
-					component_count), temp_var_name);
+				new_vector_addr = cl2llvm_builder.CreateAlloca(LLVMVectorType(value.getLlvmType().getElementType(), component_count), temp_var_name);
 
-				LLVMPositionBuilderAtEnd(cl2llvm_builder, current_basic_block);
+				cl2llvm_builder.setInsertPoint( current_basic_block);
 
 
 				/* Load new vector */
 				snprintf(temp_var_name, sizeof temp_var_name,
 					"tmp_%d", temp_var_count++);
-				new_vector = LLVMBuildLoad(cl2llvm_builder, new_vector_addr,
+				new_vector = cl2llvm_builder.CreateLoad(new_vector_addr,
 					temp_var_name);
 
 				while ($1->vector_indices[i])
@@ -4167,13 +4147,13 @@ type_spec
 	}
 	| type_spec TOK_MULT
 	{
-		LLVMTypeRef ptr_type;
+		llvm::Type ptr_type;
 		Type type;
 		
 		/* Create pointer type */
 		ptr_type = LLVMPointerType($1.getType(), 0);
 		
-		type = cl2llvmTypeWrapCreate(ptr_type, $1.getSign());
+		type.setType(ptr_type, $1.getSign());
 	
 		/* Free pointers */
 		cl2llvmTypeWrapFree($1);
@@ -4240,163 +4220,153 @@ type_name
 	}
 	| TOK_UINT
 	{
-		Type type = cl2llvmTypeWrapCreate(
+		Type type(
 			LLVMInt32Type(), 0);
 		$$ = type;
 	}
 	| TOK_UINT_LONG
 	{
-		Type type = cl2llvmTypeWrapCreate(
+		Type type(
 			LLVMInt32Type(), 0);
 		$$ = type;
 	}
 	| TOK_UINT_LONG_LONG
 	{
-		Type type = cl2llvmTypeWrapCreate(
+		Type type(
 			LLVMInt64Type(), 0);
 		$$ = type;
 	}
 	| TOK_UCHAR
 	{
-		Type type = cl2llvmTypeWrapCreate(
+		Type type(
 			LLVMInt8Type(), 0);
 		$$ = type;
 	}
 	| TOK_SHORT
 	{
-		Type type = cl2llvmTypeWrapCreate(
+		Type type(
 			LLVMInt16Type(), 1);
 		$$ = type;
 	}
 	| TOK_USHORT
 	{
-		Type type = cl2llvmTypeWrapCreate(
+		Type type(
 			LLVMInt16Type(), 0);
 		$$ = type;
 	}
 	| TOK_UINTN
 	{
-		Type type;
-		type = cl2llvmTypeWrapCreate(LLVMVectorType(LLVMInt32Type(), $1), 0);
+		Type type(LLVMVectorType(LLVMInt32Type(), $1), 0);
 		$$ = type;
 
 	}
 	| TOK_UCHARN
 	{
-		Type type;
-		type = cl2llvmTypeWrapCreate(LLVMVectorType(LLVMInt8Type(), $1), 0);
+		Type type(LLVMVectorType(LLVMInt8Type(), $1), 0);
 		$$ = type;
 
 	}
 	| TOK_ULONGN
 	{
-		Type type;
-		type = cl2llvmTypeWrapCreate(LLVMVectorType(LLVMInt32Type(), $1), 0);
+		Type type(LLVMVectorType(LLVMInt32Type(), $1), 0);
 		$$ = type;
 
 	}
 	| TOK_USHORTN
 	{
-		Type type;
-		type = cl2llvmTypeWrapCreate(LLVMVectorType(LLVMInt16Type(), $1), 0);
+		Type type(LLVMVectorType(LLVMInt16Type(), $1), 0);
 		$$ = type;
 
 	}
 	| TOK_SHORTN
 	{
-		Type type;
-		type = cl2llvmTypeWrapCreate(LLVMVectorType(LLVMInt16Type(), $1), 1);
+		Type type(LLVMVectorType(LLVMInt16Type(), $1), 1);
 		$$ = type;
 
 	}
 	| TOK_INTN
 	{
-		Type type;
-		type = cl2llvmTypeWrapCreate(LLVMVectorType(LLVMInt32Type(), $1), 1);
+		Type type(LLVMVectorType(LLVMInt32Type(), $1), 1);
 		$$ = type;
 	}
 	| TOK_LONGN
 	{
-		Type type;
-		type = cl2llvmTypeWrapCreate(LLVMVectorType(LLVMInt32Type(), $1), 1);
+		Type type(LLVMVectorType(LLVMInt32Type(), $1), 1);
 		$$ = type;
 	}
 	| TOK_CHARN
 	{
-		Type type;
-		type = cl2llvmTypeWrapCreate(LLVMVectorType(LLVMInt8Type(), $1), 1);
+		Type type(LLVMVectorType(LLVMInt8Type(), $1), 1);
 		$$ = type;
 	}
 	| TOK_FLOATN
 	{
-		Type type;
-		type = cl2llvmTypeWrapCreate(LLVMVectorType(LLVMFloatType(), $1), 1);
+		Type type(LLVMVectorType(LLVMFloatType(), $1), 1);
 		$$ = type;
 	}
 	| TOK_DOUBLEN
 	{
-		Type type;
-		type = cl2llvmTypeWrapCreate(LLVMVectorType(LLVMDoubleType(), $1), 1);
+		Type type(LLVMVectorType(LLVMDoubleType(), $1), 1);
 		$$ = type;
 	}
 	| TOK_INT 
 	{
-		Type type = cl2llvmTypeWrapCreate(
+		Type type(
 			LLVMInt32Type(), 1);
 		$$ = type;
 	}
 	| TOK_INT_LONG
 	{
-		Type type = cl2llvmTypeWrapCreate(
+		Type type(
 			LLVMInt32Type(), 1);
 		$$ = type;
 	}
 	| TOK_LONG_LONG
 	{
-		Type type = cl2llvmTypeWrapCreate(
+		Type type(
 			LLVMInt64Type(), 1);
 		$$ = type;
 	}
 	| TOK_CHAR
 	{
-		Type type = cl2llvmTypeWrapCreate(
+		Type type(
 			LLVMInt8Type(), 1);
 		$$ = type;
 	}
 	| TOK_FLOAT
 	{
-		Type type = cl2llvmTypeWrapCreate(
+		Type type(
 			LLVMFloatType(), 1);
 		$$ = type;
 	}
 	| TOK_BOOL
 	{
-		Type type = cl2llvmTypeWrapCreate(
+		Type type(
 			LLVMInt1Type(), 1);
 		$$ = type;
 	}
 	| TOK_DOUBLE
 	{
-		Type type = cl2llvmTypeWrapCreate(
+		Type type(
 			LLVMDoubleType(), 1);
 		$$ = type;
 	}
 	|TOK_DOUBLE_LONG
 	{
-		Type type = cl2llvmTypeWrapCreate(
+		Type type(
 			LLVMInt64Type(), 1);
 		$$ = type;
 	}
 	| TOK_VOID
 	{
-		Type type = cl2llvmTypeWrapCreate(
+		Type type(
 			LLVMVoidType(), 1);
 		$$ = type;
 
 	}
 	| TOK_HALF
 	{
-		Type type = cl2llvmTypeWrapCreate(
+		Type type(
 			LLVMHalfType(), 1);
 		$$ = type;
 	}
