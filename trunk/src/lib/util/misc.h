@@ -259,6 +259,30 @@ void m2s_dist_file(char *file_name, char *dist_path, char *non_dist_path,
  * Other
  */
 
+/* union containing hi,lo,double */
+union double_si_uint32
+{
+	double as_double;
+	unsigned int as_reg[2];
+	unsigned long long as_uint;
+};
+
+/* Function to extract sign, exponent, mantissa*/
+void extract_sign_exp_mant(
+			double s0,
+			double s1, 
+			unsigned long long *sign, 
+			unsigned long long *exp0, 
+			unsigned long long *mant,
+			union double_si_uint32 *s0_reg,
+			union double_si_uint32 *s1_reg);
+
+/* Function to concatenate two 32-bit registers as 64-bit register */
+void concat_32_to_64_reg(
+			unsigned int s0, 
+			unsigned int s1, 
+			unsigned long long *dst);
+
 int hex_str_to_byte_array(char *dest, char *str, int num);
 void dump_bin(int x, int digits, FILE *f);
 void dump_ptr(void *ptr, int size, FILE *stream);

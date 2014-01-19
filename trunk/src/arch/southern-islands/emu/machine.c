@@ -33,7 +33,6 @@
 #include "work-group.h"
 #include "work-item.h"
 
-
 char *err_si_isa_note =
 	"\tThe AMD Southern Islands instruction set is partially supported by\n"
 	"\tMulti2Sim. If your program is using an unimplemented instruction,\n"
@@ -2292,8 +2291,31 @@ void si_isa_V_READFIRSTLANE_B32_impl(SIWorkItem *work_item,
 #define INST SI_INST_VOP1
 void si_isa_V_CVT_I32_F64_impl(SIWorkItem *work_item,
 	struct SIInstWrap *inst)
-{
-	NOT_IMPL();
+{	
+	union
+	{
+		double as_double;
+		unsigned int as_reg[2];
+		int as_int;
+
+	} s0, dst;
+
+	SIInstReg result_lo;
+	SIInstReg result_hi;
+	
+	dst.as_int = (int)s0.as_double;
+
+	/* Load operands from registers. */
+	s0.as_reg[0] = SIWorkItemReadReg(work_item, INST.src0);
+	s0.as_reg[1] = SIWorkItemReadReg(work_item, INST.src0 + 1);
+	
+	/* Write the results. */
+	/* Cast uint32 to unsigned int */
+	result_lo.as_uint = (unsigned int)dst.as_reg[0];
+	result_hi.as_uint = (unsigned int)dst.as_reg[1];
+	SIWorkItemWriteVReg(work_item, INST.vdst, result_lo.as_uint);
+	SIWorkItemWriteVReg(work_item, INST.vdst + 1, result_hi.as_uint);
+
 }
 #undef INST
 
@@ -4369,7 +4391,7 @@ void si_isa_V_ADD_F32_VOP3a_impl(SIWorkItem *work_item,
 	s0.as_uint = SIWorkItemReadReg(work_item, INST.src0);
 	s1.as_uint = SIWorkItemReadReg(work_item, INST.src1);
 
-	/* Apply absolute value modifiers. */
+	/* Apply abs0.ute value modifiers. */
 	if (INST.abs & 1)
 		s0.as_float = fabsf(s0.as_float);
 	if (INST.abs & 2)
@@ -4414,7 +4436,7 @@ void si_isa_V_SUBREV_F32_VOP3a_impl(SIWorkItem *work_item,
 	s0.as_uint = SIWorkItemReadReg(work_item, INST.src0);
 	s1.as_uint = SIWorkItemReadReg(work_item, INST.src1);
 
-	/* Apply absolute value modifiers. */
+	/* Apply abs0.ute value modifiers. */
 	if (INST.abs & 1)
 		s0.as_float = fabsf(s0.as_float);
 	if (INST.abs & 2)
@@ -4494,7 +4516,7 @@ void si_isa_V_MUL_F32_VOP3a_impl(SIWorkItem *work_item,
 	s0.as_uint = SIWorkItemReadReg(work_item, INST.src0);
 	s1.as_uint = SIWorkItemReadReg(work_item, INST.src1);
 
-	/* Apply absolute value modifiers. */
+	/* Apply abs0.ute value modifiers. */
 	if (INST.abs & 1)
 		s0.as_float = fabsf(s0.as_float);
 	if (INST.abs & 2)
@@ -4576,7 +4598,7 @@ void si_isa_V_MAX_F32_VOP3a_impl(SIWorkItem *work_item,
 	s0.as_uint = SIWorkItemReadReg(work_item, INST.src0);
 	s1.as_uint = SIWorkItemReadReg(work_item, INST.src1);
 
-	/* Apply absolute value modifiers. */
+	/* Apply abs0.ute value modifiers. */
 	if (INST.abs & 1)
 		s0.as_float = fabsf(s0.as_float);
 	if (INST.abs & 2)
@@ -4624,7 +4646,7 @@ void si_isa_V_MAD_F32_impl(SIWorkItem *work_item,
 	s1.as_uint = SIWorkItemReadReg(work_item, INST.src1);
 	s2.as_uint = SIWorkItemReadReg(work_item, INST.src2);
 
-	/* Apply absolute value modifiers. */
+	/* Apply abs0.ute value modifiers. */
 	if (INST.abs & 1)
 		s0.as_float = fabsf(s0.as_float);
 	if (INST.abs & 2)
@@ -4838,7 +4860,7 @@ void si_isa_V_FMA_F32_impl(SIWorkItem *work_item,
 	s1.as_uint = SIWorkItemReadReg(work_item, INST.src1);
 	s2.as_uint = SIWorkItemReadReg(work_item, INST.src2);
 
-	/* Apply absolute value modifiers. */
+	/* Apply abs0.ute value modifiers. */
 	if (INST.abs & 1)
 		s0.as_float = fabsf(s0.as_float);
 	if (INST.abs & 2)
@@ -4875,7 +4897,43 @@ void si_isa_V_FMA_F32_impl(SIWorkItem *work_item,
 void si_isa_V_FMA_F64_impl(SIWorkItem *work_item,
 	struct SIInstWrap *inst)
 {
-	NOT_IMPL();
+	/* Implementation based on v_mul_f64 above */
+	/*********************************************************/
+
+	/* input operands */
+	union
+	{
+		double as_double;
+		unsigned int as_reg[2];
+
+	} s0, s1, s2, dst;
+
+	SIInstReg result_lo;
+	SIInstReg result_hi;
+
+	assert(!INST.clamp);
+	assert(!INST.omod);
+
+	/* Load operands from registers. */
+	s0.as_reg[0] = SIWorkItemReadReg(work_item, INST.src0);
+	s0.as_reg[1] = SIWorkItemReadReg(work_item, INST.src0 + 1);
+	s1.as_reg[0] = SIWorkItemReadReg(work_item, INST.src1);
+	s1.as_reg[1] = SIWorkItemReadReg(work_item, INST.src1 + 1);
+	s2.as_reg[0] = SIWorkItemReadReg(work_item, INST.src2);
+	s2.as_reg[1] = SIWorkItemReadReg(work_item, INST.src2 + 1);
+	
+	/*********************************************************/
+
+	/* Compute fused multiply-add */
+	dst.as_double = s0.as_double * s1.as_double + s2.as_double;
+	
+	/* Write the results. */
+	/* Cast uint32 to unsigned int */
+	result_lo.as_uint = (unsigned int)dst.as_reg[0];
+	result_hi.as_uint = (unsigned int)dst.as_reg[1];
+	SIWorkItemWriteVReg(work_item, INST.vdst, result_lo.as_uint);
+	SIWorkItemWriteVReg(work_item, INST.vdst + 1, result_hi.as_uint);
+
 }
 #undef INST
 
@@ -4937,7 +4995,41 @@ void si_isa_V_DIV_FIXUP_F64_impl(SIWorkItem *work_item,
 void si_isa_V_LSHL_B64_impl(SIWorkItem *work_item,
 	struct SIInstWrap *inst)
 {
-	NOT_IMPL();
+	/* input operands */
+	union
+	{
+		double as_double;
+		unsigned int as_reg[2];
+		unsigned int as_uint;
+
+	} s0, s1, dst;
+
+	SIInstReg result_lo;
+	SIInstReg result_hi;
+
+	assert(!INST.clamp);
+	assert(!INST.omod);
+
+	/* Load operands from registers. */
+	s0.as_reg[0] = SIWorkItemReadReg(work_item, INST.src0);
+	s0.as_reg[1] = SIWorkItemReadReg(work_item, INST.src0 + 1);
+	s1.as_reg[0] = SIWorkItemReadReg(work_item, INST.src1);
+	s1.as_reg[1] = SIWorkItemReadReg(work_item, INST.src1 + 1);
+	
+	/*********************************************************/
+
+	/* LSHFT_B64 */
+	/* Mask s1 to return s1[4:0] 
+	 * to extract left shift right operand
+	 */
+	dst.as_uint = s0.as_uint << (s1.as_uint & 0x001F);
+	
+	/* Write the results. */
+	/* Cast uint32 to unsigned int */
+	result_lo.as_uint = (unsigned int)dst.as_reg[0];
+	result_hi.as_uint = (unsigned int)dst.as_reg[1];
+	SIWorkItemWriteVReg(work_item, INST.vdst, result_lo.as_uint);
+	SIWorkItemWriteVReg(work_item, INST.vdst + 1, result_hi.as_uint);
 }
 #undef INST
 
@@ -5139,7 +5231,7 @@ void si_isa_V_CMP_LT_F32_VOP3a_impl(SIWorkItem *work_item,
 	s0.as_uint = SIWorkItemReadReg(work_item, INST.src0);
 	s1.as_uint = SIWorkItemReadReg(work_item, INST.src1);
 
-	/* Apply absolute value modifiers. */
+	/* Apply abs0.ute value modifiers. */
 	if (INST.abs & 1)
 		s0.as_float = fabsf(s0.as_float);
 	if (INST.abs & 2)
@@ -5185,7 +5277,7 @@ void si_isa_V_CMP_EQ_F32_VOP3a_impl(SIWorkItem *work_item,
 	s0.as_uint = SIWorkItemReadReg(work_item, INST.src0);
 	s1.as_uint = SIWorkItemReadReg(work_item, INST.src1);
 
-	/* Apply absolute value modifiers. */
+	/* Apply abs0.ute value modifiers. */
 	if (INST.abs & 1)
 		s0.as_float = fabsf(s0.as_float);
 	if (INST.abs & 2)
@@ -5239,7 +5331,7 @@ void si_isa_V_CMP_GT_F32_VOP3a_impl(SIWorkItem *work_item,
 	s0.as_uint = SIWorkItemReadReg(work_item, INST.src0);
 	s1.as_uint = SIWorkItemReadReg(work_item, INST.src1);
 
-	/* Apply absolute value modifiers. */
+	/* Apply abs0.ute value modifiers. */
 	if (INST.abs & 1)
 		s0.as_float = fabsf(s0.as_float);
 	if (INST.abs & 2)
@@ -5294,7 +5386,7 @@ void si_isa_V_CMP_NEQ_F32_VOP3a_impl(SIWorkItem *work_item,
 	s0.as_uint = SIWorkItemReadReg(work_item, INST.src0);
 	s1.as_uint = SIWorkItemReadReg(work_item, INST.src1);
 
-	/* Apply absolute value modifiers. */
+	/* Apply abs0.ute value modifiers. */
 	if (INST.abs & 1)
 		s0.as_float = fabsf(s0.as_float);
 	if (INST.abs & 2)
@@ -5340,7 +5432,7 @@ void si_isa_V_CMP_NLT_F32_VOP3a_impl(SIWorkItem *work_item,
 	s0.as_uint = SIWorkItemReadReg(work_item, INST.src0);
 	s1.as_uint = SIWorkItemReadReg(work_item, INST.src1);
 
-	/* Apply absolute value modifiers. */
+	/* Apply abs0.ute value modifiers. */
 	if (INST.abs & 1)
 		s0.as_float = fabsf(s0.as_float);
 	if (INST.abs & 2)
@@ -5370,15 +5462,133 @@ void si_isa_V_CMP_NLT_F32_VOP3a_impl(SIWorkItem *work_item,
 }
 #undef INST
 
-/* Comparison Operations */
+/* Comparis0. Operations */
 #define INST SI_INST_VOP3a
 void si_isa_V_CMP_OP16_F64_VOP3a_impl(SIWorkItem *work_item,
 	struct SIInstWrap *inst)
 {
-	NOT_IMPL();
-}
-#undef INST
+	/* OP16 VMP options */
+	enum{F,LT,EQ,LE,GT,LG,GE,O,U,NGE,NLG,NGT,NLE,NEQ,NLT,TRU};
+	
+	int op_code;
+	/* input operands */
+	union
+	{
+		double as_double;
+		unsigned int as_reg[2];
+		unsigned int as_uint;
+		int as_int;
 
+	} s0, s1, dst;
+
+	SIInstReg result_lo;
+	SIInstReg result_hi;
+
+	assert(!INST.clamp);
+	assert(!INST.omod);
+
+	/* Load operands from registers. */
+	s0.as_reg[0] = SIWorkItemReadReg(work_item, INST.src0);
+	s0.as_reg[1] = SIWorkItemReadReg(work_item, INST.src0 + 1);
+	s1.as_reg[0] = SIWorkItemReadReg(work_item, INST.src1);
+	s1.as_reg[1] = SIWorkItemReadReg(work_item, INST.src1 + 1);
+	
+	/*********************************************************/
+
+	/* 16 V_CMP_F64 operations */				
+	op_code = (int)INST.op & 0x000F;	
+	
+	/* Switch on op_code */
+	switch(op_code)
+	{
+		/* D.u = 0 */
+		case F:
+			dst.as_uint = 0;
+			break; 
+		/* D.u = (S0 < S1) */
+		case LT:
+			dst.as_uint = (unsigned int)(s0.as_uint < s1.as_uint);
+			break;
+		/* D.u = (S0 == S1) */
+		case EQ:
+			dst.as_uint = (unsigned int)(s0.as_uint == s1.as_uint);
+			break;
+		/* D.u = (S0 <= S1) */
+		case LE:
+			dst.as_uint = (unsigned int)(s0.as_uint <= s1.as_uint);
+			break;
+		/* D.u = (S0 > S1) */
+		case GT:
+			dst.as_uint = (unsigned int)(s0.as_uint > s1.as_uint);
+			break;
+		/* D.u = (S0 <> S1) */
+		case LG: 
+			dst.as_uint = (unsigned int)(s0.as_uint < s1.as_uint
+						|| s0.as_uint > s1.as_uint);
+			break;
+		/* D.u = (S0 >= S1) */
+		case GE:
+			dst.as_uint = (unsigned int)(s0.as_uint >= s1.as_uint);
+			break;
+		
+		/* isNaN Cases */
+		/* D.u = (!isNaN(S0) && !isNaN(S1)) */
+		case O:
+			dst.as_uint = (unsigned int)( !(s0.as_double == FP_NAN) 
+						&& !(s1.as_double == FP_NAN) );
+			break;
+
+		/* D.u = (!isNaN(S0) || !isNaN(S1)) */
+		case U:
+			dst.as_uint = (unsigned int)( !(s0.as_double == FP_NAN) 
+						|| !(s1.as_double == FP_NAN) );
+			break;
+		/* D.u = !(S0 >= S1)*/
+		case NGE:
+			dst.as_uint = (unsigned int)(!(s0.as_uint >= s1.as_uint));
+			break;
+		/* D.u = !(S0 <> S1) */
+		case NLG:	
+			dst.as_uint = (unsigned int)(!(s0.as_uint < s1.as_uint
+						|| s0.as_uint > s1.as_uint));
+			break;
+		/* D.u = !(S0 > S1) */
+		case NGT:
+			dst.as_uint = (unsigned int)(!(s0.as_uint > s1.as_uint));
+			break;
+		/* D.u = !(S0 <= S1) */
+		case NLE:
+			dst.as_uint = (unsigned int)(!(s0.as_uint <= s1.as_uint));
+			break;
+		/* D.u = !(S0 == S1) */
+		case NEQ:
+			dst.as_uint = (unsigned int)(!(s0.as_uint == s1.as_uint));
+			break;
+		/* D.u = !(S0 < S1) */
+		case NLT:
+			dst.as_uint = (unsigned int)(!(s0.as_uint < s1.as_uint));
+			break;
+		/* D.u = 1 */
+		case TRU:
+			dst.as_uint = (unsigned int)(1);
+			break;
+		default:
+			printf("OP16 VCMP Instruction not found.\n");
+			break;
+	}	
+
+	/* Write the results. */
+	/* Cast uint32 to unsigned int */
+	result_lo.as_uint = (unsigned int)dst.as_reg[0];
+	result_hi.as_uint = (unsigned int)dst.as_reg[1];
+	SIWorkItemWriteVReg(work_item, INST.vdst, result_lo.as_uint);
+	SIWorkItemWriteVReg(work_item, INST.vdst + 1, result_hi.as_uint);
+
+}
+
+/* Covered by VOP16_CMP */
+
+#undef INST
 /* D.u = (S0 < S1) */
 #define INST SI_INST_VOP3a
 void si_isa_V_CMP_LT_F64_VOP3a_impl(SIWorkItem *work_item,
@@ -5449,7 +5659,7 @@ void si_isa_V_CMP_LT_I32_VOP3a_impl(SIWorkItem *work_item,
 	s0.as_uint = SIWorkItemReadReg(work_item, INST.src0);
 	s1.as_uint = SIWorkItemReadReg(work_item, INST.src1);
 
-	/* Apply absolute value modifiers. */
+	/* Apply abs0.ute value modifiers. */
 	if (INST.abs & 1)
 		s0.as_int = abs(s0.as_int);
 	if (INST.abs & 2)
@@ -5495,7 +5705,7 @@ void si_isa_V_CMP_EQ_I32_VOP3a_impl(SIWorkItem *work_item,
 	s0.as_uint = SIWorkItemReadReg(work_item, INST.src0);
 	s1.as_uint = SIWorkItemReadReg(work_item, INST.src1);
 
-	/* Apply absolute value modifiers. */
+	/* Apply abs0.ute value modifiers. */
 	if (INST.abs & 1)
 		s0.as_int = abs(s0.as_int);
 	if (INST.abs & 2)
@@ -5541,7 +5751,7 @@ void si_isa_V_CMP_LE_I32_VOP3a_impl(SIWorkItem *work_item,
 	s0.as_uint = SIWorkItemReadReg(work_item, INST.src0);
 	s1.as_uint = SIWorkItemReadReg(work_item, INST.src1);
 
-	/* Apply absolute value modifiers. */
+	/* Apply abs0.ute value modifiers. */
 	if (INST.abs & 1)
 		s0.as_int = abs(s0.as_int);
 	if (INST.abs & 2)
@@ -5587,7 +5797,7 @@ void si_isa_V_CMP_GT_I32_VOP3a_impl(SIWorkItem *work_item,
 	s0.as_uint = SIWorkItemReadReg(work_item, INST.src0);
 	s1.as_uint = SIWorkItemReadReg(work_item, INST.src1);
 
-	/* Apply absolute value modifiers. */
+	/* Apply abs0.ute value modifiers. */
 	if (INST.abs & 1)
 		s0.as_int = abs(s0.as_int);
 	if (INST.abs & 2)
@@ -5633,7 +5843,7 @@ void si_isa_V_CMP_NE_I32_VOP3a_impl(SIWorkItem *work_item,
 	s0.as_uint = SIWorkItemReadReg(work_item, INST.src0);
 	s1.as_uint = SIWorkItemReadReg(work_item, INST.src1);
 
-	/* Apply absolute value modifiers. */
+	/* Apply abs0.ute value modifiers. */
 	if (INST.abs & 1)
 		s0.as_int = abs(s0.as_int);
 	if (INST.abs & 2)
@@ -5679,7 +5889,7 @@ void si_isa_V_CMP_GE_I32_VOP3a_impl(SIWorkItem *work_item,
 	s0.as_uint = SIWorkItemReadReg(work_item, INST.src0);
 	s1.as_uint = SIWorkItemReadReg(work_item, INST.src1);
 
-	/* Apply absolute value modifiers. */
+	/* Apply abs0.ute value modifiers. */
 	if (INST.abs & 1)
 		s0.as_int = abs(s0.as_int);
 	if (INST.abs & 2)
@@ -5709,7 +5919,7 @@ void si_isa_V_CMP_GE_I32_VOP3a_impl(SIWorkItem *work_item,
 }
 #undef INST
 
-/* D.u = (S0.i == S1.i). Also write EXEC */
+/* D.u = (S0.i == S1.i). Als0.write EXEC */
 #define INST SI_INST_VOP3a
 void si_isa_V_CMPX_EQ_I32_VOP3a_impl(SIWorkItem *work_item,
 	struct SIInstWrap *inst)
@@ -5725,7 +5935,7 @@ void si_isa_V_CMPX_EQ_I32_VOP3a_impl(SIWorkItem *work_item,
 	s0.as_uint = SIWorkItemReadReg(work_item, INST.src0);
 	s1.as_uint = SIWorkItemReadReg(work_item, INST.src1);
 
-	/* Apply absolute value modifiers. */
+	/* Apply abs0.ute value modifiers. */
 	if (INST.abs & 1)
 		s0.as_int = abs(s0.as_int);
 	if (INST.abs & 2)
@@ -6171,8 +6381,8 @@ void si_isa_V_ADD_F64_impl(SIWorkItem *work_item,
 
 	assert(!INST.clamp);
 	assert(!INST.omod);
-	assert(!INST.neg);
-	assert(!INST.abs);
+	//assert(!INST.neg);
+	//assert(!INST.abs);
 
 	/* Load operands from registers. */
 	s0.as_reg[0] = SIWorkItemReadReg(work_item, INST.src0);
@@ -6282,13 +6492,17 @@ void si_isa_V_MUL_F64_impl(SIWorkItem *work_item,
 
 	} s0, s1, value;
 
+
+	/* Registers for 32-bit components */
 	SIInstReg result_lo;
 	SIInstReg result_hi;
 
 	assert(!INST.clamp);
 	assert(!INST.omod);
-	assert(!INST.neg);
-	assert(!INST.abs);
+	
+	/* Possible fix */
+	/* assert(!INST.neg);
+	assert(!INST.abs); */
 
 	/* Load operands from registers. */
 	s0.as_reg[0] = SIWorkItemReadReg(work_item, INST.src0);
@@ -6296,32 +6510,19 @@ void si_isa_V_MUL_F64_impl(SIWorkItem *work_item,
 	s1.as_reg[0] = SIWorkItemReadReg(work_item, INST.src1);
 	s1.as_reg[1] = SIWorkItemReadReg(work_item, INST.src1 + 1);
 
-	/* Multiply the operands, take into account special number cases. */
-
-	/* s0 == NaN64 || s1 == NaN64 */
-	if (fpclassify(s0.as_double) == FP_NAN ||
-		fpclassify(s1.as_double) == FP_NAN)
+	/* s1 == NaN64 || s1 == INFINITY*/
+	if (fpclassify(s1.as_double) == FP_NAN ||
+		fpclassify(s1.as_double) == FP_INFINITE)
 	{
-		/* value <-- NaN64 */
-		value.as_double = NAN;
+		/* value <-- s1 */
+		value.as_double = s1.as_double;
 	}
 	/* s0 == +denormal, +0 */
 	else if ((fpclassify(s1.as_double) == FP_SUBNORMAL ||
 			fpclassify(s1.as_double) == FP_ZERO) &&
 		!signbit(s0.as_double))
 	{
-		/* s1 == +-infinity */
-		if (isinf(s1.as_double))
-			/* value <-- NaN64 */
-			value.as_double = NAN;
-		/* s1 > 0 */
-		else if (!signbit(s1.as_double))
-			/* value <-- +0 */
-			value.as_double = +0;
-		/* s1 < 0 */
-		else if (! !signbit(s1.as_double))
-			/* value <-- -0 */
-			value.as_double = -0;
+		
 	}
 	/* s0 == -denormal, -0 */
 	else if ((fpclassify(s1.as_double) == FP_SUBNORMAL ||
@@ -6399,11 +6600,89 @@ void si_isa_V_MUL_F64_impl(SIWorkItem *work_item,
 #undef INST
 
 /* D.d = Look Up 2/PI (S0.d) with segment select S1.u[4:0]. */
+
+/* D = sign * 1.mant * 2 ^ exp */
 #define INST SI_INST_VOP3a
 void si_isa_V_LDEXP_F64_impl(SIWorkItem *work_item,
 	struct SIInstWrap *inst)
 {
 	NOT_IMPL();
+	/* Implementation based on v_mul_f64 above */
+	/*********************************************************/
+
+	printf("Running ld_exp_f64...\n");	
+
+	/* input operands */
+	union double_si_uint32 s0, s1, dst;
+	union double_si_uint32 s0_reg, s1_reg;
+
+	SIInstReg result_lo;
+	SIInstReg result_hi;
+
+	assert(!INST.clamp);
+	assert(!INST.omod);
+
+	/* Load operands from registers. */
+	s0.as_reg[0] = SIWorkItemReadReg(work_item, INST.src0);
+	s0.as_reg[1] = SIWorkItemReadReg(work_item, INST.src0 + 1);
+	s1.as_reg[0] = SIWorkItemReadReg(work_item, INST.src1);
+	s1.as_reg[1] = SIWorkItemReadReg(work_item, INST.src1 + 1);
+	
+	/*********************************************************/
+	
+	/* Sign, exponent, mantissa */
+	unsigned long long sign,exp,mantissa;
+
+	/* 64-bit registers from 32-bit registers */
+	unsigned long long s0_uint64;
+	concat_32_to_64_reg(s0.as_reg[0],s0.as_reg[1],&s0_uint64);
+	
+	/* Extract sign, exponent, mantissa */
+	extract_sign_exp_mant(
+			s0.as_double,
+			s1.as_double, 
+			&sign, 
+			&exp, 
+			&mantissa,
+			&s0_reg,
+			&s1_reg);
+
+	/* LD_EXP from C math library */
+	/* dst = src1 * 2^src0  */	
+	/* Check boundary conditions */
+	if(exp == (unsigned long long)0x7FF)
+		dst.as_double = s1.as_double;
+	else if(exp == (unsigned long long)0x0)
+		dst.as_double = (double)(sign ? 0x8000000000000000 : 0x0);
+	else
+	{
+		exp += s0_uint64;
+	
+		/* overflow */
+		if(exp >= (unsigned long long)0x7FF)
+		{
+			dst.as_reg[0] = (unsigned int)sign;
+			dst.as_reg[1] = (unsigned int)INFINITY;
+		}
+		/* underflow */
+		if(s0_uint64 <= (unsigned long long)0)
+		{
+			dst.as_reg[0] = (unsigned int)sign;
+			dst.as_reg[1] = (unsigned int)0;
+		}
+		mantissa |= (exp << 52);
+		mantissa |= (sign << 63);
+
+		dst.as_double = (double)mantissa;
+	}
+
+	/* Write the results. */
+	/* Cast uint32 to unsigned int */
+	result_lo.as_uint = (unsigned int)dst.as_reg[0];
+	result_hi.as_uint = (unsigned int)dst.as_reg[1];
+	SIWorkItemWriteVReg(work_item, INST.vdst, result_lo.as_uint);
+	SIWorkItemWriteVReg(work_item, INST.vdst + 1, result_hi.as_uint);
+
 }
 #undef INST
 
@@ -6468,7 +6747,7 @@ void si_isa_V_DIV_SCALE_F64_impl(SIWorkItem *work_item,
  * VINTRP
  */
 
-/* FIXME: move this to some header file */
+/* FIXME: move this to s0.e header file */
 /* M0 must be intialized before VINTRP instructions */
 struct si_m0_for_vintrp_t
 {
