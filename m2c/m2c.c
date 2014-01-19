@@ -68,7 +68,7 @@ int m2c_gl_run;  /* Run OpenGL native compiler */
 int m2c_amd_run;  /* Run AMD native compiler */
 int m2c_preprocess_run;  /* Run stand-alone preprocessor */
 int m2c_cl2llvm_run;  /* Run OpenCL-to-LLVM stand-alone front-end */
-int m2c_frm2bin_run;  /* Run Fermi stand-alone assembler */
+// int m2c_frm2bin_run;  /* Run Fermi stand-alone assembler */
 int m2c_llvm2si_run;  /* Run LLVM-to-SI stand-alone back-end */
 int m2c_si2bin_run;  /* Run Southern Islands stand-alone assembler */
 int m2c_opt_level = 2;  /* Optimization level */
@@ -259,12 +259,12 @@ static void m2c_process_option(const char *option, char *optarg)
 	}
 #endif
 
-	if (!strcmp(option, "frm-asm") || !strcmp(option, "frm2bin"))
+/*	if (!strcmp(option, "frm-asm") || !strcmp(option, "frm2bin"))
 	{
 		m2c_frm2bin_run = 1;
 		return;
 	}
-
+*/
 	if (!strcmp(option, "gl"))
 	{
 		m2c_gl_run = 1;
@@ -810,13 +810,13 @@ int main(int argc, char **argv)
 	}
 
 	/* Fermi assembler */
-	if (m2c_frm2bin_run)
+/*	if (m2c_frm2bin_run)
 	{
 		m2c_replace_out_file_name(m2c_bin_file_list);
 		//Frm2binCompile(frm2bin, m2c_source_file_list, m2c_bin_file_list);
 		goto out;
 	}
-
+*/
 	/* For now, let's give this warning */
 	fprintf(stderr,
 		"\n"
