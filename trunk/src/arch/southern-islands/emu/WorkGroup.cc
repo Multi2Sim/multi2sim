@@ -276,7 +276,7 @@ WorkGroup::WorkGroup(NDRange *ndrange, unsigned id)
 			else if (user_element->dataClass == 21)
 			{
 				/* Store VB table in sregs */
-				wavefront->setSRegWithBufferTable(
+				wavefront->setSRegWithVertexBufferTable(
 					user_element->startUserReg,
 					user_element->userRegCount);
 			}
