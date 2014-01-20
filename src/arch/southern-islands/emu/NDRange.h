@@ -85,7 +85,7 @@ class NDRange
 	NDRangeStage stage;
 
 	// Initialization data for Pixel Shader, dequeue from SPI module
-	//SxPsInit sc_ps_init;  // FIXME - confusing names
+	// SxPsInit sc_ps_init;  // FIXME - confusing names
 
 	// Work-group lists
 	std::list<std::unique_ptr<WorkGroup>> waiting_work_groups;
@@ -144,17 +144,20 @@ class NDRange
 	unsigned const_buf_table;
 	TableEntry const_buf_table_entries[EmuMaxNumConstBufs];
 
-	// ?
+	// Addresses and entries of tables that reside in global memory
 	unsigned resource_table;
 	TableEntry resource_table_entries[EmuMaxNumResources];
 
-	// ?
+	// Addresses and entries of tables that reside in global memory
 	unsigned uav_table;
 	TableEntry uav_table_entries[EmuMaxNumUAVs];
 
-	// ?
+	// Addresses and entries of tables that reside in global memory
 	unsigned vertex_buffer_table;
 	TableEntry vertex_buffer_table_entries[EmuMaxNumVertexBuffers];
+
+	// Addresses of fetch shader in instruction buffer
+	unsigned fetch_shader_addr;
 
 	// Addresses of the constant buffers
 	unsigned cb0;
@@ -213,6 +216,30 @@ public:
 
 	/// Get emu it belongs to
 	Emu *getEmu() const { return emu; }
+
+	/// Get constant buffer entry from constant buffer table at index
+	TableEntry *getConstBuffer(unsigned idx) {
+		assert(idx >= 0 && idx <= EmuMaxNumConstBufs);
+		return &const_buf_table_entries[idx];
+	}
+
+	/// Get uav entry from uav table at index
+	TableEntry *getUAV(unsigned idx) {
+		assert(idx >= 0 && idx <= EmuMaxNumUAVs);
+		return &uav_table_entries[idx];
+	}
+
+	// Get constant buffer table address in global memory
+	unsigned getConstBufferTableAddr() const { return const_buf_table; }
+
+	// Get UAV table address in global memory
+	unsigned getUAVTableAddr() const { return uav_table; }
+
+	// Get Vertex buffer table address in global memory
+	unsigned getVertexBufferTableAddr() const { return vertex_buffer_table; }
+
+	/// Get Fetch shader starting address in instruction memory
+	unsigned getFetchShaderAddr() const { return fetch_shader_addr; }
 
 	/// Setters
 	///

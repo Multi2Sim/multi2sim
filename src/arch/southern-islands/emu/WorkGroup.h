@@ -137,7 +137,7 @@ public:
 	long long getVregWriteCount() const { return vreg_write_count; }
 
 	/// Get NDRange that it belongs to
-	const NDRange *getNDRange() const { return ndrange; }
+	NDRange *getNDRange() const { return ndrange; }
 
 	/// Get pointer of a workitem in this workgroup
 	WorkItem *getWorkItem(int id_in_work_group) {
