@@ -19,6 +19,8 @@
 
 #include <lib/cpp/Misc.h>
 
+#include "Emu.h"
+#include "NDRange.h"
 #include "Wavefront.h"
 #include "WorkGroup.h"
 
@@ -131,10 +133,147 @@ Wavefront::Wavefront(WorkGroup *work_group, int id)
 	// 
 }
 
-#if 0
-
-
-
-#endif
+void Wavefront::Execute()
+{
 	
+}
+	
+bool Wavefront::getWorkItemActive(int id_in_wavefront)
+{
+	int mask = 1;
+	if(id_in_wavefront < 32)
+	{
+		mask <<= id_in_wavefront;
+		return (sreg[SI_EXEC].as_uint & mask) >> 
+			id_in_wavefront;
+	}
+	else
+	{
+		mask <<= (id_in_wavefront - 32);
+		return (sreg[SI_EXEC + 1].as_uint & mask) >> 
+			(id_in_wavefront - 32);
+	}	
+}
+
+void Wavefront::setSReg(int sreg, unsigned value)
+{
+	this->sreg[sreg].as_uint = value;
+}
+
+void Wavefront::setSRegWithConstantBuffer(int first_reg, int num_regs, 
+	int cb)
+{
+	EmuBufferDesc buf_desc;
+	NDRange *ndrange = work_group->getNDRange();
+	Emu *emu = ndrange->getEmu();
+
+	unsigned buf_desc_addr;
+
+	assert(num_regs == 4);
+	assert(sizeof(buf_desc) == 16);
+	assert(cb < (int)EmuMaxNumConstBufs);
+	assert(ndrange->getConstBuffer(cb)->valid);
+
+	buf_desc_addr = ndrange->getConstBufferTableAddr() +
+		cb*EmuConstBufTableEntrySize;
+
+	// Read a descriptor from the constant buffer table (located 
+	// in global memory) 
+	emu->getGlobalMem()->Read(buf_desc_addr, sizeof(buf_desc),
+		(char *)&buf_desc);
+
+	// Store the descriptor in 4 scalar registers 
+	setSregUint(first_reg, ((unsigned *)&buf_desc)[0]);
+	setSregUint(first_reg + 1, ((unsigned *)&buf_desc)[1]);
+	setSregUint(first_reg + 2, ((unsigned *)&buf_desc)[2]);
+	setSregUint(first_reg + 3, ((unsigned *)&buf_desc)[3]);
+}
+
+void Wavefront::setSRegWithConstantBufferTable(int first_reg, int num_regs)
+{
+	NDRange *ndrange = work_group->getNDRange();
+	EmuMemPtr mem_ptr;
+
+	assert(num_regs == 2);
+	assert(sizeof(mem_ptr) == 8);
+
+	mem_ptr.addr = (unsigned int)ndrange->getConstBufferTableAddr();
+
+	setSregUint(first_reg, ((unsigned *)&mem_ptr)[0]);
+	setSregUint(first_reg + 1, ((unsigned *)&mem_ptr)[1]);
+}
+
+
+void Wavefront::setSRegWithUAV(int first_reg, int num_regs, int uav)
+{
+	EmuBufferDesc buf_desc;
+	NDRange *ndrange = work_group->getNDRange();
+	Emu *emu = ndrange->getEmu();
+
+	unsigned buf_desc_addr;
+
+	assert(num_regs == 4);
+	assert(sizeof(buf_desc) == 16);
+	assert(uav < (int)EmuMaxNumUAVs);
+	assert(ndrange->getUAV(uav)->valid);
+
+	buf_desc_addr = ndrange->getUAVTableAddr() +
+		uav*EmuUAVTableEntrySize;
+
+	// Read a descriptor from the constant buffer table (located 
+	// in global memory) 
+	emu->getGlobalMem()->Read(buf_desc_addr, sizeof(buf_desc),
+		(char *)&buf_desc);
+
+	// Store the descriptor in 4 scalar registers 
+	setSregUint(first_reg, ((unsigned *)&buf_desc)[0]);
+	setSregUint(first_reg + 1, ((unsigned *)&buf_desc)[1]);
+	setSregUint(first_reg + 2, ((unsigned *)&buf_desc)[2]);
+	setSregUint(first_reg + 3, ((unsigned *)&buf_desc)[3]);
+}
+
+
+void Wavefront::setSRegWithUAVTable(int first_reg, int num_regs)
+{
+	NDRange *ndrange = work_group->getNDRange();
+	EmuMemPtr mem_ptr;
+
+	assert(num_regs == 2);
+	assert(sizeof(mem_ptr) == 8);
+
+	mem_ptr.addr = (unsigned int)ndrange->getUAVTableAddr();
+
+	setSregUint(first_reg, ((unsigned *)&mem_ptr)[0]);
+	setSregUint(first_reg + 1, ((unsigned *)&mem_ptr)[1]);
+}
+
+void Wavefront::setSRegWithVertexBufferTable(int first_reg, int num_regs)
+{
+	NDRange *ndrange = work_group->getNDRange();
+	EmuMemPtr mem_ptr;
+
+	assert(num_regs == 2);
+	assert(sizeof(mem_ptr) == 8);
+
+	mem_ptr.addr = (unsigned int)ndrange->getVertexBufferTableAddr();
+
+	setSregUint(first_reg, ((unsigned *)&mem_ptr)[0]);
+	setSregUint(first_reg + 1, ((unsigned *)&mem_ptr)[1]);
+}
+
+void Wavefront::setSRegWithFetchShader(int first_reg, int num_regs)
+{
+	NDRange *ndrange = work_group->getNDRange();
+	EmuMemPtr mem_ptr;
+
+	assert(num_regs == 2);
+	assert(sizeof(mem_ptr) == 8);
+
+	mem_ptr.addr = (unsigned int)ndrange->getFetchShaderAddr();
+
+	setSregUint(first_reg, ((unsigned *)&mem_ptr)[0]);
+	setSregUint(first_reg + 1, ((unsigned *)&mem_ptr)[1]);	
+}
+
+
 }  // namespace SI 

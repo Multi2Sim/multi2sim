@@ -239,12 +239,6 @@ public:
 	/// \param num_regs Number of scalar registers to be used, must be 2
 	void setSRegWithConstantBufferTable(int first_reg, int num_regs);
 
-	/// Puts a memory descriptor for a UAV table into sregs
-	/// It requires 2 consecutive registers to store the 128-bit structure
-	/// \param first_reg Id of the first scalar register
-	/// \param num_regs Number of scalar registers to be used, must be 2
-	void setSRegWithUAVTable(int first_reg, int num_regs);
-
 	/// Puts a memory descriptor for a UAV into sregs
 	/// It requires 4 consecutive registers to store the 128-bit structure
 	/// \param first_reg Id of the first scalar register
@@ -252,10 +246,16 @@ public:
 	/// \param uav Id of UAV
 	void setSRegWithUAV(int first_reg, int num_regs, int uav);
 
+	/// Puts a memory descriptor for a UAV table into sregs
+	/// It requires 2 consecutive registers to store the 128-bit structure
+	/// \param first_reg Id of the first scalar register
+	/// \param num_regs Number of scalar registers to be used, must be 2
+	void setSRegWithUAVTable(int first_reg, int num_regs);
+
 	/// Put a pointer to the Vertex Buffer table into 2 consecutive sregs
 	/// \param first_reg Id of the first scalar register
 	/// \param num_regs Number of scalar registers to be used, must be 2
-	void setSRegWithBufferTable(int first_reg, int num_regs);
+	void setSRegWithVertexBufferTable(int first_reg, int num_regs);
 
 	/// Put a pointer to the Fetch Shader into 2 consecutive sregs
 	/// \param first_reg Id of the first scalar register
