@@ -125,6 +125,64 @@ public:
 	/// \id Global 1D identifier of the work-item
 	WorkItem(Wavefront *wavefront, int id);
 
+	/// Getters
+	///
+	/// Get wavefront it belongs to
+	Wavefront *getWavefront() const { return wavefront; }
+
+	/// Get global id
+	unsigned getId() const { return id; }
+
+	/// Get id_3d
+	unsigned getId3D(unsigned dim) const {
+		assert(dim >= 0 && dim <= 2);
+		return id_3d[dim];
+	}
+
+	/// Get id_in_wavefront
+	unsigned getIdInWavefront() const { return id_in_wavefront; }
+
+	/// Get id
+	unsigned getLocalId() const { return id_in_work_group; }
+
+	/// Get id_in_work_group_3d
+	/// \param dim Local id dimention
+	unsigned getLocalId3D(unsigned dim) const { 
+		assert(dim >= 0 && dim <= 2);
+		return id_in_work_group_3d[dim]; 
+	}
+
+	/// Setters
+	///
+	/// Set workitem 3D global identifier
+	/// \param dim Goblal dimention of identifier
+	/// \param id 3D Identifier
+	void setGlobalId(unsigned dim, unsigned id) {
+		assert(dim >= 0 && dim <= 2);
+		id_3d[dim] = id;		
+	}
+
+	/// Set unique identifier of workitem
+	/// \param id Identifier of workitem 
+	void setGlobalId(unsigned id) { this->id = id; }
+
+	/// Set workitem 3D local identifier
+	/// \param dim Local id dimention
+	/// \param id 3D Identifier
+	void setLocalId(unsigned dim, unsigned id) {
+		assert(dim >= 0 && dim <= 2);
+		id_in_work_group_3d[dim] = id;		
+	}
+
+	/// Set identifier of workitem in workgroup scope
+	/// \param id Identifier of workitem 
+	void setLocalId(unsigned id) { id_in_work_group = id; }	
+
+	/// Set identifier of a workitem, wavefront scope
+	/// \param id Identifier of workitem in a wavefront
+	void setIdInWavefront(unsigned id) { id_in_wavefront = id; }
+
+
 	// FIXME - probably most functions below can be inline
 
 	/// Get value of a scalar register

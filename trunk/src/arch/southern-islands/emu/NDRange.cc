@@ -35,13 +35,6 @@ NDRange::NDRange(Emu *emu)
 	this->last_work_group_sent = false;
 }
 
-// FIXME
-// NDRange::~NDRange()
-// {
-// 	if (inst_buffer)
-// 		free(inst_buffer);
-// }
-
 void NDRange::SetupSize(unsigned *global_size, unsigned *local_size,
 	int work_dim)
 {
