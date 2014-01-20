@@ -185,10 +185,34 @@ public:
 	unsigned getLocalMemTop() const { return local_mem_top; }
 
 	/// Get size of local size
-	unsigned getLocalSize(unsigned dim) { 
+	unsigned getLocalSize(unsigned dim) const { 
 		assert(dim >= 0 && dim <= 2);
 		return local_size3[dim];
 	}
+
+	/// Get size of group count
+	unsigned getGroupCount(unsigned dim) const {
+		assert(dim >= 0 && dim <= 2);
+		return group_count3[dim];
+	}
+
+	/// Get stage of NDRange
+	NDRangeStage getStage()	const { return stage; }
+
+	/// Get index of scalar register which stores workgroup id
+	unsigned getWorkgroupIdSreg() const { return wg_id_sgpr; }
+
+	/// Get user_element_count
+	unsigned getUserElementCount() const { return user_element_count; }
+
+	/// Get user element object
+	BinaryUserElement *getUserElement(int idx) {
+		assert(idx >= 0 && idx <= BinaryMaxUserElements);
+		return &user_elements[idx];
+	}
+
+	/// Get emu it belongs to
+	Emu *getEmu() const { return emu; }
 
 	/// Setters
 	///

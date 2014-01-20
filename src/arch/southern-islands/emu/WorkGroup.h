@@ -67,6 +67,9 @@ class WorkGroup
 	// ND-Range that it belongs to
 	NDRange *ndrange;
 
+	// Counter of workitems in the work-group
+	unsigned work_item_count;
+
 	// List of work-items in the work-group
 	std::vector<std::unique_ptr<WorkItem>> work_items;
 
@@ -108,6 +111,12 @@ public:
 	///
 	/// Get workgroup ID
 	int getId() const { return id; }
+
+	/// Get workgroup ID in 3D
+	int getId3D(unsigned dim) {
+		assert(dim >= 0 && dim <= 2);
+		return id_3d[dim];		
+	}
 
 	/// Get counter of wavefronts in workgroup
 	int getWavefrontsInWorkgroup() const { return wavefronts.size(); }
