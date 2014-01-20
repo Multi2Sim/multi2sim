@@ -68,7 +68,7 @@ class Wavefront
 	// Additional data added by timing simulator
 	std::unique_ptr<WavefrontData> data;
 
-	// Program counter. Offset in 'inst_buffer' where we can find the next
+	// Program counter. Pointer to 'inst_buffer' in NDRange where we can find the next
 	// instruction to be executed.
 	unsigned pc;
 
@@ -154,8 +154,24 @@ public:
 		return work_items_begin[id_in_wavefront].get();
 	}
 
+	/// Return pointer to the workgroup this wavefront belongs to
+	WorkGroup *getWorkgroup() const { return work_group; }
+
+	/// Get work_item_count
+	unsigned getWorkItemCount() const { return work_item_count; }
+
+	/// Return true if work-item is active. The work-item identifier is
+	/// given relative to the first work-item in the wavefront
+	bool getWorkItemActive(int id_in_wavefront);
+
 	/// Setters
 	///
+	/// Set work_item_count
+	void setWorkItemCount(unsigned work_item_count) { this->work_item_count = work_item_count; }
+
+	/// Set work_item_count++
+	void incWorkItemCount() { work_item_count++; }
+
 	/// Set PC
 	void setPC(unsigned pc) { this->pc = pc; }
 
@@ -189,23 +205,15 @@ public:
 	/// Set scalar register as an unsigned int
 	void setSregUint(int id, unsigned int value);
 
-	/// Dump wavefront in a human-readable format into output stream \a os
-	void Dump(std::ostream &os) const;
-
-	/// Dump wavefront into output stream
-	friend std::ostream &operator<<(std::ostream &os,
-			const Wavefront &wavefront) {
-		os << wavefront;
-		return os;
+	/// Set work_items_begin iterator
+	void setWorkItemsBegin(std::vector<std::unique_ptr<WorkItem>>::iterator work_items_begin) {
+		this->work_items_begin = work_items_begin;
 	}
 
-	/// Emulate the next instruction in the wavefront at the current
-	/// position of the program counter
-	void Execute();
-
-	/// Return true if work-item is active. The work-item identifier is
-	/// given relative to the first work-item in the wavefront
-	bool getWorkItemActive(int id_in_wavefront);
+	/// Set work_items_end iterator
+	void setWorkItemsEnd(std::vector<std::unique_ptr<WorkItem>>::iterator work_items_end) {
+		this->work_items_end = work_items_end;
+	}
 
 	/// Assign additional data to the wavefront. This operation is typically
 	/// done by the timing simulator. Argument \a data is given as a newly
@@ -253,6 +261,20 @@ public:
 	/// \param first_reg Id of the first scalar register
 	/// \param num_regs Number of scalar registers to be used, must be 2
 	void setSRegWithFetchShader(int first_reg, int num_regs);
+
+	/// Dump wavefront in a human-readable format into output stream \a os
+	void Dump(std::ostream &os) const;
+
+	/// Dump wavefront into output stream
+	friend std::ostream &operator<<(std::ostream &os,
+			const Wavefront &wavefront) {
+		os << wavefront;
+		return os;
+	}
+
+	/// Emulate the next instruction in the wavefront at the current
+	/// position of the program counter
+	void Execute();	
 
 	/// Return an iterator to the first work-item in the wavefront. The
 	/// work-items can be conveniently traversed with a loop using these

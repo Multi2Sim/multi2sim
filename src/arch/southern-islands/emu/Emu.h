@@ -299,6 +299,14 @@ public:
 	/// Get global memory
 	Memory::Memory *getGlobalMem() { return global_mem; }
 
+	/// Setters
+	///
+	/// Set work_group_count
+	void setWorkGroupCount(long long count) { work_group_count = count; }
+
+	/// Increase work_group_count by 1
+	void incWorkGroupCount() { work_group_count++; }
+
 	/// Dump the statistics summary
 	void DumpSummary(std::ostream &os);
 

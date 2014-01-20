@@ -17,9 +17,13 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include "NDRange.h"
 #include "WorkGroup.h"
 #include "Wavefront.h"
 #include "WorkItem.h"
+
+
+using namespace misc;
 
 namespace SI
 {
@@ -29,737 +33,274 @@ WorkGroup::WorkGroup(NDRange *ndrange, unsigned id)
 	this->id = id;
 	this->ndrange = ndrange;
 
-	// int i;
-	// int lid;
-	// int lidx, lidy, lidz;
-	// int tid;
-	// int user_element_count;
-	// int wavefront_id;
-	// int wavefront_offset;
-	// int work_item_id;
-	// int work_item_gidx_start;
-	// int work_item_gidy_start;
-	// int work_item_gidz_start;
+	unsigned lid;
+	unsigned lidx, lidy, lidz;
+	unsigned tid;
+	unsigned work_item_gidx_start;
+	unsigned work_item_gidy_start;
+	unsigned work_item_gidz_start;
 
-	// /* Number of work-items in work-group */
-	// unsigned int work_items_per_group = ndrange->getLocalSize(0) * 
-	// 	ndrange->getLocalSize(1) * ndrange->getLocalSize(2);
-	// assert(work_items_per_group > 0);
-
-	// /* Number of wavefronts in work-group */
-	// unsigned int wavefronts_per_group = (work_items_per_group + 
-	// 	(wavefront_size - 1)) / wavefront_size;
-	// assert(wavefronts_per_group > 0);
-
-	// /* Allocate pointers for work-items (will actually be created when
-	//  * wavefronts are created) */
-	// work_items = xcalloc(wavefront_size * 
-	// 	wavefronts_per_group, sizeof(void *));
-	// wavefronts = xcalloc(wavefronts_per_group, sizeof(void *));
-	// wavefront_count = wavefronts_per_group;
-
-	// /* Allocate wavefronts and work-items */
-	// SI_FOREACH_WAVEFRONT_IN_WORK_GROUP(self, wavefront_id)
-	// {
-	// 	wavefronts[wavefront_id] = new(SIWavefront,
-	// 		id * wavefronts_per_group + wavefront_id,
-	// 		self);
-
-	// 	wavefront = wavefronts[wavefront_id];
-
-	// 	SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
-	// 	{
-	// 		wavefront_offset = wavefront_id * wavefront_size;
-
-	// 		work_items[wavefront_offset+work_item_id] = 
-	// 			wavefront->work_items[work_item_id];
-	// 		work_items[wavefront_offset+work_item_id]->
-	// 			work_group = self;
-	// 	}
-	// }
-
-	// /* Initialize work-group and work-item metadata */
-	// id_3d[0] = id % ndrange->group_count3[0];
-	// id_3d[1] = (id / ndrange->group_count3[0]) % 
-	// 	ndrange->group_count3[1];
-	// id_3d[2] = id / (ndrange->group_count3[0] * 
-	// 	ndrange->group_count3[1]);
-
-	// /* Number of work-items in work-group */
-	// work_item_count = ndrange->getLocalSize(2) *
-	// 	ndrange->getLocalSize(1) * ndrange->getLocalSize(0);
-
-	// /* Global ID of work-item (0,0,0) within the work group */
-	// work_item_gidx_start = id_3d[0] * ndrange->getLocalSize(0);
-	// work_item_gidy_start = id_3d[1] * ndrange->getLocalSize(1);
-	// work_item_gidz_start = id_3d[2] * ndrange->getLocalSize(2);
-
-	// /* For NDRange created for Pixel Shader, we need to initialize LDS */
-	// switch(ndrange->stage)
-	// {
-	// case STAGE_PS:
-	// {
-	// 	/* Initialize LDS(Parameter Cache) */
-	// 	SIWorkGroupInitParamCache(self);
-	// 	break;
-	// }
-	// default:
-	// 	break;
-	// }
-
-	// /* Initialize work-item metadata */
-	// lid = 0;
-	// tid = id * work_items_per_group;
-	// for (lidz = 0; lidz < ndrange->getLocalSize(2); lidz++)
-	// {
-	// 	for (lidy = 0; lidy < ndrange->getLocalSize(1); lidy++)
-	// 	{
-	// 		for (lidx = 0; lidx < ndrange->getLocalSize(0); lidx++)
-	// 		{
-	// 			work_item = work_items[lid];
-
-	// 			/* Global IDs */
-	// 			work_item->id_3d[0] = work_item_gidx_start + 
-	// 				lidx;
-	// 			work_item->id_3d[1] = work_item_gidy_start + 
-	// 				lidy;
-	// 			work_item->id_3d[2] = work_item_gidz_start + 
-	// 				lidz;
-	// 			work_item->id = tid;
-
-	// 			/* Local IDs */
-	// 			work_item->id_in_work_group_3d[0] = lidx;
-	// 			work_item->id_in_work_group_3d[1] = lidy;
-	// 			work_item->id_in_work_group_3d[2] = lidz;
-	// 			work_item->id_in_work_group = lid;
-
-
-	// 			/* First, last, and number of work-items 
-	// 			 * in wavefront */
-	// 			wavefront = work_item->wavefront;
-	// 			if (!wavefront->work_item_count)
-	// 			{
-	// 				wavefront->work_item_id_first = tid;
-	// 			}
-	// 			wavefront->work_item_id_last = tid;
-	// 			wavefront->work_item_count++;
-
-	// 			/* Next work-item */
-	// 			tid++;
-	// 			lid++;
-
-	// 			/* Initialize the execution mask */
-	// 			if (work_item->id_in_wavefront < 32)
-	// 			{
-	// 				wavefront->sreg[SI_EXEC].as_uint |= 
-	// 					1 << work_item->id_in_wavefront;
-	// 			}
-	// 			else if (work_item->id_in_wavefront < 64)
-	// 			{
-	// 				wavefront->sreg[SI_EXEC + 1].as_uint |= 
-	// 					1 << work_item->id_in_wavefront;
-	// 			}
-	// 			else 
-	// 			{
-	// 				fatal("%s: invalid work-item id (%d)",
-	// 					__FUNCTION__, 
-	// 					work_item->id_in_wavefront);
-	// 			}
-	// 		}
-	// 	}
-	// }
-
-	// /* Intialize wavefront state */
-	// SI_FOREACH_WAVEFRONT_IN_WORK_GROUP(self, wavefront_id)
-	// {
-	// 	wavefront = wavefronts[wavefront_id];
-
-	// 	/* Set PC */
-	// 	wavefront->pc = 0;
-
-	// 	switch(ndrange->stage)
-	// 	{
-
-	// 		case STAGE_CL:
-	// 		{
-	// 			/* Save work-group IDs in scalar registers */
-	// 			wavefront->sreg[ndrange->wg_id_sgpr].as_int =
-	// 				wavefront->work_group->id_3d[0];
-	// 			wavefront->sreg[ndrange->wg_id_sgpr + 1].as_int =
-	// 				wavefront->work_group->id_3d[1];
-	// 			wavefront->sreg[ndrange->wg_id_sgpr + 2].as_int =
-	// 				wavefront->work_group->id_3d[2];
-	// 			break;
-	// 		}
-	// 		case STAGE_PS:
-	// 		{
-	// 			/* Currently hard coded as only store 1 primitive data in LDS with offset 0x0 */
-	// 			wavefront->sreg[ndrange->wg_id_sgpr].as_int =0x0000000; 
-	// 		}
-	// 		default:
-	// 		{
-	// 			/* Save work-group IDs in scalar registers */
-	// 			wavefront->sreg[ndrange->wg_id_sgpr].as_int =
-	// 				wavefront->work_group->id_3d[0];
-	// 			wavefront->sreg[ndrange->wg_id_sgpr + 1].as_int =
-	// 				wavefront->work_group->id_3d[1];
-	// 			wavefront->sreg[ndrange->wg_id_sgpr + 2].as_int =
-	// 				wavefront->work_group->id_3d[2];
-	// 			break;				
-	// 		}
-	// 	}
-
-	// 	SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
-	// 	{
-	// 		/* Store work-item IDs in vector registers */
-	// 		work_item = wavefront->work_items[work_item_id];
-	// 		switch(ndrange->stage)
-	// 		{
-	// 			 OpenCL convention 
-	// 			case STAGE_CL:
-	// 			{
-	// 				/* V0 */
-	// 				work_item->vreg[0].as_int = 
-	// 					work_item->id_in_work_group_3d[0];  
-	// 				/* V1 */
-	// 				work_item->vreg[1].as_int = 
-	// 					work_item->id_in_work_group_3d[1]; 
-	// 				/* V2 */
-	// 				work_item->vreg[2].as_int = 
-	// 					work_item->id_in_work_group_3d[2];
-	// 				break;					
-	// 			}
-	// 			/* Vertex shader initialization convention */
-	// 			case STAGE_VS:
-	// 			{
-	// 				/* VSes load VGPR0 with the thread's vertex index */
-	// 				work_item->vreg[0].as_int = work_item->id;
-	// 				break;
-	// 			}
-	// 			/* Pixel shader initialization convention */
-	// 			case STAGE_PS:
-	// 			{
-	// 				ps_init_meta = list_get(ndrange->ps_init_data->meta_list, work_item->id);
-
-	// 				/* PSes load barycentric coordinates to VGPRs */
-	// 				if (ps_init_meta)
-	// 				{
-	// 					work_item->vreg[0].as_float = ps_init_meta->brctrc_i; /* I pers sample */
-	// 					work_item->vreg[1].as_float = ps_init_meta->brctrc_j; /* J pers sample */
-	// 					work_item->vreg[2].as_float = 0.0f; /* I pers center */
-	// 					work_item->vreg[3].as_float = 0.0f; /* J pers center */
-	// 					work_item->vreg[4].as_float = 0.0f; /* I pers centroid */
-	// 					work_item->vreg[5].as_float = 0.0f; /* J pers centroid */
-	// 					work_item->vreg[6].as_float = 0.0f ; /* I/W */
-	// 					work_item->vreg[7].as_float = 0.0f; /* J/W */
-	// 					work_item->vreg[8].as_float = 0.0f; /* 1/W */
-	// 					work_item->vreg[9].as_float = 0.0f; /* I linear sample */
-	// 					work_item->vreg[10].as_float = 0.0f; /* J linear sample */
-	// 					work_item->vreg[11].as_float = 0.0f; /* I linear center */
-	// 					work_item->vreg[12].as_float = 0.0f; /* J linear center */
-	// 					work_item->vreg[13].as_float = 0.0f; /* I linear centroid */
-	// 					work_item->vreg[14].as_float = 0.0f; /* J linear centroid */
-	// 					work_item->vreg[15].as_float = 0.0f; /* Line stipple */
-	// 					work_item->vreg[16].as_int = ps_init_meta->x; /* X float */
-	// 					work_item->vreg[17].as_int = ps_init_meta->y; /* Y float */
-	// 					work_item->vreg[18].as_float = 0.0f; /* Z float */
-	// 					work_item->vreg[19].as_float = 0.0f; /* W float */
-	// 					work_item->vreg[20].as_float = 0.0f; /* Facedness */
-	// 					work_item->vreg[21].as_float = 0.0f; /* RTA, ISN, PT */
-	// 					work_item->vreg[22].as_float = 0.0f; /* Sample mask */
-	// 					work_item->vreg[23].as_float = 0.0f; /* X/Y fixed */
-	// 				}
-	// 				break;
-	// 			}
-	// 			/* Default is OpenCL convention */
-	// 			default:
-	// 			{
-	// 				/* V0 */
-	// 				work_item->vreg[0].as_int = 
-	// 					work_item->id_in_work_group_3d[0];  
-	// 				/* V1 */
-	// 				work_item->vreg[1].as_int = 
-	// 					work_item->id_in_work_group_3d[1]; 
-	// 				/* V2 */
-	// 				work_item->vreg[2].as_int = 
-	// 					work_item->id_in_work_group_3d[2];
-	// 				break;
-	// 			}
-	// 		}
-	// 	}
-
-	// 	/* Initialize sreg pointers to internal data structures */
-	// 	user_element_count = ndrange->userElementCount;
-	// 	user_elements = ndrange->userElements;
-	// 	for (i = 0; i < user_element_count; i++)
-	// 	{
-	// 		if (user_elements[i].dataClass == SIBinaryUserDataConstBuffer)
-	// 		{
-	// 			/* Store CB pointer in sregs */
-	// 			SIWavefrontInitSRegWithConstantBuffer(wavefront,
-	// 				user_elements[i].startUserReg,
-	// 				user_elements[i].userRegCount,
-	// 				user_elements[i].apiSlot);
-	// 		}
-	// 		else if (user_elements[i].dataClass == SIBinaryUserDataUAV)
-	// 		{
-	// 			/* Store UAV pointer in sregs */
-	// 			SIWavefrontInitSRegWithUAV(wavefront,
-	// 				user_elements[i].startUserReg,
-	// 				user_elements[i].userRegCount,
-	// 				user_elements[i].apiSlot);
-	// 		}
-	// 		else if (user_elements[i].dataClass ==
-	// 			SIBinaryUserDataConstBufferTable)
-	// 		{
-	// 			/* Store CB table in sregs */
-	// 			SIWavefrontInitSRegWithConstantBufferTable(wavefront,
-	// 				user_elements[i].startUserReg,
-	// 				user_elements[i].userRegCount);
-	// 		}
-	// 		else if (user_elements[i].dataClass == SIBinaryUserDataUAVTable)
-	// 		{
-	// 			/* Store UAV table in sregs */
-	// 			SIWavefrontInitSRegWithUAVTable(
-	// 				wavefront,
-	// 				user_elements[i].startUserReg,
-	// 				user_elements[i].userRegCount);
-	// 		}
-	// 		/* FIXME: PTR_VERTEX_BUFFER_TABLE doesn't match binary */
-	// 		else if (user_elements[i].dataClass == 21)
-	// 		{
-	// 			/* Store VB table in sregs */
-	// 			SIWavefrontInitSRegWithBufferTable(
-	// 				wavefront,
-	// 				user_elements[i].startUserReg,
-	// 				user_elements[i].userRegCount);
-	// 		}
-	// 		/* FIXME: SUB_PTR_FETCH_SHADER doesn't match binary */
-	// 		else if (user_elements[i].dataClass == 16)
-	// 		{
-	// 			/* Store Fetch Shader pointer in sregs */
-	// 			SIWavefrontInitSRegWithFetchShader(
-	// 				wavefront,
-	// 				user_elements[i].startUserReg,
-	// 				user_elements[i].userRegCount);
-	// 		}
-	// 		else if (user_elements[i].dataClass == SIBinaryUserDataSampler)
-	// 		{
-	// 			/* Store sampler in sregs */
-	// 			assert(0);
-	// 		}
-	// 		else if (user_elements[i].dataClass ==
-	// 			SIBinaryUserDataPtrResourceTable)
-	// 		{
-	// 			/* Store resource table in sregs */
-	// 			assert(0);
-	// 		}
-	// 		else if (user_elements[i].dataClass ==
-	// 			SIBinaryUserDataInternalGlobalTable)
-	// 		{
-	// 			fatal("%s: PTR_INTERNAL_GLOBAL_TABLE not "
-	// 				"supported", __FUNCTION__);
-	// 		}
-	// 		else
-	// 		{
-	// 			fatal("%s: Unimplemented User Element: "
-	// 				"dataClass:%d", __FUNCTION__,
-	// 				user_elements[i].dataClass);
-	// 		}
-	// 	}
-	// }
-
-	// /* Statistics */
-	// emu->work_group_count++;
-
-
-}
-	
-}  // namespace SI
-
-#if 0
-#include <driver/opengl/si-spi.h>
-#include <lib/mhandle/mhandle.h>
-#include <lib/util/debug.h>
-#include <lib/util/list.h>
-#include <mem-system/memory.h>
-
-#include "isa.h"
-#include "ndrange.h"
-#include "sx.h"
-#include "wavefront.h"
-#include "work-group.h"
-#include "work-item.h"
-
-/*
- * Private Functions
- */
-
-
-/* Parameter cache is LDS, which has parameter data from shader export module */
-static void SIWorkGroupInitParamCache(SIWorkGroup *self)
-{
-	struct si_sx_ps_init_lds_t *lds;
-
-	lds = ndrange->ps_init_data->lds;
-	assert(lds);
-
-	/* 
-	 * Currently, NDRange is created per primitive(triangle) for Pixel Shader
-	 * So just load lds data to the beginning of LDS module
-	 */	 
-	mem_write(lds_module, 0x0, lds->size, lds->data);
-}
-
-
-/*
- * Public Functions
- */
-
-void SIWorkGroupCreate(SIWorkGroup *self, unsigned int id, SINDRange *ndrange)
-{
-	struct SIBinaryUserElement *user_elements;
-
-	SIWavefront *wavefront;
-	SIWorkItem *work_item;
-	SIEmu *emu = ndrange->emu;
-	struct si_sx_ps_init_meta_t *ps_init_meta;
-
-	int i;
-	int lid;
-	int lidx, lidy, lidz;
-	int tid;
-	int user_element_count;
-	int wavefront_id;
-	int wavefront_offset;
-	int work_item_id;
-	int work_item_gidx_start;
-	int work_item_gidy_start;
-	int work_item_gidz_start;
-
-	/* Number of work-items in work-group */
-	unsigned int work_items_per_group = ndrange->getLocalSize(0) * 
+	// Number of work-items in work-group 
+	unsigned work_items_per_group = ndrange->getLocalSize(0) * 
 		ndrange->getLocalSize(1) * ndrange->getLocalSize(2);
 	assert(work_items_per_group > 0);
 
-	/* Number of wavefronts in work-group */
-	unsigned int wavefronts_per_group = (work_items_per_group + 
+	// Number of wavefronts in work-group 
+	unsigned wavefronts_per_group = (work_items_per_group + 
 		(wavefront_size - 1)) / wavefront_size;
 	assert(wavefronts_per_group > 0);
 
-	/* Initialize */
-	id = id;
-	ndrange = ndrange;
-
-	/* Create LDS */
-	lds_module = mem_create();
-	lds_module->safe = 0;
-
-	/* Allocate pointers for work-items (will actually be created when
-	 * wavefronts are created) */
-	work_items = xcalloc(wavefront_size * 
-		wavefronts_per_group, sizeof(void *));
-	wavefronts = xcalloc(wavefronts_per_group, sizeof(void *));
-	wavefront_count = wavefronts_per_group;
-
-	/* Allocate wavefronts and work-items */
-	SI_FOREACH_WAVEFRONT_IN_WORK_GROUP(self, wavefront_id)
+	// Allocate wavefronts and work-items
+	for (unsigned i = 0; i < wavefronts_per_group; ++i)
 	{
-		wavefronts[wavefront_id] = new(SIWavefront,
-			id * wavefronts_per_group + wavefront_id,
-			self);
-
-		wavefront = wavefronts[wavefront_id];
-
-		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
+		this->wavefronts.push_back(std::unique_ptr<Wavefront>(new 
+			Wavefront(this, i)));
+		for (unsigned j = 0; j < wavefront_size; ++j)
 		{
-			wavefront_offset = wavefront_id * wavefront_size;
-
-			work_items[wavefront_offset+work_item_id] = 
-				wavefront->work_items[work_item_id];
-			work_items[wavefront_offset+work_item_id]->
-				work_group = self;
+			unsigned work_item_id = i * wavefronts_per_group + j;
+			this->work_items.push_back(std::unique_ptr<WorkItem>(new 
+				WorkItem(wavefronts[i].get(), work_item_id)));
 		}
 	}
 
-	/* Initialize work-group and work-item metadata */
-	id_3d[0] = id % ndrange->group_count3[0];
-	id_3d[1] = (id / ndrange->group_count3[0]) % 
-		ndrange->group_count3[1];
-	id_3d[2] = id / (ndrange->group_count3[0] * 
-		ndrange->group_count3[1]);
+	// Initialize work-group and work-item metadata 
+	id_3d[0] = id % ndrange->getGroupCount(0);
+	id_3d[1] = (id / ndrange->getGroupCount(0)) % 
+		ndrange->getGroupCount(1);
+	id_3d[2] = id / (ndrange->getGroupCount(0) * 
+		ndrange->getGroupCount(1));
 
-	/* Number of work-items in work-group */
-	work_item_count = ndrange->getLocalSize(2) *
+	// Number of work-items in work-group 
+	this->work_item_count = ndrange->getLocalSize(2) *
 		ndrange->getLocalSize(1) * ndrange->getLocalSize(0);
 
-	/* Global ID of work-item (0,0,0) within the work group */
+	// Global ID of work-item (0,0,0) within the work group 
 	work_item_gidx_start = id_3d[0] * ndrange->getLocalSize(0);
 	work_item_gidy_start = id_3d[1] * ndrange->getLocalSize(1);
 	work_item_gidz_start = id_3d[2] * ndrange->getLocalSize(2);
 
-	/* For NDRange created for Pixel Shader, we need to initialize LDS */
-	switch(ndrange->stage)
+	// For NDRange created for Pixel Shader, we need to initialize LDS 
+	switch(ndrange->getStage())
 	{
-	case STAGE_PS:
-	{
-		/* Initialize LDS(Parameter Cache) */
-		SIWorkGroupInitParamCache(self);
+
+	case NDRangeStagePixelShader:
+		// FIXME:Initialize LDS(Parameter Cache) 
 		break;
-	}
+
 	default:
 		break;
+
 	}
 
-	/* Initialize work-item metadata */
+	// Initialize work-item metadata
 	lid = 0;
 	tid = id * work_items_per_group;
+	WorkItem *work_item;
+	Wavefront *wavefront;
 	for (lidz = 0; lidz < ndrange->getLocalSize(2); lidz++)
 	{
 		for (lidy = 0; lidy < ndrange->getLocalSize(1); lidy++)
 		{
 			for (lidx = 0; lidx < ndrange->getLocalSize(0); lidx++)
 			{
-				work_item = work_items[lid];
+				work_item = work_items[lid].get();
 
-				/* Global IDs */
-				work_item->id_3d[0] = work_item_gidx_start + 
-					lidx;
-				work_item->id_3d[1] = work_item_gidy_start + 
-					lidy;
-				work_item->id_3d[2] = work_item_gidz_start + 
-					lidz;
-				work_item->id = tid;
+				// Global IDs 
+				work_item->setGlobalId(0,work_item_gidx_start + lidx);
+				work_item->setGlobalId(1,work_item_gidy_start + lidy);
+				work_item->setGlobalId(2,work_item_gidz_start + lidz);
+				work_item->setGlobalId(tid);
 
-				/* Local IDs */
-				work_item->id_in_work_group_3d[0] = lidx;
-				work_item->id_in_work_group_3d[1] = lidy;
-				work_item->id_in_work_group_3d[2] = lidz;
-				work_item->id_in_work_group = lid;
+				// Local IDs 
+				work_item->setLocalId(0, lidx);
+				work_item->setLocalId(1, lidy);
+				work_item->setLocalId(2, lidz);
+				work_item->setLocalId(lid);
 
-
-				/* First, last, and number of work-items 
-				 * in wavefront */
-				wavefront = work_item->wavefront;
-				if (!wavefront->work_item_count)
+				// First, last, and number of work-items 
+				// in wavefront 
+				wavefront = work_item->getWavefront();
+				if (!wavefront->getWorkItemCount())
 				{
-					wavefront->work_item_id_first = tid;
+					wavefront->setWorkItemsBegin(this->work_items.begin() + lid);
 				}
-				wavefront->work_item_id_last = tid;
-				wavefront->work_item_count++;
+				wavefront->setWorkItemsEnd(this->work_items.begin() + tid);
+				wavefront->incWorkItemCount();
 
 				/* Next work-item */
 				tid++;
 				lid++;
 
 				/* Initialize the execution mask */
-				if (work_item->id_in_wavefront < 32)
+				if (work_item->getIdInWavefront() < 32)
 				{
-					wavefront->sreg[SI_EXEC].as_uint |= 
-						1 << work_item->id_in_wavefront;
+					unsigned exec_mask = wavefront->getSregUint(SI_EXEC);
+					exec_mask |= 1 << work_item->getIdInWavefront();
+					wavefront->setSregUint(SI_EXEC, exec_mask);
 				}
-				else if (work_item->id_in_wavefront < 64)
+				else if (work_item->getIdInWavefront() < 64)
 				{
-					wavefront->sreg[SI_EXEC + 1].as_uint |= 
-						1 << work_item->id_in_wavefront;
+					unsigned exec_mask = wavefront->getSregUint(SI_EXEC + 1);
+					exec_mask |= 1 << work_item->getIdInWavefront();
+					wavefront->setSregUint(SI_EXEC, exec_mask);
 				}
 				else 
 				{
 					fatal("%s: invalid work-item id (%d)",
 						__FUNCTION__, 
-						work_item->id_in_wavefront);
+						work_item->getIdInWavefront());
 				}
 			}
 		}
 	}
 
-	/* Intialize wavefront state */
-	SI_FOREACH_WAVEFRONT_IN_WORK_GROUP(self, wavefront_id)
+	// Intialize wavefront state 
+	for(auto wf_i = WavefrontsBegin(),
+			wf_e = WavefrontsEnd(); wf_i != wf_e; ++wf_i)
 	{
-		wavefront = wavefronts[wavefront_id];
+		wavefront = (*wf_i).get();
 
-		/* Set PC */
-		wavefront->pc = 0;
+		// Set PC 
+		wavefront->setPC(0);
 
-		switch(ndrange->stage)
+		switch(ndrange->getStage())
 		{
 
-			case STAGE_CL:
+		// Save work-group IDs in scalar registers 
+		case NDRangeStageCompute:
+			wavefront->setSregUint(ndrange->getWorkgroupIdSreg(), 
+				wavefront->getWorkgroup()->getId3D(0));
+			wavefront->setSregUint(ndrange->getWorkgroupIdSreg() + 1, 
+				wavefront->getWorkgroup()->getId3D(1));
+			wavefront->setSregUint(ndrange->getWorkgroupIdSreg() + 2, 
+				wavefront->getWorkgroup()->getId3D(2));
+			break;
+
+
+		// Currently hard coded as LDS is exclusive to each primitive.
+		// Primitives should share LDS module and use different offset
+		case NDRangeStagePixelShader:
+			wavefront->setSregUint(ndrange->getWorkgroupIdSreg(), 0x0); 
+			break;
+
+		default:
+			// Save work-group IDs in scalar registers 
+			wavefront->setSregUint(ndrange->getWorkgroupIdSreg(), 
+				wavefront->getWorkgroup()->getId3D(0));
+			wavefront->setSregUint(ndrange->getWorkgroupIdSreg() + 1, 
+				wavefront->getWorkgroup()->getId3D(1));
+			wavefront->setSregUint(ndrange->getWorkgroupIdSreg() + 2, 
+				wavefront->getWorkgroup()->getId3D(2));
+			break;
+		}
+
+		for (auto wi_i = wavefront->WorkItemsBegin(),
+				wi_e = wavefront->WorkItemsEnd(); wi_i != wi_e; ++wi_i)
+		{
+			// Store work-item IDs in vector registers 
+			work_item = (*wi_i).get();
+
+			switch(ndrange->getStage())
 			{
-				/* Save work-group IDs in scalar registers */
-				wavefront->sreg[ndrange->wg_id_sgpr].as_int =
-					wavefront->work_group->id_3d[0];
-				wavefront->sreg[ndrange->wg_id_sgpr + 1].as_int =
-					wavefront->work_group->id_3d[1];
-				wavefront->sreg[ndrange->wg_id_sgpr + 2].as_int =
-					wavefront->work_group->id_3d[2];
+
+			// OpenCL convention 
+			case NDRangeStageCompute:
+				// V0 
+				work_item->WriteVReg(0, work_item->getLocalId3D(0));
+				// V1 
+				work_item->WriteVReg(1, work_item->getLocalId3D(1));
+				// V2 
+				work_item->WriteVReg(2, work_item->getLocalId3D(2));
+				break;					
+
+			// Vertex shader initialization convention 
+			case NDRangeStageVertexShader:
+				// VSes load VGPR0 with the thread's vertex index 
+				work_item->WriteVReg(0, work_item->getId());
+				break;
+
+			// Pixel shader initialization convention 
+			case NDRangeStagePixelShader:
+				// FIXME
+				break;
+
+			// Default is OpenCL convention 
+			default:
+				// V0 
+				work_item->WriteVReg(0, work_item->getLocalId3D(0));
+				// V1 
+				work_item->WriteVReg(1, work_item->getLocalId3D(1));
+				// V2 
+				work_item->WriteVReg(2, work_item->getLocalId3D(2));
 				break;
 			}
-			case STAGE_PS:
-			{
-				/* Currently hard coded as only store 1 primitive data in LDS with offset 0x0 */
-				wavefront->sreg[ndrange->wg_id_sgpr].as_int =0x0000000; 
-			}
-			default:
-			{
-				/* Save work-group IDs in scalar registers */
-				wavefront->sreg[ndrange->wg_id_sgpr].as_int =
-					wavefront->work_group->id_3d[0];
-				wavefront->sreg[ndrange->wg_id_sgpr + 1].as_int =
-					wavefront->work_group->id_3d[1];
-				wavefront->sreg[ndrange->wg_id_sgpr + 2].as_int =
-					wavefront->work_group->id_3d[2];
-				break;				
-			}
 		}
 
-		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
+		// Initialize sreg pointers to internal data structures 
+		unsigned user_element_count = ndrange->getUserElementCount();
+		for (unsigned i = 0; i < user_element_count; i++)
 		{
-			/* Store work-item IDs in vector registers */
-			work_item = wavefront->work_items[work_item_id];
-			switch(ndrange->stage)
-			{
-				/* OpenCL convention */
-				case STAGE_CL:
-				{
-					/* V0 */
-					work_item->vreg[0].as_int = 
-						work_item->id_in_work_group_3d[0];  
-					/* V1 */
-					work_item->vreg[1].as_int = 
-						work_item->id_in_work_group_3d[1]; 
-					/* V2 */
-					work_item->vreg[2].as_int = 
-						work_item->id_in_work_group_3d[2];
-					break;					
-				}
-				/* Vertex shader initialization convention */
-				case STAGE_VS:
-				{
-					/* VSes load VGPR0 with the thread's vertex index */
-					work_item->vreg[0].as_int = work_item->id;
-					break;
-				}
-				/* Pixel shader initialization convention */
-				case STAGE_PS:
-				{
-					ps_init_meta = list_get(ndrange->ps_init_data->meta_list, work_item->id);
-
-					/* PSes load barycentric coordinates to VGPRs */
-					if (ps_init_meta)
-					{
-						work_item->vreg[0].as_float = ps_init_meta->brctrc_i; /* I pers sample */
-						work_item->vreg[1].as_float = ps_init_meta->brctrc_j; /* J pers sample */
-						work_item->vreg[2].as_float = 0.0f; /* I pers center */
-						work_item->vreg[3].as_float = 0.0f; /* J pers center */
-						work_item->vreg[4].as_float = 0.0f; /* I pers centroid */
-						work_item->vreg[5].as_float = 0.0f; /* J pers centroid */
-						work_item->vreg[6].as_float = 0.0f ; /* I/W */
-						work_item->vreg[7].as_float = 0.0f; /* J/W */
-						work_item->vreg[8].as_float = 0.0f; /* 1/W */
-						work_item->vreg[9].as_float = 0.0f; /* I linear sample */
-						work_item->vreg[10].as_float = 0.0f; /* J linear sample */
-						work_item->vreg[11].as_float = 0.0f; /* I linear center */
-						work_item->vreg[12].as_float = 0.0f; /* J linear center */
-						work_item->vreg[13].as_float = 0.0f; /* I linear centroid */
-						work_item->vreg[14].as_float = 0.0f; /* J linear centroid */
-						work_item->vreg[15].as_float = 0.0f; /* Line stipple */
-						work_item->vreg[16].as_int = ps_init_meta->x; /* X float */
-						work_item->vreg[17].as_int = ps_init_meta->y; /* Y float */
-						work_item->vreg[18].as_float = 0.0f; /* Z float */
-						work_item->vreg[19].as_float = 0.0f; /* W float */
-						work_item->vreg[20].as_float = 0.0f; /* Facedness */
-						work_item->vreg[21].as_float = 0.0f; /* RTA, ISN, PT */
-						work_item->vreg[22].as_float = 0.0f; /* Sample mask */
-						work_item->vreg[23].as_float = 0.0f; /* X/Y fixed */
-					}
-					break;
-				}
-				/* Default is OpenCL convention */
-				default:
-				{
-					/* V0 */
-					work_item->vreg[0].as_int = 
-						work_item->id_in_work_group_3d[0];  
-					/* V1 */
-					work_item->vreg[1].as_int = 
-						work_item->id_in_work_group_3d[1]; 
-					/* V2 */
-					work_item->vreg[2].as_int = 
-						work_item->id_in_work_group_3d[2];
-					break;
-				}
-			}
-		}
-
-		/* Initialize sreg pointers to internal data structures */
-		user_element_count = ndrange->userElementCount;
-		user_elements = ndrange->userElements;
-		for (i = 0; i < user_element_count; i++)
-		{
-			if (user_elements[i].dataClass == SIBinaryUserDataConstBuffer)
+			BinaryUserElement *user_element = ndrange->getUserElement(i);
+			if (user_element->dataClass == BinaryUserDataConstBuffer)
 			{
 				/* Store CB pointer in sregs */
-				SIWavefrontInitSRegWithConstantBuffer(wavefront,
-					user_elements[i].startUserReg,
-					user_elements[i].userRegCount,
-					user_elements[i].apiSlot);
+				wavefront->setSRegWithConstantBuffer(
+					user_element->startUserReg,
+					user_element->userRegCount,
+					user_element->apiSlot);
 			}
-			else if (user_elements[i].dataClass == SIBinaryUserDataUAV)
+			else if (user_element->dataClass == BinaryUserDataUAV)
 			{
 				/* Store UAV pointer in sregs */
-				SIWavefrontInitSRegWithUAV(wavefront,
-					user_elements[i].startUserReg,
-					user_elements[i].userRegCount,
-					user_elements[i].apiSlot);
+				wavefront->setSRegWithUAV(
+					user_element->startUserReg,
+					user_element->userRegCount,
+					user_element->apiSlot);
 			}
-			else if (user_elements[i].dataClass ==
-				SIBinaryUserDataConstBufferTable)
+			else if (user_element->dataClass ==
+				BinaryUserDataConstBufferTable)
 			{
 				/* Store CB table in sregs */
-				SIWavefrontInitSRegWithConstantBufferTable(wavefront,
-					user_elements[i].startUserReg,
-					user_elements[i].userRegCount);
+				wavefront->setSRegWithConstantBufferTable(
+					user_element->startUserReg,
+					user_element->userRegCount);
 			}
-			else if (user_elements[i].dataClass == SIBinaryUserDataUAVTable)
+			else if (user_element->dataClass == BinaryUserDataUAVTable)
 			{
 				/* Store UAV table in sregs */
-				SIWavefrontInitSRegWithUAVTable(
-					wavefront,
-					user_elements[i].startUserReg,
-					user_elements[i].userRegCount);
+				wavefront->setSRegWithUAVTable(
+					user_element->startUserReg,
+					user_element->userRegCount);
 			}
 			/* FIXME: PTR_VERTEX_BUFFER_TABLE doesn't match binary */
-			else if (user_elements[i].dataClass == 21)
+			else if (user_element->dataClass == 21)
 			{
 				/* Store VB table in sregs */
-				SIWavefrontInitSRegWithBufferTable(
-					wavefront,
-					user_elements[i].startUserReg,
-					user_elements[i].userRegCount);
+				wavefront->setSRegWithBufferTable(
+					user_element->startUserReg,
+					user_element->userRegCount);
 			}
 			/* FIXME: SUB_PTR_FETCH_SHADER doesn't match binary */
-			else if (user_elements[i].dataClass == 16)
+			else if (user_element->dataClass == 16)
 			{
 				/* Store Fetch Shader pointer in sregs */
-				SIWavefrontInitSRegWithFetchShader(
-					wavefront,
-					user_elements[i].startUserReg,
-					user_elements[i].userRegCount);
+				wavefront->setSRegWithFetchShader(
+					user_element->startUserReg,
+					user_element->userRegCount);
 			}
-			else if (user_elements[i].dataClass == SIBinaryUserDataSampler)
+			else if (user_element->dataClass == BinaryUserDataSampler)
 			{
 				/* Store sampler in sregs */
 				assert(0);
 			}
-			else if (user_elements[i].dataClass ==
-				SIBinaryUserDataPtrResourceTable)
+			else if (user_element->dataClass ==
+				BinaryUserDataPtrResourceTable)
 			{
 				/* Store resource table in sregs */
 				assert(0);
 			}
-			else if (user_elements[i].dataClass ==
-				SIBinaryUserDataInternalGlobalTable)
+			else if (user_element->dataClass ==
+				BinaryUserDataInternalGlobalTable)
 			{
 				fatal("%s: PTR_INTERNAL_GLOBAL_TABLE not "
 					"supported", __FUNCTION__);
@@ -768,40 +309,13 @@ void SIWorkGroupCreate(SIWorkGroup *self, unsigned int id, SINDRange *ndrange)
 			{
 				fatal("%s: Unimplemented User Element: "
 					"dataClass:%d", __FUNCTION__,
-					user_elements[i].dataClass);
+					user_element->dataClass);
 			}
 		}
 	}
 
-	/* Statistics */
-	emu->work_group_count++;
+	// Statistics 
+	ndrange->getEmu()->incWorkGroupCount();
 }
-
-
-void SIWorkGroupDestroy(SIWorkGroup *self)
-{
-	SIWavefront *wavefront;
-
-	int wavefront_id;
-	int work_item_id; 
-
-	/* Free wavefronts and work-items */
-	SI_FOREACH_WAVEFRONT_IN_WORK_GROUP(self, wavefront_id)
-	{
-		wavefront = wavefronts[wavefront_id];
-
-		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
-			delete(wavefront->work_items[work_item_id]);
-
-		delete(wavefront->scalar_work_item);
-		delete(wavefront);
-	}
-	free(wavefronts);
-	free(work_items);
-
-	/* Free LDS memory module */
-	mem_free(lds_module);
-}
-
-#endif
-
+	
+}  // namespace SI
