@@ -29,7 +29,7 @@ struct cuda_device_t *cuda_device_create(enum cuda_device_type_t dev_type)
 	struct cuda_device_t *device;
 
 	/* Create device */
-	device = (struct cuda_device_t *)xcalloc(1, sizeof(struct cuda_device_t));
+	device = (struct cuda_device_t *) xcalloc(1, sizeof(struct cuda_device_t));
 
 	/* Initialize */
 	device->device = list_count(device_list);
@@ -266,6 +266,7 @@ struct cuda_device_t *cuda_device_create(enum cuda_device_type_t dev_type)
 		device->attributes
 		[CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE1D_MIPMAPPED_WIDTH] = 16384;
 	}
+	device->stream_list = list_create();
 
 	/* Add to device list */
 	list_add(device_list, device);
@@ -278,6 +279,7 @@ void cuda_device_free(struct cuda_device_t *device)
 {
 	list_remove(device_list, device);
 
+	list_free(device->stream_list);
 	free(device->name);
 	free(device);
 }

@@ -24,7 +24,6 @@
 struct cuda_function_arg_t
 {
 	void *ptr;
-
 	int size;
 
 	/* Offset in constant memory where argument is saved */

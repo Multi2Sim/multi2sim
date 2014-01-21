@@ -17,30 +17,190 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
 #include <pthread.h>
+#include <stdio.h>
+#include <unistd.h>
 
 #include "../include/cuda.h"
+#include "debug.h"
+#include "device.h"
+#include "function.h"
 #include "list.h"
 #include "mhandle.h"
 #include "stream.h"
 
 
+void cuMemcpyAsyncImpl(struct cuda_stream_command_t *command)
+{
+	int i;
+	CUdeviceptr mem_ptr;
+	CUdeviceptr dst = command->m_args.dst_ptr;
+	CUdeviceptr src = command->m_args.src_ptr;
+	unsigned size = command->m_args.size;
+	int dst_is_device = 0;
+	int src_is_device = 0;
+	int ret;
+	extern char *cuda_err_native;
+
+	cuda_debug("CUDA stream command %d running now", command->id);
+	cuda_debug("\tin: src_ptr = 0x%08x", src);
+	cuda_debug("\tin: dst_ptr = 0x%08x", dst);
+	cuda_debug("\tin: size = %d", size);
+
+	/* Determine if dst/src is host or device pointer */
+	for (i = 0; i < list_count(device_memory_object_list); ++i)
+	{
+		mem_ptr = (CUdeviceptr) list_get(device_memory_object_list, i);
+		if ((! dst_is_device) && (mem_ptr == dst))
+			dst_is_device = 1;
+		else if ((! src_is_device) && (mem_ptr == src))
+			src_is_device = 1;
+		if (dst_is_device && src_is_device)
+			break;
+	}
+
+	/* Syscall */
+	if (active_device->type == CUDA_DEVICE_FERMI)
+	{
+		if ((! src_is_device) && dst_is_device)
+			ret = syscall(CUDA_SYS_CODE, cuda_call_cuFrmMemcpyHtoD, dst, src,
+					size);
+		else if (src_is_device && (! dst_is_device))
+			ret = syscall(CUDA_SYS_CODE, cuda_call_cuFrmMemcpyDtoH, dst, src,
+					size);
+		/* TODO: host2host and device2device */
+		else
+			warning("%s: host to host and device to device async memory copy \
+					not implemented.\n", __func__);
+	}
+	else if (active_device->type == CUDA_DEVICE_KEPLER)
+	{
+		if ((! src_is_device) && dst_is_device)
+			ret = syscall(CUDA_SYS_CODE, cuda_call_cuKplMemcpyHtoD, dst, src,
+					size);
+		else if (src_is_device && (! dst_is_device))
+			ret = syscall(CUDA_SYS_CODE, cuda_call_cuKplMemcpyDtoH, dst, src,
+					size);
+		/* TODO: host2host and device2device */
+		else
+			warning("%s: host to host and device to device async memory copy \
+					not implemented.\n", __func__);
+	}
+	else
+		fatal("device not supported.\n");
+
+	/* Check that we are running on Multi2Sim. If a program linked with this
+	 * library is running natively, system call CUDA_SYS_CODE is not
+	 * supported. */
+	if (ret)
+		fatal("native execution not supported.\n%s", cuda_err_native);
+
+	cuda_debug("CUDA stream command %d completed now", command->id);
+}
+
+void cuLaunchKernelImpl(struct cuda_stream_command_t *command)
+{
+	CUfunction f = command->k_args.kernel;
+	unsigned gridDimX = command->k_args.grid_dim_x;
+	unsigned gridDimY = command->k_args.grid_dim_y;
+	unsigned gridDimZ = command->k_args.grid_dim_z;
+	unsigned blockDimX = command->k_args.block_dim_x;
+	unsigned blockDimY = command->k_args.block_dim_y;
+	unsigned blockDimZ = command->k_args.block_dim_z;
+	unsigned sharedMemBytes = command->k_args.shared_mem_size;
+	CUstream hStream = command->k_args.stream;
+	int **kernelParams = (int **)command->k_args.kernel_params;
+	void **extra = command->k_args.extra;
+	unsigned sys_args[11];
+	int ret;
+	extern char *cuda_err_native;
+
+	cuda_debug("CUDA stream command %d running now", command->id);
+	cuda_debug("\tin: function = [%p]", f);
+	cuda_debug("\tin: gridDimX = %u", gridDimX);
+	cuda_debug("\tin: gridDimY = %u", gridDimY);
+	cuda_debug("\tin: gridDimZ = %u", gridDimZ);
+	cuda_debug("\tin: blockDimX = %u", blockDimX);
+	cuda_debug("\tin: blockDimY = %u", blockDimY);
+	cuda_debug("\tin: blockDimZ = %u", blockDimZ);
+	cuda_debug("\tin: sharedMemBytes = %u", sharedMemBytes);
+	cuda_debug("\tin: hStream = [%p]", hStream);
+	cuda_debug("\tin: kernelParams = [%p]", kernelParams);
+	cuda_debug("\tin: extra = [%p]", extra);
+
+	/* Check input */
+	assert(gridDimX != 0 && gridDimY != 0 && gridDimZ != 0);
+	assert(blockDimX != 0 && blockDimY != 0 && blockDimZ != 0);
+
+	/* Syscall arguments */
+	sys_args[0] = f->id;
+	sys_args[1] = gridDimX;
+	sys_args[2] = gridDimY;
+	sys_args[3] = gridDimZ;
+	sys_args[4] = blockDimX;
+	sys_args[5] = blockDimY;
+	sys_args[6] = blockDimZ;
+	sys_args[7] = sharedMemBytes;
+	sys_args[8] = (hStream ? hStream->id : 0);
+	sys_args[9] = (unsigned)kernelParams;
+	sys_args[10] = (unsigned)extra;
+
+	/* Syscall */
+	if (active_device->type == CUDA_DEVICE_FERMI)
+		ret = syscall(CUDA_SYS_CODE, cuda_call_cuFrmLaunchKernel, sys_args);
+	else if (active_device->type == CUDA_DEVICE_KEPLER)
+		ret = syscall(CUDA_SYS_CODE, cuda_call_cuKplLaunchKernel, sys_args);
+	else
+		fatal("device not supported.\n");
+
+	/* Check that we are running on Multi2Sim. If a program linked with this
+	 * library is running natively, system call CUDA_SYS_CODE is not
+	 * supported. */
+	if (ret)
+		fatal("native execution not supported.\n%s", cuda_err_native);
+
+	cuda_debug("CUDA stream command %d completed now", command->id);
+}
+
 struct cuda_stream_command_t *cuda_stream_command_create(CUstream stream,
-		enum cuda_stream_command_type type, cuda_stream_command_func_t func)
+		cuda_stream_command_func_t func, struct memory_args_t *m_args,
+		struct kernel_args_t *k_args)
 {
 	struct cuda_stream_command_t *command;
 
 	/* Allocate command */
-	command = (struct cuda_stream_command_t *)xcalloc(1,
+	command = (struct cuda_stream_command_t *) xcalloc(1,
 			sizeof(struct cuda_stream_command_t));
+
+	/* if stream == 0, it is the default stream */
+	if (stream == 0)
+		stream = list_get(active_device->stream_list, 0);
 
 	/* Initialize */
 	command->id = list_count(stream->command_list);
-	command->type = type;
 	command->func = func;
+	if (m_args != NULL)
+	{
+		command->m_args.src_ptr = m_args->src_ptr;
+		command->m_args.dst_ptr = m_args->dst_ptr;
+		command->m_args.size = m_args->size;
+	}
+	if (k_args != NULL)
+	{
+		command->k_args.kernel = k_args->kernel;
+		command->k_args.grid_dim_x = k_args->grid_dim_x;
+		command->k_args.grid_dim_y = k_args->grid_dim_y;
+		command->k_args.grid_dim_z = k_args->grid_dim_z;
+		command->k_args.block_dim_x = k_args->block_dim_x;
+		command->k_args.block_dim_y = k_args->block_dim_y;
+		command->k_args.block_dim_z = k_args->block_dim_z;
+		command->k_args.shared_mem_size = k_args->shared_mem_size;
+		command->k_args.stream = k_args->stream;
+		command->k_args.kernel_params = k_args->kernel_params;
+		command->k_args.extra = k_args->extra;
+	}
 	command->completed = 0;
-
-	list_enqueue(stream->command_list, command);
 
 	return command;
 }
@@ -56,7 +216,7 @@ void cuda_stream_command_run(struct cuda_stream_command_t *command)
 	command->completed = 1;
 }
 
-static void *cuda_stream_thread_func(void *thread_data)
+void *cuda_stream_thread_func(void *thread_data)
 {
 	CUstream stream = thread_data;
 	struct cuda_stream_command_t *command;
@@ -67,7 +227,7 @@ static void *cuda_stream_thread_func(void *thread_data)
 		/* Get command */
 		command = cuda_stream_dequeue(stream);
 		if (! command)
-			break;
+			continue;
 
 		/* Run command */
 		cuda_stream_command_run(command);
@@ -75,8 +235,6 @@ static void *cuda_stream_thread_func(void *thread_data)
 	}
 
 	pthread_exit(NULL);
-
-	return NULL;
 }
 
 /* Create a stream */
@@ -85,18 +243,18 @@ CUstream cuda_stream_create(void)
 	CUstream stream;
 
 	/* Allocate stream */
-	stream = (CUstream)xcalloc(1, sizeof(struct CUstream_st));
+	stream = (CUstream) xcalloc(1, sizeof(struct CUstream_st));
 
 	/* Initialize */
-	stream->id = list_count(stream_list);
+	stream->id = list_count(active_device->stream_list);
 	stream->command_list = list_create();
 
 	/* Create thread associated with stream */
 	pthread_mutex_init(&stream->lock, NULL);
-	pthread_cond_init(&stream->cond, NULL);
 	pthread_create(&stream->thread, NULL, cuda_stream_thread_func, stream);
 
-	list_add(stream_list, stream);
+	/* Add to stream list */
+	list_add(active_device->stream_list, stream);
 
 	return stream;
 }
@@ -104,13 +262,9 @@ CUstream cuda_stream_create(void)
 /* Free stream */
 void cuda_stream_free(CUstream stream)
 {
-	pthread_join(stream->thread, NULL);
-
 	pthread_mutex_destroy(&stream->lock);
-	pthread_cond_destroy(&stream->cond);
-	pthread_exit(NULL);
 
-	list_remove(stream_list, stream);
+	list_remove(active_device->stream_list, stream);
 
 	free(stream);
 }
@@ -118,6 +272,10 @@ void cuda_stream_free(CUstream stream)
 /* Enqueue a command */
 void cuda_stream_enqueue(CUstream stream, struct cuda_stream_command_t *command)
 {
+	/* if stream == 0, it is the default stream */
+	if (stream == 0)
+		stream = list_get(active_device->stream_list, 0);
+
 	pthread_mutex_lock(&stream->lock);
 
 	list_add(stream->command_list, command);
@@ -132,8 +290,6 @@ struct cuda_stream_command_t *cuda_stream_dequeue(CUstream stream)
 
 	pthread_mutex_lock(&stream->lock);
 
-	while (! list_count(stream->command_list))
-		pthread_cond_wait(&stream->cond, &stream->lock);
 	command = list_dequeue(stream->command_list);
 
 	pthread_mutex_unlock(&stream->lock);

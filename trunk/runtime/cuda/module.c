@@ -30,7 +30,7 @@ CUmodule cuda_module_create(const char *cubin_path)
 	CUmodule module;
 
 	/* Create module */
-	module = (CUmodule)xcalloc(1, sizeof(struct CUmod_st));
+	module = (CUmodule) xcalloc(1, sizeof(struct CUmod_st));
 
 	/* Initialize */
 	module->id = list_count(module_list);

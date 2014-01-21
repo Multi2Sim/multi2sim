@@ -36,6 +36,9 @@ struct cuda_device_t
 
 	/* Attributes */
 	int attributes[CU_DEVICE_ATTRIBUTE_MAX];
+
+	/* Streams associated */
+	struct list_t *stream_list;
 };
 
 struct cuda_device_t *cuda_device_create(enum cuda_device_type_t dev_type);

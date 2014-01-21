@@ -21,7 +21,7 @@
 #define RUNTIME_CUDA_EVENT_H
 
 
-extern struct list_t *event_list;
+#include "api.h"
 
 struct CUevent_st
 {
