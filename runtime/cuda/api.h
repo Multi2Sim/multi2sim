@@ -43,7 +43,7 @@ enum cuda_device_type_t
 	CUDA_DEVICE_FERMI = 0,
 	CUDA_DEVICE_KEPLER = 1
 };
-struct cuda_device_t *active_devices;
+struct cuda_device_t *active_device;
 struct cuda_device_t *frm_device;
 struct cuda_device_t *kpl_device;
 
@@ -53,9 +53,11 @@ struct list_t *device_list;
 struct list_t *module_list;
 struct list_t *function_list;
 struct list_t *memory_object_list;
-struct list_t *stream_list;
 struct list_t *event_list;
 
+/* Memory related tables */
+struct list_t *pinned_memory_object_list;
+struct list_t *device_memory_object_list;
 
 #endif
 

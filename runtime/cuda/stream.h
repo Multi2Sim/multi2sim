@@ -21,7 +21,7 @@
 #define RUNTIME_CUDA_STREAM_H
 
 
-extern struct list_t *stream_list;
+#include "api.h"
 
 enum cuda_stream_command_type
 {
@@ -34,13 +34,44 @@ struct cuda_stream_command_t;
 typedef void (*cuda_stream_command_func_t)(
 		struct cuda_stream_command_t *command);
 
+struct memory_args_t
+{
+	CUdeviceptr src_ptr;
+	CUdeviceptr dst_ptr;
+	unsigned size;
+};
+
+struct kernel_args_t
+{
+	CUfunction kernel;
+	unsigned grid_dim_x;
+	unsigned grid_dim_y;
+	unsigned grid_dim_z;
+	unsigned block_dim_x;
+	unsigned block_dim_y;
+	unsigned block_dim_z;
+	unsigned shared_mem_size;
+	CUstream stream;
+	void **kernel_params;
+	void **extra;
+};
+
 struct cuda_stream_command_t
 {
 	unsigned id;
 
-	enum cuda_stream_command_type type;
 	cuda_stream_command_func_t func;
 
+	union
+	{
+		/* Arguments for memory copy functions */
+		struct memory_args_t m_args;
+
+		/* Arguments for kernel launch functions */
+		struct kernel_args_t k_args;
+	};
+
+	/* Flags */
 	unsigned completed;
 };
 
@@ -52,9 +83,15 @@ struct CUstream_st
 
 	pthread_t thread;
 	pthread_mutex_t lock;
-	pthread_cond_t cond;
 };
 
+void cuMemcpyAsyncImpl(struct cuda_stream_command_t *command);
+void cuLaunchKernelImpl(struct cuda_stream_command_t *command);
+struct cuda_stream_command_t *cuda_stream_command_create(CUstream stream,
+		cuda_stream_command_func_t func, struct memory_args_t *mem_args,
+		struct kernel_args_t *k_args);
+void cuda_stream_command_free(struct cuda_stream_command_t *command);
+void cuda_stream_command_run(struct cuda_stream_command_t *command);
 CUstream cuda_stream_create(void);
 void cuda_stream_free(CUstream stream);
 void cuda_stream_enqueue(CUstream stream,
