@@ -44,7 +44,7 @@ struct cuda_function_arg_t
 	enum cuda_mem_scope_t mem_scope;
 	enum cuda_function_arg_access_type_t access_type;
 
-	unsigned int value;
+	unsigned value;
 };
 
 struct cuda_function_arg_t *cuda_function_arg_create(char *name);

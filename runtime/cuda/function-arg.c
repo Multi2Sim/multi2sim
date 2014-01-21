@@ -30,7 +30,7 @@ struct cuda_function_arg_t *cuda_function_arg_create(const void *ptr, int size,
 	struct cuda_function_arg_t *arg;
 
 	/* Create a new function argument */
-	arg = (struct cuda_function_arg_t *)xcalloc(1, 
+	arg = (struct cuda_function_arg_t *) xcalloc(1,
 			sizeof(struct cuda_function_arg_t));
 
 	/* Initialize */
