@@ -30,6 +30,9 @@ libsi2bin_a_SOURCES = \
 	Metadata.cc \
 	Metadata.h \
 	\
+	si2bin.c \
+	si2bin.h \
+	\
 	Symbol.cc \
 	Symbol.h \
 	\
@@ -38,6 +41,9 @@ libsi2bin_a_SOURCES = \
 	\
 	Token.cc \
 	Token.h \
+	\
+	Wrapper.cc \
+	Wrapper.h \
 	\
 	Lex.ll \
 	Parser.yy
@@ -49,9 +55,9 @@ LDADD = \
 
 else
 
-#libsi2bin_a_SOURCES = \
-#	si2bin-missing.c \
-#	si2bin.h
+libsi2bin_a_SOURCES = \
+	si2bin-missing.c \
+	si2bin.h
 
 endif
 
