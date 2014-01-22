@@ -119,10 +119,16 @@ public:
 	}
 
 	/// Get counter of wavefronts in workgroup
-	int getWavefrontsInWorkgroup() const { return wavefronts.size(); }
+	unsigned getWavefrontsInWorkgroup() const { return wavefronts.size(); }
 
 	/// Get counter of wavefronts at barrier
-	int getWavefrontsAtBarrier() const { return wavefronts_at_barrier; }
+	unsigned getWavefrontsAtBarrier() const { return wavefronts_at_barrier; }
+
+	/// Get counter of finished wavefront, emulation mode
+	unsigned getWavefrontsCompletedEmu() const { return wavefronts_completed_emu; }
+
+	/// Get counter of finished wavefront, timing mode
+	unsigned getWavefrontsCompletedTiming() const { return wavefronts_completed_timing; }	
 
 	/// Return value of sreg_read_count
 	long long getSregReadCount() const{ return sreg_read_count; }
@@ -174,6 +180,9 @@ public:
 	/// ownership of that pointer and free it automatically when the
 	/// work-group is destructed.
 	void setData(WorkGroupData *data);
+
+	/// Set finished_emu flag
+	void setFinishedEmu(bool flag) { finished_emu = flag; }
 
 	/// Return an iterator to the first work-item in the work-group. The
 	/// following code can then be used to iterate over all work-items (and

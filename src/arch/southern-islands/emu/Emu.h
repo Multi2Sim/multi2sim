@@ -22,6 +22,7 @@
 
 #include <iostream>
 #include <list>
+#include <memory>
 
 #include <lib/cpp/Debug.h>
 #include <mem-system/Memory.h>
@@ -236,11 +237,11 @@ class Emu
 	// Memory spaces
 
 	// Local to the GPU
-	Memory::Memory *video_mem;
+	std::unique_ptr<Memory::Memory> video_mem;
 	unsigned int video_mem_top;
 
 	// Shared with the CPU
-	Memory::Memory *shared_mem;
+	std::unique_ptr<Memory::Memory> shared_mem;
 	
 	// Will point to video_mem or shared_mem
 	Memory::Memory *global_mem;
@@ -299,13 +300,37 @@ public:
 	/// Get global memory
 	Memory::Memory *getGlobalMem() { return global_mem; }
 
+	/// Get disassembler
+	SI::Asm *getAsm() { return as; }
+
 	/// Setters
 	///
 	/// Set work_group_count
 	void setWorkGroupCount(long long count) { work_group_count = count; }
 
-	/// Increase work_group_count by 1
+	/// Increment work_group_count
 	void incWorkGroupCount() { work_group_count++; }
+
+	/// Increment scalar_alu_inst_count
+	void incScalarAluInstCount() { scalar_alu_inst_count++; }
+
+	/// Increment scalar_mem_inst_count
+	void incScalarMemInstCount() { scalar_mem_inst_count++; }
+
+	/// Increment branch_inst_count
+	void incBranchInstCount() { branch_inst_count++; }
+
+	/// Increment vector_alu_inst_count
+	void incVectorAluInstCount() { vector_alu_inst_count++; }
+
+	/// Increment lds_inst_count
+	void incLdsInstCount() { lds_inst_count++; }
+
+	/// Increment vector_mem_inst_count
+	void incVectorMemInstCount() { vector_mem_inst_count++; }
+
+	/// Increment export_inst_count
+	void incExportInstCount() { export_inst_count++; }
 
 	/// Dump the statistics summary
 	void DumpSummary(std::ostream &os);

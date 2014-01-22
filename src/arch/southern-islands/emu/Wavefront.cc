@@ -114,13 +114,13 @@ Wavefront::Wavefront(WorkGroup *work_group, int id)
 	this->work_group = work_group;
 	this->id = id;
 
-	/* Integer inline constants. */
+	// Integer inline constants.
 	for(int i = 128; i < 193; i++)
 		sreg[i].as_int = i - 128;
 	for(int i = 193; i < 209; i++)
 		sreg[i].as_int = -(i - 192);
 
-	/* Inline floats. */
+	// Inline floats.
 	sreg[240].as_float = 0.5;
 	sreg[241].as_float = -0.5;
 	sreg[242].as_float = 1.0;
@@ -130,12 +130,532 @@ Wavefront::Wavefront(WorkGroup *work_group, int id)
 	sreg[246].as_float = 4.0;
 	sreg[247].as_float = -4.0;
 
-	// 
+	// FIXME:: Create work items at here ?
+	// self->work_items = xcalloc(si_emu_wavefront_size, sizeof(void *));
+	// for(auto i = work_items_begin; i != work_items_end; ++i)
+	// {
+	// 	self->work_items[work_item_id] = new(SIWorkItem, work_item_id, self);
+	// 	self->work_items[work_item_id]->work_group = work_group;
+	// 	self->work_items[work_item_id]->id_in_wavefront = work_item_id;
+	// }
+
+	// Create scalar work item
+	scalar_work_item = std::move(std::unique_ptr<WorkItem>(new WorkItem(this, 0)));
+	scalar_work_item->setWorkGroup(this->work_group);
 }
 
 void Wavefront::Execute()
 {
+	// Get current work-group
+	WorkGroup *work_group = this->work_group;
+	NDRange *ndrange = work_group->getNDRange();
+	Emu *emu = ndrange->getEmu();
+	WorkItem *work_item = NULL;
+	std::unique_ptr<Inst> inst(new Inst(emu->getAsm()));
+
+	// Reset instruction flags
+	vector_mem_write = 0;
+	vector_mem_read = 0;
+	vector_mem_atomic = 0;
+	scalar_mem_read = 0;
+	lds_write = false;
+	lds_read = false;
+	mem_wait = false;
+	at_barrier = false;
+	barrier_inst = false;
+	vector_mem_global_coherency = false;
+
+	assert(!finished);
 	
+	// Grab the instruction at PC and update the pointer 
+	unsigned inst_addr = ndrange->getInstAddr();
+	unsigned inst_size = ndrange->getInstSize();
+	char *inst_buffer = ndrange->getInstBuffer();
+	ndrange->getInstMem()->Read(inst_addr, inst_size, inst_buffer);
+	inst->Decode(inst_buffer, pc);
+
+	this->inst_size = inst->getSize();
+	InstOpcode opcode = inst->getOpcode();
+	InstFormat format = inst->getFormat();
+	InstBytes *bytes = inst->getBytes();
+	int op = inst->getOp();
+
+	// FIXME: Stats
+	// asEmu(emu)->instructions++;
+	// emu_inst_count++;
+	// inst_count++;
+
+	// Dump instruction string when debugging
+	if (Emu::debug)
+		inst->Dump(Emu::debug);
+
+	// Execute the current instruction
+	switch (format)
+	{
+
+	// Scalar ALU Instructions
+	case InstFormatSOP1:
+	{
+		// Stats
+		emu->incScalarAluInstCount();
+		scalar_alu_inst_count++;
+
+		// Only one work item executes the instruction
+		work_item = scalar_work_item.get();
+		work_item->Execute(opcode, inst.get());
+
+		if (Emu::debug)
+		{
+			Emu::debug << StringFmt("\n");
+		}
+
+		break;
+	}
+
+	case InstFormatSOP2:
+	{
+		// Stats
+		emu->incScalarAluInstCount();
+		scalar_alu_inst_count++;
+
+		// Only one work item executes the instruction
+		work_item = scalar_work_item.get();
+		work_item->Execute(opcode, inst.get());
+
+		if (Emu::debug)
+		{
+			Emu::debug << StringFmt("\n");
+		}
+
+		break;
+	}
+
+	case InstFormatSOPP:
+	{
+		// Stats
+		if (bytes->sopp.op > 1 &&
+			bytes->sopp.op < 10)
+		{
+			emu->incBranchInstCount();
+			branch_inst_count++;
+		} else
+		{
+			emu->incScalarAluInstCount();
+			scalar_alu_inst_count++;
+		}
+
+		// Only one work item executes the instruction
+		work_item = scalar_work_item.get();
+		work_item->Execute(opcode, inst.get());
+
+		if (Emu::debug)
+		{
+			Emu::debug << StringFmt("\n");
+		}
+
+		break;
+	}
+
+	case InstFormatSOPC:
+	{
+		// Stats
+		emu->incScalarAluInstCount();
+		scalar_alu_inst_count++;
+
+		// Only one work item executes the instruction
+		work_item = scalar_work_item.get();
+		work_item->Execute(opcode, inst.get());
+
+		if (Emu::debug)
+		{
+			Emu::debug << StringFmt("\n");
+		}
+
+		break;
+	}
+
+	case InstFormatSOPK:
+	{
+		// Stats
+		emu->incScalarAluInstCount();
+		scalar_alu_inst_count++;
+
+		// Only one work item executes the instruction
+		work_item = scalar_work_item.get();
+		work_item->Execute(opcode, inst.get());
+
+		if (Emu::debug)
+		{
+			Emu::debug << StringFmt("\n");
+		}
+
+		break;
+	}
+
+	// Scalar Memory Instructions
+	case InstFormatSMRD:
+	{
+		// Stats
+		emu->incScalarMemInstCount();
+		scalar_mem_inst_count++;
+
+		// Only one work item executes the instruction
+		work_item = scalar_work_item.get();
+		work_item->Execute(opcode, inst.get());
+
+		if (Emu::debug)
+		{
+			Emu::debug << StringFmt("\n");
+		}
+
+		break;
+	}
+
+	// Vector ALU Instructions
+	case InstFormatVOP2:
+	{
+		// Stats
+		emu->incVectorAluInstCount();
+		vector_alu_inst_count++;
+	
+		// Execute the instruction
+		for(auto i = work_items_begin; i != work_items_end; ++i)
+		{
+			work_item = (*i).get();
+			if(getWorkItemActive(work_item->getIdInWavefront()))
+			{
+				work_item->Execute(opcode, inst.get());
+			}
+		}
+
+		if (Emu::debug)
+		{
+			Emu::debug << StringFmt("\n");
+		}
+
+		break;
+	}
+
+	case InstFormatVOP1:
+	{
+		// Stats
+		emu->incVectorAluInstCount();
+		vector_alu_inst_count++;
+
+		// Special case: V_READFIRSTLANE_B32
+		if (bytes->vop1.op == 2)
+		{
+			/* Instruction ignores execution mask and is only 
+			 * executed on one work item. Execute on the first 
+			 * active work item from the least significant bit 
+			 * in EXEC. (if exec is 0, execute work item 0) */
+			work_item = (work_items_begin[0]).get();
+			if (work_item->ReadSReg(SI_EXEC) == 0 && 
+				work_item->ReadSReg(SI_EXEC + 1) == 0)
+			{
+				work_item->Execute(opcode, inst.get());
+			}
+			else 
+			{
+				for(auto i = work_items_begin; i != work_items_end; ++i)
+				{
+					work_item = (*i).get();
+					if(getWorkItemActive(work_item->getIdInWavefront()))
+					{
+						work_item->Execute(opcode, inst.get());
+					}
+				}
+			}
+		}
+		else
+		{
+			// Execute the instruction
+			for(auto i = work_items_begin; i != work_items_end; ++i)
+			{
+				work_item = (*i).get();
+				if(getWorkItemActive(work_item->getIdInWavefront()))
+				{
+					work_item->Execute(opcode, inst.get());
+				}
+			}
+		}
+
+		if (Emu::debug)
+		{
+			Emu::debug << StringFmt("\n");
+		}
+
+		break;
+	}
+
+	case InstFormatVOPC:
+	{
+		// Stats
+		emu->incVectorAluInstCount();
+		vector_alu_inst_count++;
+	
+		// Execute the instruction
+		for(auto i = work_items_begin; i != work_items_end; ++i)
+		{
+			work_item = (*i).get();
+			if(getWorkItemActive(work_item->getIdInWavefront()))
+			{
+				work_item->Execute(opcode, inst.get());
+			}
+		}
+
+		if (Emu::debug)
+		{
+			Emu::debug << StringFmt("\n");
+		}
+
+		break;
+	}
+	
+	case InstFormatVOP3a:
+	{
+		// Stats
+		emu->incVectorAluInstCount();
+		vector_alu_inst_count++;
+	
+		// Execute the instruction
+		for(auto i = work_items_begin; i != work_items_end; ++i)
+		{
+			work_item = (*i).get();
+			if(getWorkItemActive(work_item->getIdInWavefront()))
+			{
+				work_item->Execute(opcode, inst.get());
+			}
+		}
+
+		if (Emu::debug)
+		{
+			Emu::debug << StringFmt("\n");
+		}
+
+		break;
+	}
+
+	case InstFormatVOP3b:
+	{
+		// Stats
+		emu->incVectorAluInstCount();
+		vector_alu_inst_count++;
+	
+		// Execute the instruction
+		for(auto i = work_items_begin; i != work_items_end; ++i)
+		{
+			work_item = (*i).get();
+			if(getWorkItemActive(work_item->getIdInWavefront()))
+			{
+				work_item->Execute(opcode, inst.get());
+			}
+		}
+
+		if (Emu::debug)
+		{
+			Emu::debug << StringFmt("\n");
+		}
+
+		break;
+	}
+
+	case InstFormatVINTRP:
+	{
+		// Stats
+		emu->incVectorAluInstCount();
+		vector_alu_inst_count++;
+
+		// Execute the instruction
+		for(auto i = work_items_begin; i != work_items_end; ++i)
+		{
+			work_item = (*i).get();
+			if(getWorkItemActive(work_item->getIdInWavefront()))
+			{
+				work_item->Execute(opcode, inst.get());
+			}
+		}
+
+		if (Emu::debug)
+		{
+			Emu::debug << StringFmt("\n");
+		}
+ 	
+		break;
+	}
+
+	case InstFormatDS:
+	{
+		// Stats
+		emu->incLdsInstCount();
+		lds_inst_count++;
+
+		// Record access type
+		if ((op >= 13 && op < 16) ||
+			(op >= 30 && op < 32) ||
+			(op >= 77 && op < 80))
+		{
+			lds_write = 1;
+		}
+		else if (
+			(op >= 54 && op < 61) ||
+			(op >= 118 && op < 120))
+		{
+			lds_read = 1;
+		}
+		else 
+		{
+			fatal("%s: unimplemented LDS opcode", __FUNCTION__);
+		}
+
+		// Execute the instruction
+		for(auto i = work_items_begin; i != work_items_end; ++i)
+		{
+			work_item = (*i).get();
+			if(getWorkItemActive(work_item->getIdInWavefront()))
+			{
+				work_item->Execute(opcode, inst.get());
+			}
+		}
+
+		if (Emu::debug)
+		{
+			Emu::debug << StringFmt("\n");
+		}
+
+		break;
+	}
+
+	// Vector Memory Instructions
+	case InstFormatMTBUF:
+	{
+		// Stats
+		emu->incVectorMemInstCount();
+		vector_mem_inst_count++;
+
+		// Record access type
+		if (op >= 0 && op < 4)
+			vector_mem_read = 1;
+		else if (op >= 4 && op < 8)
+			vector_mem_write = 1;
+		else 
+			fatal("%s: invalid mtbuf opcode", __FUNCTION__);
+	
+		// Execute the instruction
+		for(auto i = work_items_begin; i != work_items_end; ++i)
+		{
+			work_item = (*i).get();
+			if(getWorkItemActive(work_item->getIdInWavefront()))
+			{
+				work_item->Execute(opcode, inst.get());
+			}
+		}
+
+		if (Emu::debug)
+		{
+			Emu::debug << StringFmt("\n");
+		}
+
+		break;
+	}
+
+	case InstFormatMUBUF:
+	{
+		// Stats
+		emu->incVectorMemInstCount();
+		vector_mem_inst_count++;
+
+		// Record access type
+		if ((op >= 0 && op < 4) ||
+			(op >= 8 && op < 15))
+		{
+			vector_mem_read = 1;
+		}
+		else if ((op >= 4 && op < 8) ||
+			(op >= 24 && op < 30))
+		{
+			vector_mem_write = 1;
+		}
+		else if (op == 50)
+		{
+			vector_mem_atomic = 1;
+		}
+		else 
+		{
+			fatal("%s: unsupported mubuf opcode (%d)", 
+				__FUNCTION__, op);
+		}
+	
+		// Execute the instruction
+		for(auto i = work_items_begin; i != work_items_end; ++i)
+		{
+			work_item = (*i).get();
+			if(getWorkItemActive(work_item->getIdInWavefront()))
+			{
+				work_item->Execute(opcode, inst.get());
+			}
+		}
+
+		if (Emu::debug)
+		{
+			Emu::debug << StringFmt("\n");
+		}
+
+		break;
+	}
+
+	case InstFormatEXP:
+	{
+		// Stats
+		emu->incExportInstCount();
+		export_inst_count++;
+
+		// Record access type
+		// FIXME
+			
+		// Execute the instruction
+		for(auto i = work_items_begin; i != work_items_end; ++i)
+		{
+			work_item = (*i).get();
+			if(getWorkItemActive(work_item->getIdInWavefront()))
+			{
+				work_item->Execute(opcode, inst.get());
+			}
+		}
+
+		if (Emu::debug)
+		{
+			Emu::debug << StringFmt("\n");
+		}
+
+		break;
+
+	}
+
+	default:
+	{
+		fatal("%s: instruction type not implemented (%d)", 
+			__FUNCTION__, format);
+		break;
+	}
+
+	}
+
+	// Check if wavefront finished kernel execution
+	if (!finished)
+	{
+		// Increment the PC
+		pc += inst_size;
+	}
+	else
+	{
+		// Check if work-group finished kernel execution
+		if (work_group->getWavefrontsCompletedEmu() == 
+			work_group->getWavefrontsInWorkgroup())
+		{
+			work_group->setFinishedEmu(true);
+		}
+	}
 }
 	
 bool Wavefront::getWorkItemActive(int id_in_wavefront)

@@ -140,7 +140,6 @@ void SIWavefrontExecute(SIWavefront *self)
 	bytes = SIInstWrapGetBytes(self->inst);
 	op = SIInstWrapGetOp(inst);
 
-
 	/* Stats */
 	asEmu(emu)->instructions++;
 	self->emu_inst_count++;

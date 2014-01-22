@@ -241,6 +241,23 @@ WorkItem::WorkItem(Wavefront *wavefront, int id)
 	// Initialization
 	this->id = id;
 	this->wavefront = wavefront;
+
+/* FIXME: Initialize ISA function table 
+	ISAInstFuncTable =
+	{
+		nullptr,
+#define DEFINST(_name, _fmt_str, _fmt, _opcode, _size, _flags) \
+	&WorkItem::ISA_##_name##_Impl,
+#include <arch/southern-islands/asm/asm.dat>
+#undef DEFINST
+		nullptr
+	};
+*/
+}
+
+void WorkItem::Execute(InstOpcode opcode, Inst *inst)
+{
+	ISAInstFuncTable[opcode](inst);
 }
 
 unsigned WorkItem::ReadSReg(int sreg)
