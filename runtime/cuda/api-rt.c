@@ -80,7 +80,9 @@ void **__cudaRegisterFatBinary(void *fatCubin)
 	cuda_debug("CUDA runtime internal function '%s'", __func__);
 	cuda_debug("\t(runtime) '%s' in: fatCubin = [%p]", __func__, fatCubin);
 
+	active_device = NULL;
 	cuInit(0);
+
 	fatCubinHandle = xcalloc(1, sizeof(void *));
 	*fatCubinHandle = fatCubin;
 
@@ -143,7 +145,7 @@ void __cudaRegisterFunction(void **fatCubinHandle, const char *hostFun,
 	int i;
 
 	cuda_debug("CUDA runtime internal function '%s'", __func__);
-	cuda_debug("\t(runtime) '%s' in: fatCubinHandle = %p", __func__,
+	cuda_debug("\t(runtime) '%s' in: fatCubinHandle = [%p]", __func__,
 			*fatCubinHandle);
 	/* hostFun is the signature of the kernel */
 	cuda_debug("\t(runtime) '%s' in: hostFun = [%p]", __func__, hostFun);
@@ -264,13 +266,25 @@ cudaError_t cudaDeviceReset(void)
 
 	cuda_debug("CUDA runtime API '%s'", __func__);
 
-	for (i = 1; i < list_count(active_device->stream_list); ++i)
+	if (! active_device)
+		cuInit(0);
+
+	/* Wait for GPU work to finish */
+	for (i = 0; i < list_count(active_device->stream_list); ++i)
 	{
 		stream = list_get(active_device->stream_list, i);
 		cudaStreamSynchronize(stream);
+	}
+
+	/* Destroy device */
+	for (i = 1; i < list_count(active_device->stream_list); ++i)
+	{
+		stream = list_get(active_device->stream_list, i);
 		cudaStreamDestroy(stream);
 	}
-	/* Resources are freed in cuda_done() */
+	cuda_device_free(frm_device);
+	cuda_device_free(kpl_device);
+	active_device = NULL;
 
 	cuda_rt_last_error = cudaSuccess;
 
@@ -285,6 +299,9 @@ cudaError_t cudaDeviceSynchronize(void)
 	CUstream stream;
 
 	cuda_debug("CUDA runtime API '%s'", __func__);
+
+	if (! active_device)
+		cuInit(0);
 
 	for (i = 0; i < list_count(active_device->stream_list); ++i)
 	{
@@ -429,6 +446,9 @@ cudaError_t cudaGetLastError(void)
 
 	cuda_debug("CUDA runtime API '%s'", __func__);
 
+	if (! active_device)
+		cuInit(0);
+
 	cuda_rt_last_error_ret = cuda_rt_last_error;
 
 	/* Reset */
@@ -458,6 +478,9 @@ cudaError_t cudaGetDeviceCount(int *count)
 	cuda_debug("CUDA runtime API '%s'", __func__);
 	cuda_debug("\t(runtime) '%s' in: count = [%p]", __func__, count);
 
+	if (! active_device)
+		cuInit(0);
+
 	cuDeviceGetCount(count);
 
 	cuda_rt_last_error = cudaSuccess;
@@ -475,6 +498,9 @@ cudaError_t cudaGetDeviceProperties(struct cudaDeviceProp *prop_ptr, int device)
 	cuda_debug("CUDA runtime API '%s'", __func__);
 	cuda_debug("\t(runtime) '%s' in: prop_ptr = [%p]", __func__, prop_ptr);
 	cuda_debug("\t(runtime) '%s' in: device = %d", __func__, device);
+
+	if (! active_device)
+		cuInit(0);
 
 	/* Check input */
 	if (! prop_ptr)
@@ -659,6 +685,9 @@ cudaError_t cudaSetDevice(int device)
 	cuda_debug("CUDA runtime API '%s'", __func__);
 	cuda_debug("\t(runtime) '%s' in: device = %d", __func__, device);
 
+	if (! active_device)
+		cuInit(0);
+
 	/* TODO: Since only the Fermi device is ready for now, device must be 0.
 	 * The following assertion will be deleted when the Kepler device is ready.
 	 */
@@ -676,9 +705,12 @@ cudaError_t cudaGetDevice(int *device)
 	cuda_debug("CUDA runtime API '%s'", __func__);
 	cuda_debug("\t(runtime) '%s' in: device = [%p]", __func__, device);
 
-	/* Check valid device pointer */
-	if (!device)
-		fatal("%s: invalid device pointer.\n%s", __func__,
+	if (! active_device)
+		cuInit(0);
+
+	/* Check for a valid pointer */
+	if (! device)
+		fatal("%s: invalid pointer (%p).\n%s", __func__, device,
 				cuda_rt_err_param_note);
 
 	/* Get the currently active device */
@@ -704,13 +736,44 @@ cudaError_t cudaSetDeviceFlags(unsigned int flags)
 
 cudaError_t cudaStreamCreate(cudaStream_t *pStream)
 {
-	__CUDART_NOT_IMPL__;
+	cuda_debug("CUDA runtime API '%s'", __func__);
+	cuda_debug("\t(runtime) '%s' in: pStream = [%p]", __func__, pStream);
+
+	if (! active_device)
+		cuInit(0);
+
+	/* Check for a valid pointer */
+	if (! pStream)
+		fatal("%s: invalid pointer (%p).\n%s", __func__, pStream,
+				cuda_rt_err_param_note);
+
+	cuStreamCreate(pStream, CU_STREAM_DEFAULT);
+
+	cuda_debug("\t(runtime) '%s' out: pStream = [%p]", __func__, *pStream);
+	cuda_debug("\t(runtime) '%s' out: return = %d", __func__, cudaSuccess);
+
 	return cudaSuccess;
 }
 
 cudaError_t cudaStreamCreateWithFlags(cudaStream_t *pStream, unsigned int flags)
 {
-	__CUDART_NOT_IMPL__;
+	cuda_debug("CUDA runtime API '%s'", __func__);
+	cuda_debug("\t(runtime) '%s' in: pStream = [%p]", __func__, pStream);
+	cuda_debug("\t(runtime) '%s' in: flags = %d", __func__, flags);
+
+	if (! active_device)
+		cuInit(0);
+
+	/* Check for a valid pointer */
+	if (! pStream)
+		fatal("%s: invalid pointer (%p).\n%s", __func__, pStream,
+				cuda_rt_err_param_note);
+
+	cuStreamCreate(pStream, flags);
+
+	cuda_debug("\t(runtime) '%s' out: pStream = [%p]", __func__, *pStream);
+	cuda_debug("\t(runtime) '%s' out: return = %d", __func__, cudaSuccess);
+
 	return cudaSuccess;
 }
 
@@ -735,7 +798,21 @@ cudaError_t cudaStreamGetFlags(cudaStream_t hStream, unsigned int *flags)
 
 cudaError_t cudaStreamDestroy(cudaStream_t stream)
 {
-	__CUDART_NOT_IMPL__;
+	cuda_debug("CUDA runtime API '%s'", __func__);
+	cuda_debug("\t(runtime) '%s' in: stream = [%p]", __func__, stream);
+
+	if (! active_device)
+		cuInit(0);
+
+	/* Check for a valid pointer */
+	if (! stream)
+		fatal("%s: invalid pointer (%p).\n%s", __func__, stream,
+				cuda_rt_err_param_note);
+
+	cuStreamDestroy(stream);
+
+	cuda_debug("\t(runtime) '%s' out: return = %d", __func__, cudaSuccess);
+
 	return cudaSuccess;
 }
 
@@ -758,6 +835,9 @@ cudaError_t cudaStreamSynchronize(cudaStream_t stream)
 	cuda_debug("CUDA runtime API '%s'", __func__);
 	cuda_debug("\t(runtime) '%s' in: stream = [%p]", __func__, stream);
 
+	if (! active_device)
+		cuInit(0);
+
 	cuStreamSynchronize(stream);
 
 	cuda_rt_last_error = cudaSuccess;
@@ -778,11 +858,14 @@ cudaError_t cudaEventCreate(cudaEvent_t *event)
 	cuda_debug("CUDA runtime API '%s'", __func__);
 	cuda_debug("\t(runtime) '%s' in: event = [%p]", __func__, event);
 
+	if (! active_device)
+		cuInit(0);
+
 	cuEventCreate(event, CU_EVENT_DEFAULT);
 
 	cuda_rt_last_error = cudaSuccess;
 
-	cuda_debug("\t(runtime) '%s' out: event = %p", __func__, *event);
+	cuda_debug("\t(runtime) '%s' out: event = [%p]", __func__, *event);
 	cuda_debug("\t(runtime) '%s' out: return = %d", __func__, cudaSuccess);
 
 	return cudaSuccess;
@@ -800,6 +883,9 @@ cudaError_t cudaEventRecord(cudaEvent_t event, cudaStream_t stream)
 	cuda_debug("\t(runtime) '%s' in: event = [%p]", __func__, event);
 	cuda_debug("\t(runtime) '%s' in: stream = [%p]", __func__, stream);
 
+	if (! active_device)
+		cuInit(0);
+
 	cuEventRecord(event, stream);
 
 	cuda_rt_last_error = cudaSuccess;
@@ -811,7 +897,18 @@ cudaError_t cudaEventRecord(cudaEvent_t event, cudaStream_t stream)
 
 cudaError_t cudaEventQuery(cudaEvent_t event)
 {
-	__CUDART_NOT_IMPL__;
+	cuda_debug("CUDA runtime API '%s'", __func__);
+	cuda_debug("\t(runtime) '%s' in: event = [%p]", __func__, event);
+
+	if (! active_device)
+		cuInit(0);
+
+	cuEventQuery(event);
+
+	cuda_rt_last_error = cudaSuccess;
+
+	cuda_debug("\t(runtime) '%s' out: return = %d", __func__, cudaSuccess);
+
 	return cudaSuccess;
 }
 
@@ -825,6 +922,9 @@ cudaError_t cudaEventDestroy(cudaEvent_t event)
 {
 	cuda_debug("CUDA runtime API '%s'", __func__);
 	cuda_debug("\t(runtime) '%s' in: event = [%p]", __func__, event);
+
+	if (! active_device)
+		cuInit(0);
 
 	cuEventDestroy(event);
 
@@ -841,6 +941,9 @@ cudaError_t cudaEventElapsedTime(float *ms, cudaEvent_t start, cudaEvent_t end)
 	cuda_debug("\t(runtime) '%s' in: ms = [%p]", __func__, ms);
 	cuda_debug("\t(runtime) '%s' in: start = [%p]", __func__, start);
 	cuda_debug("\t(runtime) '%s' in: end = [%p]", __func__, end);
+
+	if (! active_device)
+		cuInit(0);
 
 	cuEventElapsedTime(ms, start, end);
 
@@ -862,6 +965,9 @@ cudaError_t cudaConfigureCall(dim3 gridDim, dim3 blockDim, size_t sharedMem,
 	cuda_debug("\t(runtime) '%s' in: blockDim = %u", __func__, blockDim.x);
 	cuda_debug("\t(runtime) '%s' in: sharedMem = %d", __func__, sharedMem);
 	cuda_debug("\t(runtime) '%s' in: stream = [%p]", __func__, stream);
+
+	if (! active_device)
+		cuInit(0);
 
 	/* Create stack */
 	if (! execution_stack)
@@ -894,6 +1000,9 @@ cudaError_t cudaSetupArgument(const void *arg, size_t size, size_t offset)
 	cuda_debug("\t(runtime) '%s' in: arg = [%p]", __func__, arg);
 	cuda_debug("\t(runtime) '%s' in: size = %d", __func__, size);
 	cuda_debug("\t(runtime) '%s' in: offset = %d", __func__, offset);
+
+	if (! active_device)
+		cuInit(0);
 
 	/* Create function argument */
 	func_arg = cuda_function_arg_create(arg, size, offset);
@@ -936,6 +1045,9 @@ cudaError_t cudaLaunch(const void *func)
 
 	cuda_debug("CUDA runtime API '%s'", __func__);
 	cuda_debug("\t(runtime) '%s' in: func = [%p]", __func__, func);
+
+	if (! active_device)
+		cuInit(0);
 
 	/* Get function */
 	for (i = 0; i < list_count(runtime_func_list); i++)
@@ -1000,12 +1112,15 @@ cudaError_t cudaMalloc(void **devPtr, size_t size)
 	cuda_debug("\t(runtime) '%s' in: devPtr = [%p]", __func__, devPtr);
 	cuda_debug("\t(runtime) '%s' in: size = %d", __func__, size);
 
+	if (! active_device)
+		cuInit(0);
+
 	cuMemAlloc(&dptr, size);
 	*(CUdeviceptr *)devPtr = dptr;
 
 	cuda_rt_last_error = cudaSuccess;
 
-	cuda_debug("\t(runtime) '%s' out: devPtr = %p", __func__, *devPtr);
+	cuda_debug("\t(runtime) '%s' out: devPtr = [%p]", __func__, *devPtr);
 	cuda_debug("\t(runtime) '%s' out: return = %d", __func__, cudaSuccess);
 
 	return cudaSuccess;
@@ -1017,11 +1132,14 @@ cudaError_t cudaMallocHost(void **ptr, size_t size)
 	cuda_debug("\t(runtime) '%s' in: ptr = [%p]", __func__, ptr);
 	cuda_debug("\t(runtime) '%s' in: size = %d", __func__, size);
 
+	if (! active_device)
+		cuInit(0);
+
 	cuMemAllocHost(ptr, size);
 
 	cuda_rt_last_error = cudaSuccess;
 
-	cuda_debug("\t(runtime) '%s' out: ptr = %p", __func__, *ptr);
+	cuda_debug("\t(runtime) '%s' out: ptr = [%p]", __func__, *ptr);
 	cuda_debug("\t(runtime) '%s' out: return = %d", __func__, cudaSuccess);
 
 	return cudaSuccess;
@@ -1047,6 +1165,9 @@ cudaError_t cudaFree(void *devPtr)
 	cuda_debug("CUDA runtime API '%s'", __func__);
 	cuda_debug("\t(runtime) '%s' in: devPtr = [%p]", __func__, devPtr);
 
+	if (! active_device)
+		cuInit(0);
+
 	cuMemFree((CUdeviceptr)devPtr);
 
 	cuda_rt_last_error = cudaSuccess;
@@ -1060,6 +1181,9 @@ cudaError_t cudaFreeHost(void *ptr)
 {
 	cuda_debug("CUDA runtime API '%s'", __func__);
 	cuda_debug("\t(runtime) '%s' in: ptr = [%p]", __func__, ptr);
+
+	if (! active_device)
+		cuInit(0);
 
 	cuMemFreeHost(ptr);
 
@@ -1191,6 +1315,9 @@ cudaError_t cudaMemcpy(void *dst, const void *src, size_t count,
 	cuda_debug("\t(runtime) '%s' in: count = %d", __func__, count);
 	cuda_debug("\t(runtime) '%s' in: kind = %d", __func__, kind);
 
+	if (! active_device)
+		cuInit(0);
+
 	if (kind == cudaMemcpyHostToDevice)
 		cuMemcpyHtoD((CUdeviceptr)dst, src, count);
 	else if (kind == cudaMemcpyDeviceToHost)
@@ -1292,6 +1419,9 @@ cudaError_t cudaMemcpyAsync(void *dst, const void *src, size_t count,
 	cuda_debug("\t(runtime) '%s' in: kind = %d", __func__, kind);
 	cuda_debug("\t(runtime) '%s' in: stream = [%p]", __func__, stream);
 
+	if (! active_device)
+		cuInit(0);
+
 	cuMemcpyAsync((CUdeviceptr)dst, (CUdeviceptr)src, count, stream);
 
 	cuda_rt_last_error = cudaSuccess;
@@ -1374,6 +1504,9 @@ cudaError_t cudaMemset(void *devPtr, int value, size_t count)
 	cuda_debug("\t(runtime) '%s' in: devPtr = [%p]", __func__, devPtr);
 	cuda_debug("\t(runtime) '%s' in: value = %d", __func__, value);
 	cuda_debug("\t(runtime) '%s' in: count = %d", __func__, count);
+
+	if (! active_device)
+		cuInit(0);
 
 	if (list_index_of(pinned_memory_object_list, devPtr) != -1)
 		warning("%s:%d: pinned host memory not implemented", __func__,

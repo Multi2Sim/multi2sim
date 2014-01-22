@@ -27,7 +27,13 @@ struct CUevent_st
 {
 	unsigned id;
 
+	CUstream stream;
+
 	clock_t t;
+
+	/* Flags */
+	unsigned to_be_recorded;
+	unsigned recorded;
 };
 
 CUevent cuda_event_create(unsigned flags);

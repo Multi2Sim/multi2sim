@@ -25,6 +25,7 @@
 #include "../include/cuda.h"
 #include "debug.h"
 #include "device.h"
+#include "event.h"
 #include "function.h"
 #include "list.h"
 #include "mhandle.h"
@@ -43,7 +44,7 @@ void cuMemcpyAsyncImpl(struct cuda_stream_command_t *command)
 	int ret;
 	extern char *cuda_err_native;
 
-	cuda_debug("CUDA stream command %d running now", command->id);
+	cuda_debug("CUDA stream command 'cuMemcpyAsync' running now");
 	cuda_debug("\tin: src_ptr = 0x%08x", src);
 	cuda_debug("\tin: dst_ptr = 0x%08x", dst);
 	cuda_debug("\tin: size = %d", size);
@@ -96,7 +97,7 @@ void cuMemcpyAsyncImpl(struct cuda_stream_command_t *command)
 	if (ret)
 		fatal("native execution not supported.\n%s", cuda_err_native);
 
-	cuda_debug("CUDA stream command %d completed now", command->id);
+	cuda_debug("CUDA stream command 'cuMemcpyAsync' completed now");
 }
 
 void cuLaunchKernelImpl(struct cuda_stream_command_t *command)
@@ -116,7 +117,7 @@ void cuLaunchKernelImpl(struct cuda_stream_command_t *command)
 	int ret;
 	extern char *cuda_err_native;
 
-	cuda_debug("CUDA stream command %d running now", command->id);
+	cuda_debug("CUDA stream command 'cuLaunchKernel' running now");
 	cuda_debug("\tin: function = [%p]", f);
 	cuda_debug("\tin: gridDimX = %u", gridDimX);
 	cuda_debug("\tin: gridDimY = %u", gridDimY);
@@ -160,12 +161,25 @@ void cuLaunchKernelImpl(struct cuda_stream_command_t *command)
 	if (ret)
 		fatal("native execution not supported.\n%s", cuda_err_native);
 
-	cuda_debug("CUDA stream command %d completed now", command->id);
+	cuda_debug("CUDA stream command 'cuLaunchKernel' completed now");
+}
+
+void cuEventRecordImpl(struct cuda_stream_command_t *command)
+{
+	CUevent event = command->e_args.event;
+
+	cuda_debug("CUDA stream command 'cuEventRecord' running now");
+	cuda_debug("\tin: event = [%p]", event);
+
+	event->recorded = 1;
+	cuda_event_record(event);
+
+	cuda_debug("CUDA stream command 'cuEventRecord' completed now");
 }
 
 struct cuda_stream_command_t *cuda_stream_command_create(CUstream stream,
 		cuda_stream_command_func_t func, struct memory_args_t *m_args,
-		struct kernel_args_t *k_args)
+		struct kernel_args_t *k_args, struct event_args_t *e_args)
 {
 	struct cuda_stream_command_t *command;
 
@@ -178,7 +192,6 @@ struct cuda_stream_command_t *cuda_stream_command_create(CUstream stream,
 		stream = list_get(active_device->stream_list, 0);
 
 	/* Initialize */
-	command->id = list_count(stream->command_list);
 	command->func = func;
 	if (m_args != NULL)
 	{
@@ -200,6 +213,8 @@ struct cuda_stream_command_t *cuda_stream_command_create(CUstream stream,
 		command->k_args.kernel_params = k_args->kernel_params;
 		command->k_args.extra = k_args->extra;
 	}
+	if (e_args != NULL)
+		command->e_args.event = e_args->event;
 	command->completed = 0;
 
 	return command;
@@ -224,6 +239,9 @@ void *cuda_stream_thread_func(void *thread_data)
 	/* Execute commands sequentially */
 	while (1)
 	{
+		if (stream->to_be_freed)
+			break;
+
 		/* Get command */
 		command = cuda_stream_dequeue(stream);
 		if (! command)
@@ -248,13 +266,11 @@ CUstream cuda_stream_create(void)
 	/* Initialize */
 	stream->id = list_count(active_device->stream_list);
 	stream->command_list = list_create();
+	stream->to_be_freed = 0;
 
 	/* Create thread associated with stream */
 	pthread_mutex_init(&stream->lock, NULL);
 	pthread_create(&stream->thread, NULL, cuda_stream_thread_func, stream);
-
-	/* Add to stream list */
-	list_add(active_device->stream_list, stream);
 
 	return stream;
 }
@@ -262,9 +278,10 @@ CUstream cuda_stream_create(void)
 /* Free stream */
 void cuda_stream_free(CUstream stream)
 {
-	pthread_mutex_destroy(&stream->lock);
+	stream->to_be_freed = 1;
+	pthread_join(stream->thread, NULL);
 
-	list_remove(active_device->stream_list, stream);
+	pthread_mutex_destroy(&stream->lock);
 
 	free(stream);
 }
@@ -278,7 +295,7 @@ void cuda_stream_enqueue(CUstream stream, struct cuda_stream_command_t *command)
 
 	pthread_mutex_lock(&stream->lock);
 
-	list_add(stream->command_list, command);
+	list_enqueue(stream->command_list, command);
 
 	pthread_mutex_unlock(&stream->lock);
 }

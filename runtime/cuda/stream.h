@@ -56,10 +56,13 @@ struct kernel_args_t
 	void **extra;
 };
 
+struct event_args_t
+{
+	CUevent event;
+};
+
 struct cuda_stream_command_t
 {
-	unsigned id;
-
 	cuda_stream_command_func_t func;
 
 	union
@@ -69,6 +72,9 @@ struct cuda_stream_command_t
 
 		/* Arguments for kernel launch functions */
 		struct kernel_args_t k_args;
+
+		/* Arguments for event functions */
+		struct event_args_t e_args;
 	};
 
 	/* Flags */
@@ -83,13 +89,17 @@ struct CUstream_st
 
 	pthread_t thread;
 	pthread_mutex_t lock;
+
+	/* Flags */
+	unsigned to_be_freed;
 };
 
 void cuMemcpyAsyncImpl(struct cuda_stream_command_t *command);
 void cuLaunchKernelImpl(struct cuda_stream_command_t *command);
+void cuEventRecordImpl(struct cuda_stream_command_t *command);
 struct cuda_stream_command_t *cuda_stream_command_create(CUstream stream,
 		cuda_stream_command_func_t func, struct memory_args_t *mem_args,
-		struct kernel_args_t *k_args);
+		struct kernel_args_t *k_args, struct event_args_t *e_args);
 void cuda_stream_command_free(struct cuda_stream_command_t *command);
 void cuda_stream_command_run(struct cuda_stream_command_t *command);
 CUstream cuda_stream_create(void);
