@@ -21,12 +21,14 @@
 #include "device.h"
 #include "list.h"
 #include "mhandle.h"
+#include "stream.h"
 
 
 /* Create a device */
 struct cuda_device_t *cuda_device_create(enum cuda_device_type_t dev_type)
 {
 	struct cuda_device_t *device;
+	CUstream default_stream;
 
 	/* Create device */
 	device = (struct cuda_device_t *) xcalloc(1, sizeof(struct cuda_device_t));
@@ -267,6 +269,8 @@ struct cuda_device_t *cuda_device_create(enum cuda_device_type_t dev_type)
 		[CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE1D_MIPMAPPED_WIDTH] = 16384;
 	}
 	device->stream_list = list_create();
+	default_stream = cuda_stream_create();
+	list_enqueue(device->stream_list, default_stream);
 
 	/* Add to device list */
 	list_add(device_list, device);
@@ -277,10 +281,15 @@ struct cuda_device_t *cuda_device_create(enum cuda_device_type_t dev_type)
 /* Free device */
 void cuda_device_free(struct cuda_device_t *device)
 {
+	CUstream default_stream;
+
 	list_remove(device_list, device);
 
+	default_stream = list_remove_at(device->stream_list, 0);
+	cuda_stream_free(default_stream);
 	list_free(device->stream_list);
 	free(device->name);
+
 	free(device);
 }
 
