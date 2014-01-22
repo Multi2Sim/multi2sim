@@ -28,14 +28,7 @@
 #include <m2c/common/Wrapper.h>
 #include <m2c/frm2bin/frm2bin.h>
 #include <m2c/llvm2si/llvm2si.h>
-#include <m2c/si2bin/arg.h>
-#include <m2c/si2bin/data.h>
-#include <m2c/si2bin/inst.h>
-#include <m2c/si2bin/inst-info.h>
 #include <m2c/si2bin/si2bin.h>
-#include <m2c/si2bin/symbol.h>
-#include <m2c/si2bin/task.h>
-#include <m2c/si2bin/token.h>
 #include <lib/class/array.h>
 #include <lib/class/bitmap.h>
 #include <lib/class/elf-writer.h>
@@ -309,7 +302,7 @@ static void m2c_process_option(const char *option, char *optarg)
 
 	if (!strcmp(option, "m"))
 	{
-		//si2bin_machine_name = optarg;
+		si2bin_machine_name = optarg;
 		return;
 	}
 
@@ -592,6 +585,7 @@ static void m2c_preprocess(struct list_t *source_file_list,
 /* Compilers */
 static Cl2llvm *cl2llvm;
 static Llvm2si *llvm2si;
+static Si2bin *si2bin;
 //static Frm2bin *frm2bin;
 
 
@@ -639,7 +633,7 @@ void m2c_init(void)
 
 	CLASS_REGISTER(Llvm2si);
 
-	//CLASS_REGISTER(Si2bin);
+	CLASS_REGISTER(Si2bin);
 #ifdef HAVE_FLEX_BISON
 	/*CLASS_REGISTER(Si2binArg);
 	CLASS_REGISTER(Si2binData);
@@ -662,7 +656,7 @@ void m2c_init(void)
 	/* Initialize compilers */
 	cl2llvm = new(Cl2llvm);
 	llvm2si = new(Llvm2si);
-	//si2bin = new(Si2bin);
+	si2bin = new(Si2bin);
 	//frm2bin = new(Frm2bin);
 
 #ifdef HAVE_FLEX_BISON_AND_LLVM
@@ -708,7 +702,7 @@ void m2c_done(void)
 	/* Finalize compilers */
 	delete(cl2llvm);
 	delete(llvm2si);
-	//delete(si2bin);
+	delete(si2bin);
 	//delete(frm2bin);
 
 #ifdef HAVE_FLEX_BISON_AND_LLVM
@@ -725,7 +719,7 @@ int main(int argc, char **argv)
 
 	/* C++ version of Multi2Sim. This call will terminate execution as new
 	 * functionality gets supported in C++. */
-	main_cpp(argc, argv);
+	//main_cpp(argc, argv);
 
 	/* Read command line */
 	m2c_pre_init();
@@ -805,7 +799,7 @@ int main(int argc, char **argv)
 	if (m2c_si2bin_run)
 	{
 		m2c_replace_out_file_name(m2c_bin_file_list);
-		//Si2binCompile(si2bin, m2c_source_file_list, m2c_bin_file_list);
+		Si2binCompile(si2bin, m2c_source_file_list, m2c_bin_file_list);
 		goto out;
 	}
 
@@ -838,7 +832,7 @@ int main(int argc, char **argv)
 	m2c_preprocess(m2c_source_file_list, m2c_clp_file_list);
 	Cl2llvmCompile(cl2llvm, m2c_clp_file_list, m2c_llvm_file_list, m2c_opt_level);
 	Llvm2siCompile(llvm2si, m2c_llvm_file_list, m2c_asm_file_list);
-	//Si2binCompile(si2bin, m2c_asm_file_list, m2c_bin_file_list);
+	Si2binCompile(si2bin, m2c_asm_file_list, m2c_bin_file_list);
 
 	/* Remove temporary files */
 	m2c_remove_temp_file_name(m2c_clp_file_list);
