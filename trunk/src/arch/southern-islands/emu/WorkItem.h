@@ -34,6 +34,8 @@ class Wavefront;
 class WorkGroup;
 class NDRange;
 
+typedef void (*ISAInstFuncPtr)(Inst *inst);
+
 /// Abstract polymorphic class used to attach additional information to the
 /// work-item. The timing simulator can created objects derived from this class
 /// and link them with the work-item.
@@ -103,6 +105,9 @@ private:
 #include <arch/southern-islands/asm/asm.dat>
 #undef DEFINST
 
+	// Instruction execution table 
+	static ISAInstFuncPtr ISAInstFuncTable[InstOpcodeCount + 1];
+
 	// Error massage for unimplemented instructions
 	static void ISAUnimplemented(Inst *inst);
 
@@ -157,7 +162,7 @@ public:
 	/// Set workitem 3D global identifier
 	/// \param dim Goblal dimention of identifier
 	/// \param id 3D Identifier
-	void setGlobalId(unsigned dim, unsigned id) {
+	void setGlobalId3D(unsigned dim, unsigned id) {
 		assert(dim >= 0 && dim <= 2);
 		id_3d[dim] = id;		
 	}
@@ -169,7 +174,7 @@ public:
 	/// Set workitem 3D local identifier
 	/// \param dim Local id dimention
 	/// \param id 3D Identifier
-	void setLocalId(unsigned dim, unsigned id) {
+	void setLocalId3D(unsigned dim, unsigned id) {
 		assert(dim >= 0 && dim <= 2);
 		id_in_work_group_3d[dim] = id;		
 	}
@@ -182,8 +187,18 @@ public:
 	/// \param id Identifier of workitem in a wavefront
 	void setIdInWavefront(unsigned id) { id_in_wavefront = id; }
 
+	/// Set wavefront it belongs
+	/// \param wf Pointer of wavefront where it belongs
+	void setWavefront(Wavefront *wf) { wavefront = wf; }
+
+	/// Set work-group it belongs
+	/// \param wg Pointer of work-group where it belongs
+	void setWorkGroup(WorkGroup *wg) { work_group = wg; }
 
 	// FIXME - probably most functions below can be inline
+
+	/// Execute an instruction
+	void Execute(InstOpcode opcode, Inst *inst);
 
 	/// Get value of a scalar register
 	/// \param sreg Scalar register identifier

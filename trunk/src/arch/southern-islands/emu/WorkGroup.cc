@@ -106,15 +106,15 @@ WorkGroup::WorkGroup(NDRange *ndrange, unsigned id)
 				work_item = work_items[lid].get();
 
 				// Global IDs 
-				work_item->setGlobalId(0,work_item_gidx_start + lidx);
-				work_item->setGlobalId(1,work_item_gidy_start + lidy);
-				work_item->setGlobalId(2,work_item_gidz_start + lidz);
+				work_item->setGlobalId3D(0,work_item_gidx_start + lidx);
+				work_item->setGlobalId3D(1,work_item_gidy_start + lidy);
+				work_item->setGlobalId3D(2,work_item_gidz_start + lidz);
 				work_item->setGlobalId(tid);
 
 				// Local IDs 
-				work_item->setLocalId(0, lidx);
-				work_item->setLocalId(1, lidy);
-				work_item->setLocalId(2, lidz);
+				work_item->setLocalId3D(0, lidx);
+				work_item->setLocalId3D(1, lidy);
+				work_item->setLocalId3D(2, lidz);
 				work_item->setLocalId(lid);
 
 				// First, last, and number of work-items 
@@ -127,11 +127,11 @@ WorkGroup::WorkGroup(NDRange *ndrange, unsigned id)
 				wavefront->setWorkItemsEnd(this->work_items.begin() + tid);
 				wavefront->incWorkItemCount();
 
-				/* Next work-item */
+				// Next work-item
 				tid++;
 				lid++;
 
-				/* Initialize the execution mask */
+				// Initialize the execution mask
 				if (work_item->getIdInWavefront() < 32)
 				{
 					unsigned exec_mask = wavefront->getSregUint(SI_EXEC);
@@ -243,7 +243,7 @@ WorkGroup::WorkGroup(NDRange *ndrange, unsigned id)
 			BinaryUserElement *user_element = ndrange->getUserElement(i);
 			if (user_element->dataClass == BinaryUserDataConstBuffer)
 			{
-				/* Store CB pointer in sregs */
+				// Store CB pointer in sregs
 				wavefront->setSRegWithConstantBuffer(
 					user_element->startUserReg,
 					user_element->userRegCount,
@@ -251,7 +251,7 @@ WorkGroup::WorkGroup(NDRange *ndrange, unsigned id)
 			}
 			else if (user_element->dataClass == BinaryUserDataUAV)
 			{
-				/* Store UAV pointer in sregs */
+				// Store UAV pointer in sregs
 				wavefront->setSRegWithUAV(
 					user_element->startUserReg,
 					user_element->userRegCount,
@@ -260,43 +260,43 @@ WorkGroup::WorkGroup(NDRange *ndrange, unsigned id)
 			else if (user_element->dataClass ==
 				BinaryUserDataConstBufferTable)
 			{
-				/* Store CB table in sregs */
+				// Store CB table in sregs
 				wavefront->setSRegWithConstantBufferTable(
 					user_element->startUserReg,
 					user_element->userRegCount);
 			}
 			else if (user_element->dataClass == BinaryUserDataUAVTable)
 			{
-				/* Store UAV table in sregs */
+				// Store UAV table in sregs
 				wavefront->setSRegWithUAVTable(
 					user_element->startUserReg,
 					user_element->userRegCount);
 			}
-			/* FIXME: PTR_VERTEX_BUFFER_TABLE doesn't match binary */
+			// FIXME: PTR_VERTEX_BUFFER_TABLE doesn't match binary
 			else if (user_element->dataClass == 21)
 			{
-				/* Store VB table in sregs */
+				// Store VB table in sregs
 				wavefront->setSRegWithVertexBufferTable(
 					user_element->startUserReg,
 					user_element->userRegCount);
 			}
-			/* FIXME: SUB_PTR_FETCH_SHADER doesn't match binary */
+			// FIXME: SUB_PTR_FETCH_SHADER doesn't match binary
 			else if (user_element->dataClass == 16)
 			{
-				/* Store Fetch Shader pointer in sregs */
+				// Store Fetch Shader pointer in sregs
 				wavefront->setSRegWithFetchShader(
 					user_element->startUserReg,
 					user_element->userRegCount);
 			}
 			else if (user_element->dataClass == BinaryUserDataSampler)
 			{
-				/* Store sampler in sregs */
+				// Store sampler in sregs
 				assert(0);
 			}
 			else if (user_element->dataClass ==
 				BinaryUserDataPtrResourceTable)
 			{
-				/* Store resource table in sregs */
+				// Store resource table in sregs
 				assert(0);
 			}
 			else if (user_element->dataClass ==
