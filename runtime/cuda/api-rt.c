@@ -162,11 +162,10 @@ void __cudaRegisterFunction(void **fatCubinHandle, const char *hostFun,
 	/* User can set an environment variable 'M2S_CUDA_BINARY' to make the
 	 * runtime load that specific pre-compiled binary. */
 	env = getenv("M2S_CUDA_BINARY");
-	if (strchr(cubin_path, '/'))
+	if (strchr(env, '/'))
 		snprintf(cubin_path, sizeof cubin_path, "%s", env);
 	else
-		snprintf(cubin_path, sizeof cubin_path, "%s/%s", 
-				getenv("PWD"), env);
+		snprintf(cubin_path, sizeof cubin_path, "%s/%s", getenv("PWD"), env);
 
 	/* Get CUDA function binary */
 	if (env)
@@ -180,12 +179,10 @@ void __cudaRegisterFunction(void **fatCubinHandle, const char *hostFun,
 		dev_func_bin_sec_size = (((unsigned int)dev_func_bin_sec[8]) | 
 				(((unsigned int)dev_func_bin_sec[9]) << 8) |
 				(((unsigned int)dev_func_bin_sec[10]) << 16) |
-				(((unsigned int)dev_func_bin_sec[11]) << 24)) +
-				16u;
+				(((unsigned int)dev_func_bin_sec[11]) << 24)) + 16u;
 
 		/* Get identifier to determine the end of cubin */
-		snprintf(identifier, sizeof identifier, "%s", 
-				dev_func_bin_sec + 80);
+		snprintf(identifier, sizeof identifier, "%s", dev_func_bin_sec + 80);
 
 		/* Determine the start and the end of cubin */
 		elf_start = 0;
@@ -197,8 +194,7 @@ void __cudaRegisterFunction(void **fatCubinHandle, const char *hostFun,
 			{
 				if (elf_start == 0)
 				{
-					elf_start = (i + strlen(identifier) + 8)
-								/ 8 * 8;
+					elf_start = (i + strlen(identifier) + 8) / 8 * 8;
 					continue;
 				}
 				if (elf_end == 0)
@@ -211,6 +207,7 @@ void __cudaRegisterFunction(void **fatCubinHandle, const char *hostFun,
 				dev_func_bin_sec[elf_start + 3] == 0x46);
 
 		/* Get kernel binary */
+		printf("hello %d %d\n", elf_start, elf_end);
 		dev_func_bin = elf_file_create_from_buffer(
 				(void *)(dev_func_bin_sec + elf_start),
 				elf_end - elf_start, NULL);
