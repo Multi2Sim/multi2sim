@@ -147,7 +147,7 @@ Context::Context()
 		/* Insert instruction info structure into hash table. There could
 		 * be already an instruction encoding with the same name but a
 		 * different encoding. They all form a linked list. */
-		InstInfo *prev_info = getInstInfo(inst_info->name);
+		InstInfo *prev_info = getInstInfo(info->getName());
 		if (prev_info)
 		{
 			/* Non vop3 instructions are added first into list.
