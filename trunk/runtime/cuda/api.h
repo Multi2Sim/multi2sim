@@ -21,6 +21,8 @@
 #define RUNTIME_CUDA_API_H
 
 
+#include <stdio.h>
+
 /* Syscall code */
 #define CUDA_SYS_CODE 328
 

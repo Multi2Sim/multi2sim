@@ -35,6 +35,8 @@ CUevent cuda_event_create(unsigned flags)
 
 	/* Initialize */
 	event->id = list_count(event_list);
+	event->to_be_recorded = 0;
+	event->recorded = 0;
 
 	/* Add to event list */
 	list_add(event_list, event);
