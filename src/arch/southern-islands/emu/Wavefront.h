@@ -68,16 +68,16 @@ class Wavefront
 	// Additional data added by timing simulator
 	std::unique_ptr<WavefrontData> data;
 
-	// Program counter. Pointer to 'inst_buffer' in NDRange where we can find the next
+	// Program counter. Offset to 'inst_addr' in NDRange where we can find the next
 	// instruction to be executed.
 	unsigned pc;
 
 	// Current instruction
-	struct SIInstWrap *inst;
+	Inst *inst;
 	int inst_size;
 
 	// Associated scalar work-item
-	WorkItem *scalar_work_item;
+	std::unique_ptr<WorkItem> scalar_work_item;
 
 	// Iterator to the first work-item in the wavefront, pointing to a
 	// work-item in the list of work-items from the work-group. Work-items

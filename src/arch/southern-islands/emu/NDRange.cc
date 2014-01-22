@@ -38,14 +38,14 @@ NDRange::NDRange(Emu *emu)
 void NDRange::SetupSize(unsigned *global_size, unsigned *local_size,
 	int work_dim)
 {
-	/* Default value */
+	// Default value
 	this->global_size3[1] = 1;
 	this->global_size3[2] = 1;
 	this->local_size3[1] = 1;
 	this->local_size3[2] = 1;
 	this->work_dim = work_dim;
 
-	/* Global work sizes */
+	// Global work sizes
 	for (int i = 0; i < work_dim; i++)
 	{
 		this->global_size3[i] = global_size[i];
@@ -53,7 +53,7 @@ void NDRange::SetupSize(unsigned *global_size, unsigned *local_size,
 	this->global_size = this->global_size3[0] *
 		this->global_size3[1] * this->global_size3[2];
 
-	/* Local work sizes */
+	// Local work sizes
 	for (int i = 0; i < work_dim; i++)
 	{
 		this->local_size3[i] = local_size[i];
@@ -66,7 +66,7 @@ void NDRange::SetupSize(unsigned *global_size, unsigned *local_size,
 	this->local_size = this->local_size3[0] * 
 		this->local_size3[1] * this->local_size3[2];
 
-	/* Check valid global/local sizes */
+	// Check valid global/local sizes
 	if (this->global_size3[0] < 1 || this->global_size3[1] < 1
 			|| this->global_size3[2] < 1)
 		fatal("%s: invalid global size", __FUNCTION__);
@@ -74,7 +74,7 @@ void NDRange::SetupSize(unsigned *global_size, unsigned *local_size,
 			|| this->local_size3[2] < 1)
 		fatal("%s: invalid local size", __FUNCTION__);
 
-	/* Check divisibility of global by local sizes */
+	// Check divisibility of global by local sizes
 	if ((this->global_size3[0] % this->local_size3[0])
 		|| (this->global_size3[1] % this->local_size3[1])
 		|| (this->global_size3[2] % this->local_size3[2]))
@@ -83,7 +83,7 @@ void NDRange::SetupSize(unsigned *global_size, unsigned *local_size,
 				__FUNCTION__);
 	}
 
-	/* Calculate number of groups */
+	// Calculate number of groups
 	for (int i = 0; i < 3; i++)
 	{
 		this->group_count3[i] = this->global_size3[i] / 
@@ -96,12 +96,19 @@ void NDRange::SetupSize(unsigned *global_size, unsigned *local_size,
 
 void NDRange::SetupFSMem(const char *buf, unsigned size, unsigned pc)
 {
-	inst_buffer.Write(pc, size, buf);
+	inst_mem->Write(pc, size, buf);
 }
 
 void NDRange::SetupInstMem(const char *buf, unsigned size, unsigned pc)
 {
-	inst_buffer.Write(pc, size, buf);
+	// Copy instructions from buffer to instruction memory
+	inst_mem->Write(pc, size, buf);
+	inst_size = size;
+	inst_addr = pc;
+
+	// Save a copy of buffer in NDRange
+	inst_buffer = std::move(std::unique_ptr<char>(new char(size)));
+	inst_mem->Read(pc, size, inst_buffer.get());
 }
 
 void NDRange::ConstantBufferWrite(int const_buffer_num, unsigned offset,
@@ -168,7 +175,7 @@ void NDRange::InsertBufferIntoUAVTable(EmuBufferDesc *buffer_desc, unsigned uav)
 	assert(uav < EmuMaxNumUAVs);
 	assert(sizeof(*buffer_desc) <= EmuUAVTableEntrySize);
 
-	/* Write the buffer resource descriptor into the UAV table */
+	// Write the buffer resource descriptor into the UAV table
 	unsigned addr = uav_table + uav*EmuUAVTableEntrySize;
 
 	emu->getGlobalMem()->Write(addr, (unsigned)sizeof(*buffer_desc),
@@ -186,7 +193,7 @@ void NDRange::InsertBufferIntoVertexBufferTable(EmuBufferDesc *buffer_desc,
 	assert(vertex_buffer < EmuMaxNumVertexBuffers);
 	assert(sizeof(*buffer_desc) <= EmuVertexBufferTableEntrySize);
 
-	/* Write the buffer resource descriptor into the Vertex Buffer table */
+	// Write the buffer resource descriptor into the Vertex Buffer table
 	unsigned addr = vertex_buffer_table + vertex_buffer*EmuVertexBufferTableEntrySize;
 
 	emu->getGlobalMem()->Write(addr, (unsigned)sizeof(*buffer_desc),
@@ -204,7 +211,7 @@ void NDRange::InsertBufferIntoConstantBufferTable(EmuBufferDesc *buffer_desc,
 	assert(const_buffer_num < EmuMaxNumConstBufs);
 	assert(sizeof(*buffer_desc) <= EmuConstBufTableEntrySize);
 
-	/* Write the buffer resource descriptor into the constant buffer table */
+	// Write the buffer resource descriptor into the constant buffer table
 	unsigned addr = const_buf_table + const_buffer_num*EmuConstBufTableEntrySize;
 
 	emu->getGlobalMem()->Write(addr, (unsigned)sizeof(*buffer_desc), 
@@ -221,7 +228,7 @@ void NDRange::ImageIntoUAVTable(EmuImageDesc *image_desc, unsigned uav)
 	assert(uav < EmuMaxNumUAVs);
 	assert(sizeof(*image_desc) <= EmuUAVTableEntrySize);
 
-	/* Write the buffer resource descriptor into the UAV table */
+	// Write the buffer resource descriptor into the UAV table
 	unsigned addr = uav_table + uav*EmuUAVTableEntrySize;
 
 	emu->getGlobalMem()->Write(addr, (unsigned)sizeof(*image_desc), 
