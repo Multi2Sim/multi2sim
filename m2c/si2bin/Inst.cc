@@ -99,7 +99,7 @@ void Inst::Initialize(const std::string &name)
 			error = StringFmt("invalid number of arguments for %s "
 					"(%d given, %d expected)",
 					name.c_str(), (int) args.size(),
-					(int) info->getNumTokens() - 1);
+					(int) info->getNumTokens());
 			continue;
 		}
 
