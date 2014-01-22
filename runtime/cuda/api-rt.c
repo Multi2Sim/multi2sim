@@ -127,21 +127,22 @@ void __cudaRegisterFunction(void **fatCubinHandle, const char *hostFun,
 		char *deviceFun, const char *deviceName, int thread_limit, uint3 *tid,
 		uint3 *bid, dim3 *bDim, dim3 *gDim, int *wSize)
 {
+	char *env;
 	char cubin_path[1024];
-
-	const unsigned char *dev_func_bin_sec;
-	unsigned int dev_func_bin_sec_size;
-	char identifier[1024];
-	int elf_start;
-	int elf_end;
 	struct elf_file_t *dev_func_bin;
+	const unsigned char *dev_func_bin_sec;
+	unsigned dev_func_bin_sec_size;
+	char identifier[1024];
+	unsigned char *elf_start;
+	int elf_size = 0;
+	unsigned short program_header_size, program_header_count;
+	unsigned short section_header_size, section_header_count;
+	unsigned section_header_offset;
 	FILE *dev_func_bin_f;
 	unsigned char abi_version;
-
 	CUmodule module;
 	CUfunction function;
 
-	char *env;
 	int i;
 
 	cuda_debug("CUDA runtime internal function '%s'", __func__);
@@ -174,43 +175,53 @@ void __cudaRegisterFunction(void **fatCubinHandle, const char *hostFun,
 	{
 		/* Get the section containing kernel binary */
 		dev_func_bin_sec = (unsigned char *)(*(struct {int m; int v;
-					const unsigned long long int *d; char *f;} **)
+					const unsigned long long *d; char *f;} **)
 					fatCubinHandle)->d;
-		dev_func_bin_sec_size = (((unsigned int)dev_func_bin_sec[8]) | 
-				(((unsigned int)dev_func_bin_sec[9]) << 8) |
-				(((unsigned int)dev_func_bin_sec[10]) << 16) |
-				(((unsigned int)dev_func_bin_sec[11]) << 24)) + 16u;
+		dev_func_bin_sec_size = (((unsigned)dev_func_bin_sec[8]) |
+				(((unsigned)dev_func_bin_sec[9]) << 8) |
+				(((unsigned)dev_func_bin_sec[10]) << 16) |
+				(((unsigned)dev_func_bin_sec[11]) << 24)) + 16u;
 
-		/* Get identifier to determine the end of cubin */
+		/* Determine the start of cubin */
 		snprintf(identifier, sizeof identifier, "%s", dev_func_bin_sec + 80);
-
-		/* Determine the start and the end of cubin */
-		elf_start = 0;
-		elf_end = 0;
 		for (i = 16; i < dev_func_bin_sec_size; ++i)
 		{
 			if (!strncmp((char *)dev_func_bin_sec + i, identifier, 
 					strlen(identifier)))
 			{
-				if (elf_start == 0)
-				{
-					elf_start = (i + strlen(identifier) + 8) / 8 * 8;
-					continue;
-				}
-				if (elf_end == 0)
-					elf_end = i - 1;
+				elf_start = (unsigned char *)dev_func_bin_sec + (i +
+						strlen(identifier) + 8) / 8 * 8;
+				break;
 			}
 		}
-		assert(dev_func_bin_sec[elf_start] == 0x7f && 
-				dev_func_bin_sec[elf_start + 1] == 0x45 && 
-				dev_func_bin_sec[elf_start + 2] == 0x4c && 
-				dev_func_bin_sec[elf_start + 3] == 0x46);
+		assert(elf_start[EI_MAG0] == ELFMAG0 && elf_start[EI_MAG1] == ELFMAG1 &&
+				elf_start[EI_MAG2] == ELFMAG2 && elf_start[EI_MAG3] == ELFMAG3);
+
+		/* Determine the size of cubin */
+		program_header_size = ((Elf32_Ehdr *)elf_start)->e_phentsize;
+		program_header_count = ((Elf32_Ehdr *)elf_start)->e_phnum;
+		elf_size += program_header_size * program_header_count;
+		section_header_size = ((Elf32_Ehdr *)elf_start)->e_shentsize;
+		section_header_count = ((Elf32_Ehdr *)elf_start)->e_shnum;
+		elf_size += section_header_size * section_header_count;
+		section_header_offset = ((Elf32_Ehdr *)elf_start)->e_shoff;
+		for (i = section_header_count - 1; i >= 1; --i)
+		{
+			if ((((Elf32_Shdr *)(elf_start + section_header_offset + i *
+					sizeof(Elf32_Shdr)))->sh_type) == SHT_NOBITS)
+				continue;
+			else
+			{
+				elf_size += ((Elf32_Shdr *)(elf_start + section_header_offset +
+						i * sizeof(Elf32_Shdr)))->sh_offset + ((Elf32_Shdr *)
+								(elf_start + section_header_offset + i *
+										sizeof(Elf32_Shdr)))->sh_size;
+				break;
+			}
+		}
 
 		/* Get kernel binary */
-		printf("hello %d %d\n", elf_start, elf_end);
-		dev_func_bin = elf_file_create_from_buffer(
-				(void *)(dev_func_bin_sec + elf_start),
-				elf_end - elf_start, NULL);
+		dev_func_bin = elf_file_create_from_buffer(elf_start, elf_size, NULL);
 
 		/* Save kernel binary in a temporary file for later use in
 		 * CUDA driver */
@@ -221,7 +232,7 @@ void __cudaRegisterFunction(void **fatCubinHandle, const char *hostFun,
 	}
 
 	/* Check for Fermi and Kepler binary. */
-	elf_buffer_seek(&(dev_func_bin->buffer), 8);
+	elf_buffer_seek(&(dev_func_bin->buffer), EI_ABIVERSION);
 	elf_buffer_read(&(dev_func_bin->buffer), &abi_version, 1);
 	if (abi_version < 4 || abi_version > 7)
 		fatal("%s:%d: The cubin has a unrecognized ABI version (0x%x).\n"
@@ -236,7 +247,7 @@ void __cudaRegisterFunction(void **fatCubinHandle, const char *hostFun,
 
 	/* Save host function pointer, which is used as an index to find the
 	 * kernel */
-	function->host_func_ptr = (unsigned int)hostFun;
+	function->host_func_ptr = (unsigned)hostFun;
 
 	/* Create list */
 	if (!runtime_func_list)
