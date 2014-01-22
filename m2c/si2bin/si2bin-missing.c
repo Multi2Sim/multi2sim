@@ -74,11 +74,3 @@ void Si2binCompile(Si2bin *self,
 }
 
 
-
-
-/*
- * Public
- */
-
-Si2bin *si2bin;
-
