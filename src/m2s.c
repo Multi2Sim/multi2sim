@@ -194,7 +194,7 @@ static EvgGpu *evg_gpu;
 static struct FrmAsmWrap *frm_asm;
 static FrmEmu *frm_emu;
 
-//static KplEmu *kpl_emu;
+static KplEmu *kpl_emu;
 
 static struct MIPSAsmWrap *mips_asm;
 static MIPSEmu *mips_emu;
@@ -2373,9 +2373,8 @@ int main(int argc, char **argv)
 	/* Drivers */
 	opencl_driver = new(OpenclDriver, x86_emu, si_emu);
 	opencl_old_driver = new(OpenclOldDriver, x86_emu, evg_emu);
-	cuda_driver = new(CudaDriver, x86_emu, frm_emu);
 	/* Adding Kpl parameter */
-	//cuda_driver = new(CudaDriver, x86_emu, frm_emu, kpl_emu);
+	cuda_driver = new(CudaDriver, x86_emu, frm_emu, kpl_emu);
 
 #ifdef HAVE_OPENGL
 	opengl_driver = new(OpenglDriver, x86_emu, si_emu);
@@ -2440,7 +2439,7 @@ int main(int argc, char **argv)
 	delete(frm_emu);
 	FrmAsmWrapFree(frm_asm);
 
-	//delete(kpl_emu);
+	delete(kpl_emu);
 
 	/* MIPS */
 	delete(mips_emu);

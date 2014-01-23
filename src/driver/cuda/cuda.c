@@ -102,15 +102,15 @@ struct cuda_abi_kpl_kernel_launch_info_t
  */
 
 
-//void CudaDriverCreate(CudaDriver *self, X86Emu *x86_emu, FrmEmu *frm_emu, KplEmu *kpl_emu)
-void CudaDriverCreate(CudaDriver *self, X86Emu *x86_emu, FrmEmu *frm_emu)
+//void CudaDriverCreate(CudaDriver *self, X86Emu *x86_emu, FrmEmu *frm_emu)
+void CudaDriverCreate(CudaDriver *self, X86Emu *x86_emu, FrmEmu *frm_emu, KplEmu *kpl_emu)
 {
 	/* Parent */
 	DriverCreate(asDriver(self), x86_emu);
 
 	/* Initialize */
 	self->frm_emu = frm_emu;
-	//self->kpl_emu = kpl_emu;
+	self->kpl_emu = kpl_emu;
 
 	/* Assign driver to host emulator */
 	x86_emu->cuda_driver = self;
