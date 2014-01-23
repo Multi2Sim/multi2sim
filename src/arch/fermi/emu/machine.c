@@ -32,10 +32,11 @@
 #include "thread-block.h"
 
 
-char *frm_err_isa_note = "\tThe NVIDIA Fermi SASS instruction set is \n"
-		"\tpartially supported by Multi2Sim. If your program is using an \n"
-		"\tunimplemented instruction, please email \n"
-		"\t'development@multi2sim.org' to request support for it.\n";
+char *frm_err_isa_note =
+		"\tThe NVIDIA Fermi SASS instruction set is partially supported by \n"
+		"\tMulti2Sim. If your program is using an unimplemented instruction, \n"
+		"\tplease email 'development@multi2sim.org' to request support for \n"
+		"\tit.\n";
 
 #define __NOT_IMPL__ fatal("Fermi instruction '%s' not implemented.\n%s", \
 		FrmInstWrapGetName(inst), frm_err_isa_note);
@@ -2093,12 +2094,146 @@ void frm_isa_POPC_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_RED_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	__NOT_IMPL__
+	/* Format */
+	FrmFmtLdSt fmt = FrmInstWrapGetBytes(inst)->fmt_ldst;
+
+	/* Active and predicate */
+	FrmWarp *warp = thread->warp;
+	FrmWarpSyncStackEntry entry;
+	unsigned active;
+	unsigned pred_id, pred;
+
+	/* Operands */
+	unsigned op;
+	int dst_id, src_id;
+	union {int i; float f;} dst, src;
+	struct mem_t *global_mem = thread->grid->emu->global_mem;
+
+	/* Active */
+	entry = warp->sync_stack.entries[warp->sync_stack_top];
+	active = bit_map_get(entry.active_thread_mask, thread->id_in_warp, 1);
+
+	/* Predicate */
+	pred_id = fmt.pred;
+	if (pred_id <= 7)
+		pred = thread->pr[pred_id];
+	else
+		pred = ! thread->pr[pred_id - 8];
+
+	/* Execute */
+	if (active == 1 && pred == 1)
+	{
+		/* Read */
+		dst_id = thread->gpr[fmt.src1].s32;
+		dst_id += (int)fmt.fmod1_srco;
+		mem_read(global_mem, dst_id, 4, &(dst.i));
+		src_id = fmt.dst;
+		src.i = thread->gpr[src_id].s32;
+
+		/* Execute */
+		/* TODO: check ATOMICSIZE */
+		op = (fmt.fmod0 >> 1) & 0xf;
+		if (op == 0)
+			dst.i += src.i;
+		else if (op == 1)
+			dst.i = dst.i < src.i ? dst.i : src.i;
+		else if (op == 2)
+			dst.i = dst.i < src.i ? src.i : dst.i;
+		else if (op == 3)
+			dst.i = dst.i >= src.i ? 0 : dst.i + 1;
+		else if (op == 4)
+			dst.i = ((dst.i == 0) | (dst.i > src.i)) ? src.i : dst.i - 1;
+		else if (op == 5)
+			dst.i &= src.i;
+		else if (op == 6)
+			dst.i |= src.i;
+		else if (op == 7)
+			dst.i ^= src.i;
+
+		/* Write */
+		mem_write(global_mem, dst_id, 4, &(dst.i));
+	}
+
+	/* Debug */
+	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
+			"dst = [0x%x] 0x%08x src = [0x%x] 0x%08x\n",
+			__func__, __LINE__, warp->pc, thread->id, active,
+			pred_id, pred, dst_id, dst.i, src_id, src.i);
 }
 
 void frm_isa_ATOM_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	__NOT_IMPL__
+	/* Format */
+	FrmFmtLdSt fmt = FrmInstWrapGetBytes(inst)->fmt_ldst;
+
+	/* Active and predicate */
+	FrmWarp *warp = thread->warp;
+	FrmWarpSyncStackEntry entry;
+	unsigned active;
+	unsigned pred_id, pred;
+
+	/* Operands */
+	unsigned op;
+	int dst_id, src1_id, src2_id;
+	union {int i; float f;} dst, src1, src2;
+	struct mem_t *global_mem = thread->grid->emu->global_mem;
+
+	/* Active */
+	entry = warp->sync_stack.entries[warp->sync_stack_top];
+	active = bit_map_get(entry.active_thread_mask, thread->id_in_warp, 1);
+
+	/* Predicate */
+	pred_id = fmt.pred;
+	if (pred_id <= 7)
+		pred = thread->pr[pred_id];
+	else
+		pred = ! thread->pr[pred_id - 8];
+
+	/* Execute */
+	if (active == 1 && pred == 1)
+	{
+		/* Read */
+		dst_id = thread->gpr[fmt.src1].s32;
+		dst_id += (int)fmt.fmod1_srco;
+		mem_read(global_mem, dst_id, 4, &(dst.i));
+		src1_id = fmt.dst;
+		src1.i = thread->gpr[src1_id].s32;
+		src2_id = (fmt.fmod1_srco >> 23) & 0x3f;
+		src2.i = thread->gpr[src2_id].s32;
+
+		/* Execute */
+		/* TODO: check ATOMICSIZE */
+		op = (fmt.fmod0 >> 1) & 0xf;
+		if (op == 0)
+			dst.i += src1.i;
+		else if (op == 1)
+			dst.i = dst.i < src1.i ? dst.i : src1.i;
+		else if (op == 2)
+			dst.i = dst.i < src1.i ? src1.i : dst.i;
+		else if (op == 3)
+			dst.i = dst.i >= src1.i ? 0 : dst.i + 1;
+		else if (op == 4)
+			dst.i = ((dst.i == 0) | (dst.i > src1.i)) ? src1.i : dst.i - 1;
+		else if (op == 5)
+			dst.i &= src1.i;
+		else if (op == 6)
+			dst.i |= src1.i;
+		else if (op == 7)
+			dst.i ^= src1.i;
+		else if (op == 8)
+			dst.i = src1.i;
+		else if (op == 9)
+			dst.i = dst.i == src1.i ? src2.i : dst.i;
+
+		/* Write */
+		mem_write(global_mem, dst_id, 4, &(dst.i));
+	}
+
+	/* Debug */
+	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
+			"dst = [0x%x] 0x%08x src1 = [0x%x] 0x%08x src2 = [0x%x] 0x%08x\n",
+			__func__, __LINE__, warp->pc, thread->id, active,
+			pred_id, pred, dst_id, dst.i, src1_id, src1.i, src2_id, src2.i);
 }
 
 void frm_isa_LD_impl(FrmThread *thread, struct FrmInstWrap *inst)
