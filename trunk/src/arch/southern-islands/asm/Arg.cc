@@ -289,9 +289,9 @@ void ArgValue::WriteReflection(ELFWriter::Buffer *buffer, unsigned int index)
 	else if (num_elems > 1)
 	{
 		line =
-			";reflection:%d:%s%d\n" + std::to_string(index)+
+			";reflection:" + std::to_string(index)+
 			":" + reflection + std::to_string(num_elems)
-			+ "*\n";
+			+ "\n";
 	}
 	else
 	{

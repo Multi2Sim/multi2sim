@@ -38,6 +38,8 @@ class Token;
 
 
 extern misc::StringMap arg_type_map;
+
+/// Possible argument types
 enum ArgType
 {
 	ArgTypeInvalid = 0,
@@ -60,6 +62,7 @@ enum ArgType
 	ArgTypeCount
 };
 
+/// Possible argument types for the s_waitcnt instruction
 enum WaitCntType
 {
 	WaitCntTypeInvalid = 0,
@@ -71,6 +74,8 @@ enum WaitCntType
 	WaitCntTypeCount
 };
 
+/// Base class representing the argument of an instruction. More specific
+/// instruction classes can be derived from this class
 class Arg
 {
 	friend class Inst;
@@ -100,11 +105,11 @@ protected:
 
 public:
 
-	/* Constructor */
+	/// Constructor
 	Arg(ArgType type) : type(type), index(-1), token(nullptr),
 			abs(false), neg(false), constant(false) { }
 	
-	/* Virtual Destructor */
+	/// Virtual Destructor
 	virtual ~Arg();
 
 	/* Getters */
