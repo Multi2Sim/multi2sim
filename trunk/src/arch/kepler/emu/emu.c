@@ -43,8 +43,8 @@ void KplEmuCreate(KplEmu *self, struct KplAsm *as)
 	self->pending_grids = list_create();
 	self->running_grids = list_create();
 	self->finished_grids = list_create();
-/*#define DEFINST(_op, _fmt_str, _opcode) \
-		self->inst_func[KplInstId##_op] = kpl_isa_##_op##_impl;*/
+/*#define DEFINST(_name, _fmt_str, ...) \
+		self->inst_func[INST_##_name] = kpl_isa_##_op##_impl;*/
 //#include <arch/kepler/asm/asm.dat>
 //#undef DEFINST
 	self->global_mem = mem_create();

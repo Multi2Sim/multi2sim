@@ -89,9 +89,33 @@ typedef union
 } KplInstBytes;
 
 
+typedef enum
+{
+	KplInstOpcodeInvalid = 0,
+
+#define DEFINST(_name, _fmt_str, ...)        \
+	INST_##_name,
+#include "asm.dat"
+#undef DEFINST
+
+	// Max
+	KplInstOpcodeCount
+} KplInstOpcode;
+
+
+typedef struct
+{
+	KplInstOpcode opcode;
+	const char *name;
+	const char *fmt_str;
+} KplInstInfo;
+
+
 struct KplInstWrap *KplInstWrapCreate(struct KplAsm *as);
+void KplInstWrapFree(struct KplInstWrap *self);
 void KplInstWrapDecode(struct KplInstWrap *self, unsigned int addr, void *ptr);
 //KplInstId KplInstWrapGetId(struct KplInstWrap *self);
+KplInstOpcode KplInstWrapGetOpcode(struct KplInstWrap *self);
 
 
 ////////////////////////////////////////////////////////////////////////////////
