@@ -340,6 +340,9 @@ public:
 	/// Get ID
 	//InstId getId() { return info ? info->id : InstIdInvalid; }
 
+	/// Get opcode
+	unsigned getOpcode() { return info ? (unsigned) info->opcode : InstOpcodeInvalid; }
+
 	/// Dump instruction as a sequence of hexadecimal digits
 	void DumpHex(std::ostream &os) const;
 

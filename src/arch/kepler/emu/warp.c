@@ -85,7 +85,7 @@ void KplWarpDestroy(KplWarp *self)
 	int i;
 	
 	free(self->threads);
-//	FrmInstWrapFree(self->inst);
+	KplInstWrapFree(self->inst);
 	for (i = self->sync_stack_top; i >=0 ; --i)
 		bit_map_free(self->sync_stack.entries[i].active_thread_mask);
 }
@@ -101,11 +101,11 @@ void KplWarpExecute(KplWarp *self)
 	KplEmu *emu;
 	KplGrid *grid;
 	KplThreadBlock *thread_block;
-//	KplThread *thread;
-//	struct KplInstWrap *inst;
+	KplThread *thread;
+	struct KplInstWrap *inst;
 
-//	KplInstBytes inst_bytes;
-//	KplInstId inst_id;
+	KplInstBytes inst_bytes;
+	KplInstOpcode inst_op;
 	int thread_id;
 
 	/* Get current arch, grid, and thread-block */
@@ -114,24 +114,24 @@ void KplWarpExecute(KplWarp *self)
 	emu = grid->emu;
 
 	/* Get instruction */
-//	inst_bytes.as_uint[0] = self->inst_buffer[self->pc / self->inst_size] >> 32;
-//	inst_bytes.as_uint[1] = self->inst_buffer[self->pc / self->inst_size];
-//	kpl_isa_debug("%s:%d: warp[%d] executes instruction [0x%x] 0x%016llx\n",
-//			__FILE__, __LINE__, self->id, self->pc, inst_bytes.dword);
+	inst_bytes.as_uint[0] = self->inst_buffer[self->pc / self->inst_size] >> 32;
+	inst_bytes.as_uint[1] = self->inst_buffer[self->pc / self->inst_size];
+	kpl_isa_debug("%s:%d: warp[%d] executes instruction [0x%x] 0x%016llx\n",
+			__FILE__, __LINE__, self->id, self->pc, inst_bytes.as_dword);
 
 	/* Decode instruction */
-//	inst = self->inst;
-//	KplInstWrapDecode(inst, self->pc, &inst_bytes);
+	inst = self->inst;
+	KplInstWrapDecode(inst, self->pc, &inst_bytes);
 
 	/* Execute instruction */
-//	inst_id = KplInstWrapGetId(inst);
-//	if (!inst_id)
-//		fatal("%s:%d: unrecognized instruction (%08x %08x)",
-//				__FILE__, __LINE__, inst_bytes.word[0], inst_bytes.word[1]);
+	inst_op = KplInstWrapGetOpcode(inst);
+	if (!inst_op)
+		fatal("%s:%d: unrecognized instruction (%08x %08x)",
+				__FILE__, __LINE__, inst_bytes.as_uint[0], inst_bytes.as_uint[1]);
 	for (thread_id = 0; thread_id < self->thread_count; ++thread_id)
 	{
-//		thread = self->threads[thread_id];
-//		emu->inst_func[inst_id](thread, inst);
+		thread = self->threads[thread_id];
+		emu->inst_func[inst_op](thread, inst);
 	}
 
 	/* Finish */

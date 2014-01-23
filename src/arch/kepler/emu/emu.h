@@ -44,7 +44,7 @@ CLASS_BEGIN(KplEmu, Emu)
 	struct list_t *finished_grids;
 
 	/* Array of pointers to instruction implementation functions */
-	//KplEmuInstFunc inst_func[KplInstIdCount];
+	KplEmuInstFunc inst_func[KplInstOpcodeCount];
 
 	/* Global memory */
 	struct mem_t *global_mem;

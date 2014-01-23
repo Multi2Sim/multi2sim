@@ -33,6 +33,11 @@ struct KplInstWrap *KplInstWrapCreate(struct KplAsm *as)
 	return (KplInstWrap *) new Kepler::Inst((Kepler::Asm *) as);
 }
 
+void KplInstWrapFree(struct KplInstWrap *self)
+{
+	delete (Kepler::Inst *) self;
+}
+
 void KplInstWrapDecode(struct KplInstWrap *self, unsigned addr, void *ptr)
 {
 	Kepler::Inst *inst = (Kepler::Inst *) self;
@@ -44,6 +49,12 @@ void KplInstWrapDecode(struct KplInstWrap *self, unsigned addr, void *ptr)
 //	Kepler::Inst *inst = (Kepler::Inst *) self;
 //	return (KplInstId) inst->getId();
 //}
+
+KplInstOpcode KplInstWrapGetOpcode(struct KplInstWrap *self)
+{
+	Kepler::Inst *inst = (Kepler::Inst *) self;
+	return (KplInstOpcode) inst->getOpcode();
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // Wrapper for class Asm
