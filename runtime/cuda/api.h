@@ -23,6 +23,8 @@
 
 #include <stdio.h>
 
+#include "../include/cuda.h"
+
 /* Syscall code */
 #define CUDA_SYS_CODE 328
 

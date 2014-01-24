@@ -54,11 +54,20 @@ struct kernel_args_t
 	CUstream stream;
 	void **kernel_params;
 	void **extra;
+	struct list_t *args;
 };
 
 struct event_args_t
 {
 	CUevent event;
+};
+
+struct callback_t
+{
+	CUstreamCallback func;
+	CUstream stream;
+	CUresult status;
+	void *userData;
 };
 
 struct cuda_stream_command_t
@@ -75,6 +84,9 @@ struct cuda_stream_command_t
 
 		/* Arguments for event functions */
 		struct event_args_t e_args;
+
+		/* Callback functions */
+		struct callback_t cb;
 	};
 
 	/* Flags */
@@ -85,21 +97,28 @@ struct CUstream_st
 {
 	unsigned id;
 
+	pthread_t user_thread;
+
 	struct list_t *command_list;
 
 	pthread_t thread;
 	pthread_mutex_t lock;
+	pthread_cond_t cond;
 
 	/* Flags */
 	unsigned to_be_freed;
 };
 
 void cuMemcpyAsyncImpl(struct cuda_stream_command_t *command);
+void cudaConfigureCallImpl(struct cuda_stream_command_t *command);
+void cudaSetupArgumentImpl(struct cuda_stream_command_t *command);
 void cuLaunchKernelImpl(struct cuda_stream_command_t *command);
 void cuEventRecordImpl(struct cuda_stream_command_t *command);
+void cuStreamCallbackImpl(struct cuda_stream_command_t *command);
 struct cuda_stream_command_t *cuda_stream_command_create(CUstream stream,
 		cuda_stream_command_func_t func, struct memory_args_t *mem_args,
-		struct kernel_args_t *k_args, struct event_args_t *e_args);
+		struct kernel_args_t *k_args, struct event_args_t *e_args,
+		struct callback_t *cb);
 void cuda_stream_command_free(struct cuda_stream_command_t *command);
 void cuda_stream_command_run(struct cuda_stream_command_t *command);
 CUstream cuda_stream_create(void);
