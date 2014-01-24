@@ -1110,11 +1110,11 @@ cudaError_t cudaLaunch(const void *func)
 	shared_mem_size = command->k_args.shared_mem_size;
 
 	/* Get arguments */
-	arg_ptr_array = xcalloc(list_count(command->k_args.args) - 1,
+	arg_ptr_array = xcalloc(list_count(command->k_args.args),
 			sizeof(void *));
-	while (list_count(command->k_args.args))
+	for (i = 0; i < list_count(command->k_args.args); ++i)
 	{
-		arg = (struct cuda_function_arg_t *) list_pop(command->k_args.args);
+		arg = list_get(command->k_args.args, i);
 		arg_ptr_array[i] = xcalloc(1, arg->size);
 		memcpy(arg_ptr_array[i], arg->ptr, arg->size);
 	}

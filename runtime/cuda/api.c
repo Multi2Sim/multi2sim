@@ -1806,7 +1806,6 @@ CUresult cuLaunchKernel(CUfunction f, unsigned int gridDimX,
 		unsigned int sharedMemBytes, CUstream hStream, void **kernelParams,
 		void **extra)
 {
-	struct kernel_args_t *args;
 	CUstream stream;
 	struct cuda_stream_command_t *command;
 	int i;
@@ -1833,19 +1832,6 @@ CUresult cuLaunchKernel(CUfunction f, unsigned int gridDimX,
 		return CUDA_ERROR_NOT_INITIALIZED;
 	}
 
-	args = xcalloc(1, sizeof(struct kernel_args_t));
-	args->kernel = f;
-	args->grid_dim_x = gridDimX;
-	args->grid_dim_y = gridDimY;
-	args->grid_dim_z = gridDimZ;
-	args->block_dim_x = blockDimX;
-	args->block_dim_y = blockDimY;
-	args->block_dim_z = blockDimZ;
-	args->shared_mem_size = sharedMemBytes;
-	args->stream = hStream;
-	args->kernel_params = kernelParams;
-	args->extra = extra;
-
 	/* Find stream */
 	for (i = 0; i < list_count(active_device->stream_list); ++i)
 	{
@@ -1857,9 +1843,10 @@ CUresult cuLaunchKernel(CUfunction f, unsigned int gridDimX,
 
 	/* Update command */
 	command = list_get(stream->command_list, 0);
-	command->k_args.kernel = args->kernel;
-	command->k_args.stream = args->stream;
-	command->k_args.extra = args->extra;
+	command->k_args.kernel = f;
+	command->k_args.stream = hStream;
+	command->k_args.kernel_params = kernelParams;
+	command->k_args.extra = extra;
 	pthread_cond_signal(&command->k_args.stream->cond);
 
 	cuda_debug("\t(driver) '%s' out: return = %d", __func__, CUDA_SUCCESS);
