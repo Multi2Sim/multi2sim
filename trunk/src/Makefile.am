@@ -47,6 +47,7 @@ LDADD = \
 	$(top_builddir)/src/arch/fermi/asm/libasm.a \
 	\
 	$(top_builddir)/src/arch/kepler/asm/libasm.a \
+	$(top_builddir)/src/arch/kepler/emu/libemu.a \
 	\
 	$(top_builddir)/src/arch/mips/timing/libtiming.a \
 	$(top_builddir)/src/arch/mips/emu/libemu.a \
