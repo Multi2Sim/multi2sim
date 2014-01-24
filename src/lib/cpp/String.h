@@ -158,8 +158,7 @@ std::string StringParagraph(const std::string &text,
 ///	StringMap my_map = {
 ///		{ "element1", 1 },
 ///		{ "second_element", 2 },
-///		{ "last item", 3 },
-///		{ 0, 0 }
+///		{ "last item", 3 }
 ///	};
 /// \endcode
 ///
@@ -210,8 +209,7 @@ public:
 	///		{ "Fetch", 1 },
 	///		{ "Decode", 2 },
 	///		{ "Issue", 3 },
-	///		{ "Writeback", 4 },
-	///		{ 0, 0 }
+	///		{ "Writeback", 4 }
 	///	};
 	/// \endcode
 	///
@@ -264,8 +262,7 @@ public:
 	///		{ "Read", 1 },
 	///		{ "Write", 2 },
 	///		{ "Modify", 4 },
-	///		{ "Execute", 8 },
-	///		{ 0, 0 }
+	///		{ "Execute", 8 }
 	///	};
 	/// \endcode
 	///

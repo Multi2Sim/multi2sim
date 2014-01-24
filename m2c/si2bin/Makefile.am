@@ -7,7 +7,13 @@ lib_LIBRARIES = libsi2bin.a
 
 if HAVE_FLEX_BISON
 
-#BUILT_SOURCES = parser.h
+# This rule is needed for Automake 1.12 and up. These versions generate a
+# file name Parser.hh instead of Parser.h. To make compilation work under any
+# version of Automake, we make sure that any .hh file is first converted into
+# a .h file with the same name.
+.hh.h:
+	mv $< $@
+
 BUILT_SOURCES = Parser.h
 
 libsi2bin_a_SOURCES = \
@@ -62,16 +68,4 @@ libsi2bin_a_SOURCES = \
 endif
 
 INCLUDES = @M2S_INCLUDES@
-
-
-# The two rules below overwrite the default rules generated to compile sources
-# 'lex.c' and 'parser.c'. Some flex and bison versions generate code that
-# produce warnings, so we need to avoid the use of flag '-Werror' in this case.
-
-CFLAGS_NO_WERROR = `echo "$(CFLAGS)" | $(SED) "s/\-Werror\>//g"` -DMHANDLE_ALLOW_NON_X_FUNCTIONS
-
-parser.o: CFLAGS := $(CFLAGS_NO_WERROR)
-
-lex.o: CFLAGS := $(CFLAGS_NO_WERROR)
-
 
