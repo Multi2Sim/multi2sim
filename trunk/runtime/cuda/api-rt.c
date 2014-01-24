@@ -18,6 +18,7 @@
  */
 
 #include <assert.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -37,9 +38,6 @@
 /*
  * Global Variables
  */
-
-/* Execution stack */
-struct list_t *execution_stack;
 
 /* CUDA function list */
 struct list_t *runtime_func_list;
@@ -834,7 +832,21 @@ cudaError_t cudaStreamWaitEvent(cudaStream_t stream, cudaEvent_t event,
 cudaError_t cudaStreamAddCallback(cudaStream_t stream,
 		cudaStreamCallback_t callback, void *userData, unsigned int flags)
 {
-	__CUDART_NOT_IMPL__;
+	cuda_debug("CUDA runtime API '%s'", __func__);
+	cuda_debug("\t(runtime) '%s' in: stream = [%p]", __func__, stream);
+	cuda_debug("\t(runtime) '%s' in: callback = [%p]", __func__, callback);
+	cuda_debug("\t(runtime) '%s' in: userData = [%p]", __func__, userData);
+	cuda_debug("\t(runtime) '%s' in: flags = %u", __func__, flags);
+
+	if (! active_device)
+		cuInit(0);
+
+	cuStreamAddCallback(stream, (CUstreamCallback)callback, userData, flags);
+
+	cuda_rt_last_error = cudaSuccess;
+
+	cuda_debug("\t(runtime) '%s' out: return = %d", __func__, cudaSuccess);
+
 	return cudaSuccess;
 }
 
@@ -966,7 +978,8 @@ cudaError_t cudaEventElapsedTime(float *ms, cudaEvent_t start, cudaEvent_t end)
 cudaError_t cudaConfigureCall(dim3 gridDim, dim3 blockDim, size_t sharedMem,
 		cudaStream_t stream)
 {
-	unsigned *func_dim;
+	struct cuda_stream_command_t *command;
+	struct kernel_args_t *args;
 
 	cuda_debug("CUDA runtime API '%s'", __func__);
 	cuda_debug("\t(runtime) '%s' in: gridDim = %u", __func__, gridDim.x);
@@ -977,21 +990,22 @@ cudaError_t cudaConfigureCall(dim3 gridDim, dim3 blockDim, size_t sharedMem,
 	if (! active_device)
 		cuInit(0);
 
-	/* Create stack */
-	if (! execution_stack)
-		execution_stack = list_create();
+	args = xcalloc(1, sizeof(struct kernel_args_t));
+	args->kernel = NULL;
+	args->args = NULL;
+	args->grid_dim_x = gridDim.x;
+	args->grid_dim_y = gridDim.y;
+	args->grid_dim_z = gridDim.z;
+	args->block_dim_x = blockDim.x;
+	args->block_dim_y = blockDim.y;
+	args->block_dim_z = blockDim.z;
+	args->shared_mem_size = sharedMem;
 
-	/* Create function dim */
-	func_dim = xcalloc(1, sizeof gridDim + sizeof blockDim);
-	func_dim[0] = gridDim.x;
-	func_dim[1] = gridDim.y;
-	func_dim[2] = gridDim.z;
-	func_dim[3] = blockDim.x;
-	func_dim[4] = blockDim.y;
-	func_dim[5] = blockDim.z;
+	command = cuda_stream_command_create(stream, cuLaunchKernelImpl, NULL, args,
+			NULL, NULL);
+	cuda_stream_enqueue(stream, command);
 
-	/* Push to stack */
-	list_push(execution_stack, func_dim);
+	free(args);
 
 	cuda_rt_last_error = cudaSuccess;
 
@@ -1003,6 +1017,10 @@ cudaError_t cudaConfigureCall(dim3 gridDim, dim3 blockDim, size_t sharedMem,
 cudaError_t cudaSetupArgument(const void *arg, size_t size, size_t offset)
 {
 	struct cuda_function_arg_t *func_arg;
+	CUstream stream;
+	struct cuda_stream_command_t *command;
+
+	int i;
 
 	cuda_debug("CUDA runtime API '%s'", __func__);
 	cuda_debug("\t(runtime) '%s' in: arg = [%p]", __func__, arg);
@@ -1015,8 +1033,20 @@ cudaError_t cudaSetupArgument(const void *arg, size_t size, size_t offset)
 	/* Create function argument */
 	func_arg = cuda_function_arg_create(arg, size, offset);
 
-	/* Push to stack */
-	list_push(execution_stack, func_arg);
+	/* Find stream */
+	for (i = 0; i < list_count(active_device->stream_list); ++i)
+	{
+		stream = list_get(active_device->stream_list, i);
+		if (pthread_equal(pthread_self(), stream->user_thread))
+			break;
+	}
+	assert(i < list_count(active_device->stream_list));
+
+	/* Update command */
+	command = list_get(stream->command_list, 0);
+	if (! command->k_args.args)
+		command->k_args.args = list_create();
+	list_enqueue(command->k_args.args, func_arg);
 
 	cuda_rt_last_error = cudaSuccess;
 
@@ -1041,21 +1071,53 @@ cudaError_t cudaFuncSetSharedMemConfig(const void *func,
 
 cudaError_t cudaLaunch(const void *func)
 {
+	CUstream stream;
+	struct cuda_stream_command_t *command;
+	unsigned grid_dim[3];
+	unsigned block_dim[3];
+	unsigned shared_mem_size;
+	void **arg_ptr_array;
+	struct cuda_function_arg_t *arg;
 	CUfunction function;
 
-	unsigned num_args;
-	void **arg_ptr_array;
-	unsigned *func_dim;
-
 	int i;
-	struct cuda_function_arg_t *arg;
-	CUstream stream;
 
 	cuda_debug("CUDA runtime API '%s'", __func__);
 	cuda_debug("\t(runtime) '%s' in: func = [%p]", __func__, func);
 
 	if (! active_device)
 		cuInit(0);
+
+	/* Find stream */
+	for (i = 0; i < list_count(active_device->stream_list); ++i)
+	{
+		stream = list_get(active_device->stream_list, i);
+		if (pthread_equal(pthread_self(), stream->user_thread))
+			break;
+	}
+	assert(i < list_count(active_device->stream_list));
+
+	/* Get the last command */
+	command = list_get(stream->command_list, 0);
+
+	/* Get dims and sizes */
+	grid_dim[0] = command->k_args.grid_dim_x;
+	grid_dim[1] = command->k_args.grid_dim_y;
+	grid_dim[2] = command->k_args.grid_dim_z;
+	block_dim[0] = command->k_args.block_dim_x;
+	block_dim[1] = command->k_args.block_dim_y;
+	block_dim[2] = command->k_args.block_dim_z;
+	shared_mem_size = command->k_args.shared_mem_size;
+
+	/* Get arguments */
+	arg_ptr_array = xcalloc(list_count(command->k_args.args) - 1,
+			sizeof(void *));
+	while (list_count(command->k_args.args))
+	{
+		arg = (struct cuda_function_arg_t *) list_pop(command->k_args.args);
+		arg_ptr_array[i] = xcalloc(1, arg->size);
+		memcpy(arg_ptr_array[i], arg->ptr, arg->size);
+	}
 
 	/* Get function */
 	for (i = 0; i < list_count(runtime_func_list); i++)
@@ -1067,24 +1129,10 @@ cudaError_t cudaLaunch(const void *func)
 	if (i == list_count(runtime_func_list))
 		fatal("%s: no function found", __func__);
 
-	/* Get arguments */
-	num_args = list_count(execution_stack) - 1;
-	arg_ptr_array = xcalloc(num_args, sizeof(void *));
-	for (i = num_args - 1; i >= 0; i--)
-	{
-		arg = (struct cuda_function_arg_t *) list_pop(execution_stack);
-		arg_ptr_array[i] = xcalloc(1, arg->size);
-		memcpy(arg_ptr_array[i], arg->ptr, arg->size);
-	}
-
-	/* Get dim */
-	func_dim = (unsigned *) list_pop(execution_stack);
-	assert(list_count(execution_stack) == 0);
-
 	/* Launch kernel */
-	stream = list_get(active_device->stream_list, 0);
-	cuLaunchKernel(function, func_dim[0], func_dim[1], func_dim[2], func_dim[3],
-			func_dim[4], func_dim[5], 0, stream, arg_ptr_array, NULL);
+	cuLaunchKernel(function, grid_dim[0], grid_dim[1], grid_dim[2],
+			block_dim[0], block_dim[1], block_dim[2], shared_mem_size, stream,
+			arg_ptr_array, NULL);
 
 	cuda_rt_last_error = cudaSuccess;
 
@@ -1216,7 +1264,21 @@ cudaError_t cudaFreeMipmappedArray(cudaMipmappedArray_t mipmappedArray)
 
 cudaError_t cudaHostAlloc(void **pHost, size_t size, unsigned int flags)
 {
-	__CUDART_NOT_IMPL__;
+	cuda_debug("CUDA runtime API '%s'", __func__);
+	cuda_debug("\t(runtime) '%s' in: pHost = [%p]", __func__, pHost);
+	cuda_debug("\t(runtime) '%s' in: size = %d", __func__, size);
+	cuda_debug("\t(runtime) '%s' in: flags = %u", __func__, flags);
+
+	if (! active_device)
+		cuInit(0);
+
+	cuMemHostAlloc(pHost, size, flags);
+
+	cuda_rt_last_error = cudaSuccess;
+
+	cuda_debug("\t(runtime) '%s' out: pHost = [%p]", __func__, *pHost);
+	cuda_debug("\t(runtime) '%s' out: return = %d", __func__, cudaSuccess);
+
 	return cudaSuccess;
 }
 
