@@ -18,6 +18,7 @@
  */
 
 #include <assert.h>
+#include <pthread.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
@@ -970,7 +971,27 @@ CUresult cuMemFreeHost(void *p)
 
 CUresult cuMemHostAlloc(void **pp, size_t bytesize, unsigned int Flags)
 {
-	__CUDA_NOT_IMPL__;
+	cuda_debug("CUDA driver API '%s'", __func__);
+	cuda_debug("\t(driver) '%s' in: pp = [%p]", __func__, pp);
+	cuda_debug("\t(driver) '%s' in: bytesize = %d", __func__, bytesize);
+	cuda_debug("\t(driver) '%s' in: Flags = %u", __func__, Flags);
+
+	if (! active_device)
+	{
+		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
+				CUDA_ERROR_NOT_INITIALIZED);
+		return CUDA_ERROR_NOT_INITIALIZED;
+	}
+
+	/* Allocate */
+	*pp = xcalloc(1, bytesize);
+
+	/* Update pinned memory table */
+	list_enqueue(pinned_memory_object_list, *pp);
+
+	cuda_debug("\t(driver) '%s' out: pp = [%p]", __func__, *pp);
+	cuda_debug("\t(driver) '%s' out: return = %d", __func__, CUDA_SUCCESS);
+
 	return CUDA_SUCCESS;
 }
 
@@ -1221,7 +1242,7 @@ CUresult cuMemcpyAsync(CUdeviceptr dst, CUdeviceptr src, size_t ByteCount,
 	args->size = ByteCount;
 
 	command = cuda_stream_command_create(hStream, cuMemcpyAsyncImpl, args,
-			NULL, NULL);
+			NULL, NULL, NULL);
 	cuda_stream_enqueue(hStream, command);
 
 	cuda_debug("\t(driver) '%s' out: return = %d", __func__, CUDA_SUCCESS);
@@ -1394,7 +1415,7 @@ CUresult cuMemsetD8Async(CUdeviceptr dstDevice, unsigned char uc, size_t N,
 	args->size = N;
 
 	command = cuda_stream_command_create(hStream, cuMemcpyAsyncImpl, args,
-			NULL, NULL);
+			NULL, NULL, NULL);
 	cuda_stream_enqueue(hStream, command);
 
 	cuda_debug("\t(driver) '%s' out: return = %d", __func__, CUDA_SUCCESS);
@@ -1549,7 +1570,33 @@ CUresult cuStreamWaitEvent(CUstream hStream, CUevent hEvent, unsigned int Flags)
 CUresult cuStreamAddCallback(CUstream hStream, CUstreamCallback callback,
 		void *userData, unsigned int flags)
 {
-	__CUDA_NOT_IMPL__;
+	struct cuda_stream_command_t *command;
+	struct callback_t *cb;
+
+	cuda_debug("CUDA driver API '%s'", __func__);
+	cuda_debug("\t(driver) '%s' in: hStream = [%p]", __func__, hStream);
+	cuda_debug("\t(driver) '%s' in: callback = [%p]", __func__, callback);
+	cuda_debug("\t(driver) '%s' in: userData = [%p]", __func__, userData);
+	cuda_debug("\t(driver) '%s' in: flags = %u", __func__, flags);
+
+	if (! active_device)
+	{
+		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
+				CUDA_ERROR_NOT_INITIALIZED);
+		return CUDA_ERROR_NOT_INITIALIZED;
+	}
+
+	cb = xcalloc(1, sizeof(struct callback_t));
+	cb->func = callback;
+	cb->stream = hStream;
+	cb->userData = userData;
+
+	command = cuda_stream_command_create(hStream, cuStreamCallbackImpl, NULL,
+			NULL, NULL, cb);
+	cuda_stream_enqueue(hStream, command);
+
+	cuda_debug("\t(driver) '%s' out: return = %d", __func__, CUDA_SUCCESS);
+
 	return CUDA_SUCCESS;
 }
 
@@ -1640,7 +1687,7 @@ CUresult cuEventRecord(CUevent hEvent, CUstream hStream)
 	args = xcalloc(1, sizeof(struct event_args_t));
 	args->event = hEvent;
 	command = cuda_stream_command_create(hStream, cuEventRecordImpl, NULL, NULL,
-			args);
+			args, NULL);
 	cuda_stream_enqueue(hStream, command);
 
 	cuda_debug("\t(driver) '%s' out: return = %d", __func__, CUDA_SUCCESS);
@@ -1759,8 +1806,10 @@ CUresult cuLaunchKernel(CUfunction f, unsigned int gridDimX,
 		unsigned int sharedMemBytes, CUstream hStream, void **kernelParams,
 		void **extra)
 {
-	struct cuda_stream_command_t *command;
 	struct kernel_args_t *args;
+	CUstream stream;
+	struct cuda_stream_command_t *command;
+	int i;
 
 	cuda_debug("CUDA driver API '%s'", __func__);
 	cuda_debug("\t(driver) '%s' in: function = [%p]", __func__, f);
@@ -1797,9 +1846,21 @@ CUresult cuLaunchKernel(CUfunction f, unsigned int gridDimX,
 	args->kernel_params = kernelParams;
 	args->extra = extra;
 
-	command = cuda_stream_command_create(hStream, cuLaunchKernelImpl, NULL,
-			args, NULL);
-	cuda_stream_enqueue(hStream, command);
+	/* Find stream */
+	for (i = 0; i < list_count(active_device->stream_list); ++i)
+	{
+		stream = list_get(active_device->stream_list, i);
+		if (pthread_equal(pthread_self(), stream->user_thread))
+			break;
+	}
+	assert(i < list_count(active_device->stream_list));
+
+	/* Update command */
+	command = list_get(stream->command_list, 0);
+	command->k_args.kernel = args->kernel;
+	command->k_args.stream = args->stream;
+	command->k_args.extra = args->extra;
+	pthread_cond_signal(&command->k_args.stream->cond);
 
 	cuda_debug("\t(driver) '%s' out: return = %d", __func__, CUDA_SUCCESS);
 

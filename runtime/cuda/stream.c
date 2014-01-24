@@ -100,6 +100,16 @@ void cuMemcpyAsyncImpl(struct cuda_stream_command_t *command)
 	cuda_debug("CUDA stream command 'cuMemcpyAsync' completed now");
 }
 
+void cudaConfigureCallImpl(struct cuda_stream_command_t *command)
+{
+
+}
+
+void cudaSetupArgumentImpl(struct cuda_stream_command_t *command)
+{
+
+}
+
 void cuLaunchKernelImpl(struct cuda_stream_command_t *command)
 {
 	CUfunction f = command->k_args.kernel;
@@ -177,9 +187,28 @@ void cuEventRecordImpl(struct cuda_stream_command_t *command)
 	cuda_debug("CUDA stream command 'cuEventRecord' completed now");
 }
 
+void cuStreamCallbackImpl(struct cuda_stream_command_t *command)
+{
+	CUstreamCallback func = command->cb.func;
+	CUstream stream = command->cb.stream;
+	CUresult status = command->cb.status;
+	void *userData = command->cb.userData;
+
+	cuda_debug("CUDA stream command 'cuStreamCallback' running now");
+	cuda_debug("\tin: func = [%p]", func);
+	cuda_debug("\tin: stream = [%p]", stream);
+	cuda_debug("\tin: status = %d", status);
+	cuda_debug("\tin: userData = [%p]", userData);
+
+	func(stream, status, userData);
+
+	cuda_debug("CUDA stream command 'cuStreamCallback' completed now");
+}
+
 struct cuda_stream_command_t *cuda_stream_command_create(CUstream stream,
 		cuda_stream_command_func_t func, struct memory_args_t *m_args,
-		struct kernel_args_t *k_args, struct event_args_t *e_args)
+		struct kernel_args_t *k_args, struct event_args_t *e_args,
+		struct callback_t *cb)
 {
 	struct cuda_stream_command_t *command;
 
@@ -201,20 +230,27 @@ struct cuda_stream_command_t *cuda_stream_command_create(CUstream stream,
 	}
 	if (k_args != NULL)
 	{
-		command->k_args.kernel = k_args->kernel;
-		command->k_args.grid_dim_x = k_args->grid_dim_x;
-		command->k_args.grid_dim_y = k_args->grid_dim_y;
-		command->k_args.grid_dim_z = k_args->grid_dim_z;
-		command->k_args.block_dim_x = k_args->block_dim_x;
-		command->k_args.block_dim_y = k_args->block_dim_y;
-		command->k_args.block_dim_z = k_args->block_dim_z;
-		command->k_args.shared_mem_size = k_args->shared_mem_size;
-		command->k_args.stream = k_args->stream;
-		command->k_args.kernel_params = k_args->kernel_params;
-		command->k_args.extra = k_args->extra;
+		if (k_args->kernel == NULL && k_args->args == NULL)
+		{
+			command->k_args.grid_dim_x = k_args->grid_dim_x;
+			command->k_args.grid_dim_y = k_args->grid_dim_y;
+			command->k_args.grid_dim_z = k_args->grid_dim_z;
+			command->k_args.block_dim_x = k_args->block_dim_x;
+			command->k_args.block_dim_y = k_args->block_dim_y;
+			command->k_args.block_dim_z = k_args->block_dim_z;
+			command->k_args.shared_mem_size = k_args->shared_mem_size;
+			command->k_args.stream = stream;
+		}
 	}
 	if (e_args != NULL)
 		command->e_args.event = e_args->event;
+	if (cb != NULL)
+	{
+		command->cb.func = cb->func;
+		command->cb.stream = cb->stream;
+		command->cb.status = cb->status;
+		command->cb.userData = cb->userData;
+	}
 	command->completed = 0;
 
 	return command;
@@ -242,10 +278,19 @@ void *cuda_stream_thread_func(void *thread_data)
 		if (stream->to_be_freed)
 			break;
 
-		/* Get command */
-		command = cuda_stream_dequeue(stream);
+		command = list_get(stream->command_list, 0);
 		if (! command)
 			continue;
+
+		/* Get command */
+		if (command->func == cuLaunchKernelImpl)
+		{
+			pthread_mutex_lock(&command->k_args.stream->lock);
+			pthread_cond_wait(&command->k_args.stream->cond,
+					&command->k_args.stream->lock);
+			pthread_mutex_unlock(&command->k_args.stream->lock);
+		}
+		command = cuda_stream_dequeue(stream);
 
 		/* Run command */
 		cuda_stream_command_run(command);
@@ -265,11 +310,13 @@ CUstream cuda_stream_create(void)
 
 	/* Initialize */
 	stream->id = list_count(active_device->stream_list);
+	stream->user_thread = pthread_self();
 	stream->command_list = list_create();
 	stream->to_be_freed = 0;
 
 	/* Create thread associated with stream */
 	pthread_mutex_init(&stream->lock, NULL);
+	pthread_cond_init(&stream->cond, NULL);
 	pthread_create(&stream->thread, NULL, cuda_stream_thread_func, stream);
 
 	return stream;
@@ -281,6 +328,7 @@ void cuda_stream_free(CUstream stream)
 	stream->to_be_freed = 1;
 	pthread_join(stream->thread, NULL);
 
+	pthread_cond_destroy(&stream->cond);
 	pthread_mutex_destroy(&stream->lock);
 
 	free(stream);
@@ -313,3 +361,4 @@ struct cuda_stream_command_t *cuda_stream_dequeue(CUstream stream)
 
 	return command;
 }
+
