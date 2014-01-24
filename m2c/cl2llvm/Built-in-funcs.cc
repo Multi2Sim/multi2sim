@@ -117,7 +117,7 @@ hash_table<string, BuiltInFunction> BuiltInFuncTableCreate(void)
 	for(i = 0; i < BUILT_IN_FUNC_COUNT; i++)
 	{
 		built_in_func = BuiltInFuncCreate(function_list[i].arg_count, function_list[i].format, function_list[i].name);
-		built_in_func_table.iinsert( { function_list[i].name,
+		built_in_func_table.insert( { function_list[i].name,
 			built_in_func } );
 	}
 	return built_in_func_table;
@@ -140,123 +140,92 @@ string name)
 	this->arg_count = arg_count;
 
 	/* Populate format_list */
-	pch = strtok(arg_string, " ");
+	getline(ss, token, " ");
 	while(pch)
 	{
 
-		getline(ss, token, " ");
 
-		built_in_func_llvm_name = cl2llvm_built_in_func_llvm_name_create();
+		BuiltInFunctionInst built_in_func_inst;
 
 		/* iterate through arguments and add to array */
 		for(i = 0; i < arg_count; i++)
 		{
-			built_in_func_llvm_name->arg_list[i] = 		
-				string_to_type(pch);
+			built_in_func_inst->arg_list[i] = 		
+				StringToType(token);
 			
-			strcpy(arg_types_as_strings[i], pch);
+			arg_types_as_strings[i] = token;
 			
 			/* Get next token */
-			pch = strtok(NULL, " ");
-		}
-		
-		/* Put this in a separate function */
+			getline(ss, token, " ");
+
+		/* Create suffix for LLVM name based on the names
+		   of the arguments */
 		for (i = 0; i < arg_count; i++)
 		{
 			if (!i)
 			{
 				previous_type = arg_types_as_strings[i];
-
-				snprintf(type_suffix, sizeof(type_suffix), "_%s", arg_types_as_strings[i]);
+				
+				type_suffix = "_" + arg_types_as_strings[i];
 			}
-			else if (!strcmp(arg_types_as_strings[i],
+			else if (!arg_types_as_strings[i].compare(,
 				previous_type))
 			{
-				snprintf(type_suffix, sizeof(type_suffix), "_%s", arg_types_as_strings[i]);
+				type_suffix = type_suffix + "_" + arg_types_as_strings[i];
+				
 				previous_type = arg_types_as_strings[i];
 			}
 		}
 
-		snprintf(llvm_name, sizeof(llvm_name), "__%s%s",
-		name, type_suffix);
+		llvm_name = "__" + name + type_suffix;
+		
 		/* Add return type */
-		built_in_func_llvm_name->ret_type = string_to_type(pch);
-		/* Get llvm name token */
+		built_in_func_inst->ret_type = string_to_type(token);
 
 		/* Add llvm name */
-		built_in_func_llvm_name-> llvm_name = xstrdup(llvm_name);
+		built_in_func_inst->llvm_name = llvm_name;
 		
 		/* Add built_in_func_llvm_name to built_in_func
 		   format list */
-		list_add(built_in_func->format_list, built_in_func_llvm_name);
+		built_in_func->format_list.push_back(built_in_func_inst);
 
 		/* Get next token.  If NULL, loop will terminate. */
-		pch = strtok(NULL, " ");	
+		getline(ss, token, " ");
 	}
-
 
 	return built_in_func;
 }
 
-void cl2llvm_built_in_func_llvm_name_free(struct cl2llvm_built_in_func_llvm_name_t* built_in_func_llvm_name)
-{
-	int i;
 	
-	i = 0;
-
-	free(built_in_func_llvm_name->llvm_name);
-	
-	cl2llvmTypeWrapFree(built_in_func_llvm_name->ret_type);
-	while(built_in_func_llvm_name->arg_list[i])
-	{
-		cl2llvmTypeWrapFree(built_in_func_llvm_name->arg_list[i]);
-		i++;
-	}
-	free(built_in_func_llvm_name->arg_list);
-	free(built_in_func_llvm_name);
-}
-
-struct cl2llvm_built_in_func_llvm_name_t *		
-	cl2llvm_built_in_func_llvm_name_create()
+void BuiltInFunctionAnalyze(string name, vector<Value> *param_list)
 {
-	struct cl2llvm_built_in_func_llvm_name_t *built_in_func_llvm_name;
-
-	built_in_func_llvm_name = xcalloc(1, sizeof(struct cl2llvm_built_in_func_llvm_name_t));
-	built_in_func_llvm_name->arg_list = xcalloc(3,
-		sizeof(Type ));
-	
-	return built_in_func_llvm_name;
-}
-
-void cl2llvm_built_in_func_analyze(char* name, struct list_t *param_list)
-{
-	struct cl2llvm_built_in_func_t *built_in_func;
-	struct cl2llvm_built_in_func_llvm_name_t *func_inst;
+	BuiltInFunction *built_in_func;
+	BuiltInFunctionInst *func_inst;
 	int match_found;
 	int args_match;
 	int i;
 	int j;
 /*	char error_message[1000];*/
 	Type type;
-	Value param;
+	Value *param;
 
-	built_in_func = hash_table_get(cl2llvm_built_in_func_table, name);
+	built_in_func = built_in_func_table(name);
 
 	match_found = 0;
 
-	for (i = 0; i < list_count(built_in_func->format_list) && !match_found; i++)
+	for (i = 0; i < built_in_func->format_list.size() && !match_found; i++)
 	{
 		args_match = 1;
-		func_inst = list_get(built_in_func->format_list, i);
+		func_inst = vector<built_in_func->format_list[i];
 		for (j = 0; j < built_in_func->arg_count; j++)
 		{
-			param = list_get(param_list, j);
+			param = param_list[j];
 			type = func_inst->arg_list[j];
 
 			if (args_match)	
 			{
 				/* If type is void, Create special comparison */
-				if (type.getType() == LLVMVoidType() && param == NULL)
+				if (type.getType().isVoidTyID() && param == NULL)
 					args_match = 1;
 				/* Only compare signs if type is a vector */
 				else if (param->type.getType().getTypeID() ==
@@ -283,7 +252,7 @@ void cl2llvm_built_in_func_analyze(char* name, struct list_t *param_list)
 			match_found = 1;
 			
 			/* Declare function */
-			func_declare(built_in_func->arg_count, func_inst->arg_list, func_inst->ret_type, name, func_inst->llvm_name);
+			FunctionDeclare(built_in_func->arg_count, func_inst->arg_list, func_inst->ret_type, name, func_inst->llvm_name);
 		}
 	}
 
@@ -299,8 +268,8 @@ void cl2llvm_built_in_func_analyze(char* name, struct list_t *param_list)
 	}
 }
 
-void func_declare(int arg_count, Type *arg_types_list, Type ret_type, 
-	char* name, char* llvm_name)
+void FunctionDeclare(int arg_count, Type *arg_types_list, Type* ret_type, 
+	string name, string llvm_name)
 {
 	LLVMTypeRef args_array[50];
 	struct list_t *arg_list;
@@ -308,23 +277,22 @@ void func_declare(int arg_count, Type *arg_types_list, Type ret_type,
 	struct cl2llvm_arg_t *arg;
 	struct cl2llvm_function_t *function;
 	struct cl2llvm_function_t *test_function;
+	llvm::Value *llvm_function;
 	Type current_arg_type;
 	Type type_spec;
 	int i;
 	
-	function = hash_table_get(cl2llvm_declared_built_in_funcs_table, llvm_name);
 	
 	/* If specific function has already been declared, exit */
-	if(function)
+	if(cl2llvm_declared_built_in_funcs_table.find(llvm_name) != cl2llvm_declared_built_in_funcs_table.end())
 	{
 		/* Check function already exists under same name and
 		   replace it */
-		test_function = hash_table_get(cl2llvm_symbol_table, name);
-		if (test_function)
-			cl2llvm_function_free(test_function);
+		if (symbol_table.find(name) != symbol_table.end())
+			FunctionFree(symbol_table[name]);
 
 		/* Insert function in global symbol table */
-		hash_table_insert(cl2llvm_symbol_table, name, 
+		symbol_table[name] =  function;
 			cl2llvm_func_cpy(function));
 		return;
 	}
