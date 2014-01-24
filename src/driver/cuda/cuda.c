@@ -898,52 +898,52 @@ int cuda_func_cuFrmLaunchKernel(X86Context *ctx)
  *	The return value is always 0 on success.
  */
 
-//void kpl_grid_set_free_notify_func(KplGrid *grid, void (*func)(void *),
-//		void *user_data)
-//{
-//	grid->free_notify_func = func;
-//	grid->free_notify_data = user_data;
-//}
+void kpl_grid_set_free_notify_func(KplGrid *grid, void (*func)(void *),
+		void *user_data)
+{
+	grid->free_notify_func = func;
+	grid->free_notify_data = user_data;
+}
 
-//static void cuda_abi_kpl_kernel_launch_finish(void *user_data)
-//{
-//	struct cuda_abi_kpl_kernel_launch_info_t *info = user_data;
-//	struct cuda_function_t *kernel = info->function;
-//
-//	X86Context *ctx = info->context;
-//	KplGrid *grid = info->grid;
-//
+static void cuda_abi_kpl_kernel_launch_finish(void *user_data)
+{
+	struct cuda_abi_kpl_kernel_launch_info_t *info = user_data;
+	struct cuda_function_t *kernel = info->function;
+
+	X86Context *ctx = info->context;
+	KplGrid *grid = info->grid;
+
 	/* Debug */
-//	cuda_debug("Grid %d running kernel '%s' finished\n",
-//			grid->id, kernel->name);
+	cuda_debug("Grid %d running kernel '%s' finished\n",
+			grid->id, kernel->name);
 
 	/* Set 'finished' flag in launch info */
-//	info->finished = 1;
+	info->finished = 1;
 
 	/* Force the x86 emulator to check which suspended contexts can wakeup,
 	 * based on their new state. */
-//	X86EmuProcessEventsSchedule(ctx->emu);
-//}
+	X86EmuProcessEventsSchedule(ctx->emu);
+}
 
-//static int cuda_abi_kpl_kernel_launch_can_wakeup(X86Context *ctx,
-//		void *user_data)
-//{
-//	struct cuda_abi_kpl_kernel_launch_info_t *info = user_data;
+static int cuda_abi_kpl_kernel_launch_can_wakeup(X86Context *ctx,
+		void *user_data)
+{
+	struct cuda_abi_kpl_kernel_launch_info_t *info = user_data;
 
 	/* NOTE: the grid has been freed at this point if it finished
 	 * execution, so field 'info->grid' should not be accessed. We
 	 * use flag 'info->finished' instead. */
-//	return info->finished;
-//}
+	return info->finished;
+}
 
-//static void cuda_abi_kpl_kernel_launch_wakeup(X86Context *ctx,
-//		void *user_data)
-//{
-//	struct cuda_abi_kpl_kernel_launch_info_t *info = user_data;
+static void cuda_abi_kpl_kernel_launch_wakeup(X86Context *ctx,
+		void *user_data)
+{
+	struct cuda_abi_kpl_kernel_launch_info_t *info = user_data;
 
 	/* Free info object */
-//	free(info);
-//}
+	free(info);
+}
 
 int cuda_func_cuKplLaunchKernel(X86Context *ctx)
 {
@@ -964,9 +964,9 @@ int cuda_func_cuKplLaunchKernel(X86Context *ctx)
 	struct cuda_function_arg_t *arg;
 	unsigned arg_ptr;
 	int offset = 0x20;
-//	KplGrid *grid;
+	KplGrid *grid;
 	KplEmu *kpl_emu = ctx->emu->cuda_driver->kpl_emu;
-//	struct cuda_abi_kpl_kernel_launch_info_t *info;
+	struct cuda_abi_kpl_kernel_launch_info_t *info;
 
 	/* Read arguments */
 	mem_read(mem, regs->ecx, 11 * sizeof *args, args);
@@ -1009,26 +1009,26 @@ int cuda_func_cuKplLaunchKernel(X86Context *ctx)
 	}
 
 	/* Create grid */
-//	grid = new(KplGrid, kpl_emu, function);
+	grid = new(KplGrid, kpl_emu, function);
 
 	/* Set up grid */
-//	KplGridSetupSize(grid, grid_dim, block_dim);
-//	KplGridSetupConstantMemory(grid);
+	KplGridSetupSize(grid, grid_dim, block_dim);
+	KplGridSetupConstantMemory(grid);
 
 	/* Add to pending list */
-//	list_add(kpl_emu->pending_grids, grid);
+	list_add(kpl_emu->pending_grids, grid);
 
 	/* Set up call-back function to be run when grid finishes */
-//	info = xcalloc(1, sizeof(struct cuda_abi_kpl_kernel_launch_info_t));
-//	info->function= function;
-//	info->context = ctx;
-//	info->grid = grid;
-//	kpl_grid_set_free_notify_func(grid, cuda_abi_kpl_kernel_launch_finish,
-//		info);
+	info = xcalloc(1, sizeof(struct cuda_abi_kpl_kernel_launch_info_t));
+	info->function= function;
+	info->context = ctx;
+	info->grid = grid;
+	kpl_grid_set_free_notify_func(grid, cuda_abi_kpl_kernel_launch_finish,
+		info);
 
 	/* Suspend x86 context until grid finishes */
-//	X86ContextSuspend(ctx, cuda_abi_kpl_kernel_launch_can_wakeup, info,
-//			cuda_abi_kpl_kernel_launch_wakeup, info);
+	X86ContextSuspend(ctx, cuda_abi_kpl_kernel_launch_can_wakeup, info,
+			cuda_abi_kpl_kernel_launch_wakeup, info);
 
 	return 0;
 }
