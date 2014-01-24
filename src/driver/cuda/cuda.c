@@ -965,7 +965,7 @@ int cuda_func_cuKplLaunchKernel(X86Context *ctx)
 	unsigned arg_ptr;
 	int offset = 0x20;
 //	KplGrid *grid;
-//	KplEmu *kpl_emu = ctx->emu->cuda_driver->kpl_emu;
+	KplEmu *kpl_emu = ctx->emu->cuda_driver->kpl_emu;
 //	struct cuda_abi_kpl_kernel_launch_info_t *info;
 
 	/* Read arguments */
@@ -1004,7 +1004,7 @@ int cuda_func_cuKplLaunchKernel(X86Context *ctx)
 		arg = function->arg_array[i];
 		mem_read(mem, kernel_args + i * 4, sizeof(unsigned), &arg_ptr);
 		mem_read(mem, arg_ptr, sizeof(unsigned), &(arg->value));
-//		KplEmuConstMemWrite(kpl_emu, offset, &(arg->value));
+		KplEmuConstMemWrite(kpl_emu, offset, &(arg->value));
 		offset += 0x4;
 	}
 
