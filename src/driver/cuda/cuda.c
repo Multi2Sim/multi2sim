@@ -788,8 +788,8 @@ int cuda_func_cuFrmLaunchKernel(X86Context *ctx)
 	unsigned function_id;
 	unsigned grid_dim[3];
 	unsigned block_dim[3];
-	unsigned shared_mem_usage;
-	unsigned stream_handle;
+	unsigned shared_mem_size;
+	unsigned stream;
 	unsigned kernel_args;
 	unsigned extra;
 
@@ -811,8 +811,8 @@ int cuda_func_cuFrmLaunchKernel(X86Context *ctx)
 	block_dim[0] = args[4];
 	block_dim[1] = args[5];
 	block_dim[2] = args[6];
-	shared_mem_usage = args[7];
-	stream_handle = args[8];
+	shared_mem_size = args[7];
+	stream = args[8];
 	kernel_args = args[9];
 	extra = args[10];
 
@@ -824,8 +824,8 @@ int cuda_func_cuFrmLaunchKernel(X86Context *ctx)
 	cuda_debug("\tblock_dimX = %u\n", block_dim[0]);
 	cuda_debug("\tblock_dimY = %u\n", block_dim[1]);
 	cuda_debug("\tblock_dimZ = %u\n", block_dim[2]);
-	cuda_debug("\tshared_mem_usage = %u\n", shared_mem_usage);
-	cuda_debug("\tstream_handle = 0x%08x\n", stream_handle);
+	cuda_debug("\tshared_mem_usage = %u\n", shared_mem_size);
+	cuda_debug("\tstream_handle = 0x%08x\n", stream);
 	cuda_debug("\tkernel_args = 0x%08x\n", kernel_args);
 	cuda_debug("\textra = 0x%08x\n", extra);
 
