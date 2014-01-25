@@ -1097,6 +1097,8 @@ CUresult cuMemcpyHtoD(CUdeviceptr dstDevice, const void *srcHost,
 		return CUDA_ERROR_NOT_INITIALIZED;
 	}
 
+	cuStreamSynchronize(0);
+
 	/* Syscall */
 	if (active_device->type == CUDA_DEVICE_FERMI)
 		ret = syscall(CUDA_SYS_CODE, cuda_call_cuFrmMemcpyHtoD, dstDevice,
@@ -1133,6 +1135,8 @@ CUresult cuMemcpyDtoH(void *dstHost, CUdeviceptr srcDevice, size_t ByteCount)
 				CUDA_ERROR_NOT_INITIALIZED);
 		return CUDA_ERROR_NOT_INITIALIZED;
 	}
+
+	cuStreamSynchronize(0);
 
 	/* Syscall */
 	if (active_device->type == CUDA_DEVICE_FERMI)
@@ -1244,6 +1248,10 @@ CUresult cuMemcpyAsync(CUdeviceptr dst, CUdeviceptr src, size_t ByteCount,
 	args->src_ptr = src;
 	args->dst_ptr = dst;
 	args->size = ByteCount;
+
+	/* If stream == 0, it is the default stream. */
+	if (hStream == 0)
+		hStream = list_get(active_device->stream_list, 0);
 
 	command = cuda_stream_command_create(hStream, cuMemcpyAsyncImpl, args,
 			NULL, NULL, NULL);
@@ -1417,6 +1425,10 @@ CUresult cuMemsetD8Async(CUdeviceptr dstDevice, unsigned char uc, size_t N,
 	args->src_ptr = (CUdeviceptr)src;
 	args->dst_ptr = dstDevice;
 	args->size = N;
+
+	/* If stream == 0, it is the default stream. */
+	if (hStream == 0)
+		hStream = list_get(active_device->stream_list, 0);
 
 	command = cuda_stream_command_create(hStream, cuMemcpyAsyncImpl, args,
 			NULL, NULL, NULL);
@@ -1595,6 +1607,10 @@ CUresult cuStreamAddCallback(CUstream hStream, CUstreamCallback callback,
 	cb->stream = hStream;
 	cb->userData = userData;
 
+	/* If stream == 0, it is the default stream. */
+	if (hStream == 0)
+		hStream = list_get(active_device->stream_list, 0);
+
 	command = cuda_stream_command_create(hStream, cuStreamCallbackImpl, NULL,
 			NULL, NULL, cb);
 	cuda_stream_enqueue(hStream, command);
@@ -1622,6 +1638,11 @@ CUresult cuStreamSynchronize(CUstream hStream)
 		return CUDA_ERROR_NOT_INITIALIZED;
 	}
 
+	/* If stream == 0, it is the default stream. */
+	if (hStream == 0)
+		hStream = list_get(active_device->stream_list, 0);
+
+	/* Wait until all GPU work is completed. */
 	while (list_count(hStream->command_list))
 		;
 
@@ -1690,6 +1711,11 @@ CUresult cuEventRecord(CUevent hEvent, CUstream hStream)
 	hEvent->to_be_recorded = 1;
 	args = xcalloc(1, sizeof(struct event_args_t));
 	args->event = hEvent;
+
+	/* If stream == 0, it is the default stream. */
+	if (hStream == 0)
+		hStream = list_get(active_device->stream_list, 0);
+
 	command = cuda_stream_command_create(hStream, cuEventRecordImpl, NULL, NULL,
 			args, NULL);
 	cuda_stream_enqueue(hStream, command);

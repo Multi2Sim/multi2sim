@@ -1020,6 +1020,10 @@ cudaError_t cudaConfigureCall(dim3 gridDim, dim3 blockDim, size_t sharedMem,
 	args->block_dim_z = blockDim.z;
 	args->shared_mem_size = sharedMem;
 
+	/* If stream == 0, it is the default stream. */
+	if (stream == 0)
+		stream = list_get(active_device->stream_list, 0);
+
 	command = cuda_stream_command_create(stream, cuLaunchKernelImpl, NULL, args,
 			NULL, NULL);
 	cuda_stream_enqueue(stream, command);
