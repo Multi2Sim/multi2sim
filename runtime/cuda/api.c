@@ -162,15 +162,19 @@ CUresult cuInit(unsigned int Flags)
 	device_list = list_create();
 	module_list = list_create();
 	function_list = list_create();
+	memory_object_list = list_create();
 	event_list = list_create();
 
 	/* Create one Fermi device and one Kepler device */
 	frm_device = cuda_device_create(CUDA_DEVICE_FERMI);
 	kpl_device = cuda_device_create(CUDA_DEVICE_KEPLER);
 
-	/* Create other structures */
+	/* Create memory object lists */
 	pinned_memory_object_list = list_create();
 	device_memory_object_list = list_create();
+
+	/* Initialize mutex */
+	pthread_mutex_init(&cuda_mutex, NULL);
 
 	/* Fermi is selected by default. This could change if the user specifies
 	 * which device should be used in cudaSetDevice function */

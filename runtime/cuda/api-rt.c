@@ -282,6 +282,13 @@ cudaError_t cudaDeviceReset(void)
 		cudaStreamSynchronize(stream);
 	}
 
+	/* Destroy mutex */
+	pthread_mutex_destroy(&cuda_mutex);
+
+	/* Free memory object lists */
+	list_free(device_memory_object_list);
+	list_free(pinned_memory_object_list);
+
 	/* Destroy device */
 	for (i = 1; i < list_count(active_device->stream_list); ++i)
 	{
@@ -291,6 +298,14 @@ cudaError_t cudaDeviceReset(void)
 	cuda_device_free(frm_device);
 	cuda_device_free(kpl_device);
 	active_device = NULL;
+
+	/* Free CUDA object lists */
+	list_free(event_list);
+	list_free(memory_object_list);
+	list_free(function_list);
+	list_free(module_list);
+	list_free(device_list);
+	list_free(context_list);
 
 	cuda_rt_last_error = cudaSuccess;
 
@@ -688,6 +703,8 @@ cudaError_t cudaChooseDevice(int *device, const struct cudaDeviceProp *prop)
 
 cudaError_t cudaSetDevice(int device)
 {
+	pthread_mutex_lock(&cuda_mutex);
+
 	cuda_debug("CUDA runtime API '%s'", __func__);
 	cuda_debug("\t(runtime) '%s' in: device = %d", __func__, device);
 
@@ -702,6 +719,8 @@ cudaError_t cudaSetDevice(int device)
 	active_device = list_get(device_list, device);
 
 	cuda_debug("\t(runtime) '%s' out: return = %d", __func__, cudaSuccess);
+
+	pthread_mutex_unlock(&cuda_mutex);
 
 	return cudaSuccess;
 }
@@ -1164,6 +1183,8 @@ cudaError_t cudaMalloc(void **devPtr, size_t size)
 {
 	CUdeviceptr dptr;
 
+	pthread_mutex_lock(&cuda_mutex);
+
 	cuda_debug("CUDA runtime API '%s'", __func__);
 	cuda_debug("\t(runtime) '%s' in: devPtr = [%p]", __func__, devPtr);
 	cuda_debug("\t(runtime) '%s' in: size = %d", __func__, size);
@@ -1178,6 +1199,8 @@ cudaError_t cudaMalloc(void **devPtr, size_t size)
 
 	cuda_debug("\t(runtime) '%s' out: devPtr = [%p]", __func__, *devPtr);
 	cuda_debug("\t(runtime) '%s' out: return = %d", __func__, cudaSuccess);
+
+	pthread_mutex_unlock(&cuda_mutex);
 
 	return cudaSuccess;
 }
@@ -1218,6 +1241,8 @@ cudaError_t cudaMallocArray(cudaArray_t *array,
 
 cudaError_t cudaFree(void *devPtr)
 {
+	pthread_mutex_lock(&cuda_mutex);
+
 	cuda_debug("CUDA runtime API '%s'", __func__);
 	cuda_debug("\t(runtime) '%s' in: devPtr = [%p]", __func__, devPtr);
 
@@ -1230,11 +1255,15 @@ cudaError_t cudaFree(void *devPtr)
 
 	cuda_debug("\t(runtime) '%s' out: return = %d", __func__, cudaSuccess);
 
+	pthread_mutex_unlock(&cuda_mutex);
+
 	return cudaSuccess;
 }
 
 cudaError_t cudaFreeHost(void *ptr)
 {
+	pthread_mutex_lock(&cuda_mutex);
+
 	cuda_debug("CUDA runtime API '%s'", __func__);
 	cuda_debug("\t(runtime) '%s' in: ptr = [%p]", __func__, ptr);
 
@@ -1246,6 +1275,8 @@ cudaError_t cudaFreeHost(void *ptr)
 	cuda_rt_last_error = cudaSuccess;
 
 	cuda_debug("\t(runtime) '%s' out: return = %d", __func__, cudaSuccess);
+
+	pthread_mutex_unlock(&cuda_mutex);
 
 	return cudaSuccess;
 }
@@ -1264,6 +1295,8 @@ cudaError_t cudaFreeMipmappedArray(cudaMipmappedArray_t mipmappedArray)
 
 cudaError_t cudaHostAlloc(void **pHost, size_t size, unsigned int flags)
 {
+	pthread_mutex_lock(&cuda_mutex);
+
 	cuda_debug("CUDA runtime API '%s'", __func__);
 	cuda_debug("\t(runtime) '%s' in: pHost = [%p]", __func__, pHost);
 	cuda_debug("\t(runtime) '%s' in: size = %d", __func__, size);
@@ -1278,6 +1311,8 @@ cudaError_t cudaHostAlloc(void **pHost, size_t size, unsigned int flags)
 
 	cuda_debug("\t(runtime) '%s' out: pHost = [%p]", __func__, *pHost);
 	cuda_debug("\t(runtime) '%s' out: return = %d", __func__, cudaSuccess);
+
+	pthread_mutex_unlock(&cuda_mutex);
 
 	return cudaSuccess;
 }
