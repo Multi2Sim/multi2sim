@@ -216,10 +216,6 @@ struct cuda_stream_command_t *cuda_stream_command_create(CUstream stream,
 	command = (struct cuda_stream_command_t *) xcalloc(1,
 			sizeof(struct cuda_stream_command_t));
 
-	/* if stream == 0, it is the default stream */
-	if (stream == 0)
-		stream = list_get(active_device->stream_list, 0);
-
 	/* Initialize */
 	command->func = func;
 	if (m_args != NULL)
@@ -290,10 +286,12 @@ void *cuda_stream_thread_func(void *thread_data)
 			pthread_cond_wait(&stream->cond, &stream->lock);
 			pthread_mutex_unlock(&stream->lock);
 		}
-		command = cuda_stream_dequeue(stream);
 
 		/* Run command */
 		cuda_stream_command_run(command);
+
+		/* Free command */
+		cuda_stream_dequeue(stream);
 		cuda_stream_command_free(command);
 	}
 
@@ -337,10 +335,6 @@ void cuda_stream_free(CUstream stream)
 /* Enqueue a command */
 void cuda_stream_enqueue(CUstream stream, struct cuda_stream_command_t *command)
 {
-	/* if stream == 0, it is the default stream */
-	if (stream == 0)
-		stream = list_get(active_device->stream_list, 0);
-
 	pthread_mutex_lock(&stream->lock);
 
 	list_enqueue(stream->command_list, command);
