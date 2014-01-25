@@ -278,6 +278,7 @@ void *cuda_stream_thread_func(void *thread_data)
 		if (stream->to_be_freed)
 			break;
 
+		/* If no command is in the stream, continue waiting */
 		command = list_get(stream->command_list, 0);
 		if (! command)
 			continue;
@@ -285,10 +286,9 @@ void *cuda_stream_thread_func(void *thread_data)
 		/* Get command */
 		if (command->func == cuLaunchKernelImpl)
 		{
-			pthread_mutex_lock(&command->k_args.stream->lock);
-			pthread_cond_wait(&command->k_args.stream->cond,
-					&command->k_args.stream->lock);
-			pthread_mutex_unlock(&command->k_args.stream->lock);
+			pthread_mutex_lock(&stream->lock);
+			pthread_cond_wait(&stream->cond, &stream->lock);
+			pthread_mutex_unlock(&stream->lock);
 		}
 		command = cuda_stream_dequeue(stream);
 
