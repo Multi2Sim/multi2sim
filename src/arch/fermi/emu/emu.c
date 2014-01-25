@@ -44,10 +44,10 @@ void FrmEmuCreate(FrmEmu *self, struct FrmAsmWrap *as)
 	self->pending_grids = list_create();
 	self->running_grids = list_create();
 	self->finished_grids = list_create();
-/*#define DEFINST(_op, _fmt_str, _opcode) \
+#define DEFINST(_op, _fmt_str, _opcode) \
 		self->inst_func[FrmInstId##_op] = frm_isa_##_op##_impl;
 #include <arch/fermi/asm/asm.dat>
-#undef DEFINST*/
+#undef DEFINST
 	self->global_mem = mem_create();
 	self->global_mem->safe = 0;
 	self->global_mem_top = 0;
