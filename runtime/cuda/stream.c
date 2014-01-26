@@ -213,8 +213,7 @@ struct cuda_stream_command_t *cuda_stream_command_create(CUstream stream,
 	struct cuda_stream_command_t *command;
 
 	/* Allocate command */
-	command = (struct cuda_stream_command_t *) xcalloc(1,
-			sizeof(struct cuda_stream_command_t));
+	command = xcalloc(1, sizeof(struct cuda_stream_command_t));
 
 	/* Initialize */
 	command->func = func;
@@ -226,17 +225,17 @@ struct cuda_stream_command_t *cuda_stream_command_create(CUstream stream,
 	}
 	if (k_args != NULL)
 	{
-		if (k_args->kernel == NULL && k_args->args == NULL)
-		{
-			command->k_args.grid_dim_x = k_args->grid_dim_x;
-			command->k_args.grid_dim_y = k_args->grid_dim_y;
-			command->k_args.grid_dim_z = k_args->grid_dim_z;
-			command->k_args.block_dim_x = k_args->block_dim_x;
-			command->k_args.block_dim_y = k_args->block_dim_y;
-			command->k_args.block_dim_z = k_args->block_dim_z;
-			command->k_args.shared_mem_size = k_args->shared_mem_size;
-			command->k_args.stream = stream;
-		}
+		command->k_args.grid_dim_x = k_args->grid_dim_x;
+		command->k_args.grid_dim_y = k_args->grid_dim_y;
+		command->k_args.grid_dim_z = k_args->grid_dim_z;
+		command->k_args.block_dim_x = k_args->block_dim_x;
+		command->k_args.block_dim_y = k_args->block_dim_y;
+		command->k_args.block_dim_z = k_args->block_dim_z;
+		command->k_args.shared_mem_size = k_args->shared_mem_size;
+		command->k_args.kernel = k_args->kernel;
+		command->k_args.stream = k_args->stream;
+		command->k_args.kernel_params = k_args->kernel_params;
+		command->k_args.extra = k_args->extra;
 	}
 	if (e_args != NULL)
 		command->e_args.event = e_args->event;
@@ -276,21 +275,13 @@ void *cuda_stream_thread_func(void *thread_data)
 
 		/* If no command is in the stream, continue waiting */
 		command = list_get(stream->command_list, 0);
-		if (! command)
+		if (! command || ! command->ready_to_run)
 			continue;
-
-		/* Get command */
-		if (command->func == cuLaunchKernelImpl)
-		{
-			pthread_mutex_lock(&stream->lock);
-			pthread_cond_wait(&stream->cond, &stream->lock);
-			pthread_mutex_unlock(&stream->lock);
-		}
 
 		/* Run command */
 		cuda_stream_command_run(command);
 
-		/* Free command */
+		/* Dequeue and free command */
 		cuda_stream_dequeue(stream);
 		cuda_stream_command_free(command);
 	}
@@ -304,7 +295,7 @@ CUstream cuda_stream_create(void)
 	CUstream stream;
 
 	/* Allocate stream */
-	stream = (CUstream) xcalloc(1, sizeof(struct CUstream_st));
+	stream = xcalloc(1, sizeof(struct CUstream_st));
 
 	/* Initialize */
 	stream->id = list_count(active_device->stream_list);
@@ -314,7 +305,6 @@ CUstream cuda_stream_create(void)
 
 	/* Create thread associated with stream */
 	pthread_mutex_init(&stream->lock, NULL);
-	pthread_cond_init(&stream->cond, NULL);
 	pthread_create(&stream->thread, NULL, cuda_stream_thread_func, stream);
 
 	return stream;
@@ -326,7 +316,6 @@ void cuda_stream_free(CUstream stream)
 	stream->to_be_freed = 1;
 	pthread_join(stream->thread, NULL);
 
-	pthread_cond_destroy(&stream->cond);
 	pthread_mutex_destroy(&stream->lock);
 
 	free(stream);

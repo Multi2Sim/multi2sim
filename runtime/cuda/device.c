@@ -31,7 +31,7 @@ struct cuda_device_t *cuda_device_create(enum cuda_device_type_t dev_type)
 	CUstream default_stream;
 
 	/* Create device */
-	device = (struct cuda_device_t *) xcalloc(1, sizeof(struct cuda_device_t));
+	device = xcalloc(1, sizeof(struct cuda_device_t));
 
 	/* Initialize */
 	device->device = list_count(device_list);

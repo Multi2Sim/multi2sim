@@ -20,7 +20,8 @@
 #ifndef RUNTIME_CUDA_FUNCTION_H
 #define RUNTIME_CUDA_FUNCTION_H
 
-#include <lib/util/elf-format.h>
+
+#include "module.h"
 
 
 extern struct list_t *function_list;
@@ -34,42 +35,24 @@ struct cuda_function_t
 	char *name;
 
 	/* Module ID */
-	unsigned int module_id;
+	unsigned module_id;
 
 	/* Instruction binary */
 	int inst_bin_size;
-	unsigned long long int *inst_bin;
-
-	/* Arguments */
-	int arg_count;
-	struct cuda_function_arg_t **arg_array;
+	unsigned long long *inst_bin;
 
 	/* Number of GPRs used by one thread */
 	int num_gpr;
 
-	/* Number of work dimensions */
-	int work_dim;
-
-	/* 3D Counters */
-	unsigned int global_size3[3];  /* Total number of work_items */
-	unsigned int local_size3[3];  /* Number of work_items in a group */
-	unsigned int group_count3[3];  /* Number of work_item groups */
-
-	/* 1D Counters. Each counter is equal to the multiplication
-	 * of each component in the corresponding 3D counter. */
-	unsigned int global_size;
-	unsigned int local_size;
-	unsigned int group_count;
-
-	/* State of the running function */
-	struct frm_grid_t *grid;
+	/* Arguments */
+	int arg_count;
+	struct cuda_function_arg_t **arg_array;
 };
-
-struct cuda_module_t;
 
 struct cuda_function_t *cuda_function_create(struct cuda_module_t *module, 
 		char *func_name);
 void cuda_function_free(struct cuda_function_t *function);
+
 
 #endif
 

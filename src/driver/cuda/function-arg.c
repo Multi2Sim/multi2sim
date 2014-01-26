@@ -26,8 +26,10 @@ struct cuda_function_arg_t *cuda_function_arg_create(char *name)
 {
 	struct cuda_function_arg_t *arg;
 
-	/* Initialize */
+	/* Allocate */
 	arg = xcalloc(1, sizeof(struct cuda_function_arg_t));
+
+	/* Initialize */
 	arg->name = xstrdup(name);
 
 	return arg;
@@ -36,9 +38,8 @@ struct cuda_function_arg_t *cuda_function_arg_create(char *name)
 
 void cuda_function_arg_free(struct cuda_function_arg_t *arg)
 {
-	if (arg->name)
-		free(arg->name);
-	if (arg)
-		free(arg);
+	free(arg->name);
+
+	free(arg);
 }
 

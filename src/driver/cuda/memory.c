@@ -24,23 +24,17 @@
 
 struct cuda_memory_t *cuda_memory_create(void)
 {
-        struct cuda_memory_t *mem;
+	struct cuda_memory_t *mem;
 
-        /* Initialize */
-        mem = xcalloc(1, sizeof(struct cuda_memory_t));
-        //mem->id = cuda_object_new_id(CUDA_OBJ_MEMORY);
-        mem->ref_count = 1;
+	/* Allocate */
+	mem = xcalloc(1, sizeof(struct cuda_memory_t));
 
-        //cuda_object_add(mem);
-
-        return mem;
+	return mem;
 }
 
 
 void cuda_memory_free(struct cuda_memory_t *mem)
 {
-        //cuda_object_remove(mem);
-
-        free(mem);
+	free(mem);
 }
 

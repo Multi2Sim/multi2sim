@@ -54,6 +54,7 @@ struct kernel_args_t
 	CUstream stream;
 	void **kernel_params;
 	void **extra;
+
 	struct list_t *args;
 };
 
@@ -91,6 +92,7 @@ struct cuda_stream_command_t
 
 	/* Flags */
 	unsigned completed;
+	unsigned ready_to_run;
 };
 
 struct CUstream_st
@@ -103,7 +105,6 @@ struct CUstream_st
 
 	pthread_t thread;
 	pthread_mutex_t lock;
-	pthread_cond_t cond;
 
 	/* Flags */
 	unsigned to_be_freed;

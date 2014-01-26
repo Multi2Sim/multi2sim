@@ -27,8 +27,7 @@ struct cuda_memory_object_t *cuda_memory_object_create(void)
 	struct cuda_memory_object_t *mem;
 
 	/* Create memory object */
-	mem = (struct cuda_memory_object_t *) xcalloc(1,
-			sizeof(struct cuda_memory_object_t));
+	mem = xcalloc(1, sizeof(struct cuda_memory_object_t));
 
 	/* Initialize */
 	mem->id = list_count(memory_object_list);
