@@ -20,12 +20,12 @@
 #include <assert.h>
 
 #include <lib/mhandle/mhandle.h>
+#include <lib/util/elf-format.h>
 #include <lib/util/list.h>
 #include <lib/util/string.h>
 
 #include "function.h"
 #include "function-arg.h"
-#include "module.h"
 
 
 struct list_t *function_list;
@@ -48,13 +48,9 @@ struct cuda_function_t *cuda_function_create(struct cuda_module_t *module,
 	/* Allocate */
 	function = xcalloc(1, sizeof(struct cuda_function_t));
 
-	/* ID */
+	/* Initialization */
 	function->id = list_count(function_list);
-
-	/* Name */
 	function->name = xstrdup(func_name);
-
-	/* Module ID */
 	function->module_id = module->id;
 
 	/* Get cubin */
@@ -66,34 +62,30 @@ struct cuda_function_t *cuda_function_create(struct cuda_module_t *module,
 	for (i = 0; i < list_count(cubin->section_list); ++i)
 	{
 		sec = list_get(cubin->section_list, i);
-		if (!strncmp(sec->name, func_text_sec_name,
-					strlen(func_text_sec_name)))
+		if (!strncmp(sec->name, func_text_sec_name, strlen(func_text_sec_name)))
 		{
 			func_text_sec = list_get(cubin->section_list, i);
 			break;
 		}
 	}
-	assert (i < list_count(cubin->section_list));
+	assert(i < list_count(cubin->section_list));
 
 	/* Get instruction binary */
 	function->inst_bin_size = func_text_sec->header->sh_size;
 	function->inst_bin = xcalloc(1, function->inst_bin_size);
 	for (i = 0; i < function->inst_bin_size; ++i)
 	{
-		elf_buffer_seek(&(cubin->buffer),
-				func_text_sec->header->sh_offset + i);
+		elf_buffer_seek(&(cubin->buffer), func_text_sec->header->sh_offset + i);
 		elf_buffer_read(&(cubin->buffer), &inst_bin_byte, 1);
 		if (i % 8 == 0 || i % 8 == 1 || i % 8 == 2 || i % 8 == 3)
 		{
-			function->inst_bin[i / 8] |= 
-				(unsigned long long int)(inst_bin_byte) << 
-				(i * 8 + 32);
+			function->inst_bin[i / 8] |= (unsigned long long int)(inst_bin_byte)
+					<< (i * 8 + 32);
 		}
 		else
 		{
-			function->inst_bin[i / 8] |= 
-				(unsigned long long int)(inst_bin_byte) << 
-				(i * 8 - 32);
+			function->inst_bin[i / 8] |= (unsigned long long int)(inst_bin_byte)
+					<< (i * 8 - 32);
 		}
 	}
 
@@ -106,8 +98,7 @@ struct cuda_function_t *cuda_function_create(struct cuda_module_t *module,
 	for (i = 0; i < list_count(cubin->section_list); ++i)
 	{
 		sec = list_get(cubin->section_list, i);
-		if (!strncmp(sec->name, func_info_sec_name,
-					strlen(func_info_sec_name)))
+		if (!strncmp(sec->name, func_info_sec_name, strlen(func_info_sec_name)))
 		{
 			func_info_sec = list_get(cubin->section_list, i);
 			break;
@@ -116,8 +107,7 @@ struct cuda_function_t *cuda_function_create(struct cuda_module_t *module,
 	assert(i < list_count(cubin->section_list));
 
 	/* Get the number of arguments */
-	function->arg_count = ((unsigned char *)
-			func_info_sec->buffer.ptr)[10] / 4;
+	function->arg_count = ((unsigned char *)func_info_sec->buffer.ptr)[10] / 4;
 
 	/* Create arguments */
 	function->arg_array = xcalloc(function->arg_count, 
@@ -139,18 +129,12 @@ void cuda_function_free(struct cuda_function_t *function)
 {
 	int i;
 
-	/* Free arguments */
 	for (i = 0; i < function->arg_count; ++i)
 		cuda_function_arg_free(function->arg_array[i]);
 	free(function->arg_array);
-
-	/* Free instruction buffer */
 	free(function->inst_bin);
-
-	/* Free name */
 	free(function->name);
 
-	/* Free function */
 	free(function);
 }
 

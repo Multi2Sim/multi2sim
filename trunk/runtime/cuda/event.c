@@ -31,7 +31,7 @@ CUevent cuda_event_create(unsigned flags)
 	CUevent event;
 
 	/* Allocate event */
-	event = (CUevent) xcalloc(1, sizeof(struct CUevent_st));
+	event = xcalloc(1, sizeof(struct CUevent_st));
 
 	/* Initialize */
 	event->id = list_count(event_list);

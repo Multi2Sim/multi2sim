@@ -29,7 +29,7 @@ CUcontext cuda_context_create(CUdevice device)
 	CUcontext context;
 
 	/* Create context */
-	context = (CUcontext) xcalloc(1, sizeof(struct CUctx_st));
+	context = xcalloc(1, sizeof(struct CUctx_st));
 
 	/* Initialize */
 	context->id = list_count(context_list);

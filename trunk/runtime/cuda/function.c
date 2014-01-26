@@ -43,7 +43,7 @@ CUfunction cuda_function_create(CUmodule module, const char *function_name)
 	unsigned char inst_buf_byte;
 
 	/* Create function */
-	function = (CUfunction) xcalloc(1, sizeof(struct CUfunc_st));
+	function = xcalloc(1, sizeof(struct CUfunc_st));
 
 	/* Initialize */
 	function->id = list_count(function_list);
@@ -77,8 +77,7 @@ CUfunction cuda_function_create(CUmodule module, const char *function_name)
 
 	/* Get instruction binary */
 	function->inst_buf_size = text_sec->header->sh_size;
-	function->inst_buf = (unsigned long long *) xcalloc(1,
-			function->inst_buf_size);
+	function->inst_buf = xcalloc(1, function->inst_buf_size);
 	for (i = 0; i < function->inst_buf_size; ++i)
 	{
 		elf_buffer_seek(&(dev_func_bin->buffer), text_sec->header->sh_offset +
@@ -111,6 +110,7 @@ void cuda_function_free(CUfunction function)
 
 	free(function->inst_buf);
 	free(function->name);
+
 	free(function);
 }
 

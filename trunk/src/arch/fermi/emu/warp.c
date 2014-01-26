@@ -55,8 +55,7 @@ void FrmWarpCreate(FrmWarp *self, int id, FrmThreadBlock *thread_block,
 	else
 		self->thread_count = grid->thread_block_size -
 		(thread_block->warp_count - 1) * frm_emu_warp_size;
-	self->threads = (FrmThread **) xcalloc(self->thread_count,
-			sizeof(FrmThread *));
+	self->threads = xcalloc(self->thread_count, sizeof(FrmThread *));
 
 	/* Instruction */
 	self->inst = FrmInstWrapCreate(emu->as);
@@ -82,10 +81,10 @@ void FrmWarpDestroy(FrmWarp *self)
 {
 	int i;
 
-	free(self->threads);
-	FrmInstWrapFree(self->inst);
 	for (i = self->sync_stack_top; i >=0 ; --i)
 		bit_map_free(self->sync_stack.entries[i].active_thread_mask);
+	FrmInstWrapFree(self->inst);
+	free(self->threads);
 }
 
 void FrmWarpDump(FrmWarp *self, FILE *f)

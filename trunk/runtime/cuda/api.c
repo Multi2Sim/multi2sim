@@ -311,6 +311,7 @@ CUresult cuDeviceGetName(char *name, int len, CUdevice dev)
 
 CUresult cuDeviceTotalMem(size_t *bytes, CUdevice dev)
 {
+	size_t free;
 	int ret;
 
 	cuda_debug("CUDA driver API '%s'", __func__);
@@ -333,7 +334,7 @@ CUresult cuDeviceTotalMem(size_t *bytes, CUdevice dev)
 	}
 
 	/* Syscall */
-	ret = syscall(CUDA_SYS_CODE, cuda_call_cuDeviceTotalMem, bytes);
+	ret = syscall(CUDA_SYS_CODE, cuda_call_cuMemGetInfo, &free, bytes);
 
 	/* Check that we are running on Multi2Sim. If a program linked with this
 	 * library is running natively, system call CUDA_SYS_CODE is not
@@ -1255,6 +1256,7 @@ CUresult cuMemcpyAsync(CUdeviceptr dst, CUdeviceptr src, size_t ByteCount,
 
 	command = cuda_stream_command_create(hStream, cuMemcpyAsyncImpl, args,
 			NULL, NULL, NULL);
+	command->ready_to_run = 1;
 	cuda_stream_enqueue(hStream, command);
 
 	cuda_debug("\t(driver) '%s' out: return = %d", __func__, CUDA_SUCCESS);
@@ -1432,6 +1434,7 @@ CUresult cuMemsetD8Async(CUdeviceptr dstDevice, unsigned char uc, size_t N,
 
 	command = cuda_stream_command_create(hStream, cuMemcpyAsyncImpl, args,
 			NULL, NULL, NULL);
+	command->ready_to_run = 1;
 	cuda_stream_enqueue(hStream, command);
 
 	cuda_debug("\t(driver) '%s' out: return = %d", __func__, CUDA_SUCCESS);
@@ -1613,6 +1616,7 @@ CUresult cuStreamAddCallback(CUstream hStream, CUstreamCallback callback,
 
 	command = cuda_stream_command_create(hStream, cuStreamCallbackImpl, NULL,
 			NULL, NULL, cb);
+	command->ready_to_run = 1;
 	cuda_stream_enqueue(hStream, command);
 
 	cuda_debug("\t(driver) '%s' out: return = %d", __func__, CUDA_SUCCESS);
@@ -1718,6 +1722,7 @@ CUresult cuEventRecord(CUevent hEvent, CUstream hStream)
 
 	command = cuda_stream_command_create(hStream, cuEventRecordImpl, NULL, NULL,
 			args, NULL);
+	command->ready_to_run = 1;
 	cuda_stream_enqueue(hStream, command);
 
 	cuda_debug("\t(driver) '%s' out: return = %d", __func__, CUDA_SUCCESS);
@@ -1838,6 +1843,7 @@ CUresult cuLaunchKernel(CUfunction f, unsigned int gridDimX,
 {
 	CUstream stream;
 	struct cuda_stream_command_t *command;
+	struct kernel_args_t *args;
 	int i;
 
 	cuda_debug("CUDA driver API '%s'", __func__);
@@ -1873,11 +1879,40 @@ CUresult cuLaunchKernel(CUfunction f, unsigned int gridDimX,
 
 	/* Update command */
 	command = list_get(stream->command_list, 0);
-	command->k_args.kernel = f;
-	command->k_args.stream = hStream;
-	command->k_args.kernel_params = kernelParams;
-	command->k_args.extra = extra;
-	pthread_cond_signal(&command->k_args.stream->cond);
+	if (! command)  /* Directly called, i.e., CUDA runtime APIs are used. */
+	{
+		/* If stream == 0, it is the default stream. */
+		if (hStream == 0)
+			hStream = list_get(active_device->stream_list, 0);
+
+		args = xcalloc(1, sizeof(struct kernel_args_t));
+		args->grid_dim_x = gridDimX;
+		args->grid_dim_y = gridDimY;
+		args->grid_dim_z = gridDimZ;
+		args->block_dim_x = blockDimX;
+		args->block_dim_y = blockDimY;
+		args->block_dim_z = blockDimZ;
+		args->shared_mem_size = sharedMemBytes;
+		args->kernel = f;
+		args->stream = hStream;
+		args->kernel_params = kernelParams;
+		args->extra = extra;
+
+		command = cuda_stream_command_create(hStream, cuLaunchKernelImpl, NULL,
+				args, NULL, NULL);
+		command->ready_to_run = 1;
+		cuda_stream_enqueue(hStream, command);
+
+		free(args);
+	}
+	else  /* Indirectly called, i.e., CUDA driver APIs are used. */
+	{
+		command->k_args.kernel = f;
+		command->k_args.stream = hStream;
+		command->k_args.kernel_params = kernelParams;
+		command->k_args.extra = extra;
+		command->ready_to_run = 1;
+	}
 
 	cuda_debug("\t(driver) '%s' out: return = %d", __func__, CUDA_SUCCESS);
 

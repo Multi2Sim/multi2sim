@@ -20,35 +20,18 @@
 #ifndef DRIVER_CUDA_FUNCTION_ARG_H
 #define DRIVER_CUDA_FUNCTION_ARG_H
 
-enum cuda_mem_scope_t
-{
-	CUDA_MEM_SCOPE_NONE = 0,
-	CUDA_MEM_SCOPE_GLOBAL,
-	CUDA_MEM_SCOPE_LOCAL,
-	CUDA_MEM_SCOPE_PRIVATE,
-	CUDA_MEM_SCOPE_CONSTANT
-};
-
-enum cuda_function_arg_access_type_t
-{
-	CUDA_FUNCTION_ARG_READ_ONLY = 1,
-	CUDA_FUNCTION_ARG_WRITE_ONLY,
-	CUDA_FUNCTION_ARG_READ_WRITE
-};
 
 struct cuda_function_arg_t
 {
 	int id;
 	char *name;
 
-	enum cuda_mem_scope_t mem_scope;
-	enum cuda_function_arg_access_type_t access_type;
-
 	unsigned value;
 };
 
 struct cuda_function_arg_t *cuda_function_arg_create(char *name);
 void cuda_function_arg_free(struct cuda_function_arg_t *arg);
+
 
 #endif
 

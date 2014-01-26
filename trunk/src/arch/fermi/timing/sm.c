@@ -108,8 +108,8 @@ void FrmSMCreate(FrmSM *self, FrmGpu *gpu)
 		self->simd_units[i]->issue_buffer = list_create();
 		self->simd_units[i]->decode_buffer = list_create();
 		self->simd_units[i]->exec_buffer = list_create();
-		self->simd_units[i]->subwarp_inst_queue =
-			xcalloc(1, sizeof(struct frm_subwarp_inst_queue_t));
+		self->simd_units[i]->subwarp_inst_queue = xcalloc(1,
+				sizeof(struct frm_subwarp_inst_queue_t));
 
 		self->simd_units[i]->sm = self;
 		self->simd_units[i]->wkg_util = xcalloc(1,
@@ -128,8 +128,8 @@ void FrmSMCreate(FrmSM *self, FrmGpu *gpu)
 			sizeof(struct frm_util_t));
 	}
 
-	self->thread_blocks = 
-		xcalloc(frm_gpu_max_thread_blocks_per_sm, sizeof(void *));
+	self->thread_blocks = xcalloc(frm_gpu_max_thread_blocks_per_sm,
+			sizeof(void *));
 }
 
 

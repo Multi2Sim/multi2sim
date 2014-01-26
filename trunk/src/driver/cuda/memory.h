@@ -20,6 +20,7 @@
 #ifndef DRIVER_CUDA_MEMORY_H
 #define DRIVER_CUDA_MEMORY_H
 
+
 struct cuda_memory_t
 {
 	unsigned int id;
@@ -32,6 +33,7 @@ struct cuda_memory_t
 
 struct cuda_memory_t *cuda_memory_create(void);
 void cuda_memory_free(struct cuda_memory_t *mem);
+
 
 #endif
 

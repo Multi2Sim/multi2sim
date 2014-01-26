@@ -20,6 +20,7 @@
 #ifndef DRIVER_CUDA_CUDA_H
 #define DRIVER_CUDA_CUDA_H
 
+
 #include <driver/common/driver.h>
 
 
@@ -50,7 +51,6 @@ enum cuda_call_t
 };
 
 
-
 /*
  * Class 'CudaDriver'
  */
@@ -63,8 +63,8 @@ CLASS_BEGIN(CudaDriver, Driver)
 
 CLASS_END(CudaDriver)
 
-/* Including Kpl device in the CUDA driver */
-void CudaDriverCreate(CudaDriver *self, X86Emu *x86_emu, FrmEmu *frm_emu, KplEmu *kpl_emu);
+void CudaDriverCreate(CudaDriver *self, X86Emu *x86_emu, FrmEmu *frm_emu,
+		KplEmu *kpl_emu);
 void CudaDriverDestroy(CudaDriver *self);
 
 
