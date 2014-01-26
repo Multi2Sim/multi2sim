@@ -133,9 +133,10 @@ void __cudaRegisterFunction(void **fatCubinHandle, const char *hostFun,
 	char identifier[1024];
 	unsigned char *elf_start;
 	int elf_size = 0;
-	unsigned short program_header_size, program_header_count;
-	unsigned short section_header_size, section_header_count;
 	unsigned section_header_offset;
+	unsigned align = 1;
+	unsigned short section_header_size, section_header_count;
+	unsigned short program_header_size, program_header_count;
 	FILE *dev_func_bin_f;
 	unsigned char abi_version;
 	CUmodule module;
@@ -196,12 +197,7 @@ void __cudaRegisterFunction(void **fatCubinHandle, const char *hostFun,
 				elf_start[EI_MAG2] == ELFMAG2 && elf_start[EI_MAG3] == ELFMAG3);
 
 		/* Determine the size of cubin */
-		program_header_size = ((Elf32_Ehdr *)elf_start)->e_phentsize;
-		program_header_count = ((Elf32_Ehdr *)elf_start)->e_phnum;
-		elf_size += program_header_size * program_header_count;
-		section_header_size = ((Elf32_Ehdr *)elf_start)->e_shentsize;
 		section_header_count = ((Elf32_Ehdr *)elf_start)->e_shnum;
-		elf_size += section_header_size * section_header_count;
 		section_header_offset = ((Elf32_Ehdr *)elf_start)->e_shoff;
 		for (i = section_header_count - 1; i >= 1; --i)
 		{
@@ -210,13 +206,22 @@ void __cudaRegisterFunction(void **fatCubinHandle, const char *hostFun,
 				continue;
 			else
 			{
-				elf_size += ((Elf32_Shdr *)(elf_start + section_header_offset +
+				elf_size = ((Elf32_Shdr *)(elf_start + section_header_offset +
 						i * sizeof(Elf32_Shdr)))->sh_offset + ((Elf32_Shdr *)
 								(elf_start + section_header_offset + i *
 										sizeof(Elf32_Shdr)))->sh_size;
+				if (i + 1 <= section_header_count - 1)
+					align = ((Elf32_Shdr *)(elf_start + section_header_offset +
+							(i + 1) * sizeof(Elf32_Shdr)))->sh_addralign;
+				elf_size = (elf_size + align - 1) / align * align;
 				break;
 			}
 		}
+		section_header_size = ((Elf32_Ehdr *)elf_start)->e_shentsize;
+		elf_size += section_header_size * section_header_count;
+		program_header_size = ((Elf32_Ehdr *)elf_start)->e_phentsize;
+		program_header_count = ((Elf32_Ehdr *)elf_start)->e_phnum;
+		elf_size += program_header_size * program_header_count;
 
 		/* Get kernel binary */
 		dev_func_bin = elf_file_create_from_buffer(elf_start, elf_size, NULL);
@@ -1010,8 +1015,6 @@ cudaError_t cudaConfigureCall(dim3 gridDim, dim3 blockDim, size_t sharedMem,
 		cuInit(0);
 
 	args = xcalloc(1, sizeof(struct kernel_args_t));
-	args->kernel = NULL;
-	args->args = NULL;
 	args->grid_dim_x = gridDim.x;
 	args->grid_dim_y = gridDim.y;
 	args->grid_dim_z = gridDim.z;
@@ -1019,6 +1022,7 @@ cudaError_t cudaConfigureCall(dim3 gridDim, dim3 blockDim, size_t sharedMem,
 	args->block_dim_y = blockDim.y;
 	args->block_dim_z = blockDim.z;
 	args->shared_mem_size = sharedMem;
+	args->stream = stream;
 
 	/* If stream == 0, it is the default stream. */
 	if (stream == 0)
@@ -1026,6 +1030,7 @@ cudaError_t cudaConfigureCall(dim3 gridDim, dim3 blockDim, size_t sharedMem,
 
 	command = cuda_stream_command_create(stream, cuLaunchKernelImpl, NULL, args,
 			NULL, NULL);
+	command->ready_to_run = 0;
 	cuda_stream_enqueue(stream, command);
 
 	free(args);

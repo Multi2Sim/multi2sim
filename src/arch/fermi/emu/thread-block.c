@@ -46,7 +46,7 @@ void FrmThreadBlockCreate(FrmThreadBlock *self, int id, FrmGrid *grid)
 	/* Create warps */
 	self->warp_count = (grid->thread_block_size + frm_emu_warp_size - 1) /
 			frm_emu_warp_size;
-	self->warps = (FrmWarp **) xcalloc(self->warp_count, sizeof(FrmWarp *));
+	self->warps = xcalloc(self->warp_count, sizeof(FrmWarp *));
 	self->running_warps = list_create();
 	self->finished_warps = list_create();
 	for (i = 0; i < self->warp_count; ++i)
@@ -58,8 +58,7 @@ void FrmThreadBlockCreate(FrmThreadBlock *self, int id, FrmGrid *grid)
 
 	/* Create threads */
 	self->thread_count = grid->thread_block_size;
-	self->threads = (FrmThread **) xcalloc(self->thread_count,
-			sizeof(FrmThread *));
+	self->threads = xcalloc(self->thread_count, sizeof(FrmThread *));
 	for (i = 0; i < self->thread_count; ++i)
 	{
 		thread = new(FrmThread, i, self->warps[i / frm_emu_warp_size]);
@@ -79,17 +78,17 @@ void FrmThreadBlockDestroy(FrmThreadBlock *self)
 {
 	int i;
 
+	mem_free(self->shared_mem);
+
 	for (i = 0; i < self->warp_count; i++)
 		delete(self->warps[i]);
-	free(self->warps);
-	list_free(self->running_warps);
 	list_free(self->finished_warps);
+	list_free(self->running_warps);
+	free(self->warps);
 
 	for (i = 0; i < self->thread_count; i++)
 		delete(self->threads[i]);
 	free(self->threads);
-
-	mem_free(self->shared_mem);
 }
 
 

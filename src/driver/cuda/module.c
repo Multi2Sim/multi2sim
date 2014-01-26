@@ -17,8 +17,6 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <assert.h>
-
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/elf-format.h>
 #include <lib/util/list.h>
@@ -36,10 +34,8 @@ struct cuda_module_t *cuda_module_create(char *cubin_path)
 	/* Allocate */
 	module = xcalloc(1, sizeof(struct cuda_module_t));
 
-	/* ID */
+	/* Initialization */
 	module->id = list_count(module_list);
-
-	/* ELF */
 	module->elf_file = elf_file_create_from_path(cubin_path);
 
 	/* Add module to list */
@@ -51,11 +47,8 @@ struct cuda_module_t *cuda_module_create(char *cubin_path)
 /* Free module */
 void cuda_module_free(struct cuda_module_t *module)
 {
-	/* Free ELF */
-	assert(module->elf_file);
 	elf_file_free(module->elf_file);
 
-	/* Free module */
 	free(module);
 }
 

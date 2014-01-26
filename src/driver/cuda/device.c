@@ -27,11 +27,8 @@ struct cuda_device_t *cuda_device_create()
 {
 	struct cuda_device_t *device;
 
-	/* Initialize */
+	/* Allocate */
 	device = xcalloc(1, sizeof(struct cuda_device_t));
-	//device->id = cuda_object_new_id(CUDA_OBJ_DEVICE);
-
-	//cuda_object_add(device);
 
 	return device;
 }
@@ -40,8 +37,6 @@ struct cuda_device_t *cuda_device_create()
 /* Free device */
 void cuda_device_free(struct cuda_device_t *device)
 {
-	//cuda_object_remove(device);
-
 	free(device);
 }
 

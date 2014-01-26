@@ -20,13 +20,15 @@
 #ifndef DRIVER_CUDA_DEVICE_H
 #define DRIVER_CUDA_DEVICE_H
 
+
 struct cuda_device_t
 {
-	unsigned int id;
+	unsigned id;
 };
 
 struct cuda_device_t *cuda_device_create(void);
 void cuda_device_free(struct cuda_device_t *device);
+
 
 #endif
 
