@@ -28,7 +28,7 @@
 #include "emu.h"
 #include "grid.h"
 #include "isa.h"
-//#include "machine.h"
+#include "machine.h"
 #include "thread.h"
 #include "thread-block.h"
 #include "warp.h"

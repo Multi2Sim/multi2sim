@@ -24,7 +24,7 @@
 
 #include "emu.h"
 #include "grid.h"
-//#include "machine.h"
+#include "machine.h"
 #include "warp.h"
 #include "thread-block.h"
 
@@ -43,10 +43,10 @@ void KplEmuCreate(KplEmu *self, struct KplAsm *as)
 	self->pending_grids = list_create();
 	self->running_grids = list_create();
 	self->finished_grids = list_create();
-/*#define DEFINST(_name, _fmt_str, ...) \
+#define DEFINST(_name, _fmt_str, ...) \
 		self->inst_func[INST_##_name] = kpl_isa_##_name##_impl;
 #include <arch/kepler/asm/asm.dat>
-#undef DEFINST*/
+#undef DEFINST
 	self->global_mem = mem_create();
         self->global_mem->safe = 0;
         self->global_mem_top = 0;
