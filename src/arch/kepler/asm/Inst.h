@@ -337,9 +337,6 @@ public:
 	/// address.
 	void Decode(const char *buffer, unsigned int address);
 
-	/// Get ID
-	//InstId getId() { return info ? info->id : InstIdInvalid; }
-
 	/// Get opcode
 	unsigned getOpcode() { return info ? (unsigned) info->opcode : InstOpcodeInvalid; }
 

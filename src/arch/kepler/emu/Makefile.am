@@ -13,6 +13,8 @@ libemu_a_SOURCES = \
 	thread.c \
 	thread.h \
 	isa.c \
-	isa.h
+	isa.h \
+	machine.c\
+	machine.h
 INCLUDES = @M2S_INCLUDES@
 
