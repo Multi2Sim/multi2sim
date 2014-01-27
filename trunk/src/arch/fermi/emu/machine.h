@@ -21,12 +21,16 @@
 #define FERMI_EMU_MACHINE_H
 
 
-/* Declarations of function prototypes implementing Fermi ISA */
+/* Forward declarations of ISA implementation */
 #define DEFINST(_name, _fmt_str, _opcode) \
-		extern void frm_isa_##_name##_impl(FrmThread *thread, \
+		void frm_isa_##_name##_impl(FrmThread *thread, \
 				struct FrmInstWrap *inst);
 #include <arch/fermi/asm/asm.dat>
 #undef DEFINST
+void frm_isa_LDL_impl(FrmThread *thread, struct FrmInstWrap *inst);
+void frm_isa_LDS_impl(FrmThread *thread, struct FrmInstWrap *inst);
+void frm_isa_STL_impl(FrmThread *thread, struct FrmInstWrap *inst);
+void frm_isa_STS_impl(FrmThread *thread, struct FrmInstWrap *inst);
 
 
 #endif

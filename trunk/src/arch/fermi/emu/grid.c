@@ -35,6 +35,7 @@ void FrmGridCreate(FrmGrid *self, FrmEmu *emu, struct cuda_function_t *function)
 	self->id = list_count(emu->grids);
 	self->function = function;
 	self->num_gpr = function->num_gpr;
+	self->shared_mem_top = 0;
 
 	/* Add to list */
 	list_add(emu->grids, self);

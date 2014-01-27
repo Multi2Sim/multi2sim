@@ -50,6 +50,7 @@ CLASS_BEGIN(FrmThreadBlock, Object)
 
 	/* Flags */
 	unsigned finished;
+	unsigned at_barrier_warp_count;
 
 	/* Fields for architectural simulation only */
 
