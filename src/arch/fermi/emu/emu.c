@@ -122,15 +122,32 @@ int FrmEmuRun(Emu *self)
 		{
 			thread_block_id = (long) list_dequeue(grid->running_thread_blocks);
 			thread_block = new(FrmThreadBlock, thread_block_id, grid);
-			while (!thread_block->finished)
+			while (! thread_block->finished)
 			{
 				for (warp_id = 0; warp_id <	list_count(thread_block->
 						running_warps); ++warp_id)
 				{
 					warp = list_get(thread_block->running_warps, warp_id);
-					if (warp->finished || warp->at_barrier)
+					if (warp->finished)
 						continue;
 					FrmWarpExecute(warp);
+					if (warp->at_barrier)
+					{
+						thread_block->at_barrier_warp_count++;
+						continue;
+					}
+				}
+
+				/* Continue execution when all the warps in a thread-block reach
+				 * a barrier*/
+				if (thread_block->at_barrier_warp_count ==
+						thread_block->warp_count)
+				{
+					for (warp_id = 0; warp_id < thread_block->warp_count;
+							warp_id++)
+						thread_block->warps[warp_id]->at_barrier = 0;
+
+					thread_block->at_barrier_warp_count = 0;
 				}
 
 				if (list_count(thread_block->finished_warps) == thread_block->

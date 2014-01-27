@@ -27,9 +27,10 @@
 #include "emu.h"
 #include "grid.h"
 #include "isa.h"
+#include "machine.h"
 #include "thread.h"
-#include "warp.h"
 #include "thread-block.h"
+#include "warp.h"
 
 
 char *frm_err_isa_note =
@@ -2019,30 +2020,30 @@ void frm_isa_B2R_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_NOP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-//	FrmWarp *warp;
-//	FrmWarpSyncStackEntry *entry;
-//	static int first_time = 1;
-//
-//	warp = thread->warp;
-//
-//	if (first_time == 1)
-//	{
-//		entry = &(warp->sync_stack.entries[warp->sync_stack_top]);
-//
-//		/* Reverse thread mask */
-//		entry->active_thread_mask ^= 1 << thread->id_in_warp;
-//
-//		/* Go to not taken path */
-//		warp->pc = entry->next_path_pc - 8;
-//
-//		if (thread->id_in_warp == warp->thread_count - 1)
-//			first_time = 0;
-//	}
-//	else
-//	{
-//		/* Pop sync stack */
-//		if (thread->id_in_warp == warp->thread_count - 1)
-//			warp->sync_stack_top--;
+	//	FrmWarp *warp;
+	//	FrmWarpSyncStackEntry *entry;
+	//	static int first_time = 1;
+	//
+	//	warp = thread->warp;
+	//
+	//	if (first_time == 1)
+	//	{
+	//		entry = &(warp->sync_stack.entries[warp->sync_stack_top]);
+	//
+	//		/* Reverse thread mask */
+	//		entry->active_thread_mask ^= 1 << thread->id_in_warp;
+	//
+	//		/* Go to not taken path */
+	//		warp->pc = entry->next_path_pc - 8;
+	//
+	//		if (thread->id_in_warp == warp->thread_count - 1)
+	//			first_time = 0;
+	//	}
+	//	else
+	//	{
+	//		/* Pop sync stack */
+	//		if (thread->id_in_warp == warp->thread_count - 1)
+	//			warp->sync_stack_top--;
 }
 
 void frm_isa_LEPC_impl(FrmThread *thread, struct FrmInstWrap *inst)
@@ -2057,34 +2058,34 @@ void frm_isa_VOTE_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_BAR_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-//	FrmThreadBlock *thread_block;
-//	FrmWarp *warp;
-//
-//	int warp_id;
-//
-//	thread_block = thread->thread_block;
-//	warp = thread->warp;
-//
-//	/* Set flag to suspend warp execution */
-//	warp->at_barrier = 1;
-//
-//	if (thread->id_in_warp == warp->thread_count - 1)
-//		thread_block->num_warps_at_barrier++;
-//
-//	/* Continue execution when all warps in the thread-block reach the
-//	 * barrier*/
-//	if (thread_block->num_warps_at_barrier == thread_block->warp_count)
-//	{
-//		for (warp_id = 0; warp_id < thread_block->warp_count;
-//				warp_id++)
-//			thread_block->warps[warp_id]->at_barrier = 0;
-//
-//		thread_block->num_warps_at_barrier = 0;
-//	}
-//
-//	/* Debug */
-//	frm_isa_debug("%s:%d: PC = 0x%x thread[%d]\n",
-//			__func__, __LINE__, warp->pc, thread->id);
+	/* Format */
+	FrmFmtOther fmt = FrmInstWrapGetBytes(inst)->fmt_other;
+
+	/* Active and predicate */
+	FrmWarp *warp = thread->warp;
+	FrmWarpSyncStackEntry entry;
+	unsigned active;
+	unsigned pred_id, pred;
+
+	/* Active */
+	entry = warp->sync_stack.entries[warp->sync_stack_top];
+	active = bit_map_get(entry.active_thread_mask, thread->id_in_warp, 1);
+
+	/* Predicate */
+	pred_id = fmt.pred;
+	if (pred_id <= 7)
+		pred = thread->pr[pred_id];
+	else
+		pred = ! thread->pr[pred_id - 8];
+
+	/* Execute */
+	if (active == 1 && pred == 1)
+		warp->at_barrier = 1;
+
+	/* Debug */
+	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d\n",
+			__func__, __LINE__, warp->pc, thread->id, active,
+			pred_id, pred);
 }
 
 void frm_isa_POPC_impl(FrmThread *thread, struct FrmInstWrap *inst)
@@ -2365,7 +2366,13 @@ void frm_isa_LD_LDU_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_LDX_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	__NOT_IMPL__
+	/* Format */
+	FrmFmtLdSt fmt = FrmInstWrapGetBytes(inst)->fmt_ldst;
+
+	if (((fmt.fmod1_srco >> 30) & 0x1) == 0)
+		frm_isa_LDL_impl(thread, inst);
+	else
+		frm_isa_LDS_impl(thread, inst);
 }
 
 void frm_isa_LDL_impl(FrmThread *thread, struct FrmInstWrap *inst)
@@ -2448,7 +2455,13 @@ void frm_isa_LDSLK_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_STX_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	__NOT_IMPL__
+	/* Format */
+	FrmFmtLdSt fmt = FrmInstWrapGetBytes(inst)->fmt_ldst;
+
+	if (((fmt.fmod1_srco >> 30) & 0x1) == 0)
+		frm_isa_STL_impl(thread, inst);
+	else
+		frm_isa_STS_impl(thread, inst);
 }
 
 void frm_isa_STL_impl(FrmThread *thread, struct FrmInstWrap *inst)
@@ -2764,20 +2777,20 @@ void frm_isa_PLONGJMP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_SSY_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-//	int target;
-//	FrmWarp *warp = thread->warp;
-//
-//	/* Get target. Target is the recovergence point */
-//	target = FrmInstWrapGetBytes(inst)->tgt.target;
-//	if ((target >> 19 & 0x1) == 1)
-//		target |= 0xfff00000;
-//
-//	/* Set reconvergence PC */
-//	warp->new_entry.reconv_pc = target;
-//
-//	/* Debug */
-//	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] target = 0x%x\n",
-//			__func__, __LINE__, warp->pc, thread->id, target);
+	//	int target;
+	//	FrmWarp *warp = thread->warp;
+	//
+	//	/* Get target. Target is the recovergence point */
+	//	target = FrmInstWrapGetBytes(inst)->tgt.target;
+	//	if ((target >> 19 & 0x1) == 1)
+	//		target |= 0xfff00000;
+	//
+	//	/* Set reconvergence PC */
+	//	warp->new_entry.reconv_pc = target;
+	//
+	//	/* Debug */
+	//	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] target = 0x%x\n",
+	//			__func__, __LINE__, warp->pc, thread->id, target);
 }
 
 void frm_isa_PBK_impl(FrmThread *thread, struct FrmInstWrap *inst)

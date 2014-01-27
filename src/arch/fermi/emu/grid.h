@@ -59,9 +59,9 @@ CLASS_BEGIN(FrmGrid, Object)
 	void (*free_notify_func)(void *);
 	void *free_notify_data;
 
-	/* The following fields are used by architectural simulation only. */
-
 	unsigned shared_mem_top;
+
+	/* The following fields are used by architectural simulation only. */
 
 CLASS_END(FrmGrid)
 
