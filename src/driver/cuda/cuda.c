@@ -232,8 +232,10 @@ int cuda_func_versionCheck(X86Context *ctx)
 int cuda_func_cuInit(X86Context *ctx)
 {
 	/* Create lists */
-	module_list = list_create();
-	function_list = list_create();
+	if (! module_list)
+		module_list = list_create();
+	if (! function_list)
+		function_list = list_create();
 
 	return 0;
 }

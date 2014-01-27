@@ -160,8 +160,10 @@ CUresult cuInit(unsigned int Flags)
 	/* Create CUDA object lists */
 	context_list = list_create();
 	device_list = list_create();
-	module_list = list_create();
-	function_list = list_create();
+	if (! module_list)
+		module_list = list_create();
+	if (! function_list)
+		function_list = list_create();
 	memory_object_list = list_create();
 	event_list = list_create();
 

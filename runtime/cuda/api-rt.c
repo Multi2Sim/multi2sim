@@ -39,9 +39,6 @@
  * Global Variables
  */
 
-/* CUDA function list */
-struct list_t *runtime_func_list;
-
 /* Error code for last runtime function call */
 cudaError_t cuda_rt_last_error;
 
@@ -218,7 +215,6 @@ void __cudaRegisterFunction(void **fatCubinHandle, const char *hostFun,
 				break;
 			}
 		}
-		printf("%d %d\n", elf_size, align);
 		section_header_size = ((Elf32_Ehdr *)elf_start)->e_shentsize;
 		elf_size += section_header_size * section_header_count;
 		program_header_size = ((Elf32_Ehdr *)elf_start)->e_phentsize;
@@ -255,11 +251,8 @@ void __cudaRegisterFunction(void **fatCubinHandle, const char *hostFun,
 	function->host_func_ptr = (unsigned)hostFun;
 
 	/* Create list */
-	if (!runtime_func_list)
-		runtime_func_list = list_create();
-
-	/* Add function to stack */
-	list_add(runtime_func_list, function);
+	if (! function_list)
+		function_list = list_create();
 
 	/* Free */
 	elf_file_free(dev_func_bin);
@@ -309,8 +302,8 @@ cudaError_t cudaDeviceReset(void)
 	/* Free CUDA object lists */
 	list_free(event_list);
 	list_free(memory_object_list);
-	list_free(function_list);
-	list_free(module_list);
+	//list_free(function_list);
+	//list_free(module_list);
 	list_free(device_list);
 	list_free(context_list);
 
@@ -1150,13 +1143,13 @@ cudaError_t cudaLaunch(const void *func)
 	}
 
 	/* Get function */
-	for (i = 0; i < list_count(runtime_func_list); i++)
+	for (i = 0; i < list_count(function_list); i++)
 	{
-		function = (CUfunction)list_get(runtime_func_list, i);
+		function = (CUfunction)list_get(function_list, i);
 		if (function->host_func_ptr == (unsigned)func)
 			break;
 	}
-	if (i == list_count(runtime_func_list))
+	if (i == list_count(function_list))
 		fatal("%s: no function found", __func__);
 
 	/* Launch kernel */
