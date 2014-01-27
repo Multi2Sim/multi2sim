@@ -212,11 +212,13 @@ void __cudaRegisterFunction(void **fatCubinHandle, const char *hostFun,
 										sizeof(Elf32_Shdr)))->sh_size;
 				if (i + 1 <= section_header_count - 1)
 					align = ((Elf32_Shdr *)(elf_start + section_header_offset +
-							(i + 1) * sizeof(Elf32_Shdr)))->sh_addralign;
+							(section_header_count - 1) * sizeof(Elf32_Shdr)))->
+							sh_addralign;
 				elf_size = (elf_size + align - 1) / align * align;
 				break;
 			}
 		}
+		printf("%d %d\n", elf_size, align);
 		section_header_size = ((Elf32_Ehdr *)elf_start)->e_shentsize;
 		elf_size += section_header_size * section_header_count;
 		program_header_size = ((Elf32_Ehdr *)elf_start)->e_phentsize;
