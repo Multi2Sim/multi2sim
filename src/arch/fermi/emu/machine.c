@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
 #include <math.h>
 #include <stdlib.h>
 
@@ -1786,7 +1787,8 @@ void frm_isa_I2I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 	/* Operands */
 	unsigned dst_id, src_id;
-	int dst, src;
+	int dst, src, tmp;
+	unsigned dst_fmt, src_fmt;
 
 	struct mem_t *const_mem = thread->grid->emu->const_mem;
 
@@ -1816,9 +1818,111 @@ void frm_isa_I2I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 			src = abs(src);
 		if (((fmt.fmod0 >> 4) & 0x1) == 1)
 			src = -src;
+		dst_fmt = ((fmt.fmod0 >> 1) & 0x4) | (fmt.fmod1_src1 & 0x3);
+		src_fmt = ((fmt.fmod0 >> 3) & 0x4) | ((fmt.fmod1_src1 >> 3) & 0x3);
 
 		/* Execute */
-		dst = src;
+		assert(dst_fmt != 3 && dst_fmt != 7 && src_fmt != 3 && src_fmt != 7);
+		if (src_fmt == 0 || src_fmt == 4)
+			tmp = src & 0xff;
+		else if (src_fmt == 1 || src_fmt == 5)
+			tmp = src & 0xffff;
+		else
+			tmp = src;
+		if (dst_fmt <= 3)
+		{
+			if (src_fmt <= 3)
+			{
+				if (dst_fmt < src_fmt)
+				{
+					/* Chop */
+					if (dst_fmt == 0)
+						dst = tmp & 0xff;
+					else if (dst_fmt == 1)
+						dst = tmp & 0xffff;
+					else
+						dst = tmp & 0xffffffff;
+				}
+				else
+				{
+					/* Zero extension */
+					dst = tmp;
+				}
+			}
+			else
+			{
+				if (dst_fmt + 4 < src_fmt)
+				{
+					/* Chop */
+					if (dst_fmt == 0)
+						dst = tmp & 0xff;
+					else if (dst_fmt == 1)
+						dst = tmp & 0xffff;
+					else
+						dst = tmp & 0xffffffff;
+				}
+				else
+				{
+					/* Sign extension */
+					if (src_fmt == 4)
+					{
+						if (dst_fmt == 1)
+							dst = tmp >> 7 ? tmp | 0xff00 : tmp;
+						else if (dst_fmt == 2)
+							dst = tmp >> 7 ? tmp | 0xffffff00 : tmp;
+					}
+					else if (src_fmt == 5)
+						dst = tmp >> 15 ? tmp | 0xffff0000 : tmp;
+				}
+			}
+		}
+		else
+		{
+			if (src_fmt <= 3)
+			{
+				if (dst_fmt < src_fmt + 4)
+				{
+					/* Chop */
+					if (dst_fmt == 4)
+						dst = tmp & 0xff;
+					else if (dst_fmt == 5)
+						dst = tmp & 0xffff;
+					else
+						dst = tmp & 0xffffffff;
+				}
+				else
+				{
+					/* Zero extension */
+					dst = tmp;
+				}
+			}
+			else
+			{
+				if (dst_fmt < src_fmt)
+				{
+					/* Chop */
+					if (dst_fmt == 4)
+						dst = tmp & 0xff;
+					else if (dst_fmt == 5)
+						dst = tmp & 0xffff;
+					else
+						dst = tmp & 0xffffffff;
+				}
+				else
+				{
+					/* Sign extension */
+					if (src_fmt == 4)
+					{
+						if (dst_fmt == 5)
+							dst = tmp >> 7 ? tmp | 0xff00 : tmp;
+						else if (dst_fmt == 6)
+							dst = tmp >> 7 ? tmp | 0xffffff00 : tmp;
+					}
+					else if (src_fmt == 5)
+						dst = tmp >> 15 ? tmp | 0xffff0000 : tmp;
+				}
+			}
+		}
 
 		/* Write */
 		dst_id = fmt.dst;
@@ -1827,9 +1931,9 @@ void frm_isa_I2I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 	/* Debug */
 	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
-			"dst = [0x%x] 0x%08x src = [0x%x] 0x%08x\n",
-			__func__, __LINE__, warp->pc, thread->id, active,
-			pred_id, pred, dst_id, dst, src_id, src);
+			"dst = [0x%x] 0x%08x src = [0x%x] 0x%08x dst_fmt = %d "
+			"src_fmt = %d\n", __func__, __LINE__, warp->pc, thread->id, active,
+			pred_id, pred, dst_id, dst, src_id, src, dst_fmt, src_fmt);
 }
 
 void frm_isa_SEL_impl(FrmThread *thread, struct FrmInstWrap *inst)

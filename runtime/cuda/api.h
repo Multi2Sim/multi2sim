@@ -54,10 +54,10 @@ struct cuda_device_t *kpl_device;
 /* Lists of CUDA objects */
 struct list_t *context_list;
 struct list_t *device_list;
-struct list_t *module_list;
-struct list_t *function_list;
 struct list_t *memory_object_list;
 struct list_t *event_list;
+struct list_t *module_list;
+struct list_t *function_list;
 
 /* Memory object tables */
 struct list_t *pinned_memory_object_list;
