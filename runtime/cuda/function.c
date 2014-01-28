@@ -57,7 +57,7 @@ CUfunction cuda_function_create(CUmodule module, const char *function_name)
 	text_sec_index = 0;
 	for (i = 0; i < list_count(dev_func_bin->section_list); ++i)
 	{
-		sec = (struct elf_section_t *) list_get(dev_func_bin->section_list, i);
+		sec = list_get(dev_func_bin->section_list, i);
 
 		if (!strncmp(sec->name, text_sec_name, sizeof text_sec_name))
 		{
@@ -72,8 +72,7 @@ CUfunction cuda_function_create(CUmodule module, const char *function_name)
 				file.", __FUNCTION__);
 
 	/* Get .text.device_function_name section */
-	text_sec = (struct elf_section_t *) list_get(dev_func_bin->section_list,
-			text_sec_index);
+	text_sec = list_get(dev_func_bin->section_list, text_sec_index);
 
 	/* Get instruction binary */
 	function->inst_buf_size = text_sec->header->sh_size;

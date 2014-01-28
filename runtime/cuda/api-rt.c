@@ -77,6 +77,8 @@ void **__cudaRegisterFatBinary(void *fatCubin)
 
 	active_device = NULL;
 	cuInit(0);
+	module_list = list_create();
+	function_list = list_create();
 
 	fatCubinHandle = xcalloc(1, sizeof(void *));
 	*fatCubinHandle = fatCubin;
@@ -91,6 +93,9 @@ void __cudaUnregisterFatBinary(void **fatCubinHandle)
 	cuda_debug("CUDA runtime internal function '%s'", __func__);
 	cuda_debug("\t(runtime) '%s' in: fatCubinHandle = [%p]", __func__,
 			fatCubinHandle);
+
+	list_free(function_list);
+	list_free(module_list);
 
 	free(fatCubinHandle);
 
@@ -250,10 +255,6 @@ void __cudaRegisterFunction(void **fatCubinHandle, const char *hostFun,
 	 * kernel */
 	function->host_func_ptr = (unsigned)hostFun;
 
-	/* Create list */
-	if (! function_list)
-		function_list = list_create();
-
 	/* Free */
 	elf_file_free(dev_func_bin);
 
@@ -302,8 +303,6 @@ cudaError_t cudaDeviceReset(void)
 	/* Free CUDA object lists */
 	list_free(event_list);
 	list_free(memory_object_list);
-	//list_free(function_list);
-	//list_free(module_list);
 	list_free(device_list);
 	list_free(context_list);
 
@@ -1145,7 +1144,7 @@ cudaError_t cudaLaunch(const void *func)
 	/* Get function */
 	for (i = 0; i < list_count(function_list); i++)
 	{
-		function = (CUfunction)list_get(function_list, i);
+		function = list_get(function_list, i);
 		if (function->host_func_ptr == (unsigned)func)
 			break;
 	}
