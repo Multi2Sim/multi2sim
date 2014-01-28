@@ -160,10 +160,6 @@ CUresult cuInit(unsigned int Flags)
 	/* Create CUDA object lists */
 	context_list = list_create();
 	device_list = list_create();
-	if (! module_list)
-		module_list = list_create();
-	if (! function_list)
-		function_list = list_create();
 	memory_object_list = list_create();
 	event_list = list_create();
 
@@ -406,7 +402,7 @@ CUresult cuDeviceGetProperties(CUdevprop *prop, CUdevice dev)
 	}
 
 	/* Get device */
-	device = (struct cuda_device_t *)list_get(device_list, dev);
+	device = list_get(device_list, dev);
 
 	/* Get properties */
 	prop->maxThreadsPerBlock = device->attributes
@@ -467,7 +463,7 @@ CUresult cuDeviceComputeCapability(int *major, int *minor, CUdevice dev)
 	}
 
 	/* Get version */
-	device = (struct cuda_device_t *)list_get(device_list, dev);
+	device = list_get(device_list, dev);
 	*major = device->attributes[CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR];
 	*minor = device->attributes[CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR];
 
