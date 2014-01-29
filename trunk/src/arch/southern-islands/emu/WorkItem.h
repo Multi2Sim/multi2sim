@@ -25,7 +25,6 @@
 
 #include "Emu.h"
 
-
 namespace SI
 {
 
@@ -34,7 +33,7 @@ class Wavefront;
 class WorkGroup;
 class NDRange;
 
-typedef void (*ISAInstFuncPtr)(Inst *inst);
+// typedef void (*WorkItemISAFuncPtr)(Inst *inst);
 
 /// Abstract polymorphic class used to attach additional information to the
 /// work-item. The timing simulator can created objects derived from this class
@@ -106,7 +105,8 @@ private:
 #undef DEFINST
 
 	// Instruction execution table 
-	static ISAInstFuncPtr ISAInstFuncTable[InstOpcodeCount + 1];
+	typedef void (WorkItem::*ISAInstFuncPtr)(Inst *inst);
+	ISAInstFuncPtr ISAInstFuncTable[InstOpcodeCount + 1];
 
 	// Error massage for unimplemented instructions
 	static void ISAUnimplemented(Inst *inst);
