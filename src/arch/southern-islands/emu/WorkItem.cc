@@ -28,13 +28,11 @@ using namespace misc;
 namespace SI
 {
 
-/*
- * Private functions
- */
+/// Private functions
 
 void WorkItem::ISAUnimplemented(Inst *inst)
 {
-	static const char*err_si_isa_note =
+	static const char *err_si_isa_note =
 	"The AMD Southern Islands instruction set is partially supported by"
 	"Multi2Sim. If your program is using an unimplemented instruction,"
 	"please email development@multi2sim.org' to request support for it.";
@@ -242,22 +240,17 @@ WorkItem::WorkItem(Wavefront *wavefront, int id)
 	this->id = id;
 	this->wavefront = wavefront;
 
-/* FIXME: Initialize ISA function table 
-	ISAInstFuncTable =
-	{
-		nullptr,
+	ISAInstFuncTable[InstOpcodeInvalid] =  nullptr;
 #define DEFINST(_name, _fmt_str, _fmt, _opcode, _size, _flags) \
-	&WorkItem::ISA_##_name##_Impl,
+	ISAInstFuncTable[INST_##_name] = &WorkItem::ISA_##_name##_Impl;
 #include <arch/southern-islands/asm/asm.dat>
 #undef DEFINST
-		nullptr
-	};
-*/
+	ISAInstFuncTable[InstOpcodeCount] = nullptr;
 }
 
 void WorkItem::Execute(InstOpcode opcode, Inst *inst)
 {
-	ISAInstFuncTable[opcode](inst);
+	(this->*(ISAInstFuncTable[opcode]))(inst);
 }
 
 unsigned WorkItem::ReadSReg(int sreg)
