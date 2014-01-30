@@ -803,7 +803,7 @@ int cuda_func_cuFrmLaunchKernel(X86Context *ctx)
 		arg = function->arg_array[i];
 		mem_read(mem, kernel_args + i * 4, sizeof(unsigned), &arg_ptr);
 		mem_read(mem, arg_ptr, sizeof(unsigned), &(arg->value));
-		FrmEmuConstMemWrite(frm_emu, offset, &(arg->value));
+		mem_write(frm_emu->const_mem, offset, sizeof(unsigned), &(arg->value));
 		offset += 0x4;
 	}
 
