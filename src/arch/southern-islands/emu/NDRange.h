@@ -256,6 +256,19 @@ public:
 	/// Get Fetch shader starting address in instruction memory
 	unsigned getFetchShaderAddr() const { return fetch_shader_addr; }
 
+	/// Get count of running_work_groups
+	unsigned isRunningWorkGroupsEmpty() const { return running_work_groups.empty(); }
+
+	// Return an iterator to the first workgroup in the running_work_group list.
+	std::list<std::unique_ptr<WorkGroup>>::iterator RunningWorkGroupBegin() { 
+		return running_work_groups.begin();
+	}
+
+	// Return an iterator to the past-to-end iterator in the running_work_group list.
+	std::list<std::unique_ptr<WorkGroup>>::iterator RunningWorkGroupEnd() { 
+		return running_work_groups.end();
+	}
+
 	/// Setters
 	///
 	/// Set new size parameters of the ND-Range before it gets launched.
@@ -330,6 +343,9 @@ public:
 	/// \param image_desc Image descriptor
 	/// \param uav Index in UAV table
 	void ImageIntoUAVTable(EmuImageDesc *image_desc, unsigned uav);
+
+	/// Move workgroups in waiting list to running list
+	void WaitingToRunning();	
 
 };
 

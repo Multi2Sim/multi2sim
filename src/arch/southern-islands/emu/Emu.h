@@ -28,16 +28,19 @@
 #include <mem-system/Memory.h>
 
 
+namespace Driver
+{
+	class OpenCLDriver;
+	class OpenGLDriver;
+}  // namespace Driver
+
 namespace SI
 {
 
 class Asm;
 class NDRange;
-class OpenCLDriver;
-class OpenGLDriver;
 class ShaderExport;
 class WorkGroup;
-
 
 /// UAV Table
 const unsigned EmuMaxNumUAVs = 16;
@@ -231,8 +234,8 @@ class Emu
 	Asm *as;
 
 	// Associated drivers
-	OpenCLDriver *opencl_driver;
-	OpenGLDriver *opengl_driver;
+	Driver::OpenCLDriver *opencl_driver;
+	Driver::OpenGLDriver *opengl_driver;
 
 	// Memory spaces
 
