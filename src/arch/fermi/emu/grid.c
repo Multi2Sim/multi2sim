@@ -21,6 +21,7 @@
 #include <driver/cuda/function.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
+#include <mem-system/memory.h>
 
 #include "emu.h"
 #include "grid.h"
@@ -117,5 +118,9 @@ void FrmGridSetupSize(FrmGrid *self, unsigned *thread_block_count,
 /* Write initial values into constant memory. Used by driver. */
 void FrmGridSetupConstantMemory(FrmGrid *self)
 {
-	FrmEmuConstMemWrite(self->emu, 0x8, self->thread_block_size3);
+	unsigned v;
+
+	mem_write(self->emu->const_mem, 0x8, 12, self->thread_block_size3);
+	v = 0x1000000;
+	mem_write(self->emu->const_mem, 0x100000, 4, &v);
 }
