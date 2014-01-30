@@ -176,18 +176,6 @@ int FrmEmuRun(Emu *self)
 }
 
 
-void FrmEmuConstMemWrite(FrmEmu *self, unsigned addr, void *value_ptr)
-{
-	mem_write(self->const_mem, addr, sizeof(unsigned), value_ptr);
-}
-
-
-void FrmEmuConstMemRead(FrmEmu *self, unsigned addr, void *value_ptr)
-{
-	mem_read(self->const_mem, addr, sizeof(unsigned), value_ptr);
-}
-
-
 /*
  * Non-Class Stuff
  */

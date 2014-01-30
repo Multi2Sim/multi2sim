@@ -71,9 +71,6 @@ void FrmEmuDump(Object *self, FILE *f);
 void FrmEmuDumpSummary(Emu *self, FILE *f);
 int FrmEmuRun(Emu *emu);
 
-void FrmEmuConstMemWrite(FrmEmu *self, unsigned addr, void *pvalue);
-void FrmEmuConstMemRead(FrmEmu *self, unsigned addr, void *pvalue);
-
 
 /*
  * Public Variables

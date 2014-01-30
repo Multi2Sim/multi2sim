@@ -1029,8 +1029,6 @@ void frm_isa_IMAD_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	unsigned dst_id, src1_id, src2_id, src3_id;
 	int dst, src1, src2, src3;
 
-	struct mem_t *const_mem = thread->grid->emu->const_mem;
-
 	/* Active */
 	entry = warp->sync_stack.entries[warp->sync_stack_top];
 	active = bit_map_get(entry.active_thread_mask, thread->id_in_warp, 1);
@@ -1054,7 +1052,12 @@ void frm_isa_IMAD_impl(FrmThread *thread, struct FrmInstWrap *inst)
 		if (fmt.s2mod == 0)
 			src2 = thread->gpr[src2_id].s32;
 		else if (fmt.s2mod == 1 || fmt.s2mod == 2)
-			mem_read(const_mem, src2_id, 4, &src2);
+		{
+			struct mem_t *const_mem = thread->grid->emu->const_mem;
+			unsigned bank = ((fmt.src2 & 0x1) << 4) | (fmt.src2 >> 16);
+			unsigned offset = fmt.src2 & 0xfffe;
+			mem_read(const_mem, (bank << 16) + offset, 4, &src2);
+		}
 		else
 			src2 = src2_id >> 19 ? src2_id | 0xfff00000 : src2_id;
 		src3_id = fmt.fmod1_srco & 0x3f;
@@ -1063,7 +1066,12 @@ void frm_isa_IMAD_impl(FrmThread *thread, struct FrmInstWrap *inst)
 			src3 = -src3;
 
 		/* Execute */
-		dst = src1 * src2 + src3;
+		unsigned hi = (fmt.fmod0 >> 2) & 0x1;
+		long long temp = (long long)src1 * src2;
+		if (hi)
+			dst = (int)(temp >> 32) + src3;
+		else
+			dst = (int)temp + src3;
 
 		/* Write */
 		dst_id = fmt.dst;
@@ -1515,11 +1523,11 @@ void frm_isa_LOP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 		/* Execute */
 		if (bop == 0)
-			dst = src1 && src2;
+			dst = src1 & src2;
 		else if (bop == 1)
-			dst = src1 || src2;
+			dst = src1 | src2;
 		else if (bop == 2)
-			dst = (src1 && !src2) || (!src1 && src2);
+			dst = (src1 & ~ src2) | (~ src1 & src2);
 		else
 			fatal("%s: bitwise operation %d not implemented",
 					__func__, bop);
@@ -2353,8 +2361,8 @@ void frm_isa_LD_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	unsigned pred_id, pred;
 
 	/* Operands */
-	unsigned dst_id, src1_id;
-	int dst, src1;
+	unsigned dst_id;
+	int dst[3];
 	unsigned addr;
 
 	struct mem_t *global_mem = thread->grid->emu->global_mem;
@@ -2374,23 +2382,28 @@ void frm_isa_LD_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	if (active == 1 && pred == 1)
 	{
 		/* Read */
-		src1_id = fmt.src1;
-		src1 = thread->gpr[src1_id].s32;
-		addr = src1 + fmt.fmod1_srco;
+		addr = thread->gpr[fmt.src1].s32 + fmt.fmod1_srco;
+		unsigned read_64 = (((fmt.fmod0 >> 1) & 0x7) == 5) ||
+				((((fmt.fmod0 >> 1) & 0x7) == 7) &&
+				(((fmt.fmod0 >> 5) & 0x1) == 0));
 
 		/* Execute */
-		mem_read(global_mem, addr, 4, &dst);
+		mem_read(global_mem, addr, 4, dst);
+		if (read_64)
+			mem_read(global_mem, addr + 4, 4, dst + 1);
 
 		/* Write */
 		dst_id = fmt.dst;
-		thread->gpr[dst_id].s32 = dst;
+		thread->gpr[dst_id].s32 = dst[0];
+		if (read_64)
+			thread->gpr[dst_id + 1].s32 = dst[1];
 	}
 
 	/* Debug */
 	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
-			"dst = [0x%x] 0x%08x src1 = [0x%x] 0x%08x addr = 0x%08x\n",
+			"dst[0] = [0x%x] 0x%08x addr = 0x%08x\n",
 			__func__, __LINE__, warp->pc, thread->id, active,
-			pred_id, pred, dst_id, dst, src1_id, src1, addr);
+			pred_id, pred, dst_id, dst[0], addr);
 }
 
 void frm_isa_LDU_impl(FrmThread *thread, struct FrmInstWrap *inst)
