@@ -79,7 +79,12 @@ public:
 	static OpenCLDriver *getInstance();
 
 	/// Getters
+	///
+	/// Get SI functional emulator
 	SI::Emu *getEmuGpu() const { return si_emu; }
+
+	/// Get NDRange count
+	bool isNDRangeListEmpty() const { return ndranges.empty(); }
 
 	/// This function is called when all work groups from an ND-Range have
 	/// been scheduled (i.e., ndrange->waiting_work_groups is empty)
@@ -94,6 +99,25 @@ public:
 
 	/// OpenCL driver call
 	int DriverCall();
+
+	/// Return an iterator to the first NDRange in the NDRange list. The
+	/// NDRanges can be conveniently traversed with a loop using these
+	/// iterators. This is an example of how to dump all NDRanges in the
+	/// NDRange list:
+	/// \code
+	///	for (auto i = opencl_driver->NDRangesBegin(),
+	///			e = wavefront->NDRangesEnd(); i != e; ++i)
+	///		i->Dump(std::cout);
+	/// \endcode
+	std::vector<std::unique_ptr<SI::NDRange>>::iterator NDRangesBegin() {
+		return ndranges.begin();
+	}
+
+	/// Return a past-the-end iterator for the list of NDRanges in the
+	/// NDRange list.
+	std::vector<std::unique_ptr<SI::NDRange>>::iterator NDRangesEnd() {
+		return ndranges.end();
+	}
 
 };	
 

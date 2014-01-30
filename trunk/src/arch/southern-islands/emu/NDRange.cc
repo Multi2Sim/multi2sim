@@ -31,6 +31,7 @@ NDRange::NDRange(Emu *emu)
 	this->stage = NDRangeStageCompute;
 	this->id = emu->getNewNDRangeID();
 	this->address_space_index = emu->getNewNDRangeID();
+	this->inst_mem.reset(new Memory::Memory());
 
 	this->last_work_group_sent = false;
 }
@@ -238,6 +239,13 @@ void NDRange::ImageIntoUAVTable(EmuImageDesc *image_desc, unsigned uav)
 	uav_table_entries[uav].kind = TableEntryKindImageDesc;
 	uav_table_entries[uav].size = sizeof(*image_desc);
 
+}
+
+void NDRange::WaitingToRunning()
+{
+	for (auto i = waiting_work_groups.begin(), e = waiting_work_groups.end(); 
+		i != e; ++i)
+		running_work_groups.push_back(std::move(*i));
 }
 
 }  // namespace SI

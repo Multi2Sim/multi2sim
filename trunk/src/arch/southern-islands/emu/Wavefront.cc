@@ -140,7 +140,7 @@ Wavefront::Wavefront(WorkGroup *work_group, int id)
 	// }
 
 	// Create scalar work item
-	scalar_work_item = std::move(std::unique_ptr<WorkItem>(new WorkItem(this, 0)));
+	this->scalar_work_item.reset(new WorkItem(this, 0));
 	scalar_work_item->setWorkGroup(this->work_group);
 }
 
@@ -535,9 +535,9 @@ void Wavefront::Execute()
 
 		// Record access type
 		if (op >= 0 && op < 4)
-			vector_mem_read = 1;
+			vector_mem_read = true;
 		else if (op >= 4 && op < 8)
-			vector_mem_write = 1;
+			vector_mem_write = true;
 		else 
 			fatal("%s: invalid mtbuf opcode", __FUNCTION__);
 	
@@ -569,16 +569,16 @@ void Wavefront::Execute()
 		if ((op >= 0 && op < 4) ||
 			(op >= 8 && op < 15))
 		{
-			vector_mem_read = 1;
+			vector_mem_read = true;
 		}
 		else if ((op >= 4 && op < 8) ||
 			(op >= 24 && op < 30))
 		{
-			vector_mem_write = 1;
+			vector_mem_write = true;
 		}
 		else if (op == 50)
 		{
-			vector_mem_atomic = 1;
+			vector_mem_atomic = true;
 		}
 		else 
 		{
