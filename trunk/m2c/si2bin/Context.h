@@ -53,17 +53,6 @@ namespace si2bin
 {
 
 extern std::string MachineName;
-
-class Si2binConfig : public misc::CommandLineConfig
-{
-	std::string source_file;
-	std::string output_file;
-public:
-	void Register(misc::CommandLine &command_line);
-
-	void Process();
-};
-
 class InstInfo
 {
 	/* There can be multiple instruction encodings for the same instruction
@@ -164,7 +153,6 @@ public:
 	}
 	
 	static Context *getInstance();
-	static Si2binConfig config;
 
 
 	Symbol *getSymbol(const std::string &name){

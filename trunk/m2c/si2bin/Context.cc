@@ -28,7 +28,6 @@
 #include <cstdio>
 #include <cstdlib>
 
-//char *si2bin_yytext;
 
 
 void si2bin_yyerror(const char *s)
@@ -61,28 +60,6 @@ namespace si2bin
 
 std::string MachineName = "tahiti";
 
-
-void Si2binConfig::Register(CommandLine &command_line)
-{
-	// Option --si2bin <file>
-	command_line.RegisterString("--si2bin", source_file,
-			"Creates an AMD Southern Islands GPU compliant ELF "
-			"from the assembly file provided in <arg> using the "
-			"internal Southern Islands Assembler.");
-}
-
-void Si2binConfig::Process()
-{
-	// Run Southern Islands Assembler
-	if (!source_file.empty())
-	{
-		output_file = "output.bin";
-
-		Context *context = Context::getInstance();
-		context->Compile(source_file, output_file);
-		exit(0);
-	}
-}
 
 
 
@@ -126,9 +103,6 @@ InstInfo::InstInfo(SI::InstInfo *info)
 
 // Global context
 std::unique_ptr<Context> Context::instance;
-
-// Config
-Si2binConfig Context::config;
 
 Context::Context()
 {
