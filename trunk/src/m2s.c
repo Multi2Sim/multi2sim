@@ -194,6 +194,7 @@ static EvgGpu *evg_gpu;
 static struct FrmAsmWrap *frm_asm;
 static FrmEmu *frm_emu;
 
+static struct KplAsm *kpl_asm;
 static KplEmu *kpl_emu;
 
 static struct MIPSAsmWrap *mips_asm;
@@ -2372,6 +2373,9 @@ int main(int argc, char **argv)
 		arch_set_timing(arch_southern_islands, asTiming(si_gpu));
 	}
 	arch_set_emu(arch_southern_islands, asEmu(si_emu));
+
+	kpl_asm = KplAsmCreate();
+	kpl_emu = new(KplEmu, kpl_asm);
 
 	/* Drivers */
 	opencl_driver = new(OpenclDriver, x86_emu, si_emu);
