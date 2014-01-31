@@ -17,7 +17,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <arch/southern-islands/emu/WorkGroup.h>
+#include <arch/southern-islands/emu/Wavefront.h>
+#include <arch/southern-islands/emu/WorkItem.h>
 #include <src/driver/opencl/OpenCLDriver.h>
+
 #include "Emu.h"
 #include "NDRange.h"
 
@@ -32,7 +36,7 @@ Emu::Emu(Asm *as)
 	// GPU memories
 	this->video_mem.reset(new Memory::Memory());
 	this->shared_mem.reset(new Memory::Memory());
-	global_mem = video_mem.get();
+	this->global_mem = video_mem.get();
 }
 
 

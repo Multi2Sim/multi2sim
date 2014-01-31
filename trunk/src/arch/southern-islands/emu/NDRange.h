@@ -23,11 +23,7 @@
 #include <list>
 #include <memory>
 
-#include <arch/southern-islands/asm/Arg.h>
 #include <arch/southern-islands/asm/Binary.h>
-#include <arch/southern-islands/emu/WorkGroup.h>
-#include <arch/southern-islands/emu/Wavefront.h>
-#include <arch/southern-islands/emu/WorkItem.h>
 
 #include "Emu.h"
 
@@ -257,7 +253,7 @@ public:
 	unsigned getFetchShaderAddr() const { return fetch_shader_addr; }
 
 	/// Get count of running_work_groups
-	unsigned isRunningWorkGroupsEmpty() const { return running_work_groups.empty(); }
+	bool isRunningWorkGroupsEmpty() const { return running_work_groups.empty(); }
 
 	// Return an iterator to the first workgroup in the running_work_group list.
 	std::list<std::unique_ptr<WorkGroup>>::iterator RunningWorkGroupBegin() { 

@@ -17,8 +17,13 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <arch/southern-islands/asm/Arg.h>
 #include <src/lib/cpp/Misc.h>
+
 #include "NDRange.h"
+#include "WorkGroup.h"
+#include "Wavefront.h"
+#include "WorkItem.h"
 
 using namespace misc;
 

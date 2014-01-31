@@ -17,8 +17,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <src/arch/x86/asm/Asm.h>
-#include <src/arch/x86/emu/Emu.h>
+#include <arch/x86/asm/Asm.h>
+#include <arch/x86/emu/Emu.h>
+#include <arch/southern-islands/emu/WorkGroup.h>
+#include <arch/southern-islands/emu/Wavefront.h>
+#include <arch/southern-islands/emu/WorkItem.h>
 
 #include "ABI.h"
 #include "OpenCLDriver.h"
