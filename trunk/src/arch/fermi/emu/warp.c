@@ -65,11 +65,11 @@ void FrmWarpCreate(FrmWarp *self, int id, FrmThreadBlock *thread_block,
 
 	/* Sync stack */
 	self->sync_stack_top = 0;
+	self->sync_stack.entries[self->sync_stack_top].reconv_pc = 0;
 	self->sync_stack.entries[self->sync_stack_top].active_thread_mask =
 			bit_map_create(self->thread_count);
 	bit_map_set(self->sync_stack.entries[self->sync_stack_top].
-			active_thread_mask, 0, self->thread_count,
-			((unsigned long long)1 << self->thread_count) - 1);
+			active_thread_mask, 0, self->thread_count, 0xffffffff);
 
 	/* Reset flags */
 	self->at_barrier = 0;
@@ -93,7 +93,7 @@ void FrmWarpDump(FrmWarp *self, FILE *f)
 
 void FrmWarpExecute(FrmWarp *self)
 {
-	FrmEmu *emu;
+	FrmEmu *emu = NULL;
 	FrmGrid *grid;
 	FrmThreadBlock *thread_block;
 	FrmThread *thread;
@@ -141,12 +141,13 @@ void FrmWarpExecute(FrmWarp *self)
 	}
 
 	/* Update PC */
-	if (FrmInstWrapGetCategory(inst) != FrmInstCategoryCtrl)
+	if ((FrmInstWrapGetCategory(inst) != FrmInstCategoryCtrl) ||
+			FrmInstWrapGetId(inst) == FrmInstIdSSY)
 		self->pc += self->inst_size;
 	else
 		self->pc = self->target_pc;
 
 	/* Stats */
-	asEmu(emu)->instructions++;
+	emu->inst_count++;
 	self->inst_count++;
 }
