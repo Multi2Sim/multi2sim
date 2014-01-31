@@ -62,7 +62,7 @@ KplInstOpcode KplInstWrapGetOpcode(struct KplInstWrap *self)
 
 struct KplAsm *KplAsmCreate()
 {
-	Kepler::Asm *as = new Kepler::Asm();
+	Kepler::Asm *as = NULL; //new Kepler::Asm();
 	return (KplAsm *) as;
 }
 
