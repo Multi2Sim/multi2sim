@@ -23,7 +23,7 @@
 #include <lib/cpp/CommandLine.h>
 #include <lib/cpp/Misc.h>
 
-#include "si2bin/Context.h"
+#include "si2bin/Config.h"
 #include "Wrapper.h"
 
 using namespace misc;
@@ -48,7 +48,7 @@ void main_cpp(int argc, char **argv)
 
 	
 	// Register module configurations
-	command_line.AddConfig(si2bin::Context::config);
+	command_line.AddConfig(si2bin::config);
 
 	// Process command line. Return to C version of Multi2Sim if a
 	// command-line option was not recognized.
