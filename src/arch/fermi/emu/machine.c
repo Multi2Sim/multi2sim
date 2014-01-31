@@ -34,6 +34,66 @@
 #include "warp.h"
 
 
+enum
+{
+	SR_LANEID = 0,
+	SR_CLOCK = 1,
+	SR_VIRTCFG = 2,
+	SR_VIRTID = 3,
+	SR_PM0 = 4,
+	SR_PM1 = 5,
+	SR_PM2 = 6,
+	SR_PM3 = 7,
+	SR_PM4 = 8,
+	SR_PM5 = 9,
+	SR_PM6 = 10,
+	SR_PM7 = 11,
+	SR_PRIM_TYPE = 16,
+	SR_INVOCATION_ID = 17,
+	SR_Y_DIRECTION = 18,
+	SR_THREAD_KILL = 19,
+	SR_SHADER_TYPE = 20,
+	SR_MACHINE_ID_0 = 24,
+	SR_MACHINE_ID_1 = 25,
+	SR_MACHINE_ID_2 = 26,
+	SR_MACHINE_ID_3 = 27,
+	SR_AFFINITY = 28,
+	SR_TID = 32,
+	SR_TID_X = 33,
+	SR_TID_Y = 34,
+	SR_TID_Z = 35,
+	SR_CTA_PARAM = 36,
+	SR_CTAID_X = 37,
+	SR_CTAID_Y = 38,
+	SR_CTAID_Z = 39,
+	SR_NTID = 40,
+	SR_NTID_X = 41,
+	SR_NTID_Y = 42,
+	SR_NTID_Z = 43,
+	SR_GRIDPARAM = 44,
+	SR_NCTAID_X = 45,
+	SR_NCTAID_Y = 46,
+	SR_NCTAID_Z = 47,
+	SR_SWINLO = 48,
+	SR_SWINSZ = 49,
+	SR_SMEMSZ = 50,
+	SR_SMEMBANKS = 51,
+	SR_LWINLO = 52,
+	SR_LWINSZ = 53,
+	SR_LMEMLOSZ = 54,
+	SR_LMEMHIOFF = 55,
+	SR_EQMASK = 56,
+	SR_LTMASK = 57,
+	SR_LEMASK = 58,
+	SR_GTMASK = 59,
+	SR_GEMASK = 60,
+	SR_GLOBALERRORSTATUS = 64,
+	SR_WARPERRORSTATUS = 66,
+	SR_WARPERRORSTATUSCLEAR = 67,
+	SR_CLOCKLO = 80,
+	SR_CLOCKHI = 81
+};
+
 char *frm_err_isa_note =
 		"\tThe NVIDIA Fermi SASS instruction set is partially supported by \n"
 		"\tMulti2Sim. If your program is using an unimplemented instruction, \n"
@@ -141,6 +201,18 @@ void frm_isa_FSETP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 			cop_res = src1 != src2;
 		else if (cop == 6)
 			cop_res = src1 >= src2;
+		else if (cop == 9)
+			cop_res = src1 < src2 || isnan(src1) || isnan(src2);
+		else if (cop == 10)
+			cop_res = src1 == src2 || isnan(src1) || isnan(src2);
+		else if (cop == 11)
+			cop_res = src1 <= src2 || isnan(src1) || isnan(src2);
+		else if (cop == 12)
+			cop_res = src1 > src2 || isnan(src1) || isnan(src2);
+		else if (cop == 13)
+			cop_res = src1 != src2 || isnan(src1) || isnan(src2);
+		else if (cop == 14)
+			cop_res = src1 >= src2 || isnan(src1) || isnan(src2);
 		else
 			fatal("%s: compare operation %d not implemented",
 					__func__, cop);
@@ -2369,7 +2441,12 @@ void frm_isa_S2R_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	{
 		/* Read */
 		src_id = fmt.src2 & 0xff;
-		src = thread->sr[src_id].s32;
+		if (src_id == SR_CLOCKLO)
+			src = thread->grid->emu->inst_count & 0xffffffff;
+		else if (src_id == SR_CLOCKHI)
+			src = (thread->grid->emu->inst_count >> 32) & 0xffffffff;
+		else
+			src = thread->sr[src_id].s32;
 
 		/* Execute */
 		dst = src;
@@ -2431,6 +2508,10 @@ void frm_isa_NOP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 		pred = thread->pr[pred_id];
 	else
 		pred = ! thread->pr[pred_id - 8];
+
+	/* Execute */
+	if (active == 1 && pred == 1)
+		bit_map_set(entry.active_thread_mask, thread->id_in_warp, 1, 0);
 
 	/* Debug */
 	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
@@ -3257,7 +3338,6 @@ void frm_isa_SSY_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	FrmWarp *warp = thread->warp;
 	FrmWarpSyncStackEntry entry;
 	unsigned active;
-	unsigned pred_id, pred;
 
 	/* Operand */
 	int reconv_pc;
@@ -3276,15 +3356,8 @@ void frm_isa_SSY_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	entry = warp->sync_stack.entries[warp->sync_stack_top];
 	active = bit_map_get(entry.active_thread_mask, thread->id_in_warp, 1);
 
-	/* Predicate */
-	pred_id = fmt.pred;
-	if (pred_id <= 7)
-		pred = thread->pr[pred_id];
-	else
-		pred = ! thread->pr[pred_id - 8];
-
 	/* Execute */
-	if (active == 1 && pred == 1)
+	if (active == 1)
 	{
 		if ((fmt.mmod & 0x1) == 0)
 			reconv_pc = (fmt.imm32 & 0xffffff) + warp->pc + 8;
@@ -3297,17 +3370,20 @@ void frm_isa_SSY_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	}
 
 	/* Create new entry in sync stack */
-	active_thread_mask = bit_map_create(warp->thread_count);
-	bit_map_set(active_thread_mask, 0, 32, 0xffffffff);
-	warp->sync_stack_top++;
-	warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = reconv_pc;
-	warp->sync_stack.entries[warp->sync_stack_top].active_thread_mask =
-			active_thread_mask;
+	if (thread->id_in_warp == warp->thread_count - 1)
+	{
+		active_thread_mask = bit_map_create(warp->thread_count);
+		bit_map_set(active_thread_mask, 0, warp->thread_count, 0xffffffff);
+		warp->sync_stack_top++;
+		assert(warp->sync_stack_top < 32);
+		warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = reconv_pc;
+		warp->sync_stack.entries[warp->sync_stack_top].active_thread_mask =
+				active_thread_mask;
+	}
 
 	/* Debug */
-	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
-			"reconv_pc = 0x%x\n", __func__, __LINE__, warp->pc, thread->id,
-			active, pred_id, pred, reconv_pc);
+	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d reconv_pc = 0x%x\n",
+			__func__, __LINE__, warp->pc, thread->id, active, reconv_pc);
 }
 
 void frm_isa_PBK_impl(FrmThread *thread, struct FrmInstWrap *inst)
