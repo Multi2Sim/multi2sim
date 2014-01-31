@@ -22,9 +22,6 @@
 
 #include <string>
 
-#include "southern-islands/Kernel.h"
-#include "southern-islands/Program.h"
-
 // Forward declaration
 namespace x86
 {
@@ -36,11 +33,14 @@ namespace SI
 {
 	class Emu;
 	class NDRange;
+	class Program;
+	class Kernel;
 }  // namespace SI
 
 namespace Driver
 {
 
+/// OpenCL Driver
 class OpenCLDriver
 {
 	// Driver verision information
