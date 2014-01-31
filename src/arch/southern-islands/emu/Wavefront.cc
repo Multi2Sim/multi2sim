@@ -23,20 +23,13 @@
 #include "NDRange.h"
 #include "Wavefront.h"
 #include "WorkGroup.h"
+#include "WorkItem.h"
 
 using namespace misc;
 
 namespace SI
 {
 
-/*
- * Private functions
- */
-
-
-/*
- * Public functions
- */
 unsigned Wavefront::getSregUint(int sreg) const
 {
 	unsigned value;

@@ -126,8 +126,8 @@ private:
 public:
 
 	/// Constructor
-	/// \param Wavefront Wavefront that it belongs to
-	/// \id Global 1D identifier of the work-item
+	/// \param wavefront Wavefront that it belongs to
+	/// \param id Global 1D identifier of the work-item
 	WorkItem(Wavefront *wavefront, int id);
 
 	/// Getters
@@ -238,7 +238,7 @@ public:
 	
 	/// Get memory pointer from 2 succesive scalar registers
 	/// \param sreg Sclalar register identifier of the 1st scalar registers
-	/// \param &mem_prt Reference of a memory pointer descripter
+	/// \param mem_ptr Reference of a memory pointer descripter
 	void ReadMemPtr(int sreg, EmuMemPtr &mem_ptr);
 
 };
