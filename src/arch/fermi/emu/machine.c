@@ -76,7 +76,14 @@ void frm_isa_FSETP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	unsigned bop;
 	unsigned cop_res;
 
-	struct mem_t *const_mem = thread->grid->emu->const_mem;
+	/* Pop sync stack at reconvergence PC */
+	if ((warp->pc != 0) && (warp->pc == warp->sync_stack.entries[warp->sync_stack_top].reconv_pc))
+	{
+		warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = 0;
+		bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+				active_thread_mask);
+		warp->sync_stack_top--;
+	}
 
 	/* Active */
 	entry = warp->sync_stack.entries[warp->sync_stack_top];
@@ -103,7 +110,10 @@ void frm_isa_FSETP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 		if (fmt.s2mod == 0)
 			src2 = thread->gpr[src2_id].f;
 		else if (fmt.s2mod == 1 || fmt.s2mod == 2)
+		{
+			struct mem_t *const_mem = thread->grid->emu->const_mem;
 			mem_read(const_mem, src2_id, 4, &src2);
+		}
 		else
 		{
 			gpr.i = fmt.src2 << 12;
@@ -189,7 +199,14 @@ void frm_isa_FFMA_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	float dst, src1, src2, src3;
 	union {unsigned i; float f;} gpr;
 
-	struct mem_t *const_mem = thread->grid->emu->const_mem;
+	/* Pop sync stack at reconvergence PC */
+	if ((warp->pc != 0) && (warp->pc == warp->sync_stack.entries[warp->sync_stack_top].reconv_pc))
+	{
+		warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = 0;
+		bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+				active_thread_mask);
+		warp->sync_stack_top--;
+	}
 
 	/* Active */
 	entry = warp->sync_stack.entries[warp->sync_stack_top];
@@ -214,7 +231,10 @@ void frm_isa_FFMA_impl(FrmThread *thread, struct FrmInstWrap *inst)
 		if (fmt.s2mod == 0)
 			src2 = thread->gpr[src2_id].f;
 		else if (fmt.s2mod == 1 || fmt.s2mod == 2)
+		{
+			struct mem_t *const_mem = thread->grid->emu->const_mem;
 			mem_read(const_mem, src2_id, 4, &src2);
+		}
 		else
 		{
 			gpr.i = fmt.src2 << 12;
@@ -266,7 +286,14 @@ void frm_isa_FCMP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	unsigned cop;
 	unsigned cop_res;
 
-	struct mem_t *const_mem = thread->grid->emu->const_mem;
+	/* Pop sync stack at reconvergence PC */
+	if ((warp->pc != 0) && (warp->pc == warp->sync_stack.entries[warp->sync_stack_top].reconv_pc))
+	{
+		warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = 0;
+		bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+				active_thread_mask);
+		warp->sync_stack_top--;
+	}
 
 	/* Active */
 	entry = warp->sync_stack.entries[warp->sync_stack_top];
@@ -289,7 +316,10 @@ void frm_isa_FCMP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 		if (fmt.s2mod == 0)
 			src2 = thread->gpr[src2_id].f;
 		else if (fmt.s2mod == 1 || fmt.s2mod == 2)
+		{
+			struct mem_t *const_mem = thread->grid->emu->const_mem;
 			mem_read(const_mem, src2_id, 4, &src2);
+		}
 		else
 		{
 			gpr.i = fmt.src2 << 12;
@@ -352,7 +382,14 @@ void frm_isa_FADD_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	float dst, src1, src2;
 	union {unsigned i; float f;} gpr;
 
-	struct mem_t *const_mem = thread->grid->emu->const_mem;
+	/* Pop sync stack at reconvergence PC */
+	if ((warp->pc != 0) && (warp->pc == warp->sync_stack.entries[warp->sync_stack_top].reconv_pc))
+	{
+		warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = 0;
+		bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+				active_thread_mask);
+		warp->sync_stack_top--;
+	}
 
 	/* Active */
 	entry = warp->sync_stack.entries[warp->sync_stack_top];
@@ -379,7 +416,10 @@ void frm_isa_FADD_impl(FrmThread *thread, struct FrmInstWrap *inst)
 		if (fmt.s2mod == 0)
 			src2 = thread->gpr[src2_id].f;
 		else if (fmt.s2mod == 1 || fmt.s2mod == 2)
+		{
+			struct mem_t *const_mem = thread->grid->emu->const_mem;
 			mem_read(const_mem, src2_id, 4, &src2);
+		}
 		else
 		{
 			gpr.i = fmt.src2 << 12;
@@ -421,7 +461,14 @@ void frm_isa_FMUL_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	float dst, src1, src2;
 	union {unsigned i; float f;} gpr;
 
-	struct mem_t *const_mem = thread->grid->emu->const_mem;
+	/* Pop sync stack at reconvergence PC */
+	if ((warp->pc != 0) && (warp->pc == warp->sync_stack.entries[warp->sync_stack_top].reconv_pc))
+	{
+		warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = 0;
+		bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+				active_thread_mask);
+		warp->sync_stack_top--;
+	}
 
 	/* Active */
 	entry = warp->sync_stack.entries[warp->sync_stack_top];
@@ -448,7 +495,10 @@ void frm_isa_FMUL_impl(FrmThread *thread, struct FrmInstWrap *inst)
 		if (fmt.s2mod == 0)
 			src2 = thread->gpr[src2_id].f;
 		else if (fmt.s2mod == 1 || fmt.s2mod == 2)
+		{
+			struct mem_t *const_mem = thread->grid->emu->const_mem;
 			mem_read(const_mem, src2_id, 4, &src2);
+		}
 		else
 		{
 			gpr.i = fmt.src2 << 12;
@@ -534,6 +584,15 @@ void frm_isa_IADD32I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	unsigned dst_id, src1_id;
 	int dst, src1, imm;
 
+	/* Pop sync stack at reconvergence PC */
+	if ((warp->pc != 0) && (warp->pc == warp->sync_stack.entries[warp->sync_stack_top].reconv_pc))
+	{
+		warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = 0;
+		bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+				active_thread_mask);
+		warp->sync_stack_top--;
+	}
+
 	/* Active */
 	entry = warp->sync_stack.entries[warp->sync_stack_top];
 	active = bit_map_get(entry.active_thread_mask, thread->id_in_warp, 1);
@@ -585,6 +644,15 @@ void frm_isa_IMUL32I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	unsigned dst_id, src1_id;
 	int dst, src1, imm;
 
+	/* Pop sync stack at reconvergence PC */
+	if ((warp->pc != 0) && (warp->pc == warp->sync_stack.entries[warp->sync_stack_top].reconv_pc))
+	{
+		warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = 0;
+		bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+				active_thread_mask);
+		warp->sync_stack_top--;
+	}
+
 	/* Active */
 	entry = warp->sync_stack.entries[warp->sync_stack_top];
 	active = bit_map_get(entry.active_thread_mask, thread->id_in_warp, 1);
@@ -635,6 +703,15 @@ void frm_isa_MOV32I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	/* Operands */
 	unsigned dst_id;
 	int dst, imm;
+
+	/* Pop sync stack at reconvergence PC */
+	if ((warp->pc != 0) && (warp->pc == warp->sync_stack.entries[warp->sync_stack_top].reconv_pc))
+	{
+		warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = 0;
+		bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+				active_thread_mask);
+		warp->sync_stack_top--;
+	}
 
 	/* Active */
 	entry = warp->sync_stack.entries[warp->sync_stack_top];
@@ -688,6 +765,15 @@ void frm_isa_FADD32I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	unsigned dst_id, src1_id;
 	float dst, src1;
 	union {unsigned i; float f;} imm;
+
+	/* Pop sync stack at reconvergence PC */
+	if ((warp->pc != 0) && (warp->pc == warp->sync_stack.entries[warp->sync_stack_top].reconv_pc))
+	{
+		warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = 0;
+		bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+				active_thread_mask);
+		warp->sync_stack_top--;
+	}
 
 	/* Active */
 	entry = warp->sync_stack.entries[warp->sync_stack_top];
@@ -747,6 +833,15 @@ void frm_isa_FMUL32I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	float dst, src1;
 	union {unsigned i; float f;} imm;
 
+	/* Pop sync stack at reconvergence PC */
+	if ((warp->pc != 0) && (warp->pc == warp->sync_stack.entries[warp->sync_stack_top].reconv_pc))
+	{
+		warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = 0;
+		bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+				active_thread_mask);
+		warp->sync_stack_top--;
+	}
+
 	/* Active */
 	entry = warp->sync_stack.entries[warp->sync_stack_top];
 	active = bit_map_get(entry.active_thread_mask, thread->id_in_warp, 1);
@@ -798,6 +893,15 @@ void frm_isa_LOP32I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 	/* Operation */
 	int bop;
+
+	/* Pop sync stack at reconvergence PC */
+	if ((warp->pc != 0) && (warp->pc == warp->sync_stack.entries[warp->sync_stack_top].reconv_pc))
+	{
+		warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = 0;
+		bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+				active_thread_mask);
+		warp->sync_stack_top--;
+	}
 
 	/* Active */
 	entry = warp->sync_stack.entries[warp->sync_stack_top];
@@ -858,6 +962,15 @@ void frm_isa_ISCADD32I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	/* Operands */
 	unsigned dst_id, src1_id;
 	int dst, src1, imm, shamt;
+
+	/* Pop sync stack at reconvergence PC */
+	if ((warp->pc != 0) && (warp->pc == warp->sync_stack.entries[warp->sync_stack_top].reconv_pc))
+	{
+		warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = 0;
+		bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+				active_thread_mask);
+		warp->sync_stack_top--;
+	}
 
 	/* Active */
 	entry = warp->sync_stack.entries[warp->sync_stack_top];
@@ -926,7 +1039,14 @@ void frm_isa_ISETP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	unsigned bop;
 	unsigned cop_res;
 
-	struct mem_t *const_mem = thread->grid->emu->const_mem;
+	/* Pop sync stack at reconvergence PC */
+	if ((warp->pc != 0) && (warp->pc == warp->sync_stack.entries[warp->sync_stack_top].reconv_pc))
+	{
+		warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = 0;
+		bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+				active_thread_mask);
+		warp->sync_stack_top--;
+	}
 
 	/* Active */
 	entry = warp->sync_stack.entries[warp->sync_stack_top];
@@ -949,7 +1069,10 @@ void frm_isa_ISETP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 		if (fmt.s2mod == 0)
 			src2 = thread->gpr[src2_id].s32;
 		else if (fmt.s2mod == 1 || fmt.s2mod == 2)
+		{
+			struct mem_t *const_mem = thread->grid->emu->const_mem;
 			mem_read(const_mem, src2_id, 4, &src2);
+		}
 		else
 			src2 = src2_id >> 19 ? src2_id | 0xfff00000 : src2_id;
 		r_id = fmt.fmod1_srco & 0x7;
@@ -1028,6 +1151,15 @@ void frm_isa_IMAD_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	/* Operands */
 	unsigned dst_id, src1_id, src2_id, src3_id;
 	int dst, src1, src2, src3;
+
+	/* Pop sync stack at reconvergence PC */
+	if ((warp->pc != 0) && (warp->pc == warp->sync_stack.entries[warp->sync_stack_top].reconv_pc))
+	{
+		warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = 0;
+		bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+				active_thread_mask);
+		warp->sync_stack_top--;
+	}
 
 	/* Active */
 	entry = warp->sync_stack.entries[warp->sync_stack_top];
@@ -1111,7 +1243,14 @@ void frm_isa_ICMP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	unsigned cop;
 	unsigned cop_res;
 
-	struct mem_t *const_mem = thread->grid->emu->const_mem;
+	/* Pop sync stack at reconvergence PC */
+	if ((warp->pc != 0) && (warp->pc == warp->sync_stack.entries[warp->sync_stack_top].reconv_pc))
+	{
+		warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = 0;
+		bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+				active_thread_mask);
+		warp->sync_stack_top--;
+	}
 
 	/* Active */
 	entry = warp->sync_stack.entries[warp->sync_stack_top];
@@ -1134,7 +1273,10 @@ void frm_isa_ICMP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 		if (fmt.s2mod == 0)
 			src2 = thread->gpr[src2_id].s32;
 		else if (fmt.s2mod == 1 || fmt.s2mod == 2)
+		{
+			struct mem_t *const_mem = thread->grid->emu->const_mem;
 			mem_read(const_mem, src2_id, 4, &src2);
+		}
 		else
 			src2 = src2_id >> 19 ? src2_id | 0xfff00000 : src2_id;
 		src3_id = fmt.fmod1_srco & 0x3f;
@@ -1193,7 +1335,14 @@ void frm_isa_ISCADD_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	unsigned dst_id, src1_id, src2_id;
 	int dst, src1, src2, shamt;
 
-	struct mem_t *const_mem = thread->grid->emu->const_mem;
+	/* Pop sync stack at reconvergence PC */
+	if ((warp->pc != 0) && (warp->pc == warp->sync_stack.entries[warp->sync_stack_top].reconv_pc))
+	{
+		warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = 0;
+		bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+				active_thread_mask);
+		warp->sync_stack_top--;
+	}
 
 	/* Active */
 	entry = warp->sync_stack.entries[warp->sync_stack_top];
@@ -1218,7 +1367,10 @@ void frm_isa_ISCADD_impl(FrmThread *thread, struct FrmInstWrap *inst)
 		if (fmt.s2mod == 0)
 			src2 = thread->gpr[src2_id].s32;
 		else if (fmt.s2mod == 1 || fmt.s2mod == 2)
+		{
+			struct mem_t *const_mem = thread->grid->emu->const_mem;
 			mem_read(const_mem, src2_id, 4, &src2);
+		}
 		else
 			src2 = src2_id >> 19 ? src2_id | 0xfff00000 : src2_id;
 		if (((fmt.fmod1_srco >> 6) & 0x3) == 1)
@@ -1256,7 +1408,14 @@ void frm_isa_IADD_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	unsigned dst_id, src1_id, src2_id;
 	int dst, src1, src2;
 
-	struct mem_t *const_mem = thread->grid->emu->const_mem;
+	/* Pop sync stack at reconvergence PC */
+	if ((warp->pc != 0) && (warp->pc == warp->sync_stack.entries[warp->sync_stack_top].reconv_pc))
+	{
+		warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = 0;
+		bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+				active_thread_mask);
+		warp->sync_stack_top--;
+	}
 
 	/* Active */
 	entry = warp->sync_stack.entries[warp->sync_stack_top];
@@ -1279,7 +1438,10 @@ void frm_isa_IADD_impl(FrmThread *thread, struct FrmInstWrap *inst)
 		if (fmt.s2mod == 0)
 			src2 = thread->gpr[src2_id].s32;
 		else if (fmt.s2mod == 1 || fmt.s2mod == 2)
+		{
+			struct mem_t *const_mem = thread->grid->emu->const_mem;
 			mem_read(const_mem, src2_id, 4, &src2);
+		}
 		else
 			src2 = src2_id >> 19 ? src2_id | 0xfff00000 : src2_id;
 		if (((fmt.fmod0 >> 4) & 0x3) == 1 || ((fmt.fmod0 >> 4) & 0x3) == 2)
@@ -1315,7 +1477,14 @@ void frm_isa_IMUL_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	unsigned dst_id, src1_id, src2_id;
 	int dst, src1, src2;
 
-	struct mem_t *const_mem = thread->grid->emu->const_mem;
+	/* Pop sync stack at reconvergence PC */
+	if ((warp->pc != 0) && (warp->pc == warp->sync_stack.entries[warp->sync_stack_top].reconv_pc))
+	{
+		warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = 0;
+		bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+				active_thread_mask);
+		warp->sync_stack_top--;
+	}
 
 	/* Active */
 	entry = warp->sync_stack.entries[warp->sync_stack_top];
@@ -1338,7 +1507,10 @@ void frm_isa_IMUL_impl(FrmThread *thread, struct FrmInstWrap *inst)
 		if (fmt.s2mod == 0)
 			src2 = thread->gpr[src2_id].s32;
 		else if (fmt.s2mod == 1 || fmt.s2mod == 2)
+		{
+			struct mem_t *const_mem = thread->grid->emu->const_mem;
 			mem_read(const_mem, src2_id, 4, &src2);
+		}
 		else
 			src2 = src2_id >> 19 ? src2_id | 0xfff00000 : src2_id;
 
@@ -1372,7 +1544,14 @@ void frm_isa_SHR_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	unsigned dst_id, src1_id, src2_id;
 	int dst, src1, src2;
 
-	struct mem_t *const_mem = thread->grid->emu->const_mem;
+	/* Pop sync stack at reconvergence PC */
+	if ((warp->pc != 0) && (warp->pc == warp->sync_stack.entries[warp->sync_stack_top].reconv_pc))
+	{
+		warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = 0;
+		bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+				active_thread_mask);
+		warp->sync_stack_top--;
+	}
 
 	/* Active */
 	entry = warp->sync_stack.entries[warp->sync_stack_top];
@@ -1395,7 +1574,10 @@ void frm_isa_SHR_impl(FrmThread *thread, struct FrmInstWrap *inst)
 		if (fmt.s2mod == 0)
 			src2 = thread->gpr[src2_id].s32;
 		else if (fmt.s2mod == 1 || fmt.s2mod == 2)
+		{
+			struct mem_t *const_mem = thread->grid->emu->const_mem;
 			mem_read(const_mem, src2_id, 4, &src2);
+		}
 		else
 			src2 = src2_id >> 19 ? src2_id | 0xfff00000 : src2_id;
 
@@ -1429,7 +1611,14 @@ void frm_isa_SHL_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	unsigned dst_id, src1_id, src2_id;
 	int dst, src1, src2;
 
-	struct mem_t *const_mem = thread->grid->emu->const_mem;
+	/* Pop sync stack at reconvergence PC */
+	if ((warp->pc != 0) && (warp->pc == warp->sync_stack.entries[warp->sync_stack_top].reconv_pc))
+	{
+		warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = 0;
+		bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+				active_thread_mask);
+		warp->sync_stack_top--;
+	}
 
 	/* Active */
 	entry = warp->sync_stack.entries[warp->sync_stack_top];
@@ -1452,7 +1641,10 @@ void frm_isa_SHL_impl(FrmThread *thread, struct FrmInstWrap *inst)
 		if (fmt.s2mod == 0)
 			src2 = thread->gpr[src2_id].s32;
 		else if (fmt.s2mod == 1 || fmt.s2mod == 2)
+		{
+			struct mem_t *const_mem = thread->grid->emu->const_mem;
 			mem_read(const_mem, src2_id, 4, &src2);
+		}
 		else
 			src2 = src2_id >> 19 ? src2_id | 0xfff00000 : src2_id;
 
@@ -1489,7 +1681,14 @@ void frm_isa_LOP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	/* Operation */
 	unsigned bop;
 
-	struct mem_t *const_mem = thread->grid->emu->const_mem;
+	/* Pop sync stack at reconvergence PC */
+	if ((warp->pc != 0) && (warp->pc == warp->sync_stack.entries[warp->sync_stack_top].reconv_pc))
+	{
+		warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = 0;
+		bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+				active_thread_mask);
+		warp->sync_stack_top--;
+	}
 
 	/* Active */
 	entry = warp->sync_stack.entries[warp->sync_stack_top];
@@ -1514,7 +1713,10 @@ void frm_isa_LOP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 		if (fmt.s2mod == 0)
 			src2 = thread->gpr[src2_id].s32;
 		else if (fmt.s2mod == 1 || fmt.s2mod == 2)
+		{
+			struct mem_t *const_mem = thread->grid->emu->const_mem;
 			mem_read(const_mem, src2_id, 4, &src2);
+		}
 		else
 			src2 = src2_id >> 19 ? src2_id | 0xfff00000 : src2_id;
 		if (((fmt.fmod0 >> 4) & 0x1) == 1)
@@ -1593,7 +1795,14 @@ void frm_isa_F2F_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	/* Operation */
 	unsigned rnd;
 
-	struct mem_t *const_mem = thread->grid->emu->const_mem;
+	/* Pop sync stack at reconvergence PC */
+	if ((warp->pc != 0) && (warp->pc == warp->sync_stack.entries[warp->sync_stack_top].reconv_pc))
+	{
+		warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = 0;
+		bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+				active_thread_mask);
+		warp->sync_stack_top--;
+	}
 
 	/* Active */
 	entry = warp->sync_stack.entries[warp->sync_stack_top];
@@ -1617,7 +1826,10 @@ void frm_isa_F2F_impl(FrmThread *thread, struct FrmInstWrap *inst)
 		if (fmt.s2mod == 0)
 			src.f = thread->gpr[src_id].f;
 		else if (fmt.s2mod == 1 || fmt.s2mod == 2)
+		{
+			struct mem_t *const_mem = thread->grid->emu->const_mem;
 			mem_read(const_mem, src_id, 4, &src.i);
+		}
 		else
 			src.i = fmt.src2 << 12;
 		if (((fmt.fmod0 >> 2) & 0x1) == 1)
@@ -1668,7 +1880,14 @@ void frm_isa_F2I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	/* Operation */
 	unsigned rnd;
 
-	struct mem_t *const_mem = thread->grid->emu->const_mem;
+	/* Pop sync stack at reconvergence PC */
+	if ((warp->pc != 0) && (warp->pc == warp->sync_stack.entries[warp->sync_stack_top].reconv_pc))
+	{
+		warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = 0;
+		bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+				active_thread_mask);
+		warp->sync_stack_top--;
+	}
 
 	/* Active */
 	entry = warp->sync_stack.entries[warp->sync_stack_top];
@@ -1692,7 +1911,10 @@ void frm_isa_F2I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 		if (fmt.s2mod == 0)
 			src.f = thread->gpr[src_id].f;
 		else if (fmt.s2mod == 1 || fmt.s2mod == 2)
+		{
+			struct mem_t *const_mem = thread->grid->emu->const_mem;
 			mem_read(const_mem, src_id, 4, &src.i);
+		}
 		else
 			src.i = fmt.src2 << 12;
 		if (((fmt.fmod0 >> 2) & 0x1) == 1)
@@ -1738,7 +1960,14 @@ void frm_isa_I2F_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	float dst;
 	int src;
 
-	struct mem_t *const_mem = thread->grid->emu->const_mem;
+	/* Pop sync stack at reconvergence PC */
+	if ((warp->pc != 0) && (warp->pc == warp->sync_stack.entries[warp->sync_stack_top].reconv_pc))
+	{
+		warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = 0;
+		bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+				active_thread_mask);
+		warp->sync_stack_top--;
+	}
 
 	/* Active */
 	entry = warp->sync_stack.entries[warp->sync_stack_top];
@@ -1759,7 +1988,10 @@ void frm_isa_I2F_impl(FrmThread *thread, struct FrmInstWrap *inst)
 		if (fmt.s2mod == 0)
 			src = thread->gpr[src_id].s32;
 		else if (fmt.s2mod == 1 || fmt.s2mod == 2)
+		{
+			struct mem_t *const_mem = thread->grid->emu->const_mem;
 			mem_read(const_mem, src_id, 4, &src);
+		}
 		else
 			src = fmt.src2 << 12;
 		if (((fmt.fmod0 >> 2) & 0x1) == 1)
@@ -1798,7 +2030,14 @@ void frm_isa_I2I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	int dst, src, tmp;
 	unsigned dst_fmt, src_fmt;
 
-	struct mem_t *const_mem = thread->grid->emu->const_mem;
+	/* Pop sync stack at reconvergence PC */
+	if ((warp->pc != 0) && (warp->pc == warp->sync_stack.entries[warp->sync_stack_top].reconv_pc))
+	{
+		warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = 0;
+		bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+				active_thread_mask);
+		warp->sync_stack_top--;
+	}
 
 	/* Active */
 	entry = warp->sync_stack.entries[warp->sync_stack_top];
@@ -1819,7 +2058,10 @@ void frm_isa_I2I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 		if (fmt.s2mod == 0)
 			src = thread->gpr[src_id].s32;
 		else if (fmt.s2mod == 1 || fmt.s2mod == 2)
+		{
+			struct mem_t *const_mem = thread->grid->emu->const_mem;
 			mem_read(const_mem, src_id, 4, &src);
+		}
 		else
 			src = fmt.src2 << 12;
 		if (((fmt.fmod0 >> 2) & 0x1) == 1)
@@ -1959,7 +2201,14 @@ void frm_isa_SEL_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	unsigned dst_id, src1_id, src2_id, src3_id;
 	int dst, src1, src2, src3;
 
-	struct mem_t *const_mem = thread->grid->emu->const_mem;
+	/* Pop sync stack at reconvergence PC */
+	if ((warp->pc != 0) && (warp->pc == warp->sync_stack.entries[warp->sync_stack_top].reconv_pc))
+	{
+		warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = 0;
+		bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+				active_thread_mask);
+		warp->sync_stack_top--;
+	}
 
 	/* Active */
 	entry = warp->sync_stack.entries[warp->sync_stack_top];
@@ -1982,7 +2231,10 @@ void frm_isa_SEL_impl(FrmThread *thread, struct FrmInstWrap *inst)
 		if (fmt.s2mod == 0)
 			src2 = thread->gpr[src2_id].s32;
 		else if (fmt.s2mod == 1 || fmt.s2mod == 2)
+		{
+			struct mem_t *const_mem = thread->grid->emu->const_mem;
 			mem_read(const_mem, src2_id, 4, &src2);
+		}
 		else
 			src2 = src2_id >> 19 ? src2_id | 0xfff00000 : src2_id;
 		src3_id = fmt.fmod2_srco & 0x7;
@@ -2027,7 +2279,14 @@ void frm_isa_MOV_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	unsigned dst_id, src_id;
 	int dst, src;
 
-	struct mem_t *const_mem = thread->grid->emu->const_mem;
+	/* Pop sync stack at reconvergence PC */
+	if ((warp->pc != 0) && (warp->pc == warp->sync_stack.entries[warp->sync_stack_top].reconv_pc))
+	{
+		warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = 0;
+		bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+				active_thread_mask);
+		warp->sync_stack_top--;
+	}
 
 	/* Active */
 	entry = warp->sync_stack.entries[warp->sync_stack_top];
@@ -2048,7 +2307,10 @@ void frm_isa_MOV_impl(FrmThread *thread, struct FrmInstWrap *inst)
 		if (fmt.s2mod == 0)
 			src = thread->gpr[src_id].s32;
 		else if (fmt.s2mod == 1 || fmt.s2mod == 2)
+		{
+			struct mem_t *const_mem = thread->grid->emu->const_mem;
 			mem_read(const_mem, src_id, 4, &src);
+		}
 		else
 			src = src_id >> 19 ? src_id | 0xfff00000 : src_id;
 
@@ -2081,6 +2343,15 @@ void frm_isa_S2R_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	/* Operands */
 	unsigned dst_id, src_id;
 	int dst, src;
+
+	/* Pop sync stack at reconvergence PC */
+	if ((warp->pc != 0) && (warp->pc == warp->sync_stack.entries[warp->sync_stack_top].reconv_pc))
+	{
+		warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = 0;
+		bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+				active_thread_mask);
+		warp->sync_stack_top--;
+	}
 
 	/* Active */
 	entry = warp->sync_stack.entries[warp->sync_stack_top];
@@ -2132,30 +2403,39 @@ void frm_isa_B2R_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_NOP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	//	FrmWarp *warp;
-	//	FrmWarpSyncStackEntry *entry;
-	//	static int first_time = 1;
-	//
-	//	warp = thread->warp;
-	//
-	//	if (first_time == 1)
-	//	{
-	//		entry = &(warp->sync_stack.entries[warp->sync_stack_top]);
-	//
-	//		/* Reverse thread mask */
-	//		entry->active_thread_mask ^= 1 << thread->id_in_warp;
-	//
-	//		/* Go to not taken path */
-	//		warp->pc = entry->next_path_pc - 8;
-	//
-	//		if (thread->id_in_warp == warp->thread_count - 1)
-	//			first_time = 0;
-	//	}
-	//	else
-	//	{
-	//		/* Pop sync stack */
-	//		if (thread->id_in_warp == warp->thread_count - 1)
-	//			warp->sync_stack_top--;
+	/* Format */
+	FrmFmtOther fmt = FrmInstWrapGetBytes(inst)->fmt_other;
+
+	/* Active and predicate */
+	FrmWarp *warp = thread->warp;
+	FrmWarpSyncStackEntry entry;
+	unsigned active;
+	unsigned pred_id, pred;
+
+	/* Pop sync stack at reconvergence PC */
+	if ((warp->pc != 0) && (warp->pc == warp->sync_stack.entries[warp->sync_stack_top].reconv_pc))
+	{
+		warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = 0;
+		bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+				active_thread_mask);
+		warp->sync_stack_top--;
+	}
+
+	/* Active */
+	entry = warp->sync_stack.entries[warp->sync_stack_top];
+	active = bit_map_get(entry.active_thread_mask, thread->id_in_warp, 1);
+
+	/* Predicate */
+	pred_id = fmt.pred;
+	if (pred_id <= 7)
+		pred = thread->pr[pred_id];
+	else
+		pred = ! thread->pr[pred_id - 8];
+
+	/* Debug */
+	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
+			"sync_stack_top = %d\n", __func__, __LINE__, warp->pc, thread->id,
+			active, pred_id, pred, warp->sync_stack_top);
 }
 
 void frm_isa_LEPC_impl(FrmThread *thread, struct FrmInstWrap *inst)
@@ -2178,6 +2458,15 @@ void frm_isa_BAR_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	FrmWarpSyncStackEntry entry;
 	unsigned active;
 	unsigned pred_id, pred;
+
+	/* Pop sync stack at reconvergence PC */
+	if ((warp->pc != 0) && (warp->pc == warp->sync_stack.entries[warp->sync_stack_top].reconv_pc))
+	{
+		warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = 0;
+		bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+				active_thread_mask);
+		warp->sync_stack_top--;
+	}
 
 	/* Active */
 	entry = warp->sync_stack.entries[warp->sync_stack_top];
@@ -2221,6 +2510,15 @@ void frm_isa_RED_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	int dst_id, src_id;
 	union {int i; float f;} dst, src;
 	struct mem_t *global_mem = thread->grid->emu->global_mem;
+
+	/* Pop sync stack at reconvergence PC */
+	if ((warp->pc != 0) && (warp->pc == warp->sync_stack.entries[warp->sync_stack_top].reconv_pc))
+	{
+		warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = 0;
+		bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+				active_thread_mask);
+		warp->sync_stack_top--;
+	}
 
 	/* Active */
 	entry = warp->sync_stack.entries[warp->sync_stack_top];
@@ -2290,6 +2588,15 @@ void frm_isa_ATOM_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	int dst_id, src1_id, src2_id;
 	union {int i; float f;} dst, src1, src2;
 	struct mem_t *global_mem = thread->grid->emu->global_mem;
+
+	/* Pop sync stack at reconvergence PC */
+	if ((warp->pc != 0) && (warp->pc == warp->sync_stack.entries[warp->sync_stack_top].reconv_pc))
+	{
+		warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = 0;
+		bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+				active_thread_mask);
+		warp->sync_stack_top--;
+	}
 
 	/* Active */
 	entry = warp->sync_stack.entries[warp->sync_stack_top];
@@ -2364,8 +2671,16 @@ void frm_isa_LD_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	unsigned dst_id;
 	int dst[3];
 	unsigned addr;
-
 	struct mem_t *global_mem = thread->grid->emu->global_mem;
+
+	/* Pop sync stack at reconvergence PC */
+	if ((warp->pc != 0) && (warp->pc == warp->sync_stack.entries[warp->sync_stack_top].reconv_pc))
+	{
+		warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = 0;
+		bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+				active_thread_mask);
+		warp->sync_stack_top--;
+	}
 
 	/* Active */
 	entry = warp->sync_stack.entries[warp->sync_stack_top];
@@ -2426,8 +2741,16 @@ void frm_isa_ST_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	unsigned value_id, src1_id;
 	int value, src1;
 	unsigned addr;
-
 	struct mem_t *global_mem = thread->grid->emu->global_mem;
+
+	/* Pop sync stack at reconvergence PC */
+	if ((warp->pc != 0) && (warp->pc == warp->sync_stack.entries[warp->sync_stack_top].reconv_pc))
+	{
+		warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = 0;
+		bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+				active_thread_mask);
+		warp->sync_stack_top--;
+	}
 
 	/* Active */
 	entry = warp->sync_stack.entries[warp->sync_stack_top];
@@ -2512,8 +2835,16 @@ void frm_isa_LDS_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	unsigned dst_id, src1_id;
 	int dst[4], src1;
 	unsigned addr;
-
 	struct mem_t *shared_mem = thread->thread_block->shared_mem;
+
+	/* Pop sync stack at reconvergence PC */
+	if ((warp->pc != 0) && (warp->pc == warp->sync_stack.entries[warp->sync_stack_top].reconv_pc))
+	{
+		warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = 0;
+		bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+				active_thread_mask);
+		warp->sync_stack_top--;
+	}
 
 	/* Active */
 	entry = warp->sync_stack.entries[warp->sync_stack_top];
@@ -2601,8 +2932,16 @@ void frm_isa_STS_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	unsigned value_id, src1_id;
 	int value[4], src1;
 	unsigned addr;
-
 	struct mem_t *shared_mem = thread->thread_block->shared_mem;
+
+	/* Pop sync stack at reconvergence PC */
+	if ((warp->pc != 0) && (warp->pc == warp->sync_stack.entries[warp->sync_stack_top].reconv_pc))
+	{
+		warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = 0;
+		bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+				active_thread_mask);
+		warp->sync_stack_top--;
+	}
 
 	/* Active */
 	entry = warp->sync_stack.entries[warp->sync_stack_top];
@@ -2712,8 +3051,16 @@ void frm_isa_LDC_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	unsigned dst_id, src1_id;
 	int dst, src1;
 	unsigned addr;
-
 	struct mem_t *const_mem = thread->grid->emu->const_mem;
+
+	/* Pop sync stack at reconvergence PC */
+	if ((warp->pc != 0) && (warp->pc == warp->sync_stack.entries[warp->sync_stack_top].reconv_pc))
+	{
+		warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = 0;
+		bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+				active_thread_mask);
+		warp->sync_stack_top--;
+	}
 
 	/* Active */
 	entry = warp->sync_stack.entries[warp->sync_stack_top];
@@ -2798,6 +3145,15 @@ void frm_isa_BRA_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	int target_pc;
 	int taken_thread_count;
 
+	/* Pop sync stack at reconvergence PC */
+	if ((warp->pc != 0) && (warp->pc == warp->sync_stack.entries[warp->sync_stack_top].reconv_pc))
+	{
+		warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = 0;
+		bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+				active_thread_mask);
+		warp->sync_stack_top--;
+	}
+
 	/* Active */
 	entry = warp->sync_stack.entries[warp->sync_stack_top];
 	active = bit_map_get(entry.active_thread_mask, thread->id_in_warp, 1);
@@ -2872,7 +3228,7 @@ void frm_isa_BRA_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 	/* Debug */
 	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
-			"warp->target_pc = 0x%x\n",
+			"target_pc = 0x%x\n",
 			__func__, __LINE__, warp->pc, thread->id,
 			active, pred_id, pred, warp->target_pc);
 }
@@ -2894,20 +3250,64 @@ void frm_isa_PLONGJMP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_SSY_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	//	int target;
-	//	FrmWarp *warp = thread->warp;
-	//
-	//	/* Get target. Target is the recovergence point */
-	//	target = FrmInstWrapGetBytes(inst)->tgt.target;
-	//	if ((target >> 19 & 0x1) == 1)
-	//		target |= 0xfff00000;
-	//
-	//	/* Set reconvergence PC */
-	//	warp->new_entry.reconv_pc = target;
-	//
-	//	/* Debug */
-	//	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] target = 0x%x\n",
-	//			__func__, __LINE__, warp->pc, thread->id, target);
+	/* Format */
+	FrmFmtCtrl fmt = FrmInstWrapGetBytes(inst)->fmt_ctrl;
+
+	/* Active and predicate */
+	FrmWarp *warp = thread->warp;
+	FrmWarpSyncStackEntry entry;
+	unsigned active;
+	unsigned pred_id, pred;
+
+	/* Operand */
+	int reconv_pc;
+	struct bit_map_t *active_thread_mask;
+
+	/* Pop sync stack at reconvergence PC */
+	if ((warp->pc != 0) && (warp->pc == warp->sync_stack.entries[warp->sync_stack_top].reconv_pc))
+	{
+		warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = 0;
+		bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+				active_thread_mask);
+		warp->sync_stack_top--;
+	}
+
+	/* Active */
+	entry = warp->sync_stack.entries[warp->sync_stack_top];
+	active = bit_map_get(entry.active_thread_mask, thread->id_in_warp, 1);
+
+	/* Predicate */
+	pred_id = fmt.pred;
+	if (pred_id <= 7)
+		pred = thread->pr[pred_id];
+	else
+		pred = ! thread->pr[pred_id - 8];
+
+	/* Execute */
+	if (active == 1 && pred == 1)
+	{
+		if ((fmt.mmod & 0x1) == 0)
+			reconv_pc = (fmt.imm32 & 0xffffff) + warp->pc + 8;
+		else
+		{
+			struct mem_t *const_mem = thread->grid->emu->const_mem;
+			unsigned addr = fmt.imm32 & 0x1fffff;
+			mem_read(const_mem, addr, 4, &reconv_pc);
+		}
+	}
+
+	/* Create new entry in sync stack */
+	active_thread_mask = bit_map_create(warp->thread_count);
+	bit_map_set(active_thread_mask, 0, 32, 0xffffffff);
+	warp->sync_stack_top++;
+	warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = reconv_pc;
+	warp->sync_stack.entries[warp->sync_stack_top].active_thread_mask =
+			active_thread_mask;
+
+	/* Debug */
+	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
+			"reconv_pc = 0x%x\n", __func__, __LINE__, warp->pc, thread->id,
+			active, pred_id, pred, reconv_pc);
 }
 
 void frm_isa_PBK_impl(FrmThread *thread, struct FrmInstWrap *inst)
@@ -2935,6 +3335,15 @@ void frm_isa_EXIT_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	FrmWarpSyncStackEntry entry;
 	unsigned active;
 	unsigned pred_id, pred;
+
+	/* Pop sync stack at reconvergence PC */
+	if ((warp->pc != 0) && (warp->pc == warp->sync_stack.entries[warp->sync_stack_top].reconv_pc))
+	{
+		warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = 0;
+		bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+				active_thread_mask);
+		warp->sync_stack_top--;
+	}
 
 	/* Active */
 	entry = warp->sync_stack.entries[warp->sync_stack_top];
