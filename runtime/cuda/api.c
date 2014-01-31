@@ -1817,13 +1817,56 @@ CUresult cuEventElapsedTime(float *pMilliseconds, CUevent hStart, CUevent hEnd)
 CUresult cuFuncGetAttribute(int *pi, CUfunction_attribute attrib,
 		CUfunction hfunc)
 {
-	__CUDA_NOT_IMPL__;
+	cuda_debug("CUDA driver API '%s'", __func__);
+	cuda_debug("\t(driver) '%s' in: pi = [%p]", __func__, pi);
+	cuda_debug("\t(driver) '%s' in: attrib = %d", __func__, attrib);
+	cuda_debug("\t(driver) '%s' in: hfunc = [%p]", __func__, hfunc);
+
+	if (! active_device)
+	{
+		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
+				CUDA_ERROR_NOT_INITIALIZED);
+		return CUDA_ERROR_NOT_INITIALIZED;
+	}
+
+	if (attrib == CU_FUNC_ATTRIBUTE_MAX_THREADS_PER_BLOCK)
+		*pi = hfunc->maxThreadsPerBlock;
+	else if (attrib == CU_FUNC_ATTRIBUTE_SHARED_SIZE_BYTES)
+		*pi = hfunc->sharedSizeBytes;
+	else if (attrib == CU_FUNC_ATTRIBUTE_CONST_SIZE_BYTES)
+		*pi = hfunc->constSizeBytes;
+	else if (attrib == CU_FUNC_ATTRIBUTE_LOCAL_SIZE_BYTES)
+		*pi = hfunc->localSizeBytes;
+	else if (attrib == CU_FUNC_ATTRIBUTE_NUM_REGS)
+		*pi = hfunc->numRegs;
+	else if (attrib == CU_FUNC_ATTRIBUTE_PTX_VERSION)
+		*pi = hfunc->ptxVersion;
+	else if (attrib == CU_FUNC_ATTRIBUTE_BINARY_VERSION)
+		*pi = hfunc->binaryVersion;
+
+	cuda_debug("\t(driver) '%s' out: *pi = %d", __func__, *pi);
+	cuda_debug("\t(driver) '%s' out: return = %d", __func__, CUDA_SUCCESS);
+
 	return CUDA_SUCCESS;
 }
 
 CUresult cuFuncSetCacheConfig(CUfunction hfunc, CUfunc_cache config)
 {
-	__CUDA_NOT_IMPL__;
+	cuda_debug("CUDA driver API '%s'", __func__);
+	cuda_debug("\t(driver) '%s' in: hfunc = [%p]", __func__, hfunc);
+	cuda_debug("\t(driver) '%s' in: config = %d", __func__, config);
+
+	if (! active_device)
+	{
+		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
+				CUDA_ERROR_NOT_INITIALIZED);
+		return CUDA_ERROR_NOT_INITIALIZED;
+	}
+
+	hfunc->cache_config = config;
+
+	cuda_debug("\t(driver) '%s' out: return = %d", __func__, CUDA_SUCCESS);
+
 	return CUDA_SUCCESS;
 }
 
