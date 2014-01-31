@@ -35,9 +35,10 @@ CUfunction cuda_function_create(CUmodule module, const char *function_name)
 
 	struct elf_file_t *dev_func_bin;
 	struct elf_section_t *sec;
-	char text_sec_name[1024];
-	int text_sec_index;
+	char sec_name[1024];
+	int sec_index;
 	struct elf_section_t *text_sec;
+	struct elf_section_t *shared_sec = NULL;
 
 	int i;
 	unsigned char inst_buf_byte;
@@ -45,7 +46,7 @@ CUfunction cuda_function_create(CUmodule module, const char *function_name)
 	/* Create function */
 	function = xcalloc(1, sizeof(struct CUfunc_st));
 
-	/* Initialize */
+	/* Initialize identification */
 	function->id = list_count(function_list);
 	function->name = xstrdup(function_name);
 
@@ -53,26 +54,25 @@ CUfunction cuda_function_create(CUmodule module, const char *function_name)
 	dev_func_bin = module->elf_file;
 
 	/* Look for .text.device_function_name section */
-	snprintf(text_sec_name, sizeof text_sec_name, ".text.%s", function_name);
-	text_sec_index = 0;
+	snprintf(sec_name, sizeof sec_name, ".text.%s", function_name);
 	for (i = 0; i < list_count(dev_func_bin->section_list); ++i)
 	{
 		sec = list_get(dev_func_bin->section_list, i);
 
-		if (!strncmp(sec->name, text_sec_name, sizeof text_sec_name))
+		if (!strncmp(sec->name, sec_name, sizeof sec_name))
 		{
-			text_sec_index = i;
+			sec_index = i;
 			break;
 		}
 	}
-	if (text_sec_index == 0)
-		fatal("%s: cannot get .text.device_function_name section.! This is \
-				probably because the cubin filename set in M2S_CUDA_BINARY is \
-				not the device function identifier. Please check the cubin \
-				file.", __FUNCTION__);
+	if (i == list_count(dev_func_bin->section_list))
+		fatal("%s: cannot get .text.device_function_name section.! This is \n"
+				"probably because the cubin filename set in M2S_CUDA_BINARY \n"
+				"is not the device function identifier. Please check the \n"
+				"cubin file.", __FUNCTION__);
 
 	/* Get .text.device_function_name section */
-	text_sec = list_get(dev_func_bin->section_list, text_sec_index);
+	text_sec = list_get(dev_func_bin->section_list, sec_index);
 
 	/* Get instruction binary */
 	function->inst_buf_size = text_sec->header->sh_size;
@@ -94,8 +94,32 @@ CUfunction cuda_function_create(CUmodule module, const char *function_name)
 		}
 	}
 
-	/* Get GPR usage */
+	/* Look for .nv.shared.device_function_name section */
+	snprintf(sec_name, sizeof sec_name, ".nv.shared.%s", function_name);
+	for (i = 0; i < list_count(dev_func_bin->section_list); ++i)
+	{
+		sec = list_get(dev_func_bin->section_list, i);
+
+		if (!strncmp(sec->name, sec_name, sizeof sec_name))
+		{
+			sec_index = i;
+			break;
+		}
+	}
+
+	/* Get .nv.shared.device_function_name section if any */
+	if (i < list_count(dev_func_bin->section_list))
+		shared_sec = list_get(dev_func_bin->section_list, sec_index);
+
+	/* Initialize attributes */
+	function->maxThreadsPerBlock = 1024;  // Hard-coded for Fermi
+	function->sharedSizeBytes = shared_sec ? shared_sec->header->sh_size : 0;
+	function->constSizeBytes = 0;
+	function->localSizeBytes = 0;
 	function->numRegs = text_sec->header->sh_info >> 24;
+	function->ptxVersion = (dev_func_bin->header->e_flags >> 16) & 0xff;
+	function->binaryVersion = dev_func_bin->header->e_flags & 0xff;
+	function->cache_config = CU_FUNC_CACHE_PREFER_NONE;
 
 	/* Add to function list */
 	list_add(function_list, function);

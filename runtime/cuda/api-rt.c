@@ -1080,7 +1080,31 @@ cudaError_t cudaSetupArgument(const void *arg, size_t size, size_t offset)
 cudaError_t cudaFuncSetCacheConfig(const void *func, 
 		enum cudaFuncCache cacheConfig)
 {
-	__CUDART_NOT_IMPL__;
+	CUfunction f;
+	int i;
+
+	cuda_debug("CUDA runtime API '%s'", __func__);
+	cuda_debug("\t(runtime) '%s' in: func = [%p]", __func__, func);
+	cuda_debug("\t(runtime) '%s' in: cacheConfig = %d", __func__, cacheConfig);
+
+	if (! active_device)
+		cuInit(0);
+
+	/* Find function */
+	for (i = 0; i < list_count(function_list); ++i)
+	{
+		f = list_get(function_list, i);
+		if (f->host_func_ptr == (unsigned)func)
+			break;
+	}
+	assert(i < list_count(function_list));
+
+	cuFuncSetCacheConfig(f, (CUfunc_cache)cacheConfig);
+
+	cuda_rt_last_error = cudaSuccess;
+
+	cuda_debug("\t(runtime) '%s' out: return = %d", __func__, cudaSuccess);
+
 	return cudaSuccess;
 }
 
@@ -1166,7 +1190,42 @@ cudaError_t cudaLaunch(const void *func)
 cudaError_t cudaFuncGetAttributes(struct cudaFuncAttributes *attr, 
 		const void *func)
 {
-	__CUDART_NOT_IMPL__;
+	CUfunction f;
+	int i;
+
+	cuda_debug("CUDA runtime API '%s'", __func__);
+	cuda_debug("\t(runtime) '%s' in: attr = [%p]", __func__, attr);
+	cuda_debug("\t(runtime) '%s' in: func = [%p]", __func__, func);
+
+	if (! active_device)
+		cuInit(0);
+
+	/* Find function */
+	for (i = 0; i < list_count(function_list); ++i)
+	{
+		f = list_get(function_list, i);
+		if (f->host_func_ptr == (unsigned)func)
+			break;
+	}
+	assert(i < list_count(function_list));
+
+	cuFuncGetAttribute(&attr->binaryVersion, CU_FUNC_ATTRIBUTE_BINARY_VERSION,
+			f);
+	cuFuncGetAttribute((int *)&attr->constSizeBytes,
+			CU_FUNC_ATTRIBUTE_CONST_SIZE_BYTES, f);
+	cuFuncGetAttribute((int *)&attr->localSizeBytes,
+			CU_FUNC_ATTRIBUTE_LOCAL_SIZE_BYTES, f);
+	cuFuncGetAttribute(&attr->maxThreadsPerBlock,
+			CU_FUNC_ATTRIBUTE_MAX_THREADS_PER_BLOCK, f);
+	cuFuncGetAttribute(&attr->numRegs, CU_FUNC_ATTRIBUTE_NUM_REGS, f);
+	cuFuncGetAttribute(&attr->ptxVersion, CU_FUNC_ATTRIBUTE_PTX_VERSION, f);
+	cuFuncGetAttribute((int *)&attr->sharedSizeBytes,
+			CU_FUNC_ATTRIBUTE_SHARED_SIZE_BYTES, f);
+
+	cuda_rt_last_error = cudaSuccess;
+
+	cuda_debug("\t(runtime) '%s' out: return = %d", __func__, cudaSuccess);
+
 	return cudaSuccess;
 }
 
