@@ -56,6 +56,7 @@ CLASS_BEGIN(FrmEmu, Emu)
 
 	/* Stats */
 	int grid_count;
+	long long inst_count;
 	long long branch_inst_count;
 	long long alu_inst_count;
 	long long shared_mem_inst_count;
