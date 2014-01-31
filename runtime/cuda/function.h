@@ -36,7 +36,7 @@ struct CUfunc_st
 	unsigned inst_buf_size;
 	unsigned long long *inst_buf;
 
-	/* Mandatory fields according to NVIDIA's docs */
+	/* Mandatory fields according to NVIDIA's documentation */
 	int maxThreadsPerBlock;
 	size_t sharedSizeBytes;
 	size_t constSizeBytes;
