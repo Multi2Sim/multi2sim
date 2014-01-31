@@ -38,12 +38,13 @@ struct CUfunc_st
 
 	/* Mandatory fields according to NVIDIA's docs */
 	int maxThreadsPerBlock;
-	int sharedSizeBytes;
-	int constSizeBytes;
-	int localSizeBytes;
+	size_t sharedSizeBytes;
+	size_t constSizeBytes;
+	size_t localSizeBytes;
 	int numRegs;
 	int ptxVersion;
 	int binaryVersion;
+	CUfunc_cache cache_config;
 
 	/* Used to find the function in the function list */
 	unsigned host_func_ptr;
