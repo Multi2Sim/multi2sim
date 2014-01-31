@@ -25,6 +25,66 @@
 #include "warp.h"
 
 
+enum
+{
+	SR_LANEID = 0,
+	SR_CLOCK = 1,
+	SR_VIRTCFG = 2,
+	SR_VIRTID = 3,
+	SR_PM0 = 4,
+	SR_PM1 = 5,
+	SR_PM2 = 6,
+	SR_PM3 = 7,
+	SR_PM4 = 8,
+	SR_PM5 = 9,
+	SR_PM6 = 10,
+	SR_PM7 = 11,
+	SR_PRIM_TYPE = 16,
+	SR_INVOCATION_ID = 17,
+	SR_Y_DIRECTION = 18,
+	SR_THREAD_KILL = 19,
+	SR_SHADER_TYPE = 20,
+	SR_MACHINE_ID_0 = 24,
+	SR_MACHINE_ID_1 = 25,
+	SR_MACHINE_ID_2 = 26,
+	SR_MACHINE_ID_3 = 27,
+	SR_AFFINITY = 28,
+	SR_TID = 32,
+	SR_TID_X = 33,
+	SR_TID_Y = 34,
+	SR_TID_Z = 35,
+	SR_CTA_PARAM = 36,
+	SR_CTAID_X = 37,
+	SR_CTAID_Y = 38,
+	SR_CTAID_Z = 39,
+	SR_NTID = 40,
+	SR_NTID_X = 41,
+	SR_NTID_Y = 42,
+	SR_NTID_Z = 43,
+	SR_GRIDPARAM = 44,
+	SR_NCTAID_X = 45,
+	SR_NCTAID_Y = 46,
+	SR_NCTAID_Z = 47,
+	SR_SWINLO = 48,
+	SR_SWINSZ = 49,
+	SR_SMEMSZ = 50,
+	SR_SMEMBANKS = 51,
+	SR_LWINLO = 52,
+	SR_LWINSZ = 53,
+	SR_LMEMLOSZ = 54,
+	SR_LMEMHIOFF = 55,
+	SR_EQMASK = 56,
+	SR_LTMASK = 57,
+	SR_LEMASK = 58,
+	SR_GTMASK = 59,
+	SR_GEMASK = 60,
+	SR_GLOBALERRORSTATUS = 64,
+	SR_WARPERRORSTATUS = 66,
+	SR_WARPERRORSTATUSCLEAR = 67,
+	SR_CLOCKLO = 80,
+	SR_CLOCKHI = 81
+};
+
 /*
  * Public Functions
  */
@@ -47,17 +107,18 @@ void FrmThreadCreate(FrmThread *self, int id, FrmWarp *warp)
 	/* Special registers */
 	for (i = 0; i < 82; ++i)
 		self->sr[i].u32 = 0;
-	self->sr[33].u32 = id % self->grid->thread_block_size3[0];
-	self->sr[34].u32 = (id / self->grid->thread_block_size3[0]) %
+	self->sr[SR_LANEID].u32 = self->id_in_warp;
+	self->sr[SR_TID_X].u32 = id % self->grid->thread_block_size3[0];
+	self->sr[SR_TID_Y].u32 = (id / self->grid->thread_block_size3[0]) %
 			self->grid->thread_block_size3[1];
-	self->sr[35].u32 = id / (self->grid->thread_block_size3[0] *
+	self->sr[SR_TID_Z].u32 = id / (self->grid->thread_block_size3[0] *
 			self->grid->thread_block_size3[1]);
-	self->sr[37].u32 = self->thread_block->id %
+	self->sr[SR_CTAID_X].u32 = self->thread_block->id %
 			self->grid->thread_block_count3[0];
-	self->sr[38].u32 = (self->thread_block->id /
+	self->sr[SR_CTAID_Y].u32 = (self->thread_block->id /
 			self->grid->thread_block_count3[0]) %
 			self->grid->thread_block_count3[1];
-	self->sr[39].u32 = self->thread_block->id /
+	self->sr[SR_CTAID_Z].u32 = self->thread_block->id /
 			(self->grid->thread_block_count3[0] *
 					self->grid->thread_block_count3[1]);
 
