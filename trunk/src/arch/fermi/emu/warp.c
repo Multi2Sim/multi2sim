@@ -71,9 +71,11 @@ void FrmWarpCreate(FrmWarp *self, int id, FrmThreadBlock *thread_block,
 	bit_map_set(self->sync_stack.entries[self->sync_stack_top].
 			active_thread_mask, 0, self->thread_count, 0xffffffff);
 
+	self->taken_thread_map = bit_map_create(self->thread_count);
+
 	/* Reset flags */
 	self->at_barrier = 0;
-	self->finished_thread_count = 0;
+	self->finished_thread_map = bit_map_create(self->thread_count);
 	self->finished = 0;
 }
 
@@ -84,6 +86,8 @@ void FrmWarpDestroy(FrmWarp *self)
 	for (i = self->sync_stack_top; i >=0 ; --i)
 		bit_map_free(self->sync_stack.entries[i].active_thread_mask);
 	FrmInstWrapFree(self->inst);
+	bit_map_free(self->taken_thread_map);
+	bit_map_free(self->finished_thread_map);
 	free(self->threads);
 }
 
@@ -141,8 +145,7 @@ void FrmWarpExecute(FrmWarp *self)
 	}
 
 	/* Update PC */
-	if ((FrmInstWrapGetCategory(inst) != FrmInstCategoryCtrl) ||
-			FrmInstWrapGetId(inst) == FrmInstIdSSY)
+	if ((FrmInstWrapGetCategory(inst) != FrmInstCategoryCtrl))
 		self->pc += self->inst_size;
 	else
 		self->pc = self->target_pc;

@@ -121,6 +121,7 @@ void FrmGridSetupConstantMemory(FrmGrid *self)
 	unsigned v;
 
 	mem_write(self->emu->const_mem, 0x8, 12, self->thread_block_size3);
+	mem_write(self->emu->const_mem, 0x14, 12, self->thread_block_count3);
 	v = 0x1000000;
 	mem_write(self->emu->const_mem, 0x100000, 4, &v);
 }
