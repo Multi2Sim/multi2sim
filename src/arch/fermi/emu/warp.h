@@ -27,12 +27,11 @@
  * Class 'FrmWarp'
  */
 
-#define FRM_WARP_SYNC_STACK_SIZE  32
+#define FRM_WARP_SYNC_STACK_SIZE  64
 
 typedef struct
 {
 	unsigned reconv_pc;
-	unsigned next_path_pc;
 	struct bit_map_t *active_thread_mask;
 } FrmWarpSyncStackEntry;
 
@@ -58,7 +57,6 @@ CLASS_BEGIN(FrmWarp, Object)
 	/* PC */
 	unsigned pc;
 	int target_pc;
-	struct bit_map_t *taken_threads;
 
 	/* Instructions to execute */
 	struct FrmInstWrap *inst;
@@ -71,9 +69,9 @@ CLASS_BEGIN(FrmWarp, Object)
 	int sync_stack_top;
 
 	/* Flags updated during instruction execution */
+	struct bit_map_t *taken_thread_map;
 	unsigned at_barrier;
-	unsigned divergent;
-	unsigned finished_thread_count;
+	struct bit_map_t *finished_thread_map;
 	unsigned finished;
 
 	/* Fields below are used for architectural simulation only */
