@@ -171,7 +171,7 @@ class Function
 
 	/* Add argument 'arg' into the list of arguments of 'function', and
 	 * emit code to load it into 'function->basic_block_args'. */
-	void AddArg(FunctionArg *arg, int num_elem);
+	int AddArg(FunctionArg *arg, int num_elem, int offset);
 
 	void DumpData(std::ostream &os);
 

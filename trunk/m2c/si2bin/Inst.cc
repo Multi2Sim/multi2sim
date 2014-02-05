@@ -88,8 +88,8 @@ void Inst::Initialize(const std::string &name)
 	// Common initialization
 	Initialize();
 
-	/* Try to create the instruction following all possible encodings for
-	 * the same instruction name. */
+	// Try to create the instruction following all possible encodings for
+	// the same instruction name. */
 	std::string error = "invalid instruction: " + name;
 	for (info = context->getInstInfo(name); info; info = info->getNext())
 	{
@@ -127,8 +127,8 @@ void Inst::Initialize(const std::string &name)
 		if (!error.empty())
 			continue;
 	
-		/* All checks passed, instruction identified correctly as that
-		 * represented by 'info'. */
+		// All checks passed, instruction identified correctly as that
+		// represented by 'info'.
 		break;
 	}
 
@@ -360,6 +360,7 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 		break;
 	}
 	
+
 	case TokenMtSeriesVdataDst:
 	{
 		int low = 0;
@@ -376,6 +377,8 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 					<ArgVectorRegister *>(arg);
 			assert(vr);
 			low = vr->getId();
+
+			//One reg so high is same as low
 			high = low;
 			break;
 		}

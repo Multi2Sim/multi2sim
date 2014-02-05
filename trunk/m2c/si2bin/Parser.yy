@@ -841,7 +841,7 @@ operand
 	| TOK_VECTOR_REGISTER
 	{
 		int value = atoi($1 + 1);
-		
+
 		// Get context instance
 		si2bin::Context *context;
 		context = si2bin::Context::getInstance();
@@ -916,7 +916,7 @@ arg
 		else if (!strcmp($1, "v"))
 		{
 			arg = new si2bin::ArgVectorRegisterSeries(low, high);
-			if (high >= context->GetInnerBin()->GetNumVgpr());
+			if (high >= context->GetInnerBin()->GetNumVgpr())
 				context->GetInnerBin()->SetNumVgpr(high + 1);
 		}
 		else

@@ -169,7 +169,7 @@ void Function::AddUAV(FunctionUAV *uav)
 }
 
 
-void Function::AddArg(FunctionArg *arg, int num_elem)
+int Function::AddArg(FunctionArg *arg, int num_elem, int offset)
 {
 	/* Check that argument does not belong to a self yet */
 	if (arg->function)
@@ -201,7 +201,7 @@ void Function::AddArg(FunctionArg *arg, int num_elem)
 		Inst *inst = new Inst(SI::INST_S_BUFFER_LOAD_DWORD,
 				new ArgScalarRegister(arg->sreg),
 				new ArgScalarRegisterSeries(sreg_cb1, sreg_cb1 + 3),
-				new ArgLiteral(arg->index * 4));
+				new ArgLiteral(arg->index * 4 + offset));
 		basic_block->AddInst(inst);
 
 		inst = new Inst(SI::INST_S_WAITCNT,
@@ -231,7 +231,33 @@ void Function::AddArg(FunctionArg *arg, int num_elem)
 		Inst *inst = new Inst(SI::INST_S_BUFFER_LOAD_DWORDX4,
 				new ArgScalarRegisterSeries(arg->sreg, arg->sreg + 3),
 				new ArgScalarRegisterSeries(sreg_cb1, sreg_cb1 + 3),
-				new ArgLiteral(arg->index * 4));
+				new ArgLiteral(arg->index * 4 + offset));
+		basic_block->AddInst(inst);
+		
+		inst = new Inst(SI::INST_S_WAITCNT,
+				new ArgWaitCnt(WaitCntTypeLgkmCnt));
+		basic_block->AddInst(inst);
+
+		/* Insert argument name in symbol table, using its scalar register. */
+		symbol = new Symbol(arg->name, SymbolScalarRegister, arg->sreg);
+		AddSymbol(symbol);
+		
+		break;
+	}
+	case 8:
+	{
+		Inst *inst = new Inst(SI::INST_S_BUFFER_LOAD_DWORDX4,
+				new ArgScalarRegisterSeries(arg->sreg, arg->sreg + 3),
+				new ArgScalarRegisterSeries(sreg_cb1, sreg_cb1 + 3),
+				new ArgLiteral(arg->index * 4 + offset));
+		basic_block->AddInst(inst);
+		
+		inst = new Inst(SI::INST_S_BUFFER_LOAD_DWORDX4,
+				new ArgScalarRegisterSeries(arg->sreg + 4, arg->sreg + 7),
+				new ArgScalarRegisterSeries(sreg_cb1, sreg_cb1 + 3),
+				new ArgLiteral(arg->index * 4 + 4 + offset));
+
+		offset += 4;
 		basic_block->AddInst(inst);
 		
 		inst = new Inst(SI::INST_S_WAITCNT,
@@ -264,6 +290,8 @@ void Function::AddArg(FunctionArg *arg, int num_elem)
 		symbol->SetUAVIndex(uav->index);
 		arg->uav_index = uav->index;
 	}
+
+	return offset;
 }
 
 
@@ -489,6 +517,8 @@ void Function::EmitHeader()
 
 void Function::EmitArgs()
 {
+
+	int offset = 0;
 	/* Emit code for each argument individually */
 	for (auto &llvm_arg : llvm_function->getArgumentList())
 	{
@@ -500,7 +530,7 @@ void Function::EmitArgs()
 
 		/* Add the argument to the list. This call will cause the
 		 * corresponding code to be emitted. */
-		AddArg(arg, num_elem);
+		offset = AddArg(arg, num_elem, offset);
 	}
 }
 
