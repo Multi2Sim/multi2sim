@@ -687,9 +687,9 @@ void OuterBin::Generate(std::ostream& os)
 		std::ostringstream oss;
 	
 		/* Output Inner ELF */
-		std::ofstream of("kernel.bin");
-		inner_bin->Generate(of);
-		of.close();
+		//std::ofstream of("kernel.bin");
+		//inner_bin->Generate(of);
+		//of.close();
 		
 
 		inner_bin->Generate(oss);
