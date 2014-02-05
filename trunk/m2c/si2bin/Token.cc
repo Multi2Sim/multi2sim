@@ -284,8 +284,17 @@ bool Token::IsArgAllowed(Arg *arg)
 			t == ArgTypeVectorRegister;
 
 	case TokenVdst:
-	case TokenVop3Vdst:
 	case TokenVsrc0:
+		
+		/* Token 'src' does not accept 'abs' of 'neg' function */
+		if (arg->getAbs())
+			return false;
+		if (arg->getNeg())
+			return false;
+
+		return t == ArgTypeVectorRegister;
+	
+	case TokenVop3Vdst:
 		return t == ArgTypeVectorRegister;
 	
 	case Token64Src0:
@@ -303,7 +312,7 @@ bool Token::IsArgAllowed(Arg *arg)
 		/* Token 'src' does not accept 'abs' of 'neg' function */
 		if (arg->getAbs())
 			return false;
-		if (arg->getAbs())
+		if (arg->getNeg())
 			return false;
 		
 		return t == ArgTypeVectorRegister;
