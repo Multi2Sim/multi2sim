@@ -184,7 +184,11 @@ public:
 		task_list.push_back(std::unique_ptr<Task>(new Task(offset, symbol, buffer)));
 	}
 	
-	void TaskProcess() { for (auto &task : task_list) task->Process(); };
+	void TaskProcess() {
+		for (auto &task : task_list) task->Process(); 
+		task_list.clear();
+	};
+
 	void SymbolTableClear() { symbol_table.clear(); };
 	
 	
