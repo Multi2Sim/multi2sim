@@ -45,7 +45,6 @@ enum TokenType
 	Token64Vdst,
 	TokenLabel,
 	TokenMtMaddr,
-	TokenMtSeriesVdata,
 	TokenOffset,
 	TokenSdst,
 	TokenSeriesSbase,
@@ -78,8 +77,6 @@ enum TokenType
 	TokenAddr,
 	TokenData0,
 	TokenDsVdst,
-
-	// New tokens
 	TokenVop2Lit,
 	Token64Vsrc0,
 	Token64Vsrc1,
@@ -98,11 +95,12 @@ enum TokenType
 	TokenMuGlc,
 	TokenMtSeriesVdataDst,
 	TokenMtSeriesVdataSrc,
-	TokenMimgSeriesVdata,
 	TokenMimgVaddr,
 	TokenMimgSeriesSrsrc,
 	TokenMimgDugSeriesSrsrc,
 	TokenMimgDugSeriesSsamp,
+	TokenMimgSeriesVdataDst,
+	TokenMimgSeriesVdataSrc,
 	TokenTgt,
 	TokenExpVSrcs,
 

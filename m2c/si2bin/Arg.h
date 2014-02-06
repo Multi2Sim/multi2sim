@@ -114,6 +114,7 @@ public:
 
 	/* Getters */
 	ArgType getType() { return type; }
+	Token *getToken() { return token; }
 	bool getAbs() { return abs; }
 	bool getNeg() { return neg; }
 	bool getConstant() { return constant; }

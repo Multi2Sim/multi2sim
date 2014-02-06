@@ -122,7 +122,6 @@ class Function
 
 	/* Number of used registers */
 	int num_sregs;  /* Scalar */
-	int num_vregs;  /* Vector */
 
 	int sreg_uav_table;  /* UAV table (2 registers) */
 	int sreg_cb0;  /* CB0 (4 registers) */
@@ -183,6 +182,8 @@ class Function
 
 public:
 
+	int num_vregs;  /* Vector */
+
 	/* Constructor */
 	explicit Function(llvm::Function *llvm_function);
 
@@ -228,6 +229,55 @@ public:
 	 * stacks related with the function control flow. */
 	void EmitControlFlow();
 
+	/* Perform analysis on live variables inside the llvm function to allow for
+	 * memory efficient register allocation at a basic block level granularity
+	 *
+	 * Pseudo-code:
+	 *
+	 * Populate def and use bitmaps for each basic block
+	 *
+	 * For all basic blocks n: in[n] = out[n] = 0
+	 * worklist = all exit basic blocks
+	 *
+	 * while(worklist is not empty)
+	 * 	remove n from worklist
+	 * 	in[n] = ( out[n] - def[n] ) U use[n]
+	 *
+	 * 	for each predecessor n':
+	 * 		out[n'] = out[n'] U in[n]
+	 * 		if ( out[n'] changed )
+	 * 			add n' to worklist
+	 * */
+	void LiveRegisterAnalysis();
+
+	/* Creates an interference graph populated by the register lifetimes seen
+	 * from conducting live register analysis. Uses this interference graph
+	 * to map and allocate registers to each pre-mapped register.
+	 *
+	 * Pseudo-code:
+	 *
+	 * n = number of registers available
+	 * b = bitmap specifying previously defined interfering registers' mappings
+	 * registerMap = T -> R
+	 * T = used temporaries
+	 * R = available registers
+	 *
+	 * for (temp (column) in interference graph) {
+	 * 	Bitmap b(n) // clear
+	 *
+	 * 	for (each row in the temp's column; row < column)
+	 * 		if (if vertex c -> r in int. graph is true)
+	 * 			b[registerMap[row]] = true
+	 *
+	 * 	iterate over b to find first 0 at index i
+	 * 	registerMap[column] = i;
+	 * }
+	 */
+	void LiveRegisterAllocation();
+
+	/* Dumps the results of the live register analysis. */
+	void LiveRegisterAnalysisBitmapDump();
+
 	/* Create a Southern Islands instruction argument from an LLVM value.
 	 * The type of argument created depends on the LLVM value as follows:
 	 *   - If the LLVM value is an integer constant, the Southern Islands
@@ -252,6 +302,7 @@ public:
 	 * identifier is a multiple of 'align'. */
 	int AllocSReg(int count = 1, int align = 1);
 	int AllocVReg(int count = 1, int align = 1);
+
 };
 
 }  /* namespace llvm2si */

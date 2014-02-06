@@ -44,7 +44,6 @@ StringMap token_type_map =
 	{ "\%64_vdst", Token64Vdst },
 	{ "\%label", TokenLabel },
 	{ "\%mt_maddr", TokenMtMaddr },
-	{ "\%mt_series_vdata", TokenMtSeriesVdata },
 	{ "\%offset", TokenOffset },
 	{ "\%sdst", TokenSdst },
 	{ "\%series_sbase", TokenSeriesSbase },
@@ -93,11 +92,12 @@ StringMap token_type_map =
 	{ "\%mu_glc", TokenMuGlc },
 	{ "\%mt_series_vdata_dst", TokenMtSeriesVdataDst },
 	{ "\%mt_series_vdata_src", TokenMtSeriesVdataSrc },
-	{ "\%mimg_series_vdata", TokenMimgSeriesVdata },
 	{ "\%mimg_vaddr", TokenMimgVaddr },
 	{ "\%mimg_series_srsrc", TokenMimgSeriesSrsrc },
 	{ "\%mimg_dug_series_srsrc", TokenMimgDugSeriesSrsrc },
 	{ "\%mimg_dug_series_ssamp", TokenMimgDugSeriesSsamp },
+	{ "\%mimg_series_vdata_dst", TokenMimgSeriesVdataDst },
+	{ "\%mimg_series_vdata_src", TokenMimgSeriesVdataSrc },
 	{ "\%tgt", TokenTgt },
 	{ "\%exp_vsrcs", TokenExpVSrcs }
 };
@@ -111,38 +111,6 @@ Token::Token(TokenType type)
 	/* Set direction */
 	switch (type)
 	{
-	/* What to do?
-	 * TokenMtSeriesVdata
-	 * TokenSeriesSbase
-	 * TokenSimm16
-	 * TokenVaddr
-	 * TokenWaitCnt
-	 * TokenAddr
-	 * TokenData0
-	 * TokenVccSi2binTokenVop2Lit
-	 * TokenFixme
-	 * TokenVIntrpVdst
-	 * TokenVSrcIJ
-	 * TokenAttr
-	 * TokenAttrChan
-	 * TokenData1
-	 * TokenOffset0
-	 * TokenOffset1
-	 * TokenDsSeriesVdst
-	 * TokenMuSeriesVdataDst
-	 * TokenMuSeriesVdataSrc
-	 * TokenMuMaddr
-	 * TokenMuGlc
-	 * TokenMtSeriesVdataDst
-	 * TokenMtSeriesVdataSrc
-	 * TokenMimgSeriesVdata
-	 * TokenMimgVaddr
-	 * TokenMimgSeriesSrsrc
-	 * TokenMimgDugSeriesSrsrc
-	 * TokenMimgDugSeriesSsamp
-	 * TokenTgt
-	 * TokenExpVSrcs
-	 */
 
 	case Token64Sdst:
 	case Token64Svdst:
@@ -157,7 +125,12 @@ Token::Token(TokenType type)
 	case TokenVop3Vdst:
 	case TokenVop364Vdst:
 	case TokenDsVdst:
-		direction = TokenDirectionDst;
+	case TokenDsSeriesVdst:
+	case TokenMuSeriesVdataDst:
+	case TokenMtSeriesVdataDst:
+	case TokenMimgSeriesVdataDst:
+	case TokenVIntrpVdst:
+		this->direction = TokenDirectionDst;
 		break;
 
 	case Token64Ssrc0:
@@ -180,15 +153,42 @@ Token::Token(TokenType type)
 	case TokenVsrc0:
 	case TokenVsrc1:
 	case TokenMtMaddr:
+	case TokenMuMaddr:
 	case Token64Vsrc0:
 	case Token64Vsrc1:
-		direction = TokenDirectionSrc;
+	case TokenMimgSeriesSrsrc:
+	case TokenMimgDugSeriesSrsrc:
+	case TokenMimgDugSeriesSsamp:
+	case TokenExpVSrcs:
+	case TokenMtSeriesVdataSrc:
+	case TokenMuSeriesVdataSrc:
+	case TokenMimgSeriesVdataSrc:
+	case TokenMimgVaddr:
+	case TokenAddr:
+	case TokenVaddr:
+	case TokenSeriesSbase:
+	case TokenVSrcIJ:
+	case TokenData0:
+	case TokenData1:
+		this->direction = TokenDirectionSrc;
 		break;
 
 	case TokenLabel:
 	case TokenOffset:
-		direction = TokenDirectionOther;
+	case TokenOffset0:
+	case TokenOffset1:
+	case TokenSimm16:
+	case TokenWaitCnt:
+	case TokenVcc:
+	case TokenVop2Lit:
+	case TokenFixme:
+	case TokenAttr:
+	case TokenAttrChan:
+	case TokenMuGlc:
+	case TokenTgt:
+		this->direction = TokenDirectionOther;
 		break;
+
 
 	/* Need the rest, finish with Rafa */
 	default:
@@ -236,7 +236,8 @@ bool Token::IsArgAllowed(Arg *arg)
 	case TokenMtMaddr:
 		return t == ArgTypeMaddr;
 
-	case TokenMtSeriesVdata:
+	case TokenMtSeriesVdataSrc:
+	case TokenMtSeriesVdataDst:
 		return t == ArgTypeVectorRegister ||
 			t == ArgTypeVectorRegisterSeries;
 
@@ -375,9 +376,6 @@ bool Token::IsArgAllowed(Arg *arg)
 	case TokenMuSeriesVdataSrc:
 	case TokenMuMaddr:
 	case TokenMuGlc:
-	case TokenMtSeriesVdataDst:
-	case TokenMtSeriesVdataSrc:
-	case TokenMimgSeriesVdata:
 	case TokenMimgVaddr:
 	case TokenMimgSeriesSrsrc:
 	case TokenMimgDugSeriesSrsrc:

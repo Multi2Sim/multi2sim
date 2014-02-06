@@ -13,6 +13,9 @@ libllvm2si_a_SOURCES = \
 	Function.cc \
 	Function.h \
 	\
+	InterferenceGraph.cc \
+	InterferenceGraph.h \
+	\
 	llvm2si.c \
 	llvm2si.h \
 	\

@@ -30,6 +30,7 @@ class Bitmap
 {
 	size_t size;
 	size_t size_in_blocks;
+	size_t mask;
 	std::unique_ptr<size_t> data;
 
 	void getBlockBit(size_t at, size_t &block, size_t &bit) const;
@@ -39,7 +40,7 @@ public:
 	explicit Bitmap(size_t size);
 	Bitmap(const Bitmap &b);
 
-	void Dump(std::ostream &os);
+	void Dump(std::ostream &os = std::cout) const;
 	friend std::ostream &operator<<(std::ostream &os, Bitmap &b) {
 		b.Dump(os); return os; }
 	
@@ -64,6 +65,7 @@ public:
 	size_t CountOnes() const;
 
 	bool operator[](size_t at) const { return Test(at); }
+	bool operator==(const Bitmap &b) const;
 	Bitmap &operator<<=(size_t n);
 	Bitmap &operator>>=(size_t n);
 	Bitmap &operator&=(const Bitmap &b);

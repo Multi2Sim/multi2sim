@@ -76,7 +76,6 @@ class Node
 	Tree *tree;
 
 	std::list<Node *> succ_list;
-	std::list<Node *> pred_list;
 
 	std::list<Node *> forward_edge_list;
 	std::list<Node *> back_edge_list;
@@ -107,6 +106,9 @@ class Node
 	int color;
 
 public:
+
+	std::list<Node *> pred_list;
+
 	/* Constructor/destructor */
 	Node(const std::string &name, NodeKind kind);
 	virtual ~Node() { }
