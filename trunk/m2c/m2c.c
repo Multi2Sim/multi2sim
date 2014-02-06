@@ -430,7 +430,8 @@ static void m2c_replace_temp_file_name(struct list_t *file_list)
 
 		/* Create new file */
 		strcpy(new_name, "/tmp/XXXXXX");
-		mktemp(new_name);
+		char *ret = mkdtemp(new_name);
+		assert (ret != NULL);
 		if (name_ext)
 			strcat(new_name, name_ext);
 

@@ -41,7 +41,6 @@ typedef enum
 	Si2binToken64Vdst,
 	Si2binTokenLabel,
 	Si2binTokenMtMaddr,
-	Si2binTokenMtSeriesVdata,
 	Si2binTokenOffset,
 	Si2binTokenSdst,
 	Si2binTokenSeriesSbase,
@@ -74,8 +73,6 @@ typedef enum
 	Si2binTokenAddr,
 	Si2binTokenData0,
 	Si2binTokenDsVdst,
-
-	// New tokens
 	Si2binTokenVop2Lit,
 	Si2binToken64Vsrc0,
 	Si2binToken64Vsrc1,
@@ -94,11 +91,12 @@ typedef enum
 	Si2binTokenMuGlc,
 	Si2binTokenMtSeriesVdataDst,
 	Si2binTokenMtSeriesVdataSrc,
-	Si2binTokenMimgSeriesVdata,
 	Si2binTokenMimgVaddr,
 	Si2binTokenMimgSeriesSrsrc,
 	Si2binTokenMimgDugSeriesSrsrc,
 	Si2binTokenMimgDugSeriesSsamp,
+	Si2binTokenMimgSeriesVdataDst,
+	Si2binTokenMimgSeriesVdataSrc,
 	Si2binTokenTgt,
 	Si2binTokenExpVSrcs,
 

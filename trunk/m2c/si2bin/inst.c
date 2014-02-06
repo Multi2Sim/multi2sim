@@ -586,21 +586,22 @@ void Si2binInstGenerate(Si2binInst *self)
 			break;
 		}
 		
-		case Si2binTokenMtSeriesVdataSrc:
-		{
-			/* Encode */
-			inst_bytes->mtbuf.vdata = arg->value.vector_register.id;
-			break;
-		}
-		
-		case Si2binTokenMtSeriesVdataDst:
-		{
-			/* Encode */
-			inst_bytes->mtbuf.vdata = arg->value.vector_register.id;
-			break;
-		}
+//		case Si2binTokenMtSeriesVdataSrc:
+//		{
+//			/* Encode */
+//			inst_bytes->mtbuf.vdata = arg->value.vector_register.id;
+//			break;
+//		}
+//
+//		case Si2binTokenMtSeriesVdataDst:
+//		{
+//			/* Encode */
+//			inst_bytes->mtbuf.vdata = arg->value.vector_register.id;
+//			break;
+//		}
 
-		case Si2binTokenMtSeriesVdata:
+		case Si2binTokenMtSeriesVdataDst:
+		case Si2binTokenMtSeriesVdataSrc:
 		{
 			int low = 0;
 			int high = 0;

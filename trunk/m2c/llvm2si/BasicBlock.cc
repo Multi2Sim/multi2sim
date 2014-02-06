@@ -1130,6 +1130,70 @@ void BasicBlock::Emit(llvm::BasicBlock *llvm_basic_block)
 	}
 }
 
+void BasicBlock::LiveRegisterAnalysis()
+{
+	/* Iterate through list of instructions to populate bitmaps*/
+	for (auto &inst : this->getInstList())
+	{
+		this->def = new Bitmap(this->function->num_vregs);
+		this->use = new Bitmap(this->function->num_vregs);
+
+		/* Get each argument in the line */
+		for (auto &arg : inst->getArgs())
+		{
+			/* Currently only deals with scalar registers */
+			if (arg->getType() == si2bin::ArgTypeVectorRegister) {
+
+				si2bin::ArgVectorRegister *argReg = dynamic_cast<si2bin::ArgVectorRegister *>(arg.get());
+				if (!argReg)
+					continue;
+
+				if (arg->getToken()->GetDirection() == si2bin::TokenDirectionDst)
+				{
+					this->def->Set(argReg->getId(), true);
+				}
+				else if (arg->getToken()->GetDirection() == si2bin::TokenDirectionSrc)
+				{
+					/* If register wasn't defined in the same basic block */
+					if (this->def->Test(argReg->getId()) != true)
+					{
+						this->use->Set(argReg->getId(), true);
+					}
+				}
+			}
+		}
+	}
+
+	assert(out != NULL);
+
+	si2bin::Inst *prev_inst = nullptr;
+	for (auto it = inst_list.rbegin(), e = inst_list.rend(); it != e; ++it)
+	{
+		std::unique_ptr<Inst> &inst = *it;
+
+		/* Sets out bitmap of instruction */
+		if (it == inst_list.rbegin())
+		{
+			inst->out = new Bitmap(*out);
+		}
+		else
+		{
+			inst->out = new Bitmap(*prev_inst->in);
+		}
+
+		/* Clones out into in so that it can be used to perform calculations */
+		inst->in = new Bitmap(*inst->out);
+		*inst->in -= *inst->def;
+		*inst->in |= *inst->use;
+
+		// Iterate
+		prev_inst = inst.get();
+	}
+
+	/* Makes sure first instruction's in bitmap matches basic blocks in bitmap */
+	//assert(!BitmapCompare(prev_inst->in, basic_block->in));
+}
+
 
 }  /* namespace llvm2si */
 

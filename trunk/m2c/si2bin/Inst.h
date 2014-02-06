@@ -26,6 +26,7 @@
 #include <vector>
 
 #include <arch/southern-islands/asm/Inst.h>
+#include <src/lib/cpp/Bitmap.h>
 
 #include "Arg.h"
 #include "Context.h"
@@ -103,6 +104,13 @@ class Inst
 public:
 	
 
+	/* Bitmaps to hold live register analysis intermediate data */
+	misc::Bitmap *def;
+	misc::Bitmap *use;
+
+	misc::Bitmap *in;
+	misc::Bitmap *out;
+
 	
 	/* Create a new instruction with the specified opcode, as defined in the
 	 * Southern Islands disassembler. The arguments contained in the list
@@ -144,6 +152,7 @@ public:
 	}
 
 	// Getters/setters
+	const std::vector<std::unique_ptr<Arg>> &getArgs() { return args; }
 	llvm2si::BasicBlock *GetBasicBlock() { return basic_block; }
 	void SetBasicBlock(llvm2si::BasicBlock *basic_block) {
 		this->basic_block = basic_block; }
