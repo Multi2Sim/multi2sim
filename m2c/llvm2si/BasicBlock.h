@@ -30,6 +30,8 @@
 #include <m2c/common/Node.h>
 #include <m2c/si2bin/Inst.h>
 
+#include <src/lib/cpp/Bitmap.h>
+
 
 namespace llvm2si
 {
@@ -39,15 +41,16 @@ class Function;
 
 class BasicBlock : public Common::BasicBlock
 {
-	/* Comment stored temporarily in the basic block to be attached to the
-	 * next instruction added. */
-	std::string comment;
+	static int id_counter;
 
-	/* Function where the basic block belongs. */
-	Function *function;
+	int global_id;
 
 	/* List list of instructions forming the basic block. */
 	std::list<std::unique_ptr<si2bin::Inst>> inst_list;
+
+	/* Comment stored temporarily in the basic block to be attached to the
+	 * next instruction added. */
+	std::string comment;
 
 	/* Return the size in bytes of an LLVM type */
 	static int GetLlvmTypeSize(llvm::Type *llvm_type);
@@ -74,10 +77,22 @@ class BasicBlock : public Common::BasicBlock
 	void EmitInsertElement(llvm::InsertElementInst *llvm_inst);
 
 public:
-	
+
+	/* Function where the basic block belongs. */
+	Function *function;
+
+	/* Bitmaps to hold live register analysis intermediate data */
+	misc::Bitmap *def;
+	misc::Bitmap *use;
+
+	misc::Bitmap *in;
+	misc::Bitmap *out;
+
 	/* Constructor */
 	BasicBlock(Function *function, Common::LeafNode *node) :
 		Common::BasicBlock(node), function(function) { }
+
+	std::list<std::unique_ptr<si2bin::Inst>> &getInstList() { return inst_list; }
 
 	/* Dump */
 	void Dump(std::ostream &os);
@@ -94,6 +109,30 @@ public:
 
 	/* Emit SI code for the LLVM basic block into field 'inst_list'. */
 	void Emit(llvm::BasicBlock *llvm_basic_block);
+
+	/* Perform analysis on live variables inside the llvm function to allow for
+	 * memory efficient register allocation at an instruction level granularity
+	 *
+	 * Pseudo-code:
+	 *
+	 * Populate def and use bitmaps for each instruction
+	 *
+	 * For all instructions n: in[n] = out[n] = 0
+	 * current = last instruction in basic block
+	 *
+	 * while(current is not null)
+	 * 	if (current is last in basic block)
+	 * 		out[current] = out[basic_block]
+	 * 	else
+	 * 		out[current] = in[successor]
+	 *
+	 * 	in[current] = ( out[current] - def[current] ) U use[current]
+	 *
+	 *	current = predecessor
+	 *
+	 *assert (in[first instruction] == in[basic_block])
+	 * */
+	void LiveRegisterAnalysis();
 };
 
 

@@ -38,6 +38,7 @@ Bitmap::Bitmap(size_t size)
 	/* Initialize */
 	this->size = size;
 	size_in_blocks = (size + sizeof(size_t) - 1) / sizeof(size_t);
+	mask = ~((1 << (size_in_blocks * sizeof(size_t) - size)) - 1);
 	data.reset(new size_t[size_in_blocks]());
 }
 
@@ -46,6 +47,7 @@ Bitmap::Bitmap(const Bitmap &b)
 {
 	size = b.size;
 	size_in_blocks = b.size_in_blocks;
+	mask = b.mask;
 	data.reset(new size_t[size_in_blocks]());
 	for (size_t i = 0; i < size_in_blocks; i++)
 		data.get()[i] = b.data.get()[i];
@@ -71,7 +73,7 @@ Bitmap &Bitmap::operator=(const Bitmap& b)
 }
 
 
-void Bitmap::Dump(std::ostream &os)
+void Bitmap::Dump(std::ostream &os) const
 {
 	for (size_t i = 0; i < size; i++)
 		os << (Test(i) ? '1' : '0');
@@ -110,6 +112,7 @@ Bitmap &Bitmap::Flip()
 {
 	for (size_t i = 0; i < size_in_blocks; i++)
 		data.get()[i] = ~data.get()[i];
+	data.get()[size_in_blocks - 1] &= mask;
 	return *this;
 }
 
@@ -163,6 +166,16 @@ size_t Bitmap::CountOnes() const
 		if (Test(i))
 			count++;
 	return count;
+}
+
+
+bool Bitmap::operator==(const Bitmap &b) const
+{
+	assert(size == b.size);
+	for (size_t i = 0; i < size_in_blocks; i++)
+		if (data.get()[i] != b.data.get()[i])
+			return false;
+	return true;
 }
 
 

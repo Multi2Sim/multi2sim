@@ -937,7 +937,8 @@ void Inst::Dump(std::ostream &os) const
 					<< inst_buf_num_format_map.MapValue(
 					bytes.mtbuf.nfmt) << ']';
 		}
-		else if (Common::Asm::IsToken(fmt_str, "MIMG_SERIES_VDATA", token_len))
+		else if (Common::Asm::IsToken(fmt_str, "MIMG_SERIES_VDATA_SRC", token_len) ||
+				Common::Asm::IsToken(fmt_str, "MIMG_SERIES_VDATA_DST", token_len))
 		{
 			DumpVectorSeries(os, bytes.mimg.vdata,
 					bytes.mimg.vdata + 3);

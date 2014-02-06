@@ -17,12 +17,14 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <fstream>
 #include <lib/cpp/Misc.h>
 #include <llvm/Constants.h>
 #include <llvm/Function.h>
 
 #include "BasicBlock.h"
 #include "Function.h"
+#include "InterferenceGraph.h"
 
 using namespace misc;
 using namespace si2bin;
@@ -207,7 +209,7 @@ int Function::AddArg(FunctionArg *arg, int num_elem, int offset)
 		inst = new Inst(SI::INST_S_WAITCNT,
 				new ArgWaitCnt(WaitCntTypeLgkmCnt));
 		basic_block->AddInst(inst);
-		
+
 		/* Copy argument into a vector register. This vector register will be
 		 * used for convenience during code emission, so that we don't have to
 		 * worry at this point about different operand type encodings for
@@ -219,13 +221,13 @@ int Function::AddArg(FunctionArg *arg, int num_elem, int offset)
 				new ArgVectorRegister(arg->vreg),
 				new ArgScalarRegister(arg->sreg));
 		basic_block->AddInst(inst);*/
-		
+
 		/* Insert argument name in symbol table, using its vector register. */
 		symbol = new Symbol(arg->name, SymbolScalarRegister, arg->sreg);
 		AddSymbol(symbol);
 		break;
 	}
-	
+
 	case 4:
 	{
 		Inst *inst = new Inst(SI::INST_S_BUFFER_LOAD_DWORDX4,
@@ -233,7 +235,7 @@ int Function::AddArg(FunctionArg *arg, int num_elem, int offset)
 				new ArgScalarRegisterSeries(sreg_cb1, sreg_cb1 + 3),
 				new ArgLiteral(arg->index * 4 + offset));
 		basic_block->AddInst(inst);
-		
+
 		inst = new Inst(SI::INST_S_WAITCNT,
 				new ArgWaitCnt(WaitCntTypeLgkmCnt));
 		basic_block->AddInst(inst);
@@ -241,7 +243,7 @@ int Function::AddArg(FunctionArg *arg, int num_elem, int offset)
 		/* Insert argument name in symbol table, using its scalar register. */
 		symbol = new Symbol(arg->name, SymbolScalarRegister, arg->sreg);
 		AddSymbol(symbol);
-		
+
 		break;
 	}
 	case 8:
@@ -273,8 +275,8 @@ int Function::AddArg(FunctionArg *arg, int num_elem, int offset)
 	default:
 		panic("%s: not supported number of elements", __FUNCTION__);
 	}
-	
-	
+
+
 	/* If argument is an object in global memory, create a UAV
 	 * associated with it. */
 	SI::ArgPointer *pointer = dynamic_cast<SI::ArgPointer *>
@@ -327,8 +329,8 @@ Function::Function(llvm::Function *llvm_function)
 		: name(llvm_function->getName()),
 		  llvm_function(llvm_function),
 		  num_sregs(0),
-		  num_vregs(0),
-		  tree(name)
+		  tree(name),
+		  num_vregs(0)
 {
 	/* Create pre-defined nodes in control tree */
 	header_node = new Common::LeafNode("header");
@@ -925,6 +927,296 @@ void Function::EmitControlFlow()
 }
 
 
+void Function::LiveRegisterAnalysis() {
+	llvm2si::BasicBlock *basic_block;
+	//Common::Node *node;
+
+	std::list<llvm2si::BasicBlock *> worklist;
+
+	std::list<Common::Node *> node_list;
+	tree.PostorderTraversal(node_list);
+	for(auto &node : node_list)
+	{
+		/* Skip abstract nodes */
+		if (node->getKind() != Common::NodeKindLeaf)
+			continue;
+
+		/* Get node's basic block */
+		if (!dynamic_cast<Common::LeafNode*>(node))
+			continue;
+
+		basic_block = dynamic_cast<llvm2si::BasicBlock*>((dynamic_cast<Common::LeafNode*>(node)->GetBasicBlock()));
+		if (!basic_block)
+			continue;
+
+		/* Assigns blank bitmaps of size num_sregs to each of the
+		 * basic block's bitmap fields
+		 */
+		basic_block->def = new Bitmap(this->num_vregs);
+		basic_block->use = new Bitmap(this->num_vregs);
+		basic_block->in = new Bitmap(this->num_vregs);
+		basic_block->out = new Bitmap(this->num_vregs);
+
+		/* Read each line of basic block */
+		for (auto &inst : basic_block->getInstList())
+		{
+			/* Get each argument in the line */
+			for (auto &arg : inst->getArgs())
+			{
+				/* Currently only deals with scalar registers */
+				if (arg->getType() == si2bin::ArgTypeVectorRegister) {
+
+					si2bin::ArgVectorRegister *argReg = dynamic_cast<si2bin::ArgVectorRegister*>(arg.get());
+					if (!argReg)
+						continue;
+
+					if (arg->getToken()->GetDirection() == si2bin::TokenDirectionDst)
+					{
+						basic_block->def->Set(argReg->getId(), true);
+					}
+					else if (arg->getToken()->GetDirection() == si2bin::TokenDirectionSrc)
+					{
+						/* If register wasn't defined in the same basic block */
+						if (basic_block->def->Test(argReg->getId()) != true)
+						{
+							basic_block->use->Set(argReg->getId(), true);
+						}
+					}
+				}
+			}
+		}
+
+		/* Adds basic block into worklist if it is a exit node */
+		llvm::BasicBlock *llvm_basic_block = (dynamic_cast<Common::LeafNode*>(node))->GetLlvmBasicBlock();
+		llvm::TerminatorInst *llvm_inst = llvm_basic_block->getTerminator();
+		assert(llvm_inst);
+		if(llvm_inst->getOpcode() == llvm::Instruction::Ret)
+			worklist.push_back(basic_block);
+	}
+
+	/* Iterates through worklist until no basic blocks remain */
+	while(worklist.size() != 0) {
+		basic_block = worklist.front();
+
+		/* Clones out into in so that it can be used to perform calculations */
+		*basic_block->in = (*basic_block->out - *basic_block->def) & *basic_block->use;
+
+		// Get predecessors
+		// TODO is this pred list correct??? I dont think it contains headers
+		for (auto &node : basic_block->GetNode()->pred_list)
+		{
+			llvm2si::BasicBlock *pred_basic_block;
+
+			/* Skip abstract nodes */
+			if (node->getKind() != Common::NodeKindLeaf)
+				continue;
+
+			/* Get node's basic block */
+			if (!dynamic_cast<Common::LeafNode*>(node))
+				continue;
+			//
+			pred_basic_block = dynamic_cast<llvm2si::BasicBlock*>((dynamic_cast<Common::LeafNode*>(node)->GetBasicBlock()));
+			if (!basic_block)
+				continue;
+
+			// Check old n
+			Bitmap oldOut = *pred_basic_block->out;
+
+			// Or old out with in of successor basic block
+			*pred_basic_block->out = *(pred_basic_block->out) | *(basic_block->in);
+
+			/* If compare returns one, it changed */
+			if (*pred_basic_block->out == oldOut) {
+				if(std::find(worklist.begin(), worklist.end(), pred_basic_block) == worklist.end());
+					worklist.push_back(pred_basic_block);
+			}
+
+		}
+
+		worklist.erase(worklist.begin());
+
+	}
+
+	/* Instruction bitmap population */
+	for (auto &node : node_list)
+	{
+		/* Skip abstract nodes */
+		if (node->getKind() != Common::NodeKindLeaf)
+			continue;
+
+		/* Get node's basic block */
+		if (!dynamic_cast<Common::LeafNode*>(node))
+			continue;
+
+		basic_block = dynamic_cast<llvm2si::BasicBlock*>((dynamic_cast<Common::LeafNode*>(node)->GetBasicBlock()));
+		if (!basic_block)
+			continue;
+
+		basic_block->LiveRegisterAnalysis();
+
+	}
+
+	LiveRegisterAnalysisBitmapDump();
+	LiveRegisterAllocation();
+
+	/* Free structures */
+	for (auto &node : node_list)
+	{
+		/* Skip abstract nodes */
+		if (node->getKind() != Common::NodeKindLeaf)
+			continue;
+
+		/* Get node's basic block */
+		if (!dynamic_cast<Common::LeafNode*>(node))
+			continue;
+
+		basic_block = dynamic_cast<llvm2si::BasicBlock*>((dynamic_cast<Common::LeafNode*>(node)->GetBasicBlock()));
+		if (!basic_block)
+			continue;
+
+		/* Iterate through list of instructions to delete bitmaps */
+		for(auto &inst : basic_block->getInstList())
+		{
+			delete(inst->def);
+			delete(inst->use);
+
+			delete(inst->in);
+			delete(inst->out);
+		}
+
+		/* Deletes allocated memory*/
+		delete(basic_block->def);
+		delete(basic_block->use);
+		delete(basic_block->in);
+		delete(basic_block->out);
+
+	}
+
+}
+
+
+void Function::LiveRegisterAllocation() {
+	llvm2si::InterferenceGraph interferenceGraph(this->num_vregs);
+
+	llvm2si::BasicBlock *basic_block;
+	//Common::Node *node;
+
+	std::list<Common::Node *> node_list;
+	tree.PostorderTraversal(node_list);
+	for(auto &node : node_list)
+	{
+		/* Skip abstract nodes */
+		if (node->getKind() != Common::NodeKindLeaf)
+			continue;
+
+		/* Get node's basic block */
+		if (!dynamic_cast<Common::LeafNode*>(node))
+			continue;
+
+		basic_block = dynamic_cast<llvm2si::BasicBlock*>((dynamic_cast<Common::LeafNode*>(node)->GetBasicBlock()));
+		if (!basic_block)
+			continue;
+
+		for(auto &inst : basic_block->getInstList())
+		{
+			for (unsigned int i = 0; i < inst->out->getSize(); i++) {
+				if (inst->out->Test(i)) {
+					for (unsigned int j = i; j < inst->out->getSize(); j++) {
+						if (inst->out->Test(j))
+							interferenceGraph.Set(i, j, true);
+					}
+				}
+			}
+
+		}
+	}
+
+	// Creates a register map
+	std::vector<int> registerMap;
+	int n = 256; // Should be set to number of registers available
+
+	for (int i = 0; i < interferenceGraph.GetSize(); i++) {
+		misc::Bitmap b(n); // clear
+
+		for (int j = 0; j < i; j++) {
+			if (interferenceGraph.Get(i,j)) {
+				b.Set(j, true);
+			}
+		}
+
+		unsigned int count;
+		for (count = 0; count < b.getSize(); count++)
+			if (b[count] == false)
+				break;
+
+		assert (count != b.getSize());
+
+		registerMap.push_back(count);
+	}
+}
+
+
+void Function::LiveRegisterAnalysisBitmapDump() {
+	std::ofstream file("BitmapDump", std::ofstream::out);
+
+	int i = 0;
+
+	std::list<Common::Node *> node_list;
+	tree.PostorderTraversal(node_list);
+	for (auto &node : node_list)
+	{
+		/* Skip abstract nodes */
+		if (node->getKind() != Common::NodeKindLeaf)
+			continue;
+
+		/* Get node's basic block */
+		if (!dynamic_cast<Common::LeafNode*>(node))
+			continue;
+
+		llvm2si::BasicBlock *basic_block = dynamic_cast<llvm2si::BasicBlock*>((dynamic_cast<Common::LeafNode*>(node)->GetBasicBlock()));
+		if (!basic_block)
+			continue;
+
+		file << "Basic Block: " << i << std::endl;
+
+		/* Assigns blank bitmaps of size num_sregs to each of the
+		 * basic block's bitmap fields
+		 */
+		file << "--Def Bitmap:\t";
+		basic_block->def->Dump(file);
+
+		file << "--Use Bitmap:\t";
+		basic_block->use->Dump(file);
+
+		file << "--In Bitmap:\t";
+		basic_block->in->Dump(file);
+
+		file << "--Out Bitmap:\t";
+		basic_block->out->Dump(file);
+
+		file << "--Instruction List:\n";
+		//int j = 0;
+		/* Iterate over instructions in basic block */
+		//si2bin::Inst *inst;
+
+//		for (auto &inst : basic_block->getInstList())
+//		{
+//			file << "\tLive After Instruction " << j << ": ";
+//			inst->out->Dump(file);
+//
+//			j++;
+//		}
+
+		file << std::endl;
+
+		i++;
+	}
+
+	/* Free structures */
+	file.close();
+}
+
+
 Arg *Function::TranslateConstant(llvm::Constant *llvm_const)
 {
 	/* Check constant type */
@@ -994,7 +1286,7 @@ Arg *Function::TranslateValue(llvm::Value *llvm_value, Symbol *&symbol)
 		panic("%s: invalid symbol type (%d)", __FUNCTION__,
 				symbol->getType());
 	}
-	
+
 	/* Return argument and symbol */
 	return arg;
 }
