@@ -1,6 +1,6 @@
 /*
  *  Multi2Sim
- *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
+ *  Copyright (C) 2014  Yuqing Shi (shi.yuq@husky.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -22,77 +22,32 @@
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
 
-#include "emu.h"
+#include "Emu.h"
 #include "Grid.h"
-#include "isa.h"
+//#include "isa.h"
 
-
-void Grid::Grid(KplEmu *emu, struct cuda_function_t *function)
+namespace Kepler
 {
-	/* Initialization */
-	this->emu = emu;
-	this->id = list_count(emu->grids);
-	this->function = function;
-	this->num_gpr = function->num_gpr;
 
-	/* Add to list */
-	list_add(emu->grids, this);
-}
-
-void Grid::Dump(FILE *f)
+void Grid::Grid(KplEmu *emu)
 {
 }
 
+void Grid::Dump(std::ostream &os = std::cout) const
+{
+}
 
-/* Setup sizes of a grid. Used by driver. */
 void Grid::SetupSize(unsigned *thread_block_count,
 		unsigned *thread_block_size)
 {
-	int i;
 
-	/* Setup thread-block counts */
-	for (i = 0; i < 3; i++)
-		this->thread_block_count3[i] = thread_block_count[i];
-	this->thread_block_count = this->thread_block_count3[0] *
-			this->thread_block_count3[1] * this->thread_block_count3[2];
-
-	/* Setup thread-block sizes */
-	for (i = 0; i < 3; i++)
-		this->thread_block_size3[i] = thread_block_size[i];
-	this->thread_block_size = this->thread_block_size3[0] *
-			this->thread_block_size3[1] * this->thread_block_size3[2];
-
-	/* Calculate thread counts */
-	for (i = 0; i < 3; i++)
-		this->thread_count3[i] = thread_block_count[i] * thread_block_size[i];
-	this->thread_count = this->thread_count3[0] * this->thread_count3[1] *
-			this->thread_count3[2];
-
-	/* Create lists */
-	this->pending_thread_blocks = list_create();
-	for (i = 0; i < this->thread_block_count; ++i)
-		list_enqueue(this->pending_thread_blocks, (void *)((long)i));
-	this->running_thread_blocks = list_create();
-	this->finished_thread_blocks = list_create();
-
-	/* Debug */
-	kpl_isa_debug("%s:%d: block count = (%d,%d,%d)\n",
-			__FILE__, __LINE__, this->thread_block_count3[0],
-			this->thread_block_count3[1],
-			this->thread_block_count3[2]);
-	kpl_isa_debug("%s:%d: block size = (%d,%d,%d)\n",
-			__FILE__, __LINE__, this->thread_block_size3[0],
-			this->thread_block_size3[1],
-			this->thread_block_size3[2]);
-	kpl_isa_debug("%s:%d: grid size = (%d,%d,%d)\n",
-			__FILE__, __LINE__, this->thread_count3[0],
-			this->thread_count3[1], this->thread_count3[2]);
 }
 
 
-/* Write initial values into constant memory. Used by driver. */
+
 void Grid::SetupConstantMemory()
 {
-	KplEmuConstMemWrite(this->emu, 0x8, this->thread_block_size3);
+
 }
 
+}	//namespace

@@ -17,44 +17,68 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <lib/mhandle/mhandle.h>
+#include <lib/util/list.h>
+#include <lib/util/misc.h>
+#include <mem-system/memory.h>
+
+#include "Emu.h"
 #include "Grid.h"
-#include "Wrapper.h"
+#include "machine.h"
+#include "warp.h"
+#include "thread-block.h"
 
 namespace Kepler
 {
-////////////////////////////////////////////////////////////////////////////////
-// per for class Grid
-////////////////////////////////////////////////////////////////////////////////
+/*
+ * Class 'KplEmu'
+ */
 
-struct KplGrid *KplGridCreate(KplEmu *emu)
+KplEmu::KplEmu(Asm *as)
 {
-	return (KplGrid *) new Grid(emu);
-}
 
-void KplGridFree(struct KplGrid *self)
-{
-	Grid *gr = (Grid *) self;
-	delete gr;
 }
 
-void KplGridDump(struct KplGrid *self, FILE *f)
+void KplEmu::Dump(std::ostream &os = std::cout) const
 {
-	Grid *grid = (Grid *) self;
-	__gnu_cxx::stdio_filebuf<char> filebuf(fileno(f), std::ios::out);
-	std::ostream os(&filebuf);
-	grid->Dump(os);
+
 }
 
-void KplGridSetupSize(struct KplGrid *self, unsigned *thread_block_count,
-		unsigned *thread_block_size)
+
+void KplEmu::KplEmuDumpSummary(std::ostream &os = std::cout)
 {
-	Grid *grid = (Grid *) self;
-	grid->SetupSize(thread_block_count, thread_block_size);
+	/* Call parent */
+
 }
 
-void KplGridSetupConstantMemory(struct KplGrid *self)
+
+int KplEmu::KplEmuRun()
 {
-	Grid *grid = (Grid *) self;
-	grid->SetupConstantMemory();
+	return true;
 }
+
+
+void KplEmu::KplEmuConstMemWrite(unsigned addr, void *value_ptr)
+{
+	mem_write(this->const_mem, addr, sizeof(unsigned), value_ptr);
 }
+
+
+void KplEmu::KplEmuConstMemRead(unsigned addr, void *value_ptr)
+{
+	mem_read(this->const_mem, addr, sizeof(unsigned), value_ptr);
+}
+
+
+/*
+ * Non-Class Stuff
+ */
+/*
+long long kpl_emu_max_cycles;
+long long kpl_emu_max_inst;
+int kpl_emu_max_functions;
+
+const int kpl_emu_warp_size = 32;
+*/
+}
+
