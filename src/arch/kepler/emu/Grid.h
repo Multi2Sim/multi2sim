@@ -1,6 +1,6 @@
 /*
  *  Multi2Sim
- *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
+ *  Copyright (C) 2014  Yuqing Shi (shi.yuq@husky.neu.edu)
  *
  *  This module is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,10 +17,15 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef KEPLER_EMU_GRID_Grid_H
-#define KEPLER_EMU_GRID_Grid_H
+#ifndef ARCH_KEPLER_EMU_GRID_H
+#define ARCH_KEPLER_EMU_GRID_H
 
-#include <lib/class/class.h>
+#include "Emu.h"
+
+namespace Kepler
+{
+
+class KplEmu;
 
 class Grid
 {
@@ -29,9 +34,6 @@ class Grid
 
 	/* ID */
 	int id;
-
-	/* CUDA function associated */
-	struct cuda_function_t *function;
 
 	/* Number of general purpose registers used by a thread */
 	unsigned int num_gpr;
@@ -60,34 +62,25 @@ class Grid
 
 public:
 
-	/*Constructor*/
-	explicit Grid(KplEmu *emu, struct cuda_function_t *function);
-	/*Destructor*/
+	///Constructor
+	Grid(KplEmu *emu);
 
-	void ~Grid()
-	{
-		KplEmu *emu = this->emu;
+	/// Dump grid in a human-readable fashion into an output stream (or
+	/// standard output if argument \a os is omitted.
+	void Dump(std::ostream &os = std::cout) const;
 
-		/* Run free notify call-back */
-		if (this->free_notify_func)
-			this->free_notify_func(this->free_notify_data);
-
-	        /* Free thread_blocks */
-		list_free(this->pending_thread_blocks);
-		list_free(this->running_thread_blocks);
-		list_free(this->finished_thread_blocks);
-
-		/* Remove from lists */
-		list_remove(emu->pending_grids, this);
-		list_remove(emu->running_grids, this);
-		list_remove(emu->finished_grids, this);
-		list_remove(emu->grids, this);
+	/// Operator \c << overloaded, invoking function Dump()
+	friend std::ostream &operator<<(std::ostream &os, const Grid &grid) {
+		grid.Dump(os);
+		return os;
 	}
 
-	void Dump(FILE *f);
+	/// Setup sizes of a grid. Used by driver.
 	void SetupSize(unsigned *global_size, unsigned *local_size);
+
+	/// Write initial values into constant memory. Used by driver.
 	void SetupConstantMemory();
 };
-
+}   //namespace
 #endif
 
