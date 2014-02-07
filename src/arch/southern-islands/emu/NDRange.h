@@ -87,6 +87,9 @@ class NDRange
 	std::list<std::unique_ptr<WorkGroup>> waiting_work_groups;
 	std::list<std::unique_ptr<WorkGroup>> running_work_groups;
 	std::list<std::unique_ptr<WorkGroup>> completed_work_groups;
+	// std::list<unsigned> waiting_work_groups;
+	// std::list<unsigned> running_work_groups;
+	// std::list<unsigned> completed_work_groups;
 
 	// Used by the driver
 	bool last_work_group_sent;
@@ -183,6 +186,24 @@ public:
 
 	/// Getters
 	///
+	/// Get work dim
+	unsigned getWorkDim() const { return work_dim; }
+
+	/// Get work dim pointer
+	unsigned *getWorkDimPtr() { return &work_dim; }
+
+	/// Get size of global size
+	unsigned getGlobalSize(unsigned dim) const { 
+		assert(dim >= 0 && dim <= 2);
+		return global_size3[dim];
+	}
+
+	/// Get global memory size pointer
+	unsigned *getGlobalSizePtr(unsigned dim) {
+		assert(dim >= 0 && dim <= 2);
+		return &global_size3[dim];
+	}
+	
 	/// Get local memory top address
 	unsigned getLocalMemTop() const { return local_mem_top; }
 
@@ -192,11 +213,24 @@ public:
 		return local_size3[dim];
 	}
 
+	/// Get global memory size pointer
+	unsigned *getLocalSizePtr(unsigned dim) {
+		assert(dim >= 0 && dim <= 2);
+		return &local_size3[dim];
+	}
+
 	/// Get size of group count
 	unsigned getGroupCount(unsigned dim) const {
 		assert(dim >= 0 && dim <= 2);
 		return group_count3[dim];
 	}
+
+	/// Get group count pointer
+	unsigned *getGroupCountPtr(unsigned dim) {
+		assert(dim >= 0 && dim <= 2);
+		return &group_count3[dim];
+	}
+
 
 	/// Get stage of NDRange
 	NDRangeStage getStage()	const { return stage; }
@@ -232,6 +266,15 @@ public:
 	TableEntry *getConstBuffer(unsigned idx) {
 		assert(idx >= 0 && idx <= EmuMaxNumConstBufs);
 		return &const_buf_table_entries[idx];
+	}
+
+	/// Get constant buffer address in global memory
+	unsigned getConstBufferAddr(unsigned idx) const {
+		assert(idx >= 0 && idx <= EmuMaxNumConstBufs);
+		if (idx == 0)
+			return cb0;
+		else
+			return cb1;
 	}
 
 	/// Get uav entry from uav table at index

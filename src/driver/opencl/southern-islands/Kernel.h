@@ -32,6 +32,7 @@ namespace SI
 // Forward declaration
 class NDRange;
 class Program;
+struct EmuBufferDesc;
 
 class Kernel
 {
@@ -71,6 +72,10 @@ class Kernel
 	void LoadMetaDataV3();
 
 	void LoadMetaData();
+
+	void CreateBufferDesc(unsigned base_addr, unsigned size, int num_elems, 
+		ArgDataType data_type,
+		EmuBufferDesc *buffer_desc);
 
 public:
 	Kernel(int id, std::string name, Program *program);
