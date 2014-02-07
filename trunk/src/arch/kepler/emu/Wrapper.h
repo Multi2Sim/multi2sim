@@ -1,6 +1,6 @@
 /*
  *  Multi2Sim
- *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
+ *  Copyright (C) 2014  Yuqing Shi (shi.yuq@husky.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -24,20 +24,27 @@
 extern "C" {
 #endif
 
-struct KplGridWrap;
+namespace Kepler
+{
+struct KplGrid;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Wrapper for class Grid
 ////////////////////////////////////////////////////////////////////////////////
 
 
-struct KplGridWrap *KplGridWrapCreate(KplEmu *emu,
-		struct cuda_function_t *function);
-void KplGridWrapFree(struct KplGridWrap *self);
-void KplGridWrapDump(struct KplGridWrap *self, FILE *f);
-void KplGridWrapSetupSize(unsigned *thread_block_count,
+struct KplGrid *KplGridCreate(KplEmu *emu);
+
+void KplGridFree(struct KplGrid *self);
+
+void KplGridDump(struct KplGrid *self, FILE *f);
+
+void KplGridSetupSize(unsigned *thread_block_count,
 		unsigned *thread_block_size);
-void KplGridSetupConstantMemory(KplGridWrap *self);
+
+void KplGridSetupConstantMemory(KplGrid *self);
+
+}
 
 #ifdef __cplusplus
 }
