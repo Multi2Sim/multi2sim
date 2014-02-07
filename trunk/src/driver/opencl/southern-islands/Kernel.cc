@@ -18,7 +18,11 @@
  */
 
  
+#include <arch/southern-islands/emu/Emu.h>
+#include <arch/southern-islands/emu/NDRange.h>
 #include <lib/cpp/Misc.h>
+#include <string.h>
+
 #include "Kernel.h"
 #include "Program.h"
 
@@ -560,6 +564,176 @@ void Kernel::LoadMetaData()
 
 }
 
+void Kernel::CreateBufferDesc(unsigned base_addr, unsigned size, int num_elems, 
+	ArgDataType data_type,
+	EmuBufferDesc *buffer_desc)
+{
+	int num_format;
+	int data_format;
+	int elem_size;
+
+	// Zero-out the buffer resource descriptor 
+	assert(sizeof(struct EmuBufferDesc) == 16);
+	memset(buffer_desc, 0, sizeof(EmuBufferDesc));
+
+	num_format = EmuBufDescNumFmtInvalid;
+	data_format = EmuBufDescDataFmtInvalid;
+
+	switch (data_type)
+	{
+
+	case ArgDataTypeInt8:
+	case ArgDataTypeUInt8:
+
+		num_format = EmuBufDescNumFmtSint;
+		switch (num_elems)
+		{
+		case 1:
+			data_format = EmuBufDescDataFmt8;
+			break;
+
+		case 2:
+			data_format = EmuBufDescDataFmt8_8;
+			break;
+
+		case 4:
+			data_format = EmuBufDescDataFmt8_8_8_8;
+			break;
+
+		default:
+			fatal("%s: invalid number of i8/u8 elements (%d)",
+					__FUNCTION__, num_elems);
+		}
+		elem_size = 1 * num_elems;
+		break;
+
+	case ArgDataTypeInt16:
+	case ArgDataTypeUInt16:
+
+		num_format = EmuBufDescNumFmtSint;
+		switch (num_elems)
+		{
+
+		case 1:
+			data_format = EmuBufDescDataFmt16;
+			break;
+
+		case 2:
+			data_format = EmuBufDescDataFmt16_16;
+			break;
+
+		case 4:
+			data_format = EmuBufDescDataFmt16_16_16_16;
+			break;
+
+		default:
+			fatal("%s: invalid number of i16/u16 elements (%d)",
+					__FUNCTION__, num_elems);
+		}
+		elem_size = 2 * num_elems;
+		break;
+
+	case ArgDataTypeInt32:
+	case ArgDataTypeUInt32:
+
+		num_format = EmuBufDescNumFmtSint;
+		switch (num_elems)
+		{
+
+		case 1:
+			data_format = EmuBufDescDataFmt32;
+			break;
+
+		case 2:
+			data_format = EmuBufDescDataFmt32_32;
+			break;
+
+		case 3:
+			data_format = EmuBufDescDataFmt32_32_32;
+			break;
+
+		case 4:
+			data_format = EmuBufDescDataFmt32_32_32_32;
+			break;
+
+		default:
+			fatal("%s: invalid number of i32/u32 elements (%d)",
+					__FUNCTION__, num_elems);
+		}
+		elem_size = 4 * num_elems;
+		break;
+
+	case ArgDataTypeFloat:
+
+		num_format = EmuBufDescNumFmtFloat;
+		switch (num_elems)
+		{
+		case 1:
+			data_format = EmuBufDescDataFmt32;
+			break;
+
+		case 2:
+			data_format = EmuBufDescDataFmt32_32;
+			break;
+
+		case 3:
+			data_format = EmuBufDescDataFmt32_32_32;
+			break;
+
+		case 4:
+			data_format = EmuBufDescDataFmt32_32_32_32;
+			break;
+
+		default:
+			fatal("%s: invalid number of float elements (%d)",
+					__FUNCTION__, num_elems);
+		}
+		elem_size = 4 * num_elems;
+		break;
+
+	case ArgDataTypeDouble:
+
+		num_format = EmuBufDescNumFmtFloat;
+		switch (num_elems)
+		{
+		case 1:
+			data_format = EmuBufDescDataFmt32_32;
+			break;
+
+		case 2:
+			data_format = EmuBufDescDataFmt32_32_32_32;
+			break;
+
+		default:
+			fatal("%s: invalid number of double elements (%d)",
+					__FUNCTION__, num_elems);
+		}
+		elem_size = 8 * num_elems;
+		break;
+	case ArgDataTypeStruct:
+
+		num_format = EmuBufDescNumFmtUint;
+		data_format = EmuBufDescDataFmt8;
+		elem_size = 1;
+		break;
+
+	default:
+		fatal("%s: invalid data type for SI buffer (%d)",
+			__FUNCTION__, data_type);
+	}
+	assert(num_format != EmuBufDescNumFmtInvalid);
+	assert(data_format != EmuBufDescDataFmtInvalid);
+
+	buffer_desc->base_addr = base_addr;
+	buffer_desc->num_format = num_format;
+	buffer_desc->data_format = data_format;
+	assert(!(size % elem_size));  
+	buffer_desc->elem_size = elem_size;
+	buffer_desc->num_records = size/elem_size;
+
+	return;
+
+}
 
 // Public functions
 
@@ -593,6 +767,139 @@ Kernel::Kernel(int id, std::string name, Program *program)
 	
 	// Load metadata
 	LoadMetaData();
+}
+
+void Kernel::SetupNDRangeConstantBuffers(NDRange *ndrange)
+{
+	EmuBufferDesc buffer_desc;
+
+	unsigned zero = 0;
+
+	float f;
+
+	/* Constant buffer 0 */
+	CreateBufferDesc(ndrange->getConstBufferAddr(0), EmuConstBuf0Size, 
+		1, ArgDataTypeInt32, &buffer_desc);
+
+	ndrange->InsertBufferIntoConstantBufferTable(&buffer_desc, 0);
+
+	/* Constant buffer 1 */
+	CreateBufferDesc(ndrange->getConstBufferAddr(1), EmuConstBuf1Size,
+		1, ArgDataTypeInt32, &buffer_desc);
+
+	ndrange->InsertBufferIntoConstantBufferTable(&buffer_desc, 1);
+
+	/* Initialize constant buffer 0 */
+
+	/* CB0 bytes 0:15 */
+
+	/* Global work size for the {x,y,z} dimensions */
+	ndrange->ConstantBufferWrite(0, 0, 
+		ndrange->getGlobalSizePtr(0), 4);
+	ndrange->ConstantBufferWrite(0, 4, 
+		ndrange->getGlobalSizePtr(1), 4);
+	ndrange->ConstantBufferWrite(0, 8, 
+		ndrange->getGlobalSizePtr(2), 4);
+
+	/* Number of work dimensions */
+	ndrange->ConstantBufferWrite(0, 12, ndrange->getWorkDimPtr(), 4);
+
+	/* CB0 bytes 16:31 */
+
+	/* Local work size for the {x,y,z} dimensions */
+	ndrange->ConstantBufferWrite(0, 16, 
+		ndrange->getLocalSizePtr(0), 4);
+	ndrange->ConstantBufferWrite(0, 20, 
+		ndrange->getLocalSizePtr(1), 4);
+	ndrange->ConstantBufferWrite(0, 24, 
+		ndrange->getLocalSizePtr(2), 4);
+
+	/* 0  */
+	ndrange->ConstantBufferWrite(0, 28, &zero, 4);
+
+	/* CB0 bytes 32:47 */
+
+	/* Global work size {x,y,z} / local work size {x,y,z} */
+	ndrange->ConstantBufferWrite(0, 32, 
+		ndrange->getGroupCountPtr(0), 4);
+	ndrange->ConstantBufferWrite(0, 36, 
+		ndrange->getGroupCountPtr(1), 4);
+	ndrange->ConstantBufferWrite(0, 40, 
+		ndrange->getGroupCountPtr(2), 4);
+
+	/* 0  */
+	ndrange->ConstantBufferWrite(0, 44, &zero, 4);
+
+	/* CB0 bytes 48:63 */
+
+	/* FIXME Offset to private memory ring (0 if private memory is
+	 * not emulated) */
+
+	/* FIXME Private memory allocated per work_item */
+
+	/* 0  */
+	ndrange->ConstantBufferWrite(0, 56, &zero, 4);
+
+	/* 0  */
+	ndrange->ConstantBufferWrite(0, 60, &zero, 4);
+
+	/* CB0 bytes 64:79 */
+
+	/* FIXME Offset to local memory ring (0 if local memory is
+	 * not emulated) */
+
+	/* FIXME Local memory allocated per group */
+
+	/* 0 */
+	ndrange->ConstantBufferWrite(0, 72, &zero, 4);
+
+	/* FIXME Pointer to location in global buffer where math library
+	 * tables start. */
+
+	/* CB0 bytes 80:95 */
+
+	/* 0.0 as IEEE-32bit float - required for math library. */
+	f = 0.0f;
+	ndrange->ConstantBufferWrite(0, 80, &f, 4);
+
+	/* 0.5 as IEEE-32bit float - required for math library. */
+	f = 0.5f;
+	ndrange->ConstantBufferWrite(0, 84, &f, 4);
+
+	/* 1.0 as IEEE-32bit float - required for math library. */
+	f = 1.0f;
+	ndrange->ConstantBufferWrite(0, 88, &f, 4);
+
+	/* 2.0 as IEEE-32bit float - required for math library. */
+	f = 2.0f;
+	ndrange->ConstantBufferWrite(0, 92, &f, 4);
+
+	/* CB0 bytes 96:111 */
+
+	/* Global offset for the {x,y,z} dimension of the work_item spawn */
+	ndrange->ConstantBufferWrite(0, 96, &zero, 4);
+	ndrange->ConstantBufferWrite(0, 100, &zero, 4);
+	ndrange->ConstantBufferWrite(0, 104, &zero, 4);
+
+	/* Global single dimension flat offset: x * y * z */
+	ndrange->ConstantBufferWrite(0, 108, &zero, 4);
+
+	/* CB0 bytes 112:127 */
+
+	/* Group offset for the {x,y,z} dimensions of the work_item spawn */
+	ndrange->ConstantBufferWrite(0, 112, &zero, 4);
+	ndrange->ConstantBufferWrite(0, 116, &zero, 4);
+	ndrange->ConstantBufferWrite(0, 120, &zero, 4);
+
+	/* Group single dimension flat offset, x * y * z */
+	ndrange->ConstantBufferWrite(0, 124, &zero, 4);
+
+	/* CB0 bytes 128:143 */
+
+	/* FIXME Offset in the global buffer where data segment exists */
+	/* FIXME Offset in buffer for printf support */
+	/* FIXME Size of the printf buffer */
+
 }
 
 }  // namespace SI
