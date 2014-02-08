@@ -34,6 +34,7 @@ struct CUevent_st
 	/* Flags */
 	unsigned to_be_recorded;
 	unsigned recorded;
+	unsigned flags;
 };
 
 CUevent cuda_event_create(unsigned flags);
