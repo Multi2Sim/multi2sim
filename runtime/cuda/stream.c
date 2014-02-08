@@ -302,6 +302,7 @@ CUstream cuda_stream_create(void)
 	stream->user_thread = pthread_self();
 	stream->command_list = list_create();
 	stream->to_be_freed = 0;
+	stream->configuring = 0;
 
 	/* Create thread associated with stream */
 	pthread_mutex_init(&stream->lock, NULL);

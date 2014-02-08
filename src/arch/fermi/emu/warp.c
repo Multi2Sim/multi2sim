@@ -71,9 +71,8 @@ void FrmWarpCreate(FrmWarp *self, int id, FrmThreadBlock *thread_block,
 	bit_map_set(self->sync_stack.entries[self->sync_stack_top].
 			active_thread_mask, 0, self->thread_count, 0xffffffff);
 
+	/* Flags */
 	self->taken_thread_map = bit_map_create(self->thread_count);
-
-	/* Reset flags */
 	self->at_barrier = 0;
 	self->finished_thread_map = bit_map_create(self->thread_count);
 	self->finished = 0;
@@ -124,7 +123,7 @@ void FrmWarpExecute(FrmWarp *self)
 
 	/* Execute instruction */
 	inst_id = FrmInstWrapGetId(inst);
-	if (!inst_id)
+	if (! inst_id)
 		fatal("%s:%d: unrecognized instruction (%08x %08x)",
 				__FILE__, __LINE__, inst_bytes.word[0], inst_bytes.word[1]);
 	for (thread_id = 0; thread_id < self->thread_count; ++thread_id)

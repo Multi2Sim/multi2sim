@@ -843,7 +843,23 @@ cudaError_t cudaStreamDestroy(cudaStream_t stream)
 cudaError_t cudaStreamWaitEvent(cudaStream_t stream, cudaEvent_t event,
 		unsigned int flags)
 {
-	__CUDART_NOT_IMPL__;
+	cuda_debug("CUDA runtime API '%s'", __func__);
+	cuda_debug("\t(runtime) '%s' in: stream = [%p]", __func__, stream);
+	cuda_debug("\t(runtime) '%s' in: event = [%p]", __func__, event);
+	cuda_debug("\t(runtime) '%s' in: flags = %d", __func__, flags);
+
+	if (! active_device)
+		cuInit(0);
+
+	/* Check for valid flags */
+	if (flags)
+		fatal("%s: invalid flags (%d).\n%s", __func__, flags,
+				cuda_rt_err_param_note);
+
+	cuStreamWaitEvent(stream, event, flags);
+
+	cuda_debug("\t(runtime) '%s' out: return = %d", __func__, cudaSuccess);
+
 	return cudaSuccess;
 }
 
@@ -911,7 +927,20 @@ cudaError_t cudaEventCreate(cudaEvent_t *event)
 
 cudaError_t cudaEventCreateWithFlags(cudaEvent_t *event, unsigned int flags)
 {
-	__CUDART_NOT_IMPL__;
+	cuda_debug("CUDA runtime API '%s'", __func__);
+	cuda_debug("\t(runtime) '%s' in: event = [%p]", __func__, event);
+	cuda_debug("\t(runtime) '%s' in: flags = %d", __func__, flags);
+
+	if (! active_device)
+		cuInit(0);
+
+	cuEventCreate(event, flags);
+
+	cuda_rt_last_error = cudaSuccess;
+
+	cuda_debug("\t(runtime) '%s' out: event = [%p]", __func__, *event);
+	cuda_debug("\t(runtime) '%s' out: return = %d", __func__, cudaSuccess);
+
 	return cudaSuccess;
 }
 
@@ -1008,6 +1037,13 @@ cudaError_t cudaConfigureCall(dim3 gridDim, dim3 blockDim, size_t sharedMem,
 	if (! active_device)
 		cuInit(0);
 
+	/* If stream == 0, it is the default stream. */
+	if (stream == 0)
+		stream = list_get(active_device->stream_list, 0);
+
+	stream->configuring = 1;
+
+	/* Create and initialize argument */
 	args = xcalloc(1, sizeof(struct kernel_args_t));
 	args->grid_dim_x = gridDim.x;
 	args->grid_dim_y = gridDim.y;
@@ -1016,12 +1052,8 @@ cudaError_t cudaConfigureCall(dim3 gridDim, dim3 blockDim, size_t sharedMem,
 	args->block_dim_y = blockDim.y;
 	args->block_dim_z = blockDim.z;
 	args->shared_mem_size = sharedMem;
-	args->stream = stream;
 
-	/* If stream == 0, it is the default stream. */
-	if (stream == 0)
-		stream = list_get(active_device->stream_list, 0);
-
+	/* Create and enqueue command */
 	command = cuda_stream_command_create(stream, cuLaunchKernelImpl, NULL, args,
 			NULL, NULL);
 	command->ready_to_run = 0;
@@ -1059,12 +1091,14 @@ cudaError_t cudaSetupArgument(const void *arg, size_t size, size_t offset)
 	for (i = 0; i < list_count(active_device->stream_list); ++i)
 	{
 		stream = list_get(active_device->stream_list, i);
-		if (pthread_equal(pthread_self(), stream->user_thread))
+		if (pthread_equal(pthread_self(), stream->user_thread) &&
+				stream->configuring)
 			break;
 	}
 	assert(i < list_count(active_device->stream_list));
 
 	/* Update command */
+	assert(list_count(stream->command_list) > 0);
 	command = list_get(stream->command_list, 0);
 	if (! command->k_args.args)
 		command->k_args.args = list_create();
@@ -1138,7 +1172,8 @@ cudaError_t cudaLaunch(const void *func)
 	for (i = 0; i < list_count(active_device->stream_list); ++i)
 	{
 		stream = list_get(active_device->stream_list, i);
-		if (pthread_equal(pthread_self(), stream->user_thread))
+		if (pthread_equal(pthread_self(), stream->user_thread) &&
+				stream->configuring)
 			break;
 	}
 	assert(i < list_count(active_device->stream_list));
@@ -1179,6 +1214,8 @@ cudaError_t cudaLaunch(const void *func)
 	cuLaunchKernel(function, grid_dim[0], grid_dim[1], grid_dim[2],
 			block_dim[0], block_dim[1], block_dim[2], shared_mem_size, stream,
 			arg_ptr_array, NULL);
+
+	stream->configuring = 0;
 
 	cuda_rt_last_error = cudaSuccess;
 
@@ -1579,6 +1616,8 @@ cudaError_t cudaMemcpyFromSymbol(void *dst, const void *symbol, size_t count,
 cudaError_t cudaMemcpyAsync(void *dst, const void *src, size_t count,
 		enum cudaMemcpyKind kind, cudaStream_t stream)
 {
+	pthread_mutex_lock(&cuda_mutex);
+
 	cuda_debug("CUDA runtime API '%s'", __func__);
 	cuda_debug("\t(runtime) '%s' in: dst = [%p]", __func__, dst);
 	cuda_debug("\t(runtime) '%s' in: src = [%p]", __func__, src);
@@ -1594,6 +1633,8 @@ cudaError_t cudaMemcpyAsync(void *dst, const void *src, size_t count,
 	cuda_rt_last_error = cudaSuccess;
 
 	cuda_debug("\t(runtime) '%s' out: return = %d", __func__, cudaSuccess);
+
+	pthread_mutex_unlock(&cuda_mutex);
 
 	return cudaSuccess;
 }
