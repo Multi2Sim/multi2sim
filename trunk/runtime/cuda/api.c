@@ -1580,7 +1580,37 @@ CUresult cuStreamGetFlags(CUstream hStream, unsigned int *flags)
 
 CUresult cuStreamWaitEvent(CUstream hStream, CUevent hEvent, unsigned int Flags)
 {
-	__CUDA_NOT_IMPL__;
+	int i;
+	//CUstream stream;
+
+	cuda_debug("CUDA driver API '%s'", __func__);
+	cuda_debug("\t(driver) '%s' in: hStream = [%p]", __func__, hStream);
+	cuda_debug("\t(driver) '%s' in: hEvent = [%p]", __func__, hEvent);
+	cuda_debug("\t(driver) '%s' in: Flags = %d", __func__, Flags);
+
+	if (! active_device)
+	{
+		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
+				CUDA_ERROR_NOT_INITIALIZED);
+		return CUDA_ERROR_NOT_INITIALIZED;
+	}
+
+	if (hStream == NULL)
+	{
+		for (i = 0; i < list_count(active_device->stream_list); ++i)
+		{
+			//stream = list_get(active_device->stream_list, i);
+			cuEventSynchronize(hEvent);
+		}
+	}
+	else
+	{
+		while (! hEvent->recorded)
+			;
+	}
+
+	cuda_debug("\t(driver) '%s' out: return = %d", __func__, CUDA_SUCCESS);
+
 	return CUDA_SUCCESS;
 }
 
@@ -1913,7 +1943,8 @@ CUresult cuLaunchKernel(CUfunction f, unsigned int gridDimX,
 	for (i = 0; i < list_count(active_device->stream_list); ++i)
 	{
 		stream = list_get(active_device->stream_list, i);
-		if (pthread_equal(pthread_self(), stream->user_thread))
+		if (pthread_equal(pthread_self(), stream->user_thread) &&
+				stream->configuring)
 			break;
 	}
 	assert(i < list_count(active_device->stream_list));

@@ -249,11 +249,10 @@ void frm_isa_FSETP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 	/* Debug */
 	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
-			"p = [%d] %d, q = [%d] %d, src1 = [0x%x] %f, "
-			"src2 = [0x%x] %f, r = [%d] %d\n",
-			__func__, __LINE__, warp->pc, thread->id, active,
-			pred_id, pred, p_id, p, q_id, q, src1_id, src1, src2_id, src2,
-			r_id, r);
+			"p = [%d] %d q = [%d] %d src1 = [0x%x] %f src2 = [0x%x] %f "
+			"r = [%d] %d\n", __func__, __LINE__, warp->pc, thread->id, active,
+			pred_id, pred, p_id, p, q_id, q, src1_id, src1, src2_id, src2, r_id,
+			r);
 }
 
 void frm_isa_FFMA_impl(FrmThread *thread, struct FrmInstWrap *inst)
@@ -333,10 +332,9 @@ void frm_isa_FFMA_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 	/* Debug */
 	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
-			"dst = [0x%x] %f src1 = [0x%x] %f "
-			"src2 = [0x%x] %f src3 = [0x%x] %f\n",
-			__func__, __LINE__, warp->pc, thread->id, active,
-			pred_id, pred, dst_id, dst, src1_id, src1, src2_id, src2,
+			"dst = [0x%x] %f src1 = [0x%x] %f src2 = [0x%x] %f "
+			"src3 = [0x%x] %f\n", __func__, __LINE__, warp->pc, thread->id,
+			active, pred_id, pred, dst_id, dst, src1_id, src1, src2_id, src2,
 			src3_id, src3);
 }
 
@@ -429,10 +427,9 @@ void frm_isa_FCMP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 	/* Debug */
 	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
-			"dst = [0x%x] %f src1 = [0x%x] %f "
-			"src2 = [0x%x] %f src3 = [0x%x] %f\n",
-			__func__, __LINE__, warp->pc, thread->id, active,
-			pred_id, pred, dst_id, dst, src1_id, src1, src2_id, src2,
+			"dst = [0x%x] %f src1 = [0x%x] %f src2 = [0x%x] %f "
+			"src3 = [0x%x] %f\n", __func__, __LINE__, warp->pc, thread->id,
+			active,	pred_id, pred, dst_id, dst, src1_id, src1, src2_id, src2,
 			src3_id, src3);
 }
 
@@ -516,9 +513,9 @@ void frm_isa_FADD_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 	/* Debug */
 	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
-			"dst = [0x%x] %f src1 = [0x%x] %f src2 = [0x%x] %f\n",
-			__func__, __LINE__, warp->pc, thread->id, active,
-			pred_id, pred, dst_id, dst, src1_id, src1, src2_id, src2);
+			"dst = [0x%x] %f src1 = [0x%x] %f src2 = [0x%x] %f\n", __func__,
+			__LINE__, warp->pc, thread->id, active, pred_id, pred, dst_id, dst,
+			src1_id, src1, src2_id, src2);
 }
 
 void frm_isa_FMUL_impl(FrmThread *thread, struct FrmInstWrap *inst)
@@ -596,9 +593,9 @@ void frm_isa_FMUL_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 	/* Debug */
 	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
-			"dst = [0x%x] %f src1 = [0x%x] %f src2 = [0x%x] %f\n",
-			__func__, __LINE__, warp->pc, thread->id, active,
-			pred_id, pred, dst_id, dst, src1_id, src1, src2_id, src2);
+			"dst = [0x%x] %f src1 = [0x%x] %f src2 = [0x%x] %f\n", __func__,
+			__LINE__, warp->pc, thread->id, active, pred_id, pred, dst_id, dst,
+			src1_id, src1, src2_id, src2);
 }
 
 void frm_isa_RRO_impl(FrmThread *thread, struct FrmInstWrap *inst)
@@ -702,9 +699,9 @@ void frm_isa_IADD32I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 	/* Debug */
 	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
-			"dst = [0x%x] 0x%08x src1 = [0x%x] 0x%08x imm = 0x%08x\n",
-			__func__, __LINE__, warp->pc, thread->id, active,
-			pred_id, pred, dst_id, dst, src1_id, src1, imm);
+			"dst = [0x%x] 0x%08x src1 = [0x%x] 0x%08x imm = 0x%08x\n", __func__,
+			__LINE__, warp->pc, thread->id, active, pred_id, pred, dst_id, dst,
+			src1_id, src1, imm);
 }
 
 void frm_isa_IMUL32I_impl(FrmThread *thread, struct FrmInstWrap *inst)
@@ -763,9 +760,9 @@ void frm_isa_IMUL32I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 	/* Debug */
 	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
-			"dst = [0x%x] 0x%08x src1 = [0x%x] 0x%08x imm = 0x%08x\n",
-			__func__, __LINE__, warp->pc, thread->id, active,
-			pred_id, pred, dst_id, dst, src1_id, src1, imm);
+			"dst = [0x%x] 0x%08x src1 = [0x%x] 0x%08x imm = 0x%08x\n", __func__,
+			__LINE__, warp->pc, thread->id, active, pred_id, pred, dst_id, dst,
+			src1_id, src1, imm);
 }
 
 void frm_isa_MOV32I_impl(FrmThread *thread, struct FrmInstWrap *inst)
@@ -820,9 +817,8 @@ void frm_isa_MOV32I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 	/* Debug */
 	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
-			"dst = [0x%x] 0x%08x imm = 0x%08x\n",
-			__func__, __LINE__, warp->pc, thread->id, active,
-			pred_id, pred, dst_id, dst, imm);
+			"dst = [0x%x] 0x%08x imm = 0x%08x\n", __func__, __LINE__, warp->pc,
+			thread->id, active, pred_id, pred, dst_id, dst, imm);
 }
 
 void frm_isa_FFMA32I_impl(FrmThread *thread, struct FrmInstWrap *inst)
@@ -893,9 +889,9 @@ void frm_isa_FADD32I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 	/* Debug */
 	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
-			"dst = [0x%x] %f src1 = [0x%x] %f imm = %f\n",
-			__func__, __LINE__, warp->pc, thread->id, active,
-			pred_id, pred, dst_id, dst, src1_id, src1, imm.f);
+			"dst = [0x%x] %f src1 = [0x%x] %f imm = %f\n", __func__, __LINE__,
+			warp->pc, thread->id, active, pred_id, pred, dst_id, dst, src1_id,
+			src1, imm.f);
 }
 
 void frm_isa_FMUL32I_impl(FrmThread *thread, struct FrmInstWrap *inst)
@@ -953,9 +949,9 @@ void frm_isa_FMUL32I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 	/* Debug */
 	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
-			"dst = [0x%x] %f src1 = [0x%x] %f imm = %f\n",
-			__func__, __LINE__, warp->pc, thread->id, active,
-			pred_id, pred, dst_id, dst, src1_id, src1, imm.f);
+			"dst = [0x%x] %f src1 = [0x%x] %f imm = %f\n", __func__, __LINE__,
+			warp->pc, thread->id, active, pred_id, pred, dst_id, dst, src1_id,
+			src1, imm.f);
 }
 
 void frm_isa_LOP32I_impl(FrmThread *thread, struct FrmInstWrap *inst)
@@ -1026,9 +1022,9 @@ void frm_isa_LOP32I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 	/* Debug */
 	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
-			"dst = [0x%x] 0x%08x src1 = [0x%x] 0x%08x imm = 0x%08x\n",
-			__func__, __LINE__, warp->pc, thread->id, active,
-			pred_id, pred, dst_id, dst, src1_id, src1, imm);
+			"dst = [0x%x] 0x%08x src1 = [0x%x] 0x%08x imm = 0x%08x\n", __func__,
+			__LINE__, warp->pc, thread->id, active, pred_id, pred, dst_id, dst,
+			src1_id, src1, imm);
 }
 
 void frm_isa_ISCADD32I_impl(FrmThread *thread, struct FrmInstWrap *inst)
@@ -1087,8 +1083,7 @@ void frm_isa_ISCADD32I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	/* Debug */
 	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
 			"dst = [0x%x] 0x%08x src1 = [0x%x] 0x%08x imm = 0x%08x "
-			"shamt = %d\n",
-			__func__, __LINE__, warp->pc, thread->id, active,
+			"shamt = %d\n", __func__, __LINE__, warp->pc, thread->id, active,
 			pred_id, pred, dst_id, dst, src1_id, src1, imm, shamt);
 }
 
@@ -1215,11 +1210,10 @@ void frm_isa_ISETP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 	/* Debug */
 	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
-			"p = [%d] %d, q = [%d] %d, src1 = [0x%x] 0x%08x, "
-			"src2 = [0x%x] 0x%08x, r = [%d] %d\n",
-			__func__, __LINE__, warp->pc, thread->id, active,
-			pred_id, pred, p_id, p, q_id, q, src1_id, src1, src2_id, src2,
-			r_id, r);
+			"p = [%d] %d q = [%d] %d src1 = [0x%x] 0x%08x src2 = [0x%x] 0x%08x "
+			"r = [%d] %d\n", __func__, __LINE__, warp->pc, thread->id, active,
+			pred_id, pred, p_id, p, q_id, q, src1_id, src1, src2_id, src2, r_id,
+			r);
 }
 
 void frm_isa_IMAD_impl(FrmThread *thread, struct FrmInstWrap *inst)
@@ -1299,9 +1293,8 @@ void frm_isa_IMAD_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	/* Debug */
 	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
 			"dst = [0x%x] 0x%08x src1 = [0x%x] 0x%08x src2 = [0x%x] 0x%08x "
-			"src3 = [0x%x] 0x%08x\n",
-			__func__, __LINE__, warp->pc, thread->id, active,
-			pred_id, pred, dst_id, dst, src1_id, src1, src2_id, src2,
+			"src3 = [0x%x] 0x%08x\n", __func__, __LINE__, warp->pc, thread->id,
+			active, pred_id, pred, dst_id, dst, src1_id, src1, src2_id, src2,
 			src3_id, src3);
 }
 
@@ -1395,10 +1388,9 @@ void frm_isa_ICMP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 	/* Debug */
 	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
-			"dst = [0x%x] 0x%08x src1 = [0x%x] 0x%08x "
-			"src2 = [0x%x] 0x%08x src3 = [0x%x] 0x%08x\n",
-			__func__, __LINE__, warp->pc, thread->id, active,
-			pred_id, pred, dst_id, dst, src1_id, src1, src2_id, src2,
+			"dst = [0x%x] 0x%08x src1 = [0x%x] 0x%08x src2 = [0x%x] 0x%08x "
+			"src3 = [0x%x] 0x%08x\n", __func__, __LINE__, warp->pc, thread->id,
+			active, pred_id, pred, dst_id, dst, src1_id, src1, src2_id, src2,
 			src3_id, src3);
 }
 
@@ -1476,8 +1468,7 @@ void frm_isa_ISCADD_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	/* Debug */
 	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
 			"dst = [0x%x] 0x%08x src1 = [0x%x] 0x%08x src2 = [0x%x] 0x%08x "
-			"shamt = %d\n",
-			__func__, __LINE__, warp->pc, thread->id, active,
+			"shamt = %d\n", __func__, __LINE__, warp->pc, thread->id, active,
 			pred_id, pred, dst_id, dst, src1_id, src1, src2_id, src2, shamt);
 }
 
@@ -1547,8 +1538,8 @@ void frm_isa_IADD_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	/* Debug */
 	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
 			"dst = [0x%x] 0x%08x src1 = [0x%x] 0x%08x src2 = [0x%x] 0x%08x\n",
-			__func__, __LINE__, warp->pc, thread->id, active,
-			pred_id, pred, dst_id, dst, src1_id, src1, src2_id, src2);
+			__func__, __LINE__, warp->pc, thread->id, active, pred_id, pred,
+			dst_id, dst, src1_id, src1, src2_id, src2);
 }
 
 void frm_isa_IMUL_impl(FrmThread *thread, struct FrmInstWrap *inst)
@@ -1615,8 +1606,8 @@ void frm_isa_IMUL_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	/* Debug */
 	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
 			"dst = [0x%x] 0x%08x src1 = [0x%x] 0x%08x src2 = [0x%x] 0x%08x\n",
-			__func__, __LINE__, warp->pc, thread->id, active,
-			pred_id, pred, dst_id, dst, src1_id, src1, src2_id, src2);
+			__func__, __LINE__, warp->pc, thread->id, active, pred_id, pred,
+			dst_id, dst, src1_id, src1, src2_id, src2);
 }
 
 void frm_isa_SHR_impl(FrmThread *thread, struct FrmInstWrap *inst)
@@ -1683,8 +1674,8 @@ void frm_isa_SHR_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	/* Debug */
 	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
 			"dst = [0x%x] 0x%08x src1 = [0x%x] 0x%08x src2 = [0x%x] 0x%08x\n",
-			__func__, __LINE__, warp->pc, thread->id, active,
-			pred_id, pred, dst_id, dst, src1_id, src1, src2_id, src2);
+			__func__, __LINE__, warp->pc, thread->id, active, pred_id, pred,
+			dst_id, dst, src1_id, src1, src2_id, src2);
 }
 
 void frm_isa_SHL_impl(FrmThread *thread, struct FrmInstWrap *inst)
@@ -1751,8 +1742,8 @@ void frm_isa_SHL_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	/* Debug */
 	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
 			"dst = [0x%x] 0x%08x src1 = [0x%x] 0x%08x src2 = [0x%x] 0x%08x\n",
-			__func__, __LINE__, warp->pc, thread->id, active,
-			pred_id, pred, dst_id, dst, src1_id, src1, src2_id, src2);
+			__func__, __LINE__, warp->pc, thread->id, active, pred_id, pred,
+			dst_id, dst, src1_id, src1, src2_id, src2);
 }
 
 void frm_isa_LOP_impl(FrmThread *thread, struct FrmInstWrap *inst)
@@ -1835,8 +1826,8 @@ void frm_isa_LOP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	/* Debug */
 	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
 			"dst = [0x%x] 0x%08x src1 = [0x%x] 0x%08x src2 = [0x%x] 0x%08x\n",
-			__func__, __LINE__, warp->pc, thread->id, active,
-			pred_id, pred, dst_id, dst, src1_id, src1, src2_id, src2);
+			__func__, __LINE__, warp->pc, thread->id, active, pred_id, pred,
+			dst_id, dst, src1_id, src1, src2_id, src2);
 }
 
 void frm_isa_BFE_impl(FrmThread *thread, struct FrmInstWrap *inst)
@@ -1950,9 +1941,8 @@ void frm_isa_F2F_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 	/* Debug */
 	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
-			"dst = [0x%x] %f src = [0x%x] %f\n",
-			__func__, __LINE__, warp->pc, thread->id, active,
-			pred_id, pred, dst_id, dst, src_id, src.f);
+			"dst = [0x%x] %f src = [0x%x] %f\n", __func__, __LINE__, warp->pc,
+			thread->id, active, pred_id, pred, dst_id, dst, src_id, src.f);
 }
 
 void frm_isa_F2I_impl(FrmThread *thread, struct FrmInstWrap *inst)
@@ -2034,9 +2024,9 @@ void frm_isa_F2I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 	/* Debug */
 	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
-			"dst = [0x%x] 0x%08x src = [0x%x] %f\n",
-			__func__, __LINE__, warp->pc, thread->id, active,
-			pred_id, pred, dst_id, dst, src_id, src.f);
+			"dst = [0x%x] 0x%08x src = [0x%x] %f\n", __func__, __LINE__,
+			warp->pc, thread->id, active, pred_id, pred, dst_id, dst, src_id,
+			src.f);
 }
 
 void frm_isa_I2F_impl(FrmThread *thread, struct FrmInstWrap *inst)
@@ -2105,9 +2095,9 @@ void frm_isa_I2F_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 	/* Debug */
 	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
-			"dst = [0x%x] %f src = [0x%x] 0x%08x\n",
-			__func__, __LINE__, warp->pc, thread->id, active,
-			pred_id, pred, dst_id, dst, src_id, src);
+			"dst = [0x%x] %f src = [0x%x] 0x%08x\n", __func__, __LINE__,
+			warp->pc, thread->id, active, pred_id, pred, dst_id, dst, src_id,
+			src);
 }
 
 void frm_isa_I2I_impl(FrmThread *thread, struct FrmInstWrap *inst)
@@ -2350,10 +2340,9 @@ void frm_isa_SEL_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 	/* Debug */
 	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
-			"dst = [0x%x] 0x%08x src1 = [0x%x] 0x%08x "
-			"src2 = [0x%x] 0x%08x src3 = [%d] %d\n",
-			__func__, __LINE__, warp->pc, thread->id, active,
-			pred_id, pred, dst_id, dst, src1_id, src1, src2_id, src2,
+			"dst = [0x%x] 0x%08x src1 = [0x%x] 0x%08x src2 = [0x%x] 0x%08x "
+			"src3 = [%d] %d\n", __func__, __LINE__, warp->pc, thread->id,
+			active, pred_id, pred, dst_id, dst, src1_id, src1, src2_id, src2,
 			src3_id, src3);
 }
 
@@ -2423,9 +2412,9 @@ void frm_isa_MOV_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 	/* Debug */
 	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
-			"dst = [0x%x] 0x%08x src = [0x%x] 0x%08x\n",
-			__func__, __LINE__, warp->pc, thread->id, active,
-			pred_id, pred, dst_id, dst, src_id, src);
+			"dst = [0x%x] 0x%08x src = [0x%x] 0x%08x\n", __func__, __LINE__,
+			warp->pc, thread->id, active, pred_id, pred, dst_id, dst, src_id,
+			src);
 }
 
 void frm_isa_S2R_impl(FrmThread *thread, struct FrmInstWrap *inst)
@@ -2486,9 +2475,8 @@ void frm_isa_S2R_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 	/* Debug */
 	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
-			"dst = [0x%x] 0x%08x src = [%d] %d\n",
-			__func__, __LINE__, warp->pc, thread->id, active,
-			pred_id, pred, dst_id, dst, src_id, src);
+			"dst = [0x%x] 0x%08x src = [%d] %d\n", __func__, __LINE__, warp->pc,
+			thread->id, active, pred_id, pred, dst_id, dst, src_id, src);
 }
 
 void frm_isa_P2R_impl(FrmThread *thread, struct FrmInstWrap *inst)
@@ -2596,8 +2584,7 @@ void frm_isa_BAR_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 	/* Debug */
 	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d\n",
-			__func__, __LINE__, warp->pc, thread->id, active,
-			pred_id, pred);
+			__func__, __LINE__, warp->pc, thread->id, active, pred_id, pred);
 }
 
 void frm_isa_POPC_impl(FrmThread *thread, struct FrmInstWrap *inst)
@@ -2679,9 +2666,9 @@ void frm_isa_RED_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 	/* Debug */
 	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
-			"dst = [0x%x] 0x%08x src = [0x%x] 0x%08x\n",
-			__func__, __LINE__, warp->pc, thread->id, active,
-			pred_id, pred, dst_id, dst.i, src_id, src.i);
+			"dst = [0x%x] 0x%08x src = [0x%x] 0x%08x\n", __func__, __LINE__,
+			warp->pc, thread->id, active, pred_id, pred, dst_id, dst.i, src_id,
+			src.i);
 }
 
 void frm_isa_ATOM_impl(FrmThread *thread, struct FrmInstWrap *inst)
@@ -2765,8 +2752,8 @@ void frm_isa_ATOM_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	/* Debug */
 	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
 			"dst = [0x%x] 0x%08x src1 = [0x%x] 0x%08x src2 = [0x%x] 0x%08x\n",
-			__func__, __LINE__, warp->pc, thread->id, active,
-			pred_id, pred, dst_id, dst.i, src1_id, src1.i, src2_id, src2.i);
+			__func__, __LINE__, warp->pc, thread->id, active, pred_id, pred,
+			dst_id, dst.i, src1_id, src1.i, src2_id, src2.i);
 }
 
 void frm_isa_LD_impl(FrmThread *thread, struct FrmInstWrap *inst)
@@ -2830,9 +2817,8 @@ void frm_isa_LD_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 	/* Debug */
 	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
-			"dst[0] = [0x%x] 0x%08x addr = 0x%08x\n",
-			__func__, __LINE__, warp->pc, thread->id, active,
-			pred_id, pred, dst_id, dst[0], addr);
+			"dst[0] = [0x%x] 0x%08x addr = 0x%08x\n", __func__, __LINE__,
+			warp->pc, thread->id, active, pred_id, pred, dst_id, dst[0], addr);
 }
 
 void frm_isa_LDU_impl(FrmThread *thread, struct FrmInstWrap *inst)
@@ -2895,8 +2881,8 @@ void frm_isa_ST_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	/* Debug */
 	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
 			"value = [0x%x] 0x%08x src1 = [0x%x] 0x%08x addr = 0x%08x\n",
-			__func__, __LINE__, warp->pc, thread->id, active,
-			pred_id, pred, value_id, value, src1_id, src1, addr);
+			__func__, __LINE__, warp->pc, thread->id, active, pred_id, pred,
+			value_id, value, src1_id, src1, addr);
 }
 
 void frm_isa_CCTL_impl(FrmThread *thread, struct FrmInstWrap *inst)
@@ -3008,8 +2994,8 @@ void frm_isa_LDS_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	/* Debug */
 	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
 			"dst[0] = [0x%x] 0x%08x src1 = [0x%x] 0x%08x addr = 0x%08x\n",
-			__func__, __LINE__, warp->pc, thread->id, active,
-			pred_id, pred, dst_id, dst[0], src1_id, src1, addr);
+			__func__, __LINE__, warp->pc, thread->id, active, pred_id, pred,
+			dst_id, dst[0], src1_id, src1, addr);
 }
 
 void frm_isa_LDSLK_impl(FrmThread *thread, struct FrmInstWrap *inst)
@@ -3104,8 +3090,8 @@ void frm_isa_STS_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	/* Debug */
 	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
 			"value[0] = [0x%x] 0x%08x src1 = [0x%x] 0x%08x addr = 0x%08x\n",
-			__func__, __LINE__, warp->pc, thread->id, active,
-			pred_id, pred, value_id, value[0], src1_id, src1, addr);
+			__func__, __LINE__, warp->pc, thread->id, active, pred_id, pred,
+			value_id, value[0], src1_id, src1, addr);
 }
 
 void frm_isa_STSUL_impl(FrmThread *thread, struct FrmInstWrap *inst)
@@ -3210,8 +3196,8 @@ void frm_isa_LDC_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	/* Debug */
 	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
 			"dst = [0x%x] 0x%08x src1 = [0x%x] 0x%08x addr = 0x%08x\n",
-			__func__, __LINE__, warp->pc, thread->id, active,
-			pred_id, pred, dst_id, dst, src1_id, src1, addr);
+			__func__, __LINE__, warp->pc, thread->id, active, pred_id, pred,
+			dst_id, dst, src1_id, src1, addr);
 }
 
 void frm_isa_TEX_impl(FrmThread *thread, struct FrmInstWrap *inst)
@@ -3261,7 +3247,8 @@ void frm_isa_BRA_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	unsigned pred_id, pred;
 
 	/* Operand */
-	int target_pc;
+	int relative_target;
+	enum {FORWARD = 0, BACKWARD} branch_dir;
 	int reconv_pc;
 
 	/* Pop sync stack at reconvergence PC */
@@ -3291,27 +3278,29 @@ void frm_isa_BRA_impl(FrmThread *thread, struct FrmInstWrap *inst)
 				bit_map_create(warp->thread_count);
 
 	/* Update active thread mask */
-	target_pc = fmt.imm32 & 0xffffff;
+	relative_target = fmt.imm32 & 0xffffff;
+	branch_dir = (relative_target >> 23) & 0x1;
 	if (active == 1 && pred == 1)
 	{
-		if ((target_pc >> 23 & 0x1) == 0)  /* Forward branch */
+		if (branch_dir == FORWARD)
 			bit_map_set(warp->sync_stack.entries[warp->sync_stack_top + 1].
 					active_thread_mask, thread->id_in_warp, 1, 0);
-		else  /* Backward branch */
+		else
 			bit_map_set(warp->sync_stack.entries[warp->sync_stack_top + 1].
 					active_thread_mask, thread->id_in_warp, 1, 1);
 		bit_map_set(warp->taken_thread_map, thread->id_in_warp, 1, 1);
 	}
 	else
 	{
-		if ((target_pc >> 23 & 0x1) == 0)  /* Forward branch */
+		if (branch_dir == FORWARD)
 			bit_map_set(warp->sync_stack.entries[warp->sync_stack_top + 1].
 					active_thread_mask, thread->id_in_warp, 1, 1);
-		else  /* Backward branch */
+		else
 			bit_map_set(warp->sync_stack.entries[warp->sync_stack_top + 1].
 					active_thread_mask, thread->id_in_warp, 1, 0);
 		bit_map_set(warp->taken_thread_map, thread->id_in_warp, 1, 0);
 	}
+
 
 	/* Update sync stack when the last thread is executed. */
 	if (thread->id_in_warp == warp->thread_count - 1)
@@ -3319,59 +3308,80 @@ void frm_isa_BRA_impl(FrmThread *thread, struct FrmInstWrap *inst)
 		/* Determine how many threads take branch */
 		unsigned taken_thread_count = bit_map_count_ones(warp->taken_thread_map,
 				0, warp->thread_count);
+		unsigned active_thread_count = bit_map_count_ones(warp->sync_stack.
+				entries[warp->sync_stack_top].active_thread_mask, 0,
+				warp->thread_count);
 
 		/* Update target PC and sync stack */
-		if ((target_pc >> 23 & 0x1) == 0)  /* Forward branch */
+		if (taken_thread_count == 0)
 		{
-			if (taken_thread_count == 0)  /* None of threads take branch */
+			bit_map_free(warp->sync_stack.entries[warp->sync_stack_top + 1].
+					active_thread_mask);
+			warp->target_pc = warp->pc + warp->inst_size;
+		}
+		else if (taken_thread_count == warp->thread_count)
+		{
+			bit_map_free(warp->sync_stack.entries[warp->sync_stack_top + 1].
+					active_thread_mask);
+			if (branch_dir == FORWARD)
+				warp->target_pc = warp->pc + warp->inst_size + relative_target;
+			else
 			{
-				warp->target_pc = warp->pc + warp->inst_size;
-				bit_map_free(warp->sync_stack.entries[warp->sync_stack_top + 1].
-						active_thread_mask);
-			}
-			else if (taken_thread_count == warp->thread_count)  /* All threads
-			take branch */
-			{
-				warp->target_pc = warp->pc + warp->inst_size + target_pc;
-				bit_map_free(warp->sync_stack.entries[warp->sync_stack_top + 1].
-						active_thread_mask);
-			}
-			else  /* Divergent */
-			{
-				warp->target_pc = warp->pc + warp->inst_size;
-				reconv_pc = warp->pc + warp->inst_size + target_pc;
-				warp->sync_stack.entries[warp->sync_stack_top + 1].reconv_pc =
-						reconv_pc;
-				warp->sync_stack_top++;
+				relative_target |= 0xfff00000;
+				warp->target_pc = warp->pc + warp->inst_size + relative_target;
 			}
 		}
-		else  /* Backward branch */
+		else
 		{
-			/* Sign extension */
-			target_pc |= 0xfff00000;
+			if (branch_dir == FORWARD)
+			{
+				warp->target_pc = warp->pc + warp->inst_size;
 
-			if (taken_thread_count == 0)  /* None of threads take branch */
-			{
-				warp->target_pc = warp->pc + warp->inst_size;
-				bit_map_free(warp->sync_stack.entries[warp->sync_stack_top + 1].
-						active_thread_mask);
+				if (taken_thread_count == active_thread_count)
+				{
+					unsigned mask;
+					bit_map_free(warp->sync_stack.entries
+							[warp->sync_stack_top + 1].active_thread_mask);
+					mask = bit_map_get(warp->sync_stack.entries
+							[warp->sync_stack_top].active_thread_mask, 0,
+							warp->thread_count);
+					mask = ~mask;
+					bit_map_set(warp->sync_stack.entries[warp->sync_stack_top].
+							active_thread_mask, 0, warp->thread_count, mask);
+					reconv_pc = warp->pc + warp->inst_size + relative_target;
+					warp->sync_stack.entries[warp->sync_stack_top].reconv_pc =
+							reconv_pc;
+				}
+				else
+				{
+					reconv_pc = warp->pc + warp->inst_size + relative_target;
+					warp->sync_stack.entries[warp->sync_stack_top + 1].
+					reconv_pc = reconv_pc;
+					warp->sync_stack_top++;
+				}
 			}
-			else if (taken_thread_count == warp->thread_count)  /* All threads
-			take branch */
+			else
 			{
-				warp->target_pc = warp->pc + warp->inst_size + target_pc;
-				bit_map_free(warp->sync_stack.entries[warp->sync_stack_top + 1].
-						active_thread_mask);
-			}
-			else  /* Divergent */
-			{
-				warp->target_pc = warp->pc + warp->inst_size + target_pc;
-				reconv_pc = warp->pc + warp->inst_size;
-				warp->sync_stack.entries[warp->sync_stack_top + 1].reconv_pc =
-						reconv_pc;
-				warp->sync_stack_top++;
+				relative_target |= 0xfff00000;
+				warp->target_pc = warp->pc + warp->inst_size + relative_target;
+
+				if (taken_thread_count == active_thread_count)
+				{
+					bit_map_free(warp->sync_stack.entries
+							[warp->sync_stack_top + 1].active_thread_mask);
+					fatal("%s:%d: unsupported control flow pattern", __func__,
+							__LINE__);
+				}
+				else
+				{
+					reconv_pc = warp->pc + warp->inst_size;
+					warp->sync_stack.entries[warp->sync_stack_top + 1].
+					reconv_pc = reconv_pc;
+					warp->sync_stack_top++;
+				}
 			}
 		}
+
 	}
 
 	/* Debug */
@@ -3455,8 +3465,9 @@ void frm_isa_SSY_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	warp->target_pc = warp->pc + warp->inst_size;
 
 	/* Debug */
-	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d reconv_pc = 0x%x\n",
-			__func__, __LINE__, warp->pc, thread->id, active, reconv_pc);
+	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d reconv_pc = 0x%x "
+			"sync_stack_top = %d\n", __func__, __LINE__, warp->pc, thread->id,
+			active, reconv_pc, warp->sync_stack_top);
 }
 
 void frm_isa_PBK_impl(FrmThread *thread, struct FrmInstWrap *inst)
@@ -3511,7 +3522,7 @@ void frm_isa_EXIT_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	{
 		bit_map_set(warp->finished_thread_map, thread->id_in_warp, 1, 1);
 		if (bit_map_count_ones(warp->finished_thread_map, 0,
-				warp->thread_count) == warp->thread_count)
+				warp->thread_count) >= warp->thread_count)
 			warp->finished = 1;
 	}
 
@@ -3520,8 +3531,7 @@ void frm_isa_EXIT_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 	/* Debug */
 	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d\n",
-			__func__, __LINE__, warp->pc, thread->id, active,
-			pred_id, pred);
+			__func__, __LINE__, warp->pc, thread->id, active, pred_id, pred);
 }
 
 void frm_isa_LONGJMP_impl(FrmThread *thread, struct FrmInstWrap *inst)

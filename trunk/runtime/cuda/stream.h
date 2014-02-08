@@ -108,6 +108,7 @@ struct CUstream_st
 
 	/* Flags */
 	unsigned to_be_freed;
+	unsigned configuring;
 };
 
 void cuMemcpyAsyncImpl(struct cuda_stream_command_t *command);
