@@ -822,6 +822,8 @@ cudaError_t cudaStreamGetFlags(cudaStream_t hStream, unsigned int *flags)
 
 cudaError_t cudaStreamDestroy(cudaStream_t stream)
 {
+	pthread_mutex_lock(&cuda_mutex);
+
 	cuda_debug("CUDA runtime API '%s'", __func__);
 	cuda_debug("\t(runtime) '%s' in: stream = [%p]", __func__, stream);
 
@@ -836,6 +838,8 @@ cudaError_t cudaStreamDestroy(cudaStream_t stream)
 	cuStreamDestroy(stream);
 
 	cuda_debug("\t(runtime) '%s' out: return = %d", __func__, cudaSuccess);
+
+	pthread_mutex_unlock(&cuda_mutex);
 
 	return cudaSuccess;
 }
@@ -981,7 +985,18 @@ cudaError_t cudaEventQuery(cudaEvent_t event)
 
 cudaError_t cudaEventSynchronize(cudaEvent_t event)
 {
-	__CUDART_NOT_IMPL__;
+	cuda_debug("CUDA runtime API '%s'", __func__);
+	cuda_debug("\t(runtime) '%s' in: event = [%p]", __func__, event);
+
+	if (! active_device)
+		cuInit(0);
+
+	cuEventSynchronize(event);
+
+	cuda_rt_last_error = cudaSuccess;
+
+	cuda_debug("\t(runtime) '%s' out: return = %d", __func__, cudaSuccess);
+
 	return cudaSuccess;
 }
 
@@ -1041,6 +1056,7 @@ cudaError_t cudaConfigureCall(dim3 gridDim, dim3 blockDim, size_t sharedMem,
 	if (stream == 0)
 		stream = list_get(active_device->stream_list, 0);
 
+	/* Mark stream as configuring */
 	stream->configuring = 1;
 
 	/* Create and initialize argument */
@@ -1059,6 +1075,7 @@ cudaError_t cudaConfigureCall(dim3 gridDim, dim3 blockDim, size_t sharedMem,
 	command->ready_to_run = 0;
 	cuda_stream_enqueue(stream, command);
 
+	/* Free arguments */
 	free(args);
 
 	cuda_rt_last_error = cudaSuccess;
@@ -1207,8 +1224,7 @@ cudaError_t cudaLaunch(const void *func)
 		if (function->host_func_ptr == (unsigned)func)
 			break;
 	}
-	if (i == list_count(function_list))
-		fatal("%s: no function found", __func__);
+	assert(i < list_count(function_list));
 
 	/* Launch kernel */
 	cuLaunchKernel(function, grid_dim[0], grid_dim[1], grid_dim[2],
@@ -1527,7 +1543,7 @@ cudaError_t cudaMemcpy(void *dst, const void *src, size_t count,
 	else if (kind == cudaMemcpyDeviceToHost)
 		cuMemcpyDtoH(dst, (CUdeviceptr)src, count);
 	else
-		warning("%s: kind = %d not implemented.\n%s", __func__, kind,
+		fatal("%s: kind = %d not implemented.\n%s", __func__, kind,
 				cuda_rt_err_not_impl);
 
 	cuda_rt_last_error = cudaSuccess;
@@ -1717,8 +1733,7 @@ cudaError_t cudaMemset(void *devPtr, int value, size_t count)
 		cuInit(0);
 
 	if (list_index_of(pinned_memory_object_list, devPtr) != -1)
-		warning("%s:%d: pinned host memory not implemented", __func__,
-				__LINE__);
+		fatal("%s:%d: pinned host memset not implemented", __func__, __LINE__);
 	else
 	{
 		stream = list_get(active_device->stream_list, 0);
