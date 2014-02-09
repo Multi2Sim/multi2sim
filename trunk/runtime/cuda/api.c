@@ -128,10 +128,9 @@ void versionCheck(void)
 	if (version.major != CUDA_VERSION_MAJOR || version.minor <
 			CUDA_VERSION_MINOR)
 		fatal("%s:%d: incompatible CUDA versions. Guest library v. %d.%d / "
-				"Host implementation v. %d.%d.\n"
-				"\t%s", __FILE__, __LINE__,	CUDA_VERSION_MAJOR,
-				CUDA_VERSION_MINOR, version.major, version.minor,
-				cuda_err_version);
+				"Host implementation v. %d.%d.\n\t%s", __FILE__, __LINE__,
+				CUDA_VERSION_MAJOR, CUDA_VERSION_MINOR, version.major,
+				version.minor, cuda_err_version);
 }
 
 
@@ -462,8 +461,10 @@ CUresult cuDeviceComputeCapability(int *major, int *minor, CUdevice dev)
 		return CUDA_ERROR_INVALID_VALUE;
 	}
 
-	/* Get version */
+	/* Get device */
 	device = list_get(device_list, dev);
+
+	/* Get version */
 	*major = device->attributes[CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR];
 	*minor = device->attributes[CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR];
 
@@ -866,6 +867,7 @@ CUresult cuMemAlloc(CUdeviceptr *dptr, size_t bytesize)
 	if (ret)
 		fatal("native execution not supported.\n%s", cuda_err_native);
 
+	/* Update device memory list */
 	list_enqueue(device_memory_object_list, (void *)*dptr);
 
 	cuda_debug("\t(driver) '%s' out: device_ptr = 0x%08x", __func__, *dptr);
@@ -904,6 +906,9 @@ CUresult cuMemFree(CUdeviceptr dptr)
 	if (ret)
 		fatal("native execution not supported.\n%s", cuda_err_native);
 
+	/* Update device memory list */
+	list_remove(device_memory_object_list, (void *)dptr);
+
 	cuda_debug("\t(driver) '%s' out: return = %d", __func__, CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
@@ -932,7 +937,7 @@ CUresult cuMemAllocHost(void **pp, size_t bytesize)
 	/* Allocate */
 	*pp = xcalloc(1, bytesize);
 
-	/* Update pinned memory table */
+	/* Update pinned memory list */
 	list_enqueue(pinned_memory_object_list, *pp);
 
 	cuda_debug("\t(driver) '%s' out: pp = [%p]", __func__, *pp);
@@ -943,9 +948,6 @@ CUresult cuMemAllocHost(void **pp, size_t bytesize)
 
 CUresult cuMemFreeHost(void *p)
 {
-	int i;
-	void *pmem;
-
 	cuda_debug("CUDA driver API '%s'", __func__);
 	cuda_debug("\t(driver) '%s' in: p = [%p]", __func__, p);
 
@@ -956,16 +958,10 @@ CUresult cuMemFreeHost(void *p)
 		return CUDA_ERROR_NOT_INITIALIZED;
 	}
 
-	for (i = 0; i < list_count(pinned_memory_object_list); ++i)
-	{
-		pmem = list_get(pinned_memory_object_list, i);
-		if (pmem == p)
-		{
-			list_remove_at(pinned_memory_object_list, i);
-			free(p);
-			break;
-		}
-	}
+	/* Update pinned memory list */
+	list_remove(pinned_memory_object_list, p);
+
+	free(p);
 
 	cuda_debug("\t(driver) '%s' out: return = %d", __func__, CUDA_SUCCESS);
 
@@ -1243,6 +1239,7 @@ CUresult cuMemcpyAsync(CUdeviceptr dst, CUdeviceptr src, size_t ByteCount,
 		return CUDA_ERROR_NOT_INITIALIZED;
 	}
 
+	/* Create arguments */
 	args = xcalloc(1, sizeof(struct memory_args_t));
 	args->src_ptr = src;
 	args->dst_ptr = dst;
@@ -1256,6 +1253,9 @@ CUresult cuMemcpyAsync(CUdeviceptr dst, CUdeviceptr src, size_t ByteCount,
 			NULL, NULL, NULL);
 	command->ready_to_run = 1;
 	cuda_stream_enqueue(hStream, command);
+
+	/* Free arguments */
+	free(args);
 
 	cuda_debug("\t(driver) '%s' out: return = %d", __func__, CUDA_SUCCESS);
 
@@ -1340,9 +1340,11 @@ CUresult cuMemsetD8(CUdeviceptr dstDevice, unsigned char uc, size_t N)
 		return CUDA_ERROR_NOT_INITIALIZED;
 	}
 
-	/* Syscall */
+	/* Create host data */
 	src_host = xcalloc(N, sizeof(unsigned char));
 	memset(src_host, uc, N);
+
+	/* Syscall */
 	if (active_device->type == CUDA_DEVICE_FERMI)
 		ret = syscall(CUDA_SYS_CODE, cuda_call_cuFrmMemcpyHtoD, dstDevice,
 			src_host, N);
@@ -1352,6 +1354,7 @@ CUresult cuMemsetD8(CUdeviceptr dstDevice, unsigned char uc, size_t N)
 	else
 		fatal("device not supported.\n");
 
+	/* Free host data */
 	free(src_host);
 
 	/* Check that we are running on Multi2Sim. If a program linked with this
@@ -1418,9 +1421,11 @@ CUresult cuMemsetD8Async(CUdeviceptr dstDevice, unsigned char uc, size_t N,
 		return CUDA_ERROR_NOT_INITIALIZED;
 	}
 
+	/* Create host data */
 	src = xcalloc(N, sizeof(unsigned char));
 	memset(src, uc, N);
 
+	/* Create arguments */
 	args = xcalloc(1, sizeof(struct memory_args_t));
 	args->src_ptr = (CUdeviceptr)src;
 	args->dst_ptr = dstDevice;
@@ -1434,6 +1439,9 @@ CUresult cuMemsetD8Async(CUdeviceptr dstDevice, unsigned char uc, size_t N,
 			NULL, NULL, NULL);
 	command->ready_to_run = 1;
 	cuda_stream_enqueue(hStream, command);
+
+	/* Free arguments */
+	free(args);
 
 	cuda_debug("\t(driver) '%s' out: return = %d", __func__, CUDA_SUCCESS);
 
@@ -1647,6 +1655,8 @@ CUresult cuStreamAddCallback(CUstream hStream, CUstreamCallback callback,
 	command->ready_to_run = 1;
 	cuda_stream_enqueue(hStream, command);
 
+	free(cb);
+
 	cuda_debug("\t(driver) '%s' out: return = %d", __func__, CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
@@ -1752,6 +1762,8 @@ CUresult cuEventRecord(CUevent hEvent, CUstream hStream)
 			args, NULL);
 	command->ready_to_run = 1;
 	cuda_stream_enqueue(hStream, command);
+
+	free(args);
 
 	cuda_debug("\t(driver) '%s' out: return = %d", __func__, CUDA_SUCCESS);
 
@@ -1950,7 +1962,13 @@ CUresult cuLaunchKernel(CUfunction f, unsigned int gridDimX,
 	assert(i < list_count(active_device->stream_list));
 
 	/* Update command */
-	command = list_get(stream->command_list, 0);
+	for (i = 0; i < list_count(stream->command_list); ++i)
+	{
+		command = list_get(stream->command_list, i);
+		if (command->func == cuLaunchKernelImpl)
+			break;
+	}
+	assert(i < list_count(stream->command_list));
 	if (! command)  /* Directly called, i.e., CUDA runtime APIs are used. */
 	{
 		/* If stream == 0, it is the default stream. */
@@ -1983,6 +2001,7 @@ CUresult cuLaunchKernel(CUfunction f, unsigned int gridDimX,
 		command->k_args.stream = hStream;
 		command->k_args.kernel_params = kernelParams;
 		command->k_args.extra = extra;
+
 		command->ready_to_run = 1;
 	}
 
