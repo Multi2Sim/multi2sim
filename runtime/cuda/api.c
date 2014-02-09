@@ -1797,7 +1797,21 @@ CUresult cuEventQuery(CUevent hEvent)
 
 CUresult cuEventSynchronize(CUevent hEvent)
 {
-	__CUDA_NOT_IMPL__;
+	cuda_debug("CUDA driver API '%s'", __func__);
+	cuda_debug("\t(driver) '%s' in: hEvent = [%p]", __func__, hEvent);
+
+	if (! active_device)
+	{
+		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
+				CUDA_ERROR_NOT_INITIALIZED);
+		return CUDA_ERROR_NOT_INITIALIZED;
+	}
+
+	while (! hEvent->to_be_recorded)
+		;
+
+	cuda_debug("\t(driver) '%s' out: return = %d", __func__, CUDA_SUCCESS);
+
 	return CUDA_SUCCESS;
 }
 
