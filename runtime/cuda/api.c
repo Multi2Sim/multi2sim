@@ -1609,8 +1609,8 @@ CUresult cuStreamWaitEvent(CUstream hStream, CUevent hEvent, unsigned int Flags)
 	{
 		args = xcalloc(1, sizeof(struct event_args_t));
 		args->event = hEvent;
-		command = cuda_stream_command_create(hStream, cuWaitEventImpl, NULL, NULL,
-				args, NULL);
+		command = cuda_stream_command_create(hStream, cuWaitEventImpl, NULL,
+				NULL, args, NULL);
 		command->ready_to_run = 1;
 		if (hStream == NULL)
 		{
@@ -1759,6 +1759,7 @@ CUresult cuEventRecord(CUevent hEvent, CUstream hStream)
 		return CUDA_ERROR_NOT_INITIALIZED;
 	}
 
+	hEvent->recorded = 0;
 	hEvent->to_be_recorded = 1;
 	args = xcalloc(1, sizeof(struct event_args_t));
 	args->event = hEvent;
