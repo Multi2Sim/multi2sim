@@ -187,6 +187,19 @@ void cuEventRecordImpl(struct cuda_stream_command_t *command)
 	cuda_debug("CUDA stream command 'cuEventRecord' completed now");
 }
 
+void cuWaitEventImpl(struct cuda_stream_command_t *command)
+{
+	CUevent event = command->e_args.event;
+
+	cuda_debug("CUDA stream command 'cuWaitEvent' running now");
+	cuda_debug("\tin: event = [%p]", event);
+
+	while (event->recorded)
+		;
+
+	cuda_debug("CUDA stream command 'cuWaitEvent' completed now");
+}
+
 void cuStreamCallbackImpl(struct cuda_stream_command_t *command)
 {
 	CUstreamCallback func = command->cb.func;

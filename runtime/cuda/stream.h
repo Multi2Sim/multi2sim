@@ -116,6 +116,7 @@ void cudaConfigureCallImpl(struct cuda_stream_command_t *command);
 void cudaSetupArgumentImpl(struct cuda_stream_command_t *command);
 void cuLaunchKernelImpl(struct cuda_stream_command_t *command);
 void cuEventRecordImpl(struct cuda_stream_command_t *command);
+void cuWaitEventImpl(struct cuda_stream_command_t *command);
 void cuStreamCallbackImpl(struct cuda_stream_command_t *command);
 struct cuda_stream_command_t *cuda_stream_command_create(CUstream stream,
 		cuda_stream_command_func_t func, struct memory_args_t *mem_args,

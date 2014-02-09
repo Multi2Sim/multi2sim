@@ -1588,8 +1588,10 @@ CUresult cuStreamGetFlags(CUstream hStream, unsigned int *flags)
 
 CUresult cuStreamWaitEvent(CUstream hStream, CUevent hEvent, unsigned int Flags)
 {
+	struct cuda_stream_command_t *command;
+	struct event_args_t *args;
+	CUstream stream;
 	int i;
-	//CUstream stream;
 
 	cuda_debug("CUDA driver API '%s'", __func__);
 	cuda_debug("\t(driver) '%s' in: hStream = [%p]", __func__, hStream);
@@ -1603,18 +1605,25 @@ CUresult cuStreamWaitEvent(CUstream hStream, CUevent hEvent, unsigned int Flags)
 		return CUDA_ERROR_NOT_INITIALIZED;
 	}
 
-	if (hStream == NULL)
+	if (hEvent->to_be_recorded != 0)
 	{
-		for (i = 0; i < list_count(active_device->stream_list); ++i)
+		args = xcalloc(1, sizeof(struct event_args_t));
+		args->event = hEvent;
+		command = cuda_stream_command_create(hStream, cuWaitEventImpl, NULL, NULL,
+				args, NULL);
+		command->ready_to_run = 1;
+		if (hStream == NULL)
 		{
-			//stream = list_get(active_device->stream_list, i);
-			cuEventSynchronize(hEvent);
+			for (i = 0; i < list_count(active_device->stream_list); ++i)
+			{
+				stream = list_get(active_device->stream_list, i);
+				cuda_stream_enqueue(stream, command);
+			}
 		}
-	}
-	else
-	{
-		while (! hEvent->recorded)
-			;
+		else
+			cuda_stream_enqueue(hStream, command);
+
+		free(args);
 	}
 
 	cuda_debug("\t(driver) '%s' out: return = %d", __func__, CUDA_SUCCESS);
