@@ -181,8 +181,8 @@ void cuEventRecordImpl(struct cuda_stream_command_t *command)
 	cuda_debug("CUDA stream command 'cuEventRecord' running now");
 	cuda_debug("\tin: event = [%p]", event);
 
-	event->recorded = 1;
 	cuda_event_record(event);
+	event->recorded = 1;
 
 	cuda_debug("CUDA stream command 'cuEventRecord' completed now");
 }
