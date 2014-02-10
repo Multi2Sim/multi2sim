@@ -1832,7 +1832,76 @@ void frm_isa_LOP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_BFE_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	__NOT_IMPL__
+	/* Format */
+	FrmFmtReg fmt = FrmInstWrapGetBytes(inst)->fmt_reg;
+
+	/* Active and predicate */
+	FrmWarp *warp = thread->warp;
+	FrmWarpSyncStackEntry entry;
+	unsigned active;
+	unsigned pred_id, pred;
+
+	/* Operands */
+	unsigned dst_id, src1_id, src2_id;
+	int dst, src1, src2;
+	unsigned start_bit, len;
+
+	/* Pop sync stack at reconvergence PC */
+	if ((warp->pc != 0) && (warp->pc ==
+			warp->sync_stack.entries[warp->sync_stack_top].reconv_pc))
+	{
+		warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = 0;
+		bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+				active_thread_mask);
+		warp->sync_stack_top--;
+	}
+
+	/* Active */
+	entry = warp->sync_stack.entries[warp->sync_stack_top];
+	active = bit_map_get(entry.active_thread_mask, thread->id_in_warp, 1);
+
+	/* Predicate */
+	pred_id = fmt.pred;
+	if (pred_id <= 7)
+		pred = thread->pr[pred_id];
+	else
+		pred = ! thread->pr[pred_id - 8];
+
+	/* Execute */
+	if (active == 1 && pred == 1)
+	{
+		/* Read */
+		src1_id = fmt.src1;
+		src1 = thread->gpr[src1_id].s32;
+		src2_id = fmt.src2;
+		if (fmt.s2mod == 0)
+			src2 = thread->gpr[src2_id].s32;
+		else if (fmt.s2mod == 1 || fmt.s2mod == 2)
+		{
+			struct mem_t *const_mem = thread->grid->emu->const_mem;
+			mem_read(const_mem, src2_id, 4, &src2);
+		}
+		else
+			src2 = src2_id >> 19 ? src2_id | 0xfff00000 : src2_id;
+		start_bit = src2 & 0xff;
+		len = (src2 >> 8) & 0xff;
+
+		/* Execute */
+		dst = ((src1 & (1 << (start_bit + len - 1))) >> start_bit) &
+				(1 << (len - 1));
+		if (((dst >> (len - 1)) & 0x1) == 1)
+			dst = dst | (0xffffffff << len);
+
+		/* Write */
+		dst_id = fmt.dst;
+		thread->gpr[dst_id].s32 = dst;
+	}
+
+	/* Debug */
+	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
+			"dst = [0x%x] 0x%08x src1 = [0x%x] 0x%08x src2 = [0x%x] 0x%08x\n",
+			__func__, __LINE__, warp->pc, thread->id, active, pred_id, pred,
+			dst_id, dst, src1_id, src1, src2_id, src2);
 }
 
 void frm_isa_FLO_impl(FrmThread *thread, struct FrmInstWrap *inst)
