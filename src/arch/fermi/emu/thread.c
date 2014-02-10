@@ -127,6 +127,12 @@ void FrmThreadCreate(FrmThread *self, int id, FrmWarp *warp)
 		self->pr[i] = 0;
 	self->pr[7] = 1;
 
+	/* Condition code registers */
+	self->cc.sign = 0;
+	self->cc.carry = 0;
+	self->cc.zero = 0;
+	self->cc.overflow = 0;
+
 	/* Add thread to warp */
 	warp->threads[self->id_in_warp] = self;
 }
