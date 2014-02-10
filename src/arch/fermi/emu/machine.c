@@ -215,8 +215,7 @@ void frm_isa_FSETP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 		else if (cop == 14)
 			cop_res = src1 >= src2 || isnan(src1) || isnan(src2);
 		else
-			fatal("%s: compare operation %d not implemented",
-					__func__, cop);
+			fatal("%s: compare operation (%d) not implemented", __func__, cop);
 
 		/* Logic */
 		if (bop == 0)
@@ -416,8 +415,8 @@ void frm_isa_FCMP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 		else if (cop == 6)
 			cop_res = src3 >= 0;
 		else
-			fatal("%s:%d: compare operation 0x%x not implemented",
-					__func__, __LINE__, cop);
+			fatal("%s:%d: compare operation 0x%x not implemented", __func__,
+					__LINE__, cop);
 		dst = cop_res ? src1 : src2;
 
 		/* Write */
@@ -1012,8 +1011,8 @@ void frm_isa_LOP32I_impl(FrmThread *thread, struct FrmInstWrap *inst)
 		else if (bop == 2)
 			dst = src1 ^ imm;
 		else
-			fatal("%s:%d: unsupported logic operation 0x%x",
-					__func__, __LINE__, bop);
+			fatal("%s:%d: unsupported logic operation 0x%x", __func__, __LINE__,
+					bop);
 
 		/* Write */
 		dst_id = fmt.dst;
@@ -1176,8 +1175,7 @@ void frm_isa_ISETP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 		else if (cop == 6)
 			cop_res = src1 >= src2;
 		else
-			fatal("%s: compare operation %d not implemented",
-					__func__, cop);
+			fatal("%s: compare operation (%d) not implemented", __func__, cop);
 
 		/* Logic */
 		if (bop == 0)
@@ -1377,8 +1375,8 @@ void frm_isa_ICMP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 		else if (cop == 6)
 			cop_res = src3 >= 0;
 		else
-			fatal("%s:%d: compare operation 0x%x not implemented",
-					__func__, __LINE__, cop);
+			fatal("%s:%d: compare operation 0x%x not implemented", __func__,
+					__LINE__, cop);
 		dst = cop_res ? src1 : src2;
 
 		/* Write */
@@ -1916,7 +1914,88 @@ void frm_isa_CSET_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_CSETP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	__NOT_IMPL__
+	/* Format */
+	FrmFmtOther fmt = FrmInstWrapGetBytes(inst)->fmt_other;
+
+	/* Active and predicate */
+	FrmWarp *warp = thread->warp;
+	FrmWarpSyncStackEntry entry;
+	unsigned active;
+	unsigned pred_id, pred;
+
+	/* Operands */
+	unsigned p_id, p, q_id, q, cc, r_id, r;
+
+	/* Operations and intermediate values */
+	unsigned bop;
+
+	/* Pop sync stack at reconvergence PC */
+	if ((warp->pc != 0) && (warp->pc ==
+			warp->sync_stack.entries[warp->sync_stack_top].reconv_pc))
+	{
+		warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = 0;
+		bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+				active_thread_mask);
+		warp->sync_stack_top--;
+	}
+
+	/* Active */
+	entry = warp->sync_stack.entries[warp->sync_stack_top];
+	active = bit_map_get(entry.active_thread_mask, thread->id_in_warp, 1);
+
+	/* Get predicate */
+	pred_id = fmt.pred;
+	if (pred_id <= 7)
+		pred = thread->pr[pred_id];
+	else
+		pred = ! thread->pr[pred_id - 8];
+
+	/* Execute */
+	if (active == 1 && pred == 1)
+	{
+		/* Read */
+		cc = thread->cc.sign || thread->cc.carry || thread->cc.zero ||
+				thread->cc.overflow;
+		r_id = fmt.fmod2_srco & 0x7;
+		if (r_id <= 7)
+			r = thread->pr[r_id];
+		else
+			r = ! thread->pr[r_id - 8];
+		bop = (fmt.fmod2_srco >> 4) & 0x3;
+
+		/* Logic */
+		if (bop == 0)
+		{
+			p = cc && r;
+			q = ! cc && r;
+		}
+		else if (bop == 1)
+		{
+			p = cc || r;
+			q = ! cc || r;
+		}
+		else if (bop == 2)
+		{
+			p = (cc && ! r) || (! cc && r);
+			q = (cc && r) || (! cc && ! r);
+		}
+		else
+			fatal("%s: bitwise operation %d not implemented", __func__, bop);
+
+		/* Write */
+		p_id = (fmt.dst >> 3) & 0x7;
+		q_id = fmt.dst & 0x7;
+		if (p_id != 7)
+			thread->pr[p_id] = p;
+		if (q_id != 7)
+			thread->pr[q_id] = q;
+	}
+
+	/* Debug */
+	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
+			"p = [%d] %d q = [%d] %d cc = %d r = [%d] %d\n", __func__, __LINE__,
+			warp->pc, thread->id, active, pred_id, pred, p_id, p, q_id, q, cc,
+			r_id, r);
 }
 
 void frm_isa_PSET_impl(FrmThread *thread, struct FrmInstWrap *inst)
@@ -1926,7 +2005,108 @@ void frm_isa_PSET_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_PSETP_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	__NOT_IMPL__
+	/* Format */
+	FrmFmtOther fmt = FrmInstWrapGetBytes(inst)->fmt_other;
+
+	/* Active and predicate */
+	FrmWarp *warp = thread->warp;
+	FrmWarpSyncStackEntry entry;
+	unsigned active;
+	unsigned pred_id, pred;
+
+	/* Operands */
+	unsigned p_id, p, q_id, q;
+	unsigned src1_id, src2_id, src3_id;
+	unsigned src1, src2, src3;
+
+	/* Operations and intermediate values */
+	unsigned bop1, bop2;
+	unsigned intermediate_result;
+
+	/* Pop sync stack at reconvergence PC */
+	if ((warp->pc != 0) && (warp->pc ==
+			warp->sync_stack.entries[warp->sync_stack_top].reconv_pc))
+	{
+		warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = 0;
+		bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+				active_thread_mask);
+		warp->sync_stack_top--;
+	}
+
+	/* Active */
+	entry = warp->sync_stack.entries[warp->sync_stack_top];
+	active = bit_map_get(entry.active_thread_mask, thread->id_in_warp, 1);
+
+	/* Get predicate */
+	pred_id = fmt.pred;
+	if (pred_id <= 7)
+		pred = thread->pr[pred_id];
+	else
+		pred = ! thread->pr[pred_id - 8];
+
+	/* Execute */
+	if (active == 1 && pred == 1)
+	{
+		/* Read */
+		src1_id = fmt.fmod1_src1 & 0xf;
+		if (src1_id <= 7)
+			src1 = thread->pr[src1_id];
+		else
+			src1 = ! thread->pr[src1_id - 8];
+		src2_id = fmt.src2 & 0x7;
+		src2 = thread->pr[src2_id];
+		src3_id = fmt.fmod2_srco & 0xf;
+		if (src3_id <= 7)
+			src3 = thread->pr[src3_id];
+		else
+			src3 = ! thread->pr[src3_id - 8];
+		bop1 = (fmt.src2 >> 4) & 0x3;
+		bop2 = (fmt.fmod2_srco >> 4) & 0x3;
+
+		/* Execute */
+		if (bop1 == 0)
+			intermediate_result = src1 && src2;
+		else if (bop1 == 1)
+			intermediate_result = src1 || src2;
+		else if (bop1 == 2)
+			intermediate_result = (! src1 && src2) || (src1 && ! src2);
+		else
+			fatal("%s: invalid bitwise logic operation (%d)", __func__, bop1);
+		if (bop2 == 0)
+		{
+			p = intermediate_result && src3;
+			q = (! intermediate_result) && src3;
+		}
+		else if (bop2 == 1)
+		{
+			p = intermediate_result || src3;
+			q = (! intermediate_result) || src3;
+		}
+		else if (bop2 == 2)
+		{
+			p = (! intermediate_result && src3) || (intermediate_result &&
+					! src3);
+			q = (intermediate_result && src3) || (! intermediate_result &&
+					! src3);
+		}
+		else
+			fatal("%s: invalid bitwise logic operation (%d)", __func__, bop2);
+
+		/* Write */
+		p_id = (fmt.dst >> 3) & 0x7;
+		q_id = fmt.dst & 0x7;
+		if (p_id != 7)
+			thread->pr[p_id] = p;
+		if (q_id != 7)
+			thread->pr[q_id] = q;
+	}
+
+	/* Debug */
+	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d pred = [%d] %d "
+			"p = [%d] %d q = [%d] %d src1 = [%d] %d src2 = [%d] %d "
+			"src3 = [%d] %d\n", __func__, __LINE__, warp->pc, thread->id,
+			active, pred_id, pred, p_id, p, q_id, q, src1_id, src1, src2_id,
+			src2, src3_id, src3);
 }
 
 void frm_isa_F2F_impl(FrmThread *thread, struct FrmInstWrap *inst)
@@ -3316,7 +3496,7 @@ void frm_isa_BRA_impl(FrmThread *thread, struct FrmInstWrap *inst)
 	unsigned pred_id, pred;
 
 	/* Operand */
-	int relative_target;
+	int relative_addr;
 	enum {FORWARD = 0, BACKWARD} branch_dir;
 	int reconv_pc;
 
@@ -3347,8 +3527,8 @@ void frm_isa_BRA_impl(FrmThread *thread, struct FrmInstWrap *inst)
 				bit_map_create(warp->thread_count);
 
 	/* Update active thread mask */
-	relative_target = fmt.imm32 & 0xffffff;
-	branch_dir = (relative_target >> 23) & 0x1;
+	relative_addr = fmt.imm32 & 0xffffff;
+	branch_dir = (relative_addr >> 23) & 0x1;
 	if (active == 1 && pred == 1)
 	{
 		if (branch_dir == FORWARD)
@@ -3393,11 +3573,11 @@ void frm_isa_BRA_impl(FrmThread *thread, struct FrmInstWrap *inst)
 			bit_map_free(warp->sync_stack.entries[warp->sync_stack_top + 1].
 					active_thread_mask);
 			if (branch_dir == FORWARD)
-				warp->target_pc = warp->pc + warp->inst_size + relative_target;
+				warp->target_pc = warp->pc + warp->inst_size + relative_addr;
 			else
 			{
-				relative_target |= 0xfff00000;
-				warp->target_pc = warp->pc + warp->inst_size + relative_target;
+				relative_addr |= 0xfff00000;
+				warp->target_pc = warp->pc + warp->inst_size + relative_addr;
 			}
 		}
 		else
@@ -3417,13 +3597,13 @@ void frm_isa_BRA_impl(FrmThread *thread, struct FrmInstWrap *inst)
 					mask = ~mask;
 					bit_map_set(warp->sync_stack.entries[warp->sync_stack_top].
 							active_thread_mask, 0, warp->thread_count, mask);
-					reconv_pc = warp->pc + warp->inst_size + relative_target;
+					reconv_pc = warp->pc + warp->inst_size + relative_addr;
 					warp->sync_stack.entries[warp->sync_stack_top].reconv_pc =
 							reconv_pc;
 				}
 				else
 				{
-					reconv_pc = warp->pc + warp->inst_size + relative_target;
+					reconv_pc = warp->pc + warp->inst_size + relative_addr;
 					warp->sync_stack.entries[warp->sync_stack_top + 1].
 					reconv_pc = reconv_pc;
 					warp->sync_stack_top++;
@@ -3431,8 +3611,8 @@ void frm_isa_BRA_impl(FrmThread *thread, struct FrmInstWrap *inst)
 			}
 			else
 			{
-				relative_target |= 0xfff00000;
-				warp->target_pc = warp->pc + warp->inst_size + relative_target;
+				relative_addr |= 0xfff00000;
+				warp->target_pc = warp->pc + warp->inst_size + relative_addr;
 
 				if (taken_thread_count == active_thread_count)
 				{
@@ -3546,7 +3726,54 @@ void frm_isa_PBK_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_PCNT_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	__NOT_IMPL__
+	/* Format */
+	FrmFmtCtrl fmt = FrmInstWrapGetBytes(inst)->fmt_ctrl;
+
+	/* Active and predicate */
+	FrmWarp *warp = thread->warp;
+	FrmWarpSyncStackEntry entry;
+	unsigned active;
+
+	/* Operand */
+	int relative_addr;
+
+	/* Pop sync stack at reconvergence PC */
+	if ((warp->pc != 0) && (warp->pc ==
+			warp->sync_stack.entries[warp->sync_stack_top].reconv_pc))
+	{
+		warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = 0;
+		bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+				active_thread_mask);
+		warp->sync_stack_top--;
+	}
+
+	/* Active */
+	entry = warp->sync_stack.entries[warp->sync_stack_top];
+	active = bit_map_get(entry.active_thread_mask, thread->id_in_warp, 1);
+
+	/* Execute */
+	if (active == 1)
+	{
+		if ((fmt.mmod & 0x1) == 0)
+		{
+			relative_addr = fmt.imm32 & 0xffffff;
+			warp->cont_pc = warp->pc + warp->inst_size + relative_addr;
+		}
+		else
+		{
+			struct mem_t *const_mem = thread->grid->emu->const_mem;
+			unsigned bank = (fmt.imm32 >> 16) & 0x1f;
+			unsigned offset = fmt.imm32 & 0xffff;
+			mem_read(const_mem, (bank << 16) + offset, 4, &relative_addr);
+			warp->cont_pc = relative_addr;
+		}
+
+		warp->target_pc = warp->pc + warp->inst_size;
+	}
+
+	/* Debug */
+	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d cont_pc = 0x%x\n",
+			__func__, __LINE__, warp->pc, thread->id, active, warp->cont_pc);
 }
 
 void frm_isa_PRET_impl(FrmThread *thread, struct FrmInstWrap *inst)
@@ -3620,7 +3847,43 @@ void frm_isa_BRK_impl(FrmThread *thread, struct FrmInstWrap *inst)
 
 void frm_isa_CONT_impl(FrmThread *thread, struct FrmInstWrap *inst)
 {
-	__NOT_IMPL__
+	/* Format */
+	FrmFmtCtrl fmt = FrmInstWrapGetBytes(inst)->fmt_ctrl;
+
+	/* Active and predicate */
+	FrmWarp *warp = thread->warp;
+	FrmWarpSyncStackEntry entry;
+	unsigned active;
+	unsigned pred_id, pred;
+
+	/* Pop sync stack at reconvergence PC */
+	if ((warp->pc != 0) && (warp->pc ==
+			warp->sync_stack.entries[warp->sync_stack_top].reconv_pc))
+	{
+		warp->sync_stack.entries[warp->sync_stack_top].reconv_pc = 0;
+		bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+				active_thread_mask);
+		warp->sync_stack_top--;
+	}
+
+	/* Active */
+	entry = warp->sync_stack.entries[warp->sync_stack_top];
+	active = bit_map_get(entry.active_thread_mask, thread->id_in_warp, 1);
+
+	/* Predicate */
+	pred_id = fmt.pred;
+	if (pred_id <= 7)
+		pred = thread->pr[pred_id];
+	else
+		pred = ! thread->pr[pred_id - 8];
+
+	/* Execute */
+	if (active == 1 && pred == 1)
+		warp->target_pc = warp->cont_pc;
+
+	/* Debug */
+	frm_isa_debug("%s:%d: PC = 0x%x thread[%d] active = %d target_pc = 0x%x\n",
+			__func__, __LINE__, warp->pc, thread->id, active, warp->target_pc);
 }
 
 void frm_isa_BPT_impl(FrmThread *thread, struct FrmInstWrap *inst)

@@ -56,7 +56,8 @@ CLASS_BEGIN(FrmWarp, Object)
 
 	/* PC */
 	unsigned pc;
-	int target_pc;
+	unsigned target_pc;
+	unsigned cont_pc;
 
 	/* Instructions to execute */
 	struct FrmInstWrap *inst;

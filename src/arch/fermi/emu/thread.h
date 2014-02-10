@@ -35,6 +35,14 @@ typedef union
 	float f;
 } FrmThreadReg;
 
+typedef struct
+{
+	unsigned sign;
+	unsigned carry;
+	unsigned zero;
+	unsigned overflow;
+} FrmThreadCC;
+
 CLASS_BEGIN(FrmThread, Object)
 
 	/* IDs */
@@ -50,6 +58,7 @@ CLASS_BEGIN(FrmThread, Object)
 	FrmThreadReg gpr[64];  /* General purpose registers */
 	FrmThreadReg sr[82];  /* Special registers */
 	unsigned pr[8];  /* Predicate registers */
+	FrmThreadCC cc;  /* Condition code registers */
 
 	/* Fields below are used for architectural simulation only. */
 
