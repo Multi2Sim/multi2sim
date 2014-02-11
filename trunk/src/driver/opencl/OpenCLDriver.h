@@ -20,6 +20,7 @@
 #ifndef DRIVER_OPENCL_SI_DRIVER_H
 #define DRIVER_OPENCL_SI_DRIVER_H
 
+#include <src/driver/common/Driver.h>
 #include <string>
 
 // Forward declaration
@@ -41,7 +42,7 @@ namespace Driver
 {
 
 /// OpenCL Driver
-class OpenCLDriver
+class OpenCLDriver : SICommon
 {
 	// Driver verision information
 	static const unsigned major = 5;
@@ -54,19 +55,9 @@ class OpenCLDriver
 	// can be obtained with a call to getInstance()
 	OpenCLDriver();
 
-	// Device emulators
-	SI::Emu *si_emu;
-	x86::Emu *x86_emu;
-	bool fused;
-
-	// Device timing simulators
-	// SI::Gpu *gpu;
-	// x86::Cpu *cpu;
-
 	// List of Southern Islands programs and kernels
 	std::vector<std::unique_ptr<SI::Program>> programs;
 	std::vector<std::unique_ptr<SI::Kernel>> kernels;
-	std::vector<std::unique_ptr<SI::NDRange>> ndranges;
 
 public:
 
