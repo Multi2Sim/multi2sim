@@ -27,7 +27,7 @@ namespace x86
 {
 
 class Context;
-
+class Asm;
 
 /// x86 Emulator configuration
 class EmuConfig : public misc::CommandLineConfig
