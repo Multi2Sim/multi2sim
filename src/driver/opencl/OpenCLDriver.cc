@@ -35,7 +35,6 @@ OpenCLDriver::OpenCLDriver()
 {
 	// Obtain instance of emulators
 	// si_emu = SI::Emu::getInstance();
-	x86_emu = x86::Emu::getInstance();
 }
 
 OpenCLDriver *OpenCLDriver::getInstance()
