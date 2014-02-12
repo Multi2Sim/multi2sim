@@ -55,6 +55,7 @@ void KplGridSetupSize(struct KplGrid *self, unsigned *thread_block_count,
 void KplGridSetupConstantMemory(struct KplGrid *self)
 {
 	Grid *grid = (Grid *) self;
-	grid->SetupConstantMemory();
+	grid->emu->const_mem->Write(0x8, sizeof(unsigned), (const char*)grid->thread_block_size3);
 }
+
 }
