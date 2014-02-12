@@ -29,6 +29,10 @@ libemu_a_SOURCES = \
 	Emu.cc \
 	Emu.h \
 	\
+	ThreadBlock.h \
+	Thread.h \
+	Warp.h \
+	\
 	Wrapper.cc \
 	Wrapper.h
 	

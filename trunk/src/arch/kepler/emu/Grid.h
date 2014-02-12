@@ -20,67 +20,104 @@
 #ifndef ARCH_KEPLER_EMU_GRID_H
 #define ARCH_KEPLER_EMU_GRID_H
 
+#include <list>
+#include <mem-system/Memory.h>
+#include <iostream>
+
 #include "Emu.h"
 
 namespace Kepler
 {
 
-class KplEmu;
+class Emu;
+class ThreadBlock;
+
+enum GridState
+{
+	GridStateInvalid = 0,
+	GridPending = 0x1,
+    GridRunning = 0x2,
+    GridFinished = 0x4
+};
 
 class Grid
 {
-	/* Emulator */
-	KplEmu *emu;
+	// Emulator
+	Emu *emu;
 
-	/* ID */
+	// ID
 	int id;
 
-	/* Number of general purpose registers used by a thread */
-	unsigned int num_gpr;
+	// Name
+	std::string name;
 
-	/* Lists of thread blocks */
-	struct list_t *pending_thread_blocks;
-	struct list_t *running_thread_blocks;
-	struct list_t *finished_thread_blocks;
+	// State
+	GridState state;
 
-	/* Sizes */
-	int thread_count3[3];
-	int thread_count;
-	int thread_block_size3[3];
-	int thread_block_size;
-	int thread_block_count3[3];
-	int thread_block_count;
+	// 3D counters
+	unsigned thread_count3[3];
+	unsigned thread_block_size3[3];
+	unsigned thread_block_count3[3];
 
-	/* Call-back function run right before freeing grid, using the value in
-	 * 'free_notify_data' as an argument. */
-	void (*free_notify_func)(void *);
-	void *free_notify_data;
+	// 1D counters. Each counter is equal to the multiplication
+	// of each component in the corresponding 3D counter
+	unsigned thread_count;
+	unsigned thread_block_size;
+	unsigned thread_block_count;
 
-	/* The following fields are used by architectural simulation only. */
+	// GPR usage by a thread
+	unsigned gpr_count;
 
+	// Thread-blocks
+	std::list<std::unique_ptr<ThreadBlock>> pending_thread_blocks;
+	std::list<std::unique_ptr<ThreadBlock>> running_thread_blocks;
+	std::list<std::unique_ptr<ThreadBlock>> finished_thread_blocks;
+
+	// Iterators
+	std::list<Grid *>::iterator grid_list_iter;
+	std::list<Grid *>::iterator pending_grid_list_iter;
+	std::list<Grid *>::iterator running_grid_list_iter;
+	std::list<Grid *>::iterator finished_grid_list_iter;
+
+	// Instruction buffer
+	void *inst_buffer;
+	unsigned inst_buffer_size;
+
+	// Shared memory top pointer
 	unsigned shared_mem_top;
 
 public:
+	/// Constructor
+	Grid(Emu *emu);
 
-	///Constructor
-	Grid(KplEmu *emu);
-
-	/// Dump grid in a human-readable fashion into an output stream (or
-	/// standard output if argument \a os is omitted.
+	/// Dump the state of the grid in a plain-text format into an output
+	/// stream.
 	void Dump(std::ostream &os = std::cout) const;
 
-	/// Operator \c << overloaded, invoking function Dump()
-	friend std::ostream &operator<<(std::ostream &os, const Grid &grid) {
+	/// Short-hand notation for dumping grid.
+	friend std::ostream &operator<<(std::ostream &os,
+			const Grid &grid) {
 		grid.Dump(os);
 		return os;
 	}
 
-	/// Setup sizes of a grid. Used by driver.
-	void SetupSize(unsigned *global_size, unsigned *local_size);
+	// Getters
+	//
+	// Get shared memory top address
+	unsigned getSharedMemTop() const { return shared_mem_top; }
 
-	/// Write initial values into constant memory. Used by driver.
-	void SetupConstantMemory();
+	// Setters
+	//
+
+	/// Set new sizes of a grid before it is launched.
+	///
+	/// \param global_size Array of 3 elements
+	///        representing the global size.
+	/// \param local_size Array of 3 elements
+	///        representing the local size.
+	void SetupSize(unsigned *global_size, unsigned *local_size);
 };
+
 }   //namespace
 #endif
 
