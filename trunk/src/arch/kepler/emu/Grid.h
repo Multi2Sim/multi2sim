@@ -21,10 +21,13 @@
 #define ARCH_KEPLER_EMU_GRID_H
 
 #include <list>
+#include <memory>
+#include <vector>
 #include <mem-system/Memory.h>
 #include <iostream>
 
 #include "Emu.h"
+#include "ThreadBlock.h"
 
 namespace Kepler
 {

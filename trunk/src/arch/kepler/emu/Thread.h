@@ -70,20 +70,30 @@ public:
 		unsigned size;
 	};
 
-	/* IDs */
+private:
+
+	// IDs
 	int id;
 	int id_in_thread_block;
 	int id_in_warp;
 
-	/* Warp, thread-block, and grid where it belongs */
+	// 3D IDs
+	int id_3d[3];
+	int id_in_thread_block_3d[3];
+
+	// Warp, thread-block, and grid where it belongs
 	Warp *warp;
 	ThreadBlock *thread_block;
 	Grid *grid;
 
-	/* Registers */
+	// Registers
 	RegValue gpr[64];  /* General purpose registers */
 	RegValue sr[82];  /* Special registers */
 	unsigned pr[8];  /* Predicate registers */
+
+	// Last global memory access
+	unsigned global_mem_access_addr;
+	unsigned global_mem_access_size;
 
 	/* Fields below are used for architectural simulation only. */
 public :
@@ -93,32 +103,32 @@ public :
 	/// \id Global 1D identifier of the thread
 	Thread(Warp *warp, int id);
 
-	// FIXME - probably most functions below can be inline
-
 	/// Get value of a GPR
 	/// \param vreg GPR identifier
-	unsigned ReadGPR(int gpr);
+	unsigned ReadGPR(int gpr_id) { return gpr[gpr_id].u32; };
 
 	/// Set value of a GPR
 	/// \param gpr GPR idenfifier
 	/// \param value Value given as an \a unsigned typed value
-	void WriteGPR(int gpr, unsigned value);
+	void WriteGPR(int gpr_id, unsigned value) { gpr[gpr_id].u32 = value;};
 
-	/// Get value of the active thread mask
-	int GetActive();
+	/// Get value of a SR
+	/// \param vreg SR identifier
+	unsigned ReadSR(int sr_id) { return sr[sr_id].u32; };
 
-	/// Set value of the active thread mask
+	/// Set value of a SR
+	/// \param gpr SR idenfifier
 	/// \param value Value given as an \a unsigned typed value
-	void SetActive(unsigned value);
+	void WriteSR(int sr_id, unsigned value) { sr[sr_id].u32 = value; };
 
 	/// Get value of a predicate register
 	/// \param pr Predicate register identifier
-	int GetPred(int pr);
+	int GetPred(int pr_id) { return pr[pr_id]; };
 
 	/// Set value of a predicate register
 	/// \param pr Predicate register identifier
 	/// \param value Value given as an \a unsigned typed value
-	void SetPred(int pr, unsigned value);
+	void SetPred(int pr_id, unsigned value) { pr[pr_id] = value; };
 };
 
 } //namespace
