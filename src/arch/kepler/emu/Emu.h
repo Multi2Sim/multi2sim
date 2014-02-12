@@ -17,82 +17,109 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_KEPLER_EMU_H
-#define ARCH_KEPLER_EMU_H
+#ifndef ARCH_KEPLER_EMU_EMU_H
+#define ARCH_KEPLER_EMU_EMU_H
 
+#include <iostream>
+#include <list>
 
+#include <mem-system/Memory.h>
 #include <arch/common/emu.h>
 #include <arch/kepler/asm/Asm.h>
 
 namespace Kepler
 {
+
+class Asm;
+class Grid;
+class CUDADriver;
+class ThreadBlock;
+class Thread;
+struct KplInstWrap;
+
 /*
  * Class 'KplEmu'
  */
-
-/* Function implementing an instruction */		//make it clear
-typedef void (*KplEmuInstFunc)(KplThread *, struct KplInstWrap *);
-
-class Emu;
-
-class KplEmu : public Emu
+class Emu
 {
-private :
-
-	/* Disassembler */
+	// Disassembler
 	Asm *as;
 
-	/* List of grids */		//make it clear
-	struct list_t *grids;
-	struct list_t *pending_grids;
-	struct list_t *running_grids;
-	struct list_t *finished_grids;
+	// Grids
+	std::list<Grid *> grids;
+	std::list<Grid *> pending_grids;
+	std::list<Grid *> running_grids;
+	std::list<Grid *> finished_grids;
 
-	/* Array of pointers to instruction implementation functions */
-	KplEmuInstFunc inst_func[KplInstOpcodeCount];
+	// Memory
+	Memory::Memory *global_mem;
+	Memory::Memory *const_mem;
+	Memory::Memory *shared_mem;
 
-	/* Global memory */
-	struct mem_t *global_mem;
+	// Global memory parameters
 	unsigned global_mem_top;
-	unsigned total_global_mem_size;
-	unsigned free_global_mem_size;
+	unsigned global_mem_free_size;
+	unsigned global_mem_total_size;
 
-	/* Constant memory */
-	struct mem_t *const_mem;
+	// Flags indicating whether the first 32 bytes of constant memory
+	// are initialized. A warning will be issued by the simulator
+	// if an uninitialized element is used by the kernel.
+//	bool const_mem_init[32];
 
-	/* Stats */
-	int grid_count;
+	// Instruction emulation table
+//	typedef void (*InstFunc)(Kepler::Thread *thread, struct KplInstWrap *inst);
+	typedef void (*InstFunc)(KplThread *, struct KplInstWrap *);
+	InstFunc inst_func[KplInstOpcodeCount];
+
+	// Stats		//make it clear
+	/*
+	long long alu_inst_count;  // ALU instructions executed
+	long long branch_inst_count;  // Branch instructions executed
+	long long ldst_inst_count;  // LDST instructions executed
+*/
 	long long branch_inst_count;
 	long long alu_inst_count;
 	long long shared_mem_inst_count;
 	long long global_mem_inst_count;
 
-public :
+	/// Constructor
+	Emu(Asm *as);
 
-	long long kpl_emu_max_cycles;
-	long long kpl_emu_max_inst;
-	int kpl_emu_max_functions;
-	const int kpl_emu_warp_size = 32;
+	// Unique instance of Fermi emulator
+	//static std::unique_ptr<Emu> instance;
 
-	KplEmu(Asm *as);
+public:
+
+	///Kepler emulator maximum cycles
+	long long emu_max_cycles;
+
+	///Kepler emulator maximum number of instructions
+	long long emu_max_inst;
+
+	///Kepler emulator maximum number of functions
+	int emu_max_functions;
+	const int emu_warp_size = 32;
+
+	/// Get the only instance of the Fermi emulator. If the instance does not
+	/// exist yet, it will be created, and will remain allocated until the
+	/// end of the execution.
+	//static Emu *getInstance();
 
 	/// Dump Kepler Emulator in a human-readable fashion into an output stream (or
 	/// standard output if argument \a os is omitted.
 	void Dump(std::ostream &os = std::cout) const;
 
-	void KplEmuDumpSummary(std::ostream &os = std::cout);
-
-	/// Operator \c << overloaded, invoking function Dump()
-	friend std::ostream &operator<<(std::ostream &os, const KplEmu &emu) {
+	/// Dump emulator state (equivalent to Dump())
+	friend std::ostream &operator<<(std::ostream &os, const Emu &emu) {
 		emu.Dump(os);
 		return os;
 	}
 
+	/// Dump the statistics summary
+	void DumpSummary(std::ostream &os);
 
-	int KplEmuRun();
-
-	void KplEmuConstMemWrite(unsigned addr, void *pvalue);
-	void KplEmuConstMemRead(unsigned addr, void *pvalue);
+	/// Run one iteration of the emulation loop
+	bool Run();
 };
 
 
