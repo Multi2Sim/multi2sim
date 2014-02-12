@@ -26,6 +26,9 @@
 
 #include <arch/kepler/asm/Inst.h>
 
+#include "Grid.h"
+#include "ThreadBlock.h"
+#include "Warp.h"
 
 namespace Kepler
 {
