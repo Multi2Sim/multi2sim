@@ -1883,6 +1883,8 @@ expr
 		{
 			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(cl2llvmTypeWrapGetLlvmType(op1->type)), cl2llvmTypeWrapGetSign(op1->type));
 		}
+		else 
+			switch_type = cl2llvmTypeWrapCreate(cl2llvmTypeWrapGetLlvmType(op1->type), cl2llvmTypeWrapGetSign(op1->type));
 
 		switch (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(switch_type)))
 		{
@@ -3475,7 +3477,7 @@ unary_expr
 		   This extra object is necessary since in the case of a vector 
 		   type, we are concerned with the type of its components, but the
 		   resultant type of the operation is a vector. */
-		if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(switch_type)) == LLVMVectorTypeKind)
+		if (LLVMGetTypeKind(cl2llvmTypeWrapGetLlvmType(lval->type)) == LLVMVectorTypeKind)
 		{
 			switch_type = cl2llvmTypeWrapCreate(LLVMGetElementType(cl2llvmTypeWrapGetLlvmType(type)), cl2llvmTypeWrapGetSign(type));
 		}
