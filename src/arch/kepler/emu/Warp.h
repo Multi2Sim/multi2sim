@@ -84,7 +84,8 @@ class Warp
 	int inst_size;
 
 	// Current instruction
-	KeplerInstWrap *inst;
+	//KeplerInstWrap *inst;
+	Inst* inst;
 
 	// Starting/current position in buffer
 	unsigned long long *inst_buffer;
@@ -108,6 +109,8 @@ class Warp
 	int active_mask_pop;
 	unsigned at_barrier_thread_count;
 	unsigned finished_thread_count;
+	bool finished_emu;
+	bool at_barrier;
 
 	// iterators
 	std::list<Warp *>::iterator running_list_iter;
@@ -160,11 +163,19 @@ public:
 
 	// Setters
 	//
-	// Set PC
+	/// Set PC
 	void setPC(unsigned pc) { this->pc = pc; }
 
-	// Increase PC
+	/// Increase PC
 	void incPC(int increment) { pc += increment; }
+
+	/// set threads_begin
+	void setThreadBegin(std::vector<std::unique_ptr<Thread>> value)
+	{ threads_begin = value;}
+
+	/// set threads_end
+	void setThreadEnd(std::vector<std::unique_ptr<Thread>> value)
+	{ threads_end = value;}
 
 	/// Dump warp in a human-readable format into output stream \a os
 	void Dump(std::ostream &os = std::cout) const;

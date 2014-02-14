@@ -89,7 +89,7 @@ public:
 	///
 	/// \param grid Instance of class Grid that it belongs to.
 	/// \param id Thread-block global 1D ID
-	ThreadBlock(Grid *grid);
+	ThreadBlock(Grid *grid, int id);
 
 	/// Dump thread-block in human readable format into output stream
 	void Dump(std::ostream &os = std::cout) const;
@@ -110,7 +110,10 @@ public:
 	int getWarpsInWorkgroup() const { return warps.size(); }
 
 	// Get counter of warps at barrier
-	int getWarpsAtBarrier() const { return num_warps_at_barrier; }
+	unsigned getWarpsAtBarrier() const { return num_warps_at_barrier; }
+
+	// Get counter of completed warps
+	unsigned getWarpsCompletedEmu() const { return warps_completed_emu; }
 
 	// Get Grid that it belongs to
 	const Grid *getGrid() const { return grid; }
@@ -121,6 +124,12 @@ public:
 		return threads[id_in_thread_block].get();
 	}
 
+	// Get counter of threads in thread-block
+	int getThreadsInThreadBlock() const { return threads.size(); }
+
+
+	// Get finished_emu
+	bool getFinishedEmu() const { return finished_emu; }
 	// Setters
 	//
 	// Increase warps_at_barrier counter
@@ -128,6 +137,9 @@ public:
 
 	// Set warp_at_barrier counter
 	void setWarpsAtBarrier(unsigned counter) { num_warps_at_barrier = counter; }
+
+	// Set finished_emu
+	void setFinishedEmu(bool value) { finished_emu = value; }
 
 	// Return an iterator to the first work-item in the work-group. The
 	// following code can then be used to iterate over all work-items (and

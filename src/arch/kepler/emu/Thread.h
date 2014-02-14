@@ -129,6 +129,13 @@ public :
 	/// \param pr Predicate register identifier
 	/// \param value Value given as an \a unsigned typed value
 	void SetPred(int pr_id, unsigned value) { pr[pr_id] = value; };
+
+	/// Get value of the active thread mask
+	int GetActive();
+
+	/// Set value of the active thread mask
+	/// \param value Value given as an \a unsigned typed value
+	void SetActive(unsigned value);
 };
 
 } //namespace

@@ -106,9 +106,51 @@ public:
 
 	// Getters
 	//
-	// Get shared memory top address
+	/// Get assambler
+	Asm *getAsm() const { return emu->getAsm(); }
+
+	/// Get shared memory top address
 	unsigned getSharedMemTop() const { return shared_mem_top; }
 
+	/// Get 1D thread block size
+	unsigned getThreadBlockSize() const { return thread_block_size; }
+
+	/// Get 3D thread block size
+	/// \param index range from 0 to 2
+	unsigned getThreadBlockSize3(int index) const
+	{
+		assert(index < 3);
+		return thread_block_size3[index];
+	}
+
+	/// Get 3D thread block count
+	/// \param index range from 0 to 2
+	unsigned getThreadBlockCount3(int index) const
+	{
+		assert(index < 3);
+		return thread_block_count3[index];
+	}
+
+	///get instruction function
+	InstFunc getInstFunc(InstOpcode inst) { return emu->getInstFunc(inst); }
+
+	/// Get instruction buffer
+	void *getInstBuffer() const { return inst_buffer; }
+
+	/// Get instruction buffer size
+	unsigned getInstBufferSize() const { return inst_buffer_size; }
+
+	/// Get pending_thread_blocks size
+	unsigned getPendThreadBlocksize() const { return pending_thread_blocks.size();}
+
+	/// Get running_thread_blocks size
+	unsigned getRunThreadBlocksize() const { return running_thread_blocks.size();}
+
+	/// Get running thread blocks list begin
+	std::list<std::unique_ptr<ThreadBlock>>::iterator getRunningThreadBlocksBegin() const
+	{
+		return running_thread_blocks.begin();
+	}
 	// Setters
 	//
 
@@ -119,6 +161,10 @@ public:
 	/// \param local_size Array of 3 elements
 	///        representing the local size.
 	void SetupSize(unsigned *global_size, unsigned *local_size);
+
+	/// move all pending thread block list to running thread block list
+	void WaitingToRunning();
+
 };
 
 }   //namespace
