@@ -95,7 +95,7 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val,
 	llvm_val->val = original_val->val;
 	cl2llvmTypeWrapSetLlvmType(llvm_val->type, cl2llvmTypeWrapGetLlvmType(original_val->type));
 	cl2llvmTypeWrapSetSign(llvm_val->type, cl2llvmTypeWrapGetSign(original_val->type));
-
+	
 	snprintf(temp_var_name, sizeof temp_var_name,
 		"tmp_%d", temp_var_count++);
 		
@@ -872,6 +872,7 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val,
 	}
 	cl2llvmTypeWrapSetLlvmType(llvm_val->type, totype);
 	cl2llvmTypeWrapSetSign(llvm_val->type, tosign);
+	
 	return llvm_val;
 }
 
@@ -920,8 +921,6 @@ void type_unify(struct cl2llvm_val_t *val1, struct cl2llvm_val_t *val2, struct c
 		*new_val2 = llvm_type_cast(val2, type);
 	}
 
-	/* Free pointers */
-	cl2llvmTypeWrapFree(type);
 }
 
 /* This function returns an i1 1 if the value is not equal to 0 and 
