@@ -41,22 +41,22 @@ Emu::Emu(Asm *as)
     /* Initialize */
 	this->as = as;
 
-	this->grids = new std::list<Grid*>;
-	this->pending_grids = new std::list<Grid*>;
-	this->running_grids = new std::list<Grid*>;
-	this->finished_grids = new std::list<Grid*>;
+	grids = new std::list<Grid*>;
+	pending_grids = new std::list<Grid*>;
+	running_grids = new std::list<Grid*>;
+	finished_grids = new std::list<Grid*>;
 
 #define DEFINST(_name, _fmt_str, ...) \
-	this->inst_func[INST_##_name] = kpl_isa_##_name##_impl;
+	inst_func[INST_##_name] = kpl_isa_##_name##_impl;
 #include <arch/kepler/asm/asm.dat>
 #undef DEFINST
-	this->global_mem = new Memory::Memory();
-    this->global_mem->safe = false;
-    this->global_mem_top = 0;
-    this->global_mem_total_size = 1 << 30; /* 2GB */
-    this->global_mem_free_size = this->global_mem_total_size;
-    this->const_mem = new Memory::Memory();
-    this->const_mem->safe = false;
+	global_mem = new Memory::Memory();
+    global_mem->safe = false;
+    global_mem_top = 0;
+    global_mem_total_size = 1 << 30; /* 2GB */
+    global_mem_free_size = this->global_mem_total_size;
+    const_mem = new Memory::Memory();
+    const_mem->safe = false;
 /*
 
         asObject(this)->Dump = KplEmuDump;
@@ -80,12 +80,10 @@ void Emu::DumpSummary(std::ostream &os = std::cout)
 
 bool Emu::Run()
 {
-	/*
-	Grid *grid;
-	ThreadBlock *thread_block;
-	Warp *warp;
 
-	int thread_block_id, warp_id;
+	Grid *grid;
+	Warp *warp;
+	std::list<std::unique_ptr<ThreadBlock>>::iterator thread_block;
 
 	// Stop emulation if no grids
 	if (!this->grids.size())
@@ -93,45 +91,36 @@ bool Emu::Run()
 
 	// Remove grid and its thread blocks from pending list, and add them to
 	 // running list
-	while (this->pending_grids.size())
+	while (pending_grids.size())
 	{
-		grid = this->pending_grids.pop_front();
-		while (grid->pending_thread_blocks.size())
-		{
-			thread_block_id = (long) grid->running_thread_blocks.pop_back();
-			thread_block = new ThreadBlock(grid);
-			while (!thread_block->finished_emu)
-			{
-				for (warp_id = 0; warp_id <	list_count(thread_block->
-						running_warps); ++warp_id)
-				{
-					warp = list_get(thread_block->running_warps, warp_id);
-					if (warp->finished_emu || warp->at_barrier)
-						continue;
-					warp->Execute();
-				}
+		grid = pending_grids.front();
+		pending_grids.pop_front();
 
-				if (list_count(thread_block->finished_warps) == thread_block->
-						warp_count)
+		while (grid->getPendThreadBlocksize())
+		{
+			grid->WaitingToRunning();
+			thread_block = grid->getRunningThreadBlocksBegin();
+			while (thread_block->getWarpsCompletedEmu() != thread_block->
+					getWarpsInWorkgroup())
+			{
+				for (auto wp_p = thread_block->WarpsBegin(); wp_p <	thread_block->
+						WarpsEnd(); ++wp_p)
 				{
-					list_enqueue(grid->finished_thread_blocks, (void *)
-							((long) thread_block_id));
-					thread_block->finished = 1;
+					if ((*wp_p)->finished_emu || (*wp_p)->at_barrier)
+						continue;
+					(*wp_p)->Execute();
 				}
 			}
-			delete(thread_block);
+			thread_block->setFinishedEmu(true);
+			grid->finished_thread_blocks.push_back(thread_block);
 		}
-		list_enqueue(emu->finished_grids, grid);
+		finished_grids.push_back(grid);
 	}
 
 	// Free finished grids
-	assert(!list_count(emu->pending_grids) && !list_count(emu->running_grids));
-	while (list_count(emu->finished_grids))
-	{
-		grid = list_dequeue(emu->finished_grids);
-		delete(grid);
-	}
-*/
+	assert(!grid->getPendThreadBlocksize() && !grid->getRunThreadBlocksize());
+	finished_grids.clear();
+
 	/* Continue emulation */
 	return TRUE;
 }

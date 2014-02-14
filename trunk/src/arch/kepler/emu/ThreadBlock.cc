@@ -35,47 +35,48 @@
 namespace Kepler
 {
 
-ThreadBlock::ThreadBlock(Grid *grid)
+ThreadBlock::ThreadBlock(Grid *grid, int id)
 {
+
 	Warp *warp;
 	Thread *thread;
-	int i;
 	int warp_count;
+	int thread_count;
+
 	/* Initialization */
 	this->id = id;
 	this->grid = grid;
 
 	/* Create warps */
-	warp_count = (grid->thread_block_size + warp_size - 1) /
+	warp_count = (grid->getThreadBlockSize() + warp_size - 1) /
 			warp_size;
-	/*
-	this->warps = (KplWarp **) xcalloc(this->warp_count, sizeof(KplWarp *));
-	this->running_warps = list_create();
-	this->finished_warps = list_create();
-	for (i = 0; i < this->warp_count; ++i)
-	{
-		warp = new(KplWarp, i, this, grid);
-		this->warps[i] = warp;
-		list_add(this->running_warps, warp);
-	}
-*/
+	for (int i = 0; i < warp_count; ++i)
+		warps.push_back(std::unique_ptr<Warp>(new
+				Warp(this, i)));
+
 	/* Create threads */
-	/*
-	this->thread_count = grid->thread_block_size;
-	this->threads = (KplThread **) xcalloc(this->thread_count,
-			sizeof(KplThread *));
-	for (i = 0; i < this->thread_count; ++i)
+	thread_count = grid->getThreadBlockSize();
+	for (int i = 0; i < thread_count; ++i)
+		threads.push_back(std::unique_ptr<Thread>(new
+				Thread(warps[i / warp_size].get(), i)));
+
+	/* Set warps' beginning thread and ending thread */
+	for (int i = 0; i < warp_count - 1; ++i)
 	{
-		thread = new(KplThread, i, this->warps[i / kpl_emu_warp_size]);
-		this->threads[i] = thread;
+		warps[i]->setThreadBegin(threads[warp_size * i]);
+		warps[i]->setThreadEnd(threads[warp_size * i + warp_size]);
 	}
-*/
+	warps[warp_count - 1]->setThreadBegin
+		(threads[warp_size * (warp_count - 1)]);
+	warps[warp_count - 1]->setThreadEnd
+		(threads->end());
+
 	/* Create shared memory */
-	this->shared_mem = new Memory::Memory();
-	this->shared_mem.safe = false;
+	shared_mem = new Memory::Memory();
+	shared_mem.safe = false;
 
 	/* Flags */
-	this->finished_emu = false;
+	finished_emu = false;
 }
 
 void ThreadBlock::Dump(std::ostream &os = std::cout) const
