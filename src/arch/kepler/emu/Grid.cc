@@ -33,7 +33,7 @@ void Grid::Grid(Emu *emu)
 {
 	/* Initialization */
 	this->emu = emu;
-	this->id = emu->grids.size();
+	id = emu->grids.size();
 
 	/* Add to list */
 	emu->grids.push_back(this);
@@ -47,34 +47,32 @@ void Grid::SetupSize(unsigned *thread_block_count,
 		unsigned *thread_block_size)
 {
 
-	int i;
-
 	/* Setup thread-block counts */
-	for (i = 0; i < 3; i++)
-		this->thread_block_count3[i] = thread_block_count[i];
-	this->thread_block_count = this->thread_block_count3[0] *
-			this->thread_block_count3[1] * this->thread_block_count3[2];
+	for (int i = 0; i < 3; i++)
+		thread_block_count3[i] = thread_block_count[i];
+	this->thread_block_count = thread_block_count3[0] *
+			thread_block_count3[1] * thread_block_count3[2];
 
 	/* Setup thread-block sizes */
-	for (i = 0; i < 3; i++)
-		this->thread_block_size3[i] = thread_block_size[i];
-	this->thread_block_size = this->thread_block_size3[0] *
-			this->thread_block_size3[1] * this->thread_block_size3[2];
+	for (int i = 0; i < 3; i++)
+		thread_block_size3[i] = thread_block_size[i];
+	this->thread_block_size = thread_block_size3[0] *
+			thread_block_size3[1] * thread_block_size3[2];
 
 	/* Calculate thread counts */
-	for (i = 0; i < 3; i++)
-		this->thread_count3[i] = thread_block_count[i] * thread_block_size[i];
-	this->thread_count = this->thread_count3[0] * this->thread_count3[1] *
-			this->thread_count3[2];
+	for (int i = 0; i < 3; i++)
+		thread_count3[i] = thread_block_count[i] * thread_block_size[i];
+	thread_count = thread_count3[0] * thread_count3[1] *
+			thread_count3[2];
 
 	/* Create lists */
-	/*
-	this->pending_thread_blocks = new std::list<std::unique_ptr<ThreadBlock>>;
-	for (i = 0; i < this->thread_block_count; ++i)
-		this->pending_thread_blocks.push_back((long)i);
-	this->running_thread_blocks = list_create();
-	this->finished_thread_blocks = list_create();
-*/
+
+	//this->pending_thread_blocks = new std::list<std::unique_ptr<ThreadBlock>>;
+	for (int i = 0; i < this->thread_block_count; ++i)
+		pending_thread_blocks.push_back(std::unique_ptr<ThreadBlock>(new ThreadBlock(this, i)));
+	//this->running_thread_blocks = list_create();
+	//this->finished_thread_blocks = list_create();
+
 	/* Debug */
 	/*kpl_isa_debug("%s:%d: block count = (%d,%d,%d)\n",
 			__FILE__, __LINE__, this->thread_block_count3[0],
@@ -89,5 +87,13 @@ void Grid::SetupSize(unsigned *thread_block_count,
 			this->thread_count3[1], this->thread_count3[2]);
 			*/
 }
+
+void Grid::WaitingToRunning()
+{
+	running_thread_blocks.push_back
+		(std::move(pending_thread_blocks.front()));
+	pending_thread_blocks.pop_front();
+}
+
 
 }	//namespace

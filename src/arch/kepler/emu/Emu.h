@@ -37,6 +37,8 @@ class ThreadBlock;
 class Thread;
 struct KplInstWrap;
 
+typedef void (*InstFunc)(Kepler::Thread *thread, Inst *inst);
+
 /*
  * Class 'KplEmu'
  */
@@ -64,12 +66,10 @@ class Emu
 	// Flags indicating whether the first 32 bytes of constant memory
 	// are initialized. A warning will be issued by the simulator
 	// if an uninitialized element is used by the kernel.
-//	bool const_mem_init[32];
+	bool const_mem_init[32];
 
 	// Instruction emulation table
-//	typedef void (*InstFunc)(Kepler::Thread *thread, struct KplInstWrap *inst);
-	typedef void (*InstFunc)(KplThread *, struct KplInstWrap *);
-	InstFunc inst_func[KplInstOpcodeCount];
+	InstFunc inst_func[InstOpcodeCount];
 
 	// Stats		//make it clear
 	/*
@@ -85,7 +85,7 @@ class Emu
 	/// Constructor
 	Emu(Asm *as);
 
-	// Unique instance of Fermi emulator
+	// Unique instance of Kepler emulator
 	//static std::unique_ptr<Emu> instance;
 
 public:
@@ -100,10 +100,17 @@ public:
 	int emu_max_functions;
 	const int emu_warp_size = 32;
 
-	/// Get the only instance of the Fermi emulator. If the instance does not
+	/// Get the only instance of the Kepler emulator. If the instance does not
 	/// exist yet, it will be created, and will remain allocated until the
 	/// end of the execution.
 	//static Emu *getInstance();
+
+	// Getters
+	/// Get the assambler
+	Asm *getAsm() const { return as;}
+
+	/// Get instruction emulation table
+	InstFunc getInstFunc(InstOpcode inst) { return inst_func[inst]; }
 
 	/// Dump Kepler Emulator in a human-readable fashion into an output stream (or
 	/// standard output if argument \a os is omitted.
