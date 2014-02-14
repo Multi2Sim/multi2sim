@@ -30,7 +30,7 @@
 #include "cl2llvm.h"
 #include "format.h"
 
-#define BUILT_IN_FUNC_COUNT 10
+#define BUILT_IN_FUNC_COUNT 12
 
 #define GENTYPE "f32 f32 f32v2 f32v2 f32v3 f32v3 f32v4 f32v4 f32v8 f32v8 f32v16 f32v16 f64 f64 f64v2 f64v2 f64v3 f64v3 f64v4 f64v4 f64v8 f64v8 f64v16 f64v16"
 
@@ -108,7 +108,9 @@ struct hash_table_t *built_in_func_table_create(void)
 		{1, "get_group_id", "u32 u32"},
 		{1, "get_global_offset", "u32 u32"},
 		{1, "barrier", "u32 void"},
-		{1, "acos", GENTYPE}
+		{1, "acos", GENTYPE},
+		{1, "sqrt", GENTYPE},
+		{1, "exp", GENTYPE}
 	};
 	/* Create hash table */
 	struct hash_table_t *built_in_func_table = hash_table_create(200, 1);
