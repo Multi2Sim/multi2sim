@@ -10,50 +10,53 @@ if HAVE_FLEX_BISON_AND_LLVM
 BUILT_SOURCES = parser.h
 
 libcl2llvm_a_SOURCES = \
-	arg.h\
-	arg.c\
+	arg.h \
+	arg.c \
 	\
-	built-in-funcs.h\
-	built-in-funcs.c\
+	built-in-funcs.h \
+	built-in-funcs.c \
 	\
 	cl2llvm.c \
 	cl2llvm.h \
 	\
-	declarator-list.h\
-	declarator-list.c\
+	declarator-list.h \
+	declarator-list.c \
 	\
-	enum-types.h\
-	enum-types.c\
+	enum-types.h \
+	enum-types.c \
 	\
-	format.h\
-	format.c\
+	format.h \
+	format.c \
 	\
-	for-blocks.c\
-	for-blocks.h\
+	for-blocks.c \
+	for-blocks.h \
 	\
-	function.h\
-	function.c\
+	function.h \
+	function.c \
 	\
-	init.c\
-	init.h\
+	init.c \
+	init.h \
 	\
-	ret-error.c\
-	ret-error.h\
+	ret-error.c \
+	ret-error.h \
 	\
 	symbol.c \
 	symbol.h \
 	\
+	type.c \
+	type.h \
+	\
 	Type.cc \
 	Type.h \
 	\
-	val.c\
-	val.h\
+	val.c \
+	val.h \
 	\
-	vector-ops.c\
-	vector-ops.h\
+	vector-ops.c \
+	vector-ops.h \
 	\
-	while-blocks.c\
-	while-blocks.h\
+	while-blocks.c \
+	while-blocks.h \
 	\
 	lex.l \
 	parser.y
