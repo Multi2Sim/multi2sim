@@ -24,7 +24,7 @@
 #include "lib/mhandle/mhandle.h"
 
 #include "format.h"
-#include "type.h"
+#include "Type.h"
 
 char *extract_file_name(char *text)
 {
