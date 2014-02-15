@@ -650,6 +650,7 @@ fi
 ###########
 
 have_llvm=yes
+AC_MSG_CHECKING([for LLVM 3.1])
 
 # Command-line option to force LLVM absence
 AC_ARG_ENABLE(llvm,
@@ -660,13 +661,38 @@ then
 	have_llvm=no
 fi
 
-# Check for 'llvm-config' command
+# Command-line option for llvm-config path
 LLVM_CONFIG="llvm-config-3.1"
+#AC_ARG_VAR(llvm_config_path, [  --llvm-config-path=<path>	Path for 'llvm-config' script])
+#echo "**************************************"
+#echo $llvm_config_path
+#echo "**************************************"
+
+# Check for 'llvm-config' command
 if test x$have_llvm = xyes
 then
-	which $LLVM_CONFIG > /dev/null || \
-		have_llvm=no
+	which $LLVM_CONFIG > /dev/null 2>&1
+	if test $? -ne 0
+	then
+		LLVM_CONFIG="llvm-config"
+		which $LLVM_CONFIG > /dev/null 2>&1
+		if test $? -eq 0
+		then
+			version=`$LLVM_CONFIG --version`
+			if test $version != "3.1"
+			then
+				have_llvm=no
+			fi
+		else
+			have_llvm=no
+		fi
+	fi
+
 fi
+
+# Result
+AC_MSG_RESULT($have_llvm)
+
 
 # Check for 'g++'
 have_cxx=yes
@@ -741,8 +767,8 @@ then
 	# Use the LLVM flags suggested by 'llvm-config', but don't let them
 	# interfere with our own flags. Get rid of their -O2, -NDEBUG, and -g.
 	# We will decide if we want those with our --enable-debug.
-	LLVM_CFLAGS=`$LLVM_CONFIG --cflags | sed "s/\(\-DNDEBUG\>\)\|\(\-g\>\)\|\(\-O2\>\)//g"`
-	LLVM_CXXFLAGS=`$LLVM_CONFIG --cxxflags | sed "s/\(\-DNDEBUG\>\)\|\(\-g\>\)\|\(\-O2\>\)//g"`
+	LLVM_CFLAGS=`$LLVM_CONFIG --cflags | sed "s/\(\-DNDEBUG\>\)\|\(\-g\>\)\|\(\-O[0-9]\>\)//g"`
+	LLVM_CXXFLAGS=`$LLVM_CONFIG --cxxflags | sed "s/\(\-DNDEBUG\>\)\|\(\-g\>\)\|\(\-O[0-9]\>\)//g"`
 
 	# In profile mode, flag '-pg' interferes with LLVM's flags
 	# -fomit-frame-pointer.
@@ -783,7 +809,12 @@ else
 	this library. Some modules in Multi2Sim will not be built. In an Ubuntu
 	distribution, you can install these package by running command
 
-		sudo apt-get install llvm-3.1]
+		sudo apt-get install llvm-3.1
+	
+	If the location your LLVM libraries are not included on the PATH variable,
+	you can pass it manually by running the command
+
+		./configure --llvm-path <pathname>]
 	)
 fi
 
