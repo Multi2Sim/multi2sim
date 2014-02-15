@@ -43,9 +43,6 @@ libcl2llvm_a_SOURCES = \
 	symbol.c \
 	symbol.h \
 	\
-	type.c \
-	type.h \
-	\
 	Type.cc \
 	Type.h \
 	\

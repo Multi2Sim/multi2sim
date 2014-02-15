@@ -7,7 +7,6 @@
 
 #include "format.h"
 #include "val.h"
-#include "type.h"
 #include <llvm-c/Core.h>
 #include "parser.h"
 #include "cl2llvm.h"
