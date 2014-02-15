@@ -26,7 +26,7 @@
 #include "function.h"
 #include "val.h"
 #include "ret-error.h"
-#include "type.h"
+#include "Type.h"
 #include "init.h"
 #include "symbol.h"
 #include "built-in-funcs.h"
