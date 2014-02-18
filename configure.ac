@@ -3,8 +3,8 @@ AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([src/m2s.c])
 AM_INIT_AUTOMAKE([nostdinc])
 AM_PROG_AS
-AC_PROG_CC
-AC_PROG_CXX
+AC_PROG_CC([gcc])
+AC_PROG_CXX([g++])
 AC_PROG_INSTALL
 
 # Silent rules if supported
@@ -88,6 +88,43 @@ AC_COMPILE_IFELSE(
 		)
 	]
 )
+
+
+################################################
+# Test of GCC version >= 4.6 (support for C++11)
+################################################
+
+# Check for option -dumpversion
+AC_MSG_CHECKING([for option -dumpversion])
+$CXX -dumpversion >/dev/null 2>&1
+if test $? -ne 0
+then
+	AC_MSG_ERROR([
+
+	The version of the GCC compiler could not be determined, since option
+	-dumpversion is not available. Please install GCC 4.6 or later in your
+	system to compile Multi2Sim.]
+	)
+fi
+AC_MSG_RESULT(yes)
+
+# Get GCC version
+AC_MSG_CHECKING([for GCC version])
+cxx_version=`$CXX -dumpversion`
+AC_MSG_RESULT($cxx_version)
+
+# Check version
+cxx_major_version=`echo $cxx_version | cut -d. -f1`
+cxx_minor_version=`echo $cxx_version | cut -d. -f2`
+if test \( $cxx_major_version -lt 4 \) -o \( $cxx_major_version -eq 4 -a $cxx_minor_version -lt 6 \)
+then
+	AC_MSG_ERROR([
+
+	The version of the GCC compiler must be 4.6 or higher to support the
+	C++11 code introduced in Multi2Sim. Please install a more recent version
+	of GCC and recompile.]
+	)
+fi
 
 
 
