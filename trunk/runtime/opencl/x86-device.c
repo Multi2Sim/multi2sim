@@ -19,6 +19,8 @@
 
 #include <assert.h>
 #include <limits.h>
+#include <pthread.h>
+#include <sys/syscall.h>  /////////////
 
 #include "debug.h"
 #include "device.h"
@@ -124,8 +126,12 @@ void opencl_x86_device_reinit_work_item(struct opencl_x86_device_core_t *core)
 	size_t size = core->nd->arch_kernel->stack_param_words * sizeof (size_t);
 	char *stack_top = (char *)fiber->stack_bottom + fiber->stack_size - size;
 
-	opencl_nd_address(core->nd->work_dim, core->current_item, core->nd->local_work_size, work_item_data->global_id);
+	/* Compute the local ID of the work item */
+	opencl_nd_address(core->current_item, core->nd->local_work_size, 
+		work_item_data->global_id);
 
+	/* Add the offsets for the current group to get the global ID
+	 * for the work item */
 	work_item_data->global_id[0] += core->group_global[0];
 	work_item_data->global_id[1] += core->group_global[1];
 	work_item_data->global_id[2] += core->group_global[2];
@@ -246,8 +252,10 @@ void opencl_x86_device_init_work_item(int i, struct opencl_x86_device_core_t *co
 	work_item_data->group_id[1] = core->group_id[1];
 	work_item_data->group_id[2] = core->group_id[2];
 
-	opencl_nd_address(nd->work_dim, i, nd->local_work_size, work_item_data->global_id);
+	/* Compute the local ID for the work-item */
+	opencl_nd_address(i, nd->local_work_size, work_item_data->global_id);
 
+	/* Add the group offset to get the global ID for the work-item */
 	work_item_data->global_id[0] += core->group_global[0];
 	work_item_data->global_id[1] += core->group_global[1];
 	work_item_data->global_id[2] += core->group_global[2];
@@ -298,26 +306,27 @@ void opencl_x86_device_work_group_init(
 /* Blocking call to execute a work-group.
  * This code is function is run from within a core-assigned runtime thread */
 void opencl_x86_device_work_group_launch(
-	int num,
+	int work_group_num,
 	struct opencl_x86_device_exec_t *exec,
 	struct opencl_x86_device_core_t *core)
 {
-	const unsigned int *local_size = exec->ndrange->local_work_size;
-	struct opencl_x86_ndrange_t *nd = exec->ndrange;
+	struct opencl_x86_ndrange_t *ndrange = exec->ndrange;
 
-	opencl_nd_address(nd->work_dim, num, exec->work_group_count, core->group_id);
+	/* Compute the work-groups ID */
+	opencl_nd_address(work_group_num, ndrange->num_groups, core->group_id);
 	for (int i = 0; i < 3; i++)
-		core->group_global[i] = (core->group_id[i] + exec->work_group_start[i]) * local_size[i] + nd->global_work_offset[i];
+		core->group_global[i] = core->group_id[i];
 
-	opencl_debug("[%s] running group (%d,%d,%d)", __FUNCTION__,
-		core->group_id[0], core->group_id[1], core->group_id[2]);
+	opencl_debug("[%s] running group %d (%d,%d,%d)", __FUNCTION__,
+		work_group_num, core->group_id[0], core->group_id[1], 
+		core->group_id[2]);
 	
 	assert(core->num_items > 0);
 
 	core->num_started = 1;
 	core->num_done = 0;
 	core->current_item = 0;
-	core->nd = nd;
+	core->nd = ndrange;
 	core->hit_barrier = 0;
 
 	opencl_x86_device_init_work_item(0, core);
@@ -391,16 +400,39 @@ void opencl_x86_device_run_exec(
 	/* Initialize kernel data */
 	opencl_x86_device_work_group_init(core, exec);
 
+	cl_ulong cltime;
+
 	/* Launch work-groups */
 	for (;;)
 	{
 		/* Get next work-group */
 		int num = opencl_x86_device_get_next_work_group(exec);
-		if (num >= exec->num_groups)
+		/*
+		opencl_debug("[%s] thread %ld num = %d count = %d", 
+			__FUNCTION__, syscall(SYS_gettid), num, exec->work_group_count);
+		*/
+		if (num >= (exec->work_group_start + exec->work_group_count))
 			break;
+
+		/////////////////////// DEBUG
+		struct timespec tmp;
+		clock_gettime(CLOCK_MONOTONIC, &tmp);
+		cltime = (cl_ulong)tmp.tv_sec;
+		cltime *= 1000000000;
+		cltime += (cl_ulong)tmp.tv_nsec;
+		opencl_debug("[%s] thread %ld wg %d start = %lld", 
+			__FUNCTION__, syscall(SYS_gettid), num, cltime);
 
 		/* Launch it */
 		opencl_x86_device_work_group_launch(num, exec, core);
+
+		/////////////////////// DEBUG
+		clock_gettime(CLOCK_MONOTONIC, &tmp);
+		cltime = (cl_ulong)tmp.tv_sec;
+		cltime *= 1000000000;
+		cltime += (cl_ulong)tmp.tv_nsec;
+		opencl_debug("[%s] thread %ld wg %d end = %lld", 
+			__FUNCTION__, syscall(SYS_gettid), num, cltime);
 
 	}
 
@@ -416,6 +448,25 @@ void *opencl_x86_device_core_func(struct opencl_x86_device_t *device)
 	struct opencl_x86_device_core_t core;
 	int count = 0;
 
+	/* OpenCL programs often use a busy-wait on the CPU during 
+	 * kernel execution.  To avoid wasting 50% of cycles on a core,
+	 * we will bump up the priority of the execution threads
+	 * while a kernel is being executed */
+	int sched_policy_new;
+	struct sched_param sched_param_new;
+
+	if (!opencl_native_mode)
+	{
+		/* Give dispatch threads the one less than the 
+		 * highest priority, so that scheduler threads can 
+		 * run as needed. */
+		sched_policy_new = SCHED_RR;
+		sched_param_new.sched_priority = sched_get_priority_max(
+			sched_policy_new) - 1;
+		pthread_setschedparam(pthread_self(), sched_policy_new, 
+			&sched_param_new);
+	}
+
 	opencl_x86_device_core_init(&core);
 
 	/* Get kernels until done */
@@ -426,11 +477,13 @@ void *opencl_x86_device_core_func(struct opencl_x86_device_t *device)
 		if (!exec)
 			break;
 
+		/* Execute the kernel */
 		opencl_x86_device_run_exec(&core, exec);
 
 		opencl_x86_device_sync_post(&device->cores_done);
 	}
 	opencl_x86_device_core_treardown(&core);
+
 	return NULL;
 }
 
@@ -645,12 +698,14 @@ struct opencl_x86_device_t *opencl_x86_device_create(
 		/* Assign thread to CPU core */
 		CPU_ZERO(&cpu_set);
 		CPU_SET(i, &cpu_set);
-		pthread_setaffinity_np(device->threads[i], sizeof cpu_set, &cpu_set);
+		pthread_setaffinity_np(device->threads[i], sizeof cpu_set, 
+			&cpu_set);
 	}
 	opencl_x86_device_core_init(&device->queue_core);
 
 	opencl_debug("[%s] opencl_x86_device_t device = %p", __FUNCTION__, 
 		device);
+	opencl_debug("[%s] num cores = %d", __FUNCTION__, device->num_cores);
 
 	/* Return */
 	return device;
@@ -710,5 +765,8 @@ void opencl_x86_device_mem_copy(struct opencl_x86_device_t *device,
 
 int opencl_x86_device_preferred_workgroups(struct opencl_x86_device_t *device)
 {
+	opencl_debug("[%s] device = %p", __FUNCTION__, device);
+	opencl_debug("[%s] preferred groups = %d", __FUNCTION__, 
+		device->num_cores);
 	return device->num_cores;
 }

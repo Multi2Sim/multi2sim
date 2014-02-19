@@ -98,7 +98,7 @@ void opencl_debug(char *fmt, ...)
 	 * calls to 'printf', that can have race conditions among threads. */
 	va_start(va, fmt);
 	vsnprintf(str, sizeof str, fmt, va);
-	fprintf(stderr, "[libm2s-opencl] %s\n", str);
+	fprintf(stderr, "[%llu] [libm2s-opencl] %s\n", opencl_get_time(), str);
 }
 
 
@@ -157,6 +157,18 @@ int opencl_event_wait_list_check(
 }
 
 
+cl_ulong opencl_get_time()
+{
+	cl_ulong cltime;
+	struct timespec tmp;
+
+	clock_gettime(CLOCK_MONOTONIC, &tmp);
+	cltime = (cl_ulong)tmp.tv_sec;
+	cltime *= 1000000000;
+	cltime += (cl_ulong)tmp.tv_nsec;
+
+	return cltime;
+}
 
 
 /*

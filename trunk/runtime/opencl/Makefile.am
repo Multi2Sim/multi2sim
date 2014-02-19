@@ -99,40 +99,7 @@ __top_builddir__lib_libm2s_opencl_la_SOURCES = \
 	union-program.c \
 	union-program.h \
 	\
-	partition-strategy.c \
-	partition-strategy.h \
-	\
-	partition-util.c \
-	partition-util.h \
-	\
-	partition-util-time.c \
-	partition-util-time.h \
-	\
-	even-partition-strategy.c \
-	even-partition-strategy.h \
-	\
-	relative-runtime-partition-strategy.c \
-	relative-runtime-partition-strategy.h \
-	\
-	x86-device-wi.s \
-	\
-	throughput-overhead-partition-strategy.c \
-	throughput-overhead-partition-strategy.h \
-	\
-	block-by-block-partition-strategy.c \
-	block-by-block-partition-strategy.h \
-	\
-	numa-partition-strategy.c \
-	numa-partition-strategy.h \
-	\
-	first-done-partition-strategy.c \
-	first-done-partition-strategy.h \
-	\
-	same-latency-partition-strategy.c \
-	same-latency-partition-strategy.h \
-	\
-	partition-issue-log.c \
-	partition-issue-log.h
+	x86-device-wi.s
 
 AM_CFLAGS = -m32 -D_GNU_SOURCE
 AM_CCASFLAGS = -m32

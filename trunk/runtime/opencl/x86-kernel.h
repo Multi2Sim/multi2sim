@@ -156,8 +156,8 @@ struct opencl_x86_ndrange_t
 	unsigned int global_work_size[3];
 	unsigned int local_work_size[3];
 
-	unsigned int group_count[3];
-	unsigned int num_groups;
+	unsigned int num_groups[3];
+	unsigned int total_num_groups;
 };
 
 
@@ -197,8 +197,11 @@ void opencl_x86_ndrange_run(
 
 void opencl_x86_ndrange_run_partial(
 		struct opencl_x86_ndrange_t *ndrange, 
-		unsigned int *work_group_start, 
-		unsigned int *work_group_count);
+		unsigned int work_group_start, 
+		unsigned int work_group_count);
 
-void opencl_nd_address(int dim, int addr, const unsigned int *size, unsigned int *pos);
+void opencl_nd_address(
+		int linear_id, 
+		const unsigned int *dims, 
+		unsigned int *id);
 #endif
