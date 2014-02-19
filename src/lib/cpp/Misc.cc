@@ -26,6 +26,7 @@
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
+#include <unistd.h>
 
 #include "Misc.h"
 #include "String.h"
