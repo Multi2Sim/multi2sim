@@ -22,9 +22,11 @@
 
 #include <memory>
 
+#include <lib/cpp/Debug.h>
 #include <lib/cpp/ELFReader.h>
 #include <mem-system/Memory.h>
 
+#include "FileTable.h"
 #include "Regs.h"
 #include "Signal.h"
 
@@ -80,6 +82,9 @@ class Context
 	// Register file. Each context has its own copy always.
 	Regs regs;
 
+	// File descriptor table, private for each context.
+	FileTable file_table;
+
 
 	// Update the context state
 	void UpdateState(unsigned state);
@@ -99,7 +104,7 @@ class Context
 	struct Loader
 	{
 		// Program executable
-		ELFReader::File file;
+		std::unique_ptr<ELFReader::File> binary;
 
 		// Command-line arguments
 		std::vector<std::string> args;
@@ -117,8 +122,8 @@ class Context
 		std::string cwd;
 
 		// File name for standard input and output
-		std::string stdin_file;
-		std::string stdout_file;
+		std::string stdin_file_name;
+		std::string stdout_file_name;
 
 		// Stack
 		unsigned stack_base;
@@ -140,9 +145,6 @@ class Context
 		// Random bytes
 		unsigned at_random_addr;
 		unsigned at_random_addr_holder;
-
-		// Constructor
-		Loader(const std::string &path) : file(path) { }
 	};
 
 	// Loader information. This information can be shared among multiple
@@ -151,14 +153,8 @@ class Context
 	// it.
 	std::shared_ptr<Loader> loader;
 
-	// Add arguments to stack
-	void AddArgsVector();
-
-	// Add one particular argument to the stack
-	void AddArgsString(char *args);
-
-	// Add environment variables to the stack
-	void AddEnv(const std::string &env);
+	// Load environment variables in 'loader.env' into the stack
+	void LoadEnv();
 
 	// Load ELF sections from binary
 	void LoadELFSections();
@@ -175,8 +171,8 @@ class Context
 	// Load content of stack
 	void LoadStack();
 
-	// Load ELF binary
-	void LoadExe();
+	// Load ELF binary, as already decoded in 'loader.binary'
+	void LoadBinary();
 
 	
 	///////////////////////////////////////////////////////////////////////
@@ -214,10 +210,36 @@ class Context
 
 public:
 
-	// Create a context from a command line, given as a vector of arguments.
-	// Contexts should be created directly only internally in class Emu. To
-	// create a context, function Emu::NewContext() should be used instead.
-	Context(Emu *emu, const std::vector<std::string> &args);
+	/// Create a context from a command line. To safely create a context,
+	/// function Emu::NewContext() should be used instead.
+	Context();
+
+	/// Load a program from a command line into an existing context. The
+	/// content is left in a state ready to start running the first x86 ISA
+	/// instruction at the program entry.
+	///
+	/// \param args
+	///	Command line to be used, where the first argument contains the
+	///	path to the executable ELF file.
+	/// \param env
+	///	Array of environment variables. The environment variables
+	///	actually loaded in the program is the vector of existing
+	///	environment variables in the M2S process, together with any
+	///	extra variable contained in this array.
+	/// \param cwd
+	///	Initial current working directory for the context. Relative
+	///	paths used by the context will be relative to this directory.
+	/// \param stdin_file_name
+	///	File to redirect the standard input, or empty
+	/// 	string for no redirection.
+	/// \param stdout_file_name
+	///	File to redirect the standard output and standard error output,
+	///	or empty string for no redirection.
+	void loadProgram(const std::vector<std::string> &args,
+			const std::vector<std::string> &env,
+			const std::string &cwd,
+			const std::string &stdin_file_name,
+			const std::string &stdout_file_name);
 
 	/// Given a file name, return its full path based on the current working
 	/// directory for the context.

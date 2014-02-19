@@ -100,7 +100,7 @@ void Arg::ValidTypes(bool types[])
 
 int ArgScalarRegister::Encode()
 {
-	if (InRange(id, 0, 103))
+	if (inRange(id, 0, 103))
 		return id;
 
 	panic("%s: invalid scalar register (s%d)",
@@ -124,7 +124,7 @@ ArgScalarRegisterSeries::ArgScalarRegisterSeries(int low, int high) :
 
 int ArgScalarRegisterSeries::Encode()
 {
-	if (InRange(low, 0, 103))
+	if (inRange(low, 0, 103))
 		return low;
 
 	panic("%s: invalid scalar register series (s[%d:%d])",
@@ -141,7 +141,7 @@ int ArgScalarRegisterSeries::Encode()
 
 int ArgVectorRegister::Encode()
 {
-	if (InRange(id, 0, 255))
+	if (inRange(id, 0, 255))
 		return id + 256;
 
 	panic("%s: invalid vector register (v%d)",
@@ -165,7 +165,7 @@ ArgVectorRegisterSeries::ArgVectorRegisterSeries(int low, int high) :
 
 int ArgVectorRegisterSeries::Encode()
 {
-	if (InRange(low, 0, 255))
+	if (inRange(low, 0, 255))
 		return low + 256;
 
 	panic("%s: invalid vector register series (v[%d:%d:])",
@@ -188,7 +188,7 @@ ArgLiteral::ArgLiteral(int value) :
 	/* Detect the special case where the literal constant is in range
 	 * [-16..64]. Some instructions can encode these values more
 	 * efficiently. Some others even only allow for these values. */
-	if (InRange(value, -16, 64))
+	if (inRange(value, -16, 64))
 		type = ArgTypeLiteralReduced;
 }
 
@@ -199,9 +199,9 @@ int ArgLiteral::Encode()
 		panic("%s: only valid for ArgTypeLiteralReduced",
 				__FUNCTION__);
 	
-	if (InRange(value, 0, 64))
+	if (inRange(value, 0, 64))
 		return value + 128;
-	if (InRange(value, -16, -1))
+	if (inRange(value, -16, -1))
 		return 192 - value;
 	
 	panic("%s: cannot encode integer constant (%d)",

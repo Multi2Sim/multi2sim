@@ -106,7 +106,7 @@ void Inst::Decode(unsigned addr, const char *buf)
 	current_table_low = 26;
 	current_table_high = 31;
 	loop_iteration = 0;
-	table_arg = misc::GetBits32(bytes.word, current_table_high,
+	table_arg = misc::getBits32(bytes.word, current_table_high,
 			current_table_low);
 
 	// Find next tables if the instruction belongs to another table
@@ -118,7 +118,7 @@ void Inst::Decode(unsigned addr, const char *buf)
 			current_table_high = current_table[table_arg].next_table_high;
 			current_table_low = current_table[table_arg].next_table_low;
 			current_table = current_table[table_arg].next_table;
-			table_arg = GetBits32(bytes.word, current_table_high,
+			table_arg = getBits32(bytes.word, current_table_high,
 					current_table_low);
 			loop_iteration++;
 		}

@@ -29,49 +29,49 @@ namespace misc
 {
 
 
-/*
- * Inline bit manipulation
- */
+//
+// Inline bit manipulation
+//
 
-inline unsigned GetBits32(unsigned x, int high, int low) {
+inline unsigned getBits32(unsigned x, int high, int low) {
 	return (x >> low) & ((1u << (high - low + 1)) - 1);
 }
 
-inline bool GetBit32(unsigned x, int bit) {
+inline bool getBit32(unsigned x, int bit) {
 	return x & (1u << bit);
 }
 
-inline unsigned long long GetBits64(unsigned long long x, int high, int low) {
+inline unsigned long long getBits64(unsigned long long x, int high, int low) {
 	return (x >> low) & ((1ull << (high - low + 1)) - 1);
 }
 
-inline bool GetBit64(unsigned long long x, int bit) {
+inline bool getBit64(unsigned long long x, int bit) {
 	return x & (1ull << bit);
 }
 
-inline unsigned ClearBits32(unsigned x, int high, int low)
+inline unsigned clearBits32(unsigned x, int high, int low)
 {
 	return x & (((1ull << low) - 1) | ~((1ull << (high + 1)) - 1));
 }
 
-inline unsigned TruncateBits32(unsigned x, int num)
+inline unsigned truncBits32(unsigned x, int num)
 {
 	return x & ((1ull << num) - 1);
 }
 
-inline unsigned SetBits32(unsigned x, int high, int low,
+inline unsigned setBits32(unsigned x, int high, int low,
 		unsigned value)
 {
-	return ClearBits32(x, high, low) | (TruncateBits32(value, high
+	return clearBits32(x, high, low) | (truncBits32(value, high
 			- low + 1) << low);
 }
 
-inline unsigned SetBit32(unsigned x, int bit)
+inline unsigned setBit32(unsigned x, int bit)
 {
 	return x | (1u << bit);
 }
 
-inline unsigned ClearBit32(unsigned x, int bit)
+inline unsigned clearBit32(unsigned x, int bit)
 {
 	return x & ~(1u << bit);
 }
@@ -91,33 +91,48 @@ inline unsigned long long SignExtend64(unsigned long long x,
 
 
 
-/*
- * Output messages
- */
+//
+// Output messages
+//
 
+/// Warning message
 void warning(const char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
+
+/// Error message terminating the program as a result of an invalid user input
+/// or runtime error.
 void fatal(const char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
+
+/// Error message aborting the program as a result of a logic error in the
+/// program execution.
 void panic(const char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
 
 
 
+//
+// File system
+//
 
-/*
- * Miscelaneous
- */
+/// Return the current working directory
+std::string getCwd();
 
 
-inline bool InRange(int value, int min, int max) {
+
+//
+// Miscelaneous
+//
+
+
+inline bool inRange(int value, int min, int max) {
 	return value >= min && value <= max;
 }
 
 inline unsigned RoundUp(unsigned n, unsigned align) {
-	assert(!(n & (n - 1)));
+	assert(!(align & (align - 1)));
 	return (n + (align - 1)) & ~(align - 1);
 }
 
 inline unsigned RoundDown(unsigned n, unsigned align) {
-	assert(!(n & (n - 1)));
+	assert(!(align & (align - 1)));
 	return n & ~(align - 1);
 }
 

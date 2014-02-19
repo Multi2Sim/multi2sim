@@ -46,14 +46,14 @@ void Debug::Close()
 }
 
 
-void Debug::setPath(const std::string& path)
+void Debug::setPath(const std::string &path)
 {
 	// Release previous output stream
 	Close();
 	this->path = path;
 
 	// Empty file
-	if (path == "")
+	if (path.empty())
 		return;
 
 	// File is standard output
@@ -67,7 +67,7 @@ void Debug::setPath(const std::string& path)
 	// Create new output stream
 	if (!*os)
 	{
-		std::cerr << "fatal: cannot open " << path <<'\n';
+		std::cerr << "fatal: cannot open " << path << '\n';
 		exit(1);
 	}
 }

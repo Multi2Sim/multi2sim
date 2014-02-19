@@ -18,7 +18,9 @@
  */
 
 #include "Context.h"
+#include "Emu.h"
 
+#include <fcntl.h>
 #include <lib/cpp/String.h>
 
 
@@ -73,61 +75,10 @@ char *x86_loader_help =
 	"See the Multi2Sim Guide (www.multi2sim.org) for further details and\n"
 	"examples on how to use the context configuration file.\n"
 	"\n";
+#endif
 
 
-
-/*
- * Class 'X86Context'
- * Additional functions
- */
-
-static struct str_map_t elf_section_flags_map =
-{
-	3, {
-		{ "SHF_WRITE", 1 },
-		{ "SHF_ALLOC", 2 },
-		{ "SHF_EXECINSTR", 4 }
-	}
-};
-
-
-void X86ContextAddArgsVector(X86Context *self, int argc, char **argv)
-{
-	struct x86_loader_t *loader = self->loader;
-
-	char *arg;
-	int i;
-
-	for (i = 0; i < argc; i++)
-	{
-		arg = str_set(NULL, argv[i]);
-		linked_list_add(loader->args, arg);
-	}
-}
-
-
-void X86ContextAddArgsString(X86Context *self, char *args)
-{
-	struct x86_loader_t *loader = self->loader;
-
-	char *delim = " ";
-	char *arg;
-	
-	// Duplicate argument string
-	args = str_set(NULL, args);
-
-	// Tokens
-	for (arg = strtok(args, delim); arg; arg = strtok(NULL, delim))
-	{
-		arg = str_set(NULL, arg);
-		linked_list_add(loader->args, arg);
-	}
-
-	// Free argument string
-	str_free(args);
-}
-
-
+#if 0
 /* Add environment variables from the actual environment plus
  * the list attached in the argument 'env'. */
 void X86ContextAddEnv(X86Context *self, char *env)
@@ -178,74 +129,79 @@ void X86ContextAddEnv(X86Context *self, char *env)
 	}
 }
 
-
-#define X86_LOADER_STACK_BASE  0xc0000000
-#define X86_LOADER_MAX_ENVIRON  0x10000  // 16KB for environment
-#define X86_LOADER_STACK_SIZE  0x800000  // 8MB stack size
+#endif
 
 
-// Load sections from an ELF file
-void X86ContextLoadELFSections(X86Context *self, struct elf_file_t *elf_file)
+static const unsigned loader_stack_base = 0xc0000000;
+static const unsigned loader_max_environ = 0x10000;  // 16KB for environment
+static const unsigned loader_stack_size = 0x800000;  // 8MB stack size
+
+static misc::StringMap section_flags_map =
 {
-	struct mem_t *mem = self->mem;
+	{ "SHF_WRITE", 1 },
+	{ "SHF_ALLOC", 2 },
+	{ "SHF_EXECINSTR", 4 }
+};
+
+void Context::LoadELFSections()
+{
+	/*struct mem_t *mem = self->mem;
 	struct x86_loader_t *loader = self->loader;
 
 	struct elf_section_t *section;
 	int i;
 
 	enum mem_access_t perm;
-	char flags_str[200];
+	char flags_str[200];*/
 
-	x86_loader_debug("\nLoading ELF sections\n");
+	Emu::loader_debug << "\nLoading ELF sections\n";
 	loader->bottom = 0xffffffff;
-	for (i = 0; i < list_count(elf_file->section_list); i++)
+	ELFReader::File *binary = loader->binary.get();
+	for (auto &section : binary->getSections())
 	{
-		section = list_get(elf_file->section_list, i);
-
-		perm = mem_access_init | mem_access_read;
-		str_map_flags(&elf_section_flags_map, section->header->sh_flags,
-				flags_str, sizeof(flags_str));
-		x86_loader_debug("  section %d: name='%s', offset=0x%x, "
+		// Debug
+		unsigned perm = Memory::MemoryAccessInit | Memory::MemoryAccessRead;
+		std::string flags_str = section_flags_map.MapFlags(section->getFlags());
+		Emu::loader_debug << misc::StringFmt("  section '%s': offset=0x%x, "
 				"addr=0x%x, size=%u, flags=%s\n",
-				i, section->name, section->header->sh_offset,
-				section->header->sh_addr, section->header->sh_size, flags_str);
+				section->getName().c_str(), section->getOffset(),
+				section->getAddr(), section->getSize(),
+				flags_str.c_str());
 
 		// Process section
-		if (section->header->sh_flags & SHF_ALLOC)
+		if (section->getFlags() & SHF_ALLOC)
 		{
 			// Permissions
-			if (section->header->sh_flags & SHF_WRITE)
-				perm |= mem_access_write;
-			if (section->header->sh_flags & SHF_EXECINSTR)
-				perm |= mem_access_exec;
+			if (section->getFlags() & SHF_WRITE)
+				perm |= Memory::MemoryAccessWrite;
+			if (section->getFlags() & SHF_EXECINSTR)
+				perm |= Memory::MemoryAccessExec;
 
 			// Load section
-			mem_map(mem, section->header->sh_addr, section->header->sh_size, perm);
-			mem->heap_break = MAX(mem->heap_break, section->header->sh_addr
-				+ section->header->sh_size);
-			loader->bottom = MIN(loader->bottom, section->header->sh_addr);
+			memory->Map(section->getAddr(), section->getSize(), perm);
+			memory->growHeapBreak(section->getAddr() + section->getSize());
+			loader->bottom = std::min(loader->bottom, section->getAddr());
 
-			/* If section type is SHT_NOBITS (sh_type=8), initialize to 0.
-			 * Otherwise, copy section contents from ELF file. */
-			if (section->header->sh_type == 8)
+			// If section type is SHT_NOBITS (sh_type=8), initialize to 0.
+			// Otherwise, copy section contents from ELF file.
+			if (section->getType() == 8)
 			{
-				void *ptr;
-
-				ptr = xcalloc(1, section->header->sh_size);
-				mem_access(mem, section->header->sh_addr,
-						section->header->sh_size,
-						ptr, mem_access_init);
-				free(ptr);
-			} else {
-				mem_access(mem, section->header->sh_addr,
-						section->header->sh_size,
-						section->buffer.ptr, mem_access_init);
+				char *zero_buffer = new char[section->getSize()]();
+				memory->Init(section->getAddr(), section->getSize(),
+						zero_buffer);
+				delete zero_buffer;
+			}
+			else
+			{
+				memory->Init(section->getAddr(), section->getSize(),
+						section->getBuffer());
 			}
 		}
 	}
 }
 
 
+#if 0
 void X86ContextLoadInterp(X86Context *self)
 {
 	struct x86_loader_t *loader = self->loader;
@@ -511,61 +467,70 @@ void X86ContextLoadStack(X86Context *self)
 }
 
 
-void X86ContextLoadExe(X86Context *self, char *exe)
+#endif
+
+void Context::LoadBinary()
 {
-	struct x86_loader_t *loader = self->loader;
+/*	struct x86_loader_t *loader = self->loader;
 	struct mem_t *mem = self->mem;
 	struct x86_file_desc_table_t *fdt = self->file_desc_table;
 
 	char stdin_file_full_path[MAX_STRING_SIZE];
 	char stdout_file_full_path[MAX_STRING_SIZE];
-	char exe_full_path[MAX_STRING_SIZE];
+	char exe_full_path[MAX_STRING_SIZE];*/
 
 	// Alternative stdin
-	X86ContextGetFullPath(self, loader->stdin_file, stdin_file_full_path, MAX_STRING_SIZE);
-	if (*stdin_file_full_path)
+	std::string stdin_full_path = getFullPath(loader->stdin_file_name);
+	if (!stdin_full_path.empty())
 	{
-		struct x86_file_desc_t *fd;
-		fd = x86_file_desc_table_entry_get(fdt, 0);
-		assert(fd);
-		fd->host_fd = open(stdin_file_full_path, O_RDONLY);
-		if (fd->host_fd < 0)
-			fatal("%s: cannot open stdin", loader->stdin_file);
-		x86_loader_debug("%s: stdin redirected\n", stdin_file_full_path);
+		// Open new stdin
+		int f = open(stdin_full_path.c_str(), O_RDONLY);
+		if (f < 0)
+			fatal("%s: cannot open stdin", stdin_full_path.c_str());
+
+		// Replace file descriptor 0
+		file_table.freeFileDesc(0);
+		file_table.newFileDesc(FileDescStd, 0, f,
+				stdin_full_path, O_RDONLY);
 	}
 
 	// Alternative stdout/stderr
-	X86ContextGetFullPath(self, loader->stdout_file, stdout_file_full_path, MAX_STRING_SIZE);
-	if (*stdout_file_full_path)
+	std::string stdout_full_path = getFullPath(loader->stdout_file_name);
+	if (!stdout_full_path.empty())
 	{
-		struct x86_file_desc_t *fd1, *fd2;
-		fd1 = x86_file_desc_table_entry_get(fdt, 1);
-		fd2 = x86_file_desc_table_entry_get(fdt, 2);
-		assert(fd1 && fd2);
-		fd1->host_fd = fd2->host_fd = open(stdout_file_full_path,
-			O_CREAT | O_APPEND | O_TRUNC | O_WRONLY, 0660);
-		if (fd1->host_fd < 0)
-			fatal("%s: cannot open stdout/stderr", loader->stdout_file);
-		x86_loader_debug("%s: stdout redirected\n", stdout_file_full_path);
+		// Open new stdout
+		int f = open(stdout_full_path.c_str(),
+				O_CREAT | O_APPEND | O_TRUNC | O_WRONLY,
+				0660);
+		if (f < 0)
+			fatal("%s: cannot open stdin", stdin_full_path.c_str());
+
+		// Replace file descriptors 1 and 2
+		file_table.freeFileDesc(1);
+		file_table.freeFileDesc(2);
+		file_table.newFileDesc(FileDescStd, 1, f,
+				stdout_full_path, O_WRONLY);
+		file_table.newFileDesc(FileDescStd, 2, f,
+				stdout_full_path, O_WRONLY);
 	}
 	
-	
-	// Load program into memory
-	X86ContextGetFullPath(self, exe, exe_full_path, MAX_STRING_SIZE);
-	loader->elf_file = elf_file_create_from_path(exe_full_path);
-	loader->exe = str_set(NULL, exe_full_path);
+	// Load ELF binary
+	loader->exe = getFullPath(loader->args[0]);
+	loader->binary.reset(new ELFReader::File(loader->exe));
 
 	// Read sections and program entry
-	X86ContextLoadELFSections(self, loader->elf_file);
-	loader->prog_entry = loader->elf_file->header->e_entry;
+	LoadELFSections();
+	loader->prog_entry = loader->binary->getEntry();
 
-	/* Set heap break to the highest written address rounded up to
-	 * the memory page boundary. */
-	mem->heap_break = ROUND_UP(mem->heap_break, MEM_PAGE_SIZE);
+	// Set heap break to the highest written address rounded up to
+	// the memory page boundary.
+	memory->setHeapBreak(misc::RoundUp(memory->getHeapBreak(),
+			Memory::MemoryPageSize));
 
-	/* Load program header table. If we found a PT_INTERP program header,
-	 * we have to load the program interpreter. This means we are dealing with
-	 * a dynamically linked application. */
+#if 0
+	// Load program header table. If we found a PT_INTERP program header,
+	// we have to load the program interpreter. This means we are dealing with
+	// a dynamically linked application.
 	X86ContextLoadProgramHeaders(self);
 	if (loader->interp)
 		X86ContextLoadInterp(self);
@@ -580,10 +545,9 @@ void X86ContextLoadExe(X86Context *self, char *exe)
 	x86_loader_debug("Program entry is 0x%x\n", self->regs->eip);
 	x86_loader_debug("Initial stack pointer is 0x%x\n", self->regs->esp);
 	x86_loader_debug("Heap start set to 0x%x\n", mem->heap_break);
+#endif
 }
 
-
-#endif
 
 std::string Context::getFullPath(const std::string &path)
 {

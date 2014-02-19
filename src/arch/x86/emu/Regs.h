@@ -121,17 +121,17 @@ public:
 
 	/// Set the value of a flag, given as an \c InstFlagXXX identifier.
 	void setFlag(InstFlag flag) {
-		eflags = misc::SetBit32(eflags, flag);
+		eflags = misc::setBit32(eflags, flag);
 	}
 
 	/// Clear the value of a flag, given as an \c InstFlagXXX identifier.
 	void clearFlag(InstFlag flag) {
-		eflags = misc::ClearBit32(eflags, flag);
+		eflags = misc::clearBit32(eflags, flag);
 	}
 
 	/// Get the value of a flag, given as an \c InstFlagXXX constant.
 	bool getFlag(InstFlag flag) {
-		return misc::GetBit32(eflags, flag);
+		return misc::getBit32(eflags, flag);
 	}
 
 	/// Read a 10-byte extended value from the FPU stack at \a index, given
@@ -150,13 +150,13 @@ public:
 
 	/// Get a reference to XMM register \a index (0 to 7)
 	XMMValue &getXMM(int index) {
-		assert(misc::InRange(index, 0, 7));
+		assert(misc::inRange(index, 0, 7));
 		return xmm[index];
 	}
 
 	/// Get a constant reference to XMM register \a index (0 to 7)
 	const XMMValue &getXMM(int index) const {
-		assert(misc::InRange(index, 0, 7));
+		assert(misc::inRange(index, 0, 7));
 		return xmm[index];
 	}
 

@@ -326,6 +326,17 @@ public:
 				sections[index].get() : nullptr;
 	}
 
+	/// Return a read-only reference to the vector of sections. This
+	/// function is useful for convenient iteration through sections using
+	/// the following code:
+	///
+	/// \code
+	///	for (auto &section : file.getSections())
+	/// \endcode
+	const std::vector<std::unique_ptr<Section>> &getSections() const {
+		return sections;
+	}
+
 	/// Return the number of program headers
 	int getNumProgramHeaders() const { return program_headers.size(); }
 

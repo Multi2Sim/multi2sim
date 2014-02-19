@@ -23,24 +23,54 @@
 
 
 using namespace misc;
+	
+extern char **environ;
 
 namespace x86
 {
 
-Context::Context(Emu *emu, const std::vector<std::string> &args)
+Context::Context()
 {
-	// At least 1 argument
-	if (args.size() < 1)
-		fatal("%s: at least one argument is expected in the context "
-				"command line specifying the name of the "
-				"executable file to run.", __FUNCTION__);
+}
+
+
+void Context::loadProgram(const std::vector<std::string> &args,
+		const std::vector<std::string> &env,
+		const std::string &cwd,
+		const std::string &stdin_file_name,
+		const std::string &stdout_file_name)
+{
+	// String in 'args' must contain at least one non-empty element
+	if (!args.size() || args[0].empty())
+		panic("%s: function invoked with no program name, or with an "
+				"empty program.", __FUNCTION__);
+
+	// Program must not have been loaded before
+	if (loader.get() || memory.get())
+		panic("%s: program '%s' has already been loaded in a "
+				"previous call to this function.",
+				__FUNCTION__, args[0].c_str());
+	
+	// Create new memory image
+	memory.reset(new Memory::Memory());
 	
 	// Create new loader info
-	loader.reset(new Loader(args[0]));
+	loader.reset(new Loader());
+	loader->args = args;
+	loader->cwd = cwd;
+	loader->stdin_file_name = stdin_file_name;
+	loader->stdout_file_name = stdout_file_name;
 
-	// Create new memory map
-	memory.reset(new Memory::Memory());
+	// Add environment variables
+	for (int i = 0; environ[i]; i++)
+		loader->env.emplace_back(environ[i]);
+	for (auto &var : env)
+		loader->env.emplace_back(var);
+
+	// Load the binary
+	LoadBinary();
 }
+
 
 }  // namespace x86
 

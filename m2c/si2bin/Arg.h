@@ -147,7 +147,7 @@ public:
 	void ValidTypes(bool types[]);
 	template<typename... T> void ValidTypes(bool types[], ArgType type,
 			T... args) {
-		assert(misc::InRange(type, 0, ArgTypeCount - 1));
+		assert(misc::inRange(type, 0, ArgTypeCount - 1));
 		types[type] = true;
 		ValidTypes(types, args...);
 	}
