@@ -155,7 +155,7 @@ void BasicBlock::EmitCall(llvm::CallInst *llvm_inst)
 	/* Get argument value and check bounds */
 	llvm::ConstantInt *llvm_const = llvm::cast<llvm::ConstantInt>(llvm_op);
 	int dim = llvm_const->getZExtValue();
-	if (!InRange(dim, 0, 2))
+	if (!inRange(dim, 0, 2))
 		fatal("%s: constant in range [0..2] expected",
 				__FUNCTION__);
 

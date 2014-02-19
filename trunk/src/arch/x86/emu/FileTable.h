@@ -117,26 +117,26 @@ public:
 	/// Return file descriptor \a index, or \c nullptr is no file descriptor
 	/// exists with that identifier.
 	FileDesc *getFileDesc(int index) const {
-		return misc::InRange(index, 0, (int) file_descs.size() - 1) ?
+		return misc::inRange(index, 0, (int) file_descs.size() - 1) ?
 				file_descs[index].get() : nullptr;
 	}
 
 	/// Create a new file descriptor with a specific guest identifier. If
 	/// the value in \a guest_index is set to -1, the first free guest file
 	/// descriptor will be allocated.
-	FileDesc *NewFileDesc(FileDescType type, int guest_index, int host_index,
+	FileDesc *newFileDesc(FileDescType type, int guest_index, int host_index,
 			const std::string &path, int flags);
 	
 	/// Create a new file descriptor, assigning the first available guest
 	/// identifier.
-	FileDesc *NewFileDesc(FileDescType type, int host_index,
+	FileDesc *newFileDesc(FileDescType type, int host_index,
 			const std::string &path, int flags) {
-		return NewFileDesc(type, -1, host_index, path, flags);
+		return newFileDesc(type, -1, host_index, path, flags);
 	}
 
 	/// Free file descriptor with identifier \a index. If \a index is out of
 	/// range, the call will ignore it silently.
-	void FreeFileDesc(int index);
+	void freeFileDesc(int index);
 
 	/// Return the host file descriptor associated with the guest file
 	/// descriptor given in \a guest_index, or -1 if \a index is not a

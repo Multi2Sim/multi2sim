@@ -90,6 +90,7 @@ void main_cpp(int argc, char **argv)
 	
 	// Register module configurations
 	command_line.AddConfig(x86::Asm::config);
+	command_line.AddConfig(x86::Emu::config);
 
 	// Process command line. Return to C version of Multi2Sim if a
 	// command-line option was not recognized.
@@ -110,9 +111,9 @@ void main_cpp(int argc, char **argv)
 	if (command_line.getNumArguments())
 	{
 		x86::Emu *emu = x86::Emu::getInstance();
-		emu->NewContext(command_line.getArguments());
-		x86::SignalHandler handler;
-		std::cout << handler << '\n';
+		emu->newContext(command_line.getArguments(),
+				std::vector<std::string>(),
+				misc::getCwd(), "", "");
 	}
 
 	// End

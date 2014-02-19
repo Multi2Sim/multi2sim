@@ -63,37 +63,37 @@ Asm::Asm()
 
 		if (info->fmt == InstFormatSOPP)
 		{
-			assert(InRange(info->op, 0, dec_table_sopp_count - 1));
+			assert(inRange(info->op, 0, dec_table_sopp_count - 1));
 			dec_table_sopp[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == InstFormatSOPC)
 		{
-			assert(InRange(info->op, 0, dec_table_sopc_count - 1));
+			assert(inRange(info->op, 0, dec_table_sopc_count - 1));
 			dec_table_sopc[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == InstFormatSOP1)
 		{
-			assert(InRange(info->op, 0, dec_table_sop1_count - 1));
+			assert(inRange(info->op, 0, dec_table_sop1_count - 1));
 			dec_table_sop1[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == InstFormatSOPK)
 		{
-			assert(InRange(info->op, 0, dec_table_sopk_count - 1));
+			assert(inRange(info->op, 0, dec_table_sopk_count - 1));
 			dec_table_sopk[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == InstFormatSOP2)
 		{
-			assert(InRange(info->op, 0, dec_table_sop2_count - 1));
+			assert(inRange(info->op, 0, dec_table_sop2_count - 1));
 			dec_table_sop2[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == InstFormatSMRD) 
 		{
-			assert(InRange(info->op, 0, dec_table_smrd_count - 1));
+			assert(inRange(info->op, 0, dec_table_smrd_count - 1));
 			dec_table_smrd[info->op] = info;
 			continue;
 		}
@@ -101,7 +101,7 @@ Asm::Asm()
 		{
 			int i;
 
-			assert(InRange(info->op, 0, dec_table_vop3_count - 1));
+			assert(inRange(info->op, 0, dec_table_vop3_count - 1));
 			dec_table_vop3[info->op] = info;
 			if (info->flags & InstFlagOp8)
 			{
@@ -123,55 +123,55 @@ Asm::Asm()
 		}
 		else if (info->fmt == InstFormatVOPC)
 		{
-			assert(InRange(info->op, 0, dec_table_vopc_count - 1));
+			assert(inRange(info->op, 0, dec_table_vopc_count - 1));
 			dec_table_vopc[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == InstFormatVOP1)
 		{
-			assert(InRange(info->op, 0, dec_table_vop1_count - 1));
+			assert(inRange(info->op, 0, dec_table_vop1_count - 1));
 			dec_table_vop1[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == InstFormatVOP2)
 		{
-			assert(InRange(info->op, 0, dec_table_vop2_count - 1));
+			assert(inRange(info->op, 0, dec_table_vop2_count - 1));
 			dec_table_vop2[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == InstFormatVINTRP)
 		{
-			assert(InRange(info->op, 0, dec_table_vintrp_count - 1));
+			assert(inRange(info->op, 0, dec_table_vintrp_count - 1));
 			dec_table_vintrp[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == InstFormatDS)
 		{
-			assert(InRange(info->op, 0, dec_table_ds_count - 1));
+			assert(inRange(info->op, 0, dec_table_ds_count - 1));
 			dec_table_ds[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == InstFormatMTBUF)
 		{
-			assert(InRange(info->op, 0, dec_table_mtbuf_count - 1));
+			assert(inRange(info->op, 0, dec_table_mtbuf_count - 1));
 			dec_table_mtbuf[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == InstFormatMUBUF)
 		{
-			assert(InRange(info->op, 0, dec_table_mubuf_count - 1));
+			assert(inRange(info->op, 0, dec_table_mubuf_count - 1));
 			dec_table_mubuf[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == InstFormatMIMG)
 		{
-			assert(InRange(info->op, 0, dec_table_mimg_count - 1));
+			assert(inRange(info->op, 0, dec_table_mimg_count - 1));
 			dec_table_mimg[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == InstFormatEXP)
 		{
-			assert(InRange(info->op, 0, dec_table_exp_count - 1));
+			assert(inRange(info->op, 0, dec_table_exp_count - 1));
 			dec_table_exp[info->op] = info;
 			continue;
 		}

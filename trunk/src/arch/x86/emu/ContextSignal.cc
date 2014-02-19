@@ -37,7 +37,7 @@ namespace x86
 void Context::RunSignalHandler(int sig)
 {
 	// Debug
-	assert(InRange(sig, 1, 64));
+	assert(inRange(sig, 1, 64));
 	Emu::syscall_debug << "context " << pid << " executes signal "
 			"handler for signal " << sig << '\n';
 

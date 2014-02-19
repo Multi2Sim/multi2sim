@@ -52,7 +52,7 @@ void Inst::Initialize(SI::InstOpcode opcode)
 
 	// Check opcode
 	this->opcode = opcode;
-	if (!InRange(opcode, 1, SI::InstOpcodeCount - 1))
+	if (!inRange(opcode, 1, SI::InstOpcodeCount - 1))
 		fatal("%s: invalid opcode (%d)", __FUNCTION__, opcode);
 
 	// Get instruction information
@@ -185,7 +185,7 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 		{
 			// Encode
 			value = arg->Encode();
-			if (!InRange(value, 0, 255))
+			if (!inRange(value, 0, 255))
 				fatal("invalid argument type");
 			bytes.sopk.simm16 = value;
 		}
@@ -228,7 +228,7 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 
 			// Encode
 			int value = arg->Encode();
-			if (!InRange(value, 0, 255))
+			if (!inRange(value, 0, 255))
 				fatal("invalid argument type");
 			bytes.sop2.ssrc0 = value;
 		}
@@ -258,7 +258,7 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 
 			// Encode
 			int value = arg->Encode();
-			if (!InRange(value, 0, 255))
+			if (!inRange(value, 0, 255))
 				fatal("invalid argument type");
 			bytes.sop2.ssrc1 = value;
 		}
@@ -273,7 +273,7 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 
 		// Offset
 		int soffset = maddr->getSoffset()->Encode();
-		if (!InRange(soffset, 0, 253))
+		if (!inRange(soffset, 0, 253))
 			fatal("invalid offset");
 		bytes.mtbuf.soffset = soffset;
 
@@ -628,7 +628,7 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 		else
 		{
 			int value = arg->Encode();
-			if (!InRange(value, 0, 255))
+			if (!inRange(value, 0, 255))
 				fatal("invalid argument type");
 			bytes.sop2.ssrc0 = value;
 		}
@@ -654,7 +654,7 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 		else
 		{
 			int value = arg->Encode();
-			if (!InRange(value, 0, 255))
+			if (!inRange(value, 0, 255))
 				fatal("invalid argument type");
 			bytes.sop2.ssrc1 = value;
 		}
@@ -942,42 +942,42 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 		// vmcnt(x)
 		if (wait_cnt->getVmcntActive())
 		{
-			if (!InRange(wait_cnt->getVmcntValue(), 0, 0xe))
+			if (!inRange(wait_cnt->getVmcntValue(), 0, 0xe))
 				fatal("invalid value for vmcnt");
-			bytes.sopp.simm16 = SetBits32(bytes.sopp.simm16,
+			bytes.sopp.simm16 = setBits32(bytes.sopp.simm16,
 					3, 0, wait_cnt->getVmcntValue());
 		}
 		else
 		{
-			bytes.sopp.simm16 = SetBits32(bytes.sopp.simm16,
+			bytes.sopp.simm16 = setBits32(bytes.sopp.simm16,
 					3, 0, 0xf);
 		}
 
 		// lgkmcnt(x)
 		if (wait_cnt->getLgkmcntActive())
 		{
-			if (!InRange(wait_cnt->getLgkmcntValue(), 0, 0x1e))
+			if (!inRange(wait_cnt->getLgkmcntValue(), 0, 0x1e))
 				fatal("invalid value for lgkmcnt");
-			bytes.sopp.simm16 = SetBits32(bytes.sopp.simm16,
+			bytes.sopp.simm16 = setBits32(bytes.sopp.simm16,
 					12, 8, wait_cnt->getLgkmcntValue());
 		}
 		else
 		{
-			bytes.sopp.simm16 = SetBits32(bytes.sopp.simm16,
+			bytes.sopp.simm16 = setBits32(bytes.sopp.simm16,
 					12, 8, 0x1f);
 		}
 
 		// expcnt(x)
 		if (wait_cnt->getExpcntActive())
 		{
-			if (!InRange(wait_cnt->getExpcntValue(), 0, 0x6))
+			if (!inRange(wait_cnt->getExpcntValue(), 0, 0x6))
 				fatal("invalid value for expcnt");
-			bytes.sopp.simm16 = SetBits32(bytes.sopp.simm16,
+			bytes.sopp.simm16 = setBits32(bytes.sopp.simm16,
 					6, 4, wait_cnt->getExpcntValue());
 		}
 		else
 		{
-			bytes.sopp.simm16 = SetBits32(bytes.sopp.simm16,
+			bytes.sopp.simm16 = setBits32(bytes.sopp.simm16,
 					6, 4, 0x7);
 		}
 		break;

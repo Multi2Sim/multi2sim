@@ -426,8 +426,8 @@ void Inst::DumpVop3Src(std::ostream& os, unsigned int src, int neg) const
 	std::stringstream ss;
 
 	DumpOperand(ss, src);
-	if (!(InRange(bytes.vop3a.op, 293, 298)) && 
-		!(InRange(bytes.vop3a.op, 365, 366)))
+	if (!(inRange(bytes.vop3a.op, 293, 298)) && 
+		!(inRange(bytes.vop3a.op, 365, 366)))
 	{
 		if ((bytes.vop3a.neg & neg) && 
 				(bytes.vop3a.abs & neg))
@@ -457,8 +457,8 @@ void Inst::DumpVop364Src(std::ostream& os, unsigned int src, int neg) const
 	std::stringstream ss;
 
 	DumpOperandSeries(ss, src, src + 1);
-	if (!(InRange(bytes.vop3a.op, 293, 298)) && 
-		!(InRange(bytes.vop3a.op, 365, 366)))
+	if (!(inRange(bytes.vop3a.op, 293, 298)) && 
+		!(inRange(bytes.vop3a.op, 365, 366)))
 	{
 		if ((bytes.vop3a.neg & neg) && 
 				(bytes.vop3a.abs & neg))
@@ -713,7 +713,7 @@ void Inst::Dump(std::ostream &os) const
 			int op = bytes.smrd.op;
 
 			/* S_LOAD_DWORD */
-			if (InRange(op, 0, 4))
+			if (inRange(op, 0, 4))
 			{
 				/* Multi-dword */
 				switch (op)
@@ -738,7 +738,7 @@ void Inst::Dump(std::ostream &os) const
 				}
 			}
 			/* S_BUFFER_LOAD_DWORD */
-			else if (InRange(op, 8, 12))
+			else if (inRange(op, 8, 12))
 			{	
 				/* Multi-dword */
 				switch (op)
@@ -792,13 +792,13 @@ void Inst::Dump(std::ostream &os) const
 			int op = bytes.smrd.op;
 
 			/* S_LOAD_DWORD */
-			if (InRange(op, 0, 4))
+			if (inRange(op, 0, 4))
 			{
 				/* SBASE specifies two consecutive SGPRs */
 				sbase_end = sbase + 1;
 			}
 			/* S_BUFFER_LOAD_DWORD */
-			else if (InRange(op, 8, 12))
+			else if (inRange(op, 8, 12))
 			{
 				/* SBASE specifies four consecutive SGPRs */
 				sbase_end = sbase + 3;

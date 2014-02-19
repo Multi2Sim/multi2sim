@@ -121,7 +121,7 @@ Regs::Regs()
 
 unsigned Regs::Read(InstReg reg) const
 {
-	assert(InRange(reg, InstRegNone, InstRegCount - 1));
+	assert(inRange(reg, InstRegNone, InstRegCount - 1));
 	unsigned *value_ptr = (unsigned *) ((char *) &eax + info[reg].offset);
 	return *value_ptr & mask[info[reg].size];
 }
@@ -129,7 +129,7 @@ unsigned Regs::Read(InstReg reg) const
 
 void Regs::Write(InstReg reg, unsigned value)
 {
-	assert(InRange(reg, InstRegNone, InstRegCount - 1));
+	assert(inRange(reg, InstRegNone, InstRegCount - 1));
 	unsigned mask = this->mask[info[reg].size];
 	unsigned *value_ptr = (unsigned *) ((char *) &eax + info[reg].offset);
 	*value_ptr = (*value_ptr & ~mask) | (value & mask);
@@ -139,7 +139,7 @@ void Regs::Write(InstReg reg, unsigned value)
 Extended Regs::ReadFpu(int index) const
 {
 	// Invalid index
-	if (!InRange(index, 0, 7))
+	if (!inRange(index, 0, 7))
 		return 0.0;
 
 	// Calculate effective index
@@ -155,7 +155,7 @@ Extended Regs::ReadFpu(int index) const
 void Regs::WriteFpu(int index, const Extended &value)
 {
 	// Invalid index
-	if (!InRange(index, 0, 7))
+	if (!inRange(index, 0, 7))
 		return;
 
 	// Calculate effective index
@@ -229,8 +229,8 @@ void Regs::Dump(std::ostream &os) const
 
 	// Floating point code (part from status register)
 	os << StringFmt("  fpu_code (C3-C2-C1-C0): %d-%d-%d-%d\n",
-		GetBit32(fpu_code, 3) > 0, GetBit32(fpu_code, 2) > 0,
-		GetBit32(fpu_code, 1) > 0, GetBit32(fpu_code, 0) > 0);
+		getBit32(fpu_code, 3) > 0, getBit32(fpu_code, 2) > 0,
+		getBit32(fpu_code, 1) > 0, getBit32(fpu_code, 0) > 0);
 	os << StringFmt("  fpu_ctrl=%04x\n", fpu_ctrl);
 
 	// XMM registers

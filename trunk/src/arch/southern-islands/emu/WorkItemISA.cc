@@ -2517,7 +2517,7 @@ void WorkItem::ISA_V_SIN_F32_Impl(Inst *inst)
 	// XXX Should it be module instead of dividing?
 	s0.as_float = s0.as_float * (2 * M_PI);
 
-	if (InRange(s0.as_float, -256, 256))
+	if (inRange(s0.as_float, -256, 256))
 	{
 		result.as_float = sinf(s0.as_float);
 	}
@@ -2556,7 +2556,7 @@ void WorkItem::ISA_V_COS_F32_Impl(Inst *inst)
 	// XXX Should it be module instead of dividing?
 	s0.as_float = s0.as_float * (2 * M_PI);
 
-	if (InRange(s0.as_float, -256, 256))
+	if (inRange(s0.as_float, -256, 256))
 	{
 		result.as_float = cosf(s0.as_float);
 	}

@@ -26,7 +26,99 @@
 namespace x86
 {
 
+//
+// Class 'EmuConfig'
+//
+
+void EmuConfig::Register(misc::CommandLine &command_line)
+{
+	// Option --x86-debug-call <file>
+	command_line.RegisterString("--x86-debug-call", call_debug_file,
+			"Dump debug information about function calls and "
+			"returns. The control flow of an x86 program can be "
+			"observed leveraging ELF symbols present in the program "
+			"binary.");
+	
+	// Option --x86-debug-ctx <file>
+	command_line.RegisterString("--x86-debug-ctx", ctx_debug_file,
+			"Dump debug information related with context creation, "
+			"destruction, allocation, or state change.");
+
+	// Option --x86-debug-cuda <file>
+	command_line.RegisterString("--x86-debug-cuda", cuda_debug_file,
+			"Debug information for the CUDA driver.");
+
+	// Option --x86-debug-glut <file>
+	command_line.RegisterString("--x86-debug-glut", glut_debug_file,
+			"Debug information for the GLUT library, used by "
+			"OpenGL programs.");
+
+	// Option --x86-debug-isa <file>
+	command_line.RegisterString("--x86-debug-isa", isa_debug_file,
+			"Debug information for dynamic execution of x86 "
+			"instructions. Updates on the processor state can be "
+			"analyzed using this information.");
+
+	// Option --x86-debug-loader <file>
+	command_line.RegisterString("--x86-debug-loader", loader_debug_file,
+			"Dump debug information extending the analysis of the "
+			"ELF program binary. This information shows which ELF "
+			"sections and symbols are loaded to the initial program "
+			"memory image.");
+
+	// Option --x86-debug-opencl <file>
+	command_line.RegisterString("--x86-debug-opencl", opencl_debug_file,
+			"Debug information for the OpenCL driver.");
+	
+	// Option --x86-debug-opengl <file>
+	command_line.RegisterString("--x86-debug-opengl", opencl_debug_file,
+			"Debug information for the OpenGL graphics driver.");
+	
+	// Option --x86-debug-syscall <file>
+	command_line.RegisterString("--x86-debug-syscall", syscall_debug_file,
+			"Debug information for system calls performed by an x86 "
+			"program, including system call code, aguments, and "
+			"return value.");
+}
+
+
+void EmuConfig::Process()
+{
+	// Debuggers
+	Emu::call_debug.setPath(call_debug_file);
+	Emu::ctx_debug.setPath(ctx_debug_file);
+	Emu::cuda_debug.setPath(cuda_debug_file);
+	Emu::glut_debug.setPath(glut_debug_file);
+	Emu::isa_debug.setPath(isa_debug_file);
+	Emu::loader_debug.setPath(loader_debug_file);
+	Emu::opencl_debug.setPath(opencl_debug_file);
+	Emu::opengl_debug.setPath(opengl_debug_file);
+	Emu::syscall_debug.setPath(syscall_debug_file);
+}
+
+
+
+//
+// Class 'Emu'
+//
+
+// Emulator singleton
 std::unique_ptr<Emu> Emu::instance;
+
+// Debuggers
+misc::Debug Emu::call_debug;
+misc::Debug Emu::ctx_debug;
+misc::Debug Emu::cuda_debug;
+misc::Debug Emu::glut_debug;
+misc::Debug Emu::isa_debug;
+misc::Debug Emu::loader_debug;
+misc::Debug Emu::opencl_debug;
+misc::Debug Emu::opengl_debug;
+misc::Debug Emu::syscall_debug;
+
+// Configuration
+EmuConfig Emu::config;
+
 
 Emu::Emu()
 {
@@ -47,10 +139,21 @@ Emu *Emu::getInstance()
 }
 
 
-Context *Emu::NewContext(const std::vector<std::string> &args)
+Context *Emu::newContext(const std::vector<std::string> &args,
+			const std::vector<std::string> &env,
+			const std::string &cwd,
+			const std::string &stdin_file_name,
+			const std::string &stdout_file_name)
 {
-	Context *context = new Context(this, args);
+	// Create context and add to context list
+	Context *context = new Context();
 	contexts.emplace_back(context);
+
+	// Load program
+	context->loadProgram(args, env, cwd, stdin_file_name,
+			stdout_file_name);
+
+	// Return
 	return context;
 }
 

@@ -87,121 +87,121 @@ public:
 
 	/// Get the 8-bit unsigned integer at position \a index
 	unsigned char getAsUChar(int index) const {
-		assert(misc::InRange(index, 0, 15));
+		assert(misc::inRange(index, 0, 15));
 		return as_uchar[index];
 	}
 
 	/// Get the 16-bit unsigned integer at position \a index
 	unsigned short getAsUShort(int index) const {
-		assert(misc::InRange(index, 0, 7));
+		assert(misc::inRange(index, 0, 7));
 		return as_ushort[index];
 	}
 
 	/// Get the 32-bit unsigned integer at position \a index
 	unsigned getAsUInt(int index) const {
-		assert(misc::InRange(index, 0, 3));
+		assert(misc::inRange(index, 0, 3));
 		return as_uint[index];
 	}
 
 	/// Get the 64-bit unsigned integer at position \a index
 	unsigned long long getAsUInt64(int index) const {
-		assert(misc::InRange(index, 0, 1));
+		assert(misc::inRange(index, 0, 1));
 		return as_uint64[index];
 	}
 
 	/// Get the 8-bit signed integer at position \a index
 	char getAsChar(int index) const {
-		assert(misc::InRange(index, 0, 15));
+		assert(misc::inRange(index, 0, 15));
 		return as_char[index];
 	}
 
 	/// Get the 16-bit signed integer at position \a index
 	short getAsShort(int index) const {
-		assert(misc::InRange(index, 0, 7));
+		assert(misc::inRange(index, 0, 7));
 		return as_short[index];
 	}
 
 	/// Get the 32-bit signed integer at position \a index
 	int getAsInt(int index) const {
-		assert(misc::InRange(index, 0, 3));
+		assert(misc::inRange(index, 0, 3));
 		return as_int[index];
 	}
 
 	/// Get the 64-bit signed integer at position \a index
 	long long getAsInt64(int index) const {
-		assert(misc::InRange(index, 0, 1));
+		assert(misc::inRange(index, 0, 1));
 		return as_int64[index];
 	}
 
 	/// Get the \c float value at position \a index
 	float getAsFloat(int index) const {
-		assert(misc::InRange(index, 0, 3));
+		assert(misc::inRange(index, 0, 3));
 		return as_float[index];
 	}
 
 	/// Get the \c double value at position \a index
 	double getAsDouble(int index) const {
-		assert(misc::InRange(index, 0, 1));
+		assert(misc::inRange(index, 0, 1));
 		return as_double[index];
 	}
 
 	/// Set unsigned 8-bit integer at position \a index
 	void setAsUChar(int index, unsigned char value) {
-		assert(misc::InRange(index, 0, 15));
+		assert(misc::inRange(index, 0, 15));
 		as_uchar[index] = value;
 	}
 
 	/// Set unsigned 16-bit integer at position \a index
 	void setAsUShort(int index, unsigned short value) {
-		assert(misc::InRange(index, 0, 7));
+		assert(misc::inRange(index, 0, 7));
 		as_ushort[index] = value;
 	}
 
 	/// Set unsigned 32-bit integer at position \a index
 	void setAsUInt(int index, unsigned value) {
-		assert(misc::InRange(index, 0, 3));
+		assert(misc::inRange(index, 0, 3));
 		as_uint[index] = value;
 	}
 
 	/// Set unsigned 64-bit integer at position \a index
 	void setAsUInt64(int index, unsigned long long value) {
-		assert(misc::InRange(index, 0, 1));
+		assert(misc::inRange(index, 0, 1));
 		as_uint64[index] = value;
 	}
 
 	/// Set signed 8-bit integer at position \a index
 	void setAsChar(int index, char value) {
-		assert(misc::InRange(index, 0, 15));
+		assert(misc::inRange(index, 0, 15));
 		as_char[index] = value;
 	}
 
 	/// Set signed 16-bit integer at position \a index
 	void setAsShort(int index, short value) {
-		assert(misc::InRange(index, 0, 7));
+		assert(misc::inRange(index, 0, 7));
 		as_short[index] = value;
 	}
 
 	/// Set signed 32-bit integer at position \a index
 	void setAsInt(int index, int value) {
-		assert(misc::InRange(index, 0, 3));
+		assert(misc::inRange(index, 0, 3));
 		as_int[index] = value;
 	}
 
 	/// Set signed 64-bit integer at position \a index
 	void setAsInt64(int index, long long value) {
-		assert(misc::InRange(index, 0, 1));
+		assert(misc::inRange(index, 0, 1));
 		as_int64[index] = value;
 	}
 
 	/// Set \c float value at position \a index
 	void setAsFloat(int index, float value) {
-		assert(misc::InRange(index, 0, 3));
+		assert(misc::inRange(index, 0, 3));
 		as_float[index] = value;
 	}
 
 	/// Set \c double value at position \a index
 	void setAsDouble(int index, double value) {
-		assert(misc::InRange(index, 0, 1));
+		assert(misc::inRange(index, 0, 1));
 		as_double[index] = value;
 	}
 

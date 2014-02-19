@@ -224,6 +224,19 @@ public:
 	/// Load a region of the memory space from a file into address \a start
 	void Load(const std::string &path, unsigned start);
 
+	/// Set a new value for the heap break.
+	void setHeapBreak(unsigned heap_break) { this->heap_break = heap_break; }
+
+	/// Set the heap break to the value given in \a heap_break if this is
+	/// a higher value than the current heap break.
+	void growHeapBreak(unsigned heap_break) {
+		if (this->heap_break < heap_break)
+			this->heap_break = heap_break;
+	}
+
+	/// Get current heap break.
+	unsigned getHeapBreak() { return heap_break; }
+
 };
 
 
