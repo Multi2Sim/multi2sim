@@ -98,21 +98,21 @@ public:
 	/// Add a signal to the set. The value of \a sig must be between 1 and
 	/// 64. If the value is out of range, the call is ignored.
 	void Add(int sig) {
-		if (misc::InRange(sig, 1, 64))
+		if (misc::inRange(sig, 1, 64))
 			bitmap.Set(sig - 1);
 	}
 
 	/// Delete a signal from the set. The value of \a sig must be between 1
 	/// and 64. If the value is out of range, the call is ignored.
 	void Delete(int sig) {
-		if (misc::InRange(sig, 1, 64))
+		if (misc::inRange(sig, 1, 64))
 			bitmap.Set(sig - 1, false);
 	}
 
 	/// Return whether a signal is in the set. The value of \a sig must be
 	/// between 1 and 64. If the value is out of range, return \c false.
 	bool isMember(int sig) const {
-		return misc::InRange(sig, 1, 64) ?
+		return misc::inRange(sig, 1, 64) ?
 				bitmap.Test(sig - 1) : false;
 	}
 
@@ -235,7 +235,7 @@ public:
 	/// Return signal handler for signal \a sig, an integer value between 1
 	/// and 64. This number should not be out of range.
 	SignalHandler *getSignalHandler(int sig) {
-		assert(misc::InRange(sig, 1, 64));
+		assert(misc::inRange(sig, 1, 64));
 		return &signal_handler[sig - 1];
 	}
 };

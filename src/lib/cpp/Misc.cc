@@ -35,9 +35,9 @@ namespace misc
 {
 
 
-/*
- * Output messages
- */
+//
+// Output messages
+//
 
 void fatal(const char *fmt, ...)
 {
@@ -89,6 +89,22 @@ void warning(const char *fmt, ...)
 	std::cerr << '\n' << StringParagraph(msg + buf, 9) << '\n';
 }
 
+
+
+
+//
+// File system
+//
+
+std::string getCwd()
+{
+	char path[FILENAME_MAX];
+	if (!getcwd(path, sizeof path))
+		panic("%s: cannot store the current working directory in a "
+				"buffer of %d bytes", __FUNCTION__,
+				(int) sizeof path);
+	return path;
+}
 
 
 }  // namespace Misc

@@ -20,12 +20,10 @@
 #include "FileTable.h"
 #include <unistd.h>
 
-using namespace misc;
-
 namespace x86
 {
 
-const StringMap file_desc_type_map =
+const misc::StringMap file_desc_type_map =
 {
 	{ "Regular", FileDescRegular },
 	{ "Standard", FileDescStd },
@@ -41,7 +39,7 @@ void FileDesc::Dump(std::ostream &os) const
 	os << "type = " << file_desc_type_map.MapValue(type);
 	os << ", guest_index = " << guest_index;
 	os << ", host_index = " << host_index;
-	os << StringFmt(", flags = 0x%x", flags);
+	os << misc::StringFmt(", flags = 0x%x", flags);
 	os << ", path = '" << path << "'";
 }
 
@@ -88,7 +86,7 @@ void FileTable::Dump(std::ostream &os) const
 int FileTable::getHostIndex(int guest_index) const
 {
 	// Invalid index
-	if (!InRange(guest_index, 0, (int) file_descs.size()))
+	if (!misc::inRange(guest_index, 0, (int) file_descs.size()))
 		return -1;
 
 	// Return
@@ -112,7 +110,7 @@ int FileTable::getGuestIndex(int host_index) const
 }
 
 
-FileDesc *FileTable::NewFileDesc(FileDescType type, int guest_index,
+FileDesc *FileTable::newFileDesc(FileDescType type, int guest_index,
 		int host_index, const std::string &path, int flags)
 {
 	// Look for a free entry
@@ -141,10 +139,10 @@ FileDesc *FileTable::NewFileDesc(FileDescType type, int guest_index,
 }
 
 
-void FileTable::FreeFileDesc(int index)
+void FileTable::freeFileDesc(int index)
 {
 	// Out of range
-	if (!InRange(index, 0, (int) file_descs.size() - 1))
+	if (!misc::inRange(index, 0, (int) file_descs.size() - 1))
 		return;
 
 	// Get file descriptor. If it is empty, exit
@@ -156,10 +154,10 @@ void FileTable::FreeFileDesc(int index)
 	if (desc->getType() == FileDescVirtual)
 	{
 		if (unlink(desc->getPath().c_str()))
-			warning("%s: temporary host virtual file could not "
+			misc::warning("%s: temporary host virtual file could not "
 					"be deleted", desc->getPath().c_str());
 	}
-	
+
 	// Free file descriptor and remove entry in table.
 	file_descs[index] = nullptr;
 }
