@@ -1365,14 +1365,6 @@ int SIGpuRun(Timing *self)
 
 			list_add(gpu->waiting_work_groups, work_group);
 		}
-
-		/* Let the driver know that all work groups for this
-		 * nd-range have been scheduled */
-		if (opencl_driver && 
-			!list_count(ndrange->waiting_work_groups))
-		{
-			OpenclDriverRequestWork(opencl_driver, ndrange);
-		}
 	}
 
 	/* Allocate work-groups to compute units */
@@ -1387,6 +1379,14 @@ int SIGpuRun(Timing *self)
 		SIComputeUnitMapWorkGroup(
 			list_dequeue(gpu->available_compute_units),
 			work_group);
+
+		/* Let the driver when all work groups 
+		 * have been scheduled */
+		if (opencl_driver && 
+			!list_count(gpu->waiting_work_groups))
+		{
+			OpenclDriverRequestWork(opencl_driver, ndrange);
+		}
 	}
 
 	/* One more cycle */

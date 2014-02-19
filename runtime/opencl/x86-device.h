@@ -46,10 +46,9 @@ struct opencl_x86_device_exec_t
 	struct opencl_x86_kernel_t *kernel;
 	struct opencl_x86_ndrange_t *ndrange;
 
-	unsigned int work_group_start[3];
-	unsigned int work_group_count[3];
+	unsigned int work_group_start;
+	unsigned int work_group_count;
 
-	int num_groups;
 #ifndef HAVE_SYNC_BUILTINS
 	pthread_mutex_t next_group_lock;
 #endif

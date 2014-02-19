@@ -142,32 +142,32 @@ struct x86_fu_res_t x86_fu_res_pool[x86_fu_count] =
 {
 	{ 0, 0, 0 },  /* Unused */
 
-	{ 4, 1, 1 },  /* x86_fu_int_add */
-	{ 2, 2, 2 },  /* x86_fu_int_mult */
-	{ 1, 5, 5 },  /* x86_fu_int_div */
+	{ 3, 1, 1 },  /* x86_fu_int_add */
+	{ 1, 3, 1 },  /* x86_fu_int_mult */
+	{ 1, 14, 11 },  /* x86_fu_int_div */
 
-	{ 4, 2, 2 },  /* x86_fu_effaddr */
-	{ 4, 1, 1 },  /* x86_fu_logic */
+	{ 3, 2, 2 },  /* x86_fu_effaddr */
+	{ 3, 1, 1 },  /* x86_fu_logic */
 
-	{ 2, 2, 2 },  /* x86_fu_float_simple */
-	{ 2, 5, 5 },  /* x86_fu_float_add */
-	{ 2, 2, 2 },  /* x86_fu_float_comp */
-	{ 1, 10, 10 },  /* x86_fu_float_mult */
-	{ 1, 15, 15 },  /* x86_fu_float_div */
-	{ 1, 20, 20 },  /* x86_fu_float_complex */
+	{ 1, 2, 1 },  /* x86_fu_float_simple */
+	{ 1, 3, 1 },  /* x86_fu_float_add */
+	{ 1, 3, 1 },  /* x86_fu_float_comp */
+	{ 1, 5, 1 },  /* x86_fu_float_mult */
+	{ 1, 12, 5 },  /* x86_fu_float_div */
+	{ 1, 22, 14 },  /* x86_fu_float_complex */
 
 	{ 1, 1, 1 },  /* x86_fu_xmm_int_add */
-	{ 1, 2, 2 },  /* x86_fu_xmm_int_mult */
-	{ 1, 5, 5 },  /* x86_fu_xmm_int_div */
+	{ 1, 3, 1 },  /* x86_fu_xmm_int_mult */
+	{ 1, 14, 11 },  /* x86_fu_xmm_int_div */
 
 	{ 1, 1, 1 },  /* x86_fu_xmm_logic */
 
-	{ 1, 5, 5 },  /* x86_fu_xmm_float_add */
-	{ 1, 2, 2 },  /* x86_fu_xmm_float_comp */
-	{ 1, 10, 10 },  /* x86_fu_xmm_float_mult */
-	{ 1, 15, 15 },  /* x86_fu_xmm_float_div */
-	{ 1, 5, 5 },  /* x86_fu_xmm_float_conv */
-	{ 1, 20, 20 }  /* x86_fu_xmm_float_complex */
+	{ 1, 3, 1 },  /* x86_fu_xmm_float_add */
+	{ 1, 3, 1 },  /* x86_fu_xmm_float_comp */
+	{ 1, 5, 1 },  /* x86_fu_xmm_float_mult */
+	{ 1, 12, 6 },  /* x86_fu_xmm_float_div */
+	{ 1, 3, 1 },  /* x86_fu_xmm_float_conv */
+	{ 1, 22, 14 }  /* x86_fu_xmm_float_complex */
 };
 
 char *x86_fu_name[x86_fu_count] =

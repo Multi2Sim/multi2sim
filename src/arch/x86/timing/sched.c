@@ -280,7 +280,7 @@ void X86ThreadSchedule(X86Thread *self)
 					sizeof state_str);
 				X86ContextDebug("\tctx %d is candidate\n",
 					tmp_ctx->pid);
-				X86ContextDebug("\tpriority %d, state %s\n",
+				X86ContextDebug("\t\tpriority %d, state %s\n",
 					tmp_ctx->sched_priority, state_str);
 
 				if (tmp_ctx != ctx && 

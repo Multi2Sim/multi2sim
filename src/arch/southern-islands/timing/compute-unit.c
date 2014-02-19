@@ -23,6 +23,7 @@
 #include <arch/southern-islands/emu/work-group.h>
 #include <arch/x86/emu/emu.h>
 #include <driver/opencl/opencl.h>
+#include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
@@ -242,7 +243,7 @@ void SIComputeUnitMapWorkGroup(SIComputeUnit *self, SIWorkGroup *work_group)
 
 	/* Find an available slot */
 	while (work_group->id_in_compute_unit < gpu->work_groups_per_compute_unit
-			&& self->work_groups[work_group->id_in_compute_unit])
+		&& self->work_groups[work_group->id_in_compute_unit])
 	{
 		work_group->id_in_compute_unit++;
 	}

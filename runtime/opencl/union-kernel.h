@@ -5,7 +5,6 @@
 #include "opencl.h"
 #include "union-device.h"
 #include "union-program.h"
-#include "partition-strategy.h"
 
 struct opencl_union_kernel_t
 {
@@ -33,8 +32,9 @@ struct opencl_union_ndrange_t
 	unsigned int global_work_size[3];
 	unsigned int local_work_size[3];
 
-	unsigned int group_count[3];
-	unsigned int num_groups;
+	unsigned int num_groups[3];
+	unsigned int total_num_groups;
+	unsigned int next_group;
 };
 
 
