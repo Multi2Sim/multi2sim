@@ -98,6 +98,7 @@ void OuterBin::Generate(std::ostream& os)
 	int glob_size;
 	int imm_cb_found;
 	int ptr_cb_table_found;
+	int rat_op;
 
 
 	/* Set machine type */
@@ -163,6 +164,7 @@ void OuterBin::Generate(std::ostream& os)
 		offset = 0;
 		ptr_cb_table_found = 0;
 		imm_cb_found = 0;
+		rat_op = 0;
 
 		for (j = 0; j < MAX_UAV_NUM; j++)
 			uav[j] = 0;
@@ -326,7 +328,10 @@ void OuterBin::Generate(std::ostream& os)
 		for (k = 0; k < MAX_UAV_NUM; k++)
 		{
 			if (uav[k])
+			{
+				rat_op |= (1 << k);
 				buff_num_offset++;
+			}
 		}
 
 
@@ -576,11 +581,12 @@ void OuterBin::Generate(std::ostream& os)
 		
 		/* AMU_ABI_RAT_OP_IS_USED */
 		prog_info[77].address = 0x8000001f;
-		prog_info[77].value = inner_bin->GetRatOp();
+		prog_info[77].value = rat_op;
+		printf("\n****rat_op is %08x****\n", rat_op);
 
 		/* AMU_ABI_UAV_RESOURCE_MASK_0 */
 		prog_info[78].address = 0x80001843;
-		prog_info[78].value = inner_bin->GetRatOp();
+		prog_info[78].value = rat_op;
 		
 		prog_info[79].address = 0x80001844;
 		prog_info[79].value = 0;
@@ -674,7 +680,7 @@ void OuterBin::Generate(std::ostream& os)
 		/* ELF_NOTE_ATI_UAV_OP_MASK */
 		note_ptr[16] = new char[128]();
 		
-		*((int*)note_ptr[16]) = inner_bin->GetRatOp();
+		*((int*)note_ptr[16]) = rat_op;
 
 		entry->NewNote(InnerBinNoteTypeUAVOPMask, 128, note_ptr[16]);
 

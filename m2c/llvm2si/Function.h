@@ -190,6 +190,7 @@ public:
 	/* Getters */
 	Common::Tree *getTree() { return &tree; }
 	int getVRegGid() { return vreg_gid; }
+	int getVRegLid() { return vreg_lid; }
 	int getSRegGSize() { return sreg_gsize; }
 	FunctionUAV *getUAV(int index) { return index >= 0 && index <
 			(int) uav_list.size() ? uav_list[index].get() :

@@ -88,7 +88,7 @@ void Arg::ValidTypes(bool types[])
 
 	/* Message tail */
 	msg << "} expected";
-	fatal("%s", msg.str().c_str());
+	panic("%s", msg.str().c_str());
 }
 
 
