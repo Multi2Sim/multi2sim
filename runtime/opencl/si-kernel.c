@@ -324,7 +324,7 @@ struct opencl_si_ndrange_t *opencl_si_ndrange_create(
 			local_work_size[i] : 1;
 		assert(!(global_work_size[i] % 
 			arch_ndrange->local_work_size[i]));
-		arch_ndrange->group_count[i] = global_work_size[i] / 
+		arch_ndrange->num_groups[i] = global_work_size[i] / 
 			arch_ndrange->local_work_size[i];
 	}
 
@@ -334,15 +334,16 @@ struct opencl_si_ndrange_t *opencl_si_ndrange_create(
 		arch_ndrange->global_work_offset[i] = 0;
 		arch_ndrange->global_work_size[i] = 1;
 		arch_ndrange->local_work_size[i] = 1;
-		arch_ndrange->group_count[i] = 
+		arch_ndrange->num_groups[i] = 
 			arch_ndrange->global_work_size[i] / 
 			arch_ndrange->local_work_size[i];
 	}
 
 	/* Calculate the number of work groups in the ND-Range */
-	arch_ndrange->num_groups = arch_ndrange->group_count[0] * 
-		arch_ndrange->group_count[1] * arch_ndrange->group_count[2];
-
+	arch_ndrange->total_num_groups = 
+		arch_ndrange->num_groups[0] * 
+		arch_ndrange->num_groups[1] * 
+		arch_ndrange->num_groups[2];
 
 	/* Tell the driver whether or not we are using a fused device */
 	syscall(OPENCL_SYSCALL_CODE, opencl_abi_si_ndrange_set_fused,
@@ -373,12 +374,18 @@ void opencl_si_ndrange_init(struct opencl_si_ndrange_t *ndrange)
 void opencl_si_ndrange_finish(struct opencl_si_ndrange_t *ndrange)
 {
 	/* Wait for the nd-range to complete */
+	opencl_debug("[%s] finish start at %llu", __FUNCTION__,
+		opencl_get_time()); /////////////////
 	syscall(OPENCL_SYSCALL_CODE, opencl_abi_si_ndrange_finish,
 		ndrange->id);
 
 	/* Flush the cache */
+	opencl_debug("[%s] finish end/flush start at %llu", __FUNCTION__,
+		opencl_get_time()); /////////////////
 	syscall(OPENCL_SYSCALL_CODE, opencl_abi_si_ndrange_flush, 
 		ndrange->id);
+	opencl_debug("[%s] flush done at %llu", __FUNCTION__,
+		opencl_get_time()); /////////////////
 
 }
 
@@ -396,7 +403,7 @@ void opencl_si_ndrange_free(struct opencl_si_ndrange_t *ndrange)
 }
 
 void opencl_si_ndrange_run_partial(struct opencl_si_ndrange_t *ndrange,
-	unsigned int *work_group_start, unsigned int *work_group_count)
+	unsigned int work_group_start, unsigned int work_group_count)
 {
 	int max_work_groups_to_send;
 
@@ -408,8 +415,7 @@ void opencl_si_ndrange_run_partial(struct opencl_si_ndrange_t *ndrange,
 
 	syscall(OPENCL_SYSCALL_CODE, 
 		opencl_abi_si_ndrange_send_work_groups, 
-		ndrange->id, &work_group_start[0], &work_group_count[0],
-		ndrange->group_count);
+		ndrange->id, work_group_start, work_group_count);
 }
 
 void opencl_si_ndrange_run(struct opencl_si_ndrange_t *ndrange,
@@ -421,10 +427,6 @@ void opencl_si_ndrange_run(struct opencl_si_ndrange_t *ndrange,
 
 	cl_ulong cltime;
 
-	unsigned int work_group_start[3];
-	unsigned int work_group_count[3];
-
-	int i;
 	int sched_policy_new;
 	int sched_policy_old;
 
@@ -439,12 +441,6 @@ void opencl_si_ndrange_run(struct opencl_si_ndrange_t *ndrange,
 	pthread_setschedparam(pthread_self(), sched_policy_new, 
 		&sched_param_new);
 
-	for (i = 0; i < 3; i++)
-	{
-		work_group_start[i] = 0;
-		work_group_count[i] = ndrange->group_count[i];
-	}
-
 	syscall(OPENCL_SYSCALL_CODE, opencl_abi_ndrange_start);
 
 	/* Record start time */
@@ -454,8 +450,7 @@ void opencl_si_ndrange_run(struct opencl_si_ndrange_t *ndrange,
 	}
 
 	/* Run all of the work groups */
-	opencl_si_ndrange_run_partial(ndrange, work_group_start,
-		work_group_count);
+	opencl_si_ndrange_run_partial(ndrange, 0, ndrange->total_num_groups);
 
 	/* Wait for the nd-range to complete and then flush the cache */
 	opencl_si_ndrange_finish(ndrange);

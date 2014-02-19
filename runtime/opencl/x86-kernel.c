@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <sys/syscall.h>
 #include <assert.h>
 #include <dlfcn.h>
 #include <stdlib.h>
@@ -353,7 +354,7 @@ struct opencl_x86_ndrange_t *opencl_x86_ndrange_create(
 			local_work_size[i] : 1;
 		assert(!(global_work_size[i] % 
 			arch_ndrange->local_work_size[i]));
-		arch_ndrange->group_count[i] = global_work_size[i] / 
+		arch_ndrange->num_groups[i] = global_work_size[i] / 
 			arch_ndrange->local_work_size[i];
 	}
 
@@ -363,13 +364,14 @@ struct opencl_x86_ndrange_t *opencl_x86_ndrange_create(
 		arch_ndrange->global_work_offset[i] = 0;
 		arch_ndrange->global_work_size[i] = 1;
 		arch_ndrange->local_work_size[i] = 1;
-		arch_ndrange->group_count[i] = 1;
+		arch_ndrange->num_groups[i] = 1;
 	}
 
 	/* Calculate the number of work groups in the ND-Range */
-	arch_ndrange->num_groups = arch_ndrange->group_count[0] * 
-		arch_ndrange->group_count[1] * arch_ndrange->group_count[2];
-
+	arch_ndrange->total_num_groups = 
+		arch_ndrange->num_groups[0] * 
+		arch_ndrange->num_groups[1] * 
+		arch_ndrange->num_groups[2];
 
 	/* Check that all arguments are set */
 	for (i = 0; i < x86_kernel->num_params; i++)
@@ -390,24 +392,41 @@ struct opencl_x86_ndrange_t *opencl_x86_ndrange_create(
 		arch_ndrange->global_work_size[2]);
 
 	/* copy over register arguments */
-	size_t reg_size = sizeof x86_kernel->cur_register_params[0] * MAX_SSE_REG_PARAMS;
-	if (posix_memalign((void **) &arch_ndrange->register_params, MEMORY_ALIGN, reg_size))
+	size_t reg_size = sizeof x86_kernel->cur_register_params[0] * 
+		MAX_SSE_REG_PARAMS;
+	if (posix_memalign((void **) &arch_ndrange->register_params, 
+		MEMORY_ALIGN, reg_size))
+	{
 		fatal("%s: could not allocate aligned memory", __FUNCTION__);
+	}
 	mhandle_register_ptr(arch_ndrange->register_params, reg_size);
-	memcpy(arch_ndrange->register_params, x86_kernel->cur_register_params, reg_size);
+	memcpy(arch_ndrange->register_params, x86_kernel->cur_register_params, 
+		reg_size);
 
 	/* copy over stack arguments */
-	arch_ndrange->stack_params = xmalloc(x86_kernel->stack_param_words * sizeof(size_t));
+	arch_ndrange->stack_params = xmalloc(x86_kernel->stack_param_words * 
+		sizeof(size_t));
 	if (!arch_ndrange->stack_params)
 		fatal("%s: out of memory", __FUNCTION__);
-	memcpy(arch_ndrange->stack_params, x86_kernel->cur_stack_params, x86_kernel->stack_param_words * sizeof (size_t));
+	memcpy(arch_ndrange->stack_params, x86_kernel->cur_stack_params, 
+		x86_kernel->stack_param_words * sizeof (size_t));
 	
 	return arch_ndrange;
 }
+
 /* Initialize an ND-Range */
 void opencl_x86_ndrange_init(struct opencl_x86_ndrange_t *ndrange)
 {
 	opencl_debug("[%s] initing x86 ndrange", __FUNCTION__);
+
+	struct opencl_x86_device_t *device = ndrange->arch_kernel->device;
+
+	/* Set the affinity of the dispatch thread to the last core.
+	 * The worker threads will be scheduled to the N-1 cores. */
+	cpu_set_t cpu_set;
+	CPU_ZERO(&cpu_set);
+	CPU_SET(device->num_cores - 1, &cpu_set);
+	pthread_setaffinity_np(pthread_self(), sizeof cpu_set, &cpu_set);
 
 	struct opencl_x86_device_exec_t *exec;
 	exec = xcalloc(1, sizeof(struct opencl_x86_device_exec_t));
@@ -436,31 +455,22 @@ void opencl_x86_ndrange_free(struct opencl_x86_ndrange_t *ndrange)
 }
 
 void opencl_x86_ndrange_run_partial(struct opencl_x86_ndrange_t *ndrange, 
-	unsigned int *work_group_start, unsigned int *work_group_count)
+	unsigned int work_group_start, unsigned int work_group_count)
 {
 	struct opencl_x86_device_exec_t *exec = ndrange->exec;
 	struct opencl_x86_device_t *device = ndrange->arch_kernel->device;
 
+	/*
 	opencl_debug("[%s] running x86 partial ndrange", __FUNCTION__);
+	opencl_debug("[%s] x86 scheduling thread has tid %ld", 
+		__FUNCTION__, syscall(SYS_gettid));
+	opencl_debug("[%s] group start = %u, group count = %u", __FUNCTION__,
+		work_group_start, work_group_count);
+		*/
 
-	opencl_debug("[%s] group count = (%d, %d, %d)", __FUNCTION__,
-		work_group_count[0], work_group_count[1], work_group_count[2]);
-
-	memcpy(exec->work_group_start, work_group_start, sizeof (unsigned int) * 3);
-	memcpy(exec->work_group_count, work_group_count, sizeof (unsigned int) * 3);
-
-	exec->next_group = 0;
-	exec->num_groups = 1;
-	for (int i = 0; i < 3; i++)
-		exec->num_groups *= work_group_count[i];
-
-	/* With a fused device, the thread that is generated to 
-	 * execute the nd-range may be new each time.  To ensure proper 
-	 * execution, we should always set its affinity. */
-	cpu_set_t cpu_set;
-	CPU_ZERO(&cpu_set);
-	CPU_SET(device->num_cores - 1, &cpu_set);
-	pthread_setaffinity_np(pthread_self(), sizeof cpu_set, &cpu_set);
+	exec->work_group_start = work_group_start;
+	exec->next_group = work_group_start;
+	exec->work_group_count = work_group_count;
 
 	device->exec = exec;
 	opencl_x86_device_sync_post(&device->work_ready);
@@ -477,14 +487,31 @@ void opencl_x86_ndrange_run(struct opencl_x86_ndrange_t *ndrange,
 
 	cl_ulong cltime;
 
-	unsigned int group_start[3] = {0, 0, 0};
+	int sched_policy_new;
+	int sched_policy_old;
+	struct sched_param sched_param_old;
+	struct sched_param sched_param_new;
 
 	/* One-time initialization */
 	opencl_x86_ndrange_init(ndrange);
 
-	/* Tell the driver that the nd-range has started */
+	/* Tell the driver that the nd-range has started.  Give 
+	 * dispatch thread highest priority. */
 	if (!opencl_native_mode)
+	{
 		syscall(OPENCL_SYSCALL_CODE, opencl_abi_ndrange_start);
+
+		/* Store old scheduling policy and priority */
+		pthread_getschedparam(pthread_self(), &sched_policy_old, 
+			&sched_param_old);
+
+		/* Give dispatch threads the highest priority */
+		sched_policy_new = SCHED_RR;
+		sched_param_new.sched_priority = sched_get_priority_max(
+			sched_policy_new);
+		pthread_setschedparam(pthread_self(), sched_policy_new, 
+			&sched_param_new);
+	}
 
 	/* Record start time */
 	if (event)
@@ -493,8 +520,7 @@ void opencl_x86_ndrange_run(struct opencl_x86_ndrange_t *ndrange,
 	}
 
 	/* Execute the nd-range */
-	opencl_x86_ndrange_run_partial(ndrange, group_start, 
-		ndrange->group_count);
+	opencl_x86_ndrange_run_partial(ndrange, 0, ndrange->total_num_groups);
 
 	/* TODO Finish is currently not used.  If we enable non-coherent
 	 * stores for OpenCL running on x86, we will need to add a flush
@@ -517,33 +543,26 @@ void opencl_x86_ndrange_run(struct opencl_x86_ndrange_t *ndrange,
 		event->time_end = cltime;
 	}
 
-	/* Tell the driver that the nd-range has ended */
 	if (!opencl_native_mode)
+	{
+		/* Reset old scheduling parameters */
+		pthread_setschedparam(pthread_self(), sched_policy_old, 
+			&sched_param_old);
+
+		/* Tell the driver that the nd-range has ended */
 		syscall(OPENCL_SYSCALL_CODE, opencl_abi_ndrange_end);
+	}
 
 	/* Tear-down */
 	opencl_x86_ndrange_free(ndrange);
 }
 
 /* convert a linear address into an n-dimensional address */
-void opencl_nd_address(int dim, int addr, const unsigned int *size, unsigned int *pos)
+void opencl_nd_address(int linear_id, const unsigned int *dims, 
+	unsigned int *id)
 {
-	switch (dim)
-	{
-	case 1:
-		pos[0] = addr;
-		return;
-	case 2:
-		pos[1] = addr / size[0];
-		pos[0] = addr - (pos[1] * size[0]);
-		return;
-	case 3:
-		pos[2] = addr / (size[1] * size[0]);
-		pos[1] = (addr / size[0]) % size[1];
-		pos[0] = (addr % size[0]);
-		return;
-	default:
-		fatal("%s: dim is greater than 3\n", __FUNCTION__);
-		return;
-	}
+	id[2] = linear_id / (dims[1] * dims[0]);
+	id[1] = (linear_id / dims[0]) % dims[1];
+	id[0] = (linear_id % dims[0]);
+	return;
 }

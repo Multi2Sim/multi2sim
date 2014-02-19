@@ -10,11 +10,9 @@
 #include "program.h"
 #include "union-device.h"
 #include "union-kernel.h"
-#include "partition-util-time.h"
 
 struct dispatch_info
 {
-	void *part;
 	pthread_mutex_t *lock;
 	pthread_barrier_t *barrier;
 
@@ -48,15 +46,15 @@ void *device_ndrange_dispatch(void *ptr)
 
 	cl_ulong cltime;
 
-	long long now;
-
-	int i;
 	int sched_policy_new;
 	int sched_policy_old;
 	int work_groups_executed = 0;
 
+	unsigned int start_group;
+	unsigned int num_groups_to_exec;
+	unsigned int preferred_groups;
+
 	assert(ptr);
-	assert(info->part);
 	assert(info->lock);
 	assert(info->device);
 	assert(info->arch_kernel);
@@ -73,25 +71,10 @@ void *device_ndrange_dispatch(void *ptr)
 	pthread_setschedparam(pthread_self(), sched_policy_new, 
 		&sched_param_new);
 
-	/* Allocate the maximum number of dimensions */
-	unsigned int *group_offset = xcalloc(3, sizeof (unsigned int));
-	unsigned int *group_count = xcalloc(3, sizeof (unsigned int));
-
-	/* Initialize to reasonable values */
-	for (i = 0; i < 3; i++)
-	{
-		group_offset[i] = 0;
-		group_count[i] = (ndrange->global_work_size[i] /
-			ndrange->local_work_size[i]) - 
-			(ndrange->global_work_offset[i] /
-			ndrange->local_work_size[i]);
-	}
 	opencl_debug("[%s] global size = (%d,%d,%d)", __FUNCTION__,
 		ndrange->global_work_size[0],
 		ndrange->global_work_size[1],
 		ndrange->global_work_size[2]);
-	opencl_debug("[%s] group count = (%d,%d,%d)", __FUNCTION__,
-		group_count[0], group_count[1], group_count[2]);
 
 	/* Create architecture-specific ND-Range */
 	arch_ndrange = info->device->arch_ndrange_create_func(ndrange->parent,
@@ -101,6 +84,12 @@ void *device_ndrange_dispatch(void *ptr)
 	
 	/* Initialize architecture-specific ND-Range */
 	info->device->arch_ndrange_init_func(arch_ndrange);
+
+	opencl_debug("[%s] creating union nd-range", __FUNCTION__);
+	preferred_groups = info->device->arch_device_preferred_workgroups_func(
+		info->device->arch_device);
+	opencl_debug("[%s] %s preferred groups = %u", __FUNCTION__,
+		info->device->name, preferred_groups);
 
 	pthread_barrier_wait(info->barrier);
 
@@ -117,40 +106,58 @@ void *device_ndrange_dispatch(void *ptr)
 
 	/* Execute work groups until the ND-Range is complete */
 	pthread_mutex_lock(info->lock);
-	now = get_time();
-	while (get_strategy()->get_partition(
-		info->part, 
-		info->id,
-		info->device->arch_device_preferred_workgroups_func(
-			info->device), group_offset, group_count, now)
-		&& device_ndrange_has_work(ndrange->work_dim, group_count))
+	while (ndrange->next_group < ndrange->total_num_groups)
 	{
+		/* Determine the number of groups to give this device */
+		start_group = ndrange->next_group;
+		num_groups_to_exec = MIN(preferred_groups,
+			ndrange->total_num_groups - ndrange->next_group);
 		/*
-		opencl_debug("[%s] running work groups (%d,%d,%d) to (%d,%d,%d)"
-			" on device %s", __FUNCTION__,
-			group_offset[0], group_offset[1], group_offset[2],
-			group_offset[0]+group_count[0]-1,
-			group_offset[1]+group_count[1]-1,
-			group_offset[2]+group_count[2]-1,
-			info->device->name);
-			*/
+		opencl_debug("[%s] start group = %d, num groups to exec = %d",
+			__FUNCTION__, start_group, num_groups_to_exec);
+		*/
+
+		/* Update the group counter */
+		ndrange->next_group += num_groups_to_exec;
+
 		pthread_mutex_unlock(info->lock);
 
-		info->device->arch_ndrange_run_partial_func(arch_ndrange,
-			group_offset, group_count);
-
-		work_groups_executed += 
-			group_count[2] * group_count[1] * group_count[0];
-
 		/*
-		opencl_debug("[%s] id %d. offset: %d.  count: %d", 
-			__FUNCTION__, info->id, group_offset[0], 
-			group_count[0]);
+		opencl_debug("[%s] running work groups %d to %d"
+			" on device %s", __FUNCTION__,
+			start_group, start_group + num_groups_to_exec - 1,
+			info->device->name);
 			*/
+
+		cltime = opencl_get_time();
+		/*
+		opencl_debug("[%s] %s ndrange partial start = %lld", 
+			__FUNCTION__, info->device->name, cltime);
+		*/
+
+		info->device->arch_ndrange_run_partial_func(arch_ndrange,
+			start_group, num_groups_to_exec);
+
+		work_groups_executed += num_groups_to_exec;
+
+		cltime = opencl_get_time();
+		/*
+		opencl_debug("[%s] %s ndrange partial end = %lld", 
+			__FUNCTION__, info->device->name, cltime);
+		*/
 
 		pthread_mutex_lock(info->lock);
 	}
 	pthread_mutex_unlock(info->lock);
+
+	/////////////////////
+	cltime = opencl_get_time();
+	opencl_debug("[%s] %s ndrange ready to call finish = %lld", 
+		__FUNCTION__, info->device->name, cltime);
+	////////////////////////
+	/* All devices must sync before one tries to call flush.  
+	 * Otherwise weird stuff may happen. */
+	pthread_barrier_wait(info->barrier);
 
 	/* opencl_debug("[%s] calling nd-range finish", __FUNCTION__); */
 	info->device->arch_ndrange_finish_func(arch_ndrange);
@@ -178,7 +185,7 @@ void *device_ndrange_dispatch(void *ptr)
 
 	pthread_barrier_wait(info->barrier);
 
-	opencl_debug("[%s] Device %s ran %d work-groups\n",
+	opencl_debug("[%s] Device %s ran %d work-groups",
 		__FUNCTION__, info->device->name, work_groups_executed);
 
 	/* opencl_debug("[%s] calling nd-range free", __FUNCTION__); */
@@ -187,9 +194,6 @@ void *device_ndrange_dispatch(void *ptr)
 	/* Reset old scheduling parameters */
 	pthread_setschedparam(pthread_self(), sched_policy_old, 
 		&sched_param_old);
-
-	free(group_offset);
-	free(group_count);
 
 	opencl_debug("[%s] device '%s' done", __FUNCTION__, info->device->name);
 
@@ -215,8 +219,6 @@ void opencl_union_ndrange_run(struct opencl_union_ndrange_t *ndrange,
 	int i;
 	int num_devices;
 
-	void *part;
-
 	opencl_debug("[%s] global work size = %d,%d,%d", __FUNCTION__, 
 		ndrange->global_work_size[0], ndrange->global_work_size[1], 
 		ndrange->global_work_size[2]);
@@ -230,8 +232,6 @@ void opencl_union_ndrange_run(struct opencl_union_ndrange_t *ndrange,
 	opencl_debug("[%s] num fused sub-devices = %d", __FUNCTION__, 
 		num_devices);
 
-	part = get_strategy()->create(num_devices, ndrange->work_dim, 
-		ndrange->group_count);
 	threads = xcalloc(num_devices - 1, sizeof (pthread_t));
 	info = xcalloc(num_devices, sizeof (struct dispatch_info));
 	pthread_mutex_init(&lock, NULL);
@@ -240,7 +240,6 @@ void opencl_union_ndrange_run(struct opencl_union_ndrange_t *ndrange,
 	for (i = 0; i < num_devices; i++)
 	{
 		info[i].ndrange = ndrange;
-		info[i].part = part;
 		info[i].device = list_get(device_list, i);
 		info[i].arch_kernel = list_get(ndrange->arch_kernels, i);
 		opencl_debug("[%s] ndrange->kernel[%d] = %p", 
@@ -273,7 +272,6 @@ void opencl_union_ndrange_run(struct opencl_union_ndrange_t *ndrange,
 	
 	pthread_mutex_destroy(&lock);
 	pthread_barrier_destroy(&barrier);
-	get_strategy()->destroy(part);
 	free(info);
 	free(threads);
 }
@@ -416,7 +414,7 @@ struct opencl_union_ndrange_t *opencl_union_ndrange_create(
 			local_work_size[i] : 1;
 		assert(!(global_work_size[i] % 
 			union_ndrange->local_work_size[i]));
-		union_ndrange->group_count[i] = global_work_size[i] / 
+		union_ndrange->num_groups[i] = global_work_size[i] / 
 			union_ndrange->local_work_size[i];
 	}
 
@@ -426,14 +424,16 @@ struct opencl_union_ndrange_t *opencl_union_ndrange_create(
 		union_ndrange->global_work_offset[i] = 0;
 		union_ndrange->global_work_size[i] = 1;
 		union_ndrange->local_work_size[i] = 1;
-		union_ndrange->group_count[i] = 
+		union_ndrange->num_groups[i] = 
 			union_ndrange->global_work_size[i] / 
 			union_ndrange->local_work_size[i];
 	}
 
 	/* Calculate the number of work groups in the ND-Range */
-	union_ndrange->num_groups = union_ndrange->group_count[0] * 
-		union_ndrange->group_count[1] * union_ndrange->group_count[2];
+	union_ndrange->total_num_groups = 
+		union_ndrange->num_groups[0] * 
+		union_ndrange->num_groups[1] * 
+		union_ndrange->num_groups[2];
 
 	return union_ndrange;
 }

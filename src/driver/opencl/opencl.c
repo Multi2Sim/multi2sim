@@ -28,6 +28,7 @@
 #include <arch/x86/timing/cpu.h>
 #include <lib/class/list.h>
 #include <lib/class/string.h>
+#include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
@@ -232,8 +233,8 @@ int OpenclDriverCall(X86Context *ctx)
 
 /* NOTE: when modifying the values of these two macros, the same values should
  * be reflected in 'runtime/opencl/platform.c'. */
-#define OPENCL_VERSION_MAJOR  5
-#define OPENCL_VERSION_MINOR  2173
+#define OPENCL_VERSION_MAJOR  6
+#define OPENCL_VERSION_MINOR  2500
 
 struct opencl_version_t
 {
@@ -1202,17 +1203,13 @@ static int opencl_abi_si_ndrange_get_num_buffer_entries_impl(
  *
  *	ID of the ND-Range
  *
- * @param unsigned int work_group_start[3]
+ * @param unsigned int work_group_start
  *
- *	Origin of work groups to enqueue
+ *	First work group to execute
  *
- * @param unsigned int work_group_count[3]
+ * @param unsigned int work_group_count
  *
- *	Count of work groups to enqueue
- *
- * @param unsigned int work_group_sizes[3]
- *
- * 	Overall sizes of work groups in each dimension
+ *	Number of work groups to execute
  *
  * @return int
  *
@@ -1246,27 +1243,19 @@ static int opencl_abi_si_ndrange_send_work_groups_impl(X86Context *ctx)
 	SINDRange *ndrange = NULL, *tmp;
 
 	struct x86_regs_t *regs = ctx->regs;
-	struct mem_t *mem = ctx->mem;
 
-	int i, j, k;
 	int index;
 	int ndrange_id;
 
-	unsigned int work_group_start_ptr;
-	unsigned int work_group_count_ptr;
-	unsigned int work_group_sizes_ptr;
-	unsigned int work_group_start[3];
-	unsigned int work_group_count[3];
-	unsigned int work_group_sizes[3];
-	unsigned int total_num_groups;
+	unsigned int work_group_start;
+	unsigned int work_group_count;
 
 	long work_group_id;
 
 	/* Arguments */
 	ndrange_id = regs->ecx;
-	work_group_start_ptr = regs->edx;
-	work_group_count_ptr = regs->esi;
-	work_group_sizes_ptr = regs->edi;
+	work_group_start = regs->edx;
+	work_group_count = regs->esi;
 
 	LIST_FOR_EACH(driver->si_ndrange_list, index)
 	{
@@ -1278,37 +1267,20 @@ static int opencl_abi_si_ndrange_send_work_groups_impl(X86Context *ctx)
 		fatal("%s: invalid ndrange ID (%d)", __FUNCTION__, ndrange_id);
 	opencl_debug("\tndrange %d\n", ndrange->id);
 
-	mem_read(mem, work_group_start_ptr, 3 * 4, work_group_start);
-	mem_read(mem, work_group_count_ptr, 3 * 4, work_group_count);
-	mem_read(mem, work_group_sizes_ptr, 3 * 4, work_group_sizes);
-
-	total_num_groups = work_group_count[2] * work_group_count[1] * 
-		work_group_count[0];
-	assert(total_num_groups <= SI_DRIVER_MAX_WORK_GROUP_BUFFER_SIZE -
+	assert(work_group_count <= SI_DRIVER_MAX_WORK_GROUP_BUFFER_SIZE -
 		list_count(ndrange->waiting_work_groups));
 
-	opencl_debug("\treceiving %d work groups: (%d,%d,%d) through (%d,%d,%d)\n",
-		work_group_count[2] * work_group_count[1] * work_group_count[0],
-		work_group_start[0], work_group_start[1], work_group_start[2],
-		work_group_start[0] + work_group_count[0] - 1, 
-		work_group_start[1] + work_group_count[1] - 1, 
-		work_group_start[2] + work_group_count[2] - 1);
+	opencl_debug("\treceiving %d work groups: (%d) through (%d)\n",
+		work_group_count, work_group_start, 
+		work_group_start + work_group_count - 1);
 
 	/* Receive work groups (add them to the waiting queue) */
-	for (i = work_group_start[2]; i < work_group_start[2] + work_group_count[2]; i++)
+	for (work_group_id = work_group_start; 
+		work_group_id < work_group_start + work_group_count; 
+		work_group_id++)
 	{
-		for (j = work_group_start[1]; j < work_group_start[1] + work_group_count[1]; j++)
-		{
-			for (k = work_group_start[0]; k < work_group_start[0] + work_group_count[0]; k++)
-			{
-				work_group_id = (i * work_group_sizes[1] * 
-					work_group_sizes[0]) + (j * 
-					work_group_sizes[0]) + k;
-
-				list_enqueue(ndrange->waiting_work_groups, 
-					(void*)work_group_id);
-			}
-		}
+		list_enqueue(ndrange->waiting_work_groups, 
+			(void*)work_group_id);
 	}
 
 	/* Suspend x86 context until driver needs more work */
@@ -1706,7 +1678,6 @@ static int opencl_abi_ndrange_start_impl(X86Context *ctx)
  *
  *	The function always returns 0.
  */
-
 static int opencl_abi_ndrange_end_impl(X86Context *ctx)
 {
 	X86Emu *x86_emu = ctx->emu;
@@ -1723,3 +1694,4 @@ static int opencl_abi_ndrange_end_impl(X86Context *ctx)
 
 	return 0;
 }
+

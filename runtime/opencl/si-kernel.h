@@ -99,8 +99,8 @@ struct opencl_si_ndrange_t
 	unsigned int global_work_size[3];
 	unsigned int local_work_size[3];
 
-	unsigned int group_count[3];
-	unsigned int num_groups;
+	unsigned int num_groups[3];
+	unsigned int total_num_groups;
 
 	void *table_ptr;
 	void *cb_ptr;
@@ -131,7 +131,7 @@ void opencl_si_ndrange_run(struct opencl_si_ndrange_t *ndrange,
 	struct opencl_event_t *event);
 
 void opencl_si_ndrange_run_partial(struct opencl_si_ndrange_t *ndrange,
-	unsigned int work_group_start[3], unsigned int work_group_size[3]);
+	unsigned int work_group_start, unsigned int work_group_count);
 
 void opencl_si_ndrange_finish(struct opencl_si_ndrange_t *ndrange);
 

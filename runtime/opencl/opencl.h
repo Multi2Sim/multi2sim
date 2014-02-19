@@ -233,7 +233,7 @@ typedef void (*opencl_arch_ndrange_run_func_t)(void *ndrange,
 
 /* Run an part of an ND-Range */
 typedef void (*opencl_arch_ndrange_run_partial_func_t)(void *ndrange, 
-		unsigned int *work_group_start, unsigned int *work_group_count);
+		unsigned int work_group_start, unsigned int work_group_count);
 
 /* Finish an ND-Range (blocking call) */
 typedef void (*opencl_arch_ndrange_finish_func_t)(void *ndrange);
@@ -255,6 +255,7 @@ extern int opencl_native_mode;
  */
 
 void opencl_debug(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
+cl_ulong opencl_get_time();
 
 /* Populate a parameter as a response to OpenCL's many clGet*Info functions */
 cl_int opencl_set_param(const void *src_value, size_t src_size,

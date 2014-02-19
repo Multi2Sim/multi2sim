@@ -117,12 +117,13 @@ struct opencl_platform_t *opencl_platform_create(void)
 		device = opencl_device_create();
 		device->arch_device = opencl_si_device_create(device);
 		list_add(platform->device_list, device);
-	}
 
-	/* Add Union device */
-	device = opencl_device_create();
-	device->arch_device = opencl_union_device_create(device, platform->device_list);
-	list_add(platform->device_list, device);
+		/* Add fused device */
+		device = opencl_device_create();
+		device->arch_device = opencl_union_device_create(device, 
+			platform->device_list);
+		list_add(platform->device_list, device);
+	}
 
 	/* Return */
 	return platform;
@@ -156,8 +157,8 @@ void opencl_platform_free(struct opencl_platform_t *platform)
 /* Version for the OpenCL runtime.
  * NOTE: when modifying the values of these two macros, the same values should
  * be reflected in 'src/driver/opencl/opencl.c'. */
-#define OPENCL_VERSION_MAJOR  5
-#define OPENCL_VERSION_MINOR  2173
+#define OPENCL_VERSION_MAJOR  6 
+#define OPENCL_VERSION_MINOR  2500
 
 cl_int clGetPlatformIDs(
 	cl_uint num_entries,
