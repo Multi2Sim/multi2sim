@@ -403,7 +403,7 @@ void Function::EmitHeader()
 	/* Allocate 3 vector registers (v[0:2]) for local ID */
 	vreg_lid = AllocVReg(3);
 	if (vreg_lid)
-		panic("%s: vreg_lid is expented to be 0", __FUNCTION__);
+		panic("%s: vreg_lid is expected to be 0", __FUNCTION__);
 
 	/* Allocate 2 scalar registers for UAV table. The value for these
 	 * registers is assigned by the runtime based on info found in the

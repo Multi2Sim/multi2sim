@@ -168,6 +168,14 @@ void BasicBlock::EmitCall(llvm::CallInst *llvm_inst)
 				function->getVRegGid() + dim);
 		function->AddSymbol(ret_symbol);
 	}
+	else if (func_name == "__get_local_id_u32")
+	{
+		/* Create new symbol associating it with the vector register
+		 * containing the global ID in the given dimension. */
+		Symbol *ret_symbol = new Symbol(var_name, SymbolVectorRegister,
+				function->getVRegLid() + dim);
+		function->AddSymbol(ret_symbol);
+	}
 	else if (func_name == "get_global_size")
 	{
 		/* Allocate a new vector register to copy global size. */
@@ -522,6 +530,60 @@ void BasicBlock::EmitMul(llvm::BinaryOperator *llvm_inst)
 	llvm::Value *llvm_arg2 = llvm_inst->getOperand(1);
 	Arg *arg1 = function->TranslateValue(llvm_arg1);
 	Arg *arg2 = function->TranslateValue(llvm_arg2);
+	
+	/* If arg1 is a scalar register convert it to a vector register */
+	if (arg1->getType() == ArgTypeScalarRegister)
+	{	
+		ArgScalarRegister *arg_scalar = 
+				dynamic_cast<ArgScalarRegister *>(arg1);
+		
+		/* Allocate vector register and create symbol for return value */
+		std::string ret_name = llvm_arg1->getName();
+		int ret_vreg = function->AllocVReg();
+		Symbol *ret_symbol = new Symbol(ret_name, SymbolVectorRegister, ret_vreg);
+		function->AddSymbol(ret_symbol);
+
+
+		/* Emit instruction
+		 * v_mov_b32 ret_vreg, arg1
+		 */
+
+		 auto inst = new Inst(SI::INST_V_MOV_B32,
+			 new ArgVectorRegister(ret_vreg), 
+			 new ArgScalarRegister(arg_scalar->getId()));
+		 AddInst(inst);
+
+		 delete arg1;
+
+		 arg1 = new ArgVectorRegister(ret_vreg);
+	}
+	
+	/* If arg2 is a scalar register convert it to a vector register */
+	if (arg2->getType() == ArgTypeScalarRegister)
+	{	
+		ArgScalarRegister *arg_scalar = 
+				dynamic_cast<ArgScalarRegister *>(arg2);
+		
+		/* Allocate vector register and create symbol for return value */
+		std::string ret_name = llvm_arg2->getName();
+		int ret_vreg = function->AllocVReg();
+		Symbol *ret_symbol = new Symbol(ret_name, SymbolVectorRegister, ret_vreg);
+		function->AddSymbol(ret_symbol);
+
+
+		/* Emit instruction
+		 * v_mov_b32 ret_vreg, arg1
+		 */
+
+		 auto inst = new Inst(SI::INST_V_MOV_B32,
+			 new ArgVectorRegister(ret_vreg), 
+			 new ArgScalarRegister(arg_scalar->getId()));
+		 AddInst(inst);
+
+		 delete arg2;
+
+		 arg2 = new ArgVectorRegister(ret_vreg);
+	}
 
 	/* Only the first operand can be a constant, so swap them if there is
 	 * a constant in the second. */

@@ -259,10 +259,6 @@ metadata_stmt
 		{
 			misc::warning("User has provided 'COMPUTE_PGM_RSRC2' but this number is automatically calculated from provided PGM_RSRC2 fields");
 		}
-		else if(!strcmp($1, "rat_op"))
-		{	
-			context->GetInnerBin()->SetRatOp($3);
-		}
 		else if (!strcmp($1, "COMPUTE_PGM_RSRC2"))
 		{
 			misc::warning("User has provided 'COMPUTE_PGM_RSRC2' but this number is automatically calculated from provided PGM_RSRC2 fields");
