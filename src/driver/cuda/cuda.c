@@ -21,6 +21,7 @@
 #include <arch/fermi/emu/grid.h>
 #include <arch/kepler/emu/emu.h>
 #include <arch/kepler/emu/grid.h>
+#include <arch/kepler/emu/Wrapper.h>
 #include <arch/x86/emu/context.h>
 #include <arch/x86/emu/emu.h>
 #include <arch/x86/emu/regs.h>
@@ -438,19 +439,29 @@ int cuda_func_cuKplMemAlloc(X86Context *ctx)
 
 	unsigned dev_mem_ptr;
 	unsigned dev_mem_size;
+
+	unsigned kpl_emu_global_mem_top;
 	KplEmu *kpl_emu = ctx->emu->cuda_driver->kpl_emu;
 
 	dev_mem_ptr = regs->ecx;
 	dev_mem_size = regs->edx;
 
 	cuda_debug("\tin: dev_mem_size=%u\n", dev_mem_size);
-
+/*
 	mem_write(mem, dev_mem_ptr, sizeof(unsigned), &(kpl_emu->global_mem_top));
 	kpl_emu->free_global_mem_size -= dev_mem_size;
 
 	cuda_debug("\tout: dev_mem_ptr=0x%08x\n", kpl_emu->global_mem_top);
 
 	kpl_emu->global_mem_top += dev_mem_size;
+	*/
+	kpl_emu_global_mem_top = KplGetGlobalMemTop(kpl_emu);
+	mem_write(mem, dev_mem_ptr, sizeof(unsigned), &kpl_emu_global_mem_top);
+	KplSetGlobalMemFreeSize(kpl_emu, KplGetGlobalMemFreeSize(kpl_emu) - dev_mem_size);
+
+	cuda_debug("\tout: dev_mem_ptr=0x%08x\n", KplGetGlobalMemTop(kpl_emu));
+
+	KplSetGlobalMemTop(kpl_emu, KplGetGlobalMemTop(kpl_emu) + dev_mem_size);
 
 	return 0;
 }
@@ -568,7 +579,8 @@ int cuda_func_cuKplMemcpyHtoD(X86Context *ctx)
 	/* Copy */
 	buf = xcalloc(1, size);
 	mem_read(mem, host_mem_ptr, size, buf);
-	mem_write(kpl_emu->global_mem, dev_mem_ptr, size, buf);
+	//mem_write(kpl_emu->global_mem, dev_mem_ptr, size, buf);
+	KplWriteGlobalMem(kpl_emu, dev_mem_ptr, size, buf);
 	free(buf);
 
 	return 0;
@@ -659,7 +671,8 @@ int cuda_func_cuKplMemcpyDtoH(X86Context *ctx)
 
 	/* Copy */
 	buf = xcalloc(1, size);
-	mem_read(kpl_emu->global_mem, dev_mem_ptr, size, buf);
+//	mem_read(kpl_emu->global_mem, dev_mem_ptr, size, buf);
+	KplReadGlobalMem(kpl_emu, dev_mem_ptr, size, buf);
 	mem_write(mem, host_mem_ptr, size, buf);
 	free(buf);
 
@@ -869,7 +882,7 @@ void kpl_grid_set_free_notify_func(KplGrid *grid, void (*func)(void *),
 	grid->free_notify_func = func;
 	grid->free_notify_data = user_data;
 }
-
+/*
 static void cuda_abi_kpl_kernel_launch_finish(void *user_data)
 {
 	struct cuda_abi_kpl_kernel_launch_info_t *info = user_data;
@@ -877,19 +890,22 @@ static void cuda_abi_kpl_kernel_launch_finish(void *user_data)
 
 	X86Context *ctx = info->context;
 	KplGrid *grid = info->grid;
-
+*/
 	/* Debug */
+	//cuda_debug("Grid %d running kernel '%s' finished\n",
+		//	grid->id, kernel->name);
+/*
 	cuda_debug("Grid %d running kernel '%s' finished\n",
-			grid->id, kernel->name);
-
+			KplGetID(grid), kernel->name);
+*/
 	/* Set 'finished' flag in launch info */
-	info->finished = 1;
+//	info->finished = 1;
 
 	/* Force the x86 emulator to check which suspended contexts can wakeup,
 	 * based on their new state. */
-	X86EmuProcessEventsSchedule(ctx->emu);
+/*	X86EmuProcessEventsSchedule(ctx->emu);
 }
-
+*/
 static int cuda_abi_kpl_kernel_launch_can_wakeup(X86Context *ctx,
 		void *user_data)
 {
@@ -969,27 +985,35 @@ int cuda_func_cuKplLaunchKernel(X86Context *ctx)
 		arg = function->arg_array[i];
 		mem_read(mem, kernel_args + i * 4, sizeof(unsigned), &arg_ptr);
 		mem_read(mem, arg_ptr, sizeof(unsigned), &(arg->value));
-		KplEmuConstMemWrite(kpl_emu, offset, &(arg->value));
+		//KplEmuConstMemWrite(kpl_emu, offset, &(arg->value));
+		KplWriteConstMem(kpl_emu, offset, sizeof(unsigned), &(arg->value));
 		offset += 0x4;
 	}
 
 	/* Create grid */
-	grid = new(KplGrid, kpl_emu, function);  // TODO: memory leak?
+	//grid = new(KplGrid, kpl_emu, function);  // TODO: memory leak?
+	grid = KplWrapGridCreate(kpl_emu);
 
 	/* Set up grid */
-	KplGridSetupSize(grid, grid_dim, block_dim);
-	KplGridSetupConstantMemory(grid);
+	//KplGridSetupSize(grid, grid_dim, block_dim);
+	//KplGridSetupConstantMemory(grid);
+
+	/* Set up grid */
+	// FIXME remove "Wrap" after c++ porting finishing
+	KplWrapGridSetupSize(grid, grid_dim, block_dim);
+	KplWrapGridSetupConstantMemory(grid);
 
 	/* Add to pending list */
-	list_add(kpl_emu->pending_grids, grid);
+	//list_add(kpl_emu->pending_grids, grid);
+	KplPushGridList(kpl_emu, grid);
 
 	/* Set up call-back function to be run when grid finishes */
 	info = xcalloc(1, sizeof(struct cuda_abi_kpl_kernel_launch_info_t));
 	info->function= function;
 	info->context = ctx;
 	info->grid = grid;
-	kpl_grid_set_free_notify_func(grid, cuda_abi_kpl_kernel_launch_finish,
-			info);
+	//kpl_grid_set_free_notify_func(grid, cuda_abi_kpl_kernel_launch_finish,
+	//		info);
 
 	/* Suspend x86 context until grid finishes */
 	X86ContextSuspend(ctx, cuda_abi_kpl_kernel_launch_can_wakeup, info,

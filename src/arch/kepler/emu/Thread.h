@@ -20,6 +20,8 @@
 #ifndef ARCH_KEPLER_EMU_THREAD_H
 #define ARCH_KEPLER_EMU_THREAD_H
 
+#ifdef __cplusplus
+
 #include <arch/kepler/asm/Asm.h>
 #include "Grid.h"
 #include "Warp.h"
@@ -141,3 +143,4 @@ public :
 } //namespace
 #endif
 
+#endif

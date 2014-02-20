@@ -24,22 +24,25 @@
 
 #include "Emu.h"
 #include "Grid.h"
+#include "ThreadBlock.h"
+#include "Warp.h"
+#include "Thread.h"
 //#include "isa.h"
 
 namespace Kepler
 {
 
-void Grid::Grid(Emu *emu)
+Grid::Grid(Emu *emu)
 {
 	/* Initialization */
 	this->emu = emu;
-	id = emu->grids.size();
+	id = emu->getGridSize();
 
 	/* Add to list */
-	emu->grids.push_back(this);
+	emu->GridsPushBack(this);
 }
 
-void Grid::Dump(std::ostream &os = std::cout) const
+void Grid::Dump(std::ostream &os) const
 {
 }
 
@@ -68,8 +71,11 @@ void Grid::SetupSize(unsigned *thread_block_count,
 	/* Create lists */
 
 	//this->pending_thread_blocks = new std::list<std::unique_ptr<ThreadBlock>>;
-	for (int i = 0; i < this->thread_block_count; ++i)
-		pending_thread_blocks.push_back(std::unique_ptr<ThreadBlock>(new ThreadBlock(this, i)));
+	for (unsigned i = 0; i < this->thread_block_count; ++i)
+	{
+		std::unique_ptr<ThreadBlock> tb;
+		pending_thread_blocks.push_back(std::move(tb));
+	}
 	//this->running_thread_blocks = list_create();
 	//this->finished_thread_blocks = list_create();
 
@@ -88,12 +94,26 @@ void Grid::SetupSize(unsigned *thread_block_count,
 			*/
 }
 
-void Grid::WaitingToRunning()
+void Grid::GridSetupConstantMemory()
+{
+	unsigned v;
+
+	emu->WriteConstMem(0x8, 3*sizeof(unsigned), (const char*)thread_block_size3);
+	emu->WriteConstMem(0x14, 3*sizeof(unsigned), (const char*)thread_block_count3);
+	v = 0x1000000;
+	emu->WriteConstMem(0x100000, sizeof(unsigned), (const char*)&v);
+}
+
+void Grid::WaitingToRunning(int thread_block_id)
 {
 	running_thread_blocks.push_back
-		(std::move(pending_thread_blocks.front()));
+		(std::unique_ptr<ThreadBlock>(new ThreadBlock(this, thread_block_id)));
 	pending_thread_blocks.pop_front();
 }
 
+void Grid::PushFinishedThreadBlock(std::unique_ptr<ThreadBlock> threadblock)
+{
+	finished_thread_blocks.push_back(std::move(threadblock));
+}
 
 }	//namespace

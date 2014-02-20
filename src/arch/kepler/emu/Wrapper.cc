@@ -17,45 +17,130 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <ext/stdio_filebuf.h>
+
+#include "Emu.h"
 #include "Grid.h"
+#include "ThreadBlock.h"
+#include "Warp.h"
+#include "Thread.h"
 #include "Wrapper.h"
 
-namespace Kepler
-{
 ////////////////////////////////////////////////////////////////////////////////
-// per for class Grid
+// Wrapper for class Emu
 ////////////////////////////////////////////////////////////////////////////////
 
-struct KplGrid *KplGridCreate(KplEmu *emu)
+KplEmu *KplWrapEmuCreate(KplAsm * as)
 {
-	return (KplGrid *) new Grid(emu);
+	return (KplEmu *) new Kepler::Emu((Kepler::Asm*) as);
+}
+////////////////////////////////////////////////////////////////////////////////
+// Wrapper for class Grid
+////////////////////////////////////////////////////////////////////////////////
+int KplGetID(KplGrid *self)
+{
+	Kepler::Grid *grid = (Kepler::Grid *) self;
+	return grid->getID();
+}
+KplGrid *KplWrapGridCreate(KplEmu *emu)
+{
+	return (KplGrid *) new Kepler:: Grid((Kepler::Emu *)emu);
 }
 
-void KplGridFree(struct KplGrid *self)
+void KplGridFree(KplGrid *self)
 {
-	Grid *gr = (Grid *) self;
+	Kepler::Grid *gr = (Kepler::Grid *) self;
 	delete gr;
 }
 
-void KplGridDump(struct KplGrid *self, FILE *f)
+void KplWrapGridDump(KplGrid *self, FILE *f)
 {
-	Grid *grid = (Grid *) self;
+	Kepler::Grid *grid = (Kepler::Grid *) self;
 	__gnu_cxx::stdio_filebuf<char> filebuf(fileno(f), std::ios::out);
 	std::ostream os(&filebuf);
 	grid->Dump(os);
 }
 
-void KplGridSetupSize(struct KplGrid *self, unsigned *thread_block_count,
+void KplWrapGridSetupSize(KplGrid *self, unsigned *thread_block_count,
 		unsigned *thread_block_size)
 {
-	Grid *grid = (Grid *) self;
+	Kepler::Grid *grid = (Kepler::Grid *) self;
 	grid->SetupSize(thread_block_count, thread_block_size);
 }
 
-void KplGridSetupConstantMemory(struct KplGrid *self)
+void KplWrapGridSetupConstantMemory(KplGrid *self)
 {
-	Grid *grid = (Grid *) self;
-	grid->emu->const_mem->Write(0x8, sizeof(unsigned), (const char*)grid->thread_block_size3);
+	Kepler::Grid *grid = (Kepler::Grid *) self;
+	grid->GridSetupConstantMemory();
 }
 
+/// Get Kepler Emulator global memory top
+unsigned KplGetGlobalMemTop(KplEmu* self)
+{
+	Kepler::Emu *emu = (Kepler::Emu*) self;
+	return emu->getGlobalMemTop();
+}
+
+/// Get global memory free size
+unsigned KplGetGlobalMemFreeSize(KplEmu* self)
+{
+	Kepler::Emu *emu = (Kepler::Emu*) self;
+	return emu->getGlobalMemFreeSize();
+}
+
+/// Get global memory Total size
+unsigned KplGetGlobalMemTotalSize(KplEmu* self)
+{
+	Kepler::Emu *emu = (Kepler::Emu*) self;
+	return emu->getGlobalMemTotalSize();
+}
+
+// Setter
+/// Set Kelper Emulator global memory top
+void KplSetGlobalMemTop(KplEmu* self, unsigned value)
+{
+	Kepler::Emu *emu = (Kepler::Emu*) self;
+	emu->SetGlobalMemTop(value);
+}
+
+/// Set global memory free size
+void KplSetGlobalMemFreeSize(KplEmu* self, unsigned value)
+{
+	Kepler::Emu *emu = (Kepler::Emu*) self;
+	emu->setGlobalMemFreeSize(value);
+}
+
+/// Set global memory total size
+void KplSetGlobalMemTotalSize(KplEmu* self, unsigned value)
+{
+	Kepler::Emu *emu = (Kepler::Emu*) self;
+	emu->setGlobalMemTotalSize(value);
+}
+
+/// Read to Global memory
+void KplReadGlobalMem(KplEmu *self, unsigned addr, unsigned size, void* buf)
+{
+	Kepler::Emu *emu = (Kepler::Emu*) self;
+	emu->ReadGlobalMem(addr, size, (char*)buf);
+}
+
+/// Write to Global memory
+void KplWriteGlobalMem(KplEmu *self, unsigned addr, unsigned size, void* buf)
+{
+	Kepler::Emu *emu = (Kepler::Emu*) self;
+	emu->WriteGlobalMem(addr, size, (const char*)buf);
+}
+
+/// Write to Constant memory
+void KplWriteConstMem(KplEmu *self, unsigned addr, unsigned size, void* buf)
+{
+	Kepler::Emu *emu = (Kepler::Emu*) self;
+	emu->WriteConstMem(addr, size, (const char*)buf);
+}
+
+void KplPushGridList(KplEmu *self, KplGrid *grid)
+{
+	Kepler::Emu *emu = (Kepler::Emu*) self;
+	Kepler::Grid *gr = (Kepler::Grid*) grid;
+	emu->PushPendingGrid(gr);
 }
