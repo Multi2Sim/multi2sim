@@ -17,23 +17,35 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <arch/x86/emu/Emu.h>
-#include <arch/southern-islands/asm/Arg.h>
-#include <arch/southern-islands/emu/Emu.h>
-#include <arch/southern-islands/emu/NDRange.h>
-#include <arch/southern-islands/emu/WorkGroup.h>
-#include <arch/southern-islands/emu/Wavefront.h>
-#include <arch/southern-islands/emu/WorkItem.h>
+#ifndef DRIVER_COMMON_SI_H
+#define DRIVER_COMMON_SI_H
+
+#include <memory>
+#include <vector>
 #include "Driver.h"
 
 namespace Driver
 {
 
-Common::Common()
+class SICommon : public Common
 {
-	x86_emu = x86::Emu::getInstance();
+protected:
+	// Device functional emulator
+	SI::Emu *si_emu;
 
-	// x86_cpu = x86::CPU::getInstance();
-}
+	// Device timing simulator
+	SI::Gpu *si_gpu;
+
+	// CPU/GPU fused device
+	bool fused;
+
+	// NDRange list is shared by OpenGL/CL driver
+	static std::vector<std::unique_ptr<SI::NDRange>> ndranges;
+
+public:
+	SICommon();
+};
 
 }  // namespace Driver
+
+#endif

@@ -100,7 +100,7 @@ public:
 
 	///Kepler emulator maximum number of functions
 	int emu_max_functions;
-	const int emu_warp_size = 32;
+	static const int emu_warp_size = 32;
 
 	/// Get the only instance of the Kepler emulator. If the instance does not
 	/// exist yet, it will be created, and will remain allocated until the

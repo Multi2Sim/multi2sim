@@ -17,23 +17,14 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <arch/x86/emu/Emu.h>
-#include <arch/southern-islands/asm/Arg.h>
-#include <arch/southern-islands/emu/Emu.h>
-#include <arch/southern-islands/emu/NDRange.h>
-#include <arch/southern-islands/emu/WorkGroup.h>
-#include <arch/southern-islands/emu/Wavefront.h>
-#include <arch/southern-islands/emu/WorkItem.h>
-#include "Driver.h"
+#include "SI.h"
 
 namespace Driver
 {
 
-Common::Common()
+SICommon::SICommon()
 {
-	x86_emu = x86::Emu::getInstance();
-
-	// x86_cpu = x86::CPU::getInstance();
+	// si_emu = SI::Emu::getInstance();
 }
 
 }  // namespace Driver
