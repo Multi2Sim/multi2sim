@@ -175,7 +175,7 @@ CUresult cuInit(unsigned int Flags)
 
 	/* Fermi is selected by default. This could change if the user specifies
 	 * which device should be used in cudaSetDevice function */
-	active_device = frm_device;
+	active_device = kpl_device; //frm_device;
 
 	/* Syscall */
 	ret = syscall(CUDA_SYS_CODE, cuda_call_cuInit);

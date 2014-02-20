@@ -59,6 +59,13 @@
 #include <arch/kepler/emu/thread.h>
 #include <arch/kepler/emu/thread-block.h>
 #include <arch/kepler/emu/warp.h>
+#include <arch/kepler/emu/Wrapper.h>
+#include <arch/kepler/emu/Emu.h>
+#include <arch/kepler/emu/Grid.h>
+#include <arch/kepler/emu/isa.h>
+#include <arch/kepler/emu/Thread.h>
+#include <arch/kepler/emu/ThreadBlock.h>
+#include <arch/kepler/emu/Warp.h>
 
 #include <arch/mips/emu/context.h>
 #include <arch/mips/emu/isa.h>
@@ -2374,8 +2381,10 @@ int main(int argc, char **argv)
 	}
 	arch_set_emu(arch_southern_islands, asEmu(si_emu));
 
+	//kpl_asm = KplAsmCreate();
+	//kpl_emu = new(KplEmu, kpl_asm);
 	kpl_asm = KplAsmCreate();
-	kpl_emu = new(KplEmu, kpl_asm);
+	kpl_emu = KplWrapEmuCreate(kpl_asm);
 
 	/* Drivers */
 	opencl_driver = new(OpenclDriver, x86_emu, si_emu);

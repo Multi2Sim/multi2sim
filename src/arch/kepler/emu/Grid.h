@@ -20,11 +20,12 @@
 #ifndef ARCH_KEPLER_EMU_GRID_H
 #define ARCH_KEPLER_EMU_GRID_H
 
+#ifdef __cplusplus
+#include <iostream>
 #include <list>
 #include <memory>
 #include <vector>
 #include <mem-system/Memory.h>
-#include <iostream>
 
 #include "Emu.h"
 #include "ThreadBlock.h"
@@ -106,6 +107,9 @@ public:
 
 	// Getters
 	//
+	/// Get ID
+	int getID() const { return id; }
+
 	/// Get assambler
 	Asm *getAsm() const { return emu->getAsm(); }
 
@@ -119,7 +123,7 @@ public:
 	/// \param index range from 0 to 2
 	unsigned getThreadBlockSize3(int index) const
 	{
-		assert(index < 3);
+		//assert(index < 3);
 		return thread_block_size3[index];
 	}
 
@@ -127,7 +131,7 @@ public:
 	/// \param index range from 0 to 2
 	unsigned getThreadBlockCount3(int index) const
 	{
-		assert(index < 3);
+		//assert(index < 3);
 		return thread_block_count3[index];
 	}
 
@@ -135,7 +139,7 @@ public:
 	InstFunc getInstFunc(InstOpcode inst) { return emu->getInstFunc(inst); }
 
 	/// Get instruction buffer
-	void *getInstBuffer() const { return inst_buffer; }
+	long long unsigned *getInstBuffer() const { return (long long unsigned *)inst_buffer; }
 
 	/// Get instruction buffer size
 	unsigned getInstBufferSize() const { return inst_buffer_size; }
@@ -147,7 +151,7 @@ public:
 	unsigned getRunThreadBlocksize() const { return running_thread_blocks.size();}
 
 	/// Get running thread blocks list begin
-	std::list<std::unique_ptr<ThreadBlock>>::iterator getRunningThreadBlocksBegin() const
+	std::list<std::unique_ptr<ThreadBlock>>::iterator getRunningThreadBlocksBegin()
 	{
 		return running_thread_blocks.begin();
 	}
@@ -162,11 +166,19 @@ public:
 	///        representing the local size.
 	void SetupSize(unsigned *global_size, unsigned *local_size);
 
-	/// move all pending thread block list to running thread block list
-	void WaitingToRunning();
+	/// Write initial values into constant memory. Used by driver.
+	void GridSetupConstantMemory();
+
+	/// pop an element from pending thread block list,
+	/// and create a new thread block pushing into running thread block list
+	void WaitingToRunning(int thread_block_id);
+
+	/// push a thread block into finished thread block list
+	void PushFinishedThreadBlock(std::unique_ptr<ThreadBlock> threadblock);
 
 };
 
 }   //namespace
+#endif
 #endif
 

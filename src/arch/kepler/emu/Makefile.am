@@ -21,10 +21,10 @@ libemu_a_SOURCES = \
 	isa.h \
 	\
 	machine.c\
-	machine.h
+	machine.h \
 	\
-	Grid.cc \
 	Grid.h \
+	Grid.cc \
 	\
 	Emu.cc \
 	Emu.h \
@@ -32,6 +32,13 @@ libemu_a_SOURCES = \
 	ThreadBlock.h \
 	Thread.h \
 	Warp.h \
+	\
+	ThreadBlock.cc \
+	Thread.cc \
+	Warp.cc \
+	\
+	Machine.h \
+	Machine.cc \
 	\
 	Wrapper.cc \
 	Wrapper.h

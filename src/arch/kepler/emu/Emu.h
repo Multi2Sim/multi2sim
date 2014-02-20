@@ -20,11 +20,13 @@
 #ifndef ARCH_KEPLER_EMU_EMU_H
 #define ARCH_KEPLER_EMU_EMU_H
 
+#ifdef __cplusplus
+
 #include <iostream>
 #include <list>
 
 #include <mem-system/Memory.h>
-#include <arch/common/emu.h>
+//#include <arch/common/emu.h>
 #include <arch/kepler/asm/Asm.h>
 
 namespace Kepler
@@ -82,13 +84,13 @@ class Emu
 	long long shared_mem_inst_count;
 	long long global_mem_inst_count;
 
-	/// Constructor
-	Emu(Asm *as);
-
 	// Unique instance of Kepler emulator
 	//static std::unique_ptr<Emu> instance;
 
 public:
+
+	/// Constructor
+	Emu(Asm *as);
 
 	///Kepler emulator maximum cycles
 	long long emu_max_cycles;
@@ -106,11 +108,33 @@ public:
 	//static Emu *getInstance();
 
 	// Getters
+	/// Get grid list size
+	unsigned getGridSize() { return grids.size(); }
+
 	/// Get the assambler
 	Asm *getAsm() const { return as;}
 
+	/// Get global memory top
+	unsigned getGlobalMemTop() const { return global_mem_top; }
+
 	/// Get instruction emulation table
 	InstFunc getInstFunc(InstOpcode inst) { return inst_func[inst]; }
+
+	/// Get global memory free size
+	unsigned getGlobalMemFreeSize() const { return global_mem_free_size; }
+
+	/// Get global memory Total size
+	unsigned getGlobalMemTotalSize() const { return global_mem_total_size; }
+
+	// Setter
+	/// set global memory top
+	void SetGlobalMemTop(unsigned value) { global_mem_top = value; }
+
+	/// Set global memory free size
+	void setGlobalMemFreeSize(unsigned value) { global_mem_free_size = value; }
+
+	/// Set global memory total size
+	void setGlobalMemTotalSize(unsigned value) { global_mem_total_size = value; }
 
 	/// Dump Kepler Emulator in a human-readable fashion into an output stream (or
 	/// standard output if argument \a os is omitted.
@@ -127,6 +151,30 @@ public:
 
 	/// Run one iteration of the emulation loop
 	bool Run();
+
+	/// push back an element in grids list
+	void GridsPushBack(Grid *grid);
+
+	/// Write Constant Memory
+	/// \param starting address to be written in
+	/// \param size of data
+	/// \param data buffer
+	void WriteConstMem(unsigned addr, unsigned size, const char *buf);
+
+	/// Write Global Memory
+	/// \param starting address to be written in
+	/// \param size of data
+	/// \param data buffer
+	void WriteGlobalMem(unsigned addr, unsigned size, const char *buf);
+
+	/// Read Global Memory
+	/// \param starting address to be read in
+	/// \param size of data
+	/// \param data buffer
+	void ReadGlobalMem(unsigned addr, unsigned size, char *buf);
+
+	/// Push an element into pending grid list
+	void PushPendingGrid(Grid *grid);
 };
 
 
@@ -134,3 +182,4 @@ public:
 
 #endif
 
+#endif
