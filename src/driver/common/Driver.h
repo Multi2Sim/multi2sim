@@ -43,32 +43,13 @@ class Common
 {
 protected:
 	// Device functional emulators
-	x86::Emu *x86_emu;
+	static x86::Emu *x86_emu;
 
 	// Device timing simulators
-	x86::Cpu *x86_cpu;
+	static x86::Cpu *x86_cpu;
 
 public:
 	Common();
-};
-
-class SICommon : Common
-{
-protected:
-	// Device functional emulator
-	SI::Emu *si_emu;
-
-	// Device timing simulator
-	SI::Gpu *si_gpu;
-
-	// CPU/GPU fused device
-	bool fused;
-
-	// NDRange list is shared by OpenGL/CL driver
-	static std::vector<std::unique_ptr<SI::NDRange>> ndranges;
-
-public:
-	SICommon();
 };
 	
 }  // namespace Driver

@@ -6,7 +6,10 @@ libcommon_a_SOURCES = \
 	driver.h \
 	\
 	Driver.cc \
-	Driver.h
-
+	Driver.h \
+	\
+	SI.cc \
+	SI.h 
+	
 INCLUDES = @M2S_INCLUDES@
 

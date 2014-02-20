@@ -21,6 +21,7 @@
 #define DRIVER_OPENCL_SI_DRIVER_H
 
 #include <src/driver/common/Driver.h>
+#include <src/driver/common/SI.h>
 #include <string>
 
 // Forward declaration
