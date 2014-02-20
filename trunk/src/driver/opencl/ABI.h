@@ -37,6 +37,8 @@ enum OpenCLABICall
 	OpenCLABICallCount
 };
 
+
+
 // Forward declarations of OpenCL Runtime functions
 #define OPENCL_ABI_CALL(space, name, code) \
 	int OpenCLABI##name##Impl();

@@ -28,7 +28,8 @@
 
 namespace Driver
 {
-	
+
+// Free automatically only when m2s exit execution or called reset()
 std::unique_ptr<OpenCLDriver> OpenCLDriver::instance;
 
 OpenCLDriver::OpenCLDriver()
