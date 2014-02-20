@@ -20,6 +20,8 @@
 #ifndef ARCH_KEPLER_ASM_ASM_H
 #define ARCH_KEPLER_ASM_ASM_H
 
+#ifdef __cplusplus
+
 #include "Inst.h"
 
 
@@ -144,5 +146,6 @@ public:
 
 }  // namespace Kepler
 
+#endif
 #endif  // ARCH_KEPLER_ASM_ASM_H
 

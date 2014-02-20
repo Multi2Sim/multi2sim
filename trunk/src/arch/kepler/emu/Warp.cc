@@ -26,11 +26,11 @@
 #include "Emu.h"
 #include "Grid.h"
 #include "isa.h"
-#include "machine.h"
+#include "Machine.h"
 #include "Thread.h"
 #include "ThreadBlock.h"
 #include "Warp.h"
-#include "Wrapper.h"
+//#include "Wrapper.h"
 
 /*
  * Public Functions
@@ -39,7 +39,7 @@
 namespace Kepler
 {
 
-Warp::Warp(ThreadBlock *thread_block, int id)
+Warp::Warp(ThreadBlock *thread_block, unsigned id)
 {
 	/* Initialization */
 	this->id = id + thread_block->getId() * thread_block->getWarpsInWorkgroup();
@@ -62,11 +62,13 @@ Warp::Warp(ThreadBlock *thread_block, int id)
 
 	/* Sync stack */
 	sync_stack_top = 0;
+	//sync_stack.entries[sync_stack_top].active_thread_mask =
+	//		bit_map_create(thread_count);
+	//bit_map_set(sync_stack.entries[sync_stack_top].
+	//		active_thread_mask, 0, thread_count,
+	//		((unsigned long long)1 << thread_count) - 1);
 	sync_stack.entries[sync_stack_top].active_thread_mask =
-			bit_map_create(thread_count);
-	bit_map_set((bit_map_t *)sync_stack.entries[sync_stack_top].
-			active_thread_mask, 0, thread_count,
-			((unsigned long long)1 << thread_count) - 1);
+			((unsigned long long)1 << thread_count) - 1;
 
 	/* Reset flags */
 	at_barrier_thread_count = 0;
@@ -86,7 +88,7 @@ Warp::Warp(ThreadBlock *thread_block, int id)
 }
 
 
-void Warp::Dump(std::ostream &os = std::cout) const
+void Warp::Dump(std::ostream &os) const
 {
 }
 
@@ -107,12 +109,12 @@ void Warp::Execute()
 	inst->Decode((const char *) &inst_bytes, pc);
 
 	/* Execute instruction */
-	inst_op = inst->getOpcode();
+	inst_op = (InstOpcode) inst->getOpcode();
 	if (!inst_op)
-		fatal("%s:%d: unrecognized instruction (%08x %08x)",
-				__FILE__, __LINE__, inst_bytes.as_uint[0], inst_bytes.as_uint[1]);
+		std::cerr << __FILE__ << ":" << __LINE__ << ": unrecognized instruction ("
+				<< inst_bytes.as_uint[0]<< inst_bytes.as_uint[1] << std::endl;
 	for (auto thread_id = threads_begin; thread_id < threads_end; ++thread_id)
-		grid->getInstFunc[inst_op](thread_id, inst); //make it clear
+		grid->getInstFunc(inst_op); //make it clear
 
 	/* Finish */
 

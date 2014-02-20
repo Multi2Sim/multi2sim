@@ -38,8 +38,8 @@ namespace Kepler
 ThreadBlock::ThreadBlock(Grid *grid, int id)
 {
 
-	Warp *warp;
-	Thread *thread;
+	//Warp *warp;
+	//Thread *thread;
 	int warp_count;
 	int thread_count;
 
@@ -63,23 +63,23 @@ ThreadBlock::ThreadBlock(Grid *grid, int id)
 	/* Set warps' beginning thread and ending thread */
 	for (int i = 0; i < warp_count - 1; ++i)
 	{
-		warps[i]->setThreadBegin(threads[warp_size * i]);
-		warps[i]->setThreadEnd(threads[warp_size * i + warp_size]);
+		warps[i]->setThreadBegin(threads.begin() + warp_size * i);
+		warps[i]->setThreadEnd(threads.begin() + warp_size * i + warp_size);
 	}
 	warps[warp_count - 1]->setThreadBegin
-		(threads[warp_size * (warp_count - 1)]);
+		(threads.begin() + warp_size * (warp_count - 1));
 	warps[warp_count - 1]->setThreadEnd
-		(threads->end());
+		(threads.end());
 
 	/* Create shared memory */
-	shared_mem = new Memory::Memory();
-	shared_mem.safe = false;
+	//shared_mem = new Memory::Memory();
+	//shared_mem.safe = false;
 
 	/* Flags */
 	finished_emu = false;
 }
 
-void ThreadBlock::Dump(std::ostream &os = std::cout) const
+void ThreadBlock::Dump(std::ostream &os) const
 {
 }
 

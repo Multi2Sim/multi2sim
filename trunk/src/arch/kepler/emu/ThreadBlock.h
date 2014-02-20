@@ -20,6 +20,8 @@
 #ifndef ARCH_KEPLER_EMU_THREADBLOCK_H
 #define ARCH_KEPLER_EMU_THREADBLOCK_H
 
+#ifdef __cplusplus
+
 #include <cassert>
 #include <list>
 #include <memory>
@@ -107,7 +109,7 @@ public:
 	int getId() const { return id; }
 
 	// Get counter of warps in thread-block
-	int getWarpsInWorkgroup() const { return warps.size(); }
+	unsigned getWarpsInWorkgroup() const { return warps.size(); }
 
 	// Get counter of warps at barrier
 	unsigned getWarpsAtBarrier() const { return num_warps_at_barrier; }
@@ -116,7 +118,7 @@ public:
 	unsigned getWarpsCompletedEmu() const { return warps_completed_emu; }
 
 	// Get Grid that it belongs to
-	const Grid *getGrid() const { return grid; }
+	Grid *getGrid() const { return grid; }
 
 	// Get pointer of a thread in this thread-block
 	Thread *getThread(int id_in_thread_block) {
@@ -180,4 +182,5 @@ public:
 
 }  // namespace
 
+#endif
 #endif

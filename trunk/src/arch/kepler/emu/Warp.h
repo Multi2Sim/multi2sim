@@ -20,6 +20,8 @@
 #ifndef ARCH_KEPLER_EMU_WARP_H
 #define ARCH_KEPLER_EMU_WARP_H
 
+#ifdef __cplusplus
+
 #include <list>
 #include <memory>
 #include <vector>
@@ -145,21 +147,29 @@ public:
 	///
 	/// \param thread_block Thead-block that the warp belongs to
 	/// \param id Global 1D identifier of the warp
-	Warp(ThreadBlock *thread_block, int id);
+	Warp(ThreadBlock *thread_block, unsigned id);
 
 	// Getters
 	//
-	// Return the global warp 1D ID
+	/// Return the global warp 1D ID
 	int getId() const { return id; }
 
-	// Return PC
+	/// Return the threadblock it is belong to
+	ThreadBlock *getThreadBlock() const { return thread_block; }
+
+	/// Return PC
 	unsigned getPC() const { return pc; }
 
-	// Return pointer to a thread inside this warp
+	/// Return pointer to a thread inside this warp
 	Thread *getThread(int id_in_warp) {
 		assert(id_in_warp >= 0 && id_in_warp < (int) thread_count);
 		return threads_begin[id_in_warp].get();
 	}
+	/// Return finished_emu
+	bool getFinishedEmu() const { return finished_emu; }
+
+	/// Return at barrier
+	bool getAtBarrier() const { return at_barrier; }
 
 	// Setters
 	//
@@ -170,12 +180,12 @@ public:
 	void incPC(int increment) { pc += increment; }
 
 	/// set threads_begin
-	void setThreadBegin(std::vector<std::unique_ptr<Thread>> value)
-	{ threads_begin = value;}
+	void setThreadBegin(std::vector<std::unique_ptr<Thread>>::iterator value)
+	{ threads_begin = value; }
 
 	/// set threads_end
-	void setThreadEnd(std::vector<std::unique_ptr<Thread>> value)
-	{ threads_end = value;}
+	void setThreadEnd(std::vector<std::unique_ptr<Thread>>::iterator value)
+	{ threads_end = value; }
 
 	/// Dump warp in a human-readable format into output stream \a os
 	void Dump(std::ostream &os = std::cout) const;
@@ -224,4 +234,4 @@ public:
 }  // namespace
 
 #endif
-
+#endif

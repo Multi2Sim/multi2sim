@@ -34,8 +34,8 @@ Thread::Thread(Warp *warp, int id)
 {
 	/* Initialization */
 	this->warp = warp;
-	thread_block = warp->thread_block;
-	grid = warp->thread_block->getGrid();
+	thread_block = warp->getThreadBlock();
+	grid = thread_block->getGrid();
 	this->id = id + thread_block->getId() * grid->getThreadBlockSize();
 	id_in_warp = id % warp_size;
 
@@ -53,10 +53,10 @@ Thread::Thread(Warp *warp, int id)
 			grid->getThreadBlockSize3(1));
 	sr[37].u32 = thread_block->getId() %
 			grid->getThreadBlockCount3(0);
-	sr[38].u32 = (thread_block->id /
+	sr[38].u32 = (thread_block->getId() /
 			grid->getThreadBlockCount3(0)) %
 			grid->getThreadBlockCount3(1);
-	sr[39].u32 = thread_block->id /
+	sr[39].u32 = thread_block->getId() /
 			(grid->getThreadBlockCount3(0) *
 					grid->getThreadBlockCount3(1));
 

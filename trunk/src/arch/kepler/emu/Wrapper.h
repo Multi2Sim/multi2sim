@@ -23,28 +23,71 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-namespace Kepler
-{
+/*
+#include "grid.h"
+#include "emu.h"
+#include "../asm/asm.h"
+*/
 struct KplGrid;
+struct KplEmu;
+struct KplAsm;
+
+////////////////////////////////////////////////////////////////////////////////
+// Wrapper for class Emu
+////////////////////////////////////////////////////////////////////////////////
+
+KplEmu *KplWrapEmuCreate(struct KplAsm *as);
+
+/// Get Kepler Emulator global memory top
+unsigned KplGetGlobalMemTop(KplEmu *self);
+
+/// Get Kelper Emulator global memory free size
+unsigned KplGetGlobalMemFreeSize(KplEmu *self);
+
+/// Get Kelper Emulator global memory Total size
+unsigned KplGetGlobalMemTotalSize(KplEmu *self);
+
+/// Set Kelper Emulator global memory top
+void KplSetGlobalMemTop(KplEmu *self, unsigned value);
+
+/// Set Kelper Emulator global memory free size
+void KplSetGlobalMemFreeSize(KplEmu *self, unsigned value);
+
+/// Set Kelper Emulator global memory total size
+void KplSetGlobalMemTotalSize(KplEmu *self, unsigned value);
+
+/// Read to Global memory
+void KplReadGlobalMem(KplEmu *self,unsigned addr, unsigned size, void* buf);
+
+/// Write to Global memory
+void KplWriteGlobalMem(KplEmu *self,unsigned addr, unsigned size, void* buf);
+
+/// Write to Constant memory
+void KplWriteConstMem(KplEmu *self,unsigned addr, unsigned size, void* buf);
+
+/// Push an element into pending grid list
+void KplPushGridList(KplEmu* self, KplGrid *grid);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Wrapper for class Grid
 ////////////////////////////////////////////////////////////////////////////////
 
 
-struct KplGrid *KplGridCreate(KplEmu *emu);
+KplGrid *KplWrapGridCreate(KplEmu *self);
 
-void KplGridFree(struct KplGrid *self);
+int KplGetID(KplGrid *self);
 
-void KplGridDump(struct KplGrid *self, FILE *f);
+void KplGridFree(KplGrid *self);
 
-void KplGridSetupSize(unsigned *thread_block_count,
+void KplWrapGridDump(KplGrid *self, FILE *f);
+
+void KplWrapGridSetupSize(KplGrid *self,
+		unsigned *thread_block_count,
 		unsigned *thread_block_size);
 
-void KplGridSetupConstantMemory(KplGrid *self);
+void KplWrapGridSetupConstantMemory(KplGrid *self);
 
-}
+
 
 #ifdef __cplusplus
 }
