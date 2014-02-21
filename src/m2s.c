@@ -2457,8 +2457,8 @@ int main(int argc, char **argv)
 
 	/* TODO: The if condition is temporary to avoid "class_delete(NULL)"
 	 * panic. It will be removed when the Kepler emulator is ready. */
-	if (kpl_emu != NULL)
-		delete(kpl_emu);
+	/*if (kpl_emu != NULL)
+		delete(kpl_emu);*/
 
 	/* MIPS */
 	delete(mips_emu);

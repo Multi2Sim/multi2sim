@@ -434,7 +434,7 @@ then
 	directory 'runtime', which you can later link with your OpenCL, OpenGL,
 	GLUT, ... guest programs.
 
-	This feature is not needed if you are just indenting to run pre-compiled
+	This feature is not needed if you are just intending to run pre-compiled
 	benchmarks. You need it only to compile your custom benchmarks that use
 	any of the Multi2Sim runtimes.
 
