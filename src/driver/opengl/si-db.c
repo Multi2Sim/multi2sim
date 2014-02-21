@@ -112,57 +112,32 @@ int opengl_depth_buffer_test_pixel(struct opengl_depth_buffer_t *db, int x, int 
 	{
 	
 		case GL_NEVER:
-		{
 			is_pass = 0;
-		}
-
+			break;
 		case GL_LESS:
-		{
 			is_pass = depth_val < depth ? 1 : 0;
 			break;
-		}
-
 		case GL_EQUAL:
-		{
 			is_pass = depth_val == depth ? 1 : 0;
 			break;
-		}
-
 		case GL_LEQUAL:
-		{
 			is_pass = depth_val <= depth ? 1 : 0;
 			break;
-		}
-
 		case GL_GREATER:
-		{
 			is_pass = depth_val > depth ? 1 : 0;
 			break;
-		}
-
 		case GL_NOTEQUAL:
-		{
 			is_pass = depth_val != depth ? 1 : 0;
 			break;
-		}
-
 		case GL_GEQUAL:
-		{
 			is_pass = depth_val >= depth ? 1 : 0;
 			break;
-		}
-
 		case GL_ALWAYS:
-		{
 			is_pass = 1;
 			break;
-		}
-
 		default:
-		{
 			is_pass = depth_val < depth ? 1 : 0;
 			break;
-		}
 	}
 
 	/* Return */
@@ -171,7 +146,7 @@ int opengl_depth_buffer_test_pixel(struct opengl_depth_buffer_t *db, int x, int 
 
 void opengl_depth_buffer_set_pixel(struct opengl_depth_buffer_t *db, int x, int y, float depth_val)
 {
-		/* Invalid X coordinate */
+	/* Invalid X coordinate */
 	if (!IN_RANGE(x, 0, db->width - 1))
 	{
 		warning("%s: invalid X coordinate", __FUNCTION__);

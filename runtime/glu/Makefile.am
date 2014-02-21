@@ -4,6 +4,8 @@ lib_LTLIBRARIES = $(top_builddir)/lib/libm2s-glu.la
 
 __top_builddir__lib_libm2s_glu_la_LDFLAGS = -version-info 1:0:0
 
+__top_builddir__lib_libm2s_glu_la_LIBADD = -L$(top_builddir)/lib -lm2s-opengl
+
 __top_builddir__lib_libm2s_glu_la_SOURCES = \
 	\
 	api.c \
