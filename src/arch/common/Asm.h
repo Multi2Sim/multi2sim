@@ -22,7 +22,7 @@
 
 #include <string>
 
-namespace Common
+namespace comm
 {
 
 class Asm
@@ -47,7 +47,7 @@ public:
 };
 
 
-}  // namespace Common
+}  // namespace comm
 
 #endif
 

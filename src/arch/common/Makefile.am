@@ -5,6 +5,9 @@ libcommon_a_SOURCES = \
 	arch.c \
 	arch.h \
 	\
+	Arch.cc \
+	Arch.h \
+	\
 	asm.c \
 	asm.h \
 	\
