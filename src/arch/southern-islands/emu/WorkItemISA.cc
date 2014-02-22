@@ -29,8 +29,6 @@
 #include "WorkItem.h"
 
 
-using namespace misc;
-
 namespace SI
 {
 
@@ -83,7 +81,7 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORD_Impl(Inst *inst)
 
 	// Debug
 	if (Emu::debug)
-		Emu::debug << StringFmt("wf%d: S%u<=(%u)(%u,%gf)", 
+		Emu::debug << misc::fmt("wf%d: S%u<=(%u)(%u,%gf)", 
 				wavefront->getId(), INST.sdst, addr, 
 				value.as_uint, value.as_float);
 
@@ -121,10 +119,10 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORDX2_Impl(Inst *inst)
 	// Debug
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("wf%d: ", wavefront->getId());
+		Emu::debug << misc::fmt("wf%d: ", wavefront->getId());
 		for (i = 0; i < 2; i++)
 		{
-			Emu::debug << StringFmt("S%u<=(%u)(%u,%gf) ", INST.sdst + i, 
+			Emu::debug << misc::fmt("S%u<=(%u)(%u,%gf) ", INST.sdst + i, 
 				addr + i * 4, value[i].as_uint, 
 				value[i].as_float);
 		}
@@ -165,10 +163,10 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORDX4_Impl(Inst *inst)
 	// Debug
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("wf%d: ", wavefront->getId());
+		Emu::debug << misc::fmt("wf%d: ", wavefront->getId());
 		for (i = 0; i < 4; i++)
 		{
-			Emu::debug << StringFmt("S%u<=(%u)(%u,%gf) ", INST.sdst + i, 
+			Emu::debug << misc::fmt("S%u<=(%u)(%u,%gf) ", INST.sdst + i, 
 				addr + i*4, value[i].as_uint, 
 				value[i].as_float);
 		}
@@ -208,10 +206,10 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORDX8_Impl(Inst *inst)
 	// Debug
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("wf%d: ", wavefront->getId());
+		Emu::debug << misc::fmt("wf%d: ", wavefront->getId());
 		for (i = 0; i < 8; i++)
 		{
-			Emu::debug << StringFmt("S%u<=(%u)(%u,%gf) ", INST.sdst + i, 
+			Emu::debug << misc::fmt("S%u<=(%u)(%u,%gf) ", INST.sdst + i, 
 				addr + i*4, value[i].as_uint, 
 				value[i].as_float);
 		}
@@ -251,10 +249,10 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORDX16_Impl(Inst *inst)
 	// Debug
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("wf%d: ", wavefront->getId());
+		Emu::debug << misc::fmt("wf%d: ", wavefront->getId());
 		for (i = 0; i < 16; i++)
 		{
-			Emu::debug << StringFmt("S%u<=(%u)(%u,%gf) ", INST.sdst + i, 
+			Emu::debug << misc::fmt("S%u<=(%u)(%u,%gf) ", INST.sdst + i, 
 				addr + i*4, value[i].as_uint, 
 				value[i].as_float);
 		}
@@ -299,11 +297,11 @@ void WorkItem::ISA_S_LOAD_DWORDX2_Impl(Inst *inst)
 	// Debug
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("S[%u,%u] <= (addr %u): ", INST.sdst, INST.sdst+3, 
+		Emu::debug << misc::fmt("S[%u,%u] <= (addr %u): ", INST.sdst, INST.sdst+3, 
 			m_addr);
 		for (i = 0; i < 2; i++)
 		{
-			Emu::debug << StringFmt("S%u<=(%u,%gf) ", INST.sdst + i,
+			Emu::debug << misc::fmt("S%u<=(%u,%gf) ", INST.sdst + i,
 				value[i].as_uint, value[i].as_float);
 		}
 	}
@@ -346,11 +344,11 @@ void WorkItem::ISA_S_LOAD_DWORDX4_Impl(Inst *inst)
 	// Debug
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("S[%u,%u] <= (addr %u): ", INST.sdst, INST.sdst+3, 
+		Emu::debug << misc::fmt("S[%u,%u] <= (addr %u): ", INST.sdst, INST.sdst+3, 
 			m_addr);
 		for (i = 0; i < 4; i++)
 		{
-			Emu::debug << StringFmt("S%u<=(%u,%gf) ", INST.sdst + i,
+			Emu::debug << misc::fmt("S%u<=(%u,%gf) ", INST.sdst + i,
 				value[i].as_uint, value[i].as_float);
 		}
 	}
@@ -394,11 +392,11 @@ void WorkItem::ISA_S_LOAD_DWORDX8_Impl(Inst *inst)
 	// Debug
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("S[%u,%u] <= (addr %u): ", INST.sdst, INST.sdst+3, 
+		Emu::debug << misc::fmt("S[%u,%u] <= (addr %u): ", INST.sdst, INST.sdst+3, 
 			m_addr);
 		for (i = 0; i < 8; i++)
 		{
-			Emu::debug << StringFmt("S%u<=(%u,%gf) ", INST.sdst + i,
+			Emu::debug << misc::fmt("S%u<=(%u,%gf) ", INST.sdst + i,
 				value[i].as_uint, value[i].as_float);
 		}
 	}
@@ -448,8 +446,8 @@ void WorkItem::ISA_S_ADD_U32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("S%u<=(%u) ", INST.sdst, sum.as_uint);
-		Emu::debug << StringFmt("scc<=(%u) ", carry.as_uint);
+		Emu::debug << misc::fmt("S%u<=(%u) ", INST.sdst, sum.as_uint);
+		Emu::debug << misc::fmt("scc<=(%u) ", carry.as_uint);
 	}
 }
 #undef INST
@@ -490,8 +488,8 @@ void WorkItem::ISA_S_ADD_I32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("S%u<=(%u) ", INST.sdst, sum.as_uint);
-		Emu::debug << StringFmt("scc<=(%u) ", ovf.as_uint);
+		Emu::debug << misc::fmt("S%u<=(%u) ", INST.sdst, sum.as_uint);
+		Emu::debug << misc::fmt("scc<=(%u) ", ovf.as_uint);
 	}
 }
 #undef INST
@@ -531,8 +529,8 @@ void WorkItem::ISA_S_SUB_I32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("S%u<=(%d) ", INST.sdst, diff.as_int);
-		Emu::debug << StringFmt("scc<=(%u) ", ovf.as_uint);
+		Emu::debug << misc::fmt("S%u<=(%d) ", INST.sdst, diff.as_int);
+		Emu::debug << misc::fmt("scc<=(%u) ", ovf.as_uint);
 	}
 }
 #undef INST
@@ -578,8 +576,8 @@ void WorkItem::ISA_S_MIN_U32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("S%u<=(%u) ", INST.sdst, min.as_uint);
-		Emu::debug << StringFmt("scc<=(%d) ", s0_min.as_uint);
+		Emu::debug << misc::fmt("S%u<=(%u) ", INST.sdst, min.as_uint);
+		Emu::debug << misc::fmt("scc<=(%d) ", s0_min.as_uint);
 	}
 }
 #undef INST
@@ -626,8 +624,8 @@ void WorkItem::ISA_S_MAX_I32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("S%u<=(%d) ", INST.sdst, max.as_int);
-		Emu::debug << StringFmt("scc<=(%u) ", s0_max.as_uint);
+		Emu::debug << misc::fmt("S%u<=(%d) ", INST.sdst, max.as_int);
+		Emu::debug << misc::fmt("scc<=(%u) ", s0_max.as_uint);
 	}
 }
 #undef INST
@@ -673,8 +671,8 @@ void WorkItem::ISA_S_MAX_U32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("S%u<=(%u) ", INST.sdst, max.as_uint);
-		Emu::debug << StringFmt("scc<=(%u) ", s0_max.as_uint);
+		Emu::debug << misc::fmt("S%u<=(%u) ", INST.sdst, max.as_uint);
+		Emu::debug << misc::fmt("scc<=(%u) ", s0_max.as_uint);
 	}
 }
 #undef INST
@@ -710,7 +708,7 @@ void WorkItem::ISA_S_CSELECT_B32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("S%u<=(0x%x) ", INST.sdst, result.as_uint);
+		Emu::debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, result.as_uint);
 	}
 }
 #undef INST
@@ -749,8 +747,8 @@ void WorkItem::ISA_S_AND_B32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("S%u<=(0x%x) ", INST.sdst, result.as_uint);
-		Emu::debug << StringFmt("scc<=(%u) ", nonzero.as_uint);
+		Emu::debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, result.as_uint);
+		Emu::debug << misc::fmt("scc<=(%u) ", nonzero.as_uint);
 	}
 }
 #undef INST
@@ -793,9 +791,9 @@ void WorkItem::ISA_S_AND_B64_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("S%u<=(0x%x) ", INST.sdst, result_lo.as_uint);
-		Emu::debug << StringFmt("S%u<=(0x%x) ", INST.sdst + 1, result_hi.as_uint);
-		Emu::debug << StringFmt("scc<=(%u) ", nonzero.as_uint);
+		Emu::debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, result_lo.as_uint);
+		Emu::debug << misc::fmt("S%u<=(0x%x) ", INST.sdst + 1, result_hi.as_uint);
+		Emu::debug << misc::fmt("scc<=(%u) ", nonzero.as_uint);
 	}
 }
 #undef INST
@@ -834,8 +832,8 @@ void WorkItem::ISA_S_OR_B32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("S%u<=(0x%x) ", INST.sdst, result.as_uint);
-		Emu::debug << StringFmt("scc<=(%u) ", nonzero.as_uint);
+		Emu::debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, result.as_uint);
+		Emu::debug << misc::fmt("scc<=(%u) ", nonzero.as_uint);
 	}
 }
 #undef INST
@@ -878,9 +876,9 @@ void WorkItem::ISA_S_OR_B64_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("S%u<=(0x%x) ", INST.sdst, result_lo.as_uint);
-		Emu::debug << StringFmt("S%u<=(0x%x) ", INST.sdst + 1, result_hi.as_uint);
-		Emu::debug << StringFmt("scc<=(%u) ", nonzero.as_uint);
+		Emu::debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, result_lo.as_uint);
+		Emu::debug << misc::fmt("S%u<=(0x%x) ", INST.sdst + 1, result_hi.as_uint);
+		Emu::debug << misc::fmt("scc<=(%u) ", nonzero.as_uint);
 	}
 }
 #undef INST
@@ -923,9 +921,9 @@ void WorkItem::ISA_S_XOR_B64_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("S%u<=(0x%x) ", INST.sdst, result_lo.as_uint);
-		Emu::debug << StringFmt("S%u<=(0x%x) ", INST.sdst + 1, result_hi.as_uint);
-		Emu::debug << StringFmt("scc<=(%u) ", nonzero.as_uint);
+		Emu::debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, result_lo.as_uint);
+		Emu::debug << misc::fmt("S%u<=(0x%x) ", INST.sdst + 1, result_hi.as_uint);
+		Emu::debug << misc::fmt("scc<=(%u) ", nonzero.as_uint);
 	}
 }
 #undef INST
@@ -968,9 +966,9 @@ void WorkItem::ISA_S_ANDN2_B64_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("S%u<=(0x%x) ", INST.sdst, result_lo.as_uint);
-		Emu::debug << StringFmt("S%u<=(0x%x) ", INST.sdst + 1, result_hi.as_uint);
-		Emu::debug << StringFmt("scc<=(%u)", nonzero.as_uint);
+		Emu::debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, result_lo.as_uint);
+		Emu::debug << misc::fmt("S%u<=(0x%x) ", INST.sdst + 1, result_hi.as_uint);
+		Emu::debug << misc::fmt("scc<=(%u)", nonzero.as_uint);
 	}
 }
 #undef INST
@@ -1013,9 +1011,9 @@ void WorkItem::ISA_S_NAND_B64_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("S%u<=(0x%x) ", INST.sdst, result_lo.as_uint);
-		Emu::debug << StringFmt("S%u<=(0x%x) ", INST.sdst + 1, result_hi.as_uint);
-		Emu::debug << StringFmt("scc<=(%u) ", nonzero.as_uint);
+		Emu::debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, result_lo.as_uint);
+		Emu::debug << misc::fmt("S%u<=(0x%x) ", INST.sdst + 1, result_hi.as_uint);
+		Emu::debug << misc::fmt("scc<=(%u) ", nonzero.as_uint);
 	}
 }
 #undef INST
@@ -1063,8 +1061,8 @@ void WorkItem::ISA_S_LSHL_B32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("S%u<=(0x%x) ", INST.sdst, result.as_uint);
-		Emu::debug << StringFmt("scc<=(%u)", nonzero.as_uint);
+		Emu::debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, result.as_uint);
+		Emu::debug << misc::fmt("scc<=(%u)", nonzero.as_uint);
 	}
 }
 #undef INST
@@ -1112,8 +1110,8 @@ void WorkItem::ISA_S_LSHR_B32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("S%u<=(0x%x) ", INST.sdst, result.as_uint);
-		Emu::debug << StringFmt("scc<=(%u)", nonzero.as_uint);
+		Emu::debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, result.as_uint);
+		Emu::debug << misc::fmt("scc<=(%u)", nonzero.as_uint);
 	}
 }
 #undef INST
@@ -1161,8 +1159,8 @@ void WorkItem::ISA_S_ASHR_I32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("S%u<=(%d) ", INST.sdst, result.as_int);
-		Emu::debug << StringFmt("scc<=(%u)", nonzero.as_uint);
+		Emu::debug << misc::fmt("S%u<=(%d) ", INST.sdst, result.as_int);
+		Emu::debug << misc::fmt("scc<=(%u)", nonzero.as_uint);
 	}
 }
 #undef INST
@@ -1196,7 +1194,7 @@ void WorkItem::ISA_S_MUL_I32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("S%u<=(%d)", INST.sdst, result.as_int);
+		Emu::debug << misc::fmt("S%u<=(%d)", INST.sdst, result.as_int);
 	}
 }
 #undef INST
@@ -1248,8 +1246,8 @@ void WorkItem::ISA_S_BFE_I32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("S%u<=(0x%x) ", INST.sdst, result.as_uint);
-		Emu::debug << StringFmt("scc<=(%u)", nonzero.as_uint);
+		Emu::debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, result.as_uint);
+		Emu::debug << misc::fmt("scc<=(%u)", nonzero.as_uint);
 	}
 	
 }
@@ -1281,7 +1279,7 @@ void WorkItem::ISA_S_MOVK_I32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("S%u<=(%d)", INST.sdst, result.as_int);
+		Emu::debug << misc::fmt("S%u<=(%d)", INST.sdst, result.as_int);
 	}
 }
 #undef INST
@@ -1328,8 +1326,8 @@ void WorkItem::ISA_S_ADDK_I32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("S%u<=(%d)", INST.sdst, sum.as_int);
-		Emu::debug << StringFmt("scc<=(%u)", ovf.as_uint);
+		Emu::debug << misc::fmt("S%u<=(%d)", INST.sdst, sum.as_int);
+		Emu::debug << misc::fmt("scc<=(%u)", ovf.as_uint);
 	}
 }
 #undef INST
@@ -1367,8 +1365,8 @@ void WorkItem::ISA_S_MULK_I32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("S%u<=(%d)", INST.sdst, product.as_int);
-		Emu::debug << StringFmt("scc<=(%u)", ovf.as_uint);
+		Emu::debug << misc::fmt("S%u<=(%d)", INST.sdst, product.as_int);
+		Emu::debug << misc::fmt("scc<=(%u)", ovf.as_uint);
 	}
 }
 #undef INST
@@ -1396,8 +1394,8 @@ void WorkItem::ISA_S_MOV_B64_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("S%u<=(0x%x) ", INST.sdst, s0_lo.as_uint);
-		Emu::debug << StringFmt("S%u<=(0x%x)", INST.sdst + 1, s0_hi.as_uint);
+		Emu::debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, s0_lo.as_uint);
+		Emu::debug << misc::fmt("S%u<=(0x%x)", INST.sdst + 1, s0_hi.as_uint);
 	}
 }
 #undef INST
@@ -1425,7 +1423,7 @@ void WorkItem::ISA_S_MOV_B32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("S%u<=(0x%x) ", INST.sdst, s0.as_uint);
+		Emu::debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, s0.as_uint);
 	}
 }
 #undef INST
@@ -1453,7 +1451,7 @@ void WorkItem::ISA_S_NOT_B32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("S%u<=(0x%x) ", INST.sdst, s0.as_uint);
+		Emu::debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, s0.as_uint);
 	}
 }
 #undef INST
@@ -1491,9 +1489,9 @@ void WorkItem::ISA_S_SWAPPC_B64_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("S%u<=(0x%x) ", INST.sdst, pc + 4);
-		Emu::debug << StringFmt("S%u<=(0x%x) ", INST.sdst + 1, s0_hi.as_uint);
-		Emu::debug << StringFmt("PC<=(0x%x)", wavefront->getPC());
+		Emu::debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, pc + 4);
+		Emu::debug << misc::fmt("S%u<=(0x%x) ", INST.sdst + 1, s0_hi.as_uint);
+		Emu::debug << misc::fmt("PC<=(0x%x)", wavefront->getPC());
 	}
 }
 #undef INST
@@ -1541,11 +1539,11 @@ void WorkItem::ISA_S_AND_SAVEEXEC_B64_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("S%u<=(0x%x) ", INST.sdst, exec_lo.as_uint);
-		Emu::debug << StringFmt("S%u<=(0x%x) ", INST.sdst + 1, exec_hi.as_uint);
-		Emu::debug << StringFmt("exec_lo<=(0x%x) ", exec_new_lo.as_uint);
-		Emu::debug << StringFmt("exec_hi<=(0x%x) ", exec_new_hi.as_uint);
-		Emu::debug << StringFmt("scc<=(%u)", nonzero.as_uint);
+		Emu::debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, exec_lo.as_uint);
+		Emu::debug << misc::fmt("S%u<=(0x%x) ", INST.sdst + 1, exec_hi.as_uint);
+		Emu::debug << misc::fmt("exec_lo<=(0x%x) ", exec_new_lo.as_uint);
+		Emu::debug << misc::fmt("exec_hi<=(0x%x) ", exec_new_hi.as_uint);
+		Emu::debug << misc::fmt("scc<=(%u)", nonzero.as_uint);
 	}
 }
 #undef INST
@@ -1583,7 +1581,7 @@ void WorkItem::ISA_S_CMP_EQ_I32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("wf%d: scc<=(%u) (%u ==? %u)", 
+		Emu::debug << misc::fmt("wf%d: scc<=(%u) (%u ==? %u)", 
 			wavefront->getId(), result.as_uint, s0.as_int,
 			s1.as_int);
 	}
@@ -1619,7 +1617,7 @@ void WorkItem::ISA_S_CMP_GT_I32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("scc<=(%u) (%u >? %u) ", result.as_uint,
+		Emu::debug << misc::fmt("scc<=(%u) (%u >? %u) ", result.as_uint,
 			s0.as_uint, s1.as_uint);
 	}
 }
@@ -1654,7 +1652,7 @@ void WorkItem::ISA_S_CMP_GE_I32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("scc<=(%u) ", result.as_uint);
+		Emu::debug << misc::fmt("scc<=(%u) ", result.as_uint);
 	}
 }
 #undef INST
@@ -1688,7 +1686,7 @@ void WorkItem::ISA_S_CMP_LT_I32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("scc<=(%u) ", result.as_uint);
+		Emu::debug << misc::fmt("scc<=(%u) ", result.as_uint);
 	}
 }
 #undef INST
@@ -1722,7 +1720,7 @@ void WorkItem::ISA_S_CMP_LE_I32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("scc<=(%u) ", result.as_uint);
+		Emu::debug << misc::fmt("scc<=(%u) ", result.as_uint);
 	}
 }
 #undef INST
@@ -1756,7 +1754,7 @@ void WorkItem::ISA_S_CMP_GT_U32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("scc<=(%u) ", result.as_uint);
+		Emu::debug << misc::fmt("scc<=(%u) ", result.as_uint);
 	}
 }
 #undef INST
@@ -1790,7 +1788,7 @@ void WorkItem::ISA_S_CMP_GE_U32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("scc<=(%u) ", result.as_uint);
+		Emu::debug << misc::fmt("scc<=(%u) ", result.as_uint);
 	}
 }
 #undef INST
@@ -1824,7 +1822,7 @@ void WorkItem::ISA_S_CMP_LE_U32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("scc<=(%u) ", result.as_uint);
+		Emu::debug << misc::fmt("scc<=(%u) ", result.as_uint);
 	}
 }
 #undef INST
@@ -1905,7 +1903,7 @@ void WorkItem::ISA_S_CBRANCH_SCC1_Impl(Inst *inst)
 		// Print isa debug information.
 		if (Emu::debug)
 		{
-			Emu::debug << StringFmt("wf%d: SCC=%u (taken)", 
+			Emu::debug << misc::fmt("wf%d: SCC=%u (taken)", 
 				wavefront->getId(), scc.as_uint);
 		}
 	}
@@ -1914,7 +1912,7 @@ void WorkItem::ISA_S_CBRANCH_SCC1_Impl(Inst *inst)
 		// Print isa debug information.
 		if (Emu::debug)
 		{
-			Emu::debug << StringFmt("wf%d: SCC=%u (not taken)", 
+			Emu::debug << misc::fmt("wf%d: SCC=%u (not taken)", 
 				wavefront->getId(), scc.as_uint);
 		}
 	}
@@ -1990,7 +1988,7 @@ void WorkItem::ISA_S_CBRANCH_EXECZ_Impl(Inst *inst)
 		// Print isa debug information.
 		if (Emu::debug)
 		{
-			Emu::debug << StringFmt("wf%d: EXEC=0x%x, EXECZ=%u (taken)", 
+			Emu::debug << misc::fmt("wf%d: EXEC=0x%x, EXECZ=%u (taken)", 
 				wavefront->getId(), exec.as_uint, 
 				execz.as_uint);
 		}
@@ -2000,7 +1998,7 @@ void WorkItem::ISA_S_CBRANCH_EXECZ_Impl(Inst *inst)
 		// Print isa debug information.
 		if (Emu::debug)
 		{
-			Emu::debug << StringFmt("wf%d: EXEC=0x%x, EXECZ=%u " 
+			Emu::debug << misc::fmt("wf%d: EXEC=0x%x, EXECZ=%u " 
 				"(not taken)", wavefront->getId(), 
 				exec.as_uint, execz.as_uint);
 		}
@@ -2039,7 +2037,7 @@ void WorkItem::ISA_S_BARRIER_Impl(Inst *inst)
 	wavefront->setAtBarrier(true);
 	work_group->incWavefrontsAtBarrier();
 
-	Emu::debug << StringFmt("Group %d wavefront %d reached barrier "
+	Emu::debug << misc::fmt("Group %d wavefront %d reached barrier "
 		"(%d reached, %d left)\n",
 		work_group->getId(), wavefront->getId(), 
 		work_group->getWavefrontsAtBarrier(),
@@ -2056,7 +2054,7 @@ void WorkItem::ISA_S_BARRIER_Impl(Inst *inst)
 
 		work_group->setWavefrontsAtBarrier(0);
 
-		Emu::debug << StringFmt("Group %d completed barrier\n", work_group->getId());
+		Emu::debug << misc::fmt("Group %d completed barrier\n", work_group->getId());
 	}
 }
 
@@ -2097,7 +2095,7 @@ void WorkItem::ISA_V_MOV_B32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(0x%x) ", id, INST.vdst,
+		Emu::debug << misc::fmt("t%d: V%u<=(0x%x) ", id, INST.vdst,
 			value.as_uint);
 	}
 }
@@ -2120,7 +2118,7 @@ void WorkItem::ISA_V_READFIRSTLANE_B32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(0x%x) ", id, INST.vdst,
+		Emu::debug << misc::fmt("t%d: V%u<=(0x%x) ", id, INST.vdst,
 			value.as_uint);
 	}
 }
@@ -2166,7 +2164,7 @@ void WorkItem::ISA_V_CVT_F64_I32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V[%u:+1]<=(%lgf) ", id,
+		Emu::debug << misc::fmt("t%d: V[%u:+1]<=(%lgf) ", id,
 			INST.vdst, value.as_double);
 	}
 }
@@ -2192,7 +2190,7 @@ void WorkItem::ISA_V_CVT_F32_I32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%gf) ", id, INST.vdst,
+		Emu::debug << misc::fmt("t%d: V%u<=(%gf) ", id, INST.vdst,
 			value.as_float);
 	}
 }
@@ -2218,7 +2216,7 @@ void WorkItem::ISA_V_CVT_F32_U32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%gf) ", id, INST.vdst,
+		Emu::debug << misc::fmt("t%d: V%u<=(%gf) ", id, INST.vdst,
 			value.as_float);
 	}
 }
@@ -2258,7 +2256,7 @@ void WorkItem::ISA_V_CVT_U32_F32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%u) ", id, INST.vdst,
+		Emu::debug << misc::fmt("t%d: V%u<=(%u) ", id, INST.vdst,
 			value.as_uint);
 	}
 }
@@ -2300,7 +2298,7 @@ void WorkItem::ISA_V_CVT_I32_F32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%d) ", id, INST.vdst,
+		Emu::debug << misc::fmt("t%d: V%u<=(%d) ", id, INST.vdst,
 			value.as_int);
 	}
 }
@@ -2333,7 +2331,7 @@ void WorkItem::ISA_V_CVT_F32_F64_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%gf) ", id, INST.vdst,
+		Emu::debug << misc::fmt("t%d: V%u<=(%gf) ", id, INST.vdst,
 			value.as_float);
 	}
 }
@@ -2372,7 +2370,7 @@ void WorkItem::ISA_V_CVT_F64_F32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V[%u:+1]<=(%lgf) ", id,
+		Emu::debug << misc::fmt("t%d: V[%u:+1]<=(%lgf) ", id,
 			INST.vdst, value.as_double);
 	}
 }
@@ -2408,7 +2406,7 @@ void WorkItem::ISA_V_TRUNC_F32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%gf) ", id, INST.vdst,
+		Emu::debug << misc::fmt("t%d: V%u<=(%gf) ", id, INST.vdst,
 			value.as_float);
 	}
 }
@@ -2451,7 +2449,7 @@ void WorkItem::ISA_V_RCP_F32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%gf) ", id, INST.vdst,
+		Emu::debug << misc::fmt("t%d: V%u<=(%gf) ", id, INST.vdst,
 			rcp.as_float);
 	}
 }
@@ -2494,7 +2492,7 @@ void WorkItem::ISA_V_SQRT_F32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%gf) ", id, INST.vdst,
+		Emu::debug << misc::fmt("t%d: V%u<=(%gf) ", id, INST.vdst,
 			srt.as_float);
 	}
 }
@@ -2517,7 +2515,7 @@ void WorkItem::ISA_V_SIN_F32_Impl(Inst *inst)
 	// XXX Should it be module instead of dividing?
 	s0.as_float = s0.as_float * (2 * M_PI);
 
-	if (inRange(s0.as_float, -256, 256))
+	if (misc::inRange(s0.as_float, -256, 256))
 	{
 		result.as_float = sinf(s0.as_float);
 	}
@@ -2533,7 +2531,7 @@ void WorkItem::ISA_V_SIN_F32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%gf) (sin %gf) ", id, 
+		Emu::debug << misc::fmt("t%d: V%u<=(%gf) (sin %gf) ", id, 
 			INST.vdst, result.as_float, s0.as_float);
 	}
 }
@@ -2556,7 +2554,7 @@ void WorkItem::ISA_V_COS_F32_Impl(Inst *inst)
 	// XXX Should it be module instead of dividing?
 	s0.as_float = s0.as_float * (2 * M_PI);
 
-	if (inRange(s0.as_float, -256, 256))
+	if (misc::inRange(s0.as_float, -256, 256))
 	{
 		result.as_float = cosf(s0.as_float);
 	}
@@ -2572,7 +2570,7 @@ void WorkItem::ISA_V_COS_F32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%gf) (cos %gf) ", id, 
+		Emu::debug << misc::fmt("t%d: V%u<=(%gf) (cos %gf) ", id, 
 			INST.vdst, result.as_float, s0.as_float);
 	}
 }
@@ -2600,7 +2598,7 @@ void WorkItem::ISA_V_NOT_B32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(0x%x) ", id, INST.vdst,
+		Emu::debug << misc::fmt("t%d: V%u<=(0x%x) ", id, INST.vdst,
 			result.as_uint);
 	}
 }
@@ -2643,7 +2641,7 @@ void WorkItem::ISA_V_MOVRELD_B32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V[%u+%u]<=(0x%x) ", id, 
+		Emu::debug << misc::fmt("t%d: V[%u+%u]<=(0x%x) ", id, 
 			INST.vdst, m0.as_uint, s0.as_uint);
 	}
 }
@@ -2672,7 +2670,7 @@ void WorkItem::ISA_V_MOVRELS_B32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V[%u]<=(0x%x) ", id, 
+		Emu::debug << misc::fmt("t%d: V[%u]<=(0x%x) ", id, 
 			INST.vdst, s0.as_uint);
 	}
 }
@@ -2711,7 +2709,7 @@ void WorkItem::ISA_V_CNDMASK_B32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%u) ", id, INST.vdst,
+		Emu::debug << misc::fmt("t%d: V%u<=(%u) ", id, INST.vdst,
 			result.as_uint);
 	}
 }
@@ -2741,7 +2739,7 @@ void WorkItem::ISA_V_ADD_F32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%gf) ", id, INST.vdst,
+		Emu::debug << misc::fmt("t%d: V%u<=(%gf) ", id, INST.vdst,
 			sum.as_float);
 	}
 }
@@ -2771,7 +2769,7 @@ void WorkItem::ISA_V_SUB_F32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%gf) ", id, INST.vdst,
+		Emu::debug << misc::fmt("t%d: V%u<=(%gf) ", id, INST.vdst,
 			dif.as_float);
 	}
 }
@@ -2801,7 +2799,7 @@ void WorkItem::ISA_V_SUBREV_F32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%gf) ", id, INST.vdst,
+		Emu::debug << misc::fmt("t%d: V%u<=(%gf) ", id, INST.vdst,
 			dif.as_float);
 	}
 }
@@ -2847,7 +2845,7 @@ void WorkItem::ISA_V_MUL_LEGACY_F32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%gf) (%gf * %gf) ", id, 
+		Emu::debug << misc::fmt("t%d: V%u<=(%gf) (%gf * %gf) ", id, 
 			INST.vdst, product.as_float, s0.as_float, s1.as_float);
 	}
 }
@@ -2877,7 +2875,7 @@ void WorkItem::ISA_V_MUL_F32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%gf) (%gf*%gf)", id, 
+		Emu::debug << misc::fmt("t%d: V%u<=(%gf) (%gf*%gf)", id, 
 			INST.vdst, product.as_float, s0.as_float, s1.as_float);
 	}
 }
@@ -2899,8 +2897,8 @@ void WorkItem::ISA_V_MUL_I32_I24_Impl(Inst *inst)
 	s1.as_uint = ReadVReg(INST.vsrc1);
 
 	// Truncate operands to 24-bit signed integers
-	s0.as_uint = SignExtend32(s0.as_uint, 24);
-	s1.as_uint = SignExtend32(s1.as_uint, 24);
+	s0.as_uint = misc::SignExtend32(s0.as_uint, 24);
+	s1.as_uint = misc::SignExtend32(s1.as_uint, 24);
 
 	// Calculate the product.
 	product.as_int = s0.as_int * s1.as_int;
@@ -2911,7 +2909,7 @@ void WorkItem::ISA_V_MUL_I32_I24_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%d)", id, INST.vdst,
+		Emu::debug << misc::fmt("t%d: V%u<=(%d)", id, INST.vdst,
 			product.as_int);
 	}
 }
@@ -2948,7 +2946,7 @@ void WorkItem::ISA_V_MIN_F32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%gf)", id, INST.vdst,
+		Emu::debug << misc::fmt("t%d: V%u<=(%gf)", id, INST.vdst,
 			min.as_float);
 	}
 }
@@ -2985,7 +2983,7 @@ void WorkItem::ISA_V_MAX_F32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%gf)", id, INST.vdst,
+		Emu::debug << misc::fmt("t%d: V%u<=(%gf)", id, INST.vdst,
 			max.as_float);
 	}
 }
@@ -3022,7 +3020,7 @@ void WorkItem::ISA_V_MAX_I32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%d)", id, INST.vdst,
+		Emu::debug << misc::fmt("t%d: V%u<=(%d)", id, INST.vdst,
 			max.as_int);
 	}
 }
@@ -3059,7 +3057,7 @@ void WorkItem::ISA_V_MIN_I32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%d)", id, INST.vdst,
+		Emu::debug << misc::fmt("t%d: V%u<=(%d)", id, INST.vdst,
 			min.as_int);
 	}
 }
@@ -3096,7 +3094,7 @@ void WorkItem::ISA_V_MIN_U32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%u)", id, INST.vdst,
+		Emu::debug << misc::fmt("t%d: V%u<=(%u)", id, INST.vdst,
 			min.as_uint);
 	}
 }
@@ -3133,7 +3131,7 @@ void WorkItem::ISA_V_MAX_U32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%u)", id, INST.vdst,
+		Emu::debug << misc::fmt("t%d: V%u<=(%u)", id, INST.vdst,
 			max.as_uint);
 	}
 }
@@ -3168,7 +3166,7 @@ void WorkItem::ISA_V_LSHRREV_B32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%u) (%u >> %u) ", id,
+		Emu::debug << misc::fmt("t%d: V%u<=(%u) (%u >> %u) ", id,
 			INST.vdst, result.as_uint, s1.as_uint, s0.as_uint);
 	}
 }
@@ -3203,7 +3201,7 @@ void WorkItem::ISA_V_ASHRREV_I32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%d, %u) ", id, INST.vdst,
+		Emu::debug << misc::fmt("t%d: V%u<=(%d, %u) ", id, INST.vdst,
 			result.as_int, result.as_uint);
 	}
 }
@@ -3233,7 +3231,7 @@ void WorkItem::ISA_V_LSHL_B32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(0x%x) ", id, INST.vdst,
+		Emu::debug << misc::fmt("t%d: V%u<=(0x%x) ", id, INST.vdst,
 			result.as_uint);
 	}
 }
@@ -3268,7 +3266,7 @@ void WorkItem::ISA_V_LSHLREV_B32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(0x%x) (%u << %u) ", id,
+		Emu::debug << misc::fmt("t%d: V%u<=(0x%x) (%u << %u) ", id,
 			INST.vdst, result.as_uint, s1.as_uint, s0.as_uint);
 	}
 }
@@ -3302,7 +3300,7 @@ void WorkItem::ISA_V_AND_B32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(0x%x) (%u & %u) ", id, 
+		Emu::debug << misc::fmt("t%d: V%u<=(0x%x) (%u & %u) ", id, 
 			INST.vdst, result.as_uint, s0.as_uint, s1.as_uint);
 	}
 }
@@ -3332,7 +3330,7 @@ void WorkItem::ISA_V_OR_B32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(0x%x) (%u | %u) ", 
+		Emu::debug << misc::fmt("t%d: V%u<=(0x%x) (%u | %u) ", 
 			id, INST.vdst, result.as_uint, s0.as_uint,
 			s1.as_uint);
 	}
@@ -3363,7 +3361,7 @@ void WorkItem::ISA_V_XOR_B32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%u)(%u ^ %u) ", id, 
+		Emu::debug << misc::fmt("t%d: V%u<=(%u)(%u ^ %u) ", id, 
 			INST.vdst, result.as_uint, s0.as_uint, s1.as_uint);
 	}
 }
@@ -3403,7 +3401,7 @@ void WorkItem::ISA_V_MAC_F32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%gf) ", id, INST.vdst,
+		Emu::debug << misc::fmt("t%d: V%u<=(%gf) ", id, INST.vdst,
 			result.as_float);
 	}
 }
@@ -3432,7 +3430,7 @@ void WorkItem::ISA_V_MADMK_F32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%f) (%f * %f + %f)", id, 
+		Emu::debug << misc::fmt("t%d: V%u<=(%f) (%f * %f + %f)", id, 
 			INST.vdst, dst.as_float, s0.as_float, K.as_float, 
 			s1.as_float);
 	}
@@ -3467,9 +3465,9 @@ void WorkItem::ISA_V_ADD_I32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%d) (%d + %d) ", id, 
+		Emu::debug << misc::fmt("t%d: V%u<=(%d) (%d + %d) ", id, 
 			INST.vdst, sum.as_int, s0.as_int, s1.as_int);
-		Emu::debug << StringFmt("vcc<=(%u) ", carry.as_uint);
+		Emu::debug << misc::fmt("vcc<=(%u) ", carry.as_uint);
 	}
 }
 #undef INST
@@ -3501,9 +3499,9 @@ void WorkItem::ISA_V_SUB_I32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%d) ", id, INST.vdst,
+		Emu::debug << misc::fmt("t%d: V%u<=(%d) ", id, INST.vdst,
 			dif.as_int);
-		Emu::debug << StringFmt("vcc<=(%u) ", carry.as_uint);
+		Emu::debug << misc::fmt("vcc<=(%u) ", carry.as_uint);
 	}
 }
 #undef INST
@@ -3535,9 +3533,9 @@ void WorkItem::ISA_V_SUBREV_I32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%d) ", id, INST.vdst,
+		Emu::debug << misc::fmt("t%d: V%u<=(%d) ", id, INST.vdst,
 			dif.as_int);
-		Emu::debug << StringFmt("vcc<=(%u) ", carry.as_uint);
+		Emu::debug << misc::fmt("vcc<=(%u) ", carry.as_uint);
 	}
 }
 #undef INST
@@ -3581,7 +3579,7 @@ void WorkItem::ISA_V_CVT_PKRTZ_F16_F32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%d) ", id, INST.vdst,
+		Emu::debug << misc::fmt("t%d: V%u<=(%d) ", id, INST.vdst,
 			float_pack.as_uint32);
 	}	
 }
@@ -3616,7 +3614,7 @@ void WorkItem::ISA_V_CMP_LT_F32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: vcc<=(%u) ",
+		Emu::debug << misc::fmt("t%d: vcc<=(%u) ",
 			id_in_wavefront, result.as_uint);
 	}
 }
@@ -3646,7 +3644,7 @@ void WorkItem::ISA_V_CMP_GT_F32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: vcc<=(%u) ",
+		Emu::debug << misc::fmt("t%d: vcc<=(%u) ",
 			id_in_wavefront, result.as_uint);
 	}
 }
@@ -3684,7 +3682,7 @@ void WorkItem::ISA_V_CMP_NGT_F32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: vcc<=(%u) ",
+		Emu::debug << misc::fmt("t%d: vcc<=(%u) ",
 			id_in_wavefront, result.as_uint);
 	}
 }
@@ -3714,7 +3712,7 @@ void WorkItem::ISA_V_CMP_NEQ_F32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: vcc<=(%u) ",
+		Emu::debug << misc::fmt("t%d: vcc<=(%u) ",
 			id_in_wavefront, result.as_uint);
 	}
 }
@@ -3792,7 +3790,7 @@ void WorkItem::ISA_V_CMP_LT_I32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: vcc<=(%u) ",
+		Emu::debug << misc::fmt("t%d: vcc<=(%u) ",
 			id_in_wavefront, result.as_uint);
 	}
 }
@@ -3822,7 +3820,7 @@ void WorkItem::ISA_V_CMP_EQ_I32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: vcc<=(%u) ",
+		Emu::debug << misc::fmt("t%d: vcc<=(%u) ",
 			id_in_wavefront, result.as_uint);
 	}
 }
@@ -3852,7 +3850,7 @@ void WorkItem::ISA_V_CMP_LE_I32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: vcc<=(%u) ",
+		Emu::debug << misc::fmt("t%d: vcc<=(%u) ",
 			id_in_wavefront, result.as_uint);
 	}
 }
@@ -3882,7 +3880,7 @@ void WorkItem::ISA_V_CMP_GT_I32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: vcc<=(%u) ",
+		Emu::debug << misc::fmt("t%d: vcc<=(%u) ",
 			id_in_wavefront, result.as_uint);
 	}
 }
@@ -3912,7 +3910,7 @@ void WorkItem::ISA_V_CMP_NE_I32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: vcc<=(%u) ",
+		Emu::debug << misc::fmt("t%d: vcc<=(%u) ",
 			id_in_wavefront, result.as_uint);
 	}
 }
@@ -3942,7 +3940,7 @@ void WorkItem::ISA_V_CMP_GE_I32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: vcc<=(%u) ",
+		Emu::debug << misc::fmt("t%d: vcc<=(%u) ",
 			id_in_wavefront, result.as_uint);
 	}
 }
@@ -3980,7 +3978,7 @@ void WorkItem::ISA_V_CMP_LT_U32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: vcc<=(%u) ",
+		Emu::debug << misc::fmt("t%d: vcc<=(%u) ",
 			id_in_wavefront, result.as_uint);
 	}
 }
@@ -4017,7 +4015,7 @@ void WorkItem::ISA_V_CMP_LE_U32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: vcc<=(%u) ",
+		Emu::debug << misc::fmt("t%d: vcc<=(%u) ",
 			id_in_wavefront, result.as_uint);
 	}
 }
@@ -4047,7 +4045,7 @@ void WorkItem::ISA_V_CMP_GT_U32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: vcc<=(%u) ",
+		Emu::debug << misc::fmt("t%d: vcc<=(%u) ",
 			id_in_wavefront, result.as_uint);
 	}
 }
@@ -4111,7 +4109,7 @@ void WorkItem::ISA_V_CNDMASK_B32_VOP3a_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%u, %gf) (s1=%u, s0=%u)", 
+		Emu::debug << misc::fmt("t%d: V%u<=(%u, %gf) (s1=%u, s0=%u)", 
 			id, INST.vdst, result.as_uint, 
 			result.as_float, s1.as_uint, s0.as_uint);
 	}
@@ -4156,7 +4154,7 @@ void WorkItem::ISA_V_ADD_F32_VOP3a_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%gf) ", id, INST.vdst,
+		Emu::debug << misc::fmt("t%d: V%u<=(%gf) ", id, INST.vdst,
 			sum.as_float);
 	}
 }
@@ -4200,7 +4198,7 @@ void WorkItem::ISA_V_SUBREV_F32_VOP3a_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%gf) ", id, INST.vdst,
+		Emu::debug << misc::fmt("t%d: V%u<=(%gf) ", id, INST.vdst,
 			diff.as_float);
 	}
 }
@@ -4234,7 +4232,7 @@ void WorkItem::ISA_V_MUL_LEGACY_F32_VOP3a_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%gf) (%gf * %gf) ", id, 
+		Emu::debug << misc::fmt("t%d: V%u<=(%gf) (%gf * %gf) ", id, 
 			INST.vdst, product.as_float, s0.as_float, s1.as_float);
 	}
 }
@@ -4278,7 +4276,7 @@ void WorkItem::ISA_V_MUL_F32_VOP3a_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%gf) (%gf*%gf)", id, 
+		Emu::debug << misc::fmt("t%d: V%u<=(%gf) (%gf*%gf)", id, 
 			INST.vdst, result.as_float, s0.as_float, s1.as_float);
 	}
 }
@@ -4302,8 +4300,8 @@ void WorkItem::ISA_V_MUL_I32_I24_VOP3a_Impl(Inst *inst)
 	s1.as_uint = ReadReg(INST.src1);
 
 	// Truncate operands to 24-bit signed integers
-	s0.as_uint = SignExtend32(s0.as_uint, 24);
-	s1.as_uint = SignExtend32(s1.as_uint, 24);
+	s0.as_uint = misc::SignExtend32(s0.as_uint, 24);
+	s1.as_uint = misc::SignExtend32(s1.as_uint, 24);
 
 	// Calculate the product.
 	product.as_int = s0.as_int * s1.as_int;
@@ -4314,7 +4312,7 @@ void WorkItem::ISA_V_MUL_I32_I24_VOP3a_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%d)", id, INST.vdst,
+		Emu::debug << misc::fmt("t%d: V%u<=(%d)", id, INST.vdst,
 			product.as_int);
 	}
 }
@@ -4359,7 +4357,7 @@ void WorkItem::ISA_V_MAX_F32_VOP3a_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%gf) ", id, INST.vdst,
+		Emu::debug << misc::fmt("t%d: V%u<=(%gf) ", id, INST.vdst,
 			result.as_float);
 	}
 }
@@ -4407,7 +4405,7 @@ void WorkItem::ISA_V_MAD_F32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%gf) ", id, INST.vdst,
+		Emu::debug << misc::fmt("t%d: V%u<=(%gf) ", id, INST.vdst,
 			result.as_float);
 	}
 }
@@ -4444,7 +4442,7 @@ void WorkItem::ISA_V_MAD_U32_U24_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%u) ", id, INST.vdst,
+		Emu::debug << misc::fmt("t%d: V%u<=(%u) ", id, INST.vdst,
 			result.as_uint);
 	}
 }
@@ -4482,9 +4480,9 @@ void WorkItem::ISA_V_BFE_U32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: value:s0:%u, offset:s1:%u, width:s2:%u ",
+		Emu::debug << misc::fmt("t%d: value:s0:%u, offset:s1:%u, width:s2:%u ",
 			id, s0.as_uint, s1.as_uint, s2.as_uint);
-		Emu::debug << StringFmt("V%u<=(0x%x) ", INST.vdst, result.as_uint);
+		Emu::debug << misc::fmt("V%u<=(0x%x) ", INST.vdst, result.as_uint);
 	}
 }
 #undef INST
@@ -4533,7 +4531,7 @@ void WorkItem::ISA_V_BFE_I32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%d) ", id, INST.vdst,
+		Emu::debug << misc::fmt("t%d: V%u<=(%d) ", id, INST.vdst,
 			result.as_int);
 	}
 }
@@ -4568,7 +4566,7 @@ void WorkItem::ISA_V_BFI_B32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(0x%x) ", id, INST.vdst,
+		Emu::debug << misc::fmt("t%d: V%u<=(0x%x) ", id, INST.vdst,
 			result.as_uint);
 	}
 }
@@ -4616,7 +4614,7 @@ void WorkItem::ISA_V_FMA_F32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%gf) (%gf*%gf + %gf) ", 
+		Emu::debug << misc::fmt("t%d: V%u<=(%gf) (%gf*%gf + %gf) ", 
 			id, INST.vdst, result.as_float, 
 			s0.as_float, s1.as_float, s2.as_float);
 	}
@@ -4665,7 +4663,7 @@ void WorkItem::ISA_V_ALIGNBIT_B32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(0x%x, %u) ({0x%x,0x%x} >> %u) ",
+		Emu::debug << misc::fmt("t%d: V%u<=(0x%x, %u) ({0x%x,0x%x} >> %u) ",
 			id, INST.vdst, result.as_uint, 
 			result.as_uint, src.as_reg[1], src.as_reg[0], 
 			src2.as_uint);
@@ -4725,7 +4723,7 @@ void WorkItem::ISA_V_MUL_LO_U32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%u) ", id, INST.vdst,
+		Emu::debug << misc::fmt("t%d: V%u<=(%u) ", id, INST.vdst,
 			result.as_uint);
 	}
 }
@@ -4778,7 +4776,7 @@ void WorkItem::ISA_V_MUL_HI_U32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%u) ", id, INST.vdst,
+		Emu::debug << misc::fmt("t%d: V%u<=(%u) ", id, INST.vdst,
 			result.as_uint);
 	}
 }
@@ -4811,7 +4809,7 @@ void WorkItem::ISA_V_MUL_LO_I32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%d)(%d*%d) ", id, 
+		Emu::debug << misc::fmt("t%d: V%u<=(%d)(%d*%d) ", id, 
 			INST.vdst, result.as_int, s0.as_int, s1.as_int);
 	}
 }
@@ -4850,7 +4848,7 @@ void WorkItem::ISA_V_FRACT_F32_VOP3a_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%gf) ", id, INST.vdst,
+		Emu::debug << misc::fmt("t%d: V%u<=(%gf) ", id, INST.vdst,
 			result.as_float);
 	}
 }
@@ -4894,7 +4892,7 @@ void WorkItem::ISA_V_CMP_LT_F32_VOP3a_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: S[%u:+1]<=(%u) ",
+		Emu::debug << misc::fmt("t%d: S[%u:+1]<=(%u) ",
 			id_in_wavefront, INST.vdst,
 			result.as_uint);
 	}
@@ -4939,7 +4937,7 @@ void WorkItem::ISA_V_CMP_EQ_F32_VOP3a_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: S[%u:+1]<=(%u) ",
+		Emu::debug << misc::fmt("t%d: S[%u:+1]<=(%u) ",
 			id_in_wavefront, INST.vdst,
 			result.as_uint);
 	}
@@ -4991,7 +4989,7 @@ void WorkItem::ISA_V_CMP_GT_F32_VOP3a_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: S[%u:+1]<=(%u) ",
+		Emu::debug << misc::fmt("t%d: S[%u:+1]<=(%u) ",
 			id_in_wavefront, INST.vdst,
 			result.as_uint);
 	}
@@ -5044,7 +5042,7 @@ void WorkItem::ISA_V_CMP_NEQ_F32_VOP3a_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: S[%u:+1]<=(%u) ",
+		Emu::debug << misc::fmt("t%d: S[%u:+1]<=(%u) ",
 			id_in_wavefront, INST.vdst,
 			result.as_uint);
 	}
@@ -5089,7 +5087,7 @@ void WorkItem::ISA_V_CMP_NLT_F32_VOP3a_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: S[%u:+1]<=(%u) ",
+		Emu::debug << misc::fmt("t%d: S[%u:+1]<=(%u) ",
 			id_in_wavefront, INST.vdst,
 			result.as_uint);
 	}
@@ -5142,7 +5140,7 @@ void WorkItem::ISA_V_CMP_LT_I32_VOP3a_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: S[%u:+1]<=(%u) ",
+		Emu::debug << misc::fmt("t%d: S[%u:+1]<=(%u) ",
 			id_in_wavefront, INST.vdst,
 			result.as_uint);
 	}
@@ -5187,7 +5185,7 @@ void WorkItem::ISA_V_CMP_EQ_I32_VOP3a_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: S[%u:+1]<=(%u) ",
+		Emu::debug << misc::fmt("t%d: S[%u:+1]<=(%u) ",
 			id_in_wavefront, INST.vdst,
 			result.as_uint);
 	}
@@ -5232,7 +5230,7 @@ void WorkItem::ISA_V_CMP_LE_I32_VOP3a_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: S[%u:+1]<=(%u) ",
+		Emu::debug << misc::fmt("t%d: S[%u:+1]<=(%u) ",
 			id_in_wavefront, INST.vdst,
 			result.as_uint);
 	}
@@ -5277,7 +5275,7 @@ void WorkItem::ISA_V_CMP_GT_I32_VOP3a_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: S[%u:%u]<=(%u) ",
+		Emu::debug << misc::fmt("t%d: S[%u:%u]<=(%u) ",
 			id_in_wavefront, INST.vdst, INST.vdst + 1, 
 			result.as_uint);
 	}
@@ -5322,7 +5320,7 @@ void WorkItem::ISA_V_CMP_NE_I32_VOP3a_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: S[%u:+1]<=(%u) ",
+		Emu::debug << misc::fmt("t%d: S[%u:+1]<=(%u) ",
 			id_in_wavefront, INST.vdst,
 			result.as_uint);
 	}
@@ -5367,7 +5365,7 @@ void WorkItem::ISA_V_CMP_GE_I32_VOP3a_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: S[%u:+1]<=(%u) ",
+		Emu::debug << misc::fmt("t%d: S[%u:+1]<=(%u) ",
 			id_in_wavefront, INST.vdst,
 			result.as_uint);
 	}
@@ -5415,7 +5413,7 @@ void WorkItem::ISA_V_CMPX_EQ_I32_VOP3a_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: S[%u:%u],EXEC<=(%u) ",
+		Emu::debug << misc::fmt("t%d: S[%u:%u],EXEC<=(%u) ",
 			id_in_wavefront, INST.vdst, INST.vdst+1,
 			result.as_uint);
 	}
@@ -5456,7 +5454,7 @@ void WorkItem::ISA_V_CMP_LT_U32_VOP3a_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: S[%u:+1]<=(%u) ",
+		Emu::debug << misc::fmt("t%d: S[%u:+1]<=(%u) ",
 			id_in_wavefront, INST.vdst,
 			result.as_uint);
 	}
@@ -5489,7 +5487,7 @@ void WorkItem::ISA_V_CMP_LE_U32_VOP3a_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: S[%u:+1]<=(%u) ",
+		Emu::debug << misc::fmt("t%d: S[%u:+1]<=(%u) ",
 			id_in_wavefront, INST.vdst,
 			result.as_uint);
 	}
@@ -5522,7 +5520,7 @@ void WorkItem::ISA_V_CMP_GT_U32_VOP3a_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: S[%u:+1]<=(%u) ",
+		Emu::debug << misc::fmt("t%d: S[%u:+1]<=(%u) ",
 			id_in_wavefront, INST.vdst,
 			result.as_uint);
 	}
@@ -5555,7 +5553,7 @@ void WorkItem::ISA_V_CMP_LG_U32_VOP3a_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: S[%u:+1]<=(%u) ",
+		Emu::debug << misc::fmt("t%d: S[%u:+1]<=(%u) ",
 			id_in_wavefront, INST.vdst,
 			result.as_uint);
 	}
@@ -5588,7 +5586,7 @@ void WorkItem::ISA_V_CMP_GE_U32_VOP3a_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: S[%u:+1]<=(%u) ",
+		Emu::debug << misc::fmt("t%d: S[%u:+1]<=(%u) ",
 			id_in_wavefront, INST.vdst,
 			result.as_uint);
 	}
@@ -5640,7 +5638,7 @@ void WorkItem::ISA_V_MAX3_I32_Impl(Inst *inst)
 	}
 	else
 	{
-		fatal("%s: Max algorithm failed\n", __FUNCTION__);
+		misc::fatal("%s: Max algorithm failed\n", __FUNCTION__);
 	}
 
 	// Write the results.
@@ -5649,7 +5647,7 @@ void WorkItem::ISA_V_MAX3_I32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V[%u]<=(%d) ",
+		Emu::debug << misc::fmt("t%d: V[%u]<=(%d) ",
 			id_in_wavefront, INST.vdst, max.as_int);
 	}
 }
@@ -5698,7 +5696,7 @@ void WorkItem::ISA_V_MED3_I32_Impl(Inst *inst)
 	}
 	else
 	{
-		fatal("%s: Median algorithm failed\n", __FUNCTION__);
+		misc::fatal("%s: Median algorithm failed\n", __FUNCTION__);
 	}
 
 	// Write the results.
@@ -5707,7 +5705,7 @@ void WorkItem::ISA_V_MED3_I32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V[%u]<=(%d) ",
+		Emu::debug << misc::fmt("t%d: V[%u]<=(%d) ",
 			id_in_wavefront, INST.vdst, median.as_int);
 	}
 }
@@ -5751,10 +5749,10 @@ void WorkItem::ISA_V_LSHR_B64_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: S[%u]<=(0x%x) ",
+		Emu::debug << misc::fmt("t%d: S[%u]<=(0x%x) ",
 			id_in_wavefront, INST.vdst,
 			result_lo.as_uint);
-		Emu::debug << StringFmt("S[%u]<=(0x%x) ", INST.vdst + 1,
+		Emu::debug << misc::fmt("S[%u]<=(0x%x) ", INST.vdst + 1,
 			result_hi.as_uint);
 	}
 }
@@ -5798,10 +5796,10 @@ void WorkItem::ISA_V_ASHR_I64_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: S[%u]<=(0x%x) ",
+		Emu::debug << misc::fmt("t%d: S[%u]<=(0x%x) ",
 			id_in_wavefront, INST.vdst,
 			result_lo.as_uint);
-		Emu::debug << StringFmt("S[%u]<=(0x%x) ", INST.vdst + 1,
+		Emu::debug << misc::fmt("S[%u]<=(0x%x) ", INST.vdst + 1,
 			result_hi.as_uint);
 	}
 }
@@ -5915,7 +5913,7 @@ void WorkItem::ISA_V_ADD_F64_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: S[%u:+1]<=(%lgf) ",
+		Emu::debug << misc::fmt("t%d: S[%u:+1]<=(%lgf) ",
 			id_in_wavefront, INST.vdst,
 			value.as_double);
 	}
@@ -6042,7 +6040,7 @@ void WorkItem::ISA_V_MUL_F64_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: S[%u:+1]<=(%lgf) ",
+		Emu::debug << misc::fmt("t%d: S[%u:+1]<=(%lgf) ",
 			id_in_wavefront, INST.vdst,
 			value.as_double);
 	}
@@ -6094,9 +6092,9 @@ void WorkItem::ISA_V_ADDC_U32_VOP3b_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%u) ", id, INST.vdst,
+		Emu::debug << misc::fmt("t%d: V%u<=(%u) ", id, INST.vdst,
 			sum.as_uint);
-		Emu::debug << StringFmt("vcc<=(%u) ", carry_out.as_uint);
+		Emu::debug << misc::fmt("vcc<=(%u) ", carry_out.as_uint);
 	}
 }
 #undef INST
@@ -6167,7 +6165,7 @@ void WorkItem::ISA_V_INTERP_P1_F32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%f = P10(%f) * Lamda2(%f) + P0(%f)) \n", 
+		Emu::debug << misc::fmt("t%d: V%u<=(%f = P10(%f) * Lamda2(%f) + P0(%f)) \n", 
 			id, INST.vdst, data.as_float, p10.as_float, 
 			s.as_float, p0.as_float);
 	}
@@ -6221,7 +6219,7 @@ void WorkItem::ISA_V_INTERP_P2_F32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%f += P20(%f) * Lamda2(%f)) \n", 
+		Emu::debug << misc::fmt("t%d: V%u<=(%f += P20(%f) * Lamda2(%f)) \n", 
 			id, INST.vdst, data.as_float, p20.as_float, 
 			s.as_float);
 	}
@@ -6271,12 +6269,12 @@ void WorkItem::ISA_DS_WRITE2_B32_Impl(Inst *inst)
 	if (addr0.as_uint > std::min(work_group->getNDRange()->getLocalMemTop(),
 		ReadSReg(SI_M0)))
 	{
-		fatal("%s: invalid address\n", __FUNCTION__);
+		misc::fatal("%s: invalid address\n", __FUNCTION__);
 	}
 	if (addr1.as_uint > std::min(work_group->getNDRange()->getLocalMemTop(),
 		ReadSReg(SI_M0)))
 	{
-		fatal("%s: invalid address\n", __FUNCTION__);
+		misc::fatal("%s: invalid address\n", __FUNCTION__);
 	}
 
 	// Write Dword.
@@ -6314,16 +6312,16 @@ void WorkItem::ISA_DS_WRITE2_B32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug && INST.gds)
 	{
-		Emu::debug << StringFmt("t%d: GDS[%u]<=(%u,%f) ", id, 
+		Emu::debug << misc::fmt("t%d: GDS[%u]<=(%u,%f) ", id, 
 			addr0.as_uint, data0.as_uint, data0.as_float);
-		Emu::debug << StringFmt("GDS[%u]<=(%u,%f) ", addr1.as_uint, data0.as_uint,
+		Emu::debug << misc::fmt("GDS[%u]<=(%u,%f) ", addr1.as_uint, data0.as_uint,
 			data0.as_float);
 	}
 	else
 	{
-		Emu::debug << StringFmt("t%d: LDS[%u]<=(%u,%f) ", id, 
+		Emu::debug << misc::fmt("t%d: LDS[%u]<=(%u,%f) ", id, 
 			addr0.as_uint, data0.as_uint, data0.as_float);
-		Emu::debug << StringFmt("LDS[%u]<=(%u,%f) ", addr1.as_uint, data1.as_uint, 
+		Emu::debug << misc::fmt("LDS[%u]<=(%u,%f) ", addr1.as_uint, data1.as_uint, 
 			data1.as_float);
 	}
 }
@@ -6347,7 +6345,7 @@ void WorkItem::ISA_DS_WRITE_B32_Impl(Inst *inst)
 	if (addr.as_uint > std::min(work_group->getNDRange()->getLocalMemTop(), 
 		ReadSReg(SI_M0)))
 	{
-		fatal("%s: invalid address\n", __FUNCTION__);
+		misc::fatal("%s: invalid address\n", __FUNCTION__);
 	}
 
 	// Global data store not supported
@@ -6380,12 +6378,12 @@ void WorkItem::ISA_DS_WRITE_B32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug && INST.gds)
 	{
-		Emu::debug << StringFmt("t%d: GDS[%u]<=(%u,%f) ", id, 
+		Emu::debug << misc::fmt("t%d: GDS[%u]<=(%u,%f) ", id, 
 			addr.as_uint, data0.as_uint, data0.as_float);
 	}
 	else
 	{
-		Emu::debug << StringFmt("t%d: LDS[%u]<=(%u,%f) ", id, 
+		Emu::debug << misc::fmt("t%d: LDS[%u]<=(%u,%f) ", id, 
 			addr.as_uint, data0.as_uint, data0.as_float);
 	}
 }
@@ -6436,12 +6434,12 @@ void WorkItem::ISA_DS_WRITE_B8_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug && INST.gds)
 	{
-		Emu::debug << StringFmt("t%d: GDS[%u]<=(0x%x) ", id, 
+		Emu::debug << misc::fmt("t%d: GDS[%u]<=(0x%x) ", id, 
 			addr.as_uint, data0.as_ubyte[0]);
 	}
 	else
 	{
-		Emu::debug << StringFmt("t%d: LDS[%u]<=(0x%x) ", id, 
+		Emu::debug << misc::fmt("t%d: LDS[%u]<=(0x%x) ", id, 
 			addr.as_uint, data0.as_ubyte[0]);
 	}
 }
@@ -6492,12 +6490,12 @@ void WorkItem::ISA_DS_WRITE_B16_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug && INST.gds)
 	{
-		Emu::debug << StringFmt("t%d: GDS[%u]<=(0x%x) ", id, 
+		Emu::debug << misc::fmt("t%d: GDS[%u]<=(0x%x) ", id, 
 			addr.as_uint, data0.as_ushort[0]);
 	}
 	else
 	{
-		Emu::debug << StringFmt("t%d: LDS[%u]<=(0x%x) ", id, 
+		Emu::debug << misc::fmt("t%d: LDS[%u]<=(0x%x) ", id, 
 			addr.as_uint, data0.as_ushort[0]);
 	}
 
@@ -6551,7 +6549,7 @@ void WorkItem::ISA_DS_READ_B32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(0x%x)(0x%x) ", id, 
+		Emu::debug << misc::fmt("t%d: V%u<=(0x%x)(0x%x) ", id, 
 			INST.vdst, addr.as_uint, data.as_uint);
 	}
 
@@ -6613,10 +6611,10 @@ void WorkItem::ISA_DS_READ2_B32_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(0x%x)(0x%x) ", id, 
+		Emu::debug << misc::fmt("t%d: V%u<=(0x%x)(0x%x) ", id, 
 			INST.vdst, addr.as_uint+INST.offset0*4, 
 			data0.as_uint);
-		Emu::debug << StringFmt("V%u<=(0x%x)(0x%x) ", INST.vdst+1, 
+		Emu::debug << misc::fmt("V%u<=(0x%x)(0x%x) ", INST.vdst+1, 
 			addr.as_uint+INST.offset1*4, data1.as_uint);
 	}
 }
@@ -6672,7 +6670,7 @@ void WorkItem::ISA_DS_READ_I8_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(0x%x)(%d) ", id, INST.vdst,
+		Emu::debug << misc::fmt("t%d: V%u<=(0x%x)(%d) ", id, INST.vdst,
 			addr.as_uint, data.as_int);
 	}
 }
@@ -6728,7 +6726,7 @@ void WorkItem::ISA_DS_READ_U8_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(0x%x)(%u) ", id, INST.vdst,
+		Emu::debug << misc::fmt("t%d: V%u<=(0x%x)(%u) ", id, INST.vdst,
 			addr.as_uint, data.as_uint);
 	}
 }
@@ -6783,7 +6781,7 @@ void WorkItem::ISA_DS_READ_I16_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(0x%x)(%d) ", id, INST.vdst,
+		Emu::debug << misc::fmt("t%d: V%u<=(0x%x)(%d) ", id, INST.vdst,
 			addr.as_uint, data.as_int);
 	}
 
@@ -6840,7 +6838,7 @@ void WorkItem::ISA_DS_READ_U16_Impl(Inst *inst)
 	// Print isa debug information.
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(0x%x)(%u) ", id, INST.vdst,
+		Emu::debug << misc::fmt("t%d: V%u<=(0x%x)(%u) ", id, INST.vdst,
 			addr.as_uint, data.as_uint);
 	}
 }
@@ -6897,7 +6895,7 @@ void WorkItem::ISA_BUFFER_LOAD_SBYTE_Impl(Inst *inst)
 	 * having a stride */
 	if (idx_vgpr && !stride)
 	{
-		fatal("%s: the buffer descriptor is probably not correct",
+		misc::fatal("%s: the buffer descriptor is probably not correct",
 			__FUNCTION__);
 	}
 
@@ -6918,7 +6916,7 @@ void WorkItem::ISA_BUFFER_LOAD_SBYTE_Impl(Inst *inst)
 
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%u)(%d) ", id,
+		Emu::debug << misc::fmt("t%d: V%u<=(%u)(%d) ", id,
 			INST.vdata, addr, value.as_int);
 	}
 }
@@ -6970,7 +6968,7 @@ void WorkItem::ISA_BUFFER_LOAD_DWORD_Impl(Inst *inst)
 	 * having a stride */
 	if (idx_vgpr && !stride)
 	{
-		fatal("%s: the buffer descriptor is probably not correct",
+		misc::fatal("%s: the buffer descriptor is probably not correct",
 			__FUNCTION__);
 	}
 
@@ -6991,7 +6989,7 @@ void WorkItem::ISA_BUFFER_LOAD_DWORD_Impl(Inst *inst)
 
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%u)(%d) ", id,
+		Emu::debug << misc::fmt("t%d: V%u<=(%u)(%d) ", id,
 			INST.vdata, addr, value.as_int);
 	}
 }
@@ -7047,7 +7045,7 @@ void WorkItem::ISA_BUFFER_STORE_BYTE_Impl(Inst *inst)
 	 * having a stride */
 	if (idx_vgpr && !stride)
 	{
-		fatal("%s: the buffer descriptor is probably not correct",
+		misc::fatal("%s: the buffer descriptor is probably not correct",
 			__FUNCTION__);
 	}
 
@@ -7069,7 +7067,7 @@ void WorkItem::ISA_BUFFER_STORE_BYTE_Impl(Inst *inst)
 
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%u)(%d) ", id,
+		Emu::debug << misc::fmt("t%d: V%u<=(%u)(%d) ", id,
 			INST.vdata, addr, value.as_int);
 	}
 }
@@ -7125,7 +7123,7 @@ void WorkItem::ISA_BUFFER_STORE_DWORD_Impl(Inst *inst)
 	 * having a stride */
 	if (idx_vgpr && !stride)
 	{
-		fatal("%s: the buffer descriptor is probably not correct",
+		misc::fatal("%s: the buffer descriptor is probably not correct",
 			__FUNCTION__);
 	}
 
@@ -7142,7 +7140,7 @@ void WorkItem::ISA_BUFFER_STORE_DWORD_Impl(Inst *inst)
 
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: (%u)<=V%u(%d) ", id,
+		Emu::debug << misc::fmt("t%d: (%u)<=V%u(%d) ", id,
 			addr, INST.vdata, value.as_int);
 	}
 }
@@ -7207,7 +7205,7 @@ void WorkItem::ISA_BUFFER_ATOMIC_ADD_Impl(Inst *inst)
 	 * having a stride */
 	if (idx_vgpr && !stride)
 	{
-		fatal("%s: the buffer descriptor is probably not correct",
+		misc::fatal("%s: the buffer descriptor is probably not correct",
 			__FUNCTION__);
 	}
 
@@ -7237,7 +7235,7 @@ void WorkItem::ISA_BUFFER_ATOMIC_ADD_Impl(Inst *inst)
 
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%u)(%d) ", id,
+		Emu::debug << misc::fmt("t%d: V%u<=(%u)(%d) ", id,
 			INST.vdata, addr, value.as_int);
 	}
 }
@@ -7299,7 +7297,7 @@ void WorkItem::ISA_TBUFFER_LOAD_FORMAT_X_Impl(Inst *inst)
 	 * having a stride */
 	if (idx_vgpr && !stride)
 	{
-		fatal("%s: the buffer descriptor is probably not correct",
+		misc::fatal("%s: the buffer descriptor is probably not correct",
 			__FUNCTION__);
 	}
 
@@ -7320,13 +7318,13 @@ void WorkItem::ISA_TBUFFER_LOAD_FORMAT_X_Impl(Inst *inst)
 	// TODO Print value based on type
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: V%u<=(%u)(%u,%gf) ", id,
+		Emu::debug << misc::fmt("t%d: V%u<=(%u)(%u,%gf) ", id,
 			INST.vdata, addr, value.as_uint, value.as_float);
 		if (INST.offen)
-			Emu::debug << StringFmt("offen ");
+			Emu::debug << misc::fmt("offen ");
 		if (INST.idxen)
-			Emu::debug << StringFmt("idxen ");
-		Emu::debug << StringFmt("%u,%u,%u,%u,%u,%u ", base, mem_offset, 
+			Emu::debug << misc::fmt("idxen ");
+		Emu::debug << misc::fmt("%u,%u,%u,%u,%u,%u ", base, mem_offset, 
 			inst_offset, off_vgpr, idx_vgpr, stride);
 	}
 }
@@ -7382,7 +7380,7 @@ void WorkItem::ISA_TBUFFER_LOAD_FORMAT_XY_Impl(Inst *inst)
 	 * having a stride */
 	if (idx_vgpr && !stride)
 	{
-		fatal("%s: the buffer descriptor is probably not correct",
+		misc::fatal("%s: the buffer descriptor is probably not correct",
 			__FUNCTION__);
 	}
 
@@ -7401,7 +7399,7 @@ void WorkItem::ISA_TBUFFER_LOAD_FORMAT_XY_Impl(Inst *inst)
 		// TODO Print value based on type
 		if (Emu::debug)
 		{
-			Emu::debug << StringFmt("t%d: V%u<=(%u)(%u,%gf) ", id,
+			Emu::debug << misc::fmt("t%d: V%u<=(%u)(%u,%gf) ", id,
 				INST.vdata + i, addr+4*i, value.as_uint,
 				value.as_float);
 		}
@@ -7471,7 +7469,7 @@ void WorkItem::ISA_TBUFFER_LOAD_FORMAT_XYZW_Impl(Inst *inst)
 	 * having a stride */
 	if (idx_vgpr && !stride)
 	{
-		fatal("%s: the buffer descriptor is probably not correct",
+		misc::fatal("%s: the buffer descriptor is probably not correct",
 			__FUNCTION__);
 	}
 
@@ -7492,7 +7490,7 @@ void WorkItem::ISA_TBUFFER_LOAD_FORMAT_XYZW_Impl(Inst *inst)
 		// TODO Print value based on type
 		if (Emu::debug)
 		{
-			Emu::debug << StringFmt("t%d: V%u<=(%u)(%u,%gf) ", id,
+			Emu::debug << misc::fmt("t%d: V%u<=(%u)(%u,%gf) ", id,
 				INST.vdata + i, addr+4*i, value.as_uint,
 				value.as_float);
 		}
@@ -7551,7 +7549,7 @@ void WorkItem::ISA_TBUFFER_STORE_FORMAT_X_Impl(Inst *inst)
 	 * having a stride */
 	if (idx_vgpr && !stride)
 	{
-		fatal("%s: the buffer descriptor is probably not correct",
+		misc::fatal("%s: the buffer descriptor is probably not correct",
 			__FUNCTION__);
 	}
 
@@ -7569,7 +7567,7 @@ void WorkItem::ISA_TBUFFER_STORE_FORMAT_X_Impl(Inst *inst)
 	// TODO Print value based on type
 	if (Emu::debug)
 	{
-		Emu::debug << StringFmt("t%d: (%u)<=V%u(%u,%gf) ", id,
+		Emu::debug << misc::fmt("t%d: (%u)<=V%u(%u,%gf) ", id,
 			addr, INST.vdata, value.as_uint,
 			value.as_float);
 	}
@@ -7624,7 +7622,7 @@ void WorkItem::ISA_TBUFFER_STORE_FORMAT_XY_Impl(Inst *inst)
 	 * having a stride */
 	if (idx_vgpr && !stride)
 	{
-		fatal("%s: the buffer descriptor is probably not correct",
+		misc::fatal("%s: the buffer descriptor is probably not correct",
 			__FUNCTION__);
 	}
 
@@ -7640,7 +7638,7 @@ void WorkItem::ISA_TBUFFER_STORE_FORMAT_XY_Impl(Inst *inst)
 		// TODO Print value based on type
 		if (Emu::debug)
 		{
-			Emu::debug << StringFmt("t%d: (%u)<=V%u(%u,%gf) ", id,
+			Emu::debug << misc::fmt("t%d: (%u)<=V%u(%u,%gf) ", id,
 				addr, INST.vdata+i, value.as_uint,
 				value.as_float);
 		}
@@ -7699,7 +7697,7 @@ void WorkItem::ISA_TBUFFER_STORE_FORMAT_XYZW_Impl(Inst *inst)
 	 * having a stride */
 	if (idx_vgpr && !stride)
 	{
-		fatal("%s: the buffer descriptor is probably not correct",
+		misc::fatal("%s: the buffer descriptor is probably not correct",
 			__FUNCTION__);
 	}
 
@@ -7716,7 +7714,7 @@ void WorkItem::ISA_TBUFFER_STORE_FORMAT_XYZW_Impl(Inst *inst)
 		// TODO Print value based on type
 		if (Emu::debug)
 		{
-			Emu::debug << StringFmt("t%d: (%u)<=V%u(%u,%gf) ", id,
+			Emu::debug << misc::fmt("t%d: (%u)<=V%u(%u,%gf) ", id,
 				addr, INST.vdata+i, value.as_uint,
 				value.as_float);
 		}
@@ -7825,7 +7823,7 @@ void WorkItem::ISA_EXPORT_Impl(Inst *inst)
 	// 	// Parameter 0 - 31
 	// 	SISXExportParam(sx, target_id - 32, id, x.as_float, y.as_float, z.as_float, w.as_float);
 	// } else
-	// 	fatal("Export target %d is not valid!\n", target_id);
+	// 	misc::fatal("Export target %d is not valid!\n", target_id);
 }
 #undef INST
 

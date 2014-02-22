@@ -32,9 +32,6 @@
 #include "Tree.h"
 
 
-using namespace misc;
-
-
 namespace Common
 {
 
@@ -59,9 +56,9 @@ void TreeConfig::ProcessCommand(const std::string &s)
 {
 	/* Get list of tokens */
 	std::vector<std::string> tokens;
-	StringTokenize(s, tokens);
+	misc::StringTokenize(s, tokens);
 	if (!tokens.size())
-		fatal("%s: empty command", __FUNCTION__);
+		misc::fatal("%s: empty command", __FUNCTION__);
 	
 	/* Process command */
 	std::string command = tokens[0];
@@ -69,20 +66,20 @@ void TreeConfig::ProcessCommand(const std::string &s)
 	{
 		/* Syntax: LoadTree <file> <name> */
 		if (tokens.size() != 3)
-			fatal("%s: %s: invalid number of arguments",
+			misc::fatal("%s: %s: invalid number of arguments",
 					__FUNCTION__, command.c_str());
 		std::string file_name = tokens[1];
 		std::string tree_name = tokens[2];
 
 		/* Load control tree */
-		IniFile f(file_name);
+		misc::IniFile f(file_name);
 		tree_list.emplace_back(new Tree(f, tree_name));
 	}
 	else if (!strcasecmp(command.c_str(), "SaveTree"))
 	{
 		/* Syntax: SaveTree <file> <name> */
 		if (tokens.size() != 3)
-			fatal("%s: %s: invalid number of arguments",
+			misc::fatal("%s: %s: invalid number of arguments",
 					__FUNCTION__, command.c_str());
 		std::string file_name = tokens[1];
 		std::string tree_name = tokens[2];
@@ -90,11 +87,11 @@ void TreeConfig::ProcessCommand(const std::string &s)
 		/* Get control tree */
 		Tree *tree = GetTree(tree_name);
 		if (!tree)
-			fatal("%s: %s: invalid control tree",
+			misc::fatal("%s: %s: invalid control tree",
 					__FUNCTION__, tree_name.c_str());
 
 		/* Save control tree in INI file */
-		IniFile f;
+		misc::IniFile f;
 		tree->Write(f);
 		f.Save(file_name);
 	}
@@ -102,7 +99,7 @@ void TreeConfig::ProcessCommand(const std::string &s)
 	{
 		/* Syntax: RenameTree <tree> <name> */
 		if (tokens.size() != 3)
-			fatal("%s: %s: invalid number of arguments",
+			misc::fatal("%s: %s: invalid number of arguments",
 					__FUNCTION__, command.c_str());
 		std::string tree_name = tokens[1];
 		std::string tree_name2 = tokens[2];
@@ -110,7 +107,7 @@ void TreeConfig::ProcessCommand(const std::string &s)
 		/* Get control tree */
 		Tree *tree = GetTree(tree_name);
 		if (!tree)
-			fatal("%s: %s: invalid control tree",
+			misc::fatal("%s: %s: invalid control tree",
 					__FUNCTION__, tree_name.c_str());
 
 		/* Rename */
@@ -120,7 +117,7 @@ void TreeConfig::ProcessCommand(const std::string &s)
 	{
 		/* Syntax: CompareTree <tree1> <tree2> */
 		if (tokens.size() != 3)
-			fatal("%s: %s: invalid number of arguments",
+			misc::fatal("%s: %s: invalid number of arguments",
 					__FUNCTION__, command.c_str());
 		std::string tree_name1 = tokens[1];
 		std::string tree_name2 = tokens[2];
@@ -128,13 +125,13 @@ void TreeConfig::ProcessCommand(const std::string &s)
 		/* Get first control tree */
 		Tree *tree1 = GetTree(tree_name1);
 		if (!tree1)
-			fatal("%s: %s: invalid control tree",
+			misc::fatal("%s: %s: invalid control tree",
 					__FUNCTION__, tree_name1.c_str());
 
 		/* Get second control tree */
 		Tree *tree2 = GetTree(tree_name2);
 		if (!tree2)
-			fatal("%s: %s: invalid control tree",
+			misc::fatal("%s: %s: invalid control tree",
 					__FUNCTION__, tree_name2.c_str());
 
 		/* Compare them */
@@ -144,21 +141,21 @@ void TreeConfig::ProcessCommand(const std::string &s)
 	{
 		/* Syntax: StructuralAnalysis <tree> */
 		if (tokens.size() != 2)
-			fatal("%s: %s: invalid syntax",
+			misc::fatal("%s: %s: invalid syntax",
 					__FUNCTION__, command.c_str());
 		std::string tree_name = tokens[1];
 
 		/* Get control tree */
 		Tree *tree = GetTree(tree_name);
 		if (!tree)
-			fatal("%s: %s: invalid control tree",
+			misc::fatal("%s: %s: invalid control tree",
 					__FUNCTION__, tree_name.c_str());
 
 		/* Structural analysis */
 		tree->StructuralAnalysis();
 	}
 	else
-		fatal("%s: invalid command: %s", __FUNCTION__,
+		misc::fatal("%s: invalid command: %s", __FUNCTION__,
 				command.c_str());
 }
 
@@ -166,7 +163,7 @@ void TreeConfig::ProcessCommand(const std::string &s)
 void TreeConfig::SetPath(const std::string &path)
 {
 	this->path = path;
-	ini_file.reset(new IniFile(path));
+	ini_file.reset(new misc::IniFile(path));
 }
 
 
@@ -174,14 +171,14 @@ void TreeConfig::Run()
 {
 	/* INI file must have been loaded */
 	if (!ini_file.get())
-		panic("%s: INI file not loaded", __FUNCTION__);
+		misc::panic("%s: INI file not loaded", __FUNCTION__);
 
 	/* Process commands */
 	std::string section = "Commands";
 	for (int index = 0;; index++)
 	{
 		/* Read next command */
-		std::string var = StringFmt("Command[%d]", index);
+		std::string var = misc::fmt("Command[%d]", index);
 		std::string value = ini_file->ReadString(section, var);
 		if (value.empty())
 			break;
@@ -392,24 +389,24 @@ AbstractNode *Tree::Reduce(std::list<Node *> &list, AbstractNodeRegion region)
 
 	/* List of nodes must contain at least one node */
 	if (!list.size())
-		panic("%s: node list empty", __FUNCTION__);
+		misc::panic("%s: node list empty", __FUNCTION__);
 
 	/* All nodes in 'list' must be part of the control tree, and none
 	 * of them can have a parent yet. */
 	for (auto &tmp_node : list)
 	{
 		if (!tmp_node->InList(node_list))
-			panic("%s: node not in control tree",
+			misc::panic("%s: node not in control tree",
 					__FUNCTION__);
 		if (tmp_node->parent)
-			panic("%s: node has a parent already",
+			misc::panic("%s: node has a parent already",
 					__FUNCTION__);
 	}
 #endif
 
 	/* Figure out a name for the new abstract node */
 	assert(region);
-	std::string abs_node_name = StringFmt("__%s_%d",
+	std::string abs_node_name = misc::fmt("__%s_%d",
 			abstract_node_region_map.MapValue(region),
 			name_counter[region]);
 	name_counter[region]++;
@@ -800,7 +797,7 @@ Tree::Tree(const std::string &name)
 {
 	/* No anonymous */
 	if (name.empty())
-		panic("%s: no name given", __FUNCTION__);
+		misc::panic("%s: no name given", __FUNCTION__);
 
 	/* Initialize */
 	this->name = name;
@@ -837,7 +834,7 @@ void Tree::AddNode(Node *node)
 	/* Insert in hash table */
 	auto ret = node_table.insert(std::make_pair(node->name, node));
 	if (!ret.second)
-		fatal("%s: duplicate node name ('%s')",
+		misc::fatal("%s: duplicate node name ('%s')",
 				__FUNCTION__, node->name.c_str());
 
 	/* Record tree in node */
@@ -911,7 +908,7 @@ void Tree::PreorderTraversal(std::list<Node *> &list)
 {
 	/* A structural analysis must have been run first */
 	if (!structural_analysis_done)
-		panic("%s: %s: tree traversal requires structural analysis",
+		misc::panic("%s: %s: tree traversal requires structural analysis",
 				__FUNCTION__, name.c_str());
 
 	/* Traverse tree recursively */
@@ -932,7 +929,7 @@ void Tree::PostorderTraversal(std::list<Node *> &list)
 {
 	/* A structural analysis must have been run first */
 	if (!structural_analysis_done)
-		panic("%s: %s: tree traversal requires structural analysis",
+		misc::panic("%s: %s: tree traversal requires structural analysis",
 				__FUNCTION__, name.c_str());
 
 	/* Traverse tree recursively */
@@ -953,7 +950,7 @@ LeafNode *Tree::AddLlvmCFG(llvm::BasicBlock *llvm_basic_block)
 {
 	/* Empty name not allowed */
 	if (llvm_basic_block->getName().empty())
-		fatal("%s: anonymous LLVM basic blocks not allowed",
+		misc::fatal("%s: anonymous LLVM basic blocks not allowed",
 			__FUNCTION__);
 
 	/* If node already exists, just return it */
@@ -1001,7 +998,7 @@ LeafNode *Tree::AddLlvmCFG(llvm::BasicBlock *llvm_basic_block)
 		return node;
 
 	/* Invalid terminator */
-	fatal("%s: %s: block terminator not supported",
+	misc::fatal("%s: %s: block terminator not supported",
 		__FUNCTION__, terminator->getName().data());
 	return NULL;
 }
@@ -1033,17 +1030,17 @@ void Tree::GetNodeList(std::list<Node *> &list, const std::string &list_str)
 	{
 		Node *node = GetNode(token);
 		if (!node)
-			fatal("%s: invalid node name", token.c_str());
+			misc::fatal("%s: invalid node name", token.c_str());
 		list.push_back(node);
 	}
 }
 
 
-void Tree::Write(IniFile &f)
+void Tree::Write(misc::IniFile &f)
 {
 	/* Control tree must have entry node */
 	if (!entry_node)
-		fatal("%s: control tree without entry node", __FUNCTION__);
+		misc::fatal("%s: control tree without entry node", __FUNCTION__);
 
 	/* Dump control tree section */
 	std::string section = "Tree." + name;
@@ -1054,7 +1051,7 @@ void Tree::Write(IniFile &f)
 	{
 		section = "Tree." + name + ".Node." + node->name;
 		if (f.Exists(section))
-			fatal("%s: duplicate node name ('%s')", __FUNCTION__,
+			misc::fatal("%s: duplicate node name ('%s')", __FUNCTION__,
 					node->name.c_str());
 
 		/* Dump node properties */
@@ -1063,7 +1060,7 @@ void Tree::Write(IniFile &f)
 		else if (node->kind == NodeKindLeaf)
 			f.WriteString(section, "Kind", "Leaf");
 		else
-			fatal("%s: unknown type of node '%s'", __FUNCTION__,
+			misc::fatal("%s: unknown type of node '%s'", __FUNCTION__,
 					node->name.c_str());
 
 		/* Successors */
@@ -1092,7 +1089,7 @@ void Tree::Write(IniFile &f)
 }
 
 
-void Tree::Read(IniFile &f, const std::string &name)
+void Tree::Read(misc::IniFile &f, const std::string &name)
 {
 	/* Clear existing tree */
 	Clear();
@@ -1100,12 +1097,12 @@ void Tree::Read(IniFile &f, const std::string &name)
 	/* Set tree name */
 	this->name = name;
 	if (name.empty())
-		fatal("%s: empty name", __FUNCTION__);
+		misc::fatal("%s: empty name", __FUNCTION__);
 
 	/* Check that it exists in configuration file */
 	std::string section = "Tree." + name;
 	if (!f.Exists(section))
-		fatal("%s: %s: tree not found", __FUNCTION__, name.c_str());
+		misc::fatal("%s: %s: tree not found", __FUNCTION__, name.c_str());
 
 	/* Read nodes */
 	std::string path = f.GetPath();
@@ -1129,7 +1126,7 @@ void Tree::Read(IniFile &f, const std::string &name)
 		NodeKind kind = (NodeKind)
 				node_kind_map.MapStringCase(kind_str);
 		if (!kind)
-			fatal("%s: %s: invalid value for 'Kind'",
+			misc::fatal("%s: %s: invalid value for 'Kind'",
 					path.c_str(), section.c_str());
 
 		/* Create node */
@@ -1146,7 +1143,7 @@ void Tree::Read(IniFile &f, const std::string &name)
 					abstract_node_region_map.MapStringCase(
 					region_str);
 			if (!region)
-				fatal("%s: %s: invalid or missing 'Region'",
+				misc::fatal("%s: %s: invalid or missing 'Region'",
 						path.c_str(), node_name.c_str());
 
 			/* Create node */
@@ -1170,7 +1167,7 @@ void Tree::Read(IniFile &f, const std::string &name)
 		for (auto &tmp_node : list)
 		{
 			if (tmp_node->InList(node->succ_list))
-				fatal("%s.%s: duplicate successor", name.c_str(),
+				misc::fatal("%s.%s: duplicate successor", name.c_str(),
 						node->name.c_str());
 			node->Connect(tmp_node);
 		}
@@ -1186,7 +1183,7 @@ void Tree::Read(IniFile &f, const std::string &name)
 			{
 				tmp_node->parent = node.get();
 				if (tmp_node->InList(abs_node->child_list))
-					fatal("%s.%s: duplicate child", name.c_str(),
+					misc::fatal("%s.%s: duplicate child", name.c_str(),
 							node->name.c_str());
 				abs_node->child_list.push_back(tmp_node);
 			}
@@ -1197,10 +1194,10 @@ void Tree::Read(IniFile &f, const std::string &name)
 	section = "Tree." + name;
 	std::string node_name = f.ReadString(section, "Entry");
 	if (node_name.empty())
-		fatal("%s: %s: no entry node", __FUNCTION__, name.c_str());
+		misc::fatal("%s: %s: no entry node", __FUNCTION__, name.c_str());
 	entry_node = GetNode(node_name);
 	if (!entry_node)
-		fatal("%s: %s: invalid node name", __FUNCTION__,
+		misc::fatal("%s: %s: invalid node name", __FUNCTION__,
 				node_name.c_str());
 
 	/* Check configuration file syntax */
@@ -1214,20 +1211,20 @@ void Tree::Compare(Tree *tree2)
 	assert(entry_node);
 	assert(tree2->entry_node);
 	if (entry_node->name != tree2->entry_node->name)
-		fatal("'%s' vs '%s': entry nodes differ", name.c_str(),
+		misc::fatal("'%s' vs '%s': entry nodes differ", name.c_str(),
 				tree2->name.c_str());
 	
 	/* Check that all nodes in tree 1 are in tree 2 */
 	for (auto &node : node_list)
 		if (!tree2->GetNode(node->name))
-			fatal("node '%s.%s' not present in tree '%s'",
+			misc::fatal("node '%s.%s' not present in tree '%s'",
 				name.c_str(), node->name.c_str(),
 				tree2->name.c_str());
 
 	/* Check that all nodes in tree 2 are in tree 1 */
 	for (auto &node : tree2->node_list)
 		if (!GetNode(node->name))
-			fatal("node '%s.%s' not present in tree '%s'",
+			misc::fatal("node '%s.%s' not present in tree '%s'",
 				tree2->name.c_str(), node->name.c_str(),
 				name.c_str());
 

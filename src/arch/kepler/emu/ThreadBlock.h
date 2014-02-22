@@ -83,7 +83,7 @@ class ThreadBlock
 	bool finished_timing;
 
 	// Shared memory
-	Memory::Memory shared_mem;
+	mem::Memory shared_mem;
 
 public:
 

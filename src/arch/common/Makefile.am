@@ -14,6 +14,9 @@ libcommon_a_SOURCES = \
 	emu.c \
 	emu.h \
 	\
+	Emu.cc \
+	Emu.h \
+	\
 	runtime.c \
 	runtime.h \
 	\

@@ -31,13 +31,11 @@
 #include "Inst.h"
 
 
-using namespace misc;
-
 namespace Fermi
 {
 
 
-StringMap _1d_map =
+misc::StringMap _1d_map =
 {
 		{ ".1D", 0 },
 		{ ".2D", 1 },
@@ -45,7 +43,7 @@ StringMap _1d_map =
 		{ ".E2D", 3 }
 };
 
-StringMap addsub_map =
+misc::StringMap addsub_map =
 {
 		{ "ADD", 0 },
 		{ "SUB", 1 },
@@ -53,13 +51,13 @@ StringMap addsub_map =
 		{ "ADD", 3 }
 };
 
-StringMap aoffi_map =
+misc::StringMap aoffi_map =
 {
 		{ "", 0 },
 		{ ".AOFFI", 1 }
 };
 
-StringMap atomicsize_map =
+misc::StringMap atomicsize_map =
 {
 		{ ".U8", 0 },
 		{ ".S8", 1 },
@@ -79,7 +77,7 @@ StringMap atomicsize_map =
 		{ ".INVALIDATOMICSIZE15", 15 }
 };
 
-StringMap atomop_map =
+misc::StringMap atomop_map =
 {
 		{ ".ADD", 0 },
 		{ ".MIN", 1 },
@@ -99,13 +97,13 @@ StringMap atomop_map =
 		{ ".INVALIDATOMOP15", 15 },
 };
 
-StringMap b1_map =
+misc::StringMap b1_map =
 {
 		{ ".B", 0 },
 		{ ".P", 1 }
 };
 
-StringMap b4_map =
+misc::StringMap b4_map =
 {
 		{ ".B", 0 },
 		{ ".P", 1 },
@@ -125,7 +123,7 @@ StringMap b4_map =
 		{ ".P", 15 }
 };
 
-StringMap barmode_map =
+misc::StringMap barmode_map =
 {
 		{ ".POPC", 0 },
 		{ ".AND", 1 },
@@ -133,13 +131,13 @@ StringMap barmode_map =
 		{ ".INVALIDBARMOD3", 3 }
 };
 
-StringMap bf_map =
+misc::StringMap bf_map =
 {
 		{ "", 0 },
 		{ ".BF", 1 }
 };
 
-StringMap blod_map =
+misc::StringMap blod_map =
 {
 		{ "", 0 },
 		{ ".LZ", 1 },
@@ -151,7 +149,7 @@ StringMap blod_map =
 		{ ".LLA", 7 }
 };
 
-StringMap bop_map =
+misc::StringMap bop_map =
 {
 		{ ".AND", 0 },
 		{ ".OR", 1 },
@@ -159,13 +157,13 @@ StringMap bop_map =
 		{ ".PASS_B", 3 }
 };
 
-StringMap brev_map =
+misc::StringMap brev_map =
 {
 		{ "", 0 },
 		{ ".BREV", 1 }
 };
 
-StringMap btoff_map =
+misc::StringMap btoff_map =
 {
 		{ "", 0 },
 		{ ".AOFFI", 1 },
@@ -173,7 +171,7 @@ StringMap btoff_map =
 		{ ".INVALIDBTOFF03", 3 }
 };
 
-StringMap cachectrl_map =
+misc::StringMap cachectrl_map =
 {
 		{ "", 0 },
 		{ "", 1 },
@@ -209,7 +207,7 @@ StringMap cachectrl_map =
 		{ ".BV.CG", 31 }
 };
 
-StringMap cctlop_map =
+misc::StringMap cctlop_map =
 {
 		{ ".QRY1", 0 },
 		{ ".PF1", 1 },
@@ -245,13 +243,13 @@ StringMap cctlop_map =
 		{ ".INVALIDCCTLOP31", 31 }
 };
 
-StringMap cl_map =
+misc::StringMap cl_map =
 {
 		{ "", 0 },
 		{ ".CL", 1 }
 };
 
-StringMap cop3_map =
+misc::StringMap cop3_map =
 {
 		{ ".F", 0 },
 		{ ".LT", 1 },
@@ -263,7 +261,7 @@ StringMap cop3_map =
 		{ ".T", 7 }
 };
 
-StringMap cop4_map =
+misc::StringMap cop4_map =
 {
 		{ ".F", 0 },
 		{ ".LT", 1 },
@@ -282,7 +280,7 @@ StringMap cop4_map =
 		{ ".T", 15 }
 };
 
-StringMap cop_map =
+misc::StringMap cop_map =
 {
 		{ ".F", 0 },
 		{ ".LT", 1 },
@@ -318,13 +316,13 @@ StringMap cop_map =
 		{ ".RGT", 31 }
 };
 
-StringMap dc_map =
+misc::StringMap dc_map =
 {
 		{ "", 0 },
 		{ ".DC", 1 }
 };
 
-StringMap drain_map =
+misc::StringMap drain_map =
 {
 		{ ".DRAIN", 0 },
 		{ ".CAL", 1 },
@@ -332,19 +330,19 @@ StringMap drain_map =
 		{ ".TRAP", 3 }
 };
 
-StringMap e_map =
+misc::StringMap e_map =
 {
 		{ "", 0 },
 		{ ".E", 1 }
 };
 
-StringMap eu_map =
+misc::StringMap eu_map =
 {
 		{ "", 0 },
 		{ ".EU", 1 }
 };
 
-StringMap fma_map =
+misc::StringMap fma_map =
 {
 		{ "", 0 },
 		{ ".FMA", 1 },
@@ -352,7 +350,7 @@ StringMap fma_map =
 		{ ".INVALID", 3 }
 };
 
-StringMap fmz_map =
+misc::StringMap fmz_map =
 {
 		{ "", 0 },
 		{ ".FTZ", 1 },
@@ -360,7 +358,7 @@ StringMap fmz_map =
 		{ ".INVALIDFMZ3", 3 }
 };
 
-StringMap fpdest_map =
+misc::StringMap fpdest_map =
 {
 		{ ".INVALIDFPDEST0", 0 },
 		{ ".F16", 1 },
@@ -368,7 +366,7 @@ StringMap fpdest_map =
 		{ ".F64", 3 }
 };
 
-StringMap fpsrc_map =
+misc::StringMap fpsrc_map =
 {
 		{ ".INVALIDFPSRC0", 0 },
 		{ ".F16", 1 },
@@ -376,7 +374,7 @@ StringMap fpsrc_map =
 		{ ".F64", 3 }
 };
 
-StringMap frnd2_map =
+misc::StringMap frnd2_map =
 {
 		{ "", 0 },
 		{ ".FLOOR", 1 },
@@ -384,7 +382,7 @@ StringMap frnd2_map =
 		{ ".TRUNC", 3 }
 };
 
-StringMap frnd3_map =
+misc::StringMap frnd3_map =
 {
 		{ "", 0 },
 		{ ".PASS", 1 },
@@ -396,13 +394,13 @@ StringMap frnd3_map =
 		{ ".TRUNC", 7 }
 };
 
-StringMap ftz_map =
+misc::StringMap ftz_map =
 {
 		{ "", 0 },
 		{ ".FTZ", 1 }
 };
 
-StringMap geom_map =
+misc::StringMap geom_map =
 {
 		{ "1D", 0 },
 		{ "ARRAY_1D", 1 },
@@ -414,25 +412,25 @@ StringMap geom_map =
 		{ "ARRAY_CUBE", 7 }
 };
 
-StringMap h1_map =
+misc::StringMap h1_map =
 {
 		{ "", 0 },
 		{ ".H1", 1 }
 };
 
-StringMap hi_map =
+misc::StringMap hi_map =
 {
 		{ "", 0 },
 		{ ".HI", 1 }
 };
 
-StringMap i_map =
+misc::StringMap i_map =
 {
 		{ "", 0 },
 		{ ".I", 1 }
 };
 
-StringMap idest_map =
+misc::StringMap idest_map =
 {
 		{ ".U8", 0 },
 		{ ".U16", 1 },
@@ -444,7 +442,7 @@ StringMap idest_map =
 		{ ".S64", 7 }
 };
 
-StringMap il_map =
+misc::StringMap il_map =
 {
 		{ "", 0 },
 		{ ".IL", 1 },
@@ -452,7 +450,7 @@ StringMap il_map =
 		{ ".ISL", 3 }
 };
 
-StringMap irnd_map =
+misc::StringMap irnd_map =
 {
 		{ "", 0 },
 		{ ".RM", 1 },
@@ -460,7 +458,7 @@ StringMap irnd_map =
 		{ ".RZ", 3 }
 };
 
-StringMap isrc_map =
+misc::StringMap isrc_map =
 {
 		{ ".U8", 0 },
 		{ ".U16", 1 },
@@ -472,7 +470,7 @@ StringMap isrc_map =
 		{ ".S64", 7 }
 };
 
-StringMap ldcachectrl_map =
+misc::StringMap ldcachectrl_map =
 {
 		{ ".CA", 0 },
 		{ "", 1 },
@@ -480,7 +478,7 @@ StringMap ldcachectrl_map =
 		{ ".CV", 3 }
 };
 
-StringMap ldlcachectrl_map =
+misc::StringMap ldlcachectrl_map =
 {
 		{ "", 0 },
 		{ ".CG", 1 },
@@ -488,25 +486,25 @@ StringMap ldlcachectrl_map =
 		{ ".CV", 3 }
 };
 
-StringMap lmt_map =
+misc::StringMap lmt_map =
 {
 		{ "", 0 },
 		{ ".LMT", 1 }
 };
 
-StringMap ls_map =
+misc::StringMap ls_map =
 {
 		{ "L", 0 },
 		{ "S", 1 }
 };
 
-StringMap lz_map =
+misc::StringMap lz_map =
 {
 		{ ".LZ", 0 },
 		{ ".LL", 1 }
 };
 
-StringMap membar_map =
+misc::StringMap membar_map =
 {
 		{ ".CTA", 0 },
 		{ ".GL", 1 },
@@ -514,7 +512,7 @@ StringMap membar_map =
 		{ ".INVALIDMEMBAR3", 3 }
 };
 
-StringMap mode_map =
+misc::StringMap mode_map =
 {
 		{ "0", 0 },
 		{ "TEX_HEADER_TEXTURE_TYPE", 1 },
@@ -550,13 +548,13 @@ StringMap mode_map =
 		{ "31", 31 }
 };
 
-StringMap ms_map =
+misc::StringMap ms_map =
 {
 		{ "", 0 },
 		{ ".MS", 1 }
 };
 
-StringMap mufuopcode_map =
+misc::StringMap mufuopcode_map =
 {
 		{ ".COS", 0 },
 		{ ".SIN", 1 },
@@ -576,25 +574,25 @@ StringMap mufuopcode_map =
 		{ ".INVALIDMUFUOPCODEF", 15 }
 };
 
-StringMap ndv_map =
+misc::StringMap ndv_map =
 {
 		{ "", 0 },
 		{ ".NDV", 1 }
 };
 
-StringMap nodep_map =
+misc::StringMap nodep_map =
 {
 		{ "", 0 },
 		{ ".NODEP", 1 }
 };
 
-StringMap noinc_map =
+misc::StringMap noinc_map =
 {
 		{ ".NOINC", 0 },
 		{ "", 1 }
 };
 
-StringMap op_map =
+misc::StringMap op_map =
 {
 		{ "", 0 },
 		{ ".FMA64", 1 },
@@ -614,7 +612,7 @@ StringMap op_map =
 		{ ".INVALID0F", 15 }
 };
 
-StringMap phase_map =
+misc::StringMap phase_map =
 {
 		{ "", 0 },
 		{ ".T", 1 },
@@ -622,7 +620,7 @@ StringMap phase_map =
 		{ ".INVALIDPHASE3", 3 }
 };
 
-StringMap pmode_map =
+misc::StringMap pmode_map =
 {
 		{ "", 0 },
 		{ ".F4E", 1 },
@@ -642,7 +640,7 @@ StringMap pmode_map =
 		{ ".???15", 15 }
 };
 
-StringMap po_map =
+misc::StringMap po_map =
 {
 		{ "", 0 },
 		{ "", 1 },
@@ -650,7 +648,7 @@ StringMap po_map =
 		{ ".PO", 3 }
 };
 
-StringMap r2_map =
+misc::StringMap r2_map =
 {
 		{ ".R", 0 },
 		{ ".G", 1 },
@@ -658,7 +656,7 @@ StringMap r2_map =
 		{ ".A", 3 }
 };
 
-StringMap r4_map =
+misc::StringMap r4_map =
 {
 		{ "", 0 },
 		{ ".R", 1 },
@@ -678,7 +676,7 @@ StringMap r4_map =
 		{ "", 15 }
 };
 
-StringMap redop_map =
+misc::StringMap redop_map =
 {
 		{ ".ADD", 0 },
 		{ ".MIN", 1 },
@@ -698,7 +696,7 @@ StringMap redop_map =
 		{ ".INVALIDREDOP15", 15 }
 };
 
-StringMap rf2_map =
+misc::StringMap rf2_map =
 {
 		{ "", 0 },
 		{ ".INVALIDRF1", 1 },
@@ -706,7 +704,7 @@ StringMap rf2_map =
 		{ ".INVALIDRF3", 3 }
 };
 
-StringMap rf3_map =
+misc::StringMap rf3_map =
 {
 		{ "", 0 },
 		{ ".INVALIDRF1", 1 },
@@ -718,7 +716,7 @@ StringMap rf3_map =
 		{ ".INVALIDRF7", 7 }
 };
 
-StringMap rnd_map =
+misc::StringMap rnd_map =
 {
 		{ "", 0 },
 		{ ".RM", 1 },
@@ -726,25 +724,25 @@ StringMap rnd_map =
 		{ ".RZ", 3 }
 };
 
-StringMap rroop_map =
+misc::StringMap rroop_map =
 {
 		{ ".SINCOS", 0 },
 		{ ".EX2", 1 }
 };
 
-StringMap s_map =
+misc::StringMap s_map =
 {
 		{ "", 0 },
 		{ ".S", 1 }
 };
 
-StringMap sat_map =
+misc::StringMap sat_map =
 {
 		{ "", 0 },
 		{ ".SAT", 1 }
 };
 
-StringMap scale3_map =
+misc::StringMap scale3_map =
 {
 		{ "", 0 },
 		{ ".D2", 1 },
@@ -756,13 +754,13 @@ StringMap scale3_map =
 		{ ".INVALIDSCALE37", 7 }
 };
 
-StringMap sh_map =
+misc::StringMap sh_map =
 {
 		{ "", 0 },
 		{ ".SH", 1 }
 };
 
-StringMap shrxmode_map =
+misc::StringMap shrxmode_map =
 {
 		{ "", 0 },
 		{ ".INVALIDSHRXMODE1", 1 },
@@ -770,7 +768,7 @@ StringMap shrxmode_map =
 		{ ".XHI", 3 }
 };
 
-StringMap size3_map =
+misc::StringMap size3_map =
 {
 		{ ".U8", 0 },
 		{ ".S8", 1 },
@@ -781,7 +779,7 @@ StringMap size3_map =
 		{ ".128", 6 }
 };
 
-StringMap size5_map =
+misc::StringMap size5_map =
 {
 		{ ".U8.U8", 0 },
 		{ ".S8.S8", 1 },
@@ -817,7 +815,7 @@ StringMap size5_map =
 		{ ".128.64", 31 },
 };
 
-StringMap stcachectrl_map =
+misc::StringMap stcachectrl_map =
 {
 		{ "", 0 },
 		{ ".CG", 1 },
@@ -825,7 +823,7 @@ StringMap stcachectrl_map =
 		{ ".WT", 3 }
 };
 
-StringMap sucachectrl_map =
+misc::StringMap sucachectrl_map =
 {
 		{ ".WB", 0 },
 		{ "", 1 },
@@ -833,7 +831,7 @@ StringMap sucachectrl_map =
 		{ ".WT", 3 }
 };
 
-StringMap suqop_map =
+misc::StringMap suqop_map =
 {
 		{ ".RANK", 0 },
 		{ ".PIXFMT", 1 },
@@ -869,7 +867,7 @@ StringMap suqop_map =
 		{ ".INVALIDSUQOP31", 31 },
 };
 
-StringMap suredop_map =
+misc::StringMap suredop_map =
 {
 		{ ".ADD", 0 },
 		{ ".MIN", 1 },
@@ -889,14 +887,14 @@ StringMap suredop_map =
 		{ ".INVALIDSUREDOP15", 15 }
 };
 
-StringMap surfaceclamp_map =
+misc::StringMap surfaceclamp_map =
 {
 		{ "", 1 },
 		{ ".TRAP", 2 },
 		{ ".INVALIDSURFACECLAMP3", 3 }
 };
 
-StringMap swizzlemode_map =
+misc::StringMap swizzlemode_map =
 {
 		{ ".0000", 0 },
 		{ ".1111", 1 },
@@ -908,13 +906,13 @@ StringMap swizzlemode_map =
 		{ ".INVALIDSWIZZLEMODE7", 7 }
 };
 
-StringMap trig_map =
+misc::StringMap trig_map =
 {
 		{ "", 0 },
 		{ ".TRIG", 1 }
 };
 
-StringMap type_map =
+misc::StringMap type_map =
 {
 		{ ".U32.U32", 0 },
 		{ ".U32.S32", 1 },
@@ -922,7 +920,7 @@ StringMap type_map =
 		{ "", 3 }
 };
 
-StringMap u_map =
+misc::StringMap u_map =
 {
 		{ "", 0 },
 		{ ".U", 1 },
@@ -930,13 +928,13 @@ StringMap u_map =
 		{ ".I", 3 },
 };
 
-StringMap u32_map =
+misc::StringMap u32_map =
 {
 		{ ".U32", 0 },
 		{ "", 1 }
 };
 
-StringMap vmode_map =
+misc::StringMap vmode_map =
 {
 		{ ".ALL", 0 },
 		{ ".ANY", 1 },
@@ -948,19 +946,19 @@ StringMap vmode_map =
 		{ ".VTG.RA", 7 }
 };
 
-StringMap w_map =
+misc::StringMap w_map =
 {
 		{ "", 0 },
 		{ ".W", 1 }
 };
 
-StringMap x_map =
+misc::StringMap x_map =
 {
 		{ "", 0 },
 		{ ".X", 1 }
 };
 
-StringMap xlo_map =
+misc::StringMap xlo_map =
 {
 		{ "", 0 },
 		{ ".XLO", 1 },
@@ -968,7 +966,7 @@ StringMap xlo_map =
 		{ ".XHI", 3 }
 };
 
-StringMap xlu_map =
+misc::StringMap xlu_map =
 {
 		{ "", 0 },
 		{ ".XLU", 1 },
@@ -977,13 +975,13 @@ StringMap xlu_map =
 };
 
 // operand modifiers
-StringMap cc_map =
+misc::StringMap cc_map =
 {
 		{ "", 0 },
 		{ ".CC", 1 }
 };
 
-StringMap cccop_map =
+misc::StringMap cccop_map =
 {
 		{ "CC.F", 0 },
 		{ "CC.LT", 1 },
@@ -1079,7 +1077,7 @@ enum
 	SR_CLOCKHI = 81
 };
 
-StringMap ssrc_map =
+misc::StringMap ssrc_map =
 {
 		{ "SR_LANEID", SR_LANEID },
 		{ "SR_CLOCK", SR_CLOCK },
@@ -1174,7 +1172,7 @@ Inst::Inst(Asm *as)
 
 void Inst::DumpPC(std::ostream &os)
 {
-	os << StringFmt("/*%04x*/", addr);
+	os << misc::fmt("/*%04x*/", addr);
 }
 
 
@@ -1208,7 +1206,7 @@ void Inst::DumpToBufWithFmtReg(void)
 		// Character is a token
 		++fmt_str;
 
-		if (Common::Asm::IsToken(fmt_str, "pred", len))
+		if (Common::Asm::isToken(fmt_str, "pred", len))
 		{
 			unsigned pred;
 			pred = fmt.pred;
@@ -1219,19 +1217,19 @@ void Inst::DumpToBufWithFmtReg(void)
 			else
 				ss << "       ";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "addsub", len))
+		else if (Common::Asm::isToken(fmt_str, "addsub", len))
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 4) & 0x3;
 			ss << addsub_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "bf", len))
+		else if (Common::Asm::isToken(fmt_str, "bf", len))
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 1) & 0x1;
 			ss << bf_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "bop", len))
+		else if (Common::Asm::isToken(fmt_str, "bop", len))
 		{
 			unsigned v;
 			if (info->op == InstOpLOP)
@@ -1240,19 +1238,19 @@ void Inst::DumpToBufWithFmtReg(void)
 				v = (fmt.fmod1_srco >> 4) & 0x3;
 			ss << bop_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "brev", len))
+		else if (Common::Asm::isToken(fmt_str, "brev", len))
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 4) & 0x1;
 			ss << brev_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "cop3", len))
+		else if (Common::Asm::isToken(fmt_str, "cop3", len))
 		{
 			unsigned v;
 			v = (fmt.fmod1_srco >> 6) & 0x7;
 			ss << cop3_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "cop4", len))
+		else if (Common::Asm::isToken(fmt_str, "cop4", len))
 		{
 			unsigned v;
 			v = (fmt.fmod1_srco >> 6) & 0xf;
@@ -1264,7 +1262,7 @@ void Inst::DumpToBufWithFmtReg(void)
 					ss << ".GT";
 			}
 		}
-		else if (Common::Asm::IsToken(fmt_str, "fma", len))
+		else if (Common::Asm::isToken(fmt_str, "fma", len))
 		{
 			unsigned v;
 			if (info->op == InstOpFADD || info->op == InstOpFFMA)
@@ -1273,13 +1271,13 @@ void Inst::DumpToBufWithFmtReg(void)
 				v = (fmt.fmod0 >> 4) & 0x3;
 			ss << fma_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "fmz", len))
+		else if (Common::Asm::isToken(fmt_str, "fmz", len))
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 2) & 0x3;
 			ss << fmz_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "ftz", len))
+		else if (Common::Asm::isToken(fmt_str, "ftz", len))
 		{
 			unsigned v;
 			if (info->op == InstOpFSETP)
@@ -1288,25 +1286,25 @@ void Inst::DumpToBufWithFmtReg(void)
 				v = (fmt.fmod0 >> 1) & 0x1;
 			ss << ftz_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "hi", len))
+		else if (Common::Asm::isToken(fmt_str, "hi", len))
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 2) & 0x1;
 			ss << hi_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "mufuopcode", len))
+		else if (Common::Asm::isToken(fmt_str, "mufuopcode", len))
 		{
 			unsigned v;
 			v = fmt.src2 & 0xf;
 			ss << mufuopcode_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "ndv", len))
+		else if (Common::Asm::isToken(fmt_str, "ndv", len))
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 5) & 0x1;
 			ss << ndv_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "po", len))
+		else if (Common::Asm::isToken(fmt_str, "po", len))
 		{
 			unsigned v;
 			if (info->op == InstOpISCADD)
@@ -1315,19 +1313,19 @@ void Inst::DumpToBufWithFmtReg(void)
 				v = (fmt.fmod0 >> 4) & 0x3;
 			ss << po_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "rnd", len))
+		else if (Common::Asm::isToken(fmt_str, "rnd", len))
 		{
 			unsigned v;
 			v = (fmt.fmod1_srco >> 6) & 0x3;
 			ss << rnd_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "rroop", len))
+		else if (Common::Asm::isToken(fmt_str, "rroop", len))
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 1) & 0x1;
 			ss << rroop_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "sat", len))
+		else if (Common::Asm::isToken(fmt_str, "sat", len))
 		{
 			unsigned v;
 			if (info->op == InstOpFADD)
@@ -1338,61 +1336,61 @@ void Inst::DumpToBufWithFmtReg(void)
 				v = (fmt.fmod0 >> 1) & 0x1;
 			ss << sat_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "scale3", len))
+		else if (Common::Asm::isToken(fmt_str, "scale3", len))
 		{
 			unsigned v;
 			v = fmt.fmod1_srco & 0x7;
 			ss << scale3_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "shrxmode", len))
+		else if (Common::Asm::isToken(fmt_str, "shrxmode", len))
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 2) & 0x3;
 			ss << shrxmode_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "sh", len))
+		else if (Common::Asm::isToken(fmt_str, "sh", len))
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 2) & 0x1;
 			ss << sh_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "swizzlemode", len))
+		else if (Common::Asm::isToken(fmt_str, "swizzlemode", len))
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 2) & 0x7;
 			ss << swizzlemode_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "s", len))
+		else if (Common::Asm::isToken(fmt_str, "s", len))
 		{
 			unsigned v;
 			v = fmt.fmod0 & 0x1;
 			ss << s_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "type", len))
+		else if (Common::Asm::isToken(fmt_str, "type", len))
 		{
 			unsigned v;
 			v = (((fmt.fmod0 >> 3) & 0x1) << 1) | ((fmt.fmod0 >> 1) & 0x1);
 			ss << type_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "u32", len))
+		else if (Common::Asm::isToken(fmt_str, "u32", len))
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 1) & 0x1;
 			ss << u32_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "w", len))
+		else if (Common::Asm::isToken(fmt_str, "w", len))
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 5) & 0x1;
 			ss << w_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "xlo", len))
+		else if (Common::Asm::isToken(fmt_str, "xlo", len))
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 2) & 0x3;
 			ss << xlo_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "xlu", len))
+		else if (Common::Asm::isToken(fmt_str, "xlu", len))
 		{
 			unsigned v;
 			if (info->op == InstOpISETP)
@@ -1401,7 +1399,7 @@ void Inst::DumpToBufWithFmtReg(void)
 				v = (fmt.fmod1_srco >> 6) & 0x3;
 			ss << xlu_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "x", len))
+		else if (Common::Asm::isToken(fmt_str, "x", len))
 		{
 			unsigned v;
 			if (info->op == InstOpLOP)
@@ -1412,7 +1410,7 @@ void Inst::DumpToBufWithFmtReg(void)
 				v = (fmt.fmod0 >> 2) & 0x1;
 			ss << x_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "dst", len))
+		else if (Common::Asm::isToken(fmt_str, "dst", len))
 		{
 			unsigned dst;
 			dst = fmt.dst;
@@ -1422,13 +1420,13 @@ void Inst::DumpToBufWithFmtReg(void)
 			else
 				ss << "Z";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "cc", len))
+		else if (Common::Asm::isToken(fmt_str, "cc", len))
 		{
 			unsigned v;
 			v = fmt.dmod & 0x1;
 			ss << cc_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "pdst1", len))
+		else if (Common::Asm::isToken(fmt_str, "pdst1", len))
 		{
 			unsigned p;
 			p = (fmt.dst >> 3) & 0x7;
@@ -1438,7 +1436,7 @@ void Inst::DumpToBufWithFmtReg(void)
 			else
 				ss << "T";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "pdst2", len))
+		else if (Common::Asm::isToken(fmt_str, "pdst2", len))
 		{
 			unsigned p;
 			p = fmt.dst & 0x7;
@@ -1448,7 +1446,7 @@ void Inst::DumpToBufWithFmtReg(void)
 			else
 				ss << "T";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "src1src2", len))
+		else if (Common::Asm::isToken(fmt_str, "src1src2", len))
 		{
 			unsigned src1;
 			union {unsigned i; float f;} src2;
@@ -1474,7 +1472,7 @@ void Inst::DumpToBufWithFmtReg(void)
 				{
 					unsigned bank = ((src2.i & 0x1) << 4) | (src2.i >> 16);
 					int offset = src2.i & 0xfffe;
-					ss << StringFmt("c[0x%x][0x%x]", bank, offset);
+					ss << misc::fmt("c[0x%x][0x%x]", bank, offset);
 				}
 				else if (s2mode == 3)
 				{
@@ -1483,17 +1481,17 @@ void Inst::DumpToBufWithFmtReg(void)
 					{
 						src2.i = fmt.src2 << 12;
 						if (std::abs(src2.f) < 1e-4 || std::abs(src2.f) > 1e9)
-							ss << StringFmt("%.20e", src2.f);
+							ss << misc::fmt("%.20e", src2.f);
 						else
-							ss << StringFmt("%.20g", src2.f);
+							ss << misc::fmt("%.20g", src2.f);
 					}
 					else if (cat == InstCategoryInt)
 					{
 						src2.i = fmt.src2;
 						if (src2.i >> 19 == 0)  // positive value
-							ss << StringFmt("0x%x", src2.i);
+							ss << misc::fmt("0x%x", src2.i);
 						else  // negative value
-							ss << StringFmt("-0x%x", 0x100000 - src2.i);
+							ss << misc::fmt("-0x%x", 0x100000 - src2.i);
 					}
 				}
 				ss << ", R";
@@ -1522,7 +1520,7 @@ void Inst::DumpToBufWithFmtReg(void)
 				{
 					unsigned bank = ((src2.i & 0x1) << 4) | (src2.i >> 16);
 					int offset = src2.i & 0xfffe;
-					ss << StringFmt("c[0x%x][0x%x]", bank, offset);
+					ss << misc::fmt("c[0x%x][0x%x]", bank, offset);
 				}
 				else if (s2mode == 3)
 				{
@@ -1531,22 +1529,22 @@ void Inst::DumpToBufWithFmtReg(void)
 					{
 						src2.i = fmt.src2 << 12;
 						if (std::abs(src2.f) < 1e-4 || std::abs(src2.f) > 1e9)
-							ss << StringFmt("%.20e", src2.f);
+							ss << misc::fmt("%.20e", src2.f);
 						else
-							ss << StringFmt("%.20g", src2.f);
+							ss << misc::fmt("%.20g", src2.f);
 					}
 					else if (cat == InstCategoryInt)
 					{
 						src2.i = fmt.src2;
 						if (src2.i >> 19 == 0)  // positive value
-							ss << StringFmt("0x%x", src2.i);
+							ss << misc::fmt("0x%x", src2.i);
 						else  // negative value
-							ss << StringFmt("-0x%x", 0x100000 - src2.i);
+							ss << misc::fmt("-0x%x", 0x100000 - src2.i);
 					}
 				}
 			}
 		}
-		else if (Common::Asm::IsToken(fmt_str, "src1", len))
+		else if (Common::Asm::isToken(fmt_str, "src1", len))
 		{
 			unsigned src;
 			src = fmt.src1;
@@ -1556,7 +1554,7 @@ void Inst::DumpToBufWithFmtReg(void)
 			else
 				ss << "Z";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "isrc1", len))
+		else if (Common::Asm::isToken(fmt_str, "isrc1", len))
 		{
 			unsigned src;
 			unsigned i;
@@ -1570,7 +1568,7 @@ void Inst::DumpToBufWithFmtReg(void)
 			else
 				ss << "Z";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "n1src1", len))
+		else if (Common::Asm::isToken(fmt_str, "n1src1", len))
 		{
 			unsigned src;
 			unsigned n;
@@ -1587,7 +1585,7 @@ void Inst::DumpToBufWithFmtReg(void)
 			else
 				ss << "Z";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "n2src1", len))
+		else if (Common::Asm::isToken(fmt_str, "n2src1", len))
 		{
 			unsigned src;
 			unsigned n;
@@ -1604,7 +1602,7 @@ void Inst::DumpToBufWithFmtReg(void)
 			else
 				ss << "Z";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "nasrc1", len))
+		else if (Common::Asm::isToken(fmt_str, "nasrc1", len))
 		{
 			unsigned src;
 			unsigned n;
@@ -1624,7 +1622,7 @@ void Inst::DumpToBufWithFmtReg(void)
 			if (a == 1)
 				ss << "|";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "src2n1src3", len))
+		else if (Common::Asm::isToken(fmt_str, "src2n1src3", len))
 		{
 			union {unsigned i; float f;} src2;
 			unsigned mode;
@@ -1656,7 +1654,7 @@ void Inst::DumpToBufWithFmtReg(void)
 			{
 				unsigned bank = ((src2.i & 0x1) << 4) | (src2.i >> 16);
 				int offset = src2.i & 0xfffe;
-				ss << StringFmt("c[0x%x][0x%x]", bank, offset);
+				ss << misc::fmt("c[0x%x][0x%x]", bank, offset);
 				ss << ", ";
 				ss << std::dec;
 				if (n == 1)
@@ -1679,7 +1677,7 @@ void Inst::DumpToBufWithFmtReg(void)
 				else
 					ss << "Z";
 				ss << ", ";
-				ss << StringFmt("c[0x%x][0x%x]", bank, offset);
+				ss << misc::fmt("c[0x%x][0x%x]", bank, offset);
 			}
 			else if (mode == 3)
 			{
@@ -1688,19 +1686,19 @@ void Inst::DumpToBufWithFmtReg(void)
 				{
 					src2.i = fmt.src2 << 12;
 					if (std::abs(src2.f) < 1e-4)
-						ss << StringFmt("%.19e", src2.f);
+						ss << misc::fmt("%.19e", src2.f);
 					else if (std::abs(src2.f) > 1e9)
-						ss << StringFmt("%.20e", src2.f);
+						ss << misc::fmt("%.20e", src2.f);
 					else
-						ss << StringFmt("%.20g", src2.f);
+						ss << misc::fmt("%.20g", src2.f);
 				}
 				else if (cat == InstCategoryInt)
 				{
 					src2.i = fmt.src2;
 					if (src2.i >> 19 == 0)  // positive value
-						ss << StringFmt("0x%x", src2.i);
+						ss << misc::fmt("0x%x", src2.i);
 					else  // negative value
-						ss << StringFmt("-0x%x", 0x100000 - src2.i);
+						ss << misc::fmt("-0x%x", 0x100000 - src2.i);
 				}
 				ss << ", ";
 				if (n == 1)
@@ -1712,7 +1710,7 @@ void Inst::DumpToBufWithFmtReg(void)
 					ss << "Z";
 			}
 		}
-		else if (Common::Asm::IsToken(fmt_str, "src2n2src3", len))
+		else if (Common::Asm::isToken(fmt_str, "src2n2src3", len))
 		{
 			union {unsigned i; float f;} src2;
 			unsigned mode;
@@ -1744,7 +1742,7 @@ void Inst::DumpToBufWithFmtReg(void)
 			{
 				unsigned bank = ((src2.i & 0x1) << 4) | (src2.i >> 16);
 				int offset = src2.i & 0xfffe;
-				ss << StringFmt("c[0x%x][0x%x]", bank, offset);
+				ss << misc::fmt("c[0x%x][0x%x]", bank, offset);
 				ss << ", ";
 				ss << std::dec;
 				if (n == 1)
@@ -1767,7 +1765,7 @@ void Inst::DumpToBufWithFmtReg(void)
 				else
 					ss << "Z";
 				ss << ", ";
-				ss << StringFmt("c[0x%x][0x%x]", bank, offset);
+				ss << misc::fmt("c[0x%x][0x%x]", bank, offset);
 			}
 			else if (mode == 3)
 			{
@@ -1776,17 +1774,17 @@ void Inst::DumpToBufWithFmtReg(void)
 				{
 					src2.i = fmt.src2 << 12;
 					if (std::abs(src2.f) < 1e-4 || std::abs(src2.f) > 1e9)
-						ss << StringFmt("%.20e", src2.f);
+						ss << misc::fmt("%.20e", src2.f);
 					else
-						ss << StringFmt("%.20g", src2.f);
+						ss << misc::fmt("%.20g", src2.f);
 				}
 				else if (cat == InstCategoryInt)
 				{
 					src2.i = fmt.src2;
 					if (src2.i >> 19 == 0)  // positive value
-						ss << StringFmt("0x%x", src2.i);
+						ss << misc::fmt("0x%x", src2.i);
 					else  // negative value
-						ss << StringFmt("-0x%x", 0x100000 - src2.i);
+						ss << misc::fmt("-0x%x", 0x100000 - src2.i);
 				}
 				ss << ", ";
 				if (n == 1)
@@ -1798,7 +1796,7 @@ void Inst::DumpToBufWithFmtReg(void)
 					ss << "Z";
 			}
 		}
-		else if (Common::Asm::IsToken(fmt_str, "src2", len))
+		else if (Common::Asm::isToken(fmt_str, "src2", len))
 		{
 			union {unsigned i; float f; unsigned long long l; double d;} src;
 			unsigned mode;
@@ -1818,7 +1816,7 @@ void Inst::DumpToBufWithFmtReg(void)
 			{
 				unsigned bank = ((src.i & 0x1) << 4) | (src.i >> 16);
 				int offset = src.i & 0xfffe;
-				ss << StringFmt("c[0x%x][0x%x]", bank, offset);
+				ss << misc::fmt("c[0x%x][0x%x]", bank, offset);
 			}
 			else if (mode == 3)
 			{
@@ -1829,34 +1827,34 @@ void Inst::DumpToBufWithFmtReg(void)
 					if ((std::abs(src.f) < 1e-4) || (std::abs(src.f) > 1e9))
 					{
 						if (info->op == InstOpFMUL)
-							ss << StringFmt("%.19e", src.f);
+							ss << misc::fmt("%.19e", src.f);
 						else
-							ss << StringFmt("%.20e", src.f);
+							ss << misc::fmt("%.20e", src.f);
 					}
 					else
-						ss << StringFmt("%.20g", src.f);
+						ss << misc::fmt("%.20g", src.f);
 				}
 				else if (cat == InstCategoryDpFp)
 				{
 					src.l = (unsigned long long)fmt.src2 << 44;
 					if (std::abs(src.d) < 1e-4)
-						ss << StringFmt("%.11e", src.d);
+						ss << misc::fmt("%.11e", src.d);
 					else if (std::abs(src.d) > 1e9)
-						ss << StringFmt("%.20e", src.d);
+						ss << misc::fmt("%.20e", src.d);
 					else
-						ss << StringFmt("%.11g", src.d);
+						ss << misc::fmt("%.11g", src.d);
 				}
 				else if (cat == InstCategoryInt)
 				{
 					src.i = fmt.src2;
 					if (src.i >> 19 == 0)  // positive value
-						ss << StringFmt("0x%x", src.i);
+						ss << misc::fmt("0x%x", src.i);
 					else  // negative value
-						ss << StringFmt("-0x%x", 0x100000 - src.i);
+						ss << misc::fmt("-0x%x", 0x100000 - src.i);
 				}
 			}
 		}
-		else if (Common::Asm::IsToken(fmt_str, "isrc2", len))
+		else if (Common::Asm::isToken(fmt_str, "isrc2", len))
 		{
 			union {unsigned i; float f;} src;
 			unsigned mode;
@@ -1882,7 +1880,7 @@ void Inst::DumpToBufWithFmtReg(void)
 				int offset = src.i & 0xfffe;
 				if (i == 1)
 					ss << "~";
-				ss << StringFmt("c[0x%x][0x%x]", bank, offset);
+				ss << misc::fmt("c[0x%x][0x%x]", bank, offset);
 			}
 			else if (mode == 3)
 			{
@@ -1891,23 +1889,23 @@ void Inst::DumpToBufWithFmtReg(void)
 				{
 					src.i = fmt.src2 << 12;
 					if (std::abs(src.f) < 1e-4 || std::abs(src.f) > 1e9)
-						ss << StringFmt("%.20e", src.f);
+						ss << misc::fmt("%.20e", src.f);
 					else
-						ss << StringFmt("%.20g", src.f);
+						ss << misc::fmt("%.20g", src.f);
 				}
 				else if (cat == InstCategoryInt)
 				{
 					src.i = fmt.src2;
 					if (src.i >> 19 == 0)  // positive value
-						ss << StringFmt("0x%x", src.i);
+						ss << misc::fmt("0x%x", src.i);
 					else  // negative value
-						ss << StringFmt("-0x%x", 0x100000 - src.i);
+						ss << misc::fmt("-0x%x", 0x100000 - src.i);
 				}
 				if (i == 1)
 					ss << ".INV";
 			}
 		}
-		else if (Common::Asm::IsToken(fmt_str, "n2src2", len))
+		else if (Common::Asm::isToken(fmt_str, "n2src2", len))
 		{
 			union {unsigned i; float f;} src;
 			unsigned mode;
@@ -1933,7 +1931,7 @@ void Inst::DumpToBufWithFmtReg(void)
 				int offset = src.i & 0xfffe;
 				if (n == 1)
 					ss << "-";
-				ss << StringFmt("c[0x%x][0x%x]", bank, offset);
+				ss << misc::fmt("c[0x%x][0x%x]", bank, offset);
 			}
 			else if (mode == 3)
 			{
@@ -1942,23 +1940,23 @@ void Inst::DumpToBufWithFmtReg(void)
 				{
 					src.i = fmt.src2 << 12;
 					if (std::abs(src.f) < 1e-4 || std::abs(src.f) > 1e9)
-						ss << StringFmt("%.20e", src.f);
+						ss << misc::fmt("%.20e", src.f);
 					else
-						ss << StringFmt("%.20g", src.f);
+						ss << misc::fmt("%.20g", src.f);
 				}
 				else if (cat == InstCategoryInt)
 				{
 					src.i = fmt.src2;
 					if (src.i >> 19 == 0)  // positive value
-						ss << StringFmt("0x%x", src.i);
+						ss << misc::fmt("0x%x", src.i);
 					else  // negative value
-						ss << StringFmt("-0x%x", 0x100000 - src.i);
+						ss << misc::fmt("-0x%x", 0x100000 - src.i);
 				}
 				if (n == 1)
 					ss << ".NEG";
 			}
 		}
-		else if (Common::Asm::IsToken(fmt_str, "nasrc2", len))
+		else if (Common::Asm::isToken(fmt_str, "nasrc2", len))
 		{
 			union {unsigned i; float f; unsigned long long l; double d;} src;
 			unsigned mode;
@@ -1991,7 +1989,7 @@ void Inst::DumpToBufWithFmtReg(void)
 					ss << "-";
 				if (a == 1)
 					ss << "|";
-				ss << StringFmt("c[0x%x][0x%x]", bank, offset);
+				ss << misc::fmt("c[0x%x][0x%x]", bank, offset);
 				if (a == 1)
 					ss << "|";
 			}
@@ -2014,12 +2012,12 @@ void Inst::DumpToBufWithFmtReg(void)
 						if (std::abs(src.f) < 1e-4 || std::abs(src.f) > 1e9)
 						{
 							if (info->op == InstOpFSETP)
-								ss << StringFmt("%.18e", src.f);
+								ss << misc::fmt("%.18e", src.f);
 							else
-								ss << StringFmt("%.20e", src.f);
+								ss << misc::fmt("%.20e", src.f);
 						}
 						else
-							ss << StringFmt("%.20g", src.f);
+							ss << misc::fmt("%.20g", src.f);
 					}
 				}
 				if (cat == InstCategoryDpFp)
@@ -2036,18 +2034,18 @@ void Inst::DumpToBufWithFmtReg(void)
 					else
 					{
 						if ((std::abs(src.d) < 1e-4 || std::abs(src.d) > 1e9) && (src.d != 0))
-							ss << StringFmt("%.20e", src.d);
+							ss << misc::fmt("%.20e", src.d);
 						else
-							ss << StringFmt("%.20g", src.d);
+							ss << misc::fmt("%.20g", src.d);
 					}
 				}
 				else if (cat == InstCategoryInt)
 				{
 					src.i = fmt.src2;
 					if (src.i >> 19 == 0)  // positive value
-						ss << StringFmt("0x%x", src.i);
+						ss << misc::fmt("0x%x", src.i);
 					else  // negative value
-						ss << StringFmt("-0x%x", 0x100000 - src.i);
+						ss << misc::fmt("-0x%x", 0x100000 - src.i);
 				}
 				if (n == 1)
 					ss << ".NEG";
@@ -2055,7 +2053,7 @@ void Inst::DumpToBufWithFmtReg(void)
 					ss << ".ABS";
 			}
 		}
-		else if (Common::Asm::IsToken(fmt_str, "src3", len))
+		else if (Common::Asm::isToken(fmt_str, "src3", len))
 		{
 			unsigned src;
 			src = fmt.fmod1_srco & 0x3f;
@@ -2065,7 +2063,7 @@ void Inst::DumpToBufWithFmtReg(void)
 			else
 				ss << "Z";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "n1src3", len))
+		else if (Common::Asm::isToken(fmt_str, "n1src3", len))
 		{
 			unsigned src;
 			unsigned n;
@@ -2079,7 +2077,7 @@ void Inst::DumpToBufWithFmtReg(void)
 			else
 				ss << "Z";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "n2src3", len))
+		else if (Common::Asm::isToken(fmt_str, "n2src3", len))
 		{
 			unsigned src;
 			unsigned n;
@@ -2093,7 +2091,7 @@ void Inst::DumpToBufWithFmtReg(void)
 			else
 				ss << "Z";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "psrc3", len))
+		else if (Common::Asm::isToken(fmt_str, "psrc3", len))
 		{
 			unsigned p;
 			p = fmt.fmod1_srco & 0x7;
@@ -2103,7 +2101,7 @@ void Inst::DumpToBufWithFmtReg(void)
 			else
 				ss << "T";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "npsrc3", len))
+		else if (Common::Asm::isToken(fmt_str, "npsrc3", len))
 		{
 			unsigned p;
 			unsigned n;
@@ -2117,13 +2115,13 @@ void Inst::DumpToBufWithFmtReg(void)
 			else
 				ss << "T";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "shamt", len))
+		else if (Common::Asm::isToken(fmt_str, "shamt", len))
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 1) & 0x1f;
-			ss << StringFmt("0x%x", v);
+			ss << misc::fmt("0x%x", v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "pat", len))
+		else if (Common::Asm::isToken(fmt_str, "pat", len))
 		{
 			unsigned v;
 			v = (fmt.src2 >> 6) & 0x1ff;
@@ -2148,7 +2146,7 @@ void Inst::DumpToBufWithFmtReg(void)
 		}
 		else
 		{
-			fatal("%s: unknown token: %s", __FUNCTION__,
+			misc::fatal("%s: unknown token: %s", __FUNCTION__,
 					fmt_str);
 		}
 
@@ -2191,7 +2189,7 @@ void Inst::DumpToBufWithFmtImm(void)
 		// Character is a token
 		++fmt_str;
 
-		if (Common::Asm::IsToken(fmt_str, "pred", len))
+		if (Common::Asm::isToken(fmt_str, "pred", len))
 		{
 			unsigned pred;
 			pred = fmt.pred;
@@ -2202,67 +2200,67 @@ void Inst::DumpToBufWithFmtImm(void)
 			else
 				ss << "       ";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "bop", len))
+		else if (Common::Asm::isToken(fmt_str, "bop", len))
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 2) & 0x3;
 			ss << bop_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "fma", len))
+		else if (Common::Asm::isToken(fmt_str, "fma", len))
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 4) & 0x3;
 			ss << fma_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "fmz", len))
+		else if (Common::Asm::isToken(fmt_str, "fmz", len))
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 2) & 0x3;
 			ss << fmz_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "ftz", len))
+		else if (Common::Asm::isToken(fmt_str, "ftz", len))
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 1) & 0x1;
 			ss << ftz_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "hi", len))
+		else if (Common::Asm::isToken(fmt_str, "hi", len))
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 2) & 0x1;
 			ss << hi_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "po", len))
+		else if (Common::Asm::isToken(fmt_str, "po", len))
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 4) & 0x3;
 			ss << po_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "sat", len))
+		else if (Common::Asm::isToken(fmt_str, "sat", len))
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 1) & 0x1;
 			ss << sat_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "sat", len))
+		else if (Common::Asm::isToken(fmt_str, "sat", len))
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 1) & 0x1;
 			ss << sat_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "s", len))
+		else if (Common::Asm::isToken(fmt_str, "s", len))
 		{
 			unsigned v;
 			v = fmt.fmod0 & 0x1;
 			ss << s_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "type", len))
+		else if (Common::Asm::isToken(fmt_str, "type", len))
 		{
 			unsigned v;
 			v = (((fmt.fmod0 >> 3) & 0x1) << 1) | ((fmt.fmod0 >> 1) & 0x1);
 			ss << type_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "x", len))
+		else if (Common::Asm::isToken(fmt_str, "x", len))
 		{
 			unsigned v;
 			if (info->op == InstOpIADD32I)
@@ -2271,7 +2269,7 @@ void Inst::DumpToBufWithFmtImm(void)
 				v = (fmt.fmod0 >> 1) & 0x1;
 			ss << x_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "dst", len))
+		else if (Common::Asm::isToken(fmt_str, "dst", len))
 		{
 			unsigned dst;
 			dst = fmt.dst;
@@ -2281,13 +2279,13 @@ void Inst::DumpToBufWithFmtImm(void)
 			else
 				ss << "Z";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "cc", len))
+		else if (Common::Asm::isToken(fmt_str, "cc", len))
 		{
 			unsigned v;
 			v = fmt.dmod & 0x1;
 			ss << cc_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "n1dst", len))
+		else if (Common::Asm::isToken(fmt_str, "n1dst", len))
 		{
 			unsigned dst;
 			unsigned n;
@@ -2301,7 +2299,7 @@ void Inst::DumpToBufWithFmtImm(void)
 			else
 				ss << "Z";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "n2dst", len))
+		else if (Common::Asm::isToken(fmt_str, "n2dst", len))
 		{
 			unsigned dst;
 			unsigned n;
@@ -2315,7 +2313,7 @@ void Inst::DumpToBufWithFmtImm(void)
 			else
 				ss << "Z";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "src1", len))
+		else if (Common::Asm::isToken(fmt_str, "src1", len))
 		{
 			unsigned src;
 			src = fmt.src1;
@@ -2325,7 +2323,7 @@ void Inst::DumpToBufWithFmtImm(void)
 			else
 				ss << "Z";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "isrc1", len))
+		else if (Common::Asm::isToken(fmt_str, "isrc1", len))
 		{
 			unsigned src;
 			unsigned i;
@@ -2339,7 +2337,7 @@ void Inst::DumpToBufWithFmtImm(void)
 			else
 				ss << "Z";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "n1src1", len))
+		else if (Common::Asm::isToken(fmt_str, "n1src1", len))
 		{
 			unsigned src;
 			unsigned n;
@@ -2353,7 +2351,7 @@ void Inst::DumpToBufWithFmtImm(void)
 			else
 				ss << "Z";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "n2src1", len))
+		else if (Common::Asm::isToken(fmt_str, "n2src1", len))
 		{
 			unsigned src;
 			unsigned n;
@@ -2367,7 +2365,7 @@ void Inst::DumpToBufWithFmtImm(void)
 			else
 				ss << "Z";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "nasrc1", len))
+		else if (Common::Asm::isToken(fmt_str, "nasrc1", len))
 		{
 			unsigned src;
 			unsigned n;
@@ -2387,23 +2385,23 @@ void Inst::DumpToBufWithFmtImm(void)
 			if (a == 1)
 				ss << "|";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "imm32imm4", len))
+		else if (Common::Asm::isToken(fmt_str, "imm32imm4", len))
 		{
 			unsigned imm32;
 			unsigned imm4;
 			imm32 = fmt.imm32;
 			imm4 = (fmt.fmod0 >> 1) & 0xf;
-			ss << StringFmt("0x%x", imm32);
+			ss << misc::fmt("0x%x", imm32);
 			if (imm4 != 15)
-				ss << StringFmt(", 0x%x", imm4);
+				ss << misc::fmt(", 0x%x", imm4);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "uimm32", len))
+		else if (Common::Asm::isToken(fmt_str, "uimm32", len))
 		{
 			unsigned imm32;
 			imm32 = fmt.imm32;
-			ss << StringFmt("0x%x", imm32);
+			ss << misc::fmt("0x%x", imm32);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "imm32", len))
+		else if (Common::Asm::isToken(fmt_str, "imm32", len))
 		{
 			union {unsigned i; float f;} imm32;
 			unsigned s;
@@ -2412,48 +2410,48 @@ void Inst::DumpToBufWithFmtImm(void)
 			if (info->op == InstOpFFMA32I || info->op == InstOpFADD32I || info->op == InstOpFMUL32I)
 			{
 				if (std::abs(imm32.f) < 1e-4 || std::abs(imm32.f) > 1e9)
-					ss << StringFmt("%.20e", imm32.f);
+					ss << misc::fmt("%.20e", imm32.f);
 				else
-					ss << StringFmt("%.20g", imm32.f);
+					ss << misc::fmt("%.20g", imm32.f);
 			}
 			else
 			{
 				if (s == 0)
-					ss << StringFmt("0x%x", imm32.i);
+					ss << misc::fmt("0x%x", imm32.i);
 				else
-					ss << StringFmt("-0x%x", ~imm32.i + 1);
+					ss << misc::fmt("-0x%x", ~imm32.i + 1);
 			}
 		}
-		else if (Common::Asm::IsToken(fmt_str, "neg", len))
+		else if (Common::Asm::isToken(fmt_str, "neg", len))
 		{
 			unsigned n;
 			n = (fmt.fmod0 >> 4) & 0x1;
 			if (n == 1)
 				ss << ".NEG";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "abs", len))
+		else if (Common::Asm::isToken(fmt_str, "abs", len))
 		{
 			unsigned a;
 			a = (fmt.fmod0 >> 2) & 0x1;
 			if (a == 1)
 				ss << ".ABS";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "inv", len))
+		else if (Common::Asm::isToken(fmt_str, "inv", len))
 		{
 			unsigned i;
 			i = (fmt.fmod0 >> 4) & 0x1;
 			if (i == 1)
 				ss << ".INV";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "shamt", len))
+		else if (Common::Asm::isToken(fmt_str, "shamt", len))
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 1) & 0x1f;
-			ss << StringFmt("0x%x", v);
+			ss << misc::fmt("0x%x", v);
 		}
 		else
 		{
-			fatal("%s: unknown token: %s", __FUNCTION__,
+			misc::fatal("%s: unknown token: %s", __FUNCTION__,
 					fmt_str);
 		}
 
@@ -2496,7 +2494,7 @@ void Inst::DumpToBufWithFmtOther(void)
 		// Character is a token
 		++fmt_str;
 
-		if (Common::Asm::IsToken(fmt_str, "pred", len))
+		if (Common::Asm::isToken(fmt_str, "pred", len))
 		{
 			unsigned pred;
 			pred = fmt.pred;
@@ -2507,127 +2505,127 @@ void Inst::DumpToBufWithFmtOther(void)
 			else
 				ss << "       ";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "barmode", len))
+		else if (Common::Asm::isToken(fmt_str, "barmode", len))
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 1) & 0x3;
 			ss << barmode_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "bf", len))
+		else if (Common::Asm::isToken(fmt_str, "bf", len))
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 1) & 0x1;
 			ss << bf_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "bop1", len))
+		else if (Common::Asm::isToken(fmt_str, "bop1", len))
 		{
 			unsigned v;
 			v = (fmt.src2 >> 4) & 0x3;
 			ss << bop_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "bop2", len))
+		else if (Common::Asm::isToken(fmt_str, "bop2", len))
 		{
 			unsigned v;
 			v = (fmt.fmod2_srco >> 4) & 0x3;
 			ss << bop_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "cop", len))
+		else if (Common::Asm::isToken(fmt_str, "cop", len))
 		{
 			unsigned v;
 			v = fmt.fmod1_src1 & 0x1f;
 			ss << cop_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "fpdest", len))
+		else if (Common::Asm::isToken(fmt_str, "fpdest", len))
 		{
 			unsigned v;
 			v = fmt.fmod1_src1 & 0x3;
 			ss << fpdest_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "fpsrc", len))
+		else if (Common::Asm::isToken(fmt_str, "fpsrc", len))
 		{
 			unsigned v;
 			v = (fmt.fmod1_src1 >> 3) & 0x3;
 			ss << fpsrc_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "frnd2", len))
+		else if (Common::Asm::isToken(fmt_str, "frnd2", len))
 		{
 			unsigned v;
 			v = fmt.fmod2_srco & 0x3;
 			ss << frnd2_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "frnd3", len))
+		else if (Common::Asm::isToken(fmt_str, "frnd3", len))
 		{
 			unsigned v;
 			v = (((fmt.fmod0 >> 3) & 0x1) << 2) | (fmt.fmod2_srco & 0x3);
 			ss << frnd3_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "ftz", len))
+		else if (Common::Asm::isToken(fmt_str, "ftz", len))
 		{
 			unsigned v;
 			v = (fmt.fmod2_srco >> 6) & 0x1;
 			ss << ftz_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "h1", len))
+		else if (Common::Asm::isToken(fmt_str, "h1", len))
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 1) & 0x1;
 			ss << h1_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "idest", len))
+		else if (Common::Asm::isToken(fmt_str, "idest", len))
 		{
 			unsigned v;
 			v = (((fmt.fmod0 >> 3) & 0x1) << 2) | (fmt.fmod1_src1 & 0x3);
 			ss << idest_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "irnd", len))
+		else if (Common::Asm::isToken(fmt_str, "irnd", len))
 		{
 			unsigned v;
 			v = fmt.fmod2_srco & 0x3;
 			ss << irnd_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "isrc", len))
+		else if (Common::Asm::isToken(fmt_str, "isrc", len))
 		{
 			unsigned v;
 			v = (((fmt.fmod0 >> 5) & 0x1) << 2) | ((fmt.fmod1_src1 >> 3) & 0x3);
 			ss << isrc_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "op", len))
+		else if (Common::Asm::isToken(fmt_str, "op", len))
 		{
 			unsigned v;
 			v = (fmt.fmod1_src1 >> 2) & 0xf;
 			ss << op_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "pmode", len))
+		else if (Common::Asm::isToken(fmt_str, "pmode", len))
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 1) & 0xf;
 			ss << pmode_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "sat", len))
+		else if (Common::Asm::isToken(fmt_str, "sat", len))
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 1) & 0x1;
 			ss << sat_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "s", len))
+		else if (Common::Asm::isToken(fmt_str, "s", len))
 		{
 			unsigned v;
 			v = fmt.fmod0 & 0x1;
 			ss << s_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "trig", len))
+		else if (Common::Asm::isToken(fmt_str, "trig", len))
 		{
 			unsigned v;
 			v = (fmt.fmod2_srco >> 1) & 0x1;
 			ss << trig_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "vmode", len))
+		else if (Common::Asm::isToken(fmt_str, "vmode", len))
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 1) & 0x7;
 			ss << vmode_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "xlu", len))
+		else if (Common::Asm::isToken(fmt_str, "xlu", len))
 		{
 			unsigned v;
 			if (info->op == InstOpMOV)
@@ -2636,7 +2634,7 @@ void Inst::DumpToBufWithFmtOther(void)
 				v = (fmt.fmod0 >> 4) & 0x3;
 			ss << xlu_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "cccopsrc2", len))
+		else if (Common::Asm::isToken(fmt_str, "cccopsrc2", len))
 		{
 			unsigned cccop;
 			unsigned imm16;
@@ -2645,9 +2643,9 @@ void Inst::DumpToBufWithFmtOther(void)
 			if (cccop != 15)
 				ss << cop_map.MapValue(cccop);
 			if (imm16 != 0)
-				ss << StringFmt(", 0x%x", imm16);
+				ss << misc::fmt(", 0x%x", imm16);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "dstpdst", len))
+		else if (Common::Asm::isToken(fmt_str, "dstpdst", len))
 		{
 			unsigned dst, p;
 			dst = fmt.dst;
@@ -2666,7 +2664,7 @@ void Inst::DumpToBufWithFmtOther(void)
 					ss << "T";
 			}
 		}
-		else if (Common::Asm::IsToken(fmt_str, "dstpsrc4", len))
+		else if (Common::Asm::isToken(fmt_str, "dstpsrc4", len))
 		{
 			unsigned dst, p;
 			dst = fmt.dst;
@@ -2679,7 +2677,7 @@ void Inst::DumpToBufWithFmtOther(void)
 			else
 				ss << "T";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "dst", len))
+		else if (Common::Asm::isToken(fmt_str, "dst", len))
 		{
 			unsigned dst;
 			dst = fmt.dst;
@@ -2689,13 +2687,13 @@ void Inst::DumpToBufWithFmtOther(void)
 			else
 				ss << "Z";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "cc", len))
+		else if (Common::Asm::isToken(fmt_str, "cc", len))
 		{
 			unsigned v;
 			v = fmt.dmod & 0x1;
 			ss << cc_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "pdst1", len))
+		else if (Common::Asm::isToken(fmt_str, "pdst1", len))
 		{
 			unsigned p;
 			p = (fmt.dst >> 3) & 0x7;
@@ -2705,7 +2703,7 @@ void Inst::DumpToBufWithFmtOther(void)
 			else
 				ss << "T";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "pdst2", len))
+		else if (Common::Asm::isToken(fmt_str, "pdst2", len))
 		{
 			unsigned p;
 			p = fmt.dst & 0x7;
@@ -2715,7 +2713,7 @@ void Inst::DumpToBufWithFmtOther(void)
 			else
 				ss << "T";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "src1", len))
+		else if (Common::Asm::isToken(fmt_str, "src1", len))
 		{
 			unsigned src;
 			src = fmt.fmod1_src1;
@@ -2725,7 +2723,7 @@ void Inst::DumpToBufWithFmtOther(void)
 			else
 				ss << "Z";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "isrc1", len))
+		else if (Common::Asm::isToken(fmt_str, "isrc1", len))
 		{
 			unsigned src;
 			unsigned i;
@@ -2739,7 +2737,7 @@ void Inst::DumpToBufWithFmtOther(void)
 			else
 				ss << "Z";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "nasrc1", len))
+		else if (Common::Asm::isToken(fmt_str, "nasrc1", len))
 		{
 			unsigned src;
 			unsigned n;
@@ -2759,7 +2757,7 @@ void Inst::DumpToBufWithFmtOther(void)
 			if (a == 1)
 				ss << "|";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "src2imm4", len))
+		else if (Common::Asm::isToken(fmt_str, "src2imm4", len))
 		{
 			union {unsigned i; float f;} src;
 			unsigned i;
@@ -2781,7 +2779,7 @@ void Inst::DumpToBufWithFmtOther(void)
 			{
 				unsigned bank = ((src.i & 0x1) << 4) | (src.i >> 16);
 				int offset = src.i & 0xfffe;
-				ss << StringFmt("c[0x%x][0x%x]", bank, offset);
+				ss << misc::fmt("c[0x%x][0x%x]", bank, offset);
 			}
 			else if (mode == 3)
 			{
@@ -2790,24 +2788,24 @@ void Inst::DumpToBufWithFmtOther(void)
 				{
 					src.i = fmt.src2 << 12;
 					if (std::abs(src.f) < 1e-4 || std::abs(src.f) > 1e9)
-						ss << StringFmt("%.20e", src.f);
+						ss << misc::fmt("%.20e", src.f);
 					else
-						ss << StringFmt("%.20g", src.f);
+						ss << misc::fmt("%.20g", src.f);
 				}
 				else if (cat == InstCategoryInt)
 				{
 					src.i = fmt.src2;
 					if (src.i >> 19 == 0)  // positive value
-						ss << StringFmt("0x%x", src.i);
+						ss << misc::fmt("0x%x", src.i);
 					else  // negative value
-						ss << StringFmt("-0x%x", 0x100000 - src.i);
+						ss << misc::fmt("-0x%x", 0x100000 - src.i);
 				}
 			}
 
 			if (i != 15)
 				ss << ", " << i;
 		}
-		else if (Common::Asm::IsToken(fmt_str, "src2", len))
+		else if (Common::Asm::isToken(fmt_str, "src2", len))
 		{
 			union {unsigned i; float f;} src;
 			unsigned mode;
@@ -2827,18 +2825,18 @@ void Inst::DumpToBufWithFmtOther(void)
 			{
 				unsigned bank = ((src.i & 0x1) << 4) | (src.i >> 16);
 				int offset = src.i & 0xfffe;
-				ss << StringFmt("c[0x%x][0x%x]", bank, offset);
+				ss << misc::fmt("c[0x%x][0x%x]", bank, offset);
 			}
 			else if (mode == 3)
 			{
 				src.i = fmt.src2;
 				if (src.i >> 19 == 0)  // positive value
-					ss << StringFmt("0x%x", src.i);
+					ss << misc::fmt("0x%x", src.i);
 				else  // negative value
-					ss << StringFmt("-0x%x", 0x100000 - src.i);
+					ss << misc::fmt("-0x%x", 0x100000 - src.i);
 			}
 		}
-		else if (Common::Asm::IsToken(fmt_str, "isrc2", len))
+		else if (Common::Asm::isToken(fmt_str, "isrc2", len))
 		{
 			union {unsigned i; float f;} src;
 			unsigned mode;
@@ -2864,7 +2862,7 @@ void Inst::DumpToBufWithFmtOther(void)
 				int offset = src.i & 0xfffe;
 				if (i == 1)
 					ss << "~";
-				ss << StringFmt("c[0x%x][0x%x]", bank, offset);
+				ss << misc::fmt("c[0x%x][0x%x]", bank, offset);
 			}
 			else if (mode == 3)
 			{
@@ -2873,23 +2871,23 @@ void Inst::DumpToBufWithFmtOther(void)
 				{
 					src.i = fmt.src2 << 12;
 					if (std::abs(src.f) < 1e-4 || std::abs(src.f) > 1e9)
-						ss << StringFmt("%.20e", src.f);
+						ss << misc::fmt("%.20e", src.f);
 					else
-						ss << StringFmt("%.20g", src.f);
+						ss << misc::fmt("%.20g", src.f);
 				}
 				else if (cat == InstCategoryInt)
 				{
 					src.i = fmt.src2;
 					if (src.i >> 19 == 0)  // positive value
-						ss << StringFmt("0x%x", src.i);
+						ss << misc::fmt("0x%x", src.i);
 					else  // negative value
-						ss << StringFmt("-0x%x", 0x100000 - src.i);
+						ss << misc::fmt("-0x%x", 0x100000 - src.i);
 				}
 				if (i == 1)
 					ss << ".INV";
 			}
 		}
-		else if (Common::Asm::IsToken(fmt_str, "nasrc2", len))
+		else if (Common::Asm::isToken(fmt_str, "nasrc2", len))
 		{
 			union {unsigned i; float f;} src;
 			unsigned mode;
@@ -2922,7 +2920,7 @@ void Inst::DumpToBufWithFmtOther(void)
 					ss << "-";
 				if (a == 1)
 					ss << "|";
-				ss << StringFmt("c[0x%x][0x%x]", bank, offset);
+				ss << misc::fmt("c[0x%x][0x%x]", bank, offset);
 				if (a == 1)
 					ss << "|";
 			}
@@ -2933,17 +2931,17 @@ void Inst::DumpToBufWithFmtOther(void)
 				{
 					src.i = fmt.src2 << 12;
 					if (std::abs(src.f) < 1e-4 || std::abs(src.f) > 1e9)
-						ss << StringFmt("%.20e", src.f);
+						ss << misc::fmt("%.20e", src.f);
 					else
-						ss << StringFmt("%.20g", src.f);
+						ss << misc::fmt("%.20g", src.f);
 				}
 				else if (cat == InstCategoryInt)
 				{
 					src.i = fmt.src2;
 					if (src.i >> 19 == 0)  // positive value
-						ss << StringFmt("0x%x", src.i);
+						ss << misc::fmt("0x%x", src.i);
 					else  // negative value
-						ss << StringFmt("-0x%x", 0x100000 - src.i);
+						ss << misc::fmt("-0x%x", 0x100000 - src.i);
 				}
 				if (n == 1)
 					ss << ".NEG";
@@ -2951,7 +2949,7 @@ void Inst::DumpToBufWithFmtOther(void)
 					ss << ".ABS";
 			}
 		}
-		else if (Common::Asm::IsToken(fmt_str, "nabsrc2", len))
+		else if (Common::Asm::isToken(fmt_str, "nabsrc2", len))
 		{
 			union {unsigned i; float f;} src;
 			unsigned mode;
@@ -2987,7 +2985,7 @@ void Inst::DumpToBufWithFmtOther(void)
 					ss << "-";
 				if (a == 1)
 					ss << "|";
-				ss << StringFmt("c[0x%x][0x%x]", bank, offset);
+				ss << misc::fmt("c[0x%x][0x%x]", bank, offset);
 				if (b != 0)
 					ss << ".B" << b;
 				if (a == 1)
@@ -3000,17 +2998,17 @@ void Inst::DumpToBufWithFmtOther(void)
 				{
 					src.i = fmt.src2 << 12;
 					if (std::abs(src.f) < 1e-4 || std::abs(src.f) > 1e9)
-						ss << StringFmt("%.20e", src.f);
+						ss << misc::fmt("%.20e", src.f);
 					else
-						ss << StringFmt("%.20g", src.f);
+						ss << misc::fmt("%.20g", src.f);
 				}
 				else if (cat == InstCategoryInt)
 				{
 					src.i = fmt.src2;
 					if (src.i >> 19 == 0)  // positive value
-						ss << StringFmt("0x%x", src.i);
+						ss << misc::fmt("0x%x", src.i);
 					else  // negative value
-						ss << StringFmt("-0x%x", 0x100000 - src.i);
+						ss << misc::fmt("-0x%x", 0x100000 - src.i);
 				}
 				if (b != 0)
 					ss << ".B" << b;
@@ -3020,7 +3018,7 @@ void Inst::DumpToBufWithFmtOther(void)
 					ss << ".ABS";
 			}
 		}
-		else if (Common::Asm::IsToken(fmt_str, "nahisrc2", len))
+		else if (Common::Asm::isToken(fmt_str, "nahisrc2", len))
 		{
 			union {unsigned i; float f;} src;
 			unsigned mode;
@@ -3054,7 +3052,7 @@ void Inst::DumpToBufWithFmtOther(void)
 					ss << "-";
 				if (a == 1)
 					ss << "|";
-				ss << StringFmt("c[0x%x][0x%x]", bank, offset);
+				ss << misc::fmt("c[0x%x][0x%x]", bank, offset);
 				if (a == 1)
 					ss << "|";
 			}
@@ -3065,17 +3063,17 @@ void Inst::DumpToBufWithFmtOther(void)
 				{
 					src.i = fmt.src2 << 12;
 					if (std::abs(src.f) < 1e-4 || std::abs(src.f) > 1e9)
-						ss << StringFmt("%.20e", src.f);
+						ss << misc::fmt("%.20e", src.f);
 					else
-						ss << StringFmt("%.20g", src.f);
+						ss << misc::fmt("%.20g", src.f);
 				}
 				else if (cat == InstCategoryInt)
 				{
 					src.i = fmt.src2;
 					if (src.i >> 19 == 0)  // positive value
-						ss << StringFmt("0x%x", src.i);
+						ss << misc::fmt("0x%x", src.i);
 					else  // negative value
-						ss << StringFmt("-0x%x", 0x100000 - src.i);
+						ss << misc::fmt("-0x%x", 0x100000 - src.i);
 				}
 				if (n == 1)
 					ss << ".NEG";
@@ -3086,7 +3084,7 @@ void Inst::DumpToBufWithFmtOther(void)
 			if (hi == 1)
 				ss << ".HI";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "src3", len))
+		else if (Common::Asm::isToken(fmt_str, "src3", len))
 		{
 			unsigned src;
 			src = fmt.fmod2_srco & 0x3f;
@@ -3096,19 +3094,19 @@ void Inst::DumpToBufWithFmtOther(void)
 			else
 				ss << "Z";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "ssrc", len))
+		else if (Common::Asm::isToken(fmt_str, "ssrc", len))
 		{
 			unsigned src;
 			src = fmt.src2 & 0xff;
 			ss << ssrc_map.MapValue(src);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "imm6", len))
+		else if (Common::Asm::isToken(fmt_str, "imm6", len))
 		{
 			unsigned i;
 			i = fmt.fmod1_src1;
-			ss << StringFmt("0x%x", i);
+			ss << misc::fmt("0x%x", i);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "psrc1", len))
+		else if (Common::Asm::isToken(fmt_str, "psrc1", len))
 		{
 			unsigned p, i;
 			p = fmt.fmod1_src1 & 0x7;
@@ -3121,7 +3119,7 @@ void Inst::DumpToBufWithFmtOther(void)
 			else
 				ss << "T";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "psrc2", len))
+		else if (Common::Asm::isToken(fmt_str, "psrc2", len))
 		{
 			unsigned p, i;
 			p = fmt.src2 & 0x7;
@@ -3134,7 +3132,7 @@ void Inst::DumpToBufWithFmtOther(void)
 			else
 				ss << "T";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "psrc3", len))
+		else if (Common::Asm::isToken(fmt_str, "psrc3", len))
 		{
 			unsigned p, i;
 			p = fmt.fmod2_srco & 0x7;
@@ -3147,7 +3145,7 @@ void Inst::DumpToBufWithFmtOther(void)
 			else
 				ss << "T";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "psrc4", len))
+		else if (Common::Asm::isToken(fmt_str, "psrc4", len))
 		{
 			unsigned p;
 			p = (fmt.fmod2_srco >> 5) & 0x7;
@@ -3159,7 +3157,7 @@ void Inst::DumpToBufWithFmtOther(void)
 		}
 		else
 		{
-			fatal("%s: unknown token: %s", __FUNCTION__,
+			misc::fatal("%s: unknown token: %s", __FUNCTION__,
 					fmt_str);
 		}
 
@@ -3202,7 +3200,7 @@ void Inst::DumpToBufWithFmtLdSt(void)
 		// Character is a token
 		++fmt_str;
 
-		if (Common::Asm::IsToken(fmt_str, "pred", len))
+		if (Common::Asm::isToken(fmt_str, "pred", len))
 		{
 			unsigned pred;
 			pred = fmt.pred;
@@ -3213,115 +3211,115 @@ void Inst::DumpToBufWithFmtLdSt(void)
 			else
 				ss << "       ";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "1d", len))
+		else if (Common::Asm::isToken(fmt_str, "1d", len))
 		{
 			unsigned v;
 			v = (fmt.fmod1_srco >> 18) & 0x3;
 			ss << _1d_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "aoffi", len))
+		else if (Common::Asm::isToken(fmt_str, "aoffi", len))
 		{
 			unsigned v;
 			v = (fmt.fmod1_srco >> 28) & 0x1;
 			ss << aoffi_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "atomicsize", len))
+		else if (Common::Asm::isToken(fmt_str, "atomicsize", len))
 		{
 			unsigned v;
 			v = (fmt.func & 0xe) | ((fmt.fmod0 >> 5) & 0x1);
 			ss << atomicsize_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "atomop", len))
+		else if (Common::Asm::isToken(fmt_str, "atomop", len))
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 1) & 0xf;
 			ss << atomop_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "b1", len))
+		else if (Common::Asm::isToken(fmt_str, "b1", len))
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 4) & 0x1;
 			ss << b1_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "b4", len))
+		else if (Common::Asm::isToken(fmt_str, "b4", len))
 		{
 			unsigned v;
 			v = (fmt.fmod1_srco >> 23) & 0xf;
 			ss << b4_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "blod", len))
+		else if (Common::Asm::isToken(fmt_str, "blod", len))
 		{
 			unsigned v;
 			v = ((fmt.func & 0x3) << 1) | ((fmt.fmod1_srco >> 31) & 0x1);
 			ss << blod_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "btoff", len))
+		else if (Common::Asm::isToken(fmt_str, "btoff", len))
 		{
 			unsigned v;
 			v = (fmt.fmod1_srco >> 28) & 0x3;
 			ss << btoff_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "cachectrl", len))
+		else if (Common::Asm::isToken(fmt_str, "cachectrl", len))
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 1) & 0x1f;
 			ss << cachectrl_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "cctlop", len))
+		else if (Common::Asm::isToken(fmt_str, "cctlop", len))
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 1) & 0x1f;
 			ss << cctlop_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "cl", len))
+		else if (Common::Asm::isToken(fmt_str, "cl", len))
 		{
 			unsigned v;
 			v = (fmt.fmod1_srco >> 30) & 0x1;
 			ss << cl_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "dc", len))
+		else if (Common::Asm::isToken(fmt_str, "dc", len))
 		{
 			unsigned v;
 			v = (fmt.fmod1_srco >> 30) & 0x1;
 			ss << dc_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "eu", len))
+		else if (Common::Asm::isToken(fmt_str, "eu", len))
 		{
 			unsigned v;
 			v = fmt.func & 0x1;
 			ss << eu_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "e", len))
+		else if (Common::Asm::isToken(fmt_str, "e", len))
 		{
 			unsigned v;
 			v = fmt.func & 0x1;
 			ss << e_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "geom", len))
+		else if (Common::Asm::isToken(fmt_str, "geom", len))
 		{
 			unsigned v;
 			v = (fmt.fmod1_srco >> 25) & 0x7;
 			ss << geom_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "il", len))
+		else if (Common::Asm::isToken(fmt_str, "il", len))
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 4) & 0x1;
 			ss << il_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "i", len))
+		else if (Common::Asm::isToken(fmt_str, "i", len))
 		{
 			unsigned v;
 			v = (fmt.fmod1_srco >> 24) & 0x1;
 			ss << i_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "ldcachectrl", len))
+		else if (Common::Asm::isToken(fmt_str, "ldcachectrl", len))
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 4) & 0x3;
 			ss << ldcachectrl_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "ldlcachectrl", len))
+		else if (Common::Asm::isToken(fmt_str, "ldlcachectrl", len))
 		{
 			if (((fmt.fmod1_srco >> 30) & 0x1) == 0)  // LDL
 			{
@@ -3330,61 +3328,61 @@ void Inst::DumpToBufWithFmtLdSt(void)
 				ss << ldlcachectrl_map.MapValue(v);
 			}
 		}
-		else if (Common::Asm::IsToken(fmt_str, "ls", len))
+		else if (Common::Asm::isToken(fmt_str, "ls", len))
 		{
 			unsigned v;
 			v = (fmt.fmod1_srco >> 30) & 0x1;
 			ss << ls_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "lz", len))
+		else if (Common::Asm::isToken(fmt_str, "lz", len))
 		{
 			unsigned v;
 			v = (fmt.fmod1_srco >> 31) & 0x1;
 			ss << lz_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "membar", len))
+		else if (Common::Asm::isToken(fmt_str, "membar", len))
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 1) & 0x3;
 			ss << membar_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "mode", len))
+		else if (Common::Asm::isToken(fmt_str, "mode", len))
 		{
 			unsigned v;
 			v = ((fmt.func & 0x1) << 4) | ((fmt.fmod1_srco >> 28) & 0xf);
 			ss << mode_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "ms", len))
+		else if (Common::Asm::isToken(fmt_str, "ms", len))
 		{
 			unsigned v;
 			v = (fmt.fmod1_srco >> 29) & 0x1;
 			ss << ms_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "ndv", len))
+		else if (Common::Asm::isToken(fmt_str, "ndv", len))
 		{
 			unsigned v;
 			v = (fmt.fmod1_srco >> 19) & 0x1;
 			ss << ndv_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "nodep", len))
+		else if (Common::Asm::isToken(fmt_str, "nodep", len))
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 5) & 0x1;
 			ss << nodep_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "phase", len))
+		else if (Common::Asm::isToken(fmt_str, "phase", len))
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 3) & 0x3;
 			ss << phase_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "r2", len))
+		else if (Common::Asm::isToken(fmt_str, "r2", len))
 		{
 			unsigned v;
 			v = fmt.fmod0 & 0x3;
 			ss << r2_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "r4", len))
+		else if (Common::Asm::isToken(fmt_str, "r4", len))
 		{
 			unsigned v;
 			if (info->op == InstOpSURED)
@@ -3393,25 +3391,25 @@ void Inst::DumpToBufWithFmtLdSt(void)
 				v = (fmt.fmod1_srco >> 23) & 0xf;
 			ss << r4_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "redop", len))
+		else if (Common::Asm::isToken(fmt_str, "redop", len))
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 1) & 0xf;
 			ss << redop_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "rf2", len))
+		else if (Common::Asm::isToken(fmt_str, "rf2", len))
 		{
 			unsigned v;
 			v = (fmt.fmod1_srco >> 29) & 0x3;
 			ss << rf2_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "rf3", len))
+		else if (Common::Asm::isToken(fmt_str, "rf3", len))
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 1) & 0x7;
 			ss << rf3_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "size3", len))
+		else if (Common::Asm::isToken(fmt_str, "size3", len))
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 1) & 0x7;
@@ -3437,13 +3435,13 @@ void Inst::DumpToBufWithFmtLdSt(void)
 					ss << ".INVALIDSIZE7";
 			}
 		}
-		else if (Common::Asm::IsToken(fmt_str, "size5", len))
+		else if (Common::Asm::isToken(fmt_str, "size5", len))
 		{
 			unsigned v;
 			v = (fmt.fmod1_srco >> 27) & 0x1f;
 			ss << size5_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "stcachectrl", len))
+		else if (Common::Asm::isToken(fmt_str, "stcachectrl", len))
 		{
 			unsigned v;
 			if (!((info->op == InstOpSTX) && (((fmt.fmod1_srco >> 30) & 0x1) == 1)))  // !STS
@@ -3452,43 +3450,43 @@ void Inst::DumpToBufWithFmtLdSt(void)
 				ss << stcachectrl_map.MapValue(v);
 			}
 		}
-		else if (Common::Asm::IsToken(fmt_str, "sucachectrl", len))
+		else if (Common::Asm::isToken(fmt_str, "sucachectrl", len))
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 4) & 0x3;
 			ss << sucachectrl_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "suqop", len))
+		else if (Common::Asm::isToken(fmt_str, "suqop", len))
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 1) & 0x1f;
 			ss << suqop_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "suredop", len))
+		else if (Common::Asm::isToken(fmt_str, "suredop", len))
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 1) & 0xf;
 			ss << suredop_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "surfaceclamp", len))
+		else if (Common::Asm::isToken(fmt_str, "surfaceclamp", len))
 		{
 			unsigned v;
 			v = (fmt.fmod1_srco >> 21) & 0x3;
 			ss << surfaceclamp_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "s", len))
+		else if (Common::Asm::isToken(fmt_str, "s", len))
 		{
 			unsigned v;
 			v = fmt.fmod0 & 0x1;
 			ss << s_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "u", len))
+		else if (Common::Asm::isToken(fmt_str, "u", len))
 		{
 			unsigned v;
 			v = fmt.fmod1_srco & 0x3;
 			ss << u_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "dstsrc4", len))
+		else if (Common::Asm::isToken(fmt_str, "dstsrc4", len))
 		{
 			unsigned dst, src;
 			dst = fmt.dst;
@@ -3501,7 +3499,7 @@ void Inst::DumpToBufWithFmtLdSt(void)
 			if (src != 63)
 				ss << ", R" << src;
 		}
-		else if (Common::Asm::IsToken(fmt_str, "dst", len))
+		else if (Common::Asm::isToken(fmt_str, "dst", len))
 		{
 			unsigned dst;
 			dst = fmt.dst;
@@ -3511,7 +3509,7 @@ void Inst::DumpToBufWithFmtLdSt(void)
 			else
 				ss << "Z";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "pdst", len))
+		else if (Common::Asm::isToken(fmt_str, "pdst", len))
 		{
 			unsigned p, dst;
 			p = (fmt.fmod1_srco >> 28) & 0x7;
@@ -3524,7 +3522,7 @@ void Inst::DumpToBufWithFmtLdSt(void)
 			else
 				ss << "Z";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "src1src2", len))
+		else if (Common::Asm::isToken(fmt_str, "src1src2", len))
 		{
 			unsigned src1, src2;
 			src1 = fmt.src1;
@@ -3543,7 +3541,7 @@ void Inst::DumpToBufWithFmtLdSt(void)
 					ss << "Z";
 			}
 		}
-		else if (Common::Asm::IsToken(fmt_str, "src1off16", len))
+		else if (Common::Asm::isToken(fmt_str, "src1off16", len))
 		{
 			unsigned src, off16, s;
 			src = fmt.src1;
@@ -3553,18 +3551,18 @@ void Inst::DumpToBufWithFmtLdSt(void)
 			{
 				ss << "R" << src << "+";
 				if (s == 0)
-					ss << StringFmt("0x%x", off16);
+					ss << misc::fmt("0x%x", off16);
 				else
-					ss << StringFmt("-0x%x", 0x1000000 - off16);
+					ss << misc::fmt("-0x%x", 0x1000000 - off16);
 			}
 			else if (src == 63 && off16 != 0)
-				ss << StringFmt("0x%x", off16);
+				ss << misc::fmt("0x%x", off16);
 			else if (src != 63 && off16 == 0)
 				ss << "R" << src;
 			else
 				ss << "0x0";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "src1off24", len))
+		else if (Common::Asm::isToken(fmt_str, "src1off24", len))
 		{
 			unsigned src, off24, s;
 			src = fmt.src1;
@@ -3574,18 +3572,18 @@ void Inst::DumpToBufWithFmtLdSt(void)
 			{
 				ss << "R" << src;
 				if (s == 0)
-					ss << StringFmt("+0x%x", off24);
+					ss << misc::fmt("+0x%x", off24);
 				else
-					ss << StringFmt("+-0x%x", 0x1000000 - off24);
+					ss << misc::fmt("+-0x%x", 0x1000000 - off24);
 			}
 			else if (src == 63 && off24 != 0)
-				ss << StringFmt("0x%x", off24);
+				ss << misc::fmt("0x%x", off24);
 			else if (src != 63 && off24 == 0)
 				ss << "R" << src;
 			else
 				ss << "RZ";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "src1imm41imm42", len))
+		else if (Common::Asm::isToken(fmt_str, "src1imm41imm42", len))
 		{
 			unsigned src, imm41, imm42;
 			src = fmt.src1;
@@ -3598,10 +3596,10 @@ void Inst::DumpToBufWithFmtLdSt(void)
 				ss << "Z";
 			if (imm41 != 0 || imm42 != 0)
 			{
-				ss << StringFmt(", 0x%x, 0x%x", imm41, imm42);
+				ss << misc::fmt(", 0x%x, 0x%x", imm41, imm42);
 			}
 		}
-		else if (Common::Asm::IsToken(fmt_str, "src1", len))
+		else if (Common::Asm::isToken(fmt_str, "src1", len))
 		{
 			unsigned src;
 			src = fmt.src1;
@@ -3611,7 +3609,7 @@ void Inst::DumpToBufWithFmtLdSt(void)
 			else
 				ss << "Z";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "src2imm8", len))
+		else if (Common::Asm::isToken(fmt_str, "src2imm8", len))
 		{
 			unsigned src;
 			unsigned i;
@@ -3619,9 +3617,9 @@ void Inst::DumpToBufWithFmtLdSt(void)
 			i = (fmt.fmod1_srco >> 6) & 0xff;
 			if (src != 63)
 				ss << "R" << src << ", ";
-			ss << StringFmt("0x%x", i);
+			ss << misc::fmt("0x%x", i);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "src2", len))
+		else if (Common::Asm::isToken(fmt_str, "src2", len))
 		{
 			unsigned src;
 			src = fmt.fmod1_srco & 0x3f;
@@ -3631,7 +3629,7 @@ void Inst::DumpToBufWithFmtLdSt(void)
 			else
 				ss << "Z";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "risrc2", len))
+		else if (Common::Asm::isToken(fmt_str, "risrc2", len))
 		{
 			unsigned src;
 			unsigned mode;
@@ -3646,9 +3644,9 @@ void Inst::DumpToBufWithFmtLdSt(void)
 					ss << "Z";
 			}
 			else
-				ss << StringFmt("0x%x", src);
+				ss << misc::fmt("0x%x", src);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "src3", len))
+		else if (Common::Asm::isToken(fmt_str, "src3", len))
 		{
 			unsigned src;
 			if (info->op == InstOpATOM)
@@ -3661,7 +3659,7 @@ void Inst::DumpToBufWithFmtLdSt(void)
 			else
 				ss << "Z";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "off141", len))
+		else if (Common::Asm::isToken(fmt_str, "off141", len))
 		{
 			unsigned s, v;
 			s = (fmt.fmod1_srco >> 27) & 0x3f;
@@ -3677,7 +3675,7 @@ void Inst::DumpToBufWithFmtLdSt(void)
 			else
 				ss << (v << 4);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "off142", len))
+		else if (Common::Asm::isToken(fmt_str, "off142", len))
 		{
 			unsigned s, v;
 			s = (fmt.fmod1_srco >> 27) & 0x3f;
@@ -3693,7 +3691,7 @@ void Inst::DumpToBufWithFmtLdSt(void)
 			else
 				ss << (v << 4);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "off16", len))
+		else if (Common::Asm::isToken(fmt_str, "off16", len))
 		{
 			int v, s;
 			v = fmt.fmod1_srco & 0xffff;
@@ -3701,12 +3699,12 @@ void Inst::DumpToBufWithFmtLdSt(void)
 			if (v != 0)
 			{
 				if (s == 0)
-					ss << StringFmt("+0x%x", v);
+					ss << misc::fmt("+0x%x", v);
 				else
-					ss << StringFmt("-0x%x", 0x10000 - v);
+					ss << misc::fmt("-0x%x", 0x10000 - v);
 			}
 		}
-		else if (Common::Asm::IsToken(fmt_str, "off20", len))
+		else if (Common::Asm::isToken(fmt_str, "off20", len))
 		{
 			int v, s;
 			v = (((fmt.fmod1_srco >> 29) & 0x7) << 17) | (fmt.fmod1_srco & 0x1ffff);
@@ -3714,12 +3712,12 @@ void Inst::DumpToBufWithFmtLdSt(void)
 			if (v != 0)
 			{
 				if (s == 0)
-					ss << StringFmt("+0x%x", v);
+					ss << misc::fmt("+0x%x", v);
 				else
-					ss << StringFmt("-0x%x", 0x100000 - v);
+					ss << misc::fmt("-0x%x", 0x100000 - v);
 			}
 		}
-		else if (Common::Asm::IsToken(fmt_str, "off24", len))
+		else if (Common::Asm::isToken(fmt_str, "off24", len))
 		{
 			int v, s;
 			if (info->op == InstOpCCTLL)
@@ -3730,12 +3728,12 @@ void Inst::DumpToBufWithFmtLdSt(void)
 			if (v != 0)
 			{
 				if (s == 0)
-					ss << StringFmt("+0x%x", v);
+					ss << misc::fmt("+0x%x", v);
 				else
-					ss << StringFmt("-0x%x", 0x1000000 - v);
+					ss << misc::fmt("-0x%x", 0x1000000 - v);
 			}
 		}
-		else if (Common::Asm::IsToken(fmt_str, "off32", len))
+		else if (Common::Asm::isToken(fmt_str, "off32", len))
 		{
 			int v;
 			if (info->op == InstOpCCTL)
@@ -3743,47 +3741,47 @@ void Inst::DumpToBufWithFmtLdSt(void)
 			else
 				v = fmt.fmod1_srco & 0xffffffff;
 			if (v > 0)
-				ss << StringFmt("+0x%x", v);
+				ss << misc::fmt("+0x%x", v);
 			else if (v < 0)
-				ss << StringFmt("+-0x%x", ~v + 1);
+				ss << misc::fmt("+-0x%x", ~v + 1);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "imm41", len))
+		else if (Common::Asm::isToken(fmt_str, "imm41", len))
 		{
 			unsigned v;
 			v = (fmt.fmod1_srco >> 6) & 0xf;
-			ss << StringFmt("0x%x", v);
+			ss << misc::fmt("0x%x", v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "imm42", len))
+		else if (Common::Asm::isToken(fmt_str, "imm42", len))
 		{
 			unsigned v;
 			v = (fmt.fmod1_srco >> 10) & 0xf;
-			ss << StringFmt("0x%x", v);
+			ss << misc::fmt("0x%x", v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "imm43", len))
+		else if (Common::Asm::isToken(fmt_str, "imm43", len))
 		{
 			unsigned v;
 			v = (fmt.fmod1_srco >> 20) & 0xf;
-			ss << StringFmt("0x%x", v);
+			ss << misc::fmt("0x%x", v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "imm5", len))
+		else if (Common::Asm::isToken(fmt_str, "imm5", len))
 		{
 			unsigned v;
 			v = (fmt.fmod1_srco >> 14) & 0x1f;
-			ss << StringFmt("0x%x", v);
+			ss << misc::fmt("0x%x", v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "imm8", len))
+		else if (Common::Asm::isToken(fmt_str, "imm8", len))
 		{
 			unsigned v;
 			v = (fmt.fmod1_srco >> 6) & 0xff;
-			ss << StringFmt("0x%x", v);
+			ss << misc::fmt("0x%x", v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "bank", len))
+		else if (Common::Asm::isToken(fmt_str, "bank", len))
 		{
 			unsigned v;
 			v = (fmt.fmod1_srco >> 16) & 0x1f;
-			ss << StringFmt("0x%x", v);
+			ss << misc::fmt("0x%x", v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "psrc", len))
+		else if (Common::Asm::isToken(fmt_str, "psrc", len))
 		{
 			unsigned p;
 			if (info->op == InstOpLDLK)
@@ -3798,7 +3796,7 @@ void Inst::DumpToBufWithFmtLdSt(void)
 		}
 		else
 		{
-			fatal("%s: unknown token: %s", __FUNCTION__,
+			misc::fatal("%s: unknown token: %s", __FUNCTION__,
 					fmt_str);
 		}
 
@@ -3841,7 +3839,7 @@ void Inst::DumpToBufWithFmtCtrl(void)
 		// Character is a token
 		++fmt_str;
 
-		if (Common::Asm::IsToken(fmt_str, "pred", len))
+		if (Common::Asm::isToken(fmt_str, "pred", len))
 		{
 			unsigned pred;
 			pred = fmt.pred;
@@ -3852,31 +3850,31 @@ void Inst::DumpToBufWithFmtCtrl(void)
 			else
 				ss << "       ";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "drain", len))
+		else if (Common::Asm::isToken(fmt_str, "drain", len))
 		{
 			unsigned v;
 			v = fmt.mmod & 0x3;
 			ss << drain_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "lmt", len))
+		else if (Common::Asm::isToken(fmt_str, "lmt", len))
 		{
 			unsigned v;
 			v = (fmt.mmod >> 2) & 0x1;
 			ss << lmt_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "noinc", len))
+		else if (Common::Asm::isToken(fmt_str, "noinc", len))
 		{
 			unsigned v;
 			v = (fmt.mmod >> 2) & 0x1;
 			ss << noinc_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "u", len))
+		else if (Common::Asm::isToken(fmt_str, "u", len))
 		{
 			unsigned v;
 			v = (fmt.mmod >> 1) & 0x1;
 			ss << u_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "cccopatarget", len))
+		else if (Common::Asm::isToken(fmt_str, "cccopatarget", len))
 		{
 			unsigned cccop;
 			unsigned mode;
@@ -3892,11 +3890,11 @@ void Inst::DumpToBufWithFmtCtrl(void)
 			if (cccop != 15)
 				ss << cccop_map.MapValue(cccop) << ", ";
 			if (mode == 0)
-				ss << StringFmt("0x%x", target);
+				ss << misc::fmt("0x%x", target);
 			else
-				ss << StringFmt("c[0x%x][0x%x]", bank, offset);
+				ss << misc::fmt("c[0x%x][0x%x]", bank, offset);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "cccopaitarget24", len))
+		else if (Common::Asm::isToken(fmt_str, "cccopaitarget24", len))
 		{
 			unsigned cccop;
 			unsigned mode;
@@ -3918,16 +3916,16 @@ void Inst::DumpToBufWithFmtCtrl(void)
 			{
 				ss << "R" << src << " ";
 				if (s == 0)
-					ss << StringFmt("0x%x", target);
+					ss << misc::fmt("0x%x", target);
 				else
-					ss << StringFmt("-0x%x", 0x1000000 - target);
+					ss << misc::fmt("-0x%x", 0x1000000 - target);
 			}
 			else
 			{
-				ss << StringFmt("c[R%d+0x%x][0x%x]", src, bank, offset);
+				ss << misc::fmt("c[R%d+0x%x][0x%x]", src, bank, offset);
 			}
 		}
-		else if (Common::Asm::IsToken(fmt_str, "cccoprtarget", len))
+		else if (Common::Asm::isToken(fmt_str, "cccoprtarget", len))
 		{
 			unsigned cccop;
 			unsigned mode;
@@ -3946,14 +3944,14 @@ void Inst::DumpToBufWithFmtCtrl(void)
 			if (mode == 0)
 			{
 				if (s == 0)
-					ss << StringFmt("0x%x", target + addr + 8);
+					ss << misc::fmt("0x%x", target + addr + 8);
 				else
-					ss << StringFmt("0x%x", -(0x1000000 - target) + addr + 8);
+					ss << misc::fmt("0x%x", -(0x1000000 - target) + addr + 8);
 			}
 			else
-				ss << StringFmt("c[0x%x][0x%x]", bank, offset);
+				ss << misc::fmt("c[0x%x][0x%x]", bank, offset);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "cccopsrc1", len))
+		else if (Common::Asm::isToken(fmt_str, "cccopsrc1", len))
 		{
 			unsigned cccop;
 			unsigned src;
@@ -3969,13 +3967,13 @@ void Inst::DumpToBufWithFmtCtrl(void)
 			else
 				ss << "Z";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "cccop", len))
+		else if (Common::Asm::isToken(fmt_str, "cccop", len))
 		{
 			unsigned v;
 			v = (fmt.fmod0 >> 1) & 0x1f;
 			ss << cccop_map.MapValue(v);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "src1", len))
+		else if (Common::Asm::isToken(fmt_str, "src1", len))
 		{
 			unsigned src;
 			src = fmt.src1;
@@ -3985,7 +3983,7 @@ void Inst::DumpToBufWithFmtCtrl(void)
 			else
 				ss << "Z";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "atarget", len))
+		else if (Common::Asm::isToken(fmt_str, "atarget", len))
 		{
 			unsigned mode;
 			unsigned target;
@@ -3995,11 +3993,11 @@ void Inst::DumpToBufWithFmtCtrl(void)
 			bank = (fmt.imm32 >> 16) & 0x1f;
 			offset = fmt.imm32 & 0xffff;
 			if (mode == 0)
-				ss << StringFmt("0x%x", target);
+				ss << misc::fmt("0x%x", target);
 			else
-				ss << StringFmt("c[0x%x][0x%x]", bank, offset);
+				ss << misc::fmt("c[0x%x][0x%x]", bank, offset);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "aitarget", len))
+		else if (Common::Asm::isToken(fmt_str, "aitarget", len))
 		{
 			unsigned mode;
 			unsigned src;
@@ -4013,14 +4011,14 @@ void Inst::DumpToBufWithFmtCtrl(void)
 			if (mode == 0)
 			{
 				ss << "R" << src << " ";
-				ss << StringFmt("0x%x", target);
+				ss << misc::fmt("0x%x", target);
 			}
 			else
 			{
-				ss << StringFmt("c[R%d+0x%x][0x%x]", src, bank, offset);
+				ss << misc::fmt("c[R%d+0x%x][0x%x]", src, bank, offset);
 			}
 		}
-		else if (Common::Asm::IsToken(fmt_str, "rtarget", len))
+		else if (Common::Asm::isToken(fmt_str, "rtarget", len))
 		{
 			unsigned mode;
 			unsigned target, s;
@@ -4033,14 +4031,14 @@ void Inst::DumpToBufWithFmtCtrl(void)
 			if (mode == 0)
 			{
 				if (s == 0)
-					ss << StringFmt("0x%x", target + addr + 8);
+					ss << misc::fmt("0x%x", target + addr + 8);
 				else
-					ss << StringFmt("0x%x", -(0x1000000 - target) + addr + 8);
+					ss << misc::fmt("0x%x", -(0x1000000 - target) + addr + 8);
 			}
 			else
-				ss << StringFmt("c[0x%x][0x%x]", bank, offset);
+				ss << misc::fmt("c[0x%x][0x%x]", bank, offset);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "ritarget", len))
+		else if (Common::Asm::isToken(fmt_str, "ritarget", len))
 		{
 			unsigned mode;
 			unsigned src;
@@ -4056,25 +4054,25 @@ void Inst::DumpToBufWithFmtCtrl(void)
 			{
 				ss << "R" << src << " ";
 				if (s == 0)
-					ss << StringFmt("0x%x", target + addr + 8);
+					ss << misc::fmt("0x%x", target + addr + 8);
 				else
-					ss << StringFmt("0x%x", -(0x1000000 - target) + addr + 8);
+					ss << misc::fmt("0x%x", -(0x1000000 - target) + addr + 8);
 			}
 			else
 			{
-				ss << StringFmt("c[R%d+0x%x][0x%x]", src, bank, offset);
+				ss << misc::fmt("c[R%d+0x%x][0x%x]", src, bank, offset);
 			}
 		}
-		else if (Common::Asm::IsToken(fmt_str, "imm20", len))
+		else if (Common::Asm::isToken(fmt_str, "imm20", len))
 		{
 			unsigned i;
 			i = fmt.imm32 & 0xfffff;
 			if (i != 0)
-				ss << StringFmt("0x%x", i);
+				ss << misc::fmt("0x%x", i);
 		}
 		else
 		{
-			fatal("%s: unknown token: %s", __FUNCTION__,
+			misc::fatal("%s: unknown token: %s", __FUNCTION__,
 					fmt_str);
 		}
 
@@ -4093,7 +4091,7 @@ void Inst::DumpToBuf(void)
 
 	// Check if instruction is supported
 	if (!info)
-		fatal("%s: instruction not supported (offset=0x%x)",
+		misc::fatal("%s: instruction not supported (offset=0x%x)",
 				__FUNCTION__, addr);
 
 	// Get instruction category
@@ -4111,7 +4109,7 @@ void Inst::DumpToBuf(void)
 	else if (cat == InstCategoryCtrl)
 		DumpToBufWithFmtCtrl();
 	else
-		fatal("%s: instruction category %d (offset=0x%x)",
+		misc::fatal("%s: instruction category %d (offset=0x%x)",
 				__FUNCTION__, addr, cat);
 }
 
@@ -4126,7 +4124,7 @@ void Inst::Dump(std::ostream &os, unsigned width)
 
 void Inst::DumpHex(std::ostream &os)
 {
-	os << StringFmt("/* 0x%016llx */", bytes.dword);
+	os << misc::fmt("/* 0x%016llx */", bytes.dword);
 }
 
 

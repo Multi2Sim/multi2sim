@@ -34,8 +34,8 @@ Emu::Emu(Asm *as)
 	this->as = as;
 	
 	// GPU memories
-	this->video_mem.reset(new Memory::Memory());
-	this->shared_mem.reset(new Memory::Memory());
+	this->video_mem.reset(new mem::Memory());
+	this->shared_mem.reset(new mem::Memory());
 	this->global_mem = video_mem.get();
 }
 

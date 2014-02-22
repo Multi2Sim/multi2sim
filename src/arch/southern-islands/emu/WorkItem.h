@@ -83,8 +83,8 @@ private:
 	NDRange *ndrange;
 
 	// Global and local memory
-	Memory::Memory *global_mem;
-	Memory::Memory *lds;
+	mem::Memory *global_mem;
+	mem::Memory *lds;
 
 	// Vector registers
 	InstReg vreg[256];

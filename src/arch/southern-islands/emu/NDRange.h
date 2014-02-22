@@ -113,7 +113,7 @@ class NDRange
 	BinaryUserElement user_elements[BinaryMaxUserElements];
 
 	// Instruction memory containing Southern Islands ISA
-	std::unique_ptr<Memory::Memory> inst_mem;
+	std::unique_ptr<mem::Memory> inst_mem;
 	std::unique_ptr<char> inst_buffer;
 	unsigned inst_addr;
 	unsigned inst_size;
@@ -242,7 +242,7 @@ public:
 	unsigned getUserElementCount() const { return user_element_count; }
 
 	/// Get instruction memory
-	Memory::Memory *getInstMem() { return inst_mem.get(); }
+	mem::Memory *getInstMem() { return inst_mem.get(); }
 
 	/// Get buffer containing instructions
 	char *getInstBuffer() const { return inst_buffer.get(); }

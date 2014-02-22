@@ -26,6 +26,9 @@ libcpp_a_SOURCES = \
 	String.cc \
 	String.h \
 	\
+	Timer.cc \
+	Timer.h \
+	\
 	Wrapper.cc \
 	Wrapper.h
 

@@ -39,7 +39,7 @@ void FileDesc::Dump(std::ostream &os) const
 	os << "type = " << file_desc_type_map.MapValue(type);
 	os << ", guest_index = " << guest_index;
 	os << ", host_index = " << host_index;
-	os << misc::StringFmt(", flags = 0x%x", flags);
+	os << misc::fmt(", flags = 0x%x", flags);
 	os << ", path = '" << path << "'";
 }
 

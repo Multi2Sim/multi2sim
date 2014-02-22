@@ -160,9 +160,9 @@ void Context::LoadELFSections()
 	for (auto &section : binary->getSections())
 	{
 		// Debug
-		unsigned perm = Memory::MemoryAccessInit | Memory::MemoryAccessRead;
+		unsigned perm = mem::MemoryAccessInit | mem::MemoryAccessRead;
 		std::string flags_str = section_flags_map.MapFlags(section->getFlags());
-		Emu::loader_debug << misc::StringFmt("  section '%s': offset=0x%x, "
+		Emu::loader_debug << misc::fmt("  section '%s': offset=0x%x, "
 				"addr=0x%x, size=%u, flags=%s\n",
 				section->getName().c_str(), section->getOffset(),
 				section->getAddr(), section->getSize(),
@@ -173,9 +173,9 @@ void Context::LoadELFSections()
 		{
 			// Permissions
 			if (section->getFlags() & SHF_WRITE)
-				perm |= Memory::MemoryAccessWrite;
+				perm |= mem::MemoryAccessWrite;
 			if (section->getFlags() & SHF_EXECINSTR)
-				perm |= Memory::MemoryAccessExec;
+				perm |= mem::MemoryAccessExec;
 
 			// Load section
 			memory->Map(section->getAddr(), section->getSize(), perm);
@@ -525,7 +525,7 @@ void Context::LoadBinary()
 	// Set heap break to the highest written address rounded up to
 	// the memory page boundary.
 	memory->setHeapBreak(misc::RoundUp(memory->getHeapBreak(),
-			Memory::MemoryPageSize));
+			mem::MemoryPageSize));
 
 #if 0
 	// Load program header table. If we found a PT_INTERP program header,

@@ -25,7 +25,6 @@
 #include "WorkGroup.h"
 #include "WorkItem.h"
 
-using namespace misc;
 
 namespace SI
 {
@@ -199,7 +198,7 @@ void Wavefront::Execute()
 
 		if (Emu::debug)
 		{
-			Emu::debug << StringFmt("\n");
+			Emu::debug << misc::fmt("\n");
 		}
 
 		break;
@@ -217,7 +216,7 @@ void Wavefront::Execute()
 
 		if (Emu::debug)
 		{
-			Emu::debug << StringFmt("\n");
+			Emu::debug << misc::fmt("\n");
 		}
 
 		break;
@@ -243,7 +242,7 @@ void Wavefront::Execute()
 
 		if (Emu::debug)
 		{
-			Emu::debug << StringFmt("\n");
+			Emu::debug << misc::fmt("\n");
 		}
 
 		break;
@@ -261,7 +260,7 @@ void Wavefront::Execute()
 
 		if (Emu::debug)
 		{
-			Emu::debug << StringFmt("\n");
+			Emu::debug << misc::fmt("\n");
 		}
 
 		break;
@@ -279,7 +278,7 @@ void Wavefront::Execute()
 
 		if (Emu::debug)
 		{
-			Emu::debug << StringFmt("\n");
+			Emu::debug << misc::fmt("\n");
 		}
 
 		break;
@@ -298,7 +297,7 @@ void Wavefront::Execute()
 
 		if (Emu::debug)
 		{
-			Emu::debug << StringFmt("\n");
+			Emu::debug << misc::fmt("\n");
 		}
 
 		break;
@@ -323,7 +322,7 @@ void Wavefront::Execute()
 
 		if (Emu::debug)
 		{
-			Emu::debug << StringFmt("\n");
+			Emu::debug << misc::fmt("\n");
 		}
 
 		break;
@@ -375,7 +374,7 @@ void Wavefront::Execute()
 
 		if (Emu::debug)
 		{
-			Emu::debug << StringFmt("\n");
+			Emu::debug << misc::fmt("\n");
 		}
 
 		break;
@@ -399,7 +398,7 @@ void Wavefront::Execute()
 
 		if (Emu::debug)
 		{
-			Emu::debug << StringFmt("\n");
+			Emu::debug << misc::fmt("\n");
 		}
 
 		break;
@@ -423,7 +422,7 @@ void Wavefront::Execute()
 
 		if (Emu::debug)
 		{
-			Emu::debug << StringFmt("\n");
+			Emu::debug << misc::fmt("\n");
 		}
 
 		break;
@@ -447,7 +446,7 @@ void Wavefront::Execute()
 
 		if (Emu::debug)
 		{
-			Emu::debug << StringFmt("\n");
+			Emu::debug << misc::fmt("\n");
 		}
 
 		break;
@@ -471,7 +470,7 @@ void Wavefront::Execute()
 
 		if (Emu::debug)
 		{
-			Emu::debug << StringFmt("\n");
+			Emu::debug << misc::fmt("\n");
 		}
  	
 		break;
@@ -498,7 +497,7 @@ void Wavefront::Execute()
 		}
 		else 
 		{
-			fatal("%s: unimplemented LDS opcode", __FUNCTION__);
+			misc::fatal("%s: unimplemented LDS opcode", __FUNCTION__);
 		}
 
 		// Execute the instruction
@@ -513,7 +512,7 @@ void Wavefront::Execute()
 
 		if (Emu::debug)
 		{
-			Emu::debug << StringFmt("\n");
+			Emu::debug << misc::fmt("\n");
 		}
 
 		break;
@@ -532,7 +531,7 @@ void Wavefront::Execute()
 		else if (op >= 4 && op < 8)
 			vector_mem_write = true;
 		else 
-			fatal("%s: invalid mtbuf opcode", __FUNCTION__);
+			misc::fatal("%s: invalid mtbuf opcode", __FUNCTION__);
 	
 		// Execute the instruction
 		for(auto i = work_items_begin; i != work_items_end; ++i)
@@ -546,7 +545,7 @@ void Wavefront::Execute()
 
 		if (Emu::debug)
 		{
-			Emu::debug << StringFmt("\n");
+			Emu::debug << misc::fmt("\n");
 		}
 
 		break;
@@ -575,7 +574,7 @@ void Wavefront::Execute()
 		}
 		else 
 		{
-			fatal("%s: unsupported mubuf opcode (%d)", 
+			misc::fatal("%s: unsupported mubuf opcode (%d)", 
 				__FUNCTION__, op);
 		}
 	
@@ -591,7 +590,7 @@ void Wavefront::Execute()
 
 		if (Emu::debug)
 		{
-			Emu::debug << StringFmt("\n");
+			Emu::debug << misc::fmt("\n");
 		}
 
 		break;
@@ -618,7 +617,7 @@ void Wavefront::Execute()
 
 		if (Emu::debug)
 		{
-			Emu::debug << StringFmt("\n");
+			Emu::debug << misc::fmt("\n");
 		}
 
 		break;
@@ -627,7 +626,7 @@ void Wavefront::Execute()
 
 	default:
 	{
-		fatal("%s: instruction type not implemented (%d)", 
+		misc::fatal("%s: instruction type not implemented (%d)", 
 			__FUNCTION__, format);
 		break;
 	}

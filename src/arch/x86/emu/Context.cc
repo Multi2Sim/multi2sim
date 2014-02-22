@@ -20,17 +20,133 @@
 #include <lib/cpp/Misc.h>
 
 #include "Context.h"
+#include "Emu.h"
 
 
 using namespace misc;
 	
-extern char **environ;
-
 namespace x86
 {
 
+
+StringMap context_state_map = {
+	{ "running",      ContextRunning },
+	{ "specmode",     ContextSpecMode },
+	{ "suspended",    ContextSuspended },
+	{ "finished",     ContextFinished },
+	{ "exclusive",    ContextExclusive },
+	{ "locked",       ContextLocked },
+	{ "handler",      ContextHandler },
+	{ "sigsuspend",   ContextSigsuspend },
+	{ "nanosleep",    ContextNanosleep },
+	{ "poll",         ContextPoll },
+	{ "read",         ContextRead },
+	{ "write",        ContextWrite },
+	{ "waitpid",      ContextWaitpid },
+	{ "zombie",       ContextZombie },
+	{ "futex",        ContextFutex },
+	{ "alloc",        ContextAlloc },
+	{ "callback",     ContextCallback },
+	{ "mapped",       ContextMapped }
+};
+
+
+//
+// Private functions
+//
+
+
+void Context::AddToContextList(ContextListType type)
+{
+	if (!in_context_list[type])
+	{
+		in_context_list[type] = true;
+		context_list_iter[type] = emu->AddToContextList(
+				type, this);
+	}
+}
+
+
+void Context::RemoveFromContextList(ContextListType type)
+{
+	if (in_context_list[type])
+	{
+		in_context_list[type] = false;
+		emu->RemoveFromContextList(type,
+				context_list_iter[type]);
+	}
+}
+
+
+// Update the presence of the context in the context list
+void Context::UpdateContextList(ContextListType type, bool present)
+{
+	if (in_context_list[type] && !present)
+		RemoveFromContextList(type);
+	else if (!in_context_list[type] && present)
+		AddToContextList(type);
+}
+
+
+void Context::UpdateState(unsigned state)
+{
+	// If the difference between the old and new state lies in other
+	// states other than 'ContextSpecMode', a reschedule is marked. */
+	unsigned diff = this->state ^ state;
+	if (diff & ~ContextSpecMode)
+		emu->setScheduleSignal();
+	
+	// Update state
+	this->state = state;
+	if (this->state & ContextFinished)
+		this->state = ContextFinished
+				| (state & ContextAlloc)
+				| (state & ContextMapped);
+	if (this->state & ContextZombie)
+		this->state = ContextZombie
+				| (state & ContextAlloc)
+				| (state & ContextMapped);
+	if (!(this->state & ContextSuspended) &&
+			!(this->state & ContextFinished) &&
+			!(this->state & ContextZombie) &&
+			!(this->state & ContextLocked))
+		this->state |= ContextRunning;
+	else
+		this->state &= ~ContextRunning;
+	
+	// Update presence of context in emulator lists depending on its state
+	UpdateContextList(ContextListRunning, this->state & ContextRunning);
+	UpdateContextList(ContextListZombie, this->state & ContextZombie);
+	UpdateContextList(ContextListFinished, this->state & ContextFinished);
+	UpdateContextList(ContextListSuspended, this->state & ContextSuspended);
+	
+	// Dump new state (ignore ContextSpecMode state, it's too frequent)
+	if (Emu::context_debug && (diff & ~ContextSpecMode))
+	{
+		Emu::context_debug << misc::fmt(
+				"inst %lld: context %d changed state to %s\n",
+				emu->getInstructions(), pid,
+				context_state_map.MapFlags(this->state).c_str());
+	}
+
+	// Resume or pause timer depending on whether there are any contexts
+	// currently running.
+	if (emu->getContextList(ContextListRunning).size())
+		emu->StartTimer();
+	else
+		emu->StopTimer();
+}
+
+
+
+//
+// Public functions
+//
+
 Context::Context()
 {
+	// Save emulator instance
+	emu = Emu::getInstance();
 }
 
 
@@ -52,9 +168,11 @@ void Context::loadProgram(const std::vector<std::string> &args,
 				__FUNCTION__, args[0].c_str());
 	
 	// Create new memory image
-	memory.reset(new Memory::Memory());
+	assert(!memory.get());
+	memory.reset(new mem::Memory());
 	
 	// Create new loader info
+	assert(!loader.get());
 	loader.reset(new Loader());
 	loader->args = args;
 	loader->cwd = cwd;

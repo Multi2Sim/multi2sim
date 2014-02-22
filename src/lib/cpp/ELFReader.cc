@@ -28,17 +28,14 @@
 #include "String.h"
 
 
-using namespace misc;
-
-
 namespace ELFReader
 {
 
 
 
-/*
- * Class 'Section'
- */
+//
+// Class 'Section'
+//
 
 
 Section::Section(File *file, int index, unsigned int pos)
@@ -46,7 +43,7 @@ Section::Section(File *file, int index, unsigned int pos)
 	// Read section header
 	info = (Elf32_Shdr *) (file->getBuffer() + pos);
 	if (pos < 0 || pos + sizeof(Elf32_Shdr) > file->getSize())
-		fatal("%s: invalid position for section header",
+		misc::fatal("%s: invalid position for section header",
 				file->getPath().c_str());
 
 	// Initialize
@@ -61,7 +58,7 @@ Section::Section(File *file, int index, unsigned int pos)
 	{
 		// Check valid range
 		if (info->sh_offset + info->sh_size > file->getSize())
-			fatal("%s: section out of range",
+			misc::fatal("%s: section out of range",
 					file->getPath().c_str());
 
 		// Set up buffer and stream
@@ -71,9 +68,9 @@ Section::Section(File *file, int index, unsigned int pos)
 
 
 
-/*
- * Class 'ProgramHeader'
- */
+//
+// Class 'ProgramHeader'
+//
 
 
 ProgramHeader::ProgramHeader(File *file, int index, unsigned int pos)
@@ -85,7 +82,7 @@ ProgramHeader::ProgramHeader(File *file, int index, unsigned int pos)
 	// Read program header
 	info = (Elf32_Phdr *) (file->getBuffer() + pos);
 	if (pos < 0 || pos + sizeof(Elf32_Phdr) > file->getSize())
-		fatal("%s: invalid position for program header",
+		misc::fatal("%s: invalid position for program header",
 				file->getPath().c_str());
 
 	// File content
@@ -99,7 +96,7 @@ void ProgramHeader::getStream(std::istringstream &stream, unsigned int offset,
 {
 	// Check valid offset/size
 	if (offset + size > this->size)
-		fatal("%s: %s: invalid offset/size",
+		misc::fatal("%s: %s: invalid offset/size",
 				file->getPath().c_str(),
 				__FUNCTION__);
 
@@ -111,9 +108,9 @@ void ProgramHeader::getStream(std::istringstream &stream, unsigned int offset,
 
 
 
-/*
- * Class 'Symbol'
- */
+//
+// Class 'Symbol'
+//
 
 Symbol::Symbol(File *file, Section *section, unsigned int pos)
 {
@@ -123,19 +120,19 @@ Symbol::Symbol(File *file, Section *section, unsigned int pos)
 	// Read symbol
 	info = (Elf32_Sym *) (section->getBuffer() + pos);
 	if (pos < 0 || pos + sizeof(Elf32_Sym) > section->getSize())
-		fatal("%s: invalid position for symbol",
+		misc::fatal("%s: invalid position for symbol",
 				file->getPath().c_str());
 
 	// Get section with symbol name
 	unsigned name_section_index = section->getLink();
 	Section *name_section = file->getSection(name_section_index);
 	if (!name_section)
-		fatal("%s: invalid index for symbol name section",
+		misc::fatal("%s: invalid index for symbol name section",
 				file->getPath().c_str());
 
 	// Get symbol name
 	if (info->st_name >= name_section->getSize())
-		fatal("%s: invalid symbol name offset",
+		misc::fatal("%s: invalid symbol name offset",
 				file->getPath().c_str());
 	name = name_section->getBuffer() + info->st_name;
 
@@ -182,13 +179,13 @@ void Symbol::getStream(std::istringstream &stream, unsigned int offset,
 {
 	// Symbol without content
 	if (!buffer)
-		fatal("%s: %s: symbol '%s' does not have any valid content",
+		misc::fatal("%s: %s: symbol '%s' does not have any valid content",
 				file->getPath().c_str(), __FUNCTION__,
 				name.c_str());
 
 	// Check valid offset/size
 	if (offset + size > info->st_size)
-		fatal("%s: symbol '%s': %s: invalid offset/size",
+		misc::fatal("%s: symbol '%s': %s: invalid offset/size",
 				file->getPath().c_str(), name.c_str(),
 				__FUNCTION__);
 
@@ -200,9 +197,9 @@ void Symbol::getStream(std::istringstream &stream, unsigned int offset,
 
 
 
-/*
- * Class 'File'
- */
+//
+// Class 'File'
+//
 
 static const char *err_64bit =
 	"\tThe ELF file being loaded is a 64-bit file, currently not supported\n"
@@ -217,15 +214,15 @@ void File::ReadHeader()
 	// Read ELF header
 	info = (Elf32_Ehdr *) buffer;
 	if (size < sizeof(Elf32_Ehdr))
-		fatal("%s: invalid ELF file", path.c_str());
+		misc::fatal("%s: invalid ELF file", path.c_str());
 
 	// Check that file is a valid ELF file
 	if (strncmp((char *) info->e_ident, ELFMAG, 4))
-		fatal("%s: invalid ELF file", path.c_str());
+		misc::fatal("%s: invalid ELF file", path.c_str());
 
 	// Check that ELF file is a 32-bit object
 	if (info->e_ident[EI_CLASS] == ELFCLASS64)
-		fatal("%s: 64-bit ELF not supported.\n%s",
+		misc::fatal("%s: 64-bit ELF not supported.\n%s",
 			path.c_str(), err_64bit);
 }
 
@@ -234,7 +231,7 @@ void File::ReadSections()
 {
 	// Check section size and number
 	if (!info->e_shnum || info->e_shentsize != sizeof(Elf32_Shdr))
-		fatal("%s: number of sections is 0 or section size is not %d",
+		misc::fatal("%s: number of sections is 0 or section size is not %d",
 			path.c_str(), (int) sizeof(Elf32_Shdr));
 
 	// Read section headers
@@ -244,10 +241,10 @@ void File::ReadSections()
 
 	// Read string table
 	if (info->e_shstrndx >= info->e_shnum)
-		fatal("%s: invalid string table index", path.c_str());
+		misc::fatal("%s: invalid string table index", path.c_str());
 	string_table = sections[info->e_shstrndx].get();
 	if (string_table->info->sh_type != 3)
-		fatal("%s: invalid string table type", path.c_str());
+		misc::fatal("%s: invalid string table type", path.c_str());
 
 	// Read section names
 	for (auto &section : sections)
@@ -264,7 +261,7 @@ void File::ReadProgramHeaders()
 	
 	// Check program header size
 	if (info->e_phentsize != sizeof(Elf32_Phdr))
-		fatal("%s: program header size %d (should be %d)",
+		misc::fatal("%s: program header size %d (should be %d)",
 				path.c_str(), info->e_phentsize,
 				(int) sizeof(Elf32_Phdr));
 	
@@ -317,7 +314,7 @@ File::File(const std::string &path)
 	// Open file
 	std::ifstream f(path);
 	if (!f)
-		fatal("%s: cannot open file", path.c_str());
+		misc::fatal("%s: cannot open file", path.c_str());
 
 	// Get file size
 	f.seekg(0, std::ios_base::end);
@@ -379,7 +376,7 @@ std::ostream &operator<<(std::ostream &os, const File &file)
 			", EI_VERSION=" << (int) file.info->e_ident[6] << "\n";
 	os << "  ehdr.e_type: " << file.info->e_type << "\n";
 	os << "  ehdr.e_machine: " << file.info->e_machine << "\n";
-	os << StringFmt("  ehdr.e_entry: 0x%x\n", file.info->e_entry);
+	os << misc::fmt("  ehdr.e_entry: 0x%x\n", file.info->e_entry);
 	os << "  ehdr.e_phoff: " << file.info->e_phoff << "\n";
 	os << "  ehdr.e_shoff: " << file.info->e_shoff << "\n";
 	os << "  ehdr.e_phentsize: " << file.info->e_phentsize << "\n";
@@ -395,13 +392,13 @@ std::ostream &operator<<(std::ostream &os, const File &file)
 	os << std::string(80, '-') << '\n';
 	for (auto &section : file.sections)
 	{
-		os << StringFmt("  [%2d]", section->getIndex());
-		os << StringFmt("%4d ", section->getType());
-		os << StringFmt("%5x ", section->getFlags());
-		os << StringFmt("%08x ", section->getAddr());
-		os << StringFmt("%08x ", section->getOffset());
-		os << StringFmt("%9x ", section->getSize());
-		os << StringFmt("%8d ", section->getLink());
+		os << misc::fmt("  [%2d]", section->getIndex());
+		os << misc::fmt("%4d ", section->getType());
+		os << misc::fmt("%5x ", section->getFlags());
+		os << misc::fmt("%08x ", section->getAddr());
+		os << misc::fmt("%08x ", section->getOffset());
+		os << misc::fmt("%9x ", section->getSize());
+		os << misc::fmt("%8d ", section->getLink());
 		os << section->getName();
 		os << '\n';
 	}
@@ -414,14 +411,14 @@ std::ostream &operator<<(std::ostream &os, const File &file)
 	os << std::string(80, '-') << '\n';
 	for (auto &ph : file.program_headers)
 	{
-		os << StringFmt("%3d ", ph->getIndex());
-		os << StringFmt("%8x ", ph->getType());
-		os << StringFmt("%8x ", ph->getOffset());
-		os << StringFmt("%8x ", ph->getVaddr());
-		os << StringFmt("%8x ", ph->getPaddr());
-		os << StringFmt("%9u ", ph->getFilesz());
-		os << StringFmt("%9u ", ph->getMemsz());
-		os << StringFmt("%6u ", ph->getFlags());
+		os << misc::fmt("%3d ", ph->getIndex());
+		os << misc::fmt("%8x ", ph->getType());
+		os << misc::fmt("%8x ", ph->getOffset());
+		os << misc::fmt("%8x ", ph->getVaddr());
+		os << misc::fmt("%8x ", ph->getPaddr());
+		os << misc::fmt("%9u ", ph->getFilesz());
+		os << misc::fmt("%9u ", ph->getMemsz());
+		os << misc::fmt("%6u ", ph->getFlags());
 		os << ph->getAlign() << ' ';
 		os << '\n';
 	}
@@ -429,26 +426,26 @@ std::ostream &operator<<(std::ostream &os, const File &file)
 
 	// Dump
 	os << "Symbol table:\n";
-	os << StringFmt("%-40s %-15s %-12s %-12s %-10s %-10s",
+	os << misc::fmt("%-40s %-15s %-12s %-12s %-10s %-10s",
 			"name", "section", "value", "size", "info", "other");
 	os << std::string(80, '-') << '\n';
 	for (auto &symbol : file.symbols)
 	{
 		// Symbol name
-		os << StringFmt("%-40s ", symbol->getName().c_str());
+		os << misc::fmt("%-40s ", symbol->getName().c_str());
 
 		// Print section
 		Section *section = symbol->getSection();
 		if (section)
-			os << StringFmt("%-15s ", section->getName().c_str());
+			os << misc::fmt("%-15s ", section->getName().c_str());
 		else
-			os << StringFmt("%-15d ", symbol->getShndx());
+			os << misc::fmt("%-15d ", symbol->getShndx());
 
 		// Rest
-		os << StringFmt("%-10x ", symbol->getValue());
-		os << StringFmt("%-12u ", symbol->getSize());
-		os << StringFmt("%-10u ", symbol->getInfo());
-		os << StringFmt("%-10u ", symbol->getOther());
+		os << misc::fmt("%-10x ", symbol->getValue());
+		os << misc::fmt("%-12u ", symbol->getSize());
+		os << misc::fmt("%-10u ", symbol->getInfo());
+		os << misc::fmt("%-10u ", symbol->getOther());
 		os << '\n';
 	}
 	os << '\n';
@@ -475,7 +472,7 @@ void File::getStream(std::istringstream &stream, unsigned int offset,
 {
 	// Check valid offset/size
 	if (offset + size > this->size)
-		fatal("%s: %s: invalid offset/size",
+		misc::fatal("%s: %s: invalid offset/size",
 				path.c_str(), __FUNCTION__);
 
 	// Set substream

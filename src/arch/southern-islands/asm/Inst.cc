@@ -28,13 +28,10 @@
 #include "Inst.h"
 
 
-using namespace misc;
-
-
 namespace SI
 {
 
-StringMap inst_format_map =
+misc::StringMap inst_format_map =
 {
 	{ "<invalid>", InstFormatInvalid },
 	{ "sop2", InstFormatSOP2 },
@@ -57,7 +54,7 @@ StringMap inst_format_map =
 };
 
 /* String maps for assembly dump. */
-static StringMap inst_sdst_map =
+static misc::StringMap inst_sdst_map =
 {
 	{"reserved", 0},
 	{"reserved", 1},
@@ -85,7 +82,7 @@ static StringMap inst_sdst_map =
 	{"exec_hi", 23}
 };
 
-static StringMap inst_ssrc_map =
+static misc::StringMap inst_ssrc_map =
 {
 	{"0.5", 0},
 	{"-0.5", 1},
@@ -105,7 +102,7 @@ static StringMap inst_ssrc_map =
 	{"literal constant", 15}
 };
 
-StringMap inst_buf_data_format_map =
+misc::StringMap inst_buf_data_format_map =
 {
 	{"invalid", InstBufDataFormatInvalid },
 	{"BUF_DATA_FORMAT_8", InstBufDataFormat8 },
@@ -125,7 +122,7 @@ StringMap inst_buf_data_format_map =
 	{"reserved", InstBufDataFormatReserved }
 };
 
-StringMap inst_buf_num_format_map =
+misc::StringMap inst_buf_num_format_map =
 {
 	{"BUF_NUM_FORMAT_UNORM", InstBufNumFormatUnorm },
 	{"BUF_NUM_FORMAT_SNORM", InstBufNumFormatSnorm },
@@ -143,7 +140,7 @@ StringMap inst_buf_num_format_map =
 	{"BUF_NUM_FORMAT_UBSCALED", InstBufNumFormatUbscaled }
 };
 
-static StringMap inst_OP16_map =
+static misc::StringMap inst_OP16_map =
 {
 	{"f", 0},
 	{"lt", 1},
@@ -163,7 +160,7 @@ static StringMap inst_OP16_map =
 	{"tru", 15}
 };
 
-static StringMap inst_OP8_map =
+static misc::StringMap inst_OP8_map =
 {
 	{"f", 0},
 	{"lt", 1},
@@ -175,7 +172,7 @@ static StringMap inst_OP8_map =
 	{"tru", 7}
 };
 
-StringMap inst_special_reg_map =
+misc::StringMap inst_special_reg_map =
 {
 	{ "vcc", InstSpecialRegVcc },
 	{ "scc", InstSpecialRegScc },
@@ -209,7 +206,7 @@ void Inst::DumpOperand(std::ostream& os, int operand)
 	}
 	else if (operand <= 239)
 	{
-		fatal("%s: operand code unused (%d)",
+		misc::fatal("%s: operand code unused (%d)",
 				__FUNCTION__, operand);
 	}
 	else if (operand <= 255)
@@ -286,14 +283,14 @@ void Inst::DumpOperandSeries(std::ostream& os, int start, int end)
 				os << "-2.0";
 				break;
 			default:
-				fatal("Unimplemented series: "
+				misc::fatal("Unimplemented series: "
 					"[%d:%d]", start, end);
 			}
 		}
 	}
 	else if (start <= 255)
 	{
-		fatal("%s: illegal operand series: [%d:%d]",
+		misc::fatal("%s: illegal operand series: [%d:%d]",
 				__FUNCTION__, start, end);
 	}
 	else if (start <= 511)
@@ -347,7 +344,7 @@ void Inst::DumpOperandExp(std::ostream& os, int operand)
 	}
 	else if (operand < 12)
 	{
-		fatal("%s: operand code [%d] unused.",
+		misc::fatal("%s: operand code [%d] unused.",
 				__FUNCTION__, operand);
 	}
 	else if (operand <= 15)
@@ -357,7 +354,7 @@ void Inst::DumpOperandExp(std::ostream& os, int operand)
 	}
 	else if (operand < 32)
 	{
-		fatal("%s: operand code [%d] unused.",
+		misc::fatal("%s: operand code [%d] unused.",
 				__FUNCTION__, operand);
 	}
 	else if (operand <= 63)
@@ -396,7 +393,7 @@ void Inst::DumpSeriesVdata(std::ostream& os, unsigned int vdata, int op)
 			vdata_end = vdata + 3;
 			break;
 		default:
-			fatal("MUBUF/MTBUF opcode not recognized");
+			misc::fatal("MUBUF/MTBUF opcode not recognized");
 	}
 
 	DumpVectorSeries(os, vdata, vdata_end);
@@ -406,7 +403,7 @@ void Inst::DumpSeriesVdata(std::ostream& os, unsigned int vdata, int op)
 void Inst::DumpSsrc(std::ostream& os, unsigned int ssrc) const
 {
 	if (ssrc == 0xff)
-		os << StringFmt("0x%08x", bytes.sop2.lit_cnst);
+		os << misc::fmt("0x%08x", bytes.sop2.lit_cnst);
 	else
 		DumpScalar(os, ssrc);
 }
@@ -415,7 +412,7 @@ void Inst::DumpSsrc(std::ostream& os, unsigned int ssrc) const
 void Inst::Dump64Ssrc(std::ostream& os, unsigned int ssrc) const
 {		
 	if (ssrc == 0xff)
-		os << StringFmt("0x%08x", bytes.sop2.lit_cnst);
+		os << misc::fmt("0x%08x", bytes.sop2.lit_cnst);
 	else
 		DumpScalarSeries(os, ssrc, ssrc + 1);
 }
@@ -426,8 +423,8 @@ void Inst::DumpVop3Src(std::ostream& os, unsigned int src, int neg) const
 	std::stringstream ss;
 
 	DumpOperand(ss, src);
-	if (!(inRange(bytes.vop3a.op, 293, 298)) && 
-		!(inRange(bytes.vop3a.op, 365, 366)))
+	if (!(misc::inRange(bytes.vop3a.op, 293, 298)) && 
+		!(misc::inRange(bytes.vop3a.op, 365, 366)))
 	{
 		if ((bytes.vop3a.neg & neg) && 
 				(bytes.vop3a.abs & neg))
@@ -457,8 +454,8 @@ void Inst::DumpVop364Src(std::ostream& os, unsigned int src, int neg) const
 	std::stringstream ss;
 
 	DumpOperandSeries(ss, src, src + 1);
-	if (!(inRange(bytes.vop3a.op, 293, 298)) && 
-		!(inRange(bytes.vop3a.op, 365, 366)))
+	if (!(misc::inRange(bytes.vop3a.op, 293, 298)) && 
+		!(misc::inRange(bytes.vop3a.op, 365, 366)))
 	{
 		if ((bytes.vop3a.neg & neg) && 
 				(bytes.vop3a.abs & neg))
@@ -509,7 +506,7 @@ void Inst::DumpMaddr(std::ostream& os) const
 void Inst::DumpDug(std::ostream& os) const
 {
 	/* DMASK */
-	os << StringFmt(" dmask:0x%x", bytes.mimg.dmask);
+	os << misc::fmt(" dmask:0x%x", bytes.mimg.dmask);
 	
 	/* UNORM */
 	if (bytes.mimg.unorm)
@@ -548,7 +545,7 @@ void Inst::Dump(std::ostream &os) const
 
 		/* Token */
 		fmt_str++;
-		if (Common::Asm::IsToken(fmt_str, "WAIT_CNT", token_len))
+		if (Common::Asm::isToken(fmt_str, "WAIT_CNT", token_len))
 		{	
 			const InstBytesSOPP *sopp = &bytes.sopp;
 
@@ -579,132 +576,132 @@ void Inst::Dump(std::ostream &os) const
 				more = 1;
 			}
 		}
-		else if (Common::Asm::IsToken(fmt_str, "LABEL", token_len))
+		else if (Common::Asm::isToken(fmt_str, "LABEL", token_len))
 		{		
 			const InstBytesSOPP *sopp = &bytes.sopp;
 	
 			short simm16 = sopp->simm16;
 			int se_simm = simm16;
 
-			os << StringFmt("label_%04X",
+			os << misc::fmt("label_%04X",
 					(address + (se_simm * 4) + 4) / 4);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "SSRC0", token_len))
+		else if (Common::Asm::isToken(fmt_str, "SSRC0", token_len))
 		{	
 			DumpSsrc(os, bytes.sop2.ssrc0);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "64_SSRC0", token_len))
+		else if (Common::Asm::isToken(fmt_str, "64_SSRC0", token_len))
 		{
 			Dump64Ssrc(os, bytes.sop2.ssrc0);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "SSRC1", token_len))
+		else if (Common::Asm::isToken(fmt_str, "SSRC1", token_len))
 		{
 			DumpSsrc(os, bytes.sop2.ssrc1);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "64_SSRC1", token_len))
+		else if (Common::Asm::isToken(fmt_str, "64_SSRC1", token_len))
 		{
 			Dump64Ssrc(os, bytes.sop2.ssrc1);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "SDST", token_len))
+		else if (Common::Asm::isToken(fmt_str, "SDST", token_len))
 		{	
 			DumpScalar(os, bytes.sop2.sdst);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "64_SDST", token_len))
+		else if (Common::Asm::isToken(fmt_str, "64_SDST", token_len))
 		{
 			DumpScalarSeries(os, bytes.sop2.sdst, bytes.sop2.sdst + 1);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "SIMM16", token_len))
+		else if (Common::Asm::isToken(fmt_str, "SIMM16", token_len))
 		{
-			os << StringFmt("0x%04x", bytes.sopk.simm16);
+			os << misc::fmt("0x%04x", bytes.sopk.simm16);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "SRC0", token_len))
+		else if (Common::Asm::isToken(fmt_str, "SRC0", token_len))
 		{
 			if (bytes.vopc.src0 == 0xFF)
-				os << StringFmt("0x%08x", bytes.vopc.lit_cnst);
+				os << misc::fmt("0x%08x", bytes.vopc.lit_cnst);
 			else
 				DumpOperand(os, bytes.vopc.src0);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "64_SRC0", token_len))
+		else if (Common::Asm::isToken(fmt_str, "64_SRC0", token_len))
 		{
 			assert(bytes.vopc.src0 != 0xFF);
 			DumpOperandSeries(os, bytes.vopc.src0, bytes.vopc.src0 + 1);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "VSRC1", token_len))
+		else if (Common::Asm::isToken(fmt_str, "VSRC1", token_len))
 		{
 			DumpVector(os, bytes.vopc.vsrc1);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "64_VSRC1", token_len))
+		else if (Common::Asm::isToken(fmt_str, "64_VSRC1", token_len))
 		{
 			assert(bytes.vopc.vsrc1 != 0xFF);
 			DumpVectorSeries(os, bytes.vopc.vsrc1, bytes.vopc.vsrc1 + 1);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "VDST", token_len))
+		else if (Common::Asm::isToken(fmt_str, "VDST", token_len))
 		{
 			DumpVector(os, bytes.vop1.vdst);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "64_VDST", token_len))
+		else if (Common::Asm::isToken(fmt_str, "64_VDST", token_len))
 		{
 			DumpVectorSeries(os, bytes.vop1.vdst, bytes.vop1.vdst + 1);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "SVDST", token_len))
+		else if (Common::Asm::isToken(fmt_str, "SVDST", token_len))
 		{
 			DumpScalar(os, bytes.vop1.vdst);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "VOP3_64_SVDST", token_len))
+		else if (Common::Asm::isToken(fmt_str, "VOP3_64_SVDST", token_len))
 		{
 			/* VOP3a compare operations use the VDST field to 
 			 * indicate the address of the scalar destination.*/
 			DumpScalarSeries(os, bytes.vop3a.vdst, bytes.vop3a.vdst + 1);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "VOP3_VDST", token_len))
+		else if (Common::Asm::isToken(fmt_str, "VOP3_VDST", token_len))
 		{
 			DumpVector(os, bytes.vop3a.vdst);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "VOP3_64_VDST", token_len))
+		else if (Common::Asm::isToken(fmt_str, "VOP3_64_VDST", token_len))
 		{
 			DumpVectorSeries(os, bytes.vop3a.vdst, bytes.vop3a.vdst + 1);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "VOP3_64_SDST", token_len))
+		else if (Common::Asm::isToken(fmt_str, "VOP3_64_SDST", token_len))
 		{
 			DumpScalarSeries(os, bytes.vop3b.sdst, bytes.vop3b.sdst + 1);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "VOP3_SRC0", token_len))
+		else if (Common::Asm::isToken(fmt_str, "VOP3_SRC0", token_len))
 		{
 			DumpVop3Src(os, bytes.vop3a.src0, 1);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "VOP3_64_SRC0", token_len))
+		else if (Common::Asm::isToken(fmt_str, "VOP3_64_SRC0", token_len))
 		{
 			DumpVop364Src(os, bytes.vop3a.src0, 1);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "VOP3_SRC1", token_len))
+		else if (Common::Asm::isToken(fmt_str, "VOP3_SRC1", token_len))
 		{
 			DumpVop3Src(os, bytes.vop3a.src1, 2);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "VOP3_64_SRC1", token_len))
+		else if (Common::Asm::isToken(fmt_str, "VOP3_64_SRC1", token_len))
 		{
 			DumpVop364Src(os, bytes.vop3a.src1, 2);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "VOP3_SRC2", token_len))
+		else if (Common::Asm::isToken(fmt_str, "VOP3_SRC2", token_len))
 		{
 			DumpVop3Src(os, bytes.vop3a.src2, 4);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "VOP3_64_SRC2", token_len))
+		else if (Common::Asm::isToken(fmt_str, "VOP3_64_SRC2", token_len))
 		{
 			DumpVop364Src(os, bytes.vop3a.src2, 4);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "VOP3_OP16", token_len))
+		else if (Common::Asm::isToken(fmt_str, "VOP3_OP16", token_len))
 		{
 			os << inst_OP16_map.MapValue(bytes.vop3a.op & 15);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "VOP3_OP8", token_len))
+		else if (Common::Asm::isToken(fmt_str, "VOP3_OP8", token_len))
 		{
 			os << inst_OP8_map.MapValue(bytes.vop3a.op & 15);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "SMRD_SDST", token_len))
+		else if (Common::Asm::isToken(fmt_str, "SMRD_SDST", token_len))
 		{
 			DumpScalar(os, bytes.smrd.sdst);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "SERIES_SDST", token_len))
+		else if (Common::Asm::isToken(fmt_str, "SERIES_SDST", token_len))
 		{
 			/* The sbase field is missing the LSB, 
 			 * so multiply by 2 */
@@ -713,7 +710,7 @@ void Inst::Dump(std::ostream &os) const
 			int op = bytes.smrd.op;
 
 			/* S_LOAD_DWORD */
-			if (inRange(op, 0, 4))
+			if (misc::inRange(op, 0, 4))
 			{
 				/* Multi-dword */
 				switch (op)
@@ -733,12 +730,12 @@ void Inst::Dump(std::ostream &os) const
 					sdst_end = sdst + 15;
 					break;
 				default:
-					fatal("Invalid smrd "
+					misc::fatal("Invalid smrd "
 						"opcode");
 				}
 			}
 			/* S_BUFFER_LOAD_DWORD */
-			else if (inRange(op, 8, 12))
+			else if (misc::inRange(op, 8, 12))
 			{	
 				/* Multi-dword */
 				switch (op)
@@ -758,31 +755,31 @@ void Inst::Dump(std::ostream &os) const
 					sdst_end = sdst + 15;
 					break;
 				default:
-					fatal("Invalid smrd "
+					misc::fatal("Invalid smrd "
 						"opcode");
 				}
 			}
 			/* S_MEMTIME */
 			else if (op == 30)
 			{
-				fatal("S_MEMTIME instruction not currently" 
+				misc::fatal("S_MEMTIME instruction not currently" 
 					"supported");
 			}
 			/* S_DCACHE_INV */
 			else if (op == 31)
 			{
-				fatal("S_DCACHE_INV instruction not" 
+				misc::fatal("S_DCACHE_INV instruction not" 
 					"currently supported");
 			}
 			else
 			{
-				fatal("Invalid smrd opcode");
+				misc::fatal("Invalid smrd opcode");
 			}
 
 			DumpScalarSeries(os, sdst, sdst_end);
 
 		}
-		else if (Common::Asm::IsToken(fmt_str, "SERIES_SBASE", token_len))
+		else if (Common::Asm::isToken(fmt_str, "SERIES_SBASE", token_len))
 		{
 			
 			/* The sbase field is missing the LSB, 
@@ -792,13 +789,13 @@ void Inst::Dump(std::ostream &os) const
 			int op = bytes.smrd.op;
 
 			/* S_LOAD_DWORD */
-			if (inRange(op, 0, 4))
+			if (misc::inRange(op, 0, 4))
 			{
 				/* SBASE specifies two consecutive SGPRs */
 				sbase_end = sbase + 1;
 			}
 			/* S_BUFFER_LOAD_DWORD */
-			else if (inRange(op, 8, 12))
+			else if (misc::inRange(op, 8, 12))
 			{
 				/* SBASE specifies four consecutive SGPRs */
 				sbase_end = sbase + 3;
@@ -806,76 +803,76 @@ void Inst::Dump(std::ostream &os) const
 			/* S_MEMTIME */
 			else if (op == 30)
 			{
-				fatal("S_MEMTIME instruction not currently"
+				misc::fatal("S_MEMTIME instruction not currently"
 					" supported");
 			}
 			/* S_DCACHE_INV */
 			else if (op == 31)
 			{
-				fatal("S_DCACHE_INV instruction not currently"
+				misc::fatal("S_DCACHE_INV instruction not currently"
 					" supported");
 			}
 			else
 			{
-				fatal("Invalid smrd opcode");
+				misc::fatal("Invalid smrd opcode");
 			}
 
 			DumpScalarSeries(os, sbase, sbase_end);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "VOP2_LIT", token_len))
+		else if (Common::Asm::isToken(fmt_str, "VOP2_LIT", token_len))
 		{
-			os << StringFmt("0x%08x", bytes.vop2.lit_cnst);
+			os << misc::fmt("0x%08x", bytes.vop2.lit_cnst);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "OFFSET", token_len))
+		else if (Common::Asm::isToken(fmt_str, "OFFSET", token_len))
 		{
 			if (bytes.smrd.imm)
-				os << StringFmt("0x%02x", bytes.smrd.offset);
+				os << misc::fmt("0x%02x", bytes.smrd.offset);
 			else
 				DumpScalar(os, bytes.smrd.offset);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "DS_VDST", token_len))
+		else if (Common::Asm::isToken(fmt_str, "DS_VDST", token_len))
 		{
 			DumpVector(os, bytes.ds.vdst);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "ADDR", token_len))
+		else if (Common::Asm::isToken(fmt_str, "ADDR", token_len))
 		{
 			DumpVector(os, bytes.ds.addr);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "DATA0", token_len))
+		else if (Common::Asm::isToken(fmt_str, "DATA0", token_len))
 		{
 			DumpVector(os, bytes.ds.data0);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "DATA1", token_len))
+		else if (Common::Asm::isToken(fmt_str, "DATA1", token_len))
 		{
 			DumpVector(os, bytes.ds.data1);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "OFFSET0", token_len))
+		else if (Common::Asm::isToken(fmt_str, "OFFSET0", token_len))
 		{
 			if (bytes.ds.offset0)
 				os << "offset0:" << bytes.ds.offset0 << ' ';
 		}
-		else if (Common::Asm::IsToken(fmt_str, "DS_SERIES_VDST", token_len))
+		else if (Common::Asm::isToken(fmt_str, "DS_SERIES_VDST", token_len))
 		{
 			DumpVectorSeries(os, bytes.ds.vdst, bytes.ds.vdst + 1);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "OFFSET1", token_len))
+		else if (Common::Asm::isToken(fmt_str, "OFFSET1", token_len))
 		{
 			if (bytes.ds.offset1)
 				os << "offset1:" << bytes.ds.offset1 << ' ';
 		}
-		else if (Common::Asm::IsToken(fmt_str, "VINTRP_VDST", token_len))
+		else if (Common::Asm::isToken(fmt_str, "VINTRP_VDST", token_len))
 		{
 			DumpVector(os, bytes.vintrp.vdst);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "VSRC_I_J", token_len))
+		else if (Common::Asm::isToken(fmt_str, "VSRC_I_J", token_len))
 		{
 			DumpVector(os, bytes.vintrp.vsrc);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "ATTR", token_len))
+		else if (Common::Asm::isToken(fmt_str, "ATTR", token_len))
 		{
 			os << "attr_" << bytes.vintrp.attr;
 		}
-		else if (Common::Asm::IsToken(fmt_str, "ATTRCHAN", token_len))
+		else if (Common::Asm::isToken(fmt_str, "ATTRCHAN", token_len))
 		{
 			switch (bytes.vintrp.attrchan)
 			{
@@ -895,17 +892,17 @@ void Inst::Dump(std::ostream &os) const
 				break;
 			}
 		}
-		else if (Common::Asm::IsToken(fmt_str, "MU_SERIES_VDATA_DST", token_len)  ||
-				Common::Asm::IsToken(fmt_str, "MU_SERIES_VDATA_SRC", token_len))
+		else if (Common::Asm::isToken(fmt_str, "MU_SERIES_VDATA_DST", token_len)  ||
+				Common::Asm::isToken(fmt_str, "MU_SERIES_VDATA_SRC", token_len))
 		{
 			DumpSeriesVdata(os, bytes.mubuf.vdata, bytes.mubuf.op);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "MU_GLC", token_len))
+		else if (Common::Asm::isToken(fmt_str, "MU_GLC", token_len))
 		{
 			if (bytes.mubuf.glc)
 				os << "glc";
 		}
-		else if (Common::Asm::IsToken(fmt_str, "VADDR", token_len))
+		else if (Common::Asm::isToken(fmt_str, "VADDR", token_len))
 		{
 			if (bytes.mtbuf.offen && bytes.mtbuf.idxen)
 				DumpVectorSeries(os, bytes.mtbuf.vaddr, 
@@ -913,22 +910,22 @@ void Inst::Dump(std::ostream &os) const
 			else
 				DumpVector(os, bytes.mtbuf.vaddr);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "MU_MADDR", token_len))
+		else if (Common::Asm::isToken(fmt_str, "MU_MADDR", token_len))
 		{
 			DumpMaddr(os);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "MT_SERIES_VDATA_DST", token_len) ||
-				Common::Asm::IsToken(fmt_str, "MT_SERIES_VDATA_SRC", token_len))
+		else if (Common::Asm::isToken(fmt_str, "MT_SERIES_VDATA_DST", token_len) ||
+				Common::Asm::isToken(fmt_str, "MT_SERIES_VDATA_SRC", token_len))
 		{
 			DumpSeriesVdata(os, bytes.mtbuf.vdata, bytes.mtbuf.op);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "SERIES_SRSRC", token_len))
+		else if (Common::Asm::isToken(fmt_str, "SERIES_SRSRC", token_len))
 		{
 			assert((bytes.mtbuf.srsrc << 2) % 4 == 0);
 			DumpScalarSeries(os, bytes.mtbuf.srsrc << 2, 
 					(bytes.mtbuf.srsrc << 2) + 3);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "MT_MADDR", token_len))
+		else if (Common::Asm::isToken(fmt_str, "MT_MADDR", token_len))
 		{
 			DumpMaddr(os);
 			os << " format:["
@@ -937,37 +934,37 @@ void Inst::Dump(std::ostream &os) const
 					<< inst_buf_num_format_map.MapValue(
 					bytes.mtbuf.nfmt) << ']';
 		}
-		else if (Common::Asm::IsToken(fmt_str, "MIMG_SERIES_VDATA_SRC", token_len) ||
-				Common::Asm::IsToken(fmt_str, "MIMG_SERIES_VDATA_DST", token_len))
+		else if (Common::Asm::isToken(fmt_str, "MIMG_SERIES_VDATA_SRC", token_len) ||
+				Common::Asm::isToken(fmt_str, "MIMG_SERIES_VDATA_DST", token_len))
 		{
 			DumpVectorSeries(os, bytes.mimg.vdata,
 					bytes.mimg.vdata + 3);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "MIMG_VADDR", token_len))
+		else if (Common::Asm::isToken(fmt_str, "MIMG_VADDR", token_len))
 		{
 			DumpVectorSeries(os, bytes.mimg.vaddr, 
 					bytes.mimg.vaddr + 3);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "MIMG_SERIES_SRSRC", token_len))
+		else if (Common::Asm::isToken(fmt_str, "MIMG_SERIES_SRSRC", token_len))
 		{
 			assert((bytes.mimg.srsrc << 2) % 4 == 0);
 			DumpScalarSeries(os, bytes.mimg.srsrc << 2, 
 					(bytes.mimg.srsrc << 2) + 7);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "MIMG_DUG_SERIES_SRSRC", token_len))
+		else if (Common::Asm::isToken(fmt_str, "MIMG_DUG_SERIES_SRSRC", token_len))
 		{
 			assert((bytes.mimg.srsrc << 2) % 4 == 0);
 			DumpScalarSeries(os, bytes.mimg.srsrc << 2, 
 					(bytes.mimg.srsrc << 2) + 7);
 			DumpDug(os);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "MIMG_SERIES_SSAMP", token_len))
+		else if (Common::Asm::isToken(fmt_str, "MIMG_SERIES_SSAMP", token_len))
 		{
 			assert((bytes.mimg.ssamp << 2) % 4 == 0);
 			DumpScalarSeries(os, bytes.mimg.ssamp << 2, 
 					(bytes.mimg.ssamp << 2) + 3);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "MIMG_DUG_SERIES_SSAMP", 
+		else if (Common::Asm::isToken(fmt_str, "MIMG_DUG_SERIES_SSAMP", 
 			token_len))
 		{
 			assert((bytes.mimg.ssamp << 2) % 4 == 0);
@@ -975,11 +972,11 @@ void Inst::Dump(std::ostream &os) const
 					(bytes.mimg.ssamp << 2) + 3);
 			DumpDug(os);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "TGT", token_len))
+		else if (Common::Asm::isToken(fmt_str, "TGT", token_len))
 		{
 			DumpOperandExp(os, bytes.exp.tgt);
 		}
-		else if (Common::Asm::IsToken(fmt_str, "EXP_VSRCs", token_len))
+		else if (Common::Asm::isToken(fmt_str, "EXP_VSRCs", token_len))
 		{
 			if (bytes.exp.compr == 0 && 
 					(bytes.exp.en && 0x0) == 0x0)
@@ -1006,7 +1003,7 @@ void Inst::Dump(std::ostream &os) const
 		}
 		else
 		{
-			fatal("%s: token not recognized.", fmt_str);
+			misc::fatal("%s: token not recognized.", fmt_str);
 		}
 
 		fmt_str += token_len;
@@ -1037,7 +1034,7 @@ void Inst::Decode(const char *buf, unsigned int address)
 	{
 		if (!as->getDecTableSopp(bytes.sopp.op))
 		{
-			fatal("Unimplemented Instruction: SOPP:%d  "
+			misc::fatal("Unimplemented Instruction: SOPP:%d  "
 				"// %08X: %08X\n", bytes.sopp.op,
 				address, * (unsigned int *) buf);
 		}
@@ -1048,7 +1045,7 @@ void Inst::Decode(const char *buf, unsigned int address)
 	{
 		if (!as->getDecTableSopc(bytes.sopc.op))
 		{
-			fatal("Unimplemented Instruction: SOPC:%d  "
+			misc::fatal("Unimplemented Instruction: SOPC:%d  "
 				"// %08X: %08X\n", bytes.sopc.op,
 				address, * (unsigned int *) buf);
 		}
@@ -1070,7 +1067,7 @@ void Inst::Decode(const char *buf, unsigned int address)
 	{
 		if (!as->getDecTableSop1(bytes.sop1.op))
 		{
-			fatal("Unimplemented Instruction: SOP1:%d  "
+			misc::fatal("Unimplemented Instruction: SOP1:%d  "
 				"// %08X: %08X\n", bytes.sop1.op,
 				address, *(unsigned int*)buf);
 		}
@@ -1089,7 +1086,7 @@ void Inst::Decode(const char *buf, unsigned int address)
 	{
 		if (!as->getDecTableSopk(bytes.sopk.op))
 		{
-			fatal("Unimplemented Instruction: SOPK:%d  "
+			misc::fatal("Unimplemented Instruction: SOPK:%d  "
 				"// %08X: %08X\n", bytes.sopk.op,
 				address, * (unsigned int *) buf);
 		}
@@ -1100,7 +1097,7 @@ void Inst::Decode(const char *buf, unsigned int address)
 	{
 		if (!as->getDecTableSop2(bytes.sop2.op))
 		{
-			fatal("Unimplemented Instruction: SOP2:%d  "
+			misc::fatal("Unimplemented Instruction: SOP2:%d  "
 				"// %08X: %08X\n", bytes.sop2.op,
 				address, *(unsigned int *)buf);
 		}
@@ -1122,7 +1119,7 @@ void Inst::Decode(const char *buf, unsigned int address)
 	{
 		if (!as->getDecTableSmrd(bytes.smrd.op))
 		{
-			fatal("Unimplemented Instruction: SMRD:%d  "
+			misc::fatal("Unimplemented Instruction: SMRD:%d  "
 				"// %08X: %08X\n", bytes.smrd.op,
 				address, *(unsigned int *)buf);
 		}
@@ -1137,7 +1134,7 @@ void Inst::Decode(const char *buf, unsigned int address)
 
 		if (!as->getDecTableVop3(bytes.vop3a.op))
 		{
-			fatal("Unimplemented Instruction: VOP3:%d  "
+			misc::fatal("Unimplemented Instruction: VOP3:%d  "
 				"// %08X: %08X %08X\n",
 				bytes.vop3a.op, address,
 				*(unsigned int *)buf,
@@ -1150,7 +1147,7 @@ void Inst::Decode(const char *buf, unsigned int address)
 	{
 		if (!as->getDecTableVopc(bytes.vopc.op))
 		{
-			fatal("Unimplemented Instruction: VOPC:%d  "
+			misc::fatal("Unimplemented Instruction: VOPC:%d  "
 				"// %08X: %08X\n",
 				bytes.vopc.op, address,
 				*(unsigned int *)buf);
@@ -1170,7 +1167,7 @@ void Inst::Decode(const char *buf, unsigned int address)
 	{
 		if (!as->getDecTableVop1(bytes.vop1.op))
 		{
-			fatal("Unimplemented Instruction: VOP1:%d  "
+			misc::fatal("Unimplemented Instruction: VOP1:%d  "
 				"// %08X: %08X\n", bytes.vop1.op,
 				address, * (unsigned int *) buf);
 		}
@@ -1189,7 +1186,7 @@ void Inst::Decode(const char *buf, unsigned int address)
 	{
 		if (!as->getDecTableVop2(bytes.vop2.op))
 		{
-			fatal("Unimplemented Instruction: VOP2:%d  "
+			misc::fatal("Unimplemented Instruction: VOP2:%d  "
 				"// %08X: %08X\n", bytes.vop2.op,
 				address, * (unsigned int *) buf);
 		}
@@ -1216,7 +1213,7 @@ void Inst::Decode(const char *buf, unsigned int address)
 	{
 		if (!as->getDecTableVintrp(bytes.vintrp.op))
 		{
-			fatal("Unimplemented Instruction: VINTRP:%d  "
+			misc::fatal("Unimplemented Instruction: VINTRP:%d  "
 				"// %08X: %08X\n", bytes.vintrp.op,
 				address, * (unsigned int *) buf);
 		}
@@ -1231,7 +1228,7 @@ void Inst::Decode(const char *buf, unsigned int address)
 		bytes.dword = * (unsigned long long *) buf;
 		if (!as->getDecTableDs(bytes.ds.op))
 		{
-			fatal("Unimplemented Instruction: DS:%d  "
+			misc::fatal("Unimplemented Instruction: DS:%d  "
 				"// %08X: %08X %08X\n", bytes.ds.op,
 				address, *(unsigned int *)buf,
 				*(unsigned int *)(buf + 4));
@@ -1247,7 +1244,7 @@ void Inst::Decode(const char *buf, unsigned int address)
 
 		if (!as->getDecTableMtbuf(bytes.mtbuf.op))
 		{
-			fatal("Unimplemented Instruction: MTBUF:%d  "
+			misc::fatal("Unimplemented Instruction: MTBUF:%d  "
 				"// %08X: %08X %08X\n",
 				bytes.mtbuf.op, address,
 				*(unsigned int *)buf, *(unsigned int *)(buf+4));
@@ -1263,7 +1260,7 @@ void Inst::Decode(const char *buf, unsigned int address)
 
 		if (!as->getDecTableMubuf(bytes.mubuf.op))
 		{
-			fatal("Unimplemented Instruction: MUBUF:%d  "
+			misc::fatal("Unimplemented Instruction: MUBUF:%d  "
 				"// %08X: %08X %08X\n",
 				bytes.mubuf.op, address,
 				*(unsigned int *)buf,
@@ -1280,7 +1277,7 @@ void Inst::Decode(const char *buf, unsigned int address)
 
 		if(!as->getDecTableMimg(bytes.mimg.op))
 		{
-			fatal("Unimplemented Instruction: MIMG:%d  "
+			misc::fatal("Unimplemented Instruction: MIMG:%d  "
 				"// %08X: %08X %08X\n",
 				bytes.mimg.op, address,
 				*(unsigned int *)buf,
@@ -1297,13 +1294,13 @@ void Inst::Decode(const char *buf, unsigned int address)
 
 		/* Export is the only instruction in its kind */
 		if (!as->getDecTableExp(0))
-			fatal("Unimplemented Instruction: EXP\n");
+			misc::fatal("Unimplemented Instruction: EXP\n");
 
 		info = as->getDecTableExp(0);
 	}
 	else
 	{
-		fatal("Unimplemented format. Instruction is:  // %08X: %08X\n",
+		misc::fatal("Unimplemented format. Instruction is:  // %08X: %08X\n",
 				address, ((unsigned int*)buf)[0]);
 	}
 }
