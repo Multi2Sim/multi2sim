@@ -22,8 +22,6 @@
 #include "XMMValue.h"
 
 
-using namespace misc;
-
 namespace x86
 {
 
@@ -34,7 +32,7 @@ void XMMValue::DumpAsChar(std::ostream &os) const
 	os << "{ ";
 	for (int i = 0; i < 16; i++)
 	{
-		os << comma << StringFmt("%02x", as_uchar[i]);
+		os << comma << misc::fmt("%02x", as_uchar[i]);
 		comma = ", ";
 	}
 	os << " }";
@@ -47,7 +45,7 @@ void XMMValue::DumpAsShort(std::ostream &os) const
 	os << "{ ";
 	for (int i = 0; i < 8; i++)
 	{
-		os << comma << StringFmt("%04x", as_ushort[i]);
+		os << comma << misc::fmt("%04x", as_ushort[i]);
 		comma = ", ";
 	}
 	os << " }";
@@ -56,28 +54,28 @@ void XMMValue::DumpAsShort(std::ostream &os) const
 
 void XMMValue::DumpAsInt(std::ostream &os) const
 {
-	os << StringFmt("{ %08x, %08x, %08x, %08x }",
+	os << misc::fmt("{ %08x, %08x, %08x, %08x }",
 			as_uint[0], as_uint[1], as_uint[2], as_uint[3]);
 }
 
 
 void XMMValue::DumpAsInt64(std::ostream &os) const
 {
-	os << StringFmt("{ %016llx, %016llx }",
+	os << misc::fmt("{ %016llx, %016llx }",
 			as_uint64[0], as_uint64[1]);
 }
 
 
 void XMMValue::DumpAsFloat(std::ostream &os) const
 {
-	os << StringFmt("{ %g, %g, %g, %g }",
+	os << misc::fmt("{ %g, %g, %g, %g }",
 			as_float[0], as_float[1], as_float[2], as_float[3]);
 }
 
 
 void XMMValue::DumpAsDouble(std::ostream &os) const
 {
-	os << StringFmt("{ %g, %g }",
+	os << misc::fmt("{ %g, %g }",
 			as_double[0], as_double[1]);
 }
 

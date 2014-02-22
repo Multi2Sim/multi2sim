@@ -28,8 +28,6 @@
 #include "Asm.h"
 #include "Inst.h"
 
-using namespace misc;
-
 
 namespace MIPS
 {
@@ -118,13 +116,13 @@ void Inst::Decode(unsigned addr, const char *buf)
 			current_table_high = current_table[table_arg].next_table_high;
 			current_table_low = current_table[table_arg].next_table_low;
 			current_table = current_table[table_arg].next_table;
-			table_arg = getBits32(bytes.word, current_table_high,
+			table_arg = misc::getBits32(bytes.word, current_table_high,
 					current_table_low);
 			loop_iteration++;
 		}
 		else if (loop_iteration > 4)
 		{
-			fatal("%s: invalid instruction", __FUNCTION__);
+			misc::fatal("%s: invalid instruction", __FUNCTION__);
 		}
 		else
 		{
@@ -143,7 +141,7 @@ void Inst::DumpSa(std::ostream &os) const
 
 	sa = bytes.standard.sa;
 	if (sa != 0)
-		os << StringFmt("0x%x", sa);
+		os << misc::fmt("0x%x", sa);
 	else
 		os << '0';
 }
@@ -156,11 +154,11 @@ void Inst::DumpRd(std::ostream &os) const
 
 	rd = bytes.standard.rd;
 
-	if (Common::Asm::IsToken(info->name, "RDHWR", token_len))
+	if (Common::Asm::isToken(info->name, "RDHWR", token_len))
 	{
 		os << '$' << rd;
 	}
-	else if (Common::Asm::IsToken(info->name, "JALR", token_len))
+	else if (Common::Asm::isToken(info->name, "JALR", token_len))
 	{
 		if (rd != 31)
 			os << ',' << inst_reg_name[rd];
@@ -187,29 +185,29 @@ void Inst::DumpRs(std::ostream &os) const
 void Inst::DumpTarget(std::ostream &os)
 {
 	target = bytes.target.target << 2;
-	os << StringFmt("%x", target);
+	os << misc::fmt("%x", target);
 }
 
 
 void Inst::DumpOffset(std::ostream &os) const
 {
-	int offset = SignExtend32(bytes.offset_imm.offset, 16);
+	int offset = misc::SignExtend32(bytes.offset_imm.offset, 16);
 	os << offset;
 }
 
 
 void Inst::DumpOffsetbr(std::ostream &os)
 {
-	int offsetbr = SignExtend32(bytes.cc.offsetbr, 16);
+	int offsetbr = misc::SignExtend32(bytes.cc.offsetbr, 16);
 	offsetbr = (offsetbr << 2) + addr + 4;
 	target = offsetbr;
-	os << StringFmt("%x", offsetbr);
+	os << misc::fmt("%x", offsetbr);
 }
 
 
 void Inst::DumpImm(std::ostream &os) const
 {
-	int imm = SignExtend32(bytes.offset_imm.offset, 16);
+	int imm = misc::SignExtend32(bytes.offset_imm.offset, 16);
 	os << imm;
 }
 
@@ -217,7 +215,7 @@ void Inst::DumpImm(std::ostream &os) const
 void Inst::DumpImmhex(std::ostream &os) const
 {
 	unsigned immhex = bytes.offset_imm.offset;
-	os << StringFmt("0x%x", immhex);
+	os << misc::fmt("0x%x", immhex);
 }
 
 
@@ -245,15 +243,15 @@ void Inst::DumpCc(std::ostream &os) const
 void Inst::DumpPos(std::ostream &os) const
 {
 	unsigned pos = bytes.standard.sa;
-	os << StringFmt("0x%x", pos);
+	os << misc::fmt("0x%x", pos);
 }
 
 
 void Inst::DumpFs(std::ostream &os) const
 {
 	unsigned fs = bytes.standard.rd;
-	if ((Common::Asm::IsToken(info->name, "CFC1")) ||
-			(Common::Asm::IsToken(info->name, "CTC1")))
+	if ((Common::Asm::isToken(info->name, "CFC1")) ||
+			(Common::Asm::isToken(info->name, "CTC1")))
 		os << '$' << fs;
 	else
 		os << "$f" << fs;
@@ -265,11 +263,11 @@ void Inst::DumpSize(std::ostream &os) const
 	unsigned pos = bytes.standard.sa;
 	unsigned size = bytes.standard.rd;
 
-	if (Common::Asm::IsToken(info->name, "INS"))
+	if (Common::Asm::isToken(info->name, "INS"))
 		size = size + 1 - pos;
-	else if (Common::Asm::IsToken(info->name, "EXT"))
+	else if (Common::Asm::isToken(info->name, "EXT"))
 		size++;
-	os << StringFmt("0x%x", size);
+	os << misc::fmt("0x%x", size);
 }
 
 
@@ -290,7 +288,7 @@ void Inst::DumpFd(std::ostream &os) const
 void Inst::DumpCode(std::ostream &os) const
 {
 	unsigned code = bytes.code.code;
-	os << StringFmt("0x%x", code);
+	os << misc::fmt("0x%x", code);
 }
 
 
@@ -301,7 +299,7 @@ void Inst::Dump(std::ostream &os)
 	// Get format string
 	const char *fmt_str = info->fmt_str;
 	if (!fmt_str || !*fmt_str)
-		fatal("%s: instruction not implemented",
+		misc::fatal("%s: instruction not implemented",
 				__FUNCTION__);
 
 	// Traverse format string
@@ -318,7 +316,7 @@ void Inst::Dump(std::ostream &os)
 		//
 
 		// SLL ZERO, ZERO, ZERO => NOP
-		if (Common::Asm::IsToken(fmt_str, "sll", token_len))
+		if (Common::Asm::isToken(fmt_str, "sll", token_len))
 		{
 			if ((rd | rt | sa) == 0)
 			{
@@ -327,7 +325,7 @@ void Inst::Dump(std::ostream &os)
 			}
 		}
 		// ADDU RD, RS, ZERO => MOVE RD, RS
-		else if (Common::Asm::IsToken(fmt_str, "addu", token_len))
+		else if (Common::Asm::isToken(fmt_str, "addu", token_len))
 		{
 			if (rt == 0)
 			{
@@ -339,7 +337,7 @@ void Inst::Dump(std::ostream &os)
 			}
 		}
 		// BGEZAL ZERO, OFFSET => BAL OFFSET
-		else if (Common::Asm::IsToken(fmt_str, "bgezal", token_len))
+		else if (Common::Asm::isToken(fmt_str, "bgezal", token_len))
 		{
 			if (rs == 0)
 			{
@@ -350,7 +348,7 @@ void Inst::Dump(std::ostream &os)
 		}
 		// BEQ ZERO, ZERO, OFFSET => B OFFSET
 		// BEQ RS, ZERO, OFFSET => BEQZ RS, OFFSET
-		else if (Common::Asm::IsToken(fmt_str, "beq", token_len))
+		else if (Common::Asm::isToken(fmt_str, "beq", token_len))
 		{
 			if ((rs | rt) == 0)
 			{
@@ -368,7 +366,7 @@ void Inst::Dump(std::ostream &os)
 			}
 		}
 		// ADDIU RT, ZERO, IMM => LI RT, IMM
-		else if (Common::Asm::IsToken(fmt_str, "addiu",
+		else if (Common::Asm::isToken(fmt_str, "addiu",
 				token_len))
 		{
 			if (rs == 0)
@@ -381,7 +379,7 @@ void Inst::Dump(std::ostream &os)
 			}
 		}
 		// ORI RT, ZERO, IMM => LI RT, IMM
-		else if (Common::Asm::IsToken(fmt_str, "ori", token_len))
+		else if (Common::Asm::isToken(fmt_str, "ori", token_len))
 		{
 			if (rs == 0)
 			{
@@ -393,7 +391,7 @@ void Inst::Dump(std::ostream &os)
 			}
 		}
 		// BNE RS, ZERO, OFFSET => BNEZ RS, OFFSET
-		else if (Common::Asm::IsToken(fmt_str, "bne", token_len))
+		else if (Common::Asm::isToken(fmt_str, "bne", token_len))
 		{
 			if (rt == 0)
 			{
@@ -405,7 +403,7 @@ void Inst::Dump(std::ostream &os)
 			}
 		}
 		// SUBU RD, ZERO, RT => NEGU RD, RT
-		else if (Common::Asm::IsToken(fmt_str, "subu", token_len))
+		else if (Common::Asm::isToken(fmt_str, "subu", token_len))
 		{
 			if (rs == 0)
 			{
@@ -432,48 +430,48 @@ void Inst::Dump(std::ostream &os)
 			os << '\t';
 		first_token = false;
 		++fmt_str;
-		if (Common::Asm::IsToken(fmt_str, "sa", token_len))
+		if (Common::Asm::isToken(fmt_str, "sa", token_len))
 			DumpSa(os);
-		else if (Common::Asm::IsToken(fmt_str, "rd", token_len))
+		else if (Common::Asm::isToken(fmt_str, "rd", token_len))
 			DumpRd(os);
-		else if (Common::Asm::IsToken(fmt_str, "rt", token_len))
+		else if (Common::Asm::isToken(fmt_str, "rt", token_len))
 			DumpRt(os);
-		else if (Common::Asm::IsToken(fmt_str, "rs", token_len))
+		else if (Common::Asm::isToken(fmt_str, "rs", token_len))
 			DumpRs(os);
-		else if (Common::Asm::IsToken(fmt_str, "target",
+		else if (Common::Asm::isToken(fmt_str, "target",
 				token_len))
 			DumpTarget(os);
-		else if (Common::Asm::IsToken(fmt_str, "offset",
+		else if (Common::Asm::isToken(fmt_str, "offset",
 				token_len))
 			DumpOffset(os);
-		else if (Common::Asm::IsToken(fmt_str, "offsetbr",
+		else if (Common::Asm::isToken(fmt_str, "offsetbr",
 				token_len))
 			DumpOffsetbr(os);
-		else if (Common::Asm::IsToken(fmt_str, "Imm", token_len))
+		else if (Common::Asm::isToken(fmt_str, "Imm", token_len))
 			DumpImm(os);
-		else if (Common::Asm::IsToken(fmt_str, "Immhex",
+		else if (Common::Asm::isToken(fmt_str, "Immhex",
 				token_len))
 			DumpImmhex(os);
-		else if (Common::Asm::IsToken(fmt_str, "base", token_len))
+		else if (Common::Asm::isToken(fmt_str, "base", token_len))
 			DumpBase(os);
-		else if (Common::Asm::IsToken(fmt_str, "sel", token_len))
+		else if (Common::Asm::isToken(fmt_str, "sel", token_len))
 			DumpSel(os);
-		else if (Common::Asm::IsToken(fmt_str, "cc", token_len))
+		else if (Common::Asm::isToken(fmt_str, "cc", token_len))
 			DumpCc(os);
-		else if (Common::Asm::IsToken(fmt_str, "pos", token_len))
+		else if (Common::Asm::isToken(fmt_str, "pos", token_len))
 			DumpPos(os);
-		else if (Common::Asm::IsToken(fmt_str, "size", token_len))
+		else if (Common::Asm::isToken(fmt_str, "size", token_len))
 			DumpSize(os);
-		else if (Common::Asm::IsToken(fmt_str, "fs", token_len))
+		else if (Common::Asm::isToken(fmt_str, "fs", token_len))
 			DumpFs(os);
-		else if (Common::Asm::IsToken(fmt_str, "ft", token_len))
+		else if (Common::Asm::isToken(fmt_str, "ft", token_len))
 			DumpFt(os);
-		else if (Common::Asm::IsToken(fmt_str, "fd", token_len))
+		else if (Common::Asm::isToken(fmt_str, "fd", token_len))
 			DumpFd(os);
-		else if (Common::Asm::IsToken(fmt_str, "code", token_len))
+		else if (Common::Asm::isToken(fmt_str, "code", token_len))
 			DumpCode(os);
 		else
-			fatal("%s: token not recognized\n", fmt_str);
+			misc::fatal("%s: token not recognized\n", fmt_str);
 
 		fmt_str += token_len;
 
@@ -483,7 +481,7 @@ void Inst::Dump(std::ostream &os)
 
 void Inst::DumpHex(std::ostream &os)
 {
-	os << StringFmt("\n%8x:\t%08x \t", addr, bytes.word);
+	os << misc::fmt("\n%8x:\t%08x \t", addr, bytes.word);
 }
 
 

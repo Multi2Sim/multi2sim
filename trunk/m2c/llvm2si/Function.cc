@@ -26,7 +26,6 @@
 #include "Function.h"
 #include "InterferenceGraph.h"
 
-using namespace misc;
 using namespace si2bin;
 
 namespace llvm2si
@@ -50,7 +49,7 @@ FunctionArg::FunctionArg(llvm::Argument *llvm_arg) :
 	/* Get argument name */
 	name = llvm_arg->getName();
 	if (name.empty())
-		fatal("%s: anonymous arguments not allowed", __FUNCTION__);
+		misc::fatal("%s: anonymous arguments not allowed", __FUNCTION__);
 
 	/* Initialize SI argument */
 	llvm::Type *llvm_type = llvm_arg->getType();
@@ -88,7 +87,7 @@ SI::ArgDataType FunctionArg::GetDataType(llvm::Type *llvm_type)
 		case 64: return SI::ArgDataTypeInt64;
 
 		default:
-			panic("%s: unsupported argument bit width (%d)",
+			misc::panic("%s: unsupported argument bit width (%d)",
 				__FUNCTION__, bit_width);
 		}
 	}
@@ -98,7 +97,7 @@ SI::ArgDataType FunctionArg::GetDataType(llvm::Type *llvm_type)
 	}
 	else
 	{
-		panic("%s: unsupported argument type kind (%d)",
+		misc::panic("%s: unsupported argument type kind (%d)",
 				__FUNCTION__, llvm_type->getTypeID());
 	}
 
@@ -135,7 +134,7 @@ void FunctionArg::Dump(std::ostream &os)
 	}
 
 	default:
-		panic("%s: argument type not recognized (%d)",
+		misc::panic("%s: argument type not recognized (%d)",
 				__FUNCTION__, arg->getType());
 	}
 }
@@ -175,7 +174,7 @@ int Function::AddArg(FunctionArg *arg, int num_elem, int offset)
 {
 	/* Check that argument does not belong to a self yet */
 	if (arg->function)
-		panic("%s: argument already added", __FUNCTION__);
+		misc::panic("%s: argument already added", __FUNCTION__);
 
 	/* Get basic block, or create it */
 	BasicBlock *basic_block = dynamic_cast<BasicBlock *>
@@ -273,7 +272,7 @@ int Function::AddArg(FunctionArg *arg, int num_elem, int offset)
 		break;
 	}
 	default:
-		panic("%s: not supported number of elements", __FUNCTION__);
+		misc::panic("%s: not supported number of elements", __FUNCTION__);
 	}
 
 
@@ -403,7 +402,7 @@ void Function::EmitHeader()
 	/* Allocate 3 vector registers (v[0:2]) for local ID */
 	vreg_lid = AllocVReg(3);
 	if (vreg_lid)
-		panic("%s: vreg_lid is expected to be 0", __FUNCTION__);
+		misc::panic("%s: vreg_lid is expected to be 0", __FUNCTION__);
 
 	/* Allocate 2 scalar registers for UAV table. The value for these
 	 * registers is assigned by the runtime based on info found in the
@@ -482,7 +481,7 @@ void Function::EmitHeader()
 	for (int index = 0; index < 3; index++)
 	{
 		/* Comment */
-		basic_block->AddComment(StringFmt("Calculate global ID "
+		basic_block->AddComment(misc::fmt("Calculate global ID "
 				"in dimension %d", index));
 
 		/* v_mov_b32 */
@@ -583,7 +582,7 @@ void Function::EmitPhi()
 
 		/* Get basic block */
 		Common::LeafNode *node = phi->GetSrcNode();
-		BasicBlock *basic_block = cast<BasicBlock *>(node->GetBasicBlock());
+		BasicBlock *basic_block = misc::cast<BasicBlock *>(node->GetBasicBlock());
 
 		/* Get source value */
 		Arg *src_value = TranslateValue(phi->GetSrcValue());
@@ -619,10 +618,10 @@ void Function::EmitIfThen(Common::AbstractNode *node)
 	then_node = then_node->GetLastLeaf();
 	assert(if_node->getKind() == Common::NodeKindLeaf);
 	assert(then_node->getKind() == Common::NodeKindLeaf);
-	Common::LeafNode *if_leaf_node = cast<Common::LeafNode *>(if_node);
-	Common::LeafNode *then_leaf_node = cast<Common::LeafNode *>(then_node);
-	BasicBlock *if_basic_block = cast<BasicBlock *>(if_leaf_node->GetBasicBlock());
-	BasicBlock *then_basic_block = cast<BasicBlock *>(then_leaf_node->GetBasicBlock());
+	Common::LeafNode *if_leaf_node = misc::cast<Common::LeafNode *>(if_node);
+	Common::LeafNode *then_leaf_node = misc::cast<Common::LeafNode *>(then_node);
+	BasicBlock *if_basic_block = misc::cast<BasicBlock *>(if_leaf_node->GetBasicBlock());
+	BasicBlock *then_basic_block = misc::cast<BasicBlock *>(then_leaf_node->GetBasicBlock());
 
 
 	/*** Code for 'If' block ***/
@@ -785,13 +784,13 @@ void Function::EmitWhileLoop(Common::AbstractNode *node)
 	assert(head_node->getKind() == Common::NodeKindLeaf);
 	assert(tail_node->getKind() == Common::NodeKindLeaf);
 	assert(exit_node->getKind() == Common::NodeKindLeaf);
-	Common::LeafNode *pre_leaf_node = cast<Common::LeafNode *>(pre_node);
-	Common::LeafNode *head_leaf_node = cast<Common::LeafNode *>(head_node);
-	Common::LeafNode *tail_leaf_node = cast<Common::LeafNode *>(tail_node);
-	Common::LeafNode *exit_leaf_node = cast<Common::LeafNode *>(exit_node);
+	Common::LeafNode *pre_leaf_node = misc::cast<Common::LeafNode *>(pre_node);
+	Common::LeafNode *head_leaf_node = misc::cast<Common::LeafNode *>(head_node);
+	Common::LeafNode *tail_leaf_node = misc::cast<Common::LeafNode *>(tail_node);
+	Common::LeafNode *exit_leaf_node = misc::cast<Common::LeafNode *>(exit_node);
 	assert(!pre_leaf_node->GetBasicBlock());
-	BasicBlock *head_basic_block = cast<BasicBlock *>(head_leaf_node->GetBasicBlock());
-	BasicBlock *tail_basic_block = cast<BasicBlock *>(tail_leaf_node->GetBasicBlock());
+	BasicBlock *head_basic_block = misc::cast<BasicBlock *>(head_leaf_node->GetBasicBlock());
+	BasicBlock *tail_basic_block = misc::cast<BasicBlock *>(tail_leaf_node->GetBasicBlock());
 	assert(!exit_leaf_node->GetBasicBlock());
 
 	/* Create pre-header and exit basic blocks */
@@ -919,7 +918,7 @@ void Function::EmitControlFlow()
 			break;
 
 		default:
-			panic("%s: region %s not supported", __FUNCTION__,
+			misc::panic("%s: region %s not supported", __FUNCTION__,
 					Common::abstract_node_region_map.MapValue(
 					abs_node->GetRegion()));
 		}
@@ -952,10 +951,10 @@ void Function::LiveRegisterAnalysis() {
 		/* Assigns blank bitmaps of size num_sregs to each of the
 		 * basic block's bitmap fields
 		 */
-		basic_block->def = new Bitmap(this->num_vregs);
-		basic_block->use = new Bitmap(this->num_vregs);
-		basic_block->in = new Bitmap(this->num_vregs);
-		basic_block->out = new Bitmap(this->num_vregs);
+		basic_block->def = new misc::Bitmap(this->num_vregs);
+		basic_block->use = new misc::Bitmap(this->num_vregs);
+		basic_block->in = new misc::Bitmap(this->num_vregs);
+		basic_block->out = new misc::Bitmap(this->num_vregs);
 
 		/* Read each line of basic block */
 		for (auto &inst : basic_block->getInstList())
@@ -1020,7 +1019,7 @@ void Function::LiveRegisterAnalysis() {
 				continue;
 
 			// Check old n
-			Bitmap oldOut = *pred_basic_block->out;
+			misc::Bitmap oldOut = *pred_basic_block->out;
 
 			// Or old out with in of successor basic block
 			*pred_basic_block->out = *(pred_basic_block->out) | *(basic_block->in);
@@ -1226,7 +1225,7 @@ Arg *Function::TranslateConstant(llvm::Constant *llvm_const)
 		/* Only 32-bit constants supported for now. We need to figure
 		 * out what to do with the sign extension otherwise. */
 		if (!llvm_type->isIntegerTy(32))
-			panic("%s: only 32-bit integer constant supported "
+			misc::panic("%s: only 32-bit integer constant supported "
 					" (%d-bit found)", __FUNCTION__,
 					llvm_type->getIntegerBitWidth());
 
@@ -1238,7 +1237,7 @@ Arg *Function::TranslateConstant(llvm::Constant *llvm_const)
 	}
 	else
 	{
-		panic("%s: constant type not supported (%d)",
+		misc::panic("%s: constant type not supported (%d)",
 				__FUNCTION__, llvm_type->getTypeID());
 		return NULL;
 	}
@@ -1258,12 +1257,12 @@ Arg *Function::TranslateValue(llvm::Value *llvm_value, Symbol *&symbol)
 	/* Get name */
 	std::string name = llvm_value->getName();
 	if (name.empty())
-		panic("%s: anonymous value", __FUNCTION__);
+		misc::panic("%s: anonymous value", __FUNCTION__);
 
 	/* Look up symbol */
 	symbol = symbol_table.Lookup(name);
 	if (!symbol)
-		fatal("%s: %s: symbol not found", __FUNCTION__, name.c_str());
+		misc::fatal("%s: %s: symbol not found", __FUNCTION__, name.c_str());
 
 	/* Create argument based on symbol type */
 	Arg *arg;
@@ -1283,7 +1282,7 @@ Arg *Function::TranslateValue(llvm::Value *llvm_value, Symbol *&symbol)
 	default:
 
 		arg = nullptr;
-		panic("%s: invalid symbol type (%d)", __FUNCTION__,
+		misc::panic("%s: invalid symbol type (%d)", __FUNCTION__,
 				symbol->getType());
 	}
 

@@ -46,8 +46,9 @@ const char *StringErrorToString(StringError error);
 /// Return a string obtained by formating the input in argument \a fmt, which
 /// follows the standard \c printf formatting rules. The number and type of
 /// arguments following \a fmt depend on the special characters used in the
-/// format string itself.
-std::string StringFmt(const char *fmt, ...)
+/// format string itself. This is an exception of a function that does not
+/// have the \c StringXXX prefix, due to its very frequent use.
+std::string fmt(const char *fmt_str, ...)
 		__attribute__ ((format(printf, 1, 2)));
 
 /// Return \c true if the character given in \a c is present in string \a set.

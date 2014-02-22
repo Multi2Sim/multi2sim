@@ -25,36 +25,27 @@
 #include "Asm.h"
 
 
-using namespace misc;
-
-
 namespace Common
 {
 
 
-bool Asm::IsToken(const std::string &fmt, const std::string &token)
-{
-	int length;
-	return IsToken(fmt, token, length);
-}
-
-
-bool Asm::IsToken(const std::string &fmt, const std::string &token,
+bool Asm::isToken(const std::string &fmt, const std::string &token,
 		int &length)
 {
-	/* Token is not prefix */
+	// Token is not prefix
 	length = 0;
-	if (!StringPrefix(fmt, token))
+	if (!misc::StringPrefix(fmt, token))
 		return false;
 	
-	/* Token is not end of word */
+	// Token is not end of word
 	if (fmt.size() > token.size() && isalnum(fmt[token.size()]))
 		return false;
 
-	/* Token found */
+	// Token found
 	length = token.size();
 	return true;
 }
 
 
-}  /* namespace Common */
+}  // namespace Common
+

@@ -36,7 +36,7 @@ NDRange::NDRange(Emu *emu)
 	this->stage = NDRangeStageCompute;
 	this->id = emu->getNewNDRangeID();
 	this->address_space_index = emu->getNewNDRangeID();
-	this->inst_mem.reset(new Memory::Memory());
+	this->inst_mem.reset(new mem::Memory());
 
 	this->last_work_group_sent = false;
 }

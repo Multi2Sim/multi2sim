@@ -27,9 +27,7 @@
 #include "Memory.h"
 
 
-using namespace misc;
-
-namespace Memory
+namespace mem
 {
 
 bool Memory::safe_mode = true;
@@ -151,7 +149,7 @@ void Memory::Copy(unsigned dest, unsigned src, unsigned size)
 	assert(!(size & (MemoryPageSize-1)));
 	if ((src < dest && src + size > dest) ||
 			(dest < src && dest + size > src))
-		panic("%s: cannot copy overlapping regions", __FUNCTION__);
+		misc::panic("%s: cannot copy overlapping regions", __FUNCTION__);
 	
 	// Copy
 	while (size > 0)
@@ -197,7 +195,7 @@ char *Memory::getBuffer(unsigned addr, unsigned size, MemoryAccess access)
 	
 	// Check page permissions
 	if ((page->perm & access) != access && safe)
-		fatal("%s: permission denied at 0x%x", __FUNCTION__, addr);
+		misc::fatal("%s: permission denied at 0x%x", __FUNCTION__, addr);
 	
 	// Allocate and initialize page data if it does not exist yet.
 	if (!page->data)
@@ -221,7 +219,7 @@ void Memory::AccessAtPageBoundary(unsigned addr, unsigned size, char *buf,
 	if (!page)
 	{
 		if (safe)
-			fatal("%s: illegal access at 0x%x: page not allocated",
+			misc::fatal("%s: illegal access at 0x%x: page not allocated",
 					__FUNCTION__, addr);
 		if (access == MemoryAccessRead || access == MemoryAccessExec)
 		{
@@ -244,7 +242,7 @@ void Memory::AccessAtPageBoundary(unsigned addr, unsigned size, char *buf,
 
 	// Check permissions in safe mode
 	if (safe && (page->perm & access) != access)
-		fatal("%s: permission denied at 0x%x", __FUNCTION__, addr);
+		misc::fatal("%s: permission denied at 0x%x", __FUNCTION__, addr);
 
 	// Read/execute access
 	if (access == MemoryAccessRead || access == MemoryAccessExec)
@@ -497,7 +495,7 @@ void Memory::Save(const std::string &path, unsigned start, unsigned end)
 {
 	std::ofstream f(path);
 	if (!f)
-		fatal("%s: %s: cannot open file",
+		misc::fatal("%s: %s: cannot open file",
 				__FUNCTION__, path.c_str());
 	
 	// Set unsafe mode and dump
@@ -522,7 +520,7 @@ void Memory::Load(const std::string &path, unsigned start)
 	// Open file
 	std::ifstream f(path);
 	if (!f)
-		fatal("%s: %s: cannot open file",
+		misc::fatal("%s: %s: cannot open file",
 				__FUNCTION__, path.c_str());
 	
 	// Set unsafe mode and load

@@ -20,8 +20,12 @@
 #ifndef ARCH_X86_EMU_EMU_H
 #define ARCH_X86_EMU_EMU_H
 
+#include <arch/common/Emu.h>
 #include <lib/cpp/CommandLine.h>
 #include <lib/cpp/Debug.h>
+
+#include "Context.h"
+
 
 namespace x86
 {
@@ -34,7 +38,7 @@ class Asm;
 class EmuConfig : public misc::CommandLineConfig
 {
 	std::string call_debug_file;
-	std::string ctx_debug_file;
+	std::string context_debug_file;
 	std::string cuda_debug_file;
 	std::string glut_debug_file;
 	std::string isa_debug_file;
@@ -53,8 +57,8 @@ public:
 };
 
 
-/// x86 Emulator
-class Emu
+/// x86 emulator
+class Emu : public Common::Emu
 {
 	// Unique instance of x86 emulator
 	static std::unique_ptr<Emu> instance;
@@ -62,8 +66,15 @@ class Emu
 	// Disassembler
 	Asm *as;
 
-	// List of allocated contexts
+	// Primary list of contexts
 	std::list<std::unique_ptr<Context>> contexts;
+
+	// Secondary lists of contexts. Contexts in different states
+	// are added/removed from this lists as their state gets updated.
+	std::list<Context *> context_list[ContextListCount];
+
+	// See setScheduleSignal()
+	bool schedule_signal;
 
 	// Private constructor. The only possible instance of the x86 emulator
 	// can be obtained with a call to getInstance()
@@ -82,12 +93,48 @@ public:
 			const std::string &stdin_file_name,
 			const std::string &stdout_file_name);
 
+	/// Add a context to a context list. This function does not update
+	/// the internal state of the context. Call Context::addToList()
+	/// instead. The function returns an iterator to the inserted context.
+	std::list<Context *>::iterator AddToContextList(ContextListType type,
+			Context *context)
+	{
+		context_list[type].push_back(context);
+		auto iter = context_list[type].end();
+		return --iter;
+	}
+
+	/// Remove a context from a context list. This function does not
+	/// update the internal state of the context. Call
+	/// Context::removeFromList() instead.
+	void RemoveFromContextList(ContextListType type,
+			std::list<Context *>::iterator &iter)
+	{
+		context_list[type].erase(iter);
+	}
+
+	/// Return a constant reference to a context list, given its type.
+	const std::list<Context *> &getContextList(ContextListType type) const {
+			return context_list[type]; }
+	
+	/// Signals a call to the scheduler Timing::Schedule() in the
+	/// beginning of next cycle. This flag is set any time a context changes
+	/// its state in any bit other than ContextSpecMode. It can be set
+	/// anywhere in the code by directly assigning a value to 1. E.g.:
+	/// when a system call is executed to change the context's affinity.
+	void setScheduleSignal() { schedule_signal = true; }
+
+	/// Run one iteration of the emulation loop.
+	/// \return This function \c true if the iteration had a useful
+	/// emulation, and \c false if all contexts finished execution.
+	bool Run();
+
 
 	/// Debugger for function calls
 	static misc::Debug call_debug;
 
 	/// Debugger for x86 contexts
-	static misc::Debug ctx_debug;
+	static misc::Debug context_debug;
 
 	/// Debugger for CUDA driver
 	static misc::Debug cuda_debug;

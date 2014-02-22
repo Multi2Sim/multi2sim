@@ -240,14 +240,14 @@ class Emu
 	// Memory spaces
 
 	// Local to the GPU
-	std::unique_ptr<Memory::Memory> video_mem;
+	std::unique_ptr<mem::Memory> video_mem;
 	unsigned int video_mem_top;
 
 	// Shared with the CPU
-	std::unique_ptr<Memory::Memory> shared_mem;
+	std::unique_ptr<mem::Memory> shared_mem;
 	
 	// Will point to video_mem or shared_mem
-	Memory::Memory *global_mem;
+	mem::Memory *global_mem;
 
 	int address_space_index;
 
@@ -301,7 +301,7 @@ public:
 	unsigned getNewAddressSpaceIdx() { return address_space_index++; }
 
 	/// Get global memory
-	Memory::Memory *getGlobalMem() { return global_mem; }
+	mem::Memory *getGlobalMem() { return global_mem; }
 
 	/// Get disassembler
 	SI::Asm *getAsm() { return as; }

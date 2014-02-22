@@ -26,7 +26,6 @@
 #include "Kernel.h"
 #include "Program.h"
 
-using namespace misc;
 
 namespace SI
 {
@@ -102,7 +101,7 @@ void Kernel::LoadMetaDataV3()
 	{
 		//  Read the next line
 		std::getline(metadata_stream, line);
-		Driver::OpenCLDriver::debug << StringFmt("\t%s\n", line.c_str());
+		Driver::OpenCLDriver::debug << misc::fmt("\t%s\n", line.c_str());
 		misc::StringTokenize(line, token_list, ";:");
 
 		//  Stop when ARGEND is found or line is empty
@@ -126,37 +125,37 @@ void Kernel::LoadMetaDataV3()
 
 			// Token 2 - Data type 
 			token_list.erase(token_list.begin());
-			int data_type_int = StringToInt(*token_list.begin());
+			int data_type_int = misc::StringToInt(*token_list.begin());
 			ArgDataType data_type = static_cast<ArgDataType>(data_type_int);
 			const char *data_type_string = arg_data_type_map.MapValue(data_type, err);
 			if (err)
-				fatal("%s: invalid data type '%s'.\n%s",
+				misc::fatal("%s: invalid data type '%s'.\n%s",
 					__FUNCTION__, data_type_string, 
 					OpenCLErrSIKernelMetadata);
 
 			// Token 3 - Number of elements 
 			token_list.erase(token_list.begin());
 			ExpectInt(token_list);
-			int num_elems = StringToInt(*token_list.begin());
+			int num_elems = misc::StringToInt(*token_list.begin());
 			assert(num_elems > 0);
 
 			// Token 4 - Constant buffer 
 			token_list.erase(token_list.begin());
 			ExpectInt(token_list);
 			Expect(token_list, "1");
-			int constant_buffer_num = StringToInt(*token_list.begin());
+			int constant_buffer_num = misc::StringToInt(*token_list.begin());
 
 			// Token 5 - Conastant offset 
 			token_list.erase(token_list.begin());
 			ExpectInt(token_list);
-			int constant_offset = StringToInt(*token_list.begin());
+			int constant_offset = misc::StringToInt(*token_list.begin());
 
 			// Create argument object
 			std::unique_ptr<SI::Arg> arg(new SI::ArgValue(name, data_type, num_elems, 
 				constant_buffer_num, constant_offset));
 
 			// Debug 
-			Driver::OpenCLDriver::debug << StringFmt("\targument '%s' - value stored in "
+			Driver::OpenCLDriver::debug << misc::fmt("\targument '%s' - value stored in "
 				"constant buffer %d at offset %d\n",
 				name.c_str(), constant_buffer_num,
 				constant_offset);
@@ -181,11 +180,11 @@ void Kernel::LoadMetaDataV3()
 
 			// Token 2 - Data type
 			token_list.erase(token_list.begin());
-			int data_type_int = StringToInt(*token_list.begin());
+			int data_type_int = misc::StringToInt(*token_list.begin());
 			ArgDataType data_type = static_cast<ArgDataType>(data_type_int);
 			const char *data_type_string = arg_data_type_map.MapValue(data_type, err);
 			if (err)
-				fatal("%s: invalid data type '%s'.\n%s",
+				misc::fatal("%s: invalid data type '%s'.\n%s",
 					__FUNCTION__, data_type_string, 
 					OpenCLErrSIKernelMetadata);
 
@@ -195,45 +194,45 @@ void Kernel::LoadMetaDataV3()
 			token_list.erase(token_list.begin());
 			ExpectInt(token_list);
 			Expect(token_list, "1");
-			int num_elems = StringToInt(*token_list.begin());
+			int num_elems = misc::StringToInt(*token_list.begin());
 
 			// Token 4 - Constant buffer 
 			token_list.erase(token_list.begin());
 			ExpectInt(token_list);
 			Expect(token_list, "1");
-			int constant_buffer_num = StringToInt(*token_list.begin());
+			int constant_buffer_num = misc::StringToInt(*token_list.begin());
 
 			// Token 5 - Conastant offset 
 			token_list.erase(token_list.begin());
 			ExpectInt(token_list);
-			int constant_offset = StringToInt(*token_list.begin());
+			int constant_offset = misc::StringToInt(*token_list.begin());
 
 			// Token 6 - Memory scope 
 			token_list.erase(token_list.begin());
-			int arg_scope_int = StringToInt(*token_list.begin());
+			int arg_scope_int = misc::StringToInt(*token_list.begin());
 			ArgScope arg_scope = static_cast<ArgScope>(arg_scope_int);
 			const char *arg_scope_string = arg_scope_map.MapValue(arg_scope, err);
 			if (err)
-				fatal("%s: invalid scope '%s'.\n%s",
+				misc::fatal("%s: invalid scope '%s'.\n%s",
 					__FUNCTION__, arg_scope_string, 
 					OpenCLErrSIKernelMetadata);
 
 			// Token 7 - Buffer number 
 			token_list.erase(token_list.begin());
 			ExpectInt(token_list);
-			int buffer_num = StringToInt(*token_list.begin());
+			int buffer_num = misc::StringToInt(*token_list.begin());
 
 			// Token 8 - Alignment 
 			token_list.erase(token_list.begin());
 			ExpectInt(token_list);
-			int alignment = StringToInt(*token_list.begin());
+			int alignment = misc::StringToInt(*token_list.begin());
 
 			// Token 9 - Access type 
 			token_list.erase(token_list.begin());
-			int access_type_int = StringToInt(*token_list.begin());
+			int access_type_int = misc::StringToInt(*token_list.begin());
 			ArgAccessType access_type = static_cast<ArgAccessType>(access_type_int);
 			if (err)
-				fatal("%s: invalid access type '%s'.\n%s",
+				misc::fatal("%s: invalid access type '%s'.\n%s",
 					__FUNCTION__, token.c_str(), 
 					OpenCLErrSIKernelMetadata);
 
@@ -251,7 +250,7 @@ void Kernel::LoadMetaDataV3()
 				access_type));
 
 			// Debug 
-			Driver::OpenCLDriver::debug << StringFmt("\targument '%s' - Pointer stored in "
+			Driver::OpenCLDriver::debug << misc::fmt("\targument '%s' - Pointer stored in "
 				"constant buffer %d at offset %d\n",
 				name.c_str(), constant_buffer_num,
 				constant_offset);
@@ -274,43 +273,43 @@ void Kernel::LoadMetaDataV3()
 
 			// Token 2 - Dimension 
 			token_list.erase(token_list.begin());
-			int dimension = StringToInt(*token_list.begin());
+			int dimension = misc::StringToInt(*token_list.begin());
 			const char*dimension_string = arg_dimension_map.MapValue(dimension, err);
 			if (err)
-				fatal("%s: invalid image dimensions '%s'.\n%s",
+				misc::fatal("%s: invalid image dimensions '%s'.\n%s",
 					__FUNCTION__, dimension_string, OpenCLErrSIKernelMetadata);
 
 			// Token 3 - Access type 
 			token_list.erase(token_list.begin());
-			int access_type_int = StringToInt(*token_list.begin());
+			int access_type_int = misc::StringToInt(*token_list.begin());
 			ArgAccessType access_type = static_cast<ArgAccessType>(access_type_int);
 			if (err)
-				fatal("%s: invalid access type '%s'.\n%s",
+				misc::fatal("%s: invalid access type '%s'.\n%s",
 					__FUNCTION__, token.c_str(), 
 					OpenCLErrSIKernelMetadata);
 
 			// Token 4 - UAV 
 			token_list.erase(token_list.begin());
 			ExpectInt(token_list);
-			int uav = StringToInt(*token_list.begin());
+			int uav = misc::StringToInt(*token_list.begin());
 
 			// Token 5 - Constant buffer 
 			token_list.erase(token_list.begin());
 			ExpectInt(token_list);
 			Expect(token_list, "1");
-			int constant_buffer_num = StringToInt(*token_list.begin());
+			int constant_buffer_num = misc::StringToInt(*token_list.begin());
 
 			// Token 6 - Conastant offset 
 			token_list.erase(token_list.begin());
 			ExpectInt(token_list);
-			int constant_offset = StringToInt(*token_list.begin());
+			int constant_offset = misc::StringToInt(*token_list.begin());
 
 			// Create argument object
 			std::unique_ptr<SI::Arg> arg(new SI::ArgImage(name, dimension, access_type,
 				uav, constant_buffer_num, constant_offset));
 
 			// Debug 
-			Driver::OpenCLDriver::debug << StringFmt("\targument '%s' - Image stored in "
+			Driver::OpenCLDriver::debug << misc::fmt("\targument '%s' - Image stored in "
 				"constant buffer %d at offset %d\n",
 				name.c_str(), constant_buffer_num,
 				constant_offset);
@@ -334,17 +333,17 @@ void Kernel::LoadMetaDataV3()
 			// Token 2 - ID 
 			token_list.erase(token_list.begin());
 			ExpectInt(token_list);
-			int id = StringToInt(*token_list.begin());
+			int id = misc::StringToInt(*token_list.begin());
 
 			// Token 3 - Location 
 			token_list.erase(token_list.begin());
 			ExpectInt(token_list);
-			int location = StringToInt(*token_list.begin());
+			int location = misc::StringToInt(*token_list.begin());
 
 			// Token 4 - Value 
 			token_list.erase(token_list.begin());
 			ExpectInt(token_list);
-			int value = StringToInt(*token_list.begin());
+			int value = misc::StringToInt(*token_list.begin());
 
 			// Create argument object
 			std::unique_ptr<SI::Arg> arg(new SI::ArgSampler(name, id, location, 
@@ -391,7 +390,7 @@ void Kernel::LoadMetaDataV3()
 				// Token 2 - Size of local memory
 				token_list.erase(token_list.begin());
 				ExpectInt(token_list);
-				this->mem_size_local = StringToInt(*token_list.begin());
+				this->mem_size_local = misc::StringToInt(*token_list.begin());
 			}
 			else if (token_list.front() == "datareqd")
 			{
@@ -405,7 +404,7 @@ void Kernel::LoadMetaDataV3()
 			}
 			else
 			{
-				fatal("%s: not supported metadata '%s'.\n%s",
+				misc::fatal("%s: not supported metadata '%s'.\n%s",
 						__FUNCTION__, token.c_str(), OpenCLErrSIKernelMetadata);
 			}
 
@@ -428,7 +427,7 @@ void Kernel::LoadMetaDataV3()
 			// Token 2 - Function ID
 			token_list.erase(token_list.begin());
 			ExpectInt(token_list);
-			this->func_uniqueid = StringToInt(*token_list.begin());
+			this->func_uniqueid = misc::StringToInt(*token_list.begin());
 
 			// Next
 			token_list.clear();
@@ -519,7 +518,7 @@ void Kernel::LoadMetaDataV3()
 		}
 
 		// Crash when uninterpreted entries appear
-		fatal("kernel '%s': unknown metadata entry '%s'",
+		misc::fatal("kernel '%s': unknown metadata entry '%s'",
 			this->name.c_str(), token.c_str());
 	}
 }
@@ -546,7 +545,7 @@ void Kernel::LoadMetaData()
 	misc::StringTokenize(line, token_list, ";:");
 	Expect(token_list, "version");
 	ExpectCount(token_list, 4);
-	int version = StringToInt(token_list[1]);
+	int version = misc::StringToInt(token_list[1]);
 	token_list.clear();
 
 	// Parse rest of the metadata based on version number 
@@ -601,7 +600,7 @@ void Kernel::CreateBufferDesc(unsigned base_addr, unsigned size, int num_elems,
 			break;
 
 		default:
-			fatal("%s: invalid number of i8/u8 elements (%d)",
+			misc::fatal("%s: invalid number of i8/u8 elements (%d)",
 					__FUNCTION__, num_elems);
 		}
 		elem_size = 1 * num_elems;
@@ -627,7 +626,7 @@ void Kernel::CreateBufferDesc(unsigned base_addr, unsigned size, int num_elems,
 			break;
 
 		default:
-			fatal("%s: invalid number of i16/u16 elements (%d)",
+			misc::fatal("%s: invalid number of i16/u16 elements (%d)",
 					__FUNCTION__, num_elems);
 		}
 		elem_size = 2 * num_elems;
@@ -657,7 +656,7 @@ void Kernel::CreateBufferDesc(unsigned base_addr, unsigned size, int num_elems,
 			break;
 
 		default:
-			fatal("%s: invalid number of i32/u32 elements (%d)",
+			misc::fatal("%s: invalid number of i32/u32 elements (%d)",
 					__FUNCTION__, num_elems);
 		}
 		elem_size = 4 * num_elems;
@@ -685,7 +684,7 @@ void Kernel::CreateBufferDesc(unsigned base_addr, unsigned size, int num_elems,
 			break;
 
 		default:
-			fatal("%s: invalid number of float elements (%d)",
+			misc::fatal("%s: invalid number of float elements (%d)",
 					__FUNCTION__, num_elems);
 		}
 		elem_size = 4 * num_elems;
@@ -705,7 +704,7 @@ void Kernel::CreateBufferDesc(unsigned base_addr, unsigned size, int num_elems,
 			break;
 
 		default:
-			fatal("%s: invalid number of double elements (%d)",
+			misc::fatal("%s: invalid number of double elements (%d)",
 					__FUNCTION__, num_elems);
 		}
 		elem_size = 8 * num_elems;
@@ -718,7 +717,7 @@ void Kernel::CreateBufferDesc(unsigned base_addr, unsigned size, int num_elems,
 		break;
 
 	default:
-		fatal("%s: invalid data type for SI buffer (%d)",
+		misc::fatal("%s: invalid data type for SI buffer (%d)",
 			__FUNCTION__, data_type);
 	}
 	assert(num_format != EmuBufDescNumFmtInvalid);
@@ -750,11 +749,11 @@ Kernel::Kernel(int id, std::string name, Program *program)
 		misc::fatal("%s: invalid kernel function (ELF symbol '__OpenCL_%s_xxx missing')\n%s",
 				__FUNCTION__, name.c_str(), OpenCLErrSIKernelSymbol);
 	
-	Driver::OpenCLDriver::debug << StringFmt("\tmetadata symbol: offset=0x%x, size=%u\n",
+	Driver::OpenCLDriver::debug << misc::fmt("\tmetadata symbol: offset=0x%x, size=%u\n",
 			(unsigned)metadata_symbol->getValue(), (unsigned)metadata_symbol->getSize());
-	Driver::OpenCLDriver::debug << StringFmt("\theader symbol: offset=0x%x, size=%u\n",
+	Driver::OpenCLDriver::debug << misc::fmt("\theader symbol: offset=0x%x, size=%u\n",
 			(unsigned)header_symbol->getValue(), (unsigned)header_symbol->getSize());
-	Driver::OpenCLDriver::debug << StringFmt("\tkernel symbol: offset=0x%x, size=%u\n",
+	Driver::OpenCLDriver::debug << misc::fmt("\tkernel symbol: offset=0x%x, size=%u\n",
 			(unsigned)kernel_symbol->getValue(), (unsigned)kernel_symbol->getSize());
 
 	// Create and parse kernel binary (internal ELF).

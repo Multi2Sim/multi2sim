@@ -40,7 +40,7 @@ void EmuConfig::Register(misc::CommandLine &command_line)
 			"binary.");
 	
 	// Option --x86-debug-ctx <file>
-	command_line.RegisterString("--x86-debug-ctx", ctx_debug_file,
+	command_line.RegisterString("--x86-debug-ctx", context_debug_file,
 			"Dump debug information related with context creation, "
 			"destruction, allocation, or state change.");
 
@@ -86,7 +86,7 @@ void EmuConfig::Process()
 {
 	// Debuggers
 	Emu::call_debug.setPath(call_debug_file);
-	Emu::ctx_debug.setPath(ctx_debug_file);
+	Emu::context_debug.setPath(context_debug_file);
 	Emu::cuda_debug.setPath(cuda_debug_file);
 	Emu::glut_debug.setPath(glut_debug_file);
 	Emu::isa_debug.setPath(isa_debug_file);
@@ -107,7 +107,7 @@ std::unique_ptr<Emu> Emu::instance;
 
 // Debuggers
 misc::Debug Emu::call_debug;
-misc::Debug Emu::ctx_debug;
+misc::Debug Emu::context_debug;
 misc::Debug Emu::cuda_debug;
 misc::Debug Emu::glut_debug;
 misc::Debug Emu::isa_debug;
@@ -120,7 +120,7 @@ misc::Debug Emu::syscall_debug;
 EmuConfig Emu::config;
 
 
-Emu::Emu()
+Emu::Emu() : Common::Emu("x86")
 {
 	// Obtain instance to disassembler
 	as = Asm::getInstance();
@@ -155,6 +155,42 @@ Context *Emu::newContext(const std::vector<std::string> &args,
 
 	// Return
 	return context;
+}
+
+
+bool Emu::Run()
+{
+#if 0
+	X86Emu *emu = asX86Emu(self);
+	X86Context *ctx;
+
+	/* Stop if there is no context running */
+	if (emu->finished_list_count >= emu->context_list_count)
+		return FALSE;
+
+	/* Stop if maximum number of CPU instructions exceeded */
+	if (x86_emu_max_inst && asEmu(self)->instructions >= x86_emu_max_inst)
+		esim_finish = esim_finish_x86_max_inst;
+
+	/* Stop if any previous reason met */
+	if (esim_finish)
+		return TRUE;
+
+	/* Run an instruction from every running process */
+	for (ctx = emu->running_list_head; ctx; ctx = ctx->running_list_next)
+		X86ContextExecute(ctx);
+
+	/* Free finished contexts */
+	while (emu->finished_list_head)
+		delete(emu->finished_list_head);
+
+	/* Process list of suspended contexts */
+	X86EmuProcessEvents(emu);
+
+	/* Still running */
+	return TRUE;
+#endif
+	return true;
 }
 
 } // namespace x86

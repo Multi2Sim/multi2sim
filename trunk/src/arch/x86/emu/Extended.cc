@@ -22,8 +22,6 @@
 #include "Extended.h"
 
 
-using namespace misc;
-
 namespace x86
 {
 
@@ -63,7 +61,7 @@ float Extended::ExtendedToFloat(const char *x)
 void Extended::Dump(std::ostream &os) const
 {
 	double d = ExtendedToDouble(x);
-	os << StringFmt("%g", d);
+	os << misc::fmt("%g", d);
 }
 
 

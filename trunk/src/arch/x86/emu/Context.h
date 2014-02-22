@@ -60,6 +60,19 @@ enum ContextState
 	ContextMapped       = 0x20000   // mapped to a core/thread
 };
 
+/// Context list identifiers
+enum ContextListType
+{
+	// No 'Invalid' identifier here
+	ContextListRunning = 0,
+	ContextListSuspended,
+	ContextListZombie,
+	ContextListFinished,
+
+	// Number of context lists
+	ContextListCount
+};
+
 
 /// x86 Context
 class Context
@@ -77,7 +90,7 @@ class Context
 	// Context memory. This object can be shared by multiple contexts, so it
 	// is declared as a shared pointer. The las freed context pointing to
 	// this memory object will be the one automatically freeing it.
-	std::shared_ptr<Memory::Memory> memory;
+	std::shared_ptr<mem::Memory> memory;
 
 	// Register file. Each context has its own copy always.
 	Regs regs;
@@ -85,6 +98,16 @@ class Context
 	// File descriptor table, private for each context.
 	FileTable file_table;
 
+	// Flag indicating whether this context is present in a certain context
+	// list, and if true, iterator indicating its position inside of that
+	// list.
+	bool in_context_list[ContextListCount];
+	std::list<Context *>::iterator context_list_iter[ContextListCount];
+
+	// Add/remove context in a context list of the emulator
+	void AddToContextList(ContextListType type);
+	void RemoveFromContextList(ContextListType type);
+	void UpdateContextList(ContextListType type, bool present);
 
 	// Update the context state
 	void UpdateState(unsigned state);

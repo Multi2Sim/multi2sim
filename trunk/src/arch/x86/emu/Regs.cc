@@ -26,8 +26,6 @@
 #include "Regs.h"
 
 
-using namespace misc;
-
 namespace x86
 {
 
@@ -121,7 +119,7 @@ Regs::Regs()
 
 unsigned Regs::Read(InstReg reg) const
 {
-	assert(inRange(reg, InstRegNone, InstRegCount - 1));
+	assert(misc::inRange(reg, InstRegNone, InstRegCount - 1));
 	unsigned *value_ptr = (unsigned *) ((char *) &eax + info[reg].offset);
 	return *value_ptr & mask[info[reg].size];
 }
@@ -129,7 +127,7 @@ unsigned Regs::Read(InstReg reg) const
 
 void Regs::Write(InstReg reg, unsigned value)
 {
-	assert(inRange(reg, InstRegNone, InstRegCount - 1));
+	assert(misc::inRange(reg, InstRegNone, InstRegCount - 1));
 	unsigned mask = this->mask[info[reg].size];
 	unsigned *value_ptr = (unsigned *) ((char *) &eax + info[reg].offset);
 	*value_ptr = (*value_ptr & ~mask) | (value & mask);
@@ -139,7 +137,7 @@ void Regs::Write(InstReg reg, unsigned value)
 Extended Regs::ReadFpu(int index) const
 {
 	// Invalid index
-	if (!inRange(index, 0, 7))
+	if (!misc::inRange(index, 0, 7))
 		return 0.0;
 
 	// Calculate effective index
@@ -155,7 +153,7 @@ Extended Regs::ReadFpu(int index) const
 void Regs::WriteFpu(int index, const Extended &value)
 {
 	// Invalid index
-	if (!inRange(index, 0, 7))
+	if (!misc::inRange(index, 0, 7))
 		return;
 
 	// Calculate effective index
@@ -206,14 +204,14 @@ void Regs::DumpFpuStack(std::ostream &os) const
 void Regs::Dump(std::ostream &os) const
 {
 	// Integer registers
-	os << StringFmt("  eax=%08x  ecx=%08x  edx=%08x  ebx=%08x\n",
+	os << misc::fmt("  eax=%08x  ecx=%08x  edx=%08x  ebx=%08x\n",
 		eax, ecx, edx, ebx);
-	os << StringFmt("  esp=%08x  ebp=%08x  esi=%08x  edi=%08x\n",
+	os << misc::fmt("  esp=%08x  ebp=%08x  esi=%08x  edi=%08x\n",
 		esp, ebp, esi, edi);
-	os << StringFmt("  es=%x, cs=%x, ss=%x, ds=%x, fs=%x, gs=%x\n",
+	os << misc::fmt("  es=%x, cs=%x, ss=%x, ds=%x, fs=%x, gs=%x\n",
 		es, cs, ss, ds, fs, gs);
-	os << StringFmt("  eip=%08x\n", eip);
-	os << StringFmt("  flags=%04x (cf=%d  pf=%d  af=%d  zf=%d  sf=%d  df=%d  of=%d)\n",
+	os << misc::fmt("  eip=%08x\n", eip);
+	os << misc::fmt("  flags=%04x (cf=%d  pf=%d  af=%d  zf=%d  sf=%d  df=%d  of=%d)\n",
 		eflags,
 		(eflags & (1 << InstFlagCF)) > 0,
 		(eflags & (1 << InstFlagPF)) > 0,
@@ -228,10 +226,10 @@ void Regs::Dump(std::ostream &os) const
 	DumpFpuStack(os);
 
 	// Floating point code (part from status register)
-	os << StringFmt("  fpu_code (C3-C2-C1-C0): %d-%d-%d-%d\n",
-		getBit32(fpu_code, 3) > 0, getBit32(fpu_code, 2) > 0,
-		getBit32(fpu_code, 1) > 0, getBit32(fpu_code, 0) > 0);
-	os << StringFmt("  fpu_ctrl=%04x\n", fpu_ctrl);
+	os << misc::fmt("  fpu_code (C3-C2-C1-C0): %d-%d-%d-%d\n",
+		misc::getBit32(fpu_code, 3) > 0, misc::getBit32(fpu_code, 2) > 0,
+		misc::getBit32(fpu_code, 1) > 0, misc::getBit32(fpu_code, 0) > 0);
+	os << misc::fmt("  fpu_ctrl=%04x\n", fpu_ctrl);
 
 	// XMM registers
 	for (int i = 0; i < 8; i++)

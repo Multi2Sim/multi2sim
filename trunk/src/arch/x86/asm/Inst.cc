@@ -27,13 +27,11 @@
 #include "Inst.h"
 
 
-using namespace misc;
-
 namespace x86
 {
 
 // Register names
-StringMap inst_reg_map =
+misc::StringMap inst_reg_map =
 {
 	{ "eax", InstRegEax },
 	{ "ecx", InstRegEcx },
@@ -133,7 +131,7 @@ Inst::Inst()
 void Inst::DumpMoffsAddr(std::ostream &os) const
 {
 	InstReg reg = segment ? segment : InstRegDs;
-	os << StringFmt("%s:0x%x", inst_reg_map.MapValue(reg), imm.d);
+	os << misc::fmt("%s:0x%x", inst_reg_map.MapValue(reg), imm.d);
 }
 
 
@@ -155,7 +153,7 @@ void Inst::DumpAddr(std::ostream &os) const
 		if (segment_str.empty())
 			segment_str = "ds:";
 		os << segment_str;
-		os << StringFmt("0x%x", disp);
+		os << misc::fmt("0x%x", disp);
 		return;
 	}
 
@@ -179,10 +177,10 @@ void Inst::DumpAddr(std::ostream &os) const
 	{
 		if (write_sign)
 			os << '+';
-		os << StringFmt("0x%x", disp);
+		os << misc::fmt("0x%x", disp);
 	}
 	if (disp < 0)
-		os << StringFmt("-0x%x", -disp);
+		os << misc::fmt("-0x%x", -disp);
 	os << ']';
 }
 
@@ -204,22 +202,22 @@ void Inst::Dump(std::ostream &os) const
 	{
 		// Check tokens
 		int length = 0;
-		if (Common::Asm::IsToken(fmt, "r8", length))
+		if (Common::Asm::isToken(fmt, "r8", length))
 		{
 			os << inst_reg_map.MapValue(modrm_reg
 					+ InstRegAl);
 		}
-		else if (Common::Asm::IsToken(fmt, "r16", length))
+		else if (Common::Asm::isToken(fmt, "r16", length))
 		{
 			os << inst_reg_map.MapValue(modrm_reg
 					+ InstRegAx);
 		}
-		else if (Common::Asm::IsToken(fmt, "r32", length))
+		else if (Common::Asm::isToken(fmt, "r32", length))
 		{
 			os << inst_reg_map.MapValue(modrm_reg
 					+ InstRegEax);
 		}
-		else if (Common::Asm::IsToken(fmt, "rm8", length))
+		else if (Common::Asm::isToken(fmt, "rm8", length))
 		{
 			if (modrm_mod == 0x03)
 				os << inst_reg_map.MapValue(modrm_rm
@@ -230,7 +228,7 @@ void Inst::Dump(std::ostream &os) const
 				DumpAddr(os);
 			}
 		}
-		else if (Common::Asm::IsToken(fmt, "rm16", length))
+		else if (Common::Asm::isToken(fmt, "rm16", length))
 		{
 			if (modrm_mod == 0x03)
 				os << inst_reg_map.MapValue(modrm_rm
@@ -241,7 +239,7 @@ void Inst::Dump(std::ostream &os) const
 				DumpAddr(os);
 			}
 		}
-		else if (Common::Asm::IsToken(fmt, "rm32", length))
+		else if (Common::Asm::isToken(fmt, "rm32", length))
 		{
 			if (modrm_mod == 0x03)
 				os << inst_reg_map.MapValue(modrm_rm
@@ -252,7 +250,7 @@ void Inst::Dump(std::ostream &os) const
 				DumpAddr(os);
 			}
 		}
-		else if (Common::Asm::IsToken(fmt, "r32m8", length))
+		else if (Common::Asm::isToken(fmt, "r32m8", length))
 		{
 			if (modrm_mod == 3)
 				os << inst_reg_map.MapValue(modrm_rm
@@ -263,7 +261,7 @@ void Inst::Dump(std::ostream &os) const
 				DumpAddr(os);
 			}
 		}
-		else if (Common::Asm::IsToken(fmt, "r32m16", length))
+		else if (Common::Asm::isToken(fmt, "r32m16", length))
 		{
 			if (modrm_mod == 3)
 				os << inst_reg_map.MapValue(modrm_rm
@@ -274,101 +272,101 @@ void Inst::Dump(std::ostream &os) const
 				DumpAddr(os);
 			}
 		}
-		else if (Common::Asm::IsToken(fmt, "m", length))
+		else if (Common::Asm::isToken(fmt, "m", length))
 		{
 			DumpAddr(os);
 		}
-		else if (Common::Asm::IsToken(fmt, "imm8", length))
+		else if (Common::Asm::isToken(fmt, "imm8", length))
 		{
-			os << StringFmt("0x%x", imm.b);
+			os << misc::fmt("0x%x", imm.b);
 		}
-		else if (Common::Asm::IsToken(fmt, "imm16", length))
+		else if (Common::Asm::isToken(fmt, "imm16", length))
 		{
-			os << StringFmt("0x%x", imm.w);
+			os << misc::fmt("0x%x", imm.w);
 		}
-		else if (Common::Asm::IsToken(fmt, "imm32", length))
+		else if (Common::Asm::isToken(fmt, "imm32", length))
 		{
-			os << StringFmt("0x%x", imm.d);
+			os << misc::fmt("0x%x", imm.d);
 		}
-		else if (Common::Asm::IsToken(fmt, "rel8", length))
+		else if (Common::Asm::isToken(fmt, "rel8", length))
 		{
-			os << StringFmt("%x", (char) imm.b + eip + size);
+			os << misc::fmt("%x", (char) imm.b + eip + size);
 		}
-		else if (Common::Asm::IsToken(fmt, "rel16", length))
+		else if (Common::Asm::isToken(fmt, "rel16", length))
 		{
-			os << StringFmt("%x", (short) imm.w + eip + size);
+			os << misc::fmt("%x", (short) imm.w + eip + size);
 		}
-		else if (Common::Asm::IsToken(fmt, "rel32", length))
+		else if (Common::Asm::isToken(fmt, "rel32", length))
 		{
-			os << StringFmt("%x", imm.d + eip + size);
+			os << misc::fmt("%x", imm.d + eip + size);
 		}
-		else if (Common::Asm::IsToken(fmt, "moffs8", length))
-		{
-			DumpMoffsAddr(os);
-		}
-		else if (Common::Asm::IsToken(fmt, "moffs16", length))
+		else if (Common::Asm::isToken(fmt, "moffs8", length))
 		{
 			DumpMoffsAddr(os);
 		}
-		else if (Common::Asm::IsToken(fmt, "moffs32", length))
+		else if (Common::Asm::isToken(fmt, "moffs16", length))
 		{
 			DumpMoffsAddr(os);
 		}
-		else if (Common::Asm::IsToken(fmt, "m8", length))
+		else if (Common::Asm::isToken(fmt, "moffs32", length))
+		{
+			DumpMoffsAddr(os);
+		}
+		else if (Common::Asm::isToken(fmt, "m8", length))
 		{
 			os << "BYTE PTR ";
 			DumpAddr(os);
 		}
-		else if (Common::Asm::IsToken(fmt, "m16", length))
+		else if (Common::Asm::isToken(fmt, "m16", length))
 		{
 			os << "WORD PTR ";
 			DumpAddr(os);
 		}
-		else if (Common::Asm::IsToken(fmt, "m32", length))
+		else if (Common::Asm::isToken(fmt, "m32", length))
 		{
 			os << "DWORD PTR ";
 			DumpAddr(os);
 		}
-		else if (Common::Asm::IsToken(fmt, "m64", length))
+		else if (Common::Asm::isToken(fmt, "m64", length))
 		{
 			os << "QWORD PTR ";
 			DumpAddr(os);
 		}
-		else if (Common::Asm::IsToken(fmt, "m80", length))
+		else if (Common::Asm::isToken(fmt, "m80", length))
 		{
 			os << "TBYTE PTR ";
 			DumpAddr(os);
 		}
-		else if (Common::Asm::IsToken(fmt, "m128", length))
+		else if (Common::Asm::isToken(fmt, "m128", length))
 		{
 			os << "XMMWORD PTR ";
 			DumpAddr(os);
 		}
-		else if (Common::Asm::IsToken(fmt, "st0", length))
+		else if (Common::Asm::isToken(fmt, "st0", length))
 		{
 			os << "st";
 		}
-		else if (Common::Asm::IsToken(fmt, "sti", length))
+		else if (Common::Asm::isToken(fmt, "sti", length))
 		{
-			os << StringFmt("st(%d)", opindex);
+			os << misc::fmt("st(%d)", opindex);
 		}
-		else if (Common::Asm::IsToken(fmt, "ir8", length))
+		else if (Common::Asm::isToken(fmt, "ir8", length))
 		{
 			os << inst_reg_map.MapValue(opindex + InstRegAl);
 		}
-		else if (Common::Asm::IsToken(fmt, "ir16", length))
+		else if (Common::Asm::isToken(fmt, "ir16", length))
 		{
 			os << inst_reg_map.MapValue(opindex + InstRegAx);
 		}
-		else if (Common::Asm::IsToken(fmt, "ir32", length))
+		else if (Common::Asm::isToken(fmt, "ir32", length))
 		{
 			os << inst_reg_map.MapValue(opindex + InstRegEax);
 		}
-		else if (Common::Asm::IsToken(fmt, "sreg", length))
+		else if (Common::Asm::isToken(fmt, "sreg", length))
 		{
 			os << inst_reg_map.MapValue(reg + InstRegEs);
 		}
-		else if (Common::Asm::IsToken(fmt, "xmmm32", length))
+		else if (Common::Asm::isToken(fmt, "xmmm32", length))
 		{
 			if (modrm_mod == 3)
 				os << "xmm" << (unsigned) modrm_rm;
@@ -378,7 +376,7 @@ void Inst::Dump(std::ostream &os) const
 				DumpAddr(os);
 			}
 		}
-		else if (Common::Asm::IsToken(fmt, "xmmm64", length))
+		else if (Common::Asm::isToken(fmt, "xmmm64", length))
 		{
 			if (modrm_mod == 3)
 				os << "xmm" << (unsigned) modrm_rm;
@@ -388,7 +386,7 @@ void Inst::Dump(std::ostream &os) const
 				DumpAddr(os);
 			}
 		}
-		else if (Common::Asm::IsToken(fmt, "xmmm128", length))
+		else if (Common::Asm::isToken(fmt, "xmmm128", length))
 		{
 			if (modrm_mod == 3)
 				os << "xmm" << (unsigned) modrm_rm;
@@ -398,7 +396,7 @@ void Inst::Dump(std::ostream &os) const
 				DumpAddr(os);
 			}
 		}
-		else if (Common::Asm::IsToken(fmt, "xmm", length))
+		else if (Common::Asm::isToken(fmt, "xmm", length))
 		{
 			os << "xmm" << (unsigned) modrm_reg;
 		}
@@ -547,7 +545,7 @@ void Inst::Decode(const char *buffer, unsigned eip)
 			break;
 
 		default:
-			panic("%s: invalid prefix", __FUNCTION__);
+			misc::panic("%s: invalid prefix", __FUNCTION__);
 
 		}
 

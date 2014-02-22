@@ -26,8 +26,6 @@
 
 #include "Program.h"
 
-using namespace misc;
-using namespace ELFReader;
 
 namespace SI
 {
@@ -72,7 +70,7 @@ void Program::InitializeConstantBuffers()
 	for (unsigned i = 2; i < EmuMaxNumConstBufs; i++) 
 	{
 		/* Create string of symbol name */
-		symbol_name = misc::StringFmt("__OpenCL_%d_global", i);
+		symbol_name = misc::fmt("__OpenCL_%d_global", i);
 
 		/* Check to see if symbol exists */
 		symbol = elf_file->getSymbol(symbol_name);
@@ -80,7 +78,7 @@ void Program::InitializeConstantBuffers()
 			break;
 
 		/* Read the elf symbol into a buffer */
-		Driver::OpenCLDriver::debug << StringFmt("\tconstant buffer '%s' found with size %d\n",
+		Driver::OpenCLDriver::debug << misc::fmt("\tconstant buffer '%s' found with size %d\n",
 			symbol->getName().c_str(), symbol->getSize());
 
 		/* Create buffer and add constant buffer to list */
@@ -100,7 +98,7 @@ Program::Program(int id, Driver::OpenCLDriver *driver)
 
 void Program::SetBinary(const char *buf, unsigned int size)
 {
-	elf_file = std::unique_ptr<File>(new File(buf, size));
+	elf_file = std::unique_ptr<ELFReader::File>(new ELFReader::File(buf, size));
 
 	InitializeConstantBuffers();
 }

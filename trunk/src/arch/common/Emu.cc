@@ -1,6 +1,6 @@
 /*
  *  Multi2Sim
- *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
+ *  Copyright (C) 2014  Rafael Ubal (ubal@ece.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,37 +17,34 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_COMMON_ASM_H
-#define ARCH_COMMON_ASM_H
+#include "Emu.h"
 
-#include <string>
+#include <lib/cpp/String.h>
+
 
 namespace Common
 {
 
-class Asm
+Emu::Emu(const std::string &name)
+		: timer(name)
 {
-public:
+	// Initialize
+	this->name = name;
+}
+
 	
-	/// Check whether \a token is found in the beginning of string \a fmt.
-	/// If so, the length of the found token is returned in argument
-	/// \a length.
-	static bool isToken(const std::string &fmt, const std::string &token,
-			int &length);
+void Emu::DumpSummary(std::ostream &os) const
+{
+	double time_in_sec = (double) timer.getValue() / 1.0e6;
+	double inst_per_sec = time_in_sec > 0.0 ? (double) instructions
+			/ time_in_sec : 0.0;
 
-	/// Alternative version of function isToken() where the length of the
-	/// obtained token is not returned (argument \a length is omitted).
-	static bool isToken(const std::string &fmt, const std::string &token)
-	{
-		int length;
-		return isToken(fmt, token, length);
-	}
-
-
-};
+	os << misc::fmt("[ %s ]\n", name.c_str());
+	os << misc::fmt("RealTime = %.2f [s]\n", time_in_sec);
+	os << misc::fmt("Instructions = %lld\n", instructions);
+	os << misc::fmt("InstructionsPerSecond = %.0f\n", inst_per_sec);
+}
 
 
 }  // namespace Common
-
-#endif
 
