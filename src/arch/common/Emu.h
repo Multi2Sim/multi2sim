@@ -25,7 +25,7 @@
 #include <string>
 
 
-namespace Common
+namespace comm
 {
 
 class Emu
@@ -68,14 +68,14 @@ public:
 
 	/// Dump the statistics summary for the emulator. This is a virtual
 	/// function that should be overridden by child classes. The function is
-	/// not abstract: its body is still valid for class Common::Emu, and
+	/// not abstract: its body is still valid for class comm::Emu, and
 	/// it can be invoked by the child class to print general statistics
 	/// present for all emulators, such as instruction count.
 	virtual void DumpSummary(std::ostream &os) const;
 };
 
 
-}  // namespace Common
+}  // namespace comm
 
 #endif
 

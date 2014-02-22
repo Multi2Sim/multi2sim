@@ -17,37 +17,53 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "Emu.h"
-
-#include <lib/cpp/String.h>
-#include <lib/esim/ESim.h>
+#include "Arch.h"
 
 
 namespace comm
 {
 
-Emu::Emu(const std::string &name)
-		: timer(name)
+misc::StringMap arch_sim_kind_map =
+{
+	{ "functional", ArchSimFunctional },
+	{ "detailed", ArchSimDetailed }
+};
+
+
+//
+// Class Arch
+//
+
+Arch::Arch(const std::string &name, const std::string &prefix)
 {
 	// Initialize
 	this->name = name;
-	instructions = 0;
-	
-	// Get the instance of the event-driven simulator
-	esim = esim::ESim::getInstance();
+	this->prefix = prefix;
 }
-
 	
-void Emu::DumpSummary(std::ostream &os) const
-{
-	double time_in_sec = (double) timer.getValue() / 1.0e6;
-	double inst_per_sec = time_in_sec > 0.0 ? (double) instructions
-			/ time_in_sec : 0.0;
 
-	os << misc::fmt("[ %s ]\n", name.c_str());
-	os << misc::fmt("RealTime = %.2f [s]\n", time_in_sec);
-	os << misc::fmt("Instructions = %lld\n", instructions);
-	os << misc::fmt("InstructionsPerSecond = %.0f\n", inst_per_sec);
+
+//
+// Class ArchPool
+//
+
+std::unique_ptr<ArchPool> ArchPool::instance;
+
+ArchPool *ArchPool::getInstance()
+{
+	// Return existing instance
+	if (instance.get())
+		return instance.get();
+	
+	// Create new architecture pool
+	instance.reset(new ArchPool());
+	return instance.get();
+}
+	
+void ArchPool::Register(const std::string &name, const std::string &prefix)
+{
+	// Create new architecture in place
+	arch_list.emplace_back(new Arch(name, prefix));
 }
 
 

@@ -545,7 +545,7 @@ void Inst::Dump(std::ostream &os) const
 
 		/* Token */
 		fmt_str++;
-		if (Common::Asm::isToken(fmt_str, "WAIT_CNT", token_len))
+		if (comm::Asm::isToken(fmt_str, "WAIT_CNT", token_len))
 		{	
 			const InstBytesSOPP *sopp = &bytes.sopp;
 
@@ -576,7 +576,7 @@ void Inst::Dump(std::ostream &os) const
 				more = 1;
 			}
 		}
-		else if (Common::Asm::isToken(fmt_str, "LABEL", token_len))
+		else if (comm::Asm::isToken(fmt_str, "LABEL", token_len))
 		{		
 			const InstBytesSOPP *sopp = &bytes.sopp;
 	
@@ -586,122 +586,122 @@ void Inst::Dump(std::ostream &os) const
 			os << misc::fmt("label_%04X",
 					(address + (se_simm * 4) + 4) / 4);
 		}
-		else if (Common::Asm::isToken(fmt_str, "SSRC0", token_len))
+		else if (comm::Asm::isToken(fmt_str, "SSRC0", token_len))
 		{	
 			DumpSsrc(os, bytes.sop2.ssrc0);
 		}
-		else if (Common::Asm::isToken(fmt_str, "64_SSRC0", token_len))
+		else if (comm::Asm::isToken(fmt_str, "64_SSRC0", token_len))
 		{
 			Dump64Ssrc(os, bytes.sop2.ssrc0);
 		}
-		else if (Common::Asm::isToken(fmt_str, "SSRC1", token_len))
+		else if (comm::Asm::isToken(fmt_str, "SSRC1", token_len))
 		{
 			DumpSsrc(os, bytes.sop2.ssrc1);
 		}
-		else if (Common::Asm::isToken(fmt_str, "64_SSRC1", token_len))
+		else if (comm::Asm::isToken(fmt_str, "64_SSRC1", token_len))
 		{
 			Dump64Ssrc(os, bytes.sop2.ssrc1);
 		}
-		else if (Common::Asm::isToken(fmt_str, "SDST", token_len))
+		else if (comm::Asm::isToken(fmt_str, "SDST", token_len))
 		{	
 			DumpScalar(os, bytes.sop2.sdst);
 		}
-		else if (Common::Asm::isToken(fmt_str, "64_SDST", token_len))
+		else if (comm::Asm::isToken(fmt_str, "64_SDST", token_len))
 		{
 			DumpScalarSeries(os, bytes.sop2.sdst, bytes.sop2.sdst + 1);
 		}
-		else if (Common::Asm::isToken(fmt_str, "SIMM16", token_len))
+		else if (comm::Asm::isToken(fmt_str, "SIMM16", token_len))
 		{
 			os << misc::fmt("0x%04x", bytes.sopk.simm16);
 		}
-		else if (Common::Asm::isToken(fmt_str, "SRC0", token_len))
+		else if (comm::Asm::isToken(fmt_str, "SRC0", token_len))
 		{
 			if (bytes.vopc.src0 == 0xFF)
 				os << misc::fmt("0x%08x", bytes.vopc.lit_cnst);
 			else
 				DumpOperand(os, bytes.vopc.src0);
 		}
-		else if (Common::Asm::isToken(fmt_str, "64_SRC0", token_len))
+		else if (comm::Asm::isToken(fmt_str, "64_SRC0", token_len))
 		{
 			assert(bytes.vopc.src0 != 0xFF);
 			DumpOperandSeries(os, bytes.vopc.src0, bytes.vopc.src0 + 1);
 		}
-		else if (Common::Asm::isToken(fmt_str, "VSRC1", token_len))
+		else if (comm::Asm::isToken(fmt_str, "VSRC1", token_len))
 		{
 			DumpVector(os, bytes.vopc.vsrc1);
 		}
-		else if (Common::Asm::isToken(fmt_str, "64_VSRC1", token_len))
+		else if (comm::Asm::isToken(fmt_str, "64_VSRC1", token_len))
 		{
 			assert(bytes.vopc.vsrc1 != 0xFF);
 			DumpVectorSeries(os, bytes.vopc.vsrc1, bytes.vopc.vsrc1 + 1);
 		}
-		else if (Common::Asm::isToken(fmt_str, "VDST", token_len))
+		else if (comm::Asm::isToken(fmt_str, "VDST", token_len))
 		{
 			DumpVector(os, bytes.vop1.vdst);
 		}
-		else if (Common::Asm::isToken(fmt_str, "64_VDST", token_len))
+		else if (comm::Asm::isToken(fmt_str, "64_VDST", token_len))
 		{
 			DumpVectorSeries(os, bytes.vop1.vdst, bytes.vop1.vdst + 1);
 		}
-		else if (Common::Asm::isToken(fmt_str, "SVDST", token_len))
+		else if (comm::Asm::isToken(fmt_str, "SVDST", token_len))
 		{
 			DumpScalar(os, bytes.vop1.vdst);
 		}
-		else if (Common::Asm::isToken(fmt_str, "VOP3_64_SVDST", token_len))
+		else if (comm::Asm::isToken(fmt_str, "VOP3_64_SVDST", token_len))
 		{
 			/* VOP3a compare operations use the VDST field to 
 			 * indicate the address of the scalar destination.*/
 			DumpScalarSeries(os, bytes.vop3a.vdst, bytes.vop3a.vdst + 1);
 		}
-		else if (Common::Asm::isToken(fmt_str, "VOP3_VDST", token_len))
+		else if (comm::Asm::isToken(fmt_str, "VOP3_VDST", token_len))
 		{
 			DumpVector(os, bytes.vop3a.vdst);
 		}
-		else if (Common::Asm::isToken(fmt_str, "VOP3_64_VDST", token_len))
+		else if (comm::Asm::isToken(fmt_str, "VOP3_64_VDST", token_len))
 		{
 			DumpVectorSeries(os, bytes.vop3a.vdst, bytes.vop3a.vdst + 1);
 		}
-		else if (Common::Asm::isToken(fmt_str, "VOP3_64_SDST", token_len))
+		else if (comm::Asm::isToken(fmt_str, "VOP3_64_SDST", token_len))
 		{
 			DumpScalarSeries(os, bytes.vop3b.sdst, bytes.vop3b.sdst + 1);
 		}
-		else if (Common::Asm::isToken(fmt_str, "VOP3_SRC0", token_len))
+		else if (comm::Asm::isToken(fmt_str, "VOP3_SRC0", token_len))
 		{
 			DumpVop3Src(os, bytes.vop3a.src0, 1);
 		}
-		else if (Common::Asm::isToken(fmt_str, "VOP3_64_SRC0", token_len))
+		else if (comm::Asm::isToken(fmt_str, "VOP3_64_SRC0", token_len))
 		{
 			DumpVop364Src(os, bytes.vop3a.src0, 1);
 		}
-		else if (Common::Asm::isToken(fmt_str, "VOP3_SRC1", token_len))
+		else if (comm::Asm::isToken(fmt_str, "VOP3_SRC1", token_len))
 		{
 			DumpVop3Src(os, bytes.vop3a.src1, 2);
 		}
-		else if (Common::Asm::isToken(fmt_str, "VOP3_64_SRC1", token_len))
+		else if (comm::Asm::isToken(fmt_str, "VOP3_64_SRC1", token_len))
 		{
 			DumpVop364Src(os, bytes.vop3a.src1, 2);
 		}
-		else if (Common::Asm::isToken(fmt_str, "VOP3_SRC2", token_len))
+		else if (comm::Asm::isToken(fmt_str, "VOP3_SRC2", token_len))
 		{
 			DumpVop3Src(os, bytes.vop3a.src2, 4);
 		}
-		else if (Common::Asm::isToken(fmt_str, "VOP3_64_SRC2", token_len))
+		else if (comm::Asm::isToken(fmt_str, "VOP3_64_SRC2", token_len))
 		{
 			DumpVop364Src(os, bytes.vop3a.src2, 4);
 		}
-		else if (Common::Asm::isToken(fmt_str, "VOP3_OP16", token_len))
+		else if (comm::Asm::isToken(fmt_str, "VOP3_OP16", token_len))
 		{
 			os << inst_OP16_map.MapValue(bytes.vop3a.op & 15);
 		}
-		else if (Common::Asm::isToken(fmt_str, "VOP3_OP8", token_len))
+		else if (comm::Asm::isToken(fmt_str, "VOP3_OP8", token_len))
 		{
 			os << inst_OP8_map.MapValue(bytes.vop3a.op & 15);
 		}
-		else if (Common::Asm::isToken(fmt_str, "SMRD_SDST", token_len))
+		else if (comm::Asm::isToken(fmt_str, "SMRD_SDST", token_len))
 		{
 			DumpScalar(os, bytes.smrd.sdst);
 		}
-		else if (Common::Asm::isToken(fmt_str, "SERIES_SDST", token_len))
+		else if (comm::Asm::isToken(fmt_str, "SERIES_SDST", token_len))
 		{
 			/* The sbase field is missing the LSB, 
 			 * so multiply by 2 */
@@ -779,7 +779,7 @@ void Inst::Dump(std::ostream &os) const
 			DumpScalarSeries(os, sdst, sdst_end);
 
 		}
-		else if (Common::Asm::isToken(fmt_str, "SERIES_SBASE", token_len))
+		else if (comm::Asm::isToken(fmt_str, "SERIES_SBASE", token_len))
 		{
 			
 			/* The sbase field is missing the LSB, 
@@ -819,60 +819,60 @@ void Inst::Dump(std::ostream &os) const
 
 			DumpScalarSeries(os, sbase, sbase_end);
 		}
-		else if (Common::Asm::isToken(fmt_str, "VOP2_LIT", token_len))
+		else if (comm::Asm::isToken(fmt_str, "VOP2_LIT", token_len))
 		{
 			os << misc::fmt("0x%08x", bytes.vop2.lit_cnst);
 		}
-		else if (Common::Asm::isToken(fmt_str, "OFFSET", token_len))
+		else if (comm::Asm::isToken(fmt_str, "OFFSET", token_len))
 		{
 			if (bytes.smrd.imm)
 				os << misc::fmt("0x%02x", bytes.smrd.offset);
 			else
 				DumpScalar(os, bytes.smrd.offset);
 		}
-		else if (Common::Asm::isToken(fmt_str, "DS_VDST", token_len))
+		else if (comm::Asm::isToken(fmt_str, "DS_VDST", token_len))
 		{
 			DumpVector(os, bytes.ds.vdst);
 		}
-		else if (Common::Asm::isToken(fmt_str, "ADDR", token_len))
+		else if (comm::Asm::isToken(fmt_str, "ADDR", token_len))
 		{
 			DumpVector(os, bytes.ds.addr);
 		}
-		else if (Common::Asm::isToken(fmt_str, "DATA0", token_len))
+		else if (comm::Asm::isToken(fmt_str, "DATA0", token_len))
 		{
 			DumpVector(os, bytes.ds.data0);
 		}
-		else if (Common::Asm::isToken(fmt_str, "DATA1", token_len))
+		else if (comm::Asm::isToken(fmt_str, "DATA1", token_len))
 		{
 			DumpVector(os, bytes.ds.data1);
 		}
-		else if (Common::Asm::isToken(fmt_str, "OFFSET0", token_len))
+		else if (comm::Asm::isToken(fmt_str, "OFFSET0", token_len))
 		{
 			if (bytes.ds.offset0)
 				os << "offset0:" << bytes.ds.offset0 << ' ';
 		}
-		else if (Common::Asm::isToken(fmt_str, "DS_SERIES_VDST", token_len))
+		else if (comm::Asm::isToken(fmt_str, "DS_SERIES_VDST", token_len))
 		{
 			DumpVectorSeries(os, bytes.ds.vdst, bytes.ds.vdst + 1);
 		}
-		else if (Common::Asm::isToken(fmt_str, "OFFSET1", token_len))
+		else if (comm::Asm::isToken(fmt_str, "OFFSET1", token_len))
 		{
 			if (bytes.ds.offset1)
 				os << "offset1:" << bytes.ds.offset1 << ' ';
 		}
-		else if (Common::Asm::isToken(fmt_str, "VINTRP_VDST", token_len))
+		else if (comm::Asm::isToken(fmt_str, "VINTRP_VDST", token_len))
 		{
 			DumpVector(os, bytes.vintrp.vdst);
 		}
-		else if (Common::Asm::isToken(fmt_str, "VSRC_I_J", token_len))
+		else if (comm::Asm::isToken(fmt_str, "VSRC_I_J", token_len))
 		{
 			DumpVector(os, bytes.vintrp.vsrc);
 		}
-		else if (Common::Asm::isToken(fmt_str, "ATTR", token_len))
+		else if (comm::Asm::isToken(fmt_str, "ATTR", token_len))
 		{
 			os << "attr_" << bytes.vintrp.attr;
 		}
-		else if (Common::Asm::isToken(fmt_str, "ATTRCHAN", token_len))
+		else if (comm::Asm::isToken(fmt_str, "ATTRCHAN", token_len))
 		{
 			switch (bytes.vintrp.attrchan)
 			{
@@ -892,17 +892,17 @@ void Inst::Dump(std::ostream &os) const
 				break;
 			}
 		}
-		else if (Common::Asm::isToken(fmt_str, "MU_SERIES_VDATA_DST", token_len)  ||
-				Common::Asm::isToken(fmt_str, "MU_SERIES_VDATA_SRC", token_len))
+		else if (comm::Asm::isToken(fmt_str, "MU_SERIES_VDATA_DST", token_len)  ||
+				comm::Asm::isToken(fmt_str, "MU_SERIES_VDATA_SRC", token_len))
 		{
 			DumpSeriesVdata(os, bytes.mubuf.vdata, bytes.mubuf.op);
 		}
-		else if (Common::Asm::isToken(fmt_str, "MU_GLC", token_len))
+		else if (comm::Asm::isToken(fmt_str, "MU_GLC", token_len))
 		{
 			if (bytes.mubuf.glc)
 				os << "glc";
 		}
-		else if (Common::Asm::isToken(fmt_str, "VADDR", token_len))
+		else if (comm::Asm::isToken(fmt_str, "VADDR", token_len))
 		{
 			if (bytes.mtbuf.offen && bytes.mtbuf.idxen)
 				DumpVectorSeries(os, bytes.mtbuf.vaddr, 
@@ -910,22 +910,22 @@ void Inst::Dump(std::ostream &os) const
 			else
 				DumpVector(os, bytes.mtbuf.vaddr);
 		}
-		else if (Common::Asm::isToken(fmt_str, "MU_MADDR", token_len))
+		else if (comm::Asm::isToken(fmt_str, "MU_MADDR", token_len))
 		{
 			DumpMaddr(os);
 		}
-		else if (Common::Asm::isToken(fmt_str, "MT_SERIES_VDATA_DST", token_len) ||
-				Common::Asm::isToken(fmt_str, "MT_SERIES_VDATA_SRC", token_len))
+		else if (comm::Asm::isToken(fmt_str, "MT_SERIES_VDATA_DST", token_len) ||
+				comm::Asm::isToken(fmt_str, "MT_SERIES_VDATA_SRC", token_len))
 		{
 			DumpSeriesVdata(os, bytes.mtbuf.vdata, bytes.mtbuf.op);
 		}
-		else if (Common::Asm::isToken(fmt_str, "SERIES_SRSRC", token_len))
+		else if (comm::Asm::isToken(fmt_str, "SERIES_SRSRC", token_len))
 		{
 			assert((bytes.mtbuf.srsrc << 2) % 4 == 0);
 			DumpScalarSeries(os, bytes.mtbuf.srsrc << 2, 
 					(bytes.mtbuf.srsrc << 2) + 3);
 		}
-		else if (Common::Asm::isToken(fmt_str, "MT_MADDR", token_len))
+		else if (comm::Asm::isToken(fmt_str, "MT_MADDR", token_len))
 		{
 			DumpMaddr(os);
 			os << " format:["
@@ -934,37 +934,37 @@ void Inst::Dump(std::ostream &os) const
 					<< inst_buf_num_format_map.MapValue(
 					bytes.mtbuf.nfmt) << ']';
 		}
-		else if (Common::Asm::isToken(fmt_str, "MIMG_SERIES_VDATA_SRC", token_len) ||
-				Common::Asm::isToken(fmt_str, "MIMG_SERIES_VDATA_DST", token_len))
+		else if (comm::Asm::isToken(fmt_str, "MIMG_SERIES_VDATA_SRC", token_len) ||
+				comm::Asm::isToken(fmt_str, "MIMG_SERIES_VDATA_DST", token_len))
 		{
 			DumpVectorSeries(os, bytes.mimg.vdata,
 					bytes.mimg.vdata + 3);
 		}
-		else if (Common::Asm::isToken(fmt_str, "MIMG_VADDR", token_len))
+		else if (comm::Asm::isToken(fmt_str, "MIMG_VADDR", token_len))
 		{
 			DumpVectorSeries(os, bytes.mimg.vaddr, 
 					bytes.mimg.vaddr + 3);
 		}
-		else if (Common::Asm::isToken(fmt_str, "MIMG_SERIES_SRSRC", token_len))
+		else if (comm::Asm::isToken(fmt_str, "MIMG_SERIES_SRSRC", token_len))
 		{
 			assert((bytes.mimg.srsrc << 2) % 4 == 0);
 			DumpScalarSeries(os, bytes.mimg.srsrc << 2, 
 					(bytes.mimg.srsrc << 2) + 7);
 		}
-		else if (Common::Asm::isToken(fmt_str, "MIMG_DUG_SERIES_SRSRC", token_len))
+		else if (comm::Asm::isToken(fmt_str, "MIMG_DUG_SERIES_SRSRC", token_len))
 		{
 			assert((bytes.mimg.srsrc << 2) % 4 == 0);
 			DumpScalarSeries(os, bytes.mimg.srsrc << 2, 
 					(bytes.mimg.srsrc << 2) + 7);
 			DumpDug(os);
 		}
-		else if (Common::Asm::isToken(fmt_str, "MIMG_SERIES_SSAMP", token_len))
+		else if (comm::Asm::isToken(fmt_str, "MIMG_SERIES_SSAMP", token_len))
 		{
 			assert((bytes.mimg.ssamp << 2) % 4 == 0);
 			DumpScalarSeries(os, bytes.mimg.ssamp << 2, 
 					(bytes.mimg.ssamp << 2) + 3);
 		}
-		else if (Common::Asm::isToken(fmt_str, "MIMG_DUG_SERIES_SSAMP", 
+		else if (comm::Asm::isToken(fmt_str, "MIMG_DUG_SERIES_SSAMP", 
 			token_len))
 		{
 			assert((bytes.mimg.ssamp << 2) % 4 == 0);
@@ -972,11 +972,11 @@ void Inst::Dump(std::ostream &os) const
 					(bytes.mimg.ssamp << 2) + 3);
 			DumpDug(os);
 		}
-		else if (Common::Asm::isToken(fmt_str, "TGT", token_len))
+		else if (comm::Asm::isToken(fmt_str, "TGT", token_len))
 		{
 			DumpOperandExp(os, bytes.exp.tgt);
 		}
-		else if (Common::Asm::isToken(fmt_str, "EXP_VSRCs", token_len))
+		else if (comm::Asm::isToken(fmt_str, "EXP_VSRCs", token_len))
 		{
 			if (bytes.exp.compr == 0 && 
 					(bytes.exp.en && 0x0) == 0x0)

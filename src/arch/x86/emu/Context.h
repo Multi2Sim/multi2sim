@@ -241,6 +241,9 @@ public:
 	/// function Emu::NewContext() should be used instead.
 	Context();
 
+	/// Destructor
+	~Context();
+
 	/// Load a program from a command line into an existing context. The
 	/// content is left in a state ready to start running the first x86 ISA
 	/// instruction at the program entry.
