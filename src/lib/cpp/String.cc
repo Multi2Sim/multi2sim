@@ -259,7 +259,7 @@ int StringToInt(const std::string &_s, StringError &error)
 		base = 16;
 		s.erase(0, 2);
 	}
-	else if (s.length() >= 1 && s[0] == '0')
+	else if (s.length() > 1 && s[0] == '0')
 	{
 		base = 8;
 		s.erase(0, 1);
@@ -434,7 +434,7 @@ long long StringToInt64(const std::string &_s, StringError &error)
 		base = 16;
 		s.erase(0, 2);
 	}
-	else if (s.length() >= 1 && s[0] == '0')
+	else if (s.length() > 1 && s[0] == '0')
 	{
 		base = 8;
 		s.erase(0, 1);
