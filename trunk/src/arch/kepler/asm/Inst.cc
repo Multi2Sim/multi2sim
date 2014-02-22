@@ -516,137 +516,137 @@ void Inst::Dump(std::ostream &os) const
 		/* Tokens */
 		int length = 0;
 		fmt_str++;
-		if (Common::Asm::isToken(fmt_str, "tgt", length))
+		if (comm::Asm::isToken(fmt_str, "tgt", length))
 		{
 			DumpTarget(os, 45, 23, 46, 46);
 		}
-		else if (Common::Asm::isToken(fmt_str, "offset", length))
+		else if (comm::Asm::isToken(fmt_str, "offset", length))
 		{
 			DumpOffset(os, 53, 23);
 		}
-		else if (Common::Asm::isToken(fmt_str, "offset2", length))
+		else if (comm::Asm::isToken(fmt_str, "offset2", length))
 		{
 			DumpOffset(os, 34, 23);
 		}
-		else if (Common::Asm::isToken(fmt_str, "const", length))
+		else if (comm::Asm::isToken(fmt_str, "const", length))
 		{
 			DumpEndConst(os, 45, 42);
 		}
-		else if (Common::Asm::isToken(fmt_str, "srcC", length))
+		else if (comm::Asm::isToken(fmt_str, "srcC", length))
 		{
 			DumpReg(os, 49, 42);
 		}
-		else if (Common::Asm::isToken(fmt_str, "srcB2", length))
+		else if (comm::Asm::isToken(fmt_str, "srcB2", length))
 		{
 			DumpReg(os, 31, 23);
 		}
-		else if (Common::Asm::isToken(fmt_str, "srcB", length))
+		else if (comm::Asm::isToken(fmt_str, "srcB", length))
 		{
 			DumpSRCB(os, 63, 63, 41, 37, 36, 32, 31, 23);
 		}
-		else if (Common::Asm::isToken(fmt_str, "src_spec", length))
+		else if (comm::Asm::isToken(fmt_str, "src_spec", length))
 		{
 			DumpSpecReg(os, 30, 23);
 		}
-		else if (Common::Asm::isToken(fmt_str, "cc_dst", length))
+		else if (comm::Asm::isToken(fmt_str, "cc_dst", length))
 		{
 			DumpCc2(os, 6, 2);
 		}
-		else if (Common::Asm::isToken(fmt_str, "pred1", length))
+		else if (comm::Asm::isToken(fmt_str, "pred1", length))
 		{
 			DumpPredShort(os, 7, 5);
 		}
-		else if (Common::Asm::isToken(fmt_str, "pred2", length))
+		else if (comm::Asm::isToken(fmt_str, "pred2", length))
 		{
 			DumpPredShort(os, 4, 2);
 		}
-		else if (Common::Asm::isToken(fmt_str, "pred3", length))
+		else if (comm::Asm::isToken(fmt_str, "pred3", length))
 		{
 			DumpPredNoat(os, 45, 42);
 		}
-		else if (Common::Asm::isToken(fmt_str, "keeprefcount", length))
+		else if (comm::Asm::isToken(fmt_str, "keeprefcount", length))
 		{
 			DumpKeepRefCount(os, 7, 7);
 		}
-		else if (Common::Asm::isToken(fmt_str, "rm", length))
+		else if (comm::Asm::isToken(fmt_str, "rm", length))
 		{
 			DumpRm(os, 43, 42);
 		}
-		else if (Common::Asm::isToken(fmt_str, "LMT", length))
+		else if (comm::Asm::isToken(fmt_str, "LMT", length))
 		{
 			DumpLmt(os, 8, 8);
 		}
-		else if (Common::Asm::isToken(fmt_str, "cg", length))
+		else if (comm::Asm::isToken(fmt_str, "cg", length))
 		{
 			DumpCv(os, 50, 50);
 		}
-		else if (Common::Asm::isToken(fmt_str, "e", length))
+		else if (comm::Asm::isToken(fmt_str, "e", length))
 		{
 			DumpCc(os, 60, 59);
 		}
-		else if (Common::Asm::isToken(fmt_str, "cc", length))
+		else if (comm::Asm::isToken(fmt_str, "cc", length))
 		{
 			DumpCc(os, 50, 50);
 		}
-		else if (Common::Asm::isToken(fmt_str, "us", length))
+		else if (comm::Asm::isToken(fmt_str, "us", length))
 		{
 			DumpUs(os, 56, 56, 51, 51);
 		}
-		else if (Common::Asm::isToken(fmt_str, "po", length))
+		else if (comm::Asm::isToken(fmt_str, "po", length))
 		{
 			DumpPo(os, 55, 55);
 		}
-		else if (Common::Asm::isToken(fmt_str, "sat", length))
+		else if (comm::Asm::isToken(fmt_str, "sat", length))
 		{
 			DumpSat(os, 53, 53);
 		}
-		else if (Common::Asm::isToken(fmt_str, "hi", length))
+		else if (comm::Asm::isToken(fmt_str, "hi", length))
 		{
 			DumpHi(os, 57, 57);
 		}
-		else if (Common::Asm::isToken(fmt_str, "u8", length))
+		else if (comm::Asm::isToken(fmt_str, "u8", length))
 		{
 			DumpU8(os, 58, 56);
 		}
-		else if (Common::Asm::isToken(fmt_str, "U32", length))
+		else if (comm::Asm::isToken(fmt_str, "U32", length))
 		{
 			DumpU32(os, 51, 51);
 		}
-		else if (Common::Asm::isToken(fmt_str, "x", length))
+		else if (comm::Asm::isToken(fmt_str, "x", length))
 		{
 			DumpX(os, 46, 46);
 		}
-		else if (Common::Asm::isToken(fmt_str, "and", length))
+		else if (comm::Asm::isToken(fmt_str, "and", length))
 		{
 			DumpAnd(os, 49, 48);
 		}
-		else if (Common::Asm::isToken(fmt_str, "f", length))
+		else if (comm::Asm::isToken(fmt_str, "f", length))
 		{
 			DumpF(os, 54, 52);
 		}
-		else if (Common::Asm::isToken(fmt_str, "s", length))
+		else if (comm::Asm::isToken(fmt_str, "s", length))
 		{
 			DumpS(os, 22, 22);
 		}
-		else if (Common::Asm::isToken(fmt_str, "u", length))
+		else if (comm::Asm::isToken(fmt_str, "u", length))
 		{
 			DumpU(os, 9, 9);
 		}
-		else if (Common::Asm::isToken(fmt_str, "srcA", length))
+		else if (comm::Asm::isToken(fmt_str, "srcA", length))
 		{
 			DumpReg(os, 17, 10);
 		}
-		else if (Common::Asm::isToken(fmt_str, "dst", length))
+		else if (comm::Asm::isToken(fmt_str, "dst", length))
 		{
 			DumpReg(os, 9, 2);
 		}
-		else if (Common::Asm::isToken(fmt_str, "pred0", length))
+		else if (comm::Asm::isToken(fmt_str, "pred0", length))
 		{
 			DumpPred(os, 21, 18);
 			assert(fmt_str[length] == ' ');
 			length++;
 		}
-		else if (Common::Asm::isToken(fmt_str, "pred", length))
+		else if (comm::Asm::isToken(fmt_str, "pred", length))
 		{
 			DumpPred(os, 21, 18);
 			assert(fmt_str[length] == ' ');

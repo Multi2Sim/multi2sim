@@ -74,19 +74,6 @@ void main_cpp(int argc, char **argv)
 			"available on systems with support for GTK 3.0 or "
 			"higher.");
 
-	enum SimKind {
-		SimKindInvalid = 0,
-		SimKindFunctional,
-		SimKindDetailed
-	};
-	misc::StringMap sim_kind_map = {
-		{ "functional", SimKindFunctional },
-		{ "detailed", SimKindDetailed }
-	};
-	int x86_sim_kind = SimKindFunctional;
-	command_line.RegisterEnum("--x86-sim", x86_sim_kind, sim_kind_map,
-			"Level of accuracy of x86 simulation.");
-	
 	// Register module configurations
 	command_line.AddConfig(x86::Asm::config);
 	command_line.AddConfig(x86::Emu::config);
@@ -99,6 +86,10 @@ void main_cpp(int argc, char **argv)
 	// Finish if C++ version of Multi2Sim is not activated
 	if (!command_line.getUseCpp())
 		return;
+
+	// Register architectures
+	comm::ArchPool *arch_pool = comm::ArchPool::getInstance();
+	arch_pool->Register("x86", "x86");
 
 	// Multi2Sim C++
 	std::cerr << "; Multi2Sim C++\n";

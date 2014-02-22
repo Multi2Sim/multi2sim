@@ -124,6 +124,16 @@ Context::Context()
 	// Presence in context lists
 	for (int i = 0; i < ContextListCount; i++)
 		context_list_present[i] = false;
+
+	// Debug
+	emu->context_debug << "Context " << pid << " created\n";
+}
+
+
+Context::~Context()
+{
+	// Debug
+	emu->context_debug << "Context " << pid << " destroyed\n";
 }
 
 

@@ -32,7 +32,7 @@ namespace Fermi
 {
 
 
-class Asm: public Common::Asm
+class Asm: public comm::Asm
 {
 	// Max number of operations per category
 	static const unsigned InstOpCountPerCategory = 64;

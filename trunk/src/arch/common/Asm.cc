@@ -25,7 +25,7 @@
 #include "Asm.h"
 
 
-namespace Common
+namespace comm
 {
 
 
@@ -47,5 +47,5 @@ bool Asm::isToken(const std::string &fmt, const std::string &token,
 }
 
 
-}  // namespace Common
+}  // namespace comm
 

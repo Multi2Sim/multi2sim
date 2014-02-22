@@ -20,6 +20,7 @@
 #ifndef ARCH_X86_EMU_EMU_H
 #define ARCH_X86_EMU_EMU_H
 
+#include <arch/common/Arch.h>
 #include <arch/common/Emu.h>
 #include <lib/cpp/CommandLine.h>
 #include <lib/cpp/Debug.h>
@@ -51,7 +52,13 @@ class EmuConfig : public misc::CommandLineConfig
 	// Maximum number of instructions
 	long long max_instructions;
 
+	// Simulation kind
+	comm::ArchSimKind sim_kind;
+
 public:
+
+	/// Initialization of default command-line options
+	EmuConfig();
 
 	/// Register command-line options related with the x86 emulator
 	void Register(misc::CommandLine &command_line);
@@ -65,7 +72,7 @@ public:
 
 
 /// x86 emulator
-class Emu : public Common::Emu
+class Emu : public comm::Emu
 {
 	// Unique instance of x86 emulator
 	static std::unique_ptr<Emu> instance;

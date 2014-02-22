@@ -30,6 +30,12 @@ namespace x86
 // Class 'EmuConfig'
 //
 
+EmuConfig::EmuConfig()
+{
+	// Initialize
+	sim_kind = comm::ArchSimFunctional;
+}
+
 void EmuConfig::Register(misc::CommandLine &command_line)
 {
 	// Option --x86-debug-call <file>
@@ -87,6 +93,12 @@ void EmuConfig::Register(misc::CommandLine &command_line)
 			"instructions. On x86 detailed simulation, it is given as "
 			"the number of committed (non-speculative) instructions. "
 			"Use 0 (default) for unlimited.");
+
+	// Option --x86-sim <kind>
+	command_line.RegisterEnum("--x86-sim {functional|detailed}", (int &) sim_kind,
+			comm::arch_sim_kind_map,
+			"Level of accuracy of x86 simulation. The default value "
+			"is functional simulation.");
 }
 
 
@@ -128,7 +140,7 @@ misc::Debug Emu::syscall_debug;
 EmuConfig Emu::config;
 
 
-Emu::Emu() : Common::Emu("x86")
+Emu::Emu() : comm::Emu("x86")
 {
 }
 
