@@ -22,14 +22,15 @@
 #include "Context.h"
 #include "Emu.h"
 
+// Variable used in function Context::loadProgram()
+extern char **environ;
 
-using namespace misc;
 	
 namespace x86
 {
 
 
-StringMap context_state_map = {
+misc::StringMap context_state_map = {
 	{ "running",      ContextRunning },
 	{ "specmode",     ContextSpecMode },
 	{ "suspended",    ContextSuspended },
@@ -158,12 +159,12 @@ void Context::loadProgram(const std::vector<std::string> &args,
 {
 	// String in 'args' must contain at least one non-empty element
 	if (!args.size() || args[0].empty())
-		panic("%s: function invoked with no program name, or with an "
+		misc::panic("%s: function invoked with no program name, or with an "
 				"empty program.", __FUNCTION__);
 
 	// Program must not have been loaded before
 	if (loader.get() || memory.get())
-		panic("%s: program '%s' has already been loaded in a "
+		misc::panic("%s: program '%s' has already been loaded in a "
 				"previous call to this function.",
 				__FUNCTION__, args[0].c_str());
 	
