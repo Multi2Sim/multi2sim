@@ -25,18 +25,30 @@
 
 
 using namespace misc;
+	
+CommandLineOption::CommandLineOption(Type type, const std::string &name,
+		int num_args, const std::string &help)
+{
+	// Initialize
+	this->type = type;
+	this->num_args = num_args;
+	this->help = help;
+	present = false;
+	incompatible = false;
+
+	// Option name
+	std::vector<std::string> tokens;
+	misc::StringTokenize(name, tokens);
+	assert(tokens.size() > 0);
+	this->name = tokens[0];
+	help_name = name;
+}
+
 
 void CommandLineOption::Help(std::ostream &os) const
 {
 	// Option name
-	os << "  " << name;
-
-	// Arguments
-	if (num_args == 1)
-		os << " <arg>";
-	else
-		for (int i = 1; i <= num_args; i++)
-			os << " <arg" << i << ">";
+	os << "  " << help_name;
 
 	// Description
 	os << "\n\n" << StringParagraph(help, 8, 8) << '\n';
@@ -89,7 +101,7 @@ void CommandLineOptionInt64::Read(int argc, char **argv, int index)
 
 	// Read value
 	StringError error;
-	*var = StringToInt(argv[index + 1], error);
+	*var = StringToInt64(argv[index + 1], error);
 	if (error)
 		fatal("invalid value of option '%s': %s",
 				getName().c_str(),

@@ -21,6 +21,7 @@
 #define ARCH_COMMON_EMU_H
 
 #include <lib/cpp/Timer.h>
+#include <lib/esim/ESim.h>
 #include <string>
 
 
@@ -34,6 +35,11 @@ class Emu
 	
 	// Timer keeping track of emulator activity
 	misc::Timer timer;
+
+protected:
+
+	// Event-driven simulator
+	esim::ESim *esim;
 
 	// Number of emulated instructions
 	long long instructions;

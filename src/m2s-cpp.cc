@@ -27,16 +27,15 @@
 #include <arch/x86/emu/Signal.h>
 #include <lib/cpp/CommandLine.h>
 #include <lib/cpp/Misc.h>
+#include <lib/esim/ESim.h>
 
 #include "Wrapper.h"
-
-using namespace misc;
 
 
 void main_cpp(int argc, char **argv)
 {
 	// Read command line
-	CommandLine command_line(argc, argv);
+	misc::CommandLine command_line(argc, argv);
 	command_line.setErrorMessage("Please type 'm2s --help' for a list of "
 			"valid Multi2Sim command-line options.\n");
 	command_line.setHelp("Syntax:"
@@ -80,7 +79,7 @@ void main_cpp(int argc, char **argv)
 		SimKindFunctional,
 		SimKindDetailed
 	};
-	StringMap sim_kind_map = {
+	misc::StringMap sim_kind_map = {
 		{ "functional", SimKindFunctional },
 		{ "detailed", SimKindDetailed }
 	};
@@ -111,11 +110,18 @@ void main_cpp(int argc, char **argv)
 	if (command_line.getNumArguments())
 	{
 		x86::Emu *emu = x86::Emu::getInstance();
-		emu->newContext(command_line.getArguments(),
+		x86::Context *context = emu->newContext(
+				command_line.getArguments(),
 				std::vector<std::string>(),
 				misc::getCwd(), "", "");
-		while (1)
-			emu->Run();
+		context->setState(x86::ContextRunning);
+		esim::ESim *esim = esim::ESim::getInstance();
+		while (!esim->hasFinished())
+		{
+			bool active = emu->Run();
+			if (!active)
+				esim->Finish(esim::ESimFinishCtx);
+		}
 	}
 
 	// End

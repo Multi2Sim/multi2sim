@@ -98,18 +98,8 @@ class Context
 	// File descriptor table, private for each context.
 	FileTable file_table;
 
-	// Flag indicating whether this context is present in a certain context
-	// list, and if true, iterator indicating its position inside of that
-	// list.
-	bool in_context_list[ContextListCount];
-	std::list<Context *>::iterator context_list_iter[ContextListCount];
-
-	// Add/remove context in a context list of the emulator
-	void AddToContextList(ContextListType type);
-	void RemoveFromContextList(ContextListType type);
-	void UpdateContextList(ContextListType type, bool present);
-
-	// Update the context state
+	// Update the context state, updating also the presence on the context
+	// in the various context lists in the emulator.
 	void UpdateState(unsigned state);
 	
 
@@ -233,6 +223,20 @@ class Context
 
 public:
 
+	/// Position of the context in the main context list. This field is
+	/// managed by the emulator. When a context is removed from the main
+	/// context list, it is automatically freed.
+	std::list<std::unique_ptr<Context>>::iterator contexts_iter;
+
+	/// Flag indicating whether this context is present in a certain context
+	/// list of the emulator. This field is exclusively managed by the
+	/// emulator.
+	bool context_list_present[ContextListCount];
+
+	/// Position of the context in a certain context list. This field is
+	/// exclusively managed by the emulator.
+	std::list<Context *>::iterator context_list_iter[ContextListCount];
+
 	/// Create a context from a command line. To safely create a context,
 	/// function Emu::NewContext() should be used instead.
 	Context();
@@ -275,9 +279,12 @@ public:
 	void setState(ContextState state) { UpdateState(this->state | state); }
 
 	/// Clear flag \a state in the context state
-	void clearState(ContextState state) {
-		UpdateState(this->state & ~state);
-	}
+	void clearState(ContextState state) { UpdateState(this->state
+			& ~state); }
+
+	/// Run one instruction for the context at the position pointed to by
+	/// register \c eip.
+	void Execute();
 };
 
 }  // namespace x86

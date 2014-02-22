@@ -72,6 +72,7 @@ private:
 
 	Type type;
 	std::string name;
+	std::string help_name;
 	int num_args;
 	std::string help;
 
@@ -86,16 +87,15 @@ public:
 	/// Constructor
 	///
 	/// \param name Option name. It must start with a double dash
-	///        (<tt>--</tt>)
+	///        (<tt>--</tt>). Only the first token of this string is
+	///        considered as the option name. The complete string will be
+	///        used to display the help message.
 	/// \param num_args Number of additional arguments required by the
 	///        command-line option.
 	/// \param help String to print as a help message related with the
 	///        option.
 	CommandLineOption(Type type, const std::string &name, int num_args,
-			const std::string &help) :
-			type(type), name(name), num_args(num_args),
-			help(help), present(false),
-			incompatible(false) { }
+			const std::string &help);
 
 	/// Virtual destructor to make class polymorphic.
 	virtual ~CommandLineOption() { }
@@ -104,8 +104,12 @@ public:
 	/// actual instantiated subclass.
 	Type getType() const { return type; }
 
-	// Return the option name
+	/// Return the option name
 	const std::string &getName() const { return name; }
+
+	/// Return the option name with all extra arguments used to display the
+	/// help string for it.
+	const std::string &getHelpName() const { return help_name; }
 
 	/// Return \a true if the command-line option was specified by the user.
 	bool isPresent() const { return present; }
@@ -337,6 +341,12 @@ public:
 	/// present, the original content of \a var is not modified. The value
 	/// passed in argument \a help is the help string shown to the user when
 	/// invoking Help().
+	///
+	/// If \a name is a string with two tokens separated by a space, only
+	/// the first token is considered as the option name, but the whole
+	/// string will be shown when displaying the help message. This is
+	/// useful to specify a name for the formal argument that the option
+	/// takes (e.g. "--x86-max-inst <instructions>").
 	///
 	/// All Register<tt>xxx</tt>() calls must be invoked before processing
 	/// the actual command line with a call to Process().

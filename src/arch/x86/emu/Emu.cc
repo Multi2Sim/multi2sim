@@ -33,52 +33,60 @@ namespace x86
 void EmuConfig::Register(misc::CommandLine &command_line)
 {
 	// Option --x86-debug-call <file>
-	command_line.RegisterString("--x86-debug-call", call_debug_file,
+	command_line.RegisterString("--x86-debug-call <file>", call_debug_file,
 			"Dump debug information about function calls and "
 			"returns. The control flow of an x86 program can be "
 			"observed leveraging ELF symbols present in the program "
 			"binary.");
 	
 	// Option --x86-debug-ctx <file>
-	command_line.RegisterString("--x86-debug-ctx", context_debug_file,
+	command_line.RegisterString("--x86-debug-ctx <file>", context_debug_file,
 			"Dump debug information related with context creation, "
 			"destruction, allocation, or state change.");
 
 	// Option --x86-debug-cuda <file>
-	command_line.RegisterString("--x86-debug-cuda", cuda_debug_file,
+	command_line.RegisterString("--x86-debug-cuda <file>", cuda_debug_file,
 			"Debug information for the CUDA driver.");
 
 	// Option --x86-debug-glut <file>
-	command_line.RegisterString("--x86-debug-glut", glut_debug_file,
+	command_line.RegisterString("--x86-debug-glut <file>", glut_debug_file,
 			"Debug information for the GLUT library, used by "
 			"OpenGL programs.");
 
 	// Option --x86-debug-isa <file>
-	command_line.RegisterString("--x86-debug-isa", isa_debug_file,
+	command_line.RegisterString("--x86-debug-isa <file>", isa_debug_file,
 			"Debug information for dynamic execution of x86 "
 			"instructions. Updates on the processor state can be "
 			"analyzed using this information.");
 
 	// Option --x86-debug-loader <file>
-	command_line.RegisterString("--x86-debug-loader", loader_debug_file,
+	command_line.RegisterString("--x86-debug-loader <file>", loader_debug_file,
 			"Dump debug information extending the analysis of the "
 			"ELF program binary. This information shows which ELF "
 			"sections and symbols are loaded to the initial program "
 			"memory image.");
 
 	// Option --x86-debug-opencl <file>
-	command_line.RegisterString("--x86-debug-opencl", opencl_debug_file,
+	command_line.RegisterString("--x86-debug-opencl <file>", opencl_debug_file,
 			"Debug information for the OpenCL driver.");
 	
 	// Option --x86-debug-opengl <file>
-	command_line.RegisterString("--x86-debug-opengl", opencl_debug_file,
+	command_line.RegisterString("--x86-debug-opengl <file>", opencl_debug_file,
 			"Debug information for the OpenGL graphics driver.");
 	
 	// Option --x86-debug-syscall <file>
-	command_line.RegisterString("--x86-debug-syscall", syscall_debug_file,
+	command_line.RegisterString("--x86-debug-syscall <file>", syscall_debug_file,
 			"Debug information for system calls performed by an x86 "
 			"program, including system call code, aguments, and "
 			"return value.");
+		
+	// Option --x86-max-inst <number>
+	command_line.RegisterInt64("--x86-max-inst <number>", max_instructions,
+			"Maximum number of x86 instructions. On x86 functional "
+			"simulation, this limit is given in number of emulated "
+			"instructions. On x86 detailed simulation, it is given as "
+			"the number of committed (non-speculative) instructions. "
+			"Use 0 (default) for unlimited.");
 }
 
 
@@ -122,8 +130,42 @@ EmuConfig Emu::config;
 
 Emu::Emu() : Common::Emu("x86")
 {
-	// Obtain instance to disassembler
-	as = Asm::getInstance();
+}
+
+void Emu::AddContextToList(ContextListType type, Context *context)
+{
+	// Nothing if already present
+	if (context->context_list_present[type])
+		return;
+
+	// Add context
+	context->context_list_present[type] = true;
+	context_list[type].push_back(context);
+	auto iter = context_list[type].end();
+	context->context_list_iter[type] = --iter;
+}
+
+	
+void Emu::RemoveContextFromList(ContextListType type, Context *context)
+{
+	// Nothing if not present
+	if (!context->context_list_present[type])
+		return;
+
+	// Remove context
+	context->context_list_present[type] = false;
+	auto iter = context->context_list_iter[type];
+	context_list[type].erase(iter);
+}
+	
+
+void Emu::UpdateContextInList(ContextListType type, Context *context,
+			int present)
+{
+	if (present && !context->context_list_present[type])
+		AddContextToList(type, context);
+	else if (!present && context->context_list_present[type])
+		RemoveContextFromList(type, context);
 }
 
 
@@ -149,6 +191,10 @@ Context *Emu::newContext(const std::vector<std::string> &args,
 	Context *context = new Context();
 	contexts.emplace_back(context);
 
+	// Save position in context list
+	auto iter = contexts.end();
+	context->contexts_iter = --iter;
+
 	// Load program
 	context->loadProgram(args, env, cwd, stdin_file_name,
 			stdout_file_name);
@@ -158,38 +204,64 @@ Context *Emu::newContext(const std::vector<std::string> &args,
 }
 
 
+void Emu::freeContext(Context *context)
+{
+	// Remove context from all context lists
+	for (int i = 0; i < ContextListCount; i++)
+		RemoveContextFromList((ContextListType) i, context);
+	
+	// Remove from main context list. This will invoke the context
+	// destructor and free it.
+	contexts.erase(context->contexts_iter);
+}
+
+
+void Emu::ProcessEvents()
+{
+}
+
+
 bool Emu::Run()
 {
-#if 0
-	X86Emu *emu = asX86Emu(self);
-	X86Context *ctx;
+	// Stop if there is no more contexts
+	if (!contexts.size())
+		return false;
 
-	/* Stop if there is no context running */
-	if (emu->finished_list_count >= emu->context_list_count)
-		return FALSE;
+	// Stop if maximum number of CPU instructions exceeded
+	if (config.getMaxInstructions() && instructions >=
+			config.getMaxInstructions())
+		esim->Finish(esim::ESimFinishX86MaxInst);
 
-	/* Stop if maximum number of CPU instructions exceeded */
-	if (x86_emu_max_inst && asEmu(self)->instructions >= x86_emu_max_inst)
-		esim_finish = esim_finish_x86_max_inst;
+	// Stop if any previous reason met
+	if (esim->hasFinished())
+		return true;
 
-	/* Stop if any previous reason met */
-	if (esim_finish)
-		return TRUE;
+	// Run an instruction from every running context. During execution, a
+	// context can remove itself from the running list, so we need to save
+	// the iterator to the next element before executing.
+	auto end = context_list[ContextListRunning].end();
+	for (auto it = context_list[ContextListRunning].begin(); it != end; )
+	{
+		// Save position of next context
+		auto next = it;
+		++next;
 
-	/* Run an instruction from every running process */
-	for (ctx = emu->running_list_head; ctx; ctx = ctx->running_list_next)
-		X86ContextExecute(ctx);
+		// Run one iteration
+		Context *context = *it;
+		context->Execute();
 
-	/* Free finished contexts */
-	while (emu->finished_list_head)
-		delete(emu->finished_list_head);
+		// Move to saved next context
+		it = next;
+	}
 
-	/* Process list of suspended contexts */
-	X86EmuProcessEvents(emu);
+	// Free finished contexts
+	while (context_list[ContextListFinished].size())
+		freeContext(context_list[ContextListFinished].front());
 
-	/* Still running */
-	return TRUE;
-#endif
+	// Process list of suspended contexts
+	ProcessEvents();
+
+	// Still running
 	return true;
 }
 
