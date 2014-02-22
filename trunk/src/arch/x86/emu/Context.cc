@@ -57,38 +57,6 @@ misc::StringMap context_state_map = {
 //
 
 
-void Context::AddToContextList(ContextListType type)
-{
-	if (!in_context_list[type])
-	{
-		in_context_list[type] = true;
-		context_list_iter[type] = emu->AddToContextList(
-				type, this);
-	}
-}
-
-
-void Context::RemoveFromContextList(ContextListType type)
-{
-	if (in_context_list[type])
-	{
-		in_context_list[type] = false;
-		emu->RemoveFromContextList(type,
-				context_list_iter[type]);
-	}
-}
-
-
-// Update the presence of the context in the context list
-void Context::UpdateContextList(ContextListType type, bool present)
-{
-	if (in_context_list[type] && !present)
-		RemoveFromContextList(type);
-	else if (!in_context_list[type] && present)
-		AddToContextList(type);
-}
-
-
 void Context::UpdateState(unsigned state)
 {
 	// If the difference between the old and new state lies in other
@@ -116,11 +84,11 @@ void Context::UpdateState(unsigned state)
 		this->state &= ~ContextRunning;
 	
 	// Update presence of context in emulator lists depending on its state
-	UpdateContextList(ContextListRunning, this->state & ContextRunning);
-	UpdateContextList(ContextListZombie, this->state & ContextZombie);
-	UpdateContextList(ContextListFinished, this->state & ContextFinished);
-	UpdateContextList(ContextListSuspended, this->state & ContextSuspended);
-	
+	emu->UpdateContextInList(ContextListRunning, this, this->state & ContextRunning);
+	emu->UpdateContextInList(ContextListZombie, this, this->state & ContextZombie);
+	emu->UpdateContextInList(ContextListFinished, this, this->state & ContextFinished);
+	emu->UpdateContextInList(ContextListSuspended, this, this->state & ContextSuspended);
+
 	// Dump new state (ignore ContextSpecMode state, it's too frequent)
 	if (Emu::context_debug && (diff & ~ContextSpecMode))
 	{
@@ -148,6 +116,14 @@ Context::Context()
 {
 	// Save emulator instance
 	emu = Emu::getInstance();
+
+	// Initialize
+	state = 0;
+	pid = 0;  // FIXME
+
+	// Presence in context lists
+	for (int i = 0; i < ContextListCount; i++)
+		context_list_present[i] = false;
 }
 
 
@@ -188,6 +164,13 @@ void Context::loadProgram(const std::vector<std::string> &args,
 
 	// Load the binary
 	LoadBinary();
+}
+
+
+void Context::Execute()
+{
+	clearState(ContextRunning);
+	setState(ContextFinished);
 }
 
 

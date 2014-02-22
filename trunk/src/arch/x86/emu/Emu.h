@@ -30,13 +30,14 @@
 namespace x86
 {
 
-class Context;
 class Asm;
+class Context;
 
 
 /// x86 Emulator configuration
 class EmuConfig : public misc::CommandLineConfig
 {
+	// Debugger files
 	std::string call_debug_file;
 	std::string context_debug_file;
 	std::string cuda_debug_file;
@@ -47,6 +48,9 @@ class EmuConfig : public misc::CommandLineConfig
 	std::string opengl_debug_file;
 	std::string syscall_debug_file;
 
+	// Maximum number of instructions
+	long long max_instructions;
+
 public:
 
 	/// Register command-line options related with the x86 emulator
@@ -54,6 +58,9 @@ public:
 
 	/// Process command-line options related with the x86 emualtor
 	void Process();
+
+	/// Return maximum number of instructions
+	long long getMaxInstructions() { return max_instructions; }
 };
 
 
@@ -62,9 +69,6 @@ class Emu : public Common::Emu
 {
 	// Unique instance of x86 emulator
 	static std::unique_ptr<Emu> instance;
-
-	// Disassembler
-	Asm *as;
 
 	// Primary list of contexts
 	std::list<std::unique_ptr<Context>> contexts;
@@ -79,6 +83,12 @@ class Emu : public Common::Emu
 	// Private constructor. The only possible instance of the x86 emulator
 	// can be obtained with a call to getInstance()
 	Emu();
+	
+	// Check for events detected in spawned host threads, such as waking up
+	// contexts or sending signals. The list is only effectively processed
+	// if events have been scheduled to get processed with a previous call
+	// to ProcessEventsSchedule().
+	void ProcessEvents();
 
 public:
 
@@ -93,30 +103,26 @@ public:
 			const std::string &stdin_file_name,
 			const std::string &stdout_file_name);
 
-	/// Add a context to a context list. This function does not update
-	/// the internal state of the context. Call Context::addToList()
-	/// instead. The function returns an iterator to the inserted context.
-	std::list<Context *>::iterator AddToContextList(ContextListType type,
-			Context *context)
-	{
-		context_list[type].push_back(context);
-		auto iter = context_list[type].end();
-		return --iter;
-	}
+	/// Remove a context from all context lists and free it
+	void freeContext(Context *context);
 
-	/// Remove a context from a context list. This function does not
-	/// update the internal state of the context. Call
-	/// Context::removeFromList() instead.
-	void RemoveFromContextList(ContextListType type,
-			std::list<Context *>::iterator &iter)
-	{
-		context_list[type].erase(iter);
-	}
+	/// Add a context to a context list if it is not present already
+	void AddContextToList(ContextListType type, Context *context);
 
-	/// Return a constant reference to a context list, given its type.
+	/// Remove a context from a context list if present
+	void RemoveContextFromList(ContextListType type, Context *context);
+
+	/// Update the presence of a context in a list depending on the value
+	/// passed in argument \a present. If \c true, the context will be added
+	/// to the list (if not present already. If \c false, it will be removed
+	/// (if still present).
+	void UpdateContextInList(ContextListType type, Context *context,
+			int present);
+
+	/// Return a constant reference to a list of contexts
 	const std::list<Context *> &getContextList(ContextListType type) const {
 			return context_list[type]; }
-	
+
 	/// Signals a call to the scheduler Timing::Schedule() in the
 	/// beginning of next cycle. This flag is set any time a context changes
 	/// its state in any bit other than ContextSpecMode. It can be set
@@ -129,6 +135,10 @@ public:
 	/// emulation, and \c false if all contexts finished execution.
 	bool Run();
 
+
+	//
+	// Debuggers and configuration
+	//
 
 	/// Debugger for function calls
 	static misc::Debug call_debug;
@@ -156,8 +166,6 @@ public:
 	
 	/// Debugger for system calls
 	static misc::Debug syscall_debug;
-
-	
 
 	/// Configuration for x86 emulator
 	static EmuConfig config;
