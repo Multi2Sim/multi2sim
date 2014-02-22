@@ -26,9 +26,6 @@
 #include "Emu.h"
 #include "Signal.h"
 
-using namespace Memory;
-using namespace misc;
-
 
 namespace x86
 {
@@ -37,7 +34,7 @@ namespace x86
 void Context::RunSignalHandler(int sig)
 {
 	// Debug
-	assert(inRange(sig, 1, 64));
+	assert(misc::inRange(sig, 1, 64));
 	Emu::syscall_debug << "context " << pid << " executes signal "
 			"handler for signal " << sig << '\n';
 
@@ -53,11 +50,11 @@ void Context::RunSignalHandler(int sig)
 	// Create a memory page with execution permission, and copy return code
 	// on it.
 	signal_mask_table.setRetCodePtr(memory->MapSpace(
-			MemoryPageSize, MemoryPageSize));
-	memory->Map(signal_mask_table.getRetCodePtr(), MemoryPageSize,
-			MemoryAccessExec | MemoryAccessInit);
+			mem::MemoryPageSize, mem::MemoryPageSize));
+	memory->Map(signal_mask_table.getRetCodePtr(), mem::MemoryPageSize,
+			mem::MemoryAccessExec | mem::MemoryAccessInit);
 	Emu::syscall_debug << "  return code of signal handler allocated at "
-			<< StringFmt("0x%x\n",
+			<< misc::fmt("0x%x\n",
 			signal_mask_table.getRetCodePtr());
 	memory->Init(signal_mask_table.getRetCodePtr(), sizeof signal_ret_code,
 			signal_ret_code);
@@ -98,13 +95,13 @@ void Context::RunSignalHandler(int sig)
 	// In the current implementation, we do not allow other signals to
 	// interrupt the signal handler, so we notify it in the context status.
 	if (getState(ContextHandler))
-		fatal("%s: already running a handler", __FUNCTION__);
+		misc::fatal("%s: already running a handler", __FUNCTION__);
 	setState(ContextHandler);
 
 	// Set eip to run handler
 	unsigned handler = signal_handler->getHandler();
 	if (!handler)
-		fatal("%s: invalid signal handler", __FUNCTION__);
+		misc::fatal("%s: invalid signal handler", __FUNCTION__);
 	regs.setEip(handler);
 }
 
@@ -113,13 +110,13 @@ void Context::ReturnFromSignalHandler()
 {
 	// Change context status
 	if (!getState(ContextHandler))
-		fatal("%s: not handling a signal", __FUNCTION__);
+		misc::fatal("%s: not handling a signal", __FUNCTION__);
 	clearState(ContextHandler);
 
 	// Free signal frame
-	memory->Unmap(signal_mask_table.getRetCodePtr(), MemoryPageSize);
+	memory->Unmap(signal_mask_table.getRetCodePtr(), mem::MemoryPageSize);
 	Emu::syscall_debug << "  signal handler return code at " <<
-			StringFmt("0x%x", signal_mask_table.getRetCodePtr())
+			misc::fmt("0x%x", signal_mask_table.getRetCodePtr())
 			<< " deallocated\n";
 
 	// Restore saved register file and free backup

@@ -26,15 +26,14 @@
 #include "String.h"
 
 
-using namespace misc;
-
-
 namespace ELFWriter
 {
 
-/*
- * Class 'Buffer'
- */
+
+
+//
+// Class 'Buffer'
+//
 
 size_t Buffer::getSize()
 {
@@ -63,7 +62,7 @@ void Buffer::Dump(std::ostream &os) const
 	for (unsigned i = 0; i < s.length(); i += 16)
 	{
 		// Print offset
-		os << StringFmt("%08x ", i);
+		os << misc::fmt("%08x ", i);
 
 		// Print hex bytes
 		for (int j = 0; j < 16; j++)
@@ -76,7 +75,7 @@ void Buffer::Dump(std::ostream &os) const
 			if (i + j < s.length())
 			{
 				unsigned char c = s[i + j];
-				os << StringFmt("%02x ", (int) c);
+				os << misc::fmt("%02x ", (int) c);
 			}
 			else
 			{
@@ -107,9 +106,9 @@ void Buffer::Dump(std::ostream &os) const
 
 
 
-/*
- * Class 'Section'
- */
+//
+// Class 'Section'
+//
 
 Section::Section(File *file, std::string name, Buffer *first_buffer,
 		Buffer *last_buffer, int index)
@@ -123,7 +122,7 @@ Section::Section(File *file, std::string name, Buffer *first_buffer,
 
 	// Check ordered indices
 	if (last_buffer->getIndex() < first_buffer->getIndex())
-		fatal("%s: invalid buffer order", __FUNCTION__);
+		misc::fatal("%s: invalid buffer order", __FUNCTION__);
 }
 
 
@@ -147,9 +146,9 @@ void Section::Dump(std::ostream &os) const
 
 
 
-/*
- * Class 'Segment'
- */
+//
+// Class 'Segment'
+//
 
 Segment::Segment(File *file, std::string name, Buffer *first_buffer,
 		Buffer *last_buffer, int index)
@@ -182,9 +181,9 @@ void Segment::Dump(std::ostream &os) const
 
 
 
-/*
- * Class 'SymbolTable'
- */
+//
+// Class 'SymbolTable'
+//
 
 SymbolTable::SymbolTable(File *file, const std::string &symtab,
 		const std::string &strtab)
@@ -238,9 +237,9 @@ void SymbolTable::Generate()
 
 
 
-/*
- * Class 'File'
- */
+//
+// Class 'File'
+//
 
 
 File::File()
@@ -429,10 +428,11 @@ void File::Generate(const std::string &path)
 {
 	std::ofstream of(path);
 	if (!of)
-		fatal("%s: cannot write to file", path.c_str());
+		misc::fatal("%s: cannot write to file", path.c_str());
 	Generate(of);
 	of.close();
 }
 
 
-}  /* namespace ELFWriter */
+}  // namespace ELFWriter
+

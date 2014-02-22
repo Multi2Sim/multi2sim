@@ -29,9 +29,6 @@
 #include "Inst.h"
 
 
-using namespace misc;
-
-
 namespace SI
 {
 
@@ -63,37 +60,37 @@ Asm::Asm()
 
 		if (info->fmt == InstFormatSOPP)
 		{
-			assert(inRange(info->op, 0, dec_table_sopp_count - 1));
+			assert(misc::inRange(info->op, 0, dec_table_sopp_count - 1));
 			dec_table_sopp[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == InstFormatSOPC)
 		{
-			assert(inRange(info->op, 0, dec_table_sopc_count - 1));
+			assert(misc::inRange(info->op, 0, dec_table_sopc_count - 1));
 			dec_table_sopc[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == InstFormatSOP1)
 		{
-			assert(inRange(info->op, 0, dec_table_sop1_count - 1));
+			assert(misc::inRange(info->op, 0, dec_table_sop1_count - 1));
 			dec_table_sop1[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == InstFormatSOPK)
 		{
-			assert(inRange(info->op, 0, dec_table_sopk_count - 1));
+			assert(misc::inRange(info->op, 0, dec_table_sopk_count - 1));
 			dec_table_sopk[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == InstFormatSOP2)
 		{
-			assert(inRange(info->op, 0, dec_table_sop2_count - 1));
+			assert(misc::inRange(info->op, 0, dec_table_sop2_count - 1));
 			dec_table_sop2[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == InstFormatSMRD) 
 		{
-			assert(inRange(info->op, 0, dec_table_smrd_count - 1));
+			assert(misc::inRange(info->op, 0, dec_table_smrd_count - 1));
 			dec_table_smrd[info->op] = info;
 			continue;
 		}
@@ -101,7 +98,7 @@ Asm::Asm()
 		{
 			int i;
 
-			assert(inRange(info->op, 0, dec_table_vop3_count - 1));
+			assert(misc::inRange(info->op, 0, dec_table_vop3_count - 1));
 			dec_table_vop3[info->op] = info;
 			if (info->flags & InstFlagOp8)
 			{
@@ -123,55 +120,55 @@ Asm::Asm()
 		}
 		else if (info->fmt == InstFormatVOPC)
 		{
-			assert(inRange(info->op, 0, dec_table_vopc_count - 1));
+			assert(misc::inRange(info->op, 0, dec_table_vopc_count - 1));
 			dec_table_vopc[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == InstFormatVOP1)
 		{
-			assert(inRange(info->op, 0, dec_table_vop1_count - 1));
+			assert(misc::inRange(info->op, 0, dec_table_vop1_count - 1));
 			dec_table_vop1[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == InstFormatVOP2)
 		{
-			assert(inRange(info->op, 0, dec_table_vop2_count - 1));
+			assert(misc::inRange(info->op, 0, dec_table_vop2_count - 1));
 			dec_table_vop2[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == InstFormatVINTRP)
 		{
-			assert(inRange(info->op, 0, dec_table_vintrp_count - 1));
+			assert(misc::inRange(info->op, 0, dec_table_vintrp_count - 1));
 			dec_table_vintrp[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == InstFormatDS)
 		{
-			assert(inRange(info->op, 0, dec_table_ds_count - 1));
+			assert(misc::inRange(info->op, 0, dec_table_ds_count - 1));
 			dec_table_ds[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == InstFormatMTBUF)
 		{
-			assert(inRange(info->op, 0, dec_table_mtbuf_count - 1));
+			assert(misc::inRange(info->op, 0, dec_table_mtbuf_count - 1));
 			dec_table_mtbuf[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == InstFormatMUBUF)
 		{
-			assert(inRange(info->op, 0, dec_table_mubuf_count - 1));
+			assert(misc::inRange(info->op, 0, dec_table_mubuf_count - 1));
 			dec_table_mubuf[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == InstFormatMIMG)
 		{
-			assert(inRange(info->op, 0, dec_table_mimg_count - 1));
+			assert(misc::inRange(info->op, 0, dec_table_mimg_count - 1));
 			dec_table_mimg[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == InstFormatEXP)
 		{
-			assert(inRange(info->op, 0, dec_table_exp_count - 1));
+			assert(misc::inRange(info->op, 0, dec_table_exp_count - 1));
 			dec_table_exp[info->op] = info;
 			continue;
 		}
@@ -271,7 +268,7 @@ void Asm::DisassembleBuffer(std::ostream& os, const char *buffer, int size)
 		/* Dump a label if necessary. */
 		if (*next_label == rel_addr && next_label != end_label)
 		{
-			os << StringFmt("label_%04X:\n", rel_addr / 4);
+			os << misc::fmt("label_%04X:\n", rel_addr / 4);
 			next_label++;
 		}
 
@@ -286,9 +283,9 @@ void Asm::DisassembleBuffer(std::ostream& os, const char *buffer, int size)
 
 		/* Hex dump */
 		os << ss.str();
-		os << StringFmt(" // %08X: %08X", rel_addr, bytes->word[0]);
+		os << misc::fmt(" // %08X: %08X", rel_addr, bytes->word[0]);
 		if (inst.getSize() == 8)
-			os << StringFmt(" %08X", bytes->word[1]);
+			os << misc::fmt(" %08X", bytes->word[1]);
 		os << '\n';
 
 		/* Break at end of program. */
@@ -315,12 +312,12 @@ void Asm::DisassembleBinary(std::string path)
 
 		/* If symbol is '__OpenCL_XXX_kernel', it points 
 		 * to internal ELF */
-		if (StringPrefix(symbol_name, "__OpenCL_") &&
-				StringSuffix(symbol_name, "_kernel"))
+		if (misc::StringPrefix(symbol_name, "__OpenCL_") &&
+				misc::StringSuffix(symbol_name, "_kernel"))
 		{
 			/* Symbol must point to valid content */
 			if (!symbol->getBuffer())
-				fatal("%s: symbol '%s' without content",
+				misc::fatal("%s: symbol '%s' without content",
 						path.c_str(), symbol_name.c_str());
 			/* Get kernel name */
 			std::string kernel_name = symbol_name.substr(9,
@@ -363,7 +360,7 @@ void Asm::DisassembleOpenGLBinary(std::string path, int shader_index)
 	/* Open file */
 	std::ifstream f(path);
 	if (!f)
-		fatal("%s: cannot open file", path.c_str());
+		misc::fatal("%s: cannot open file", path.c_str());
 
 	/* Load file into string */
 	std::stringstream ss;
@@ -380,7 +377,7 @@ void Asm::DisassembleOpenGLBinary(std::string path, int shader_index)
 			<< " shaders\n\n";
 	if (shader_index > list_count(program_bin->shader_bins) ||
 			shader_index <= 0 )
-		fatal("shader index out of range.\n\tPlease choose <index> "
+		misc::fatal("shader index out of range.\n\tPlease choose <index> "
 			"from 1 ~ %d", list_count(program_bin->shader_bins));
 
 	/* Disassemble */

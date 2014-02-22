@@ -23,7 +23,6 @@
 #include "Asm.h"
 #include "Inst.h"
 
-using namespace misc;
 
 namespace MIPS
 {
@@ -306,7 +305,7 @@ void Asm::DisassembleBinary(std::string path)
 			}
 			if (symbol && symbol->getValue() ==
 					section->getAddr() + pos)
-				std::cout << StringFmt("\n\n%08x <%s>:",
+				std::cout << misc::fmt("\n\n%08x <%s>:",
 						section->getAddr() + pos,
 						symbol->getName().c_str());
 
@@ -326,7 +325,7 @@ void Asm::DisassembleBinary(std::string path)
 					if (print_symbol->getValue() == inst.target)
 						std::cout << " <" << print_symbol->getName() << ">";
 					else
-						std::cout << StringFmt(" <%s+0x%x>",
+						std::cout << misc::fmt(" <%s+0x%x>",
 								print_symbol->getName().c_str(),
 								inst.target -
 								print_symbol->getValue());

@@ -47,13 +47,13 @@ const char *StringErrorToString(StringError error)
 }
 
 
-std::string StringFmt(const char *fmt, ...)
+std::string fmt(const char *fmt_str, ...)
 {
 	char buf[1024];
 	va_list va;
 
-	va_start(va, fmt);
-	vsnprintf(buf, sizeof buf, fmt, va);
+	va_start(va, fmt_str);
+	vsnprintf(buf, sizeof buf, fmt_str, va);
 	return buf;
 }
 

@@ -114,6 +114,8 @@ void main_cpp(int argc, char **argv)
 		emu->newContext(command_line.getArguments(),
 				std::vector<std::string>(),
 				misc::getCwd(), "", "");
+		while (1)
+			emu->Run();
 	}
 
 	// End

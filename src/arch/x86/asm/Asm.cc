@@ -26,14 +26,12 @@
 #include "Asm.h"
 #include "Inst.h"
 
-using namespace misc;
-
 
 namespace x86
 {
 
 
-void AsmConfig::Register(CommandLine &command_line)
+void AsmConfig::Register(misc::CommandLine &command_line)
 {
 	// Option --x86-disasm <file>
 	command_line.RegisterString("--x86-disasm", path,
@@ -320,17 +318,17 @@ void Asm::DisassembleBinary(const std::string &path, std::ostream &os) const
 				symbol = file.getSymbol(current_symbol);
 			}
 			if (symbol && symbol->getValue() == eip)
-				os << StringFmt("\n%08x <%s>:\n", eip,
+				os << misc::fmt("\n%08x <%s>:\n", eip,
 						symbol->getName().c_str());
 
 			// Address
-			os << StringFmt("%8x:\t", eip);
+			os << misc::fmt("%8x:\t", eip);
 
 			// Hex dump of bytes 0..6
 			for (int i = 0; i < 7; i++)
 			{
 				if (i < inst.getSize())
-					os << StringFmt("%02x ",
+					os << misc::fmt("%02x ",
 							(unsigned char)
 							buffer[i]);
 				else
@@ -348,9 +346,9 @@ void Asm::DisassembleBinary(const std::string &path, std::ostream &os) const
 			// Hex dump of bytes 7..13
 			if (inst.getSize() > 7)
 			{
-				os << StringFmt("%8x:\t", eip + 7);
+				os << misc::fmt("%8x:\t", eip + 7);
 				for (int i = 7; i < 14 && i < inst.getSize(); i++)
-					os << StringFmt("%02x ",
+					os << misc::fmt("%02x ",
 							(unsigned char)
 							buffer[i]);
 				os << '\n';

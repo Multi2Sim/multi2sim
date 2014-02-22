@@ -19,13 +19,11 @@
 
 #include "Signal.h"
 
-using namespace misc;
-
 
 namespace x86
 {
 
-const StringMap signal_map =
+const misc::StringMap signal_map =
 {
 	{ "SIGHUP",           1 },
 	{ "SIGINT",           2 },
@@ -61,7 +59,7 @@ const StringMap signal_map =
 };
 
 
-const StringMap signal_handler_flags_map =
+const misc::StringMap signal_handler_flags_map =
 {
 	{ "SA_NOCLDSTOP",       0x00000001u },
 	{ "SA_NOCLDWAIT",       0x00000002u },
@@ -106,9 +104,9 @@ void SignalSet::Dump(std::ostream &os) const
 
 void SignalHandler::Dump(std::ostream &os) const
 {
-	os << StringFmt("handler = 0x%x, ", handler);
+	os << misc::fmt("handler = 0x%x, ", handler);
 	os << "flags = " << signal_handler_flags_map.MapFlags(flags) << ", ";
-	os << StringFmt("restorer = 0x%x, ", restorer);
+	os << misc::fmt("restorer = 0x%x, ", restorer);
 	os << "mask = " << mask;
 }
 

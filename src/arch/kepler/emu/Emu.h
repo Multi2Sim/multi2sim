@@ -56,9 +56,9 @@ class Emu
 	std::list<Grid *> finished_grids;
 
 	// Memory
-	Memory::Memory *global_mem;
-	Memory::Memory *const_mem;
-	Memory::Memory *shared_mem;
+	mem::Memory *global_mem;
+	mem::Memory *const_mem;
+	mem::Memory *shared_mem;
 
 	// Global memory parameters
 	unsigned global_mem_top;

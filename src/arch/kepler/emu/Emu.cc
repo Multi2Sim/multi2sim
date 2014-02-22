@@ -50,12 +50,12 @@ Emu::Emu(Asm *as)
 	inst_func[INST_##_name] = kpl_isa_##_name##_impl;
 #include <arch/kepler/asm/asm.dat>
 #undef DEFINST
-	global_mem = new Memory::Memory();
+	global_mem = new mem::Memory();
     //global_mem->safe = false;
     global_mem_top = 0;
     global_mem_total_size = 1 << 30; /* 2GB */
     global_mem_free_size = this->global_mem_total_size;
-    const_mem = new Memory::Memory();
+    const_mem = new mem::Memory();
     //const_mem->safe = false;
 /*
 

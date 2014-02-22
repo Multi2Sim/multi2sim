@@ -25,8 +25,6 @@
 #include "Token.h"
 
 
-using namespace misc;
-
 namespace si2bin
 {
 
@@ -52,17 +50,17 @@ void Inst::Initialize(SI::InstOpcode opcode)
 
 	// Check opcode
 	this->opcode = opcode;
-	if (!inRange(opcode, 1, SI::InstOpcodeCount - 1))
-		fatal("%s: invalid opcode (%d)", __FUNCTION__, opcode);
+	if (!misc::inRange(opcode, 1, SI::InstOpcodeCount - 1))
+		misc::fatal("%s: invalid opcode (%d)", __FUNCTION__, opcode);
 
 	// Get instruction information
 	info = context->getInstInfo(opcode);
 	if (!info)
-		fatal("%s: opcode %d not supported", __FUNCTION__, opcode);
+		misc::fatal("%s: opcode %d not supported", __FUNCTION__, opcode);
 
 	// Check number of arguments
 	if (args.size() != info->getNumTokens())
-		fatal("%s: invalid number of arguments (%d given, %d expected)",
+		misc::fatal("%s: invalid number of arguments (%d given, %d expected)",
 				__FUNCTION__, (int) args.size(),
 				(int) info->getNumTokens());
 
@@ -78,7 +76,7 @@ void Inst::Initialize(SI::InstOpcode opcode)
 
 		// Check that actual argument type is acceptable for token
 		if (!token->IsArgAllowed(arg))
-			fatal("%s: invalid type for argument %d", __FUNCTION__, i + 1);
+			misc::fatal("%s: invalid type for argument %d", __FUNCTION__, i + 1);
 	}
 }
 
@@ -96,7 +94,7 @@ void Inst::Initialize(const std::string &name)
 		// Check number of arguments
 		if (args.size() != info->getNumTokens())
 		{
-			error = StringFmt("invalid number of arguments for %s "
+			error = misc::fmt("invalid number of arguments for %s "
 					"(%d given, %d expected)",
 					name.c_str(), (int) args.size(),
 					(int) info->getNumTokens());
@@ -117,7 +115,7 @@ void Inst::Initialize(const std::string &name)
 			// Check that actual argument type is acceptable for token
 			if (!token->IsArgAllowed(arg))
 			{
-				error = StringFmt("line:%d: invalid type for argument %d",
+				error = misc::fmt("line:%d: invalid type for argument %d",
 						si2bin_yylineno, arg->index + 1);
 				break;
 			}
@@ -134,7 +132,7 @@ void Inst::Initialize(const std::string &name)
 
 	// Error identifying instruction
 	if (!info)
-		fatal("%s", error.c_str());
+		misc::fatal("%s", error.c_str());
 
 	// Initialize opcode
 	opcode = info->getOpcode();
@@ -177,7 +175,7 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 		{
 			// Literal constant other than [-16...64]
 			if (literal->getValue() > 0xff00)
-				fatal("%s: Literal in simm16 needs to fit in 16 bit field",
+				misc::fatal("%s: Literal in simm16 needs to fit in 16 bit field",
 					__FUNCTION__);
 			bytes.sopk.simm16 = literal->getValue();
 		}
@@ -185,8 +183,8 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 		{
 			// Encode
 			value = arg->Encode();
-			if (!inRange(value, 0, 255))
-				fatal("invalid argument type");
+			if (!misc::inRange(value, 0, 255))
+				misc::fatal("invalid argument type");
 			bytes.sopk.simm16 = value;
 		}
 		break;
@@ -198,7 +196,7 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 		ArgScalarRegisterSeries *srs = dynamic_cast
 				<ArgScalarRegisterSeries *>(arg);
 		if (srs && srs->getHigh() != srs->getLow() + 1)
-			fatal("register series must be s[x:x+1]");
+			misc::fatal("register series must be s[x:x+1]");
 		
 		// Encode
 		bytes.sop2.sdst = arg->Encode();
@@ -213,7 +211,7 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 			/* Literal constant other than [-16...64] is encoded by adding
 			 * four more bits to the instruction. */
 			if (size == 8)
-				fatal("only one literal allowed");
+				misc::fatal("only one literal allowed");
 			size = 8;
 			bytes.sop2.ssrc0 = 0xff;
 			bytes.sop2.lit_cnst = literal->getValue();
@@ -224,12 +222,12 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 			ArgScalarRegisterSeries *srs = dynamic_cast
 					<ArgScalarRegisterSeries *>(arg);
 			if (srs && srs->getHigh() != srs->getLow() + 1)
-				fatal("invalid scalar register series, s[x:x+1] expected");
+				misc::fatal("invalid scalar register series, s[x:x+1] expected");
 
 			// Encode
 			int value = arg->Encode();
-			if (!inRange(value, 0, 255))
-				fatal("invalid argument type");
+			if (!misc::inRange(value, 0, 255))
+				misc::fatal("invalid argument type");
 			bytes.sop2.ssrc0 = value;
 		}
 		break;
@@ -243,7 +241,7 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 			/* Literal constant other than [-16...64] is encoded by adding
 			 * four more bits to the instruction. */
 			if (size == 8)
-				fatal("only one literal allowed");
+				misc::fatal("only one literal allowed");
 			size = 8;
 			bytes.sop2.ssrc1 = 0xff;
 			bytes.sop2.lit_cnst = literal->getValue();
@@ -254,12 +252,12 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 			ArgScalarRegisterSeries *srs = dynamic_cast
 					<ArgScalarRegisterSeries *>(arg);
 			if (srs && srs->getHigh() != srs->getLow() + 1)
-				fatal("invalid scalar register series, s[x:x+1] expected");
+				misc::fatal("invalid scalar register series, s[x:x+1] expected");
 
 			// Encode
 			int value = arg->Encode();
-			if (!inRange(value, 0, 255))
-				fatal("invalid argument type");
+			if (!misc::inRange(value, 0, 255))
+				misc::fatal("invalid argument type");
 			bytes.sop2.ssrc1 = value;
 		}
 		break;
@@ -273,8 +271,8 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 
 		// Offset
 		int soffset = maddr->getSoffset()->Encode();
-		if (!inRange(soffset, 0, 253))
-			fatal("invalid offset");
+		if (!misc::inRange(soffset, 0, 253))
+			misc::fatal("invalid offset");
 		bytes.mtbuf.soffset = soffset;
 
 		// Data and number format
@@ -320,7 +318,7 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 		}
 
 		default:
-			panic("%s: invalid argument for TokenMtSeriesVdata",
+			misc::panic("%s: invalid argument for TokenMtSeriesVdata",
 					__FUNCTION__);
 		}
 
@@ -347,13 +345,13 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 			break;
 
 		default:
-			panic("%s: MUBUF/MTBUF instruction not recognized: %s",
+			misc::panic("%s: MUBUF/MTBUF instruction not recognized: %s",
 					__FUNCTION__, info->getName().c_str());
 		}
 
 		// Check range
 		if (high != high_must)
-			fatal("invalid register series: v[%d:%d]", low, high);
+			misc::fatal("invalid register series: v[%d:%d]", low, high);
 
 		// Encode
 		bytes.mtbuf.vdata = low;
@@ -393,7 +391,7 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 		}
 
 		default:
-			panic("%s: invalid argument for TokenMtSeriesVdata",
+			misc::panic("%s: invalid argument for TokenMtSeriesVdata",
 					__FUNCTION__);
 		}
 
@@ -420,13 +418,13 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 			break;
 
 		default:
-			panic("%s: MUBUF/MTBUF instruction not recognized: %s",
+			misc::panic("%s: MUBUF/MTBUF instruction not recognized: %s",
 					__FUNCTION__, info->getName().c_str());
 		}
 
 		// Check range
 		if (high != high_must)
-			fatal("invalid register series: v[%d:%d]", low, high);
+			misc::fatal("invalid register series: v[%d:%d]", low, high);
 
 		// Encode
 		bytes.mtbuf.vdata = low;
@@ -445,7 +443,7 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 			ArgLiteral *literal = dynamic_cast
 					<ArgLiteral *>(arg);
 			if (literal->getValue() > 255)
-				fatal("%s: offset needs to fit in 8 bit field",
+				misc::fatal("%s: offset needs to fit in 8 bit field",
 					__FUNCTION__);
 
 			bytes.smrd.imm = 1;
@@ -462,7 +460,7 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 			break;
 		}
 		default:
-			panic("%s: invalid argument type for TokenOffset",
+			misc::panic("%s: invalid argument type for TokenOffset",
 				__FUNCTION__);
 		}
 		break;
@@ -483,7 +481,7 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 				<ArgScalarRegisterSeries *>(arg);
 		assert(srs);
 		if (srs->getLow() % 2)
-			fatal("base register must be multiple of 2");
+			misc::fatal("base register must be multiple of 2");
 
 		// Restrictions for high register
 		switch (opcode)
@@ -494,7 +492,7 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 
 			// High register must be low plus 1
 			if (srs->getHigh() != srs->getLow() + 1)
-				fatal("register series must be s[x:x+1]");
+				misc::fatal("register series must be s[x:x+1]");
 			break;
 
 		case SI::INST_S_BUFFER_LOAD_DWORD:
@@ -503,11 +501,11 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 
 			// High register must be low plus 3
 			if (srs->getHigh() != srs->getLow() + 3)
-				fatal("register series must be s[x:x+3]");
+				misc::fatal("register series must be s[x:x+3]");
 			break;
 
 		default:
-			fatal("%s: unsupported opcode for TokenSeriesSbase: %s",
+			misc::fatal("%s: unsupported opcode for TokenSeriesSbase: %s",
 					__FUNCTION__, info->getName().c_str());
 		}
 
@@ -532,7 +530,7 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 
 			// High register must be low plus 1
 			if (srs->getHigh() != srs->getLow() + 1)
-				fatal("register series must be s[low:low+1]");
+				misc::fatal("register series must be s[low:low+1]");
 			break;
 
 		case SI::INST_S_LOAD_DWORDX4:
@@ -540,11 +538,11 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 
 			// High register must be low plus 3
 			if (srs->getHigh() != srs->getLow() + 3)
-				fatal("register series must be s[low:low+3]");
+				misc::fatal("register series must be s[low:low+3]");
 			break;
 
 		default:
-			fatal("%s: unsupported opcode for 'series_sdst' token: %s",
+			misc::fatal("%s: unsupported opcode for 'series_sdst' token: %s",
 					__FUNCTION__, info->getName().c_str());
 		}
 
@@ -564,12 +562,12 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 
 		// Base register must be multiple of 4
 		if (low % 4)
-			fatal("low register must be multiple of 4 in s[%d:%d]",
+			misc::fatal("low register must be multiple of 4 in s[%d:%d]",
 					low, high);
 
 		// High register must be low + 3
 		if (high != low + 3)
-			fatal("register series must span 4 registers in s[%d:%d]",
+			misc::fatal("register series must span 4 registers in s[%d:%d]",
 					low, high);
 
 		// Encode
@@ -593,7 +591,7 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 			/* Literal constant other than [-16...64] is encoded by adding
 			 * four more bits to the instruction. */
 			if (size == 8)
-				fatal("only one literal allowed");
+				misc::fatal("only one literal allowed");
 			size = 8;
 
 			// Set literal
@@ -616,7 +614,7 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 			/* Literal constant other than [-16...64] is encoded by adding
 			 * four more bits to the instruction. */
 			if (size == 8)
-				fatal("only one literal allowed");
+				misc::fatal("only one literal allowed");
 			size = 8;
 
 			// Set literal
@@ -628,8 +626,8 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 		else
 		{
 			int value = arg->Encode();
-			if (!inRange(value, 0, 255))
-				fatal("invalid argument type");
+			if (!misc::inRange(value, 0, 255))
+				misc::fatal("invalid argument type");
 			bytes.sop2.ssrc0 = value;
 		}
 		break;
@@ -642,7 +640,7 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 			/* Literal constant other than [-16...64] is encoded by adding
 			 * four more bits to the instruction. */
 			if (size == 8)
-				fatal("only one literal allowed");
+				misc::fatal("only one literal allowed");
 			size = 8;
 			
 			// Set literal
@@ -654,8 +652,8 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 		else
 		{
 			int value = arg->Encode();
-			if (!inRange(value, 0, 255))
-				fatal("invalid argument type");
+			if (!misc::inRange(value, 0, 255))
+				misc::fatal("invalid argument type");
 			bytes.sop2.ssrc1 = value;
 		}
 		break;
@@ -680,7 +678,7 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 			ArgVectorRegisterSeries *vrs = dynamic_cast
 					<ArgVectorRegisterSeries *>(arg);
 			if (vrs->getHigh() != vrs->getLow() + 1)
-				fatal("register series must be v[x:x+1]");
+				misc::fatal("register series must be v[x:x+1]");
 
 			bytes.mtbuf.vaddr = vrs->getLow();
 			// FIXME - Find way to verify that idxen and offen are set
@@ -688,7 +686,7 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 		}
 
 		default:
-			fatal("%s: invalid argument type for TokenVaddr",
+			misc::fatal("%s: invalid argument type for TokenVaddr",
 				__FUNCTION__);
 		}
 		break;
@@ -732,7 +730,7 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 			low = srs->getLow();
 			high = srs->getHigh();
 			if (high != low + 1)
-				fatal("register series must be s[low:low+1]");
+				misc::fatal("register series must be s[low:low+1]");
 			break;
 		}
 
@@ -744,12 +742,12 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 			low = vrs->getLow();
 			high = vrs->getHigh();
 			if (high != low + 1)
-				fatal("register series must be v[low:low+1]");
+				misc::fatal("register series must be v[low:low+1]");
 			break;
 		}
 
 		default:
-			panic("%s: invalid argument type for Token64Src0",
+			misc::panic("%s: invalid argument type for Token64Src0",
 					__FUNCTION__);
 		}
 
@@ -766,7 +764,7 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 		int low = vrs->getLow();
 		int high = vrs->getHigh();
 		if (high != low + 1)
-			fatal("register series must be v[low:low+1]");
+			misc::fatal("register series must be v[low:low+1]");
 		
 		// Encode
 		bytes.vop1.vdst = low;
@@ -781,7 +779,7 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 					<ArgScalarRegisterSeries *>(arg);
 			assert(srs);
 			if (srs->getHigh() != srs->getLow() + 1)
-				fatal("register series must be s[low:low+1]");
+				misc::fatal("register series must be s[low:low+1]");
 		}
 
 		// Encode
@@ -827,14 +825,14 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 			ArgScalarRegisterSeries *srs = dynamic_cast
 					<ArgScalarRegisterSeries *>(arg);
 			if (srs->getHigh() != srs->getLow() + 1)
-				fatal("register series must be s[low:low+1]");
+				misc::fatal("register series must be s[low:low+1]");
 		}
 		else if (arg->type == ArgTypeVectorRegisterSeries)
 		{
 			ArgVectorRegisterSeries *vrs = dynamic_cast
 					<ArgVectorRegisterSeries *>(arg);
 			if (vrs->getHigh() != vrs->getLow() + 1)
-				fatal("register series must be v[low:low+1]");
+				misc::fatal("register series must be v[low:low+1]");
 		}
 
 		// Encode
@@ -854,14 +852,14 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 			ArgScalarRegisterSeries *srs = dynamic_cast
 					<ArgScalarRegisterSeries *>(arg);
 			if (srs->getHigh() != srs->getLow() + 1)
-				fatal("register series must be s[low:low+1]");
+				misc::fatal("register series must be s[low:low+1]");
 		}
 		else if (arg->type == ArgTypeVectorRegisterSeries)
 		{
 			ArgVectorRegisterSeries *vrs = dynamic_cast
 					<ArgVectorRegisterSeries *>(arg);
 			if (vrs->getHigh() != vrs->getLow() + 1)
-				fatal("register series must be v[low:low+1]");
+				misc::fatal("register series must be v[low:low+1]");
 		}
 
 		// Encode
@@ -880,14 +878,14 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 			ArgScalarRegisterSeries *srs = dynamic_cast
 					<ArgScalarRegisterSeries *>(arg);
 			if (srs->getHigh() != srs->getLow() + 1)
-				fatal("register series must be s[low:low+1]");
+				misc::fatal("register series must be s[low:low+1]");
 		}
 		else if (arg->type == ArgTypeVectorRegisterSeries)
 		{
 			ArgVectorRegisterSeries *vrs = dynamic_cast
 					<ArgVectorRegisterSeries *>(arg);
 			if (vrs->getHigh() != vrs->getLow() + 1)
-				fatal("register series must be v[low:low+1]");
+				misc::fatal("register series must be v[low:low+1]");
 		}
 
 		// Encode
@@ -920,7 +918,7 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 		ArgVectorRegisterSeries *vrs = dynamic_cast
 				<ArgVectorRegisterSeries *>(arg);
 		if (vrs->getHigh() != vrs->getLow() + 1)
-			fatal("register series must be v[low:low+1]");
+			misc::fatal("register series must be v[low:low+1]");
 
 		bytes.vop3a.vdst = vrs->getLow();
 		break;
@@ -942,42 +940,42 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 		// vmcnt(x)
 		if (wait_cnt->getVmcntActive())
 		{
-			if (!inRange(wait_cnt->getVmcntValue(), 0, 0xe))
-				fatal("invalid value for vmcnt");
-			bytes.sopp.simm16 = setBits32(bytes.sopp.simm16,
+			if (!misc::inRange(wait_cnt->getVmcntValue(), 0, 0xe))
+				misc::fatal("invalid value for vmcnt");
+			bytes.sopp.simm16 = misc::setBits32(bytes.sopp.simm16,
 					3, 0, wait_cnt->getVmcntValue());
 		}
 		else
 		{
-			bytes.sopp.simm16 = setBits32(bytes.sopp.simm16,
+			bytes.sopp.simm16 = misc::setBits32(bytes.sopp.simm16,
 					3, 0, 0xf);
 		}
 
 		// lgkmcnt(x)
 		if (wait_cnt->getLgkmcntActive())
 		{
-			if (!inRange(wait_cnt->getLgkmcntValue(), 0, 0x1e))
-				fatal("invalid value for lgkmcnt");
-			bytes.sopp.simm16 = setBits32(bytes.sopp.simm16,
+			if (!misc::inRange(wait_cnt->getLgkmcntValue(), 0, 0x1e))
+				misc::fatal("invalid value for lgkmcnt");
+			bytes.sopp.simm16 = misc::setBits32(bytes.sopp.simm16,
 					12, 8, wait_cnt->getLgkmcntValue());
 		}
 		else
 		{
-			bytes.sopp.simm16 = setBits32(bytes.sopp.simm16,
+			bytes.sopp.simm16 = misc::setBits32(bytes.sopp.simm16,
 					12, 8, 0x1f);
 		}
 
 		// expcnt(x)
 		if (wait_cnt->getExpcntActive())
 		{
-			if (!inRange(wait_cnt->getExpcntValue(), 0, 0x6))
-				fatal("invalid value for expcnt");
-			bytes.sopp.simm16 = setBits32(bytes.sopp.simm16,
+			if (!misc::inRange(wait_cnt->getExpcntValue(), 0, 0x6))
+				misc::fatal("invalid value for expcnt");
+			bytes.sopp.simm16 = misc::setBits32(bytes.sopp.simm16,
 					6, 4, wait_cnt->getExpcntValue());
 		}
 		else
 		{
-			bytes.sopp.simm16 = setBits32(bytes.sopp.simm16,
+			bytes.sopp.simm16 = misc::setBits32(bytes.sopp.simm16,
 					6, 4, 0x7);
 		}
 		break;
@@ -1181,7 +1179,7 @@ void Inst::Encode()
 		break;
 
 	default:
-		panic("%s: unsupported format",
+		misc::panic("%s: unsupported format",
 				__FUNCTION__);
 	}
 
