@@ -88,16 +88,6 @@ class Memory
 	void AccessAtPageBoundary(unsigned addr, unsigned size, char *buf,
 			MemoryAccess access);
 
- 	/// Access memory at any address and size, without page boundary
-	/// restrictions.
-	///
- 	/// \param addr Address
-	/// \param size Number of bytes
-	/// \param buf Buffer to read data from, or write data into.
-	/// \param access Type of access
-	void Access(unsigned addr, unsigned size, char *buf,
-			MemoryAccess access);
-
 public:
 
 	/// Constructor
@@ -108,6 +98,15 @@ public:
 
 	/// Copy constructor
 	Memory(const Memory &memory);
+
+	/// Set the safe mode. A memory in safe mode will crash with a fatal
+	/// error message when a memory address is accessed that was not
+	/// allocated before witn a call to Map(). In unsafe mode, all memory
+	/// addresses can be accessed without prior allocation.
+	void setSafe(bool safe) { this->safe = safe; }
+
+	/// Set safe mode to its original global default value
+	void setSafeDefault() { safe = safe_mode; }
 
 	/// Clear content of memory
 	void Clear();
@@ -171,6 +170,16 @@ public:
 	/// dest. All parameters must be multiple of the page size. The pages in
 	/// the source and destination interval must exist. */
 	void Copy(unsigned dest, unsigned src, unsigned size);
+
+ 	/// Access memory at any address and size, without page boundary
+	/// restrictions.
+	///
+ 	/// \param addr Address
+	/// \param size Number of bytes
+	/// \param buf Buffer to read data from, or write data into.
+	/// \param access Type of access
+	void Access(unsigned addr, unsigned size, char *buf,
+			MemoryAccess access);
 
 	/// Read from memory, with no alignment or size restrictions.
 	///

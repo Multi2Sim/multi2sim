@@ -98,6 +98,9 @@ class Context
 	// File descriptor table, private for each context.
 	FileTable file_table;
 
+	// Last emulated instruction
+	Inst inst;
+
 	// Update the context state, updating also the presence on the context
 	// in the various context lists in the emulator.
 	void UpdateState(unsigned state);
