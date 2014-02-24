@@ -145,7 +145,8 @@ struct dram_controller_t
 
 struct dram_controller_t *dram_controller_create(unsigned int dram_controller_request_queue_depth,
 							enum dram_controller_row_buffer_policy_t rb_policy,
-							enum dram_controller_scheduling_policy_t scheduling_policy);
+							enum dram_controller_scheduling_policy_t scheduling_policy,
+							char *name);
 void dram_controller_free(struct dram_controller_t *controller);
 void dram_controller_dump(struct dram_controller_t *controller, FILE *f);
 int dram_controller_add_dram(struct dram_controller_t *controller, struct dram_t *dram);

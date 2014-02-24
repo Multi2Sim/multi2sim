@@ -167,7 +167,8 @@ static unsigned int dram_timing_matrix[DRAM_TIMING_MATRIX_SIZE][DRAM_TIMING_MATR
 
 struct dram_controller_t *dram_controller_create(unsigned int dram_controller_request_queue_depth,
 							enum dram_controller_row_buffer_policy_t rb_policy,
-							enum dram_controller_scheduling_policy_t scheduling_policy)
+							enum dram_controller_scheduling_policy_t scheduling_policy,
+							char *name)
 {
 	struct dram_controller_t *controller;
 
@@ -182,6 +183,7 @@ struct dram_controller_t *dram_controller_create(unsigned int dram_controller_re
 			sizeof dram_timing_matrix);
 
 	/* Create dram list */
+	controller->name = xstrdup(name);
 	controller->dram_list = list_create();
 
 	/* Create bank info list */
@@ -217,6 +219,7 @@ void dram_controller_free(struct dram_controller_t *controller)
 	list_free(controller->dram_list);
 
 	/* Free */
+	free(controller->name);
 	free(controller);
 }
 

@@ -204,7 +204,7 @@ struct dram_system_t *dram_system_config_with_file(struct config_t *config, char
 		if (strcasecmp(section, section_str))
 			continue;
 		system->num_logical_channels = config_read_int(config, section,
-				"NumLogicalChannels", system->num_logical_channels);
+				"NumLogicalChannels", 1);
 	}
 
 
@@ -229,7 +229,7 @@ struct dram_system_t *dram_system_config_with_file(struct config_t *config, char
 		if (!token || strcasecmp(token, system_name))
 			continue;
 
-		/* Third token must be 'Node' */
+		/* Third token must be 'Controller' */
 		token = strtok(NULL, delim);
 		if (!token || strcasecmp(token, "Controller"))
 			continue;
@@ -262,8 +262,7 @@ struct dram_system_t *dram_system_config_with_file(struct config_t *config, char
 
 		/* Create controller */
 		struct dram_controller_t *controller;
-		controller = dram_controller_create(request_queue_depth, rb_policy, scheduling_policy);
-
+		controller = dram_controller_create(request_queue_depth, rb_policy, scheduling_policy, controller_name);
 		/* Assign controller parameters */
 		controller->id = controller_sections;
 		if (!controller_sections)
