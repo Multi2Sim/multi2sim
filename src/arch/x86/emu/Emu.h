@@ -97,6 +97,10 @@ class Emu : public comm::Emu
 	// to ProcessEventsSchedule().
 	void ProcessEvents();
 
+	// Process ID to be assigned next. Process IDs are assigned in
+	// increasing order, using function Emu::getPid()
+	int pid;
+
 public:
 
 	/// The x86 emulator is a singleton class. The only possible instance of
@@ -136,6 +140,10 @@ public:
 	/// anywhere in the code by directly assigning a value to 1. E.g.:
 	/// when a system call is executed to change the context's affinity.
 	void setScheduleSignal() { schedule_signal = true; }
+
+	/// Return a unique process ID. Contexts can call this function when
+	/// created to obtain their unique identifier.
+	int getPid() { return pid++; }
 
 	/// Run one iteration of the emulation loop.
 	/// \return This function \c true if the iteration had a useful

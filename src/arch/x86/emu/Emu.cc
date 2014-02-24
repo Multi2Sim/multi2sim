@@ -142,6 +142,8 @@ EmuConfig Emu::config;
 
 Emu::Emu() : comm::Emu("x86")
 {
+	// Initialize
+	pid = 100;
 }
 
 void Emu::AddContextToList(ContextListType type, Context *context)
