@@ -68,6 +68,9 @@ libemu_a_SOURCES = \
 	Signal.cc \
 	Signal.h \
 	\
+	UInst.cc \
+	UInst.h \
+	\
 	XMMValue.cc \
 	XMMValue.h
 

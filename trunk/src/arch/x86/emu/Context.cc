@@ -119,7 +119,7 @@ Context::Context()
 
 	// Initialize
 	state = 0;
-	pid = 0;  // FIXME
+	pid = emu->getPid();
 
 	// Presence in context lists
 	for (int i = 0; i < ContextListCount; i++)
@@ -179,8 +179,49 @@ void Context::loadProgram(const std::vector<std::string> &args,
 
 void Context::Execute()
 {
-	clearState(ContextRunning);
+	// Memory permissions should not be checked if the context is executing in
+	// speculative mode. This will prevent guest segmentation faults to occur.
+	bool spec_mode = getState(ContextSpecMode);
+	if (spec_mode)
+		memory->setSafe(false);
+	else
+		memory->setSafeDefault();
+
+	// Read instruction from memory. Memory should be accessed here in unsafe mode
+	// (i.e., allowing segmentation faults) if executing speculatively.
+	char buffer[20];
+	char *buffer_ptr = memory->getBuffer(regs.getEip(), 20,
+			mem::MemoryAccessExec);
+	if (!buffer_ptr)
+	{
+		// Disable safe mode. If a part of the 20 read bytes does not
+		// belong to the actual instruction, and they lie on a page with
+		// no permissions, this would generate an undesired protection
+		// fault.
+		memory->setSafe(false);
+		buffer_ptr = buffer;
+		memory->Access(regs.getEip(), 20, buffer_ptr,
+				mem::MemoryAccessExec);
+	}
+
+	// Return to default safe mode
+	memory->setSafeDefault();
+
+	// Disassemble
+	inst.Decode(buffer_ptr, regs.getEip());
+	if (inst.getOpcode() == InstOpcodeInvalid && !spec_mode)
+		misc::fatal("0x%x: not supported x86 instruction "
+				"(%02x %02x %02x %02x...)",
+				regs.getEip(), buffer_ptr[0], buffer_ptr[1],
+				buffer_ptr[2], buffer_ptr[3]);
+
+	// Execute instruction */
+	//X86ContextExecuteInst(self);
+	emu->context_debug << inst;
 	setState(ContextFinished);
+	
+	// Stats
+	emu->incInstructions();
 }
 
 
