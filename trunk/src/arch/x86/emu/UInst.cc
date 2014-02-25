@@ -190,6 +190,28 @@ UInstInfo UInst::info[UInstOpcodeCount] =
 	{ "syscall", 0 }
 };
 
+
+UInst::UInst(UInstOpcode opcode)
+{
+	// Pointers
+	idep = dep;
+	odep = dep + UInstMaxIDeps;
+
+	// Initialize
+	this->opcode = opcode;
+	size = 0;
+	address = 0;
+
+	// Input dependences
+	for (int i = 0; i < UInstMaxIDeps; i++)
+		idep[i] = UInstDepNone;
+
+	// Output dependences
+	for (int i = 0; i < UInstMaxODeps; i++)
+		odep[i] = UInstDepNone;
+}
+
+
 void UInst::Dump(std::ostream &os) const
 {
 	// Name

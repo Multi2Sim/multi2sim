@@ -68,6 +68,9 @@ public:
 
 	/// Return maximum number of instructions
 	long long getMaxInstructions() { return max_instructions; }
+
+	/// Return the type of simulation
+	comm::ArchSimKind getSimKind() { return sim_kind; }
 };
 
 

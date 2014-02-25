@@ -51,6 +51,7 @@ libemu_a_SOURCES = \
 	Context.cc \
 	ContextLoader.cc \
 	ContextSignal.cc \
+	ContextUInst.cc \
 	Context.h \
 	\
 	Emu.cc \

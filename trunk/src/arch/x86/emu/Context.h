@@ -29,12 +29,14 @@
 #include "FileTable.h"
 #include "Regs.h"
 #include "Signal.h"
+#include "UInst.h"
 
 
 namespace x86
 {
 
 class Emu;
+
 
 /// Context states
 enum ContextState
@@ -223,6 +225,92 @@ class Context
 	//    instruction next to the system call, and register 'eax' is set to
 	//    \c -EINTR.
 	void CheckSignalHandlerIntr();
+
+
+	///////////////////////////////////////////////////////////////////////
+	//
+	// Functions related with x86 micro-instructions. These functions are
+	// implemented in file ContextUInst.cc
+	//
+	///////////////////////////////////////////////////////////////////////
+
+	// True if we are in timing simulation and need to active
+	// micro-instructions.
+	bool uinst_active;
+
+	// True if the effective address computation for the current macro-
+	// instruction has already been emitted. This flag is used to avoid
+	// multiple address computations for macro-instruction that implicitly
+	// load, operate, and store.
+	bool uinst_effaddr_emitted;
+
+	// List of micro-instructions produced during the emulation of the last
+	// x86 macro-instruction.
+	std::vector<std::unique_ptr<UInst>> uinst_list;
+
+	// Clear the list of micro-instructions
+	void ClearUInstList() {
+		uinst_list.clear();
+		uinst_effaddr_emitted = false;
+	}
+
+	// Emit the effective address computation micro-instructions. Argument
+	// \a index is the dependency index, a value between 0 and
+	// UInstMaxDeps - 1
+	void EmitUInstEffectiveAddress(UInst *uinst, int index);
+
+	// Parse input dependences. Argument \a index is a value between 0 and
+	// UInstMaxIDeps - 1
+	void ParseUInstIDep(UInst *uinst, int index);
+	
+	// Parse output dependences. Argument \a index is a value between 0 and
+	// UInstMaxODeps - 1
+	void ParseUInstODep(UInst *uinst, int index);
+
+	// Process a newly created micro-instruction. The object must have been
+	// allocated with \c new. This function will insert it into \c
+	// uinst_list, and assign it to a smart pointer for automatic release.
+	void ProcessNewUInst(UInst *uinst);
+
+	// Add a new memory micro-instruction to the list only if we're running
+	// in timing simulation mode. This function can be invoked directly by
+	// the instruction emulation functions. This function is written inline
+	// to avoid passing the high number of arguments.
+	void newMemoryUInst(UInstOpcode opcode, unsigned address, int size,
+			UInstDep idep0, UInstDep idep1, UInstDep idep2,
+			UInstDep odep0, UInstDep odep1, UInstDep odep2,
+			UInstDep odep3)
+	{
+		// Discard if we're in function simulation mode
+		if (!uinst_active)
+			return;
+
+		// Create micro-instruction
+		UInst *uinst = new UInst(opcode);
+		uinst->setMemoryAccess(address, size);
+		uinst->setIDep(0, idep0);
+		uinst->setIDep(1, idep1);
+		uinst->setIDep(2, idep2);
+		uinst->setODep(0, odep0);
+		uinst->setODep(1, odep1);
+		uinst->setODep(2, odep2);
+		uinst->setODep(3, odep3);
+
+		// Process it
+		ProcessNewUInst(uinst);
+	}
+
+	// Add a new micro-instruction to the list only if we're running
+	// in timing simulation mode, omitting the \a address and \a size
+	// arguments. This function can be invoked directly by the instruction
+	// emulation functions.
+	void newUInst(UInstOpcode opcode, UInstDep idep0, UInstDep idep1,
+			UInstDep idep2, UInstDep odep0, UInstDep odep1,
+			UInstDep odep2, UInstDep odep3)
+	{
+		newMemoryUInst(opcode, 0, 0, idep0, idep1, idep2, odep0, odep1,
+				odep2, odep3);
+	}
 
 public:
 
