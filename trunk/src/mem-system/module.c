@@ -246,7 +246,8 @@ int mod_find_block(struct mod_t *mod, unsigned int addr, int *set_ptr,
 	PTR_ASSIGN(tag_ptr, tag);
 
 	/* Miss */
-	if (way == cache->assoc)
+	if (way == cache->assoc ||
+		cache->sets[set].blocks[way].state == cache_block_invalid)
 	{
 	/*
 		PTR_ASSIGN(way_ptr, 0);
@@ -549,7 +550,10 @@ struct mod_t *mod_get_low_mod(struct mod_t *mod, unsigned int addr)
 
 int mod_get_retry_latency(struct mod_t *mod)
 {
-	return random() % mod->data_latency + mod->data_latency;
+	/* To support a data latency of zero, we must ensure that at least
+	 * one of the following values is non-zero so that the modulo operation
+	 * will work.  Using two instead of one to avoid livelock situations. */
+	return random() % (mod->data_latency + 2);
 }
 
 

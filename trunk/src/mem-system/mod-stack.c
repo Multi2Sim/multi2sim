@@ -190,8 +190,15 @@ struct mod_t *mod_stack_set_peer(struct mod_t *peer, int state)
 {
 	struct mod_t *ret = NULL;
 
+	/* FIXME I'm disabling peer transfers because we now allow caches
+	 * to discard blocks without synchronizing with their lower-level
+	 * caches.  If we allowed peer transfers, a lower-level cache could
+	 * potentially ask a higher-level cache to transfer data that it
+	 * doesn't have */
+	/*
 	if (state == cache_block_owned || mem_peer_transfers)
 		ret = peer;	
+	*/
 
 	return ret;
 }

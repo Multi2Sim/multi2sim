@@ -81,6 +81,8 @@ struct mod_stack_t
 	int src_way;
 	int src_tag;
 
+	unsigned int block_not_found;
+
 	enum mod_request_dir_t request_dir;
 	enum mod_message_type_t message;
 	enum mod_reply_type_t reply;

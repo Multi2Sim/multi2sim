@@ -235,11 +235,8 @@ struct mod_t
 	long long retry_read_probes;
 	long long retry_write_probes;
 
-	/* Statistics for other coherence traffic 
-	 * (e.g. data received from a block in a higher-level cache 
-	 * getting evicted)
-	 */
-	long long other_traffic;
+	/* Statistics for other coherence traffic */
+	long long hlc_evictions;
 
 	/* FIXME Update the local memory protocol and remove these */
 	long long effective_reads;
