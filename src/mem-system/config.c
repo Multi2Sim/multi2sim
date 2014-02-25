@@ -76,8 +76,6 @@ char *mem_config_help =
 	"  PageSize = <size>  (Default = 4096)\n"
 	"      Memory page size. Virtual addresses are translated into new physical\n"
 	"      addresses in ascending order at the granularity of the page size.\n"
-	"  PeerTransfers = <bool> (Default = transfers)\n"
-	"      Whether or not transfers between peer caches are used.\n"
 	"\n"
 	"Section [Module <name>] defines a generic memory module. This section is\n"
 	"used to declare both caches and main memory modules accessible from CPU\n"
@@ -337,8 +335,12 @@ static void mem_config_read_general(struct config_t *config)
 			mem_config_file_name, mem_err_config_note);
 
 	/* Peer transfers */
+	/* FIXME Disabling this option for now.  Potentially removing it
+	 * entirely.  See description in mod-stack.c */
+	/*
 	mem_peer_transfers = config_read_bool(config, section, 
 		"PeerTransfers", 1);
+	*/
 }
 
 
@@ -606,7 +608,7 @@ static struct mod_t *mem_config_read_cache(struct config_t *config,
 		fatal("%s: cache %s: invalid value for variable "
 			"'DirectoryLatency'.\n%s", mem_config_file_name, 
 			mod_name, mem_err_config_note);
-	if (latency < 1)
+	if (latency < 0)
 		fatal("%s: cache %s: invalid value for variable 'Latency'.\n%s",
 			mem_config_file_name, mod_name, mem_err_config_note);
 	if (mshr_size < 1)
@@ -709,7 +711,7 @@ static struct mod_t *mem_config_read_main_memory(struct config_t *config,
 	if (block_size < 1 || (block_size & (block_size - 1)))
 		fatal("%s: %s: block size must be power of two.\n%s",
 			mem_config_file_name, mod_name, mem_err_config_note);
-	if (latency < 1)
+	if (latency < 0)
 		fatal("%s: %s: invalid value for variable 'Latency'.\n%s",
 			mem_config_file_name, mod_name, mem_err_config_note);
 	if (num_ports < 1)
