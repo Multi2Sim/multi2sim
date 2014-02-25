@@ -212,6 +212,41 @@ UInst::UInst(UInstOpcode opcode)
 }
 
 
+bool UInst::addIDep(UInstDep dep)
+{
+	// Find free index
+	int index;
+	for (index = 0; index < UInstMaxIDeps; index++)
+		if (!idep[index])
+			break;
+	
+	// Return false if no room for new dependency
+	if (index == UInstMaxIDeps)
+		return false;
+	
+	// Set new dependence
+	idep[index] = dep;
+	return true;
+}
+
+bool UInst::addODep(UInstDep dep)
+{
+	// Find free index
+	int index;
+	for (index = 0; index < UInstMaxODeps; index++)
+		if (!odep[index])
+			break;
+	
+	// Return false if no room for new dependency
+	if (index == UInstMaxODeps)
+		return false;
+	
+	// Set new dependence
+	odep[index] = dep;
+	return true;
+}
+
+
 void UInst::Dump(std::ostream &os) const
 {
 	// Name
