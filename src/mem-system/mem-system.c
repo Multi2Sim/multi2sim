@@ -472,7 +472,7 @@ void mem_system_dump_report(void)
 		fprintf(f, "\n");
 		fprintf(f, "ConflictInvalidations = %lld\n", 
 			mod->conflict_invalidations);
-		fprintf(f, "OtherTraffic = %lld\n", mod->other_traffic);
+		fprintf(f, "HLCEvictions = %lld\n", mod->hlc_evictions);
 		/*
 		fprintf(f, "\n");
 		fprintf(f, "DirectoryAccesses = %lld\n", mod->dir_accesses);
