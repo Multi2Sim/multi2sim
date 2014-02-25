@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <arch/common/Arch.h>
 #include <lib/cpp/Misc.h>
 
 #include "Context.h"
@@ -124,6 +125,10 @@ Context::Context()
 	// Presence in context lists
 	for (int i = 0; i < ContextListCount; i++)
 		context_list_present[i] = false;
+
+	// Micro-instructions
+	uinst_active = Emu::config.getSimKind() == comm::ArchSimDetailed;
+	uinst_effaddr_emitted = false;
 
 	// Debug
 	emu->context_debug << "Context " << pid << " created\n";
