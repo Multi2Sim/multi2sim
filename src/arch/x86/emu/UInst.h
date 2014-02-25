@@ -325,62 +325,9 @@ public:
 	static const char *getDepName(UInstDep dep) {
 			return uinst_dep_map.MapValue(dep); }
 
-	/// Create an arithmetic-logic micro-instruction. This function is
-	/// implemented inline to allow the compiler to initialize the fields in
-	/// place, instead of passing all values as function arguments.
-	UInst(UInstOpcode opcode, UInstDep idep0, UInstDep idep1,
-			UInstDep idep2, UInstDep odep0, UInstDep odep1,
-			UInstDep odep2, UInstDep odep3)
-	{
-		// Vector of inputs and outputs
-		idep = dep;
-		odep = dep + UInstMaxIDeps;
-
-		// Initialize
-		this->opcode = opcode;
-		size = 0;
-		address = 0;
-
-		// Input dependences
-		idep[0] = idep0;
-		idep[1] = idep1;
-		idep[2] = idep2;
-
-		// Output dependences
-		odep[0] = odep0;
-		odep[1] = odep1;
-		odep[2] = odep2;
-		odep[3] = odep3;
-	}
+	/// Create a micro-instruction with a given \a opcode
+	UInst(UInstOpcode opcode);
 	
-	/// Create a memory micro-instruction, passing arguments \a address
-	/// and \a size. Implemented inline for in-place initialization.
-	UInst(UInstOpcode opcode, unsigned address, int size,
-			UInstDep idep0, UInstDep idep1, UInstDep idep2,
-			UInstDep odep0, UInstDep odep1, UInstDep odep2,
-			UInstDep odep3)
-	{
-		// Vector of inputs and outputs
-		idep = dep;
-		odep = dep + UInstMaxIDeps;
-
-		// Initialize
-		this->opcode = opcode;
-		this->address = address;
-		this->size = size;
-
-		// Input dependences
-		idep[0] = idep0;
-		idep[1] = idep1;
-		idep[2] = idep2;
-
-		// Output dependences
-		odep[0] = odep0;
-		odep[1] = odep1;
-		odep[2] = odep2;
-		odep[3] = odep3;
-	}
-
 	/// Return an input dependence. Argument \a index must be a value
 	/// between 0 and UInstMaxIDeps - 1.
 	UInstDep getIDep(int index) const {
@@ -393,6 +340,33 @@ public:
 	UInstDep getODep(int index) const {
 		assert(index >= 0 && index < UInstMaxODeps);
 		return odep[index];
+	}
+
+	/// Get the address of a memory access micro-instruction
+	unsigned getAddress() const { return address; }
+
+	/// Get the size of a memory access micro-instruction
+	int getSize() const { return size; }
+
+	/// Set an input dependence. Argument \a index must be a value between
+	/// 0 and UInstMaxIDeps - 1.
+	void setIDep(int index, UInstDep dep) {
+		assert(index >= 0 && index < UInstMaxIDeps);
+		idep[index] = dep;
+	}
+
+	/// Set an output dependence. Argument \a index must be a value between
+	/// 0 and UInstMaxODeps - 1.
+	void setODep(int index, UInstDep dep) {
+		assert(index >= 0 && index < UInstMaxODeps);
+		odep[index] = dep;
+	}
+
+	/// Set the address and size of a memory access micro-instruction
+	void setMemoryAccess(unsigned address, int size) {
+		this->address = address;
+		this->size = size;
+		assert(size != 0);
 	}
 
 	/// Dump the micro-instruction into an output stream
