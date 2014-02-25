@@ -24,6 +24,7 @@
 #include <iostream>
 #include <string>
 
+#include <lib/cpp/Misc.h>
 #include <lib/cpp/String.h>
 
 
@@ -328,17 +329,30 @@ public:
 	/// Create a micro-instruction with a given \a opcode
 	UInst(UInstOpcode opcode);
 	
+	/// Return the micro-instruction opcode
+	UInstOpcode getOpcode() const { return opcode; }
+
+	/// Modify the micro-instruction opcode
+	void setOpcode(UInstOpcode opcode) { this->opcode = opcode; }
+
+	/// Return a dependence at position \a index, which must be a value
+	/// between 0 and UInstMaxDeps.
+	UInstDep getDep(int index) const {
+		assert(misc::inRange(index, 0, UInstMaxDeps - 1));
+		return dep[index];
+	}
+
 	/// Return an input dependence. Argument \a index must be a value
 	/// between 0 and UInstMaxIDeps - 1.
 	UInstDep getIDep(int index) const {
-		assert(index >= 0 && index < UInstMaxIDeps);
+		assert(misc::inRange(index, 0, UInstMaxIDeps - 1));
 		return idep[index];
 	}
 
 	/// Return an output dependence. Argument \a index must be a value
 	/// between 0 and UInstMaxODeps - 1.
 	UInstDep getODep(int index) const {
-		assert(index >= 0 && index < UInstMaxODeps);
+		assert(misc::inRange(index, 0, UInstMaxODeps - 1));
 		return odep[index];
 	}
 
@@ -351,16 +365,31 @@ public:
 	/// Set an input dependence. Argument \a index must be a value between
 	/// 0 and UInstMaxIDeps - 1.
 	void setIDep(int index, UInstDep dep) {
-		assert(index >= 0 && index < UInstMaxIDeps);
+		assert(misc::inRange(index, 0, UInstMaxIDeps - 1));
 		idep[index] = dep;
 	}
 
 	/// Set an output dependence. Argument \a index must be a value between
 	/// 0 and UInstMaxODeps - 1.
 	void setODep(int index, UInstDep dep) {
-		assert(index >= 0 && index < UInstMaxODeps);
+		assert(misc::inRange(index, 0, UInstMaxODeps - 1));
 		odep[index] = dep;
 	}
+
+	/// Set a dependence using a global index. Argument \a index must be a
+	/// value between 0 and UInstMaxDeps - 1.
+	void setDep(int index, UInstDep dep) {
+		assert(misc::inRange(index, 0, UInstMaxDeps - 1));
+		this->dep[index] = dep;
+	}
+
+	/// Add an input dependence to the instruction if there is room for it.
+	/// If all dependences are taken, return \c false.
+	bool addIDep(UInstDep dep);
+
+	/// Add an output dependence to the instruction if there is room for it.
+	/// If all dependences are taken, return \c false.
+	bool addODep(UInstDep dep);
 
 	/// Set the address and size of a memory access micro-instruction
 	void setMemoryAccess(unsigned address, int size) {

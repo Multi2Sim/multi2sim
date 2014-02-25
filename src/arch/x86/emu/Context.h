@@ -254,16 +254,26 @@ class Context
 		uinst_effaddr_emitted = false;
 	}
 
+	// If dependence at position \a index is a memory operand, return its
+	// associated standard dependence in \a std_dep and its size as the
+	// return value of the function. The function returns 0 if the
+	// dependence is not a memory dependence.
+	int getMemoryDepSize(UInst *uinst, int index, UInstDep &std_dep);
+
 	// Emit the effective address computation micro-instructions. Argument
 	// \a index is the dependency index, a value between 0 and
 	// UInstMaxDeps - 1
 	void EmitUInstEffectiveAddress(UInst *uinst, int index);
 
+	// Parse regular dependence, given as a global dependence index. The
+	// value in \a index must be between 0 and UInstMaxDeps -1
+	void ParseUInstDep(UInst *uinst, int index);
+
 	// Parse input dependences. Argument \a index is a value between 0 and
 	// UInstMaxIDeps - 1
 	void ParseUInstIDep(UInst *uinst, int index);
 	
-	// Parse output dependences. Argument \a index is a value between 0 and
+	// Parse output dependence. Argument \a index is a value between 0 and
 	// UInstMaxODeps - 1
 	void ParseUInstODep(UInst *uinst, int index);
 
@@ -311,6 +321,18 @@ class Context
 		newMemoryUInst(opcode, 0, 0, idep0, idep1, idep2, odep0, odep1,
 				odep2, odep3);
 	}
+
+
+	///////////////////////////////////////////////////////////////////////
+	//
+	// Functions and fields related with x86 instruction emulation,
+	// implemented in ContextIsaXXX.cc files
+	//
+	///////////////////////////////////////////////////////////////////////
+
+	// Virtual address of the memory access performed by the last emulated
+	// instruction.
+	unsigned effective_address;
 
 public:
 

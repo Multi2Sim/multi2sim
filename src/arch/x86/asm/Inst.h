@@ -259,6 +259,38 @@ public:
 		inst.Dump(os);
 		return os;
 	}
+
+
+	//
+	// Querying instruction fields
+	//
+
+	// Return the opcode index (value between 0 and 7)
+	int getOpIndex() const { return opindex; }
+
+	/// Return segment register
+	InstReg getSegment() const { return segment; }
+
+	/// Return the base register for the effective address computation
+	InstReg getEABase() const { return ea_base; }
+
+	/// Return the index register for the effective address computation
+	InstReg getEAIndex() const { return ea_index; }
+
+	/// Return the scale factor for the effective address computation
+	unsigned getEAScale() const { return ea_scale; }
+
+	/// Return the decoded \i ModR/M field
+	unsigned char getModRM() const { return modrm; }
+
+	/// Return field \a mod extracted from the decoded \i ModR/M field
+	unsigned char getModRMMod() const { return modrm_mod; }
+
+	/// Return field \a reg extracted from the decoded \i ModR/M field
+	unsigned char getModRMReg() const { return modrm_reg; }
+
+	/// Return field \a rm extracted from the decoded \i ModR/M field
+	unsigned char getModRMRm() const { return modrm_rm; }
 };
 
 
