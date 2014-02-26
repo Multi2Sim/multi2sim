@@ -22,12 +22,6 @@
 
 #include <string>
 
-#include <src/arch/southern-islands/emu/Emu.h>
-#include <src/arch/southern-islands/emu/NDRange.h>
-#include <src/driver/opencl/ABI.h>
-#include "Program.h"
-#include "Kernel.h"
-
 namespace SI
 {
 

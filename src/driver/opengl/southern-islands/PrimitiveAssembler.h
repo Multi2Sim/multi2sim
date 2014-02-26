@@ -1,6 +1,6 @@
 /*
  *  Multi2Sim
- *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
+ *  Copyright (C) 2013  Rafael Ubal (ubal@ece.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,16 +17,19 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "SI.h"
-#include <arch/southern-islands/emu/Emu.h>
+#ifndef DRIVER_OPENGL_SI_PRIMITIVE_ASSEMLBER_H
+#define DRIVER_OPENGL_SI_PRIMITIVE_ASSEMLBER_H
 
-namespace Driver
+namespace SI
 {
 
-SICommon::SICommon()
+class PrimitiveAssembler
 {
-	// FIXME: 
-	// si_emu = SI::Emu::getInstance();
-}
+public:
+	PrimitiveAssembler();
 
-}  // namespace Driver
+};
+
+} // namespace Driver
+
+#endif

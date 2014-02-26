@@ -18,12 +18,6 @@
  */
 
 #include <arch/x86/emu/Emu.h>
-#include <arch/southern-islands/asm/Arg.h>
-#include <arch/southern-islands/emu/Emu.h>
-#include <arch/southern-islands/emu/NDRange.h>
-#include <arch/southern-islands/emu/WorkGroup.h>
-#include <arch/southern-islands/emu/Wavefront.h>
-#include <arch/southern-islands/emu/WorkItem.h>
 #include "Driver.h"
 
 namespace Driver
@@ -31,8 +25,10 @@ namespace Driver
 
 Common::Common()
 {
+	// Get the only instance of X86 functional emulator
 	x86_emu = x86::Emu::getInstance();
 
+	// Get the only instance of X86 timing simulator
 	// x86_cpu = x86::CPU::getInstance();
 }
 

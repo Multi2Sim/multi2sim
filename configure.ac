@@ -1024,6 +1024,7 @@ AC_CONFIG_FILES([
 		src/driver/opencl-old/Makefile
 		src/driver/opencl-old/evergreen/Makefile
 		src/driver/opengl/Makefile
+		src/driver/opengl/southern-islands/Makefile
 
 		src/lib/class/Makefile
 		src/lib/cpp/Makefile

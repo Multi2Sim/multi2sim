@@ -12,8 +12,8 @@ libcommon_a_SOURCES = \
 	SI.h \
 	\
 	SI-ABI.cc \
-	SI-ABI.h \
-	SI-ABI.dat
-	
+	SI-ABI.dat \
+	SI-ABI.h
+
 INCLUDES = @M2S_INCLUDES@
 
