@@ -55,6 +55,9 @@ class EmuConfig : public misc::CommandLineConfig
 	// Simulation kind
 	comm::ArchSimKind sim_kind;
 
+	// Process prefetch instructions
+	bool process_prefetch_hints;
+
 public:
 
 	/// Initialization of default command-line options
@@ -71,6 +74,9 @@ public:
 
 	/// Return the type of simulation
 	comm::ArchSimKind getSimKind() { return sim_kind; }
+
+	/// Return whether to process prefetch hints
+	bool getProcessPrefetchHints() { return process_prefetch_hints; }
 };
 
 

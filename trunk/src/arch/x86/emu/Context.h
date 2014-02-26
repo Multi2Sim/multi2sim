@@ -496,6 +496,20 @@ class Context
 	// fields, and store it in 'effective_address' field for the future
 	unsigned getEffectiveAddress();
 
+	// Return a memory address contained in the immediate value
+	unsigned getMoffsAddress();
+
+	
+	///////////////////////////////////////////////////////////////////////
+	//
+	// Functions and fields related with the emulation of system calls,
+	// implemented in ContextSyscall.cc.
+	//
+	///////////////////////////////////////////////////////////////////////
+
+	// Emulate a system call
+	void Syscall();
+
 public:
 	
 	/// Position of the context in the main context list. This field is
