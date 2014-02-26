@@ -93,13 +93,13 @@ void Context::EmitUInstEffectiveAddress(UInst *uinst, int index)
 	// Emit micro-instruction
 	UInst *new_uinst = new UInst(UInstEffaddr);
 	new_uinst->setIDep(0, inst.getSegment() ?
-			(UInstDep) (inst.getSegment() - InstRegEs + UInstDepEs)
+			inst.getSegment() - InstRegEs + UInstDepEs
 			: UInstDepNone);
 	new_uinst->setIDep(1, inst.getEaBase() ?
-			(UInstDep) (inst.getEaBase() - InstRegEax + UInstDepEax)
+			inst.getEaBase() - InstRegEax + UInstDepEax
 			: UInstDepNone);
 	new_uinst->setIDep(2, inst.getEaIndex() ?
-			(UInstDep) (inst.getEaIndex() - InstRegEax + UInstDepEax)
+			inst.getEaIndex() - InstRegEax + UInstDepEax
 			: UInstDepNone);
 	new_uinst->setODep(0, UInstDepEa);
 	uinst_list.emplace_back(new_uinst);
@@ -124,21 +124,21 @@ void Context::ParseUInstDep(UInst *uinst, int index)
 	case UInstDepEaseg:
 
 		uinst->setDep(index, inst.getSegment() ?
-				(UInstDep) (inst.getSegment() - InstRegEs + UInstDepEs)
+				inst.getSegment() - InstRegEs + UInstDepEs
 				: UInstDepNone);
 		break;
 
 	case UInstDepEabas:
 
 		uinst->setDep(index, inst.getEaBase() ?
-				(UInstDep) (inst.getEaBase() - InstRegEax + UInstDepEax)
+				inst.getEaBase() - InstRegEax + UInstDepEax
 				: UInstDepNone);
 		break;
 
 	case UInstDepEaidx:
 
 		uinst->setDep(index, inst.getEaIndex() ?
-				(UInstDep) (inst.getEaIndex() - InstRegEax + UInstDepEax)
+				inst.getEaIndex() - InstRegEax + UInstDepEax
 				: UInstDepNone);
 		break;
 
@@ -149,51 +149,51 @@ void Context::ParseUInstDep(UInst *uinst, int index)
 
 		assert(inst.getModRmMod() == 3);
 		uinst->setDep(index, inst.getModRmRm() < 4 ?
-				(UInstDep) (UInstDepEax + inst.getModRmRm())
-				: (UInstDep) (UInstDepEax + inst.getModRmRm() - 4));
+				UInstDepEax + inst.getModRmRm()
+				: UInstDepEax + inst.getModRmRm() - 4);
 		break;
 
 	case UInstDepRm16:
 	case UInstDepRm32:
 
 		assert(inst.getModRmMod() == 3);
-		uinst->setDep(index, (UInstDep) (UInstDepEax + inst.getModRmRm()));
+		uinst->setDep(index, UInstDepEax + inst.getModRmRm());
 		break;
 
 	case UInstDepR8:
 
 		uinst->setDep(index, inst.getModRmReg() < 4 ?
-				(UInstDep) (UInstDepEax + inst.getModRmReg())
-				: (UInstDep) (UInstDepEax + inst.getModRmReg() - 4));
+				UInstDepEax + inst.getModRmReg()
+				: UInstDepEax + inst.getModRmReg() - 4);
 		break;
 
 	case UInstDepR16:
 	case UInstDepR32:
 
-		uinst->setDep(index, (UInstDep) (UInstDepEax + inst.getModRmReg()));
+		uinst->setDep(index, UInstDepEax + inst.getModRmReg());
 		break;
 
 	case UInstDepIr8:
 
 		uinst->setDep(index, inst.getOpIndex() < 4 ?
-				(UInstDep) (UInstDepEax + inst.getOpIndex())
-				: (UInstDep) (UInstDepEax + inst.getOpIndex() - 4));
+				UInstDepEax + inst.getOpIndex()
+				: UInstDepEax + inst.getOpIndex() - 4);
 		break;
 
 	case UInstDepIr16:
 	case UInstDepIr32:
 
-		uinst->setDep(index, (UInstDep) (UInstDepEax + inst.getOpIndex()));
+		uinst->setDep(index, UInstDepEax + inst.getOpIndex());
 		break;
 
 	case UInstDepSreg:
 
-		uinst->setDep(index, (UInstDep) (UInstDepEs + inst.getModRmReg()));
+		uinst->setDep(index, UInstDepEs + inst.getModRmReg());
 		break;
 
 	case UInstDepSti:
 
-		uinst->setDep(index, (UInstDep) (UInstDepSt0 + inst.getOpIndex()));
+		uinst->setDep(index, UInstDepSt0 + inst.getOpIndex());
 		break;
 
 	case UInstDepXmmm32:
@@ -201,12 +201,12 @@ void Context::ParseUInstDep(UInst *uinst, int index)
 	case UInstDepXmmm128:
 
 		assert(inst.getModRmMod() == 3);
-		uinst->setDep(index, (UInstDep) (UInstDepXmm0 + inst.getModRmRm()));
+		uinst->setDep(index, UInstDepXmm0 + inst.getModRmRm());
 		break;
 
 	case UInstDepXmm:
 
-		uinst->setDep(index, (UInstDep) (UInstDepXmm0 + inst.getModRmReg()));
+		uinst->setDep(index, UInstDepXmm0 + inst.getModRmReg());
 		break;
 
 	default:

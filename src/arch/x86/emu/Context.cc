@@ -136,6 +136,12 @@ Context::Context()
 	glibc_segment_base = 0;
 	glibc_segment_limit = 0;
 	pid = emu->getPid();
+	
+	// String operations
+	str_op_esi = 0;
+	str_op_edi = 0;
+	str_op_dir = 0;
+	str_op_count = 0;
 
 	// Presence in context lists
 	for (int i = 0; i < ContextListCount; i++)

@@ -202,13 +202,9 @@ UInst::UInst(UInstOpcode opcode)
 	size = 0;
 	address = 0;
 
-	// Input dependences
-	for (int i = 0; i < UInstMaxIDeps; i++)
-		idep[i] = UInstDepNone;
-
-	// Output dependences
-	for (int i = 0; i < UInstMaxODeps; i++)
-		odep[i] = UInstDepNone;
+	// Dependences
+	for (int i = 0; i < UInstMaxDeps; i++)
+		dep[i] = UInstDepNone;
 }
 
 

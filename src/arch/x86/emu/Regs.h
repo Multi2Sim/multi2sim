@@ -112,12 +112,16 @@ public:
 
 	/// Read one of the main x86 registers (registers \a eax through \a gs),
 	/// identified with an \c InstRegXXX constant. If the requested register
-	/// is less than 32-bit wide, the read value is zero-extended.
-	unsigned Read(InstReg reg) const;
+	/// is less than 32-bit wide, the read value is zero-extended. The type
+	/// of argument \a reg is \c int in order to avoid conversion warnings
+	/// when using arithmetic to compute it.
+	unsigned Read(int reg) const;
 
 	/// Write one of the main x86 registers (register \a eax through \a gs),
-	/// identified with an \c InstRegXXX constant.
-	void Write(InstReg reg, unsigned value);
+	/// identified with an \c InstRegXXX constant. Argument \a reg has type
+	/// \a int to avoid cast warnings when using integer arithmetic to
+	/// compute it.
+	void Write(int reg, unsigned value);
 
 	/// Set the value of a flag, given as an \c InstFlagXXX identifier.
 	void setFlag(InstFlag flag) {
@@ -283,6 +287,14 @@ public:
 	/// Set value of register \c ecx
 	void setEcx(unsigned value) { ecx = value; }
 
+	/// Increment value of register \c ecs by \a value, or by 1 if no value
+	/// is specified. Used by string operations.
+	void incEcx(int value = 1) { ecx += value; }
+
+	/// Increment value of register \c ecs by \a value, or by 1 if no value
+	/// is specified. Used by string operations.
+	void decEcx(int value = 1) { ecx -= value; }
+
 	/// Set value of register \c cx
 	void setCx(unsigned short value) { Write(InstRegCx, value); }
 
@@ -327,11 +339,19 @@ public:
 	/// Set value of register \c esi
 	void setEsi(unsigned value) { esi = value; }
 
+	/// Increment value of register \a esi by \a value bytes, or by 1 if
+	/// no value is specified. Used in string operations.
+	void incEsi(int value = 1) { esi += value; }
+
 	/// Set value of register \c si
 	void setSi(unsigned value) { Write(InstRegSi, value); }
 
 	/// Set value of register \c edi
 	void setEdi(unsigned value) { edi = value; }
+
+	/// Increment value of register \a edi by \a value bytes, or by 1 if
+	/// no value is specified. Used in string operations.
+	void incEdi(int value = 1) { edi += value; }
 
 	/// Set value of register \c di
 	void setDi(unsigned value) { Write(InstRegDi, value); }

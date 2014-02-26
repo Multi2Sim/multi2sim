@@ -22,6 +22,16 @@
 namespace x86
 {
 
+// Macros defined to prevent accidental use of functions that cause unsafe
+// execution in speculative mode.
+#undef assert
+#define memory __COMPILATION_ERROR__
+#define fatal __COMPILATION_ERROR__
+#define panic __COMPILATION_ERROR__
+#define warning __COMPILATION_ERROR__
+#define assert __COMPILATION_ERROR__
+
+
 #define op_stdop_al_imm8(stdop, wb, cin, uinst) \
 void Context::ExecuteInst_##stdop##_al_imm8() \
 { \
@@ -45,11 +55,11 @@ void Context::ExecuteInst_##stdop##_al_imm8() \
 	__X86_CONTEXT_RESTORE_FLAGS__ \
 	if (wb) { \
 		regs.Write(InstRegAl, al); \
-		newUInst(uinst, UInstDepEax, cin_dep, UInstDepNone, UInstDepEax, \
+		newUInst(uinst, UInstDepEax, cin_dep, 0, UInstDepEax, \
 				UInstDepZps, UInstDepCf, UInstDepOf); \
 	} else { \
-		newUInst(uinst, UInstDepEax, cin_dep, UInstDepNone, UInstDepZps, \
-				UInstDepCf, UInstDepOf, UInstDepNone); \
+		newUInst(uinst, UInstDepEax, cin_dep, 0, UInstDepZps, \
+				UInstDepCf, UInstDepOf, 0); \
 	} \
 	regs.setEflags(flags); \
 }
@@ -78,11 +88,11 @@ void Context::ExecuteInst_##stdop##_ax_imm16() \
 	__X86_CONTEXT_RESTORE_FLAGS__ \
 	if (wb) { \
 		regs.Write(InstRegAx, ax); \
-		newUInst(uinst, UInstDepEax, cin_dep, UInstDepNone, UInstDepEax, \
+		newUInst(uinst, UInstDepEax, cin_dep, 0, UInstDepEax, \
 				UInstDepZps, UInstDepCf, UInstDepOf); \
 	} else { \
-		newUInst(uinst, UInstDepEax, cin_dep, UInstDepNone, UInstDepZps, \
-				UInstDepCf, UInstDepOf, UInstDepNone); \
+		newUInst(uinst, UInstDepEax, cin_dep, 0, UInstDepZps, \
+				UInstDepCf, UInstDepOf, 0); \
 	} \
 	regs.setEflags(flags); \
 }
@@ -111,11 +121,11 @@ void Context::ExecuteInst_##stdop##_eax_imm32() \
 	__X86_CONTEXT_RESTORE_FLAGS__ \
 	if (wb) { \
 		regs.Write(InstRegEax, eax); \
-		newUInst(uinst, UInstDepEax, cin_dep, UInstDepNone, UInstDepEax, \
+		newUInst(uinst, UInstDepEax, cin_dep, 0, UInstDepEax, \
 				UInstDepZps, UInstDepCf, UInstDepOf); \
 	} else { \
-		newUInst(uinst, UInstDepEax, cin_dep, UInstDepNone, UInstDepZps, \
-				UInstDepCf, UInstDepOf, UInstDepNone); \
+		newUInst(uinst, UInstDepEax, cin_dep, 0, UInstDepZps, \
+				UInstDepCf, UInstDepOf, 0); \
 	} \
 	regs.setEflags(flags); \
 }
@@ -144,11 +154,11 @@ void Context::ExecuteInst_##stdop##_rm8_imm8() \
 	__X86_CONTEXT_RESTORE_FLAGS__ \
 	if (wb) { \
 		StoreRm8(rm8); \
-		newUInst(uinst, UInstDepRm8, cin_dep, UInstDepNone, UInstDepRm8, \
+		newUInst(uinst, UInstDepRm8, cin_dep, 0, UInstDepRm8, \
 				UInstDepZps, UInstDepCf, UInstDepOf); \
 	} else { \
-		newUInst(uinst, UInstDepRm8, cin_dep, UInstDepNone, UInstDepZps, \
-				UInstDepCf, UInstDepOf, UInstDepNone); \
+		newUInst(uinst, UInstDepRm8, cin_dep, 0, UInstDepZps, \
+				UInstDepCf, UInstDepOf, 0); \
 	} \
 	regs.setEflags(flags); \
 }
@@ -177,11 +187,11 @@ void Context::ExecuteInst_##stdop##_rm16_imm16() \
 	__X86_CONTEXT_RESTORE_FLAGS__ \
 	if (wb) { \
 		StoreRm16(rm16); \
-		newUInst(uinst, UInstDepRm16, cin_dep, UInstDepNone, UInstDepRm16, \
+		newUInst(uinst, UInstDepRm16, cin_dep, 0, UInstDepRm16, \
 				UInstDepZps, UInstDepCf, UInstDepOf); \
 	} else { \
-		newUInst(uinst, UInstDepRm16, cin_dep, UInstDepNone, UInstDepZps, \
-				UInstDepCf, UInstDepOf, UInstDepNone); \
+		newUInst(uinst, UInstDepRm16, cin_dep, 0, UInstDepZps, \
+				UInstDepCf, UInstDepOf, 0); \
 	} \
 	regs.setEflags(flags); \
 }
@@ -210,11 +220,11 @@ void Context::ExecuteInst_##stdop##_rm32_imm32() \
 	__X86_CONTEXT_RESTORE_FLAGS__ \
 	if (wb) { \
 		StoreRm32(rm32); \
-		newUInst(uinst, UInstDepRm32, cin_dep, UInstDepNone, UInstDepRm32, \
+		newUInst(uinst, UInstDepRm32, cin_dep, 0, UInstDepRm32, \
 				UInstDepZps, UInstDepCf, UInstDepOf); \
 	} else { \
-		newUInst(uinst, UInstDepRm32, cin_dep, UInstDepNone, UInstDepZps, \
-				UInstDepCf, UInstDepOf, UInstDepNone); \
+		newUInst(uinst, UInstDepRm32, cin_dep, 0, UInstDepZps, \
+				UInstDepCf, UInstDepOf, 0); \
 	} \
 	regs.setEflags(flags); \
 }
@@ -243,11 +253,11 @@ void Context::ExecuteInst_##stdop##_rm16_imm8() \
 	__X86_CONTEXT_RESTORE_FLAGS__ \
 	if (wb) { \
 		StoreRm16(rm16); \
-		newUInst(uinst, UInstDepRm16, cin_dep, UInstDepNone, UInstDepRm16, \
+		newUInst(uinst, UInstDepRm16, cin_dep, 0, UInstDepRm16, \
 				UInstDepZps, UInstDepCf, UInstDepOf); \
 	} else { \
-		newUInst(uinst, UInstDepRm16, cin_dep, UInstDepNone, UInstDepZps, \
-				UInstDepCf, UInstDepOf, UInstDepNone); \
+		newUInst(uinst, UInstDepRm16, cin_dep, 0, UInstDepZps, \
+				UInstDepCf, UInstDepOf, 0); \
 	} \
 	regs.setEflags(flags); \
 }
@@ -276,11 +286,11 @@ void Context::ExecuteInst_##stdop##_rm32_imm8() \
 	__X86_CONTEXT_RESTORE_FLAGS__ \
 	if (wb) { \
 		StoreRm32(rm32); \
-		newUInst(uinst, UInstDepRm32, cin_dep, UInstDepNone, UInstDepRm32, \
+		newUInst(uinst, UInstDepRm32, cin_dep, 0, UInstDepRm32, \
 				UInstDepZps, UInstDepCf, UInstDepOf); \
 	} else { \
-		newUInst(uinst, UInstDepRm32, cin_dep, UInstDepNone, UInstDepZps, \
-				UInstDepCf, UInstDepOf, UInstDepNone); \
+		newUInst(uinst, UInstDepRm32, cin_dep, 0, UInstDepZps, \
+				UInstDepCf, UInstDepOf, 0); \
 	} \
 	regs.setEflags(flags); \
 }
@@ -313,7 +323,7 @@ void Context::ExecuteInst_##stdop##_rm8_r8() \
 				UInstDepZps, UInstDepCf, UInstDepOf); \
 	} else { \
 		newUInst(uinst, UInstDepRm8, UInstDepR8, cin_dep, UInstDepZps, \
-				UInstDepCf, UInstDepOf, UInstDepNone); \
+				UInstDepCf, UInstDepOf, 0); \
 	} \
 	regs.setEflags(flags); \
 }
@@ -346,7 +356,7 @@ void Context::ExecuteInst_##stdop##_rm16_r16() \
 				UInstDepZps, UInstDepCf, UInstDepOf); \
 	} else { \
 		newUInst(uinst, UInstDepRm16, UInstDepR16, cin_dep, UInstDepZps, \
-				UInstDepCf, UInstDepOf, UInstDepNone); \
+				UInstDepCf, UInstDepOf, 0); \
 	} \
 	regs.setEflags(flags); \
 }
@@ -379,7 +389,7 @@ void Context::ExecuteInst_##stdop##_rm32_r32() \
 				UInstDepZps, UInstDepCf, UInstDepOf); \
 	} else  { \
 		newUInst(uinst, UInstDepRm32, UInstDepR32, cin_dep, UInstDepZps, \
-				UInstDepCf, UInstDepOf, UInstDepNone); \
+				UInstDepCf, UInstDepOf, 0); \
 	} \
 	regs.setEflags(flags); \
 }
@@ -412,7 +422,7 @@ void Context::ExecuteInst_##stdop##_r8_rm8() \
 				UInstDepZps, UInstDepCf, UInstDepOf); \
 	} else { \
 		newUInst(uinst, UInstDepR8, UInstDepRm8, cin_dep, UInstDepZps, \
-				UInstDepCf, UInstDepOf, UInstDepNone); \
+				UInstDepCf, UInstDepOf, 0); \
 	} \
 	regs.setEflags(flags); \
 }
@@ -445,7 +455,7 @@ void Context::ExecuteInst_##stdop##_r16_rm16() \
 				UInstDepZps, UInstDepCf, UInstDepOf); \
 	} else { \
 		newUInst(uinst, UInstDepR16, UInstDepRm16, cin_dep, UInstDepZps, \
-				UInstDepCf, UInstDepOf, UInstDepNone); \
+				UInstDepCf, UInstDepOf, 0); \
 	} \
 	regs.setEflags(flags); \
 }
@@ -478,7 +488,7 @@ void Context::ExecuteInst_##stdop##_r32_rm32() \
 				UInstDepZps, UInstDepCf, UInstDepOf); \
 	} else { \
 		newUInst(uinst, UInstDepR32, UInstDepRm32, cin_dep, UInstDepZps, \
-				UInstDepCf, UInstDepOf, UInstDepNone); \
+				UInstDepCf, UInstDepOf, 0); \
 	} \
 	regs.setEflags(flags); \
 }
@@ -519,6 +529,7 @@ op_stdop_all(sbb, 1, 1, UInstSub)
 op_stdop_all(sub, 1, 0, UInstSub)
 op_stdop_all(test, 0, 0, UInstAnd)
 op_stdop_all(xor, 1, 0, UInstXor)
+
 
 }  // namespace x86
 

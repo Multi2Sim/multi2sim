@@ -38,21 +38,61 @@ void Context::IsaError(const char *fmt, ...)
 		return;
 
 	// Error
-	fprintf(stderr, "fatal: x86 context %d at 0x%08x inst %lld: ",
+	fflush(NULL);
+	fprintf(stderr, "\n\nfatal: x86 context %d at 0x%08x inst %lld: ",
 			pid, current_eip, emu->getInstructions());
 	vfprintf(stderr, fmt, va);
 	fprintf(stderr, "\n");
 	exit(1);
 }
 
+void Context::MemoryRead(unsigned int address, int size, void *buffer)
+{
+	// Speculative mode read
+	/*if (self->state & X86ContextSpecMode)
+	{
+		spec_mem_read(self->spec_mem, addr, size, buf);
+		return;
+	}*/
+
+	// Read in regular mode
+	memory->Read(address, size, (char *) buffer);
+}
+
+
+void Context::MemoryWrite(unsigned int address, int size, void *buffer)
+{
+	// Speculative mode write
+	/*if (self->state & X86ContextSpecMode)
+	{
+		spec_mem_write(self->spec_mem, addr, size, buf);
+		return;
+	}*/
+
+	// Write in regular mode
+	memory->Write(address, size, (char *) buffer);
+}
+
+
+
+// Macros defined to prevent accidental use of functions that cause unsafe
+// execution in speculative mode.
+#undef assert
+#define memory __COMPILATION_ERROR__
+#define fatal __COMPILATION_ERROR__
+#define panic __COMPILATION_ERROR__
+#define warning __COMPILATION_ERROR__
+#define assert __COMPILATION_ERROR__
+
+
 unsigned char Context::LoadRm8()
 {
 	unsigned char value;
 
 	if (inst.getModRmMod() == 0x03)
-		return regs.Read((InstReg) (inst.getModRmRm() + InstRegAl));
+		return regs.Read(inst.getModRmRm() + InstRegAl);
 
-	memory->Read(getEffectiveAddress(), 1, (char *) &value);
+	MemoryRead(getEffectiveAddress(), 1, &value);
 	emu->isa_debug << misc::fmt("  [0x%x]=0x%x", effective_address, value);
 	return value;
 }
@@ -62,9 +102,9 @@ unsigned short Context::LoadRm16()
 	unsigned short value;
 
 	if (inst.getModRmMod() == 0x03)
-		return regs.Read((InstReg) (inst.getModRmRm() + InstRegAx));
+		return regs.Read(inst.getModRmRm() + InstRegAx);
 
-	memory->Read(getEffectiveAddress(), 2, (char *) &value);
+	MemoryRead(getEffectiveAddress(), 2, &value);
 	emu->isa_debug << misc::fmt("  [0x%x]=0x%x", effective_address, value);
 	return value;
 }
@@ -74,9 +114,9 @@ unsigned int Context::LoadRm32()
 	unsigned int value;
 
 	if (inst.getModRmMod() == 0x03)
-		return regs.Read((InstReg) (inst.getModRmRm() + InstRegEax));
+		return regs.Read(inst.getModRmRm() + InstRegEax);
 
-	memory->Read(getEffectiveAddress(), 4, (char *) &value);
+	MemoryRead(getEffectiveAddress(), 4, &value);
 	emu->isa_debug << misc::fmt("  [0x%x]=0x%x", effective_address, value);
 	return value;
 }
@@ -86,9 +126,9 @@ unsigned short Context::LoadR32M16()
 	unsigned short value;
 
 	if (inst.getModRmMod() == 0x03)
-		return regs.Read((InstReg) (inst.getModRmRm() + InstRegEax));
+		return regs.Read(inst.getModRmRm() + InstRegEax);
 
-	memory->Read(getEffectiveAddress(), 2, (char *) &value);
+	MemoryRead(getEffectiveAddress(), 2, &value);
 	emu->isa_debug << misc::fmt("  [0x%x]=0x%x", effective_address, value);
 	return value;
 }
@@ -97,7 +137,7 @@ unsigned long long Context::LoadM64()
 {
 	unsigned long long value;
 
-	memory->Read(getEffectiveAddress(), 8, (char *) &value);
+	MemoryRead(getEffectiveAddress(), 8, &value);
 	emu->isa_debug << misc::fmt("  [0x%x]=0x%llx", effective_address, value);
 	return value;
 }
@@ -106,10 +146,10 @@ void Context::StoreRm8(unsigned char value)
 {
 	if (inst.getModRmMod() == 0x03)
 	{
-		regs.Write((InstReg) (inst.getModRmRm() + InstRegAl), value);
+		regs.Write(inst.getModRmRm() + InstRegAl, value);
 		return;
 	}
-	memory->Write(getEffectiveAddress(), 1, (char *) &value);
+	MemoryWrite(getEffectiveAddress(), 1, &value);
 	emu->isa_debug << misc::fmt("  [0x%x] <- 0x%x", effective_address, value);
 }
 
@@ -117,10 +157,10 @@ void Context::StoreRm16(unsigned short value)
 {
 	if (inst.getModRmMod() == 0x03)
 	{
-		regs.Write((InstReg) (inst.getModRmRm() + InstRegAx), value);
+		regs.Write(inst.getModRmRm() + InstRegAx, value);
 		return;
 	}
-	memory->Write(getEffectiveAddress(), 2, (char *) &value);
+	MemoryWrite(getEffectiveAddress(), 2, &value);
 	emu->isa_debug << misc::fmt("  [0x%x] <- 0x%x", effective_address, value);
 }
 
@@ -128,16 +168,16 @@ void Context::StoreRm32(unsigned int value)
 {
 	if (inst.getModRmMod() == 0x03)
 	{
-		regs.Write((InstReg) (inst.getModRmRm() + InstRegEax), value);
+		regs.Write(inst.getModRmRm() + InstRegEax, value);
 		return;
 	}
-	memory->Write(getEffectiveAddress(), 4, (char *) &value);
+	MemoryWrite(getEffectiveAddress(), 4, &value);
 	emu->isa_debug << misc::fmt("  [0x%x] <- 0x%x", effective_address, value);
 }
 
 void Context::StoreM64(unsigned long long value)
 {
-	memory->Write(getEffectiveAddress(), 8, (char *) &value);
+	MemoryWrite(getEffectiveAddress(), 8, &value);
 	emu->isa_debug << misc::fmt("  [0x%x] <- 0x%llx", effective_address, value);
 }
 
