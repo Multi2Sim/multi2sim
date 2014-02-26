@@ -50,8 +50,16 @@ libemu_a_SOURCES = \
 	\
 	Context.cc \
 	ContextIsa.cc \
+	ContextIsaCtrl.cc \
+	ContextIsaFp.cc \
 	ContextIsaMisc.cc \
+	ContextIsaRot.cc \
+	ContextIsaSSE2.cc \
+	ContextIsaSSE3.cc \
+	ContextIsaSSE4.cc \
+	ContextIsaSSE.cc \
 	ContextIsaStd.cc \
+	ContextIsaStr.cc \
 	ContextLoader.cc \
 	ContextSignal.cc \
 	ContextUInst.cc \
@@ -77,6 +85,7 @@ libemu_a_SOURCES = \
 	\
 	XMMValue.cc \
 	XMMValue.h
+
 
 INCLUDES = @M2S_INCLUDES@
 

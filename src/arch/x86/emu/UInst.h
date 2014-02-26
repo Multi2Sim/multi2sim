@@ -363,24 +363,26 @@ public:
 	int getSize() const { return size; }
 
 	/// Set an input dependence. Argument \a index must be a value between
-	/// 0 and UInstMaxIDeps - 1.
-	void setIDep(int index, UInstDep dep) {
+	/// 0 and UInstMaxIDeps - 1. Argument \a dep should be an \c UInstDepXXX
+	/// constant.
+	void setIDep(int index, int dep) {
 		assert(misc::inRange(index, 0, UInstMaxIDeps - 1));
-		idep[index] = dep;
+		idep[index] = (UInstDep) dep;
 	}
 
 	/// Set an output dependence. Argument \a index must be a value between
 	/// 0 and UInstMaxODeps - 1.
-	void setODep(int index, UInstDep dep) {
+	void setODep(int index, int dep) {
 		assert(misc::inRange(index, 0, UInstMaxODeps - 1));
-		odep[index] = dep;
+		odep[index] = (UInstDep) dep;
 	}
 
 	/// Set a dependence using a global index. Argument \a index must be a
-	/// value between 0 and UInstMaxDeps - 1.
-	void setDep(int index, UInstDep dep) {
+	/// value between 0 and UInstMaxDeps - 1. Argument \a dep should be an
+	/// \c UInstDepXXX constant.
+	void setDep(int index, int dep) {
 		assert(misc::inRange(index, 0, UInstMaxDeps - 1));
-		this->dep[index] = dep;
+		this->dep[index] = (UInstDep) dep;
 	}
 
 	/// Add an input dependence to the instruction if there is room for it.

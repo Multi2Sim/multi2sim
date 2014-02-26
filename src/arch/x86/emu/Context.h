@@ -125,6 +125,12 @@ class Context
 	// Virtual address of the memory access performed by the last emulated
 	// instruction.
 	unsigned effective_address;
+	
+	// For emulation of string operations
+	unsigned int str_op_esi;  // Initial value for register 'esi'
+	unsigned int str_op_edi;  // Initial value for register 'edi'
+	int str_op_dir;  // Direction: 1 = forward, -1 = backward
+	int str_op_count;  // Number of iterations in string operation //
 
 	// Last emulated instruction
 	Inst inst;
@@ -327,9 +333,8 @@ class Context
 	// the instruction emulation functions. This function is written inline
 	// to avoid passing the high number of arguments.
 	void newMemoryUInst(UInstOpcode opcode, unsigned address, int size,
-			UInstDep idep0, UInstDep idep1, UInstDep idep2,
-			UInstDep odep0, UInstDep odep1, UInstDep odep2,
-			UInstDep odep3)
+			int idep0, int idep1, int idep2,
+			int odep0, int odep1, int odep2, int odep3)
 	{
 		// Discard if we're in function simulation mode
 		if (!uinst_active)
@@ -354,9 +359,8 @@ class Context
 	// in timing simulation mode, omitting the \a address and \a size
 	// arguments. This function can be invoked directly by the instruction
 	// emulation functions.
-	void newUInst(UInstOpcode opcode, UInstDep idep0, UInstDep idep1,
-			UInstDep idep2, UInstDep odep0, UInstDep odep1,
-			UInstDep odep2, UInstDep odep3)
+	void newUInst(UInstOpcode opcode, int idep0, int idep1, int idep2,
+			int odep0, int odep1, int odep2, int odep3)
 	{
 		newMemoryUInst(opcode, 0, 0, idep0, idep1, idep2, odep0, odep1,
 				odep2, odep3);
@@ -394,6 +398,10 @@ class Context
 	// Fatal error message during instruction emulation, shown only while
 	// in non-speculative mode.
 	void IsaError(const char *fmt, ...);
+
+	// Safe memory accesses, based on the current speculative mode
+	void MemoryRead(unsigned int address, int size, void *buffer);
+	void MemoryWrite(unsigned int address, int size, void *buffer);
 	
 	// These are some functions created automatically by the macros in
 	// ContextIsaStd.cc, but corresponding to non-existing instructions.
@@ -404,6 +412,46 @@ class Context
 	void ExecuteInst_test_r8_rm8();
 	void ExecuteInst_test_r16_rm16();
 	void ExecuteInst_test_r32_rm32();
+
+	// Functions used in ContextIsaStr.cc to generate micro-instructions
+	// for string operations
+	void newUInst_cmpsb(unsigned int esi, unsigned int edi);
+	void newUInst_cmpsd(unsigned int esi, unsigned int edi);
+	void newUInst_insb(unsigned int esi, unsigned int edi);
+	void newUInst_insd(unsigned int esi, unsigned int edi);
+	void newUInst_lodsb(unsigned int esi, unsigned int edi);
+	void newUInst_lodsd(unsigned int esi, unsigned int edi);
+	void newUInst_movsb(unsigned int esi, unsigned int edi);
+	void newUInst_movsw(unsigned int esi, unsigned int edi);
+	void newUInst_movsd(unsigned int esi, unsigned int edi);
+	void newUInst_outsb(unsigned int esi, unsigned int edi);
+	void newUInst_outsd(unsigned int esi, unsigned int edi);
+	void newUInst_scasb(unsigned int esi, unsigned int edi);
+	void newUInst_scasd(unsigned int esi, unsigned int edi);
+	void newUInst_stosb(unsigned int esi, unsigned int edi);
+	void newUInst_stosd(unsigned int esi, unsigned int edi);
+
+	// Functions used in ContextIsaStr.cc for execution of string
+	// instructions
+	void ExecuteStringInst_cmpsb();
+	void ExecuteStringInst_cmpsd();
+	void ExecuteStringInst_insb();
+	void ExecuteStringInst_insd();
+	void ExecuteStringInst_lodsb();
+	void ExecuteStringInst_lodsd();
+	void ExecuteStringInst_movsb();
+	void ExecuteStringInst_movsw();
+	void ExecuteStringInst_movsd();
+	void ExecuteStringInst_outsb();
+	void ExecuteStringInst_outsd();
+	void ExecuteStringInst_scasb();
+	void ExecuteStringInst_scasd();
+	void ExecuteStringInst_stosb();
+	void ExecuteStringInst_stosd();
+
+	// Reset or update iteration counters for string instructions with
+	// 'repXXX' prefixes.
+	void StartRepInst();
 
 	// Load from register/memory
 	unsigned char LoadRm8();
@@ -419,26 +467,26 @@ class Context
 	void StoreM64(unsigned long long value);
 
 	// Load value from register
-	unsigned char LoadR8() { return regs.Read((InstReg) (inst.getModRmReg() + InstRegAl)); }
-	unsigned short LoadR16() { return regs.Read((InstReg) (inst.getModRmReg() + InstRegAx)); }
-	unsigned int LoadR32() { return regs.Read((InstReg) (inst.getModRmReg() + InstRegEax)); }
-	unsigned short LoadSReg() { return regs.Read((InstReg) (inst.getModRmReg() + InstRegEs)); }
+	unsigned char LoadR8() { return regs.Read(inst.getModRmReg() + InstRegAl); }
+	unsigned short LoadR16() { return regs.Read(inst.getModRmReg() + InstRegAx); }
+	unsigned int LoadR32() { return regs.Read(inst.getModRmReg() + InstRegEax); }
+	unsigned short LoadSReg() { return regs.Read(inst.getModRmReg() + InstRegEs); }
 
 	// Store value into register
-	void StoreR8(unsigned char value) { regs.Write((InstReg) (inst.getModRmReg() + InstRegAl), value); }
-	void StoreR16(unsigned short value) { regs.Write((InstReg) (inst.getModRmReg() + InstRegAx), value); }
-	void StoreR32(unsigned int value) { regs.Write((InstReg) (inst.getModRmReg() + InstRegEax), value); }
-	void StoreSReg(unsigned short value) { regs.Write((InstReg) (inst.getModRmReg() + InstRegEs), value); }
+	void StoreR8(unsigned char value) { regs.Write(inst.getModRmReg() + InstRegAl, value); }
+	void StoreR16(unsigned short value) { regs.Write(inst.getModRmReg() + InstRegAx, value); }
+	void StoreR32(unsigned int value) { regs.Write(inst.getModRmReg() + InstRegEax, value); }
+	void StoreSReg(unsigned short value) { regs.Write(inst.getModRmReg() + InstRegEs, value); }
 
 	// Load value from index register
-	unsigned char LoadIR8() { return regs.Read((InstReg) (inst.getOpIndex() + InstRegAl)); }
-	unsigned short LoadIR16() { return regs.Read((InstReg) (inst.getOpIndex() + InstRegAx)); }
-	unsigned int LoadIR32() { return regs.Read((InstReg) (inst.getOpIndex() + InstRegEax)); }
+	unsigned char LoadIR8() { return regs.Read(inst.getOpIndex() + InstRegAl); }
+	unsigned short LoadIR16() { return regs.Read(inst.getOpIndex() + InstRegAx); }
+	unsigned int LoadIR32() { return regs.Read(inst.getOpIndex() + InstRegEax); }
 
 	// Store value into index register
-	void StoreIR8(unsigned char value) { regs.Write((InstReg) (inst.getOpIndex() + InstRegAl), value); }
-	void StoreIR16(unsigned short value) { regs.Write((InstReg) (inst.getOpIndex() + InstRegAx), value); }
-	void StoreIR32(unsigned int value) { regs.Write((InstReg) (inst.getOpIndex() + InstRegEax), value); }
+	void StoreIR8(unsigned char value) { regs.Write(inst.getOpIndex() + InstRegAl, value); }
+	void StoreIR16(unsigned short value) { regs.Write(inst.getOpIndex() + InstRegAx, value); }
+	void StoreIR32(unsigned int value) { regs.Write(inst.getOpIndex() + InstRegEax, value); }
 
 	// Return the final address obtained from binding \a address inside
 	// the corresponding segment. The segment boundaries are checked.

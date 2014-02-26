@@ -117,7 +117,7 @@ Regs::Regs()
 }
 
 
-unsigned Regs::Read(InstReg reg) const
+unsigned Regs::Read(int reg) const
 {
 	assert(misc::inRange(reg, InstRegNone, InstRegCount - 1));
 	unsigned *value_ptr = (unsigned *) ((char *) &eax + info[reg].offset);
@@ -125,7 +125,7 @@ unsigned Regs::Read(InstReg reg) const
 }
 
 
-void Regs::Write(InstReg reg, unsigned value)
+void Regs::Write(int reg, unsigned value)
 {
 	assert(misc::inRange(reg, InstRegNone, InstRegCount - 1));
 	unsigned mask = this->mask[info[reg].size];
