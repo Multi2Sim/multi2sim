@@ -9,7 +9,11 @@ libcommon_a_SOURCES = \
 	Driver.h \
 	\
 	SI.cc \
-	SI.h 
+	SI.h \
+	\
+	SI-ABI.cc \
+	SI-ABI.h \
+	SI-ABI.dat
 	
 INCLUDES = @M2S_INCLUDES@
 
