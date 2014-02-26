@@ -57,6 +57,15 @@ misc::StringMap context_state_map = {
 // Private functions
 //
 
+Context::ExecuteInstFn Context::execute_inst_fn[InstOpcodeCount] =
+{
+		nullptr  // For InstOpcodeNone
+#define DEFINST(name, op1, op2, op3, modrm, imm, pfx) \
+		 , &Context::ExecuteInst_##name
+#include <arch/x86/asm/asm.dat>
+#undef DEFINST
+};
+
 
 void Context::UpdateState(unsigned state)
 {
@@ -180,6 +189,55 @@ void Context::loadProgram(const std::vector<std::string> &args,
 	// Load the binary
 	LoadBinary();
 }
+	
+
+void Context::DebugCallInst()
+{
+#if 0
+	struct elf_symbol_t *from;
+	struct elf_symbol_t *to;
+
+	struct x86_loader_t *loader = self->loader;
+	struct x86_regs_t *regs = self->regs;
+
+	char *action;
+	int i;
+
+	/* Do nothing on speculative mode */
+	if (self->state & X86ContextSpecMode)
+		return;
+
+	/* Call or return. Otherwise, exit */
+	if (!strncmp(self->inst.format, "call", 4))
+		action = "call";
+	else if (!strncmp(self->inst.format, "ret", 3))
+		action = "ret";
+	else
+		return;
+
+	/* Debug it */
+	for (i = 0; i < self->function_level; i++)
+		X86ContextDebugCall("| ");
+	from = elf_symbol_get_by_address(loader->elf_file, self->curr_eip, NULL);
+	to = elf_symbol_get_by_address(loader->elf_file, regs->eip, NULL);
+	if (from)
+		X86ContextDebugCall("%s", from->name);
+	else
+		X86ContextDebugCall("0x%x", self->curr_eip);
+	X86ContextDebugCall(" - %s to ", action);
+	if (to)
+		X86ContextDebugCall("%s", to->name);
+	else
+		X86ContextDebugCall("0x%x", regs->eip);
+	X86ContextDebugCall("\n");
+
+	/* Change current level */
+	if (strncmp(self->inst.format, "call", 4))
+		self->function_level--;
+	else
+		self->function_level++;
+#endif
+}
 
 
 void Context::Execute()
@@ -220,11 +278,42 @@ void Context::Execute()
 				regs.getEip(), buffer_ptr[0], buffer_ptr[1],
 				buffer_ptr[2], buffer_ptr[3]);
 
-	// Execute instruction */
-	//X86ContextExecuteInst(self);
-	emu->context_debug << inst;
-	setState(ContextFinished);
+	// Clear existing list of microinstructions, though the architectural
+	// simulator might have cleared it already. A new list will be generated
+	// for the next executed x86 instruction.
+	ClearUInstList();
+
+	// Set last, current, and target instruction addresses
+	last_eip = current_eip;
+	current_eip = regs.getEip();
+	target_eip = 0;
+
+	// Reset effective address
+	effective_address = 0;
+
+	// Debug
+	if (emu->isa_debug)
+		emu->isa_debug << misc::fmt("%d %8lld %x: ", pid,
+				emu->getInstructions(), current_eip)
+				<< inst
+				<< misc::fmt("  (%d bytes)",
+						inst.getSize());
+
+	// Advance instruction pointer
+	regs.incEip(inst.getSize());
 	
+	// Call instruction emulation function
+	if (inst.getOpcode())
+	{
+		ExecuteInstFn fn = execute_inst_fn[inst.getOpcode()];
+		(this->*fn)();
+	}
+	
+	// Debug
+	emu->isa_debug << '\n';
+	if (emu->call_debug)
+		DebugCallInst();
+
 	// Stats
 	emu->incInstructions();
 }

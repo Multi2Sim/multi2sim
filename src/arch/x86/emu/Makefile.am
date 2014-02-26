@@ -49,6 +49,7 @@ libemu_a_SOURCES = \
 	\
 	\
 	Context.cc \
+	ContextIsa.cc \
 	ContextLoader.cc \
 	ContextSignal.cc \
 	ContextUInst.cc \
