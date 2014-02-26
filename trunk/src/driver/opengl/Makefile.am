@@ -23,7 +23,10 @@ libopengl_a_SOURCES = \
 	si-shader.h \
 	\
 	si-program.c \
-	si-program.h 
+	si-program.h \
+	\
+	OpenGLDriver.cc \
+	OpenGLDriver.h 
 
 else
 

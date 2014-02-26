@@ -78,7 +78,7 @@ void Program::InitializeConstantBuffers()
 			break;
 
 		/* Read the elf symbol into a buffer */
-		Driver::OpenCLDriver::debug << misc::fmt("\tconstant buffer '%s' found with size %d\n",
+		Driver::OpenCLSIDriver::debug << misc::fmt("\tconstant buffer '%s' found with size %d\n",
 			symbol->getName().c_str(), symbol->getSize());
 
 		/* Create buffer and add constant buffer to list */
@@ -90,7 +90,7 @@ void Program::InitializeConstantBuffers()
 }
 
 
-Program::Program(int id, Driver::OpenCLDriver *driver)
+Program::Program(int id, Driver::OpenCLSIDriver *driver)
 {
 	this->id = id;
 	this->driver = driver;

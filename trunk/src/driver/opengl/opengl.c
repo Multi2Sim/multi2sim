@@ -1658,7 +1658,7 @@ static int opengl_abi_si_raster_finish_impl(X86Context *ctx)
 	{
 		ndrange = list_get(ndrange_list, i);
 
-		/* If no work-groups are left in the queues, remove the nd-range
+		/* If no work-groups is in the queues, remove the nd-range
 		 * from the driver list */
 		if (!list_count(ndrange->running_work_groups) && 
 			!list_count(ndrange->waiting_work_groups))

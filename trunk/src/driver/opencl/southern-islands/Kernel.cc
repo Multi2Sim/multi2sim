@@ -101,7 +101,7 @@ void Kernel::LoadMetaDataV3()
 	{
 		//  Read the next line
 		std::getline(metadata_stream, line);
-		Driver::OpenCLDriver::debug << misc::fmt("\t%s\n", line.c_str());
+		Driver::OpenCLSIDriver::debug << misc::fmt("\t%s\n", line.c_str());
 		misc::StringTokenize(line, token_list, ";:");
 
 		//  Stop when ARGEND is found or line is empty
@@ -155,7 +155,7 @@ void Kernel::LoadMetaDataV3()
 				constant_buffer_num, constant_offset));
 
 			// Debug 
-			Driver::OpenCLDriver::debug << misc::fmt("\targument '%s' - value stored in "
+			Driver::OpenCLSIDriver::debug << misc::fmt("\targument '%s' - value stored in "
 				"constant buffer %d at offset %d\n",
 				name.c_str(), constant_buffer_num,
 				constant_offset);
@@ -250,7 +250,7 @@ void Kernel::LoadMetaDataV3()
 				access_type));
 
 			// Debug 
-			Driver::OpenCLDriver::debug << misc::fmt("\targument '%s' - Pointer stored in "
+			Driver::OpenCLSIDriver::debug << misc::fmt("\targument '%s' - Pointer stored in "
 				"constant buffer %d at offset %d\n",
 				name.c_str(), constant_buffer_num,
 				constant_offset);
@@ -309,7 +309,7 @@ void Kernel::LoadMetaDataV3()
 				uav, constant_buffer_num, constant_offset));
 
 			// Debug 
-			Driver::OpenCLDriver::debug << misc::fmt("\targument '%s' - Image stored in "
+			Driver::OpenCLSIDriver::debug << misc::fmt("\targument '%s' - Image stored in "
 				"constant buffer %d at offset %d\n",
 				name.c_str(), constant_buffer_num,
 				constant_offset);
@@ -749,11 +749,11 @@ Kernel::Kernel(int id, std::string name, Program *program)
 		misc::fatal("%s: invalid kernel function (ELF symbol '__OpenCL_%s_xxx missing')\n%s",
 				__FUNCTION__, name.c_str(), OpenCLErrSIKernelSymbol);
 	
-	Driver::OpenCLDriver::debug << misc::fmt("\tmetadata symbol: offset=0x%x, size=%u\n",
+	Driver::OpenCLSIDriver::debug << misc::fmt("\tmetadata symbol: offset=0x%x, size=%u\n",
 			(unsigned)metadata_symbol->getValue(), (unsigned)metadata_symbol->getSize());
-	Driver::OpenCLDriver::debug << misc::fmt("\theader symbol: offset=0x%x, size=%u\n",
+	Driver::OpenCLSIDriver::debug << misc::fmt("\theader symbol: offset=0x%x, size=%u\n",
 			(unsigned)header_symbol->getValue(), (unsigned)header_symbol->getSize());
-	Driver::OpenCLDriver::debug << misc::fmt("\tkernel symbol: offset=0x%x, size=%u\n",
+	Driver::OpenCLSIDriver::debug << misc::fmt("\tkernel symbol: offset=0x%x, size=%u\n",
 			(unsigned)kernel_symbol->getValue(), (unsigned)kernel_symbol->getSize());
 
 	// Create and parse kernel binary (internal ELF).
