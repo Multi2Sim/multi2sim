@@ -76,6 +76,11 @@ inline unsigned clearBit32(unsigned x, int bit)
 	return x & ~(1u << bit);
 }
 
+inline unsigned setBit32(unsigned x, int bit, bool value)
+{
+	return value ? setBit32(x, bit) : clearBit32(x, bit);
+}
+
 inline unsigned SignExtend32(unsigned x, unsigned b)
 {
 	return x & (1u << (b - 1)) ? x | ~((1u << b) - 1) :

@@ -238,5 +238,18 @@ unsigned Context::getEffectiveAddress()
 	return address;
 }
 
+unsigned Context::getMoffsAddress()
+{
+	// Immediate value as effective address
+	unsigned address = inst.getImmDWord();
+
+	// Add segment base
+	address = getLinearAddress(address);
+
+	return address;
+}
+
+
+
 }  // namespace x86
 

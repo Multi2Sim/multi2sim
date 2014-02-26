@@ -140,23 +140,6 @@ public:
 };
 
 
-/// Command-line option taking no argument
-class CommandLineOptionBool : public CommandLineOption
-{
-	bool *var;
-public:
-
-	/// Constructor
-	CommandLineOptionBool(const std::string &name, bool *var,
-			const std::string &help)
-			: CommandLineOption(TypeBool, name, 0, help),
-			var(var) { }
-	
-	/// Read option from command line. See CommandLineOption::Read().
-	void Read(int argc, char **argv, int index);
-};
-
-
 /// Command-line option taking a string as an argument
 class CommandLineOptionString : public CommandLineOption
 {
@@ -219,6 +202,23 @@ public:
 		var(var), map(map) { }
 	
 	/// Read option from command line. See CommandLineOption::Read()
+	void Read(int argc, char **argv, int index);
+};
+
+
+/// Command-line option taking no argument
+class CommandLineOptionBool : public CommandLineOption
+{
+	bool *var;
+public:
+
+	/// Constructor
+	CommandLineOptionBool(const std::string &name, bool *var,
+			const std::string &help)
+			: CommandLineOption(TypeBool, name, 0, help),
+			var(var) { }
+	
+	/// Read option from command line. See CommandLineOption::Read().
 	void Read(int argc, char **argv, int index);
 };
 
@@ -385,9 +385,19 @@ public:
 				(long long *) &var, help));
 	}
 
+	/// Register an option that can take values from the string map provided
+	/// in argument \a map.
 	void RegisterEnum(const std::string &name, int &var,
 			const StringMap &map, const std::string &help) {
 		Register(new CommandLineOptionEnum(name, &var, map, help));
+	}
+
+	/// Register a boolean option with no additional arguments. If the
+	/// option is present, a value of \c True is assumed, and \c False if
+	/// the option is not provided by the user.
+	void RegisterBool(const std::string &name, bool &var,
+			const std::string &help) {
+		Register(new CommandLineOptionBool(name, &var, help));
 	}
 
 	/// Make option \a name incompatible with any other option.

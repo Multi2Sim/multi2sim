@@ -34,6 +34,7 @@ EmuConfig::EmuConfig()
 {
 	// Initialize
 	sim_kind = comm::ArchSimFunctional;
+	process_prefetch_hints = false;
 }
 
 void EmuConfig::Register(misc::CommandLine &command_line)
@@ -87,18 +88,26 @@ void EmuConfig::Register(misc::CommandLine &command_line)
 			"return value.");
 		
 	// Option --x86-max-inst <number>
-	command_line.RegisterInt64("--x86-max-inst <number>", max_instructions,
+	command_line.RegisterInt64("--x86-max-inst <number> (default = 0)",
+			max_instructions,
 			"Maximum number of x86 instructions. On x86 functional "
 			"simulation, this limit is given in number of emulated "
 			"instructions. On x86 detailed simulation, it is given as "
 			"the number of committed (non-speculative) instructions. "
-			"Use 0 (default) for unlimited.");
+			"A value of 0 means no limit.");
+
+	// Option --x86-prefetch
+	command_line.RegisterBool("--x86-prefetch {True|False} (default = False)",
+			process_prefetch_hints,
+			"This option determines whether or not to process "
+			"prefetch x86 instructions, and trigger prefetching "
+			"requests during a timing simulation.");
 
 	// Option --x86-sim <kind>
-	command_line.RegisterEnum("--x86-sim {functional|detailed}", (int &) sim_kind,
-			comm::arch_sim_kind_map,
-			"Level of accuracy of x86 simulation. The default value "
-			"is functional simulation.");
+	command_line.RegisterEnum("--x86-sim {functional|detailed} "
+			"(default = functional)",
+			(int &) sim_kind, comm::arch_sim_kind_map,
+			"Level of accuracy of x86 simulation.");
 }
 
 
