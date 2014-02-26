@@ -35,6 +35,7 @@
 namespace x86
 {
 
+class Context;
 class Emu;
 
 
@@ -76,6 +77,7 @@ enum ContextListType
 };
 
 
+
 /// x86 Context
 class Context
 {
@@ -100,12 +102,24 @@ class Context
 	// File descriptor table, private for each context.
 	FileTable file_table;
 
+	// Instruction pointers
+	unsigned last_eip;  // Address of last emulated instruction
+	unsigned current_eip;  // Address of currently emulated instruction
+	unsigned target_eip;  // Target address for branch, even if not taken
+
+	// Virtual address of the memory access performed by the last emulated
+	// instruction.
+	unsigned effective_address;
+
 	// Last emulated instruction
 	Inst inst;
 
 	// Update the context state, updating also the presence on the context
 	// in the various context lists in the emulator.
 	void UpdateState(unsigned state);
+
+	// Dump debug information about a call instruction
+	void DebugCallInst();
 	
 
 	///////////////////////////////////////////////////////////////////////
@@ -165,6 +179,9 @@ class Context
 		unsigned at_random_addr_holder;
 	};
 
+	// String map from program header types
+	static misc::StringMap program_header_type_map;
+
 	// Loader information. This information can be shared among multiple
 	// contexts. For this reason, it is declared as a shared pointer. The
 	// last destructed context sharing this variable will automatically free
@@ -175,7 +192,7 @@ class Context
 	void LoadEnv();
 
 	// Load ELF sections from binary
-	void LoadELFSections();
+	void LoadELFSections(ELFReader::File *binary);
 
 	// Load dynamic linker
 	void LoadInterp();
@@ -183,7 +200,10 @@ class Context
 	// Load program headers
 	void LoadProgramHeaders();
 
-	// Load auxiliary vector
+	// Load entry of the auxiliary vector
+	void LoadAVEntry(unsigned &sp, unsigned type, unsigned value);
+
+	// Load auxiliary vector and return its size in bytes
 	unsigned LoadAV(unsigned where);
 
 	// Load content of stack
@@ -330,12 +350,30 @@ class Context
 	//
 	///////////////////////////////////////////////////////////////////////
 
-	// Virtual address of the memory access performed by the last emulated
-	// instruction.
-	unsigned effective_address;
+	// Prototype of a member function of class Context devoted to the
+	// execution of ISA instructions. The emulator has a table indexed by an
+	// instruction identifier that points to all instruction emulation
+	// functions.
+	typedef void (Context::*ExecuteInstFn)();
+
+
+	// Instruction emulation functions. Each entry of asm.dat will be
+	// expanded into a function prototype. For example, entry
+	//
+	// 	DEFINST(adc_al_imm8, 0x14, SKIP, SKIP, SKIP, IB, 0)
+	//
+	// is expanded to
+	//
+	//	void ExecuteInst_adc_al_imm8();
+#define DEFINST(name, op1, op2, op3, modrm, imm, pfx) void ExecuteInst_##name();
+#include <arch/x86/asm/asm.dat>
+#undef DEFINST
+
+	// Table of functions
+	static ExecuteInstFn execute_inst_fn[InstOpcodeCount];
 
 public:
-
+	
 	/// Position of the context in the main context list. This field is
 	/// managed by the emulator. When a context is removed from the main
 	/// context list, it is automatically freed.

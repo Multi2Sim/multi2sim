@@ -64,6 +64,11 @@ public:
 	/// list of the File object where it belongs.
 	int getIndex() const { return index; }
 
+	/// Return a pointer to the Elf32_Shdr structure representing the
+	/// section header. Each field of this structure can be queried with
+	/// dedicated getters instead.
+	Elf32_Shdr *getRawInfo() const { return info; }
+
 	/// Return the section name
 	const std::string &getName() const { return name; }
 
@@ -142,6 +147,11 @@ public:
 	/// Return the index of the program header in the program header
 	/// list of the File object where it belongs.
 	int getIndex() const { return index; }
+
+	/// Return a pointer to the Elf32_Phdr structure representing the
+	/// program header. Each field of this structure can be queried with
+	/// dedicated getters instead.
+	Elf32_Phdr *getRawInfo() const { return info; }
 
 	/// Return the \a p_type field of the ELF program header
 	Elf32_Word getType() const { return info->p_type; }
@@ -225,6 +235,11 @@ class Symbol
 			const std::unique_ptr<Symbol> &b);
 
 public:
+
+	/// Return a pointer to the Elf32_Sym structure representing the
+	/// symbol. Each field of this structure can be queried with dedicated
+	/// getters instead.
+	Elf32_Sym *getRawInfo() const { return info; }
 
 	/// Return the section associated with the symbol
 	Section *getSection() const { return section; }
@@ -334,8 +349,7 @@ public:
 	///	for (auto &section : file.getSections())
 	/// \endcode
 	const std::vector<std::unique_ptr<Section>> &getSections() const {
-		return sections;
-	}
+			return sections; }
 
 	/// Return the number of program headers
 	int getNumProgramHeaders() const { return program_headers.size(); }
@@ -346,6 +360,11 @@ public:
 		return index >= 0 && index < (int) program_headers.size() ?
 				program_headers[index].get() : nullptr;
 	}
+
+	/// Return a constant reference to the list of program headers for
+	/// convenient iteration.
+	const std::vector<std::unique_ptr<ProgramHeader>> &getProgramHeaders()
+			const { return program_headers; }
 
 	/// Return the number of symbols
 	int getNumSymbols() const { return symbols.size(); }
@@ -361,6 +380,11 @@ public:
 	/// internally in a sorted data structure, with an access cost of
 	/// log(n).
 	Symbol *getSymbol(const std::string &name) const;
+
+	/// Return a constant reference to the list of symbols for convenient
+	/// iteration.
+	const std::vector<std::unique_ptr<Symbol>> &getSymbols() const {
+			return symbols; }
 
 	/// Return the section corresponding to the string table, or \a null if
 	/// the ELF file doesn't contain one.
