@@ -44,6 +44,12 @@ protected:
 
 public:
 	SICommon();
+
+	std::vector<std::unique_ptr<SI::NDRange>>::iterator 
+		getNDRangeBegin() { return ndranges.begin(); }
+
+	std::vector<std::unique_ptr<SI::NDRange>>::iterator 
+		getNDRangeEnd() { return ndranges.end(); }
 };
 
 }  // namespace Driver

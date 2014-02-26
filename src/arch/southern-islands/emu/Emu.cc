@@ -63,9 +63,11 @@ void Emu::Run()
 	if (opencl_driver->isNDRangeListEmpty())
 		return;
 
-	for (auto ndr_i = opencl_driver->NDRangesBegin(), 
-		ndr_e = opencl_driver->NDRangesEnd(); ndr_i < ndr_e; ++ndr_i)
+	// NDRange list is shared by CL/GL driver
+	for (auto ndr_i = opencl_driver->getNDRangeBegin(); 
+		ndr_i < opencl_driver->getNDRangeEnd(); ++ndr_i)
 	{
+		
 		// Move waiting work groups to running work groups 
 		(*ndr_i)->WaitingToRunning();
 

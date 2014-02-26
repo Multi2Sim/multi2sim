@@ -22,6 +22,7 @@
 
 
 #include <string>
+
 #include "southern-islands/ABI.h"
 
 namespace Driver
@@ -31,15 +32,29 @@ namespace Driver
 enum OpenCLABICall
 {
 	OpenCLABIInvalid = 0,
+
+// Shared ABIs for both CL/GL driver
+#define SI_ABI_CALL(space, name, code) OpenCLABI##space##name = code,
+#include "../common/SI-ABI.dat"
+#undef SI_ABI_CALL
+
+// Unique ABIs
 #define OPENCL_ABI_CALL(space, name, code) OpenCLABI##space##name = code,
 #include "ABI.dat"
 #undef OPENCL_ABI_CALL
+
 	OpenCLABICallCount
 };
 
-
-
 // Forward declarations of OpenCL Runtime functions
+
+// Shared ABIs for both CL/GL driver
+#define SI_ABI_CALL(space, name, code) \
+	int SIABI##name##Impl();
+#include "../common/SI-ABI.dat"
+#undef SI_ABI_CALL
+
+// Unique ABIs for CL driver
 #define OPENCL_ABI_CALL(space, name, code) \
 	int OpenCLABI##name##Impl();
 #include "ABI.dat"
@@ -49,6 +64,10 @@ enum OpenCLABICall
 std::string OpenCLABICallName[OpenCLABICallCount + 1] =
 {
 	nullptr,
+#define SI_ABI_CALL(space, name, code) #space #name,
+#include "../common/SI-ABI.dat"
+#undef SI_ABI_CALL
+
 #define OPENCL_ABI_CALL(space, name, code) #space #name,
 #include "ABI.dat"
 #undef OPENCL_ABI_CALL
@@ -60,6 +79,13 @@ typedef int (*OpenCLABICallFuncPtr)();
 OpenCLABICallFuncPtr OpenCLABICallTable[OpenCLABICallCount + 1] =
 {
 	nullptr,
+
+// Shared ABIs for both CL/GL driver
+#define SI_ABI_CALL(space, name, code) &space::SIABI##name##Impl,
+#include "../common/SI-ABI.dat"
+#undef SI_ABI_CALL
+
+// Unique ABIs for CL driver
 #define OPENCL_ABI_CALL(space, name, code) &space::OpenCLABI##name##Impl,
 #include "ABI.dat"
 #undef OPENCL_ABI_CALL

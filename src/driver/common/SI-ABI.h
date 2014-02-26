@@ -17,40 +17,19 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef DRIVER_COMMON_DRIVER_H
-#define DRIVER_COMMON_DRIVER_H
-
-#include <memory>
-
-// Forward declaration
-namespace x86
-{
-class Emu;
-class Cpu;
-}  // namespace x86
+#ifndef DRIVER_COMMON_SI_ABI_H
+#define DRIVER_COMMON_SI_ABI_H
 
 namespace SI
 {
-class NDRange;
-class Emu;
-class Gpu;
+
+// Forward declarations of OpenCL Runtime functions
+#define SI_ABI_CALL(space, name, code) \
+	int SIABI##name##Impl();
+#include "../../common/SI-ABI.dat"
+#undef SI_ABI_CALL
+
+
 }  // namespace SI
 
-namespace Driver
-{
-
-class Common
-{
-protected:
-	// Device functional emulators
-	static x86::Emu *x86_emu;
-
-	// Device timing simulators
-	static x86::Cpu *x86_cpu;
-
-public:
-	Common();
-};
-	
-}  // namespace Driver
 #endif

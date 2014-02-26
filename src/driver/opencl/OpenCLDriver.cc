@@ -30,36 +30,36 @@ namespace Driver
 {
 
 // Free automatically only when m2s exit execution or called reset()
-std::unique_ptr<OpenCLDriver> OpenCLDriver::instance;
+std::unique_ptr<OpenCLSIDriver> OpenCLSIDriver::instance;
 
-OpenCLDriver::OpenCLDriver()
+OpenCLSIDriver::OpenCLSIDriver()
 {
 	// Obtain instance of emulators
 	// si_emu = SI::Emu::getInstance();
 }
 
-OpenCLDriver *OpenCLDriver::getInstance()
+OpenCLSIDriver *OpenCLSIDriver::getInstance()
 {
 	// Instance already exists
 	if (instance.get())
 		return instance.get();
 
 	// Create instance
-	instance.reset(new OpenCLDriver());
+	instance.reset(new OpenCLSIDriver());
 	return instance.get();
 }
 
-void OpenCLDriver::RequestWork(SI::NDRange *ndrange)
+void OpenCLSIDriver::RequestWork(SI::NDRange *ndrange)
 {
 	// FIXME
 }
 
-void OpenCLDriver::NDRangeComplete(SI::NDRange *ndrange)
+void OpenCLSIDriver::NDRangeComplete(SI::NDRange *ndrange)
 {
 	// FIXME
 }
 
-int OpenCLDriver::DriverCall()
+int OpenCLSIDriver::DriverCall()
 {
 	// FIXME
 	// struct x86_regs_t *regs = ctx->regs;
