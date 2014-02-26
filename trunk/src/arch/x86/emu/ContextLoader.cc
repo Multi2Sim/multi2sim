@@ -17,14 +17,13 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "Context.h"
-#include "Emu.h"
-
 #include <fcntl.h>
+#include <unistd.h>
+
 #include <lib/cpp/String.h>
 
-
-using namespace misc;
+#include "Context.h"
+#include "Emu.h"
 
 
 namespace x86
@@ -446,7 +445,8 @@ void Context::LoadBinary()
 		// Open new stdin
 		int f = open(stdin_full_path.c_str(), O_RDONLY);
 		if (f < 0)
-			fatal("%s: cannot open stdin", stdin_full_path.c_str());
+			misc::fatal("%s: cannot open stdin",
+					stdin_full_path.c_str());
 
 		// Replace file descriptor 0
 		file_table.freeFileDesc(0);
@@ -463,7 +463,8 @@ void Context::LoadBinary()
 				O_CREAT | O_APPEND | O_TRUNC | O_WRONLY,
 				0660);
 		if (f < 0)
-			fatal("%s: cannot open stdin", stdin_full_path.c_str());
+			misc::fatal("%s: cannot open stdin",
+					stdin_full_path.c_str());
 
 		// Replace file descriptors 1 and 2
 		file_table.freeFileDesc(1);
@@ -513,7 +514,7 @@ std::string Context::getFullPath(const std::string &path)
 {
 	// Remove './' prefix from 's'
 	std::string s = path;
-	while (StringPrefix(s, "./"))
+	while (misc::StringPrefix(s, "./"))
 		s.erase(0, 2);
 
 	// File name is empty
