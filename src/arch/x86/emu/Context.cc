@@ -31,7 +31,8 @@ namespace x86
 {
 
 
-misc::StringMap context_state_map = {
+misc::StringMap context_state_map =
+{
 	{ "running",      ContextRunning },
 	{ "specmode",     ContextSpecMode },
 	{ "suspended",    ContextSuspended },
@@ -51,6 +52,9 @@ misc::StringMap context_state_map = {
 	{ "callback",     ContextCallback },
 	{ "mapped",       ContextMapped }
 };
+
+long context_host_flags;
+
 
 
 //
@@ -129,6 +133,8 @@ Context::Context()
 
 	// Initialize
 	state = 0;
+	glibc_segment_base = 0;
+	glibc_segment_limit = 0;
 	pid = emu->getPid();
 
 	// Presence in context lists

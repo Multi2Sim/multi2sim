@@ -43,7 +43,7 @@ int Context::getMemoryDepSize(UInst *uinst, int index, UInstDep &std_dep)
 
 		// The 'modrm_mod' field of the instruction bytes indicates
 		// whether it's actually a memory dependence or a register
-		if (inst.getModRMMod() == 3)
+		if (inst.getModRmMod() == 3)
 			return 0;
 
 		std_dep = UInstDepData;
@@ -69,7 +69,7 @@ int Context::getMemoryDepSize(UInst *uinst, int index, UInstDep &std_dep)
 
 		// The 'modrm_mod' field indicates whether it's actually a memory
 		// dependence or a register.
-		if (inst.getModRMMod() == 3)
+		if (inst.getModRmMod() == 3)
 			return 0;
 
 		std_dep = UInstDepXmmData;
@@ -95,11 +95,11 @@ void Context::EmitUInstEffectiveAddress(UInst *uinst, int index)
 	new_uinst->setIDep(0, inst.getSegment() ?
 			(UInstDep) (inst.getSegment() - InstRegEs + UInstDepEs)
 			: UInstDepNone);
-	new_uinst->setIDep(1, inst.getEABase() ?
-			(UInstDep) (inst.getEABase() - InstRegEax + UInstDepEax)
+	new_uinst->setIDep(1, inst.getEaBase() ?
+			(UInstDep) (inst.getEaBase() - InstRegEax + UInstDepEax)
 			: UInstDepNone);
-	new_uinst->setIDep(2, inst.getEAIndex() ?
-			(UInstDep) (inst.getEAIndex() - InstRegEax + UInstDepEax)
+	new_uinst->setIDep(2, inst.getEaIndex() ?
+			(UInstDep) (inst.getEaIndex() - InstRegEax + UInstDepEax)
 			: UInstDepNone);
 	new_uinst->setODep(0, UInstDepEa);
 	uinst_list.emplace_back(new_uinst);
@@ -130,15 +130,15 @@ void Context::ParseUInstDep(UInst *uinst, int index)
 
 	case UInstDepEabas:
 
-		uinst->setDep(index, inst.getEABase() ?
-				(UInstDep) (inst.getEABase() - InstRegEax + UInstDepEax)
+		uinst->setDep(index, inst.getEaBase() ?
+				(UInstDep) (inst.getEaBase() - InstRegEax + UInstDepEax)
 				: UInstDepNone);
 		break;
 
 	case UInstDepEaidx:
 
-		uinst->setDep(index, inst.getEAIndex() ?
-				(UInstDep) (inst.getEAIndex() - InstRegEax + UInstDepEax)
+		uinst->setDep(index, inst.getEaIndex() ?
+				(UInstDep) (inst.getEaIndex() - InstRegEax + UInstDepEax)
 				: UInstDepNone);
 		break;
 
@@ -147,30 +147,30 @@ void Context::ParseUInstDep(UInst *uinst, int index)
 	// ParseUInstODep() functions.
 	case UInstDepRm8:
 
-		assert(inst.getModRMMod() == 3);
-		uinst->setDep(index, inst.getModRMRm() < 4 ?
-				(UInstDep) (UInstDepEax + inst.getModRMRm())
-				: (UInstDep) (UInstDepEax + inst.getModRMRm() - 4));
+		assert(inst.getModRmMod() == 3);
+		uinst->setDep(index, inst.getModRmRm() < 4 ?
+				(UInstDep) (UInstDepEax + inst.getModRmRm())
+				: (UInstDep) (UInstDepEax + inst.getModRmRm() - 4));
 		break;
 
 	case UInstDepRm16:
 	case UInstDepRm32:
 
-		assert(inst.getModRMMod() == 3);
-		uinst->setDep(index, (UInstDep) (UInstDepEax + inst.getModRMRm()));
+		assert(inst.getModRmMod() == 3);
+		uinst->setDep(index, (UInstDep) (UInstDepEax + inst.getModRmRm()));
 		break;
 
 	case UInstDepR8:
 
-		uinst->setDep(index, inst.getModRMReg() < 4 ?
-				(UInstDep) (UInstDepEax + inst.getModRMReg())
-				: (UInstDep) (UInstDepEax + inst.getModRMReg() - 4));
+		uinst->setDep(index, inst.getModRmReg() < 4 ?
+				(UInstDep) (UInstDepEax + inst.getModRmReg())
+				: (UInstDep) (UInstDepEax + inst.getModRmReg() - 4));
 		break;
 
 	case UInstDepR16:
 	case UInstDepR32:
 
-		uinst->setDep(index, (UInstDep) (UInstDepEax + inst.getModRMReg()));
+		uinst->setDep(index, (UInstDep) (UInstDepEax + inst.getModRmReg()));
 		break;
 
 	case UInstDepIr8:
@@ -188,7 +188,7 @@ void Context::ParseUInstDep(UInst *uinst, int index)
 
 	case UInstDepSreg:
 
-		uinst->setDep(index, (UInstDep) (UInstDepEs + inst.getModRMReg()));
+		uinst->setDep(index, (UInstDep) (UInstDepEs + inst.getModRmReg()));
 		break;
 
 	case UInstDepSti:
@@ -200,13 +200,13 @@ void Context::ParseUInstDep(UInst *uinst, int index)
 	case UInstDepXmmm64:
 	case UInstDepXmmm128:
 
-		assert(inst.getModRMMod() == 3);
-		uinst->setDep(index, (UInstDep) (UInstDepXmm0 + inst.getModRMRm()));
+		assert(inst.getModRmMod() == 3);
+		uinst->setDep(index, (UInstDep) (UInstDepXmm0 + inst.getModRmRm()));
 		break;
 
 	case UInstDepXmm:
 
-		uinst->setDep(index, (UInstDep) (UInstDepXmm0 + inst.getModRMReg()));
+		uinst->setDep(index, (UInstDep) (UInstDepXmm0 + inst.getModRmReg()));
 		break;
 
 	default:

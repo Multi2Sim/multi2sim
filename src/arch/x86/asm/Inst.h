@@ -272,25 +272,49 @@ public:
 	InstReg getSegment() const { return segment; }
 
 	/// Return the base register for the effective address computation
-	InstReg getEABase() const { return ea_base; }
+	InstReg getEaBase() const { return ea_base; }
 
 	/// Return the index register for the effective address computation
-	InstReg getEAIndex() const { return ea_index; }
+	InstReg getEaIndex() const { return ea_index; }
 
 	/// Return the scale factor for the effective address computation
-	unsigned getEAScale() const { return ea_scale; }
+	unsigned getEaScale() const { return ea_scale; }
 
 	/// Return the decoded \i ModR/M field
-	unsigned char getModRM() const { return modrm; }
+	unsigned char getModRm() const { return modrm; }
 
 	/// Return field \a mod extracted from the decoded \i ModR/M field
-	unsigned char getModRMMod() const { return modrm_mod; }
+	unsigned char getModRmMod() const { return modrm_mod; }
 
 	/// Return field \a reg extracted from the decoded \i ModR/M field
-	unsigned char getModRMReg() const { return modrm_reg; }
+	unsigned char getModRmReg() const { return modrm_reg; }
 
 	/// Return field \a rm extracted from the decoded \i ModR/M field
-	unsigned char getModRMRm() const { return modrm_rm; }
+	unsigned char getModRmRm() const { return modrm_rm; }
+	
+	/// Return field \a SIB from the decoded instruction
+	unsigned char getSib() const { return sib; }
+
+	/// Return sub-field \a scale extracted from field \a SIB
+	unsigned char getSibScale() const { return sib_scale; }
+
+	/// Return sub-field \a index extracted from field \a SIB
+	unsigned char getSibIndex() const { return sib_index; }
+
+	/// Return sub-field \a base extracted from field \a SIB
+	unsigned char getSibBase() const { return sib_base; }
+	
+	/// Return decoded displacement field
+	int getDisp() const { return disp; }
+
+	/// Return immediate value interpreted as a byte
+	unsigned char getImmByte() const { return imm.b; }
+
+	/// Return immediate value interpreted as a word (2 bytes)
+	unsigned short getImmWord() const { return imm.w; }
+
+	/// Return immediate value interpreted as a double word (4 bytes)
+	unsigned getImmDWord() const { return imm.d; }
 };
 
 

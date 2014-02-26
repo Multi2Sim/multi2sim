@@ -76,6 +76,21 @@ enum ContextListType
 	ContextListCount
 };
 
+// Saved host flags during emulation
+extern long context_host_flags;
+
+// Assembly code used before and after instruction emulation when the host flags
+// are affected by the guest code
+#define __X86_CONTEXT_SAVE_FLAGS__ asm volatile ( \
+	"pushf\n\t" \
+	"pop %0\n\t" \
+	: "=m" (context_host_flags));
+#define __X86_CONTEXT_RESTORE_FLAGS__ asm volatile ( \
+	"push %0\n\t" \
+	"popf\n\t" \
+	: "=m" (context_host_flags));
+
+
 
 
 /// x86 Context
@@ -113,6 +128,11 @@ class Context
 
 	// Last emulated instruction
 	Inst inst;
+	
+	// For segmented memory access in glibc
+	unsigned glibc_segment_base;
+	unsigned glibc_segment_limit;
+
 
 	// Update the context state, updating also the presence on the context
 	// in the various context lists in the emulator.
@@ -356,7 +376,6 @@ class Context
 	// functions.
 	typedef void (Context::*ExecuteInstFn)();
 
-
 	// Instruction emulation functions. Each entry of asm.dat will be
 	// expanded into a function prototype. For example, entry
 	//
@@ -371,6 +390,63 @@ class Context
 
 	// Table of functions
 	static ExecuteInstFn execute_inst_fn[InstOpcodeCount];
+
+	// Fatal error message during instruction emulation, shown only while
+	// in non-speculative mode.
+	void IsaError(const char *fmt, ...);
+	
+	// These are some functions created automatically by the macros in
+	// ContextIsaStd.cc, but corresponding to non-existing instructions.
+	// Since they're not declared in asm.dat, they must be explicitly
+	// declared here.
+	void ExecuteInst_test_rm16_imm8();
+	void ExecuteInst_test_rm32_imm8();
+	void ExecuteInst_test_r8_rm8();
+	void ExecuteInst_test_r16_rm16();
+	void ExecuteInst_test_r32_rm32();
+
+	// Load from register/memory
+	unsigned char LoadRm8();
+	unsigned short LoadRm16();
+	unsigned int LoadRm32();
+	unsigned short LoadR32M16();
+	unsigned long long LoadM64();
+
+	// Store into register/memory
+	void StoreRm8(unsigned char value);
+	void StoreRm16(unsigned short value);
+	void StoreRm32(unsigned int value);
+	void StoreM64(unsigned long long value);
+
+	// Load value from register
+	unsigned char LoadR8() { return regs.Read((InstReg) (inst.getModRmReg() + InstRegAl)); }
+	unsigned short LoadR16() { return regs.Read((InstReg) (inst.getModRmReg() + InstRegAx)); }
+	unsigned int LoadR32() { return regs.Read((InstReg) (inst.getModRmReg() + InstRegEax)); }
+	unsigned short LoadSReg() { return regs.Read((InstReg) (inst.getModRmReg() + InstRegEs)); }
+
+	// Store value into register
+	void StoreR8(unsigned char value) { regs.Write((InstReg) (inst.getModRmReg() + InstRegAl), value); }
+	void StoreR16(unsigned short value) { regs.Write((InstReg) (inst.getModRmReg() + InstRegAx), value); }
+	void StoreR32(unsigned int value) { regs.Write((InstReg) (inst.getModRmReg() + InstRegEax), value); }
+	void StoreSReg(unsigned short value) { regs.Write((InstReg) (inst.getModRmReg() + InstRegEs), value); }
+
+	// Load value from index register
+	unsigned char LoadIR8() { return regs.Read((InstReg) (inst.getOpIndex() + InstRegAl)); }
+	unsigned short LoadIR16() { return regs.Read((InstReg) (inst.getOpIndex() + InstRegAx)); }
+	unsigned int LoadIR32() { return regs.Read((InstReg) (inst.getOpIndex() + InstRegEax)); }
+
+	// Store value into index register
+	void StoreIR8(unsigned char value) { regs.Write((InstReg) (inst.getOpIndex() + InstRegAl), value); }
+	void StoreIR16(unsigned short value) { regs.Write((InstReg) (inst.getOpIndex() + InstRegAx), value); }
+	void StoreIR32(unsigned int value) { regs.Write((InstReg) (inst.getOpIndex() + InstRegEax), value); }
+
+	// Return the final address obtained from binding \a address inside
+	// the corresponding segment. The segment boundaries are checked.
+	unsigned getLinearAddress(unsigned offset);
+
+	// Return the effective address obtained from the 'SIB' and 'disp'
+	// fields, and store it in 'effective_address' field for the future
+	unsigned getEffectiveAddress();
 
 public:
 	
