@@ -17,9 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
- 
-#include <string.h>
-
+#include <arch/x86/emu/Emu.h>
 #include <arch/southern-islands/emu/Emu.h>
 #include <lib/cpp/ELFReader.h>
 #include <lib/cpp/String.h>
@@ -39,7 +37,7 @@ ConstantBuffer::ConstantBuffer(int id, unsigned size, const char *data)
 	this->id = id;
 	this->size = size;
 	this->data = new char[size];
-	memcpy(this->data, data, size);
+	std::copy(&data[0], &data[size], this->data);
 }
 
 ConstantBuffer::~ConstantBuffer()
@@ -57,7 +55,7 @@ void Program::InitializeConstantBuffers()
 	ELFReader::Symbol *symbol;
 	std::string symbol_name;
 
-	assert(elf_file);
+	assert(this->elf_file);
 
 	/* Constant buffers encoded in ELF file */
 	for (unsigned i = 0; i < EmuMaxNumConstBufs; i++) 
@@ -73,19 +71,20 @@ void Program::InitializeConstantBuffers()
 		symbol_name = misc::fmt("__OpenCL_%d_global", i);
 
 		/* Check to see if symbol exists */
-		symbol = elf_file->getSymbol(symbol_name);
+		symbol = this->elf_file->getSymbol(symbol_name);
 		if (!symbol)
 			break;
 
 		/* Read the elf symbol into a buffer */
-		Driver::OpenCLSIDriver::debug << misc::fmt("\tconstant buffer '%s' found with size %d\n",
+		x86::Emu::opencl_debug << misc::fmt("\tconstant buffer '%s' found with size %d\n",
 			symbol->getName().c_str(), symbol->getSize());
 
 		/* Create buffer and add constant buffer to list */
-		constant_buffers[i] = std::unique_ptr<ConstantBuffer>(new ConstantBuffer(i, symbol->getSize(), symbol->getBuffer()));
+		constant_buffers[i] = std::unique_ptr<ConstantBuffer>(new ConstantBuffer(i, 
+			symbol->getSize(), symbol->getBuffer()));
 		
 		/* Increase video memory top */
-		driver->getEmuGpu()->IncVideoMemTop(symbol->getSize());
+		driver->getEmuGpu()->incVideoMemTop(symbol->getSize());
 	}
 }
 
@@ -98,7 +97,7 @@ Program::Program(int id, Driver::OpenCLSIDriver *driver)
 
 void Program::SetBinary(const char *buf, unsigned int size)
 {
-	elf_file = std::unique_ptr<ELFReader::File>(new ELFReader::File(buf, size));
+	this->elf_file = std::unique_ptr<ELFReader::File>(new ELFReader::File(buf, size));
 
 	InitializeConstantBuffers();
 }

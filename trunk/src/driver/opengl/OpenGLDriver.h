@@ -20,21 +20,14 @@
 #ifndef DRIVER_OPENGL_DRIVER_H
 #define DRIVER_OPENGL_DRIVER_H
 
-#include <src/driver/common/Driver.h>
 #include <src/driver/common/SI.h>
+#include "southern-islands/Program.h"
+#include "southern-islands/Shader.h"
 
 // Forward declaration
-namespace x86
-{
-	class Asm;
-	class Emu;
-}  // namespace x86
-
 namespace SI
 {
-	class Emu;
-	class NDRange;
-	class Program;
+	class ProgramGL;
 	class Shader;
 }  // namespace SI
 
@@ -55,14 +48,11 @@ class OpenGLSIDriver : public SICommon
 	// can be obtained with a call to getInstance()
 	OpenGLSIDriver();
 
-	// List of Southern Islands programs and shaders
-	std::vector<std::unique_ptr<SI::Program>> programs;
-	std::vector<std::unique_ptr<SI::Shader>> shaders;
+	// List of Southern Islands OpenGL programs and shaders
+	std::vector<std::unique_ptr<SI::ProgramGL>> programs;
+	// std::vector<std::unique_ptr<SI::Shader>> shaders;
 
 public:
-
-	/// Debugger
-	// static misc::Debug debug;
 
 	/// Get the only instance of the OpenGL Driver. If the instance does not
 	/// exist yet, it will be created, and will remain allocated until the
@@ -80,7 +70,7 @@ public:
 	/// \param ndrange 
 	void NDRangeComplete(SI::NDRange *ndrange);
 
-	/// OpenCL driver call
+	/// OpenGL driver call
 	int DriverCall();
 
 	/// Return an iterator to the first NDRange in the NDRange list. The

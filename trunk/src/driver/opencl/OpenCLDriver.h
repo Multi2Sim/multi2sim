@@ -20,9 +20,9 @@
 #ifndef DRIVER_OPENCL_SI_DRIVER_H
 #define DRIVER_OPENCL_SI_DRIVER_H
 
-#include <src/driver/common/Driver.h>
 #include <src/driver/common/SI.h>
-#include <string>
+#include "southern-islands/Program.h"
+#include "southern-islands/Kernel.h"
 
 // Forward declaration
 namespace x86
@@ -61,9 +61,6 @@ class OpenCLSIDriver : public SICommon
 	std::vector<std::unique_ptr<SI::Kernel>> kernels;
 
 public:
-
-	/// Debugger
-	static misc::Debug debug;
 
 	/// Get the only instance of the OpenCL Driver. If the instance does not
 	/// exist yet, it will be created, and will remain allocated until the

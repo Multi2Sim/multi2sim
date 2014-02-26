@@ -17,16 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "SI.h"
-#include <arch/southern-islands/emu/Emu.h>
+#include "Shader.h"
 
-namespace Driver
+namespace SI
 {
 
-SICommon::SICommon()
-{
-	// FIXME: 
-	// si_emu = SI::Emu::getInstance();
-}
-
-}  // namespace Driver
+}  // namespace SI

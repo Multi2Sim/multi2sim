@@ -29,7 +29,6 @@ namespace SI
 #include "SI-ABI.dat"
 #undef SI_ABI_CALL
 
-
 }  // namespace SI
 
 #endif

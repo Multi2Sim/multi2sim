@@ -24,6 +24,14 @@
 #include <vector>
 #include "Driver.h"
 
+// Forward declaration
+namespace SI
+{
+class Emu;
+class Gpu;
+class NDRange;
+}  // namespace SI
+
 namespace Driver
 {
 
@@ -39,7 +47,7 @@ protected:
 	// CPU/GPU fused device
 	bool fused;
 
-	// NDRange list is shared by OpenGL/CL driver
+	// NDRange list contains NDRanges created by driver, shared by OpenCL/GL driver
 	static std::vector<std::unique_ptr<SI::NDRange>> ndranges;
 
 public:
