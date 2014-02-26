@@ -27,11 +27,11 @@
 #include <lib/cpp/Debug.h>
 #include <mem-system/Memory.h>
 
-
+// Forward declaration
 namespace Driver
 {
-	class OpenCLDriver;
-	class OpenGLDriver;
+	class OpenCLSIDriver;
+	class OpenGLSIDriver;
 }  // namespace Driver
 
 namespace SI
@@ -234,8 +234,8 @@ class Emu
 	Asm *as;
 
 	// Associated drivers
-	Driver::OpenCLDriver *opencl_driver;
-	Driver::OpenGLDriver *opengl_driver;
+	Driver::OpenCLSIDriver *opencl_driver;
+	Driver::OpenGLSIDriver *opengl_driver;
 
 	// Memory spaces
 
@@ -348,7 +348,7 @@ public:
 
 
 
-}  // namespace
+}  // namespace SI
 
 #endif
 

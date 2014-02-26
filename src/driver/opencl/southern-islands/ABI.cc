@@ -25,38 +25,6 @@
 namespace SI
 {
 
-int OpenCLABIMemAllocImpl()
-{
-	// Driver::OpenCLDriver *driver = Driver::OpenCLDriver::getInstance();
-	
-	// Return
-	return 0;
-}
-
-int OpenCLABIMemReadImpl()
-{
-	// Return
-	return 0;
-}
-
-int OpenCLABIMemWriteImpl()
-{
-	// Return
-	return 0;
-}
-
-int OpenCLABIMemCopyImpl()
-{
-	// Return
-	return 0;
-}
-
-int OpenCLABIMemFreeImpl()
-{
-	// Return
-	return 0;
-}
-
 int OpenCLABIProgramCreateImpl()
 {
 	// Return

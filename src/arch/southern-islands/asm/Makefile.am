@@ -22,11 +22,17 @@ libasm_a_SOURCES = \
 	Inst.cc \
 	Inst.h \
 	\
+	Input.cc \
+	Input.h \
+	\
 	input.c \
 	input.h \
 	\
 	opengl-bin-file.c \
 	opengl-bin-file.h \
+	\
+	ShaderBinary.cc \
+	ShaderBinary.h \
 	\
 	Wrapper.cc \
 	Wrapper.h

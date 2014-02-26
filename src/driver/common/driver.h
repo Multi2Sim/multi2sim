@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef DRIVER_COMMON_DRIVER_H
-#define DRIVER_COMMON_DRIVER_H
+#ifndef DRIVER_COMMON_DRIVER_H_OLD
+#define DRIVER_COMMON_DRIVER_H_OLD
 
 #include <lib/class/class.h>
 

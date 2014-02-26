@@ -28,7 +28,7 @@
 // Forward declaration
 namespace Driver
 {
-	class OpenCLDriver;
+	class OpenCLSIDriver;
 }  // namespace Driver
 
 namespace SI
@@ -53,7 +53,7 @@ class Program
 	int id;
 
 	// Opencl driver it belongs to
-	Driver::OpenCLDriver *driver;
+	Driver::OpenCLSIDriver *driver;
 
 	// ELF binary
 	std::unique_ptr<ELFReader::File> elf_file;
@@ -65,7 +65,7 @@ class Program
 	void InitializeConstantBuffers();
 
 public:
-	Program(int id, Driver::OpenCLDriver *driver);
+	Program(int id, Driver::OpenCLSIDriver *driver);
 
 	/// Load ELF binary into program object
 	///

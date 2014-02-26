@@ -1,6 +1,6 @@
 /*
  *  Multi2Sim
- *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
+ *  Copyright (C) 2013  Rafael Ubal (ubal@ece.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,12 +17,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef DRIVER_OPENCL_SI_DRIVER_H
-#define DRIVER_OPENCL_SI_DRIVER_H
+#ifndef DRIVER_OPENGL_DRIVER_H
+#define DRIVER_OPENGL_DRIVER_H
 
 #include <src/driver/common/Driver.h>
 #include <src/driver/common/SI.h>
-#include <string>
 
 // Forward declaration
 namespace x86
@@ -36,47 +35,39 @@ namespace SI
 	class Emu;
 	class NDRange;
 	class Program;
-	class Kernel;
+	class Shader;
 }  // namespace SI
 
 namespace Driver
 {
 
-/// OpenCL Driver for SI
-class OpenCLSIDriver : public SICommon
+class OpenGLSIDriver : public SICommon
 {
+
 	// Driver verision information
-	static const unsigned major = 5;
-	static const unsigned minor = 2173;
+	static const unsigned major = 1;
+	static const unsigned minor = 1000;
 
 	// Unique instance of Opencl Driver
-	static std::unique_ptr<OpenCLSIDriver> instance;
+	static std::unique_ptr<OpenGLSIDriver> instance;
 
-	// Private constructor. The only possible instance of the OpenCL Driver
+	// Private constructor. The only possible instance of the OpenGL Driver
 	// can be obtained with a call to getInstance()
-	OpenCLSIDriver();
+	OpenGLSIDriver();
 
-	// List of Southern Islands programs and kernels
+	// List of Southern Islands programs and shaders
 	std::vector<std::unique_ptr<SI::Program>> programs;
-	std::vector<std::unique_ptr<SI::Kernel>> kernels;
+	std::vector<std::unique_ptr<SI::Shader>> shaders;
 
 public:
 
 	/// Debugger
-	static misc::Debug debug;
+	// static misc::Debug debug;
 
-	/// Get the only instance of the OpenCL Driver. If the instance does not
+	/// Get the only instance of the OpenGL Driver. If the instance does not
 	/// exist yet, it will be created, and will remain allocated until the
 	/// end of the execution.
-	static OpenCLSIDriver *getInstance();
-
-	/// Getters
-	///
-	/// Get SI functional emulator
-	SI::Emu *getEmuGpu() const { return si_emu; }
-
-	/// Get NDRange count
-	bool isNDRangeListEmpty() const { return ndranges.empty(); }
+	static OpenGLSIDriver *getInstance();
 
 	/// This function is called when all work groups from an ND-Range have
 	/// been scheduled (i.e., ndrange->waiting_work_groups is empty)
@@ -110,9 +101,8 @@ public:
 	std::vector<std::unique_ptr<SI::NDRange>>::iterator NDRangesEnd() {
 		return ndranges.end();
 	}
+};
 
-};	
-
-}  // namespace Driver
+} // namespace Driver
 
 #endif

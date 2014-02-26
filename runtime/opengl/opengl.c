@@ -57,7 +57,7 @@ char *opengl_err_param_note =
 /*
  * Debug
  *
- * If environment variable 'opengl_DEBUG' is set, the Multi2Sim OpenGL Runtime
+ * If environment variable 'M2S_OPENGL_RT_DEBUG' is set, the Multi2Sim OpenGL Runtime
  * library will dump debug information about OpenGL calls, argument values,
  * intermeidate actions, and return values.
  */
