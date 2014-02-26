@@ -21,5 +21,25 @@
 
 namespace Driver
 {
+
+// Unique instance of OpenGL driver
+std::unique_ptr<OpenGLSIDriver> OpenGLSIDriver::instance;
+
+OpenGLSIDriver::OpenGLSIDriver()
+{
+	// Obtain instance of emulators
+	// si_emu = SI::Emu::getInstance();
+}
+
+OpenGLSIDriver *OpenGLSIDriver::getInstance()
+{
+	// Instance already exists
+	if (instance.get())
+		return instance.get();
+
+	// Create instance
+	instance.reset(new OpenGLSIDriver());
+	return instance.get();
+}
 	
 }  // namespace Driver

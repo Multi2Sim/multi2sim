@@ -29,23 +29,16 @@ class Emu;
 class Cpu;
 }  // namespace x86
 
-namespace SI
-{
-class NDRange;
-class Emu;
-class Gpu;
-}  // namespace SI
-
 namespace Driver
 {
 
 class Common
 {
 protected:
-	// Device functional emulators
+	// Device x86 functional emulators
 	static x86::Emu *x86_emu;
 
-	// Device timing simulators
+	// Device x86 timing simulators
 	static x86::Cpu *x86_cpu;
 
 public:

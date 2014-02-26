@@ -342,7 +342,7 @@ public:
 	void Run();
 
 	/// Increase video memory top
-	void IncVideoMemTop(unsigned inc) { video_mem_top += inc; }
+	void incVideoMemTop(unsigned inc) { video_mem_top += inc; }
 };
 
 

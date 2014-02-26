@@ -20,9 +20,6 @@
 #ifndef DRIVER_OPENCL_ABI_H
 #define DRIVER_OPENCL_ABI_H
 
-
-#include <string>
-
 #include "southern-islands/ABI.h"
 
 namespace Driver

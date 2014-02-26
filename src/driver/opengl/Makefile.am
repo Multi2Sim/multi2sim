@@ -1,3 +1,6 @@
+SUBDIRS = \
+	southern-islands
+
 lib_LIBRARIES = libopengl.a
 
 if HAVE_OPENGL
@@ -26,7 +29,14 @@ libopengl_a_SOURCES = \
 	si-program.h \
 	\
 	OpenGLDriver.cc \
-	OpenGLDriver.h 
+	OpenGLDriver.h \
+	\
+	ABI.cc \
+	ABI.dat \
+	ABI.h
+
+LDADD = \
+	$(top_builddir)/src/driver/opengl/southern-islands/libsi_gl.a
 
 else
 
@@ -38,4 +48,3 @@ libopengl_a_SOURCES = \
 endif
 
 INCLUDES = @M2S_INCLUDES@
-
