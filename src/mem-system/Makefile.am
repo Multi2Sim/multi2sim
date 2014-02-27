@@ -48,6 +48,9 @@ libmemsystem_a_SOURCES = \
 	Memory.cc \
 	Memory.h \
 	\
+	SpecMem.cc \
+	SpecMem.h \
+	\
 	Wrapper.cc \
 	Wrapper.h
 

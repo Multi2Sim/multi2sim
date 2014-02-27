@@ -49,11 +49,11 @@ void Context::IsaError(const char *fmt, ...)
 void Context::MemoryRead(unsigned int address, int size, void *buffer)
 {
 	// Speculative mode read
-	/*if (self->state & X86ContextSpecMode)
+	if (getState(ContextSpecMode))
 	{
-		spec_mem_read(self->spec_mem, addr, size, buf);
+		spec_mem->Read(address, size, (char *) buffer);
 		return;
-	}*/
+	}
 
 	// Read in regular mode
 	memory->Read(address, size, (char *) buffer);
@@ -63,11 +63,11 @@ void Context::MemoryRead(unsigned int address, int size, void *buffer)
 void Context::MemoryWrite(unsigned int address, int size, void *buffer)
 {
 	// Speculative mode write
-	/*if (self->state & X86ContextSpecMode)
+	if (getState(ContextSpecMode))
 	{
-		spec_mem_write(self->spec_mem, addr, size, buf);
+		spec_mem->Write(address, size, (char *) buffer);
 		return;
-	}*/
+	}
 
 	// Write in regular mode
 	memory->Write(address, size, (char *) buffer);

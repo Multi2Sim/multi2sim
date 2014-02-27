@@ -25,6 +25,7 @@
 #include <lib/cpp/Debug.h>
 #include <lib/cpp/ELFReader.h>
 #include <mem-system/Memory.h>
+#include <mem-system/SpecMem.h>
 
 #include "FileTable.h"
 #include "Regs.h"
@@ -110,6 +111,10 @@ class Context
 	// is declared as a shared pointer. The las freed context pointing to
 	// this memory object will be the one automatically freeing it.
 	std::shared_ptr<mem::Memory> memory;
+
+	// Speculative memory. Its initialization is deferred to be able to link
+	// it with the actual memory, known only at context creation.
+	std::unique_ptr<mem::SpecMem> spec_mem;
 
 	// Register file. Each context has its own copy always.
 	Regs regs;
