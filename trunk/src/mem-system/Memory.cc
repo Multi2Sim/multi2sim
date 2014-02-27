@@ -540,5 +540,5 @@ void Memory::Load(const std::string &path, unsigned start)
 }
 
 
-} // namespace MemSystem
+} // namespace mem
 

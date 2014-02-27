@@ -108,6 +108,9 @@ public:
 	/// Set safe mode to its original global default value
 	void setSafeDefault() { safe = safe_mode; }
 
+	/// Return whether the safe mode is on
+	bool getSafe() { return safe; }
+
 	/// Clear content of memory
 	void Clear();
 
@@ -249,7 +252,7 @@ public:
 };
 
 
-}  // namespace MemSystem
+}  // namespace mem
 
 #endif
 

@@ -183,6 +183,9 @@ void Context::loadProgram(const std::vector<std::string> &args,
 	// Create new memory image
 	assert(!memory.get());
 	memory.reset(new mem::Memory());
+
+	// Create speculative memory, and link it with the real memory
+	spec_mem.reset(new mem::SpecMem(memory.get()));
 	
 	// Create new loader info
 	assert(!loader.get());
