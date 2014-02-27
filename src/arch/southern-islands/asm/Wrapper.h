@@ -580,35 +580,35 @@ enum SIBinaryUserData
 {
 	SIBinaryUserDataResource,               // immediate resource descriptor
 	SIBinaryUserDataSampler,                // immediate sampler descriptor
-	SIBinaryUserDataConstBuffer,           // immediate const buffer descriptor
-	SIBinaryUserDataVertexBuffer,          // immediate vertex buffer descriptor
+	SIBinaryUserDataConstBuffer,            // immediate const buffer descriptor
+	SIBinaryUserDataVertexBuffer,           // immediate vertex buffer descriptor
 	SIBinaryUserDataUAV,                    // immediate UAV descriptor
-	SIBinaryUserDataALUFloatConst,        // immediate float const (scalar or vector)
-	SIBinaryUserDataALUBool32Const,       // 32 immediate bools packed into a single UINT
-	SIBinaryUserDataGDSCounterRange,      // immediate UINT with GDS address range for counters
-	SIBinaryUserDataGDSMemoryRange,       // immediate UINT with GDS address range for storage
-	SIBinaryUserDataGWSBase,               // immediate UINT with GWS resource base offset
-	SIBinaryUserDataWorkItemRange,        // immediate HSAIL work item range
-	SIBinaryUserDataWorkGroupRange,       // immediate HSAIL work group range
-	SIBinaryUserDataDispatchId,            // immediate HSAIL dispatch ID
-	SIBinaryUserDataScratchBuffer,         // immediate HSAIL scratch buffer descriptor
-	SIBinaryUserDataHeapBuffer,            // immediate HSAIL heap buffer descriptor
-	SIBinaryUserDataKernelArg,             // immediate HSAIL kernel argument
-	SIBinaryUserDataContextBase,           // immediate HSAIL context base-address
-	SIBinaryUserDataLDSEsgsSize,          // immediate LDS ESGS size used in on-chip GS
-	SIBinaryUserDataPtrFetchShader,       // fetch shader subroutine pointer
-	SIBinaryUserDataPtrResourceTable,         // flat/chunked resource table pointer
-	SIBinaryUserDataConstBufferTable,     // flat/chunked const buffer table pointer
-	SIBinaryUserDataInteralResourceTable,// flat/chunked internal resource table pointer
-	SIBinaryUserDataSamplerTable,          // flat/chunked sampler table pointer
-	SIBinaryUserDataUAVTable,              // flat/chunked UAV resource table pointer
-	SIBinaryUserDataInternalGlobalTable,  // internal driver table pointer
-	SIBinaryUserDataVertexBufferTable,    // flat/chunked vertex buffer table pointer
-	SIBinaryUserDataSoBufferTable,        // flat/chunked stream-out buffer table pointer
-	SIBinaryUserDataExtendedUserData,     // extended user data in video memory
-	SIBinaryUserDataIndirectResource,      // pointer to resource indirection table
-	SIBinaryUserDataInternalResource,// pointer to internal resource indirection table
-	SIBinaryUserDataPtrIndirectUAV,           // pointer to UAV indirection table
+	SIBinaryUserDataALUFloatConst,          // immediate float const (scalar or vector)
+	SIBinaryUserDataALUBool32Const,         // 32 immediate bools packed into a single UINT
+	SIBinaryUserDataGDSCounterRange,        // immediate UINT with GDS address range for counters
+	SIBinaryUserDataGDSMemoryRange,         // immediate UINT with GDS address range for storage
+	SIBinaryUserDataGWSBase,                // immediate UINT with GWS resource base offset
+	SIBinaryUserDataWorkItemRange,          // immediate HSAIL work item range
+	SIBinaryUserDataWorkGroupRange,         // immediate HSAIL work group range
+	SIBinaryUserDataDispatchId,             // immediate HSAIL dispatch ID
+	SIBinaryUserDataScratchBuffer,          // immediate HSAIL scratch buffer descriptor
+	SIBinaryUserDataHeapBuffer,             // immediate HSAIL heap buffer descriptor
+	SIBinaryUserDataKernelArg,              // immediate HSAIL kernel argument
+	SIBinaryUserDataContextBase,            // immediate HSAIL context base-address
+	SIBinaryUserDataLDSEsgsSize,            // immediate LDS ESGS size used in on-chip GS
+	SIBinaryUserDataPtrFetchShader,         // fetch shader subroutine pointer
+	SIBinaryUserDataPtrResourceTable,       // flat/chunked resource table pointer
+	SIBinaryUserDataConstBufferTable,       // flat/chunked const buffer table pointer
+	SIBinaryUserDataInteralResourceTable,   // flat/chunked internal resource table pointer
+	SIBinaryUserDataSamplerTable,           // flat/chunked sampler table pointer
+	SIBinaryUserDataUAVTable,               // flat/chunked UAV resource table pointer
+	SIBinaryUserDataInternalGlobalTable,    // internal driver table pointer
+	SIBinaryUserDataVertexBufferTable,      // flat/chunked vertex buffer table pointer
+	SIBinaryUserDataSoBufferTable,          // flat/chunked stream-out buffer table pointer
+	SIBinaryUserDataExtendedUserData,       // extended user data in video memory
+	SIBinaryUserDataIndirectResource,       // pointer to resource indirection table
+	SIBinaryUserDataInternalResource,       // pointer to internal resource indirection table
+	SIBinaryUserDataPtrIndirectUAV,         // pointer to UAV indirection table
 	SIBinaryUserDataLast
 };
 
