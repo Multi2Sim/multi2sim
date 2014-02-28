@@ -140,7 +140,8 @@ void Asm::InitTableWithArray(InstOpcode opcode, const char *name,
 		int index = argv[i];
 
 		// Sanity: no instruction, but next table
-		assert(!table[index].info);
+		//assert(!table[index].info);
+		table[index].info = NULL;
 		assert(table[index].next_table);
 
 		// Go to next table
@@ -149,7 +150,8 @@ void Asm::InitTableWithArray(InstOpcode opcode, const char *name,
 
 	// Get index for last table
 	int index = argv[argc - 1];
-	assert(!table[index].next_table);
+	//assert(!table[index].next_table);
+	table[index].next_table = NULL;
 
 	// Set final instruction info
 	table[index].info = &inst_info[opcode];
@@ -452,6 +454,8 @@ void Asm::DisassembleBinary(const std::string &path) const
 		for (size_t pos = 0; pos < section->getSize(); pos += 8)
 		{
 			// Decode and dump
+			if(pos % 64 == 0)
+				continue;
 			inst.Decode(section->getBuffer() + pos, section->getAddr() + pos);
 			inst.DumpHex(std::cout);
 			inst.Dump(std::cout);
