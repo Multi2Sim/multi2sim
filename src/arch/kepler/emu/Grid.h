@@ -27,6 +27,8 @@
 #include <vector>
 #include <mem-system/Memory.h>
 
+#include <driver/cuda/function.h>
+
 #include "Emu.h"
 #include "ThreadBlock.h"
 
@@ -85,14 +87,14 @@ class Grid
 
 	// Instruction buffer
 	void *inst_buffer;
-	unsigned inst_buffer_size;
+	int inst_buffer_size;
 
 	// Shared memory top pointer
 	unsigned shared_mem_top;
 
 public:
 	/// Constructor
-	Grid(Emu *emu);
+	Grid(Emu *emu, cuda_function_t *function);
 
 	/// Dump the state of the grid in a plain-text format into an output
 	/// stream.

@@ -99,6 +99,8 @@ void Warp::Execute()
 	InstBytes inst_bytes;
 	InstOpcode inst_op;
 
+	InstFunc InstFunction;
+
 	/* Get instruction */
 	inst_bytes.as_uint[0] = inst_buffer[pc / inst_size] >> 32;
 	inst_bytes.as_uint[1] = inst_buffer[pc / inst_size];
@@ -106,16 +108,21 @@ void Warp::Execute()
 		//	__FILE__, __LINE__, this->id, this->pc, inst_bytes.as_dword);
 
 	/* Decode instruction */
-	inst->Decode((const char *) &inst_bytes, pc);
+	if( pc % 64)
+	{
+		inst->Decode((const char *) &inst_bytes, pc);
 
-	/* Execute instruction */
-	inst_op = (InstOpcode) inst->getOpcode();
-	if (!inst_op)
-		std::cerr << __FILE__ << ":" << __LINE__ << ": unrecognized instruction ("
-				<< inst_bytes.as_uint[0]<< inst_bytes.as_uint[1] << std::endl;
-	for (auto thread_id = threads_begin; thread_id < threads_end; ++thread_id)
-		grid->getInstFunc(inst_op); //make it clear
-
+		/* Execute instruction */
+		inst_op = (InstOpcode) inst->getOpcode();
+		if (!inst_op)
+			std::cerr << __FILE__ << ":" << __LINE__ << ": unrecognized instruction ("
+					<< inst_bytes.as_uint[0]<< inst_bytes.as_uint[1] << std::endl;
+		for (auto thread_id = threads_begin; thread_id < threads_end; ++thread_id)
+		{
+			InstFunction = grid->getInstFunc(inst_op); //make it clear
+			(*InstFunction)(thread_id->get(), inst);
+		}
+	}
 	/* Finish */
 
 	if (finished_emu)
@@ -144,13 +151,16 @@ void Warp::Execute()
 	else
 		pc = this->target_pc;
 */
-	pc += inst_size;		//make it clear, no jump
+        pc += inst_size;		//make it clear, no jump
 
 	/* Stats */
 
 	//asEmu(emu)->instructions++; // no parent class any more
-	inst_count++;					//other counter?
-	emu_inst_count++;
+	if( pc % 64 )
+	{
+        inst_count++;					//other counter?
+        emu_inst_count++;
+	}
 }
 
 } //namespace

@@ -23,6 +23,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include <driver/cuda/function.h>
 /*
 #include "grid.h"
 #include "emu.h"
@@ -68,12 +70,16 @@ void KplWriteConstMem(KplEmu *self,unsigned addr, unsigned size, void* buf);
 /// Push an element into pending grid list
 void KplPushGridList(KplEmu* self, KplGrid *grid);
 
+/// The run function of Kepler emulator
+
+void KplRun(KplEmu* self);
+
 ////////////////////////////////////////////////////////////////////////////////
 // Wrapper for class Grid
 ////////////////////////////////////////////////////////////////////////////////
 
 
-KplGrid *KplWrapGridCreate(KplEmu *self);
+KplGrid *KplWrapGridCreate(KplEmu *self, struct cuda_function_t *function);
 
 int KplGetID(KplGrid *self);
 

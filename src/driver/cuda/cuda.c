@@ -882,7 +882,7 @@ void kpl_grid_set_free_notify_func(KplGrid *grid, void (*func)(void *),
 	grid->free_notify_func = func;
 	grid->free_notify_data = user_data;
 }
-/*
+
 static void cuda_abi_kpl_kernel_launch_finish(void *user_data)
 {
 	struct cuda_abi_kpl_kernel_launch_info_t *info = user_data;
@@ -890,22 +890,21 @@ static void cuda_abi_kpl_kernel_launch_finish(void *user_data)
 
 	X86Context *ctx = info->context;
 	KplGrid *grid = info->grid;
-*/
+
 	/* Debug */
-	//cuda_debug("Grid %d running kernel '%s' finished\n",
-		//	grid->id, kernel->name);
-/*
+	cuda_debug("Grid %d running kernel '%s' finished\n",
+			grid->id, kernel->name);
+
 	cuda_debug("Grid %d running kernel '%s' finished\n",
 			KplGetID(grid), kernel->name);
-*/
 	/* Set 'finished' flag in launch info */
-//	info->finished = 1;
+	info->finished = 1;
 
 	/* Force the x86 emulator to check which suspended contexts can wakeup,
 	 * based on their new state. */
-/*	X86EmuProcessEventsSchedule(ctx->emu);
+	X86EmuProcessEventsSchedule(ctx->emu);
 }
-*/
+
 static int cuda_abi_kpl_kernel_launch_can_wakeup(X86Context *ctx,
 		void *user_data)
 {
@@ -992,7 +991,7 @@ int cuda_func_cuKplLaunchKernel(X86Context *ctx)
 
 	/* Create grid */
 	//grid = new(KplGrid, kpl_emu, function);  // TODO: memory leak?
-	grid = KplWrapGridCreate(kpl_emu);
+	grid = KplWrapGridCreate(kpl_emu, function);
 
 	/* Set up grid */
 	//KplGridSetupSize(grid, grid_dim, block_dim);
@@ -1014,7 +1013,7 @@ int cuda_func_cuKplLaunchKernel(X86Context *ctx)
 	info->grid = grid;
 	//kpl_grid_set_free_notify_func(grid, cuda_abi_kpl_kernel_launch_finish,
 	//		info);
-
+	cuda_abi_kpl_kernel_launch_finish(info);
 	/* Suspend x86 context until grid finishes */
 	X86ContextSuspend(ctx, cuda_abi_kpl_kernel_launch_can_wakeup, info,
 			cuda_abi_kpl_kernel_launch_wakeup, info);
