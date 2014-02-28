@@ -26,14 +26,14 @@ namespace x86
 {
 
 
-void Extended::DoubleToExtended(double f, char *x)
+void Extended::DoubleToExtended(double f, unsigned char *x)
 {
 	asm volatile ("fldl %1; fstpt %0\n\t"
 			: "=m" (*x) : "m" (f));
 }
 
 
-double Extended::ExtendedToDouble(const char *x)
+double Extended::ExtendedToDouble(const unsigned char *x)
 {
 	double f;
 	asm volatile ("fldt %1; fstpl %0\n\t"
@@ -42,14 +42,14 @@ double Extended::ExtendedToDouble(const char *x)
 }
 
 
-void Extended::FloatToExtended(float f, char *x)
+void Extended::FloatToExtended(float f, unsigned char *x)
 {
 	asm volatile ("flds %1; fstpt %0\n\t"
 			: "=m" (*x) : "m" (f));
 }
 
 
-float Extended::ExtendedToFloat(const char *x)
+float Extended::ExtendedToFloat(const unsigned char *x)
 {
 	float f;
 	asm volatile ("fldt %1; fstps %0\n\t"

@@ -1039,7 +1039,7 @@ void Context::ExecuteInst_int_imm8()
 	// Do system call if not in speculative mode
 	spec_mode = getState(ContextSpecMode);
 	if (!spec_mode)
-		Syscall();
+		ExecuteSyscall();
 
 	newUInst(UInstSyscall, 0, 0, 0, 0, 0, 0, 0);
 }

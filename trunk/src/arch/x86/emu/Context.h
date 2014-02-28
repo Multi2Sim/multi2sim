@@ -77,8 +77,9 @@ enum ContextListType
 	ContextListCount
 };
 
-// Saved host flags during emulation
+// Saved host statue during emulation
 extern long context_host_flags;
+extern unsigned char context_host_fpenv[28];
 
 // Assembly code used before and after instruction emulation when the host flags
 // are affected by the guest code
@@ -86,10 +87,38 @@ extern long context_host_flags;
 	"pushf\n\t" \
 	"pop %0\n\t" \
 	: "=m" (context_host_flags));
+
 #define __X86_CONTEXT_RESTORE_FLAGS__ asm volatile ( \
 	"push %0\n\t" \
 	"popf\n\t" \
 	: "=m" (context_host_flags));
+
+// Assembly code used before and after emulation of floating-point operations
+#define __X86_CONTEXT_FP_BEGIN__ { \
+	unsigned short fpu_ctrl; \
+	asm volatile ( \
+		"pushf\n\t" \
+		"pop %0\n\t" \
+		"fnstenv %1\n\t" \
+		"fnclex\n\t" \
+		"fldcw %2\n\t" \
+		: "=m" (context_host_flags), "=m" (*context_host_fpenv) \
+		: "m" (fpu_ctrl) \
+	); \
+	regs.setFpuCtrl(fpu_ctrl); \
+}
+
+#define __X86_CONTEXT_FP_END__ { \
+	unsigned short fpu_ctrl = regs.getFpuCtrl(); \
+	asm volatile ( \
+		"push %0\n\t" \
+		"popf\n\t" \
+		"fnstcw %1\n\t" \
+		"fldenv %2\n\t" \
+		: "=m" (context_host_flags), "=m" (fpu_ctrl) \
+		: "m" (*context_host_fpenv) \
+	); \
+}
 
 
 
@@ -372,6 +401,8 @@ class Context
 	}
 
 
+
+
 	///////////////////////////////////////////////////////////////////////
 	//
 	// Functions and fields related with x86 instruction emulation,
@@ -387,11 +418,8 @@ class Context
 
 	// Instruction emulation functions. Each entry of asm.dat will be
 	// expanded into a function prototype. For example, entry
-	//
 	// 	DEFINST(adc_al_imm8, 0x14, SKIP, SKIP, SKIP, IB, 0)
-	//
 	// is expanded to
-	//
 	//	void ExecuteInst_adc_al_imm8();
 #define DEFINST(name, op1, op2, op3, modrm, imm, pfx) void ExecuteInst_##name();
 #include <arch/x86/asm/asm.dat>
@@ -454,6 +482,9 @@ class Context
 	void ExecuteStringInst_stosb();
 	void ExecuteStringInst_stosd();
 
+	// Additional instructions
+	void ExecuteInst_fist_m64();
+
 	// Reset or update iteration counters for string instructions with
 	// 'repXXX' prefixes.
 	void StartRepInst();
@@ -493,6 +524,27 @@ class Context
 	void StoreIR16(unsigned short value) { regs.Write(inst.getOpIndex() + InstRegAx, value); }
 	void StoreIR32(unsigned int value) { regs.Write(inst.getOpIndex() + InstRegEax, value); }
 
+	void LoadFpu(int index, unsigned char *value);
+	void StoreFpu(int index, unsigned char *value);
+	void PopFpu(unsigned char *value);
+	void PushFpu(unsigned char *value);
+
+	float LoadFloat();
+	double LoadDouble();
+	void LoadExtended(unsigned char *value);
+	void StoreFloat(float value);
+	void StoreDouble(double value);
+	void StoreExtended(unsigned char *value);
+
+	// Store the code bits (14, 10, 9, and 8) of the FPU state word into the
+	// 'code' register
+	void StoreFpuCode(unsigned short status);
+
+	// Read the state register, by building it from the 'top' and 'code'
+	// fields
+	unsigned short LoadFpuStatus();
+
+
 	// Return the final address obtained from binding \a address inside
 	// the corresponding segment. The segment boundaries are checked.
 	unsigned getLinearAddress(unsigned offset);
@@ -504,7 +556,9 @@ class Context
 	// Return a memory address contained in the immediate value
 	unsigned getMoffsAddress();
 
-	
+
+
+
 	///////////////////////////////////////////////////////////////////////
 	//
 	// Functions and fields related with the emulation of system calls,
@@ -513,7 +567,45 @@ class Context
 	///////////////////////////////////////////////////////////////////////
 
 	// Emulate a system call
-	void Syscall();
+	void ExecuteSyscall();
+
+	// Enumeration with all system call codes. Each entry of syscall.dat
+	// will be expanded into a code. For example, entry
+	//	DEFSYSCALL(exit, 1)
+	// will produce code
+	//	SyscallCode_exit
+	// There is a last element 'SyscallCodeCount' that will be one unit
+	// higher than the highest system call code found in syscall.dat.
+	enum
+	{
+#define DEFSYSCALL(name, code) SyscallCode_##name = code,
+#include "syscall.dat"
+#undef DEFSYSCALL
+		SyscallCodeCount
+	};
+
+	// System call emulation functions. Each entry of syscall.dat will be
+	// expanded into a function prototype. For example, entry
+	//	DEFSYSCALL(exit, 1)
+	// is expanded to
+	//	void ExecuteSyscall_exit();
+#define DEFSYSCALL(name, code) int ExecuteSyscall_##name();
+#include "syscall.dat"
+#undef DEFSYSCALL
+
+	// System call names
+	static const char *syscall_name[SyscallCodeCount + 1];
+
+	// Prototype of a member function of class Context devoted to the
+	// execution of ISA instructions. The emulator has a table indexed by an
+	// instruction identifier that points to all instruction emulation
+	// functions.
+	typedef int (Context::*ExecuteSyscallFn)();
+
+	// Table of system call execution functions
+	static const ExecuteSyscallFn execute_syscall_fn[SyscallCodeCount + 1];
+
+
 
 public:
 	
