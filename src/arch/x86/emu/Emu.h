@@ -20,6 +20,8 @@
 #ifndef ARCH_X86_EMU_EMU_H
 #define ARCH_X86_EMU_EMU_H
 
+#include <pthread.h>
+
 #include <arch/common/Arch.h>
 #include <arch/common/Emu.h>
 #include <lib/cpp/CommandLine.h>
@@ -109,6 +111,16 @@ class Emu : public comm::Emu
 	// Process ID to be assigned next. Process IDs are assigned in
 	// increasing order, using function Emu::getPid()
 	int pid;
+	
+	// Emulator mutex, used to access shared variables between main program
+	// and child host threads.
+	pthread_mutex_t mutex;
+
+	// Schedule next call to Emu::ProcessEvents(). The call will only be
+	// effective if 'process_events_force' is set. This flag should be
+	// accessed thread-safely locking the mutex.
+	bool process_events_force;
+
 
 public:
 
@@ -153,6 +165,23 @@ public:
 	/// Return a unique process ID. Contexts can call this function when
 	/// created to obtain their unique identifier.
 	int getPid() { return pid++; }
+
+	/// Get reference to the main context list
+	std::list<std::unique_ptr<Context>> &getContexts() { return contexts; }
+
+	/// Lock the emulator mutex
+	void LockMutex() { pthread_mutex_lock(&mutex); }
+
+	/// Unlock the emulator mutex
+	void UnlockMutex() { pthread_mutex_unlock(&mutex); }
+
+	/// Schedule a call to ProcessEvents(). This call internally locks the
+	/// emulator mutex.
+	void ProcessEventsSchedule();
+
+	/// Schedule next call to ProcessEvents(). The emulator mutex must be
+	/// locked before invoking this function.
+	void ProcessEventsScheduleUnsafe() { process_events_force = true; }
 
 	/// Run one iteration of the emulation loop.
 	/// \return This function \c true if the iteration had a useful

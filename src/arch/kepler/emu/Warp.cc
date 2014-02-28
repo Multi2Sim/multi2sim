@@ -55,7 +55,7 @@ Warp::Warp(ThreadBlock *thread_block, unsigned id)
 		(thread_block->getWarpsInWorkgroup() - 1) * warp_size;
 
 	/* Instruction */
-	inst = new Inst(grid->getAsm());
+	inst = new Inst();
 	inst_size = 8;
 	inst_buffer = grid->getInstBuffer();
 	inst_buffer_size = grid->getInstBufferSize();

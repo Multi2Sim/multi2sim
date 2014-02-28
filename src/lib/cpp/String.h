@@ -150,6 +150,12 @@ std::string StringParagraph(const std::string &text,
 		int indent = 0, int first_indent = 0,
 		int width = 80);
 
+/// Return a string with a human-readable representation of a binary buffer.
+/// \param buffer Pointer to the binary buffer.
+/// \param size Number of bytes available in the buffer.
+/// \param truncate Maximum number of bytes from the original buffer to dump
+///	into the string, or 0 for no max. This argument is optional.
+std::string StringBinaryBuffer(char *buffer, int size, int truncate = 0);
 
 
 /// Class representing a string map: a set of strings mapped to integer values.

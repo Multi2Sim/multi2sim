@@ -28,9 +28,9 @@
 // Wrapper for class Inst
 ////////////////////////////////////////////////////////////////////////////////
 
-struct KplInstWrap *KplInstWrapCreate(struct KplAsm *as)
+struct KplInstWrap *KplInstWrapCreate()
 {
-	return (KplInstWrap *) new Kepler::Inst((Kepler::Asm *) as);
+	return (KplInstWrap *) new Kepler::Inst();
 }
 
 void KplInstWrapFree(struct KplInstWrap *self)
@@ -62,14 +62,12 @@ KplInstOpcode KplInstWrapGetOpcode(struct KplInstWrap *self)
 
 struct KplAsm *KplAsmCreate()
 {
-	Kepler::Asm *as = new Kepler::Asm();
+	Kepler::Asm *as = Kepler::Asm::getInstance();
 	return (KplAsm *) as;
 }
 
 void KplAsmFree(struct KplAsm *self)
 {
-	Kepler::Asm *as = (Kepler::Asm *) self;
-	delete as;
 }
 
 void KplAsmDisassembleBinary(struct KplAsm *self, const char *path)

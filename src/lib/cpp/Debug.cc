@@ -73,6 +73,13 @@ void Debug::setPath(const std::string &path)
 }
 
 
+void Debug::Flush()
+{
+	if (os)
+		os->flush();
+}
+
+
 
 }  // namespace misc
 

@@ -204,9 +204,18 @@ misc::StringMap inst_u8_map =
 };
 
 
-Inst::Inst(const Asm *as)
+InstDecodeInfo::InstDecodeInfo()
 {
-	this->as = as;
+	next_table_low = 0;
+	next_table_high = 0;
+	next_table = nullptr;
+	info = nullptr;
+}
+
+
+Inst::Inst()
+{
+	as = Asm::getInstance();
 }
 
 

@@ -21,6 +21,7 @@
 #include <fcntl.h>
 #include <poll.h>
 #include <sched.h>
+#include <string.h>
 #include <syscall.h>
 #include <unistd.h>
 #include <utime.h>
@@ -358,7 +359,57 @@ int Context::ExecuteSyscall_read()
 
 int Context::ExecuteSyscall_write()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	int guest_fd = regs.getEbx();
+	unsigned buf_ptr = regs.getEcx();
+	unsigned count = regs.getEdx();
+	emu->syscall_debug << misc::fmt("  guest_fd=%d, buf_ptr=0x%x, count=0x%x\n",
+			guest_fd, buf_ptr, count);
+
+	// Get file descriptor
+	FileDesc *desc = file_table.getFileDesc(guest_fd);
+	if (!desc)
+		return -EBADF;
+	int host_fd = desc->getHostIndex();
+	emu->syscall_debug << misc::fmt("  host_fd=%d\n", host_fd);
+
+	// Read buffer from memory
+	char *buf = new char[count];
+	memory->Read(buf_ptr, count, buf);
+	emu->syscall_debug << "  buf=\""
+			<< misc::StringBinaryBuffer(buf, count, 40)
+			<< "\"\n";
+
+	// Poll the file descriptor to check if write is blocking
+	struct pollfd fds;
+	fds.fd = host_fd;
+	fds.events = POLLOUT;
+	poll(&fds, 1, 0);
+
+	// Non-blocking write
+	if (fds.revents)
+	{
+		// Host write
+		int err = write(host_fd, buf, count);
+		if (err == -1)
+			err = -errno;
+
+		// Return written bytes
+		delete buf;
+		return err;
+	}
+
+	// Blocking write - suspend thread
+	emu->syscall_debug << misc::fmt("  blocking write - process suspended\n");
+	wakeup_fd = guest_fd;
+	setState(ContextSuspended);
+	setState(ContextWrite);
+	emu->ProcessEventsSchedule();
+
+	// Return value doesn't matter here. It will be overwritten when the
+	// context wakes up after blocking call.
+	delete buf;
+	return 0;
 }
 
 
@@ -1435,6 +1486,129 @@ int Context::ExecuteSyscall_readdir()
 //
 // System call 'mmap'
 //
+
+static const unsigned mmap_base_address = 0xb7fb0000;
+
+static const misc::StringMap mmap_prot_map =
+{
+	{ "PROT_READ",       0x1 },
+	{ "PROT_WRITE",      0x2 },
+	{ "PROT_EXEC",       0x4 },
+	{ "PROT_SEM",        0x8 },
+	{ "PROT_GROWSDOWN",  0x01000000 },
+	{ "PROT_GROWSUP",    0x02000000 }
+};
+
+static const misc::StringMap mmap_flags_map =
+{
+	{ "MAP_SHARED",      0x01 },
+	{ "MAP_PRIVATE",     0x02 },
+	{ "MAP_FIXED",       0x10 },
+	{ "MAP_ANONYMOUS",   0x20 },
+	{ "MAP_GROWSDOWN",   0x00100 },
+	{ "MAP_DENYWRITE",   0x00800 },
+	{ "MAP_EXECUTABLE",  0x01000 },
+	{ "MAP_LOCKED",      0x02000 },
+	{ "MAP_NORESERVE",   0x04000 },
+	{ "MAP_POPULATE",    0x08000 },
+	{ "MAP_NONBLOCK",    0x10000 }
+};
+
+int Context::SyscallMmapAux(unsigned int addr, unsigned int len,
+		int prot, int flags, int guest_fd, int offset)
+{
+	// Check that protection flags match in guest and host
+	assert(PROT_READ == 1);
+	assert(PROT_WRITE == 2);
+	assert(PROT_EXEC == 4);
+
+	// Check that mapping flags match
+	assert(MAP_SHARED == 0x01);
+	assert(MAP_PRIVATE == 0x02);
+	assert(MAP_FIXED == 0x10);
+	assert(MAP_ANONYMOUS == 0x20);
+
+	// Translate file descriptor
+	FileDesc *desc = file_table.getFileDesc(guest_fd);
+	int host_fd = desc ? desc->getHostIndex() : -1;
+	if (guest_fd > 0 && host_fd < 0)
+		misc::fatal("%s: invalid guest descriptor", __FUNCTION__);
+
+	// Permissions
+	int perm = mem::MemoryAccessInit;
+	perm |= prot & PROT_READ ? mem::MemoryAccessRead : 0;
+	perm |= prot & PROT_WRITE ? mem::MemoryAccessWrite : 0;
+	perm |= prot & PROT_EXEC ? mem::MemoryAccessExec : 0;
+
+	// Flag MAP_ANONYMOUS.
+	// If it is set, the 'fd' parameter is ignored.
+	if (flags & MAP_ANONYMOUS)
+		host_fd = -1;
+
+	// 'addr' and 'offset' must be aligned to page size boundaries.
+	// 'len' is rounded up to page boundary.
+	if (offset & ~mem::MemoryPageMask)
+		misc::fatal("%s: unaligned offset", __FUNCTION__);
+	if (addr & ~mem::MemoryPageMask)
+		misc::fatal("%s: unaligned address", __FUNCTION__);
+	unsigned len_aligned = misc::RoundUp(len, mem::MemoryPageSize);
+
+	// Find region for allocation
+	if (flags & MAP_FIXED)
+	{
+		// If MAP_FIXED is set, the 'addr' parameter must be obeyed, and
+		// is not just a hint for a possible base address of the
+		// allocated range.
+		if (!addr)
+			misc::fatal("%s: no start specified for fixed mapping",
+					__FUNCTION__);
+
+		// Any allocated page in the range specified by 'addr' and 'len'
+		// must be discarded.
+		memory->Unmap(addr, len_aligned);
+	}
+	else
+	{
+		if (!addr || memory->MapSpaceDown(addr, len_aligned) != addr)
+			addr = mmap_base_address;
+		addr = memory->MapSpaceDown(addr, len_aligned);
+		if (addr == (unsigned) -1)
+			misc::fatal("%s: out of guest memory", __FUNCTION__);
+	}
+
+	// Allocation of memory
+	memory->Map(addr, len_aligned, perm);
+
+	// Host mapping
+	if (host_fd >= 0)
+	{
+		// Save previous position
+		unsigned last_pos = lseek(host_fd, 0, SEEK_CUR);
+		lseek(host_fd, offset, SEEK_SET);
+
+		// Read pages
+		assert(len_aligned % mem::MemoryPageSize == 0);
+		assert(addr % mem::MemoryPageSize == 0);
+		unsigned curr_addr = addr;
+		for (int size = len_aligned; size > 0; size -= mem::MemoryPageSize)
+		{
+			char buf[mem::MemoryPageSize];
+			memset(buf, 0, mem::MemoryPageSize);
+			int count = read(host_fd, buf, mem::MemoryPageSize);
+			if (count)
+				memory->Access(curr_addr, mem::MemoryPageSize,
+						buf, mem::MemoryAccessInit);
+			curr_addr += mem::MemoryPageSize;
+		}
+
+		// Return file to last position
+		lseek(host_fd, last_pos, SEEK_SET);
+	}
+
+	// Return mapped address
+	return addr;
+}
+
 
 int Context::ExecuteSyscall_mmap()
 {
@@ -2694,7 +2868,26 @@ int Context::ExecuteSyscall_getrlimit()
 
 int Context::ExecuteSyscall_mmap2()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	unsigned addr = regs.getEbx();
+	unsigned len = regs.getEcx();
+	int prot = regs.getEdx();
+	int flags = regs.getEsi();
+	int guest_fd = regs.getEdi();
+	int offset = regs.getEbp();
+
+	// Debug
+	emu->syscall_debug << misc::fmt("  addr=0x%x, len=%u, prot=0x%x, "
+			"flags=0x%x, guest_fd=%d, offset=0x%x\n",
+			addr, len, prot, flags, guest_fd, offset);
+	emu->syscall_debug << misc::fmt("  prot=%s, flags=%s\n",
+			mmap_prot_map.MapFlags(prot).c_str(),
+			mmap_flags_map.MapFlags(flags).c_str());
+
+	// System calls 'mmap' and 'mmap2' only differ in the interpretation of
+	// argument 'offset'. Here, it is given in memory pages.
+	return SyscallMmapAux(addr, len, prot, flags, guest_fd,
+			offset << mem::MemoryPageShift);
 }
 
 
@@ -2728,6 +2921,59 @@ int Context::ExecuteSyscall_ftruncate64()
 // System call 'stat64'
 //
 
+struct sim_stat64_t
+{
+	unsigned long long dev;  // 0 8
+	unsigned int pad1;  // 8 4
+	unsigned int __ino;  // 12 4
+	unsigned int mode;  // 16 4
+	unsigned int nlink;  // 20 4
+	unsigned int uid;  // 24 4
+	unsigned int gid;  // 28 4
+	unsigned long long rdev;  // 32 8
+	unsigned int pad2;  // 40 4
+	long long size;  // 44 8
+	unsigned int blksize;  // 52 4
+	unsigned long long blocks;  // 56 8
+	unsigned int atime;  // 64 4
+	unsigned int atime_nsec;  // 68 4
+	unsigned int mtime;  // 72 4
+	unsigned int mtime_nsec;  // 76 4
+	unsigned int ctime;  // 80 4
+	unsigned int ctime_nsec;  // 84 4
+	unsigned long long ino;  // 88 8
+} __attribute__((packed));
+
+static void sys_stat_host_to_guest(struct sim_stat64_t *guest, struct stat *host)
+{
+	assert(sizeof(struct sim_stat64_t) == 96);
+	memset(guest, 0, sizeof(struct sim_stat64_t));
+
+	guest->dev = host->st_dev;
+	guest->__ino = host->st_ino;
+	guest->mode = host->st_mode;
+	guest->nlink = host->st_nlink;
+	guest->uid = host->st_uid;
+	guest->gid = host->st_gid;
+	guest->rdev = host->st_rdev;
+	guest->size = host->st_size;
+	guest->blksize = host->st_blksize;
+	guest->blocks = host->st_blocks;
+	guest->atime = host->st_atime;
+	guest->mtime = host->st_mtime;
+	guest->ctime = host->st_ctime;
+	guest->ino = host->st_ino;
+
+	Emu *emu = Emu::getInstance();
+	emu->syscall_debug << misc::fmt("  stat64 structure:\n");
+	emu->syscall_debug << misc::fmt("    dev=%lld, ino=%lld, mode=%d, nlink=%d\n",
+		guest->dev, guest->ino, guest->mode, guest->nlink);
+	emu->syscall_debug << misc::fmt("    uid=%d, gid=%d, rdev=%lld\n",
+		guest->uid, guest->gid, guest->rdev);
+	emu->syscall_debug << misc::fmt("    size=%lld, blksize=%d, blocks=%lld\n",
+		guest->size, guest->blksize, guest->blocks);
+}
+
 int Context::ExecuteSyscall_stat64()
 {
 	__UNIMPLEMENTED__
@@ -2754,7 +3000,27 @@ int Context::ExecuteSyscall_lstat64()
 
 int Context::ExecuteSyscall_fstat64()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	int fd = regs.getEbx();
+	unsigned statbuf_ptr = regs.getEcx();
+	emu->syscall_debug << misc::fmt("  fd=%d, statbuf_ptr=0x%x\n",
+			fd, statbuf_ptr);
+
+	// Get host descriptor
+	int host_fd = file_table.getHostIndex(fd);
+	emu->syscall_debug << misc::fmt("  host_fd=%d\n", host_fd);
+
+	// Host call
+	struct stat statbuf;
+	int err = fstat(host_fd, &statbuf);
+	if (err == -1)
+		return -errno;
+
+	// Return
+	struct sim_stat64_t sim_statbuf;
+	sys_stat_host_to_guest(&sim_statbuf, &statbuf);
+	memory->Write(statbuf_ptr, sizeof sim_statbuf, (char *) &sim_statbuf);
+	return 0;
 }
 
 
@@ -3455,7 +3721,13 @@ int Context::ExecuteSyscall_ni_syscall_251()
 
 int Context::ExecuteSyscall_exit_group()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	int status = regs.getEbx();
+	emu->syscall_debug << misc::fmt("  status=%d\n", status);
+
+	// Finish
+	FinishGroup(status);
+	return 0;
 }
 
 
