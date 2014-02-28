@@ -112,6 +112,90 @@ void Context::UpdateState(unsigned state)
 }
 
 
+int Context::FutexWake(unsigned futex, unsigned count, unsigned bitset)
+{
+	Context *wakeup_context;
+	int wakeup_count = 0;
+
+	// Look for threads suspended in this futex
+	while (count)
+	{
+		wakeup_context = nullptr;
+		for (Context *context : emu->getContextList(ContextListSuspended))
+		{
+			if (!context->getState(ContextFutex) || context->wakeup_futex != futex)
+				continue;
+			if (!(context->wakeup_futex_bitset & bitset))
+				continue;
+			if (!wakeup_context || context->wakeup_futex_sleep <
+					wakeup_context->wakeup_futex_sleep)
+				wakeup_context = context;
+		}
+
+		if (wakeup_context)
+		{
+			// Wake up context
+			wakeup_context->clearState(ContextFutex);
+			wakeup_context->clearState(ContextSuspended);
+			emu->syscall_debug << misc::fmt("  futex 0x%x: thread %d woken up\n",
+					futex, wakeup_context->pid);
+			wakeup_count++;
+			count--;
+
+			// Set system call return value
+			wakeup_context->regs.setEax(0);
+		}
+		else
+		{
+			break;
+		}
+	}
+	return wakeup_count;
+}
+
+
+void Context::ExitRobustList()
+{
+	// Read the offset from the list head. This is how the structure is
+	// represented in the kernel:
+	// struct robust_list {
+	//      struct robust_list __user *next;
+	// }
+	//struct robust_list_head {
+	//	struct robust_list list;
+	//	long futex_offset;
+	//	struct robust_list __user *list_op_pending;
+	// }
+	// See linux/Documentation/robust-futex-ABI.txt for details
+	// about robust futex wake up at thread exit.
+	//
+
+	unsigned lock_entry = robust_list_head;
+	if (!lock_entry)
+		return;
+
+	emu->syscall_debug << misc::fmt("ctx %d: processing robust futex list\n",
+			pid);
+	for (;;)
+	{
+		unsigned int next, offset, lock_word;
+		memory->Read(lock_entry, 4, (char *) &next);
+		memory->Read(lock_entry + 4, 4, (char *) &offset);
+		memory->Read(lock_entry + offset, 4, (char *) &lock_word);
+
+		emu->syscall_debug << misc::fmt("  lock_entry=0x%x: "
+				"offset=%d, lock_word=0x%x\n",
+				lock_entry, offset, lock_word);
+
+		// Stop processing list if 'next' points to robust list
+		if (!next || next == robust_list_head)
+			break;
+		lock_entry = next;
+	}
+}
+
+
+
 
 //
 // Public functions
@@ -127,6 +211,13 @@ Context::Context()
 	glibc_segment_base = 0;
 	glibc_segment_limit = 0;
 	pid = emu->getPid();
+	parent = nullptr;
+	group_parent = nullptr;
+	exit_signal = 0;
+	exit_code = 0;
+	clear_child_tid = 0;
+	robust_list_head = 0;
+	host_thread_suspend_active = false;
 	
 	// String operations
 	str_op_esi = 0;
@@ -154,7 +245,7 @@ Context::~Context()
 }
 
 
-void Context::loadProgram(const std::vector<std::string> &args,
+void Context::LoadProgram(const std::vector<std::string> &args,
 		const std::vector<std::string> &env,
 		const std::string &cwd,
 		const std::string &stdin_file_name,
@@ -245,6 +336,45 @@ void Context::DebugCallInst()
 #endif
 }
 
+void Context::HostThreadSuspendCancelUnsafe()
+{
+	if (!host_thread_suspend_active)
+		return;
+	if (pthread_cancel(host_thread_suspend))
+		misc::fatal("%s: context %d: error canceling host thread",
+			__FUNCTION__, pid);
+	host_thread_suspend_active = false;
+	emu->ProcessEventsScheduleUnsafe();
+}
+
+
+void Context::HostThreadSuspendCancel()
+{
+	emu->LockMutex();
+	HostThreadSuspendCancelUnsafe();
+	emu->UnlockMutex();
+}
+
+
+void Context::HostThreadTimerCancelUnsafe()
+{
+	if (!host_thread_timer_active)
+		return;
+	if (pthread_cancel(host_thread_timer))
+		misc::fatal("%s: context %d: error canceling host thread",
+				__FUNCTION__, pid);
+	host_thread_timer_active = false;
+	emu->ProcessEventsScheduleUnsafe();
+}
+
+
+void Context::HostThreadTimerCancel()
+{
+	emu->LockMutex();
+	HostThreadTimerCancelUnsafe();
+	emu->UnlockMutex();
+}
+
 
 void Context::Execute()
 {
@@ -322,6 +452,100 @@ void Context::Execute()
 
 	// Stats
 	emu->incInstructions();
+}
+
+
+void Context::FinishGroup(int exit_code)
+{
+	// Make call on group parent only
+	if (group_parent)
+	{
+		assert(!group_parent->group_parent);
+		group_parent->FinishGroup(exit_code);
+		return;
+	}
+
+	// Context already finished
+	if (getState(ContextFinished) || getState(ContextZombie))
+		return;
+
+	// Finish all contexts in the group
+	for (auto &context : emu->getContexts())
+	{
+		if (context->group_parent != this && context.get() != this)
+			continue;
+
+		if (context->getState(ContextZombie))
+			context->setState(ContextFinished);
+		if (context->getState(ContextHandler))
+			context->ReturnFromSignalHandler();
+		context->HostThreadSuspendCancel();
+		context->HostThreadTimerCancel();
+
+		// Child context of 'context' goes to state 'finished'.
+		// Context 'context' goes to state 'zombie' or 'finished' if it has a parent
+		if (context.get() == this)
+			context->setState(context->parent ? ContextZombie : ContextFinished);
+		else
+			context->setState(ContextFinished);
+		context->exit_code = exit_code;
+	}
+
+	// Process events
+	emu->ProcessEventsSchedule();
+}
+
+
+void Context::Finish(int exit_code)
+{
+	// Context already finished
+	if (getState(ContextFinished) || getState(ContextZombie))
+		return;
+
+	// If context is waiting for host events, cancel spawned host threads
+	HostThreadSuspendCancel();
+	HostThreadTimerCancel();
+
+	// From now on, all children have lost their parent. If a child is
+	// already zombie, finish it, since its parent won't be able to waitpid it
+	// anymore.
+	for (auto &context : emu->getContexts())
+	{
+		if (context->parent == this)
+		{
+			context->parent = nullptr;
+			if (context->getState(ContextZombie))
+				context->setState(ContextFinished);
+		}
+	}
+
+	// Send finish signal to parent
+	if (exit_signal && parent)
+	{
+		emu->syscall_debug << misc::fmt("  sending signal %d to pid %d\n",
+				exit_signal, parent->pid);
+		parent->signal_mask_table.getPending().Add(exit_signal);
+		emu->ProcessEventsSchedule();
+	}
+
+	// If clear_child_tid was set, a futex() call must be performed on
+	// that pointer. Also wake up futexes in the robust list. */
+	if (clear_child_tid)
+	{
+		unsigned int zero = 0;
+		memory->Write(clear_child_tid, 4, (char *) &zero);
+		FutexWake(clear_child_tid, 1, -1);
+	}
+	ExitRobustList();
+
+	// If we are in a signal handler, stop it.
+	if (getState(ContextHandler))
+		ReturnFromSignalHandler();
+
+	// Finish context
+	setState(parent ? ContextZombie : ContextFinished);
+	this->exit_code = exit_code;
+	emu->ProcessEventsSchedule();
 }
 
 

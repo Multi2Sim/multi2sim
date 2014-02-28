@@ -62,9 +62,12 @@ struct InstDecodeInfo
 	int next_table_high;
 	InstDecodeInfo *next_table;
 
-	/* Field used when the table entry points to a final
-	 * instruction */
+	// Field used when the table entry points to a final
+	// instruction
 	InstInfo *info;
+
+	// Constructor that initializes all fields to 0
+	InstDecodeInfo();
 };
 
 
@@ -333,7 +336,7 @@ class Inst
 
 public:
 	/// Constructor
-	explicit Inst(const Asm *as);
+	Inst();
 
 	/// Decode the instruction in \a buffer at the offset specified by \a
 	/// address.

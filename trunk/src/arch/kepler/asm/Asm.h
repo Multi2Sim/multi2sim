@@ -20,7 +20,8 @@
 #ifndef ARCH_KEPLER_ASM_ASM_H
 #define ARCH_KEPLER_ASM_ASM_H
 
-#ifdef __cplusplus
+
+#include <memory>
 
 #include "Inst.h"
 
@@ -110,6 +111,9 @@ class Asm
 
 	InstDecodeInfo dec_table_c_b_e_b_a_a[16];
 
+	// Global instance of the Kepler disassembler
+	static std::unique_ptr<Asm> as;
+
 	template<typename... Args> void InitTable(InstOpcode opcode,
 			const char *name, const char *fmt_str, Args&&... args)
 	{
@@ -129,10 +133,14 @@ class Asm
 	void InitTableWithArray(InstOpcode opcode, const char *name,
 			const char *fmt_str, int argc, int argv[]);
 
+	// Private constructor for singleton
+	Asm();
+
 public:
 
-	/// Constructor
-	Asm();
+	/// Return the single instance of the Kepler disassembler, and allocate
+	/// it if this is the first time the function is invoked.
+	static Asm *getInstance();
 
 	/// Return a pointer to the decoding table, which will be indexed by
 	/// instruction bits for instruction decoding purposes.
@@ -146,6 +154,5 @@ public:
 
 }  // namespace Kepler
 
-#endif
 #endif  // ARCH_KEPLER_ASM_ASM_H
 
