@@ -54,22 +54,13 @@ misc::StringMap context_state_map =
 };
 
 long context_host_flags;
+unsigned char context_host_fpenv[28];
 
 
 
 //
 // Private functions
 //
-
-Context::ExecuteInstFn Context::execute_inst_fn[InstOpcodeCount] =
-{
-		nullptr  // For InstOpcodeNone
-#define DEFINST(name, op1, op2, op3, modrm, imm, pfx) \
-		 , &Context::ExecuteInst_##name
-#include <arch/x86/asm/asm.dat>
-#undef DEFINST
-};
-
 
 void Context::UpdateState(unsigned state)
 {

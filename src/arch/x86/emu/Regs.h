@@ -386,6 +386,51 @@ public:
 	/// Set value of register \c eflags
 	void setEflags(unsigned value) { eflags = value; }
 
+	/// Get the top of the FP stack
+	int getFpuTop() const { return fpu_top; }
+
+	/// Set the top of the FP stack
+	void setFpuTop(int index) {
+		assert(misc::inRange(index, 0, 7));
+		fpu_top = index;
+	}
+
+	/// Increment the top of the FP stack in a circular manner
+	void incFpuTop() { fpu_top = (fpu_top + 1) % 8; }
+
+	/// Decrement the top of the FP stack in a circular manner
+	void decFpuTop() { fpu_top = (fpu_top + 7) % 8; }
+
+	/// Get field \a code of the FP status register (bits 3..0)
+	int getFpuCode() const { return fpu_code; }
+
+	/// Set field \a code of the FP status register
+	void setFpuCode(int fpu_code) { this->fpu_code = fpu_code; }
+
+	/// Get the FP control word (16 bits)
+	unsigned short getFpuCtrl() const { return fpu_ctrl; }
+
+	/// Set the FP control word (16 bits)
+	void setFpuCtrl(unsigned short fpu_ctrl) { this->fpu_ctrl = fpu_ctrl; }
+
+	/// Return whether a position in the FP stack is valid
+	bool isFpuValid(int index) {
+		assert(misc::inRange(index, 0, 7));
+		return fpu_stack[index].valid;
+	}
+
+	/// Set the validity of the FP stack at position \a index
+	void setFpuValid(int index, bool valid = true) {
+		assert(misc::inRange(index, 0, 7));
+		fpu_stack[index].valid = valid;
+	}
+
+	/// Return the extended value at FP stack position \a index
+	unsigned char *getFpuValue(int index) {
+		assert(misc::inRange(index, 0, 7));
+		return fpu_stack[index].value.getValue();
+	}
+
 	/// Dump register in a human-readable fashion into an output stream (or
 	/// standard output if argument \a os is omitted.
 	void Dump(std::ostream &os = std::cout) const;
