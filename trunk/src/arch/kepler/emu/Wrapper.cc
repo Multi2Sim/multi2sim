@@ -18,6 +18,7 @@
  */
 
 #include <ext/stdio_filebuf.h>
+#include <driver/cuda/function.h>
 
 #include "Emu.h"
 #include "Grid.h"
@@ -33,45 +34,6 @@
 KplEmu *KplWrapEmuCreate(KplAsm * as)
 {
 	return (KplEmu *) new Kepler::Emu((Kepler::Asm*) as);
-}
-////////////////////////////////////////////////////////////////////////////////
-// Wrapper for class Grid
-////////////////////////////////////////////////////////////////////////////////
-int KplGetID(KplGrid *self)
-{
-	Kepler::Grid *grid = (Kepler::Grid *) self;
-	return grid->getID();
-}
-KplGrid *KplWrapGridCreate(KplEmu *emu)
-{
-	return (KplGrid *) new Kepler:: Grid((Kepler::Emu *)emu);
-}
-
-void KplGridFree(KplGrid *self)
-{
-	Kepler::Grid *gr = (Kepler::Grid *) self;
-	delete gr;
-}
-
-void KplWrapGridDump(KplGrid *self, FILE *f)
-{
-	Kepler::Grid *grid = (Kepler::Grid *) self;
-	__gnu_cxx::stdio_filebuf<char> filebuf(fileno(f), std::ios::out);
-	std::ostream os(&filebuf);
-	grid->Dump(os);
-}
-
-void KplWrapGridSetupSize(KplGrid *self, unsigned *thread_block_count,
-		unsigned *thread_block_size)
-{
-	Kepler::Grid *grid = (Kepler::Grid *) self;
-	grid->SetupSize(thread_block_count, thread_block_size);
-}
-
-void KplWrapGridSetupConstantMemory(KplGrid *self)
-{
-	Kepler::Grid *grid = (Kepler::Grid *) self;
-	grid->GridSetupConstantMemory();
 }
 
 /// Get Kepler Emulator global memory top
@@ -144,3 +106,49 @@ void KplPushGridList(KplEmu *self, KplGrid *grid)
 	Kepler::Grid *gr = (Kepler::Grid*) grid;
 	emu->PushPendingGrid(gr);
 }
+
+void KplRun(KplEmu* self)
+{
+	Kepler::Emu *emu = (Kepler::Emu*) self;
+	emu->Run();
+}
+////////////////////////////////////////////////////////////////////////////////
+// Wrapper for class Grid
+////////////////////////////////////////////////////////////////////////////////
+int KplGetID(KplGrid *self)
+{
+	Kepler::Grid *grid = (Kepler::Grid *) self;
+	return grid->getID();
+}
+KplGrid *KplWrapGridCreate(KplEmu *emu, cuda_function_t *function)
+{
+	return (KplGrid *) new Kepler:: Grid((Kepler::Emu *)emu, function);
+}
+
+void KplGridFree(KplGrid *self)
+{
+	Kepler::Grid *gr = (Kepler::Grid *) self;
+	delete gr;
+}
+
+void KplWrapGridDump(KplGrid *self, FILE *f)
+{
+	Kepler::Grid *grid = (Kepler::Grid *) self;
+	__gnu_cxx::stdio_filebuf<char> filebuf(fileno(f), std::ios::out);
+	std::ostream os(&filebuf);
+	grid->Dump(os);
+}
+
+void KplWrapGridSetupSize(KplGrid *self, unsigned *thread_block_count,
+		unsigned *thread_block_size)
+{
+	Kepler::Grid *grid = (Kepler::Grid *) self;
+	grid->SetupSize(thread_block_count, thread_block_size);
+}
+
+void KplWrapGridSetupConstantMemory(KplGrid *self)
+{
+	Kepler::Grid *grid = (Kepler::Grid *) self;
+	grid->GridSetupConstantMemory();
+}
+

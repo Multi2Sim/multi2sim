@@ -27,16 +27,23 @@
 #include "ThreadBlock.h"
 #include "Warp.h"
 #include "Thread.h"
+
 //#include "isa.h"
 
 namespace Kepler
 {
 
-Grid::Grid(Emu *emu)
+Grid::Grid(Emu *emu, cuda_function_t *function)
 {
 	/* Initialization */
 	this->emu = emu;
 	id = emu->getGridSize();
+
+	inst_buffer = function->inst_bin;
+	inst_buffer_size = function->inst_bin_size;
+	gpr_count = function->num_gpr;
+
+	state = GridStateInvalid;
 
 	/* Add to list */
 	emu->GridsPushBack(this);
