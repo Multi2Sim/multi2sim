@@ -35,515 +35,2114 @@ namespace x86
 #define assert __COMPILATION_ERROR__
 
 
-
-#define __UNIMPLEMENTED__ IsaError("%s: unimplemented instruction", \
-		__FUNCTION__);
-
-
-
 void Context::ExecuteInst_f2xm1()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10];
+	unsigned short status;
+
+	LoadFpu(0, st0);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldt %2\n\t"
+		"f2xm1\n\t"
+		"fnstsw %%ax\n\t"
+		"fstpt %0\n\t"
+		"mov %%ax, %1\n\t"
+		: "=m" (*st0), "=g" (status)
+		: "m" (*st0)
+		: "ax"
+	);
+	__X86_CONTEXT_FP_END__
+
+	StoreFpu(0, st0);
+	StoreFpuCode(status);
+
+	newUInst(UInstFpExp, UInstDepSt0, 0, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fabs()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10];
+	unsigned short status;
+
+	LoadFpu(0, st0);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldt %2\n\t"
+		"fabs\n\t"
+		"fnstsw %%ax\n\t"
+		"fstpt %0\n\t"
+		"mov %%ax, %1\n\t"
+		: "=m" (*st0), "=g" (status)
+		: "m" (*st0)
+		: "ax"
+	);
+	__X86_CONTEXT_FP_END__
+
+	StoreFpu(0, st0);
+	StoreFpuCode(status);
+
+	newUInst(UInstFpSign, UInstDepSt0, 0, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fadd_m32()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10];
+	float m32;
+	unsigned short status;
+
+	m32 = LoadFloat();
+	LoadFpu(0, st0);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldt %2\n\t"
+		"flds %3\n\t"
+		"faddp %%st(0), %%st(1)\n\t"
+		"fnstsw %%ax\n\t"
+		"fstpt %0\n\t"
+		"mov %%ax, %1\n\t"
+		: "=m" (*st0), "=g" (status)
+		: "m" (*st0), "m" (m32)
+		: "ax"
+	);
+	__X86_CONTEXT_FP_END__
+
+	StoreFpu(0, st0);
+	StoreFpuCode(status);
+
+	newUInst(UInstFpAdd, UInstDepSt0, UInstDepMem32, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fadd_m64()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10];
+	double m64;
+	unsigned short status;
+
+	m64 = LoadDouble();
+	LoadFpu(0, st0);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldt %2\n\t"
+		"fldl %3\n\t"
+		"faddp %%st(0), %%st(1)\n\t"
+		"fnstsw %%ax\n\t"
+		"fstpt %0\n\t"
+		"mov %%ax, %1\n\t"
+		: "=m" (*st0), "=g" (status)
+		: "m" (*st0), "m" (m64)
+		: "ax"
+	);
+	__X86_CONTEXT_FP_END__
+
+	StoreFpu(0, st0);
+	StoreFpuCode(status);
+
+	newUInst(UInstFpAdd, UInstDepSt0, UInstDepMem64, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fadd_st0_sti()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10], sti[10];
+	unsigned short status;
+
+	LoadFpu(0, st0);
+	LoadFpu(inst.getOpIndex(), sti);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldt %2\n\t"
+		"fldt %3\n\t"
+		"faddp %%st(0), %%st(1)\n\t"
+		"fnstsw %%ax\n\t"
+		"fstpt %0\n\t"
+		"mov %%ax, %1\n\t"
+		: "=m" (*st0), "=g" (status)
+		: "m" (*st0), "m" (*sti)
+		: "ax"
+	);
+	__X86_CONTEXT_FP_END__
+
+	StoreFpu(0, st0);
+	StoreFpuCode(status);
+
+	newUInst(UInstFpAdd, UInstDepSt0, UInstDepSti, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fadd_sti_st0()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10], sti[10];
+	unsigned short status;
+
+	LoadFpu(0, st0);
+	LoadFpu(inst.getOpIndex(), sti);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldt %2\n\t"
+		"fldt %3\n\t"
+		"faddp %%st(0), %%st(1)\n\t"
+		"fnstsw %%ax\n\t"
+		"fstpt %0\n\t"
+		"mov %%ax, %1\n\t"
+		: "=m" (*sti), "=g" (status)
+		: "m" (*sti), "m" (*st0)
+		: "ax"
+	);
+	__X86_CONTEXT_FP_END__
+
+	StoreFpu(inst.getOpIndex(), sti);
+	StoreFpuCode(status);
+
+	newUInst(UInstFpAdd, UInstDepSt0, UInstDepSti, 0, UInstDepSti, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_faddp_sti_st0()
 {
-	__UNIMPLEMENTED__
+	ExecuteInst_fadd_sti_st0();
+	PopFpu(nullptr);
+
+	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fchs()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10];
+	unsigned short status;
+
+	LoadFpu(0, st0);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldt %2\n\t"
+		"fchs\n\t"
+		"fnstsw %%ax\n\t"
+		"fstpt %0\n\t"
+		"mov %%ax, %1\n\t"
+		: "=m" (*st0), "=g" (status)
+		: "m" (*st0)
+		: "ax"
+	);
+	__X86_CONTEXT_FP_END__
+
+	StoreFpu(0, st0);
+	StoreFpuCode(status);
+
+	newUInst(UInstFpSign, UInstDepSt0, 0, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fcmovb_st0_sti()
 {
-	__UNIMPLEMENTED__
+	unsigned char sti[10];
+	LoadFpu(inst.getOpIndex(), sti);
+	if (regs.getFlag(InstFlagCF))
+		StoreFpu(0, sti);
+
+	newUInst(UInstFpMove, UInstDepSti, UInstDepCf, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fcmove_st0_sti()
 {
-	__UNIMPLEMENTED__
+	unsigned char sti[10];
+	LoadFpu(inst.getOpIndex(), sti);
+	if (regs.getFlag(InstFlagZF))
+		StoreFpu(0, sti);
+
+	newUInst(UInstFpMove, UInstDepSti, UInstDepZps, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fcmovbe_st0_sti()
 {
-	__UNIMPLEMENTED__
+	unsigned char sti[10];
+	LoadFpu(inst.getOpIndex(), sti);
+	if (regs.getFlag(InstFlagCF) || regs.getFlag(InstFlagZF))
+		StoreFpu(0, sti);
+
+	newUInst(UInstFpMove, UInstDepSti, UInstDepCf, UInstDepZps, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fcmovu_st0_sti()
 {
-	__UNIMPLEMENTED__
+	unsigned char sti[10];
+	LoadFpu(inst.getOpIndex(), sti);
+	if (regs.getFlag(InstFlagPF))
+		StoreFpu(0, sti);
+
+	newUInst(UInstFpMove, UInstDepSti, UInstDepZps, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fcmovnb_st0_sti()
 {
-	__UNIMPLEMENTED__
+	unsigned char sti[10];
+	LoadFpu(inst.getOpIndex(), sti);
+	if (!regs.getFlag(InstFlagCF))
+		StoreFpu(0, sti);
+
+	newUInst(UInstFpMove, UInstDepSti, UInstDepCf, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fcmovne_st0_sti()
 {
-	__UNIMPLEMENTED__
+	unsigned char sti[10];
+	LoadFpu(inst.getOpIndex(), sti);
+	if (!regs.getFlag(InstFlagZF))
+		StoreFpu(0, sti);
+
+	newUInst(UInstFpMove, UInstDepSti, UInstDepZps, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fcmovnbe_st0_sti()
 {
-	__UNIMPLEMENTED__
+	unsigned char sti[10];
+	LoadFpu(inst.getOpIndex(), sti);
+	if (!regs.getFlag(InstFlagCF) && !regs.getFlag(InstFlagZF))
+		StoreFpu(0, sti);
+
+	newUInst(UInstFpMove, UInstDepSti, UInstDepCf, UInstDepZps, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fcmovnu_st0_sti()
 {
-	__UNIMPLEMENTED__
+	unsigned char sti[10];
+	LoadFpu(inst.getOpIndex(), sti);
+	if (!regs.getFlag(InstFlagPF))
+		StoreFpu(0, sti);
+
+	newUInst(UInstFpMove, UInstDepSti, UInstDepZps, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fcom_m32()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10];
+	float m32;
+	unsigned short status;
+
+	LoadFpu(0, st0);
+	m32 = LoadFloat();
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldt %1\n\t"
+		"fcomps %2\n\t"
+		"fnstsw %%ax\n\t"
+		"mov %%ax, %0\n\t"
+		: "=g" (status)
+		: "m" (*st0), "m" (m32)
+		: "ax"
+	);
+	__X86_CONTEXT_FP_END__
+
+	StoreFpuCode(status);
+
+	newUInst(UInstFpComp, UInstDepSt0, UInstDepMem32, 0, UInstDepFpst, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fcom_m64()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10];
+	double m64;
+	unsigned short status;
+
+	LoadFpu(0, st0);
+	m64 = LoadDouble();
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldt %1\n\t"
+		"fcompl %2\n\t"
+		"fnstsw %%ax\n\t"
+		"mov %%ax, %0\n\t"
+		: "=g" (status)
+		: "m" (*st0), "m" (m64)
+		: "ax"
+	);
+	__X86_CONTEXT_FP_END__
+
+	StoreFpuCode(status);
+
+	newUInst(UInstFpComp, UInstDepSt0, UInstDepMem64, 0, UInstDepFpst, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fcom_sti()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10], sti[10];
+	unsigned short status;
+
+	LoadFpu(0, st0);
+	LoadFpu(inst.getOpIndex(), sti);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldt %2\n\t"
+		"fldt %1\n\t"
+		"fcompp\n\t"
+		"fnstsw %%ax\n\t"
+		"mov %%ax, %0\n\t"
+		: "=g" (status)
+		: "m" (*st0), "m" (*sti)
+		: "ax"
+	);
+	__X86_CONTEXT_FP_END__
+
+	StoreFpuCode(status);
+
+	newUInst(UInstFpComp, UInstDepSt0, UInstDepSti, 0, UInstDepFpst, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fcomp_m32()
 {
-	__UNIMPLEMENTED__
+	ExecuteInst_fcom_m32();
+	PopFpu(nullptr);
+
+	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fcomp_m64()
 {
-	__UNIMPLEMENTED__
+	ExecuteInst_fcom_m64();
+	PopFpu(nullptr);
+
+	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fcomp_sti()
 {
-	__UNIMPLEMENTED__
+	ExecuteInst_fcom_sti();
+	PopFpu(nullptr);
+
+	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fcompp()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10], st1[10];
+	unsigned short status;
+
+	LoadFpu(0, st0);
+	LoadFpu(1, st1);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldt %2\n\t"
+		"fldt %1\n\t"
+		"fcompp\n\t"
+		"fnstsw %%ax\n\t"
+		"mov %%ax, %0\n\t"
+		: "=g" (status)
+		: "m" (*st0), "m" (*st1)
+		: "ax"
+	);
+	__X86_CONTEXT_FP_END__
+
+	StoreFpuCode(status);
+	PopFpu(nullptr);
+	PopFpu(nullptr);
+
+	newUInst(UInstFpComp, UInstDepSt0, UInstDepSt1, 0, UInstDepFpst, 0, 0, 0);
+	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
+	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fcomi_st0_sti()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10], sti[10];
+	unsigned long flags = regs.getEflags();
+
+	LoadFpu(0, st0);
+	LoadFpu(inst.getOpIndex(), sti);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"push %3\n\t"
+		"popf\n\t"
+		"fldt %2\n\t"
+		"fldt %1\n\t"
+		"fcomip %%st(1), %%st\n\t"
+		"fstp %%st(0)\n\t"
+		"pushf\n\t"
+		"pop %0\n\t"
+		: "=g" (flags)
+		: "m" (*st0), "m" (*sti), "g" (flags)
+	);
+	__X86_CONTEXT_FP_END__
+
+	regs.setEflags(flags);
+
+	newUInst(UInstFpComp, UInstDepSt0, UInstDepSti, 0, UInstDepZps, UInstDepCf, 0, 0);
 }
+
 
 void Context::ExecuteInst_fcomip_st0_sti()
 {
-	__UNIMPLEMENTED__
+	ExecuteInst_fcomi_st0_sti();
+	PopFpu(nullptr);
+
+	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fucomi_st0_sti()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10], sti[10];
+	unsigned long flags = regs.getEflags();
+
+	LoadFpu(0, st0);
+	LoadFpu(inst.getOpIndex(), sti);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"push %3\n\t"
+		"popf\n\t"
+		"fldt %2\n\t"
+		"fldt %1\n\t"
+		"fucomip %%st(1), %%st\n\t"
+		"fstp %%st(0)\n\t"
+		"pushf\n\t"
+		"pop %0\n\t"
+		: "=g" (flags)
+		: "m" (*st0), "m" (*sti), "g" (flags)
+	);
+	__X86_CONTEXT_FP_END__
+
+	regs.setEflags(flags);
+
+	newUInst(UInstFpComp, UInstDepSt0, UInstDepSti, 0, UInstDepZps, UInstDepCf, 0, 0);
 }
+
 
 void Context::ExecuteInst_fucomip_st0_sti()
 {
-	__UNIMPLEMENTED__
+	ExecuteInst_fucomi_st0_sti();
+	PopFpu(nullptr);
+
+	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fcos()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10];
+	unsigned short status;
+
+	LoadFpu(0, st0);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldt %2\n\t"
+		"fcos\n\t"
+		"fnstsw %%ax\n\t"
+		"fstpt %0\n\t"
+		"mov %%ax, %1\n\t"
+		: "=m" (*st0), "=g" (status)
+		: "m" (*st0)
+		: "ax"
+	);
+	__X86_CONTEXT_FP_END__
+
+	StoreFpu(0, st0);
+	StoreFpuCode(status);
+
+	newUInst(UInstFpCos, UInstDepSt0, 0, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fdiv_m32()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10];
+	float m32;
+	unsigned short status;
+
+	m32 = LoadFloat();
+	LoadFpu(0, st0);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldt %2\n\t"
+		"flds %3\n\t"
+		"fdivrp %%st(0), %%st(1)\n\t"
+		"fnstsw %%ax\n\t"
+		"fstpt %0\n\t"
+		"mov %%ax, %1\n\t"
+		: "=m" (*st0), "=g" (status)
+		: "m" (*st0), "m" (m32)
+		: "ax"
+	);
+	__X86_CONTEXT_FP_END__
+
+	StoreFpu(0, st0);
+	StoreFpuCode(status);
+
+	newUInst(UInstFpDiv, UInstDepSt0, UInstDepMem32, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fdiv_m64()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10];
+	double m64;
+	unsigned short status;
+
+	m64 = LoadDouble();
+	LoadFpu(0, st0);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldt %2\n\t"
+		"fldl %3\n\t"
+		"fdivrp %%st(0), %%st(1)\n\t"
+		"fnstsw %%ax\n\t"
+		"fstpt %0\n\t"
+		"mov %%ax, %1\n\t"
+		: "=m" (*st0), "=g" (status)
+		: "m" (*st0), "m" (m64)
+		: "ax"
+	);
+	__X86_CONTEXT_FP_END__
+
+	StoreFpu(0, st0);
+	StoreFpuCode(status);
+
+	newUInst(UInstFpDiv, UInstDepSt0, UInstDepMem64, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fdiv_st0_sti()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10], sti[10];
+	unsigned short status;
+
+	LoadFpu(0, st0);
+	LoadFpu(inst.getOpIndex(), sti);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldt %2\n\t"
+		"fldt %3\n\t"
+		"fdivrp %%st(0), %%st(1)\n\t"
+		"fnstsw %%ax\n\t"
+		"fstpt %0\n\t"
+		"mov %%ax, %1\n\t"
+		: "=m" (*st0), "=g" (status)
+		: "m" (*st0), "m" (*sti)
+		: "ax"
+	);
+	__X86_CONTEXT_FP_END__
+
+	StoreFpu(0, st0);
+	StoreFpuCode(status);
+
+	newUInst(UInstFpDiv, UInstDepSt0, UInstDepSti, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fdiv_sti_st0()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10], sti[10];
+	unsigned short status;
+
+	LoadFpu(0, st0);
+	LoadFpu(inst.getOpIndex(), sti);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldt %2\n\t"
+		"fldt %3\n\t"
+		"fdivrp %%st(0), %%st(1)\n\t"
+		"fnstsw %%ax\n\t"
+		"fstpt %0\n\t"
+		"mov %%ax, %1\n\t"
+		: "=m" (*sti), "=g" (status)
+		: "m" (*sti), "m" (*st0)
+		: "ax"
+	);
+	__X86_CONTEXT_FP_END__
+
+	StoreFpu(inst.getOpIndex(), sti);
+	StoreFpuCode(status);
+
+	newUInst(UInstFpDiv, UInstDepSt0, UInstDepSti, 0, UInstDepSti, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fdivp_sti_st0()
 {
-	__UNIMPLEMENTED__
+	ExecuteInst_fdiv_sti_st0();
+	PopFpu(nullptr);
+
+	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fdivr_m32()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10];
+	float m32;
+	unsigned short status;
+
+	m32 = LoadFloat();
+	LoadFpu(0, st0);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"flds %2\n\t"
+		"fldt %3\n\t"
+		"fdivrp %%st(0), %%st(1)\n\t"
+		"fnstsw %%ax\n\t"
+		"fstpt %0\n\t"
+		"mov %%ax, %1\n\t"
+		: "=m" (*st0), "=g" (status)
+		: "m" (m32), "m" (*st0)
+		: "ax"
+	);
+	__X86_CONTEXT_FP_END__
+
+	StoreFpu(0, st0);
+	StoreFpuCode(status);
+
+	newUInst(UInstFpDiv, UInstDepSt0, UInstDepMem32, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fdivr_m64()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10];
+	double m64;
+	unsigned short status;
+
+	m64 = LoadDouble();
+	LoadFpu(0, st0);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldl %2\n\t"
+		"fldt %3\n\t"
+		"fdivrp %%st(0), %%st(1)\n\t"
+		"fnstsw %%ax\n\t"
+		"fstpt %0\n\t"
+		"mov %%ax, %1\n\t"
+		: "=m" (*st0), "=g" (status)
+		: "m" (m64), "m" (*st0)
+		: "ax"
+	);
+	__X86_CONTEXT_FP_END__
+
+	StoreFpu(0, st0);
+	StoreFpuCode(status);
+
+	newUInst(UInstFpDiv, UInstDepSt0, UInstDepMem64, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fdivr_st0_sti()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10], sti[10];
+	unsigned short status;
+
+	LoadFpu(0, st0);
+	LoadFpu(inst.getOpIndex(), sti);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldt %2\n\t"
+		"fldt %3\n\t"
+		"fdivrp %%st(0), %%st(1)\n\t"
+		"fnstsw %%ax\n\t"
+		"fstpt %0\n\t"
+		"mov %%ax, %1\n\t"
+		: "=m" (*st0), "=g" (status)
+		: "m" (*sti), "m" (*st0)
+		: "ax"
+	);
+	__X86_CONTEXT_FP_END__
+
+	StoreFpu(0, st0);
+	StoreFpuCode(status);
+
+	newUInst(UInstDiv, UInstDepSt0, UInstDepSti, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fdivr_sti_st0()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10], sti[10];
+	unsigned short status;
+
+	LoadFpu(0, st0);
+	LoadFpu(inst.getOpIndex(), sti);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldt %2\n\t"
+		"fldt %3\n\t"
+		"fdivrp %%st(0), %%st(1)\n\t"
+		"fnstsw %%ax\n\t"
+		"fstpt %0\n\t"
+		"mov %%ax, %1\n\t"
+		: "=m" (*sti), "=g" (status)
+		: "m" (*st0), "m" (*sti)
+		: "ax"
+	);
+	__X86_CONTEXT_FP_END__
+
+	StoreFpu(inst.getOpIndex(), sti);
+	StoreFpuCode(status);
+
+	newUInst(UInstDiv, UInstDepSt0, UInstDepSti, 0, UInstDepSti, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fdivrp_sti_st0()
 {
-	__UNIMPLEMENTED__
+	ExecuteInst_fdivr_sti_st0();
+	PopFpu(nullptr);
+
+	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fild_m16()
 {
-	__UNIMPLEMENTED__
+	short m16;
+	unsigned char e[10];
+
+	MemoryRead(getEffectiveAddress(), 2, &m16);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"filds %1\n\t"
+		"fstpt %0\n\t"
+		: "=m" (*e)
+		: "m" (m16)
+	);
+	__X86_CONTEXT_FP_END__
+
+	PushFpu(e);
+
+	newUInst(UInstFpPush, 0, 0, 0, 0, 0, 0, 0);
+	newUInst(UInstFpMove, UInstDepMem16, 0, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fild_m32()
 {
-	__UNIMPLEMENTED__
+	int m32;
+	unsigned char e[10];
+
+	MemoryRead(getEffectiveAddress(), 4, &m32);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fildl %1\n\t"
+		"fstpt %0\n\t"
+		: "=m" (*e)
+		: "m" (m32)
+	);
+	__X86_CONTEXT_FP_END__
+
+	PushFpu(e);
+
+	newUInst(UInstFpPush, 0, 0, 0, 0, 0, 0, 0);
+	newUInst(UInstFpMove, UInstDepMem32, 0, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fild_m64()
 {
-	__UNIMPLEMENTED__
+	long long m64;
+	unsigned char e[10];
+
+	MemoryRead(getEffectiveAddress(), 8, &m64);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fildq %1\n\t"
+		"fstpt %0\n\t"
+		: "=m" (*e)
+		: "m" (m64)
+	);
+	__X86_CONTEXT_FP_END__
+
+	PushFpu(e);
+
+	newUInst(UInstFpPush, 0, 0, 0, 0, 0, 0, 0);
+	newUInst(UInstFpMove, UInstDepMem64, 0, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fist_m16()
 {
-	__UNIMPLEMENTED__
+	short m16;
+	unsigned char e[10];
+
+	LoadFpu(0, e);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldt %1\n\t"
+		"fistps %0\n\t"
+		: "=m" (m16)
+		: "m" (*e)
+	);
+	__X86_CONTEXT_FP_END__
+
+	MemoryWrite(getEffectiveAddress(), 2, &m16);
+
+	newUInst(UInstFpMove, UInstDepSt0, 0, 0, UInstDepMem16, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fist_m32()
 {
-	__UNIMPLEMENTED__
+	int m32;
+	unsigned char e[10];
+
+	LoadFpu(0, e);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldt %1\n\t"
+		"fistpl %0\n\t"
+		: "=m" (m32)
+		: "m" (*e)
+	);
+	__X86_CONTEXT_FP_END__
+
+	MemoryWrite(getEffectiveAddress(), 4, &m32);
+
+	newUInst(UInstFpMove, UInstDepSt0, 0, 0, UInstDepMem32, 0, 0, 0);
 }
+
+
+void Context::ExecuteInst_fist_m64()
+{
+	long long m64;
+	unsigned char e[10];
+
+	LoadFpu(0, e);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldt %1\n\t"
+		"fistpq %0\n\t"
+		: "=m" (m64)
+		: "m" (*e)
+	);
+	__X86_CONTEXT_FP_END__
+
+	MemoryWrite(getEffectiveAddress(), 8, &m64);
+
+	newUInst(UInstFpMove, UInstDepSt0, 0, 0, UInstDepMem64, 0, 0, 0);
+}
+
 
 void Context::ExecuteInst_fistp_m16()
 {
-	__UNIMPLEMENTED__
+	ExecuteInst_fist_m16();
+	PopFpu(nullptr);
+
+	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fistp_m32()
 {
-	__UNIMPLEMENTED__
+	ExecuteInst_fist_m32();
+	PopFpu(nullptr);
+
+	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fistp_m64()
 {
-	__UNIMPLEMENTED__
+	ExecuteInst_fist_m64();
+	PopFpu(nullptr);
+
+	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fld1()
 {
-	__UNIMPLEMENTED__
+	unsigned char v[10];
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fld1\n\t"
+		"fstpt %0\n\t"
+		: "=m" (*v)
+	);
+	__X86_CONTEXT_FP_END__
+
+	PushFpu(v);
+
+	newUInst(UInstFpPush, 0, 0, 0, 0, 0, 0, 0);
+	newUInst(UInstFpMove, 0, 0, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fldl2e()
 {
-	__UNIMPLEMENTED__
+	unsigned char v[10];
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldl2e\n\t"
+		"fstpt %0\n\t"
+		: "=m" (*v)
+	);
+	__X86_CONTEXT_FP_END__
+
+	PushFpu(v);
+
+	newUInst(UInstFpPush, 0, 0, 0, 0, 0, 0, 0);
+	newUInst(UInstFpMove, 0, 0, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fldl2t()
 {
-	__UNIMPLEMENTED__
+	unsigned char v[10];
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldl2t\n\t"
+		"fstpt %0\n\t"
+		: "=m" (*v)
+	);
+	__X86_CONTEXT_FP_END__
+
+	PushFpu(v);
+
+	newUInst(UInstFpPush, 0, 0, 0, 0, 0, 0, 0);
+	newUInst(UInstFpMove, 0, 0, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fldpi()
 {
-	__UNIMPLEMENTED__
+	unsigned char v[10];
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldpi\n\t"
+		"fstpt %0\n\t"
+		: "=m" (*v)
+	);
+	__X86_CONTEXT_FP_END__
+
+	PushFpu(v);
+
+	newUInst(UInstFpPush, 0, 0, 0, 0, 0, 0, 0);
+	newUInst(UInstFpMove, 0, 0, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fldlg2()
 {
-	__UNIMPLEMENTED__
+	unsigned char v[10];
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldlg2\n\t"
+		"fstpt %0\n\t"
+		: "=m" (*v)
+	);
+	__X86_CONTEXT_FP_END__
+
+	PushFpu(v);
+
+	newUInst(UInstFpPush, 0, 0, 0, 0, 0, 0, 0);
+	newUInst(UInstFpMove, 0, 0, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fldln2()
 {
-	__UNIMPLEMENTED__
+	unsigned char v[10];
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldln2\n\t"
+		"fstpt %0\n\t"
+		: "=m" (*v)
+	);
+	__X86_CONTEXT_FP_END__
+
+	PushFpu(v);
+
+	newUInst(UInstFpPush, 0, 0, 0, 0, 0, 0, 0);
+	newUInst(UInstFpMove, 0, 0, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fldz()
 {
-	__UNIMPLEMENTED__
+	unsigned char v[10];
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldz\n\t"
+		"fstpt %0\n\t"
+		: "=m" (*v)
+	);
+	__X86_CONTEXT_FP_END__
+
+	PushFpu(v);
+
+	newUInst(UInstFpPush, 0, 0, 0, 0, 0, 0, 0);
+	newUInst(UInstFpMove, 0, 0, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fld_m32()
 {
-	__UNIMPLEMENTED__
+	unsigned char e[10];
+	float m32;
+
+	m32 = LoadFloat();
+	Extended::FloatToExtended(m32, e);
+	PushFpu(e);
+
+	newUInst(UInstFpPush, 0, 0, 0, 0, 0, 0, 0);
+	newUInst(UInstFpMove, UInstDepMem32, 0, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fld_m64()
 {
-	__UNIMPLEMENTED__
+	unsigned char e[10];
+	double m64;
+
+	m64 = LoadDouble();
+	Extended::DoubleToExtended(m64, e);
+	PushFpu(e);
+
+	newUInst(UInstFpPush, 0, 0, 0, 0, 0, 0, 0);
+	newUInst(UInstFpMove, UInstDepMem64, 0, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fld_m80()
 {
-	__UNIMPLEMENTED__
+	unsigned char e[10];
+
+	LoadExtended(e);
+	PushFpu(e);
+
+	newUInst(UInstFpPush, 0, 0, 0, 0, 0, 0, 0);
+	newUInst(UInstFpMove, UInstDepMem80, 0, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fld_sti()
 {
-	__UNIMPLEMENTED__
+	unsigned char sti[10];
+	LoadFpu(inst.getOpIndex(), sti);
+	PushFpu(sti);
+
+	newUInst(UInstFpMove, UInstDepSti, 0, 0, UInstDepFpaux, 0, 0, 0);
+	newUInst(UInstFpPush, 0, 0, 0, 0, 0, 0, 0);
+	newUInst(UInstFpMove, UInstDepFpaux, 0, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fldcw_m16()
 {
-	__UNIMPLEMENTED__
+	unsigned int addr;
+	unsigned short value;
+	int spec_mode;
+
+	addr = getEffectiveAddress();
+	MemoryRead(addr, 2, &value);
+
+	// Mask all floating-point exception on wrong path
+	spec_mode = getState(ContextSpecMode);
+	if (spec_mode)
+		value |= 0x3f;
+
+	// Set value
+	regs.setFpuCtrl(value);
+
+	// Micro-instructions
+	newUInst(UInstFpMove, UInstDepMem16, 0, 0, UInstDepFpcw, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fmul_m32()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10];
+	float m32;
+	unsigned short status;
+
+	m32 = LoadFloat();
+	LoadFpu(0, st0);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldt %2\n\t"
+		"flds %3\n\t"
+		"fmulp %%st(0), %%st(1)\n\t"
+		"fnstsw %%ax\n\t"
+		"fstpt %0\n\t"
+		"mov %%ax, %1\n\t"
+		: "=m" (*st0), "=g" (status)
+		: "m" (*st0), "m" (m32)
+		: "ax"
+	);
+	__X86_CONTEXT_FP_END__
+
+	StoreFpu(0, st0);
+	StoreFpuCode(status);
+
+	newUInst(UInstFpMult, UInstDepSt0, UInstDepMem32, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fmul_m64()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10];
+	double m64;
+	unsigned short status;
+
+	m64 = LoadDouble();
+	LoadFpu(0, st0);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldt %2\n\t"
+		"fldl %3\n\t"
+		"fmulp %%st(0), %%st(1)\n\t"
+		"fnstsw %%ax\n\t"
+		"fstpt %0\n\t"
+		"mov %%ax, %1\n\t"
+		: "=m" (*st0), "=g" (status)
+		: "m" (*st0), "m" (m64)
+		: "ax"
+	);
+	__X86_CONTEXT_FP_END__
+
+	StoreFpu(0, st0);
+	StoreFpuCode(status);
+
+	newUInst(UInstFpMult, UInstDepSt0, UInstDepMem64, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fmul_st0_sti()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10], sti[10];
+	unsigned short status;
+
+	LoadFpu(0, st0);
+	LoadFpu(inst.getOpIndex(), sti);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldt %2\n\t"
+		"fldt %3\n\t"
+		"fmulp %%st(0), %%st(1)\n\t"
+		"fnstsw %%ax\n\t"
+		"fstpt %0\n\t"
+		"mov %%ax, %1\n\t"
+		: "=m" (*st0), "=g" (status)
+		: "m" (*st0), "m" (*sti)
+		: "ax"
+	);
+	__X86_CONTEXT_FP_END__
+
+	StoreFpu(0, st0);
+	StoreFpuCode(status);
+
+	newUInst(UInstFpMult, UInstDepSt0, UInstDepSti, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fmul_sti_st0()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10], sti[10];
+	unsigned short status;
+
+	LoadFpu(0, st0);
+	LoadFpu(inst.getOpIndex(), sti);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldt %2\n\t"
+		"fldt %3\n\t"
+		"fmulp %%st(0), %%st(1)\n\t"
+		"fnstsw %%ax\n\t"
+		"fstpt %0\n\t"
+		"mov %%ax, %1\n\t"
+		: "=m" (*sti), "=g" (status)
+		: "m" (*sti), "m" (*st0)
+		: "ax"
+	);
+	__X86_CONTEXT_FP_END__
+
+	StoreFpu(inst.getOpIndex(), sti);
+	StoreFpuCode(status);
+
+	newUInst(UInstFpMult, UInstDepSt0, UInstDepSti, 0, UInstDepSti, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fmulp_sti_st0()
 {
-	__UNIMPLEMENTED__
+	ExecuteInst_fmul_sti_st0();
+	PopFpu(nullptr);
+
+	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fnstcw_m16()
 {
-	__UNIMPLEMENTED__
+	ExecuteInst_fstcw_m16();
 }
+
 
 void Context::ExecuteInst_fnstsw_ax()
 {
-	__UNIMPLEMENTED__
+	unsigned short status = LoadFpuStatus();
+	regs.Write(InstRegAx, status);
+
+	newUInst(UInstFpMove, UInstDepFpst, 0, 0, UInstDepEax, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fpatan()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10], st1[10];
+	unsigned short status;
+
+	LoadFpu(0, st0);
+	LoadFpu(1, st1);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldt %3\n\t"
+		"fldt %2\n\t"
+		"fpatan\n\t"
+		"fnstsw %%ax\n\t"
+		"fstpt %0\n\t"
+		"mov %%ax, %1\n\t"
+		: "=m" (*st1), "=g" (status)
+		: "m" (*st0), "m" (*st1)
+		: "ax"
+	);
+	__X86_CONTEXT_FP_END__
+
+	StoreFpu(1, st1);
+	PopFpu(nullptr);
+	StoreFpuCode(status);
+
+	newUInst(UInstFpAtan, UInstDepSt0, UInstDepSt1, 0, UInstDepSt1, 0, 0, 0);
+	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fprem()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10], st1[10];
+	unsigned short status;
+
+	LoadFpu(0, st0);
+	LoadFpu(1, st1);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldt %3\n\t"
+		"fldt %2\n\t"
+		"fprem\n\t"
+		"fnstsw %%ax\n\t"
+		"fstpt %0\n\t"
+		"fstp %%st(0)\n\t"
+		"mov %%ax, %1\n\t"
+		: "=m" (*st0), "=g" (status)
+		: "m" (*st0), "m" (*st1)
+		: "ax"
+	);
+	__X86_CONTEXT_FP_END__
+
+	StoreFpu(0, st0);
+	StoreFpuCode(status);
+
+	newUInst(UInstFpDiv, UInstDepSt0, UInstDepSt1, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fprem1()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10], st1[10];
+	unsigned short status;
+
+	LoadFpu(0, st0);
+	LoadFpu(1, st1);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldt %3\n\t"
+		"fldt %2\n\t"
+		"fprem1\n\t"
+		"fnstsw %%ax\n\t"
+		"fstpt %0\n\t"
+		"fstp %%st(0)\n\t"
+		"mov %%ax, %1\n\t"
+		: "=m" (*st0), "=g" (status)
+		: "m" (*st0), "m" (*st1)
+		: "ax"
+	);
+	__X86_CONTEXT_FP_END__
+
+	StoreFpu(0, st0);
+	StoreFpuCode(status);
+
+	newUInst(UInstFpDiv, UInstDepSt0, UInstDepSt1, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fptan()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10];
+	unsigned short status;
+
+	LoadFpu(0, st0);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldt %2\n\t"
+		"fptan\n\t"
+		"fnstsw %%ax\n\t"
+		"fstp %%st(0)\n\t"
+		"fstpt %0\n\t"
+		"mov %%ax, %1\n\t"
+		: "=m" (*st0), "=g" (status)
+		: "m" (*st0)
+		: "ax"
+	);
+	__X86_CONTEXT_FP_END__
+
+	StoreFpu(0, st0);
+
+	newUInst(UInstFpTan, UInstDepSt0, 0, 0, UInstDepSt0, UInstDepSt1, 0, 0);
+
+	ExecuteInst_fld1();
+	StoreFpuCode(status);
 }
+
 
 void Context::ExecuteInst_frndint()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10];
+	unsigned short status;
+
+	LoadFpu(0, st0);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldt %2\n\t"
+		"frndint\n\t"
+		"fnstsw %%ax\n\t"
+		"fstpt %0\n\t"
+		"mov %%ax, %1\n\t"
+		: "=m" (*st0), "=g" (status)
+		: "m" (*st0)
+		: "ax"
+	);
+	__X86_CONTEXT_FP_END__
+
+	StoreFpu(0, st0);
+	StoreFpuCode(status);
+
+	newUInst(UInstFpRound, UInstDepSt0, 0, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fscale()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10], st1[10];
+	unsigned short status;
+
+	LoadFpu(0, st0);
+	LoadFpu(1, st1);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldt %3\n\t"
+		"fldt %2\n\t"
+		"fscale\n\t"
+		"fnstsw %%ax\n\t"
+		"fstpt %0\n\t"
+		"fstp %%st(0)\n\t"
+		"mov %%ax, %1\n\t"
+		: "=m" (*st0), "=g" (status)
+		: "m" (*st0), "m" (*st1)
+		: "ax"
+	);
+	__X86_CONTEXT_FP_END__
+
+	StoreFpu(0, st0);
+	StoreFpuCode(status);
+
+	newUInst(UInstFpExp, UInstDepSt0, UInstDepSt1, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fsin()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10];
+	short status;
+
+	LoadFpu(0, st0);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldt %2\n\t"
+		"fsin\n\t"
+		"fnstsw %%ax\n\t"
+		"fstpt %0\n\t"
+		"mov %%ax, %1\n\t"
+		: "=m" (*st0), "=g" (status)
+		: "m" (*st0)
+		: "ax"
+	);
+	__X86_CONTEXT_FP_END__
+
+	StoreFpu(0, st0);
+	StoreFpuCode(status);
+
+	newUInst(UInstFpSin, UInstDepSt0, 0, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fsincos()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10], vsin[10], vcos[10];
+	unsigned short status;
+
+	LoadFpu(0, st0);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldt %3\n\t"
+		"fsin\n\t"
+		"fstpt %0\n\t"
+		"fldt %3\n\t"
+		"fcos\n\t"
+		"fnstsw %%ax\n\t"
+		"fstpt %1\n\t"
+		"mov %%ax, %2\n\t"
+		: "=m" (*vsin), "=m" (*vcos), "=g" (status)
+		: "m" (*st0)
+		: "ax"
+	);
+	__X86_CONTEXT_FP_END__
+
+	StoreFpu(0, vsin);
+	PushFpu(vcos);
+	StoreFpuCode(status);
+
+	newUInst(UInstFpPush, 0, 0, 0, 0, 0, 0, 0);
+	newUInst(UInstFpSincos, UInstDepSt1, 0, 0, UInstDepSt0, UInstDepSt1, 0, 0);
 }
+
 
 void Context::ExecuteInst_fsqrt()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10];
+	unsigned short status;
+
+	LoadFpu(0, st0);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldt %2\n\t"
+		"fsqrt\n\t"
+		"fnstsw %%ax\n\t"
+		"fstpt %0\n\t"
+		"mov %%ax, %1\n\t"
+		: "=m" (*st0), "=g" (status)
+		: "m" (*st0)
+		: "ax"
+	);
+	__X86_CONTEXT_FP_END__
+
+	StoreFpu(0, st0);
+	StoreFpuCode(status);
+
+	newUInst(UInstFpSqrt, UInstDepSt0, 0, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fst_m32()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10];
+	float m32;
+
+	LoadFpu(0, st0);
+	m32 = Extended::ExtendedToFloat(st0);
+	StoreFloat(m32);
+
+	newUInst(UInstFpMove, UInstDepSt0, 0, 0, UInstDepMem32, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fst_m64()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10];
+	double m64;
+
+	LoadFpu(0, st0);
+	m64 = Extended::ExtendedToDouble(st0);
+	StoreDouble(m64);
+
+	newUInst(UInstFpMove, UInstDepSt0, 0, 0, UInstDepMem64, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fst_sti()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10];
+
+	LoadFpu(0, st0);
+	StoreFpu(inst.getOpIndex(), st0);
+
+	newUInst(UInstFpMove, UInstDepSt0, 0, 0, UInstDepSti, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fstp_m32()
 {
-	__UNIMPLEMENTED__
+	ExecuteInst_fst_m32();
+	PopFpu(nullptr);
+
+	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fstp_m64()
 {
-	__UNIMPLEMENTED__
+	ExecuteInst_fst_m64();
+	PopFpu(nullptr);
+
+	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fstp_m80()
 {
-	__UNIMPLEMENTED__
+	unsigned char m80[10];
+
+	PopFpu(m80);
+	StoreExtended(m80);
+
+	newUInst(UInstFpMove, UInstDepSt0, 0, 0, UInstDepMem80, 0, 0, 0);
+	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fstp_sti()
 {
-	__UNIMPLEMENTED__
+	ExecuteInst_fst_sti();
+	PopFpu(nullptr);
+
+	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fstsw_ax()
 {
-	__UNIMPLEMENTED__
+	unsigned short status = LoadFpuStatus();
+	regs.Write(InstRegAx, status);
+
+	newUInst(UInstFpMove, UInstDepFpst, 0, 0, UInstDepEax, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fsub_m32()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10];
+	float m32;
+	unsigned short status;
+
+	m32 = LoadFloat();
+	LoadFpu(0, st0);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldt %2\n\t"
+		"flds %3\n\t"
+		"fsubrp %%st(0), %%st(1)\n\t"
+		"fnstsw %%ax\n\t"
+		"fstpt %0\n\t"
+		"mov %%ax, %1\n\t"
+		: "=m" (*st0), "=g" (status)
+		: "m" (*st0), "m" (m32)
+		: "ax"
+	);
+	__X86_CONTEXT_FP_END__
+
+	StoreFpu(0, st0);
+	StoreFpuCode(status);
+
+	newUInst(UInstFpSub,	UInstDepSt0, UInstDepMem32, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fsub_m64()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10];
+	double m64;
+	unsigned short status;
+
+	m64 = LoadDouble();
+	LoadFpu(0, st0);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldt %2\n\t"
+		"fldl %3\n\t"
+		"fsubrp %%st(0), %%st(1)\n\t"
+		"fnstsw %%ax\n\t"
+		"fstpt %0\n\t"
+		"mov %%ax, %1\n\t"
+		: "=m" (*st0), "=g" (status)
+		: "m" (*st0), "m" (m64)
+		: "ax"
+	);
+	__X86_CONTEXT_FP_END__
+
+	StoreFpu(0, st0);
+	StoreFpuCode(status);
+
+	newUInst(UInstFpSub, UInstDepSt0, UInstDepMem64, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fsub_st0_sti()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10], sti[10];
+	unsigned short status;
+
+	LoadFpu(0, st0);
+	LoadFpu(inst.getOpIndex(), sti);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldt %2\n\t"
+		"fldt %3\n\t"
+		"fsubrp %%st(0), %%st(1)\n\t"
+		"fnstsw %%ax\n\t"
+		"fstpt %0\n\t"
+		"mov %%ax, %1\n\t"
+		: "=m" (*st0), "=g" (status)
+		: "m" (*st0), "m" (*sti)
+		: "ax"
+	);
+	__X86_CONTEXT_FP_END__
+
+	StoreFpu(0, st0);
+	StoreFpuCode(status);
+
+	newUInst(UInstFpSub, UInstDepSt0, UInstDepSti, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fsub_sti_st0()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10], sti[10];
+	unsigned short status;
+
+	LoadFpu(0, st0);
+	LoadFpu(inst.getOpIndex(), sti);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldt %2\n\t"
+		"fldt %3\n\t"
+		"fsubrp %%st(0), %%st(1)\n\t"
+		"fnstsw %%ax\n\t"
+		"fstpt %0\n\t"
+		"mov %%ax, %1\n\t"
+		: "=m" (*sti), "=g" (status)
+		: "m" (*sti), "m" (*st0)
+		: "ax"
+	);
+	__X86_CONTEXT_FP_END__
+
+	StoreFpu(inst.getOpIndex(), sti);
+	StoreFpuCode(status);
+
+	newUInst(UInstFpSub, UInstDepSt0, UInstDepSti, 0, UInstDepSti, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fsubp_sti_st0()
 {
-	__UNIMPLEMENTED__
+	ExecuteInst_fsub_sti_st0();
+	PopFpu(nullptr);
+
+	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fsubr_m32()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10];
+	float m32;
+	unsigned short status;
+
+	m32 = LoadFloat();
+	LoadFpu(0, st0);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"flds %2\n\t"
+		"fldt %3\n\t"
+		"fsubrp %%st(0), %%st(1)\n\t"
+		"fnstsw %%ax\n\t"
+		"fstpt %0\n\t"
+		"mov %%ax, %1\n\t"
+		: "=m" (*st0), "=g" (status)
+		: "m" (m32), "m" (*st0)
+		: "ax"
+	);
+	__X86_CONTEXT_FP_END__
+
+	StoreFpu(0, st0);
+	StoreFpuCode(status);
+
+	newUInst(UInstFpSub, UInstDepSt0, UInstDepMem32, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fsubr_m64()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10];
+	double m64;
+	unsigned short status;
+
+	m64 = LoadDouble();
+	LoadFpu(0, st0);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldl %2\n\t"
+		"fldt %3\n\t"
+		"fsubrp %%st(0), %%st(1)\n\t"
+		"fnstsw %%ax\n\t"
+		"fstpt %0\n\t"
+		"mov %%ax, %1\n\t"
+		: "=m" (*st0), "=g" (status)
+		: "m" (m64), "m" (*st0)
+		: "ax"
+	);
+	__X86_CONTEXT_FP_END__
+
+	StoreFpu(0, st0);
+	StoreFpuCode(status);
+
+	newUInst(UInstFpSub, UInstDepSt0, UInstDepMem64, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fsubr_st0_sti()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10], sti[10];
+	unsigned short status;
+
+	LoadFpu(0, st0);
+	LoadFpu(inst.getOpIndex(), sti);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldt %2\n\t"
+		"fldt %3\n\t"
+		"fsubrp %%st(0), %%st(1)\n\t"
+		"fnstsw %%ax\n\t"
+		"fstpt %0\n\t"
+		"mov %%ax, %1\n\t"
+		: "=m" (*st0), "=g" (status)
+		: "m" (*sti), "m" (*st0)
+		: "ax"
+	);
+	__X86_CONTEXT_FP_END__
+
+	StoreFpu(0, st0);
+	StoreFpuCode(status);
+
+	newUInst(UInstFpSub, UInstDepSt0, UInstDepSti, 0, UInstDepSt0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fsubr_sti_st0()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10], sti[10];
+	unsigned short status;
+
+	LoadFpu(0, st0);
+	LoadFpu(inst.getOpIndex(), sti);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldt %2\n\t"
+		"fldt %3\n\t"
+		"fsubrp %%st(0), %%st(1)\n\t"
+		"fnstsw %%ax\n\t"
+		"fstpt %0\n\t"
+		"mov %%ax, %1\n\t"
+		: "=m" (*sti), "=g" (status)
+		: "m" (*st0), "m" (*sti)
+		: "ax"
+	);
+	__X86_CONTEXT_FP_END__
+
+	StoreFpu(inst.getOpIndex(), sti);
+	StoreFpuCode(status);
+
+	newUInst(UInstFpSub, UInstDepSt0, UInstDepSti, 0, UInstDepSti, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fsubrp_sti_st0()
 {
-	__UNIMPLEMENTED__
+	ExecuteInst_fsubr_sti_st0();
+	PopFpu(nullptr);
+
+	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fstcw_m16()
 {
-	__UNIMPLEMENTED__
+	unsigned short value = regs.getFpuCtrl();
+
+	// Store value of FP control word
+	MemoryWrite(getEffectiveAddress(), 2, &value);
+
+	// Micro-instructions
+	newUInst(UInstFpMove, UInstDepFpcw, 0, 0, UInstDepMem32, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_ftst()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10];
+	unsigned short status;
+
+	LoadFpu(0, st0);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldt %1\n\t"
+		"ftst\n\t"
+		"fnstsw %%ax\n\t"
+		"fstp %%st(0)\n\t"
+		"mov %%ax, %0\n\t"
+		: "=g" (status)
+		: "m" (*st0)
+		: "ax"
+	);
+	__X86_CONTEXT_FP_END__
+
+	StoreFpuCode(status);
+
+	newUInst(UInstFpComp, UInstDepSt0, 0, 0, UInstDepFpst, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fucom_sti()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10], sti[10];
+	unsigned short status;
+
+	LoadFpu(0, st0);
+	LoadFpu(inst.getOpIndex(), sti);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldt %2\n\t"
+		"fldt %1\n\t"
+		"fucompp\n\t"
+		"fnstsw %%ax\n\t"
+		"mov %%ax, %0\n\t"
+		: "=g" (status)
+		: "m" (*st0), "m" (*sti)
+		: "ax"
+	);
+	__X86_CONTEXT_FP_END__
+
+	StoreFpuCode(status);
+
+	newUInst(UInstFpComp, UInstDepSt0, UInstDepSti, 0, UInstDepFpst, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fucomp_sti()
 {
-	__UNIMPLEMENTED__
+	ExecuteInst_fucom_sti();
+	PopFpu(nullptr);
+
+	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fucompp()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10], st1[10];
+	unsigned short status;
+
+	LoadFpu(0, st0);
+	LoadFpu(1, st1);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldt %2\n\t"
+		"fldt %1\n\t"
+		"fucompp\n\t"
+		"fnstsw %%ax\n\t"
+		"mov %%ax, %0\n\t"
+		: "=g" (status)
+		: "m" (*st0), "m" (*st1)
+		: "ax"
+	);
+	__X86_CONTEXT_FP_END__
+
+	StoreFpuCode(status);
+	PopFpu(nullptr);
+	PopFpu(nullptr);
+
+	newUInst(UInstFpComp, UInstDepSt0, UInstDepSt1, 0, UInstDepFpst, 0, 0, 0);
+	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
+	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fxam()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10];
+	unsigned short status;
+
+	LoadFpu(0, st0);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldt %1\n\t"
+		"fxam\n\t"
+		"fstsw %%ax\n\t"
+		"mov %%ax, %0\n\t"
+		"fstp %%st(0)\n\t"
+		: "=g" (status)
+		: "m" (*st0)
+		: "ax"
+	);
+	__X86_CONTEXT_FP_END__
+
+	StoreFpuCode(status);
+
+	newUInst(UInstFpComp, UInstDepSt0, 0, 0, UInstDepFpst, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fxch_sti()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10], sti[10];
+	LoadFpu(0, st0);
+	LoadFpu(inst.getOpIndex(), sti);
+	StoreFpu(0, sti);
+	StoreFpu(inst.getOpIndex(), st0);
+
+	newUInst(UInstFpMove, UInstDepSt0, UInstDepSti, 0, UInstDepSt0, UInstDepSti, 0, 0);
 }
+
 
 void Context::ExecuteInst_fyl2x()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10], st1[10];
+	unsigned short status;
+
+	LoadFpu(0, st0);
+	LoadFpu(1, st1);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldt %3\n\t"
+		"fldt %2\n\t"
+		"fyl2x\n\t"
+		"fnstsw %%ax\n\t"
+		"fstpt %0\n\t"
+		"mov %%ax, %1\n\t"
+		: "=m" (*st1), "=g" (status)
+		: "m" (*st0), "m" (*st1)
+		: "ax"
+	);
+	__X86_CONTEXT_FP_END__
+
+	StoreFpu(1, st1);
+	PopFpu(nullptr);
+	StoreFpuCode(status);
+
+	newUInst(UInstFpLog, UInstDepSt0, UInstDepSt1, 0, UInstDepSt1, 0, 0, 0);
+	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_fyl2xp1()
 {
-	__UNIMPLEMENTED__
+	unsigned char st0[10], st1[10];
+	unsigned short status;
+
+	LoadFpu(0, st0);
+	LoadFpu(1, st1);
+
+	__X86_CONTEXT_FP_BEGIN__
+	asm volatile (
+		"fldt %3\n\t"
+		"fldt %2\n\t"
+		"fyl2xp1\n\t"
+		"fnstsw %%ax\n\t"
+		"fstpt %0\n\t"
+		"mov %%ax, %1\n\t"
+		: "=m" (*st1), "=g" (status)
+		: "m" (*st0), "m" (*st1)
+		: "ax"
+	);
+	__X86_CONTEXT_FP_END__
+
+	StoreFpu(1, st1);
+	PopFpu(nullptr);
+	StoreFpuCode(status);
+
+	newUInst(UInstFpLog, UInstDepSt0, UInstDepSt1, 0, UInstDepSt1, 0, 0, 0);
+	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
 }
 
 }  // namespace x86

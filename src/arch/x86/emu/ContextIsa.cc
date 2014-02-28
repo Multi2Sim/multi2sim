@@ -18,6 +18,7 @@
  */
 
 #include <cstdarg>
+#include <cstring>
 
 #include <lib/cpp/Misc.h>
 
@@ -27,6 +28,16 @@
 
 namespace x86
 {
+
+Context::ExecuteInstFn Context::execute_inst_fn[InstOpcodeCount] =
+{
+		nullptr  // For InstOpcodeNone
+#define DEFINST(name, op1, op2, op3, modrm, imm, pfx) \
+		 , &Context::ExecuteInst_##name
+#include <arch/x86/asm/asm.dat>
+#undef DEFINST
+};
+
 
 void Context::IsaError(const char *fmt, ...)
 {
@@ -249,6 +260,165 @@ unsigned Context::getMoffsAddress()
 	return address;
 }
 
+void Context::LoadFpu(int index, unsigned char *value)
+{
+	if (!misc::inRange(index, 0, 7))
+	{
+		IsaError("%s: invalid value for 'index'", __FUNCTION__);
+		return;
+	}
+
+	int eff_index = (regs.getFpuTop() + index) % 8;
+	if (!regs.isFpuValid(eff_index))
+	{
+		IsaError("%s: invalid FPU stack entry", __FUNCTION__);
+		return;
+	}
+
+	memcpy(value, regs.getFpuValue(eff_index), 10);
+	if (emu->isa_debug)
+		emu->isa_debug << misc::fmt("  st(%d)=%g", index,
+				Extended::ExtendedToDouble(value));
+}
+
+
+void Context::StoreFpu(int index, unsigned char *value)
+{
+	// Check valid index
+	if (!misc::inRange(index, 0, 7))
+	{
+		IsaError("%s: invalid value for 'index'", __FUNCTION__);
+		return;
+	}
+
+	// Get index
+	index = (regs.getFpuTop() + index) % 8;
+	if (!regs.isFpuValid(index))
+	{
+		IsaError("%s: invalid FPU stack entry", __FUNCTION__);
+		return;
+	}
+
+	// Store value
+	memcpy(regs.getFpuValue(index), value, 10);
+	if (emu->isa_debug)
+		emu->isa_debug << misc::fmt("  st(%d) <- %g", index,
+				Extended::ExtendedToDouble(value));
+}
+
+
+void Context::PushFpu(unsigned char *value)
+{
+	// Debug
+	if (emu->isa_debug)
+		emu->isa_debug << misc::fmt("  st(0) <- %g (pushed)",
+				Extended::ExtendedToDouble(value));
+
+	// Get stack top
+	regs.decFpuTop();
+	if (regs.isFpuValid(regs.getFpuTop()))
+	{
+		IsaError("%s: unexpected valid entry", __FUNCTION__);
+		return;
+	}
+
+	regs.setFpuValid(regs.getFpuTop());
+	memcpy(regs.getFpuValue(regs.getFpuTop()), value, 10);
+}
+
+
+void Context::PopFpu(unsigned char *value)
+{
+	// Check valid entry
+	if (!regs.isFpuValid(regs.getFpuTop()))
+	{
+		IsaError("%s: unexpected invalid entry", __FUNCTION__);
+		return;
+	}
+
+	if (value)
+	{
+		memcpy(value, regs.getFpuValue(regs.getFpuTop()), 10);
+		if (emu->isa_debug)
+			emu->isa_debug << misc::fmt("  st(0) -> %g (popped)",
+					Extended::ExtendedToDouble(value));
+	}
+	regs.setFpuValid(regs.getFpuTop(), false);
+	regs.incFpuTop();
+}
+
+
+double Context::LoadDouble()
+{
+	double value;
+	MemoryRead(getEffectiveAddress(), 8, &value);
+	emu->isa_debug << misc::fmt("  [0x%x]=%g", getEffectiveAddress(), value);
+	return value;
+}
+
+
+void Context::LoadExtended(unsigned char *value)
+{
+	MemoryRead(getEffectiveAddress(), 10, value);
+}
+
+
+void Context::StoreExtended(unsigned char *value)
+{
+	MemoryWrite(getEffectiveAddress(), 10, value);
+}
+
+
+void Context::StoreDouble(double value)
+{
+	MemoryWrite(getEffectiveAddress(), 8, &value);
+	emu->isa_debug << misc::fmt("  [0x%x] <- %g", getEffectiveAddress(), value);
+}
+
+
+float Context::LoadFloat()
+{
+	float value;
+
+	MemoryRead(getEffectiveAddress(), 4, &value);
+	emu->isa_debug << misc::fmt("  [0x%x]=%g", getEffectiveAddress(), (double) value);
+
+	return value;
+}
+
+
+void Context::StoreFloat(float value)
+{
+	MemoryWrite(getEffectiveAddress(), 4, &value);
+	emu->isa_debug << misc::fmt("  [0x%x] <- %g", getEffectiveAddress(), (double) value);
+}
+
+
+void Context::StoreFpuCode(unsigned short status)
+{
+	regs.setFpuCode(0);
+	if (misc::getBit32(status, 14))
+		regs.setFpuCode(regs.getFpuCode() | 8);
+	regs.setFpuCode(regs.getFpuCode() | ((status >> 8) & 7));
+}
+
+
+unsigned short Context::LoadFpuStatus()
+{
+	unsigned short status = 0;
+	
+	if (!misc::inRange(regs.getFpuTop(), 0, 7))
+	{
+		IsaError("%s: wrong FPU stack top", __FUNCTION__);
+		return 0;
+	}
+
+	status |= regs.getFpuTop() << 11;
+	if (misc::getBit32(regs.getFpuCode(), 3))
+		status |= 0x4000;
+	status |= (regs.getFpuCode() & 7) << 8;
+	return status;
+}
 
 
 }  // namespace x86

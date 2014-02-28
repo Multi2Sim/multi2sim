@@ -30,14 +30,21 @@ namespace x86
 class Extended
 {
 	// Bytes
-	char x[10];
-
-	static void DoubleToExtended(double f, char *x);
-	static double ExtendedToDouble(const char *x);
-	static void FloatToExtended(float f, char *x);
-	static float ExtendedToFloat(const char *x);
+	unsigned char x[10];
 
 public:
+
+	/// Convert a double into an extended
+	static void DoubleToExtended(double f, unsigned char *x);
+
+	/// Convert an extended into a double
+	static double ExtendedToDouble(const unsigned char *x);
+
+	/// Convert a float into an extended
+	static void FloatToExtended(float f, unsigned char *x);
+
+	/// Convert an extended into a float
+	static float ExtendedToFloat(const unsigned char *x);
 
 	/// Empty constructor, initializing the value to 0
 	Extended() : x() { }
@@ -60,11 +67,14 @@ public:
 		return os;
 	}
 
-	/// Cast to type \c float.
-	operator float() { return ExtendedToFloat(x); }
+	/// Return the represented extended number as a 32-bit \c float.
+	float getFloat() const { return ExtendedToFloat(x); }
 
-	/// Cast to type \c double.
-	operator double() { return ExtendedToDouble(x); }
+	/// Return the 64-bit \c double representation
+	double getDouble() const { return ExtendedToDouble(x); }
+
+	/// Return the extended value as a sequence of 10 bytes
+	unsigned char *getValue() { return x; }
 };
 
 
