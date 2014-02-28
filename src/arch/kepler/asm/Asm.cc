@@ -120,6 +120,8 @@ static const int AsmOpcode_C_B_E_B_B = 1;
 static const int AsmOpcode_C_B_E_B_A_A = 1;
 
 
+std::unique_ptr<Asm> Asm::as;
+
 
 void Asm::InitTableWithArray(InstOpcode opcode, const char *name,
 		const char *fmt_str, int argc, int argv[])
@@ -140,8 +142,7 @@ void Asm::InitTableWithArray(InstOpcode opcode, const char *name,
 		int index = argv[i];
 
 		// Sanity: no instruction, but next table
-		//assert(!table[index].info);
-		table[index].info = NULL;
+		assert(!table[index].info);
 		assert(table[index].next_table);
 
 		// Go to next table
@@ -150,11 +151,19 @@ void Asm::InitTableWithArray(InstOpcode opcode, const char *name,
 
 	// Get index for last table
 	int index = argv[argc - 1];
-	//assert(!table[index].next_table);
-	table[index].next_table = NULL;
+	assert(!table[index].next_table);
 
 	// Set final instruction info
 	table[index].info = &inst_info[opcode];
+}
+
+
+Asm *Asm::getInstance()
+{
+	if (as)
+		return as.get();
+	as.reset(new Asm());
+	return as.get();
 }
 
 
@@ -431,7 +440,7 @@ void Asm::DisassembleBinary(const std::string &path) const
 {
 	// Initializations
 	ELFReader::File f(path);
-	Inst inst(this);
+	Inst inst;
 
 	// Read Sections
 	for (int i = 0; i < f.getNumSections(); i++)

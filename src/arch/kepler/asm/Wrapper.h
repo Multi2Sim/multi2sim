@@ -111,7 +111,7 @@ typedef struct
 } KplInstInfo;
 
 
-struct KplInstWrap *KplInstWrapCreate(struct KplAsm *as);
+struct KplInstWrap *KplInstWrapCreate();
 void KplInstWrapFree(struct KplInstWrap *self);
 void KplInstWrapDecode(struct KplInstWrap *self, unsigned int addr, void *ptr);
 //KplInstId KplInstWrapGetId(struct KplInstWrap *self);

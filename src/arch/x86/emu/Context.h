@@ -156,6 +156,19 @@ class Context
 	unsigned current_eip;  // Address of currently emulated instruction
 	unsigned target_eip;  // Target address for branch, even if not taken
 
+	// Parent context
+	Context *parent;
+
+	// Context group initiator. There is only one group parent (if not null)
+	// with many group children, no tree organization.
+	Context *group_parent;
+
+	int exit_signal;  // Signal to send parent when finished
+	int exit_code;  // For zombie contexts
+
+	unsigned int clear_child_tid;
+	unsigned int robust_list_head;  // robust futex list
+
 	// Virtual address of the memory access performed by the last emulated
 	// instruction.
 	unsigned effective_address;
@@ -173,14 +186,48 @@ class Context
 	unsigned glibc_segment_base;
 	unsigned glibc_segment_limit;
 
+	// Host thread that suspends and then schedules call to Emu::ProcessEvents()
+	// The 'host_thread_suspend_active' flag is set when a 'host_thread_suspend' thread
+	// is launched for this context (by caller).
+	// It is clear when the context finished (by the host thread).
+	// It should be accessed safely by locking the emulator mutex */
+	pthread_t host_thread_suspend;  // Thread
+	bool host_thread_suspend_active;  // Thread-spawned flag
+
+	/* Host thread that lets time elapse and schedules call to 'x86_emu_process_events'. */
+	pthread_t host_thread_timer;  /* Thread */
+	int host_thread_timer_active;  /* Thread-spawned flag */
+	long long host_thread_timer_wakeup;  /* Time when the thread will wake up */
+
+	// Variables used to wake up suspended contexts.
+	long long wakeup_time;  // x86_emu_timer time to wake up (poll/nanosleep)
+	int wakeup_fd;  // File descriptor (read/write/poll)
+	int wakeup_events;  // Events for wake up (poll)
+	int wakeup_pid;  // Pid waiting for (waitpid)
+	unsigned wakeup_futex;  // Address of futex where context is suspended
+	unsigned wakeup_futex_bitset;  // Bit mask for selective futex wakeup
+	long long wakeup_futex_sleep;  // Assignment from futex_sleep_count
+
 
 	// Update the context state, updating also the presence on the context
 	// in the various context lists in the emulator.
 	void UpdateState(unsigned state);
 
+	// Futex-related calls
+	int FutexWake(unsigned futex, unsigned count, unsigned bitset);
+	void ExitRobustList();
+
 	// Dump debug information about a call instruction
 	void DebugCallInst();
 	
+	// Cancel host thread
+	void HostThreadSuspendCancel();
+	void HostThreadSuspendCancelUnsafe();
+
+	// Cancel timer thread
+	void HostThreadTimerCancel();
+	void HostThreadTimerCancelUnsafe();
+
 
 	///////////////////////////////////////////////////////////////////////
 	//
@@ -605,7 +652,9 @@ class Context
 	// Table of system call execution functions
 	static const ExecuteSyscallFn execute_syscall_fn[SyscallCodeCount + 1];
 
-
+	// Auxiliary system call functions
+	int SyscallMmapAux(unsigned int addr, unsigned int len, int prot,
+			int flags, int guest_fd, int offset);
 
 public:
 	
@@ -651,7 +700,7 @@ public:
 	/// \param stdout_file_name
 	///	File to redirect the standard output and standard error output,
 	///	or empty string for no redirection.
-	void loadProgram(const std::vector<std::string> &args,
+	void LoadProgram(const std::vector<std::string> &args,
 			const std::vector<std::string> &env,
 			const std::string &cwd,
 			const std::string &stdin_file_name,
@@ -670,6 +719,18 @@ public:
 	/// Clear flag \a state in the context state
 	void clearState(ContextState state) { UpdateState(this->state
 			& ~state); }
+
+	// Finish a context. If the context has no parent, its state will be
+	// set to ContextFinished. If it has, its state is set to
+	// ContextZombie, waiting for a call to 'waitpid'. The children of the
+	// finished context will set their 'parent' attribute to null. The
+	// zombie children will be finished.
+	void Finish(int status);
+
+	// Finish a context group. This call does a subset of action of the
+	// Finish() call, but for all parent and child contexts sharing a
+	// memory map.
+	void FinishGroup(int status);
 
 	/// Run one instruction for the context at the position pointed to by
 	/// register \c eip.

@@ -654,6 +654,46 @@ std::string StringParagraph(const std::string &text,
 }
 
 
+std::string StringBinaryBuffer(char *buffer, int size, int truncate)
+{
+	// Truncate size to
+	bool truncated = false;
+	if (size > truncate && truncate)
+	{
+		size = truncate;
+		truncated = true;
+	}
+
+	// Create output
+	std::string result;
+	while (size)
+	{
+		unsigned char c = *buffer;
+		if (c >= 32)
+			result += c;
+		else if (!c)
+			result += "\\0";
+		else if (c == '\n')
+			result += "\\n";
+		else if (c == '\t')
+			result += "\\t";
+		else
+			result += misc::fmt("\\%02x", c);
+
+		// Next byte
+		buffer++;
+		size--;
+	}
+
+	// Ellipsis if truncated;
+	if (truncated)
+		result += "...";
+	
+	// Return
+	return result;
+}
+
+
 
 
 //

@@ -153,6 +153,7 @@ Emu::Emu() : comm::Emu("x86")
 {
 	// Initialize
 	pid = 100;
+	process_events_force = false;
 }
 
 void Emu::AddContextToList(ContextListType type, Context *context)
@@ -219,7 +220,7 @@ Context *Emu::newContext(const std::vector<std::string> &args,
 	context->contexts_iter = --iter;
 
 	// Load program
-	context->loadProgram(args, env, cwd, stdin_file_name,
+	context->LoadProgram(args, env, cwd, stdin_file_name,
 			stdout_file_name);
 
 	// Return
@@ -238,6 +239,13 @@ void Emu::freeContext(Context *context)
 	contexts.erase(context->contexts_iter);
 }
 
+
+void Emu::ProcessEventsSchedule()
+{
+	LockMutex();
+	process_events_force = true;
+	UnlockMutex();
+}
 
 void Emu::ProcessEvents()
 {

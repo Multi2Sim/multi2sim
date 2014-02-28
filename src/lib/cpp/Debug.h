@@ -100,6 +100,9 @@ public:
 	/// user must make sure that this only happens when a proper output
 	/// stream has been internally initialized after a call to setPath().
 	operator std::ostream &() { assert(os); return *os; }
+
+	/// Flush the internal stream
+	void Flush();
 };
 
 
