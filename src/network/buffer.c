@@ -29,6 +29,7 @@
 #include "net-system.h"
 #include "network.h"
 #include "node.h"
+#include "packet.h"
 
 
 /* 
@@ -107,15 +108,15 @@ void net_buffer_dump_report(struct net_buffer_t *buffer, FILE *f)
 }
 
 
-void net_buffer_insert(struct net_buffer_t *buffer, struct net_msg_t *msg)
+void net_buffer_insert(struct net_buffer_t *buffer, struct net_packet_t *pkt)
 {
 	struct net_t *net = buffer->net;
 	struct net_node_t *node = buffer->node;
 
-	if (buffer->count + msg->size > buffer->size)
+	if (buffer->count + pkt->size > buffer->size)
 		panic("%s: not enough space in buffer", __FUNCTION__);
-	buffer->count += msg->size;
-	list_enqueue(buffer->msg_list, msg);
+	buffer->count += pkt->size;
+	list_enqueue(buffer->msg_list, pkt);
 
 	/* Update occupancy stat */
 	net_buffer_update_occupancy(buffer);
@@ -124,28 +125,29 @@ void net_buffer_insert(struct net_buffer_t *buffer, struct net_msg_t *msg)
 	net_debug("buf "
 		"a=\"insert\" "
 		"net=\"%s\" "
-		"msg=%lld "
+		"msg-->pkt=%lld:%d "
 		"node=\"%s\" "
 		"buf=\"%s\"\n",
 		net->name,
-		msg->id,
+		pkt->msg->id,
+		pkt->session_id,
 		node->name,
 		buffer->name);
 }
 
 
-void net_buffer_extract(struct net_buffer_t *buffer, struct net_msg_t *msg)
+void net_buffer_extract(struct net_buffer_t *buffer, struct net_packet_t *pkt)
 {
 	struct net_t *net = buffer->net;
 	struct net_node_t *node = buffer->node;
 
-	assert(buffer->count >= msg->size);
-	buffer->count -= msg->size;
+	assert(buffer->count >= pkt->size);
+	buffer->count -= pkt->size;
 
 	/* Extract message from list */
 	if (!list_count(buffer->msg_list))
 		panic("%s: empty message list", __FUNCTION__);
-	if (list_dequeue(buffer->msg_list) != msg)
+	if (list_dequeue(buffer->msg_list) != pkt)
 		panic("%s: message is not at buffer head", __FUNCTION__);
 
 	/* Update occupancy stat */
@@ -155,11 +157,12 @@ void net_buffer_extract(struct net_buffer_t *buffer, struct net_msg_t *msg)
 	net_debug("buf "
 		"a=\"extract\" "
 		"net=\"%s\" "
-		"msg=%lld "
+		"msg-->pkt=%lld:%d "
 		"node=\"%s\" "
 		"buf=\"%s\"\n",
 		net->name,
-		msg->id,
+		pkt->msg->id,
+		pkt->session_id,
 		node->name,
 		buffer->name);
 

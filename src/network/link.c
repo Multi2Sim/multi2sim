@@ -30,6 +30,7 @@
 #include "net-system.h"
 #include "network.h"
 #include "node.h"
+#include "packet.h"
 
 
 struct net_link_t *net_link_create(struct net_t *net,
@@ -123,7 +124,7 @@ struct net_buffer_t *net_link_arbitrator_vc(struct net_link_t *link,
 	int input_buffer_count = list_count(dst_node->input_buffer_list);
 
 	struct net_buffer_t *output_buffer;
-	struct net_msg_t *msg;
+	struct net_packet_t *pkt;
 
 	/* Keeping indexes of last chosen buffer */
 	int last_output_buffer_vc_index;
@@ -201,12 +202,12 @@ struct net_buffer_t *net_link_arbitrator_vc(struct net_link_t *link,
 		assert(output_buffer->link == link);
 
 		/* msg should be at head */
-		msg = list_get(output_buffer->msg_list, 0);
-		if (!msg)
+		pkt = list_get(output_buffer->msg_list, 0);
+		if (!pkt)
 			continue;
 
 		/* msg must be ready */
-		if (msg->busy >= cycle)
+		if (pkt->busy >= cycle)
 			continue;
 
 		/* output buffer must be ready */

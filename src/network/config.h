@@ -17,39 +17,16 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef NET_COMMAND_H
-#define NET_COMMAND_H
+#ifndef NET_CONFIG_H
+#define NET_CONFIG_H
 
-/*
- * Event to handle network commands that injects message to the network,
- * checks them and receives them.
- */
+/* Help message */
+extern char *net_config_help;
+extern char *net_config_file_name;
 
-extern int EV_NET_COMMAND;
-extern int EV_NET_COMMAND_RCV;
-extern int EV_NET_COMMAND_SEND;
-
-/* Stack */
-struct net_command_stack_t
-{
-	/* Local variables */
-	struct net_t *net;
-	struct net_msg_t *msg;
-	char *command;
-
-	/* Return event */
-	int ret_event;
-	struct net_command_stack_t *ret_stack;
-};
+void net_read_config();
 
 
-struct net_command_stack_t *net_command_stack_create(struct net_t *net,
-	int retevent, void *retstack);
-void net_command_stack_return(struct net_command_stack_t *stack);
 
 
-void net_command_handler(int event, void *data);
-
-
-#endif
-
+#endif /* CONFIG_H_ */

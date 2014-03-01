@@ -4,6 +4,15 @@ libnetwork_a_SOURCES = \
 	buffer.c \
 	buffer.h \
 	\
+	bus.c \
+	bus.h \
+	\
+	command.c \
+	command.h \
+	\
+	config.c \
+	config.h \
+	\
 	link.c \
 	link.h \
 	\
@@ -19,16 +28,13 @@ libnetwork_a_SOURCES = \
 	node.c \
 	node.h \
 	\
-	visual.c \
-	visual.h \
-	\
-	bus.c \
-	bus.h \
-	\
-	command.c \
-	command.h \
+	packet.c \
+	packet.h \
 	\
 	routing-table.c \
-	routing-table.h
+	routing-table.h \
+	\
+	visual.c \
+	visual.h 
 
 INCLUDES = @M2S_INCLUDES@

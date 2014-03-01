@@ -85,7 +85,7 @@ struct net_graph_t *net_visual_calc(struct net_t *net)
 			vertex->kind = net_vertex_switch;
 		else if (node->kind == net_node_end)
 			vertex->kind = net_vertex_end_node;
-		else if (node->kind == net_node_bus)
+		else if (node->kind == net_node_bus || node->kind == net_node_photonic)
 			vertex->kind = net_vertex_bus;
 		else
 			vertex->kind = net_vertex_dummy;

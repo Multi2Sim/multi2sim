@@ -37,7 +37,8 @@ enum net_buffer_kind_t
 {
 	net_buffer_invalid= 0,
 	net_buffer_link,
-	net_buffer_bus
+	net_buffer_bus,
+	net_buffer_photonic
 };
 
 struct net_buffer_t
@@ -89,8 +90,8 @@ void net_buffer_free(struct net_buffer_t *buffer);
 void net_buffer_dump(struct net_buffer_t *buffer, FILE *f);
 void net_buffer_dump_report(struct net_buffer_t *buffer, FILE *f);
 
-void net_buffer_insert(struct net_buffer_t *buffer, struct net_msg_t *msg);
-void net_buffer_extract(struct net_buffer_t *buffer, struct net_msg_t *msg);
+void net_buffer_insert(struct net_buffer_t *buffer, struct net_packet_t *msg);
+void net_buffer_extract(struct net_buffer_t *buffer, struct net_packet_t *msg);
 
 void net_buffer_wait(struct net_buffer_t *buffer, int event, void *stack);
 void net_buffer_wakeup(struct net_buffer_t *buffer);

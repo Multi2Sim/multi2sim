@@ -116,6 +116,7 @@
 #include <mem-system/mem-system.h>
 #include <mem-system/mmu.h>
 #include <network/net-system.h>
+#include <network/config.h>
 #include <dram/dram-system.h>
 #include <sys/time.h>
 #include <visual/common/visual.h>
