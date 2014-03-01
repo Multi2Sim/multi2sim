@@ -41,12 +41,17 @@ struct net_bus_t
 	long long sched_when;
 	struct net_buffer_t *sched_buffer;
 
+	/* as a channel */
+	struct list_t *src_buffer_list;
+	struct list_t *dst_buffer_list;
 
 };
 struct net_bus_t *net_bus_create(struct net_t *net, struct net_node_t *node,
 	int bandwidth, char *name);
 void net_bus_free(struct net_bus_t *bus);
 struct net_bus_t *net_bus_arbitration(struct net_node_t *bus_node,
+	struct net_buffer_t *buffer);
+struct net_bus_t *net_photo_link_arbitration(struct net_node_t *bus_node,
 	struct net_buffer_t *buffer);
 void net_bus_dump_report(struct net_bus_t *bus, FILE *f);
 #endif

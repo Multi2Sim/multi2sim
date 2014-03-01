@@ -134,7 +134,7 @@ static struct net_buffer_t * net_command_get_buffer(struct net_node_t * node,
 void net_command_handler(int event, void *data)
 {
 
-	struct net_stack_t *stack= data;
+	struct net_command_stack_t *stack= data;
 	struct net_t *net = stack->net;
 
 	char out_msg[MAX_STRING_SIZE];
@@ -283,7 +283,7 @@ void net_command_handler(int event, void *data)
 			fprintf(stderr, ">>> %s - %s\n", out_msg, test_failed ?
 				"failed" : "passed");
 			fprintf(stderr, "%s", msg_detail);
-			net_stack_return(stack);
+			net_command_stack_return(stack);
 
 		}
 
@@ -338,7 +338,7 @@ void net_command_handler(int event, void *data)
 			fprintf(stderr, ">>> %s - %s\n", out_msg, test_failed ?
 				"failed" : "passed");
 			fprintf(stderr, "%s", msg_detail);
-			net_stack_return(stack);
+			net_command_stack_return(stack);
 		}
 
 		else if (!strcasecmp(command, "OutBufferCheck"))
@@ -391,7 +391,8 @@ void net_command_handler(int event, void *data)
 			fprintf(stderr, ">>> %s - %s\n", out_msg, test_failed ?
 				"failed" : "passed");
 			fprintf(stderr, "%s", msg_detail);
-			net_stack_return(stack);		}
+			net_command_stack_return(stack);
+		}
 
 		else if (!strcasecmp(command, "NodeCheck"))
 		{
@@ -433,7 +434,7 @@ void net_command_handler(int event, void *data)
 			fprintf(stderr, ">>> %s - %s\n", out_msg, test_failed ?
 				"failed" : "passed");
 			fprintf(stderr, "%s", msg_detail);
-			net_stack_return(stack);
+			net_command_stack_return(stack);
 		}
 
 		else if (!strcasecmp(command, "ExactPosCheck"))
@@ -481,7 +482,7 @@ void net_command_handler(int event, void *data)
 			fprintf(stderr, ">>> %s - %s\n", out_msg, test_failed ?
 				"failed" : "passed");
 			fprintf(stderr, "%s", msg_detail);
-			net_stack_return(stack);
+			net_command_stack_return(stack);
 		}
 		else
 			fatal("%s: %s: invalid command.\n\t> %s",
@@ -501,6 +502,30 @@ void net_command_handler(int event, void *data)
 
 		fprintf(stderr, "\n Message %lld received at %lld \n\n", msg->id, cycle);
 		net_receive(net, dst_node, msg);
-		net_stack_return(stack);
+		net_command_stack_return(stack);
 	}
+}
+struct net_command_stack_t *net_command_stack_create(struct net_t *net,
+		int retevent, void *retstack)
+{
+	struct net_command_stack_t *stack;
+
+	/* Initialize */
+	stack = xcalloc(1, sizeof(struct net_command_stack_t));
+	stack->net = net;
+	stack->ret_event = retevent;
+	stack->ret_stack = retstack;
+
+	/* Return */
+	return stack;
+}
+
+
+void net_command_stack_return(struct net_command_stack_t *stack)
+{
+	int retevent = stack->ret_event;
+	struct net_command_stack_t *retstack = stack->ret_stack;
+
+	free(stack);
+	esim_schedule_event(retevent, retstack, 0);
 }

@@ -158,7 +158,7 @@ static void net_routing_table_cycle_detection(struct net_routing_table_t
 	for (i = 0; i < routing_table->dim; i++)
 	{
 		node_i = list_get(net->node_list, i);
-		if (node_i->kind != net_node_bus)
+		if (node_i->kind != net_node_bus && node_i->kind != net_node_photonic)
 			for (j = 0; j < list_count(node_i->output_buffer_list); j++)
 			{
 
@@ -275,7 +275,7 @@ void net_routing_table_initiate(struct net_routing_table_t *routing_table)
 			/* If it is connected to a BUS we create a connection 
 			 * between this node and all the nodes that are
 			 * connected to the BUS */
-			else if (buffer->kind == net_buffer_bus)
+			else if (buffer->kind == net_buffer_bus || buffer->kind == net_buffer_photonic)
 			{
 				int k;
 
@@ -389,7 +389,7 @@ void net_routing_table_floyd_warshall(struct net_routing_table_t *routing_table)
 
 			/* Look for output buffer */
 			buffer = NULL;
-			if (node_i->kind != net_node_bus)
+			if (node_i->kind != net_node_bus && node_i->kind != net_node_photonic)
 			{
 				struct net_buffer_t *bus_dst_buffer;
 				assert(list_count(node_i->output_buffer_list));
@@ -624,7 +624,7 @@ void net_routing_table_route_update(struct net_routing_table_t *routing_table,
 				}
 			}
 		}
-		else if (buffer->kind == net_buffer_bus)
+		else if (buffer->kind == net_buffer_bus || buffer->kind == net_buffer_photonic)
 		{
 			assert(!buffer->link);
 			bus = buffer->bus;

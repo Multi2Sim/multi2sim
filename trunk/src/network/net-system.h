@@ -20,9 +20,6 @@
 #ifndef NETWORK_NET_SYSTEM_H
 #define NETWORK_NET_SYSTEM_H
 
-/* Help message */
-extern char *net_config_help;
-
 /* Error messages */
 extern char *net_err_end_nodes;
 extern char *net_err_no_route;
@@ -33,14 +30,13 @@ extern char *net_err_can_send;
 extern char *net_err_cycle;
 extern char *net_err_route_step;
 
+extern struct hash_table_t *net_table;
 
 /* Debug */
 #define net_debug(...) debug(net_debug_category, __VA_ARGS__)
 extern int net_debug_category;
 
-/* Configuration parameters */
-extern char *net_config_file_name;
-extern char *net_report_file_name;
+/* Configuration parameters */extern char *net_report_file_name;
 extern char *net_visual_file_name;
 extern char *net_sim_network_name;
 
