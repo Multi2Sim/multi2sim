@@ -28,6 +28,7 @@
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
 
+#include "config.h"
 #include "net-system.h"
 #include "network.h"
 #include "node.h"
@@ -38,78 +39,6 @@
  */
 
 int net_debug_category;
-
-char *net_config_help =
-		"The network configuration file is a plain-text file following the\n"
-		"IniFile format. It specifies a set of networks, their nodes, and\n"
-		"connections between them. The following set of sections and variables\n"
-		"are allowed:\n"
-		"\n"
-		"Section '[ General ]' contains configuration parameters affecting the\n"
-		"whole network system.\n"
-		"\n"
-		"  Frequency = <value> (Default = 1000)\n"
-		"      Frequency for the network system in MHz.\n"
-		"\n"
-		"Section '[ Network.<name> ]' defines a network. The string specified in\n"
-		"<name> can be used in other configuration files to refer to\n"
-		"this network.\n"
-		"\n"
-		"  DefaultInputBufferSize = <size> (Required)\n"
-		"      Default size for input buffers in nodes and switches, specified\n"
-		"      in number of packets. When a node/switch is created in the network\n"
-		"      this size will be used if it is not specified.\n"
-		"  DefaultOutputBufferSize = <size> (Required)\n"
-		"      Default size for output buffers in nodes and switches in number\n"
-		"      or packets.\n"
-		"  DefaultBandwidth = <bandwidth> (Required)\n"
-		"      Default bandwidth for links in the network, specified in number of\n"
-		"      bytes per cycle. If a link's bandwidth is not specified, this value\n"
-		"      will be used.\n"
-		"\n"
-		"Sections '[ Network.<network>.Node.<node> ]' are used to define nodes in\n"
-		"network '<network>'.\n"
-		"\n"
-		"  Type = {EndNode|Switch} (Required)\n"
-		"      Type of node. End nodes can send and receive packets, while\n"
-		"      switches are used to forward packets between other switches and\n"
-		"      end nodes.\n"
-		"  InputBufferSize = <size> (Default = <network>.DefaultInputBufferSize)\n"
-		"      Size of input buffer in number of packets.\n"
-		"  OutputBufferSize = <size> (Default = <network>.DefaultOutputBufferSize)\n"
-		"      Size of output buffer in number of packets.\n"
-		"  Bandwidth = <bandwidth> (Default = <network>.DefaultBandwidth)\n"
-		"      For switches, bandwidth of internal crossbar communicating input\n"
-		"      with output buffers. For end nodes, this variable is ignored.\n"
-		"\n"
-		"Sections '[ Network.<network>.Link.<link> ]' are used to define links in\n"
-		"network <network>. A link connects an output buffer of a source node with\n"
-		"an input buffer of a destination node.\n"
-		"\n"
-		"  Source = <node> (Required)\n"
-		"      Source node. The node name is a node declared in a\n"
-		"      'Network.<network>.Node.<node>' section.\n"
-		"  Dest = <node> (Required)\n"
-		"      Destination node.\n"
-		"  Type = {Unidirectional|Bidirectional} (Default = Unidirectional)\n"
-		"      Link direction. Choosing a bidirectional link has the same effect\n"
-		"      as creating two unidirectional links in opposite directions.\n"
-		"  Bandwidth = <bandwidth> (Default = <network>.DefaultBandwidth)\n"
-		"      Bandwidth of the link in bytes per cycle.\n"
-		"  VC = <virtual channels> (Default = 1)\n"
-		"	Number of virtual channels a link can have.\n"
-		"\n"
-		"Section '[Network.<network>.Routes]' can be used (Optional) to define \n"
-		"routes and manually configure the routing table. For a route between \n"
-		"two end-nodes every route step from source to destination should be \n"
-		"identified. Each unidirectional route step follows the pattern:\n"
-		"  <node_A>.to.<node_C> = <node_B>:<Virtual Channel>\n"
-		"  node_A. Source node of a route step \n"
-		"  node_C. Destination node of a route step \n"
-		"  node_B. Immediate next node that each packet must go through to get \n"
-		"      from node_A to node_C\n"
-		"  Virtual Channel. Is an optional field to choose a virtual channel on \n"
-		"  the link between node_A and node_B. \n" "\n" "\n";
 
 char *net_err_end_nodes =
 		"\tAn attempt has been made to send a message from/to an intermediate\n"
@@ -165,11 +94,9 @@ int EV_NET_INPUT_BUFFER;
 int EV_NET_RECEIVE;
 
 /* List of networks */
-static struct hash_table_t *net_table;
+struct hash_table_t *net_table;
 
 /* Configuration parameters */
-char *net_config_file_name = "";
-
 char *net_traffic_pattern = "";
 
 char *net_report_file_name = "";
@@ -256,103 +183,6 @@ static void net_traffic_uniform(struct net_t *net, double *inject_time)
  * Public Functions
  */
 
-
-void net_read_config(void)
-{
-	struct config_t *config;
-	struct list_t *net_name_list;
-	char *section;
-	int i;
-
-	/* Configuration file */
-	if (!*net_config_file_name)
-	{
-		net_domain_index = esim_new_domain(net_frequency);
-		return;
-	}
-
-
-	/* Open network configuration file */
-	config = config_create(net_config_file_name);
-	if (*net_config_file_name)
-		config_load(config);
-
-	/* Section with generic configuration parameters */
-	section = "General";
-
-	/* Frequency */
-	net_frequency = config_read_int(config, section,
-			"Frequency", net_frequency);
-	if (!IN_RANGE(net_frequency, 1, ESIM_MAX_FREQUENCY))
-		fatal("%s: invalid value for 'Frequency'",
-				net_config_file_name);
-
-	/* Create frequency domain */
-	net_domain_index = esim_new_domain(net_frequency);
-
-	/* Create a temporary list of network names found in configuration
-	 * file */
-	net_name_list = list_create();
-	for (section = config_section_first(config); section;
-			section = config_section_next(config))
-	{
-		char *delim = ".";
-
-		char section_str[MAX_STRING_SIZE];
-		char *token;
-		char *net_name;
-
-		/* Create a copy of section name */
-		snprintf(section_str, sizeof section_str, "%s", section);
-		section = section_str;
-
-		/* First token must be 'Network' */
-		token = strtok(section, delim);
-		if (strcasecmp(token, "Network"))
-			continue;
-
-		/* Second token is network name */
-		net_name = strtok(NULL, delim);
-		if (!net_name)
-			continue;
-
-		/* No third token */
-		token = strtok(NULL, delim);
-		if (token)
-			continue;
-
-		/* Insert new network name */
-		net_name = xstrdup(net_name);
-		list_add(net_name_list, net_name);
-	}
-
-	/* Print network names */
-	net_debug("%s: loading network configuration file\n",
-			net_config_file_name);
-	net_debug("networks found:\n");
-	for (i = 0; i < net_name_list->count; i++)
-		net_debug("\t%s\n", (char *) list_get(net_name_list, i));
-	net_debug("\n");
-
-	/* Load networks */
-	net_table = hash_table_create(0, 0);
-	for (i = 0; i < net_name_list->count; i++)
-	{
-		struct net_t *network;
-		char *net_name;
-
-		net_name = list_get(net_name_list, i);
-		network = net_create_from_config(config, net_name);
-
-		hash_table_insert(net_table, net_name, network);
-	}
-
-	/* Free list of network names and configuration file */
-	while (net_name_list->count)
-		free(list_remove_at(net_name_list, 0));
-	list_free(net_name_list);
-	config_free(config);
-}
 
 
 void net_init(void)

@@ -29,7 +29,8 @@ enum net_node_kind_t
 	net_node_invalid = 0,
 	net_node_end,
 	net_node_switch,
-	net_node_bus
+	net_node_bus,
+	net_node_photonic
 };
 
 
@@ -52,11 +53,12 @@ struct net_node_t
 	struct list_t *input_buffer_list;
 	struct list_t *output_buffer_list;
 
-	/* BUS & scheduling */
+	/* BUS, Photonic & scheduling */
 	struct list_t *bus_lane_list;	/* elements are of type net_bus_t */
 	struct list_t *src_buffer_list;	/* elements are of type struct net_buffer_t */
 	struct list_t *dst_buffer_list;	/* elements are of type struct net_buffer_t */
 	int last_node_index;
+	int last_lane_index;
 
 	/* Stats */
 	long long bytes_received;
@@ -83,6 +85,7 @@ struct net_buffer_t *net_node_add_output_buffer(struct net_node_t *node,
 struct net_buffer_t *net_node_add_input_buffer(struct net_node_t *node,
 	int bandwidth);
 struct net_bus_t *net_node_add_bus_lane(struct net_node_t *node);
+struct net_bus_t *net_node_add_photonic_link(struct net_node_t *node);
 
 struct net_buffer_t *net_node_schedule(struct net_node_t *node,
 	struct net_buffer_t *output_buffer);

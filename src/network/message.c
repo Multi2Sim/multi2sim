@@ -23,6 +23,7 @@
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
+#include <lib/util/misc.h>
 
 #include "buffer.h"
 #include "bus.h"
@@ -32,6 +33,7 @@
 #include "network.h"
 #include "node.h"
 #include "routing-table.h"
+#include "packet.h"
 
 
 /* 
@@ -39,7 +41,7 @@
  */
 
 struct net_msg_t *net_msg_create(struct net_t *net,
-	struct net_node_t *src_node, struct net_node_t *dst_node, int size)
+		struct net_node_t *src_node, struct net_node_t *dst_node, int size)
 {
 	struct net_msg_t *msg;
 	long long cycle;
@@ -65,6 +67,15 @@ struct net_msg_t *net_msg_create(struct net_t *net,
 
 void net_msg_free(struct net_msg_t *msg)
 {
+	while (msg->packet_list_head)
+	{
+		struct net_packet_t *pkt;
+		pkt = msg->packet_list_head;
+		DOUBLE_LINKED_LIST_REMOVE(msg, packet, pkt);
+		//		fprintf(stderr, "freeing %lld:%d\t", msg->id, pkt->session_id); [K1]
+		free(pkt);
+	}
+	//	fprintf(stderr, "\n"); [K1]
 	free(msg);
 }
 
@@ -76,7 +87,7 @@ void net_msg_free(struct net_msg_t *msg)
  */
 
 struct net_stack_t *net_stack_create(struct net_t *net,
-	int retevent, void *retstack)
+		int retevent, void *retstack)
 {
 	struct net_stack_t *stack;
 
@@ -106,13 +117,13 @@ void net_event_handler(int event, void *data)
 	struct net_stack_t *stack = data;
 	struct net_t *net = stack->net;
 	struct net_routing_table_t *routing_table = net->routing_table;
-	struct net_msg_t *msg = stack->msg;
+	struct net_packet_t *pkt= stack->packet;
 
-	struct net_node_t *src_node = msg->src_node;
-	struct net_node_t *dst_node = msg->dst_node;
+	struct net_node_t *src_node = pkt->msg->src_node;
+	struct net_node_t *dst_node = pkt->msg->dst_node;
 
-	struct net_node_t *node = msg->node;
-	struct net_buffer_t *buffer = msg->buffer;
+	struct net_node_t *node = pkt->node;
+	struct net_buffer_t *buffer = pkt->buffer;
 
 	long long cycle;
 
@@ -133,41 +144,44 @@ void net_event_handler(int event, void *data)
 				"src=\"%s\" "
 				"dst=\"%s\"\n",
 				net->name,
-				msg->id,
-				msg->size,
+				pkt->msg->id,
+				pkt->msg->size,
 				src_node->name,
 				dst_node->name);
 
 		/* Get output buffer */
 		entry = net_routing_table_lookup(routing_table, src_node,
-			dst_node);
+				dst_node);
 		output_buffer = entry->output_buffer;
 		if (!output_buffer)
 			fatal("%s: no route from %s to %s.\n%s", net->name,
-				src_node->name, dst_node->name,
-				net_err_no_route);
+					src_node->name, dst_node->name,
+					net_err_no_route);
 
-		if (output_buffer->write_busy >= cycle)
+		/*		if (output_buffer->write_busy >= cycle)
 			panic("%s: output buffer busy.\n%s", __FUNCTION__,
 				net_err_can_send);
+		 */
 
-		if (msg->size > output_buffer->size)
+		if (pkt->msg->size > output_buffer->size)
 			panic("%s: message does not fit in buffer.\n%s",
-				__FUNCTION__, net_err_can_send);
+					__FUNCTION__, net_err_can_send);
 
-		if (output_buffer->count + msg->size > output_buffer->size)
+		if (output_buffer->count + pkt->size > output_buffer->size)
 			panic("%s: output buffer full.\n%s", __FUNCTION__,
-				net_err_can_send);
+					net_err_can_send);
 
 		/* Insert in output buffer (1 cycle latency) */
-		net_buffer_insert(output_buffer, msg);
+		net_buffer_insert(output_buffer, pkt);
 		output_buffer->write_busy = cycle;
-		msg->node = src_node;
-		msg->buffer = output_buffer;
-		msg->busy = cycle;
+		pkt->node = src_node;
+		pkt->buffer = output_buffer;
+		pkt->busy = cycle;
 
 		/* Schedule next event */
 		esim_schedule_event(EV_NET_OUTPUT_BUFFER, stack, 1);
+		//		fprintf(stderr, "\t\tStep 2: scheduling packet = %lld-->%d for output buffer of node %s \n",
+		//				pkt->msg->id, pkt->session_id, pkt->node->name); [K1]
 
 	}
 
@@ -180,41 +194,52 @@ void net_event_handler(int event, void *data)
 		net_debug("msg "
 				"a=\"obuf\" "
 				"net=\"%s\" "
-				"msg=%lld "
+				"msg-->pkt=%lld-->%d "
 				"node=\"%s\" "
 				"buf=\"%s\"\n",
 				net->name,
-				msg->id,
+				pkt->msg->id,
+				pkt->session_id,
 				node->name,
 				buffer->name);
 
 		/* If message is not at buffer head, process later */
 		assert(list_count(buffer->msg_list));
-		if (list_get(buffer->msg_list, 0) != msg)
+
+		//		fprintf(stderr, "\t\t*%lld*\t Number of packets in the %s->%s is %d ", cycle ,
+		//				node->name, buffer->name, list_count(buffer->msg_list)); [K1]
+
+		if (list_get(buffer->msg_list, 0) != pkt)
 		{
+			//			fprintf(stderr,"\n"); [K1]
 			net_buffer_wait(buffer, event, stack);
 			net_debug("msg "
-				"a=\"stall\" "
-				"net=\"%s\" "
-				"msg=%lld "
-				"why=\"not output buffer head\"\n",
-				net->name,
-				msg->id);
+					"a=\"stall\" "
+					"net=\"%s\" "
+					"msg-->packet=%lld:%d "
+					"why=\"not output buffer head\"\n",
+					net->name,
+					pkt->msg->id,
+					pkt->session_id);
 			return;
 		}
-
-		/* If source output buffer is busy, wait */
-		if (buffer->read_busy >= cycle)
+		// FIXME: I don't understand why it was buffer->read_busy >= cycle. Both link and dst_buffer would take
+		// care of the packet. Also if packet is at the head of the buffer how does it matter if
+		// the buffer is busy or not.
+		if (buffer->read_busy > cycle)
 		{
 			esim_schedule_event(event, stack,
-				buffer->read_busy - cycle + 1);
+					buffer->read_busy - cycle + 1);
 			net_debug("msg "
-				"a=\"stall\" "
-				"net=\"%s\" "
-			 	"msg=%lld "
-				"why=\"output buffer busy\"\n",
-				net->name,
-				msg->id);
+					"a=\"stall\" "
+					"net=\"%s\" "
+					"msg-->pkt=%lld:%d "
+					"why=\"output buffer busy\" "
+					"\"next event is : %lld\"\n",
+					net->name,
+					pkt->msg->id,
+					pkt->session_id,
+					buffer->read_busy - cycle + 1);
 			return;
 		}
 
@@ -228,14 +253,15 @@ void net_event_handler(int event, void *data)
 			if (link->busy >= cycle)
 			{
 				esim_schedule_event(event, stack,
-					link->busy - cycle + 1);
+						link->busy - cycle + 1);
 				net_debug("msg "
-					"a=\"stall\" "
-					"net=\"%s\" "
-					"msg=%lld "
-					"why=\"link busy\"\n",
-					net->name,
-					msg->id);
+						"a=\"stall\" "
+						"net=\"%s\" "
+						"msg-->pkt=%lld:%d "
+						"why=\"link busy\"\n",
+						net->name,
+						pkt->msg->id,
+						pkt->session_id);
 				return;
 			}
 
@@ -246,16 +272,17 @@ void net_event_handler(int event, void *data)
 				struct net_buffer_t *temp_buffer;
 
 				temp_buffer =
-					net_link_arbitrator_vc(link, node);
+						net_link_arbitrator_vc(link, node);
 				if (temp_buffer != buffer)
 				{
 					net_debug("msg "
-						"a=\"stall\" "
-						"net=\"%s\" "
-						"msg=%lld "
-						"why=\"arbitrator sched\"\n",
-						net->name,
-						msg->id);
+							"a=\"stall\" "
+							"net=\"%s\" "
+							"msg-->pkt=%lld:%d "
+							"why=\"arbitrator sched\"\n",
+							net->name,
+							pkt->msg->id,
+							pkt->session_id);
 					esim_schedule_event(event, stack, 1);
 					return;
 				}
@@ -267,55 +294,56 @@ void net_event_handler(int event, void *data)
 			if (input_buffer->write_busy >= cycle)
 			{
 				net_debug("msg "
-					"a=\"stall\" "
-					"net=\"%s\" "
-					"msg=%lld "
-					"why=\"input buffer busy\"\n",
-					net->name, msg->id);
-	
+						"a=\"stall\" "
+						"net=\"%s\" "
+						"msg-->pkt=%lld:%d "
+						"why=\"input buffer busy\"\n",
+						net->name, pkt->msg->id,
+						pkt->session_id);
+
 				esim_schedule_event(event, stack,
-					input_buffer->write_busy - cycle + 1);
+						input_buffer->write_busy - cycle + 1);
 				return;
 			}
 
 			/* If destination input buffer is full, wait */
-			if (msg->size > input_buffer->size)
+			if (pkt->size > input_buffer->size)
 				fatal("%s: message does not fit in buffer.\n%s", net->name, net_err_large_message);
-			if (input_buffer->count + msg->size >
-				input_buffer->size)
+			if (input_buffer->count + pkt->size >
+			input_buffer->size)
 			{
 				net_debug("msg "
-					"a=\"stall\" "
-					"net=\"%s\" "
-					"msg=%lld "
-					"why=\"input buffer full\"\n",
-					net->name, msg->id);
+						"a=\"stall\" "
+						"net=\"%s\" "
+						"msg-->pkt=%lld:%d "
+						"why=\"input buffer full\"\n",
+						net->name, pkt->msg->id, pkt->session_id);
 				net_buffer_wait(input_buffer, event, stack);
 				return;
 			}
 
 			/* Calculate latency and occupy resources */
-			lat = (msg->size - 1) / link->bandwidth + 1;
+			lat = (pkt->size - 1) / link->bandwidth + 1;
 			assert(lat > 0);
 			buffer->read_busy = cycle + lat - 1;
 			link->busy = cycle + lat - 1;
 			input_buffer->write_busy = cycle + lat - 1;
 
 			/* Transfer message to next input buffer */
-			assert(msg->busy < cycle);
-			net_buffer_extract(buffer, msg);
-			net_buffer_insert(input_buffer, msg);
-			msg->node = input_buffer->node;
-			msg->buffer = input_buffer;
-			msg->busy = cycle + lat - 1;
+			assert(pkt->busy < cycle);
+			net_buffer_extract(buffer, pkt);
+			net_buffer_insert(input_buffer, pkt);
+			pkt->node = input_buffer->node;
+			pkt->buffer = input_buffer;
+			pkt->busy = cycle + lat - 1;
 
 			/* Stats */
 			link->busy_cycles += lat;
-			link->transferred_bytes += msg->size;
+			link->transferred_bytes += pkt->size;
 			link->transferred_msgs++;
-			node->bytes_sent += msg->size;
+			node->bytes_sent += pkt->size;
 			node->msgs_sent++;
-			input_buffer->node->bytes_received += msg->size;
+			input_buffer->node->bytes_received += pkt->size;
 			input_buffer->node->msgs_received++;
 		}
 		else if (buffer->kind == net_buffer_bus)
@@ -335,7 +363,7 @@ void net_event_handler(int event, void *data)
 			struct net_routing_table_entry_t *entry;
 
 			entry = net_routing_table_lookup(routing_table,
-				msg->node, msg->dst_node);
+					pkt->node, pkt->msg->dst_node);
 
 			for (int i = 0; i < list_count(bus_node->dst_buffer_list); i++)
 			{
@@ -348,38 +376,40 @@ void net_event_handler(int event, void *data)
 			}
 			if (input_buffer_detection == 0)
 				fatal("%s: Something went wrong so there is no appropriate input"
-				"buffer for the route between %s and %s \n", net->name,
-				msg->node->name,entry->next_node->name);
+						"buffer for the route between %s and %s \n", net->name,
+						pkt->node->name,entry->next_node->name);
 
 			/* 1. Check the destination buffer is busy or not */
 			if (input_buffer->write_busy >= cycle)
 			{
 				esim_schedule_event(event, stack,
-					input_buffer->write_busy - cycle + 1);
+						input_buffer->write_busy - cycle + 1);
 				net_debug("msg "
-					"a=\"stall\" "
-					"net=\"%s\" "
-					"msg=%lld "
-					"why=\"input busy\"\n",
-					net->name,
-					msg->id);
+						"a=\"stall\" "
+						"net=\"%s\" "
+						"msg-->pkt=%lld:%d "
+						"why=\"input busy\"\n",
+						net->name,
+						pkt->msg->id,
+						pkt->session_id);
 				return;
 			}
 
 			/* 2. Check the destination buffer is full or not */
-			if (msg->size > input_buffer->size)
+			if (pkt->size > input_buffer->size)
 				fatal("%s: message does not fit in buffer.\n%s",
-					net->name, net_err_large_message);
+						net->name, net_err_large_message);
 
-			if (input_buffer->count + msg->size > input_buffer->size)
+			if (input_buffer->count + pkt->size > input_buffer->size)
 			{
 				net_buffer_wait(input_buffer, event, stack);
 				net_debug("msg "
-					"a=\"stall\" "
-					"net=\"%s\" "
-					"msg=%lld "
-					"why=\"input full\"\n",
-					net->name, msg->id);
+						"a=\"stall\" "
+						"net=\"%s\" "
+						"msg-->pkt=%lld:%d "
+						"why=\"input full\"\n",
+						net->name, pkt->msg->id,
+						pkt->session_id);
 				return;
 			}
 
@@ -391,11 +421,12 @@ void net_event_handler(int event, void *data)
 			{
 				esim_schedule_event(event, stack, 1);
 				net_debug("msg "
-					"a=\"stall\" "
-					"net=\"%s\" "
-					"msg=%lld "
-					"why=\"bus arbiter\"\n",
-					net->name, msg->id);
+						"a=\"stall\" "
+						"net=\"%s\" "
+						"msg-->pkt=%lld:%d "
+						"why=\"bus arbiter\"\n",
+						net->name, pkt->msg->id,
+						pkt->session_id);
 				return;
 			}
 
@@ -415,30 +446,162 @@ void net_event_handler(int event, void *data)
 
 
 			/* Calculate latency and occupy resources */
-			lat = (msg->size - 1) / bus->bandwidth + 1;
+			lat = (pkt->size - 1) / bus->bandwidth + 1;
 			assert(lat > 0);
 			buffer->read_busy = cycle + lat - 1;
 			bus->busy = cycle + lat - 1;
 			input_buffer->write_busy = cycle + lat - 1;
 
 			/* Transfer message to next input buffer */
-			assert(msg->busy < cycle);
-			net_buffer_extract(buffer, msg);
-			net_buffer_insert(input_buffer, msg);
-			msg->node = input_buffer->node;
-			msg->buffer = input_buffer;
-			msg->busy = cycle + lat - 1;
+			assert(pkt->busy < cycle);
+			net_buffer_extract(buffer, pkt);
+			net_buffer_insert(input_buffer, pkt);
+			pkt->node = input_buffer->node;
+			pkt->buffer = input_buffer;
+			pkt->busy = cycle + lat - 1;
 
 			/* Stats */
 			bus->busy_cycles += lat;
-			bus->transferred_bytes += msg->size;
+			bus->transferred_bytes += pkt->size;
 			bus->transferred_msgs++;
-			node->bytes_sent += msg->size;
+			node->bytes_sent += pkt->size;
 			node->msgs_sent++;
-			input_buffer->node->bytes_received += msg->size;
+			input_buffer->node->bytes_received += pkt->size;
 			input_buffer->node->msgs_received++;
 
 		}
+
+		else if (buffer->kind == net_buffer_photonic)
+		{
+			struct net_bus_t *bus, *updated_bus;
+			struct net_node_t *bus_node;
+
+			assert(!buffer->link);
+			assert(buffer->bus);
+			bus = buffer->bus;
+			bus_node = bus->node;
+
+			/* before 1 and 2 we have to figure out what is the
+			 * next input buffer since it is not clear from the
+			 * output buffer */
+			int input_buffer_detection = 0;
+			struct net_routing_table_entry_t *entry;
+
+			entry = net_routing_table_lookup(routing_table,
+					pkt->node, pkt->msg->dst_node);
+
+			for (int i = 0; i < list_count(bus_node->dst_buffer_list); i++)
+			{
+				input_buffer = list_get(bus_node->dst_buffer_list, i);
+				if (entry->next_node == input_buffer->node)
+				{
+					input_buffer_detection = 1;
+					break;
+				}
+			}
+			if (input_buffer_detection == 0)
+				fatal("%s: Something went wrong so there is no appropriate input"
+						"buffer for the route between %s and %s \n", net->name,
+						pkt->node->name,entry->next_node->name);
+
+			/* 1. Check the destination buffer is busy or not */
+			if (input_buffer->write_busy > cycle)
+			{
+				esim_schedule_event(event, stack,
+						input_buffer->write_busy - cycle + 1);
+				net_debug("msg "
+						"a=\"stall\" "
+						"net=\"%s\" "
+						"msg-->pkt=%lld:%d "
+						"why=\"input busy\"\n",
+						net->name,
+						pkt->msg->id,
+						pkt->session_id);
+				return;
+			}
+
+			/* 2. Check the destination buffer is full or not */
+			if (pkt->size > input_buffer->size)
+				fatal("%s: message does not fit in buffer.\n%s",
+						net->name, net_err_large_message);
+
+			if (input_buffer->count + pkt->size > input_buffer->size)
+			{
+				net_buffer_wait(input_buffer, event, stack);
+				net_debug("msg "
+						"a=\"stall\" "
+						"net=\"%s\" "
+						"msg-->pkt=%lld:%d "
+						"why=\"input full\"\n",
+						net->name, pkt->msg->id,
+						pkt->session_id);
+				return;
+			}
+
+
+			/* 3. Make sure if any bus is available; return one
+			 * that is available the fastest */
+			updated_bus = net_photo_link_arbitration(bus_node, buffer);
+			if (updated_bus == NULL)
+			{
+				esim_schedule_event(event, stack, 1);
+				net_debug("msg "
+						"a=\"stall\" "
+						"net=\"%s\" "
+						"msg-->pkt=%lld:%d "
+						"why=\"bus arbiter\"\n",
+						net->name, pkt->msg->id,
+						pkt->session_id);
+				return;
+			}
+
+			/* 4. assign the bus to the buffer. update the
+			 * necessary data ; before here, the bus is not
+			 * assign to anything and is not updated so it can be
+			 * assign to other buffers as well. If this certain
+			 * buffer wins that specific bus_lane the appropriate
+			 * fields will be updated. Contains: bus_lane
+			 * cin_buffer and cout_buffer and busy time as well as
+			 * buffer data itself */
+			assert(updated_bus);
+			buffer->bus = updated_bus;
+			input_buffer->bus = updated_bus;
+			bus = buffer->bus;
+			assert(bus);
+
+			/* Calculate latency and occupy resources */
+			lat = (pkt->size - 1) / bus->bandwidth + 1;
+			assert(lat > 0);
+			buffer->read_busy = cycle + lat - 1;
+			bus->busy = cycle + lat - 1;
+			input_buffer->write_busy = cycle + lat - 1;
+
+			/* Transfer message to next input buffer */
+			assert(pkt->busy < cycle);
+			net_buffer_extract(buffer, pkt);
+			net_buffer_insert(input_buffer, pkt);
+			pkt->node = input_buffer->node;
+			pkt->buffer = input_buffer;
+			pkt->busy = cycle + lat - 1;
+
+			/* Stats */
+			bus->busy_cycles += lat;
+			bus->transferred_bytes += pkt->size;
+			bus->transferred_msgs++;
+			node->bytes_sent += pkt->size;
+			node->msgs_sent++;
+			input_buffer->node->bytes_received += pkt->size;
+			input_buffer->node->msgs_received++;
+
+			net_debug("msg "
+					"a=\"success photonic transmission\" "
+					"net=\"%s\" "
+					"msg-->pkt=%lld:%d "
+					"through = \" %d\"\n",
+					net->name, pkt->msg->id,
+					pkt->session_id, updated_bus->index);
+		}
+
 		/* Schedule next event */
 		esim_schedule_event(EV_NET_INPUT_BUFFER, stack, lat);
 	}
@@ -452,32 +615,34 @@ void net_event_handler(int event, void *data)
 
 		/* Debug */
 		net_debug("msg "
-			"a=\"ibuf\" "
-			"net=\"%s\" "
-			"msg=%lld "
-			"node=\"%s\" "
-			"buf=\"%s\"\n",
-			net->name,
-			msg->id,
-			node->name,
-			buffer->name);
+				"a=\"ibuf\" "
+				"net=\"%s\" "
+				"msg-->pkt=%lld:%d "
+				"node=\"%s\" "
+				"buf=\"%s\"\n",
+				net->name,
+				pkt->msg->id,
+				pkt->session_id,
+				node->name,
+				buffer->name);
 
 		/* If message is not at buffer head, process later */
 		assert(list_count(buffer->msg_list));
-		if (list_get(buffer->msg_list, 0) != msg)
+		if (list_get(buffer->msg_list, 0) != pkt)
 		{
 			net_debug("msg "
-				"a=\"stall\" "
-				"net=\"%s\" "
-				"msg=%lld "
-				"why=\"not-head\"\n",
-				 net->name, msg->id);
+					"a=\"stall\" "
+					"net=\"%s\" "
+					"msg-->pkt=%lld:%d"
+					"why=\"not-head\"\n",
+					net->name, pkt->msg->id,
+					pkt->session_id);
 			net_buffer_wait(buffer, event, stack);
 			return;
 		}
 
 		/* If this is the destination node, finish */
-		if (node == msg->dst_node)
+		if (node == pkt->msg->dst_node)
 		{
 			esim_schedule_event(EV_NET_RECEIVE, stack, 0);
 			return;
@@ -486,56 +651,61 @@ void net_event_handler(int event, void *data)
 		/* If source input buffer is busy, wait */
 		if (buffer->read_busy >= cycle)
 		{
-			net_debug("msg "
-				"a=\"stall\" "
-				"net=\"%s\" "
-				"msg=%lld "
-				"why=\"src-busy\"\n",
-				net->name,
-				msg->id);
+			net_debug("pkt"
+					"a=\"stall\" "
+					"net=\"%s\" "
+					"msg-->pkt=%lld:%d "
+					"why=\"src-busy\"\n",
+					net->name,
+					pkt->msg->id,
+					pkt->session_id);
+
 			esim_schedule_event(event, stack,
-				buffer->read_busy - cycle + 1);
+					buffer->read_busy - cycle + 1);
 			return;
 		}
 
 		/* Get output buffer */
 		entry = net_routing_table_lookup(routing_table, node,
-			dst_node);
+				dst_node);
 		output_buffer = entry->output_buffer;
 		if (!output_buffer)
 			fatal("%s: no route from %s to %s.\n%s", net->name,
-				node->name, dst_node->name, net_err_no_route);
+					node->name, dst_node->name, net_err_no_route);
 
 		/* If destination output buffer is busy, wait */
 		if (output_buffer->write_busy >= cycle)
 		{
-			net_debug("msg "
-				"a=\"stall\" "
-				"net=\"%s\" "
-				"msg=%lld "
-				"why=\"dst-busy\"\n",
-				net->name,
-				msg->id);
+			net_debug("pkt "
+					"a=\"stall\" "
+					"net=\"%s\" "
+					"msg-->pkt=%lld:%d "
+					"why=\"dst-busy\"\n",
+					net->name,
+					pkt->msg->id,
+					pkt->session_id);
 			esim_schedule_event(event, stack,
-				output_buffer->write_busy - cycle + 1);
+					output_buffer->write_busy - cycle + 1);
 			return;
 		}
 
 		/* If destination output buffer is full, wait */
-		if (msg->size > output_buffer->size)
+		if (pkt->size > output_buffer->size)
 			fatal("%s: message does not fit in buffer.\n%s",
-				net->name, net_err_large_message);
+					net->name, net_err_large_message);
 
 
-		if (output_buffer->count + msg->size > output_buffer->size)
+		if (output_buffer->count + pkt->size > output_buffer->size)
 		{
-			net_debug("msg "
-				"a=\"stall\" "
-				"net=\"%s\" "
-				"msg=%lld "
-				"why=\"dst-full\"\n",
-				net->name,
-				msg->id);
+			net_debug("pkt "
+					"a=\"stall\" "
+					"net=\"%s\" "
+					"msg-->pkt=%lld:%d "
+					"why=\"dst-full\"\n",
+					net->name,
+					pkt->msg->id,
+					pkt->session_id);
+
 			net_buffer_wait(output_buffer, event, stack);
 			return;
 		}
@@ -543,13 +713,14 @@ void net_event_handler(int event, void *data)
 		/* If scheduler says that it is not our turn, try later */
 		if (net_node_schedule(node, output_buffer) != buffer)
 		{
-			net_debug("msg "
-				"a=\"stall\" "
-				"net=\"%s\" "
-				"msg=%lld "
-				"why=\"sched\"\n",
-				net->name,
-				msg->id);
+			net_debug("pkt "
+					"a=\"stall\" "
+					"net=\"%s\" "
+					"msg-->pkt=%lld:%d "
+					"why=\"sched\"\n",
+					net->name,
+					pkt->msg->id,
+					pkt->session_id);
 			esim_schedule_event(event, stack, 1);
 			return;
 		}
@@ -557,17 +728,17 @@ void net_event_handler(int event, void *data)
 		/* Calculate latency and occupy resources */
 		assert(node->kind != net_node_end);
 		assert(node->bandwidth > 0);
-		lat = (msg->size - 1) / node->bandwidth + 1;
+		lat = (pkt->size - 1) / node->bandwidth + 1;
 		assert(lat > 0);
 		buffer->read_busy = cycle + lat - 1;
 		output_buffer->write_busy = cycle + lat - 1;
 
 		/* Transfer message to next output buffer */
-		assert(msg->busy < cycle);
-		net_buffer_extract(buffer, msg);
-		net_buffer_insert(output_buffer, msg);
-		msg->buffer = output_buffer;
-		msg->busy = cycle + lat - 1;
+		assert(pkt->busy < cycle);
+		net_buffer_extract(buffer, pkt);
+		net_buffer_insert(output_buffer, pkt);
+		pkt->buffer = output_buffer;
+		pkt->busy = cycle + lat - 1;
 
 		/* Schedule next event */
 		esim_schedule_event(EV_NET_OUTPUT_BUFFER, stack, lat);
@@ -575,27 +746,39 @@ void net_event_handler(int event, void *data)
 
 	else if (event == EV_NET_RECEIVE)
 	{
+		assert (pkt);
+		struct net_msg_t *msg = pkt->msg;
 		/* Debug */
-		net_debug("msg "
-			"a=\"receive\" "
-			"net=\"%s\" "
-			"msg=%lld "
-			"node=\"%s\"\n",
-			net->name,
-			msg->id,
-			dst_node->name);
+		net_debug("pkt "
+				"a=\"receive\" "
+				"net=\"%s\" "
+				"msg-->pkt=%lld:%d "
+				"node=\"%s\"\n",
+				net->name,
+				pkt->msg->id,
+				pkt->session_id,
+				dst_node->name);
+		//fprintf(stderr,"Step 3:the packet is about to be received %lld:%d \n", pkt->msg->id, pkt->session_id); [K1]
 
-		/* Stats */
-		net->transfers++;
-		net->lat_acc += cycle - msg->send_cycle;
-		net->msg_size_acc += msg->size;
+		if (net_depacketizer(net, node, pkt) == 1)
+		{
+			if (stack->ret_event == ESIM_EV_NONE)
+			{
+				{
+					assert (msg);
+					net->transfers++;
+					net->lat_acc += cycle - msg->send_cycle;
+					net->msg_size_acc += pkt->msg->size;
+					net_receive(net, node, msg);
 
-		/* If not return event was specified, free message here */
-		if (stack->ret_event == ESIM_EV_NONE)
-			net_receive(net, node, msg);
+				}
 
-		/* Finish */
-		net_stack_return(stack);
+			}
+			/* Finish */
+			net_stack_return(stack);
+		}
+		else
+			free(stack);
 	}
 
 	else

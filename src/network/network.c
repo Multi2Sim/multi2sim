@@ -24,6 +24,7 @@
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
 #include <lib/util/string.h>
+#include <lib/util/misc.h>
 
 #include "buffer.h"
 #include "bus.h"
@@ -34,137 +35,8 @@
 #include "routing-table.h"
 #include "visual.h"
 #include "command.h"
+#include "packet.h"
 
-
-/* 
- * Private Functions
- */
-
-static void net_config_route_create(struct net_t *net, struct config_t *config, char *section)
-{
-	char *token;
-	char section_str[MAX_STRING_SIZE];
-	char *delim_sep = ":";
-
-	for (int i = 0; i < net->node_count; i++)
-	{
-
-		for (int j = 0; j < net->node_count; j++)
-		{
-			int vc_used = 0;
-
-			char spr_result_size[MAX_STRING_SIZE];
-			char *nxt_node_name;
-
-			struct net_node_t *src_node_r;
-			struct net_node_t *dst_node_r;
-			struct net_node_t *nxt_node_r;
-
-			src_node_r = list_get(net->node_list, i);
-			dst_node_r = list_get(net->node_list, j);
-
-			if (dst_node_r->kind == net_node_end)
-			{
-				snprintf(spr_result_size,
-						sizeof spr_result_size,
-						"%s.to.%s", src_node_r->name,
-						dst_node_r->name);
-				nxt_node_name =
-						config_read_string(config,
-								section, spr_result_size,
-								"---");
-
-				/* Token Separates the next node and
-				 * VC */
-				snprintf(section_str,
-						sizeof section_str, "%s",
-						nxt_node_name);
-				token = strtok(section_str,
-						delim_sep);
-				nxt_node_name = token;
-				token = strtok(NULL, delim_sep);
-
-				if (token != NULL)
-				{
-					vc_used = atoi(token);
-					if (vc_used < 0)
-						fatal("Network %s:%s: Unacceptable virtual channel \n %s",
-								net->name, section, net_err_config);
-				}
-
-				int name_check =
-						strcmp(nxt_node_name, "---");
-				nxt_node_r =
-						net_get_node_by_name(net,
-								nxt_node_name);
-
-				if (name_check == 1)
-				{
-					if (nxt_node_r == NULL)
-						fatal("Network %s:%s: Invalid node Name.\n %s",
-								net->name, section,net_err_config);
-
-					else
-						net_routing_table_route_create
-						(net->routing_table,
-								src_node_r,
-								dst_node_r,
-								nxt_node_r,
-								vc_used);
-				}
-			}
-		}
-	}
-}
-
-static void net_config_command_create(struct net_t *net, struct config_t *config, char *section)
-{
-	char *command_line;
-	char command_var[MAX_STRING_SIZE];
-
-	int command_var_id;
-
-	/* Checks */
-	if (net_injection_rate > 0.001)
-		fatal("Network %s:%s: Using Command section; \n"
-				"\t option --net-injection-rate should not be used \n",
-				net->name,section);
-	/* Read commands */
-	net_injection_rate = 0;
-	if (strcmp(net_traffic_pattern, "") &&
-			(strcmp(net_traffic_pattern, "command")))
-		fatal("Network %s: Command option doesn't comply with other "
-				"traffic pattern\n (%s)", net->name,
-				net_traffic_pattern);
-	net_traffic_pattern = "command";
-	command_var_id = 0;
-
-	/* Register events for command handler*/
-	EV_NET_COMMAND = esim_register_event_with_name(net_command_handler,
-			net_domain_index, "net_command");
-	EV_NET_COMMAND_RCV = esim_register_event_with_name(net_command_handler,
-			net_domain_index, "net_command_receive");
-
-
-	while (1)
-	{
-		/* Get command */
-		snprintf(command_var, sizeof command_var, "Command[%d]", command_var_id);
-		command_line = config_read_string(config, section, command_var, NULL);
-		if (!command_line)
-			break;
-
-		/* Schedule event to process command */
-		struct net_stack_t *stack;
-		stack = net_stack_create(net,ESIM_EV_NONE, NULL);
-		stack->net = net;
-		stack->command = xstrdup(command_line);
-		esim_schedule_event(EV_NET_COMMAND, stack, 0);
-
-		/* Next command */
-		command_var_id++;
-	}
-}
 
 /* Insert a message into the in-flight messages hash table. */
 void net_msg_table_insert(struct net_t *net, struct net_msg_t *msg)
@@ -237,343 +109,6 @@ struct net_t *net_create(char *name)
 	return net;
 }
 
-
-struct net_t *net_create_from_config(struct config_t *config, char *name)
-{
-	int routing_type = 0;
-	struct net_t *net;
-	char *section;
-	char section_str[MAX_STRING_SIZE];
-	int def_input_buffer_size;
-	int def_output_buffer_size;
-	int def_bandwidth;
-
-	/* Create network */
-	net = net_create(name);
-
-	/* Main section */
-	snprintf(section_str, sizeof section_str, "Network.%s", name);
-	for (section = config_section_first(config); section;
-			section = config_section_next(config))
-	{
-		if (strcasecmp(section, section_str))
-			continue;
-
-		net->def_input_buffer_size = config_read_int(config, section,
-				"DefaultInputBufferSize", 0);
-		net->def_output_buffer_size = config_read_int(config, section,
-				"DefaultOutputBufferSize", 0);
-		def_bandwidth = config_read_int(config, section, 
-				"DefaultBandwidth", 0);
-		if (!net->def_input_buffer_size)
-			fatal("%s:%s: DefaultInputBufferSize: invalid/missing value.\n%s",
-					net->name, section, net_err_config);
-		if (!net->def_output_buffer_size)
-			fatal("%s:%s: DefaultOutputBufferSize: invalid/missing value.\n%s",
-					net->name, section, net_err_config);
-		if (!def_bandwidth)
-			fatal("%s:%s: DefaultBandwidth: invalid/missing value.\n%s",
-					net->name, section, net_err_config);
-		def_output_buffer_size = net->def_output_buffer_size;
-		def_input_buffer_size = net->def_input_buffer_size;
-	}
-
-	/* Nodes */
-	for (section = config_section_first(config); section;
-			section = config_section_next(config))
-	{
-		char *delim = ".";
-
-		char *token;
-		char *node_name;
-		char *node_type;
-
-		int input_buffer_size;
-		int output_buffer_size;
-		int bandwidth;
-		int lanes;	/* BUS lanes */
-
-		/* First token must be 'Network' */
-		snprintf(section_str, sizeof section_str, "%s", section);
-		token = strtok(section_str, delim);
-		if (!token || strcasecmp(token, "Network"))
-			continue;
-
-		/* Second token must be the name of the network */
-		token = strtok(NULL, delim);
-		if (!token || strcasecmp(token, name))
-			continue;
-
-		/* Third token must be 'Node' */
-		token = strtok(NULL, delim);
-		if (!token || strcasecmp(token, "Node"))
-			continue;
-
-		/* Get name */
-		node_name = strtok(NULL, delim);
-		token = strtok(NULL, delim);
-		if (!node_name || token)
-			fatal("%s:%s: wrong format for node.\n%s",
-					net->name, section, net_err_config);
-
-		/* Get properties */
-		node_type = config_read_string(config, section, "Type", "");
-		input_buffer_size = config_read_int(config, section,
-				"InputBufferSize", def_input_buffer_size);
-		output_buffer_size = config_read_int(config, section,
-				"OutputBufferSize", def_output_buffer_size);
-		bandwidth = config_read_int(config, section,
-				"BandWidth", def_bandwidth);
-		lanes = config_read_int(config, section, "Lanes", 1);
-
-		/* Create node */
-		if (!strcasecmp(node_type, "EndNode"))
-			net_add_end_node(net, input_buffer_size,
-					output_buffer_size, node_name, NULL);
-		else if (!strcasecmp(node_type, "Switch"))
-			net_add_switch(net, input_buffer_size,
-					output_buffer_size, bandwidth, node_name);
-		else if (!strcasecmp(node_type, "Bus"))
-		{
-			/* Right now we ignore the size of buffers. But we
-			 * can set it as the value for bus ports, making the
-			 * connecting switches asymmetric. */
-			if (input_buffer_size != def_input_buffer_size ||
-					output_buffer_size != def_output_buffer_size)
-				fatal("%s:%s: BUS does not contain input/output buffers. "
-						"Size values will be ignored \n",
-						net->name, section);
-
-			/* If the number of lanes is smaller than 1 produce
-			 * an error */
-			if (lanes < 1)
-				fatal("%s:%s: BUS cannot have less than 1 number of lanes \n%s",
-						net->name, section, net_err_config);
-			net_add_bus(net, bandwidth, node_name, lanes);
-		}
-		else
-			fatal("%s:%s: Type: invalid/missing value.\n%s",
-					net->name, section, net_err_config);
-	}
-
-
-
-	/* Links */
-	for (section = config_section_first(config); section;
-			section = config_section_next(config))
-	{
-		char *delim = ".";
-
-		char *token;
-		char *link_name;
-		char *link_type;
-		char *src_node_name;
-		char *dst_node_name;
-
-		int bandwidth;
-		int v_channel_count;
-		int src_buffer_size;
-		int dst_buffer_size;
-
-		struct net_node_t *src_node;
-		struct net_node_t *dst_node;
-
-		/* First token must be 'Network' */
-		snprintf(section_str, sizeof section_str, "%s", section);
-		token = strtok(section_str, delim);
-		if (!token || strcasecmp(token, "Network"))
-			continue;
-
-		/* Second token must be the name of the network */
-		token = strtok(NULL, delim);
-		if (!token || strcasecmp(token, name))
-			continue;
-
-		/* Third token must be 'Link' */
-		token = strtok(NULL, delim);
-		if (!token || strcasecmp(token, "Link"))
-			continue;
-
-		/* Fourth token must name of the link */
-		link_name = strtok(NULL, delim);
-		token = strtok(NULL, delim);
-		if (!link_name || token)
-			fatal("%s: %s: bad format for link.\n%s",
-					name, section, net_err_config);
-
-		/* Fields */
-		link_type = config_read_string(config, section, "Type",
-				"Unidirectional");
-		bandwidth = config_read_int(config, section, "Bandwidth",
-				def_bandwidth);
-		src_node_name = config_read_string(config, section, "Source", "");
-		dst_node_name = config_read_string(config, section, "Dest", "");
-		v_channel_count = config_read_int(config, section, "VC", 1);
-		src_buffer_size = config_read_int(config, section,
-				"SourceBufferSize", 0);
-		dst_buffer_size = config_read_int(config, section,
-				"DestBufferSize", 0);
-
-		/* Nodes */
-		src_node = net_get_node_by_name(net, src_node_name);
-		dst_node = net_get_node_by_name(net, dst_node_name);
-
-		if (!src_node)
-			fatal("%s: %s: %s: source node does not exist.\n%s",
-					name, section, src_node_name, net_err_config);
-		if (!dst_node)
-			fatal("%s: %s: %s: destination node does not exist.\n%s",
-					name, section, dst_node_name, net_err_config);
-
-
-		/* If it is a link connection */
-		if (src_node->kind != net_node_bus
-				&& dst_node->kind != net_node_bus)
-		{
-			int link_src_bsize;
-			int link_dst_bsize;
-
-			if (v_channel_count >= 1)
-			{
-
-				if (!strcasecmp(link_type, "Unidirectional"))
-				{
-					link_src_bsize = (src_buffer_size)? src_buffer_size :
-							src_node->output_buffer_size;
-					link_dst_bsize = (dst_buffer_size) ?dst_buffer_size :
-							dst_node->input_buffer_size;
-
-					net_add_link(net, src_node, dst_node,
-							bandwidth, link_src_bsize,
-							link_dst_bsize,
-							v_channel_count);
-				}
-				else if (!strcasecmp(link_type,
-						"Bidirectional"))
-				{
-					net_add_bidirectional_link(net,
-							src_node, dst_node, bandwidth,
-							src_buffer_size,
-							dst_buffer_size,
-							v_channel_count);
-				}
-			}
-			else
-				fatal("%s: %s: Unacceptable number of virtual channels \n %s", 
-						name, section, net_err_config);
-		}
-		/* If is is a Bus Connection */
-		else
-		{
-
-			if (v_channel_count > 1)
-				fatal("%s: %s: BUS can not have virtual channels. \n %s",
-						name, section, net_err_config);
-
-			if (!strcasecmp(link_type, "Unidirectional"))
-			{
-				if ((src_node->kind == net_node_bus &&
-						src_buffer_size) ||
-						(dst_node->kind == net_node_bus &&
-								dst_buffer_size))
-				{
-					fatal ("%s: %s: Source/Destination BUS cannot have buffer. \n %s "
-							,name, section, net_err_config);
-				}
-
-				net_add_bus_port(net, src_node, dst_node,
-						src_buffer_size, dst_buffer_size);
-			}
-			else if (!strcasecmp(link_type, "Bidirectional"))
-			{
-				net_add_bidirectional_bus_port(net, src_node,
-						dst_node, src_buffer_size,
-						dst_buffer_size);
-			}
-
-		}
-	}
-
-	/* initializing the routing table */
-	net_routing_table_initiate(net->routing_table);
-
-	/* Routes */
-	for (section = config_section_first(config); section;
-			section = config_section_next(config))
-	{
-		char *delim = ".";
-
-		char *token;
-		char *token_endl;
-
-		/* First token must be 'Network' */
-		snprintf(section_str, sizeof section_str, "%s", section);
-		token = strtok(section_str, delim);
-		if (!token || strcasecmp(token, "Network"))
-			continue;
-
-		/* Second token must be the name of the network */
-		token = strtok(NULL, delim);
-		if (!token || strcasecmp(token, name))
-			continue;
-
-		/* Third token must be 'Routes' */
-		token = strtok(NULL, delim);
-		if (!token || strcasecmp(token, "Routes"))
-			continue;
-
-		token_endl = strtok(NULL, delim);
-		if (token_endl)
-			fatal("%s: %s: bad format for route.\n%s",
-					name, section, net_err_config);
-
-		/* Routes */
-		routing_type = 1;
-		net_config_route_create(net, config, section);
-		config_check(config);
-	}
-	/* Commands */
-	for (section = config_section_first(config); section;
-			section = config_section_next(config))
-	{
-		char *delim = ".";
-
-		char *token;
-		char *token_endl;
-
-		/* First token must be 'Network' */
-		snprintf(section_str, sizeof section_str, "%s", section);
-		token = strtok(section_str, delim);
-		if (!token || strcasecmp(token, "Network"))
-			continue;
-
-		/* Second token must be the name of the network */
-		token = strtok(NULL, delim);
-		if (!token || strcasecmp(token, name))
-			continue;
-
-		/* Third token must be 'Commands' */
-		token = strtok(NULL, delim);
-		if (!token || strcasecmp(token, "Commands"))
-			continue;
-
-		token_endl = strtok(NULL, delim);
-		if (token_endl)
-			fatal("%s: %s: bad format for Commands section.\n%s",
-					name, section, net_err_config);
-
-		/* Commands */
-		net_config_command_create(net, config, section);
-		config_check(config);
-	}
-	/* If there is no route section, Floyd-Warshall calculates the
-	 * shortest path for all the nodes in the network */
-	if (routing_type == 0)
-		net_routing_table_floyd_warshall(net->routing_table);
-
-	/* Return */
-	return net;
-}
 
 
 void net_free(struct net_t *net)
@@ -685,7 +220,7 @@ void net_dump_visual(struct net_graph_t *graph, FILE *f)
 					vertex->y_coor);
 		else
 		{
-			assert(vertex->node->kind == net_node_bus);
+			assert(vertex->node->kind == net_node_bus || vertex->node->kind == net_node_photonic);
 			for (int j = 0;
 					j < list_count(vertex->node->bus_lane_list);
 					j++)
@@ -862,6 +397,35 @@ struct net_node_t *net_add_switch(struct net_t *net,
 	return node;
 }
 
+struct net_node_t *net_add_photonic(struct net_t *net, int input_buffer_size,
+		int output_buffer_size, char *node_name,
+		int waveguides, int wavelength )
+{
+	struct net_node_t *node;
+	node = net_node_create(net,
+			net_node_photonic,
+			net->node_count,
+			0,
+			0,
+			wavelength,
+			node_name,
+			NULL);
+	net->node_count++;
+	list_add(net->node_list, node);
+
+	node->bus_lane_list = list_create_with_size(4);
+	node->src_buffer_list = list_create_with_size(4);
+	node->dst_buffer_list = list_create_with_size(4);
+
+	for (int j = 0; j < waveguides ; j++)
+	{
+		net_node_add_photonic_link(node);
+	}
+
+	/* Return */
+	return node;
+}
+
 
 /* Get a node by its name. If none found, return NULL. Search is
  * case-insensitive. */
@@ -931,16 +495,16 @@ void net_add_bidirectional_link(struct net_t *net,
 	int dst_buffer_size;
 
 	src_buffer_size = (link_src_bsize)
-						? link_src_bsize : src_node->output_buffer_size;
+					? link_src_bsize : src_node->output_buffer_size;
 	dst_buffer_size = (link_dst_bsize)
-						? link_dst_bsize : dst_node->input_buffer_size;
+					? link_dst_bsize : dst_node->input_buffer_size;
 	net_add_link(net, src_node, dst_node, bandwidth,
 			src_buffer_size, dst_buffer_size, vc_count);
 
 	src_buffer_size = (link_src_bsize)
-						? link_src_bsize : dst_node->output_buffer_size;
+					? link_src_bsize : dst_node->output_buffer_size;
 	dst_buffer_size = (link_dst_bsize)
-						? link_dst_bsize : src_node->input_buffer_size;
+					? link_dst_bsize : src_node->input_buffer_size;
 	net_add_link(net, dst_node, src_node, bandwidth,
 			src_buffer_size, dst_buffer_size, vc_count);
 
@@ -997,6 +561,57 @@ void net_add_bus_port(struct net_t *net, struct net_node_t *src_node,
 
 }
 
+void net_add_channel_port(struct net_t *net, struct net_node_t *src_node,
+		struct net_node_t *dst_node, int bus_src_buffer, int bus_dst_buffer)
+{
+	/* Checks */
+	assert(src_node->net == net);
+	assert(dst_node->net == net);
+	struct net_buffer_t *buffer;
+
+	/* Condition 1: No support for direct BUS to BUS connection */
+	if (src_node->kind == net_node_photonic && dst_node->kind == net_node_photonic)
+		fatal("network \"%s\" : BUS to BUS connection is not supported.", net->name);
+
+	/* Condition 2: In case source node is BUS, we add an input buffer to
+	 * destination node and add it to the list of destination nodes in
+	 * BUS */
+	if (src_node->kind == net_node_photonic && dst_node->kind != net_node_photonic)
+	{
+		int dst_buffer_size =
+				(bus_dst_buffer) ? bus_dst_buffer : dst_node->
+						input_buffer_size;
+
+		buffer = net_node_add_input_buffer(dst_node, dst_buffer_size);
+
+		assert(!buffer->link);
+		list_add(src_node->dst_buffer_list, buffer);
+		buffer->bus = list_get(src_node->bus_lane_list, 0);
+	}
+
+	/* Condition 3: In case destination node is BUS, we add an output
+	 * buffer to source node and add it to the list of source nodes in
+	 * BUS */
+	else if (src_node->kind != net_node_photonic
+			&& dst_node->kind == net_node_photonic)
+	{
+		int src_buffer_size =
+				(bus_src_buffer) ? bus_src_buffer : src_node->
+						output_buffer_size;
+
+		buffer = net_node_add_output_buffer(src_node,
+				src_buffer_size);
+		assert(!buffer->link);
+		list_add(dst_node->src_buffer_list, buffer);
+		buffer->bus = list_get(dst_node->bus_lane_list, 0);
+	}
+
+	/* We make the buffer as type port for clarification and use in event
+	 * handler */
+	buffer->kind = net_buffer_photonic;
+
+}
+
 void net_add_bidirectional_bus_port(struct net_t *net,
 		struct net_node_t *src_node, struct net_node_t *dst_node,
 		int bus_src_buffer, int bus_dst_buffer)
@@ -1004,6 +619,17 @@ void net_add_bidirectional_bus_port(struct net_t *net,
 	net_add_bus_port(net, src_node, dst_node, bus_src_buffer,
 			bus_dst_buffer);
 	net_add_bus_port(net, dst_node, src_node, bus_src_buffer,
+			bus_dst_buffer);
+}
+
+
+void net_add_bidirectional_channel_port(struct net_t *net,
+		struct net_node_t *src_node, struct net_node_t *dst_node,
+		int bus_src_buffer, int bus_dst_buffer)
+{
+	net_add_channel_port(net, src_node, dst_node, bus_src_buffer,
+			bus_dst_buffer);
+	net_add_channel_port(net, dst_node, src_node, bus_src_buffer,
 			bus_dst_buffer);
 }
 
@@ -1037,7 +663,11 @@ int net_can_send(struct net_t *net, struct net_node_t *src_node,
 		return 0;
 
 	/* Message does not fit in output buffer */
-	if (output_buffer->count + size > output_buffer->size)
+	int required_size = size;
+	if (net->packet_size != 0)
+		required_size = ((size - 1) / net->packet_size + 1)*net->packet_size;
+
+	if (output_buffer->count + required_size > output_buffer->size) // size is replaced by required size
 		return 0;
 
 	/* All conditions satisfied, can send */
@@ -1086,12 +716,15 @@ int net_can_send_ev(struct net_t *net, struct net_node_t *src_node,
 	}
 
 	/* Message does not fit in output buffer */
-	if (output_buffer->count + size > output_buffer->size)
+	//	fprintf(stderr, "\n **the buffer in question is %s:%s with count %d \n", output_buffer->node->name, output_buffer->name, output_buffer->count); //[K12]
+	int required_size = size;
+	if (net->packet_size != 0)
+		required_size = ((size - 1) / net->packet_size + 1)*net->packet_size;
+	if (output_buffer->count + required_size > output_buffer->size) //size replaced by required_size
 	{
 		net_buffer_wait(output_buffer, retry_event, retry_stack);
 		return 0;
 	}
-
 	/* All conditions satisfied, can send */
 	return 1;
 }
@@ -1121,7 +754,7 @@ struct net_msg_t *net_send_ev(struct net_t *net, struct net_node_t *src_node,
 {
 	struct net_stack_t *stack;
 	struct net_msg_t *msg;
-
+	struct net_packet_t *pkt;
 	/* Check nodes */
 	if (src_node->kind != net_node_end || dst_node->kind != net_node_end)
 		fatal("%s: not end nodes.\n%s", __FUNCTION__,
@@ -1133,15 +766,27 @@ struct net_msg_t *net_send_ev(struct net_t *net, struct net_node_t *src_node,
 	/* Insert message into hash table of in-flight messages */
 	net_msg_table_insert(net, msg);
 
-	/* Start event-driven simulation */
-	stack = net_stack_create(net, ESIM_EV_NONE, NULL);
-	stack->msg = msg;
-	stack->ret_event = receive_event;
-	stack->ret_stack = receive_stack;
-	esim_execute_event(EV_NET_SEND, stack);
-
+	//new to make sure packet size is now equal to msg size
+	if (net->packet_size == 0)
+		net_packetizer(net, msg, msg->size);
+	else
+		net_packetizer(net, msg, net->packet_size);
+	//	fprintf (stderr, "Step 1: what is the packet count for message : %d\n", msg->packet_list_count ); [K1]
+	for (int i = 0; i < msg->packet_list_max; i++)
+	{
+		/* Start event-driven simulation */
+		pkt = msg->packet_list_head; //[K12]
+		stack = net_stack_create(net, ESIM_EV_NONE, NULL);
+		//		fprintf(stderr, "\tStep 2:%d. the message id is %lld and the packet is %d\n",i, pkt->msg->id, pkt->session_id); [K1]
+		stack->packet = pkt; // [K12]
+		stack->ret_event = receive_event;
+		stack->ret_stack = receive_stack;
+		esim_execute_event(EV_NET_SEND, stack);
+		DOUBLE_LINKED_LIST_REMOVE(msg, packet, pkt);
+	}
 	/* Return created message */
 	return msg;
+
 }
 
 
@@ -1179,24 +824,12 @@ struct net_msg_t *net_try_send_ev(struct net_t *net,
 void net_receive(struct net_t *net, struct net_node_t *node,
 		struct net_msg_t *msg)
 {
-	struct net_buffer_t *buffer;
-
 	/* Checks */
 	assert(node->net == net);
 	assert(msg->net == net);
-	if (msg->node != node)
-		panic("%s: message not at end node", __FUNCTION__);
 
-	/* Get buffer */
-	buffer = msg->buffer;
-	assert(buffer->node == node);
-	if (!list_count(buffer->msg_list))
-		panic("%s: empty buffer", __FUNCTION__);
-	if (list_get(buffer->msg_list, 0) != msg)
-		panic("%s: message not at input buffer head", __FUNCTION__);
-
-	/* Extract and free message */
-	net_buffer_extract(buffer, msg);
 	net_msg_table_extract(net, msg->id);
+	//	fprintf(stderr, "freeing msg %lld\n", msg->id); [K1]
 	net_msg_free(msg);
 }
+

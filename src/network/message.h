@@ -20,6 +20,31 @@
 #ifndef NETWORK_MESSAGE_H
 #define NETWORK_MESSAGE_H
 
+/* Events */
+extern int EV_NET_PACKET_SEND;
+extern int EV_NET_PACKET_OUTPUT_BUFFER;
+extern int EV_NET_PACKET_INPUT_BUFFER;
+extern int EV_NET_PACKET_RECEIVE;
+
+/* Stack */
+struct net_packet_stack_t
+{
+	/* Local variables */
+	struct net_t *net;
+	struct net_packet_t *pkt;
+
+	/* Return event */
+	int ret_event;
+	struct net_packet_stack_t *ret_stack;
+};
+
+struct net_stack_t *net_packet_stack_create(struct net_t *net,
+	int retevent, void *retstack);
+void net_packet_stack_return(struct net_stack_t *stack);
+
+void net_packet_event_handler(int event, void *data);
+
+
 struct net_msg_t
 {
 	struct net_t *net;
@@ -42,6 +67,12 @@ struct net_msg_t
 
 	/* Liked list for bucket chain in net->msg_table */
 	struct net_msg_t *bucket_next;
+
+	/* For Packetizing */
+	struct net_packet_t *packet_list_head, *packet_list_tail;
+	int packet_list_count;
+	int packet_list_max;
+
 };
 
 

@@ -411,9 +411,9 @@ def DrawNodes(f):
 				% (Center, PlotOrigY + Y, Width / 2 + 0.5))
 
 			f.write("%f %f %f setrgbcolor %f %f %f 0 360 arc closepath fill stroke\n" \
-				% (ChartColors[1][0], ChartColors[1][1], ChartColors[1][2], Center, PlotOrigY + Y, Width / 2))
+				% (ChartColors[6][0], ChartColors[6][1], ChartColors[6][2], Center, PlotOrigY + Y, Width / 2))
 
-			f.write("0 0 0 C Tss %f %f N " % (PlotOrigX + X, PlotOrigY + Y  \
+			f.write("0 0 0 C Tsk %f %f N " % (PlotOrigX + X, PlotOrigY + Y  \
 				- (SwitchWidthRatio * 0.1 *(PlotHeight / (YRangeDiff + 2)))))
 			f.write("(%s) Cshow stroke\n" % Node[0])
 		elif Node[1] == 2:
@@ -439,7 +439,7 @@ def DrawNodes(f):
 
 			f.write("%f %f %f setrgbcolor %f %f %f 0 360 arc closepath fill stroke\n" \
 				% (Color[0], Color[1], Color[2], Center, PlotOrigY + Y, Width / 2))
-			f.write("0 0 0 C Tt %f %f N " % (PlotOrigX + X, PlotOrigY + Y + \
+			f.write("0 0 0 C Tsk %f %f N " % (PlotOrigX + X, PlotOrigY + Y + \
 				(0.3 *(PlotHeight / (YRangeDiff + 2)))))
 			f.write("(%s) Cshow stroke\n" % Node[0])
 		
@@ -561,7 +561,7 @@ LTdef
 /Tn {/Helvetica findfont 9 scalefont setfont} def
 /Tb {/Times-Roman findfont 14 scalefont setfont} def
 /Tss {/Sans-serif findfont 10 scalefont setfont} def
-/Tsk {/Sans-serif findfont 7 scalefont setfont} def
+/Tsk {/Sans-serif findfont 3 scalefont setfont} def
 """)
 
 	f.write("""

@@ -31,6 +31,7 @@
 #include "network.h"
 #include "node.h"
 #include "routing-table.h"
+#include "packet.h"
 
 
 /* 
@@ -104,7 +105,7 @@ void net_node_free(struct net_node_t *node)
 
 
 	/* For BUS */
-	if (node->kind == net_node_bus)
+	if (node->kind == net_node_bus || node->kind == net_node_photonic)
 	{
 		/* Freeing associated bus structures */
 		for (i = 0; i < list_count(node->bus_lane_list); i++)
@@ -148,7 +149,7 @@ void net_node_dump_report(struct net_node_t *node, FILE *f)
 	fprintf(f, "[ Network.%s.Node.%s ]\n", net->name, node->name);
 
 	/* Statistics */
-	if (node->kind != net_node_bus)
+	if (node->kind != net_node_bus && node->kind != net_node_photonic)
 	{
 		/* Configuration */
 		if (node->kind != net_node_end)
@@ -178,7 +179,7 @@ void net_node_dump_report(struct net_node_t *node, FILE *f)
 			net_buffer_dump_report(buffer, f);
 		}
 	}
-	else if (node->kind == net_node_bus)
+	else if (node->kind == net_node_bus || node->kind == net_node_photonic)
 	{
 		struct net_bus_t *bus;
 
@@ -240,6 +241,22 @@ struct net_bus_t *net_node_add_bus_lane(struct net_node_t *node)
 }
 
 
+struct net_bus_t *net_node_add_photonic_link(struct net_node_t *node)
+{
+	assert(node->kind == net_node_photonic);
+	struct net_bus_t *bus;
+	char name[MAX_STRING_SIZE];
+
+	snprintf(name, sizeof(name), "%s_photo_link_%d", node->name,
+		list_count(node->bus_lane_list));
+	bus = net_bus_create(node->net, node, node->bandwidth, name);
+	bus->index = list_count(node->bus_lane_list);
+	list_add(node->bus_lane_list, bus);
+
+	return bus;
+}
+
+
 /* Round-robin scheduler for network switch, choosing between several
  * candidate messages at the head of all input buffers that have a given
  * output buffer as an immediate target. */
@@ -251,7 +268,7 @@ struct net_buffer_t *net_node_schedule(struct net_node_t *node,
 
 	struct net_routing_table_entry_t *entry;
 	struct net_buffer_t *input_buffer;
-	struct net_msg_t *msg;
+	struct net_packet_t * pkt;
 
 	long long cycle;
 
@@ -296,12 +313,12 @@ struct net_buffer_t *net_node_schedule(struct net_node_t *node,
 			list_get(node->input_buffer_list, input_buffer_index);
 
 		/* There must be a message at the head */
-		msg = list_get(input_buffer->msg_list, 0);
-		if (!msg)
+		pkt = list_get(input_buffer->msg_list, 0);
+		if (!pkt)
 			continue;
 
 		/* Message must be ready */
-		if (msg->busy >= cycle)
+		if (pkt->busy >= cycle)
 			continue;
 
 		/* Input buffer must be ready to be read */
@@ -310,13 +327,13 @@ struct net_buffer_t *net_node_schedule(struct net_node_t *node,
 
 		/* Message must target this output buffer */
 		entry = net_routing_table_lookup(routing_table, node,
-			msg->dst_node);
+			pkt->msg->dst_node);
 		assert(entry->output_buffer);
 		if (entry->output_buffer != output_buffer)
 			continue;
 
 		/* Message must fit in this output buffer */
-		if (output_buffer->count + msg->size > output_buffer->size)
+		if (output_buffer->count + pkt->size > output_buffer->size)
 			continue;
 
 		/* All conditions satisfied - schedule */
