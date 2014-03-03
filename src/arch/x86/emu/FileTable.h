@@ -87,6 +87,9 @@ public:
 	/// Return host file descriptor index
 	int getHostIndex() const { return host_index; }
 
+	/// Return the flags with which this file was opened
+	int getFlags() const { return flags; }
+
 	/// Return associated path, if any
 	const std::string &getPath() const { return path; }
 };

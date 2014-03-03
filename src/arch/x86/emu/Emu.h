@@ -102,6 +102,11 @@ class Emu : public comm::Emu
 	// can be obtained with a call to getInstance()
 	Emu();
 	
+	// Schedule next call to Emu::ProcessEvents(). The call will only be
+	// effective if 'process_events_force' is set. This flag should be
+	// accessed thread-safely locking the mutex.
+	bool process_events_force;
+	
 	// Check for events detected in spawned host threads, such as waking up
 	// contexts or sending signals. The list is only effectively processed
 	// if events have been scheduled to get processed with a previous call
@@ -116,10 +121,9 @@ class Emu : public comm::Emu
 	// and child host threads.
 	pthread_mutex_t mutex;
 
-	// Schedule next call to Emu::ProcessEvents(). The call will only be
-	// effective if 'process_events_force' is set. This flag should be
-	// accessed thread-safely locking the mutex.
-	bool process_events_force;
+	// Counter of times that a context has been suspended in a futex. Used
+	// for FIFO wakeups.
+	long long futex_sleep_count;
 
 
 public:
@@ -178,6 +182,11 @@ public:
 	/// Schedule a call to ProcessEvents(). This call internally locks the
 	/// emulator mutex.
 	void ProcessEventsSchedule();
+	
+	/// Increment an internal counter for futex identifiers, and return its
+	/// new value. This function is used to assign futex identifiers used as
+	/// event timestamps.
+	long long incFutexSleepCount() { return ++futex_sleep_count; }
 
 	/// Schedule next call to ProcessEvents(). The emulator mutex must be
 	/// locked before invoking this function.

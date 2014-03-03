@@ -42,9 +42,26 @@ public:
 
 	void Dump(std::ostream &os = std::cout) const;
 	friend std::ostream &operator<<(std::ostream &os, Bitmap &b) {
-		b.Dump(os); return os; }
+			b.Dump(os); return os; }
 	
-	size_t getSize() { return size; }
+	/// Return the size of the bitmap in bits, as initialized in the
+	/// constructor
+	size_t getSize() const { return size; }
+
+	/// Return the size of the bitmap in bytes. This value will always be
+	/// a multiple of the machine word size.
+	size_t getSizeInBytes() const { return size_in_blocks *
+			sizeof(size_t); }
+
+	/// Return a constant pointer to the internal data storing the bitmap.
+	/// The size of the buffer pointed to by the returned value can be
+	/// obtained with getSizeInBytes().
+	const char *getBuffer() const { return (const char *) data.get(); }
+
+	/// Return a pointer to the internal data storing the bitmap. The size
+	/// of the buffer pointed to by the returned value can be obtained with
+	/// getSizeInBytes().
+	char *getBuffer() { return (char *) data.get(); }
 
 	Bitmap &operator=(const Bitmap& b);
 

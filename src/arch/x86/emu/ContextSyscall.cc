@@ -347,7 +347,66 @@ int Context::ExecuteSyscall_fork()
 
 int Context::ExecuteSyscall_read()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	int guest_fd = regs.getEbx();
+	unsigned buf_ptr = regs.getEcx();
+	unsigned count = regs.getEdx();
+	emu->syscall_debug << misc::fmt("  guest_fd=%d, "
+			"buf_ptr=0x%x, count=0x%x\n",
+			guest_fd, buf_ptr, count);
+
+	// Get file descriptor
+	FileDesc *desc = file_table.getFileDesc(guest_fd);
+	if (!desc)
+		return -EBADF;
+	int host_fd = desc->getHostIndex();
+	emu->syscall_debug << misc::fmt("  host_fd=%d\n", host_fd);
+
+	// Poll the file descriptor to check if read is blocking
+	char *buf = new char[count]();
+	struct pollfd fds;
+	fds.fd = host_fd;
+	fds.events = POLLIN;
+	int err = poll(&fds, 1, 0);
+	if (err < 0)
+		misc::panic("%s: error executing 'poll'", __FUNCTION__);
+
+	// Non-blocking read
+	if (fds.revents || (desc->getFlags() & O_NONBLOCK))
+	{
+		// Host system call
+		err = read(host_fd, buf, count);
+		if (err == -1)
+		{
+			delete buf;
+			return -errno;
+		}
+
+		// Write in guest memory
+		if (err > 0)
+		{
+			memory->Write(buf_ptr, err, buf);
+			emu->syscall_debug << misc::StringBinaryBuffer(buf,
+					count, 40);
+		}
+
+		// Return number of read bytes
+		delete buf;
+		return err;
+	}
+
+	// Blocking read - suspend thread
+	emu->syscall_debug << misc::fmt("  blocking read - process suspended\n");
+	wakeup_fd = guest_fd;
+	wakeup_events = 1;  // POLLIN
+	setState(ContextSuspended);
+	setState(ContextRead);
+	emu->ProcessEventsSchedule();
+
+	// Free allocated buffer. Return value doesn't matter,
+	// it will be overwritten when context wakes up from blocking call.
+	delete buf;
+	return 0;
 }
 
 
@@ -419,9 +478,108 @@ int Context::ExecuteSyscall_write()
 // System call 'open'
 //
 
+// Flags given in octal
+static misc::StringMap open_flags_map =
+{
+	{ "O_RDONLY",        00000000 },
+	{ "O_WRONLY",        00000001 },
+	{ "O_RDWR",          00000002 },
+	{ "O_CREAT",         00000100 },
+	{ "O_EXCL",          00000200 },
+	{ "O_NOCTTY",        00000400 },
+	{ "O_TRUNC",         00001000 },
+	{ "O_APPEND",        00002000 },
+	{ "O_NONBLOCK",      00004000 },
+	{ "O_SYNC",          00010000 },
+	{ "FASYNC",          00020000 },
+	{ "O_DIRECT",        00040000 },
+	{ "O_LARGEFILE",     00100000 },
+	{ "O_DIRECTORY",     00200000 },
+	{ "O_NOFOLLOW",      00400000 },
+	{ "O_NOATIME",       01000000 }
+};
+
+FileDesc *Context::SyscallOpenVirtualFile(const std::string &path,
+		int flags, int mode)
+{
+	// Assume no file found
+	std::string temp_path;
+
+	// Virtual file /proc/self/maps
+	if (path == "/proc/self/maps")
+		temp_path = OpenProcSelfMaps();
+	
+	// Virtual file /proc/cpuinfo
+	else if (path == "/proc/cpuinfo")
+		temp_path = OpenProcCPUInfo();
+
+	// No file found
+	if (temp_path.empty())
+		return nullptr;
+
+	// File found, create descriptor
+	int host_fd = open(temp_path.c_str(), flags, mode);
+	assert(host_fd > 0);
+
+	// Add file descriptor table entry.
+	FileDesc *desc = file_table.newFileDesc(FileDescVirtual, host_fd,
+			temp_path, flags);
+	emu->syscall_debug << misc::fmt("    host file '%s' opened: "
+			"guest_fd=%d, host_fd=%d\n",
+			temp_path.c_str(), desc->getGuestIndex(),
+			desc->getHostIndex());
+	return desc;
+}
+
 int Context::ExecuteSyscall_open()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	unsigned file_name_ptr = regs.getEbx();
+	int flags = regs.getEcx();
+	int mode = regs.getEdx();
+	std::string file_name = memory->ReadString(file_name_ptr);
+	std::string full_path = getFullPath(file_name);
+	emu->syscall_debug << misc::fmt("  filename='%s' flags=0x%x, mode=0x%x\n",
+			file_name.c_str(), flags, mode);
+	emu->syscall_debug << misc::fmt("  fullpath='%s'\n", full_path.c_str());
+	emu->syscall_debug << misc::fmt("  flags=%s\n",
+			open_flags_map.MapFlags(flags).c_str());
+	
+	// The dynamic linker uses the 'open' system call to open shared libraries.
+	// We need to intercept here attempts to access runtime libraries and
+	// redirect them to our own Multi2Sim runtimes.
+
+	// FIXME
+	//if (runtime_redirect(full_path, temp_path, sizeof temp_path))
+	//	snprintf(full_path, sizeof full_path, "%s", temp_path);
+
+	// Virtual files
+	if (misc::StringPrefix(full_path, "/proc/"))
+	{
+		// Attempt to open virtual file
+		FileDesc *desc = SyscallOpenVirtualFile(full_path, flags, mode);
+		if (desc)
+			return desc->getGuestIndex();
+		
+		// Unhandled virtual file. Let the application read the contents
+		// of the host version of the file as if it was a regular file.
+		emu->syscall_debug << "    warning: unhandled virtual file\n";
+	}
+
+	// Regular file.
+	int host_fd = open(full_path.c_str(), flags, mode);
+	if (host_fd == -1)
+		return -errno;
+
+	// File opened, create a new file descriptor.
+	FileDesc *desc = file_table.newFileDesc(FileDescRegular,
+			host_fd, full_path, flags);
+	emu->syscall_debug << misc::fmt("    file descriptor opened: "
+			"guest_fd=%d, host_fd=%d\n",
+			desc->getGuestIndex(), desc->getHostIndex());
+
+	// Return guest descriptor index
+	return desc->getGuestIndex();
 }
 
 
@@ -433,7 +591,32 @@ int Context::ExecuteSyscall_open()
 
 int Context::ExecuteSyscall_close()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	int guest_fd = regs.getEbx();
+	int host_fd = file_table.getHostIndex(guest_fd);
+	emu->syscall_debug << misc::fmt("  guest_fd=%d\n", guest_fd);
+	emu->syscall_debug << misc::fmt("  host_fd=%d\n", host_fd);
+
+	// Get file descriptor table entry.
+	FileDesc *desc = file_table.getFileDesc(guest_fd);
+	if (!desc)
+		return -EBADF;
+
+	// Close host file descriptor only if it is valid and not
+	// stdin/stdout/stderr
+	if (host_fd > 2)
+		close(host_fd);
+
+	// Free guest file descriptor. This will delete the host file if it's a
+	// virtual file
+	if (desc->getType() == FileDescVirtual)
+		emu->syscall_debug << misc::fmt("    host file '%s': "
+				"temporary file deleted\n",
+				desc->getPath().c_str());
+	file_table.freeFileDesc(desc->getGuestIndex());
+
+	// Success
+	return 0;
 }
 
 
@@ -481,7 +664,22 @@ int Context::ExecuteSyscall_link()
 
 int Context::ExecuteSyscall_unlink()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	unsigned file_name_ptr = regs.getEbx();
+	std::string file_name = memory->ReadString(file_name_ptr);
+	std::string full_path = getFullPath(file_name);
+	emu->syscall_debug << misc::fmt("  file_name_ptr=0x%x\n",
+			file_name_ptr);
+	emu->syscall_debug << misc::fmt("  file_name=%s, full_path=%s\n",
+			file_name.c_str(), full_path.c_str());
+
+	// Host call
+	int err = unlink(full_path.c_str());
+	if (err == -1)
+		return -errno;
+
+	// Return
+	return 0;
 }
 
 
@@ -755,9 +953,38 @@ int Context::ExecuteSyscall_ni_syscall_32()
 // System call 'access'
 //
 
+static const misc::StringMap access_mode_map =
+{
+	{ "X_OK",  1 },
+	{ "W_OK",  2 },
+	{ "R_OK",  4 }
+};
+
 int Context::ExecuteSyscall_access()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	unsigned file_name_ptr = regs.getEbx();
+	int mode = regs.getEcx();
+
+	// Read file name
+	std::string file_name = memory->ReadString(file_name_ptr);
+	std::string full_path = getFullPath(file_name);
+
+	// Debug
+	emu->syscall_debug << misc::fmt("  file_name='%s', mode=0x%x\n",
+			file_name.c_str(), mode);
+	emu->syscall_debug << misc::fmt("  full_path='%s'\n",
+			full_path.c_str());
+	emu->syscall_debug << misc::fmt("  mode=%s\n",
+			access_mode_map.MapFlags(mode).c_str());
+
+	// Host call
+	int err = access(full_path.c_str(), mode);
+	if (err == -1)
+		return -errno;
+
+	// Return
+	return err;
 }
 
 
@@ -1624,7 +1851,21 @@ int Context::ExecuteSyscall_mmap()
 
 int Context::ExecuteSyscall_munmap()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	unsigned addr = regs.getEbx();
+	unsigned size = regs.getEcx();
+	emu->syscall_debug << misc::fmt("  addr=0x%x, size=0x%x\n", addr, size);
+
+	// Restrictions
+	if (addr & (mem::MemoryPageSize - 1))
+		misc::fatal("%s: address not aligned", __FUNCTION__);
+
+	// Unmap
+	unsigned size_aligned = misc::RoundUp(size, mem::MemoryPageSize);
+	memory->Unmap(addr, size_aligned);
+
+	// Return
+	return 0;
 }
 
 
@@ -2064,7 +2305,22 @@ int Context::ExecuteSyscall_adjtimex()
 
 int Context::ExecuteSyscall_mprotect()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	unsigned start = regs.getEbx();
+	unsigned len = regs.getEcx();
+	int prot = regs.getEdx();
+	emu->syscall_debug << misc::fmt("  start=0x%x, len=0x%x, prot=0x%x\n",
+			start, len, prot);
+
+	// Permissions
+	int perm = 0;
+	perm |= prot & 0x01 ? mem::MemoryAccessRead : 0;
+	perm |= prot & 0x02 ? mem::MemoryAccessWrite : 0;
+	perm |= prot & 0x04 ? mem::MemoryAccessExec : 0;
+	memory->Protect(start, len, perm);
+
+	// Return
+	return 0;
 }
 
 
@@ -2653,6 +2909,53 @@ int Context::ExecuteSyscall_rt_sigreturn()
 int Context::ExecuteSyscall_rt_sigaction()
 {
 	__UNIMPLEMENTED__
+/*
+	struct x86_sigaction_t act;
+
+	// Arguments
+	int sig = regs.getEbx();
+	unsigned act_ptr = regs.getEcx();
+	unsigned old_act_ptr = regs.getEdx();
+	int sigsetsize = regs.getEsi();
+	emu->syscall_debug << misc::fmt("  sig=%d, act_ptr=0x%x, "
+			"old_act_ptr=0x%x, sigsetsize=0x%x\n",
+			sig, act_ptr, old_act_ptr, sigsetsize);
+	emu->syscall_debug << misc::fmt("  signal=%s\n",
+			signal_map.MapValue(sig));
+
+	// Invalid signal
+	if (sig < 1 || sig > 64)
+		misc::fatal("%s: invalid signal (%d)", __FUNCTION__, sig);
+
+	// Read new sigaction
+	if (act_ptr)
+	{
+		memory->Read(act_ptr, sizeof act, (char *) &act);
+		if (debug_status(x86_sys_debug_category))
+		{
+			FILE *f = debug_file(x86_sys_debug_category);
+			emu->syscall_debug << misc::fmt("  act: ");
+			x86_sigaction_dump(&act, f);
+			emu->syscall_debug << misc::fmt("\n    flags: ");
+			x86_sigaction_flags_dump(act.flags, f);
+			emu->syscall_debug << misc::fmt("\n    mask: ");
+			x86_sigset_dump(act.mask, f);
+			emu->syscall_debug << misc::fmt("\n");
+		}
+	}
+
+	// Store previous sigaction
+	if (old_act_ptr)
+		memory->Write(old_act_ptr, sizeof(struct x86_sigaction_t), (char *)
+			&ctx->signal_handler_table->sigaction[sig - 1]);
+
+	// Make new sigaction effective
+	if (act_ptr)
+		ctx->signal_handler_table->sigaction[sig - 1] = act;
+
+	// Return
+	return 0;
+*/
 }
 
 
@@ -3534,9 +3837,218 @@ int Context::ExecuteSyscall_sendfile64()
 // System call 'futex'
 //
 
+static const misc::StringMap futex_cmd_map =
+{
+	{ "FUTEX_WAIT",              0 },
+	{ "FUTEX_WAKE",              1 },
+	{ "FUTEX_FD",                2 },
+	{ "FUTEX_REQUEUE",           3 },
+	{ "FUTEX_CMP_REQUEUE",       4 },
+	{ "FUTEX_WAKE_OP",           5 },
+	{ "FUTEX_LOCK_PI",           6 },
+	{ "FUTEX_UNLOCK_PI",         7 },
+	{ "FUTEX_TRYLOCK_PI",        8 },
+	{ "FUTEX_WAIT_BITSET",       9 },
+	{ "FUTEX_WAKE_BITSET",       10 },
+	{ "FUTEX_WAIT_REQUEUE_PI",   11 },
+	{ "FUTEX_CMP_REQUEUE_PI",    12 }
+};
+
 int Context::ExecuteSyscall_futex()
 {
-	__UNIMPLEMENTED__
+	// Prototype: sys_futex(void *addr1, int op, int val1, struct timespec *timeout,
+	//   void *addr2, int val3);
+
+	unsigned timeout_sec;
+	unsigned timeout_usec;
+	unsigned bitset;
+
+	int ret;
+
+	// Arguments
+	unsigned addr1 = regs.getEbx();
+	int op = regs.getEcx();
+	int val1 = regs.getEdx();
+	unsigned timeout_ptr = regs.getEsi();
+	unsigned addr2 = regs.getEdi();
+	int val3 = regs.getEbp();
+	emu->syscall_debug << misc::fmt("  addr1=0x%x, op=%d, val1=%d, ptimeout=0x%x, addr2=0x%x, val3=%d\n",
+		addr1, op, val1, timeout_ptr, addr2, val3);
+
+
+	// Command - 'cmd' is obtained by removing 'FUTEX_PRIVATE_FLAG' (128) and
+	// 'FUTEX_CLOCK_REALTIME' from 'op'.
+	unsigned cmd = op & ~(256 | 128);
+	unsigned futex;
+	memory->Read(addr1, 4, (char *) &futex);
+	emu->syscall_debug << misc::fmt("  futex=%d, cmd=%d (%s)\n",
+			futex, cmd, futex_cmd_map.MapValue(cmd));
+
+	switch (cmd)
+	{
+
+	case 0:  // FUTEX_WAIT
+	case 9:  // FUTEX_WAIT_BITSET
+	{
+		// Default bitset value (all bits set)
+		bitset = cmd == 9 ? val3 : 0xffffffff;
+
+		/* First, we compare the value of the futex with val1. If it's not the
+		 * same, we exit with the error EWOULDBLOCK (=EAGAIN). */
+		if (futex != (unsigned) val1)
+			return -EAGAIN;
+
+		// Read timeout
+		if (timeout_ptr)
+		{
+			misc::fatal("syscall futex: FUTEX_WAIT not supported with timeout");
+			memory->Read(timeout_ptr, 4, (char *) &timeout_sec);
+			memory->Read(timeout_ptr + 4, 4, (char *) &timeout_usec);
+			emu->syscall_debug << misc::fmt("  timeout={sec %d, usec %d}\n",
+				timeout_sec, timeout_usec);
+		}
+		else
+		{
+			timeout_sec = 0;
+			timeout_usec = 0;
+		}
+
+		// Suspend thread in the futex.
+		wakeup_futex = addr1;
+		wakeup_futex_bitset = bitset;
+		wakeup_futex_sleep = emu->incFutexSleepCount();
+		setState(ContextSuspended);
+		setState(ContextFutex);
+		return 0;
+	}
+
+	case 1:  // FUTEX_WAKE
+	case 10:  // FUTEX_WAKE_BITSET
+	{
+		// Default bitset value (all bits set)
+		bitset = cmd == 10 ? val3 : 0xffffffff;
+		ret = FutexWake(addr1, val1, bitset);
+		emu->syscall_debug << misc::fmt("  futex at 0x%x: "
+				"%d processes woken up\n", addr1, ret);
+		return ret;
+	}
+
+	case 4: // FUTEX_CMP_REQUEUE
+	{
+		// 'ptimeout' is interpreted here as an integer; only supported for INTMAX
+		if (timeout_ptr != 0x7fffffff)
+			misc::fatal("%s: FUTEX_CMP_REQUEUE: only supported for ptimeout=INTMAX", __FUNCTION__);
+
+		// The value of val3 must be the same as the value of the futex
+		// at 'addr1' (stored in 'futex')
+		if (futex != (unsigned) val3)
+			return -EAGAIN;
+
+		// Wake up 'val1' threads from futex at 'addr1'. The number of
+		// woken up threads is the return value of the system call.
+		ret = FutexWake(addr1, val1, 0xffffffff);
+		emu->syscall_debug << misc::fmt("  futex at 0x%x: %d processes woken up\n", addr1, ret);
+
+		// The rest of the threads waiting in futex 'addr1' are requeued
+		// into futex 'addr2'
+		int requeued = 0;
+		for (Context *context : emu->getContextList(ContextListSuspended))
+		{
+			if (context->getState(ContextFutex)
+					&& context->wakeup_futex == addr1)
+			{
+				context->wakeup_futex = addr2;
+				requeued++;
+			}
+		}
+		emu->syscall_debug << misc::fmt("  futex at 0x%x: "
+				"%d processes requeued to futex 0x%x\n",
+				addr1, requeued, addr2);
+		return ret;
+	}
+
+	case 5: // FUTEX_WAKE_OP
+	{
+		int op;
+		int oparg;
+		int cmp;
+		int cmparg;
+
+		int val2 = timeout_ptr;
+		int oldval;
+		int newval = 0;
+		int cond = 0;
+		int ret = 0;
+
+		op = (val3 >> 28) & 0xf;
+		cmp = (val3 >> 24) & 0xf;
+		oparg = (val3 >> 12) & 0xfff;
+		cmparg = val3 & 0xfff;
+
+		memory->Read(addr2, 4, (char *) &oldval);
+		switch (op)
+		{
+		case 0: // FUTEX_OP_SET
+			newval = oparg;
+			break;
+		case 1: // FUTEX_OP_ADD
+			newval = oldval + oparg;
+			break;
+		case 2: // FUTEX_OP_OR
+			newval = oldval | oparg;
+			break;
+		case 3: // FUTEX_OP_AND
+			newval = oldval & oparg;
+			break;
+		case 4: // FOTEX_OP_XOR
+			newval = oldval ^ oparg;
+			break;
+		default:
+			misc::fatal("%s: FUTEX_WAKE_OP: invalid operation", __FUNCTION__);
+		}
+		memory->Write(addr2, 4, (char *) &newval);
+
+		ret = FutexWake(addr1, val1, 0xffffffff);
+
+		switch (cmp)
+		{
+		case 0: // FUTEX_OP_CMP_EQ
+			cond = oldval == cmparg;
+			break;
+		case 1: // FUTEX_OP_CMP_NE
+			cond = oldval != cmparg;
+			break;
+		case 2: // FUTEX_OP_CMP_LT
+			cond = oldval < cmparg;
+			break;
+		case 3: // FUTEX_OP_CMP_LE
+			cond = oldval <= cmparg;
+			break;
+		case 4: // FUTEX_OP_CMP_GT
+			cond = oldval > cmparg;
+			break;
+		case 5: // FUTEX_OP_CMP_GE
+			cond = oldval >= cmparg;
+			break;
+		default:
+			misc::fatal("%s: FUTEX_WAKE_OP: invalid condition", __FUNCTION__);
+		}
+		if (cond)
+			ret += FutexWake(addr2, val2, 0xffffffff);
+
+		// FIXME: we are returning the total number of threads waken up
+		// counting both calls to x86_ctx_futex_wake. Is this correct?
+		return ret;
+	}
+
+	default:
+		misc::fatal("%s: not implemented for cmd=%d (%s).\n%s",
+			__FUNCTION__, cmd, futex_cmd_map.MapValue(cmd),
+			syscall_error_note);
+	}
+
+	// Dead code
+	return 0;
 }
 
 
@@ -3799,7 +4311,12 @@ int Context::ExecuteSyscall_remap_file_pages()
 
 int Context::ExecuteSyscall_set_tid_address()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	unsigned tidptr = regs.getEbx();
+	emu->syscall_debug << misc::fmt("  tidptr=0x%x\n", tidptr);
+
+	clear_child_tid = tidptr;
+	return pid;
 }
 
 
@@ -4435,7 +4952,19 @@ int Context::ExecuteSyscall_unshare()
 
 int Context::ExecuteSyscall_set_robust_list()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	unsigned head = regs.getEbx();
+	int len = regs.getEcx();
+	emu->syscall_debug << misc::fmt("  head=0x%x, len=%d\n", head, len);
+
+	// Support
+	if (len != 12)
+		misc::fatal("%s: not supported for len != 12\n%s",
+			__FUNCTION__, syscall_error_note);
+
+	// Set robust list
+	robust_list_head = head;
+	return 0;
 }
 
 
