@@ -217,6 +217,10 @@ class Context
 	int FutexWake(unsigned futex, unsigned count, unsigned bitset);
 	void ExitRobustList();
 
+	// Virtual files
+	std::string OpenProcSelfMaps();
+	std::string OpenProcCPUInfo();
+
 	// Dump debug information about a call instruction
 	void DebugCallInst();
 	
@@ -655,6 +659,8 @@ class Context
 	// Auxiliary system call functions
 	int SyscallMmapAux(unsigned int addr, unsigned int len, int prot,
 			int flags, int guest_fd, int offset);
+	FileDesc *SyscallOpenVirtualFile(const std::string &path,
+			int flags, int mode);
 
 public:
 	

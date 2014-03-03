@@ -76,14 +76,6 @@ class Memory
 	/// Free page at the given address
 	void FreePage(unsigned addr);
 
-	/// Return the memory page corresponding to an address
-	MemoryPage *getPage(unsigned addr);
-
-	/// Return the memory page following \a addr in the current memory map.
-	/// This function is useful to reconstruct consecutive ranges of mapped
-	/// pages.
-	MemoryPage *getNextPage(unsigned addr);
-
 	// Access memory without exceeding page boundaries
 	void AccessAtPageBoundary(unsigned addr, unsigned size, char *buf,
 			MemoryAccess access);
@@ -113,6 +105,14 @@ public:
 
 	/// Clear content of memory
 	void Clear();
+
+	/// Return the memory page corresponding to an address
+	MemoryPage *getPage(unsigned addr);
+
+	/// Return the memory page following \a addr in the current memory map.
+	/// This function is useful to reconstruct consecutive ranges of mapped
+	/// pages.
+	MemoryPage *getNextPage(unsigned addr);
 
  	/// Allocate, if not already allocated, all necessary memory pages to
 	/// access \a size bytes after base address \a addr. These fields have
