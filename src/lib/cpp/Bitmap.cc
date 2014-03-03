@@ -35,7 +35,7 @@ void Bitmap::getBlockBit(size_t at, size_t &block, size_t &bit) const
 
 Bitmap::Bitmap(size_t size)
 {
-	/* Initialize */
+	// Initialize
 	this->size = size;
 	size_in_blocks = (size + sizeof(size_t) - 1) / sizeof(size_t);
 	mask = ~((1 << (size_in_blocks * sizeof(size_t) - size)) - 1);
@@ -56,7 +56,7 @@ Bitmap::Bitmap(const Bitmap &b)
 
 Bitmap &Bitmap::operator=(const Bitmap& b)
 {
-	/* Reallocate if size not equal */
+	// Reallocate if size not equal
 	if (size != b.size)
 	{
 		size = b.size;
@@ -64,11 +64,11 @@ Bitmap &Bitmap::operator=(const Bitmap& b)
 		data.reset(new size_t[size_in_blocks]());
 	}
 
-	/* Copy content */
+	// Copy content
 	for (size_t i = 0; i < size_in_blocks; i++)
 		data.get()[i] = b.data.get()[i];
 
-	/* Return reference */
+	// Return reference
 	return *this;
 }
 
@@ -127,17 +127,17 @@ bool Bitmap::Test(size_t at) const
 
 bool Bitmap::Any() const
 {
-	/* Check complete blocks */
+	// Check complete blocks
 	for (size_t i = 0; i < size / sizeof(size_t); i++)
 		if (data.get()[i])
 			return true;
 	
-	/* Check last incomplete block */
+	// Check last incomplete block
 	for (size_t i = size / sizeof(size_t) * sizeof(size_t); i < size; i++)
 		if (Test(i))
 			return true;
 
-	/* None set */
+	// None set
 	return false;
 }
 

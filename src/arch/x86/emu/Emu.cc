@@ -154,6 +154,7 @@ Emu::Emu() : comm::Emu("x86")
 	// Initialize
 	pid = 100;
 	process_events_force = false;
+	futex_sleep_count = 0;
 }
 
 void Emu::AddContextToList(ContextListType type, Context *context)

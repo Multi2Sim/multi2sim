@@ -91,12 +91,6 @@ void main_cpp(int argc, char **argv)
 	comm::ArchPool *arch_pool = comm::ArchPool::getInstance();
 	arch_pool->Register("x86", "x86");
 
-	// Multi2Sim C++
-	std::cerr << "; Multi2Sim C++\n";
-	std::cerr << "m2s_max_time = " << m2s_max_time << '\n';
-	std::cerr << "m2s_trace_file = " << m2s_trace_file << '\n';
-	std::cerr << "m2s_visual_file = " << m2s_visual_file << '\n';
-
 	// Test Regs
 	if (command_line.getNumArguments())
 	{

@@ -17,6 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <cstring>
+
 #include <arch/common/Arch.h>
 #include <lib/cpp/Misc.h>
 
@@ -194,6 +196,64 @@ void Context::ExitRobustList()
 	}
 }
 
+
+std::string Context::OpenProcSelfMaps()
+{
+	// Create temporary file
+	int fd;
+	FILE *f = NULL;
+	char path[256];
+	strcpy(path, "/tmp/m2s.XXXXXX");
+	if ((fd = mkstemp(path)) == -1 || (f = fdopen(fd, "wt")) == NULL)
+		misc::fatal("ctx_gen_proc_self_maps: cannot create temporary file");
+
+	// Get the first page
+	unsigned end = 0;
+	for (;;)
+	{
+		// Get start of next range
+		mem::MemoryPage *page = memory->getNextPage(end);
+		if (!page)
+			break;
+		unsigned start = page->tag;
+		end = page->tag;
+		int perm = page->perm & (mem::MemoryAccessRead |
+				mem::MemoryAccessWrite | mem::MemoryAccessExec);
+
+		// Get end of range
+		for (;;)
+		{
+			page = memory->getPage(end + mem::MemoryPageSize);
+			if (!page)
+				break;
+			int page_perm = page->perm & (mem::MemoryAccessRead |
+					mem::MemoryAccessWrite | mem::MemoryAccessExec);
+			if (page_perm != perm)
+				break;
+			end += mem::MemoryPageSize;
+			perm = page_perm;
+		}
+
+		// Dump range
+		fprintf(f, "%08x-%08x %c%c%c%c 00000000 00:00\n", start,
+				end + mem::MemoryPageSize,
+				perm & mem::MemoryAccessRead ? 'r' : '-',
+				perm & mem::MemoryAccessWrite ? 'w' : '-',
+				perm & mem::MemoryAccessExec ? 'x' : '-',
+				'p');
+	}
+
+	// Close file
+	fclose(f);
+	return path;
+}
+
+
+std::string Context::OpenProcCPUInfo()
+{
+	misc::panic("%s: unimplemented", __FUNCTION__);
+	return "";
+}
 
 
 
