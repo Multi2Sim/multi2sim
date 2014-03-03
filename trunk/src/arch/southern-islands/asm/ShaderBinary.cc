@@ -566,7 +566,7 @@ void OpenGLSiShaderBinaryCommon::DecodeInputs(ELFReader::Section *section)
 	// Calculate number of inputs based on section size and structure size
 	if (section->getSize() % sizeof(OpenGLSiBinInput))
 		fatal("Section size(%d) must be multiples of input structure(%d).", 
-			section->getSize(), sizeof(OpenGLSiBinInput));
+			(unsigned)section->getSize(), (unsigned)sizeof(OpenGLSiBinInput));
 	else
 	{
 		int input_count = section->getSize() / sizeof(OpenGLSiBinInput);
@@ -596,7 +596,7 @@ void OpenGLSiShaderBinaryCommon::DecodeInfo(ELFReader::Section *section)
 	// Size must match
 	if (section->getSize() != sizeof(OpenGLSiBinInfo))
 		fatal("Section size(%d) != sizeof(OpenGLSiBinInfo)(%d)",
-			section->getSize(), sizeof(OpenGLSiBinInfo));
+			(unsigned)section->getSize(), (unsigned)sizeof(OpenGLSiBinInfo));
 	else
 		info.reset(new OpenGLSiBinInfo(section->getBuffer()));
 }
@@ -608,7 +608,7 @@ void OpenGLSiShaderBinaryCommon::DecodeUsageInfo(ELFReader::Section *section)
 	// Size must match
 	if (section->getSize() != sizeof(OpenGLSiBinUsageinfo))
 		fatal("Section size(%d) != sizeof(OpenGLSiBinUsageinfo)(%d)",
-			section->getSize(), sizeof(OpenGLSiBinUsageinfo));
+			(unsigned)section->getSize(), (unsigned)sizeof(OpenGLSiBinUsageinfo));
 	else
 		usageinfo.reset(new OpenGLSiBinUsageinfo(section->getBuffer()));
 
