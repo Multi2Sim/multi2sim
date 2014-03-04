@@ -759,12 +759,12 @@ class OpenGLSiBinVertexShaderMetadata
 	OpenGLSiBinVsSemanticMappingOut vsOutSemantics[SC_SI_VS_MAX_OUTPUTS];
 
 	// LS/ES/VS specific shader resources
-	union
+	union 
 	{
 		uint32_t spiShaderPgmRsrc2Ls;
 		uint32_t spiShaderPgmRsrc2Es;
 		OpenGLSiBinSpiShaderPgmRsrc2Vs spiShaderPgmRsrc2Vs;
-	};
+	} spiShaderPgmRsrcUnion;
 
 	// SC-provided values for certain VS-specific registers
 	uint32_t paClVsOutCntl;
@@ -772,12 +772,12 @@ class OpenGLSiBinVertexShaderMetadata
 	{
 		OpenGLSiSpiVsOutConfig spiVsOutConfig;
 		uint32_t spiVsOutConfigAsUint;
-	};
+	} OpenGLSiSpiVsOutConfigUnion;
 	union
 	{
 		OpenGLSiSpiShaderPosFormat spiShaderPosFormat;
 		uint32_t spiShaderPosFormatAsUint;
-	};
+	} OpenGLSiSpiShaderPosFormatUnion;
 
 	// FIXME: should be a struct
 	uint32_t vgtStrmoutConfig;
@@ -794,11 +794,11 @@ class OpenGLSiBinVertexShaderMetadata
 	OpenGLSiBinCompileGuide compileFlags;     // compile flag
 	uint32_t gsMode;                            // gs mode
 
-	// FIXME: value doesn't make sense and the size doesn't match if not commentted
+	// FIXME: size doesn't match
 	// bool isOnChipGs; 
 	// uint32_t targetLdsSize;
 public:
-	OpenGLSiBinVertexShaderMetadata(const char *buffer);
+	explicit OpenGLSiBinVertexShaderMetadata(const char *buffer);
 };
 
 // Fragment shader metadata stored in .text section
@@ -819,7 +819,7 @@ class OpenGLSiBinPixelShaderMetadata
 	{
 		uint32_t spiShaderPgmRsrc2PsAsUint;
 		OpenGLSiBinSpiShaderPgmRsrc2Ps spiShaderPgmRsrc2Ps;		
-	};
+	} spiShaderPgmRsrc2PsUnion;
 
 	uint32_t spiShaderZFormat;
 	uint32_t spiPsInControl;
@@ -841,7 +841,7 @@ class OpenGLSiBinPixelShaderMetadata
 	OpenGLSiBinFsExportPatchInto exportPatchInfo[SC_SI_PS_MAX_OUTPUTS];
 	uint32_t defaultExportFmt;
 public:
-	OpenGLSiBinPixelShaderMetadata(const char *buffer);
+	explicit OpenGLSiBinPixelShaderMetadata(const char *buffer);
 };
 
 // texture resource and sampler binding
@@ -1271,7 +1271,7 @@ public:
 }__attribute__((packed));
 
 // --------------------- Shader binary ---------------------------------------
-class OpenGLSiShaderBinaryCommon : ELFReader::File
+class OpenGLSiShaderBinaryCommon : public ELFReader::File
 {
 	// Same for all shaders
 	std::vector<std::unique_ptr<OpenGLSiBinInput>>   inputs;
@@ -1297,7 +1297,7 @@ class OpenGLSiShaderBinaryVertex : public OpenGLSiShaderBinaryCommon
 	// metadata is stored in .text section
 	std::unique_ptr<OpenGLSiBinVertexShaderMetadata> meta;
 public:
-	OpenGLSiShaderBinaryVertex(const char *buffer, unsigned int size);
+	OpenGLSiShaderBinaryVertex(ELFReader::File *file);
 };
 
 // Pixel Shader ELF binary with decoded information
@@ -1306,7 +1306,7 @@ class OpenGLSiShaderBinaryPixel : public OpenGLSiShaderBinaryCommon
 	// metadata is stored in .text section
 	std::unique_ptr<OpenGLSiBinPixelShaderMetadata> meta;
 public:
-	OpenGLSiShaderBinaryPixel(const char *buffer, unsigned int size);
+	OpenGLSiShaderBinaryPixel(ELFReader::File *file);
 };
 
 } // namepace SI
