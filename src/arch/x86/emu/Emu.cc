@@ -597,8 +597,10 @@ void Emu::ProcessEvents()
 			continue;
 		}
 	}
+#endif
 
 
+#if 0
 	/*
 	 * LOOP 2
 	 * Check list of all contexts for expired timers.
@@ -656,19 +658,18 @@ void Emu::ProcessEvents()
 	}
 
 
-	/*
-	 * LOOP 3
-	 * Process pending signals in running contexts to launch signal handlers
-	 */
+	//
+	// LOOP 3
+	// Process pending signals in running contexts to launch signal handlers
+	//
 	for (context = self->running_list_head; context; context = context->running_list_next)
 	{
 		X86ContextCheckSignalHandler(context);
 	}
-#endif
-
 	
 	// Unlock
 	UnlockMutex();
+#endif
 }
 
 
