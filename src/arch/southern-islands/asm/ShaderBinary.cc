@@ -465,52 +465,52 @@ OpenGLSiBinSymbol::OpenGLSiBinSymbol(const char *buffer)
 {
 	OpenGLSiBinSymbol *symbol_ptr = (OpenGLSiBinSymbol *)buffer;
 
-	type = symbol_ptr->type;
-	dataType = symbol_ptr->dataType;
+	type                = symbol_ptr->type;
+	dataType            = symbol_ptr->dataType;
 
-	qualifierUnion = symbol_ptr->qualifierUnion;
+	qualifierUnion      = symbol_ptr->qualifierUnion;
 
-	vvalue = symbol_ptr->vvalue;
-	vcbindex = symbol_ptr->vcbindex;
-	vswizzle = symbol_ptr->vswizzle;
-	gvalue = symbol_ptr->gvalue;
-	gcbindex = symbol_ptr->gcbindex;
-	gswizzle = symbol_ptr->gswizzle;
-	fvalue = symbol_ptr->fvalue;
-	fcbindex = symbol_ptr->fcbindex;
-	fswizzle = symbol_ptr->fswizzle;
-	hvalue = symbol_ptr->hvalue;
-	hcbindex = symbol_ptr->hcbindex;
-	hswizzle = symbol_ptr->hswizzle;
-	dvalue = symbol_ptr->dvalue;
-	dcbindex = symbol_ptr->dcbindex;
-	dswizzle = symbol_ptr->dswizzle;
-	cvalue = symbol_ptr->cvalue;
-	ccbindex = symbol_ptr->ccbindex;
-	cswizzle = symbol_ptr->cswizzle;
-	size = symbol_ptr->size;
-	count = symbol_ptr->count;
+	vvalue              = symbol_ptr->vvalue;
+	vcbindex            = symbol_ptr->vcbindex;
+	vswizzle            = symbol_ptr->vswizzle;
+	gvalue              = symbol_ptr->gvalue;
+	gcbindex            = symbol_ptr->gcbindex;
+	gswizzle            = symbol_ptr->gswizzle;
+	fvalue              = symbol_ptr->fvalue;
+	fcbindex            = symbol_ptr->fcbindex;
+	fswizzle            = symbol_ptr->fswizzle;
+	hvalue              = symbol_ptr->hvalue;
+	hcbindex            = symbol_ptr->hcbindex;
+	hswizzle            = symbol_ptr->hswizzle;
+	dvalue              = symbol_ptr->dvalue;
+	dcbindex            = symbol_ptr->dcbindex;
+	dswizzle            = symbol_ptr->dswizzle;
+	cvalue              = symbol_ptr->cvalue;
+	ccbindex            = symbol_ptr->ccbindex;
+	cswizzle            = symbol_ptr->cswizzle;
+	size                = symbol_ptr->size;
+	count               = symbol_ptr->count;
 
-	isArray = symbol_ptr->isArray;
-	matrixStride = symbol_ptr->matrixStride;
-	subSize = symbol_ptr->subSize;
-	uniformBinding = symbol_ptr->uniformBinding;
-	layoutLocation = symbol_ptr->layoutLocation;
-	layoutIndex = symbol_ptr->layoutIndex;
-	uniformOffset = symbol_ptr->uniformOffset;
-	resourceIndex = symbol_ptr->resourceIndex;
+	isArray             = symbol_ptr->isArray;
+	matrixStride        = symbol_ptr->matrixStride;
+	subSize             = symbol_ptr->subSize;
+	uniformBinding      = symbol_ptr->uniformBinding;
+	layoutLocation      = symbol_ptr->layoutLocation;
+	layoutIndex         = symbol_ptr->layoutIndex;
+	uniformOffset       = symbol_ptr->uniformOffset;
+	resourceIndex       = symbol_ptr->resourceIndex;
 
-	subroutineTypeID = symbol_ptr->subroutineTypeID;
-	topLevelArraySize = symbol_ptr->topLevelArraySize;
+	subroutineTypeID    = symbol_ptr->subroutineTypeID;
+	topLevelArraySize   = symbol_ptr->topLevelArraySize;
 	topLevelArrayStride = symbol_ptr->topLevelArrayStride;
 
-	name = new char[strlen(symbol_ptr->name) + 1];
+	name                = new char[strlen(symbol_ptr->name) + 1];
 	strcpy(name, symbol_ptr->name);
-	baseName = new char[strlen(symbol_ptr->baseName) + 1];
+	baseName            = new char[strlen(symbol_ptr->baseName) + 1];
 	strcpy(baseName, symbol_ptr->baseName);
-	uniformBlockName = new char[strlen(symbol_ptr->uniformBlockName) + 1];
+	uniformBlockName    = new char[strlen(symbol_ptr->uniformBlockName) + 1];
 	strcpy(uniformBlockName, symbol_ptr->uniformBlockName);
-	mangledName = new char[strlen(symbol_ptr->mangledName) + 1];	
+	mangledName         = new char[strlen(symbol_ptr->mangledName) + 1];	
 	strcpy(mangledName, symbol_ptr->mangledName);
 }
 
@@ -522,6 +522,158 @@ OpenGLSiBinSymbol::~OpenGLSiBinSymbol()
 	delete [] mangledName;
 }
 
+OpenGLSiBinVertexShaderMetadata::OpenGLSiBinVertexShaderMetadata(const char *buffer)
+{
+	OpenGLSiBinVertexShaderMetadata *meta_ptr = (OpenGLSiBinVertexShaderMetadata *)buffer;
+
+	// Same for all metadata
+	uSizeInBytes                    = meta_ptr->uSizeInBytes;
+	stats                           = meta_ptr->stats;
+	dep                             = meta_ptr->dep;
+	X32XpPvtData                    = meta_ptr->X32XpPvtData;
+	u32PvtDataSizeInBytes           = meta_ptr->u32PvtDataSizeInBytes;
+	fConstantUsage                  = meta_ptr->fConstantUsage;
+	bConstantUsage                  = meta_ptr->bConstantUsage;
+	iConstantUsage                  = meta_ptr->iConstantUsage;
+	uShaderType                     = meta_ptr->uShaderType;
+	eInstSet                        = meta_ptr->eInstSet;
+	for (int i = 0; i < (MAX_NUM_RESOURCE + 31) / 32; ++i)
+	{
+		texResourceUsage[i]         = meta_ptr->texResourceUsage[i];
+		fetch4ResourceUsage[i]      = meta_ptr->fetch4ResourceUsage[i];
+	}
+	for (int j = 0; j < (MAX_NUM_UAV + 31) / 32; ++j)
+		uavResourceUsage[j]         = meta_ptr->uavResourceUsage[j];
+
+	texSamplerUsage                 = meta_ptr->texSamplerUsage;
+	constBufUsage                   = meta_ptr->constBufUsage;
+	for (int i = 0; i < MAX_NUM_SAMPLER; ++i)
+		for (int j = 0; j < (MAX_NUM_RESOURCE + 31) / 32; ++j)
+		texSamplerResourceMapping[i][j] = meta_ptr->texSamplerResourceMapping[i][j];
+	
+	NumConstOpportunities           = meta_ptr->NumConstOpportunities;
+	for (int i = 0; i < (MAX_NUM_RESOURCE + 31) /32; ++i)
+		ResourcesAffectAlphaOutput[i]   = meta_ptr->ResourcesAffectAlphaOutput[i];
+	X32XhShaderMemHandle            = meta_ptr->X32XhShaderMemHandle;
+	for (int i = 0; i < SC_SI_NUM_INTBUF; ++i)
+		X32XhConstBufferMemHandle[i]    = meta_ptr->X32XhConstBufferMemHandle[i];
+	CodeLenInByte                   = meta_ptr->CodeLenInByte;
+	u32UserElementCount             = meta_ptr->u32UserElementCount;
+	for (int i = 0; i < SC_SI_NUM_USER_ELEMENT; ++i)
+		pUserElement[i]             = meta_ptr->pUserElement[i];
+
+	u32NumVgprs                     = meta_ptr->u32NumVgprs;
+	u32NumSgprs                     = meta_ptr->u32NumSgprs;
+	u32FloatMode                    = meta_ptr->u32FloatMode;
+	bIeeeMode                       = meta_ptr->bIeeeMode;
+	bUsesPrimId                     = meta_ptr->bUsesPrimId;
+	bUsesVertexId                   = meta_ptr->bUsesVertexId;
+	scratchSize                     = meta_ptr->scratchSize;
+
+	// Unique for vertex shader metadata
+	numVsInSemantics = meta_ptr->numVsInSemantics;
+	for (int i = 0; i < SC_SI_VS_MAX_INPUTS; ++i)
+		vsInSemantics[i] = meta_ptr->vsInSemantics[i];
+
+	numVsOutSemantics = meta_ptr->numVsOutSemantics;
+	for (int i = 0; i < SC_SI_VS_MAX_OUTPUTS; ++i)
+		vsOutSemantics[i] = meta_ptr->vsOutSemantics[i];
+
+	spiShaderPgmRsrcUnion = meta_ptr->spiShaderPgmRsrcUnion;
+
+	paClVsOutCntl = meta_ptr->paClVsOutCntl;
+	OpenGLSiSpiVsOutConfigUnion = meta_ptr->OpenGLSiSpiVsOutConfigUnion;
+	OpenGLSiSpiShaderPosFormatUnion = meta_ptr->OpenGLSiSpiShaderPosFormatUnion;
+
+	vgtStrmoutConfig = meta_ptr->vgtStrmoutConfig;
+
+	vgprCompCnt = meta_ptr->vgprCompCnt;
+
+	exportVertexSize = meta_ptr->exportVertexSize;
+
+	useEdgeFlags = meta_ptr->useEdgeFlags;
+	remapClipDistance = meta_ptr->remapClipDistance;
+	hwShaderStage = meta_ptr->hwShaderStage;
+	compileFlags = meta_ptr->compileFlags;
+	gsMode = meta_ptr->gsMode;
+}
+
+OpenGLSiBinPixelShaderMetadata::OpenGLSiBinPixelShaderMetadata(const char *buffer)
+{
+	OpenGLSiBinPixelShaderMetadata *meta_ptr = (OpenGLSiBinPixelShaderMetadata *)buffer;
+
+	// Same for all metadata
+	uSizeInBytes                    = meta_ptr->uSizeInBytes;
+	stats                           = meta_ptr->stats;
+	dep                             = meta_ptr->dep;
+	X32XpPvtData                    = meta_ptr->X32XpPvtData;
+	u32PvtDataSizeInBytes           = meta_ptr->u32PvtDataSizeInBytes;
+	fConstantUsage                  = meta_ptr->fConstantUsage;
+	bConstantUsage                  = meta_ptr->bConstantUsage;
+	iConstantUsage                  = meta_ptr->iConstantUsage;
+	uShaderType                     = meta_ptr->uShaderType;
+	eInstSet                        = meta_ptr->eInstSet;
+	for (int i = 0; i < (MAX_NUM_RESOURCE + 31) / 32; ++i)
+	{
+		texResourceUsage[i]         = meta_ptr->texResourceUsage[i];
+		fetch4ResourceUsage[i]      = meta_ptr->fetch4ResourceUsage[i];
+	}
+	for (int j = 0; j < (MAX_NUM_UAV + 31) / 32; ++j)
+		uavResourceUsage[j]         = meta_ptr->uavResourceUsage[j];
+
+	texSamplerUsage                 = meta_ptr->texSamplerUsage;
+	constBufUsage                   = meta_ptr->constBufUsage;
+	for (int i = 0; i < MAX_NUM_SAMPLER; ++i)
+		for (int j = 0; j < (MAX_NUM_RESOURCE + 31) / 32; ++j)
+		texSamplerResourceMapping[i][j] = meta_ptr->texSamplerResourceMapping[i][j];
+	
+	NumConstOpportunities           = meta_ptr->NumConstOpportunities;
+	for (int i = 0; i < (MAX_NUM_RESOURCE + 31) /32; ++i)
+		ResourcesAffectAlphaOutput[i]   = meta_ptr->ResourcesAffectAlphaOutput[i];
+	X32XhShaderMemHandle            = meta_ptr->X32XhShaderMemHandle;
+	for (int i = 0; i < SC_SI_NUM_INTBUF; ++i)
+		X32XhConstBufferMemHandle[i]    = meta_ptr->X32XhConstBufferMemHandle[i];
+	CodeLenInByte                   = meta_ptr->CodeLenInByte;
+	u32UserElementCount             = meta_ptr->u32UserElementCount;
+	for (int i = 0; i < SC_SI_NUM_USER_ELEMENT; ++i)
+		pUserElement[i]             = meta_ptr->pUserElement[i];
+
+	u32NumVgprs                     = meta_ptr->u32NumVgprs;
+	u32NumSgprs                     = meta_ptr->u32NumSgprs;
+	u32FloatMode                    = meta_ptr->u32FloatMode;
+	bIeeeMode                       = meta_ptr->bIeeeMode;
+	bUsesPrimId                     = meta_ptr->bUsesPrimId;
+	bUsesVertexId                   = meta_ptr->bUsesVertexId;
+	scratchSize                     = meta_ptr->scratchSize;
+
+	// Unique for Pixel Shader
+	numPsInSemantics = meta_ptr->numPsInSemantics;
+	for (int i = 0; i < SC_SI_PS_MAX_INPUTS; ++i)
+	{
+		psInSemantics[i] = meta_ptr->psInSemantics[SC_SI_PS_MAX_INPUTS];
+		psInTexCoordIndex[i] = meta_ptr->psInTexCoordIndex[i];		
+	}	
+
+	spiShaderPgmRsrc2PsUnion = meta_ptr->spiShaderPgmRsrc2PsUnion;
+
+	spiShaderZFormat = meta_ptr->spiShaderZFormat;
+	spiPsInControl = meta_ptr->spiPsInControl;
+	spiPsInputAddr = meta_ptr->spiPsInputAddr;
+	spiPsInputEna = meta_ptr->spiPsInputEna;
+
+	spiBarycCntl = meta_ptr->spiBarycCntl;
+
+	dbShaderControl = meta_ptr->dbShaderControl;
+	cbShaderMask = meta_ptr->cbShaderMask;
+
+	exportPatchCodeSize = meta_ptr->exportPatchCodeSize;
+	numPsExports = meta_ptr->numPsExports;
+	dualBlending = meta_ptr->dualBlending;
+	for (int i = 0; i < SC_SI_PS_MAX_OUTPUTS; ++i)
+		exportPatchInfo[i] = meta_ptr->exportPatchInfo[i];
+	defaultExportFmt = meta_ptr->defaultExportFmt;
+}
+
 OpenGLSiShaderBinaryCommon::OpenGLSiShaderBinaryCommon(const char *buffer, unsigned int size)
 	: ELFReader::File(buffer, size)
 {
@@ -531,22 +683,22 @@ OpenGLSiShaderBinaryCommon::OpenGLSiShaderBinaryCommon(const char *buffer, unsig
 	for (int i = 0; i < num_section; ++i)
 	{
 		section = getSection(i);
-		if (section->getName() == "inputs")
+		if (section->getName() == ".inputs")
 		{
 			DecodeInputs(section);
 			continue;
 		}
-		if (section->getName() == "outputs")
+		if (section->getName() == ".outputs")
 		{
 			DecodeOutputs(section);
 			continue;
 		}
-		if (section->getName() == "info")
+		if (section->getName() == ".info")
 		{
 			DecodeInfo(section);
 			continue;
 		}
-		if (section->getName() == "usageinfo")
+		if (section->getName() == ".usageinfo")
 		{
 			DecodeUsageInfo(section);
 			continue;
@@ -561,7 +713,7 @@ OpenGLSiShaderBinaryCommon::OpenGLSiShaderBinaryCommon(const char *buffer, unsig
 
 void OpenGLSiShaderBinaryCommon::DecodeInputs(ELFReader::Section *section)
 {
-	assert(section->getName() != "inputs");
+	assert(section->getName() != ".inputs");
 
 	// Calculate number of inputs based on section size and structure size
 	if (section->getSize() % sizeof(OpenGLSiBinInput))
@@ -578,7 +730,7 @@ void OpenGLSiShaderBinaryCommon::DecodeInputs(ELFReader::Section *section)
 
 void OpenGLSiShaderBinaryCommon::DecodeOutputs(ELFReader::Section *section)
 {
-	assert(section->getName() != "outputs");
+	assert(section->getName() != ".outputs");
 
 	const char *output_ptr = section->getBuffer();
 	do
@@ -591,7 +743,7 @@ void OpenGLSiShaderBinaryCommon::DecodeOutputs(ELFReader::Section *section)
 
 void OpenGLSiShaderBinaryCommon::DecodeInfo(ELFReader::Section *section)
 {
-	assert(section->getName() != "info");
+	assert(section->getName() != ".info");
 
 	// Size must match
 	if (section->getSize() != sizeof(OpenGLSiBinInfo))
@@ -603,7 +755,7 @@ void OpenGLSiShaderBinaryCommon::DecodeInfo(ELFReader::Section *section)
 
 void OpenGLSiShaderBinaryCommon::DecodeUsageInfo(ELFReader::Section *section)
 {
-	assert(section->getName() != "usageinfo");
+	assert(section->getName() != ".usageinfo");
 
 	// Size must match
 	if (section->getSize() != sizeof(OpenGLSiBinUsageinfo))
@@ -616,7 +768,7 @@ void OpenGLSiShaderBinaryCommon::DecodeUsageInfo(ELFReader::Section *section)
 
 void OpenGLSiShaderBinaryCommon::DecodeSymbols(ELFReader::Section *section)
 {
-	assert(section->getName() != "symbols");
+	assert(section->getName() != ".symbols");
 
 	// First 4 bypes in .symbol section is the count of symbols
 	int symbol_count = *(int *)section->getBuffer();
@@ -631,17 +783,35 @@ void OpenGLSiShaderBinaryCommon::DecodeSymbols(ELFReader::Section *section)
 }
 
 // Vertex shader binary constructor
-OpenGLSiShaderBinaryVertex::OpenGLSiShaderBinaryVertex(const char *buffer, unsigned int size)
-	: OpenGLSiShaderBinaryCommon(buffer, size)
+OpenGLSiShaderBinaryVertex::OpenGLSiShaderBinaryVertex(ELFReader::File *file)
+	: OpenGLSiShaderBinaryCommon(file->getBuffer(), file->getSize())
 {
+	int num_section = getNumSections();
+	ELFReader::Section *section;
 
+	for (int i = 0; i < num_section; ++i)
+	{
+		section = getSection(i);
+		if (section->getName() == ".text")
+			meta.reset(new OpenGLSiBinVertexShaderMetadata(section->getBuffer()));
+		break;
+	}
 }
 
 // Fragment shader binary constructor
-OpenGLSiShaderBinaryPixel::OpenGLSiShaderBinaryPixel(const char *buffer, unsigned int size)
-	: OpenGLSiShaderBinaryCommon(buffer, size)
+OpenGLSiShaderBinaryPixel::OpenGLSiShaderBinaryPixel(ELFReader::File *file)
+	: OpenGLSiShaderBinaryCommon(file->getBuffer(), file->getSize())
 {
+	int num_section = getNumSections();
+	ELFReader::Section *section;
 
+	for (int i = 0; i < num_section; ++i)
+	{
+		section = getSection(i);
+		if (section->getName() == ".text")
+			meta.reset(new OpenGLSiBinPixelShaderMetadata(section->getBuffer()));
+		break;
+	}
 }
 
-}
+} // namespace SI
