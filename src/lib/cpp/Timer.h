@@ -56,7 +56,7 @@ class Timer
 
 public:
 
-	/// Create a timer with a name
+	/// Create a timer with a name. The timer is initially stopped.
 	Timer(const std::string &name);
 
 	/// Return the name of the timer

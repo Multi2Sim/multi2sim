@@ -278,6 +278,7 @@ Context::Context()
 	clear_child_tid = 0;
 	robust_list_head = 0;
 	host_thread_suspend_active = false;
+	host_thread_timer_active = false;
 	
 	// String operations
 	str_op_esi = 0;
@@ -305,7 +306,7 @@ Context::~Context()
 }
 
 
-void Context::LoadProgram(const std::vector<std::string> &args,
+void Context::Load(const std::vector<std::string> &args,
 		const std::vector<std::string> &env,
 		const std::string &cwd,
 		const std::string &stdin_file_name,
@@ -325,9 +326,16 @@ void Context::LoadProgram(const std::vector<std::string> &args,
 	// Create new memory image
 	assert(!memory.get());
 	memory.reset(new mem::Memory());
+	address_space_index = emu->getAddressSpaceIndex();
+
+	// Create signal handler table
+	signal_handler_table.reset(new SignalHandlerTable());
 
 	// Create speculative memory, and link it with the real memory
 	spec_mem.reset(new mem::SpecMem(memory.get()));
+
+	// Create file descriptor table
+	file_table.reset(new FileTable());
 	
 	// Create new loader info
 	assert(!loader.get());
@@ -345,6 +353,65 @@ void Context::LoadProgram(const std::vector<std::string> &args,
 
 	// Load the binary
 	LoadBinary();
+}
+
+
+void Context::Clone(Context *parent)
+{
+	// Register file contexts are copied from parent
+	regs = parent->regs;
+
+	// The memory image of the cloned context if the same. The memory
+	// structure must be only freed by the parent when all its children have
+	// been killed. The set of signal handlers is the same, too.
+	address_space_index = parent->address_space_index;
+	memory = parent->memory;
+	
+	// Create speculative memory, linked with the real memory
+	spec_mem.reset(new mem::SpecMem(memory.get()));
+
+	// Reference to parent's loader
+	loader = parent->loader;
+
+	// Signal handlers and file descriptor table
+	signal_handler_table = parent->signal_handler_table;
+	file_table = parent->file_table;
+
+	// Libc segment
+	glibc_segment_base = parent->glibc_segment_base;
+	glibc_segment_limit = parent->glibc_segment_limit;
+
+	// Update other fields
+	this->parent = parent;
+}
+	
+
+void Context::Fork(Context *parent)
+{
+	// Register file contexts are copied from parent
+	regs = parent->regs;
+
+	// Memory
+	address_space_index = emu->getAddressSpaceIndex();
+	memory.reset(new mem::Memory());
+	memory->Clone(*parent->memory);
+	
+	// Create speculative memory, linked with the real memory
+	spec_mem.reset(new mem::SpecMem(memory.get()));
+
+	// Reference to parent's loader
+	loader = parent->loader;
+
+	// Signal handlers and file descriptor table
+	signal_handler_table.reset(new SignalHandlerTable());
+	file_table.reset(new FileTable());
+
+	// Libc segment
+	glibc_segment_base = parent->glibc_segment_base;
+	glibc_segment_limit = parent->glibc_segment_limit;
+
+	// Update other fields
+	this->parent = parent;
 }
 	
 

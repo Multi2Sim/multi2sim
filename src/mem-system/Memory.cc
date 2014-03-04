@@ -540,5 +540,29 @@ void Memory::Load(const std::string &path, unsigned start)
 }
 
 
+void Memory::Clone(const Memory &memory)
+{
+	// Clear destination memory
+	Clear();
+
+	// Copy pages
+	safe = false;
+	for (unsigned i = 0; i < MemoryPageCount; i++)
+	{
+		for (MemoryPage *page = memory.page_table[i]; page; page = page->next)
+		{
+			NewPage(page->tag, page->perm);
+			if (page->data)
+				Access(page->tag, MemoryPageSize, page->data,
+						MemoryAccessInit);
+		}
+	}
+
+	// Copy other fields
+	safe = memory.safe;
+	heap_break = memory.heap_break;
+}
+
+
 } // namespace mem
 
