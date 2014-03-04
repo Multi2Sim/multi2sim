@@ -28,6 +28,8 @@ namespace misc
 
 class Bitmap
 {
+	static const size_t bits_per_block = sizeof(size_t) * 8;
+
 	size_t size;
 	size_t size_in_blocks;
 	size_t mask;
@@ -41,7 +43,7 @@ public:
 	Bitmap(const Bitmap &b);
 
 	void Dump(std::ostream &os = std::cout) const;
-	friend std::ostream &operator<<(std::ostream &os, Bitmap &b) {
+	friend std::ostream &operator<<(std::ostream &os, const Bitmap &b) {
 			b.Dump(os); return os; }
 	
 	/// Return the size of the bitmap in bits, as initialized in the

@@ -23,6 +23,7 @@
 #include <memory>
 
 #include <lib/cpp/String.h>
+#include <lib/cpp/Timer.h>
 
 
 namespace esim
@@ -76,9 +77,18 @@ class ESim
 	// Reason to finish, or ESimFinishNone if not finished
 	ESimFinish finish;
 
+	// Signal received from the user
+	volatile int signal_received;
+
+	// Global timer
+	misc::Timer timer;
+
 	// Private constructor, used internally to instantiate a singleton. Use
 	// a call to getInstance() instead.
 	ESim();
+
+	// Signals received from the user are captured by this function
+	static void SignalHandler(int sig);
 
 public:
 
@@ -90,6 +100,21 @@ public:
 
 	/// Return whether the simulation finished
 	bool hasFinished() { return finish; }
+
+	/// Return the number of micro-seconds ellapsed since the start of the
+	/// simulation.
+	long long getRealTime() { return timer.getValue(); }
+
+	/// Intercept signals received by the user, and invoke the internal
+	/// SignalHandler() function. Signals are enabled by default, as soon as
+	/// the event-driven simulator is instantiated.
+	void EnableSignals();
+
+	/// Disable signal interception, and restore the default handlers.
+	void DisableSignals();
+
+	/// Function invoked in every iteration of the main simulation loop
+	void ProcessEvents();
 };
 
 

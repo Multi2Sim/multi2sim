@@ -181,7 +181,7 @@ static misc::StringMap syscall_error_map =
 #define SIM_CLONE_NEWNET		0x40000000
 #define SIM_CLONE_IO			0x80000000
 
-static struct misc::StringMap syscall_clone_flags_map =
+static struct misc::StringMap clone_flags_map =
 {
 	{ "CLONE_VM", 0x00000100 },
 	{ "CLONE_FS", 0x00000200 },
@@ -205,10 +205,10 @@ static struct misc::StringMap syscall_clone_flags_map =
 	{ "CLONE_NEWUSER", 0x10000000 },
 	{ "CLONE_NEWPID", 0x20000000 },
 	{ "CLONE_NEWNET", 0x40000000 },
-	{ "CLONE_IO", 0x80000000 }
+	{ "CLONE_IO", (int) 0x80000000 }
 };
 
-static const unsigned int syscall_clone_supported_flags =
+static const unsigned int clone_supported_flags =
 	SIM_CLONE_VM |
 	SIM_CLONE_FS |
 	SIM_CLONE_FILES |
@@ -323,7 +323,13 @@ int Context::ExecuteSyscall_restart_syscall()
 
 int Context::ExecuteSyscall_exit()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	int status = regs.getEbx();
+	emu->syscall_debug << misc::fmt("  status=0x%x\n", status);
+
+	// Finish context
+	Finish(status);
+	return 0;
 }
 
 
@@ -356,7 +362,7 @@ int Context::ExecuteSyscall_read()
 			guest_fd, buf_ptr, count);
 
 	// Get file descriptor
-	FileDesc *desc = file_table.getFileDesc(guest_fd);
+	FileDesc *desc = file_table->getFileDesc(guest_fd);
 	if (!desc)
 		return -EBADF;
 	int host_fd = desc->getHostIndex();
@@ -426,7 +432,7 @@ int Context::ExecuteSyscall_write()
 			guest_fd, buf_ptr, count);
 
 	// Get file descriptor
-	FileDesc *desc = file_table.getFileDesc(guest_fd);
+	FileDesc *desc = file_table->getFileDesc(guest_fd);
 	if (!desc)
 		return -EBADF;
 	int host_fd = desc->getHostIndex();
@@ -522,7 +528,7 @@ FileDesc *Context::SyscallOpenVirtualFile(const std::string &path,
 	assert(host_fd > 0);
 
 	// Add file descriptor table entry.
-	FileDesc *desc = file_table.newFileDesc(FileDescVirtual, host_fd,
+	FileDesc *desc = file_table->newFileDesc(FileDescVirtual, host_fd,
 			temp_path, flags);
 	emu->syscall_debug << misc::fmt("    host file '%s' opened: "
 			"guest_fd=%d, host_fd=%d\n",
@@ -572,7 +578,7 @@ int Context::ExecuteSyscall_open()
 		return -errno;
 
 	// File opened, create a new file descriptor.
-	FileDesc *desc = file_table.newFileDesc(FileDescRegular,
+	FileDesc *desc = file_table->newFileDesc(FileDescRegular,
 			host_fd, full_path, flags);
 	emu->syscall_debug << misc::fmt("    file descriptor opened: "
 			"guest_fd=%d, host_fd=%d\n",
@@ -593,12 +599,12 @@ int Context::ExecuteSyscall_close()
 {
 	// Arguments
 	int guest_fd = regs.getEbx();
-	int host_fd = file_table.getHostIndex(guest_fd);
+	int host_fd = file_table->getHostIndex(guest_fd);
 	emu->syscall_debug << misc::fmt("  guest_fd=%d\n", guest_fd);
 	emu->syscall_debug << misc::fmt("  host_fd=%d\n", host_fd);
 
 	// Get file descriptor table entry.
-	FileDesc *desc = file_table.getFileDesc(guest_fd);
+	FileDesc *desc = file_table->getFileDesc(guest_fd);
 	if (!desc)
 		return -EBADF;
 
@@ -613,7 +619,7 @@ int Context::ExecuteSyscall_close()
 		emu->syscall_debug << misc::fmt("    host file '%s': "
 				"temporary file deleted\n",
 				desc->getPath().c_str());
-	file_table.freeFileDesc(desc->getGuestIndex());
+	file_table->freeFileDesc(desc->getGuestIndex());
 
 	// Success
 	return 0;
@@ -1534,6 +1540,32 @@ int Context::ExecuteSyscall_sethostname()
 // System call 'setrlimit'
 //
 
+static const misc::StringMap rlimit_res_map =
+{
+	{ "RLIMIT_CPU",              0 },
+	{ "RLIMIT_FSIZE",            1 },
+	{ "RLIMIT_DATA",             2 },
+	{ "RLIMIT_STACK",            3 },
+	{ "RLIMIT_CORE",             4 },
+	{ "RLIMIT_RSS",              5 },
+	{ "RLIMIT_NPROC",            6 },
+	{ "RLIMIT_NOFILE",           7 },
+	{ "RLIMIT_MEMLOCK",          8 },
+	{ "RLIMIT_AS",               9 },
+	{ "RLIMIT_LOCKS",            10 },
+	{ "RLIMIT_SIGPENDING",       11 },
+	{ "RLIMIT_MSGQUEUE",         12 },
+	{ "RLIMIT_NICE",             13 },
+	{ "RLIMIT_RTPRIO",           14 },
+	{ "RLIM_NLIMITS",            15 }
+};
+
+struct sim_rlimit
+{
+	unsigned cur;
+	unsigned max;
+};
+
 int Context::ExecuteSyscall_setrlimit()
 {
 	__UNIMPLEMENTED__
@@ -1756,7 +1788,7 @@ int Context::SyscallMmapAux(unsigned int addr, unsigned int len,
 	assert(MAP_ANONYMOUS == 0x20);
 
 	// Translate file descriptor
-	FileDesc *desc = file_table.getFileDesc(guest_fd);
+	FileDesc *desc = file_table->getFileDesc(guest_fd);
 	int host_fd = desc ? desc->getHostIndex() : -1;
 	if (guest_fd > 0 && host_fd < 0)
 		misc::fatal("%s: invalid guest descriptor", __FUNCTION__);
@@ -2213,7 +2245,127 @@ int Context::ExecuteSyscall_sigreturn()
 
 int Context::ExecuteSyscall_clone()
 {
-	__UNIMPLEMENTED__
+	// Prototype: long sys_clone(unsigned long clone_flags, unsigned long newsp,
+	// 	int __user *parent_tid, int unused, int __user *child_tid);
+	// There is an unused parameter, that's why we read child_tidptr from edi
+	// instead of esi.
+
+	// Arguments
+	unsigned flags = regs.getEbx();
+	unsigned new_esp = regs.getEcx();
+	unsigned parent_tid_ptr = regs.getEdx();
+	unsigned child_tid_ptr = regs.getEdi();
+	emu->syscall_debug << misc::fmt("  flags=0x%x, newsp=0x%x, "
+			"parent_tidptr=0x%x, child_tidptr=0x%x\n",
+			flags, new_esp, parent_tid_ptr, child_tid_ptr);
+
+	// Exit signal is specified in the lower byte of 'flags'
+	int exit_signal = flags & 0xff;
+	flags &= ~0xff;
+
+	// Debug
+	emu->syscall_debug << misc::fmt("  flags=%s\n",
+			clone_flags_map.MapFlags(flags).c_str());
+	emu->syscall_debug << misc::fmt("  exit_signal=%d (%s)\n",
+			exit_signal, signal_map.MapValue(exit_signal));
+
+	// New stack pointer defaults to current
+	if (!new_esp)
+		new_esp = regs.getEsp();
+
+	// Check not supported flags
+	if (flags & ~clone_supported_flags)
+		misc::fatal("%s: not supported flags: %s\n%s",
+				__FUNCTION__, clone_flags_map.MapFlags(flags).c_str(),
+				syscall_error_note);
+
+	// Flag CLONE_VM
+	Context *context = emu->newContext();
+	if (flags & SIM_CLONE_VM)
+	{
+		// CLONE_FS, CLONE_FILES, CLONE_SIGHAND must be there, too
+		if ((flags & (SIM_CLONE_FS | SIM_CLONE_FILES | SIM_CLONE_SIGHAND)) !=
+				(SIM_CLONE_FS | SIM_CLONE_FILES | SIM_CLONE_SIGHAND))
+			misc::fatal("%s: not supported flags with CLONE_VM.\n%s",
+				__FUNCTION__, syscall_error_note);
+
+		// Create new context sharing memory image
+		context->Clone(this);
+	}
+	else
+	{
+		// CLONE_FS, CLONE_FILES, CLONE_SIGHAND must not be there either
+		if (flags & (SIM_CLONE_FS | SIM_CLONE_FILES | SIM_CLONE_SIGHAND))
+			misc::fatal("%s: not supported flags with CLONE_VM.\n%s",
+				__FUNCTION__, syscall_error_note);
+
+		// Create new context replicating memory image
+		context->Fork(this);
+	}
+
+	// Flag CLONE_THREAD.
+	// If specified, the exit signal is ignored. Otherwise, it is specified in the
+	// lower byte of the flags. Also, this determines whether to create a group of
+	// threads.
+	if (flags & SIM_CLONE_THREAD)
+	{
+		context->exit_signal = 0;
+		context->group_parent = group_parent ? group_parent : this;
+	}
+	else
+	{
+		context->exit_signal = exit_signal;
+		context->group_parent = nullptr;
+	}
+
+	// Flag CLONE_PARENT_SETTID
+	if (flags & SIM_CLONE_PARENT_SETTID)
+		memory->Write(parent_tid_ptr, 4, (char *) &context->pid);
+
+	// Flag CLONE_CHILD_SETTID
+	if (flags & SIM_CLONE_CHILD_SETTID)
+		context->memory->Write(child_tid_ptr, 4, (char *) &context->pid);
+
+	// Flag CLONE_CHILD_CLEARTID
+	if (flags & SIM_CLONE_CHILD_CLEARTID)
+		context->clear_child_tid = child_tid_ptr;
+
+	// Flag CLONE_SETTLS
+	if (flags & SIM_CLONE_SETTLS)
+	{
+		unsigned uinfo_ptr = regs.getEsi();
+		emu->syscall_debug << misc::fmt("  puinfo=0x%x\n", uinfo_ptr);
+
+		struct sim_user_desc uinfo;
+		memory->Read(uinfo_ptr, sizeof(struct sim_user_desc), (char *) &uinfo);
+		emu->syscall_debug << misc::fmt("  entry_number=0x%x, base_addr=0x%x, limit=0x%x\n",
+				uinfo.entry_number, uinfo.base_addr, uinfo.limit);
+		emu->syscall_debug << misc::fmt("  seg_32bit=0x%x, contents=0x%x, read_exec_only=0x%x\n",
+				uinfo.seg_32bit, uinfo.contents, uinfo.read_exec_only);
+		emu->syscall_debug << misc::fmt("  limit_in_pages=0x%x, seg_not_present=0x%x, useable=0x%x\n",
+				uinfo.limit_in_pages, uinfo.seg_not_present, uinfo.useable);
+		if (!uinfo.seg_32bit)
+			misc::fatal("%s: only 32-bit segments supported", __FUNCTION__);
+
+		// Limit given in pages (4KB units)
+		if (uinfo.limit_in_pages)
+			uinfo.limit <<= 12;
+
+		uinfo.entry_number = 6;
+		memory->Write(uinfo_ptr, 4, (char *) &uinfo.entry_number);
+
+		context->glibc_segment_base = uinfo.base_addr;
+		context->glibc_segment_limit = uinfo.limit;
+	}
+
+	// New context returns 0.
+	context->regs.setEsp(new_esp);
+	context->regs.setEax(0);
+
+	// Return PID of the new context
+	emu->syscall_debug << misc::fmt("  context created with pid %d\n",
+			context->pid);
+	return context->pid;
 }
 
 
@@ -2908,10 +3060,6 @@ int Context::ExecuteSyscall_rt_sigreturn()
 
 int Context::ExecuteSyscall_rt_sigaction()
 {
-	__UNIMPLEMENTED__
-/*
-	struct x86_sigaction_t act;
-
 	// Arguments
 	int sig = regs.getEbx();
 	unsigned act_ptr = regs.getEcx();
@@ -2928,34 +3076,33 @@ int Context::ExecuteSyscall_rt_sigaction()
 		misc::fatal("%s: invalid signal (%d)", __FUNCTION__, sig);
 
 	// Read new sigaction
+	SignalHandler act;
 	if (act_ptr)
 	{
-		memory->Read(act_ptr, sizeof act, (char *) &act);
-		if (debug_status(x86_sys_debug_category))
-		{
-			FILE *f = debug_file(x86_sys_debug_category);
-			emu->syscall_debug << misc::fmt("  act: ");
-			x86_sigaction_dump(&act, f);
-			emu->syscall_debug << misc::fmt("\n    flags: ");
-			x86_sigaction_flags_dump(act.flags, f);
-			emu->syscall_debug << misc::fmt("\n    mask: ");
-			x86_sigset_dump(act.mask, f);
-			emu->syscall_debug << misc::fmt("\n");
-		}
+		act.ReadFromMemory(memory.get(), act_ptr);
+		emu->syscall_debug << misc::fmt("  act: ") << act
+				<< misc::fmt("\n    flags: ")
+				<< signal_handler_flags_map.MapFlags(act.getFlags())
+				<< misc::fmt("\n    mask: ")
+				<< act.getMask() << '\n';
 	}
 
-	// Store previous sigaction
+	// Store previous signal handler
 	if (old_act_ptr)
-		memory->Write(old_act_ptr, sizeof(struct x86_sigaction_t), (char *)
-			&ctx->signal_handler_table->sigaction[sig - 1]);
+	{
+		SignalHandler *handler = signal_handler_table->getSignalHandler(sig);
+		handler->WriteToMemory(memory.get(), old_act_ptr);
+	}
 
 	// Make new sigaction effective
 	if (act_ptr)
-		ctx->signal_handler_table->sigaction[sig - 1] = act;
+	{
+		SignalHandler *handler = signal_handler_table->getSignalHandler(sig);
+		*handler = act;
+	}
 
 	// Return
 	return 0;
-*/
 }
 
 
@@ -2965,9 +3112,73 @@ int Context::ExecuteSyscall_rt_sigaction()
 // System call 'rt_sigprocmask'
 //
 
+static const misc::StringMap sigprocmask_how_map =
+{
+	{ "SIG_BLOCK",     0 },
+	{ "SIG_UNBLOCK",   1 },
+	{ "SIG_SETMASK",   2 }
+};
+
 int Context::ExecuteSyscall_rt_sigprocmask()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	int how = regs.getEbx();
+	unsigned set_ptr = regs.getEcx();
+	unsigned old_set_ptr = regs.getEdx();
+	int sigsetsize = regs.getEsi();
+	emu->syscall_debug << misc::fmt("  how=0x%x, set_ptr=0x%x, "
+			"old_set_ptr=0x%x, sigsetsize=0x%x\n",
+			how, set_ptr, old_set_ptr, sigsetsize);
+	emu->syscall_debug << misc::fmt("  how=%s\n",
+			sigprocmask_how_map.MapValue(how));
+
+	// Save old set
+	SignalSet old_set = signal_mask_table.getBlocked();
+
+	// New set
+	if (set_ptr)
+	{
+		// Read it from memory
+		SignalSet set;
+		set.ReadFromMemory(memory.get(), set_ptr);
+		emu->syscall_debug << "  set = " << set << '\n';
+
+		// Set new set
+		switch (how)
+		{
+
+		// SIG_BLOCK
+		case 0:
+			signal_mask_table.getBlocked().getBitmap()
+					|= set.getBitmap();
+			break;
+
+		// SIG_UNBLOCK
+		case 1:
+			signal_mask_table.getBlocked().getBitmap()
+					&= ~set.getBitmap();
+			break;
+
+		// SIG_SETMASK
+		case 2:
+			signal_mask_table.getBlocked() = set;
+			break;
+
+		default:
+			misc::fatal("%s: invalid value for 'how'", __FUNCTION__);
+		}
+	}
+
+	// Return old set
+	if (old_set_ptr)
+		memory->Write(old_set_ptr, 8, (char *) &old_set);
+
+	// A change in the signal mask can cause pending signals to be
+	// able to execute, so check this.
+	emu->ProcessEventsSchedule();
+	emu->ProcessEvents();
+
+	return 0;
 }
 
 
@@ -3159,7 +3370,52 @@ int Context::ExecuteSyscall_vfork()
 
 int Context::ExecuteSyscall_getrlimit()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	unsigned res = regs.getEbx();
+	unsigned rlim_ptr = regs.getEcx();
+	emu->syscall_debug << misc::fmt("  res=0x%x, rlim_ptr=0x%x\n",
+			res, rlim_ptr);
+	emu->syscall_debug << misc::fmt("  res=%s\n",
+			rlimit_res_map.MapValue(res));
+
+	struct sim_rlimit sim_rlimit;
+	switch (res)
+	{
+
+	case 2:  // RLIMIT_DATA
+	{
+		sim_rlimit.cur = 0xffffffff;
+		sim_rlimit.max = 0xffffffff;
+		break;
+	}
+
+	case 3:  // RLIMIT_STACK
+	{
+		sim_rlimit.cur = loader->stack_size;
+		sim_rlimit.max = 0xffffffff;
+		break;
+	}
+
+	case 7:  // RLIMIT_NOFILE
+	{
+		sim_rlimit.cur = 0x400;
+		sim_rlimit.max = 0x400;
+		break;
+	}
+
+	default:
+		misc::fatal("%s: not implemented for res = %s.\n%s",
+			__FUNCTION__, rlimit_res_map.MapValue(res),
+			syscall_error_note);
+	}
+
+	// Return structure
+	memory->Write(rlim_ptr, sizeof(struct sim_rlimit), (char *) &sim_rlimit);
+	emu->syscall_debug << misc::fmt("  ret: cur=0x%x, max=0x%x\n",
+			sim_rlimit.cur, sim_rlimit.max);
+
+	// Return
+	return 0;
 }
 
 
@@ -3310,7 +3566,7 @@ int Context::ExecuteSyscall_fstat64()
 			fd, statbuf_ptr);
 
 	// Get host descriptor
-	int host_fd = file_table.getHostIndex(fd);
+	int host_fd = file_table->getHostIndex(fd);
 	emu->syscall_debug << misc::fmt("  host_fd=%d\n", host_fd);
 
 	// Host call

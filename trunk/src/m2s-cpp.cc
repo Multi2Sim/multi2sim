@@ -95,17 +95,17 @@ void main_cpp(int argc, char **argv)
 	if (command_line.getNumArguments())
 	{
 		x86::Emu *emu = x86::Emu::getInstance();
-		x86::Context *context = emu->newContext(
-				command_line.getArguments(),
-				std::vector<std::string>(),
-				misc::getCwd(), "", "");
-		context->setState(x86::ContextRunning);
+		x86::Context *context = emu->newContext();
+		context->Load(command_line.getArguments(),
+				std::vector<std::string>(), misc::getCwd(),
+				"", "");
 		esim::ESim *esim = esim::ESim::getInstance();
 		while (!esim->hasFinished())
 		{
 			bool active = emu->Run();
 			if (!active)
 				esim->Finish(esim::ESimFinishCtx);
+			esim->ProcessEvents();
 		}
 	}
 

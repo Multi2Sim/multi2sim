@@ -131,6 +131,9 @@ class Context
 
 	// Process ID
 	int pid;
+	
+	// Virtual memory address space index
+	int address_space_index;
 
 	// Context state, expressed as a bitmap of flags, e.g.,
 	// ContextSuspended | ContextFutex
@@ -148,8 +151,8 @@ class Context
 	// Register file. Each context has its own copy always.
 	Regs regs;
 
-	// File descriptor table, private for each context.
-	FileTable file_table;
+	// File descriptor table, shared by contexts
+	std::shared_ptr<FileTable> file_table;
 
 	// Instruction pointers
 	unsigned last_eip;  // Address of last emulated instruction
@@ -679,7 +682,9 @@ public:
 	std::list<Context *>::iterator context_list_iter[ContextListCount];
 
 	/// Create a context from a command line. To safely create a context,
-	/// function Emu::NewContext() should be used instead.
+	/// function Emu::NewContext() should be used instead. After the
+	/// creation of a context, its basic data structures are initialized
+	/// with Load(), Clone(), or Fork().
 	Context();
 
 	/// Destructor
@@ -706,11 +711,18 @@ public:
 	/// \param stdout_file_name
 	///	File to redirect the standard output and standard error output,
 	///	or empty string for no redirection.
-	void LoadProgram(const std::vector<std::string> &args,
+	void Load(const std::vector<std::string> &args,
 			const std::vector<std::string> &env,
 			const std::string &cwd,
 			const std::string &stdin_file_name,
 			const std::string &stdout_file_name);
+
+	/// Initialize the context by cloning the main data structures from a
+	/// parent context.
+	void Clone(Context *parent);
+
+	/// Initialize the context by forking a parent context.
+	void Fork(Context *parent);
 
 	/// Given a file name, return its full path based on the current working
 	/// directory for the context.
