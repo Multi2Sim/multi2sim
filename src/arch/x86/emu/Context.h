@@ -235,6 +235,33 @@ class Context
 	void HostThreadTimerCancel();
 	void HostThreadTimerCancelUnsafe();
 
+	// Virtual class representing the data used by system calls when they
+	// suspend the context with a call to Suspend(). The system call stores
+	// its data in the 'wakeup_data' variable. These data are passed to
+	// called 'can_wakeup_fn' and 'wakeup_fn'. Both functions should cast
+	// the value stored in 'wakeup_data' to the specific type that the
+	// original system call instantiated.
+	struct WakeupData { };
+	typedef bool (Context::*CanWakeupFn)();
+	typedef void (Context::*WakeupFn)();
+
+	// Stored callbacks for functions used to the wakeup mechanism of
+	// suspended contexts. The 'wakeup_data' smart pointer will be
+	// automatically reset when the context is waken up. The system
+	// call callback does not need to take care of this.
+	CanWakeupFn can_wakeup_fn;
+	WakeupFn wakeup_fn;
+	std::unique_ptr<WakeupData> wakeup_data;
+
+	// Suspend a context, using callbacks 'can_wakeup_fn' and 'wakeup_fn'
+	// to check whether the context can wakeup and to wake it up,
+	// respectively. Argument 'wakeup_data' contains dynamically allocated
+	// memory that will be internally assigned to a unique pointer. There
+	// is no need to take care of freeing the memory. The smart pointer will
+	// be reset when the context is waken up.
+	void Suspend(CanWakeupFn can_wakeup_fn, WakeupFn wakeup_fn,
+			WakeupData *wakeup_data);
+
 
 	///////////////////////////////////////////////////////////////////////
 	//
@@ -727,6 +754,11 @@ public:
 	/// Given a file name, return its full path based on the current working
 	/// directory for the context.
 	std::string getFullPath(const std::string &path);
+
+	/// Look for zombie child. If 'pid' is -1, the first finished child in
+	/// the zombie contexts list is return. Otherwise, 'pid' is the pid of
+	/// the child process. If no child has finished, return nullptr.
+	Context *getZombie(int pid);
 
 	/// Return \c true if flag \a state is part of the context state
 	bool getState(ContextState state) const { return this->state & state; }
