@@ -102,12 +102,30 @@ void SignalSet::Dump(std::ostream &os) const
 }
 
 
+void SignalHandler::ReadFromMemory(mem::Memory *memory, unsigned address)
+{
+	memory->Read(address, 4, (char *) &handler);
+	memory->Read(address + 4, 4, (char *) &flags);
+	memory->Read(address + 8, 4, (char *) &restorer);
+	mask.ReadFromMemory(memory, address + 12);
+}
+
+
+void SignalHandler::WriteToMemory(mem::Memory *memory, unsigned address)
+{
+	memory->Write(address, 4, (char *) &handler);
+	memory->Write(address + 4, 4, (char *) &flags);
+	memory->Write(address + 8, 4, (char *) &restorer);
+	mask.WriteToMemory(memory, address + 12);
+}
+
+
 void SignalHandler::Dump(std::ostream &os) const
 {
-	os << misc::fmt("handler = 0x%x, ", handler);
-	os << "flags = " << signal_handler_flags_map.MapFlags(flags) << ", ";
-	os << misc::fmt("restorer = 0x%x, ", restorer);
-	os << "mask = " << mask;
+	os << misc::fmt("handler = 0x%x, ", handler)
+			<< misc::fmt("flags = 0x%x, ", flags)
+			<< misc::fmt("restorer = 0x%x, ", restorer)
+			<< "mask = " << mask;
 }
 
 

@@ -1035,6 +1035,11 @@ void Context::ExecuteInst_int_imm8()
 	num = (unsigned char) inst.getImmByte();
 	if (num != 0x80)
 		IsaError("%s: not supported for num != 0x80", __FUNCTION__);
+	
+	// Debug
+	int code = regs.getEax();
+	if (misc::inRange(code, 0, SyscallCodeCount))
+		emu->isa_debug << " syscall '" << syscall_name[code] << "'";
 
 	// Do system call if not in speculative mode
 	spec_mode = getState(ContextSpecMode);

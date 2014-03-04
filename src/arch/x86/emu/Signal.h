@@ -24,6 +24,7 @@
 
 #include <lib/cpp/Bitmap.h>
 #include <lib/cpp/String.h>
+#include <mem-system/Memory.h>
 
 #include "Regs.h"
 
@@ -118,6 +119,7 @@ public:
 
 	/// Return the bitmap representing the signal set
 	const misc::Bitmap &getBitmap() const { return bitmap; }
+	misc::Bitmap &getBitmap() { return bitmap; }
 
 	/// Dump into output stream, or \c std::cout if \a os is omitted.
 	void Dump(std::ostream &os = std::cout) const;
@@ -127,6 +129,18 @@ public:
 			const SignalSet &set) {
 		set.Dump(os);
 		return os;
+	}
+
+	/// Read signal set from memory
+	void ReadFromMemory(mem::Memory *memory, unsigned address) {
+		assert(bitmap.getSizeInBytes() == 8);
+		memory->Read(address, 8, bitmap.getBuffer());
+	}
+
+	/// Write signal set to memory
+	void WriteToMemory(mem::Memory *memory, unsigned address) {
+		assert(bitmap.getSizeInBytes() == 8);
+		memory->Write(address, 8, bitmap.getBuffer());
 	}
 };
 
@@ -201,7 +215,7 @@ class SignalHandler
 
 public:
 
-	/// Contructor
+	/// Constructor
 	SignalHandler() : handler(0), flags(0), restorer(0) { }
 
 	/// Dump information about signal handler
@@ -210,16 +224,25 @@ public:
 	/// Same as Dump()
 	friend std::ostream &operator<<(std::ostream &os,
 			const SignalHandler &handler) {
-		handler.Dump();
+		handler.Dump(os);
 		return os;
 	}
 
 	/// Return the address in the guest program where the handler for the
 	/// signal has been installed.
-	unsigned getHandler() { return handler; }
+	unsigned getHandler() const { return handler; }
 
 	/// Return the flags associated with the signal handler
-	unsigned getFlags() { return flags; }
+	unsigned getFlags() const { return flags; }
+
+	/// Return the mask associated with the signal handler
+	SignalSet &getMask() { return mask; }
+
+	/// Read the content of the signal handler from memory
+	void ReadFromMemory(mem::Memory *memory, unsigned address);
+
+	/// Write the content of the signal handler to memory
+	void WriteToMemory(mem::Memory *memory, unsigned address);
 };
 
 

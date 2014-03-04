@@ -25,11 +25,14 @@
 namespace misc
 {
 
-void Bitmap::getBlockBit(size_t at, size_t &block, size_t &bit) const
+const size_t Bitmap::bits_per_block;
+
+
+inline void Bitmap::getBlockBit(size_t at, size_t &block, size_t &bit) const
 {
 	assert(at < size);
-	block = at / sizeof(size_t);
-	bit = at % sizeof(size_t);
+	block = at / bits_per_block;
+	bit = at % bits_per_block;
 }
 
 
@@ -37,8 +40,8 @@ Bitmap::Bitmap(size_t size)
 {
 	// Initialize
 	this->size = size;
-	size_in_blocks = (size + sizeof(size_t) - 1) / sizeof(size_t);
-	mask = ~((1 << (size_in_blocks * sizeof(size_t) - size)) - 1);
+	size_in_blocks = (size + bits_per_block - 1) / bits_per_block;
+	mask = ~((1 << (size_in_blocks * bits_per_block - size)) - 1);
 	data.reset(new size_t[size_in_blocks]());
 }
 
@@ -128,12 +131,12 @@ bool Bitmap::Test(size_t at) const
 bool Bitmap::Any() const
 {
 	// Check complete blocks
-	for (size_t i = 0; i < size / sizeof(size_t); i++)
+	for (size_t i = 0; i < size / bits_per_block; i++)
 		if (data.get()[i])
 			return true;
 	
 	// Check last incomplete block
-	for (size_t i = size / sizeof(size_t) * sizeof(size_t); i < size; i++)
+	for (size_t i = size / bits_per_block * bits_per_block; i < size; i++)
 		if (Test(i))
 			return true;
 

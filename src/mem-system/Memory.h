@@ -249,6 +249,9 @@ public:
 	/// Get current heap break.
 	unsigned getHeapBreak() { return heap_break; }
 
+	/// Copy the content and attributes from another memory object
+	void Clone(const Memory &memory);
+
 };
 
 

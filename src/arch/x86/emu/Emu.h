@@ -107,15 +107,14 @@ class Emu : public comm::Emu
 	// accessed thread-safely locking the mutex.
 	bool process_events_force;
 	
-	// Check for events detected in spawned host threads, such as waking up
-	// contexts or sending signals. The list is only effectively processed
-	// if events have been scheduled to get processed with a previous call
-	// to ProcessEventsSchedule().
-	void ProcessEvents();
-
 	// Process ID to be assigned next. Process IDs are assigned in
 	// increasing order, using function Emu::getPid()
 	int pid;
+	
+	// Index of virtual memory space assigned to new contexts. A new ID
+	// can be retrieved in increasing order by using function
+	// Emu::getAddressSpaceIndex()
+	int address_space_index;
 	
 	// Emulator mutex, used to access shared variables between main program
 	// and child host threads.
@@ -132,12 +131,11 @@ public:
 	/// it will be allocated the first time this function is invoked.
 	static Emu *getInstance();
 
-	/// Create a new context associated with the emulator
-	Context *newContext(const std::vector<std::string> &args,
-			const std::vector<std::string> &env,
-			const std::string &cwd,
-			const std::string &stdin_file_name,
-			const std::string &stdout_file_name);
+	/// Create a new context associated with the emulator. The context is
+	/// inserted in the main emulator context list. Its state is set to
+	/// ContextRunning, and it is inserted into the emulator list of running
+	/// contexts.
+	Context *newContext();
 
 	/// Remove a context from all context lists and free it
 	void freeContext(Context *context);
@@ -170,6 +168,10 @@ public:
 	/// created to obtain their unique identifier.
 	int getPid() { return pid++; }
 
+	/// Return a unique increasing ID for a virtual memory space for
+	/// contexts.
+	int getAddressSpaceIndex() { return address_space_index++; }
+
 	/// Get reference to the main context list
 	std::list<std::unique_ptr<Context>> &getContexts() { return contexts; }
 
@@ -183,6 +185,12 @@ public:
 	/// emulator mutex.
 	void ProcessEventsSchedule();
 	
+	// Check for events detected in spawned host threads, such as waking up
+	// contexts or sending signals. The list is only effectively processed
+	// if events have been scheduled to get processed with a previous call
+	// to ProcessEventsSchedule().
+	void ProcessEvents();
+
 	/// Increment an internal counter for futex identifiers, and return its
 	/// new value. This function is used to assign futex identifiers used as
 	/// event timestamps.

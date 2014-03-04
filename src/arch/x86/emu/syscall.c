@@ -257,7 +257,7 @@ void X86ContextSyscall(X86Context *self)
 		regs->eax = err;
 
 		/* Debug and done */
-		x86_sys_debug("  ret=(%d, 0x%x)\n", err, err);
+		x86_sys_debug("  ret = (%d, 0x%x)\n", err, err);
 		return;
 	}
 
@@ -279,7 +279,7 @@ void X86ContextSyscall(X86Context *self)
 		regs->eax = err;
 
 	/* Debug */
-	x86_sys_debug("  ret=(%d, 0x%x)", err, err);
+	x86_sys_debug("  ret = (%d, 0x%x)", err, err);
 	if (err < 0 && err >= -SIM_ERRNO_MAX)
 		x86_sys_debug(", errno=%s)", str_map_value(&x86_sys_error_code_map, -err));
 	x86_sys_debug("\n");
@@ -3099,7 +3099,7 @@ static int x86_sys_getdents_impl(X86Context *ctx)
 		if (guest_offs > count)
 			fatal("%s: buffer too small", __FUNCTION__);
 	}
-	x86_sys_debug("  ret=%d(host),%d(guest)\n", host_offs, guest_offs);
+	x86_sys_debug("  ret = %d(host),%d(guest)\n", host_offs, guest_offs);
 	free(buf);
 	return guest_offs;
 }
@@ -4867,7 +4867,7 @@ static int x86_sys_getdents64_impl(X86Context *ctx)
 
 	/* Return */
 	free(buf);
-	x86_sys_debug("  ret=%d (host), %d (guest)\n", host_offs, guest_offs);
+	x86_sys_debug("  ret = %d (host), %d (guest)\n", host_offs, guest_offs);
 	return guest_offs;
 }
 
@@ -4957,7 +4957,7 @@ static int x86_sys_fcntl64_impl(X86Context *ctx)
 		else
 		{
 			str_map_flags(&sys_open_flags_map, err, flags_str, MAX_STRING_SIZE);
-			x86_sys_debug("    ret=%s\n", flags_str);
+			x86_sys_debug("    ret = %s\n", flags_str);
 		}
 		break;
 
