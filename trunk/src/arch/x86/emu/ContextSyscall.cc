@@ -632,9 +632,59 @@ int Context::ExecuteSyscall_close()
 // System call 'waitpid'
 //
 
+static const misc::StringMap waitpid_options_map =
+{
+	{ "WNOHANG",       0x00000001 },
+	{ "WUNTRACED",     0x00000002 },
+	{ "WEXITED",       0x00000004 },
+	{ "WCONTINUED",    0x00000008 },
+	{ "WNOWAIT",       0x01000000 },
+	{ "WNOTHREAD",     0x20000000 },
+	{ "WALL",          0x40000000 },
+	{ "WCLONE",        (int) 0x80000000 }
+};
+
 int Context::ExecuteSyscall_waitpid()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	int pid = regs.getEbx();
+	unsigned status_ptr = regs.getEcx();
+	int options = regs.getEdx();
+	emu->syscall_debug << misc::fmt("  pid=%d, pstatus=0x%x, options=0x%x\n",
+		pid, status_ptr, options);
+	emu->syscall_debug << misc::fmt("  options=%s\n",
+			waitpid_options_map.MapFlags(options).c_str());
+
+	// Supported values for 'pid'
+	if (pid != -1 && pid <= 0)
+		misc::fatal("%s: only supported for pid=-1 or pid > 0.\n%s",
+				__FUNCTION__, syscall_error_note);
+
+	// Look for a zombie child.
+	Context *child = getZombie(pid);
+
+	// If there is no child and the flag WNOHANG was not specified,
+	// we get suspended until the specified child finishes.
+	if (!child && !(options & 0x1))
+	{
+		wakeup_pid = pid;
+		setState(ContextSuspended);
+		setState(ContextWaitpid);
+		return 0;
+	}
+
+	// Context is not suspended. WNOHANG was specified, or some child
+	// was found in the zombie list.
+	if (child)
+	{
+		if (status_ptr)
+			memory->Write(status_ptr, 4, (char *) &child->exit_code);
+		child->setState(ContextFinished);
+		return child->pid;
+	}
+
+	// Return
+	return 0;
 }
 
 
@@ -721,7 +771,17 @@ int Context::ExecuteSyscall_chdir()
 
 int Context::ExecuteSyscall_time()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	unsigned time_ptr = regs.getEbx();
+	emu->syscall_debug << misc::fmt("  ptime=0x%x\n", time_ptr);
+
+	// Host call
+	int t = time(NULL);
+	if (time_ptr)
+		memory->Write(time_ptr, 4, (char *) &t);
+
+	// Return
+	return t;
 }
 
 
@@ -2916,7 +2976,29 @@ int Context::ExecuteSyscall_sched_rr_get_interval()
 
 int Context::ExecuteSyscall_nanosleep()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	unsigned rqtp = regs.getEbx();
+	unsigned rmtp = regs.getEcx();
+	emu->syscall_debug << misc::fmt("  rqtp=0x%x, rmtp=0x%x\n", rqtp, rmtp);
+
+	// Get current time
+	esim::ESim *esim = esim::ESim::getInstance();
+	long long now = esim->getRealTime();
+
+	// Read structure
+	unsigned sec;
+	unsigned nsec;
+	memory->Read(rqtp, 4, (char *) &sec);
+	memory->Read(rqtp + 4, 4, (char *) &nsec);
+	long long total = (long long) sec * 1000000 + (nsec / 1000);
+	emu->syscall_debug << misc::fmt("  sleep time (us): %llu\n", total);
+
+	// Suspend process
+	wakeup_time = now + total;
+	setState(ContextSuspended);
+	setState(ContextNanosleep);
+	emu->ProcessEventsSchedule();
+	return 0;
 }
 
 

@@ -676,5 +676,18 @@ void Context::Finish(int exit_code)
 }
 
 
+Context *Context::getZombie(int pid)
+{
+	for (Context *context : emu->getContextList(ContextListZombie))
+	{
+		if (context->parent != this)
+			continue;
+		if (context->pid == pid || pid == -1)
+			return context;
+	}
+	return nullptr;
+}
+
+
 }  // namespace x86
 

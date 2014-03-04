@@ -4,7 +4,6 @@ AC_CONFIG_SRCDIR([src/m2s.c])
 AM_INIT_AUTOMAKE([nostdinc])
 AM_PROG_AS
 AC_PROG_CC([gcc])
-AC_PROG_CXX([g++])
 AC_PROG_INSTALL
 
 # Silent rules if supported
@@ -88,6 +87,25 @@ AC_COMPILE_IFELSE(
 		)
 	]
 )
+
+
+################################
+# Check presence of C++ compiler
+################################
+
+AC_PROG_CXX([g++])
+if test "$CXX" = no || test "$CXX:$GXX" = "g++:"
+then
+	AC_MSG_ERROR([
+
+	The g++ compiler is not installed in your machine. Please install a
+	valid C++11 compiler and retry. In Ubuntu, the following command is
+	suggested:
+
+		sudo apt-get install g++]
+	)
+fi
+
 
 
 ################################################
