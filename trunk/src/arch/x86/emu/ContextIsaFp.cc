@@ -18,6 +18,7 @@
  */
 
 #include "Context.h"
+#include "Emu.h"
 
 #include <lib/cpp/Misc.h>
 
@@ -1190,6 +1191,7 @@ void Context::ExecuteInst_fldcw_m16()
 
 	// Set value
 	regs.setFpuCtrl(value);
+	emu->isa_debug << misc::fmt(" fpcw<=0x%x", value);
 
 	// Micro-instructions
 	newUInst(UInstFpMove, UInstDepMem16, 0, 0, UInstDepFpcw, 0, 0, 0);
@@ -1946,7 +1948,9 @@ void Context::ExecuteInst_fstcw_m16()
 	unsigned short value = regs.getFpuCtrl();
 
 	// Store value of FP control word
-	MemoryWrite(getEffectiveAddress(), 2, &value);
+	unsigned address = getEffectiveAddress();
+	MemoryWrite(address, 2, &value);
+	emu->isa_debug << misc::fmt(" [0x%x]<=0x%x", address, value);
 
 	// Micro-instructions
 	newUInst(UInstFpMove, UInstDepFpcw, 0, 0, UInstDepMem32, 0, 0, 0);

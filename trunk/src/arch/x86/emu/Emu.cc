@@ -187,7 +187,7 @@ void Emu::RemoveContextFromList(ContextListType type, Context *context)
 	
 
 void Emu::UpdateContextInList(ContextListType type, Context *context,
-			int present)
+			bool present)
 {
 	if (present && !context->context_list_present[type])
 		AddContextToList(type, context);
@@ -227,6 +227,18 @@ Context *Emu::newContext()
 }
 
 
+Context *Emu::getContext(int pid)
+{
+	// Find context
+	for (auto &context : contexts)
+		if (context->getPid() == pid)
+			return context.get();
+	
+	// Not found
+	return nullptr;
+}
+
+
 void Emu::freeContext(Context *context)
 {
 	// Remove context from all context lists
@@ -248,11 +260,6 @@ void Emu::ProcessEventsSchedule()
 
 void Emu::ProcessEvents()
 {
-#if 0
-	// Save current time
-	esim::ESim *esim = esim::ESim::getInstance();
-	long long now = esim->getRealTime();
-	
 	// Check if events need actually be checked.
 	LockMutex();
 	if (!process_events_force)
@@ -263,67 +270,32 @@ void Emu::ProcessEvents()
 	
 	// By default, no subsequent call to ProcessEvents() is assumed
 	process_events_force = false;
-
+	
+	
 	//
 	// LOOP 1
 	// Look at the list of suspended contexts and try to find
 	// one that needs to be waken up.
 	//
-	Context *next;
-	for (Context *context = context_list[ContextSuspended].front();
-			context; context = next)
+	auto &suspended_context_list = getContextList(ContextListSuspended);
+	auto iter_next = suspended_context_list.end();
+	for (auto iter = suspended_context_list.begin();
+			iter != suspended_context_list.end();
+			iter = iter_next)
 	{
-		// Save next
-		auto next_iter = context->context_list_iter[ContextSuspended];
-		++next_iter;
-		next = *next_iter;
+		// Save iterator to next element here, since the context can be
+		// removed from the suspended list if waken up.
+		iter_next = iter;
+		++iter_next;
+		Context *context = *iter;
+		assert(context->getState(ContextSuspended));
+		assert(context->context_list_iter[ContextListSuspended] == iter);
+		assert(context->context_list_present[ContextListSuspended]);
 
-		// Context is suspended in 'nanosleep' system call.
-		if (X86ContextGetState(context, X86ContextNanosleep))
-		{
-			unsigned int rmtp = context->regs->ecx;
-			unsigned long long zero = 0;
-			unsigned int sec, usec;
-			unsigned long long diff;
-
-			// If 'X86EmuHostThreadSuspend' is still running for this context, do nothing.
-			if (context->host_thread_suspend_active)
-				continue;
-
-			// Timeout expired
-			if (context->wakeup_time <= now)
-			{
-				if (rmtp)
-					mem_write(context->mem, rmtp, 8, &zero);
-				x86_sys_debug("syscall 'nanosleep' - continue (pid %d)\n", context->pid);
-				x86_sys_debug("  return=0x%x\n", context->regs->eax);
-				X86ContextClearState(context, X86ContextSuspended | X86ContextNanosleep);
-				continue;
-			}
-
-			// Context received a signal
-			if (context->signal_mask_table->pending & ~context->signal_mask_table->blocked)
-			{
-				if (rmtp)
-				{
-					diff = context->wakeup_time - now;
-					sec = diff / 1000000;
-					usec = diff % 1000000;
-					mem_write(context->mem, rmtp, 4, &sec);
-					mem_write(context->mem, rmtp + 4, 4, &usec);
-				}
-				context->regs->eax = -EINTR;
-				x86_sys_debug("syscall 'nanosleep' - interrupted by signal (pid %d)\n", context->pid);
-				X86ContextClearState(context, X86ContextSuspended | X86ContextNanosleep);
-				continue;
-			}
-
-			// No event available, launch 'X86EmuHostThreadSuspend' again
-			context->host_thread_suspend_active = 1;
-			if (pthread_create(&context->host_thread_suspend, NULL, X86EmuHostThreadSuspend, context))
-				fatal("syscall 'poll': could not create child thread");
-			continue;
-		}
+#if 0
+		// Save current time
+		esim::ESim *esim = esim::ESim::getInstance();
+		long long now = esim->getRealTime();
 
 		// Context suspended in 'rt_sigsuspend' system call
 		if (X86ContextGetState(context, X86ContextSigsuspend))
@@ -340,206 +312,6 @@ void Emu::ProcessEvents()
 
 			/* No event available. The context will never awake on its own, so no
 			 * 'X86EmuHostThreadSuspend' is necessary. */
-			continue;
-		}
-
-		// Context suspended in 'poll' system call
-		if (X86ContextGetState(context, X86ContextPoll))
-		{
-			uint32_t prevents = context->regs->ebx + 6;
-			uint16_t revents = 0;
-			struct x86_file_desc_t *fd;
-			struct pollfd host_fds;
-			int err;
-
-			// If 'X86EmuHostThreadSuspend' is still running for this context, do nothing.
-			if (context->host_thread_suspend_active)
-				continue;
-
-			// Get file descriptor
-			fd = x86_file_desc_table_entry_get(context->file_desc_table, context->wakeup_fd);
-			if (!fd)
-				fatal("syscall 'poll': invalid 'wakeup_fd'");
-
-			// Context received a signal
-			if (context->signal_mask_table->pending & ~context->signal_mask_table->blocked)
-			{
-				X86ContextCheckSignalHandlerIntr(context);
-				x86_sys_debug("syscall 'poll' - interrupted by signal (pid %d)\n", context->pid);
-				X86ContextClearState(context, X86ContextSuspended | X86ContextPoll);
-				continue;
-			}
-
-			// Perform host 'poll' call
-			host_fds.fd = fd->host_fd;
-			host_fds.events = ((context->wakeup_events & 4) ? POLLOUT : 0) | ((context->wakeup_events & 1) ? POLLIN : 0);
-			err = poll(&host_fds, 1, 0);
-			if (err < 0)
-				fatal("syscall 'poll': unexpected error in host 'poll'");
-
-			// POLLOUT event available
-			if (context->wakeup_events & host_fds.revents & POLLOUT)
-			{
-				revents = POLLOUT;
-				mem_write(context->mem, prevents, 2, &revents);
-				context->regs->eax = 1;
-				x86_sys_debug("syscall poll - continue (pid %d) - POLLOUT occurred in file\n", context->pid);
-				x86_sys_debug("  retval=%d\n", context->regs->eax);
-				X86ContextClearState(context, X86ContextSuspended | X86ContextPoll);
-				continue;
-			}
-
-			// POLLIN event available
-			if (context->wakeup_events & host_fds.revents & POLLIN)
-			{
-				revents = POLLIN;
-				mem_write(context->mem, prevents, 2, &revents);
-				context->regs->eax = 1;
-				x86_sys_debug("syscall poll - continue (pid %d) - POLLIN occurred in file\n", context->pid);
-				x86_sys_debug("  retval=%d\n", context->regs->eax);
-				X86ContextClearState(context, X86ContextSuspended | X86ContextPoll);
-				continue;
-			}
-
-			// Timeout expired
-			if (context->wakeup_time && context->wakeup_time < now)
-			{
-				revents = 0;
-				mem_write(context->mem, prevents, 2, &revents);
-				x86_sys_debug("syscall poll - continue (pid %d) - time out\n", context->pid);
-				x86_sys_debug("  return=0x%x\n", context->regs->eax);
-				X86ContextClearState(context, X86ContextSuspended | X86ContextPoll);
-				continue;
-			}
-
-			// No event available, launch 'X86EmuHostThreadSuspend' again
-			context->host_thread_suspend_active = 1;
-			if (pthread_create(&context->host_thread_suspend, NULL, X86EmuHostThreadSuspend, context))
-				fatal("syscall 'poll': could not create child thread");
-			continue;
-		}
-
-
-		// Context suspended in a 'write' system call 
-		if (X86ContextGetState(context, X86ContextWrite))
-		{
-			struct x86_file_desc_t *fd;
-			int count, err;
-			uint32_t pbuf;
-			void *buf;
-			struct pollfd host_fds;
-
-			// If 'X86EmuHostThreadSuspend' is still running for this context, do nothing.
-			if (context->host_thread_suspend_active)
-				continue;
-
-			// Context received a signal
-			if (context->signal_mask_table->pending & ~context->signal_mask_table->blocked)
-			{
-				X86ContextCheckSignalHandlerIntr(context);
-				x86_sys_debug("syscall 'write' - interrupted by signal (pid %d)\n", context->pid);
-				X86ContextClearState(context, X86ContextSuspended | X86ContextWrite);
-				continue;
-			}
-
-			// Get file descriptor
-			fd = x86_file_desc_table_entry_get(context->file_desc_table, context->wakeup_fd);
-			if (!fd)
-				fatal("syscall 'write': invalid 'wakeup_fd'");
-
-			// Check if data is ready in file by polling it
-			host_fds.fd = fd->host_fd;
-			host_fds.events = POLLOUT;
-			err = poll(&host_fds, 1, 0);
-			if (err < 0)
-				fatal("syscall 'write': unexpected error in host 'poll'");
-
-			// If data is ready in the file, wake up context
-			if (host_fds.revents) {
-				pbuf = context->regs->ecx;
-				count = context->regs->edx;
-				buf = xmalloc(count);
-				mem_read(context->mem, pbuf, count, buf);
-
-				count = write(fd->host_fd, buf, count);
-				if (count < 0)
-					fatal("syscall 'write': unexpected error in host 'write'");
-
-				context->regs->eax = count;
-				free(buf);
-
-				x86_sys_debug("syscall write - continue (pid %d)\n", context->pid);
-				x86_sys_debug("  return=0x%x\n", context->regs->eax);
-				X86ContextClearState(context, X86ContextSuspended | X86ContextWrite);
-				continue;
-			}
-
-			// Data is not ready to be written - launch 'X86EmuHostThreadSuspend' again
-			context->host_thread_suspend_active = 1;
-			if (pthread_create(&context->host_thread_suspend, NULL, X86EmuHostThreadSuspend, context))
-				fatal("syscall 'write': could not create child thread");
-			continue;
-		}
-
-		// Context suspended in 'read' system call
-		if (X86ContextGetState(context, X86ContextRead))
-		{
-			struct x86_file_desc_t *fd;
-			uint32_t pbuf;
-			int count, err;
-			void *buf;
-			struct pollfd host_fds;
-
-			// If 'X86EmuHostThreadSuspend' is still running for this context, do nothing.
-			if (context->host_thread_suspend_active)
-				continue;
-
-			// Context received a signal
-			if (context->signal_mask_table->pending & ~context->signal_mask_table->blocked)
-			{
-				X86ContextCheckSignalHandlerIntr(context);
-				x86_sys_debug("syscall 'read' - interrupted by signal (pid %d)\n", context->pid);
-				X86ContextClearState(context, X86ContextSuspended | X86ContextRead);
-				continue;
-			}
-
-			// Get file descriptor
-			fd = x86_file_desc_table_entry_get(context->file_desc_table, context->wakeup_fd);
-			if (!fd)
-				fatal("syscall 'read': invalid 'wakeup_fd'");
-
-			// Check if data is ready in file by polling it
-			host_fds.fd = fd->host_fd;
-			host_fds.events = POLLIN;
-			err = poll(&host_fds, 1, 0);
-			if (err < 0)
-				fatal("syscall 'read': unexpected error in host 'poll'");
-
-			// If data is ready, perform host 'read' call and wake up
-			if (host_fds.revents)
-			{
-				pbuf = context->regs->ecx;
-				count = context->regs->edx;
-				buf = xmalloc(count);
-				
-				count = read(fd->host_fd, buf, count);
-				if (count < 0)
-					fatal("syscall 'read': unexpected error in host 'read'");
-
-				context->regs->eax = count;
-				mem_write(context->mem, pbuf, count, buf);
-				free(buf);
-
-				x86_sys_debug("syscall 'read' - continue (pid %d)\n", context->pid);
-				x86_sys_debug("  return=0x%x\n", context->regs->eax);
-				X86ContextClearState(context, X86ContextSuspended | X86ContextRead);
-				continue;
-			}
-
-			// Data is not ready. Launch 'X86EmuHostThreadSuspend' again
-			context->host_thread_suspend_active = 1;
-			if (pthread_create(&context->host_thread_suspend, NULL, X86EmuHostThreadSuspend, context))
-				fatal("syscall 'read': could not create child thread");
 			continue;
 		}
 
@@ -570,34 +342,20 @@ void Emu::ProcessEvents()
 			 * 'X86EmuHostThreadSuspend' is needed. */
 			continue;
 		}
-
-		/* Context suspended in a system call using a custom wake up check call-back
-		 * function. NOTE: this is a new mechanism. It'd be nice if all other system
-		 * calls started using it. It is nicer, since it allows for a check of wake up
-		 * conditions together with the system call itself, without having distributed
-		 * code for the implementation of a system call (e.g. 'read'). */
-		if (X86ContextGetState(context, X86ContextCallback))
+#endif
+		// Context suspended in a system call using a custom wake up
+		// check call-back function. NOTE: this is a new mechanism. It'd
+		// be nice if all other system calls started using it. It is
+		// nicer, since it allows for a check of wake up conditions
+		// together with the system call itself, without having
+		// distributed code for the implementation of a system call
+		// (e.g. 'read').
+		if (context->getState(ContextCallback) && context->CanWakeup())
 		{
-			assert(context->can_wakeup_callback_func);
-			if (context->can_wakeup_callback_func(context, context->can_wakeup_callback_data))
-			{
-				// Set context status to 'running' again.
-				X86ContextClearState(context, X86ContextSuspended | X86ContextCallback);
-
-				// Call wake up function
-				if (context->wakeup_callback_func)
-					context->wakeup_callback_func(context, context->wakeup_callback_data);
-
-				// Reset call-back info
-				context->wakeup_callback_func = NULL;
-				context->wakeup_callback_data = NULL;
-				context->can_wakeup_callback_func = NULL;
-				context->can_wakeup_callback_data = NULL;
-			}
+			context->Wakeup();
 			continue;
 		}
 	}
-#endif
 
 
 #if 0
@@ -658,18 +416,16 @@ void Emu::ProcessEvents()
 	}
 
 
+#endif
 	//
 	// LOOP 3
 	// Process pending signals in running contexts to launch signal handlers
 	//
-	for (context = self->running_list_head; context; context = context->running_list_next)
-	{
-		X86ContextCheckSignalHandler(context);
-	}
+	for (Context *context : context_list[ContextListRunning])
+		context->CheckSignalHandler();
 	
 	// Unlock
 	UnlockMutex();
-#endif
 }
 
 

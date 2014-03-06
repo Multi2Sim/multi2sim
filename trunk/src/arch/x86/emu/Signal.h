@@ -117,9 +117,68 @@ public:
 				bitmap.Test(sig - 1) : false;
 	}
 
-	/// Return the bitmap representing the signal set
+	/// Return a constant reference the bitmap representing the signal set
 	const misc::Bitmap &getBitmap() const { return bitmap; }
+	
+	/// Return the bitmap representing the signal set
 	misc::Bitmap &getBitmap() { return bitmap; }
+	
+	/// Return \c true if any signal is set
+	bool Any() const { return bitmap.Any(); }
+
+	/// Return \c true if no signal is set
+	bool None() const { return bitmap.None(); }
+	
+	/// Operator "~"
+	SignalSet operator~() const {
+		SignalSet set = *this;
+		set.bitmap.Flip();
+		return set;
+	}
+	
+	/// Operator "&"
+	SignalSet operator&(const SignalSet &set) const {
+		SignalSet result;
+		result.bitmap = bitmap & set.bitmap;
+		return result;
+	}
+
+	/// Operator "|"
+	SignalSet operator|(const SignalSet &set) const {
+		SignalSet result;
+		result.bitmap = bitmap | set.bitmap;
+		return result;
+	}
+
+	/// Operator "^"
+	SignalSet operator^(const SignalSet &set) const {
+		SignalSet result;
+		result.bitmap = bitmap ^ set.bitmap;
+		return result;
+	}
+
+	/// Operator "=="
+	bool operator==(const SignalSet &set) const {
+		return bitmap == set.bitmap;
+	}
+	
+	/// Operator "&="
+	SignalSet &operator&=(const SignalSet &set) {
+		bitmap &= set.bitmap;
+		return *this;
+	}
+
+	/// Operator "|="
+	SignalSet &operator|=(const SignalSet &set) {
+		bitmap |= set.bitmap;
+		return *this;
+	}
+
+	/// Operator "^="
+	SignalSet &operator^=(const SignalSet &set) {
+		bitmap ^= set.bitmap;
+		return *this;
+	}
 
 	/// Dump into output stream, or \c std::cout if \a os is omitted.
 	void Dump(std::ostream &os = std::cout) const;

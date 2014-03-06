@@ -206,6 +206,7 @@ void X86EmuProcessEvents(X86Emu *self)
 			{
 				if (rmtp)
 					mem_write(ctx->mem, rmtp, 8, &zero);
+				ctx->regs->eax = 0;
 				x86_sys_debug("syscall 'nanosleep' - continue (pid %d)\n", ctx->pid);
 				x86_sys_debug("  return=0x%x\n", ctx->regs->eax);
 				X86ContextClearState(ctx, X86ContextSuspended | X86ContextNanosleep);
@@ -219,7 +220,7 @@ void X86EmuProcessEvents(X86Emu *self)
 				{
 					diff = ctx->wakeup_time - now;
 					sec = diff / 1000000;
-					usec = diff % 1000000;
+					usec = diff % 1000000 * 1000;
 					mem_write(ctx->mem, rmtp, 4, &sec);
 					mem_write(ctx->mem, rmtp + 4, 4, &usec);
 				}
@@ -317,6 +318,7 @@ void X86EmuProcessEvents(X86Emu *self)
 			{
 				revents = 0;
 				mem_write(ctx->mem, prevents, 2, &revents);
+				ctx->regs->eax = 0;
 				x86_sys_debug("syscall poll - continue (pid %d) - time out\n", ctx->pid);
 				x86_sys_debug("  return=0x%x\n", ctx->regs->eax);
 				X86ContextClearState(ctx, X86ContextSuspended | X86ContextPoll);

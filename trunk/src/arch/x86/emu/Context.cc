@@ -18,6 +18,7 @@
  */
 
 #include <cstring>
+#include <poll.h>
 
 #include <arch/common/Arch.h>
 #include <lib/cpp/Misc.h>
@@ -279,6 +280,9 @@ Context::Context()
 	robust_list_head = 0;
 	host_thread_suspend_active = false;
 	host_thread_timer_active = false;
+
+	wakeup_fn = nullptr;
+	can_wakeup_fn = nullptr;
 	
 	// String operations
 	str_op_esi = 0;
@@ -463,23 +467,174 @@ void Context::DebugCallInst()
 #endif
 }
 
-void Context::HostThreadSuspendCancelUnsafe()
+
+void Context::HostThreadSuspend()
 {
-	if (!host_thread_suspend_active)
-		return;
-	if (pthread_cancel(host_thread_suspend))
-		misc::fatal("%s: context %d: error canceling host thread",
-			__FUNCTION__, pid);
-	host_thread_suspend_active = false;
+	// Get current time
+	esim::ESim *esim = esim::ESim::getInstance();
+	long long now = esim->getRealTime();
+
+	// Detach this thread - we don't want the parent to have to join it to
+	// release its resources. The thread termination can be observed by
+	// atomically checking the 'host_thread_suspend_active' field of the
+	// context.
+	pthread_detach(pthread_self());
+
+	// Suspended in system call 'nanosleep'
+	if (getState(ContextNanosleep))
+	{
+		// Calculate remaining sleep time in microseconds
+		long long timeout = syscall_nanosleep_wakeup_time > now ?
+				syscall_nanosleep_wakeup_time - now : 0;
+		usleep(timeout);
+
+	}
+
+	// Suspended in system call 'read'
+	if (getState(ContextRead))
+	{
+		// Get file descriptor
+		FileDesc *desc = file_table->getFileDesc(syscall_read_fd);
+		if (!desc)
+			misc::panic("%s: invalid file descriptor (%d)",
+					__FUNCTION__, syscall_read_fd);
+
+		// Perform blocking host 'poll'
+		struct pollfd host_fds;
+		host_fds.fd = desc->getHostIndex();
+		host_fds.events = POLLIN;
+		int err = poll(&host_fds, 1, -1);
+		if (err < 0)
+			misc::panic("%s: unexpected error in host 'poll'",
+					__FUNCTION__);
+	}
+
+	// Suspended in system call 'write'
+	if (getState(ContextWrite))
+	{
+		// Get file descriptor
+		FileDesc *desc = file_table->getFileDesc(syscall_write_fd);
+		if (!desc)
+			misc::panic("%s: invalid file descriptor (%d)",
+					__FUNCTION__, syscall_write_fd);
+
+		// Perform blocking host 'poll'
+		struct pollfd host_fds;
+		host_fds.fd = desc->getHostIndex();
+		host_fds.events = POLLOUT;
+		int err = poll(&host_fds, 1, -1);
+		if (err < 0)
+			misc::panic("%s: unexpected error in host 'poll'",
+					__FUNCTION__);
+	}
+
+	// Suspended in system call 'poll'
+	if (getState(ContextPoll))
+	{
+		// Get file descriptor
+		FileDesc *desc = file_table->getFileDesc(syscall_poll_fd);
+		if (!desc)
+			misc::panic("%s: invalid file descriptor (%d)",
+					__FUNCTION__, syscall_poll_fd);
+
+		// Calculate timeout for host call in milliseconds from now
+		int timeout;
+		if (!syscall_poll_time)
+			timeout = -1;
+		else if (syscall_poll_time < now)
+			timeout = 0;
+		else
+			timeout = (syscall_poll_time - now) / 1000;
+
+		// Perform blocking host 'poll'
+		struct pollfd host_fds;
+		host_fds.fd = desc->getHostIndex();
+		host_fds.events = ((syscall_poll_events & 4) ? POLLOUT : 0) |
+				((syscall_poll_events & 1) ? POLLIN : 0);
+		int err = poll(&host_fds, 1, timeout);
+		if (err < 0)
+			misc::panic("%s: unexpected error in host 'poll'",
+					__FUNCTION__);
+	}
+
+	// Event occurred - thread finishes
+	emu->LockMutex();
 	emu->ProcessEventsScheduleUnsafe();
+	host_thread_suspend_active = false;
+	emu->UnlockMutex();
 }
 
+
+void Context::HostThreadSuspendCancelUnsafe()
+{
+	if (host_thread_suspend_active)
+	{
+		if (pthread_cancel(host_thread_suspend))
+			misc::fatal("%s: context %d: error canceling host thread",
+					__FUNCTION__, pid);
+		host_thread_suspend_active = false;
+	}
+	emu->ProcessEventsScheduleUnsafe();
+}
+	
 
 void Context::HostThreadSuspendCancel()
 {
 	emu->LockMutex();
 	HostThreadSuspendCancelUnsafe();
 	emu->UnlockMutex();
+}
+
+
+void Context::Suspend(CanWakeupFn can_wakeup_fn, WakeupFn wakeup_fn,
+		ContextState wakeup_state)
+{
+	// Checks
+	assert(!getState(ContextSuspended));
+	assert(!this->can_wakeup_fn);
+	assert(!this->wakeup_fn);
+
+	// Store callbacks and data
+	this->can_wakeup_fn = can_wakeup_fn;
+	this->wakeup_fn = wakeup_fn;
+	this->wakeup_state = wakeup_state;
+
+	// Suspend context
+	setState(ContextSuspended);
+	setState(ContextCallback);
+	setState(wakeup_state);
+	emu->ProcessEventsSchedule();
+}
+
+
+bool Context::CanWakeup()
+{
+	// Checks
+	assert(getState(ContextCallback));
+	assert(getState(ContextSuspended));
+	assert(this->can_wakeup_fn);
+
+	// Invoke callback
+	return (this->*can_wakeup_fn)();
+}
+
+
+void Context::Wakeup()
+{
+	// Checks
+	assert(getState(ContextCallback));
+	assert(getState(ContextSuspended));
+	assert(this->wakeup_fn);
+
+	// Wakeup context
+	(this->*wakeup_fn)();
+	clearState(ContextCallback);
+	clearState(ContextSuspended);
+	clearState(wakeup_state);
+
+	// Reset callbacks and free data
+	can_wakeup_fn = nullptr;
+	wakeup_fn = nullptr;
 }
 
 

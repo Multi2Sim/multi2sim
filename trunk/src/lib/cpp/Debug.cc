@@ -30,6 +30,7 @@ namespace misc
 Debug::Debug()
 {
 	os = nullptr;
+	active = true;
 }
 
 Debug::~Debug()
