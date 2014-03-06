@@ -302,7 +302,7 @@ void Context::StoreFpu(int index, unsigned char *value)
 	// Store value
 	memcpy(regs.getFpuValue(index), value, 10);
 	if (emu->isa_debug)
-		emu->isa_debug << misc::fmt("  st(%d) <- %g", index,
+		emu->isa_debug << misc::fmt("  st(%d)<=%g", index,
 				Extended::ExtendedToDouble(value));
 }
 
@@ -311,7 +311,7 @@ void Context::PushFpu(unsigned char *value)
 {
 	// Debug
 	if (emu->isa_debug)
-		emu->isa_debug << misc::fmt("  st(0) <- %g (pushed)",
+		emu->isa_debug << misc::fmt("  st(0)<=%g (pushed)",
 				Extended::ExtendedToDouble(value));
 
 	// Get stack top
@@ -336,13 +336,17 @@ void Context::PopFpu(unsigned char *value)
 		return;
 	}
 
+	// Copy value
 	if (value)
-	{
 		memcpy(value, regs.getFpuValue(regs.getFpuTop()), 10);
-		if (emu->isa_debug)
-			emu->isa_debug << misc::fmt("  st(0) -> %g (popped)",
-					Extended::ExtendedToDouble(value));
-	}
+	
+	// Debug
+	if (emu->isa_debug)
+		emu->isa_debug << misc::fmt("  st(0)=%g (popped)",
+				Extended::ExtendedToDouble(regs.
+				getFpuValue(regs.getFpuTop())));
+
+	// Pop
 	regs.setFpuValid(regs.getFpuTop(), false);
 	regs.incFpuTop();
 }
@@ -372,7 +376,7 @@ void Context::StoreExtended(unsigned char *value)
 void Context::StoreDouble(double value)
 {
 	MemoryWrite(getEffectiveAddress(), 8, &value);
-	emu->isa_debug << misc::fmt("  [0x%x] <- %g", getEffectiveAddress(), value);
+	emu->isa_debug << misc::fmt("  [0x%x]<=%g", getEffectiveAddress(), value);
 }
 
 
@@ -390,7 +394,7 @@ float Context::LoadFloat()
 void Context::StoreFloat(float value)
 {
 	MemoryWrite(getEffectiveAddress(), 4, &value);
-	emu->isa_debug << misc::fmt("  [0x%x] <- %g", getEffectiveAddress(), (double) value);
+	emu->isa_debug << misc::fmt("  [0x%x]<=%g", getEffectiveAddress(), (double) value);
 }
 
 

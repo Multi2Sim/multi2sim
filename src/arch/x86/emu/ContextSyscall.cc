@@ -208,7 +208,7 @@ static struct misc::StringMap clone_flags_map =
 	{ "CLONE_IO", (int) 0x80000000 }
 };
 
-static const unsigned int clone_supported_flags =
+static const unsigned clone_supported_flags =
 	SIM_CLONE_VM |
 	SIM_CLONE_FS |
 	SIM_CLONE_FILES |
@@ -222,15 +222,15 @@ static const unsigned int clone_supported_flags =
 
 struct sim_user_desc
 {
-	unsigned int entry_number;
-	unsigned int base_addr;
-	unsigned int limit;
-	unsigned int seg_32bit:1;
-	unsigned int contents:2;
-	unsigned int read_exec_only:1;
-	unsigned int limit_in_pages:1;
-	unsigned int seg_not_present:1;
-	unsigned int useable:1;
+	unsigned entry_number;
+	unsigned base_addr;
+	unsigned limit;
+	unsigned seg_32bit:1;
+	unsigned contents:2;
+	unsigned read_exec_only:1;
+	unsigned limit_in_pages:1;
+	unsigned seg_not_present:1;
+	unsigned useable:1;
 };
 
 
@@ -251,22 +251,22 @@ void Context::ExecuteSyscall()
 	#if 0
 	if (code < 1 || code >= x86_sys_code_count)
 	{
-		/* Check if it is a special code registered by a runtime ABI */
+		// Check if it is a special code registered by a runtime ABI
 		runtime = runtime_get_from_syscall_code(code);
 		if (!runtime)
 			fatal("%s: invalid system call code (%d)", __FUNCTION__, code);
 
-		/* Debug */
+		// Debug
 		x86_sys_debug("%s runtime ABI call (code %d, inst %lld, pid %d)\n",
 			runtime->name, code, asEmu(emu)->instructions, self->pid);
 
-		/* Run runtime ABI call */
+		// Run runtime ABI call
 		err = runtime_abi_call(runtime, self);
 
-		/* Set return value in 'eax'. */
-		regs->eax = err;
+		// Set return value in 'eax'.
+		regs.setEax(err);
 
-		/* Debug and done */
+		// Debug and done
 		x86_sys_debug("  ret=(%d, 0x%x)\n", err, err);
 		return;
 	}
@@ -351,6 +351,71 @@ int Context::ExecuteSyscall_fork()
 // System call 'read'
 //
 
+void Context::SyscallReadWakeup()
+{
+}
+
+bool Context::SyscallReadCanWakeup()
+{
+	// If the host thread is still running for this context, do nothing.
+	if (host_thread_suspend_active)
+		return false;
+
+	// Context received a signal
+	SignalSet pending_unblocked = signal_mask_table.getPending() &
+			~signal_mask_table.getBlocked();
+	if (pending_unblocked.Any())
+	{
+		CheckSignalHandlerIntr();
+		emu->syscall_debug << misc::fmt("syscall 'read' - "
+				"interrupted by signal (pid %d)\n", pid);
+		return true;
+	}
+
+	// Get file descriptor
+	FileDesc *desc = file_table->getFileDesc(syscall_read_fd);
+	if (!desc)
+		misc::panic("%s: invalid file descriptor", __FUNCTION__);
+
+	// Check if data is ready in file by polling it
+	struct pollfd host_fds;
+	host_fds.fd = desc->getHostIndex();
+	host_fds.events = POLLIN;
+	int err = poll(&host_fds, 1, 0);
+	if (err < 0)
+		misc::panic("%s: unexpected error in host call to 'poll'",
+				__FUNCTION__);
+
+	// If data is ready, perform host 'read' call and wake up
+	if (host_fds.revents)
+	{
+		unsigned pbuf = regs.getEcx();
+		int count = regs.getEdx();
+		char *buf = new char[count];
+
+		count = read(desc->getHostIndex(), buf, count);
+		if (count < 0)
+			misc::panic("%s: unexpected error in host 'read'",
+					__FUNCTION__);
+
+		regs.setEax(count);
+		memory->Write(pbuf, count, buf);
+		delete buf;
+
+		emu->syscall_debug << misc::fmt("syscall 'read' - "
+				"continue (pid %d)\n", pid);
+		emu->syscall_debug << misc::fmt("  return=0x%x\n", regs.getEax());
+		return true;
+	}
+
+	// Data is not ready. Launch host thread again
+	host_thread_suspend_active = true;
+	if (pthread_create(&host_thread_suspend, nullptr,
+			&Context::HostThreadSuspend, this))
+		misc::panic("%s: could not launch host thread", __FUNCTION__);
+	return false;
+}
+
 int Context::ExecuteSyscall_read()
 {
 	// Arguments
@@ -403,10 +468,9 @@ int Context::ExecuteSyscall_read()
 
 	// Blocking read - suspend thread
 	emu->syscall_debug << misc::fmt("  blocking read - process suspended\n");
-	wakeup_fd = guest_fd;
-	wakeup_events = 1;  // POLLIN
-	setState(ContextSuspended);
-	setState(ContextRead);
+	syscall_read_fd = guest_fd;
+	Suspend(&Context::SyscallReadCanWakeup, &Context::SyscallReadWakeup,
+			ContextRead);
 	emu->ProcessEventsSchedule();
 
 	// Free allocated buffer. Return value doesn't matter,
@@ -421,6 +485,72 @@ int Context::ExecuteSyscall_read()
 //
 // System call 'write'
 //
+
+void Context::SyscallWriteWakeup()
+{
+}
+
+bool Context::SyscallWriteCanWakeup()
+{
+	// If host thread is still running for this context, do nothing.
+	if (host_thread_suspend_active)
+		return false;
+
+	// Context received a signal
+	SignalSet pending_unblocked = signal_mask_table.getPending() &
+			~signal_mask_table.getBlocked();
+	if (pending_unblocked.Any())
+	{
+		CheckSignalHandlerIntr();
+		emu->syscall_debug << misc::fmt("syscall 'write' - "
+				"interrupted by signal (pid %d)\n", pid);
+		return true;
+	}
+
+	// Get file descriptor
+	FileDesc *desc = file_table->getFileDesc(syscall_write_fd);
+	if (!desc)
+		misc::panic("%s: invalid file descriptor", __FUNCTION__);
+
+	// Check if data is ready in file by polling it
+	struct pollfd host_fds;
+	host_fds.fd = desc->getHostIndex();
+	host_fds.events = POLLOUT;
+	int err = poll(&host_fds, 1, 0);
+	if (err < 0)
+		misc::panic("%s: unexpected error in host 'poll'",
+				__FUNCTION__);
+
+	// If data is ready in the file, wake up context
+	if (host_fds.revents)
+	{
+		unsigned pbuf = regs.getEcx();
+		int count = regs.getEdx();
+		char *buf = new char[count];
+		
+		memory->Read(pbuf, count, buf);
+		count = write(desc->getHostIndex(), buf, count);
+		if (count < 0)
+			misc::panic("%s: unexpected error in host 'write'",
+					__FUNCTION__);
+
+		regs.setEax(count);
+		delete buf;
+
+		emu->syscall_debug << misc::fmt("syscall write - "
+				"continue (pid %d)\n", pid);
+		emu->syscall_debug << misc::fmt("  return=0x%x\n", regs.getEax());
+		return true;
+	}
+
+	// Data is not ready to be written - launch host thread again
+	host_thread_suspend_active = true;
+	if (pthread_create(&host_thread_suspend, nullptr,
+			&Context::HostThreadSuspend, this))
+		misc::panic("%s: could not create child thread",
+				__FUNCTION__);
+	return false;
+}
 
 int Context::ExecuteSyscall_write()
 {
@@ -466,9 +596,9 @@ int Context::ExecuteSyscall_write()
 
 	// Blocking write - suspend thread
 	emu->syscall_debug << misc::fmt("  blocking write - process suspended\n");
-	wakeup_fd = guest_fd;
-	setState(ContextSuspended);
-	setState(ContextWrite);
+	syscall_write_fd = guest_fd;
+	Suspend(&Context::SyscallWriteCanWakeup, &Context::SyscallWriteWakeup,
+			ContextWrite);
 	emu->ProcessEventsSchedule();
 
 	// Return value doesn't matter here. It will be overwritten when the
@@ -865,7 +995,7 @@ int Context::ExecuteSyscall_lseek()
 
 int Context::ExecuteSyscall_getpid()
 {
-	__UNIMPLEMENTED__
+	return pid;
 }
 
 
@@ -1098,7 +1228,26 @@ int Context::ExecuteSyscall_sync()
 
 int Context::ExecuteSyscall_kill()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	int pid = regs.getEbx();
+	int sig = regs.getEcx();
+	emu->syscall_debug << misc::fmt("  pid=%d, sig=%d (%s)\n", pid,
+			sig, signal_map.MapValue(sig));
+
+	// Find context. We assume program correctness, so misc::fatal if
+	// context is not found, rather than return error code.
+	Context *context = emu->getContext(pid);
+	if (!context)
+		misc::fatal("%s: invalid pid %d", __FUNCTION__, pid);
+
+	// Send signal
+	context->signal_mask_table.getPending().Add(sig);
+	context->HostThreadSuspendCancel();
+	emu->ProcessEventsSchedule();
+	emu->ProcessEvents();
+
+	// Success
+	return 0;
 }
 
 
@@ -1158,7 +1307,32 @@ int Context::ExecuteSyscall_dup()
 
 int Context::ExecuteSyscall_pipe()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	unsigned fd_ptr = regs.getEbx();
+	emu->syscall_debug << misc::fmt("  fd_ptr=0x%x\n", fd_ptr);
+
+	// Create host pipe
+	int host_fd[2];
+	int err = pipe(host_fd);
+	if (err == -1)
+		misc::fatal("%s: cannot create pipe", __FUNCTION__);
+	emu->syscall_debug << misc::fmt("  host pipe created: fd={%d, %d}\n",
+			host_fd[0], host_fd[1]);
+
+	// Create guest pipe
+	FileDesc *read_desc = file_table->newFileDesc(FileDescPipe,
+			host_fd[0], "", O_RDONLY);
+	FileDesc *write_desc = file_table->newFileDesc(FileDescPipe,
+			host_fd[1], "", O_WRONLY);
+	int guest_read_fd = read_desc->getGuestIndex();
+	int guest_write_fd = write_desc->getGuestIndex();
+	emu->syscall_debug << misc::fmt("  guest pipe created: fd={%d, %d}\n",
+			guest_read_fd, guest_write_fd);
+
+	// Return file descriptors.
+	memory->Write(fd_ptr, 4, (char *) &guest_read_fd);
+	memory->Write(fd_ptr + 4, 4, (char *) &guest_write_fd);
+	return 0;
 }
 
 
@@ -1229,7 +1403,7 @@ int Context::ExecuteSyscall_brk()
 		return new_heap_break;
 	}
 
-	/* Always allow to shrink the heap. */
+	// Always allow to shrink the heap.
 	if (new_heap_break < old_heap_break)
 	{
 		unsigned size = old_heap_break_aligned - new_heap_break_aligned;
@@ -1833,7 +2007,7 @@ static const misc::StringMap mmap_flags_map =
 	{ "MAP_NONBLOCK",    0x10000 }
 };
 
-int Context::SyscallMmapAux(unsigned int addr, unsigned int len,
+int Context::SyscallMmapAux(unsigned addr, unsigned len,
 		int prot, int flags, int guest_fd, int offset)
 {
 	// Check that protection flags match in guest and host
@@ -2293,7 +2467,10 @@ int Context::ExecuteSyscall_fsync()
 
 int Context::ExecuteSyscall_sigreturn()
 {
-	__UNIMPLEMENTED__
+	ReturnFromSignalHandler();
+	emu->ProcessEventsSchedule();
+	emu->ProcessEvents();
+	return 0;
 }
 
 
@@ -2974,6 +3151,64 @@ int Context::ExecuteSyscall_sched_rr_get_interval()
 // System call 'nanosleep'
 //
 
+bool Context::SyscallNanosleepCanWakeup()
+{
+	// If suspension thread is still running for this context, do nothing.
+	if (host_thread_suspend_active)
+		return false;
+
+	// Get current time
+	esim::ESim *esim = esim::ESim::getInstance();
+	long long now = esim->getRealTime();
+
+	// Timeout expired
+	unsigned rmtp = regs.getEcx();
+	long long zero = 0;
+	if (syscall_nanosleep_wakeup_time <= now)
+	{
+		if (rmtp)
+			memory->Write(rmtp, 8, (char *) &zero);
+		regs.setEax(0);
+		emu->syscall_debug << misc::fmt("syscall 'nanosleep' - "
+				"continue (pid %d)\n", pid);
+		emu->syscall_debug << misc::fmt("  return=0x%x\n",
+				regs.getEax());
+		return true;
+	}
+
+	// Context received a signal that is not blocked
+	SignalSet pending_unblocked = signal_mask_table.getPending() &
+			~signal_mask_table.getBlocked();
+	if (pending_unblocked.Any())
+	{
+		if (rmtp)
+		{
+			long long diff = syscall_nanosleep_wakeup_time - now;
+			unsigned sec = diff / 1000000;
+			unsigned usec = diff % 1000000 * 1000;
+			memory->Write(rmtp, 4, (char *) &sec);
+			memory->Write(rmtp + 4, 4, (char *) &usec);
+		}
+		regs.setEax(-EINTR);
+		emu->syscall_debug << misc::fmt("syscall 'nanosleep' - "
+				"interrupted by signal (pid %d)\n", pid);
+		return true;
+	}
+
+	// No event available, launch host thread again
+	host_thread_suspend_active = true;
+	if (pthread_create(&host_thread_suspend, nullptr,
+			&Context::HostThreadSuspend, this))
+		misc::panic("%s: could not create child thread",
+				__FUNCTION__);
+	return false;
+}
+
+void Context::SyscallNanosleepWakeup()
+{
+	// Intentionally empty
+}
+
 int Context::ExecuteSyscall_nanosleep()
 {
 	// Arguments
@@ -2994,10 +3229,12 @@ int Context::ExecuteSyscall_nanosleep()
 	emu->syscall_debug << misc::fmt("  sleep time (us): %llu\n", total);
 
 	// Suspend process
-	wakeup_time = now + total;
-	setState(ContextSuspended);
-	setState(ContextNanosleep);
+	syscall_nanosleep_wakeup_time = now + total;
+	Suspend(&Context::SyscallNanosleepCanWakeup,
+			&Context::SyscallNanosleepWakeup, ContextNanosleep);
 	emu->ProcessEventsSchedule();
+
+	// Success
 	return 0;
 }
 
@@ -3068,9 +3305,220 @@ int Context::ExecuteSyscall_ni_syscall_167()
 // System call 'poll'
 //
 
+static const misc::StringMap poll_event_map =
+{
+	{ "POLLIN",          0x0001 },
+	{ "POLLPRI",         0x0002 },
+	{ "POLLOUT",         0x0004 },
+	{ "POLLERR",         0x0008 },
+	{ "POLLHUP",         0x0010 },
+	{ "POLLNVAL",        0x0020 }
+};
+
+struct sim_pollfd
+{
+	unsigned fd;
+	unsigned short events;
+	unsigned short revents;
+};
+
+void Context::SyscallPollWakeup()
+{
+}
+
+bool Context::SyscallPollCanWakeup()
+{
+	// If host thread is still running for this context, do nothing.
+	if (host_thread_suspend_active)
+		return false;
+
+	// Current time
+	esim::ESim *esim = esim::ESim::getInstance();
+	long long now = esim->getRealTime();
+
+	// Get arguments
+	unsigned prevents = regs.getEbx() + 6;
+	FileDesc *desc = file_table->getFileDesc(syscall_poll_fd);
+	if (!desc)
+		misc::panic("%s: invalid file descriptor (%d)",
+				__FUNCTION__, syscall_poll_fd);
+
+	// Context received a signal
+	SignalSet pending_unblocked = signal_mask_table.getPending() &
+			~signal_mask_table.getBlocked();
+	if (pending_unblocked.Any())
+	{
+		CheckSignalHandlerIntr();
+		emu->syscall_debug << misc::fmt("syscall 'poll' - "
+				"interrupted by signal (pid %d)\n", pid);
+		return true;
+	}
+
+	// Perform host 'poll' call
+	unsigned short revents = 0;
+	struct pollfd host_fds;
+	host_fds.fd = desc->getHostIndex();
+	host_fds.events = ((syscall_poll_events & 4) ? POLLOUT : 0) |
+			((syscall_poll_events & 1) ? POLLIN : 0);
+	int err = poll(&host_fds, 1, 0);
+	if (err < 0)
+		misc::panic("%s: unexpected error in host 'poll'",
+				__FUNCTION__);
+
+	// POLLOUT event available
+	if (syscall_poll_events & host_fds.revents & POLLOUT)
+	{
+		revents = POLLOUT;
+		memory->Write(prevents, 2, (char *) &revents);
+		regs.setEax(1);
+		emu->syscall_debug << misc::fmt("syscall poll - "
+				"continue (pid %d) - POLLOUT "
+				"occurred in file\n", pid);
+		emu->syscall_debug << misc::fmt("  retval=%d\n",
+				regs.getEax());
+		return true;
+	}
+
+	// POLLIN event available
+	if (syscall_poll_events & host_fds.revents & POLLIN)
+	{
+		revents = POLLIN;
+		memory->Write(prevents, 2, (char *) &revents);
+		regs.setEax(1);
+		emu->syscall_debug << misc::fmt("syscall poll - "
+				"continue (pid %d) - POLLIN "
+				"occurred in file\n", pid);
+		emu->syscall_debug << misc::fmt("  retval=%d\n",
+				regs.getEax());
+		return true;
+	}
+
+	// Timeout expired
+	if (syscall_poll_time && syscall_poll_time < now)
+	{
+		revents = 0;
+		memory->Write(prevents, 2, (char *) &revents);
+		regs.setEax(0);
+		emu->syscall_debug << misc::fmt("syscall poll - "
+				"continue (pid %d) - time out\n", pid);
+		emu->syscall_debug << misc::fmt("  retval=%d\n",
+				regs.getEax());
+		return true;
+	}
+
+	// No event available, launch host thread again
+	host_thread_suspend_active = true;
+	if (pthread_create(&host_thread_suspend, nullptr,
+			&Context::HostThreadSuspend, this))
+		misc::panic("%s: could not launch host thread", __FUNCTION__);
+	return false;
+}
+
 int Context::ExecuteSyscall_poll()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	unsigned pfds = regs.getEbx();
+	unsigned nfds = regs.getEcx();
+	int timeout = regs.getEdx();
+	emu->syscall_debug << misc::fmt("  pfds=0x%x, nfds=%d, timeout=%d\n",
+			pfds, nfds, timeout);
+
+	// Assumptions on host architecture
+	sim_pollfd guest_fds;
+	assert(sizeof guest_fds == 8);
+	assert(POLLIN == 1);
+	assert(POLLPRI == 2);
+	assert(POLLOUT == 4);
+
+	// Supported value
+	if (nfds != 1)
+		misc::fatal("%s: not suported for nfds != 1\n%s",
+				__FUNCTION__, syscall_error_note);
+
+	// Read pollfd
+	memory->Read(pfds, sizeof guest_fds, (char *) &guest_fds);
+	int guest_fd = guest_fds.fd;
+	emu->syscall_debug << misc::fmt("  guest_fd=%d, events=%s\n",
+			guest_fd, poll_event_map.MapFlags(guest_fds.events).c_str());
+
+	// Get file descriptor
+	FileDesc *desc = file_table->getFileDesc(guest_fd);
+	if (!desc)
+		return -EBADF;
+	int host_fd = desc->getHostIndex();
+	emu->syscall_debug << misc::fmt("  host_fd=%d\n", host_fd);
+
+	// Only POLLIN (0x1) and POLLOUT (0x4) supported
+	if (guest_fds.events & ~(POLLIN | POLLOUT))
+		misc::fatal("%s: event not supported.\n%s",
+				__FUNCTION__, syscall_error_note);
+
+	// Not supported file descriptor
+	if (host_fd < 0)
+		misc::fatal("%s: not supported file descriptor.\n%s",
+				__FUNCTION__, syscall_error_note);
+
+	// Perform host 'poll' system call with a 0 timeout to distinguish
+	// blocking from non-blocking cases.
+	struct pollfd host_fds;
+	host_fds.fd = host_fd;
+	host_fds.events = guest_fds.events;
+	int err = poll(&host_fds, 1, 0);
+	if (err == -1)
+		return -errno;
+
+	// If host 'poll' returned a value greater than 0, the guest call is non-blocking,
+	// since I/O is ready for the file descriptor.
+	if (err > 0)
+	{
+		// Non-blocking POLLOUT on a file.
+		if (guest_fds.events & host_fds.revents & POLLOUT)
+		{
+			emu->syscall_debug << misc::fmt("  non-blocking write "
+					"to file guaranteed\n");
+			guest_fds.revents = POLLOUT;
+			memory->Write(pfds, sizeof guest_fds, (char *) &guest_fds);
+			return 1;
+		}
+
+		// Non-blocking POLLIN on a file.
+		if (guest_fds.events & host_fds.revents & POLLIN)
+		{
+			emu->syscall_debug << misc::fmt("  non-blocking read "
+					"from file guaranteed\n");
+			guest_fds.revents = POLLIN;
+			memory->Write(pfds, sizeof guest_fds, (char *) &guest_fds);
+			return 1;
+		}
+
+		// Never should get here
+		misc::panic("%s: unexpected events", __FUNCTION__);
+	}
+
+	// At this point, host 'poll' returned 0, which means that none of the
+	// requested events is ready on the file, so we must suspend until they
+	// occur.
+	emu->syscall_debug << misc::fmt("  process going to sleep waiting for "
+			"events on file\n");
+	
+	// Calculate wakeup time
+	syscall_poll_time = 0;
+	if (timeout >= 0)
+	{
+		esim::ESim *esim = esim::ESim::getInstance();
+		long long now = esim->getRealTime();
+		syscall_poll_time = now + (long long) timeout * 1000;
+	}
+
+	// Other wakeup arguments
+	syscall_poll_fd = guest_fd;
+	syscall_poll_events = guest_fds.events;
+
+	// Suspend
+	Suspend(&Context::SyscallPollCanWakeup, &Context::SyscallPollWakeup,
+			ContextPoll);
+	emu->ProcessEventsSchedule();
+	return 0;
 }
 
 
@@ -3216,7 +3664,7 @@ int Context::ExecuteSyscall_rt_sigprocmask()
 
 	// Save old set
 	SignalSet old_set = signal_mask_table.getBlocked();
-
+			
 	// New set
 	if (set_ptr)
 	{
@@ -3254,6 +3702,7 @@ int Context::ExecuteSyscall_rt_sigprocmask()
 	// Return old set
 	if (old_set_ptr)
 		memory->Write(old_set_ptr, 8, (char *) &old_set);
+
 
 	// A change in the signal mask can cause pending signals to be
 	// able to execute, so check this.
@@ -3565,23 +4014,23 @@ int Context::ExecuteSyscall_ftruncate64()
 struct sim_stat64_t
 {
 	unsigned long long dev;  // 0 8
-	unsigned int pad1;  // 8 4
-	unsigned int __ino;  // 12 4
-	unsigned int mode;  // 16 4
-	unsigned int nlink;  // 20 4
-	unsigned int uid;  // 24 4
-	unsigned int gid;  // 28 4
+	unsigned pad1;  // 8 4
+	unsigned __ino;  // 12 4
+	unsigned mode;  // 16 4
+	unsigned nlink;  // 20 4
+	unsigned uid;  // 24 4
+	unsigned gid;  // 28 4
 	unsigned long long rdev;  // 32 8
-	unsigned int pad2;  // 40 4
+	unsigned pad2;  // 40 4
 	long long size;  // 44 8
-	unsigned int blksize;  // 52 4
+	unsigned blksize;  // 52 4
 	unsigned long long blocks;  // 56 8
-	unsigned int atime;  // 64 4
-	unsigned int atime_nsec;  // 68 4
-	unsigned int mtime;  // 72 4
-	unsigned int mtime_nsec;  // 76 4
-	unsigned int ctime;  // 80 4
-	unsigned int ctime_nsec;  // 84 4
+	unsigned atime;  // 64 4
+	unsigned atime_nsec;  // 68 4
+	unsigned mtime;  // 72 4
+	unsigned mtime_nsec;  // 76 4
+	unsigned ctime;  // 80 4
+	unsigned ctime_nsec;  // 84 4
 	unsigned long long ino;  // 88 8
 } __attribute__((packed));
 
@@ -3925,7 +4374,15 @@ int Context::ExecuteSyscall_mincore()
 
 int Context::ExecuteSyscall_madvise()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	unsigned start = regs.getEbx();
+	unsigned len = regs.getEcx();
+	int advice = regs.getEdx();
+	emu->syscall_debug << misc::fmt("  start=0x%x, len=%d, advice=%d\n",
+			start, len, advice);
+
+	// System call ignored
+	return 0;
 }
 
 

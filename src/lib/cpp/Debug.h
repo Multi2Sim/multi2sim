@@ -53,6 +53,7 @@ class Debug
 {
 	std::string path;
 	std::ostream *os;
+	bool active;
 
 	void Close();
 public:
@@ -74,12 +75,18 @@ public:
 	/// standard output or standard error output, respectively.
 	const std::string &getPath() { return path; }
 
+	/// Turn off debug
+	void Off() { active = false; }
+
+	/// Turn on debug
+	void On() { active = true; }
+
 	/// Dump a value into the output stream currently pointed to by the
 	/// debug object. If the debugger has not been initialized with a call
 	/// to setPath(), this call is ignored. The argument can be of any
 	/// type accepted by an \c std::ostream object.
 	template<typename T> Debug& operator<<(T val) {
-		if (os)
+		if (os && active)
 			*os << val;
 		return *this;
 	}
