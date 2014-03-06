@@ -137,6 +137,10 @@ public:
 	/// contexts.
 	Context *newContext();
 
+	/// Return a context given its pid, or null if no contexts exists with
+	/// that pid.
+	Context *getContext(int pid);
+
 	/// Remove a context from all context lists and free it
 	void freeContext(Context *context);
 
@@ -151,7 +155,7 @@ public:
 	/// to the list (if not present already. If \c false, it will be removed
 	/// (if still present).
 	void UpdateContextInList(ContextListType type, Context *context,
-			int present);
+			bool present);
 
 	/// Return a constant reference to a list of contexts
 	const std::list<Context *> &getContextList(ContextListType type) const {
@@ -181,10 +185,6 @@ public:
 	/// Unlock the emulator mutex
 	void UnlockMutex() { pthread_mutex_unlock(&mutex); }
 
-	/// Schedule a call to ProcessEvents(). This call internally locks the
-	/// emulator mutex.
-	void ProcessEventsSchedule();
-	
 	// Check for events detected in spawned host threads, such as waking up
 	// contexts or sending signals. The list is only effectively processed
 	// if events have been scheduled to get processed with a previous call
@@ -196,6 +196,10 @@ public:
 	/// event timestamps.
 	long long incFutexSleepCount() { return ++futex_sleep_count; }
 
+	/// Schedule a call to ProcessEvents(). This call internally locks the
+	/// emulator mutex.
+	void ProcessEventsSchedule();
+	
 	/// Schedule next call to ProcessEvents(). The emulator mutex must be
 	/// locked before invoking this function.
 	void ProcessEventsScheduleUnsafe() { process_events_force = true; }

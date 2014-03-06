@@ -147,9 +147,9 @@ void Context::CheckSignalHandlerIntr()
 			getSignalHandler(sig);
 	if (signal_handler->getFlags() & 0x10000000u)
 	{
-		char buf[2];
+		unsigned char buf[2];
 		regs.decEip(2);
-		memory->Read(regs.getEip(), 2, buf);
+		memory->Read(regs.getEip(), 2, (char *) buf);
 		assert(buf[0] == 0xcd && buf[1] == 0x80);  // 'int 0x80'
 	}
 	else

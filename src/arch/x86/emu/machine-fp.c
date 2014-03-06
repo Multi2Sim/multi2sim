@@ -24,6 +24,8 @@
 #include "regs.h"
 #include "uinst.h"
 
+#include <lib/util/debug.h>
+
 
 /* Macros defined to prevent accidental use of 'mem_<xx>' instructions */
 #define mem_access __COMPILATION_ERROR__
@@ -1201,6 +1203,7 @@ void x86_isa_fldcw_m16_impl(X86Context *ctx)
 
 	/* Set value */
 	regs->fpu_ctrl = value;
+	X86ContextDebugISA(" fpcw<=0x%x", value);
 
 	/* Micro-instructions */
 	x86_uinst_new(ctx, x86_uinst_fp_move, x86_dep_mem16, 0, 0, x86_dep_fpcw, 0, 0, 0);
@@ -1958,7 +1961,9 @@ void x86_isa_fstcw_m16_impl(X86Context *ctx)
 	unsigned short value = regs->fpu_ctrl;
 
 	/* Store value of FP control word */
-	X86ContextMemWrite(ctx, X86ContextEffectiveAddress(ctx), 2, &value);
+	unsigned address = X86ContextEffectiveAddress(ctx);
+	X86ContextMemWrite(ctx, address, 2, &value);
+	X86ContextDebugISA(" [0x%x]<=0x%x", address, value);
 
 	/* Micro-instructions */
 	x86_uinst_new(ctx, x86_uinst_fp_move, x86_dep_fpcw, 0, 0, x86_dep_mem32, 0, 0, 0);

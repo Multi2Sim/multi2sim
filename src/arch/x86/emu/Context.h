@@ -93,9 +93,10 @@ extern unsigned char context_host_fpenv[28];
 	"popf\n\t" \
 	: "=m" (context_host_flags));
 
+
 // Assembly code used before and after emulation of floating-point operations
 #define __X86_CONTEXT_FP_BEGIN__ { \
-	unsigned short fpu_ctrl; \
+	unsigned short fpu_ctrl = regs.getFpuCtrl(); \
 	asm volatile ( \
 		"pushf\n\t" \
 		"pop %0\n\t" \
@@ -105,11 +106,10 @@ extern unsigned char context_host_fpenv[28];
 		: "=m" (context_host_flags), "=m" (*context_host_fpenv) \
 		: "m" (fpu_ctrl) \
 	); \
-	regs.setFpuCtrl(fpu_ctrl); \
 }
 
 #define __X86_CONTEXT_FP_END__ { \
-	unsigned short fpu_ctrl = regs.getFpuCtrl(); \
+	unsigned short fpu_ctrl; \
 	asm volatile ( \
 		"push %0\n\t" \
 		"popf\n\t" \
@@ -118,6 +118,7 @@ extern unsigned char context_host_fpenv[28];
 		: "=m" (context_host_flags), "=m" (fpu_ctrl) \
 		: "m" (*context_host_fpenv) \
 	); \
+	regs.setFpuCtrl(fpu_ctrl); \
 }
 
 
@@ -203,9 +204,6 @@ class Context
 	long long host_thread_timer_wakeup;  /* Time when the thread will wake up */
 
 	// Variables used to wake up suspended contexts.
-	long long wakeup_time;  // x86_emu_timer time to wake up (poll/nanosleep)
-	int wakeup_fd;  // File descriptor (read/write/poll)
-	int wakeup_events;  // Events for wake up (poll)
 	int wakeup_pid;  // Pid waiting for (waitpid)
 	unsigned wakeup_futex;  // Address of futex where context is suspended
 	unsigned wakeup_futex_bitset;  // Bit mask for selective futex wakeup
@@ -226,6 +224,13 @@ class Context
 
 	// Dump debug information about a call instruction
 	void DebugCallInst();
+
+	// Host thread function
+	void HostThreadSuspend();
+	static void *HostThreadSuspend(void *data) {
+		((Context *) data)->HostThreadSuspend();
+		return nullptr;
+	}
 	
 	// Cancel host thread
 	void HostThreadSuspendCancel();
@@ -235,32 +240,25 @@ class Context
 	void HostThreadTimerCancel();
 	void HostThreadTimerCancelUnsafe();
 
-	// Virtual class representing the data used by system calls when they
-	// suspend the context with a call to Suspend(). The system call stores
-	// its data in the 'wakeup_data' variable. These data are passed to
-	// called 'can_wakeup_fn' and 'wakeup_fn'. Both functions should cast
-	// the value stored in 'wakeup_data' to the specific type that the
-	// original system call instantiated.
-	struct WakeupData { };
+	// Callbacks for suspended contexts
 	typedef bool (Context::*CanWakeupFn)();
 	typedef void (Context::*WakeupFn)();
 
 	// Stored callbacks for functions used to the wakeup mechanism of
-	// suspended contexts. The 'wakeup_data' smart pointer will be
-	// automatically reset when the context is waken up. The system
-	// call callback does not need to take care of this.
+	// suspended contexts. Variable 'wakeup_state' contains the state
+	// or states that will be set when suspended and cleared when
+	// waken up
 	CanWakeupFn can_wakeup_fn;
 	WakeupFn wakeup_fn;
-	std::unique_ptr<WakeupData> wakeup_data;
+	ContextState wakeup_state;
 
 	// Suspend a context, using callbacks 'can_wakeup_fn' and 'wakeup_fn'
 	// to check whether the context can wakeup and to wake it up,
-	// respectively. Argument 'wakeup_data' contains dynamically allocated
-	// memory that will be internally assigned to a unique pointer. There
-	// is no need to take care of freeing the memory. The smart pointer will
-	// be reset when the context is waken up.
+	// respectively. Argument 'wakeup_state' specified a temporary
+	// state added to the context when suspended, and removed when
+	// waken up.
 	void Suspend(CanWakeupFn can_wakeup_fn, WakeupFn wakeup_fn,
-			WakeupData *wakeup_data);
+			ContextState wakeup_state);
 
 
 	///////////////////////////////////////////////////////////////////////
@@ -374,20 +372,9 @@ class Context
 	// Return from a signal handler
 	void ReturnFromSignalHandler();
 
-	void CheckSignalHandler();
-
-	// Check any pending signal, and run the corresponding signal handler by
-	// considering that the signal interrupted a system call
-	// (\c syscall_intr). This has the following implication on the return
-	// address from the signal handler:
-	//   -If flag \c SA_RESTART is set for the handler, the return address
-	//    is the system call itself, which must be repeated.
-	//   -If flag \c SA_RESTART is not set, the return address is the
-	//    instruction next to the system call, and register 'eax' is set to
-	//    \c -EINTR.
-	void CheckSignalHandlerIntr();
-
-
+	
+	
+	
 	///////////////////////////////////////////////////////////////////////
 	//
 	// Functions related with x86 micro-instructions. These functions are
@@ -692,6 +679,28 @@ class Context
 	FileDesc *SyscallOpenVirtualFile(const std::string &path,
 			int flags, int mode);
 
+	// System call 'nanosleep'
+	long long syscall_nanosleep_wakeup_time;
+	void SyscallNanosleepWakeup();
+	bool SyscallNanosleepCanWakeup();
+
+	// System call 'read'
+	int syscall_read_fd;
+	void SyscallReadWakeup();
+	bool SyscallReadCanWakeup();
+
+	// System call 'write'
+	int syscall_write_fd;
+	void SyscallWriteWakeup();
+	bool SyscallWriteCanWakeup();
+
+	// System call 'poll'
+	int syscall_poll_time;
+	int syscall_poll_fd;
+	int syscall_poll_events;
+	void SyscallPollWakeup();
+	bool SyscallPollCanWakeup();
+
 public:
 	
 	/// Position of the context in the main context list. This field is
@@ -716,6 +725,9 @@ public:
 
 	/// Destructor
 	~Context();
+
+	/// Return the context pid
+	int getPid() const { return pid; }
 
 	/// Load a program from a command line into an existing context. The
 	/// content is left in a state ready to start running the first x86 ISA
@@ -781,6 +793,30 @@ public:
 	// Finish() call, but for all parent and child contexts sharing a
 	// memory map.
 	void FinishGroup(int status);
+	
+	/// Check whether a context suspended with a call to Suspend() is ready
+	/// to wake up, by invoking the 'can_wakeup' callback.
+	bool CanWakeup();
+
+	/// Wake up a context in suspended state that went to sleep with a call
+	/// to Suspend(). The 'wakeup_fn' callback function is invoked, and the
+	/// wakeup data is internally freed by reseting the smart pointer.
+	void Wakeup();
+
+	// Check whether there is any pending unblocked signal in the context,
+	// and invoke the corresponding signal handler.
+	void CheckSignalHandler();
+
+	// Check any pending signal, and run the corresponding signal handler by
+	// considering that the signal interrupted a system call
+	// (\c syscall_intr). This has the following implication on the return
+	// address from the signal handler:
+	//   -If flag \c SA_RESTART is set for the handler, the return address
+	//    is the system call itself, which must be repeated.
+	//   -If flag \c SA_RESTART is not set, the return address is the
+	//    instruction next to the system call, and register 'eax' is set to
+	//    \c -EINTR.
+	void CheckSignalHandlerIntr();
 
 	/// Run one instruction for the context at the position pointed to by
 	/// register \c eip.
