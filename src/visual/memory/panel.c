@@ -350,7 +350,7 @@ struct vi_mem_panel_t *vi_mem_panel_create(void)
 
 	/* Frame */
 	GtkWidget *frame;
-	frame = gtk_frame_new("Memory Hierarchy");
+	frame = gtk_frame_new("Memory Hierarchy - Network");
 
 	/* Scrolled window */
 	GtkWidget *scrolled_window;
@@ -377,7 +377,7 @@ struct vi_mem_panel_t *vi_mem_panel_create(void)
 
 			/* Get board position */
 			x = VI_MOD_BOARD_PADDING + mod_id * (VI_MOD_BOARD_PADDING + VI_MOD_BOARD_WIDTH);
-			y = VI_MOD_BOARD_PADDING + level_id * (VI_MOD_BOARD_PADDING + VI_MOD_BOARD_HEIGHT);
+			y = VI_MOD_BOARD_PADDING + 2 * level_id * (VI_MOD_BOARD_PADDING + VI_MOD_BOARD_HEIGHT);
 
 			/* Create board */
 			board = vi_mod_board_create(mod);

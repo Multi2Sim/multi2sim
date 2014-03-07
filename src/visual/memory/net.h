@@ -26,6 +26,10 @@ struct vi_net_t
 	char *name;
 
 	struct list_t *node_list;
+
+	struct list_t *high_mods;
+	struct list_t *low_mods;
+
 };
 
 struct vi_trace_line_t;
