@@ -22,4 +22,93 @@
 namespace SI
 {
 
+DepthBuffer::DepthBuffer(unsigned width, unsigned height) :
+	compare_func(GL_LESS), 
+	clear_value(1.0f)
+{
+	this->width  = width;
+	this->height = height;
+
+	for (unsigned i = 0; i < width * height; ++i)
+			buffer.push_back(std::unique_ptr<double> (new double(0.0f)));
+}
+
+void DepthBuffer::Resize(unsigned width, unsigned height)
+{
+	assert(width > 0 && height > 0);
+
+	unsigned count = this->width * this->height;
+	unsigned new_count = width * height;
+	bool enlarge = count < new_count ? true : false;
+
+	if (enlarge)
+		for (unsigned i = 0; i < abs(new_count - count); ++i)
+			buffer.push_back(std::unique_ptr<double> (new double(0.0f)));
+	else
+		for (unsigned i = 0; i < abs(new_count - count); ++i)
+		buffer.pop_back();
+}
+
+void DepthBuffer::Resize(unsigned width, unsigned height, double clear_value)
+{
+	buffer.clear();
+
+	for (unsigned i = 0; i < width * height; ++i)
+			buffer.push_back(std::unique_ptr<double> (new double(clear_value)));
+}
+
+void DepthBuffer::Clear()
+{
+	for (unsigned i = 0; i < buffer.size(); ++i)
+		*buffer[i] = clear_value;
+}
+
+void DepthBuffer::Clear(double value)
+{
+	for (unsigned i = 0; i < buffer.size(); ++i)
+		*buffer[i] = value;
+}
+
+bool DepthBuffer::isPass(unsigned x, unsigned y, double value, DepthBufferCompareFunc func)
+{
+	assert(x > 0 && x < width && y > 0 && y < height);
+
+	bool is_pass;
+	double depth = *buffer[y * width + x];
+
+	switch(func)
+	{
+		case GL_NEVER:
+			is_pass = true;
+			break;
+		case GL_LESS:
+			is_pass = value < depth ? true : false;
+			break;
+		case GL_EQUAL:
+			is_pass = value == depth ? true : false;
+			break;
+		case GL_LEQUAL:
+			is_pass = value <= depth ? true : false;
+			break;
+		case GL_GREATER:
+			is_pass = value > depth ? true : false;
+			break;
+		case GL_NOTEQUAL:
+			is_pass = value != depth ? true : false;
+			break;
+		case GL_GEQUAL:
+			is_pass = value >= depth ? true : false;
+			break;
+		case GL_ALWAYS:
+			is_pass = 1;
+			break;
+		default:
+			is_pass = value < depth ? true : false;
+			break;
+	}
+
+	return is_pass;
+}
+
+
 }  // namespace SI

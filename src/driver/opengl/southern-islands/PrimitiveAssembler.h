@@ -20,8 +20,12 @@
 #ifndef DRIVER_OPENGL_SI_PRIMITIVE_ASSEMLBER_H
 #define DRIVER_OPENGL_SI_PRIMITIVE_ASSEMLBER_H
 
-#include <vector>
 #include <memory>
+#include <vector>
+
+#include <src/lib/cpp/Misc.h>
+
+using namespace misc;
 
 namespace SI
 {
@@ -64,6 +68,12 @@ public:
 	
 	/// Get PrimAsmVertex.W
 	float getW() const { return pos[3]; }
+
+	/// Get by index
+	float getComp(int idx) const {
+		assert(idx < 4);
+		return pos[idx];
+	}
 
 	/// Setters
 	///
@@ -121,6 +131,48 @@ public:
 	edge0(vtx0, vtx1),
 	edge1(vtx1, vtx2),
 	edge2(vtx2, vtx0) { }
+
+	/// Getters
+	///
+	/// Get vertex component
+	float getVertexPos(int vertex_idx, int component_idx) const {
+		assert(vertex_idx < 3);
+		assert(component_idx < 4);
+		switch (vertex_idx)
+		{
+		
+		case 0:
+			return vtx0.getComp(component_idx);
+			break;
+
+		case 1:
+			return vtx1.getComp(component_idx);
+			break;
+
+		case 2:
+			return vtx2.getComp(component_idx);
+			break;
+
+		default:
+			return 0.0f;
+			break;
+		}
+	}
+
+	/// Get reference of a vertex
+	const PrimAsmVertex &getVertex(unsigned id) {
+		assert(id > 0 && id < 3);
+		switch (id)
+		{
+		case 0:
+			return vtx0;
+		case 1:
+			return vtx1;
+		case 2:
+			return vtx2;
+		}
+	}
+
 };
 
 class Primitive
