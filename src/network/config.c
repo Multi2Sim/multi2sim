@@ -18,6 +18,7 @@
  */
 
 #include <lib/esim/esim.h>
+#include <lib/esim/trace.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/file.h>
@@ -26,13 +27,16 @@
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
 
-#include "network.h"
-#include "node.h"
-#include "visual.h"
-#include "net-system.h"
+#include "buffer.h"
+#include "bus.h"
 #include "command.h"
 #include "config.h"
+#include "link.h"
+#include "net-system.h"
+#include "network.h"
+#include "node.h"
 #include "routing-table.h"
+#include "visual.h"
 
 char *net_config_help =
 		"The network configuration file is a plain-text file following the\n"
@@ -118,6 +122,7 @@ static void          net_read_from_config_links    (struct net_t* net, struct co
 static int           net_read_from_config_routes   (struct net_t *net, struct config_t *config);
 static void          net_read_from_config_commands (struct net_t *net, struct config_t *config);
 static struct net_t* net_create_from_config        (struct config_t *config, char *name);
+static void 		 net_config_trace			   (void);
 
 /*
  * Private Functions
@@ -218,6 +223,9 @@ void net_read_config(void)
 		free(list_remove_at(net_name_list, 0));
 	list_free(net_name_list);
 	config_free(config);
+
+	/* If the network is external and trace is active, we create trace with detail about config */
+	net_config_trace();
 }
 
 
@@ -783,6 +791,96 @@ static void net_config_route_create(struct net_t *net, struct config_t *config, 
 								nxt_node_r,
 								vc_used);
 				}
+			}
+		}
+	}
+}
+
+#define NET_SYSTEM_TRACE_VERSION_MAJOR		1
+#define NET_SYSTEM_TRACE_VERSION_MINOR		678
+
+static void net_config_trace(void)
+{
+	struct net_t *net;
+	int i, j;
+
+	/* No need if not tracing */
+	if (!net_tracing())
+		return;
+
+	/* Initialization */
+	net_trace_header("net.init version=\"%d.%d\"\n",
+			NET_SYSTEM_TRACE_VERSION_MAJOR, NET_SYSTEM_TRACE_VERSION_MINOR);
+
+	/* For External networks */
+	for (net = net_find_first(); net; net = net_find_next())
+	{
+
+		/* Nodes Trace */
+		LIST_FOR_EACH(net->node_list, i)
+						{
+			struct net_node_t *node;
+			node = list_get(net->node_list, i);
+
+			if (node->kind == net_node_switch || node->kind == net_node_end)
+				net_trace_header("net.node net_name=\"%s\" node_name=\"%s\" node_type=%d "
+						"num_in_buf=%d num_out_buf=%d\n", net->name, node->name, node->kind,
+						list_count(node->input_buffer_list), list_count(node->output_buffer_list));
+			else if (node->kind == net_node_bus || node->kind == net_node_photonic)
+				net_trace_header("net.node net_name=\"%s\" node_name=\"%s\" node_type=%d "
+						"num_lanes=%d\n", net->name, node->name, node->kind,
+						list_count(node->bus_lane_list));
+						}
+
+		/* Links Trace */
+		LIST_FOR_EACH(net->link_list, i)
+		{
+			struct net_link_t *link;
+			link = list_get(net->link_list, i);
+
+			net_trace_header("net.link net_name=\"%s\" link_name=\"%s\" src_node=\"%s\" "
+					"dst_node=\"%s\" vc_num=%d\n", net->name, link->name, link->src_node->name,
+					link->dst_node->name, link->virtual_channel);
+		}
+
+		/* Buffer Trace */
+		LIST_FOR_EACH(net->node_list, i)
+		{
+			struct net_node_t *node;
+			node = list_get(net->node_list, i);
+
+			LIST_FOR_EACH(node->input_buffer_list, j)
+			{
+				struct net_buffer_t *buffer;
+				buffer = list_get(node->input_buffer_list, j);
+
+				if (buffer->kind == net_buffer_link)
+					net_trace_header("net.buffer net_name=\"%s\" node_name=\"%s\" buffer_name=\"%s\" "
+							"buffer_size=%d buffer_type=%d connection=\"%s\"\n", net->name,
+							buffer->node->name, buffer->name, buffer->size, buffer->kind,
+							buffer->link->name);
+
+				else if (buffer->kind == net_buffer_bus || buffer->kind == net_buffer_photonic)
+					net_trace_header("net.buffer net_name=\"%s\" node_name=\"%s\" buffer_name=\"%s\" "
+							"buffer_size=%d buffer_type=%d connection=\"%s\"\n", net->name,
+							node->name, buffer->name, buffer->size, buffer->kind,
+							buffer->bus->name);
+			}
+			LIST_FOR_EACH(node->output_buffer_list, j)
+			{
+				struct net_buffer_t *buffer;
+				buffer = list_get(node->output_buffer_list, j);
+
+				if (buffer->kind == net_buffer_link)
+					net_trace_header("net.buffer net_name=\"%s\" node_name=\"%s\" buffer_name=\"%s\" "
+							"buffer_size=%d buffer_type=%d connection=\"%s\"\n", net->name,
+							buffer->node->name, buffer->name, buffer->size, buffer->kind,
+							buffer->link->name);
+				else if (buffer->kind == net_buffer_bus || buffer->kind == net_buffer_photonic)
+					net_trace_header("net.buffer net_name=\"%s\" node_name=\"%s\" buffer_name=\"%s\" "
+							"buffer_size=%d buffer_type=%d connection=\"%s\"\n", net->name,
+							buffer->node->name, buffer->name, buffer->size, buffer->kind,
+							buffer->bus->name);
 			}
 		}
 	}

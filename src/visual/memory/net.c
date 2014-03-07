@@ -82,7 +82,8 @@ struct vi_net_t *vi_net_create(struct vi_trace_line_t *trace_line)
 	for (i = 0; i < num_nodes; i++)
 		list_add(net->node_list, vi_net_node_create());
 
-
+	net->high_mods = list_create();
+	net->low_mods = list_create();
 	/* Return */
 	return net;
 }
@@ -96,6 +97,9 @@ void vi_net_free(struct vi_net_t *net)
 	LIST_FOR_EACH(net->node_list, i)
 		vi_net_node_free(list_get(net->node_list, i));
 	list_free(net->node_list);
+
+	list_free(net->high_mods);
+	list_free(net->low_mods);
 
 	/* Free network */
 	free(net->name);
