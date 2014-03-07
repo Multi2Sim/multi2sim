@@ -59,9 +59,12 @@ Primitive::Primitive(PrimAsmMode mode, std::vector<std::unique_ptr<float>> pos_r
 			int loc = i * 12;
 
 			// Create 3 vetices
-			PrimAsmVertex vtx0(*pos_repo[loc + 0], *pos_repo[loc + 1], *pos_repo[loc + 2], *pos_repo[loc + 3]);
-			PrimAsmVertex vtx1(*pos_repo[loc + 4], *pos_repo[loc + 5], *pos_repo[loc + 6], *pos_repo[loc + 7]);
-			PrimAsmVertex vtx2(*pos_repo[loc + 8], *pos_repo[loc + 9], *pos_repo[loc + 10], *pos_repo[loc + 11]);
+			PrimAsmVertex vtx0(*pos_repo[loc + 0], *pos_repo[loc + 1], 
+				*pos_repo[loc + 2], *pos_repo[loc + 3]);
+			PrimAsmVertex vtx1(*pos_repo[loc + 4], *pos_repo[loc + 5], 
+				*pos_repo[loc + 6], *pos_repo[loc + 7]);
+			PrimAsmVertex vtx2(*pos_repo[loc + 8], *pos_repo[loc + 9], 
+				*pos_repo[loc + 10], *pos_repo[loc + 11]);
 
 			// Apply viewport transformation
 			vtx0.ApplyViewPort(x, y, width, height);
@@ -69,7 +72,8 @@ Primitive::Primitive(PrimAsmMode mode, std::vector<std::unique_ptr<float>> pos_r
 			vtx2.ApplyViewPort(x, y, width, height);
 
 			// Add to triangle repository
-			triangles.push_back(std::unique_ptr<PrimAsmTriangle> (new PrimAsmTriangle(vtx0, vtx1, vtx2)));
+			triangles.push_back(std::unique_ptr<PrimAsmTriangle> (new 
+				PrimAsmTriangle(vtx0, vtx1, vtx2)));
 
 		}
 		break;

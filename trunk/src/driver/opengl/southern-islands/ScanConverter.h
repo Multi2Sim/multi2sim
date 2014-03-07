@@ -20,13 +20,135 @@
 #ifndef DRIVER_OPENGL_SI_SCAN_CONVERTER_H
 #define DRIVER_OPENGL_SI_SCAN_CONVERTER_H
 
+#include "PrimitiveAssembler.h"
+
 namespace SI
 {
 
+#define SPAN_MAX_WIDTH 16384
+#define MAX_GLUINT	0xffffffff
+
+#define PIXEL_TEST_PASS 1
+#define PIXEL_TEST_FAIL 0
+
+// Convert float to int by rounding to nearest integer, away from zero 
+static inline int IROUND(float f)
+{
+	return (int) ((f >= 0.0F) ? (f + 0.5F) : (f - 0.5F));
+}
+
+#define SUB_PIXEL_BITS 4
+
+// Fixed point arithmetic macros 
+#ifndef FIXED_FRAC_BITS
+#define FIXED_FRAC_BITS 11
+#endif
+
+#define FIXED_SHIFT     FIXED_FRAC_BITS
+#define FIXED_ONE       (1 << FIXED_SHIFT)
+#define FIXED_HALF      (1 << (FIXED_SHIFT-1))
+#define FIXED_FRAC_MASK (FIXED_ONE - 1)
+#define FIXED_INT_MASK  (~FIXED_FRAC_MASK)
+#define FIXED_EPSILON   1
+#define FIXED_SCALE     ((float) FIXED_ONE)
+#define FIXED_DBL_SCALE ((double) FIXED_ONE)
+#define FloatToFixed(X) (IROUND((X) * FIXED_SCALE))
+#define FixedToDouble(X) ((X) * (1.0 / FIXED_DBL_SCALE))
+#define IntToFixed(I)   ((I) << FIXED_SHIFT)
+#define FixedToInt(X)   ((X) >> FIXED_SHIFT)
+#define FixedToUns(X)   (((unsigned int)(X)) >> FIXED_SHIFT)
+#define FixedCeil(X)    (((X) + FIXED_ONE - FIXED_EPSILON) & FIXED_INT_MASK)
+#define FixedFloor(X)   ((X) & FIXED_INT_MASK)
+#define FixedToFloat(X) ((X) * (1.0F / FIXED_SCALE))
+#define PosFloatToFixed(X)      FloatToFixed(X)
+#define SignedFloatToFixed(X)   FloatToFixed(X)
+
+class DepthBuffer;
+class PrimAsmVertex;
+
+class ScanConvEdge
+{
+	float          dx;    // X(vtx1) - X(vtx0)
+	float          dy;    // Y(vtx1) - Y(vtx0)
+	float          dxdy;  // dx/dy
+	int            fdxdy; // dx/dy in fixed-point
+	float          adjy;  // adjust from v[0]->fy to fsy, scaled
+	int            fsx;   // first sample point x coord
+	int            fsy;   // first sample point y coord
+	int            fx0;   // fixed pt X of lower endpoint
+	int            lines; // number of lines to be sampled on this edge
+
+public:
+	ScanConvEdge(const PrimAsmVertex &vtx0, const PrimAsmVertex &vtx1);
+
+	/// Getters
+	///
+	/// Get number of lines on this edge
+	int getLines() const { return lines; }
+
+	/// Get Dx
+	float getDx() const { return dx; }
+
+	/// Get Dy
+	float getDy() const { return dy; }
+
+};
+
+class ScanConvSpan
+{
+	// Coord of first fragment in horizontal span/run 
+	int x;
+	int y;
+
+	float attrStart[4];   // initial value 
+	float attrStepX[4];   // dvalue/dx
+	float attrStepY[4];   // dvalue/dy
+
+	int z;
+	int zStep;
+
+	// Number of fragments in the span 
+	unsigned end;
+
+	// fragment Z coords 
+	unsigned frag_z[SPAN_MAX_WIDTH];  
+
+public:
+	ScanConvSpan();
+
+};
+
+class PixelInfo
+{
+	// Positions in window coordinates
+	bool isWDCSet;
+	int pos[4];
+
+	// Barycentric coordinates to be load to VGPRs
+	float i;
+	float j;
+
+public:
+	PixelInfo(int x, int y, int z);
+
+	/// Generate baricentric coordinates
+	void GenBaryCoord(const PrimAsmTriangle &triangle);
+
+};
+
+// The major functionality of ScanConverter is to get barycentric 
+// coordinate of pixels inside a triangle/line, which will be loaded 
+// to VGPRs in fragment shader
 class ScanConverter
 {
+	bool scan_from_left_to_right;
+
+	std::vector<std::unique_ptr<PixelInfo>> pixel_info_repo;
+
 public:
 	ScanConverter();
+
+	void Rasterize(const PrimAsmTriangle &triangle, const DepthBuffer &depth_buffer);
 };
 
 } // namespace SI
