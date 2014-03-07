@@ -774,6 +774,34 @@ static const misc::StringMap waitpid_options_map =
 	{ "WCLONE",        (int) 0x80000000 }
 };
 
+void Context::SyscallWaitpidWakeup()
+{
+}
+
+bool Context::SyscallWaitpidCanWakeup()
+{
+	// A zombie child is available to 'waitpid' it
+	Context *child = getZombie(syscall_waitpid_pid);
+	if (child)
+	{
+		// Continue with 'waitpid' system call
+		unsigned pstatus = regs.getEcx();
+		regs.setEax(child->pid);
+		if (pstatus)
+			memory->Write(pstatus, 4, (char *) &child->exit_code);
+		child->setState(ContextFinished);
+
+		emu->syscall_debug << misc::fmt("syscall waitpid - "
+				"continue (pid %d)\n", pid)
+				<< misc::fmt("  return=0x%x\n", regs.getEax());
+		return true;
+	}
+
+	// No event available. Since this context won't wake up on its own, no
+	// host thread is needed.
+	return false;
+}
+
 int Context::ExecuteSyscall_waitpid()
 {
 	// Arguments
@@ -781,7 +809,7 @@ int Context::ExecuteSyscall_waitpid()
 	unsigned status_ptr = regs.getEcx();
 	int options = regs.getEdx();
 	emu->syscall_debug << misc::fmt("  pid=%d, pstatus=0x%x, options=0x%x\n",
-		pid, status_ptr, options);
+			pid, status_ptr, options);
 	emu->syscall_debug << misc::fmt("  options=%s\n",
 			waitpid_options_map.MapFlags(options).c_str());
 
@@ -797,9 +825,10 @@ int Context::ExecuteSyscall_waitpid()
 	// we get suspended until the specified child finishes.
 	if (!child && !(options & 0x1))
 	{
-		wakeup_pid = pid;
-		setState(ContextSuspended);
-		setState(ContextWaitpid);
+		syscall_waitpid_pid = pid;
+		Suspend(&Context::SyscallWaitpidCanWakeup,
+				&Context::SyscallWaitpidWakeup,
+				ContextWaitpid);
 		return 0;
 	}
 
@@ -3755,9 +3784,58 @@ int Context::ExecuteSyscall_rt_sigqueueinfo()
 // System call 'rt_sigsuspend'
 //
 
+void Context::SyscallSigsuspendWakeup()
+{
+}
+
+bool Context::SyscallSigsuspendCanWakeup()
+{
+	// Context received a signal
+	SignalSet pending_unblocked = signal_mask_table.getPending() &
+			~signal_mask_table.getBlocked();
+	if (pending_unblocked.Any())
+	{
+		CheckSignalHandlerIntr();
+		signal_mask_table.RestoreBlockedSignals();
+		emu->syscall_debug << misc::fmt("syscall 'rt_sigsuspend' - "
+				"interrupted by signal (pid %d)\n", pid);
+		return true;
+	}
+
+	// No event available. The context will never awake on its own, so no
+	// host thread creation is necessary.
+	return false;
+}
+
 int Context::ExecuteSyscall_rt_sigsuspend()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	unsigned new_set_ptr = regs.getEbx();
+	int sigsetsize = regs.getEcx();
+	emu->syscall_debug << misc::fmt("  new_set_ptr=0x%x, sigsetsize=%d\n",
+		new_set_ptr, sigsetsize);
+
+	// Read temporary signal mask
+	SignalSet new_set;
+	new_set.ReadFromMemory(memory.get(), new_set_ptr);
+
+	// Debug
+	emu->syscall_debug << "  old mask: " << signal_mask_table.getBlocked()
+			<< "\n  new mask: " << new_set
+			<< "\n  pending:  " << signal_mask_table.getPending()
+			<< '\n';
+
+	// Save old mask and set new one, then suspend.
+	signal_mask_table.BackupBlockedSignals();
+	signal_mask_table.setBlocked(new_set);
+	Suspend(&Context::SyscallSigsuspendCanWakeup,
+			&Context::SyscallSigsuspendWakeup,
+			ContextSigsuspend);
+	
+	// New signal mask may cause new events
+	emu->ProcessEventsSchedule();
+	emu->ProcessEvents();
+	return 0;
 }
 
 

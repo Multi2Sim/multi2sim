@@ -204,7 +204,6 @@ class Context
 	long long host_thread_timer_wakeup;  /* Time when the thread will wake up */
 
 	// Variables used to wake up suspended contexts.
-	int wakeup_pid;  // Pid waiting for (waitpid)
 	unsigned wakeup_futex;  // Address of futex where context is suspended
 	unsigned wakeup_futex_bitset;  // Bit mask for selective futex wakeup
 	long long wakeup_futex_sleep;  // Assignment from futex_sleep_count
@@ -700,6 +699,15 @@ class Context
 	int syscall_poll_events;
 	void SyscallPollWakeup();
 	bool SyscallPollCanWakeup();
+
+	// System call 'sigsuspend'
+	void SyscallSigsuspendWakeup();
+	bool SyscallSigsuspendCanWakeup();
+
+	// System call 'waitpid'
+	int syscall_waitpid_pid;
+	void SyscallWaitpidWakeup();
+	bool SyscallWaitpidCanWakeup();
 
 public:
 	
