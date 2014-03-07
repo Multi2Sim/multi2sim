@@ -365,7 +365,7 @@ struct net_graph_t *net_visual_calc(struct net_t *net)
 		vertex->x_coor = (2*(vertex->x_coor) + (max_node_in_layer - vertex->neighbours))* opt_distance;
 		graph->xscale = scale ;
 	}
-	/*Step 6: remove the Graph */
+	/*Step 6: return the Graph */
 	return graph;
 }
 
