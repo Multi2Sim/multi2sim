@@ -715,12 +715,10 @@ int net_can_send_ev(struct net_t *net, struct net_node_t *src_node,
 		return 0;
 	}
 
-	/* Message does not fit in output buffer */
-	//	fprintf(stderr, "\n **the buffer in question is %s:%s with count %d \n", output_buffer->node->name, output_buffer->name, output_buffer->count); //[K12]
 	int required_size = size;
 	if (net->packet_size != 0)
 		required_size = ((size - 1) / net->packet_size + 1)*net->packet_size;
-	if (output_buffer->count + required_size > output_buffer->size) //size replaced by required_size
+	if (output_buffer->count + required_size > output_buffer->size)
 	{
 		net_buffer_wait(output_buffer, retry_event, retry_stack);
 		return 0;
@@ -771,14 +769,14 @@ struct net_msg_t *net_send_ev(struct net_t *net, struct net_node_t *src_node,
 		net_packetizer(net, msg, msg->size);
 	else
 		net_packetizer(net, msg, net->packet_size);
-	//	fprintf (stderr, "Step 1: what is the packet count for message : %d\n", msg->packet_list_count ); [K1]
+
 	for (int i = 0; i < msg->packet_list_max; i++)
 	{
 		/* Start event-driven simulation */
-		pkt = msg->packet_list_head; //[K12]
+		pkt = msg->packet_list_head;
+
 		stack = net_stack_create(net, ESIM_EV_NONE, NULL);
-		//		fprintf(stderr, "\tStep 2:%d. the message id is %lld and the packet is %d\n",i, pkt->msg->id, pkt->session_id); [K1]
-		stack->packet = pkt; // [K12]
+		stack->packet = pkt;
 		stack->ret_event = receive_event;
 		stack->ret_stack = receive_stack;
 		esim_execute_event(EV_NET_SEND, stack);
@@ -829,7 +827,6 @@ void net_receive(struct net_t *net, struct net_node_t *node,
 	assert(msg->net == net);
 
 	net_msg_table_extract(net, msg->id);
-	//	fprintf(stderr, "freeing msg %lld\n", msg->id); [K1]
 	net_msg_free(msg);
 }
 

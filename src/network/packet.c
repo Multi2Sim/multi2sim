@@ -52,28 +52,17 @@ void net_packet_free (struct net_packet_t *pkt)
 }
 
 /*
-	 * We pass net->packet_size for network simulation cases. What we want is as follows:
-	 * 1) if net simulation is on-going and we have a packet size != 0, we go with packet size
-	 * 2) if net simulation is on-going and we have a packet_size == 0, we go with default msg size
-	 * 3) if actual simulation and packet_size != 0 we always send the packet size
-	 * 4) if actual sim and packet_sze == 0 we send 1 packet equal the size of the msg ***
-	 */
+ * We pass net->packet_size for network simulation cases. What we want is as follows:
+ * 1) if net simulation is on-going and we have a packet size != 0, we go with packet size
+ * 2) if net simulation is on-going and we have a packet_size == 0, we go with default msg size
+ * 3) if actual simulation and packet_size != 0 we always send the packet size
+ * 4) if actual sim and packet_sze == 0 we send 1 packet equal the size of the msg ***
+ */
 void net_packetizer(struct net_t *net, struct net_msg_t *msg, int packet_size)
 {
 	int packet_count;
 
-//	fprintf(stderr, "this is net_packet_size %d and net_msg_size: %d \n", net->packet_size, msg->size); [K1]
-	/*
-	if (packet_size == 0 )
-	{
-		net->packet_size = msg->size ;
-		packet_count = 1;
-	}
-	else
-	*/
-//	{
-		packet_count = (msg->size - 1) / packet_size + 1 ;
-//	}
+	packet_count = (msg->size - 1) / packet_size + 1 ;
 
 	assert(packet_count > 0);
 
