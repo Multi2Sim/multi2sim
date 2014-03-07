@@ -408,10 +408,10 @@ struct list_t *opengl_sc_rast_triangle_gen_pixel_info(struct opengl_pa_triangle_
 	edge_bottom->dy = FixedToFloat(vtx_mid_fy - vtx_min_fy);
 
 	/* Compute area */	
-      	const float area = edge_major->dx * edge_bottom->dy - edge_bottom->dx * edge_major->dy;
-      	one_over_area = 1.0f / area;
+	const float area = edge_major->dx * edge_bottom->dy - edge_bottom->dx * edge_major->dy;
+	one_over_area = 1.0f / area;
 
-      	/* Edge setup */
+	/* Edge setup */
 	edge_major->fsy = FixedCeil(vtx_min_fy);
 	edge_major->lines = FixedToInt(FixedCeil(vtx_max_fy - edge_major->fsy));
 	if (edge_major->lines > 0) {

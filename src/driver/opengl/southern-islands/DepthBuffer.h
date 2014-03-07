@@ -20,13 +20,85 @@
 #ifndef DRIVER_OPENGL_SI_DEPTH_BUFFER_H
 #define DRIVER_OPENGL_SI_DEPTH_BUFFER_H
 
+#include <memory>
+#include <vector>
+#include <src/lib/cpp/Misc.h>
+
+using namespace misc;
+
 namespace SI
 {
 
+enum DepthBufferCompareFunc 
+{
+	GL_NEVER,
+	GL_LESS,
+	GL_EQUAL,
+	GL_LEQUAL,
+	GL_GREATER,
+	GL_NOTEQUAL,
+	GL_GEQUAL,
+	GL_ALWAYS	
+};
+
 class DepthBuffer
 {
+	// FIXME: maybe need to make it a part of global memory
+	std::vector<std::unique_ptr<double>> buffer;
+
+	unsigned width;
+	unsigned height;
+
+	DepthBufferCompareFunc compare_func;
+	double clear_value;
+
 public:
-	DepthBuffer();
+	// Constructor, width/height = window width/height
+	DepthBuffer(unsigned width, unsigned height);
+
+	/// Getters
+	///
+	/// Get depth value at position (x, y)
+	double getValue(unsigned x, unsigned y) const {
+		assert( x > 0 && x < width && y > 0 && y < height);
+		return *buffer[y * width + x];
+	}
+
+	/// Setters
+	///
+	/// Set clear value;
+	void setClearValue(double value) { clear_value = value; }
+
+	/// Set compare function
+	void setCompareFunc(DepthBufferCompareFunc func) { compare_func = func; }
+
+	/// Resize Depth Buffer but doesn't clear content
+	///
+	/// \param width Width of new size
+	/// \param heigh Height of new size
+	void Resize(unsigned width, unsigned height);
+
+	/// Resize depth buffer and clear all content with clear value
+	///
+	/// \param width Width of new size
+	/// \param height Height of new size
+	void Resize(unsigned width, unsigned height, double clear_value);
+
+	/// Clear depth buffer, using clear value(default: 1.0)
+	void Clear();
+
+	/// Clear depth buffer with a clear value
+	///
+	/// \param value Value used to clear the whole depth buffer
+	void Clear(double value);
+
+	/// Check if a value passes depth test at certain position
+	///
+	/// \param x X position
+	/// \param y Y position
+	/// \param value The value to be compared
+	/// \param func Test function 
+	bool isPass(unsigned x, unsigned y, double value, DepthBufferCompareFunc func);
 };
 
 } // namespace SI
