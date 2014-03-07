@@ -20,6 +20,7 @@
 #include <math.h>
 
 #include <lib/esim/esim.h>
+#include <lib/esim/trace.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/file.h>
@@ -27,6 +28,7 @@
 #include <lib/util/list.h>
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
+
 
 #include "config.h"
 #include "net-system.h"
@@ -39,6 +41,7 @@
  */
 
 int net_debug_category;
+int net_trace_category;
 
 char *net_err_end_nodes =
 		"\tAn attempt has been made to send a message from/to an intermediate\n"
@@ -187,6 +190,11 @@ static void net_traffic_uniform(struct net_t *net, double *inject_time)
 
 void net_init(void)
 {
+	/* Create trace category. This needs to be done before reading the
+	 * network configuration file with 'net_read_config', since the latter
+	 * function generates the trace headers. */
+	net_trace_category = trace_new_category();
+
 	/* Load network configuration file */
 	net_read_config();
 

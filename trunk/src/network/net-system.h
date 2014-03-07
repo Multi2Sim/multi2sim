@@ -36,6 +36,12 @@ extern struct hash_table_t *net_table;
 #define net_debug(...) debug(net_debug_category, __VA_ARGS__)
 extern int net_debug_category;
 
+/* Trace */
+#define net_tracing() trace_status(net_trace_category)
+#define net_trace(...) trace(net_trace_category, __VA_ARGS__)
+#define net_trace_header(...) trace_header(net_trace_category, __VA_ARGS__)
+extern int net_trace_category;
+
 /* Configuration parameters */extern char *net_report_file_name;
 extern char *net_visual_file_name;
 extern char *net_sim_network_name;
