@@ -292,57 +292,6 @@ void Emu::ProcessEvents()
 		assert(context->context_list_iter[ContextListSuspended] == iter);
 		assert(context->context_list_present[ContextListSuspended]);
 
-#if 0
-		// Save current time
-		esim::ESim *esim = esim::ESim::getInstance();
-		long long now = esim->getRealTime();
-
-		// Context suspended in 'rt_sigsuspend' system call
-		if (X86ContextGetState(context, X86ContextSigsuspend))
-		{
-			// Context received a signal
-			if (context->signal_mask_table->pending & ~context->signal_mask_table->blocked)
-			{
-				X86ContextCheckSignalHandlerIntr(context);
-				context->signal_mask_table->blocked = context->signal_mask_table->backup;
-				x86_sys_debug("syscall 'rt_sigsuspend' - interrupted by signal (pid %d)\n", context->pid);
-				X86ContextClearState(context, X86ContextSuspended | X86ContextSigsuspend);
-				continue;
-			}
-
-			/* No event available. The context will never awake on its own, so no
-			 * 'X86EmuHostThreadSuspend' is necessary. */
-			continue;
-		}
-
-		// Context suspended in a 'waitpid' system call
-		if (X86ContextGetState(context, X86ContextWaitpid))
-		{
-			X86Context *child;
-			uint32_t pstatus;
-
-			// A zombie child is available to 'waitpid' it
-			child = X86ContextGetZombie(context, context->wakeup_pid);
-			if (child)
-			{
-				// Continue with 'waitpid' system call
-				pstatus = context->regs->ecx;
-				context->regs->eax = child->pid;
-				if (pstatus)
-					mem_write(context->mem, pstatus, 4, &child->exit_code);
-				X86ContextSetState(child, X86ContextFinished);
-
-				x86_sys_debug("syscall waitpid - continue (pid %d)\n", context->pid);
-				x86_sys_debug("  return=0x%x\n", context->regs->eax);
-				X86ContextClearState(context, X86ContextSuspended | X86ContextWaitpid);
-				continue;
-			}
-
-			/* No event available. Since this context won't wake up on its own, no
-			 * 'X86EmuHostThreadSuspend' is needed. */
-			continue;
-		}
-#endif
 		// Context suspended in a system call using a custom wake up
 		// check call-back function. NOTE: this is a new mechanism. It'd
 		// be nice if all other system calls started using it. It is

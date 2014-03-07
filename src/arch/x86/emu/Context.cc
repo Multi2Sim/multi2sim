@@ -19,6 +19,7 @@
 
 #include <cstring>
 #include <poll.h>
+#include <unistd.h>
 
 #include <arch/common/Arch.h>
 #include <lib/cpp/Misc.h>

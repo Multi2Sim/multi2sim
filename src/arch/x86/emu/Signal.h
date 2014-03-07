@@ -254,9 +254,15 @@ public:
 	const SignalSet &getBlocked() const { return blocked; }
 	SignalSet &getBlocked() { return blocked; }
 
-	/// Return backed up signal mask
-	const SignalSet &getBackup() const { return backup; }
-	SignalSet &getBackup() { return backup; }
+	/// Set the blocked signal mask
+	void setBlocked(const SignalSet &blocked) { this->blocked = blocked; }
+
+	/// Save a copy of the blocked signal mask
+	void BackupBlockedSignals() { backup = blocked; }
+
+	/// Restore the blocked signal mask previously backed up with a call to
+	/// BackupBlockedSignals()
+	void RestoreBlockedSignals() { blocked = backup; }
 
 	/// Return address where the return code can be found.
 	unsigned getRetCodePtr() const { return ret_code_ptr; }
