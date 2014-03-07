@@ -135,20 +135,6 @@ void net_event_handler(int event, void *data)
 		struct net_routing_table_entry_t *entry;
 		struct net_buffer_t *output_buffer;
 
-		/* Debug */
-		net_debug("msg "
-				"a=\"send\" "
-				"net=\"%s\" "
-				"msg=%lld "
-				"size=%d "
-				"src=\"%s\" "
-				"dst=\"%s\"\n",
-				net->name,
-				pkt->msg->id,
-				pkt->msg->size,
-				src_node->name,
-				dst_node->name);
-
 		/* Get output buffer */
 		entry = net_routing_table_lookup(routing_table, src_node,
 				dst_node);
@@ -157,11 +143,6 @@ void net_event_handler(int event, void *data)
 			fatal("%s: no route from %s to %s.\n%s", net->name,
 					src_node->name, dst_node->name,
 					net_err_no_route);
-
-		/*		if (output_buffer->write_busy >= cycle)
-			panic("%s: output buffer busy.\n%s", __FUNCTION__,
-				net_err_can_send);
-		 */
 
 		if (pkt->msg->size > output_buffer->size)
 			panic("%s: message does not fit in buffer.\n%s",
@@ -180,8 +161,6 @@ void net_event_handler(int event, void *data)
 
 		/* Schedule next event */
 		esim_schedule_event(EV_NET_OUTPUT_BUFFER, stack, 1);
-		//		fprintf(stderr, "\t\tStep 2: scheduling packet = %lld-->%d for output buffer of node %s \n",
-		//				pkt->msg->id, pkt->session_id, pkt->node->name); [K1]
 
 	}
 
@@ -206,12 +185,8 @@ void net_event_handler(int event, void *data)
 		/* If message is not at buffer head, process later */
 		assert(list_count(buffer->msg_list));
 
-		//		fprintf(stderr, "\t\t*%lld*\t Number of packets in the %s->%s is %d ", cycle ,
-		//				node->name, buffer->name, list_count(buffer->msg_list)); [K1]
-
 		if (list_get(buffer->msg_list, 0) != pkt)
 		{
-			//			fprintf(stderr,"\n"); [K1]
 			net_buffer_wait(buffer, event, stack);
 			net_debug("msg "
 					"a=\"stall\" "
@@ -223,9 +198,7 @@ void net_event_handler(int event, void *data)
 					pkt->session_id);
 			return;
 		}
-		// FIXME: I don't understand why it was buffer->read_busy >= cycle. Both link and dst_buffer would take
-		// care of the packet. Also if packet is at the head of the buffer how does it matter if
-		// the buffer is busy or not.
+
 		if (buffer->read_busy > cycle)
 		{
 			esim_schedule_event(event, stack,
@@ -308,7 +281,8 @@ void net_event_handler(int event, void *data)
 
 			/* If destination input buffer is full, wait */
 			if (pkt->size > input_buffer->size)
-				fatal("%s: message does not fit in buffer.\n%s", net->name, net_err_large_message);
+				fatal("%s: message does not fit in buffer.\n%s",
+						net->name, net_err_large_message);
 			if (input_buffer->count + pkt->size >
 			input_buffer->size)
 			{
@@ -356,7 +330,7 @@ void net_event_handler(int event, void *data)
 			bus = buffer->bus;
 			bus_node = bus->node;
 
-			/* before 1 and 2 we have to figure out what is the
+			/* before initiating bus transfer we have to figure out what is the
 			 * next input buffer since it is not clear from the
 			 * output buffer */
 			int input_buffer_detection = 0;
@@ -412,7 +386,6 @@ void net_event_handler(int event, void *data)
 						pkt->session_id);
 				return;
 			}
-
 
 			/* 3. Make sure if any bus is available; return one
 			 * that is available the fastest */
@@ -758,20 +731,16 @@ void net_event_handler(int event, void *data)
 				pkt->msg->id,
 				pkt->session_id,
 				dst_node->name);
-		//fprintf(stderr,"Step 3:the packet is about to be received %lld:%d \n", pkt->msg->id, pkt->session_id); [K1]
 
 		if (net_depacketizer(net, node, pkt) == 1)
 		{
 			if (stack->ret_event == ESIM_EV_NONE)
 			{
-				{
-					assert (msg);
-					net->transfers++;
-					net->lat_acc += cycle - msg->send_cycle;
-					net->msg_size_acc += pkt->msg->size;
-					net_receive(net, node, msg);
-
-				}
+				assert (msg);
+				net->transfers++;
+				net->lat_acc += cycle - msg->send_cycle;
+				net->msg_size_acc += pkt->msg->size;
+				net_receive(net, node, msg);
 
 			}
 			/* Finish */
