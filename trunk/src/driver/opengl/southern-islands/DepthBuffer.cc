@@ -42,10 +42,10 @@ void DepthBuffer::Resize(unsigned width, unsigned height)
 	bool enlarge = count < new_count ? true : false;
 
 	if (enlarge)
-		for (unsigned i = 0; i < abs(new_count - count); ++i)
+		for (int i = 0; i < abs(new_count - count); ++i)
 			buffer.push_back(std::unique_ptr<double> (new double(0.0f)));
 	else
-		for (unsigned i = 0; i < abs(new_count - count); ++i)
+		for (int i = 0; i < abs(new_count - count); ++i)
 		buffer.pop_back();
 }
 
