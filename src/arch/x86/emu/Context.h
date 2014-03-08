@@ -194,14 +194,19 @@ class Context
 	// The 'host_thread_suspend_active' flag is set when a 'host_thread_suspend' thread
 	// is launched for this context (by caller).
 	// It is clear when the context finished (by the host thread).
-	// It should be accessed safely by locking the emulator mutex */
+	// It should be accessed safely by locking the emulator mutex
 	pthread_t host_thread_suspend;  // Thread
 	bool host_thread_suspend_active;  // Thread-spawned flag
 
-	/* Host thread that lets time elapse and schedules call to 'x86_emu_process_events'. */
-	pthread_t host_thread_timer;  /* Thread */
-	int host_thread_timer_active;  /* Thread-spawned flag */
-	long long host_thread_timer_wakeup;  /* Time when the thread will wake up */
+	// Host thread that lets time elapse and schedules call to
+	// emu->ProcessEvents()
+	pthread_t host_thread_timer;
+	int host_thread_timer_active;
+	long long host_thread_timer_wakeup;
+	
+	// Scheduler
+	int sched_policy;
+	int sched_priority;
 
 	// Variables used to wake up suspended contexts.
 	unsigned wakeup_futex;  // Address of futex where context is suspended

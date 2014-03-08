@@ -918,7 +918,44 @@ int Context::ExecuteSyscall_execve()
 
 int Context::ExecuteSyscall_chdir()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	unsigned path_ptr = regs.getEbx();
+	emu->syscall_debug << misc::fmt("  path_ptr=0x%x\n", path_ptr);
+
+	// Read path
+	std::string path = memory->ReadString(path_ptr);
+	emu->syscall_debug << misc::fmt("  path='%s'\n", path.c_str());
+
+	// Save old host path
+	char old_host_path[200];
+	if (!getcwd(old_host_path, sizeof old_host_path))
+		misc::panic("%s: buffer 'old_host_path' too small",
+				__FUNCTION__);
+
+	// Change host path to guest working directory
+	if (chdir(loader->cwd.c_str()))
+		misc::panic("%s: %s: cannot cd to guest working directory",
+				__FUNCTION__, loader->cwd.c_str());
+	
+	// Change to specified directory
+	int err = chdir(path.c_str());
+	if (!err)
+	{
+		char new_path[200];
+		if (!getcwd(new_path, sizeof new_path))
+			misc::panic("%s: buffer 'path' too small", __FUNCTION__);
+		loader->cwd = new_path;
+		emu->syscall_debug << misc::fmt("  New working directory "
+				"is '%s'\n", loader->cwd.c_str());
+	}
+
+	// Go back to old host path
+	if (chdir(old_host_path))
+		misc::panic("%s: cannot cd back into old host path",
+				__FUNCTION__);
+
+	// Return error code received in host call
+	return err;
 }
 
 
@@ -964,7 +1001,23 @@ int Context::ExecuteSyscall_mknod()
 
 int Context::ExecuteSyscall_chmod()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	unsigned file_name_ptr = regs.getEbx();
+	unsigned mode = regs.getEcx();
+	std::string file_name = memory->ReadString(file_name_ptr);
+	std::string full_path = getFullPath(file_name);
+	emu->syscall_debug << misc::fmt("  file_name_ptr=0x%x, mode=0x%x\n",
+			file_name_ptr, mode);
+	emu->syscall_debug << misc::fmt("  file_name='%s', full_path='%s'\n",
+			file_name.c_str(), full_path.c_str());
+
+	// Host call
+	int err = chmod(full_path.c_str(), mode);
+	if (err == -1)
+		return -errno;
+
+	// Return
+	return err;
 }
 
 
@@ -1288,7 +1341,30 @@ int Context::ExecuteSyscall_kill()
 
 int Context::ExecuteSyscall_rename()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	unsigned old_path_ptr = regs.getEbx();
+	unsigned new_path_ptr = regs.getEcx();
+	emu->syscall_debug << misc::fmt("  old_path_ptr=0x%x, "
+			"new_path_ptr=0x%x\n", old_path_ptr, new_path_ptr);
+
+	// Get old path
+	std::string old_path = memory->ReadString(old_path_ptr);
+	std::string new_path = memory->ReadString(new_path_ptr);
+	std::string old_full_path = getFullPath(old_path);
+	std::string new_full_path = getFullPath(new_path);
+	emu->syscall_debug << misc::fmt("  old_path='%s', new_path='%s'\n",
+			old_path.c_str(), new_path.c_str());
+	emu->syscall_debug << misc::fmt("  old_full_path='%s', "
+			"new_full_path='%s'\n", old_full_path.c_str(),
+			new_full_path.c_str());
+
+	// Host call
+	int err = rename(old_full_path.c_str(), new_full_path.c_str());
+	if (err == -1)
+		return -errno;
+
+	// Return
+	return err;
 }
 
 
@@ -1300,7 +1376,25 @@ int Context::ExecuteSyscall_rename()
 
 int Context::ExecuteSyscall_mkdir()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	unsigned path_ptr = regs.getEbx();
+	int mode = regs.getEcx();
+	emu->syscall_debug << misc::fmt("  path_ptr=0x%x, mode=0x%x\n",
+			path_ptr, mode);
+
+	// Read path
+	std::string path = memory->ReadString(path_ptr);
+	std::string full_path = getFullPath(path);
+	emu->syscall_debug << misc::fmt("  path='%s', full_path='%s'\n",
+			path.c_str(), full_path.c_str());
+
+	// Host call
+	int err = mkdir(full_path.c_str(), mode);
+	if (err == -1)
+		return -errno;
+
+	// Return
+	return err;
 }
 
 
@@ -1324,7 +1418,29 @@ int Context::ExecuteSyscall_rmdir()
 
 int Context::ExecuteSyscall_dup()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	int guest_fd = regs.getEbx();
+	emu->syscall_debug << misc::fmt("  guest_fd=%d\n", guest_fd);
+
+	// Check that file descriptor is valid.
+	FileDesc *desc = file_table->getFileDesc(guest_fd);
+	if (!desc)
+		return -EBADF;
+	int host_fd = desc->getHostIndex();
+	emu->syscall_debug << misc::fmt("  host_fd=%d\n", host_fd);
+
+	// Duplicate host file descriptor.
+	int dup_host_fd = dup(host_fd);
+	if (dup_host_fd == -1)
+		return -errno;
+
+	// Create a new entry in the file descriptor table.
+	FileDesc *dup_desc = file_table->newFileDesc(FileDescRegular,
+			dup_host_fd, desc->getPath(), desc->getFlags());
+	int dup_guest_fd = dup_desc->getGuestIndex();
+
+	// Return new file descriptor.
+	return dup_guest_fd;
 }
 
 
@@ -1673,7 +1789,12 @@ int Context::ExecuteSyscall_dup2()
 
 int Context::ExecuteSyscall_getppid()
 {
-	__UNIMPLEMENTED__
+	// Return 1 if there is no parent
+	if (!parent)
+		return 1;
+
+	// Return parent's ID
+	return parent->pid;
 }
 
 
@@ -1831,7 +1952,45 @@ struct sim_rlimit
 
 int Context::ExecuteSyscall_setrlimit()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	unsigned res = regs.getEbx();
+	unsigned rlim_ptr = regs.getEcx();
+	emu->syscall_debug << misc::fmt("  res=0x%x, rlim_ptr=0x%x\n",
+			res, rlim_ptr);
+	emu->syscall_debug << misc::fmt("  res=%s\n",
+			rlimit_res_map.MapValue(res));
+
+	// Read structure
+	struct sim_rlimit sim_rlimit;
+	memory->Read(rlim_ptr, sizeof(struct sim_rlimit), (char *) &sim_rlimit);
+	emu->syscall_debug << misc::fmt("  rlim->cur=0x%x, rlim->max=0x%x\n",
+			sim_rlimit.cur, sim_rlimit.max);
+
+	// Different actions depending on resource type
+	switch (res)
+	{
+
+	case RLIMIT_DATA:
+	{
+		// Default limit is maximum. This system call is ignored.
+		break;
+	}
+
+	case RLIMIT_STACK:
+	{
+		// A program should allocate its stack with calls to mmap.
+		// This should be a limit for the stack, which is ignored here.
+		break;
+	}
+
+	default:
+		misc::fatal("%s: not implemented for res = %s.\n%s",
+				__FUNCTION__, rlimit_res_map.MapValue(res),
+				syscall_error_note);
+	}
+
+	// Return
+	return 0;
 }
 
 
@@ -1867,7 +2026,33 @@ int Context::ExecuteSyscall_getrusage()
 
 int Context::ExecuteSyscall_gettimeofday()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	unsigned tv_ptr = regs.getEbx();
+	unsigned tz_ptr = regs.getEcx();
+	emu->syscall_debug << misc::fmt("  tv_ptr=0x%x, tz_ptr=0x%x\n",
+			tv_ptr, tz_ptr);
+
+	// Host call
+	struct timeval tv;
+	struct timezone tz;
+	gettimeofday(&tv, &tz);
+
+	// Write time value
+	if (tv_ptr)
+	{
+		memory->Write(tv_ptr, 4, (char *) &tv.tv_sec);
+		memory->Write(tv_ptr + 4, 4, (char *) &tv.tv_usec);
+	}
+
+	// Write time zone
+	if (tz_ptr)
+	{
+		memory->Write(tz_ptr, 4, (char *) &tz.tz_minuteswest);
+		memory->Write(tz_ptr + 4, 4, (char *) &tz.tz_dsttime);
+	}
+
+	// Return
+	return 0;
 }
 
 
@@ -2134,7 +2319,27 @@ int Context::SyscallMmapAux(unsigned addr, unsigned len,
 
 int Context::ExecuteSyscall_mmap()
 {
-	__UNIMPLEMENTED__
+	// This system call takes the arguments from memory, at the address
+	// pointed by 'ebx'.
+	unsigned args_ptr = regs.getEbx();
+	unsigned addr, len;
+	int prot, flags, guest_fd, offset;
+	memory->Read(args_ptr, 4, (char *) &addr);
+	memory->Read(args_ptr + 4, 4, (char *) &len);
+	memory->Read(args_ptr + 8, 4, (char *) &prot);
+	memory->Read(args_ptr + 12, 4, (char *) &flags);
+	memory->Read(args_ptr + 16, 4, (char *) &guest_fd);
+	memory->Read(args_ptr + 20, 4, (char *) &offset);
+	emu->syscall_debug << misc::fmt("  args_ptr=0x%x\n", args_ptr);
+	emu->syscall_debug << misc::fmt("  addr=0x%x, len=%u, prot=0x%x, "
+			"flags=0x%x, guest_fd=%d, offset=0x%x\n",
+			addr, len, prot, flags, guest_fd, offset);
+	emu->syscall_debug << misc::fmt("  prot=%s, flags=%s\n",
+			mmap_prot_map.MapFlags(prot).c_str(),
+			mmap_flags_map.MapFlags(flags).c_str());
+
+	// Call
+	return SyscallMmapAux(addr, len, prot, flags, guest_fd, offset);
 }
 
 
@@ -2196,7 +2401,22 @@ int Context::ExecuteSyscall_ftruncate()
 
 int Context::ExecuteSyscall_fchmod()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	int fd = regs.getEbx();
+	int mode = regs.getEcx();
+	emu->syscall_debug << misc::fmt("  fd=%d, mode=%d\n", fd, mode);
+
+	// Get host descriptor
+	int host_fd = file_table->getHostIndex(fd);
+	emu->syscall_debug << misc::fmt("  host_fd=%d\n", host_fd);
+
+	// Host call
+	int err = fchmod(host_fd, mode);
+	if (err == -1)
+		return -errno;
+
+	// Return
+	return err;
 }
 
 
@@ -2208,7 +2428,26 @@ int Context::ExecuteSyscall_fchmod()
 
 int Context::ExecuteSyscall_fchown16()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	unsigned file_name_ptr = regs.getEbx();
+	int owner = regs.getEcx();
+	int group = regs.getEdx();
+	emu->syscall_debug << misc::fmt("  file_name_ptr=0x%x, owner=%d, "
+			"group=%d\n", file_name_ptr, owner, group);
+
+	// Read file name
+	std::string file_name = memory->ReadString(file_name_ptr);
+	std::string full_path = getFullPath(file_name);
+	emu->syscall_debug << misc::fmt("  filename='%s', fullpath='%s'\n",
+			file_name.c_str(), full_path.c_str());
+
+	// Host call
+	int err = chown(full_path.c_str(), owner, group);
+	if (err == -1)
+		return -errno;
+
+	// Return
+	return err;
 }
 
 
@@ -2964,9 +3203,26 @@ int Context::ExecuteSyscall_flock()
 // System call 'msync'
 //
 
+static const misc::StringMap msync_flags_map =
+{
+	{ "MS_ASYNC", 1 },
+	{ "MS_INAVLIAGE", 2 },
+	{ "MS_SYNC", 4 }
+};
+
 int Context::ExecuteSyscall_msync()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	unsigned start = regs.getEbx();
+	unsigned len = regs.getEcx();
+	int flags = regs.getEdx();
+	emu->syscall_debug << misc::fmt("  start=0x%x, len=0x%x, flags=0x%x\n",
+			start, len, flags);
+	emu->syscall_debug << misc::fmt("  flags=%s\n",
+			msync_flags_map.MapFlags(flags).c_str());
+
+	// System call ignored
+	return 0;
 }
 
 
@@ -3024,9 +3280,51 @@ int Context::ExecuteSyscall_fdatasync()
 // System call 'sysctl'
 //
 
+struct sysctl_args
+{
+	unsigned pname;
+	unsigned nlen;
+	unsigned poldval;
+	unsigned oldlenp;
+	unsigned pnewval;
+	unsigned newlen;
+};
+
 int Context::ExecuteSyscall_sysctl()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	unsigned args_ptr = regs.getEbx();
+	emu->syscall_debug << misc::fmt("  pargs=0x%x\n", args_ptr);
+
+	// Access arguments in memory
+	struct sysctl_args args;
+	memory->Read(args_ptr, sizeof args, (char *) &args);
+	emu->syscall_debug << misc::fmt("    pname=0x%x\n", args.pname);
+	emu->syscall_debug << misc::fmt("    nlen=%d\n      ", args.nlen);
+	for (unsigned i = 0; i < args.nlen; i++)
+	{
+		unsigned aux;
+		memory->Read(args.pname + i * 4, 4, (char *) &aux);
+		emu->syscall_debug << misc::fmt("name[%d]=%d ", i, aux);
+	}
+	emu->syscall_debug << misc::fmt("\n    poldval=0x%x\n", args.poldval);
+	emu->syscall_debug << misc::fmt("    oldlenp=0x%x\n", args.oldlenp);
+	emu->syscall_debug << misc::fmt("    pnewval=0x%x\n", args.pnewval);
+	emu->syscall_debug << misc::fmt("    newlen=%d\n", args.newlen);
+
+	// Supported values
+	if (!args.oldlenp || !args.poldval)
+		misc::fatal("%s: not supported for poldval=0 or oldlenp=0.\n%s",
+			__FUNCTION__, syscall_error_note);
+	if (args.pnewval || args.newlen)
+		misc::fatal("%s: not supported for pnewval or newlen other than 0.\n%s",
+			__FUNCTION__, syscall_error_note);
+
+	// Return
+	unsigned zero = 0;
+	memory->Write(args.oldlenp, 4, (char *) &zero);
+	memory->Write(args.poldval, 1, (char *) &zero);
+	return 0;
 }
 
 
@@ -3086,7 +3384,54 @@ int Context::ExecuteSyscall_munlockall()
 
 int Context::ExecuteSyscall_sched_setparam()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	int pid = regs.getEbx();
+	unsigned param_ptr = regs.getEcx();
+	emu->syscall_debug << misc::fmt("  pid=%d\n", pid)
+			<< misc::fmt("  param_ptr=0x%x\n", param_ptr);
+
+	// Read priority
+	int sched_priority;
+	memory->Read(param_ptr, 4, (char *) &sched_priority);
+	emu->syscall_debug << misc::fmt("    param.sched_priority=%d\n",
+			sched_priority);
+
+	// Currently only works when pid matches calling context
+	if (pid != this->pid)
+		misc::panic("%s: only supported for same pid as current "
+				"context.\n%s", __FUNCTION__,
+				syscall_error_note);
+
+	// Max and min priority
+	int max_priority = 99;
+	int min_priority = 0;
+	switch (sched_policy)
+	{
+
+	case SCHED_OTHER:
+		max_priority = 0;
+		min_priority = 0;
+
+	case SCHED_FIFO:
+		max_priority = 99;
+		min_priority = 1;
+
+	case SCHED_RR:
+		max_priority = 99;
+		min_priority = 1;
+
+	default:
+		misc::fatal("%s: policy not supported.\n%s",
+				__FUNCTION__, syscall_error_note);
+	}
+
+	if (sched_priority < min_priority || sched_priority > max_priority)
+		misc::fatal("%s: invalid scheduling priority supplied (%d: "
+				"min = %d, max = %d)\n", __FUNCTION__,
+				sched_priority, min_priority, max_priority);
+
+	// Ignore system call
+	return 0;
 }
 
 
@@ -3098,7 +3443,24 @@ int Context::ExecuteSyscall_sched_setparam()
 
 int Context::ExecuteSyscall_sched_getparam()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	int pid = regs.getEbx();
+	unsigned param_ptr = regs.getEcx();
+	emu->syscall_debug << misc::fmt("  pid=%d\n", pid)
+			<< misc::fmt("  param_ptr=0x%x\n", param_ptr);
+
+	// Currently only works when pid matches calling context
+	if (pid != this->pid)
+		misc::panic("%s: only supported for same pid as current "
+				"context.\n%s", __FUNCTION__,
+				syscall_error_note);
+
+	// Return scheduling priority
+	memory->Write(param_ptr, 4, (char *) &sched_priority);
+	emu->syscall_debug << misc::fmt("  returning sched priority %d\n",
+			sched_priority);
+
+	return 0;
 }
 
 
@@ -3110,7 +3472,55 @@ int Context::ExecuteSyscall_sched_getparam()
 
 int Context::ExecuteSyscall_sched_setscheduler()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	int pid = regs.getEbx();
+	int policy = regs.getEcx();
+	unsigned param_ptr = regs.getEdx();
+	emu->syscall_debug << misc::fmt("  pid=%d\n", pid)
+			<< misc::fmt("  policy=%d\n", policy);
+
+	// Read scheduler info
+	struct sched_param param;
+	memory->Read(param_ptr, sizeof(struct sched_param), (char *) &param);
+	int priority = param.sched_priority;
+	emu->syscall_debug << misc::fmt("  param_ptr=0x%x (priority = %d)\n",
+			param_ptr, param.sched_priority);
+
+	switch (policy)
+	{
+	case SCHED_OTHER:
+		if (priority != 0)
+			misc::fatal("%s: invalid priority.\n%s",
+					__FUNCTION__, syscall_error_note);
+		break;
+
+	case SCHED_FIFO:
+		misc::warning("%s: FIFO policy is not implemented to spec\n%s",
+				__FUNCTION__, syscall_error_note);
+		if (priority < 1 || priority > 99)
+			misc::fatal("%s: invalid priority.\n%s",
+					__FUNCTION__, syscall_error_note);
+		break;
+
+	case SCHED_RR:
+		if (priority < 1 || priority > 99)
+			misc::fatal("%s: invalid priority.\n%s",
+					__FUNCTION__, syscall_error_note);
+		break;
+
+	default:
+		misc::fatal("%s: policy not supported (%d).\n%s",
+				__FUNCTION__, policy, syscall_error_note);
+	}
+
+	// Find context referred by pid.
+	Context *context = emu->getContext(pid);
+	if (!context)
+		misc::fatal("%s: invalid pid (%d)", __FUNCTION__, pid);
+
+	context->sched_policy = policy;
+	context->sched_priority = priority;
+	return 0;
 }
 
 
@@ -3122,7 +3532,22 @@ int Context::ExecuteSyscall_sched_setscheduler()
 
 int Context::ExecuteSyscall_sched_getscheduler()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	int pid = regs.getEbx();
+	emu->syscall_debug << misc::fmt("  pid=%d\n", pid);
+
+	// Currently only works when pid matches calling context
+	if (pid != this->pid)
+		misc::panic("%s: only supported for same pid as current "
+				"context.\n%s", __FUNCTION__,
+				syscall_error_note);
+
+	// Debug
+	emu->syscall_debug << misc::fmt("  returning scheduling policy %d\n",
+			sched_policy);
+
+	// Return
+	return sched_policy;
 }
 
 
@@ -3146,7 +3571,29 @@ int Context::ExecuteSyscall_sched_yield()
 
 int Context::ExecuteSyscall_sched_get_priority_max()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	int policy = regs.getEbx();
+	emu->syscall_debug << misc::fmt("  policy=%d\n", policy);
+
+	switch (policy)
+	{
+
+	case SCHED_OTHER:
+		return 0;
+
+	case SCHED_FIFO:
+		return 99;
+
+	case SCHED_RR:
+		return 99;
+
+	default:
+		misc::fatal("%s: policy not supported.\n%s",
+				__FUNCTION__, syscall_error_note);
+	}
+
+	// Dead code
+	return 0;
 }
 
 
@@ -3158,7 +3605,29 @@ int Context::ExecuteSyscall_sched_get_priority_max()
 
 int Context::ExecuteSyscall_sched_get_priority_min()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	int policy = regs.getEbx();
+	emu->syscall_debug << misc::fmt("  policy=%d\n", policy);
+
+	switch (policy)
+	{
+
+	case SCHED_OTHER:
+		return 0;
+
+	case SCHED_FIFO:
+		return 1;
+
+	case SCHED_RR:
+		return 1;
+
+	default:
+		misc::fatal("%s: policy not supported.\n%s",
+				__FUNCTION__, syscall_error_note);
+	}
+
+	// Dead code
+	return 0;
 }
 
 
@@ -3276,7 +3745,60 @@ int Context::ExecuteSyscall_nanosleep()
 
 int Context::ExecuteSyscall_mremap()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	unsigned addr = regs.getEbx();
+	unsigned old_len = regs.getEcx();
+	unsigned new_len = regs.getEdx();
+	int flags = regs.getEsi();
+	emu->syscall_debug << misc::fmt("  addr=0x%x, old_len=0x%x, "
+			"new_len=0x%x flags=0x%x\n",
+			addr, old_len, new_len, flags);
+
+	// Restrictions
+	assert(!(addr & (mem::MemoryPageSize - 1)));
+	assert(!(old_len & (mem::MemoryPageSize - 1)));
+	assert(!(new_len & (mem::MemoryPageSize - 1)));
+	if (!(flags & 0x1))
+		misc::fatal("%s: flags MAP_MAYMOVE must be present",
+				__FUNCTION__);
+	if (!old_len || !new_len)
+		misc::fatal("%s: old_len or new_len cannot be zero",
+				__FUNCTION__);
+
+	// New size equals to old size means no action.
+	if (new_len == old_len)
+		return addr;
+
+	// Shrink region. This is always possible.
+	if (new_len < old_len)
+	{
+		memory->Unmap(addr + new_len, old_len - new_len);
+		return addr;
+	}
+
+	/* Increase region at the same address. This is only possible if
+	 * there is enough free space for the new region. */
+	if (new_len > old_len && memory->MapSpace(addr + old_len,
+			new_len - old_len) == addr + old_len)
+	{
+		memory->Map(addr + old_len, new_len - old_len,
+				mem::MemoryAccessRead | mem::MemoryAccessWrite);
+		return addr;
+	}
+
+	// A new region must be found for the new size.
+	unsigned new_addr = memory->MapSpaceDown(mmap_base_address, new_len);
+	if (new_addr == (unsigned) -1)
+		misc::fatal("%s: out of guest memory", __FUNCTION__);
+
+	// Map new region and copy old one
+	memory->Map(new_addr, new_len, mem::MemoryAccessRead |
+			mem::MemoryAccessWrite);
+	memory->Copy(new_addr, addr, std::min(old_len, new_len));
+	memory->Unmap(addr, old_len);
+
+	// Return new address
+	return new_addr;
 }
 
 
@@ -3883,7 +4405,19 @@ int Context::ExecuteSyscall_chown16()
 
 int Context::ExecuteSyscall_getcwd()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	unsigned buf_ptr = regs.getEbx();
+	unsigned size = regs.getEcx();
+	emu->syscall_debug << misc::fmt("  buf_ptr=0x%x, size=0x%x\n",
+			buf_ptr, size);
+
+	// Does not fit
+	if (size <= loader->cwd.length())
+		return -ERANGE;
+
+	// Return
+	memory->WriteString(buf_ptr, loader->cwd);
+	return loader->cwd.length() + 1;
 }
 
 
@@ -4079,7 +4613,22 @@ int Context::ExecuteSyscall_truncate64()
 
 int Context::ExecuteSyscall_ftruncate64()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	int fd = regs.getEbx();
+	unsigned length = regs.getEcx();
+	emu->syscall_debug << misc::fmt("  fd=%d, length=0x%x\n", fd, length);
+
+	// Get host descriptor
+	int host_fd = file_table->getHostIndex(fd);
+	emu->syscall_debug << misc::fmt("  host_fd=%d\n", host_fd);
+
+	// Host call
+	int err = ftruncate(host_fd, length);
+	if (err == -1)
+		return -errno;
+
+	// Return
+	return err;
 }
 
 
@@ -4212,7 +4761,7 @@ int Context::ExecuteSyscall_lchown()
 
 int Context::ExecuteSyscall_getuid()
 {
-	__UNIMPLEMENTED__
+	return getuid();
 }
 
 
@@ -4224,7 +4773,7 @@ int Context::ExecuteSyscall_getuid()
 
 int Context::ExecuteSyscall_getgid()
 {
-	__UNIMPLEMENTED__
+	return getgid();
 }
 
 
@@ -4236,7 +4785,7 @@ int Context::ExecuteSyscall_getgid()
 
 int Context::ExecuteSyscall_geteuid()
 {
-	__UNIMPLEMENTED__
+	return geteuid();
 }
 
 
@@ -4248,7 +4797,7 @@ int Context::ExecuteSyscall_geteuid()
 
 int Context::ExecuteSyscall_getegid()
 {
-	__UNIMPLEMENTED__
+	return getegid();
 }
 
 
@@ -4482,9 +5031,103 @@ int Context::ExecuteSyscall_getdents64()
 // System call 'fcntl64'
 //
 
+static const misc::StringMap fcntl_cmd_map =
+{
+	{ "F_DUPFD", 0 },
+	{ "F_GETFD", 1 },
+	{ "F_SETFD", 2 },
+	{ "F_GETFL", 3 },
+	{ "F_SETFL", 4 },
+	{ "F_GETLK", 5 },
+	{ "F_SETLK", 6 },
+	{ "F_SETLKW", 7 },
+	{ "F_SETOWN", 8 },
+	{ "F_GETOWN", 9 },
+	{ "F_SETSIG", 10 },
+	{ "F_GETSIG", 11 },
+	{ "F_GETLK64", 12 },
+	{ "F_SETLK64", 13 },
+	{ "F_SETLKW64", 14 }
+};
+
 int Context::ExecuteSyscall_fcntl64()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	int guest_fd = regs.getEbx();
+	int cmd = regs.getEcx();
+	unsigned arg = regs.getEdx();
+	emu->syscall_debug << misc::fmt("  guest_fd=%d, cmd=%d, arg=0x%x\n",
+			guest_fd, cmd, arg);
+	emu->syscall_debug << misc::fmt("    cmd=%s\n",
+			fcntl_cmd_map.MapValue(cmd));
+
+	// Get file descriptor table entry
+	FileDesc *desc = file_table->getFileDesc(guest_fd);
+	if (!desc)
+		return -EBADF;
+	if (desc->getHostIndex() < 0)
+		misc::fatal("%s: not supported for this type of file",
+				__FUNCTION__);
+	emu->syscall_debug << misc::fmt("    host_fd=%d\n",
+			desc->getHostIndex());
+
+	// Process command
+	int err = 0;
+	switch (cmd)
+	{
+
+	// F_GETFD
+	case 1:
+	{
+		err = fcntl(desc->getHostIndex(), F_GETFD);
+		if (err == -1)
+			err = -errno;
+		break;
+	}
+
+	// F_SETFD
+	case 2:
+	{
+		err = fcntl(desc->getHostIndex(), F_SETFD, arg);
+		if (err == -1)
+			err = -errno;
+		break;
+	}
+
+	// F_GETFL
+	case 3:
+	{
+		err = fcntl(desc->getHostIndex(), F_GETFL);
+		if (err == -1)
+			err = -errno;
+		else
+			emu->syscall_debug << misc::fmt("    ret=%s\n",
+					open_flags_map.MapFlags(err).c_str());
+		break;
+	}
+
+	// F_SETFL
+	case 4:
+	{
+		emu->syscall_debug << misc::fmt("    arg=%s\n",
+				open_flags_map.MapFlags(arg).c_str());
+		desc->setFlags(arg);
+
+		err = fcntl(desc->getHostIndex(), F_SETFL, arg);
+		if (err == -1)
+			err = -errno;
+		break;
+	}
+
+	default:
+
+		misc::fatal("%s: command %s not implemented.\n%s",
+				__FUNCTION__, fcntl_cmd_map.MapValue(cmd),
+				syscall_error_note);
+	}
+
+	// Return
+	return err;
 }
 
 
@@ -4520,7 +5163,10 @@ int Context::ExecuteSyscall_ni_syscall_223()
 
 int Context::ExecuteSyscall_gettid()
 {
-	__UNIMPLEMENTED__
+	// FIXME: return different 'tid' for threads, but the system call
+	// 'getpid' should return the same 'pid' for threads from the same group
+	// created with CLONE_THREAD flag.
+	return pid;
 }
 
 
@@ -5082,7 +5728,18 @@ int Context::ExecuteSyscall_io_cancel()
 
 int Context::ExecuteSyscall_fadvise64()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	int fd = regs.getEbx();
+	unsigned off_lo = regs.getEcx();
+	unsigned off_hi = regs.getEdx();
+	unsigned len = regs.getEsi();
+	int advice = regs.getEdi();
+	emu->syscall_debug << misc::fmt("  fd=%d, off={0x%x, 0x%x}, "
+			"len=%d, advice=%d\n", fd, off_hi, off_lo,
+			len, advice);
+
+	// System call ignored
+	return 0;
 }
 
 
@@ -5285,7 +5942,18 @@ int Context::ExecuteSyscall_clock_gettime()
 
 int Context::ExecuteSyscall_clock_getres()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	unsigned clk_id = regs.getEbx();
+	unsigned pres = regs.getEcx();
+	emu->syscall_debug << misc::fmt("  clk_id=%d\n", clk_id);
+	emu->syscall_debug << misc::fmt("  pres=0x%x\n", pres);
+
+	// Return
+	unsigned tv_sec = 0;
+	unsigned tv_nsec = 1;
+	memory->Write(pres, 4, (char *) &tv_sec);
+	memory->Write(pres + 4, 4, (char *) &tv_nsec);
+	return 0;
 }
 
 
@@ -5333,7 +6001,29 @@ int Context::ExecuteSyscall_fstatfs64()
 
 int Context::ExecuteSyscall_tgkill()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	int tgid = regs.getEbx();
+	int pid = regs.getEcx();
+	int sig = regs.getEdx();
+	emu->syscall_debug << misc::fmt("  tgid=%d, pid=%d, sig=%d (%s)\n",
+			tgid, pid, sig, signal_map.MapValue(sig));
+
+	// Implementation restrictions.
+	if (tgid == -1)
+		misc::panic("%s: not supported for tgid = -1\n%s",
+				__FUNCTION__, syscall_error_note);
+
+	// Find context referred by pid.
+	Context *context = emu->getContext(pid);
+	if (!context)
+		misc::fatal("%s: invalid pid (%d)", __FUNCTION__, pid);
+
+	// Send signal
+	context->signal_mask_table.getPending().Add(sig);
+	context->HostThreadSuspendCancel();
+	emu->ProcessEventsSchedule();
+	emu->ProcessEvents();
+	return 0;
 }
 
 
