@@ -281,6 +281,8 @@ Context::Context()
 	robust_list_head = 0;
 	host_thread_suspend_active = false;
 	host_thread_timer_active = false;
+	sched_policy = SCHED_RR;
+	sched_priority = 1;  // Lowest priority
 
 	wakeup_fn = nullptr;
 	can_wakeup_fn = nullptr;
