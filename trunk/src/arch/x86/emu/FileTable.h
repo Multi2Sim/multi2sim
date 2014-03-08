@@ -89,6 +89,9 @@ public:
 
 	/// Return the flags with which this file was opened
 	int getFlags() const { return flags; }
+	
+	/// Update the file descriptor flags
+	void setFlags(int flags) { this->flags = flags; }
 
 	/// Return associated path, if any
 	const std::string &getPath() const { return path; }
