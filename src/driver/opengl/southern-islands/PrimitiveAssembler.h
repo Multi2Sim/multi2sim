@@ -160,17 +160,20 @@ public:
 	}
 
 	/// Get reference of a vertex
-	const PrimAsmVertex &getVertex(unsigned id) {
+	const PrimAsmVertex *getVertex(unsigned id) const {
 		assert(id > 0 && id < 3);
 		switch (id)
 		{
 		case 0:
-			return vtx0;
+			return &vtx0;
 		case 1:
-			return vtx1;
+			return &vtx1;
 		case 2:
-			return vtx2;
+			return &vtx2;
+		default:
+			return nullptr;
 		}
+		return nullptr;
 	}
 
 };

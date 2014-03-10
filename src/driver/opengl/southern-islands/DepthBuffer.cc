@@ -69,14 +69,14 @@ void DepthBuffer::Clear(double value)
 		*buffer[i] = value;
 }
 
-bool DepthBuffer::isPass(unsigned x, unsigned y, double value, DepthBufferCompareFunc func)
+bool DepthBuffer::isPass(unsigned x, unsigned y, double value) const
 {
 	assert(x > 0 && x < width && y > 0 && y < height);
 
 	bool is_pass;
 	double depth = *buffer[y * width + x];
 
-	switch(func)
+	switch(compare_func)
 	{
 		case GL_NEVER:
 			is_pass = true;
@@ -108,6 +108,11 @@ bool DepthBuffer::isPass(unsigned x, unsigned y, double value, DepthBufferCompar
 	}
 
 	return is_pass;
+}
+
+bool DepthBuffer::isPass(unsigned x, unsigned y, float value) const
+{
+	return isPass(x, y, (float)value);
 }
 
 
