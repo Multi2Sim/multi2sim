@@ -78,19 +78,49 @@ class ScanConvEdge
 	int            fx0;   // fixed pt X of lower endpoint
 	int            lines; // number of lines to be sampled on this edge
 
+	const PrimAsmVertex  *vtx0;
+	const PrimAsmVertex  *vtx1;
+
 public:
-	ScanConvEdge(const PrimAsmVertex &vtx0, const PrimAsmVertex &vtx1);
+	ScanConvEdge(const PrimAsmVertex *vtx0, const PrimAsmVertex *vtx1);
 
 	/// Getters
 	///
+	/// Get dx
+	float getDx() const { return dx; }
+
+	/// Get dy
+	float getDy() const { return dy; }
+
+	/// Get dxdy
+	float getDxDy() const { return dxdy; }
+
+	/// Get fdxdy
+	int getFDxDy() const { return fdxdy; }
+
+	/// Get adjy
+	float getAdjy() const {return adjy; }
+
+	/// Get fsx
+	int getFsx() const { return fsx; }
+
+	/// Get fsy
+	int getFsy() const { return fsy; }
+
+	int getFx0() const { return fx0; }
+
 	/// Get number of lines on this edge
 	int getLines() const { return lines; }
 
-	/// Get Dx
-	float getDx() const { return dx; }
-
-	/// Get Dy
-	float getDy() const { return dy; }
+	/// Get pointer to vertex 0
+	const PrimAsmVertex *getVertex(int index) {
+		assert(index < 2);
+		if (index == 0)
+			return vtx0;
+		else
+			return vtx1;
+		return nullptr;
+	}
 
 };
 
@@ -116,12 +146,63 @@ class ScanConvSpan
 public:
 	ScanConvSpan();
 
+	/// Getters
+	int getX() const { return x; }
+
+	int getY() const { return y; }
+
+	int getZ() const { return z; }
+
+	float getStepX(int index) const {
+		assert(index < 4);
+		return attrStepX[index];
+	}
+
+	float getStepY(int index) const {
+		assert(index < 4);
+		return attrStepY[index];
+	}
+
+	int getStepZ() const { return zStep; }
+
+	unsigned getEnd() const { return end; }
+
+	/// Setters
+	void setX(int value) { x = value; }
+
+	void setY(int value) { y = value; }
+
+	void setZ(int value) { z = value; }
+
+	void setStartX(int index, float value) {
+		assert(index < 4);
+		attrStart[index] = value;
+	}
+
+	void setStepX(int index, float value) {
+		assert(index < 4);
+		attrStepX[index] = value;
+	}
+
+	void setStepY(int index, float value) {
+		assert(index < 4);
+		attrStepY[index] = value;
+	}
+
+	void setStepZ(int value) { zStep = value; }
+
+	void setEnd(unsigned value) { end = value; }
+
+	void incX() { x++; }
+
+	void incY() { y++; }
+
 };
 
 class PixelInfo
 {
 	// Positions in window coordinates
-	bool isWDCSet;
+	bool isPosSet;
 	int pos[4];
 
 	// Barycentric coordinates to be load to VGPRs
@@ -132,7 +213,7 @@ public:
 	PixelInfo(int x, int y, int z);
 
 	/// Generate baricentric coordinates
-	void GenBaryCoord(const PrimAsmTriangle &triangle);
+	void GenBaryCoord(const PrimAsmTriangle *triangle);
 
 };
 
@@ -148,7 +229,7 @@ class ScanConverter
 public:
 	ScanConverter();
 
-	void Rasterize(const PrimAsmTriangle &triangle, const DepthBuffer &depth_buffer);
+	void Rasterize(const PrimAsmTriangle *triangle, const DepthBuffer *depth_buffer);
 };
 
 } // namespace SI

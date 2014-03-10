@@ -97,8 +97,10 @@ public:
 	/// \param x X position
 	/// \param y Y position
 	/// \param value The value to be compared
-	/// \param func Test function 
-	bool isPass(unsigned x, unsigned y, double value, DepthBufferCompareFunc func);
+	bool isPass (unsigned x, unsigned y, double value) const;
+
+	bool isPass(unsigned x, unsigned y, float value) const;
+
 };
 
 } // namespace SI
