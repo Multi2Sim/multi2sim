@@ -703,7 +703,7 @@ OpenGLSiShaderBinaryCommon::OpenGLSiShaderBinaryCommon(const char *buffer, unsig
 			DecodeUsageInfo(section);
 			continue;
 		}
-		if (section->getName() == "symbols")
+		if (section->getName() == ".symbols")
 		{
 			DecodeSymbols(section);
 			continue;
@@ -783,8 +783,8 @@ void OpenGLSiShaderBinaryCommon::DecodeSymbols(ELFReader::Section *section)
 }
 
 // Vertex shader binary constructor
-OpenGLSiShaderBinaryVertex::OpenGLSiShaderBinaryVertex(ELFReader::File *file)
-	: OpenGLSiShaderBinaryCommon(file->getBuffer(), file->getSize())
+OpenGLSiShaderBinaryVertex::OpenGLSiShaderBinaryVertex(const char *buffer, unsigned size)
+	: OpenGLSiShaderBinaryCommon(buffer, size)
 {
 	int num_section = getNumSections();
 	ELFReader::Section *section;
@@ -799,8 +799,8 @@ OpenGLSiShaderBinaryVertex::OpenGLSiShaderBinaryVertex(ELFReader::File *file)
 }
 
 // Fragment shader binary constructor
-OpenGLSiShaderBinaryPixel::OpenGLSiShaderBinaryPixel(ELFReader::File *file)
-	: OpenGLSiShaderBinaryCommon(file->getBuffer(), file->getSize())
+OpenGLSiShaderBinaryPixel::OpenGLSiShaderBinaryPixel(const char *buffer, unsigned size)
+	: OpenGLSiShaderBinaryCommon(buffer, size)
 {
 	int num_section = getNumSections();
 	ELFReader::Section *section;
@@ -811,6 +811,24 @@ OpenGLSiShaderBinaryPixel::OpenGLSiShaderBinaryPixel(ELFReader::File *file)
 		if (section->getName() == ".text")
 			meta.reset(new OpenGLSiBinPixelShaderMetadata(section->getBuffer()));
 		break;
+	}
+}
+
+// OpenGL ELF program binary, get by glGetProgramBinary
+OpenGLSiProgramBinary::OpenGLSiProgramBinary(const char *buffer, unsigned buffer_size)
+	: ELFReader::File(buffer, buffer_size)
+{
+	for (auto &symbol : this->getSymbols())
+	{
+		const char *elf_bin_buf   = symbol->getSection()->getBuffer();
+		unsigned    elf_bin_size  = symbol->getSection()->getSize();
+
+		if (symbol->getName() == "__Shader_V_AsicID_23_ElfBinary_0_")
+			vertex_shader.reset(new OpenGLSiShaderBinaryVertex(elf_bin_buf, elf_bin_size));
+		else if (symbol->getName() == "__Shader_F_AsicID_23_ElfBinary_0_")
+			pixel_shader.reset(new OpenGLSiShaderBinaryPixel(elf_bin_buf, elf_bin_size));
+		else
+			return;
 	}
 }
 

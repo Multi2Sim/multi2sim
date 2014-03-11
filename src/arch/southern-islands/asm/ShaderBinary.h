@@ -1297,7 +1297,7 @@ class OpenGLSiShaderBinaryVertex : public OpenGLSiShaderBinaryCommon
 	// metadata is stored in .text section
 	std::unique_ptr<OpenGLSiBinVertexShaderMetadata> meta;
 public:
-	OpenGLSiShaderBinaryVertex(ELFReader::File *file);
+	OpenGLSiShaderBinaryVertex(const char *buffer, unsigned size);
 };
 
 // Pixel Shader ELF binary with decoded information
@@ -1306,7 +1306,17 @@ class OpenGLSiShaderBinaryPixel : public OpenGLSiShaderBinaryCommon
 	// metadata is stored in .text section
 	std::unique_ptr<OpenGLSiBinPixelShaderMetadata> meta;
 public:
-	OpenGLSiShaderBinaryPixel(ELFReader::File *file);
+	OpenGLSiShaderBinaryPixel(const char *buffer, unsigned size);
+};
+
+// Binary get by glGetProgramBinary. It should be ELF formatted in latest AMD driver
+class OpenGLSiProgramBinary : public ELFReader::File
+{
+	std::unique_ptr<OpenGLSiShaderBinaryVertex> vertex_shader;
+	std::unique_ptr<OpenGLSiShaderBinaryPixel> pixel_shader;
+
+public:
+	OpenGLSiProgramBinary(const char *buffer, unsigned buffer_size);
 };
 
 } // namepace SI
