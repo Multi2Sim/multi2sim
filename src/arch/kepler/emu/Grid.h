@@ -94,7 +94,7 @@ class Grid
 
 public:
 	/// Constructor
-	Grid(Emu *emu, cuda_function_t *function);
+	Grid(cuda_function_t *function);
 
 	/// Dump the state of the grid in a plain-text format into an output
 	/// stream.

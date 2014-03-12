@@ -38,48 +38,48 @@ struct KplAsm;
 // Wrapper for class Emu
 ////////////////////////////////////////////////////////////////////////////////
 
-KplEmu *KplWrapEmuCreate(struct KplAsm *as);
+KplEmu *KplWrapEmuCreate();
 
 /// Get Kepler Emulator global memory top
-unsigned KplGetGlobalMemTop(KplEmu *self);
+unsigned KplGetGlobalMemTop();
 
 /// Get Kelper Emulator global memory free size
-unsigned KplGetGlobalMemFreeSize(KplEmu *self);
+unsigned KplGetGlobalMemFreeSize();
 
 /// Get Kelper Emulator global memory Total size
-unsigned KplGetGlobalMemTotalSize(KplEmu *self);
+unsigned KplGetGlobalMemTotalSize();
 
 /// Set Kelper Emulator global memory top
-void KplSetGlobalMemTop(KplEmu *self, unsigned value);
+void KplSetGlobalMemTop(unsigned value);
 
 /// Set Kelper Emulator global memory free size
-void KplSetGlobalMemFreeSize(KplEmu *self, unsigned value);
+void KplSetGlobalMemFreeSize(unsigned value);
 
 /// Set Kelper Emulator global memory total size
-void KplSetGlobalMemTotalSize(KplEmu *self, unsigned value);
+void KplSetGlobalMemTotalSize(unsigned value);
 
 /// Read to Global memory
-void KplReadGlobalMem(KplEmu *self,unsigned addr, unsigned size, void* buf);
+void KplReadGlobalMem(unsigned addr, unsigned size, void* buf);
 
 /// Write to Global memory
-void KplWriteGlobalMem(KplEmu *self,unsigned addr, unsigned size, void* buf);
+void KplWriteGlobalMem(unsigned addr, unsigned size, void* buf);
 
 /// Write to Constant memory
-void KplWriteConstMem(KplEmu *self,unsigned addr, unsigned size, void* buf);
+void KplWriteConstMem(unsigned addr, unsigned size, void* buf);
 
 /// Push an element into pending grid list
-void KplPushGridList(KplEmu* self, KplGrid *grid);
+void KplPushGridList(KplGrid *grid);
 
 /// The run function of Kepler emulator
 
-void KplRun(KplEmu* self);
+void KplRun();
 
 ////////////////////////////////////////////////////////////////////////////////
 // Wrapper for class Grid
 ////////////////////////////////////////////////////////////////////////////////
 
 
-KplGrid *KplWrapGridCreate(KplEmu *self, struct cuda_function_t *function);
+KplGrid *KplWrapGridCreate(struct cuda_function_t *function);
 
 int KplGetID(KplGrid *self);
 

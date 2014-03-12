@@ -441,7 +441,7 @@ int cuda_func_cuKplMemAlloc(X86Context *ctx)
 	unsigned dev_mem_size;
 
 	unsigned kpl_emu_global_mem_top;
-	KplEmu *kpl_emu = ctx->emu->cuda_driver->kpl_emu;
+	//KplEmu *kpl_emu = ctx->emu->cuda_driver->kpl_emu;
 
 	dev_mem_ptr = regs->ecx;
 	dev_mem_size = regs->edx;
@@ -455,13 +455,13 @@ int cuda_func_cuKplMemAlloc(X86Context *ctx)
 
 	kpl_emu->global_mem_top += dev_mem_size;
 	*/
-	kpl_emu_global_mem_top = KplGetGlobalMemTop(kpl_emu);
+	kpl_emu_global_mem_top = KplGetGlobalMemTop();
 	mem_write(mem, dev_mem_ptr, sizeof(unsigned), &kpl_emu_global_mem_top);
-	KplSetGlobalMemFreeSize(kpl_emu, KplGetGlobalMemFreeSize(kpl_emu) - dev_mem_size);
+	KplSetGlobalMemFreeSize(KplGetGlobalMemFreeSize() - dev_mem_size);
 
-	cuda_debug("\tout: dev_mem_ptr=0x%08x\n", KplGetGlobalMemTop(kpl_emu));
+	cuda_debug("\tout: dev_mem_ptr=0x%08x\n", KplGetGlobalMemTop());
 
-	KplSetGlobalMemTop(kpl_emu, KplGetGlobalMemTop(kpl_emu) + dev_mem_size);
+	KplSetGlobalMemTop(KplGetGlobalMemTop() + dev_mem_size);
 
 	return 0;
 }
@@ -566,7 +566,7 @@ int cuda_func_cuKplMemcpyHtoD(X86Context *ctx)
 	unsigned host_mem_ptr;
 	unsigned size;
 	void *buf;
-	KplEmu *kpl_emu = ctx->emu->cuda_driver->kpl_emu;
+	//KplEmu *kpl_emu = ctx->emu->cuda_driver->kpl_emu;
 
 	dev_mem_ptr = regs->ecx;
 	host_mem_ptr = regs->edx;
@@ -580,7 +580,7 @@ int cuda_func_cuKplMemcpyHtoD(X86Context *ctx)
 	buf = xcalloc(1, size);
 	mem_read(mem, host_mem_ptr, size, buf);
 	//mem_write(kpl_emu->global_mem, dev_mem_ptr, size, buf);
-	KplWriteGlobalMem(kpl_emu, dev_mem_ptr, size, buf);
+	KplWriteGlobalMem(dev_mem_ptr, size, buf);
 	free(buf);
 
 	return 0;
@@ -659,7 +659,7 @@ int cuda_func_cuKplMemcpyDtoH(X86Context *ctx)
 	unsigned dev_mem_ptr;
 	unsigned size;
 	void *buf;
-	KplEmu *kpl_emu = ctx->emu->cuda_driver->kpl_emu;
+	//KplEmu *kpl_emu = ctx->emu->cuda_driver->kpl_emu;
 
 	host_mem_ptr = regs->ecx;
 	dev_mem_ptr = regs->edx;
@@ -672,7 +672,7 @@ int cuda_func_cuKplMemcpyDtoH(X86Context *ctx)
 	/* Copy */
 	buf = xcalloc(1, size);
 //	mem_read(kpl_emu->global_mem, dev_mem_ptr, size, buf);
-	KplReadGlobalMem(kpl_emu, dev_mem_ptr, size, buf);
+	KplReadGlobalMem(dev_mem_ptr, size, buf);
 	mem_write(mem, host_mem_ptr, size, buf);
 	free(buf);
 
@@ -945,7 +945,7 @@ int cuda_func_cuKplLaunchKernel(X86Context *ctx)
 	unsigned arg_ptr;
 	int offset = 0x20;
 	KplGrid *grid;
-	KplEmu *kpl_emu = ctx->emu->cuda_driver->kpl_emu;
+	//KplEmu *kpl_emu = ctx->emu->cuda_driver->kpl_emu;
 	struct cuda_abi_kpl_kernel_launch_info_t *info;
 
 	/* Read arguments */
@@ -985,13 +985,13 @@ int cuda_func_cuKplLaunchKernel(X86Context *ctx)
 		mem_read(mem, kernel_args + i * 4, sizeof(unsigned), &arg_ptr);
 		mem_read(mem, arg_ptr, sizeof(unsigned), &(arg->value));
 		//KplEmuConstMemWrite(kpl_emu, offset, &(arg->value));
-		KplWriteConstMem(kpl_emu, offset, sizeof(unsigned), &(arg->value));
+		KplWriteConstMem(offset, sizeof(unsigned), &(arg->value));
 		offset += 0x4;
 	}
 
 	/* Create grid */
 	//grid = new(KplGrid, kpl_emu, function);  // TODO: memory leak?
-	grid = KplWrapGridCreate(kpl_emu, function);
+	grid = KplWrapGridCreate(function);
 
 	/* Set up grid */
 	//KplGridSetupSize(grid, grid_dim, block_dim);
@@ -1004,7 +1004,7 @@ int cuda_func_cuKplLaunchKernel(X86Context *ctx)
 
 	/* Add to pending list */
 	//list_add(kpl_emu->pending_grids, grid);
-	KplPushGridList(kpl_emu, grid);
+	KplPushGridList(grid);
 
 	/* Set up call-back function to be run when grid finishes */
 	info = xcalloc(1, sizeof(struct cuda_abi_kpl_kernel_launch_info_t));
