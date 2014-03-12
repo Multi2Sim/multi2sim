@@ -19,6 +19,7 @@
 
 #include <iostream>
 #include <list>
+#include <memory>
 
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/misc.h>
@@ -35,27 +36,36 @@ namespace Kepler
 /*
  * Class 'Emu'
  */
+std::unique_ptr<Emu> Emu::instance;
 
-Emu::Emu(Asm *as)
+Emu *Emu::getInstance()
+{
+	if (instance)
+		return instance.get();
+	instance.reset(new Emu);
+	return instance.get();
+}
+
+Emu::Emu()
 {
     /* Initialize */
-	this->as = as;
-
-	//grids = new std::list<Grid*>;
-	//pending_grids = new std::list<Grid*>;
-	//running_grids = new std::list<Grid*>;
-	//finished_grids = new std::list<Grid*>;
+	this->as = as->getInstance();
 
 #define DEFINST(_name, _fmt_str, ...) \
 	inst_func[INST_##_name] = kpl_isa_##_name##_impl;
 #include <arch/kepler/asm/asm.dat>
 #undef DEFINST
+
+	// Global memory initialization
 	global_mem = new mem::Memory();
-    //global_mem->safe = false;
+	global_mem->setSafe(false);
     global_mem_top = 0;
     global_mem_total_size = 1 << 30; /* 2GB */
     global_mem_free_size = this->global_mem_total_size;
+
+	// Global memory initialization
     const_mem = new mem::Memory();
+	const_mem->setSafe(false);
     //const_mem->safe = false;
 /*
 
@@ -155,15 +165,6 @@ void Emu::PushPendingGrid(Grid *grid)
 {
 	pending_grids.push_back(grid);
 }
-/*
- * Non-Class Stuff
- */
-/*
-long long kpl_emu_max_cycles;
-long long kpl_emu_max_inst;
-int kpl_emu_max_functions;
 
-const int kpl_emu_warp_size = 32;
-*/
 }	//namespace
 

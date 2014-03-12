@@ -31,86 +31,87 @@
 // Wrapper for class Emu
 ////////////////////////////////////////////////////////////////////////////////
 
-KplEmu *KplWrapEmuCreate(KplAsm * as)
+KplEmu *KplWrapEmuCreate()
 {
-	return (KplEmu *) new Kepler::Emu((Kepler::Asm*) as);
+	Kepler::Emu* emu;
+	return (KplEmu *) emu->getInstance();
 }
 
 /// Get Kepler Emulator global memory top
-unsigned KplGetGlobalMemTop(KplEmu* self)
+unsigned KplGetGlobalMemTop()
 {
-	Kepler::Emu *emu = (Kepler::Emu*) self;
-	return emu->getGlobalMemTop();
+	Kepler::Emu *emu;
+	return emu->getInstance()->getGlobalMemTop();
 }
 
 /// Get global memory free size
-unsigned KplGetGlobalMemFreeSize(KplEmu* self)
+unsigned KplGetGlobalMemFreeSize()
 {
-	Kepler::Emu *emu = (Kepler::Emu*) self;
-	return emu->getGlobalMemFreeSize();
+	Kepler::Emu *emu;
+	return emu->getInstance()->getGlobalMemFreeSize();
 }
 
 /// Get global memory Total size
-unsigned KplGetGlobalMemTotalSize(KplEmu* self)
+unsigned KplGetGlobalMemTotalSize()
 {
-	Kepler::Emu *emu = (Kepler::Emu*) self;
-	return emu->getGlobalMemTotalSize();
+	Kepler::Emu *emu;
+	return emu->getInstance()->getGlobalMemTotalSize();
 }
 
 // Setter
 /// Set Kelper Emulator global memory top
-void KplSetGlobalMemTop(KplEmu* self, unsigned value)
+void KplSetGlobalMemTop(unsigned value)
 {
-	Kepler::Emu *emu = (Kepler::Emu*) self;
-	emu->SetGlobalMemTop(value);
+	Kepler::Emu *emu;
+	emu->getInstance()->SetGlobalMemTop(value);
 }
 
 /// Set global memory free size
-void KplSetGlobalMemFreeSize(KplEmu* self, unsigned value)
+void KplSetGlobalMemFreeSize(unsigned value)
 {
-	Kepler::Emu *emu = (Kepler::Emu*) self;
-	emu->setGlobalMemFreeSize(value);
+	Kepler::Emu *emu;
+	emu->getInstance()->setGlobalMemFreeSize(value);
 }
 
 /// Set global memory total size
-void KplSetGlobalMemTotalSize(KplEmu* self, unsigned value)
+void KplSetGlobalMemTotalSize(unsigned value)
 {
-	Kepler::Emu *emu = (Kepler::Emu*) self;
-	emu->setGlobalMemTotalSize(value);
+	Kepler::Emu *emu;
+	emu->getInstance()->setGlobalMemTotalSize(value);
 }
 
 /// Read to Global memory
-void KplReadGlobalMem(KplEmu *self, unsigned addr, unsigned size, void* buf)
+void KplReadGlobalMem(unsigned addr, unsigned size, void* buf)
 {
-	Kepler::Emu *emu = (Kepler::Emu*) self;
-	emu->ReadGlobalMem(addr, size, (char*)buf);
+	Kepler::Emu *emu;
+	emu->getInstance()->ReadGlobalMem(addr, size, (char*)buf);
 }
 
 /// Write to Global memory
-void KplWriteGlobalMem(KplEmu *self, unsigned addr, unsigned size, void* buf)
+void KplWriteGlobalMem(unsigned addr, unsigned size, void* buf)
 {
-	Kepler::Emu *emu = (Kepler::Emu*) self;
-	emu->WriteGlobalMem(addr, size, (const char*)buf);
+	Kepler::Emu *emu;
+	emu->getInstance()->WriteGlobalMem(addr, size, (const char*)buf);
 }
 
 /// Write to Constant memory
-void KplWriteConstMem(KplEmu *self, unsigned addr, unsigned size, void* buf)
+void KplWriteConstMem(unsigned addr, unsigned size, void* buf)
 {
-	Kepler::Emu *emu = (Kepler::Emu*) self;
-	emu->WriteConstMem(addr, size, (const char*)buf);
+	Kepler::Emu *emu;
+	emu->getInstance()->WriteConstMem(addr, size, (const char*)buf);
 }
 
-void KplPushGridList(KplEmu *self, KplGrid *grid)
+void KplPushGridList(KplGrid *grid)
 {
-	Kepler::Emu *emu = (Kepler::Emu*) self;
+	Kepler::Emu *emu;
 	Kepler::Grid *gr = (Kepler::Grid*) grid;
-	emu->PushPendingGrid(gr);
+	emu->getInstance()->PushPendingGrid(gr);
 }
 
-void KplRun(KplEmu* self)
+void KplRun()
 {
-	Kepler::Emu *emu = (Kepler::Emu*) self;
-	emu->Run();
+	Kepler::Emu *emu;
+	emu->getInstance()->Run();
 }
 ////////////////////////////////////////////////////////////////////////////////
 // Wrapper for class Grid
@@ -120,9 +121,9 @@ int KplGetID(KplGrid *self)
 	Kepler::Grid *grid = (Kepler::Grid *) self;
 	return grid->getID();
 }
-KplGrid *KplWrapGridCreate(KplEmu *emu, cuda_function_t *function)
+KplGrid *KplWrapGridCreate(cuda_function_t *function)
 {
-	return (KplGrid *) new Kepler:: Grid((Kepler::Emu *)emu, function);
+	return (KplGrid *) new Kepler:: Grid(function);
 }
 
 void KplGridFree(KplGrid *self)
