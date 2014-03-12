@@ -820,8 +820,9 @@ OpenGLSiProgramBinary::OpenGLSiProgramBinary(const char *buffer, unsigned buffer
 {
 	for (auto &symbol : this->getSymbols())
 	{
-		const char *elf_bin_buf   = symbol->getSection()->getBuffer();
-		unsigned    elf_bin_size  = symbol->getSection()->getSize();
+		ELFReader::Section *section = symbol->getSection();
+		const char *elf_bin_buf   = section->getBuffer() + symbol->getValue();
+		unsigned    elf_bin_size  = section->getSize();
 
 		if (symbol->getName() == "__Shader_V_AsicID_23_ElfBinary_0_")
 			vertex_shader.reset(new OpenGLSiShaderBinaryVertex(elf_bin_buf, elf_bin_size));

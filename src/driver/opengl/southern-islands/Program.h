@@ -20,13 +20,35 @@
 #ifndef DRIVER_OPENGL_SI_PROGRAM_H
 #define DRIVER_OPENGL_SI_PROGRAM_H
 
+#include <memory>
+#include <src/arch/southern-islands/asm/ShaderBinary.h>
+#include "Shader.h"
+
+// Forward declarations
+namespace Driver
+{
+	class OpenGLSIDriver;
+}
+
 namespace SI
 {
 
 class ProgramGL
 {
+	unsigned id;
+	Driver::OpenGLSIDriver *opengl_driver;
+
+	std::unique_ptr<OpenGLSiProgramBinary> program_bin;
+	std::vector<std::unique_ptr<Shader>> shaders;
+
 public:
-	ProgramGL();
+	ProgramGL(unsigned id, const char *buffer, unsigned size);
+
+	/// Return pointer of a shader based on shader id
+	Shader *getShaderByID(unsigned id);
+
+	/// Bind a shader to program
+	void BindShader(unsigned shader_id, OpenGLSiShaderStage stage);
 
 };
 

@@ -9,6 +9,9 @@ libsi_gl_a_SOURCES = \
 	DepthBuffer.cc \
 	DepthBuffer.h \
 	\
+	Input.cc \
+	Input.h \
+	\
 	PrimitiveAssembler.cc \
 	PrimitiveAssembler.h \
 	\

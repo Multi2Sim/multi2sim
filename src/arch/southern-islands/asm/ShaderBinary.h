@@ -20,6 +20,7 @@
 #ifndef ARCH_SOUTHERN_ISLANDS_ASM_SHADER_BINARY_H
 #define ARCH_SOUTHERN_ISLANDS_ASM_SHADER_BINARY_H
 
+#include <cstring>
 #include <vector>
 #include <memory>
 #include <lib/cpp/ELFReader.h>
@@ -1317,6 +1318,18 @@ class OpenGLSiProgramBinary : public ELFReader::File
 
 public:
 	OpenGLSiProgramBinary(const char *buffer, unsigned buffer_size);
+
+	/// Getter
+	///
+	/// Get associated vertex shader
+	OpenGLSiShaderBinaryVertex *getVertexShader() const { 
+		return vertex_shader.get();
+	}
+
+	/// Get associated pixel shader
+	OpenGLSiShaderBinaryPixel *getPixelShader() const {
+		return pixel_shader.get();
+	}
 };
 
 } // namepace SI
