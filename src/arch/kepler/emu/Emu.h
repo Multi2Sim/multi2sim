@@ -24,6 +24,7 @@
 
 #include <iostream>
 #include <list>
+#include <memory>
 
 #include <mem-system/Memory.h>
 //#include <arch/common/emu.h>
@@ -46,6 +47,7 @@ typedef void (*InstFunc)(Kepler::Thread *thread, Inst *inst);
  */
 class Emu
 {
+	static std::unique_ptr<Emu> instance;
 	// Disassembler
 	Asm *as;
 
@@ -84,13 +86,10 @@ class Emu
 	long long shared_mem_inst_count;
 	long long global_mem_inst_count;
 
-	// Unique instance of Kepler emulator
-	//static std::unique_ptr<Emu> instance;
+	/// Constructor
+	Emu();
 
 public:
-
-	/// Constructor
-	Emu(Asm *as);
 
 	///Kepler emulator maximum cycles
 	long long emu_max_cycles;
@@ -105,7 +104,7 @@ public:
 	/// Get the only instance of the Kepler emulator. If the instance does not
 	/// exist yet, it will be created, and will remain allocated until the
 	/// end of the execution.
-	//static Emu *getInstance();
+	static Emu *getInstance();
 
 	// Getters
 	/// Get grid list size
