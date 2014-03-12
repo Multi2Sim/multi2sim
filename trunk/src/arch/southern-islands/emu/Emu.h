@@ -32,7 +32,7 @@ namespace Driver
 {
 	class OpenCLSIDriver;
 	class OpenGLSIDriver;
-}  // namespace Driver
+}
 
 namespace SI
 {
