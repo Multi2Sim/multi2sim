@@ -17,9 +17,25 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include "Input.h"
 #include "Shader.h"
 
 namespace SI
 {
+
+Shader::Shader(unsigned id, OpenGLSiShaderStage stage, OpenGLSiShaderBinaryCommon *shader_bin)
+{
+	this->id = id;
+	this->stage = stage;
+	this->shader_bin = shader_bin;
+}
+
+void Shader::AddInput(unsigned index, unsigned device_buffer_size, unsigned device_buffer_ptr, 
+	SIInputDataType data_type, unsigned num_elems, unsigned isNormalized, 
+	unsigned stride, unsigned device_buffer_offset)
+{
+	inputs.push_back(std::unique_ptr<Input> (new Input(index, device_buffer_size, 
+		device_buffer_ptr, data_type, num_elems, isNormalized, stride, device_buffer_offset)));
+}
 
 }  // namespace SI

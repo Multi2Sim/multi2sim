@@ -17,42 +17,55 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef DRIVER_OPENGL_SI_SHADER_H
-#define DRIVER_OPENGL_SI_SHADER_H
-
-#include <arch/southern-islands/asm/ShaderBinary.h>
-#include "Input.h"
+#ifndef DRIVER_OPENGL_SI_INPUT_H
+#define DRIVER_OPENGL_SI_INPUT_H
 
 namespace SI
 {
 
-class OpenglSiShaderBinaryCommon;
-
-class Shader
+enum SIInputDataType
 {
-	unsigned id;
-	OpenGLSiShaderStage stage;
+	SIInputInvalid = 0,
+	SIInputByte,
+	SIInputUbyte,
+	SIInputShort,
+	SIInputUshort,
+	SIInputInt,
+	SIInputUint,
+	SIInputHfloat,
+	SIInputFloat,
+	SIInputDouble,
+	SIInputFixed,
+	SIInputInt2101010Rev,
+	SIInputUint2101010Rev
+};
 
-	OpenGLSiShaderBinaryCommon *shader_bin;
+class Input
+{
+	unsigned index;
+
+	// Info from glBufferData
+	unsigned device_buffer_size;
+	unsigned device_buffer_ptr;
 	
-	// OpenGL input interface doesn't always match GLSL input interface
-	// If they don't match, we rely on Fetch Shader to load correct data
-	// to GPRs
-	std::vector<std::unique_ptr<Input>> inputs;
+	// Info from glVertexAttribPointer
+	SIInputDataType data_type;
+	unsigned num_elems;
+	unsigned isNormalized;
+	unsigned stride;
+	unsigned device_buffer_offset;
 
 public:
-	Shader(unsigned id, OpenGLSiShaderStage stage, OpenGLSiShaderBinaryCommon *shader_bin);
-
-	/// Getters
-	///
-	unsigned getID() const { return id; }
-	
-	/// Insert an input object to inputs list
-	void AddInput(unsigned index, unsigned device_buffer_size, unsigned device_buffer_ptr, 
+	Input(unsigned index, unsigned device_buffer_size, unsigned device_buffer_ptr, 
 		SIInputDataType data_type, unsigned num_elems, unsigned isNormalized, 
 		unsigned stride, unsigned device_buffer_offset);
 
+	/// Getters
+	///
+	/// Get data size based on data type
+	unsigned getDataSize(SIInputDataType data_type) const;
 };
+
 
 } // namespace SI
 
