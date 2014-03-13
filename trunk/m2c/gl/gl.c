@@ -701,7 +701,7 @@ void gl_compile(struct list_t *source_file_list,	struct list_t *output_file_list
 
 	/* Two sources needed for OpenGL */
 	if (source_file_list->count != 2)
-		fatal("2 source files expected, 1 for vertex, 1 for fragment shader");
+		fatal("Expect at least 2 source files, 1st for vertex shader, 2nd for fragment shader");
 	
 	/* Extract vertex and fragment shader sources from 'source_file_list'. */
 	gl_vertex_shader = list_get(source_file_list, 0);

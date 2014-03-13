@@ -199,6 +199,28 @@ public:
 
 };
 
+class ViewPort
+{
+	int x;
+	int y;
+	int width;
+	int height;
+
+public:
+	ViewPort(int x, int y, int width, int height) :
+		x(x), y(y), width(width), height(height) { };
+};
+
+class DepthRange
+{
+	double n;
+	double f;
+
+public:
+	DepthRange(double n, double f) :
+		n(n), f(f) { };
+};
+
 } // namespace Driver
 
 #endif

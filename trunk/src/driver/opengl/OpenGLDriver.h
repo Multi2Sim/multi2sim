@@ -41,16 +41,15 @@ class OpenGLSIDriver : public SICommon
 	static const unsigned major = 1;
 	static const unsigned minor = 1000;
 
-	// Unique instance of Opencl Driver
+	// Unique instance of OpenGL Driver
 	static std::unique_ptr<OpenGLSIDriver> instance;
 
 	// Private constructor. The only possible instance of the OpenGL Driver
 	// can be obtained with a call to getInstance()
 	OpenGLSIDriver();
 
-	// List of Southern Islands OpenGL programs and shaders
+	// List of Southern Islands OpenGL programs(container of shaders)
 	std::vector<std::unique_ptr<SI::ProgramGL>> programs;
-	// std::vector<std::unique_ptr<SI::Shader>> shaders;
 
 public:
 
