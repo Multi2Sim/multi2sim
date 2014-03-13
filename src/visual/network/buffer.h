@@ -17,20 +17,18 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef VISUAL_NETWORK_NET_SYSTEM_H
-#define VISUAL_NETWORK_NET_SYSTEM_H
+#ifndef VISUAL_NETWORK_BUFFER_H
+#define VISUAL_NETWORK_BUFFER_H
 
-struct hash_table_t;
-
-struct vi_net_system_t
+struct vi_net_buffer_t
 {
-	int active;
-
-	struct hash_table_t *net_table;
+	struct vi_net_node_t *node;
 };
 
-extern struct vi_net_system_t *vi_net_system;
+struct vi_net_buffer_t *vi_net_buffer_create (void);
+void                    vi_net_buffer_free   (struct vi_net_buffer_t *buffer);
 
-void vi_net_system_init(void);
+
+
 
 #endif

@@ -27,11 +27,12 @@
 #include <lib/util/string.h>
 #include <visual/common/state.h>
 #include <visual/common/trace.h>
+#include <visual/network/net.h>
+#include <visual/network/net-system.h>
 
 #include "mem-system.h"
 #include "mod.h"
 #include "mod-access.h"
-#include "net.h"
 
 
 /*
@@ -432,7 +433,7 @@ struct vi_mem_system_t *vi_mem_system;
  */
 
 #define VI_MEM_SYSTEM_TRACE_VERSION_MAJOR	1
-#define VI_MEM_SYSTEM_TRACE_VERSION_MINOR	678
+#define VI_MEM_SYSTEM_TRACE_VERSION_MINOR	679
 
 static char *err_vi_mem_system_trace_version =
 	"\tThe memory system trace file has been created with an incompatible version\n"
@@ -534,9 +535,14 @@ void vi_mem_system_init(void)
 		}
 		else if (!strcmp(command, "mem.new_net"))
 		{
+			char *name;
 			struct vi_net_t *net;
 
-			net = vi_net_create(trace_line);
+			name = vi_trace_line_get_symbol(trace_line, "net_name");
+			net =hash_table_get(vi_net_system->net_table, name);
+			if (!net)
+				net = vi_net_create(trace_line);
+			assert(net);
 			hash_table_insert(vi_mem_system->net_table, net->name, net);
 		}
 	}

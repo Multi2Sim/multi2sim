@@ -17,20 +17,31 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef VISUAL_NETWORK_NET_SYSTEM_H
-#define VISUAL_NETWORK_NET_SYSTEM_H
+#ifndef VISUAL_NETWORK_NET_H
+#define VISUAL_NETWORK_NET_H
 
-struct hash_table_t;
 
-struct vi_net_system_t
+struct vi_net_t
 {
-	int active;
+	char *name;
+	int   packet_size;
 
-	struct hash_table_t *net_table;
+	struct list_t *node_list;
+	struct list_t *link_list;
+
+	struct list_t *high_mods;
+	struct list_t *low_mods;
+
 };
 
-extern struct vi_net_system_t *vi_net_system;
+struct vi_trace_line_t;
 
-void vi_net_system_init(void);
+struct vi_net_t *vi_net_create(struct vi_trace_line_t *trace_line);
+void             vi_net_free  (struct vi_net_t *net);
+
+struct vi_mod_t;
+
+void             vi_net_attach_mod(struct vi_net_t *net, struct vi_mod_t *mod, int node_index);
+struct vi_mod_t *vi_net_get_mod   (struct vi_net_t *net, int node_index);
 
 #endif
