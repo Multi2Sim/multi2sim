@@ -16,13 +16,20 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+#include <assert.h>
+#include <gtk/gtk.h>
+#include <stdio.h>
 
-#include <lib/util/hash-table.h>
 #include <lib/mhandle/mhandle.h>
+#include <lib/util/debug.h>
+#include <lib/util/hash-table.h>
+#include <lib/util/misc.h>
 #include <visual/common/state.h>
 #include <visual/common/trace.h>
 
 #include "net-system.h"
+#include "net.h"
+#include "node.h"
 
 /*
  * Public Functions
@@ -36,7 +43,7 @@ static char *err_vi_net_system_trace_version =
 	"\tversion used to visualize the trace.\n";
 
 #define VI_NET_SYSTEM_TRACE_VERSION_MAJOR	1
-#define VI_NET_SYSTEM_TRACE_VERSION_MINOR	678
+#define VI_NET_SYSTEM_TRACE_VERSION_MINOR	1	
 
 void vi_net_system_init(void)
 {
@@ -84,34 +91,29 @@ void vi_net_system_init(void)
 				sscanf(version, "%d.%d", &version_major, &version_minor);
 			if (version_major != VI_NET_SYSTEM_TRACE_VERSION_MAJOR ||
 				version_minor > VI_NET_SYSTEM_TRACE_VERSION_MINOR)
-				fatal("incompatible memory system trace version.\n"
+				fatal("incompatible network system trace version.\n"
 					"\tTrace generation v. %d.%d / Trace consumer v. %d.%d\n%s",
 					version_major, version_minor, VI_NET_SYSTEM_TRACE_VERSION_MAJOR,
 					VI_NET_SYSTEM_TRACE_VERSION_MINOR, err_vi_net_system_trace_version);
 		}
-		else if (!strcmp(command, "mem.new_mod"))
-		{
-			struct vi_mod_t *mod;
-			struct list_t *mod_level;
-
-			/* Create module */
-			mod = vi_mod_create(trace_line);
-			hash_table_insert(vi_mem_system->mod_table, mod->name, mod);
-			if (mod->level < 1)
-				panic("%s: %s: invalid level (%d)", __FUNCTION__, mod->name, mod->level);
-
-			/* Add to level list */
-			while (vi_mem_system->mod_level_list->count < mod->level)
-				list_add(vi_mem_system->mod_level_list, list_create());
-			mod_level = list_get(vi_mem_system->mod_level_list, mod->level - 1);
-			list_add(mod_level, mod);
-		}
-		else if (!strcmp(command, "mem.new_net"))
+		else if (!strcmp(command, "net.create"))
 		{
 			struct vi_net_t *net;
 
+			/* Create module */
 			net = vi_net_create(trace_line);
-			hash_table_insert(vi_mem_system->net_table, net->name, net);
+
+			/* Add to network system hash table of networks */
+			hash_table_insert(vi_net_system->net_table, net->name, net);
+
+		}
+		else if (!strcmp(command, "net.node"))
+		{
+			struct vi_net_node_t *node;
+
+			node = vi_net_node_assign(trace_line);
+			assert(node);
+
 		}
 	}
 }
