@@ -27,11 +27,11 @@
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
 #include <visual/common/trace.h>
+#include <visual/network/net.h>
 
 #include "mem-system.h"
 #include "mod.h"
 #include "mod-access.h"
-#include "net.h"
 
 
 static struct str_map_t vi_mod_block_state_map =

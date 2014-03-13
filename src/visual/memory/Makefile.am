@@ -17,9 +17,6 @@ libmemory_a_SOURCES += \
 	mod-widget.c \
 	mod-widget.h \
 	\
-	net.c \
-	net.h \
-	\
 	panel.c \
 	panel.h
 

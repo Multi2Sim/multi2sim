@@ -18,6 +18,7 @@
  */
 
 #include <assert.h>
+#include <stdio.h>
 
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
@@ -26,35 +27,7 @@
 #include <visual/common/trace.h>
 
 #include "net.h"
-
-
-/*
- * Network Node
- */
-
-struct vi_net_node_t
-{
-	struct vi_mod_t *mod;
-};
-
-
-struct vi_net_node_t *vi_net_node_create(void)
-{
-	struct vi_net_node_t *node;
-
-	/* Return */
-	node = xcalloc(1, sizeof(struct vi_net_node_t));
-	return node;
-}
-
-
-void vi_net_node_free(struct vi_net_node_t *node)
-{
-	free(node);
-}
-
-
-
+#include "node.h"
 
 /*
  * Network
@@ -65,6 +38,7 @@ struct vi_net_t *vi_net_create(struct vi_trace_line_t *trace_line)
 	struct vi_net_t *net;
 
 	int num_nodes;
+	int packet_size;
 	int i;
 
 	char *name;
@@ -82,6 +56,11 @@ struct vi_net_t *vi_net_create(struct vi_trace_line_t *trace_line)
 	for (i = 0; i < num_nodes; i++)
 		list_add(net->node_list, vi_net_node_create());
 
+	/* Get the packet size, if it is in the trace */
+	packet_size = vi_trace_line_get_symbol_int(trace_line, "packet_size");
+	if (packet_size != 0)
+		net->packet_size = packet_size;
+
 	net->high_mods = list_create();
 	net->low_mods = list_create();
 	/* Return */
@@ -95,7 +74,7 @@ void vi_net_free(struct vi_net_t *net)
 
 	/* Free nodes */
 	LIST_FOR_EACH(net->node_list, i)
-		vi_net_node_free(list_get(net->node_list, i));
+	vi_net_node_free(list_get(net->node_list, i));
 	list_free(net->node_list);
 
 	list_free(net->high_mods);
@@ -108,7 +87,7 @@ void vi_net_free(struct vi_net_t *net)
 
 
 void vi_net_attach_mod(struct vi_net_t *net,
-	struct vi_mod_t *mod, int node_index)
+		struct vi_mod_t *mod, int node_index)
 {
 	struct vi_net_node_t *node;
 

@@ -17,29 +17,22 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef VISUAL_MEMORY_NET_H
-#define VISUAL_MEMORY_NET_H
+#include <lib/mhandle/mhandle.h>
 
+#include "buffer.h"
 
-struct vi_net_t
+struct vi_net_buffer_t *vi_net_buffer_create (void)
 {
-	char *name;
+	struct vi_net_buffer_t *buffer;
 
-	struct list_t *node_list;
-
-	struct list_t *high_mods;
-	struct list_t *low_mods;
-
-};
-
-struct vi_trace_line_t;
-struct vi_net_t *vi_net_create(struct vi_trace_line_t *trace_line);
-void vi_net_free(struct vi_net_t *net);
-
-struct vi_mod_t;
-void vi_net_attach_mod(struct vi_net_t *net, struct vi_mod_t *mod, int node_index);
-struct vi_mod_t *vi_net_get_mod(struct vi_net_t *net, int node_index);
+	/* Return */
+	buffer = xcalloc(1, sizeof(struct vi_net_buffer_t));
+	return buffer;
+}
+void vi_net_buffer_free (struct vi_net_buffer_t *buffer)
+{
+	free(buffer);
+}
 
 
-#endif
 

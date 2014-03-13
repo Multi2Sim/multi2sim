@@ -993,6 +993,7 @@ AC_CONFIG_FILES([
 		src/visual/common/Makefile
 		src/visual/evergreen/Makefile
 		src/visual/memory/Makefile
+		src/visual/network/Makefile
 		src/visual/southern-islands/Makefile
 		src/visual/x86/Makefile
 
