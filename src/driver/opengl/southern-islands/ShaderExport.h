@@ -1,6 +1,6 @@
 /*
  *  Multi2Sim
- *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
+ *  Copyright (C) 2013  Rafael Ubal (ubal@ece.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,41 +17,29 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <src/driver/opengl/OpenGLDriver.h>
-#include "ScanConverter.h"
-#include "SPI.h"
+#ifndef DRIVER_OPENGL_SI_SHADER_EXPORT_H
+#define DRIVER_OPENGL_SI_SHADER_EXPORT_H
+
+#include <memory>
+#include <vector>
 
 namespace SI
 {
 
-std::unique_ptr<SPI> SPI::instance;
-
-SPI *SPI::getInstance()
+class ShaderExport
 {
-	opengl_driver = Driver::OpenGLSIDriver::getInstance();
+	// Unique instance of ShaderExport
+	static std::unique_ptr<ShaderExport> instance;
 
-	// Instance already exists
-	if (instance.get())
-		return instance.get();
-	
-	// Create instance
-	instance.reset(new SPI());
-	return instance.get();	
-}
+	// Private constructor. The only possible instance of the ShaderExport
+	// can be obtained with a call to getInstance()
+	ShaderExport();
 
-DataInitVGPRs::DataInitVGPRs(const PixelInfo *pixel_info)
-{
-	x = pixel_info->getX();
-	y = pixel_info->getY();
-	i = pixel_info->getI();
-	j = pixel_info->getJ();
-}
+public:
+	ShaderExport *getInstance();
 
-DataInitLDS::DataInitLDS(const char *buffer, unsigned size)
-{
-	lds.reset(new char[size]);
-	for (unsigned i = 0; i < size; ++i)
-		lds[i] = buffer[i];
-}
+};
 
-}  // namespace SI
+} // namespace SI
+
+#endif

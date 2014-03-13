@@ -47,6 +47,9 @@ public:
 	/// Return pointer of a shader based on shader id
 	Shader *getShaderByID(unsigned id);
 
+	/// Return pointer of a shader based on shader type
+	Shader *getShaderByStage(OpenGLSiShaderStage stage);
+
 	/// Bind a shader to program
 	void BindShader(unsigned shader_id, OpenGLSiShaderStage stage);
 

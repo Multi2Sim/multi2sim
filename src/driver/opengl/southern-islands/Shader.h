@@ -26,8 +26,6 @@
 namespace SI
 {
 
-class OpenglSiShaderBinaryCommon;
-
 class Shader
 {
 	unsigned id;
@@ -46,6 +44,9 @@ public:
 	/// Getters
 	///
 	unsigned getID() const { return id; }
+
+	///
+	OpenGLSiShaderStage getStage() const { return stage; }
 	
 	/// Insert an input object to inputs list
 	void AddInput(unsigned index, unsigned device_buffer_size, unsigned device_buffer_ptr, 

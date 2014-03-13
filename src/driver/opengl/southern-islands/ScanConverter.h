@@ -212,6 +212,19 @@ class PixelInfo
 public:
 	PixelInfo(int x, int y, int z);
 
+	/// Getters
+	int getX() const { return pos[0]; }
+
+	int getY() const { return pos[1]; }
+
+	int getZ() const { return pos[2]; }
+
+	int getW() const { return pos[3]; }
+
+	float getI() const { return i; }
+
+	float getJ() const { return j; }
+
 	/// Generate baricentric coordinates
 	void GenBaryCoord(const PrimAsmTriangle *triangle);
 
