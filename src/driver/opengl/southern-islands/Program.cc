@@ -39,9 +39,40 @@ Shader *ProgramGL::getShaderByID(unsigned id)
 	for (auto &shader : shaders )
 	{
 		if ( shader->getID() == id)
-		{
 			return shader.get();
+	}
+
+	return nullptr;
+}
+
+Shader *ProgramGL::getShaderByStage(OpenGLSiShaderStage stage)
+{
+	switch(stage)
+	{
+
+	case OpenGLSiShaderVertex:
+	{
+		for( auto &shader : shaders)
+		{
+			if (shader->getStage() == OpenGLSiShaderVertex)
+				return shader.get();
 		}
+		break;
+	}
+	
+	case OpenGLSiShaderPixel:
+	{
+		for( auto &shader : shaders)
+		{
+			if (shader->getStage() == OpenGLSiShaderPixel)
+				return shader.get();
+		}
+		break;
+	}
+
+	default:
+		return nullptr;
+
 	}
 
 	return nullptr;
@@ -60,14 +91,21 @@ void ProgramGL::BindShader(unsigned id, OpenGLSiShaderStage stage)
 			(new Shader(id, stage, program_bin->getVertexShader())));
 		break;
 	}
+
 	case OpenGLSiShaderPixel:
 	{
 		shaders.push_back(std::unique_ptr<Shader>
-			(new Shader(id, stage, program_bin->getVertexShader())));		
+			(new Shader(id, stage, program_bin->getPixelShader())));
+		break;	
 	}
+
 	default:
+	{
 		fatal("Binding error: Shader type(%d) not supported!", stage);
 		break;
+
+	}
+
 	}
 }
 

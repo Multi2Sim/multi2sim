@@ -24,6 +24,9 @@ libsi_gl_a_SOURCES = \
 	Shader.cc \
 	Shader.h \
 	\
+	ShaderExport.cc \
+	ShaderExport.h \
+	\
 	SPI.cc \
 	SPI.h 
 
