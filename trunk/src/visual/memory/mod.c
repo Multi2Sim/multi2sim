@@ -94,12 +94,12 @@ struct vi_mod_t *vi_mod_create(struct vi_trace_line_t *trace_line)
 	if (mod->high_net)
 	{
 		vi_net_attach_mod(mod->high_net, mod, mod->high_net_node_index);
-		list_add(mod->high_net->low_mods, mod);
+		hash_table_insert(mod->high_net->low_mods, mod->name, mod);
 	}
 	if (mod->low_net)
 	{
 		vi_net_attach_mod(mod->low_net, mod, mod->low_net_node_index);
-		list_add(mod->low_net->high_mods, mod);
+		hash_table_insert(mod->low_net->high_mods, mod->name, mod);
 	}
 
 	/* Blocks */

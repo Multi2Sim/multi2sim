@@ -45,36 +45,6 @@ struct vi_net_node_t *vi_net_node_create(void)
 	return node;
 }
 
-
-void vi_net_node_free(struct vi_net_node_t *node)
-{
-	int i;
-
-	if (node->input_buffer_list)
-	{
-		LIST_FOR_EACH(node->input_buffer_list, i)
-		{
-			struct vi_net_buffer_t *buffer;
-			buffer = list_get(node->input_buffer_list, i);
-			vi_net_buffer_free(buffer);
-		}
-		list_free(node->input_buffer_list);
-	}
-	if (node->output_buffer_list)
-	{
-		LIST_FOR_EACH(node->output_buffer_list, i)
-		{
-			struct vi_net_buffer_t *buffer;
-			buffer = list_get(node->output_buffer_list, i);
-			vi_net_buffer_free(buffer);
-		}
-		list_free(node->output_buffer_list);
-	}
-	if (node->name)
-		free(node->name);
-	free(node);
-}
-
 struct vi_net_node_t * vi_net_node_assign(struct vi_trace_line_t *trace_line)
 {
 	int i;
@@ -111,21 +81,77 @@ struct vi_net_node_t * vi_net_node_assign(struct vi_trace_line_t *trace_line)
 	/* Get node type */
 	enum vi_net_node_kind node_type;
 	node_type = vi_trace_line_get_symbol_int(trace_line, "node_type");
-	node->node_type = node_type;
+	node->type = node_type;
 
-	/* Get number of input buffers */
-	int in_buffer_count;
-	in_buffer_count = vi_trace_line_get_symbol_int(trace_line, "num_in_buf");
-	node->input_buffer_list = list_create();
-	for (i = 0; i < in_buffer_count; i++)
-		list_add(node->input_buffer_list, vi_net_buffer_create());
+	if (node->type == vi_net_node_bus || node->type == vi_net_node_photonic)
+	{
+		int num_lanes = vi_trace_line_get_symbol_int(trace_line, "num_lanes");
+		node->bus_lane_list = list_create();
+		for (i = 0; i < num_lanes ; i++)
+			list_add(node->bus_lane_list, vi_net_bus_create());
 
-	/* Get number of output buffers */
-	int out_buffer_count;
-	out_buffer_count = vi_trace_line_get_symbol_int(trace_line, "num_out_buf");
-	node->output_buffer_list = list_create();
-	for (i = 0; i < out_buffer_count; i++)
-		list_add(node->output_buffer_list, vi_net_buffer_create());
+		node->src_buffer_list = hash_table_create(0, FALSE);
+		node->dst_buffer_list = hash_table_create(0, FALSE);
+	}
+	else
+	{
+		node->input_buffer_list  = hash_table_create(0, FALSE);
+		node->output_buffer_list = hash_table_create(0, FALSE);
+	}
 
 	return node;
+}
+
+
+
+void vi_net_node_free(struct vi_net_node_t *node)
+{
+	int i;
+	char *buffer_name;
+	struct vi_net_buffer_t *buffer;
+
+	/* Free buffers , then hash tables */
+	if (node->input_buffer_list)
+	{
+		HASH_TABLE_FOR_EACH(node->input_buffer_list, buffer_name, buffer)
+				vi_net_buffer_free(buffer);
+		hash_table_free(node->input_buffer_list);
+	}
+
+	if (node->output_buffer_list)
+	{
+		HASH_TABLE_FOR_EACH(node->output_buffer_list, buffer_name, buffer)
+			vi_net_buffer_free(buffer);
+		hash_table_free(node->output_buffer_list);
+	}
+
+	if (node->bus_lane_list)
+	{
+		LIST_FOR_EACH(node->bus_lane_list, i)
+			vi_net_bus_free(list_get(node->bus_lane_list, i));
+		list_free(node->bus_lane_list);
+	}
+
+	if (node->src_buffer_list)
+		hash_table_free(node->src_buffer_list);
+
+	if (node->dst_buffer_list)
+		hash_table_free(node->dst_buffer_list);
+	/* Free name then node itself */
+	if (node->name)
+		free(node->name);
+	free(node);
+}
+
+struct vi_net_bus_t  *vi_net_bus_create  (void)
+{
+	struct vi_net_bus_t *bus;
+
+	bus = xcalloc(1, sizeof(struct vi_net_bus_t));
+	return bus;
+}
+
+void vi_net_bus_free (struct vi_net_bus_t *bus)
+{
+	free(bus);
 }

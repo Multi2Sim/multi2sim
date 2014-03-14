@@ -539,7 +539,8 @@ void vi_mem_system_init(void)
 			struct vi_net_t *net;
 
 			name = vi_trace_line_get_symbol(trace_line, "net_name");
-			net =hash_table_get(vi_net_system->net_table, name);
+			if (vi_net_system && vi_net_system->net_table)
+				net = hash_table_get(vi_net_system->net_table, name);
 			if (!net)
 				net = vi_net_create(trace_line);
 			assert(net);
@@ -568,7 +569,14 @@ void vi_mem_system_done(void)
 
 	/* Free networks */
 	HASH_TABLE_FOR_EACH(vi_mem_system->net_table, net_name, net)
+	{
+		/* We remove it from network hash table so we don't try to
+		 * free the network again later when we are freeing
+		 * net-system. If it is not in that table, it is still a win */
+		if (vi_net_system && vi_net_system->net_table)
+			hash_table_remove(vi_net_system->net_table, net_name);
 		vi_net_free(net);
+	}
 	hash_table_free(vi_mem_system->net_table);
 
 	/* Free accesses */
