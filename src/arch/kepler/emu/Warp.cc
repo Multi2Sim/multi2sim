@@ -145,21 +145,25 @@ void Warp::Execute()
 	}
 
 	/* Update PC */
+	if( pc % 64 )
+	{
+        inst_count++;					//other counter?
+        emu_inst_count++;
+	}
 /*	if (KplInstWrapGetCategory(inst) != KplInstCategoryCtrl)
 		pc += inst_size;
 	else
 		pc = this->target_pc;
 */
         pc += inst_size;		//make it clear, no jump
-
+    if(pc >= grid->getInstBufferSize() - 8)
+    {
+    	finished_emu = true;
+    	thread_block->incWarpsCompletedEmu();
+    }
 	/* Stats */
 
 	//asEmu(emu)->instructions++; // no parent class any more
-	if( pc % 64 )
-	{
-        inst_count++;					//other counter?
-        emu_inst_count++;
-	}
 }
 
 } //namespace

@@ -140,6 +140,9 @@ public:
 	// Set warp_at_barrier counter
 	void setWarpsAtBarrier(unsigned counter) { num_warps_at_barrier = counter; }
 
+	// Increment warps_completed_emu counter
+	void incWarpsCompletedEmu() { warps_completed_emu ++; }
+
 	// Set finished_emu
 	void setFinishedEmu(bool value) { finished_emu = value; }
 
