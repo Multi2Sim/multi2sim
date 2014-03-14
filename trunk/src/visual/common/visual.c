@@ -22,6 +22,7 @@
 #include <visual/evergreen/panel.h>
 #include <visual/memory/mem-system.h>
 #include <visual/memory/panel.h>
+#include <visual/network/net-system.h>
 #include <visual/southern-islands/gpu.h>
 #include <visual/southern-islands/panel.h>
 #include <visual/x86/cpu.h>
@@ -87,6 +88,7 @@ void visual_run(char *file_name)
 	vi_state_init(file_name);
 
 	/* Initialize visual systems */
+	vi_net_system_init();
 	vi_mem_system_init();
 	vi_evg_gpu_init();
 	vi_si_gpu_init();
@@ -154,6 +156,7 @@ void visual_run(char *file_name)
 	vi_evg_gpu_done();
 	vi_si_gpu_done();
 	vi_mem_system_done();
+	vi_net_system_done();
 	vi_cycle_bar_done();
 	vi_state_done();
 }

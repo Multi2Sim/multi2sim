@@ -143,5 +143,16 @@ void vi_net_system_init(void)
 
 void vi_net_system_done(void)
 {
+	struct vi_net_t *net;
 
+	char *net_name;
+	/* Free networks */
+	HASH_TABLE_FOR_EACH(vi_net_system->net_table, net_name, net)
+	{
+		vi_net_free(net);
+	}
+	hash_table_free(vi_net_system->net_table);
+
+	/* Rest */
+	free(vi_net_system);
 }
