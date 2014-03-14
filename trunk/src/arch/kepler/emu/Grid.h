@@ -178,6 +178,8 @@ public:
 	/// push a thread block into finished thread block list
 	void PushFinishedThreadBlock(std::unique_ptr<ThreadBlock> threadblock);
 
+	/// pop the front thread block out of running thread block list
+	void PopRunningThreadBlock();
 };
 
 }   //namespace

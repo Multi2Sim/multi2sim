@@ -47,7 +47,6 @@ Grid::Grid(cuda_function_t *function)
 
 	/* Add to list */
 	emu->GridsPushBack(this);
-	std::cout<<"gird created";
 }
 
 void Grid::Dump(std::ostream &os) const
@@ -122,6 +121,11 @@ void Grid::WaitingToRunning(int thread_block_id)
 void Grid::PushFinishedThreadBlock(std::unique_ptr<ThreadBlock> threadblock)
 {
 	finished_thread_blocks.push_back(std::move(threadblock));
+}
+
+void Grid::PopRunningThreadBlock()
+{
+	running_thread_blocks.pop_front();
 }
 
 }	//namespace
