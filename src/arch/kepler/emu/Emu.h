@@ -27,7 +27,6 @@
 #include <memory>
 
 #include <mem-system/Memory.h>
-//#include <arch/common/emu.h>
 #include <arch/kepler/asm/Asm.h>
 
 namespace Kepler

@@ -39,6 +39,7 @@ class Grid;
 class ThreadBlock;
 class Thread;
 struct KeplerInstWrap;
+struct bit_map_t;
 
 /// Polymorphic class used to attach data to a warp. The timing simulator
 /// can use an object derived from this class, instead of adding fields to the
@@ -104,7 +105,7 @@ class Warp
 	unsigned int taken;
 
 	// Predicate mask
-	struct bit_map_t *pred;
+	bit_map_t *pred;
 
 	// Flags updated during instruction execution
 	int active_mask_push;

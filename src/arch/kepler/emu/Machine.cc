@@ -40,9 +40,10 @@ const char *kpl_err_isa_note =
 		"\tplease email 'development@multi2sim.org' to request support for \n"
 		"\tit.\n";
 
-#define __NOT_IMPL__ std::cerr << "Kepler instruction not implemented.\n" << \
-		kpl_err_isa_note;
+//#define __NOT_IMPL__ std::cerr << "Kepler instruction not implemented.\n" <<
+//		kpl_err_isa_note;
 
+#define __NOT_IMPL__ std::cerr << "";
 
 void kpl_isa_IMUL_A_impl(Thread *thread, Inst *inst)
 {
@@ -96,12 +97,12 @@ void kpl_isa_BRA_impl(Thread *thread, Inst *inst)
 
 void kpl_isa_MOV_A_impl(Thread *thread, Inst *inst)
 {
-	__NOT_IMPL__
+	std::cout << "MOV_A" << std::endl;
 }
 
 void kpl_isa_MOV_B_impl(Thread *thread, Inst *inst)
 {
-	__NOT_IMPL__
+	std::cout << "MOV_B" << std::endl;
 }
 
 void kpl_isa_MOV32I_impl(Thread *thread, Inst *inst)
@@ -135,6 +136,11 @@ void kpl_isa_DADD_impl(Thread *thread, Inst *inst)
 }
 
 void kpl_isa_FFMA_impl(Thread *thread, Inst *inst)
+{
+	__NOT_IMPL__
+}
+
+void kpl_isa_FADD_impl(Thread *thread, Inst *inst)
 {
 	__NOT_IMPL__
 }

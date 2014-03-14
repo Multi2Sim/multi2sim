@@ -179,6 +179,13 @@ DEFINST(FFMA,
 		0x09,
 		0x01)
 
+DEFINST(FADD,
+		"%pred0 FADD %dst, %srcA, %srcB;",
+		0x02,
+		0x03,
+		0x0c,
+		0x0b)
+
 /* Misc catogory instructions:
  * S2R, NOP
  */
