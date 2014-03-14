@@ -20,7 +20,7 @@
 
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/list.h>
-#include <mem-system/memory.h>
+#include <mem-system/Memory.h>
 
 #include "Emu.h"
 #include "Grid.h"
@@ -73,7 +73,7 @@ ThreadBlock::ThreadBlock(Grid *grid, int id)
 
 	/* Create shared memory */
 	//shared_mem = new Memory::Memory();
-	//shared_mem.safe = false;
+	shared_mem.setSafe(false);
 
 	/* Flags */
 	finished_emu = false;

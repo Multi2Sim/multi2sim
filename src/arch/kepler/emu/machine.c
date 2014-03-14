@@ -137,6 +137,11 @@ void kpl_isa_FFMA_impl(KplThread *thread, struct KplInstWrap *inst)
 	__NOT_IMPL__
 }
 
+void kpl_isa_FADD_impl(KplThread *thread, struct KplInstWrap *inst)
+{
+	__NOT_IMPL__
+}
+
 void kpl_isa_NOP_impl(KplThread *thread, struct KplInstWrap *inst)
 {
 	__NOT_IMPL__

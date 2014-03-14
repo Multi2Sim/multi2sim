@@ -66,7 +66,6 @@ Emu::Emu()
 	// Global memory initialization
     const_mem = new mem::Memory();
 	const_mem->setSafe(false);
-    //const_mem->safe = false;
 /*
 
         asObject(this)->Dump = KplEmuDump;
