@@ -538,7 +538,7 @@ void vi_mem_system_init(void)
 			char *name;
 			struct vi_net_t *net;
 
-			name = vi_trace_line_get_symbol(trace_line, "net_name");
+			name = vi_trace_line_get_symbol(trace_line, "name");
 			if (vi_net_system && vi_net_system->net_table)
 				net = hash_table_get(vi_net_system->net_table, name);
 			if (!net)
