@@ -119,5 +119,6 @@ struct vi_net_buffer_t *vi_net_buffer_create (struct vi_trace_line_t *trace_line
 
 void vi_net_buffer_free (struct vi_net_buffer_t *buffer)
 {
+	free(buffer->name);
 	free(buffer);
 }

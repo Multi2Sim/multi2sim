@@ -98,7 +98,7 @@ struct vi_net_node_t * vi_net_node_assign(struct vi_trace_line_t *trace_line)
 		node->input_buffer_list  = hash_table_create(0, FALSE);
 		node->output_buffer_list = hash_table_create(0, FALSE);
 	}
-
+	hash_table_insert(net->node_table, node->name, node);
 	return node;
 }
 

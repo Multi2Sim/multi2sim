@@ -64,7 +64,9 @@ struct vi_net_link_t *vi_net_link_create(struct vi_trace_line_t *trace_line)
 	dst_node_name = vi_trace_line_get_symbol(trace_line, "dst_node");
 	dst = hash_table_get(net->node_table, dst_node_name);
 
-	assert(src && dst && (src != dst));
+	assert(src);
+	assert(dst);
+	assert(src != dst);
 
 	link->src_node = src;
 	link->dst_node = dst;
