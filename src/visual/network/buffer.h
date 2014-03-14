@@ -20,15 +20,36 @@
 #ifndef VISUAL_NETWORK_BUFFER_H
 #define VISUAL_NETWORK_BUFFER_H
 
-struct vi_net_buffer_t
+enum vi_buffer_direction_t
 {
-	struct vi_net_node_t *node;
+	vi_buffer_dir_invalid = 0,
+	vi_buffer_dir_input,
+	vi_buffer_dir_output
 };
 
-struct vi_net_buffer_t *vi_net_buffer_create (void);
+enum vi_buffer_connect_t
+{
+	vi_buffer_invalid = 0,
+	vi_buffer_link,
+	vi_buffer_bus,
+	vi_buffer_photonic
+};
+
+struct vi_net_buffer_t
+{
+	int			    size;
+	enum vi_buffer_connect_t    connection_type;
+	enum vi_buffer_direction_t  direction;
+
+	char                       *name;
+	struct vi_net_node_t       *node;
+
+	/* Either a link connection or a bus connection */
+	struct vi_net_link_t 	   *link;
+
+};
+
+struct vi_net_buffer_t *vi_net_buffer_create (struct vi_trace_line_t *trace_line, enum vi_buffer_direction_t);
 void                    vi_net_buffer_free   (struct vi_net_buffer_t *buffer);
-
-
-
 
 #endif

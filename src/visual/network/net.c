@@ -22,10 +22,12 @@
 
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
+#include <lib/util/hash-table.h>
 #include <lib/util/list.h>
 #include <lib/util/misc.h>
 #include <visual/common/trace.h>
 
+#include "link.h"
 #include "net.h"
 #include "node.h"
 
@@ -61,8 +63,11 @@ struct vi_net_t *vi_net_create(struct vi_trace_line_t *trace_line)
 	if (packet_size != 0)
 		net->packet_size = packet_size;
 
-	net->high_mods = list_create();
-	net->low_mods = list_create();
+	net->high_mods = hash_table_create(0, FALSE);
+	net->low_mods  = hash_table_create(0, FALSE);
+	net->link_table = hash_table_create(0, FALSE);
+	net->node_table = hash_table_create(0, FALSE);
+
 	/* Return */
 	return net;
 }
@@ -71,14 +76,36 @@ struct vi_net_t *vi_net_create(struct vi_trace_line_t *trace_line)
 void vi_net_free(struct vi_net_t *net)
 {
 	int i;
+	char *link_name;
+	struct vi_net_link_t *link;
+
+	char *node_name;
+	struct vi_net_node_t *node;
 
 	/* Free nodes */
 	LIST_FOR_EACH(net->node_list, i)
-	vi_net_node_free(list_get(net->node_list, i));
+	{
+		node = list_get(net->node_list, i);
+		if (node->name)
+			hash_table_remove(net->node_table, node->name);
+		vi_net_node_free(node);
+	}
 	list_free(net->node_list);
 
-	list_free(net->high_mods);
-	list_free(net->low_mods);
+	/*Redundant: if it goes here something was wrong - Fail safe */
+	HASH_TABLE_FOR_EACH(net->node_table, node_name, node)
+		vi_net_node_free(node);
+	hash_table_free(net->node_table);
+
+	/* Free Links */
+	HASH_TABLE_FOR_EACH(net->link_table, link_name, link)
+		vi_net_link_free(link);
+	hash_table_free(net->link_table);
+
+	/* Free mod tables - Not freeing mods, since it has been
+	 * freed before by mem-system */
+	hash_table_free(net->high_mods);
+	hash_table_free(net->low_mods);
 
 	/* Free network */
 	free(net->name);
