@@ -47,6 +47,7 @@ Grid::Grid(cuda_function_t *function)
 
 	/* Add to list */
 	emu->GridsPushBack(this);
+	std::cout<<"gird created";
 }
 
 void Grid::Dump(std::ostream &os) const

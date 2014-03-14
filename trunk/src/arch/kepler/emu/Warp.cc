@@ -84,7 +84,6 @@ Warp::Warp(ThreadBlock *thread_block, unsigned id)
 	inst_count = 0;
 	global_mem_inst_count = 0;
 	shared_mem_inst_count = 0;
-
 }
 
 
