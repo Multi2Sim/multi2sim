@@ -91,7 +91,7 @@ bool Emu::Run()
 {
 
 	Grid *grid;
-	std::list<std::unique_ptr<ThreadBlock>>::iterator thread_block;
+	std::unique_ptr<ThreadBlock> thread_block;
 	int thread_block_id;
 
 	// Stop emulation if no grids
@@ -110,27 +110,28 @@ bool Emu::Run()
 		{
 			grid->WaitingToRunning(thread_block_id);
 			thread_block_id ++;
-			thread_block = grid->getRunningThreadBlocksBegin();
-			while (thread_block->get()->getWarpsCompletedEmu() != thread_block->
+			thread_block.reset(grid->getRunningThreadBlocksBegin()->release());
+			while (thread_block.get()->getWarpsCompletedEmu() != thread_block.
 					get()->getWarpsInWorkgroup())
 			{
-				for (auto wp_p = thread_block->get()->WarpsBegin(); wp_p <
-					thread_block->get()->WarpsEnd(); ++wp_p)
+				for (auto wp_p = thread_block.get()->WarpsBegin(); wp_p <
+					thread_block.get()->WarpsEnd(); ++wp_p)
 				{
 					if ((*wp_p)->getFinishedEmu() || (*wp_p)->getAtBarrier())
 						continue;
 					(*wp_p)->Execute();
 				}
 			}
-			thread_block->get()->setFinishedEmu(true);
+			thread_block.get()->setFinishedEmu(true);
+			grid->PopRunningThreadBlock();
 			grid->PushFinishedThreadBlock
-				(std::move(std::unique_ptr<ThreadBlock>(thread_block->release())));
+				(std::move(std::unique_ptr<ThreadBlock>(thread_block.release())));
 		}
 		finished_grids.push_back(grid);
 	}
 
 	// Free finished grids
-	assert(!grid->getPendThreadBlocksize() && !grid->getRunThreadBlocksize());
+	assert(!running_grids.size() && !pending_grids.size());
 	finished_grids.clear();
 
 	/* Continue emulation */

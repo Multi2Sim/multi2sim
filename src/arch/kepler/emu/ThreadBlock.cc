@@ -77,6 +77,7 @@ ThreadBlock::ThreadBlock(Grid *grid, int id)
 
 	/* Flags */
 	finished_emu = false;
+	warps_completed_emu = 0;
 }
 
 void ThreadBlock::Dump(std::ostream &os) const
