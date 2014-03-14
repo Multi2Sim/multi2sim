@@ -797,7 +797,7 @@ static void net_config_route_create(struct net_t *net, struct config_t *config, 
 }
 
 #define NET_SYSTEM_TRACE_VERSION_MAJOR		1
-#define NET_SYSTEM_TRACE_VERSION_MINOR		1	
+#define NET_SYSTEM_TRACE_VERSION_MINOR		2
 
 static void net_config_trace(void)
 {
@@ -824,9 +824,8 @@ static void net_config_trace(void)
 			node = list_get(net->node_list, i);
 
 			if (node->kind == net_node_switch || node->kind == net_node_end)
-				net_trace_header("net.node net_name=\"%s\" node_index=\"%d\" node_name=\"%s\" node_type=%d "
-						"num_in_buf=%d num_out_buf=%d\n", net->name, node->index, node->name, node->kind,
-						list_count(node->input_buffer_list), list_count(node->output_buffer_list));
+				net_trace_header("net.node net_name=\"%s\" node_index=\"%d\" node_name=\"%s\" node_type=%d\n"
+						, net->name, node->index, node->name, node->kind);
 			else if (node->kind == net_node_bus || node->kind == net_node_photonic)
 				net_trace_header("net.node net_name=\"%s\" node_index=\"%d\" node_name=\"%s\" node_type=%d "
 						"num_lanes=%d\n", net->name, node->index, node->name, node->kind,
@@ -839,8 +838,8 @@ static void net_config_trace(void)
 			struct net_link_t *link;
 			link = list_get(net->link_list, i);
 
-			net_trace_header("net.link net_name=\"%s\" link_index=\"%d\" link_name=\"%s\" src_node=\"%s\" "
-					"dst_node=\"%s\" vc_num=%d\n", net->name, i, link->name, link->src_node->name,
+			net_trace_header("net.link net_name=\"%s\" link_name=\"%s\" src_node=\"%s\" "
+					"dst_node=\"%s\" vc_num=%d\n", net->name, link->name, link->src_node->name,
 					link->dst_node->name, link->virtual_channel);
 		}
 
@@ -856,18 +855,16 @@ static void net_config_trace(void)
 				buffer = list_get(node->input_buffer_list, j);
 
 				if (buffer->kind == net_buffer_link)
-					net_trace_header("net.input_buffer net_name=\"%s\" node_name=\"%s\" "
-							"buffer_index=\"%d\" buffer_name=\"%s\" "
+					net_trace_header("net.input_buffer net_name=\"%s\" node_name=\"%s\" buffer_name=\"%s\" "
 							"buffer_size=%d buffer_type=%d connection=\"%s\"\n", net->name,
-							buffer->node->name, j, buffer->name, buffer->size, buffer->kind,
+							node->name, buffer->name, buffer->size, buffer->kind,
 							buffer->link->name);
 
 				else if (buffer->kind == net_buffer_bus || buffer->kind == net_buffer_photonic)
-					net_trace_header("net.input_buffer net_name=\"%s\" node_name=\"%s\" "
-							"buffer_index=\"%d\" buffer_name=\"%s\" "
+					net_trace_header("net.input_buffer net_name=\"%s\" node_name=\"%s\" buffer_name=\"%s\" "
 							"buffer_size=%d buffer_type=%d connection=\"%s\"\n", net->name,
-							buffer->node->name, j, buffer->name, buffer->size, buffer->kind,
-							buffer->bus->name);
+							node->name, buffer->name, buffer->size, buffer->kind,
+							buffer->bus->node->name);
 			}
 			LIST_FOR_EACH(node->output_buffer_list, j)
 			{
@@ -875,17 +872,16 @@ static void net_config_trace(void)
 				buffer = list_get(node->output_buffer_list, j);
 
 				if (buffer->kind == net_buffer_link)
-					net_trace_header("net.output_buffer net_name=\"%s\" node_name=\"%s\" "
-							"buffer_index=\"%d\" buffer_name=\"%s\" "
+					net_trace_header("net.output_buffer net_name=\"%s\" node_name=\"%s\" buffer_name=\"%s\" "
 							"buffer_size=%d buffer_type=%d connection=\"%s\"\n", net->name,
-							buffer->node->name, j, buffer->name, buffer->size, buffer->kind,
+							node->name, buffer->name, buffer->size, buffer->kind,
 							buffer->link->name);
+
 				else if (buffer->kind == net_buffer_bus || buffer->kind == net_buffer_photonic)
-					net_trace_header("net.output_buffer net_name=\"%s\" node_name=\"%s\" "
-							"buffer_index=\"%d\" buffer_name=\"%s\" "
+					net_trace_header("net.output_buffer net_name=\"%s\" node_name=\"%s\" buffer_name=\"%s\" "
 							"buffer_size=%d buffer_type=%d connection=\"%s\"\n", net->name,
-							buffer->node->name, j, buffer->name, buffer->size, buffer->kind,
-							buffer->bus->name);
+							node->name, buffer->name, buffer->size, buffer->kind,
+							buffer->bus->node->name);
 			}
 		}
 	}

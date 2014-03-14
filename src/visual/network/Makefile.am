@@ -8,6 +8,9 @@ libnetwork_a_SOURCES += \
 	buffer.c \
 	buffer.h \
 	\
+	link.c \
+	link.h \
+	\
 	net-system.c \
 	net-system.h \
 	\

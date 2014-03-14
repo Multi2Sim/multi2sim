@@ -27,6 +27,8 @@
 #include <visual/common/state.h>
 #include <visual/common/trace.h>
 
+#include "buffer.h"
+#include "link.h"
 #include "net-system.h"
 #include "net.h"
 #include "node.h"
@@ -43,7 +45,7 @@ static char *err_vi_net_system_trace_version =
 	"\tversion used to visualize the trace.\n";
 
 #define VI_NET_SYSTEM_TRACE_VERSION_MAJOR	1
-#define VI_NET_SYSTEM_TRACE_VERSION_MINOR	1	
+#define VI_NET_SYSTEM_TRACE_VERSION_MINOR	2
 
 void vi_net_system_init(void)
 {
@@ -113,7 +115,33 @@ void vi_net_system_init(void)
 
 			node = vi_net_node_assign(trace_line);
 			assert(node);
+		}
+		else if (!strcmp(command, "net.link"))
+		{
+			struct vi_net_link_t *link;
 
+			link = vi_net_link_create(trace_line);
+			assert(link);
+		}
+
+		else if (!strcmp(command, "net.input_buffer"))
+		{
+			struct vi_net_buffer_t *buffer;
+
+			buffer = vi_net_buffer_create(trace_line, vi_buffer_dir_input);
+			assert(buffer);
+		}
+		else if (!strcmp(command, "net.output_buffer"))
+		{
+			struct vi_net_buffer_t *buffer;
+
+			buffer = vi_net_buffer_create(trace_line, vi_buffer_dir_output);
+			assert(buffer);
 		}
 	}
+}
+
+void vi_net_system_done(void)
+{
+
 }

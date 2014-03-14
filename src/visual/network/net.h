@@ -26,11 +26,12 @@ struct vi_net_t
 	char *name;
 	int   packet_size;
 
-	struct list_t *node_list;
-	struct list_t *link_list;
+	struct list_t *node_list; /* Keeping it for backward compatibility */
 
-	struct list_t *high_mods;
-	struct list_t *low_mods;
+	struct hash_table_t *node_table;
+	struct hash_table_t *link_table;
+	struct hash_table_t *high_mods;
+	struct hash_table_t *low_mods;
 
 };
 

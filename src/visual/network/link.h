@@ -1,5 +1,5 @@
 /*
- *  Multi2Sim
+ *  Multi2Sim Tools
  *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -17,13 +17,20 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef NET_CONFIG_H
-#define NET_CONFIG_H
+#ifndef VISUAL_NETWORK_LINK_H
+#define VISUAL_NETWORK_LINK_H
 
-/* Help message */
-extern char *net_config_help;
-extern char *net_config_file_name;
+struct vi_net_link_t
+{
+	int   vc_number;
+	char *name;
 
-void net_read_config();
+	struct vi_net_node_t *src_node;
+	struct vi_net_node_t *dst_node;
+};
 
-#endif /* CONFIG_H_ */
+
+struct vi_net_link_t *vi_net_link_create  (struct vi_trace_line_t * trace_line);
+void                  vi_net_link_free    (struct vi_net_link_t *link);
+
+#endif

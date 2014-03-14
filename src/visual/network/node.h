@@ -28,25 +28,36 @@
 
 enum vi_net_node_kind
 {
-	net_node_invalid = 0,
-	net_node_end,
-	net_node_switch,
-	net_node_bus,
-	net_node_photonic
+	vi_net_node_invalid = 0,
+	vi_net_node_end,
+	vi_net_node_switch,
+	vi_net_node_bus,
+	vi_net_node_photonic
 };
 
+struct vi_net_bus_t
+{
+	int utilization;
+};
 struct vi_net_node_t
 {
-	enum vi_net_node_kind  node_type;
+	enum vi_net_node_kind  type;
 	char                  *name;
 	struct vi_mod_t       *mod;
-	struct list_t 		  *input_buffer_list;
-	struct list_t 		  *output_buffer_list;
-};
+	struct hash_table_t   *input_buffer_list;
+	struct hash_table_t   *output_buffer_list;
 
+	/* if node is BUS or Photonic */
+	struct list_t	    *bus_lane_list;
+	struct hash_table_t *src_buffer_list;
+	struct hash_table_t *dst_buffer_list;
+};
 
 struct vi_net_node_t *vi_net_node_create (void);
 void                  vi_net_node_free   (struct vi_net_node_t *node);
 struct vi_net_node_t *vi_net_node_assign (struct vi_trace_line_t *trace_line);
+
+struct vi_net_bus_t  *vi_net_bus_create  (void);
+void                  vi_net_bus_free    (struct vi_net_bus_t *bus);
 
 #endif
