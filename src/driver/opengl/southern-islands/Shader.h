@@ -31,11 +31,11 @@ class Shader
 	unsigned id;
 	OpenGLSiShaderStage stage;
 
+	// Points to Shader binary inside Program binary
 	OpenGLSiShaderBinaryCommon *shader_bin;
 	
 	// OpenGL input interface doesn't always match GLSL input interface
-	// If they don't match, we rely on Fetch Shader to load correct data
-	// to GPRs
+	// If they don't, we rely on Fetch Shader to load correct data to GPRs
 	std::vector<std::unique_ptr<Input>> inputs;
 
 public:
