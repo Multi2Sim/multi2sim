@@ -23,6 +23,7 @@
 #include <visual/memory/mem-system.h>
 #include <visual/memory/panel.h>
 #include <visual/network/net-system.h>
+#include <visual/network/panel.h>
 #include <visual/southern-islands/gpu.h>
 #include <visual/southern-islands/panel.h>
 #include <visual/x86/cpu.h>
@@ -138,6 +139,12 @@ void visual_run(char *file_name)
 		vi_si_panel = vi_si_panel_create();
 		gtk_box_pack_start(GTK_BOX(vbox), vi_si_panel_get_widget(vi_si_panel),
 				FALSE, FALSE, 0);
+	}
+
+	/* Network system level detection */
+	if (vi_net_system->active)
+	{
+		vi_net_system_level_assign();
 	}
 
 	/* Memory system panel */

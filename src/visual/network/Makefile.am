@@ -18,7 +18,10 @@ libnetwork_a_SOURCES += \
 	net.h \
 	\
 	node.c \
-	node.h 
+	node.h \
+	\
+	panel.c \
+	panel.h
 
 AM_CFLAGS = @GTK_CFLAGS@
 
