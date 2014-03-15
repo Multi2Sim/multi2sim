@@ -47,14 +47,24 @@ struct vi_net_board_t *vi_net_board_create(struct vi_net_t *net)
 	board = xcalloc(1, sizeof(struct vi_net_board_t));
 	board->net = net;
 
+	/* Color */
+
+	GdkRGBA frame_color;
+	frame_color.red = .682;
+	frame_color.green = .917;
+	frame_color.blue = 1;
+	frame_color.alpha = .8;
+
 	/* Frame */
 	GtkWidget *frame = gtk_frame_new(NULL);
 	GtkWidget *event_box = gtk_event_box_new();
 	gtk_container_add(GTK_CONTAINER(event_box), frame);
+	gtk_widget_override_background_color(event_box, GTK_STATE_FLAG_NORMAL, &frame_color);
 	gtk_widget_set_size_request(frame, VI_MOD_BOARD_WIDTH, VI_MOD_BOARD_HEIGHT);
 
 	/* Vertical box */
 	GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+
 	gtk_container_add(GTK_CONTAINER(frame), vbox);
 
 	/* Name */
@@ -73,7 +83,7 @@ struct vi_net_board_t *vi_net_board_create(struct vi_net_t *net)
 	GtkWidget *toggle_button = gtk_toggle_button_new_with_label("Detail");
 	gtk_box_pack_start(GTK_BOX(hbox), toggle_button, TRUE, TRUE, 0);
 	g_signal_connect(G_OBJECT(toggle_button), "toggled",
-		G_CALLBACK(vi_net_board_toggle_button_toggled), board);
+			G_CALLBACK(vi_net_board_toggle_button_toggled), board);
 	board->toggle_button = toggle_button;
 
 	/* Main widget */
@@ -108,16 +118,16 @@ static gboolean vi_net_board_toggle_button_toggled(GtkWidget *widget, struct vi_
 		gtk_widget_destroy(vi_net_window_get_widget(board->net_window));
 		board->net_window = NULL;
 	}
-*/
+	 */
 	return FALSE;
 }
 
 static void vi_net_board_free(struct vi_net_board_t *board)
 {
 	/* Destroy pop-up window */
-/*	if (board->net_window)
+	/*	if (board->net_window)
 		gtk_widget_destroy(vi_net_window_get_widget(board->net_window));
-*/
+	 */
 
 	/* Free */
 	free(board);
@@ -135,4 +145,4 @@ static GtkWidget *vi_net_window_get_widget(struct vi_net_window_t *net_window)
 	return net_window->widget;
 }
 
-*/
+ */
