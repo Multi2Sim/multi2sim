@@ -17,23 +17,22 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef VISUAL_NETWORK_NET_SYSTEM_H
-#define VISUAL_NETWORK_NET_SYSTEM_H
+#include "net-widget.h"
 
-struct hash_table_t;
-
-struct vi_net_system_t
+struct vi_mod_widget_t
 {
-	int active;
+	char *name;
 
-	struct hash_table_t *net_table;
-	struct list_t 	    *level_list;
+	GtkWidget *widget;
+	GtkWidget *hscrollbar;
+	GtkWidget *vscrollbar;
+
+	GtkWidget *layout;
+	GtkWidget *first_row_layout;
+	GtkWidget *first_col_layout;
+
+//	struct vi_list_t *access_list;
+
+	int width;
+	int height;
 };
-
-extern struct vi_net_system_t *vi_net_system;
-
-void vi_net_system_init(void);
-void vi_net_system_level_assign(void);
-void vi_net_system_done(void);
-
-#endif

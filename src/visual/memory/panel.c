@@ -25,6 +25,8 @@
 #include <visual/common/led.h>
 #include <visual/common/list.h>
 #include <visual/common/state.h>
+#include <visual/network/net-system.h>
+#include <visual/network/panel.h>
 
 #include "mem-system.h"
 #include "mod.h"
@@ -228,12 +230,12 @@ static struct vi_mod_board_t *vi_mod_board_create(struct vi_mod_t *mod)
 	GtkWidget *toggle_button = gtk_toggle_button_new_with_label("Detail");
 	gtk_box_pack_start(GTK_BOX(hbox), toggle_button, TRUE, TRUE, 0);
 	g_signal_connect(G_OBJECT(toggle_button), "toggled",
-		G_CALLBACK(vi_mod_board_toggle_button_toggled), board);
+			G_CALLBACK(vi_mod_board_toggle_button_toggled), board);
 	board->toggle_button = toggle_button;
 
 	/* Access list */
 	struct vi_list_t *access_list = vi_list_create("Access list", 10, 10, (vi_list_get_elem_name_func_t)
-		vi_mod_access_get_name_short, (vi_list_get_elem_desc_func_t) vi_mod_access_get_desc);
+			vi_mod_access_get_name_short, (vi_list_get_elem_desc_func_t) vi_mod_access_get_desc);
 	gtk_box_pack_start(GTK_BOX(vbox), vi_list_get_widget(access_list), TRUE, TRUE, 0);
 	board->access_list = access_list;
 
@@ -312,13 +314,16 @@ struct vi_mem_panel_t
 	GtkWidget *widget;
 
 	struct list_t *board_list;
+	struct list_t *net_board_list;
 };
 
 
 static void vi_mem_panel_destroy(GtkWidget *widget,
-	struct vi_mem_panel_t *panel)
+		struct vi_mem_panel_t *panel)
 {
 	list_free(panel->board_list);
+	if (panel->net_board_list)
+		list_free(panel->net_board_list);
 	vi_mem_panel_free(panel);
 }
 
@@ -331,6 +336,7 @@ struct vi_mem_panel_t *vi_mem_panel_create(void)
 	struct list_t *mod_list;
 	struct vi_mod_board_t *board;
 
+	int tab;
 	int level_id;
 	int mod_id;
 
@@ -362,6 +368,43 @@ struct vi_mem_panel_t *vi_mem_panel_create(void)
 	/* Insert module boards */
 	layout_width = VI_MOD_BOARD_WIDTH;
 	layout_height = VI_MOD_BOARD_HEIGHT;
+	if (vi_net_system->active)
+	{
+		tab = 1;
+		int net_id;
+		struct vi_net_t *net;
+		struct list_t   *net_list;
+		struct vi_net_board_t *board;
+
+		panel->net_board_list = list_create();
+		LIST_FOR_EACH(vi_net_system->level_list, level_id)
+		{
+			net_list = list_get(vi_net_system->level_list, level_id);
+
+			/* Networks */
+			LIST_FOR_EACH(net_list, net_id)
+			{
+				int x;
+				int y;
+
+				net = list_get(net_list, net_id);
+
+				/* Get board Position */
+				x = VI_MOD_BOARD_PADDING + net_id * (VI_MOD_BOARD_PADDING + VI_MOD_BOARD_WIDTH);
+				y = VI_MOD_BOARD_PADDING + ( 2 * level_id + 1) * (VI_MOD_BOARD_PADDING + VI_MOD_BOARD_HEIGHT);
+
+				board = vi_net_board_create(net);
+				list_add(panel->net_board_list, board );
+				gtk_layout_put(GTK_LAYOUT(layout), board->widget, x, y);
+
+				/* Size of layout */
+				layout_width = MAX(layout_width, x + VI_MOD_BOARD_WIDTH + VI_MOD_BOARD_PADDING);
+				layout_height = MAX(layout_height, y + VI_MOD_BOARD_HEIGHT + VI_MOD_BOARD_PADDING);
+
+			}
+		}
+	}
+
 	LIST_FOR_EACH(vi_mem_system->mod_level_list, level_id)
 	{
 		mod_list = list_get(vi_mem_system->mod_level_list, level_id);
@@ -377,7 +420,7 @@ struct vi_mem_panel_t *vi_mem_panel_create(void)
 
 			/* Get board position */
 			x = VI_MOD_BOARD_PADDING + mod_id * (VI_MOD_BOARD_PADDING + VI_MOD_BOARD_WIDTH);
-			y = VI_MOD_BOARD_PADDING + 2 * level_id * (VI_MOD_BOARD_PADDING + VI_MOD_BOARD_HEIGHT);
+			y = VI_MOD_BOARD_PADDING + (1 + tab) * level_id * (VI_MOD_BOARD_PADDING + VI_MOD_BOARD_HEIGHT);
 
 			/* Create board */
 			board = vi_mod_board_create(mod);
@@ -396,7 +439,7 @@ struct vi_mem_panel_t *vi_mem_panel_create(void)
 	/* Assign panel widget */
 	panel->widget = frame;
 	g_signal_connect(G_OBJECT(panel->widget), "destroy",
-		G_CALLBACK(vi_mem_panel_destroy), panel);
+			G_CALLBACK(vi_mem_panel_destroy), panel);
 
 	/* Return */
 	return panel;

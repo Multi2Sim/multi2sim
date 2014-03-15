@@ -23,9 +23,11 @@
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/hash-table.h>
+#include <lib/util/list.h>
 #include <lib/util/misc.h>
 #include <visual/common/state.h>
 #include <visual/common/trace.h>
+#include <visual/memory/mod.h>
 
 #include "buffer.h"
 #include "link.h"
@@ -40,9 +42,9 @@
 struct vi_net_system_t *vi_net_system;
 
 static char *err_vi_net_system_trace_version =
-	"\tThe network system trace file has been created with an incompatible version\n"
-	"\tof Multi2Sim. Please rerun the simulation with the same Multi2Sim\n"
-	"\tversion used to visualize the trace.\n";
+		"\tThe network system trace file has been created with an incompatible version\n"
+		"\tof Multi2Sim. Please rerun the simulation with the same Multi2Sim\n"
+		"\tversion used to visualize the trace.\n";
 
 #define VI_NET_SYSTEM_TRACE_VERSION_MAJOR	1
 #define VI_NET_SYSTEM_TRACE_VERSION_MINOR	2
@@ -52,19 +54,19 @@ void vi_net_system_init(void)
 	struct vi_trace_line_t *trace_line;
 
 	/* State file */
-/*	vi_state_new_category("Network hierarchy",
+	/*	vi_state_new_category("Network hierarchy",
 		(vi_state_read_checkpoint_func_t) vi_net_system_read_checkpoint,
 		(vi_state_write_checkpoint_func_t) vi_net_system_write_checkpoint,
 		vi_net_system);
-*/
+	 */
 	/* Commands */
-/*	vi_state_new_command("net.send",
+	/*	vi_state_new_command("net.send",
 		(vi_state_process_trace_line_func_t) vi_net_system_send,
 		vi_mem_system);
 	vi_state_new_command("net.recieve",
 		(vi_state_process_trace_line_func_t) vi_net_system_recieve,
 		vi_mem_system);
-*/
+	 */
 	/* Initialize */
 	vi_net_system = xcalloc(1, sizeof(struct vi_net_system_t));
 	vi_net_system->net_table = hash_table_create(0, FALSE);
@@ -92,11 +94,11 @@ void vi_net_system_init(void)
 			if (version)
 				sscanf(version, "%d.%d", &version_major, &version_minor);
 			if (version_major != VI_NET_SYSTEM_TRACE_VERSION_MAJOR ||
-				version_minor > VI_NET_SYSTEM_TRACE_VERSION_MINOR)
+					version_minor > VI_NET_SYSTEM_TRACE_VERSION_MINOR)
 				fatal("incompatible network system trace version.\n"
-					"\tTrace generation v. %d.%d / Trace consumer v. %d.%d\n%s",
-					version_major, version_minor, VI_NET_SYSTEM_TRACE_VERSION_MAJOR,
-					VI_NET_SYSTEM_TRACE_VERSION_MINOR, err_vi_net_system_trace_version);
+						"\tTrace generation v. %d.%d / Trace consumer v. %d.%d\n%s",
+						version_major, version_minor, VI_NET_SYSTEM_TRACE_VERSION_MAJOR,
+						VI_NET_SYSTEM_TRACE_VERSION_MINOR, err_vi_net_system_trace_version);
 		}
 		else if (!strcmp(command, "net.create"))
 		{
@@ -143,6 +145,7 @@ void vi_net_system_init(void)
 
 void vi_net_system_done(void)
 {
+	int i;
 	struct vi_net_t *net;
 
 	char *net_name;
@@ -153,6 +156,38 @@ void vi_net_system_done(void)
 	}
 	hash_table_free(vi_net_system->net_table);
 
+	/* Free levels */
+	LIST_FOR_EACH(vi_net_system->level_list, i)
+		list_free(list_get(vi_net_system->level_list, i));
+	list_free(vi_net_system->level_list);
+
 	/* Rest */
 	free(vi_net_system);
+}
+
+void vi_net_system_level_assign(void)
+{
+	int mod_level;
+	char *net_name;
+	struct vi_net_t *net;
+	vi_net_system->level_list = list_create();
+
+	HASH_TABLE_FOR_EACH(vi_net_system->net_table, net_name, net)
+	{
+		struct list_t *net_level;
+		struct vi_mod_t *mod;
+
+		hash_table_find_first(net->high_mods,(void **) &(mod));
+
+		/* To make sure you are not dependent to mods */
+		if (mod)
+			mod_level = mod->level;
+		else
+			mod_level = 1;
+
+		while (vi_net_system->level_list->count < mod_level)
+			list_add(vi_net_system->level_list, list_create());
+		net_level = list_get(vi_net_system->level_list, mod_level - 1);
+		list_add(net_level, net);
+	}
 }
