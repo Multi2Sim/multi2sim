@@ -17,23 +17,29 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef VISUAL_NETWORK_NET_SYSTEM_H
-#define VISUAL_NETWORK_NET_SYSTEM_H
+#ifndef VISUAL_NETWORK_PANEL_H
+#define VISUAL_NETWORK_PANEL_H
 
-struct hash_table_t;
+#include <gtk/gtk.h>
 
-struct vi_net_system_t
+struct vi_net_board_t
 {
-	int active;
+	/* Main widget */
+	GtkWidget *widget;
 
-	struct hash_table_t *net_table;
-	struct list_t 	    *level_list;
+	/* Pop-up window showing detail */
+//	struct vi_net_window_t *net_window;
+
+	/* Toggle button to activate pop-up window */
+	GtkWidget *toggle_button;
+
+	struct vi_net_t *net;
+
+	/* FIXME Message list and LED (or not) */
+	// look up access list in mem-system
+
 };
 
-extern struct vi_net_system_t *vi_net_system;
-
-void vi_net_system_init(void);
-void vi_net_system_level_assign(void);
-void vi_net_system_done(void);
+struct vi_net_board_t *vi_net_board_create(struct vi_net_t *net);
 
 #endif
