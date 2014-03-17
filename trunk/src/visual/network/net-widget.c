@@ -17,22 +17,49 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <lib/mhandle/mhandle.h>
+#include <lib/util/debug.h>
+
 #include "net-widget.h"
 
-struct vi_mod_widget_t
+static void vi_net_widget_destroy(GtkWidget *widget, struct vi_net_widget_t *net_widget);
+
+GtkWidget *vi_net_widget_get_widget(struct vi_net_widget_t *net_widget)
 {
-	char *name;
+	return net_widget->widget;
+}
 
-	GtkWidget *widget;
-	GtkWidget *hscrollbar;
-	GtkWidget *vscrollbar;
+struct vi_net_widget_t *vi_net_widget_create(char *net_name)
+{
+	struct vi_net_widget_t *net_widget;
 
-	GtkWidget *layout;
-	GtkWidget *first_row_layout;
-	GtkWidget *first_col_layout;
+	/* Initialize */
+	net_widget = xcalloc(1, sizeof(struct vi_net_widget_t));
+	net_widget->name = xstrdup(net_name);
 
-//	struct vi_list_t *access_list;
+	/* Vertical box */
+	GtkWidget *vbox;
+	vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 
-	int width;
-	int height;
-};
+	/* Assign main widget */
+	net_widget->widget = vbox;
+	g_signal_connect(G_OBJECT(net_widget->widget), "destroy",
+		G_CALLBACK(vi_net_widget_destroy), net_widget);
+
+	/* Return */
+	return net_widget;
+}
+
+static void vi_net_widget_destroy(GtkWidget *widget, struct vi_net_widget_t *net_widget)
+{
+	vi_net_widget_free(net_widget);
+}
+
+
+void vi_net_widget_free(struct vi_net_widget_t *net_widget)
+{
+
+	/* Free widget */
+	free(net_widget->name);
+	free(net_widget);
+}

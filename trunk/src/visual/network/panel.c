@@ -23,18 +23,20 @@
 
 #include "net.h"
 #include "panel.h"
-
-/*
- * Network Module Board
- */
+#include "net-widget.h"
 
 #define VI_MOD_BOARD_PADDING		10
 #define VI_MOD_BOARD_WIDTH		100
 #define VI_MOD_BOARD_HEIGHT		100
 
 
-static gboolean vi_net_board_toggle_button_toggled(GtkWidget *widget, struct vi_net_board_t *board);
-static void vi_net_board_destroy(GtkWidget *widget, struct vi_net_board_t *board);
+static gboolean 		 vi_net_board_toggle_button_toggled (GtkWidget *widget, struct vi_net_board_t *board);
+static void 			 vi_net_board_destroy               (GtkWidget *widget, struct vi_net_board_t *board);
+static struct vi_net_window_t   *vi_net_window_create              (struct vi_net_t * net, GtkWidget *parent_toggle_button);
+static void                      vi_net_window_free                 (struct vi_net_window_t *net_window);
+static void                      vi_net_window_destroy              (GtkWidget *widget, struct vi_net_window_t *net_window);
+static gboolean                  vi_net_window_delete               (GtkWidget *widget, GdkEvent *event, struct vi_net_window_t *net_window);
+static GtkWidget                *vi_net_window_get_widget           (struct vi_net_window_t *net_window);
 
 
 struct vi_net_board_t *vi_net_board_create(struct vi_net_t *net)
@@ -96,15 +98,14 @@ struct vi_net_board_t *vi_net_board_create(struct vi_net_t *net)
 
 static gboolean vi_net_board_toggle_button_toggled(GtkWidget *widget, struct vi_net_board_t *board)
 {
+	struct vi_net_window_t *net_window;
 
 	int active;
 
 	/* Get button state */
 	active = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(board->toggle_button));
 
-	fprintf(stderr, "active = %d Window will be created \n", active);
-
-	/* Show
+	/* Show */
 	if (active && !board->net_window)
 	{
 
@@ -112,22 +113,21 @@ static gboolean vi_net_board_toggle_button_toggled(GtkWidget *widget, struct vi_
 		board->net_window = net_window;
 	}
 
-	 Hide
+	/* Hide */
 	if (!active && board->net_window)
 	{
 		gtk_widget_destroy(vi_net_window_get_widget(board->net_window));
 		board->net_window = NULL;
 	}
-	 */
+
 	return FALSE;
 }
 
 static void vi_net_board_free(struct vi_net_board_t *board)
 {
 	/* Destroy pop-up window */
-	/*	if (board->net_window)
+	if (board->net_window)
 		gtk_widget_destroy(vi_net_window_get_widget(board->net_window));
-	 */
 
 	/* Free */
 	free(board);
@@ -139,10 +139,57 @@ static void vi_net_board_destroy(GtkWidget *widget, struct vi_net_board_t *board
 	vi_net_board_free(board);
 }
 
-/*
+
+static struct vi_net_window_t * vi_net_window_create(struct vi_net_t * net, GtkWidget *parent_toggle_button)
+{
+	struct vi_net_window_t *net_window;
+
+	char str[MAX_STRING_SIZE];
+
+	/* Initialize */
+	net_window = xcalloc(1, sizeof(struct vi_net_window_t));
+	net_window->net = net;
+	net_window->parent_toggle_button = parent_toggle_button;
+
+	/* Main window */
+	snprintf(str, sizeof str, "Network %s", net->name);
+	GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+	gtk_window_set_title(GTK_WINDOW(window), str);
+
+	/* Module widget */
+	struct vi_net_widget_t *net_widget;
+	net_widget = vi_net_widget_create(net->name);
+	gtk_container_add(GTK_CONTAINER(window), vi_net_widget_get_widget(net_widget));
+	net_window->net_widget = net_widget;
+
+	/* Associate widget */
+	net_window->widget = window;
+	gtk_widget_show_all(net_window->widget);
+	g_signal_connect(G_OBJECT(net_window->widget), "destroy", G_CALLBACK(vi_net_window_destroy), net_window);
+	g_signal_connect(G_OBJECT(net_window->widget), "delete_event", G_CALLBACK(vi_net_window_delete), net_window);
+
+	/* Return */
+	return net_window;
+
+}
+
+static void vi_net_window_free(struct vi_net_window_t *net_window)
+{
+	free(net_window);
+}
+
+static void vi_net_window_destroy(GtkWidget *widget, struct vi_net_window_t *net_window)
+{
+	vi_net_window_free(net_window);
+}
+
+static gboolean vi_net_window_delete(GtkWidget *widget, GdkEvent *event, struct vi_net_window_t *net_window)
+{
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(net_window->parent_toggle_button), FALSE);
+	return TRUE;
+}
+
 static GtkWidget *vi_net_window_get_widget(struct vi_net_window_t *net_window)
 {
 	return net_window->widget;
 }
-
- */

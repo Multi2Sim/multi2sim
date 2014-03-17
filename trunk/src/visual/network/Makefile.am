@@ -11,11 +11,14 @@ libnetwork_a_SOURCES += \
 	link.c \
 	link.h \
 	\
+	net.c \
+	net.h \
+	\
 	net-system.c \
 	net-system.h \
 	\
-	net.c \
-	net.h \
+	net-widget.c \
+	net-widget.h \
 	\
 	node.c \
 	node.h \
