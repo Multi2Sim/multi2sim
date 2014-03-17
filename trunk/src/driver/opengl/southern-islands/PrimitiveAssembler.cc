@@ -18,6 +18,7 @@
  */
 
 #include <src/lib/cpp/Misc.h>
+#include "ShaderExport.h"
 #include "PrimitiveAssembler.h"
 
 using namespace misc;
@@ -41,7 +42,7 @@ PrimAsmEdge::PrimAsmEdge(const PrimAsmVertex &vtx0, const PrimAsmVertex &vtx1)
 		b * (vtx0.getY() + vtx1.getY()));
 }
 
-Primitive::Primitive(PrimAsmMode mode, std::vector<std::unique_ptr<float>> pos_repo, 
+Primitive::Primitive(PrimAsmMode mode, std::vector<std::unique_ptr<ExportData>> export_target, 
 	int x, int y, int width, int height)
 {
 	switch (mode)
@@ -49,22 +50,20 @@ Primitive::Primitive(PrimAsmMode mode, std::vector<std::unique_ptr<float>> pos_r
 
 	case OpenGLPaTriangles:
 	{
-		if (pos_repo.size() % 12)
+		if (export_target.size() % 3)
 		{
-			panic("Position data error, must be multiples of 12.");
+			panic("Position data error, must be multiples of 3.");
 			return;
 		}
-		for (unsigned i = 0; i < pos_repo.size() / 12; ++i)
+		for (unsigned i = 0; i < export_target.size() / 3; ++i)
 		{
-			int loc = i * 12;
-
 			// Create 3 vetices
-			PrimAsmVertex vtx0(*pos_repo[loc + 0], *pos_repo[loc + 1], 
-				*pos_repo[loc + 2], *pos_repo[loc + 3]);
-			PrimAsmVertex vtx1(*pos_repo[loc + 4], *pos_repo[loc + 5], 
-				*pos_repo[loc + 6], *pos_repo[loc + 7]);
-			PrimAsmVertex vtx2(*pos_repo[loc + 8], *pos_repo[loc + 9], 
-				*pos_repo[loc + 10], *pos_repo[loc + 11]);
+			PrimAsmVertex vtx0(export_target[i]->getXAsFloat(), export_target[i]->getYAsFloat(), 
+				export_target[i]->getZAsFloat(), export_target[i]->getWAsFloat());
+			PrimAsmVertex vtx1(export_target[i + 1]->getXAsFloat(), export_target[i + 1]->getYAsFloat(), 
+				export_target[i + 1]->getZAsFloat(), export_target[i + 1]->getWAsFloat());
+			PrimAsmVertex vtx2(export_target[i + 2]->getXAsFloat(), export_target[i + 2]->getYAsFloat(), 
+				export_target[i + 2]->getZAsFloat(), export_target[i + 2]->getWAsFloat());
 
 			// Apply viewport transformation
 			vtx0.ApplyViewPort(x, y, width, height);
@@ -74,13 +73,12 @@ Primitive::Primitive(PrimAsmMode mode, std::vector<std::unique_ptr<float>> pos_r
 			// Add to triangle repository
 			triangles.push_back(std::unique_ptr<PrimAsmTriangle> (new 
 				PrimAsmTriangle(vtx0, vtx1, vtx2)));
-
 		}
 		break;
 	}
 
 	default:
-		panic("Mode(%d) is not supported by Primitive Assembler.", mode);
+		panic("Assemble mode(%d) is currently not supported.", mode);
 		break;
 	}
 }

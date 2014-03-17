@@ -58,6 +58,13 @@ public:
 
 	std::vector<std::unique_ptr<SI::NDRange>>::iterator 
 		getNDRangeEnd() { return ndranges.end(); }
+
+	/// Push NDRange to repository, NDRange comes fom Driver(Vertex Shader) or SPI 
+	/// module(Pixel Shader). After added to repository, Driver/SPI modules lose
+	/// ownership of NDRange instance.
+	///
+	/// \param ndrange NDRange instance created by Driver/SPI
+	void AddNDRange(std::unique_ptr<SI::NDRange> ndrange);
 };
 
 }  // namespace Driver

@@ -22,8 +22,9 @@
 
 #include <memory>
 #include <vector>
-
 #include <src/lib/cpp/Misc.h>
+
+#include "ShaderExport.h"
 
 using namespace misc;
 
@@ -189,14 +190,13 @@ public:
 	///
 	/// Create primitive collection from raw position data
 	/// \param mode Mode of primitives to be generated
-	/// \param pos_repo Repository of position data(float) from export module
+	/// \param pos_repo Repository of position data from export module
 	/// \param x X as set in ViewPort
 	/// \param y Y as set in ViewPort
 	/// \param width Width as set in ViewPort
 	/// \param height Height as set in ViewPort
-	Primitive(PrimAsmMode mode, std::vector<std::unique_ptr<float>> pos_repo, 
+	Primitive(PrimAsmMode mode, std::vector<std::unique_ptr<ExportData>> pos_repo, 
 		int x, int y, int width, int height);
-
 };
 
 class ViewPort

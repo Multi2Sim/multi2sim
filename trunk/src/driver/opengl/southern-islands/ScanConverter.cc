@@ -346,8 +346,11 @@ void ScanConverter::Rasterize(const PrimAsmTriangle *triangle,
 			
 		} /*while lines>0*/
 	}
-
 }
 
+void ScanConverter::Clear()
+{
+	pixel_info_repo.clear();
+}
 
 }  // namespace SI
