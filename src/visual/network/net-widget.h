@@ -23,5 +23,23 @@
 
 #include <gtk/gtk.h>
 
+struct vi_net_widget_t
+{
+	char *name;
+
+	GtkWidget *widget;
+	GtkWidget *hscrollbar;
+	GtkWidget *vscrollbar;
+
+	int width;
+	int height;
+
+};
+
+
+struct vi_net_widget_t *vi_net_widget_create     (char *net_name);
+void                    vi_net_widget_free       (struct vi_net_widget_t *net_widget);
+GtkWidget              *vi_net_widget_get_widget (struct vi_net_widget_t *widget);
+
 
 #endif
