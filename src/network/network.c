@@ -198,7 +198,7 @@ void net_dump_report(struct net_t *net, FILE *f)
 	}
 }
 
-void net_dump_visual(struct net_graph_t *graph, FILE *f)
+void net_dump_visual(struct net_t *net, struct net_graph_t *graph, FILE *f)
 {
 	int i;
 	long long cycle;
@@ -207,7 +207,7 @@ void net_dump_visual(struct net_graph_t *graph, FILE *f)
 	cycle = esim_domain_cycle(net_domain_index);
 
 	fprintf(f, "Legend = True \n");
-	fprintf(f, "Title = \" Network: %s \"\n", graph->net->name);
+	fprintf(f, "Title = \" Network: %s \"\n", net->name);
 	for (i = 0; i < list_count(graph->vertex_list); i++)
 	{
 		struct net_graph_vertex_t *vertex;

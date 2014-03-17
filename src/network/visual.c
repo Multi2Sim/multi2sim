@@ -374,7 +374,6 @@ struct net_graph_t *net_graph_create(struct net_t *net)
 	struct net_graph_t *graph;
 
 	graph = xcalloc(1, sizeof(struct net_graph_t));
-	graph->net = net;
 	graph->edge_list = list_create_with_size(4);
 	graph->vertex_list = list_create_with_size(4);
 
@@ -810,7 +809,6 @@ void net_graph_cross_reduction(struct net_graph_t *graph, int layer_count)
 struct net_graph_vertex_t *net_get_vertex_by_node(struct net_graph_t * graph,
 		struct net_node_t *node)
 {
-	assert(graph->net == node->net);
 	struct net_graph_vertex_t * vertex;
 
 	for (int i = 0; i < list_count(graph->vertex_list); i++)

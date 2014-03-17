@@ -108,7 +108,7 @@ struct net_graph_vertex_t *net_get_vertex_by_node(struct net_graph_t * graph,
 
 
 
-void net_dump_visual(struct net_graph_t *graph, FILE *f);
+void net_dump_visual(struct net_t *net, struct net_graph_t *graph, FILE *f);
 
 
 #endif /* NETWORK_VISUAL_H */
