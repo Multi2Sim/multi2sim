@@ -253,4 +253,9 @@ void NDRange::WaitingToRunning()
 		running_work_groups.push_back(std::move(*i));
 }
 
+void NDRange::ReceiveInitData(std::unique_ptr<DataForPixelShader> data)
+{
+	init_data_pixel_shader = std::move(data);
+}
+
 }  // namespace SI

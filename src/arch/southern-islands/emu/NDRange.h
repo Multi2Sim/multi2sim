@@ -24,6 +24,7 @@
 #include <memory>
 
 #include <arch/southern-islands/asm/Binary.h>
+#include <driver/opengl/southern-islands/SPI.h>
 
 #include "Emu.h"
 
@@ -80,8 +81,9 @@ class NDRange
 	// Stage that the ND-range operates on
 	NDRangeStage stage;
 
-	// Initialization data for Pixel Shader, dequeue from SPI module
-	// SxPsInit sc_ps_init;  // FIXME - confusing names
+	// Initialization data to be load to GPRs, LDS... Set by SPI module
+	// Pixel Shader
+	std::unique_ptr<DataForPixelShader> init_data_pixel_shader;
 
 	// Work-group lists
 	std::list<std::unique_ptr<WorkGroup>> waiting_work_groups;
@@ -231,9 +233,11 @@ public:
 		return &group_count3[dim];
 	}
 
-
 	/// Get stage of NDRange
 	NDRangeStage getStage()	const { return stage; }
+
+	/// Get id of NDRange
+	int getID() const { return id; }
 
 	/// Get index of scalar register which stores workgroup id
 	unsigned getWorkgroupIdSreg() const { return wg_id_sgpr; }
@@ -386,6 +390,8 @@ public:
 	/// Move workgroups in waiting list to running list
 	void WaitingToRunning();	
 
+	/// Get initialization data from SPI module
+	void ReceiveInitData(std::unique_ptr<DataForPixelShader> data);
 };
 
 }  // namespace

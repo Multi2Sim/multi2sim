@@ -17,8 +17,14 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "SI.h"
+#include <arch/southern-islands/asm/Arg.h>
 #include <arch/southern-islands/emu/Emu.h>
+#include <arch/southern-islands/emu/NDRange.h>
+#include <arch/southern-islands/emu/WorkGroup.h>
+#include <arch/southern-islands/emu/Wavefront.h>
+#include <arch/southern-islands/emu/WorkItem.h>
+
+#include "SI.h"
 
 namespace Driver
 {
@@ -27,6 +33,11 @@ SICommon::SICommon()
 {
 	// FIXME: 
 	// si_emu = SI::Emu::getInstance();
+}
+
+void SICommon::AddNDRange(std::unique_ptr<SI::NDRange> ndrange)
+{
+	ndranges.push_back(std::move(ndrange));
 }
 
 }  // namespace Driver

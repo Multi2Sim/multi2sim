@@ -85,7 +85,18 @@ public:
 	ExportData(float x, float y, float z, float w);
 	ExportData(unsigned x, unsigned y, unsigned z, unsigned w);
 
+	/// Getters
+	float getXAsFloat() const { return x.f; }
+	float getYAsFloat() const { return y.f; }
+	float getZAsFloat() const { return z.f; }
+	float getWAsFloat() const { return w.f; }
+
+	float getXAsUInt() const { return x.u; }
+	float getYAsUInt() const { return y.u; }
+	float getZAsUInt() const { return z.u; }
+	float getWAsUInt() const { return w.u; }
 };
+
 class ShaderExport
 {
 	// Unique instance of ShaderExport
