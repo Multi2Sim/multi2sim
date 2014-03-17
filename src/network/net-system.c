@@ -249,7 +249,7 @@ void net_done(void)
 				struct net_graph_t *graph;
 
 				graph = net_visual_calc(net);
-				net_dump_visual(graph, net_visual_file);
+				net_dump_visual(net, graph, net_visual_file);
 				net_graph_free(graph);
 			}
 			/* Free network */
