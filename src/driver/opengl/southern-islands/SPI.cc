@@ -17,7 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <src/driver/opengl/OpenGLDriver.h>
+#include <arch/southern-islands/emu/NDRange.h>
+#include <driver/opengl/OpenGLDriver.h>
+
 #include "ScanConverter.h"
 #include "SPI.h"
 
@@ -39,7 +41,7 @@ SPI *SPI::getInstance()
 	return instance.get();	
 }
 
-DataInitVGPRs::DataInitVGPRs(const PixelInfo *pixel_info)
+DataForVGPRs::DataForVGPRs(const PixelInfo *pixel_info)
 {
 	x = pixel_info->getX();
 	y = pixel_info->getY();
@@ -47,11 +49,41 @@ DataInitVGPRs::DataInitVGPRs(const PixelInfo *pixel_info)
 	j = pixel_info->getJ();
 }
 
-DataInitLDS::DataInitLDS(const char *buffer, unsigned size)
+DataForLDS::DataForLDS(const char *buffer, unsigned size)
 {
 	lds.reset(new char[size]);
 	for (unsigned i = 0; i < size; ++i)
 		lds[i] = buffer[i];
+}
+
+void DataForPixelShader::setLDS(const char *buffer, unsigned size)
+{
+	lds_init_data.reset(new DataForLDS(buffer, size));
+}
+
+void DataForPixelShader::setVGPRs(const PixelInfo *pixel_info)
+{
+	vgpr_init_data.push_back(std::unique_ptr<DataForVGPRs>(new 
+		DataForVGPRs(pixel_info)));
+}
+
+void DataForPixelShader::setVGPRs(int x, int y, float i, float j)
+{
+	vgpr_init_data.push_back(std::unique_ptr<DataForVGPRs>(new 
+		DataForVGPRs(x, y, i, j)));
+}
+
+void SPI::InitDataToNDRange(NDRange *ndrange)
+{
+	assert(ndrange->getStage() == NDRangeStagePixelShader);
+
+	unsigned id = ndrange->getID();
+
+	for( auto &elem : init_data_repo)
+	{
+		if (elem->getID() == id)
+			ndrange->ReceiveInitData(std::move(elem));
+	}
 }
 
 }  // namespace SI
