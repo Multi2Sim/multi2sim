@@ -21,6 +21,8 @@
 #include <limits>
 #include <math.h>
 #include <lib/cpp/Misc.h>
+#include <driver/opengl/OpenGLDriver.h>
+#include <driver/opengl/southern-islands/ShaderExport.h>
 
 #include "Emu.h"
 #include "NDRange.h"
@@ -7752,78 +7754,54 @@ void WorkItem::ISA_IMAGE_SAMPLE_Impl(Inst *inst)
 #define INST INST_EXP
 void WorkItem::ISA_EXPORT_Impl(Inst *inst)
 {
-	// FIXME: Shader Export module to be implemented
-	// SISX *sx = emu->sx;
+	ShaderExport *sx = Driver::OpenGLSIDriver::getInstance()->getShaderExport();
 	
-	// unsigned compr_en;
-	// unsigned target_id;
-	// unsigned en_bitmask;
-	// InstReg x;
-	// InstReg y;
-	// InstReg z;
-	// InstReg w;
+	unsigned compr_en;
+	unsigned target_id;
+	unsigned en_bitmask;
+	InstReg x;
+	InstReg y;
+	InstReg z;
+	InstReg w;
 
-	// compr_en = INST.compr;
-	// en_bitmask = INST.en;
-	// target_id = INST.tgt;
+	compr_en = INST.compr;
+	en_bitmask = INST.en;
+	target_id = INST.tgt;
 
-	// if (!compr_en)
-	// {
-	// 	if ((en_bitmask & 0x1))
-	// 		x.as_uint = ReadVReg(INST.vsrc0);
-	// 	else
-	// 		x.as_uint = 0;
-	// 	if ((en_bitmask & 0x2))
-	// 		y.as_uint = ReadVReg(INST.vsrc1);
-	// 	else 
-	// 		y.as_uint = 0;
-	// 	if ((en_bitmask & 0x4))
-	// 		z.as_uint = ReadVReg(INST.vsrc2);
-	// 	else
-	// 		z.as_uint = 0;
-	// 	if ((en_bitmask & 0x8))
-	// 		w.as_uint = ReadVReg(INST.vsrc3);
-	// 	else
-	// 		w.as_uint = 0;
-	// }
-	// else
-	// {
-	// 	if ((en_bitmask & 0x1))
-	// 		x.as_uint = ReadVReg(INST.vsrc0);
-	// 	else
-	// 		x.as_uint = 0;
-	// 	if ((en_bitmask & 0x2))
-	// 		y.as_uint = ReadVReg(INST.vsrc1);
-	// 	else 
-	// 		y.as_uint = 0;
-	// 	z.as_uint = 0;
-	// 	w.as_uint = 0;
-	// }
+	if (!compr_en)
+	{
+		if ((en_bitmask & 0x1))
+			x.as_uint = ReadVReg(INST.vsrc0);
+		else
+			x.as_uint = 0;
+		if ((en_bitmask & 0x2))
+			y.as_uint = ReadVReg(INST.vsrc1);
+		else 
+			y.as_uint = 0;
+		if ((en_bitmask & 0x4))
+			z.as_uint = ReadVReg(INST.vsrc2);
+		else
+			z.as_uint = 0;
+		if ((en_bitmask & 0x8))
+			w.as_uint = ReadVReg(INST.vsrc3);
+		else
+			w.as_uint = 0;
+	}
+	else
+	{
+		if ((en_bitmask & 0x1))
+			x.as_uint = ReadVReg(INST.vsrc0);
+		else
+			x.as_uint = 0;
+		if ((en_bitmask & 0x2))
+			y.as_uint = ReadVReg(INST.vsrc1);
+		else 
+			y.as_uint = 0;
+		z.as_uint = 0;
+		w.as_uint = 0;
+	}
 
-	// if (target_id >=0 && target_id <= 7)
-	// {
-	// 	// Export to MRT 0-7
-	// 	SISXExportMRT(sx, target_id, work_item, compr_en, x, y, z, w);
-	// }
-	// else if (target_id == 8)
-	// {
-	// 	// Export to Z
-	// }
-	// else if (target_id == 9)
-	// {
-	// 	// NULL
-	// }
-	// else if (target_id >= 12 && target_id <= 15)
-	// {
-	// 	// Position 0-3
-	// 	SISXExportPosition(sx, target_id - 12, id, x.as_float, y.as_float, z.as_float, w.as_float);
-	// }
-	// else if (target_id >= 32 && target_id <= 63)
-	// {
-	// 	// Parameter 0 - 31
-	// 	SISXExportParam(sx, target_id - 32, id, x.as_float, y.as_float, z.as_float, w.as_float);
-	// } else
-	// 	misc::fatal("Export target %d is not valid!\n", target_id);
+	sx->Export(target_id, id, x.as_uint, y.as_uint, z.as_uint, w.as_uint);
 }
 #undef INST
 

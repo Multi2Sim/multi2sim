@@ -95,7 +95,7 @@ void PixelInfo::GenBaryCoord(const PrimAsmTriangle *triangle)
 	// Only need to store lamda2 and lamda3 as AMD rearranges the formula.
 	// See Southern Island ISA documentation Fig 9.3. It's P0 P10 P20, 
 	// meaning P0, P1 -P0 and P2 -P0 respectively. LDS stores information of 
-	// primitives such as color. So given color information of 3 vertices,
+	// primitives such as color, normal... So given color information of 3 vertices,
 	// all pixels inside the triangle can get their color easily in fragment
 	// shader. Interpolation was done this way in AMD's hardware.
 	//
@@ -252,7 +252,7 @@ void ScanConverter::Rasterize(const PrimAsmTriangle *triangle,
 			const int fsx = edge_left->getFsx();  /* no fractional part */
 			const int fx = FixedCeil(fsx);  /* no fractional part */
 			const int adjx = (int) (fx - edge_left->getFx0()); /* SCALED! */
-			const int adjy = (int) edge_left->getAdjy();      /* SCALED! */			
+			const int adjy = (int) edge_left->getAdjy();      /* SCALED! */
 			int idxOuter;
 			float dxOuter;			
 			int fdxOuter;

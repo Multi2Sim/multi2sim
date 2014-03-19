@@ -29,6 +29,8 @@ namespace SI
 {
 	class ProgramGL;
 	class Shader;
+	class ShaderExport;
+	class SPI;
 }  // namespace SI
 
 namespace Driver
@@ -36,7 +38,6 @@ namespace Driver
 
 class OpenGLSIDriver : public SICommon
 {
-
 	// Driver verision information
 	static const unsigned major = 1;
 	static const unsigned minor = 1000;
@@ -51,12 +52,24 @@ class OpenGLSIDriver : public SICommon
 	// List of Southern Islands OpenGL programs(container of shaders)
 	std::vector<std::unique_ptr<SI::ProgramGL>> programs;
 
+	// Shader Export module
+	SI::ShaderExport *sx;
+
+	// SPI module generates NDRanges for Pixel Shader
+	SI::SPI *spi;
+
 public:
 
 	/// Get the only instance of the OpenGL Driver. If the instance does not
 	/// exist yet, it will be created, and will remain allocated until the
 	/// end of the execution.
 	static OpenGLSIDriver *getInstance();
+
+	/// Get SPI module
+	SI::SPI *getSPI() const { return spi; }
+
+	/// Get Shader Export Module
+	SI::ShaderExport *getShaderExport() const { return sx; }
 
 	/// This function is called when all work groups from an ND-Range have
 	/// been scheduled (i.e., ndrange->waiting_work_groups is empty)
