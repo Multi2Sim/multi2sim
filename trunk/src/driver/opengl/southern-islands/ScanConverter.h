@@ -242,6 +242,26 @@ class ScanConverter
 public:
 	ScanConverter();
 
+	/// Getters
+	///
+	/// Return an iterator to the first PixelInfo in the pixel_info_repo. The
+	/// following code can then be used to iterate over all PixelInfo object
+	///
+	/// \code
+	/// for (auto i = primitive->PixelInfoBegin(),
+	///		e = pritmitive->PixelInfoEnd(); i != e; ++i)
+	/// {
+	/// 	CODE
+	/// }
+	/// \endcode
+	std::vector<std::unique_ptr<PixelInfo>>::iterator PixelInfoBegin() { 
+		return pixel_info_repo.begin(); }
+
+	/// Return a past-the-end iterator to the list of triangles
+	std::vector<std::unique_ptr<PixelInfo>>::iterator PixelInfoEnd() { 
+		return pixel_info_repo.end(); }
+
+
 	/// Rasterize an triangle and store pixel information in repository
 	void Rasterize(const PrimAsmTriangle *triangle, const DepthBuffer *depth_buffer);
 
