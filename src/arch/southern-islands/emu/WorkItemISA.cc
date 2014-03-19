@@ -7754,7 +7754,7 @@ void WorkItem::ISA_IMAGE_SAMPLE_Impl(Inst *inst)
 #define INST INST_EXP
 void WorkItem::ISA_EXPORT_Impl(Inst *inst)
 {
-	ShaderExport *sx = Driver::OpenGLSIDriver::getInstance()->getShaderExport();
+	ShaderExport *sx = Driver::OpenGLSIDriver::getInstance()->getShaderExportModule();
 	
 	unsigned compr_en;
 	unsigned target_id;

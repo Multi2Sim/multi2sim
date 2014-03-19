@@ -17,11 +17,20 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <arch/southern-islands/asm/Arg.h>
 #include <arch/southern-islands/emu/NDRange.h>
+#include <arch/southern-islands/emu/WorkGroup.h>
+#include <arch/southern-islands/emu/Wavefront.h>
+#include <arch/southern-islands/emu/WorkItem.h>
+
+
 #include <driver/opengl/OpenGLDriver.h>
 
+#include "DepthBuffer.h"
 #include "ScanConverter.h"
+#include "ShaderExport.h"
 #include "SPI.h"
+#include "PrimitiveAssembler.h"
 
 namespace SI
 {
@@ -30,8 +39,6 @@ std::unique_ptr<SPI> SPI::instance;
 
 SPI *SPI::getInstance()
 {
-	opengl_driver = Driver::OpenGLSIDriver::getInstance();
-
 	// Instance already exists
 	if (instance.get())
 		return instance.get();
@@ -84,6 +91,53 @@ void SPI::InitDataToNDRange(NDRange *ndrange)
 		if (elem->getID() == id)
 			ndrange->ReceiveInitData(std::move(elem));
 	}
+}
+
+void SPI::setViewport(int x, int y, int width, int height)
+{
+	viewport.reset(new ViewPort(x, y, width, height));
+	depth_buffer.reset(new DepthBuffer((unsigned)width, (unsigned)height));
+}
+
+void SPI::genNDRange(ShaderExport *sx)
+{
+	Driver::OpenGLSIDriver *opengl_driver = Driver::OpenGLSIDriver::getInstance();
+
+	// Currently only process export target pos[0]
+	std::vector<std::unique_ptr<ExportData>> &positions = 
+		opengl_driver->getShaderExportModule()->getExportTarget(12);
+
+	// Currently only support triangle
+	std::unique_ptr<Primitive> triangles(new Primitive(OpenGLPaTriangles, positions, viewport.get()));
+
+	// 1 NDRange per primitive
+	for( auto i = triangles.get()->TriangleBegin(), e = triangles.get()->TriangleEnd(); i != e; i++)
+	{
+		// FIXME: should pass SI Emu pointer
+		// Create a NDRange
+		std::unique_ptr<NDRange> ndrange(new NDRange(nullptr));
+
+		// Rasterize a triangle
+		ScanConverter sc;
+		sc.Rasterize((*i).get(), depth_buffer.get());
+		
+		// Prepare initialization data(GPRs)
+		DataForPixelShader init_data(ndrange->getID());
+		for( auto pi = sc.PixelInfoBegin(), pe = sc.PixelInfoEnd(); pi != pe; pi++)
+			init_data.setVGPRs((*pi).get());
+		
+		// FIXME: Prepare initialization data(LDS)
+		InitDataToNDRange(ndrange.get());
+
+		// FIXME: Setup NDRange dimensions 
+
+		// Add to central NDRange repository
+		opengl_driver->AddNDRange(std::move(ndrange));
+	}
+
+	// Finished NDRange creation, export target can be clear
+	opengl_driver->getShaderExportModule()->ClearAll();
+
 }
 
 }  // namespace SI

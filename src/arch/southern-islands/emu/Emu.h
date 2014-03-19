@@ -259,15 +259,15 @@ class Emu
 	std::list<WorkGroup *> running_work_groups;
 
 	// Statistics
-	int ndrange_count;  // Number of OpenCL kernels executed
-	long long work_group_count;  // Number of OpenCL work groups executed
-	long long scalar_alu_inst_count;  // Scalar ALU instructions executed
-	long long scalar_mem_inst_count;  // Scalar mem instructions executed
-	long long branch_inst_count;  // Branch instructions executed
-	long long vector_alu_inst_count;  // Vector ALU instructions executed
-	long long lds_inst_count;  // LDS instructions executed
-	long long vector_mem_inst_count;  // Vector mem instructions executed
-	long long export_inst_count; // Export instructions executed
+	int ndrange_count;               // Number of OpenCL kernels executed
+	long long work_group_count;      // Number of OpenCL work groups executed
+	long long scalar_alu_inst_count; // Scalar ALU instructions executed
+	long long scalar_mem_inst_count; // Scalar mem instructions executed
+	long long branch_inst_count;     // Branch instructions executed
+	long long vector_alu_inst_count; // Vector ALU instructions executed
+	long long lds_inst_count;        // LDS instructions executed
+	long long vector_mem_inst_count; // Vector mem instructions executed
+	long long export_inst_count;     // Export instructions executed
 
 public:
 

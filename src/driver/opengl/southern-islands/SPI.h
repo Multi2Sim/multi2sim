@@ -35,6 +35,9 @@ namespace SI
 // Forward declaration
 class NDRange;
 class PixelInfo;
+class ShaderExport;
+class ViewPort;
+class DepthBuffer;
 
 // Pixels(WorkItems) created for Pixel Shader need to load their barycentric 
 // coordinate into VGPRs, which will work together with data in LDS(color...)
@@ -121,8 +124,6 @@ public:
 // Shader Processor Interpolator
 class SPI
 {
-	static Driver::OpenGLSIDriver *opengl_driver;
-
 	// Unique instance of SPI
 	static std::unique_ptr<SPI> instance;
 
@@ -134,6 +135,12 @@ class SPI
 	// IDs of initialization data object must match NDRange ID()
 	std::vector<std::unique_ptr<DataForPixelShader>> init_data_repo;
 
+	// Viewport to be applied to vertex export data
+	std::unique_ptr<ViewPort> viewport;
+
+	// Depth Buffer FIXME: make it a part of Shader Export module
+	std::unique_ptr<DepthBuffer> depth_buffer;
+
 	/// Move initialization data to NDRange(created for Pixel Shader)
 	void InitDataToNDRange(NDRange *ndrange);
 
@@ -143,7 +150,14 @@ public:
 	/// exist yet, it will be created, and will remain allocated until the
 	/// end of the execution.
 	static SPI *getInstance();
+
+	/// Setters
+	///
+	/// Set viewport parameters
+	void setViewport(int x, int y, int width, int height);
 	
+	/// Take data from export module and generate NDRange for Pixel Shader
+	void genNDRange(ShaderExport *sx);
 };
 
 } // namespace SI

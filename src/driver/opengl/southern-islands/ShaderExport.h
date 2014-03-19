@@ -102,6 +102,9 @@ class ShaderExport
 	// Unique instance of ShaderExport
 	static std::unique_ptr<ShaderExport> instance;
 
+	// FIXME: move export targets to global memory and
+	// use resource table in Emu to store the locations
+
 	// Number of MRTs (Multiple Rendering Target)
 	static const int MRT_COUNT = 8;
 
@@ -135,6 +138,8 @@ class ShaderExport
 
 public:
 	static ShaderExport *getInstance();
+
+	std::vector<std::unique_ptr<ExportData>> &getExportTarget(unsigned target);
 
 	void Export(unsigned target, unsigned index, unsigned x, unsigned y, unsigned z, unsigned w);
 
