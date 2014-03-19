@@ -258,9 +258,6 @@ class Emu
 	std::list<WorkGroup *> waiting_work_groups;
 	std::list<WorkGroup *> running_work_groups;
 
-	// Shader export module
-	// ShaderExport *shader_export;
-
 	// Statistics
 	int ndrange_count;  // Number of OpenCL kernels executed
 	long long work_group_count;  // Number of OpenCL work groups executed

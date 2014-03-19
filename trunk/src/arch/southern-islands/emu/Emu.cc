@@ -20,7 +20,8 @@
 #include <arch/southern-islands/emu/WorkGroup.h>
 #include <arch/southern-islands/emu/Wavefront.h>
 #include <arch/southern-islands/emu/WorkItem.h>
-#include <src/driver/opencl/OpenCLDriver.h>
+#include <driver/opencl/OpenCLDriver.h>
+#include <driver/opengl/southern-islands/ShaderExport.h>
 
 #include "Emu.h"
 #include "NDRange.h"

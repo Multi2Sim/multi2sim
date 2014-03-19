@@ -139,7 +139,7 @@ class SPI
 
 public:
 
-	/// Get the only instance of the OpenGL Driver. If the instance does not
+	/// Get the only instance of the SPI module. If the instance does not
 	/// exist yet, it will be created, and will remain allocated until the
 	/// end of the execution.
 	static SPI *getInstance();
