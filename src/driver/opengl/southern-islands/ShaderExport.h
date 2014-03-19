@@ -134,7 +134,7 @@ class ShaderExport
 	float Float16to32(uint16_t value);
 
 public:
-	ShaderExport *getInstance();
+	static ShaderExport *getInstance();
 
 	void Export(unsigned target, unsigned index, unsigned x, unsigned y, unsigned z, unsigned w);
 

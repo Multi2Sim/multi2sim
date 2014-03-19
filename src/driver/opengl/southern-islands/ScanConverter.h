@@ -242,7 +242,7 @@ class ScanConverter
 public:
 	ScanConverter();
 
-	/// Rasterize an triangle and store pixel information of it in repository
+	/// Rasterize an triangle and store pixel information in repository
 	void Rasterize(const PrimAsmTriangle *triangle, const DepthBuffer *depth_buffer);
 
 	/// Clear pixel_info_repo
