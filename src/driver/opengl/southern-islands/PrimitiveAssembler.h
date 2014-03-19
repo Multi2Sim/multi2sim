@@ -48,6 +48,56 @@ enum PrimAsmMode
 	OpenGLPaInvalid
 };
 
+class ViewPort
+{
+	int x;
+	int y;
+	int width;
+	int height;
+
+public:
+
+	ViewPort(int x, int y, int width, int height) :
+		x(x), y(y), width(width), height(height) { };
+
+	/// Getters
+	///
+	/// Get X
+	int getX() const { return x; }
+
+	/// Get Y
+	int getY() const { return y; }
+
+	/// Get width
+	int getWidth() const { return width; }
+
+	/// Get height
+	int getHeight() const { return height; }
+
+	/// Setters
+	///
+	/// Set viewport
+	void setViewport(int x, int y, int width, int height);
+};
+
+class DepthRange
+{
+	double n;
+	double f;
+
+public:
+	DepthRange(double n, double f) :
+		n(n), f(f) { };
+
+	/// Getters
+	///
+	/// Get n
+	double getNear() const { return n; }
+
+	/// Get f
+	double getFar() const { return f; }
+};
+
 class PrimAsmVertex
 {
 	// In normalized device coordinate
@@ -91,15 +141,16 @@ public:
 	void setW(float value) { pos[3] = value; }
 
 	/// Apply ViewPort(x, y, width, height)
-	void ApplyViewPort(int x, int y, int width, int height) {
-		pos[0] = 0.5 * width * (pos[0] + 1) + x; 
-		pos[1] = 0.5 * height * (pos[1] + 1) + y;
+	void ApplyViewPort(ViewPort *viewport) {
+		pos[0] = 0.5 * viewport->getWidth() * (pos[0] + 1) + viewport->getX(); 
+		pos[1] = 0.5 * viewport->getHeight() * (pos[1] + 1) + viewport->getY();
 	}
 
 	/// Apply DepthRange(n, f)
-	void ApplyDepthRange(double near, double far) {
-		pos[2] = 0.5 * (far - near) * pos[2] + 0.5 * (far + near);
-	}	
+	void ApplyDepthRange(DepthRange *depth) {
+		pos[2] = 0.5 * (depth->getFar() - depth->getNear()) * pos[2] 
+			+ 0.5 * (depth->getFar() + depth->getNear());
+	}
 
 };
 
@@ -160,7 +211,7 @@ public:
 		}
 	}
 
-	/// Get reference of a vertex
+	/// Get pointer of a vertex
 	const PrimAsmVertex *getVertex(unsigned id) const {
 		assert(id > 0 && id < 3);
 		switch (id)
@@ -195,30 +246,27 @@ public:
 	/// \param y Y as set in ViewPort
 	/// \param width Width as set in ViewPort
 	/// \param height Height as set in ViewPort
-	Primitive(PrimAsmMode mode, std::vector<std::unique_ptr<ExportData>> pos_repo, 
-		int x, int y, int width, int height);
-};
+	Primitive(PrimAsmMode mode, std::vector<std::unique_ptr<ExportData>> &pos_repo, 
+		ViewPort *viewport);
 
-class ViewPort
-{
-	int x;
-	int y;
-	int width;
-	int height;
+	/// Getters
+	///
+	/// Return an iterator to the first triangle in the triangle repository. The
+	/// following code can then be used to iterate over all triangles
+	///
+	/// \code
+	/// for (auto i = primitive->TriangleBegin(),
+	///		e = pritmitive->TriangleEnd(); i != e; ++i)
+	/// {
+	/// 	CODE
+	/// }
+	/// \endcode
+	std::vector<std::unique_ptr<PrimAsmTriangle>>::iterator TriangleBegin() { 
+		return triangles.begin(); }
 
-public:
-	ViewPort(int x, int y, int width, int height) :
-		x(x), y(y), width(width), height(height) { };
-};
-
-class DepthRange
-{
-	double n;
-	double f;
-
-public:
-	DepthRange(double n, double f) :
-		n(n), f(f) { };
+	/// Return a past-the-end iterator to the list of triangles
+	std::vector<std::unique_ptr<PrimAsmTriangle>>::iterator TriangleEnd() { 
+		return triangles.end(); }
 };
 
 } // namespace Driver

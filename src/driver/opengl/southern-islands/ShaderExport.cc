@@ -88,6 +88,20 @@ float ShaderExport::Float16to32(uint16_t value)
 	return v.f;	
 }
 
+std::vector<std::unique_ptr<ExportData>> &ShaderExport::getExportTarget(unsigned target)
+{
+	if (target >= 0 && target <= 7)
+		return mrt[target];
+	else if (target == 9)
+		return z;
+	else if (target >= 12 && target <= 15)
+		return pos[target - 12];
+	else if (target >= 32 && target <= 63)
+		return param[target - 32];
+
+	// Return
+	return mrt[0];
+}
 
 void ShaderExport::Export(unsigned target, unsigned index, 
 	unsigned x, unsigned y, unsigned z, unsigned w)

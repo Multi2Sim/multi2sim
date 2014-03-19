@@ -42,8 +42,8 @@ PrimAsmEdge::PrimAsmEdge(const PrimAsmVertex &vtx0, const PrimAsmVertex &vtx1)
 		b * (vtx0.getY() + vtx1.getY()));
 }
 
-Primitive::Primitive(PrimAsmMode mode, std::vector<std::unique_ptr<ExportData>> export_target, 
-	int x, int y, int width, int height)
+Primitive::Primitive(PrimAsmMode mode, std::vector<std::unique_ptr<ExportData>> &export_target, 
+	ViewPort *viewport)
 {
 	switch (mode)
 	{
@@ -66,9 +66,9 @@ Primitive::Primitive(PrimAsmMode mode, std::vector<std::unique_ptr<ExportData>> 
 				export_target[i + 2]->getZAsFloat(), export_target[i + 2]->getWAsFloat());
 
 			// Apply viewport transformation
-			vtx0.ApplyViewPort(x, y, width, height);
-			vtx1.ApplyViewPort(x, y, width, height);
-			vtx2.ApplyViewPort(x, y, width, height);
+			vtx0.ApplyViewPort(viewport);
+			vtx1.ApplyViewPort(viewport);
+			vtx2.ApplyViewPort(viewport);
 
 			// Add to triangle repository
 			triangles.push_back(std::unique_ptr<PrimAsmTriangle> (new 

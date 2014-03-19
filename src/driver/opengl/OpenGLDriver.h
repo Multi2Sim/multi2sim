@@ -66,10 +66,10 @@ public:
 	static OpenGLSIDriver *getInstance();
 
 	/// Get SPI module
-	SI::SPI *getSPI() const { return spi; }
+	SI::SPI *getSPIModule() const { return spi; }
 
 	/// Get Shader Export Module
-	SI::ShaderExport *getShaderExport() const { return sx; }
+	SI::ShaderExport *getShaderExportModule() const { return sx; }
 
 	/// This function is called when all work groups from an ND-Range have
 	/// been scheduled (i.e., ndrange->waiting_work_groups is empty)
