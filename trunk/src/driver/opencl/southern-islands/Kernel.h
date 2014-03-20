@@ -80,6 +80,23 @@ class Kernel
 public:
 	Kernel(int id, std::string name, Program *program);
 
+	/// Getters
+	///
+	/// Get kernel binary
+	SI::Binary *getKernelBinary() const { return bin_file.get(); }
+
+	/// Get reference of arguments list
+	std::vector<std::unique_ptr<SI::Arg>> &getArgs() { return args; }
+
+	/// Get count of arguments
+	unsigned getArgsCount() const { return args.size(); }
+
+	/// Get mem_size_local
+	int getMemSizeLocal() const { return mem_size_local; }
+
+	/// Get mem_size_private
+	int getMemSizePrivate() const { return mem_size_private; }
+
 	///
 	void SetupNDRangeConstantBuffers(NDRange *ndrange);
 

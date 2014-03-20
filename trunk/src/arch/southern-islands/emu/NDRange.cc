@@ -18,6 +18,8 @@
  */
 
 #include <arch/southern-islands/asm/Arg.h>
+#include <arch/x86/emu/Emu.h>
+#include <driver/opencl/southern-islands/Kernel.h>
 #include <src/lib/cpp/Misc.h>
 
 #include "NDRange.h"
@@ -115,6 +117,40 @@ void NDRange::SetupInstMem(const char *buf, unsigned size, unsigned pc)
 	// Save a copy of buffer in NDRange
 	inst_buffer = std::move(std::unique_ptr<char>(new char(size)));
 	inst_mem->Read(pc, size, inst_buffer.get());
+}
+
+void NDRange::InitFromKernel(Kernel *kernel)
+{
+	// Get SI encoding dictionary
+	BinaryDictEntry *si_enc = kernel->getKernelBinary()->GetSIDictEntry();
+
+	// Initialize registers and local memory requirements 
+	local_mem_top = kernel->getMemSizeLocal();
+	num_sgpr_used = si_enc->num_sgpr;
+	num_vgpr_used = si_enc->num_vgpr;
+	wg_id_sgpr = si_enc->compute_pgm_rsrc2->user_sgpr;
+
+	// Copy user elements from kernel to ND-Range 
+	user_element_count = si_enc->num_user_elements;
+	for (unsigned i = 0; i < user_element_count; ++i)
+		user_elements[i] = si_enc->user_elements[i];
+
+	// Set up instruction memory 
+	// Initialize wavefront instruction buffer and PC 
+	const char *text_buffer = si_enc->text_section->getBuffer();
+	unsigned text_size = si_enc->text_section->getSize();
+	if (!text_size)
+		fatal("%s: cannot load kernel code", __FUNCTION__);
+
+	// Set up instruction memory
+	SetupInstMem(text_buffer, text_size, 0);
+	
+	x86::Emu::opencl_debug << misc::fmt("\tcopying %d arguments from the kernel\n", 
+		kernel->getArgsCount());
+
+	// Copy kernel argument list to NDRange 
+	for( auto &arg : kernel->getArgs())
+		this->args.push_back(std::move(arg));
 }
 
 void NDRange::ConstantBufferWrite(int const_buffer_num, unsigned offset,
