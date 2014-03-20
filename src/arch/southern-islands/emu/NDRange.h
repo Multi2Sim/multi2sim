@@ -36,6 +36,7 @@ namespace SI
 class Emu;
 class Arg;
 class WorkGroup;
+class Kernel;
 
 struct BinaryUserElement;
 struct EmuBufferDesc;
@@ -101,7 +102,7 @@ class NDRange
 
 	// 3D work size counters
 	unsigned global_size3[3];  // Total number of work_items
-	unsigned local_size3[3];  // Number of work_items in a group
+	unsigned local_size3[3];   // Number of work_items in a group
 	unsigned group_count3[3];  // Number of work_item groups
 
 	// 1D work size counters. Each counter is equal to the multiplication
@@ -128,7 +129,7 @@ class NDRange
 	// Local memory top to assign to local arguments.
 	// Initially it is equal to the size of local variables in 
 	// kernel function.
-	unsigned local_mem_top;
+	int local_mem_top;
 
 	// Each ND-Range has its own address space
 	int address_space_index;
@@ -342,6 +343,11 @@ public:
 	/// \param size Number of bytes in the instruction buffer
 	/// \param pc Initial value of the program counter
 	void SetupInstMem(const char *buf, unsigned size, unsigned pc);
+
+	/// Initialize from kernel information
+	///
+	/// \param kernel Kernel containing Southern Islands encoding dictionary
+	void InitFromKernel(Kernel *kernel);
 
 	/// Write to constant buffer(as a part of global memory)
 	///

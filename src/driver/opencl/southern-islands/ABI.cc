@@ -69,6 +69,10 @@ int OpenCLABIKernelSetArgSamplerImpl()
 
 int OpenCLABINDRangeCreateImpl()
 {
+
+	// if (si_gpu)
+	// 	SIGpuMapNDRange(si_gpu, ndrange);
+
 	// Return
 	return 0;
 }
