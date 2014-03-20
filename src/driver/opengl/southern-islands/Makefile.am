@@ -9,6 +9,9 @@ libsi_gl_a_SOURCES = \
 	DepthBuffer.cc \
 	DepthBuffer.h \
 	\
+	FetchShader.cc \
+	FetchShader.h \
+	\
 	Input.cc \
 	Input.h \
 	\

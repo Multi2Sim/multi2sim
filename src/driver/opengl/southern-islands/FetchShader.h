@@ -16,52 +16,33 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+#ifndef DRIVER_OPENGL_SI_FETCH_SHADER
+#define DRIVER_OPENGL_SI_FETCH_SHADER
 
-#ifndef ARCH_SOUTHERN_ISLANDS_ASM_INPUT_H
-#define ARCH_SOUTHERN_ISLANDS_ASM_INPUT_H
+#include <memory>
 
 namespace SI
 {
 
-enum InputDataType
-{
-	InputDataTypeInvalid = 0,
-	InputDataTypeByte,
-	InputDataTypeUbyte,
-	InputDataTypeShort,
-	InputDataTypeUshort,
-	InputDataTypeInt,
-	InputDataTypeUint,
-	InputDataTypeHfloat,
-	InputDataTypeFloat,
-	InputDataTypeDouble,
-	InputDataTypeFixed,
-	InputDataTypeInt2101010Rev,
-	InputDataTypeUint2101010Rev
-};
+class Shader;
 
-// Input is created by runtime API calls glVertexAttribPointer
-// The .input section in GL shader binary overrules runtime 
-// created inputs. They are 'matched' in fetch shader.
-class Input
+// Fetch shader generates instructions to initialize GPRs. Normally it's a subroutine
+// at the beginning of Vertex Shader. The .input section in Vertex Shader ELF binary
+// has the interface information of the GLSL shader. The input list in Vertex Shader 
+// object are created in ABI calls, which contains vertex attribute data and information 
+// such as size/format of the data. 
+// ABI created inputs sometimes don't match GLSL shader input interface. We need
+// fetch shader to expand data to 4 components( it seems AMD always use 4 elements
+// data in vertex shader )
+class FetchShader
 {
-	unsigned vertex_attrib_index;
-
-	InputDataType data_type;
-	unsigned num_elems;
-	unsigned data_size;
-	bool normalized;
-	
-	unsigned device_ptr;
+	std::unique_ptr<char[ ]> inst_buffer;
+	unsigned inst_buffer_size;
 
 public:
-	Input();
-
-	// Getters
-	unsigned getDataType(InputDataType data_type);
-	
+	FetchShader(const Shader *shader);
 };
 
-} // namespace SI
+}  // namespace SI
 
 #endif

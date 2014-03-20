@@ -118,13 +118,16 @@ void SPI::genNDRange(ShaderExport *sx)
 		std::unique_ptr<NDRange> ndrange(new NDRange(nullptr));
 
 		// Rasterize a triangle
-		ScanConverter sc;
-		sc.Rasterize((*i).get(), depth_buffer.get());
+		std::unique_ptr<ScanConverter> sc(new ScanConverter());
+		sc->Rasterize((*i).get(), depth_buffer.get());
 		
 		// Prepare initialization data(GPRs)
 		DataForPixelShader init_data(ndrange->getID());
-		for( auto pi = sc.PixelInfoBegin(), pe = sc.PixelInfoEnd(); pi != pe; pi++)
+		for( auto pi = sc->PixelInfoBegin(), pe = sc->PixelInfoEnd(); pi != pe; pi++)
 			init_data.setVGPRs((*pi).get());
+
+		// Release ScanConverter
+		sc.reset();
 		
 		// FIXME: Prepare initialization data(LDS)
 		InitDataToNDRange(ndrange.get());

@@ -763,7 +763,7 @@ Kernel::Kernel(int id, std::string name, Program *program)
 	std::string symbol_name = "kernel<" + name + ">.InternalELF";
 	const char *kernel_buf = kernel_symbol->getBuffer();
 	unsigned kernel_buf_size = (unsigned)kernel_symbol->getSize();
-	bin_file = std::unique_ptr<SI::Binary>(new Binary(kernel_buf, kernel_buf_size, symbol_name));
+	bin_file.reset(new Binary(kernel_buf, kernel_buf_size, symbol_name));
 	
 	// Load metadata
 	LoadMetaData();
