@@ -156,11 +156,11 @@ void net_node_dump_report(struct net_node_t *node, FILE *f)
 			fprintf(f, "Config.BandWidth = %d\n",
 				node->bandwidth);
 
-		fprintf(f, "SentMessages = %lld\n", node->msgs_sent);
+		fprintf(f, "SentPackets = %lld\n", node->msgs_sent);
 		fprintf(f, "SentBytes = %lld\n", node->bytes_sent);
 		fprintf(f, "SendRate = %.4f\n", cycle ?
 			(double) node->bytes_sent / cycle : 0.0);
-		fprintf(f, "ReceivedMessages = %lld\n", node->msgs_received);
+		fprintf(f, "ReceivedPackets = %lld\n", node->msgs_received);
 		fprintf(f, "ReceivedBytes = %lld\n", node->bytes_received);
 		fprintf(f, "ReceiveRate = %.4f\n", cycle ?
 			(double) node->bytes_received / cycle : 0.0);
