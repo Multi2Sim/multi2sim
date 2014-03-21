@@ -175,6 +175,7 @@ void net_dump_report(struct net_t *net, FILE *f)
 	fprintf(f, "Transfers = %lld\n", net->transfers);
 	fprintf(f, "AverageMessageSize = %.2f\n", net->transfers ?
 			(double) net->msg_size_acc / net->transfers : 0.0);
+	fprintf(f, "NetworkBandwdithDemand/AccumulatedMsgs = %lld\n",net->msg_size_acc );
 	fprintf(f, "AverageLatency = %.4f\n", net->transfers ?
 			(double) net->lat_acc / net->transfers : 0.0);
 	fprintf(f, "\n");
@@ -822,11 +823,20 @@ struct net_msg_t *net_try_send_ev(struct net_t *net,
 void net_receive(struct net_t *net, struct net_node_t *node,
 		struct net_msg_t *msg)
 {
+	long long cycle;
+
+	/* Get current cycle */
+	cycle = esim_domain_cycle(net_domain_index);
+
 	/* Checks */
 	assert(node->net == net);
 	assert(msg->net == net);
 
+	/* Net Info update */
+	net->transfers++;
+	net->lat_acc += cycle - msg->send_cycle;
+	net->msg_size_acc += msg->size;
+
 	net_msg_table_extract(net, msg->id);
 	net_msg_free(msg);
 }
-

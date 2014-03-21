@@ -2,8 +2,8 @@
 [Network.si-net-l1-l2]
 DefaultInputBufferSize = 528
 DefaultOutputBufferSize = 528
-DefaultBandwidth = 4
-DefaultPacketSize = 4
+DefaultBandwidth = 72
+DefaultPacketSize = 0 
 
 ;--------------------------------------------------Nodes
 [Network.si-net-l1-l2.Node.l1s0]

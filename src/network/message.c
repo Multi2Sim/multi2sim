@@ -737,9 +737,6 @@ void net_event_handler(int event, void *data)
 			if (stack->ret_event == ESIM_EV_NONE)
 			{
 				assert (msg);
-				net->transfers++;
-				net->lat_acc += cycle - msg->send_cycle;
-				net->msg_size_acc += pkt->msg->size;
 				net_receive(net, node, msg);
 
 			}
@@ -747,6 +744,7 @@ void net_event_handler(int event, void *data)
 			net_stack_return(stack);
 		}
 		else
+			/* Freeing packet stack, not the message */
 			free(stack);
 	}
 
