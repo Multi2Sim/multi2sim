@@ -1,0 +1,6 @@
+[ Context 0 ]
+Exe = MatrixMultiplication
+Args = -q -x 256 -y 256 -z 256 --load MatrixMultiplication_Kernels.bin
+StdOut = sim.out
+
+~                   
