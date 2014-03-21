@@ -103,7 +103,7 @@ void net_link_dump_report(struct net_link_t *link, FILE *f)
 
 	fprintf(f, "[ Network.%s.Link.%s ]\n", net->name, link->name);
 	fprintf(f, "Config.Bandwidth = %d\n", link->bandwidth);
-	fprintf(f, "TransferredMessages = %lld\n", link->transferred_msgs);
+	fprintf(f, "TransferredPackets = %lld\n", link->transferred_msgs);
 	fprintf(f, "TransferredBytes = %lld\n", link->transferred_bytes);
 	fprintf(f, "BusyCycles = %lld\n", link->busy_cycles);
 	fprintf(f, "BytesPerCycle = %.4f\n", cycle ?

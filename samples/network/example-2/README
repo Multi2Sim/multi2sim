@@ -26,7 +26,7 @@ SW  = Switch ; One switch act as a Crossbar connecting L1 Cache Level to L2 Cach
 To Run simulation, modify the following for your binary:
 
 $> m2s --si-sim detailed --mem-config mem-si --net-config net-si --si-config si-config \
---ctx-config <context_file_descriptor>
+--ctx-config <context_file_descriptor> --net-report net_report.txt
 
 ---------------------------------------------------------------------------------------
 %% Format of a context file descriptor 
