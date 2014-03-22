@@ -27,9 +27,9 @@
 #include "Thread.h"
 #include "Wrapper.h"
 
-////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////
 // Wrapper for class Emu
-////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////
 
 KplEmu *KplWrapEmuCreate()
 {
@@ -37,64 +37,71 @@ KplEmu *KplWrapEmuCreate()
 	return (KplEmu *) emu->getInstance();
 }
 
-/// Get Kepler Emulator global memory top
+// Get Kepler Emulator global memory top
 unsigned KplGetGlobalMemTop()
 {
 	Kepler::Emu *emu;
 	return emu->getInstance()->getGlobalMemTop();
 }
 
-/// Get global memory free size
+// Get global memory free size
 unsigned KplGetGlobalMemFreeSize()
 {
 	Kepler::Emu *emu;
 	return emu->getInstance()->getGlobalMemFreeSize();
 }
 
-/// Get global memory Total size
+// Get global memory Total size
 unsigned KplGetGlobalMemTotalSize()
 {
 	Kepler::Emu *emu;
 	return emu->getInstance()->getGlobalMemTotalSize();
 }
 
+// Get Kelper Emulator ALU instructon count
+unsigned KplGetAluInstCount()
+{
+	Kepler::Emu *emu = Kepler::Emu::getInstance();
+	return emu->getAluInstCount();
+}
+
 // Setter
-/// Set Kelper Emulator global memory top
+// Set Kelper Emulator global memory top
 void KplSetGlobalMemTop(unsigned value)
 {
 	Kepler::Emu *emu;
 	emu->getInstance()->SetGlobalMemTop(value);
 }
 
-/// Set global memory free size
+// Set global memory free size
 void KplSetGlobalMemFreeSize(unsigned value)
 {
 	Kepler::Emu *emu;
 	emu->getInstance()->setGlobalMemFreeSize(value);
 }
 
-/// Set global memory total size
+// Set global memory total size
 void KplSetGlobalMemTotalSize(unsigned value)
 {
 	Kepler::Emu *emu;
 	emu->getInstance()->setGlobalMemTotalSize(value);
 }
 
-/// Read to Global memory
+// Read to Global memory
 void KplReadGlobalMem(unsigned addr, unsigned size, void* buf)
 {
 	Kepler::Emu *emu;
 	emu->getInstance()->ReadGlobalMem(addr, size, (char*)buf);
 }
 
-/// Write to Global memory
+// Write to Global memory
 void KplWriteGlobalMem(unsigned addr, unsigned size, void* buf)
 {
 	Kepler::Emu *emu;
 	emu->getInstance()->WriteGlobalMem(addr, size, (const char*)buf);
 }
 
-/// Write to Constant memory
+// Write to Constant memory
 void KplWriteConstMem(unsigned addr, unsigned size, void* buf)
 {
 	Kepler::Emu *emu;
@@ -113,9 +120,19 @@ void KplRun()
 	Kepler::Emu *emu;
 	emu->getInstance()->Run();
 }
-////////////////////////////////////////////////////////////////////////////////
+
+// Dump emulator
+void KplWrapEmuDump(FILE *f)
+{
+	Kepler::Emu *emu = Kepler::Emu::getInstance();
+	__gnu_cxx::stdio_filebuf<char> filebuf(fileno(f), std::ios::out);
+	std::ostream os(&filebuf);
+	emu->Dump(os);
+}
+
+//////////////////////////////////////////////////////////////////
 // Wrapper for class Grid
-////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////
 int KplGetID(KplGrid *self)
 {
 	Kepler::Grid *grid = (Kepler::Grid *) self;

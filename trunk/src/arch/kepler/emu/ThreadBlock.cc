@@ -80,6 +80,12 @@ ThreadBlock::ThreadBlock(Grid *grid, int id)
 	warps_completed_emu = 0;
 }
 
+unsigned ThreadBlock::getWarpsInWorkgroup() const
+{
+    return (grid->getThreadBlockSize() + warp_size - 1) /
+    		warp_size;
+}
+
 void ThreadBlock::Dump(std::ostream &os) const
 {
 }

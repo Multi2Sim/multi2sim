@@ -172,6 +172,12 @@ public:
 	/// Return at barrier
 	bool getAtBarrier() const { return at_barrier; }
 
+	/// Get Sync stack top reconv pc
+    unsigned getSyncStkTopRecPC() const { return sync_stack.entries[sync_stack_top].reconv_pc; }
+
+	/// Get Sync stack top reconv pc
+    unsigned getSyncStkTopActive() const { return sync_stack.entries[sync_stack_top].active_thread_mask; }
+
 	// Setters
 	//
 	/// Set PC
@@ -187,6 +193,21 @@ public:
 	/// set threads_end
 	void setThreadEnd(std::vector<std::unique_ptr<Thread>>::iterator value)
 	{ threads_end = value; }
+
+	/// Set Sync stack top reconv pc
+    void setSyncStkTopRecPC(unsigned value)
+    {
+    	sync_stack.entries[sync_stack_top].reconv_pc = value;
+    }
+
+	/// Set Sync stack top reconv pc
+    void setSyncStkTopActive(unsigned value)
+    {
+    	sync_stack.entries[sync_stack_top].active_thread_mask = value;
+    }
+
+    /// Decrement Sync Stack top counter
+    void decrSyncStkTop() { sync_stack_top --; }
 
 	/// Dump warp in a human-readable format into output stream \a os
 	void Dump(std::ostream &os = std::cout) const;
