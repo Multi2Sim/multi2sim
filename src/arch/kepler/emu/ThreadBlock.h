@@ -109,7 +109,7 @@ public:
 	int getId() const { return id; }
 
 	// Get counter of warps in thread-block
-	unsigned getWarpsInWorkgroup() const { return warps.size(); }
+	unsigned getWarpsInWorkgroup() const;
 
 	// Get counter of warps at barrier
 	unsigned getWarpsAtBarrier() const { return num_warps_at_barrier; }

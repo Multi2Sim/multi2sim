@@ -75,7 +75,7 @@ struct InstDecodeInfo
 
 // 1st level struct
 /* BFE, POPC, IADD, IASCADD, IMNMX, SHR, IMUL, LOP, SHL, DMUL, DMNMX, FADD,
-   FMNMX, FMUL, DADD, SEL, P2R, RRO, MOV, F2F, F2I, I2F, I2I, FLO, DCHK, FCHK */
+   FMNMX, FMUL, DADD, SEL, P2R, RRO, MOV, F2F, F2I, I2F, I2I, FLO, DCHK, FCHK */	//S2R, IMAD, ISETP, ISCADD
 struct InstBytesGeneral0
 {
 	unsigned long long int op0 	: 2; 	// 1:0
@@ -83,7 +83,7 @@ struct InstBytesGeneral0
 	unsigned long long int mod0 	: 8; 	// 17:10
 	unsigned long long int pred 	: 4; 	// 21:18
 	unsigned long long int s 	: 1; 	// 22
-	unsigned long long int srcB 	: 9; 	// 41:23
+	unsigned long long int srcB 	: 19; 	// 41:23
 	unsigned long long int mod1 	: 12;	// 53:42
 	unsigned long long int op1 	: 9; 	// 62:54
 	unsigned long long int srcB_mod	: 1; 	// 63
@@ -344,6 +344,9 @@ public:
 
 	/// Get opcode
 	unsigned getOpcode() { return info ? (unsigned) info->opcode : InstOpcodeInvalid; }
+
+	///Get Inst Bytes
+	InstBytes getInstBytes() const { return bytes; }
 
 	/// Dump instruction as a sequence of hexadecimal digits
 	void DumpHex(std::ostream &os) const;

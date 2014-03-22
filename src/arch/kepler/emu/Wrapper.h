@@ -49,6 +49,9 @@ unsigned KplGetGlobalMemFreeSize();
 /// Get Kelper Emulator global memory Total size
 unsigned KplGetGlobalMemTotalSize();
 
+/// Get Kelper Emulator ALU instructon count
+unsigned KplGetAluInstCount();
+
 /// Set Kelper Emulator global memory top
 void KplSetGlobalMemTop(unsigned value);
 
@@ -71,8 +74,10 @@ void KplWriteConstMem(unsigned addr, unsigned size, void* buf);
 void KplPushGridList(KplGrid *grid);
 
 /// The run function of Kepler emulator
-
 void KplRun();
+
+/// Dump emulator
+void KplWrapEmuDump(FILE *f);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Wrapper for class Grid
