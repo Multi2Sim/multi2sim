@@ -105,6 +105,12 @@ public :
 	/// \id Global 1D identifier of the thread
 	Thread(Warp *warp, int id);
 
+	/// Get id_in_warp;
+	int getIdInWarp() const { return id_in_warp; }
+
+	/// Get warp_id
+	int getWarpId() const { return warp->getId(); }
+
 	/// Get value of a GPR
 	/// \param vreg GPR identifier
 	unsigned ReadGPR(int gpr_id) { return gpr[gpr_id].u32; };
@@ -134,6 +140,9 @@ public :
 
 	/// Get value of the active thread mask
 	int GetActive();
+
+	/// Get the warp the thread belong to
+	Warp* getWarp() const { return warp; }
 
 	/// Set value of the active thread mask
 	/// \param value Value given as an \a unsigned typed value

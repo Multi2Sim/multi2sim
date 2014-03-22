@@ -94,7 +94,7 @@ void Warp::Dump(std::ostream &os) const
 
 void Warp::Execute()
 {
-
+	Emu *emu = Emu::getInstance();
 	InstBytes inst_bytes;
 	InstOpcode inst_op;
 
@@ -149,6 +149,7 @@ void Warp::Execute()
 	{
         inst_count++;					//other counter?
         emu_inst_count++;
+        emu->incAluInstCount();
 	}
 /*	if (KplInstWrapGetCategory(inst) != KplInstCategoryCtrl)
 		pc += inst_size;

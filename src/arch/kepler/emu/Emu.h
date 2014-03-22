@@ -124,6 +124,9 @@ public:
 	/// Get global memory Total size
 	unsigned getGlobalMemTotalSize() const { return global_mem_total_size; }
 
+	/// Get ALU instruction count
+	unsigned getAluInstCount() const { return alu_inst_count; }
+
 	// Setter
 	/// set global memory top
 	void SetGlobalMemTop(unsigned value) { global_mem_top = value; }
@@ -133,6 +136,9 @@ public:
 
 	/// Set global memory total size
 	void setGlobalMemTotalSize(unsigned value) { global_mem_total_size = value; }
+
+	/// Increment ALU instruction counter
+	void incAluInstCount() { alu_inst_count ++; }
 
 	/// Dump Kepler Emulator in a human-readable fashion into an output stream (or
 	/// standard output if argument \a os is omitted.
@@ -164,6 +170,12 @@ public:
 	/// \param size of data
 	/// \param data buffer
 	void WriteGlobalMem(unsigned addr, unsigned size, const char *buf);
+
+	/// Read Global Memory
+	/// \param starting address to be read in
+	/// \param size of data
+	/// \param data buffer
+	void ReadConstMem(unsigned addr, unsigned size, char *buf);
 
 	/// Read Global Memory
 	/// \param starting address to be read in

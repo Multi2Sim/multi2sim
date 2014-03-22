@@ -66,24 +66,24 @@ Emu::Emu()
 	// Global memory initialization
     const_mem = new mem::Memory();
 	const_mem->setSafe(false);
-/*
 
-        asObject(this)->Dump = KplEmuDump;
-        asEmu(this)->DumpSummary = KplEmuDumpSummary;
-        asEmu(this)->Run = KplEmuRun;
-*/
+	alu_inst_count = 0;
+	branch_inst_count = 0;
+	shared_mem_inst_count = 0;
+	global_mem_inst_count = 0;
 }
 
 void Emu::Dump(std::ostream &os) const
 {
-
+	std::cout <<"\n[ Kepler ]\nInstructions = "
+			<< alu_inst_count << std::endl;
 }
 
 
 void Emu::DumpSummary(std::ostream &os)
 {
 	/* Call parent */
-
+	Dump();
 }
 
 
@@ -142,6 +142,11 @@ bool Emu::Run()
 void Emu::GridsPushBack(Grid * grid)
 {
 	grids.push_back(grid);
+}
+
+void Emu::ReadConstMem(unsigned addr, unsigned size, char *buf)
+{
+	const_mem->Read(addr, size, buf);
 }
 
 void Emu::ReadGlobalMem(unsigned addr, unsigned size, char *buf)
