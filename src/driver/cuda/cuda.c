@@ -943,7 +943,7 @@ int cuda_func_cuKplLaunchKernel(X86Context *ctx)
 	int i;
 	struct cuda_function_arg_t *arg;
 	unsigned arg_ptr;
-	int offset = 0x20;
+	int offset = 0x140;
 	KplGrid *grid;
 	//KplEmu *kpl_emu = ctx->emu->cuda_driver->kpl_emu;
 	struct cuda_abi_kpl_kernel_launch_info_t *info;
