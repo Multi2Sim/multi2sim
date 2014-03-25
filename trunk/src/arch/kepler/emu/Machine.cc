@@ -120,12 +120,83 @@ void kpl_isa_IMUL_B_impl(Thread *thread, Inst *inst)
 
 void kpl_isa_ISCADD_A_impl(Thread *thread, Inst *inst)
 {
-	__NOT_IMPL__
+	// Inst bytes format
+	InstBytes inst_bytes = inst->getInstBytes();
+	InstBytesGeneral0 fmt = inst_bytes.general0;
+
+	// Predicates and active masks
+	Emu* emu = Emu::getInstance();
+	Warp* warp = thread->getWarp();
+	unsigned pred;
+	unsigned pred_id;
+	unsigned active;
+
+    // Operands
+	unsigned dst_id, src_id;
+	int dst;
+	int srcA, srcB;
+	int shamt;
+
+	// Pop sync stack at reconvergence PC
+	if ((warp->getPC() != 0) && (warp->getPC() ==
+			warp->getSyncStkTopRecPC()))
+	{
+		warp->setSyncStkTopRecPC(0);
+		//bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+		//		active_thread_mask);
+        warp->setSyncStkTopActive(-1);
+		warp->decrSyncStkTop();
+	}
+
+	// Active
+	active =  unsigned(1) & (warp->getSyncStkTopActive() >> (thread->getIdInWarp()-1));
+
+	// Predicate
+	pred_id = fmt.pred;
+	if (pred_id <= 7)
+		pred = thread->GetPred(pred_id);
+	else
+		pred = ! thread->GetPred(pred_id - 8);
+
+	// Execute
+	if (active == 1 && pred == 1)
+	{
+		/* Read */
+		src_id = fmt.mod0;
+		srcA = thread->ReadGPR(src_id);
+
+		if (((fmt.mod1 >> 6) & 0x3) == 2)	//FIXME
+			srcA = -srcA;
+		src_id = fmt.srcB;
+		if (fmt.srcB_mod == 0)
+			emu->ReadConstMem(src_id << 2, 4, (char*)&srcB);
+		else if (fmt.srcB_mod == 1)
+			srcB = thread->ReadGPR(src_id);
+		else
+			srcB = src_id >> 18 ? src_id | 0xfff80000 : src_id;
+
+		if (((fmt.mod1 >> 6) & 0x3) == 1)	//FIXME
+			srcB = -srcB;
+		shamt = fmt.mod1 & 0xf; //45:42
+
+		/* Execute */
+		dst = (srcA << shamt) + srcB;
+
+		/* Write */
+		dst_id = fmt.dst;
+		thread->WriteGPR(dst_id, dst);
+	}
+    std::cout<< "Warp id "<< std::hex
+       		<<thread->getWarpId() <<" ISCADD op0 "<<fmt.op0;
+    std::cout<<" dst " <<fmt.dst <<" mod0 " <<fmt.mod0 << " s " <<fmt.s << " srcB " <<fmt.srcB
+
+       		<<" mod1 " <<fmt.mod1 << " op1 "<< fmt.op1 <<" srcB_mod " <<fmt.srcB_mod
+       		<<std::endl;
 }
 
 void kpl_isa_ISCADD_B_impl(Thread *thread, Inst *inst)
 {
-	__NOT_IMPL__
+	std:: cout <<"ISCADD B"<<std::endl;
 }
 
 void kpl_isa_IMAD_impl(Thread *thread, Inst *inst)
@@ -185,9 +256,7 @@ void kpl_isa_IMAD_impl(Thread *thread, Inst *inst)
 			srcB = thread->ReadGPR(src_id);
 		}
 		else	//check it
-		{
-			//src = src_id >> 18 ? src_id | 0xfff00000 : src_id;
-		}
+			srcB = src_id >> 18 ? src_id | 0xfff80000 : src_id;
 
 
 		// Execute
@@ -208,7 +277,75 @@ void kpl_isa_IMAD_impl(Thread *thread, Inst *inst)
 
 void kpl_isa_IADD_A_impl(Thread *thread, Inst *inst)
 {
-	__NOT_IMPL__
+	// Inst bytes format
+	InstBytes inst_bytes = inst->getInstBytes();
+	InstBytesGeneral0 fmt = inst_bytes.general0;
+
+	// Predicates and active masks
+	Emu* emu = Emu::getInstance();
+	Warp* warp = thread->getWarp();
+	unsigned pred;
+	unsigned pred_id;
+	unsigned active;
+
+    // Operands
+	unsigned dst_id, src_id;
+	int dst;
+	int srcA, srcB;
+
+	// Pop sync stack at reconvergence PC
+	if ((warp->getPC() != 0) && (warp->getPC() ==
+			warp->getSyncStkTopRecPC()))
+	{
+		warp->setSyncStkTopRecPC(0);
+		//bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+		//		active_thread_mask);
+        warp->setSyncStkTopActive(-1);
+		warp->decrSyncStkTop();
+	}
+
+	// Active
+	active =  unsigned(1) & (warp->getSyncStkTopActive() >> (thread->getIdInWarp()-1));
+
+	// Predicate
+	pred_id = fmt.pred;
+	if (pred_id <= 7)
+		pred = thread->GetPred(pred_id);
+	else
+		pred = ! thread->GetPred(pred_id - 8);
+
+	// Execute
+	if (active == 1 && pred == 1)
+	{
+		/* Read */
+		src_id = fmt.mod0;
+		srcA = thread->ReadGPR(src_id);
+		src_id = fmt.srcB;
+		if (fmt.srcB_mod == 0)
+		{
+			emu->ReadConstMem(src_id << 2, 4, (char*)&srcB);
+		}
+		else if (fmt.srcB_mod == 1)
+			srcB = thread->ReadGPR(src_id);
+		else	//check it
+			srcB = src_id >> 18 ? src_id | 0xfff80000 : src_id;
+
+		if (((fmt.mod1 >> 9) & 0x1) == 1)	//FIXME
+			srcB = -srcB;
+
+		/* Execute */
+		dst = srcA + srcB;
+
+		/* Write */
+		dst_id = fmt.dst;
+		thread->WriteGPR(dst_id, dst);
+	}
+    std::cout<< "Warp id "<< std::hex
+      		<<thread->getWarpId() <<" IADD op0 "<<fmt.op0;
+    std::cout<<" dst " <<fmt.dst <<" mod0 " <<fmt.mod0 << " s " <<fmt.s << " srcB " <<fmt.srcB
+       		<<" mod1 " <<fmt.mod1 << " op1 "<< fmt.op1 <<" srcB_mod " <<fmt.srcB_mod
+       		<<std::endl;
+
 }
 
 void kpl_isa_IADD_B_impl(Thread *thread, Inst *inst)
@@ -274,7 +411,7 @@ void kpl_isa_ISETP_impl(Thread *thread, Inst *inst)
 		else if (fmt.srcB_mod == 1)
 			srcB = thread->ReadGPR(srcB_id);
 		else	//check it
-			srcB = srcB_id >> 18 ? srcB_id | 0xfff00000 : srcB_id;
+			srcB = srcB_id >> 18 ? srcB_id | 0xfff80000 : srcB_id;
 
 		// Predicates
 		pred_id_1 = (fmt.dst >> 3) & 0x7;
@@ -332,9 +469,9 @@ void kpl_isa_ISETP_impl(Thread *thread, Inst *inst)
 		if (pred_id_2 != 7)
 			thread->WriteGPR(pred_id_2, pred_2);
 	}
-       std::cout<< "Warp id "<< std::hex
-       		<<thread->getWarpId() <<" MOV_B op0 "<<fmt.op0;
-       std::cout<<" dst " <<fmt.dst <<" mod0 " <<fmt.mod0 << " s " <<fmt.s << " srcB " <<fmt.srcB
+    std::cout<< "Warp id "<< std::hex
+    		<<thread->getWarpId() <<" ISETP op0 "<<fmt.op0;
+    std::cout<<" dst " <<fmt.dst <<" mod0 " <<fmt.mod0 << " s " <<fmt.s << " srcB " <<fmt.srcB
        		<<" mod1 " <<fmt.mod1 << " op1 "<< fmt.op1 <<" srcB_mod " <<fmt.srcB_mod
        		<<" cmp "<< cmp_op << " bool " << bool_op
        		<<std::endl;
@@ -405,7 +542,7 @@ void kpl_isa_MOV_B_impl(Thread *thread, Inst *inst)
 		else if (fmt.srcB_mod == 1)
 			src = thread->ReadGPR(src_id);
 		else	//check it
-			src = src_id >> 18 ? src_id | 0xfff00000 : src_id;
+			src = src_id >> 18 ? src_id | 0xfff80000 : src_id;
 
         std::cout<< "Warp id "<< std::hex
         		<<thread->getWarpId() <<" MOV_B op0 "<<fmt.op0;
@@ -430,7 +567,79 @@ void kpl_isa_MOV32I_impl(Thread *thread, Inst *inst)
 
 void kpl_isa_LD_impl(Thread *thread, Inst *inst)
 {
-	__NOT_IMPL__
+	// Inst bytes format
+	InstBytes inst_bytes = inst->getInstBytes();
+	InstBytesGeneral0 fmt = inst_bytes.general0;
+	Emu* emu = Emu::getInstance();
+
+	// Predicates and active masks
+	Warp* warp = thread->getWarp();
+	unsigned pred;
+	unsigned pred_id;
+	unsigned active;
+
+    // Operands
+	unsigned dst_id;
+	int dst[4];
+	unsigned addr;
+	unsigned data_type;
+
+	// Pop sync stack at reconvergence PC
+	if ((warp->getPC() != 0) && (warp->getPC() ==
+			warp->getSyncStkTopRecPC()))
+	{
+		warp->setSyncStkTopRecPC(0);
+		//bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+		//		active_thread_mask);
+        warp->setSyncStkTopActive(-1);
+		warp->decrSyncStkTop();
+	}
+
+	// Active
+	active =  unsigned(1) & (warp->getSyncStkTopActive() >> (thread->getIdInWarp()-1));
+
+	// Predicate
+	pred_id = fmt.pred;
+	if (pred_id <= 7)
+		pred = thread->GetPred(pred_id);
+	else
+		pred = ! thread->GetPred(pred_id - 8);
+
+	// Execute
+	if (active == 1 && pred == 1)
+	{
+		// Read
+		if(fmt.op1 & 0x1) 	//offset direction
+			addr = thread->ReadGPR(fmt.mod0) - (fmt.mod1 << 19) - fmt.srcB;
+		else
+			addr = thread->ReadGPR(fmt.mod0) + (fmt.mod1 << 19) + fmt.srcB;
+
+		data_type = (fmt.op1 >> 2) & 0x7;
+
+		// Execute
+		emu->ReadGlobalMem(addr, 4, (char*)dst);
+		if (data_type > 4)
+			emu->ReadGlobalMem(addr + 4, 4, (char*)&dst[1]);
+		if (data_type > 5)										//Really? FIXME
+			emu->ReadGlobalMem(addr + 8, 8, (char*)&dst[2]);
+
+		/* Write */
+		dst_id = fmt.dst;
+		thread->WriteGPR(dst_id, dst[0]);
+		if (data_type > 4)
+			thread->WriteGPR(dst_id + 1, dst[1]);
+		if (data_type > 5)
+		{
+			thread->WriteGPR(dst_id + 2, dst[2]);
+			thread->WriteGPR(dst_id + 3, dst[3]);
+		}
+	}
+    std::cout<< "Warp id "<< std::hex
+      		<<thread->getWarpId() <<" LD op0 "<<fmt.op0;
+    std::cout<<" dst " <<fmt.dst <<" mod0 " <<fmt.mod0 << " s " <<fmt.s << " srcB " <<fmt.srcB
+       		<<" mod1 " <<fmt.mod1 << " op1 "<< fmt.op1 <<" srcB_mod " <<fmt.srcB_mod
+       		<<std::endl;
+
 }
 
 void kpl_isa_LDS_impl(Thread *thread, Inst *inst)
@@ -440,7 +649,77 @@ void kpl_isa_LDS_impl(Thread *thread, Inst *inst)
 
 void kpl_isa_ST_impl(Thread *thread, Inst *inst)
 {
-	__NOT_IMPL__
+	// Inst bytes format
+	InstBytes inst_bytes = inst->getInstBytes();
+	InstBytesGeneral0 fmt = inst_bytes.general0;
+	Emu* emu = Emu::getInstance();
+
+	// Predicates and active masks
+	Warp* warp = thread->getWarp();
+	unsigned pred;
+	unsigned pred_id;
+	unsigned active;
+
+    // Operands
+	unsigned src_id;
+	int src[4];
+	unsigned addr;
+	unsigned data_type;
+
+	// Pop sync stack at reconvergence PC
+	if ((warp->getPC() != 0) && (warp->getPC() ==
+			warp->getSyncStkTopRecPC()))
+	{
+		warp->setSyncStkTopRecPC(0);
+		//bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+		//		active_thread_mask);
+        warp->setSyncStkTopActive(-1);
+		warp->decrSyncStkTop();
+	}
+
+	// Active
+	active =  unsigned(1) & (warp->getSyncStkTopActive() >> (thread->getIdInWarp()-1));
+
+	// Predicate
+	pred_id = fmt.pred;
+	if (pred_id <= 7)
+		pred = thread->GetPred(pred_id);
+	else
+		pred = ! thread->GetPred(pred_id - 8);
+
+	// Execute
+	if (active == 1 && pred == 1)
+	{
+		// Read
+		if(fmt.op1 & 0x1) 	//offset direction
+			addr = thread->ReadGPR(fmt.mod0) - (fmt.mod1 << 19) - fmt.srcB;
+		else
+			addr = thread->ReadGPR(fmt.mod0) + (fmt.mod1 << 19) + fmt.srcB;
+		data_type = (fmt.op1 >> 2) & 0x7;
+		src_id = fmt.dst;
+		src[0] = thread->ReadGPR(src_id);
+		if (data_type > 4)
+			src[1] = thread->ReadGPR(src_id + 1);
+		if (data_type > 5)										//Really? FIXME
+		{
+			src[2] = thread->ReadGPR(src_id + 2);
+			src[3] = thread->ReadGPR(src_id + 3);
+		}
+
+		// Execute
+		// Write
+		emu->WriteGlobalMem(addr, 4, (char*)src);
+		if (data_type > 4)
+			emu->WriteGlobalMem(addr + 4, 4, (char*)&src[1]);
+		if (data_type > 5)										//Really? FIXME
+			emu->WriteGlobalMem(addr + 8, 8, (char*)&src[2]);
+	}
+    std::cout<< "Warp id "<< std::hex
+      		<<thread->getWarpId() <<" ST op0 "<<fmt.op0;
+    std::cout<<" dst " <<fmt.dst <<" mod0 " <<fmt.mod0 << " s " <<fmt.s << " srcB " <<fmt.srcB
+       		<<" mod1 " <<fmt.mod1 << " op1 "<< fmt.op1 <<" srcB_mod " <<fmt.srcB_mod
+       		<<std::endl;
+
 }
 
 void kpl_isa_STS_impl(Thread *thread, Inst *inst)
@@ -517,13 +796,6 @@ void kpl_isa_S2R_impl(Thread *thread, Inst *inst)
 		else if (fmt.srcB_mod == 1)
 			src = thread->ReadSR(src_id);
 
-
-        std::cout<< "Warp id "<< std::hex
-        		<<thread->getWarpId() <<" S2R op0 "<<fmt.op0;
-        std::cout<<" dst " <<fmt.dst <<" mod0 " <<fmt.mod0 << " s " <<fmt.s << " srcB " <<fmt.srcB
-        		<<" mod1 " <<fmt.mod1 << " op1 "<< fmt.op1 <<" srcB_mod " <<fmt.srcB_mod
-        		<<std::endl;
-
 		// Execute
 		dst = src;
 
@@ -531,6 +803,12 @@ void kpl_isa_S2R_impl(Thread *thread, Inst *inst)
 		dst_id = fmt.dst;
 		thread->WriteGPR(dst_id, dst);
 	}
+    std::cout<< "Warp id "<< std::hex
+       		<<thread->getWarpId() <<" S2R op0 "<<fmt.op0;
+    std::cout<<" dst " <<fmt.dst <<" mod0 " <<fmt.mod0 << " s " <<fmt.s << " srcB " <<fmt.srcB
+       		<<" mod1 " <<fmt.mod1 << " op1 "<< fmt.op1 <<" srcB_mod " <<fmt.srcB_mod
+       		<<std::endl;
+
 }
 
 void kpl_isa_SHF_impl(Thread *thread, Inst *inst)
