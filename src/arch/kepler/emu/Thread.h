@@ -47,6 +47,13 @@ public:
 class Thread
 {
 
+enum DataTypeGPR
+{
+	Unsigned = 0,
+	Signed,
+	Float
+};
+
 public:
 	/// GPR value
 	union RegValue
@@ -113,7 +120,7 @@ public :
 
 	/// Get value of a GPR
 	/// \param vreg GPR identifier
-	unsigned ReadGPR(int gpr_id) { return gpr[gpr_id].u32; };
+	unsigned ReadGPR(int gpr_id) const { return gpr[gpr_id].u32; }
 
 	/// Set value of a GPR
 	/// \param gpr GPR idenfifier
