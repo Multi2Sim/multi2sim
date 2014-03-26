@@ -70,6 +70,7 @@ void vi_net_system_init(void)
 	/* Initialize */
 	vi_net_system = xcalloc(1, sizeof(struct vi_net_system_t));
 	vi_net_system->net_table = hash_table_create(0, FALSE);
+	vi_net_system->level_list = list_create();
 
 	/* Parse header in state file */
 	VI_STATE_FOR_EACH_HEADER(trace_line)
@@ -158,7 +159,12 @@ void vi_net_system_done(void)
 
 	/* Free levels */
 	LIST_FOR_EACH(vi_net_system->level_list, i)
-		list_free(list_get(vi_net_system->level_list, i));
+	{
+		struct list_t *list = list_get(vi_net_system->level_list, i);
+		if (list)
+			list_free(list);
+	}
+
 	list_free(vi_net_system->level_list);
 
 	/* Rest */
@@ -170,7 +176,6 @@ void vi_net_system_level_assign(void)
 	int mod_level;
 	char *net_name;
 	struct vi_net_t *net;
-	vi_net_system->level_list = list_create();
 
 	HASH_TABLE_FOR_EACH(vi_net_system->net_table, net_name, net)
 	{
