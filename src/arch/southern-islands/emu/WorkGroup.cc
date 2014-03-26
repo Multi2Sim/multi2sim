@@ -30,8 +30,16 @@ namespace SI
 
 WorkGroup::WorkGroup(NDRange *ndrange, unsigned id)
 {
+	// Initialize
 	this->id = id;
 	this->ndrange = ndrange;
+
+	// Create LDS module
+	this->lds.reset(new mem::Memory());
+	this->lds->setSafe(false);
+
+	// Create WorkgroupData for timing simulation
+	this->data.reset(new WorkGroupData());
 
 	unsigned lid;
 	unsigned lidx, lidy, lidz;
@@ -54,7 +62,7 @@ WorkGroup::WorkGroup(NDRange *ndrange, unsigned id)
 	for (unsigned i = 0; i < wavefronts_per_group; ++i)
 	{
 		this->wavefronts.push_back(std::unique_ptr<Wavefront>(new 
-			Wavefront(this, i)));
+			Wavefront(this, id * wavefronts_per_group + i)));
 		for (unsigned j = 0; j < wavefront_size; ++j)
 		{
 			unsigned work_item_id = i * wavefronts_per_group + j;

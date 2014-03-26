@@ -86,13 +86,10 @@ class NDRange
 	// Pixel Shader
 	std::unique_ptr<DataForPixelShader> init_data_pixel_shader;
 
-	// Work-group lists
-	std::list<std::unique_ptr<WorkGroup>> waiting_work_groups;
-	std::list<std::unique_ptr<WorkGroup>> running_work_groups;
-	std::list<std::unique_ptr<WorkGroup>> completed_work_groups;
-	// std::list<unsigned> waiting_work_groups;
-	// std::list<unsigned> running_work_groups;
-	// std::list<unsigned> completed_work_groups;
+	// Work-group lists, IDs only
+	std::list<long> waiting_work_groups;
+	std::list<long> running_work_groups;
+	std::list<long> completed_work_groups;
 
 	// Used by the driver
 	bool last_work_group_sent;
@@ -304,12 +301,12 @@ public:
 	bool isRunningWorkGroupsEmpty() const { return running_work_groups.empty(); }
 
 	// Return an iterator to the first workgroup in the running_work_group list.
-	std::list<std::unique_ptr<WorkGroup>>::iterator RunningWorkGroupBegin() { 
+	std::list<long>::iterator RunningWorkGroupBegin() { 
 		return running_work_groups.begin();
 	}
 
 	// Return an iterator to the past-to-end iterator in the running_work_group list.
-	std::list<std::unique_ptr<WorkGroup>>::iterator RunningWorkGroupEnd() { 
+	std::list<long>::iterator RunningWorkGroupEnd() { 
 		return running_work_groups.end();
 	}
 

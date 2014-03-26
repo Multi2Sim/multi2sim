@@ -21,9 +21,7 @@
 #define DRIVER_OPENCL_SI_PROGRAM_H
 
 #include <memory>
-#include <driver/opencl/OpenCLDriver.h> 
 #include <src/lib/cpp/ELFReader.h>
-
 
 // Forward declaration
 namespace Driver
@@ -65,7 +63,7 @@ class Program
 	void InitializeConstantBuffers();
 
 public:
-	Program(int id, Driver::OpenCLSIDriver *driver);
+	Program(int id);
 
 	/// Load ELF binary into program object
 	///
@@ -73,13 +71,12 @@ public:
 	/// \param size Size of buffer
 	void SetBinary(const char *buf, unsigned int size);
 
-
 	/// Getters
 	///
 	/// Get the symbol in the Program ELF file by symbol name
 	/// \param name Name of the symbol
-	ELFReader::Symbol *getSymbol(std::string name) const { return elf_file->getSymbol(name); };
-
+	ELFReader::Symbol *getSymbol(std::string name) const { 
+		return elf_file->getSymbol(name); };
 };
 
 }  // namespace SI

@@ -22,6 +22,8 @@
 #include <arch/southern-islands/emu/WorkItem.h>
 #include <driver/opencl/OpenCLDriver.h>
 #include <driver/opengl/southern-islands/ShaderExport.h>
+#include <src/lib/cpp/ELFReader.h>
+
 
 #include "Emu.h"
 #include "NDRange.h"
@@ -36,6 +38,8 @@ Emu::Emu(Asm *as)
 	
 	// GPU memories
 	this->video_mem.reset(new mem::Memory());
+	this->video_mem->setSafe(true);
+
 	this->shared_mem.reset(new mem::Memory());
 	this->global_mem = video_mem.get();
 }
@@ -58,7 +62,6 @@ void Emu::Dump(std::ostream &os) const
 
 void Emu::Run()
 {
-
 	// For efficiency when no Southern Islands emulation is selected, 
 	// exit here if the list of existing ND-Ranges is empty. 
 	if (opencl_driver->isNDRangeListEmpty())
@@ -68,7 +71,6 @@ void Emu::Run()
 	for (auto ndr_i = opencl_driver->getNDRangeBegin(); 
 		ndr_i < opencl_driver->getNDRangeEnd(); ++ndr_i)
 	{
-		
 		// Move waiting work groups to running work groups 
 		(*ndr_i)->WaitingToRunning();
 
@@ -80,14 +82,13 @@ void Emu::Run()
 		for (auto wg_i = (*ndr_i)->RunningWorkGroupBegin(), 
 			wg_e = (*ndr_i)->RunningWorkGroupEnd(); wg_i != wg_e; ++wg_i)
 		{
-			// FIXME: workgroups are instantiated in driver
-			// might need to instantiate at here as in C version
+			std::unique_ptr<WorkGroup> workgroup(new WorkGroup((*ndr_i).get(), (*wg_i)));
 
-			for (auto wf_i = (*wg_i)->WavefrontsBegin(), 
-				wf_e = (*wg_i)->WavefrontsEnd(); wf_i != wf_e; ++wf_i)
-			{
+			for (auto wf_i = workgroup->WavefrontsBegin(), 
+				wf_e = workgroup->WavefrontsEnd(); wf_i != wf_e; ++wf_i)
 				(*wf_i)->Execute();
-			}
+
+			workgroup.reset();
 		}
 
 		// Let driver know that all work-groups from this nd-range

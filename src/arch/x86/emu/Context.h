@@ -834,6 +834,10 @@ public:
 	/// Run one instruction for the context at the position pointed to by
 	/// register \c eip.
 	void Execute();
+
+	/// Return a reference of the register file
+	const Regs &getRegs() {	return regs; }
+
 };
 
 }  // namespace x86
