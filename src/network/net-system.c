@@ -246,10 +246,8 @@ void net_done(void)
 			 * compatible file */
 			if (net_visual_file)
 			{
-				struct net_graph_t *graph;
-
-				graph = net_visual_calc(net);
-				net_dump_visual(net, graph, net_visual_file);
+				struct net_graph_t *graph = net_graph_visual_calculation(net);
+				net_dump_visual(graph, net_visual_file);
 				net_graph_free(graph);
 			}
 			/* Free network */

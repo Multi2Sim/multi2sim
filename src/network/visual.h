@@ -24,8 +24,15 @@ enum net_vertex_kind_t
 {
 	net_vertex_end_node = 0,
 	net_vertex_switch,
-	net_vertex_dummy,
 	net_vertex_bus
+};
+
+struct net_vertex_data_t
+{
+	int bus_util_color;
+
+	enum net_vertex_kind_t kind;
+	struct net_node_t *node;
 };
 
 enum net_edge_kind_t
@@ -35,80 +42,43 @@ enum net_edge_kind_t
 	net_edge_bus,
 	net_edge_bibus
 };
-struct net_graph_t
+
+
+struct net_edge_data_t
 {
-	struct net_t *net;
-
-	int vertex_count;
-	int xscale;
-	struct list_t *vertex_list;
-	struct list_t *edge_list;
-
-};
-
-struct net_graph_vertex_t {
-	int x_coor;
-	int y_coor;
-	int indeg ;
-	int outdeg ;
-	int key_val;  // acts as Pi_val and degdif
-	float cross_num;
-	int neighbours;
-
-	char *name;
-	int bus_util_color;
-	enum net_vertex_kind_t kind;
-	struct net_graph_t *graph;
-	struct net_node_t *node;
-	struct list_t *incoming_vertex_list;
-	struct list_t *outgoint_vertex_list;
-
-};
-
-struct net_graph_edge_t {
 	enum net_edge_kind_t kind;
-	struct net_graph_t *graph;
-	struct net_graph_vertex_t *src_vertex;
-	struct net_graph_vertex_t *dst_vertex;
-
-	/* an edge can be either a link or a bus */
-
 	struct net_link_t *upstream;
 	struct net_link_t *downstream;
 
-	struct net_graph_vertex_t *bus_vertex;
+	struct graph_vertex_t *bus_vertex;
+};
+
+
+struct net_graph_t
+{
+	/* associated Network */
+	struct net_t *net;
+
+	/* associated Graph */
+	struct graph_t *graph;
+
+	/* Associated variables for Visual/Dump */
+	int vertex_count;
+	int scale;
+
+	/* Associated edge data list */
+	struct list_t *edge_data_list;
+
 
 };
 
-struct net_graph_t *net_graph_create(struct net_t *net);
-void net_graph_free (struct net_graph_t * graph);
+struct net_graph_t *net_graph_create             (struct net_t *net);
+void                net_graph_free               (struct net_graph_t * graph);
 
-struct net_graph_vertex_t *net_graph_vertex_create(struct net_graph_t *graph, char *name);
-void net_graph_vertex_free (struct net_graph_vertex_t *vertex);
+struct net_graph_t *net_graph_visual_calculation (struct net_t *net);
+void                net_graph_populate           (struct net_t *net, struct net_graph_t *net_graph);
 
-struct net_graph_edge_t *net_graph_edge_create(struct net_graph_t *graph);
-void net_graph_edge_free (struct net_graph_edge_t *edge);
-
-/*For calculating the visual coordinations*/
-struct net_graph_t *net_visual_calc(struct net_t  *net);
-
-/* First Step: Removing the cycles in the graph and making sure it is connected*/
-void net_graph_greedy_cycle_removal (struct net_graph_t *graph);
-
-/* Second Step: Assigning optimized y coordinates for nodes */
-void net_graph_coffman_graham_layering (struct net_graph_t *graph, int width);
-/* A vital part in second step */
-void net_graph_label_assignment(struct net_graph_t *graph);
-/*Third step : Reducing the number of Crosses in the graph; It is a NP-Complete Problem*/
-void net_graph_cross_reduction(struct net_graph_t *graph, int layer_count);
-
-struct net_graph_vertex_t *net_get_vertex_by_node(struct net_graph_t * graph,
-		struct net_node_t *node);
-
-
-
-
-void net_dump_visual(struct net_t *net, struct net_graph_t *graph, FILE *f);
+void                net_dump_visual              (struct net_graph_t *graph, FILE *f);
 
 
 #endif /* NETWORK_VISUAL_H */
