@@ -245,7 +245,7 @@ void net_graph_populate(struct net_t *net, struct net_graph_t *net_graph)
 				edge = graph_edge_create();
 
 				struct net_edge_data_t *edge_data;
-				edge_data = (struct net_edge_data_t *) edge->data;
+				edge_data = net_edge_data_create();
 
 				edge_data->bus_vertex = vertex;
 				edge_data->kind = net_edge_bus;
@@ -258,6 +258,8 @@ void net_graph_populate(struct net_t *net, struct net_graph_t *net_graph)
 				edge->src_vertex->outdeg++;
 				list_add(edge->dst_vertex->incoming_vertex_list, edge->src_vertex);
 				edge->dst_vertex->indeg++;
+
+				edge->data = edge_data;
 			}
 
 			for (int j = 0; j < list_count(bus_node->dst_buffer_list); j++ )
@@ -274,12 +276,13 @@ void net_graph_populate(struct net_t *net, struct net_graph_t *net_graph)
 				edge = graph_edge_create();
 
 				struct net_edge_data_t *edge_data;
-				edge_data = (struct net_edge_data_t *) edge->data;
+				edge_data = net_edge_data_create();
 
 				edge_data->bus_vertex = vertex;
 				edge_data->kind = net_edge_bus;
 				edge->src_vertex = vertex;
 				edge->dst_vertex = dst_vertex;
+				edge->data = edge_data;
 
 				/* Again, Combining two edges of different directions */
 				for (int l = 0; l < list_count(graph->edge_list); l++)
@@ -310,7 +313,7 @@ void net_graph_populate(struct net_t *net, struct net_graph_t *net_graph)
 				}
 				else
 				{
-					struct net_edge_data_t * edge_data = edge->data;
+					struct net_edge_data_t *edge_data = edge->data;
 					if (edge_data)
 						net_edge_data_free(edge_data);
 					graph_edge_free(edge);
