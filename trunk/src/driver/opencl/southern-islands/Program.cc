@@ -19,7 +19,7 @@
 
 #include <arch/x86/emu/Emu.h>
 #include <arch/southern-islands/emu/Emu.h>
-#include <lib/cpp/ELFReader.h>
+#include <driver/opencl/OpenCLDriver.h>
 #include <lib/cpp/String.h>
 
 #include "Program.h"
@@ -89,10 +89,10 @@ void Program::InitializeConstantBuffers()
 }
 
 
-Program::Program(int id, Driver::OpenCLSIDriver *driver)
+Program::Program(int id)
 {
 	this->id = id;
-	this->driver = driver;
+	this->driver = Driver::OpenCLSIDriver::getInstance();
 }
 
 void Program::SetBinary(const char *buf, unsigned int size)

@@ -53,10 +53,10 @@ protected:
 public:
 	SICommon();
 
-	std::vector<std::unique_ptr<SI::NDRange>>::iterator 
+	static std::vector<std::unique_ptr<SI::NDRange>>::iterator 
 		getNDRangeBegin() { return ndranges.begin(); }
 
-	std::vector<std::unique_ptr<SI::NDRange>>::iterator 
+	static std::vector<std::unique_ptr<SI::NDRange>>::iterator 
 		getNDRangeEnd() { return ndranges.end(); }
 
 	/// Push NDRange to repository, NDRange comes fom Driver(Vertex Shader) or SPI 

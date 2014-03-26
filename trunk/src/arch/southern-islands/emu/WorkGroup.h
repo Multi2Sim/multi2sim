@@ -77,7 +77,7 @@ class WorkGroup
 	std::vector<std::unique_ptr<Wavefront>> wavefronts;
 
 	// Local memory
-	mem::Memory lds;
+	std::unique_ptr<mem::Memory> lds;
 
 	// Additional work-group data
 	std::unique_ptr<WorkGroupData> data;
