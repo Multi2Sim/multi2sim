@@ -29,6 +29,7 @@ namespace x86
 {
 	class Asm;
 	class Emu;
+	class Context;
 }  // namespace x86
 
 namespace SI
@@ -49,7 +50,7 @@ class OpenCLSIDriver : public SICommon
 	static const unsigned major = 5;
 	static const unsigned minor = 2173;
 
-	// Unique instance of Opencl Driver
+	// Unique instance of OpenCL Driver
 	static std::unique_ptr<OpenCLSIDriver> instance;
 
 	// Private constructor. The only possible instance of the OpenCL Driver
@@ -87,27 +88,7 @@ public:
 	void NDRangeComplete(SI::NDRange *ndrange);
 
 	/// OpenCL driver call
-	int DriverCall();
-
-	/// Return an iterator to the first NDRange in the NDRange list. The
-	/// NDRanges can be conveniently traversed with a loop using these
-	/// iterators. This is an example of how to dump all NDRanges in the
-	/// NDRange list:
-	/// \code
-	///	for (auto i = opencl_driver->NDRangesBegin(),
-	///			e = wavefront->NDRangesEnd(); i != e; ++i)
-	///		i->Dump(std::cout);
-	/// \endcode
-	std::vector<std::unique_ptr<SI::NDRange>>::iterator NDRangesBegin() {
-		return ndranges.begin();
-	}
-
-	/// Return a past-the-end iterator for the list of NDRanges in the
-	/// NDRange list.
-	std::vector<std::unique_ptr<SI::NDRange>>::iterator NDRangesEnd() {
-		return ndranges.end();
-	}
-
+	int DriverCall(x86::Context *ctx);
 };	
 
 }  // namespace Driver

@@ -27,19 +27,18 @@ using namespace SI;
 namespace Driver
 {
 
-int OpenCLABIInitImpl()
+int OpenCLABIInitImpl(x86::Context *ctx)
 {
-	std::string spacename;
+	// std::string spacename;
 
-	struct OpenCLVersion
-	{
-		int major;
-		int minor;
-	};
+	// struct OpenCLVersion
+	// {
+	// 	int major;
+	// 	int minor;
+	// };
 
-	// Compare runtime version against driver
-	// OpenCLDriver *driver = OpenCLDriver::getInstance();
-	// OpenCLVersion version = 
+	// // Compare runtime version against driver
+	// OpenCLSIDriver *driver = OpenCLSIDriver::getInstance();
 
 	// Return Success
 	return 0;
