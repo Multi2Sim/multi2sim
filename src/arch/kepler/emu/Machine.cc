@@ -106,8 +106,13 @@ const char *kpl_err_isa_note =
 //		kpl_err_isa_note;
 
 
-#define __NOT_IMPL__ std::cerr << "";
+#define __NOT_IMPL__  if(getenv("M2S_KPL_ISA_DEBUG"))\
+		std::cerr << __func__ <<"is not supported yet.\n";\
+		else std::cerr << "Kepler instruction not implemented.\n" <<\
+		kpl_err_isa_note;
 
+
+	;
 void kpl_isa_IMUL_A_impl(Thread *thread, Inst *inst)
 {
 	__NOT_IMPL__
@@ -186,17 +191,20 @@ void kpl_isa_ISCADD_A_impl(Thread *thread, Inst *inst)
 		dst_id = fmt.dst;
 		thread->WriteGPR(dst_id, dst);
 	}
-    std::cout<< "Warp id "<< std::hex
-       		<<thread->getWarpId() <<" ISCADD op0 "<<fmt.op0;
-    std::cout<<" dst " <<fmt.dst <<" mod0 " <<fmt.mod0 << " s " <<fmt.s << " srcB " <<fmt.srcB
+	if(getenv("M2S_KPL_ISA_DEBUG"))
+	{
+		std::cerr<< "Warp id "<< std::hex
+				<<thread->getWarpId() <<" ISCADD op0 "<<fmt.op0;
+		std::cerr<<" dst " <<fmt.dst <<" mod0 " <<fmt.mod0 << " s " <<fmt.s << " srcB " <<fmt.srcB
 
-       		<<" mod1 " <<fmt.mod1 << " op1 "<< fmt.op1 <<" srcB_mod " <<fmt.srcB_mod
-       		<<std::endl;
+				<<" mod1 " <<fmt.mod1 << " op1 "<< fmt.op1 <<" srcB_mod " <<fmt.srcB_mod
+				<<std::endl;
+	}
 }
 
 void kpl_isa_ISCADD_B_impl(Thread *thread, Inst *inst)
 {
-	std:: cout <<"ISCADD B"<<std::endl;
+	std:: cerr <<"ISCADD B"<<std::endl;
 }
 
 void kpl_isa_IMAD_impl(Thread *thread, Inst *inst)
@@ -266,9 +274,12 @@ void kpl_isa_IMAD_impl(Thread *thread, Inst *inst)
 		dst_id = fmt.dst;
 		thread->WriteGPR(dst_id, dst);
 
-        std::cout<< "Warp id "<< std::hex
+	}
+	if(getenv("M2S_KPL_ISA_DEBUG"))
+	{
+        std::cerr<< "Warp id "<< std::hex
         		<<thread->getWarpId() <<" IMAD op0 "<<fmt.op0;
-        std::cout<<" dst " <<fmt.dst <<" mod0 " <<fmt.mod0 << " s " <<fmt.s << " srcB " <<fmt.srcB
+        std::cerr<<" dst " <<fmt.dst <<" mod0 " <<fmt.mod0 << " s " <<fmt.s << " srcB " <<fmt.srcB
 
         		<<" mod1 " <<fmt.mod1 << " op1 "<< fmt.op1 <<" srcB_mod " <<fmt.srcB_mod
         		<<std::endl;
@@ -340,11 +351,14 @@ void kpl_isa_IADD_A_impl(Thread *thread, Inst *inst)
 		dst_id = fmt.dst;
 		thread->WriteGPR(dst_id, dst);
 	}
-    std::cout<< "Warp id "<< std::hex
+	if(getenv("M2S_KPL_ISA_DEBUG"))
+	{
+    std::cerr<< "Warp id "<< std::hex
       		<<thread->getWarpId() <<" IADD op0 "<<fmt.op0;
-    std::cout<<" dst " <<fmt.dst <<" mod0 " <<fmt.mod0 << " s " <<fmt.s << " srcB " <<fmt.srcB
+    std::cerr<<" dst " <<fmt.dst <<" mod0 " <<fmt.mod0 << " s " <<fmt.s << " srcB " <<fmt.srcB
        		<<" mod1 " <<fmt.mod1 << " op1 "<< fmt.op1 <<" srcB_mod " <<fmt.srcB_mod
        		<<std::endl;
+	}
 
 }
 
@@ -469,12 +483,15 @@ void kpl_isa_ISETP_impl(Thread *thread, Inst *inst)
 		if (pred_id_2 != 7)
 			thread->WriteGPR(pred_id_2, pred_2);
 	}
-    std::cout<< "Warp id "<< std::hex
-    		<<thread->getWarpId() <<" ISETP op0 "<<fmt.op0;
-    std::cout<<" dst " <<fmt.dst <<" mod0 " <<fmt.mod0 << " s " <<fmt.s << " srcB " <<fmt.srcB
-       		<<" mod1 " <<fmt.mod1 << " op1 "<< fmt.op1 <<" srcB_mod " <<fmt.srcB_mod
-       		<<" cmp "<< cmp_op << " bool " << bool_op
-       		<<std::endl;
+	if(getenv("M2S_KPL_ISA_DEBUG"))
+	{
+		std::cerr<< "Warp id "<< std::hex
+				<<thread->getWarpId() <<" ISETP op0 "<<fmt.op0;
+		std::cerr<<" dst " <<fmt.dst <<" mod0 " <<fmt.mod0 << " s " <<fmt.s << " srcB " <<fmt.srcB
+				<<" mod1 " <<fmt.mod1 << " op1 "<< fmt.op1 <<" srcB_mod " <<fmt.srcB_mod
+				<<" cmp "<< cmp_op << " bool " << bool_op
+				<<std::endl;
+	}
 }
 
 void kpl_isa_EXIT_impl(Thread *thread, Inst *inst)
@@ -489,7 +506,7 @@ void kpl_isa_BRA_impl(Thread *thread, Inst *inst)
 
 void kpl_isa_MOV_A_impl(Thread *thread, Inst *inst)
 {
-	std::cout << "MOV_A" << std::endl;
+	std::cerr << "MOV_A" << std::endl;
 }
 
 void kpl_isa_MOV_B_impl(Thread *thread, Inst *inst)
@@ -544,11 +561,6 @@ void kpl_isa_MOV_B_impl(Thread *thread, Inst *inst)
 		else	//check it
 			src = src_id >> 18 ? src_id | 0xfff80000 : src_id;
 
-        std::cout<< "Warp id "<< std::hex
-        		<<thread->getWarpId() <<" MOV_B op0 "<<fmt.op0;
-        std::cout<<" dst " <<fmt.dst <<" mod0 " <<fmt.mod0 << " s " <<fmt.s << " srcB " <<fmt.srcB
-        		<<" mod1 " <<fmt.mod1 << " op1 "<< fmt.op1 <<" srcB_mod " <<fmt.srcB_mod
-        		<<std::endl;
 
 		/* Execute */
 		dst = src;
@@ -556,6 +568,14 @@ void kpl_isa_MOV_B_impl(Thread *thread, Inst *inst)
 		/* Write */
 		dst_id = fmt.dst;
 		thread->WriteGPR(dst_id, dst);
+	}
+	if(getenv("M2S_KPL_ISA_DEBUG"))
+	{
+        std::cerr<< "Warp id "<< std::hex
+        		<<thread->getWarpId() <<" MOV_B op0 "<<fmt.op0;
+        std::cerr<<" dst " <<fmt.dst <<" mod0 " <<fmt.mod0 << " s " <<fmt.s << " srcB " <<fmt.srcB
+        		<<" mod1 " <<fmt.mod1 << " op1 "<< fmt.op1 <<" srcB_mod " <<fmt.srcB_mod
+        		<<std::endl;
 	}
 
 }
@@ -634,11 +654,14 @@ void kpl_isa_LD_impl(Thread *thread, Inst *inst)
 			thread->WriteGPR(dst_id + 3, dst[3]);
 		}
 	}
-    std::cout<< "Warp id "<< std::hex
-      		<<thread->getWarpId() <<" LD op0 "<<fmt.op0;
-    std::cout<<" dst " <<fmt.dst <<" mod0 " <<fmt.mod0 << " s " <<fmt.s << " srcB " <<fmt.srcB
-       		<<" mod1 " <<fmt.mod1 << " op1 "<< fmt.op1 <<" srcB_mod " <<fmt.srcB_mod
-       		<<std::endl;
+	if(getenv("M2S_KPL_ISA_DEBUG"))
+	{
+		std::cerr<< "Warp id "<< std::hex
+				<<thread->getWarpId() <<" LD op0 "<<fmt.op0;
+		std::cerr<<" dst " <<fmt.dst <<" mod0 " <<fmt.mod0 << " s " <<fmt.s << " srcB " <<fmt.srcB
+				<<" mod1 " <<fmt.mod1 << " op1 "<< fmt.op1 <<" srcB_mod " <<fmt.srcB_mod
+				<<std::endl;
+	}
 
 }
 
@@ -714,11 +737,15 @@ void kpl_isa_ST_impl(Thread *thread, Inst *inst)
 		if (data_type > 5)										//Really? FIXME
 			emu->WriteGlobalMem(addr + 8, 8, (char*)&src[2]);
 	}
-    std::cout<< "Warp id "<< std::hex
-      		<<thread->getWarpId() <<" ST op0 "<<fmt.op0;
-    std::cout<<" dst " <<fmt.dst <<" mod0 " <<fmt.mod0 << " s " <<fmt.s << " srcB " <<fmt.srcB
-       		<<" mod1 " <<fmt.mod1 << " op1 "<< fmt.op1 <<" srcB_mod " <<fmt.srcB_mod
-       		<<std::endl;
+
+	if(getenv("M2S_KPL_ISA_DEBUG"))
+	{
+        std::cerr<< "Warp id "<< std::hex
+                 <<thread->getWarpId() <<" ST op0 "<<fmt.op0;
+        std::cerr<<" dst " <<fmt.dst <<" mod0 " <<fmt.mod0 << " s " <<fmt.s << " srcB " <<fmt.srcB
+                 <<" mod1 " <<fmt.mod1 << " op1 "<< fmt.op1 <<" srcB_mod " <<fmt.srcB_mod
+                 <<std::endl;
+	}
 
 }
 
@@ -744,7 +771,6 @@ void kpl_isa_FADD_impl(Thread *thread, Inst *inst)
 
 void kpl_isa_NOP_impl(Thread *thread, Inst *inst)
 {
-	__NOT_IMPL__
 }
 
 void kpl_isa_S2R_impl(Thread *thread, Inst *inst)
@@ -803,11 +829,14 @@ void kpl_isa_S2R_impl(Thread *thread, Inst *inst)
 		dst_id = fmt.dst;
 		thread->WriteGPR(dst_id, dst);
 	}
-    std::cout<< "Warp id "<< std::hex
-       		<<thread->getWarpId() <<" S2R op0 "<<fmt.op0;
-    std::cout<<" dst " <<fmt.dst <<" mod0 " <<fmt.mod0 << " s " <<fmt.s << " srcB " <<fmt.srcB
-       		<<" mod1 " <<fmt.mod1 << " op1 "<< fmt.op1 <<" srcB_mod " <<fmt.srcB_mod
-       		<<std::endl;
+	if(getenv("M2S_KPL_ISA_DEBUG"))
+	{
+		std::cerr<< "Warp id "<< std::hex
+				<<thread->getWarpId() <<" S2R op0 "<<fmt.op0;
+		std::cerr<<" dst " <<fmt.dst <<" mod0 " <<fmt.mod0 << " s " <<fmt.s << " srcB " <<fmt.srcB
+				<<" mod1 " <<fmt.mod1 << " op1 "<< fmt.op1 <<" srcB_mod " <<fmt.srcB_mod
+				<<std::endl;
+	}
 
 }
 
