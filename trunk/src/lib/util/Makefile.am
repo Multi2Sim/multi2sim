@@ -26,6 +26,9 @@ libutil_a_SOURCES = \
 	file.c \
 	file.h \
 	\
+	graph.c \
+	graph.h \
+	\
 	hash-table.c \
 	hash-table.h \
 	\
