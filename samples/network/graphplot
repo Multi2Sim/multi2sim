@@ -255,7 +255,7 @@ def ProcessKey(key, value):
 	elif key == "node":
 		global Nodes
 		Node = GetItems(value)
-		if int(Node[1]) == 3:
+		if int(Node[1]) == 2:
 			if len(Node) != 5:
 				error("Node requires 5 arguments when second argument is 3")
 			try:
@@ -416,7 +416,7 @@ def DrawNodes(f):
 			f.write("0 0 0 C Tsk %f %f N " % (PlotOrigX + X, PlotOrigY + Y  \
 				- (SwitchWidthRatio * 0.1 *(PlotHeight / (YRangeDiff + 2)))))
 			f.write("(%s) Cshow stroke\n" % Node[0])
-		elif Node[1] == 2:
+		elif Node[1] == 3:
 			Width = PlotWidth * DummyWidthRatio / (max(XRangeDiff, YRangeDiff) + 1)
 			f.write("1 setgray %f %f %f 0 360 arc closepath fill stroke\n" \
 				% (Center, PlotOrigY + Y, Width / 2 + 0.5))
@@ -424,7 +424,7 @@ def DrawNodes(f):
 			f.write("%f %f %f setrgbcolor %f %f %f 0 360 arc closepath fill stroke\n" \
 				% (ChartColors[3][0], ChartColors[3][1], ChartColors[3][2], Center, PlotOrigY + Y, Width / 2))
 		
-		elif Node[1] == 3:
+		elif Node[1] == 2:
 			if Node[4] <= 10:
 				Color = GradiantColor[Node[4]]
 			elif Node[4] > 10 and Node[4] <=20:
