@@ -354,16 +354,24 @@ static void net_read_from_config_nodes(struct net_t* net, struct config_t *confi
 			int end_node_input_buffer_size = input_buffer_size;
 			int end_node_output_buffer_size = output_buffer_size;
 			/*end-node should be able to contain an entire msg or
-			 * or equivalent number of packets for that message.
-			 * We can change the net->packet size during simulation
-			 * since this is just at the creation part. */
+			 * or equivalent number of packets for that message.*/
 			if(input_buffer_size <= net_msg_size)
-				end_node_input_buffer_size = ((net_msg_size - 1)/
-						net->packet_size + 1) * net->packet_size;
-			if(output_buffer_size <= net_msg_size)
-				end_node_output_buffer_size = ((net_msg_size - 1)
-						/ net->packet_size + 1)	* net->packet_size;
+			{
+				if(net->packet_size != 0)
+					end_node_input_buffer_size = ((net_msg_size - 1)/
+							net->packet_size + 1) * net->packet_size;
+				else
+					end_node_input_buffer_size = net_msg_size;
+			}
 
+			if (output_buffer_size <= net_msg_size)
+			{
+				if(net->packet_size != 0)
+					end_node_output_buffer_size = ((net_msg_size - 1)/
+							net->packet_size + 1) * net->packet_size;
+				else
+					end_node_output_buffer_size = net_msg_size;
+			}
 			net_add_end_node(net, end_node_input_buffer_size,
 					end_node_output_buffer_size, node_name, NULL);
 		}
