@@ -83,8 +83,8 @@ public:
 
 	/// Getters
 	///
-	/// Get ID
-	unsigned getID() const { return id; }
+	/// Get id
+	unsigned getId() const { return id; }
 
 	/// Get count of vgpr_init_data
 	unsigned getCount() const { return vgpr_init_data.size(); }

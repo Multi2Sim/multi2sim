@@ -77,6 +77,9 @@ public:
 	/// \param name Name of the symbol
 	ELFReader::Symbol *getSymbol(std::string name) const { 
 		return elf_file->getSymbol(name); };
+
+	/// Get the id of the program
+	int getId() const { return id; }
 };
 
 }  // namespace SI

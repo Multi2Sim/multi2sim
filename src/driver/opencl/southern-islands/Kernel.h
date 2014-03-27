@@ -88,6 +88,9 @@ public:
 	/// Get reference of arguments list
 	std::vector<std::unique_ptr<SI::Arg>> &getArgs() { return args; }
 
+	/// Get pointer of an argument by index in arguments list
+	SI::Arg *getArgByIndex(unsigned idx) { return args[idx].get(); }
+
 	/// Get count of arguments
 	unsigned getArgsCount() const { return args.size(); }
 
@@ -96,6 +99,9 @@ public:
 
 	/// Get mem_size_private
 	int getMemSizePrivate() const { return mem_size_private; }
+
+	/// Get kernel id
+	int getId() const { return id; }
 
 	///
 	void SetupNDRangeConstantBuffers(NDRange *ndrange);

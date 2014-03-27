@@ -29,19 +29,21 @@
 #include "Emu.h"
 
 
+// Forward declarations
 namespace SI
 {
+	class Emu;
+	class Arg;
+	class WorkGroup;
+	class Kernel;
 
-// Forward declaration
-class Emu;
-class Arg;
-class WorkGroup;
-class Kernel;
+	struct BinaryUserElement;
+	struct EmuBufferDesc;
+	struct ImageDesc;	
+}
 
-struct BinaryUserElement;
-struct EmuBufferDesc;
-struct ImageDesc;
-
+namespace SI
+{
 
 /// Stage is used to determine V/SGPRs initialization convention when creating
 /// wavefronts/workitems.
@@ -53,7 +55,6 @@ enum NDRangeStage
 	NDRangeStageGeometryShader,
 	NDRangeStagePixelShader
 };
-
 
 /// ?
 class NDRange
@@ -235,7 +236,7 @@ public:
 	NDRangeStage getStage()	const { return stage; }
 
 	/// Get id of NDRange
-	int getID() const { return id; }
+	int getId() const { return id; }
 
 	/// Get index of scalar register which stores workgroup id
 	unsigned getWorkgroupIdSreg() const { return wg_id_sgpr; }
@@ -260,6 +261,9 @@ public:
 		assert(idx >= 0 && idx <= BinaryMaxUserElements);
 		return &user_elements[idx];
 	}
+
+	/// Get address_space_index
+	int getAddressSpaceIndex() const { return address_space_index; }
 
 	/// Get emu it belongs to
 	Emu *getEmu() const { return emu; }
@@ -312,6 +316,21 @@ public:
 
 	/// Setters
 	///
+	/// Set address_space_index
+	void setAddressSpaceIndex(int value) { address_space_index = value; }
+
+	/// Set local_mem_top
+	void setLocalMemTop(int value) { local_mem_top = value; }
+
+	/// Set num_vgpr_used
+	void setNumVgprUsed(unsigned value) { num_vgpr_used = value; }
+
+	/// Set num_sgpr_used
+	void setNumSgprUsed(unsigned value) { num_sgpr_used = value; }
+
+	/// Set wg_id_sgpr
+	void setWgIdSgpr(unsigned value) { wg_id_sgpr = value; }
+
 	/// Set new size parameters of the ND-Range before it gets launched.
 	///
 	/// \param global_size Array of \a work_dim elements (3 at most)

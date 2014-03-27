@@ -17,10 +17,12 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <arch/southern-islands/asm/Asm.h>
 #include <arch/southern-islands/emu/WorkGroup.h>
 #include <arch/southern-islands/emu/Wavefront.h>
 #include <arch/southern-islands/emu/WorkItem.h>
 #include <driver/opencl/OpenCLDriver.h>
+#include <driver/opengl/OpenGLDriver.h>
 #include <driver/opengl/southern-islands/ShaderExport.h>
 #include <src/lib/cpp/ELFReader.h>
 
@@ -31,10 +33,23 @@
 namespace SI
 {
 
-Emu::Emu(Asm *as)
+std::unique_ptr<Emu> Emu::instance;
+
+Emu *Emu::getInstance()
+{
+	// Instance already exists
+	if (instance.get())
+		return instance.get();
+
+	// Create instance
+	instance.reset(new Emu());
+	return instance.get();	
+}
+
+Emu::Emu()
 {
 	// Disassemler
-	this->as = as;
+	this->as.reset(new Asm());
 	
 	// GPU memories
 	this->video_mem.reset(new mem::Memory());
@@ -42,8 +57,14 @@ Emu::Emu(Asm *as)
 
 	this->shared_mem.reset(new mem::Memory());
 	this->global_mem = video_mem.get();
-}
 
+	this->opencl_driver = Driver::OpenCLSIDriver::getInstance();
+
+#ifndef HAVE_OPENGL
+	this->opengl_driver = Driver::OpenGLSIDriver::getInstance();
+#endif
+
+}
 
 void Emu::Dump(std::ostream &os) const
 {
@@ -91,9 +112,21 @@ void Emu::Run()
 			workgroup.reset();
 		}
 
-		// Let driver know that all work-groups from this nd-range
+#ifdef HAVE_OPENGL
+		// Notify corresponding driver
+		if ((*ndr_i)->getStage() == NDRangeStageCompute)
+		{
+			// Let OpenCL driver know that all work-groups from this nd-range
+			// have been run
+			opencl_driver->RequestWork((*ndr_i).get());
+		}
+		else
+			opengl_driver->RequestWork((*ndr_i).get());
+#else
+		// Let OpenCL driver know that all work-groups from this nd-range
 		// have been run
 		opencl_driver->RequestWork((*ndr_i).get());
+#endif
 	}
 }
 
