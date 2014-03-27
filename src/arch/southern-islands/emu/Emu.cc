@@ -60,7 +60,7 @@ Emu::Emu()
 
 	this->opencl_driver = Driver::OpenCLSIDriver::getInstance();
 
-#ifndef HAVE_OPENGL
+#ifdef HAVE_OPENGL
 	this->opengl_driver = Driver::OpenGLSIDriver::getInstance();
 #endif
 
