@@ -46,10 +46,6 @@ namespace Driver
 /// OpenCL Driver for SI
 class OpenCLSIDriver : public SICommon
 {
-	// Driver verision information
-	static const unsigned major = 5;
-	static const unsigned minor = 2173;
-
 	// Unique instance of OpenCL Driver
 	static std::unique_ptr<OpenCLSIDriver> instance;
 
@@ -63,6 +59,10 @@ class OpenCLSIDriver : public SICommon
 
 public:
 
+	// Driver verision information
+	static const unsigned major = 5;
+	static const unsigned minor = 2173;
+
 	/// Get the only instance of the OpenCL Driver. If the instance does not
 	/// exist yet, it will be created, and will remain allocated until the
 	/// end of the execution.
@@ -73,8 +73,17 @@ public:
 	/// Get SI functional emulator
 	SI::Emu *getEmuGpu() const { return si_emu; }
 
-	/// Get NDRange count
-	bool isNDRangeListEmpty() const { return ndranges.empty(); }
+	/// Get count of program in list
+	int getProgramCount() const { return programs.size(); }
+
+	/// Get a pointer of a program by id
+	SI::Program *getProgramById(unsigned id) { return programs[id].get(); }
+
+	/// Get count of kernel in list
+	int getKernelCount() const { return kernels.size(); }
+
+	/// Get a pointer of a kernel by id
+	SI::Kernel *getKernelById(unsigned id) {return kernels[id].get(); }
 
 	/// This function is called when all work groups from an ND-Range have
 	/// been scheduled (i.e., ndrange->waiting_work_groups is empty)
@@ -89,6 +98,12 @@ public:
 
 	/// OpenCL driver call
 	int DriverCall(x86::Context *ctx);
+
+	/// Add program to program list
+	void AddProgram(std::unique_ptr<SI::Program> program);
+
+	/// Add kernel to kernel list
+	void AddKernel(std::unique_ptr<SI::Kernel> kernel);
 };	
 
 }  // namespace Driver

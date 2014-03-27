@@ -105,10 +105,13 @@ public:
 	ArgType getType() { return type; }
 	std::string getName() { return name; }
 	bool getConstArg() { return constarg; }
-
+	int getSize() const { return size; }
+	
 	/* Setters */
 	void setName(const std::string &name) { this->name = name; }
 	void setConstArg(bool constarg) { this->constarg = constarg; }
+	void setSize(int size) { this->size = size; }
+	void setSetFlag(bool flag) { this->set = flag; }
 
 	/* Dump */
 	virtual void Dump(std::ostream &os) { os << name; }

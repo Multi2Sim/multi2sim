@@ -54,7 +54,7 @@ enum OpenCLABICall
 // List of OpenCL ABI call names
 std::string OpenCLABICallName[OpenCLABICallCount + 1] =
 {
-	nullptr,
+	"ABI Invalid",
 #define SI_ABI_CALL(space, name, code) #space #name,
 #include "../../common/SI-ABI.dat"
 #undef SI_ABI_CALL
@@ -62,7 +62,7 @@ std::string OpenCLABICallName[OpenCLABICallCount + 1] =
 #define OPENCL_ABI_CALL(space, name, code) #space #name,
 #include "../ABI.dat"
 #undef OPENCL_ABI_CALL
-	nullptr
+	"ABI Call Count"
 };
 
 }  // namespace SI

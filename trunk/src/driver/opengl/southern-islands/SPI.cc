@@ -84,11 +84,11 @@ void SPI::InitDataToNDRange(NDRange *ndrange)
 {
 	assert(ndrange->getStage() == NDRangeStagePixelShader);
 
-	unsigned id = ndrange->getID();
+	unsigned id = ndrange->getId();
 
 	for( auto &elem : init_data_repo)
 	{
-		if (elem->getID() == id)
+		if (elem->getId() == id)
 			ndrange->ReceiveInitData(std::move(elem));
 	}
 }
@@ -122,7 +122,7 @@ void SPI::genNDRange(ShaderExport *sx)
 		sc->Rasterize((*i).get(), depth_buffer.get());
 		
 		// Prepare initialization data(GPRs)
-		DataForPixelShader init_data(ndrange->getID());
+		DataForPixelShader init_data(ndrange->getId());
 		for( auto pi = sc->PixelInfoBegin(), pe = sc->PixelInfoEnd(); pi != pe; pi++)
 			init_data.setVGPRs((*pi).get());
 

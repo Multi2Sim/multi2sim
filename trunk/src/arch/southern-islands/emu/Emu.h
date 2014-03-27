@@ -25,23 +25,29 @@
 #include <memory>
 
 #include <lib/cpp/Debug.h>
-#include <mem-system/Memory.h>
 
-// Forward declaration
+// Forward declarations
 namespace Driver
 {
 	class OpenCLSIDriver;
 	class OpenGLSIDriver;
 }
 
+namespace mem
+{
+	class Memory;
+}
+
 namespace SI
 {
+	class Asm;
+	class NDRange;
+	class ShaderExport;
+	class WorkGroup;
+}
 
-class Asm;
-class NDRange;
-class ShaderExport;
-class WorkGroup;
-
+namespace SI
+{
 /// UAV Table
 const unsigned EmuMaxNumUAVs = 16;
 const unsigned EmuUAVTableEntrySize = 32;
@@ -71,7 +77,6 @@ const unsigned EmuConstBuf0Size = 160;  // Defined in Metadata.pdf
 const unsigned EmuConstBuf1Size = 1024; // FIXME
 
 const unsigned EmuTotalConstBufSize = EmuConstBuf0Size + EmuConstBuf1Size;
-
 
 /// Buffer descriptor data format
 enum EmuBufDescDataFmt
@@ -231,11 +236,14 @@ public:
 class Emu
 {
 	// Associated disassembler
-	Asm *as;
+	std::unique_ptr<Asm> as;
 
 	// Associated drivers
 	Driver::OpenCLSIDriver *opencl_driver;
+
+#ifdef HAVE_OPENGL
 	Driver::OpenGLSIDriver *opengl_driver;
+#endif
 
 	// Memory spaces
 
@@ -269,6 +277,13 @@ class Emu
 	long long vector_mem_inst_count; // Vector mem instructions executed
 	long long export_inst_count;     // Export instructions executed
 
+	// Unique instance of Southern Islands Emulator
+	static std::unique_ptr<Emu> instance;
+
+	// Private constructor. The only possible instance of the OpenCL Driver
+	// can be obtained with a call to getInstance()
+	Emu();
+
 public:
 
 	/// Debugger for ISA traces
@@ -277,8 +292,10 @@ public:
 	/// Emulator configuration;
 	static EmuConfig config;
 
-	/// Constructor
-	Emu(Asm *as);
+	/// Get the only instance of the Southern Islands emulator. If the instance does not
+	/// exist yet, it will be created, and will remain allocated until the
+	/// end of the execution.
+	static Emu *getInstance();
 
 	/// Dump emulator state
 	void Dump(std::ostream &os) const;
@@ -301,10 +318,13 @@ public:
 	mem::Memory *getGlobalMem() { return global_mem; }
 
 	/// Get disassembler
-	SI::Asm *getAsm() { return as; }
+	SI::Asm *getAsm() { return as.get(); }
 
 	/// Setters
 	///
+	/// Set global_mem
+	void setGlobalMem(mem::Memory *memory) { global_mem = memory; }
+	
 	/// Set work_group_count
 	void setWorkGroupCount(long long count) { work_group_count = count; }
 
