@@ -24,13 +24,13 @@
 #include <vector>
 #include "Driver.h"
 
-// Forward declaration
+// Forward declarations
 namespace SI
 {
-class Emu;
-class Gpu;
-class NDRange;
-}  // namespace SI
+	class Emu;
+	class Gpu;
+	class NDRange;
+}
 
 namespace Driver
 {
@@ -59,9 +59,15 @@ public:
 	static std::vector<std::unique_ptr<SI::NDRange>>::iterator 
 		getNDRangeEnd() { return ndranges.end(); }
 
+	/// Get NDRange count
+	static bool isNDRangeListEmpty() { return ndranges.empty(); }
+
+	/// Get fused information
+	bool isFused() const { return fused; }
+
 	/// Push NDRange to repository, NDRange comes fom Driver(Vertex Shader) or SPI 
 	/// module(Pixel Shader). After added to repository, Driver/SPI modules lose
-	/// ownership of NDRange instance.
+	/// ownership of NDRange instances.
 	///
 	/// \param ndrange NDRange instance created by Driver/SPI
 	void AddNDRange(std::unique_ptr<SI::NDRange> ndrange);

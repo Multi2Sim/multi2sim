@@ -20,6 +20,7 @@
 #include <arch/x86/emu/Emu.h>
 #include <arch/x86/emu/Context.h>
 #include <arch/x86/emu/Regs.h>
+#include <arch/southern-islands/emu/Emu.h>
 #include <lib/cpp/Misc.h>
 
 #include "ABI.h"
@@ -40,8 +41,6 @@ std::unique_ptr<OpenCLSIDriver> OpenCLSIDriver::instance;
 
 OpenCLSIDriver::OpenCLSIDriver()
 {
-	// Obtain instance of emulators
-	// si_emu = SI::Emu::getInstance();
 }
 
 OpenCLSIDriver *OpenCLSIDriver::getInstance()
@@ -85,11 +84,23 @@ int OpenCLSIDriver::DriverCall(x86::Context *ctx)
 
 	// // Call OpenCL Runtime function
 	// assert(OpenCLABICallTable[code]);
-	// int ret = OpenCLABICallTable[code]();
+	// int ret = OpenCLABICallTable[code](ctx);
 
 	// // Return value
 	// return ret;
 	return 0;
+}
+
+void OpenCLSIDriver::AddProgram(std::unique_ptr<SI::Program> program)
+{
+	programs.insert(this->programs.begin() + program.get()->getId(), 
+		std::move(program));
+}
+
+void OpenCLSIDriver::AddKernel(std::unique_ptr<SI::Kernel> kernel)
+{
+	kernels.insert(this->kernels.begin() + kernel.get()->getId(), 
+		std::move(kernel));
 }
 
 }  // namespace Driver

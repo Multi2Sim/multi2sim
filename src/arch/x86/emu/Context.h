@@ -836,7 +836,13 @@ public:
 	void Execute();
 
 	/// Return a reference of the register file
-	const Regs &getRegs() {	return regs; }
+	Regs &getRegs() {	return regs; }
+
+	/// Return a constant reference of the memory
+	mem::Memory &getMem() {
+		assert(memory.get());
+		return *memory;
+	}
 
 };
 
