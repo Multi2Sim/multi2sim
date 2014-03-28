@@ -235,6 +235,15 @@ public:
 	/// Get stage of NDRange
 	NDRangeStage getStage()	const { return stage; }
 
+	/// Get count of waiting_work_groups
+	unsigned getWaitingWorkgroupsCount() const { return waiting_work_groups.size(); }
+
+	/// Get count of running_work_groups
+	unsigned getRunningWorkgroupsCount() const { return running_work_groups.size(); }
+
+	/// Get count of completed_work_groups
+	unsigned getCompletedWorkgroupsCount() const { return completed_work_groups.size(); }
+
 	/// Get id of NDRange
 	int getId() const { return id; }
 
@@ -292,6 +301,9 @@ public:
 	// Get constant buffer table address in global memory
 	unsigned getConstBufferTableAddr() const { return const_buf_table; }
 
+	// Get reource table address in global memory
+	unsigned getResourceTableAddr() const { return resource_table; }
+
 	// Get UAV table address in global memory
 	unsigned getUAVTableAddr() const { return uav_table; }
 
@@ -330,6 +342,18 @@ public:
 
 	/// Set wg_id_sgpr
 	void setWgIdSgpr(unsigned value) { wg_id_sgpr = value; }
+
+	/// Set last_work_group_sent
+	void setLastWorkgroupSend(bool value) { last_work_group_sent = value; }
+
+	/// Set const_buffer_table
+	void setConstBufferTable(unsigned value) { const_buf_table = value; }
+
+	/// Set uav_table
+	void setUAVTable(unsigned value) { uav_table = value; }
+
+	/// Set resource_table
+	void setResourceTable(unsigned value) { resource_table = value; }
 
 	/// Set new size parameters of the ND-Range before it gets launched.
 	///
@@ -414,6 +438,9 @@ public:
 
 	/// Get initialization data from SPI module
 	void ReceiveInitData(std::unique_ptr<DataForPixelShader> data);
+
+	/// Add ID of workgroups to waitinglist
+	void AddWorkgroupIdToWaitingList(long work_group_id);
 };
 
 }  // namespace
