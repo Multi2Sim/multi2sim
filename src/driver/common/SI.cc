@@ -35,6 +35,18 @@ SICommon::SICommon()
 	// si_emu = SI::Emu::getInstance();
 }
 
+SI::NDRange *SICommon::getNDRangeById(int id)
+{
+	for( auto &ndrange : ndranges)
+	{
+		if (ndrange->getId() == id)
+			return ndrange.get();
+	}
+
+	// Return nullptr if can't find in the ndrange list
+	return nullptr;
+}
+
 void SICommon::AddNDRange(std::unique_ptr<SI::NDRange> ndrange)
 {
 	ndranges.push_back(std::move(ndrange));

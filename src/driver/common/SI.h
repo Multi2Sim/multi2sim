@@ -62,6 +62,9 @@ public:
 	/// Get NDRange count
 	static bool isNDRangeListEmpty() { return ndranges.empty(); }
 
+	/// Get NDRange by id
+	SI::NDRange *getNDRangeById(int id);
+
 	/// Get fused information
 	bool isFused() const { return fused; }
 
