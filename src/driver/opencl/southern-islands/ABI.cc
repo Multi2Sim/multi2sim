@@ -35,6 +35,7 @@ using namespace misc;
 namespace SI
 {
 
+static const unsigned MaxWorkGroupBufferSize = 1024*1024;
 
 /*
  * OpenCL ABI call #7 - ProgramCreate
@@ -463,26 +464,277 @@ int OpenCLABINDRangeCreateImpl(x86::Context *ctx)
 	return ndrange->getId();
 }
 
+/*
+ * OpenCL ABI call #15 - si_ndrange_get_num_buffer_entries
+ *
+ * Returns the number of available buffer entries in the waiting 
+ * work-group queue.
+ *
+ * @param unsigned int *host_ptr
+ *
+ *	Location to be populated with the number of available 
+ *	buffer entry slots.
+ *
+ * @return int
+ *
+ *	The function always returns 0.
+ */
+
 int OpenCLABINDRangeGetBufferEntriesImpl(x86::Context *ctx)
 {
+	// SI::Gpu *si_gpu = driver->si_gpu;
+
+	x86::Regs &regs   = ctx->getRegs();
+	mem::Memory &mem  = ctx->getMem();
+
+	int available_buffer_entries;
+
+	// Arguments 
+	unsigned host_ptr = regs.getEcx();
+
+	// if (si_gpu)
+	// {
+	// 	available_buffer_entries = 
+	// 		MaxWorkGroupBufferSize -
+	// 		list_count(si_gpu->waiting_work_groups);
+	// }
+	// else
+	// {
+		available_buffer_entries = 
+			MaxWorkGroupBufferSize;
+	// }
+
+	x86::Emu::opencl_debug << misc::fmt("\tavailable buffer entries = %d\n", 
+		available_buffer_entries);
+
+	mem.Write(host_ptr, sizeof available_buffer_entries,
+		(const char *)&available_buffer_entries);
+
 	// Return
 	return 0;
 }
+
+/*
+ * OpenCL ABI call #16 - si_ndrange_send_work_groups
+ *
+ * Let's the driver know that work groups have been added to 
+ * the queue.
+ *
+ * @param unsigned int ndrange_id
+ *
+ *	ID of the ND-Range
+ *
+ * @param unsigned int work_group_start
+ *
+ *	First work group to execute
+ *
+ * @param unsigned int work_group_count
+ *
+ *	Number of work groups to execute
+ *
+ * @return int
+ *
+ *	The function always returns 0.
+ */
+
+// bool OpenCLABINDRangeSendWorkGoupsCanWakeup()
+// {
+// 	// FIXME, x86 suspend mechanism
+// 	return true;
+// }
+
+// int OpenCLABINDRangeSendWorkGoupsWakeup()
+// {
+// 	// FIXME, x86 suspend mechanism
+// 	return 0;
+// }
 
 int OpenCLABINDRangeSendWorkGoupsImpl(x86::Context *ctx)
 {
+	Driver::OpenCLSIDriver *driver = Driver::OpenCLSIDriver::getInstance();
+	x86::Regs &regs = ctx->getRegs();
+
+	// Arguments 
+	int ndrange_id = (int)regs.getEcx();
+	unsigned work_group_start = regs.getEdx();
+	unsigned work_group_count = regs.getEsi();
+
+	NDRange *ndrange = driver->getNDRangeById(ndrange_id);
+	if (!ndrange)
+		fatal("%s: invalid ndrange ID (%d)", __FUNCTION__, ndrange_id);
+	x86::Emu::opencl_debug << misc::fmt("\tndrange %d\n", ndrange->getId());
+
+	assert(work_group_count <= MaxWorkGroupBufferSize -
+		ndrange->getWaitingWorkgroupsCount());
+
+	x86::Emu::opencl_debug << misc::fmt("\treceiving %d work groups: (%d) through (%d)\n",
+		work_group_count, work_group_start, 
+		work_group_start + work_group_count - 1);
+
+	// Receive work groups (add them to the waiting queue) 
+	for (unsigned work_group_id = work_group_start; 
+		work_group_id < work_group_start + work_group_count; 
+		work_group_id++)
+		ndrange->AddWorkgroupIdToWaitingList(work_group_id);
+
+	// Suspend x86 context until driver needs more work 
+	// ctx->Suspend(OpenCLABINDRangeSendWorkGoupsCanWakeup, 
+	// 	OpenCLABINDRangeSendWorkGoupsWakeup, x86::ContextSuspended);
+
 	// Return
 	return 0;
 }
+
+/*
+ * OpenCL ABI call #17 - si_ndrange_finish
+ *
+ * Tells the driver that there are no more work groups to execute
+ * from the ND-Range.
+ *
+ * @param int ndrange_id
+ *
+ *	ID of nd-range
+ *
+ * @return int
+ *
+ *	The function always returns 0.
+ */
+
+// bool OpenCLABINDRangeFinishCanWakeup()
+// {
+// 	// FIXME, x86 suspend mechanism
+// 	return true;
+// }
+
+// int OpenCLABINDRangeFinishWakeup()
+// {
+// 	// FIXME, x86 suspend mechanism
+// 	return 0;
+// }
 
 int OpenCLABINDRangeFinishImpl(x86::Context *ctx)
 {
+	Driver::OpenCLSIDriver *driver = Driver::OpenCLSIDriver::getInstance();
+	x86::Regs &regs = ctx->getRegs();
+
+	// Arguments 
+	int ndrange_id = (int)regs.getEcx();
+
+	NDRange *ndrange = driver->getNDRangeById(ndrange_id);
+	if (!ndrange)
+		fatal("%s: invalid ndrange ID (%d)", __FUNCTION__, ndrange_id);
+	x86::Emu::opencl_debug << misc::fmt("\tndrange %d\n", ndrange->getId());
+
+	ndrange->setLastWorkgroupSend(true);
+	
+	 // If no work-groups are left in the queues, remove the nd-range
+	 // from the driver list 
+	if (!ndrange->getRunningWorkgroupsCount() && 
+		!ndrange->getWaitingWorkgroupsCount())
+	{
+		x86::Emu::opencl_debug << misc::fmt("\tnd-range %d finished\n", ndrange_id);
+	}
+	else
+	{
+		x86::Emu::opencl_debug << misc::fmt("\twaiting for nd-range %d to finish (blocking)\n", 
+				ndrange_id);
+	// Suspend x86 context until driver needs more work 
+	// ctx->Suspend(OpenCLABINDRangeFinishCanWakeup, 
+	// 	OpenCLABINDRangeFinishWakeup, x86::ContextSuspended);
+	}
+
 	// Return
 	return 0;
 }
 
+/*
+ * OpenCL ABI call #18 - si_ndrange_pass_mem_objs
+ *
+ * @param int ndrange_id
+ *
+ *	ID of nd-range
+ *
+ * @param int kernel_id
+ *
+ *	ID of kernel
+ *
+ * @param unsigned int *tables_ptr
+ *
+ *	Location reserved for internal tables (may not be aligned)
+ *
+ * @param unsigned int *constant_buffers_ptr
+ *
+ *	Location reserved for constant buffers (may not be aligned)
+ *
+ * @return int
+ *
+ *	The function always returns 0.
+ */
+
 int OpenCLABINDRangePassMemObjsImpl(x86::Context *ctx)
 {
+	// SIGpu *si_gpu = driver->si_gpu;
+
+	Driver::OpenCLSIDriver *driver = Driver::OpenCLSIDriver::getInstance();
+	x86::Regs &regs = ctx->getRegs();
+
+	// Arguments 
+	int ndrange_id = (int)regs.getEcx();
+	int kernel_id = (int)regs.getEdx();
+
+	NDRange *ndrange = driver->getNDRangeById(ndrange_id);
+	if (!ndrange)
+		fatal("%s: invalid ndrange ID (%d)", __FUNCTION__, ndrange_id);
+
+	Kernel *kernel = driver->getKernelById(kernel_id);
+	if (!kernel)
+		fatal("%s: invalid kernel ID (%d)", __FUNCTION__, kernel_id);
+
+	 // When a fused device is present, the driver needs to set up
+	 // the addresses of the internal buffers for the GPU as well
+	 // as the MMU for both the internal buffers and kernel arguments 
+	if (driver->isFused())
+	{
+		// 16 extra bytes allocated for alignment 
+		unsigned tables_ptr = (regs.getEsi() + 15) & 0xFFFFFFF0;
+
+		ndrange->setConstBufferTable(tables_ptr);
+
+		// The successive tables must be aligned 
+		ndrange->setResourceTable((ndrange->getConstBufferTableAddr() + 
+			EmuConstBufTableSize + 16) & 0xFFFFFFF0);
+		
+		ndrange->setUAVTable((ndrange->getResourceTableAddr() +
+			EmuResourceTableSize + 16) & 0xFFFFFFF0);
+		
+		// Initialize the GPU MMU with the pages required for
+		// ndrange execution using the same translations as the
+		// CPU MMU 
+		// unsigned constant_buffers_ptr = (regs.getEdi() + 15) & 0xFFFFFFF0;
+		// opencl_si_ndrange_setup_mmu(ndrange, driver->x86_cpu->mmu, 
+		// 	ctx->address_space_index, si_gpu->mmu, tables_ptr, 
+		// 	constant_buffers_ptr);
+	}
+	else
+	{
+		// if (si_gpu)
+		// {
+		// 	opencl_si_kernel_create_ndrange_tables(ndrange, 
+		// 		si_gpu->mmu); 
+		// 	opencl_si_kernel_create_ndrange_constant_buffers(
+		// 		ndrange, si_gpu->mmu); 
+		// }
+		// else
+		{
+			kernel->CreateNDRangeTables(ndrange);
+			kernel->SetupNDRangeConstantBuffers(ndrange); 
+		}
+	}
+	kernel->SetupNDRangeConstantBuffers(ndrange); 
+
+	kernel->SetupNDRangeArgs(ndrange);
+	kernel->DebugNDRangeState(ndrange);
+
 	// Return
 	return 0;
 }

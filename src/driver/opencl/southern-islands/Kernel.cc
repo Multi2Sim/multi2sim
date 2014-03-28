@@ -27,6 +27,7 @@
 #include "Kernel.h"
 #include "Program.h"
 
+using namespace misc;
 
 namespace SI
 {
@@ -767,6 +768,53 @@ Kernel::Kernel(int id, std::string name, Program *program)
 	
 	// Load metadata
 	LoadMetaData();
+}
+
+void Kernel::CreateNDRangeTables(NDRange *ndrange /* MMU *gpu_mmu */)
+{
+	Emu *emu = SI::Emu::getInstance();
+
+	unsigned size_of_tables = EmuConstBufTableSize + 
+		EmuResourceTableSize + EmuUAVTableSize;
+
+	// if (gpu_mmu)
+	// {
+	// 	/* Allocate starting from nearest page boundary */
+	// 	if (emu->video_mem_top & gpu_mmu->page_mask)
+	// 	{
+	// 		emu->video_mem_top += gpu_mmu->page_size -
+	// 			(emu->video_mem_top & gpu_mmu->page_mask);
+	// 	}
+	// }
+
+	// Map new pages 
+	// mem_map(emu->video_mem, emu->video_mem_top, size_of_tables,
+	// 	mem_access_read | mem_access_write);
+
+	x86::Emu::opencl_debug << misc::fmt("\t%u bytes of device memory allocated at " 
+		"0x%x for SI internal tables\n", size_of_tables,
+		emu->getVideoMemTop());
+
+	/* Setup internal tables */
+	ndrange->setConstBufferTable(emu->getVideoMemTop());
+	emu->incVideoMemTop(EmuConstBufTableSize);
+	ndrange->setResourceTable(emu->getVideoMemTop());
+	emu->incVideoMemTop(EmuResourceTableSize);
+	ndrange->setUAVTable(emu->getVideoMemTop());
+	emu->incVideoMemTop(EmuUAVTableSize);
+
+	// Return
+	return;
+}
+
+void Kernel::SetupNDRangeArgs(NDRange *ndrange /* MMU *gpu_mmu */)
+{
+	fatal("%s: Not implemented", __FUNCTION__);
+}
+
+void Kernel::DebugNDRangeState(NDRange *ndrange)
+{
+	fatal("%s: Not implemented", __FUNCTION__);
 }
 
 void Kernel::SetupNDRangeConstantBuffers(NDRange *ndrange)

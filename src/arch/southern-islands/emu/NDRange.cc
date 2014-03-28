@@ -294,4 +294,10 @@ void NDRange::ReceiveInitData(std::unique_ptr<DataForPixelShader> data)
 	init_data_pixel_shader = std::move(data);
 }
 
+void NDRange::AddWorkgroupIdToWaitingList(long work_group_id)
+{
+	waiting_work_groups.push_back(work_group_id);
+}
+
+
 }  // namespace SI
