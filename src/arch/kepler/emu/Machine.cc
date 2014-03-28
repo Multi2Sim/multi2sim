@@ -501,7 +501,7 @@ void kpl_isa_EXIT_impl(Thread *thread, Inst *inst)
 	InstBytesGeneral0 fmt = inst_bytes.general0;
 
 	// Predicates and active masks
-	Emu* emu = Emu::getInstance();
+	//Emu* emu = Emu::getInstance();
 	Warp* warp = thread->getWarp();
 	unsigned pred;
 	unsigned pred_id;
