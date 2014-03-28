@@ -496,7 +496,45 @@ void kpl_isa_ISETP_impl(Thread *thread, Inst *inst)
 
 void kpl_isa_EXIT_impl(Thread *thread, Inst *inst)
 {
-	__NOT_IMPL__
+	// Inst bytes format
+	InstBytes inst_bytes = inst->getInstBytes();
+	InstBytesGeneral0 fmt = inst_bytes.general0;
+
+	// Predicates and active masks
+	Emu* emu = Emu::getInstance();
+	Warp* warp = thread->getWarp();
+	unsigned pred;
+	unsigned pred_id;
+	unsigned active;
+
+	// Pop sync stack at reconvergence PC
+	if ((warp->getPC() != 0) && (warp->getPC() ==
+			warp->getSyncStkTopRecPC()))
+	{
+		warp->setSyncStkTopRecPC(0);
+		//bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+		//		active_thread_mask);
+        warp->setSyncStkTopActive(-1);
+		warp->decrSyncStkTop();
+	}
+
+	// Active
+	active =  unsigned(1) & (warp->getSyncStkTopActive() >> (thread->getIdInWarp()-1));
+
+	// Predicate
+	pred_id = fmt.pred;
+	if (pred_id <= 7)
+		pred = thread->GetPred(pred_id);
+	else
+		pred = ! thread->GetPred(pred_id - 8);
+
+	// Execute
+	if (active == 1 && pred == 1)
+	{
+		if(warp->getFinishedThreadCount() >= warp->getThreadCount() )
+			warp->setFinishedEmu(true);
+	}
+	
 }
 
 void kpl_isa_BRA_impl(Thread *thread, Inst *inst)
