@@ -171,6 +171,13 @@ public:
 
 	/// Return at barrier
 	bool getAtBarrier() const { return at_barrier; }
+         /////////////////////////////////////////////////////////////
+	
+	///Get thread_count
+	unsigned getThreadCount() const {return thread_count; }
+
+	/// Get finished_thread_count
+	unsigned getFinishedThreadCount() const {return finished_thread_count; }
 
 	/// Get Sync stack top reconv pc
     unsigned getSyncStkTopRecPC() const { return sync_stack.entries[sync_stack_top].reconv_pc; }
@@ -205,6 +212,11 @@ public:
     {
     	sync_stack.entries[sync_stack_top].active_thread_mask = value;
     }
+
+////////////////////////////////////////////////////////////////////
+	// Set finished_emu
+
+	void setFinishedEmu (bool value) { finished_emu = value;}
 
     /// Decrement Sync Stack top counter
     void decrSyncStkTop() { sync_stack_top --; }
