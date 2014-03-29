@@ -34,6 +34,7 @@ extern struct vi_net_system_t *vi_net_system;
 
 void vi_net_system_init(void);
 void vi_net_system_level_assign(void);
+void vi_net_system_coordination_config(void);
 void vi_net_system_done(void);
 
 #endif

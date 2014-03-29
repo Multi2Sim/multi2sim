@@ -49,6 +49,8 @@ struct vi_net_buffer_t
 
 };
 
+struct vi_trace_line_t;
+
 struct vi_net_buffer_t *vi_net_buffer_create (struct vi_trace_line_t *trace_line, enum vi_buffer_direction_t);
 void                    vi_net_buffer_free   (struct vi_net_buffer_t *buffer);
 

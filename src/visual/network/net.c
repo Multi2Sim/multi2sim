@@ -29,6 +29,7 @@
 
 #include "link.h"
 #include "net.h"
+#include "net-graph.h"
 #include "node.h"
 
 /*
@@ -140,4 +141,15 @@ struct vi_mod_t *vi_net_get_mod(struct vi_net_t *net, int node_index)
 	/* Return */
 	node = list_get(net->node_list, node_index);
 	return node->mod;
+}
+
+void vi_net_graph_visual_calculation (struct vi_net_t *net)
+{
+	struct vi_net_graph_t *net_graph;
+
+	net_graph = vi_net_graph_create(net);
+	vi_net_graph_populate(net, net_graph);
+	vi_net_graph_draw_scale(net_graph);
+	vi_net_graph_finalize(net_graph);
+	vi_net_graph_free(net_graph);
 }
