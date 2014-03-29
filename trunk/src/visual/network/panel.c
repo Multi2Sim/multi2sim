@@ -18,6 +18,7 @@
  */
 
 #include <lib/mhandle/mhandle.h>
+#include <lib/util/list.h>
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
 
@@ -25,13 +26,12 @@
 #include "panel.h"
 #include "net-widget.h"
 
-#define VI_MOD_BOARD_PADDING		10
-#define VI_MOD_BOARD_WIDTH		100
-#define VI_MOD_BOARD_HEIGHT		100
+#define VI_NET_BOARD_PADDING		10
+#define VI_NET_BOARD_WIDTH		100
+#define VI_NET_BOARD_HEIGHT		100
 
-
-static gboolean 		         vi_net_board_toggle_button_toggled (GtkWidget *widget, struct vi_net_board_t *board);
-static void 			         vi_net_board_destroy               (GtkWidget *widget, struct vi_net_board_t *board);
+static gboolean 		 vi_net_board_toggle_button_toggled (GtkWidget *widget, struct vi_net_board_t *board);
+static void 			 vi_net_board_destroy               (GtkWidget *widget, struct vi_net_board_t *board);
 static struct vi_net_window_t   *vi_net_window_create              (struct vi_net_t * net, GtkWidget *parent_toggle_button);
 static void                      vi_net_window_free                 (struct vi_net_window_t *net_window);
 static void                      vi_net_window_destroy              (GtkWidget *widget, struct vi_net_window_t *net_window);
@@ -62,7 +62,7 @@ struct vi_net_board_t *vi_net_board_create(struct vi_net_t *net)
 	GtkWidget *event_box = gtk_event_box_new();
 	gtk_container_add(GTK_CONTAINER(event_box), frame);
 	gtk_widget_override_background_color(event_box, GTK_STATE_FLAG_NORMAL, &frame_color);
-	gtk_widget_set_size_request(frame, VI_MOD_BOARD_WIDTH, VI_MOD_BOARD_HEIGHT);
+	gtk_widget_set_size_request(frame, VI_NET_BOARD_WIDTH, VI_NET_BOARD_HEIGHT);
 
 	/* Vertical box */
 	GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
@@ -158,11 +158,11 @@ static struct vi_net_window_t * vi_net_window_create(struct vi_net_t * net, GtkW
 
 	/* Module widget */
 	struct vi_net_widget_t *net_widget;
-	net_widget = vi_net_widget_create(net->name);
+	net_widget = vi_net_widget_create(net);
 	gtk_container_add(GTK_CONTAINER(window), vi_net_widget_get_widget(net_widget));
 	net_window->net_widget = net_widget;
 
-	/* Associate widget */
+	/* Associated widget */
 	net_window->widget = window;
 	gtk_widget_show_all(net_window->widget);
 	g_signal_connect(G_OBJECT(net_window->widget), "destroy", G_CALLBACK(vi_net_window_destroy), net_window);
@@ -170,7 +170,6 @@ static struct vi_net_window_t * vi_net_window_create(struct vi_net_t * net, GtkW
 
 	/* Return */
 	return net_window;
-
 }
 
 static void vi_net_window_free(struct vi_net_window_t *net_window)

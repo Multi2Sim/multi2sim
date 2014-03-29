@@ -331,6 +331,7 @@ void vi_net_graph_free (struct vi_net_graph_t * net_graph)
 
 void vi_net_graph_draw_scale(struct vi_net_graph_t *net_graph)
 {
+	int scale;
         struct graph_t *graph = net_graph->graph;
 
         /* Apply drawing algorithm on graph of net_graph */
@@ -339,19 +340,18 @@ void vi_net_graph_draw_scale(struct vi_net_graph_t *net_graph)
         /* Calculate a tailored scale for the vi_graph that depends on the
          * spacing of each node and link
          */
-        int scale = list_count(graph->vertex_list);
-/*
-        for (int i = 1; i < list_count(graph->vertex_list); i++)
-        {
-                struct graph_vertex_t *vertex;
-                vertex = list_get(graph->vertex_list, i);
 
-                int opt_distance= graph->max_vertex_in_layer * scale /(2* graph->max_vertex_in_layer - 1);
-                vertex->x_coor = (2*(vertex->x_coor) + (graph->max_vertex_in_layer - vertex->neighbours))* opt_distance;
-                net_graph->scale = scale ;
-        }
-        */
-        net_graph->scale = scale;
+	scale = list_count(graph->vertex_list);
+
+	struct graph_vertex_t *vertex;
+	for (int i = 0; i < list_count(graph->vertex_list); i++)
+	{
+		vertex = list_get(graph->vertex_list, i);
+
+		int opt_distance= graph->max_vertex_in_layer * scale /(2* graph->max_vertex_in_layer - 1);
+		vertex->x_coor = (2*(vertex->x_coor) + (graph->max_vertex_in_layer - vertex->neighbours))* opt_distance;
+	}
+	net_graph->scale = scale ;
 }
 
 void vi_net_graph_finalize(struct vi_net_graph_t *net_graph)

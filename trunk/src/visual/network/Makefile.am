@@ -26,6 +26,9 @@ libnetwork_a_SOURCES += \
 	node.c \
 	node.h \
 	\
+	node-widget.c \
+	node-widget.h \
+	\
 	panel.c \
 	panel.h
 
