@@ -369,14 +369,15 @@ void vi_net_graph_finalize(struct vi_net_graph_t *net_graph)
                         struct vi_net_node_t *node;
 
                         node = vertex_data->node;
-                        node->X = vertex->x_coor;
+                        node->X = (double) vertex->x_coor / net_graph->scale;
                         node->Y = vertex->y_coor;
-                        fprintf(stderr, "With scale node = %s %f %d \t", vertex->name,
+/*                        fprintf(stderr, "With scale node = %s %f %d \t", vertex->name,
                                         (double) vertex->x_coor / net_graph->scale,
                                         vertex->y_coor);
                         fprintf(stderr, "Without scale node = %s %f %d \n", vertex->name,
                                         (double) vertex->x_coor,
                                         vertex->y_coor);
+                                        */
                 }
         }
 }

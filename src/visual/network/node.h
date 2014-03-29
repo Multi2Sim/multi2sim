@@ -49,8 +49,8 @@ struct vi_net_node_t
 	struct hash_table_t   *output_buffer_list;
 
 	/* Coordination on Network Window */
-	int X;
-	int Y;
+	double X;
+	double Y;
 
 	/* if node is BUS or Photonic */
 	struct list_t	    *bus_lane_list;
