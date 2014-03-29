@@ -41,11 +41,16 @@ struct vi_net_bus_t
 };
 struct vi_net_node_t
 {
+	int 		       index;
 	enum vi_net_node_kind  type;
 	char                  *name;
 	struct vi_mod_t       *mod;
 	struct hash_table_t   *input_buffer_list;
 	struct hash_table_t   *output_buffer_list;
+
+	/* Coordination on Network Window */
+	int X;
+	int Y;
 
 	/* if node is BUS or Photonic */
 	struct list_t	    *bus_lane_list;

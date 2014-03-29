@@ -29,8 +29,10 @@ struct vi_net_link_t
 	struct vi_net_node_t *dst_node;
 };
 
+struct vi_trace_line_t;
 
-struct vi_net_link_t *vi_net_link_create  (struct vi_trace_line_t * trace_line);
+
+struct vi_net_link_t *vi_net_link_create  (struct vi_trace_line_t *trace_line);
 void                  vi_net_link_free    (struct vi_net_link_t *link);
 
 #endif

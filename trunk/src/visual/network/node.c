@@ -68,6 +68,7 @@ struct vi_net_node_t * vi_net_node_assign(struct vi_trace_line_t *trace_line)
 
 	node = list_get(net->node_list, node_index);
 	assert(node);
+	node->index = node_index;
 
 	/* Set Node Name */
 	char *node_name;

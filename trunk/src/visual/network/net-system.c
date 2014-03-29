@@ -31,8 +31,8 @@
 
 #include "buffer.h"
 #include "link.h"
-#include "net-system.h"
 #include "net.h"
+#include "net-system.h"
 #include "node.h"
 
 /*
@@ -194,5 +194,16 @@ void vi_net_system_level_assign(void)
 			list_add(vi_net_system->level_list, list_create());
 		net_level = list_get(vi_net_system->level_list, mod_level - 1);
 		list_add(net_level, net);
+	}
+}
+
+void vi_net_system_coordination_config(void)
+{
+	char *net_name;
+	struct vi_net_t *net;
+
+	HASH_TABLE_FOR_EACH(vi_net_system->net_table, net_name, net)
+	{
+		vi_net_graph_visual_calculation(net);
 	}
 }

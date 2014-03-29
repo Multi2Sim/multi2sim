@@ -30,8 +30,8 @@
 #define VI_MOD_BOARD_HEIGHT		100
 
 
-static gboolean 		 vi_net_board_toggle_button_toggled (GtkWidget *widget, struct vi_net_board_t *board);
-static void 			 vi_net_board_destroy               (GtkWidget *widget, struct vi_net_board_t *board);
+static gboolean 		         vi_net_board_toggle_button_toggled (GtkWidget *widget, struct vi_net_board_t *board);
+static void 			         vi_net_board_destroy               (GtkWidget *widget, struct vi_net_board_t *board);
 static struct vi_net_window_t   *vi_net_window_create              (struct vi_net_t * net, GtkWidget *parent_toggle_button);
 static void                      vi_net_window_free                 (struct vi_net_window_t *net_window);
 static void                      vi_net_window_destroy              (GtkWidget *widget, struct vi_net_window_t *net_window);
