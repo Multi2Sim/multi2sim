@@ -28,8 +28,8 @@
 #include "node-widget.h"
 
 #define VI_NODE_BOARD_PADDING           10
-#define VI_NODE_BOARD_WIDTH             60
-#define VI_NODE_BOARD_HEIGHT            60
+#define VI_NODE_BOARD_WIDTH             70
+#define VI_NODE_BOARD_HEIGHT            70
 
 static void vi_net_widget_destroy(GtkWidget *widget, struct vi_net_widget_t *net_widget);
 
