@@ -336,7 +336,7 @@ struct vi_mem_panel_t *vi_mem_panel_create(void)
 	struct list_t *mod_list;
 	struct vi_mod_board_t *board;
 
-	int tab;
+	int tab = 0;
 	int level_id;
 	int mod_id;
 
@@ -366,11 +366,11 @@ struct vi_mem_panel_t *vi_mem_panel_create(void)
 	gtk_container_add(GTK_CONTAINER(frame), scrolled_window);
 
 	/* Insert module boards */
-	tab = 1;
 	layout_width = VI_MOD_BOARD_WIDTH;
 	layout_height = VI_MOD_BOARD_HEIGHT;
 	if (vi_net_system->active)
 	{
+		tab = 1;
 		int net_id;
 		struct vi_net_t *net;
 		struct list_t   *net_list;

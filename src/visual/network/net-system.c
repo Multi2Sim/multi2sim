@@ -47,7 +47,7 @@ static char *err_vi_net_system_trace_version =
 		"\tversion used to visualize the trace.\n";
 
 #define VI_NET_SYSTEM_TRACE_VERSION_MAJOR	1
-#define VI_NET_SYSTEM_TRACE_VERSION_MINOR	2
+#define VI_NET_SYSTEM_TRACE_VERSION_MINOR	3
 
 void vi_net_system_init(void)
 {
