@@ -17,47 +17,29 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef VISUAL_NETWORK_PANEL_H
-#define VISUAL_NETWORK_PANEL_H
+
+#ifndef VISUAL_NETWORK_NODE_WIDGET_H
+#define VISUAL_NETWORK_NODE_WIDGET_H
 
 #include <gtk/gtk.h>
 
-/* Network Detailed View */
-struct vi_net_window_t
+struct vi_node_widget_t
 {
-	/* Main detail Window */
+	char *name;
+
 	GtkWidget *widget;
+	GtkWidget *hscrollbar;
+	GtkWidget *vscrollbar;
 
-	/* Network that window show */
-	struct vi_net_t *net;
-
-	/* Toggle button that causes activation of window */
-	GtkWidget *parent_toggle_button;
-
-	/* Network widget */
-	struct vi_net_widget_t *net_widget;
+	int width;
+	int height;
 
 };
 
-struct vi_net_board_t
-{
-	/* Main widget */
-	GtkWidget *widget;
 
-	/* Pop-up window showing detail */
-	struct vi_net_window_t *net_window;
+struct vi_node_widget_t *vi_node_widget_create     (char *node_name);
+void                     vi_node_widget_free       (struct vi_node_widget_t *node_widget);
+GtkWidget               *vi_node_widget_get_widget (struct vi_node_widget_t *widget);
 
-	/* Toggle button to activate pop-up window */
-	GtkWidget *toggle_button;
-
-	/* Associated Network */
-	struct vi_net_t *net;
-
-	/* FIXME Message list */
-//	struct list_t *msg_list;
-};
-
-
-struct vi_net_board_t *vi_net_board_create(struct vi_net_t *net);
 
 #endif
