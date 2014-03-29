@@ -45,4 +45,6 @@ struct vi_mod_t;
 void             vi_net_attach_mod(struct vi_net_t *net, struct vi_mod_t *mod, int node_index);
 struct vi_mod_t *vi_net_get_mod   (struct vi_net_t *net, int node_index);
 
+void             vi_net_graph_visual_calculation (struct vi_net_t *net);
+
 #endif

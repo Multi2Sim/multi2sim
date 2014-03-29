@@ -14,6 +14,9 @@ libnetwork_a_SOURCES += \
 	net.c \
 	net.h \
 	\
+	net-graph.c \
+	net-graph.h \
+	\
 	net-system.c \
 	net-system.h \
 	\

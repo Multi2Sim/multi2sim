@@ -145,6 +145,7 @@ void visual_run(char *file_name)
 	if (vi_net_system->active)
 	{
 		vi_net_system_level_assign();
+		vi_net_system_coordination_config();
 	}
 
 	/* Memory system panel */
