@@ -53,6 +53,7 @@ protected:
 public:
 	SICommon();
 
+	/// Getters
 	static std::vector<std::unique_ptr<SI::NDRange>>::iterator 
 		getNDRangeBegin() { return ndranges.begin(); }
 
@@ -68,12 +69,26 @@ public:
 	/// Get fused information
 	bool isFused() const { return fused; }
 
+	/// Get timing simulator
+	SI::Gpu *getGpu() const { return si_gpu; }
+
+
+	/// Setters
+	///
+	/// Set fused mode
+	void setFused(bool fused) { this->fused = fused; }
+
 	/// Push NDRange to repository, NDRange comes fom Driver(Vertex Shader) or SPI 
 	/// module(Pixel Shader). After added to repository, Driver/SPI modules lose
 	/// ownership of NDRange instances.
 	///
 	/// \param ndrange NDRange instance created by Driver/SPI
 	void AddNDRange(std::unique_ptr<SI::NDRange> ndrange);
+
+	/// Remove NDRange from repository by it's ID
+	///
+	/// \param id ID of NDRange to be removed
+	void RemoveNDRangeById(int id);
 };
 
 }  // namespace Driver

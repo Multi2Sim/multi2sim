@@ -78,6 +78,11 @@ public:
 	ELFReader::Symbol *getSymbol(std::string name) const { 
 		return elf_file->getSymbol(name); };
 
+	/// Get reference to contant buffer by index
+	ConstantBuffer *getConstantBufferByIndex(int index) const {
+		return constant_buffers[index].get();
+	}
+
 	/// Get the id of the program
 	int getId() const { return id; }
 };
