@@ -64,6 +64,8 @@ struct vi_net_t *vi_net_create(struct vi_trace_line_t *trace_line)
 	if (packet_size != 0)
 		net->packet_size = packet_size;
 
+	net->dummy_node_list = list_create();
+
 	net->high_mods = hash_table_create(0, FALSE);
 	net->low_mods  = hash_table_create(0, FALSE);
 	net->link_table = hash_table_create(0, FALSE);
@@ -107,6 +109,16 @@ void vi_net_free(struct vi_net_t *net)
 	 * freed before by mem-system */
 	hash_table_free(net->high_mods);
 	hash_table_free(net->low_mods);
+
+
+	for (i = 0; i < list_count(net->dummy_node_list); i++)
+	{
+	                struct vi_net_node_t *dummy_node;
+	                dummy_node = list_get(net->dummy_node_list, i);
+	                assert (dummy_node->type == vi_net_node_dummy);
+	                vi_net_node_free(dummy_node);
+	}
+	list_free(net->dummy_node_list);
 
 	/* Free network */
 	free(net->name);

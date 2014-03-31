@@ -28,6 +28,11 @@ struct vi_net_t
 
 	struct list_t *node_list; /* Keeping it for backward compatibility */
 
+	/* Keeping the dummy node structures. Nodes of this kind would not
+	 * go in neither node_list nor node table. It is for visualization
+	 * porpose only */
+	struct list_t *dummy_node_list;
+
 	struct hash_table_t *node_table;
 	struct hash_table_t *link_table;
 	struct hash_table_t *high_mods;
