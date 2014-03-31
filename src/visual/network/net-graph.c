@@ -357,7 +357,9 @@ void vi_net_graph_draw_scale(struct vi_net_graph_t *net_graph)
 void vi_net_graph_finalize(struct vi_net_graph_t *net_graph)
 {
         struct graph_t * graph = net_graph->graph;
+        struct vi_net_t *net = net_graph->net;
 
+        /* Updating Nodes */
         for (int i = 0 ; i < list_count(graph->vertex_list); i++)
         {
                 struct graph_vertex_t *vertex;
@@ -371,13 +373,24 @@ void vi_net_graph_finalize(struct vi_net_graph_t *net_graph)
                         node = vertex_data->node;
                         node->X = (double) vertex->x_coor / net_graph->scale;
                         node->Y = vertex->y_coor;
-/*                        fprintf(stderr, "With scale node = %s %f %d \t", vertex->name,
+/*                      fprintf(stderr, "With scale node = %s %f %d \t", vertex->name,
                                         (double) vertex->x_coor / net_graph->scale,
                                         vertex->y_coor);
                         fprintf(stderr, "Without scale node = %s %f %d \n", vertex->name,
                                         (double) vertex->x_coor,
                                         vertex->y_coor);
                                         */
+                }
+                if (vertex->kind == graph_vertex_dummy)
+                {
+                        struct vi_net_node_t *node;
+                        node = vi_net_node_create();
+
+                        node->name = xstrdup(vertex->name);
+                        node->type = vi_net_node_dummy;
+                        node->X = (double) vertex->x_coor / net_graph->scale;
+                        node->Y = vertex->y_coor;
+                        list_add(net->dummy_node_list, node);
                 }
         }
 }
