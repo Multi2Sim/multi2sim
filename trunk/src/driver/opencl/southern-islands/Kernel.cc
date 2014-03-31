@@ -24,6 +24,7 @@
 #include <lib/cpp/Misc.h>
 #include <string.h>
 
+
 #include "Kernel.h"
 #include "Program.h"
 
@@ -795,7 +796,7 @@ void Kernel::CreateNDRangeTables(NDRange *ndrange /* MMU *gpu_mmu */)
 		"0x%x for SI internal tables\n", size_of_tables,
 		emu->getVideoMemTop());
 
-	/* Setup internal tables */
+	// Setup internal tables 
 	ndrange->setConstBufferTable(emu->getVideoMemTop());
 	emu->incVideoMemTop(EmuConstBufTableSize);
 	ndrange->setResourceTable(emu->getVideoMemTop());
@@ -809,7 +810,180 @@ void Kernel::CreateNDRangeTables(NDRange *ndrange /* MMU *gpu_mmu */)
 
 void Kernel::SetupNDRangeArgs(NDRange *ndrange /* MMU *gpu_mmu */)
 {
-	fatal("%s: Not implemented", __FUNCTION__);
+	EmuBufferDesc buffer_desc;
+	int zero = 0;
+
+	// Initial top of local memory is determined by the static local memory
+	// specified in the kernel binary. Number of vector and scalar 
+	// registers used by the kernel recorded as well. 
+	const BinaryDictEntry *enc_dict = getKernelBinary()->GetSIDictEntry();
+	ndrange->setLocalMemTop(getMemSizeLocal());
+	ndrange->setNumSgprUsed(enc_dict->num_sgpr);
+	ndrange->setNumVgprUsed(enc_dict->num_vgpr);
+
+	// Kernel arguments 
+	int index = 0;;
+	for( auto &arg : getArgs())
+	{
+		// Check that argument was set 
+		assert(arg);
+		if (!arg->isSet())
+			fatal("%s: kernel '%s': argument '%s' not set",
+				__FUNCTION__, getName().c_str(), arg->getName().c_str());
+
+		x86::Emu::opencl_debug << misc::fmt("\targ[%d] = %s ", index, arg->getName().c_str());
+		
+		// Process argument depending on its type 
+		switch (arg->getType())
+		{
+
+		case ArgTypeValue:
+		{
+			ArgValue &arg_value = dynamic_cast<ArgValue&>(*arg);
+			// Value copied directly into device constant memory 
+			assert(arg_value.getSize());
+			ndrange->ConstantBufferWrite(
+				arg_value.getConstantBufferNum(),
+				arg_value.getConstantOffset(),
+				arg_value.getValuePtr(), arg_value.getSize());
+			break;
+		}
+
+		case ArgTypePointer:
+		{
+			ArgPointer &arg_ptr = dynamic_cast<ArgPointer&>(*arg);
+
+			switch (arg_ptr.getScope())
+			{
+
+			// Hardware local memory 
+			case ArgScopeHwLocal:
+
+				// Pointer in __local scope.
+				// Argument value is always NULL, just assign
+				// space for it. 
+				ndrange->ConstantBufferWrite(
+					arg_ptr.getConstantBufferNum(),
+					arg_ptr.getConstantOffset(),
+					ndrange->getLocalMemTopPtr(), 4);
+
+				x86::Emu::opencl_debug << misc::fmt("%u bytes at 0x%x", arg_ptr.getSize(), 
+					ndrange->getLocalMemTop());
+
+				ndrange->incLocalMemTop(arg_ptr.getSize());
+
+				break;
+
+			// UAV 
+			case ArgScopeUAV:
+			{
+				x86::Emu::opencl_debug << misc::fmt("(0x%x)", arg_ptr.getDevicePtr());
+				
+				// Create descriptor for argument 
+				CreateBufferDesc(
+					arg_ptr.getDevicePtr(),
+					arg_ptr.getSize(),
+					arg_ptr.getNumElems(),
+					arg_ptr.getDataType(), &buffer_desc);
+
+				// Add to UAV table 
+				ndrange->InsertBufferIntoUAVTable(
+					&buffer_desc,
+					arg_ptr.getBufferNum());
+
+				// Write 0 to CB1 
+				ndrange->ConstantBufferWrite(
+					arg_ptr.getConstantBufferNum(),
+					arg_ptr.getConstantOffset(),
+					&zero, 4);
+
+				break;
+			}
+
+			// Hardware constant memory 
+			case ArgScopeHwConstant:
+			{
+				CreateBufferDesc(
+					arg_ptr.getDevicePtr(),
+					arg_ptr.getSize(),
+					arg_ptr.getNumElems(),
+					arg_ptr.getDataType(), &buffer_desc);
+
+				// Data stored in hw constant memory 
+				// uses a 4-byte stride 
+				buffer_desc.stride = 4;
+
+				// Add to Constant Buffer table 
+				ndrange->InsertBufferIntoConstantBufferTable(
+					&buffer_desc,
+					arg_ptr.getBufferNum());
+
+				// Write 0 to CB1 
+				ndrange->ConstantBufferWrite(
+					arg_ptr.getConstantBufferNum(),
+					arg_ptr.getConstantOffset(),
+					&zero, 4);
+
+				break;
+			}
+
+			default:
+
+				fatal("%s: not implemented memory scope",
+						__FUNCTION__);
+			}
+
+			break;
+		}
+		case ArgTypeImage:
+
+			fatal("%s: type 'image' not implemented", __FUNCTION__);
+			break;
+
+		case ArgTypeSampler:
+
+			fatal("%s: type 'sampler' not implemented", 
+				__FUNCTION__);
+			break;
+
+		default:
+
+			fatal("%s: argument type not recognized (%d)",
+				__FUNCTION__, arg->getType());
+
+		}
+		x86::Emu::opencl_debug << misc::fmt("\n");
+
+		// Next 
+		index++;
+	}
+
+	// Add program-wide constant buffers to the ND-range. 
+	// Program-wide constant buffers start at number 2. 
+	for (unsigned i = 2; i < EmuMaxNumConstBufs; i++) 
+	{
+		ConstantBuffer *constant_buffer = 
+			getProgram()->getConstantBufferByIndex(i);
+
+		if (!constant_buffer)
+			break;
+
+		fatal("ConstantBuffer Size unknown!");
+		// CreateBufferDesc(
+		// 	ndrange->cb_start + SI_EMU_CONST_BUF_SIZE*i,
+		// 	constant_buffer->getSize(),
+		// 	4,
+		// 	ArgFloat,
+		// 	&buffer_desc);
+
+		// Data stored in hw constant memory 
+		// uses a 16-byte stride 
+		// buffer_desc.stride = 16; // XXX Use or don't use?
+
+		// Add to Constant Buffer table 
+		ndrange->InsertBufferIntoConstantBufferTable( 
+			&buffer_desc, index);
+	}
 }
 
 void Kernel::DebugNDRangeState(NDRange *ndrange)

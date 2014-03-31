@@ -57,6 +57,9 @@ class OpenCLSIDriver : public SICommon
 	std::vector<std::unique_ptr<SI::Program>> programs;
 	std::vector<std::unique_ptr<SI::Kernel>> kernels;
 
+	// Count of current OpenCL ND-Ranges executing for this driver 
+	int ndranges_running;
+
 public:
 
 	// Driver verision information
@@ -84,6 +87,15 @@ public:
 
 	/// Get a pointer of a kernel by id
 	SI::Kernel *getKernelById(unsigned id) {return kernels[id].get(); }
+
+	/// Get count of current OpenCL ND-Ranges executing
+	int getNDrangeRunning() const { return ndranges_running; }
+
+	/// Increment count of NDRanges that are currently running
+	void incNDRangeRunning() { ndranges_running++; }
+
+	/// Decrease count of NDRanges that are currently running 
+	void decNDRangeRunning() { ndranges_running--; }
 
 	/// This function is called when all work groups from an ND-Range have
 	/// been scheduled (i.e., ndrange->waiting_work_groups is empty)

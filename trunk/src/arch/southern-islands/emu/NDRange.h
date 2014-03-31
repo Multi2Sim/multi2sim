@@ -208,6 +208,9 @@ public:
 	/// Get local memory top address
 	unsigned getLocalMemTop() const { return local_mem_top; }
 
+	/// Get pointer to local_mem_top
+	int *getLocalMemTopPtr() { return &local_mem_top; }
+
 	/// Get size of local size
 	unsigned getLocalSize(unsigned dim) const { 
 		assert(dim >= 0 && dim <= 2);
@@ -334,6 +337,9 @@ public:
 	/// Set local_mem_top
 	void setLocalMemTop(int value) { local_mem_top = value; }
 
+	/// Increment local_mem_top
+	void incLocalMemTop(int value) { local_mem_top += value; }
+
 	/// Set num_vgpr_used
 	void setNumVgprUsed(unsigned value) { num_vgpr_used = value; }
 
@@ -346,7 +352,7 @@ public:
 	/// Set last_work_group_sent
 	void setLastWorkgroupSend(bool value) { last_work_group_sent = value; }
 
-	/// Set const_buffer_table
+	/// Set const_buf_table
 	void setConstBufferTable(unsigned value) { const_buf_table = value; }
 
 	/// Set uav_table
@@ -355,6 +361,12 @@ public:
 	/// Set resource_table
 	void setResourceTable(unsigned value) { resource_table = value; }
 
+	/// Set cb0
+	void setCB0(unsigned value) { cb0 = value; }
+
+	/// Set cb10
+	void setCB1(unsigned value) { cb1 = value; }
+	
 	/// Set new size parameters of the ND-Range before it gets launched.
 	///
 	/// \param global_size Array of \a work_dim elements (3 at most)

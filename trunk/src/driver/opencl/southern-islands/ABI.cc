@@ -400,7 +400,6 @@ int OpenCLABIKernelSetArgSamplerImpl(x86::Context *ctx)
 
 int OpenCLABINDRangeCreateImpl(x86::Context *ctx)
 {
-
 	Driver::OpenCLSIDriver *driver = Driver::OpenCLSIDriver::getInstance();
 	SI::Emu *si_emu = SI::Emu::getInstance();
 	// SI::Gpu *si_gpu = driver->si_gpu;
@@ -707,10 +706,13 @@ int OpenCLABINDRangePassMemObjsImpl(x86::Context *ctx)
 		ndrange->setUAVTable((ndrange->getResourceTableAddr() +
 			EmuResourceTableSize + 16) & 0xFFFFFFF0);
 		
+		unsigned constant_buffers_ptr = (regs.getEdi() + 15) & 0xFFFFFFF0;
+		ndrange->setCB0(constant_buffers_ptr);
+		ndrange->setCB1(constant_buffers_ptr + EmuConstBuf0Size);
+
 		// Initialize the GPU MMU with the pages required for
 		// ndrange execution using the same translations as the
 		// CPU MMU 
-		// unsigned constant_buffers_ptr = (regs.getEdi() + 15) & 0xFFFFFFF0;
 		// opencl_si_ndrange_setup_mmu(ndrange, driver->x86_cpu->mmu, 
 		// 	ctx->address_space_index, si_gpu->mmu, tables_ptr, 
 		// 	constant_buffers_ptr);
@@ -730,8 +732,7 @@ int OpenCLABINDRangePassMemObjsImpl(x86::Context *ctx)
 			kernel->SetupNDRangeConstantBuffers(ndrange); 
 		}
 	}
-	kernel->SetupNDRangeConstantBuffers(ndrange); 
-
+	kernel->SetupNDRangeConstantBuffers(ndrange);
 	kernel->SetupNDRangeArgs(ndrange);
 	kernel->DebugNDRangeState(ndrange);
 
@@ -739,32 +740,162 @@ int OpenCLABINDRangePassMemObjsImpl(x86::Context *ctx)
 	return 0;
 }
 
+/*
+ * OpenCL ABI call #19 - si_ndrange_set_fused
+ *
+ * @param unsigned int fused
+ *
+ *	Whether to enable or disable the fused device
+ *
+ * @return int
+ *
+ *	The function always returns 0.
+ */
+
 int OpenCLABINDRangeSetFusedImpl(x86::Context *ctx)
 {
+	Driver::OpenCLSIDriver *driver = Driver::OpenCLSIDriver::getInstance();
+	x86::Regs &regs = ctx->getRegs();
+
+	SI::Gpu *si_gpu = driver->getGpu();
+
+	driver->setFused((bool)regs.getEcx());
+
+	// With a fused device, the GPU MMU will be initialized by
+	// the CPU 
+	if (driver->isFused())
+	{
+		x86::Emu::opencl_debug << misc::fmt("\tfused\n");
+		assert(si_gpu);
+		// si_gpu->mmu->read_only = 1;
+	}
+	else
+	{
+		x86::Emu::opencl_debug << misc::fmt("\tnot fused\n");
+	}
+
 	// Return
 	return 0;
 }
+
+/*
+ * OpenCL ABI call #20 - si_ndrange_flush
+ *
+ * @param int ndrange-id
+ *
+ *	ID of ND-Range to flush
+ *
+ * @return int
+ *
+ *	The function always returns 0.
+ */
+
+// bool OpenCLABINDRangeFlushCanWakeup()
+// {
+// 	// FIXME, x86 suspend mechanism
+// 	return true;
+// }
+
+// int OpenCLABINDNDRangeFlushWakeup()
+// {
+// 	// FIXME, x86 suspend mechanism
+// 	return 0;
+// }
 
 int OpenCLABINDRangeFlushImpl(x86::Context *ctx)
 {
+	Driver::OpenCLSIDriver *driver = Driver::OpenCLSIDriver::getInstance();
+	x86::Regs &regs = ctx->getRegs();
+
+	SI::Gpu *si_gpu = driver->getGpu();
+
+	// If there's not a timing simulator, no need to flush 
+	if (!si_gpu)
+		return 0;
+
+	int ndrange_id = (int)regs.getEcx();
+
+	NDRange *ndrange = driver->getNDRangeById(ndrange_id);
+	if (!ndrange)
+		fatal("%s: invalid ndrange ID (%d)", __FUNCTION__, ndrange_id);
+
+	x86::Emu::opencl_debug << misc::fmt("\tndrange %d\n", ndrange->getId());
+
+	// Flush RW or WO buffers from this ND-Range 
+	SI::Kernel::FlushNDRangeBuffers(ndrange/*, si_gpu, x86_emu*/);
+
+	// X86ContextSuspend(ctx, opencl_abi_si_ndrange_flush_can_wakeup, 
+	// 	&(ndrange->flushing), opencl_abi_si_ndrange_flush_wakeup, 
+	// 	&(ndrange->flushing));
+
 	// Return
 	return 0;
 }
+
+/*
+ * OpenCL ABI call #21 - si_ndrange_free
+ *
+ * @param int ndrange-id
+ *
+ *	ID of ND-Range to free
+ *
+ * @return int
+ *
+ *	The function always returns 0.
+ */
 
 int OpenCLABINDRangeFreeImpl(x86::Context *ctx)
 {
+	Driver::OpenCLSIDriver *driver = Driver::OpenCLSIDriver::getInstance();
+	x86::Regs &regs = ctx->getRegs();
+
+	int ndrange_id = (int)regs.getEcx();
+
+	// Free 
+	driver->RemoveNDRangeById(ndrange_id);
+
 	// Return
 	return 0;
 }
+
+/*
+ * OpenCL ABI call #22 - ndrange_start
+ *
+ * Tell the driver that an nd-range (for any device) has
+ * started executing. 
+ *
+ * @return int
+ *
+ *	The function always returns 0.
+ */
 
 int OpenCLABINDRangeStartImpl(x86::Context *ctx)
 {
+	Driver::OpenCLSIDriver *driver = Driver::OpenCLSIDriver::getInstance();
+
+	driver->incNDRangeRunning()	;
+
 	// Return
 	return 0;
 }
 
+/*
+ * OpenCL ABI call #23 - ndrange_end
+ *
+ * Tell the driver that an nd-range (for any device) has
+ * finished executing. 
+ *
+ * @return int
+ *
+ *	The function always returns 0.
+ */
+
 int OpenCLABINDRangeEndImpl(x86::Context *ctx)
 {
+	Driver::OpenCLSIDriver *driver = Driver::OpenCLSIDriver::getInstance();
+
+	driver->decNDRangeRunning()	;
+	
 	// Return
 	return 0;
 }
