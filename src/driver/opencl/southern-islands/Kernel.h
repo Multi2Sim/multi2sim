@@ -85,6 +85,9 @@ public:
 	/// Get kernel binary
 	SI::Binary *getKernelBinary() const { return bin_file.get(); }
 
+	/// Get associated program
+	Program *getProgram() const { return program; }
+
 	/// Get reference of arguments list
 	std::vector<std::unique_ptr<SI::Arg>> &getArgs() { return args; }
 
@@ -103,6 +106,9 @@ public:
 	/// Get kernel id
 	int getId() const { return id; }
 
+	/// Get kernel name
+	std::string getName() const { return name; }
+
 	///
 	void SetupNDRangeConstantBuffers(NDRange *ndrange);
 
@@ -113,7 +119,7 @@ public:
 	void DebugNDRangeState(NDRange *ndrange);
 
 	/// FIXME
-	void FlushNDRangeBuffers(NDRange *ndrange /*SIGpu *gpu, X86Emu *x86_emu*/);
+	static void FlushNDRangeBuffers(NDRange *ndrange /*SIGpu *gpu, X86Emu *x86_emu*/);
 	void CreateNDRangeTables(NDRange *ndrange /* MMU *gpu_mmu */);
 	void CreateNDRangeConstantBuffers(NDRange *ndrange /*MMU *gpu_mmu*/);
 	void NDRangeSetupMMU(NDRange *ndrange);

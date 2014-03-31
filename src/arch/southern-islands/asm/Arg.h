@@ -106,7 +106,8 @@ public:
 	std::string getName() { return name; }
 	bool getConstArg() { return constarg; }
 	int getSize() const { return size; }
-	
+	bool isSet() const { return set; }
+
 	/* Setters */
 	void setName(const std::string &name) { this->name = name; }
 	void setConstArg(bool constarg) { this->constarg = constarg; }
@@ -168,7 +169,7 @@ public:
 	int getConstantBufferNum() { return constant_buffer_num; }
 	int getConstantOffset() { return constant_offset; }
 	int getBufferNum() { return buffer_num; }
-
+	unsigned int getDevicePtr() const { return device_ptr; }
 
 	/* Setters */
 	void setDevicePtr(unsigned int device_ptr) {
@@ -214,8 +215,12 @@ public:
 				constant_buffer_num(constant_buffer_num),
 				constant_offset(constant_offset) { }
 
+	/* Gtters */
 	ArgDataType getDataType() { return data_type; }
 	int getNumElems() { return num_elems; }
+	int getConstantBufferNum() const { return constant_buffer_num; }
+	int getConstantOffset() const { return constant_offset; }
+	void *getValuePtr() const { return value.get(); }
 
 	/* Setters */
 	void setDataType(ArgDataType data_type) { this->data_type = data_type; }

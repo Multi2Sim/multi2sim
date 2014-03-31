@@ -23,8 +23,11 @@
 #include <arch/southern-islands/emu/WorkGroup.h>
 #include <arch/southern-islands/emu/Wavefront.h>
 #include <arch/southern-islands/emu/WorkItem.h>
+#include <lib/cpp/Misc.h>
 
 #include "SI.h"
+
+using namespace misc;
 
 namespace Driver
 {
@@ -50,6 +53,20 @@ SI::NDRange *SICommon::getNDRangeById(int id)
 void SICommon::AddNDRange(std::unique_ptr<SI::NDRange> ndrange)
 {
 	ndranges.push_back(std::move(ndrange));
+}
+
+void SICommon::RemoveNDRangeById(int id)
+{
+	for( auto n_i = getNDRangeBegin(), n_e = getNDRangeEnd(); n_i != n_e; n_i++ )
+	{
+		if ((*n_i)->getId() == id)
+		{
+			ndranges.erase(n_i);
+			return;
+		}
+	}
+
+	fatal("%s: invalid ndrange ID (%d)", __FUNCTION__, id);
 }
 
 }  // namespace Driver
