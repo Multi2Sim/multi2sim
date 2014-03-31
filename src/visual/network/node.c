@@ -94,10 +94,16 @@ struct vi_net_node_t * vi_net_node_assign(struct vi_trace_line_t *trace_line)
 		node->src_buffer_list = hash_table_create(0, FALSE);
 		node->dst_buffer_list = hash_table_create(0, FALSE);
 	}
-	else
+	else if (node->type == vi_net_node_switch || node->type == vi_net_node_end)
 	{
 		node->input_buffer_list  = hash_table_create(0, FALSE);
 		node->output_buffer_list = hash_table_create(0, FALSE);
+	}
+	else if (node->type == vi_net_node_dummy || node->type == vi_net_node_invalid)
+	{
+                panic("%s: Unauthorized. Node is of kind dummy or invalid \n",
+                                __FUNCTION__);
+
 	}
 	hash_table_insert(net->node_table, node->name, node);
 	return node;

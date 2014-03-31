@@ -32,7 +32,8 @@ enum vi_net_node_kind
 	vi_net_node_end,
 	vi_net_node_switch,
 	vi_net_node_bus,
-	vi_net_node_photonic
+	vi_net_node_photonic,
+	vi_net_node_dummy
 };
 
 struct vi_net_bus_t
