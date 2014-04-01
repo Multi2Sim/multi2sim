@@ -33,7 +33,7 @@ struct opencl_union_device_t *opencl_union_device_create(
 	// job later.
 	*(parent) = *(struct opencl_device_t *)list_get(devices, 0); 
 	parent->max_work_group_size = 512;
-	parent->name = "Multi2Sim Union Device";
+	parent->name = "Multi2Sim Fused Device";
 	parent->type = CL_DEVICE_TYPE_ACCELERATOR;
 
 	parent->arch_device_free_func =

@@ -56,7 +56,7 @@ struct opencl_x86_device_exec_t
 };
 
 
-struct opencl_x86_device_work_item_data_t
+struct opencl_x86_device_work_item_t
 {
 	unsigned int work_group_data;  /* 0x60 (Not actually part of AMD runtime, padding_0) */
 	unsigned int barrier_func;  /* 0x5c (function *) */
@@ -71,7 +71,7 @@ struct opencl_x86_device_work_item_data_t
 
 struct opencl_x86_ndrange_t;
 
-struct opencl_x86_device_core_t
+struct opencl_x86_work_group_t
 {
 	const void *register_params; /* this is accessed in assembly - don't move it */
 	const void *kernel_fn; /* so is this - don't move it either */
@@ -92,7 +92,7 @@ struct opencl_x86_device_core_t
 
 	struct opencl_x86_device_fiber_t main_fiber;
 	struct opencl_x86_device_fiber_t work_fibers[X86_MAX_WORK_GROUP_SIZE];
-	struct opencl_x86_device_work_item_data_t *work_item_data[X86_MAX_WORK_GROUP_SIZE];
+	struct opencl_x86_device_work_item_t *work_item[X86_MAX_WORK_GROUP_SIZE];
 
 
 };
@@ -118,47 +118,79 @@ struct opencl_x86_device_t
 	/* Parent generic device object */
 	struct opencl_device_t *parent;
 
-	struct opencl_x86_device_sync_t cores_done;
+	struct opencl_x86_device_sync_t work_groups_done;
 	struct opencl_x86_device_sync_t work_ready;
-	int core_done_count;
+	int work_group_done_count;
 
 	int num_cores;
 	pthread_t *threads;
 
 	struct opencl_x86_device_exec_t *exec;
-	struct opencl_x86_device_core_t queue_core;
+	struct opencl_x86_work_group_t work_group;
 };
 
 
 
-struct opencl_x86_device_t *opencl_x86_device_create(struct opencl_device_t *parent);
-void opencl_x86_device_free(struct opencl_x86_device_t *device);
-int opencl_x86_device_preferred_workgroups(struct opencl_x86_device_t *device);
+struct opencl_x86_device_t *opencl_x86_device_create(
+	struct opencl_device_t *parent);
 
-void *opencl_x86_device_mem_alloc(struct opencl_x86_device_t *device,
-		unsigned int size);
-void opencl_x86_device_mem_free(struct opencl_x86_device_t *device,
-		void *ptr);
-void opencl_x86_device_mem_read(struct opencl_x86_device_t *device,
-		void *host_ptr, void *device_ptr, unsigned int size);
-void opencl_x86_device_mem_write(struct opencl_x86_device_t *device,
-		void *device_ptr, void *host_ptr, unsigned int size);
-void opencl_x86_device_mem_copy(struct opencl_x86_device_t *device,
-		void *device_dest_ptr, void *device_src_ptr,
-		unsigned int size);
+void opencl_x86_device_free(
+	struct opencl_x86_device_t *device);
+
+int opencl_x86_device_preferred_workgroups(
+	struct opencl_x86_device_t *device);
+
+void *opencl_x86_device_mem_alloc(
+	struct opencl_x86_device_t *device,
+	unsigned int size);
+
+void opencl_x86_device_mem_free(
+	struct opencl_x86_device_t *device,
+	void *ptr);
+
+void opencl_x86_device_mem_read(
+	struct opencl_x86_device_t *device,
+	void *host_ptr, 
+	void *device_ptr, 
+	unsigned int size);
+
+void opencl_x86_device_mem_write(
+	struct opencl_x86_device_t *device,
+	void *device_ptr, 
+	void *host_ptr, 
+	unsigned int size);
+
+void opencl_x86_device_mem_copy(
+	struct opencl_x86_device_t *device,
+	void *device_dest_ptr, 
+	void *device_src_ptr, 
+	unsigned int size);
+
 void opencl_x86_device_switch_fiber(
-		volatile struct opencl_x86_device_fiber_t *current,
-		volatile struct opencl_x86_device_fiber_t *dest);
+	volatile struct opencl_x86_device_fiber_t *current,
+	volatile struct opencl_x86_device_fiber_t *dest);
+
 void opencl_x86_device_exit_fiber(void);
+
 void opencl_x86_device_barrier(int data);
 
-void *opencl_x86_device_core_func(struct opencl_x86_device_t *device);
+void *opencl_x86_device_core_func(
+	struct opencl_x86_device_t *device);
 
 void opencl_x86_work_item_entry_point(void);
 
-void opencl_x86_device_init_work_item(int i, struct opencl_x86_device_core_t *core);
+void opencl_x86_device_init_work_item(
+	int i, 
+	struct opencl_x86_work_group_t *work_group);
+
 void opencl_x86_device_run_exec(
-	struct opencl_x86_device_core_t *core,
+	struct opencl_x86_work_group_t *work_group,
 	struct opencl_x86_device_exec_t *exec);
+
+void opencl_x86_device_work_group_init(
+	struct opencl_x86_work_group_t *work_group);
+
+void opencl_x86_device_work_group_done(
+	struct opencl_x86_work_group_t *work_group);
 
 #endif

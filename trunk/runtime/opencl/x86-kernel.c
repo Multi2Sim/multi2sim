@@ -35,6 +35,8 @@
 
 #define MEMORY_ALIGN 16
 
+const int OPENCL_WORK_GROUP_STACK_ALIGN=16;
+
 /*
  * Private Functions
  */
@@ -302,20 +304,23 @@ int opencl_x86_kernel_set_arg(struct opencl_x86_kernel_t *kernel,
 		kernel->cur_stack_params[param_info->stack_offset] = arg_size;
 	}
 	else if (param_info->mem_arg_type == OPENCL_X86_KERNEL_MEM_ARG_GLOBAL
-			|| param_info->mem_arg_type == OPENCL_X86_KERNEL_MEM_ARG_CONSTANT)
+		|| param_info->mem_arg_type == OPENCL_X86_KERNEL_MEM_ARG_CONSTANT)
 	{
 		void *addr = opencl_mem_get_buffer(*(cl_mem *) arg_value);
 		if (!addr)
 			return CL_INVALID_MEM_OBJECT;
-		memcpy(kernel->cur_stack_params + param_info->stack_offset, &addr, sizeof addr);
+		memcpy(kernel->cur_stack_params + param_info->stack_offset, 
+			&addr, sizeof addr);
 	}
 	else if (param_info->is_stack)
 	{
-		memcpy(kernel->cur_stack_params + param_info->stack_offset, arg_value, arg_size);
+		memcpy(kernel->cur_stack_params + param_info->stack_offset, 
+			arg_value, arg_size);
 	}
 	else
 	{
-		memcpy(kernel->cur_register_params + param_info->reg_offset, arg_value, arg_size);
+		memcpy(kernel->cur_register_params + param_info->reg_offset, 
+			arg_value, arg_size);
 	}
 
 	/* Label argument as set */
@@ -414,6 +419,61 @@ struct opencl_x86_ndrange_t *opencl_x86_ndrange_create(
 	return arch_ndrange;
 }
 
+
+/*
+ * One-time initialization of work-group data for an nd-range
+ */
+void opencl_x86_kernel_work_group_init(
+	struct opencl_x86_work_group_t *work_group,
+	struct opencl_x86_device_exec_t *e)
+{
+	int i;
+	struct opencl_x86_ndrange_t *nd = e->ndrange;
+
+
+	work_group->num_items = 1;
+	for (i = 0; i < nd->work_dim; i++)
+		work_group->num_items *= e->ndrange->local_work_size[i];
+
+	work_group->register_params = nd->register_params;
+	work_group->kernel_fn = nd->arch_kernel->func;
+
+	if (e->kernel->local_reserved_bytes)
+	{
+		work_group->local_reserved = xmalloc(
+			e->kernel->local_reserved_bytes);
+	}
+	else
+	{
+		work_group->local_reserved = NULL;
+	}
+
+	/* Set up params with local memory pointers separate from those 
+	 * of other threads */
+	work_group->stack_params = (size_t *) xmalloc(
+		sizeof (size_t) * e->kernel->stack_param_words);
+	memcpy(work_group->stack_params, e->ndrange->stack_params, 
+		sizeof (size_t) * e->kernel->stack_param_words);
+	for (i = 0; i < e->kernel->num_params; i++)
+	{
+		if (e->kernel->param_info[i].mem_arg_type == 
+			OPENCL_X86_KERNEL_MEM_ARG_LOCAL)
+		{
+			int offset = e->kernel->param_info[i].stack_offset;
+			if (posix_memalign((void **) (work_group->stack_params +
+				offset), OPENCL_WORK_GROUP_STACK_ALIGN, 
+				e->ndrange->stack_params[offset]))
+			{
+				fatal("%s: out of memory", __FUNCTION__);
+			}
+			mhandle_register_ptr(*(void **) (
+				work_group->stack_params + offset),
+				e->ndrange->stack_params[offset]);
+		}
+	}
+}
+
+
 /* Initialize an ND-Range */
 void opencl_x86_ndrange_init(struct opencl_x86_ndrange_t *ndrange)
 {
@@ -437,14 +497,63 @@ void opencl_x86_ndrange_init(struct opencl_x86_ndrange_t *ndrange)
 	exec->ndrange = ndrange;
 	exec->kernel = ndrange->arch_kernel;
 	ndrange->exec = exec;
+
+	/* Initialize the static work-group data for this kernel
+	 * for the main x86 thread (the worker threads initialize
+	 * their structures in opencl_x86_device_run_func). */
+	opencl_x86_kernel_work_group_init(&device->work_group, exec);
 }
 
+
+/* 
+ * Release resources required by the work-group 
+ */
+void opencl_x86_kernel_work_group_done(
+	struct opencl_x86_work_group_t *work_group,
+	struct opencl_x86_kernel_t *kernel)
+{
+	int i;
+	int offset;
+
+	for (i = 0; i < kernel->num_params; i++)
+	{
+		if (kernel->param_info[i].mem_arg_type == 
+			OPENCL_X86_KERNEL_MEM_ARG_LOCAL)
+		{
+			offset = kernel->param_info[i].stack_offset;
+			free((void *) work_group->stack_params[offset]);
+		}
+	}
+	free(work_group->stack_params);
+	if (work_group->local_reserved)
+		free(work_group->local_reserved);
+}
+
+/* 
+ * Release resources required by the nd-range
+ */
 void opencl_x86_ndrange_finish(struct opencl_x86_ndrange_t *ndrange)
 {
+	struct opencl_x86_device_t *device = ndrange->arch_kernel->device;
+	struct opencl_x86_device_exec_t *exec = ndrange->exec;
 
+	ndrange->done = 1;
+
+	device->exec = exec;
+	opencl_x86_device_sync_post(&device->work_ready);
+	opencl_x86_device_run_exec(&device->work_group, exec);
+	device->work_group_done_count += device->num_cores - 1;
+	opencl_x86_device_sync_wait(&device->work_groups_done, 
+		device->work_group_done_count);
+
+	/* Release the work group resources */
+	opencl_x86_kernel_work_group_done(&device->work_group, 
+		ndrange->arch_kernel);
 }
 
-/* Finalize an ND-Range */
+/* 
+ * Finalize an ND-Range 
+ * */
 void opencl_x86_ndrange_free(struct opencl_x86_ndrange_t *ndrange)
 {
 	opencl_debug("[%s] freeing x86 ndrange", __FUNCTION__);
@@ -460,8 +569,8 @@ void opencl_x86_ndrange_run_partial(struct opencl_x86_ndrange_t *ndrange,
 	struct opencl_x86_device_exec_t *exec = ndrange->exec;
 	struct opencl_x86_device_t *device = ndrange->arch_kernel->device;
 
-	/*
 	opencl_debug("[%s] running x86 partial ndrange", __FUNCTION__);
+	/*
 	opencl_debug("[%s] x86 scheduling thread has tid %ld", 
 		__FUNCTION__, syscall(SYS_gettid));
 	opencl_debug("[%s] group start = %u, group count = %u", __FUNCTION__,
@@ -474,9 +583,12 @@ void opencl_x86_ndrange_run_partial(struct opencl_x86_ndrange_t *ndrange,
 
 	device->exec = exec;
 	opencl_x86_device_sync_post(&device->work_ready);
-	opencl_x86_device_run_exec(&device->queue_core, exec);
-	device->core_done_count += device->num_cores - 1;
-	opencl_x86_device_sync_wait(&device->cores_done, device->core_done_count);
+	opencl_x86_device_run_exec(&device->work_group, exec);
+	device->work_group_done_count += device->num_cores - 1;
+	opencl_x86_device_sync_wait(&device->work_groups_done, 
+		device->work_group_done_count);
+
+	ndrange->scheduling_pass++;
 }
 
 /* Run an ND-Range */
@@ -522,11 +634,6 @@ void opencl_x86_ndrange_run(struct opencl_x86_ndrange_t *ndrange,
 	/* Execute the nd-range */
 	opencl_x86_ndrange_run_partial(ndrange, 0, ndrange->total_num_groups);
 
-	/* TODO Finish is currently not used.  If we enable non-coherent
-	 * stores for OpenCL running on x86, we will need to add a flush
-	 * command here */
-	/* opencl_x86_ndrange_finish(ndrange); */
-
 	/* Record end time */
 	if (event)
 	{
@@ -542,6 +649,8 @@ void opencl_x86_ndrange_run(struct opencl_x86_ndrange_t *ndrange,
 		cltime += (cl_ulong)end.tv_nsec;
 		event->time_end = cltime;
 	}
+
+	opencl_x86_ndrange_finish(ndrange);
 
 	if (!opencl_native_mode)
 	{
@@ -559,6 +668,28 @@ void opencl_x86_ndrange_run(struct opencl_x86_ndrange_t *ndrange,
 
 /* convert a linear address into an n-dimensional address */
 void opencl_nd_address(int linear_id, const unsigned int *dims, 
+	unsigned int *id)
+{
+	if (dims[2] == 1)
+	{
+		id[2] = 0;
+		id[1] = linear_id/dims[0];
+		id[0] = linear_id - (id[1]*dims[0]);
+	}
+	else
+	{
+		unsigned int items_per_slice = (dims[1]*dims[0]);
+		id[2] = linear_id/items_per_slice;
+		unsigned int tmp = linear_id - (id[2]*items_per_slice);
+		id[1] = tmp/dims[0];
+		id[0] = tmp - (id[1]*dims[0]);
+	}
+
+	return;
+}
+
+/* convert a linear address into an n-dimensional address */
+void opencl_nd_address_old(int linear_id, const unsigned int *dims, 
 	unsigned int *id)
 {
 	id[2] = linear_id / (dims[1] * dims[0]);

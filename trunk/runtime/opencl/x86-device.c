@@ -20,7 +20,6 @@
 #include <assert.h>
 #include <limits.h>
 #include <pthread.h>
-#include <sys/syscall.h>  /////////////
 
 #include "debug.h"
 #include "device.h"
@@ -30,6 +29,10 @@
 #include "x86-kernel.h"
 #include "x86-program.h"
 
+#define OPENCL_WORK_GROUP_STACK_SIZE 0x00002000 
+#define OPENCL_WORK_GROUP_STACK_MASK 0xffffe000 
+#define OPENCL_WORK_GROUP_DATA_OFFSET -0x60 
+
 
 /*
  * Private Functions
@@ -38,15 +41,10 @@
 #define XSTR(s) STR(s)
 #define STR(s) #s
 
-#define OPENCL_WORK_GROUP_STACK_ALIGN  16
-#define OPENCL_WORK_GROUP_STACK_SIZE  0x00002000
-#define OPENCL_WORK_GROUP_STACK_MASK  0xffffe000
-#define OPENCL_WORK_GROUP_DATA_OFFSET  -0x60
-
-static struct opencl_x86_device_core_t
-		*opencl_x86_device_get_work_group_data(void)
+static struct opencl_x86_work_group_t *opencl_x86_device_get_work_group_data(
+	void)
 {
-	struct opencl_x86_device_core_t *data;
+	struct opencl_x86_work_group_t *data;
 
 	asm volatile (
 		"lea " XSTR(OPENCL_WORK_GROUP_STACK_SIZE) "(%%esp), %%eax\n\t"
@@ -64,7 +62,7 @@ static struct opencl_x86_device_core_t
 /* Check to see whether the device has been assigned work. Assume that the
  * calling thread owns 'device->lock'. */
 static struct opencl_x86_device_exec_t *opencl_x86_device_has_work(
-		struct opencl_x86_device_t *device, int *old_count)
+	struct opencl_x86_device_t *device, int *old_count)
 {
 	(*old_count)++;
 
@@ -119,34 +117,37 @@ static int opencl_x86_device_get_num_cores(void)
  * Public Functions
  */
 
-void opencl_x86_device_reinit_work_item(struct opencl_x86_device_core_t *core)
+void opencl_x86_device_reinit_work_item(
+	struct opencl_x86_work_group_t *work_group)
 {
-	struct opencl_x86_device_work_item_data_t *work_item_data = core->work_item_data[0];
-	struct opencl_x86_device_fiber_t *fiber = core->work_fibers;
-	size_t size = core->nd->arch_kernel->stack_param_words * sizeof (size_t);
-	char *stack_top = (char *)fiber->stack_bottom + fiber->stack_size - size;
+	struct opencl_x86_device_work_item_t *work_item = 
+		work_group->work_item[0];
+	struct opencl_x86_device_fiber_t *fiber = work_group->work_fibers;
+	size_t size = work_group->nd->arch_kernel->stack_param_words * 
+		sizeof (size_t);
+	char *stack_top = (char *)fiber->stack_bottom + fiber->stack_size - 
+		size;
 
 	/* Compute the local ID of the work item */
-	opencl_nd_address(core->current_item, core->nd->local_work_size, 
-		work_item_data->global_id);
+	opencl_nd_address(work_group->current_item, 
+		work_group->nd->local_work_size, 
+		work_item->global_id);
 
-	/* Add the offsets for the current group to get the global ID
-	 * for the work item */
-	work_item_data->global_id[0] += core->group_global[0];
-	work_item_data->global_id[1] += core->group_global[1];
-	work_item_data->global_id[2] += core->group_global[2];
+	/* Add the group offset to get the global ID for the work-item */
+	work_item->global_id[0] += work_group->group_global[0];
+	work_item->global_id[1] += work_group->group_global[1];
+	work_item->global_id[2] += work_group->group_global[2];
 
-	memcpy(stack_top, core->stack_params, size);
+	memcpy(stack_top, work_group->stack_params, size);
 	fiber->eip = opencl_x86_work_item_entry_point;
 	fiber->esp = stack_top - sizeof (size_t);
 	*(size_t *)fiber->esp = (size_t)opencl_x86_device_exit_fiber;
 }
 
 
-
 void opencl_x86_device_exit_fiber(void)
 {
-	struct opencl_x86_device_core_t *workgroup_data;
+	struct opencl_x86_work_group_t *workgroup_data;
 
 	void *new_esp;
 	void *new_eip;
@@ -154,14 +155,15 @@ void opencl_x86_device_exit_fiber(void)
 	workgroup_data = opencl_x86_device_get_work_group_data();
 	workgroup_data->num_done++;
 
-	/* exit to the main fiber.  This work-group is done */
+	/* Exit to the main fiber.  This work-group is done */
 	if (workgroup_data->num_done == workgroup_data->num_items)
 	{
 		new_esp = workgroup_data->main_fiber.esp;
 		new_eip = workgroup_data->main_fiber.eip;
 	}
-	/* this work-group has barriers and therefore, one stack per work-item.
-	   switch to the next work-item's stack and initialize it if it is new */
+	/* This work-group has barriers and therefore requires one stack per 
+	 * work-item.  Switch to the next work-item's stack and initialize 
+	 * it if it is new */
 	else if (workgroup_data->hit_barrier)
 	{
 		int i = workgroup_data->current_item + 1;
@@ -176,7 +178,8 @@ void opencl_x86_device_exit_fiber(void)
 		new_esp = resume_fiber->esp;
 		new_eip = resume_fiber->eip;
 	}
-	/* this work-group doesn't have barriers.  re-use the current work-item */
+	/* This work-group doesn't have barriers, so we can re-use the 
+	 * stack from the current work-item. */
 	else
 	{
 		workgroup_data->current_item++;
@@ -197,22 +200,22 @@ void opencl_x86_device_exit_fiber(void)
 void opencl_x86_device_barrier(int data)
 {
 	int i;
-	struct opencl_x86_device_core_t *workgroup_data;
+	struct opencl_x86_work_group_t *work_group;
 	struct opencl_x86_device_fiber_t *sleep_fiber;
 	struct opencl_x86_device_fiber_t *resume_fiber;
 
-	workgroup_data = opencl_x86_device_get_work_group_data();
-	workgroup_data->hit_barrier = 1;
-	i = workgroup_data->current_item;
+	work_group = opencl_x86_device_get_work_group_data();
+	work_group->hit_barrier = 1;
+	i = work_group->current_item;
 
-	sleep_fiber = workgroup_data->work_fibers + i;
-	i = (i + 1) % workgroup_data->num_items;
+	sleep_fiber = work_group->work_fibers + i;
+	i = (i + 1) % work_group->num_items;
 
-	workgroup_data->current_item = i;
-	resume_fiber = workgroup_data->work_fibers + i;
+	work_group->current_item = i;
+	resume_fiber = work_group->work_fibers + i;
 	
-	if (workgroup_data->num_started++ == i)
-		opencl_x86_device_init_work_item(i, workgroup_data);
+	if (work_group->num_started++ == i)
+		opencl_x86_device_init_work_item(i, work_group);
 
 	opencl_x86_device_switch_fiber(sleep_fiber, resume_fiber);
 }
@@ -221,86 +224,53 @@ void opencl_x86_device_barrier(int data)
 /* We need a variable holding the address of the barrier function. The address
  * of this variable is kept in the work-item data structure. */
 typedef void (*opencl_x86_device_barrier_func_t)(int user_data);
-static opencl_x86_device_barrier_func_t opencl_x86_device_barrier_func
-		= opencl_x86_device_barrier;
+static opencl_x86_device_barrier_func_t opencl_x86_device_barrier_func = 
+	opencl_x86_device_barrier;
 
 
-void opencl_x86_device_init_work_item(int i, struct opencl_x86_device_core_t *core)
+void opencl_x86_device_init_work_item(int i, 
+	struct opencl_x86_work_group_t *work_group)
 {
-	struct opencl_x86_device_work_item_data_t *work_item_data = core->work_item_data[i];
-	struct opencl_x86_ndrange_t *nd = core->nd;
+	struct opencl_x86_device_work_item_t *work_item = 
+		work_group->work_item[i];
+	struct opencl_x86_ndrange_t *nd = work_group->nd;
 	size_t arg_size =  nd->arch_kernel->stack_param_words * sizeof (size_t);
-	struct opencl_x86_device_fiber_t *fiber = core->work_fibers + i;
-	char *stack_top = (char *)fiber->stack_bottom + fiber->stack_size - arg_size;
+	struct opencl_x86_device_fiber_t *fiber = work_group->work_fibers + i;
+	char *stack_top = (char *)fiber->stack_bottom + fiber->stack_size - 
+		arg_size;
 
-	work_item_data->local_reserved = (int) core->local_reserved;
-	work_item_data->work_dim = nd->work_dim;
+	work_item->local_reserved = (unsigned int) work_group->local_reserved;
+	work_item->work_dim = nd->work_dim;
 	
-	work_item_data->group_global[0] = core->group_global[0];
-	work_item_data->group_global[1] = core->group_global[1];
-	work_item_data->group_global[2] = core->group_global[2];
+	work_item->group_global[0] = work_group->group_global[0];
+	work_item->group_global[1] = work_group->group_global[1];
+	work_item->group_global[2] = work_group->group_global[2];
 
-	work_item_data->global_size[0] = nd->global_work_size[0];
-	work_item_data->global_size[1] = nd->global_work_size[1];
-	work_item_data->global_size[2] = nd->global_work_size[2];
+	work_item->global_size[0] = nd->global_work_size[0];
+	work_item->global_size[1] = nd->global_work_size[1];
+	work_item->global_size[2] = nd->global_work_size[2];
 
-	work_item_data->local_size[0] = nd->local_work_size[0];
-	work_item_data->local_size[1] = nd->local_work_size[1];
-	work_item_data->local_size[2] = nd->local_work_size[2];
+	work_item->local_size[0] = nd->local_work_size[0];
+	work_item->local_size[1] = nd->local_work_size[1];
+	work_item->local_size[2] = nd->local_work_size[2];
 
-	work_item_data->group_id[0] = core->group_id[0];
-	work_item_data->group_id[1] = core->group_id[1];
-	work_item_data->group_id[2] = core->group_id[2];
+	work_item->group_id[0] = work_group->group_id[0];
+	work_item->group_id[1] = work_group->group_id[1];
+	work_item->group_id[2] = work_group->group_id[2];
 
 	/* Compute the local ID for the work-item */
-	opencl_nd_address(i, nd->local_work_size, work_item_data->global_id);
+	opencl_nd_address(i, nd->local_work_size, work_item->global_id);
 
 	/* Add the group offset to get the global ID for the work-item */
-	work_item_data->global_id[0] += core->group_global[0];
-	work_item_data->global_id[1] += core->group_global[1];
-	work_item_data->global_id[2] += core->group_global[2];
+	work_item->global_id[0] += work_group->group_global[0];
+	work_item->global_id[1] += work_group->group_global[1];
+	work_item->global_id[2] += work_group->group_global[2];
 
-	memcpy(stack_top, core->stack_params, arg_size);
+	memcpy(stack_top, work_group->stack_params, arg_size);
 	fiber->eip = opencl_x86_work_item_entry_point;
 	fiber->esp = stack_top - sizeof (size_t);
 	*(size_t *) fiber->esp = (size_t) opencl_x86_device_exit_fiber;
 } 
-
-
-void opencl_x86_device_work_group_init(
-	struct opencl_x86_device_core_t *work_group,
-	struct opencl_x86_device_exec_t *e)
-{
-	int i;
-	struct opencl_x86_ndrange_t *nd = e->ndrange;
-
-
-	work_group->num_items = 1;
-	for (i = 0; i < nd->work_dim; i++)
-		work_group->num_items *= e->ndrange->local_work_size[i];
-
-	work_group->register_params = nd->register_params;
-	work_group->kernel_fn = nd->arch_kernel->func;
-
-	if (e->kernel->local_reserved_bytes)
-		work_group->local_reserved = xmalloc(e->kernel->local_reserved_bytes);
-	else
-		work_group->local_reserved = NULL;
-
-	/* set up params with local memory pointers sperate from those of other threads */
-	work_group->stack_params = (size_t *) xmalloc(sizeof (size_t) * e->kernel->stack_param_words);
-	memcpy(work_group->stack_params, e->ndrange->stack_params, sizeof (size_t) * e->kernel->stack_param_words);
-	for (i = 0; i < e->kernel->num_params; i++)
-		if (e->kernel->param_info[i].mem_arg_type == OPENCL_X86_KERNEL_MEM_ARG_LOCAL)
-		{
-			int offset = e->kernel->param_info[i].stack_offset;
-			if (posix_memalign((void **) (work_group->stack_params + offset),
-					OPENCL_WORK_GROUP_STACK_ALIGN, e->ndrange->stack_params[offset]))
-				fatal("%s: out of memory", __FUNCTION__);
-			mhandle_register_ptr(*(void **) (work_group->stack_params + offset),
-					e->ndrange->stack_params[offset]);
-		}
-}
 
 
 /* Blocking call to execute a work-group.
@@ -308,100 +278,101 @@ void opencl_x86_device_work_group_init(
 void opencl_x86_device_work_group_launch(
 	int work_group_num,
 	struct opencl_x86_device_exec_t *exec,
-	struct opencl_x86_device_core_t *core)
+	struct opencl_x86_work_group_t *work_group)
 {
 	struct opencl_x86_ndrange_t *ndrange = exec->ndrange;
 
 	/* Compute the work-groups ID */
-	opencl_nd_address(work_group_num, ndrange->num_groups, core->group_id);
-	for (int i = 0; i < 3; i++)
-		core->group_global[i] = core->group_id[i];
+	opencl_nd_address(work_group_num, ndrange->num_groups, 
+		work_group->group_id);
+	work_group->group_global[0] = 
+		work_group->group_id[0] * ndrange->local_work_size[0];
+	work_group->group_global[1] = 
+		work_group->group_id[1] * ndrange->local_work_size[1];
+	work_group->group_global[2] = 
+		work_group->group_id[2] * ndrange->local_work_size[2];
 
+	/*
 	opencl_debug("[%s] running group %d (%d,%d,%d)", __FUNCTION__,
-		work_group_num, core->group_id[0], core->group_id[1], 
-		core->group_id[2]);
+		work_group_num, work_group->group_id[0], 
+		work_group->group_id[1], work_group->group_id[2]);
+		*/
 	
-	assert(core->num_items > 0);
+	assert(work_group->num_items > 0);
 
-	core->num_started = 1;
-	core->num_done = 0;
-	core->current_item = 0;
-	core->nd = ndrange;
-	core->hit_barrier = 0;
+	work_group->num_started = 1;
+	work_group->num_done = 0;
+	work_group->current_item = 0;
+	work_group->nd = ndrange;
+	work_group->hit_barrier = 0;
 
-	opencl_x86_device_init_work_item(0, core);
-	opencl_x86_device_switch_fiber(&core->main_fiber, core->work_fibers);
+	opencl_x86_device_init_work_item(0, work_group);
+
+	opencl_x86_device_switch_fiber(&work_group->main_fiber, 
+		work_group->work_fibers);
 }
 
 
-void opencl_x86_device_work_group_done(
-		struct opencl_x86_device_core_t *core,
-		struct opencl_x86_kernel_t *kernel)
+/* 
+ * This function initializes work-items once per lifetime of the x86
+ * worker thread.  The same structure will be used to run work-items
+ * from multiple kernels. 
+ */
+void opencl_x86_device_work_group_init(
+	struct opencl_x86_work_group_t *work_group)
 {
-	int i;
-	int offset;
-
-	for (i = 0; i < kernel->num_params; i++)
-	{
-		if (kernel->param_info[i].mem_arg_type == OPENCL_X86_KERNEL_MEM_ARG_LOCAL)
-		{
-			offset = kernel->param_info[i].stack_offset;
-			free((void *) core->stack_params[offset]);
-		}
-	}
-	free(core->stack_params);
-	if (core->local_reserved)
-		free(core->local_reserved);
-}
-
-void opencl_x86_device_core_init(struct opencl_x86_device_core_t *work_group)
-{
+	/* Allocate stacks for the work-items */
 	if (posix_memalign((void **) &work_group->aligned_stacks,
 			OPENCL_WORK_GROUP_STACK_SIZE,
 			OPENCL_WORK_GROUP_STACK_SIZE * X86_MAX_WORK_GROUP_SIZE))
+	{
 		fatal("%s: aligned memory allocation failure", __FUNCTION__);
+	}
 	mhandle_register_ptr(work_group->aligned_stacks,
 		OPENCL_WORK_GROUP_STACK_SIZE * X86_MAX_WORK_GROUP_SIZE);
 
-
+	/* Initialize work-item structures */
 	for (int i = 0; i < X86_MAX_WORK_GROUP_SIZE; i++)
 	{
 		struct opencl_x86_device_fiber_t *fiber;
-		struct opencl_x86_device_work_item_data_t *work_item_data;
+		struct opencl_x86_device_work_item_t *work_item;
 
-		/* properly initialize the stack and work_group */
 		fiber = work_group->work_fibers + i;
-		fiber->stack_bottom = work_group->aligned_stacks
-			+ (i * OPENCL_WORK_GROUP_STACK_SIZE);
-		fiber->stack_size = OPENCL_WORK_GROUP_STACK_SIZE
-			- sizeof(struct opencl_x86_device_work_item_data_t);
+		fiber->stack_bottom = work_group->aligned_stacks + 
+			(i * OPENCL_WORK_GROUP_STACK_SIZE);
+		fiber->stack_size = OPENCL_WORK_GROUP_STACK_SIZE - 
+			sizeof(struct opencl_x86_device_work_item_t);
 		
-		work_item_data = (struct opencl_x86_device_work_item_data_t *)
+		work_item = (struct opencl_x86_device_work_item_t *)
 			((char *) fiber->stack_bottom + fiber->stack_size);
 
-		work_item_data->work_group_data = (int) work_group;
-		work_item_data->barrier_func = (int) &opencl_x86_device_barrier_func;
+		work_item->work_group_data = (int) work_group;
+		work_item->barrier_func = 
+			(int) &opencl_x86_device_barrier_func;
 
-		work_group->work_item_data[i] = work_item_data;
+		work_group->work_item[i] = work_item;
 	}
-
 }
 
-void opencl_x86_device_core_treardown(struct opencl_x86_device_core_t *work_group_data)
+
+/*
+ * This function is called to clean up the work-group data that exists
+ */
+void opencl_x86_device_work_group_done(
+	struct opencl_x86_work_group_t *work_group)
 {
-	free(work_group_data->aligned_stacks);
+	free(work_group->aligned_stacks);
 }
 
 
+/*
+ * This function executes all the work-groups passed to
+ * opencl_x86_run_ndrange_partial.
+ */
 void opencl_x86_device_run_exec(
-	struct opencl_x86_device_core_t *core,
+	struct opencl_x86_work_group_t *work_group,
 	struct opencl_x86_device_exec_t *exec)
 {
-	/* Initialize kernel data */
-	opencl_x86_device_work_group_init(core, exec);
-
-	cl_ulong cltime;
-
 	/* Launch work-groups */
 	for (;;)
 	{
@@ -409,35 +380,18 @@ void opencl_x86_device_run_exec(
 		int num = opencl_x86_device_get_next_work_group(exec);
 		/*
 		opencl_debug("[%s] thread %ld num = %d count = %d", 
-			__FUNCTION__, syscall(SYS_gettid), num, exec->work_group_count);
+			__FUNCTION__, syscall(SYS_gettid), num, 
+			exec->work_group_count);
 		*/
+
+		/* If the work-group ID has become higher than the highest
+		 * ID that we're supposed to execute, then stop executing */
 		if (num >= (exec->work_group_start + exec->work_group_count))
 			break;
 
-		/////////////////////// DEBUG
-		struct timespec tmp;
-		clock_gettime(CLOCK_MONOTONIC, &tmp);
-		cltime = (cl_ulong)tmp.tv_sec;
-		cltime *= 1000000000;
-		cltime += (cl_ulong)tmp.tv_nsec;
-		opencl_debug("[%s] thread %ld wg %d start = %lld", 
-			__FUNCTION__, syscall(SYS_gettid), num, cltime);
-
-		/* Launch it */
-		opencl_x86_device_work_group_launch(num, exec, core);
-
-		/////////////////////// DEBUG
-		clock_gettime(CLOCK_MONOTONIC, &tmp);
-		cltime = (cl_ulong)tmp.tv_sec;
-		cltime *= 1000000000;
-		cltime += (cl_ulong)tmp.tv_nsec;
-		opencl_debug("[%s] thread %ld wg %d end = %lld", 
-			__FUNCTION__, syscall(SYS_gettid), num, cltime);
-
+		/* Launch the work-group */
+		opencl_x86_device_work_group_launch(num, exec, work_group);
 	}
-
-	/* Finalize kernel */
-	opencl_x86_device_work_group_done(core, exec->kernel);
 }
 
 /* Each core on every device has a thread that runs this procedure
@@ -445,7 +399,7 @@ void opencl_x86_device_run_exec(
 void *opencl_x86_device_core_func(struct opencl_x86_device_t *device)
 {
 	struct opencl_x86_device_exec_t *exec;
-	struct opencl_x86_device_core_t core;
+	struct opencl_x86_work_group_t work_group;
 	int count = 0;
 
 	/* OpenCL programs often use a busy-wait on the CPU during 
@@ -467,22 +421,55 @@ void *opencl_x86_device_core_func(struct opencl_x86_device_t *device)
 			&sched_param_new);
 	}
 
-	opencl_x86_device_core_init(&core);
+	/* Initialize the work-group for the x86 worker threads.  This is only
+	 * called once for the entire lifetime of a thread, even if it is
+	 * used to execute work-groups from multiple kernels. */
+	opencl_x86_device_work_group_init(&work_group);
 
 	/* Get kernels until done */
 	for (;;)
 	{
-		/* Get one more kernel */
+		/* Wait here until the main x86 thread tells us that
+		 * there is work to be done */
 		exec = opencl_x86_device_has_work(device, &count);
 		if (!exec)
+		{
+			/* If exec is NULL, then we are completely done
+			 * executing kernels and have begun to tear down
+			 * the x86 threads */
 			break;
+		}
+	
+		if (exec->ndrange->done)
+		{
+			/* If this nd-range is done, free up the kernel-specific
+			 * resources */
+			opencl_x86_kernel_work_group_done(&work_group, 
+				exec->kernel);
+		}
+		else
+		{
+			/* If this is the first time executing work-groups for
+			 * this nd-range, allocate kernel-specific structures */
+			if (!exec->ndrange->scheduling_pass)
+			{
+				opencl_x86_kernel_work_group_init(&work_group,
+					exec);
+			}
 
-		/* Execute the kernel */
-		opencl_x86_device_run_exec(&core, exec);
-
-		opencl_x86_device_sync_post(&device->cores_done);
+			/* Execute the kernel */
+			opencl_x86_device_run_exec(&work_group, exec);
+		}
+		
+		/* Tell the other threads that we're done */
+		opencl_x86_device_sync_post(&device->work_groups_done);
 	}
-	opencl_x86_device_core_treardown(&core);
+
+	opencl_debug("[%s] RELEASING WORK GROUP", __FUNCTION__);
+
+	/* Free the resources allocated by the worker thread for a 
+	 * work-group. */
+	opencl_x86_device_work_group_done(&work_group);
 
 	return NULL;
 }
@@ -543,9 +530,9 @@ struct opencl_x86_device_t *opencl_x86_device_create(
 	device->parent = parent;
 	device->num_cores = opencl_x86_device_get_num_cores();
 	opencl_x86_device_sync_init(&device->work_ready);
-	opencl_x86_device_sync_init(&device->cores_done);
+	opencl_x86_device_sync_init(&device->work_groups_done);
 	device->exec = NULL;
-	device->core_done_count = 0;
+	device->work_group_done_count = 0;
 
 	/* Initialize parent device */
 	parent->address_bits = 8 * sizeof (void *);
@@ -701,7 +688,11 @@ struct opencl_x86_device_t *opencl_x86_device_create(
 		pthread_setaffinity_np(device->threads[i], sizeof cpu_set, 
 			&cpu_set);
 	}
-	opencl_x86_device_core_init(&device->queue_core);
+
+	/* Initialize the work-group for the main x86 thread.  This is only
+	 * called once for the entire lifetime of the thread, even if it is
+	 * used to execute work-groups from multiple kernels. */
+	opencl_x86_device_work_group_init(&device->work_group);
 
 	opencl_debug("[%s] opencl_x86_device_t device = %p", __FUNCTION__, 
 		device);
@@ -715,7 +706,7 @@ struct opencl_x86_device_t *opencl_x86_device_create(
 void opencl_x86_device_free(struct opencl_x86_device_t *device)
 {
 	opencl_x86_device_sync_destroy(&device->work_ready);
-	opencl_x86_device_sync_destroy(&device->cores_done);
+	opencl_x86_device_sync_destroy(&device->work_groups_done);
 	free(device->threads);
 	free(device);
 }

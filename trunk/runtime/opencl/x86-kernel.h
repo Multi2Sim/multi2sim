@@ -158,50 +158,61 @@ struct opencl_x86_ndrange_t
 
 	unsigned int num_groups[3];
 	unsigned int total_num_groups;
+
+	unsigned int scheduling_pass;
+	unsigned int done;
 };
 
 
 struct opencl_x86_kernel_t *opencl_x86_kernel_create(
-		struct opencl_kernel_t *parent,
-		struct opencl_x86_program_t *program,
-		char *func_name);
+	struct opencl_kernel_t *parent,
+	struct opencl_x86_program_t *program,
+	char *func_name);
 
 void opencl_x86_kernel_free(
-		struct opencl_x86_kernel_t *kernel);
+	struct opencl_x86_kernel_t *kernel);
 
 int opencl_x86_kernel_set_arg(
-		struct opencl_x86_kernel_t *kernel,
-		int arg_index,
-		unsigned int arg_size,
-		void *arg_value);
+	struct opencl_x86_kernel_t *kernel,
+	int arg_index,
+	unsigned int arg_size,
+	void *arg_value);
 
 struct opencl_x86_ndrange_t *opencl_x86_ndrange_create(
-		struct opencl_ndrange_t *ndrange,
-		struct opencl_x86_kernel_t *arch_kernel,
-		unsigned int work_dim, unsigned int *global_work_offset,
-		unsigned int *global_work_size, unsigned int *local_work_size,
-		unsigned int fused);
+	struct opencl_ndrange_t *ndrange,
+	struct opencl_x86_kernel_t *arch_kernel,
+	unsigned int work_dim, unsigned int *global_work_offset,
+	unsigned int *global_work_size, unsigned int *local_work_size,
+	unsigned int fused);
 
 void opencl_x86_ndrange_finish(
-		struct opencl_x86_ndrange_t *ndrange);
+	struct opencl_x86_ndrange_t *ndrange);
 
 void opencl_x86_ndrange_free(
-		struct opencl_x86_ndrange_t *ndrange);
+	struct opencl_x86_ndrange_t *ndrange);
 
 void opencl_x86_ndrange_init(
-		struct opencl_x86_ndrange_t *ndrange);
+	struct opencl_x86_ndrange_t *ndrange);
 
 void opencl_x86_ndrange_run(
-		struct opencl_x86_ndrange_t *ndrange,
-		struct opencl_event_t *event);
+	struct opencl_x86_ndrange_t *ndrange,
+	struct opencl_event_t *event);
 
 void opencl_x86_ndrange_run_partial(
-		struct opencl_x86_ndrange_t *ndrange, 
-		unsigned int work_group_start, 
-		unsigned int work_group_count);
+	struct opencl_x86_ndrange_t *ndrange, 
+	unsigned int work_group_start, 
+	unsigned int work_group_count);
 
 void opencl_nd_address(
-		int linear_id, 
-		const unsigned int *dims, 
-		unsigned int *id);
+	int linear_id, 
+	const unsigned int *dims, 
+	unsigned int *id);
+
+void opencl_x86_kernel_work_group_init(
+	struct opencl_x86_work_group_t *work_group,
+	struct opencl_x86_device_exec_t *e);
+
+void opencl_x86_kernel_work_group_done(
+	struct opencl_x86_work_group_t *work_group,
+	struct opencl_x86_kernel_t *kernel);
 #endif
