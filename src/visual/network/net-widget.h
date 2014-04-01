@@ -30,6 +30,9 @@ struct vi_net_widget_t
 	/* List of Node Boards */
 	struct list_t *node_board_list;
 
+	/* List of all subLinks */
+	struct list_t *link_board_list;
+
 };
 
 /* Node Detailed View */
@@ -63,6 +66,14 @@ struct vi_node_board_t
 	/* Associated Node */
 	struct vi_net_node_t *node;
 };
+
+struct vi_link_board_t
+{
+        GtkWidget *widget;
+
+        struct vi_net_sub_link_t *subLink;
+};
+
 
 
 struct vi_net_widget_t *vi_net_widget_create     (struct vi_net_t *net);

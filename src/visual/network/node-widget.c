@@ -37,6 +37,7 @@ struct vi_node_widget_t *vi_node_widget_create(char *node_name)
 	node_widget = xcalloc(1, sizeof(struct vi_node_widget_t));
 	node_widget->name = xstrdup(node_name);
 
+	/* You should create different Widgets based on the type. Return vi_node_widget_t */
 	/* Vertical box */
 	GtkWidget *vbox;
 	vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
