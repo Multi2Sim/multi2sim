@@ -57,7 +57,7 @@ int OpenCLABIProgramCreateImpl(x86::Context *ctx)
 	std::unique_ptr<Program> program(new Program(program_count));
 
 	// Debug
-	x86::Emu::opencl_debug << misc::fmt << misc::fmt << misc::fmt << misc::fmt << misc::fmt(
+	x86::Emu::opencl_debug << misc::fmt(
 		"\tnew program ID = %d\n", program->getId());
 
 	// And add it to list of SI programs in OpenCL SI driver
@@ -100,7 +100,7 @@ int OpenCLABIProgramSetBinaryImpl(x86::Context *ctx)
 	int program_id = (int)regs.getEcx();
 	unsigned bin_ptr = regs.getEdx();
 	unsigned bin_size = regs.getEsi();
-	x86::Emu::opencl_debug << misc::fmt << misc::fmt << misc::fmt << misc::fmt(
+	x86::Emu::opencl_debug << misc::fmt(
 		"\tprogram_id=%d, bin_ptr=0x%x, size=%u\n",	program_id, bin_ptr, bin_size);
 
 	// Get program 
@@ -148,12 +148,12 @@ int OpenCLABIKernalCreateImpl(x86::Context *ctx)
 	// Arguments 
 	int program_id         = (int)regs.getEcx();
 	unsigned func_name_ptr = regs.getEdx();
-	x86::Emu::opencl_debug << misc::fmt << misc::fmt << misc::fmt(
+	x86::Emu::opencl_debug << misc::fmt(
 		"\tprogram_id=%d, func_name_ptr=0x%x\n", program_id, func_name_ptr);
 
 	// Read function name 
 	std::string func_name = mem.ReadString(func_name_ptr);
-	x86::Emu::opencl_debug << misc::fmt << misc::fmt << misc::fmt(
+	x86::Emu::opencl_debug << misc::fmt(
 		"\tfunc_name='%s'\n", func_name.c_str());
 
 	// Get program object 
@@ -165,7 +165,7 @@ int OpenCLABIKernalCreateImpl(x86::Context *ctx)
 	// Create kernel 
 	std::unique_ptr<Kernel> kernel(new Kernel(driver->getKernelCount(),
 			func_name, program));
-	x86::Emu::opencl_debug << misc::fmt << misc::fmt << misc::fmt(
+	x86::Emu::opencl_debug << misc::fmt(
 		"\tnew kernel ID = %d\n", kernel->getId());
 
 	// Add to kernel list
@@ -216,9 +216,9 @@ int OpenCLABIKernelSetArgValueImpl(x86::Context *ctx)
 	unsigned index    = regs.getEdx();
 	unsigned host_ptr = regs.getEsi();
 	int size          = (int)regs.getEdi();
-	x86::Emu::opencl_debug << misc::fmt << misc::fmt(
+	x86::Emu::opencl_debug << misc::fmt(
 		"\tkernel_id=%d, index=%d\n", kernel_id, index);
-	x86::Emu::opencl_debug << misc::fmt << misc::fmt(
+	x86::Emu::opencl_debug << misc::fmt(
 		"\thost_ptr=0x%x, size=%u\n", host_ptr, size);
 
 	// Get kernel 
@@ -294,9 +294,9 @@ int OpenCLABIKernelSetArgPointerImpl(x86::Context *ctx)
 	unsigned index      = regs.getEdx();
 	unsigned device_ptr = regs.getEsi();
 	int size            = (int)regs.getEdi();
-	x86::Emu::opencl_debug << misc::fmt << misc::fmt(
+	x86::Emu::opencl_debug << misc::fmt(
 		"\tkernel_id=%d, index=%d\n", kernel_id, index);
-	x86::Emu::opencl_debug << misc::fmt << misc::fmt(
+	x86::Emu::opencl_debug << misc::fmt(
 		"\tdevice_ptr=0x%x, size=%u\n", device_ptr, size);
 
 	// Get kernel 
@@ -352,7 +352,7 @@ int OpenCLABIKernelSetArgImageImpl(x86::Context *ctx)
 	// Arguments 
 	int kernel_id = (int)regs.getEcx();
 	unsigned index = regs.getEdx();
-	x86::Emu::opencl_debug << misc::fmt << misc::fmt("\tkernel_id=%d, index=%d\n", kernel_id, index);
+	x86::Emu::opencl_debug << misc::fmt("\tkernel_id=%d, index=%d\n", kernel_id, index);
 
 	// Not yet 
 	fatal("%s: not implemented", __FUNCTION__);
@@ -388,7 +388,7 @@ int OpenCLABIKernelSetArgSamplerImpl(x86::Context *ctx)
 	// Arguments 
 	int kernel_id = (int)regs.getEcx();
 	unsigned index = regs.getEdx();
-	x86::Emu::opencl_debug << misc::fmt << misc::fmt("\tkernel_id=%d, index=%d\n", kernel_id, index);
+	x86::Emu::opencl_debug << misc::fmt("\tkernel_id=%d, index=%d\n", kernel_id, index);
 
 	// Not yet 
 	fatal("%s: not implemented", __FUNCTION__);
@@ -895,7 +895,7 @@ int OpenCLABINDRangeEndImpl(x86::Context *ctx)
 	Driver::OpenCLSIDriver *driver = Driver::OpenCLSIDriver::getInstance();
 
 	driver->decNDRangeRunning()	;
-	
+
 	// Return
 	return 0;
 }
