@@ -107,10 +107,11 @@ struct vi_net_widget_t *vi_net_widget_create(struct vi_net_t *net)
 
         layout_width = VI_NODE_BOARD_WIDTH;
         layout_height = VI_NODE_BOARD_HEIGHT;
+
         /* Insert Links */
-        struct vi_link_board_t *drwSubLink;
         struct vi_net_link_t *link;
         char *link_name;
+
         HASH_TABLE_FOR_EACH(net->link_table, link_name, link)
         {
                 for (int i = 0; i < list_count(link->sublink_list); i++)
@@ -129,15 +130,14 @@ struct vi_net_widget_t *vi_net_widget_create(struct vi_net_t *net)
                         subLink->dst_y = (VI_NODE_BOARD_PADDING + VI_NODE_BOARD_HEIGHT/2 +
                                         ( 2 * subLink->dst_y) * (VI_NODE_BOARD_PADDING + VI_NODE_BOARD_HEIGHT));
 
+                        struct vi_link_board_t *drwSubLink;
                         drwSubLink = vi_link_board_create(subLink);
                         list_add(panel->link_board_list, drwSubLink);
-                        gtk_layout_put(GTK_LAYOUT(layout), drwSubLink->widget, subLink->src_x + 100 ,subLink->src_y);
-                        fprintf (stderr, "link from node %s to node %s : \t", subLink->link->src_node->name, subLink->link->dst_node->name);
-                        fprintf (stderr, "link from : (%f, %f) to (%f, %f) \n",subLink->src_x , subLink->src_y, subLink->dst_x ,subLink->dst_y);
-                }
+                        gtk_layout_put(GTK_LAYOUT(layout), drwSubLink->widget, 0,0);
+              }
         }
-        /* Insert Node Boards */
 
+        /* Insert Node Boards */
         struct vi_node_board_t *board;
         int node_index;
         struct vi_net_node_t *node;
@@ -155,7 +155,6 @@ struct vi_net_widget_t *vi_net_widget_create(struct vi_net_t *net)
                 board = vi_node_board_create(node);
                 list_add(panel->node_board_list, board );
                 gtk_layout_put(GTK_LAYOUT(layout), board->widget, x, y);
-                fprintf(stderr, "node name %s, (x = %d , y = %d )\n", node->name, x,y);
 
                 /* Size of layout */
                 layout_width = MAX(layout_width, x + VI_NODE_BOARD_WIDTH + VI_NODE_BOARD_PADDING);
@@ -403,13 +402,13 @@ static gboolean vi_link_board_draw (GtkWidget *widget, GdkEventConfigure *event,
         subLink = board->subLink;
         struct vi_net_link_t *link;
         link = subLink->link;
-
+/*
         int width;
         int height;
 
         width = gtk_widget_get_allocated_width(widget);
         height = gtk_widget_get_allocated_height(widget);
-
+*/
         window = gtk_widget_get_window(widget);
         cr = gdk_cairo_create(window);
 
@@ -417,10 +416,13 @@ static gboolean vi_link_board_draw (GtkWidget *widget, GdkEventConfigure *event,
         cairo_set_source_rgb(cr, link->color.red,
                 link->color.green, link->color.blue);
 
-        cairo_set_line_width(cr, 1);
-        cairo_arc(cr, width / 2, height / 2.0, MIN(width, height) / 3.0, 0., 2 * M_PI);
-        cairo_fill_preserve(cr);
-        cairo_set_source_rgb(cr, 0, 0, 0);
+        cairo_set_line_width(cr, 10);
+        cairo_move_to(cr, (int) subLink->src_x, (int) subLink->src_y);
+        cairo_line_to(cr, (int) subLink->dst_x, (int) subLink->dst_y);
+        cairo_stroke(cr);
+//        cairo_arc(cr, width / 2, height / 2.0, MIN(width, height) / 3.0, 0., 2 * M_PI);
+//        cairo_fill_preserve(cr);
+//        cairo_set_source_rgb(cr, 0, 0, 0);
 
         /* Finish */
         cairo_stroke(cr);
@@ -454,8 +456,16 @@ static struct vi_link_board_t  *vi_link_board_create (struct vi_net_sub_link_t *
         board = xcalloc(1, sizeof(struct vi_link_board_t));
         board->subLink = subLink;
         /* Drawing box */
+        GdkRGBA color;
+        color.red = 1;
+        color.green = 1;
+        color.blue = 1;
+        color.alpha = 0;
+
         GtkWidget *drawing_area = gtk_drawing_area_new();
-        gtk_widget_set_size_request(drawing_area, 26 , 26);
+        gtk_widget_set_size_request(drawing_area,
+                        MAX(subLink->src_x, subLink->dst_x) , MAX(subLink->src_y, subLink->dst_y));
+        gtk_widget_override_background_color(drawing_area, GTK_STATE_NORMAL, &color);
         g_signal_connect(G_OBJECT(drawing_area), "draw", G_CALLBACK(vi_link_board_draw), board);
 
         /* Main widget */

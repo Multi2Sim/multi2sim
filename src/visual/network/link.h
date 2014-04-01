@@ -29,6 +29,7 @@ struct vi_net_sub_link_t
         double dst_y;
 
         struct vi_net_link_t *link;
+        int index;
 };
 
 struct vi_net_link_t
