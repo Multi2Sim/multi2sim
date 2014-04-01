@@ -558,7 +558,7 @@ static struct mod_t *mem_config_read_cache(struct config_t *config,
 	assoc = config_read_int(config, buf, "Assoc", 2);
 	block_size = config_read_int(config, buf, "BlockSize", 256);
 	latency = config_read_int(config, buf, "Latency", 1);
-	dir_latency = config_read_int(config, buf, "DirectoryLatency", 1);
+	dir_latency = config_read_int(config, buf, "DirectoryLatency", 0);
 	policy_str = config_read_string(config, buf, "Policy", "LRU");
 	writepolicy_str = config_read_string(config, buf, "WritePolicy",
 		"WriteBack");
@@ -604,7 +604,7 @@ static struct mod_t *mem_config_read_cache(struct config_t *config,
 		fatal("%s: cache %s: block size must be power of two and "
 			"at least 4.\n%s", mem_config_file_name, mod_name, 
 			mem_err_config_note);
-	if (dir_latency < 1)
+	if (dir_latency < 0)
 		fatal("%s: cache %s: invalid value for variable "
 			"'DirectoryLatency'.\n%s", mem_config_file_name, 
 			mod_name, mem_err_config_note);

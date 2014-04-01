@@ -66,8 +66,16 @@ void *device_ndrange_dispatch(void *ptr)
 
 	/* Give dispatch threads the highest priority */
 	sched_policy_new = SCHED_RR;
-	sched_param_new.sched_priority = sched_get_priority_max(
-		sched_policy_new);
+	/* Sometimes the SI scheduler thread will get scheduled with the
+	 * x86 scheduler thread and starve while the x86 thread runs 
+	 * work-groups.  This is an attempt to fix that */
+	/* FIXME This is not scalable when new device types are added */
+	if (info->id == 0) /* SI */
+		sched_param_new.sched_priority = sched_get_priority_max(
+			sched_policy_new);
+	else /* x86 */ 
+		sched_param_new.sched_priority = sched_get_priority_max(
+			sched_policy_new)-1;
 	pthread_setschedparam(pthread_self(), sched_policy_new, 
 		&sched_param_new);
 
@@ -122,15 +130,13 @@ void *device_ndrange_dispatch(void *ptr)
 
 		pthread_mutex_unlock(info->lock);
 
-		/*
 		opencl_debug("[%s] running work groups %d to %d"
 			" on device %s", __FUNCTION__,
 			start_group, start_group + num_groups_to_exec - 1,
 			info->device->name);
-			*/
 
-		cltime = opencl_get_time();
 		/*
+		cltime = opencl_get_time();
 		opencl_debug("[%s] %s ndrange partial start = %lld", 
 			__FUNCTION__, info->device->name, cltime);
 		*/
@@ -140,8 +146,8 @@ void *device_ndrange_dispatch(void *ptr)
 
 		work_groups_executed += num_groups_to_exec;
 
-		cltime = opencl_get_time();
 		/*
+		cltime = opencl_get_time();
 		opencl_debug("[%s] %s ndrange partial end = %lld", 
 			__FUNCTION__, info->device->name, cltime);
 		*/
@@ -150,11 +156,11 @@ void *device_ndrange_dispatch(void *ptr)
 	}
 	pthread_mutex_unlock(info->lock);
 
-	/////////////////////
+	/*
 	cltime = opencl_get_time();
 	opencl_debug("[%s] %s ndrange ready to call finish = %lld", 
 		__FUNCTION__, info->device->name, cltime);
-	////////////////////////
+	*/
 	/* All devices must sync before one tries to call flush.  
 	 * Otherwise weird stuff may happen. */
 	pthread_barrier_wait(info->barrier);
@@ -216,7 +222,7 @@ void opencl_union_ndrange_run(struct opencl_union_ndrange_t *ndrange,
 	pthread_mutex_t lock;
 	pthread_barrier_t barrier;
 
-	int i;
+	int i, j;
 	int num_devices;
 
 	opencl_debug("[%s] global work size = %d,%d,%d", __FUNCTION__, 
@@ -239,9 +245,11 @@ void opencl_union_ndrange_run(struct opencl_union_ndrange_t *ndrange,
 
 	for (i = 0; i < num_devices; i++)
 	{
+		/* j is a hack to get the GPU to be scheduled before the CPU */
+		j = num_devices - 1 - i;
 		info[i].ndrange = ndrange;
-		info[i].device = list_get(device_list, i);
-		info[i].arch_kernel = list_get(ndrange->arch_kernels, i);
+		info[i].device = list_get(device_list, j);
+		info[i].arch_kernel = list_get(ndrange->arch_kernels, j);
 		opencl_debug("[%s] ndrange->kernel[%d] = %p", 
 			__FUNCTION__, i, info[i].arch_kernel);
 		info[i].lock = &lock;
@@ -291,7 +299,6 @@ struct opencl_union_kernel_t *opencl_union_kernel_create(
 	kernel = xcalloc(1, sizeof (struct opencl_union_kernel_t));
 	kernel->type = opencl_runtime_type_union;
 	kernel->parent = parent;
-	//kernel->device = program->device;
 	kernel->program = program;
 	kernel->arch_kernels = list_create();
 
