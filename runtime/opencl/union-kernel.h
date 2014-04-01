@@ -58,8 +58,10 @@ int opencl_union_kernel_set_arg(
 struct opencl_union_ndrange_t *opencl_union_ndrange_create(
 	struct opencl_ndrange_t *ndrange, 
 	struct opencl_union_kernel_t *union_kernel,
-	unsigned int work_dim, unsigned int *global_work_offset,
-	unsigned int *global_work_size, unsigned int *local_work_size, 
+	unsigned int work_dim, 
+	unsigned int *global_work_offset,
+	unsigned int *global_work_size, 
+	unsigned int *local_work_size, 
 	unsigned int fused);
 
 void opencl_union_ndrange_finish(
@@ -75,7 +77,9 @@ void opencl_union_ndrange_run(
 	struct opencl_union_ndrange_t *ndrange,
 	struct opencl_event_t *event);
 
-void opencl_union_ndrange_run_partial(struct opencl_union_ndrange_t *ndrange, 
-	unsigned int *work_group_start, unsigned int *work_group_count);
+void opencl_union_ndrange_run_partial(
+	struct opencl_union_ndrange_t *ndrange, 
+	unsigned int *work_group_start, 
+	unsigned int *work_group_count);
 
 #endif

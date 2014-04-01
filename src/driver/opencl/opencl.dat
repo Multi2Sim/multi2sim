@@ -21,4 +21,5 @@ OPENCL_ABI_CALL(si_ndrange_flush, 20)
 OPENCL_ABI_CALL(si_ndrange_free, 21)
 OPENCL_ABI_CALL(ndrange_start, 22)
 OPENCL_ABI_CALL(ndrange_end, 23)
+OPENCL_ABI_CALL(runtime_debug, 24)
 

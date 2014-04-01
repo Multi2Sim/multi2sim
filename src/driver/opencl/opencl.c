@@ -29,6 +29,7 @@
 #include <lib/class/list.h>
 #include <lib/class/string.h>
 #include <lib/esim/esim.h>
+#include <lib/esim/trace.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
@@ -233,8 +234,8 @@ int OpenclDriverCall(X86Context *ctx)
 
 /* NOTE: when modifying the values of these two macros, the same values should
  * be reflected in 'runtime/opencl/platform.c'. */
-#define OPENCL_VERSION_MAJOR  6
-#define OPENCL_VERSION_MINOR  2500
+#define OPENCL_VERSION_MAJOR  7
+#define OPENCL_VERSION_MINOR  2652
 
 struct opencl_version_t
 {
@@ -1691,6 +1692,28 @@ static int opencl_abi_ndrange_end_impl(X86Context *ctx)
 		driver->x86_cpu->ndranges_running--;
 		assert(driver->ndranges_running >= 0);
 	}
+
+	return 0;
+}
+
+/*
+ * OpenCL ABI call #24 - runtime_debug
+ *
+ * This syscall is here for convenience when debugging the runtime.
+ *
+ * @return int
+ *
+ *	The function always returns 0.
+ */
+static int opencl_abi_runtime_debug_impl(X86Context *ctx)
+{
+	/*
+	X86Emu *x86_emu = ctx->emu;
+	OpenclDriver *driver = x86_emu->opencl_driver;
+
+	trace_done();
+	exit(0);
+	*/
 
 	return 0;
 }
