@@ -323,6 +323,9 @@ public:
 	/// Get video_mem_top
 	unsigned getVideoMemTop() const { return video_mem_top; }
 
+	/// Get video_mem
+	mem::Memory &getVideoMem() { return *(video_mem.get()); }
+
 	/// Setters
 	///
 	/// Set global_mem
