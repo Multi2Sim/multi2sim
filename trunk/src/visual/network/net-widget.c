@@ -16,12 +16,16 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+#include <gtk/gtk.h>
 
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
+#include <lib/util/hash-table.h>
 #include <lib/util/list.h>
 #include <lib/util/string.h>
+#include <visual/memory/mod.h>
 
+#include "link.h"
 #include "net.h"
 #include "net-widget.h"
 #include "node.h"
@@ -30,6 +34,8 @@
 #define VI_NODE_BOARD_PADDING           10
 #define VI_NODE_BOARD_WIDTH             70
 #define VI_NODE_BOARD_HEIGHT            70
+# define M_PI           3.14159265358979323846  /* pi */
+
 
 static void vi_net_widget_destroy(GtkWidget *widget, struct vi_net_widget_t *net_widget);
 
@@ -48,6 +54,7 @@ void vi_net_widget_free(struct vi_net_widget_t *net_widget)
 {
 
         /* Free widget */
+        list_free(net_widget->link_board_list);
         list_free(net_widget->node_board_list);
         free(net_widget);
 }
@@ -56,17 +63,21 @@ void vi_net_widget_free(struct vi_net_widget_t *net_widget)
 static struct vi_node_board_t  *vi_node_board_create                (struct vi_net_node_t *node);
 static gboolean 	        vi_node_board_toggle_button_toggled (GtkWidget *widget, struct vi_node_board_t *board);
 static void 		        vi_node_board_destroy               (GtkWidget *widget, struct vi_node_board_t *board);
+
+/* We named them board since it is easy */
+static struct vi_link_board_t  *vi_link_board_create                (struct vi_net_sub_link_t *subLink);
+static void                     vi_link_board_destroy               (GtkWidget *widget, struct vi_link_board_t *subLink);
 static struct vi_node_window_t *vi_node_window_create               (struct vi_net_node_t * node, GtkWidget *parent_toggle_button);
 static void                     vi_node_window_free                 (struct vi_node_window_t *node_window);
 static void                     vi_node_window_destroy              (GtkWidget *widget, struct vi_node_window_t *node_window);
 static gboolean                 vi_node_window_delete               (GtkWidget *widget, GdkEvent *event, struct vi_node_window_t *node_window);
 static GtkWidget               *vi_node_window_get_widget           (struct vi_node_window_t *node_window);
 
+static gboolean vi_link_board_draw (GtkWidget *widget, GdkEventConfigure *event, struct vi_link_board_t *board);
+
 struct vi_net_widget_t *vi_net_widget_create(struct vi_net_t *net)
 {
         struct vi_net_widget_t *panel;
-
-        struct vi_node_board_t *board;
 
         int layout_width;
         int layout_height;
@@ -74,6 +85,7 @@ struct vi_net_widget_t *vi_net_widget_create(struct vi_net_t *net)
         /* Initialize */
         panel = xcalloc(1, sizeof(struct vi_net_widget_t));
         panel->node_board_list = list_create();
+        panel->link_board_list = list_create();
 
         /* Layout */
         GtkWidget *layout;
@@ -93,10 +105,40 @@ struct vi_net_widget_t *vi_net_widget_create(struct vi_net_t *net)
         gtk_widget_set_size_request(scrolled_window, VI_NODE_BOARD_WIDTH * 3 / 2, VI_NODE_BOARD_HEIGHT * 3 / 2);
         gtk_container_add(GTK_CONTAINER(frame), scrolled_window);
 
-        /* Insert module boards */
         layout_width = VI_NODE_BOARD_WIDTH;
         layout_height = VI_NODE_BOARD_HEIGHT;
+        /* Insert Links */
+        struct vi_link_board_t *drwSubLink;
+        struct vi_net_link_t *link;
+        char *link_name;
+        HASH_TABLE_FOR_EACH(net->link_table, link_name, link)
+        {
+                for (int i = 0; i < list_count(link->sublink_list); i++)
+                {
+                        struct vi_net_sub_link_t *subLink;
+                        subLink = list_get(link->sublink_list , i);
 
+                        /* updating X and Ys to Center */
+                        subLink->src_x = (VI_NODE_BOARD_PADDING + VI_NODE_BOARD_WIDTH/2 +
+                                        ( 2 * subLink->src_x) * (VI_NODE_BOARD_PADDING + VI_NODE_BOARD_WIDTH));
+                        subLink->src_y = (VI_NODE_BOARD_PADDING + VI_NODE_BOARD_HEIGHT/2 +
+                                        ( 2 * subLink->src_y) * (VI_NODE_BOARD_PADDING + VI_NODE_BOARD_HEIGHT));
+
+                        subLink->dst_x = (VI_NODE_BOARD_PADDING + VI_NODE_BOARD_WIDTH/2 +
+                                        ( 2 * subLink->dst_x) * (VI_NODE_BOARD_PADDING + VI_NODE_BOARD_WIDTH));
+                        subLink->dst_y = (VI_NODE_BOARD_PADDING + VI_NODE_BOARD_HEIGHT/2 +
+                                        ( 2 * subLink->dst_y) * (VI_NODE_BOARD_PADDING + VI_NODE_BOARD_HEIGHT));
+
+                        drwSubLink = vi_link_board_create(subLink);
+                        list_add(panel->link_board_list, drwSubLink);
+                        gtk_layout_put(GTK_LAYOUT(layout), drwSubLink->widget, subLink->src_x + 100 ,subLink->src_y);
+                        fprintf (stderr, "link from node %s to node %s : \t", subLink->link->src_node->name, subLink->link->dst_node->name);
+                        fprintf (stderr, "link from : (%f, %f) to (%f, %f) \n",subLink->src_x , subLink->src_y, subLink->dst_x ,subLink->dst_y);
+                }
+        }
+        /* Insert Node Boards */
+
+        struct vi_node_board_t *board;
         int node_index;
         struct vi_net_node_t *node;
         LIST_FOR_EACH(net->node_list, node_index)
@@ -113,6 +155,7 @@ struct vi_net_widget_t *vi_net_widget_create(struct vi_net_t *net)
                 board = vi_node_board_create(node);
                 list_add(panel->node_board_list, board );
                 gtk_layout_put(GTK_LAYOUT(layout), board->widget, x, y);
+                fprintf(stderr, "node name %s, (x = %d , y = %d )\n", node->name, x,y);
 
                 /* Size of layout */
                 layout_width = MAX(layout_width, x + VI_NODE_BOARD_WIDTH + VI_NODE_BOARD_PADDING);
@@ -130,8 +173,8 @@ struct vi_net_widget_t *vi_net_widget_create(struct vi_net_t *net)
                 /* Get Central position for a dummy LED */
                 x =  VI_NODE_BOARD_PADDING/2 + VI_NODE_BOARD_WIDTH/2 + (2 * node->X ) *
                                 (VI_NODE_BOARD_PADDING + VI_NODE_BOARD_WIDTH);
-                y =  VI_NODE_BOARD_PADDING/2 + VI_NODE_BOARD_WIDTH/2 + (2 * node->Y ) *
-                                (VI_NODE_BOARD_PADDING + VI_NODE_BOARD_WIDTH);
+                y =  VI_NODE_BOARD_PADDING/2 + VI_NODE_BOARD_HEIGHT/2 + (2 * node->Y ) *
+                                (VI_NODE_BOARD_PADDING + VI_NODE_BOARD_HEIGHT);
                 board = vi_node_board_create(node);
                 list_add(panel->node_board_list, board);
                 gtk_layout_put(GTK_LAYOUT(layout), board->widget, x, y);
@@ -164,24 +207,25 @@ static struct vi_node_board_t *vi_node_board_create(struct vi_net_node_t *node)
 
         /* Color */
         GdkRGBA frame_color;
+
         int board_width = VI_NODE_BOARD_WIDTH;
         int board_height = VI_NODE_BOARD_HEIGHT;
         int has_label = 1;
 
         switch (node->type) {
-        /* --- For Node */
+        /* BLUE For Node */
         case vi_net_node_end:
                 frame_color.red = .56;
                 frame_color.green = 0.76;
                 frame_color.blue = 0.83;
-                frame_color.alpha = .8;
+                frame_color.alpha = 1;
                 break;
-        /* Pink For Switch */
+                /* Pink For Switch */
         case vi_net_node_switch:
                 frame_color.red = .83;
                 frame_color.green = 0.38;
                 frame_color.blue = 0.72;
-                frame_color.alpha = .290;
+                frame_color.alpha = 1;
                 break;
                 /* ---- For Switch */
         case vi_net_node_bus:
@@ -189,13 +233,13 @@ static struct vi_node_board_t *vi_node_board_create(struct vi_net_node_t *node)
                 frame_color.red = .56;
                 frame_color.green = .152;
                 frame_color.blue = 0.53;
-                frame_color.alpha = .8;
+                frame_color.alpha = 1;
                 break;
         case vi_net_node_dummy:
                 frame_color.red = 0.74;
                 frame_color.green = 0.74;
                 frame_color.blue = 0.74;
-                frame_color.alpha = .8;
+                frame_color.alpha = 1;
                 board_width = VI_NODE_BOARD_PADDING;
                 board_height = VI_NODE_BOARD_PADDING;
                 has_label = 0;
@@ -203,6 +247,7 @@ static struct vi_node_board_t *vi_node_board_create(struct vi_net_node_t *node)
         default:
                 break;
         }
+
 
         /* Frame */
         GtkWidget *frame = gtk_frame_new(NULL);
@@ -219,10 +264,16 @@ static struct vi_node_board_t *vi_node_board_create(struct vi_net_node_t *node)
         /* Name */
         if (has_label == 1)
         {
-                snprintf(str, sizeof str, "<b>%s</b>", node->name);
+                if (node->mod)
+                {
+                        snprintf(str, sizeof str, "%s\n[%s]", node->name, node->mod->name);
+                }
+                else
+                        snprintf(str, sizeof str, "%s", node->name);
 
                 GtkWidget *label = gtk_label_new(NULL);
                 gtk_label_set_markup(GTK_LABEL(label), str);
+                gtk_label_set_justify (GTK_LABEL(label), GTK_JUSTIFY_CENTER);
                 gtk_box_pack_start(GTK_BOX(vbox), label, FALSE, FALSE, 0);
                 gtk_box_pack_start(GTK_BOX(vbox), gtk_separator_new(GTK_ORIENTATION_HORIZONTAL), FALSE, FALSE, 0);
 
@@ -343,3 +394,74 @@ static gboolean vi_node_window_delete(GtkWidget *widget, GdkEvent *event, struct
         return TRUE;
 }
 
+static gboolean vi_link_board_draw (GtkWidget *widget, GdkEventConfigure *event, struct vi_link_board_t *board)
+{
+        GdkWindow *window;
+        cairo_t *cr;
+
+        struct vi_net_sub_link_t *subLink;
+        subLink = board->subLink;
+        struct vi_net_link_t *link;
+        link = subLink->link;
+
+        int width;
+        int height;
+
+        width = gtk_widget_get_allocated_width(widget);
+        height = gtk_widget_get_allocated_height(widget);
+
+        window = gtk_widget_get_window(widget);
+        cr = gdk_cairo_create(window);
+
+        /* Circle */
+        cairo_set_source_rgb(cr, link->color.red,
+                link->color.green, link->color.blue);
+
+        cairo_set_line_width(cr, 1);
+        cairo_arc(cr, width / 2, height / 2.0, MIN(width, height) / 3.0, 0., 2 * M_PI);
+        cairo_fill_preserve(cr);
+        cairo_set_source_rgb(cr, 0, 0, 0);
+
+        /* Finish */
+        cairo_stroke(cr);
+        cairo_destroy(cr);
+        return FALSE;
+
+        /* Color
+        cairo_set_line_width(cr, 1);
+        cairo_move_to(cr, subLink->src_x, subLink->src_y);
+        cairo_line_to(cr, subLink->dst_x, subLink->dst_y);
+        cairo_set_source_rgb(cr, 0, 0, 0);
+
+        cairo_stroke(cr);
+        cairo_destroy(cr);
+        return FALSE; */
+}
+
+static void vi_link_board_free(struct vi_link_board_t *board)
+{
+        free(board);
+}
+static void vi_link_board_destroy(GtkWidget *widget, struct vi_link_board_t *board)
+{
+        vi_link_board_free(board);
+}
+static struct vi_link_board_t  *vi_link_board_create (struct vi_net_sub_link_t *subLink)
+{
+        struct vi_link_board_t *board;
+
+        /* Initialize */
+        board = xcalloc(1, sizeof(struct vi_link_board_t));
+        board->subLink = subLink;
+        /* Drawing box */
+        GtkWidget *drawing_area = gtk_drawing_area_new();
+        gtk_widget_set_size_request(drawing_area, 26 , 26);
+        g_signal_connect(G_OBJECT(drawing_area), "draw", G_CALLBACK(vi_link_board_draw), board);
+
+        /* Main widget */
+        board->widget = drawing_area;
+        g_signal_connect(G_OBJECT(board->widget), "destroy", G_CALLBACK(vi_link_board_destroy), board);
+
+        /* Return */
+        return board;
+}

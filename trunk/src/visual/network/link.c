@@ -19,6 +19,7 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <gtk/gtk.h>
 
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
@@ -33,6 +34,18 @@
 #include "net.h"
 #include "net-system.h"
 
+void vi_link_color_utilization(struct vi_net_link_t *link)
+{
+        GdkRGBA color = link->color;
+        if (link->utilization != 0)
+        {
+                assert(link->utilization <= 1);
+                color.blue = 0;
+                color.green = ( 2 * link->utilization <= 1 ) ? 1 : 2 * (1 - link->utilization) ;
+                color.red = ( 2 * link->utilization >= 1 ) ? 1 : 2 * link->utilization ;
+        }
+        link->color = color;
+}
 struct vi_net_link_t *vi_net_link_create(struct vi_trace_line_t *trace_line)
 {
 	struct vi_net_link_t *link;
@@ -76,6 +89,16 @@ struct vi_net_link_t *vi_net_link_create(struct vi_trace_line_t *trace_line)
 	vc_num = vi_trace_line_get_symbol_int(trace_line, "vc_num");
 	link->vc_number = vc_num;
 
+	/* Setting initial Link color */
+        link->color.red = .8;
+        link->color.green = .8;
+        link->color.blue = .8;
+        link->color.alpha = .8;
+
+        /* Creating link's sub-link list */
+        link->sublink_list = list_create();
+
+        /* Insert link in the network Hash table */
 	hash_table_insert(net->link_table,link->name, link);
 
 	/* Return Link */
@@ -84,7 +107,24 @@ struct vi_net_link_t *vi_net_link_create(struct vi_trace_line_t *trace_line)
 
 void vi_net_link_free(struct vi_net_link_t *link)
 {
+        for (int i = 0 ; i < list_count(link->sublink_list); i++)
+        {
+                vi_net_sub_link_free(list_get(link->sublink_list, i));
+        }
+        list_free(link->sublink_list);
 	if (link->name)
 		free(link->name);
 	free(link);
+}
+
+struct vi_net_sub_link_t * vi_net_sub_link_create(void)
+{
+        struct vi_net_sub_link_t *subLink;
+        subLink = xcalloc(1, sizeof (struct vi_net_sub_link_t));
+
+        return subLink;
+}
+void vi_net_sub_link_free  (struct vi_net_sub_link_t * subLink)
+{
+        free(subLink);
 }

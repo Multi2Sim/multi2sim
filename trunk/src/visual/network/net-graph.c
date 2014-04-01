@@ -331,7 +331,7 @@ void vi_net_graph_free (struct vi_net_graph_t * net_graph)
 
 void vi_net_graph_draw_scale(struct vi_net_graph_t *net_graph)
 {
-	int scale;
+        int scale;
         struct graph_t *graph = net_graph->graph;
 
         /* Apply drawing algorithm on graph of net_graph */
@@ -341,26 +341,27 @@ void vi_net_graph_draw_scale(struct vi_net_graph_t *net_graph)
          * spacing of each node and link
          */
 
-	scale = list_count(graph->vertex_list);
+        scale = list_count(graph->vertex_list);
 
-	struct graph_vertex_t *vertex;
-	for (int i = 0; i < list_count(graph->vertex_list); i++)
-	{
-		vertex = list_get(graph->vertex_list, i);
+        struct graph_vertex_t *vertex;
+        for (int i = 0; i < list_count(graph->vertex_list); i++)
+        {
+                vertex = list_get(graph->vertex_list, i);
 
-		int opt_distance= graph->max_vertex_in_layer * scale /(2* graph->max_vertex_in_layer - 1);
-		vertex->x_coor = (2*(vertex->x_coor) + (graph->max_vertex_in_layer - vertex->neighbours))* opt_distance;
-	}
-	net_graph->scale = scale ;
+                int opt_distance= graph->max_vertex_in_layer * scale /(2* graph->max_vertex_in_layer - 1);
+                vertex->x_coor = (2*(vertex->x_coor) + (graph->max_vertex_in_layer - vertex->neighbours))* opt_distance;
+        }
+        net_graph->scale = scale ;
 }
 
 void vi_net_graph_finalize(struct vi_net_graph_t *net_graph)
 {
+        int i;
         struct graph_t * graph = net_graph->graph;
         struct vi_net_t *net = net_graph->net;
 
         /* Updating Nodes */
-        for (int i = 0 ; i < list_count(graph->vertex_list); i++)
+        for (i = 0 ; i < list_count(graph->vertex_list); i++)
         {
                 struct graph_vertex_t *vertex;
                 vertex = list_get(graph->vertex_list, i);
@@ -373,13 +374,13 @@ void vi_net_graph_finalize(struct vi_net_graph_t *net_graph)
                         node = vertex_data->node;
                         node->X = (double) vertex->x_coor / net_graph->scale;
                         node->Y = vertex->y_coor;
-/*                      fprintf(stderr, "With scale node = %s %f %d \t", vertex->name,
+                        /*                      fprintf(stderr, "With scale node = %s %f %d \t", vertex->name,
                                         (double) vertex->x_coor / net_graph->scale,
                                         vertex->y_coor);
                         fprintf(stderr, "Without scale node = %s %f %d \n", vertex->name,
                                         (double) vertex->x_coor,
                                         vertex->y_coor);
-                                        */
+                         */
                 }
                 if (vertex->kind == graph_vertex_dummy)
                 {
@@ -391,6 +392,40 @@ void vi_net_graph_finalize(struct vi_net_graph_t *net_graph)
                         node->X = (double) vertex->x_coor / net_graph->scale;
                         node->Y = vertex->y_coor;
                         list_add(net->dummy_node_list, node);
+                }
+        }
+
+        for (i = 0 ; i < list_count(graph->edge_list); i++)
+        {
+                struct graph_edge_t *edge;
+                struct vi_net_edge_data_t *edge_data;
+                edge = list_get(graph->edge_list, i);
+                edge_data = (struct vi_net_edge_data_t *) edge->data;
+
+                if (edge_data->downstream)
+                {
+                        struct vi_net_sub_link_t *subLink = vi_net_sub_link_create();
+                        struct vi_net_link_t *link;
+                        link = edge_data->downstream;
+                        subLink->src_x = edge->src_vertex->x_coor / net_graph->scale;
+                        subLink->src_y = edge->src_vertex->y_coor;
+                        subLink->dst_x = edge->dst_vertex->x_coor / net_graph->scale;
+                        subLink->dst_y = edge->dst_vertex->y_coor;
+                        subLink->link = link;
+                        list_add(link->sublink_list, subLink);
+                }
+
+                if (edge_data->upstream)
+                {
+                        struct vi_net_sub_link_t *subLink = vi_net_sub_link_create();
+                        struct vi_net_link_t *link;
+                        link = edge_data->upstream;
+                        subLink->src_x = edge->dst_vertex->x_coor / net_graph->scale;
+                        subLink->src_y = edge->dst_vertex->y_coor;
+                        subLink->dst_x = edge->src_vertex->x_coor / net_graph->scale;
+                        subLink->dst_y = edge->src_vertex->y_coor;
+                        subLink->link = link;
+                        list_add(link->sublink_list, subLink);
                 }
         }
 }

@@ -19,11 +19,26 @@
 
 #ifndef VISUAL_NETWORK_LINK_H
 #define VISUAL_NETWORK_LINK_H
+#include <gtk/gtk.h>
+
+struct vi_net_sub_link_t
+{
+        double src_x;
+        double src_y;
+        double dst_x;
+        double dst_y;
+
+        struct vi_net_link_t *link;
+};
 
 struct vi_net_link_t
 {
+        double utilization;
 	int   vc_number;
 	char *name;
+	GdkRGBA color;
+
+	struct list_t *sublink_list;
 
 	struct vi_net_node_t *src_node;
 	struct vi_net_node_t *dst_node;
@@ -32,7 +47,10 @@ struct vi_net_link_t
 struct vi_trace_line_t;
 
 
-struct vi_net_link_t *vi_net_link_create  (struct vi_trace_line_t *trace_line);
-void                  vi_net_link_free    (struct vi_net_link_t *link);
+struct vi_net_link_t *vi_net_link_create        (struct vi_trace_line_t *trace_line);
+void                  vi_net_link_free          (struct vi_net_link_t *link);
+void                  vi_link_color_utilization (struct vi_net_link_t *link);
 
+struct vi_net_sub_link_t * vi_net_sub_link_create(void);
+void                       vi_net_sub_link_free  (struct vi_net_sub_link_t * link);
 #endif
