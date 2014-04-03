@@ -27,11 +27,16 @@ using namespace misc;
 namespace SI
 {
 
-ProgramGL::ProgramGL(unsigned id, const char *buffer, unsigned size)
+ProgramGL::ProgramGL(unsigned id)
 {
 	this->id = id;
-	opengl_driver = Driver::OpenGLSIDriver::getInstance();
-	program_bin.reset(new OpenGLSiProgramBinary(buffer, size));
+	this->opengl_driver = Driver::OpenGLSIDriver::getInstance();
+}
+
+void ProgramGL::SetBinary(const char *buffer, unsigned size)
+{
+	if (buffer)
+		program_bin.reset(new OpenGLSiProgramBinary(buffer, size));	
 }
 
 Shader *ProgramGL::getShaderByID(unsigned id)

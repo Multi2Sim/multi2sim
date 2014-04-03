@@ -20,12 +20,17 @@
 #ifndef DRIVER_COMMON_SI_ABI_H
 #define DRIVER_COMMON_SI_ABI_H
 
+namespace x86
+{
+	class Context;
+}  // namespace x86
+
 namespace SI
 {
 
 // Forward declarations of OpenCL Runtime functions
 #define SI_ABI_CALL(space, name, code) \
-	int SIABI##name##Impl();
+	int SIABI##name##Impl(x86::Context *ctx);
 #include "SI-ABI.dat"
 #undef SI_ABI_CALL
 

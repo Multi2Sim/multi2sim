@@ -25,45 +25,16 @@
 namespace SI
 {
 
-// List of OpenCL Runtime calls
-enum OpenCLABICall
-{
-	OpenCLABIInvalid = 0,
-// Shared ABIs
-#define SI_ABI_CALL(space, name, code) OpenCLABI##space##name = code,
-#include "../../common/SI-ABI.dat"
-#undef SI_ABI_CALL
-
-#define OPENCL_ABI_CALL(space, name, code) OpenCLABI##space##name = code,
-#include "../ABI.dat"
-#undef OPENCL_ABI_CALL
-	OpenCLABICallCount
-};
-
 // Forward declarations of OpenCL Runtime functions
 #define SI_ABI_CALL(space, name, code) \
-	int SIABI##name##Impl();
+	int SIABI##name##Impl(x86::Context *ctx);
 #include "../../common/SI-ABI.dat"
 #undef SI_ABI_CALL
 
 #define OPENCL_ABI_CALL(space, name, code) \
-	int OpenCLABI##name##Impl();
+	int OpenCLABI##name##Impl(x86::Context *ctx);
 #include "../ABI.dat"
 #undef OPENCL_ABI_CALL
-
-// List of OpenCL ABI call names
-std::string OpenCLABICallName[OpenCLABICallCount + 1] =
-{
-	"ABI Invalid",
-#define SI_ABI_CALL(space, name, code) #space #name,
-#include "../../common/SI-ABI.dat"
-#undef SI_ABI_CALL
-
-#define OPENCL_ABI_CALL(space, name, code) #space #name,
-#include "../ABI.dat"
-#undef OPENCL_ABI_CALL
-	"ABI Call Count"
-};
 
 }  // namespace SI
 

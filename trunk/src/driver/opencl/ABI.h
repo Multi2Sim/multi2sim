@@ -43,20 +43,6 @@ enum OpenCLABICall
 	OpenCLABICallCount
 };
 
-// Forward declarations of OpenCL Runtime functions
-
-// Shared ABIs for both CL/GL driver
-#define SI_ABI_CALL(space, name, code) \
-	int SIABI##name##Impl();
-#include "../common/SI-ABI.dat"
-#undef SI_ABI_CALL
-
-// Unique ABIs for CL driver
-#define OPENCL_ABI_CALL(space, name, code) \
-	int OpenCLABI##name##Impl();
-#include "ABI.dat"
-#undef OPENCL_ABI_CALL
-
 // List of OpenCL ABI call names
 std::string OpenCLABICallName[OpenCLABICallCount + 1] =
 {
@@ -71,8 +57,11 @@ std::string OpenCLABICallName[OpenCLABICallCount + 1] =
 	nullptr
 };
 
+// OpenCL common driver ABI
+int OpenCLABIInitImpl(x86::Context *ctx);
+
 /// List of OpenCL Runtime functions
-typedef int (*OpenCLABICallFuncPtr)();
+typedef int (*OpenCLABICallFuncPtr)(x86::Context *);
 OpenCLABICallFuncPtr OpenCLABICallTable[OpenCLABICallCount + 1] =
 {
 	nullptr,

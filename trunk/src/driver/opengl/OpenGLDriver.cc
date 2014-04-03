@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <arch/southern-islands/emu/Emu.h>
 #include <driver/opengl/southern-islands/ShaderExport.h>
 #include <driver/opengl/southern-islands/SPI.h>
 #include "OpenGLDriver.h"
@@ -30,7 +31,7 @@ std::unique_ptr<OpenGLSIDriver> OpenGLSIDriver::instance;
 OpenGLSIDriver::OpenGLSIDriver()
 {
 	// Obtain instance of emulators
-	// si_emu = SI::Emu::getInstance();
+	si_emu = SI::Emu::getInstance();
 
 	// Obtain instance of Shader Export module
 	sx = SI::ShaderExport::getInstance();
@@ -48,6 +49,12 @@ OpenGLSIDriver *OpenGLSIDriver::getInstance()
 	// Create instance
 	instance.reset(new OpenGLSIDriver());
 	return instance.get();
+}
+
+void OpenGLSIDriver::AddProgram(std::unique_ptr<SI::ProgramGL> program)
+{
+	programs.insert(this->programs.begin() + program.get()->getId(), 
+		std::move(program));
 }
 	
 }  // namespace Driver
