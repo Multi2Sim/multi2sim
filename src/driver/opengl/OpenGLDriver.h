@@ -38,10 +38,6 @@ namespace Driver
 
 class OpenGLSIDriver : public SICommon
 {
-	// Driver verision information
-	static const unsigned major = 1;
-	static const unsigned minor = 1000;
-
 	// Unique instance of OpenGL Driver
 	static std::unique_ptr<OpenGLSIDriver> instance;
 
@@ -60,6 +56,10 @@ class OpenGLSIDriver : public SICommon
 
 public:
 
+	// Driver verision information
+	static const unsigned major = 1;
+	static const unsigned minor = 1000;
+
 	/// Get the only instance of the OpenGL Driver. If the instance does not
 	/// exist yet, it will be created, and will remain allocated until the
 	/// end of the execution.
@@ -70,6 +70,27 @@ public:
 
 	/// Get Shader Export Module
 	SI::ShaderExport *getShaderExportModule() const { return sx; }
+
+	/// Get program by id
+	SI::ProgramGL *getProgramById(unsigned id) {
+		for( auto &program : programs)
+		{
+			if (program->getId() == id)
+				return program.get();
+		}
+
+		// Return
+		return nullptr;
+	}
+
+	/// Remove program by id
+	void RemoveProgramById(unsigned id) {
+		for( auto &program : programs)
+		{
+			if (program->getId() == id)
+				program.reset();
+		}		
+	}
 
 	/// This function is called when all work groups from an ND-Range have
 	/// been scheduled (i.e., ndrange->waiting_work_groups is empty)
@@ -103,6 +124,9 @@ public:
 	std::vector<std::unique_ptr<SI::NDRange>>::iterator NDRangesEnd() {
 		return ndranges.end();
 	}
+
+	/// Add program to program list
+	void AddProgram(std::unique_ptr<SI::ProgramGL> program);
 };
 
 } // namespace Driver

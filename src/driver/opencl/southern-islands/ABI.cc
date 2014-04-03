@@ -240,8 +240,8 @@ int OpenCLABIKernelSetArgValueImpl(x86::Context *ctx)
 
 	// Save value 
 	fatal("FIXME: OpenCLABIKernelSetArgValueImpl()");
-	void *value_ptr = (void *)calloc(1, size);
-	mem.Read(host_ptr, size, (char *)value_ptr);
+	char *value_ptr = (char *)calloc(1, size);
+	mem.Read(host_ptr, size, value_ptr);
 	arg->setValue(value_ptr);
 	free(value_ptr);
 
