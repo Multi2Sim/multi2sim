@@ -42,16 +42,24 @@ class ProgramGL
 	std::vector<std::unique_ptr<Shader>> shaders;
 
 public:
-	ProgramGL(unsigned id, const char *buffer, unsigned size);
+	ProgramGL(unsigned id);
 
+	/// Getters
+	///
 	/// Return pointer of a shader based on shader id
 	Shader *getShaderByID(unsigned id);
 
 	/// Return pointer of a shader based on shader type
 	Shader *getShaderByStage(OpenGLSiShaderStage stage);
 
+	/// Get program id
+	unsigned getId() const { return id; }
+
 	/// Bind a shader to program
 	void BindShader(unsigned shader_id, OpenGLSiShaderStage stage);
+
+	/// Set Program binary
+	void SetBinary(const char*buffer, unsigned size);
 
 };
 
