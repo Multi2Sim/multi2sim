@@ -42,9 +42,11 @@ extern int net_debug_category;
 #define net_trace_header(...) trace_header(net_trace_category, __VA_ARGS__)
 extern int net_trace_category;
 
-/* Configuration parameters */extern char *net_report_file_name;
+/* Configuration parameters */
+extern char *net_report_file_name;
 extern char *net_visual_file_name;
 extern char *net_sim_network_name;
+extern char *net_route_file_name;
 
 extern char *net_traffic_pattern;
 

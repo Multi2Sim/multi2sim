@@ -1506,6 +1506,15 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
+		/* Dumping Routes */
+		if (!strcmp(argv[argi], "--net-dump-routes"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			net_route_file_name = argv[++argi];
+			continue;
+		}
+
+
 		/* Traffic Pattern */
 		if (!strcmp(argv[argi], "--net-traffic-pattern"))
 		{

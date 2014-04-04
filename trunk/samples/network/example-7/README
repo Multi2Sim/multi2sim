@@ -1,0 +1,7 @@
+Example of a 4x4 torus.
+In order to make toruses with anysize try using the scripts provided in /samples/network/scripts
+
+Torus without manual routing may lead to cycle in the network and ultimately deadlock. For more information about cycle and deadlock check out multi2sim manual (Interconnection Network Chapter)
+
+Run the following:
+/m2s --net-sim net0 --net-config net-torus --net-injection-rate 32 --net-msg-size 144 --net-max-cycles 120 --net-visual net.vis

@@ -120,14 +120,14 @@ struct vi_net_widget_t *vi_net_widget_create(struct vi_net_t *net)
                         subLink = list_get(link->sublink_list , i);
 
                         /* updating X and Ys to Center */
-                        subLink->src_x = (VI_NODE_BOARD_PADDING + VI_NODE_BOARD_WIDTH/2 +
+                        subLink->src_x = (VI_NODE_BOARD_WIDTH/2 +
                                         ( 2 * subLink->src_x) * (VI_NODE_BOARD_PADDING + VI_NODE_BOARD_WIDTH));
-                        subLink->src_y = (VI_NODE_BOARD_PADDING + VI_NODE_BOARD_HEIGHT/2 +
+                        subLink->src_y = (VI_NODE_BOARD_HEIGHT/2 +
                                         ( 2 * subLink->src_y) * (VI_NODE_BOARD_PADDING + VI_NODE_BOARD_HEIGHT));
 
-                        subLink->dst_x = (VI_NODE_BOARD_PADDING + VI_NODE_BOARD_WIDTH/2 +
+                        subLink->dst_x = (VI_NODE_BOARD_WIDTH/2 +
                                         ( 2 * subLink->dst_x) * (VI_NODE_BOARD_PADDING + VI_NODE_BOARD_WIDTH));
-                        subLink->dst_y = (VI_NODE_BOARD_PADDING + VI_NODE_BOARD_HEIGHT/2 +
+                        subLink->dst_y = (VI_NODE_BOARD_HEIGHT/2 +
                                         ( 2 * subLink->dst_y) * (VI_NODE_BOARD_PADDING + VI_NODE_BOARD_HEIGHT));
 
                         struct vi_link_board_t *drwSubLink;
