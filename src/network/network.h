@@ -90,6 +90,7 @@ void net_free(struct net_t *net);
 void net_dump(struct net_t *net, FILE *f);
 
 void net_dump_report(struct net_t *net, FILE *f);
+void net_dump_routes(struct net_t *net, FILE *f);
 
 struct net_node_t *net_add_end_node(struct net_t *net,
 	int input_buffer_size, int output_buffer_size,

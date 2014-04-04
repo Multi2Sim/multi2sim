@@ -72,10 +72,8 @@ void net_msg_free(struct net_msg_t *msg)
 		struct net_packet_t *pkt;
 		pkt = msg->packet_list_head;
 		DOUBLE_LINKED_LIST_REMOVE(msg, packet, pkt);
-		//		fprintf(stderr, "freeing %lld:%d\t", msg->id, pkt->session_id); [K1]
-		free(pkt);
+		net_packet_free(pkt);
 	}
-	//	fprintf(stderr, "\n"); [K1]
 	free(msg);
 }
 
