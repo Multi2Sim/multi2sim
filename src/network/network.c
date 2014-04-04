@@ -22,6 +22,7 @@
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
+#include <lib/util/hash-table.h>
 #include <lib/util/list.h>
 #include <lib/util/string.h>
 #include <lib/util/misc.h>
@@ -199,6 +200,10 @@ void net_dump_report(struct net_t *net, FILE *f)
 	}
 }
 
+void net_dump_routes(struct net_t *net, FILE *f)
+{
+        net_routing_table_dump(net->routing_table, f);
+}
 
 struct net_node_t *net_add_end_node(struct net_t *net,
 		int input_buffer_size, int output_buffer_size,

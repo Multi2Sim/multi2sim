@@ -22,9 +22,11 @@
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/file.h>
+#include <lib/util/hash-table.h>
 #include <lib/util/list.h>
 #include <lib/util/string.h>
 #include <network/network.h>
+#include <network/net-system.h>
 
 #include "cache.h"
 #include "config.h"
@@ -94,10 +96,17 @@ void mem_system_free(struct mem_system_t *mem_system)
  */
 
 static char *mem_err_timing =
-	"\tA command-line option related with the memory hierarchy ('--mem' prefix)\n"
-	"\thas been specified, by no architecture is running a detailed simulation.\n"
-	"\tPlease specify at least one detailed simulation (e.g., with option\n"
-	"\t'--x86-sim detailed'.\n";
+		"\tA command-line option related with the memory hierarchy ('--mem' prefix)\n"
+		"\thas been specified, by no architecture is running a detailed simulation.\n"
+		"\tPlease specify at least one detailed simulation (e.g., with option\n"
+		"\t'--x86-sim detailed'.\n";
+static char *net_wrn_dump =
+                "\tThe requested information about some or all of system's network is placed\n"
+                "\tin the resulted memory report file. If a memory report file is not\n"
+                "\trequested, this data is lost. Also if some of the network configuration\n"
+                "\thas been set in external network configuration file, requested data\n"
+                "\tfor those network files will be placed in files assign as m2s input\n"
+                "\targuments (e.g. --net-report <FILE-NAME> or --net-dump-routes <FILE-NAME>.\n";
 
 void mem_system_init(void)
 {
@@ -113,7 +122,7 @@ void mem_system_init(void)
 	if (mem_config_file_name && *mem_config_file_name && !count)
 		fatal("memory configuration file given, but no timing simulation.\n%s",
 				mem_err_timing);
-	
+
 	/* Create trace category. This needs to be done before reading the
 	 * memory configuration file with 'mem_config_read', since the latter
 	 * function generates the trace headers. */
@@ -131,7 +140,7 @@ void mem_system_init(void)
 	/* Try to open report file */
 	if (*mem_report_file_name && !file_can_open_for_write(mem_report_file_name))
 		fatal("%s: cannot open GPU cache report file",
-			mem_report_file_name);
+				mem_report_file_name);
 
 	/* NMOESI memory event-driven simulation */
 
@@ -158,7 +167,7 @@ void mem_system_init(void)
 			mem_domain_index, "mod_nmoesi_store_unlock");
 	EV_MOD_NMOESI_STORE_FINISH = esim_register_event_with_name(mod_handler_nmoesi_store,
 			mem_domain_index, "mod_nmoesi_store_finish");
-	
+
 	EV_MOD_NMOESI_NC_STORE = esim_register_event_with_name(mod_handler_nmoesi_nc_store,
 			mem_domain_index, "mod_nmoesi_nc_store");
 	EV_MOD_NMOESI_NC_STORE_LOCK = esim_register_event_with_name(mod_handler_nmoesi_nc_store,
@@ -338,11 +347,20 @@ void mem_system_dump_report(void)
 
 	int i;
 
+	/* Network dump information warning */
+	if (list_count(mem_system->net_list) != 0)
+	{
+		if (*net_report_file_name || *net_route_file_name)
+		{
+			warning("Displacement in presenting requested output data.\n%s", net_wrn_dump);
+		}
+	}
+
 	/* Open file */
 	f = file_open_for_write(mem_report_file_name);
 	if (!f)
 		return;
-	
+
 	/* Intro */
 	fprintf(f, "; Report for caches, TLBs, and main memory\n");
 	fprintf(f, ";    Accesses - Total number of accesses\n");
@@ -359,7 +377,7 @@ void mem_system_dump_report(void)
 	fprintf(f, ";    BlockingReads, BlockingWrites, BlockingNCWrites - Reads/writes coming from lower-level cache\n");
 	fprintf(f, ";    NonBlockingReads, NonBlockingWrites, NonBlockingNCWrites - Coming from upper-level cache\n");
 	fprintf(f, "\n\n");
-	
+
 	/* Report for each cache */
 	for (i = 0; i < list_count(mem_system->mod_list); i++)
 	{
@@ -373,9 +391,9 @@ void mem_system_dump_report(void)
 			fprintf(f, "Sets = %d\n", cache->num_sets);
 			fprintf(f, "Assoc = %d\n", cache->assoc);
 			fprintf(f, "Policy = %s\n", str_map_value(
-				&cache_policy_map, cache->policy));
+					&cache_policy_map, cache->policy));
 			fprintf(f, "WritePolicy = %s\n", str_map_value(
-				&cache_writepolicy_map, cache->writepolicy));
+					&cache_writepolicy_map, cache->writepolicy));
 		}
 		fprintf(f, "BlockSize = %d\n", mod->block_size);
 		fprintf(f, "Latency = %d\n", mod->data_latency);
@@ -384,34 +402,34 @@ void mem_system_dump_report(void)
 
 		/* Statistics */
 		long long hits = mod->read_hits + mod->write_hits + 
-			mod->nc_write_hits;
+				mod->nc_write_hits;
 		long long retry_hits = mod->retry_read_hits + 
-			mod->retry_write_hits + mod->retry_nc_write_hits;
+				mod->retry_write_hits + mod->retry_nc_write_hits;
 		long long misses = mod->read_misses + mod->write_misses + 
-			mod->nc_write_misses;
+				mod->nc_write_misses;
 		long long retry_misses = mod->retry_read_misses + 
-			mod->retry_write_misses + mod->retry_nc_write_misses;
+				mod->retry_write_misses + mod->retry_nc_write_misses;
 		long long total_hits = hits + retry_hits;
 		long long total_misses = misses + retry_misses;
 		fprintf(f, "Accesses = %lld\n", mod->accesses);
 		/*
 		assert(mod->accesses == hits + misses + 
 			mod->dir_entry_conflicts);
-			*/
+		 */
 		fprintf(f, "Conflicts(Retries) = %lld\n", 
-			mod->dir_entry_conflicts);
+				mod->dir_entry_conflicts);
 		fprintf(f, "CoalescedAccesses = %lld\n", mod->coalesced_reads + 
-			mod->coalesced_writes + mod->coalesced_nc_writes);
+				mod->coalesced_writes + mod->coalesced_nc_writes);
 		fprintf(f, "Hits = %lld\n", total_hits);
 		fprintf(f, "Misses = %lld\n", total_misses);
 		fprintf(f, "HitRatio = %.4g\n", (total_hits + total_misses) ?
-			(double)total_hits/(total_hits + total_misses) : 0.0);
+				(double)total_hits/(total_hits + total_misses) : 0.0);
 		fprintf(f, "Evictions = %lld\n", mod->evictions);
 		fprintf(f, "Retries = %lld\n", mod->retry_accesses);
 		/*
 		assert(mod->retry_accesses == (retry_hits + retry_misses +
 			mod->retry_dir_entry_conflicts));
-			*/
+		 */
 		fprintf(f, "\n");
 		fprintf(f, "Reads = %lld\n", mod->reads);
 		assert(mod->reads == mod->read_hits + mod->read_misses);
@@ -421,7 +439,7 @@ void mem_system_dump_report(void)
 		/*
 		assert(mod->retry_reads == mod->retry_read_hits + 
 			mod->retry_read_misses);
-			*/
+		 */
 		fprintf(f, "RetryReadHits = %lld\n", mod->retry_read_hits);
 		fprintf(f, "RetryReadMisses = %lld\n", mod->retry_read_misses);
 		fprintf(f, "CoalescedReads = %lld\n", mod->coalesced_reads);
@@ -434,50 +452,50 @@ void mem_system_dump_report(void)
 		/*
 		assert(mod->retry_writes == mod->retry_write_hits + 
 			mod->retry_write_misses);
-			*/
+		 */
 		fprintf(f, "RetryWriteHits = %lld\n", mod->retry_write_hits);
 		fprintf(f, "RetryWriteMisses = %lld\n", 
-			mod->retry_write_misses);
+				mod->retry_write_misses);
 		fprintf(f, "CoalescedWrites = %lld\n", mod->coalesced_writes);
 		fprintf(f, "\n");
 		fprintf(f, "NCWrites = %lld\n", mod->nc_writes);
 		/*
 		assert(mod->nc_writes == mod->nc_write_hits + 
 			mod->nc_write_misses);
-			*/
+		 */
 		fprintf(f, "NCWriteHits = %lld\n", mod->nc_write_hits);
 		fprintf(f, "NCWriteMisses = %lld\n", mod->nc_write_misses);
 		fprintf(f, "RetryNCWrites = %lld\n", mod->retry_nc_writes);
 		/*
 		assert(mod->retry_nc_writes == mod->retry_nc_write_hits + 
 			mod->retry_nc_write_misses);
-			*/
+		 */
 		fprintf(f, "RetryNCWriteHits = %lld\n", 
-			mod->retry_nc_write_hits);
+				mod->retry_nc_write_hits);
 		fprintf(f, "RetryNCWriteMisses = %lld\n", 
-			mod->retry_nc_write_misses);
+				mod->retry_nc_write_misses);
 		fprintf(f, "CoalescedNCWrites = %lld\n", 
-			mod->coalesced_nc_writes);
+				mod->coalesced_nc_writes);
 		fprintf(f, "\n");
 		fprintf(f, "Prefetches = %lld\n", mod->prefetches);
 		fprintf(f, "PrefetchAborts = %lld\n", mod->prefetch_aborts);
 		fprintf(f, "UselessPrefetches = %lld\n", 
-			mod->useless_prefetches);
+				mod->useless_prefetches);
 		fprintf(f, "\n");
 		fprintf(f, "ReadProbes = %lld\n", mod->read_probes);
 		fprintf(f, "RetryReadProbes = %lld\n", mod->retry_read_probes);
 		fprintf(f, "WriteProbes = %lld\n", mod->write_probes);
 		fprintf(f, "RetryWriteProbes = %lld\n", 
-			mod->retry_write_probes);
+				mod->retry_write_probes);
 		fprintf(f, "\n");
 		fprintf(f, "ConflictInvalidations = %lld\n", 
-			mod->conflict_invalidations);
+				mod->conflict_invalidations);
 		fprintf(f, "HLCEvictions = %lld\n", mod->hlc_evictions);
 		/*
 		fprintf(f, "\n");
 		fprintf(f, "DirectoryAccesses = %lld\n", mod->dir_accesses);
 		fprintf(f, "DataAccesses = %lld\n", mod->data_accesses);
-		*/
+		 */
 		fprintf(f, "\n\n");
 	}
 
@@ -486,8 +504,11 @@ void mem_system_dump_report(void)
 	{
 		net = list_get(mem_system->net_list, i);
 		net_dump_report(net, f);
+		if (*net_route_file_name)
+			net_dump_routes(net, f);
+
 	}
-	
+
 	/* Done */
 	fclose(f);
 }
