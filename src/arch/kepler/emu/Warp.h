@@ -27,7 +27,6 @@
 #include <vector>
 
 #include <arch/kepler/asm/Inst.h>
-
 #include "Grid.h"
 #include "ThreadBlock.h"
 #include "Warp.h"
@@ -56,12 +55,12 @@ class Warp
 	{
 		unsigned int reconv_pc;
 		unsigned int next_path_pc;
-		unsigned int active_thread_mask;
+		unsigned int active_thread_mask;  // the number of the thread active?
 	};
 
 	struct SyncStack
 	{
-		SyncStackEntry entries[32];
+		SyncStackEntry entries[32];  // 注意 32个entry 对应32个thread
 	};
 
 	// IDs
@@ -75,27 +74,28 @@ class Warp
 	Grid *grid;
 	ThreadBlock *thread_block;
 
-	// threads
+	// threads　　　　　     how many threads the warp includes ?? 
 	unsigned thread_count;
 
 	// Additional data added by timing simulator
 	std::unique_ptr<WarpData> data;
 
 	// Program counter. Offset in 'inst_buffer' where we can find the next
-	// instruction to be executed.
+	// instruction to be executed.　　　　　　　??  what's inst_buffer 
 	unsigned pc;
 	int inst_size;
+    int target_pc;    // ????????????????????????????????????????
 
 	// Current instruction
 	//KeplerInstWrap *inst;
 	Inst* inst;
 
-	// Starting/current position in buffer
+	// Starting/current position in buffer          what's the buffer ?
 	unsigned long long *inst_buffer;
 	unsigned inst_buffer_index;
 	unsigned inst_buffer_size;
-
-	// Sync stack
+	 
+	// Sync stack   Reconvergence stack
 	SyncStackEntry new_entry;
 	SyncStack sync_stack;
 	int sync_stack_top;
@@ -104,7 +104,7 @@ class Warp
 	unsigned int divergent;
 	unsigned int taken;
 
-	// Predicate mask
+	// Predicate mask        // mask register??  
 	bit_map_t *pred;
 
 	// Flags updated during instruction execution
@@ -112,7 +112,7 @@ class Warp
 	int active_mask_pop;
 	unsigned at_barrier_thread_count;
 	unsigned finished_thread_count;
-	bool finished_emu;
+	bool finished_emu;                    // what's this? 
 	bool at_barrier;
 
 	// iterators
@@ -171,7 +171,14 @@ public:
 
 	/// Return at barrier
 	bool getAtBarrier() const { return at_barrier; }
-         /////////////////////////////////////////////////////////////
+
+	/// Get Sync stack top reconv pc
+    unsigned getSyncStkTopRecPC() const { return sync_stack.entries[sync_stack_top].reconv_pc; }
+
+	/// Get Sync stack top reconv pc
+    unsigned getSyncStkTopActive() const { return sync_stack.entries[sync_stack_top].active_thread_mask; }
+
+	/////////////////////////////////////////////////////////////
 	
 	///Get thread_count
 	unsigned getThreadCount() const {return thread_count; }
@@ -179,11 +186,10 @@ public:
 	/// Get finished_thread_count
 	unsigned getFinishedThreadCount() const {return finished_thread_count; }
 
-	/// Get Sync stack top reconv pc
-    unsigned getSyncStkTopRecPC() const { return sync_stack.entries[sync_stack_top].reconv_pc; }
+	/// Get inst_size
 
-	/// Get Sync stack top reconv pc
-    unsigned getSyncStkTopActive() const { return sync_stack.entries[sync_stack_top].active_thread_mask; }
+	int getInstSize() const {return inst_size;}
+	//////////////////////////////////////////////////////////////
 
 	// Setters
 	//
@@ -213,10 +219,12 @@ public:
     	sync_stack.entries[sync_stack_top].active_thread_mask = value;
     }
 
-////////////////////////////////////////////////////////////////////
+	////////////////////////////////////////////////////////////////////
 	// Set finished_emu
 
 	void setFinishedEmu (bool value) { finished_emu = value;}
+
+	void setTargetpc ( int target)  {target_pc = target; }
 
     /// Decrement Sync Stack top counter
     void decrSyncStkTop() { sync_stack_top --; }

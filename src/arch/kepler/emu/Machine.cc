@@ -19,10 +19,10 @@
 
 #include <math.h>
 #include <iostream>
-
 #include <lib/util/bit-map.h>
 #include <lib/util/debug.h>
 #include <mem-system/memory.h>
+
 
 #include "Emu.h"
 #include "Grid.h"
@@ -362,10 +362,82 @@ void kpl_isa_IADD_A_impl(Thread *thread, Inst *inst)
 
 }
 
+ 
 void kpl_isa_IADD_B_impl(Thread *thread, Inst *inst)
 {
 
-	__NOT_IMPL__
+	// Inst bytes format
+	InstBytes inst_bytes = inst->getInstBytes();
+	InstBytesGeneral0 fmt = inst_bytes.general0;
+
+	// Predicates and active masks
+	Emu* emu = Emu::getInstance();
+	Warp* warp = thread->getWarp();
+	unsigned pred;
+	unsigned pred_id;
+	unsigned active;
+
+    // Operands
+	unsigned dst_id, src_id;
+	int dst;
+	int srcA, srcB;
+
+	// Pop sync stack at reconvergence PC
+	if ((warp->getPC() != 0) && (warp->getPC() ==
+			warp->getSyncStkTopRecPC()))
+	{
+		warp->setSyncStkTopRecPC(0);
+		//bit_map_free(warp->sync_stack.entries[warp->sync_stack_top].
+		//		active_thread_mask);
+        warp->setSyncStkTopActive(-1);
+		warp->decrSyncStkTop();
+	}
+
+	// Active
+	active =  unsigned(1) & (warp->getSyncStkTopActive() >> (thread->getIdInWarp()-1));
+
+	// Predicate
+	pred_id = fmt.pred;
+	if (pred_id <= 7)
+		pred = thread->GetPred(pred_id);
+	else
+		pred = ! thread->GetPred(pred_id - 8);
+
+	// Execute
+	if (active == 1 && pred == 1)
+	{
+		/* Read */
+		src_id = fmt.mod0;
+		srcA = thread->ReadGPR(src_id);
+		src_id = fmt.srcB;
+		if (fmt.srcB_mod == 0)
+		{
+			emu->ReadConstMem(src_id << 2, 4, (char*)&srcB);
+		}
+		else if (fmt.srcB_mod == 1)
+			srcB = thread->ReadGPR(src_id);
+		else	//check it
+			srcB = src_id >> 18 ? src_id | 0xfff80000 : src_id;
+
+		if (((fmt.mod1 >> 9) & 0x1) == 1)	//FIXME
+			srcB = -srcB;
+
+		/* Execute */
+		dst = srcA + srcB;
+
+		/* Write */
+		dst_id = fmt.dst;
+		thread->WriteGPR(dst_id, dst);
+	}
+	if(getenv("M2S_KPL_ISA_DEBUG"))
+	{
+    std::cerr<< "Warp id "<< std::hex
+      		<<thread->getWarpId() <<" IADD op0 "<<fmt.op0;
+    std::cerr<<" dst " <<fmt.dst <<" mod0 " <<fmt.mod0 << " s " <<fmt.s << " srcB " <<fmt.srcB
+       		<<" mod1 " <<fmt.mod1 << " op1 "<< fmt.op1 <<" srcB_mod " <<fmt.srcB_mod
+       		<<std::endl;
+	}
+
 }
 
 void kpl_isa_ISETP_impl(Thread *thread, Inst *inst)
@@ -534,7 +606,8 @@ void kpl_isa_EXIT_impl(Thread *thread, Inst *inst)
 		if(warp->getFinishedThreadCount() >= warp->getThreadCount() )
 			warp->setFinishedEmu(true);
 	}
-	
+
+	warp->setTargetpc(warp->getPC()+warp->getInstSize());
 }
 
 void kpl_isa_BRA_impl(Thread *thread, Inst *inst)
