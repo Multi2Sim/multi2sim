@@ -55,6 +55,12 @@ public:
 	/// Get program id
 	unsigned getId() const { return id; }
 
+	/// Get attribute location
+	unsigned getAttribLoc(const std::string &string);
+
+	/// Get uniform location
+	unsigned getUniformLoc(const std::string &string);
+
 	/// Bind a shader to program
 	void BindShader(unsigned shader_id, OpenGLSiShaderStage stage);
 
