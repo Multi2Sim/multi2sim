@@ -1233,6 +1233,12 @@ public:
 			strlen(symbol_ptr->mangledName) + 1);
 	}
 
+	/// Get name
+	const char *getName() const { return name; }
+
+	/// Get type
+	OpenGLSiBinSymbolType getType() const { return type; }
+
 };
 
 //---------------------------.inputs section ---------------------------------
@@ -1274,6 +1280,7 @@ public:
 // --------------------- Shader binary ---------------------------------------
 class OpenGLSiShaderBinaryCommon : public ELFReader::File
 {
+protected:
 	// Same for all shaders
 	std::vector<std::unique_ptr<OpenGLSiBinInput>>   inputs;
 	std::vector<std::unique_ptr<OpenGLSiBinOutput>>  outputs;
@@ -1290,6 +1297,8 @@ class OpenGLSiShaderBinaryCommon : public ELFReader::File
 
 public:
 	OpenGLSiShaderBinaryCommon(const char *buffer, unsigned int size);
+
+	std::vector<std::unique_ptr<OpenGLSiBinSymbol>> &getSymbols() { return symbols; }
 };
 
 // Vertex Shader ELF binary with decoded information
