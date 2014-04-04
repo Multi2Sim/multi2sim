@@ -103,30 +103,77 @@ int OpenGLABIProgramSetBinary(x86::Context *ctx)
 
 int OpenGLABIProgramGetAttribLoc(x86::Context *ctx)
 {
+	Driver::OpenGLSIDriver *opengl_driver = Driver::OpenGLSIDriver::getInstance();
+	x86::Regs &regs = ctx->getRegs();
+	mem::Memory &mem = ctx->getMem();
+
+	unsigned program_id = regs.getEcx();
+	unsigned name_ptr = regs.getEdx();
+
+	ProgramGL *program = opengl_driver->getProgramById(program_id);
+	if (!program)
+		fatal("Invalid program ID %d", program_id);
+
+	std::string name = mem.ReadString(name_ptr, 1024);
+	unsigned attrib_loc = program->getAttribLoc(name);
+
 	// Return
-	return 0;
+	return attrib_loc;
 }
 
 int OpenGLABIProgramGetUniformLoc(x86::Context *ctx)
 {
+	Driver::OpenGLSIDriver *opengl_driver = Driver::OpenGLSIDriver::getInstance();
+	x86::Regs &regs = ctx->getRegs();
+	mem::Memory &mem = ctx->getMem();
+
+	unsigned program_id = regs.getEcx();
+	unsigned name_ptr = regs.getEdx();
+
+	ProgramGL *program = opengl_driver->getProgramById(program_id);
+	if (!program)
+		fatal("Invalid program ID %d", program_id);
+
+	std::string name = mem.ReadString(name_ptr, 1024);
+	unsigned uniform_loc = program->getUniformLoc(name);
+
+	// Return
+	return uniform_loc;
+
 	// Return
 	return 0;
 }
 
 int OpenGLABIShaderCreate(x86::Context *ctx)
 {
+	Driver::OpenGLSIDriver *opengl_driver = Driver::OpenGLSIDriver::getInstance();
+	x86::Regs &regs = ctx->getRegs();
+
+	unsigned program_id = regs.getEcx();
+	unsigned shader_id = regs.getEdx();
+	unsigned shader_type = regs.getEsi();
+
+	ProgramGL *program = opengl_driver->getProgramById(program_id);
+	if (!program)
+		fatal("Invalid program ID %d", program_id);
+
+	program->BindShader(shader_id, (OpenGLSiShaderStage)shader_type);
+
 	// Return
 	return 0;
 }
 
 int OpenGLABIShaderFree(x86::Context *ctx)
 {
+	// Not necessary, shader will be freed automatically
+
 	// Return
 	return 0;
 }
 
 int OpenGLABIShaderSetInput(x86::Context *ctx)
 {
+	
 	// Return
 	return 0;
 }
