@@ -64,6 +64,7 @@ extern char *fpr_name[];
 
 class mips_regs_t {
     private:
+        // Implemetation of the classs
         class mips_regs_impl {
             unsigned int regs_R[GPR_COUNT]; /* General Purpose registers */
 
@@ -82,18 +83,23 @@ class mips_regs_t {
             unsigned int regs_HI;
             unsigned int regs_LO;
         } __attribute__((packed));
+        
 
         mips_regs_impl* m_inst;
 
         void copy_from(const mips_regs_t& b);
 
     public:
+        /// Constructor and Destructor
         mips_regs_t();
         ~mips_regs_t();
 
+        /// Inistialize and Destroy is the implementation of the 
+        /// constructor and destructor. In order to prevent memory leak
         void initialize();
         void destroy();
 
+        /// Both of this two are Register copy function 
         mips_regs_t(const mips_regs_t& b);
         mips_regs_t operator=(const mips_regs_t& b);
 };
