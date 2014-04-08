@@ -63,39 +63,39 @@ extern char *gpr_name[];
 extern char *fpr_name[];
 
 class mips_regs_t {
-private:
-	class mips_regs_impl {
-		unsigned int regs_R[GPR_COUNT]; /* General Purpose registers */
+    private:
+        class mips_regs_impl {
+            unsigned int regs_R[GPR_COUNT]; /* General Purpose registers */
 
-		union {
-			float	s[FPR_COUNT];		/* single precision fp regs */
-			double	d[FPR_COUNT / 2];	/* double precision fp regs */
-		} regs_F;
+            union {
+                float	s[FPR_COUNT];		/* single precision fp regs */
+                double	d[FPR_COUNT / 2];	/* double precision fp regs */
+            } regs_F;
 
-		struct {
-			unsigned int FIR;
-			unsigned int FCSR;
-		} regs_C;
+            struct {
+                unsigned int FIR;
+                unsigned int FCSR;
+            } regs_C;
 
-		unsigned int regs_cop0[GPR_COUNT]; /* Coprocessor 0 registers */
-		unsigned int pc;
-		unsigned int regs_HI;
-		unsigned int regs_LO;
-	} __attribute__((packed));
+            unsigned int regs_cop0[GPR_COUNT]; /* Coprocessor 0 registers */
+            unsigned int pc;
+            unsigned int regs_HI;
+            unsigned int regs_LO;
+        } __attribute__((packed));
 
-	mips_regs_impl* m_inst;
+        mips_regs_impl* m_inst;
 
-	void copy_from(const mips_regs_t& b);
+        void copy_from(const mips_regs_t& b);
 
-public:
-	mips_regs_t();
-	~mips_regs_t();
+    public:
+        mips_regs_t();
+        ~mips_regs_t();
 
-	void initialize();
-	void destroy();
+        void initialize();
+        void destroy();
 
-	mips_regs_t(const mips_regs_t& b);
-	mips_regs_t operator=(const mips_regs_t& b);
+        mips_regs_t(const mips_regs_t& b);
+        mips_regs_t operator=(const mips_regs_t& b);
 };
 
 #endif
