@@ -158,6 +158,7 @@ class MIPSContext {
 
         MIPSContext_Impl* m_inst;
 
+        //! Private functions
         static void DoCreate(MIPSContext_Impl *self, MIPSEmu *emu);
         static void LoadProgramHeaders(MIPSContext_Impl *self);
         static void LoadSections(MIPSContext_Impl *self, struct elf_file_t *elf_file);
@@ -168,7 +169,8 @@ class MIPSContext {
         MIPSContext();
         ~MIPSContext();
         
-        /// Initialze and destroy function        
+        /// Initialze and destroy function, similar to Constructor and Destructor, to prevent
+        /// memroy leak        
         void initialize(MIPSEmu *emu);
         void destroy();
 
