@@ -54,17 +54,17 @@ typedef enum
 class MIPSContext {
     private:
         class MIPSContext_Impl {
-            /* Emulator */
+            //! Emulator 
             MIPSEmu *emu;
 
-            /* Parent context */
+            //! Parent context 
             MIPSContext *parent;
 
-            /* Context group initiator. There is only one group parent (if not NULL)
-             * with many group children, no tree organization. */
+            //! Context group initiator. There is only one group parent (if not NULL)
+            //! with many group children, no tree organization. 
             MIPSContext *group_parent;
 
-            /* Context properties */
+            //! Context properties 
             int status;
             int pid;  /* Context ID */
             int address_space_index;  /* Virtual memory address space index */
@@ -72,7 +72,7 @@ class MIPSContext {
             int exit_signal;  /* Signal to send parent when finished */
             int exit_code;  /* For zombie contexts */
 
-            /* Program data */
+            //! Program data 
             struct elf_file_t *elf_file;
             struct linked_list_t *args;
             struct linked_list_t *env;
@@ -81,36 +81,36 @@ class MIPSContext {
             char *stdin_file;  /* File name for stdin */
             char *stdout_file;  /* File name for stdout */
 
-            /* Stack */
+            //! Stack 
             unsigned int stack_base;
             unsigned int stack_top;
             unsigned int stack_size;
             unsigned int environ_base;
 
-            /* Lowest address initialized */
+            //! Lowest address initialized 
             unsigned int bottom;
 
-            /* Program entries */
+            //! Program entries 
             unsigned int prog_entry;
             unsigned int interp_prog_entry;
 
-            /* Program headers */
+            //! Program headers 
             unsigned int phdt_base;
             unsigned int phdr_count;
 
-            /* Random bytes */
+            //! Random bytes 
             unsigned int at_random_addr;
             unsigned int at_random_addr_holder;
 
-            /* Instruction pointers */
+            //! Instruction pointers 
             unsigned int next_ip;  /* Address of next emulated instruction */
             unsigned int curr_ip;  /* Address of currently emulated instruction */
             unsigned int n_next_ip;  /* Address for secon-next instruction */
 
-            /* Currently emulated instruction */
+            //! Currently emulated instruction 
             struct MIPSInstWrap *inst;
 
-            /* Links to contexts forming a linked list. */
+            //! Links to contexts forming a linked list. 
             MIPSContext *context_list_next, *context_list_prev;
             MIPSContext *running_list_next, *running_list_prev;
             MIPSContext *suspended_list_next, *suspended_list_prev;
@@ -118,15 +118,15 @@ class MIPSContext {
             MIPSContext *zombie_list_next, *zombie_list_prev;
             MIPSContext *alloc_list_next, *alloc_list_prev;
 
-            /* For segmented memory access in glibc */
+            //! For segmented memory access in glibc 
             unsigned int glibc_segment_base;
             unsigned int glibc_segment_limit;
 
-            /* When debugging function calls with 'mips_isa_debug_call', function call level. */
+            //! When debugging function calls with 'mips_isa_debug_call', function call level. 
             int function_level;
 
 
-            /* Variables used to wake up suspended contexts. */
+            //! Variables used to wake up suspended contexts. 
             long long wakeup_time;  /* mips_emu_timer time to wake up (poll/nanosleep) */
             int wakeup_fd;  /* File descriptor (read/write/poll) */
             int wakeup_events;  /* Events for wake up (poll) */
@@ -135,24 +135,24 @@ class MIPSContext {
             unsigned int wakeup_futex_bitset;  /* Bit mask for selective futex wakeup */
             long long wakeup_futex_sleep;  /* Assignment from x86_emu->futex_sleep_count */
 
-            /* Substructures */
+            //! Substructures 
             struct mem_t *mem; /* Virtual Memory image */
             struct mips_regs_t *regs; /* Logical register file */
             struct mips_file_desc_table_t *file_desc_table;  /* File descriptor table */
             struct mips_signal_mask_table_t *signal_mask_table;
             struct mips_signal_handler_table_t *signal_handler_table;
 
-            /* Fault Management */
+            //! Fault Management 
             unsigned int fault_addr;
             int fault_value;
 
-            /* Call Debug Stack */
+            //! Call Debug Stack 
             struct mips_isa_cstack_t *cstack;
 
-            /* Statistics */
+            //! Statistics 
 
-            /* Number of non-speculate instructions.
-             * Updated by the architectural simulator at the commit stage. */
+            //! Number of non-speculate instructions.
+            //! Updated by the architectural simulator at the commit stage. 
             long long inst_count;
         };
 
@@ -167,7 +167,8 @@ class MIPSContext {
     public:
         MIPSContext();
         ~MIPSContext();
-
+        
+        /// Initialze and destroy function        
         void initialize(MIPSEmu *emu);
         void destroy();
 
