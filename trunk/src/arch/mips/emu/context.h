@@ -20,27 +20,49 @@
 #ifndef ARCH_MIPS_EMU_CONTEXT_H
 #define ARCH_MIPS_EMU_CONTEXT_H
 
-#include <arch/mips/asm/asm.h>
 #include <lib/util/config.h>
 
 #include "emu.h"
 
 
-#define mips_ctx_debug(...) debug(mips_ctx_debug_category, __VA_ARGS__)
-extern int mips_ctx_debug_category;
+/*
+ * Class 'MIPSContext'
+ */
 
-struct mips_ctx_t
+typedef enum
 {
-	/* Number of extra contexts using this loader */
-	int num_links; //???
+	MIPSContextRunning      = 0x00001,  /* it is able to run instructions */
+	MIPSContextSpecMode     = 0x00002,  /* executing in speculative mode */
+	MIPSContextSuspended    = 0x00004,  /* suspended in a system call */
+	MIPSContextFinished     = 0x00008,  /* no more inst to execute */
+	MIPSContextExclusive    = 0x00010,  /* executing in excl mode */
+	MIPSContextLocked       = 0x00020,  /* another context is running in excl mode */
+	MIPSContextHandler      = 0x00040,  /* executing a signal handler */
+	MIPSContextSigsuspend   = 0x00080,  /* suspended after syscall 'sigsuspend' */
+	MIPSContextNanosleep    = 0x00100,  /* suspended after syscall 'nanosleep' */
+	MIPSContextPoll         = 0x00200,  /* 'poll' system call */
+	MIPSContextRead         = 0x00400,  /* 'read' system call */
+	MIPSContextWrite        = 0x00800,  /* 'write' system call */
+	MIPSContextWaitpid      = 0x01000,  /* 'waitpid' system call */
+	MIPSContextZombie       = 0x02000,  /* zombie context */
+	MIPSContextFutex        = 0x04000,  /* suspended in a futex */
+	MIPSContextAlloc        = 0x08000,  /* allocated to a core/thread */
+	MIPSContextCallback     = 0x10000,  /* suspended after syscall with callback */
+	MIPSContextInvalid      = 0x00000
+} MIPSContextState;
+
+
+CLASS_BEGIN(MIPSContext, Object)
+
+	/* Emulator */
+	MIPSEmu *emu;
 
 	/* Parent context */
-	struct mips_ctx_t *parent;
-
+	MIPSContext *parent;
 
 	/* Context group initiator. There is only one group parent (if not NULL)
 	 * with many group children, no tree organization. */
-	struct mips_ctx_t *group_parent;
+	MIPSContext *group_parent;
 
 	/* Context properties */
 	int status;
@@ -86,15 +108,15 @@ struct mips_ctx_t
 	unsigned int n_next_ip;  /* Address for secon-next instruction */
 
 	/* Currently emulated instruction */
-	struct mips_inst_t inst;
+	struct MIPSInstWrap *inst;
 
 	/* Links to contexts forming a linked list. */
-	struct mips_ctx_t *context_list_next, *context_list_prev;
-	struct mips_ctx_t *running_list_next, *running_list_prev;
-	struct mips_ctx_t *suspended_list_next, *suspended_list_prev;
-	struct mips_ctx_t *finished_list_next, *finished_list_prev;
-	struct mips_ctx_t *zombie_list_next, *zombie_list_prev;
-	struct mips_ctx_t *alloc_list_next, *alloc_list_prev;
+	MIPSContext *context_list_next, *context_list_prev;
+	MIPSContext *running_list_next, *running_list_prev;
+	MIPSContext *suspended_list_next, *suspended_list_prev;
+	MIPSContext *finished_list_next, *finished_list_prev;
+	MIPSContext *zombie_list_next, *zombie_list_prev;
+	MIPSContext *alloc_list_next, *alloc_list_prev;
 
 	/* For segmented memory access in glibc */
 	unsigned int glibc_segment_base;
@@ -132,49 +154,41 @@ struct mips_ctx_t
 	/* Number of non-speculate instructions.
 	 * Updated by the architectural simulator at the commit stage. */
 	long long inst_count;
-};
 
-enum mips_ctx_status_t
-{
-	mips_ctx_running      = 0x00001,  /* it is able to run instructions */
-	mips_ctx_spec_mode    = 0x00002,  /* executing in speculative mode */
-	mips_ctx_suspended    = 0x00004,  /* suspended in a system call */
-	mips_ctx_finished     = 0x00008,  /* no more inst to execute */
-	mips_ctx_exclusive    = 0x00010,  /* executing in excl mode */
-	mips_ctx_locked       = 0x00020,  /* another context is running in excl mode */
-	mips_ctx_handler      = 0x00040,  /* executing a signal handler */
-	mips_ctx_sigsuspend   = 0x00080,  /* suspended after syscall 'sigsuspend' */
-	mips_ctx_nanosleep    = 0x00100,  /* suspended after syscall 'nanosleep' */
-	mips_ctx_poll         = 0x00200,  /* 'poll' system call */
-	mips_ctx_read         = 0x00400,  /* 'read' system call */
-	mips_ctx_write        = 0x00800,  /* 'write' system call */
-	mips_ctx_waitpid      = 0x01000,  /* 'waitpid' system call */
-	mips_ctx_zombie       = 0x02000,  /* zombie context */
-	mips_ctx_futex        = 0x04000,  /* suspended in a futex */
-	mips_ctx_alloc        = 0x08000,  /* allocated to a core/thread */
-	mips_ctx_callback     = 0x10000,  /* suspended after syscall with callback */
-	mips_ctx_none         = 0x00000
-};
+CLASS_END(MIPSContext)
 
-struct mips_ctx_t *mips_ctx_create();
+
+void MIPSContextCreate(MIPSContext *self, MIPSEmu *emu);
+void MIPSContextDestroy(MIPSContext *self);
+
+int MIPSContextGetState(MIPSContext *ctx, MIPSContextState status);
+void MIPSContextSetState(MIPSContext *ctx, MIPSContextState status);
+void MIPSContextClearState(MIPSContext *ctx, MIPSContextState status);
+
+void MIPSContextExecute(MIPSContext *ctx);
+void MIPSContextGetFullPath(MIPSContext *ctx, char *file_name, char *full_path, int size);
+void MIPSContextFinish(MIPSContext *ctx, int status);
+void MIPSContextFinishGroup(MIPSContext *ctx, int status);
+void MIPSContextGenerateProcSelfMaps(MIPSContext *ctx, char *path);
+
+void MIPSContextAddArgsVector(MIPSContext *self, int argc, char **argv);
+
+/* Add environment variables from the actual environment plus the list attached
+ * in the argument 'env'. */
+void MIPSContextAddEnviron(MIPSContext *self, char *env);
+
+void MIPSContextLoadExecutable(MIPSContext *self, char *path);
+
+
+/*
+ * Public
+ */
+
+#define MIPSContextDebug(...) debug(mips_context_debug_category, __VA_ARGS__)
+extern int mips_context_debug_category;
 
 #define mips_loader_debug(...) debug(mips_loader_debug_category, __VA_ARGS__)
 extern int mips_loader_debug_category;
-
-int mips_ctx_get_status(struct mips_ctx_t *ctx, enum mips_ctx_status_t status);
-void mips_ctx_set_status(struct mips_ctx_t *ctx, enum mips_ctx_status_t status);
-void mips_ctx_clear_status(struct mips_ctx_t *ctx, enum mips_ctx_status_t status);
-
-void mips_ctx_execute(struct mips_ctx_t *ctx);
-void mips_ctx_free(struct mips_ctx_t *ctx);
-void mips_ctx_loader_get_full_path(struct mips_ctx_t *ctx, char *file_name, char *full_path, int size);
-void mips_ctx_finish(struct mips_ctx_t *ctx, int status);
-void mips_ctx_finish_group(struct mips_ctx_t *ctx, int status);
-void mips_ctx_load_from_command_line(int argc, char **argv);
-void mips_ctx_load_from_ctx_config(struct config_t *config, char *section);
-void mips_ctx_gen_proc_self_maps(struct mips_ctx_t *ctx, char *path);
-
-unsigned int mips_ctx_check_fault(struct mips_ctx_t *ctx);
 
 
 #endif

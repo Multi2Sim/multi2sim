@@ -37,27 +37,27 @@
 #define MIPS_COP0_GET(X) 		ctx->regs->regs_cop0[X]
 
 #define MIPS_FPR_S_GET(X)		ctx->regs->regs_F.s[X]
-#define MIPS_FPR_S_SET(X, V)	ctx->regs->regs_F.s[X] = (V)
+#define MIPS_FPR_S_SET(X, V)		ctx->regs->regs_F.s[X] = (V)
 
 #define MIPS_FPR_D_GET(X)		ctx->regs->regs_F.d[X]
-#define MIPS_FPR_D_SET(X, V)	ctx->regs->regs_F.d[X] = (V)
+#define MIPS_FPR_D_SET(X, V)		ctx->regs->regs_F.d[X] = (V)
 
 #define MIPS_REG_HI 			ctx->regs->regs_HI
 #define MIPS_REG_LO 			ctx->regs->regs_LO
-#define MIPS_REG_C_FPC_FCSR 	ctx->regs->regs_C.FCSR
+#define MIPS_REG_C_FPC_FCSR 		ctx->regs->regs_C.FCSR
 #define MIPS_REG_C_FPC_FIR 		ctx->regs->regs_C.FIR
 
 /* Instruction fields */
-#define RS 					ctx->inst.dword.standard.rs
-#define RD 					ctx->inst.dword.standard.rd
-#define SA 					ctx->inst.dword.standard.sa
-#define OFFSET 				ctx->inst.dword.offset_imm.offset
-#define RT					ctx->inst.dword.standard.rt
-#define IMM					ctx->inst.dword.offset_imm.offset
-#define	FT					ctx->inst.dword.standard.rt
-#define	FS					ctx->inst.dword.standard.rd
-#define	FD					ctx->inst.dword.standard.sa
-#define	TARGET				ctx->inst.dword.target.target
+#define RS 				MIPSInstWrapGetBytes(ctx->inst)->standard.rs
+#define RD 				MIPSInstWrapGetBytes(ctx->inst)->standard.rd
+#define SA 				MIPSInstWrapGetBytes(ctx->inst)->standard.sa
+#define OFFSET 				MIPSInstWrapGetBytes(ctx->inst)->offset_imm.offset
+#define RT				MIPSInstWrapGetBytes(ctx->inst)->standard.rt
+#define IMM				MIPSInstWrapGetBytes(ctx->inst)->offset_imm.offset
+#define	FT				MIPSInstWrapGetBytes(ctx->inst)->standard.rt
+#define	FS				MIPSInstWrapGetBytes(ctx->inst)->standard.rd
+#define	FD				MIPSInstWrapGetBytes(ctx->inst)->standard.sa
+#define	TARGET				MIPSInstWrapGetBytes(ctx->inst)->target.target
 
 extern char *gpr_name[];
 extern char *fpr_name[];
