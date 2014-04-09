@@ -22,6 +22,7 @@ int main(int argc, char **argv)
 	printf("Sorting vector...\n");
 	fflush(stdout);
 	qsort(elem, NELEM, sizeof(int), compar);
+
 	printf("Finished\n");
 	return 0;
 }
