@@ -446,68 +446,67 @@ static gboolean vi_link_board_draw (GtkWidget *widget, GdkEventConfigure *event,
         subLink = board->subLink;
         struct vi_net_link_t *link;
         link = subLink->link;
-        /*
-        int width;
-        int height;
 
-        width = gtk_widget_get_allocated_width(widget);
-        height = gtk_widget_get_allocated_height(widget);
-         */
         window = gtk_widget_get_window(widget);
         cr = gdk_cairo_create(window);
 
-        /* Circle */
+        /* Link */
         cairo_set_source_rgb(cr, link->color.red,
                         link->color.green, link->color.blue);
 
         cairo_set_line_width(cr, 8);
-        if (subLink->src_x == subLink->dst_x)
-        {
-                cairo_set_line_width(cr, 16);
-        }
-        else
-                cairo_set_line_width(cr, 8);
+
         cairo_move_to(cr, subLink->src_x, subLink->src_y );
         cairo_line_to(cr, subLink->dst_x, subLink->dst_y );
-        cairo_stroke(cr);
+        cairo_stroke_preserve(cr);
+        cairo_fill(cr);
 
-        /* calculating Degree for triangle on links */
-        double Alpha = 90 ;
-        if (subLink->src_x != subLink->dst_x)
+
+
+        /* Calculating Sign */
+        int sign = 1;
+        if (subLink->dst_y - subLink->src_y > 0 )
         {
-                Alpha = atan((subLink->dst_y - subLink->src_y) / (subLink->dst_x - subLink->src_x ));
-//                Alpha = Alpha * 180/M_PI;
+        	sign = -1;
         }
 
-        for (int i = 0; i < 1 ; i++)
-        {
-                double tri_center_x = (i+1) * (subLink->src_x + subLink->dst_x) / 2;
-                double tri_center_y = (i+1) * (subLink->src_y + subLink->dst_y) / 2;
 
-                cairo_move_to(cr, tri_center_x + 6 * cos(Alpha), tri_center_y + 6 * sin (Alpha));
-                cairo_line_to(cr, tri_center_x + 6 * cos(140), tri_center_y + 6* sin (140));
-                cairo_line_to(cr, tri_center_x + 6 * cos(- 140), tri_center_y + 6 * sin (- 140));
-                cairo_close_path(cr);
-                cairo_stroke(cr);
+        float Alpha = M_PI/2;
+        float Cprime = sqrt(pow(subLink->dst_x - subLink->src_x, 2) + pow(subLink->dst_y - subLink->src_y,2));
+        float C = 15;
+
+        /* calculating Degree for triangle on links */
+        if (subLink->src_x != subLink->dst_x)
+        {
+        	Alpha = atan((subLink->dst_y - subLink->src_y) /(subLink->dst_x - subLink->src_x ));
+        }
+
+        if (Alpha < 0 )
+        {
+        	C = -C;
+        }
+
+        int iter = Cprime / 80;
+        for (int i = 0; i < iter ; i++)
+        {
+                cairo_set_source_rgb(cr, link->color.red,
+                                link->color.green, link->color.blue);
+
+                float tri_center_x = subLink->src_x + ((i+1) * ((subLink->dst_x - subLink->src_x) / iter));
+                float tri_center_y = subLink->src_y + ((i+1) * ((subLink->dst_y - subLink->src_y) / iter));
+                float next_x = tri_center_x + sign * C * cos(Alpha + M_PI/10);
+                float next_y = tri_center_y + sign * C * sin(Alpha + M_PI/10);
+                cairo_move_to(cr, tri_center_x , tri_center_y );
+                cairo_line_to(cr, next_x, next_y );
+                cairo_stroke_preserve(cr);
                 cairo_fill(cr);
 
         }
 
-
         /* Finish */
-        //	cairo_stroke(cr);
         cairo_destroy(cr);
         return FALSE;
 
-        /* Color
-        cairo_set_line_width(cr, 1);
-        cairo_move_to(cr, subLink->src_x, subLink->src_y);
-        cairo_line_to(cr, subLink->dst_x, subLink->dst_y);
-        cairo_set_source_rgb(cr, 0, 0, 0);
-
-        cairo_stroke(cr);
-        cairo_destroy(cr);
-        return FALSE; */
 }
 
 static void vi_link_board_free(struct vi_link_board_t *board)
@@ -534,7 +533,7 @@ static struct vi_link_board_t  *vi_link_board_create (struct vi_net_sub_link_t *
 
         GtkWidget *drawing_area = gtk_drawing_area_new();
         gtk_widget_set_size_request(drawing_area,
-                        MAX(subLink->src_x, subLink->dst_x) , MAX(subLink->src_y, subLink->dst_y));
+                        MAX(subLink->src_x, subLink->dst_x) + 10, MAX(subLink->src_y, subLink->dst_y) + 10);
         gtk_widget_override_background_color(drawing_area, GTK_STATE_NORMAL, &color);
         g_signal_connect(G_OBJECT(drawing_area), "draw", G_CALLBACK(vi_link_board_draw), board);
 
