@@ -31,7 +31,7 @@ Shader::Shader(unsigned id, OpenGLSiShaderStage stage, OpenGLSiShaderBinaryCommo
 }
 
 void Shader::AddInput(unsigned index, unsigned device_buffer_size, unsigned device_buffer_ptr, 
-	SIInputDataType data_type, unsigned num_elems, unsigned isNormalized, 
+	SIInputDataType data_type, unsigned num_elems, bool isNormalized, 
 	unsigned stride, unsigned device_buffer_offset)
 {
 	inputs.push_back(std::unique_ptr<Input> (new Input(index, device_buffer_size, 

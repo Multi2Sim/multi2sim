@@ -537,13 +537,14 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count )
 					syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_mem_write,
 						vbo->device_ptr, vbo->data, vbo->size);
 					/* Insert to input list */
-					unsigned int sys_args[6];
+					unsigned int sys_args[7];
 					sys_args[0] = (unsigned int)vertex_shader_id;
 					sys_args[1] = (unsigned int)vbo->device_ptr;
 					sys_args[2] = (unsigned int)vattrib->size;
 					sys_args[3] = (unsigned int)vattrib->type;
 					sys_args[4] = (unsigned int)vbo->size;
 					sys_args[5] = (unsigned int)i;
+					sys_args[6] = (unsigned int)opengl_ctx->program_binding_point->id;
 					syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_shader_set_input,
 						sys_args);
 
