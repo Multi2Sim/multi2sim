@@ -138,8 +138,11 @@ class SPI
 	// Viewport to be applied to vertex export data
 	std::unique_ptr<ViewPort> viewport;
 
-	// Depth Buffer FIXME: make it a part of Shader Export module
+	// Depth Buffer
 	std::unique_ptr<DepthBuffer> depth_buffer;
+	// FIXME: make it a part of global memory
+	// unsigned depth_buffer_ptr // depth buffer is a part of global memory
+	// unsigned depth_buffer_size
 
 	/// Move initialization data to NDRange(created for Pixel Shader)
 	void InitDataToNDRange(NDRange *ndrange);

@@ -27,7 +27,7 @@ namespace SI
 {
 
 Input::Input(unsigned index, unsigned device_buffer_size, unsigned device_buffer_ptr, 
-	SIInputDataType data_type, unsigned num_elems, unsigned isNormalized, 
+	SIInputDataType data_type, unsigned num_elems, bool isNormalized, 
 	unsigned stride, unsigned device_buffer_offset)
 {
 	this->index = index;
@@ -44,7 +44,7 @@ Input::Input(unsigned index, unsigned device_buffer_size, unsigned device_buffer
 	this->device_buffer_offset = device_buffer_offset;
 }
 
-unsigned getDataSize(SIInputDataType data_type) 
+unsigned Input::getDataSize(SIInputDataType data_type) 
 {
 	switch (data_type)
 	{

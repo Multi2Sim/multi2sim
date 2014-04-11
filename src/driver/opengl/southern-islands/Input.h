@@ -57,13 +57,13 @@ class Input
 
 public:
 	Input(unsigned index, unsigned device_buffer_size, unsigned device_buffer_ptr, 
-		SIInputDataType data_type, unsigned num_elems, unsigned isNormalized, 
+		SIInputDataType data_type, unsigned num_elems, bool isNormalized, 
 		unsigned stride, unsigned device_buffer_offset);
 
 	/// Getters
 	///
 	/// Get data size based on data type
-	unsigned getDataSize(SIInputDataType data_type) const;
+	static unsigned getDataSize(SIInputDataType data_type);
 };
 
 
