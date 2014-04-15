@@ -17,37 +17,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <iostream>
 
-namespace MIPS 
+namespace mips
 {
-
-// Context States
-enum ContextState
-{
-	ContextRunning	 = 0x00001,  // it is able to run instructions
-	ContextSpecMode	 = 0x00002,  // executing in speculative mode
-	ContextFinished  = 0x00003,  // executing finished
-	ContextInvalid	 = 0x00000
-};
-
-// mips Context
-class Context
-{
-
-
-
-public:
-	Context();
-	~Context();
-
-
-
-}
-
-
-
-
-
+//
+// Class 'Emu'
+//
 
 }
