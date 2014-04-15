@@ -22,6 +22,18 @@ libemu_a_SOURCES = \
 	machine.h \
 	\
 	isa.c \
-	isa.h
-
+	isa.h \
+	\
+	Context.cc \
+	Context.h \
+	\
+	Regs.cc \
+	Regs.h \
+	\
+	Emu.cc \
+	Emu.h
+	
+	
+	
+	
 INCLUDES = @M2S_INCLUDES@
