@@ -31,6 +31,12 @@ struct vi_node_widget_t
 	GtkWidget *hscrollbar;
 	GtkWidget *vscrollbar;
 
+        GtkWidget *content_layout;
+        GtkWidget *msg_bar_layout;
+
+        GtkWidget *first_row_layout;
+        GtkWidget *first_col_layout;
+
 	int width;
 	int height;
 
