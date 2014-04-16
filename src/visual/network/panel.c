@@ -30,6 +30,10 @@
 #define VI_NET_BOARD_WIDTH		100
 #define VI_NET_BOARD_HEIGHT		100
 
+#define VI_NETWORK_LAYOUT_WIDTH         800
+#define VI_NETWORK_LAYOUT_HEIGHT        600
+
+
 static gboolean 		 vi_net_board_toggle_button_toggled (GtkWidget *widget, struct vi_net_board_t *board);
 static void 			 vi_net_board_destroy               (GtkWidget *widget, struct vi_net_board_t *board);
 static struct vi_net_window_t   *vi_net_window_create              (struct vi_net_t * net, GtkWidget *parent_toggle_button);
@@ -155,7 +159,8 @@ static struct vi_net_window_t * vi_net_window_create(struct vi_net_t * net, GtkW
 	snprintf(str, sizeof str, "Network %s", net->name);
 	GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_title(GTK_WINDOW(window), str);
-
+        gtk_window_set_default_size(GTK_WINDOW(window), VI_NETWORK_LAYOUT_WIDTH,
+                        VI_NETWORK_LAYOUT_HEIGHT);
 	/* Module widget */
 	struct vi_net_widget_t *net_widget;
 	net_widget = vi_net_widget_create(net);

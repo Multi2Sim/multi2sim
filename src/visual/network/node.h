@@ -49,6 +49,8 @@ struct vi_net_node_t
 	struct hash_table_t   *input_buffer_list;
 	struct hash_table_t   *output_buffer_list;
 
+        int max_buffer_size;
+
 	/* Coordination on Network Window */
 	double X;
 	double Y;
@@ -58,6 +60,8 @@ struct vi_net_node_t
 	struct hash_table_t *src_buffer_list;
 	struct hash_table_t *dst_buffer_list;
 };
+
+struct vi_trace_line_t;
 
 struct vi_net_node_t *vi_net_node_create (void);
 void                  vi_net_node_free   (struct vi_net_node_t *node);

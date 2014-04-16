@@ -35,9 +35,8 @@
 #define VI_NODE_BOARD_WIDTH             80
 #define VI_NODE_BOARD_HEIGHT            80
 
-#define VI_NETWORK_LAYOUT_WIDTH         800
-#define VI_NETWORK_LAYOUT_HEIGHT        600
-
+#define VI_NODE_LAYOUT_WIDTH            400
+#define VI_NODE_LAYOUT_HEIGHT           300
 # define ALPHA		VI_NODE_BOARD_PADDING
 # define M_PI           3.14159265358979323846  /* pi */
 
@@ -96,8 +95,6 @@ struct vi_net_widget_t *vi_net_widget_create(struct vi_net_t *net)
         GtkWidget *layout;
         GdkColor color;
         layout = gtk_layout_new(NULL, NULL);
-        gtk_widget_set_size_request(layout, VI_NETWORK_LAYOUT_WIDTH,
-                VI_NETWORK_LAYOUT_HEIGHT);
         gdk_color_parse("white", &color);
         gtk_widget_modify_bg(layout, GTK_STATE_NORMAL, &color);
 
@@ -405,13 +402,15 @@ static struct vi_node_window_t *vi_node_window_create(struct vi_net_node_t * nod
         node_window->parent_toggle_button = parent_toggle_button;
 
         /* Main window */
-        snprintf(str, sizeof str, "Network %s", node->name);
+        snprintf(str, sizeof str, "Node %s", node->name);
         GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
         gtk_window_set_title(GTK_WINDOW(window), str);
+        gtk_window_set_default_size(GTK_WINDOW(window), VI_NODE_LAYOUT_WIDTH,
+                        VI_NODE_LAYOUT_HEIGHT);
 
         /* Module widget */
         struct vi_node_widget_t *node_widget;
-        node_widget = vi_node_widget_create(node->name);
+        node_widget = vi_node_widget_create(node);
         gtk_container_add(GTK_CONTAINER(window), vi_node_widget_get_widget(node_widget));
         node_window->node_widget = node_widget;
 

@@ -374,13 +374,7 @@ void vi_net_graph_finalize(struct vi_net_graph_t *net_graph)
                         node = vertex_data->node;
                         node->X = (double) vertex->x_coor / net_graph->scale;
                         node->Y = vertex->y_coor;
-                        /*                      fprintf(stderr, "With scale node = %s %f %d \t", vertex->name,
-                                        (double) vertex->x_coor / net_graph->scale,
-                                        vertex->y_coor);
-                        fprintf(stderr, "Without scale node = %s %f %d \n", vertex->name,
-                                        (double) vertex->x_coor,
-                                        vertex->y_coor);
-                         */
+
                 }
                 if (vertex->kind == graph_vertex_dummy)
                 {

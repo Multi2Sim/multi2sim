@@ -25,27 +25,48 @@
 
 struct vi_node_widget_t
 {
-	char *name;
+	struct vi_net_node_t *node;
 
 	GtkWidget *widget;
+
+        GtkWidget *buffer_table_title_layout;
+
 	GtkWidget *hscrollbar;
 	GtkWidget *vscrollbar;
 
         GtkWidget *content_layout;
+        GtkWidget *content_table;
+        struct matrix_t *content_matrix;
+
+        GtkWidget *buffer_queue_layout;
+        GtkWidget *buffer_queue;
+        struct list_t *buffer_queue_list;
+
+        GtkWidget *buffer_table_layout;
+        GtkWidget *buffer_table;
+        struct list_t *buffer_list;
+
         GtkWidget *msg_bar_layout;
 
-        GtkWidget *first_row_layout;
-        GtkWidget *first_col_layout;
+        int content_layout_width;
+        int content_layout_height;
 
-	int width;
-	int height;
+        int buffer_table_layout_width;
+        int buffer_table_layout_height;
 
+        int left_packet;
+        int left_offset;
+
+        int top_buffer;
+        int top_offset;
 };
 
 
-struct vi_node_widget_t *vi_node_widget_create     (char *node_name);
+struct vi_node_widget_t *vi_node_widget_create     (struct vi_net_node_t *node);
 void                     vi_node_widget_free       (struct vi_node_widget_t *node_widget);
 GtkWidget               *vi_node_widget_get_widget (struct vi_node_widget_t *widget);
+
+void                     vi_node_widget_refresh    (struct vi_node_widget_t *node_widget);
 
 
 #endif
