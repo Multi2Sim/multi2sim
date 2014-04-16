@@ -81,6 +81,13 @@ struct vi_net_buffer_t *vi_net_buffer_create (struct vi_trace_line_t *trace_line
 	int buffer_size ;
 	buffer_size = vi_trace_line_get_symbol_int(trace_line, "buffer_size");
 	buffer->size = buffer_size;
+	if (net->packet_size != 0)
+	        buffer->packet_capacity = (buffer_size -1 ) / net->packet_size + 1;
+	else
+	        buffer->packet_capacity = buffer->size;
+
+        if (node->max_buffer_size < buffer->packet_capacity)
+                node->max_buffer_size = buffer->packet_capacity;
 
 	/* Set buffer connection Type */
 	int connection_type;

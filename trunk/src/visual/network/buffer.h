@@ -38,6 +38,7 @@ enum vi_buffer_connect_t
 struct vi_net_buffer_t
 {
 	int			    size;
+	int                         packet_capacity;
 	enum vi_buffer_connect_t    connection_type;
 	enum vi_buffer_direction_t  direction;
 
