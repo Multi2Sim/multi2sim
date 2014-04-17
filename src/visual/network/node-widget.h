@@ -27,9 +27,12 @@ struct vi_node_widget_t
 {
 	struct vi_net_node_t *node;
 
+	struct vi_list_t *message_list;
 	GtkWidget *widget;
 
         GtkWidget *buffer_table_title_layout;
+        GtkWidget *buffer_title;
+        struct list_t *buffer_title_list;
 
 	GtkWidget *hscrollbar;
 	GtkWidget *vscrollbar;

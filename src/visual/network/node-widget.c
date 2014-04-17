@@ -17,6 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <math.h>
+
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/hash-table.h>
@@ -25,6 +27,7 @@
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
 
+#include "buffer.h"
 #include "node.h"
 #include "node-widget.h"
 
@@ -79,97 +82,6 @@ static gboolean vi_node_widget_scroll(GtkWidget *widget, GdkEventScroll *event,
         return FALSE;
 }
 
-struct vi_node_widget_t *vi_node_widget_create(struct vi_net_node_t *node)
-{
-        struct vi_node_widget_t *node_widget;
-
-        /* Initialize */
-        node_widget = xcalloc(1, sizeof(struct vi_node_widget_t));
-        node_widget->node = node;
-
-        /* Content Layout */
-        GtkWidget *content_layout;
-        content_layout = gtk_layout_new(NULL, NULL);
-        gtk_widget_set_size_request(content_layout, VI_NODE_CONTENT_LAYOUT_WIDTH,
-                        VI_NODE_CONTENT_LAYOUT_HEIGHT);
-        g_signal_connect(G_OBJECT(content_layout), "size_allocate",
-                        G_CALLBACK(vi_node_widget_size_allocate), node_widget);
-        g_signal_connect(G_OBJECT(content_layout), "scroll-event",
-                        G_CALLBACK(vi_node_widget_scroll), node_widget);
-        node_widget->content_layout = content_layout;
-
-        /* Table Right - Vertical */
-        GtkWidget *buffer_queue_layout;
-        buffer_queue_layout = gtk_layout_new(NULL, NULL);
-        gtk_widget_set_size_request(buffer_queue_layout , VI_NODE_BUFFER_QUEUE_LAYOUT_WIDTH,
-                        VI_NODE_BUFFER_QUEUE_LAYOUT_HEIGHT);
-        node_widget->buffer_queue_layout = buffer_queue_layout;
-
-        /* Right vertical box */
-        GtkWidget *right_vbox;
-        right_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-        gtk_box_pack_start(GTK_BOX(right_vbox), buffer_queue_layout, FALSE, FALSE, 0);
-        gtk_box_pack_start(GTK_BOX(right_vbox), content_layout, TRUE, TRUE, 0);
-
-        /* Buffer Queue Layout */
-        GtkWidget *buffer_table_layout;
-        buffer_table_layout = gtk_layout_new(NULL, NULL);
-        gtk_widget_set_size_request(buffer_table_layout, VI_NODE_BUFFER_TABLE_LAYOUT_WIDTH,
-                        VI_NODE_BUFFER_TABLE_LAYOUT_HEIGHT);
-        g_signal_connect(G_OBJECT(buffer_table_layout), "size_allocate",
-                        G_CALLBACK(vi_node_widget_size_allocate), node_widget);
-        g_signal_connect(G_OBJECT(buffer_table_layout), "scroll-event",
-                        G_CALLBACK(vi_node_widget_scroll), node_widget);
-        node_widget->buffer_table_layout = buffer_table_layout;
-
-        /* Buffer Table Title Layout */
-        GtkWidget *buffer_table_title_layout;
-        buffer_table_title_layout= gtk_layout_new(NULL, NULL);
-        gtk_widget_set_size_request(buffer_table_title_layout, VI_NODE_BUFFER_TABLE_LAYOUT_WIDTH,
-                        VI_NODE_CONTENT_CELL_HEIGHT);
-        node_widget->buffer_table_title_layout = buffer_table_title_layout;
-
-        /* Left vertical box */
-        GtkWidget *left_vbox;
-        left_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-        gtk_box_pack_start(GTK_BOX(left_vbox), buffer_table_title_layout, FALSE, FALSE, 0);
-        gtk_box_pack_start(GTK_BOX(left_vbox), buffer_table_layout, TRUE, TRUE, 0);
-
-        /* Inner horizontal panel */
-        GtkWidget *inner_hpaned;
-        inner_hpaned = gtk_paned_new(GTK_ORIENTATION_HORIZONTAL);
-        gtk_paned_pack1(GTK_PANED(inner_hpaned), left_vbox, TRUE, FALSE);
-        gtk_paned_pack2(GTK_PANED(inner_hpaned), right_vbox, TRUE, TRUE);
-
-        /* Scroll bars */
-        GtkWidget *hscrollbar = gtk_scrollbar_new(GTK_ORIENTATION_HORIZONTAL, NULL);
-        GtkWidget *vscrollbar = gtk_scrollbar_new(GTK_ORIENTATION_VERTICAL, NULL);
-        node_widget->hscrollbar = hscrollbar;
-        node_widget->vscrollbar = vscrollbar;
-        g_signal_connect(G_OBJECT(hscrollbar), "value-changed",
-                        G_CALLBACK(vi_node_widget_scroll_bar_value_changed), node_widget);
-        g_signal_connect(G_OBJECT(vscrollbar), "value-changed",
-                        G_CALLBACK(vi_node_widget_scroll_bar_value_changed), node_widget);
-
-        /* Table */
-        GtkWidget *table;
-        table = gtk_table_new(2, 2, FALSE);
-        gtk_table_attach(GTK_TABLE(table), inner_hpaned, 0, 1, 0, 1,
-                        GTK_EXPAND | GTK_FILL | GTK_SHRINK, GTK_EXPAND | GTK_FILL | GTK_SHRINK, 0, 0);
-        gtk_table_attach(GTK_TABLE(table), hscrollbar, 0, 1, 1, 2, GTK_EXPAND | GTK_FILL | GTK_SHRINK, GTK_FILL, 0, 0);
-        gtk_table_attach(GTK_TABLE(table), vscrollbar, 1, 2, 0, 1, GTK_FILL, GTK_EXPAND | GTK_FILL | GTK_SHRINK, 0, 0);
-
-        /* Widget */
-        node_widget->widget = table;
-        g_signal_connect(G_OBJECT(node_widget->widget), "destroy",
-                        G_CALLBACK(vi_node_widget_destroy), node_widget);
-        g_signal_connect(G_OBJECT(node_widget->widget), "size_allocate",
-                        G_CALLBACK(vi_node_widget_size_allocate), node_widget);
-
-        /* Return */
-        return node_widget;
-}
-
 static void vi_node_widget_destroy(GtkWidget *widget, struct vi_node_widget_t *node_widget)
 {
         vi_node_widget_free(node_widget);
@@ -182,13 +94,16 @@ void vi_node_widget_free(struct vi_node_widget_t *node_widget)
         if (node_widget->content_matrix)
                 matrix_free(node_widget->content_matrix);
 
-        /* Instruction label list */
+        /* buffer list */
         if (node_widget->buffer_list)
                 list_free(node_widget->buffer_list);
 
-        /* Cycle label list */
+        /* buffer queue list */
         if (node_widget->buffer_queue_list)
                 list_free(node_widget->buffer_queue_list);
+
+        if (node_widget->buffer_title_list)
+                list_free(node_widget->buffer_title_list);
 
         /* Free widget */
         free(node_widget);
@@ -316,7 +231,67 @@ static void vi_node_widget_refresh_content_layout(struct vi_node_widget_t *node_
         gtk_container_check_resize(GTK_CONTAINER(content_layout));
 }
 
+static void vi_node_widget_refresh_buffer_title_layout(struct vi_node_widget_t *node_widget)
+{
+        GtkWidget *buffer_table_title_layout;
+        GtkWidget *buffer_title;
 
+        int col;
+        int num_cols = MIN(4, node_widget->buffer_table_layout_width /  VI_NODE_CONTENT_CELL_WIDTH + 2);
+
+        /* Clear title list */
+        if (!node_widget->buffer_title_list)
+                node_widget->buffer_title_list = list_create();
+        list_clear(node_widget->buffer_title_list);
+
+        /* Create New Table */
+        buffer_table_title_layout = node_widget->buffer_table_title_layout;
+        if (node_widget->buffer_title)
+                gtk_widget_destroy(node_widget->buffer_title);
+        buffer_title = gtk_table_new(1, num_cols, FALSE);
+        gtk_layout_put(GTK_LAYOUT(buffer_table_title_layout), buffer_title, 0, node_widget->top_offset);
+        node_widget->buffer_title = buffer_title;
+
+        for (col = 0; col < num_cols ; col++)
+        {
+                /* Label */
+
+                float width;
+                width = (- fabs((float) col - 1.5) + 2.5) * (float) VI_NODE_CONTENT_CELL_WIDTH;
+                GtkWidget *label = gtk_label_new(NULL);
+                gtk_misc_set_alignment(GTK_MISC(label), .5, .5);
+
+                /* Set label font attributes */
+                PangoAttrList *attrs;
+                attrs = pango_attr_list_new();
+                PangoAttribute *size_attr = pango_attr_size_new_absolute(VI_NODE_CONTENT_FONT_SIZE << 10);
+                pango_attr_list_insert(attrs, size_attr);
+                gtk_label_set_attributes(GTK_LABEL(label), attrs);
+
+                /* Event box */
+                GtkWidget *event_box = gtk_event_box_new();
+//                        gtk_widget_set_size_request(event_box, width,
+//                        VI_NODE_CONTENT_CELL_HEIGHT - 1);
+                gtk_container_add(GTK_CONTAINER(event_box), label);
+                list_add(node_widget->buffer_title_list, event_box);
+
+                /* Frame */
+                GtkWidget *frame = gtk_frame_new(NULL);
+                gtk_frame_set_shadow_type(GTK_FRAME(frame), GTK_SHADOW_IN);
+                gtk_container_add(GTK_CONTAINER(frame), event_box);
+                gtk_table_attach_defaults(GTK_TABLE(buffer_title), frame, col ,  col + 1, 0, 1);
+                gtk_widget_set_size_request(frame,  width,
+                                VI_NODE_CONTENT_CELL_HEIGHT);
+                /* Color */
+                GdkColor color;
+                gdk_color_parse("#eeeeee", &color);
+                gtk_widget_modify_bg(event_box, GTK_STATE_NORMAL, &color);
+        }
+        /* Show all widgets */
+        gtk_widget_show_all(buffer_title);
+        gtk_container_check_resize(GTK_CONTAINER(buffer_table_title_layout));
+
+}
 static void vi_node_widget_refresh_buffer_table_layout(struct vi_node_widget_t *node_widget)
 {
         GtkWidget *buffer_table_layout;
@@ -342,43 +317,54 @@ static void vi_node_widget_refresh_buffer_table_layout(struct vi_node_widget_t *
         buffer_table_layout = node_widget->buffer_table_layout;
         if (node_widget->buffer_table)
                 gtk_widget_destroy(node_widget->buffer_table);
-        buffer_table = gtk_table_new(num_rows, 1, TRUE);
+        buffer_table = gtk_table_new(num_rows, 4, FALSE);
         gtk_layout_put(GTK_LAYOUT(buffer_table_layout), buffer_table, 0, node_widget->top_offset);
         node_widget->buffer_table = buffer_table;
 
         /* Create labels */
         for (row = 0; row < num_rows; row++)
         {
-                /* Label */
-                GtkWidget *label = gtk_label_new(NULL);
-                gtk_misc_set_alignment(GTK_MISC(label), 0, .5);
+                for (int col = 0; col < 4; col++ )
+                {
+                        /* Label */
 
-                /* Set label font attributes */
-                PangoAttrList *attrs;
-                attrs = pango_attr_list_new();
-                PangoAttribute *size_attr = pango_attr_size_new_absolute(VI_NODE_CONTENT_FONT_SIZE << 10);
-                pango_attr_list_insert(attrs, size_attr);
-                gtk_label_set_attributes(GTK_LABEL(label), attrs);
+                        float width;
+                        width = (- fabs((float) col - 1.5) + 2.5) * (float) VI_NODE_CONTENT_CELL_WIDTH;
+                        GtkWidget *label = gtk_label_new(NULL);
+                        gtk_misc_set_alignment(GTK_MISC(label), .5, .5);
 
-                /* Event box */
-                GtkWidget *event_box = gtk_event_box_new();
-                gtk_widget_set_size_request(event_box, node_widget->buffer_table_layout_width,
-                                VI_NODE_CONTENT_CELL_HEIGHT);
-                gtk_container_add(GTK_CONTAINER(event_box), label);
-                gtk_table_attach_defaults(GTK_TABLE(buffer_table), event_box, 0, 1, row, row + 1);
-                list_add(node_widget->buffer_list, event_box);
+                        /* Set label font attributes */
+                        PangoAttrList *attrs;
+                        attrs = pango_attr_list_new();
+                        PangoAttribute *size_attr = pango_attr_size_new_absolute(VI_NODE_CONTENT_FONT_SIZE << 10);
+                        pango_attr_list_insert(attrs, size_attr);
+                        gtk_label_set_attributes(GTK_LABEL(label), attrs);
 
-                /* Color */
-                GdkColor color;
-                gdk_color_parse("#ffffff", &color);
-                gtk_widget_modify_bg(event_box, GTK_STATE_NORMAL, &color);
+                        /* Event box */
+                        GtkWidget *event_box = gtk_event_box_new();
+//                        gtk_widget_set_size_request(event_box, width,
+//                        VI_NODE_CONTENT_CELL_HEIGHT - 1);
+                        gtk_container_add(GTK_CONTAINER(event_box), label);
+                        list_add(node_widget->buffer_list, event_box);
+
+                        /* Frame */
+                        GtkWidget *frame = gtk_frame_new(NULL);
+                        gtk_frame_set_shadow_type(GTK_FRAME(frame), GTK_SHADOW_IN);
+                        gtk_container_add(GTK_CONTAINER(frame), event_box);
+                        gtk_table_attach_defaults(GTK_TABLE(buffer_table), frame, col ,  col + 1, row, row + 1);
+                        gtk_widget_set_size_request(frame,  width,
+                                        VI_NODE_CONTENT_CELL_HEIGHT);
+                        /* Color */
+                        GdkColor color;
+                        gdk_color_parse("#c6f729", &color);
+                        gtk_widget_modify_bg(event_box, GTK_STATE_NORMAL, &color);
+                }
         }
 
         /* Show all widgets */
         gtk_widget_show_all(buffer_table);
         gtk_container_check_resize(GTK_CONTAINER(buffer_table_layout));
 }
-
 
 static void vi_node_widget_refresh_buffer_queue_layout(struct vi_node_widget_t *node_widget)
 {
@@ -389,7 +375,7 @@ static void vi_node_widget_refresh_buffer_queue_layout(struct vi_node_widget_t *
         int num_cols;
         int col;
 
-        long long num_packets;
+        int num_packets;
 
         /* Get new dimensions */
         num_packets = node->max_buffer_size;
@@ -445,21 +431,21 @@ static void vi_node_widget_refresh_buffer_queue_layout(struct vi_node_widget_t *
 static void vi_node_widget_refresh_content(struct vi_node_widget_t *node_widget)
 {
 
-  //      struct vi_net_node_t *node = node_widget->node;
+        //      struct vi_net_node_t *node = node_widget->node;
 
         int left_packet;
- //       int top_buffer;
+        //       int top_buffer;
 
-        int row;
+//        int row;
         int col;
 
         char str[MAX_LONG_STRING_SIZE];
 
- //       char *buffer_name;
+        //       char *buffer_name;
 
         /* Get variables */
         left_packet = node_widget->left_packet;
-//        top_buffer = node_widget->top_buffer;
+        //        top_buffer = node_widget->top_buffer;
 
         /* Cycle layout */
         LIST_FOR_EACH(node_widget->buffer_queue_list, col)
@@ -479,26 +465,132 @@ static void vi_node_widget_refresh_content(struct vi_node_widget_t *node_widget)
                 gtk_label_set_text(GTK_LABEL(label), str);
         }
 
-        /* Clear instruction layout */
-        LIST_FOR_EACH(node_widget->buffer_list, row)
+        /* Title Layout */
+        LIST_FOR_EACH(node_widget->buffer_title_list, col)
         {
-                /* Event box */
+                /* Event Box */
                 GtkWidget *event_box;
-                event_box = list_get(node_widget->buffer_list, row);
+                event_box = list_get(node_widget->buffer_title_list, col);
                 if (!event_box)
                         continue;
 
                 /* Label */
                 GtkWidget *label;
                 label = gtk_bin_get_child(GTK_BIN(event_box));
-                gtk_label_set_text(GTK_LABEL(label), NULL);
+
+                /* Text */
+                snprintf(str, sizeof str, "%s", str_map_value(&vi_net_buffer_attrib_map, col));
+                gtk_label_set_text(GTK_LABEL(label), str);
         }
+        /* Clear instruction layout
+        LIST_FOR_EACH(node_widget->buffer_list, row)
+        {
+                Event box
+                GtkWidget *event_box;
+                event_box = list_get(node_widget->buffer_list, row);
+                if (!event_box)
+                        continue;
 
-
+                Label
+                GtkWidget *label;
+                label = gtk_bin_get_child(GTK_BIN(event_box));
+                gtk_label_set_text(GTK_LABEL(label), NULL);
+        }*/
         /* Content layout */
 
 }
 
+
+struct vi_node_widget_t *vi_node_widget_create(struct vi_net_node_t *node)
+{
+        struct vi_node_widget_t *node_widget;
+
+        /* Initialize */
+        node_widget = xcalloc(1, sizeof(struct vi_node_widget_t));
+        node_widget->node = node;
+
+        /* Content Layout */
+        GtkWidget *content_layout;
+        content_layout = gtk_layout_new(NULL, NULL);
+        gtk_widget_set_size_request(content_layout, VI_NODE_CONTENT_LAYOUT_WIDTH,
+                        VI_NODE_CONTENT_LAYOUT_HEIGHT);
+        g_signal_connect(G_OBJECT(content_layout), "size_allocate",
+                        G_CALLBACK(vi_node_widget_size_allocate), node_widget);
+        g_signal_connect(G_OBJECT(content_layout), "scroll-event",
+                        G_CALLBACK(vi_node_widget_scroll), node_widget);
+        node_widget->content_layout = content_layout;
+
+        /* Table Right - Vertical */
+        GtkWidget *buffer_queue_layout;
+        buffer_queue_layout = gtk_layout_new(NULL, NULL);
+        gtk_widget_set_size_request(buffer_queue_layout , VI_NODE_BUFFER_QUEUE_LAYOUT_WIDTH,
+                        VI_NODE_BUFFER_QUEUE_LAYOUT_HEIGHT);
+        node_widget->buffer_queue_layout = buffer_queue_layout;
+
+        /* Right vertical box */
+        GtkWidget *right_vbox;
+        right_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+        gtk_box_pack_start(GTK_BOX(right_vbox), buffer_queue_layout, FALSE, FALSE, 0);
+        gtk_box_pack_start(GTK_BOX(right_vbox), content_layout, TRUE, TRUE, 0);
+
+        /* Buffer Queue Layout */
+        GtkWidget *buffer_table_layout;
+        buffer_table_layout = gtk_layout_new(NULL, NULL);
+        gtk_widget_set_size_request(buffer_table_layout, VI_NODE_BUFFER_TABLE_LAYOUT_WIDTH,
+                        VI_NODE_BUFFER_TABLE_LAYOUT_HEIGHT);
+        g_signal_connect(G_OBJECT(buffer_table_layout), "size_allocate",
+                        G_CALLBACK(vi_node_widget_size_allocate), node_widget);
+        g_signal_connect(G_OBJECT(buffer_table_layout), "scroll-event",
+                        G_CALLBACK(vi_node_widget_scroll), node_widget);
+        node_widget->buffer_table_layout = buffer_table_layout;
+
+        /* Buffer Table Title Layout */
+        GtkWidget *buffer_table_title_layout;
+        buffer_table_title_layout= gtk_layout_new(NULL, NULL);
+        gtk_widget_set_size_request(buffer_table_title_layout, VI_NODE_BUFFER_TABLE_LAYOUT_WIDTH,
+                        VI_NODE_CONTENT_CELL_HEIGHT);
+        node_widget->buffer_table_title_layout = buffer_table_title_layout;
+
+        /* Left vertical box */
+        GtkWidget *left_vbox;
+        left_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+        gtk_box_pack_start(GTK_BOX(left_vbox), buffer_table_title_layout, FALSE, FALSE, 0);
+        gtk_box_pack_start(GTK_BOX(left_vbox), buffer_table_layout, TRUE, TRUE, 0);
+
+        /* Inner horizontal panel */
+        GtkWidget *inner_hpaned;
+        inner_hpaned = gtk_paned_new(GTK_ORIENTATION_HORIZONTAL);
+        gtk_paned_pack1(GTK_PANED(inner_hpaned), left_vbox, TRUE, FALSE);
+        gtk_paned_pack2(GTK_PANED(inner_hpaned), right_vbox, TRUE, TRUE);
+
+        /* Scroll bars */
+        GtkWidget *hscrollbar = gtk_scrollbar_new(GTK_ORIENTATION_HORIZONTAL, NULL);
+        GtkWidget *vscrollbar = gtk_scrollbar_new(GTK_ORIENTATION_VERTICAL, NULL);
+        node_widget->hscrollbar = hscrollbar;
+        node_widget->vscrollbar = vscrollbar;
+        g_signal_connect(G_OBJECT(hscrollbar), "value-changed",
+                        G_CALLBACK(vi_node_widget_scroll_bar_value_changed), node_widget);
+        g_signal_connect(G_OBJECT(vscrollbar), "value-changed",
+                        G_CALLBACK(vi_node_widget_scroll_bar_value_changed), node_widget);
+
+        /* Table */
+        GtkWidget *table;
+        table = gtk_table_new(2, 2, FALSE);
+        gtk_table_attach(GTK_TABLE(table), inner_hpaned, 0, 1, 0, 1,
+                        GTK_EXPAND | GTK_FILL | GTK_SHRINK, GTK_EXPAND | GTK_FILL | GTK_SHRINK, 0, 0);
+        gtk_table_attach(GTK_TABLE(table), hscrollbar, 0, 1, 1, 2, GTK_EXPAND | GTK_FILL | GTK_SHRINK, GTK_FILL, 0, 0);
+        gtk_table_attach(GTK_TABLE(table), vscrollbar, 1, 2, 0, 1, GTK_FILL, GTK_EXPAND | GTK_FILL | GTK_SHRINK, 0, 0);
+
+        /* Widget */
+        node_widget->widget = table;
+        g_signal_connect(G_OBJECT(node_widget->widget), "destroy",
+                        G_CALLBACK(vi_node_widget_destroy), node_widget);
+        g_signal_connect(G_OBJECT(node_widget->widget), "size_allocate",
+                        G_CALLBACK(vi_node_widget_size_allocate), node_widget);
+
+        /* Return */
+        return node_widget;
+}
 
 
 void vi_node_widget_refresh(struct vi_node_widget_t *node_widget)
@@ -583,6 +675,9 @@ void vi_node_widget_refresh(struct vi_node_widget_t *node_widget)
         if (top_offset_changed)
                 gtk_layout_move(GTK_LAYOUT(node_widget->buffer_table_layout), node_widget->buffer_table,
                                 0, node_widget->top_offset);
+
+        if (buffer_table_layout_width_changed)
+                vi_node_widget_refresh_buffer_title_layout(node_widget);
 
         /* Refresh cycle layout */
         if (content_layout_width_changed)
