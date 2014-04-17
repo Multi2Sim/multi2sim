@@ -2224,9 +2224,16 @@ int main(int argc, char **argv)
 	if (*visual_file_name)
 		visual_run(visual_file_name);
 
+	/* Trace */
+        trace_init(trace_file_name);
+
 	/* Network simulation tool */
 	if (*net_sim_network_name)
+	{
 		net_sim(net_debug_file_name);
+	        /* Finish program */
+	        goto end;
+	}
 
 	/* DRAM simulation Tool */
 	if (*dram_sim_system_name)
@@ -2284,7 +2291,6 @@ int main(int argc, char **argv)
 
 	/* Initialization of libraries */
 	esim_init();
-	trace_init(trace_file_name);
 
 	/* Initialization of architectures */
 	arch_arm = arch_register("ARM", "arm", arm_sim_kind,

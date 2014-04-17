@@ -190,11 +190,6 @@ static void net_traffic_uniform(struct net_t *net, double *inject_time)
 
 void net_init(void)
 {
-	/* Create trace category. This needs to be done before reading the
-	 * network configuration file with 'net_read_config', since the latter
-	 * function generates the trace headers. */
-	net_trace_category = trace_new_category();
-
 	/* Load network configuration file */
 	net_read_config();
 
@@ -320,7 +315,16 @@ void net_sim(char *debug_file_name)
 	net = net_find(net_sim_network_name);
 	if (!net)
 		fatal("%s: network does not exist", net_sim_network_name);
-	/* Initialize */
+	/* Network Trace = Stand Alone */
+        if (net_tracing())
+        {
+                /* Initialization of Trace */
+                 net_trace_header("net.init version=\"%d.%d\"\n",
+                                 NET_SYSTEM_TRACE_VERSION_MAJOR, NET_SYSTEM_TRACE_VERSION_MINOR);
+
+                 /* Network Trace Header */
+                 net_config_trace(net);
+        }
 	inject_time = xcalloc(net->node_count, sizeof(double));
 
 	/* FIXME: error for no dest node in network */
@@ -360,9 +364,6 @@ void net_sim(char *debug_file_name)
 	/* Finalize */
 	net_done();
 	esim_done();
+	trace_done();
 	debug_done();
-
-	/* Finish program */
-	mhandle_done();
-	exit(0);
 }

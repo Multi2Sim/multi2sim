@@ -1431,6 +1431,26 @@ static void mem_config_trace(void)
 	mem_trace_header("mem.init version=\"%d.%d\"\n",
 		MEM_SYSTEM_TRACE_VERSION_MAJOR, MEM_SYSTEM_TRACE_VERSION_MINOR);
 
+	/* Call for creating Net trace */
+	if (net_tracing())
+	{
+	        /* Initialization */
+	        net_trace_header("net.init version=\"%d.%d\"\n",
+	                        NET_SYSTEM_TRACE_VERSION_MAJOR, NET_SYSTEM_TRACE_VERSION_MINOR);
+
+	        /* Internal networks Headers*/
+	        LIST_FOR_EACH(mem_system->net_list, i)
+	        {
+	                net = list_get(mem_system->net_list, i);
+	                net_config_trace(net);
+	        }
+
+	        /* External networks Headers*/
+	        for (net = net_find_first(); net; net = net_find_next())
+	        {
+	                net_config_trace(net);
+	        }
+	}
 	/* Internal networks */
 	LIST_FOR_EACH(mem_system->net_list, i)
 	{
