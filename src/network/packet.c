@@ -20,6 +20,7 @@
 #include <assert.h>
 
 #include <lib/esim/esim.h>
+#include <lib/esim/trace.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
@@ -28,6 +29,7 @@
 #include "net-system.h"
 #include "message.h"
 #include "network.h"
+#include "node.h"
 #include "packet.h"
 #include "buffer.h"
 
