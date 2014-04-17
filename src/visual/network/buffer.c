@@ -24,6 +24,7 @@
 #include <lib/util/list.h>
 #include <lib/util/hash-table.h>
 #include <lib/util/misc.h>
+#include <lib/util/string.h>
 #include <lib/mhandle/mhandle.h>
 #include <visual/common/state.h>
 #include <visual/common/trace.h>
@@ -33,7 +34,16 @@
 #include "net.h"
 #include "net-system.h"
 
-
+struct str_map_t vi_net_buffer_attrib_map =
+{
+        4,
+        {
+                { "Direction", 0 },
+                { "Connection Name", 1},
+                { "Buffer Name", 2},
+                { "Buffer Size", 3}
+        }
+};
 struct vi_net_buffer_t *vi_net_buffer_create (struct vi_trace_line_t *trace_line,
 		enum vi_buffer_direction_t buffer_direction)
 {
