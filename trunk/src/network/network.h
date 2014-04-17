@@ -154,4 +154,7 @@ struct net_msg_t *net_try_send_ev(struct net_t *net,
 void net_receive(struct net_t *net, struct net_node_t *node,
 	struct net_msg_t *msg);
 
+void net_config_trace (struct net_t *net);
+
+
 #endif
