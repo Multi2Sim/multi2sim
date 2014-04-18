@@ -16,22 +16,53 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+ 
+
 static const int GPR_COUNT = 32;
-static const int FPR_COUNT = 32;
+
 
 namespace mips{
 class Regs
 {
-	unsigned int regs_R[GPR_COUNT]; // General Purpose registers
-    float s[FPR_COUNT]; // single precision fp regs
-    double d[FPR_COUNT/2]; // double precision fp regs
+	unsigned int  gpr[GPR_COUNT]; // General Purpose registers
+	unsigned int pc; //program counter
+    unsigned int hi;  // mult register for [63:32]
+    unsigned int lo;  // mult register for [31:0]
 public:
-    /// Constructor
+    /// Constructor Destructor
     Regs();
     ~Regs();
     
-    /// Read the value of GPR according to the index
-    unsigned int readGPR(int reg);
+    void reset();
+    
+    ///read one word from GPR, n is the register number
+    ///if n is great than 31, exit program
+    unsigned int read_r(int n);
+    
+    ///write one word to GPR, n is the register number, value
+    ///if n is great than 31, exit program
+    void write_r(int n, unsigned int value);
+    
+    ///read from PC
+    unsigned int read_PC();
+    
+    ///write pc with value
+    void write_PC(unsigned int value);
+    
+    ///read from HI register
+    unsigned int read_HI();
+    
+    ///write HI register with value 
+    void write_HI(unsigned int value);
+    
+    ///read from low register
+    unsigned int read_LO();
+    
+    ///write Lo register with value
+    void write_LO(unsigned int value); 
+    
+    ///show all registers
+  	//int show_all_registers(int n, char *output_buffer); 
 };
 
 }
