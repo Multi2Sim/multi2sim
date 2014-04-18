@@ -128,3 +128,13 @@ void vi_net_sub_link_free  (struct vi_net_sub_link_t * subLink)
 {
         free(subLink);
 }
+
+void vi_link_read_checkpoint(struct vi_net_link_t *link, FILE *f)
+{
+
+}
+void vi_link_write_checkpoint(struct vi_net_link_t *link, FILE *f)
+{
+
+}
+

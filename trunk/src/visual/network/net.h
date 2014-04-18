@@ -35,6 +35,7 @@ struct vi_net_t
 
 	struct hash_table_t *node_table;
 	struct hash_table_t *link_table;
+	struct hash_table_t *message_table;
 	struct hash_table_t *high_mods;
 	struct hash_table_t *low_mods;
 
@@ -51,5 +52,9 @@ void             vi_net_attach_mod(struct vi_net_t *net, struct vi_mod_t *mod, i
 struct vi_mod_t *vi_net_get_mod   (struct vi_net_t *net, int node_index);
 
 void             vi_net_graph_visual_calculation (struct vi_net_t *net);
+
+void vi_net_read_checkpoint(struct vi_net_t *net, FILE *f);
+void vi_net_write_checkpoint(struct vi_net_t *net, FILE *f);
+
 
 #endif
