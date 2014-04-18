@@ -279,7 +279,7 @@ void net_event_handler(int event, void *data)
 
 			/* If destination input buffer is full, wait */
 			if (pkt->size > input_buffer->size)
-				fatal("%s: message does not fit in buffer.\n%s",
+				fatal("%s: packet does not fit in buffer.\n%s",
 						net->name, net_err_large_message);
 			if (input_buffer->count + pkt->size >
 			input_buffer->size)
@@ -369,7 +369,7 @@ void net_event_handler(int event, void *data)
 
 			/* 2. Check the destination buffer is full or not */
 			if (pkt->size > input_buffer->size)
-				fatal("%s: message does not fit in buffer.\n%s",
+				fatal("%s: packet  does not fit in buffer.\n%s",
 						net->name, net_err_large_message);
 
 			if (input_buffer->count + pkt->size > input_buffer->size)
@@ -662,7 +662,7 @@ void net_event_handler(int event, void *data)
 
 		/* If destination output buffer is full, wait */
 		if (pkt->size > output_buffer->size)
-			fatal("%s: message does not fit in buffer.\n%s",
+			fatal("%s: packet does not fit in buffer.\n%s",
 					net->name, net_err_large_message);
 
 

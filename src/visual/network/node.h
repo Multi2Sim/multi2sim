@@ -70,4 +70,8 @@ struct vi_net_node_t *vi_net_node_assign (struct vi_trace_line_t *trace_line);
 struct vi_net_bus_t  *vi_net_bus_create  (void);
 void                  vi_net_bus_free    (struct vi_net_bus_t *bus);
 
+void vi_node_read_checkpoint(struct vi_net_node_t *node, FILE *f);
+void vi_node_write_checkpoint(struct vi_net_node_t *node, FILE *f);
+
+
 #endif

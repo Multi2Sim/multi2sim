@@ -25,11 +25,13 @@
 #include <lib/util/hash-table.h>
 #include <lib/util/list.h>
 #include <lib/util/misc.h>
+#include <lib/util/string.h>
 #include <visual/common/trace.h>
 
 #include "link.h"
 #include "net.h"
 #include "net-graph.h"
+#include "net-message.h"
 #include "node.h"
 
 /*
@@ -70,6 +72,7 @@ struct vi_net_t *vi_net_create(struct vi_trace_line_t *trace_line)
 	net->low_mods  = hash_table_create(0, FALSE);
 	net->link_table = hash_table_create(0, FALSE);
 	net->node_table = hash_table_create(0, FALSE);
+	net->message_table = hash_table_create(0, FALSE);
 
 	/* Return */
 	return net;
@@ -85,7 +88,15 @@ void vi_net_free(struct vi_net_t *net)
 	char *node_name;
 	struct vi_net_node_t *node;
 
-	/* Free nodes */
+	char *message_name;
+	struct vi_net_message_t *message;
+
+	/* Free messages */
+	HASH_TABLE_FOR_EACH(net->message_table, message_name, message)
+	                vi_net_message_free(message);
+        hash_table_free(net->message_table);
+
+        /* Free nodes */
 	LIST_FOR_EACH(net->node_list, i)
 	{
 		node = list_get(net->node_list, i);
@@ -164,4 +175,104 @@ void vi_net_graph_visual_calculation (struct vi_net_t *net)
 	vi_net_graph_draw_scale(net_graph);
 	vi_net_graph_finalize(net_graph);
 	vi_net_graph_free(net_graph);
+}
+
+void vi_net_read_checkpoint(struct vi_net_t *net, FILE *f)
+{
+        char node_name[MAX_STRING_SIZE];
+        char link_name[MAX_STRING_SIZE];
+
+        struct vi_net_node_t *node;
+        struct vi_net_link_t *link;
+        struct vi_net_message_t *message;
+
+        char *message_name;
+
+        int num_messages;
+        int count;
+        int i;
+
+        /* Empty access list */
+        HASH_TABLE_FOR_EACH(net->message_table, message_name, message)
+                vi_net_message_free(message);
+        hash_table_clear(net->message_table);
+
+        /* Read number of Messages */
+        count = fread(&num_messages, 1, 4, f);
+        if (count != 4)
+                fatal("%s: error reading from checkpoint", __FUNCTION__);
+
+        /* Read Messages */
+        for (i = 0; i < num_messages; i++)
+        {
+                message = vi_net_message_create(NULL);
+                vi_net_message_read_checkpoint(message, f);
+                hash_table_insert(net->message_table, message->name, message);
+        }
+
+        /* Read Nodes */
+        for (i = 0; i < hash_table_count(net->node_table); i++)
+        {
+                /* Get module */
+                str_read_from_file(f, node_name, sizeof node_name);
+                node = hash_table_get(net->node_table, node_name);
+                if (!node)
+                        panic("%s: %s: invalid module name", __FUNCTION__, node_name);
+
+                /* Read module checkpoint */
+                vi_node_read_checkpoint(node, f);
+        }
+
+        /* Read Links */
+        for (i = 0; i < hash_table_count(net->link_table); i++)
+        {
+                /* Get module */
+                str_read_from_file(f, link_name, sizeof link_name);
+                link = hash_table_get(net->link_table, link_name);
+                if (!link)
+                        panic("%s: %s: invalid module name", __FUNCTION__, link_name);
+
+                /* Read module checkpoint */
+                vi_link_read_checkpoint(link, f);
+        }
+
+}
+
+void vi_net_write_checkpoint(struct vi_net_t *net, FILE *f)
+{
+        struct vi_net_node_t *node;
+        struct vi_net_link_t *link;
+        struct vi_net_message_t *message;
+
+        char *node_name;
+        char *link_name;
+        char *message_name;
+
+        int num_messages;
+        int count;
+
+        /* Write number of messages */
+        num_messages = hash_table_count(net->message_table);
+        count = fwrite(&num_messages, 1, 4, f);
+        if (count != 4)
+                fatal("%s: cannot write to checkpoint file", __FUNCTION__);
+
+        /* Write messages */
+        HASH_TABLE_FOR_EACH(net->message_table, message_name, message)
+                vi_net_message_write_checkpoint(message, f);
+
+        /* Write Nodes */
+        HASH_TABLE_FOR_EACH(net->node_table, node_name, node)
+        {
+                str_write_to_file(f, node->name);
+                vi_node_write_checkpoint(node, f);
+        }
+
+        /* Write Links */
+        HASH_TABLE_FOR_EACH(net->link_table, link_name, link)
+        {
+                str_write_to_file(f, link->name);
+                vi_link_write_checkpoint(link, f);
+        }
+
 }
