@@ -25,6 +25,8 @@
 #include <lib/util/list.h>
 #include <lib/util/string.h>
 #include <mem-system/memory.h>
+#include <network/message.h>
+#include <network/net-system.h>
 #include <network/network.h>
 #include <network/node.h>
 
@@ -1494,6 +1496,9 @@ void mod_handler_nmoesi_evict(int event, void *data)
 		stack->msg = net_try_send_ev(mod->low_net, mod->low_net_node,
 			low_node, msg_size, EV_MOD_NMOESI_EVICT_RECEIVE, stack, 
 			event, stack);
+		if (stack->msg)
+			net_trace("net.msg_access net=\"%s\" name=\"M-%lld\" access=\"A-%lld\"\n",
+				mod->low_net->name, stack->msg->id, stack->id);
 		return;
 	}
 
@@ -1703,6 +1708,9 @@ void mod_handler_nmoesi_evict(int event, void *data)
 		stack->msg = net_try_send_ev(target_mod->high_net, target_mod->high_net_node,
 			mod->low_net_node, 8, EV_MOD_NMOESI_EVICT_REPLY_RECEIVE, stack,
 			event, stack);
+		if (stack->msg)
+			net_trace("net.msg_access net=\"%s\" name=\"M-%lld\" access=\"A-%lld\"\n",
+				target_mod->high_net->name, stack->msg->id, stack->id);
 		return;
 
 	}
@@ -1795,6 +1803,9 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 		/* Send message */
 		stack->msg = net_try_send_ev(net, src_node, dst_node, 8,
 			EV_MOD_NMOESI_READ_REQUEST_RECEIVE, stack, event, stack);
+		if (stack->msg)
+			net_trace("net.msg_access net=\"%s\" name=\"M-%lld\" access=\"A-%lld\"\n",
+				net->name, stack->msg->id, stack->id);
 		return;
 	}
 
@@ -2469,6 +2480,9 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 		stack->msg = net_try_send_ev(net, src_node, dst_node, 
 			stack->reply_size,
 			EV_MOD_NMOESI_READ_REQUEST_FINISH, stack, event, stack);
+		if (stack->msg)
+			net_trace("net.msg_access net=\"%s\" name=\"M-%lld\" access=\"A-%lld\"\n",
+				net->name, stack->msg->id, stack->id);
 		return;
 	}
 
@@ -2557,6 +2571,9 @@ void mod_handler_nmoesi_write_request(int event, void *data)
 		/* Send message */
 		stack->msg = net_try_send_ev(net, src_node, dst_node, 8,
 			EV_MOD_NMOESI_WRITE_REQUEST_RECEIVE, stack, event, stack);
+		if (stack->msg)
+			net_trace("net.msg_access net=\"%s\" name=\"M-%lld\" access=\"A-%lld\"\n",
+				net->name, stack->msg->id, stack->id);
 		return;
 	}
 
@@ -2933,6 +2950,9 @@ void mod_handler_nmoesi_write_request(int event, void *data)
 
 		stack->msg = net_try_send_ev(net, src_node, dst_node, stack->reply_size,
 			EV_MOD_NMOESI_WRITE_REQUEST_FINISH, stack, event, stack);
+		if (stack->msg)
+			net_trace("net.msg_access net=\"%s\" name=\"M-%lld\" access=\"A-%lld\"\n",
+				net->name, stack->msg->id, stack->id);
 		return;
 	}
 
@@ -2990,7 +3010,9 @@ void mod_handler_nmoesi_peer(int event, void *data)
 		/* Send message from src to peer */
 		stack->msg = net_try_send_ev(src->low_net, src->low_net_node, peer->low_net_node, 
 			src->block_size + 8, EV_MOD_NMOESI_PEER_RECEIVE, stack, event, stack);
-
+		if (stack->msg)
+			net_trace("net.msg_access net=\"%s\" name=\"M-%lld\" access=\"A-%lld\"\n",
+				src->low_net->name, stack->msg->id, stack->id);
 		return;
 	}
 
@@ -3019,7 +3041,9 @@ void mod_handler_nmoesi_peer(int event, void *data)
 		/* Send ack from peer to src */
 		stack->msg = net_try_send_ev(peer->low_net, peer->low_net_node, src->low_net_node, 
 				8, EV_MOD_NMOESI_PEER_FINISH, stack, event, stack); 
-
+		if (stack->msg)
+			net_trace("net.msg_access net=\"%s\" name=\"M-%lld\" access=\"A-%lld\"\n",
+				peer->low_net->name, stack->msg->id, stack->id);
 		return;
 	}
 
@@ -3176,6 +3200,9 @@ void mod_handler_nmoesi_message(int event, void *data)
 		/* Send message */
 		stack->msg = net_try_send_ev(net, src_node, dst_node, 8,
 			EV_MOD_NMOESI_MESSAGE_RECEIVE, stack, event, stack);
+		if (stack->msg)
+			net_trace("net.msg_access net=\"%s\" name=\"M-%lld\" access=\"A-%lld\"\n",
+				net->name, stack->msg->id, stack->id);
 		return;
 	}
 
@@ -3266,6 +3293,9 @@ void mod_handler_nmoesi_message(int event, void *data)
 		/* Send message */
 		stack->msg = net_try_send_ev(net, src_node, dst_node, stack->reply_size,
 			EV_MOD_NMOESI_MESSAGE_FINISH, stack, event, stack);
+		if (stack->msg)
+			net_trace("net.msg_access net=\"%s\" name=\"M-%lld\" access=\"A-%lld\"\n",
+				net->name, stack->msg->id, stack->id);
 		return;
 	}
 

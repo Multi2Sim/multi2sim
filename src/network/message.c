@@ -20,6 +20,7 @@
 #include <assert.h>
 
 #include <lib/esim/esim.h>
+#include <lib/esim/trace.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
@@ -113,6 +114,7 @@ void net_stack_return(struct net_stack_t *stack)
 void net_event_handler(int event, void *data)
 {
 	struct net_stack_t *stack = data;
+
 	struct net_t *net = stack->net;
 	struct net_routing_table_t *routing_table = net->routing_table;
 	struct net_packet_t *pkt= stack->packet;
@@ -732,6 +734,11 @@ void net_event_handler(int event, void *data)
 
 		if (net_depacketizer(net, node, pkt) == 1)
 		{
+			if (pkt->msg->packet_list_count > 1)
+				net_trace("net.msg net=\"%s\" name=\"M-%lld\" "
+						"state=\"%s:depacketize\"\n",
+						net->name, msg->id, node->name);
+
 			if (stack->ret_event == ESIM_EV_NONE)
 			{
 				assert (msg);

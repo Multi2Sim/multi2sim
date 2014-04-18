@@ -205,7 +205,7 @@ void vi_net_read_checkpoint(struct vi_net_t *net, FILE *f)
         /* Read Messages */
         for (i = 0; i < num_messages; i++)
         {
-                message = vi_net_message_create(NULL);
+                message = vi_net_message_create(NULL, 0);
                 vi_net_message_read_checkpoint(message, f);
                 hash_table_insert(net->message_table, message->name, message);
         }

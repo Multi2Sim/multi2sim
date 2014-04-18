@@ -650,6 +650,9 @@ struct net_msg_t *net_send_ev(struct net_t *net, struct net_node_t *src_node,
 	/* Create message */
 	msg = net_msg_create(net, src_node, dst_node, size);
 
+	net_trace("net.new_msg net=\"%s\" name=\"M-%lld\" size=%d state=\"%s:create\"\n",
+			net->name, msg->id, msg->size, src_node->name);
+
 	/* Insert message into hash table of in-flight messages */
 	net_msg_table_insert(net, msg);
 
@@ -657,7 +660,12 @@ struct net_msg_t *net_send_ev(struct net_t *net, struct net_node_t *src_node,
 	if (net->packet_size == 0)
 		net_packetizer(net, msg, msg->size);
 	else
+	{
 		net_packetizer(net, msg, net->packet_size);
+		net_trace("net.msg net=\"%s\" name=\"M-%lld\" state=\"%s:packetize\"\n",
+					net->name, msg->id, src_node->name);
+	}
+
 
 	for (int i = 0; i < msg->packet_list_max; i++)
 	{
@@ -726,6 +734,13 @@ void net_receive(struct net_t *net, struct net_node_t *node,
 	net->msg_size_acc += msg->size;
 
 	net_msg_table_extract(net, msg->id);
+
+	net_trace("net.msg net=\"%s\" name=\"M-%lld\" state=\"%s:receive\"\n",
+			net->name, msg->id, node->name);
+
+	net_trace("net.end_msg net=\"%s\" name=\"M-%lld\"\n",
+				net->name, msg->id);
+
 	net_msg_free(msg);
 }
 
