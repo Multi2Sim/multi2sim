@@ -18,6 +18,7 @@
  */
 
 #include <iostream>
+#include <lib/cpp/ELFReader.h>
 
 namespace MIPS 
 {
@@ -34,7 +35,17 @@ enum ContextState
 // mips Context
 class Context
 {
+	struct Loader
+	{
+		// Program executable
+		std::unique_ptr<ELFReader::File> binary;
 
+		// Command-line arguments
+		std::vector<std::string> args;
+
+		// Environment variables
+		std::vector<std::string> env;
+	};
 
 
 public:
