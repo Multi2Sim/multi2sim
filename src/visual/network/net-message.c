@@ -26,23 +26,32 @@
 
 void vi_net_message_free(struct vi_net_message_t *message)
 {
+	str_free(message->access_name);
         str_free(message->name);
         str_free(message->state);
         free(message);
 }
 
-struct vi_net_message_t *vi_net_message_create(char *name)
+struct vi_net_message_t *vi_net_message_create(char *name, int size)
 {
         struct vi_net_message_t *message;
 
         /* Initialize */
         message = xcalloc(1, sizeof(struct vi_net_message_t));
         message->name = str_set(message->name, name);
+        message->size = size;
         message->creation_cycle = vi_state_get_current_cycle();
 
         /* Return */
         return message;
 }
+
+void vi_net_message_set_state(struct vi_net_message_t *message, char *state)
+{
+	message->state = str_set(message->state, state);
+	message->state_update_cycle = vi_state_get_current_cycle();
+}
+
 void vi_net_message_read_checkpoint(struct vi_net_message_t *message, FILE *f)
 {
         char name[MAX_STRING_SIZE];
