@@ -158,6 +158,16 @@ struct vi_net_bus_t  *vi_net_bus_create  (void)
 	return bus;
 }
 
+void vi_node_read_checkpoint(struct vi_net_node_t *node, FILE *f)
+{
+
+}
+void vi_node_write_checkpoint(struct vi_net_node_t *node, FILE *f)
+{
+
+}
+
+
 void vi_net_bus_free (struct vi_net_bus_t *bus)
 {
 	free(bus);

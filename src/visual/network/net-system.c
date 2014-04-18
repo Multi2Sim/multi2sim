@@ -25,6 +25,7 @@
 #include <lib/util/hash-table.h>
 #include <lib/util/list.h>
 #include <lib/util/misc.h>
+#include <lib/util/string.h>
 #include <visual/common/state.h>
 #include <visual/common/trace.h>
 #include <visual/memory/mod.h>
@@ -47,22 +48,27 @@ static char *err_vi_net_system_trace_version =
 		"\tversion used to visualize the trace.\n";
 
 #define VI_NET_SYSTEM_TRACE_VERSION_MAJOR	1
-#define VI_NET_SYSTEM_TRACE_VERSION_MINOR	3
+#define VI_NET_SYSTEM_TRACE_VERSION_MINOR	4
+
+static void vi_net_system_read_checkpoint(struct vi_net_system_t *net_system, FILE *f);
+static void vi_net_system_write_checkpoint(struct vi_net_system_t *net_system, FILE *f);
+static void vi_net_system_new_message(struct vi_net_system_t *net_system, struct vi_trace_line_t *trace_line);
 
 void vi_net_system_init(void)
 {
 	struct vi_trace_line_t *trace_line;
 
 	/* State file */
-	/*	vi_state_new_category("Network hierarchy",
+		vi_state_new_category("Network hierarchy",
 		(vi_state_read_checkpoint_func_t) vi_net_system_read_checkpoint,
 		(vi_state_write_checkpoint_func_t) vi_net_system_write_checkpoint,
 		vi_net_system);
-	 */
+
 	/* Commands */
-	/*	vi_state_new_command("net.send",
-		(vi_state_process_trace_line_func_t) vi_net_system_send,
-		vi_mem_system);
+		vi_state_new_command("net.new_msg",
+		(vi_state_process_trace_line_func_t) vi_net_system_new_message,
+		vi_net_system);
+		/*
 	vi_state_new_command("net.recieve",
 		(vi_state_process_trace_line_func_t) vi_net_system_recieve,
 		vi_mem_system);
@@ -206,4 +212,45 @@ void vi_net_system_coordination_config(void)
 	{
 		vi_net_graph_visual_calculation(net);
 	}
+}
+
+
+static void vi_net_system_read_checkpoint(struct vi_net_system_t *net_system, FILE *f)
+{
+        char net_name[MAX_STRING_SIZE];
+
+        struct vi_net_t *net;
+
+        int i;
+
+        /* Read modules */
+        for (i = 0; i < hash_table_count(vi_net_system->net_table); i++)
+        {
+                /* Get module */
+                str_read_from_file(f, net_name, sizeof net_name);
+                net = hash_table_get(vi_net_system->net_table, net_name);
+                if (!net)
+                        panic("%s: %s: invalid module name", __FUNCTION__, net_name);
+
+                /* Read module checkpoint */
+                vi_net_read_checkpoint(net, f);
+        }
+}
+static void vi_net_system_write_checkpoint(struct vi_net_system_t *net_system, FILE *f)
+{
+        struct vi_net_t *net;
+
+        char *net_name;
+
+         /* Write modules */
+         HASH_TABLE_FOR_EACH(vi_net_system->net_table, net_name,net)
+         {
+                 str_write_to_file(f, net->name);
+                 vi_net_write_checkpoint(net, f);
+         }
+}
+
+static void vi_net_system_new_message(struct vi_net_system_t *net_system, struct vi_trace_line_t *trace_line)
+{
+
 }
