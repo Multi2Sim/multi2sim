@@ -69,6 +69,10 @@ static void visual_cycle_bar_refresh(void *user_data, long long cycle)
 	/* x86 */
 	if (vi_x86_cpu->active)
 		vi_x86_panel_refresh(vi_x86_panel);
+
+	/* Network */
+	if (vi_net_system->active)
+		vi_net_panel_refresh(vi_mem_panel);
 }
 
 

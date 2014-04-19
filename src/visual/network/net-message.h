@@ -25,6 +25,7 @@ struct vi_net_message_t
 {
         char *name;
         char *state;
+        char *net_name;
         char *access_name;
         int size;
         /* An access is considered to be in a module as long as the access
@@ -37,13 +38,17 @@ struct vi_net_message_t
         long long state_update_cycle;
 };
 
-struct vi_net_message_t *vi_net_message_create(char *name, int size);
+struct vi_net_message_t *vi_net_message_create(char *net_name, char *name, int size);
+struct vi_net_message_t *vi_net_message_duplicate(struct vi_net_message_t *message);
 void vi_net_message_free(struct vi_net_message_t *message);
 
 void vi_net_message_set_state(struct vi_net_message_t *message, char *state);
 
 void vi_net_message_read_checkpoint(struct vi_net_message_t *message, FILE *f);
 void vi_net_message_write_checkpoint(struct vi_net_message_t *message, FILE *f);
+
+void vi_net_message_get_name_short(struct vi_net_message_t *message, char *buf, int size);
+void vi_net_message_get_desc(struct vi_net_message_t *message, char *buf, int size);
 
 
 #endif

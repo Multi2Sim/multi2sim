@@ -29,6 +29,7 @@ struct vi_mem_panel_t *vi_mem_panel_create(void);
 void vi_mem_panel_free(struct vi_mem_panel_t *panel);
 
 void vi_mem_panel_refresh(struct vi_mem_panel_t *panel);
+void vi_net_panel_refresh(struct vi_mem_panel_t *panel);
 
 GtkWidget *vi_mem_panel_get_widget(struct vi_mem_panel_t *panel);
 
