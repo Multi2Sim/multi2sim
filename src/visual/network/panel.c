@@ -18,12 +18,15 @@
  */
 
 #include <lib/mhandle/mhandle.h>
+#include <lib/util/hash-table.h>
 #include <lib/util/list.h>
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
+#include <visual/common/list.h>
 
 #include "net.h"
 #include "panel.h"
+#include "net-message.h"
 #include "net-widget.h"
 
 #define VI_NET_BOARD_PADDING		10
@@ -92,6 +95,13 @@ struct vi_net_board_t *vi_net_board_create(struct vi_net_t *net)
 			G_CALLBACK(vi_net_board_toggle_button_toggled), board);
 	board->toggle_button = toggle_button;
 
+	/* Access list */
+	struct vi_list_t *message_list = vi_list_create("Message list", 10, 10, (vi_list_get_elem_name_func_t)
+			vi_net_message_get_name_short, (vi_list_get_elem_desc_func_t) vi_net_message_get_desc);
+	gtk_box_pack_start(GTK_BOX(vbox), vi_list_get_widget(message_list), TRUE, TRUE, 0);
+	gtk_widget_override_background_color(vi_list_get_widget(message_list), GTK_STATE_FLAG_NORMAL, &frame_color);
+	board->message_list = message_list;
+
 	/* Main widget */
 	board->widget = event_box;
 	g_signal_connect(G_OBJECT(board->widget), "destroy", G_CALLBACK(vi_net_board_destroy), board);
@@ -132,6 +142,11 @@ static void vi_net_board_free(struct vi_net_board_t *board)
 	/* Destroy pop-up window */
 	if (board->net_window)
 		gtk_widget_destroy(vi_net_window_get_widget(board->net_window));
+
+	/* Free message list */
+	while (vi_list_count(board->message_list))
+		vi_list_remove_at(board->message_list, 0);
+	vi_list_free(board->message_list);
 
 	/* Free */
 	free(board);
@@ -196,4 +211,32 @@ static gboolean vi_net_window_delete(GtkWidget *widget, GdkEvent *event, struct 
 static GtkWidget *vi_net_window_get_widget(struct vi_net_window_t *net_window)
 {
 	return net_window->widget;
+}
+
+static void vi_net_window_refresh(struct vi_net_window_t *net_window)
+{
+//	vi_net_widget_refresh(net_window->net_widget);
+}
+
+void vi_net_board_refresh(struct vi_net_board_t *board)
+{
+	struct vi_net_message_t *message;
+
+	char *message_name;
+
+	/* Empty access list */
+	while (vi_list_count(board->message_list))
+		vi_list_remove_at(board->message_list, 0);
+
+	/* Refresh access list */
+	HASH_TABLE_FOR_EACH(board->net->message_table, message_name, message)
+	{
+		/* Add to list */
+		vi_list_add(board->message_list, message);
+	}
+	vi_list_refresh(board->message_list);
+
+	/* Refresh pop-up window */
+	if (board->net_window)
+		vi_net_window_refresh(board->net_window);
 }

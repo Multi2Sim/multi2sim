@@ -53,11 +53,12 @@ struct vi_net_board_t
 	/* Associated Network */
 	struct vi_net_t *net;
 
-	/* FIXME Message list */
-//	struct list_t *msg_list;
+	/* Message list */
+	struct vi_list_t *message_list;
 };
 
 
 struct vi_net_board_t *vi_net_board_create(struct vi_net_t *net);
+void 		       vi_net_board_refresh(struct vi_net_board_t *board);
 
 #endif

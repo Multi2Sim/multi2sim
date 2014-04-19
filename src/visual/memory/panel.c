@@ -472,6 +472,26 @@ void vi_mem_panel_refresh(struct vi_mem_panel_t *panel)
 	}
 }
 
+void vi_net_panel_refresh(struct vi_mem_panel_t *panel)
+{
+	struct vi_net_board_t *board;
+
+	long long cycle;
+
+	int board_id;
+
+	/* Go to cycle */
+	cycle = vi_cycle_bar_get_cycle();
+	vi_state_go_to_cycle(cycle);
+
+	/* Refresh all module boards */
+	LIST_FOR_EACH(panel->net_board_list, board_id)
+	{
+		board = list_get(panel->net_board_list, board_id);
+		vi_net_board_refresh(board);
+	}
+}
+
 
 GtkWidget *vi_mem_panel_get_widget(struct vi_mem_panel_t *panel)
 {
