@@ -284,7 +284,7 @@ static void vi_net_system_new_message(struct vi_net_system_t *net_system, struct
 	size = vi_trace_line_get_symbol_int(trace_line, "size");
 
 	/* Create new access */
-	message = vi_net_message_create(name, size);
+	message = vi_net_message_create(net->name, name, size);
 	vi_net_message_set_state(message, state);
 
 	/* Add access to list */
