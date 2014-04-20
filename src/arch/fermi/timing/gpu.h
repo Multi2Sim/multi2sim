@@ -222,6 +222,8 @@ CLASS_BEGIN(FrmGpu, Timing)
 
 	/* Streaming multiprocessors */
 	FrmSM **sms;
+	struct list_t *ready_sms;
+	struct list_t *busy_sms;
 
 	/* Lists */
 	struct list_t *sm_ready_list;
