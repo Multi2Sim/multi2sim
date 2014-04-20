@@ -27,6 +27,7 @@
 #include <lib/util/list.h>
 #include <lib/util/string.h>
 
+#include "calc.h"
 #include "sm.h"
 #include "gpu.h"
 #include "simd-unit.h"
@@ -212,64 +213,51 @@ void FrmSMDestroy(FrmSM *self)
 }
 
 
-void FrmSMMapThreadBlock(FrmSM *sm,
-		FrmThreadBlock *thread_block)
+void FrmSMMapThreadBlock(FrmSM *sm, FrmThreadBlock *thread_block)
 {
-	FrmGrid *grid;
+	FrmGrid *grid = thread_block->grid;
 	FrmWarp *warp;
 
 	int warp_id;
 	int wiq_id;
 	int entry_index;
 
-	assert(sm->thread_block_count < frm_gpu->thread_blocks_per_sm);
-	assert(!thread_block->id_in_sm);
+	/* Calculate the max number of thread blocks per SM */
+	grid->max_thread_blocks_per_sm = frm_calc_get_thread_blocks_per_sm(
+			grid->thread_block_size, grid->num_gpr, grid->shared_mem_top);
 
-	/* Assign thread-block ID */
-	while (thread_block->id_in_sm < frm_gpu->thread_blocks_per_sm &&
+	/* Find an available SM */
+	while (thread_block->id_in_sm < grid->max_thread_blocks_per_sm &&
 			sm->thread_blocks[thread_block->id_in_sm])
 		thread_block->id_in_sm++;
 
-	/* Assign thread-block to a SM */
+	/* Map thread-block */
 	sm->thread_blocks[thread_block->id_in_sm] = thread_block;
 	sm->thread_block_count++;
 
-	/* Remove fully-loaded SM to 'sm_ready' list so that thread-blocks
-	 * cannot be assigned to it any more */
-	if (sm->thread_block_count == frm_gpu->thread_blocks_per_sm)
-		list_remove(frm_gpu->sm_ready_list, sm);
-
-	/* Add SM to 'sm_busy' list if it has not been there */
-	if (list_index_of(frm_gpu->sm_busy_list, sm) == -1)
-		list_add(frm_gpu->sm_busy_list, sm);
-
 	/* Set up warps */
-	for (warp_id = 0; warp_id < thread_block->warp_count; warp_id++)
+	for (warp_id = 0; warp_id < thread_block->warp_count; ++warp_id)
 	{
 		/* Assign ID */
 		warp = thread_block->warps[warp_id];
-		warp->id_in_sm = thread_block->id_in_sm *
-			thread_block->warp_count + warp_id;
+		warp->id_in_sm = thread_block->id_in_sm * thread_block->warp_count +
+				warp_id;
 
 		/* Assign warp instruction queue */
 		wiq_id = warp->id_in_sm % frm_gpu_num_warp_inst_queues;
 		warp->warp_inst_queue = sm->warp_inst_queues[wiq_id];
+		warp->warp_inst_queue->warp_count++;
 
 		/* Assign warp instruction queue entry */
 		entry_index = warp->id_in_sm / frm_gpu_num_warp_inst_queues;
 		warp->warp_inst_queue_entry =
-			warp->warp_inst_queue->entries[entry_index];
+				warp->warp_inst_queue->entries[entry_index];
 
 		/* Initialize warp instruction queue entry */
 		warp->warp_inst_queue_entry->valid = 1;
 		warp->warp_inst_queue_entry->ready = 1;
 		warp->warp_inst_queue_entry->warp = warp;
 	}
-
-	/* Change thread-block status to running */
-	grid = thread_block->grid;
-	list_remove(grid->pending_thread_blocks, thread_block);
-	list_add(grid->running_thread_blocks, thread_block);
 
 	/* Trace */
 	frm_trace("frm.map_tb sm=%d tb=%d t_first=%d t_count=%d w_first=%d "

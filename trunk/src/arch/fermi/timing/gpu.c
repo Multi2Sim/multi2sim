@@ -496,40 +496,29 @@ void frm_config_dump(FILE *f)
 }
 
 
-static void frm_gpu_map_grid(FrmGrid *grid)
-{
-	/* Assign current grid */
-	assert(!frm_gpu->grid);
-	frm_gpu->grid = grid;
-
-	/* Calculate the number of thread-blocks per SM */
-	frm_gpu->thread_blocks_per_sm =
-		frm_calc_get_thread_blocks_per_sm(
-				grid->thread_block_size, grid->num_gpr,
-				grid->shared_mem_top);
-
-	/* Thread-block cannot be assigned to SM */
-	if (!frm_gpu->thread_blocks_per_sm)
-	{
-		fatal("Thread-blocks cannot be assigned to SMs.\n"
-				"\tA SM in the GPU has a limit in number of warps,\n"
-				"\tnumber of registers, and amount of shared memory.\n"
-				"\tIf a thread-block requires more resources than\n"
-				"\tthese limits, it cannot be assigned to a SM.\n");
-	}
-
-	/* Calculate limit of warps and threads per SM */
-//	frm_gpu->warps_per_sm = frm_gpu->thread_blocks_per_sm *
-//		grid->thread_blocks[0]->warp_count;
-	frm_gpu->threads_per_sm = frm_gpu->warps_per_sm * frm_emu_warp_size;
-}
+//static void FrmGpuMapGrid(FrmGpu *self, FrmGrid *grid)
+//{
+//	/* Calculate the max number of thread-blocks per SM */
+//	self->thread_blocks_per_sm = frm_calc_get_thread_blocks_per_sm(
+//			grid->thread_block_size, grid->num_gpr, grid->shared_mem_top);
+//
+//	/* Error if one thread-block cannot be assigned to a SM */
+//	if (! self->thread_blocks_per_sm)
+//	{
+//		fatal("Thread-blocks cannot be assigned to SMs.\n"
+//				"\tA SM in the GPU has a limit in number of warps,\n"
+//				"\tnumber of registers, and amount of shared memory.\n"
+//				"\tIf a thread-block requires more resources than\n"
+//				"\tthese limits, it cannot be assigned to a SM.\n");
+//	}
+//}
 
 
-static void frm_gpu_unmap_grid(void)
-{
-	/* Unmap */
-	frm_gpu->grid = NULL;
-}
+//static void frm_gpu_unmap_grid(void)
+//{
+//	/* Unmap */
+//	frm_gpu->grid = NULL;
+//}
 
 
 
@@ -1103,50 +1092,56 @@ int FrmGpuRun(Timing *self)
 	FrmEmu *emu = gpu->emu;
 
 	FrmGrid *grid;
+	FrmThreadBlock *thread_block;
+	int thread_block_id;
 
 	FrmSM *sm;
-	FrmSM *sm_next;
 	int sm_id;
 
-	/* FIXME - temporarily disabled due to segfault.
-	 * Feature not available for 4.2 anyway. */
-	fatal("%s: Fermi timing simulation not supported yet",
-			__FUNCTION__);
-
-	/* For efficiency when no Fermi emulation is selected, 
-	 * exit here if the list of existing grids is empty. */
-	if (!list_count(emu->grids))
+	/* Return immediately if no grids exists. */
+	if (! list_count(emu->grids))
 		return FALSE;
 
-	/* Map grids */
-	while ((grid = list_head(emu->pending_grids)))
+	/* Remove grids from the pending list and add them to running list if there
+	 * are SMs ready */
+	if (list_count(emu->pending_grids) && list_count(gpu->ready_sms))
 	{
-		/* Set grid status to 'running' */
-		list_remove(emu->pending_grids, grid);
-		list_add(emu->running_grids, grid);
-
-		/* Map grid to GPU */
-		frm_gpu_map_grid(grid);
-		frm_calc_plot();
+		grid = list_dequeue(emu->pending_grids);
+		list_enqueue(emu->running_grids, grid);
 	}
 
-	/* Get mapped grids */
-	grid = gpu->grid;
-	assert(grid);
-
-	/* Assign thread-blocks to SMs */
-	while (list_head(gpu->sm_ready_list) && 
-			list_head(grid->pending_thread_blocks))
+	/* Map grid and thread-blocks to SMs */
+	if (list_count(emu->running_grids))
 	{
-		FrmSMMapThreadBlock(list_head(gpu->sm_ready_list),
-				list_head(grid->pending_thread_blocks));
+		grid = list_dequeue(emu->running_grids);
+
+		while (list_count(grid->pending_thread_blocks) &&
+				list_count(gpu->ready_sms))
+		{
+			thread_block_id = (long) list_dequeue(grid->pending_thread_blocks);
+			thread_block = new(FrmThreadBlock, thread_block_id, grid);
+			list_enqueue(grid->running_thread_blocks,
+					(void *)((long)thread_block_id));
+
+			sm = list_dequeue(gpu->ready_sms);
+			FrmSMMapThreadBlock(sm, thread_block);
+			if (sm->thread_block_count < grid->max_thread_blocks_per_sm)
+				list_enqueue(gpu->ready_sms, sm);
+			else
+				list_enqueue(gpu->busy_sms, sm);
+		}
+
+		if (list_count(grid->running_thread_blocks))
+			list_enqueue(emu->running_grids, grid);
+		else
+			list_enqueue(emu->finished_grids, grid);
 	}
 
 	/* One more cycle */
-	asTiming(frm_gpu)->cycle++;
+	asTiming(self)->cycle++;
 
 	/* Stop if maximum number of GPU cycles exceeded */
-	if (frm_emu_max_cycles && asTiming(frm_gpu)->cycle >= frm_emu_max_cycles)
+	if (frm_emu_max_cycles && asTiming(self)->cycle >= frm_emu_max_cycles)
 		esim_finish = esim_finish_frm_max_cycles;
 
 	/* Stop if maximum number of GPU instructions exceeded */
@@ -1154,7 +1149,8 @@ int FrmGpuRun(Timing *self)
 		esim_finish = esim_finish_frm_max_inst;
 
 	/* Stop if there was a simulation stall */
-	if ((asTiming(frm_gpu)->cycle - gpu->last_complete_cycle) > 1000000)
+	if (gpu->last_complete_cycle &&
+			(asTiming(self)->cycle - gpu->last_complete_cycle) > 1000000)
 	{
 		warning("Fermi GPU simulation stalled.\n%s", frm_err_stall);
 		esim_finish = esim_finish_stall;
@@ -1165,32 +1161,14 @@ int FrmGpuRun(Timing *self)
 		return TRUE;
 
 	/* Run one loop iteration on each busy SM */
-	for (sm = list_head(gpu->sm_busy_list), sm_id = 0; sm; 
-			sm = sm_next, sm_id++)
+	for (sm_id = 0; sm_id < list_count(gpu->busy_sms); sm_id++)
 	{
-		/* Store next busy SM, since this can change
-		 * during the SM simulation loop iteration. */
-		sm_next = list_get(gpu->sm_busy_list, sm_id + 1);
+		sm = list_get(gpu->busy_sms, sm_id);
 
 		/* Run one cycle */
 		FrmSMRun(sm);
 	}
 
-	/* Finish execution */
-	if (!list_count(gpu->sm_busy_list))
-	{
-		/* Stop if maximum number of kernels reached */
-		if (frm_emu_max_functions && list_count(emu->grids) >=
-				frm_emu_max_functions)
-		{
-			esim_finish = esim_finish_frm_max_functions;
-		}
-
-		/* Finalize and free Grid */
-		frm_gpu_unmap_grid();
-		FrmGridDestroy(grid);
-	}
-
-	/* Still simulating */
+	/* Still running */
 	return TRUE;
 }
