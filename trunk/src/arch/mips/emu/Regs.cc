@@ -33,21 +33,14 @@ Regs::Regs()
 
 }
 
-void Regs::reset()
-{
-	for(int i=0; i<GPR_COUNT; i++)
-	{
-		gpr[i]=0;
-	}
-	pc=hi=lo=0;
-}
+
 Regs::~Regs()
 {
 }
 
 //read one word from GPRs, n is the register number.
 //If the n is greater than 31, exit program
-unsigned int Regs::read_r(int n)
+unsigned int Regs::getGPR(int n)
 {
 //		printf("%d %d", n, gpr[n]);
 		  return gpr[n];
@@ -55,45 +48,45 @@ unsigned int Regs::read_r(int n)
 
 //Write one word to GPRs, n is the register number, and value is the data to Rn
 //If the n is greater than 31, exit program
-void Regs::write_r(int n,unsigned int value)
+void Regs::setGPR(int n,unsigned int value)
 {
 //		  printf("%d %d", n, value);
 		  gpr[n]=value;
 }
 
 //Read from PC
-unsigned int Regs::read_PC()
+unsigned int Regs::getPC()
 {
 		  return pc;
 }
 
 //Write PC with value
-void Regs::write_PC(unsigned int value)
+void Regs::setPC(unsigned int value)
 {
 		  pc=value;
 }
 
 //Read from HI register
-unsigned int Regs::read_HI()
+unsigned int Regs::getHI()
 {
 		  return hi;
 }
 
 //Write HI register with value
-void Regs::write_HI(unsigned int value)
+void Regs::setHI(unsigned int value)
 {
 		  hi=value;
 }
 
 //Read from LO register
-unsigned int Regs::read_LO()
+unsigned int Regs::getLO()
 {
 
 		  return lo;
 }
 
 //Write LO register with value
-void Regs::write_LO(unsigned int value)
+void Regs::setLO(unsigned int value)
 {
 		  lo=value;
 }
