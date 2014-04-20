@@ -33,33 +33,31 @@ public:
     Regs();
     ~Regs();
     
-    void reset();
-    
-    ///read one word from GPR, n is the register number
-    ///if n is great than 31, exit program
-    unsigned int read_r(int n);
+    /// Read one word from GPR, n is the register number If n is great than 31,
+    /// exit program
+    unsigned int getGPR(int n);
     
     ///write one word to GPR, n is the register number, value
     ///if n is great than 31, exit program
-    void write_r(int n, unsigned int value);
+    void setGPR(int n, unsigned int value);
     
     ///read from PC
-    unsigned int read_PC();
+    unsigned int getPC();
     
     ///write pc with value
-    void write_PC(unsigned int value);
+    void setPC(unsigned int value);
     
     ///read from HI register
-    unsigned int read_HI();
+    unsigned int getHI();
     
     ///write HI register with value 
-    void write_HI(unsigned int value);
+    void setHI(unsigned int value);
     
     ///read from low register
-    unsigned int read_LO();
+    unsigned int getLO();
     
     ///write Lo register with value
-    void write_LO(unsigned int value); 
+    void setLO(unsigned int value); 
     
     ///show all registers
   	//int show_all_registers(int n, char *output_buffer); 
