@@ -26,6 +26,7 @@
 #include <lib/util/hash-table.h>
 #include <lib/util/misc.h>
 #include <lib/mhandle/mhandle.h>
+#include <visual/common/cycle-bar.h>
 #include <visual/common/state.h>
 #include <visual/common/trace.h>
 
@@ -37,12 +38,28 @@
 void vi_link_color_utilization(struct vi_net_link_t *link)
 {
         GdkRGBA color = link->color;
-        if (link->utilization != 0)
+        double utilization;
+        long long current_cycle;
+
+        current_cycle = vi_cycle_bar_get_cycle();
+
+        utilization = (double) link->transferred_bytes / (current_cycle * link->bandwidth);
+
+        if (utilization > 1)
+        	utilization = 1;
+
+        if (utilization != 0)
         {
-                assert(link->utilization <= 1);
                 color.blue = 0;
-                color.green = ( 2 * link->utilization <= 1 ) ? 1 : 2 * (1 - link->utilization) ;
-                color.red = ( 2 * link->utilization >= 1 ) ? 1 : 2 * link->utilization ;
+                color.green = ( 2 * utilization <= 1 ) ? 1 : 2 * (1 - utilization ) ;
+                color.red = ( 2 * utilization >= 1 ) ? 1 : 2 * utilization ;
+        }
+        else
+        {
+                color.red = .8;
+                color.green = .8;
+                color.blue = .8;
+                color.alpha = .8;
         }
         link->color = color;
 }
@@ -89,6 +106,10 @@ struct vi_net_link_t *vi_net_link_create(struct vi_trace_line_t *trace_line)
 	vc_num = vi_trace_line_get_symbol_int(trace_line, "vc_num");
 	link->vc_number = vc_num;
 
+	int bandwidth;
+	bandwidth = vi_trace_line_get_symbol_int(trace_line, "bw");
+	link->bandwidth = bandwidth;
+
 	/* Setting initial Link color */
         link->color.red = .8;
         link->color.green = .8;
@@ -131,10 +152,22 @@ void vi_net_sub_link_free  (struct vi_net_sub_link_t * subLink)
 
 void vi_link_read_checkpoint(struct vi_net_link_t *link, FILE *f)
 {
+	int count;
+	int transfered_bytes;
+        count = fread(&transfered_bytes, 1, 4, f);
+        if (count != 4)
+                fatal("%s: error reading from checkpoint", __FUNCTION__);
 
+        link->transferred_bytes = transfered_bytes;
 }
 void vi_link_write_checkpoint(struct vi_net_link_t *link, FILE *f)
 {
+	/* Transferred Bytes through Link */
+	int count;
+        count = fwrite(&link->transferred_bytes, 1, 4, f);
+        if (count != 4)
+                fatal("%s: cannot write to checkpoint file", __FUNCTION__);
+
 
 }
 

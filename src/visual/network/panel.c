@@ -215,7 +215,7 @@ static GtkWidget *vi_net_window_get_widget(struct vi_net_window_t *net_window)
 
 static void vi_net_window_refresh(struct vi_net_window_t *net_window)
 {
-//	vi_net_widget_refresh(net_window->net_widget);
+	vi_net_widget_refresh(net_window->net_widget);
 }
 
 void vi_net_board_refresh(struct vi_net_board_t *board)
