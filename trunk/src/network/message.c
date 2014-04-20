@@ -319,6 +319,9 @@ void net_event_handler(int event, void *data)
 			node->msgs_sent++;
 			input_buffer->node->bytes_received += pkt->size;
 			input_buffer->node->msgs_received++;
+			net_trace("net.link_transfer net=\"%s\" link=\"%s\" "
+					"transB=%lld\n",
+					net->name, link->name, link->transferred_bytes);
 		}
 		else if (buffer->kind == net_buffer_bus)
 		{
@@ -441,7 +444,10 @@ void net_event_handler(int event, void *data)
 			node->msgs_sent++;
 			input_buffer->node->bytes_received += pkt->size;
 			input_buffer->node->msgs_received++;
-
+			net_trace("net.bus_transfer net=\"%s\" node=\"%s\" "
+					"lane_index=%d transB=%lld\n",
+					net->name, bus->node->name, bus->index,
+					bus->transferred_bytes);
 		}
 
 		else if (buffer->kind == net_buffer_photonic)
@@ -565,7 +571,10 @@ void net_event_handler(int event, void *data)
 			node->msgs_sent++;
 			input_buffer->node->bytes_received += pkt->size;
 			input_buffer->node->msgs_received++;
-
+			net_trace("net.photonic_transfer net=\"%s\" node=\"%s\" "
+					"lane_index=%d transB=%lld\n",
+					net->name, bus->node->name, bus->index,
+					bus->transferred_bytes);
 			net_debug("msg "
 					"a=\"success photonic transmission\" "
 					"net=\"%s\" "

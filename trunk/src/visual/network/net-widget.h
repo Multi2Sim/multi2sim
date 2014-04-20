@@ -71,7 +71,12 @@ struct vi_link_board_t
 {
         GtkWidget *widget;
 
-        struct vi_net_sub_link_t *subLink;
+        float src_x;
+        float src_y;
+        float dst_x;
+        float dst_y;
+
+        struct vi_net_link_t *link;
 };
 
 
@@ -79,6 +84,7 @@ struct vi_link_board_t
 struct vi_net_widget_t *vi_net_widget_create     (struct vi_net_t *net);
 void                    vi_net_widget_free       (struct vi_net_widget_t *net_widget);
 GtkWidget              *vi_net_widget_get_widget (struct vi_net_widget_t *widget);
+void 			vi_net_widget_refresh    (struct vi_net_widget_t *net_widget);
 
 
 #endif

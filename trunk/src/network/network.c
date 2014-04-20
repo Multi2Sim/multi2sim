@@ -772,8 +772,8 @@ void net_config_trace(struct net_t *net)
                 link = list_get(net->link_list, i);
 
                 net_trace_header("net.link net_name=\"%s\" link_name=\"%s\" src_node=\"%s\" "
-                                "dst_node=\"%s\" vc_num=%d\n", net->name, link->name, link->src_node->name,
-                                link->dst_node->name, link->virtual_channel);
+                                "dst_node=\"%s\" vc_num=%d bw=%d\n", net->name, link->name, link->src_node->name,
+                                link->dst_node->name, link->virtual_channel, link->bandwidth);
         }
 
         /* Buffer Trace */

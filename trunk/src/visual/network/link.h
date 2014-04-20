@@ -34,8 +34,10 @@ struct vi_net_sub_link_t
 
 struct vi_net_link_t
 {
-        double utilization;
-	int   vc_number;
+        long long transferred_bytes;
+
+        int   vc_number;
+        int   bandwidth;
 	char *name;
 	GdkRGBA color;
 

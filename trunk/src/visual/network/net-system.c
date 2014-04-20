@@ -49,7 +49,7 @@ static char *err_vi_net_system_trace_version =
 		"\tversion used to visualize the trace.\n";
 
 #define VI_NET_SYSTEM_TRACE_VERSION_MAJOR	1
-#define VI_NET_SYSTEM_TRACE_VERSION_MINOR	5
+#define VI_NET_SYSTEM_TRACE_VERSION_MINOR	6
 
 static void vi_net_system_read_checkpoint  (struct vi_net_system_t *net_system, FILE *f);
 static void vi_net_system_write_checkpoint (struct vi_net_system_t *net_system, FILE *f);
@@ -58,6 +58,7 @@ static void vi_net_system_new_message      (struct vi_net_system_t *net_system, 
 static void vi_net_system_msg_set_access   (struct vi_net_system_t *net_system, struct vi_trace_line_t *trace_line);
 static void vi_net_system_message          (struct vi_net_system_t *net_system, struct vi_trace_line_t *trace_line);
 static void vi_net_system_end_message	   (struct vi_net_system_t *net_system, struct vi_trace_line_t *trace_line);
+static void vi_net_system_link_transfer    (struct vi_net_system_t *net_system, struct vi_trace_line_t *trace_line);
 
 void vi_net_system_init(void)
 {
@@ -85,6 +86,11 @@ void vi_net_system_init(void)
 	vi_state_new_command("net.end_msg",
 			(vi_state_process_trace_line_func_t) vi_net_system_end_message,
 			vi_net_system);
+
+	vi_state_new_command("net.link_transfer",
+			(vi_state_process_trace_line_func_t) vi_net_system_link_transfer,
+			vi_net_system);
+
 	/* Initialize */
 	vi_net_system = xcalloc(1, sizeof(struct vi_net_system_t));
 	vi_net_system->net_table = hash_table_create(0, FALSE);
@@ -366,4 +372,32 @@ static void vi_net_system_end_message (struct vi_net_system_t *net_system, struc
 
 	/* Free access */
 	vi_net_message_free(message);
+}
+
+static void vi_net_system_link_transfer(struct vi_net_system_t *net_system, struct vi_trace_line_t *trace_line)
+{
+	struct vi_net_t *net;
+	struct vi_net_link_t *link;
+
+	char *net_name;
+	char *link_name;
+
+	int transferred_bytes;
+
+	/* Read Fields */
+	net_name =  vi_trace_line_get_symbol(trace_line, "net");
+	net = hash_table_get(vi_net_system->net_table, net_name);
+	if (!net)
+		panic("%s: invalid network name '%s'", __FUNCTION__, net_name);
+
+	link_name = vi_trace_line_get_symbol(trace_line, "link");
+
+	link = hash_table_get(net->link_table, link_name);
+	if (!link)
+		panic("%s: Link not found", __FUNCTION__);
+
+	transferred_bytes = vi_trace_line_get_symbol_int(trace_line, "transB");
+
+	link->transferred_bytes = transferred_bytes;
+
 }
