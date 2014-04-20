@@ -62,6 +62,7 @@ CLASS_BEGIN(FrmGrid, Object)
 	unsigned shared_mem_top;
 
 	/* The following fields are used by architectural simulation only. */
+	int max_thread_blocks_per_sm;
 
 CLASS_END(FrmGrid)
 
