@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 #include "Emu.h"
+#include "Context.h"
 
 namespace mips
 {
@@ -24,9 +25,23 @@ namespace mips
 // Class 'Emu'
 //
 
+// Emulator singleton
+Emu *Emu::instance;
+
 Emu::Emu()
 {
 
+}
+
+Emu *Emu::getInstance()
+{
+	// Instance already exists
+	if (instance)
+		return instance;
+
+	// Create instance
+	instance = new Emu();
+	return instance;
 }
 
 }

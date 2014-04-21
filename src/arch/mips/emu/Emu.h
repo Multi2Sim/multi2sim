@@ -16,17 +16,22 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-#include "Mem.h"
-#include "Regs.h"
 namespace mips
 {
 class Emu
 {
 
+	// Unique instance of mips emulator
+	static Emu *instance;
+
 public:
 	///Constructor and Desctructor
 	Emu();
 	~Emu();
+
+	/// The mips emulator is a singleton class. The only possible instance of
+	/// it will be allocated the first time this function is invoked.
+	static Emu *getInstance();
 
 };
 }
