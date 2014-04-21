@@ -19,18 +19,10 @@
 
 #include <iostream>
 #include <lib/cpp/ELFReader.h>
-#include "Emu.h"
+
 namespace mips
 {
-
-// Context States
-enum ContextState
-{
-	ContextRunning	 = 0x00001,  // it is able to run instructions
-	ContextSpecMode	 = 0x00002,  // executing in speculative mode
-	ContextFinished  = 0x00003,  // executing finished
-	ContextInvalid	 = 0x00000
-};
+class Emu;
 
 // mips Context
 class Context

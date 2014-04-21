@@ -25,7 +25,7 @@ namespace mips
 {
 Regs::Regs()
 {
-	for(int i=0; i<GPR_COUNT; i++)
+	for(int i=0; i<32; i++)
 		{
 			gpr[i]=0;
 		}
