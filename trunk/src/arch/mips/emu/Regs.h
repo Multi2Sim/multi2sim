@@ -41,7 +41,7 @@ public:
     void setGPR(int n, unsigned int value);
     
     ///read from PC
-    unsigned int getPC();
+    unsigned int getPC(){ return pc; }
     
     ///write pc with value
     void setPC(unsigned int value);

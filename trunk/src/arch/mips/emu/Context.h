@@ -18,7 +18,10 @@
  */
 
 #include <iostream>
-#include <lib/cpp/ELFReader.h>
+#include <memory>
+#include <mem-system/Memory.h>
+
+#include "Regs.h"
 
 namespace mips
 {
@@ -30,9 +33,21 @@ class Context
 	// Emulator it belongs to
 	Emu *emu;
 
+	// Context memory. This object can be shared by multiple contexts, so it
+	// is declared as a shared pointer. The last freed context pointing to
+	// this memory object will be the one automatically freeing it.
+	std::shared_ptr<mem::Memory> memory;
+
+	// Register file. Each context has its own copy always.
+	Regs regs;
+
 public:
 	Context();
 	~Context();
+
+	/// Run one instruction for the context at the position pointed to by
+	/// register program counter.
+	void Execute();
 
 };
 }

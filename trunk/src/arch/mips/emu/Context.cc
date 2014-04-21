@@ -22,9 +22,32 @@
 
 namespace mips
 {
-Context::Context(){
+Context::Context()
+{
 	// Save emulator instance
 	emu = Emu::getInstance();
 }
 
+void Context::Execute()
+{
+	/// read 32 bits mips instruction from memory into buffer
+	char buffer[32];
+	char *buffer_ptr = memory->getBuffer(regs.getPC(), 32,
+				mem::MemoryAccessExec);
+	if (!buffer_ptr)
+		{
+			// Disable safe mode. If a part of the 32 read bytes does not
+			// belong to the actual instruction, and they lie on a page with
+			// no permissions, this would generate an undesired protection
+			// fault.
+			memory->setSafe(false);
+			buffer_ptr = buffer;
+			memory->Access(regs.getPC(), 32, buffer_ptr,
+					mem::MemoryAccessExec);
+		}
+
+	// Return to default safe mode
+	memory->setSafeDefault();
+
+}
 }
