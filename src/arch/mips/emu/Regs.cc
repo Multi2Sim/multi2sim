@@ -54,11 +54,7 @@ void Regs::setGPR(int n,unsigned int value)
 		  gpr[n]=value;
 }
 
-//Read from PC
-unsigned int Regs::getPC()
-{
-		  return pc;
-}
+
 
 //Write PC with value
 void Regs::setPC(unsigned int value)
