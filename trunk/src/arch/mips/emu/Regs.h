@@ -18,13 +18,12 @@
  */
  
 
-static const int GPR_COUNT = 32;
 
 
 namespace mips{
 class Regs
 {
-	unsigned int  gpr[GPR_COUNT]; // General Purpose registers
+	unsigned int  gpr[32]; // General Purpose registers
 	unsigned int pc; //program counter
     unsigned int hi;  // mult register for [63:32]
     unsigned int lo;  // mult register for [31:0]

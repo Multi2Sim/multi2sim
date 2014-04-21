@@ -18,13 +18,13 @@
  */
 #include <iostream>
 #include "Context.h"
+#include "Emu.h"
+
 namespace mips
 {
 Context::Context(){
-
+	// Save emulator instance
+	emu = Emu::getInstance();
 }
-
-
-
 
 }
