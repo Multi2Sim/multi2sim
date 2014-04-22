@@ -23,13 +23,40 @@
 #include <src/mem-system/Memory.h>
 
 #include "ABI.h"
-#include "OpenCLDriver.h"
 #include "southern-islands/ABI.h"
-
-using namespace SI;
+#include "OpenCLDriver.h"
 
 namespace Driver
 {
+
+std::string OpenCLABICallName[OpenCLABICallCount + 1] =
+{
+	nullptr,
+#define SI_ABI_CALL(space, name, code) #space #name,
+#include "../common/SI-ABI.dat"
+#undef SI_ABI_CALL
+
+#define OPENCL_ABI_CALL(space, name, code) #space #name,
+#include "ABI.dat"
+#undef OPENCL_ABI_CALL
+	nullptr
+};
+
+OpenCLABICallFuncPtr OpenCLABICallTable[OpenCLABICallCount + 1] =
+{
+	nullptr,
+
+// Shared ABIs for both CL/GL driver
+#define SI_ABI_CALL(space, name, code) &space::SIABI##name##Impl,
+#include "../common/SI-ABI.dat"
+#undef SI_ABI_CALL
+
+// Unique ABIs for CL driver
+#define OPENCL_ABI_CALL(space, name, code) &space::OpenCLABI##name##Impl,
+#include "ABI.dat"
+#undef OPENCL_ABI_CALL
+	nullptr
+};
 
 int OpenCLABIInitImpl(x86::Context *ctx)
 {

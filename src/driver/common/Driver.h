@@ -25,8 +25,9 @@
 // Forward declaration
 namespace x86
 {
-class Emu;
-class Cpu;
+	class Emu;
+	class Cpu;
+	class Context;
 }  // namespace x86
 
 namespace Driver
@@ -35,14 +36,16 @@ namespace Driver
 class Common
 {
 protected:
-	// Device x86 functional emulators
+	// Device x86 functional emulators, shared by all drivers
 	static x86::Emu *x86_emu;
 
-	// Device x86 timing simulators
+	// Device x86 timing simulators, shared by all drivers
 	static x86::Cpu *x86_cpu;
 
 public:
 	Common();
+
+	virtual int DriverCall(x86::Context *ctx, int ioctl_code) = 0;
 };
 	
 }  // namespace Driver

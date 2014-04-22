@@ -22,6 +22,11 @@
 
 #include <memory>
 #include <vector>
+
+#include <arch/southern-islands/asm/Arg.h>
+#include <arch/southern-islands/emu/NDRange.h>
+#include <mem-system/Memory.h>
+
 #include "Driver.h"
 
 // Forward declarations
@@ -32,10 +37,15 @@ namespace SI
 	class NDRange;
 }
 
+namespace x86
+{
+	class Context;
+}  // namespace x86
+
 namespace Driver
 {
 
-class SICommon : public Common
+class SICommon : virtual public Common
 {
 protected:
 	// Device functional emulator
@@ -48,20 +58,20 @@ protected:
 	bool fused;
 
 	// NDRange list contains NDRanges created by driver, shared by OpenCL/GL driver
-	static std::vector<std::unique_ptr<SI::NDRange>> ndranges;
+	std::vector<std::unique_ptr<SI::NDRange>> ndranges;
 
 public:
-	SICommon();
+	SICommon() {};
 
 	/// Getters
-	static std::vector<std::unique_ptr<SI::NDRange>>::iterator 
+	std::vector<std::unique_ptr<SI::NDRange>>::iterator 
 		getNDRangeBegin() { return ndranges.begin(); }
 
-	static std::vector<std::unique_ptr<SI::NDRange>>::iterator 
+	std::vector<std::unique_ptr<SI::NDRange>>::iterator 
 		getNDRangeEnd() { return ndranges.end(); }
 
 	/// Get NDRange count
-	static bool isNDRangeListEmpty() { return ndranges.empty(); }
+	bool isNDRangeListEmpty() { return ndranges.empty(); }
 
 	/// Get NDRange by id
 	SI::NDRange *getNDRangeById(int id);

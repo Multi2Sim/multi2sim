@@ -36,7 +36,7 @@ namespace SI
 namespace Driver
 {
 
-class OpenGLSIDriver : public SICommon
+class OpenGLSIDriver : public virtual SICommon
 {
 	// Unique instance of OpenGL Driver
 	static std::unique_ptr<OpenGLSIDriver> instance;
@@ -54,7 +54,12 @@ class OpenGLSIDriver : public SICommon
 	// SPI module generates NDRanges for Pixel Shader
 	SI::SPI *spi;
 
+	// Virtual device in /tmp
+	FILE *vt_dev;
+
 public:
+
+	~OpenGLSIDriver();
 
 	// Driver verision information
 	static const unsigned major = 1;
@@ -64,6 +69,9 @@ public:
 	/// exist yet, it will be created, and will remain allocated until the
 	/// end of the execution.
 	static OpenGLSIDriver *getInstance();
+
+	/// OpenCL driver call
+	int DriverCall(x86::Context *ctx, int abi_code);
 
 	/// Get SPI module
 	SI::SPI *getSPIModule() const { return spi; }
@@ -104,7 +112,7 @@ public:
 	void NDRangeComplete(SI::NDRange *ndrange);
 
 	/// OpenGL driver call
-	int DriverCall();
+	int DriverCall(x86::Context *context, unsigned abi_code);
 
 	/// Return an iterator to the first NDRange in the NDRange list. The
 	/// NDRanges can be conveniently traversed with a loop using these

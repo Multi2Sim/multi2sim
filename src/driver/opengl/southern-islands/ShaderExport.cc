@@ -40,6 +40,11 @@ ExportData::ExportData(unsigned x, unsigned y, unsigned z, unsigned w)
 	this->w.u = w;
 }
 
+ShaderExport::ShaderExport()
+{
+
+}
+
 ShaderExport *ShaderExport::getInstance()
 {
 	// Instance already exists

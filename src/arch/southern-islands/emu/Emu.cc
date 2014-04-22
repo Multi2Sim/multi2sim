@@ -24,7 +24,8 @@
 #include <driver/opencl/OpenCLDriver.h>
 #include <driver/opengl/OpenGLDriver.h>
 #include <driver/opengl/southern-islands/ShaderExport.h>
-#include <src/lib/cpp/ELFReader.h>
+#include <lib/cpp/ELFReader.h>
+#include <lib/cpp/Misc.h>
 
 
 #include "Emu.h"
@@ -33,7 +34,14 @@
 namespace SI
 {
 
+// Singleton
 std::unique_ptr<Emu> Emu::instance;
+
+// Debugger
+misc::Debug Emu::debug;
+
+// Configuration
+EmuConfig Emu::config;
 
 Emu *Emu::getInstance()
 {

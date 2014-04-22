@@ -226,6 +226,9 @@ class Context
 	std::string OpenProcSelfMaps();
 	std::string OpenProcCPUInfo();
 
+	// Virtual devices
+	std::string OpenDevM2SSICL();
+
 	// Dump debug information about a call instruction
 	void DebugCallInst();
 
@@ -682,6 +685,8 @@ class Context
 			int flags, int guest_fd, int offset);
 	FileDesc *SyscallOpenVirtualFile(const std::string &path,
 			int flags, int mode);
+	FileDesc *SyscallOpenVirtualDevice(const std::string &path,
+			int flags, int mode);
 
 	// System call 'nanosleep'
 	long long syscall_nanosleep_wakeup_time;
@@ -836,7 +841,7 @@ public:
 	void Execute();
 
 	/// Return a reference of the register file
-	Regs &getRegs() {	return regs; }
+	Regs &getRegs() { return regs; }
 
 	/// Return a constant reference of the memory
 	mem::Memory &getMem() {
@@ -844,6 +849,10 @@ public:
 		return *memory;
 	}
 
+	/// Register Driver and create virtual device under /tmp
+	///
+	/// \param drv_name Name of the driver
+	int RegisterDriver(const std::string &drv_name);
 };
 
 }  // namespace x86

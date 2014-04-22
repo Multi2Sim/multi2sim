@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_COMMON_RUNTIME_H
-#define ARCH_COMMON_RUNTIME_H
+#ifndef ARCH_COMMON_RUNTIME_H_OLD
+#define ARCH_COMMON_RUNTIME_H_OLD
 
 /* Function acting as ABI between the runtime and the underlying driver.
  * The function takes a generic pointer as an argument, and returns an integer

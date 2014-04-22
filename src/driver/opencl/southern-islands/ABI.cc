@@ -822,7 +822,7 @@ int OpenCLABINDRangeFlushImpl(x86::Context *ctx)
 	x86::Emu::opencl_debug << misc::fmt("\tndrange %d\n", ndrange->getId());
 
 	// Flush RW or WO buffers from this ND-Range 
-	SI::Kernel::FlushNDRangeBuffers(ndrange/*, si_gpu, x86_emu*/);
+	// SI::Kernel::FlushNDRangeBuffers(ndrange/*, si_gpu, x86_emu*/);
 
 	// X86ContextSuspend(ctx, opencl_abi_si_ndrange_flush_can_wakeup, 
 	// 	&(ndrange->flushing), opencl_abi_si_ndrange_flush_wakeup, 
