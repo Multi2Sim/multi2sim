@@ -95,8 +95,8 @@ void main_cpp(int argc, char **argv)
 	arch_pool->Register("SouthernIslands", "si");
 
 	// Register runtime and driver pairs
-	// comm::RuntimePool *runtime_pool = comm::RuntimePool::getInstance();
-	// runtime_pool->Register("OpenCL", "OpenCL", "m2s-opencl", 0xAAAA0001, Driver::OpenCLSIDriver::getInstance());
+	comm::RuntimePool *runtime_pool = comm::RuntimePool::getInstance();
+	runtime_pool->Register("OpenCL", "OpenCL", "m2s-opencl", 0xAAAA0001, Driver::OpenCLSIDriver::getInstance());
 
 	// Test Regs
 	if (command_line.getNumArguments())
