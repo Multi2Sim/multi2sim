@@ -35,9 +35,6 @@ libopengl_a_SOURCES = \
 	ABI.dat \
 	ABI.h
 
-LDADD = \
-	$(top_builddir)/src/driver/opengl/southern-islands/libsi_gl.a
-
 else
 
 libopengl_a_SOURCES = \

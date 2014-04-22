@@ -21,14 +21,16 @@ AM_LIBTOOLFLAGS = --preserve-dup-deps
 INCLUDES = @M2S_INCLUDES@
 
 LDADD = \
-	$(top_builddir)/src/driver/common/libcommon.a \
 	$(top_builddir)/src/driver/cuda/libcuda.a \
 	$(top_builddir)/src/driver/glu/libglu.a \
 	$(top_builddir)/src/driver/glut/libglut.a \
 	$(top_builddir)/src/driver/glew/libglew.a \
 	$(top_builddir)/src/driver/opencl/libopencl.a \
+	$(top_builddir)/src/driver/opencl/southern-islands/libsi.a \
 	$(top_builddir)/src/driver/opencl-old/evergreen/libopencl.a \
 	$(top_builddir)/src/driver/opengl/libopengl.a \
+	$(top_builddir)/src/driver/opengl/southern-islands/libsi_gl.a \
+	$(top_builddir)/src/driver/common/libcommon.a \
 	\
 	$(top_builddir)/src/arch/x86/timing/libtiming.a \
 	$(top_builddir)/src/arch/x86/emu/libemu.a \
@@ -55,6 +57,8 @@ LDADD = \
 	\
 	$(top_builddir)/src/arch/southern-islands/timing/libtiming.a \
 	$(top_builddir)/src/arch/southern-islands/emu/libemu.a \
+	$(top_builddir)/src/driver/opengl/libopengl.a \
+	$(top_builddir)/src/driver/opengl/southern-islands/libsi_gl.a \
 	$(top_builddir)/src/arch/southern-islands/asm/libasm.a \
 	\
 	$(top_builddir)/src/arch/common/libcommon.a \

@@ -23,7 +23,3 @@ libopencl_a_SOURCES = \
 	ABI.h
 
 INCLUDES = @M2S_INCLUDES@
-
-LDADD = \
-	$(top_builddir)/src/driver/opencl/southern-islands/libsi.a
-

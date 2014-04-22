@@ -27,12 +27,12 @@ namespace SI
 
 // Forward declarations of OpenCL Runtime functions
 #define SI_ABI_CALL(space, name, code) \
-	int SIABI##name##Impl(x86::Context *ctx);
+int SIABI##name##Impl(x86::Context *ctx);
 #include "../../common/SI-ABI.dat"
 #undef SI_ABI_CALL
 
 #define OPENCL_ABI_CALL(space, name, code) \
-	int OpenCLABI##name##Impl(x86::Context *ctx);
+int OpenCLABI##name##Impl(x86::Context *ctx);
 #include "../ABI.dat"
 #undef OPENCL_ABI_CALL
 

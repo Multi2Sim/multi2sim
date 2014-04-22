@@ -35,6 +35,8 @@
 #include <sys/times.h>
 
 #include <lib/cpp/Misc.h>
+#include <arch/common/Runtime.h>
+#include <driver/common/Driver.h>
 
 #include "Context.h"
 #include "Emu.h"
@@ -667,6 +669,34 @@ FileDesc *Context::SyscallOpenVirtualFile(const std::string &path,
 	return desc;
 }
 
+FileDesc *Context::SyscallOpenVirtualDevice(const std::string &path,
+		int flags, int mode)
+{
+	// Assume no file found
+	std::string temp_path;
+
+	// Virtual device /dev/m2s-si-cl
+	if (path == "/dev/m2s-si-cl")
+		temp_path = OpenDevM2SSICL();
+
+	// No device found
+	if (temp_path.empty())
+		return nullptr;
+
+	// File found, create descriptor
+	int host_fd = open(temp_path.c_str(), flags, mode);
+	assert(host_fd > 0);
+
+	// Add file descriptor table entry.
+	FileDesc *desc = file_table->newFileDesc(FileDescGPU, host_fd,
+			temp_path, flags);
+	emu->syscall_debug << misc::fmt("    host device '%s' opened: "
+			"guest_fd=%d, host_fd=%d\n",
+			temp_path.c_str(), desc->getGuestIndex(),
+			desc->getHostIndex());
+	return desc;
+}
+
 int Context::ExecuteSyscall_open()
 {
 	// Arguments
@@ -688,6 +718,19 @@ int Context::ExecuteSyscall_open()
 	// FIXME
 	//if (runtime_redirect(full_path, temp_path, sizeof temp_path))
 	//	snprintf(full_path, sizeof full_path, "%s", temp_path);
+
+	// Driver devices
+	if (misc::StringPrefix(full_path, "/dev/"))
+	{
+		// Attempt to open virtual file
+		FileDesc *desc = SyscallOpenVirtualDevice(full_path, flags, mode);
+		if (desc)
+			return desc->getGuestIndex();
+		
+		// Unhandled virtual file. Let the application read the contents
+		// of the host version of the file as if it was a regular file.
+		emu->syscall_debug << "    warning: unhandled virtual device\n";		
+	}
 
 	// Virtual files
 	if (misc::StringPrefix(full_path, "/proc/"))
@@ -1669,7 +1712,56 @@ int Context::ExecuteSyscall_ni_syscall_53()
 
 int Context::ExecuteSyscall_ioctl()
 {
-	__UNIMPLEMENTED__
+	// Arguments 
+	int guest_fd = regs.getEbx();
+	unsigned cmd = regs.getEcx();
+	unsigned arg = regs.getEdx();
+	emu->syscall_debug << misc::fmt("  guest_fd=%d, cmd=0x%x, arg=0x%x\n",
+		guest_fd, cmd, arg);
+
+	// File descriptor 
+	FileDesc *desc= file_table->getFileDesc(guest_fd);
+	if (!desc)
+		return -EBADF;
+
+	comm::RuntimePool *runtime_pool = comm::RuntimePool::getInstance();
+
+	// Process IOCTL
+	if (cmd >= 0x5401 || cmd <= 0x5408)
+	{
+		// 'ioctl' commands using 'struct termios' as the argument.
+		// This structure is 60 bytes long both for x86 and x86_64
+		// architectures, so it doesn't vary between guest/host.
+		// No translation needed, so just use a 60-byte I/O buffer. 
+		char buf[60];
+
+		// Read buffer 
+		memory->Read(arg, sizeof buf, buf);
+		int err = ioctl(desc->getHostIndex(), cmd, &buf);
+		if (err == -1)
+			return -errno;
+
+		// Return in memory 
+		memory->Write(arg, sizeof buf, buf);
+		return err;
+	}
+	// 
+	else if (desc->getType() == FileDescGPU)
+	{
+
+		comm::Runtime *runtime = runtime_pool->getRuntimeByCode(guest_fd);
+		Driver::Common *driver = runtime->getDriver();
+
+		return driver->DriverCall(this, cmd);
+	}
+	else
+	{
+		misc::fatal("%s: not implement for cmd = 0x%x.\n%s",
+			__FUNCTION__, cmd, syscall_error_note);
+	}
+
+	// Return 
+	return 0;
 }
 
 

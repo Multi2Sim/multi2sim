@@ -20,11 +20,13 @@
 #include <cstdlib>
 #include <iostream>
 
+#include <arch/common/Runtime.h>
 #include <arch/x86/asm/Asm.h>
 #include <arch/x86/emu/Context.h>
 #include <arch/x86/emu/Emu.h>
 #include <arch/x86/emu/FileTable.h>
 #include <arch/x86/emu/Signal.h>
+#include <driver/opencl/OpenCLDriver.h>
 #include <lib/cpp/CommandLine.h>
 #include <lib/cpp/Misc.h>
 #include <lib/esim/ESim.h>
@@ -90,6 +92,11 @@ void main_cpp(int argc, char **argv)
 	// Register architectures
 	comm::ArchPool *arch_pool = comm::ArchPool::getInstance();
 	arch_pool->Register("x86", "x86");
+	arch_pool->Register("SouthernIslands", "si");
+
+	// Register runtime and driver pairs
+	comm::RuntimePool *runtime_pool = comm::RuntimePool::getInstance();
+	runtime_pool->Register("OpenCL", "OpenCL", "m2s-opencl", 0xAAAA0001, Driver::OpenCLSIDriver::getInstance());
 
 	// Test Regs
 	if (command_line.getNumArguments())

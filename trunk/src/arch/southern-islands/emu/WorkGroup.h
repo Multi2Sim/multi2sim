@@ -43,7 +43,7 @@ class WorkGroupData
 {
 public:
 	/// Virtual destructor to guarantee polymorphism
-	virtual ~WorkGroupData();
+	virtual ~WorkGroupData() { };
 };
 
 

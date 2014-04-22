@@ -20,6 +20,8 @@
 #include <arch/southern-islands/emu/Emu.h>
 #include <driver/opengl/southern-islands/ShaderExport.h>
 #include <driver/opengl/southern-islands/SPI.h>
+#include <lib/cpp/Misc.h>
+
 #include "OpenGLDriver.h"
 
 namespace Driver
@@ -38,6 +40,18 @@ OpenGLSIDriver::OpenGLSIDriver()
 
 	// Obtain instance of SPI module
 	spi = SI::SPI::getInstance();
+
+	// Create virtual device in /tmp
+	if ((vt_dev = fopen("/tmp/m2s-si-cl", "rw+")) == NULL)
+		misc::fatal("%s: cannot open /dev/m2s-si-cl", __FUNCTION__);
+
+}
+
+OpenGLSIDriver::~OpenGLSIDriver()
+{
+	// Close virtual device
+	if (vt_dev)
+		fclose(vt_dev);
 }
 
 OpenGLSIDriver *OpenGLSIDriver::getInstance()
@@ -50,6 +64,18 @@ OpenGLSIDriver *OpenGLSIDriver::getInstance()
 	instance.reset(new OpenGLSIDriver());
 	return instance.get();
 }
+
+int OpenGLSIDriver::DriverCall(x86::Context *ctx, int abi_code)
+{
+	// FIXME
+	return 0;
+}
+
+void OpenGLSIDriver::RequestWork(SI::NDRange *ndrange)
+{
+	// FIXME
+}
+
 
 void OpenGLSIDriver::AddProgram(std::unique_ptr<SI::ProgramGL> program)
 {
