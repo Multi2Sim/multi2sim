@@ -409,6 +409,53 @@ void WorkItem::ISA_S_LOAD_DWORDX8_Impl(Inst *inst)
 }
 #undef INST
 
+#define INST INST_SMRD
+void WorkItem::ISA_S_LOAD_DWORDX16_Impl(Inst *inst)
+{
+	// Record access
+	wavefront->setScalarMemRead(true);
+
+	assert(INST.imm);
+
+	int sbase = INST.sbase << 1;
+
+	EmuMemPtr mem_ptr;
+	ReadMemPtr(sbase, mem_ptr);
+
+	// Calculate effective address
+	unsigned m_base = mem_ptr.addr;
+	unsigned m_offset = INST.offset * 4;
+	unsigned m_addr = m_base + m_offset;
+
+	assert(!(m_addr & 0x3));
+
+	int i;
+	InstReg value[16];
+	for (i = 0; i < 16; i++)
+	{
+		// Read value from global memory		
+		global_mem->Read(m_addr + i * 4, 4, (char *)&value[i]);
+		// Store the data in the destination register
+		WriteSReg(INST.sdst + i, value[i].as_uint);
+	}
+
+	// Debug
+	if (Emu::debug)
+	{
+		Emu::debug << misc::fmt("S[%u,%u] <= (addr %u): ", INST.sdst, INST.sdst+3, 
+			m_addr);
+		for (i = 0; i < 8; i++)
+		{
+			Emu::debug << misc::fmt("S%u<=(%u,%gf) ", INST.sdst + i,
+				value[i].as_uint, value[i].as_float);
+		}
+	}
+
+	// Record last memory access for the detailed simulator.
+	global_mem_access_addr = m_addr;
+	global_mem_access_size = 4 * 16;
+}
+#undef INST
 
 /*
  * SOP2
@@ -3768,6 +3815,15 @@ void WorkItem::ISA_V_CMP_NEQ_F64_Impl(Inst *inst)
 }
 #undef INST
 
+// vcc = !(S0.d < S1.d). 
+#define INST INST_VOPC
+void WorkItem::ISA_V_CMP_NLT_F64_Impl(Inst *inst)
+{
+	ISAUnimplemented(inst);
+}
+#undef INST
+
+
 // vcc = (S0.i < S1.i).
 #define INST INST_VOPC
 void WorkItem::ISA_V_CMP_LT_I32_Impl(Inst *inst)
@@ -4682,6 +4738,45 @@ void WorkItem::ISA_V_DIV_FIXUP_F64_Impl(Inst *inst)
 	ISAUnimplemented(inst);
 }
 #undef INST
+
+#define INST INST_VOP3a
+void WorkItem::ISA_V_LSHL_B64_Impl(Inst *inst)
+{
+	// Input operands 
+	union
+	{
+		double as_double;
+		unsigned int as_reg[2];
+		unsigned int as_uint;
+
+	} s0, s1, dst;
+
+	InstReg result_lo;
+	InstReg result_hi;
+
+	assert(!INST.clamp);
+	assert(!INST.omod);
+
+	// Load operands from registers. 
+	s0.as_reg[0] = ReadReg(INST.src0);
+	s0.as_reg[1] = ReadReg(INST.src0 + 1);
+	s1.as_reg[0] = ReadReg(INST.src1);
+	s1.as_reg[1] = ReadReg(INST.src1 + 1);
+	
+	// LSHFT_B64
+	// Mask s1 to return s1[4:0] 
+	// to extract left shift right operand
+	dst.as_uint = s0.as_uint << (s1.as_uint & 0x001F);
+	
+	// Write the results. 
+	// Cast uint32 to unsigned int 
+	result_lo.as_uint = (unsigned int)dst.as_reg[0];
+	result_hi.as_uint = (unsigned int)dst.as_reg[1];
+	WriteVReg(INST.vdst, result_lo.as_uint);
+	WriteVReg(INST.vdst + 1, result_hi.as_uint);
+}
+#undef INST
+
 
 // D.d = min(S0.d, S1.d).
 #define INST INST_VOP3a
@@ -7754,6 +7849,7 @@ void WorkItem::ISA_IMAGE_SAMPLE_Impl(Inst *inst)
 #define INST INST_EXP
 void WorkItem::ISA_EXPORT_Impl(Inst *inst)
 {
+#ifdef HAVE_OPENGL
 	ShaderExport *sx = Driver::OpenGLSIDriver::getInstance()->getShaderExportModule();
 	
 	unsigned compr_en;
@@ -7802,6 +7898,7 @@ void WorkItem::ISA_EXPORT_Impl(Inst *inst)
 	}
 
 	sx->Export(target_id, id, x.as_uint, y.as_uint, z.as_uint, w.as_uint);
+#endif
 }
 #undef INST
 

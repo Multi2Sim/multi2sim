@@ -44,7 +44,7 @@ namespace Driver
 {
 
 /// OpenCL Driver for SI
-class OpenCLSIDriver : public SICommon
+class OpenCLSIDriver : public virtual SICommon
 {
 	// Unique instance of OpenCL Driver
 	static std::unique_ptr<OpenCLSIDriver> instance;
@@ -62,6 +62,8 @@ class OpenCLSIDriver : public SICommon
 
 public:
 
+	~OpenCLSIDriver();
+
 	// Driver verision information
 	static const unsigned major = 5;
 	static const unsigned minor = 2173;
@@ -70,6 +72,9 @@ public:
 	/// exist yet, it will be created, and will remain allocated until the
 	/// end of the execution.
 	static OpenCLSIDriver *getInstance();
+
+	/// OpenCL driver call
+	int DriverCall(x86::Context *ctx, int abi_code);
 
 	/// Getters
 	///
@@ -107,9 +112,6 @@ public:
 	/// ndrange->running_work_groups are both empty)
 	/// \param ndrange 
 	void NDRangeComplete(SI::NDRange *ndrange);
-
-	/// OpenCL driver call
-	int DriverCall(x86::Context *ctx);
 
 	/// Add program to program list
 	void AddProgram(std::unique_ptr<SI::Program> program);

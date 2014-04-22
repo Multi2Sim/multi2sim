@@ -23,6 +23,9 @@ libcommon_a_SOURCES = \
 	runtime.c \
 	runtime.h \
 	\
+	Runtime.cc \
+	Runtime.h \
+	\
 	timing.c \
 	timing.h
 

@@ -23,6 +23,9 @@
 namespace Driver
 {
 
+x86::Emu *Common::x86_emu;
+x86::Cpu *Common::x86_cpu;
+
 Common::Common()
 {
 	// Get the only instance of X86 functional emulator

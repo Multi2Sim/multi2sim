@@ -37,6 +37,11 @@ namespace SI
 
 std::unique_ptr<SPI> SPI::instance;
 
+SPI::SPI()
+{
+	
+}
+
 SPI *SPI::getInstance()
 {
 	// Instance already exists

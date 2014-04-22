@@ -104,6 +104,16 @@ void PixelInfo::GenBaryCoord(const PrimAsmTriangle *triangle)
 
 }
 
+ScanConverter::ScanConverter()
+{
+
+}
+
+ScanConvSpan::ScanConvSpan()
+{
+	
+}
+
 void ScanConverter::Rasterize(const PrimAsmTriangle *triangle, 
 	const DepthBuffer *depth_buffer)
 {

@@ -32,12 +32,6 @@ using namespace misc;
 namespace Driver
 {
 
-SICommon::SICommon()
-{
-	// FIXME: 
-	// si_emu = SI::Emu::getInstance();
-}
-
 SI::NDRange *SICommon::getNDRangeById(int id)
 {
 	for( auto &ndrange : ndranges)

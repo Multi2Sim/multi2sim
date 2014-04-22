@@ -18,6 +18,7 @@
  */
 
 #include <cstring>
+#include <fcntl.h>
 #include <poll.h>
 #include <unistd.h>
 
@@ -257,7 +258,17 @@ std::string Context::OpenProcCPUInfo()
 	return "";
 }
 
+std::string Context::OpenDevM2SSICL()
+{
+	// Check if device is created
+	FILE *f = NULL;
+	if ((f = fopen("/tmp/m2s-si-cl", "r")) == NULL)
+		misc::fatal("%s: cannot open /dev/m2s-si-cl", __FUNCTION__);
 
+	// Close file
+	fclose(f);
+	return "/tmp/m2s-si-cl";
+}
 
 //
 // Public functions
@@ -846,6 +857,27 @@ Context *Context::getZombie(int pid)
 	return nullptr;
 }
 
+int Context::RegisterDriver(const std::string &drv_name)
+{
+	// Create temporary file
+	int fd;
+	FILE *f = NULL;
+	char path[256];
+	sprintf(path, "/tmp/%s", drv_name.c_str());
+
+	// Try to open first
+	fd = open(path, O_RDWR);
+	if (fd == -1)
+	{
+		// Device doesn't exist, create it
+		if ((fd = mkstemp(path)) == -1 || (f = fdopen(fd, "wt")) == NULL)
+			misc::fatal("Context::OpenDevM2SSICL: cannot create temporary virtual device");		
+	}
+
+	// Close file
+	fclose(f);
+	return fd;
+}
 
 }  // namespace x86
 

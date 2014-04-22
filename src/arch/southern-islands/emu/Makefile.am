@@ -26,7 +26,6 @@ libemu_a_SOURCES = \
 	work-item.c \
 	work-item.h \
 	\
-	\
 	Emu.cc \
 	Emu.h \
 	\
