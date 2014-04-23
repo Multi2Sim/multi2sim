@@ -41,6 +41,9 @@ std::unique_ptr<OpenCLSIDriver> OpenCLSIDriver::instance;
 
 OpenCLSIDriver::OpenCLSIDriver()
 {
+	// Obtain instance of emulators
+	si_emu = SI::Emu::getInstance();
+	si_emu->setDriverCL(this);
 }
 
 OpenCLSIDriver::~OpenCLSIDriver()

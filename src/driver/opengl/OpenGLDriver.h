@@ -55,7 +55,7 @@ class OpenGLSIDriver : public virtual SICommon
 	SI::SPI *spi;
 
 	// Virtual device in /tmp
-	FILE *vt_dev;
+	int vt_dev;
 
 public:
 

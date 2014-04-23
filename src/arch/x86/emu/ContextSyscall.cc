@@ -37,6 +37,7 @@
 #include <lib/cpp/Misc.h>
 #include <arch/common/Runtime.h>
 #include <driver/common/Driver.h>
+#include <driver/opencl/OpenCLDriver.h>
 
 #include "Context.h"
 #include "Emu.h"
@@ -672,29 +673,37 @@ FileDesc *Context::SyscallOpenVirtualFile(const std::string &path,
 FileDesc *Context::SyscallOpenVirtualDevice(const std::string &path,
 		int flags, int mode)
 {
+
 	// Assume no file found
 	std::string temp_path;
 
-	// Virtual device /dev/m2s-si-cl
-	if (path == "/dev/m2s-si-cl")
-		temp_path = OpenDevM2SSICL();
+	// Try to get descriptor 
+	comm::RuntimePool *runtime_pool = comm::RuntimePool::getInstance();
+	comm::Runtime *runtime = runtime_pool->getRuntimeByDevPath(path);
+	if (!runtime)
+		misc::fatal("%s: Cannot find device in %s", __FUNCTION__, path.c_str());
 
-	// No device found
-	if (temp_path.empty())
-		return nullptr;
-
-	// File found, create descriptor
-	int host_fd = open(temp_path.c_str(), flags, mode);
+	int host_fd = runtime->getDevDesc();
 	assert(host_fd > 0);
 
-	// Add file descriptor table entry.
-	FileDesc *desc = file_table->newFileDesc(FileDescGPU, host_fd,
-			temp_path, flags);
-	emu->syscall_debug << misc::fmt("    host device '%s' opened: "
-			"guest_fd=%d, host_fd=%d\n",
-			temp_path.c_str(), desc->getGuestIndex(),
-			desc->getHostIndex());
-	return desc;
+	// Try to get file descriptor from filetable
+	FileDesc *desc = file_table->getFileDesc(host_fd);
+	if (file_table->getFileDesc(host_fd))
+		return desc;
+	// Create if can't find
+	else
+	{
+		desc = file_table->newFileDesc(FileDescGPU, host_fd,
+				temp_path, flags);
+		emu->syscall_debug << misc::fmt("    host device '%s' opened: "
+				"guest_fd=%d, host_fd=%d\n",
+				temp_path.c_str(), desc->getGuestIndex(),
+				desc->getHostIndex());
+		return desc;		
+	}
+
+	// Return
+	return nullptr;
 }
 
 int Context::ExecuteSyscall_open()
@@ -1727,7 +1736,17 @@ int Context::ExecuteSyscall_ioctl()
 	comm::RuntimePool *runtime_pool = comm::RuntimePool::getInstance();
 
 	// Process IOCTL
-	if (cmd >= 0x5401 || cmd <= 0x5408)
+	if (desc->getType() == FileDescGPU)
+	{
+		// Runtime create device file in /tmp 
+		int host_fd = desc->getHostIndex();
+		comm::Runtime *runtime = runtime_pool->getRuntimeByDevDesc(host_fd);
+		if (!runtime)
+			misc::fatal("%s: Runtime not registered!", __FUNCTION__);
+		Driver::Common *driver = runtime->getDriver();
+		return driver->DriverCall(this, cmd);
+	}
+	else if (cmd >= 0x5401 || cmd <= 0x5408)
 	{
 		// 'ioctl' commands using 'struct termios' as the argument.
 		// This structure is 60 bytes long both for x86 and x86_64
@@ -1744,15 +1763,6 @@ int Context::ExecuteSyscall_ioctl()
 		// Return in memory 
 		memory->Write(arg, sizeof buf, buf);
 		return err;
-	}
-	// 
-	else if (desc->getType() == FileDescGPU)
-	{
-
-		comm::Runtime *runtime = runtime_pool->getRuntimeByCode(guest_fd);
-		Driver::Common *driver = runtime->getDriver();
-
-		return driver->DriverCall(this, cmd);
 	}
 	else
 	{
