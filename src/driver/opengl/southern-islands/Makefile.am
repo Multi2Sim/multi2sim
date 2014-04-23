@@ -37,6 +37,7 @@ else
 
 libsi_gl_a_SOURCES = 
 
-INCLUDES = @M2S_INCLUDES@
 
 endif
+
+INCLUDES = @M2S_INCLUDES@
