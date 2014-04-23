@@ -52,25 +52,32 @@ class Runtime
 	// source tree or Multi2Sim installation path. 
 	std::string redirect_lib_name;
 
+	// Path to virtual device
+	std::string dev_path;
+
+	// Host device descriptor in /tmp
+	int dev_desc;
+
 	// Record here failed attempts to access this runtime. This is used
 	// to issue a warning to the user at the end of the simulation. 
 	unsigned open_attempt;
-
-	// Identifier used for the driver ABI. When the runtime needs
-	// to communicate with the driver, it is done through ioctl . 
-	unsigned ioctl_code;
 
 	// Associate driver instance
 	Driver::Common *driver;
 
 public:
 	Runtime(const std::string &name, const std::string &lib_name, const std::string &redirect_lib_name,
-		unsigned ioctl_code, Driver::Common *driver);
+		const std::string &dev_path, Driver::Common *driver);
+
+	~Runtime();
 
 	/// Getters
 	///
-	/// Get ioctl_code
-	unsigned getCode() const { return ioctl_code; }
+	/// Get dev_path
+	const std::string &getDevPath() const { return dev_path; }
+
+	/// Get host device descriptor
+	int getDevDesc() const { return dev_desc; };
 
 	/// Get Driver
 	Driver::Common *getDriver() const { return driver; }
@@ -94,29 +101,30 @@ public:
 
 	/// Getters
 	///
-	/// Get runtime by ioctl_code
-	Runtime *getRuntimeByCode(unsigned code) {
+	/// Get runtime by dev_path
+	Runtime *getRuntimeByDevPath(const std::string &path) {
 		for( auto &runtime : runtime_list)
 		{
-			if (runtime->getCode() == code)
+			if (runtime->getDevPath() == path)
 				return runtime.get();
 		}
 		return nullptr;
 	}
 
-	/// Check if ioctl_code is used by any registered runtime
-	bool isRegistered(unsigned value) const {
+	/// get runtime by host device descriptor
+	Runtime *getRuntimeByDevDesc(int host_fd) {
 		for( auto &runtime : runtime_list)
 		{
-			if (runtime->getCode() == value)
-				return true;
+			if (runtime->getDevDesc() == host_fd)
+				return runtime.get();
 		}
-		return false;
+		return nullptr;
 	}
+
 
 	/// Register a runtime
 	void Register(const std::string &name, const std::string &lib_name, const std::string &redirect_lib_name,
-		unsigned ioctl_code, Driver::Common *driver);
+		const std::string &dev_path, Driver::Common *driver);
 
 };
 

@@ -258,18 +258,6 @@ std::string Context::OpenProcCPUInfo()
 	return "";
 }
 
-std::string Context::OpenDevM2SSICL()
-{
-	// Check if device is created
-	FILE *f = NULL;
-	if ((f = fopen("/tmp/m2s-si-cl", "r")) == NULL)
-		misc::fatal("%s: cannot open /dev/m2s-si-cl", __FUNCTION__);
-
-	// Close file
-	fclose(f);
-	return "/tmp/m2s-si-cl";
-}
-
 //
 // Public functions
 //

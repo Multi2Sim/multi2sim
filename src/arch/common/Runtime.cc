@@ -18,6 +18,10 @@
  */
 
 #include <driver/common/Driver.h>
+#include <lib/cpp/String.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include "Runtime.h"
 
@@ -27,13 +31,35 @@ namespace comm
 std::unique_ptr<RuntimePool> RuntimePool::instance;
 
 Runtime::Runtime(const std::string &name, const std::string &lib_name, 
-	const std::string &redirect_lib_name, unsigned ioctl_code, Driver::Common *driver)
+	const std::string &redirect_lib_name, const std::string &dev_path, Driver::Common *driver)
 {
 	this->name = name;
 	this->lib_name = lib_name;
 	this->redirect_lib_name = redirect_lib_name;
-	this->ioctl_code = ioctl_code;
+	this->dev_path = dev_path;
 	this->driver = driver;
+
+	// Replace /dev with /tmp
+	std::string host_dev_path = dev_path;
+	misc::StringTrimLeft(host_dev_path, "/dev/");
+	host_dev_path = "/tmp/" + host_dev_path;
+
+	// Clean up if already exists
+	remove(host_dev_path.c_str());
+
+	// Create virtual device in /tmp/
+	if ((dev_desc = open(host_dev_path.c_str(), O_RDWR | O_CREAT, S_IRUSR | S_IRGRP | S_IROTH)) == -1)
+		misc::fatal("%s: cannot open %s", __FUNCTION__, dev_path.c_str());
+}
+
+Runtime::~Runtime()
+{
+	// Close virtual device
+	if (dev_desc)
+		close(dev_desc);
+
+	// Clean up
+	remove("/tmp/m2s-si-cl");	
 }
 
 RuntimePool* RuntimePool::getInstance()
@@ -48,10 +74,10 @@ RuntimePool* RuntimePool::getInstance()
 }
 
 void RuntimePool::Register(const std::string &name, const std::string &lib_name, 
-	const std::string &redirect_lib_name, unsigned ioctl_code, Driver::Common *driver)
+	const std::string &redirect_lib_name, const std::string &dev_path, Driver::Common *driver)
 {
 	// Create new architecture in place
-	runtime_list.emplace_back(new Runtime(name, lib_name, redirect_lib_name, ioctl_code, driver));	
+	runtime_list.emplace_back(new Runtime(name, lib_name, redirect_lib_name, dev_path, driver));	
 }
 
 }  // namespace comm

@@ -334,6 +334,19 @@ public:
 	/// Set work_group_count
 	void setWorkGroupCount(long long count) { work_group_count = count; }
 
+	/// Set OpenCL driver
+	void setDriverCL(Driver::OpenCLSIDriver *opencl_driver) {
+		if (opencl_driver)
+			this->opencl_driver = opencl_driver;
+	}
+
+#ifdef HAVE_OPENGL
+	/// Set OpenGL driver
+	void setDriverGL(Driver::OpenGLSIDriver *opengl_driver) {
+		this->opengl_driver = opengl_driver;
+	}
+#endif
+
 	/// Increment work_group_count
 	void incWorkGroupCount() { work_group_count++; }
 

@@ -57,7 +57,7 @@ int SIABIMemAllocImpl(x86::Context *ctx)
 	// SI::Gpu *si_gpu = driver->si_gpu;
 
 	// Arguments 
-	unsigned size = regs.getEcx();
+	unsigned size = regs.getEdx();
 	x86::Emu::opencl_debug << misc::fmt("\tsize = %u\n", size);
 
 	if (driver->isFused())

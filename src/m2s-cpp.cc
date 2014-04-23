@@ -27,6 +27,7 @@
 #include <arch/x86/emu/FileTable.h>
 #include <arch/x86/emu/Signal.h>
 #include <driver/opencl/OpenCLDriver.h>
+#include <driver/opengl/OpenGLDriver.h>
 #include <lib/cpp/CommandLine.h>
 #include <lib/cpp/Misc.h>
 #include <lib/esim/ESim.h>
@@ -96,7 +97,8 @@ void main_cpp(int argc, char **argv)
 
 	// Register runtime and driver pairs
 	comm::RuntimePool *runtime_pool = comm::RuntimePool::getInstance();
-	runtime_pool->Register("OpenCL", "OpenCL", "m2s-opencl", 0xAAAA0001, Driver::OpenCLSIDriver::getInstance());
+	runtime_pool->Register("OpenCL", "OpenCL", "m2s-opencl", "/dev/m2s-si-cl", Driver::OpenCLSIDriver::getInstance());
+	runtime_pool->Register("OpenGL", "OpenGL", "m2s-opengl", "/dev/m2s-si-gl", Driver::OpenGLSIDriver::getInstance());
 
 	// Test Regs
 	if (command_line.getNumArguments())
