@@ -37,10 +37,10 @@ protected:
 			BrigType16_t type, 
 			uint32_t elementCount, 
 			std::ostream &os
-		);
+		) const;
 	// Dump Symbol Declaration
 	static void dumpSymDecl(
-			BrigEntry *dir,
+			const BrigEntry *dir,
 			std::ostream &os
 		);
 	
