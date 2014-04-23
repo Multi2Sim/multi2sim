@@ -1,6 +1,6 @@
-if HAVE_OPENGL
-
 lib_LIBRARIES = libsi_gl.a
+
+if HAVE_OPENGL
 
 libsi_gl_a_SOURCES = \
 	ABI.cc \
@@ -32,6 +32,10 @@ libsi_gl_a_SOURCES = \
 	\
 	SPI.cc \
 	SPI.h 
+
+else
+
+libsi_gl_a_SOURCES = 
 
 INCLUDES = @M2S_INCLUDES@
 
