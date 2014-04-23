@@ -123,13 +123,13 @@ void BrigEntry::dumpValueList(
 		BrigType16_t type,
 		uint32_t elementCount, 
 		std::ostream &os = std::cout
-	)
+	) const
 {
 
 }
 
 void BrigEntry::dumpSymDecl(
-		BrigEntry *dir,
+		const BrigEntry *dir,
 		std::ostream &os = std::cout
 	)
 {

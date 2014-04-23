@@ -11,7 +11,7 @@ BrigDirEntry::BrigDirEntry(char *buf, BrigFile *file)
 {
 }
 
-int BrigDirEntry::getKind()
+int BrigDirEntry::getKind() const
 {
 	struct BrigDirectiveBase *dir 
 		= (struct BrigDirectiveBase *)base;
@@ -49,51 +49,51 @@ BrigDirEntry::DumpDirectiveFn BrigDirEntry::dump_dir_fn[27] =
 	&BrigDirEntry::DumpDirectiveVersion		// 26 
 };
 
-void BrigDirEntry::DumpDirectiveArgScopeEnd(std::ostream &os = std::cout)
+void BrigDirEntry::DumpDirectiveArgScopeEnd(std::ostream &os = std::cout) const
 {
 	os << "}";
 }
-void BrigDirEntry::DumpDirectiveArgScopeStart(std::ostream &os = std::cout)
+void BrigDirEntry::DumpDirectiveArgScopeStart(std::ostream &os = std::cout) const
 {
 	os << "{";
 }
-void BrigDirEntry::DumpDirectiveBlockEnd(std::ostream &os = std::cout)
+void BrigDirEntry::DumpDirectiveBlockEnd(std::ostream &os = std::cout) const
 {
 	os << "endblock;";
 }
-void BrigDirEntry::DumpDirectiveNumeric(std::ostream &os = std::cout)
+void BrigDirEntry::DumpDirectiveNumeric(std::ostream &os = std::cout) const
 {
 	os << "blocknumeric";
 	struct BrigBlockNumeric *dir = (struct BrigBlockNumeric *)this->base;
 	os << BrigEntry::type2str(dir->type);
 	this->dumpValueList(dir->data, dir->type, dir->elementCount, os);
 }
-void BrigDirEntry::DumpDirectiveBlockStart(std::ostream &os = std::cout)
+void BrigDirEntry::DumpDirectiveBlockStart(std::ostream &os = std::cout) const
 {
 	os << "block ";
 	struct BrigBlockStart *dir = (struct BrigBlockStart *)this->base;
 	BrigStrEntry::DumpString(this->file, dir->name, os);
 }
-void BrigDirEntry::DumpDirectiveBlockString(std::ostream &os = std::cout)
+void BrigDirEntry::DumpDirectiveBlockString(std::ostream &os = std::cout) const
 {
 	os << "blockstring ";
 	struct BrigBlockString *dir = (struct BrigBlockString *)this->base;
 	BrigStrEntry::DumpString(this->file, dir->string, os);
 	os << ";";
 }
-void BrigDirEntry::DumpDirectiveComment(std::ostream &os = std::cout)
+void BrigDirEntry::DumpDirectiveComment(std::ostream &os = std::cout) const
 {
 	misc::warning("Unsupport directive %s", "Comment");
 }
-void BrigDirEntry::DumpDirectiveControl(std::ostream &os = std::cout)
+void BrigDirEntry::DumpDirectiveControl(std::ostream &os = std::cout) const
 {
 	misc::warning("Unsupport directive %s", "Control");
 }
-void BrigDirEntry::DumpDirectiveExtension(std::ostream &os = std::cout)
+void BrigDirEntry::DumpDirectiveExtension(std::ostream &os = std::cout) const
 {
 	misc::warning("Unsupport directive %s", "Extension");
 }
-void BrigDirEntry::DumpDirectiveFBarrier(std::ostream &os = std::cout)
+void BrigDirEntry::DumpDirectiveFBarrier(std::ostream &os = std::cout) const
 {		
 	struct BrigDirectiveFbarrier * fbar = 
 		(struct BrigDirectiveFbarrier *)this->base;
@@ -101,11 +101,11 @@ void BrigDirEntry::DumpDirectiveFBarrier(std::ostream &os = std::cout)
 	os << BrigStrEntry::GetStringByOffset(this->file, fbar->name);
 	os << ";\n";
 }
-void BrigDirEntry::DumpDirectiveFile(std::ostream &os = std::cout)
+void BrigDirEntry::DumpDirectiveFile(std::ostream &os = std::cout) const
 {
 	misc::warning("Unsupport directive %s", "File");
 }
-void BrigDirEntry::DumpDirectiveFunction(std::ostream &os = std::cout)
+void BrigDirEntry::DumpDirectiveFunction(std::ostream &os = std::cout) const
 {
 	struct BrigDirectiveFunction *fun
 		= (struct BrigDirectiveFunction *)this->base;
@@ -120,7 +120,7 @@ void BrigDirEntry::DumpDirectiveFunction(std::ostream &os = std::cout)
 	BrigEntry::dumpBody(modifier.isDeclaration(), os);
 	
 }
-void BrigDirEntry::DumpDirectiveImage(std::ostream &os = std::cout)
+void BrigDirEntry::DumpDirectiveImage(std::ostream &os = std::cout) const
 {
 	struct BrigDirectiveImage *image = 
 		(struct BrigDirectiveImage *)this->base;
@@ -131,11 +131,11 @@ void BrigDirEntry::DumpDirectiveImage(std::ostream &os = std::cout)
 	}
 	os << ";\n";
 }
-void BrigDirEntry::DumpDirectiveImageInit(std::ostream &os = std::cout)
+void BrigDirEntry::DumpDirectiveImageInit(std::ostream &os = std::cout) const
 {
 	misc::warning("Unsupport directive %s", "ImageInit");
 }
-void BrigDirEntry::DumpDirectiveKernel(std::ostream &os = std::cout)
+void BrigDirEntry::DumpDirectiveKernel(std::ostream &os = std::cout) const
 {
 	struct BrigDirectiveKernel *ker
 		= (struct BrigDirectiveKernel *)this->base;
@@ -145,30 +145,30 @@ void BrigDirEntry::DumpDirectiveKernel(std::ostream &os = std::cout)
 	next = BrigEntry::dumpArgs(next, ker->inArgCount, os);
 	BrigEntry::dumpBody(false, os);
 }
-void BrigDirEntry::DumpDirectiveLabel(std::ostream &os = std::cout)
+void BrigDirEntry::DumpDirectiveLabel(std::ostream &os = std::cout) const
 {
 	struct BrigDirectiveLabel *label
 		= (struct BrigDirectiveLabel *)this->base;
 	os << BrigStrEntry::GetStringByOffset(this->file, label->name);
 	os << ":\n";
 }
-void BrigDirEntry::DumpDirectiveLabelInit(std::ostream &os = std::cout)
+void BrigDirEntry::DumpDirectiveLabelInit(std::ostream &os = std::cout) const
 {
 	misc::warning("Unsupport directive %s", "LabelInit");
 }
-void BrigDirEntry::DumpDirectiveLabelTargets(std::ostream &os = std::cout)
+void BrigDirEntry::DumpDirectiveLabelTargets(std::ostream &os = std::cout) const
 {
 	misc::warning("Unsupport directive %s", "LabelTagets");
 }
-void BrigDirEntry::DumpDirectiveLoc(std::ostream &os = std::cout)
+void BrigDirEntry::DumpDirectiveLoc(std::ostream &os = std::cout) const
 {
 	misc::warning("Unsupport directive %s", "Loc");
 }
-void BrigDirEntry::DumpDirectivePragma(std::ostream &os = std::cout)
+void BrigDirEntry::DumpDirectivePragma(std::ostream &os = std::cout) const
 {
 	misc::warning("Unsupport directive %s", "Pragma");
 }
-void BrigDirEntry::DumpDirectiveSampler(std::ostream &os = std::cout)
+void BrigDirEntry::DumpDirectiveSampler(std::ostream &os = std::cout) const
 {
 	struct BrigDirectiveSampler *samp
 		= (struct BrigDirectiveSampler *)this->base;
@@ -179,19 +179,19 @@ void BrigDirEntry::DumpDirectiveSampler(std::ostream &os = std::cout)
 	}
 	os << ";\n";
 }
-void BrigDirEntry::DumpDirectiveSamplerInit(std::ostream &os = std::cout)
+void BrigDirEntry::DumpDirectiveSamplerInit(std::ostream &os = std::cout) const
 {
 	misc::warning("Unsupport directive %s", "SamplerInit");
 }
-void BrigDirEntry::DumpDirectiveScope(std::ostream &os = std::cout)
+void BrigDirEntry::DumpDirectiveScope(std::ostream &os = std::cout) const
 {
 	misc::warning("Unsupport directive %s", "Scope");
 }
-void BrigDirEntry::DumpDirectiveSignature(std::ostream &os = std::cout)
+void BrigDirEntry::DumpDirectiveSignature(std::ostream &os = std::cout) const
 {
 	misc::warning("Unsupport directive %s", "Signature");
 }
-void BrigDirEntry::DumpDirectiveVariable(std::ostream &os = std::cout)
+void BrigDirEntry::DumpDirectiveVariable(std::ostream &os = std::cout) const
 {
 	struct BrigDirectiveVariable *var 
 		= (struct BrigDirectiveVariable *)this->base;
@@ -202,11 +202,11 @@ void BrigDirEntry::DumpDirectiveVariable(std::ostream &os = std::cout)
 	}
 	os << ";\n";
 }
-void BrigDirEntry::DumpDirectiveVariableInit(std::ostream &os = std::cout)
+void BrigDirEntry::DumpDirectiveVariableInit(std::ostream &os = std::cout) const
 {
 	misc::warning("Unsupport directive %s", "VariableInit");
 }
-void BrigDirEntry::DumpDirectiveVersion(std::ostream &os = std::cout)
+void BrigDirEntry::DumpDirectiveVersion(std::ostream &os = std::cout) const
 {
 	struct BrigDirectiveVersion *dir 
 		= (struct BrigDirectiveVersion *)this->base;

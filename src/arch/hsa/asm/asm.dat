@@ -1,0 +1,11 @@
+/// Format: DEFINST(opcode, name, opstr);
+DEFINST(NOP, "nop")
+DEFINST(ABS, "abs")
+DEFINST(ADD, "add")
+DEFINST(BORROW, "borrow")
+DEFINST(CARRY, "carry")
+DEFINST(CEIL, "ceil")
+DEFINST(COPYSIGN, "copysign")
+DEFINST(DIV, "div")
+DEFINST(FLOOR, "floor")
+DEFINST(FMA, "fma")
