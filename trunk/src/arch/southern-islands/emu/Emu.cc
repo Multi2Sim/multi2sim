@@ -65,13 +65,6 @@ Emu::Emu()
 
 	this->shared_mem.reset(new mem::Memory());
 	this->global_mem = video_mem.get();
-
-	this->opencl_driver = Driver::OpenCLSIDriver::getInstance();
-
-#ifdef HAVE_OPENGL
-	this->opengl_driver = Driver::OpenGLSIDriver::getInstance();
-#endif
-
 }
 
 void Emu::Dump(std::ostream &os) const

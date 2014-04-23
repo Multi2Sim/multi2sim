@@ -21,6 +21,9 @@
 #include <driver/opengl/southern-islands/ShaderExport.h>
 #include <driver/opengl/southern-islands/SPI.h>
 #include <lib/cpp/Misc.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include "OpenGLDriver.h"
 
@@ -40,18 +43,16 @@ OpenGLSIDriver::OpenGLSIDriver()
 
 	// Obtain instance of SPI module
 	spi = SI::SPI::getInstance();
-
-	// Create virtual device in /tmp
-	if ((vt_dev = fopen("/tmp/m2s-si-cl", "rw+")) == NULL)
-		misc::fatal("%s: cannot open /dev/m2s-si-cl", __FUNCTION__);
-
 }
 
 OpenGLSIDriver::~OpenGLSIDriver()
 {
 	// Close virtual device
 	if (vt_dev)
-		fclose(vt_dev);
+		close(vt_dev);
+
+	// Clean up
+	remove("/tmp/m2s-si-gl");
 }
 
 OpenGLSIDriver *OpenGLSIDriver::getInstance()

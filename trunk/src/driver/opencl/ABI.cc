@@ -60,31 +60,31 @@ OpenCLABICallFuncPtr OpenCLABICallTable[OpenCLABICallCount + 1] =
 
 int OpenCLABIInitImpl(x86::Context *ctx)
 {
-	x86::Regs &regs = ctx->getRegs();
-	mem::Memory &mem = ctx->getMem();
+	// x86::Regs &regs = ctx->getRegs();
+	// mem::Memory &mem = ctx->getMem();
 
-	struct OpenCLVersion
-	{
-		int major;
-		int minor;
-	};
-	OpenCLVersion version;
+	// struct OpenCLVersion
+	// {
+	// 	int major;
+	// 	int minor;
+	// };
+	// OpenCLVersion version;
 
-	// Arguments
-	unsigned version_ptr = regs.getEcx();
-	x86::Emu::opencl_debug << misc::fmt("\tversion_ptr=0x%x\n", version_ptr);
+	// // Arguments
+	// unsigned version_ptr = regs.getEcx();
+	// x86::Emu::opencl_debug << misc::fmt("\tversion_ptr=0x%x\n", version_ptr);
 
-	// Return versions
-	assert(sizeof(struct OpenCLVersion) == 8);
-	version.major = OpenCLSIDriver::major;
-	version.minor = OpenCLSIDriver::minor;
-	mem.Write(version_ptr, sizeof version, (const char *)&version);
+	// // Return versions
+	// assert(sizeof(struct OpenCLVersion) == 8);
+	// version.major = OpenCLSIDriver::major;
+	// version.minor = OpenCLSIDriver::minor;
+	// mem.Write(version_ptr, sizeof version, (const char *)&version);
 
-	// Debug
-	x86::Emu::opencl_debug << misc::fmt("\tMulti2Sim OpenCL implementation in host: v. %d.%d.\n",
-		OpenCLSIDriver::major, OpenCLSIDriver::minor);
-	x86::Emu::opencl_debug << misc::fmt("\tMulti2Sim OpenCL Runtime in guest: v. %d.%d.\n",
-		version.major, version.minor);	
+	// // Debug
+	// x86::Emu::opencl_debug << misc::fmt("\tMulti2Sim OpenCL implementation in host: v. %d.%d.\n",
+	// 	OpenCLSIDriver::major, OpenCLSIDriver::minor);
+	// x86::Emu::opencl_debug << misc::fmt("\tMulti2Sim OpenCL Runtime in guest: v. %d.%d.\n",
+	// 	version.major, version.minor);	
 
 	// Return Success
 	return 0;
