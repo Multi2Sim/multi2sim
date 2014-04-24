@@ -25,12 +25,6 @@
 namespace SI
 {
 
-// Forward declarations of OpenGL Runtime functions
-#define SI_ABI_CALL(space, name, code) \
-	int SIABI##name##Impl(x86::Context *ctx);
-#include "../../common/SI-ABI.dat"
-#undef SI_ABI_CALL
-
 #define OPENGL_ABI_CALL(space, name, code) \
 	int OpenGLABI##name##Impl(x86::Context *ctx);
 #include "../ABI.dat"

@@ -27,17 +27,9 @@ namespace Driver
 enum OpenCLABICall
 {
 	OpenCLABIInvalid = 0,
-
-// Shared ABIs for both CL/GL driver
-#define SI_ABI_CALL(space, name, code) OpenCLABI##space##name,
-#include "../common/SI-ABI.dat"
-#undef SI_ABI_CALL
-
-// Unique ABIs
-#define OPENCL_ABI_CALL(space, name, code) OpenCLABI##space##name,
-#include "ABI.dat"
-#undef OPENCL_ABI_CALL
-
+	#define OPENCL_ABI_CALL(space, name, code) OpenCLABI##space##name = code,
+	#include "ABI.dat"
+	#undef OPENCL_ABI_CALL
 	OpenCLABICallCount
 };
 
