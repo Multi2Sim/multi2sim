@@ -98,7 +98,10 @@ void main_cpp(int argc, char **argv)
 	// Register runtime and driver pairs
 	comm::RuntimePool *runtime_pool = comm::RuntimePool::getInstance();
 	runtime_pool->Register("OpenCL", "OpenCL", "m2s-opencl", "/dev/m2s-si-cl", Driver::OpenCLSIDriver::getInstance());
+
+#ifdef HAVE_OPENGL
 	runtime_pool->Register("OpenGL", "OpenGL", "m2s-opengl", "/dev/m2s-si-gl", Driver::OpenGLSIDriver::getInstance());
+#endif
 
 	// Test Regs
 	if (command_line.getNumArguments())

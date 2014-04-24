@@ -23,6 +23,7 @@
 #include <lib/cpp/Misc.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <stdio.h>
 #include <fcntl.h>
 
 #include "OpenGLDriver.h"
@@ -37,6 +38,7 @@ OpenGLSIDriver::OpenGLSIDriver()
 {
 	// Obtain instance of emulators
 	si_emu = SI::Emu::getInstance();
+	si_emu->setDriverGL(this);
 
 	// Obtain instance of Shader Export module
 	sx = SI::ShaderExport::getInstance();
@@ -47,12 +49,6 @@ OpenGLSIDriver::OpenGLSIDriver()
 
 OpenGLSIDriver::~OpenGLSIDriver()
 {
-	// Close virtual device
-	if (vt_dev)
-		close(vt_dev);
-
-	// Clean up
-	remove("/tmp/m2s-si-gl");
 }
 
 OpenGLSIDriver *OpenGLSIDriver::getInstance()

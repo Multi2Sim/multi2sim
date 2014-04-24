@@ -54,9 +54,6 @@ class OpenGLSIDriver : public virtual SICommon
 	// SPI module generates NDRanges for Pixel Shader
 	SI::SPI *spi;
 
-	// Virtual device in /tmp
-	int vt_dev;
-
 public:
 
 	~OpenGLSIDriver();
