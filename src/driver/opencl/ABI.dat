@@ -1,12 +1,9 @@
 OPENCL_ABI_CALL(Driver, Init, 1)
-
-// Shared ABIs
-// SI_ABI_CALL(SI, MemAlloc, 2)
-// SI_ABI_CALL(SI, MemRead, 3)
-// SI_ABI_CALL(SI, MemWrite, 4)
-// SI_ABI_CALL(SI, MemCopy, 5)
-// SI_ABI_CALL(SI, MemFree, 6)
-
+OPENCL_ABI_CALL(SI, MemAlloc, 2)
+OPENCL_ABI_CALL(SI, MemRead, 3)
+OPENCL_ABI_CALL(SI, MemWrite, 4)
+OPENCL_ABI_CALL(SI, MemCopy, 5)
+OPENCL_ABI_CALL(SI, MemFree, 6)
 OPENCL_ABI_CALL(SI, ProgramCreate, 7)
 OPENCL_ABI_CALL(SI, ProgramSetBinary, 8)
 OPENCL_ABI_CALL(SI, KernalCreate, 9)

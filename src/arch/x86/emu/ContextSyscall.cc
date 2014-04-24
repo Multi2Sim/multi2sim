@@ -673,11 +673,7 @@ FileDesc *Context::SyscallOpenVirtualFile(const std::string &path,
 FileDesc *Context::SyscallOpenVirtualDevice(const std::string &path,
 		int flags, int mode)
 {
-
-	// Assume no file found
-	std::string temp_path;
-
-	// Try to get descriptor 
+	// Try to get runtime 
 	comm::RuntimePool *runtime_pool = comm::RuntimePool::getInstance();
 	comm::Runtime *runtime = runtime_pool->getRuntimeByDevPath(path);
 	if (!runtime)
@@ -694,10 +690,10 @@ FileDesc *Context::SyscallOpenVirtualDevice(const std::string &path,
 	else
 	{
 		desc = file_table->newFileDesc(FileDescGPU, host_fd,
-				temp_path, flags);
+				path, flags);
 		emu->syscall_debug << misc::fmt("    host device '%s' opened: "
 				"guest_fd=%d, host_fd=%d\n",
-				temp_path.c_str(), desc->getGuestIndex(),
+				path.c_str(), desc->getGuestIndex(),
 				desc->getHostIndex());
 		return desc;		
 	}

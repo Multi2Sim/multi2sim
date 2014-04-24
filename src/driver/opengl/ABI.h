@@ -31,55 +31,36 @@ namespace x86
 namespace Driver
 {
 
+int OpenGLABIInitImpl(x86::Context *ctx);
+
 // List of OpenGL Runtime calls
 enum OpenGLABICall
 {
 	OpenGLABIInvalid = 0,
-
-// Shared ABIs for both CL/GL driver
-#define SI_ABI_CALL(space, name, code) OpenGLABI##space##name = code,
-#include "../common/SI-ABI.dat"
-#undef SI_ABI_CALL
-
-// Unique ABIs
-#define OPENGL_ABI_CALL(space, name, code) OpenGLABI##space##name = code,
-#include "ABI.dat"
-#undef OPENGL_ABI_CALL
-
+	#define OPENGL_ABI_CALL(space, name, code) OpenGLABI##space##name = code,
+	#include "ABI.dat"
+	#undef OPENGL_ABI_CALL
 	OpenGLABICallCount
 };
 
 // List of OpenGL ABI call names
 std::string OpenGLABICallName[OpenGLABICallCount + 1] =
 {
-	nullptr,
-#define SI_ABI_CALL(space, name, code) #space #name,
-#include "../common/SI-ABI.dat"
-#undef SI_ABI_CALL
-
-#define OPENGL_ABI_CALL(space, name, code) #space #name,
-#include "ABI.dat"
-#undef OPENGL_ABI_CALL
-	nullptr
+	"Invalid",
+	#define OPENGL_ABI_CALL(space, name, code) #space #name,
+	#include "ABI.dat"
+	#undef OPENGL_ABI_CALL
+	"Call Count"
 };
-
-int OpenGLABIInitImpl(x86::Context *ctx);
 
 /// List of OpenGL Runtime functions
 typedef int (*OpenGLABICallFuncPtr)(x86::Context *);
 OpenGLABICallFuncPtr OpenGLABICallTable[OpenGLABICallCount + 1] =
 {
 	nullptr,
-
-// Shared ABIs for both CL/GL driver
-#define SI_ABI_CALL(space, name, code) &space::SIABI##name##Impl,
-#include "../common/SI-ABI.dat"
-#undef SI_ABI_CALL
-
-// Unique ABIs for GL driver
-#define OPENGL_ABI_CALL(space, name, code) &space::OpenGLABI##name##Impl,
-#include "ABI.dat"
-#undef OPENGL_ABI_CALL
+	#define OPENGL_ABI_CALL(space, name, code) &space::OpenGLABI##name##Impl,
+	#include "ABI.dat"
+	#undef OPENGL_ABI_CALL
 	nullptr
 };
 

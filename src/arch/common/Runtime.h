@@ -55,6 +55,9 @@ class Runtime
 	// Path to virtual device
 	std::string dev_path;
 
+	// Actual host device path
+	std::string host_dev_path;
+
 	// Host device descriptor in /tmp
 	int dev_desc;
 
@@ -79,7 +82,7 @@ public:
 	/// Get host device descriptor
 	int getDevDesc() const { return dev_desc; };
 
-	/// Get Driver
+	/// Get driver
 	Driver::Common *getDriver() const { return driver; }
 };
 
@@ -111,7 +114,7 @@ public:
 		return nullptr;
 	}
 
-	/// get runtime by host device descriptor
+	/// Get runtime by host device descriptor
 	Runtime *getRuntimeByDevDesc(int host_fd) {
 		for( auto &runtime : runtime_list)
 		{
