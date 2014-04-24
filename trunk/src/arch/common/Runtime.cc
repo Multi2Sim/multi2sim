@@ -17,11 +17,15 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <driver/common/Driver.h>
-#include <lib/cpp/String.h>
+
+#include <fcntl.h>
+#include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <fcntl.h>
+#include <unistd.h> 
+
+#include <driver/common/Driver.h>
+#include <lib/cpp/String.h>
 
 #include "Runtime.h"
 
@@ -40,7 +44,7 @@ Runtime::Runtime(const std::string &name, const std::string &lib_name,
 	this->driver = driver;
 
 	// Replace /dev with /tmp
-	std::string host_dev_path = dev_path;
+	host_dev_path = dev_path;
 	misc::StringTrimLeft(host_dev_path, "/dev/");
 	host_dev_path = "/tmp/" + host_dev_path;
 
@@ -59,7 +63,8 @@ Runtime::~Runtime()
 		close(dev_desc);
 
 	// Clean up
-	remove("/tmp/m2s-si-cl");	
+	if (host_dev_path.c_str());
+		remove(host_dev_path.c_str());	
 }
 
 RuntimePool* RuntimePool::getInstance()
@@ -68,7 +73,7 @@ RuntimePool* RuntimePool::getInstance()
 	if (instance.get())
 		return instance.get();
 	
-	// Create new architecture pool
+	// Create new runtime pool
 	instance.reset(new RuntimePool());
 	return instance.get();	
 }
@@ -76,7 +81,7 @@ RuntimePool* RuntimePool::getInstance()
 void RuntimePool::Register(const std::string &name, const std::string &lib_name, 
 	const std::string &redirect_lib_name, const std::string &dev_path, Driver::Common *driver)
 {
-	// Create new architecture in place
+	// Create new runtime in place
 	runtime_list.emplace_back(new Runtime(name, lib_name, redirect_lib_name, dev_path, driver));	
 }
 
