@@ -20,33 +20,33 @@ int BrigDirEntry::getKind() const
 
 BrigDirEntry::DumpDirectiveFn BrigDirEntry::dump_dir_fn[27] = 
 {
-	&BrigDirEntry::DumpDirectiveArgScopeEnd,	// 0 
+	&BrigDirEntry::DumpDirectiveArgScopeEnd,   // 0
 	&BrigDirEntry::DumpDirectiveArgScopeStart, // 1
-	&BrigDirEntry::DumpDirectiveBlockEnd,		// 2
-	&BrigDirEntry::DumpDirectiveNumeric,		// 3
-	&BrigDirEntry::DumpDirectiveBlockStart,	// 4
-	&BrigDirEntry::DumpDirectiveBlockString,	// 5
-	&BrigDirEntry::DumpDirectiveComment,		// 6
-	&BrigDirEntry::DumpDirectiveControl,		// 7
-	&BrigDirEntry::DumpDirectiveExtension,		// 8
-	&BrigDirEntry::DumpDirectiveFBarrier,		// 9 
-	&BrigDirEntry::DumpDirectiveFile,			// 10 
-	&BrigDirEntry::DumpDirectiveFunction,		// 11 
-	&BrigDirEntry::DumpDirectiveImage,			// 12 
-	&BrigDirEntry::DumpDirectiveImageInit,		// 13 
-	&BrigDirEntry::DumpDirectiveKernel,		// 14 
-	&BrigDirEntry::DumpDirectiveLabel,			// 15 
-	&BrigDirEntry::DumpDirectiveLabelInit,		// 16 
-	&BrigDirEntry::DumpDirectiveLabelTargets,	// 17 
-	&BrigDirEntry::DumpDirectiveLoc,			// 18 
-	&BrigDirEntry::DumpDirectivePragma,		// 19 
-	&BrigDirEntry::DumpDirectiveSampler,		// 20
-	&BrigDirEntry::DumpDirectiveSamplerInit,	// 21 
-	&BrigDirEntry::DumpDirectiveScope,			// 22 
-	&BrigDirEntry::DumpDirectiveSignature,		// 23 
-	&BrigDirEntry::DumpDirectiveVariable,		// 24 
-	&BrigDirEntry::DumpDirectiveVariableInit,	// 25 
-	&BrigDirEntry::DumpDirectiveVersion		// 26 
+	&BrigDirEntry::DumpDirectiveBlockEnd,      // 2
+	&BrigDirEntry::DumpDirectiveNumeric,       // 3
+	&BrigDirEntry::DumpDirectiveBlockStart,    // 4
+	&BrigDirEntry::DumpDirectiveBlockString,   // 5
+	&BrigDirEntry::DumpDirectiveComment,       // 6
+	&BrigDirEntry::DumpDirectiveControl,       // 7
+	&BrigDirEntry::DumpDirectiveExtension,     // 8
+	&BrigDirEntry::DumpDirectiveFBarrier,      // 9
+	&BrigDirEntry::DumpDirectiveFile,          // 10
+	&BrigDirEntry::DumpDirectiveFunction,      // 11
+	&BrigDirEntry::DumpDirectiveImage,         // 12
+	&BrigDirEntry::DumpDirectiveImageInit,     // 13
+	&BrigDirEntry::DumpDirectiveKernel,        // 14
+	&BrigDirEntry::DumpDirectiveLabel,         // 15
+	&BrigDirEntry::DumpDirectiveLabelInit,     // 16
+	&BrigDirEntry::DumpDirectiveLabelTargets,  // 17
+	&BrigDirEntry::DumpDirectiveLoc,           // 18
+	&BrigDirEntry::DumpDirectivePragma,        // 19
+	&BrigDirEntry::DumpDirectiveSampler,       // 20
+	&BrigDirEntry::DumpDirectiveSamplerInit,   // 21
+	&BrigDirEntry::DumpDirectiveScope,         // 22
+	&BrigDirEntry::DumpDirectiveSignature,     // 23
+	&BrigDirEntry::DumpDirectiveVariable,      // 24
+	&BrigDirEntry::DumpDirectiveVariableInit,  // 25
+	&BrigDirEntry::DumpDirectiveVersion        // 26
 };
 
 void BrigDirEntry::DumpDirectiveArgScopeEnd(std::ostream &os = std::cout) const
