@@ -394,7 +394,7 @@ int OpenCLABIProgramSetBinaryImpl(x86::Context *ctx)
  *	Unique kernel ID.
  */
 
-int OpenCLABIKernalCreateImpl(x86::Context *ctx)
+int OpenCLABIKernelCreateImpl(x86::Context *ctx)
 {
 	Driver::OpenCLSIDriver *driver = Driver::OpenCLSIDriver::getInstance();
 
