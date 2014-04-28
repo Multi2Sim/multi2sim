@@ -213,19 +213,3 @@ void vi_net_message_get_desc(struct vi_net_message_t *message, char *buf, int si
 	}
 }
 
-struct vi_net_message_t * vi_net_message_duplicate(struct vi_net_message_t *message)
-{
-	struct vi_net_message_t * result;
-        result = xcalloc(1, sizeof(struct vi_net_message_t));
-        result->access_name = xstrdup(message->access_name);
-        result->name = xstrdup(message->name);
-        result->net_name = xstrdup(message->net_name);
-        result->state = xstrdup(message->state);
-
-        result->size = message->size;
-        result->state_update_cycle = message->state_update_cycle;
-        result->creation_cycle = message->creation_cycle;
-        result->num_links = message->num_links;
-
-        return result;
-}

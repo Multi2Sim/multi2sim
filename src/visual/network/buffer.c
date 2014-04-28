@@ -32,18 +32,32 @@
 #include "buffer.h"
 #include "node.h"
 #include "net.h"
+#include "net-packet.h"
 #include "net-system.h"
 
 struct str_map_t vi_net_buffer_attrib_map =
 {
-        4,
+        6,
         {
                 { "Direction", 0 },
                 { "Connection Name", 1},
-                { "Buffer Name", 2},
-                { "Buffer Size", 3}
+                { "Link Util" , 2},
+                { "Buffer Name", 3},
+                { "Buffer Size", 4},
+                { "Buffer Util", 5}
         }
 };
+
+struct str_map_t vi_net_buffer_direction_map =
+{
+	3,
+	{
+		{ "Invalid", vi_buffer_dir_invalid},
+		{ "--> In", vi_buffer_dir_input},
+		{ "<-- Out", vi_buffer_dir_output}
+	}
+};
+
 struct vi_net_buffer_t *vi_net_buffer_create (struct vi_trace_line_t *trace_line,
 		enum vi_buffer_direction_t buffer_direction)
 {
@@ -79,11 +93,15 @@ struct vi_net_buffer_t *vi_net_buffer_create (struct vi_trace_line_t *trace_line
 	buffer->direction = buffer_direction;
 
 	if (buffer_direction == vi_buffer_dir_input)
+	{
 		hash_table_insert(node->input_buffer_list, buffer->name, buffer);
-
+		buffer->id = hash_table_count(node->input_buffer_list) - 1;
+	}
 	else if (buffer_direction == vi_buffer_dir_output)
+	{
 		hash_table_insert(node->output_buffer_list, buffer->name, buffer);
-
+		buffer->id = hash_table_count(node->output_buffer_list) - 1;
+	}
 	else
 		panic("%s: buffer direction is not valid", __FUNCTION__);
 
@@ -91,14 +109,14 @@ struct vi_net_buffer_t *vi_net_buffer_create (struct vi_trace_line_t *trace_line
 	int buffer_size ;
 	buffer_size = vi_trace_line_get_symbol_int(trace_line, "buffer_size");
 	buffer->size = buffer_size;
-	if (net->packet_size != 0)
+/*	if (net->packet_size != 0)
 	        buffer->packet_capacity = (buffer_size -1 ) / net->packet_size + 1;
 	else
 	        buffer->packet_capacity = buffer->size;
 
         if (node->max_buffer_size < buffer->packet_capacity)
                 node->max_buffer_size = buffer->packet_capacity;
-
+*/
 	/* Set buffer connection Type */
 	int connection_type;
 	connection_type = vi_trace_line_get_symbol_int(trace_line, "buffer_type");
@@ -131,11 +149,80 @@ struct vi_net_buffer_t *vi_net_buffer_create (struct vi_trace_line_t *trace_line
 
 	}
 
+	buffer->packet_list = list_create();
+
 	return buffer;
 }
 
 void vi_net_buffer_free (struct vi_net_buffer_t *buffer)
 {
+	struct list_t *packet_list;
+	packet_list = buffer->packet_list;
+
+	int i;
+	/* Free accesses */
+	LIST_FOR_EACH(packet_list, i)
+		vi_net_packet_free(list_get(packet_list, i));
+	list_free(packet_list);
+
 	free(buffer->name);
 	free(buffer);
+}
+
+void vi_buffer_write_checkpoint (struct vi_net_buffer_t *buffer, FILE *f)
+{
+	int i;
+	int occupancy;
+	int count;
+	int num_packets;
+	struct vi_net_packet_t *packet;
+
+	/* Write buffer occupancy */
+	occupancy = buffer->occupancy;
+	count = fwrite(&occupancy, 1, 4, f);
+	if (count != 4)
+		fatal("%s: cannot write to checkpoint file", __FUNCTION__);
+
+	/* Write number of packets*/
+	num_packets = list_count(buffer->packet_list);
+	count = fwrite(&num_packets, 1, 4, f);
+	if (count != 4)
+		fatal("%s: cannot write to checkpoint file", __FUNCTION__);
+
+	/* Write accesses */
+	LIST_FOR_EACH(buffer->packet_list, i)
+	{
+		packet = list_get(buffer->packet_list, i);
+		vi_net_packet_write_checkpoint(packet, f);
+	}
+}
+
+void vi_buffer_read_checkpoint (struct vi_net_buffer_t *buffer, FILE *f)
+{
+	int buffer_occupancy;
+	int count;
+
+	struct vi_net_packet_t *packet;
+	/* Reading buffer Occupancy */
+	count = fread(&buffer_occupancy, 1, 4, f);
+	if (count != 4)
+		fatal("%s: error reading from checkpoint", __FUNCTION__);
+	buffer->occupancy = buffer_occupancy;
+
+	/* Empty List */
+	list_clear(buffer->packet_list);
+
+
+	/* Reading each buffer's number of packets */
+	int num_packets;
+
+	count = fread(&num_packets, 1, 4, f);
+	if (count != 4)
+		fatal("%s: error reading from checkpoint", __FUNCTION__);
+	for (int i = 0; i < num_packets ; i++)
+	{
+		packet = vi_net_packet_create(NULL, NULL, 0);
+		vi_net_packet_read_checkpoint(packet, f);
+		list_add(buffer->packet_list, packet);
+	}
 }

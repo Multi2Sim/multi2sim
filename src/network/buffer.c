@@ -20,6 +20,7 @@
 #include <assert.h>
 
 #include <lib/esim/esim.h>
+#include <lib/esim/trace.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/linked-list.h>
@@ -133,6 +134,12 @@ void net_buffer_insert(struct net_buffer_t *buffer, struct net_packet_t *pkt)
 		pkt->session_id,
 		node->name,
 		buffer->name);
+
+	net_trace("net.packet_insert net=\"%s\" node=\"%s\" buffer=\"%s\" "
+			"name=\"P-%lld:%d\" occpncy=%d\n",
+			net->name, buffer->node->name, buffer->name, pkt->msg->id,
+			pkt->session_id, buffer->occupancy_bytes_value);
+
 }
 
 
@@ -165,6 +172,11 @@ void net_buffer_extract(struct net_buffer_t *buffer, struct net_packet_t *pkt)
 		pkt->session_id,
 		node->name,
 		buffer->name);
+
+	net_trace("net.packet_extract net=\"%s\" node=\"%s\" buffer=\"%s\" "
+			"name=\"P-%lld:%d\" occpncy=%d\n",
+			net->name, buffer->node->name, buffer->name, pkt->msg->id,
+			pkt->session_id, buffer->occupancy_bytes_value);
 
 	/* Schedule events waiting for space in buffer. */
 	net_buffer_wakeup(buffer);

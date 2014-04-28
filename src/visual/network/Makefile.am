@@ -20,6 +20,9 @@ libnetwork_a_SOURCES += \
 	net-message.c \
 	net-message.h \
 	\
+	net-packet.c \
+	net-packet.h \
+	\
 	net-system.c \
 	net-system.h \
 	\

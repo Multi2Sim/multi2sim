@@ -67,7 +67,6 @@ void vi_net_widget_free(struct vi_net_widget_t *net_widget)
 
 /* Creating Network Widget */
 static struct vi_node_board_t  *vi_node_board_create                (struct vi_net_node_t *node);
-static void 		        vi_node_board_refresh		    (struct vi_node_board_t *board);
 static gboolean 	        vi_node_board_toggle_button_toggled (GtkWidget *widget, struct vi_node_board_t *board);
 static void 		        vi_node_board_destroy               (GtkWidget *widget, struct vi_node_board_t *board);
 
@@ -80,6 +79,7 @@ static void 		        vi_link_board_refresh		    (struct vi_link_board_t *board)
 static struct vi_node_window_t *vi_node_window_create               (struct vi_net_node_t * node, GtkWidget *parent_toggle_button);
 static void                     vi_node_window_free                 (struct vi_node_window_t *node_window);
 static void                     vi_node_window_destroy              (GtkWidget *widget, struct vi_node_window_t *node_window);
+static void                     vi_node_window_refresh    	    (struct vi_node_window_t *window);
 static gboolean                 vi_node_window_delete               (GtkWidget *widget, GdkEvent *event, struct vi_node_window_t *node_window);
 static GtkWidget               *vi_node_window_get_widget           (struct vi_node_window_t *node_window);
 
@@ -487,7 +487,9 @@ static gboolean vi_link_board_draw (GtkWidget *widget, GdkEventConfigure *event,
 	{
 		Alpha = atan((board->dst_y - board->src_y) /(board->dst_x - board->src_x ));
 	}
-
+/*	fprintf(stderr, "(%f,%f) --> (%f,%f), Alpha = %f(%f) \n %s --> %s %s \n",
+			board->src_x, board->src_y , board->dst_x, board->dst_y, Alpha * 180 / M_PI, Alpha,
+			board->link->src_node->name , board->link->dst_node->name, board->link->name); */
 	if (Alpha < 0 )
 	{
 		C = -C;
@@ -571,7 +573,8 @@ void vi_net_widget_refresh (struct vi_net_widget_t *net_widget)
 	LIST_FOR_EACH(net_widget->node_board_list, board_id)
 	{
 		node_board = list_get(net_widget->node_board_list, board_id);
-		vi_node_board_refresh(node_board);
+		if (node_board->node_window)
+			vi_node_window_refresh(node_board->node_window);
 	}
 
 	/* Refresh all Link boards */
@@ -581,14 +584,14 @@ void vi_net_widget_refresh (struct vi_net_widget_t *net_widget)
 		vi_link_board_refresh(link);
 	}
 }
-
-static void vi_node_board_refresh(struct vi_node_board_t *board)
+static void vi_node_window_refresh(struct vi_node_window_t *window)
 {
-
+	/* Refresh pop-up window */
+	if (window->node_widget)
+		vi_node_widget_refresh_content(window->node_widget);
 }
-
 static void vi_link_board_refresh(struct vi_link_board_t *board)
 {
-	vi_link_color_utilization(board->link);
+	vi_link_color_per_cycle(board->link);
 	vi_link_board_draw(board->widget, NULL, board);
 }
