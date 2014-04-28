@@ -42,7 +42,7 @@ extern int net_debug_category;
 #define net_trace_header(...) trace_header(net_trace_category, __VA_ARGS__)
 
 #define NET_SYSTEM_TRACE_VERSION_MAJOR          1
-#define NET_SYSTEM_TRACE_VERSION_MINOR          6
+#define NET_SYSTEM_TRACE_VERSION_MINOR          10
 
 extern int net_trace_category;
 

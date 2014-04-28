@@ -737,9 +737,19 @@ void net_receive(struct net_t *net, struct net_node_t *node,
 
 	net_trace("net.msg net=\"%s\" name=\"M-%lld\" state=\"%s:receive\"\n",
 			net->name, msg->id, node->name);
+	if (net_tracing())
+	{
+		struct net_packet_t *pkt;
+		DOUBLE_LINKED_LIST_FOR_EACH(msg, packet, pkt)
+		{
+			net_trace("net.end_packet net=\"%s\" name=\"P-%lld:%d\"\n",
+					net->name, msg->id, pkt->session_id );
 
-	net_trace("net.end_msg net=\"%s\" name=\"M-%lld\"\n",
+		}
+		net_trace("net.end_msg net=\"%s\" name=\"M-%lld\"\n",
 				net->name, msg->id);
+
+	}
 
 	net_msg_free(msg);
 }

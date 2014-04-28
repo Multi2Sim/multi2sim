@@ -75,6 +75,11 @@ void net_packetizer(struct net_t *net, struct net_msg_t *msg, int packet_size)
 		packet = net_packet_create(net, msg, packet_size); // rp net->packet_size with packet_size
 		packet->session_id = i;
 		DOUBLE_LINKED_LIST_INSERT_TAIL(msg, packet, packet);
+
+		net_trace("net.new_packet net=\"%s\" name=\"P-%lld:%d\" size=%d state=\"%s:packetizer\"\n",
+				net->name, msg->id, packet->session_id, packet->size, msg->src_node->name);
+		net_trace("net.packet_msg net=\"%s\" name=\"P-%lld:%d\" message=\"M-%lld\"\n",
+						net->name, msg->id, packet->session_id, msg->id);
 	}
 }
 
@@ -92,14 +97,14 @@ int net_depacketizer (struct net_t *net, struct net_node_t *node, struct net_pac
 	DOUBLE_LINKED_LIST_INSERT_TAIL(msg, packet, pkt);
 	net_buffer_extract(buffer, pkt);
 
+	net_trace("net.packet net=\"%s\" name=\"P-%lld:%d\" state=\"%s:depacketizer\" stg=\"DC\"\n",
+			net->name, msg->id, pkt->session_id, node->name);
 	for (int i = 0; i < msg->packet_list_count; i++)
 	{
-		//Things to be checked K[12]
-		// First :all the packets are received
+		/* All the packets are received */
 		count--;
 		if (count == 0)
 			return 1;
-		// Second : the packets have the right sessions (not two copy of one packet!)
 	}
 	return 0;
 }

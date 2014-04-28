@@ -26,6 +26,7 @@
 #include <lib/util/list.h>
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
+#include <visual/common/cycle-bar.h>
 #include <visual/common/state.h>
 #include <visual/common/trace.h>
 #include <visual/memory/mod.h>
@@ -34,6 +35,7 @@
 #include "link.h"
 #include "net.h"
 #include "net-message.h"
+#include "net-packet.h"
 #include "net-system.h"
 #include "node.h"
 
@@ -49,16 +51,22 @@ static char *err_vi_net_system_trace_version =
 		"\tversion used to visualize the trace.\n";
 
 #define VI_NET_SYSTEM_TRACE_VERSION_MAJOR	1
-#define VI_NET_SYSTEM_TRACE_VERSION_MINOR	6
+#define VI_NET_SYSTEM_TRACE_VERSION_MINOR	10
 
 static void vi_net_system_read_checkpoint  (struct vi_net_system_t *net_system, FILE *f);
 static void vi_net_system_write_checkpoint (struct vi_net_system_t *net_system, FILE *f);
 
-static void vi_net_system_new_message      (struct vi_net_system_t *net_system, struct vi_trace_line_t *trace_line);
-static void vi_net_system_msg_set_access   (struct vi_net_system_t *net_system, struct vi_trace_line_t *trace_line);
-static void vi_net_system_message          (struct vi_net_system_t *net_system, struct vi_trace_line_t *trace_line);
-static void vi_net_system_end_message	   (struct vi_net_system_t *net_system, struct vi_trace_line_t *trace_line);
-static void vi_net_system_link_transfer    (struct vi_net_system_t *net_system, struct vi_trace_line_t *trace_line);
+static void vi_net_system_new_message       (struct vi_net_system_t *net_system, struct vi_trace_line_t *trace_line);
+static void vi_net_system_msg_set_access    (struct vi_net_system_t *net_system, struct vi_trace_line_t *trace_line);
+static void vi_net_system_message           (struct vi_net_system_t *net_system, struct vi_trace_line_t *trace_line);
+static void vi_net_system_end_message	    (struct vi_net_system_t *net_system, struct vi_trace_line_t *trace_line);
+static void vi_net_system_link_transfer     (struct vi_net_system_t *net_system, struct vi_trace_line_t *trace_line);
+static void vi_net_system_new_packet	    (struct vi_net_system_t *net_system, struct vi_trace_line_t *trace_line);
+static void vi_net_system_packet_set_message(struct vi_net_system_t *net_system, struct vi_trace_line_t *trace_line);
+static void vi_net_system_end_packet	    (struct vi_net_system_t *net_system, struct vi_trace_line_t *trace_line);
+static void vi_net_system_packet_extract    (struct vi_net_system_t *net_system, struct vi_trace_line_t *trace_line);
+static void vi_net_system_packet_insert     (struct vi_net_system_t *net_system, struct vi_trace_line_t *trace_line);
+static void vi_net_system_packet	    (struct vi_net_system_t *net_system, struct vi_trace_line_t *trace_line);
 
 void vi_net_system_init(void)
 {
@@ -90,6 +98,31 @@ void vi_net_system_init(void)
 	vi_state_new_command("net.link_transfer",
 			(vi_state_process_trace_line_func_t) vi_net_system_link_transfer,
 			vi_net_system);
+
+	vi_state_new_command("net.new_packet",
+			(vi_state_process_trace_line_func_t) vi_net_system_new_packet,
+			vi_net_system);
+
+	vi_state_new_command("net.packet_msg",
+			(vi_state_process_trace_line_func_t) vi_net_system_packet_set_message,
+			vi_net_system);
+
+	vi_state_new_command("net.packet_extract",
+			(vi_state_process_trace_line_func_t) vi_net_system_packet_extract,
+			vi_net_system);
+
+	vi_state_new_command("net.packet_insert",
+			(vi_state_process_trace_line_func_t) vi_net_system_packet_insert,
+			vi_net_system);
+	vi_state_new_command("net.end_packet",
+			(vi_state_process_trace_line_func_t) vi_net_system_end_packet,
+			vi_net_system);
+
+	vi_state_new_command("net.packet",
+			(vi_state_process_trace_line_func_t) vi_net_system_packet,
+			vi_net_system);
+
+
 
 	/* Initialize */
 	vi_net_system = xcalloc(1, sizeof(struct vi_net_system_t));
@@ -297,6 +330,35 @@ static void vi_net_system_new_message(struct vi_net_system_t *net_system, struct
 	hash_table_insert(net->message_table, message->name, message);
 }
 
+static void vi_net_system_new_packet(struct vi_net_system_t *net_system, struct vi_trace_line_t *trace_line)
+{
+	char *net_name;
+	char *name;
+	char *state;
+
+	struct vi_net_t *net;
+	struct vi_net_packet_t *packet;
+
+	unsigned int size;
+
+	/* Read fields */
+	net_name =  vi_trace_line_get_symbol(trace_line, "net");
+	net = hash_table_get(vi_net_system->net_table, net_name);
+	if (!net)
+		panic("%s: invalid network name '%s'", __FUNCTION__, net_name);
+
+	name = vi_trace_line_get_symbol(trace_line, "name");
+	state = vi_trace_line_get_symbol(trace_line, "state");
+	size = vi_trace_line_get_symbol_int(trace_line, "size");
+
+	/* Create new access */
+	packet = vi_net_packet_create(net->name, name, size);
+	vi_net_packet_set_state(packet , state);
+
+	/* Add access to list */
+	hash_table_insert(net->packet_table, packet->name, packet);
+}
+
 static void vi_net_system_msg_set_access(struct vi_net_system_t *net_system, struct vi_trace_line_t *trace_line)
 {
 	char *net_name;
@@ -321,6 +383,37 @@ static void vi_net_system_msg_set_access(struct vi_net_system_t *net_system, str
 		panic("%s: invalid message name '%s'", __FUNCTION__, net_name);
 
 	message->access_name = str_set(message->access_name, access);
+}
+
+static void vi_net_system_packet_set_message(struct vi_net_system_t *net_system, struct vi_trace_line_t *trace_line)
+{
+	char *net_name;
+	char *packet_name;
+	char *message_name;
+
+	struct vi_net_t *net;
+	struct vi_net_packet_t *packet;
+	struct vi_net_message_t *message;
+
+	/* Read fields */
+	net_name =  vi_trace_line_get_symbol(trace_line, "net");
+	net = hash_table_get(vi_net_system->net_table, net_name);
+	if (!net)
+		panic("%s: invalid network name '%s'", __FUNCTION__, net_name);
+
+	message_name = vi_trace_line_get_symbol(trace_line, "message");
+	message = hash_table_get(net->message_table, message_name);
+	if (!message)
+		panic("%s: invalid message: wrong association of packet and message '%s'", __FUNCTION__, message_name);
+
+	packet_name = vi_trace_line_get_symbol(trace_line, "name");
+
+	/* Create new access */
+	packet = hash_table_get(net->packet_table, packet_name);
+	if (!packet)
+		panic("%s: invalid message name '%s'", __FUNCTION__, net_name);
+
+	packet->message_name = str_set(packet->message_name, message_name);
 }
 static void vi_net_system_message(struct vi_net_system_t *net_system, struct vi_trace_line_t *trace_line)
 {
@@ -349,6 +442,37 @@ static void vi_net_system_message(struct vi_net_system_t *net_system, struct vi_
 	vi_net_message_set_state(message, state);
 }
 
+static void vi_net_system_packet(struct vi_net_system_t *net_system, struct vi_trace_line_t *trace_line)
+{
+	struct vi_net_t *net;
+	struct vi_net_packet_t *packet;
+
+	char *net_name;
+	char *name;
+	char *state;
+	enum vi_net_packet_stage stage;
+
+	/* Read fields */
+	net_name =  vi_trace_line_get_symbol(trace_line, "net");
+	net = hash_table_get(vi_net_system->net_table, net_name);
+	if (!net)
+		panic("%s: invalid network name '%s'", __FUNCTION__, net_name);
+
+	name = vi_trace_line_get_symbol(trace_line, "name");
+	state = vi_trace_line_get_symbol(trace_line, "state");
+
+	/* Find access */
+	packet = hash_table_get(net->packet_table, name);
+	if (!packet)
+		panic("%s: %s: access not found", __FUNCTION__, name);
+
+	stage = str_map_string(&vi_packet_stage_map, vi_trace_line_get_symbol(trace_line, "stg"));
+	packet->stage = stage;
+
+	/* Update access */
+	vi_net_packet_set_state(packet, state);
+}
+
 static void vi_net_system_end_message (struct vi_net_system_t *net_system, struct vi_trace_line_t *trace_line)
 {
 	struct vi_net_message_t *message;
@@ -374,6 +498,31 @@ static void vi_net_system_end_message (struct vi_net_system_t *net_system, struc
 	vi_net_message_free(message);
 }
 
+static void vi_net_system_end_packet (struct vi_net_system_t *net_system, struct vi_trace_line_t *trace_line)
+{
+	struct vi_net_packet_t *packet;
+	struct vi_net_t *net;
+
+	char *name;
+	char *net_name;
+
+	/* Read fields */
+	net_name =  vi_trace_line_get_symbol(trace_line, "net");
+	net = hash_table_get(vi_net_system->net_table, net_name);
+	if (!net)
+		panic("%s: invalid network name '%s'", __FUNCTION__, net_name);
+
+	name = vi_trace_line_get_symbol(trace_line, "name");
+
+	/* Find access */
+	packet = hash_table_remove(net->packet_table, name);
+	if (!packet)
+		panic("%s: packet not found", __FUNCTION__);
+
+	/* Free access */
+	vi_net_packet_free(packet);
+}
+
 static void vi_net_system_link_transfer(struct vi_net_system_t *net_system, struct vi_trace_line_t *trace_line)
 {
 	struct vi_net_t *net;
@@ -383,6 +532,8 @@ static void vi_net_system_link_transfer(struct vi_net_system_t *net_system, stru
 	char *link_name;
 
 	int transferred_bytes;
+	int last_packet_size;
+	long long busy_cycle;
 
 	/* Read Fields */
 	net_name =  vi_trace_line_get_symbol(trace_line, "net");
@@ -398,6 +549,83 @@ static void vi_net_system_link_transfer(struct vi_net_system_t *net_system, stru
 
 	transferred_bytes = vi_trace_line_get_symbol_int(trace_line, "transB");
 
-	link->transferred_bytes = transferred_bytes;
+	last_packet_size = vi_trace_line_get_symbol_int(trace_line, "last_size");
 
+	busy_cycle = vi_trace_line_get_symbol_int(trace_line, "busy");
+
+	link->transferred_bytes = transferred_bytes;
+	link->last_packet_size = last_packet_size;
+	link->busy_cycle = busy_cycle;
+}
+
+static void vi_net_system_packet_insert (struct vi_net_system_t *net_system, struct vi_trace_line_t *trace_line)
+{
+	struct vi_net_t *net;
+	char *net_name;
+
+	struct vi_net_node_t *node;
+	char *node_name;
+
+	char* buffer_name;
+
+	int buffer_occupancy;
+
+	struct vi_net_packet_t *packet;
+	char *packet_name;
+
+	net_name =  vi_trace_line_get_symbol(trace_line, "net");
+	net = hash_table_get(vi_net_system->net_table, net_name);
+	if (!net)
+		panic("%s: invalid network name '%s'", __FUNCTION__, net_name);
+
+	node_name = vi_trace_line_get_symbol(trace_line, "node");
+	node = hash_table_get(net->node_table, node_name);
+	if (!net)
+		panic("%s: invalid node name '%s'", __FUNCTION__, node_name);
+
+	packet_name = vi_trace_line_get_symbol(trace_line, "name");
+	packet = hash_table_get(net->packet_table, packet_name);
+	if (!packet)
+		panic("%s: invalid packet name '%s'", __FUNCTION__, packet_name);
+
+	buffer_name = vi_trace_line_get_symbol(trace_line, "buffer");
+	buffer_occupancy = vi_trace_line_get_symbol_int(trace_line, "occpncy");
+
+	vi_node_insert_packet(node, buffer_name, buffer_occupancy, packet);
+}
+
+static void vi_net_system_packet_extract (struct vi_net_system_t *net_system, struct vi_trace_line_t *trace_line)
+{
+	struct vi_net_t *net;
+	char *net_name;
+
+	struct vi_net_node_t *node;
+	char *node_name;
+
+	char* buffer_name;
+
+	int buffer_occupancy;
+
+	struct vi_net_packet_t *packet;
+	char *packet_name;
+
+	net_name =  vi_trace_line_get_symbol(trace_line, "net");
+	net = hash_table_get(vi_net_system->net_table, net_name);
+	if (!net)
+		panic("%s: invalid network name '%s'", __FUNCTION__, net_name);
+
+	node_name = vi_trace_line_get_symbol(trace_line, "node");
+	node = hash_table_get(net->node_table, node_name);
+	if (!net)
+		panic("%s: invalid node name '%s'", __FUNCTION__, node_name);
+
+	packet_name = vi_trace_line_get_symbol(trace_line, "name");
+	packet = hash_table_get(net->packet_table, packet_name);
+	if (!packet)
+		panic("%s: invalid packet name '%s'", __FUNCTION__, packet_name);
+
+	buffer_name = vi_trace_line_get_symbol(trace_line, "buffer");
+	buffer_occupancy = vi_trace_line_get_symbol_int(trace_line, "occpncy");
+
+	vi_node_extract_packet(node, buffer_name, buffer_occupancy, packet);
 }
