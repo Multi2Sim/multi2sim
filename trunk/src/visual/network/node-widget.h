@@ -67,9 +67,8 @@ struct vi_node_widget_t
 
 struct vi_node_widget_t *vi_node_widget_create     (struct vi_net_node_t *node);
 void                     vi_node_widget_free       (struct vi_node_widget_t *node_widget);
+void 			 vi_node_widget_refresh    (struct vi_node_widget_t *node_widget);
 GtkWidget               *vi_node_widget_get_widget (struct vi_node_widget_t *widget);
-
-void                     vi_node_widget_refresh    (struct vi_node_widget_t *node_widget);
-
+void vi_node_widget_refresh_content(struct vi_node_widget_t *node_widget);
 
 #endif

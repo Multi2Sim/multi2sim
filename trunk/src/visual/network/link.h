@@ -35,6 +35,8 @@ struct vi_net_sub_link_t
 struct vi_net_link_t
 {
         long long transferred_bytes;
+        int last_packet_size;
+        long long busy_cycle;
 
         int   vc_number;
         int   bandwidth;
@@ -53,6 +55,7 @@ struct vi_trace_line_t;
 struct vi_net_link_t *vi_net_link_create        (struct vi_trace_line_t *trace_line);
 void                  vi_net_link_free          (struct vi_net_link_t *link);
 void                  vi_link_color_utilization (struct vi_net_link_t *link);
+void 		      vi_link_color_per_cycle   (struct vi_net_link_t *link);
 
 struct vi_net_sub_link_t * vi_net_sub_link_create(void);
 void                       vi_net_sub_link_free  (struct vi_net_sub_link_t * link);

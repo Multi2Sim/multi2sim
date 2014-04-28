@@ -36,6 +36,7 @@ struct vi_net_t
 	struct hash_table_t *node_table;
 	struct hash_table_t *link_table;
 	struct hash_table_t *message_table;
+	struct hash_table_t *packet_table;
 	struct hash_table_t *high_mods;
 	struct hash_table_t *low_mods;
 

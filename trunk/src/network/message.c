@@ -235,6 +235,16 @@ void net_event_handler(int event, void *data)
 						net->name,
 						pkt->msg->id,
 						pkt->session_id);
+
+				net_trace("net.packet "
+						"net=\"%s\" "
+						"name=\"P-%lld:%d\" "
+						"state=\"%s:%s:link_busy\" "
+						"stg=\"LB\"\n",
+						net->name, pkt->msg->id,
+						pkt->session_id,
+						node->name,
+						buffer->name);
 				return;
 			}
 
@@ -244,8 +254,7 @@ void net_event_handler(int event, void *data)
 			{
 				struct net_buffer_t *temp_buffer;
 
-				temp_buffer =
-						net_link_arbitrator_vc(link, node);
+				temp_buffer = net_link_arbitrator_vc(link, node);
 				if (temp_buffer != buffer)
 				{
 					net_debug("msg "
@@ -257,6 +266,16 @@ void net_event_handler(int event, void *data)
 							pkt->msg->id,
 							pkt->session_id);
 					esim_schedule_event(event, stack, 1);
+
+					net_trace("net.packet "
+							"net=\"%s\" "
+							"name=\"P-%lld:%d\" "
+							"state=\"%s:%s:VC_arbitration_fail\" "
+							"stg=\"VCA\"\n",
+							net->name, pkt->msg->id,
+							pkt->session_id,
+							node->name,
+							buffer->name);
 					return;
 				}
 			}
@@ -273,6 +292,15 @@ void net_event_handler(int event, void *data)
 						"why=\"input buffer busy\"\n",
 						net->name, pkt->msg->id,
 						pkt->session_id);
+				net_trace("net.packet "
+						"net=\"%s\" "
+						"name=\"P-%lld:%d\" "
+						"state=\"%s:%s:Dest_buffer_busy\" "
+						"stg=\"DBB\"\n",
+						net->name, pkt->msg->id,
+						pkt->session_id,
+						node->name,
+						buffer->name);
 
 				esim_schedule_event(event, stack,
 						input_buffer->write_busy - cycle + 1);
@@ -292,6 +320,16 @@ void net_event_handler(int event, void *data)
 						"msg-->pkt=%lld:%d "
 						"why=\"input buffer full\"\n",
 						net->name, pkt->msg->id, pkt->session_id);
+				net_trace("net.packet "
+						"net=\"%s\" "
+						"name=\"P-%lld:%d\" "
+						"state=\"%s:%s:Dest_buffer_full\" "
+						"stg=\"DBF\"\n",
+						net->name, pkt->msg->id,
+						pkt->session_id,
+						node->name,
+						buffer->name);
+
 				net_buffer_wait(input_buffer, event, stack);
 				return;
 			}
@@ -320,8 +358,10 @@ void net_event_handler(int event, void *data)
 			input_buffer->node->bytes_received += pkt->size;
 			input_buffer->node->msgs_received++;
 			net_trace("net.link_transfer net=\"%s\" link=\"%s\" "
-					"transB=%lld\n",
-					net->name, link->name, link->transferred_bytes);
+					"transB=%lld last_size=%d busy=%lld\n",
+					net->name, link->name,
+					link->transferred_bytes,
+					pkt->size, link->busy);
 		}
 		else if (buffer->kind == net_buffer_bus)
 		{
@@ -369,6 +409,17 @@ void net_event_handler(int event, void *data)
 						net->name,
 						pkt->msg->id,
 						pkt->session_id);
+
+				net_trace("net.packet "
+						"net=\"%s\" "
+						"name=\"P-%lld:%d\" "
+						"state=\"%s:%s:Dest_buffer_busy\" "
+						"stg=\"DBB\"\n",
+						net->name, pkt->msg->id,
+						pkt->session_id,
+						node->name,
+						buffer->name);
+
 				return;
 			}
 
@@ -387,6 +438,17 @@ void net_event_handler(int event, void *data)
 						"why=\"input full\"\n",
 						net->name, pkt->msg->id,
 						pkt->session_id);
+
+				net_trace("net.packet "
+						"net=\"%s\" "
+						"name=\"P-%lld:%d\" "
+						"state=\"%s:%s:Dest_buffer_full\" "
+						"stg=\"DBF\"\n",
+						net->name, pkt->msg->id,
+						pkt->session_id,
+						node->name,
+						buffer->name);
+
 				return;
 			}
 
@@ -403,6 +465,16 @@ void net_event_handler(int event, void *data)
 						"why=\"bus arbiter\"\n",
 						net->name, pkt->msg->id,
 						pkt->session_id);
+				net_trace("net.packet "
+						"net=\"%s\" "
+						"name=\"P-%lld:%d\" "
+						"state=\"%s:%s:BUS_arbit_fail\" "
+						"stg=\"BA\"\n",
+						net->name, pkt->msg->id,
+						pkt->session_id,
+						node->name,
+						buffer->name);
+
 				return;
 			}
 
@@ -445,9 +517,9 @@ void net_event_handler(int event, void *data)
 			input_buffer->node->bytes_received += pkt->size;
 			input_buffer->node->msgs_received++;
 			net_trace("net.bus_transfer net=\"%s\" node=\"%s\" "
-					"lane_index=%d transB=%lld\n",
+					"lane_index=%d transB=%lld last_size=%d busy=%lld\n",
 					net->name, bus->node->name, bus->index,
-					bus->transferred_bytes);
+					bus->transferred_bytes, pkt->size, bus->busy);
 		}
 
 		else if (buffer->kind == net_buffer_photonic)
@@ -496,6 +568,17 @@ void net_event_handler(int event, void *data)
 						net->name,
 						pkt->msg->id,
 						pkt->session_id);
+
+				net_trace("net.packet "
+						"net=\"%s\" "
+						"name=\"P-%lld:%d\" "
+						"state=\"%s:%s:Dest_buffer_busy\" "
+						"stg=\"DBB\"\n",
+						net->name, pkt->msg->id,
+						pkt->session_id,
+						node->name,
+						buffer->name);
+
 				return;
 			}
 
@@ -514,6 +597,17 @@ void net_event_handler(int event, void *data)
 						"why=\"input full\"\n",
 						net->name, pkt->msg->id,
 						pkt->session_id);
+
+				net_trace("net.packet "
+						"net=\"%s\" "
+						"name=\"P-%lld:%d\" "
+						"state=\"%s:%s:Dest_buffer_full\" "
+						"stg=\"DBF\"\n",
+						net->name, pkt->msg->id,
+						pkt->session_id,
+						node->name,
+						buffer->name);
+
 				return;
 			}
 
@@ -531,6 +625,17 @@ void net_event_handler(int event, void *data)
 						"why=\"bus arbiter\"\n",
 						net->name, pkt->msg->id,
 						pkt->session_id);
+
+				net_trace("net.packet "
+						"net=\"%s\" "
+						"name=\"P-%lld:%d\" "
+						"state=\"%s:%s:photonic_arbitration\" "
+						"stg=\"BA\"\n",
+						net->name, pkt->msg->id,
+						pkt->session_id,
+						node->name,
+						buffer->name);
+
 				return;
 			}
 
@@ -572,9 +677,9 @@ void net_event_handler(int event, void *data)
 			input_buffer->node->bytes_received += pkt->size;
 			input_buffer->node->msgs_received++;
 			net_trace("net.photonic_transfer net=\"%s\" node=\"%s\" "
-					"lane_index=%d transB=%lld\n",
+					"lane_index=%d transB=%lld last_size=%d busy=%lld\n",
 					net->name, bus->node->name, bus->index,
-					bus->transferred_bytes);
+					bus->transferred_bytes,pkt->size, bus->busy);
 			net_debug("msg "
 					"a=\"success photonic transmission\" "
 					"net=\"%s\" "
@@ -666,6 +771,16 @@ void net_event_handler(int event, void *data)
 					net->name,
 					pkt->msg->id,
 					pkt->session_id);
+			net_trace("net.packet "
+					"net=\"%s\" "
+					"name=\"P-%lld:%d\" "
+					"state=\"%s:%s:Dest_buffer_busy\" "
+					"stg=\"DBB\"\n",
+					net->name, pkt->msg->id,
+					pkt->session_id,
+					node->name,
+					buffer->name);
+
 			esim_schedule_event(event, stack,
 					output_buffer->write_busy - cycle + 1);
 			return;
@@ -688,6 +803,17 @@ void net_event_handler(int event, void *data)
 					pkt->msg->id,
 					pkt->session_id);
 
+			net_trace("net.packet "
+					"net=\"%s\" "
+					"name=\"P-%lld:%d\" "
+					"state=\"%s:%s:Dest_buffer_full\" "
+					"stg=\"DBF\"\n",
+					net->name, pkt->msg->id,
+					pkt->session_id,
+					node->name,
+					buffer->name);
+
+
 			net_buffer_wait(output_buffer, event, stack);
 			return;
 		}
@@ -703,6 +829,17 @@ void net_event_handler(int event, void *data)
 					net->name,
 					pkt->msg->id,
 					pkt->session_id);
+
+			net_trace("net.packet "
+					"net=\"%s\" "
+					"name=\"P-%lld:%d\" "
+					"state=\"%s:%s:switch_arbit_fail\" "
+					"stg=\"SA\"\n",
+					net->name, pkt->msg->id,
+					pkt->session_id,
+					node->name,
+					buffer->name);
+
 			esim_schedule_event(event, stack, 1);
 			return;
 		}

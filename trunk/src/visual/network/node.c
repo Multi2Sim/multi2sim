@@ -24,12 +24,14 @@
 #include <lib/util/list.h>
 #include <lib/util/hash-table.h>
 #include <lib/util/misc.h>
+#include <lib/util/string.h>
 #include <lib/mhandle/mhandle.h>
 #include <visual/common/state.h>
 #include <visual/common/trace.h>
 
 #include "buffer.h"
 #include "net.h"
+#include "net-packet.h"
 #include "net-system.h"
 #include "node.h"
 
@@ -69,6 +71,7 @@ struct vi_net_node_t * vi_net_node_assign(struct vi_trace_line_t *trace_line)
 	node = list_get(net->node_list, node_index);
 	assert(node);
 	node->index = node_index;
+	node->max_buffer_size = 1;
 
 	/* Set Node Name */
 	char *node_name;
@@ -101,8 +104,8 @@ struct vi_net_node_t * vi_net_node_assign(struct vi_trace_line_t *trace_line)
 	}
 	else if (node->type == vi_net_node_dummy || node->type == vi_net_node_invalid)
 	{
-                panic("%s: Unauthorized. Node is of kind dummy or invalid \n",
-                                __FUNCTION__);
+		panic("%s: Unauthorized. Node is of kind dummy or invalid \n",
+				__FUNCTION__);
 
 	}
 	hash_table_insert(net->node_table, node->name, node);
@@ -121,21 +124,21 @@ void vi_net_node_free(struct vi_net_node_t *node)
 	if (node->input_buffer_list)
 	{
 		HASH_TABLE_FOR_EACH(node->input_buffer_list, buffer_name, buffer)
-				vi_net_buffer_free(buffer);
+						vi_net_buffer_free(buffer);
 		hash_table_free(node->input_buffer_list);
 	}
 
 	if (node->output_buffer_list)
 	{
 		HASH_TABLE_FOR_EACH(node->output_buffer_list, buffer_name, buffer)
-			vi_net_buffer_free(buffer);
+					vi_net_buffer_free(buffer);
 		hash_table_free(node->output_buffer_list);
 	}
 
 	if (node->bus_lane_list)
 	{
 		LIST_FOR_EACH(node->bus_lane_list, i)
-			vi_net_bus_free(list_get(node->bus_lane_list, i));
+					vi_net_bus_free(list_get(node->bus_lane_list, i));
 		list_free(node->bus_lane_list);
 	}
 
@@ -160,15 +163,92 @@ struct vi_net_bus_t  *vi_net_bus_create  (void)
 
 void vi_node_read_checkpoint(struct vi_net_node_t *node, FILE *f)
 {
+	char buffer_name[MAX_STRING_SIZE];
+	struct vi_net_buffer_t *buffer;
+	int i;
+	for (i = 0; i < hash_table_count(node->input_buffer_list); i++)
+	{
+		/* Get module */
+		str_read_from_file(f, buffer_name, sizeof buffer_name);
+	        buffer = hash_table_get(node->input_buffer_list, buffer_name);
+	        if (!buffer)
+	        	panic("%s: %s: invalid buffer name", __FUNCTION__, buffer_name);
+
+	        /* Read module checkpoint */
+	        vi_buffer_read_checkpoint(buffer, f);
+	}
+
+	for (i = 0; i < hash_table_count(node->output_buffer_list); i++)
+	{
+		/* Get module */
+		str_read_from_file(f, buffer_name, sizeof buffer_name);
+	        buffer = hash_table_get(node->output_buffer_list, buffer_name);
+	        if (!buffer)
+	        	panic("%s: %s: invalid buffer name", __FUNCTION__, buffer_name);
+
+	        /* Read module checkpoint */
+	        vi_buffer_read_checkpoint(buffer, f);
+	}
+
 
 }
 void vi_node_write_checkpoint(struct vi_net_node_t *node, FILE *f)
 {
+	char *buffer_name;
+	struct vi_net_buffer_t *buffer;
 
+	HASH_TABLE_FOR_EACH(node->input_buffer_list, buffer_name, buffer)
+	{
+		/* Buffer Name */
+		str_write_to_file(f, buffer->name);
+		vi_buffer_write_checkpoint (buffer, f);
+	}
+
+	HASH_TABLE_FOR_EACH(node->output_buffer_list, buffer_name, buffer)
+	{
+		str_write_to_file(f, buffer->name);
+		vi_buffer_write_checkpoint(buffer, f);
+	}
 }
 
 
 void vi_net_bus_free (struct vi_net_bus_t *bus)
 {
 	free(bus);
+}
+
+void vi_node_insert_packet(struct vi_net_node_t *node, char* buffer_name, int buffer_occupancy, struct vi_net_packet_t *packet)
+{
+	struct vi_net_buffer_t *buffer;
+
+	buffer = hash_table_get(node->input_buffer_list, buffer_name);
+	if (!buffer)
+	{
+		buffer = hash_table_get(node->output_buffer_list, buffer_name);
+	}
+
+	if (!buffer)
+		panic("%s: Invalid buffer %s for node %s", __FUNCTION__,node->name, buffer_name);
+	list_enqueue(buffer->packet_list, packet);
+	packet->stage = vi_packet_dont_care;
+	buffer->occupancy = buffer_occupancy;
+}
+
+void vi_node_extract_packet(struct vi_net_node_t *node, char* buffer_name, int buffer_occupancy, struct vi_net_packet_t *packet)
+{
+	struct vi_net_buffer_t *buffer;
+	struct vi_net_packet_t *second_packet;
+	buffer = hash_table_get(node->input_buffer_list, buffer_name);
+	if (!buffer)
+	{
+		buffer = hash_table_get(node->output_buffer_list, buffer_name);
+	}
+
+	if (!buffer)
+		panic("%s: Invalid buffer %s for node %s", __FUNCTION__,node->name, buffer_name);
+
+	second_packet = list_dequeue(buffer->packet_list);
+	assert(!strcmp(second_packet->name, packet->name));
+	packet->stage = vi_packet_dont_care;
+	buffer->occupancy = buffer_occupancy;
 }

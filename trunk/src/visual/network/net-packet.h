@@ -18,15 +18,29 @@
  */
 
 
-#ifndef VISUAL_NETWORK_MESSAGE_H
-#define VISUAL_NETWORK_MESSAGE_H
+#ifndef VISUAL_NETWORK_PACKET_H
+#define VISUAL_NETWORK_PACKET_H
 
-struct vi_net_message_t
+enum vi_net_packet_stage
+{
+	vi_packet_dont_care = 0,
+	vi_packet_dest_buf_busy,
+	vi_packet_dest_buf_full,
+	vi_packet_link_busy,
+	vi_packet_bus_arbit,
+	vi_packet_sw_arbit,
+	vi_packet_vc_arbit,
+
+	vi_packet_stage_count
+};
+
+struct vi_net_packet_t
 {
         char *name;
         char *state;
         char *net_name;
-        char *access_name;
+        char *message_name;
+
         int size;
         /* An access is considered to be in a module as long as the access
          * is currently in any block of the module. For an access in a module,
@@ -36,19 +50,24 @@ struct vi_net_message_t
 
         long long creation_cycle;
         long long state_update_cycle;
+
+        enum vi_net_packet_stage stage;
 };
 
-struct vi_net_message_t *vi_net_message_create(char *net_name, char *name, int size);
+struct str_map_t vi_packet_stage_map;
+struct str_map_t vi_packet_stage_color_map;
 
-void vi_net_message_free(struct vi_net_message_t *message);
+struct vi_net_packet_t *vi_net_packet_create(char *net_name, char *name, int size);
+struct vi_net_packet_t *vi_net_packet_duplicate(struct vi_net_packet_t *packet);
+void vi_net_packet_free(struct vi_net_packet_t *packet);
 
-void vi_net_message_set_state(struct vi_net_message_t *message, char *state);
+void vi_net_packet_set_state(struct vi_net_packet_t *packet, char *state);
 
-void vi_net_message_read_checkpoint(struct vi_net_message_t *message, FILE *f);
-void vi_net_message_write_checkpoint(struct vi_net_message_t *message, FILE *f);
+void vi_net_packet_read_checkpoint(struct vi_net_packet_t *packet, FILE *f);
+void vi_net_packet_write_checkpoint(struct vi_net_packet_t *packet, FILE *f);
 
-void vi_net_message_get_name_short(struct vi_net_message_t *message, char *buf, int size);
-void vi_net_message_get_desc(struct vi_net_message_t *message, char *buf, int size);
+void vi_net_packet_get_name_short(struct vi_net_packet_t *packet, char *buf, int size);
+void vi_net_packet_get_desc(struct vi_net_packet_t *packet, char *buf, int size);
 
 
 #endif
