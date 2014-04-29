@@ -46,18 +46,6 @@ void Asm::DisassembleBinary(const std::string &path) const
 		dir.Dump();
 		bufPtr = dir.next();
 	}
-
-	// Parsing the code section
-	bs = bf.getBrigSection(BrigSectionCode);
-	buf = bs->getBuffer();
-	bufPtr = (char *)buf;
-	bufPtr += 4;
-	while(bufPtr < buf + bs->getSize())
-	{
-		BrigInstEntry inst(bufPtr, &bf);
-		inst.Dump();
-		bufPtr = inst.next();
-	}
 }
 
 } // namespace HSA

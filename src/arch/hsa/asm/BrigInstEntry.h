@@ -35,8 +35,27 @@ protected:
 	// convert opcode to string
 	const char *opcode2str(InstOpcode opcode) const;
 
+	// Convert rouding to string considering the default rouding should be 
+	// ignored.
+	template <typename BrigInst>
+	const char *rounding2str(BrigInst* base) const;
+
+	static misc::StringMap rounding_to_str_map;
+
+	// Convert ALU modifier to string
+	const char *modifier2str(unsigned short modifier) const;
+
+	// Pack to string map
+	static misc::StringMap pack_to_str_map;
+
+	// Convert pack to string
+	const char *pack2str(unsigned char pack) const;
+
 	// Returns true is the instruction has type
 	bool hasType() const;
+
+	// Dumps inst's operands
+	void dumpOperands(std::ostream &os) const;
 public:
 	/// Constructor
 	BrigInstEntry(char *buf, BrigFile *file);
