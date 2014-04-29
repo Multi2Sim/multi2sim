@@ -1,6 +1,7 @@
 #include "BrigEntry.h"
 #include "BrigStrEntry.h"
 #include "BrigDirEntry.h"
+#include "BrigInstEntry.h"
 #include "lib/cpp/Misc.h"
 #include "lib/cpp/String.h"
 
@@ -174,12 +175,27 @@ char *BrigEntry::dumpArgs(
 	return next;
 }
 
-void BrigEntry::dumpBody(bool isDecl, std::ostream &os = std::cout)
+void BrigEntry::dumpBody(
+		int codeOffset,
+		int nInst,
+		bool isDecl, 
+		std::ostream &os = std::cout
+	) const
 {
 	if(!isDecl)
 	{
 		os << "\n{";
-		misc::warning("Function and kernel body is not implemented");
+		os << "\n";
+		BrigSection *bs = this->file->getBrigSection(BrigSectionCode);
+		// +4 to skip section size field
+		char * bufPtr = (char *)bs->getBuffer() + 4;
+		for(int i=0; i<nInst; i++)
+		{	
+			//printf("Inst %d/%d", i, nInst);
+			BrigInstEntry inst(bufPtr, this->file);
+			inst.Dump(os);
+			bufPtr = inst.next();
+		}
 		os << "\n}";
 	}	
 	os << ";\n";

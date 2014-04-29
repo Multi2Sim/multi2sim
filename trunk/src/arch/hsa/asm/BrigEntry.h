@@ -53,7 +53,12 @@ protected:
 		);
 	
 	// Dump the function or kernel body
-	static void dumpBody(bool isDecl, std::ostream &os);
+	void dumpBody(
+			int codeOffset,
+			int nInst, 
+			bool isDecl, 
+			std::ostream &os
+		) const;
 public:
 	/// Constructor
 	BrigEntry(char *buf, BrigFile *file);
@@ -69,7 +74,9 @@ public:
 	/// Virtual function for dump assembly
 	virtual void Dump(std::ostream &os) const;
 
-	/// Returns the pointer to the next entry
+	/// Returns the pointer to the next entry in logic
+	/// For example: for a directive entry, it should return next directive 
+	/// entry of the same level.
 	virtual char *next() const{return this->base + this->getSize();}
 
 };

@@ -3,6 +3,7 @@ SUBDIRS = \
 	common \
 	evergreen \
 	fermi \
+	hsa \
 	kepler \
 	mips \
 	southern-islands \

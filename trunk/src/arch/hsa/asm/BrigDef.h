@@ -200,28 +200,28 @@ enum BrigTypeX {
     //.dispatch_proto="template<typename RetType, typename Visitor>\nRetType dispatchByType_gen(unsigned type, Visitor& v)"
     //.dispatch={ /^BRIG_TYPE_[BUSF][0-9]+/ ? "v.template visit< BrigType<$_> >()" : "v.visitNone(type)" }
     //.dispatch_arg="type" //.dispatch_default="return v.visitNone(type)"
-    BRIG_TYPE_NONE  = 0,  // .mnemo=""
-    BRIG_TYPE_U8    = 1,  // .ctype=uint8_t  // unsigned integer 8 bits
-    BRIG_TYPE_U16   = 2,  // .ctype=uint16_t // unsigned integer 16 bits
-    BRIG_TYPE_U32   = 3,  // .ctype=uint32_t // unsigned integer 32 bits
-    BRIG_TYPE_U64   = 4,  // .ctype=uint64_t // unsigned integer 64 bits
-    BRIG_TYPE_S8    = 5,  // .ctype=int8_t   // signed integer 8 bits
-    BRIG_TYPE_S16   = 6,  // .ctype=int16_t  // signed integer 16 bits
-    BRIG_TYPE_S32   = 7,  // .ctype=int32_t  // signed integer 32 bits
-    BRIG_TYPE_S64   = 8,  // .ctype=int64_t  // signed integer 64 bits
-    BRIG_TYPE_F16   = 9,  // .ctype=f16_t    // floating-point 16 bits
-    BRIG_TYPE_F32   = 10, // .ctype=float    // floating-point 32 bits
-    BRIG_TYPE_F64   = 11, // .ctype=double   // floating-point 64 bits
-    BRIG_TYPE_B1    = 12, // .ctype=bool     // uninterpreted bit string of length 1 bit
-    BRIG_TYPE_B8    = 13, // .ctype=uint8_t  // uninterpreted bit string of length 8 bits
-    BRIG_TYPE_B16   = 14, // .ctype=uint16_t // uninterpreted bit string of length 16 bits
-    BRIG_TYPE_B32   = 15, // .ctype=uint32_t // uninterpreted bit string of length 32 bits
-    BRIG_TYPE_B64   = 16, // .ctype=uint64_t // uninterpreted bit string of length 64 bits
-    BRIG_TYPE_B128  = 17, // .ctype=b128_t   // uninterpreted bit string of length 128 bits
-    BRIG_TYPE_SAMP  = 18, // .mnemo=samp     // sampler object
-    BRIG_TYPE_ROIMG = 19, // .mnemo=roimg    // read-only image object
-    BRIG_TYPE_RWIMG = 20, // .mnemo=rwimg    // read/write image object
-    BRIG_TYPE_FBAR  = 21,
+    BRIG_TYPE_NONE = 0,      //.mnemo=""
+    BRIG_TYPE_U8 = 1,        //.ctype=uint8_t  // unsigned integer 8 bits
+    BRIG_TYPE_U16 = 2,       //.ctype=uint16_t // unsigned integer 16 bits
+    BRIG_TYPE_U32 = 3,       //.ctype=uint32_t // unsigned integer 32 bits
+    BRIG_TYPE_U64 = 4,       //.ctype=uint64_t // unsigned integer 64 bits
+    BRIG_TYPE_S8 = 5,        //.ctype=int8_t   // signed integer 8 bits
+    BRIG_TYPE_S16 = 6,       //.ctype=int16_t  // signed integer 16 bits
+    BRIG_TYPE_S32 = 7,       //.ctype=int32_t  // signed integer 32 bits
+    BRIG_TYPE_S64 = 8,       //.ctype=int64_t  // signed integer 64 bits
+    BRIG_TYPE_F16 = 9,       //.ctype=f16_t    // floating-point 16 bits
+    BRIG_TYPE_F32 = 10,      //.ctype=float    // floating-point 32 bits
+    BRIG_TYPE_F64 = 11,      //.ctype=double   // floating-point 64 bits
+    BRIG_TYPE_B1 = 12,       //.ctype=bool     // uninterpreted bit string of length 1 bit
+    BRIG_TYPE_B8 = 13,       //.ctype=uint8_t  // uninterpreted bit string of length 8 bits
+    BRIG_TYPE_B16 = 14,      //.ctype=uint16_t // uninterpreted bit string of length 16 bits
+    BRIG_TYPE_B32 = 15,      //.ctype=uint32_t // uninterpreted bit string of length 32 bits
+    BRIG_TYPE_B64 = 16,      //.ctype=uint64_t // uninterpreted bit string of length 64 bits
+    BRIG_TYPE_B128 = 17,     //.ctype=b128_t   // uninterpreted bit string of length 128 bits
+    BRIG_TYPE_SAMP = 18,     //.mnemo=samp  // sampler object
+    BRIG_TYPE_ROIMG = 19,    //.mnemo=roimg // read-only image object
+    BRIG_TYPE_RWIMG = 20,    //.mnemo=rwimg // read/write image object
+    BRIG_TYPE_FBAR = 21,
 
     BRIG_TYPE_U8X4  = BRIG_TYPE_U8  | BRIG_TYPE_PACK_32,   //.ctype=uint8_t  // four bytes unsigned
     BRIG_TYPE_U8X8  = BRIG_TYPE_U8  | BRIG_TYPE_PACK_64,   //.ctype=uint8_t  // eight bytes unsigned
@@ -261,33 +261,33 @@ enum BrigDirectiveKinds {
     //.isToplevelOnly_switch //.isToplevelOnly_proto="bool isToplevelOnly(Directive d)" //.isToplevelOnly_arg="d.brig()->kind"
     //.isToplevelOnly_default="assert(false); return false"
 
-    BRIG_DIRECTIVE_ARG_SCOPE_END   = 0,  // .isBodyOnly=true
-    BRIG_DIRECTIVE_ARG_SCOPE_START = 1,  // .isBodyOnly=true
-    BRIG_DIRECTIVE_BLOCK_END       = 2,  // .wname=BlockEnd
-    BRIG_DIRECTIVE_BLOCK_NUMERIC   = 3,  // .wname=BlockNumeric
-    BRIG_DIRECTIVE_BLOCK_START     = 4,  // .wname=BlockStart
-    BRIG_DIRECTIVE_BLOCK_STRING    = 5,  // .wname=BlockString
-    BRIG_DIRECTIVE_COMMENT         = 6,
-    BRIG_DIRECTIVE_CONTROL         = 7,  // .isBodyOnly=true
-    BRIG_DIRECTIVE_EXTENSION       = 8,  // .isToplevelOnly=true
-    BRIG_DIRECTIVE_FBARRIER        = 9,
-    BRIG_DIRECTIVE_FILE            = 10, // .isToplevelOnly=true
-    BRIG_DIRECTIVE_FUNCTION        = 11, // .isToplevelOnly=true
-    BRIG_DIRECTIVE_IMAGE           = 12,
-    BRIG_DIRECTIVE_IMAGE_INIT      = 13, // .isToplevelOnly=true
-    BRIG_DIRECTIVE_KERNEL          = 14, // .isToplevelOnly=true
-    BRIG_DIRECTIVE_LABEL           = 15, // .isBodyOnly=true
-    BRIG_DIRECTIVE_LABEL_INIT      = 16, // .isBodyOnly=true
-    BRIG_DIRECTIVE_LABEL_TARGETS   = 17, // .isBodyOnly=true
-    BRIG_DIRECTIVE_LOC             = 18, // .isBodyOnly=true
-    BRIG_DIRECTIVE_PRAGMA          = 19,
-    BRIG_DIRECTIVE_SAMPLER         = 20,
-    BRIG_DIRECTIVE_SAMPLER_INIT    = 21, // .isToplevelOnly=true
-    BRIG_DIRECTIVE_SCOPE           = 22, // .skip
-    BRIG_DIRECTIVE_SIGNATURE       = 23, // .isToplevelOnly=true
-    BRIG_DIRECTIVE_VARIABLE        = 24,
-    BRIG_DIRECTIVE_VARIABLE_INIT   = 25,
-    BRIG_DIRECTIVE_VERSION         = 26  // .isToplevelOnly=true
+    BRIG_DIRECTIVE_ARG_SCOPE_END = 0,    //.isBodyOnly=true
+    BRIG_DIRECTIVE_ARG_SCOPE_START = 1,  //.isBodyOnly=true
+    BRIG_DIRECTIVE_BLOCK_END = 2,                                    //.wname=BlockEnd
+    BRIG_DIRECTIVE_BLOCK_NUMERIC = 3,                                //.wname=BlockNumeric
+    BRIG_DIRECTIVE_BLOCK_START = 4,                                  //.wname=BlockStart
+    BRIG_DIRECTIVE_BLOCK_STRING = 5,                                 //.wname=BlockString
+    BRIG_DIRECTIVE_COMMENT = 6,
+    BRIG_DIRECTIVE_CONTROL = 7,          //.isBodyOnly=true
+    BRIG_DIRECTIVE_EXTENSION = 8,        //.isToplevelOnly=true
+    BRIG_DIRECTIVE_FBARRIER = 9,
+    BRIG_DIRECTIVE_FILE = 10,            //.isToplevelOnly=true
+    BRIG_DIRECTIVE_FUNCTION = 11,        //.isToplevelOnly=true
+    BRIG_DIRECTIVE_IMAGE = 12,
+    BRIG_DIRECTIVE_IMAGE_INIT = 13,      //.isToplevelOnly=true
+    BRIG_DIRECTIVE_KERNEL = 14,          //.isToplevelOnly=true
+    BRIG_DIRECTIVE_LABEL = 15,           //.isBodyOnly=true
+    BRIG_DIRECTIVE_LABEL_INIT = 16,      //.isBodyOnly=true
+    BRIG_DIRECTIVE_LABEL_TARGETS = 17,   //.isBodyOnly=true
+    BRIG_DIRECTIVE_LOC = 18,             //.isBodyOnly=true
+    BRIG_DIRECTIVE_PRAGMA = 19,
+    BRIG_DIRECTIVE_SAMPLER = 20,
+    BRIG_DIRECTIVE_SAMPLER_INIT = 21,    //.isToplevelOnly=true
+    BRIG_DIRECTIVE_SCOPE = 22,           //.skip
+    BRIG_DIRECTIVE_SIGNATURE = 23,       //.isToplevelOnly=true
+    BRIG_DIRECTIVE_VARIABLE = 24,
+    BRIG_DIRECTIVE_VARIABLE_INIT = 25,
+    BRIG_DIRECTIVE_VERSION = 26          //.isToplevelOnly=true
 };
 
 //BrigImageGeometry was BrigGeom

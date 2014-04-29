@@ -1,3 +1,4 @@
+#include "BrigSection.h"
 #include "BrigDirEntry.h"
 #include "BrigStrEntry.h"
 #include "BrigDef.h"
@@ -18,35 +19,54 @@ int BrigDirEntry::getKind() const
 	return dir->kind;
 }
 
+char *BrigDirEntry::next() const
+{
+	switch(this->getKind())
+	{
+	case BRIG_DIRECTIVE_FUNCTION:
+	case BRIG_DIRECTIVE_KERNEL:
+	{
+		BrigSection *bs = file->getBrigSection(BrigSectionDirective);
+		struct BrigDirectiveExecutable * dir
+			= (struct BrigDirectiveExecutable *)base;
+		char *bufPtr = (char *)bs->getBuffer() + dir->nextTopLevelDirective;
+		return bufPtr;
+	}
+	default:
+		return BrigEntry::next();
+	}
+	
+}
+
 BrigDirEntry::DumpDirectiveFn BrigDirEntry::dump_dir_fn[27] = 
 {
-	&BrigDirEntry::DumpDirectiveArgScopeEnd,   // 0
+	&BrigDirEntry::DumpDirectiveArgScopeEnd,	// 0 
 	&BrigDirEntry::DumpDirectiveArgScopeStart, // 1
-	&BrigDirEntry::DumpDirectiveBlockEnd,      // 2
-	&BrigDirEntry::DumpDirectiveNumeric,       // 3
-	&BrigDirEntry::DumpDirectiveBlockStart,    // 4
-	&BrigDirEntry::DumpDirectiveBlockString,   // 5
-	&BrigDirEntry::DumpDirectiveComment,       // 6
-	&BrigDirEntry::DumpDirectiveControl,       // 7
-	&BrigDirEntry::DumpDirectiveExtension,     // 8
-	&BrigDirEntry::DumpDirectiveFBarrier,      // 9
-	&BrigDirEntry::DumpDirectiveFile,          // 10
-	&BrigDirEntry::DumpDirectiveFunction,      // 11
-	&BrigDirEntry::DumpDirectiveImage,         // 12
-	&BrigDirEntry::DumpDirectiveImageInit,     // 13
-	&BrigDirEntry::DumpDirectiveKernel,        // 14
-	&BrigDirEntry::DumpDirectiveLabel,         // 15
-	&BrigDirEntry::DumpDirectiveLabelInit,     // 16
-	&BrigDirEntry::DumpDirectiveLabelTargets,  // 17
-	&BrigDirEntry::DumpDirectiveLoc,           // 18
-	&BrigDirEntry::DumpDirectivePragma,        // 19
-	&BrigDirEntry::DumpDirectiveSampler,       // 20
-	&BrigDirEntry::DumpDirectiveSamplerInit,   // 21
-	&BrigDirEntry::DumpDirectiveScope,         // 22
-	&BrigDirEntry::DumpDirectiveSignature,     // 23
-	&BrigDirEntry::DumpDirectiveVariable,      // 24
-	&BrigDirEntry::DumpDirectiveVariableInit,  // 25
-	&BrigDirEntry::DumpDirectiveVersion        // 26
+	&BrigDirEntry::DumpDirectiveBlockEnd,		// 2
+	&BrigDirEntry::DumpDirectiveNumeric,		// 3
+	&BrigDirEntry::DumpDirectiveBlockStart,	// 4
+	&BrigDirEntry::DumpDirectiveBlockString,	// 5
+	&BrigDirEntry::DumpDirectiveComment,		// 6
+	&BrigDirEntry::DumpDirectiveControl,		// 7
+	&BrigDirEntry::DumpDirectiveExtension,		// 8
+	&BrigDirEntry::DumpDirectiveFBarrier,		// 9 
+	&BrigDirEntry::DumpDirectiveFile,			// 10 
+	&BrigDirEntry::DumpDirectiveFunction,		// 11 
+	&BrigDirEntry::DumpDirectiveImage,			// 12 
+	&BrigDirEntry::DumpDirectiveImageInit,		// 13 
+	&BrigDirEntry::DumpDirectiveKernel,		// 14 
+	&BrigDirEntry::DumpDirectiveLabel,			// 15 
+	&BrigDirEntry::DumpDirectiveLabelInit,		// 16 
+	&BrigDirEntry::DumpDirectiveLabelTargets,	// 17 
+	&BrigDirEntry::DumpDirectiveLoc,			// 18 
+	&BrigDirEntry::DumpDirectivePragma,		// 19 
+	&BrigDirEntry::DumpDirectiveSampler,		// 20
+	&BrigDirEntry::DumpDirectiveSamplerInit,	// 21 
+	&BrigDirEntry::DumpDirectiveScope,			// 22 
+	&BrigDirEntry::DumpDirectiveSignature,		// 23 
+	&BrigDirEntry::DumpDirectiveVariable,		// 24 
+	&BrigDirEntry::DumpDirectiveVariableInit,	// 25 
+	&BrigDirEntry::DumpDirectiveVersion		// 26 
 };
 
 void BrigDirEntry::DumpDirectiveArgScopeEnd(std::ostream &os = std::cout) const
@@ -107,17 +127,18 @@ void BrigDirEntry::DumpDirectiveFile(std::ostream &os = std::cout) const
 }
 void BrigDirEntry::DumpDirectiveFunction(std::ostream &os = std::cout) const
 {
-	struct BrigDirectiveFunction *fun
+	struct BrigDirectiveFunction *dir
 		= (struct BrigDirectiveFunction *)this->base;
-	//Pointer to the next directive to be processed
-	char *next = this->base + this->getSize();
-	SymbolModifier modifier(fun->modifier.allBits);
+	// Pointer to the next directive in sequence
+	// Cannot use this->next(), since it is overwritten
+	char *next = BrigEntry::next();
+	SymbolModifier modifier(dir->modifier.allBits);
 	os << modifier.getLinkageStr() << "function ";
-	os << BrigStrEntry::GetStringByOffset(this->file, fun->name);
-	next = BrigEntry::dumpArgs(next, fun->outArgCount, os);
-	next = BrigEntry::dumpArgs(next, fun->inArgCount, os);
+	os << BrigStrEntry::GetStringByOffset(this->file, dir->name);
+	next = BrigEntry::dumpArgs(next, dir->outArgCount, os);
+	next = BrigEntry::dumpArgs(next, dir->inArgCount, os);
 	// Dump the function body;
-	BrigEntry::dumpBody(modifier.isDeclaration(), os);
+	dumpBody(dir->code, dir->instCount, modifier.isDeclaration(), os);
 	
 }
 void BrigDirEntry::DumpDirectiveImage(std::ostream &os = std::cout) const
@@ -137,13 +158,13 @@ void BrigDirEntry::DumpDirectiveImageInit(std::ostream &os = std::cout) const
 }
 void BrigDirEntry::DumpDirectiveKernel(std::ostream &os = std::cout) const
 {
-	struct BrigDirectiveKernel *ker
+	struct BrigDirectiveKernel *dir
 		= (struct BrigDirectiveKernel *)this->base;
-	char *next = this->base + this->getSize();
+	char *next = BrigEntry::next();
 	os << "kernel ";
-	os << BrigStrEntry::GetStringByOffset(this->file, ker->name);
-	next = BrigEntry::dumpArgs(next, ker->inArgCount, os);
-	BrigEntry::dumpBody(false, os);
+	os << BrigStrEntry::GetStringByOffset(this->file, dir->name);
+	next = BrigEntry::dumpArgs(next, dir->inArgCount, os);
+	dumpBody(dir->code, dir->instCount, false, os);
 }
 void BrigDirEntry::DumpDirectiveLabel(std::ostream &os = std::cout) const
 {
