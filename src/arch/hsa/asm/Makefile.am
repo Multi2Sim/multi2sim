@@ -24,6 +24,12 @@ libasm_a_SOURCES = \
 	BrigStrEntry.cc \
 	BrigStrEntry.h \
 	\
+	BrigInstEntry.cc \
+	BrigInstEntry.h \
+	\
+	BrigOperandEntry.h \
+	BrigOperandEntry.cc \
+	\
 	SymbolModifier.cc \
 	SymbolModifier.h
 
