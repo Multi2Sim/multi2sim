@@ -23,6 +23,9 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*
  * Global Variables
@@ -177,6 +180,9 @@ void esim_empty(void);
  * simulation. */
 long long esim_real_time(void);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

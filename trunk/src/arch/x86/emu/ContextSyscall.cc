@@ -35,6 +35,7 @@
 #include <sys/times.h>
 
 #include <lib/cpp/Misc.h>
+#include <lib/esim/esim.h>
 #include <arch/common/Runtime.h>
 #include <driver/common/Driver.h>
 #include <driver/opencl/OpenCLDriver.h>
@@ -260,7 +261,7 @@ void Context::ExecuteSyscall()
 			fatal("%s: invalid system call code (%d)", __FUNCTION__, code);
 
 		// Debug
-		x86_sys_debug("%s runtime ABI call (code %d, inst %lld, pid %d)\n",
+		emu->syscall_debug << misc::fmt("%s runtime ABI call (code %d, inst %lld, pid %d)\n",
 			runtime->name, code, asEmu(emu)->instructions, self->pid);
 
 		// Run runtime ABI call
@@ -270,7 +271,7 @@ void Context::ExecuteSyscall()
 		regs.setEax(err);
 
 		// Debug and done
-		x86_sys_debug("  ret=(%d, 0x%x)\n", err, err);
+		emu->syscall_debug << misc::fmt("  ret=(%d, 0x%x)\n", err, err);
 		return;
 	}
 
@@ -3344,7 +3345,56 @@ int Context::ExecuteSyscall_readv()
 
 int Context::ExecuteSyscall_writev()
 {
-	__UNIMPLEMENTED__
+	int len;
+	unsigned iov_base;
+	unsigned iov_len;
+
+	// Arguments 
+	int guest_fd = regs.getEbx();
+	unsigned iovec_ptr = regs.getEcx();
+	unsigned vlen = regs.getEdx();
+	emu->syscall_debug << misc::fmt("  guest_fd=%d, iovec_ptr = 0x%x, vlen=0x%x\n",
+		guest_fd, iovec_ptr, vlen);
+
+	// Check file descriptor 
+	FileDesc *desc = file_table->getFileDesc(guest_fd);
+	if (!desc)
+		return -EBADF;
+	int host_fd = desc->getHostIndex();
+	emu->syscall_debug << misc::fmt("  host_fd=%d\n", host_fd);
+
+	// No pipes allowed 
+	if (desc->getType() == FileDescPipe)
+		misc::fatal("%s: not supported for pipes.\n%s",
+			__FUNCTION__, syscall_error_note);
+
+	// Proceed 
+	int total_len = 0;
+	for (unsigned v = 0; v < vlen; v++)
+	{
+		// Read io vector element 
+		memory->Read(iovec_ptr, 4, (char *)&iov_base);
+		memory->Read(iovec_ptr + 4, 4, (char *)&iov_len);
+		iovec_ptr += 8;
+
+		// Read buffer from memory and write it to file 
+		char *buf = (char *)malloc(iov_len);
+		memory->Read(iov_base, iov_len, buf);
+		len = write(host_fd, buf, iov_len);
+		if (len == -1)
+		{
+			free(buf);
+			return -errno;
+		}
+
+		// Accumulate written bytes 
+		total_len += len;
+		free(buf);
+	}
+
+	// Return total number of bytes written 
+	return total_len;
+
 }
 
 
@@ -4791,7 +4841,31 @@ static void sys_stat_host_to_guest(struct sim_stat64_t *guest, struct stat *host
 
 int Context::ExecuteSyscall_stat64()
 {
-	__UNIMPLEMENTED__
+	struct stat statbuf;
+	struct sim_stat64_t sim_statbuf;
+
+	// Arguments 
+	unsigned file_name_ptr = regs.getEbx();
+	unsigned statbuf_ptr = regs.getEcx();
+	emu->syscall_debug << misc::fmt("  file_name_ptr=0x%x, statbuf_ptr=0x%x\n",
+			file_name_ptr, statbuf_ptr);
+
+	// Read file name 
+	std::string file_name = memory->ReadString(file_name_ptr);
+	
+	// Get full path 
+	std::string full_path = getFullPath(file_name);
+	emu->syscall_debug << misc::fmt("  file_name='%s', full_path='%s'\n", file_name.c_str(), full_path.c_str());
+
+	/* Host call */
+	int err = stat(full_path.c_str(), &statbuf);
+	if (err == -1)
+		return -errno;
+	
+	/* Copy guest structure */
+	sys_stat_host_to_guest(&sim_statbuf, &statbuf);
+	memory->Write(statbuf_ptr, sizeof(sim_statbuf), (const char*)&sim_statbuf);
+	return 0;
 }
 
 
@@ -6026,9 +6100,94 @@ int Context::ExecuteSyscall_clock_settime()
 // System call 'clock_gettime'
 //
 
+static misc::StringMap x86_sys_clock_gettime_clk_id_map =
+{
+	{ "CLOCK_REALTIME", 0 },
+	{ "CLOCK_MONOTONIC", 1 },
+	{ "CLOCK_PROCESS_CPUTIME_ID", 2 },
+	{ "CLOCK_THREAD_CPUTIME_ID", 3 },
+	{ "CLOCK_MONOTONIC_RAW", 4 },
+	{ "CLOCK_REALTIME_COARSE", 5 },
+	{ "CLOCK_MONOTONIC_COARSE", 6 }
+};
+
 int Context::ExecuteSyscall_clock_gettime()
 {
-	__UNIMPLEMENTED__
+	long long now;
+
+	struct {
+		unsigned int sec;
+		unsigned int nsec;
+	} sim_ts;
+
+	// Arguments 
+	unsigned clk_id = regs.getEbx();
+	unsigned ts_ptr = regs.getEcx();
+	const char *clk_id_str = x86_sys_clock_gettime_clk_id_map.MapValue(clk_id);
+	emu->syscall_debug << misc::fmt("  clk_id=0x%x (%s), ts_ptr=0x%x\n",
+		clk_id, clk_id_str, ts_ptr);
+
+	// Initialize 
+	sim_ts.sec = 0;
+	sim_ts.nsec = 0;
+
+	// Clock type 
+	switch (clk_id)
+	{
+	case 0:  /* CLOCK_REALTIME */
+
+		/* For CLOCK_REALTIME, return the host real time. This is the same
+		 * value that the guest application would see if it ran natively. */
+		now = esim_real_time();
+		sim_ts.sec = now / 1000000;
+		sim_ts.nsec = (now % 1000000) * 1000;
+		break;
+
+	case 1:  /* CLOCK_MONOTONIC */
+	case 4:  /* CLOCK_MONOTONIC_RAW */
+
+		/* For these two clocks, we want to return simulated time. This
+		 * time is tricky to calculate when there could be iterations of the
+		 * main simulation loop when no timing simulation happened, but
+		 * which still need to be considered to avoid the application
+		 * having the illusion of time not going by at all. This is the
+		 * strategy assumed to calculate simulated time:
+		 *   - A first component is based on the value of 'esim_time',
+		 *     considering all simulation cycles when there was an
+		 *     active timing simulation of any architecture.
+		 *   - A second component will add a time increment for each
+		 *     simulation main loop iteration where the global time
+		 *     'esim_time' was not incremented. These iterations are
+		 *     recorded in variable 'esim_no_forward_cycles'. A default
+		 *     value of 1ns per each iteration is considered here.
+		 */
+		now = esim_time / 1000;  /* Obtain nsec */
+		now += esim_no_forward_cycles;  /* One more nsec per iteration */
+		sim_ts.sec = now / 1000000000ll;
+		sim_ts.nsec = now % 1000000000ll;
+		break;
+
+	case 2:  /* CLOCK_PROCESS_CPUTIME_ID */
+	case 3:  /* CLOCK_THREAD_CPUTIME_ID */
+	case 5:  /* CLOCK_REALTIME_COARSE */
+	case 6:  /* CLOCK_MONOTONIC_COARSE */
+
+		misc::fatal("%s: not implemented for 'clk_id' = %d",
+			__FUNCTION__, clk_id);
+		break;
+	
+	default:
+		misc::fatal("%s: invalid value for 'clk_id' (%d)",
+			__FUNCTION__, clk_id);
+	}
+
+	// Debug 
+	emu->syscall_debug << misc::fmt("\tts.tv_sec = %u\n", sim_ts.sec);
+	emu->syscall_debug << misc::fmt("\tts.tv_nsec = %u\n", sim_ts.nsec);
+
+	// Write to guest memory 
+	memory->Write(ts_ptr, sizeof sim_ts, (const char *)&sim_ts);
+	return 0;
 }
 
 

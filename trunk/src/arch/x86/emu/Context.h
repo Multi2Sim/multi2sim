@@ -32,6 +32,8 @@
 #include "Signal.h"
 #include "UInst.h"
 
+extern int x86_cpu_num_threads;
+extern int x86_cpu_num_cores;
 
 namespace x86
 {
@@ -848,11 +850,6 @@ public:
 		assert(memory.get());
 		return *memory;
 	}
-
-	/// Register Driver and create virtual device under /tmp
-	///
-	/// \param drv_name Name of the driver
-	int RegisterDriver(const std::string &drv_name);
 };
 
 }  // namespace x86
