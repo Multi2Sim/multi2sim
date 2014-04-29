@@ -65,8 +65,8 @@ public:
 	~OpenCLSIDriver();
 
 	// Driver verision information
-	static const unsigned major = 5;
-	static const unsigned minor = 2173;
+	static const unsigned major = 7;
+	static const unsigned minor = 2652;
 
 	/// Get the only instance of the OpenCL Driver. If the instance does not
 	/// exist yet, it will be created, and will remain allocated until the
