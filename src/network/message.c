@@ -130,6 +130,10 @@ void net_event_handler(int event, void *data)
 	/* Get current cycle */
 	cycle = esim_domain_cycle(net_domain_index);
 
+	if ((net_snap_period != 0) &&
+	                (net->last_recorded_cycle < (cycle/net_snap_period )))
+	        net_bandwidth_snapshot(net, cycle);
+
 	if (event == EV_NET_SEND)
 	{
 		struct net_routing_table_entry_t *entry;
@@ -353,6 +357,9 @@ void net_event_handler(int event, void *data)
 			link->busy_cycles += lat;
 			link->transferred_bytes += pkt->size;
 			link->transferred_msgs++;
+
+			net->topology_util_bw += pkt->size;
+
 			node->bytes_sent += pkt->size;
 			node->msgs_sent++;
 			input_buffer->node->bytes_received += pkt->size;
@@ -512,6 +519,9 @@ void net_event_handler(int event, void *data)
 			bus->busy_cycles += lat;
 			bus->transferred_bytes += pkt->size;
 			bus->transferred_msgs++;
+
+                        net->topology_util_bw += pkt->size;
+
 			node->bytes_sent += pkt->size;
 			node->msgs_sent++;
 			input_buffer->node->bytes_received += pkt->size;
@@ -672,6 +682,9 @@ void net_event_handler(int event, void *data)
 			bus->busy_cycles += lat;
 			bus->transferred_bytes += pkt->size;
 			bus->transferred_msgs++;
+
+                        net->topology_util_bw += pkt->size;
+
 			node->bytes_sent += pkt->size;
 			node->msgs_sent++;
 			input_buffer->node->bytes_received += pkt->size;

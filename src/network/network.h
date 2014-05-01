@@ -21,6 +21,7 @@
 #define NETWORK_NETWORK_H
 
 #include <lib/util/config.h>
+#include <lib/util/string.h>
 
 
 /* Events */
@@ -77,9 +78,23 @@ struct net_t
 	struct net_msg_t *msg_table[NET_MSG_TABLE_SIZE];
 
 	/* Stats */
-	long long transfers;	/* Transfers */
-	long long lat_acc;	/* Accumulated latency */
-	long long msg_size_acc;	/* Accumulated message size */
+	long long transfers;	        /* Transfers */
+	long long lat_acc;	        /* Accumulated latency */
+	long long offered_bandwidth;	/* Accumulated message size */
+	long long topology_util_bw;     /* Topology's Utilized bandwidth */
+
+	/* Net Visual File Name */
+	FILE *visual_file;
+
+	/* Net Runtime Data */
+	char offered_bandwidth_file_name[MAX_STRING_SIZE];
+	FILE *offered_bandwidth_data_file;
+
+	char *topology_bandwidth_file_name;
+	FILE *topology_bandwidth_data_file;
+	long long last_recorded_cycle;
+	long long last_recorded_net_bw;
+	long long last_recorded_topo_bw;
 };
 
 
@@ -156,5 +171,7 @@ void net_receive(struct net_t *net, struct net_node_t *node,
 
 void net_config_trace (struct net_t *net);
 
+void net_bandwidth_snapshot(struct net_t *net, long long cycle);
+void net_dump_snapshot(struct net_t *net);
 
 #endif
