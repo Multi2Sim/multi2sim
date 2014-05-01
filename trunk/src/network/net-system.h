@@ -57,6 +57,7 @@ extern char *net_traffic_pattern;
 extern long long net_max_cycles;
 extern double net_injection_rate;
 extern int net_msg_size;
+extern int net_snap_period;
 
 /* Frequency and frequency domain */
 extern int net_frequency;
@@ -73,6 +74,5 @@ struct net_t *net_find_first(void);
 struct net_t *net_find_next(void);
 
 void net_sim(char *debug_file_name);
-
 
 #endif

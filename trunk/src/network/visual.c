@@ -394,10 +394,12 @@ void net_dump_visual(struct net_graph_t *net_graph, FILE *f)
 
 					bus_lane = list_get(vertex_data->node->bus_lane_list, j);
 					vertex_data->bus_util_color +=(int) ((cycle ?
-							(double) bus_lane->transferred_bytes / (cycle *	bus_lane->bandwidth) : 0.0) * 10);
+							(double) bus_lane->transferred_bytes /
+							(cycle * bus_lane->bandwidth) : 0.0) * 10);
 				}
 				vertex_data->bus_util_color /= list_count(vertex_data->node->bus_lane_list);
-				fprintf(f, "node = %s %d %f %d %d\n", vertex->name, vertex_data->kind,(double) vertex->x_coor / net_graph->scale,
+				fprintf(f, "node = %s %d %f %d %d\n", vertex->name, vertex_data->kind,
+				                (double) vertex->x_coor / net_graph->scale,
 						vertex->y_coor, vertex_data->bus_util_color);
 			}
 		}
