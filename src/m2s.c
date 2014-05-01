@@ -1569,6 +1569,13 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
+		/* Network Snapshot */
+		if (!strcmp(argv[argi], "--net-snapshot"))
+		{
+		        m2s_need_argument(argc, argv, argi);
+		        net_snap_period = atoi(argv[++argi]);
+		}
+
 		/*
 		 * DRAM options
 		 */

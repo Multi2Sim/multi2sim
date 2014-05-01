@@ -18,15 +18,17 @@
  */
 
 #include <assert.h>
+#include <unistd.h>
 
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
+#include <lib/util/file.h>
 #include <lib/util/hash-table.h>
 #include <lib/util/list.h>
-#include <lib/util/string.h>
 #include <lib/util/misc.h>
+#include <lib/util/string.h>
 
 #include "buffer.h"
 #include "bus.h"
@@ -176,8 +178,8 @@ void net_dump_report(struct net_t *net, FILE *f)
 	fprintf(f, "[ Network.%s.General ]\n", net->name);
 	fprintf(f, "Transfers = %lld\n", net->transfers);
 	fprintf(f, "AverageMessageSize = %.2f\n", net->transfers ?
-			(double) net->msg_size_acc / net->transfers : 0.0);
-	fprintf(f, "NetworkBandwdithDemand/AccumulatedMsgs = %lld\n",net->msg_size_acc );
+			(double) net->offered_bandwidth / net->transfers : 0.0);
+	fprintf(f, "NetworkBandwdithDemand/AccumulatedMsgs = %lld\n",net->offered_bandwidth );
 	fprintf(f, "AverageLatency = %.4f\n", net->transfers ?
 			(double) net->lat_acc / net->transfers : 0.0);
 	fprintf(f, "\n");
@@ -731,7 +733,7 @@ void net_receive(struct net_t *net, struct net_node_t *node,
 	/* Net Info update */
 	net->transfers++;
 	net->lat_acc += cycle - msg->send_cycle;
-	net->msg_size_acc += msg->size;
+	net->offered_bandwidth += msg->size;
 
 	net_msg_table_extract(net, msg->id);
 
@@ -829,3 +831,75 @@ void net_config_trace(struct net_t *net)
         }
 }
 
+
+void net_bandwidth_snapshot(struct net_t *net, long long cycle)
+{
+        /* Dump line to data file */
+
+        fprintf(net->offered_bandwidth_data_file, "%lld %lld\n", cycle,
+                net->offered_bandwidth - net->last_recorded_net_bw);
+
+        fprintf(net->topology_bandwidth_data_file, "%lld %lld\n", cycle,
+                net->topology_util_bw - net->last_recorded_topo_bw);
+
+        net->last_recorded_cycle = cycle / net_snap_period;
+        net->last_recorded_net_bw = net->offered_bandwidth;
+        net->last_recorded_topo_bw  = net->topology_util_bw;
+
+}
+
+void net_dump_snapshot(struct net_t *net)
+{
+        /* First Close the Files */
+        fclose(net->offered_bandwidth_data_file);
+        fclose(net->topology_bandwidth_data_file);
+
+        FILE *script_file;
+
+        char net_bw_plot_file_name[MAX_PATH_SIZE];
+        char topo_bw_plot_file_name[MAX_PATH_SIZE];
+        char script_file_name[MAX_PATH_SIZE];
+        char cmd[MAX_PATH_SIZE];
+
+        int err;
+
+        snprintf(net_bw_plot_file_name, MAX_PATH_SIZE, "%s.%d.offered_bw.eps",
+                net->name, net_snap_period);
+        if (!file_can_open_for_write(net_bw_plot_file_name))
+                fatal("%s: cannot write Network Offered Bandwidth plot",
+                                net_bw_plot_file_name);
+
+        snprintf(topo_bw_plot_file_name, MAX_PATH_SIZE, "%s.%d.topology_bw.eps",
+                net->name, net_snap_period);
+        if (!file_can_open_for_write(topo_bw_plot_file_name))
+                fatal("%s: cannot write Topology Offered Bandwidth plot",
+                                topo_bw_plot_file_name);
+
+        /* Generate gnuplot script */
+        script_file = file_create_temp(script_file_name, MAX_PATH_SIZE);
+        fprintf(script_file, "set term postscript eps color solid\n");
+        fprintf(script_file, "set nokey\n");
+        fprintf(script_file, "set title 'Offered Bandwidth - Sampled at %d Cycles '\n",
+                        net_snap_period );
+        fprintf(script_file, "set xlabel 'Cycle'\n");
+        fprintf(script_file, "set ylabel 'Network Bandwidth'\n");
+        fprintf(script_file, "set xrange [0:%lld]\n", net->last_recorded_cycle * net_snap_period);
+        fprintf(script_file, "set yrange [0:]\n");
+        fprintf(script_file, "set size 0.65, 0.5\n");
+        fprintf(script_file, "set grid ytics\n");
+        fprintf(script_file, "plot '%s' w linespoints lt 4 "
+                "lw 1 pt 2 ps .5 \n", net->offered_bandwidth_file_name);
+        fclose(script_file);
+
+        /* Plot */
+        sprintf(cmd, "gnuplot %s > %s", script_file_name, net_bw_plot_file_name);
+        err = system(cmd);
+        if (err)
+                warning("could not execute gnuplot, when creating network results\n");
+
+        /* Remove temporary files */
+        unlink(net->offered_bandwidth_file_name);
+        unlink(script_file_name);
+
+
+}
