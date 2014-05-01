@@ -836,6 +836,21 @@ void net_bandwidth_snapshot(struct net_t *net, long long cycle)
 {
         /* Dump line to data file */
 
+	if (!net->offered_bandwidth_data_file)
+	{
+		net->offered_bandwidth_data_file =
+                        file_create_temp(net->offered_bandwidth_file_name,
+                                        MAX_PATH_SIZE);
+	        fprintf(net->offered_bandwidth_data_file, "%lld %lld\n", (long long) 0, (long long) 0);
+	}
+
+	if (!net->topology_bandwidth_data_file)
+	{
+		net->topology_bandwidth_data_file =
+                        file_create_temp(net->topology_bandwidth_file_name,
+                                        MAX_PATH_SIZE);
+	        fprintf(net->topology_bandwidth_data_file, "%lld %lld\n",(long long) 0, (long long) 0);
+	}
         fprintf(net->offered_bandwidth_data_file, "%lld %lld\n", cycle,
                 net->offered_bandwidth - net->last_recorded_net_bw);
 
@@ -851,6 +866,9 @@ void net_bandwidth_snapshot(struct net_t *net, long long cycle)
 void net_dump_snapshot(struct net_t *net)
 {
         /* First Close the Files */
+	if (!net->offered_bandwidth_data_file || !net->topology_bandwidth_data_file)
+		return;
+
         fclose(net->offered_bandwidth_data_file);
         fclose(net->topology_bandwidth_data_file);
 
@@ -875,14 +893,14 @@ void net_dump_snapshot(struct net_t *net)
                 fatal("%s: cannot write Topology Offered Bandwidth plot",
                                 topo_bw_plot_file_name);
 
-        /* Generate gnuplot script */
+        /* Generate gnuplot script for Offered Bandwidth */
         script_file = file_create_temp(script_file_name, MAX_PATH_SIZE);
         fprintf(script_file, "set term postscript eps color solid\n");
         fprintf(script_file, "set nokey\n");
         fprintf(script_file, "set title 'Offered Bandwidth - Sampled at %d Cycles '\n",
                         net_snap_period );
-        fprintf(script_file, "set xlabel 'Cycle'\n");
-        fprintf(script_file, "set ylabel 'Network Bandwidth'\n");
+        fprintf(script_file, "set xlabel 'Time(Cycle)'\n");
+        fprintf(script_file, "set ylabel 'Network Bandwidth (Byte)'\n");
         fprintf(script_file, "set xrange [0:%lld]\n", net->last_recorded_cycle * net_snap_period);
         fprintf(script_file, "set yrange [0:]\n");
         fprintf(script_file, "set size 0.65, 0.5\n");
@@ -893,6 +911,32 @@ void net_dump_snapshot(struct net_t *net)
 
         /* Plot */
         sprintf(cmd, "gnuplot %s > %s", script_file_name, net_bw_plot_file_name);
+        err = system(cmd);
+        if (err)
+                warning("could not execute gnuplot, when creating network results\n");
+
+        /* Remove temporary files */
+        unlink(net->offered_bandwidth_file_name);
+        unlink(script_file_name);
+
+        /* Generate gnuplot script for Topology Bandwidth */
+        script_file = file_create_temp(script_file_name, MAX_PATH_SIZE);
+        fprintf(script_file, "set term postscript eps color solid\n");
+        fprintf(script_file, "set nokey\n");
+        fprintf(script_file, "set title 'Topology Bandwidth - Sampled at %d Cycles '\n",
+                        net_snap_period );
+        fprintf(script_file, "set xlabel 'Time(Cycle)'\n");
+        fprintf(script_file, "set ylabel 'Topology Bandwidth (Byte)'\n");
+        fprintf(script_file, "set xrange [0:%lld]\n", net->last_recorded_cycle * net_snap_period);
+        fprintf(script_file, "set yrange [0:]\n");
+        fprintf(script_file, "set size 0.65, 0.5\n");
+        fprintf(script_file, "set grid ytics\n");
+        fprintf(script_file, "plot '%s' w linespoints lt 5 "
+                "lw 1 pt 3 ps .5 \n", net->topology_bandwidth_file_name);
+        fclose(script_file);
+
+        /* Plot */
+        sprintf(cmd, "gnuplot %s > %s", script_file_name, topo_bw_plot_file_name);
         err = system(cmd);
         if (err)
                 warning("could not execute gnuplot, when creating network results\n");
