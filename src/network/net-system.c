@@ -231,20 +231,6 @@ void net_init(void)
                                                         net_visual_file_name);
                         }
 
-                        /* Bandwidth Snapshot */
-                        if (net_snap_period)
-                        {
-                                net->offered_bandwidth_data_file =
-                                                file_create_temp(net->offered_bandwidth_file_name,
-                                                                MAX_PATH_SIZE);
-
-                                net->topology_bandwidth_data_file =
-                                                file_create_temp(net->topology_bandwidth_file_name,
-                                                                MAX_PATH_SIZE);
-                        }
-
-
-
                 }
         }
 }
