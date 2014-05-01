@@ -90,7 +90,7 @@ struct net_t
 	char offered_bandwidth_file_name[MAX_STRING_SIZE];
 	FILE *offered_bandwidth_data_file;
 
-	char *topology_bandwidth_file_name;
+	char topology_bandwidth_file_name[MAX_STRING_SIZE];
 	FILE *topology_bandwidth_data_file;
 	long long last_recorded_cycle;
 	long long last_recorded_net_bw;

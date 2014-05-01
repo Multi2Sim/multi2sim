@@ -1574,6 +1574,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		{
 		        m2s_need_argument(argc, argv, argi);
 		        net_snap_period = atoi(argv[++argi]);
+		        continue;
 		}
 
 		/*
