@@ -81,7 +81,7 @@ void mem_system_free(struct mem_system_t *mem_system)
 
 	/* Free networks */
 	while (list_count(mem_system->net_list))
-		net_free(list_pop(mem_system->net_list));
+		net_individual_done(list_pop(mem_system->net_list));
 	list_free(mem_system->net_list);
 
 	/* Free memory system */
@@ -102,11 +102,8 @@ static char *mem_err_timing =
 		"\t'--x86-sim detailed'.\n";
 static char *net_wrn_dump =
                 "\tThe requested information about some or all of system's network is placed\n"
-                "\tin the resulted memory report file. If a memory report file is not\n"
-                "\trequested, this data is lost. Also if some of the network configuration\n"
-                "\thas been set in external network configuration file, requested data\n"
-                "\tfor those network files will be placed in files assign as m2s input\n"
-                "\targuments (e.g. --net-report <FILE-NAME> or --net-dump-routes <FILE-NAME>.\n";
+                "\tin one individual file for each network. A memory report file now \n"
+                "\tjust generates information about memory\n";
 
 void mem_system_init(void)
 {
@@ -339,7 +336,6 @@ void mem_system_done(void)
 
 void mem_system_dump_report(void)
 {
-	struct net_t *net;
 	struct mod_t *mod;
 	struct cache_t *cache;
 
@@ -348,11 +344,18 @@ void mem_system_dump_report(void)
 	int i;
 
 	/* Network dump information warning */
+	// FIXME: This warning would stay for some time since
+	// lack of it would bring confusion to users.
 	if (list_count(mem_system->net_list) != 0)
 	{
 		if (*net_report_file_name || *net_route_file_name)
 		{
 			warning("Displacement in presenting requested output data.\n%s", net_wrn_dump);
+		}
+
+		if (!*net_report_file_name && *mem_report_file_name)
+		{
+		        warning("Please Use --net-report for report on all nets.\n%s", net_wrn_dump);
 		}
 	}
 
@@ -497,16 +500,6 @@ void mem_system_dump_report(void)
 		fprintf(f, "DataAccesses = %lld\n", mod->data_accesses);
 		 */
 		fprintf(f, "\n\n");
-	}
-
-	/* Dump report for networks */
-	for (i = 0; i < list_count(mem_system->net_list); i++)
-	{
-		net = list_get(mem_system->net_list, i);
-		net_dump_report(net, f);
-		if (*net_route_file_name)
-			net_dump_routes(net, f);
-
 	}
 
 	/* Done */

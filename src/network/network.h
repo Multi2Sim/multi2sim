@@ -83,8 +83,10 @@ struct net_t
 	long long offered_bandwidth;	/* Accumulated message size */
 	long long topology_util_bw;     /* Topology's Utilized bandwidth */
 
-	/* Net Visual File Name */
+	/* Net Files */
 	FILE *visual_file;
+	FILE *route_file;
+	FILE *report_file;
 
 	/* Net Runtime Data */
 	char offered_bandwidth_file_name[MAX_STRING_SIZE];
@@ -105,7 +107,6 @@ void net_free(struct net_t *net);
 void net_dump(struct net_t *net, FILE *f);
 
 void net_dump_report(struct net_t *net, FILE *f);
-void net_dump_routes(struct net_t *net, FILE *f);
 
 struct net_node_t *net_add_end_node(struct net_t *net,
 	int input_buffer_size, int output_buffer_size,
@@ -173,5 +174,8 @@ void net_config_trace (struct net_t *net);
 
 void net_bandwidth_snapshot(struct net_t *net, long long cycle);
 void net_dump_snapshot(struct net_t *net);
+
+void net_initiation(struct net_t *net);
+void net_individual_done(struct net_t *net);
 
 #endif

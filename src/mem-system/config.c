@@ -367,6 +367,7 @@ static void mem_config_read_networks(struct config_t *config)
 		/* Create network */
 		net = net_create(net_name);
 		mem_debug("\t%s\n", net_name);
+		net_initiation(net);
 		list_add(mem_system->net_list, net);
 	}
 	mem_debug("\n");
