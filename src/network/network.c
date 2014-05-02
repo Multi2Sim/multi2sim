@@ -203,7 +203,7 @@ void net_dump_report(struct net_t *net, FILE *f)
 	}
 }
 
-void net_dump_routes(struct net_t *net, FILE *f)
+static void net_dump_routes(struct net_t *net, FILE *f)
 {
         net_routing_table_dump(net->routing_table, f);
 }
@@ -946,4 +946,73 @@ void net_dump_snapshot(struct net_t *net)
         unlink(script_file_name);
 
 
+}
+
+void net_initiation(struct net_t *net)
+{
+        char file_name_dest[MAX_STRING_SIZE];
+
+        /* Report file */
+        if (*net_report_file_name)
+        {
+                snprintf(file_name_dest, sizeof file_name_dest, "%s_%s",
+                                net->name, net_report_file_name);
+                net->report_file = file_open_for_write(file_name_dest);
+                if (!net->report_file)
+                        fatal("%s: cannot write on network report file",
+                                        net_report_file_name);
+        }
+
+        /* Dump Routes */
+        if (*net_route_file_name)
+        {
+                snprintf(file_name_dest, sizeof file_name_dest, "%s_%s",
+                                net->name, net_route_file_name);
+                net->route_file = file_open_for_write(file_name_dest);
+                if (!net->route_file)
+                        fatal("%s: cannot write on network visualization file",
+                                        net_route_file_name);
+        }
+
+        /* Visualization File */
+        if (*net_visual_file_name)
+        {
+                snprintf(file_name_dest, sizeof file_name_dest, "%s_%s",
+                                net->name, net_visual_file_name);
+                net->visual_file = file_open_for_write(file_name_dest);
+                if (!net->visual_file)
+                        fatal("%s: cannot write on network visualization file",
+                                        net_visual_file_name);
+        }
+}
+
+void net_individual_done(struct net_t *net)
+{
+        /* Dump report for network */
+        if (net->report_file)
+                net_dump_report(net, net->report_file);
+        /* Close report file */
+        file_close(net->report_file);
+
+        if (net->route_file)
+                net_dump_routes(net ,net->route_file);
+        file_close(net->route_file);
+
+        /* Dump Visualization data in a 'graphplot'
+         * compatible file */
+        if (net->visual_file)
+        {
+                struct net_graph_t *graph = net_graph_visual_calculation(net);
+                net_dump_visual(graph, net->visual_file);
+                net_graph_free(graph);
+        }
+        /* Close visualization file */
+        file_close(net->visual_file);
+
+        if (net_snap_period)
+        {
+                net_dump_snapshot(net);
+        }
+        /* Free network */
+        net_free(net);
 }

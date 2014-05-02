@@ -113,7 +113,6 @@ char *net_config_help =
 char *net_config_file_name = "";
 
 char *net_route_file_name = "";
-FILE *net_route_file;
 
 /*
  * Prototype
@@ -300,16 +299,6 @@ static struct net_t *net_create_from_config(struct config_t *config, char *name)
          * shortest path for all the nodes in the network */
         if (routing_type == 0)
                 net_routing_table_floyd_warshall(net->routing_table);
-
-        /* Dump Routes */
-        if (*net_route_file_name)
-        {
-                net_route_file = file_open_for_write(net_route_file_name);
-                if (!net_route_file)
-                        fatal("%s: cannot write on network visualization file",
-                                        net_route_file_name);
-                net_routing_table_dump(net->routing_table,net_route_file);
-        }
 
         /* Return */
         return net;

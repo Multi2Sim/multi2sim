@@ -103,7 +103,6 @@ struct hash_table_t *net_table;
 char *net_traffic_pattern = "";
 
 char *net_report_file_name = "";
-FILE *net_report_file;
 
 char *net_visual_file_name = "";
 
@@ -203,34 +202,14 @@ void net_init(void)
 	EV_NET_RECEIVE = esim_register_event_with_name(net_event_handler,
 			net_domain_index, "net_receive");
 
-	/* Report file */
-	if (*net_report_file_name)
-	{
-		net_report_file = file_open_for_write(net_report_file_name);
-		if (!net_report_file)
-			fatal("%s: cannot write on network report file",
-					net_report_file_name);
-	}
-
         if (net_table)
         {
                 struct net_t *net;
-                char file_name_dest[MAX_STRING_SIZE];
 
                 for (hash_table_find_first(net_table, (void **) &net); net;
                                 hash_table_find_next(net_table, (void **) &net))
                 {
-                        /* Visualization File */
-                        if (*net_visual_file_name)
-                        {
-                                snprintf(file_name_dest, sizeof file_name_dest, "%s_%s",
-                                                net->name, net_visual_file_name);
-                                net->visual_file = file_open_for_write(file_name_dest);
-                                if (!net->visual_file)
-                                        fatal("%s: cannot write on network visualization file",
-                                                        net_visual_file_name);
-                        }
-
+                        net_initiation(net);
                 }
         }
 }
@@ -246,36 +225,10 @@ void net_done(void)
 		for (hash_table_find_first(net_table, (void **) &net); net;
 				hash_table_find_next(net_table, (void **) &net))
 		{
-			/* Dump report for network */
-			if (net_report_file)
-				net_dump_report(net, net_report_file);
-
-			/* Dump Visualization data in a 'graphplot'
-			 * compatible file */
-			if (net->visual_file)
-			{
-				struct net_graph_t *graph = net_graph_visual_calculation(net);
-				net_dump_visual(graph, net->visual_file);
-				net_graph_free(graph);
-			}
-
-
-		        /* Close visualization file */
-		        file_close(net->visual_file);
-
-		        if (net_snap_period)
-		        {
-		                net_dump_snapshot(net);
-		        }
-			/* Free network */
-			net_free(net);
+		        net_individual_done(net);
 		}
 		hash_table_free(net_table);
 	}
-
-	/* Close report file */
-	file_close(net_report_file);
-
 }
 
 
