@@ -1,0 +1,7 @@
+Ideal Network for Southern Island R9-290x
+--------------------------------------
+It invloves Multiple Buses for each Compute Unit. Each Node writes in one specific
+BUS which all other Nodes are listening to. 
+
+../../../bin/m2s --si-sim detailed --si-config si-config-44 --mem-config mem-si-44 --net-config net-si-44 --ctx-config ctx-config --net-snapshot 1000 --net-report report.net
+
