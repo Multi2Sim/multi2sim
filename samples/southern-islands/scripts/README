@@ -1,0 +1,8 @@
+Script si_ideal_config_maker.sh:
+
+This script is an script to create all three main files for simulation of southern Island Architecture
+by variable arguments. The begining of the script has an Input section that one can change number of Compute Units, 
+Sizes of Cache arguments, Network arguments and also the architecture of the Network between L1 and L2s. Right now this
+network is an ideal network with BUS technology. Every node in the simulation (that means compute Units and L2 units) are
+connected to one BUS that they can send messages to, and all other Ndoes are listening to it. The message Latency in all
+the case is just 2 cycles. 

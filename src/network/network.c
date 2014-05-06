@@ -942,7 +942,7 @@ void net_dump_snapshot(struct net_t *net)
                 warning("could not execute gnuplot, when creating network results\n");
 
         /* Remove temporary files */
-        unlink(net->offered_bandwidth_file_name);
+        unlink(net->topology_bandwidth_file_name);
         unlink(script_file_name);
 
 
