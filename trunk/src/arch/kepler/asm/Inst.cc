@@ -587,11 +587,11 @@ void Inst::Dump(std::ostream &os) const
 		}
 		else if (comm::Asm::isToken(fmt_str, "cg", length))
 		{
-			DumpCv(os, 50, 50);
+			DumpCv(os, 60, 59);
 		}
 		else if (comm::Asm::isToken(fmt_str, "e", length))
 		{
-			DumpCc(os, 60, 59);
+			DumpE(os, 55, 55);
 		}
 		else if (comm::Asm::isToken(fmt_str, "cc", length))
 		{

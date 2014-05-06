@@ -202,6 +202,7 @@ void kpl_isa_ISCADD_A_impl(Thread *thread, Inst *inst)
 	}
 }
 
+
 void kpl_isa_ISCADD_B_impl(Thread *thread, Inst *inst)
 {
 	std:: cerr <<"ISCADD B"<<std::endl;
@@ -284,7 +285,7 @@ void kpl_isa_IMAD_impl(Thread *thread, Inst *inst)
         		<<" mod1 " <<fmt.mod1 << " op1 "<< fmt.op1 <<" srcB_mod " <<fmt.srcB_mod
         		<<std::endl;
 	}
-}
+}  
 
 void kpl_isa_IADD_A_impl(Thread *thread, Inst *inst)
 {
