@@ -26,6 +26,7 @@
 #include <arch/x86/emu/Emu.h>
 #include <arch/x86/emu/FileTable.h>
 #include <arch/x86/emu/Signal.h>
+#include <arch/hsa/asm/Asm.h>
 #include <driver/opencl/OpenCLDriver.h>
 #include <driver/opengl/OpenGLDriver.h>
 #include <lib/cpp/CommandLine.h>
@@ -81,6 +82,8 @@ void main_cpp(int argc, char **argv)
 	command_line.AddConfig(x86::Asm::config);
 	command_line.AddConfig(x86::Emu::config);
 
+	command_line.AddConfig(HSA::Asm::config);
+
 	// Process command line. Return to C version of Multi2Sim if a
 	// command-line option was not recognized.
 	if (!command_line.Process(false))
@@ -94,6 +97,7 @@ void main_cpp(int argc, char **argv)
 	comm::ArchPool *arch_pool = comm::ArchPool::getInstance();
 	arch_pool->Register("x86", "x86");
 	arch_pool->Register("SouthernIslands", "si");
+	arch_pool->Register("HSA", "hsa");
 
 	// Register runtime and driver pairs
 	comm::RuntimePool *runtime_pool = comm::RuntimePool::getInstance();
