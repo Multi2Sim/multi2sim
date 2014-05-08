@@ -1,10 +1,23 @@
 #ifndef ARCH_HSA_ASM_ASM_H
 #define ARCH_HSA_ASM_ASM_H
 
+#include <lib/cpp/CommandLine.h>
+
 #include "BrigInstEntry.h"
 
 namespace HSA
 {
+
+class AsmConfig : public misc::CommandLineConfig
+{
+	std::string path;
+public:
+	/// Register command-line options related with hsa disassembler
+	void Register(misc::CommandLine &command_line);
+
+	/// Process command-line options related with the hsa disassembler
+	void Process();
+};
 
 class Asm
 {
@@ -40,6 +53,9 @@ public:
 
 	/// Disassemble the Brig file into HSAIL format
 	void DisassembleBinary(const std::string &path) const;
+
+	/// Configuration for hsa disassembler
+	static AsmConfig config;
 
 }; // class Asm
 
