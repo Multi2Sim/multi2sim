@@ -72,6 +72,57 @@ const char *BrigInstEntry::pack2str(unsigned char pack) const
 	return BrigInstEntry::pack_to_str_map.MapValue(pack);
 }
 
+misc::StringMap BrigInstEntry::v_to_str_map = 
+{
+	{"v2", 2},
+	{"v3", 3},
+	{"v4", 4}
+};
+
+const char *BrigInstEntry::operandV2str(char *o) const
+{
+	struct BrigOperandBase *operand = (struct BrigOperandBase *)o;
+	switch(operand->kind)
+	{
+	case BRIG_OPERAND_REG_VECTOR:
+	{
+		struct BrigOperandRegVector *v = (struct BrigOperandRegVector *)o;
+		return BrigInstEntry::v_to_str_map.MapValue(v->regCount);		
+	}
+	case BRIG_OPERAND_REG:
+		return "";
+		break;
+	case BRIG_OPERAND_IMMED:
+		return "";
+		break;
+	default:
+		return "<Invalid vX operand>";
+	}
+	
+}
+
+const char *BrigInstEntry::v2str(char* i) const
+{
+	struct BrigInstBase *inst = (struct BrigInstBase *)i;
+	switch(inst->opcode)
+	{
+	case BRIG_OPCODE_LD:
+	case BRIG_OPCODE_ST:
+	case BRIG_OPCODE_EXPAND:
+	case BRIG_OPCODE_RDIMAGE:
+	case BRIG_OPCODE_LDIMAGE:
+	case BRIG_OPCODE_STIMAGE:
+		return operandV2str(getOperand(0));
+		break;
+	case BRIG_OPCODE_COMBINE:
+		return operandV2str(getOperand(0));
+		break;
+	default:
+		break;
+	}
+	return "";
+}
+
 bool BrigInstEntry::hasType() const
 {
 	struct BrigInstBase *inst = (struct BrigInstBase *)base;
@@ -100,6 +151,14 @@ bool BrigInstEntry::hasType() const
 	default:
 		return true;
 	}
+}
+
+char *BrigInstEntry::getOperand(int i) const
+{
+	struct BrigInstBase *inst = (struct BrigInstBase *)base;
+	return BrigOperandEntry::GetOperandBufferByOffset(
+			file, inst->operands[i]
+		);
 }
 
 void BrigInstEntry::dumpOperands(std::ostream &os = std::cout) const
@@ -237,7 +296,14 @@ void BrigInstEntry::DumpInstSeg(std::ostream &os) const
 
 void BrigInstEntry::DumpInstSourceType(std::ostream &os) const
 {
-	this->DumpInstUnsupported("SourceType", os);
+	struct BrigInstSourceType *inst = (struct BrigInstSourceType *)base;
+	os << this->opcode2str((InstOpcode)inst->opcode);
+	
+	dump_(v2str(base));
+	os << "_" << BrigEntry::type2str(inst->type);
+	os << "_" << BrigEntry::type2str(inst->sourceType);
+	this->dumpOperands(os);
+	os << "\n";
 }
 
 void BrigInstEntry::DumpInstUnsupported( 
