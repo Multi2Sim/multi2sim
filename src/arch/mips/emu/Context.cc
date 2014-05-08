@@ -19,7 +19,6 @@
 #include <iostream>
 #include "Context.h"
 #include "Emu.h"
-#include <lib/cpp/Misc.h>
 
 namespace mips
 {
@@ -28,31 +27,6 @@ Context::Context()
 	// Save emulator instance
 	emu = Emu::getInstance();
 }
-
-void Context::Load(const std::vector<std::string> &args)
-{
-	// String in 'args' must contain at least one non-empty element
-	if (!args.size() || args[0].empty())
-		misc::panic("%s: function invoked with no program name, or with an "
-				"empty program.", __FUNCTION__);
-
-	// Program must not have been loaded before
-	if (loader.get() || memory.get())
-		misc::panic("%s: program '%s' has already been loaded in a "
-					"previous call to this function.",
-					__FUNCTION__, args[0].c_str());
-
-	// Create new memory image
-	assert(!memory.get());
-	memory.reset(new mem::Memory());
-	address_space_index = emu->getAddressSpaceIndex();
-
-
-
-	// Load the binary
-	LoadBinary();
-}
-
 
 void Context::Execute()
 {
@@ -74,5 +48,6 @@ void Context::Execute()
 
 	// Return to default safe mode
 	memory->setSafeDefault();
+
 }
 }
