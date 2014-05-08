@@ -52,6 +52,9 @@ protected:
 			std::ostream &os
 		);
 	
+	// Dumps a numberic value
+	void dumpValue(char *value) const;
+	
 	// Dump the function or kernel body
 	void dumpBody(
 			int codeOffset,
