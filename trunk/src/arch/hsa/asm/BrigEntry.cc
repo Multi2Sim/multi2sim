@@ -129,6 +129,10 @@ void BrigEntry::dumpValueList(
 
 }
 
+void BrigEntry::dumpValue(char *value) const
+{
+}
+
 void BrigEntry::dumpSymDecl(
 		const BrigEntry *dir,
 		std::ostream &os = std::cout

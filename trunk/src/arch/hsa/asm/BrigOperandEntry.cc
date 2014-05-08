@@ -34,11 +34,11 @@ BrigOperandEntry::DumpOperandFn BrigOperandEntry::dump_operand_fn[] =
 
 void BrigOperandEntry::dumpOperandImmed(std::ostream &os = std::cout) const
 {
-	os << "<unsupported operand>";
+	os << "<unsupported operand immed>";
 }
 void BrigOperandEntry::dumpOperandWavesize(std::ostream &os = std::cout) const
 {
-	os << "<unsupported operand>";
+	os << "WAVESIZE";
 }
 void BrigOperandEntry::dumpOperandReg(std::ostream &os = std::cout) const
 {
@@ -47,39 +47,61 @@ void BrigOperandEntry::dumpOperandReg(std::ostream &os = std::cout) const
 }
 void BrigOperandEntry::dumpOperandRegVector(std::ostream &os = std::cout) const
 {
-	os << "<unsupported operand>";
+	os << "<unsupported operand reg_vector>";
 }
 void BrigOperandEntry::dumpOperandAddress(std::ostream &os = std::cout) const
 {
-	os << "<unsupported operand>";
+	os << "<unsupported operand address>";
 }
 void BrigOperandEntry::dumpOperandLabelRef(std::ostream &os = std::cout) const
 {
-	os << "<unsupported operand>";
+	struct BrigOperandRef *op = (struct BrigOperandRef *)base;
+	BrigSection* bs = file->getBrigSection(BrigSectionDirective);
+	char *buf = (char *)bs->getBuffer();
+	buf += op->ref; 
+	struct BrigDirectiveBase *dir = (struct BrigDirectiveBase *)buf;
+	if(dir->kind == BRIG_DIRECTIVE_LABEL)
+	{
+		struct BrigDirectiveLabel *label = (struct BrigDirectiveLabel *)buf;
+		os << BrigStrEntry::GetStringByOffset(file, label->name);
+	}
+	else if(dir->kind == BRIG_DIRECTIVE_LABEL_TARGETS)
+	{
+		struct BrigDirectiveLabelTargets *targets
+			= (struct BrigDirectiveLabelTargets *)dir;
+		buf = (char *)bs->getBuffer();
+		buf += targets->label;
+		struct BrigDirectiveLabel *label = (struct BrigDirectiveLabel *)buf;
+		os << BrigStrEntry::GetStringByOffset(file, label->name);
+	}
+	else
+	{
+		misc::panic("OperandLabelRef can only ref to label of label target!");
+	}
 }
 void BrigOperandEntry::dumpOperandArgumentRef(std::ostream &os = std::cout) const
 {
-	os << "<unsupported operand>";
+	os << "<unsupported operand argument_ref>";
 }
 void BrigOperandEntry::dumpOperandArgumentList(std::ostream &os = std::cout) const
 {
-	os << "<unsupported operand>";
+	os << "<unsupported operand argument_list>";
 }
 void BrigOperandEntry::dumpOperandFunctionRef(std::ostream &os = std::cout) const
 {
-	os << "<unsupported operand>";
+	os << "<unsupported operand function_ref>";
 }
 void BrigOperandEntry::dumpOperandFunctionList(std::ostream &os = std::cout) const
 {
-	os << "<unsupported operand>";
+	os << "<unsupported operand function_list>";
 }
 void BrigOperandEntry::dumpOperandSignatureRef(std::ostream &os = std::cout) const
 {
-	os << "<unsupported operand>";
+	os << "<unsupported operand signature_ref>";
 }
 void BrigOperandEntry::dumpOperandFbarrierRef(std::ostream &os = std::cout) const
 {
-	os << "<unsupported operand>";
+	os << "<unsupported operand fbarrier_ref>";
 }
 
 char *BrigOperandEntry::GetOperandBufferByOffset(BrigFile *file, unsigned int offset)
