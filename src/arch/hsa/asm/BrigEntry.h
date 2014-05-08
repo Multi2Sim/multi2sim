@@ -1,6 +1,8 @@
 #ifndef HSA_ASM_BRIGENTRY_H
 #define HSA_ASM_BRIGENTRY_H
 
+#include <cstring>
+
 #include "BrigFile.h"
 #include "BrigDef.h"
 #include "SymbolModifier.h"
@@ -51,6 +53,13 @@ protected:
 			unsigned short argCount,
 			std::ostream &os
 		);
+
+	// Dump _str if str is not empty, otherwise do nothing
+	void dump_(const char *str, std::ostream &os = std::cout) const{
+		if(strlen(str)){
+			os << "_" << str;
+		}
+	}
 	
 	// Dumps a numberic value
 	void dumpValue(char *value) const;

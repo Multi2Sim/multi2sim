@@ -45,6 +45,15 @@ protected:
 	// Convert ALU modifier to string
 	const char *modifier2str(unsigned short modifier) const;
 
+	// Vector to string map
+	static misc::StringMap v_to_str_map;
+
+	// Aux function to convert operand to vector string
+	const char *operandV2str(char *operand) const;
+
+	// Convert vector to string, return string like v2, v4...
+	const char *v2str(char *inst) const;
+
 	// Pack to string map
 	static misc::StringMap pack_to_str_map;
 
@@ -53,6 +62,9 @@ protected:
 
 	// Returns true is the instruction has type
 	bool hasType() const;
+
+	// Returns the pointer to the operand indexed with i
+	char *getOperand(int i) const;
 
 	// Dumps inst's operands
 	void dumpOperands(std::ostream &os) const;
