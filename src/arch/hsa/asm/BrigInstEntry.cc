@@ -127,7 +127,7 @@ const char *BrigInstEntry::v2str(char* i) const
 misc::StringMap BrigInstEntry::width_to_str_map = 
 {
 	{"", 0},
-	{"", 1},
+	{"width(1)", 1},
 	{"width(2)", 2},
 	{"width(4)", 3},
 	{"width(8)", 4},
@@ -220,6 +220,55 @@ const char *BrigInstEntry::aligned2str(unsigned char modifier) const
 	return "";
 }
 
+misc::StringMap BrigInstEntry::atomic_op_to_str_map = 
+{
+	{"and", 0},
+	{"or", 1},
+	{"xor", 2},
+	{"cas", 3},
+	{"exch", 4},
+	{"add", 5},
+	{"inc", 6},
+	{"dec", 7},
+	{"min", 8},
+	{"max", 9},
+	{"sub", 10},
+};
+
+const char *BrigInstEntry::atomicOp2str(unsigned atomicOperation) const
+{
+	return atomic_op_to_str_map.MapValue(atomicOperation);
+}
+
+misc::StringMap BrigInstEntry::image_geo_to_str_map =
+{
+	{"1d", 0},
+	{"2d", 1},
+	{"3d", 2},
+	{"1da", 3},
+	{"2da", 4},
+	{"3da", 5}
+};
+
+const char *BrigInstEntry::imageGeo2str(unsigned geometry) const
+{
+	return image_geo_to_str_map.MapValue(geometry);
+}
+
+misc::StringMap BrigInstEntry::mem_fence_to_str_map = 
+{
+	{"fnone", 0},
+	{"fgroup", 1},
+	{"fglobal", 2},
+	{"fboth", 3},
+	{"fpartial", 4},
+	{"fpartial_both", 5}
+};
+
+const char *BrigInstEntry::memFence2str(unsigned memFence) const
+{
+	return mem_fence_to_str_map.MapValue(memFence);
+}
 bool BrigInstEntry::hasType() const
 {
 	struct BrigInstBase *inst = (struct BrigInstBase *)base;
@@ -326,12 +375,28 @@ void BrigInstEntry::DumpInstBasic(std::ostream &os = std::cout) const
 
 void BrigInstEntry::DumpInstAtomic(std::ostream &os = std::cout) const
 {
-	this->DumpInstUnsupported("Atomic", os);
+	struct BrigInstAtomic *inst = (struct BrigInstAtomic *)base;
+	os << this->opcode2str((InstOpcode)inst->opcode);
+	dump_(atomicOp2str(inst->atomicOperation), os);
+	//FIXME: diff from official disassembler
+	dump_(BrigEntry::seg2str(inst->segment), os); 
+	dump_(sem2str(inst->memorySemantic), os);
+	dump_(type2str(inst->type), os);
+	this->dumpOperands(os);
+	os << "\n";
 }
 
 void BrigInstEntry::DumpInstAtomicImage(std::ostream &os = std::cout) const
 {
-	this->DumpInstUnsupported("Image", os);
+	struct BrigInstAtomicImage *inst = (struct BrigInstAtomicImage *)base;
+	os << this->opcode2str((InstOpcode)inst->opcode);
+	dump_(atomicOp2str(inst->atomicOperation));
+	dump_(imageGeo2str(inst->geometry));
+	dump_(type2str(inst->type));
+	dump_(type2str(inst->imageType));
+	dump_(type2str(inst->coordType));
+	this->dumpOperands(os);
+	os << "\n";
 }
 
 void BrigInstEntry::DumpInstCvt(std::ostream &os = std::cout) const
@@ -348,7 +413,12 @@ void BrigInstEntry::DumpInstCvt(std::ostream &os = std::cout) const
 
 void BrigInstEntry::DumpInstBar(std::ostream &os = std::cout) const
 {
-	this->DumpInstUnsupported("Bar", os);
+	struct BrigInstBar *inst = (struct BrigInstBar *)base;
+	os << this->opcode2str((InstOpcode)inst->opcode);
+	dump_(width2str(inst), os);
+	dump_(memFence2str(inst->memoryFence), os);
+	this->dumpOperands(os);
+	os << "\n";
 }
 
 void BrigInstEntry::DumpInstBr(std::ostream &os = std::cout) const
@@ -379,12 +449,30 @@ void BrigInstEntry::DumpInstCmp(std::ostream &os = std::cout) const
 
 void BrigInstEntry::DumpInstFbar(std::ostream &os = std::cout) const
 {
-	this->DumpInstUnsupported("Fbar", os);
+	struct BrigInstFbar *inst = (struct BrigInstFbar *)base;
+	os << this->opcode2str((InstOpcode)inst->opcode);
+	dump_(width2str(inst), os);
+	if(inst->opcode==BRIG_OPCODE_WAITFBAR || 
+		inst->opcode==BRIG_OPCODE_ARRIVEFBAR)
+	{
+		dump_(memFence2str(inst->memoryFence), os);
+	}
+	if(this->hasType()) dump_(type2str(inst->type), os);
+	this->dumpOperands(os);
+	os << "\n";
 }
 
 void BrigInstEntry::DumpInstImage(std::ostream &os = std::cout) const
 {
-	this->DumpInstUnsupported("Image", os);
+	struct BrigInstImage *inst = (struct BrigInstImage *)base;
+	os << this->opcode2str((InstOpcode)inst->opcode);
+	dump_(v2str(base));
+	dump_(imageGeo2str(inst->geometry));
+	dump_(type2str(inst->type));
+	dump_(type2str(inst->imageType));
+	dump_(type2str(inst->coordType));
+	this->dumpOperands(os);
+	os << "\n";
 }
 
 void BrigInstEntry::DumpInstMem(std::ostream &os = std::cout) const
