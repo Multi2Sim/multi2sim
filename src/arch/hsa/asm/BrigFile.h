@@ -1,6 +1,7 @@
 #ifndef HSA_ASM_BRIGFILE_H
 #define HSA_ASM_BRIGFILE_H
 #include <cstdint>
+#include <map>
 #include "lib/cpp/ELFReader.h"
 #include <elf.h>
 #include "BrigSection.h"
