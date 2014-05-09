@@ -28,6 +28,10 @@ protected:
 	// The index corresponds with the BrigSectionType enumerator 
 	std::vector<std::unique_ptr<BrigSection>> brig_sections;
 
+	// A map that stores pointers to directive entries and their code offsets.
+	// key: code offset of a directive entry, converted to a pointer to a code entry
+	// mapped value: a pointer to a directive entry
+	std::multimap<*BrigInstBase, *BrigDirectiveBase> directive_code_map;
 
 public:
 	/// Loads a BRIG File from the file system, create sections
