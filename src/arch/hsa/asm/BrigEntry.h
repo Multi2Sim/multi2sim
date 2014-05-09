@@ -2,6 +2,8 @@
 #define HSA_ASM_BRIGENTRY_H
 
 #include <cstring>
+#include "lib/cpp/Misc.h"
+#include "lib/cpp/String.h"
 
 #include "BrigFile.h"
 #include "BrigDef.h"
@@ -32,6 +34,12 @@ protected:
 	// Returns segments as string 
 	// Segments are attributes such as global, readonly...
 	static const char *seg2str(unsigned char seg);
+
+	// Maps memory semantic to string
+	static misc::StringMap sem_to_str_map;
+
+	// Convert memory semantic 
+	const char *sem2str(unsigned char modifier) const;
 
 	// Dump value list
 	void dumpValueList(
