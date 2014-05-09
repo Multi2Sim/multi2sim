@@ -1,3 +1,4 @@
+#include <sstream>
 #include "BrigInstEntry.h"
 #include "BrigOperandEntry.h"
 #include "Asm.h"
@@ -26,18 +27,18 @@ const char *BrigInstEntry::rounding2str(BrigInst* base) const
 misc::StringMap BrigInstEntry::rounding_to_str_map = 
 {
 	{"", 0},
-	{"_near", 1},
-	{"_zero", 2},
-	{"_up", 3},
-	{"_down", 4},
-	{"_neari", 5},
-	{"_zeroi", 6},
-	{"_upi", 7},
-	{"_downi", 8},
-	{"_neari_sat", 9},
-	{"_zeroi_sat", 10},
-	{"_upi_sat", 11},
-	{"_downi_sat", 12}
+	{"", 1},
+	{"zero", 2},
+	{"up", 3},
+	{"down", 4},
+	{"neari", 5},
+	{"zeroi", 6},
+	{"upi", 7},
+	{"downi", 8},
+	{"neari_sat", 9},
+	{"zeroi_sat", 10},
+	{"upi_sat", 11},
+	{"downi_sat", 12}
 };
 
 const char *BrigInstEntry::modifier2str(unsigned short modifier) const
@@ -45,7 +46,7 @@ const char *BrigInstEntry::modifier2str(unsigned short modifier) const
 	unsigned short ftz = modifier & 16;
 	if(ftz)
 	{
-		return "_ftz";
+		return "ftz";
 	}
 	return "";
 }
@@ -53,18 +54,18 @@ const char *BrigInstEntry::modifier2str(unsigned short modifier) const
 misc::StringMap BrigInstEntry::pack_to_str_map = 
 {
 	{"", 0},
-	{"_pp", 1},
-	{"_ps", 2},
-	{"_sp", 3},
-	{"_ss", 4},
-	{"_s", 5},
-	{"_p", 6},
-	{"_pp_sat", 7},
-	{"_ps_sat", 8},
-	{"_sp_sat", 9},
-	{"_ss_sat", 10},
-	{"_s_sat", 11},
-	{"_p_sat", 12}
+	{"pp", 1},
+	{"ps", 2},
+	{"sp", 3},
+	{"ss", 4},
+	{"s", 5},
+	{"p", 6},
+	{"pp_sat", 7},
+	{"ps_sat", 8},
+	{"sp_sat", 9},
+	{"ss_sat", 10},
+	{"s_sat", 11},
+	{"p_sat", 12}
 };
 
 const char *BrigInstEntry::pack2str(unsigned char pack) const
@@ -115,7 +116,7 @@ const char *BrigInstEntry::v2str(char* i) const
 		return operandV2str(getOperand(0));
 		break;
 	case BRIG_OPCODE_COMBINE:
-		return operandV2str(getOperand(0));
+		return operandV2str(getOperand(1));
 		break;
 	default:
 		break;
@@ -126,7 +127,7 @@ const char *BrigInstEntry::v2str(char* i) const
 misc::StringMap BrigInstEntry::width_to_str_map = 
 {
 	{"", 0},
-	{"width(1)", 1},
+	{"", 1},
 	{"width(2)", 2},
 	{"width(4)", 3},
 	{"width(8)", 4},
@@ -166,6 +167,57 @@ template<class T>
 const char *BrigInstEntry::width2str(T *inst) const
 {
 	return width_to_str_map.MapValue(inst->width);	
+}
+
+misc::StringMap BrigInstEntry::comp_op_to_str_map = 
+{
+	{"eq", 0},
+	{"ne", 1},
+	{"lt", 2},
+	{"le", 3},
+	{"gt", 4},
+	{"ge", 5},
+	{"equ", 6},
+	{"neu", 7},
+	{"ltu", 8},
+	{"leu", 9},
+	{"gtu", 10},
+	{"geu", 11},
+	{"num", 12},
+	{"nan", 13},
+	{"seq", 14},
+	{"sne", 15},
+	{"slt", 16},
+	{"sle", 17},
+	{"sgt", 18},
+	{"sge", 19},
+	{"sgeu", 20},
+	{"sequ", 21},
+	{"sneu", 22},
+	{"sltu", 23},
+	{"sleu", 24},
+	{"snum", 25},
+	{"snan", 26},
+	{"sgtu", 27}
+};
+
+const char *BrigInstEntry::cmpOp2str(unsigned char op) const
+{
+	return comp_op_to_str_map.MapValue(op);
+}
+
+const char *BrigInstEntry::equiv2str(unsigned char val) const
+{
+	std::stringstream s;
+	if(val != 0) s << "equiv(" << (unsigned) val << ")";
+	return s.str().c_str();
+}
+
+const char *BrigInstEntry::aligned2str(unsigned char modifier) const
+{
+	unsigned char aligned = modifier & BRIG_MEMORY_ALIGNED;
+	if(aligned) return "aligned";
+	return "";
 }
 
 bool BrigInstEntry::hasType() const
@@ -258,12 +310,12 @@ BrigInstEntry::DumpInstFn BrigInstEntry::dump_inst_fn[] =
 	&BrigInstEntry::DumpInstSourceType
 };
 
-void BrigInstEntry::DumpInstNone(std::ostream &os) const
+void BrigInstEntry::DumpInstNone(std::ostream &os = std::cout) const
 {
 	this->DumpInstUnsupported("None", os);
 }
 
-void BrigInstEntry::DumpInstBasic(std::ostream &os) const
+void BrigInstEntry::DumpInstBasic(std::ostream &os = std::cout) const
 {
 	struct BrigInstBasic *inst = (struct BrigInstBasic *)base;
 	os << this->opcode2str((InstOpcode)inst->opcode);
@@ -272,56 +324,82 @@ void BrigInstEntry::DumpInstBasic(std::ostream &os) const
 	os << "\n";
 }
 
-void BrigInstEntry::DumpInstAtomic(std::ostream &os) const
+void BrigInstEntry::DumpInstAtomic(std::ostream &os = std::cout) const
 {
 	this->DumpInstUnsupported("Atomic", os);
 }
 
-void BrigInstEntry::DumpInstAtomicImage(std::ostream &os) const
+void BrigInstEntry::DumpInstAtomicImage(std::ostream &os = std::cout) const
 {
 	this->DumpInstUnsupported("Image", os);
 }
 
-void BrigInstEntry::DumpInstCvt(std::ostream &os) const
+void BrigInstEntry::DumpInstCvt(std::ostream &os = std::cout) const
 {
-	this->DumpInstUnsupported("Cvt", os);
+	struct BrigInstCvt *inst = (struct BrigInstCvt *)base;
+	os << this->opcode2str((InstOpcode)inst->opcode);
+	dump_(modifier2str(inst->modifier.allBits), os);
+	dump_(rounding2str(inst), os);
+	dump_(type2str(inst->type), os);
+	dump_(type2str(inst->sourceType), os);
+	this->dumpOperands(os);
+	os << "\n";
 }
 
-void BrigInstEntry::DumpInstBar(std::ostream &os) const
+void BrigInstEntry::DumpInstBar(std::ostream &os = std::cout) const
 {
 	this->DumpInstUnsupported("Bar", os);
 }
 
-void BrigInstEntry::DumpInstBr(std::ostream &os) const
+void BrigInstEntry::DumpInstBr(std::ostream &os = std::cout) const
 {
 	struct BrigInstBr *inst = (struct BrigInstBr *)base;
 	os << this->opcode2str((InstOpcode)inst->opcode);
 	dump_(width2str(inst), os);
-	os << this->modifier2str(inst->modifier.allBits);
+	dump_(modifier2str(inst->modifier.allBits), os);
 	dump_(rounding2str(inst), os);
 	if(this->hasType()) dump_(type2str(inst->type));
 	this->dumpOperands(os);
 	os << "\n";
 }
 
-void BrigInstEntry::DumpInstCmp(std::ostream &os) const
+void BrigInstEntry::DumpInstCmp(std::ostream &os = std::cout) const
 {
-	this->DumpInstUnsupported("Cmp", os);
+	struct BrigInstCmp *inst = (struct BrigInstCmp *)base;
+	os << this->opcode2str((InstOpcode)inst->opcode);
+	dump_(cmpOp2str(inst->compare), os);
+	dump_(modifier2str(inst->modifier.allBits), os);
+	dump_(rounding2str(inst), os);
+	dump_(pack2str(inst->pack), os);
+	dump_(type2str(inst->type), os);
+	dump_(type2str(inst->sourceType), os);
+	this->dumpOperands(os);
+	os << "\n";
 }
 
-void BrigInstEntry::DumpInstFbar(std::ostream &os) const
+void BrigInstEntry::DumpInstFbar(std::ostream &os = std::cout) const
 {
 	this->DumpInstUnsupported("Fbar", os);
 }
 
-void BrigInstEntry::DumpInstImage(std::ostream &os) const
+void BrigInstEntry::DumpInstImage(std::ostream &os = std::cout) const
 {
 	this->DumpInstUnsupported("Image", os);
 }
 
-void BrigInstEntry::DumpInstMem(std::ostream &os) const
+void BrigInstEntry::DumpInstMem(std::ostream &os = std::cout) const
 {
-	this->DumpInstUnsupported("Mem", os);
+	struct BrigInstMem *inst = (struct BrigInstMem *)base;
+	os << this->opcode2str((InstOpcode)inst->opcode);
+	dump_(v2str(base), os);
+	dump_(width2str(inst), os);
+	dump_(BrigEntry::seg2str(inst->segment), os);
+	dump_(aligned2str(inst->modifier.allBits), os);
+	dump_(BrigEntry::sem2str(inst->modifier.allBits), os);
+	dump_(equiv2str(inst->equivClass), os);
+	dump_(type2str(inst->type), os);
+	this->dumpOperands(os);
+	os << "\n";
 }
 
 void BrigInstEntry::DumpInstAddr(std::ostream &os = std::cout) const
@@ -338,9 +416,9 @@ void BrigInstEntry::DumpInstMod(std::ostream &os = std::cout) const
 {
 	struct BrigInstMod *inst = (struct BrigInstMod *)base;
 	os << this->opcode2str((InstOpcode)inst->opcode);
-	os << this->modifier2str(inst->modifier.allBits);
-	os << this->rounding2str(inst);
-	os << this->pack2str(inst->pack);
+	dump_(modifier2str(inst->modifier.allBits), os);
+	dump_(rounding2str(inst), os);
+	dump_(pack2str(inst->pack), os);
 	if(this->hasType()) os << "_" << BrigEntry::type2str(inst->type);
 	this->dumpOperands(os);
 	os << "\n";
