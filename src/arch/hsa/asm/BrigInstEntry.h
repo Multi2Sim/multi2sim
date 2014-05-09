@@ -80,6 +80,25 @@ protected:
 	// Returns "aligned" if the modifier says it is aligned
 	// Note it is different from BrigEntry::align2str function
 	const char *aligned2str(unsigned char modifier) const;
+	
+	// atomic operation to string map
+	static misc::StringMap atomic_op_to_str_map;
+
+	// Convert atomic operation to string
+	const char *atomicOp2str(unsigned atomicOperation) const;
+
+	// image geometry to string map
+	static misc::StringMap image_geo_to_str_map;
+
+	// Convert image geometry to string
+	const char *imageGeo2str(unsigned geometry) const;
+	
+	// Memory fence to string map
+	static misc::StringMap mem_fence_to_str_map;
+
+	// Convert memory fence to string
+	const char *memFence2str(unsigned geometry) const;
+
 
 	// Returns true is the instruction has type
 	bool hasType() const;
