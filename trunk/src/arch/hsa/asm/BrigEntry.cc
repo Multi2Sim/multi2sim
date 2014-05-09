@@ -95,7 +95,7 @@ const char *BrigEntry::align2str(unsigned char align)
 	std::stringstream ss;
 	if(align > 1)
 	{
-		ss << "align " << (unsigned int)align << ' ';	
+		ss << "align " << (unsigned)align << ' ';	
 	}
 	return ss.str().c_str();
 }
@@ -106,7 +106,7 @@ const char *BrigEntry::seg2str(unsigned char seg)
 	switch(seg)
 	{
 		case 0:	return "";	
-		case 1: return "flat";
+		case 1: return "";
 		case 2: return "global";
 		case 3: return "readonly";
 		case 4: return "kernarg";
@@ -117,6 +117,24 @@ const char *BrigEntry::seg2str(unsigned char seg)
 		default: misc::warning("Unsupported segment!");
 	}
 	return "";
+}
+
+misc::StringMap BrigEntry::sem_to_str_map = 
+{
+	{"", 0},
+	{"", 1},
+	{"acq", 2},
+	{"rel", 3},
+	{"ar", 4},
+	{"part_acq", 5},
+	{"part_rel", 6},
+	{"part_ar", 7}
+};
+
+const char *BrigEntry::sem2str(unsigned char modifier) const
+{
+	unsigned char sem = modifier & BRIG_MEMORY_SEMANTIC;
+	return sem_to_str_map.MapValue(sem);
 }
 
 void BrigEntry::dumpValueList(

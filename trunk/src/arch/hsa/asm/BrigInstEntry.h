@@ -51,8 +51,15 @@ protected:
 	// Aux function to convert operand to vector string
 	const char *operandV2str(char *operand) const;
 
+	
 	// Convert vector to string, return string like v2, v4...
 	const char *v2str(char *inst) const;
+
+	// Compare operation to string map
+	static misc::StringMap comp_op_to_str_map;
+
+	// Convert compare operation string 
+	const char *cmpOp2str(unsigned char opcode) const;
 
 	// Pack to string map
 	static misc::StringMap pack_to_str_map;
@@ -66,6 +73,13 @@ protected:
 	// Convert width to string
 	template<typename T>
 	const char *width2str(T *inst) const;
+
+	// Convert equiv to string
+	const char *equiv2str(unsigned char val) const;
+
+	// Returns "aligned" if the modifier says it is aligned
+	// Note it is different from BrigEntry::align2str function
+	const char *aligned2str(unsigned char modifier) const;
 
 	// Returns true is the instruction has type
 	bool hasType() const;
