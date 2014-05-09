@@ -123,6 +123,51 @@ const char *BrigInstEntry::v2str(char* i) const
 	return "";
 }
 
+misc::StringMap BrigInstEntry::width_to_str_map = 
+{
+	{"", 0},
+	{"width(1)", 1},
+	{"width(2)", 2},
+	{"width(4)", 3},
+	{"width(8)", 4},
+	{"width(16)", 5},
+	{"width(32)", 6},
+	{"width(64)", 7},
+	{"width(128)", 8},
+	{"width(256)", 9},
+	{"width(512)", 10},
+	{"width(1024)", 11},
+	{"width(2048)", 12},
+	{"width(4096)", 13},
+	{"width(8192)", 14},
+	{"width(16384)", 15},
+	{"width(32768)", 16},
+	{"width(65536)", 17},
+	{"width(131072)", 18},
+	{"width(262144)", 19},
+	{"width(524288)", 20},
+	{"width(1048576)", 21},
+	{"width(2097152)", 22},
+	{"width(4194304)", 23},
+	{"width(8388608)", 24},
+	{"width(16777216)", 25},
+	{"width(33554432)", 26},
+	{"width(67108864)", 27},
+	{"width(134217728)", 28},
+	{"width(268435456)", 29},
+	{"width(536870912)", 30},
+	{"width(1073741824)", 31},
+	{"width(2147483648)", 32},
+	{"width(WAVESIZE)", 33},
+	{"width(ALL)", 34}
+};
+
+template<class T>
+const char *BrigInstEntry::width2str(T *inst) const
+{
+	return width_to_str_map.MapValue(inst->width);	
+}
+
 bool BrigInstEntry::hasType() const
 {
 	struct BrigInstBase *inst = (struct BrigInstBase *)base;
@@ -200,10 +245,10 @@ BrigInstEntry::DumpInstFn BrigInstEntry::dump_inst_fn[] =
 	&BrigInstEntry::DumpInstBasic,
 	&BrigInstEntry::DumpInstAtomic,
 	&BrigInstEntry::DumpInstAtomicImage,
-	&BrigInstEntry::DumpInstCvt,
 	&BrigInstEntry::DumpInstBar,
 	&BrigInstEntry::DumpInstBr,
 	&BrigInstEntry::DumpInstCmp,
+	&BrigInstEntry::DumpInstCvt,
 	&BrigInstEntry::DumpInstFbar,
 	&BrigInstEntry::DumpInstImage,
 	&BrigInstEntry::DumpInstMem,
@@ -249,7 +294,14 @@ void BrigInstEntry::DumpInstBar(std::ostream &os) const
 
 void BrigInstEntry::DumpInstBr(std::ostream &os) const
 {
-	this->DumpInstUnsupported("Br", os);
+	struct BrigInstBr *inst = (struct BrigInstBr *)base;
+	os << this->opcode2str((InstOpcode)inst->opcode);
+	dump_(width2str(inst), os);
+	os << this->modifier2str(inst->modifier.allBits);
+	dump_(rounding2str(inst), os);
+	if(this->hasType()) dump_(type2str(inst->type));
+	this->dumpOperands(os);
+	os << "\n";
 }
 
 void BrigInstEntry::DumpInstCmp(std::ostream &os) const
@@ -272,12 +324,17 @@ void BrigInstEntry::DumpInstMem(std::ostream &os) const
 	this->DumpInstUnsupported("Mem", os);
 }
 
-void BrigInstEntry::DumpInstAddr(std::ostream &os) const
+void BrigInstEntry::DumpInstAddr(std::ostream &os = std::cout) const
 {
-	this->DumpInstUnsupported("Addr", os);
+	struct BrigInstAddr *inst = (struct BrigInstAddr *)base;
+	os << this->opcode2str((InstOpcode)inst->opcode);
+	dump_(BrigEntry::seg2str(inst->segment));
+	dump_(BrigEntry::type2str(inst->type));
+	this->dumpOperands(os);
+	os << "\n";
 }
 
-void BrigInstEntry::DumpInstMod(std::ostream &os) const
+void BrigInstEntry::DumpInstMod(std::ostream &os = std::cout) const
 {
 	struct BrigInstMod *inst = (struct BrigInstMod *)base;
 	os << this->opcode2str((InstOpcode)inst->opcode);
@@ -289,17 +346,23 @@ void BrigInstEntry::DumpInstMod(std::ostream &os) const
 	os << "\n";
 }
 
-void BrigInstEntry::DumpInstSeg(std::ostream &os) const
+void BrigInstEntry::DumpInstSeg(std::ostream &os = std::cout) const
 {
-	this->DumpInstUnsupported("Seg", os);
+	struct BrigInstSeg *inst = (struct BrigInstSeg *)base;
+	os << this->opcode2str((InstOpcode)inst->opcode);
+	dump_(BrigEntry::seg2str(inst->segment), os);
+	dump_(BrigEntry::type2str(inst->type), os);
+	dump_(BrigEntry::type2str(inst->sourceType), os);
+	this->dumpOperands(os);
+	os << "\n";
 }
 
-void BrigInstEntry::DumpInstSourceType(std::ostream &os) const
+void BrigInstEntry::DumpInstSourceType(std::ostream &os = std::cout) const
 {
 	struct BrigInstSourceType *inst = (struct BrigInstSourceType *)base;
 	os << this->opcode2str((InstOpcode)inst->opcode);
 	
-	dump_(v2str(base));
+	dump_(v2str(base), os);
 	os << "_" << BrigEntry::type2str(inst->type);
 	os << "_" << BrigEntry::type2str(inst->sourceType);
 	this->dumpOperands(os);

@@ -60,6 +60,13 @@ protected:
 	// Convert pack to string
 	const char *pack2str(unsigned char pack) const;
 
+	// Width to string map
+	static misc::StringMap width_to_str_map;
+	
+	// Convert width to string
+	template<typename T>
+	const char *width2str(T *inst) const;
+
 	// Returns true is the instruction has type
 	bool hasType() const;
 
