@@ -21,26 +21,26 @@ BrigFile::BrigFile(const std::string &path)
 	// Put every in-function directive entry in the multimap.
 	const char * directive_section_start = this->brig_sections[BrigSectionDirective].get()->getBuffer();
 	const char * code_section_start = this->brig_sections[BrigSectionCode].get()->getBuffer();
-	char * directive_ptr = directive_section_start + 4;
+	char * directive_ptr = (char *)directive_section_start + 4;
 	char * kernel_function_end = 0;
 	bool if_in_kernel_function = 0;
 	struct BrigDirectiveBase * dir;
 	while(directive_ptr < code_section_start)
 	{
 		dir = (struct BrigDirectiveBase *) directive_ptr;
-		if(dir == kernel_function_end)
+		if(directive_ptr == kernel_function_end)
 			if_in_kernel_function = 0;
 		if(dir->kind == BRIG_DIRECTIVE_KERNEL || dir->kind == BRIG_DIRECTIVE_FUNCTION)
 		{
 			if_in_kernel_function = 1;
 			struct BrigDirectiveExecutable * kernel_function = (struct BrigDirectiveExecutable *) dir;
-			kernel_function_end = directive_section_start + kernel_function->nextTopLevelDirective;
+			kernel_function_end = (char *)directive_section_start + kernel_function->nextTopLevelDirective;
 		}else if(if_in_kernel_function)
 		{
 			// add only the directives in a function or a kernel to the map
 			// code offset is converted to a pointer to the code entry.
-			struct BrigInstBase * cod = (struct BrigInstBase *) (code_section_start + dir->code);
-			directive_code_map.insert(std::pair<struct BrigInstBase *, struct BringDirectiveBase *>(cod, dir));
+			char * cod = (char *)code_section_start + dir->code;
+			directive_code_map.insert( std::pair<char *, char *>(cod, directive_ptr) );
 		}
 		directive_ptr += (dir->size + 3) / 4 * 4;
 	}
