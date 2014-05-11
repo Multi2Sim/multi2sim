@@ -175,7 +175,12 @@ void BrigOperandEntry::dumpOperandLabelRef(std::ostream &os = std::cout) const
 }
 void BrigOperandEntry::dumpOperandArgumentRef(std::ostream &os = std::cout) const
 {
-	os << "<unsupported operand argument_ref>";
+	struct BrigOperandArgumentRef *operand = 
+		(struct BrigOperandArgumentRef *)base;
+	struct BrigDirectiveSymbol *dir = 
+		(struct BrigDirectiveSymbol *)
+		BrigDirEntry::GetDirByOffset(file, operand->ref);
+	os << BrigStrEntry::GetStringByOffset(file, dir->name);
 }
 void BrigOperandEntry::dumpOperandArgumentList(std::ostream &os = std::cout) const
 {
@@ -201,7 +206,12 @@ void BrigOperandEntry::dumpOperandSignatureRef(std::ostream &os = std::cout) con
 }
 void BrigOperandEntry::dumpOperandFbarrierRef(std::ostream &os = std::cout) const
 {
-	os << "<unsupported operand fbarrier_ref>";
+	struct BrigOperandFbarrierRef *operand = 
+		(struct BrigOperandFbarrierRef *)base;
+	struct BrigDirectiveFbarrier *dir = 
+		(struct BrigDirectiveFbarrier *)
+		BrigDirEntry::GetDirByOffset(file, operand->ref);
+	os << BrigStrEntry::GetStringByOffset(file, dir->name);
 }
 
 char *BrigOperandEntry::GetOperandBufferByOffset(
@@ -226,14 +236,20 @@ void BrigOperandEntry::dumpImmedU8(
 		std::ostream &os = std::cout
 	) const
 {
-	dumpImmedUnsupported(os);
+	struct BrigOperandImmed *operand = (struct BrigOperandImmed *)base;
+	if(!ptr) ptr = operand->bytes;
+	unsigned char *value = (unsigned char *)ptr;
+	os << std::dec << (int)*value;
 }
 void BrigOperandEntry::dumpImmedU16(
 		unsigned char *ptr = nullptr, 
 		std::ostream &os = std::cout
 	) const
 {
-	dumpImmedUnsupported(os);
+	struct BrigOperandImmed *operand = (struct BrigOperandImmed *)base;
+	if(!ptr) ptr = operand->bytes;
+	unsigned short *value = (unsigned short *)ptr;
+	os << std::dec << *value;
 }
 void BrigOperandEntry::dumpImmedU32(
 		unsigned char *ptr = nullptr, 
@@ -295,7 +311,10 @@ void BrigOperandEntry::dumpImmedS64(
 	long long *value = (long long *)ptr;
 	os << std::dec << *value;
 }
-void BrigOperandEntry::dumpImmedF16(unsigned char *ptr = nullptr, std::ostream &os = std::cout) const
+void BrigOperandEntry::dumpImmedF16(
+		unsigned char *ptr = nullptr, 
+		std::ostream &os = std::cout
+	) const
 {
 	struct BrigOperandImmed *operand = (struct BrigOperandImmed *)base;
 	if(!ptr) ptr = operand->bytes;
@@ -305,9 +324,13 @@ void BrigOperandEntry::dumpImmedF16(unsigned char *ptr = nullptr, std::ostream &
 		unsigned char *value = (ptr + i);
 		std::cout << std::setfill('0') << std::setw(2) << 
 			std::hex << (int)*value;
+		std::cout << std::dec;
 	}
 }
-void BrigOperandEntry::dumpImmedF32(unsigned char *ptr = nullptr, std::ostream &os = std::cout) const
+void BrigOperandEntry::dumpImmedF32(
+		unsigned char *ptr = nullptr, 
+		std::ostream &os = std::cout
+	) const
 {
 	struct BrigOperandImmed *operand = (struct BrigOperandImmed *)base;
 	if(!ptr) ptr = operand->bytes;
@@ -317,6 +340,7 @@ void BrigOperandEntry::dumpImmedF32(unsigned char *ptr = nullptr, std::ostream &
 		unsigned char *value = &ptr[i];
 		std::cout << std::setfill('0') << std::setw(2) << 
 			std::hex << (int)*value;
+		std::cout << std::dec;
 	}
 }
 void BrigOperandEntry::dumpImmedF64(
@@ -332,31 +356,41 @@ void BrigOperandEntry::dumpImmedF64(
 		unsigned char *value = (unsigned char*) &ptr[i];
 		std::cout << std::setfill('0') << std::setw(2) << 
 			std::hex << (int)*value;
+		std::cout << std::dec;
 	}
 }
 void BrigOperandEntry::dumpImmedB1(unsigned char *ptr = nullptr, std::ostream &os = std::cout) const
 {
-	dumpImmedUnsupported(os);
+	struct BrigOperandImmed *operand = (struct BrigOperandImmed *)base;
+	if(!ptr) ptr = operand->bytes;
+	if(*ptr)
+	{
+		os << '1';
+	}
+	else
+	{
+		os << '0';
+	}
 }
 void BrigOperandEntry::dumpImmedB8(unsigned char *ptr = nullptr, std::ostream &os = std::cout) const
 {
-	dumpImmedUnsupported(os);
+	dumpImmedU8(nullptr, os);
 }
 void BrigOperandEntry::dumpImmedB16(unsigned char *ptr = nullptr, std::ostream &os = std::cout) const
 {
-	dumpImmedUnsupported(os);
+	dumpImmedU16(nullptr, os);
 }
 void BrigOperandEntry::dumpImmedB32(unsigned char *ptr = nullptr, std::ostream &os = std::cout) const
 {
-	dumpImmedUnsupported(os);
+	dumpImmedU32(nullptr, os);
 }
 void BrigOperandEntry::dumpImmedB64(unsigned char *ptr = nullptr, std::ostream &os = std::cout) const
 {
-	dumpImmedUnsupported(os);
+	dumpImmedU64(nullptr, os);
 }
 void BrigOperandEntry::dumpImmedB128(unsigned char *ptr = nullptr, std::ostream &os = std::cout) const
 {
-	dumpImmedUnsupported(os);
+	dumpImmedU64(nullptr, os);
 }
 void BrigOperandEntry::dumpImmedSAMP(unsigned char *ptr = nullptr, std::ostream &os = std::cout) const
 {
@@ -374,101 +408,479 @@ void BrigOperandEntry::dumpImmedFBAR(unsigned char *ptr = nullptr, std::ostream 
 {
 	dumpImmedUnsupported(os);
 }
-void BrigOperandEntry::dumpImmedU8X4(unsigned char *ptr = nullptr, std::ostream &os = std::cout) const
+void BrigOperandEntry::dumpImmedU8X4(
+		unsigned char *ptr = nullptr, 
+		std::ostream &os = std::cout
+	) const
 {
-	dumpImmedUnsupported(os);
+	struct BrigOperandImmed *operand = (struct BrigOperandImmed *)base;
+	if(!ptr) ptr = operand->bytes;
+	unsigned int size = 1;
+	unsigned int pack = 4;
+	unsigned int lastIndex = size * pack - size;
+	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	os << "_u" << size*8 << "x" << pack << "(";
+	for(unsigned int i=0; i<pack; i++)
+	{
+		if(i > 0) os << ",";
+		dumpImmedU8(value, os);
+		value -= size;
+	}
+	os << ")";
 }
-void BrigOperandEntry::dumpImmedU8X8(unsigned char *ptr = nullptr, std::ostream &os = std::cout) const
+void BrigOperandEntry::dumpImmedU8X8(
+		unsigned char *ptr = nullptr, 
+		std::ostream &os = std::cout
+	) const
 {
-	dumpImmedUnsupported(os);
+	struct BrigOperandImmed *operand = (struct BrigOperandImmed *)base;
+	if(!ptr) ptr = operand->bytes;
+	unsigned int size = 1;
+	unsigned int pack = 8;
+	unsigned int lastIndex = size * pack - size;
+	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	os << "_u" << size*8 << "x" << pack << "(";
+	for(unsigned int i=0; i<pack; i++)
+	{
+		if(i > 0) os << ",";
+		dumpImmedU8(value, os);
+		value -= size;
+	}
+	os << ")";
 }
-void BrigOperandEntry::dumpImmedU8X16(unsigned char *ptr = nullptr, std::ostream &os = std::cout) const
+void BrigOperandEntry::dumpImmedU8X16(
+		unsigned char *ptr = nullptr, 
+		std::ostream &os = std::cout
+	) const
 {
-	dumpImmedUnsupported(os);
+	struct BrigOperandImmed *operand = (struct BrigOperandImmed *)base;
+	if(!ptr) ptr = operand->bytes;
+	unsigned int size = 1;
+	unsigned int pack = 16;
+	unsigned int lastIndex = size * pack - size;
+	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	os << "_u" << size*8 << "x" << pack << "(";
+	for(unsigned int i=0; i<pack; i++)
+	{
+		if(i > 0) os << ",";
+		dumpImmedU8(value, os);
+		value -= size;
+	}
+	os << ")";
 }
-void BrigOperandEntry::dumpImmedU16X2(unsigned char *ptr = nullptr, std::ostream &os = std::cout) const
-{
-	dumpImmedUnsupported(os);
+void BrigOperandEntry::dumpImmedU16X2(
+		unsigned char *ptr = nullptr, 
+		std::ostream &os = std::cout
+	) const
+{	
+	struct BrigOperandImmed *operand = (struct BrigOperandImmed *)base;
+	if(!ptr) ptr = operand->bytes;
+	unsigned int size = 2;
+	unsigned int pack = 2;
+	unsigned int lastIndex = size * pack - size;
+	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	os << "_u" << size*8 << "x" << pack << "(";
+	for(unsigned int i=0; i<pack; i++)
+	{
+		if(i > 0) os << ",";
+		dumpImmedU16(value, os);
+		value -= size;
+	}
+	os << ")";
 }
-void BrigOperandEntry::dumpImmedU16X4(unsigned char *ptr = nullptr, std::ostream &os = std::cout) const
-{
-	dumpImmedUnsupported(os);
+void BrigOperandEntry::dumpImmedU16X4(
+		unsigned char *ptr = nullptr, 
+		std::ostream &os = std::cout
+	) const
+{	
+	struct BrigOperandImmed *operand = (struct BrigOperandImmed *)base;
+	if(!ptr) ptr = operand->bytes;
+	unsigned int size = 2;
+	unsigned int pack = 4;
+	unsigned int lastIndex = size * pack - size;
+	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	os << "_u" << size*8 << "x" << pack << "(";
+	for(unsigned int i=0; i<pack; i++)
+	{
+		if(i > 0) os << ",";
+		dumpImmedU16(value, os);
+		value -= size;
+	}
+	os << ")";
 }
 void BrigOperandEntry::dumpImmedU16X8(unsigned char *ptr = nullptr, std::ostream &os = std::cout) const
-{
-	dumpImmedUnsupported(os);
+{	
+	struct BrigOperandImmed *operand = (struct BrigOperandImmed *)base;
+	if(!ptr) ptr = operand->bytes;
+	unsigned int size = 2;
+	unsigned int pack = 8;
+	unsigned int lastIndex = size * pack - size;
+	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	os << "_u" << size*8 << "x" << pack << "(";
+	for(unsigned int i=0; i<pack; i++)
+	{
+		if(i > 0) os << ",";
+		dumpImmedU16(value, os);
+		value -= size;
+	}
+	os << ")";
 }
 void BrigOperandEntry::dumpImmedU32X2(unsigned char *ptr = nullptr, std::ostream &os = std::cout) const
 {
-	dumpImmedUnsupported(os);
+	struct BrigOperandImmed *operand = (struct BrigOperandImmed *)base;
+	if(!ptr) ptr = operand->bytes;
+	unsigned int size = 4;
+	unsigned int pack = 2;
+	unsigned int lastIndex = size * pack - size;
+	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	os << "_u" << size*8 << "x" << pack << "(";
+	for(unsigned int i=0; i<pack; i++)
+	{
+		if(i > 0) os << ",";
+		dumpImmedU32(value, os);
+		value -= size;
+	}
+	os << ")";
 }
-void BrigOperandEntry::dumpImmedU32X4(unsigned char *ptr = nullptr, std::ostream &os = std::cout) const
-{
-	dumpImmedUnsupported(os);
+void BrigOperandEntry::dumpImmedU32X4(
+		unsigned char *ptr = nullptr, 
+		std::ostream &os = std::cout
+	) const
+{	
+	struct BrigOperandImmed *operand = (struct BrigOperandImmed *)base;
+	if(!ptr) ptr = operand->bytes;
+	unsigned int size = 4;
+	unsigned int pack = 4;
+	unsigned int lastIndex = size * pack - size;
+	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	os << "_u" << size*8 << "x" << pack << "(";
+	for(unsigned int i=0; i<pack; i++)
+	{
+		if(i > 0) os << ",";
+		dumpImmedU32(value, os);
+		value -= size;
+	}
+	os << ")";
 }
-void BrigOperandEntry::dumpImmedU64X2(unsigned char *ptr = nullptr, std::ostream &os = std::cout) const
-{
-	dumpImmedUnsupported(os);
+void BrigOperandEntry::dumpImmedU64X2(
+		unsigned char *ptr = nullptr, 
+		std::ostream &os = std::cout
+	) const
+{	
+	struct BrigOperandImmed *operand = (struct BrigOperandImmed *)base;
+	if(!ptr) ptr = operand->bytes;
+	unsigned int size = 8;
+	unsigned int pack = 2;
+	unsigned int lastIndex = size * pack - size;
+	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	os << "_u" << size*8 << "x" << pack << "(";
+	for(unsigned int i=0; i<pack; i++)
+	{
+		if(i > 0) os << ",";
+		dumpImmedU64(value, os);
+		value -= size;
+	}
+	os << ")";
 }
-void BrigOperandEntry::dumpImmedS8X4(unsigned char *ptr = nullptr, std::ostream &os = std::cout) const
+void BrigOperandEntry::dumpImmedS8X4(
+		unsigned char *ptr = nullptr, 
+		std::ostream &os = std::cout
+	) const
 {
-	dumpImmedUnsupported(os);
+	struct BrigOperandImmed *operand = (struct BrigOperandImmed *)base;
+	if(!ptr) ptr = operand->bytes;
+	unsigned int size = 1;
+	unsigned int pack = 4;
+	unsigned int lastIndex = size * pack - size;
+	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	os << "_s" << size*8 << "x" << pack << "(";
+	for(unsigned int i=0; i<pack; i++)
+	{
+		if(i > 0) os << ",";
+		dumpImmedS8(value, os);
+		value -= size;
+	}
+	os << ")";
 }
-void BrigOperandEntry::dumpImmedS8X8(unsigned char *ptr = nullptr, std::ostream &os = std::cout) const
-{
-	dumpImmedUnsupported(os);
+void BrigOperandEntry::dumpImmedS8X8(
+		unsigned char *ptr = nullptr, 
+		std::ostream &os = std::cout
+	) const
+{	
+	struct BrigOperandImmed *operand = (struct BrigOperandImmed *)base;
+	if(!ptr) ptr = operand->bytes;
+	unsigned int size = 1;
+	unsigned int pack = 8;
+	unsigned int lastIndex = size * pack - size;
+	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	os << "_s" << size*8 << "x" << pack << "(";
+	for(unsigned int i=0; i<pack; i++)
+	{
+		if(i > 0) os << ",";
+		dumpImmedS8(value, os);
+		value -= size;
+	}
+	os << ")";
 }
-void BrigOperandEntry::dumpImmedS8X16(unsigned char *ptr = nullptr, std::ostream &os = std::cout) const
-{
-	dumpImmedUnsupported(os);
+void BrigOperandEntry::dumpImmedS8X16(
+		unsigned char *ptr = nullptr, 
+		std::ostream &os = std::cout
+	) const
+{	
+	struct BrigOperandImmed *operand = (struct BrigOperandImmed *)base;
+	if(!ptr) ptr = operand->bytes;
+	unsigned int size = 1;
+	unsigned int pack = 16;
+	unsigned int lastIndex = size * pack - size;
+	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	os << "_s" << size*8 << "x" << pack << "(";
+	for(unsigned int i=0; i<pack; i++)
+	{
+		if(i > 0) os << ",";
+		dumpImmedS8(value, os);
+		value -= size;
+	}
+	os << ")";
 }
-void BrigOperandEntry::dumpImmedS16X2(unsigned char *ptr = nullptr, std::ostream &os = std::cout) const
+void BrigOperandEntry::dumpImmedS16X2(
+		unsigned char *ptr = nullptr, 
+		std::ostream &os = std::cout
+	) const
 {
-	dumpImmedUnsupported(os);
+	struct BrigOperandImmed *operand = (struct BrigOperandImmed *)base;
+	if(!ptr) ptr = operand->bytes;
+	unsigned int size = 2;
+	unsigned int pack = 2;
+	unsigned int lastIndex = size * pack - size;
+	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	os << "_s" << size*8 << "x" << pack << "(";
+	for(unsigned int i=0; i<pack; i++)
+	{
+		if(i > 0) os << ",";
+		dumpImmedS16(value, os);
+		value -= size;
+	}
+	os << ")";
 }
-void BrigOperandEntry::dumpImmedS16X4(unsigned char *ptr = nullptr, std::ostream &os = std::cout) const
+void BrigOperandEntry::dumpImmedS16X4(
+		unsigned char *ptr = nullptr, 
+		std::ostream &os = std::cout
+	) const
 {
-	dumpImmedUnsupported(os);
+	struct BrigOperandImmed *operand = (struct BrigOperandImmed *)base;
+	if(!ptr) ptr = operand->bytes;
+	unsigned int size = 2;
+	unsigned int pack = 4;
+	unsigned int lastIndex = size * pack - size;
+	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	os << "_s" << size*8 << "x" << pack << "(";
+	for(unsigned int i=0; i<pack; i++)
+	{
+		if(i > 0) os << ",";
+		dumpImmedS16(value, os);
+		value -= size;
+	}
+	os << ")";
 }
-void BrigOperandEntry::dumpImmedS16X8(unsigned char *ptr = nullptr, std::ostream &os = std::cout) const
+void BrigOperandEntry::dumpImmedS16X8(
+		unsigned char *ptr = nullptr, 
+		std::ostream &os = std::cout
+	) const
 {
-	dumpImmedUnsupported(os);
+	struct BrigOperandImmed *operand = (struct BrigOperandImmed *)base;
+	if(!ptr) ptr = operand->bytes;
+	unsigned int size = 2;
+	unsigned int pack = 8;
+	unsigned int lastIndex = size * pack - size;
+	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	os << "_s" << size*8 << "x" << pack << "(";
+	for(unsigned int i=0; i<pack; i++)
+	{
+		if(i > 0) os << ",";
+		dumpImmedS16(value, os);
+		value -= size;
+	}
+	os << ")";
 }
-void BrigOperandEntry::dumpImmedS32X2(unsigned char *ptr = nullptr, std::ostream &os = std::cout) const
+void BrigOperandEntry::dumpImmedS32X2(
+		unsigned char *ptr = nullptr, 
+		std::ostream &os = std::cout
+	) const
 {
-	dumpImmedUnsupported(os);
+	struct BrigOperandImmed *operand = (struct BrigOperandImmed *)base;
+	if(!ptr) ptr = operand->bytes;
+	unsigned int size = 4;
+	unsigned int pack = 2;
+	unsigned int lastIndex = size * pack - size;
+	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	os << "_s" << size*8 << "x" << pack << "(";
+	for(unsigned int i=0; i<pack; i++)
+	{
+		if(i > 0) os << ",";
+		dumpImmedS32(value, os);
+		value -= size;
+	}
+	os << ")";
 }
-void BrigOperandEntry::dumpImmedS32X4(unsigned char *ptr = nullptr, std::ostream &os = std::cout) const
+void BrigOperandEntry::dumpImmedS32X4(
+		unsigned char *ptr = nullptr, 
+		std::ostream &os = std::cout
+	) const
 {
-	dumpImmedUnsupported(os);
+	struct BrigOperandImmed *operand = (struct BrigOperandImmed *)base;
+	if(!ptr) ptr = operand->bytes;
+	unsigned int size = 4;
+	unsigned int pack = 4;
+	unsigned int lastIndex = size * pack - size;
+	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	os << "_s" << size*8 << "x" << pack << "(";
+	for(unsigned int i=0; i<pack; i++)
+	{
+		if(i > 0) os << ",";
+		dumpImmedS32(value, os);
+		value -= size;
+	}
+	os << ")";
 }
-void BrigOperandEntry::dumpImmedS64X2(unsigned char *ptr = nullptr, std::ostream &os = std::cout) const
+void BrigOperandEntry::dumpImmedS64X2(
+		unsigned char *ptr = nullptr, 
+		std::ostream &os = std::cout
+	) const
 {
-	dumpImmedUnsupported(os);
+	struct BrigOperandImmed *operand = (struct BrigOperandImmed *)base;
+	if(!ptr) ptr = operand->bytes;
+	unsigned int size = 8;
+	unsigned int pack = 2;
+	unsigned int lastIndex = size * pack - size;
+	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	os << "_s" << size*8 << "x" << pack << "(";
+	for(unsigned int i=0; i<pack; i++)
+	{
+		if(i > 0) os << ",";
+		dumpImmedS64(value, os);
+		value -= size;
+	}
+	os << ")";
 }
-void BrigOperandEntry::dumpImmedF16X2(unsigned char *ptr = nullptr, std::ostream &os = std::cout) const
+void BrigOperandEntry::dumpImmedF16X2(
+		unsigned char *ptr = nullptr, 
+		std::ostream &os = std::cout
+	) const
 {
-	dumpImmedUnsupported(os);
+	struct BrigOperandImmed *operand = (struct BrigOperandImmed *)base;
+	if(!ptr) ptr = operand->bytes;
+	unsigned int size = 2;
+	unsigned int pack = 2;
+	unsigned int lastIndex = size * pack - size;
+	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	os << "_f" << size*8 << "x" << pack << "(";
+	for(unsigned int i=0; i<pack; i++)
+	{
+		if(i > 0) os << ",";
+		dumpImmedF16(value, os);
+		value -= size;
+	}
+	os << ")";
 }
-void BrigOperandEntry::dumpImmedF16X4(unsigned char *ptr = nullptr, std::ostream &os = std::cout) const
+void BrigOperandEntry::dumpImmedF16X4(
+		unsigned char *ptr = nullptr, 
+		std::ostream &os = std::cout
+	) const
 {
-	dumpImmedUnsupported(os);
+	struct BrigOperandImmed *operand = (struct BrigOperandImmed *)base;
+	if(!ptr) ptr = operand->bytes;
+	unsigned int size = 2;
+	unsigned int pack = 4;
+	unsigned int lastIndex = size * pack - size;
+	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	os << "_f" << size*8 << "x" << pack << "(";
+	for(unsigned int i=0; i<pack; i++)
+	{
+		if(i > 0) os << ",";
+		dumpImmedF16(value, os);
+		value -= size;
+	}
+	os << ")";
 }
-void BrigOperandEntry::dumpImmedF16X8(unsigned char *ptr = nullptr, std::ostream &os = std::cout) const
+void BrigOperandEntry::dumpImmedF16X8(
+		unsigned char *ptr = nullptr, 
+		std::ostream &os = std::cout
+	) const
 {
-	dumpImmedUnsupported(os);
+	struct BrigOperandImmed *operand = (struct BrigOperandImmed *)base;
+	if(!ptr) ptr = operand->bytes;
+	unsigned int size = 2;
+	unsigned int pack = 8;
+	unsigned int lastIndex = size * pack - size;
+	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	os << "_f" << size*8 << "x" << pack << "(";
+	for(unsigned int i=0; i<pack; i++)
+	{
+		if(i > 0) os << ",";
+		dumpImmedF16(value, os);
+		value -= size;
+	}
+	os << ")";
 }
-void BrigOperandEntry::dumpImmedF32X2(unsigned char *ptr = nullptr, std::ostream &os = std::cout) const
+void BrigOperandEntry::dumpImmedF32X2(
+		unsigned char *ptr = nullptr, 
+		std::ostream &os = std::cout
+	) const
 {
-	dumpImmedUnsupported(os);
+	struct BrigOperandImmed *operand = (struct BrigOperandImmed *)base;
+	if(!ptr) ptr = operand->bytes;
+	unsigned int size = 4;
+	unsigned int pack = 2;
+	unsigned int lastIndex = size * pack - size;
+	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	os << "_f" << size*8 << "x" << pack << "(";
+	for(unsigned int i=0; i<pack; i++)
+	{
+		if(i > 0) os << ",";
+		dumpImmedF32(value, os);
+		value -= size;
+	}
+	os << ")";
 }
-void BrigOperandEntry::dumpImmedF32X4(unsigned char *ptr = nullptr, std::ostream &os = std::cout) const
+void BrigOperandEntry::dumpImmedF32X4(
+		unsigned char *ptr = nullptr, 
+		std::ostream &os = std::cout
+	) const
 {
-	dumpImmedUnsupported(os);
+	struct BrigOperandImmed *operand = (struct BrigOperandImmed *)base;
+	if(!ptr) ptr = operand->bytes;
+	unsigned int size = 4;
+	unsigned int pack = 4;
+	unsigned int lastIndex = size * pack - size;
+	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	os << "_f" << size*8 << "x" << pack << "(";
+	for(unsigned int i=0; i<pack; i++)
+	{
+		if(i > 0) os << ",";
+		dumpImmedF32(value, os);
+		value -= size;
+	}
+	os << ")";
 }
-void BrigOperandEntry::dumpImmedF64X2(unsigned char *ptr = nullptr, std::ostream &os = std::cout) const
+void BrigOperandEntry::dumpImmedF64X2(
+		unsigned char *ptr = nullptr, 
+		std::ostream &os = std::cout
+	) const
 {
-	dumpImmedUnsupported(os);
+	struct BrigOperandImmed *operand = (struct BrigOperandImmed *)base;
+	if(!ptr) ptr = operand->bytes;
+	unsigned int size = 8;
+	unsigned int pack = 2;
+	unsigned int lastIndex = size * pack - size;
+	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	os << "_f" << size*8 << "x" << pack << "(";
+	for(unsigned int i=0; i<pack; i++)
+	{
+		if(i > 0) os << ",";
+		dumpImmedF64(value, os);
+		value -= size;
+	}
+	os << ")";
 }
 
 void BrigOperandEntry::dumpImmedUnsupported(std::ostream &os = std::cout) const
