@@ -236,7 +236,7 @@ void BrigDirEntry::DumpDirectiveVersion(std::ostream &os = std::cout) const
 	os << ":";
 	os << BrigEntry::machineModel2str(dir->machineModel);
 	os << misc::fmt(
-			" // Brig Object Format Version %d:%d",
+			" // Brig Object Format Version %d:%d;",
 			dir->brigMajor, dir->brigMinor);
 	os << "\n";
 }

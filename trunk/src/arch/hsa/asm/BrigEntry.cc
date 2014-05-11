@@ -208,13 +208,18 @@ void BrigEntry::dumpBody(
 	{
 		os << "\n{";
 		os << "\n";
-		BrigSection *bs = this->file->getBrigSection(BrigSectionCode);
-		// +4 to skip section size field
-		char * bufPtr = (char *)bs->getBuffer() + 4;
+		BrigSection *bsc = this->file->getBrigSection(BrigSectionCode);
+		char * bufPtr = (char *)bsc->getBuffer() + codeOffset;
 		for(int i=0; i<nInst; i++)
 		{	
 			//printf("Inst %d/%d", i, nInst);
 			BrigInstEntry inst(bufPtr, this->file);
+			while( bufPtr == (char *)this->file->getCode())
+			{
+				BrigDirEntry dir((char *)this->file->getDirective(), this->file);
+				dir.Dump(os);
+				this->file->moveToNextDirective();
+			}
 			inst.Dump(os);
 			bufPtr = inst.next();
 		}
