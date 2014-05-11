@@ -133,6 +133,7 @@ void BrigDirEntry::DumpDirectiveFunction(std::ostream &os = std::cout) const
 	// Cannot use this->next(), since it is overwritten
 	char *next = BrigEntry::next();
 	SymbolModifier modifier(dir->modifier.allBits);
+	os << "\n";
 	os << modifier.getLinkageStr() << "function ";
 	os << BrigStrEntry::GetStringByOffset(this->file, dir->name);
 	next = BrigEntry::dumpArgs(next, dir->outArgCount, os);
@@ -161,7 +162,7 @@ void BrigDirEntry::DumpDirectiveKernel(std::ostream &os = std::cout) const
 	struct BrigDirectiveKernel *dir
 		= (struct BrigDirectiveKernel *)this->base;
 	char *next = BrigEntry::next();
-	os << "kernel ";
+	os << "\nkernel ";
 	os << BrigStrEntry::GetStringByOffset(this->file, dir->name);
 	next = BrigEntry::dumpArgs(next, dir->inArgCount, os);
 	dumpBody(dir->code, dir->instCount, false, os);
@@ -240,6 +241,7 @@ void BrigDirEntry::DumpDirectiveVersion(std::ostream &os = std::cout) const
 			dir->brigMajor, dir->brigMinor);
 	os << "\n";
 }
+
 char *BrigDirEntry::GetDirByOffset(BrigFile *file, unsigned short offset)
 {
 	BrigSection *sec = file->getBrigSection(BrigSectionDirective);

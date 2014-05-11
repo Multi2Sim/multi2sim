@@ -376,7 +376,7 @@ void BrigInstEntry::DumpInstBasic(std::ostream &os = std::cout) const
 	os << this->opcode2str((InstOpcode)inst->opcode);
 	if(this->hasType()) os << "_" << BrigEntry::type2str(inst->type);
 	this->dumpOperands(os);
-	os << "\n";
+	os << ";\n";
 }
 
 void BrigInstEntry::DumpInstAtomic(std::ostream &os = std::cout) const
@@ -389,7 +389,7 @@ void BrigInstEntry::DumpInstAtomic(std::ostream &os = std::cout) const
 	dump_(sem2str(inst->memorySemantic), os);
 	dump_(type2str(inst->type), os);
 	this->dumpOperands(os);
-	os << "\n";
+	os << ";\n";
 }
 
 void BrigInstEntry::DumpInstAtomicImage(std::ostream &os = std::cout) const
@@ -402,7 +402,7 @@ void BrigInstEntry::DumpInstAtomicImage(std::ostream &os = std::cout) const
 	dump_(type2str(inst->imageType));
 	dump_(type2str(inst->coordType));
 	this->dumpOperands(os);
-	os << "\n";
+	os << ";\n";
 }
 
 void BrigInstEntry::DumpInstCvt(std::ostream &os = std::cout) const
@@ -414,7 +414,7 @@ void BrigInstEntry::DumpInstCvt(std::ostream &os = std::cout) const
 	dump_(type2str(inst->type), os);
 	dump_(type2str(inst->sourceType), os);
 	this->dumpOperands(os);
-	os << "\n";
+	os << ";\n";
 }
 
 void BrigInstEntry::DumpInstBar(std::ostream &os = std::cout) const
@@ -424,7 +424,7 @@ void BrigInstEntry::DumpInstBar(std::ostream &os = std::cout) const
 	dump_(width2str(inst), os);
 	dump_(memFence2str(inst->memoryFence), os);
 	this->dumpOperands(os);
-	os << "\n";
+	os << ";\n";
 }
 
 void BrigInstEntry::DumpInstBr(std::ostream &os = std::cout) const
@@ -436,7 +436,7 @@ void BrigInstEntry::DumpInstBr(std::ostream &os = std::cout) const
 	dump_(rounding2str(inst), os);
 	if(this->hasType()) dump_(type2str(inst->type));
 	this->dumpOperands(os);
-	os << "\n";
+	os << ";\n";
 }
 
 void BrigInstEntry::DumpInstCmp(std::ostream &os = std::cout) const
@@ -450,7 +450,7 @@ void BrigInstEntry::DumpInstCmp(std::ostream &os = std::cout) const
 	dump_(type2str(inst->type), os);
 	dump_(type2str(inst->sourceType), os);
 	this->dumpOperands(os);
-	os << "\n";
+	os << ";\n";
 }
 
 void BrigInstEntry::DumpInstFbar(std::ostream &os = std::cout) const
@@ -465,7 +465,7 @@ void BrigInstEntry::DumpInstFbar(std::ostream &os = std::cout) const
 	}
 	if(this->hasType()) dump_(type2str(inst->type), os);
 	this->dumpOperands(os);
-	os << "\n";
+	os << ";\n";
 }
 
 void BrigInstEntry::DumpInstImage(std::ostream &os = std::cout) const
@@ -478,7 +478,7 @@ void BrigInstEntry::DumpInstImage(std::ostream &os = std::cout) const
 	dump_(type2str(inst->imageType));
 	dump_(type2str(inst->coordType));
 	this->dumpOperands(os);
-	os << "\n";
+	os << ";\n";
 }
 
 void BrigInstEntry::DumpInstMem(std::ostream &os = std::cout) const
@@ -493,7 +493,7 @@ void BrigInstEntry::DumpInstMem(std::ostream &os = std::cout) const
 	dump_(equiv2str(inst->equivClass), os);
 	dump_(type2str(inst->type), os);
 	this->dumpOperands(os);
-	os << "\n";
+	os << ";\n";
 }
 
 void BrigInstEntry::DumpInstAddr(std::ostream &os = std::cout) const
@@ -503,7 +503,7 @@ void BrigInstEntry::DumpInstAddr(std::ostream &os = std::cout) const
 	dump_(BrigEntry::seg2str(inst->segment));
 	dump_(BrigEntry::type2str(inst->type));
 	this->dumpOperands(os);
-	os << "\n";
+	os << ";\n";
 }
 
 void BrigInstEntry::DumpInstMod(std::ostream &os = std::cout) const
@@ -515,7 +515,7 @@ void BrigInstEntry::DumpInstMod(std::ostream &os = std::cout) const
 	dump_(pack2str(inst->pack), os);
 	if(this->hasType()) os << "_" << BrigEntry::type2str(inst->type);
 	this->dumpOperands(os);
-	os << "\n";
+	os << ";\n";
 }
 
 void BrigInstEntry::DumpInstSeg(std::ostream &os = std::cout) const
@@ -526,7 +526,7 @@ void BrigInstEntry::DumpInstSeg(std::ostream &os = std::cout) const
 	dump_(BrigEntry::type2str(inst->type), os);
 	dump_(BrigEntry::type2str(inst->sourceType), os);
 	this->dumpOperands(os);
-	os << "\n";
+	os << ";\n";
 }
 
 void BrigInstEntry::DumpInstSourceType(std::ostream &os = std::cout) const
@@ -538,7 +538,7 @@ void BrigInstEntry::DumpInstSourceType(std::ostream &os = std::cout) const
 	os << "_" << BrigEntry::type2str(inst->type);
 	os << "_" << BrigEntry::type2str(inst->sourceType);
 	this->dumpOperands(os);
-	os << "\n";
+	os << ";\n";
 }
 
 void BrigInstEntry::DumpInstUnsupported( 
@@ -549,6 +549,6 @@ void BrigInstEntry::DumpInstUnsupported(
 	struct BrigInstBase *inst = (struct BrigInstBase *)base;
 	os << "<unsupported kind:" << kind 
 		<< "(" << inst->kind << ") " 
-		<< "opcode:" << inst->opcode << " >\n";
+		<< "opcode:" << inst->opcode << " >;\n";
 }
 }//end namespace
