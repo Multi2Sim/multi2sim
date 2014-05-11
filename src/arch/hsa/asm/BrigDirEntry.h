@@ -71,6 +71,8 @@ public:
 	/// call back function look up table
 	static DumpDirectiveFn dump_dir_fn[27];
 
+	/// Returns the pointer to the directive 
+	static char *GetDirByOffset(BrigFile *file, unsigned short offset);
 
 };
 }

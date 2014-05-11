@@ -240,4 +240,11 @@ void BrigDirEntry::DumpDirectiveVersion(std::ostream &os = std::cout) const
 			dir->brigMajor, dir->brigMinor);
 	os << "\n";
 }
+char *BrigDirEntry::GetDirByOffset(BrigFile *file, unsigned short offset)
+{
+	BrigSection *sec = file->getBrigSection(BrigSectionDirective);
+	char *buf = (char *)sec->getBuffer();
+	buf += offset;
+	return buf;
+}
 }
