@@ -18,7 +18,7 @@ BrigFile::BrigFile(const std::string &path)
 		} 
 
 	}
-	// Put every in-function directive entry in the multimap.
+	// Put every in-function/in-kernel directive entry in the multimap.
 	const char * directive_section_start = this->brig_sections[BrigSectionDirective].get()->getBuffer();
 	const char * code_section_start = this->brig_sections[BrigSectionCode].get()->getBuffer();
 	char * directive_ptr = (char *)directive_section_start + 4;
@@ -44,6 +44,7 @@ BrigFile::BrigFile(const std::string &path)
 		}
 		directive_ptr += (dir->size + 3) / 4 * 4;
 	}
+	map_it = directive_code_map.begin();
 }
 
 BrigFile::~BrigFile()
