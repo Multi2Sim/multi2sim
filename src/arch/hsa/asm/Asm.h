@@ -57,6 +57,9 @@ public:
 	/// Configuration for hsa disassembler
 	static AsmConfig config;
 
+	///Indentation of current line
+	int indent;
+
 }; // class Asm
 
 } // namespace HSA

@@ -2,6 +2,7 @@
 #include "BrigStrEntry.h"
 #include "BrigDirEntry.h"
 #include "BrigInstEntry.h"
+#include "Asm.h"
 #include "lib/cpp/Misc.h"
 #include "lib/cpp/String.h"
 
@@ -206,6 +207,8 @@ void BrigEntry::dumpBody(
 {
 	if(!isDecl)
 	{
+		Asm* as = Asm::getInstance();
+		as->indent++;
 		os << "\n{";
 		os << "\n";
 		BrigSection *bsc = this->file->getBrigSection(BrigSectionCode);
@@ -217,13 +220,16 @@ void BrigEntry::dumpBody(
 			while( bufPtr == (char *)this->file->getCode())
 			{
 				BrigDirEntry dir((char *)this->file->getDirective(), this->file);
+				os << "\n";
 				dir.Dump(os);
 				this->file->moveToNextDirective();
 			}
+			for(int i=0; i<as->indent; i++) os << "\t";
 			inst.Dump(os);
 			bufPtr = inst.next();
 		}
-		os << "\n}";
+		as->indent--;
+		os << "}";
 	}	
 	os << ";\n";
 }

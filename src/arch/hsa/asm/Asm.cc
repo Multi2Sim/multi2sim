@@ -47,6 +47,7 @@ Asm::Asm()
 	InitTable(Inst_##_name, #_name, _opstr);
 #include "asm.dat"
 #undef DEFINST
+	indent = 0;
 }
 
 void Asm::InitTable(InstOpcode opcode, const char *name, const char *fmt_str)
