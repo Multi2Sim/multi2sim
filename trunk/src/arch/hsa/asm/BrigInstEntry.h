@@ -118,6 +118,9 @@ public:
 	/// Returns the opcode
 	int getOpcode() const;
 
+	/// Returns the type of the inst
+	unsigned short getType() const;
+
 	/// Decode the bytes and prepares the inst_info struct
 	/// Not really used
 	void Decode();

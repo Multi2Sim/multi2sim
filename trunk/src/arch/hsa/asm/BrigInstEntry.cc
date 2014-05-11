@@ -316,8 +316,9 @@ void BrigInstEntry::dumpOperands(std::ostream &os = std::cout) const
 		if(inst->operands[i] == 0 ) return;
 		if(i>0) os << ", ";
 		BrigOperandEntry op(
-			BrigOperandEntry::GetOperandBufferByOffset(file, inst->operands[i]),
-			file
+			getOperand(i),
+			file,
+			this
 		);
 		op.Dump(os);
 	}
@@ -338,6 +339,11 @@ int BrigInstEntry::getOpcode() const
 {
 	struct BrigInstBase *inst = (struct BrigInstBase *)base;
 	return inst->opcode;
+}
+
+unsigned short BrigInstEntry::getType() const{
+	struct BrigInstBase *inst = (struct BrigInstBase *)base;
+	return inst->type;
 }
 
 BrigInstEntry::DumpInstFn BrigInstEntry::dump_inst_fn[] = 
