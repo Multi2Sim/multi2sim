@@ -34,6 +34,9 @@ protected:
 	// mapped value: a pointer to a directive entry
 	std::multimap<char *, char *> directive_code_map;
 
+	// Stores the current code-directive-map iterator for faster map look-up
+	std::multimap<char *, char *>::iterator map_it;
+
 public:
 	/// Loads a BRIG File from the file system, create sections
 	BrigFile(const std::string &path);
@@ -44,11 +47,21 @@ public:
 	/// Returns the path to the BRIG file
 	const std::string &getPath() const { return file.getPath(); }
 
+
 	/// Returns the section according to the type value passed in
 	BrigSection *getBrigSection (
 		enum BrigSectionType type
 	) const;
 	
+	/// Return a pointer to a code entry where the next directive entry will be dumped.
+	const char * getCode() const { return map_it->first;}
+
+	/// Return a pointer to a directive entry which needs to be dumped at the current code entry.
+	const char * getDirective() const { return map_it->second; }
+
+	/// Move to next directive entry (could be the same code entry)
+	void moveToNextDirective() { map_it++; }
+
 	/// Disassembles the binary file, output to stdout
 	void disassemble();
 };
