@@ -83,6 +83,9 @@ public:
 	/// Constructor
 	BrigEntry(char *buf, BrigFile *file);
 
+	/// Returns the pointer to the buffer of the entry
+	char *getBuffer() const{return base;}
+
 	/// Returns the size of the entry, the size is paddint into 4 bytes
 	/// String entry should have different implementation, since the size
 	/// field in string entry is 4 bytes long

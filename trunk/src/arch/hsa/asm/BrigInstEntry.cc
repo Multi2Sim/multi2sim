@@ -32,7 +32,7 @@ misc::StringMap BrigInstEntry::rounding_to_str_map =
 	{"up", 3},
 	{"down", 4},
 	{"neari", 5},
-	{"zeroi", 6},
+	{"", 6},
 	{"upi", 7},
 	{"downi", 8},
 	{"neari_sat", 9},
@@ -97,7 +97,7 @@ const char *BrigInstEntry::operandV2str(char *o) const
 		return "";
 		break;
 	default:
-		return "<Invalid vX operand>";
+		return "/*INVALID*/";
 	}
 	
 }
@@ -160,12 +160,43 @@ misc::StringMap BrigInstEntry::width_to_str_map =
 	{"width(1073741824)", 31},
 	{"width(2147483648)", 32},
 	{"width(WAVESIZE)", 33},
-	{"width(ALL)", 34}
+	{"width(all)", 34}
 };
+
+template<class T>
+int BrigInstEntry::getDefaultWidth(T *inst) const
+{
+	if(inst->opcode == BRIG_OPCODE_BRN)
+	{
+		struct BrigOperandBase * operand = 
+			(struct BrigOperandBase *)getOperand(0);
+		if(operand->kind == BRIG_OPERAND_LABEL_REF)
+		{
+			return 34;
+		}
+		return 1;
+	}
+	else if(inst->opcode == BRIG_OPCODE_BARRIER)
+	{
+		return 34;
+	}
+	else if(inst->opcode == BRIG_OPCODE_JOINFBAR ||
+		inst->opcode == BRIG_OPCODE_LEAVEFBAR ||
+		inst->opcode == BRIG_OPCODE_WAITFBAR ||
+		inst->opcode == BRIG_OPCODE_ARRIVEFBAR)
+	{
+		return 33;
+	}
+	return 1;
+}
 
 template<class T>
 const char *BrigInstEntry::width2str(T *inst) const
 {
+	if(inst->width == getDefaultWidth(inst))
+	{
+		return "";
+	}
 	return width_to_str_map.MapValue(inst->width);	
 }
 
@@ -246,8 +277,8 @@ misc::StringMap BrigInstEntry::image_geo_to_str_map =
 	{"2d", 1},
 	{"3d", 2},
 	{"1da", 3},
-	{"2da", 4},
-	{"3da", 5}
+	{"1db", 4},
+	{"2da", 5}
 };
 
 const char *BrigInstEntry::imageGeo2str(unsigned geometry) const
@@ -262,12 +293,29 @@ misc::StringMap BrigInstEntry::mem_fence_to_str_map =
 	{"fglobal", 2},
 	{"fboth", 3},
 	{"fpartial", 4},
-	{"fpartial_both", 5}
+	{"fpartialboth", 5}
 };
 
-const char *BrigInstEntry::memFence2str(unsigned memFence) const
+template<typename T>
+int BrigInstEntry::getDefaultMemFence(T *inst) const
 {
-	return mem_fence_to_str_map.MapValue(memFence);
+	if(inst->opcode == BRIG_OPCODE_BARRIER ||
+		inst->opcode == BRIG_OPCODE_WAITFBAR ||
+		inst->opcode == BRIG_OPCODE_ARRIVEFBAR ||
+		inst->opcode == BRIG_OPCODE_SYNC){
+		return 3;
+	}
+	return 0;
+}
+
+template<typename T>
+const char *BrigInstEntry::memFence2str(T *inst) const
+{
+	if(inst->memoryFence == getDefaultMemFence(inst))
+	{
+		return "";
+	}
+	return mem_fence_to_str_map.MapValue(inst->memoryFence);
 }
 bool BrigInstEntry::hasType() const
 {
@@ -310,15 +358,15 @@ char *BrigInstEntry::getOperand(int i) const
 void BrigInstEntry::dumpOperands(std::ostream &os = std::cout) const
 {
 	struct BrigInstBase *inst = (struct BrigInstBase *)base;
+	if(inst->operands[0] == 0 ) return;
 	os << "\t";
 	for(int i=0; i<5; i++)
 	{
-		if(inst->operands[i] == 0 ) return;
+		if(inst->operands[i] == 0) return;
 		if(i>0) os << ", ";
 		BrigOperandEntry op(
-			getOperand(i),
-			file,
-			this
+			getOperand(i), file,
+			this, i
 		);
 		op.Dump(os);
 	}
@@ -422,7 +470,7 @@ void BrigInstEntry::DumpInstBar(std::ostream &os = std::cout) const
 	struct BrigInstBar *inst = (struct BrigInstBar *)base;
 	os << this->opcode2str((InstOpcode)inst->opcode);
 	dump_(width2str(inst), os);
-	dump_(memFence2str(inst->memoryFence), os);
+	dump_(memFence2str(inst), os);
 	this->dumpOperands(os);
 	os << ";\n";
 }
@@ -461,7 +509,7 @@ void BrigInstEntry::DumpInstFbar(std::ostream &os = std::cout) const
 	if(inst->opcode==BRIG_OPCODE_WAITFBAR || 
 		inst->opcode==BRIG_OPCODE_ARRIVEFBAR)
 	{
-		dump_(memFence2str(inst->memoryFence), os);
+		dump_(memFence2str(inst), os);
 	}
 	if(this->hasType()) dump_(type2str(inst->type), os);
 	this->dumpOperands(os);
