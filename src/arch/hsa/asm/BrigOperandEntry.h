@@ -12,9 +12,18 @@ class BrigOperandEntry : public BrigEntry
 protected:
 	// The Instruction object that the operand belongs to
 	const BrigInstEntry *inst;
+
+	// Index of the operand in the inst
+	unsigned char index;
 public:
 	/// Constructor
-	BrigOperandEntry(char *buf, BrigFile *file, const BrigInstEntry* inst);
+	BrigOperandEntry(
+		char *buf, BrigFile *file, 
+		const BrigInstEntry* inst, unsigned char index
+	);
+
+	/// Returns the type of the operand for dumping
+	int getOperandType() const;
 	
 	/// Returns the kind field of an operand
 	unsigned short getKind() const;

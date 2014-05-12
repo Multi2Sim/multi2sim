@@ -12,11 +12,13 @@ namespace HSA
 BrigOperandEntry::BrigOperandEntry(
 		char *buf, 
 		BrigFile *file, 
-		const BrigInstEntry *inst
+		const BrigInstEntry *inst,
+		unsigned char index
 	)
 	: BrigEntry(buf, file)
 {
 	this->inst = inst;
+	this->index = index;
 }
 
 unsigned short BrigOperandEntry::getKind() const
@@ -92,10 +94,86 @@ BrigOperandEntry::dump_immed_fn =
 	{BRIG_TYPE_F64 | BRIG_TYPE_PACK_128, &BrigOperandEntry::dumpImmedF64X2}
 };
 
+int BrigOperandEntry::getOperandType() const
+{
+	if(inst->getOpcode() == BRIG_OPCODE_SHL  && index ==2)
+	{
+		return BRIG_TYPE_U32;
+	}
+	else if(inst->getOpcode() == BRIG_OPCODE_SHR  && index ==2)
+	{
+		return BRIG_TYPE_U32;
+	}
+	else if(inst->getOpcode() == BRIG_OPCODE_BITEXTRACT 
+		&& (index == 2 || index == 3))
+	{
+		return BRIG_TYPE_U32;
+	}
+	else if(inst->getOpcode() == BRIG_OPCODE_BITMASK
+		&& (index == 1 || index == 2))
+	{
+		return BRIG_TYPE_U32;
+	}
+	else if(inst->getOpcode() == BRIG_OPCODE_BITINSERT
+		&& (index == 3 || index == 4))
+	{
+		return BRIG_TYPE_U32;
+	}
+	else if(inst->getOpcode() == BRIG_OPCODE_CMOV
+		&& index == 1 )
+	{
+		struct BrigInstBasic* i = 
+			(struct BrigInstBasic *)inst->getBuffer();
+		if(i->type <= 31)
+			return BRIG_TYPE_B1;
+	}
+	else if(inst->getOpcode() == BRIG_OPCODE_CLASS
+		&& index == 2 )
+	{
+		return BRIG_TYPE_U32;
+	}
+	else if( (inst->getOpcode() == BRIG_OPCODE_SAD
+		|| inst->getOpcode() == BRIG_OPCODE_SADHI )
+		&& index == 3 )
+	{
+		return BRIG_TYPE_U32;
+	}
+	else if(inst->getOpcode() == BRIG_OPCODE_UNPACKCVT
+		&& index == 2 )
+	{
+		return BRIG_TYPE_U32;
+	}
+	else if(inst->getOpcode() == BRIG_OPCODE_MASKLANE
+		&& index == 1 )
+	{
+		return BRIG_TYPE_U32;
+	}
+	else if(inst->getOpcode() == BRIG_OPCODE_ALLOCA
+		&& index == 1 )
+	{
+		return BRIG_TYPE_U32;
+	}
+	else if(inst->getKind() == BRIG_INST_SOURCE_TYPE ||
+		inst->getKind() == BRIG_INST_CMP ||
+		inst->getKind() == BRIG_INST_CVT ||
+		inst->getKind() == BRIG_INST_SEG)
+	{
+		struct BrigInstSourceType *i 
+			= (struct BrigInstSourceType *)inst->getBuffer();
+		return i->sourceType;
+	}
+	else
+	{
+		return inst->getType();
+	}
+	return inst->getType();
+}
+
 void BrigOperandEntry::dumpOperandImmed(std::ostream &os = std::cout) const
 {
+	int type = getOperandType();
 	DumpImmedFn fn = 
-		BrigOperandEntry::dump_immed_fn[inst->getType()];
+		BrigOperandEntry::dump_immed_fn[type];
 	(this->*fn)(nullptr, os);
 
 }
@@ -268,7 +346,7 @@ void BrigOperandEntry::dumpImmedU64(
 {
 	struct BrigOperandImmed *operand = (struct BrigOperandImmed *)base;
 	if(!ptr) ptr = operand->bytes;
-	unsigned long long *value = (unsigned long long *)ptr;
+	uint64_t *value = (uint64_t *)ptr;
 	os << std::dec << *value;
 }
 void BrigOperandEntry::dumpImmedS8(
@@ -321,7 +399,7 @@ void BrigOperandEntry::dumpImmedF16(
 	os << "0H";
 	for(int i=0; i<2; i++)
 	{
-		unsigned char *value = (ptr + i);
+		unsigned char *value = &ptr[1-i];
 		std::cout << std::setfill('0') << std::setw(2) << 
 			std::hex << (int)*value;
 		std::cout << std::dec;
@@ -337,7 +415,7 @@ void BrigOperandEntry::dumpImmedF32(
 	os << "0F";
 	for(int i=0; i<4; i++)
 	{
-		unsigned char *value = &ptr[i];
+		unsigned char *value = &ptr[3-i];
 		std::cout << std::setfill('0') << std::setw(2) << 
 			std::hex << (int)*value;
 		std::cout << std::dec;
@@ -353,7 +431,7 @@ void BrigOperandEntry::dumpImmedF64(
 	os << "0D";
 	for(int i=0; i<8; i++)
 	{
-		unsigned char *value = (unsigned char*) &ptr[i];
+		unsigned char *value = (unsigned char*) &ptr[7-i];
 		std::cout << std::setfill('0') << std::setw(2) << 
 			std::hex << (int)*value;
 		std::cout << std::dec;

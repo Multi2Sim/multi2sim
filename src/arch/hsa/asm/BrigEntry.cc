@@ -11,7 +11,7 @@ const char *BrigEntry::type2str(int type)
 {
 	switch(type)
 	{
-		case 0:	return "none";
+		case 0:	return "";
 		case 1: return "u8";
 		case 2: return "u16";
 		case 3: return "u32";
