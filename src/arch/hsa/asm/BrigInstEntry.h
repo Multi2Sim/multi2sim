@@ -69,6 +69,10 @@ protected:
 
 	// Width to string map
 	static misc::StringMap width_to_str_map;
+
+	// Returns default width
+	template<class T>
+	int getDefaultWidth(T *inst) const;
 	
 	// Convert width to string
 	template<typename T>
@@ -96,8 +100,13 @@ protected:
 	// Memory fence to string map
 	static misc::StringMap mem_fence_to_str_map;
 
+	// Returns the default memory fence
+	template<typename T>
+	int getDefaultMemFence(T* inst) const;
+
 	// Convert memory fence to string
-	const char *memFence2str(unsigned geometry) const;
+	template<typename T>
+	const char *memFence2str(T* inst) const;
 
 
 	// Returns true is the instruction has type
