@@ -44,7 +44,6 @@ BrigFile::BrigFile(const std::string &path)
 		}
 		directive_ptr += (dir->size + 3) / 4 * 4;
 	}
-	map_it = directive_code_map.begin();
 }
 
 BrigFile::~BrigFile()
@@ -76,6 +75,20 @@ void BrigSection::dumpSectionHex() const
 		}
 	}
 	printf("\n");
+}
+
+bool BrigFile::searchCode(char * code)
+{
+	map_it = directive_code_map.find(code);
+	return map_it != directive_code_map.end();
+}
+
+void BrigFile::printCode()
+{
+	for(std::multimap<char *, char *>::iterator it = directive_code_map.begin(); it != directive_code_map.end(); it++)
+	{
+		std::cout << std::hex <<(long)it->first << "	" << std::hex <<(long)it->second << std::endl;
+	}
 }
 
 }// end namespace
