@@ -62,8 +62,15 @@ public:
 	/// Move to next directive entry (could be the same code entry)
 	void moveToNextDirective() { map_it++; }
 
+	/// Search for the code in the map and update the map iterator
+	/// This function should be used when entering a new function or kernel in case the code section is not in order
+	/// Returns FALSE if code is not found
+	bool searchCode(char * code);
+
 	/// Disassembles the binary file, output to stdout
 	void disassemble();
+
+	void printCode();
 };
 
 }
