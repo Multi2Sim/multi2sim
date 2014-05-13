@@ -213,16 +213,22 @@ void BrigEntry::dumpBody(
 		os << "\n";
 		BrigSection *bsc = this->file->getBrigSection(BrigSectionCode);
 		char * bufPtr = (char *)bsc->getBuffer() + codeOffset;
+		bool found_first_directive_in_function = false;
 		for(int i=0; i<nInst; i++)
 		{	
 			//printf("Inst %d/%d", i, nInst);
 			BrigInstEntry inst(bufPtr, this->file);
-			while( bufPtr == (char *)this->file->getCode())
+			if(!found_first_directive_in_function)
+				found_first_directive_in_function = this->file->searchCode(bufPtr);
+			if(found_first_directive_in_function)
 			{
-				BrigDirEntry dir((char *)this->file->getDirective(), this->file);
-				os << "\n";
-				dir.Dump(os);
-				this->file->moveToNextDirective();
+				while( bufPtr == (char *)this->file->getCode())
+				{
+					BrigDirEntry dir((char *)this->file->getDirective(), this->file);
+					os << "\n";
+					dir.Dump(os);
+					this->file->moveToNextDirective();
+				}
 			}
 			for(int i=0; i<as->indent; i++) os << "\t";
 			inst.Dump(os);
