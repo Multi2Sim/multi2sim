@@ -1,6 +1,6 @@
 /*
  *  Multi2Sim
- *  Copyright (C) 2014  Sida Gu (gu.sid@husky.neu.edu)
+ *  Copyright (C) 2014  Sida Gu(dudlykoo@gmail.com)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,32 +17,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "Emu.h"
-#include "Context.h"
-
 namespace MIPS
 {
-//
-// Class 'Emu'
-//
+/// Table of signal handlers. Multiple contexts can share the same time, so they
+/// will be conveniently referenced using \c std::shared_ptr.
+class SignalHandlerTable{
 
-// Emulator singleton
-Emu *Emu::instance;
-
-Emu::Emu()
-{
-
-}
-
-Emu *Emu::getInstance()
-{
-	// Instance already exists
-	if (instance)
-		return instance;
-
-	// Create instance
-	instance = new Emu();
-	return instance;
-}
-
+};
 }
