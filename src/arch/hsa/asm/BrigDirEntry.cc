@@ -19,8 +19,9 @@ int BrigDirEntry::getKind() const
 	return dir->kind;
 }
 
-char *BrigDirEntry::next() const
+char *BrigDirEntry::nextTop() const
 {
+
 	switch(this->getKind())
 	{
 	case BRIG_DIRECTIVE_FUNCTION:
@@ -30,13 +31,25 @@ char *BrigDirEntry::next() const
 		struct BrigDirectiveExecutable * dir
 			= (struct BrigDirectiveExecutable *)base;
 		char *bufPtr = (char *)bs->getBuffer() + dir->nextTopLevelDirective;
+		if(bufPtr >= bs->getBuffer() + bs->getSize())
+			return NULL;
 		return bufPtr;
 	}
 	default:
-		return BrigEntry::next();
+		return next();
 	}
-	
 }
+
+
+char *BrigDirEntry::next() const
+{
+	BrigSection *bs = file->getBrigSection(BrigSectionDirective);
+	char * ret = this->base + this->getSize();
+	if(ret >= bs->getBuffer() + bs->getSize())
+		return NULL;
+	return ret;
+}
+
 
 BrigDirEntry::DumpDirectiveFn BrigDirEntry::dump_dir_fn[27] = 
 {
@@ -130,8 +143,7 @@ void BrigDirEntry::DumpDirectiveFunction(std::ostream &os = std::cout) const
 	struct BrigDirectiveFunction *dir
 		= (struct BrigDirectiveFunction *)this->base;
 	// Pointer to the next directive in sequence
-	// Cannot use this->next(), since it is overwritten
-	char *next = BrigEntry::next();
+	char *next = this->next();
 	SymbolModifier modifier(dir->modifier.allBits);
 	os << "\n";
 	os << modifier.getLinkageStr() << "function ";
@@ -139,7 +151,7 @@ void BrigDirEntry::DumpDirectiveFunction(std::ostream &os = std::cout) const
 	next = BrigEntry::dumpArgs(next, dir->outArgCount, os);
 	next = BrigEntry::dumpArgs(next, dir->inArgCount, os);
 	// Dump the function body;
-	dumpBody(dir->code, dir->instCount, modifier.isDeclaration(), os);
+	dumpBody(dir->code, dir->instCount, next, modifier.isDeclaration(), os);
 	
 }
 void BrigDirEntry::DumpDirectiveImage(std::ostream &os = std::cout) const
@@ -161,14 +173,15 @@ void BrigDirEntry::DumpDirectiveKernel(std::ostream &os = std::cout) const
 {
 	struct BrigDirectiveKernel *dir
 		= (struct BrigDirectiveKernel *)this->base;
-	char *next = BrigEntry::next();
+	char *next = this->next();
 	os << "\nkernel ";
 	os << BrigStrEntry::GetStringByOffset(this->file, dir->name);
 	next = BrigEntry::dumpArgs(next, dir->inArgCount, os);
-	dumpBody(dir->code, dir->instCount, false, os);
+	dumpBody(dir->code, dir->instCount, next, false, os);
 }
 void BrigDirEntry::DumpDirectiveLabel(std::ostream &os = std::cout) const
 {
+	os << "\n";
 	struct BrigDirectiveLabel *label
 		= (struct BrigDirectiveLabel *)this->base;
 	os << BrigStrEntry::GetStringByOffset(this->file, label->name);
