@@ -19,35 +19,131 @@
 
 #include <iostream>
 #include <memory>
+#include <vector>
+
+#include <arch/mips/asm/Inst.h>
+#include <lib/cpp/ELFReader.h>
 #include <mem-system/Memory.h>
+#include <mem-system/SpecMem.h>
 
+#include "FileTable.h"
 #include "Regs.h"
+#include "Signal.h"
 
-namespace mips
+
+namespace MIPS
 {
 class Emu;
 
-// mips Context
+/// Context states
+enum ContextState
+{
+	ContextInvalid      = 0x00000,
+	ContextRunning      = 0x00001,  // it is able to run instructions
+	ContextSpecMode     = 0x00002,  // executing in speculative mode
+};
+
+/// MIPS Context
 class Context
 {
 	// Emulator it belongs to
 	Emu *emu;
+
+	// Virtual memory address space index
+	int address_space_index;
 
 	// Context memory. This object can be shared by multiple contexts, so it
 	// is declared as a shared pointer. The last freed context pointing to
 	// this memory object will be the one automatically freeing it.
 	std::shared_ptr<mem::Memory> memory;
 
+	// Speculative memory. Its initialization is deferred to be able to link
+	// it with the actual memory, known only at context creation.
+	std::unique_ptr<mem::SpecMem> spec_mem;
+
 	// Register file. Each context has its own copy always.
 	Regs regs;
 
+	// Last emulated instruction
+	//Inst inst;
+
+	// File descriptor table, shared by contexts
+	std::shared_ptr<FileTable> file_table;
+
+	///////////////////////////////////////////////////////////////////////
+	//
+	// Functions implemented in ContextLoader.cc. These are the functions
+	// related with the program loading process.
+	//
+	///////////////////////////////////////////////////////////////////////
+
+	/// Structure containing information initialized by the program loader,
+	/// associated with a context. When a context is created from a program
+	/// executable, a Loader object is associated to it. All child contexts
+	/// spawned by it will share the same Loader object.
+	struct Loader
+	{
+		// Program executable
+		std::unique_ptr<ELFReader::File> binary;
+
+		// Command-line arguments
+		std::vector<std::string> args;
+
+		// Environment variables
+		std::vector<std::string> env;
+
+		// Executable interpreter
+		std::string interp;
+
+		// Executable file name
+		std::string exe;
+
+		// Current working directory
+		std::string cwd;
+
+		// File name for standard input and output
+		std::string stdin_file_name;
+		std::string stdout_file_name;
+
+	};
+
+	// Loader information. This information can be shared among multiple
+	// contexts. For this reason, it is declared as a shared pointer. The
+	// last destructed context sharing this variable will automatically free
+	// it.
+	std::shared_ptr<Loader> loader;
+
+	// Load ELF binary, as already decoded in 'loader.binary'
+	void LoadBinary();
+
+	///////////////////////////////////////////////////////////////////////
+	//
+	// Fields and functions related with signal handling. The functions are
+	// implemented in ContextSignal.cc.
+	//
+	///////////////////////////////////////////////////////////////////////
+
+	// Table of signal handlers, possibly shared by multiple contexts
+	std::shared_ptr<SignalHandlerTable> signal_handler_table;
+
 public:
 	Context();
+
+	/// Destructor
 	~Context();
+
+	void Load(const std::vector<std::string> &args,
+			const std::vector<std::string> &env,
+			const std::string &cwd,
+			const std::string &stdin_file_name,
+			const std::string &stdout_file_name);
 
 	/// Run one instruction for the context at the position pointed to by
 	/// register program counter.
 	void Execute();
 
+	/// Given a file name, return its full path based on the current working
+	/// directory for the context.
+	std::string getFullPath(const std::string &path);
 };
 }

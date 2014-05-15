@@ -20,7 +20,8 @@
 
 
 
-namespace mips{
+namespace MIPS
+{
 class Regs
 {
 	unsigned int  gpr[32]; // General Purpose registers
@@ -40,7 +41,7 @@ public:
     ///if n is great than 31, exit program
     void setGPR(int n, unsigned int value);
     
-    ///read from PC
+    ///read from Program Counter
     unsigned int getPC(){ return pc; }
     
     ///write pc with value

@@ -26,13 +26,19 @@ libemu_a_SOURCES = \
 	\
 	Context.cc \
 	Context.h \
+	ContextLoader.cc \
 	\
 	Regs.cc \
 	Regs.h \
 	\
 	Emu.cc \
-	Emu.h
-	
-	
+	Emu.h  \
+	\
+	FileTable.h \
+	FileTable.cc \
+	\
+	Signal.h \
+	Signal.cc 
+
 	
 INCLUDES = @M2S_INCLUDES@
