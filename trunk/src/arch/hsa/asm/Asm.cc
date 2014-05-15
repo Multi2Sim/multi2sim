@@ -66,11 +66,11 @@ void Asm::DisassembleBinary(const std::string &path) const
 	char *bufPtr = (char *)buf;
 	// Increament by 4 to skip the section size field
 	bufPtr += 4;
-	while(bufPtr < buf + bs->getSize())
+	while(bufPtr && bufPtr < buf + bs->getSize())
 	{
 		BrigDirEntry dir(bufPtr, &bf);
 		dir.Dump();
-		bufPtr = dir.next();
+		bufPtr = dir.nextTop();
 	}
 }
 
