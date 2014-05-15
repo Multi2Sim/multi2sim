@@ -16,33 +16,6 @@ BrigFile::BrigFile(const std::string &path)
 			this->brig_sections[section->getType()]
 					= std::unique_ptr<BrigSection> (section);
 		} 
-
-	}
-	// Put every in-function/in-kernel directive entry in the multimap.
-	const char * directive_section_start = this->brig_sections[BrigSectionDirective].get()->getBuffer();
-	const char * code_section_start = this->brig_sections[BrigSectionCode].get()->getBuffer();
-	char * directive_ptr = (char *)directive_section_start + 4;
-	char * kernel_function_end = 0;
-	bool if_in_kernel_function = 0;
-	struct BrigDirectiveBase * dir;
-	while(directive_ptr < code_section_start)
-	{
-		dir = (struct BrigDirectiveBase *) directive_ptr;
-		if(directive_ptr == kernel_function_end)
-			if_in_kernel_function = 0;
-		if(dir->kind == BRIG_DIRECTIVE_KERNEL || dir->kind == BRIG_DIRECTIVE_FUNCTION)
-		{
-			if_in_kernel_function = 1;
-			struct BrigDirectiveExecutable * kernel_function = (struct BrigDirectiveExecutable *) dir;
-			kernel_function_end = (char *)directive_section_start + kernel_function->nextTopLevelDirective;
-		}else if(if_in_kernel_function)
-		{
-			// add only the directives in a function or a kernel to the map
-			// code offset is converted to a pointer to the code entry.
-			char * cod = (char *)code_section_start + dir->code;
-			directive_code_map.insert( std::pair<char *, char *>(cod, directive_ptr) );
-		}
-		directive_ptr += (dir->size + 3) / 4 * 4;
 	}
 }
 
@@ -75,20 +48,6 @@ void BrigSection::dumpSectionHex() const
 		}
 	}
 	printf("\n");
-}
-
-bool BrigFile::searchCode(char * code)
-{
-	map_it = directive_code_map.find(code);
-	return map_it != directive_code_map.end();
-}
-
-void BrigFile::printCode()
-{
-	for(std::multimap<char *, char *>::iterator it = directive_code_map.begin(); it != directive_code_map.end(); it++)
-	{
-		std::cout << std::hex <<(long)it->first << "	" << std::hex <<(long)it->second << std::endl;
-	}
 }
 
 }// end namespace

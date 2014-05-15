@@ -37,7 +37,10 @@ public:
 	}
 
 	/// Returns the pointer to the next same-level directive	
-	virtual char *next() const;
+	char *nextTop() const;
+
+	/// Returns the pointer to the next directive
+	char *next() const;
 
 	/// Dumps the directive according to its kind value
 	void DumpDirectiveArgScopeEnd(std::ostream &os) const;	// 0 

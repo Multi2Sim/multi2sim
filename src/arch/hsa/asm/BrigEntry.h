@@ -75,7 +75,8 @@ protected:
 	// Dump the function or kernel body
 	void dumpBody(
 			int codeOffset,
-			int nInst, 
+			int nInst,
+			char *next,
 			bool isDecl, 
 			std::ostream &os
 		) const;
@@ -97,9 +98,8 @@ public:
 	/// Virtual function for dump assembly
 	virtual void Dump(std::ostream &os) const;
 
-	/// Returns the pointer to the next entry in logic
-	/// For example: for a directive entry, it should return next directive 
-	/// entry of the same level.
+	/// Returns the pointer to the next entry
+	/// FIX: This function is not safe since it may return a pointer out of current Brig Section
 	virtual char *next() const{return this->base + this->getSize();}
 
 };

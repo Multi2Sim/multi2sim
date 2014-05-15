@@ -201,35 +201,30 @@ char *BrigEntry::dumpArgs(
 void BrigEntry::dumpBody(
 		int codeOffset,
 		int nInst,
+		char *next,
 		bool isDecl, 
 		std::ostream &os = std::cout
 	) const
 {
 	if(!isDecl)
 	{
-		Asm* as = Asm::getInstance();
+		Asm *as = Asm::getInstance();
 		as->indent++;
-		os << "\n{";
-		os << "\n";
+		os << "\n{\n";
 		BrigSection *bsc = this->file->getBrigSection(BrigSectionCode);
-		char * bufPtr = (char *)bsc->getBuffer() + codeOffset;
-		bool found_first_directive_in_function = false;
+		char *bsc_buffer = (char *)bsc->getBuffer();
+		char *bufPtr = bsc_buffer + codeOffset;
+		struct BrigDirectiveBase *dirPtr = (struct BrigDirectiveBase *)next;
 		for(int i=0; i<nInst; i++)
 		{	
+			while(dirPtr && dirPtr->code <= bufPtr - bsc_buffer)
+			{
+				BrigDirEntry dir((char *)dirPtr, this->file);
+				dir.Dump(os);
+				dirPtr = (struct BrigDirectiveBase *)dir.nextTop();
+			}
 			//printf("Inst %d/%d", i, nInst);
 			BrigInstEntry inst(bufPtr, this->file);
-			if(!found_first_directive_in_function)
-				found_first_directive_in_function = this->file->searchCode(bufPtr);
-			if(found_first_directive_in_function)
-			{
-				while( bufPtr == (char *)this->file->getCode())
-				{
-					BrigDirEntry dir((char *)this->file->getDirective(), this->file);
-					os << "\n";
-					dir.Dump(os);
-					this->file->moveToNextDirective();
-				}
-			}
 			for(int i=0; i<as->indent; i++) os << "\t";
 			inst.Dump(os);
 			bufPtr = inst.next();
