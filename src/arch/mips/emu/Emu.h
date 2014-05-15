@@ -16,13 +16,17 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-namespace mips
+namespace MIPS
 {
 class Emu
 {
-
 	// Unique instance of mips emulator
 	static Emu *instance;
+
+	// Index of virtual memory space assigned to new contexts. A new ID
+	// can be retrieved in increasing order by using function
+	// Emu::getAddressSpaceIndex()
+	int address_space_index;
 
 public:
 	///Constructor and Desctructor
@@ -32,6 +36,10 @@ public:
 	/// The mips emulator is a singleton class. The only possible instance of
 	/// it will be allocated the first time this function is invoked.
 	static Emu *getInstance();
+
+	/// Return a unique increasing ID for a virtual memory space for
+	/// contexts.
+	int getAddressSpaceIndex() { return address_space_index++; }
 
 };
 }

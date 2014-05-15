@@ -21,7 +21,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-namespace mips
+namespace MIPS
 {
 Regs::Regs()
 {
