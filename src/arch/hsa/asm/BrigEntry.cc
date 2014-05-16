@@ -217,7 +217,7 @@ void BrigEntry::dumpBody(
 		struct BrigDirectiveBase *dirPtr = (struct BrigDirectiveBase *)next;
 		for(int i=0; i<nInst; i++)
 		{	
-			while(dirPtr && dirPtr->code <= bufPtr - bsc_buffer)
+			while(dirPtr && dirPtr->code <= (BrigCodeOffset32_t)(bufPtr - bsc_buffer))
 			{
 				BrigDirEntry dir((char *)dirPtr, this->file);
 				dir.Dump(os);
