@@ -203,7 +203,7 @@ void net_event_handler(int event, void *data)
 			return;
 		}
 
-		if (buffer->read_busy > cycle)
+		if (buffer->read_busy >= cycle)
 		{
 			esim_schedule_event(event, stack,
 					buffer->read_busy - cycle + 1);
@@ -211,12 +211,10 @@ void net_event_handler(int event, void *data)
 					"a=\"stall\" "
 					"net=\"%s\" "
 					"msg-->pkt=%lld:%d "
-					"why=\"output buffer busy\" "
-					"\"next event is : %lld\"\n",
+					"why=\"output buffer busy\" \n",
 					net->name,
 					pkt->msg->id,
-					pkt->session_id,
-					buffer->read_busy - cycle + 1);
+					pkt->session_id);
 			return;
 		}
 
@@ -501,11 +499,12 @@ void net_event_handler(int event, void *data)
 
 
 			/* Calculate latency and occupy resources */
-			lat = (pkt->size - 1) / bus->bandwidth + 1;
+			/* Wire delay is introduced when the packet is on transit */
+			lat = bus->fix_delay + ((pkt->size - 1) / bus->bandwidth + 1) ;
 			assert(lat > 0);
 			buffer->read_busy = cycle + lat - 1;
 			bus->busy = cycle + lat - 1;
-			input_buffer->write_busy = cycle + lat - 1;
+			input_buffer->write_busy = cycle + lat - 1 ;
 
 			/* Transfer message to next input buffer */
 			assert(pkt->busy < cycle);

@@ -226,7 +226,7 @@ struct net_buffer_t *net_node_add_output_buffer(struct net_node_t *node,
 	return buffer;
 }
 
-struct net_bus_t *net_node_add_bus_lane(struct net_node_t *node)
+struct net_bus_t *net_node_add_bus_lane(struct net_node_t *node, int fix_delay)
 {
 	assert(node->kind == net_node_bus);
 	struct net_bus_t *bus;
@@ -236,6 +236,7 @@ struct net_bus_t *net_node_add_bus_lane(struct net_node_t *node)
 		list_count(node->bus_lane_list));
 	bus = net_bus_create(node->net, node, node->bandwidth, name);
 	bus->index = list_count(node->bus_lane_list);
+	bus->fix_delay = fix_delay;
 	list_add(node->bus_lane_list, bus);
 	return bus;
 }

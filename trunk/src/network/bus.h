@@ -30,6 +30,7 @@ struct net_bus_t
 	char *name;
 	int index;
 	int bandwidth;
+	int fix_delay;
 	long long busy;		/* Busy until this cycle inclusive */
 
 	/* Stats */

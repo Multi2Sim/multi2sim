@@ -234,7 +234,7 @@ struct net_node_t *net_add_end_node(struct net_t *net,
 }
 
 
-struct net_node_t *net_add_bus(struct net_t *net, int bandwidth, char *name, int lanes)	
+struct net_node_t *net_add_bus(struct net_t *net, int bandwidth, char *name, int lanes, int wire_delay)
 {
 	struct net_node_t *node;
 	/* Create node */
@@ -257,7 +257,7 @@ struct net_node_t *net_add_bus(struct net_t *net, int bandwidth, char *name, int
 
 	for (int i = 0; i < lanes; i++)
 	{
-		net_node_add_bus_lane(node);
+		net_node_add_bus_lane(node, wire_delay);
 	}
 	/* Return */
 	return node;

@@ -1,8 +1,8 @@
 #!/bin/bash
 ########################### INPUTS ##########################
 ################ Number of Compute Units ####################
-declare -i NumCUs=44
-declare -i NumL2s=8
+declare -i NumCUs=32
+declare -i NumL2s=6
 NumL1V=$NumCUs
 NumL1S=`expr $NumCUs / 4`
 
@@ -36,6 +36,7 @@ declare -i Inject_buffer=528
 declare -i InternalBW=264
 declare -i BW=72
 declare -i PKT=0
+declare -i FixDelay=8
 vectors=$NumL1V
 scalars=$NumL1S
 Dests=$NumL2s
@@ -234,6 +235,7 @@ for i in $(seq 0 $Num_of_sw)
 do
 echo "[Network.$net_name.Node.s$i]" >> $net_config
 echo "Type = Bus" >> $net_config
+echo "FixDelay = $FixDelay" >> $net_config
 echo "" >>$net_config
 done
 
