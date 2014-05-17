@@ -84,7 +84,7 @@ struct net_buffer_t *net_node_add_output_buffer(struct net_node_t *node,
 	int bandwidth);
 struct net_buffer_t *net_node_add_input_buffer(struct net_node_t *node,
 	int bandwidth);
-struct net_bus_t *net_node_add_bus_lane(struct net_node_t *node);
+struct net_bus_t *net_node_add_bus_lane(struct net_node_t *node, int fix_delay);
 struct net_bus_t *net_node_add_photonic_link(struct net_node_t *node);
 
 struct net_buffer_t *net_node_schedule(struct net_node_t *node,

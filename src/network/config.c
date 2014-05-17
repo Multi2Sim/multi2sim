@@ -321,6 +321,7 @@ static void net_read_from_config_nodes(struct net_t* net, struct config_t *confi
                 int output_buffer_size;
                 int bandwidth;
                 int lanes;	/* BUS lanes */
+                int fix_delay;
 
                 /* First token must be 'Network' */
                 snprintf(section_str, sizeof section_str, "%s", section);
@@ -354,6 +355,7 @@ static void net_read_from_config_nodes(struct net_t* net, struct config_t *confi
                 bandwidth = config_read_int(config, section,
                                 "BandWidth", net->def_bandwidth);
                 lanes = config_read_int(config, section, "Lanes", 1);
+                fix_delay = config_read_int(config, section, "FixDelay", 0);
 
                 /* Create node */
                 if (!strcasecmp(node_type, "EndNode"))
@@ -400,7 +402,10 @@ static void net_read_from_config_nodes(struct net_t* net, struct config_t *confi
                         if (lanes < 1)
                                 fatal("%s:%s: BUS cannot have less than 1 number of lanes \n%s",
                                                 net->name, section, net_err_config);
-                        net_add_bus(net, bandwidth, node_name, lanes);
+                        if (fix_delay < 0)
+                        	fatal("%s:%s: BUS cannot have negative wire delay \n%s",
+                        	                    net->name, section, net_err_config);
+                        net_add_bus(net, bandwidth, node_name, lanes, fix_delay);
                 }
                 else if (!strcasecmp(node_type, "Photonic"))
                 {

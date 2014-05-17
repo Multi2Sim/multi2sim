@@ -112,7 +112,7 @@ struct net_node_t *net_add_end_node(struct net_t *net,
 	int input_buffer_size, int output_buffer_size,
 	char *name, void *user_data);
 struct net_node_t *net_add_bus(struct net_t *net, int bandwidth
-		, char *name, int lanes);	/* [K] */
+		, char *name, int lanes, int wire_delay);	/* [K] */
 struct net_node_t *net_add_switch(struct net_t *net,
 	int input_buffer_size, int output_buffer_size,
 	int bandwidth, char *name);
