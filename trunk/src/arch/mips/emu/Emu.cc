@@ -29,6 +29,9 @@ namespace MIPS
 // Emulator singleton
 Emu *Emu::instance;
 
+// Debuggers
+misc::Debug Emu::loader_debug;
+
 Emu::Emu()
 {
 

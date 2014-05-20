@@ -105,6 +105,27 @@ class Context
 		std::string stdin_file_name;
 		std::string stdout_file_name;
 
+		// Stack
+		unsigned stack_base;
+		unsigned stack_top;
+		unsigned stack_size;
+		unsigned environ_base;
+
+		// Lowest address initialized
+		unsigned bottom;
+
+		// Program entries
+		unsigned prog_entry;
+		unsigned interp_prog_entry;
+
+		// Program headers
+		unsigned phdt_base;
+		unsigned phdr_count;
+
+		// Random bytes
+		unsigned at_random_addr;
+		unsigned at_random_addr_holder;
+
 	};
 
 	// Loader information. This information can be shared among multiple
@@ -112,6 +133,9 @@ class Context
 	// last destructed context sharing this variable will automatically free
 	// it.
 	std::shared_ptr<Loader> loader;
+
+	// Load ELF sections from binary
+	void LoadELFSections(ELFReader::File *binary);
 
 	// Load ELF binary, as already decoded in 'loader.binary'
 	void LoadBinary();

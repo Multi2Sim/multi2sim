@@ -16,6 +16,9 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+
+#include <lib/cpp/Debug.h>
+
 namespace MIPS
 {
 class Emu
@@ -40,6 +43,9 @@ public:
 	/// Return a unique increasing ID for a virtual memory space for
 	/// contexts.
 	int getAddressSpaceIndex() { return address_space_index++; }
+
+	/// Debugger for program loader
+	static misc::Debug loader_debug;
 
 };
 }
