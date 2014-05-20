@@ -22,9 +22,64 @@
 #include <lib/cpp/String.h>
 
 #include "Context.h"
+#include "Emu.h"
 
 namespace MIPS
 {
+static misc::StringMap section_flags_map =
+{
+	{ "SHF_WRITE", 1 },
+	{ "SHF_ALLOC", 2 },
+	{ "SHF_EXECINSTR", 4 }
+};
+
+void Context::LoadELFSections(ELFReader::File *binary)
+{
+	Emu::loader_debug << "\nLoading ELF sections\n";
+	loader->bottom = 0xffffffff;
+	for (auto &section : binary->getSections())
+	{
+		// Debug
+		unsigned perm = mem::MemoryAccessInit | mem::MemoryAccessRead;
+		std::string flags_str = section_flags_map.MapFlags(section->getFlags());
+		Emu::loader_debug << misc::fmt("  section '%s': offset=0x%x, "
+						"addr=0x%x, size=%u, flags=%s\n",
+						section->getName().c_str(), section->getOffset(),
+						section->getAddr(), section->getSize(),
+						flags_str.c_str());
+
+				// Process section
+				if (section->getFlags() & SHF_ALLOC)
+				{
+					// Permissions
+					if (section->getFlags() & SHF_WRITE)
+						perm |= mem::MemoryAccessWrite;
+					if (section->getFlags() & SHF_EXECINSTR)
+						perm |= mem::MemoryAccessExec;
+
+					// Load section
+					memory->Map(section->getAddr(), section->getSize(), perm);
+					memory->growHeapBreak(section->getAddr() + section->getSize());
+					loader->bottom = std::min(loader->bottom, section->getAddr());
+
+					// If section type is SHT_NOBITS (sh_type=8), initialize to 0.
+					// Otherwise, copy section contents from ELF file.
+					if (section->getType() == 8)
+					{
+						char *zero_buffer = new char[section->getSize()]();
+						memory->Init(section->getAddr(), section->getSize(),
+								zero_buffer);
+						delete zero_buffer;
+					}
+					else
+					{
+						memory->Init(section->getAddr(), section->getSize(),
+								section->getBuffer());
+					}
+				}
+	}
+}
+
 std::string Context::getFullPath(const std::string &path)
 {
 	// Remove './' prefix from 's'
@@ -74,14 +129,22 @@ void Context::LoadBinary()
 			misc::fatal("%s: cannot open stdin",
 					stdin_full_path.c_str());
 
-		// TODO: Replace file descriptors 1 and 2
-		//file_table->freeFileDesc(1);
-		//file_table->freeFileDesc(2);
-		//file_table->newFileDesc(FileDescStd, 1, f,
-		//		stdout_full_path, O_WRONLY);
-		//file_table->newFileDesc(FileDescStd, 2, f,
-		//		stdout_full_path, O_WRONLY);
+		// Replace file descriptors 1 and 2
+		file_table->freeFileDesc(1);
+		file_table->freeFileDesc(2);
+		file_table->newFileDesc(FileDescStd, 1, f,
+				stdout_full_path, O_WRONLY);
+		file_table->newFileDesc(FileDescStd, 2, f,
+				stdout_full_path, O_WRONLY);
 	}
+
+	// Load ELF binary
+	loader->exe = getFullPath(loader->args[0]);
+	loader->binary.reset(new ELFReader::File(loader->exe));
+
+	// Read sections and program entry
+	LoadELFSections(loader->binary.get());
+	loader->prog_entry = loader->binary->getEntry();
 
 }
 } // namespace mips
