@@ -176,7 +176,7 @@ void BasicBlock::EmitCall(llvm::CallInst *llvm_inst)
 				function->getVRegLid() + dim);
 		function->AddSymbol(ret_symbol);
 	}
-	else if (func_name == "get_global_size")
+	else if (func_name == "__get_global_size_u32")
 	{
 		/* Allocate a new vector register to copy global size. */
 		int ret_vreg = function->AllocVReg();
