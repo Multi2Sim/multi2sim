@@ -59,6 +59,7 @@ protected:
 	static char *dumpArgs(
 			char *arg, 
 			unsigned short argCount,
+			BrigFile *file,
 			std::ostream &os
 		);
 
@@ -80,6 +81,13 @@ protected:
 			bool isDecl, 
 			std::ostream &os
 		) const;
+
+	// Dump the tab for indentation
+	static void dumpIndent(int indent, std::ostream &os = std::cout)
+	{
+		for(int i=0; i<indent; i++) os << "\t";
+	}
+
 public:
 	/// Constructor
 	BrigEntry(char *buf, BrigFile *file);
