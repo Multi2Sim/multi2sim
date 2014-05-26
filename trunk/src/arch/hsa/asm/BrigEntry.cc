@@ -180,7 +180,8 @@ void BrigEntry::dumpSymDecl(
 
 char *BrigEntry::dumpArgs(
 		char *arg, 
-		unsigned short argCount, 
+		unsigned short argCount,
+		BrigFile * file,
 		std::ostream &os = std::cout
 	)
 {
@@ -188,11 +189,25 @@ char *BrigEntry::dumpArgs(
 	char *next = arg;
 	if(argCount == 1)
 	{
-		misc::warning("Function with args are not supported!");
+		BrigDirEntry dir(next, file);
+		dumpSymDecl(&dir, os);
+		next = dir.nextTop();
 	}
 	else if(argCount >1)
 	{
-		misc::warning("Function with args are not supported!");
+		Asm *as = Asm::getInstance();
+		as->indent++;
+		for(int i  = 0; i < argCount; i++)
+		{
+			os << "\n";
+			dumpIndent(as->indent, os);
+			BrigDirEntry dir(next, file);
+			dumpSymDecl(&dir, os);
+			next = dir.nextTop();
+			if(i != argCount - 1)
+				os << ",";
+		}
+		as->indent--;
 	}	
 	os << ")";
 	return next;
@@ -225,7 +240,7 @@ void BrigEntry::dumpBody(
 			}
 			//printf("Inst %d/%d", i, nInst);
 			BrigInstEntry inst(bufPtr, this->file);
-			for(int i=0; i<as->indent; i++) os << "\t";
+			dumpIndent(as->indent, os);
 			inst.Dump(os);
 			bufPtr = inst.next();
 		}
@@ -234,7 +249,6 @@ void BrigEntry::dumpBody(
 	}	
 	os << ";\n";
 }
-
 
 BrigEntry::BrigEntry(char *buf, BrigFile* file)
 {
