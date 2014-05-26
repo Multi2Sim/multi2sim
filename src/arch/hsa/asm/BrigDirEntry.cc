@@ -148,8 +148,8 @@ void BrigDirEntry::DumpDirectiveFunction(std::ostream &os = std::cout) const
 	os << "\n";
 	os << modifier.getLinkageStr() << "function ";
 	os << BrigStrEntry::GetStringByOffset(this->file, dir->name);
-	next = BrigEntry::dumpArgs(next, dir->outArgCount, os);
-	next = BrigEntry::dumpArgs(next, dir->inArgCount, os);
+	next = BrigEntry::dumpArgs(next, dir->outArgCount,this->file, os);
+	next = BrigEntry::dumpArgs(next, dir->inArgCount, this->file, os);
 	// Dump the function body;
 	dumpBody(dir->code, dir->instCount, next, modifier.isDeclaration(), os);
 	
@@ -176,7 +176,7 @@ void BrigDirEntry::DumpDirectiveKernel(std::ostream &os = std::cout) const
 	char *next = this->next();
 	os << "\nkernel ";
 	os << BrigStrEntry::GetStringByOffset(this->file, dir->name);
-	next = BrigEntry::dumpArgs(next, dir->inArgCount, os);
+	next = BrigEntry::dumpArgs(next, dir->inArgCount, this->file, os);
 	dumpBody(dir->code, dir->instCount, next, false, os);
 }
 void BrigDirEntry::DumpDirectiveLabel(std::ostream &os = std::cout) const
