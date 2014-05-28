@@ -180,9 +180,11 @@ cl_int clGetPlatformIDs(
 	 * the host program. It is checked here whether we're running in native
 	 * or simulation mode. If it's simulation mode, Multi2Sim's version is
 	 * checked for compatibility with the runtime library version. */
-	m2s_dev_si_cl = open("/dev/m2s-si-cl", O_RDWR);
+	m2s_active_dev = open("/dev/m2s-si-cl", O_RDWR);
+	if (getenv("HSA"))
+		m2s_active_dev = open("/dev/m2s-hsa-cl", O_RDWR);
 
-	ret = ioctl(m2s_dev_si_cl, DriverInit, &version);
+	ret = ioctl(m2s_active_dev, DriverInit, &version);
 
 	/* If the system call returns error, we are in native mode. */
 	if (ret == -1 && !opencl_native_mode)
