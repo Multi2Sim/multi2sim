@@ -63,7 +63,7 @@ int opencl_device_shared_memory;
 int opencl_native_mode;
 
 /* Device descriptors */
-int m2s_dev_si_cl;
+int m2s_active_dev;
 
 /*
  * Debug
@@ -99,7 +99,7 @@ void opencl_debug(char *fmt, ...)
 	 * calls to 'printf', that can have race conditions among threads. */
 	va_start(va, fmt);
 	vsnprintf(str, sizeof str, fmt, va);
-	fprintf(stderr, "[%llu] [libm2s-opencl] %s\n", opencl_get_time(), str);
+	fprintf(stderr, "[%llu] [libm2s-opencl-ioctl] %s\n", opencl_get_time(), str);
 }
 
 

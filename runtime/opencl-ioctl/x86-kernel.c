@@ -612,7 +612,7 @@ void opencl_x86_ndrange_run(struct opencl_x86_ndrange_t *ndrange,
 	 * dispatch thread highest priority. */
 	if (!opencl_native_mode)
 	{
-		ioctl(m2s_dev_si_cl, SINDRangeStart);
+		ioctl(m2s_active_dev, SINDRangeStart);
 
 		/* Store old scheduling policy and priority */
 		pthread_getschedparam(pthread_self(), &sched_policy_old, 
@@ -660,7 +660,7 @@ void opencl_x86_ndrange_run(struct opencl_x86_ndrange_t *ndrange,
 			&sched_param_old);
 
 		/* Tell the driver that the nd-range has ended */
-		ioctl(m2s_dev_si_cl, SINDRangeEnd);
+		ioctl(m2s_active_dev, SINDRangeEnd);
 	}
 
 	/* Tear-down */
