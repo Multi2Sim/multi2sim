@@ -40,11 +40,11 @@ struct opencl_si_program_t *opencl_si_program_create(
 		"Southern Islands Binary");
 
 	/* Create program object in driver */
-	program->id = ioctl(m2s_dev_si_cl,
+	program->id = ioctl(m2s_active_dev,
 		SIProgramCreate);
 
 	/* Set program binary in driver */
-	ioctl(m2s_dev_si_cl, SIProgramSetBinary,
+	ioctl(m2s_active_dev, SIProgramSetBinary,
 		program->id, binary, length);
 
 	/* Return */
