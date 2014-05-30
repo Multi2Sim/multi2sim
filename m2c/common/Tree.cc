@@ -991,6 +991,7 @@ LeafNode *Tree::AddLlvmCFG(llvm::BasicBlock *llvm_basic_block)
 		llvm::BasicBlock *false_llvm_basic_block = terminator->getSuccessor(1);
 		LeafNode *false_node = AddLlvmCFG(false_llvm_basic_block);
 		node->Connect(false_node);
+		return node;
 	}
 
 	/* Function exit: ret */
