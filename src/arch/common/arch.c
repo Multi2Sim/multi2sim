@@ -30,6 +30,8 @@
 #include "emu.h"
 #include "timing.h"
 
+// Hacking for current Kepelr emulator
+#include "../kepler/emu/Wrapper.h"
 
 /*
  * Object 'arch_t' Functions
@@ -122,11 +124,27 @@ void arch_dump_summary(struct arch_t *arch, FILE *f)
 	/* If no instruction was run for this architecture, skip
 	 * statistics summary. */
 	if (!emu->instructions)
-		return;
+		// return;
+
+	//Hacking for current Kepler emulator
+	{
+		if(strcmp(emu->name, "Fermi"))
+			return;
+		else 
+			if(!KplGetAluInstCount())
+				return;
+	}
 
 	/* Architecture-specific emulation statistics */
 	assert(emu->DumpSummary);
 	emu->DumpSummary(emu, f);
+         
+         // Hacking for current Kepler emulator
+	if(strcmp(emu->name, "Fermi"))
+	{
+		printf("\nDump_sum\n");
+		KplWrapEmuDump(f);
+	}
 
 	/* Timing simulation statistics */
 	if (arch->sim_kind == arch_sim_kind_detailed)
@@ -346,7 +364,7 @@ int arch_get_sim_kind_detailed_count(void)
 }
 
 
-void arch_run(int *num_emu_active_ptr, int *num_timing_active_ptr)
+void arch_run(int *num_emu_active_ptr, int *num_timing_active_ptr, KplEmu* kpl_emu)
 {
 	struct arch_t *arch;
 	long long cycle;
@@ -372,6 +390,10 @@ void arch_run(int *num_emu_active_ptr, int *num_timing_active_ptr)
 			emu = arch->emu;
 			assert(emu && emu->Run);
 			arch->active = emu->Run(emu);
+                           
+                           // Hacking for current Kepler emulator
+			if(strcmp(arch->name, "Fermi"))
+				KplRun(kpl_emu);
 
 			/* Increase number of active emulations if the architecture
 			 * actually performed a useful emulation iteration. */

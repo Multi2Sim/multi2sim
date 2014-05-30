@@ -98,14 +98,15 @@ void cuda_debug(char *fmt, ...)
 	}
 
 	/* Exit if not enabled */
-	if (! cuda_debug_enable)
+	
+         if (! cuda_debug_enable)
 		return;
 
 	/* Reconstruct message in 'str' first. This is done to avoid multiple
 	 * calls to 'printf', that can have race conditions among threads. */
 	va_start(va, fmt);
 	vsnprintf(str, sizeof str, fmt, va);
-	fprintf(stderr, "[libm2s-cuda] %s\n", str);
+	fprintf(stderr, "[libm2s-cuda] %s\n", str); // Get_time how? 
 }
 
 void versionCheck(void)
