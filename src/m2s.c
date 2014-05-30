@@ -1507,7 +1507,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		}
 
 		/* Dumping Routes */
-		if (!strcmp(argv[argi], "--net-routes"))
+		if (!strcmp(argv[argi], "--net-dump-routes"))
 		{
 			m2s_need_argument(argc, argv, argi);
 			net_route_file_name = argv[++argi];
@@ -1567,14 +1567,6 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			m2s_need_argument(argc, argv, argi);
 			net_sim_network_name = argv[++argi];
 			continue;
-		}
-
-		/* Network Snapshot */
-		if (!strcmp(argv[argi], "--net-snapshot"))
-		{
-		        m2s_need_argument(argc, argv, argi);
-		        net_snap_period = atoi(argv[++argi]);
-		        continue;
 		}
 
 		/*
@@ -2089,7 +2081,10 @@ static void m2s_loop(void)
 		/* Run iteration for all architectures. This function returns the number
 		 * of architectures actively running emulation, as well as the number of
 		 * architectures running an active timing simulation. */
-		arch_run(&num_emu_active, &num_timing_active);
+		
+                  //arch_run(&num_emu_active, &num_timing_active);
+		// Hacking for current Kepler emulator
+		arch_run(&num_emu_active, &num_timing_active, kpl_emu);
 
 		/* Event-driven simulation. Only process events and advance to next global
 		 * simulation cycle if any architecture performed a useful timing simulation.
