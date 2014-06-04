@@ -124,27 +124,31 @@ void arch_dump_summary(struct arch_t *arch, FILE *f)
 	/* If no instruction was run for this architecture, skip
 	 * statistics summary. */
 	if (!emu->instructions)
-		// return;
+		return;
 
-	//Hacking for current Kepler emulator
+	/*Hacking for current Kepler emulator
 	{
 		if(strcmp(emu->name, "Fermi"))
 			return;
 		else 
 			if(!KplGetAluInstCount())
 				return;
-	}
+	} 
+         */
+         
 
 	/* Architecture-specific emulation statistics */
 	assert(emu->DumpSummary);
 	emu->DumpSummary(emu, f);
          
-         // Hacking for current Kepler emulator
+        /*Hacking for current Kepler emulator
 	if(strcmp(emu->name, "Fermi"))
 	{
 		printf("\nDump_sum\n");
 		KplWrapEmuDump(f);
 	}
+         */
+        
 
 	/* Timing simulation statistics */
 	if (arch->sim_kind == arch_sim_kind_detailed)
