@@ -16,6 +16,9 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+#ifndef ARCH_MIPS_EMU_FILE_TABLE_H
+#define ARCH_MIPS_EMU_FILE_TABLE_H
+
 #include <iostream>
 #include <memory>
 #include <vector>
@@ -23,9 +26,11 @@
 #include <lib/cpp/Misc.h>
 #include <lib/cpp/String.h>
 
+
 namespace MIPS
 {
 
+extern const misc::StringMap file_desc_type_map;
 enum FileDescType
 {
 	FileDescInvalid = 0,
@@ -97,3 +102,5 @@ public:
 
 };
 }
+
+#endif

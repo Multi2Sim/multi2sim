@@ -22,6 +22,16 @@
 
 namespace MIPS
 {
+const misc::StringMap file_desc_type_map =
+{
+	{ "Regular", FileDescRegular },
+	{ "Standard", FileDescStd },
+	{ "Pipe", FileDescPipe },
+	{ "Virtual", FileDescVirtual },
+	{ "GPU", FileDescGPU },
+	{ "Socket", FileDescSocket }
+};
+
 void FileTable::freeFileDesc(int index)
 {
 	// Out of range

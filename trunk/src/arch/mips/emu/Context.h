@@ -16,6 +16,8 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+#ifndef ARCH_MIPS_EMU_CONTEXT_H
+#define ARCH_MIPS_EMU_CONTEXT_H
 
 #include <iostream>
 #include <memory>
@@ -33,7 +35,10 @@
 
 namespace MIPS
 {
+
+class Context;
 class Emu;
+
 
 /// Context states
 enum ContextState
@@ -43,14 +48,34 @@ enum ContextState
 	ContextSpecMode     = 0x00002,  // executing in speculative mode
 };
 
+/// Context list identifiers
+enum ContextListType
+{
+	// No 'Invalid' identifier here
+	ContextListRunning = 0,
+	ContextListSuspended,
+	ContextListZombie,
+	ContextListFinished,
+
+	// Number of context lists
+	ContextListCount
+};
+
 /// MIPS Context
 class Context
 {
 	// Emulator it belongs to
 	Emu *emu;
 
+	// Process ID
+	int pid;
+
 	// Virtual memory address space index
 	int address_space_index;
+
+	// Context state, expressed as a bitmap of flags, e.g.,
+	// ContextSuspended | ContextFutex
+	unsigned state;
 
 	// Context memory. This object can be shared by multiple contexts, so it
 	// is declared as a shared pointer. The last freed context pointing to
@@ -64,11 +89,15 @@ class Context
 	// Register file. Each context has its own copy always.
 	Regs regs;
 
-	// Last emulated instruction
-	//Inst inst;
+	// Current emulated instruction
+	Inst *inst;
 
 	// File descriptor table, shared by contexts
 	std::shared_ptr<FileTable> file_table;
+
+	// Update the context state, updating also the presence on the context
+	// in the various context lists in the emulator.
+	void UpdateState(unsigned state);
 
 	///////////////////////////////////////////////////////////////////////
 	//
@@ -128,6 +157,9 @@ class Context
 
 	};
 
+	// String map from program header types
+	static misc::StringMap program_header_type_map;
+
 	// Loader information. This information can be shared among multiple
 	// contexts. For this reason, it is declared as a shared pointer. The
 	// last destructed context sharing this variable will automatically free
@@ -137,8 +169,23 @@ class Context
 	// Load ELF sections from binary
 	void LoadELFSections(ELFReader::File *binary);
 
+	// Load program headers
+	void LoadProgramHeaders();
+
 	// Load ELF binary, as already decoded in 'loader.binary'
 	void LoadBinary();
+
+	// Load content of stack
+	void LoadStack();
+
+	// Load entry of the auxiliary vector
+	void LoadAVEntry(unsigned &sp, unsigned type, unsigned value);
+
+	// Load auxiliary vector and return its size in bytes
+	unsigned LoadAV(unsigned where);
+
+	// Load dynamic linker
+	void LoadInterp();
 
 	///////////////////////////////////////////////////////////////////////
 	//
@@ -151,6 +198,12 @@ class Context
 	std::shared_ptr<SignalHandlerTable> signal_handler_table;
 
 public:
+	/// Position of the context in the main context list. This field is
+	/// managed by the emulator. When a context is removed from the main
+	/// context list, it is automatically freed.
+	std::list<std::unique_ptr<Context>>::iterator contexts_iter;
+
+	/// Constructor
 	Context();
 
 	/// Destructor
@@ -169,5 +222,13 @@ public:
 	/// Given a file name, return its full path based on the current working
 	/// directory for the context.
 	std::string getFullPath(const std::string &path);
+
+	/// Return \c true if flag \a state is part of the context state
+	bool getState(ContextState state) const { return this->state & state; }
+
+	/// Set flag \a state in the context state
+	void setState(ContextState state) { UpdateState(this->state | state); }
 };
 }
+
+#endif
