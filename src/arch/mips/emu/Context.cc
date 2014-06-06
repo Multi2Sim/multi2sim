@@ -29,13 +29,32 @@ extern char **environ;
 
 namespace MIPS
 {
+//
+// Private functions
+//
+
+void Context::UpdateState(unsigned state)
+{
+	// If the difference between the old and new state lies in other
+	// states other than 'ContextSpecMode', a reschedule is marked. */
+	unsigned diff = this->state ^ state;
+	if (diff & ~ContextSpecMode)
+		emu->setScheduleSignal();
+}
+
 Context::Context()
 {
 	// Save emulator instance
 	emu = Emu::getInstance();
 
-	//inst = Inst();
 
+}
+
+
+Context::~Context()
+{
+	// Debug
+	emu->context_debug << "Context " << pid << " destroyed\n";
 }
 
 
@@ -94,19 +113,27 @@ void Context::Load(const std::vector<std::string> &args,
 
 void Context::Execute()
 {
-	/// read 32 bits mips instruction from memory into buffer
-	char buffer[32];
-	char *buffer_ptr = memory->getBuffer(regs.getPC(), 32,
+	// Memory permissions should not be checked if the context is executing in
+	// speculative mode. This will prevent guest segmentation faults to occur.
+	bool spec_mode = getState(ContextSpecMode);
+	if (spec_mode)
+		memory->setSafe(false);
+	else
+		memory->setSafeDefault();
+
+	/// read 4 bits mips instruction from memory into buffer
+	char buffer[4];
+	char *buffer_ptr = memory->getBuffer(regs.getPC(), 4,
 				mem::MemoryAccessExec);
 	if (!buffer_ptr)
 	{
-		// Disable safe mode. If a part of the 32 read bytes does not
+		// Disable safe mode. If a part of the 4 read bytes does not
 		// belong to the actual instruction, and they lie on a page with
 		// no permissions, this would generate an undesired protection
 		// fault.
 		memory->setSafe(false);
 		buffer_ptr = buffer;
-		memory->Access(regs.getPC(), 32, buffer_ptr,
+		memory->Access(regs.getPC(), 4, buffer_ptr,
 			mem::MemoryAccessExec);
 	}
 
@@ -114,6 +141,14 @@ void Context::Execute()
 	memory->setSafeDefault();
 
 	// Disassemble
-	//inst.Decode(add, buffer_ptr);
+	inst->Decode(regs.getPC(),buffer_ptr);
+
+	// Clear existing list of microinstructions, though the architectural
+	// simulator might have cleared it already. A new list will be generated
+	// for the next executed x86 instruction.
+	//ClearUInstList();
+
+
+
 }
 }
