@@ -26,12 +26,111 @@
 
 namespace MIPS
 {
+
+static const unsigned LoaderStackBase = 0xc0000000;
+static const unsigned LoaderMaxEnviron = 0x10000;  // 16KB for environment
+static const unsigned LoaderStackSize = 0x800000;  // 8MB stack size
+
 static misc::StringMap section_flags_map =
 {
 	{ "SHF_WRITE", 1 },
 	{ "SHF_ALLOC", 2 },
 	{ "SHF_EXECINSTR", 4 }
 };
+
+
+void Context::LoadInterp()
+{
+	// Debug
+	emu->loader_debug << misc::fmt("\nLoading program interpreter '%s'\n",
+			loader->interp.c_str());
+
+	// Load section from program interpreter
+	ELFReader::File binary(loader->interp);
+	LoadELFSections(&binary);
+
+	// Change program entry to the one specified by the interpreter
+	loader->interp_prog_entry = binary.getEntry();
+	emu->loader_debug << misc::fmt("  program interpreter entry: 0x%x\n\n",
+			loader->interp_prog_entry);
+}
+
+
+misc::StringMap Context::program_header_type_map =
+{
+	{ "PT_NULL",        0 },
+	{ "PT_LOAD",        1 },
+	{ "PT_DYNAMIC",     2 },
+	{ "PT_INTERP",      3 },
+	{ "PT_NOTE",        4 },
+	{ "PT_SHLIB",       5 },
+	{ "PT_PHDR",        6 },
+	{ "PT_TLS",         7 }
+};
+
+
+void Context::LoadProgramHeaders()
+{
+	// Debug
+	emu->loader_debug << "\nLoading program headers\n";
+	ELFReader::File *binary = loader->binary.get();
+
+	// Load program header table from ELF
+	int phdr_count = binary->getPhnum();
+	int phdr_size = binary->getPhentsize();
+	int phdt_size = phdr_count * phdr_size;
+	assert(phdr_count == binary->getNumProgramHeaders());
+
+	// Program header PT_PHDR, specifying location and size of the program
+	// header table itself. Search for program header PT_PHDR, specifying
+	// location and size of the program header table. If none found, choose
+	// loader->bottom - phdt_size. */
+	unsigned phdt_base = loader->bottom - phdt_size;
+	for (auto &program_header : binary->getProgramHeaders())
+		if (program_header->getType() == PT_PHDR)
+			phdt_base = program_header->getVaddr();
+	emu->loader_debug << misc::fmt("  virtual address for program header "
+			"table: 0x%x\n", phdt_base);
+
+	// Allocate memory for program headers
+	memory->Map(phdt_base, phdt_size, mem::MemoryAccessInit
+			| mem::MemoryAccessRead);
+
+	// Load program headers
+	int index = 0;
+	for (auto &program_header : binary->getProgramHeaders())
+	{
+		// Load program header
+		unsigned address = phdt_base + index * phdr_size;
+		memory->Init(address, phdr_size, (char *)
+				program_header->getRawInfo());
+
+		// Debug
+		emu->loader_debug << misc::fmt("  header loaded at 0x%x\n", address)
+		<< misc::fmt("    type=%s, offset=0x%x, vaddr=0x%x, paddr=0x%x\n",
+				program_header_type_map.MapValue(program_header->getType()),
+				program_header->getOffset(),
+				program_header->getVaddr(),
+				program_header->getPaddr())
+		<< misc::fmt("    filesz=%d, memsz=%d, flags=%d, align=%d\n",
+				program_header->getFilesz(),
+				program_header->getMemsz(),
+				program_header->getFlags(),
+				program_header->getAlign());
+
+		// Program interpreter
+		if (program_header->getType() == 3)
+			loader->interp = memory->ReadString(program_header->getVaddr());
+
+		// Next
+		index++;
+	}
+
+	// Free buffer and save pointers
+	loader->phdt_base = phdt_base;
+	loader->phdr_count = phdr_count;
+}
+
 
 void Context::LoadELFSections(ELFReader::File *binary)
 {
@@ -80,6 +179,7 @@ void Context::LoadELFSections(ELFReader::File *binary)
 	}
 }
 
+
 std::string Context::getFullPath(const std::string &path)
 {
 	// Remove './' prefix from 's'
@@ -98,6 +198,130 @@ std::string Context::getFullPath(const std::string &path)
 	// Relative path
 	return loader->cwd + "/" + s;
 }
+
+
+void Context::LoadAVEntry(unsigned &sp, unsigned type, unsigned value)
+{
+	// Write values
+	memory->Write(sp, 4, (char *) &type);
+	memory->Write(sp + 4, 4, (char *) &value);
+
+	// Increase stack pointer
+	sp += 8;
+}
+
+
+unsigned Context::LoadAV(unsigned where)
+{
+	// Debug
+	unsigned sp = where;
+	emu->loader_debug << misc::fmt("Loading auxiliary vector at 0x%x\n", where);
+
+	// Program headers
+	LoadAVEntry(sp, 3, loader->phdt_base);  // AT_PHDR
+	LoadAVEntry(sp, 4, 32);  // AT_PHENT -> program header size of 32 bytes
+	LoadAVEntry(sp, 5, loader->phdr_count);  // AT_PHNUM
+
+	// Other values
+	LoadAVEntry(sp, 6, mem::MemoryPageSize);  // AT_PAGESZ
+	LoadAVEntry(sp, 7, 0);  // AT_BASE
+	LoadAVEntry(sp, 8, 0);  // AT_FLAGS
+	LoadAVEntry(sp, 9, loader->prog_entry);  // AT_ENTRY
+	LoadAVEntry(sp, 11, getuid());  // AT_UID
+	LoadAVEntry(sp, 12, geteuid());  // AT_EUID
+	LoadAVEntry(sp, 13, getgid());  // AT_GID
+	LoadAVEntry(sp, 14, getegid());  // AT_EGID
+	LoadAVEntry(sp, 17, 0x64);  // AT_CLKTCK
+	LoadAVEntry(sp, 23, 0);  // AT_SECURE
+
+	// Random bytes
+	loader->at_random_addr_holder = sp + 4;
+	LoadAVEntry(sp, 25, 0);  // AT_RANDOM
+
+	/*LoadAVEntry(sp, 32, 0xffffe400);
+	LoadAVEntry(sp, 33, 0xffffe000);
+	LoadAVEntry(sp, 16, 0xbfebfbff);*/
+
+	/* ??? AT_HWCAP, AT_PLATFORM, 32 and 33 ???*/
+
+	// Finally, AT_NULL, and return size
+	LoadAVEntry(sp, 0, 0);
+	return sp - where;
+}
+
+
+void Context::LoadStack()
+{
+	// Allocate stack
+	loader->stack_base = LoaderStackBase;
+	loader->stack_size = LoaderStackSize;
+	loader->stack_top = LoaderStackBase - LoaderStackSize;
+	memory->Map(loader->stack_top, loader->stack_size,
+			mem::MemoryAccessRead | mem::MemoryAccessWrite);
+	emu->loader_debug << misc::fmt("mapping region for stack from 0x%x to 0x%x\n",
+			loader->stack_top, loader->stack_base - 1);
+
+	// Load arguments and environment variables
+	loader->environ_base = LoaderStackBase - LoaderMaxEnviron;
+	unsigned sp = loader->environ_base;
+	int argc = loader->args.size();
+	emu->loader_debug << misc::fmt("  saved 'argc=%d' at 0x%x\n", argc, sp);
+	memory->Write(sp, 4, (char *) &argc);
+	sp += 4;
+	unsigned argvp = sp;
+	sp += (argc + 1) * 4;
+
+	// Save space for environ and null
+	unsigned envp = sp;
+	sp += loader->env.size() * 4 + 4;
+
+	// Load here the auxiliary vector
+	sp += LoadAV(sp);
+
+	// Write arguments into stack
+	emu->loader_debug << "\nArguments:\n";
+	for (int i = 0; i < argc; i++)
+	{
+		std::string str = loader->args[i];
+		memory->Write(argvp + i * 4, 4, (char *) &sp);
+		memory->WriteString(sp, str);
+		emu->loader_debug << misc::fmt("  argument %d at 0x%x: '%s'\n",
+				i, sp, str.c_str());
+		sp += str.length() + 1;
+	}
+	unsigned zero = 0;
+	memory->Write(argvp + argc * 4, 4, (char *) &zero);
+
+	// Write environment variables
+	emu->loader_debug << "\nEnvironment variables:\n";
+	for (unsigned i = 0; i < loader->env.size(); i++)
+	{
+		std::string str = loader->env[i];
+		memory->Write(envp + i * 4, 4, (char *) &sp);
+		memory->WriteString(sp, str);
+		emu->loader_debug << misc::fmt("  env var %d at 0x%x: '%s'\n",
+				i, sp, str.c_str());
+		sp += str.length() + 1;
+	}
+	memory->Write(envp + loader->env.size() * 4, 4, (char *) &zero);
+
+	// Random bytes
+	loader->at_random_addr = sp;
+	for (int i = 0; i < 16; i++)
+	{
+		char c = random();
+		memory->Write(sp, 1, &c);
+		sp++;
+	}
+	memory->Write(loader->at_random_addr_holder, 4, (char *)
+			&loader->at_random_addr);
+
+	// Check that we didn't overflow the stack
+	if (sp > LoaderStackBase)
+		misc::fatal("%s: initial stack overflow, increment LoaderMaxEnviron",
+			__FUNCTION__);
+}
+
 
 void Context::LoadBinary()
 {
@@ -146,5 +370,21 @@ void Context::LoadBinary()
 	LoadELFSections(loader->binary.get());
 	loader->prog_entry = loader->binary->getEntry();
 
+	// Set heap break to the highest written address rounded up to
+	// the memory page boundary.
+	memory->setHeapBreak(misc::RoundUp(memory->getHeapBreak(),
+			mem::MemoryPageSize));
+
+	// Load program header table. If we found a PT_INTERP program header,
+	// we have to load the program interpreter. This means we are dealing with
+	// a dynamically linked application.
+	LoadProgramHeaders();
+	if (!loader->interp.empty())
+			LoadInterp();
+
+	// Stack
+	LoadStack();
 }
+
 } // namespace mips
+

@@ -21,6 +21,9 @@
 #include <iostream>
 
 #include <arch/common/Runtime.h>
+#include <arch/mips/asm/Asm.h>
+#include <arch/mips/emu/Context.h>
+#include <arch/mips/emu/Emu.h>
 #include <arch/x86/asm/Asm.h>
 #include <arch/x86/emu/Context.h>
 #include <arch/x86/emu/Emu.h>
@@ -34,6 +37,41 @@
 #include <lib/esim/ESim.h>
 
 #include "Wrapper.h"
+
+void mips_emulation_loop(misc::CommandLine &command_line)
+{
+	MIPS::Emu *emu = MIPS::Emu::getInstance();
+	MIPS::Context *context = emu->newContext();
+	context->Load(command_line.getArguments(),
+			std::vector<std::string>(),misc::getCwd(),
+			"", "");
+	esim::ESim *esim = esim::ESim::getInstance();
+	while (!esim->hasFinished())
+	{
+		bool active = emu->Run();
+		if (!active)
+			esim->Finish(esim::ESimFinishCtx);
+		esim->ProcessEvents();
+	}
+}
+
+
+void x86_emulation_loop(misc::CommandLine &command_line)
+{
+	x86::Emu *emu = x86::Emu::getInstance();
+	x86::Context *context = emu->newContext();
+	context->Load(command_line.getArguments(),
+			std::vector<std::string>(), misc::getCwd(),
+			"", "");
+	esim::ESim *esim = esim::ESim::getInstance();
+	while (!esim->hasFinished())
+	{
+		bool active = emu->Run();
+		if (!active)
+			esim->Finish(esim::ESimFinishCtx);
+		esim->ProcessEvents();
+	}
+}
 
 
 void main_cpp(int argc, char **argv)
@@ -78,10 +116,16 @@ void main_cpp(int argc, char **argv)
 			"available on systems with support for GTK 3.0 or "
 			"higher.");
 
+	// FIXME We add an additional configuration option to force execution of
+	// the MIPS code.
+	bool m2s_run_mips;
+	command_line.Register("--mips", m2s_run_mips,
+			"Run the MIPS disassembler and emulator.");
+
 	// Register module configurations
 	command_line.AddConfig(x86::Asm::config);
 	command_line.AddConfig(x86::Emu::config);
-
+	command_line.AddConfig(MIPS::Emu::config);
 	command_line.AddConfig(HSA::Asm::config);
 
 	// Process command line. Return to C version of Multi2Sim if a
@@ -98,34 +142,27 @@ void main_cpp(int argc, char **argv)
 	arch_pool->Register("x86", "x86");
 	arch_pool->Register("SouthernIslands", "si");
 	arch_pool->Register("HSA", "hsa");
+	arch_pool->Register("MIPS","mips"); // Register a MIPS architecture in the arch_pool
 
 	// Register runtime and driver pairs
 	comm::RuntimePool *runtime_pool = comm::RuntimePool::getInstance();
-	runtime_pool->Register("OpenCL", "OpenCL", "m2s-opencl", "/dev/m2s-si-cl", Driver::OpenCLSIDriver::getInstance());
+	runtime_pool->Register("OpenCL", "OpenCL", "m2s-opencl", "/dev/m2s-si-cl",
+			Driver::OpenCLSIDriver::getInstance());
 
 #ifdef HAVE_OPENGL
-	runtime_pool->Register("OpenGL", "OpenGL", "m2s-opengl", "/dev/m2s-si-gl", Driver::OpenGLSIDriver::getInstance());
+	runtime_pool->Register("OpenGL", "OpenGL", "m2s-opengl", "/dev/m2s-si-gl",
+			Driver::OpenGLSIDriver::getInstance());
 #endif
 
-	// Test Regs
+	// FIXME Run MIPS or x86
 	if (command_line.getNumArguments())
 	{
-		x86::Emu *emu = x86::Emu::getInstance();
-		x86::Context *context = emu->newContext();
-		context->Load(command_line.getArguments(),
-				std::vector<std::string>(), misc::getCwd(),
-				"", "");
-		esim::ESim *esim = esim::ESim::getInstance();
-		while (!esim->hasFinished())
-		{
-			bool active = emu->Run();
-			if (!active)
-				esim->Finish(esim::ESimFinishCtx);
-			esim->ProcessEvents();
-		}
-
+		if (m2s_run_mips)
+			mips_emulation_loop(command_line);
+		else
+			x86_emulation_loop(command_line);
 	}
-
+		
 	// End
 	exit(0);
 }

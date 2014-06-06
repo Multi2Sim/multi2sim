@@ -1,6 +1,6 @@
 /*
  *  Multi2Sim
- *  Copyright (C) 2014  Sida Gu(dudlykoo@gmail.com)
+ *  Copyright (C) 2014  Sida Gu (gu.sid@husky.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,16 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_MIPS_EMU_SIGNAL_H
-#define ARCH_MIPS_EMU_SIGNAL_H
-
 namespace MIPS
 {
-/// Table of signal handlers. Multiple contexts can share the same time, so they
-/// will be conveniently referenced using \c std::shared_ptr.
-class SignalHandlerTable{
 
-};
 }
-
-#endif
