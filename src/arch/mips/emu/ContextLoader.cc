@@ -18,6 +18,7 @@
  */
 
 #include <fcntl.h>
+#include <unistd.h>
 
 #include <lib/cpp/String.h>
 
