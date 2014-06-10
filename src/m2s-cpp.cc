@@ -30,6 +30,7 @@
 #include <arch/x86/emu/FileTable.h>
 #include <arch/x86/emu/Signal.h>
 #include <arch/hsa/asm/Asm.h>
+#include <arch/hsa/emu/Emu.h>
 #include <driver/opencl/OpenCLDriver.h>
 #include <driver/opengl/OpenGLDriver.h>
 #include <lib/cpp/CommandLine.h>
@@ -127,6 +128,7 @@ void main_cpp(int argc, char **argv)
 	command_line.AddConfig(x86::Emu::config);
 	command_line.AddConfig(MIPS::Emu::config);
 	command_line.AddConfig(HSA::Asm::config);
+	command_line.AddConfig(HSA::Emu::config);
 
 	// Process command line. Return to C version of Multi2Sim if a
 	// command-line option was not recognized.
