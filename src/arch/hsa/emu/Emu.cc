@@ -14,6 +14,10 @@ EmuConfig::EmuConfig()
 
 void EmuConfig::Register(misc::CommandLine &command_line)
 {
+	// Option --hsa-debug <file>
+	command_line.RegisterString("--hsa-debug <file>", hsa_debug_file, 
+		"Dump debug information about hsa");
+	
 	// Option --hsa-sim <kind>
 	command_line.RegisterEnum("--hsa-sim {functional|detailed} "
 			"(default = functional)",
@@ -23,12 +27,15 @@ void EmuConfig::Register(misc::CommandLine &command_line)
 
 void EmuConfig::Process()
 {
-
+	Emu::hsa_debug.setPath(hsa_debug_file);
+	std::cout << "In" << __FUNCTION__ << "\n";	
 }
 
 //
 // Class 'Emu'
 //
+
+misc::Debug Emu::hsa_debug;
 
 // Emulator singleton
 std::unique_ptr<Emu> Emu::instance;

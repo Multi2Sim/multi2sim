@@ -143,7 +143,7 @@ class Context
 	unsigned state;
 
 	// Context memory. This object can be shared by multiple contexts, so it
-	// is declared as a shared pointer. The las freed context pointing to
+	// is declared as a shared pointer. The last freed context pointing to
 	// this memory object will be the one automatically freeing it.
 	std::shared_ptr<mem::Memory> memory;
 
