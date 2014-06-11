@@ -124,6 +124,61 @@ The unary `&` operator should be preceded, but not followed, by a space, both wh
 
 
 
+Empty lines
+-----------
+
+### 
+One empty line should appear after the open bracket and before the closing bracket of a `namespace` block.
+
+    namespace
+    {
+    --- Empty line ---
+        [ ... ]
+    --- Empty line ---
+    }
+
+### 
+Two empty lines should appear between function implementations.
+
+    void myFunction1()
+    {
+            [...]
+    }
+    --- Empty line 1 ---
+    --- Empty line 2 ---
+    void myFunction2()
+    {
+    }
+
+### 
+All source and header files should end with a new line character
+
+    [...]
+    namespace
+    {
+    [...]
+    }
+    --- Empty line ---
+
+### 
+Declarations headed with comments must be preceded by an empty line, including types, enumerations, variables, constants, structures, classes, or class members.
+
+    // Constant
+    const int my_constant_value = 10;
+        --- Empty line ---
+    // Comment
+    class MyClass
+    {
+            // This is one field
+            int field;
+                --- Empty line ---
+            // This is another field
+            int field2;
+                --- Empty line ---
+            /// This is another field with some Doxygen documentation.
+            int field3;
+    };
+
 
 Code blocks
 -----------
@@ -263,6 +318,33 @@ All public symbols declared in a header file under the same `namespace` should h
     }
 
 
+Variable declarations
+---------------------
+
+### 
+In C++, a variable declaration involves an implicit invocation to its constructor, and thus variable declaration order matters. To unify the way variables and objects are declared, their declarations should happen at the same time as their first assignment or constructor invocation. The following code
+
+    int x;
+    MyClass object(10, 20);
+    x = 10;
+
+should be replaced by
+
+    MyClass object(10, 20);
+    int x = 10;
+
+
+### 
+Looping variables should be declared within the loop header. The following code
+
+    int i;
+    for (i = 0; i < 10; i++)
+            [ ... ]
+
+should be replaced by
+
+    for (int i = 0; i < 10; i++)
+            [ ... ]
 
 
 Types
@@ -325,25 +407,186 @@ Code documentation
 Comments
 --------
 
+### 
+Both single- and multi-line comments should use the C++ `//` comment notation. The only exception where C-style `/* ... */` comments can be used is the file headers containing the GPL license description.
+
+### 
+All code in function bodies should be grouped into regions of 1 to approximately 10 lines, headed by one comment, and followed by an empty line (unless it is the last code region in a code block). This leads to a unified structure across the project with a pattern *i*) comment header, *ii*) 1 to 10 lines of code, *iii*) empty line.
+
+    void Context::Load(const std::vector<std::string> &args,
+                    const std::vector<std::string> &env,
+                    const std::string &cwd,
+                    const std::string &stdin_file_name,
+                    const std::string &stdout_file_name)
+    {
+            // String in 'args' must contain at least one non-empty element
+            if (!args.size() || args[0].empty())
+                    misc::panic("%s: function invoked with no program name, or with an "
+                                    "empty program.", __FUNCTION__);
+    
+            // Program must not have been loaded before
+            if (loader.get() || memory.get())
+                    misc::panic("%s: program '%s' has already been loaded in a "
+                                    "previous call to this function.",
+                                    __FUNCTION__, args[0].c_str());
+            
+            // Create new memory image. This is a longer multi-line comment that does
+            // not exceed a line width of 80 characters, considering each preceding
+            // tab as 8 characters toward the limit.
+            assert(!memory.get());
+            memory.reset(new mem::Memory());
+            address_space_index = emu->getAddressSpaceIndex();
+    }
+
+### 
+The comments in a function body by themselves should express all actions carried out by the function. If all function code was removed, only the remaining comments should build a self-contained &quot;story&quot; that suffices to understand the function behavior.
 
 
-Doxygen Comments
+Doxygen comments
 ----------------
+
+### 
+Public identifier declarations in header files should be preceded by Doxygen-style `///` comments, including types, enumerations, constants, variables, classes, and public/protected class fields. Private class members should use regular `//` comments instead.
+
+### 
+Doxygen comments should use a triple-slash notation. In function bodies, argument descriptions and return values should be preceded by the `\param` and `\return` keywords, respectively, followed by a line break and a tab character. The 80-character line width should be respected in all cases.
+
+    class Context
+    {
+            /// Load a program from a command line into an existing context. The
+            /// content is left in a state ready to start running the first x86 ISA
+            /// instruction at the program entry.
+            ///
+            /// \param args
+            ///     Command line to be used, where the first argument contains the
+            ///     path to the executable ELF file.
+            ///
+            /// \param env
+            ///     Array of environment variables. The environment variables
+            ///     actually loaded in the program is the vector of existing
+            ///     environment variables in the M2S process, together with any
+            ///     extra variable contained in this array.
+            ///
+            /// \param cwd
+            ///     Initial current working directory for the context. Relative
+            ///     paths used by the context will be relative to this directory.
+            ///
+            /// \param stdin_file_name
+            ///     File to redirect the standard input, or empty string for no
+            ///     redirection.
+            ///
+            /// \param stdout_file_name
+            ///     File to redirect the standard output and standard error output,
+            ///     or empty string for no redirection.
+            ///
+            /// \return
+            ///     No value is returned.
+            void Load(const std::vector<std::string> &args,
+                            const std::vector<std::string> &env,
+                            const std::string &cwd,
+                            const std::string &stdin_file_name,
+                            const std::string &stdout_file_name);
+    
+            [...]
+    }
+
+### 
+The arguments of a function can be referred to using the `\a` prefix in a Doxygen comment. Function names can be used without prefixes, since Doxygen automatically identifies them.
+
+    /// Argument \a args of function Load() contains some arguments. Argument \a
+    /// env of the same function contains environment variables.
 
 
 Source Files
 ============
 
+Copyright notice
+----------------
+
+Every source and header file should have an initial copyright notice, including a copy of the GPL 2 license preamble, as shown below. Fields `CURRENT_YEAR`, `AUTHOR_NAME`, and `EMAIL_ADDRESS` should be replaced according to the person creating the file. The copyright notice should be followed by one empty line.
+
+    /*
+     *  Multi2Sim
+     *  Copyright (C) CURRENT_YEAR  AUTHOR_NAME (YOUR_EMAIL_ADDRESS)
+     *
+     *  This program is free software; you can redistribute it and/or modify
+     *  it under the terms of the GNU General Public License as published by
+     *  the Free Software Foundation; either version 2 of the License, or
+     *  (at your option) any later version.
+     *
+     *  This program is distributed in the hope that it will be useful,
+     *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+     *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+     *  GNU General Public License for more details.
+     *
+     *  You should have received a copy of the GNU General Public License
+     *  along with this program; if not, write to the Free Software
+     *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+     */
+            --- One empty line ---
+
+
+Structure of a source (*.cc*) file
+----------------------------------
+
+### 
+Source files should have the *.cc* name extension.
+
+### 
+The copyright notice in a source file is immediately preceded by one or more `#include` directives. The source file should only contain those `#include` directives that are strictly necessary, avoiding copying and pasting groups from other files, in order to minimize unnecessary dependencies.
+
+### 
+All `#include` directives should be classified in three groups separated by one empty line. The `#include` groups should be separated from the rest of the file using two empty lines. The groups should appear in the following order:
+
+- Standard include files found in the default include directory for the compiler (`<iostream>`, `<cstring>`, etc.), using the notation based on `<...>` brackets. The list of files in this group should be ordered alphabetically.
+
+- Include files located in other directories of the Multi2Sim or Multi2C tree. These files are expressed as a relative paths to the `multi2sim/src` or `multi2sim/m2c` directory, using the `<...>` bracket notation. The list of files in this group should be ordered alphabetically.
+
+- Include files located in the same directory as the source file, using the double quote `"..."` notation. The list of files in this group should be ordered alphabetically.
+
+For example:
+
+    /*
+     *  Multi2Sim
+     *  Copyright (C) 2012
+     *       [...]
+     */
+
+            --- One empty line ---
+
+    #include <cassert>
+    #include <cstring>
+    #include <iostream>
+
+            --- One empty line ---
+
+    #include <arch/x86/asm/Inst.h>
+    #include <lib/cpp/Debug.h>
+    #include <lib/cpp/ELFReader.h>
+
+            --- One empty line ---
+
+    #include "Context.h"
+    #include "Emu.h"
+
+            --- Two empty lines ---
+
+    [ Body of the source file ]
+
+            --- One empty line at the end of the file ---
+
+
 
 Structure of a header file
 --------------------------
 
-Structure of a source file
---------------------------
+
+Include guards
+--------------
 
 
 Multiple inclusions
--------------------------
+-------------------
 
 
 
@@ -354,14 +597,91 @@ Class Declarations
 Access specifiers
 -----------------
 
+### 
+A class declaration should contain its private, protected, and public fields in this order, when possible. The `private` access specified should be omitted (this is the default access).
+
+    class MyClass
+    {
+            int private_field;
+    
+    protected:
+            int protected_field_1;
+            int protected_field_2;
+    
+    public:
+            void PublicFunction();
+    }
+
+
 Inline functions
 ----------------
+
+### 
+Function with an empty or very simple implementation (e.g., 1 line of code) should be inlined in the header file. This includes global function, class functions, or class constructors and destructors. Inline functions do not need to comply with the standard guidelines for new lines. They should still respect the maximum line width.
+
+    class MyClass
+    {
+            void sayHello() { std::cout << "Hello\n"; }
+    }
+
+
 
 Getters and setters
 -------------------
 
-The *Dump* method
+### 
+Function fields should be declared private. Depending on their visibility, public getters and setters should be included in the class to access a field. Exceptionally, a field can be declared public when it is very frequently accessed for both read and write operation, making the use of getters and setters result in too verbose code.
+
+
+### 
+Getters should be declared as inline functions. A getter function name should begin with `get` (lower case). The function prototype should end with the `const` keyword to specify that it does not modify the object state.
+
+    class MyClass
+    {
+            /// Return the value
+            int getValue() const { return value; }
+    }
+
+
+### 
+Setters should be declared as inline functions, unless their implementation involves complex value verification steps. The argument name for a setter should be the same as the field it affects, using `this` to distinguish between the class field and the function argument. A setter function name should begin with `set` (lower case).
+
+    class MyClass
+    {
+            /// Set the value
+            void setValue(int value) { this->value = value; }
+    }
+
+
+
+The *dump* method
 -----------------
+
+### 
+Most classes should provide a `dump()` function with the following prototype:
+
+    class MyClass
+    {
+            /// Dump object content
+            void dump(std::ostream &os = std::cout) const;
+    }
+
+The function dumps the content of the object into an output stream, or `std::cout` if none is provided. The `const` suffix specifies that the internal object state is unmodified by the function.
+
+### 
+All classes with a `dump()` function should provide an alternative syntax based on the `<<` operand. This can be achieved with the inline operator overload shown below. The `dump()` and the `<<` operator functions can be grouped under the same comment, with no empty line between them.
+
+    class MyClass
+    {
+            /// Dump object content
+            void dump(std::ostream &os = std::cout) const;
+            friend std::ostream &operator<<(std::ostream &os, const MyClass &object) {
+                    object.dump(os);
+                    return os;
+            }
+    }
+
+
 
 Static variables and functions
 ------------------------------
@@ -450,6 +770,10 @@ The following code leverages a unique pointer to automatically free array `v` wh
 Shared pointers
 ---------------
 
+### 
+In those cases where one specific variable cannot be identified that points to a region of dynamic memory during its entire lifetime, shared smart pointers should be used. Shared pointers contain internal reference counters. The last shared pointer being destroyed (i.e., losing scope or being a member of an object being destroyed) will free the dynamic memory that it points to. In most cases, a unique pointer can be used instead.
+
+An example of shared pointers is given can be found in Multi2Sim emulators, where multiple contexts can share one memory object. The memory object must be freed only when the last context using it is destroyed. This context is not necessarily the context that originally created the memory object.
 
 
 
@@ -459,6 +783,23 @@ Container Data Structures
 Container traversal
 -------------------
 
+### 
+Container data structures can be traversed using C++11 `:` notation, combined with the `auto` type.
+
+    std::list<int> my_list;
+    [ ... ]
+    for (auto x : my_list)
+            std::cout << x << '\n';
+
+### 
+Containers of complex objects should be traversed using the `auto &` type instead, which obtains references to each object, rather than copying it in a local variable for each iteration of the loop. This is strictly necessary when the list is composed of unique pointers to other objects, since an `std::unique_ptr` object cannot be replicated.
+
+std::list<std::unique_ptr<Context>> context_list;
+[ ... ]
+for (auto &context : context_list)
+        std::cout << context;
+
+The example above is used to illustrate the effect of `auto &`. In that particular code, it would be clearer to specify the exact type of the loop traversal variable, replacing `auto &context` by `Context &context`.
 
 
 
