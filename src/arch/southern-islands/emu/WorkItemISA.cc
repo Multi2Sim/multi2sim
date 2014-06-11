@@ -2113,6 +2113,10 @@ void WorkItem::ISA_S_WAITCNT_Impl(Inst *inst)
 	wavefront->setMemWait(true);
 }
 
+void WorkItem::ISA_PHI_Impl(Inst *inst)
+{
+	ISAUnimplemented(inst);
+}
 
 /*
  * VOP1

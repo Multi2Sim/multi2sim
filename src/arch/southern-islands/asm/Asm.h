@@ -32,7 +32,7 @@ namespace SI
 
 class Asm
 {
-	static const int dec_table_sopp_count = 23;
+	static const int dec_table_sopp_count = 24;
 	static const int dec_table_sopc_count = 17;
 	static const int dec_table_sop1_count = 54;
 	static const int dec_table_sopk_count = 22;

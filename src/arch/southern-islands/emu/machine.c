@@ -2226,6 +2226,13 @@ void si_isa_S_WAITCNT_impl(SIWorkItem *work_item,
 	work_item->wavefront->mem_wait = 1;
 }
 
+void si_isa_PHI_impl(SIWorkItem *work_item,
+	struct SIInstWrap *inst)
+{
+	/* Nothing to do in emulation */
+}
+
+
 /*
  * VOP1
  */

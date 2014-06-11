@@ -58,6 +58,7 @@ enum ArgType
 	ArgTypeLabel,
 	ArgTypeMaddr,
 	ArgTypeMaddrQual,
+	ArgTypePhi,
 
 	ArgTypeCount
 };
@@ -372,11 +373,30 @@ public:
 		Arg(ArgTypeLabel),
 		name(name) { }
 
-	void Dump(std::ostream &os) { os << ' ' << name; }
+	void Dump(std::ostream &os) {
+		os << ' ' << name; }
 
 	const std::string &getName() { return name; }
 };
 
+class ArgPhi : public Arg
+{
+	// Register number
+	int id;
+	std::string name;
+
+public:
+	ArgPhi(int id, const std::string &name) :
+		Arg(ArgTypePhi),
+		id(id),
+		name(name) { }
+
+	void Dump(std::ostream &os);
+
+	const std::string &getName() { return name; }
+
+	int getId() { return id; }
+};
 
 }  /* namespace si2bin */
 
