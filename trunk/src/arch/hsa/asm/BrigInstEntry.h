@@ -115,6 +115,10 @@ protected:
 	// Returns the pointer to the operand indexed with i
 	char *getOperand(int i) const;
 
+	// Dumps calls operands. The call inst put the function name as the second
+	// operand. But it should be dumped first
+	void dumpCallOperands(std::ostream &os) const;
+
 	// Dumps inst's operands
 	void dumpOperands(std::ostream &os) const;
 public:

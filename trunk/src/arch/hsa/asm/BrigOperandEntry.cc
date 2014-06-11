@@ -262,7 +262,20 @@ void BrigOperandEntry::dumpOperandArgumentRef(std::ostream &os = std::cout) cons
 }
 void BrigOperandEntry::dumpOperandArgumentList(std::ostream &os = std::cout) const
 {
-	os << "<unsupported operand argument_list>";
+	struct BrigOperandArgumentList *operand = 
+		(struct BrigOperandArgumentList *)base;
+	unsigned count = operand->elementCount;
+	if(count == 1 && !operand->elements[0] ) { count = 0; } // Empty list
+	os << "(";
+	for(unsigned i=0; i<count; i++)
+	{
+		if(i > 0){ os << ","; }
+		struct BrigDirectiveSymbol *dir = 
+			(struct BrigDirectiveSymbol *)
+			BrigDirEntry::GetDirByOffset(file, operand->elements[i]);
+		os << BrigStrEntry::GetStringByOffset(file, dir->name);	
+	}
+	os << ")";
 }
 void BrigOperandEntry::dumpOperandFunctionRef(std::ostream &os = std::cout) const
 {

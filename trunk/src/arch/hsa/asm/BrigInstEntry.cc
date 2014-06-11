@@ -176,7 +176,10 @@ int BrigInstEntry::getDefaultWidth(T *inst) const
 		}
 		return 1;
 	}
-	else if(inst->opcode == BRIG_OPCODE_BARRIER)
+	else if(
+		inst->opcode == BRIG_OPCODE_BARRIER ||
+		inst->opcode == BRIG_OPCODE_CALL
+	)
 	{
 		return 34;
 	}
@@ -355,6 +358,33 @@ char *BrigInstEntry::getOperand(int i) const
 		);
 }
 
+void BrigInstEntry::dumpCallOperands(std::ostream &os = std::cout) const
+{
+	struct BrigInstBase *inst = (struct BrigInstBase *)base;
+	os << "\t";
+	BrigOperandEntry op1(
+		getOperand(1), file,
+		this, 1
+	);
+	op1.Dump(os);
+	os << " ";
+	BrigOperandEntry op0(
+		getOperand(0), file,
+		this, 0
+	);
+	op0.Dump(os);
+	for(int i=2; i<5; i++)
+	{
+		if(inst->operands[i] == 0) return;
+		if(i>0) os << " ";
+		BrigOperandEntry op(
+			getOperand(i), file,
+			this, i
+		);
+		op.Dump(os);
+	}	
+}
+
 void BrigInstEntry::dumpOperands(std::ostream &os = std::cout) const
 {
 	struct BrigInstBase *inst = (struct BrigInstBase *)base;
@@ -483,7 +513,14 @@ void BrigInstEntry::DumpInstBr(std::ostream &os = std::cout) const
 	dump_(modifier2str(inst->modifier.allBits), os);
 	dump_(rounding2str(inst), os);
 	if(this->hasType()) dump_(type2str(inst->type));
-	this->dumpOperands(os);
+	if(inst->opcode == BRIG_OPCODE_CALL)
+	{
+		this->dumpCallOperands(os);
+	}
+	else
+	{
+		this->dumpOperands(os);
+	}
 	os << ";\n";
 }
 
