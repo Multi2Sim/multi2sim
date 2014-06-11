@@ -395,6 +395,15 @@ DEFINST(S_WAITCNT,
 	0
 )
 
+DEFINST(PHI,
+	" phi ",
+	SOPP,
+	23,
+	4,
+	0
+)
+
+
 /*
  * SMRD
  */
