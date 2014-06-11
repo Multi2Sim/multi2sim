@@ -425,6 +425,11 @@ int ArgSpecialRegister::Encode()
 		return 0;
 	}
 }
+
+void ArgPhi::Dump(std::ostream &os)
+{
+	os << 'v' << id << ' ' << name;
+}
 	
 
 }  /* namespace si2bin */
