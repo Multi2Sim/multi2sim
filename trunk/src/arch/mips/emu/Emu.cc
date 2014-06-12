@@ -119,7 +119,7 @@ bool Emu::Run()
 	// Stop if maximum number of CPU instructions exceeded
 	if (config.getMaxInstructions() && instructions >=
 			config.getMaxInstructions())
-		esim->Finish(esim::ESimFinishX86MaxInst);
+		esim->Finish(esim::ESimFinishMipsMaxCycles);
 
 	// Stop if any previous reason met
 	if (esim->hasFinished())
@@ -144,8 +144,8 @@ bool Emu::Run()
 	}
 
 	// Free finished contexts
-	//while (context_list[ContextListFinished].size())
-		//freeContext(context_list[ContextListFinished].front());
+	while (context_list[ContextListFinished].size())
+		freeContext(context_list[ContextListFinished].front());
 
 	// Process list of suspended contexts
 	//ProcessEvents();

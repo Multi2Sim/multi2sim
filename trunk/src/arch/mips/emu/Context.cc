@@ -121,7 +121,7 @@ void Context::Execute()
 	else
 		memory->setSafeDefault();
 
-	/// read 4 bits mips instruction from memory into buffer
+	/// read 4 bytes mips instruction from memory into buffer
 	char buffer[4];
 	char *buffer_ptr = memory->getBuffer(regs.getPC(), 4,
 				mem::MemoryAccessExec);
@@ -143,12 +143,22 @@ void Context::Execute()
 	// Disassemble
 	inst->Decode(regs.getPC(),buffer_ptr);
 
-	// Clear existing list of microinstructions, though the architectural
-	// simulator might have cleared it already. A new list will be generated
-	// for the next executed x86 instruction.
-	//ClearUInstList();
+	// Set last, current, and target instruction addresses
+	last_eip = current_eip;
+	current_eip = regs.getPC();
+	target_eip = 0;
 
+	// Reset effective address
+	effective_address = 0;
 
+	// Advance Program Counter to the size of instruction (4 bytes)
+	regs.incPC(4);
+
+	// Call instruction emulation function
+	if(inst->GetOpcode())
+	{
+
+	}
 
 }
 }
