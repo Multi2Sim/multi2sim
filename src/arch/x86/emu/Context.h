@@ -756,17 +756,21 @@ public:
 	/// \param args
 	///	Command line to be used, where the first argument contains the
 	///	path to the executable ELF file.
+	///
 	/// \param env
 	///	Array of environment variables. The environment variables
 	///	actually loaded in the program is the vector of existing
 	///	environment variables in the M2S process, together with any
 	///	extra variable contained in this array.
+	///
 	/// \param cwd
 	///	Initial current working directory for the context. Relative
 	///	paths used by the context will be relative to this directory.
+	///
 	/// \param stdin_file_name
 	///	File to redirect the standard input, or empty
 	/// 	string for no redirection.
+	///
 	/// \param stdout_file_name
 	///	File to redirect the standard output and standard error output,
 	///	or empty string for no redirection.

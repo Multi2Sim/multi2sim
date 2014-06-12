@@ -141,6 +141,9 @@ public:
 	/// that pid.
 	Context *getContext(int pid);
 
+	/// Load a program from the command line specified in \a args.
+	void loadProgram(const std::vector<std::string> args);
+
 	/// Remove a context from all context lists and free it
 	void freeContext(Context *context);
 

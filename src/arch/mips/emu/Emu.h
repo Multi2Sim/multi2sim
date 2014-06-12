@@ -98,12 +98,14 @@ public:
 	/// when a system call is executed to change the context's affinity.
 	void setScheduleSignal() { schedule_signal = true; }
 
-
 	/// Create a new context associated with the emulator. The context is
 	/// inserted in the main emulator context list. Its state is set to
 	/// ContextRunning, and it is inserted into the emulator list of running
 	/// contexts.
 	Context *newContext();
+
+	/// Load a program from the command line specified in \a args.
+	void loadProgram(const std::vector<std::string> args);
 
 	/// Return unique instance of the MIPS emulator singleton.
 	static Emu *getInstance();
