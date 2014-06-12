@@ -78,6 +78,9 @@ public:
 
 	/// Destructor
 	~Asm();
+	
+	/// Return whether the given file is a valid MIPS binary
+	bool isValidBinary(const std::string &path) const;
 
 	/// Disassemble binary file given a path
 	void DisassembleBinary(const std::string &path);

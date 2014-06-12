@@ -27,11 +27,27 @@ namespace comm
 
 class Asm
 {
+
 public:
+
+	/// Return whether a binary file is compatible with the current
+	/// architecture. This function is used in the main program to identify
+	/// the architecture that the file passed in the command line belongs
+	/// to. Every derived class should implement this function.
+	virtual bool isValidBinary(const std::string &path) const = 0;
 	
-	/// Check whether \a token is found in the beginning of string \a fmt.
-	/// If so, the length of the found token is returned in argument
-	/// \a length.
+	/// Check whether a token is found in the begninning of a format string.
+	///
+	/// \param fmt
+	///	Format string in the beginning of which to search for the token.
+	///
+	/// \param token
+	///	Token to search for.
+	///
+	/// \param length
+	///	This argument is optional (see overloaded function isToken()).
+	///	If specified, the function returns here the length of the token
+	//	if found.
 	static bool isToken(const std::string &fmt, const std::string &token,
 			int &length);
 
@@ -42,7 +58,6 @@ public:
 		int length;
 		return isToken(fmt, token, length);
 	}
-
 
 };
 

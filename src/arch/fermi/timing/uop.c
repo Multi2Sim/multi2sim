@@ -96,12 +96,11 @@ void frm_uop_done()
 
 struct frm_uop_t *frm_uop_create(FrmGpu *gpu)
 {
-	FrmEmu *emu = gpu->emu;
 	struct frm_uop_t *uop;
 
 	uop = repos_create_object(gpu_uop_repos);
 	uop->id = gpu_uop_id_counter++;
-	uop->inst = FrmInstWrapCreate(emu->as);
+	uop->inst = FrmInstWrapCreate();
 	return uop;
 }
 
