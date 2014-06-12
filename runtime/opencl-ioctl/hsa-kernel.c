@@ -29,8 +29,8 @@
 #include "mhandle.h"
 #include "misc.h"
 #include "object.h"
-#include "si-kernel.h"
-#include "si-program.h"
+#include "hsa-kernel.h"
+#include "hsa-program.h"
 #include "string.h"
 
 /*
@@ -180,7 +180,7 @@ struct opencl_hsa_kernel_t *opencl_hsa_kernel_create(
 	}
 
 	/* Create kernel object in driver */
-	kernel->id = ioctl(m2s_active_dev, SIKernelCreate,
+	kernel->id = ioctl(m2s_active_dev, HSAKernelCreate,
 			program->id, func_name);
 
 
@@ -243,7 +243,7 @@ int opencl_hsa_kernel_set_arg(struct opencl_hsa_kernel_t *kernel, int arg_index,
 	case opencl_hsa_arg_value:
 
 		/* ABI call */
-		ioctl(m2s_active_dev, SIKernelSetArgValue,
+		ioctl(m2s_active_dev, HSAKernelSetArgValue,
 				kernel->id, arg_index, arg_value, arg_size);
 		break;
 
@@ -270,7 +270,7 @@ int opencl_hsa_kernel_set_arg(struct opencl_hsa_kernel_t *kernel, int arg_index,
 
 		/* ABI call */
 		ioctl(m2s_active_dev,
-			SIKernelSetArgPointer, kernel->id,
+			HSAKernelSetArgPointer, kernel->id,
 			arg_index, arg_value, arg_size);
 		break;
 
@@ -352,7 +352,7 @@ struct opencl_hsa_ndrange_t *opencl_hsa_ndrange_create(
 
 	/* Create the ndrange */
 	arch_ndrange->id = ioctl(m2s_active_dev,
-		SINDRangeCreate,
+		HSANDRangeCreate,
 		hsa_kernel->id, arch_ndrange->work_dim,
 		arch_ndrange->global_work_offset,
 		arch_ndrange->global_work_size,
@@ -360,7 +360,7 @@ struct opencl_hsa_ndrange_t *opencl_hsa_ndrange_create(
 
 	/* Provide internal tables initialized within the host
 	 * process' virtual address space */
-	ioctl(m2s_active_dev, SINDRangePassMemObjs,
+	ioctl(m2s_active_dev, HSANDRangePassMemObjs,
 		arch_ndrange->id, hsa_kernel->id, arch_ndrange->table_ptr,
 		arch_ndrange->cb_ptr);
 
@@ -377,13 +377,13 @@ void opencl_hsa_ndrange_finish(struct opencl_hsa_ndrange_t *ndrange)
 	/* Wait for the nd-range to complete */
 	opencl_debug("[%s] finish start at %llu", __FUNCTION__,
 		opencl_get_time()); /////////////////
-	ioctl(m2s_active_dev, NDRangeFinish,
+	ioctl(m2s_active_dev, HSANDRangeFinish,
 		ndrange->id);
 
 	/* Flush the cache */
 	opencl_debug("[%s] finish end/flush start at %llu", __FUNCTION__,
 		opencl_get_time()); /////////////////
-	ioctl(m2s_active_dev, NDRangeFlush,
+	ioctl(m2s_active_dev, HSANDRangeFlush,
 		ndrange->id);
 	opencl_debug("[%s] flush done at %llu", __FUNCTION__,
 		opencl_get_time()); /////////////////
@@ -395,7 +395,7 @@ void opencl_hsa_ndrange_free(struct opencl_hsa_ndrange_t *ndrange)
 	opencl_debug("[%s] freeing si kernel", __FUNCTION__);
 
 	/* Free the ndrange */
-	ioctl(m2s_active_dev, NDRangeFree,
+	ioctl(m2s_active_dev, HSANDRangeFree,
 		ndrange->id);
 
 	free(ndrange);
@@ -411,11 +411,11 @@ void opencl_hsa_ndrange_run_partial(struct opencl_hsa_ndrange_t *ndrange,
 	/* Ask the driver how many work groups it can buffer */
 	/* Send work groups to the driver */
 	ioctl(m2s_active_dev,
-		NDRangeGetBufferEntries,
+		HSANDRangeGetBufferEntries,
 		&max_work_groups_to_send);
 
 	ioctl(m2s_active_dev,
-		NDRangeSendWorkGoups,
+		HSANDRangeSendWorkGoups,
 		ndrange->id, work_group_start, work_group_count);
 }
 
@@ -442,7 +442,7 @@ void opencl_hsa_ndrange_run(struct opencl_hsa_ndrange_t *ndrange,
 	pthread_setschedparam(pthread_self(), sched_policy_new,
 		&sched_param_new);
 
-	ioctl(m2s_active_dev, SINDRangeStart);
+	ioctl(m2s_active_dev, HSANDRangeStart);
 
 	/* Record start time */
 	if (event)
@@ -461,7 +461,7 @@ void opencl_hsa_ndrange_run(struct opencl_hsa_ndrange_t *ndrange,
 	{
 		clock_gettime(CLOCK_MONOTONIC, &end);
 
-		ioctl(m2s_active_dev, SINDRangeEnd);
+		ioctl(m2s_active_dev, HSANDRangeEnd);
 
 		cltime = (cl_ulong)start.tv_sec;
 		cltime *= 1000000000;
