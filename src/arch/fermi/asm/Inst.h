@@ -174,7 +174,7 @@ class Inst
 
 public:
 	/// Constructor
-	Inst(Asm *as);
+	Inst();
 
 	/// Dump functions
 	void DumpPC(std::ostream &os);
