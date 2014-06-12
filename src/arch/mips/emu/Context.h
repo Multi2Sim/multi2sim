@@ -89,11 +89,20 @@ class Context
 	// Register file. Each context has its own copy always.
 	Regs regs;
 
-	// Current emulated instruction
-	Inst *inst;
+	// last emulated instruction
+	std::unique_ptr<Inst> inst;
 
 	// File descriptor table, shared by contexts
 	std::shared_ptr<FileTable> file_table;
+
+	// Instruction pointers
+	unsigned last_eip;  // Address of last emulated instruction
+	unsigned current_eip;  // Address of currently emulated instruction
+	unsigned target_eip;  // Target address for branch, even if not taken
+
+	// Virtual address of the memory access performed by the last emulated
+	// instruction.
+	unsigned effective_address;
 
 	// Update the context state, updating also the presence on the context
 	// in the various context lists in the emulator.
