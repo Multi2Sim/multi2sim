@@ -21,17 +21,64 @@
 #define DRAM_ACTION_H
 
 
+#include <lib/util/string.h>
+
+#include "request.h"
+#include "command.h"
+
+
 extern int EV_DRAM_ACTION;
+
+enum dram_action_type_t
+{
+	action_type_set_active_row,
+	action_type_request,
+	action_type_check_command_start
+};
+
+struct dram_action_t
+{
+	enum dram_action_type_t type;
+	struct dram_system_t *system;
+	union
+	{
+		struct {
+			int logical_chan;
+			int physical_chan;
+			int rank;
+			int bank;
+			int row;
+		} set_active_row;
+
+		struct {
+			char type_str[MAX_STRING_SIZE];
+			enum dram_request_type_t type;
+			unsigned int addr;
+		} request;
+
+		struct {
+			char type_str[MAX_STRING_SIZE];
+			enum dram_command_type_t type;
+			int logical_chan;
+			int physical_chan;
+			int rank;
+			int bank;
+		} check_command_start;
+	};
+};
 
 struct dram_action_stack_t
 {
-	struct dram_system_t *system;
-	char *action;
+	struct dram_action_t *action;
+	long long cycle;
 };
 
+void dram_action_parse_action_line(struct dram_system_t *system, char *action_line);
+void dram_action_handler(int event, void *data);
+struct dram_action_t *dram_action_create(void);
+void dram_action_free(struct dram_action_t *dram_action);
 struct dram_action_stack_t *dram_action_stack_create(void);
 void dram_action_stack_free(struct dram_action_stack_t *action);
-void dram_action_handler(int event, void *data);
 
 
 #endif
