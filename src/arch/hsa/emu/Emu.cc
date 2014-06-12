@@ -27,8 +27,8 @@ void EmuConfig::Register(misc::CommandLine &command_line)
 
 void EmuConfig::Process()
 {
-	/*Emu::hsa_debug.setPath(hsa_debug_file);
-	std::cout << "In" << __FUNCTION__ << "\n";*/
+	Emu::hsa_debug.setPath(hsa_debug_file);
+	// std::cout << "In" << __FUNCTION__ << "\n";	
 }
 
 //
