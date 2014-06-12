@@ -202,7 +202,7 @@ struct opencl_hsa_device_t *opencl_si_device_create(struct opencl_device_t *pare
 
 void opencl_hsa_device_free(struct opencl_hsa_device_t *device)
 {
-	ioctl(m2s_active_dev, XXX);	// Call the driver to free all device resource
+	ioctl(m2s_active_dev, HSADeviceFree);	// Call the driver to free all device resource
 	free(device);
 }
 
@@ -213,7 +213,7 @@ void *opencl_hsa_device_mem_alloc(struct opencl_hsa_device_t *device,
 	void *device_ptr;
 
 	/* Request device memory to driver */
-	device_ptr = (void *) ioctl(m2s_active_dev, XXX, size);
+	device_ptr = (void *) ioctl(m2s_active_dev, HSAMemAlloc, size);
 
 	return device_ptr;
 }
@@ -223,7 +223,7 @@ void opencl_hsa_device_mem_free(struct opencl_hsa_device_t *device,
 		void *ptr)
 {
 	/* Invoke 'mem_free' ABI call */
-	ioctl(m2s_active_dev, XXX, ptr);
+	ioctl(m2s_active_dev, HSAMemFree, ptr);
 }
 
 
@@ -231,7 +231,7 @@ void opencl_hsa_device_mem_read(struct opencl_hsa_device_t *device,
 		void *host_ptr, void *device_ptr, unsigned int size)
 {
 	/* Invoke 'mem_read' ABI call */
-	ioctl(m2s_active_dev, XXX, host_ptr, device_ptr, size);
+	ioctl(m2s_active_dev, HSAMemRead, host_ptr, device_ptr, size);
 }
 
 
@@ -239,14 +239,14 @@ void opencl_hsa_device_mem_write(struct opencl_hsa_device_t *device,
 		void *device_ptr, void *host_ptr, unsigned int size)
 {
 	/* Invoke 'mem_write' ABI call */
-	ioctl(m2s_active_dev, XXX, device_ptr, host_ptr, size);
+	ioctl(m2s_active_dev, HSAMemWrite, device_ptr, host_ptr, size);
 }
 
 
 void opencl_hsa_device_mem_copy(struct opencl_hsa_device_t *device,
 		void *device_dest_ptr, void *device_src_ptr, unsigned int size)
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	ioctl(m2s_active_dev, HSAMemCopy, device_dest_ptr, device_src_ptr, size);
 }
 
 int opencl_hsa_device_preferred_workgroups(struct opencl_hsa_device_t *device)
