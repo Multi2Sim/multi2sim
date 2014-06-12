@@ -273,11 +273,6 @@ Asm *Asm::getInstance()
 }
 
 
-bool Asm::isValidBinary(const std::string &path) const
-{
-	return false;
-}
-
 void Asm::DisassembleBinary(const std::string &path, std::ostream &os) const
 {
 	// Traverse sections of ELF file

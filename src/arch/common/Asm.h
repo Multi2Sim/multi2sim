@@ -30,12 +30,6 @@ class Asm
 
 public:
 
-	/// Return whether a binary file is compatible with the current
-	/// architecture. This function is used in the main program to identify
-	/// the architecture that the file passed in the command line belongs
-	/// to. Every derived class should implement this function.
-	virtual bool isValidBinary(const std::string &path) const = 0;
-	
 	/// Check whether a token is found in the begninning of a format string.
 	///
 	/// \param fmt
