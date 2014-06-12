@@ -62,13 +62,6 @@ Asm *Asm::getInstance()
 }
 
 
-bool Asm::isValidBinary(const std::string &path) const
-{
-	// FIXME
-	return false;
-}
-
-
 void Asm::DisassembleBinary(const std::string &path) const
 {
 	ELFReader::File file(path);

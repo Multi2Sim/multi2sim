@@ -116,9 +116,6 @@ public:
 	/// Return \c true if \a byte is a valid x86 instruction prefix.
 	bool isPrefix(unsigned char byte) const { return is_prefix[byte]; }
 
-	/// Return whether the specified file is a valid x86 binary.
-	bool isValidBinary(const std::string &path) const;
-
 	/// Disassemble the x86 ELF executable contained in file \a path, and
 	/// dump its content into the output stream given in \c os (or the
 	/// standard output if no output stream is specified.

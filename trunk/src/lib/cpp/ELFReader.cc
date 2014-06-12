@@ -196,9 +196,8 @@ void Symbol::getStream(std::istringstream &stream, unsigned int offset,
 
 
 
-
 //
-// Class 'File'
+// Class 'Header'
 //
 
 static const char *err_64bit =
@@ -208,6 +207,44 @@ static const char *err_64bit =
 	"\tget compilation errors related with missing '.h' files, check that\n"
 	"\tthe 32-bit gcc package associated with your Linux distribution is\n"
 	"\tinstalled.\n";
+
+Header::Header(const std::string &path)
+{
+	// Open file
+	std::ifstream f(path);
+	if (!f)
+		misc::fatal("%s: cannot open file", path.c_str());
+
+	// Get file size
+	f.seekg(0, std::ios_base::end);
+	unsigned size = f.tellg();
+	f.seekg(0, std::ios_base::beg);
+
+	// Check that size is at least equal to header size
+	if (size < sizeof(Elf32_Ehdr))
+		misc::fatal("%s: invalid ELF file", path.c_str());
+
+	// Load header
+	f.read((char *) &info, sizeof(Elf32_Ehdr));
+	f.close();
+
+	// Check that file is a valid ELF file
+	if (strncmp((char *) info.e_ident, ELFMAG, 4))
+		misc::fatal("%s: invalid ELF file", path.c_str());
+
+	// Check that ELF file is a 32-bit object
+	if (info.e_ident[EI_CLASS] == ELFCLASS64)
+		misc::fatal("%s: 64-bit ELF not supported.\n%s",
+			path.c_str(), err_64bit);
+	
+}
+
+
+
+
+//
+// Class 'File'
+//
 
 void File::ReadHeader()
 {
@@ -320,6 +357,10 @@ File::File(const std::string &path)
 	f.seekg(0, std::ios_base::end);
 	size = f.tellg();
 	f.seekg(0, std::ios_base::beg);
+
+	// Check that size is at least equal to header size
+	if (size < sizeof(Elf32_Ehdr))
+		misc::fatal("%s: invalid ELF file", path.c_str());
 
 	// Load entire file into buffer and close
 	buffer = new char[size];
