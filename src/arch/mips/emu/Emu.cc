@@ -22,6 +22,7 @@
 
 namespace MIPS
 {
+
 //
 // Class 'EmuConfig'
 //
@@ -37,6 +38,10 @@ void EmuConfig::Register(misc::CommandLine &command_line)
 {
 
 }
+
+
+
+
 //
 // Class 'Emu'
 //
@@ -95,6 +100,24 @@ Context *Emu::newContext()
 
 	// Return
 	return context;
+}
+
+
+void Emu::loadProgram(const std::vector<std::string> args)
+{
+	// Create new context
+	Context *context = newContext();
+
+	// Load program
+	std::vector<std::string> env;
+	std::string cwd = misc::getCwd();
+	std::string stdin_file_name = "";
+	std::string stdout_file_name = "";
+	context->Load(args,
+			env,
+			cwd,
+			stdin_file_name,
+			stdout_file_name);
 }
 
 
