@@ -172,7 +172,7 @@ public:
 	unsigned int target;
 
 	// Constructor
-	Inst(Asm *as);
+	Inst();
 
 	/* Read an instruction from the buffer 'buf' into the 'bytes' field of the
 	 * instruction object, and decode it by populating the 'info' field. The value

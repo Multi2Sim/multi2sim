@@ -55,7 +55,7 @@ public:
 
 class Emu : public comm::Emu
 {
-	// Unique instance of x86 emulator
+	// Unique instance of the singleton
 	static std::unique_ptr<Emu> instance;
 
 	// See setScheduleSignal()
@@ -105,8 +105,7 @@ public:
 	/// contexts.
 	Context *newContext();
 
-	/// The mips emulator is a singleton class. The only possible instance of
-	/// it will be allocated the first time this function is invoked.
+	/// Return unique instance of the MIPS emulator singleton.
 	static Emu *getInstance();
 
 	/// Remove a context from all context lists and free it
@@ -137,4 +136,5 @@ public:
 	/// Debugger for x86 contexts
 	static misc::Debug context_debug;
 };
+
 }

@@ -17,61 +17,16 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "Arch.h"
+#ifndef ARCH_COMMON_TIMING_H
+#define ARCH_COMMON_TIMING_H
 
 
 namespace comm
 {
 
-misc::StringMap arch_sim_kind_map =
+class Timing
 {
-	{ "functional", ArchSimFunctional },
-	{ "detailed", ArchSimDetailed }
 };
 
-
-//
-// Class Arch
-//
-
-Arch::Arch(const std::string &name, Asm *as, Emu *emu, Timing *timing)
-{
-	// Initialize
-	this->name = name;
-	this->as = as;
-	this->emu = emu;
-	this->timing = timing;
 }
-	
-
-
-//
-// Class ArchPool
-//
-
-std::unique_ptr<ArchPool> ArchPool::instance;
-
-ArchPool *ArchPool::getInstance()
-{
-	// Return existing instance
-	if (instance.get())
-		return instance.get();
-	
-	// Create new architecture pool
-	instance.reset(new ArchPool());
-	return instance.get();
-}
-	
-void ArchPool::Register(const std::string &name,
-		Asm *as,
-		Emu *emu,
-		Timing *timing)
-{
-	// Create new architecture in place
-	Arch *arch = new Arch(name, as, emu, timing);
-	arch_list.emplace_back(arch);
-}
-
-
-}  // namespace comm
 

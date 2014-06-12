@@ -27,7 +27,10 @@ libcommon_a_SOURCES = \
 	Runtime.h \
 	\
 	timing.c \
-	timing.h
+	timing.h \
+	\
+	Timing.cc \
+	Timing.h
 
 INCLUDES = @M2S_INCLUDES@
 
