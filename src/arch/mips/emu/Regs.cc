@@ -54,14 +54,6 @@ void Regs::setGPR(int n,unsigned int value)
 		  gpr[n]=value;
 }
 
-
-
-//Write PC with value
-void Regs::setPC(unsigned int value)
-{
-		  pc=value;
-}
-
 //Read from HI register
 unsigned int Regs::getHI()
 {

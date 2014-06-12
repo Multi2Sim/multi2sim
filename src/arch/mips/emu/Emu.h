@@ -112,6 +112,9 @@ public:
 	/// Remove a context from all context lists and free it
 	void freeContext(Context *context);
 
+	/// Remove a context from a context list if present
+	void RemoveContextFromList(ContextListType type, Context *context);
+
 	/// Return a unique increasing ID for a virtual memory space for
 	/// contexts.
 	int getAddressSpaceIndex() { return address_space_index++; }

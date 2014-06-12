@@ -45,8 +45,11 @@ public:
     unsigned int getPC(){ return pc; }
     
     ///write pc with value
-    void setPC(unsigned int value);
+    void setPC(unsigned int value){ pc = value; }
     
+    /// Increment value of register \c eip by \a value bytes.
+    void incPC(int value) { pc += value; }
+
     ///read from HI register
     unsigned int getHI();
     
