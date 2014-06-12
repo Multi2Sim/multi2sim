@@ -57,6 +57,12 @@ class Arch
 	Asm *as;
 	Emu *emu;
 	Timing *timing;
+
+	// Simulation kind
+	ArchSimKind sim_kind;
+
+	// True if last iteration had an active simulation
+	bool active;
 	
 public:
 
@@ -76,6 +82,27 @@ public:
 	/// \param timing
 	///	Timing simulator for the architecture
 	Arch(const std::string &name, Asm *as, Emu *emu, Timing *timing);
+
+	/// Return the associated disassembler
+	Asm *getAsm() const { return as; }
+
+	/// Return the associated emulator
+	Emu *getEmu() const { return emu; }
+
+	/// Return the associated timing simulator
+	Timing *getTiming() const { return timing; }
+
+	/// Return the type of simulation for the architecture
+	ArchSimKind getSimKind() const { return sim_kind; }
+
+	/// Return whether the architecture performed an active simulation in
+	/// the last simulation iteration.
+	bool isActive() const { return active; }
+
+	/// Set the flag that indicates that the last simulation iteration was
+	/// active. This is done only internally in the architecture pool (call
+	/// ArchPool::Run()).
+	void setActive(bool active) { this->active = active; }
 };
 
 
@@ -104,6 +131,23 @@ public:
 			Asm *as = nullptr,
 			Emu *emu = nullptr,
 			Timing *timing = nullptr);
+
+	/// Run one iteration of the main loop for each architecture, using
+	/// emulation or timing simulation, depending on the user configuration.
+	///
+	/// \param num_emu_active
+	///	The function returns in this argument the number of
+	///	architectures that performed an active emulation.
+	///
+	/// \param num_timing_active
+	///	The function returns in this argument passed by reference the
+	///	number of architectures that performed an active timing
+	///	simulation.
+	///
+	/// \return
+	///	The two arguments in this function are return values used to
+	///	decide whether the main simulation loop should stop.
+	void Run(int &num_emu_active, int &num_timing_active);
 };
 
 
