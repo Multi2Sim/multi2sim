@@ -26,7 +26,26 @@ namespace comm
 
 class Timing
 {
+	// Current cycle
+	long long cycle;
+
+	// Frequency domain info
+	int frequency;
+	int frequency_domain;
+
+public:
+
+	/// Run one cycle for the timing simulator. This function returns \a
+	/// true if a valid simulation was performed by the architecture. The
+	/// function must be implemented by every derived class.
+	virtual bool Run() = 0;
+
+	// Return the frequency domain identifier where this architecture
+	// belongs to.
+	int getFrequencyDomain() const { return frequency_domain; }
 };
 
 }
+
+#endif
 

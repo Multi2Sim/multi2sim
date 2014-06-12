@@ -18,6 +18,8 @@
  */
 
 #include "Arch.h"
+#include "Emu.h"
+#include "Timing.h"
 
 
 namespace comm
@@ -29,20 +31,6 @@ misc::StringMap arch_sim_kind_map =
 	{ "detailed", ArchSimDetailed }
 };
 
-
-//
-// Class Arch
-//
-
-Arch::Arch(const std::string &name, Asm *as, Emu *emu, Timing *timing)
-{
-	// Initialize
-	this->name = name;
-	this->as = as;
-	this->emu = emu;
-	this->timing = timing;
-}
-	
 
 
 //
@@ -72,6 +60,106 @@ void ArchPool::Register(const std::string &name,
 	arch_list.emplace_back(arch);
 }
 
+void ArchPool::Run(int &num_emu_active, int &num_timing_active)
+{
+	// Reset active counters
+	num_emu_active = 0;
+	num_timing_active = 0;
+
+	// Run one iteration for each architecture
+	for (auto &arch : arch_list)
+	{
+		switch (arch->getSimKind())
+		{
+		case ArchSimFunctional:
+		{
+			// Get the emulator. If none is available, skip this
+			// architecture.
+			Emu *emu = arch->getEmu();
+			if (!emu)
+				continue;
+
+
+			// Run
+			bool active = emu->Run();
+			arch->setActive(active);
+                           
+			// Increase number of active emulations if the architecture
+			// actually performed a useful emulation iteration.
+			if (active)
+				num_emu_active++;
+
+			// Done
+			break;
+		}
+		
+		case ArchSimDetailed:
+		{
+			misc::panic("%s: not implemented (ArchSimDetailed)",
+					__FUNCTION__);
+#if 0
+			// Get the timing simulator. If none is available, skip
+			// this architecture.
+			Timing *timing = arch->getTiming();
+			if (!timing)
+				continue;
+
+			// Check whether the architecture should actually run an
+			// iteration. If it is working at a slower frequency than
+			// the main simulation loop, we must skip this call.
+			int frequency_domain = timing->getFrequencyDomain();
+			unsigned long long cycle = esim_domain_cycle(frequency_domain);
+			if (cycle == arch->last_timing_cycle)
+				continue;
+
+			// Run
+			bool active = timing->Run(timing);
+			arch->setActive(active);
+
+			// ... but only update the last timing simulation cycle
+			// if there was an effective execution of the iteration
+			// loop. Otherwise, there is a deadlock: 'esim_time'
+			// will not advance (no call to 'esim_process_events')
+			// because no architecture ran, and no architecture will
+			// run because 'esim_time' did not advance.
+			if (active)
+			{
+				arch->last_timing_cycle = cycle;
+				num_timing_active++;
+			}
+
+			// Done
+			break;
+#endif
+		}
+
+		default:
+
+			misc::panic("%s: Invalid simulation kind (%d)",
+					__FUNCTION__, arch->getSimKind());
+		}
+	}
+}
+	
+
+
+
+//
+// Class Arch
+//
+
+Arch::Arch(const std::string &name, Asm *as, Emu *emu, Timing *timing)
+{
+	// Arguments
+	this->name = name;
+	this->as = as;
+	this->emu = emu;
+	this->timing = timing;
+
+	// Initialize
+	sim_kind = ArchSimFunctional;
+}
+
+
 
 }  // namespace comm
-
