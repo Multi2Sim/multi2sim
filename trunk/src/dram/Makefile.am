@@ -1,6 +1,8 @@
 lib_LIBRARIES = libdram.a
 
 libdram_a_SOURCES = \
+	action.c\
+	action.h\
 	\
 	bank.c \
 	bank.h \

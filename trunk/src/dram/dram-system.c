@@ -32,6 +32,7 @@
 #include "request.h"
 #include "controller.h"
 #include "dram-system.h"
+#include "action.h"
 
 
 /*
@@ -67,41 +68,41 @@ char *dram_err_config =
 
 static struct hash_table_t *dram_system_table;
 
-static void dram_config_request_create(struct dram_system_t *system, struct config_t *config,
+static void dram_config_action_create(struct dram_system_t *system, struct config_t *config,
 		char *section)
 {
-	char *request_line;
-	char request_var[MAX_STRING_SIZE];
+	char *action_line;
+	char action_var[MAX_STRING_SIZE];
 
-	int request_var_id;
+	int action_var_id;
 
 	/* Read Requests */
-	request_var_id = 0;
+	action_var_id = 0;
 
 	/* Register events for request handler*/
-	EV_DRAM_REQUEST = esim_register_event_with_name(dram_request_handler,
-			dram_domain_index, "dram_request");
+	EV_DRAM_ACTION = esim_register_event_with_name(dram_action_handler,
+			dram_domain_index, "dram_action");
 
 	while (1)
 	{
 		/* Get request */
-		snprintf(request_var, sizeof request_var, "Request[%d]", request_var_id);
-		request_line = config_read_string(config, section, request_var, NULL);
-		if (!request_line)
+		snprintf(action_var, sizeof action_var, "Action[%d]", action_var_id);
+		action_line = config_read_string(config, section, action_var, NULL);
+		if (!action_line)
 			break;
 
 		/* Schedule event to process request */
-		struct request_stack_t *stack;
-		stack = dram_request_stack_create();
+		struct dram_action_stack_t *stack;
+		stack = dram_action_stack_create();
 
-		request_line = xstrdup(request_line);
-		stack->request_line = request_line;
+		action_line = xstrdup(action_line);
+		stack->action = action_line;
 		stack->system = system;
 
-		esim_schedule_event(EV_DRAM_REQUEST, stack, 0);
+		esim_schedule_event(EV_DRAM_ACTION, stack, 0);
 
 		/* Next command */
-		request_var_id++;
+		action_var_id++;
 	}
 }
 
@@ -337,18 +338,18 @@ struct dram_system_t *dram_system_config_with_file(struct config_t *config, char
 		if (!token || strcasecmp(token, system_name))
 			continue;
 
-		/* Third token must be 'Commands' */
+		/* Third token must be 'Actions' */
 		token = strtok(NULL, delim);
-		if (!token || strcasecmp(token, "Requests"))
+		if (!token || strcasecmp(token, "Actions"))
 			continue;
 
 		token_endl = strtok(NULL, delim);
 		if (token_endl)
-			fatal("%s: %s: bad format for Commands section.\n%s",
+			fatal("%s: %s: bad format for Actions section.\n%s",
 					system_name, section, dram_err_config);
 
 		/* Requests */
-		dram_config_request_create(system, config, section);
+		dram_config_action_create(system, config, section);
 		config_check(config);
 	}
 
