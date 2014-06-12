@@ -73,9 +73,9 @@ static const char *inst_reg_name[MIPS_INST_REG_COUNT] =
 
 
 
-Inst::Inst(Asm *as)
+Inst::Inst()
 {
-	this->as = as;
+	this->as = Asm::getInstance();
 	bytes.word = 0;
 	addr = 0;
 	target = 0;

@@ -33,13 +33,13 @@ using namespace MIPS;
 
 struct MIPSAsmWrap *MIPSAsmWrapCreate(void)
 {
-	return (struct MIPSAsmWrap *) new Asm;
+	return (struct MIPSAsmWrap *) Asm::getInstance();
 }
 
 
 void MIPSAsmWrapFree(struct MIPSAsmWrap *self)
 {
-	delete (Asm *) self;
+	// Ignore - singleton deleted with smart pointers
 }
 
 
@@ -58,9 +58,9 @@ void MIPSAsmWrapDisassembleBinary(struct MIPSAsmWrap *self, char *path)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-struct MIPSInstWrap *MIPSInstWrapCreate(struct MIPSAsmWrap *as)
+struct MIPSInstWrap *MIPSInstWrapCreate()
 {
-	return (MIPSInstWrap *) new Inst((Asm *) as);
+	return (MIPSInstWrap *) new Inst();
 }
 
 

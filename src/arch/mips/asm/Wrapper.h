@@ -125,7 +125,7 @@ typedef union
 
 } MIPSInstBytes;
 
-struct MIPSInstWrap *MIPSInstWrapCreate(struct MIPSAsmWrap *as);
+struct MIPSInstWrap *MIPSInstWrapCreate();
 void MIPSInstWrapFree(struct MIPSInstWrap *self);
 void MIPSInstWrapCopy(struct MIPSInstWrap *left, struct MIPSInstWrap *right);
 

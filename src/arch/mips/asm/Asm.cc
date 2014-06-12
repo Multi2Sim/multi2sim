@@ -271,10 +271,10 @@ Asm::~Asm()
 }
 
 
-void Asm::DisassembleBinary(std::string path)
+void Asm::DisassembleBinary(const std::string &path)
 {
 	ELFReader::File file(path);
-	Inst inst(this);
+	Inst inst;
 
 	unsigned int curr_sym;
 	unsigned int pos;
@@ -337,6 +337,22 @@ void Asm::DisassembleBinary(std::string path)
 	/* End */
 	std::cout << '\n';
 }
+
+
+std::unique_ptr<Asm> Asm::instance;
+
+Asm *Asm::getInstance()
+{
+	// Instance already exists
+	if (instance.get())
+		return instance.get();
+	
+	// Create instance
+	instance.reset(new Asm());
+	return instance.get();
+}
+
+
 
 
 }  // namespace MIPS

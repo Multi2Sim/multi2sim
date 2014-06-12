@@ -29,6 +29,11 @@
 namespace comm
 {
 
+// Forward declarations
+class Asm;
+class Emu;
+class Timing;
+
 /// Type of simulation for each architecture
 enum ArchSimKind
 {
@@ -47,17 +52,30 @@ class Arch
 {
 	// Name of architecture (x86, ARM, etc.)
 	std::string name;
-	
-	// Prefix used in command-line options and in code variables and functions.
-	// E.g., 'evg' for Evergreen, or 'si' for Southern Islands.
-	std::string prefix;
 
+	// Disassembler, emulator, and timing simulator
+	Asm *as;
+	Emu *emu;
+	Timing *timing;
+	
 public:
 
 	/// Constructor of a new architecture. New architectures should be
 	/// created only through ArchPool::Register(), not directly by the
 	/// invocation of this constructor.
-	Arch(const std::string &name, const std::string &prefix);
+	///
+	/// \param name
+	///	Name of the architecture
+	///
+	/// \param as
+	///	Disassembler instance for the architecture
+	///
+	/// \param emu
+	///	Emulator instance for the architecture
+	///
+	/// \param timing
+	///	Timing simulator for the architecture
+	Arch(const std::string &name, Asm *as, Emu *emu, Timing *timing);
 };
 
 
@@ -80,8 +98,12 @@ public:
 	/// Return a unique instance of the singleton
 	static ArchPool *getInstance();
 
-	/// Register an architecture
-	void Register(const std::string &name, const std::string &prefix);
+	/// Register a new architecture. See constructor of class Arch for the
+	/// meaning of the arguments.
+	void Register(const std::string &name,
+			Asm *as = nullptr,
+			Emu *emu = nullptr,
+			Timing *timing = nullptr);
 };
 
 
