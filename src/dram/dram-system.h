@@ -21,6 +21,7 @@
 #define DRAM_DRAM_SYSTEM_H
 
 #include <stdio.h>
+#include "action.h"
 #include "request.h"
 #include <lib/util/config.h>
 

@@ -137,7 +137,7 @@ void dram_event_handler(int event, void *data)
 		if (f)
 		{
 			dram_debug("\tCommand freed in cycle %lld:\n", cycle);
-			dram_command_dump(command, stdout);
+			dram_command_dump(command, f);
 		}
 
 		/* Free command */
