@@ -68,38 +68,34 @@ char *dram_err_config =
 
 static struct hash_table_t *dram_system_table;
 
-static void dram_config_action_create(struct dram_system_t *system, struct config_t *config,
-		char *section)
+static void dram_config_action_create(struct dram_system_t *system,
+	struct config_t *config, char *section)
 {
 	char *action_line;
 	char action_var[MAX_STRING_SIZE];
+	int action_var_id = 0;
 
-	int action_var_id;
-
-	/* Read Requests */
-	action_var_id = 0;
-
-	/* Register events for request handler*/
+	/* FIXME: This should be in the init function, not here.  However,
+	 * in the init function, event registration happens after config
+	 * reading, because the domain is configurable.  However, this event
+	 * needs to be registered before the actions config is read. */
 	EV_DRAM_ACTION = esim_register_event_with_name(dram_action_handler,
-			dram_domain_index, "dram_action");
+		dram_domain_index, "dram_action");
 
+	/* Read actions from section.
+	 * Reads continuously for variables Action[0], Action[1], etc until
+	 * it doesn't find one. */
 	while (1)
 	{
-		/* Get request */
+		/* Get action */
 		snprintf(action_var, sizeof action_var, "Action[%d]", action_var_id);
 		action_line = config_read_string(config, section, action_var, NULL);
+
+		/* Action not found, parsing over */
 		if (!action_line)
 			break;
 
-		/* Schedule event to process request */
-		struct dram_action_stack_t *stack;
-		stack = dram_action_stack_create();
-
-		action_line = xstrdup(action_line);
-		stack->action = action_line;
-		stack->system = system;
-
-		esim_schedule_event(EV_DRAM_ACTION, stack, 0);
+		dram_action_parse_action_line(system, action_line);
 
 		/* Next command */
 		action_var_id++;
@@ -487,9 +483,10 @@ void dram_system_init(void)
 	dram_system_read_config();
 
 	/* Register events */
-	EV_DRAM_COMMAND_RECEIVE = esim_register_event(dram_event_handler, dram_domain_index);
-	EV_DRAM_COMMAND_COMPLETE = esim_register_event(dram_event_handler, dram_domain_index);
-
+	EV_DRAM_COMMAND_RECEIVE = esim_register_event(dram_event_handler,
+		dram_domain_index);
+	EV_DRAM_COMMAND_COMPLETE = esim_register_event(dram_event_handler,
+		dram_domain_index);
 
 	if (*dram_report_file_name)
 	{
