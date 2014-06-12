@@ -139,14 +139,35 @@ void main_cpp(int argc, char **argv)
 	if (!command_line.getUseCpp())
 		return;
 
+	//
 	// Register architectures
-	comm::ArchPool *arch_pool = comm::ArchPool::getInstance();
-	arch_pool->Register("x86", "x86");
-	arch_pool->Register("SouthernIslands", "si");
-	arch_pool->Register("HSA", "hsa");
-	arch_pool->Register("MIPS","mips"); // Register a MIPS architecture in the arch_pool
+	//
 
-	// Register runtime and driver pairs
+	// Get architecture pool
+	comm::ArchPool *arch_pool = comm::ArchPool::getInstance();
+
+	// x86
+	arch_pool->Register("x86",
+			x86::Asm::getInstance(),
+			x86::Emu::getInstance());
+	
+	// Southern Islands
+	arch_pool->Register("SouthernIslands");
+
+	// HSA
+	arch_pool->Register("HSA");
+
+	// MIPS
+	arch_pool->Register("MIPS",
+			MIPS::Asm::getInstance(),
+			MIPS::Emu::getInstance());
+
+
+
+	//
+	// Register runtimes
+	//
+
 	comm::RuntimePool *runtime_pool = comm::RuntimePool::getInstance();
 	runtime_pool->Register("OpenCL", "OpenCL", "m2s-opencl", "/dev/m2s-si-cl",
 			Driver::OpenCLSIDriver::getInstance());

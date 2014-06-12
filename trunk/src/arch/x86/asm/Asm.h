@@ -22,6 +22,7 @@
 
 #include <cassert>
 
+#include <arch/common/Asm.h>
 #include <lib/cpp/CommandLine.h>
 
 #include "Inst.h"
@@ -43,7 +44,7 @@ public:
 };
 
 
-class Asm
+class Asm : public comm::Asm
 {
 	// Constants used in asm.dat
 

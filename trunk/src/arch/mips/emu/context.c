@@ -111,7 +111,7 @@ static void MIPSContextDoCreate(MIPSContext *self, MIPSEmu *emu)
 
 	/* Structures */
 	self->regs = mips_regs_create();
-	self->inst = MIPSInstWrapCreate(emu->as);
+	self->inst = MIPSInstWrapCreate();
 }
 
 

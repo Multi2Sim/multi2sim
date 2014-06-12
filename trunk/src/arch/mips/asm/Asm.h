@@ -20,14 +20,25 @@
 #ifndef MIPS_ASM_ASM_H
 #define MIPS_ASM_ASM_H
 
+#include <memory>
+
+#include <arch/common/Asm.h>
+
 #include "Inst.h"
+
 
 namespace MIPS
 {
 
 
-class Asm
+class Asm : public comm::Asm
 {
+	// Unique instance of the singleton
+	static std::unique_ptr<Asm> instance;
+
+	// Private constructor for singleton
+	Asm();
+
 public:
 	// Decoding tables
 	InstInfo *dec_table;
@@ -60,13 +71,16 @@ public:
 
 	InstInfo *dec_table_special3;
 	InstInfo *dec_table_special3_bshfl;
+	
+	
+	/// Return an instance of the singleton
+	static Asm *getInstance();
 
-	// Creator and destructor
-	Asm();
+	/// Destructor
 	~Asm();
 
-	// Disassemble binary file given a path
-	void DisassembleBinary(std::string path);
+	/// Disassemble binary file given a path
+	void DisassembleBinary(const std::string &path);
 };
 
 
