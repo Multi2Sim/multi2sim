@@ -577,16 +577,67 @@ For example:
 
 
 
-Structure of a header file
---------------------------
+Structure of a header (*.h*) file
+---------------------------------
+
+### 
+A header file is composed by the following components, in the specified order:
+
+- Copyright notice, with the same format as in a source file, followed by one empty line.
+
+- Include guards, followed by one empty line.
+
+- Optional set of `#include` directives in alphabetical order, followed by two empty lines. In most cases, this part should be skipped.
+
+- Body of the header file, composed of symbol declarations. The body should be followed by two empty lines.
+
+- Closing include guard, followed by an empty line.
+
+For example:
+
+    /*
+     *  Multi2Sim
+     *  Copyright (C) 2012
+     *  [...]
+     */
+    
+            --- One blank line ---
+    
+    #ifndef ARCH_X86_EMU_CONTEXT_H
+    #define ARCH_X86_EMU_CONTEXT_H
+    
+            --- One empty line ---
+    
+    #include <iostream>   // Note: should be avoided here
+    #include <cstring>    // Note: should be avoided here 
+    
+            --- Two empty lines ---
+    
+    [ Body of the header file ]
+    
+            --- Two empty lines ---
+    
+    #endif
+            --- Empty line at the end of file ---
+
+
+### 
+Header files should not appear included in other header files when possible, in order to minimize recursive dependence trees. Instead, each (*.cc*) file should include all headers it requires.
+
+
+### 
+As a strategy to avoid recursive dependences, a header file does not need to be fully included when a type defined in it (e.g., `MyClass`) is only required as a pointer (e.g., `MyClass *`). Instead, the primary header file can provide a forward declaration of the required type:
+
+    class MyClass;
+    function myFunction(MyClass *object);
 
 
 Include guards
 --------------
 
+### 
+Include guards should use macros named after the directory where the file is found, relative to `multi2sim/src` in the case of Multi2Sim,and `multi2sim/` in the case of Multi2C, using upper case characters, separating directory parts with underscores, and appending `_H` to the resulting name. For example, file `multi2sim/src/lib/cpp/ELFReader.h` should use an include guard named `LIB_CPP_ELF_READER_H`, and file `multi2sim/m2c/llvm2si/BasicBlock.h` should use an include guard named `M2C_LLVM2SI_BASIC_BLOCK_H`.
 
-Multiple inclusions
--------------------
 
 
 
@@ -598,16 +649,20 @@ Access specifiers
 -----------------
 
 ### 
-A class declaration should contain its private, protected, and public fields in this order, when possible. The `private` access specified should be omitted (this is the default access).
+A class declaration should contain its private, protected, and public fields in this order, when possible. The `private` access specified should be omitted when it is used for the first group of identifiers (this is the default access). An access specifier should be preceded by an empty line only when it is not the first line in the class declaration body.
 
     class MyClass
     {
             int private_field;
-    
+
+            --- One empty line ---
+
     protected:
             int protected_field_1;
             int protected_field_2;
     
+            --- One empty line ---
+
     public:
             void PublicFunction();
     }
@@ -654,7 +709,7 @@ Setters should be declared as inline functions, unless their implementation invo
 
 
 
-The *dump* method
+The *dump()* method
 -----------------
 
 ### 
@@ -686,9 +741,92 @@ All classes with a `dump()` function should provide an alternative syntax based 
 Static variables and functions
 ------------------------------
 
+### 
+Static functions should have the same coding style as non-static functions. Standard `//` comments should describe the prototype of a private static function, while Doxygen `///` comments should describe the prototype of a public static function.
+
+    class MyClass
+    {
+            // Regular comment
+            static void myPrivateStaticFunction();
+    
+    public:
+            /// Doxygen documentation
+            static void myPublicStaticFunction();
+    }
+
+
+### 
+Static variables are declared as part of a class declaration in a header file, but must be additionally defined in the associated source file. A proper standard `//` or Doxygen `///` comment should document the variable in the declaration found in the header file, depending on whether the variable is private or public, respectively. A static variable can be initialized in the header file.
+
+Header file *Example.h*:
+
+    class Example
+    {
+            // Regular comment
+            static int my_private_static_variable = 10;
+
+    public:
+            /// Doxygen documentation
+            static int my_public_static_variable;
+    }
+
+Source file *Example.cc*:
+
+    int Example::my_private_static_variable;
+    int Example::my_public_static_variable = 20;
+
+
+
+Constants
+---------
+
+### 
+Constants should be declared as `const` variables either in a header file in the case of public constants, or in a source file in the case of private constants. Constants should not be declared using `#define` directives.
+
+
 
 Singletons
 ----------
+
+### 
+Classes that can be only instantiated once should be defined as singletons. A singleton contains a static member function called `getInstance()` that returns the only possible instance of the object in the system. A singleton has the additional advantage of instantiating the class only when it is needed for the first time, that is, upon the first call to `getInstance()`. For example, if Multi2Sim is executes an x86 simulation, the emulators of other architectures will not be instantiated, as long as there is no call to `getInstance()` for them throughout the execution.
+
+### 
+Singletons should comply with the coding pattern reflected in the following example of an emulator object. Defining a private static variable `instance` as a unique pointer allows it to be freed automatically when the program finishes, with the consequent automatic invocation to the class destructor. Defining a private constructor, either inline or in the source file, prevents the class to be instantiated with `new` or as a local variable of a function.
+
+File *Emu.h*:
+
+    #include <memory>
+    
+    class Emu
+    {
+            // Unique possible instance of the singleton
+            static std::unique_ptr<Emu> instance;
+
+            // Private constructor
+            Emu() { ... }
+    
+    public:
+            /// Return an instance of the singleton
+            static Emu *getInstance();
+    };
+
+
+File *Emu.cc*:
+
+    std::unique_ptr<Emu> Emu::instance;
+    
+    Emu *Emu::getInstance()
+    {
+            // Obtain instance if it exists
+            if (instance.get())
+                    return instance.get();
+            
+            // Create instance only the first time
+            instance.reset(new Emu());
+            return instance.get();
+    }
+
 
 
 
