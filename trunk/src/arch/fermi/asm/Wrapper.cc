@@ -28,9 +28,9 @@ using namespace Fermi;
 // Wrapper for class Inst
 ////////////////////////////////////////////////////////////////////////////////
 
-struct FrmInstWrap *FrmInstWrapCreate(struct FrmAsmWrap *as)
+struct FrmInstWrap *FrmInstWrapCreate()
 {
-	return (FrmInstWrap *) new Fermi::Inst((Fermi::Asm *) as);
+	return (FrmInstWrap *) new Fermi::Inst();
 }
 
 

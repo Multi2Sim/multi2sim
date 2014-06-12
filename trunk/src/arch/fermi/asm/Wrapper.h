@@ -153,7 +153,7 @@ typedef struct
 	char *fmt_str;
 } FrmInstInfo;
 
-struct FrmInstWrap *FrmInstWrapCreate(struct FrmAsmWrap *as);
+struct FrmInstWrap *FrmInstWrapCreate();
 void FrmInstWrapFree(struct FrmInstWrap *self);
 void FrmInstWrapCopy(struct FrmInstWrap *left, struct FrmInstWrap *right);
 

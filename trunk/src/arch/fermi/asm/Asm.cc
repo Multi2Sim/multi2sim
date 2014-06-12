@@ -61,7 +61,15 @@ Asm *Asm::getInstance()
 	return instance.get();
 }
 
-void Asm::DisassembleBinary(std::string path)
+
+bool Asm::isValidBinary(const std::string &path) const
+{
+	// FIXME
+	return false;
+}
+
+
+void Asm::DisassembleBinary(const std::string &path) const
 {
 	ELFReader::File file(path);
 	std::vector<ELFReader::Section *> text_sections;
@@ -86,7 +94,7 @@ void Asm::DisassembleBinary(std::string path)
 			max_inst_len.push_back(0);
 			for (unsigned pos = 0; pos < section->getSize(); pos += 8)
 			{
-				std::unique_ptr<Inst> inst(new Inst(this));
+				std::unique_ptr<Inst> inst(new Inst());
 
 				inst->Decode(pos, section->getBuffer() + pos);
 				inst->DumpToBuf();

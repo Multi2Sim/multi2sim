@@ -54,8 +54,11 @@ public:
 	/// end of the execution.
 	static Asm *getInstance();
 
+	/// Return whether the specified file is a valid x86 binary.
+	bool isValidBinary(const std::string &path) const;
+
 	/// Disassembler
-	void DisassembleBinary(std::string path);
+	void DisassembleBinary(const std::string &path) const;
 
 	/// Get instruction information
 	InstInfo *GetInstInfo(unsigned cat, unsigned op_in_cat)

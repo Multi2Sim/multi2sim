@@ -1164,9 +1164,9 @@ misc::StringMap ssrc_map =
 };
 
 
-Inst::Inst(Asm *as)
+Inst::Inst()
 {
-	this->as = as;
+	this->as = Asm::getInstance();
 }
 
 

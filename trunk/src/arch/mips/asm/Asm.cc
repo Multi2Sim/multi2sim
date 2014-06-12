@@ -236,6 +236,20 @@ Asm::Asm()
 }
 
 
+std::unique_ptr<Asm> Asm::instance;
+
+Asm *Asm::getInstance()
+{
+	// Instance already exists
+	if (instance.get())
+		return instance.get();
+	
+	// Create instance
+	instance.reset(new Asm());
+	return instance.get();
+}
+
+
 Asm::~Asm()
 {
 	delete dec_table;
@@ -268,6 +282,13 @@ Asm::~Asm()
 
 	delete dec_table_special3;
 	delete dec_table_special3_bshfl;
+}
+
+
+bool Asm::isValidBinary(const std::string &path) const
+{
+	// FIXME
+	return false;
 }
 
 
@@ -336,20 +357,6 @@ void Asm::DisassembleBinary(const std::string &path)
 
 	/* End */
 	std::cout << '\n';
-}
-
-
-std::unique_ptr<Asm> Asm::instance;
-
-Asm *Asm::getInstance()
-{
-	// Instance already exists
-	if (instance.get())
-		return instance.get();
-	
-	// Create instance
-	instance.reset(new Asm());
-	return instance.get();
 }
 
 
