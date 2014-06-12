@@ -112,179 +112,266 @@ static unsigned int dram_action_get_hex_address(struct list_t *token_list,
 
 
 
+void dram_action_parse_action_line(struct dram_system_t *system, char *action_line)
+{
+	char action_name[MAX_STRING_SIZE];
+	struct dram_action_t *dram_action;
+	struct dram_action_stack_t *dram_stack;
+	struct list_t *token_list;
+	long long cycle;
+	long long action_cycle;
+
+	/* Initialize the action */
+	dram_action = dram_action_create();
+	dram_action->system = system;
+
+	/* Load tokens from action line */
+	token_list = str_token_list_create(action_line, " ");
+
+	/* Get the current cycle */
+	cycle = esim_domain_cycle(dram_domain_index);
+
+	/* Get the cycle the action is scheduled for */
+	action_cycle = dram_action_get_llint(token_list, action_line, "cycle");
+
+	/* Get the type of action */
+	dram_action_get_string(token_list, action_line, action_name, sizeof(action_name));
+	if (!strcasecmp(action_name, "SetActiveRow"))
+	{
+		/* Set the action type */
+		dram_action->type = action_type_set_active_row;
+
+		/* Get all the address info for the action */
+		dram_action->set_active_row.logical_chan = dram_action_get_int(
+			token_list, action_line, "logical channel");
+		dram_action->set_active_row.physical_chan = dram_action_get_int(
+			token_list, action_line, "physical channel");
+		dram_action->set_active_row.rank = dram_action_get_int(
+			token_list, action_line, "rank");
+		dram_action->set_active_row.bank = dram_action_get_int(
+			token_list, action_line, "bank");
+		dram_action->set_active_row.row = dram_action_get_int(
+			token_list, action_line, "row");
+	}
+
+	else if (!strcasecmp(action_name, "Request"))
+	{
+		char type[MAX_STRING_SIZE];
+
+		/* Set the action type */
+		dram_action->type = action_type_request;
+
+		/* Get the type of request */
+		dram_action_get_string(token_list, action_line, type, sizeof(type));
+		strcpy(dram_action->request.type_str, type);
+		if (!strcasecmp(type, "READ"))
+		{
+			dram_action->request.type = request_type_read;
+		}
+		else if (!strcasecmp(type, "WRITE"))
+		{
+			dram_action->request.type = request_type_write;
+		}
+		else
+		{
+			fatal("%s: invalid request type %s\n\t> %s",
+				__FUNCTION__, type, action_line);
+		}
+
+		/* Create the request and add it to the system's queue*/
+		dram_action->request.addr = dram_action_get_hex_address(token_list, action_line);
+	}
+
+	else if (!strcasecmp(action_name, "CheckCommandStart"))
+	{
+		char type[MAX_STRING_SIZE];
+
+		/* Set the action type */
+		dram_action->type = action_type_check_command_start;
+
+		/* Get the type of command*/
+		dram_action_get_string(token_list, action_line, type, sizeof(type));
+		strcpy(dram_action->request.type_str, type);
+		if (!strcasecmp(type, "READ"))
+		{
+			dram_action->check_command_start.type = dram_command_read;
+		}
+		else if (!strcasecmp(type, "WRITE"))
+		{
+			dram_action->check_command_start.type = dram_command_write;
+		}
+		else if (!strcasecmp(type, "PRECHARGE"))
+		{
+			dram_action->check_command_start.type = dram_command_precharge;
+		}
+		else if (!strcasecmp(type, "ACTIVATE"))
+		{
+			dram_action->check_command_start.type = dram_command_activate;
+		}
+		else
+		{
+			fatal("%s: invalid command type %s\n\t> %s",
+				__FUNCTION__, type, action_line);
+		}
+
+		/* Get all the address info for the action */
+		dram_action->check_command_start.logical_chan = dram_action_get_int(
+			token_list, action_line, "logical channel");
+		dram_action->check_command_start.physical_chan = dram_action_get_int(
+			token_list, action_line, "physical channel");
+		dram_action->check_command_start.rank = dram_action_get_int(
+			token_list, action_line, "rank");
+		dram_action->check_command_start.bank = dram_action_get_int(
+			token_list, action_line, "bank");
+	}
+
+	else
+	{
+		/* Unknown action, fail */
+		fatal("%s: Unknown action %s\n\t>%s",
+			__FUNCTION__, action_name, action_line);
+	}
+
+	/* Build a stack for the action's event */
+	dram_stack = dram_action_stack_create();
+	dram_stack->action = dram_action;
+	dram_stack->cycle = action_cycle;
+
+	/* Delay an action to its scheduled cycle */
+	esim_schedule_event(EV_DRAM_ACTION, dram_stack, action_cycle - cycle);
+
+	str_token_list_free(token_list);
+}
+
+
 void dram_action_handler(int event, void *data)
 {
 	/* Load stack and data from it */
-	struct dram_action_stack_t *stack = data;
-	struct dram_system_t *system = stack->system;
-	char *action_line = stack->action;
-
 	long long cycle = esim_domain_cycle(dram_domain_index);
+	struct dram_action_stack_t *stack = data;
+	struct dram_action_t *dram_action = stack->action;
+	struct dram_system_t *system = dram_action->system;
+	FILE *f;
 
 	if (event == EV_DRAM_ACTION)
 	{
-		char action[MAX_STRING_SIZE];
-
-		/* Load tokens from action line */
-		struct list_t *token_list;
-		token_list = str_token_list_create(action_line, " ");
-
-		/* Get the cycle the action is scheduled for */
-		long long action_cycle = dram_action_get_llint(token_list,
-				action_line, "cycle value");
-
-		if (action_cycle > cycle)
+		if (dram_action->type == action_type_set_active_row)
 		{
-			/* Delay an action to its scheduled cycle */
-			str_token_list_free(token_list);
-			esim_schedule_event(event, stack, action_cycle - cycle);
-			return;
-		}
-
-		/* Get the type of action */
-		dram_action_get_string(token_list, action_line, action, sizeof(action));
-
-		if (!strcasecmp(action, "test"))
-		{
-			fprintf(stderr, "test %lld\n", cycle);
-		}
-
-		if (!strcasecmp(action, "SetActiveRow"))
-		{
-			int logical_chan;
-			int physical_chan;
-			int rank;
-			int bank;
-			int row;
 			struct dram_controller_t *controller;
 			struct dram_bank_info_t *info;
 
-			/* Get all the address info for the action */
-			logical_chan = dram_action_get_int(token_list,
-				action_line, "logical channel");
-			physical_chan = dram_action_get_int(token_list,
-				action_line, "physical channel");
-			rank = dram_action_get_int(token_list,
-				action_line, "rank");
-			bank = dram_action_get_int(token_list,
-				action_line, "bank");
-			row = dram_action_get_int(token_list,
-				action_line, "row");
-
 			/* Set the active row */
-			controller = list_get(system->dram_controller_list, logical_chan);
+			controller = list_get(system->dram_controller_list,
+				dram_action->set_active_row.logical_chan);
 			info = list_get(controller->dram_bank_info_list,
-					bank + rank * controller->dram_num_banks_per_device +
-					physical_chan * controller->dram_num_ranks *
+					dram_action->set_active_row.bank +
+					dram_action->set_active_row.rank *
+					controller->dram_num_banks_per_device +
+					dram_action->set_active_row.physical_chan *
+					controller->dram_num_ranks *
 					controller->dram_num_banks_per_device);
 			info->row_buffer_valid = 1;
-			info->active_row_id = row;
+			info->active_row_id = dram_action->set_active_row.row;
 
-			fprintf(stderr, "Row %d at %d:%d:%d:%d activated at cycle %lld\n",
-				row, logical_chan, physical_chan, rank, bank, cycle);
+			f = debug_file(dram_debug_category);
+			fprintf(f, "\tRow %d at %d:%d:%d:%d activated in cycle %lld\n",
+				dram_action->set_active_row.row,
+				dram_action->set_active_row.logical_chan,
+				dram_action->set_active_row.physical_chan,
+				dram_action->set_active_row.rank,
+				dram_action->set_active_row.bank,
+				cycle);
 		}
 
-		if (!strcasecmp(action, "Request"))
+		else if (dram_action->type == action_type_request)
 		{
-			char request[MAX_STRING_SIZE];
 			struct dram_request_t *dram_request;
 			dram_request = dram_request_create();
 
-			/* Get the type of request */
-			dram_action_get_string(token_list, action_line, request, sizeof(request));
-			if (!strcasecmp(request, "READ"))
-			{
-				dram_request->type = request_type_read;
-			}
-			else if (!strcasecmp(request, "WRITE"))
-			{
-				dram_request->type = request_type_write;
-			}
-			else
-			{
-				fatal("%s: invalid request type %s\n\t> %s",
-					__FUNCTION__, request, action_line);
-			}
+			/* Set the request type and address*/
+			dram_request->type = dram_action->request.type;
+			dram_request->addr = dram_action->request.addr;
 
 			/* Create the request and add it to the system's queue*/
-			dram_request->addr = dram_action_get_hex_address(token_list, action_line);
 			dram_request->system = system;
 			dram_request->id = system->request_count;
 			system->request_count++;
 			list_enqueue(system->dram_request_list, dram_request);
 
-			fprintf(stderr, "Request %s created for 0x%x at cycle %lld\n",
-				request, dram_request->addr, cycle);
+			f = debug_file(dram_debug_category);
+			fprintf(f, "\tRequest %s created for 0x%x in cycle %lld\n",
+				dram_action->request.type_str,
+				dram_request->addr,
+				cycle);
 		}
 
-		if (!strcasecmp(action, "CheckCommandStart"))
+		else if (dram_action->type == action_type_check_command_start)
 		{
-			char type[MAX_STRING_SIZE];
-			enum dram_command_type_t command_type;
-			int logical_chan;
-			int physical_chan;
-			int rank;
-			int bank;
 			struct dram_controller_t *controller;
 			struct dram_bank_info_t *info;
 
-			/* Get the type of command*/
-			dram_action_get_string(token_list, action_line, type, sizeof(type));
-			if (!strcasecmp(type, "READ"))
-			{
-				command_type = dram_command_read;
-			}
-			else if (!strcasecmp(type, "WRITE"))
-			{
-				command_type = dram_command_write;
-			}
-			else if (!strcasecmp(type, "PRECHARGE"))
-			{
-				command_type = dram_command_precharge;
-			}
-			else if (!strcasecmp(type, "ACTIVATE"))
-			{
-				command_type = dram_command_activate;
-			}
-			else
-			{
-				fatal("%s: invalid command type %s\n\t> %s",
-					__FUNCTION__, type, action_line);
-			}
-
-			/* Get all the address info for the action */
-			logical_chan = dram_action_get_int(token_list,
-				action_line, "logical channel");
-			physical_chan = dram_action_get_int(token_list,
-				action_line, "physical channel");
-			rank = dram_action_get_int(token_list,
-				action_line, "rank");
-			bank = dram_action_get_int(token_list,
-				action_line, "bank");
-
 			/* Load the dram_info object containing previous command info */
-			controller = list_get(system->dram_controller_list, logical_chan);
+			controller = list_get(system->dram_controller_list,
+				dram_action->check_command_start.logical_chan);
 			info = list_get(controller->dram_bank_info_list,
-					bank + rank * controller->dram_num_banks_per_device +
-					physical_chan * controller->dram_num_ranks *
+					dram_action->check_command_start.bank +
+					dram_action->check_command_start.rank *
+					controller->dram_num_banks_per_device +
+					dram_action->check_command_start.physical_chan *
+					controller->dram_num_ranks *
 					controller->dram_num_banks_per_device);
 
 			/* Check whether or not the command was scheduled */
-			if (info->dram_bank_info_last_scheduled_time_matrix[command_type] == cycle)
+			if (info->dram_bank_info_last_scheduled_time_matrix[dram_action->check_command_start.type] == cycle)
 			{
-				fprintf(stderr, "Command %s at %d:%d:%d:%d was started at cycle %lld\n",
-					type, logical_chan, physical_chan, rank, bank, cycle);
+				f = debug_file(dram_debug_category);
+				fprintf(f, "\tCommand %s at %d:%d:%d:%d was started in cycle %lld\n",
+					dram_action->check_command_start.type_str,
+					dram_action->check_command_start.logical_chan,
+					dram_action->check_command_start.physical_chan,
+					dram_action->check_command_start.rank,
+					dram_action->check_command_start.bank,
+					cycle);
 			}
 			else
 			{
-				fprintf(stderr, "Command %s at %d:%d:%d:%d was NOT started at cycle %lld\n",
-					type, logical_chan, physical_chan, rank, bank, cycle);
+				fprintf(stderr, "Command %s at %d:%d:%d:%d was NOT started in cycle %lld\n",
+					dram_action->check_command_start.type_str,
+					dram_action->check_command_start.logical_chan,
+					dram_action->check_command_start.physical_chan,
+					dram_action->check_command_start.rank,
+					dram_action->check_command_start.bank,
+					cycle);
+				fatal("Command not started");
 			}
 		}
 
-		str_token_list_free(token_list);
+		dram_action_free(dram_action);
 		dram_action_stack_free(stack);
 	}
+}
+
+
+struct dram_action_t *dram_action_create(void)
+{
+	struct dram_action_t *dram_action;
+	dram_action = xcalloc(1, sizeof(struct dram_action_t));
+	return dram_action;
+}
+
+
+void dram_action_free(struct dram_action_t *dram_action)
+{
+	// if (dram_action->type == action_type_request)
+	// {
+	// 	free(dram_action->request.type_str);
+	// }
+	// else if (dram_action->type == action_type_check_command_start)
+	// {
+	// 	free(dram_action->request.type_str);
+	// }
+
+	free(dram_action);
 }
 
 
@@ -296,8 +383,7 @@ struct dram_action_stack_t *dram_action_stack_create(void)
 }
 
 
-void dram_action_stack_free(struct dram_action_stack_t *action)
+void dram_action_stack_free(struct dram_action_stack_t *stack)
 {
-	free(action->action);
-	free(action);
+	free(stack);
 }
