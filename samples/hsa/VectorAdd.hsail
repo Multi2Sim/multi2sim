@@ -1,0 +1,45 @@
+//===- VectorAdd.hsail ----------------------------------------------------===//
+//
+//                     The HSA Simulator
+//
+// This file is distributed under the University of Illinois Open Source
+// License. See LICENSE.TXT for details.
+//
+//===----------------------------------------------------------------------===//
+
+version 0:96:$full:$small;
+
+function &get_global_id(arg_u32 %ret_val) (arg_u32 %arg_val0);
+
+function &abort() ();
+
+kernel &__OpenCL_vec_add_kernel(
+  kernarg_u32 %arg_val0,
+  kernarg_u32 %arg_val1,
+  kernarg_u32 %arg_val2,
+  kernarg_u32 %arg_val3)
+{
+@__OpenCL_vec_add_kernel_entry:
+// BB#0:             // %entry
+  ld_kernarg_u32 $s0, [%arg_val3];
+  workitemabsid_u32 $s1, 0;
+  cmp_lt_b1_u32     $c0, $s1, $s0;
+  ld_kernarg_u32    $s0, [%arg_val2];
+  ld_kernarg_u32    $s2, [%arg_val1];
+  ld_kernarg_u32    $s3, [%arg_val0];
+  cbr $c0, @BB0_2;
+  brn @BB0_1;
+
+@BB0_1:
+  ret;    // %if. end
+@BB0_2:
+  shl_u32  $s1, $s1, 2;
+  add_u32  $s2, $s2, $s1;
+  ld_global_f32 $s2, [$s2];
+  add_u32  $s3, $s3, $s1;
+  ld_global_f32 $s3, [$s3];
+  add_f32  $s2, $s3, $s2;
+  add_u32  $s0, $s0, $s1;
+  st_global_f32 $s2, [$s0];
+  brn @BB0_1;
+};
