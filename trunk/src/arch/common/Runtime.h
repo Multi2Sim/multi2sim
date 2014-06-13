@@ -67,12 +67,19 @@ public:
 			const std::string &library_name,
 			const std::string &redirect_library_name);
 
+	/// Return the runtime name
+	const std::string &getName() const { return name; }
+
 	/// Return the library name
 	const std::string &getLibraryName() const { return library_name; }
 
 	/// Return the redirection library name
 	const std::string &getRedirectLibraryName() const {
 			return redirect_library_name; }
+
+	/// Record or clear attempt to open this runtime
+	void setOpenAttempt(bool open_attempt) {
+			this->open_attempt = open_attempt; }
 };
 
 
@@ -88,6 +95,15 @@ class RuntimePool
 	// Private constructor for singleton
 	RuntimePool() { }
 
+	// Check if a file name matches a library name
+	static bool isLibraryMatch(const std::string &file_name,
+			const std::string &library_name);
+
+	// If Multi2Sim is running from its compilation directoy in
+	// TOPDIR/bin/m2s, directoy TOPDIR is returned. If Multi2Sim is running
+	// as an installed package (e.g. /usr/bin), an empty string is returned.
+	static std::string getBuildTreeRoot();
+	
 public:
 
 	/// Return a unique instance of the singleton
@@ -98,6 +114,23 @@ public:
 	void Register(const std::string &name,
 			const std::string &library_name,
 			const std::string &redirect_library_name);
+	
+	/// Check all runtimes in the pool for a matching library name, and if
+	/// so, redirect.
+	///
+	/// \param library_name
+	///	Library the the guest application is trying to open (e.g.,
+	///	'/usr/lib/libOpenCL.so'.
+	///
+	/// \param redirect_library_name
+	///	Output string where the redirection library is returned, if a
+	///	match is found in any of the runtimes.
+	///
+	/// \return
+	///	The function returns \a true if any match was found in a
+	///	runtime.
+	bool Redirect(const std::string &library_name,
+			std::string &redirect_library_name);
 };
 
 }  // namespace comm

@@ -37,6 +37,7 @@
 #include <lib/cpp/Misc.h>
 #include <lib/esim/esim.h>
 #include <arch/common/Driver.h>
+#include <arch/common/Runtime.h>
 
 #include "Context.h"
 #include "Emu.h"
@@ -247,35 +248,9 @@ void Context::ExecuteSyscall()
 	// Get system call code from register eax
 	int code = regs.getEax();
 
-	// Check for special system call codes outside of the standard range
-	// defined in 'syscall.dat'.
-	// FIXME
-	#if 0
-	if (code < 1 || code >= x86_sys_code_count)
-	{
-		// Check if it is a special code registered by a runtime ABI
-		runtime = runtime_get_from_syscall_code(code);
-		if (!runtime)
-			fatal("%s: invalid system call code (%d)", __FUNCTION__, code);
-
-		// Debug
-		emu->syscall_debug << misc::fmt("%s runtime ABI call (code %d, inst %lld, pid %d)\n",
-			runtime->name, code, asEmu(emu)->instructions, self->pid);
-
-		// Run runtime ABI call
-		err = runtime_abi_call(runtime, self);
-
-		// Set return value in 'eax'.
-		regs.setEax(err);
-
-		// Debug and done
-		emu->syscall_debug << misc::fmt("  ret=(%d, 0x%x)\n", err, err);
-		return;
-	}
-
-	// Statistics
-	x86_sys_call_freq[code]++;
-	#endif
+	// Check valid code
+	if (code < 1 || code >= SyscallCodeCount || !execute_syscall_fn[code])
+		misc::fatal("invalid system call (code %d)", code);
 
 	// Debug
 	emu->call_debug << misc::fmt("system call '%s' "
@@ -713,10 +688,10 @@ int Context::ExecuteSyscall_open()
 	// The dynamic linker uses the 'open' system call to open shared libraries.
 	// We need to intercept here attempts to access runtime libraries and
 	// redirect them to our own Multi2Sim runtimes.
-
-	// FIXME
-	//if (runtime_redirect(full_path, temp_path, sizeof temp_path))
-	//	snprintf(full_path, sizeof full_path, "%s", temp_path);
+	comm::RuntimePool *runtime_pool = comm::RuntimePool::getInstance();
+	std::string runtime_redirect_path;
+	if (runtime_pool->Redirect(full_path, runtime_redirect_path))
+		full_path = runtime_redirect_path;
 
 	// Driver devices
 	if (misc::StringPrefix(full_path, "/dev/"))
