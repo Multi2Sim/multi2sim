@@ -16,45 +16,21 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
-#include <lib/cpp/CommandLine.h>
-
-#include "Config.h"
 #include "Context.h"
 
-
-using namespace misc;
 
 namespace si2bin
 {
 
-
-
-void Config::Register(CommandLine &command_line)
+void Context::RegisterOptions()
 {
-	// Option --si2bin <file>
-	command_line.RegisterString("--si2bin", source_file,
-			"Creates an AMD Southern Islands GPU compliant ELF "
-			"from the assembly file provided in <arg> using the "
-			"internal Southern Islands Assembler.");
-}
-
-void Config::Process()
-{
-	// Run Southern Islands Assembler
-	if (!source_file.empty())
-	{
-		output_file = "output.bin";
-
-		Context *context = Context::getInstance();
-		context->Compile(source_file, output_file);
-		exit(0);
-	}
 }
 
 
-Config config;
-
+void Context::ProcessOptions()
+{
+}
 
 
 }  // namespace si2bin
+

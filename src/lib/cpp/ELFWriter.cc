@@ -192,10 +192,10 @@ SymbolTable::SymbolTable(File *file, const std::string &symtab,
 	this->file = file;
 
 	// Create associated buffers and sections
-	symtab_buffer = file->NewBuffer();
-	strtab_buffer = file->NewBuffer();
-	symtab_section = file->NewSection(symtab, symtab_buffer, symtab_buffer);
-	strtab_section = file->NewSection(strtab, strtab_buffer, strtab_buffer);
+	symtab_buffer = file->newBuffer();
+	strtab_buffer = file->newBuffer();
+	symtab_section = file->newSection(symtab, symtab_buffer, symtab_buffer);
+	strtab_section = file->newSection(strtab, strtab_buffer, strtab_buffer);
 	
 	// Set symtab and strtab properties
 	symtab_section->setType(SHT_SYMTAB);
@@ -204,11 +204,11 @@ SymbolTable::SymbolTable(File *file, const std::string &symtab,
 	symtab_section->setLink(strtab_section->getIndex());
 
 	// Add a null symbol
-	NewSymbol("");
+	newSymbol("");
 }
 
 
-Symbol *SymbolTable::NewSymbol(const std::string &name)
+Symbol *SymbolTable::newSymbol(const std::string &name)
 {
 	
 	symbols.push_back(std::unique_ptr<Symbol>(new Symbol(name)));
@@ -248,12 +248,12 @@ File::File()
 	memset(&info, 0, sizeof info);
 
 	// Create null section
-	Buffer *null_buffer = NewBuffer();
-	Section *null_section = NewSection("", null_buffer, null_buffer);
+	Buffer *null_buffer = newBuffer();
+	Section *null_section = newSection("", null_buffer, null_buffer);
 
 	// Create section string table
-	Buffer *shstrtab_buffer = NewBuffer();
-	Section *shstrtab_section = NewSection(".shstrtab", shstrtab_buffer,
+	Buffer *shstrtab_buffer = newBuffer();
+	Section *shstrtab_section = newSection(".shstrtab", shstrtab_buffer,
 			shstrtab_buffer);
 	shstrtab_section->info.sh_name = 1;
 	shstrtab_section->info.sh_type = SHT_STRTAB;
@@ -266,7 +266,7 @@ File::File()
 }
 
 
-Buffer *ELFWriter::File::NewBuffer()
+Buffer *ELFWriter::File::newBuffer()
 {
 	buffers.push_back(std::unique_ptr<Buffer>(new Buffer(this,
 			buffers.size())));
@@ -274,7 +274,7 @@ Buffer *ELFWriter::File::NewBuffer()
 }
 
 
-Segment *File::NewSegment(const std::string &name, Buffer *first, Buffer *last)
+Segment *File::newSegment(const std::string &name, Buffer *first, Buffer *last)
 {
 	segments.push_back(std::unique_ptr<Segment>(new Segment(this, name,
 			first, last, segments.size())));
@@ -282,7 +282,7 @@ Segment *File::NewSegment(const std::string &name, Buffer *first, Buffer *last)
 }
 
 
-Section *File::NewSection(const std::string &name, Buffer *first, Buffer *last)
+Section *File::newSection(const std::string &name, Buffer *first, Buffer *last)
 {
 	// Add to list and set index
 	sections.push_back(std::unique_ptr<Section>(new Section(this, name,
@@ -302,7 +302,7 @@ Section *File::NewSection(const std::string &name, Buffer *first, Buffer *last)
 }
 
 
-SymbolTable *File::NewSymbolTable(const std::string &symtab,
+SymbolTable *File::newSymbolTable(const std::string &symtab,
 		const std::string &strtab)
 {
 	symbol_tables.push_back(std::unique_ptr<SymbolTable>(new

@@ -96,13 +96,19 @@ InstInfo::InstInfo(SI::InstInfo *info)
 
 
 
-/*
- * Class 'Context'
- */
+//
+// Class 'Context'
+//
 
+// Input file, as set by user
+std::string Context::source_file;
 
-// Global context
+// Output file, as set by user
+std::string Context::output_file;
+
+// Singleton instance
 std::unique_ptr<Context> Context::instance;
+
 
 Context::Context()
 {
@@ -139,55 +145,75 @@ Context::Context()
 		}
 	}
 
-	//Set Unique Id default
+	// Set Unique Id default
 	uniqueid = 1024;
 
 }
 
 Context *Context::getInstance()
 {
-	//Instance already exists
+	// Instance already exists
 	if (instance.get())
 		return instance.get();
 
-	//Create Instance
+	// Create Instance
 	instance.reset(new Context());
 	return instance.get();
 }
 
 void Context::Compile(const std::string &source_file, const std::string &output_file)
 {
+	// Open source file
+	si2bin_yyin = fopen(source_file.c_str(), "r");
+	if (!si2bin_yyin)
+		fatal("%s: cannot open input file", source_file.c_str());
 
-		//FILE *f;
-		
-		// Open source file
-		si2bin_yyin = fopen(source_file.c_str(), "r");
-		if (!si2bin_yyin)
-			fatal("%s: cannot open input file", source_file.c_str());
+	// Open output file
+	std::ofstream of(output_file);
 
-		// Open output file
-		//f = fopen(output_file.c_str(), "wb");
-		//if (!f)
-		//	fatal("%s: cannot output output file", output_file.c_str());
-		
-		std::ofstream of(output_file);
+	// Create output buffer
+	this->outer_bin = new OuterBin();
 
-		// Create output buffer
-		this->outer_bin = new OuterBin();
+	// Parse input
+	si2bin_yyparse();
 
-		// Parse input
-		si2bin_yyparse();
+	// Close source file
+	fclose(si2bin_yyin);
 
-		// Close source file
-		fclose(si2bin_yyin);
-		
-		// Dump output
-		this->outer_bin->Generate(of);
-		
-		of.close();
+	// Dump output
+	this->outer_bin->Generate(of);
 
-		delete outer_bin;
+	of.close();
 
+	delete outer_bin;
 }
+
+
+void Context::RegisterOptions()
+{
+	// Get command line object
+	misc::CommandLine *command_line = misc::CommandLine::getInstance();
+
+	// Option --si2bin <file>
+	command_line->RegisterString("--si2bin", source_file,
+			"Creates an AMD Southern Islands GPU compliant ELF "
+			"from the assembly file provided in <arg> using the "
+			"internal Southern Islands Assembler.");
+}
+
+
+void Context::ProcessOptions()
+{
+	// Run Southern Islands Assembler
+	if (!source_file.empty())
+	{
+		output_file = "output.bin";
+
+		Context *context = Context::getInstance();
+		context->Compile(source_file, output_file);
+		exit(0);
+	}
+}
+
 
 }  // namespace si2bin

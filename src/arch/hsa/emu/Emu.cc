@@ -25,51 +25,61 @@
 namespace HSA
 {
 
+
 //
-// Class 'EmuConfig'
+// Configuration options
 //
 
-EmuConfig::EmuConfig()
-{
-	// Initialize
-	sim_kind = comm::ArchSimFunctional;
-}
+// Simulation kind
+comm::ArchSimKind Emu::sim_kind = comm::ArchSimFunctional;
 
-void EmuConfig::Register(misc::CommandLine &command_line)
+// Debug file
+std::string Emu::hsa_debug_file;
+
+
+//
+// Static variables
+//
+
+
+// Debugger
+misc::Debug Emu::hsa_debug;
+
+// Singleton instance
+std::unique_ptr<Emu> Emu::instance;
+
+
+
+//
+// Functions
+//
+
+void Emu::RegisterOptions()
 {
+	// Get command line object
+	misc::CommandLine *command_line = misc::CommandLine::getInstance();
+
 	// Option --hsa-debug <file>
-	command_line.RegisterString("--hsa-debug <file>", hsa_debug_file, 
+	command_line->RegisterString("--hsa-debug <file>", hsa_debug_file,
 		"Dump debug information about hsa");
 	
 	// Option --hsa-sim <kind>
-	command_line.RegisterEnum("--hsa-sim {functional|detailed} "
+	command_line->RegisterEnum("--hsa-sim {functional|detailed} "
 			"(default = functional)",
 			(int &) sim_kind, comm::arch_sim_kind_map,
 			"Level of accuracy of hsa simulation");
 }
 
-void EmuConfig::Process()
+
+void Emu::ProcessOptions()
 {
-	Emu::hsa_debug.setPath(hsa_debug_file);
-	// std::cout << "In" << __FUNCTION__ << "\n";	
+	hsa_debug.setPath(hsa_debug_file);
 }
-
-
-
-
-//
-// Class 'Emu'
-//
-
-misc::Debug Emu::hsa_debug;
-
-std::unique_ptr<Emu> Emu::instance;
-
-EmuConfig Emu::config;
 
 
 Emu::Emu() : comm::Emu("hsa")
 {
+	pid = 0;
 }
 
 

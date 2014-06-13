@@ -68,7 +68,7 @@ public:
 	void setHWRegion(int hwregion) { this->hwregion = hwregion; }
 	void setHWLocal(int hwlocal) { this->hwlocal = hwlocal; }
 	
-	SI::Arg *NewArgValue(const std::string &name, SI::ArgDataType data_type,
+	SI::Arg *newArgValue(const std::string &name, SI::ArgDataType data_type,
 			int num_elems, int constant_buffer_num, int constant_offset)
 	{
 		arg_list.push_back(std::unique_ptr<SI::Arg>(new SI::ArgValue(name, data_type,
@@ -76,7 +76,7 @@ public:
 		return arg_list.back().get();
 	}
 	
-	SI::Arg *NewArgPointer(const std::string &name, SI::ArgDataType data_type,
+	SI::Arg *newArgPointer(const std::string &name, SI::ArgDataType data_type,
 			int num_elems, int constant_buffer_num, int constant_offset,
 			SI::ArgScope scope, int buffer_num, int alignment,
 			SI::ArgAccessType access_type)

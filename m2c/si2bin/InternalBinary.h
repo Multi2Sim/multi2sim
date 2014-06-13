@@ -83,9 +83,9 @@ public:
 	//InnerBinNoteDump();
 
 	/* Getters */
-	unsigned int GetType() { return type; }
-	unsigned int GetSize() { return size; }
-	void *GetPayload() { return payload.get(); }
+	unsigned int getType() { return type; }
+	unsigned int getSize() { return size; }
+	void *getPayload() { return payload.get(); }
 };
 
 class InnerBinEntry
@@ -133,18 +133,18 @@ public:
 
 
 	/* Getters */
-	SI::BinaryDictHeader *GetHeader() { return &header; }
-	ELFWriter::Buffer *GetTextSectionBuffer() { return text_section_buffer; }
-	ELFWriter::Buffer *GetDataSectionBuffer() { return data_section_buffer; }
-	ELFWriter::SymbolTable *GetSymbolTable() { return symbol_table; };
-	unsigned int GetSize() { return header.d_size; }
+	SI::BinaryDictHeader *getHeader() { return &header; }
+	ELFWriter::Buffer *getTextSectionBuffer() { return text_section_buffer; }
+	ELFWriter::Buffer *getDataSectionBuffer() { return data_section_buffer; }
+	ELFWriter::SymbolTable *getSymbolTable() { return symbol_table; };
+	unsigned int getSize() { return header.d_size; }
 
-	void SetSize(unsigned int size) { header.d_size = size; }
-	void SetOffset(unsigned int offset) { header.d_offset = offset; }
-	void SetType(unsigned int type) { header.d_type = type; }
-	void SetMachine(unsigned int machine) { header.d_machine = machine; }
+	void setSize(unsigned int size) { header.d_size = size; }
+	void setOffset(unsigned int offset) { header.d_offset = offset; }
+	void setType(unsigned int type) { header.d_type = type; }
+	void setMachine(unsigned int machine) { header.d_machine = machine; }
 
-	void NewNote(InnerBinNoteType type, unsigned int size, void *payload);
+	void newNote(InnerBinNoteType type, unsigned int size, void *payload);
 };
 
 
@@ -191,33 +191,33 @@ public:
 	ELFWriter::File writer;
 	
 	/* Getters */
-	std::string GetName() { return name; }
-	SI::BinaryComputePgmRsrc2 *GetPgmRsrc2() { return &pgm_rsrc2; }
-	int GetNumSgpr() { return num_sgprs; }
-	int GetNumVgpr() { return num_vgprs; }
-	int GetFloatMode() { return FloatMode; }
-	int GetIeeeMode() { return IeeeMode; }
-	InnerBinEntry *GetEntry(unsigned int index) { return index < entry_list.size() ?
+	std::string getName() { return name; }
+	SI::BinaryComputePgmRsrc2 *getPgmRsrc2() { return &pgm_rsrc2; }
+	int getNumSgpr() { return num_sgprs; }
+	int getNumVgpr() { return num_vgprs; }
+	int getFloatMode() { return FloatMode; }
+	int getIeeeMode() { return IeeeMode; }
+	InnerBinEntry *getEntry(unsigned int index) { return index < entry_list.size() ?
 			entry_list[index].get() : nullptr; }
-	SI::BinaryUserElement *GetUserElement(unsigned int index) 
+	SI::BinaryUserElement *getUserElement(unsigned int index) 
 			{ return index < user_element_list.size() ? 
 			user_element_list[index].get() : nullptr; }
-	unsigned int GetUserElementCount() { return user_element_list.size(); }
+	unsigned int getUserElementCount() { return user_element_list.size(); }
 	
 	/* Setters */
-	void SetPgmRsrc2(SI::BinaryComputePgmRsrc2 &pgm_rsrc2) { this->pgm_rsrc2 = pgm_rsrc2; }
-	void SetNumSgpr(int num_sgprs) { this->num_sgprs = num_sgprs; }
-	void SetNumVgpr(int num_vgprs) { this->num_vgprs = num_vgprs; }
-	void SetFloatMode(int FloatMode) { this->FloatMode = FloatMode; }
-	void SetIeeeMode(int IeeMode) { this->IeeeMode = IeeeMode; }
+	void setPgmRsrc2(SI::BinaryComputePgmRsrc2 &pgm_rsrc2) { this->pgm_rsrc2 = pgm_rsrc2; }
+	void setNumSgpr(int num_sgprs) { this->num_sgprs = num_sgprs; }
+	void setNumVgpr(int num_vgprs) { this->num_vgprs = num_vgprs; }
+	void setFloatMode(int FloatMode) { this->FloatMode = FloatMode; }
+	void setIeeeMode(int IeeMode) { this->IeeeMode = IeeeMode; }
 
 
 	void Generate(std::ostream& os);
 
-	SI::BinaryUserElement *NewUserElement(unsigned int index, unsigned int dataClass, 
+	SI::BinaryUserElement *newUserElement(unsigned int index, unsigned int dataClass, 
 			unsigned int apiSlot, unsigned int startUserReg, 
 			unsigned int userRegCount);
-	InnerBinEntry *NewEntry();
+	InnerBinEntry *newEntry();
 
 };
 

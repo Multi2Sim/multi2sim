@@ -178,21 +178,21 @@ global_header
 		context = si2bin::Context::getInstance();
 
 		//Get outer binary from context
-		si2bin::OuterBin *outer_bin = context->GetOuterBin();
+		si2bin::OuterBin *outer_bin = context->getOuterBin();
 		
 		// Create new objects for each kernel
-		context->SetInnerBin(outer_bin->NewInnerBin(kernel_name));
-		context->SetMetadata(outer_bin->NewMetadata());
-		context->SetEntry(context->GetInnerBin()->NewEntry());
-		context->SetTextBuffer(context->GetEntry()->GetTextSectionBuffer());
+		context->setInnerBin(outer_bin->newInnerBin(kernel_name));
+		context->setMetadata(outer_bin->newMetadata());
+		context->setEntry(context->getInnerBin()->newEntry());
+		context->setTextBuffer(context->getEntry()->getTextSectionBuffer());
 
 		// Add objects and values to over all elf (outer_bin)
-		context->GetMetadata()->setUniqueId(context->GetUniqueId());
+		context->getMetadata()->setUniqueId(context->getUniqueId());
 
 		// Increment id
-		unique_id = context->GetUniqueId();
+		unique_id = context->getUniqueId();
 		unique_id++;
-		context->SetUniqueId(unique_id);
+		context->setUniqueId(unique_id);
 
 
 	} TOK_NEW_LINE
@@ -225,15 +225,15 @@ metadata_stmt
 		// Find memory information and store it in metadata
 		if (!strcmp($1, "uavprivate"))
 		{
-			context->GetMetadata()->setUAVPrivate($3);
+			context->getMetadata()->setUAVPrivate($3);
 		}
 		else if (!strcmp($1, "hwregion"))
 		{	
-			context->GetMetadata()->setHWRegion($3);
+			context->getMetadata()->setHWRegion($3);
 		}
 		else if (!strcmp($1, "hwlocal"))
 		{
-			context->GetMetadata()->setHWLocal($3);
+			context->getMetadata()->setHWLocal($3);
 		}
 		else if (!strcmp($1, "userElementCount"))
 		{
@@ -249,11 +249,11 @@ metadata_stmt
 		}
 		else if (!strcmp($1, "FloatMode"))
 		{
-			context->GetInnerBin()->SetFloatMode($3);
+			context->getInnerBin()->setFloatMode($3);
 		}
 		else if (!strcmp($1, "IeeeMode"))
 		{	
-			context->GetInnerBin()->SetIeeeMode($3);
+			context->getInnerBin()->setIeeeMode($3);
 		}
 		else if (!strcmp($1, "COMPUTE_PGM_RSRC2"))
 		{
@@ -289,7 +289,7 @@ metadata_stmt
 			si2bin_yyerror_fmt("User Elements index is out of allowed range (0 to 15)");
 
 		// Create userElement object
-		context->GetInnerBin()->NewUserElement($3, 
+		context->getInnerBin()->newUserElement($3, 
 			SI::binary_user_data_map.MapString($6, err),
 			$8,
 			$12,
@@ -307,7 +307,7 @@ metadata_stmt
 		context = si2bin::Context::getInstance();
 
 		SI::BinaryComputePgmRsrc2 *pgm_rsrc2 = 
-			context->GetInnerBin()->GetPgmRsrc2();
+			context->getInnerBin()->getPgmRsrc2();
 		
 		// Find pgm_rsrc2 information
 		if (strcmp($1, "COMPUTE_PGM_RSRC2"))
@@ -415,7 +415,7 @@ float_vals
 		si2bin::Context *context;
 		context = si2bin::Context::getInstance();
 		
-		context->GetOuterBin()->NewDataFloat($2);
+		context->getOuterBin()->newDataFloat($2);
 	}	
 	| float_vals TOK_FLOAT
 	{
@@ -423,7 +423,7 @@ float_vals
 		si2bin::Context *context;
 		context = si2bin::Context::getInstance();
 		
-		context->GetOuterBin()->NewDataFloat($2);
+		context->getOuterBin()->newDataFloat($2);
 	} TOK_NEW_LINE
 	;
 
@@ -438,7 +438,7 @@ word_vals
 		si2bin::Context *context;
 		context = si2bin::Context::getInstance();
 		
-		context->GetOuterBin()->NewDataWord(value);
+		context->getOuterBin()->newDataWord(value);
 	}
 	| word_vals hex_or_dec_value
 	{
@@ -448,7 +448,7 @@ word_vals
 		si2bin::Context *context;
 		context = si2bin::Context::getInstance();
 		
-		context->GetOuterBin()->NewDataWord(value);
+		context->getOuterBin()->newDataWord(value);
 	} TOK_NEW_LINE
 	;
 
@@ -463,7 +463,7 @@ half_vals
 		si2bin::Context *context;
 		context = si2bin::Context::getInstance();
 		
-		context->GetOuterBin()->NewDataHalf(value);
+		context->getOuterBin()->newDataHalf(value);
 	}
 	| half_vals hex_or_dec_value
 	{ 
@@ -473,7 +473,7 @@ half_vals
 		si2bin::Context *context;
 		context = si2bin::Context::getInstance();
 		
-		context->GetOuterBin()->NewDataHalf(value);
+		context->getOuterBin()->newDataHalf(value);
 	} TOK_NEW_LINE
 	;
 
@@ -488,7 +488,7 @@ byte_vals
 		si2bin::Context *context;
 		context = si2bin::Context::getInstance();
 		
-		context->GetOuterBin()->NewDataByte(value);
+		context->getOuterBin()->newDataByte(value);
 	}
 	| byte_vals hex_or_dec_value
 	{
@@ -498,7 +498,7 @@ byte_vals
 		si2bin::Context *context;
 		context = si2bin::Context::getInstance();
 		
-		context->GetOuterBin()->NewDataByte(value);
+		context->getOuterBin()->newDataByte(value);
 	} TOK_NEW_LINE
 	;
 
@@ -616,7 +616,7 @@ val_stmt_list
 		context = si2bin::Context::getInstance();
 
 		/* Create an argument with defaults*/
-		arg = context->GetMetadata()->NewArgValue("arg",
+		arg = context->getMetadata()->newArgValue("arg",
 			static_cast<SI::ArgDataType>(0), 0, 0, 0);
 
 		$$ = arg;
@@ -643,7 +643,7 @@ ptr_stmt_list
 		context = si2bin::Context::getInstance();
 
 		/* Create an argument with defaults*/
-		arg = context->GetMetadata()->NewArgPointer("arg", 
+		arg = context->getMetadata()->newArgPointer("arg", 
 			static_cast<SI::ArgDataType>(0), 0, 0, 0, 
 			SI::ArgScopeUAV, 12, 0, SI::ArgAccessTypeReadWrite);
 		$$ = arg;
@@ -724,7 +724,7 @@ text_stmt
 		si2bin::Context *context;
 		context = si2bin::Context::getInstance();
 	
-		buffer = context->GetEntry()->GetTextSectionBuffer();
+		buffer = context->getEntry()->getTextSectionBuffer();
 		std::stringstream &stream =  buffer->getStream();
 
 		// Generate code
@@ -755,17 +755,17 @@ label
 		// Create if it does not exists
 		if (!symbol)
 		{
-			symbol = context->NewSymbol($1);
+			symbol = context->newSymbol($1);
 		}
 		else
 		{
-			if (symbol->GetDefined())
+			if (symbol->getDefined())
 				si2bin_yyerror_fmt("multiply defined label: %s", $1);
 		}
 
 		// Define symbol	
-		symbol->SetDefined(true);
-		symbol->SetValue(context->GetTextBuffer()->getWritePosition());
+		symbol->setDefined(true);
+		symbol->setValue(context->getTextBuffer()->getWritePosition());
 
 	}
 
@@ -829,8 +829,8 @@ operand
 		
 		$$ = new si2bin::ArgScalarRegister(value);
 
-		if (value >= context->GetInnerBin()->GetNumSgpr())
-			context->GetInnerBin()->SetNumSgpr(value + 1);
+		if (value >= context->getInnerBin()->getNumSgpr())
+			context->getInnerBin()->setNumSgpr(value + 1);
 		
 	}
 	
@@ -844,8 +844,8 @@ operand
 
 		$$ = new si2bin::ArgVectorRegister(value);
 
-		if (value >= context->GetInnerBin()->GetNumVgpr())
-			context->GetInnerBin()->SetNumVgpr(value + 1);
+		if (value >= context->getInnerBin()->getNumVgpr())
+			context->getInnerBin()->setNumVgpr(value + 1);
 		
 	}
 	
@@ -906,14 +906,14 @@ arg
 		if (!strcmp($1, "s"))
 		{
 			arg = new si2bin::ArgScalarRegisterSeries(low, high);
-			if (high >= context->GetInnerBin()->GetNumSgpr())
-				context->GetInnerBin()->SetNumSgpr(high + 1);
+			if (high >= context->getInnerBin()->getNumSgpr())
+				context->getInnerBin()->setNumSgpr(high + 1);
 		}
 		else if (!strcmp($1, "v"))
 		{
 			arg = new si2bin::ArgVectorRegisterSeries(low, high);
-			if (high >= context->GetInnerBin()->GetNumVgpr())
-				context->GetInnerBin()->SetNumVgpr(high + 1);
+			if (high >= context->getInnerBin()->getNumVgpr())
+				context->getInnerBin()->setNumVgpr(high + 1);
 		}
 		else
 		{

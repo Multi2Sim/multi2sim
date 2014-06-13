@@ -6,21 +6,32 @@
 namespace HSA
 {
 
+// File to disassembler, set by user
+std::string Asm::path;
 
-void AsmConfig::Register(misc::CommandLine &command_line)
+// Singleton instance
+std::unique_ptr<Asm> Asm::instance;
+
+
+void Asm::RegisterOptions()
 {
+	// Get command line object
+	misc::CommandLine *command_line = misc::CommandLine::getInstance();
+
 	// Option --hsa-disasm <file>
-	command_line.RegisterString("--hsa-disasm", path, 
+	command_line->RegisterString("--hsa-disasm", path,
 			"Disassemble the HSA BRIG ELF file provided in <arg>. "	
-			"This options is incompatible with any other option."
-		);
-	command_line.setIncompatible("--hsa-disasm");
+			"This option is incompatible with any other option.");
+
+	// Option incompatibility
+	command_line->setIncompatible("--hsa-disasm");
 }
 
-void AsmConfig::Process()
+
+void Asm::ProcessOptions()
 {
 	// Run hsa disassembler
-	if(!path.empty())
+	if (!path.empty())
 	{
 		Asm *as = Asm::getInstance();
 		as->DisassembleBinary(path);
@@ -28,18 +39,18 @@ void AsmConfig::Process()
 	}
 }
 
-std::unique_ptr<Asm> Asm::as;
-	
+
 Asm *Asm::getInstance()
 {
-	if(Asm::as)
-		return Asm::as.get();
-	Asm::as.reset(new Asm());
-	return Asm::as.get();
+	// Instance already exists
+	if (instance.get())
+		return instance.get();
+
+	// Create instance
+	instance.reset(new Asm());
+	return instance.get();
 }
 
-// hsa disassembler configuration
-AsmConfig Asm::config;
 
 Asm::Asm()
 {

@@ -101,37 +101,37 @@ InnerBinEntry::InnerBinEntry(InnerBin *bin)
 	this->bin = bin;
 	
 	/* Make note list buffer for note segment */
-	note_buffer = this->bin->writer.NewBuffer();
+	note_buffer = this->bin->writer.newBuffer();
 	
 	/* Crete Note and Load Segments */
-	note_segment = this->bin->writer.NewSegment("Note Segment", note_buffer,
+	note_segment = this->bin->writer.newSegment("Note Segment", note_buffer,
 			note_buffer);
 	note_segment->setType(PT_NOTE);
 
 	/* Text Section Initialization */
-	text_section_buffer = this->bin->writer.NewBuffer();
-	text_section = this->bin->writer.NewSection(".text", text_section_buffer, 
+	text_section_buffer = this->bin->writer.newBuffer();
+	text_section = this->bin->writer.newSection(".text", text_section_buffer, 
 			text_section_buffer);
 	text_section->setType(SHT_PROGBITS);
 
 	/* Data Section Initialization */
-	data_section_buffer = this->bin->writer.NewBuffer();
-	data_section = this->bin->writer.NewSection(".data", data_section_buffer, 
+	data_section_buffer = this->bin->writer.newBuffer();
+	data_section = this->bin->writer.newSection(".data", data_section_buffer, 
 			data_section_buffer);
 	data_section->setType(SHT_PROGBITS);
 	
 	/* Symbol Table Initialization */
-	symbol_table = this->bin->writer.NewSymbolTable(".symtab", ".strtab");
+	symbol_table = this->bin->writer.newSymbolTable(".symtab", ".strtab");
 
 		
-	load_segment = this->bin->writer.NewSegment("Load Segment", text_section_buffer,
+	load_segment = this->bin->writer.newSegment("Load Segment", text_section_buffer,
 			symbol_table->getStringTableBuffer());
 	load_segment->setType(PT_LOAD);
 
 	
 }
 
-void InnerBinEntry::NewNote(InnerBinNoteType type, unsigned int size, 
+void InnerBinEntry::newNote(InnerBinNoteType type, unsigned int size, 
 		void *payload)
 {
 	note_list.push_back(std::unique_ptr<InnerBinNote>(new InnerBinNote(this, 
@@ -155,15 +155,15 @@ InnerBin::InnerBin(const std::string &name)
 	this->name = name;
 
 	/* Create buffer and segment for encoding dictionary */
-	buffer = writer.NewBuffer();
+	buffer = writer.newBuffer();
 	
-	segment = writer.NewSegment("Encoding Dictionary", buffer, buffer);
+	segment = writer.newSegment("Encoding Dictionary", buffer, buffer);
 
 	segment->setType(PT_LOPROC + 2);
 
 }
 
-SI::BinaryUserElement *InnerBin::NewUserElement(unsigned int index, unsigned int dataClass, unsigned int apiSlot,
+SI::BinaryUserElement *InnerBin::newUserElement(unsigned int index, unsigned int dataClass, unsigned int apiSlot,
 		unsigned int startUserReg, unsigned int userRegCount)
 {
 	unsigned int count = user_element_list.size();
@@ -205,7 +205,7 @@ SI::BinaryUserElement *InnerBin::NewUserElement(unsigned int index, unsigned int
 
 }
 
-InnerBinEntry *InnerBin::NewEntry()
+InnerBinEntry *InnerBin::newEntry()
 {
 	entry_list.push_back(std::unique_ptr<InnerBinEntry>(new InnerBinEntry(this)));
 	return entry_list.back().get();
@@ -240,25 +240,25 @@ void InnerBin::Generate(std::ostream& os)
 		{	
 			/* Write name, size, type, etc. to buffer */
 			entry->note_buffer->Write((char*)(&namesz), 4);
-			tmp = note->GetSize();
+			tmp = note->getSize();
 			entry->note_buffer->Write((char*)(&tmp), 4);
-			tmp = note->GetType();
+			tmp = note->getType();
 			entry->note_buffer->Write((char*)(&tmp), 4);
 			entry->note_buffer->Write(name.c_str(), 8);
-			entry->note_buffer->Write((char*)(note->GetPayload()), 
-					note->GetSize());
+			entry->note_buffer->Write((char*)(note->getPayload()), 
+					note->getSize());
 		}
 
 		start = entry->note_buffer->getIndex();
 		end = entry->symbol_table->getStringTableBuffer()->getIndex();
 		
-		entry->GetSymbolTable()->Generate();
+		entry->getSymbolTable()->Generate();
 
 		/* Calculate offset and type for enc_dict */
 		for(i = start; i <= end; i++)
 		{
 			buffer = writer.getBuffer(i);
-			entry->SetSize(entry->GetSize() + buffer->getSize());
+			entry->setSize(entry->getSize() + buffer->getSize());
 		}
 		
 		buf_offset = 0;
@@ -269,13 +269,13 @@ void InnerBin::Generate(std::ostream& os)
 			buf_offset += buffer->getSize();
 		}
 
-		entry->SetOffset(sizeof(Elf32_Ehdr) + phtab_size +
+		entry->setOffset(sizeof(Elf32_Ehdr) + phtab_size +
 			sizeof(SI::BinaryDictHeader) * entry_list.size()
 			+ buf_offset);
 
 
 		/* Write information to enc_dict */
-		enc_dict->Write((char*)(entry->GetHeader()),
+		enc_dict->Write((char*)(entry->getHeader()),
 				sizeof(SI::BinaryDictHeader));
 
 	}

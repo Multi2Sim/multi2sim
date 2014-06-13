@@ -53,14 +53,14 @@ void Task::Process()
 	// Check whether symbol is resolved
 	if (!symbol)
 		fatal("undefined symbol");
-	if (!symbol->GetDefined())
-		fatal("undefined label: %s", symbol->GetName().c_str());
+	if (!symbol->getDefined())
+		fatal("undefined label: %s", symbol->getName().c_str());
 	
 	// Resolve label
 	assert((offset >= 0) && (buffer->getSize() - 4));
 	buffer->setReadPosition(offset);
 	buffer->Read((char *) &inst, sizeof(SI::InstBytesSOPP));
-	inst.sopp.simm16 = (symbol->GetValue() - offset) / 4 - 1;
+	inst.sopp.simm16 = (symbol->getValue() - offset) / 4 - 1;
 	buffer->setWritePosition(offset);
 	buffer->Write((char *) &inst, sizeof(SI::InstBytesSOPP));
 }
