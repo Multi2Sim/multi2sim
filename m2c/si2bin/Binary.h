@@ -57,7 +57,7 @@ protected:
 
 public:
 	// Getter
-	DataType GetType() { return type; }
+	DataType getType() { return type; }
 
 };
 
@@ -150,53 +150,74 @@ public:
 	// Getters
 
 	///Returns the device type for the Outer Bin object
-	OuterBinDevice GetDevice() { return device; }
+	OuterBinDevice getDevice() { return device; }
 
 	///Returns a pointer to the Inner Binary object
-	InnerBin *GetInnerBin(unsigned int index) { return index < inner_bin_list.size() ?
-			inner_bin_list[index].get() : nullptr; }
+	InnerBin *getInnerBin(unsigned int index)
+	{
+		return index < inner_bin_list.size() ? inner_bin_list[index].get()
+				: nullptr;
+	}
+
 	///Returns a pointer to the Metadata object
-	Metadata *GetMetadata(unsigned int index) { return index < metadata_list.size() ?
-			metadata_list[index].get() : nullptr; }
+	Metadata *getMetadata(unsigned int index)
+	{
+		return index < metadata_list.size() ? metadata_list[index].get()
+				: nullptr;
+	}
+	
 	///Returns a pointer to the data object at position <index> in the Data List
-	Data *GetData(unsigned int index) { return index < data_list.size() ?
-			data_list[index].get() : nullptr; }
+	Data *getData(unsigned int index)
+	{
+		return index < data_list.size() ? data_list[index].get()
+				: nullptr;
+	}
+
 	///Returns the number of data objects in the Data List
-	unsigned int GetDataCount() { return data_list.size(); }
+	unsigned int getDataCount() { return data_list.size(); }
 
 	// Setters
 	///Set the device type for the Outer Bin object
-	void SetDevice(OuterBinDevice device) { this->device = device; }
+	void setDevice(OuterBinDevice device) { this->device = device; }
 
 	///Create a binary based on the provided assembly source file and output it to 
 	///the file pointed by std::ostream &os
 	void Generate(std::ostream& os);
 
 	///Create a new Data object of type float and add it to the Data List
-	void NewDataFloat(float value) {
+	void newDataFloat(float value)
+	{
 		data_list.push_back(std::unique_ptr<Data>(new DataFloat(value)));
 	}
+
 	///Create a new Data object of type word and add it to the Data List
-	void NewDataWord(unsigned int value) {
+	void newDataWord(unsigned int value)
+	{
 		data_list.push_back(std::unique_ptr<Data>(new DataWord(value)));
 	}
+
 	///Create a new Data object of type half and add it to the Data List
-	void NewDataHalf(unsigned short value) {
+	void newDataHalf(unsigned short value)
+	{
 		data_list.push_back(std::unique_ptr<Data>(new DataHalf(value)));
 	}
+
 	///Create a new Data object of type byte and add it to the Data List
-	void NewDataByte(unsigned char value) {
+	void newDataByte(unsigned char value)
+	{
 		data_list.push_back(std::unique_ptr<Data>(new DataByte(value)));
 	}
 
 	///Create a new Inner Bin bject and add it to the Inner Bin List
-	InnerBin *NewInnerBin(const std::string &name) { 
+	InnerBin *newInnerBin(const std::string &name)
+	{ 
 		inner_bin_list.push_back(std::unique_ptr<InnerBin>(new InnerBin(name)));
 		return inner_bin_list.back().get();
 	}
 	
 	///Create a new Metadata object and add it to the Metadata List
-	Metadata *NewMetadata() { 
+	Metadata *newMetadata()
+	{ 
 		metadata_list.push_back(std::unique_ptr<Metadata>(new Metadata()));
 		return metadata_list.back().get();
 	}

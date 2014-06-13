@@ -106,15 +106,21 @@ public:
 
 class Context
 {
+	// Input file, as set by user
+	static std::string source_file;
+
+	// Output file, as set by user
+	static std::string output_file;
+
 	// Information with all Southern Islands instructions
 	std::array<std::unique_ptr<InstInfo>, SI::InstOpcodeCount> inst_info_array;
 
-	/* Hash table indexed by an instruction name. Each entry contains a
-	 * linked list of instructions with that name. */
+	// Hash table indexed by an instruction name. Each entry contains a
+	// linked list of instructions with that name.
 	std::unordered_map<std::string, InstInfo *> inst_info_table;
 	
-	/* Hash table indexed by a symbol name. Each entry contains a
-	 * linked list of symbols with that name. */
+	// Hash table indexed by a symbol name. Each entry contains a
+	// linked list of symbols with that name.
 	std::unordered_map<std::string, std::unique_ptr<Symbol>> symbol_table;
 
 	std::vector<std::unique_ptr<Task>> task_list;
@@ -130,16 +136,18 @@ class Context
 	// Southern Islands disassembler
 	SI::Asm as;
 
+	// Intance of singleton
 	static std::unique_ptr<Context> instance;
+
+	// Private constructor for singleton
+	Context();
 
 public:
 
-	// Constructor
-	Context();
-
-	/* Return instruction information associated with a given opcode, or
-	 * null if the opcode is invalid. */
-	InstInfo *getInstInfo(SI::InstOpcode opcode) {
+	// Return instruction information associated with a given opcode, or
+	// null if the opcode is invalid.
+	InstInfo *getInstInfo(SI::InstOpcode opcode)
+	{
 		return (opcode > SI::InstOpcodeInvalid &&
 				opcode < SI::InstOpcodeCount) ?
 			inst_info_array[opcode].get() : nullptr;
@@ -147,7 +155,8 @@ public:
 
 	/* Return the head of a linked list of InstInfo structures associated
 	 * with an instruction name, or null if the name is invalid. */
-	InstInfo *getInstInfo(const std::string &name) {
+	InstInfo *getInstInfo(const std::string &name)
+	{
 		auto it = inst_info_table.find(name);
 		return it == inst_info_table.end() ? nullptr : it->second;
 	}
@@ -155,44 +164,63 @@ public:
 	static Context *getInstance();
 
 
-	Symbol *getSymbol(const std::string &name){
+	Symbol *getSymbol(const std::string &name)
+	{
 		auto it = symbol_table.find(name);
 		return it == symbol_table.end() ? nullptr : it->second.get();
 	}
 
-	Symbol *NewSymbol(const std::string &name){
-		symbol_table.insert(std::make_pair(name, std::unique_ptr<Symbol>(new Symbol(name))));
+	Symbol *newSymbol(const std::string &name)
+	{
+		symbol_table.insert(std::make_pair(name,
+				std::unique_ptr<Symbol>(new Symbol(name))));
 		return symbol_table.at(name).get();
 	}
 
-	int GetUniqueId() { return this->uniqueid; }
-	OuterBin *GetOuterBin() { return this->outer_bin; }
-	Metadata *GetMetadata() { return this->metadata; }
-	InnerBin *GetInnerBin() { return this->inner_bin; }
-	InnerBinEntry *GetEntry() { return this->entry; }
-	ELFWriter::Buffer *GetTextBuffer() { return this->text_buffer; }
+	int getUniqueId() { return this->uniqueid; }
+
+	OuterBin *getOuterBin() { return this->outer_bin; }
+
+	Metadata *getMetadata() { return this->metadata; }
+
+	InnerBin *getInnerBin() { return this->inner_bin; }
+
+	InnerBinEntry *getEntry() { return this->entry; }
+
+	ELFWriter::Buffer *getTextBuffer() { return this->text_buffer; }
 	
+	void setUniqueId(int uniqueid) { this->uniqueid = uniqueid; }
 
-	void SetUniqueId(int uniqueid) { this->uniqueid = uniqueid; }
-	void SetOuterBin(OuterBin *outer_bin) { this->outer_bin = outer_bin; }
-	void SetMetadata(Metadata *metadata) { this->metadata = metadata; }
-	void SetInnerBin(InnerBin *inner_bin) { this->inner_bin = inner_bin; }
-	void SetEntry(InnerBinEntry *entry) { this->entry = entry; }
-	void SetTextBuffer(ELFWriter::Buffer *text_buffer) { this->text_buffer = text_buffer; }
+	void setOuterBin(OuterBin *outer_bin) { this->outer_bin = outer_bin; }
 
-	void NewTask(int offset, Symbol *symbol, ELFWriter::Buffer *buffer){
+	void setMetadata(Metadata *metadata) { this->metadata = metadata; }
+
+	void setInnerBin(InnerBin *inner_bin) { this->inner_bin = inner_bin; }
+
+	void setEntry(InnerBinEntry *entry) { this->entry = entry; }
+
+	void setTextBuffer(ELFWriter::Buffer *text_buffer) { this->text_buffer = text_buffer; }
+
+	void newTask(int offset, Symbol *symbol, ELFWriter::Buffer *buffer)
+	{
 		task_list.push_back(std::unique_ptr<Task>(new Task(offset, symbol, buffer)));
 	}
 	
-	void TaskProcess() {
+	void TaskProcess()
+	{
 		for (auto &task : task_list) task->Process(); 
 		task_list.clear();
 	};
 
 	void SymbolTableClear() { symbol_table.clear(); };
 	
-	
 	void Compile(const std::string &source_file, const std::string &output_file);
+
+	/// Register command-line options
+	static void RegisterOptions();
+
+	/// Process command-line options
+	static void ProcessOptions();
 };
 
 }  // namespace si2bin

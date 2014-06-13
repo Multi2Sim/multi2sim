@@ -22,8 +22,8 @@
 
 #include <lib/cpp/CommandLine.h>
 #include <lib/cpp/Misc.h>
+#include <m2c/si2bin/Context.h>
 
-#include "si2bin/Config.h"
 #include "Wrapper.h"
 
 
@@ -33,6 +33,8 @@ void main_cpp(int argc, char **argv)
 	misc::CommandLine *command_line = misc::CommandLine::getInstance();
 	command_line->setErrorMessage("Please type 'm2c --help' for a list of "
 			"valid Multi2C command-line options.\n");
+
+	// Set help message
 	command_line->setHelp("Syntax:"
 			"\n\n"
 			"$ m2c [<options>] [<sources>]"
@@ -45,8 +47,8 @@ void main_cpp(int argc, char **argv)
 			"for <options>:");
 
 	
-	// Register module configurations
-	command_line->AddConfig(si2bin::config);
+	// Register command-line options
+	si2bin::Context::RegisterOptions();
 
 	// Process command line. Return to C version of Multi2Sim if a
 	// command-line option was not recognized.
@@ -56,6 +58,9 @@ void main_cpp(int argc, char **argv)
 	// Finish if C++ version of Multi2Sim is not activated
 	if (!command_line->getUseCpp())
 		return;
+
+	// Process command line
+	si2bin::Context::ProcessOptions();
 
 	std::cerr << "; Multi2C C++\n";
 	std::cerr <<

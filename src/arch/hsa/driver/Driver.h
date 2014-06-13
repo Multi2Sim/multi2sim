@@ -28,25 +28,12 @@
 namespace HSA
 {
 
-/// HSA driver configuration
-class DriverConfig : public misc::CommandLineConfig
-{
-	// Debugger file
-	std::string debug_file;
-
-public:
-	
-	/// Register command-line options
-	void Register(misc::CommandLine &command_line);
-
-	/// Process command-line options
-	void Process();
-};
-
-
 /// HSA driver
 class Driver : public comm::Driver
 {
+	// Debugger file, set by user
+	static std::string debug_file;
+
 	// Unique instance of singleton
 	static std::unique_ptr<Driver> instance;
 
@@ -104,11 +91,14 @@ public:
 	/// details on the meaning of the arguments.
 	int Call(int code, mem::Memory *memory, unsigned args_ptr);
 	
-	// Configuration
-	static DriverConfig config;
-	
 	/// Debugger
 	static misc::Debug debug;
+
+	/// Register command-line options
+	static void RegisterOptions();
+
+	/// Process command-line options
+	static void ProcessOptions();
 };
 
 

@@ -24,9 +24,6 @@ libsi2bin_a_SOURCES = \
 	Binary.cc \
 	Binary.h \
 	\
-	Config.cc \
-	Config.h \
-	\
 	Context.cc \
 	Context.h \
 	\
@@ -65,8 +62,10 @@ LDADD = \
 else
 
 libsi2bin_a_SOURCES = \
-	Config-missing.cc \
-	Config.h \
+	\
+	ContextMissing.cc \
+	Context.h \
+	\
 	si2bin-missing.c \
 	si2bin.h
 

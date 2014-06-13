@@ -33,26 +33,6 @@
 namespace misc
 {
 
-class CommandLine;
-
-
-/// Base class used for configurable modules.
-class CommandLineConfig
-{
-public:
-	/// Register options associated with this configurable module. This
-	/// function is invoked automatically when a configurable module is
-	/// attached to object \a command_line with a call to
-	/// \c CommandLine::AddConfig().
-	virtual void Register(CommandLine &command_line) { }
-
-	/// Process command-line options specific for this configurable module.
-	/// This function is automatically invoked after all options in the
-	/// command line have been read.
-	virtual void Process() { }
-};
-
-
 /// Base abstract class for command-line options.
 class CommandLineOption
 {
@@ -250,9 +230,6 @@ class CommandLine
 	// Set to true when function Process() is invoked.
 	bool processed;
 
-	// Configure modules
-	std::list<CommandLineConfig *> configs;
-
 	// Command-line option indicating whether to use C++
 	bool use_cpp;
 
@@ -420,14 +397,6 @@ public:
 	
 	/// Dump help for all registered command-line options.
 	void Help(std::ostream &os = std::cout);
-
-	/// Add a configurable module to the command line object. A configurable
-	/// module is an object derived from class CommandLineConfig with
-	/// virtual functions \c Register() and \c Process(). Function \c
-	/// Register() will be invoked on the configurable module during the
-	/// call to AddConfig(). Function \c Process() will be invoked after a
-	/// call to CommandLine::Process().
-	void AddConfig(CommandLineConfig &config);
 
 	/// Process command line from the arguments
 	///

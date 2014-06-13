@@ -389,14 +389,13 @@ void main_cpp(int argc, char **argv)
 {
 	// Read command line
 	RegisterOptions();
+	HSA::Asm::RegisterOptions();
+	HSA::Driver::RegisterOptions();
+	HSA::Emu::RegisterOptions();
 	MIPS::Asm::RegisterOptions();
 	MIPS::Emu::RegisterOptions();
 	x86::Asm::RegisterOptions();
 	x86::Emu::RegisterOptions();
-	/*
-	command_line.AddConfig(HSA::Asm::config);
-	command_line.AddConfig(HSA::Driver::config);
-	command_line.AddConfig(HSA::Emu::config);*/
 
 	// Process command line. Return to C version of Multi2Sim if a
 	// command-line option was not recognized.
@@ -409,6 +408,9 @@ void main_cpp(int argc, char **argv)
 		return;
 
 	// Process command line
+	HSA::Asm::ProcessOptions();
+	HSA::Driver::ProcessOptions();
+	HSA::Emu::ProcessOptions();
 	MIPS::Asm::ProcessOptions();
 	MIPS::Emu::ProcessOptions();
 	x86::Asm::ProcessOptions();

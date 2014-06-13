@@ -208,19 +208,6 @@ void CommandLine::setIncompatible(const std::string &name)
 }
 
 
-void CommandLine::AddConfig(CommandLineConfig &config)
-{
-	// Command-line must not have been processed yet
-	assert(!processed);
-
-	// Add configurable module to list
-	configs.push_back(&config);
-
-	// Register command-line options for this module
-	config.Register(*this);
-}
-
-
 bool CommandLine::Process(int argc, char **argv, bool fatal_on_bad_option)
 {
 	// Processed
@@ -314,10 +301,6 @@ bool CommandLine::Process(int argc, char **argv, bool fatal_on_bad_option)
 		Help();
 		exit(0);
 	}
-
-	// Process all module configurations
-	for (CommandLineConfig *config : configs)
-		config->Process();
 
 	// Command line successfully processed
 	return true;

@@ -163,7 +163,7 @@ void Inst::Dump(std::ostream &os)
 void Inst::EncodeArg(Arg *arg, Token *token)
 {
 	// Check token
-	switch (token->GetType())
+	switch (token->getType())
 	{
 
 	case TokenSimm16:
@@ -1021,20 +1021,20 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 		// Create symbol if it doesn't exist
 		if (!symbol)
 		{
-			symbol = context->NewSymbol(label->getName());
+			symbol = context->newSymbol(label->getName());
 		}
 
 		/* If symbol is defined, resolve label right away. Otherwise,
 		 * program a deferred task to resolve it. */
-		if (symbol->GetDefined())
+		if (symbol->getDefined())
 		{
-			bytes.sopp.simm16 = (symbol->GetValue() -
-					context->GetTextBuffer()->getWritePosition()) / 4 - 1;
+			bytes.sopp.simm16 = (symbol->getValue() -
+					context->getTextBuffer()->getWritePosition()) / 4 - 1;
 		}
 		else
 		{
-			context->NewTask(context->GetTextBuffer()->getWritePosition(), 
-					symbol, context->GetTextBuffer());
+			context->newTask(context->getTextBuffer()->getWritePosition(),
+					symbol, context->getTextBuffer());
 		}
 		break;
 	}
