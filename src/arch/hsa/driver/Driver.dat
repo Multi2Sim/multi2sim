@@ -1,0 +1,3 @@
+DEFCALL(Init, 1)
+DEFCALL(PrintArgs, 2)
+

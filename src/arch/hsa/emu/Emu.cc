@@ -1,4 +1,26 @@
+/*
+ *  Multi2Sim
+ *  Copyright (C) 2014  Yifan Sun
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+#include <arch/hsa/driver/Driver.h>
+
 #include "Emu.h"
+
 
 namespace HSA
 {
@@ -6,6 +28,7 @@ namespace HSA
 //
 // Class 'EmuConfig'
 //
+
 EmuConfig::EmuConfig()
 {
 	// Initialize
@@ -31,22 +54,24 @@ void EmuConfig::Process()
 	// std::cout << "In" << __FUNCTION__ << "\n";	
 }
 
+
+
+
 //
 // Class 'Emu'
 //
 
 misc::Debug Emu::hsa_debug;
 
-// Emulator singleton
 std::unique_ptr<Emu> Emu::instance;
 
-// Configuration
 EmuConfig Emu::config;
+
 
 Emu::Emu() : comm::Emu("hsa")
 {
-	// Initialize
 }
+
 
 Emu *Emu::getInstance()
 {
@@ -58,9 +83,12 @@ Emu *Emu::getInstance()
 	return instance.get();
 }
 
+
 bool Emu::Run()
 {
 	return false;
 }
 
-}
+
+}  // namespace HSA
+
