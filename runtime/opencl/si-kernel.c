@@ -18,6 +18,7 @@
  */
 
 #include <assert.h>
+#include <sys/ioctl.h>
 
 #include "debug.h"
 #include "elf-format.h"
@@ -179,8 +180,9 @@ struct opencl_si_kernel_t *opencl_si_kernel_create(
 	}
 
 	/* Create kernel object in driver */
-	kernel->id = syscall(OPENCL_SYSCALL_CODE, opencl_abi_si_kernel_create,
+	kernel->id = ioctl(m2s_active_dev, SIKernelCreate,
 			program->id, func_name);
+
 
 	/* Dump debug info and return */
 	opencl_debug("[%s] kernel = %p", __FUNCTION__, (void*)kernel);
@@ -241,7 +243,7 @@ int opencl_si_kernel_set_arg(struct opencl_si_kernel_t *kernel, int arg_index,
 	case opencl_si_arg_value:
 
 		/* ABI call */
-		syscall(OPENCL_SYSCALL_CODE, opencl_abi_si_kernel_set_arg_value,
+		ioctl(m2s_active_dev, SIKernelSetArgValue,
 				kernel->id, arg_index, arg_value, arg_size);
 		break;
 
@@ -267,8 +269,8 @@ int opencl_si_kernel_set_arg(struct opencl_si_kernel_t *kernel, int arg_index,
 		}
 
 		/* ABI call */
-		syscall(OPENCL_SYSCALL_CODE, 
-			opencl_abi_si_kernel_set_arg_pointer, kernel->id, 
+		ioctl(m2s_active_dev, 
+			SIKernelSetArgPointer, kernel->id, 
 			arg_index, arg_value, arg_size);
 		break;
 
@@ -346,12 +348,12 @@ struct opencl_si_ndrange_t *opencl_si_ndrange_create(
 		arch_ndrange->num_groups[2];
 
 	/* Tell the driver whether or not we are using a fused device */
-	syscall(OPENCL_SYSCALL_CODE, opencl_abi_si_ndrange_set_fused,
+	ioctl(m2s_active_dev, SINDRangeSetFused,
 		arch_ndrange->fused);
 
 	/* Create the ndrange */
-	arch_ndrange->id = syscall(OPENCL_SYSCALL_CODE, 
-		opencl_abi_si_ndrange_create, 
+	arch_ndrange->id = ioctl(m2s_active_dev, 
+		SINDRangeCreate, 
 		si_kernel->id, arch_ndrange->work_dim, 
 		arch_ndrange->global_work_offset, 
 		arch_ndrange->global_work_size, 
@@ -359,7 +361,7 @@ struct opencl_si_ndrange_t *opencl_si_ndrange_create(
 
 	/* Provide internal tables initialized within the host
 	 * process' virtual address space */
-	syscall(OPENCL_SYSCALL_CODE, opencl_abi_si_ndrange_pass_mem_objs, 
+	ioctl(m2s_active_dev, SINDRangePassMemObjs, 
 		arch_ndrange->id, si_kernel->id, arch_ndrange->table_ptr, 
 		arch_ndrange->cb_ptr);
 
@@ -376,13 +378,13 @@ void opencl_si_ndrange_finish(struct opencl_si_ndrange_t *ndrange)
 	/* Wait for the nd-range to complete */
 	opencl_debug("[%s] finish start at %llu", __FUNCTION__,
 		opencl_get_time()); /////////////////
-	syscall(OPENCL_SYSCALL_CODE, opencl_abi_si_ndrange_finish,
+	ioctl(m2s_active_dev, SINDRangeFinish,
 		ndrange->id);
 
 	/* Flush the cache */
 	opencl_debug("[%s] finish end/flush start at %llu", __FUNCTION__,
 		opencl_get_time()); /////////////////
-	syscall(OPENCL_SYSCALL_CODE, opencl_abi_si_ndrange_flush, 
+	ioctl(m2s_active_dev, SINDRangeFlush, 
 		ndrange->id);
 	opencl_debug("[%s] flush done at %llu", __FUNCTION__,
 		opencl_get_time()); /////////////////
@@ -394,7 +396,7 @@ void opencl_si_ndrange_free(struct opencl_si_ndrange_t *ndrange)
 	opencl_debug("[%s] freeing si kernel", __FUNCTION__);
 
 	/* Free the ndrange */
-	syscall(OPENCL_SYSCALL_CODE, opencl_abi_si_ndrange_free, 
+	ioctl(m2s_active_dev, SINDRangeFree, 
 		ndrange->id);
 
 	free(ndrange);
@@ -409,12 +411,12 @@ void opencl_si_ndrange_run_partial(struct opencl_si_ndrange_t *ndrange,
 
 	/* Ask the driver how many work groups it can buffer */
 	/* Send work groups to the driver */
-	syscall(OPENCL_SYSCALL_CODE,
-		opencl_abi_si_ndrange_get_num_buffer_entries,
+	ioctl(m2s_active_dev,
+		SINDRangeGetBufferEntries,
 		&max_work_groups_to_send);
 
-	syscall(OPENCL_SYSCALL_CODE, 
-		opencl_abi_si_ndrange_send_work_groups, 
+	ioctl(m2s_active_dev, 
+		SINDRangeSendWorkGoups, 
 		ndrange->id, work_group_start, work_group_count);
 }
 
@@ -441,7 +443,7 @@ void opencl_si_ndrange_run(struct opencl_si_ndrange_t *ndrange,
 	pthread_setschedparam(pthread_self(), sched_policy_new, 
 		&sched_param_new);
 
-	syscall(OPENCL_SYSCALL_CODE, opencl_abi_ndrange_start);
+	ioctl(m2s_active_dev, SINDRangeStart);
 
 	/* Record start time */
 	if (event)
@@ -460,7 +462,7 @@ void opencl_si_ndrange_run(struct opencl_si_ndrange_t *ndrange,
 	{
 		clock_gettime(CLOCK_MONOTONIC, &end);
 		
-		syscall(OPENCL_SYSCALL_CODE, opencl_abi_ndrange_end);
+		ioctl(m2s_active_dev, SINDRangeEnd);
 
 		cltime = (cl_ulong)start.tv_sec;
 		cltime *= 1000000000;

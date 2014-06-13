@@ -18,6 +18,7 @@
  */
 
 #include <limits.h>
+#include <sys/ioctl.h>
 
 #include "debug.h"
 #include "device.h"
@@ -211,8 +212,7 @@ void *opencl_si_device_mem_alloc(struct opencl_si_device_t *device,
 	void *device_ptr;
 
 	/* Request device memory to driver */
-	device_ptr = (void *) syscall(OPENCL_SYSCALL_CODE,
-			opencl_abi_si_mem_alloc, size);
+	device_ptr = (void *) ioctl(m2s_active_dev, SIMemAlloc, size);
 
 	return device_ptr;
 }
@@ -222,7 +222,7 @@ void opencl_si_device_mem_free(struct opencl_si_device_t *device,
 		void *ptr)
 {
 	/* Invoke 'mem_free' ABI call */
-	syscall(OPENCL_SYSCALL_CODE, opencl_abi_si_mem_free, ptr);
+	ioctl(m2s_active_dev, SIMemFree, ptr);
 }
 
 
@@ -230,8 +230,7 @@ void opencl_si_device_mem_read(struct opencl_si_device_t *device,
 		void *host_ptr, void *device_ptr, unsigned int size)
 {
 	/* Invoke 'mem_read' ABI call */
-	syscall(OPENCL_SYSCALL_CODE, opencl_abi_si_mem_read,
-			host_ptr, device_ptr, size);
+	ioctl(m2s_active_dev, SIMemRead, host_ptr, device_ptr, size);
 }
 
 
@@ -239,8 +238,7 @@ void opencl_si_device_mem_write(struct opencl_si_device_t *device,
 		void *device_ptr, void *host_ptr, unsigned int size)
 {
 	/* Invoke 'mem_write' ABI call */
-	syscall(OPENCL_SYSCALL_CODE, opencl_abi_si_mem_write,
-			device_ptr, host_ptr, size);
+	ioctl(m2s_active_dev, SIMemWrite, device_ptr, host_ptr, size);
 }
 
 
