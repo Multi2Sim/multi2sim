@@ -37,5 +37,5 @@ libasm_a_SOURCES = \
 	Wrapper.cc \
 	Wrapper.h
 
-INCLUDES = @M2S_INCLUDES@
+AM_CPPFLAGS = @M2S_INCLUDES@
 

@@ -4,5 +4,5 @@ libemu_a_SOURCES = \
 		Emu.h \
 		Emu.cc
 
-INCLUDES = @M2S_INCLUDES@
+AM_CPPFLAGS = @M2S_INCLUDES@
 

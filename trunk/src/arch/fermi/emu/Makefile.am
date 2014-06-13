@@ -33,5 +33,5 @@ libemu_a_SOURCES = \
 	\
 	Warp.h
 
-INCLUDES = @M2S_INCLUDES@
+AM_CPPFLAGS = @M2S_INCLUDES@
 

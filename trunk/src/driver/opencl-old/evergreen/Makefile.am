@@ -36,4 +36,4 @@ libopencl_a_SOURCES = \
 	sampler.c \
 	sampler.h
 
-INCLUDES = @M2S_INCLUDES@
+AM_CPPFLAGS = @M2S_INCLUDES@

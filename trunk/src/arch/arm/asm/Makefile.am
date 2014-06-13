@@ -12,5 +12,5 @@ libasm_a_SOURCES = \
 	inst.c \
 	inst.h
 
-INCLUDES = @M2S_INCLUDES@
+AM_CPPFLAGS = @M2S_INCLUDES@
 

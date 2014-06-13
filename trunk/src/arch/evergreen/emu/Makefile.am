@@ -23,4 +23,4 @@ libemu_a_SOURCES = \
 	work-item.c \
 	work-item.h
 
-INCLUDES = @M2S_INCLUDES@
+AM_CPPFLAGS = @M2S_INCLUDES@

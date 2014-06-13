@@ -21,5 +21,5 @@ libcuda_a_SOURCES = \
 	module.c \
 	module.h
 
-INCLUDES = @M2S_INCLUDES@
+AM_CPPFLAGS = @M2S_INCLUDES@
 

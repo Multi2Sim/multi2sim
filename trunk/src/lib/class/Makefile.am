@@ -30,5 +30,5 @@ libclass_a_SOURCES = \
 	string.c \
 	string.h
 
-INCLUDES = @M2S_INCLUDES@
+AM_CPPFLAGS = @M2S_INCLUDES@
 

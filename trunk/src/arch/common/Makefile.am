@@ -35,5 +35,5 @@ libcommon_a_SOURCES = \
 	Timing.cc \
 	Timing.h
 
-INCLUDES = @M2S_INCLUDES@
+AM_CPPFLAGS = @M2S_INCLUDES@
 

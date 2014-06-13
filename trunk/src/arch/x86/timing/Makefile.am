@@ -71,5 +71,5 @@ libtiming_a_SOURCES = \
 	writeback.c \
 	writeback.h
 
-INCLUDES = @M2S_INCLUDES@
+AM_CPPFLAGS = @M2S_INCLUDES@
 

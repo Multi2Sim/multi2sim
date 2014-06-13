@@ -18,5 +18,5 @@ libasm_a_SOURCES = \
 	opengl-bin-file.c \
 	opengl-bin-file.h
 
-INCLUDES = @M2S_INCLUDES@
+AM_CPPFLAGS = @M2S_INCLUDES@
 
