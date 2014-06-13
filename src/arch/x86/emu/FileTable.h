@@ -28,6 +28,10 @@
 #include <lib/cpp/String.h>
 
 
+// Forward declarations
+namespace comm { class Driver; }
+
+
 namespace x86
 {
 
@@ -39,7 +43,7 @@ enum FileDescType
 	FileDescStd,			/// Standard input/output
 	FileDescPipe,			/// Pipe
 	FileDescVirtual,		/// Virtual file with artificial content
-	FileDescGPU,			/// GPU device
+	FileDescDevice,			/// Virtual device
 	FileDescSocket			/// Network socket
 };
 
@@ -60,13 +64,24 @@ class FileDesc
 	// Associated path, if applicable
 	std::string path;
 
+	// Associated driver for type FileDescDevice
+	comm::Driver *driver;
+
 public:
 
 	/// Constructor
-	FileDesc(FileDescType type, int guest_index, int host_index, int flags,
+	FileDesc(FileDescType type,
+			int guest_index,
+			int host_index,
+			int flags,
 			const std::string &path)
-			: type(type), guest_index(guest_index),
-			host_index(host_index), flags(flags), path(path) { }
+			:
+			type(type),
+			guest_index(guest_index),
+			host_index(host_index),
+			flags(flags),
+			path(path) 
+			{ }
 	
 	/// Dump to output stream, or \c std::cout if \a os is omitted
 	void Dump(std::ostream &os = std::cout) const;
@@ -95,6 +110,20 @@ public:
 
 	/// Return associated path, if any
 	const std::string &getPath() const { return path; }
+
+	/// Set a driver associated with the file descriptor. The descriptor
+	/// must be of type FileDescDevice.
+	void setDriver(comm::Driver *driver) {
+		assert(type == FileDescDevice);
+		this->driver = driver;
+	}
+
+	/// Return the driver associated with the file descriptor. The file
+	/// descriptor must be of type FileDescDevice.
+	comm::Driver *getDriver() const {
+		assert(type == FileDescDevice);
+		return driver;
+	}
 };
 
 
