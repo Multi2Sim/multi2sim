@@ -60,6 +60,7 @@ LDADD = \
 	$(top_builddir)/src/arch/mips/asm/libasm.a \
 	\
 	$(top_builddir)/src/arch/southern-islands/timing/libtiming.a \
+	$(top_builddir)/src/arch/southern-islands/driver/libdriver.a \
 	$(top_builddir)/src/arch/southern-islands/emu/libemu.a \
 	$(top_builddir)/src/driver/opengl/libopengl.a \
 	$(top_builddir)/src/driver/opengl/southern-islands/libsi_gl.a \
