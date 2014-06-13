@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <lib/cpp/CommandLine.h>
 #include <lib/cpp/ELFReader.h>
 #include <lib/cpp/String.h>
 
@@ -28,7 +29,15 @@ namespace MIPS
 {
 
 
-/* Opcodes and secondary opcodes */
+//
+// Configuration options
+//
+
+std::string Asm::path;
+
+
+
+// Opcodes and secondary opcodes
 #define OPCODE_SPECIAL              0x00
 #define OPCODE_SPECIAL2             0x1c
 #define OPCODE_SPECIAL3             0x1f
@@ -60,13 +69,36 @@ namespace MIPS
 #define OPCODE_SPECIAL3_BSHFL       0x20
 
 
-/*
- * Class 'Asm'
- */
+void Asm::RegisterOptions()
+{
+	// Get command line object
+	misc::CommandLine *command_line = misc::CommandLine::getInstance();
+
+	// Option --mips-disasm <file>
+	command_line->RegisterString("--mips-disasm", path,
+			"Disassemble the MIPS ELF file provided in <arg>, "
+			"using the internal MIPS disassembler. This option is "
+			"incompatible with any other option.");
+
+	// Incompatible options
+	command_line->setIncompatible("--mips-disasm");}
+
+
+void Asm::ProcessOptions()
+{
+	// Run x86 disassembler
+	if (!path.empty())
+	{
+		Asm *as = Asm::getInstance();
+		as->DisassembleBinary(path);
+		exit(0);
+	}
+}
+
 
 Asm::Asm()
 {
-	/* Allocate storage for the instruction tables */
+	// Allocate storage for the instruction tables
 	dec_table                   = new InstInfo[64]();
 	dec_table_special           = new InstInfo[64]();
 	dec_table_special_movci     = new InstInfo[2]();
@@ -98,8 +130,8 @@ Asm::Asm()
 	dec_table_special3          = new InstInfo[64]();
 	dec_table_special3_bshfl    = new InstInfo[32]();
 
-	/* Initiate values for the 'next_table', 'next_table_low' and 'next_table_high'
-	 * fields of the tables */
+	// Initiate values for the 'next_table', 'next_table_low' and 'next_table_high'
+	// fields of the tables
 	dec_table[OPCODE_SPECIAL].next_table =
 		dec_table_special;
 	dec_table[OPCODE_SPECIAL].next_table_low                  = 0;
@@ -209,7 +241,7 @@ Asm::Asm()
 	dec_table_special3[OPCODE_SPECIAL3_BSHFL].next_table_low        = 6;
 	dec_table_special3[OPCODE_SPECIAL3_BSHFL].next_table_high       = 10;
 
-	/* Build the tables from asm.dat */
+	// Build the tables from asm.dat
 	InstInfo *current_table;
 	unsigned int table_arg[4];
 	int i = 0;
@@ -293,10 +325,10 @@ void Asm::DisassembleBinary(const std::string &path)
 	unsigned int curr_sym;
 	unsigned int pos;
 
-	/* Read Sections */
+	// Read Sections
 	for (int i = 0; i < file.getNumSections(); i++)
 	{
-		/* Skip if section does not contain code */
+		// Skip if section does not contain code
 		ELFReader::Section *section = file.getSection(i);
 		if (!(section->getFlags() & SHF_EXECINSTR))
 			continue;

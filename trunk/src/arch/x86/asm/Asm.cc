@@ -20,6 +20,7 @@
 #include <cassert>
 #include <cstring>
 
+#include <lib/cpp/CommandLine.h>
 #include <lib/cpp/ELFReader.h>
 #include <lib/cpp/String.h>
 
@@ -30,19 +31,25 @@
 namespace x86
 {
 
+std::string Asm::path;
 
-void AsmConfig::Register(misc::CommandLine &command_line)
+void Asm::RegisterOptions()
 {
+	// Get command line object
+	misc::CommandLine *command_line = misc::CommandLine::getInstance();
+
 	// Option --x86-disasm <file>
-	command_line.RegisterString("--x86-disasm", path,
+	command_line->RegisterString("--x86-disasm", path,
 			"Disassemble the x86 ELF file provided in <arg>, "
 			"using the internal x86 disassembler. This option is "
 			"incompatible with any other option.");
-	command_line.setIncompatible("--x86-disasm");
+
+	// Incompatible options
+	command_line->setIncompatible("--x86-disasm");
 }
 
 
-void AsmConfig::Process()
+void Asm::ProcessOptions()
 {
 	// Run x86 disassembler
 	if (!path.empty())
@@ -130,10 +137,6 @@ void Asm::FreeInstDecodeInfo(InstDecodeInfo *elem)
 		elem = next;
 	}
 }
-
-
-// x86 diassembler configuration
-AsmConfig Asm::config;
 
 
 Asm::Asm()

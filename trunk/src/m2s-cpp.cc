@@ -43,7 +43,25 @@
 #include "Wrapper.h"
 
 
+//
+// Configuration options
+//
+
+// Maximum simulation time
 long long m2s_max_time = 0;
+
+// Trace file
+std::string m2s_trace_file;
+
+// Visualization tool input file
+std::string m2s_visual_file;
+
+
+
+
+//
+// Global variables
+//
 
 // Number of iterations in the main simulation loop
 long long m2s_loop_iterations = 0;
@@ -54,12 +72,13 @@ volatile int m2s_signal_received;
 
 
 
+
 //
 // Functions
 //
 
 
-void registerArchitectures()
+void RegisterArchitectures()
 {
 	// Get architecture pool
 	comm::ArchPool *arch_pool = comm::ArchPool::getInstance();
@@ -82,7 +101,7 @@ void registerArchitectures()
 }
 
 
-void registerRuntimes()
+void RegisterRuntimes()
 {
 	// Get runtime pool
 	comm::RuntimePool *runtime_pool = comm::RuntimePool::getInstance();
@@ -97,7 +116,7 @@ void registerRuntimes()
 }
 
 
-void registerDrivers()
+void RegisterDrivers()
 {
 	// Get driver pool
 	comm::DriverPool *driver_pool = comm::DriverPool::getInstance();
@@ -109,14 +128,15 @@ void registerDrivers()
 
 
 // Load a program from the command line
-void loadCommandLineProgram(misc::CommandLine &command_line)
+void loadCommandLineProgram()
 {
 	// No program specified
-	if (command_line.getNumArguments() == 0)
+	misc::CommandLine *command_line = misc::CommandLine::getInstance();
+	if (command_line->getNumArguments() == 0)
 		return;
 	
 	// Get executable path
-	std::string path = command_line.getArgument(0);
+	std::string path = command_line->getArgument(0);
 
 	// Read ELF header
 	ELFReader::Header header(path);
@@ -125,7 +145,7 @@ void loadCommandLineProgram(misc::CommandLine &command_line)
 	case EM_386:
 	{
 		x86::Emu *emu = x86::Emu::getInstance();
-		emu->loadProgram(command_line.getArguments());
+		emu->loadProgram(command_line->getArguments());
 		break;
 	}
 
@@ -138,7 +158,7 @@ void loadCommandLineProgram(misc::CommandLine &command_line)
 	case EM_MIPS:
 	{
 		MIPS::Emu *emu = MIPS::Emu::getInstance();
-		emu->loadProgram(command_line.getArguments());
+		emu->loadProgram(command_line->getArguments());
 		break;
 	}
 	
@@ -149,7 +169,7 @@ void loadCommandLineProgram(misc::CommandLine &command_line)
 
 
 // Load programs from context configuration file
-void loadPrograms(misc::CommandLine &command_line)
+void loadPrograms()
 {
 #if 0
 	struct config_t *config;
@@ -209,7 +229,7 @@ void loadPrograms(misc::CommandLine &command_line)
 }
 
 
-void signalHandler(int signum)
+void SignalHandler(int signum)
 {
 	// If a signal SIGINT has been caught already and not processed, it is
 	// time to not defer it anymore. Execution ends here.
@@ -227,7 +247,7 @@ void signalHandler(int signum)
 }
 
 
-void processSignal()
+void ProcessSignal()
 {
 	// Process signal
 	esim::ESim *esim = esim::ESim::getInstance();
@@ -263,13 +283,13 @@ void processSignal()
 }
 
 
-void mainLoop()
+void MainLoop()
 {
 	// Install signal handlers
-	signal(SIGINT, &signalHandler);
-	signal(SIGABRT, &signalHandler);
-	signal(SIGUSR1, &signalHandler);
-	signal(SIGUSR2, &signalHandler);
+	signal(SIGINT, &SignalHandler);
+	signal(SIGABRT, &SignalHandler);
+	signal(SIGUSR1, &SignalHandler);
+	signal(SIGUSR2, &SignalHandler);
 
 	// Get singletons
 	esim::ESim *esim = esim::ESim::getInstance();
@@ -308,7 +328,7 @@ void mainLoop()
 
 		// Signal received
 		if (m2s_signal_received)
-			processSignal();
+			ProcessSignal();
 	}
 
 	/* Restore default signal handlers */
@@ -319,13 +339,15 @@ void mainLoop()
 }
 
 
-void main_cpp(int argc, char **argv)
+void RegisterOptions()
 {
-	// Read command line
-	misc::CommandLine command_line(argc, argv);
-	command_line.setErrorMessage("Please type 'm2s --help' for a list of "
+	// Set error message
+	misc::CommandLine *command_line = misc::CommandLine::getInstance();
+	command_line->setErrorMessage("Please type 'm2s --help' for a list of "
 			"valid Multi2Sim command-line options.\n");
-	command_line.setHelp("Syntax:"
+
+	// Set help message
+	command_line->setHelp("Syntax:"
 			"\n\n"
 			"$ m2s [<options>] [<exe>] [<args>]"
 			"\n\n"
@@ -335,15 +357,15 @@ void main_cpp(int argc, char **argv)
 			"optionally followed by its arguments <args>. The "
 			"following list of command-line options can be used "
 			"for <options>:");
-
-	// Register three sample command-line options
-	command_line.RegisterInt64("--max-time", m2s_max_time,
+	
+	// Maximum simulation time
+	command_line->RegisterInt64("--max-time", m2s_max_time,
 			"Maximum simulation time in seconds. The simulator "
 			"will stop once this time is exceeded. A value of 0 "
 			"(default) means no time limit.");
 	
-	std::string m2s_trace_file;
-	command_line.RegisterString("--trace", m2s_trace_file,
+	// Trace file
+	command_line->RegisterString("--trace", m2s_trace_file,
 			"Generate a trace file with debug information on the "
 			"configuration of the modeled CPUs, GPUs, and memory "
 			"system, as well as their dynamic simulation. The "
@@ -352,42 +374,57 @@ void main_cpp(int argc, char **argv)
 			"simulation runs, since the trace file can quickly "
 			"become extremely large.");
 	
-	std::string m2s_visual_file;
-	command_line.RegisterString("--visual", m2s_visual_file,
+	// Visualization tool input file
+	command_line->RegisterString("--visual", m2s_visual_file,
 			"Run the Multi2Sim Visualization Tool. This option "
 			"consumes a file generated with the '--trace' option "
 			"in a previous simulation. This option is only "
 			"available on systems with support for GTK 3.0 or "
 			"higher.");
 
-	// Register module configurations
-	command_line.AddConfig(x86::Asm::config);
-	command_line.AddConfig(x86::Emu::config);
-	command_line.AddConfig(MIPS::Emu::config);
+}
+
+
+void main_cpp(int argc, char **argv)
+{
+	// Read command line
+	RegisterOptions();
+	MIPS::Asm::RegisterOptions();
+	MIPS::Emu::RegisterOptions();
+	x86::Asm::RegisterOptions();
+	x86::Emu::RegisterOptions();
+	/*
 	command_line.AddConfig(HSA::Asm::config);
 	command_line.AddConfig(HSA::Driver::config);
-	command_line.AddConfig(HSA::Emu::config);
+	command_line.AddConfig(HSA::Emu::config);*/
 
 	// Process command line. Return to C version of Multi2Sim if a
 	// command-line option was not recognized.
-	if (!command_line.Process(false))
+	misc::CommandLine *command_line = misc::CommandLine::getInstance();
+	if (!command_line->Process(argc, argv, false))
 		return;
 
 	// Finish if C++ version of Multi2Sim is not activated
-	if (!command_line.getUseCpp())
+	if (!command_line->getUseCpp())
 		return;
 
+	// Process command line
+	MIPS::Asm::ProcessOptions();
+	MIPS::Emu::ProcessOptions();
+	x86::Asm::ProcessOptions();
+	x86::Emu::ProcessOptions();
+
 	// Register architectures, runtimes, and drivers
-	registerArchitectures();
-	registerRuntimes();
-	registerDrivers();
+	RegisterArchitectures();
+	RegisterRuntimes();
+	RegisterDrivers();
 
 	// Load programs
-	loadCommandLineProgram(command_line);
-	loadPrograms(command_line);
+	loadCommandLineProgram();
+	loadPrograms();
 
 	// Main simulation loop
-	mainLoop();
+	MainLoop();
 
 	// End
 	exit(0);

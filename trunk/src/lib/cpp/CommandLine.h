@@ -226,10 +226,6 @@ public:
 /// Class representing the command-line used to invoke Multi2Sim.
 class CommandLine
 {
-	// Original arguments
-	int argc;
-	char **argv;
-
 	// Error message to show when finding invalid options
 	std::string error_message;
 
@@ -266,34 +262,38 @@ class CommandLine
 	// Help message header
 	std::string help;
 
-public:
+	// Singleton instance
+	static std::unique_ptr<CommandLine> instance;
 
-	/// Constructor to be invoked in the beginning of the execution of
-	/// function \a main(), passing its \a argc and \a argv arguments
-	/// directly for post-processing.
-	CommandLine(int argc, char **argv) :
-			argc(argc), argv(argv), processed(false),
-			use_cpp(false), show_help(false)
-	{ }
+	/// Private constructor for singleton
+	CommandLine();
+
+public:
+	
+	/// Get instance of singleton
+	static CommandLine *getInstance();
 
 	/// Set the error message to be displayed when an invalid option is
 	/// found in the command line during the execution of function
 	/// Process().
-	void setErrorMessage(const std::string &msg) {
+	void setErrorMessage(const std::string &msg)
+	{
 		assert(!processed);
 		error_message = msg;
 	}
 
 	/// Set the help message to be displayed when option '--help' is
 	/// present, preceding the help for all command-line options.
-	void setHelp(const std::string &msg) {
+	void setHelp(const std::string &msg)
+	{
 		assert(!processed);
 		help = msg;
 	}
 
 	/// Return the program name used to invoke Multi2Sim. The command line
 	/// must have been processed with a call to Process().
-	const std::string &getProgramName() const {
+	const std::string &getProgramName() const
+	{
 		assert(processed);
 		return program_name;
 	}
@@ -301,7 +301,8 @@ public:
 	/// Return the number of arguments left after getting rid of the
 	/// command-line options, and the program name. The command-line must
 	/// have been processed with a call to Process().
-	int getNumArguments() const {
+	int getNumArguments() const
+	{
 		assert(processed);
 		return args.size();
 	}
@@ -310,7 +311,8 @@ public:
 	/// index specifies the first argument without considering all
 	/// command-line options or the program name. The command line must have
 	/// been processed with a call to Process().
-	const std::string &getArgument(int index) const {
+	const std::string &getArgument(int index) const
+	{
 		assert(index >= 0 && index < (int) args.size());
 		return args[index];
 	}
@@ -319,7 +321,8 @@ public:
 	/// list of command-line arguments, after having gotten rid of all
 	/// command-line options. The command line must have been processed with
 	/// a call to Process().
-	const std::vector<std::string> &getArguments() const {
+	const std::vector<std::string> &getArguments() const
+	{
 		assert(processed);
 		return args;
 	}
@@ -327,12 +330,17 @@ public:
 	/// Return \c true if the user specified command-line option \c --cpp.
 	/// This option is temporarily used to activate the C++ version of
 	/// Multi2Sim.
-	bool getUseCpp() const { assert(processed); return use_cpp; }
+	bool getUseCpp() const
+	{
+		assert(processed);
+		return use_cpp;
+	}
 
 	/// Register a command-line option that takes no argument. If present,
 	/// variable \a var will be set to \a true. If not, to \a false.
 	void Register(const std::string &name, bool &var,
-			const std::string &help) {
+			const std::string &help)
+	{
 		Register(new CommandLineOptionBool(name, &var, help));
 	}
 
@@ -351,21 +359,24 @@ public:
 	/// All Register<tt>xxx</tt>() calls must be invoked before processing
 	/// the actual command line with a call to Process().
 	void RegisterString(const std::string &name, std::string &var,
-			const std::string &help) {
+			const std::string &help)
+	{
 		Register(new CommandLineOptionString(name, &var, help));
 	}
 
 	/// Same as RegisterString(), but taking an unsigned 32-bit integer as the
 	/// type of the command-line option.
 	void RegisterInt32(const std::string &name, int &var,
-			const std::string &help) {
+			const std::string &help)
+	{
 		Register(new CommandLineOptionInt32(name, &var, help));
 	}
 
 	/// Same as RegisterString(), but taking a signed 64-bit integer as the
 	/// type of the command-line option.
 	void RegisterUInt32(const std::string &name, unsigned &var,
-			const std::string &help) {
+			const std::string &help)
+	{
 		Register(new CommandLineOptionInt32(name,
 				(int *) &var, help));
 	}
@@ -373,14 +384,16 @@ public:
 	/// Same as RegisterString(), but taking an unsigned 64-bit integer as
 	/// the type of the command-line option.
 	void RegisterInt64(const std::string &name, long long &var,
-			const std::string &help) {
+			const std::string &help)
+	{
 		Register(new CommandLineOptionInt64(name, &var, help));
 	}
 
 	/// Same as RegisterString(), but taking a signed 32-bit integer as the
 	/// type of the command-line option.
 	void RegisterUInt64(const std::string &name, unsigned long long &var,
-			const std::string &help) {
+			const std::string &help)
+	{
 		Register(new CommandLineOptionInt64(name,
 				(long long *) &var, help));
 	}
@@ -388,7 +401,8 @@ public:
 	/// Register an option that can take values from the string map provided
 	/// in argument \a map.
 	void RegisterEnum(const std::string &name, int &var,
-			const StringMap &map, const std::string &help) {
+			const StringMap &map, const std::string &help)
+	{
 		Register(new CommandLineOptionEnum(name, &var, map, help));
 	}
 
@@ -396,7 +410,8 @@ public:
 	/// option is present, a value of \c True is assumed, and \c False if
 	/// the option is not provided by the user.
 	void RegisterBool(const std::string &name, bool &var,
-			const std::string &help) {
+			const std::string &help)
+	{
 		Register(new CommandLineOptionBool(name, &var, help));
 	}
 
@@ -414,13 +429,23 @@ public:
 	/// call to CommandLine::Process().
 	void AddConfig(CommandLineConfig &config);
 
-	/// Process command line.
-	/// Optional argument \a fatal_on_bad_option specified whether a fatal
-	/// message should be issued when a command-line option is found that is
-	/// not recognized. If this value is \c false and a bad command-line
-	/// option is found, this error is indicated by the return value: \c
-	/// true if no error, and \c false on error.
-	bool Process(bool fatal_on_bad_option = true);
+	/// Process command line from the arguments
+	///
+	/// \param argc
+	///	Number of arguments
+	///
+	/// \param argv
+	///	Argument vector, as passed in the main program
+	///
+	/// \param fatal_on_bad_option (optional)
+	/// 	Specifies whether a fatal message should be issued when a
+	/// 	command-line option is found that is not recognized.
+	///
+	/// \return
+	///	If \a fatal_on_bad_options value is \c false and a bad
+	///	command-line option is found, this error is indicated by the
+	///	return value: \c true if no error, and \c false on error.
+	bool Process(int argc, char **argv, bool fatal_on_bad_option = true);
 };
 
 
