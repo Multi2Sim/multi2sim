@@ -28,108 +28,32 @@ namespace x86
 {
 
 //
-// Class 'EmuConfig'
+// Configuration options
 //
 
-EmuConfig::EmuConfig()
-{
-	// Initialize
-	sim_kind = comm::ArchSimFunctional;
-	process_prefetch_hints = false;
-}
+// Debug files
+std::string Emu::call_debug_file;
+std::string Emu::context_debug_file;
+std::string Emu::cuda_debug_file;
+std::string Emu::glut_debug_file;
+std::string Emu::isa_debug_file;
+std::string Emu::loader_debug_file;
+std::string Emu::opencl_debug_file;
+std::string Emu::opengl_debug_file;
+std::string Emu::syscall_debug_file;
 
-void EmuConfig::Register(misc::CommandLine &command_line)
-{
-	// Option --x86-debug-call <file>
-	command_line.RegisterString("--x86-debug-call <file>", call_debug_file,
-			"Dump debug information about function calls and "
-			"returns. The control flow of an x86 program can be "
-			"observed leveraging ELF symbols present in the program "
-			"binary.");
-	
-	// Option --x86-debug-ctx <file>
-	command_line.RegisterString("--x86-debug-ctx <file>", context_debug_file,
-			"Dump debug information related with context creation, "
-			"destruction, allocation, or state change.");
+// Maximum number of instructions
+long long Emu::max_instructions;
 
-	// Option --x86-debug-cuda <file>
-	command_line.RegisterString("--x86-debug-cuda <file>", cuda_debug_file,
-			"Debug information for the CUDA driver.");
+// Simulation kind
+comm::ArchSimKind Emu::sim_kind = comm::ArchSimFunctional;
 
-	// Option --x86-debug-glut <file>
-	command_line.RegisterString("--x86-debug-glut <file>", glut_debug_file,
-			"Debug information for the GLUT library, used by "
-			"OpenGL programs.");
-
-	// Option --x86-debug-isa <file>
-	command_line.RegisterString("--x86-debug-isa <file>", isa_debug_file,
-			"Debug information for dynamic execution of x86 "
-			"instructions. Updates on the processor state can be "
-			"analyzed using this information.");
-
-	// Option --x86-debug-loader <file>
-	command_line.RegisterString("--x86-debug-loader <file>", loader_debug_file,
-			"Dump debug information extending the analysis of the "
-			"ELF program binary. This information shows which ELF "
-			"sections and symbols are loaded to the initial program "
-			"memory image.");
-
-	// Option --x86-debug-opencl <file>
-	command_line.RegisterString("--x86-debug-opencl <file>", opencl_debug_file,
-			"Debug information for the OpenCL driver.");
-	
-	// Option --x86-debug-opengl <file>
-	command_line.RegisterString("--x86-debug-opengl <file>", opencl_debug_file,
-			"Debug information for the OpenGL graphics driver.");
-	
-	// Option --x86-debug-syscall <file>
-	command_line.RegisterString("--x86-debug-syscall <file>", syscall_debug_file,
-			"Debug information for system calls performed by an x86 "
-			"program, including system call code, aguments, and "
-			"return value.");
-		
-	// Option --x86-max-inst <number>
-	command_line.RegisterInt64("--x86-max-inst <number> (default = 0)",
-			max_instructions,
-			"Maximum number of x86 instructions. On x86 functional "
-			"simulation, this limit is given in number of emulated "
-			"instructions. On x86 detailed simulation, it is given as "
-			"the number of committed (non-speculative) instructions. "
-			"A value of 0 means no limit.");
-
-	// Option --x86-prefetch
-	command_line.RegisterBool("--x86-prefetch {True|False} (default = False)",
-			process_prefetch_hints,
-			"This option determines whether or not to process "
-			"prefetch x86 instructions, and trigger prefetching "
-			"requests during a timing simulation.");
-
-	// Option --x86-sim <kind>
-	command_line.RegisterEnum("--x86-sim {functional|detailed} "
-			"(default = functional)",
-			(int &) sim_kind, comm::arch_sim_kind_map,
-			"Level of accuracy of x86 simulation.");
-}
-
-
-void EmuConfig::Process()
-{
-	// Debuggers
-	Emu::call_debug.setPath(call_debug_file);
-	Emu::context_debug.setPath(context_debug_file);
-	Emu::cuda_debug.setPath(cuda_debug_file);
-	Emu::glut_debug.setPath(glut_debug_file);
-	Emu::isa_debug.setPath(isa_debug_file);
-	Emu::loader_debug.setPath(loader_debug_file);
-	Emu::opencl_debug.setPath(opencl_debug_file);
-	Emu::opengl_debug.setPath(opengl_debug_file);
-	Emu::syscall_debug.setPath(syscall_debug_file);
-}
+bool Emu::process_prefetch_hints = false;
 
 
 
 //
-// Class 'Emu'
+// Static variables
 //
 
 // Emulator singleton
@@ -146,8 +70,102 @@ misc::Debug Emu::opencl_debug;
 misc::Debug Emu::opengl_debug;
 misc::Debug Emu::syscall_debug;
 
-// Configuration
-EmuConfig Emu::config;
+
+
+//
+// Functions
+//
+
+void Emu::RegisterOptions()
+{
+	// Get command line object
+	misc::CommandLine *command_line = misc::CommandLine::getInstance();
+
+	// Option --x86-debug-call <file>
+	command_line->RegisterString("--x86-debug-call <file>", call_debug_file,
+			"Dump debug information about function calls and "
+			"returns. The control flow of an x86 program can be "
+			"observed leveraging ELF symbols present in the program "
+			"binary.");
+	
+	// Option --x86-debug-ctx <file>
+	command_line->RegisterString("--x86-debug-ctx <file>", context_debug_file,
+			"Dump debug information related with context creation, "
+			"destruction, allocation, or state change.");
+
+	// Option --x86-debug-cuda <file>
+	command_line->RegisterString("--x86-debug-cuda <file>", cuda_debug_file,
+			"Debug information for the CUDA driver.");
+
+	// Option --x86-debug-glut <file>
+	command_line->RegisterString("--x86-debug-glut <file>", glut_debug_file,
+			"Debug information for the GLUT library, used by "
+			"OpenGL programs.");
+
+	// Option --x86-debug-isa <file>
+	command_line->RegisterString("--x86-debug-isa <file>", isa_debug_file,
+			"Debug information for dynamic execution of x86 "
+			"instructions. Updates on the processor state can be "
+			"analyzed using this information.");
+
+	// Option --x86-debug-loader <file>
+	command_line->RegisterString("--x86-debug-loader <file>", loader_debug_file,
+			"Dump debug information extending the analysis of the "
+			"ELF program binary. This information shows which ELF "
+			"sections and symbols are loaded to the initial program "
+			"memory image.");
+
+	// Option --x86-debug-opencl <file>
+	command_line->RegisterString("--x86-debug-opencl <file>", opencl_debug_file,
+			"Debug information for the OpenCL driver.");
+	
+	// Option --x86-debug-opengl <file>
+	command_line->RegisterString("--x86-debug-opengl <file>", opencl_debug_file,
+			"Debug information for the OpenGL graphics driver.");
+	
+	// Option --x86-debug-syscall <file>
+	command_line->RegisterString("--x86-debug-syscall <file>", syscall_debug_file,
+			"Debug information for system calls performed by an x86 "
+			"program, including system call code, aguments, and "
+			"return value.");
+		
+	// Option --x86-max-inst <number>
+	command_line->RegisterInt64("--x86-max-inst <number> (default = 0)",
+			max_instructions,
+			"Maximum number of x86 instructions. On x86 functional "
+			"simulation, this limit is given in number of emulated "
+			"instructions. On x86 detailed simulation, it is given as "
+			"the number of committed (non-speculative) instructions. "
+			"A value of 0 means no limit.");
+
+	// Option --x86-prefetch
+	command_line->RegisterBool("--x86-prefetch {True|False} (default = False)",
+			process_prefetch_hints,
+			"This option determines whether or not to process "
+			"prefetch x86 instructions, and trigger prefetching "
+			"requests during a timing simulation.");
+
+	// Option --x86-sim <kind>
+	command_line->RegisterEnum("--x86-sim {functional|detailed} "
+			"(default = functional)",
+			(int &) sim_kind, comm::arch_sim_kind_map,
+			"Level of accuracy of x86 simulation.");
+}
+
+
+void Emu::ProcessOptions()
+{
+	// Debuggers
+	call_debug.setPath(call_debug_file);
+	context_debug.setPath(context_debug_file);
+	cuda_debug.setPath(cuda_debug_file);
+	glut_debug.setPath(glut_debug_file);
+	isa_debug.setPath(isa_debug_file);
+	loader_debug.setPath(loader_debug_file);
+	opencl_debug.setPath(opencl_debug_file);
+	opengl_debug.setPath(opengl_debug_file);
+	syscall_debug.setPath(syscall_debug_file);
+}
 
 
 Emu::Emu() : comm::Emu("x86")
@@ -155,6 +173,7 @@ Emu::Emu() : comm::Emu("x86")
 	// Initialize
 	pid = 100;
 	process_events_force = false;
+	schedule_signal = false;
 	futex_sleep_count = 0;
 	address_space_index = 0;
 }
@@ -403,8 +422,7 @@ bool Emu::Run()
 		return false;
 
 	// Stop if maximum number of CPU instructions exceeded
-	if (config.getMaxInstructions() && instructions >=
-			config.getMaxInstructions())
+	if (max_instructions && instructions >= max_instructions)
 		esim->Finish(esim::ESimFinishX86MaxInst);
 
 	// Stop if any previous reason met

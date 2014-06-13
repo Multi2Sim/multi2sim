@@ -344,7 +344,7 @@ Context::Context()
 		context_list_present[i] = false;
 
 	// Micro-instructions
-	uinst_active = Emu::config.getSimKind() == comm::ArchSimDetailed;
+	uinst_active = Emu::getSimKind() == comm::ArchSimDetailed;
 	uinst_effaddr_emitted = false;
 
 	// Debug

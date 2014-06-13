@@ -32,21 +32,19 @@ namespace x86
 {
 
 
-class AsmConfig : public misc::CommandLineConfig
-{
-	std::string path;
-public:
-	/// Register command-line options related with x86 disassembler
-	void Register(misc::CommandLine &command_line);
-
-	/// Process command-line options related with the x86 disassembler
-	void Process();
-};
-
-
 class Asm : public comm::Asm
 {
+	//
+	// Configuration options
+	//
+
+	// Disassemble a file
+	static std::string path;
+
+
+	//
 	// Constants used in asm.dat
+	//
 
 	// For fields 'op1', 'op2', 'modrm', 'imm'
 	static const int SKIP = 0x0100;
@@ -84,23 +82,26 @@ class Asm : public comm::Asm
 	// Free decoding tables
 	void FreeInstDecodeInfo(InstDecodeInfo *elem);
 
-	// Constructor. Made public to avoid any external instantiations of the
-	// x86 disassembler. Instead, the only instance can be obtain with a
-	// call to getInstance().
+	// Private constructor for singleton
 	Asm();
 
 public:
 
+	/// Register options in the command line
+	static void RegisterOptions();
+
+	/// Process command-line options
+	static void ProcessOptions();
+
 	/// Destructor
 	~Asm();
 
-	/// Return a unique instance of the x86 disassembler. This instance will
-	/// be created only upon the first call to getInstance(), and will be
-	/// alive util the end of the execution.
+	/// Get instance of singleton
 	static Asm *getInstance();
 
 	/// Get instruction information for a given opcode
-	const InstInfo *getInstInfo(InstOpcode opcode) const {
+	const InstInfo *getInstInfo(InstOpcode opcode) const
+	{
 		assert(opcode >= 0 && opcode < InstOpcodeCount);
 		return &inst_info[opcode];
 	}
@@ -121,9 +122,6 @@ public:
 	/// standard output if no output stream is specified.
 	void DisassembleBinary(const std::string &path,
 			std::ostream &os = std::cout) const;
-
-	/// Configuration for x86 disassembler
-	static AsmConfig config;
 };
 
 

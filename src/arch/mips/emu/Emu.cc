@@ -23,27 +23,22 @@
 namespace MIPS
 {
 
+
 //
-// Class 'EmuConfig'
+// Configuration variables
 //
 
-EmuConfig::EmuConfig()
-{
-	// Initialize
-	sim_kind = comm::ArchSimFunctional;
-	process_prefetch_hints = false;
-}
+// Simulation kind
+comm::ArchSimKind Emu::sim_kind = comm::ArchSimFunctional;
 
-void EmuConfig::Register(misc::CommandLine &command_line)
-{
-
-}
+// Maximum number of instructions
+long long Emu::max_instructions = 0;
 
 
 
 
 //
-// Class 'Emu'
+// Static variables
 //
 
 // Emulator singleton
@@ -54,8 +49,20 @@ std::unique_ptr<Emu> Emu::instance;
 misc::Debug Emu::loader_debug;
 misc::Debug Emu::context_debug;
 
-// Configuration
-EmuConfig Emu::config;
+
+
+//
+// Functions
+//
+
+void Emu::RegisterOptions()
+{
+}
+
+
+void Emu::ProcessOptions()
+{
+}
 
 
 Emu::Emu() : comm::Emu("MIPS")
@@ -63,6 +70,7 @@ Emu::Emu() : comm::Emu("MIPS")
 	// Initialize
 	pid = 100;
 	process_events_force = false;
+	schedule_signal = false;
 	futex_sleep_count = 0;
 	address_space_index = 0;
 }
@@ -140,8 +148,7 @@ bool Emu::Run()
 		return false;
 
 	// Stop if maximum number of CPU instructions exceeded
-	if (config.getMaxInstructions() && instructions >=
-			config.getMaxInstructions())
+	if (max_instructions && instructions >= max_instructions)
 		esim->Finish(esim::ESimFinishMipsMaxCycles);
 
 	// Stop if any previous reason met

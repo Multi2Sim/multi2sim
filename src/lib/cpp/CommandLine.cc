@@ -127,6 +127,30 @@ void CommandLineOptionEnum::Read(int argc, char **argv, int index)
 }
 
 
+// Singleton instance
+std::unique_ptr<CommandLine> CommandLine::instance;
+
+CommandLine *CommandLine::getInstance()
+{
+	// Instance already exists
+	if (instance.get())
+		return instance.get();
+
+	// Create instance
+	instance.reset(new CommandLine());
+	return instance.get();
+}
+
+
+CommandLine::CommandLine()
+{
+	// Initialize
+	processed = false;
+	use_cpp = false;
+	show_help = false;
+}
+
+
 void CommandLine::Register(CommandLineOption *option)
 {
 	// Command-line must not have been processed yet
@@ -197,7 +221,7 @@ void CommandLine::AddConfig(CommandLineConfig &config)
 }
 
 
-bool CommandLine::Process(bool fatal_on_bad_option)
+bool CommandLine::Process(int argc, char **argv, bool fatal_on_bad_option)
 {
 	// Processed
 	assert(!processed);
