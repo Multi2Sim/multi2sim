@@ -85,7 +85,7 @@ public:
 /// x86 emulator
 class Emu : public comm::Emu
 {
-	// Unique instance of x86 emulator
+	// Unique instance of singleton
 	static std::unique_ptr<Emu> instance;
 
 	// Primary list of contexts
@@ -98,8 +98,7 @@ class Emu : public comm::Emu
 	// See setScheduleSignal()
 	bool schedule_signal;
 
-	// Private constructor. The only possible instance of the x86 emulator
-	// can be obtained with a call to getInstance()
+	// Private constructor for singleton
 	Emu();
 	
 	// Schedule next call to Emu::ProcessEvents(). The call will only be
@@ -127,8 +126,7 @@ class Emu : public comm::Emu
 
 public:
 
-	/// The x86 emulator is a singleton class. The only possible instance of
-	/// it will be allocated the first time this function is invoked.
+	/// Get instance of singleton
 	static Emu *getInstance();
 
 	/// Create a new context associated with the emulator. The context is

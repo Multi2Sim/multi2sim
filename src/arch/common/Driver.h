@@ -60,14 +60,14 @@ public:
 	/// Invoke an ABI call of the driver. This is a pure virtual function
 	/// that every child of class Driver should implement.
 	///
+	/// \param code
+	///	The ABI call code
+	///
 	/// \param memory
 	///	The memory of the host application where the arguments of the
 	///	ABI call can be found.
 	///
-	/// \param command
-	///	The ABI call code
-	///
-	/// \param address
+	/// \param args_ptr
 	///	The address in the host application memory where the arguments
 	///	of the call can be found, or 0 if no arguments are passed.
 	///
@@ -75,8 +75,7 @@ public:
 	///	The functions forwards the return value of the ABI call. This
 	///	value is provided as a return value of the system call and made
 	///	available to the application.
-	virtual int Call(mem::Memory *memory, int command,
-			unsigned address) = 0;
+	virtual int Call(int code, mem::Memory *memory, unsigned args_ptr) = 0;
 };
 
 
