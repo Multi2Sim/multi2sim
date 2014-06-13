@@ -2,7 +2,9 @@
 #define HSA_ASM_BRIGDIRENTRY_H
 
 #include "BrigEntry.h"
+#include "BrigStrEntry.h"
 #include "BrigDef.h"
+#include "lib/cpp/Misc.h"	// for debug
 
 namespace HSA{
 /// Represents Brig directive entry
@@ -75,7 +77,7 @@ public:
 	static DumpDirectiveFn dump_dir_fn[27];
 
 	/// Returns the pointer to the directive 
-	static char *GetDirByOffset(BrigFile *file, unsigned short offset);
+	static char *GetDirByOffset(BrigFile *file, BrigDirectiveOffset32_t offset);
 
 };
 }
