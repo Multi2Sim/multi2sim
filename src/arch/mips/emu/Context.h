@@ -206,6 +206,32 @@ class Context
 	// Table of signal handlers, possibly shared by multiple contexts
 	std::shared_ptr<SignalHandlerTable> signal_handler_table;
 
+	///////////////////////////////////////////////////////////////////////
+	//
+	// Functions and fields related with mips instruction emulation,
+	// implemented in ContextIsaXXX.cc files
+	//
+	///////////////////////////////////////////////////////////////////////
+
+	// Prototype of a member function of class Context devoted to the
+	// execution of ISA instructions. The emulator has a table indexed by an
+	// instruction identifier that points to all instruction emulation
+	// functions.
+	typedef void (Context::*ExecuteInstFn)();
+
+	// Instruction emulation functions. Each entry of asm.dat will be
+	// expanded into a function prototype. For example, entry
+	// 	DEFINST(adc_al_imm8, 0x14, SKIP, SKIP, SKIP, IB, 0)
+	// is expanded to
+	//	void ExecuteInst_adc_al_imm8();
+#define DEFINST(name, fmt_str, fmt, opcode, func, imm) void ExecuteInst_##name();
+#include <arch/mips/asm/asm.dat>
+#undef DEFINST
+
+	// Table of functions
+	static ExecuteInstFn execute_inst_fn[InstOpcodeCount];
+
+
 public:
 	/// Position of the context in the main context list. This field is
 	/// managed by the emulator. When a context is removed from the main
