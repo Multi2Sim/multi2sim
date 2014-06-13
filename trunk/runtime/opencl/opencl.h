@@ -81,8 +81,8 @@ enum opencl_runtime_type_t
 enum opencl_abi_call_t
 {
 	opencl_abi_invalid,
-#define OPENCL_ABI_CALL(name, code) opencl_abi_##name = code,
-#include "../../src/driver/opencl/opencl.dat"
+#define OPENCL_ABI_CALL(space, name, code) space##name = code,
+#include "../../src/driver/opencl/ABI.dat"
 #undef OPENCL_ABI_CALL
 	opencl_abi_call_count
 };
@@ -248,6 +248,8 @@ typedef void (*opencl_arch_ndrange_free_func_t)(void *ndrange);
 /* Execution in native/simulated mode */
 extern int opencl_native_mode;
 
+/* Device handlers */
+extern int m2s_active_dev;
 
 
 /*
