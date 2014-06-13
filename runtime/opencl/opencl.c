@@ -62,12 +62,13 @@ int opencl_device_shared_memory;
 /* Native mode */
 int opencl_native_mode;
 
-
+/* Device descriptors */
+int m2s_active_dev;
 
 /*
  * Debug
  *
- * If environment variable 'opencl_DEBUG' is set, the Multi2Sim OpenCL Runtime
+ * If environment variable 'M2S_OPENCL_DEBUG' is set, the Multi2Sim OpenCL Runtime
  * library will dump debug information about OpenCL calls, argument values,
  * intermeidate actions, and return values.
  */
@@ -98,7 +99,7 @@ void opencl_debug(char *fmt, ...)
 	 * calls to 'printf', that can have race conditions among threads. */
 	va_start(va, fmt);
 	vsnprintf(str, sizeof str, fmt, va);
-	fprintf(stderr, "[%llu] [libm2s-opencl] %s\n", opencl_get_time(), str);
+	fprintf(stderr, "[%llu] [libm2s-opencl-ioctl] %s\n", opencl_get_time(), str);
 }
 
 

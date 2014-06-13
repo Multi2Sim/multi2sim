@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <pthread.h>
+#include <sys/ioctl.h>
 
 #include "debug.h"
 #include "event.h"
@@ -103,7 +104,7 @@ void *device_ndrange_dispatch(void *ptr)
 
 	/* Tell the driver that the nd-range has started */
 	if (!opencl_native_mode && info->id == 0)
-		syscall(OPENCL_SYSCALL_CODE, opencl_abi_ndrange_start);
+		ioctl(m2s_active_dev, SINDRangeStart);
 
 	/* Record the start time */
 	if (info->event && info->id == 0)
@@ -187,7 +188,7 @@ void *device_ndrange_dispatch(void *ptr)
 
 	/* Tell the driver that the nd-range has completed */
 	if (!opencl_native_mode && info->id == 0)
-		syscall(OPENCL_SYSCALL_CODE, opencl_abi_ndrange_end);
+		ioctl(m2s_active_dev, SINDRangeEnd);
 
 	pthread_barrier_wait(info->barrier);
 
