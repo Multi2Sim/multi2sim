@@ -29,7 +29,7 @@ const misc::StringMap file_desc_type_map =
 	{ "Standard", FileDescStd },
 	{ "Pipe", FileDescPipe },
 	{ "Virtual", FileDescVirtual },
-	{ "GPU", FileDescGPU },
+	{ "Device", FileDescDevice },
 	{ "Socket", FileDescSocket }
 };
 

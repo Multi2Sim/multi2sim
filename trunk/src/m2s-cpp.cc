@@ -52,39 +52,53 @@ volatile int m2s_signal_received;
 
 
 
-void mips_emulation_loop(misc::CommandLine &command_line)
+//
+// Functions
+//
+
+
+void registerArchitectures()
 {
-	MIPS::Emu *emu = MIPS::Emu::getInstance();
-	MIPS::Context *context = emu->newContext();
-	context->Load(command_line.getArguments(),
-			std::vector<std::string>(),misc::getCwd(),
-			"", "");
-	esim::ESim *esim = esim::ESim::getInstance();
-	while (!esim->hasFinished())
-	{
-		bool active = emu->Run();
-		if (!active)
-			esim->Finish(esim::ESimFinishCtx);
-		esim->ProcessEvents();
-	}
+	// Get architecture pool
+	comm::ArchPool *arch_pool = comm::ArchPool::getInstance();
+
+	// x86
+	arch_pool->Register("x86",
+			x86::Asm::getInstance(),
+			x86::Emu::getInstance());
+	
+	// Southern Islands
+	arch_pool->Register("SouthernIslands");
+
+	// HSA
+	arch_pool->Register("HSA");
+
+	// MIPS
+	arch_pool->Register("MIPS",
+			MIPS::Asm::getInstance(),
+			MIPS::Emu::getInstance());
 }
 
 
-void x86_emulation_loop(misc::CommandLine &command_line)
+void registerRuntimes()
 {
-	x86::Emu *emu = x86::Emu::getInstance();
-	x86::Context *context = emu->newContext();
-	context->Load(command_line.getArguments(),
-			std::vector<std::string>(), misc::getCwd(),
-			"", "");
-	esim::ESim *esim = esim::ESim::getInstance();
-	while (!esim->hasFinished())
-	{
-		bool active = emu->Run();
-		if (!active)
-			esim->Finish(esim::ESimFinishCtx);
-		esim->ProcessEvents();
-	}
+	// Get runtime pool
+	comm::RuntimePool *runtime_pool = comm::RuntimePool::getInstance();
+
+	// OpenCL runtime
+	runtime_pool->Register("OpenCL", "libOpenCL", "libm2s-opencl");
+
+#ifdef HAVE_OPENGL
+	// OpenGL runtime
+	runtime_pool->Register("OpenGL", "libOpenGL", "libm2s-opengl");
+#endif
+}
+
+
+void registerDrivers()
+{
+	// Get driver pool
+	//comm::DriverPool *driver_pool = comm::DriverPool::getInstance();
 }
 
 
@@ -356,44 +370,10 @@ void main_cpp(int argc, char **argv)
 	if (!command_line.getUseCpp())
 		return;
 
-	//
-	// Register architectures
-	//
-
-	// Get architecture pool
-	comm::ArchPool *arch_pool = comm::ArchPool::getInstance();
-
-	// x86
-	arch_pool->Register("x86",
-			x86::Asm::getInstance(),
-			x86::Emu::getInstance());
-	
-	// Southern Islands
-	arch_pool->Register("SouthernIslands");
-
-	// HSA
-	arch_pool->Register("HSA");
-
-	// MIPS
-	arch_pool->Register("MIPS",
-			MIPS::Asm::getInstance(),
-			MIPS::Emu::getInstance());
-
-
-
-	//
-	// Register runtimes
-	//
-
-	comm::RuntimePool *runtime_pool = comm::RuntimePool::getInstance();
-	runtime_pool->Register("OpenCL", "OpenCL", "m2s-opencl", "/dev/m2s-si-cl",
-			Driver::OpenCLSIDriver::getInstance());
-
-#ifdef HAVE_OPENGL
-	runtime_pool->Register("OpenGL", "OpenGL", "m2s-opengl", "/dev/m2s-si-gl",
-			Driver::OpenGLSIDriver::getInstance());
-#endif
-
+	// Register architectures, runtimes, and drivers
+	registerArchitectures();
+	registerRuntimes();
+	registerDrivers();
 
 	// Load programs
 	loadCommandLineProgram(command_line);

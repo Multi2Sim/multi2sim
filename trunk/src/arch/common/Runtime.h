@@ -1,6 +1,6 @@
 /*
  *  Multi2Sim
- *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
+ *  Copyright (C) 2014  Rafael Ubal (ubal@ece.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -25,20 +25,13 @@
 #include <iostream>
 #include <string>
 
-// Forward declarations
-namespace Driver
-{
-	class Common;
-}  // namespace Driver
-
-namespace x86
-{
-	class Context;
-}  // namespace x86
-
 namespace comm
 {
 
+
+/// This class represents a runtime: a library linked with the guest program
+/// running on Multi2Sim. Runtimes are registered by the main program, and allow
+/// libraries to be redirected during 'open' system calls in the CPU emulators.
 class Runtime
 {
 	// Runtime name, just used for debug info. 
@@ -46,46 +39,44 @@ class Runtime
 
 	// Name of the library to intercept during the execution of the
 	// 'open' system call. 
-	std::string lib_name;
+	std::string library_name;
 
 	// Name of the library to redirect it to, searching either in the
-	// source tree or Multi2Sim installation path. 
-	std::string redirect_lib_name;
-
-	// Path to virtual device
-	std::string dev_path;
-
-	// Actual host device path
-	std::string host_dev_path;
-
-	// Host device descriptor in /tmp
-	int dev_desc;
+	// source tree or the Multi2Sim installation path. 
+	std::string redirect_library_name;
 
 	// Record here failed attempts to access this runtime. This is used
 	// to issue a warning to the user at the end of the simulation. 
-	unsigned open_attempt;
-
-	// Associate driver instance
-	Driver::Common *driver;
+	bool open_attempt;
 
 public:
-	Runtime(const std::string &name, const std::string &lib_name, const std::string &redirect_lib_name,
-		const std::string &dev_path, Driver::Common *driver);
-
-	~Runtime();
-
-	/// Getters
+	
+	/// Constructor
 	///
-	/// Get dev_path
-	const std::string &getDevPath() const { return dev_path; }
+	/// \param name
+	///	Name of the runtime (e.g., "OpenCL")
+	///
+	/// \param library_name
+	///	Library name to intercept in an 'open' system call of the CPU
+	///	emulator and to be redirected (e.g., 'libOpenCL').
+	///
+	/// \param redirect_library_name
+	///	Library name representing a Multi2Sim runtime library, used to
+	///	redirect the application (e.g., 'libm2s-opencl').
+	Runtime(const std::string &name,
+			const std::string &library_name,
+			const std::string &redirect_library_name);
 
-	/// Get host device descriptor
-	int getDevDesc() const { return dev_desc; };
+	/// Return the library name
+	const std::string &getLibraryName() const { return library_name; }
 
-	/// Get driver
-	Driver::Common *getDriver() const { return driver; }
+	/// Return the redirection library name
+	const std::string &getRedirectLibraryName() const {
+			return redirect_library_name; }
 };
 
+
+/// This class keeps track of all runtimes in the system. It is a singleton.
 class RuntimePool
 {
 	// Unique instance of the class
@@ -102,33 +93,11 @@ public:
 	/// Return a unique instance of the singleton
 	static RuntimePool *getInstance();
 
-	/// Getters
-	///
-	/// Get runtime by dev_path
-	Runtime *getRuntimeByDevPath(const std::string &path) {
-		for( auto &runtime : runtime_list)
-		{
-			if (runtime->getDevPath() == path)
-				return runtime.get();
-		}
-		return nullptr;
-	}
-
-	/// Get runtime by host device descriptor
-	Runtime *getRuntimeByDevDesc(int host_fd) {
-		for( auto &runtime : runtime_list)
-		{
-			if (runtime->getDevDesc() == host_fd)
-				return runtime.get();
-		}
-		return nullptr;
-	}
-
-
-	/// Register a runtime
-	void Register(const std::string &name, const std::string &lib_name, const std::string &redirect_lib_name,
-		const std::string &dev_path, Driver::Common *driver);
-
+	/// Register a runtime. See the constructor of class Runtime for details
+	/// on the argument meaning.
+	void Register(const std::string &name,
+			const std::string &library_name,
+			const std::string &redirect_library_name);
 };
 
 }  // namespace comm

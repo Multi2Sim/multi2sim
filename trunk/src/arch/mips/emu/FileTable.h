@@ -38,7 +38,7 @@ enum FileDescType
 	FileDescStd,			/// Standard input/output
 	FileDescPipe,			/// Pipe
 	FileDescVirtual,		/// Virtual file with artificial content
-	FileDescGPU,			/// GPU device
+	FileDescDevice,			/// Virtual device
 	FileDescSocket			/// Network socket
 };
 
