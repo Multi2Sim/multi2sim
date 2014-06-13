@@ -11,5 +11,5 @@ libcommon_a_SOURCES = \
 	SI.cc \
 	SI.h 
 
-INCLUDES = @M2S_INCLUDES@
+AM_CPPFLAGS = @M2S_INCLUDES@
 

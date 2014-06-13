@@ -69,7 +69,7 @@ libcl2llvm_a_SOURCES = \
 
 endif
 
-INCLUDES = @M2S_INCLUDES@
+AM_CPPFLAGS = @M2S_INCLUDES@
 
 
 # The two rules below overwrite the default rules generated to compile sources

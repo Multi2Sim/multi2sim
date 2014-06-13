@@ -11,5 +11,5 @@ libesim_a_SOURCES = \
 	trace.c \
 	trace.h
 
-INCLUDES = @M2S_INCLUDES@
+AM_CPPFLAGS = @M2S_INCLUDES@
 

@@ -18,7 +18,7 @@ __top_builddir__bin_m2s_SOURCES = \
 	Wrapper.h
 
 AM_LIBTOOLFLAGS = --preserve-dup-deps
-INCLUDES = @M2S_INCLUDES@
+AM_CPPFLAGS = @M2S_INCLUDES@
 
 LDADD = \
 	$(top_builddir)/src/driver/cuda/libcuda.a \

@@ -5,5 +5,5 @@ libtiming_a_SOURCES = \
 	cpu.c \
 	cpu.h
 
-INCLUDES = @M2S_INCLUDES@
+AM_CPPFLAGS = @M2S_INCLUDES@
 

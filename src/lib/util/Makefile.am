@@ -56,7 +56,7 @@ libutil_a_SOURCES = \
 	timer.c \
 	timer.h
 
-INCLUDES = @M2S_INCLUDES@
+AM_CPPFLAGS = @M2S_INCLUDES@
 
 # For 'misc.c', we need the data directory to find distribution files.
 AM_CFLAGS = -DPACKAGE_DATA_DIR='"$(pkgdatadir)"'

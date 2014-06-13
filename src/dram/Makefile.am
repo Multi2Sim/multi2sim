@@ -28,5 +28,5 @@ libdram_a_SOURCES = \
 	request.c \
 	request.h
 
-INCLUDES = @M2S_INCLUDES@
+AM_CPPFLAGS = @M2S_INCLUDES@
 

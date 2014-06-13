@@ -10,4 +10,4 @@ libsi_a_SOURCES = \
 	Program.cc \
 	Program.h
 
-INCLUDES = @M2S_INCLUDES@
+AM_CPPFLAGS = @M2S_INCLUDES@
