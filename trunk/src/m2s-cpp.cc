@@ -21,6 +21,7 @@
 #include <cstdlib>
 #include <iostream>
 
+#include <arch/common/Driver.h>
 #include <arch/common/Runtime.h>
 #include <arch/mips/asm/Asm.h>
 #include <arch/mips/emu/Context.h>
@@ -31,6 +32,7 @@
 #include <arch/x86/emu/FileTable.h>
 #include <arch/x86/emu/Signal.h>
 #include <arch/hsa/asm/Asm.h>
+#include <arch/hsa/driver/Driver.h>
 #include <arch/hsa/emu/Emu.h>
 #include <driver/opencl/OpenCLDriver.h>
 #include <driver/opengl/OpenGLDriver.h>
@@ -98,7 +100,11 @@ void registerRuntimes()
 void registerDrivers()
 {
 	// Get driver pool
-	//comm::DriverPool *driver_pool = comm::DriverPool::getInstance();
+	comm::DriverPool *driver_pool = comm::DriverPool::getInstance();
+
+	// HSA driver
+	HSA::Driver *hsa_driver = HSA::Driver::getInstance();
+	driver_pool->Register(hsa_driver);
 }
 
 
@@ -359,6 +365,7 @@ void main_cpp(int argc, char **argv)
 	command_line.AddConfig(x86::Emu::config);
 	command_line.AddConfig(MIPS::Emu::config);
 	command_line.AddConfig(HSA::Asm::config);
+	command_line.AddConfig(HSA::Driver::config);
 	command_line.AddConfig(HSA::Emu::config);
 
 	// Process command line. Return to C version of Multi2Sim if a

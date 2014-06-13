@@ -8,6 +8,7 @@
 
 namespace HSA
 {
+
 /// HSA Emulator configuration
 class EmuConfig : public misc::CommandLineConfig
 {
