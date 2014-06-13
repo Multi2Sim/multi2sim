@@ -157,8 +157,8 @@ void Context::Execute()
 	// Call instruction emulation function
 	if(inst->GetOpcode())
 	{
-		ExecuteInstFn fn = execute_inst_fn[inst->GetOpcode()];
-		(this->*fn)();
+		//ExecuteInstFn fn = execute_inst_fn[inst->GetOpcode()];
+		//(this->*fn)();
 	}
 
 	// Stats
