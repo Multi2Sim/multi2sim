@@ -1031,6 +1031,7 @@ AC_CONFIG_FILES([
 
 		src/arch/southern-islands/Makefile
 		src/arch/southern-islands/asm/Makefile
+		src/arch/southern-islands/driver/Makefile
 		src/arch/southern-islands/emu/Makefile
 		src/arch/southern-islands/timing/Makefile
 
