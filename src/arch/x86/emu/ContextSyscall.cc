@@ -36,9 +36,7 @@
 
 #include <lib/cpp/Misc.h>
 #include <lib/esim/esim.h>
-#include <arch/common/Runtime.h>
-#include <driver/common/Driver.h>
-#include <driver/opencl/OpenCLDriver.h>
+#include <arch/common/Driver.h>
 
 #include "Context.h"
 #include "Emu.h"
@@ -674,33 +672,28 @@ FileDesc *Context::SyscallOpenVirtualFile(const std::string &path,
 FileDesc *Context::SyscallOpenVirtualDevice(const std::string &path,
 		int flags, int mode)
 {
-	// Try to get runtime 
-	comm::RuntimePool *runtime_pool = comm::RuntimePool::getInstance();
-	comm::Runtime *runtime = runtime_pool->getRuntimeByDevPath(path);
-	if (!runtime)
-		misc::fatal("%s: Cannot find device in %s", __FUNCTION__, path.c_str());
+	// Check if this is a Multi2Sim driver
+	comm::DriverPool *driver_pool = comm::DriverPool::getInstance();
+	comm::Driver *driver = driver_pool->getDriverByPath(path);
+	if (!driver)
+		misc::fatal("%s: Cannot find device in %s", __FUNCTION__,
+				path.c_str());
 
-	int host_fd = runtime->getDevDesc();
-	assert(host_fd > 0);
+	// Create new file descriptor
+	FileDesc *desc = file_table->newFileDesc(FileDescDevice,
+			0,  // Host descriptor doesn't matter
+			path,
+			flags);
+	desc->setDriver(driver);
 
-	// Try to get file descriptor from filetable
-	FileDesc *desc = file_table->getFileDesc(host_fd);
-	if (file_table->getFileDesc(host_fd))
-		return desc;
-	// Create if can't find
-	else
-	{
-		desc = file_table->newFileDesc(FileDescGPU, host_fd,
-				path, flags);
-		emu->syscall_debug << misc::fmt("    host device '%s' opened: "
+	// Debug
+	emu->syscall_debug << misc::fmt("    host device '%s' opened: "
 				"guest_fd=%d, host_fd=%d\n",
-				path.c_str(), desc->getGuestIndex(),
+				path.c_str(),
+				desc->getGuestIndex(),
 				desc->getHostIndex());
-		return desc;		
-	}
-
-	// Return
-	return nullptr;
+	// Return the descriptor
+	return desc;		
 }
 
 int Context::ExecuteSyscall_open()
@@ -730,12 +723,7 @@ int Context::ExecuteSyscall_open()
 	{
 		// Attempt to open virtual file
 		FileDesc *desc = SyscallOpenVirtualDevice(full_path, flags, mode);
-		if (desc)
-			return desc->getGuestIndex();
-		
-		// Unhandled virtual file. Let the application read the contents
-		// of the host version of the file as if it was a regular file.
-		emu->syscall_debug << "    warning: unhandled virtual device\n";		
+		return desc->getGuestIndex();
 	}
 
 	// Virtual files
@@ -1723,27 +1711,26 @@ int Context::ExecuteSyscall_ioctl()
 	unsigned cmd = regs.getEcx();
 	unsigned arg = regs.getEdx();
 	emu->syscall_debug << misc::fmt("  guest_fd=%d, cmd=0x%x, arg=0x%x\n",
-		guest_fd, cmd, arg);
+			guest_fd, cmd, arg);
 
 	// File descriptor 
-	FileDesc *desc= file_table->getFileDesc(guest_fd);
+	FileDesc *desc = file_table->getFileDesc(guest_fd);
 	if (!desc)
 		return -EBADF;
 
-	comm::RuntimePool *runtime_pool = comm::RuntimePool::getInstance();
-
-	// Process IOCTL
-	if (desc->getType() == FileDescGPU)
+	// Check if this is communication with a Multi2Sim driver
+	if (desc->getType() == FileDescDevice)
 	{
-		// Runtime create device file in /tmp 
-		int host_fd = desc->getHostIndex();
-		comm::Runtime *runtime = runtime_pool->getRuntimeByDevDesc(host_fd);
-		if (!runtime)
-			misc::fatal("%s: Runtime not registered!", __FUNCTION__);
-		Driver::Common *driver = runtime->getDriver();
-		return driver->DriverCall(this, cmd);
+		// Get the driver
+		comm::Driver *driver = desc->getDriver();
+		assert(driver);
+
+		// Invoke the driver call
+		return driver->Call(memory.get(), cmd, arg);
 	}
-	else if (cmd >= 0x5401 || cmd <= 0x5408)
+	
+	// Request on command
+	if (cmd >= 0x5401 || cmd <= 0x5408)
 	{
 		// 'ioctl' commands using 'struct termios' as the argument.
 		// This structure is 60 bytes long both for x86 and x86_64

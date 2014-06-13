@@ -14,6 +14,9 @@ libcommon_a_SOURCES = \
 	Asm.cc \
 	Asm.h \
 	\
+	Driver.cc \
+	Driver.h \
+	\
 	emu.c \
 	emu.h \
 	\

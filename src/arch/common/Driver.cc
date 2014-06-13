@@ -17,15 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <fcntl.h>
-#include <stdio.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h> 
-
-#include <lib/cpp/String.h>
-
-#include "Runtime.h"
+#include "Driver.h"
 
 
 namespace comm
@@ -33,50 +25,52 @@ namespace comm
 
 
 //
-// Class 'Runtime'
+// Class 'Driver'
 //
 
-Runtime::Runtime(const std::string &name,
-		const std::string &library_name, 
-		const std::string &redirect_library_name)
+Driver::Driver(const std::string &name, const std::string &path)
 {
 	// Initialize
 	this->name = name;
-	this->library_name = library_name;
-	this->redirect_library_name = redirect_library_name;
+	this->path = path;
 }
 
 
 
-
 //
-// Class 'RuntimePool'
+// Class 'DriverPool'
 //
 
-std::unique_ptr<RuntimePool> RuntimePool::instance;
+std::unique_ptr<DriverPool> DriverPool::instance;
 
-RuntimePool* RuntimePool::getInstance()
+DriverPool* DriverPool::getInstance()
 {
 	// Return existing instance
 	if (instance.get())
 		return instance.get();
 	
-	// Create new runtime pool
-	instance.reset(new RuntimePool());
+	// Create new driver pool
+	instance.reset(new DriverPool());
 	return instance.get();	
 }
 
-void RuntimePool::Register(const std::string &name, 
-		const std::string &library_name, 
-		const std::string &redirect_library_name)
+
+void DriverPool::Register(Driver *driver)
 {
-	// Create new runtime
-	Runtime *runtime = new Runtime(name,
-			library_name,
-			redirect_library_name);
-	
 	// Add it to the pool
-	runtime_list.emplace_back(runtime);
+	driver_list.push_back(driver);
+}
+
+
+Driver *DriverPool::getDriverByPath(const std::string &path)
+{
+	// Traverse all drivers
+	for (auto driver : driver_list)
+		if (driver->getPath() == path)
+			return driver;
+	
+	// Not found
+	return nullptr;
 }
 
 
