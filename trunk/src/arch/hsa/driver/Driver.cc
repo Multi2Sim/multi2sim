@@ -23,33 +23,6 @@
 namespace HSA
 {
 
-//
-// Class 'DriverConfig'
-//
-
-void DriverConfig::Register(misc::CommandLine &command_line)
-{
-	// Option --hsa-driver-debug <file>
-	command_line.RegisterString("--hsa-driver-debug <file>", debug_file,
-			"Dump debug information related with HSA driver ABI "
-			"calls and their arguments.");
-	
-}
-
-
-void DriverConfig::Process()
-{
-	Driver::debug.setPath(debug_file);
-}
-
-
-
-
-
-//
-// Class 'Driver'
-//
-
 // Initialize table of ABI call names
 const char *Driver::call_name[CallCodeCount] =
 {
@@ -70,14 +43,32 @@ const Driver::CallFn Driver::call_fn[CallCodeCount] =
 };
 
 
-// Configuration
-DriverConfig Driver::config;
+// Debugger file
+std::string Driver::debug_file;
+
+// Debugger
+misc::Debug Driver::debug;
 
 // Singleton instance
 std::unique_ptr<Driver> Driver::instance;
 
-// Debugger
-misc::Debug Driver::debug;
+
+void Driver::RegisterOptions()
+{
+	// Get command line object
+	misc::CommandLine *command_line = misc::CommandLine::getInstance();
+
+	// Option --hsa-driver-debug <file>
+	command_line->RegisterString("--hsa-driver-debug <file>", debug_file,
+			"Dump debug information related with HSA driver ABI "
+			"calls and their arguments.");
+}
+
+
+void Driver::ProcessOptions()
+{
+	debug.setPath(debug_file);
+}
 
 
 Driver *Driver::getInstance()

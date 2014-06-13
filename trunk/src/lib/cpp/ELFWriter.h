@@ -40,7 +40,7 @@ class File;
 ///
 /// The constructor of this class is private, and can only be accessed
 /// internally by friend class File. A new buffer can only be created with
-/// a call to File::NewBuffer()
+/// a call to File::newBuffer()
 ///
 class Buffer
 {
@@ -118,7 +118,7 @@ public:
 /// a superset of, or can overlap with the buffers belonging to a segment.
 ///
 /// An instance of class Section cannot be created directly (its constructor
-/// is private). Instead, the caller should use File::NewSection() to do so.
+/// is private). Instead, the caller should use File::newSection() to do so.
 ///
 class Section
 {
@@ -179,7 +179,7 @@ public:
 /// as a range of Buffer objects previously added to the File.
 ///
 /// An instance of class segment cannot be created directly (its constructor
-/// is defined private). Instead, function File::NewSegment() can be invoked
+/// is defined private). Instead, function File::newSegment() can be invoked
 /// for this purpose, which will create the segment and add it to the
 /// list of segments of the ELF file.
 ///
@@ -231,7 +231,7 @@ public:
 
 /// Class representing an ELF symbol. A symbol cannot be created directly
 /// (its constructor is private). Instead, they should be created with a call
-/// to SymbolTable::NewSymbol(). The symbol table that a symbol belongs to
+/// to SymbolTable::newSymbol(). The symbol table that a symbol belongs to
 /// handles both the symbol section and the string table section that contains
 /// the symbol name. The member functions of this class can be used to
 /// modify certain attributes of an ELF symbol.
@@ -304,7 +304,7 @@ public:
 
 	/// Create a new symbol named \a name. This is the only way to
 	/// create a new instance of class Symbol.
-	Symbol *NewSymbol(const std::string &name);
+	Symbol *newSymbol(const std::string &name);
 
 	/// Return the Buffer object associated with the symbol table
 	/// section automatically created for this symbol table.
@@ -366,12 +366,12 @@ public:
 
 	/// Add a new buffer object to an internal list of buffers.
 	/// Buffers of type Buffer can only be instantiated through this function.
-	Buffer *NewBuffer();
+	Buffer *newBuffer();
 
 	/// Create a new ELF section and add it to the internal list of
 	/// sections. The section is created by specifying a set of consecutive
 	/// buffers that will form it. These buffers must have been created and
-	/// inserted in order with calls to NewBuffer().
+	/// inserted in order with calls to newBuffer().
 	///
 	/// \param name Name of the new section.
 	/// \param first First buffer contained in the section.
@@ -380,12 +380,12 @@ public:
 	///		properties can then be modified using calls to member
 	///		functions of class Section.
 	///
-	Section *NewSection(const std::string &name, Buffer *first, Buffer *last);
+	Section *newSection(const std::string &name, Buffer *first, Buffer *last);
 
 	/// Create a new segment, pointed to by an ELF program header. A
 	/// segment is created by specifying a set of consecutive buffers that
 	/// will form it. These buffers must have been created and inserted in
-	/// order with calls to NewBuffer().
+	/// order with calls to newBuffer().
 	///
 	/// \param name Name of the new segment.
 	/// \param first First buffer contained in the segment.
@@ -394,7 +394,7 @@ public:
 	///		properties can then be modified using calls to member
 	///		functions of class Segment.
 	///
-	Segment *NewSegment(const std::string &name, Buffer *first, Buffer *last);
+	Segment *newSegment(const std::string &name, Buffer *first, Buffer *last);
 
 	/// Create a new symbol table in the ELF file. A symbol table is
 	/// composed of two sections: the symbol section (\a symtab) containing
@@ -409,7 +409,7 @@ public:
 	///		symbols can be added to this symbol table using member
 	///		functions of class SymbolTable.
 	///
-	SymbolTable *NewSymbolTable(const std::string &symtab,
+	SymbolTable *newSymbolTable(const std::string &symtab,
 			const std::string &strtab);
 
 	/// Return buffer at position \a index from the buffer list
@@ -437,17 +437,17 @@ public:
 				symbol_tables[index].get() : nullptr;
 	}
 
-	/// Return the number of buffers created with calls to NewBuffer()
+	/// Return the number of buffers created with calls to newBuffer()
 	int getBufferCount() const { return buffers.size(); }
 
-	/// Return the number of sections created with calls to NewSection()
+	/// Return the number of sections created with calls to newSection()
 	int getSectionCount() const { return sections.size(); }
 
-	/// Return the number of segments created with calls to NewSegment()
+	/// Return the number of segments created with calls to newSegment()
 	int getSegmentCount() const { return segments.size(); }
 
 	/// Return the number of symbol tables created with calls to
-	/// NewSymbolTable()
+	/// newSymbolTable()
 	int getSymbolTableCount() const { return symbol_tables.size(); }
 
 	/// Produce a complete ELF binary into the output stream given in \a os

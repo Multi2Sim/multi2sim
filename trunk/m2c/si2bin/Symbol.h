@@ -41,13 +41,13 @@ public:
 			defined(false) { }
 
 	/* Getters */
-	const std::string &GetName() { return name; }
-	int GetValue() { return value; }
-	bool GetDefined() { return defined; }
+	const std::string &getName() { return name; }
+	int getValue() { return value; }
+	bool getDefined() { return defined; }
 
 	/* Setters */
-	void SetValue(int value) { this->value = value; }
-	void SetDefined(bool defined) { this->defined = defined; }
+	void setValue(int value) { this->value = value; }
+	void setDefined(bool defined) { this->defined = defined; }
 
 	/* Dump Function */
 	void Dump(std::ostream& os);

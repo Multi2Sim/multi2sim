@@ -30,7 +30,7 @@ void Symbol::Dump(std::ostream &os)
 	if (!this)
 		misc::fatal("Undefined symbol");
 
-	if (this->GetDefined())
+	if (this->getDefined())
 		os << "name='" << name << "', value=" << value;
 	else
 		os << "name='" << name << "', value=?";
