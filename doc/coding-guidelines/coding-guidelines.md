@@ -38,12 +38,14 @@ Indentation should be done with one tab character per level. Spaces should not b
 Space characters should not occur in the beginning of the line. Tab characters should not occur once the line has started.
 
 
+### 
+Case labels (and the default label) in a switch statement always have the same indentation level as the switch statement. The case labels should have one indent deeper than the switch statement itself.
 
 Line wrapping
 -------------
 
 ### 
-In most cases, lines should have at the most 80 characters. Each tab character in the beginning of the line counts as 8 characters toward the line length limit. The maximum line with can be exceptionally exceeded in the cases described below.
+In all cases, lines should have at the most 80 characters. Each tab character in the beginning of the line counts as 8 characters toward the line length limit. The maximum line with can be exceptionally exceeded in the cases described below.
 
 
 ### 
@@ -71,7 +73,6 @@ Conditions and expressions in `if` statements and `for`/`while` loops should be 
     if (x == 10)
     while (i < 5)
     for (i = 0; i < 10; i++)
-
 
 ### 
 The left parenthesis used in formal arguments of function declarations should not be preceded by a space. The left parenthesis used around actual arguments of a function call should not be preceded by a space either. In both cases, the parentheses should not be separated with spaces from their content.
@@ -236,12 +237,14 @@ An exception for the previous rule is an `if`-`else` structure where only one of
 
 
 
-Name spaces
+Namespaces
 -----------
 
 ### 
 All symbols should be declared within a C++ `namespace`, including functions, variables, constants, enumerations, and types. A `namespace` should embrace the entire content of every `.h` and `.cc` file.
 
+### 
+A source file must not define more than one namespace.
 
 ### 
 The open bracket after `namespace` should appear in a new line. The content of the `namespace` body is an exception of a code block where the content should not be indented. Since a name space spans entire files, this avoids having most of the code at one default level of indentation. The closing bracket should be followed by two spaces and a comment specifying what `namespace` is being closed.
@@ -258,6 +261,8 @@ The open bracket after `namespace` should appear in a new line. The content of t
 ### 
 Name spaces should always be accessed explicitly, avoiding `using namespace` statements in order to prevent name space conflicts. Name space `std` should also be always explicitly stated (`std::string`, `std::cout`, ...).
 
+###
+Keep (initialization) order: Namespace-level objects in different compilation units should never depend on each other for initialization, because their initialization order is undefined.
 
 
 Identifiers
@@ -280,7 +285,7 @@ The first word of a function name can start with a lower-case or upper-case char
 
 
 ### 
-All symbol names should be representative of their conceptual meaning, avoiding short generic symbols such as `x` or `var`. Exceptions are typical looping variables (`i`, `j`, ...).
+All symbol names should be representative of their conceptual meaning, avoiding short generic symbols such as `x` or `var`. Exceptions are typical looping variables (`i`, `j`, ...). If possible, loop variables should also be replaced with meaningful variables that reflects the functionality of the loop such as row_id and column_id instead of i and j within a matrix. .
 
 
 ### 
@@ -355,9 +360,18 @@ Type categories
 ---------------
 
 ### 
-All type names should omit their category when used. For example, when using a type defined as `enum ContextState` in a variable declaration, the type name should appear as `ContextState`, and not `enum ContextState`. The same rule applies for `union` types, `struct` types, and `class` types.
+All type names should omit their category when used. For example, when using a type defined as `enum ContextState` in a variable declaration, the type name should appear as `ContextState`, and not `enum ContextState`. The same rule applies for `union` types, `struct` types, and `class` types. The following code
 
+	enum someEnumoration favoriteClassCreate (favoriteClass *self, 
+			struct some_function_t *function); 
 
+should be replaced by
+	
+	someEumoration favoriteClassCreate (favoriteClass *self,
+			some_function_t *function);
+
+### 
+The use of structs in new code is also discouraged since these only contain public data. Any new code added to multi2sim should be declared as class. In interfaces with other languages or existing code, it may, however, be necessary to use structs.
 
 The *auto* type
 ---------------

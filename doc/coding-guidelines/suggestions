@@ -1,0 +1,172 @@
+
+Indenting
+---------
+
+### 
+Functions should present each input argument in one line following with a short
+comment for each input argument. This should be avoided in the declaration of the functions in header files and should be
+limited to function itself..
+
+int functionWithArguments (arg argument_1, // what is the argument and/or the reason
+			   arg argument_2, // what is the argument and/or the reason
+                           arg argument_3, // what is the argument and/or the reason
+                           arg argument_4  // what is the argument and/or the reason
+			  )
+{
+	<Body of the function>
+}
+
+###
+Statements with long arguments that possibly results into broken lines should have separated arguments with 
+structured indention
+
+While (( statement_1 == <possiblyLongStatement> ) &&
+       ( statement_2 == <anyPossibleFormatorLongStatementOfDifferentOrSameSize> ) ||
+       ( statement_3 == <anyPossibleFormat> ))
+{
+
+	<Body of the Statement>
+}
+
+### 
+Nesting of control  primitives such as if, else, while, for, switch etc.,  should not exceed four (or even three) level.
+
+if ( <someStatement> )
+{
+	while ( <someStatement> )
+	{
+		for ( <someStatement> )
+		{
+			if ( <lastControlStructure> )
+			{
+				
+			}
+		}
+	}
+}
+
+### 
+There should be an space separating the parenthesis from the statement
+This:
+if ( x == 1 ) 
+Instead of this:
+if (x == 1)
+
+# @Rafi I am hundred percent sure (!) this is the top reason I loved reading Qualcomm codes and not a fan of our coding structure
+
+### 
+else control flow primitive should be followed by a comment, describing its complimentary if-statement , in case the if-block is too large.
+if ( <someStatement> )
+{
+	< aVeryLargeBody >
+ 	.
+	.
+	.
+	.
+	.
+	.
+	.
+	.
+	.
+	.
+	.
+	.
+	.
+	.
+	.
+}
+else // if statement itself or description such as : if ( <someStatement> )
+{
+	<bodyOfelseStatemetn>
+}
+
+### 
+Control flow primitives should always be followed with a bracket, no matter how big they are :
+
+This:
+if ( x == 1 )
+{
+	<statement>
+}
+
+Instead of this:
+if ( x == 1 )
+	<statement>
+
+# @Rafi : I love this one and almost all other good documentations have it
+
+### 
+In an if-else statement, if-block statement should represent the most likely scenario, if any.
+
+x = 2 * 3;
+
+if ( x == 6)
+{
+	<bodyOfIfStatement>
+}
+else
+{
+	<bodyOfElseStatement>
+}
+
+### 
+In a sequence of if-else statements, there should always be a terminating else even if it is merely a dummy statement.
+Example 1:
+if ( <someStatement> )
+{
+	<bodyOfStatement>
+}
+else if ( <someStatement2> )
+{
+	<bodyofSecondStatement>
+}
+.
+.
+.
+else if ( <someStatement_x> )
+{
+	<BodyofXthStatement>
+}
+else
+{
+	// Dummy or empty.
+}
+
+Example 2:
+if ( <someStatement> )
+{
+	<bodyOfstatement>
+	
+	if ( <someStatement2> )
+	{
+        	<bodyofSecondStatement>
+	}
+	else if
+	{	
+		<SomeStatement>
+	}
+	else
+	{
+		// Something or Dummy
+	}
+}
+elsei // initial if statement for clarification
+{
+	// Something or Dummy	
+}
+
+Namespaces
+----------
+
+### 
+If you must have global, namespace-scope, or static class objects, be sure to initialize such objects carefully. The order of initialization of such objects in different compilation units is undefined, and special techniques are needed to handle it correctly. The order-of-initialization rules are subtle; prefer to avoid them, but if you do have to use them then know them well and use them with great care.
+
+
+Copyright Notice
+----------------
+
+@Rafi : Instead of email we should add the multi2sim website forum. We can add explicit tag(s) that the file belongs to right after the copyright notice. Lets keep it the way it is.  This way is more cleaner and professional.
+
+I saw something similar to the alternative you added to coding guidelines, in McPat, and I hated it. Every page had a different name and then another section that said modified by whom and stuff.
+
+I think we should either add you or remove any name in its wholesome and just add the multi2sim forum address. 
