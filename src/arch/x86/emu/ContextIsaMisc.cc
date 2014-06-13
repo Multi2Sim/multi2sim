@@ -1619,11 +1619,11 @@ void Context::ExecuteInst_prefetcht0_m8()
 	unsigned int eff_addr;
 
 	// Prefetching makes sense only in a detailed simulation
-	if (Emu::config.getSimKind() != comm::ArchSimDetailed)
+	if (Emu::getSimKind() != comm::ArchSimDetailed)
 		return;
 
 	// Not if prefetch is disabled
-	if (!Emu::config.getProcessPrefetchHints())
+	if (!Emu::getProcessPrefetchHints())
 		return;
 
 	eff_addr = getEffectiveAddress();

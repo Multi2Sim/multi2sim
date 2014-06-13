@@ -37,54 +37,38 @@ class Asm;
 class Context;
 
 
-/// x86 Emulator configuration
-class EmuConfig : public misc::CommandLineConfig
-{
-	// Debugger files
-	std::string call_debug_file;
-	std::string context_debug_file;
-	std::string cuda_debug_file;
-	std::string glut_debug_file;
-	std::string isa_debug_file;
-	std::string loader_debug_file;
-	std::string opencl_debug_file;
-	std::string opengl_debug_file;
-	std::string syscall_debug_file;
-
-	// Maximum number of instructions
-	long long max_instructions;
-
-	// Simulation kind
-	comm::ArchSimKind sim_kind;
-
-	// Process prefetch instructions
-	bool process_prefetch_hints;
-
-public:
-
-	/// Initialization of default command-line options
-	EmuConfig();
-
-	/// Register command-line options related with the x86 emulator
-	void Register(misc::CommandLine &command_line);
-
-	/// Process command-line options related with the x86 emualtor
-	void Process();
-
-	/// Return maximum number of instructions
-	long long getMaxInstructions() { return max_instructions; }
-
-	/// Return the type of simulation
-	comm::ArchSimKind getSimKind() { return sim_kind; }
-
-	/// Return whether to process prefetch hints
-	bool getProcessPrefetchHints() { return process_prefetch_hints; }
-};
-
-
 /// x86 emulator
 class Emu : public comm::Emu
 {
+	//
+	// Configuration options
+	//
+
+	// Debugger files
+	static std::string call_debug_file;
+	static std::string context_debug_file;
+	static std::string cuda_debug_file;
+	static std::string glut_debug_file;
+	static std::string isa_debug_file;
+	static std::string loader_debug_file;
+	static std::string opencl_debug_file;
+	static std::string opengl_debug_file;
+	static std::string syscall_debug_file;
+
+	// Maximum number of instructions
+	static long long max_instructions;
+
+	// Simulation kind
+	static comm::ArchSimKind sim_kind;
+
+	// Process prefetch instructions
+	static bool process_prefetch_hints;
+
+
+	//
+	// Class members
+	//
+
 	// Unique instance of singleton
 	static std::unique_ptr<Emu> instance;
 
@@ -215,6 +199,12 @@ public:
 	// Debuggers and configuration
 	//
 
+	/// Register command-line options
+	static void RegisterOptions();
+
+	/// Process command-line options
+	static void ProcessOptions();
+
 	/// Debugger for function calls
 	static misc::Debug call_debug;
 
@@ -242,8 +232,11 @@ public:
 	/// Debugger for system calls
 	static misc::Debug syscall_debug;
 
-	/// Configuration for x86 emulator
-	static EmuConfig config;
+	/// Return the simulation kind
+	static comm::ArchSimKind getSimKind() { return sim_kind; }
+
+	/// Return whether prefetch hints should be processed
+	static bool getProcessPrefetchHints() { return process_prefetch_hints; }
 };
 
 

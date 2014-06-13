@@ -26,35 +26,25 @@
 namespace MIPS
 {
 
-//class Context;
-
-
-class EmuConfig : public misc::CommandLineConfig
-{
-	// Maximum number of instructions
-	long long max_instructions;
-
-	// Simulation kind
-	comm::ArchSimKind sim_kind;
-
-	// Process prefetch instructions
-	bool process_prefetch_hints;
-
-public:
-
-	/// Initialization of default command-line options
-	EmuConfig();
-
-	/// Register command-line options related with the MIPS emulator
-	void Register(misc::CommandLine &command_line);
-
-	/// Return maximum number of instructions
-	long long getMaxInstructions() { return max_instructions; }
-};
-
 
 class Emu : public comm::Emu
 {
+	//
+	// Configuration options
+	//
+
+	// Maximum number of instructions
+	static long long max_instructions;
+
+	// Simulation kind
+	static comm::ArchSimKind sim_kind;
+
+
+
+	//
+	// Class members
+	//
+
 	// Unique instance of the singleton
 	static std::unique_ptr<Emu> instance;
 
@@ -86,9 +76,12 @@ class Emu : public comm::Emu
 	// for FIFO wakeups.
 	long long futex_sleep_count;
 
-public:
-	///Constructor and Desctructor
+	/// Private constructor for singleton
 	Emu();
+
+public:
+
+	/// Destructor
 	~Emu();
 
 	/// Signals a call to the scheduler Timing::Schedule() in the
@@ -128,15 +121,20 @@ public:
 	/// emulation, and \c false if all contexts finished execution.
 	bool Run();
 
+
+
 	//
 	// Debuggers and configuration
 	//
 
-	/// Configuration for MIPS emulator
-	static EmuConfig config;
-
 	/// Debugger for x86 contexts
 	static misc::Debug context_debug;
+
+	/// Register command-line options
+	static void RegisterOptions();
+
+	/// Process command-line options
+	static void ProcessOptions();
 };
 
 }

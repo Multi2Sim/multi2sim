@@ -33,6 +33,9 @@ namespace MIPS
 
 class Asm : public comm::Asm
 {
+	// File to disassemble
+	static std::string path;
+
 	// Unique instance of the singleton
 	static std::unique_ptr<Asm> instance;
 
@@ -40,6 +43,7 @@ class Asm : public comm::Asm
 	Asm();
 
 public:
+
 	// Decoding tables
 	InstInfo *dec_table;
 	InstInfo *dec_table_special;
@@ -81,11 +85,17 @@ public:
 	
 	/// Disassemble binary file given a path
 	void DisassembleBinary(const std::string &path);
+
+	/// Register command-line options
+	static void RegisterOptions();
+
+	/// Process command-line options
+	static void ProcessOptions();
 };
 
 
 
-} // namespace MIPS
+}  // namespace MIPS
 
 
 #endif  // MIPS_ASM_ASM_H
