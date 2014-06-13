@@ -35,5 +35,5 @@ libtiming_a_SOURCES = \
 	warp-inst-queue.h
 
 
-INCLUDES = @M2S_INCLUDES@
+AM_CPPFLAGS = @M2S_INCLUDES@
 

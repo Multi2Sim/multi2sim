@@ -22,4 +22,4 @@ libopencl_a_SOURCES = \
 	ABI.dat \
 	ABI.h
 
-INCLUDES = @M2S_INCLUDES@
+AM_CPPFLAGS = @M2S_INCLUDES@

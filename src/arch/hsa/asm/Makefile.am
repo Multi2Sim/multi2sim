@@ -33,5 +33,5 @@ libasm_a_SOURCES = \
 	SymbolModifier.cc \
 	SymbolModifier.h
 
-INCLUDES = @M2S_INCLUDES@
+AM_CPPFLAGS = @M2S_INCLUDES@
 

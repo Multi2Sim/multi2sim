@@ -24,7 +24,7 @@ __top_builddir__bin_m2c_SOURCES = \
 	Wrapper.h
 
 
-INCLUDES = @M2S_INCLUDES@
+AM_CPPFLAGS = @M2S_INCLUDES@
 
 LDADD = \
 	$(top_builddir)/m2c/amd/libamd.a \

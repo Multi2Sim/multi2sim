@@ -6,5 +6,5 @@ libdriver_a_SOURCES = \
 		Driver.dat \
 		DriverCall.cc
 
-INCLUDES = @M2S_INCLUDES@
+AM_CPPFLAGS = @M2S_INCLUDES@
 

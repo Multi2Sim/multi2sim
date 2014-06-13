@@ -37,4 +37,4 @@ libnetwork_a_SOURCES = \
 	visual.c \
 	visual.h 
 
-INCLUDES = @M2S_INCLUDES@
+AM_CPPFLAGS = @M2S_INCLUDES@

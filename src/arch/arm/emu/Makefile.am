@@ -29,5 +29,5 @@ libemu_a_SOURCES = \
 	signal.c \
 	signal.h
 
-INCLUDES = @M2S_INCLUDES@
+AM_CPPFLAGS = @M2S_INCLUDES@
 

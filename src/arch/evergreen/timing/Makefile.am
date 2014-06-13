@@ -37,5 +37,5 @@ libtiming_a_SOURCES = \
 	uop.c \
 	uop.h
 
-INCLUDES = @M2S_INCLUDES@
+AM_CPPFLAGS = @M2S_INCLUDES@
 

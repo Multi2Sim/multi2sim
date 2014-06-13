@@ -41,4 +41,4 @@ libemu_a_SOURCES = \
 	Signal.cc 
 
 	
-INCLUDES = @M2S_INCLUDES@
+AM_CPPFLAGS = @M2S_INCLUDES@

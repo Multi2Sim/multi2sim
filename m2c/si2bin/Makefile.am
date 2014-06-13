@@ -72,5 +72,5 @@ libsi2bin_a_SOURCES = \
 
 endif
 
-INCLUDES = @M2S_INCLUDES@
+AM_CPPFLAGS = @M2S_INCLUDES@
 

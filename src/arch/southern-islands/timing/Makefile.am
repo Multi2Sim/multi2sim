@@ -38,5 +38,5 @@ libtiming_a_SOURCES = \
 	wavefront-pool.h
 
 
-INCLUDES = @M2S_INCLUDES@
+AM_CPPFLAGS = @M2S_INCLUDES@
 
