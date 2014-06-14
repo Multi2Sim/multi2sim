@@ -32,13 +32,13 @@ namespace Common
 BasicBlock::BasicBlock(LeafNode *node)
 {
 	/* Check that 'node' doesn't have a basic block */
-	if (node->GetBasicBlock())
+	if (node->getBasicBlock())
 		fatal("%s: node '%s' already contains a basic block",
 				__FUNCTION__, node->getName().c_str());
 
 	/* Initialize */
 	this->node = node;
-	node->SetBasicBlock(this);
+	node->setBasicBlock(this);
 }
 
 

@@ -60,9 +60,9 @@ public:
 	}
 
 	/* Getters */
-	Common::LeafNode *GetSrcNode() { return src_node; }
-	llvm::Value *GetSrcValue() { return src_value; }
-	si2bin::Arg *GetDestValue() { return dest_value; }
+	Common::LeafNode *getSrcNode() { return src_node; }
+	llvm::Value *getSrcValue() { return src_value; }
+	si2bin::Arg *getDestValue() { return dest_value; }
 };
 
 

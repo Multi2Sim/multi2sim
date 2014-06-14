@@ -25,12 +25,12 @@ using namespace Common;
 
 void CommonTreeConfigSetPath(char *path)
 {
-	Tree::config.SetPath(path);
+	Tree::config.setPath(path);
 }
 
 const char *CommonTreeConfigGetPath()
 {
-	return Tree::config.GetPath().c_str();
+	return Tree::config.getPath().c_str();
 }
 
 void CommonTreeDebugSetPath(char *path)

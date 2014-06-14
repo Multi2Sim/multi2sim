@@ -56,19 +56,19 @@ FunctionArg::FunctionArg(llvm::Argument *llvm_arg) :
 	if (llvm_type->isPointerTy())
 	{
 		llvm_type = llvm_type->getPointerElementType();
-		arg.reset(new SI::ArgPointer(name, GetDataType(llvm_type),
-				GetNumElements(llvm_type), 0, 0, SI::ArgScopeUAV, 0, 0,
+		arg.reset(new SI::ArgPointer(name, getDataType(llvm_type),
+				getNumElements(llvm_type), 0, 0, SI::ArgScopeUAV, 0, 0,
 				SI::ArgAccessTypeReadWrite));
 	}
 	else
 	{
-		arg.reset(new SI::ArgValue(name, GetDataType(llvm_type),
-				GetNumElements(llvm_type), 0, 0));
+		arg.reset(new SI::ArgValue(name, getDataType(llvm_type),
+				getNumElements(llvm_type), 0, 0));
 	}
 }
 
 
-SI::ArgDataType FunctionArg::GetDataType(llvm::Type *llvm_type)
+SI::ArgDataType FunctionArg::getDataType(llvm::Type *llvm_type)
 {
 	/* Get vector element type */
 	if (llvm_type->isVectorTy())
@@ -106,7 +106,7 @@ SI::ArgDataType FunctionArg::GetDataType(llvm::Type *llvm_type)
 }
 
 
-int FunctionArg::GetNumElements(llvm::Type *llvm_type)
+int FunctionArg::getNumElements(llvm::Type *llvm_type)
 {
 	if (llvm_type->isVectorTy())
 		return llvm_type->getVectorNumElements();
@@ -148,7 +148,7 @@ void Function::AddUAV(FunctionUAV *uav)
 
 	/* Get basic block or create it */
 	BasicBlock *basic_block = dynamic_cast<BasicBlock *>
-			(uavs_node->GetBasicBlock());
+			(uavs_node->getBasicBlock());
 	if (!basic_block)
 		basic_block = new llvm2si::BasicBlock(this, uavs_node);
 
@@ -178,7 +178,7 @@ int Function::AddArg(FunctionArg *arg, int num_elem, int offset)
 
 	/* Get basic block, or create it */
 	BasicBlock *basic_block = dynamic_cast<BasicBlock *>
-			(args_node->GetBasicBlock());
+			(args_node->getBasicBlock());
 	if (!basic_block)
 		basic_block = new BasicBlock(this, args_node);
 
@@ -288,7 +288,7 @@ int Function::AddArg(FunctionArg *arg, int num_elem, int offset)
 
 		/* Store UAV index in argument and symbol */
 		assert(symbol);
-		symbol->SetUAVIndex(uav->index);
+		symbol->setUAVIndex(uav->index);
 		arg->uav_index = uav->index;
 	}
 
@@ -338,7 +338,7 @@ Function::Function(llvm::Function *llvm_function)
 	tree.AddNode(header_node);
 	tree.AddNode(uavs_node);
 	tree.AddNode(args_node);
-	tree.SetEntryNode(header_node);
+	tree.setEntryNode(header_node);
 
 	/* Add all nodes from the LLVM control flow graph */
 	body_node = tree.AddLlvmCFG(llvm_function);
@@ -375,7 +375,7 @@ void Function::Dump(std::ostream &os)
 
 		/* Get node's basic block */
 		BasicBlock *basic_block = dynamic_cast<BasicBlock *>
-				(leaf_node->GetBasicBlock());
+				(leaf_node->getBasicBlock());
 		if (!basic_block)
 			continue;
 
@@ -562,13 +562,13 @@ void Function::EmitBody()
 			continue;
 
 		/* Skip nodes with no LLVM code to translate */
-		if (!leaf_node->GetLlvmBasicBlock())
+		if (!leaf_node->getLlvmBasicBlock())
 			continue;
 
 		/* Create basic block and emit the code */
-		assert(!leaf_node->GetBasicBlock());
+		assert(!leaf_node->getBasicBlock());
 		BasicBlock *basic_block = new BasicBlock(this, leaf_node);
-		basic_block->Emit(leaf_node->GetLlvmBasicBlock());
+		basic_block->Emit(leaf_node->getLlvmBasicBlock());
 	}
 }
 
@@ -581,17 +581,17 @@ void Function::EmitPhi()
 		Phi *phi = phi_list.front().get();
 
 		/* Get basic block */
-		Common::LeafNode *node = phi->GetSrcNode();
-		BasicBlock *basic_block = misc::cast<BasicBlock *>(node->GetBasicBlock());
+		Common::LeafNode *node = phi->getSrcNode();
+		BasicBlock *basic_block = misc::cast<BasicBlock *>(node->getBasicBlock());
 
 		/* Get source value */
-		Arg *src_value = TranslateValue(phi->GetSrcValue());
+		Arg *src_value = TranslateValue(phi->getSrcValue());
 
 		/* Copy source value to destination value.
 		 * s_mov_b32 <dest_value>, <src_value>
 		 */
 		Inst *inst = new Inst(SI::INST_V_MOV_B32,
-				phi->GetDestValue(),
+				phi->getDestValue(),
 				src_value);
 		basic_block->AddInst(inst);
 
@@ -605,29 +605,29 @@ void Function::EmitIfThen(Common::AbstractNode *node)
 {
 	/* Identify the two nodes */
 	assert(node);
-	assert(node->GetRegion() == Common::AbstractNodeIfThen);
-	assert(node->GetChildList().size() == 2);
-	Common::Node *if_node = node->GetChildList().front();
-	Common::Node *then_node = node->GetChildList().back();
+	assert(node->getRegion() == Common::AbstractNodeIfThen);
+	assert(node->getChildList().size() == 2);
+	Common::Node *if_node = node->getChildList().front();
+	Common::Node *then_node = node->getChildList().back();
 
 	/* Make sure roles match */
 	assert(if_node->getRole() == Common::NodeRoleIf);
 	assert(then_node->getRole() == Common::NodeRoleThen);
 
 	/* Get basic blocks. 'If' node should be a leaf. */
-	then_node = then_node->GetLastLeaf();
+	then_node = then_node->getLastLeaf();
 	assert(if_node->getKind() == Common::NodeKindLeaf);
 	assert(then_node->getKind() == Common::NodeKindLeaf);
 	Common::LeafNode *if_leaf_node = misc::cast<Common::LeafNode *>(if_node);
 	Common::LeafNode *then_leaf_node = misc::cast<Common::LeafNode *>(then_node);
-	BasicBlock *if_basic_block = misc::cast<BasicBlock *>(if_leaf_node->GetBasicBlock());
-	BasicBlock *then_basic_block = misc::cast<BasicBlock *>(then_leaf_node->GetBasicBlock());
+	BasicBlock *if_basic_block = misc::cast<BasicBlock *>(if_leaf_node->getBasicBlock());
+	BasicBlock *then_basic_block = misc::cast<BasicBlock *>(then_leaf_node->getBasicBlock());
 
 
 	/*** Code for 'If' block ***/
 
 	/* Get 'If' basic block terminator */
-	llvm::BasicBlock *llvm_basic_block = if_leaf_node->GetLlvmBasicBlock();
+	llvm::BasicBlock *llvm_basic_block = if_leaf_node->getLlvmBasicBlock();
 	llvm::TerminatorInst *llvm_inst = llvm_basic_block->getTerminator();
 	assert(llvm_inst);
 	assert(llvm_inst->getOpcode() == llvm::Instruction::Br);
@@ -670,13 +670,13 @@ void Function::EmitIfThenElse(Common::AbstractNode *node)
 {
 	/* Identify the three nodes */
 	assert(node);
-	assert(node->GetRegion() == Common::AbstractNodeIfThenElse);
-	assert(node->GetChildList().size() == 3);
-	auto it = node->GetChildList().begin();
+	assert(node->getRegion() == Common::AbstractNodeIfThenElse);
+	assert(node->getChildList().size() == 3);
+	auto it = node->getChildList().begin();
 	Common::Node *if_node = *(it++);
 	Common::Node *then_node = *(it++);
 	Common::Node *else_node = *(it++);
-	assert(it == node->GetChildList().end());
+	assert(it == node->getChildList().end());
 
 	/* Make sure roles match */
 	assert(if_node->getRole() == Common::NodeRoleIf);
@@ -684,23 +684,23 @@ void Function::EmitIfThenElse(Common::AbstractNode *node)
 	assert(else_node->getRole() == Common::NodeRoleElse);
 
 	/* Get basic blocks. 'If' node should be a leaf. */
-	then_node = then_node->GetLastLeaf();
-	else_node = else_node->GetLastLeaf();
+	then_node = then_node->getLastLeaf();
+	else_node = else_node->getLastLeaf();
 	assert(if_node->getKind() == Common::NodeKindLeaf);
 	assert(then_node->getKind() == Common::NodeKindLeaf);
 	assert(else_node->getKind() == Common::NodeKindLeaf);
 	Common::LeafNode *if_leaf_node = dynamic_cast<Common::LeafNode *>(if_node);
 	Common::LeafNode *then_leaf_node = dynamic_cast<Common::LeafNode *>(then_node);
 	Common::LeafNode *else_leaf_node = dynamic_cast<Common::LeafNode *>(else_node);
-	BasicBlock *if_basic_block = dynamic_cast<BasicBlock *>(if_leaf_node->GetBasicBlock());
-	BasicBlock *then_basic_block = dynamic_cast<BasicBlock *>(then_leaf_node->GetBasicBlock());
-	BasicBlock *else_basic_block = dynamic_cast<BasicBlock *>(else_leaf_node->GetBasicBlock());
+	BasicBlock *if_basic_block = dynamic_cast<BasicBlock *>(if_leaf_node->getBasicBlock());
+	BasicBlock *then_basic_block = dynamic_cast<BasicBlock *>(then_leaf_node->getBasicBlock());
+	BasicBlock *else_basic_block = dynamic_cast<BasicBlock *>(else_leaf_node->getBasicBlock());
 
 
 	/*** Code for 'If' block ***/
 
 	/* Get 'If' basic block terminator */
-	llvm::BasicBlock *llvm_basic_block = if_leaf_node->GetLlvmBasicBlock();
+	llvm::BasicBlock *llvm_basic_block = if_leaf_node->getLlvmBasicBlock();
 	llvm::TerminatorInst *llvm_inst = llvm_basic_block->getTerminator();
 	assert(llvm_inst);
 	assert(llvm_inst->getOpcode() == llvm::Instruction::Br);
@@ -755,14 +755,14 @@ void Function::EmitWhileLoop(Common::AbstractNode *node)
 {
 	/* Identify the two nodes */
 	assert(node);
-	assert(node->GetRegion() == Common::AbstractNodeWhileLoop);
-	assert(node->GetChildList().size() == 4);
-	auto it = node->GetChildList().begin();
+	assert(node->getRegion() == Common::AbstractNodeWhileLoop);
+	assert(node->getChildList().size() == 4);
+	auto it = node->getChildList().begin();
 	Common::Node *pre_node = *(it++);
 	Common::Node *head_node = *(it++);
 	Common::Node *tail_node = *(it++);
 	Common::Node *exit_node = *(it++);
-	assert(it == node->GetChildList().end());
+	assert(it == node->getChildList().end());
 
 	/* Make sure roles match */
 	assert(pre_node->getRole() == Common::NodeRolePre);
@@ -779,7 +779,7 @@ void Function::EmitWhileLoop(Common::AbstractNode *node)
 	 * blocks have been inserted during the structural analysis, so they
 	 * contain no basic block yet.
 	 */
-	tail_node = tail_node->GetLastLeaf();
+	tail_node = tail_node->getLastLeaf();
 	assert(pre_node->getKind() == Common::NodeKindLeaf);
 	assert(head_node->getKind() == Common::NodeKindLeaf);
 	assert(tail_node->getKind() == Common::NodeKindLeaf);
@@ -788,10 +788,10 @@ void Function::EmitWhileLoop(Common::AbstractNode *node)
 	Common::LeafNode *head_leaf_node = misc::cast<Common::LeafNode *>(head_node);
 	Common::LeafNode *tail_leaf_node = misc::cast<Common::LeafNode *>(tail_node);
 	Common::LeafNode *exit_leaf_node = misc::cast<Common::LeafNode *>(exit_node);
-	assert(!pre_leaf_node->GetBasicBlock());
-	BasicBlock *head_basic_block = misc::cast<BasicBlock *>(head_leaf_node->GetBasicBlock());
-	BasicBlock *tail_basic_block = misc::cast<BasicBlock *>(tail_leaf_node->GetBasicBlock());
-	assert(!exit_leaf_node->GetBasicBlock());
+	assert(!pre_leaf_node->getBasicBlock());
+	BasicBlock *head_basic_block = misc::cast<BasicBlock *>(head_leaf_node->getBasicBlock());
+	BasicBlock *tail_basic_block = misc::cast<BasicBlock *>(tail_leaf_node->getBasicBlock());
+	assert(!exit_leaf_node->getBasicBlock());
 
 	/* Create pre-header and exit basic blocks */
 	BasicBlock *pre_basic_block = new BasicBlock(this, pre_leaf_node);
@@ -836,7 +836,7 @@ void Function::EmitWhileLoop(Common::AbstractNode *node)
 	/*** Code for head block ***/
 
 	/* Get head block terminator */
-	llvm::BasicBlock *llvm_basic_block = head_leaf_node->GetLlvmBasicBlock();
+	llvm::BasicBlock *llvm_basic_block = head_leaf_node->getLlvmBasicBlock();
 	llvm::TerminatorInst *llvm_inst = llvm_basic_block->getTerminator();
 	assert(llvm_inst);
 	assert(llvm_inst->getOpcode() == llvm::Instruction::Br);
@@ -894,7 +894,7 @@ void Function::EmitControlFlow()
 			continue;
 
 		/* Check control structure */
-		switch (abs_node->GetRegion())
+		switch (abs_node->getRegion())
 		{
 
 		case Common::AbstractNodeBlock:
@@ -920,7 +920,7 @@ void Function::EmitControlFlow()
 		default:
 			misc::panic("%s: region %s not supported", __FUNCTION__,
 					Common::abstract_node_region_map.MapValue(
-					abs_node->GetRegion()));
+					abs_node->getRegion()));
 		}
 	}
 }
@@ -944,7 +944,7 @@ void Function::LiveRegisterAnalysis() {
 		if (!dynamic_cast<Common::LeafNode*>(node))
 			continue;
 
-		basic_block = dynamic_cast<llvm2si::BasicBlock*>((dynamic_cast<Common::LeafNode*>(node)->GetBasicBlock()));
+		basic_block = dynamic_cast<llvm2si::BasicBlock*>((dynamic_cast<Common::LeafNode*>(node)->getBasicBlock()));
 		if (!basic_block)
 			continue;
 
@@ -969,11 +969,11 @@ void Function::LiveRegisterAnalysis() {
 					if (!argReg)
 						continue;
 
-					if (arg->getToken()->GetDirection() == si2bin::TokenDirectionDst)
+					if (arg->getToken()->getDirection() == si2bin::TokenDirectionDst)
 					{
 						basic_block->def->Set(argReg->getId(), true);
 					}
-					else if (arg->getToken()->GetDirection() == si2bin::TokenDirectionSrc)
+					else if (arg->getToken()->getDirection() == si2bin::TokenDirectionSrc)
 					{
 						/* If register wasn't defined in the same basic block */
 						if (basic_block->def->Test(argReg->getId()) != true)
@@ -986,7 +986,7 @@ void Function::LiveRegisterAnalysis() {
 		}
 
 		/* Adds basic block into worklist if it is a exit node */
-		llvm::BasicBlock *llvm_basic_block = (dynamic_cast<Common::LeafNode*>(node))->GetLlvmBasicBlock();
+		llvm::BasicBlock *llvm_basic_block = (dynamic_cast<Common::LeafNode*>(node))->getLlvmBasicBlock();
 		llvm::TerminatorInst *llvm_inst = llvm_basic_block->getTerminator();
 		assert(llvm_inst);
 		if(llvm_inst->getOpcode() == llvm::Instruction::Ret)
@@ -1002,7 +1002,7 @@ void Function::LiveRegisterAnalysis() {
 
 		// Get predecessors
 		// TODO is this pred list correct??? I dont think it contains headers
-		for (auto &node : basic_block->GetNode()->pred_list)
+		for (auto &node : basic_block->getNode()->pred_list)
 		{
 			llvm2si::BasicBlock *pred_basic_block;
 
@@ -1014,7 +1014,7 @@ void Function::LiveRegisterAnalysis() {
 			if (!dynamic_cast<Common::LeafNode*>(node))
 				continue;
 			//
-			pred_basic_block = dynamic_cast<llvm2si::BasicBlock*>((dynamic_cast<Common::LeafNode*>(node)->GetBasicBlock()));
+			pred_basic_block = dynamic_cast<llvm2si::BasicBlock*>((dynamic_cast<Common::LeafNode*>(node)->getBasicBlock()));
 			if (!basic_block)
 				continue;
 
@@ -1047,7 +1047,7 @@ void Function::LiveRegisterAnalysis() {
 		if (!dynamic_cast<Common::LeafNode*>(node))
 			continue;
 
-		basic_block = dynamic_cast<llvm2si::BasicBlock*>((dynamic_cast<Common::LeafNode*>(node)->GetBasicBlock()));
+		basic_block = dynamic_cast<llvm2si::BasicBlock*>((dynamic_cast<Common::LeafNode*>(node)->getBasicBlock()));
 		if (!basic_block)
 			continue;
 
@@ -1069,7 +1069,7 @@ void Function::LiveRegisterAnalysis() {
 		if (!dynamic_cast<Common::LeafNode*>(node))
 			continue;
 
-		basic_block = dynamic_cast<llvm2si::BasicBlock*>((dynamic_cast<Common::LeafNode*>(node)->GetBasicBlock()));
+		basic_block = dynamic_cast<llvm2si::BasicBlock*>((dynamic_cast<Common::LeafNode*>(node)->getBasicBlock()));
 		if (!basic_block)
 			continue;
 
@@ -1112,7 +1112,7 @@ void Function::LiveRegisterAllocation() {
 		if (!dynamic_cast<Common::LeafNode*>(node))
 			continue;
 
-		basic_block = dynamic_cast<llvm2si::BasicBlock*>((dynamic_cast<Common::LeafNode*>(node)->GetBasicBlock()));
+		basic_block = dynamic_cast<llvm2si::BasicBlock*>((dynamic_cast<Common::LeafNode*>(node)->getBasicBlock()));
 		if (!basic_block)
 			continue;
 
@@ -1122,7 +1122,7 @@ void Function::LiveRegisterAllocation() {
 				if (inst->out->Test(i)) {
 					for (unsigned int j = i; j < inst->out->getSize(); j++) {
 						if (inst->out->Test(j))
-							interferenceGraph.Set(i, j, true);
+							interferenceGraph.set(i, j, true);
 					}
 				}
 			}
@@ -1134,11 +1134,11 @@ void Function::LiveRegisterAllocation() {
 	std::vector<int> registerMap;
 	int n = 256; // Should be set to number of registers available
 
-	for (int i = 0; i < interferenceGraph.GetSize(); i++) {
+	for (int i = 0; i < interferenceGraph.getSize(); i++) {
 		misc::Bitmap b(n); // clear
 
 		for (int j = 0; j < i; j++) {
-			if (interferenceGraph.Get(i,j)) {
+			if (interferenceGraph.get(i,j)) {
 				b.Set(j, true);
 			}
 		}
@@ -1172,7 +1172,7 @@ void Function::LiveRegisterAnalysisBitmapDump() {
 		if (!dynamic_cast<Common::LeafNode*>(node))
 			continue;
 
-		llvm2si::BasicBlock *basic_block = dynamic_cast<llvm2si::BasicBlock*>((dynamic_cast<Common::LeafNode*>(node)->GetBasicBlock()));
+		llvm2si::BasicBlock *basic_block = dynamic_cast<llvm2si::BasicBlock*>((dynamic_cast<Common::LeafNode*>(node)->getBasicBlock()));
 		if (!basic_block)
 			continue;
 

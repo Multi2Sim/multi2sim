@@ -170,3 +170,6 @@ Copyright Notice
 I saw something similar to the alternative you added to coding guidelines, in McPat, and I hated it. Every page had a different name and then another section that said modified by whom and stuff.
 
 I think we should either add you or remove any name in its wholesome and just add the multi2sim forum address. 
+
+### 
+Access functions (accessors) that simply return the value of a member variable are inline.

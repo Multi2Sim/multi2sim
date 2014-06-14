@@ -24,11 +24,11 @@ public:
 	InterferenceGraph(int size);
 
 	/* Return the value of the interference graph at position given. */
-	int Get(int element1, int element2);
-	int GetSize() { return size; }
+	int get(int element1, int element2);
+	int getSize() { return size; }
 
 	/* Set the value of the interference graph at the position */
-	void Set(int element1, int element2, bool value);
+	void set(int element1, int element2, bool value);
 
 };
 

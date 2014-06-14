@@ -50,13 +50,13 @@ class TreeConfig
 
 	/* Return a created control tree given its name, or null if the tree
 	 * does not exist. */
-	Tree *GetTree(const std::string &name);
+	Tree *getTree(const std::string &name);
 
 	/* Process command read from the configuration file. */
 	void ProcessCommand(const std::string &command);
 public:
-	const std::string &GetPath() { return path; }
-	void SetPath(const std::string &path);
+	const std::string &getPath() { return path; }
+	void setPath(const std::string &path);
 
 	void Run();
 };
@@ -137,7 +137,7 @@ class Tree
 
 	/* Given a list of nodes in a string format, return the nodes in the
 	 * linked list. */
-	void GetNodeList(std::list<Node *> &list, const std::string &list_str);
+	void getNodeList(std::list<Node *> &list, const std::string &list_str);
 
 public:
 
@@ -148,11 +148,11 @@ public:
 	Tree(misc::IniFile &f, const std::string &name) { Read(f, name); }
 
 	/* Getters */
-	const std::string &GetName() { return name; }
+	const std::string &getName() { return name; }
 	bool IsStructuralAnalysisDone() { return structural_analysis_done; }
 
 	/* Setters */
-	void SetEntryNode(Node *node) { assert(node->InList(node_list));
+	void setEntryNode(Node *node) { assert(node->InList(node_list));
 			entry_node = node; }
 
 	/* Dump */
@@ -173,17 +173,17 @@ public:
 	LeafNode *AddLlvmCFG(llvm::Function *llvm_function);
 
 	/* Search node by name. Return null if node not found. */
-	Node *GetNode(const std::string &name);
+	Node *getNode(const std::string &name);
 
 	/* Search leaf node by name and return null if the node is not found,
 	 * or if a node with the same name is not a leaf node. */
-	LeafNode *GetLeafNode(const std::string &name) {
-			return dynamic_cast<LeafNode *>(GetNode(name)); }
+	LeafNode *getLeafNode(const std::string &name) {
+			return dynamic_cast<LeafNode *>(getNode(name)); }
 
 	/* Search abstract node by name and return null if the node is not
 	 * found or if a node with the same name is not an abstract node. */
-	AbstractNode *GetAbstractNode(const std::string &name) {
-			return dynamic_cast<AbstractNode *>(GetNode(name)); }
+	AbstractNode *getAbstractNode(const std::string &name) {
+			return dynamic_cast<AbstractNode *>(getNode(name)); }
 
 	/* Remove all nodes from tree and reset its entry. */
 	void Clear();

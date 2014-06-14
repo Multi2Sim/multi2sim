@@ -38,7 +38,7 @@ public:
 	virtual ~BasicBlock() { }
 
 	/* Getters */
-	LeafNode *GetNode() { return node; }
+	LeafNode *getNode() { return node; }
 };
 
 

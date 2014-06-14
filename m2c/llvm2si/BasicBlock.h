@@ -53,11 +53,11 @@ class BasicBlock : public Common::BasicBlock
 	std::string comment;
 
 	/* Return the size in bytes of an LLVM type */
-	static int GetLlvmTypeSize(llvm::Type *llvm_type);
+	static int getLlvmTypeSize(llvm::Type *llvm_type);
 
 	/* Return the size in bytes of the LLVM type pointed to by an
 	 * LLVM pointer. */
-	static int GetPointedLlvmTypeSize(llvm::Type *llvm_type);
+	static int getPointedLlvmTypeSize(llvm::Type *llvm_type);
 
 	/* Emit instructions */
 	void EmitAdd(llvm::BinaryOperator *llvm_inst);

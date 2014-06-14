@@ -40,7 +40,7 @@ namespace Common
  * Class 'TreeConfig'
  */
 
-Tree *TreeConfig::GetTree(const std::string &name)
+Tree *TreeConfig::getTree(const std::string &name)
 {
 	/* Find tree */
 	for (auto &tree : tree_list)
@@ -85,7 +85,7 @@ void TreeConfig::ProcessCommand(const std::string &s)
 		std::string tree_name = tokens[2];
 
 		/* Get control tree */
-		Tree *tree = GetTree(tree_name);
+		Tree *tree = getTree(tree_name);
 		if (!tree)
 			misc::fatal("%s: %s: invalid control tree",
 					__FUNCTION__, tree_name.c_str());
@@ -105,7 +105,7 @@ void TreeConfig::ProcessCommand(const std::string &s)
 		std::string tree_name2 = tokens[2];
 
 		/* Get control tree */
-		Tree *tree = GetTree(tree_name);
+		Tree *tree = getTree(tree_name);
 		if (!tree)
 			misc::fatal("%s: %s: invalid control tree",
 					__FUNCTION__, tree_name.c_str());
@@ -123,13 +123,13 @@ void TreeConfig::ProcessCommand(const std::string &s)
 		std::string tree_name2 = tokens[2];
 
 		/* Get first control tree */
-		Tree *tree1 = GetTree(tree_name1);
+		Tree *tree1 = getTree(tree_name1);
 		if (!tree1)
 			misc::fatal("%s: %s: invalid control tree",
 					__FUNCTION__, tree_name1.c_str());
 
 		/* Get second control tree */
-		Tree *tree2 = GetTree(tree_name2);
+		Tree *tree2 = getTree(tree_name2);
 		if (!tree2)
 			misc::fatal("%s: %s: invalid control tree",
 					__FUNCTION__, tree_name2.c_str());
@@ -146,7 +146,7 @@ void TreeConfig::ProcessCommand(const std::string &s)
 		std::string tree_name = tokens[1];
 
 		/* Get control tree */
-		Tree *tree = GetTree(tree_name);
+		Tree *tree = getTree(tree_name);
 		if (!tree)
 			misc::fatal("%s: %s: invalid control tree",
 					__FUNCTION__, tree_name.c_str());
@@ -160,7 +160,7 @@ void TreeConfig::ProcessCommand(const std::string &s)
 }
 
 
-void TreeConfig::SetPath(const std::string &path)
+void TreeConfig::setPath(const std::string &path)
 {
 	this->path = path;
 	ini_file.reset(new misc::IniFile(path));
@@ -1012,14 +1012,14 @@ LeafNode *Tree::AddLlvmCFG(llvm::Function *llvm_function)
 }
 
 
-Node *Tree::GetNode(const std::string &name)
+Node *Tree::getNode(const std::string &name)
 {
 	auto it = node_table.find(name);
 	return it == node_table.end() ? nullptr : it->second;
 }
 
 
-void Tree::GetNodeList(std::list<Node *> &list, const std::string &list_str)
+void Tree::getNodeList(std::list<Node *> &list, const std::string &list_str)
 {
 	/* Clear list */
 	list.clear();
@@ -1029,7 +1029,7 @@ void Tree::GetNodeList(std::list<Node *> &list, const std::string &list_str)
 	misc::StringTokenize(list_str, tokens);
 	for (auto &token : tokens)
 	{
-		Node *node = GetNode(token);
+		Node *node = getNode(token);
 		if (!node)
 			misc::fatal("%s: invalid node name", token.c_str());
 		list.push_back(node);
@@ -1164,7 +1164,7 @@ void Tree::Read(misc::IniFile &f, const std::string &name)
 		/* Successors */
 		std::string list_str = f.ReadString(section, "Succ");
 		std::list<Node *> list;
-		GetNodeList(list, list_str);
+		getNodeList(list, list_str);
 		for (auto &tmp_node : list)
 		{
 			if (tmp_node->InList(node->succ_list))
@@ -1179,7 +1179,7 @@ void Tree::Read(misc::IniFile &f, const std::string &name)
 		{
 			/* Children */
 			list_str = f.ReadString(section, "Child");
-			GetNodeList(list, list_str);
+			getNodeList(list, list_str);
 			for (auto &tmp_node : list)
 			{
 				tmp_node->parent = node.get();
@@ -1196,7 +1196,7 @@ void Tree::Read(misc::IniFile &f, const std::string &name)
 	std::string node_name = f.ReadString(section, "Entry");
 	if (node_name.empty())
 		misc::fatal("%s: %s: no entry node", __FUNCTION__, name.c_str());
-	entry_node = GetNode(node_name);
+	entry_node = getNode(node_name);
 	if (!entry_node)
 		misc::fatal("%s: %s: invalid node name", __FUNCTION__,
 				node_name.c_str());
@@ -1217,14 +1217,14 @@ void Tree::Compare(Tree *tree2)
 	
 	/* Check that all nodes in tree 1 are in tree 2 */
 	for (auto &node : node_list)
-		if (!tree2->GetNode(node->name))
+		if (!tree2->getNode(node->name))
 			misc::fatal("node '%s.%s' not present in tree '%s'",
 				name.c_str(), node->name.c_str(),
 				tree2->name.c_str());
 
 	/* Check that all nodes in tree 2 are in tree 1 */
 	for (auto &node : tree2->node_list)
-		if (!GetNode(node->name))
+		if (!getNode(node->name))
 			misc::fatal("node '%s.%s' not present in tree '%s'",
 				tree2->name.c_str(), node->name.c_str(),
 				name.c_str());
@@ -1232,7 +1232,7 @@ void Tree::Compare(Tree *tree2)
 	/* Compare all nodes */
 	for (auto &node : node_list)
 	{
-		Node *node2 = tree2->GetNode(node->name);
+		Node *node2 = tree2->getNode(node->name);
 		assert(node2);
 		node->Compare(node2);
 	}
