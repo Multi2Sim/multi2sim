@@ -32,7 +32,7 @@ struct opencl_hsa_device_t
 
 
 
-struct opencl_hsa_device_t *opencl_si_device_create(struct opencl_device_t *parent);
+struct opencl_hsa_device_t *opencl_hsa_device_create(struct opencl_device_t *parent);
 void opencl_hsa_device_free(struct opencl_hsa_device_t *device);
 int opencl_hsa_device_preferred_workgroups(struct opencl_hsa_device_t *device);
 void *opencl_hsa_device_mem_alloc(struct opencl_hsa_device_t *device,

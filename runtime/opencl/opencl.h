@@ -248,8 +248,6 @@ typedef void (*opencl_arch_ndrange_free_func_t)(void *ndrange);
 /* Execution in native/simulated mode */
 extern int opencl_native_mode;
 
-/* Device handlers */
-extern int m2s_active_dev;
 
 
 /*

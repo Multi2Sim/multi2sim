@@ -36,7 +36,7 @@ namespace SI
 class ProgramGL
 {
 	unsigned id;
-	Driver::OpenGLSIDriver *opengl_driver;
+	::Driver::OpenGLSIDriver *opengl_driver;
 
 	std::unique_ptr<OpenGLSiProgramBinary> program_bin;
 	std::vector<std::unique_ptr<Shader>> shaders;

@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <fcntl.h>
 #include <limits.h>
 #include <sys/ioctl.h>
 
@@ -192,8 +193,17 @@ struct opencl_si_device_t *opencl_si_device_create(struct opencl_device_t *paren
 		(opencl_arch_program_valid_binary_func_t)
 		opencl_si_program_valid_binary;
 
+	/* Debug */
 	opencl_debug("[%s] opencl_si_device_t device = %p", __FUNCTION__, 
 		device);
+	
+	// Open communication channel with driver
+	parent->fd = open("/dev/southern-islands", O_RDWR);
+	if (parent->fd < 0)
+		fatal("Cannot communicate with the Southern Islands driver\n\n"
+			"This error could be due to an incompatibility between the\n"
+			"Multi2Sim OpenCL driver version and the version of the simulator.\n"
+			"Please download the latest versions and retry.");
 
 	/* Return */
 	return device;
@@ -212,7 +222,7 @@ void *opencl_si_device_mem_alloc(struct opencl_si_device_t *device,
 	void *device_ptr;
 
 	/* Request device memory to driver */
-	device_ptr = (void *) ioctl(m2s_active_dev, SIMemAlloc, size);
+	device_ptr = (void *) ioctl(device->parent->fd, SIMemAlloc, size);
 
 	return device_ptr;
 }
@@ -222,7 +232,7 @@ void opencl_si_device_mem_free(struct opencl_si_device_t *device,
 		void *ptr)
 {
 	/* Invoke 'mem_free' ABI call */
-	ioctl(m2s_active_dev, SIMemFree, ptr);
+	ioctl(device->parent->fd, SIMemFree, ptr);
 }
 
 
@@ -230,7 +240,7 @@ void opencl_si_device_mem_read(struct opencl_si_device_t *device,
 		void *host_ptr, void *device_ptr, unsigned int size)
 {
 	/* Invoke 'mem_read' ABI call */
-	ioctl(m2s_active_dev, SIMemRead, host_ptr, device_ptr, size);
+	ioctl(device->parent->fd, SIMemRead, host_ptr, device_ptr, size);
 }
 
 
@@ -238,7 +248,7 @@ void opencl_si_device_mem_write(struct opencl_si_device_t *device,
 		void *device_ptr, void *host_ptr, unsigned int size)
 {
 	/* Invoke 'mem_write' ABI call */
-	ioctl(m2s_active_dev, SIMemWrite, device_ptr, host_ptr, size);
+	ioctl(device->parent->fd, SIMemWrite, device_ptr, host_ptr, size);
 }
 
 

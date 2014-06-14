@@ -47,7 +47,7 @@ struct opencl_hsa_arg_t
 
 struct opencl_hsa_arg_t *opencl_hsa_arg_create(enum opencl_hsa_arg_type_t type,
 		char *name);
-void opencl_hsa_arg_free(struct opencl_si_arg_t *arg);
+void opencl_hsa_arg_free(struct opencl_hsa_arg_t *arg);
 
 
 

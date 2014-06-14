@@ -62,8 +62,7 @@ int opencl_device_shared_memory;
 /* Native mode */
 int opencl_native_mode;
 
-/* Device descriptors */
-int m2s_active_dev;
+
 
 /*
  * Debug

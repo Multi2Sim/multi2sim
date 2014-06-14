@@ -60,6 +60,12 @@ struct opencl_version_t
 /* Global OpenCL platform */
 struct opencl_platform_t *opencl_platform;
 
+/* Global OpenCL devices */
+struct opencl_device_t *opencl_hsa_device;
+struct opencl_device_t *opencl_si_device;
+struct opencl_device_t *opencl_union_device;
+struct opencl_device_t *opencl_x86_device;
+
 
 
 
@@ -75,6 +81,7 @@ static void opencl_platform_add_devices(struct opencl_platform_t *platform)
 	char *devices;
 	char devices_copy[200];
 	char *token;
+	char *saveptr;
 
 	/* Create list of devices */
 	platform->device_list = list_create();
@@ -101,7 +108,7 @@ static void opencl_platform_add_devices(struct opencl_platform_t *platform)
 	
 	/* Process devices string */
 	snprintf(devices_copy, sizeof devices_copy, "%s", devices);
-	token = strtok(devices_copy, ", ");
+	token = strtok_r(devices_copy, ", ", &saveptr);
 	while (token)
 	{
 		/* Add device */
@@ -111,6 +118,7 @@ static void opencl_platform_add_devices(struct opencl_platform_t *platform)
 			device = opencl_device_create();
 			device->arch_device = opencl_x86_device_create(device);
 			list_add(platform->device_list, device);
+			opencl_x86_device = device;
 			opencl_debug("\tx86 device added to the platform\n");
 		}
 		else if (!strcasecmp(token, "southern-islands") ||
@@ -124,6 +132,7 @@ static void opencl_platform_add_devices(struct opencl_platform_t *platform)
 			device = opencl_device_create();
 			device->arch_device = opencl_si_device_create(device);
 			list_add(platform->device_list, device);
+			opencl_si_device = device;
 			opencl_debug("\tSouthern Islands device added to the platform\n");
 		}
 		else if (!strcasecmp(token, "union"))
@@ -138,6 +147,7 @@ static void opencl_platform_add_devices(struct opencl_platform_t *platform)
 			device->arch_device = opencl_union_device_create(device,
 					platform->device_list);
 			list_add(platform->device_list, device);
+			opencl_union_device = device;
 			opencl_debug("\tUnion device added to the platform\n");
 		}
 		else if (!strcasecmp(token, "hsa"))
@@ -146,8 +156,13 @@ static void opencl_platform_add_devices(struct opencl_platform_t *platform)
 			if (opencl_native_mode)
 				fatal("HSA device not available in native mode");
 
-			/* FIXME */
-			fatal("HSA device not available yet");
+			/* Add HSA device */
+			/*device = opencl_device_create();
+			device->arch_device = opencl_hsa_device_create(device);
+			list_add(platform->device_list, device);
+			opencl_hsa_device = device;
+			opencl_debug("\tHSA device added to the platform\n");*/
+			warning("HSA device not available yet");
 		}
 		else
 		{
@@ -158,7 +173,7 @@ static void opencl_platform_add_devices(struct opencl_platform_t *platform)
 		}
 
 		/* Next */
-		token = strtok(NULL, ", ");
+		token = strtok_r(NULL, ", ", &saveptr);
 	}
 
 	/* Check that at least one device was added */
