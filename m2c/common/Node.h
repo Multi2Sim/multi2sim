@@ -177,12 +177,12 @@ public:
 	/* Starting at 'this', traverse the syntax tree (not control tree) in
 	 * depth-first and return the first leaf node found (could be 'this'
 	 * itself). */
-	Node *GetFirstLeaf();
+	Node *getFirstLeaf();
 
 	/* Starting at 'this', traverse the syntax tree (not control tree) in
 	 * depth-first and return the last leaf node found (could be 'this'
 	 * itself). */
-	Node *GetLastLeaf();
+	Node *getLastLeaf();
 
 	/* Compare two nodes */
 	virtual void Compare(Node *node);
@@ -221,11 +221,11 @@ public:
 	~LeafNode();
 
 	/* Getters */
-	BasicBlock *GetBasicBlock() { return basic_block; }
-	llvm::BasicBlock *GetLlvmBasicBlock() { return llvm_basic_block; }
+	BasicBlock *getBasicBlock() { return basic_block; }
+	llvm::BasicBlock *getLlvmBasicBlock() { return llvm_basic_block; }
 
 	/* Setters */
-	void SetBasicBlock(BasicBlock *basic_block) { this->basic_block
+	void setBasicBlock(BasicBlock *basic_block) { this->basic_block
 			= basic_block; }
 
 	/* Dump node */
@@ -268,8 +268,8 @@ public:
 	AbstractNode(const std::string &name, AbstractNodeRegion region);
 
 	/* Getters */
-	AbstractNodeRegion GetRegion() { return region; }
-	std::list<Node *> &GetChildList() { return child_list; }
+	AbstractNodeRegion getRegion() { return region; }
+	std::list<Node *> &getChildList() { return child_list; }
 	
 	/* Dump */
 	void Dump(std::ostream &os);

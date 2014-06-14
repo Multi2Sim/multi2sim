@@ -153,12 +153,12 @@ public:
 
 	// Getters/setters
 	const std::vector<std::unique_ptr<Arg>> &getArgs() { return args; }
-	llvm2si::BasicBlock *GetBasicBlock() { return basic_block; }
-	void SetBasicBlock(llvm2si::BasicBlock *basic_block) {
+	llvm2si::BasicBlock *getBasicBlock() { return basic_block; }
+	void setBasicBlock(llvm2si::BasicBlock *basic_block) {
 		this->basic_block = basic_block; }
 
 	// Attach a comment to the instruction
-	void SetComment(const std::string &comment) { this->comment = comment; }
+	void setComment(const std::string &comment) { this->comment = comment; }
 
 	/* Encode the instruction, internally populating the 'bytes' and 'size'
 	 * fields. A call to Inst::Write() can be performed after this to dump

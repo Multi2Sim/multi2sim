@@ -18,7 +18,7 @@ InterferenceGraph::InterferenceGraph(int size) : graph(size*(size-1)/2)
 	//this->graph = new Bitmap(size*(size-1)/2);
 }
 
-int InterferenceGraph::Get(int element1, int element2) {
+int InterferenceGraph::get(int element1, int element2) {
 	/* Check for valid sizes */
 	assert (element1 >= 0 && element1 < size);
 //		panic("%s: invalid value for 'element1' (%d)",
@@ -44,7 +44,7 @@ int InterferenceGraph::Get(int element1, int element2) {
 	return (int)graph[element1*width-(element1*element1+3*element1)/2+element2-1];
 }
 
-void InterferenceGraph::Set(int element1, int element2, bool value) {
+void InterferenceGraph::set(int element1, int element2, bool value) {
 	/* Check for valid sizes */
 	assert (element1 >= 0 && element1 < size);
 //		panic("%s: invalid value for 'element1' (%d)",

@@ -14,7 +14,7 @@ if HAVE_FLEX_BISON
 .hh.h:
 	cp $< $@
 
-BUILT_SOURCES = Parser.h Parser.hh
+BUILT_SOURCES = Parser.h
 
 libsi2bin_a_SOURCES = \
 	\

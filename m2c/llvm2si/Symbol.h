@@ -84,7 +84,7 @@ public:
 
 	/* Set the symbol type to an address to global memory and associate it
 	 * with a UAV as specified in 'uav_index' (0=uav10, 1=uav11, ...). */
-	void SetUAVIndex(int uav_index) { address = true;
+	void setUAVIndex(int uav_index) { address = true;
 			this->uav_index = uav_index; }
 	/* Set Symbol Type */
 	void setType(SymbolType type) { this->type = type; }

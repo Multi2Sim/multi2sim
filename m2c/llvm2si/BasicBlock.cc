@@ -35,7 +35,7 @@ using namespace si2bin;
 namespace llvm2si
 {
 
-int BasicBlock::GetLlvmTypeSize(llvm::Type *llvm_type)
+int BasicBlock::getLlvmTypeSize(llvm::Type *llvm_type)
 {
 	/* Return size based on type kind */
 	int num_elems;
@@ -68,12 +68,12 @@ int BasicBlock::GetLlvmTypeSize(llvm::Type *llvm_type)
 }
 
 
-int BasicBlock::GetPointedLlvmTypeSize(llvm::Type *llvm_type)
+int BasicBlock::getPointedLlvmTypeSize(llvm::Type *llvm_type)
 {
 	/* Get pointed type */
 	assert(llvm_type->isPointerTy());
 	llvm_type = llvm_type->getPointerElementType();
-	return GetLlvmTypeSize(llvm_type);
+	return getLlvmTypeSize(llvm_type);
 }
 
 
@@ -247,7 +247,7 @@ void BasicBlock::EmitGetElementPtr(llvm::GetElementPtrInst *llvm_inst)
 	
 	/* Get size of pointed value */
 	llvm::Type *llvm_type_ptr = llvm_arg_ptr->getType();
-	int ptr_size = GetPointedLlvmTypeSize(llvm_type_ptr);
+	int ptr_size = getPointedLlvmTypeSize(llvm_type_ptr);
 
 	/* Get index operand (vreg, literal) */
 	llvm::Value *llvm_arg_index = llvm_inst->getOperand(1);
@@ -260,7 +260,7 @@ void BasicBlock::EmitGetElementPtr(llvm::GetElementPtrInst *llvm_inst)
 	std::string ret_name = llvm_inst->getName();
 	int ret_vreg = function->AllocVReg();
 	Symbol *ret_symbol = new Symbol(ret_name, SymbolVectorRegister, ret_vreg);
-	ret_symbol->SetUAVIndex(ptr_symbol->getUAVIndex());
+	ret_symbol->setUAVIndex(ptr_symbol->getUAVIndex());
 	function->AddSymbol(ret_symbol);
 
 	/* Calculate offset as the multiplication between 'arg_index' and the
@@ -498,7 +498,7 @@ void BasicBlock::EmitLoad(llvm::LoadInst *llvm_inst)
 	Inst *inst = new Inst(SI::INST_TBUFFER_LOAD_FORMAT_X,
 			new ArgVectorRegister(ret_vreg),
 			arg_addr,
-			new ArgScalarRegisterSeries(uav->GetSReg(), uav->GetSReg() + 3),
+			new ArgScalarRegisterSeries(uav->getSReg(), uav->getSReg() + 3),
 			new ArgMaddr(
 					new ArgLiteral(0),
 					new ArgMaddrQual(true, false, 0),
@@ -637,7 +637,7 @@ void BasicBlock::EmitPhi(llvm::PHINode *llvm_inst)
 		/* Find node */
 		std::string name = llvm_basic_block->getName();
 		Common::Tree *tree = function->getTree();
-		Common::LeafNode *node = tree->GetLeafNode(name);
+		Common::LeafNode *node = tree->getLeafNode(name);
 		if (!node)
 			panic("%s: cannot find node '%s'",
 					__FUNCTION__, name.c_str());
@@ -739,7 +739,7 @@ void BasicBlock::EmitStore(llvm::StoreInst *llvm_inst)
 	Inst *inst = new Inst(SI::INST_TBUFFER_STORE_FORMAT_X,
 			arg_data,
 			arg_addr,
-			new ArgScalarRegisterSeries(uav->GetSReg(), uav->GetSReg() + 3),
+			new ArgScalarRegisterSeries(uav->getSReg(), uav->getSReg() + 3),
 			new ArgMaddr(
 					new ArgLiteral(0),
 					new ArgMaddrQual(true, false, 0),
@@ -1061,7 +1061,7 @@ void BasicBlock::Dump(std::ostream &os)
 		return;
 
 	/* Label with node's name */
-	Common::LeafNode *node = GetNode();
+	Common::LeafNode *node = getNode();
 	os << "\n" << node->getName() << ":\n";
 
 	/* Print list of instructions */
@@ -1074,19 +1074,19 @@ void BasicBlock::AddInst(Inst *inst)
 {
 	/* Check that the instruction does not belong to any other basic
 	 * block already. */
-	if (inst->GetBasicBlock())
+	if (inst->getBasicBlock())
 		panic("%s: instruction already added to basic block",
 				__FUNCTION__);
 
 	/* Add instruction */
 	inst_list.emplace_back(inst);
-	inst->SetBasicBlock(this);
+	inst->setBasicBlock(this);
 
 	/* If there was a comment added to the basic block, attach it to
 	 * the instruction being added now. */
 	if (!comment.empty())
 	{
-		inst->SetComment(comment);
+		inst->setComment(comment);
 		comment.clear();
 	}
 }
@@ -1210,11 +1210,11 @@ void BasicBlock::LiveRegisterAnalysis()
 				if (!argReg)
 					continue;
 
-				if (arg->getToken()->GetDirection() == si2bin::TokenDirectionDst)
+				if (arg->getToken()->getDirection() == si2bin::TokenDirectionDst)
 				{
 					this->def->Set(argReg->getId(), true);
 				}
-				else if (arg->getToken()->GetDirection() == si2bin::TokenDirectionSrc)
+				else if (arg->getToken()->getDirection() == si2bin::TokenDirectionSrc)
 				{
 					/* If register wasn't defined in the same basic block */
 					if (this->def->Test(argReg->getId()) != true)
