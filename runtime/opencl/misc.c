@@ -95,6 +95,25 @@ void free_buffer(void *buf)
 
 
 /*
+ * File functions
+ */
+
+FILE *file_open_for_write(char *fname)
+{
+	if (!fname[0])
+		return NULL;
+	if (!strcmp(fname, "stdout"))
+		return stdout;
+	else if (!strcmp(fname, "stderr"))
+		return stderr;
+	else
+		return fopen(fname, "wt");
+}
+
+
+
+
+/*
  * Other
  */
 

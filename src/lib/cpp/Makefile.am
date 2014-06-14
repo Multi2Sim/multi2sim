@@ -17,6 +17,9 @@ libcpp_a_SOURCES = \
 	ELFWriter.cc \
 	ELFWriter.h \
 	\
+	Environment.cc \
+	Environment.h \
+	\
 	IniFile.cc \
 	IniFile.h \
 	\

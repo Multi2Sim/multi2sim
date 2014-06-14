@@ -206,6 +206,12 @@ void *read_buffer(char *file_name, int *psize);
 void free_buffer(void *buf);
 
 
+/*
+ * File functions
+ */
+
+FILE *file_open_for_write(char *fname);
+
 
 /*
  * Multi2Sim functions
