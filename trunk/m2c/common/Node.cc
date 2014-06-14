@@ -121,7 +121,7 @@ void AbstractNode::Compare(Node *node)
 	differ = child_list.size() != abs_node->child_list.size();
 	for (auto &child : child_list)
 	{
-		Node *tmp_node = abs_node->getTree()->GetNode(child->getName());
+		Node *tmp_node = abs_node->getTree()->getNode(child->getName());
 		assert(tmp_node);
 		if (!tmp_node->InList(abs_node->child_list))
 			differ = true;
@@ -365,7 +365,7 @@ void Node::InsertBefore(Node *before)
 
 	/* Insert in common parent */
 	this->parent = parent;
-	std::list<Node *> &child_list = parent->GetChildList();
+	std::list<Node *> &child_list = parent->getChildList();
 	assert(!InList(child_list));
 	auto it = std::find(child_list.begin(), child_list.end(), before);
 	assert(it != child_list.end());
@@ -383,7 +383,7 @@ void Node::InsertAfter(Node *after)
 
 	/* Insert in common parent */
 	this->parent = parent;
-	std::list<Node *> &child_list = parent->GetChildList();
+	std::list<Node *> &child_list = parent->getChildList();
 	assert(!InList(child_list));
 	auto it = std::find(child_list.begin(), child_list.end(), after);
 	assert(it != child_list.end());
@@ -391,14 +391,14 @@ void Node::InsertAfter(Node *after)
 }
 
 
-Node *Node::GetFirstLeaf()
+Node *Node::getFirstLeaf()
 {
 	/* Traverse syntax tree down */
 	Node *node = this;
 	while (node->kind == NodeKindAbstract)
 	{
 		auto child_list = dynamic_cast<AbstractNode *>(node)
-				->GetChildList();
+				->getChildList();
 		assert(child_list.size());
 		node = child_list.front();
 	}
@@ -409,14 +409,14 @@ Node *Node::GetFirstLeaf()
 }
 
 
-Node *Node::GetLastLeaf()
+Node *Node::getLastLeaf()
 {
 	/* Traverse syntax tree down */
 	Node *node = this;
 	while (node->kind == NodeKindAbstract)
 	{
 		auto child_list = dynamic_cast<AbstractNode *>(node)
-				->GetChildList();
+				->getChildList();
 		assert(child_list.size());
 		node = child_list.back();
 	}
@@ -431,8 +431,8 @@ void Node::Compare(Node *node2)
 {
 	/* Store names */
 	Tree *tree2 = node2->tree;
-	std::string node_name = tree->GetName() + '.' + name;
-	std::string node_name2 = tree2->GetName() + '.' + node2->name;
+	std::string node_name = tree->getName() + '.' + name;
+	std::string node_name2 = tree2->getName() + '.' + node2->name;
 
 	/* Compare kind */
 	if (kind != node2->kind)
@@ -443,7 +443,7 @@ void Node::Compare(Node *node2)
 	bool differ = succ_list.size() != node2->succ_list.size();
 	for (auto &tmp_node : succ_list)
 	{
-		Node *tmp_node2 = tree2->GetNode(tmp_node->name);
+		Node *tmp_node2 = tree2->getNode(tmp_node->name);
 		assert(tmp_node2);
 		if (!tmp_node2->InList(node2->succ_list))
 			differ = true;

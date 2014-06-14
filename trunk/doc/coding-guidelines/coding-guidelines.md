@@ -264,6 +264,8 @@ Name spaces should always be accessed explicitly, avoiding `using namespace` sta
 ###
 Keep (initialization) order: Namespace-level objects in different compilation units should never depend on each other for initialization, because their initialization order is undefined.
 
+### 
+The identifier of every globally visible class, enumeration type, type definition, function, constant, and variable in a class library must be inside the class library’s namespace.
 
 Identifiers
 ===========
@@ -351,6 +353,8 @@ should be replaced by
     for (int i = 0; i < 10; i++)
             [ ... ]
 
+### 
+The use of public variables is discouraged because it is violating encapsulation of data, which is one of basic principles of object-oriented programming. Also an arbitrary function is capable of changing this public variable that leads to errors that are dificult to locate.
 
 Types
 =====
@@ -392,7 +396,7 @@ Integer types
 -------------
 
 ### 
-Integer variables should be declared using built-in integer types, and avoiding integer types defined in `stdint.h` (`uint8_t`, `int8_t`, `uint16_t`, etc). The following types should be used for unsigned integers of different sizes:
+Integer variables should be declared using built-in integer types, and avoiding integer types defined in `stdint.h` (`uint8_t`, `int8_t`, `uint16_t`, etc). Variables should be declared with the smallest possible scope. The following types should be used for unsigned integers of different sizes:
 
 - `unsigned char` &mdash; 8-bit unsigned integer
 - `unsigned short` &mdash; 16-bit unsigned integer
@@ -410,7 +414,8 @@ The following types should be used for signed integers of different sizes:
 ###  
 Integer types `long` and `unsigned long` should be avoided, since they represent integers of different sizes in 32- and 64-bit platforms. They should only be used when an integer type is intentionally dependent on the machine word size.
 
-
+### 
+Every variable that is declared is given an initial value before it is used. If possible, always use assignment instead of initialization.
 
 
 
@@ -453,7 +458,7 @@ All code in function bodies should be grouped into regions of 1 to approximately
     }
 
 ### 
-The comments in a function body by themselves should express all actions carried out by the function. If all function code was removed, only the remaining comments should build a self-contained &quot;story&quot; that suffices to understand the function behavior.
+The comments in a function body by themselves should express all actions carried out by the function. If all function code was removed, only the remaining comments should build a self-contained &quot;story&quot; that suffices to understand the function behavior. These comments **should** be full-sentences.
 
 
 Doxygen comments
@@ -686,7 +691,7 @@ Inline functions
 ----------------
 
 ### 
-Function with an empty or very simple implementation (e.g., 1 line of code) should be inlined in the header file. This includes global function, class functions, or class constructors and destructors. Inline functions do not need to comply with the standard guidelines for new lines. They should still respect the maximum line width.
+Function with an empty or very simple implementation (e.g., 1 line of code) should be inlined in the header file. This includes global function, class functions, or class constructors and destructors. They should still respect the maximum line width.
 
     class MyClass
     {
@@ -703,7 +708,7 @@ Function fields should be declared private. Depending on their visibility, publi
 
 
 ### 
-Getters should be declared as inline functions. A getter function name should begin with `get` (lower case). The function prototype should end with the `const` keyword to specify that it does not modify the object state.
+Getters should be declared as inline functions. A getter function name should begin with `get` (lower case). The function prototype should end with the `const` keyword to specify that it does not modify the object state. These functions do not need to comply with the standard guidelines for new lines.
 
     class MyClass
     {
@@ -796,6 +801,7 @@ Constants
 
 ### 
 Constants should be declared as `const` variables either in a header file in the case of public constants, or in a source file in the case of private constants. Constants should not be declared using `#define` directives.
+
 
 
 
@@ -925,7 +931,7 @@ Shared pointers
 ### 
 In those cases where one specific variable cannot be identified that points to a region of dynamic memory during its entire lifetime, shared smart pointers should be used. Shared pointers contain internal reference counters. The last shared pointer being destroyed (i.e., losing scope or being a member of an object being destroyed) will free the dynamic memory that it points to. In most cases, a unique pointer can be used instead.
 
-An example of shared pointers is given can be found in Multi2Sim emulators, where multiple contexts can share one memory object. The memory object must be freed only when the last context using it is destroyed. This context is not necessarily the context that originally created the memory object.
+An example of shared pointers can be found in Multi2Sim emulators, where multiple contexts can share one memory object. The memory object must be freed only when the last context using it is destroyed. This context is not necessarily the context that originally created the memory object.
 
 
 
@@ -944,7 +950,7 @@ Container data structures can be traversed using C++11 `:` notation, combined wi
             std::cout << x << '\n';
 
 ### 
-Containers of complex objects should be traversed using the `auto &` type instead, which obtains references to each object, rather than copying it in a local variable for each iteration of the loop. This is strictly necessary when the list is composed of unique pointers to other objects, since an `std::unique_ptr` object cannot be replicated.
+Containers of objects of non-basic types should be traversed using the `auto &` type instead, which obtains references to each object, rather than copying it in a local variable for each iteration of the loop. This is strictly necessary when the list is composed of unique pointers to other objects, since an `std::unique_ptr` object cannot be replicated.
 
 std::list<std::unique_ptr<Context>> context_list;
 [ ... ]

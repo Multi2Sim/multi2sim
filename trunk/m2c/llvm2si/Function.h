@@ -83,11 +83,11 @@ public:
 			{ arg.Dump(os); return os; }
 
 	/* Return a Southern Islands argument type from an LLVM type. */
-	static SI::ArgDataType GetDataType(llvm::Type *llvm_type);
+	static SI::ArgDataType getDataType(llvm::Type *llvm_type);
 
 	/* Return the number of elements in a vector type, or 1 if the LLVM
 	 * type passed is not a vector type. */
-	static int GetNumElements(llvm::Type *llvm_type);
+	static int getNumElements(llvm::Type *llvm_type);
 };
 
 
@@ -109,7 +109,7 @@ class FunctionUAV
 public:
 
 	/* Getters */
-	int GetSReg() { return sreg; }
+	int getSReg() { return sreg; }
 };
 
 
