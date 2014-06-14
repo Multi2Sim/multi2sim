@@ -51,7 +51,7 @@ class Program
 	int id;
 
 	// Opencl driver it belongs to
-	Driver::OpenCLSIDriver *driver;
+	::Driver::OpenCLSIDriver *driver;
 
 	// ELF binary
 	std::unique_ptr<ELFReader::File> elf_file;

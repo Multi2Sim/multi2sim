@@ -26,6 +26,10 @@
 /* Device object */
 struct _cl_device_id
 {
+	/* File descriptor for communication with driver */
+	int fd;
+
+	/* Fields defined in OpenCL spec */
 	cl_int address_bits;
 	cl_bool available;
 	cl_bool compiler_available;

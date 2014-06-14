@@ -20,8 +20,10 @@
 #include <assert.h>
 #include <sys/ioctl.h>
 
+#include "device.h"
 #include "elf-format.h"
 #include "mhandle.h"
+#include "si-device.h"
 #include "si-program.h"
 
 
@@ -40,11 +42,11 @@ struct opencl_si_program_t *opencl_si_program_create(
 		"Southern Islands Binary");
 
 	/* Create program object in driver */
-	program->id = ioctl(m2s_active_dev,
+	program->id = ioctl(device->parent->fd,
 		SIProgramCreate);
 
 	/* Set program binary in driver */
-	ioctl(m2s_active_dev, SIProgramSetBinary,
+	ioctl(device->parent->fd, SIProgramSetBinary,
 		program->id, binary, length);
 
 	/* Return */

@@ -23,7 +23,7 @@
 #include "opencl.h"
 
 
-/* Entry of a program associated with one device type. */
+/* Entry of a program associated with one device. */
 struct opencl_program_entry_t
 {
 	/* Associated device */

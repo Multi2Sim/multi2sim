@@ -34,6 +34,7 @@
 #include <arch/hsa/asm/Asm.h>
 #include <arch/hsa/driver/Driver.h>
 #include <arch/hsa/emu/Emu.h>
+#include <arch/southern-islands/driver/Driver.h>
 #include <driver/opencl/OpenCLDriver.h>
 #include <driver/opengl/OpenGLDriver.h>
 #include <lib/cpp/CommandLine.h>
@@ -124,6 +125,10 @@ void RegisterDrivers()
 	// HSA driver
 	HSA::Driver *hsa_driver = HSA::Driver::getInstance();
 	driver_pool->Register(hsa_driver);
+
+	// Southern Islands driver
+	SI::Driver *si_driver = SI::Driver::getInstance();
+	driver_pool->Register(si_driver);
 }
 
 
@@ -394,6 +399,7 @@ void main_cpp(int argc, char **argv)
 	HSA::Emu::RegisterOptions();
 	MIPS::Asm::RegisterOptions();
 	MIPS::Emu::RegisterOptions();
+	SI::Driver::RegisterOptions();
 	x86::Asm::RegisterOptions();
 	x86::Emu::RegisterOptions();
 
@@ -413,6 +419,7 @@ void main_cpp(int argc, char **argv)
 	HSA::Emu::ProcessOptions();
 	MIPS::Asm::ProcessOptions();
 	MIPS::Emu::ProcessOptions();
+	SI::Driver::ProcessOptions();
 	x86::Asm::ProcessOptions();
 	x86::Emu::ProcessOptions();
 

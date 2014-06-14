@@ -30,9 +30,9 @@ void m2s_opencl_fatal(char *fmt, ...)
 {
 	va_list va;
 	va_start(va, fmt);
-	fprintf(stderr, "OpenCL runtime error: ");
+	fprintf(stderr, "\nOpenCL runtime error: ");
 	vfprintf(stderr, fmt, va);
-	fprintf(stderr, "\n");
+	fprintf(stderr, "\n\n");
 	fflush(NULL);
 	exit(1);
 }
@@ -42,9 +42,9 @@ void m2s_opencl_panic(char *fmt, ...)
 {
 	va_list va;
 	va_start(va, fmt);
-	fprintf(stderr, "OpenCL runtime panic: ");
+	fprintf(stderr, "\nOpenCL runtime panic: ");
 	vfprintf(stderr, fmt, va);
-	fprintf(stderr, "\n");
+	fprintf(stderr, "\n\n");
 	fflush(NULL);
 	abort();
 }
@@ -54,8 +54,8 @@ void m2s_opencl_warning(char *fmt, ...)
 {
 	va_list va;
 	va_start(va, fmt);
-	fprintf(stderr, "OpenCL runtime warning: ");
+	fprintf(stderr, "\nOpenCL runtime warning: ");
 	vfprintf(stderr, fmt, va);
-	fprintf(stderr, "\n");
+	fprintf(stderr, "\n\n");
 }
 

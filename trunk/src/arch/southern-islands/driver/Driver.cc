@@ -44,6 +44,9 @@ const Driver::CallFn Driver::call_fn[CallCodeCount] =
 };
 
 
+// Debug file name, as set by user
+std::string Driver::debug_file;
+
 // Singleton instance
 std::unique_ptr<Driver> Driver::instance;
 
@@ -78,6 +81,24 @@ int Driver::Call(int code, mem::Memory *memory, unsigned args_ptr)
 	// Invoke call
 	CallFn fn = call_fn[code];
 	return (this->*fn)(memory, args_ptr);
+}
+
+
+void Driver::RegisterOptions()
+{
+	// Get command line object
+	misc::CommandLine *command_line = misc::CommandLine::getInstance();
+
+	// Option '--si-debug-driver <file>'
+	command_line->RegisterString("--si-debug-driver <file>", debug_file,
+			"Dump debug information for the Southern Islands driver, "
+			"including all ABI calls coming from the runtime.");
+}
+
+
+void Driver::ProcessOptions()
+{
+	debug.setPath(debug_file);
 }
 
 

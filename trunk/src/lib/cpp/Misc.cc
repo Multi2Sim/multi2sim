@@ -53,8 +53,13 @@ void fatal(const char *fmt, ...)
 	std::string msg = "fatal: ";
 	std::cerr << '\n' << StringParagraph(msg + buf, 7) << '\n';
 
-	// Exit with error code 1
+	// Exit with error code 1, or abort in debug mode in order to allow for
+	// backtrace in gdb.
+#ifdef NDEBUG
 	exit(1);
+#else
+	abort();
+#endif
 }
 
 
