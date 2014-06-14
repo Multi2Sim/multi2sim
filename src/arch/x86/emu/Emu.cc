@@ -81,6 +81,9 @@ void Emu::RegisterOptions()
 	// Get command line object
 	misc::CommandLine *command_line = misc::CommandLine::getInstance();
 
+	// Category
+	command_line->setCategory("x86");
+
 	// Option --x86-debug-call <file>
 	command_line->RegisterString("--x86-debug-call <file>", call_debug_file,
 			"Dump debug information about function calls and "

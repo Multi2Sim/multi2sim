@@ -127,6 +127,27 @@ void CommandLineOptionEnum::Read(int argc, char **argv, int index)
 }
 
 
+void CommandLineCategory::Help(std::ostream &os)
+{
+	// Skip category if it has no options
+	if (option_map.size() == 0)
+		return;
+
+	// Header for categories other than default
+	std::string header = description.empty() ?
+			name + " options" :
+			description;
+	os << "\n";
+	os << header << "\n";
+	os << std::string(header.length(), '=') << "\n";
+	os << "\n";
+
+	// Dump help for all options
+	for (auto it : option_map)
+		it.second->Help(os);
+}
+
+
 // Singleton instance
 std::unique_ptr<CommandLine> CommandLine::instance;
 
@@ -148,6 +169,13 @@ CommandLine::CommandLine()
 	processed = false;
 	use_cpp = false;
 	show_help = false;
+
+	// Create default category
+	CommandLineCategory *category = new CommandLineCategory("default");
+	category->setDescription("General options");
+	category_list.emplace_back(category);
+	category_map[category->getName()] = category;
+	current_category = category;
 }
 
 
@@ -166,9 +194,10 @@ void CommandLine::Register(CommandLineOption *option)
 		panic("%s: %s: option already registered",
 				__FUNCTION__, option->getName().c_str());
 
-	// Add option
+	// Add option to the current category
 	option_table[option->getName()] = option;
 	option_list.emplace_back(option);
+	current_category->addOption(option);
 }
 
 
@@ -184,10 +213,44 @@ void CommandLine::Help(std::ostream &os)
 		os << StringParagraph(help);
 	}
 
-	// Print help message for every option
+	// Empty line
 	os << '\n';
-	for (auto &option : option_list)
-		option->Help(os);
+
+	// Print options for default category
+	category_map["default"]->Help();
+
+	// Print help message for other categories
+	for (auto it : category_map)
+	{
+		CommandLineCategory *category = it.second;
+		if (category->getName() != "default")
+			category->Help();
+	}
+}
+
+
+void CommandLine::setCategory(const std::string &name,
+		const std::string &description)
+{
+	// Create new category if it doesn't exist
+	CommandLineCategory *category;
+	if (category_map.find(name) == category_map.end())
+	{
+		category = new CommandLineCategory(name);
+		category_map[name] = category;
+		category_list.emplace_back(category);
+	}
+	else
+	{
+		category = category_map[name];
+	}
+
+	// Set description if present
+	if (!description.empty())
+		category->setDescription(description);
+	
+	// Set current category
+	current_category = category;
 }
 
 

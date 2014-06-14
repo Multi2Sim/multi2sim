@@ -52,6 +52,9 @@
 // Maximum simulation time
 long long m2s_max_time = 0;
 
+// Binary file for OpenCL runtime
+std::string m2s_opencl_binary;
+
 // Debug information in OpenCL runtime
 std::string m2s_opencl_debug;
 
@@ -314,28 +317,23 @@ void RegisterOptions()
 			"following list of command-line options can be used "
 			"for <options>:");
 	
+
+	//
+	// General Multi2Sim Options
+	//
+	
+	// Set category for following options
+	command_line->setCategory("default", "General Multi2Sim Options");
+	
 	// Maximum simulation time
-	command_line->RegisterInt64("--max-time", m2s_max_time,
+	command_line->RegisterInt64("--max-time <time> (default = 0)",
+			m2s_max_time,
 			"Maximum simulation time in seconds. The simulator "
 			"will stop once this time is exceeded. A value of 0 "
 			"(default) means no time limit.");
 	
-	// OpenCL runtime - debug information
-	command_line->RegisterString("--opencl-debug <file>", m2s_opencl_debug,
-			"Debug file used in the OpenCL runtime to dump debug "
-			"information related with OpenCL API calls.");
-	
-	// OpenCL runtime - device list
-	command_line->RegisterString("--opencl-devices <list>",
-			m2s_opencl_devices,
-			"List of devices exposed by the OpenCL runtime to the "
-			"guest application in calls to clGetDeviceIDs, in the "
-			"specified order. The list of devices should be "
-			"separated by command. Possible values are: x86, hsa, "
-			"southern-islands, union.");
-	
 	// Trace file
-	command_line->RegisterString("--trace", m2s_trace_file,
+	command_line->RegisterString("--trace <file>", m2s_trace_file,
 			"Generate a trace file with debug information on the "
 			"configuration of the modeled CPUs, GPUs, and memory "
 			"system, as well as their dynamic simulation. The "
@@ -345,13 +343,47 @@ void RegisterOptions()
 			"become extremely large.");
 	
 	// Visualization tool input file
-	command_line->RegisterString("--visual", m2s_visual_file,
+	command_line->RegisterString("--visual <file>", m2s_visual_file,
 			"Run the Multi2Sim Visualization Tool. This option "
 			"consumes a file generated with the '--trace' option "
 			"in a previous simulation. This option is only "
 			"available on systems with support for GTK 3.0 or "
 			"higher.");
 
+	
+	//
+	// OpenCL runtime options
+	//
+
+	// Category
+	command_line->setCategory("OpenCL", "OpenCL Runtime Options");
+
+	// Debug information
+	command_line->RegisterString("--opencl-debug <file>", m2s_opencl_debug,
+			"Debug file used in the OpenCL runtime to dump debug "
+			"information related with OpenCL API calls. This "
+			"option is equivalent to environment variable "
+			"M2S_OPENCL_DEBUG.");
+	
+	// Device list
+	command_line->RegisterString("--opencl-devices <list>",
+			m2s_opencl_devices,
+			"List of devices exposed by the OpenCL runtime to the "
+			"guest application in calls to clGetDeviceIDs, in the "
+			"specified order. The list of devices should be "
+			"separated by commas. This option is equivalent to "
+			"environment variable M2S_OPENCL_DEVICES. "
+			"Possible values are: x86, hsa, southern-islands, "
+			"union.");
+	
+	// Binary
+	command_line->RegisterString("--opencl-binary <file>",
+			m2s_opencl_binary,
+			"OpenCL kernel binary used for an OpenCL guest "
+			"application executing a call to "
+			"clCreateProgramWithSource. This option is equivalent "
+			"to environment variable M2S_OPENCL_BINARY.");
+	
 }
 
 
@@ -367,6 +399,10 @@ void ProcessOptions()
 	// OpenCL device list
 	if (!m2s_opencl_devices.empty())
 		environment->addVariable("M2S_OPENCL_DEVICES", m2s_opencl_devices);
+	
+	// OpenCL binary
+	if (!m2s_opencl_binary.empty())
+		environment->addVariable("M2S_OPENCL_BINARY", m2s_opencl_binary);
 }
 
 
