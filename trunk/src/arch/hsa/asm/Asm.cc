@@ -18,8 +18,11 @@ void Asm::RegisterOptions()
 	// Get command line object
 	misc::CommandLine *command_line = misc::CommandLine::getInstance();
 
+	// Category
+	command_line->setCategory("HSA");
+
 	// Option --hsa-disasm <file>
-	command_line->RegisterString("--hsa-disasm", path,
+	command_line->RegisterString("--hsa-disasm <file>", path,
 			"Disassemble the HSA BRIG ELF file provided in <arg>. "	
 			"This option is incompatible with any other option.");
 

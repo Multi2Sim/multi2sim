@@ -89,6 +89,9 @@ void Driver::RegisterOptions()
 	// Get command line object
 	misc::CommandLine *command_line = misc::CommandLine::getInstance();
 
+	// Category
+	command_line->setCategory("Southern Islands");
+
 	// Option '--si-debug-driver <file>'
 	command_line->RegisterString("--si-debug-driver <file>", debug_file,
 			"Dump debug information for the Southern Islands driver, "
