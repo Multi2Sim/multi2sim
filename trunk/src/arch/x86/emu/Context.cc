@@ -23,15 +23,13 @@
 #include <unistd.h>
 
 #include <arch/common/Arch.h>
+#include <lib/cpp/Environment.h>
 #include <lib/cpp/Misc.h>
 
 #include "Context.h"
 #include "Emu.h"
 
-// Variable used in function Context::loadProgram()
-extern char **environ;
 
-	
 namespace x86
 {
 
@@ -399,8 +397,9 @@ void Context::Load(const std::vector<std::string> &args,
 	loader->stdout_file_name = stdout_file_name;
 
 	// Add environment variables
-	for (int i = 0; environ[i]; i++)
-		loader->env.emplace_back(environ[i]);
+	misc::Environment *environment = misc::Environment::getInstance();
+	for (auto variable : environment->getVariables())
+		loader->env.emplace_back(variable);
 	for (auto &var : env)
 		loader->env.emplace_back(var);
 

@@ -38,6 +38,7 @@
 #include <driver/opencl/OpenCLDriver.h>
 #include <driver/opengl/OpenGLDriver.h>
 #include <lib/cpp/CommandLine.h>
+#include <lib/cpp/Environment.h>
 #include <lib/cpp/Misc.h>
 #include <lib/esim/ESim.h>
 
@@ -50,6 +51,12 @@
 
 // Maximum simulation time
 long long m2s_max_time = 0;
+
+// Debug information in OpenCL runtime
+std::string m2s_opencl_debug;
+
+// List of OpenCL devices for runtime
+std::string m2s_opencl_devices;
 
 // Trace file
 std::string m2s_trace_file;
@@ -133,7 +140,7 @@ void RegisterDrivers()
 
 
 // Load a program from the command line
-void loadCommandLineProgram()
+void LoadCommandLineProgram()
 {
 	// No program specified
 	misc::CommandLine *command_line = misc::CommandLine::getInstance();
@@ -174,7 +181,7 @@ void loadCommandLineProgram()
 
 
 // Load programs from context configuration file
-void loadPrograms()
+void LoadPrograms()
 {
 #if 0
 	struct config_t *config;
@@ -288,6 +295,81 @@ void ProcessSignal()
 }
 
 
+void RegisterOptions()
+{
+	// Set error message
+	misc::CommandLine *command_line = misc::CommandLine::getInstance();
+	command_line->setErrorMessage("Please type 'm2s --help' for a list of "
+			"valid Multi2Sim command-line options.\n");
+
+	// Set help message
+	command_line->setHelp("Syntax:"
+			"\n\n"
+			"$ m2s [<options>] [<exe>] [<args>]"
+			"\n\n"
+			"Multi2Sim's command line can take a program "
+			"executable <exe> as an argument, given as a binary "
+			"file in any of the supported CPU architectures, and "
+			"optionally followed by its arguments <args>. The "
+			"following list of command-line options can be used "
+			"for <options>:");
+	
+	// Maximum simulation time
+	command_line->RegisterInt64("--max-time", m2s_max_time,
+			"Maximum simulation time in seconds. The simulator "
+			"will stop once this time is exceeded. A value of 0 "
+			"(default) means no time limit.");
+	
+	// OpenCL runtime - debug information
+	command_line->RegisterString("--opencl-debug <file>", m2s_opencl_debug,
+			"Debug file used in the OpenCL runtime to dump debug "
+			"information related with OpenCL API calls.");
+	
+	// OpenCL runtime - device list
+	command_line->RegisterString("--opencl-devices <list>",
+			m2s_opencl_devices,
+			"List of devices exposed by the OpenCL runtime to the "
+			"guest application in calls to clGetDeviceIDs, in the "
+			"specified order. The list of devices should be "
+			"separated by command. Possible values are: x86, hsa, "
+			"southern-islands, union.");
+	
+	// Trace file
+	command_line->RegisterString("--trace", m2s_trace_file,
+			"Generate a trace file with debug information on the "
+			"configuration of the modeled CPUs, GPUs, and memory "
+			"system, as well as their dynamic simulation. The "
+			"trace is a compressed plain-text file in format. The "
+			"user should watch the size of the generated trace as "
+			"simulation runs, since the trace file can quickly "
+			"become extremely large.");
+	
+	// Visualization tool input file
+	command_line->RegisterString("--visual", m2s_visual_file,
+			"Run the Multi2Sim Visualization Tool. This option "
+			"consumes a file generated with the '--trace' option "
+			"in a previous simulation. This option is only "
+			"available on systems with support for GTK 3.0 or "
+			"higher.");
+
+}
+
+
+void ProcessOptions()
+{
+	// Get environment
+	misc::Environment *environment = misc::Environment::getInstance();
+
+	// OpenCL runtime debug
+	if (!m2s_opencl_debug.empty())
+		environment->addVariable("M2S_OPENCL_DEBUG", m2s_opencl_debug);
+	
+	// OpenCL device list
+	if (!m2s_opencl_devices.empty())
+		environment->addVariable("M2S_OPENCL_DEVICES", m2s_opencl_devices);
+}
+
+
 void MainLoop()
 {
 	// Install signal handlers
@@ -344,52 +426,6 @@ void MainLoop()
 }
 
 
-void RegisterOptions()
-{
-	// Set error message
-	misc::CommandLine *command_line = misc::CommandLine::getInstance();
-	command_line->setErrorMessage("Please type 'm2s --help' for a list of "
-			"valid Multi2Sim command-line options.\n");
-
-	// Set help message
-	command_line->setHelp("Syntax:"
-			"\n\n"
-			"$ m2s [<options>] [<exe>] [<args>]"
-			"\n\n"
-			"Multi2Sim's command line can take a program "
-			"executable <exe> as an argument, given as a binary "
-			"file in any of the supported CPU architectures, and "
-			"optionally followed by its arguments <args>. The "
-			"following list of command-line options can be used "
-			"for <options>:");
-	
-	// Maximum simulation time
-	command_line->RegisterInt64("--max-time", m2s_max_time,
-			"Maximum simulation time in seconds. The simulator "
-			"will stop once this time is exceeded. A value of 0 "
-			"(default) means no time limit.");
-	
-	// Trace file
-	command_line->RegisterString("--trace", m2s_trace_file,
-			"Generate a trace file with debug information on the "
-			"configuration of the modeled CPUs, GPUs, and memory "
-			"system, as well as their dynamic simulation. The "
-			"trace is a compressed plain-text file in format. The "
-			"user should watch the size of the generated trace as "
-			"simulation runs, since the trace file can quickly "
-			"become extremely large.");
-	
-	// Visualization tool input file
-	command_line->RegisterString("--visual", m2s_visual_file,
-			"Run the Multi2Sim Visualization Tool. This option "
-			"consumes a file generated with the '--trace' option "
-			"in a previous simulation. This option is only "
-			"available on systems with support for GTK 3.0 or "
-			"higher.");
-
-}
-
-
 void main_cpp(int argc, char **argv)
 {
 	// Read command line
@@ -414,6 +450,7 @@ void main_cpp(int argc, char **argv)
 		return;
 
 	// Process command line
+	ProcessOptions();
 	HSA::Asm::ProcessOptions();
 	HSA::Driver::ProcessOptions();
 	HSA::Emu::ProcessOptions();
@@ -429,8 +466,8 @@ void main_cpp(int argc, char **argv)
 	RegisterDrivers();
 
 	// Load programs
-	loadCommandLineProgram();
-	loadPrograms();
+	LoadCommandLineProgram();
+	LoadPrograms();
 
 	// Main simulation loop
 	MainLoop();
