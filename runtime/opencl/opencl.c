@@ -27,6 +27,7 @@
 #include "debug.h"
 #include "event.h"
 #include "mhandle.h"
+#include "misc.h"
 #include "object.h"
 #include "opencl.h"
 #include "string.h"
@@ -73,32 +74,36 @@ int opencl_native_mode;
  */
 
 static int opencl_debug_initialized;
-static int opencl_debugging;
+static FILE *opencl_debug_file;
 
 void opencl_debug(char *fmt, ...)
 {
 	va_list va;
-	char *value;
+	char *file_name;
 	char str[MAX_LONG_STRING_SIZE];
 
 	/* Initialize debug */
 	if (!opencl_debug_initialized)
 	{
 		opencl_debug_initialized = 1;
-		value = getenv("M2S_OPENCL_DEBUG");
-		if (value && !strcmp(value, "1"))
-			opencl_debugging = 1;
+		file_name = getenv("M2S_OPENCL_DEBUG");
+		if (file_name)
+		{
+			opencl_debug_file = file_open_for_write(file_name);
+			if (!opencl_debug_file)
+				fatal("%s: Cannot open file", file_name);
+		}
 	}
 
 	/* Exit if not debugging */
-	if (!opencl_debugging)
+	if (!opencl_debug_file)
 		return;
 	
 	/* Reconstruct message in 'str' first. This is done to avoid multiple
 	 * calls to 'printf', that can have race conditions among threads. */
 	va_start(va, fmt);
 	vsnprintf(str, sizeof str, fmt, va);
-	fprintf(stderr, "[%llu] [libm2s-opencl-ioctl] %s\n", opencl_get_time(), str);
+	fprintf(opencl_debug_file, "[%llu] [libm2s-opencl-ioctl] %s\n", opencl_get_time(), str);
 }
 
 
