@@ -59,6 +59,9 @@ void Emu::RegisterOptions()
 	// Get command line object
 	misc::CommandLine *command_line = misc::CommandLine::getInstance();
 
+	// Category
+	command_line->setCategory("HSA");
+
 	// Option --hsa-debug <file>
 	command_line->RegisterString("--hsa-debug <file>", hsa_debug_file,
 		"Dump debug information about hsa");

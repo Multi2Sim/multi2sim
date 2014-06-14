@@ -38,8 +38,11 @@ void Asm::RegisterOptions()
 	// Get command line object
 	misc::CommandLine *command_line = misc::CommandLine::getInstance();
 
+	// Category
+	command_line->setCategory("x86");
+
 	// Option --x86-disasm <file>
-	command_line->RegisterString("--x86-disasm", path,
+	command_line->RegisterString("--x86-disasm <file>", path,
 			"Disassemble the x86 ELF file provided in <arg>, "
 			"using the internal x86 disassembler. This option is "
 			"incompatible with any other option.");

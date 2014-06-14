@@ -58,6 +58,9 @@ void Driver::RegisterOptions()
 	// Get command line object
 	misc::CommandLine *command_line = misc::CommandLine::getInstance();
 
+	// Category
+	command_line->setCategory("HSA");
+
 	// Option --hsa-driver-debug <file>
 	command_line->RegisterString("--hsa-driver-debug <file>", debug_file,
 			"Dump debug information related with HSA driver ABI "

@@ -21,6 +21,7 @@
 #define LIB_CPP_COMMAND_LINE_H
 
 #include <cassert>
+#include <map>
 #include <memory>
 #include <iostream>
 #include <unordered_map>
@@ -203,6 +204,46 @@ public:
 };
 
 
+/// Command-line options are grouped in categories represented by this class
+class CommandLineCategory
+{
+	// Category name
+	std::string name;
+
+	// Description shown in help message
+	std::string description;
+
+	// Map of command-line options
+	std::map<std::string, CommandLineOption *> option_map;
+
+public:
+
+	/// Constructor
+	CommandLineCategory(const std::string &name)
+			: name(name)
+	{
+	}
+
+	/// Get category name
+	const std::string &getName() const { return name; }
+
+	/// Set category description
+	void setDescription(const std::string &description)
+	{
+		this->description = description;
+	}
+
+	/// Add an option to the category
+	void addOption(CommandLineOption *option)
+	{
+		option_map[option->getName()] = option;
+	}
+
+	/// Print help message for this category and all its options.
+	void Help(std::ostream &os = std::cout);
+};
+
+
 /// Class representing the command-line used to invoke Multi2Sim.
 class CommandLine
 {
@@ -222,9 +263,17 @@ class CommandLine
 	// sequential order of registration to show an organized help message.
 	std::vector<std::unique_ptr<CommandLineOption>> option_list;
 
+	// Ordered map of categories
+	std::map<std::string, CommandLineCategory *> category_map;
+
+	// List of category unique pointers
+	std::vector<std::unique_ptr<CommandLineCategory>> category_list;
+
+	// Current category, as set with function 'setCategory()'
+	CommandLineCategory *current_category;
+
 	// Register a newly created command-line option. The dynamically created
-	// option will be taken ownership from by a unique_ptr that will be
-	// automatically freed.
+	// option will be taken ownership from by a unique smart pointer.
 	void Register(CommandLineOption *option);
 
 	// Set to true when function Process() is invoked.
@@ -397,6 +446,21 @@ public:
 	
 	/// Dump help for all registered command-line options.
 	void Help(std::ostream &os = std::cout);
+
+	/// Set the current category affecting all subsequently registered
+	/// command-line options. Options will be grouped into these categories
+	/// when dumping the help message.
+	///
+	/// \param name
+	///	Name of an existing category, or name of a category to be
+	///	created, affecting subsequent command-line options.
+	///
+	/// \param description
+	///	Optional argument providing a description for the cateogry. If
+	///	no value is given, the description will be the same as the name,
+	///	or will take the value set by a previous call to setCategory().
+	void setCategory(const std::string &name,
+			const std::string &description = "");
 
 	/// Process command line from the arguments
 	///
