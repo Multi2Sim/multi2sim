@@ -5,7 +5,6 @@ SUBDIRS = \
 	glu \
 	glut \
 	opencl \
-	opencl-ioctl \
 	opencl-old \
 	include
 
