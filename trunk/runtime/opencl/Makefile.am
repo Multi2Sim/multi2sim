@@ -1,10 +1,10 @@
 if HAVE_M32_FLAG
 
-lib_LTLIBRARIES = $(top_builddir)/lib/libm2s-opencl-ioctl.la
+lib_LTLIBRARIES = $(top_builddir)/lib/libm2s-opencl.la
 
-__top_builddir__lib_libm2s_opencl_ioctl_la_LDFLAGS = -version-info 1:0:0 -lpthread -ldl -lrt
+__top_builddir__lib_libm2s_opencl_la_LDFLAGS = -version-info 1:0:0 -lpthread -ldl -lrt
 
-__top_builddir__lib_libm2s_opencl_ioctl_la_SOURCES = \
+__top_builddir__lib_libm2s_opencl_la_SOURCES = \
 	\
 	command.c \
 	command.h \

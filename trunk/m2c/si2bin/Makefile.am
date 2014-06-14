@@ -12,9 +12,9 @@ if HAVE_FLEX_BISON
 # version of Automake, we make sure that any .hh file is first converted into
 # a .h file with the same name.
 .hh.h:
-	mv $< $@
+	cp $< $@
 
-BUILT_SOURCES = Parser.h
+BUILT_SOURCES = Parser.h Parser.hh
 
 libsi2bin_a_SOURCES = \
 	\

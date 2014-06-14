@@ -33,7 +33,7 @@
 #include "x86-device.h"
 #include "union-device.h"
 
-static char *opencl_err_version =
+char *opencl_err_version =
 	"\tYour OpenCL program is using a version of the Multi2Sim Runtime library\n"
 	"\tthat is incompatible with this version of Multi2Sim. Please download the\n"
 	"\tlatest Multi2Sim version, and recompile your application with the latest\n"
@@ -68,21 +68,105 @@ struct opencl_platform_t *opencl_platform;
  */
 
 
-void opencl_platform_for_each_device(
-	struct opencl_platform_t *platform,
-	opencl_platform_for_each_device_func_t for_each_device_func,
-	void *user_data)
+static void opencl_platform_add_devices(struct opencl_platform_t *platform)
 {
 	struct opencl_device_t *device;
-	int i;
 
-	/* Execute function for each device */
-	assert(for_each_device_func);
-	LIST_FOR_EACH(platform->device_list, i)
+	char *devices;
+	char devices_copy[200];
+	char *token;
+
+	/* Create list of devices */
+	platform->device_list = list_create();
+
+	/* Read M2S_OPENCL_DEVICES configuration variable, containing default
+	 * configuration for device order. If none specified, the default will
+	 * show the devices in this order:
+	 *
+	 *   1) x86
+	 *   2) Southern Islands
+	 *   3) Union
+	 *   4) HSA
+	 *
+	 * In native mode, only the x86 devices is available.
+	 */
+	devices = getenv("M2S_OPENCL_DEVICES");
+	if (!devices || !devices[0])
 	{
-		device = list_get(platform->device_list, i);
-		for_each_device_func(device, user_data);
+		if (opencl_native_mode)
+			devices = "x86";
+		else
+			devices = "x86,southern-islands,union,hsa";
 	}
+	
+	/* Process devices string */
+	snprintf(devices_copy, sizeof devices_copy, "%s", devices);
+	token = strtok(devices_copy, ", ");
+	while (token)
+	{
+		/* Add device */
+		if (!strcasecmp(token, "x86"))
+		{
+			/* Add x86 device */
+			device = opencl_device_create();
+			device->arch_device = opencl_x86_device_create(device);
+			list_add(platform->device_list, device);
+			opencl_debug("\tx86 device added to the platform\n");
+		}
+		else if (!strcasecmp(token, "southern-islands") ||
+				!strcasecmp(token, "SouthernIslands"))
+		{
+			/* Not available in native mode */
+			if (opencl_native_mode)
+				fatal("Southern Islands device not available in native mode");
+
+			/* Add Southern Islands device */
+			device = opencl_device_create();
+			device->arch_device = opencl_si_device_create(device);
+			list_add(platform->device_list, device);
+			opencl_debug("\tSouthern Islands device added to the platform\n");
+		}
+		else if (!strcasecmp(token, "union"))
+		{
+			/* Not available in native mode */
+			if (opencl_native_mode)
+				fatal("Union device not available in native mode");
+
+			
+			/* Add fused device */
+			device = opencl_device_create();
+			device->arch_device = opencl_union_device_create(device,
+					platform->device_list);
+			list_add(platform->device_list, device);
+			opencl_debug("\tUnion device added to the platform\n");
+		}
+		else if (!strcasecmp(token, "hsa"))
+		{
+			/* Not available in native mode */
+			if (opencl_native_mode)
+				fatal("HSA device not available in native mode");
+
+			/* FIXME */
+			fatal("HSA device not available yet");
+		}
+		else
+		{
+			fatal("Invalid device name (%s)\n\n"
+				"\tEnvironment variable M2S_OPENCL_DEVICES contains an invalid\n"
+				"\tdevice name. Please check the Multi2Sim guide for a list of\n"
+				"\tvalid OpenCL devices\n", token);
+		}
+
+		/* Next */
+		token = strtok(NULL, ", ");
+	}
+
+	/* Check that at least one device was added */
+	if (!platform->device_list->count)
+		fatal("No device added\n\n"
+			"\tThe list of OpenCL devices is empty. Please use environment variable\n"
+			"\tM2S_OPENCL_DEVICES to select a list of devices that the OpenCL runtime\n"
+			"\twill make visible to the application.\n");
 }
 
 
@@ -94,7 +178,6 @@ void opencl_platform_for_each_device(
 struct opencl_platform_t *opencl_platform_create(void)
 {
 	struct opencl_platform_t *platform;
-	struct opencl_device_t *device;
 
 	/* Initialize */
 	platform = xcalloc(1, sizeof(struct opencl_platform_t));
@@ -105,27 +188,7 @@ struct opencl_platform_t *opencl_platform_create(void)
 	platform->extensions = "";
 
 	/* Initialize device list */
-	platform->device_list = list_create();
-
-	/* Add x86 device */
-	device = opencl_device_create();
-	device->arch_device = opencl_x86_device_create(device);
-	list_add(platform->device_list, device);
-
-	/* Devices other than x86 CPU are added only on simulated mode */
-	if (!opencl_native_mode)
-	{
-		/* Add Southern Islands device */
-		device = opencl_device_create();
-		device->arch_device = opencl_si_device_create(device);
-		list_add(platform->device_list, device);
-
-		/* Add fused device */
-		device = opencl_device_create();
-		device->arch_device = opencl_union_device_create(device, 
-			platform->device_list);
-		list_add(platform->device_list, device);
-	}
+	opencl_platform_add_devices(platform);
 
 	/* Return */
 	return platform;
@@ -150,6 +213,24 @@ void opencl_platform_free(struct opencl_platform_t *platform)
 }
 
 
+void opencl_platform_for_each_device(
+	struct opencl_platform_t *platform,
+	opencl_platform_for_each_device_func_t for_each_device_func,
+	void *user_data)
+{
+	struct opencl_device_t *device;
+	int i;
+
+	/* Execute function for each device */
+	assert(for_each_device_func);
+	LIST_FOR_EACH(platform->device_list, i)
+	{
+		device = list_get(platform->device_list, i);
+		for_each_device_func(device, user_data);
+	}
+}
+
+
 
 
 /*
@@ -163,11 +244,10 @@ void opencl_platform_free(struct opencl_platform_t *platform)
 #define OPENCL_VERSION_MINOR  2652
 
 cl_int clGetPlatformIDs(
-	cl_uint num_entries,
-	cl_platform_id *platforms,
-	cl_uint *num_platforms)
+		cl_uint num_entries,
+		cl_platform_id *platforms,
+		cl_uint *num_platforms)
 {
-	struct opencl_version_t version;
 	int ret;
 
 	/* Debug */
@@ -180,13 +260,15 @@ cl_int clGetPlatformIDs(
 	 * the host program. It is checked here whether we're running in native
 	 * or simulation mode. If it's simulation mode, Multi2Sim's version is
 	 * checked for compatibility with the runtime library version. */
-	m2s_active_dev = open("/dev/m2s-si-cl", O_RDWR);
+
+/*	m2s_active_dev = open("/dev/m2s-si-cl", O_RDWR);
 	if (getenv("HSA"))
 		m2s_active_dev = open("/dev/m2s-hsa-cl", O_RDWR);
 
-	ret = ioctl(m2s_active_dev, DriverInit, &version);
+	ret = ioctl(m2s_active_dev, DriverInit, &version);*/
 
 	/* If the system call returns error, we are in native mode. */
+	ret = access("/dev/multi2sim", F_OK);
 	if (ret == -1 && !opencl_native_mode)
 	{
 		opencl_native_mode = 1;
@@ -196,8 +278,9 @@ cl_int clGetPlatformIDs(
 
 	/* On simulation mode, check Multi2sim version and Multi2Sim OpenCL
 	 * Runtime version compatibility. */
-	if (!opencl_native_mode)
+/*	if (!opencl_native_mode)
 	{
+		struct opencl_version_t version;
 		if (version.major != OPENCL_VERSION_MAJOR
 				|| version.minor < OPENCL_VERSION_MINOR)
 			fatal("incompatible Multi2Sim Runtime version.\n"
@@ -205,7 +288,7 @@ cl_int clGetPlatformIDs(
 				"Host implementation v. %d.%d.\n%s",
 				OPENCL_VERSION_MAJOR, OPENCL_VERSION_MINOR,
 				version.major, version.minor, opencl_err_version);
-	}
+	}*/
 
 	/* Create platform if it doesn't exist yet */
 	if (!opencl_platform)
