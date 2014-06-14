@@ -31,6 +31,9 @@ namespace SI
 /// Southern Islands driver
 class Driver : public comm::Driver
 {
+	// Debug file name, as set by user
+	static std::string debug_file;
+
 	// Unique instance of singleton
 	static std::unique_ptr<Driver> instance;
 
@@ -90,6 +93,12 @@ public:
 	
 	/// Debugger
 	static misc::Debug debug;
+
+	/// Register command-line options
+	static void RegisterOptions();
+
+	/// Process command-line options
+	static void ProcessOptions();
 };
 
 

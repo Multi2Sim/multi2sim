@@ -3224,7 +3224,46 @@ int Context::ExecuteSyscall_setfsgid16()
 
 int Context::ExecuteSyscall_llseek()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	int fd = regs.getEbx();
+	unsigned offset_high = regs.getEcx();
+	unsigned offset_low = regs.getEdx();
+	long long offset = ((long long) offset_high << 32) | offset_low;
+	unsigned result_ptr = regs.getEsi();
+	int origin = regs.getEdi();
+	
+	// Debug
+	emu->syscall_debug << misc::fmt("  fd=%d\n", fd)
+			<< misc::fmt("  offset_high = 0x%x\n", offset_high)
+			<< misc::fmt("  offset_low = 0x%x\n", offset_low)
+			<< misc::fmt("  result_ptr = 0x%x\n,", result_ptr)
+			<< misc::fmt("  origin = 0x%x\n", origin)
+			<< misc::fmt("  offset = 0x%llx\n", (long long) offset);
+	
+	// Check file descriptor 
+	FileDesc *desc = file_table->getFileDesc(fd);
+	if (!desc)
+		return -EBADF;
+	
+	// Get host file descriptor
+	int host_fd = desc->getHostIndex();
+	emu->syscall_debug << misc::fmt("  host_fd = %d\n", host_fd);
+
+	// Supported offset
+	if (offset_high != (unsigned) -1 && offset_high)
+		misc::fatal("%s: only supported for 32-bit files", __FUNCTION__);
+
+	// Host call
+	offset = lseek(host_fd, offset_low, origin);
+	if (offset == -1)
+		return -errno;
+
+	// Copy offset to memory
+	if (result_ptr)
+		memory->Write(result_ptr, 8, (char *) &offset);
+
+	// Success
+	return 0;
 }
 
 

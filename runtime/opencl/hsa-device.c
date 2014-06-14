@@ -29,7 +29,7 @@
 #include "hsa-kernel.h"
 #include "hsa-program.h"
 
-struct opencl_hsa_device_t *opencl_si_device_create(struct opencl_device_t *parent)
+struct opencl_hsa_device_t *opencl_hsa_device_create(struct opencl_device_t *parent)
 {
 	struct opencl_hsa_device_t *device;
 
@@ -194,6 +194,14 @@ struct opencl_hsa_device_t *opencl_si_device_create(struct opencl_device_t *pare
 
 	opencl_debug("[%s] opencl_hsa_device_t device = %p", __FUNCTION__,
 		device);
+
+	// Open communication channel with driver
+	parent->fd = open("/dev/hsa", O_RDWR);
+	if (parent->fd < 0)
+		fatal("Cannot communicate with the HSA driver\n\n"
+			"This error could be due to an incompatibility between the\n"
+			"Multi2Sim OpenCL driver version and the version of the simulator.\n"
+			"Please download the latest versions and retry.");
 
 	/* Return */
 	return device;
