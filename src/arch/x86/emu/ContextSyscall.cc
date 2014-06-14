@@ -1268,6 +1268,12 @@ int Context::ExecuteSyscall_access()
 	emu->syscall_debug << misc::fmt("  mode=%s\n",
 			access_mode_map.MapFlags(mode).c_str());
 
+	// A special case is introduced here for runtimes to detect whether
+	// they run in native or simulated mode. If the file name is equal to
+	// "/dev/multi2sim", this system call will return 0 (access granted).
+	if (full_path == "/dev/multi2sim")
+		return 0;
+
 	// Host call
 	int err = access(full_path.c_str(), mode);
 	if (err == -1)
