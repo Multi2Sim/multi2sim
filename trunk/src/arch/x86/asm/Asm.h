@@ -43,7 +43,7 @@ class Asm : public comm::Asm
 
 
 	//
-	// Constants used in asm.dat
+	// Constants used in Inst.def
 	//
 
 	// For fields 'op1', 'op2', 'modrm', 'imm'

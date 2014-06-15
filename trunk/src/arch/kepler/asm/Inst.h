@@ -39,7 +39,7 @@ enum InstOpcode
 
 #define DEFINST(_name, _fmt_str, ...)        \
 	INST_##_name,
-#include "asm.dat"
+#include "Inst.def"
 #undef DEFINST
 
 	// Max

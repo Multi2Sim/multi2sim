@@ -32,7 +32,7 @@
  * Variables
  */
 
-/*** Constants used in 'asm.dat' ***/
+/*** Constants used in 'Inst.def' ***/
 
 /* For fields 'op1', 'op2', 'modrm', 'imm' */
 #define SKIP  0x0100
@@ -164,7 +164,7 @@ void X86AsmCreate(X86Asm *self)
 	info->imm = __imm; \
 	info->prefixes = __prefixes; \
 	info->fmt = #__name;
-#include "asm.dat"
+#include "Inst.def"
 #undef DEFINST
 
 	/* Initialize table of prefixes */

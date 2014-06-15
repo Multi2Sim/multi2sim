@@ -41,7 +41,7 @@ static mips_isa_inst_func_t mips_isa_inst_func[MIPSInstOpcodeCount] =
 {
 	NULL /* for op_none */
 #define DEFINST(_name, _fmt_str, _op0, _op1, _op2, _op3) , mips_isa_##_name##_impl
-#include <arch/mips/asm/asm.dat>
+#include <arch/mips/asm/Inst.def>
 #undef DEFINST
 };
 

@@ -493,13 +493,13 @@ class Context
 	// functions.
 	typedef void (Context::*ExecuteInstFn)();
 
-	// Instruction emulation functions. Each entry of asm.dat will be
+	// Instruction emulation functions. Each entry of Inst.def will be
 	// expanded into a function prototype. For example, entry
 	// 	DEFINST(adc_al_imm8, 0x14, SKIP, SKIP, SKIP, IB, 0)
 	// is expanded to
 	//	void ExecuteInst_adc_al_imm8();
 #define DEFINST(name, op1, op2, op3, modrm, imm, pfx) void ExecuteInst_##name();
-#include <arch/x86/asm/asm.dat>
+#include <arch/x86/asm/Inst.def>
 #undef DEFINST
 
 	// Table of functions
@@ -515,7 +515,7 @@ class Context
 	
 	// These are some functions created automatically by the macros in
 	// ContextIsaStd.cc, but corresponding to non-existing instructions.
-	// Since they're not declared in asm.dat, they must be explicitly
+	// Since they're not declared in Inst.def, they must be explicitly
 	// declared here.
 	void ExecuteInst_test_rm16_imm8();
 	void ExecuteInst_test_rm32_imm8();

@@ -37,7 +37,7 @@ typedef enum
 
 #define DEFINST(name, op1, op2, op3, modrm, imm, prefixes) \
 	x86_inst_##name,
-#include "asm.dat"
+#include "Inst.def"
 #undef DEFINST
 
 	X86InstOpcodeCount
@@ -217,7 +217,7 @@ void X86InstDecode(X86Inst *self, unsigned int eip, void *buf);
  */
 
 
-/* This structure contains information derived from 'asm.dat'. */
+/* This structure contains information derived from 'Inst.def'. */
 struct x86_inst_info_t
 {
 	X86InstOpcode opcode;

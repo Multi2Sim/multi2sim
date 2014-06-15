@@ -40,7 +40,7 @@ typedef enum
 
 #define DEFINST(_name, _fmt_str, _op0, _op1, _op2, _op3) \
 	MIPS_INST_##_name,
-#include "asm.dat"
+#include "Inst.def"
 #undef DEFINST
 
 	/* Max */

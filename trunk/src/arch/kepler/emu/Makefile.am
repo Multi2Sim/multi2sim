@@ -5,9 +5,9 @@ libemu_a_SOURCES = \
 	emu.c \
 	emu.h \
 	\
-    grid.c \
-    grid.h \
-    \
+	grid.c \
+	grid.h \
+	\
 	warp.c \
 	warp.h \
 	\
