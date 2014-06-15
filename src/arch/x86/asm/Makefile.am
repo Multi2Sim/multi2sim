@@ -2,7 +2,6 @@ lib_LIBRARIES = libasm.a
 
 libasm_a_SOURCES = \
 	\
-	asm.dat \
 	asm.c \
 	asm.h \
 	\
@@ -14,6 +13,7 @@ libasm_a_SOURCES = \
 	Asm.h \
 	\
 	Inst.cc \
+	Inst.def \
 	Inst.h
 
 AM_CPPFLAGS = @M2S_INCLUDES@

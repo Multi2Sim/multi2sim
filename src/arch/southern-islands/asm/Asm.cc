@@ -50,7 +50,7 @@ Asm::Asm()
 	info->op = _op; \
 	info->size = _size; \
 	info->flags = (InstFlag) _flags;
-#include "asm.dat"
+#include "Inst.def"
 #undef DEFINST
 
 	/* Tables of pointers to 'inst_info' */

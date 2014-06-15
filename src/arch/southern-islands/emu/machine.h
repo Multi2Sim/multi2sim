@@ -25,7 +25,7 @@
 
 #define DEFINST(_name, _fmt_str, _fmt, _opcode, _size, _flags) \
 	void si_isa_##_name##_impl(SIWorkItem *work_item, struct SIInstWrap *inst);
-#include <arch/southern-islands/asm/asm.dat>
+#include <arch/southern-islands/asm/Inst.def>
 #undef DEFINST
 
 

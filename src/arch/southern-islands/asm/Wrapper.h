@@ -175,7 +175,7 @@ typedef enum
 #define DEFINST(_name, _fmt_str, _fmt, _opcode, _size, _flags) \
 	SI_INST_##_name,
 
-#include "asm.dat"
+#include "Inst.def"
 #undef DEFINST
 
 	// Max

@@ -8,8 +8,6 @@ libasm_a_SOURCES = \
 	Arg.cc \
 	Arg.h \
 	\
-	asm.dat \
-	\
 	Asm.cc \
 	Asm.h \
 	\
@@ -20,6 +18,7 @@ libasm_a_SOURCES = \
 	fetch-shader.h \
 	\
 	Inst.cc \
+	Inst.def \
 	Inst.h \
 	\
 	Input.cc \

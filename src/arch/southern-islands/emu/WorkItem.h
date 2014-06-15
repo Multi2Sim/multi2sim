@@ -101,7 +101,7 @@ private:
 	// instruction. For example: ISA_s_mov_b32_Impl(Inst *inst)
 #define DEFINST(_name, _fmt_str, _fmt, _opcode, _size, _flags) \
 	void ISA_##_name##_Impl(Inst *inst);
-#include <arch/southern-islands/asm/asm.dat>
+#include <arch/southern-islands/asm/Inst.def>
 #undef DEFINST
 
 	// Instruction execution table 

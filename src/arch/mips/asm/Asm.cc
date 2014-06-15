@@ -241,7 +241,7 @@ Asm::Asm()
 	dec_table_special3[OPCODE_SPECIAL3_BSHFL].next_table_low        = 6;
 	dec_table_special3[OPCODE_SPECIAL3_BSHFL].next_table_high       = 10;
 
-	// Build the tables from asm.dat
+	// Build the tables from Inst.def
 	InstInfo *current_table;
 	unsigned int table_arg[4];
 	int i = 0;
@@ -263,7 +263,7 @@ Asm::Asm()
 	current_table[table_arg[i]].name = #_name;			\
 	current_table[table_arg[i]].fmt_str = _fmt_str;			\
 	current_table[table_arg[i]].size = 4;
-#include "asm.dat"
+#include "Inst.def"
 #undef DEFINST
 }
 

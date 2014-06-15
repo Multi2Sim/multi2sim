@@ -219,13 +219,13 @@ class Context
 	// functions.
 	typedef void (Context::*ExecuteInstFn)();
 
-	// Instruction emulation functions. Each entry of asm.dat will be
+	// Instruction emulation functions. Each entry of Inst.def will be
 	// expanded into a function prototype. For example, entry
 	// 	DEFINST(adc_al_imm8, 0x14, SKIP, SKIP, SKIP, IB, 0)
 	// is expanded to
 	//	void ExecuteInst_adc_al_imm8();
 #define DEFINST(name, fmt_str, fmt, opcode, func, imm) void ExecuteInst_##name();
-#include <arch/mips/asm/asm.dat>
+#include <arch/mips/asm/Inst.def>
 #undef DEFINST
 
 	// Table of functions
