@@ -1,3 +1,6 @@
 DEFCALL(Init, 1)
 DEFCALL(PrintArgs, 2)
-
+DEFCALL(MemAlloc, 3)
+DEFCALL(MemFree, 4)
+DEFCALL(MemWrite, 5)
+DEFCALL(MemRead, 6)
