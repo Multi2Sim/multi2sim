@@ -113,5 +113,32 @@ std::string getCwd()
 }
 
 
+std::string getFullPath(const std::string &path, const std::string &cwd)
+{
+	// Remove './' prefix from path
+	std::string path_local = path;
+	while (StringPrefix(path_local, "./"))
+		path_local.erase(0, 2);
+
+	// File name is empty
+	if (path_local.empty())
+		return path_local;
+
+	// File name is given as an absolute path
+	if (path_local[0] == '/')
+		return path_local;
+	
+	// Default value for base directory
+	std::string cwd_local = cwd.empty() ? getCwd() : cwd;
+
+	// Add '/' suffix if not present
+	if (cwd_local.back() != '/')
+		cwd_local += '/';
+
+	// Return absolute path
+	return cwd_local + path_local;
+}
+
+
 }  // namespace Misc
 

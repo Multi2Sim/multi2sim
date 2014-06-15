@@ -391,10 +391,11 @@ void Context::Load(const std::vector<std::string> &args,
 	// Create new loader info
 	assert(!loader.get());
 	loader.reset(new Loader());
+	loader->exe = misc::getFullPath(args[0], cwd);
 	loader->args = args;
-	loader->cwd = cwd;
-	loader->stdin_file_name = stdin_file_name;
-	loader->stdout_file_name = stdout_file_name;
+	loader->cwd = cwd.empty() ? misc::getCwd() : cwd;
+	loader->stdin_file_name = misc::getFullPath(stdin_file_name, cwd);
+	loader->stdout_file_name = misc::getFullPath(stdout_file_name, cwd);
 
 	// Add environment variables
 	misc::Environment *environment = misc::Environment::getInstance();

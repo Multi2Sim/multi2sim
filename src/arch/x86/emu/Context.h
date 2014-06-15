@@ -749,36 +749,13 @@ public:
 	/// Return the context pid
 	int getPid() const { return pid; }
 
-	/// Load a program from a command line into an existing context. The
-	/// content is left in a state ready to start running the first x86 ISA
-	/// instruction at the program entry.
-	///
-	/// \param args
-	///	Command line to be used, where the first argument contains the
-	///	path to the executable ELF file.
-	///
-	/// \param env
-	///	Array of environment variables. The environment variables
-	///	actually loaded in the program is the vector of existing
-	///	environment variables in the M2S process, together with any
-	///	extra variable contained in this array.
-	///
-	/// \param cwd
-	///	Initial current working directory for the context. Relative
-	///	paths used by the context will be relative to this directory.
-	///
-	/// \param stdin_file_name
-	///	File to redirect the standard input, or empty
-	/// 	string for no redirection.
-	///
-	/// \param stdout_file_name
-	///	File to redirect the standard output and standard error output,
-	///	or empty string for no redirection.
+	/// Load a program on the context. The meaning of each argument is
+	/// identical to the prototype of comm::Emu::Load().
 	void Load(const std::vector<std::string> &args,
-			const std::vector<std::string> &env,
-			const std::string &cwd,
-			const std::string &stdin_file_name,
-			const std::string &stdout_file_name);
+			const std::vector<std::string> &env = { },
+			const std::string &cwd = "",
+			const std::string &stdin_file_name = "",
+			const std::string &stdout_file_name = "");
 
 	/// Initialize the context by cloning the main data structures from a
 	/// parent context.
@@ -789,7 +766,10 @@ public:
 
 	/// Given a file name, return its full path based on the current working
 	/// directory for the context.
-	std::string getFullPath(const std::string &path);
+	std::string getFullPath(const std::string &path)
+	{
+		return misc::getFullPath(path, loader->cwd);
+	}
 
 	/// Look for zombie child. If 'pid' is -1, the first finished child in
 	/// the zombie contexts list is return. Otherwise, 'pid' is the pid of

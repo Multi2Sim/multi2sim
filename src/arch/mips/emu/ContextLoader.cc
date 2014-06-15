@@ -144,61 +144,41 @@ void Context::LoadELFSections(ELFReader::File *binary)
 		unsigned perm = mem::MemoryAccessInit | mem::MemoryAccessRead;
 		std::string flags_str = section_flags_map.MapFlags(section->getFlags());
 		Emu::loader_debug << misc::fmt("  section '%s': offset=0x%x, "
-						"addr=0x%x, size=%u, flags=%s\n",
-						section->getName().c_str(), section->getOffset(),
-						section->getAddr(), section->getSize(),
-						flags_str.c_str());
+				"addr=0x%x, size=%u, flags=%s\n",
+				section->getName().c_str(), section->getOffset(),
+				section->getAddr(), section->getSize(),
+				flags_str.c_str());
 
-				// Process section
-				if (section->getFlags() & SHF_ALLOC)
-				{
-					// Permissions
-					if (section->getFlags() & SHF_WRITE)
-						perm |= mem::MemoryAccessWrite;
-					if (section->getFlags() & SHF_EXECINSTR)
-						perm |= mem::MemoryAccessExec;
+		// Process section
+		if (section->getFlags() & SHF_ALLOC)
+		{
+			// Permissions
+			if (section->getFlags() & SHF_WRITE)
+				perm |= mem::MemoryAccessWrite;
+			if (section->getFlags() & SHF_EXECINSTR)
+				perm |= mem::MemoryAccessExec;
 
-					// Load section
-					memory->Map(section->getAddr(), section->getSize(), perm);
-					memory->growHeapBreak(section->getAddr() + section->getSize());
-					loader->bottom = std::min(loader->bottom, section->getAddr());
+			// Load section
+			memory->Map(section->getAddr(), section->getSize(), perm);
+			memory->growHeapBreak(section->getAddr() + section->getSize());
+			loader->bottom = std::min(loader->bottom, section->getAddr());
 
-					// If section type is SHT_NOBITS (sh_type=8), initialize to 0.
-					// Otherwise, copy section contents from ELF file.
-					if (section->getType() == 8)
-					{
-						char *zero_buffer = new char[section->getSize()]();
-						memory->Init(section->getAddr(), section->getSize(),
-								zero_buffer);
-						delete zero_buffer;
-					}
-					else
-					{
-						memory->Init(section->getAddr(), section->getSize(),
-								section->getBuffer());
-					}
-				}
+			// If section type is SHT_NOBITS (sh_type=8), initialize to 0.
+			// Otherwise, copy section contents from ELF file.
+			if (section->getType() == 8)
+			{
+				char *zero_buffer = new char[section->getSize()]();
+				memory->Init(section->getAddr(), section->getSize(),
+						zero_buffer);
+				delete zero_buffer;
+			}
+			else
+			{
+				memory->Init(section->getAddr(), section->getSize(),
+						section->getBuffer());
+			}
+		}
 	}
-}
-
-
-std::string Context::getFullPath(const std::string &path)
-{
-	// Remove './' prefix from 's'
-	std::string s = path;
-	while (misc::StringPrefix(s, "./"))
-		s.erase(0, 2);
-
-	// File name is empty
-	if (s.empty())
-		return s;
-
-	// File name is given as an absolute path
-	if (s[0] == '/')
-		return s;
-
-	// Relative path
-	return loader->cwd + "/" + s;
 }
 
 

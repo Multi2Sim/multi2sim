@@ -74,6 +74,29 @@ public:
 	{
 		return variables;
 	}
+
+	/// Parse a string containing a list of environment variables, as given
+	/// by the user in the context configuration file.
+	///
+	/// \param str
+	///	String containing a list of environment variables. For example:
+	///
+	///	\code
+	///	"VAR1=Value1" 'VAR2=Value2' 'VAR3="The 3rd value"'
+	///	\endcode
+	///
+	/// \param list
+	///	A list of strings is returned here containing all environment
+	///	variables parsed from \a str. For the example above, the result
+	///	would be a vector of 3 elements:
+	///
+	///	\code
+	///	VAR1=Value
+	///	VAR2=Value2
+	///	VAR3="The 3rd value"
+	///	\endcode
+	static void getFromString(const std::string &str,
+			std::vector<std::string> &list);
 };
 
 

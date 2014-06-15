@@ -120,6 +120,22 @@ void panic(const char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
 /// Return the current working directory
 std::string getCwd();
 
+/// Return the full path for a relative path.
+///
+/// \param path
+///	The path to convert. If this is a relative path (i.e., does not start
+///	with a '/' character, it will be converted to an absolute path. If it is
+///	already an absolute path, it will be returned directly. If the string is
+///	empty, an empty string is returned.
+///
+/// \param cwd (optional)
+///	Base directory used for conversions to absolute paths. If no value is
+///	given, the current directory will be used.
+///
+/// \return
+///	Absolute path, or empty string if \a path is empty.
+std::string getFullPath(const std::string &path, const std::string &cwd = "");
+
 
 
 //

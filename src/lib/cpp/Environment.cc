@@ -18,6 +18,8 @@
  */
 
 #include "Environment.h"
+#include "Misc.h"
+
 
 extern char **environ;
 
@@ -52,6 +54,53 @@ void Environment::addVariable(const std::string &name, const std::string &value)
 {
 	std::string variable = name + "=" + value;
 	variables.push_back(variable);
+}
+
+
+void Environment::getFromString(const std::string &str,
+			std::vector<std::string> &list)
+{
+	// Clear output vector
+	list.clear();
+
+	// Process string
+	size_t index = 0;
+	while (index < str.length())
+	{
+		// Skip spaces
+		index = str.find_first_not_of(" \n\t\r", index);
+		if (index == std::string::npos)
+			break;
+
+		// Get new environment variable
+		switch (str[index])
+		{
+
+		case '"':
+		case '\'':
+		{
+			// Find end of variable
+			size_t next = str.find_first_of(str[index], index + 1);
+			if (next == std::string::npos)
+				misc::fatal("%s: wrong format in environment variable string",
+						__FUNCTION__);
+
+			// Extract variable
+			std::string var = str.substr(index + 1, next - index - 1);
+			list.push_back(var);
+			
+			// Next
+			index = next + 1;
+			break;
+		}
+		default:
+		{
+			std::string var = str.substr(index);
+			list.push_back(var);
+			index = str.length();
+		}
+		}
+	}
 }
 
 

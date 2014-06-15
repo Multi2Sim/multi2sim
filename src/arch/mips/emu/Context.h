@@ -250,13 +250,16 @@ public:
 			const std::string &stdin_file_name,
 			const std::string &stdout_file_name);
 
+	/// Given a file name, return its full path based on the current working
+	/// directory for the context.
+	std::string getFullPath(const std::string &path)
+	{
+		return misc::getFullPath(path, loader->cwd);
+	}
+
 	/// Run one instruction for the context at the position pointed to by
 	/// register program counter.
 	void Execute();
-
-	/// Given a file name, return its full path based on the current working
-	/// directory for the context.
-	std::string getFullPath(const std::string &path);
 
 	/// Return \c true if flag \a state is part of the context state
 	bool getState(ContextState state) const { return this->state & state; }
@@ -264,6 +267,7 @@ public:
 	/// Set flag \a state in the context state
 	void setState(ContextState state) { UpdateState(this->state | state); }
 };
-}
+
+}  // namespace MIPS
 
 #endif
