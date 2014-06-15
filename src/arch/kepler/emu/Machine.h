@@ -29,7 +29,7 @@ namespace Kepler
 #define DEFINST(_name, _fmt_str, ...) \
 		extern void kpl_isa_##_name##_impl(Thread *thread, \
 				Inst *inst);
-#include <arch/kepler/asm/asm.dat>
+#include <arch/kepler/asm/Inst.def>
 #undef DEFINST
 
 }//namespace

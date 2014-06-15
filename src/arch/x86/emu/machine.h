@@ -57,7 +57,7 @@ extern unsigned char x86_context_host_fpenv[28];
 /* References to functions emulating x86 instructions */
 #define DEFINST(name, op1, op2, op3, modrm, imm, pfx) \
 	void x86_isa_##name##_impl(X86Context *ctx);
-#include <arch/x86/asm/asm.dat>
+#include <arch/x86/asm/Inst.def>
 #undef DEFINST
 
 

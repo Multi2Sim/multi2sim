@@ -25,7 +25,7 @@
 #define DEFINST(_name, _fmt_str, ...) \
 		extern void kpl_isa_##_name##_impl(KplThread *thread, \
 				struct KplInstWrap *inst);
-#include <arch/kepler/asm/asm.dat>
+#include <arch/kepler/asm/Inst.def>
 #undef DEFINST
 
 

@@ -53,7 +53,7 @@ Emu::Emu()
 
 #define DEFINST(_name, _fmt_str, ...) \
 	inst_func[INST_##_name] = kpl_isa_##_name##_impl;
-#include <arch/kepler/asm/asm.dat>
+#include <arch/kepler/asm/Inst.def>
 #undef DEFINST
 
 	// Global memory initialization

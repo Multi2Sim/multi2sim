@@ -2,12 +2,11 @@ lib_LIBRARIES = libasm.a
 
 libasm_a_SOURCES = \
 	\
-	asm.dat \
-	\
 	Asm.cc \
 	Asm.h \
 	\
 	Inst.cc \
+	Inst.def \
 	Inst.h \
 	\
 	Wrapper.cc \

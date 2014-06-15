@@ -431,7 +431,7 @@ Asm::Asm()
 #define DEFINST(_name, _fmt_str, ...) \
 	InitTable(INST_##_name, #_name, _fmt_str, __VA_ARGS__);
 
-#include "asm.dat"
+#include "Inst.def"
 #undef DEFINST
 }
 

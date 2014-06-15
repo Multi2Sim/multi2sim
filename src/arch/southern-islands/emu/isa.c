@@ -35,7 +35,7 @@ si_isa_inst_func_t si_isa_inst_func[SIInstOpcodeCount + 1] =
 	NULL,
 #define DEFINST(_name, _fmt_str, _fmt, _opcode, _size, _flags) \
 	si_isa_##_name##_impl,
-#include <arch/southern-islands/asm/asm.dat>
+#include <arch/southern-islands/asm/Inst.def>
 #undef DEFINST
 	NULL
 };

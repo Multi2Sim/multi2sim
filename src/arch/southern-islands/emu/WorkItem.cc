@@ -243,7 +243,7 @@ WorkItem::WorkItem(Wavefront *wavefront, int id)
 	ISAInstFuncTable[InstOpcodeInvalid] =  nullptr;
 #define DEFINST(_name, _fmt_str, _fmt, _opcode, _size, _flags) \
 	ISAInstFuncTable[INST_##_name] = &WorkItem::ISA_##_name##_Impl;
-#include <arch/southern-islands/asm/asm.dat>
+#include <arch/southern-islands/asm/Inst.def>
 #undef DEFINST
 	ISAInstFuncTable[InstOpcodeCount] = nullptr;
 }
