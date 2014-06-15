@@ -20,9 +20,11 @@
 #ifndef ARCH_COMMON_EMU_H
 #define ARCH_COMMON_EMU_H
 
+#include <cstdlib>
+#include <string>
+
 #include <lib/cpp/Timer.h>
 #include <lib/esim/ESim.h>
-#include <string>
 
 
 namespace comm
@@ -59,6 +61,48 @@ public:
 
 	/// Pause the emulator timer
 	void StopTimer() { timer.Stop(); }
+
+	/// Create a CPU context and load a program from the specified command
+	/// line. The context state is left in a state ready to start running
+	/// the first x86 ISA instruction at the program entry. This function
+	/// should be overridden by all CPU architectures.
+	///
+	/// \param args
+	///	Command line to be used, where the first argument contains the
+	///	path to the executable ELF file. If the executable is given as a
+	///	relative path, it is considered relative to argument \a cwd, or
+	///	to the current directoy if \a cwd is empty.
+	///
+	/// \param env
+	///	Array of environment variables. The environment variables
+	///	actually loaded in the program is the vector of existing
+	///	environment variables in the M2S process, together with any
+	///	extra variable contained in this array.
+	///
+	/// \param cwd
+	///	Initial current working directory for the context. Relative
+	///	paths used by the context will be relative to this directory.
+	///
+	/// \param stdin_file_name
+	///	File to redirect the standard input, or empty string for no
+	///	redirection. If this is a relative path, it is interpreted as
+	///	relative to \a cwd, or to the current directory if \a cwd is
+	///	empty.
+	///
+	/// \param stdout_file_name
+	///	File to redirect the standard output and standard error output,
+	///	or empty string for no redirection. If this is a relative path,
+	///	it is interpreted as relative to \a cwd, or to the current
+	///	directoy if \a cwd is empty.
+	virtual void LoadProgram(const std::vector<std::string> &args,
+			const std::vector<std::string> &env = { },
+			const std::string &cwd = "",
+			const std::string &stdin_file_name = "",
+			const std::string &stdout_file_name = "")
+	{
+		// Should not be invoked directly
+		abort();
+	}
 
 	/// Run one iteration of the emulation loop for the architecture. If
 	/// there was an active emulation, the function returns \c true. This is

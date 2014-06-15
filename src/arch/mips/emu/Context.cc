@@ -164,4 +164,7 @@ void Context::Execute()
 	// Stats
 	emu->incInstructions();
 }
-}
+
+
+}  // namespace MIPS
+

@@ -261,16 +261,14 @@ Context *Emu::getContext(int pid)
 }
 
 
-void Emu::loadProgram(const std::vector<std::string> args)
+void Emu::LoadProgram(const std::vector<std::string> &args,
+		const std::vector<std::string> &env,
+		const std::string &cwd,
+		const std::string &stdin_file_name,
+		const std::string &stdout_file_name)
 {
 	// Create new context
 	Context *context = newContext();
-
-	// Load program
-	std::vector<std::string> env;
-	std::string cwd = misc::getCwd();
-	std::string stdin_file_name = "";
-	std::string stdout_file_name = "";
 	context->Load(args,
 			env,
 			cwd,

@@ -97,8 +97,14 @@ public:
 	/// contexts.
 	Context *newContext();
 
-	/// Load a program from the command line specified in \a args.
-	void loadProgram(const std::vector<std::string> args);
+	/// Create a context and load a program. See comm::Emu::Load() for
+	/// details on the meaning of each argument.
+	void LoadProgram(const std::vector<std::string> &args,
+			const std::vector<std::string> &env = { },
+			const std::string &cwd = "",
+			const std::string &stdin_file_name = "",
+			const std::string &stdout_file_name = "");
+
 
 	/// Return unique instance of the MIPS emulator singleton.
 	static Emu *getInstance();
