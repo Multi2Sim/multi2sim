@@ -439,44 +439,41 @@ void Context::LoadStack()
 void Context::LoadBinary()
 {
 	// Alternative stdin
-	std::string stdin_full_path = getFullPath(loader->stdin_file_name);
-	if (!stdin_full_path.empty())
+	if (!loader->stdin_file_name.empty())
 	{
 		// Open new stdin
-		int f = open(stdin_full_path.c_str(), O_RDONLY);
+		int f = open(loader->stdin_file_name.c_str(), O_RDONLY);
 		if (f < 0)
 			misc::fatal("%s: cannot open stdin",
-					stdin_full_path.c_str());
+					loader->stdin_file_name.c_str());
 
 		// Replace file descriptor 0
 		file_table->freeFileDesc(0);
 		file_table->newFileDesc(FileDescStd, 0, f,
-				stdin_full_path, O_RDONLY);
+				loader->stdin_file_name, O_RDONLY);
 	}
 
 	// Alternative stdout/stderr
-	std::string stdout_full_path = getFullPath(loader->stdout_file_name);
-	if (!stdout_full_path.empty())
+	if (!loader->stdout_file_name.empty())
 	{
 		// Open new stdout
-		int f = open(stdout_full_path.c_str(),
+		int f = open(loader->stdout_file_name.c_str(),
 				O_CREAT | O_APPEND | O_TRUNC | O_WRONLY,
 				0660);
 		if (f < 0)
-			misc::fatal("%s: cannot open stdin",
-					stdin_full_path.c_str());
+			misc::fatal("%s: cannot open stdout",
+					loader->stdout_file_name.c_str());
 
 		// Replace file descriptors 1 and 2
 		file_table->freeFileDesc(1);
 		file_table->freeFileDesc(2);
 		file_table->newFileDesc(FileDescStd, 1, f,
-				stdout_full_path, O_WRONLY);
+				loader->stdout_file_name, O_WRONLY);
 		file_table->newFileDesc(FileDescStd, 2, f,
-				stdout_full_path, O_WRONLY);
+				loader->stdout_file_name, O_WRONLY);
 	}
 	
 	// Load ELF binary
-	loader->exe = getFullPath(loader->args[0]);
 	loader->binary.reset(new ELFReader::File(loader->exe));
 
 	// Read sections and program entry
@@ -507,26 +504,6 @@ void Context::LoadBinary()
 	emu->loader_debug << misc::fmt("Program entry is 0x%x\n", regs.getEip())
 			<< misc::fmt("Initial stack pointer is 0x%x\n", regs.getEsp())
 			<< misc::fmt("Heap start set to 0x%x\n", memory->getHeapBreak());
-}
-
-
-std::string Context::getFullPath(const std::string &path)
-{
-	// Remove './' prefix from 's'
-	std::string s = path;
-	while (misc::StringPrefix(s, "./"))
-		s.erase(0, 2);
-
-	// File name is empty
-	if (s.empty())
-		return s;
-
-	// File name is given as an absolute path
-	if (s[0] == '/')
-		return s;
-
-	// Relative path
-	return loader->cwd + "/" + s;
 }
 
 

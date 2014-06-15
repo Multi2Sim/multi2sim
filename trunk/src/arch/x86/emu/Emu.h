@@ -123,11 +123,16 @@ public:
 	/// that pid.
 	Context *getContext(int pid);
 
-	/// Load a program from the command line specified in \a args.
-	void loadProgram(const std::vector<std::string> args);
-
 	/// Remove a context from all context lists and free it
 	void freeContext(Context *context);
+
+	/// Create a context and load a program. See comm::Emu::Load() for
+	/// details on the meaning of each argument.
+	void LoadProgram(const std::vector<std::string> &args,
+			const std::vector<std::string> &env = { },
+			const std::string &cwd = "",
+			const std::string &stdin_file_name = "",
+			const std::string &stdout_file_name = "");
 
 	/// Add a context to a context list if it is not present already
 	void AddContextToList(ContextListType type, Context *context);

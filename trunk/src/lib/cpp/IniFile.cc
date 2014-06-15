@@ -30,6 +30,9 @@ namespace misc
 {
 
 
+Debug IniFile::debug;
+
+
 void IniFile::ItemToSectionVar(const std::string &item, std::string &section,
 		std::string &var)
 {
@@ -66,16 +69,15 @@ std::string IniFile::SectionVarToItem(const std::string &_section,
 }
 
 
-bool IniFile::GetVarValue(const std::string &s, std::string &var,
+bool IniFile::getVarValue(const std::string &s, std::string &var,
 		std::string &value)
 {
-	// At least one '-' sign
-	size_t count = std::count(s.begin(), s.end(), '=');
-	if (count != 1)
+	// Find position of '-' sign
+	size_t pos = s.find_first_of('=');
+	if (pos == std::string::npos)
 		return false;
 
 	// Split std::string
-	size_t pos = s.find('=');
 	var = s.substr(0, pos);
 	value = s.substr(pos + 1);
 	if (var.empty())
@@ -215,6 +217,10 @@ void IniFile::Load(const std::string &path)
 					path.c_str(), line_num,
 					section.c_str(), ini_file_err_format);
 
+			// Debug
+			debug << fmt("%s: found section [%s]\n",
+					path.c_str(), section.c_str());
+
 			// Done for this line
 			continue;
 		}
@@ -225,7 +231,7 @@ void IniFile::Load(const std::string &path)
 				path.c_str(), line_num, ini_file_err_format);
 		
 		// New "<var> = <value>" entry.
-		ok = GetVarValue(line, var, value);
+		ok = getVarValue(line, var, value);
 		if (!ok)
 			fatal("%s: line %d: invalid format.\n%s",
 				path.c_str(), line_num, ini_file_err_format);
@@ -236,6 +242,11 @@ void IniFile::Load(const std::string &path)
 			fatal("%s: line %d: duplicated variable '%s'.\n%s",
 				path.c_str(), line_num, var.c_str(),
 				ini_file_err_format);
+
+		// Debug
+		debug << fmt("%s: parsed section [%s], variable '%s', value '%s'\n",
+				path.c_str(), section.c_str(), var.c_str(),
+				value.c_str());
 	}
 	
 	// End
@@ -406,7 +417,26 @@ std::string IniFile::ReadString(const std::string &section,
 	Allow(section, var);
 	std::string item = SectionVarToItem(section, var);
 	auto it = items.find(item);
-	return it == items.end() ? def : it->second;
+	if (it == items.end())
+	{
+		debug << fmt("%s: read section [%s], variable '%s', "
+				"not found, default is '%s'\n",
+				path.c_str(),
+				section.c_str(),
+				var.c_str(),
+				def.c_str());
+		return def;
+	}
+	else
+	{
+		debug << fmt("%s: read section [%s], variable '%s', "
+				"value '%s'\n",
+				path.c_str(),
+				section.c_str(),
+				var.c_str(),
+				it->second.c_str());
+		return it->second;
+	}
 }
 
 
@@ -419,8 +449,17 @@ int IniFile::ReadInt(const std::string &section, const std::string &var,
 
 	// Obtain value
 	value = ReadString(section, var);
-	if (value == "")
+	if (value.empty())
+	{
+		debug << fmt("%s: read section [%s], "
+				"variable '%s', "
+				"not found, default is %d\n",
+				path.c_str(),
+				section.c_str(),
+				var.c_str(),
+				def);
 		return def;
+	}
 
 	// Interpret
 	result = StringToInt(value, error);
@@ -430,6 +469,13 @@ int IniFile::ReadInt(const std::string &section, const std::string &var,
 				value.c_str(), StringErrorToString(error));
 
 	// Return
+	debug << fmt("%s: read section [%s], "
+			"variable '%s', "
+			"value %d\n",
+			path.c_str(),
+			section.c_str(),
+			var.c_str(),
+			result);
 	return result;
 }
 
@@ -443,8 +489,17 @@ long long IniFile::ReadInt64(const std::string &section,
 
 	// Obtain value
 	value = ReadString(section, var);
-	if (value == "")
+	if (value.empty())
+	{
+		debug << fmt("%s: read section [%s], "
+				"variable '%s', "
+				"not found, default is %lld\n",
+				path.c_str(),
+				section.c_str(),
+				var.c_str(),
+				def);
 		return def;
+	}
 
 	// Interpret
 	result = StringToInt64(value, error);
@@ -454,6 +509,13 @@ long long IniFile::ReadInt64(const std::string &section,
 				value.c_str(), StringErrorToString(error));
 
 	// Return
+	debug << fmt("%s: read section [%s], "
+			"variable '%s', "
+			"value %lld\n",
+			path.c_str(),
+			section.c_str(),
+			var.c_str(),
+			result);
 	return result;
 }
 
@@ -461,22 +523,46 @@ long long IniFile::ReadInt64(const std::string &section,
 bool IniFile::ReadBool(const std::string &section, const std::string &var,
 		bool def)
 {
-	std::string s;
-
 	// Read variable
-	s = ReadString(section, var);
-	if (s == "")
+	std::string s = ReadString(section, var);
+	if (s.empty())
+	{
+		debug << fmt("%s: read section [%s], variable '%s', "
+				"not found, default is %s\n",
+				path.c_str(),
+				section.c_str(),
+				var.c_str(),
+				def ? "True" : "False");
 		return def;
+	}
 
 	// True
-	if (!strcasecmp(s.c_str(), "t") || !strcasecmp(s.c_str(), "True")
+	if (!strcasecmp(s.c_str(), "t")
+			|| !strcasecmp(s.c_str(), "True")
 			|| !strcasecmp(s.c_str(), "On"))
+	{
+		debug << fmt("%s: read section [%s], "
+				"variable '%s', "
+				"value 'True'\n",
+				path.c_str(),
+				section.c_str(),
+				var.c_str());
 		return true;
+	}
 	
 	// False
-	if (!strcasecmp(s.c_str(), "f") || !strcasecmp(s.c_str(), "False")
+	if (!strcasecmp(s.c_str(), "f")
+			|| !strcasecmp(s.c_str(), "False")
 			|| !strcasecmp(s.c_str(), "Off"))
+	{
+		debug << fmt("%s: read section [%s], "
+				"variable '%s', "
+				"value 'False'\n",
+				path.c_str(),
+				section.c_str(),
+				var.c_str());
 		return false;
+	}
 
 	// Invalid value
 	fatal("%s: section [%s], variable '%s', invalid value '%s'\n"
@@ -489,16 +575,22 @@ bool IniFile::ReadBool(const std::string &section, const std::string &var,
 double IniFile::ReadDouble(const std::string &section,
 		const std::string &var, double def)
 {
-	std::istringstream ss;
-	std::string s;
-	double value;
-
 	// Read value
-	s = ReadString(section, var);
-	if (s == "")
+	std::string s = ReadString(section, var);
+	if (s.empty())
+	{
+		debug << fmt("%s: read section [%s], variable '%s', "
+				"not found, default is %f\n",
+				path.c_str(),
+				section.c_str(),
+				var.c_str(),
+				def);
 		return def;
+	}
 
 	// Convert
+	std::istringstream ss;
+	double value;
 	ss.str(s);
 	ss >> value;
 	if (!ss || !ss.eof())
@@ -506,6 +598,13 @@ double IniFile::ReadDouble(const std::string &section,
 				path.c_str(), section.c_str(), var.c_str(), s.c_str());
 	
 	// Convert
+	debug << fmt("%s: read section [%s], "
+			"variable '%s', "
+			"value %f\n",
+			path.c_str(),
+			section.c_str(),
+			var.c_str(),
+			value);
 	return value;
 }
 
@@ -513,20 +612,34 @@ double IniFile::ReadDouble(const std::string &section,
 int IniFile::ReadEnum(const std::string &section, const std::string &var,
 		StringMap &map, int def)
 {
-	std::string s;
-
-	int value;
-	bool error;
-
 	// Read value
-	s = ReadString(section, var);
-	if (s == "")
+	std::string s = ReadString(section, var);
+	if (s.empty())
+	{
+		debug << fmt("%s: read section [%s], "
+				"variable '%s', "
+				"not found, default is '%s'\n",
+				path.c_str(),
+				section.c_str(),
+				var.c_str(),
+				map.MapValue(def));
 		return def;
+	}
 	
 	// Convert
-	value = map.MapStringCase(s, error);
+	bool error;
+	int value = map.MapStringCase(s, error);
 	if (!error)
+	{
+		debug << fmt("%s: read section [%s], "
+				"variable '%s', "
+				"value '%s'\n",
+				path.c_str(),
+				section.c_str(),
+				var.c_str(),
+				map.MapValue(value));
 		return value;
+	}
 
 	// Error, show options
 	fatal("%s: section [%s], variable '%s', invalid value '%s'\n"
@@ -540,16 +653,32 @@ int IniFile::ReadEnum(const std::string &section, const std::string &var,
 void *IniFile::ReadPointer(const std::string &section, const std::string &var,
 		void *def)
 {
-	std::string s;
-	void *value;
-
 	// Read value
-	s = ReadString(section, var);
-	if (s == "")
+	std::string s = ReadString(section, var);
+	if (s.empty())
+	{
+		debug << fmt("%s: read section [%s], "
+				"variable '%s', "
+				"not found, default is %p\n",
+				path.c_str(),
+				section.c_str(),
+				var.c_str(),
+				def);
 		return def;
+	}
 	
 	// Convert
+	void *value;
 	sscanf(s.c_str(), "%p", &value);
+
+	// Return
+	debug << fmt("%s: read section [%s], "
+			"variable '%s', "
+			"value %p\n",
+			path.c_str(),
+			section.c_str(),
+			var.c_str(),
+			value);
 	return value;
 }
 

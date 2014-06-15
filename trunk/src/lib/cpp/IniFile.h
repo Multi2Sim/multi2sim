@@ -28,6 +28,7 @@
 #include <unordered_set>
 #include <vector>
 
+#include "Debug.h"
 #include "String.h"
 
 
@@ -40,16 +41,24 @@ class IniFile
 	// Case-insensitive string hash
 	struct KeyHash
 	{
-		size_t operator()(std::string s) const { misc::StringToLower(s);
-				return std::hash<std::string>()(s); }
+		size_t operator()(std::string s) const
+		{
+			misc::StringToLower(s);
+			return std::hash<std::string>()(s);
+		}
 	};
 
 	// Case-insensitive string compare
 	struct KeyCompare
 	{
 		bool operator()(const std::string& a, const std::string& b) const
-				{ return !strcasecmp(a.c_str(), b.c_str()); }
+		{
+			return !strcasecmp(a.c_str(), b.c_str());
+		}
 	};
+
+	// Inifile debugger
+	static Debug debug;
 
 	// File name
 	std::string path;
@@ -89,7 +98,7 @@ class IniFile
 	/// Given a string in the format "<var>=<value>", return a string
 	/// containing the variable and another string containing the value. If
 	/// the input string format is invalid, the function returns false.
-	static bool GetVarValue(const std::string &s, std::string &var,
+	static bool getVarValue(const std::string &s, std::string &var,
 			std::string &value);
 
 	bool InsertSection(std::string section);
@@ -106,7 +115,7 @@ public:
 
 	/// If the content of the INI file was loaded from the file system,
 	/// return the file name. Otherwise, return an empty string.
-	const std::string &GetPath() const { return path; }
+	const std::string &getPath() const { return path; }
 
 	/// Load the INI file content from the file system
 	void Load(const std::string &path);
@@ -238,6 +247,18 @@ public:
 	/// file, and that all variables/sections present in the file are
 	/// allowed.
 	void Check() const;
+
+	/// Activate debug information for the Inifile parser.
+	///
+	/// \param path
+	///	Path to dump debug information. Strings \c stdout and \c stderr
+	///	are special values referring to the standard output and standard
+	///	error output, respectively.
+	static void setDebugPath(const std::string &path)
+	{
+		debug.setPath(path);
+		debug.setPrefix("[IniFile]");
+	}
 };
 
 

@@ -51,11 +51,21 @@ namespace misc
 ///
 class Debug
 {
+	// Path to dump debug info
 	std::string path;
+
+	// Prefix used before every debug message
+	std::string prefix;
+
+	// Output stream
 	std::ostream *os;
+
+	// Flag indicating whether debug category is active
 	bool active;
 
+	// Close debugger
 	void Close();
+
 public:
 	
 	/// Constructor
@@ -85,9 +95,10 @@ public:
 	/// debug object. If the debugger has not been initialized with a call
 	/// to setPath(), this call is ignored. The argument can be of any
 	/// type accepted by an \c std::ostream object.
-	template<typename T> Debug& operator<<(T val) {
+	template<typename T> Debug& operator<<(T val)
+	{
 		if (os && active)
-			*os << val;
+			*os << prefix << val;
 		return *this;
 	}
 
@@ -106,10 +117,20 @@ public:
 	/// to \c Dump() functions that use an \c std::ostream reference. The
 	/// user must make sure that this only happens when a proper output
 	/// stream has been internally initialized after a call to setPath().
-	operator std::ostream &() { assert(os); return *os; }
+	operator std::ostream &()
+	{
+		assert(os);
+		return *os;
+	}
 
 	/// Flush the internal stream
 	void Flush();
+
+	/// Set a prefix to be displayed before every debug message.
+	void setPrefix(const std::string &prefix)
+	{
+		this->prefix = prefix.empty() ? "" : prefix + ' ';
+	}
 };
 
 

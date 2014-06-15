@@ -39,6 +39,7 @@
 #include <driver/opengl/OpenGLDriver.h>
 #include <lib/cpp/CommandLine.h>
 #include <lib/cpp/Environment.h>
+#include <lib/cpp/IniFile.h>
 #include <lib/cpp/Misc.h>
 #include <lib/esim/ESim.h>
 
@@ -48,6 +49,12 @@
 //
 // Configuration options
 //
+
+// Context configuration file
+std::string m2s_context_config;
+
+// Inifile debugger
+std::string m2s_debug_inifile;
 
 // Maximum simulation time
 long long m2s_max_time = 0;
@@ -143,104 +150,87 @@ void RegisterDrivers()
 
 
 // Load a program from the command line
-void LoadCommandLineProgram()
+void LoadProgram(const std::vector<std::string> &args,
+		const std::vector<std::string> &env = { },
+		const std::string &cwd = "",
+		const std::string &stdin_file_name = "",
+		const std::string &stdout_file_name = "")
 {
-	// No program specified
-	misc::CommandLine *command_line = misc::CommandLine::getInstance();
-	if (command_line->getNumArguments() == 0)
+	// Skip if no program specified
+	if (args.size() == 0)
 		return;
 	
-	// Get executable path
-	std::string path = command_line->getArgument(0);
-
-	// Read ELF header
-	ELFReader::Header header(path);
+	// Choose emulator based on ELF header
+	std::string exe = misc::getFullPath(args[0], cwd);
+	ELFReader::Header header(exe);
+	comm::Emu *emu;
 	switch (header.getMachine())
 	{
 	case EM_386:
-	{
-		x86::Emu *emu = x86::Emu::getInstance();
-		emu->loadProgram(command_line->getArguments());
+
+		emu = x86::Emu::getInstance();
 		break;
-	}
 
 	case EM_ARM:
-	{
-		std::cout << "ARM\n";
+
+		misc::fatal("%s: ARM executable not supported yet",
+				exe.c_str());
 		break;
-	}
 
 	case EM_MIPS:
-	{
-		MIPS::Emu *emu = MIPS::Emu::getInstance();
-		emu->loadProgram(command_line->getArguments());
+
+		emu = MIPS::Emu::getInstance();
 		break;
-	}
 	
 	default:
-		misc::fatal("%s: unsupported ELF architecture", path.c_str());
+		misc::fatal("%s: unsupported ELF architecture", exe.c_str());
 	}
+		
+	// Load the program in selected emulator
+	emu->LoadProgram(args, env, cwd, stdin_file_name, stdout_file_name);
 }
 
 
 // Load programs from context configuration file
 void LoadPrograms()
 {
-#if 0
-	struct config_t *config;
+	// Load command-line program
+	misc::CommandLine *command_line = misc::CommandLine::getInstance();
+	LoadProgram(command_line->getArguments());
 
-	char section[MAX_STRING_SIZE];
-	char exe_full_path[MAX_STRING_SIZE];
-	char *exe_file_name;
-	char *cwd_path;
-
-	Elf32_Ehdr ehdr;
-
-	int id;
-
-	/* Continue processing the context configuration file, if specified. */
-	if (!*ctx_config_file_name)
+	// Load more programs if context configuration file was specified
+	if (m2s_context_config.empty())
 		return;
 
-	/* Open file */
-	config = config_create(ctx_config_file_name);
-	if (*ctx_config_file_name)
-		config_load(config);
-
-	/* Iterate through consecutive contexts */
-	for (id = 0; ; id++)
+	// Load contexts
+	misc::IniFile ini_file(m2s_context_config);
+	for (int index = 0; ; index++)
 	{
-		/* Read section */
-		snprintf(section, sizeof section, "Context %d", id);
-		if (!config_section_exists(config, section))
+		// Stop if section does not exist
+		std::string section = misc::fmt("Context %d", index);
+		if (!ini_file.Exists(section))
 			break;
 
-		/* Read executable full path */
-		exe_file_name = config_read_string(config, section, "Exe", "");
-		cwd_path = config_read_string(config, section, "Cwd", "");
-		file_full_path(exe_file_name, cwd_path, exe_full_path, sizeof exe_full_path);
+		// Load
+		std::string exe = ini_file.ReadString(section, "Exe");
+		std::string cwd = ini_file.ReadString(section, "Cwd");
+		std::string stdin_file_name = ini_file.ReadString(section, "Stdin");
+		std::string stdout_file_name = ini_file.ReadString(section, "Stdout");
+		
+		// Arguments
+		std::vector<std::string> args;
+		std::string args_str = ini_file.ReadString(section, "Args");
+		misc::StringTokenize(args_str, args);
+		args.insert(args.begin(), exe);
 
-		/* Load context depending on architecture */
-		elf_file_read_header(exe_full_path, &ehdr);
-		switch (ehdr.e_machine)
-		{
-		case EM_386:
-			X86EmuLoadContextsFromConfig(x86_emu, config, section);
-			break;
+		// Environment variables
+		std::vector<std::string> env;
+		std::string env_str = ini_file.ReadString(section, "Env");
+		misc::Environment::getFromString(env_str, env);
 
-		case EM_ARM:
-			arm_ctx_load_from_ctx_config(config, section);
-			break;
-
-		default:
-			fatal("%s: unsupported ELF architecture", argv[1]);
-		}
+		// Load program
+		LoadProgram(args, env, cwd, stdin_file_name, stdout_file_name);
 	}
-
-	/* Close file */
-	config_check(config);
-	config_free(config);
-#endif
 }
 
 
@@ -324,6 +314,21 @@ void RegisterOptions()
 	
 	// Set category for following options
 	command_line->setCategory("default", "General Multi2Sim Options");
+
+	// Context configuration
+	command_line->RegisterString("--ctx-config <file>",
+			m2s_context_config,
+			"Use <file> as the context configuration file. This "
+			"file describes the initial set of running applications, "
+			"their arguments, and environment variables. Use option "
+			"--ctx-config-help for a description of the context "
+			"configuration file format.");
+	
+	// Debugger for Inifile parser
+	command_line->RegisterString("--debug-inifile <file>",
+			m2s_debug_inifile,
+			"Dump debug information about all processed INI files "
+			"into the specified path.");
 	
 	// Maximum simulation time
 	command_line->RegisterInt64("--max-time <time> (default = 0)",
@@ -333,7 +338,8 @@ void RegisterOptions()
 			"(default) means no time limit.");
 	
 	// Trace file
-	command_line->RegisterString("--trace <file>", m2s_trace_file,
+	command_line->RegisterString("--trace <file>",
+			m2s_trace_file,
 			"Generate a trace file with debug information on the "
 			"configuration of the modeled CPUs, GPUs, and memory "
 			"system, as well as their dynamic simulation. The "
@@ -343,7 +349,8 @@ void RegisterOptions()
 			"become extremely large.");
 	
 	// Visualization tool input file
-	command_line->RegisterString("--visual <file>", m2s_visual_file,
+	command_line->RegisterString("--visual <file>",
+			m2s_visual_file,
 			"Run the Multi2Sim Visualization Tool. This option "
 			"consumes a file generated with the '--trace' option "
 			"in a previous simulation. This option is only "
@@ -359,7 +366,8 @@ void RegisterOptions()
 	command_line->setCategory("OpenCL", "OpenCL Runtime Options");
 
 	// Debug information
-	command_line->RegisterString("--opencl-debug <file>", m2s_opencl_debug,
+	command_line->RegisterString("--opencl-debug <file>",
+			m2s_opencl_debug,
 			"Debug file used in the OpenCL runtime to dump debug "
 			"information related with OpenCL API calls. This "
 			"option is equivalent to environment variable "
@@ -391,6 +399,10 @@ void ProcessOptions()
 {
 	// Get environment
 	misc::Environment *environment = misc::Environment::getInstance();
+
+	// Inifile debuffer
+	if (!m2s_debug_inifile.empty())
+		misc::IniFile::setDebugPath(m2s_debug_inifile);
 
 	// OpenCL runtime debug
 	if (!m2s_opencl_debug.empty())
@@ -502,7 +514,6 @@ void main_cpp(int argc, char **argv)
 	RegisterDrivers();
 
 	// Load programs
-	LoadCommandLineProgram();
 	LoadPrograms();
 
 	// Main simulation loop
