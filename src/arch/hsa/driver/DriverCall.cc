@@ -33,7 +33,6 @@ namespace HSA
 // ...
 int Driver::CallInit(mem::Memory *memory, unsigned args_ptr)
 {
-	assert(*memory);
 	return 0;
 }
 
@@ -54,7 +53,6 @@ int Driver::CallInit(mem::Memory *memory, unsigned args_ptr)
 //
 int Driver::CallPrintArgs(mem::Memory *memory, unsigned args_ptr)
 {
-	assert(*memory);
 	// Read arguments
 	int arg1;
 	int arg2;
@@ -82,7 +80,6 @@ int Driver::CallPrintArgs(mem::Memory *memory, unsigned args_ptr)
 // return: address where the piece of memory is allocated on device
 int Driver::CallMemAlloc(mem::Memory *memory, unsigned args_ptr)
 {
-	assert(*memory);
 	unsigned size;
 	memory->Read(args_ptr, 4, (char *) &size);
 	debug << misc::fmt("	MemAlloc size = %d\n", size);
@@ -101,7 +98,6 @@ int Driver::CallMemAlloc(mem::Memory *memory, unsigned args_ptr)
 // return: 0 if success (more error code)
 int Driver::CallMemFree(mem::Memory *memory, unsigned args_ptr)
 {
-	assert(*memory);
 	unsigned device_ptr;
 	memory->Read(args_ptr, 4, (char *)&device_ptr);
 	debug << misc::fmt("	MemFree device_ptr = 0x%08x\n", device_ptr);
@@ -122,7 +118,6 @@ int Driver::CallMemFree(mem::Memory *memory, unsigned args_ptr)
 // return: 0 if success (more error code)
 int Driver::CallMemWrite(mem::Memory *memory, unsigned args_ptr)
 {
-	assert(*memory);
 	unsigned device_ptr;
 	unsigned host_ptr;
 	unsigned size;
@@ -149,7 +144,6 @@ int Driver::CallMemWrite(mem::Memory *memory, unsigned args_ptr)
 // return: 0 if success (more error code)
 int Driver::CallMemRead(mem::Memory *memory, unsigned args_ptr)
 {
-	assert(*memory);
 	unsigned host_ptr;
 	unsigned device_ptr;
 	unsigned size;
