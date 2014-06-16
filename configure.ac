@@ -54,41 +54,6 @@ AC_CHECK_FUNCS([alarm bzero ftruncate getcwd gettimeofday memset mkdir munmap se
 
 
 
-###########################
-# Test for ({ ... }) syntax
-###########################
-
-AC_MSG_CHECKING([for code blocks within parentheses])
-
-# Try
-AC_COMPILE_IFELSE(
-	[
-		AC_LANG_PROGRAM([], [
-			return ({1;});
-		])
-	],
-	[
-		AC_MSG_RESULT(yes)
-	],
-	[
-		AC_MSG_RESULT(no)
-		AC_MSG_ERROR([
-
-	Your compiler does not support code blocks within parentheses. While
-	this syntax is not standard C, most recent compilers accept it as valid.
-	The code related with classes and objects introduced in Multi2Sim 4.2
-	relies on this syntax to be available. Please make sure that your
-	compiler accepts a simple program with the following content:
-
-		int main()
-		{
-			return ({1;});
-		}]
-		)
-	]
-)
-
-
 ################################
 # Check presence of C++ compiler
 ################################
@@ -109,7 +74,7 @@ fi
 
 
 ################################################
-# Test of GCC version >= 4.6 (support for C++11)
+# Test of GCC version >= 4.7 (support for C++11)
 ################################################
 
 # Check for option -dumpversion
@@ -120,7 +85,7 @@ then
 	AC_MSG_ERROR([
 
 	The version of the GCC compiler could not be determined, since option
-	-dumpversion is not available. Please install GCC 4.6 or later in your
+	-dumpversion is not available. Please install GCC 4.7 or later in your
 	system to compile Multi2Sim.]
 	)
 fi
@@ -134,11 +99,11 @@ AC_MSG_RESULT($cxx_version)
 # Check version
 cxx_major_version=`echo $cxx_version | cut -d. -f1`
 cxx_minor_version=`echo $cxx_version | cut -d. -f2`
-if test \( $cxx_major_version -lt 4 \) -o \( $cxx_major_version -eq 4 -a $cxx_minor_version -lt 6 \)
+if test \( $cxx_major_version -lt 4 \) -o \( $cxx_major_version -eq 4 -a $cxx_minor_version -lt 7 \)
 then
 	AC_MSG_ERROR([
 
-	The version of the GCC compiler must be 4.6 or higher to support the
+	The version of the GCC compiler must be 4.7 or higher to support the
 	C++11 code introduced in Multi2Sim. Please install a more recent version
 	of GCC and recompile.]
 	)
