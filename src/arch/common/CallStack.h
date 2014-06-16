@@ -39,33 +39,71 @@ class CallStackMap
 	// Path of ELF file for the map
 	std::string path;
 
+	// Position in the source file where the map starts
+	unsigned offset;
+
 	// Virtual address in the context's memory where the map was made
 	unsigned address;
 
 	// Size in bytes of the map
 	unsigned size;
 
+	// Static/dynamic map
+	bool dynamic;
+
 public:
 
 	/// Constructor
 	CallStackMap(const std::string &path,
+			unsigned offset,
 			unsigned address,
-			unsigned size)
+			unsigned size,
+			bool dynamic)
 			:
 			path(path),
+			offset(offset),
 			address(address),
-			size(size)
+			size(size),
+			dynamic(dynamic)
 	{
 	}
 
 	/// Return the ELF path of this map
 	const std::string &getPath() const { return path; }
 
+	/// Return the offset in the source file where map was taken from
+	unsigned getOffset() const { return offset; }
+
 	/// Return the virtual address where map was made
 	unsigned getAddress() const { return address; }
 
 	/// Return the size of the map
 	unsigned getSize() const { return size; }
+};
+
+
+class CallStackFrame
+{
+	// Instruction pointer;
+	unsigned ip;
+
+	// Stack pointer;
+	unsigned sp;
+
+public:
+
+	CallStackFrame(unsigned ip, unsigned sp)
+			:
+			ip(ip),
+			sp(sp)
+	{
+	}
+
+	/// Return the instruction pointer
+	unsigned getIp() const { return ip; }
+
+	/// Return the stack pointer
+	unsigned getSp() const { return sp; }
 };
 
 
@@ -81,7 +119,7 @@ class CallStack
 	size_t max_size;
 
 	// Entries
-	std::deque<unsigned> stack;
+	std::deque<CallStackFrame> stack;
 
 	// Maps
 	std::vector<CallStackMap> maps;
@@ -119,29 +157,41 @@ public:
 	/// information is used to search for ELF symbols when reconstructing
 	/// the stack back trace.
 	///
-	/// \param binary
+	/// \param path
 	///	Name of the ELF binary from which the region is taken.
 	///
 	/// \param offset
-	///	Offset in ELF binary where region starts.
+	///	Position in the source file where the mapped region starts.
+	///
+	/// \param address
+	///	Virtual memory address where the region is loaded.
 	///
 	/// \param size
 	///	Size of the region in bytes.
 	///
-	/// \param address
-	///	Virtual memory address where the region is loaded.
-	void Map(const std::string &binary,
+	/// \param dynamic
+	///	Flag indicating whether this map is made from the initial
+	///	static program loader, or from an `mmap` system call at runtime.
+	void Map(const std::string &path,
+			unsigned offset,
 			unsigned address,
-			unsigned size);
+			unsigned size,
+			bool dynamic);
 
 	/// Record a function call
-	void Call(unsigned address);
+	void Call(unsigned ip, unsigned sp);
 
 	/// Record a function return
-	void Return();
+	void Return(unsigned ip, unsigned sp);
 	
-	/// Dump stack back trace to output stream
-	void BackTrace(std::ostream &os = std::cout);
+	/// Dump stack back trace
+	///
+	/// \param address
+	///	Current executing instruction
+	///
+	/// \param os
+	///	Output stream to dump the back trace to
+	void BackTrace(unsigned address, std::ostream &os = std::cout);
 
 	/// Activate debug information for the call stacks.
 	///

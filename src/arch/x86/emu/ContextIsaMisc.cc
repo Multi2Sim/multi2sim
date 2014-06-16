@@ -219,7 +219,7 @@ void Context::ExecuteInst_call_rel32()
 
 	// Call stack
 	if (call_stack != nullptr)
-		call_stack->Call(target_eip);
+		call_stack->Call(target_eip, regs.getEsp());
 
 	// Micro-instructions
 	newUInst(UInstSub, UInstDepEsp, 0, 0, UInstDepEsp, 0, 0, 0);
@@ -240,7 +240,7 @@ void Context::ExecuteInst_call_rm32()
 
 	// Call stack
 	if (call_stack != nullptr)
-		call_stack->Call(target_eip);
+		call_stack->Call(target_eip, regs.getEsp());
 
 	// Micro-instructions
 	newUInst(UInstSub, UInstDepEsp, 0, 0, UInstDepEsp, 0, 0, 0);
@@ -1761,7 +1761,7 @@ void Context::ExecuteInst_ret()
 
 	// Call stack
 	if (call_stack != nullptr)
-		call_stack->Return();
+		call_stack->Return(regs.getEip(), regs.getEsp());
 
 	// Micro-instrutcions
 	newUInst(UInstEffaddr, UInstDepEsp, 0, 0, UInstDepAux, 0, 0, 0);
@@ -1793,7 +1793,7 @@ void Context::ExecuteInst_ret_imm16()
 
 	// Call stack
 	if (call_stack != nullptr)
-		call_stack->Return();
+		call_stack->Return(regs.getEip(), regs.getEsp());
 
 	// Micro-instructions
 	newUInst(UInstEffaddr, UInstDepEsp, 0, 0, UInstDepAux, 0, 0, 0);
