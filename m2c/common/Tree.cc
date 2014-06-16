@@ -1106,7 +1106,7 @@ void Tree::Read(misc::IniFile &f, const std::string &name)
 		misc::fatal("%s: %s: tree not found", __FUNCTION__, name.c_str());
 
 	/* Read nodes */
-	std::string path = f.GetPath();
+	std::string path = f.getPath();
 	for (int i = 0; i < f.getNumSections(); i++)
 	{
 		/* Get section */
