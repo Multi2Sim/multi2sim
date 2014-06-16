@@ -26,6 +26,7 @@
 #include <elf.h>
 #include <iostream>
 #include <sstream>
+#include <stdexcept>
 
 
 namespace ELFReader
