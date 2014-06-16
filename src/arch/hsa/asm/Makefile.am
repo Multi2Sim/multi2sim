@@ -30,6 +30,9 @@ libasm_a_SOURCES = \
 	BrigOperandEntry.h \
 	BrigOperandEntry.cc \
 	\
+	BrigImmed.h \
+	BrigImmed.cc \
+	\
 	SymbolModifier.cc \
 	SymbolModifier.h
 

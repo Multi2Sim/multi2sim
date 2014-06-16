@@ -9,7 +9,9 @@
 #include "BrigDef.h"
 #include "SymbolModifier.h"
 
-namespace HSA{
+namespace HSA
+{
+	
 /// Pure virtual class representing a brig entry
 class BrigEntry
 {
@@ -19,8 +21,7 @@ protected:
 	// Brig file that this entry belongs to 
 	BrigFile *file;
 
-	// Converts type to type string
-	static const char *type2str(int type);
+	
 
 	// Convert profile to string to print out
 	static const char *profile2str(int profile);
@@ -86,7 +87,7 @@ protected:
 
 	// Dump the tab for indentation
 	static void dumpIndent(std::ostream &os);
-
+	/*
 	static void DumpBrigTypeNone(void *data, uint32_t count, std::ostream &os);	// 0	//.mnemo=""
 	static void DumpBrigTypeU8(void *data, uint32_t count, std::ostream &os);		// 1	//.ctype=uint8_t  // unsigned integer 8 bits
 	static void DumpBrigTypeU16(void *data, uint32_t count, std::ostream &os);		// 2	//.ctype=uint16_t // unsigned integer 16 bits
@@ -133,13 +134,17 @@ protected:
 	static void DumpBrigTypeF32X2(void *data, uint32_t count, std::ostream &os);	// BRIG_TYPE_F32 | BRIG_TYPE_PACK_64,   //.ctype=float    // two floats
 	static void DumpBrigTypeF32X4(void *data, uint32_t count, std::ostream &os);	// BRIG_TYPE_F32 | BRIG_TYPE_PACK_128,  //.ctype=float    // four floats
 	static void DumpBrigTypeF64X2(void *data, uint32_t count, std::ostream &os);	// BRIG_TYPE_F64 | BRIG_TYPE_PACK_128   //.ctype=double   // two doubles
-
+	*/
 public:
 	/// Constructor
 	BrigEntry(char *buf, BrigFile *file);
 
 	/// Returns the pointer to the buffer of the entry
 	char *getBuffer() const{return base;}
+
+
+	/// Converts type to type string
+	static const char *type2str(int type);
 
 	/// Returns the size of the entry, the size is paddint into 4 bytes
 	/// String entry should have different implementation, since the size
