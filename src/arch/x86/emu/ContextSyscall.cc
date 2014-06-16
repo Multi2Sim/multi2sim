@@ -2375,6 +2375,14 @@ int Context::SyscallMmapAux(unsigned addr, unsigned len,
 			curr_addr += mem::MemoryPageSize;
 		}
 
+		// Record map in call stack
+		if (call_stack != nullptr && !desc->getPath().empty())
+			call_stack->Map(desc->getPath(),
+					offset,
+					addr,
+					len,
+					true);
+
 		// Return file to last position
 		lseek(host_fd, last_pos, SEEK_SET);
 	}

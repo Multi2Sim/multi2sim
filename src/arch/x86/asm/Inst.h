@@ -238,7 +238,8 @@ public:
 	/// Return the instruction opcode, or \c InstOpcodeInvalid if the
 	/// sequence of bytes failed to decode. This function must be invoked
 	/// after a previous call to Decode().
-	InstOpcode getOpcode() const {
+	InstOpcode getOpcode() const
+	{
 		assert(decoded);
 		return opcode;
 	}
@@ -246,16 +247,21 @@ public:
 	/// Return the number of bytes of this instruction, or 0 if the sequence
 	/// of bytes failed to decode. This function must be invoked after a
 	/// previous call to Decode().
-	int getSize() const {
+	int getSize() const
+	{
 		assert(decoded);
 		return size;
 	}
+
+	/// Return instruction address
+	unsigned getEip() const { return eip; }
 
 	/// Dump instruction into output stream
 	void Dump(std::ostream &os = std::cout) const;
 
 	/// Dump instruction
-	friend std::ostream &operator<<(std::ostream &os, const Inst &inst) {
+	friend std::ostream &operator<<(std::ostream &os, const Inst &inst)
+	{
 		inst.Dump(os);
 		return os;
 	}

@@ -64,13 +64,13 @@ std::string CallStack::getSymbolName(unsigned address)
 {
 	// Identify map
 	CallStackMap *map = nullptr;
-	for (auto &map_i : maps)
+	for (auto it = maps.rbegin(); it != maps.rend(); ++it)
 	{
-		if (address >= map_i.getAddress() &&
-				address < map_i.getAddress()
-				+ map_i.getSize())
+		if (address >= it->getAddress() &&
+				address < it->getAddress()
+				+ it->getSize())
 		{
-			map = &map_i;
+			map = &(*it);
 			break;
 		}
 	}
@@ -82,19 +82,24 @@ std::string CallStack::getSymbolName(unsigned address)
 
 	// Get ELF file
 	ELFReader::File *elf_file = getELFFile(map->getPath());
+	address_str = misc::fmt("<0x%x> @%s", address, map->getPath().c_str());
 	if (!elf_file)
 		return address_str;
 
 	// Get symbol
 	unsigned offset;
 	ELFReader::Symbol *elf_symbol = elf_file->getSymbolByAddress(
-			address, offset);
+			address - map->getAddress() + map->getOffset(),
+			offset);
 	if (!elf_symbol)
 		return address_str;
 
 	// Symbol and offset found
-	std::string offset_str = misc::fmt(" + 0x%x", offset);
-	std::string name = elf_symbol->getName() + (offset ? offset_str : "");
+	std::string offset_str = offset ? misc::fmt(" + 0x%x", offset) : "";
+	std::string name = misc::fmt("%s%s @ %s",
+			elf_symbol->getName().c_str(),
+			offset_str.c_str(),
+			map->getPath().c_str());
 	return name;
 }
 
@@ -120,8 +125,8 @@ void CallStack::DumpCurrentLevel(std::ostream &os)
 	}
 
 	// Dump
-	unsigned address = stack.back();
-	std::string name = getSymbolName(address);
+	unsigned ip = stack.back().getIp();
+	std::string name = getSymbolName(ip);
 	debug << misc::fmt("[%s] %s%s\n",
 			path.c_str(),
 			levels.c_str(),
@@ -143,34 +148,39 @@ CallStack::CallStack(const std::string &path, size_t max_size)
 }
 	
 
-void CallStack::Map(const std::string &binary,
+void CallStack::Map(const std::string &binary_path,
+		unsigned offset,
 		unsigned address,
-		unsigned size)
+		unsigned size,
+		bool dynamic)
 {
 	// Add map
-	maps.emplace_back(binary,
+	maps.emplace_back(binary_path,
+			offset,
 			address,
-			size);
+			size,
+			dynamic);
 	
 	// Debug
-	debug << misc::fmt("[%s] %s: %u bytes loaded to 0x%x\n",
+	debug << misc::fmt("[%s] %s@0x%x mapped to %x-%x\n",
 			path.c_str(),
-			binary.c_str(),
-			size,
-			address);
+			binary_path.c_str(),
+			offset,
+			address,
+			address + size - 1);
 }
 
 
-void CallStack::Call(unsigned address)
+void CallStack::Call(unsigned ip, unsigned sp)
 {
 	// Push new address to stack
-	stack.push_back(address);
+	stack.emplace_back(ip, sp);
 
 	// Remove bottom of stack if maximum size exceeded
 	if (stack.size() > max_size)
 		stack.pop_front();
 	
-	// Increate call level
+	// Increase call level
 	level++;
 	
 	// Debug
@@ -179,7 +189,7 @@ void CallStack::Call(unsigned address)
 }
 
 
-void CallStack::Return()
+void CallStack::Return(unsigned ip, unsigned sp)
 {
 	// Pop stack
 	if (stack.size() > 0)
@@ -195,7 +205,7 @@ void CallStack::Return()
 }
 
 
-void CallStack::BackTrace(std::ostream &os)
+void CallStack::BackTrace(unsigned address, std::ostream &os)
 {
 	// Header
 	os << misc::fmt("\nBacktrace for '%s'\n", path.c_str());
@@ -210,8 +220,9 @@ void CallStack::BackTrace(std::ostream &os)
 	// Traverse stack
 	for (int i = 0; i < (int) stack.size(); i++)
 	{
-		unsigned address = stack[i];
-		std::string name = getSymbolName(address);
+		unsigned ip = i == (int) stack.size() - 1 ?
+				address : stack[i].getIp();
+		std::string name = getSymbolName(ip);
 		os << misc::fmt("\t%d. %s\n", i + 1, name.c_str());
 	}
 }

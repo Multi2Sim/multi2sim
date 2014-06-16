@@ -784,7 +784,7 @@ void Context::Execute()
 		{
 			// Stack back trace
 			if (call_stack != nullptr)
-				call_stack->BackTrace(std::cerr);
+				call_stack->BackTrace(inst.getEip(), std::cerr);
 
 			// End
 			misc::fatal("%s", e.what());
