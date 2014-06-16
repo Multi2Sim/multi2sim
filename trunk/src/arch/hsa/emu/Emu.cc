@@ -1,6 +1,6 @@
 /*
  *  Multi2Sim
- *  Copyright (C) 2014  Yifan Sun
+ *  Copyright (C) 2014  Yifan Sun (yifansun@coe.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,9 +18,7 @@
  */
 
 #include <arch/hsa/driver/Driver.h>
-
 #include "Emu.h"
-
 
 namespace HSA
 {
