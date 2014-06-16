@@ -20,7 +20,7 @@
 #ifndef M2C_LLVM2SI_PHI_H
 #define M2C_LLVM2SI_PHI_H
 
-#include <llvm/Value.h>
+#include <llvm/IR/Value.h>
 #include <m2c/common/Node.h>
 #include <m2c/si2bin/Arg.h>
 

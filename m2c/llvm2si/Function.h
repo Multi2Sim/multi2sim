@@ -25,9 +25,9 @@
 #include <list>
 
 #include <arch/southern-islands/asm/Arg.h>
-#include <llvm/Argument.h>
-#include <llvm/Value.h>
-#include <llvm/Type.h>
+#include <llvm/IR/Argument.h>
+#include <llvm/IR/Value.h>
+#include <llvm/IR/Type.h>
 #include <m2c/common/Node.h>
 #include <m2c/common/Tree.h>
 #include <m2c/si2bin/Arg.h>
