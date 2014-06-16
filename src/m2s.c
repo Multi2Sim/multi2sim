@@ -246,6 +246,9 @@ static char *m2s_help =
 		"General Options\n"
 		"================================================================================\n"
 		"\n"
+		"  -c\n"
+		"      Use C version of Multi2Sim.\n"
+		"\n"
 		"  --ctx-config <file>\n"
 		"      Use <file> as the context configuration file. This file describes the\n"
 		"      initial set of running applications, their arguments, and environment\n"
@@ -685,6 +688,13 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		/*
 		 * General Options
 		 */
+
+		/* Use C version of Multi2Sim */
+		if (!strcmp(argv[argi], "-c"))
+		{
+			/* Ignore */
+			continue;
+		}
 
 		/* Context configuration file */
 		if (!strcmp(argv[argi], "--ctx-config"))

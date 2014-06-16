@@ -67,14 +67,17 @@ public:
 
 	/// Constructor
 	///
-	/// \param name Option name. It must start with a double dash
-	///        (<tt>--</tt>). Only the first token of this string is
-	///        considered as the option name. The complete string will be
-	///        used to display the help message.
-	/// \param num_args Number of additional arguments required by the
-	///        command-line option.
-	/// \param help String to print as a help message related with the
-	///        option.
+	/// \param name
+	///	Name of the option. It must start with a double dash
+	///	(`--`). Only the first token of this string is considered
+	///	as the option name. The complete string will be used to display
+	///	the help message.
+	///
+	/// \param num_args
+	///	Number of additional arguments required by the command-line
+	///	option.
+	/// \param help
+	///	String to print as a help message related with the option.
 	CommandLineOption(Type type, const std::string &name, int num_args,
 			const std::string &help);
 
@@ -128,10 +131,14 @@ class CommandLineOptionString : public CommandLineOption
 public:
 
 	/// Constructor
-	CommandLineOptionString(const std::string &name, std::string *var,
+	CommandLineOptionString(const std::string &name,
+			std::string *var,
 			const std::string &help)
-			: CommandLineOption(TypeString, name, 1, help),
-			var(var) { }
+			:
+			CommandLineOption(TypeString, name, 1, help),
+			var(var)
+	{
+	}
 	
 	/// Read option from command line. See CommandLineOption::Read().
 	void Read(int argc, char **argv, int index);
@@ -144,10 +151,14 @@ class CommandLineOptionInt32 : public CommandLineOption
 	int *var;
 public:
 	/// Constructor
-	CommandLineOptionInt32(const std::string &name, int *var,
+	CommandLineOptionInt32(const std::string &name,
+			int *var,
 			const std::string &help)
-		: CommandLineOption(TypeInt32, name, 1, help),
-		var(var) { }
+			:
+			CommandLineOption(TypeInt32, name, 1, help),
+			var(var)
+	{
+	}
 	
 	/// Read option from command line. See CommandLineOption::Read().
 	void Read(int argc, char **argv, int index);
@@ -158,12 +169,18 @@ public:
 class CommandLineOptionInt64 : public CommandLineOption
 {
 	long long *var;
+
 public:
+
 	/// Constructor
-	CommandLineOptionInt64(const std::string &name, long long *var,
+	CommandLineOptionInt64(const std::string &name,
+			long long *var,
 			const std::string &help)
-		: CommandLineOption(TypeInt64, name, 1, help),
-		var(var) { }
+			:
+			CommandLineOption(TypeInt64, name, 1, help),
+			var(var)
+	{
+	}
 	
 	/// Read option from command line. See CommandLineOption::Read().
 	void Read(int argc, char **argv, int index);
@@ -175,12 +192,20 @@ class CommandLineOptionEnum : public CommandLineOption
 {
 	int *var;
 	const StringMap &map;
+
 public:
+
 	/// Constructor
-	CommandLineOptionEnum(const std::string &name, int *var,
-			const StringMap &map, const std::string &help)
-		: CommandLineOption(TypeEnum, name, 1, help),
-		var(var), map(map) { }
+	CommandLineOptionEnum(const std::string &name,
+			int *var,
+			const StringMap &map,
+			const std::string &help)
+			:
+			CommandLineOption(TypeEnum, name, 1, help),
+			var(var),
+			map(map)
+	{
+	}
 	
 	/// Read option from command line. See CommandLineOption::Read()
 	void Read(int argc, char **argv, int index);
@@ -194,10 +219,14 @@ class CommandLineOptionBool : public CommandLineOption
 public:
 
 	/// Constructor
-	CommandLineOptionBool(const std::string &name, bool *var,
+	CommandLineOptionBool(const std::string &name,
+			bool *var,
 			const std::string &help)
-			: CommandLineOption(TypeBool, name, 0, help),
-			var(var) { }
+			:
+			CommandLineOption(TypeBool, name, 0, help),
+			var(var)
+	{
+	}
 	
 	/// Read option from command line. See CommandLineOption::Read().
 	void Read(int argc, char **argv, int index);
@@ -277,13 +306,13 @@ class CommandLine
 	void Register(CommandLineOption *option);
 
 	// Set to true when function Process() is invoked.
-	bool processed;
+	bool processed = false;
 
-	// Command-line option indicating whether to use C++
-	bool use_cpp;
+	// Command-line option indicating whether to use the old C code instead
+	bool use_c = false;
 
 	// Show help message with command-line options
-	bool show_help;
+	bool show_help = false;
 
 	// Help message header
 	std::string help;
@@ -353,13 +382,13 @@ public:
 		return args;
 	}
 
-	/// Return \c true if the user specified command-line option \c --cpp.
+	/// Return \c true if the user specified command-line option \c -c.
 	/// This option is temporarily used to activate the C++ version of
 	/// Multi2Sim.
-	bool getUseCpp() const
+	bool getUseC() const
 	{
 		assert(processed);
-		return use_cpp;
+		return use_c;
 	}
 
 	/// Register a command-line option that takes no argument. If present,
