@@ -27,9 +27,9 @@
 
 #ifdef __cplusplus
 
-#include <llvm/DerivedTypes.h>
-#include <llvm/Type.h>
-#include <llvm/LLVMContext.h>
+#include <llvm/IR/DerivedTypes.h>
+#include <llvm/IR/Type.h>
+#include <llvm/IR/LLVMContext.h>
 
 namespace cl2llvm
 {

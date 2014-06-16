@@ -25,7 +25,7 @@
 #include <memory>
 
 #include <lib/cpp/String.h>
-#include <llvm/BasicBlock.h>
+#include <llvm/IR/BasicBlock.h>
 
 
 namespace Common

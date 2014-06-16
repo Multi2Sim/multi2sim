@@ -23,10 +23,10 @@
 #include <sstream>
 
 #include <lib/cpp/Misc.h>
-#include <llvm/BasicBlock.h>
-#include <llvm/Function.h>
-#include <llvm/InstrTypes.h>
-#include <llvm/Instructions.h>
+#include <llvm/IR/BasicBlock.h>
+#include <llvm/IR/Function.h>
+#include <llvm/IR/InstrTypes.h>
+#include <llvm/IR/Instructions.h>
 
 #include "Node.h"
 #include "Tree.h"

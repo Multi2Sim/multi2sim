@@ -23,9 +23,9 @@
 #include <iostream>
 #include <memory>
 
-#include <llvm/InstrTypes.h>
-#include <llvm/Instructions.h>
-#include <llvm/Type.h>
+#include <llvm/IR/InstrTypes.h>
+#include <llvm/IR/Instructions.h>
+#include <llvm/IR/Type.h>
 #include <m2c/common/BasicBlock.h>
 #include <m2c/common/Node.h>
 #include <m2c/si2bin/Inst.h>
