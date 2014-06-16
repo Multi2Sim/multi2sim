@@ -23,6 +23,7 @@
 #include <fstream>
 
 #include <lib/cpp/Misc.h>
+#include <lib/cpp/String.h>
 
 #include "Memory.h"
 
@@ -195,7 +196,9 @@ char *Memory::getBuffer(unsigned addr, unsigned size, MemoryAccess access)
 	
 	// Check page permissions
 	if ((page->perm & access) != access && safe)
-		misc::fatal("%s: permission denied at 0x%x", __FUNCTION__, addr);
+		throw MemoryException(misc::fmt(
+				"[0x%x] Permission denied",
+				addr));
 	
 	// Allocate and initialize page data if it does not exist yet.
 	if (!page->data)
@@ -219,8 +222,9 @@ void Memory::AccessAtPageBoundary(unsigned addr, unsigned size, char *buf,
 	if (!page)
 	{
 		if (safe)
-			misc::fatal("%s: illegal access at 0x%x: page not allocated",
-					__FUNCTION__, addr);
+			throw MemoryException(misc::fmt(
+					"[0x%x] Segmentation fault in guest program",
+					addr));
 		if (access == MemoryAccessRead || access == MemoryAccessExec)
 		{
 			memset(buf, 0, size);
@@ -242,7 +246,9 @@ void Memory::AccessAtPageBoundary(unsigned addr, unsigned size, char *buf,
 
 	// Check permissions in safe mode
 	if (safe && (page->perm & access) != access)
-		misc::fatal("%s: permission denied at 0x%x", __FUNCTION__, addr);
+		throw MemoryException(misc::fmt(
+				"[0x%x] Permission denied",
+				addr));
 
 	// Read/execute access
 	if (access == MemoryAccessRead || access == MemoryAccessExec)
@@ -495,8 +501,9 @@ void Memory::Save(const std::string &path, unsigned start, unsigned end)
 {
 	std::ofstream f(path);
 	if (!f)
-		misc::fatal("%s: %s: cannot open file",
-				__FUNCTION__, path.c_str());
+		throw MemoryException(misc::fmt(
+				"%s: Cannot open file",
+				path.c_str()));
 	
 	// Set unsafe mode and dump
 	bool old_safe = safe;
@@ -520,8 +527,9 @@ void Memory::Load(const std::string &path, unsigned start)
 	// Open file
 	std::ifstream f(path);
 	if (!f)
-		misc::fatal("%s: %s: cannot open file",
-				__FUNCTION__, path.c_str());
+		throw MemoryException(misc::fmt(
+				"%s: Cannot open file",
+				path.c_str()));
 	
 	// Set unsafe mode and load
 	bool old_safe = safe;
