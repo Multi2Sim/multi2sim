@@ -140,5 +140,11 @@ std::string getFullPath(const std::string &path, const std::string &cwd)
 }
 
 
+std::string getExtension(const std::string &filename)
+{
+	return filename.substr(filename.find_last_of('.')+1);
+
+}
+
 }  // namespace Misc
 
