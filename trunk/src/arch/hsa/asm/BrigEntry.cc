@@ -5,6 +5,7 @@
 #include "lib/cpp/Misc.h"
 #include "lib/cpp/String.h"
 #include "Asm.h"
+#include "BrigImmed.h"
 
 namespace HSA{
 const char *BrigEntry::type2str(int type)
@@ -147,8 +148,17 @@ void BrigEntry::dumpValueList(
 	)
 {
 	BrigSection *stringSection = file->getBrigSection(BrigSectionString);
-	char *temp = (char *)stringSection->getBuffer();
+	unsigned char *temp = (unsigned char *)stringSection->getBuffer();
+	temp += 4;
 	temp += data;
+	for(unsigned int i=0; i<elementCount; i++)
+	{
+		if(i>0) os << ", ";
+		BrigImmed immed(temp, type);
+		immed.Dump(os);;
+	}
+
+/*
 	switch(type)
 	{
 		case 0:	DumpBrigTypeNone(temp, elementCount, os); break;
@@ -201,8 +211,10 @@ void BrigEntry::dumpValueList(
 		default:
 			misc::warning("Unsupported type!"); break;
 	}
+*/
 }
 
+/*
 void BrigEntry::DumpBrigTypeNone(void *data, uint32_t count, std::ostream &os = std::cout)
 {
 	misc::warning("Unknown dump format for type: %s", "None");
@@ -1237,7 +1249,7 @@ void BrigEntry::DumpBrigTypeF64X2(void *data, uint32_t count, std::ostream &os =
 		os << ptr << ")};\n";
 	}
 }
-
+*/
 
 void BrigEntry::dumpValue(char *value) const
 {

@@ -2,6 +2,7 @@
 #include "BrigDirEntry.h"
 #include "BrigStrEntry.h"
 #include "BrigDef.h"
+#include "SymbolModifier.h"
 #include "Asm.h"
 #include "lib/cpp/Misc.h"
 #include "lib/cpp/String.h"
@@ -36,6 +37,21 @@ char *BrigDirEntry::nextTop() const
 		if(bufPtr >= bs->getBuffer() + bs->getSize())
 			return NULL;
 		return bufPtr;
+	}
+	case BRIG_DIRECTIVE_IMAGE:
+	case BRIG_DIRECTIVE_VARIABLE:
+	case BRIG_DIRECTIVE_SAMPLER:
+	{
+		struct BrigDirectiveSymbol *dir = 
+			(struct BrigDirectiveSymbol *)this->base;
+		if(!dir->init) return next();
+		else
+		{
+			BrigDirEntry initDir(
+				BrigDirEntry::GetDirByOffset(file, dir->init), file
+			);
+			return initDir.next();
+		}
 	}
 	default:
 		return next();
@@ -87,8 +103,8 @@ BrigDirEntry::DumpDirectiveFn BrigDirEntry::dump_dir_fn[27] =
 void BrigDirEntry::DumpDirectiveArgScopeEnd(std::ostream &os = std::cout) const
 {
 	Asm *as = Asm::getInstance();
-	BrigEntry::dumpIndent(os);
 	as->indent--;
+	BrigEntry::dumpIndent(os);
 	os << "}\n";
 }
 void BrigDirEntry::DumpDirectiveArgScopeStart(std::ostream &os = std::cout) const
@@ -255,11 +271,20 @@ void BrigDirEntry::DumpDirectiveSignature(std::ostream &os = std::cout) const
 void BrigDirEntry::DumpDirectiveVariable(std::ostream &os = std::cout) const
 {
 	BrigEntry::dumpIndent(os);
-	struct BrigDirectiveVariable *var 
+	struct BrigDirectiveVariable *dir
 		= (struct BrigDirectiveVariable *)this->base;
 	BrigEntry::dumpSymDecl(this, os);
-	if(var->init)
+	if(dir->init)
 	{
+		os << " = ";
+		SymbolModifier modifier(dir->modifier.allBits);
+		if(modifier.isArray()) os << "{";
+		BrigDirEntry initDir(
+			BrigDirEntry::GetDirByOffset(file, dir->init), file
+		);
+		initDir.Dump();	
+		if(modifier.isArray()) os << "}";
+		/*
 		struct BrigDirectiveVariableInit *init = (struct BrigDirectiveVariableInit *)GetDirByOffset(this->file, var->init);
 		if(init->elementCount == 0)
 			os << ";\n";
@@ -270,6 +295,8 @@ void BrigDirEntry::DumpDirectiveVariable(std::ostream &os = std::cout) const
 			os << " = ";
 			BrigEntry::dumpValueList(init->data, init->type, init->elementCount, this->file, os);
 		}
+		*/
+		os << ";\n";
 	}else
 	{
 		os << ";\n";
@@ -278,6 +305,9 @@ void BrigDirEntry::DumpDirectiveVariable(std::ostream &os = std::cout) const
 
 void BrigDirEntry::DumpDirectiveVariableInit(std::ostream &os = std::cout) const
 {
+	struct BrigDirectiveVariableInit *dir = 
+		(struct BrigDirectiveVariableInit *) this->base;
+	dumpValueList(dir->data, dir->type, dir->elementCount, this->file, os);
 }
 
 void BrigDirEntry::DumpDirectiveVersion(std::ostream &os = std::cout) const

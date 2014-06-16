@@ -1,7 +1,8 @@
 #ifndef HSA_ASM_SYMBOLMODIFIER_H
 #define HSA_ASM_SYMBOLMODIFIER_H
 
-namespace HSA{
+namespace HSA
+{
 	/// Represents and encapsulates the symbol modifier
 class SymbolModifier
 {
