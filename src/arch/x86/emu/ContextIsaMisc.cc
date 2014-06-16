@@ -210,12 +210,18 @@ void Context::ExecuteInst_bts_rm32_imm8()
 
 void Context::ExecuteInst_call_rel32()
 {
+	// Emulate
 	regs.decEsp(4);
 	unsigned eip = regs.getEip();
 	MemoryWrite(regs.getEsp(), 4, &eip);
 	target_eip = regs.getEip() + inst.getImmDWord();
 	regs.setEip(target_eip);
 
+	// Call stack
+	if (call_stack != nullptr)
+		call_stack->Call(target_eip);
+
+	// Micro-instructions
 	newUInst(UInstSub, UInstDepEsp, 0, 0, UInstDepEsp, 0, 0, 0);
 	newUInst(UInstEffaddr, UInstDepEsp, 0, 0, UInstDepAux, 0, 0, 0);
 	newMemoryUInst(UInstStore, regs.getEsp(), 4, UInstDepAux, 0, 0, 0, 0, 0, 0);
@@ -225,12 +231,18 @@ void Context::ExecuteInst_call_rel32()
 
 void Context::ExecuteInst_call_rm32()
 {
+	// Emulate
 	target_eip = LoadRm32();
 	regs.decEsp(4);
 	unsigned eip = regs.getEip();
 	MemoryWrite(regs.getEsp(), 4, &eip);
 	regs.setEip(target_eip);
 
+	// Call stack
+	if (call_stack != nullptr)
+		call_stack->Call(target_eip);
+
+	// Micro-instructions
 	newUInst(UInstSub, UInstDepEsp, 0, 0, UInstDepEsp, 0, 0, 0);
 	newUInst(UInstEffaddr, UInstDepEsp, 0, 0, UInstDepAux, 0, 0, 0);
 	newMemoryUInst(UInstStore, regs.getEsp(), 4, UInstDepAux, 0, 0, 0, 0, 0, 0);
@@ -1742,10 +1754,16 @@ void Context::ExecuteInst_ret()
 		return;
 	}
 
+	// Emulate
 	MemoryRead(regs.getEsp(), 4, &target_eip);
 	regs.incEsp(4);
 	regs.setEip(target_eip);
 
+	// Call stack
+	if (call_stack != nullptr)
+		call_stack->Return();
+
+	// Micro-instrutcions
 	newUInst(UInstEffaddr, UInstDepEsp, 0, 0, UInstDepAux, 0, 0, 0);
 	newMemoryUInst(UInstLoad, regs.getEsp() - 4, 4, UInstDepAux, 0, 0, UInstDepAux, 0, 0, 0);  // pop aux
 	newUInst(UInstAdd, UInstDepEsp, 0, 0, UInstDepEsp, 0, 0, 0);  // add esp, 4
@@ -1761,19 +1779,23 @@ void Context::ExecuteInst_repz_ret()
 
 void Context::ExecuteInst_ret_imm16()
 {
-	unsigned short pop;
-
 	if (inst.getSegment())
 	{
 		IsaError("%s: not supported segment", __FUNCTION__);
 		return;
 	}
 
+	// Emulate
 	MemoryRead(regs.getEsp(), 4, &target_eip);
-	pop = inst.getImmWord();
+	unsigned short pop = inst.getImmWord();
 	regs.incEsp(4 + pop);
 	regs.setEip(target_eip);
 
+	// Call stack
+	if (call_stack != nullptr)
+		call_stack->Return();
+
+	// Micro-instructions
 	newUInst(UInstEffaddr, UInstDepEsp, 0, 0, UInstDepAux, 0, 0, 0);
 	newMemoryUInst(UInstLoad, regs.getEsp() - 4 - pop, 4, UInstDepAux, 0, 0, UInstDepAux, 0, 0, 0);  // pop aux
 	newUInst(UInstAdd, UInstDepEsp, 0, 0, UInstDepEsp, 0, 0, 0);  // add esp, 4

@@ -43,8 +43,8 @@ Section::Section(File *file, int index, unsigned int pos)
 	// Read section header
 	info = (Elf32_Shdr *) (file->getBuffer() + pos);
 	if (pos < 0 || pos + sizeof(Elf32_Shdr) > file->getSize())
-		misc::fatal("%s: invalid position for section header",
-				file->getPath().c_str());
+		throw Exception(file->getPath(),
+				"Invalid position for section header");
 
 	// Initialize
 	this->file = file;
@@ -58,8 +58,8 @@ Section::Section(File *file, int index, unsigned int pos)
 	{
 		// Check valid range
 		if (info->sh_offset + info->sh_size > file->getSize())
-			misc::fatal("%s: section out of range",
-					file->getPath().c_str());
+			throw Exception(file->getPath(),
+					"Section out of range");
 
 		// Set up buffer and stream
 		buffer = file->getBuffer() + info->sh_offset;
@@ -82,8 +82,8 @@ ProgramHeader::ProgramHeader(File *file, int index, unsigned int pos)
 	// Read program header
 	info = (Elf32_Phdr *) (file->getBuffer() + pos);
 	if (pos < 0 || pos + sizeof(Elf32_Phdr) > file->getSize())
-		misc::fatal("%s: invalid position for program header",
-				file->getPath().c_str());
+		throw Exception(file->getPath(),
+				"Invalid position for program header");
 
 	// File content
 	size = info->p_filesz;
@@ -96,9 +96,7 @@ void ProgramHeader::getStream(std::istringstream &stream, unsigned int offset,
 {
 	// Check valid offset/size
 	if (offset + size > this->size)
-		misc::fatal("%s: %s: invalid offset/size",
-				file->getPath().c_str(),
-				__FUNCTION__);
+		throw Exception(file->getPath(), "Invalid offset/size");
 
 	// Set substream
 	std::stringbuf *buf = stream.rdbuf();
@@ -120,20 +118,18 @@ Symbol::Symbol(File *file, Section *section, unsigned int pos)
 	// Read symbol
 	info = (Elf32_Sym *) (section->getBuffer() + pos);
 	if (pos < 0 || pos + sizeof(Elf32_Sym) > section->getSize())
-		misc::fatal("%s: invalid position for symbol",
-				file->getPath().c_str());
+		throw Exception(file->getPath(), "Invalid position for symbol");
 
 	// Get section with symbol name
 	unsigned name_section_index = section->getLink();
 	Section *name_section = file->getSection(name_section_index);
 	if (!name_section)
-		misc::fatal("%s: invalid index for symbol name section",
-				file->getPath().c_str());
+		throw Exception(file->getPath(),
+				"Invalid index for symbol name section");
 
 	// Get symbol name
 	if (info->st_name >= name_section->getSize())
-		misc::fatal("%s: invalid symbol name offset",
-				file->getPath().c_str());
+		throw Exception(file->getPath(), "Invalid symbol name offset");
 	name = name_section->getBuffer() + info->st_name;
 
 	// Get section in 'st_shndx'
@@ -179,15 +175,15 @@ void Symbol::getStream(std::istringstream &stream, unsigned int offset,
 {
 	// Symbol without content
 	if (!buffer)
-		misc::fatal("%s: %s: symbol '%s' does not have any valid content",
-				file->getPath().c_str(), __FUNCTION__,
-				name.c_str());
+		throw Exception(file->getPath(),
+				misc::fmt("symbol '%s' does not have any valid content",
+				name.c_str()));
 
 	// Check valid offset/size
 	if (offset + size > info->st_size)
-		misc::fatal("%s: symbol '%s': %s: invalid offset/size",
-				file->getPath().c_str(), name.c_str(),
-				__FUNCTION__);
+		throw Exception(file->getPath(),
+				misc::fmt("symbol '%s': invalid offset and/or size",
+				name.c_str()));
 
 	// Set substream
 	std::stringbuf *buf = stream.rdbuf();
@@ -201,19 +197,19 @@ void Symbol::getStream(std::istringstream &stream, unsigned int offset,
 //
 
 static const char *err_64bit =
-	"\tThe ELF file being loaded is a 64-bit file, currently not supported\n"
-	"\tby Multi2Sim. If you are compiling your own source code on a 64-bit\n"
-	"\tmachine, please use the '-m32' flag in the gcc command-line. If you\n"
-	"\tget compilation errors related with missing '.h' files, check that\n"
-	"\tthe 32-bit gcc package associated with your Linux distribution is\n"
-	"\tinstalled.\n";
+	"The ELF file being loaded is a 64-bit file, currently not supported "
+	"by Multi2Sim. If you are compiling your own source code on a 64-bit "
+	"machine, please use the '-m32' flag in the gcc command-line. If you "
+	"get compilation errors related with missing '.h' files, check that "
+	"the 32-bit gcc package associated with your Linux distribution is "
+	"installed.";
 
 Header::Header(const std::string &path)
 {
 	// Open file
 	std::ifstream f(path);
 	if (!f)
-		misc::fatal("%s: cannot open file", path.c_str());
+		throw Exception(path, "Cannot open file");
 
 	// Get file size
 	f.seekg(0, std::ios_base::end);
@@ -222,7 +218,7 @@ Header::Header(const std::string &path)
 
 	// Check that size is at least equal to header size
 	if (size < sizeof(Elf32_Ehdr))
-		misc::fatal("%s: invalid ELF file", path.c_str());
+		throw Exception(path, "Invalid ELF file");
 
 	// Load header
 	f.read((char *) &info, sizeof(Elf32_Ehdr));
@@ -230,13 +226,13 @@ Header::Header(const std::string &path)
 
 	// Check that file is a valid ELF file
 	if (strncmp((char *) info.e_ident, ELFMAG, 4))
-		misc::fatal("%s: invalid ELF file", path.c_str());
+		throw Exception(path, "Invalid ELF file");
 
 	// Check that ELF file is a 32-bit object
 	if (info.e_ident[EI_CLASS] == ELFCLASS64)
-		misc::fatal("%s: 64-bit ELF not supported.\n%s",
-			path.c_str(), err_64bit);
-	
+		throw Exception(path, misc::fmt(
+				"64-bit ELF files not supported\n\n%s",
+				err_64bit));
 }
 
 
@@ -251,16 +247,17 @@ void File::ReadHeader()
 	// Read ELF header
 	info = (Elf32_Ehdr *) buffer;
 	if (size < sizeof(Elf32_Ehdr))
-		misc::fatal("%s: invalid ELF file", path.c_str());
+		throw Exception(path, "Invalid ELF file");
 
 	// Check that file is a valid ELF file
 	if (strncmp((char *) info->e_ident, ELFMAG, 4))
-		misc::fatal("%s: invalid ELF file", path.c_str());
+		throw Exception(path, "Invalid ELF file");
 
 	// Check that ELF file is a 32-bit object
 	if (info->e_ident[EI_CLASS] == ELFCLASS64)
-		misc::fatal("%s: 64-bit ELF not supported.\n%s",
-			path.c_str(), err_64bit);
+		throw Exception(path, misc::fmt(
+				"64-bit ELF files not supported\n\n%s",
+				err_64bit));
 }
 
 
@@ -268,8 +265,9 @@ void File::ReadSections()
 {
 	// Check section size and number
 	if (!info->e_shnum || info->e_shentsize != sizeof(Elf32_Shdr))
-		misc::fatal("%s: number of sections is 0 or section size is not %d",
-			path.c_str(), (int) sizeof(Elf32_Shdr));
+		throw Exception(path, misc::fmt(
+				"Number of sections is 0 or section size is not %d",
+				(int) sizeof(Elf32_Shdr)));
 
 	// Read section headers
 	for (int i = 0; i < info->e_shnum; i++)
@@ -278,10 +276,10 @@ void File::ReadSections()
 
 	// Read string table
 	if (info->e_shstrndx >= info->e_shnum)
-		misc::fatal("%s: invalid string table index", path.c_str());
+		throw Exception(path, "Invalid string table index");
 	string_table = sections[info->e_shstrndx].get();
 	if (string_table->info->sh_type != 3)
-		misc::fatal("%s: invalid string table type", path.c_str());
+		throw Exception(path, "Invalid string table type");
 
 	// Read section names
 	for (auto &section : sections)
@@ -298,9 +296,9 @@ void File::ReadProgramHeaders()
 	
 	// Check program header size
 	if (info->e_phentsize != sizeof(Elf32_Phdr))
-		misc::fatal("%s: program header size %d (should be %d)",
-				path.c_str(), info->e_phentsize,
-				(int) sizeof(Elf32_Phdr));
+		throw Exception(path, misc::fmt(
+				"Program header size %d (should be %d)",
+				info->e_phentsize, (int) sizeof(Elf32_Phdr)));
 	
 	// Read program headers
 	for (int i = 0; i < info->e_phnum; i++)
@@ -351,7 +349,7 @@ File::File(const std::string &path)
 	// Open file
 	std::ifstream f(path);
 	if (!f)
-		misc::fatal("%s: cannot open file", path.c_str());
+		throw Exception(path, "Cannot open file");
 
 	// Get file size
 	f.seekg(0, std::ios_base::end);
@@ -360,7 +358,7 @@ File::File(const std::string &path)
 
 	// Check that size is at least equal to header size
 	if (size < sizeof(Elf32_Ehdr))
-		misc::fatal("%s: invalid ELF file", path.c_str());
+		throw Exception(path, "Invalid ELF file");
 
 	// Load entire file into buffer and close
 	buffer = new char[size];
@@ -513,8 +511,7 @@ void File::getStream(std::istringstream &stream, unsigned int offset,
 {
 	// Check valid offset/size
 	if (offset + size > this->size)
-		misc::fatal("%s: %s: invalid offset/size",
-				path.c_str(), __FUNCTION__);
+		throw Exception(path, "Invalid offset and/or size");
 
 	// Set substream
 	std::stringbuf *buf = stream.rdbuf();

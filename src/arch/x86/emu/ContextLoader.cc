@@ -161,11 +161,24 @@ void Context::LoadELFSections(ELFReader::File *binary)
 		// Process section
 		if (section->getFlags() & SHF_ALLOC)
 		{
-			// Permissions
+			// Write permission
 			if (section->getFlags() & SHF_WRITE)
 				perm |= mem::MemoryAccessWrite;
+
+			// Executable section
 			if (section->getFlags() & SHF_EXECINSTR)
+			{
+				// Add execute permission
 				perm |= mem::MemoryAccessExec;
+
+				// Add region to call stack
+				if (call_stack != nullptr)
+				{
+					call_stack->Map(binary->getPath(),
+							section->getAddr(),
+							section->getSize());
+				}
+			}
 
 			// Load section
 			memory->Map(section->getAddr(), section->getSize(), perm);
