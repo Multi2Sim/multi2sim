@@ -94,10 +94,32 @@ Emu *Emu::getInstance()
 	return instance.get();
 }
 
+Context *Emu::newContext()
+{
+	// Create context and add to context list
+	Context *context = new Context();
+	return context;
+}
 
 bool Emu::Run()
 {
 	return false;
+}
+
+
+void Emu::LoadProgram(const std::vector<std::string> &args,
+		const std::vector<std::string> &env,
+		const std::string &cwd,
+		const std::string &stdin_file_name,
+		const std::string &stdout_file_name)
+{
+	// Create new context
+	Context *context = newContext();
+	context->Load(args,
+			env,
+			cwd,
+			stdin_file_name,
+			stdout_file_name);
 }
 
 

@@ -137,6 +137,16 @@ std::string getCwd();
 std::string getFullPath(const std::string &path, const std::string &cwd = "");
 
 
+/// Returns the extension of a file name.
+/// 
+/// \param filename
+///	The filename with the extension 
+///
+/// \return
+/// 	The extension of the filename, or empty if \filename does not have 
+/// 	an extension
+std::string getExtension(const std::string &filename);
+
 
 //
 // Miscelaneous

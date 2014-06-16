@@ -25,9 +25,13 @@
 #include <lib/cpp/CommandLine.h>
 #include <lib/cpp/Debug.h>
 
+#include "arch/hsa/asm/BrigFile.h"
+#include "Context.h"
+
 namespace HSA
 {
 
+class Context;
 
 /// HSA Emulator
 class Emu : public comm::Emu
@@ -59,6 +63,10 @@ public:
 	/// created to obtain their unique identifier
 	int getPid() { return pid++; }
 
+	/// Create a new context associated with the emulator. The context is 
+	/// inserted in the main emulator context list
+	Context *newContext();
+
 	/// Run one iteration of the emulation loop
 	/// \return This function \c true if the iteration had a useful emulation 
 	/// and \c false if all contexts finished execution
@@ -72,6 +80,15 @@ public:
 
 	/// Process command-line options
 	static void ProcessOptions();
+
+	/// Create a context and load a program. See comm::Emu::Load() for
+	/// details on the meaning of each argument.
+	void LoadProgram(const std::vector<std::string> &args,
+			const std::vector<std::string> &env = { },
+			const std::string &cwd = "",
+			const std::string &stdin_file_name = "",
+			const std::string &stdout_file_name = "");
+
 };
 
 }
