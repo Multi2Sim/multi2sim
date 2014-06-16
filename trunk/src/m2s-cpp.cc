@@ -185,6 +185,14 @@ void LoadProgram(const std::vector<std::string> &args,
 
 		emu = MIPS::Emu::getInstance();
 		break;
+
+	case 0: // ELF file for HSA Brig format do not have machine code
+		if(misc::getExtension(exe) == "brig" || 
+				misc::getExtension(exe) == "BRIG")
+		{
+			emu = HSA::Emu::getInstance();	
+			break;
+		}
 	
 	default:
 		misc::fatal("%s: unsupported ELF architecture", exe.c_str());
