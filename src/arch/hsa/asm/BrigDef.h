@@ -40,7 +40,8 @@
 // SOFTWARE.
 #ifndef HSA_ASM_BRIGDEF_H
 #define HSA_ASM_BRIGDEF_H
-namespace HSA{
+namespace HSA
+{
 enum BrigVersion {
     //.nowrap
     //.nodump
