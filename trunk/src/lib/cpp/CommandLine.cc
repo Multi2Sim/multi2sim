@@ -165,11 +165,6 @@ CommandLine *CommandLine::getInstance()
 
 CommandLine::CommandLine()
 {
-	// Initialize
-	processed = false;
-	use_cpp = false;
-	show_help = false;
-
 	// Create default category
 	CommandLineCategory *category = new CommandLineCategory("default");
 	category->setDescription("General options");
@@ -290,10 +285,10 @@ bool CommandLine::Process(int argc, char **argv, bool fatal_on_bad_option)
 		if (!StringPrefix(argv[index], "-"))
 			break;
 
-		// Special option --cpp
-		if (!strcmp(argv[index], "--cpp"))
+		// Special option -c
+		if (!strcmp(argv[index], "-c"))
 		{
-			use_cpp = true;
+			use_c = true;
 			continue;
 		}
 
@@ -356,7 +351,7 @@ bool CommandLine::Process(int argc, char **argv, bool fatal_on_bad_option)
 		args.push_back(argv[index]);
 
 	// Option --help was specified
-	if (use_cpp && show_help)
+	if (!use_c && show_help)
 	{
 		if (args.size() || options.size())
 			fatal("option '--help' is incompatible with any other"

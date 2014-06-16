@@ -56,7 +56,7 @@ void main_cpp(int argc, char **argv)
 		return;
 
 	// Finish if C++ version of Multi2Sim is not activated
-	if (!command_line->getUseCpp())
+	if (command_line->getUseC())
 		return;
 
 	// Process command line
