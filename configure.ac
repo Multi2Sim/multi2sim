@@ -670,7 +670,7 @@ fi
 ###########
 
 have_llvm=yes
-AC_MSG_CHECKING([for LLVM 3.1])
+AC_MSG_CHECKING([for LLVM 3.4])
 
 # Command-line option to force LLVM absence
 AC_ARG_ENABLE(llvm,
@@ -682,7 +682,7 @@ then
 fi
 
 # Command-line option for llvm-config path
-LLVM_CONFIG="llvm-config-3.1"
+LLVM_CONFIG="llvm-config-3.4"
 #AC_ARG_VAR(llvm_config_path, [  --llvm-config-path=<path>	Path for 'llvm-config' script])
 #echo "**************************************"
 #echo $llvm_config_path
@@ -699,7 +699,7 @@ then
 		if test $? -eq 0
 		then
 			version=`$LLVM_CONFIG --version`
-			if test $version != "3.1"
+			if test $version != "3.4"
 			then
 				have_llvm=no
 			fi
@@ -755,8 +755,6 @@ then
 				LLVMValueRef func_str_count = LLVMAddFunction(mod, "str_count",
 					LLVMFunctionType(LLVMInt32Type(), func_str_count_args, 1, 0));
 				LLVMSetFunctionCallConv(func_str_count, LLVMCCallConv);
-
-				/* Half type added in LLVM 3.1 */
 				LLVMHalfType();
 			]]
 		)
@@ -829,7 +827,7 @@ else
 	this library. Some modules in Multi2Sim will not be built. In an Ubuntu
 	distribution, you can install these package by running command
 
-		sudo apt-get install llvm-3.1
+		sudo apt-get install llvm-3.4-dev
 	
 	If the location your LLVM libraries are not included on the PATH variable,
 	you can pass it manually by running the command

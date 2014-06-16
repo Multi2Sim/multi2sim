@@ -19,8 +19,8 @@
 
 #include <fstream>
 #include <lib/cpp/Misc.h>
-#include <llvm/Constants.h>
-#include <llvm/Function.h>
+#include <llvm/IR/Constants.h>
+#include <llvm/IR/Function.h>
 
 #include "BasicBlock.h"
 #include "Function.h"
