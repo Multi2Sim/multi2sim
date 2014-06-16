@@ -175,8 +175,10 @@ void Context::LoadELFSections(ELFReader::File *binary)
 				if (call_stack != nullptr)
 				{
 					call_stack->Map(binary->getPath(),
+							section->getOffset(),
 							section->getAddr(),
-							section->getSize());
+							section->getSize(),
+							false);
 				}
 			}
 
