@@ -212,7 +212,7 @@ void CallStack::BackTrace(std::ostream &os)
 	{
 		unsigned address = stack[i];
 		std::string name = getSymbolName(address);
-		os << misc::fmt("\t%d. %s\n", i, name.c_str());
+		os << misc::fmt("\t%d. %s\n", i + 1, name.c_str());
 	}
 }
 

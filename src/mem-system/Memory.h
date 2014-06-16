@@ -21,6 +21,8 @@
 #define MEM_SYSTEM_MEMORY_H
 
 #include <iostream>
+#include <stdexcept>
+
 
 namespace mem
 {
@@ -40,6 +42,24 @@ static const unsigned MemoryPageShift = MemoryLogPageSize;
 static const unsigned MemoryPageSize = (1u << MemoryLogPageSize);
 static const unsigned MemoryPageMask = (~(MemoryPageSize - 1));
 static const unsigned MemoryPageCount = 1024;
+
+
+class MemoryException : public std::runtime_error
+{
+	// Address causing exception
+	unsigned address;
+
+public:
+
+	/// Constructor
+	///
+	/// \param address
+	///	Memory address causing the exception.
+	MemoryException(const std::string &error)
+			: std::runtime_error("[Memory] " + error)
+	{
+	}
+};
 
 
 /// A 4KB page of memory
@@ -101,7 +121,7 @@ public:
 	void setSafeDefault() { safe = safe_mode; }
 
 	/// Return whether the safe mode is on
-	bool getSafe() { return safe; }
+	bool getSafe() const { return safe; }
 
 	/// Clear content of memory
 	void Clear();
@@ -126,94 +146,193 @@ public:
  	/// Deallocate memory. If a page in the specified range was not
 	/// allocated, it is silently skipped.
 	///
-	/// \param addr Address aligned to page boundary.
-	/// \param size Number of bytes, multiple of page size.
+	/// \param addr
+	///	Address aligned to page boundary.
+	///
+	/// \param size
+	///	Number of bytes, multiple of page size.
 	void Unmap(unsigned addr, unsigned size);
 
 	/// Allocate memory.
 	///
-	/// \param addr Address to start looking for free memory. If the end of
-	///        the memory space is reached, the function will continue
-	///        circularly with the lowest memory addresses. The address must
-	///        be aligned to the page boundary.
-	/// \param size Number of bytes to allocate. Must be a multiple of the
-	///        page size.
-	/// \param perm Bitmap of constants of type \a MemoryAccess containing
-	///        the permission assigned to the allocated pages.
-	/// \returns The function returns the base address of the allocated
-	///          memory region, or (unsigned) -1 if no free region was found
-	///          with the requested size.
+	/// \param addr
+	///	Address to start looking for free memory. If the end of the
+	///	memory space is reached, the function will continue circularly
+	///	with the lowest memory addresses. The address must be aligned to
+	///	the page boundary.
+	///
+	/// \param size
+	///	Number of bytes to allocate. Must be a multiple of the page
+	///	size.
+	///
+	/// \param perm
+	///	Bitmap of constants of type \a MemoryAccess containing the
+	///	permission assigned to the allocated pages.
+	///
+	/// \return
+	///	The function returns the base address of the allocated memory
+	///	region, or (unsigned) -1 if no free region was found with the
+	///	requested size.
 	unsigned MapSpace(unsigned addr, unsigned size);
 	
-	/// Allocate memory downwoard.
+	/// Allocate memory downward.
 	///
-	/// \param addr Address to start checking for available free memory. If
-	///        not available, the function will keep trying to look for free
-	///        regions circularly in a decreasing order. The address must be
-	///        align to the page boundary.
-	/// \param size Number of bytes to allocate. Thie value must be a
-	///        multiple of the page size.
-	/// \param perm Bitmap of constants of type \a MemoryAccess containing
-	///        the permission assigned to the allocated pages.
-	/// \returns The base address of the allocated memory region, or
-	///          (unsigned) -1 if no free space was found with \a size
-	///          bytes.
+	/// \param addr
+	///	Address to start checking for available free memory. If not
+	///	available, the function will keep trying to look for free
+	///	regions circularly in a decreasing order. The address must be
+	///	align to the page boundary.
+	///
+	/// \param size
+	///	Number of bytes to allocate. Thie value must be a multiple of
+	///	the page size.
+	///
+	/// \param perm
+	///	Bitmap of constants of type \a MemoryAccess containing the
+	///	permission assigned to the allocated pages.
+	///
+	/// \returns
+	///	The base address of the allocated memory region, or `(unsigned)
+	///	-1` if no free space was found with \a size bytes.
 	unsigned MapSpaceDown(unsigned addr, unsigned size);
 	
 	/// Assign protection attributes to pages. If a page in the range is not
 	/// allocated, it is silently skipped.
 	///
-	/// \param addr Address aligned to page boundary.
-	/// \param size Number of bytes, multiple of page size.
-	/// \param perm Bitmap of constants of type \a MemoryAccess specifying
-	///        the new permissions of the pages in the range.
+	/// \param addr
+	///	Address aligned to page boundary.
+	///
+	/// \param size
+	///	Number of bytes, multiple of page size.
+	///
+	/// \param perm
+	///	Bitmap of constants of type \a MemoryAccess specifying the new
+	///	permissions of the pages in the range.
 	void Protect(unsigned addr, unsigned size, unsigned perm);
 
-	/// Copy a total of \a size bytes from address \a src into address \a
-	/// dest. All parameters must be multiple of the page size. The pages in
-	/// the source and destination interval must exist. */
+	/// Copy a region of memory. All arguments must be multiples of the page
+	/// size. In safe mode, the source region must have read access, and the
+	/// destination region must have write access.
+	///
+	/// \param dest
+	///	Destination address
+	///
+	/// \param src
+	///	Source address
+	///
+	/// \param size
+	///	Number of bytes to copy
+	///
+	/// \throw
+	///	This function throws a MemoryException in safe mode if the
+	///	source region does not have read permissions, or the destination
+	///	region does not have write permissions.
 	void Copy(unsigned dest, unsigned src, unsigned size);
 
  	/// Access memory at any address and size, without page boundary
 	/// restrictions.
 	///
- 	/// \param addr Address
-	/// \param size Number of bytes
-	/// \param buf Buffer to read data from, or write data into.
-	/// \param access Type of access
+ 	/// \param addr
+	///	Memory address
+	///
+	/// \param size
+	///	Number of bytes
+	///
+	/// \param buf
+	///	Buffer to read data from, or write data into.
+	///
+	/// \param access
+	///	Type of access
+	///
+	/// \throw
+	///	A MemoryException is thrown in safe mode is the written pages
+	///	are not allocated, or do not have the permissions requested in
+	///	argument \a access.
 	void Access(unsigned addr, unsigned size, char *buf,
 			MemoryAccess access);
 
 	/// Read from memory, with no alignment or size restrictions.
 	///
-	/// \param addr Address
-	/// \param size Number of bytes
-	/// \param buf Output buffer to write data
-	void Read(unsigned addr, unsigned size, char *buf) {
+	/// \param addr
+	///	Memory address
+	///
+	/// \param size
+	///	Number of bytes
+	///
+	/// \param buf
+	///	Output buffer to write data
+	///
+	/// \throw
+	///	A MemoryException is thrown in safe mode is the written pages
+	///	are not allocated, or do not have read permissions.
+	void Read(unsigned addr, unsigned size, char *buf)
+	{
 		Access(addr, size, buf, MemoryAccessRead);
 	}
 
 	/// Write to memory, with no alignment of size restrictions.
 	///
-	/// \param addr Address
-	/// \param size Number of bytes
-	/// \param buf Input buffer to read data from
-	void Write(unsigned addr, unsigned size, const char *buf) {
+	/// \param addr
+	///	Memory address
+	///
+	/// \param size
+	///	Number of bytes
+	///
+	/// \param buf
+	///	Input buffer to read data from
+	///
+	/// \throw
+	///	A MemoryException is thrown in safe mode is the written pages
+	///	are not allocated, or do not have write permissions.
+	void Write(unsigned addr, unsigned size, const char *buf)
+	{
 		Access(addr, size, const_cast<char *>(buf), MemoryAccessWrite);
 	}
 
 	/// Initialize memory with no alignment of size restrictions. The
-	/// operation is equivalent to writing, but this operation must have a
-	/// different category of permissions grantes.
-	void Init(unsigned addr, unsigned size, const char *buf) {
+	/// operation is equivalent to writing, but with different permissions.
+	///
+	/// \param addr
+	///	Memory address
+	///
+	/// \param size
+	///	Number of bytes
+	///
+	/// \param buf
+	///	Input buffer to read data from
+	///
+	/// \throw
+	///	This function throws a MemoryException in safe mode if the
+	///	destination page does not have initialization permissions.
+	void Init(unsigned addr, unsigned size, const char *buf)
+	{
 		Access(addr, size, const_cast<char *>(buf), MemoryAccessInit);
 	}
 
-	/// Read a string from memory at \a addr, with a maximum length of \a
-	/// max_length characters.
+	/// Read a string from memory.
+	///
+	/// \param addr
+	///	Memory address to read string from
+	///
+	/// \param max_length (optional, default = 1024)
+	///	Maximum length of the read string.
+	///
+	/// \throw
+	///	This function throws a MemoryException in safe mode if the
+	///	source page does not have read permissions.
 	std::string ReadString(unsigned addr, int max_length = 1024);
 
-	/// Write a string into memory at \a addr
+	/// Write a string into memory.
+	///
+	/// \param addr
+	///	Memory address
+	///
+	/// \param s
+	///	String to write
+	///
+	/// \throw
+	///	This function throws a MemoryException in safe mode if the
+	///	destination page does not have write permissions.
 	void WriteString(unsigned addr, const std::string &s);
 	
 	/// Zero-out \a size bytes of memory starting at address \a addr.
@@ -221,19 +340,46 @@ public:
 
 	/// Obtain a buffer to memory content.
 	///
-	/// \param addr Address
-	/// \param size Number of bytes requested
-	/// \param access Type of access requested
-	/// \returns Return a pointer to the memory content. If the requested
-	///          exceeds page boundaries, the function returns null. This
-	///          function is useful to read content from memory directly
-	///          with zero-copy operations.
+	/// \param addr
+	///	Memory address
+	///
+	/// \param size
+	///	Number of bytes requested
+	///
+	/// \param access
+	///	Type of access requested
+	///
+	/// \return
+	///	Return a pointer to the memory content. If the requested exceeds
+	///	page boundaries, the function returns null. This function is
+	///	useful to read content from memory directly with zero-copy
+	///	operations.
+	///
+	/// \throw
+	///	This function will throw a MemoryException if the memory is on
+	///	safe mode and the page does not have the permissions requested
+	///	in argument \a access.
 	char *getBuffer(unsigned addr, unsigned size, MemoryAccess access);
 
 	/// Save a subset of the memory space into a file
+	///
+	/// \param path
+	///	Destination file
+	///
+	/// \param start
+	///	Start saving memory from this address.
+	///
+	/// \param end
+	///	Last address to save
+	///
+	/// \throw
+	///	A MemoryException is thrown if file \a path cannot be accessed.
 	void Save(const std::string &path, unsigned start, unsigned end);
 
 	/// Load a region of the memory space from a file into address \a start
+	///
+	/// \throw
+	///	A MemoryException is thrown if file \a path cannot be accessed.
 	void Load(const std::string &path, unsigned start);
 
 	/// Set a new value for the heap break.
@@ -241,7 +387,8 @@ public:
 
 	/// Set the heap break to the value given in \a heap_break if this is
 	/// a higher value than the current heap break.
-	void growHeapBreak(unsigned heap_break) {
+	void growHeapBreak(unsigned heap_break)
+	{
 		if (this->heap_break < heap_break)
 			this->heap_break = heap_break;
 	}

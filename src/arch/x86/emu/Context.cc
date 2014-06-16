@@ -775,8 +775,20 @@ void Context::Execute()
 	// Call instruction emulation function
 	if (inst.getOpcode())
 	{
-		ExecuteInstFn fn = execute_inst_fn[inst.getOpcode()];
-		(this->*fn)();
+		try
+		{
+			ExecuteInstFn fn = execute_inst_fn[inst.getOpcode()];
+			(this->*fn)();
+		}
+		catch (mem::MemoryException &e)
+		{
+			// Stack back trace
+			if (call_stack != nullptr)
+				call_stack->BackTrace(std::cerr);
+
+			// End
+			misc::fatal("%s", e.what());
+		}
 	}
 	
 	// Debug
@@ -786,10 +798,6 @@ void Context::Execute()
 
 	// Stats
 	emu->incInstructions();
-
-	// Call
-	if (emu->getInstructions() == 1000)
-		call_stack->BackTrace();////////
 }
 
 
