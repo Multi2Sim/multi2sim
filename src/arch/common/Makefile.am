@@ -14,6 +14,9 @@ libcommon_a_SOURCES = \
 	Asm.cc \
 	Asm.h \
 	\
+	CallStack.cc \
+	CallStack.h \
+	\
 	Driver.cc \
 	Driver.h \
 	\

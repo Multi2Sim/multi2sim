@@ -34,6 +34,41 @@ namespace ELFReader
 class File;
 
 
+/// Exception class thrown by the class functions in the ELFReader name space.
+class Exception : public std::runtime_error
+{
+	// ELF file path causing the exception
+	std::string path;
+
+	// Error string
+	std::string error;
+
+public:
+
+	/// Constructor
+	///
+	/// \param path
+	///	ELF file path causing the exception
+	///
+	/// \param error
+	///	Error string
+	Exception(const std::string &path,
+			const std::string &error)
+			:
+			runtime_error(path + ": " + error),
+			path(path),
+			error(error)
+	{
+	}
+
+	/// Return affected path
+	const std::string &getPath() const { return path; }
+
+	/// Return error message
+	const std::string &getError() const { return error; }
+};
+
+
 /// This class represents an ELF section. Instances of this class are created
 /// automatically by class File when an ELF file is loaded. The user cannot
 /// instantiate objects of class Section, since its constructor is made private.
@@ -290,6 +325,11 @@ class Header
 public:
 
 	/// Constructor
+	///
+	/// Exceptions:
+	/// - The file in \a path cannot be opened
+	/// - The file in \a path is not a valid ELF file
+	/// - The file is a non-supported 64-bit ELF file
 	Header(const std::string &path);
 	
 	/// Return \a e_ident field of ELF header
@@ -371,6 +411,11 @@ class File
 public:
 
 	/// Load an ELF file from the file system
+	///
+	/// Exceptions:
+	/// - The file in \a path cannot be opened
+	/// - The file in \a path is not a valid ELF file
+	/// - The file is a non-supported 64-bit ELF file
 	File(const std::string &path);
 
 	/// Load an ELF file from a \a buffer in memory of \a size bytes

@@ -21,6 +21,7 @@
 #include <cstdlib>
 #include <iostream>
 
+#include <arch/common/CallStack.h>
 #include <arch/common/Driver.h>
 #include <arch/common/Runtime.h>
 #include <arch/mips/asm/Asm.h>
@@ -55,6 +56,9 @@ std::string m2s_context_config;
 
 // Inifile debugger
 std::string m2s_debug_inifile;
+
+// Call stack debugger
+std::string m2s_debug_callstack;
 
 // Maximum simulation time
 long long m2s_max_time = 0;
@@ -324,6 +328,13 @@ void RegisterOptions()
 			"--ctx-config-help for a description of the context "
 			"configuration file format.");
 	
+	// Debugger for call stack
+	command_line->RegisterString("--debug-callstack <file>",
+			m2s_debug_callstack,
+			"Dump debug information related with the CPU context "
+			"call stacks, including function invocations and "
+			"returns.");
+	
 	// Debugger for Inifile parser
 	command_line->RegisterString("--debug-inifile <file>",
 			m2s_debug_inifile,
@@ -400,7 +411,11 @@ void ProcessOptions()
 	// Get environment
 	misc::Environment *environment = misc::Environment::getInstance();
 
-	// Inifile debuffer
+	// Call stack debugger
+	if (!m2s_debug_callstack.empty())
+		comm::CallStack::setDebugPath(m2s_debug_callstack);
+
+	// Inifile debugger
 	if (!m2s_debug_inifile.empty())
 		misc::IniFile::setDebugPath(m2s_debug_inifile);
 
@@ -513,11 +528,23 @@ void main_cpp(int argc, char **argv)
 	RegisterRuntimes();
 	RegisterDrivers();
 
-	// Load programs
-	LoadPrograms();
-
-	// Main simulation loop
-	MainLoop();
+	// Capture errors
+	try
+	{
+		// Load programs
+		LoadPrograms();
+		
+		// Main simulation loop
+		MainLoop();
+	}
+	catch (std::runtime_error &e)
+	{
+		misc::fatal("%s", e.what());
+	}
+	catch (std::logic_error &e)
+	{
+		misc::panic("%s", e.what());
+	}
 
 	// End
 	exit(0);

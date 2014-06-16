@@ -22,6 +22,7 @@
 
 #include <memory>
 
+#include <arch/common/CallStack.h>
 #include <lib/cpp/Debug.h>
 #include <lib/cpp/ELFReader.h>
 #include <mem-system/Memory.h>
@@ -32,12 +33,14 @@
 #include "Signal.h"
 #include "UInst.h"
 
+
 extern int x86_cpu_num_threads;
 extern int x86_cpu_num_cores;
 
 namespace x86
 {
 
+// Forward declarations
 class Context;
 class Emu;
 
@@ -156,6 +159,9 @@ class Context
 
 	// File descriptor table, shared by contexts
 	std::shared_ptr<FileTable> file_table;
+
+	// Call stack
+	std::unique_ptr<comm::CallStack> call_stack;
 
 	// Instruction pointers
 	unsigned last_eip;  // Address of last emulated instruction

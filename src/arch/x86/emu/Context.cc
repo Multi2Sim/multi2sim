@@ -403,6 +403,9 @@ void Context::Load(const std::vector<std::string> &args,
 		loader->env.emplace_back(variable);
 	for (auto &var : env)
 		loader->env.emplace_back(var);
+	
+	// Create call stack
+	call_stack.reset(new comm::CallStack(loader->exe));
 
 	// Load the binary
 	LoadBinary();
@@ -783,6 +786,10 @@ void Context::Execute()
 
 	// Stats
 	emu->incInstructions();
+
+	// Call
+	if (emu->getInstructions() == 1000)
+		call_stack->BackTrace();////////
 }
 
 
