@@ -3827,7 +3827,7 @@ bool Context::SyscallNanosleepCanWakeup()
 		return false;
 
 	// Get current time
-	esim::ESim *esim = esim::ESim::getInstance();
+	esim::Engine *esim = esim::Engine::getInstance();
 	long long now = esim->getRealTime();
 
 	// Timeout expired
@@ -3886,7 +3886,7 @@ int Context::ExecuteSyscall_nanosleep()
 	emu->syscall_debug << misc::fmt("  rqtp=0x%x, rmtp=0x%x\n", rqtp, rmtp);
 
 	// Get current time
-	esim::ESim *esim = esim::ESim::getInstance();
+	esim::Engine *esim = esim::Engine::getInstance();
 	long long now = esim->getRealTime();
 
 	// Read structure
@@ -4055,7 +4055,7 @@ bool Context::SyscallPollCanWakeup()
 		return false;
 
 	// Current time
-	esim::ESim *esim = esim::ESim::getInstance();
+	esim::Engine *esim = esim::Engine::getInstance();
 	long long now = esim->getRealTime();
 
 	// Get arguments
@@ -4227,7 +4227,7 @@ int Context::ExecuteSyscall_poll()
 	syscall_poll_time = 0;
 	if (timeout >= 0)
 	{
-		esim::ESim *esim = esim::ESim::getInstance();
+		esim::Engine *esim = esim::Engine::getInstance();
 		long long now = esim->getRealTime();
 		syscall_poll_time = now + (long long) timeout * 1000;
 	}

@@ -17,7 +17,6 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <csignal>
 #include <cstdlib>
 #include <iostream>
 
@@ -41,7 +40,7 @@
 #include <lib/cpp/Environment.h>
 #include <lib/cpp/IniFile.h>
 #include <lib/cpp/Misc.h>
-#include <lib/esim/ESim.h>
+#include <lib/esim/Engine.h>
 
 #include "Wrapper.h"
 
@@ -87,9 +86,6 @@ std::string m2s_visual_file;
 // Number of iterations in the main simulation loop
 long long m2s_loop_iterations = 0;
 
-// Variable set to a value other than 0 by the signal handler when a signal is
-// received from the user.
-volatile int m2s_signal_received;
 
 
 
@@ -246,60 +242,6 @@ void LoadPrograms()
 }
 
 
-void SignalHandler(int signum)
-{
-	// If a signal SIGINT has been caught already and not processed, it is
-	// time to not defer it anymore. Execution ends here.
-	if (m2s_signal_received == signum && signum == SIGINT)
-	{
-		std::cerr << "SIGINT received\n";
-		exit(1);
-	}
-
-	// Just record that we are receiving a signal. It is not a good idea to
-	// process it now, since we might be interfering some critical
-	// execution. The signal will be processed at the end of the simulation
-	// loop iteration.
-	m2s_signal_received = signum;
-}
-
-
-void ProcessSignal()
-{
-	// Process signal
-	esim::ESim *esim = esim::ESim::getInstance();
-	switch (m2s_signal_received)
-	{
-
-	case SIGINT:
-	{
-		// Second time signal was received, abort
-		if (esim->hasFinished())
-			abort();
-
-		// Try to normally finish simulation
-		esim->Finish(esim::ESimFinishSignal);
-		misc::warning("signal SIGINT received");
-		break;
-	}
-
-	case SIGUSR1:
-	{
-		// FIXME - support for simulation dump
-		break;
-	}
-
-	default:
-
-		std::cerr << "Signal " << m2s_signal_received << " received\n";
-		exit(1);
-	}
-
-	// Signal already processed
-	m2s_signal_received = 0;
-}
-
-
 void RegisterOptions()
 {
 	// Set error message
@@ -443,14 +385,11 @@ void ProcessOptions()
 
 void MainLoop()
 {
-	// Install signal handlers
-	signal(SIGINT, &SignalHandler);
-	signal(SIGABRT, &SignalHandler);
-	signal(SIGUSR1, &SignalHandler);
-	signal(SIGUSR2, &SignalHandler);
+	// Activate signal handler
+	esim::Engine *esim = esim::Engine::getInstance();
+	esim->EnableSignals();
 
 	// Get singletons
-	esim::ESim *esim = esim::ESim::getInstance();
 	comm::ArchPool *arch_pool = comm::ArchPool::getInstance();
 
 	// Simulation loop
@@ -473,7 +412,7 @@ void MainLoop()
 		// any architecture, it means that all guest contexts finished
 		// execution - simulation can end.
 		if (!num_emu_active && !num_timing_active)
-			esim->Finish(esim::ESimFinishCtx);
+			esim->Finish("ContextsFinished");
 
 		// Count loop iterations, and check for limit in simulation time
 		// only every 128k iterations. This avoids a constant overhead
@@ -482,18 +421,11 @@ void MainLoop()
 		if (m2s_max_time > 0
 				&& !(m2s_loop_iterations & ((1 << 17) - 1))
 				&& esim->getRealTime() > m2s_max_time * 1000000)
-			esim->Finish(esim::ESimFinishMaxTime);
-
-		// Signal received
-		if (m2s_signal_received)
-			ProcessSignal();
+			esim->Finish("MaxTime");
 	}
 
-	/* Restore default signal handlers */
-	signal(SIGABRT, SIG_DFL);
-	signal(SIGINT, SIG_DFL);
-	signal(SIGUSR1, SIG_DFL);
-	signal(SIGUSR2, SIG_DFL);
+	// Restore default signal handlers
+	esim->DisableSignals();
 }
 
 

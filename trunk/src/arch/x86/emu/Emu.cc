@@ -18,7 +18,7 @@
  */
 
 #include <arch/x86/asm/Asm.h>
-#include <lib/esim/ESim.h>
+#include <lib/esim/Engine.h>
 
 #include "Context.h"
 #include "Emu.h"
@@ -424,7 +424,7 @@ bool Emu::Run()
 
 	// Stop if maximum number of CPU instructions exceeded
 	if (max_instructions && instructions >= max_instructions)
-		esim->Finish(esim::ESimFinishX86MaxInst);
+		esim->Finish("x86MaxInst");
 
 	// Stop if any previous reason met
 	if (esim->hasFinished())

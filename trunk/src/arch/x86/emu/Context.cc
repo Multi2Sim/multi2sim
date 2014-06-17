@@ -523,7 +523,7 @@ void Context::DebugCallInst()
 void Context::HostThreadSuspend()
 {
 	// Get current time
-	esim::ESim *esim = esim::ESim::getInstance();
+	esim::Engine *esim = esim::Engine::getInstance();
 	long long now = esim->getRealTime();
 
 	// Detach this thread - we don't want the parent to have to join it to

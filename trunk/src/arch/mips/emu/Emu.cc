@@ -147,7 +147,7 @@ bool Emu::Run()
 
 	// Stop if maximum number of CPU instructions exceeded
 	if (max_instructions && instructions >= max_instructions)
-		esim->Finish(esim::ESimFinishMipsMaxCycles);
+		esim->Finish("MIPSMaxInst");
 
 	// Stop if any previous reason met
 	if (esim->hasFinished())
