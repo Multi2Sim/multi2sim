@@ -17,19 +17,20 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef DRIVERNDRANGE_H_
-#define DRIVERNDRANGE_H_
+#ifndef ARCH_HSA_DRIVER_PROGRAM_H
+#define ARCH_HSA_DRIVER_PROGRAM_H
+
+#include <lib/cpp/ELFWriter.h>
 
 namespace HSA
 {
 
-class DriverNDRange
+class DriverProgram
 {
-
+	int id;
+	ELFWriter::File *file;
 };
 
 } // namespace HSA
 
-
-
-#endif /* DRIVERNDRANGE_H_ */
+#endif /* ARCH_HSA_DRIVER_PROGRAM_H */

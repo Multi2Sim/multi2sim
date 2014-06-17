@@ -17,13 +17,14 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef DRIVERKERNEL_H_
-#define DRIVERKERNEL_H_
+#ifndef ARCH_HSA_DRIVER_NDRANGE_H
+#define ARCH_HSA_DRIVER_NDRANGE_H
 
 namespace HSA
 {
 
-class DriverKernel{
+class DriverNDRange
+{
 
 };
 
@@ -31,4 +32,4 @@ class DriverKernel{
 
 
 
-#endif /* DRIVERKERNEL_H_ */
+#endif /* ARCH_HSA_DRIVER_NDRANGE_H */

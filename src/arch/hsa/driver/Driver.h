@@ -23,9 +23,9 @@
 #include <arch/common/Driver.h>
 #include <lib/cpp/CommandLine.h>
 #include <lib/cpp/Debug.h>
-#include "DriverProgram.h"
-#include "DriverKernel.h"
-#include "DriverNDRange.h"
+#include "Program.h"
+#include "Kernel.h"
+#include "NDRange.h"
 #include <list>
 
 
@@ -45,6 +45,11 @@ class Driver : public comm::Driver
 	static std::list<DriverProgram *> program_list;
 	static std::list<DriverKernel *> kernel_list;
 	static std::list<DriverNDRange *> ndrange_list;
+
+	// Driver version
+	const int driver_major = 0;
+	const int driver_minor = 1;
+
 
 	// Singletons have private constructors
 	Driver() : comm::Driver("HSA", "/dev/hsa") { }
