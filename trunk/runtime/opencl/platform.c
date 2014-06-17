@@ -83,9 +83,6 @@ static void opencl_platform_add_devices(struct opencl_platform_t *platform)
 	char *token;
 	char *saveptr;
 
-	saveptr = (char *) 0xffff0000;
-	*saveptr = 'a';/////////////
-
 	/* Create list of devices */
 	platform->device_list = list_create();
 
