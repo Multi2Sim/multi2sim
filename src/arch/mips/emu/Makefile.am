@@ -34,9 +34,6 @@ libemu_a_SOURCES = \
 	Emu.cc \
 	Emu.h  \
 	\
-	FileTable.h \
-	FileTable.cc \
-	\
 	Signal.h \
 	Signal.cc 
 

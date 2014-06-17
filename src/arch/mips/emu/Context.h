@@ -27,8 +27,8 @@
 #include <lib/cpp/ELFReader.h>
 #include <mem-system/Memory.h>
 #include <mem-system/SpecMem.h>
+#include <arch/common/FileTable.h>
 
-#include "FileTable.h"
 #include "Regs.h"
 #include "Signal.h"
 
@@ -93,7 +93,7 @@ class Context
 	std::unique_ptr<Inst> inst;
 
 	// File descriptor table, shared by contexts
-	std::shared_ptr<FileTable> file_table;
+	std::shared_ptr<comm::FileTable> file_table;
 
 	// Instruction pointers
 	unsigned last_eip;  // Address of last emulated instruction
