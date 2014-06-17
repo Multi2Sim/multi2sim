@@ -30,7 +30,6 @@
 #include <arch/x86/asm/Asm.h>
 #include <arch/x86/emu/Context.h>
 #include <arch/x86/emu/Emu.h>
-#include <arch/x86/emu/FileTable.h>
 #include <arch/x86/emu/Signal.h>
 #include <arch/hsa/asm/Asm.h>
 #include <arch/hsa/driver/Driver.h>

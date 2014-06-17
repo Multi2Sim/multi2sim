@@ -26,6 +26,9 @@ libcommon_a_SOURCES = \
 	Emu.cc \
 	Emu.h \
 	\
+	FileTable.cc \
+	FileTable.h \
+	\
 	runtime.c \
 	runtime.h \
 	\

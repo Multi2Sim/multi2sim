@@ -386,7 +386,7 @@ void Context::Load(const std::vector<std::string> &args,
 	spec_mem.reset(new mem::SpecMem(memory.get()));
 
 	// Create file descriptor table
-	file_table.reset(new FileTable());
+	file_table.reset(new comm::FileTable());
 	
 	// Create new loader info
 	assert(!loader.get());
@@ -460,7 +460,7 @@ void Context::Fork(Context *parent)
 
 	// Signal handlers and file descriptor table
 	signal_handler_table.reset(new SignalHandlerTable());
-	file_table.reset(new FileTable());
+	file_table.reset(new comm::FileTable());
 
 	// Libc segment
 	glibc_segment_base = parent->glibc_segment_base;
@@ -546,7 +546,7 @@ void Context::HostThreadSuspend()
 	if (getState(ContextRead))
 	{
 		// Get file descriptor
-		FileDesc *desc = file_table->getFileDesc(syscall_read_fd);
+		comm::FileDesc *desc = file_table->getFileDesc(syscall_read_fd);
 		if (!desc)
 			misc::panic("%s: invalid file descriptor (%d)",
 					__FUNCTION__, syscall_read_fd);
@@ -565,7 +565,7 @@ void Context::HostThreadSuspend()
 	if (getState(ContextWrite))
 	{
 		// Get file descriptor
-		FileDesc *desc = file_table->getFileDesc(syscall_write_fd);
+		comm::FileDesc *desc = file_table->getFileDesc(syscall_write_fd);
 		if (!desc)
 			misc::panic("%s: invalid file descriptor (%d)",
 					__FUNCTION__, syscall_write_fd);
@@ -584,7 +584,7 @@ void Context::HostThreadSuspend()
 	if (getState(ContextPoll))
 	{
 		// Get file descriptor
-		FileDesc *desc = file_table->getFileDesc(syscall_poll_fd);
+		comm::FileDesc *desc = file_table->getFileDesc(syscall_poll_fd);
 		if (!desc)
 			misc::panic("%s: invalid file descriptor (%d)",
 					__FUNCTION__, syscall_poll_fd);

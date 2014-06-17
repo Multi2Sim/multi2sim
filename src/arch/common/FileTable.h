@@ -28,12 +28,10 @@
 #include <lib/cpp/String.h>
 
 
-// Forward declarations
-namespace comm { class Driver; }
-
-
-namespace x86
+namespace comm
 {
+
+class Driver;
 
 extern const misc::StringMap file_desc_type_map;
 enum FileDescType
@@ -184,7 +182,7 @@ public:
 };
 
 
-}  // namespace x86
+}  // namespace comm
 
 #endif
 
