@@ -87,10 +87,10 @@ void Context::Load(const std::vector<std::string> &args,
 	spec_mem.reset(new mem::SpecMem(memory.get()));
 
 	// Create file descriptor table
-	file_table.reset(new FileTable());
+	file_table.reset(new comm::FileTable());
 
 	// Create file descriptor table
-	file_table.reset(new FileTable());
+	file_table.reset(new comm::FileTable());
 
 	// Create new loader info
 	assert(!loader.get());
