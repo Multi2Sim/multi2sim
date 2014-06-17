@@ -19,7 +19,8 @@
 
 #ifndef ARCH_HSA_ASM_ASM_H
 #define ARCH_HSA_ASM_ASM_H
-
+ 
+#include <arch/common/Asm.h>
 #include <lib/cpp/CommandLine.h>
 
 #include "BrigInstEntry.h"
@@ -28,8 +29,8 @@
 namespace HSA
 {
 
-
-class Asm
+/// HSA dissassembler singleton
+class Asm : public comm::Asm
 {
 	// File to disassemble
 	static std::string path;
