@@ -49,6 +49,12 @@ protected:
 	Asm();
 
 public:
+
+	/// Checks if the elf file to be loaded
+	static bool isValidBrigELF(const std::string &path){
+		BrigFile bf(path.c_str());
+		return bf.isValid();
+	}
 	
 	/// Returns the pointer to the only instance of has disassembler
 	static Asm *getInstance();

@@ -80,7 +80,7 @@ void Emu::ProcessOptions()
 
 Emu::Emu() : comm::Emu("hsa")
 {
-	pid = 0;
+	pid = 100;
 }
 
 
