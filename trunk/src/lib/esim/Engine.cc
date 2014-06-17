@@ -36,7 +36,7 @@ Engine::Engine()
 	timer.Start();
 
 	// Create null event
-	null_event_type = RegisterEventType("Null event", nullptr);
+	null_event_type = RegisterEventType("Null event", nullptr, nullptr);
 }
 
 
@@ -121,9 +121,10 @@ FrequencyDomain *Engine::RegisterFrequencyDomain(const std::string &name,
 
 
 EventType *Engine::RegisterEventType(const std::string &name,
-		FrequencyDomain *frequency_domain)
+		FrequencyDomain *frequency_domain,
+		EventHandler handler)
 {
-	event_types.emplace_back(name, frequency_domain);
+	event_types.emplace_back(name, frequency_domain, handler);
 	return &event_types.back();
 }
 	
