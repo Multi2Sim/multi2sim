@@ -237,20 +237,21 @@ int opencl_si_kernel_set_arg(struct opencl_si_kernel_t *kernel, int arg_index,
 	if (!arg)
 		fatal("%s: invalid argument index (%d)\n",
 				__FUNCTION__, arg_index);
-
 	/* Perform ABI call depending on the argument type */
 	switch (arg->type)
 	{
-
 	case opencl_si_arg_value:
-
+	{
 		/* ABI call */
+		unsigned int args[]= {kernel->id, arg_index, (unsigned int) arg_value, arg_size};
+
+
 		ioctl(opencl_si_device->fd, SIKernelSetArgValue,
-				kernel->id, arg_index, arg_value, arg_size);
+				args);
 		break;
-
+	}
 	case opencl_si_arg_pointer:
-
+	{
 		/* If an argument value is given, it should be a 'cl_mem' 
 		 * object.  We need to obtain the 'device_ptr' of the 
 		 * allocated memory associated with it. */
@@ -271,11 +272,12 @@ int opencl_si_kernel_set_arg(struct opencl_si_kernel_t *kernel, int arg_index,
 		}
 
 		/* ABI call */
+		unsigned int args[] = {arg_index, (unsigned int) arg_value, arg_size};
 		ioctl(opencl_si_device->fd, 
 			SIKernelSetArgPointer, kernel->id, 
-			arg_index, arg_value, arg_size);
+			args);
 		break;
-
+	}
 	default:
 		fatal("%s: argument type not supported (%d)",
 				__FUNCTION__, arg->type);
@@ -343,6 +345,10 @@ struct opencl_si_ndrange_t *opencl_si_ndrange_create(
 			arch_ndrange->local_work_size[i];
 	}
 
+	/* ioctl arguments. The argument array is now 5 which is the
+	 * maximum number of arguments in this function. If any other ioctl call is
+	 * used here, this array size should be increased */
+	void * args [5] = {NULL};
 	/* Calculate the number of work groups in the ND-Range */
 	arch_ndrange->total_num_groups = 
 		arch_ndrange->num_groups[0] * 
@@ -350,22 +356,29 @@ struct opencl_si_ndrange_t *opencl_si_ndrange_create(
 		arch_ndrange->num_groups[2];
 
 	/* Tell the driver whether or not we are using a fused device */
+	args[0] = (void *) arch_ndrange->fused;
 	ioctl(opencl_si_device->fd, SINDRangeSetFused,
-		arch_ndrange->fused);
+		args);
 
 	/* Create the ndrange */
+	args[0] = (void *) si_kernel->id;
+	args[1] = (void *) arch_ndrange->work_dim ;
+	args[2] = (void *) arch_ndrange->global_work_offset;
+	args[3] = (void *) arch_ndrange->global_work_size;
+	args[4] = (void *) arch_ndrange->local_work_size[0];
+
 	arch_ndrange->id = ioctl(opencl_si_device->fd, 
-		SINDRangeCreate, 
-		si_kernel->id, arch_ndrange->work_dim, 
-		arch_ndrange->global_work_offset, 
-		arch_ndrange->global_work_size, 
-		arch_ndrange->local_work_size);
+		SINDRangeCreate, args);
 
 	/* Provide internal tables initialized within the host
 	 * process' virtual address space */
+	args[0] = (void *) arch_ndrange->id;
+	args[1] = (void *) si_kernel->id;
+	args[2] = arch_ndrange->table_ptr;
+	args[3] = arch_ndrange->cb_ptr ;
+	args[4] = NULL ; // This is unnecessary but we are adding it for clarity
 	ioctl(opencl_si_device->fd, SINDRangePassMemObjs, 
-		arch_ndrange->id, si_kernel->id, arch_ndrange->table_ptr, 
-		arch_ndrange->cb_ptr);
+		args);
 
 	return arch_ndrange;
 }

@@ -46,8 +46,9 @@ struct opencl_si_program_t *opencl_si_program_create(
 		SIProgramCreate);
 
 	/* Set program binary in driver */
+	void * args[3] = {(void *) program->id, binary, (void *) length};
 	ioctl(device->parent->fd, SIProgramSetBinary,
-		program->id, binary, length);
+		args);
 
 	/* Return */
 	return program;
