@@ -11,8 +11,8 @@ bin_PROGRAMS = $(top_builddir)/bin/m2s
 
 __top_builddir__bin_m2s_SOURCES = \
 	\
-	m2s.c \
-	m2s-cpp.cc \
+	m2s.cc \
+	m2s-old.c \
 	\
 	Wrapper.cc \
 	Wrapper.h
