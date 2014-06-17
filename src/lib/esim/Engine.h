@@ -163,11 +163,15 @@ public:
 	///	Frequency domain for the event type, as returned by a previous
 	///	call to RegisterFrequencyDomain().
 	///
+	/// \param handler
+	///	Function to execute when the event is triggered.
+	///
 	/// \return
 	///	This function returns a new object of type EvenType, which can
 	///	be used later in calls to ScheduleEvent().
 	EventType *RegisterEventType(const std::string &name,
-			FrequencyDomain *frequency_domain);
+			FrequencyDomain *frequency_domain,
+			EventHandler handler);
 
 	/// Schedule an event.
 	///
