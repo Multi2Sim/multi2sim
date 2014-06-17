@@ -20,21 +20,18 @@
 #include "Emu.h"
 
 #include <lib/cpp/String.h>
-#include <lib/esim/ESim.h>
 
 
 namespace comm
 {
 
 Emu::Emu(const std::string &name)
-		: timer(name)
+		:
+		name(name),
+		timer(name)
 {
-	// Initialize
-	this->name = name;
-	instructions = 0;
-	
-	// Get the instance of the event-driven simulator
-	esim = esim::ESim::getInstance();
+	// Obtain event-driven simulator engine
+	esim = esim::Engine::getInstance();
 }
 
 	

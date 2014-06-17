@@ -5,8 +5,14 @@ libesim_a_SOURCES = \
 	esim.c \
 	esim.h \
 	\
-	ESim.cc \
-	ESim.h \
+	Engine.cc \
+	Engine.h \
+	\
+	Event.cc \
+	Event.h \
+	\
+	FrequencyDomain.cc \
+	FrequencyDomain.h \
 	\
 	trace.c \
 	trace.h
