@@ -28,7 +28,13 @@ namespace esim
 {
 
 // Forward declarations
+class EventFrame;
+class EventType;
 class FrequencyDomain;
+
+
+/// Event handler function prototype
+typedef void (*EventHandler)(EventType *, EventFrame *);
 
 
 /// Event type used for event registrations. This class should not be
@@ -42,13 +48,19 @@ class EventType
 	// Frequency domain
 	FrequencyDomain *frequency_domain;
 
+	// Handler function
+	EventHandler handler;
+
 public:
 
 	/// Constructor
-	EventType(const std::string &name, FrequencyDomain *frequency_domain)
+	EventType(const std::string &name,
+			FrequencyDomain *frequency_domain,
+			EventHandler handler)
 			:
 			name(name),
-			frequency_domain(frequency_domain)
+			frequency_domain(frequency_domain),
+			handler(handler)
 	{
 	}
 
