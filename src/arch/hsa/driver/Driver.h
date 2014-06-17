@@ -23,6 +23,10 @@
 #include <arch/common/Driver.h>
 #include <lib/cpp/CommandLine.h>
 #include <lib/cpp/Debug.h>
+#include "DriverProgram.h"
+#include "DriverKernel.h"
+#include "DriverNDRange.h"
+#include <list>
 
 
 namespace HSA
@@ -36,6 +40,11 @@ class Driver : public comm::Driver
 
 	// Unique instance of singleton
 	static std::unique_ptr<Driver> instance;
+
+	// List of programs, kernels, NDRanges
+	static std::list<DriverProgram *> program_list;
+	static std::list<DriverKernel *> kernel_list;
+	static std::list<DriverNDRange *> ndrange_list;
 
 	// Singletons have private constructors
 	Driver() : comm::Driver("HSA", "/dev/hsa") { }

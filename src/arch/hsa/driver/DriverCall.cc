@@ -19,7 +19,6 @@
 
 #include <lib/cpp/String.h>
 #include <mem-system/Memory.h>
-#include <assert.h>
 
 #include "Driver.h"
 
@@ -150,7 +149,7 @@ int Driver::CallMemRead(mem::Memory *memory, unsigned args_ptr)
 	memory->Read(args_ptr, 4, (char *) &host_ptr);
 	memory->Read(args_ptr + 4, 4, (char *) &device_ptr);
 	memory->Read(args_ptr + 8, 4, (char *) &size);
-	debug << misc::fmt("	MemWrite host_ptr = 0x%08x; device_ptr = 0x%08x; size = 0x%08x",
+	debug << misc::fmt("	MemRead host_ptr = 0x%08x; device_ptr = 0x%08x; size = 0x%08x",
 				host_ptr, device_ptr, size);
 	char * buf = (char *)malloc(size);
 	/* TODO:
@@ -158,9 +157,37 @@ int Driver::CallMemRead(mem::Memory *memory, unsigned args_ptr)
 	 * device_memory->Read(device_ptr, size, buf);
 	 */
 	memory->Write(host_ptr, size, buf);
+	free(buf);
 	return 0;
 }
 
+// ABI Call 'MemCopyDevice'
+// Copy from one device buffer to another device buffer
+// device_dest_ptr: address of device buffer as destination
+// device_src_ptr: address of device buffer as source
+// size: size of buffer to copy
+int Driver::CallMemCopyDevice(mem::Memory *memory, unsigned args_ptr)
+{
+	unsigned device_dest_ptr;
+	unsigned device_src_ptr;
+	unsigned size;
+	memory->Read(args_ptr, 4, (char *) &device_dest_ptr);
+	memory->Read(args_ptr + 4, 4, (char *) &device_src_ptr);
+	memory->Read(args_ptr + 8, 4, (char *) &size);
+	debug << misc::fmt("	MemCopyDevice device_dest_ptr = 0x%08x; device_src_ptr = 0x%08x; size = 0x%08x",
+			device_dest_ptr, device_src_ptr, size);
+	char * buf = (char *)malloc(size);
+	/* TODO:
+	 * read from source buffer in device memory
+	 * device_memory->Read(device_src_ptr, size, buf);
+	 * write to destination buffer in device memory
+	 * device_memory->Write(device_dest_ptr, size, buf);
+	 */
+	free(buf);
+	return 0;
+}
+
+// ABI Call 'ProgramCreate'
 
 
 
