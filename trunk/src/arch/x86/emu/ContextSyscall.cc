@@ -350,7 +350,7 @@ bool Context::SyscallReadCanWakeup()
 	}
 
 	// Get file descriptor
-	FileDesc *desc = file_table->getFileDesc(syscall_read_fd);
+	comm::FileDesc *desc = file_table->getFileDesc(syscall_read_fd);
 	if (!desc)
 		misc::panic("%s: invalid file descriptor", __FUNCTION__);
 
@@ -404,7 +404,7 @@ int Context::ExecuteSyscall_read()
 			guest_fd, buf_ptr, count);
 
 	// Get file descriptor
-	FileDesc *desc = file_table->getFileDesc(guest_fd);
+	comm::FileDesc *desc = file_table->getFileDesc(guest_fd);
 	if (!desc)
 		return -EBADF;
 	int host_fd = desc->getHostIndex();
@@ -485,7 +485,7 @@ bool Context::SyscallWriteCanWakeup()
 	}
 
 	// Get file descriptor
-	FileDesc *desc = file_table->getFileDesc(syscall_write_fd);
+	comm::FileDesc *desc = file_table->getFileDesc(syscall_write_fd);
 	if (!desc)
 		misc::panic("%s: invalid file descriptor", __FUNCTION__);
 
@@ -539,7 +539,7 @@ int Context::ExecuteSyscall_write()
 			guest_fd, buf_ptr, count);
 
 	// Get file descriptor
-	FileDesc *desc = file_table->getFileDesc(guest_fd);
+	comm::FileDesc *desc = file_table->getFileDesc(guest_fd);
 	if (!desc)
 		return -EBADF;
 	int host_fd = desc->getHostIndex();
@@ -612,7 +612,7 @@ static misc::StringMap open_flags_map =
 	{ "O_NOATIME",       01000000 }
 };
 
-FileDesc *Context::SyscallOpenVirtualFile(const std::string &path,
+comm::FileDesc *Context::SyscallOpenVirtualFile(const std::string &path,
 		int flags, int mode)
 {
 	// Assume no file found
@@ -635,7 +635,8 @@ FileDesc *Context::SyscallOpenVirtualFile(const std::string &path,
 	assert(host_fd > 0);
 
 	// Add file descriptor table entry.
-	FileDesc *desc = file_table->newFileDesc(FileDescVirtual, host_fd,
+	comm::FileDesc *desc = file_table->newFileDesc(
+			comm::FileDescVirtual, host_fd,
 			temp_path, flags);
 	emu->syscall_debug << misc::fmt("    host file '%s' opened: "
 			"guest_fd=%d, host_fd=%d\n",
@@ -644,7 +645,7 @@ FileDesc *Context::SyscallOpenVirtualFile(const std::string &path,
 	return desc;
 }
 
-FileDesc *Context::SyscallOpenVirtualDevice(const std::string &path,
+comm::FileDesc *Context::SyscallOpenVirtualDevice(const std::string &path,
 		int flags, int mode)
 {
 	// Check if this is a Multi2Sim driver
@@ -655,7 +656,8 @@ FileDesc *Context::SyscallOpenVirtualDevice(const std::string &path,
 				path.c_str());
 
 	// Create new file descriptor
-	FileDesc *desc = file_table->newFileDesc(FileDescDevice,
+	comm::FileDesc *desc = file_table->newFileDesc(
+			comm::FileDescDevice,
 			0,  // Host descriptor doesn't matter
 			path,
 			flags);
@@ -697,7 +699,8 @@ int Context::ExecuteSyscall_open()
 	if (misc::StringPrefix(full_path, "/dev/"))
 	{
 		// Attempt to open virtual file
-		FileDesc *desc = SyscallOpenVirtualDevice(full_path, flags, mode);
+		comm::FileDesc *desc = SyscallOpenVirtualDevice(
+				full_path, flags, mode);
 		return desc->getGuestIndex();
 	}
 
@@ -705,7 +708,8 @@ int Context::ExecuteSyscall_open()
 	if (misc::StringPrefix(full_path, "/proc/"))
 	{
 		// Attempt to open virtual file
-		FileDesc *desc = SyscallOpenVirtualFile(full_path, flags, mode);
+		comm::FileDesc *desc = SyscallOpenVirtualFile(
+				full_path, flags, mode);
 		if (desc)
 			return desc->getGuestIndex();
 		
@@ -720,7 +724,8 @@ int Context::ExecuteSyscall_open()
 		return -errno;
 
 	// File opened, create a new file descriptor.
-	FileDesc *desc = file_table->newFileDesc(FileDescRegular,
+	comm::FileDesc *desc = file_table->newFileDesc(
+			comm::FileDescRegular,
 			host_fd, full_path, flags);
 	emu->syscall_debug << misc::fmt("    file descriptor opened: "
 			"guest_fd=%d, host_fd=%d\n",
@@ -746,7 +751,7 @@ int Context::ExecuteSyscall_close()
 	emu->syscall_debug << misc::fmt("  host_fd=%d\n", host_fd);
 
 	// Get file descriptor table entry.
-	FileDesc *desc = file_table->getFileDesc(guest_fd);
+	comm::FileDesc *desc = file_table->getFileDesc(guest_fd);
 	if (!desc)
 		return -EBADF;
 
@@ -757,7 +762,7 @@ int Context::ExecuteSyscall_close()
 
 	// Free guest file descriptor. This will delete the host file if it's a
 	// virtual file
-	if (desc->getType() == FileDescVirtual)
+	if (desc->getType() == comm::FileDescVirtual)
 		emu->syscall_debug << misc::fmt("    host file '%s': "
 				"temporary file deleted\n",
 				desc->getPath().c_str());
@@ -1441,7 +1446,7 @@ int Context::ExecuteSyscall_dup()
 	emu->syscall_debug << misc::fmt("  guest_fd=%d\n", guest_fd);
 
 	// Check that file descriptor is valid.
-	FileDesc *desc = file_table->getFileDesc(guest_fd);
+	comm::FileDesc *desc = file_table->getFileDesc(guest_fd);
 	if (!desc)
 		return -EBADF;
 	int host_fd = desc->getHostIndex();
@@ -1453,7 +1458,8 @@ int Context::ExecuteSyscall_dup()
 		return -errno;
 
 	// Create a new entry in the file descriptor table.
-	FileDesc *dup_desc = file_table->newFileDesc(FileDescRegular,
+	comm::FileDesc *dup_desc = file_table->newFileDesc(
+			comm::FileDescRegular,
 			dup_host_fd, desc->getPath(), desc->getFlags());
 	int dup_guest_fd = dup_desc->getGuestIndex();
 
@@ -1483,9 +1489,11 @@ int Context::ExecuteSyscall_pipe()
 			host_fd[0], host_fd[1]);
 
 	// Create guest pipe
-	FileDesc *read_desc = file_table->newFileDesc(FileDescPipe,
+	comm::FileDesc *read_desc = file_table->newFileDesc(
+			comm::FileDescPipe,
 			host_fd[0], "", O_RDONLY);
-	FileDesc *write_desc = file_table->newFileDesc(FileDescPipe,
+	comm::FileDesc *write_desc = file_table->newFileDesc(
+			comm::FileDescPipe,
 			host_fd[1], "", O_WRONLY);
 	int guest_read_fd = read_desc->getGuestIndex();
 	int guest_write_fd = write_desc->getGuestIndex();
@@ -1695,12 +1703,12 @@ int Context::ExecuteSyscall_ioctl()
 			guest_fd, cmd, arg);
 
 	// File descriptor 
-	FileDesc *desc = file_table->getFileDesc(guest_fd);
+	comm::FileDesc *desc = file_table->getFileDesc(guest_fd);
 	if (!desc)
 		return -EBADF;
 
 	// Check if this is communication with a Multi2Sim driver
-	if (desc->getType() == FileDescDevice)
+	if (desc->getType() == comm::FileDescDevice)
 	{
 		// Get the driver
 		comm::Driver *driver = desc->getDriver();
@@ -2303,7 +2311,7 @@ int Context::SyscallMmapAux(unsigned addr, unsigned len,
 	assert(MAP_ANONYMOUS == 0x20);
 
 	// Translate file descriptor
-	FileDesc *desc = file_table->getFileDesc(guest_fd);
+	comm::FileDesc *desc = file_table->getFileDesc(guest_fd);
 	int host_fd = desc ? desc->getHostIndex() : -1;
 	if (guest_fd > 0 && host_fd < 0)
 		misc::fatal("%s: invalid guest descriptor", __FUNCTION__);
@@ -3249,7 +3257,7 @@ int Context::ExecuteSyscall_llseek()
 			<< misc::fmt("  offset = 0x%llx\n", (long long) offset);
 	
 	// Check file descriptor 
-	FileDesc *desc = file_table->getFileDesc(fd);
+	comm::FileDesc *desc = file_table->getFileDesc(fd);
 	if (!desc)
 		return -EBADF;
 	
@@ -3372,14 +3380,14 @@ int Context::ExecuteSyscall_writev()
 		guest_fd, iovec_ptr, vlen);
 
 	// Check file descriptor 
-	FileDesc *desc = file_table->getFileDesc(guest_fd);
+	comm::FileDesc *desc = file_table->getFileDesc(guest_fd);
 	if (!desc)
 		return -EBADF;
 	int host_fd = desc->getHostIndex();
 	emu->syscall_debug << misc::fmt("  host_fd=%d\n", host_fd);
 
 	// No pipes allowed 
-	if (desc->getType() == FileDescPipe)
+	if (desc->getType() == comm::FileDescPipe)
 		misc::fatal("%s: not supported for pipes.\n%s",
 			__FUNCTION__, syscall_error_note);
 
@@ -4052,7 +4060,7 @@ bool Context::SyscallPollCanWakeup()
 
 	// Get arguments
 	unsigned prevents = regs.getEbx() + 6;
-	FileDesc *desc = file_table->getFileDesc(syscall_poll_fd);
+	comm::FileDesc *desc = file_table->getFileDesc(syscall_poll_fd);
 	if (!desc)
 		misc::panic("%s: invalid file descriptor (%d)",
 				__FUNCTION__, syscall_poll_fd);
@@ -4156,7 +4164,7 @@ int Context::ExecuteSyscall_poll()
 			guest_fd, poll_event_map.MapFlags(guest_fds.events).c_str());
 
 	// Get file descriptor
-	FileDesc *desc = file_table->getFileDesc(guest_fd);
+	comm::FileDesc *desc = file_table->getFileDesc(guest_fd);
 	if (!desc)
 		return -EBADF;
 	int host_fd = desc->getHostIndex();
@@ -5249,7 +5257,7 @@ int Context::ExecuteSyscall_fcntl64()
 			fcntl_cmd_map.MapValue(cmd));
 
 	// Get file descriptor table entry
-	FileDesc *desc = file_table->getFileDesc(guest_fd);
+	comm::FileDesc *desc = file_table->getFileDesc(guest_fd);
 	if (!desc)
 		return -EBADF;
 	if (desc->getHostIndex() < 0)

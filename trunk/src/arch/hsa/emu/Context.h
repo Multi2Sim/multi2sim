@@ -20,7 +20,7 @@
 #ifndef ARCH_HSA_EMU_CONTEXT_H
 #define ARCH_HSA_EMU_CONTEXT_H
 
-#include "arch/x86/emu/FileTable.h"
+#include "arch/common/FileTable.h"
 
 #include "Emu.h"
 
@@ -38,7 +38,7 @@ class Context{
  	int pid;
 
 	// File descriptor table, shared by contexts
-	std::shared_ptr<x86::FileTable> file_table;
+	std::shared_ptr<comm::FileTable> file_table;
 
  	///
  	/// Functions and data stuctures related to the program loader

@@ -72,9 +72,6 @@ libemu_a_SOURCES = \
 	Extended.cc \
 	Extended.h \
 	\
-	FileTable.cc \
-	FileTable.h \
-	\
 	Regs.cc \
 	Regs.h \
 	\

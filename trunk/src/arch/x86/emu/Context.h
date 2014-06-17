@@ -28,7 +28,7 @@
 #include <mem-system/Memory.h>
 #include <mem-system/SpecMem.h>
 
-#include "FileTable.h"
+#include "arch/common/FileTable.h"
 #include "Regs.h"
 #include "Signal.h"
 #include "UInst.h"
@@ -158,7 +158,7 @@ class Context
 	Regs regs;
 
 	// File descriptor table, shared by contexts
-	std::shared_ptr<FileTable> file_table;
+	std::shared_ptr<comm::FileTable> file_table;
 
 	// Call stack
 	std::unique_ptr<comm::CallStack> call_stack;
@@ -691,9 +691,9 @@ class Context
 	// Auxiliary system call functions
 	int SyscallMmapAux(unsigned int addr, unsigned int len, int prot,
 			int flags, int guest_fd, int offset);
-	FileDesc *SyscallOpenVirtualFile(const std::string &path,
+	comm::FileDesc *SyscallOpenVirtualFile(const std::string &path,
 			int flags, int mode);
-	FileDesc *SyscallOpenVirtualDevice(const std::string &path,
+	comm::FileDesc *SyscallOpenVirtualDevice(const std::string &path,
 			int flags, int mode);
 
 	// System call 'nanosleep'
