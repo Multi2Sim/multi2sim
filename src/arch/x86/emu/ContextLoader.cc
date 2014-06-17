@@ -464,7 +464,7 @@ void Context::LoadBinary()
 
 		// Replace file descriptor 0
 		file_table->freeFileDesc(0);
-		file_table->newFileDesc(FileDescStd, 0, f,
+		file_table->newFileDesc(comm::FileDescStd, 0, f,
 				loader->stdin_file_name, O_RDONLY);
 	}
 
@@ -482,9 +482,9 @@ void Context::LoadBinary()
 		// Replace file descriptors 1 and 2
 		file_table->freeFileDesc(1);
 		file_table->freeFileDesc(2);
-		file_table->newFileDesc(FileDescStd, 1, f,
+		file_table->newFileDesc(comm::FileDescStd, 1, f,
 				loader->stdout_file_name, O_WRONLY);
-		file_table->newFileDesc(FileDescStd, 2, f,
+		file_table->newFileDesc(comm::FileDescStd, 2, f,
 				loader->stdout_file_name, O_WRONLY);
 	}
 	
