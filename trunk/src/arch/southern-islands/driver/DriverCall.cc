@@ -35,6 +35,214 @@ int Driver::CallInit(mem::Memory *memory, unsigned args_ptr)
 	return 0;
 }
 
+// ABI Call 'MEM Alloc'
+//
+// ...
+int Driver::CallMemAlloc(mem::Memory *memory, unsigned args_ptr)
+{
+	misc::fatal("%s:function call is not currently implemented in multi2sim", __FUNCTION__);
+	return 0;
+}
 
-}  // namepsace HSA
+// ABI Call 'MEM Read'
+//
+// ...
+int Driver::CallMemRead(mem::Memory *memory, unsigned args_ptr)
+{
+	misc::fatal("%s:function call is not currently implemented in multi2sim", __FUNCTION__);
+	return 0;
+}
+
+// ABI Call 'MEM Write'
+//
+// ...
+int Driver::CallMemWrite(mem::Memory *memory, unsigned args_ptr)
+{
+	misc::fatal("%s:function call is not currently implemented in multi2sim", __FUNCTION__);
+	return 0;
+}
+
+// ABI Call 'MEM Copy'
+//
+// ...
+int Driver::CallMemCopy(mem::Memory *memory, unsigned args_ptr)
+{
+	misc::fatal("%s:function call is not currently implemented in multi2sim", __FUNCTION__);
+	return 0;
+}
+
+// ABI Call 'MEM Free'
+//
+// ...
+int Driver::CallMemFree(mem::Memory *memory, unsigned args_ptr)
+{
+	misc::fatal("%s:function call is not currently implemented in multi2sim", __FUNCTION__);
+	return 0;
+}
+
+// ABI Call 'Program Create'
+//
+// ...
+int Driver::CallProgramCreate(mem::Memory *memory, unsigned args_ptr)
+{
+	misc::fatal("%s:function call is not currently implemented in multi2sim", __FUNCTION__);
+	return 0;
+}
+
+// ABI Call 'Program Set Binary'
+//
+// ...
+int Driver::CallProgramSetBinary(mem::Memory *memory, unsigned args_ptr)
+{
+	misc::fatal("%s:function call is not currently implemented in multi2sim", __FUNCTION__);
+	return 0;
+}
+
+// ABI Call 'Kernel Create'
+//
+// ...
+int Driver::CallKernelCreate(mem::Memory *memory, unsigned args_ptr)
+{
+	misc::fatal("%s:function call is not currently implemented in multi2sim", __FUNCTION__);
+	return 0;
+}
+
+// ABI Call 'Kernel Set Arg Value'
+//
+// ...
+int Driver::CallKernelSetArgValue(mem::Memory *memory, unsigned args_ptr)
+{
+	misc::fatal("%s:function call is not currently implemented in multi2sim", __FUNCTION__);
+	return 0;
+}
+
+// ABI Call 'KernelSet Arg Pointer'
+//
+// ...
+int Driver::CallKernelSetArgPointer(mem::Memory *memory, unsigned args_ptr)
+{
+	misc::fatal("%s:function call is not currently implemented in multi2sim", __FUNCTION__);
+	return 0;
+}
+
+// ABI Call 'Kernel Set Arg Sampler'
+//
+// ...
+int Driver::CallKernelSetArgSampler(mem::Memory *memory, unsigned args_ptr)
+{
+	misc::fatal("%s:function call is not currently implemented in multi2sim", __FUNCTION__);
+	return 0;
+}
+
+// ABI Call 'KernelSetArgImage'
+//
+// ...
+int Driver::CallKernelSetArgImage(mem::Memory *memory, unsigned args_ptr)
+{
+	misc::fatal("%s:function call is not currently implemented in multi2sim", __FUNCTION__);
+	return 0;
+}
+
+
+// ABI Call 'NdrangeCreate'
+//
+// ...
+int Driver::CallNdrangeCreate(mem::Memory *memory, unsigned args_ptr)
+{
+	misc::fatal("%s:function call is not currently implemented in multi2sim", __FUNCTION__);
+	return 0;
+}
+
+
+// ABI Call 'NdrangeGetNumBufferEntries'
+//
+// ...
+int Driver::CallNdrangeGetNumBufferEntries(mem::Memory *memory, unsigned args_ptr)
+{
+	misc::fatal("%s:function call is not currently implemented in multi2sim", __FUNCTION__);
+	return 0;
+}
+
+// ABI Call 'NdrangeSendWorkGroups'
+//
+// ...
+int Driver::CallNdrangeSendWorkGroups(mem::Memory *memory, unsigned args_ptr)
+{
+	misc::fatal("%s:function call is not currently implemented in multi2sim", __FUNCTION__);
+	return 0;
+}
+
+// ABI Call 'NdrangeFinish'
+//
+// ...
+int Driver::CallNdrangeFinish(mem::Memory *memory, unsigned args_ptr)
+{
+	misc::fatal("%s:function call is not currently implemented in multi2sim", __FUNCTION__);
+	return 0;
+}
+
+// ABI Call 'NdrangePassMemObjs'
+//
+// ...
+int Driver::CallNdrangePassMemObjs(mem::Memory *memory, unsigned args_ptr)
+{
+	misc::fatal("%s:function call is not currently implemented in multi2sim", __FUNCTION__);
+	return 0;
+}
+
+// ABI Call 'NdrangeSetFused'
+//
+// ...
+int Driver::CallNdrangeSetFused(mem::Memory *memory, unsigned args_ptr)
+{
+	misc::fatal("%s:function call is not currently implemented in multi2sim", __FUNCTION__);
+	return 0;
+}
+
+// ABI Call 'NdrangeFlush'
+//
+// ...
+int Driver::CallNdrangeFlush(mem::Memory *memory, unsigned args_ptr)
+{
+	misc::fatal("%s:function call is not currently implemented in multi2sim", __FUNCTION__);
+	return 0;
+}
+
+// ABI Call 'NdrangeFree'
+//
+// ...
+int Driver::CallNdrangeFree(mem::Memory *memory, unsigned args_ptr)
+{
+	misc::fatal("%s:function call is not currently implemented in multi2sim", __FUNCTION__);
+	return 0;
+}
+
+// ABI Call 'NdrangeStart'
+//
+// ...
+int Driver::CallNdrangeStart(mem::Memory *memory, unsigned args_ptr)
+{
+	misc::fatal("%s:function call is not currently implemented in multi2sim", __FUNCTION__);
+	return 0;
+}
+
+// ABI Call 'NdrangeEnd'
+//
+// ...
+int Driver::CallNdrangeEnd(mem::Memory *memory, unsigned args_ptr)
+{
+	misc::fatal("%s:function call is not currently implemented in multi2sim", __FUNCTION__);
+	return 0;
+}
+
+// ABI Call 'RuntimeDebug'
+//
+// ...
+int Driver::CallRuntimeDebug(mem::Memory *memory, unsigned args_ptr)
+{
+	misc::fatal("%s:function call is not currently implemented in multi2sim", __FUNCTION__);
+	return 0;
+}
+
+}  // namepsace SI
 
