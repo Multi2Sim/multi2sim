@@ -24,7 +24,7 @@
 #include <string>
 
 #include <lib/cpp/Timer.h>
-#include <lib/esim/ESim.h>
+#include <lib/esim/Engine.h>
 
 
 namespace comm
@@ -40,11 +40,11 @@ class Emu
 
 protected:
 
-	// Event-driven simulator
-	esim::ESim *esim;
+	/// Event-driven simulation engine
+	esim::Engine *esim;
 
-	// Number of emulated instructions
-	long long instructions;
+	/// Number of emulated instructions
+	long long instructions = 0;
 
 public:
 	/// Constructor
