@@ -59,75 +59,40 @@ done
 
 echo ";---------------------------------------------------Switches" >> $fl
 
-echo "Switches : $Num_of_sw + 1"
-
-for i in $(seq 0 $Num_of_sw)
-do
-echo "[Network.$NET.Node.s$i]" >> $fl
+echo "[Network.$NET.Node.s0]" >> $fl
 echo "Type = Switch" >> $fl
 echo "BandWidth = $SwitchBW" >> $fl
 echo "" >>$fl
-done
 
 echo ";-----------------------------------------------------Links" >> $fl
 
-for x in $(seq 0 $Num_of_sw)
+for i in $(seq 0 $Num_of_sn)
 do
-	for i in $(seq 0 $Num_of_vn)
-	do
-		if [ $x -ne $i ]
-		then
-			echo "[Network.$NET.Link.s$x-l1v$i]" >> $fl
-			echo "Type = Unidirectional" >>$fl
-			echo "Source = s$x" >> $fl
-			echo "Dest = l1v$i" >> $fl
-			echo "" >> $fl
-		else
-			echo "[Network.$NET.Link.l1v$i-s$x]" >> $fl
-			echo "Type = Unidirectional" >>$fl
-			echo "Source = l1v$i" >> $fl
-			echo "Dest = s$x" >> $fl
-			echo "" >> $fl
-		fi
-	done
+echo "[Network.$NET.Link.l1s$i-s0]" >> $fl
+echo "Type = Bidirectional" >>$fl
+echo "Source =l1s$i" >> $fl
+echo "Dest = s0" >> $fl
+echo "VC = 1" >> $fl
+echo "" >> $fl
+done
 
-	for i in $(seq 0 $Num_of_sn)
-	do
-		j=`expr $vectors + $i`
-		if [ $x -ne $j ]
-		then
-			echo "[Network.$NET.Link.s$x-l1s$i]" >> $fl
-			echo "Type = Unidirectional" >>$fl
-			echo "Source = s$x" >> $fl
-			echo "Dest = l1s$i" >> $fl
-			echo "" >> $fl
-		else
-			echo "[Network.$NET.Link.l1s$i-s$x]" >> $fl
-			echo "Type = Unidirectional" >>$fl
-			echo "Source = l1s$i" >> $fl
-			echo "Dest = s$x" >> $fl
-			echo "" >> $fl
-		fi
-	done
+for i in $(seq 0 $Num_of_vn)
+do
+echo "[Network.$NET.Link.l1v$i-s0]" >> $fl
+echo "Type = Bidirectional" >>$fl
+echo "Source = l1v$i" >> $fl
+echo "Dest = s0" >> $fl
+echo "VC = 1" >> $fl
+echo "" >> $fl
+done
 
-	for i in $(seq 0 $L2Nodes)
-	do
-		j=`expr $vectors + $scalars + $i`
-		if [ $x -ne $j ]
-		then
-			echo "[Network.$NET.Link.s$x-l2n$i]" >> $fl
-			echo "Type = Unidirectional" >>$fl
-			echo "Source = s$x" >> $fl
-			echo "Dest = l2n$i" >> $fl
-			echo "" >> $fl	
-		else
-			echo "[Network.$NET.Link.l2n$i-s$x]" >> $fl
-			echo "Type = Unidirectional" >>$fl
-			echo "Source = l2n$i" >> $fl
-			echo "Dest = s$x" >> $fl
-			echo "" >> $fl	
-		fi
-
-	done
+for i in $(seq 0 $L2Nodes)
+do
+echo "[Network.$NET.Link.l2n$i-s0]" >> $fl
+echo "Type = Bidirectional" >>$fl
+echo "Source = l2n$i" >> $fl
+echo "Dest = s0" >> $fl
+echo "VC = 1" >> $fl
+echo "" >> $fl
 done
 
