@@ -70,4 +70,26 @@ void BrigSection::dumpSectionHex() const
 	printf("\n");
 }
 
+bool BrigFile::isValid() const
+{
+	// If the section names match BRIG standard, it is considered to be
+	// a valid brig file
+	std::vector<std::string> secNames = {
+		".strtab", 
+		".directives",
+		".code",
+		".operands",
+		".debug"
+	};
+	for(unsigned int i=0; i<secNames.size(); i++){
+		BrigSection *sec = this->brig_sections[i].get();
+		if(! (sec->getName() == secNames[i]) ) {
+			//std::cout << "Expected: " << secNames[i]
+			//	<< ", but: " << sec->getName();
+			return false;
+		}
+	}
+	return true;
+}
+
 }// end namespace
