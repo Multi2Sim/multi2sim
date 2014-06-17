@@ -64,6 +64,11 @@ public:
 		enum BrigSectionType type
 	) const;
 
+	/// Checks if the loaded brig file is a valid brig file
+	/// \return
+	///	Returns \c true if the loaded file is valid
+	bool isValid() const;	
+
 	/// Disassembles the binary file, output to stdout
 	void disassemble();
 };
