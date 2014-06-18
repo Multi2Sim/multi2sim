@@ -30,16 +30,21 @@
 namespace SI
 {
 
-/*
- * Class Program
- */
+ConstantBuffer::ConstantBuffer(int id, unsigned size, const char *data)
+{
+	this->id = id;
+	this->size = size;
+	this->data = std::unique_ptr<char> (new char[size]);
+	// FIXME
+	// std::copy(data, this->data.get(), size);
+}
 
 Program::Program(int id)
 {
 	this->id = id;
 }
 
-void Program::SetBinary(const char *buf, unsigned int size)
+void Program::setBinary(const char *buf, unsigned int size)
 {
 	this->elf_file = std::unique_ptr<ELFReader::File>(new ELFReader::File(buf, size));
 }

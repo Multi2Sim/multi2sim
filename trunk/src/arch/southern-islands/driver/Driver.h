@@ -25,6 +25,7 @@
 #include <lib/cpp/Debug.h>
 
 #include "Program.h"
+#include "Kernel.h"
 
 namespace SI
 {
@@ -44,6 +45,9 @@ class Driver : public comm::Driver
 
 	// Primary list of Programs
 	std::vector<std::unique_ptr<Program>> programs;
+
+	// Primary list of Kernels
+	std::vector<std::unique_ptr<Kernel>> kernels;
 
 	// Singletons have private constructors
 	Driver() : comm::Driver("Southern Islands", "/dev/southern-islands") { }
@@ -93,6 +97,8 @@ class Driver : public comm::Driver
 	// Add program
 	void AddProgram(int program_id);
 
+	// Add kernel
+	void AddKernel(int kernel_id, const std::string &func, Program *program);
 public:
 
 	/// Obtain instance of the singleton
@@ -114,12 +120,17 @@ public:
 	/// Get reference to the main program list
 	std::vector<std::unique_ptr<Program>> &getPrograms() { return programs; }
 
-	/// Get count of program in list
+	/// Get count of programs in list
 	int getProgramCount() const { return programs.size(); }
 
 	/// Get program by its ID
-	SI::Program *getProgramById(unsigned id) { return programs[id].get(); }
+	Program *getProgramById(unsigned id) { return programs[id].get(); }
 
+	/// Get count of kernels in list
+	int getKernelCount() const { return kernels.size(); }
+
+	/// Get kernel by its Id
+	Kernel *getKernelById(unsigned id) { return kernels[id].get(); }
 };
 
 

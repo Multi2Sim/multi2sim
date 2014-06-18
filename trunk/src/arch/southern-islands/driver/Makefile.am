@@ -6,7 +6,9 @@ libdriver_a_SOURCES = \
 		Driver.dat \
 		DriverCall.cc \
 		Program.h \
-		Program.cc
+		Program.cc \
+		Kernel.h \
+		Kernel.c
 
 AM_CPPFLAGS = @M2S_INCLUDES@
 
