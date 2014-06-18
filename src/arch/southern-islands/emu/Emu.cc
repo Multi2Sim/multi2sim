@@ -126,7 +126,7 @@ void Emu::Run()
 #else
 		// Let OpenCL driver know that all work-groups from this nd-range
 		// have been run
-		opencl_driver->RequestWork((*ndr_i).get());
+		// opencl_driver->RequestWork((*ndr_i).get());
 #endif
 	}
 }

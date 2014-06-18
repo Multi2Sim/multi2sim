@@ -71,12 +71,12 @@ int Driver::Call(int code, mem::Memory *memory, unsigned args_ptr)
 	// Check valid call
 	if (code < 0 || code >= CallCodeCount || !call_fn[code])
 	{
-		debug << "Invalid call code (" << code << ")\n";
+		debug << misc::fmt("Invalid call code (%d)\n", code);
 		return -1;
 	}
 
 	// Debug
-	debug << "ABI call '" << call_name[code] << "\n";
+	debug << misc::fmt("ABI call '%s'\n", call_name[code]);
 
 	// Invoke call
 	CallFn fn = call_fn[code];
@@ -107,8 +107,14 @@ void Driver::ProcessOptions()
 
 void Driver::AddProgram(int program_id)
 {
-	// Create new program and inset it to program list
-	programs.emplace_back(std::unique_ptr<Program> (new Program(program_id)));
+	// Create new program and insert it to program list
+	programs.emplace_back(new Program(program_id));
+}
+
+void Driver::AddKernel(int kernel_id, const std::string &func, Program *program)
+{
+	// Create new kernel and insert it to program list
+	kernels.emplace_back(new Kernel(kernel_id, func, program));
 }
 
 }  // namepsace SI

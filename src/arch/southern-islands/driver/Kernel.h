@@ -1,6 +1,7 @@
+
 /*
  *  Multi2Sim
- *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
+ *  Copyright (C) 2014  Rafael Ubal (ubal@ece.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,8 +18,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef DRIVER_OPENCL_SI_KERNEL_H
-#define DRIVER_OPENCL_SI_KERNEL_H
+#ifndef ARCH_SI_KERNEL_H
+#define ARCH_SI_KERNEL_H
 
 #include <memory>
 #include <string>
@@ -73,12 +74,14 @@ class Kernel
 
 	void LoadMetaData();
 
-	void CreateBufferDesc(unsigned base_addr, unsigned size, int num_elems,
-		ArgDataType data_type,
-		EmuBufferDesc *buffer_desc);
+	void CreateBufferDesc(unsigned base_addr, 
+			unsigned size, 
+			int num_elems,
+			ArgDataType data_type,
+			EmuBufferDesc *buffer_desc);
 
 public:
-	Kernel(int id, std::string name, Program *program);
+	Kernel(int id, const std::string &name, Program *program);
 
 	/// Getters
 	///
@@ -128,4 +131,4 @@ public:
 
 }  // namespace SI
 
-#endif
+#endif /* ARCH_SI_KERNEL_H */

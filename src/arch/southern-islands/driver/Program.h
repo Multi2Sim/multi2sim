@@ -28,6 +28,19 @@
 namespace SI
 {
 
+/// ConstantBuffer Class
+class ConstantBuffer
+{
+	// Constant buffer ID (2-24)
+	int id;
+
+	unsigned size;
+	std::unique_ptr<char> data;
+
+public:
+	ConstantBuffer(int id, unsigned size, const char *data);
+};
+
 /// Program Class
 class Program
 {
@@ -36,26 +49,41 @@ class Program
 	// ELF binary
 	std::unique_ptr<ELFReader::File> elf_file;
 
+	// List of constant buffers
+	std::vector<std::unique_ptr<ConstantBuffer>> constant_buffers;
+
+	// Initialize constant buffers from ELF binary 
+	void InitializeConstantBuffers();
+
 public:
 	Program(int id);
 
 	/// Load ELF binary into program object
 	///
 	/// \param buf
-	/// Buffer containing OpenCL ELF program binary
+	///	Buffer containing OpenCL ELF program binary
+	///
 	/// \param size
 	///	Size of buffer
-	void SetBinary(const char *buf, unsigned int size);
+	void setBinary(const char *buf, unsigned int size);
 
 	/// Get the symbol in the Program ELF file by symbol name
 	///
 	/// \param name
 	///	Name of the symbol
-	ELFReader::Symbol *getSymbol(const std::string &name) const {
-		return elf_file->getSymbol(name); };
+	ELFReader::Symbol *getSymbol(const std::string &name) const 
+	{
+		return elf_file->getSymbol(name); 
+	}
 
 	/// Get the id of the program
 	int getId() const { return id; }
+
+	/// Get pointer to contant buffer by index
+	ConstantBuffer *getConstantBufferByIndex(int index) const 
+	{
+		return constant_buffers[index].get();
+	}
 };
 
 
