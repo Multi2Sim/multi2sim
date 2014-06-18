@@ -1,6 +1,7 @@
+
 /*
  *  Multi2Sim
- *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
+ *  Copyright (C) 2014  Rafael Ubal (ubal@ece.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,17 +20,18 @@
 
 #include <arch/x86/emu/Emu.h>
 #include <arch/southern-islands/emu/Emu.h>
-#include <driver/opencl/OpenCLDriver.h>
 #include <lib/cpp/String.h>
 
 #include "Program.h"
 
+#define __UNIMPLEMENTED__ misc::fatal("%s: unimplemented function", \
+		__FUNCTION__);
 
 namespace SI
 {
 
-/* 
- * Class ConstantBuffer 
+/*
+ * Class ConstantBuffer
  */
 
 ConstantBuffer::ConstantBuffer(int id, unsigned size, const char *data)
@@ -52,47 +54,14 @@ ConstantBuffer::~ConstantBuffer()
 
 void Program::InitializeConstantBuffers()
 {
-	ELFReader::Symbol *symbol;
-	std::string symbol_name;
-
-	assert(this->elf_file);
-
-	/* Constant buffers encoded in ELF file */
-	for (unsigned i = 0; i < EmuMaxNumConstBufs; i++) 
-		constant_buffers.push_back(nullptr);
-
-	/* We can't tell how many constant buffers exist in advance, but we
-	 * know they should be enumerated, starting with '2'.  This loop
-	 * searches until a constant buffer matching the format is not 
-	 * found. */
-	for (unsigned i = 2; i < EmuMaxNumConstBufs; i++) 
-	{
-		/* Create string of symbol name */
-		symbol_name = misc::fmt("__OpenCL_%d_global", i);
-
-		/* Check to see if symbol exists */
-		symbol = this->elf_file->getSymbol(symbol_name);
-		if (!symbol)
-			break;
-
-		/* Read the elf symbol into a buffer */
-		x86::Emu::opencl_debug << misc::fmt("\tconstant buffer '%s' found with size %d\n",
-			symbol->getName().c_str(), symbol->getSize());
-
-		/* Create buffer and add constant buffer to list */
-		constant_buffers[i] = std::unique_ptr<ConstantBuffer>(new ConstantBuffer(i, 
-			symbol->getSize(), symbol->getBuffer()));
-		
-		/* Increase video memory top */
-		driver->getEmuGpu()->incVideoMemTop(symbol->getSize());
-	}
+	__UNIMPLEMENTED__
 }
 
 
 Program::Program(int id)
 {
 	this->id = id;
-	this->driver = Driver::OpenCLSIDriver::getInstance();
+	this->driver = SI::Driver::getInstance();
 }
 
 void Program::SetBinary(const char *buf, unsigned int size)
