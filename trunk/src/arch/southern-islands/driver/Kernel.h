@@ -56,7 +56,7 @@ class Kernel
 	// AMD kernel binary (internal ELF)
 	std::unique_ptr<SI::Binary> bin_file;
 
-	// Memory requirements 
+	// Memory requirements
 	int mem_size_local;
 	int mem_size_private;
 
@@ -73,7 +73,7 @@ class Kernel
 
 	void LoadMetaData();
 
-	void CreateBufferDesc(unsigned base_addr, unsigned size, int num_elems, 
+	void CreateBufferDesc(unsigned base_addr, unsigned size, int num_elems,
 		ArgDataType data_type,
 		EmuBufferDesc *buffer_desc);
 
@@ -112,7 +112,7 @@ public:
 	///
 	void SetupNDRangeConstantBuffers(NDRange *ndrange);
 
-	/// 
+	///
 	void SetupNDRangeArgs(NDRange *ndrange);
 
 	///
@@ -123,7 +123,7 @@ public:
 	void CreateNDRangeTables(NDRange *ndrange /* MMU *gpu_mmu */);
 	void CreateNDRangeConstantBuffers(NDRange *ndrange /*MMU *gpu_mmu*/);
 	void NDRangeSetupMMU(NDRange *ndrange);
-	
+
 };
 
 }  // namespace SI

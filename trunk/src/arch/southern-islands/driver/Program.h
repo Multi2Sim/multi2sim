@@ -1,6 +1,7 @@
+
 /*
  *  Multi2Sim
- *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
+ *  Copyright (C) 2014  Rafael Ubal (ubal@ece.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,20 +18,18 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef DRIVER_OPENCL_SI_PROGRAM_H
-#define DRIVER_OPENCL_SI_PROGRAM_H
+#ifndef ARCH_SI_PROGRAM_H
+#define ARCH_SI_PROGRAM_H
 
-#include <memory>
-#include <src/lib/cpp/ELFReader.h>
+#include <lib/cpp/ELFReader.h>
 
-// Forward declaration
-namespace Driver
-{
-	class OpenCLSIDriver;
-}  // namespace Driver
+#include "Driver.h"
 
 namespace SI
 {
+
+//Forward declarations
+class Driver;
 
 class ConstantBuffer
 {
@@ -46,12 +45,10 @@ public:
 
 };
 
+/// Program Class
 class Program
 {
 	int id;
-
-	// Opencl driver it belongs to
-	::Driver::OpenCLSIDriver *driver;
 
 	// ELF binary
 	std::unique_ptr<ELFReader::File> elf_file;
@@ -59,7 +56,10 @@ class Program
 	// List of constant buffers
 	std::vector<std::unique_ptr<ConstantBuffer>> constant_buffers;
 
-	// 
+	//
+	Driver *driver;
+
+	//
 	void InitializeConstantBuffers();
 
 public:
@@ -75,7 +75,7 @@ public:
 	///
 	/// Get the symbol in the Program ELF file by symbol name
 	/// \param name Name of the symbol
-	ELFReader::Symbol *getSymbol(std::string name) const { 
+	ELFReader::Symbol *getSymbol(std::string name) const {
 		return elf_file->getSymbol(name); };
 
 	/// Get reference to contant buffer by index
@@ -87,6 +87,7 @@ public:
 	int getId() const { return id; }
 };
 
-}  // namespace SI
 
-#endif
+} // namespace SI
+
+#endif /* ARCH_SI_PROGRAM_H */

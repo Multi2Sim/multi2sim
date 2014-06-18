@@ -21,8 +21,8 @@
 #define DRIVER_OPENCL_SI_DRIVER_H
 
 #include <src/driver/common/SI.h>
-#include "southern-islands/Program.h"
-#include "southern-islands/Kernel.h"
+#include <src/arch/southern-islands/driver/Program.h>
+#include <src/arch/southern-islands/driver/Kernel.h>
 
 // Forward declaration
 namespace x86

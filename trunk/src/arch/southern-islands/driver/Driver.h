@@ -24,9 +24,14 @@
 #include <lib/cpp/CommandLine.h>
 #include <lib/cpp/Debug.h>
 
+#include "Program.h"
 
 namespace SI
 {
+
+// Forward Declarations
+class Program;
+
 
 /// Southern Islands driver
 class Driver : public comm::Driver
@@ -36,6 +41,9 @@ class Driver : public comm::Driver
 
 	// Unique instance of singleton
 	static std::unique_ptr<Driver> instance;
+
+	// Primary list of Programs
+	std::vector<std::unique_ptr<Program>> programs;
 
 	// Singletons have private constructors
 	Driver() : comm::Driver("Southern Islands", "/dev/southern-islands") { }
@@ -99,6 +107,17 @@ public:
 
 	/// Process command-line options
 	static void ProcessOptions();
+
+	/// Get reference to the main program list
+	std::vector<std::unique_ptr<Program>> &getPrograms() { return programs; }
+
+	/// Get count of program in list
+	int getProgramCount() const { return programs.size(); }
+
+	/// Add program to program list
+	void AddProgram(std::unique_ptr<SI::Program> program);
+
+
 };
 
 

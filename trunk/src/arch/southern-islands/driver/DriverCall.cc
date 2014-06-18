@@ -85,8 +85,16 @@ int Driver::CallMemFree(mem::Memory *memory, unsigned args_ptr)
 // ...
 int Driver::CallProgramCreate(mem::Memory *memory, unsigned args_ptr)
 {
-	misc::fatal("%s:function call is not currently implemented in multi2sim", __FUNCTION__);
-	return 0;
+
+	// Create program
+	int program_count = getProgramCount();
+	std::unique_ptr<Program> program(new Program(program_count));
+
+	// And add it to list of SI programs in OpenCL SI driver
+	AddProgram(std::move(program));
+
+	// Return
+	return program->getId();
 }
 
 // ABI Call 'Program Set Binary'

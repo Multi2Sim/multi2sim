@@ -1,6 +1,3 @@
-SUBDIRS = \
-	southern-islands
-
 lib_LIBRARIES = libopencl.a
 
 libopencl_a_SOURCES = \
