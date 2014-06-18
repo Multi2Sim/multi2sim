@@ -90,6 +90,9 @@ class Driver : public comm::Driver
 	// Table of ABI call execution functions
 	static const CallFn call_fn[CallCodeCount];
 
+	// Add program
+	void AddProgram(int program_id);
+
 public:
 
 	/// Obtain instance of the singleton
@@ -114,9 +117,8 @@ public:
 	/// Get count of program in list
 	int getProgramCount() const { return programs.size(); }
 
-	/// Add program to program list
-	void AddProgram(std::unique_ptr<SI::Program> program);
-
+	/// Get program by its ID
+	SI::Program *getProgramById(unsigned id) { return programs[id].get(); }
 
 };
 

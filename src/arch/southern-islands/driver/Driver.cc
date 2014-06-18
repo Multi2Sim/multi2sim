@@ -102,12 +102,13 @@ void Driver::RegisterOptions()
 void Driver::ProcessOptions()
 {
 	debug.setPath(debug_file);
+	debug.setPrefix("[Southern Islands driver]");
 }
 
-void Driver::AddProgram(std::unique_ptr<SI::Program> program)
+void Driver::AddProgram(int program_id)
 {
-	programs.insert(programs.begin() + program.get()->getId(),
-		std::move(program));
+	// Create new program and inset it to program list
+	programs.emplace_back(std::unique_ptr<Program> (new Program(program_id)));
 }
 
 }  // namepsace SI
