@@ -40,7 +40,6 @@ int Driver::CallInit(mem::Memory *memory, unsigned args_ptr)
 // ...
 int Driver::CallMemAlloc(mem::Memory *memory, unsigned args_ptr)
 {
-	misc::fatal("%s:function call is not currently implemented in multi2sim", __FUNCTION__);
 	return 0;
 }
 
@@ -49,7 +48,6 @@ int Driver::CallMemAlloc(mem::Memory *memory, unsigned args_ptr)
 // ...
 int Driver::CallMemRead(mem::Memory *memory, unsigned args_ptr)
 {
-	misc::fatal("%s:function call is not currently implemented in multi2sim", __FUNCTION__);
 	return 0;
 }
 
@@ -58,7 +56,6 @@ int Driver::CallMemRead(mem::Memory *memory, unsigned args_ptr)
 // ...
 int Driver::CallMemWrite(mem::Memory *memory, unsigned args_ptr)
 {
-	misc::fatal("%s:function call is not currently implemented in multi2sim", __FUNCTION__);
 	return 0;
 }
 
@@ -145,7 +142,6 @@ int Driver::CallProgramSetBinary(mem::Memory *memory, unsigned args_ptr)
 // ...
 int Driver::CallKernelCreate(mem::Memory *memory, unsigned args_ptr)
 {
-	misc::fatal("%s:function call is not currently implemented in multi2sim", __FUNCTION__);
 	return 0;
 }
 
@@ -163,7 +159,6 @@ int Driver::CallKernelSetArgValue(mem::Memory *memory, unsigned args_ptr)
 // ...
 int Driver::CallKernelSetArgPointer(mem::Memory *memory, unsigned args_ptr)
 {
-	misc::fatal("%s:function call is not currently implemented in multi2sim", __FUNCTION__);
 	return 0;
 }
 
@@ -191,7 +186,6 @@ int Driver::CallKernelSetArgImage(mem::Memory *memory, unsigned args_ptr)
 // ...
 int Driver::CallNdrangeCreate(mem::Memory *memory, unsigned args_ptr)
 {
-	misc::fatal("%s:function call is not currently implemented in multi2sim", __FUNCTION__);
 	return 0;
 }
 
@@ -201,7 +195,6 @@ int Driver::CallNdrangeCreate(mem::Memory *memory, unsigned args_ptr)
 // ...
 int Driver::CallNdrangeGetNumBufferEntries(mem::Memory *memory, unsigned args_ptr)
 {
-	misc::fatal("%s:function call is not currently implemented in multi2sim", __FUNCTION__);
 	return 0;
 }
 
@@ -210,7 +203,6 @@ int Driver::CallNdrangeGetNumBufferEntries(mem::Memory *memory, unsigned args_pt
 // ...
 int Driver::CallNdrangeSendWorkGroups(mem::Memory *memory, unsigned args_ptr)
 {
-	misc::fatal("%s:function call is not currently implemented in multi2sim", __FUNCTION__);
 	return 0;
 }
 
@@ -219,7 +211,6 @@ int Driver::CallNdrangeSendWorkGroups(mem::Memory *memory, unsigned args_ptr)
 // ...
 int Driver::CallNdrangeFinish(mem::Memory *memory, unsigned args_ptr)
 {
-	misc::fatal("%s:function call is not currently implemented in multi2sim", __FUNCTION__);
 	return 0;
 }
 
@@ -228,7 +219,6 @@ int Driver::CallNdrangeFinish(mem::Memory *memory, unsigned args_ptr)
 // ...
 int Driver::CallNdrangePassMemObjs(mem::Memory *memory, unsigned args_ptr)
 {
-	misc::fatal("%s:function call is not currently implemented in multi2sim", __FUNCTION__);
 	return 0;
 }
 
@@ -237,7 +227,6 @@ int Driver::CallNdrangePassMemObjs(mem::Memory *memory, unsigned args_ptr)
 // ...
 int Driver::CallNdrangeSetFused(mem::Memory *memory, unsigned args_ptr)
 {
-	misc::fatal("%s:function call is not currently implemented in multi2sim", __FUNCTION__);
 	return 0;
 }
 
@@ -246,7 +235,6 @@ int Driver::CallNdrangeSetFused(mem::Memory *memory, unsigned args_ptr)
 // ...
 int Driver::CallNdrangeFlush(mem::Memory *memory, unsigned args_ptr)
 {
-	misc::fatal("%s:function call is not currently implemented in multi2sim", __FUNCTION__);
 	return 0;
 }
 
@@ -255,7 +243,6 @@ int Driver::CallNdrangeFlush(mem::Memory *memory, unsigned args_ptr)
 // ...
 int Driver::CallNdrangeFree(mem::Memory *memory, unsigned args_ptr)
 {
-	misc::fatal("%s:function call is not currently implemented in multi2sim", __FUNCTION__);
 	return 0;
 }
 
@@ -264,7 +251,6 @@ int Driver::CallNdrangeFree(mem::Memory *memory, unsigned args_ptr)
 // ...
 int Driver::CallNdrangeStart(mem::Memory *memory, unsigned args_ptr)
 {
-	misc::fatal("%s:function call is not currently implemented in multi2sim", __FUNCTION__);
 	return 0;
 }
 
