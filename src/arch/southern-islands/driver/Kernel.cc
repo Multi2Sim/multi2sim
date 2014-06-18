@@ -57,7 +57,7 @@ void Kernel::Expect(std::vector<std::string> &token_list, std::string head_token
 {
 	std::string token = token_list.at(0);
 
-	if (token == head_token)
+	if (token != head_token)
 		misc::fatal("%s: token '%s' expected, '%s' found.\n%s",
 				__FUNCTION__, head_token.c_str(), token_list[0].c_str(),
 				OpenCLErrSIKernelMetadata);
@@ -739,7 +739,7 @@ void Kernel::CreateBufferDesc(unsigned base_addr, unsigned size, int num_elems,
 
 // Public functions
 
-Kernel::Kernel(int id, std::string name, Program *program)
+Kernel::Kernel(int id, const std::string &name, Program *program)
 {
 	this->id = id;
 	this->name = name;
