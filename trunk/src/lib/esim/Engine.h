@@ -26,6 +26,7 @@
 #include <stdexcept>
 #include <vector>
 
+#include <lib/cpp/Debug.h>
 #include <lib/cpp/String.h>
 #include <lib/cpp/Timer.h>
 
@@ -57,6 +58,9 @@ class Engine
 	// Unique instance of this class
 	static std::unique_ptr<Engine> instance;
 
+	/// Debugger
+	static misc::Debug debug;
+
 	// Flag set when simulation should finish
 	bool finish = false;
 
@@ -75,8 +79,10 @@ class Engine
 	// Registered frequency domains
 	std::list<FrequencyDomain> frequency_domains;
 
-	// Binary tree of pending events
-	std::priority_queue<Event, std::vector<Event>, Event::Compare> events;
+	// Heap of pending events
+	std::priority_queue<std::unique_ptr<Event>,
+			std::vector<std::unique_ptr<Event>>,
+			Event::CompareUniquePtrs> events;
 
 	// Null event type used to schedule useless events
 	EventType *null_event_type = nullptr;
@@ -191,9 +197,15 @@ public:
 	///	schedule it for the end of the current cycle. When multiple
 	///	events are scheduled for the same cycle, there is no guarantee
 	///	in which order they will execute.
+	///
+	/// \param period (optional)
+	///	If specified, the event will be scheduled periodically after its
+	///	first occurence. The period is given in number of cycles with
+	///	respect to the event's frequency domain.
 	void Schedule(EventType *event_type,
 			const std::shared_ptr<EventFrame> &event_frame,
-			int after);
+			int after,
+			int period = 0);
 
 	/// Schedule an event, remembering the current event frame. This
 	/// function should only be invoked in the body of an event handler.
@@ -228,6 +240,18 @@ public:
 	///	Number of cycles after which the return event will execute. See
 	///	Schedule() for details.
 	void Return(int after);
+
+	/// Activate debug information for the event-driven simulator.
+	///
+	/// \param path
+	///	Path to dump debug information. Strings \c stdout and \c stderr
+	///	are special values referring to the standard output and standard
+	///	error output, respectively.
+	static void setDebugPath(const std::string &path)
+	{
+		debug.setPath(path);
+		debug.setPrefix("[esim]");
+	}
 };
 
 

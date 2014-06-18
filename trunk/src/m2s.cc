@@ -52,6 +52,9 @@
 // Context configuration file
 std::string m2s_context_config;
 
+// Event-driven simulator debugger
+std::string m2s_debug_esim;
+
 // Inifile debugger
 std::string m2s_debug_inifile;
 
@@ -285,6 +288,12 @@ void RegisterOptions()
 			"call stacks, including function invocations and "
 			"returns.");
 	
+	// Debugger for event-driven simulator
+	command_line->RegisterString("--debug-esim <file>",
+			m2s_debug_esim,
+			"Dump debug information related with the event-driven "
+			"simulation engine.");
+	
 	// Debugger for Inifile parser
 	command_line->RegisterString("--debug-inifile <file>",
 			m2s_debug_inifile,
@@ -364,6 +373,10 @@ void ProcessOptions()
 	// Call stack debugger
 	if (!m2s_debug_callstack.empty())
 		comm::CallStack::setDebugPath(m2s_debug_callstack);
+
+	// Event-driven simulator debugger
+	if (!m2s_debug_esim.empty())
+		esim::Engine::setDebugPath(m2s_debug_esim);
 
 	// Inifile debugger
 	if (!m2s_debug_inifile.empty())
