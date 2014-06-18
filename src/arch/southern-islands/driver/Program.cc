@@ -31,44 +31,17 @@ namespace SI
 {
 
 /*
- * Class ConstantBuffer
- */
-
-ConstantBuffer::ConstantBuffer(int id, unsigned size, const char *data)
-{
-	this->id = id;
-	this->size = size;
-	this->data = new char[size];
-	std::copy(&data[0], &data[size], this->data);
-}
-
-ConstantBuffer::~ConstantBuffer()
-{
-	delete[] data;
-}
-
-
-/*
  * Class Program
  */
-
-void Program::InitializeConstantBuffers()
-{
-	__UNIMPLEMENTED__
-}
-
 
 Program::Program(int id)
 {
 	this->id = id;
-	this->driver = SI::Driver::getInstance();
 }
 
 void Program::SetBinary(const char *buf, unsigned int size)
 {
 	this->elf_file = std::unique_ptr<ELFReader::File>(new ELFReader::File(buf, size));
-
-	InitializeConstantBuffers();
 }
 
 }  // namespace SI

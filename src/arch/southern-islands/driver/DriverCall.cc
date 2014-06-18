@@ -80,29 +80,63 @@ int Driver::CallMemFree(mem::Memory *memory, unsigned args_ptr)
 	return 0;
 }
 
-// ABI Call 'Program Create'
-//
-// ...
+/// ABI Call 'Program Create'
+///
+/// \return
+///	Return unique program id
 int Driver::CallProgramCreate(mem::Memory *memory, unsigned args_ptr)
 {
-
 	// Create program
 	int program_count = getProgramCount();
-	std::unique_ptr<Program> program(new Program(program_count));
-
-	// And add it to list of SI programs in OpenCL SI driver
-	AddProgram(std::move(program));
+	AddProgram(program_count);
 
 	// Return
-	return program->getId();
+	return getProgramById(program_count)->getId();
 }
 
-// ABI Call 'Program Set Binary'
-//
-// ...
+/// ABI Call 'ProgramSetBinary'
+///
+/// \param program_id
+///	Program ID, as returned by a previous ABI call to 'si_program_create'.
+///
+/// \param bin_ptr
+///	Pointer to the memory space where the program binary can be found.
+///
+/// \param bin_size
+///	Size of the program binary.
+///
+/// \return
+///	No return value.
 int Driver::CallProgramSetBinary(mem::Memory *memory, unsigned args_ptr)
 {
-	misc::fatal("%s:function call is not currently implemented in multi2sim", __FUNCTION__);
+	// Arguments 
+	int program_id;
+	unsigned bin_ptr;
+	unsigned bin_size;
+
+	// Read arguments
+	memory->Read(args_ptr, sizeof(int), (char *) &program_id);
+	memory->Read(args_ptr + 4, sizeof(unsigned int), (char *) &bin_ptr);
+	memory->Read(args_ptr + 8, sizeof(unsigned int), (char *) &bin_size);
+
+	// Debug
+	debug << misc::fmt("ABI call 'ProgramSetBinary'\n"
+			"\tprogram_id = %d\n"
+			"\tbin_ptr = 0x%x\n"
+			"\tbin_size = %u\n",
+			program_id,
+			bin_ptr,
+			bin_size);
+
+	// Get program 
+	Program *program = getProgramById(program_id);
+	if (!program)
+		misc::fatal("%s: invalid program ID (%d)",
+				__FUNCTION__, program_id);
+
+	// FIXME: Set the binary 
+
+	// No return value 
 	return 0;
 }
 
