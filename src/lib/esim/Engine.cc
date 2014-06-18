@@ -25,6 +25,8 @@
 namespace esim
 {
 
+misc::Debug Engine::debug;
+
 std::unique_ptr<Engine> Engine::instance;
 
 
@@ -37,6 +39,9 @@ Engine::Engine()
 
 	// Create null event
 	null_event_type = RegisterEventType("Null event", nullptr, nullptr);
+
+	// Debug
+	debug << "Event-driven simulation engine initialized\n";
 }
 
 
@@ -93,12 +98,53 @@ void Engine::DisableSignals()
 
 void Engine::ProcessEvents()
 {
-	// Check for Control+C interrupt
+	// Check for SIGINT signal
 	if (signal_received == SIGINT)
 	{
 		std::cerr << "\nSignal SIGINT received\n";
 		Finish("Signal");
 	}
+	
+	// Process events scheduled for this cycle
+	while (1)
+	{
+		// No more elements in heap
+		if (events.size() == 0)
+			break;
+
+		// Get event from top of heap
+		Event *event = events.top().get();
+
+		// Stop when we find the first event that should run in the
+		// future.
+		if (event->getTime() > current_time)
+			break;
+		
+		// Debug
+		EventType *event_type = event->getType();
+		FrequencyDomain *frequency_domain = event_type->getFrequencyDomain();
+		debug << misc::fmt("[%.2fns] Event '%s/%s' triggered\n",
+				(double) current_time / 1000,
+				frequency_domain->getName().c_str(),
+				event_type->getName().c_str());
+
+		// Run event handler
+		EventHandler event_handler = event_type->getEventHandler();
+		current_event = event;
+		event_handler(event_type, event->getFrame().get());
+		current_event = nullptr;
+
+		// Reschedule event if it is periodic
+		int period = event->getPeriod();
+		if (period > 0)
+			Schedule(event_type, event->getFrame(), period, period);
+
+		// Remove from heap
+		events.pop();
+	}
+	
+	// Next simulation cycle
+	current_time += shortest_cycle_time;
 }
 
 
@@ -131,7 +177,8 @@ EventType *Engine::RegisterEventType(const std::string &name,
 	
 void Engine::Schedule(EventType *event_type,
 		const std::shared_ptr<EventFrame> &event_frame,
-		int after)
+		int after,
+		int period)
 {
 	// Event cannot be null. Empty events should be scheduled using
 	// null_event instead.
@@ -144,7 +191,11 @@ void Engine::Schedule(EventType *event_type,
 	
 	// Special event to be ignored
 	if (event_type == null_event_type)
+	{
+		debug << misc::fmt("[%.2fns] Null event discarded\n",
+				(double) current_time / 1000);
 		return;
+	}
 	
 	// Calculate absolute time for the event based on the event's frequency
 	// domain. First, get the actual current time for the current frequency
@@ -155,7 +206,14 @@ void Engine::Schedule(EventType *event_type,
 			frequency_domain->getCycleTime() * after;
 	
 	// Create new event and insert it in the event list
-	events.emplace(event_type, event_frame, when);
+	events.emplace(new Event(event_type, event_frame, when, period));
+		
+	// Debug
+	debug << misc::fmt("[%.2fns] Event '%s/%s' scheduled for [%.2fns]\n",
+			(double) current_time / 1000,
+			frequency_domain->getName().c_str(),
+			event_type->getName().c_str(),
+			(double) when / 1000);
 
 	/* Warn when heap is overloaded FIXME */
 /*	if (!esim_overload_shown && esim_event_heap->count >= ESIM_OVERLOAD_EVENTS)

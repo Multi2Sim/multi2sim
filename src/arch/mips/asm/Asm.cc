@@ -74,6 +74,9 @@ void Asm::RegisterOptions()
 	// Get command line object
 	misc::CommandLine *command_line = misc::CommandLine::getInstance();
 
+	// Set category
+	command_line->setCategory("MIPS");
+
 	// Option --mips-disasm <file>
 	command_line->RegisterString("--mips-disasm", path,
 			"Disassemble the MIPS ELF file provided in <arg>, "
