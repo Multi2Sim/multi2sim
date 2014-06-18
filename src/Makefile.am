@@ -26,7 +26,6 @@ LDADD = \
 	$(top_builddir)/src/driver/glut/libglut.a \
 	$(top_builddir)/src/driver/glew/libglew.a \
 	$(top_builddir)/src/driver/opencl/libopencl.a \
-	$(top_builddir)/src/driver/opencl/southern-islands/libsi.a \
 	$(top_builddir)/src/driver/opencl-old/evergreen/libopencl.a \
 	$(top_builddir)/src/driver/opengl/libopengl.a \
 	$(top_builddir)/src/driver/opengl/southern-islands/libsi_gl.a \

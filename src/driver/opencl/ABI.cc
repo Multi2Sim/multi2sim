@@ -23,7 +23,6 @@
 #include <src/mem-system/Memory.h>
 
 #include "ABI.h"
-#include "southern-islands/ABI.h"
 #include "OpenCLDriver.h"
 
 namespace Driver
@@ -40,10 +39,6 @@ std::string OpenCLABICallName[OpenCLABICallCount + 1] =
 
 OpenCLABICallFuncPtr OpenCLABICallTable[OpenCLABICallCount + 1] =
 {
-	nullptr,
-#define OPENCL_ABI_CALL(space, name, code) &space::OpenCLABI##name##Impl,
-#include "ABI.dat"
-#undef OPENCL_ABI_CALL
 	nullptr
 };
 

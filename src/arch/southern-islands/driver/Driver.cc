@@ -104,6 +104,11 @@ void Driver::ProcessOptions()
 	debug.setPath(debug_file);
 }
 
+void Driver::AddProgram(std::unique_ptr<SI::Program> program)
+{
+	programs.insert(programs.begin() + program.get()->getId(),
+		std::move(program));
+}
 
 }  // namepsace SI
 

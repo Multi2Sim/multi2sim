@@ -73,7 +73,7 @@ void Kernel::ExpectInt(std::vector<std::string> &token_list)
 	{
 		misc::fatal("%s: integer number expected, '%s' found.\n%s",
 				__FUNCTION__, token.c_str(),
-				OpenCLErrSIKernelMetadata);		
+				OpenCLErrSIKernelMetadata);
 	}
 }
 
@@ -94,12 +94,12 @@ void Kernel::LoadMetaDataV3()
 	// Load metadata content
 	std::istringstream metadata_stream;
 	metadata_symbol->getStream(metadata_stream);
- 
+
  	bool err;
 	std::string line;
 	std::string token;
 	std::vector<std::string> token_list;
- 
+
 	for (;;)
 	{
 		//  Read the next line
@@ -119,45 +119,45 @@ void Kernel::LoadMetaDataV3()
 		// Value
 		if (token_list.front() == "value")
 		{
-			// 6 tokens expected 
+			// 6 tokens expected
 			ExpectCount(token_list, 6);
 
-			// Token 1 - Name 
+			// Token 1 - Name
 			token_list.erase(token_list.begin());
 			std::string name = *token_list.begin();
 
-			// Token 2 - Data type 
+			// Token 2 - Data type
 			token_list.erase(token_list.begin());
 			int data_type_int = misc::StringToInt(*token_list.begin());
 			ArgDataType data_type = static_cast<ArgDataType>(data_type_int);
 			const char *data_type_string = arg_data_type_map.MapValue(data_type, err);
 			if (err)
 				misc::fatal("%s: invalid data type '%s'.\n%s",
-					__FUNCTION__, data_type_string, 
+					__FUNCTION__, data_type_string,
 					OpenCLErrSIKernelMetadata);
 
-			// Token 3 - Number of elements 
+			// Token 3 - Number of elements
 			token_list.erase(token_list.begin());
 			ExpectInt(token_list);
 			int num_elems = misc::StringToInt(*token_list.begin());
 			assert(num_elems > 0);
 
-			// Token 4 - Constant buffer 
+			// Token 4 - Constant buffer
 			token_list.erase(token_list.begin());
 			ExpectInt(token_list);
 			Expect(token_list, "1");
 			int constant_buffer_num = misc::StringToInt(*token_list.begin());
 
-			// Token 5 - Conastant offset 
+			// Token 5 - Conastant offset
 			token_list.erase(token_list.begin());
 			ExpectInt(token_list);
 			int constant_offset = misc::StringToInt(*token_list.begin());
 
 			// Create argument object
-			std::unique_ptr<SI::Arg> arg(new SI::ArgValue(name, data_type, num_elems, 
+			std::unique_ptr<SI::Arg> arg(new SI::ArgValue(name, data_type, num_elems,
 				constant_buffer_num, constant_offset));
 
-			// Debug 
+			// Debug
 			x86::Emu::opencl_debug << misc::fmt("\targument '%s' - value stored in "
 				"constant buffer %d at offset %d\n",
 				name.c_str(), constant_buffer_num,
@@ -169,12 +169,12 @@ void Kernel::LoadMetaDataV3()
 			continue;
 		}
 
-		// Pointer 
+		// Pointer
 		if (token_list.front() == "pointer")
 		{
 			// APP SDK 2.5 supplies 9 tokens, 2.6 supplies
 			// 10 tokens. Metadata version 3:1:104 (as specified
-			// in entry 'version') uses 12 items. 
+			// in entry 'version') uses 12 items.
 			ExpectCount(token_list, 12);
 
 			// Token 1 - Name
@@ -188,71 +188,71 @@ void Kernel::LoadMetaDataV3()
 			const char *data_type_string = arg_data_type_map.MapValue(data_type, err);
 			if (err)
 				misc::fatal("%s: invalid data type '%s'.\n%s",
-					__FUNCTION__, data_type_string, 
+					__FUNCTION__, data_type_string,
 					OpenCLErrSIKernelMetadata);
 
 			// Token 3 - Number of elements
-			// Arrays of pointers not supported, 
-			// only "1" allowed. 
+			// Arrays of pointers not supported,
+			// only "1" allowed.
 			token_list.erase(token_list.begin());
 			ExpectInt(token_list);
 			Expect(token_list, "1");
 			int num_elems = misc::StringToInt(*token_list.begin());
 
-			// Token 4 - Constant buffer 
+			// Token 4 - Constant buffer
 			token_list.erase(token_list.begin());
 			ExpectInt(token_list);
 			Expect(token_list, "1");
 			int constant_buffer_num = misc::StringToInt(*token_list.begin());
 
-			// Token 5 - Conastant offset 
+			// Token 5 - Conastant offset
 			token_list.erase(token_list.begin());
 			ExpectInt(token_list);
 			int constant_offset = misc::StringToInt(*token_list.begin());
 
-			// Token 6 - Memory scope 
+			// Token 6 - Memory scope
 			token_list.erase(token_list.begin());
 			int arg_scope_int = misc::StringToInt(*token_list.begin());
 			ArgScope arg_scope = static_cast<ArgScope>(arg_scope_int);
 			const char *arg_scope_string = arg_scope_map.MapValue(arg_scope, err);
 			if (err)
 				misc::fatal("%s: invalid scope '%s'.\n%s",
-					__FUNCTION__, arg_scope_string, 
+					__FUNCTION__, arg_scope_string,
 					OpenCLErrSIKernelMetadata);
 
-			// Token 7 - Buffer number 
+			// Token 7 - Buffer number
 			token_list.erase(token_list.begin());
 			ExpectInt(token_list);
 			int buffer_num = misc::StringToInt(*token_list.begin());
 
-			// Token 8 - Alignment 
+			// Token 8 - Alignment
 			token_list.erase(token_list.begin());
 			ExpectInt(token_list);
 			int alignment = misc::StringToInt(*token_list.begin());
 
-			// Token 9 - Access type 
+			// Token 9 - Access type
 			token_list.erase(token_list.begin());
 			int access_type_int = misc::StringToInt(*token_list.begin());
 			ArgAccessType access_type = static_cast<ArgAccessType>(access_type_int);
 			if (err)
 				misc::fatal("%s: invalid access type '%s'.\n%s",
-					__FUNCTION__, token.c_str(), 
+					__FUNCTION__, token.c_str(),
 					OpenCLErrSIKernelMetadata);
 
-			// Token 10 - ??? 
+			// Token 10 - ???
 			token_list.erase(token_list.begin());
 			Expect(token_list, "0");
 
-			// Token 11 - ??? 
+			// Token 11 - ???
 			token_list.erase(token_list.begin());
 			Expect(token_list, "0");
 
 			// Create argument object
-			std::unique_ptr<SI::Arg> arg(new SI::ArgPointer(name, data_type, num_elems, 
-				constant_buffer_num, constant_offset, arg_scope, buffer_num, alignment, 
+			std::unique_ptr<SI::Arg> arg(new SI::ArgPointer(name, data_type, num_elems,
+				constant_buffer_num, constant_offset, arg_scope, buffer_num, alignment,
 				access_type));
 
-			// Debug 
+			// Debug
 			x86::Emu::opencl_debug << misc::fmt("\targument '%s' - Pointer stored in "
 				"constant buffer %d at offset %d\n",
 				name.c_str(), constant_buffer_num,
@@ -264,17 +264,17 @@ void Kernel::LoadMetaDataV3()
 			continue;
 		}
 
-		// Image 
+		// Image
 		if (token_list.front() == "image")
 		{
-			// 7 tokens expected 
+			// 7 tokens expected
 			ExpectCount(token_list, 7);
 
-			// Token 1 - Name 
+			// Token 1 - Name
 			token_list.erase(token_list.begin());
 			std::string name = *token_list.begin();
 
-			// Token 2 - Dimension 
+			// Token 2 - Dimension
 			token_list.erase(token_list.begin());
 			int dimension = misc::StringToInt(*token_list.begin());
 			const char*dimension_string = arg_dimension_map.MapValue(dimension, err);
@@ -282,27 +282,27 @@ void Kernel::LoadMetaDataV3()
 				misc::fatal("%s: invalid image dimensions '%s'.\n%s",
 					__FUNCTION__, dimension_string, OpenCLErrSIKernelMetadata);
 
-			// Token 3 - Access type 
+			// Token 3 - Access type
 			token_list.erase(token_list.begin());
 			int access_type_int = misc::StringToInt(*token_list.begin());
 			ArgAccessType access_type = static_cast<ArgAccessType>(access_type_int);
 			if (err)
 				misc::fatal("%s: invalid access type '%s'.\n%s",
-					__FUNCTION__, token.c_str(), 
+					__FUNCTION__, token.c_str(),
 					OpenCLErrSIKernelMetadata);
 
-			// Token 4 - UAV 
+			// Token 4 - UAV
 			token_list.erase(token_list.begin());
 			ExpectInt(token_list);
 			int uav = misc::StringToInt(*token_list.begin());
 
-			// Token 5 - Constant buffer 
+			// Token 5 - Constant buffer
 			token_list.erase(token_list.begin());
 			ExpectInt(token_list);
 			Expect(token_list, "1");
 			int constant_buffer_num = misc::StringToInt(*token_list.begin());
 
-			// Token 6 - Conastant offset 
+			// Token 6 - Conastant offset
 			token_list.erase(token_list.begin());
 			ExpectInt(token_list);
 			int constant_offset = misc::StringToInt(*token_list.begin());
@@ -311,7 +311,7 @@ void Kernel::LoadMetaDataV3()
 			std::unique_ptr<SI::Arg> arg(new SI::ArgImage(name, dimension, access_type,
 				uav, constant_buffer_num, constant_offset));
 
-			// Debug 
+			// Debug
 			x86::Emu::opencl_debug << misc::fmt("\targument '%s' - Image stored in "
 				"constant buffer %d at offset %d\n",
 				name.c_str(), constant_buffer_num,
@@ -326,30 +326,30 @@ void Kernel::LoadMetaDataV3()
 		// Sampler
 		if (token_list.front() == "sampler")
 		{
-			// 5 tokens expected 
+			// 5 tokens expected
 			ExpectCount(token_list, 5);
 
-			// Token 1 - Name 
+			// Token 1 - Name
 			token_list.erase(token_list.begin());
 			std::string name = *token_list.begin();
 
-			// Token 2 - ID 
+			// Token 2 - ID
 			token_list.erase(token_list.begin());
 			ExpectInt(token_list);
 			int id = misc::StringToInt(*token_list.begin());
 
-			// Token 3 - Location 
+			// Token 3 - Location
 			token_list.erase(token_list.begin());
 			ExpectInt(token_list);
 			int location = misc::StringToInt(*token_list.begin());
 
-			// Token 4 - Value 
+			// Token 4 - Value
 			token_list.erase(token_list.begin());
 			ExpectInt(token_list);
 			int value = misc::StringToInt(*token_list.begin());
 
 			// Create argument object
-			std::unique_ptr<SI::Arg> arg(new SI::ArgSampler(name, id, location, 
+			std::unique_ptr<SI::Arg> arg(new SI::ArgSampler(name, id, location,
 				value));
 
 			// Add argument and clear token list
@@ -362,7 +362,7 @@ void Kernel::LoadMetaDataV3()
 		// Memory
 		// Used to let the GPU know how much local and private memory
 		// is required for a kernel, where it should be allocated,
-		// as well as other information. 
+		// as well as other information.
 		if (token_list.front() == "memory")
 		{
 			// Token 1 - Memory scope
@@ -370,7 +370,7 @@ void Kernel::LoadMetaDataV3()
 			if (token_list.front() == "hwprivate")
 			{
 				// FIXME Add support for private memory by
-				// adding space in global memory 
+				// adding space in global memory
 
 				// Token 2 - ???
 				token_list.erase(token_list.begin());
@@ -417,7 +417,7 @@ void Kernel::LoadMetaDataV3()
 		}
 
 		// Function
-		// Used for multi-kernel compilation units. 
+		// Used for multi-kernel compilation units.
 		if (token_list.front() == "function")
 		{
 			// Expect 3 token
@@ -444,7 +444,7 @@ void Kernel::LoadMetaDataV3()
 		// specified in the OpenCL kernel function header. It is
 		// currently ignored, since this information is extracted from
 		// the argument descriptions in 'value' and 'pointer' entries.
- 
+
 		if (token_list.front() == "reflection")
 		{
 			// Expect 3 tokens
@@ -473,7 +473,7 @@ void Kernel::LoadMetaDataV3()
 		// Format: constarg:<arg_id>:<arg_name>
 		// Observed first in version 3:1:104 of metadata.
 		// It shows up when an argument is declared as
-		// '__global const'. Entry ignored here. 
+		// '__global const'. Entry ignored here.
 		if (token_list.front() == "constarg")
 		{
 			// Expect 3 tokens
@@ -485,7 +485,7 @@ void Kernel::LoadMetaDataV3()
 		}
 
 		// Device
-		// Device that the kernel was compiled for. 
+		// Device that the kernel was compiled for.
 		if (token_list.front() == "device")
 		{
 			// Expect 2 tokens
@@ -497,7 +497,7 @@ void Kernel::LoadMetaDataV3()
 		}
 
 		// Uniqueid
-		// A mapping between a kernel and its unique ID 
+		// A mapping between a kernel and its unique ID
 		if (token_list.front() == "uniqueid")
 		{
 			// Expect 2 tokens
@@ -508,8 +508,8 @@ void Kernel::LoadMetaDataV3()
 			continue;
 		}
 
-		// Uavid 
-		// ID of a raw UAV 
+		// Uavid
+		// ID of a raw UAV
 		if (token_list.front() == "uavid")
 		{
 			// Expect 2 tokens
@@ -531,7 +531,7 @@ void Kernel::LoadMetaData()
 	// Load metadata content
 	std::istringstream metadata_stream;
 	metadata_symbol->getStream(metadata_stream);
- 
+
 	// First line example:
 	// ;ARGSTART:__OpenCL_opencl_mmul_kernel
 	std::string line;
@@ -543,7 +543,7 @@ void Kernel::LoadMetaData()
 	token_list.clear();
 
 	// Second line contains version info. Example:
-	// ;version:3:1:104 
+	// ;version:3:1:104
 	std::getline(metadata_stream, line);
 	misc::StringTokenize(line, token_list, ";:");
 	Expect(token_list, "version");
@@ -551,7 +551,7 @@ void Kernel::LoadMetaData()
 	int version = misc::StringToInt(token_list[1]);
 	token_list.clear();
 
-	// Parse rest of the metadata based on version number 
+	// Parse rest of the metadata based on version number
 	switch (version)
 	{
 	case 3:
@@ -566,7 +566,7 @@ void Kernel::LoadMetaData()
 
 }
 
-void Kernel::CreateBufferDesc(unsigned base_addr, unsigned size, int num_elems, 
+void Kernel::CreateBufferDesc(unsigned base_addr, unsigned size, int num_elems,
 	ArgDataType data_type,
 	EmuBufferDesc *buffer_desc)
 {
@@ -574,7 +574,7 @@ void Kernel::CreateBufferDesc(unsigned base_addr, unsigned size, int num_elems,
 	int data_format;
 	int elem_size;
 
-	// Zero-out the buffer resource descriptor 
+	// Zero-out the buffer resource descriptor
 	assert(sizeof(struct EmuBufferDesc) == 16);
 	memset(buffer_desc, 0, sizeof(EmuBufferDesc));
 
@@ -729,7 +729,7 @@ void Kernel::CreateBufferDesc(unsigned base_addr, unsigned size, int num_elems,
 	buffer_desc->base_addr = base_addr;
 	buffer_desc->num_format = num_format;
 	buffer_desc->data_format = data_format;
-	assert(!(size % elem_size));  
+	assert(!(size % elem_size));
 	buffer_desc->elem_size = elem_size;
 	buffer_desc->num_records = size/elem_size;
 
@@ -751,7 +751,7 @@ Kernel::Kernel(int id, std::string name, Program *program)
 	if (!metadata_symbol || !header_symbol || !kernel_symbol)
 		misc::fatal("%s: invalid kernel function (ELF symbol '__OpenCL_%s_xxx missing')\n%s",
 				__FUNCTION__, name.c_str(), OpenCLErrSIKernelSymbol);
-	
+
 	x86::Emu::opencl_debug << misc::fmt("\tmetadata symbol: offset=0x%x, size=%u\n",
 			(unsigned)metadata_symbol->getValue(), (unsigned)metadata_symbol->getSize());
 	x86::Emu::opencl_debug << misc::fmt("\theader symbol: offset=0x%x, size=%u\n",
@@ -766,7 +766,7 @@ Kernel::Kernel(int id, std::string name, Program *program)
 	const char *kernel_buf = kernel_symbol->getBuffer();
 	unsigned kernel_buf_size = (unsigned)kernel_symbol->getSize();
 	bin_file.reset(new Binary(kernel_buf, kernel_buf_size, symbol_name));
-	
+
 	// Load metadata
 	LoadMetaData();
 }
@@ -775,7 +775,7 @@ void Kernel::CreateNDRangeTables(NDRange *ndrange /* MMU *gpu_mmu */)
 {
 	Emu *emu = SI::Emu::getInstance();
 
-	unsigned size_of_tables = EmuConstBufTableSize + 
+	unsigned size_of_tables = EmuConstBufTableSize +
 		EmuResourceTableSize + EmuUAVTableSize;
 
 	// if (gpu_mmu)
@@ -788,15 +788,15 @@ void Kernel::CreateNDRangeTables(NDRange *ndrange /* MMU *gpu_mmu */)
 	// 	}
 	// }
 
-	// Map new pages 
+	// Map new pages
 	// mem_map(emu->video_mem, emu->video_mem_top, size_of_tables,
 	// 	mem_access_read | mem_access_write);
 
-	x86::Emu::opencl_debug << misc::fmt("\t%u bytes of device memory allocated at " 
+	x86::Emu::opencl_debug << misc::fmt("\t%u bytes of device memory allocated at "
 		"0x%x for SI internal tables\n", size_of_tables,
 		emu->getVideoMemTop());
 
-	// Setup internal tables 
+	// Setup internal tables
 	ndrange->setConstBufferTable(emu->getVideoMemTop());
 	emu->incVideoMemTop(EmuConstBufTableSize);
 	ndrange->setResourceTable(emu->getVideoMemTop());
@@ -814,33 +814,33 @@ void Kernel::SetupNDRangeArgs(NDRange *ndrange /* MMU *gpu_mmu */)
 	int zero = 0;
 
 	// Initial top of local memory is determined by the static local memory
-	// specified in the kernel binary. Number of vector and scalar 
-	// registers used by the kernel recorded as well. 
+	// specified in the kernel binary. Number of vector and scalar
+	// registers used by the kernel recorded as well.
 	const BinaryDictEntry *enc_dict = getKernelBinary()->GetSIDictEntry();
 	ndrange->setLocalMemTop(getMemSizeLocal());
 	ndrange->setNumSgprUsed(enc_dict->num_sgpr);
 	ndrange->setNumVgprUsed(enc_dict->num_vgpr);
 
-	// Kernel arguments 
+	// Kernel arguments
 	int index = 0;;
 	for( auto &arg : getArgs())
 	{
-		// Check that argument was set 
+		// Check that argument was set
 		assert(arg);
 		if (!arg->isSet())
 			fatal("%s: kernel '%s': argument '%s' not set",
 				__FUNCTION__, getName().c_str(), arg->getName().c_str());
 
 		x86::Emu::opencl_debug << misc::fmt("\targ[%d] = %s ", index, arg->getName().c_str());
-		
-		// Process argument depending on its type 
+
+		// Process argument depending on its type
 		switch (arg->getType())
 		{
 
 		case ArgTypeValue:
 		{
 			ArgValue &arg_value = dynamic_cast<ArgValue&>(*arg);
-			// Value copied directly into device constant memory 
+			// Value copied directly into device constant memory
 			assert(arg_value.getSize());
 			ndrange->ConstantBufferWrite(
 				arg_value.getConstantBufferNum(),
@@ -856,42 +856,42 @@ void Kernel::SetupNDRangeArgs(NDRange *ndrange /* MMU *gpu_mmu */)
 			switch (arg_ptr.getScope())
 			{
 
-			// Hardware local memory 
+			// Hardware local memory
 			case ArgScopeHwLocal:
 
 				// Pointer in __local scope.
 				// Argument value is always NULL, just assign
-				// space for it. 
+				// space for it.
 				ndrange->ConstantBufferWrite(
 					arg_ptr.getConstantBufferNum(),
 					arg_ptr.getConstantOffset(),
 					ndrange->getLocalMemTopPtr(), 4);
 
-				x86::Emu::opencl_debug << misc::fmt("%u bytes at 0x%x", arg_ptr.getSize(), 
+				x86::Emu::opencl_debug << misc::fmt("%u bytes at 0x%x", arg_ptr.getSize(),
 					ndrange->getLocalMemTop());
 
 				ndrange->incLocalMemTop(arg_ptr.getSize());
 
 				break;
 
-			// UAV 
+			// UAV
 			case ArgScopeUAV:
 			{
 				x86::Emu::opencl_debug << misc::fmt("(0x%x)", arg_ptr.getDevicePtr());
-				
-				// Create descriptor for argument 
+
+				// Create descriptor for argument
 				CreateBufferDesc(
 					arg_ptr.getDevicePtr(),
 					arg_ptr.getSize(),
 					arg_ptr.getNumElems(),
 					arg_ptr.getDataType(), &buffer_desc);
 
-				// Add to UAV table 
+				// Add to UAV table
 				ndrange->InsertBufferIntoUAVTable(
 					&buffer_desc,
 					arg_ptr.getBufferNum());
 
-				// Write 0 to CB1 
+				// Write 0 to CB1
 				ndrange->ConstantBufferWrite(
 					arg_ptr.getConstantBufferNum(),
 					arg_ptr.getConstantOffset(),
@@ -900,7 +900,7 @@ void Kernel::SetupNDRangeArgs(NDRange *ndrange /* MMU *gpu_mmu */)
 				break;
 			}
 
-			// Hardware constant memory 
+			// Hardware constant memory
 			case ArgScopeHwConstant:
 			{
 				CreateBufferDesc(
@@ -909,16 +909,16 @@ void Kernel::SetupNDRangeArgs(NDRange *ndrange /* MMU *gpu_mmu */)
 					arg_ptr.getNumElems(),
 					arg_ptr.getDataType(), &buffer_desc);
 
-				// Data stored in hw constant memory 
-				// uses a 4-byte stride 
+				// Data stored in hw constant memory
+				// uses a 4-byte stride
 				buffer_desc.stride = 4;
 
-				// Add to Constant Buffer table 
+				// Add to Constant Buffer table
 				ndrange->InsertBufferIntoConstantBufferTable(
 					&buffer_desc,
 					arg_ptr.getBufferNum());
 
-				// Write 0 to CB1 
+				// Write 0 to CB1
 				ndrange->ConstantBufferWrite(
 					arg_ptr.getConstantBufferNum(),
 					arg_ptr.getConstantOffset(),
@@ -942,7 +942,7 @@ void Kernel::SetupNDRangeArgs(NDRange *ndrange /* MMU *gpu_mmu */)
 
 		case ArgTypeSampler:
 
-			fatal("%s: type 'sampler' not implemented", 
+			fatal("%s: type 'sampler' not implemented",
 				__FUNCTION__);
 			break;
 
@@ -954,15 +954,15 @@ void Kernel::SetupNDRangeArgs(NDRange *ndrange /* MMU *gpu_mmu */)
 		}
 		x86::Emu::opencl_debug << misc::fmt("\n");
 
-		// Next 
+		// Next
 		index++;
 	}
 
-	// Add program-wide constant buffers to the ND-range. 
-	// Program-wide constant buffers start at number 2. 
-	for (unsigned i = 2; i < EmuMaxNumConstBufs; i++) 
+	// Add program-wide constant buffers to the ND-range.
+	// Program-wide constant buffers start at number 2.
+	for (unsigned i = 2; i < EmuMaxNumConstBufs; i++)
 	{
-		ConstantBuffer *constant_buffer = 
+		ConstantBuffer *constant_buffer =
 			getProgram()->getConstantBufferByIndex(i);
 
 		if (!constant_buffer)
@@ -976,12 +976,12 @@ void Kernel::SetupNDRangeArgs(NDRange *ndrange /* MMU *gpu_mmu */)
 		// 	ArgFloat,
 		// 	&buffer_desc);
 
-		// Data stored in hw constant memory 
-		// uses a 16-byte stride 
+		// Data stored in hw constant memory
+		// uses a 16-byte stride
 		// buffer_desc.stride = 16; // XXX Use or don't use?
 
-		// Add to Constant Buffer table 
-		ndrange->InsertBufferIntoConstantBufferTable( 
+		// Add to Constant Buffer table
+		ndrange->InsertBufferIntoConstantBufferTable(
 			&buffer_desc, index);
 	}
 }
@@ -1000,7 +1000,7 @@ void Kernel::SetupNDRangeConstantBuffers(NDRange *ndrange)
 	float f;
 
 	/* Constant buffer 0 */
-	CreateBufferDesc(ndrange->getConstBufferAddr(0), EmuConstBuf0Size, 
+	CreateBufferDesc(ndrange->getConstBufferAddr(0), EmuConstBuf0Size,
 		1, ArgDataTypeInt32, &buffer_desc);
 
 	ndrange->InsertBufferIntoConstantBufferTable(&buffer_desc, 0);
@@ -1016,11 +1016,11 @@ void Kernel::SetupNDRangeConstantBuffers(NDRange *ndrange)
 	/* CB0 bytes 0:15 */
 
 	/* Global work size for the {x,y,z} dimensions */
-	ndrange->ConstantBufferWrite(0, 0, 
+	ndrange->ConstantBufferWrite(0, 0,
 		ndrange->getGlobalSizePtr(0), 4);
-	ndrange->ConstantBufferWrite(0, 4, 
+	ndrange->ConstantBufferWrite(0, 4,
 		ndrange->getGlobalSizePtr(1), 4);
-	ndrange->ConstantBufferWrite(0, 8, 
+	ndrange->ConstantBufferWrite(0, 8,
 		ndrange->getGlobalSizePtr(2), 4);
 
 	/* Number of work dimensions */
@@ -1029,11 +1029,11 @@ void Kernel::SetupNDRangeConstantBuffers(NDRange *ndrange)
 	/* CB0 bytes 16:31 */
 
 	/* Local work size for the {x,y,z} dimensions */
-	ndrange->ConstantBufferWrite(0, 16, 
+	ndrange->ConstantBufferWrite(0, 16,
 		ndrange->getLocalSizePtr(0), 4);
-	ndrange->ConstantBufferWrite(0, 20, 
+	ndrange->ConstantBufferWrite(0, 20,
 		ndrange->getLocalSizePtr(1), 4);
-	ndrange->ConstantBufferWrite(0, 24, 
+	ndrange->ConstantBufferWrite(0, 24,
 		ndrange->getLocalSizePtr(2), 4);
 
 	/* 0  */
@@ -1042,11 +1042,11 @@ void Kernel::SetupNDRangeConstantBuffers(NDRange *ndrange)
 	/* CB0 bytes 32:47 */
 
 	/* Global work size {x,y,z} / local work size {x,y,z} */
-	ndrange->ConstantBufferWrite(0, 32, 
+	ndrange->ConstantBufferWrite(0, 32,
 		ndrange->getGroupCountPtr(0), 4);
-	ndrange->ConstantBufferWrite(0, 36, 
+	ndrange->ConstantBufferWrite(0, 36,
 		ndrange->getGroupCountPtr(1), 4);
-	ndrange->ConstantBufferWrite(0, 40, 
+	ndrange->ConstantBufferWrite(0, 40,
 		ndrange->getGroupCountPtr(2), 4);
 
 	/* 0  */

@@ -19,7 +19,7 @@
 
 #include <arch/southern-islands/asm/Arg.h>
 #include <arch/x86/emu/Emu.h>
-#include <driver/opencl/southern-islands/Kernel.h>
+#include <arch/southern-islands/driver/Kernel.h>
 #include <src/lib/cpp/Misc.h>
 
 #include "NDRange.h"

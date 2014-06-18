@@ -1008,7 +1008,6 @@ AC_CONFIG_FILES([
 		src/driver/glut/Makefile
 		src/driver/glew/Makefile
 		src/driver/opencl/Makefile
-		src/driver/opencl/southern-islands/Makefile
 		src/driver/opencl-old/Makefile
 		src/driver/opencl-old/evergreen/Makefile
 		src/driver/opengl/Makefile
