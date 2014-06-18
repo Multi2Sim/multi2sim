@@ -72,6 +72,9 @@ public:
 	{
 		return frequency_domain;
 	}
+
+	/// Return the event handler for this event type
+	EventHandler getEventHandler() const { return handler; }
 };
 
 
@@ -126,28 +129,34 @@ class Event
 	// Data associated with the event
 	std::shared_ptr<EventFrame> frame;
 
-	// Cycle for which the event was scheduled in fastest domain
-	long long cycle;
+	// Time in picoseconds for when the event is scheduled
+	long long time;
+
+	// Cycles after which the event will repeat (0 = no repeat)
+	int period;
 
 public:
 
 	// Comparison lambda
-	struct Compare
+	struct CompareUniquePtrs
 	{
-		bool operator()(const Event &lhs, const Event &rhs) const
+		bool operator()(const std::unique_ptr<Event> &lhs,
+				const std::unique_ptr<Event> &rhs) const
 		{
-			return lhs.cycle < rhs.cycle;
+			return lhs->time > rhs->time;
 		}
 	};
 
 	/// Constructor
 	Event(EventType *type,
 			const std::shared_ptr<EventFrame> &frame,
-			long long cycle)
+			long long time,
+			int period)
 			:
 			type(type),
 			frame(frame),
-			cycle(cycle)
+			time(time),
+			period(period)
 	{
 	}
 	
@@ -156,6 +165,14 @@ public:
 
 	/// Return the frame associated with the event
 	const std::shared_ptr<EventFrame> &getFrame() const { return frame; }
+
+	/// Return the time in picoseconds for which the event is scheduled.
+	long long getTime() const { return time; }
+
+	/// Return the number of cycles after which the event is rescheduled.
+	/// This number of cycles is given with respect to the event's frequency
+	/// domain.
+	int getPeriod() const { return period; }
 };
 
 
