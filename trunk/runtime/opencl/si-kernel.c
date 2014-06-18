@@ -182,8 +182,9 @@ struct opencl_si_kernel_t *opencl_si_kernel_create(
 	}
 
 	/* Create kernel object in driver */
+	unsigned args[2] = {program->id, (unsigned) func_name};
 	kernel->id = ioctl(opencl_si_device->fd, SIKernelCreate,
-			program->id, func_name);
+			args);
 
 
 	/* Dump debug info and return */
@@ -272,7 +273,7 @@ int opencl_si_kernel_set_arg(struct opencl_si_kernel_t *kernel, int arg_index,
 		}
 
 		/* ABI call */
-		unsigned int args[] = {arg_index, (unsigned int) arg_value, arg_size};
+		unsigned args[3] = {arg_index, (unsigned) arg_value, arg_size};
 		ioctl(opencl_si_device->fd, 
 			SIKernelSetArgPointer, kernel->id, 
 			args);
@@ -348,7 +349,7 @@ struct opencl_si_ndrange_t *opencl_si_ndrange_create(
 	/* ioctl arguments. The argument array is now 5 which is the
 	 * maximum number of arguments in this function. If any other ioctl call is
 	 * used here, this array size should be increased */
-	void * args [5] = {NULL};
+	unsigned args [5] = {0};
 	/* Calculate the number of work groups in the ND-Range */
 	arch_ndrange->total_num_groups = 
 		arch_ndrange->num_groups[0] * 
@@ -356,27 +357,27 @@ struct opencl_si_ndrange_t *opencl_si_ndrange_create(
 		arch_ndrange->num_groups[2];
 
 	/* Tell the driver whether or not we are using a fused device */
-	args[0] = (void *) arch_ndrange->fused;
+	args[0] = (unsigned) arch_ndrange->fused;
 	ioctl(opencl_si_device->fd, SINDRangeSetFused,
 		args);
 
 	/* Create the ndrange */
-	args[0] = (void *) si_kernel->id;
-	args[1] = (void *) arch_ndrange->work_dim ;
-	args[2] = (void *) arch_ndrange->global_work_offset;
-	args[3] = (void *) arch_ndrange->global_work_size;
-	args[4] = (void *) arch_ndrange->local_work_size[0];
+	args[0] = si_kernel->id;
+	args[1] = arch_ndrange->work_dim ;
+	args[2] = (unsigned) arch_ndrange->global_work_offset;
+	args[3] = (unsigned) arch_ndrange->global_work_size;
+	args[4] = arch_ndrange->local_work_size[0];
 
 	arch_ndrange->id = ioctl(opencl_si_device->fd, 
 		SINDRangeCreate, args);
 
 	/* Provide internal tables initialized within the host
 	 * process' virtual address space */
-	args[0] = (void *) arch_ndrange->id;
-	args[1] = (void *) si_kernel->id;
-	args[2] = arch_ndrange->table_ptr;
-	args[3] = arch_ndrange->cb_ptr ;
-	args[4] = NULL ; // This is unnecessary but we are adding it for clarity
+	args[0] = arch_ndrange->id;
+	args[1] = si_kernel->id;
+	args[2] = (unsigned) arch_ndrange->table_ptr;
+	args[3] = (unsigned) arch_ndrange->cb_ptr ;
+	args[4] = 0; // This is unnecessary but we are adding it for clarity
 	ioctl(opencl_si_device->fd, SINDRangePassMemObjs, 
 		args);
 
@@ -393,12 +394,13 @@ void opencl_si_ndrange_finish(struct opencl_si_ndrange_t *ndrange)
 	/* Wait for the nd-range to complete */
 	opencl_debug("[%s] finish start at %llu", __FUNCTION__,
 			opencl_get_time());
-	ioctl(opencl_si_device->fd, SINDRangeFinish, ndrange->id);
+	unsigned args[1] = {ndrange->id};
+	ioctl(opencl_si_device->fd, SINDRangeFinish, args);
 
 	/* Flush the cache */
 	opencl_debug("[%s] finish end/flush start at %llu", __FUNCTION__,
 			opencl_get_time());
-	ioctl(opencl_si_device->fd, SINDRangeFlush, ndrange->id);
+	ioctl(opencl_si_device->fd, SINDRangeFlush, args);
 	opencl_debug("[%s] flush done at %llu", __FUNCTION__,
 			opencl_get_time());
 
@@ -409,7 +411,8 @@ void opencl_si_ndrange_free(struct opencl_si_ndrange_t *ndrange)
 	opencl_debug("[%s] freeing si kernel", __FUNCTION__);
 
 	/* Free the ndrange */
-	ioctl(opencl_si_device->fd, SINDRangeFree, ndrange->id);
+	unsigned args[1] = {ndrange->id};
+	ioctl(opencl_si_device->fd, SINDRangeFree, args);
 
 	free(ndrange);
 
@@ -419,17 +422,19 @@ void opencl_si_ndrange_free(struct opencl_si_ndrange_t *ndrange)
 void opencl_si_ndrange_run_partial(struct opencl_si_ndrange_t *ndrange,
 	unsigned int work_group_start, unsigned int work_group_count)
 {
-	int max_work_groups_to_send;
 
+	int max_work_groups_to_send;
 	/* Ask the driver how many work groups it can buffer */
 	/* Send work groups to the driver */
+	// FIXME should implement the partial. Now it just does a whole run
 	ioctl(opencl_si_device->fd,
 		SINDRangeGetBufferEntries,
 		&max_work_groups_to_send);
 
+	unsigned args[3] = { ndrange->id, work_group_start, work_group_count};
 	ioctl(opencl_si_device->fd, 
 		SINDRangeSendWorkGoups, 
-		ndrange->id, work_group_start, work_group_count);
+		args);
 }
 
 void opencl_si_ndrange_run(struct opencl_si_ndrange_t *ndrange,

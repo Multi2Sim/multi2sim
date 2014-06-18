@@ -222,7 +222,8 @@ void *opencl_si_device_mem_alloc(struct opencl_si_device_t *device,
 	void *device_ptr;
 
 	/* Request device memory to driver */
-	device_ptr = (void *) ioctl(device->parent->fd, SIMemAlloc, size);
+	unsigned args[1] = {size};
+	device_ptr = (void *) ioctl(device->parent->fd, SIMemAlloc, args);
 
 	return device_ptr;
 }
@@ -239,8 +240,9 @@ void opencl_si_device_mem_free(struct opencl_si_device_t *device,
 void opencl_si_device_mem_read(struct opencl_si_device_t *device,
 		void *host_ptr, void *device_ptr, unsigned int size)
 {
+	unsigned args[3] = {(unsigned) host_ptr, (unsigned) device_ptr, size};
 	/* Invoke 'mem_read' ABI call */
-	ioctl(device->parent->fd, SIMemRead, host_ptr, device_ptr, size);
+	ioctl(device->parent->fd, SIMemRead, args);
 }
 
 
@@ -248,7 +250,8 @@ void opencl_si_device_mem_write(struct opencl_si_device_t *device,
 		void *device_ptr, void *host_ptr, unsigned int size)
 {
 	/* Invoke 'mem_write' ABI call */
-	ioctl(device->parent->fd, SIMemWrite, device_ptr, host_ptr, size);
+	unsigned args[3] = {(unsigned) device_ptr, (unsigned) host_ptr, size};
+	ioctl(device->parent->fd, SIMemWrite, args);
 }
 
 
