@@ -244,6 +244,15 @@ public:
 			int after = 0,
 			int period = 0);
 
+	/// Execute an event synchronously. This function executes the event
+	/// handler with the current frame right away, as opposed to function
+	/// Next() with a value of \a after equal to 0, which would insert it
+	/// in the event heap for a deferred execution.
+	///
+	/// \param event_type
+	///	Type of event to execute
+	void Execute(EventType *event_type);
+
 	/// Schedule an event, remembering the current event frame. This
 	/// function should only be invoked in the body of an event handler.
 	///
@@ -287,6 +296,11 @@ public:
 	/// Schedule an event for the end of the simulation. End events have
 	/// no event frame (event frame set to `nullptr`).
 	void EndEvent(EventType *event_type);
+
+	/// Return the parent frame in the event stack of the current event
+	/// chain, or `nullptr` if the current event is in the bottom of the
+	/// stack. This function should be invoked only within an event handler.
+	EventFrame *getParentFrame();
 
 	/// Activate debug information for the event-driven simulator.
 	///
