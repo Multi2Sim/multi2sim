@@ -50,6 +50,9 @@ public:
     /// Increment value of register \c eip by \a value bytes.
     void incPC(int value) { pc += value; }
 
+    /// Set Register31 stack pointer to value
+    void setSP(int value) { gpr[31] = value; }
+
     ///read from HI register
     unsigned int getHI();
     

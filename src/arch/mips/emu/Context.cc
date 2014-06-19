@@ -42,6 +42,7 @@ void Context::UpdateState(unsigned state)
 		emu->setScheduleSignal();
 }
 
+
 Context::Context()
 {
 	// Save emulator instance
@@ -55,6 +56,37 @@ Context::~Context()
 {
 	// Debug
 	emu->context_debug << "Context " << pid << " destroyed\n";
+}
+
+
+bool Context::CanWakeup()
+{
+	// Checks
+	assert(getState(ContextCallback));
+	assert(getState(ContextSuspended));
+	assert(this->can_wakeup_fn);
+
+	// Invoke callback
+	return (this->*can_wakeup_fn)();
+}
+
+
+void Context::Wakeup()
+{
+	// Checks
+	assert(getState(ContextCallback));
+	assert(getState(ContextSuspended));
+	assert(this->wakeup_fn);
+
+	// Wakeup context
+	(this->*wakeup_fn)();
+	clearState(ContextCallback);
+	clearState(ContextSuspended);
+	clearState(wakeup_state);
+
+	// Reset callbacks and free data
+	can_wakeup_fn = nullptr;
+	wakeup_fn = nullptr;
 }
 
 
@@ -157,8 +189,8 @@ void Context::Execute()
 	// Call instruction emulation function
 	if(inst->GetOpcode())
 	{
-		//ExecuteInstFn fn = execute_inst_fn[inst->GetOpcode()];
-		//(this->*fn)();
+		ExecuteInstFn fn = execute_inst_fn[inst->GetOpcode()];
+		(this->*fn)();
 	}
 
 	// Stats

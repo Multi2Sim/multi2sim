@@ -144,6 +144,72 @@ public:
 	}
 };
 
+
+/// Signal mask table. Each context has its own table, including parent and
+/// child contexts.
+class SignalMaskTable
+{
+	// Masks of pending, blocks, and backed up blocked signals
+	SignalSet pending;
+	SignalSet blocked;
+	SignalSet backup;
+
+	// Backup of register file while executing signal handler
+	std::unique_ptr<Regs> regs;
+
+	// Base address of a memory page allocated for execution of return code
+	unsigned ret_code_ptr;
+
+public:
+
+	/// Store a backup copy of the register file passed as an argument.
+	void setRegs(const Regs &regs) { this->regs.reset(new Regs(regs)); }
+
+	/// Return a constant reference to the registers storing a copy. Before
+	/// calling this function, the user has to make sure that registers have
+	/// been stored with a previous call to setRegs().
+	const Regs &getRegs() {
+		assert(regs.get());
+		return *regs;
+	}
+
+	/// Free the copy of the register file stored. The caller must be sure
+	/// that a register file was previously stored with a call to setRegs().
+	/// The call to freeRegs() is optional for optimization. Not calling it
+	/// will not cause any memory leak.
+	void freeRegs() {
+		assert(regs.get());
+		regs.reset();
+	}
+
+	/// Set the address where the return code can be found.
+	void setRetCodePtr(unsigned ret_code_ptr) {
+			this->ret_code_ptr = ret_code_ptr;
+	}
+
+	/// Return reference to pending signal mask
+	const SignalSet &getPending() const { return pending; }
+	SignalSet &getPending() { return pending; }
+
+	/// Return reference to blocked signal mask
+	const SignalSet &getBlocked() const { return blocked; }
+	SignalSet &getBlocked() { return blocked; }
+
+	/// Set the blocked signal mask
+	void setBlocked(const SignalSet &blocked) { this->blocked = blocked; }
+
+	/// Save a copy of the blocked signal mask
+	void BackupBlockedSignals() { backup = blocked; }
+
+	/// Restore the blocked signal mask previously backed up with a call to
+	/// BackupBlockedSignals()
+	void RestoreBlockedSignals() { blocked = backup; }
+
+	/// Return address where the return code can be found.
+	unsigned getRetCodePtr() const { return ret_code_ptr; }
+};
+
+
 /// Signal handler information. This structure corresponds to the Unix \c
 /// sigaction data structure.
 class SignalHandler
@@ -191,6 +257,14 @@ class SignalHandlerTable{
 	// Table of signal handlers
 	SignalHandler signal_handler[64];
 
+public:
+
+	/// Return signal handler for signal \a sig, an integer value between 1
+	/// and 64. This number should not be out of range.
+	SignalHandler *getSignalHandler(int sig) {
+		assert(misc::inRange(sig, 1, 64));
+		return &signal_handler[sig - 1];
+	}
 };
 }
 
