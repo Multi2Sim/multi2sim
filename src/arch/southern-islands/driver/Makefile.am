@@ -8,7 +8,7 @@ libdriver_a_SOURCES = \
 		Program.h \
 		Program.cc \
 		Kernel.h \
-		Kernel.c
+		Kernel.cc
 
 AM_CPPFLAGS = @M2S_INCLUDES@
 
