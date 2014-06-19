@@ -243,8 +243,8 @@ void Emu::ProcessEvents()
 	// LOOP 3
 	// Process pending signals in running contexts to launch signal handlers
 	//
-	for (Context *context : context_list[ContextListRunning])
-		context->CheckSignalHandler();
+	//for (Context *context : context_list[ContextListRunning])
+		//context->CheckSignalHandler();
 
 	// Unlock
 	UnlockMutex();
