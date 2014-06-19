@@ -45,22 +45,22 @@ class EventType
 	// Name of the event
 	std::string name;
 
-	// Frequency domain
-	FrequencyDomain *frequency_domain;
-
 	// Handler function
 	EventHandler handler;
+
+	// Frequency domain
+	FrequencyDomain *frequency_domain;
 
 public:
 
 	/// Constructor
 	EventType(const std::string &name,
-			FrequencyDomain *frequency_domain,
-			EventHandler handler)
+			EventHandler handler,
+			FrequencyDomain *frequency_domain = nullptr)
 			:
 			name(name),
-			frequency_domain(frequency_domain),
-			handler(handler)
+			handler(handler),
+			frequency_domain(frequency_domain)
 	{
 	}
 
