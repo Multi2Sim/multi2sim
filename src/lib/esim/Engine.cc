@@ -33,6 +33,24 @@ misc::Debug Engine::debug;
 
 std::unique_ptr<Engine> Engine::instance;
 
+const char *engine_err_finalization =
+	"The finalization process of the event-driven simulation is trying to "
+	"empty the event heap by scheduling all pending events. If the number of "
+	"scheduled events during this process is too high, it could mean that "
+	"some event is recursively scheduling other events, avoiding correct "
+	"finalization of the simulation. Please contact development@multi2sim.org "
+	"to report this error.\n";
+
+const char *engine_err_max_inflight_events =
+	"An excessive number of events are currently in-flight in the event-"
+	"driven simulation library. This is probably the result of a timing "
+	"model uncontrollably issuing events (typically a processor pipeline "
+	"issuing memory accesses without checking for a limit in the number "
+	"of in-flight accesses). "
+	"If you still believe that this is an expected number of in-flight "
+	"events, please increase the value of macro ESIM_OVERLOAD_EVENTS to "
+	"avoid this warning. ";
+
 
 Engine::Engine()
 		:
@@ -219,13 +237,16 @@ void Engine::Schedule(EventType *event_type,
 			event_type->getName().c_str(),
 			(double) when / 1000);
 
-	/* Warn when heap is overloaded FIXME */
-/*	if (!esim_overload_shown && esim_event_heap->count >= ESIM_OVERLOAD_EVENTS)
+	// Warn when heap is overloaded
+	if (!max_inflight_events_warning && (int) events.size() >=
+			max_inflight_events)
 	{
-		esim_overload_shown = 1;
-		warning("%s: number of in-flight events exceeds %d.\n%s",
-			__FUNCTION__, ESIM_OVERLOAD_EVENTS, esim_err_overload);
-	}*/
+		max_inflight_events_warning = true;
+		misc::warning("[esim] Maximum number of %d "
+				"in-flight events exceeds\n\n%s",
+				max_inflight_events,
+				engine_err_max_inflight_events);
+	}
 }
 
 

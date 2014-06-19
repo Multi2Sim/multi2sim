@@ -69,7 +69,9 @@ Action::Action(const std::string &line)
 	if (tokens.size() != 3)
 		throw std::logic_error(misc::fmt("Esim action malformed.\n"
 				"Expected 3 tokens, but instead received %d.\n"
-				">\t%s", tokens.size(), line.c_str()));
+				">\t%s",
+				(int) tokens.size(),
+				line.c_str()));
 
 	// Get the action type.
 	if (tokens.at(0) == "FrequencyDomain")
@@ -191,7 +193,8 @@ void EventChecks::DoChecks()
 
 		// Print out info about the missing events.
 		debug << misc::fmt("Extra checks left over; %d events weren't "
-					"scheduled.\n", checks.size());
+					"scheduled.\n",
+					(int) checks.size());
 		for (auto check : checks)
 		{
 			debug << misc::fmt("\t%s at %lld\n",
