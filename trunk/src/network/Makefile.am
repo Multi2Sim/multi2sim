@@ -34,6 +34,10 @@ libnetwork_a_SOURCES = \
 	routing-table.c \
 	routing-table.h \
 	\
+	System.cc \
+	SystemConfig.cc \
+	System.h \
+	\
 	visual.c \
 	visual.h 
 

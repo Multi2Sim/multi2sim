@@ -33,7 +33,7 @@ namespace Driver
 
 // Unique instance of OpenGL driver
 std::unique_ptr<OpenGLSIDriver> OpenGLSIDriver::instance;
-
+/*
 OpenGLSIDriver::OpenGLSIDriver()
 {
 	// Obtain instance of emulators
@@ -46,7 +46,7 @@ OpenGLSIDriver::OpenGLSIDriver()
 	// Obtain instance of SPI module
 	spi = SI::SPI::getInstance();
 }
-
+*/
 OpenGLSIDriver::~OpenGLSIDriver()
 {
 }
@@ -58,7 +58,7 @@ OpenGLSIDriver *OpenGLSIDriver::getInstance()
 		return instance.get();
 
 	// Create instance
-	instance.reset(new OpenGLSIDriver());
+//	instance.reset(new OpenGLSIDriver());
 	return instance.get();
 }
 
