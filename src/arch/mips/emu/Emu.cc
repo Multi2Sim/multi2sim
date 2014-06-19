@@ -174,11 +174,11 @@ void Emu::ProcessEvents()
 		// together with the system call itself, without having
 		// distributed code for the implementation of a system call
 		// (e.g. 'read').
-		if (context->getState(ContextCallback) && context->CanWakeup())
+		/*if (context->getState(ContextCallback) && context->CanWakeup())
 		{
 			context->Wakeup();
 			continue;
-		}
+		}*/
 	}
 #if 0
 	/*
@@ -243,8 +243,8 @@ void Emu::ProcessEvents()
 	// LOOP 3
 	// Process pending signals in running contexts to launch signal handlers
 	//
-	//for (Context *context : context_list[ContextListRunning])
-		//context->CheckSignalHandler();
+	/*for (Context *context : context_list[ContextListRunning])
+		context->CheckSignalHandler();*/
 
 	// Unlock
 	UnlockMutex();
