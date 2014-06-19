@@ -450,6 +450,9 @@ void MainLoop()
 			esim->Finish("MaxTime");
 	}
 
+	// Process all remaining events
+	esim->ProcessAllEvents();
+
 	// Restore default signal handlers
 	esim->DisableSignals();
 }

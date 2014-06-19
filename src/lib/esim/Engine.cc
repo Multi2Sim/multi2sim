@@ -190,6 +190,34 @@ bool Engine::Drain(int max_events)
 	return false;
 }
 
+
+void Engine::ProcessEndEvents()
+{
+	while (end_events.size())
+	{
+		// Get event from the head of the queue
+		Event *event = end_events.front().get();
+
+		// Debug
+		EventType *event_type = event->getType();
+		FrequencyDomain *frequency_domain = event_type->getFrequencyDomain();
+		debug << misc::fmt("[%.2fns] End event '%s/%s' triggered\n",
+				(double) current_time / 1000,
+				frequency_domain->getName().c_str(),
+				event_type->getName().c_str());
+
+		// Run event handler with null frame
+		EventHandler event_handler = event_type->getEventHandler();
+		current_event = event;
+		event_handler(event_type, nullptr);
+		current_event = nullptr;
+
+		// Dequeue
+		end_events.pop();
+	}
+}
+
+
 Engine *Engine::getInstance()
 {
 	// Instance already exists
@@ -358,6 +386,19 @@ void Engine::Return(int after)
 }
 
 
+/// Schedule an event for the end of the simulation. End events have
+/// no event frame (event frame set to `nullptr`).
+void Engine::EndEvent(EventType *event_type)
+{
+	// Discard null event
+	if (event_type == nullptr || event_type == null_event_type)
+		return;
+
+	// Add event to queue of end events
+	end_events.emplace(new Event(event_type, nullptr, 0, 0));
+}
+
+
 void Engine::ParseConfiguration(const std::string &path)
 {
 	std::vector<Action> actions;
@@ -433,13 +474,8 @@ void Engine::ParseConfiguration(const std::string &path)
 }
 
 
-#if 0
-void Engine::ProcessRemainingEvents()
+void Engine::ProcessAllEvents()
 {
-	struct esim_event_t *event;
-	struct esim_event_info_t *event_info;
-	int err;
-
 	// Drain event heap. If the maximum number of finalization events was
 	// exceeded, issue a warning, and stop.
 	bool overflow = Drain(max_finalization_events);
@@ -451,26 +487,12 @@ void Engine::ProcessRemainingEvents()
 		return;
 	}
 
-	// Schedule all events that were planned for the end of the simulation
-	// with previous calls to ScheduleEnd()
-	while (linked_list_count(esim_end_event_list))
-	{
-		/* Extract one event */
-		linked_list_head(esim_end_event_list);
-		event = linked_list_get(esim_end_event_list);
-		linked_list_remove(esim_end_event_list);
-
-		/* Process it */
-		event_info = list_get(esim_event_info_list, event->id);
-		assert(event_info && event_info->handler);
-		event_info->handler(event->id, event->data);
-		esim_event_free(event);
-	}
+	// Process events scheduled for the end of the simulation
+	ProcessEndEvents();
 
 	// Drain heap again
-	Drain();
+	Drain(max_finalization_events);
 }
-#endif
 
 
 

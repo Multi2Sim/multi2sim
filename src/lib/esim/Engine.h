@@ -138,6 +138,9 @@ class Engine
 	// Periodic events will not be rescheduled in this process.
 	bool Drain(int max_events);
 
+	// Process all events scheduled with a previous call to EndEvent()
+	void ProcessEndEvents();
+
 public:
 
 	/// Obtain the instance of the event-driven simulator singleton.
@@ -173,8 +176,8 @@ public:
 	/// Function invoked after the main simulation loop has finished. The
 	/// function processes all events remaining in the heap and then runs
 	/// all events that were scheduled for the end of the simulation with
-	/// previous calls to ScheduleEnd().
-	void ProcessRemainingEvents();
+	/// previous calls to EndEvent().
+	void ProcessAllEvents();
 
 	/// Return the current simulated time in picoseconds.
 	long long getTime() const { return current_time; }
@@ -221,9 +224,7 @@ public:
 	/// before.
 	///
 	/// \param event_type
-	///	Type of event to schedule. A null event (event with no effect)
-	///	can be scheduled using the result of getNullEventType() for this
-	///	argument.
+	///	Type of event to schedule.
 	///
 	/// \param after (optional)
 	///	Number of cycles after which the event will execute.
@@ -242,10 +243,6 @@ public:
 	void Next(EventType *event_type,
 			int after = 0,
 			int period = 0);
-
-	/// Schedule an event for the end of the simulation. End events have
-	/// no event frame (event frame set to `nullptr`).
-	void End(EventType *event_type);
 
 	/// Schedule an event, remembering the current event frame. This
 	/// function should only be invoked in the body of an event handler.
@@ -286,6 +283,10 @@ public:
 	///	Number of cycles after which the return event will execute. See
 	///	Schedule() for details.
 	void Return(int after = 0);
+
+	/// Schedule an event for the end of the simulation. End events have
+	/// no event frame (event frame set to `nullptr`).
+	void EndEvent(EventType *event_type);
 
 	/// Activate debug information for the event-driven simulator.
 	///
