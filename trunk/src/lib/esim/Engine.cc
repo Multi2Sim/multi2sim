@@ -18,7 +18,11 @@
  */
 
 #include <csignal>
+#include <map>
 
+#include <lib/cpp/IniFile.h>
+
+#include "Action.h"
 #include "Engine.h"
 
 
@@ -264,6 +268,81 @@ void Engine::Return(int after)
 	Schedule(current_event->getFrame()->getReturnEventType(),
 			current_event->getFrame()->getParentFrame(),
 			after);
+}
+
+
+void Engine::ParseConfiguration(const std::string &path)
+{
+	std::vector<Action> actions;
+	std::map<std::string, FrequencyDomain *> domains;
+	std::map<std::string, EventType *> events;
+	EventChecks *checks = EventChecks::getInstance();
+
+	// Parse the config file as an ini file.
+	misc::IniFile config_file(path);
+
+	// Find the 'Actions' section.
+	if (!config_file.Exists("Actions"))
+	{
+		throw std::logic_error(misc::fmt("Esim Actions section "
+				"not found in configuration file."));
+	}
+
+	// Find and parse each action.  Start at 'Action[0]' and continue
+	// sequentially until one isn't found.
+	int i = 0;
+	while (1)
+	{
+		// Get the next action.
+		std::string current_action = config_file.ReadString("Actions",
+				misc::fmt("Action[%d]", i));
+
+		// Check that the action exists.
+		if (current_action == "")
+			break;
+
+		// Parse the action.
+		actions.push_back(Action(current_action));
+
+		// Increment the action number.
+		i++;
+	}
+
+	// Process each action.
+	for (auto action : actions)
+	{
+		if (action.getType() == ActionTypeDomainRegistration)
+		{
+			// Register a new domain and store it.
+			FrequencyDomain *domain = RegisterFrequencyDomain(
+					action.getDomainRegistrationName(),
+					action.getDomainRegistrationFrequency());
+			domains[action.getDomainRegistrationName()] = domain;
+		}
+		else if (action.getType() == ActionTypeEventRegistration)
+		{
+			// Register a new event type and store it.
+			EventType *event = RegisterEventType(
+					action.getEventRegistrationName(),
+					domains[action.getEventRegistrationDomain()],
+					EventChecks::EventCheckHandler);
+			events[action.getEventRegistrationName()] = event;
+		}
+		else if (action.getType() == ActionTypeEventSchedule)
+		{
+			// Schedule an event.
+			Schedule(events[action.getEventScheduleName()],
+				NULL,
+				action.getEventScheduleCycle());
+		}
+		else if (action.getType() == ActionTypeCheck)
+		{
+			// Store checks to process later.
+			EventInfo event(action.getCheckName(),
+					action.getCheckTime());
+			checks->AddCheck(event);
+		}
+	}
 }
 
 
