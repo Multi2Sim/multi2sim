@@ -102,6 +102,20 @@ class Engine
 	// Event whose handler is currently being executed
 	Event *current_event = nullptr;
 
+	// Number of in-flight events before a warning is shown (10k events)
+	const int max_inflight_events = 10000;
+
+	// Flag indicating whether a warning has been shown after the maximum
+	// number of in-flight events has been exceeded. If true, the warning
+	// will not be shown again.
+	bool max_inflight_events_warning = false;
+
+	// Number of events to process in Drain() to empty the event heap at
+	// the end of the simulation before it is assumed that there is a
+	// recursive queuing of events that will cause an infinite loop
+	// (1M events).
+	const int max_finalization_events = 1000000;
+
 	// Private constructor, used internally to instantiate a singleton. Use
 	// a call to getInstance() instead.
 	Engine();
