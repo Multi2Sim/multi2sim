@@ -84,6 +84,9 @@ class Engine
 			std::vector<std::unique_ptr<Event>>,
 			Event::CompareUniquePtrs> events;
 
+	// Queue of end events
+	std::queue<std::unique_ptr<Event>> end_events;
+
 	// Null event type used to schedule useless events
 	EventType *null_event_type = nullptr;
 
@@ -123,6 +126,18 @@ class Engine
 	// Signals received from the user are captured by this function
 	static void SignalHandler(int sig);
 
+	// Schedule an event. See Next() for the meaning of the fields.
+	void Schedule(EventType *event_type,
+			std::shared_ptr<EventFrame> event_frame,
+			int after = 0,
+			int period = 0);
+
+	// Drain the event heap, with a maximum number of events specified in
+	// the argument. If this number is exceeded, the function returns true.
+	// If the heap is drained successfully, the function returns false.
+	// Periodic events will not be rescheduled in this process.
+	bool Drain(int max_events);
+
 public:
 
 	/// Obtain the instance of the event-driven simulator singleton.
@@ -150,8 +165,16 @@ public:
 	/// Disable signal interception, and restore the default handlers.
 	void DisableSignals();
 
-	/// Function invoked in every iteration of the main simulation loop
+	/// Function invoked in every iteration of the main simulation loop.
+	/// This function processes all events scheduled for the current cycle
+	/// and advances the event-driven simulation time.
 	void ProcessEvents();
+
+	/// Function invoked after the main simulation loop has finished. The
+	/// function processes all events remaining in the heap and then runs
+	/// all events that were scheduled for the end of the simulation with
+	/// previous calls to ScheduleEnd().
+	void ProcessRemainingEvents();
 
 	/// Return the current simulated time in picoseconds.
 	long long getTime() const { return current_time; }
@@ -193,33 +216,36 @@ public:
 			FrequencyDomain *frequency_domain,
 			EventHandler handler);
 
-	/// Schedule an event.
+	/// Schedule an event, using the event frame set by the last invocation
+	/// to Call() in the event chain, or nullptr if no event frame was set
+	/// before.
 	///
 	/// \param event_type
 	///	Type of event to schedule. A null event (event with no effect)
 	///	can be scheduled using the result of getNullEventType() for this
 	///	argument.
 	///
-	/// \param event_frame
-	///	Data associated with the event, given as a shared pointer. The
-	///	event-driven simulation framework will free the event data when
-	///	the last reference to it disappears.
+	/// \param after (optional)
+	///	Number of cycles after which the event will execute.
 	///
-	/// \param after
-	///	Number of cycles after which the event will execute. A value of
-	///	0 will not execute the event immediately, but instead will
-	///	schedule it for the end of the current cycle. When multiple
-	///	events are scheduled for the same cycle, there is no guarantee
-	///	in which order they will execute.
+	///	A default value of 0 makes the event execute in the current
+	///	cycle, but not immediately. The event is normally enqueued in
+	///	the event heap and later in the same cycle extracted and run.
+	///
+	///	When multiple events are scheduled for the same cycle, there is
+	///	no guarantee about the order in which they will execute.
 	///
 	/// \param period (optional)
 	///	If specified, the event will be scheduled periodically after its
-	///	first occurence. The period is given in number of cycles with
+	///	first occurrence. The period is given in number of cycles with
 	///	respect to the event's frequency domain.
-	void Schedule(EventType *event_type,
-			const std::shared_ptr<EventFrame> &event_frame,
-			int after,
+	void Next(EventType *event_type,
+			int after = 0,
 			int period = 0);
+
+	/// Schedule an event for the end of the simulation. End events have
+	/// no event frame (event frame set to `nullptr`).
+	void End(EventType *event_type);
 
 	/// Schedule an event, remembering the current event frame. This
 	/// function should only be invoked in the body of an event handler.
@@ -232,28 +258,34 @@ public:
 	///	object will be freed automatically when the last reference to
 	///	it disappears.
 	///
-	/// \param after
-	///	Number of cycles after which the called event will execute. See
-	///	Schedule() for details.
-	///
 	/// \param return_event_type
 	///	During the execution of the event handler of \a event_type, an
 	///	invocation to Return() will cause \a return_event_type to be
 	///	scheduled, using the current frame as the event data.
+	///
+	/// \param after (optional)
+	///	Number of cycles after which the called event will execute. See
+	///	Next() for details.
+	///
+	/// \param period (optional)
+	///	If specified, the event will be scheduled periodically after its
+	///	first occurrence. The period is given in number of cycles with
+	///	respect to the event's frequency domain.
 	void Call(EventType *event_type,
-			const std::shared_ptr<EventFrame> &event_frame,
-			int after,
-			EventType *return_event_type);
+			std::shared_ptr<EventFrame> event_frame = nullptr,
+			EventType *return_event_type = nullptr,
+			int after = 0,
+			int period = 0);
 
 	/// Schedule the return event specified in the last invocation to
 	/// Call() in argument \a return_event_type, using the frame that was
 	/// active at that time. This function should only be invoked in the
 	/// body of an event
 	///
-	/// \param after
+	/// \param after (optional)
 	///	Number of cycles after which the return event will execute. See
 	///	Schedule() for details.
-	void Return(int after);
+	void Return(int after = 0);
 
 	/// Activate debug information for the event-driven simulator.
 	///
