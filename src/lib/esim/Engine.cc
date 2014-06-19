@@ -109,10 +109,18 @@ void Engine::Schedule(EventType *event_type,
 		return;
 	}
 
+	// Get frequency domain. All events scheduled here must belong to a
+	// valid frequency domain.
+	FrequencyDomain *frequency_domain = event_type->getFrequencyDomain();
+	if (!frequency_domain)
+		throw std::logic_error(misc::fmt("Event '%s' has been "
+				"scheduled, but it does not belong to a "
+				"valid frequency domain",
+				event_type->getName().c_str()));
+
 	// Calculate absolute time for the event based on the event's frequency
 	// domain. First, get the actual current time for the current frequency
 	// domain, then add the time after which the event should be scheduled.
-	FrequencyDomain *frequency_domain = event_type->getFrequencyDomain();
 	long long when = current_time / frequency_domain->getCycleTime() *
 			frequency_domain->getCycleTime() +
 			frequency_domain->getCycleTime() * after;
@@ -344,6 +352,36 @@ void Engine::Next(EventType *event_type,
 }
 
 
+void Engine::Execute(EventType *event_type)
+{
+	// Null event
+	if (event_type == nullptr || event_type == null_event_type)
+		return;
+
+	// Use current event's frame if this function is invoked within an
+	// event handler, or create new frame otherwise.
+	std::shared_ptr<EventFrame> event_frame;
+	if (current_event)
+		event_frame = current_event->getFrame();
+	else
+		event_frame.reset(new EventFrame);
+
+	// Create new event
+	std::unique_ptr<Event> event(new Event(event_type, event_frame, 0, 0));
+
+	// Save current event
+	Event *old_event = current_event;
+	current_event = event.get();
+
+	// Execute event handler
+	EventHandler event_handler = event_type->getEventHandler();
+	event_handler(event_type, event_frame.get());
+
+	// Restore current event
+	current_event = old_event;
+}
+
+
 void Engine::Call(EventType *event_type,
 		std::shared_ptr<EventFrame> event_frame,
 		EventType *return_event_type,
@@ -386,8 +424,6 @@ void Engine::Return(int after)
 }
 
 
-/// Schedule an event for the end of the simulation. End events have
-/// no event frame (event frame set to `nullptr`).
 void Engine::EndEvent(EventType *event_type)
 {
 	// Discard null event
@@ -396,6 +432,18 @@ void Engine::EndEvent(EventType *event_type)
 
 	// Add event to queue of end events
 	end_events.emplace(new Event(event_type, nullptr, 0, 0));
+}
+
+
+EventFrame *Engine::getParentFrame()
+{
+	// Check that we are in an event handler
+	if (!current_event)
+		throw std::logic_error(misc::fmt("Function %s invoked "
+				"outside of an event handler", __FUNCTION__));
+
+	// Return parent frame
+	return current_event->getFrame()->getParentFrame().get();
 }
 
 
