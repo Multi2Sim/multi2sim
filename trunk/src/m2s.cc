@@ -406,6 +406,14 @@ void ProcessOptions()
 	// OpenCL binary
 	if (!m2s_opencl_binary.empty())
 		environment->addVariable("M2S_OPENCL_BINARY", m2s_opencl_binary);
+
+	// Go to event-driven simulation configuration if it's been passed.
+	if (!m2s_esim_config.empty())
+	{
+		esim::Engine *esim = esim::Engine::getInstance();
+		esim->TestLoop(m2s_esim_config);
+		exit(0);
+	}
 }
 
 
@@ -490,13 +498,6 @@ void main_cpp(int argc, char **argv)
 	SI::Driver::ProcessOptions();
 	x86::Asm::ProcessOptions();
 	x86::Emu::ProcessOptions();
-
-	// Go to event-driven simulation configuration if it's been passed.
-	if (!m2s_esim_config.empty())
-	{
-		esim::EsimTestLoop(m2s_esim_config);
-		exit(0);
-	}
 
 	// Register architectures, runtimes, and drivers
 	RegisterArchitectures();

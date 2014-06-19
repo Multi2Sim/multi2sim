@@ -18,7 +18,6 @@
  */
 
 #include <csignal>
-#include <map>
 
 #include <lib/cpp/IniFile.h>
 
@@ -208,10 +207,8 @@ void Engine::ProcessEndEvents()
 
 		// Debug
 		EventType *event_type = event->getType();
-		FrequencyDomain *frequency_domain = event_type->getFrequencyDomain();
-		debug << misc::fmt("[%.2fns] End event '%s/%s' triggered\n",
+		debug << misc::fmt("[%.2fns] End event '%s' triggered\n",
 				(double) current_time / 1000,
-				frequency_domain->getName().c_str(),
 				event_type->getName().c_str());
 
 		// Run event handler with null frame
@@ -327,10 +324,10 @@ FrequencyDomain *Engine::RegisterFrequencyDomain(const std::string &name,
 
 
 EventType *Engine::RegisterEventType(const std::string &name,
-		FrequencyDomain *frequency_domain,
-		EventHandler handler)
+		EventHandler handler,
+		FrequencyDomain *frequency_domain)
 {
-	event_types.emplace_back(name, frequency_domain, handler);
+	event_types.emplace_back(name, handler, frequency_domain);
 	return &event_types.back();
 }
 	
@@ -449,10 +446,8 @@ EventFrame *Engine::getParentFrame()
 
 void Engine::ParseConfiguration(const std::string &path)
 {
-	std::vector<Action> actions;
 	std::map<std::string, FrequencyDomain *> domains;
 	std::map<std::string, EventType *> events;
-	EventChecks *checks = EventChecks::getInstance();
 
 	// Parse the config file as an ini file.
 	misc::IniFile config_file(path);
@@ -478,46 +473,129 @@ void Engine::ParseConfiguration(const std::string &path)
 			break;
 
 		// Parse the action.
-		actions.push_back(Action(current_action));
+		ParseAction(current_action, domains, events);
 
 		// Increment the action number.
 		i++;
 	}
 
-	// Process each action.
-	for (auto action : actions)
+	// Register an event for the end to do the checks.
+	EventType *check_event = RegisterEventType("EV_DO_CHECKS",
+			EventChecks::DoChecksHandler);
+	EndEvent(check_event);
+}
+
+
+void Engine::ParseAction(const std::string &line,
+		std::map<std::string, FrequencyDomain *> &domains,
+		std::map<std::string, EventType *> &events)
+{
+	// Parse the configuration line to a list of tokens.
+	std::vector<std::string> tokens;
+	misc::StringTokenize(line, tokens);
+
+	// Every action type has 3 arguments, so assert that we have 3 tokens.
+	if (tokens.size() != 3)
+		throw std::runtime_error(misc::fmt("Esim action malformed.\n"
+				"Expected 3 tokens, but instead received %d.\n"
+				">\t%s",
+				(int) tokens.size(),
+				line.c_str()));
+
+	// Get the action type and parse it accordingly.
+	if (tokens[0] == "FrequencyDomain")
+		ParseActionDomainRegistration(tokens, domains);
+	else if (tokens[0] == "EventType")
+		ParseActionEventRegistration(tokens, events, domains);
+	else if (tokens[0] == "Event")
+		ParseActionEventSchedule(tokens, events);
+	else if (tokens[0] == "CheckEvent")
+		ParseActionCreateCheck(tokens);
+	else
+		// Invalid action type.
+		throw std::runtime_error(misc::fmt("Esim action malformed.\n"
+				"Invalid action type '%s'.\n"
+				">\t%s", tokens[0].c_str(), line.c_str()));
+}
+
+
+void Engine::ParseActionDomainRegistration(const std::vector<std::string> &tokens,
+		std::map<std::string, FrequencyDomain *> &domains)
+{
+	// Pull out the action parameters.
+	std::string name = tokens[1];
+	int frequency = misc::StringToInt(tokens[2]);
+
+	// Register a new domain and store it.
+	FrequencyDomain *domain = RegisterFrequencyDomain(name, frequency);
+	domains[name] = domain;
+}
+
+
+void Engine::ParseActionEventRegistration(const std::vector<std::string> &tokens,
+		std::map<std::string, EventType *> &events,
+		std::map<std::string, FrequencyDomain *> &domains)
+{
+	// Pull out the action parameters.
+	std::string name = tokens[1];
+	std::string domain = tokens[2];
+
+	// Register a new event type and store it.
+	EventType *event = RegisterEventType(name,
+			EventChecks::ActionEventHandler, domains[domain]);
+	events[name] = event;
+}
+
+
+void Engine::ParseActionEventSchedule(const std::vector<std::string> &tokens,
+		std::map<std::string, EventType *> &events)
+{
+	// Pull out the action parameters.
+	std::string name = tokens[1];
+	int cycle = misc::StringToInt(tokens[2]);
+
+	// Schedule an event.
+	Call(events[name], nullptr, nullptr, cycle);
+}
+
+
+void Engine::ParseActionCreateCheck(const std::vector<std::string> &tokens)
+{
+	// Pull out the action parameters.
+	std::string name = tokens[1];
+	long long time = misc::StringToInt64(tokens[2]);
+
+	// Store the check to process later.
+	EventChecks *checks = EventChecks::getInstance();
+	EventInfo event(name, time);
+	checks->AddCheck(event);
+}
+
+
+void Engine::TestLoop(const std::string &config_path)
+{
+	// Capture errors from parsing config and running esim
+	try
 	{
-		if (action.getType() == ActionTypeDomainRegistration)
+		// Process the configuration file.
+		ParseConfiguration(config_path);
+
+		// Run the simulation until there are no more events left.
+		while(events.size() != 0)
 		{
-			// Register a new domain and store it.
-			FrequencyDomain *domain = RegisterFrequencyDomain(
-					action.getDomainRegistrationName(),
-					action.getDomainRegistrationFrequency());
-			domains[action.getDomainRegistrationName()] = domain;
+			ProcessEvents();
 		}
-		else if (action.getType() == ActionTypeEventRegistration)
-		{
-			// Register a new event type and store it.
-			EventType *event = RegisterEventType(
-					action.getEventRegistrationName(),
-					domains[action.getEventRegistrationDomain()],
-					EventChecks::EventCheckHandler);
-			events[action.getEventRegistrationName()] = event;
-		}
-		else if (action.getType() == ActionTypeEventSchedule)
-		{
-			// Schedule an event.
-			Schedule(events[action.getEventScheduleName()],
-				NULL,
-				action.getEventScheduleCycle());
-		}
-		else if (action.getType() == ActionTypeCheck)
-		{
-			// Store checks to process later.
-			EventInfo event(action.getCheckName(),
-					action.getCheckTime());
-			checks->AddCheck(event);
-		}
+
+		// Process the end events.
+		ProcessAllEvents();
+	}
+	catch (std::runtime_error &e)
+	{
+		misc::fatal("%s", e.what());
+	}
+	catch (std::logic_error &e)
+	{
+		misc::panic("%s", e.what());
 	}
 }
 
