@@ -41,6 +41,7 @@
 #include <lib/cpp/IniFile.h>
 #include <lib/cpp/Misc.h>
 #include <lib/esim/Engine.h>
+#include <lib/esim/Action.h>
 
 #include "Wrapper.h"
 
@@ -51,6 +52,9 @@
 
 // Context configuration file
 std::string m2s_context_config;
+
+// Event-driven simulator configuration file
+std::string m2s_esim_config;
 
 // Event-driven simulator debugger
 std::string m2s_debug_esim;
@@ -288,6 +292,15 @@ void RegisterOptions()
 			"call stacks, including function invocations and "
 			"returns.");
 	
+	// Event-driven simulator configuration
+	command_line->RegisterString("--esim-config <file>",
+			m2s_esim_config,
+			"Use <file> as the event-driven simulation engine "
+			"configuration file.  This file can describe a set of "
+			"frequency domains, event types, times to schedule "
+			"events, and commands to check that events were "
+			"triggered at certain cycles.");
+	
 	// Debugger for event-driven simulator
 	command_line->RegisterString("--debug-esim <file>",
 			m2s_debug_esim,
@@ -474,6 +487,13 @@ void main_cpp(int argc, char **argv)
 	SI::Driver::ProcessOptions();
 	x86::Asm::ProcessOptions();
 	x86::Emu::ProcessOptions();
+
+	// Go to event-driven simulation configuration if it's been passed.
+	if (!m2s_esim_config.empty())
+	{
+		esim::EsimTestLoop(m2s_esim_config);
+		exit(0);
+	}
 
 	// Register architectures, runtimes, and drivers
 	RegisterArchitectures();
