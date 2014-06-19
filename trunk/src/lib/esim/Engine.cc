@@ -88,6 +88,108 @@ void Engine::SignalHandler(int signum)
 }
 
 
+void Engine::Schedule(EventType *event_type,
+		std::shared_ptr<EventFrame> event_frame,
+		int after,
+		int period)
+{
+	// Sanity
+	assert(after >= 0);
+	assert(event_frame != nullptr);
+
+	// Ignore event if engine is locked
+	if (locked)
+		return;
+
+	// Null event
+	if (event_type == nullptr || event_type == null_event_type)
+	{
+		debug << misc::fmt("[%.2fns] Null event discarded\n",
+				(double) current_time / 1000);
+		return;
+	}
+
+	// Calculate absolute time for the event based on the event's frequency
+	// domain. First, get the actual current time for the current frequency
+	// domain, then add the time after which the event should be scheduled.
+	FrequencyDomain *frequency_domain = event_type->getFrequencyDomain();
+	long long when = current_time / frequency_domain->getCycleTime() *
+			frequency_domain->getCycleTime() +
+			frequency_domain->getCycleTime() * after;
+
+	// Create new event and insert it in the event list
+	events.emplace(new Event(event_type, event_frame, when, period));
+
+	// Debug
+	debug << misc::fmt("[%.2fns] Event '%s/%s' scheduled for [%.2fns]\n",
+			(double) current_time / 1000,
+			frequency_domain->getName().c_str(),
+			event_type->getName().c_str(),
+			(double) when / 1000);
+
+	// Warn when heap is overloaded
+	if (!max_inflight_events_warning && (int) events.size() >=
+			max_inflight_events)
+	{
+		max_inflight_events_warning = true;
+		misc::warning("[esim] Maximum number of %d "
+				"in-flight events exceeds\n\n%s",
+				max_inflight_events,
+				engine_err_max_inflight_events);
+	}
+}
+
+
+bool Engine::Drain(int max_events)
+{
+	// Keep track of the number of extracted events
+	int num_events = 0;
+
+	// Extract events
+	while (1)
+	{
+		// No more elements in heap
+		if (events.size() == 0)
+			return false;
+
+		// Get event from top of heap
+		Event *event = events.top().get();
+
+		// Debug
+		EventType *event_type = event->getType();
+		FrequencyDomain *frequency_domain = event_type->getFrequencyDomain();
+		debug << misc::fmt("[%.2fns] Event '%s/%s' drained\n",
+				(double) current_time / 1000,
+				frequency_domain->getName().c_str(),
+				event_type->getName().c_str());
+
+		// Set current time to the time of the event
+		current_time = event->getTime();
+
+		// One more events
+		num_events++;
+
+		// Run event handler
+		EventHandler event_handler = event_type->getEventHandler();
+		current_event = event;
+		event_handler(event_type, event->getFrame().get());
+		current_event = nullptr;
+
+		// Remove from heap
+		events.pop();
+
+		// Interrupt heap draining after exceeding a given number of
+		// events. This can happen if the event handlers of processed
+		// events keep scheduling new events, causing the heap to never
+		// finish draining.
+		if (num_events == max_events)
+			return true;
+	}
+
+	// Max not exceeded
+	return false;
+}
+
 Engine *Engine::getInstance()
 {
 	// Instance already exists
@@ -197,95 +299,59 @@ EventType *Engine::RegisterEventType(const std::string &name,
 }
 	
 	
-void Engine::Schedule(EventType *event_type,
-		const std::shared_ptr<EventFrame> &event_frame,
+void Engine::Next(EventType *event_type,
 		int after,
 		int period)
 {
-	// Event cannot be null. Empty events should be scheduled using
-	// null_event instead.
-	assert(event_type);
-	assert(after >= 0);
+	// Use current event's frame if this function is invoked within an
+	// event handler, or create new frame otherwise.
+	std::shared_ptr<EventFrame> event_frame;
+	if (current_event)
+		event_frame = current_event->getFrame();
+	else
+		event_frame.reset(new EventFrame);
 
-	// Ignore event if engine is locked
-	if (locked)
-		return;
-	
-	// Special event to be ignored
-	if (event_type == null_event_type)
-	{
-		debug << misc::fmt("[%.2fns] Null event discarded\n",
-				(double) current_time / 1000);
-		return;
-	}
-	
-	// Calculate absolute time for the event based on the event's frequency
-	// domain. First, get the actual current time for the current frequency
-	// domain, then add the time after which the event should be scheduled.
-	FrequencyDomain *frequency_domain = event_type->getFrequencyDomain();
-	long long when = current_time / frequency_domain->getCycleTime() *
-			frequency_domain->getCycleTime() +
-			frequency_domain->getCycleTime() * after;
-	
-	// Create new event and insert it in the event list
-	events.emplace(new Event(event_type, event_frame, when, period));
-		
-	// Debug
-	debug << misc::fmt("[%.2fns] Event '%s/%s' scheduled for [%.2fns]\n",
-			(double) current_time / 1000,
-			frequency_domain->getName().c_str(),
-			event_type->getName().c_str(),
-			(double) when / 1000);
-
-	// Warn when heap is overloaded
-	if (!max_inflight_events_warning && (int) events.size() >=
-			max_inflight_events)
-	{
-		max_inflight_events_warning = true;
-		misc::warning("[esim] Maximum number of %d "
-				"in-flight events exceeds\n\n%s",
-				max_inflight_events,
-				engine_err_max_inflight_events);
-	}
+	// Schedule event
+	Schedule(event_type, event_frame, after, period);
 }
 
 
 void Engine::Call(EventType *event_type,
-		const std::shared_ptr<EventFrame> &event_frame,
+		std::shared_ptr<EventFrame> event_frame,
+		EventType *return_event_type,
 		int after,
-		EventType *return_event_type)
+		int period)
 {
-	// Remember return event type and frame
-	assert(current_event->getFrame() != nullptr);
-	event_frame->setParentFrame(current_event->getFrame());
+	// Create new frame if none passed
+	if (event_frame == nullptr)
+		event_frame.reset(new EventFrame);
+
+	// Set return event
 	event_frame->setReturnEventType(return_event_type);
 
+	// Set return frame to the current event's frame, if this function is
+	// being invoked from an event handler
+	if (current_event)
+		event_frame->setParentFrame(current_event->getFrame());
+
 	// Schedule event
-	Schedule(event_type, event_frame, after);
+	Schedule(event_type, event_frame, after, period);
 }
 
 
 void Engine::Return(int after)
 {
-	// Check for stack underflow
-	if (current_event->getFrame()->getParentFrame() == nullptr)
-	{
-		// Throw exception
-		EventType *event_type = current_event->getType();
-		FrequencyDomain *frequency_domain =
-				event_type->getFrequencyDomain();
-		throw Exception(misc::fmt("Event stack underflow\n\n"
-				"\tCurrent time:            %lldps\n"
-				"\tFrequency domain:        %s\n"
-				"\tCurrent cycle in domain: %lld\n"
-				"\tCurrent event:           %s\n",
-				current_time,
-				frequency_domain->getName().c_str(),
-				frequency_domain->getCycle(),
-				event_type->getName().c_str()));
-	}
+	// This function must be invoked within an event handler
+	if (!current_event)
+		throw std::logic_error(misc::fmt("Function %s invoked "
+				"outside of an event handler", __FUNCTION__));
+
+	// If this is the bottom of the stack, ignore
+	if (current_event->getFrame()->getReturnEventType() == nullptr)
+		return;
 
 	// Schedule return event
+	assert(current_event->getFrame() != nullptr);
 	Schedule(current_event->getFrame()->getReturnEventType(),
 			current_event->getFrame()->getParentFrame(),
 			after);
@@ -365,6 +431,47 @@ void Engine::ParseConfiguration(const std::string &path)
 		}
 	}
 }
+
+
+#if 0
+void Engine::ProcessRemainingEvents()
+{
+	struct esim_event_t *event;
+	struct esim_event_info_t *event_info;
+	int err;
+
+	// Drain event heap. If the maximum number of finalization events was
+	// exceeded, issue a warning, and stop.
+	bool overflow = Drain(max_finalization_events);
+	if (overflow)
+	{
+		misc::warning("[esim] Maximum number of finalization events "
+				"exceeded\n\n%s",
+				engine_err_finalization);
+		return;
+	}
+
+	// Schedule all events that were planned for the end of the simulation
+	// with previous calls to ScheduleEnd()
+	while (linked_list_count(esim_end_event_list))
+	{
+		/* Extract one event */
+		linked_list_head(esim_end_event_list);
+		event = linked_list_get(esim_end_event_list);
+		linked_list_remove(esim_end_event_list);
+
+		/* Process it */
+		event_info = list_get(esim_event_info_list, event->id);
+		assert(event_info && event_info->handler);
+		event_info->handler(event->id, event->data);
+		esim_event_free(event);
+	}
+
+	// Drain heap again
+	Drain();
+}
+#endif
+
 
 
 }  // namespace esim
