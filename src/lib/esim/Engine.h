@@ -25,6 +25,7 @@
 #include <queue>
 #include <stdexcept>
 #include <vector>
+#include <map>
 
 #include <lib/cpp/Debug.h>
 #include <lib/cpp/String.h>
@@ -126,6 +127,19 @@ class Engine
 	// Signals received from the user are captured by this function
 	static void SignalHandler(int sig);
 
+	// Called by ParseConfiguration to process an action line.
+	void ParseAction(const std::string &line,
+			std::map<std::string, FrequencyDomain *> &domains,
+			std::map<std::string, EventType *> &events);
+	void ParseActionDomainRegistration(const std::vector<std::string> &tokens,
+			std::map<std::string, FrequencyDomain *> &domains);
+	void ParseActionEventRegistration(const std::vector<std::string> &tokens,
+			std::map<std::string, EventType *> &events,
+			std::map<std::string, FrequencyDomain *> &domains);
+	void ParseActionEventSchedule(const std::vector<std::string> &tokens,
+			std::map<std::string, EventType *> &events);
+	void ParseActionCreateCheck(const std::vector<std::string> &tokens);
+
 	// Schedule an event. See Next() for the meaning of the fields.
 	void Schedule(EventType *event_type,
 			std::shared_ptr<EventFrame> event_frame,
@@ -205,19 +219,21 @@ public:
 	/// \param name
 	///	Name of the event type
 	///
-	/// \param frequency_domain
-	///	Frequency domain for the event type, as returned by a previous
-	///	call to RegisterFrequencyDomain().
-	///
 	/// \param handler
 	///	Function to execute when the event is triggered.
+	///
+	/// \param frequency_domain
+	///	Frequency domain for the event type, as returned by a previous
+	///	call to RegisterFrequencyDomain().  This is only allowed to
+	///	left equal to nullptr for events that will only be scheduled
+	///	with EndEvent().
 	///
 	/// \return
 	///	This function returns a new object of type EvenType, which can
 	///	be used later in calls to ScheduleEvent().
 	EventType *RegisterEventType(const std::string &name,
-			FrequencyDomain *frequency_domain,
-			EventHandler handler);
+			EventHandler handler,
+			FrequencyDomain *frequency_domain = nullptr);
 
 	/// Schedule an event, using the event frame set by the last invocation
 	/// to Call() in the event chain, or nullptr if no event frame was set
@@ -319,6 +335,13 @@ public:
 	/// \param path
 	///	Path to the configuration file to load.
 	void ParseConfiguration(const std::string &path);
+
+	/// Run a test event-driven simulation with domains, events and checks
+	/// passed in a configuration file.
+
+	/// \param config_path
+	/// Path to the configuration file to load.
+	void TestLoop(const std::string &config_path);
 };
 
 

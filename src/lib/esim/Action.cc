@@ -32,85 +32,6 @@ misc::Debug EventChecks::debug;
 std::unique_ptr<EventChecks> EventChecks::instance;
 
 
-void EsimTestLoop(std::string &config_path)
-{
-	Engine *esim = Engine::getInstance();
-
-	// Capture errors from parsing config and running esim
-	try
-	{
-		esim->ParseConfiguration(config_path);
-		for (int i = 0; i < 1000; i++)
-		{
-			esim->ProcessEvents();
-		}
-	}
-	catch (std::runtime_error &e)
-	{
-		misc::fatal("%s", e.what());
-	}
-	catch (std::logic_error &e)
-	{
-		misc::panic("%s", e.what());
-	}
-
-	// Process checks.
-	EventChecks::getInstance()->DoChecks();
-}
-
-
-Action::Action(const std::string &line)
-{
-	// Parse the configuration line to a list of tokens.
-	std::vector<std::string> tokens;
-	misc::StringTokenize(line, tokens);
-
-	// Every action type has 3 arguments, so assert that we have 3 tokens.
-	if (tokens.size() != 3)
-		throw std::logic_error(misc::fmt("Esim action malformed.\n"
-				"Expected 3 tokens, but instead received %d.\n"
-				">\t%s",
-				(int) tokens.size(),
-				line.c_str()));
-
-	// Get the action type.
-	if (tokens.at(0) == "FrequencyDomain")
-		type = ActionTypeDomainRegistration;
-	else if (tokens.at(0) == "EventType")
-		type = ActionTypeEventRegistration;
-	else if (tokens.at(0) == "Event")
-		type = ActionTypeEventSchedule;
-	else if (tokens.at(0) == "CheckEvent")
-		type = ActionTypeCheck;
-	else
-		throw std::logic_error(misc::fmt("Esim action malformed.\n"
-				"Invalid action type '%s'.\n"
-				">\t%s", tokens.at(0).c_str(), line.c_str()));
-
-	// Store the action specific information.
-	if (type == ActionTypeDomainRegistration)
-	{
-		domain_registration_name = tokens.at(1);
-		domain_registration_frequency = misc::StringToInt(tokens.at(2));
-	}
-	else if (type == ActionTypeEventRegistration)
-	{
-		event_registration_name = tokens.at(1);
-		event_registration_domain = tokens.at(2);
-	}
-	else if (type == ActionTypeEventSchedule)
-	{
-		event_schedule_name = tokens.at(1);
-		event_schedule_cycle = misc::StringToInt(tokens.at(2));
-	}
-	else if (type == ActionTypeCheck)
-	{
-		check_name = tokens.at(1);
-		check_time = misc::StringToInt64(tokens.at(2));
-	}
-}
-
-
 EventChecks::EventChecks()
 {
 	debug.setPath("stderr");
@@ -130,7 +51,7 @@ EventChecks *EventChecks::getInstance()
 }
 
 
-void EventChecks::EventCheckHandler(EventType *event, EventFrame *frame)
+void EventChecks::ActionEventHandler(EventType *event, EventFrame *frame)
 {
 	// Add the event name and the current time to the list of events
 	// that have happened.
@@ -138,6 +59,13 @@ void EventChecks::EventCheckHandler(EventType *event, EventFrame *frame)
 	Engine *esim = Engine::getInstance();
 	EventInfo new_event(event->getName(), esim->getTime());
 	checks->AddEvent(new_event);
+}
+
+
+void EventChecks::DoChecksHandler(EventType *event, EventFrame *frame)
+{
+	EventChecks *checks = EventChecks::getInstance();
+	checks->DoChecks();
 }
 
 
@@ -163,11 +91,11 @@ void EventChecks::DoChecks()
 		for (unsigned c_num = 0; c_num < checks.size(); c_num++)
 		{
 			// Move to next check if names don't match.
-			if (checks.at(c_num).name != events.at(e_num).name)
+			if (checks[c_num].name != events[e_num].name)
 				continue;
 
 			// Move to the next check if times don't match.
-			if (checks.at(c_num).time != events.at(e_num).time)
+			if (checks[c_num].time != events[e_num].time)
 				continue;
 
 			// This check matches the event, so remove the check.
@@ -181,8 +109,8 @@ void EventChecks::DoChecks()
 			passed = false;
 			debug << "Event has no corresponding check.\n";
 			debug << misc::fmt("\t%s at %lld\n",
-					events.at(e_num).name.c_str(),
-					events.at(e_num).time);
+					events[e_num].name.c_str(),
+					events[e_num].time);
 		}
 	}
 
@@ -195,7 +123,7 @@ void EventChecks::DoChecks()
 		debug << misc::fmt("Extra checks left over; %d events weren't "
 					"scheduled.\n",
 					(int) checks.size());
-		for (auto check : checks)
+		for (auto &check : checks)
 		{
 			debug << misc::fmt("\t%s at %lld\n",
 					check.name.c_str(), check.time);

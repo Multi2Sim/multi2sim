@@ -34,109 +34,12 @@ class EventType;
 class EventFrame;
 
 
-void EsimTestLoop(std::string &config_path);
-
-
-enum ActionType
-{
-	ActionTypeDomainRegistration = 0,
-	ActionTypeEventRegistration,
-	ActionTypeEventSchedule,
-	ActionTypeCheck
-};
-
-
-class Action
-{
-	enum ActionType type;
-
-	std::string domain_registration_name;
-	int domain_registration_frequency;
-
-	std::string event_registration_name;
-	std::string event_registration_domain;
-
-	std::string event_schedule_name;
-	int event_schedule_cycle;
-
-	std::string check_name;
-	long long check_time;
-
-	// union {
-	// 	struct {
-	// 		std::string *name;
-	// 		int frequency;
-	// 	} domain_registration;
-
-	// 	struct {
-	// 		std::string *name;
-	// 		std::string *domain;
-	// 	} event_registration;
-
-	// 	struct {
-	// 		std::string *name;
-	// 		int cycle;
-	// 	} event_schedule;
-
-	// 	struct {
-	// 		std::string *name;
-	// 		long long time;
-	// 	} check;
-	// };
-
-public:
-	Action(const std::string &line);
-
-	enum ActionType getType() { return type; }
-
-	std::string getDomainRegistrationName()
-	{
-		return domain_registration_name;
-	}
-
-	int getDomainRegistrationFrequency()
-	{
-		return domain_registration_frequency;
-	}
-
-	std::string getEventRegistrationName()
-	{
-		return event_registration_name;
-	}
-
-	std::string getEventRegistrationDomain()
-	{
-		return event_registration_domain;
-	}
-
-	std::string getEventScheduleName()
-	{
-		return event_schedule_name;
-	}
-
-	int getEventScheduleCycle()
-	{
-		return event_schedule_cycle;
-	}
-
-	std::string getCheckName()
-	{
-		return check_name;
-	}
-	
-	long long getCheckTime()
-	{
-		return check_time;
-	}
-};
-
-
 struct EventInfo
 {
 	std::string name;
 	long long time;
 
-	EventInfo(std::string name, long long time)
+	EventInfo(const std::string &name, long long time)
 			:
 			name(name),
 			time(time)
@@ -164,18 +67,22 @@ class EventChecks
 	EventChecks();
 
 public:
-	/// Obtain the instance of the event-driven simulator singleton.
+
+	/// Obtain the instancesvn  of the event-driven simulator singleton.
 	static EventChecks *getInstance();
 
 	/// Event handler that can be registerd with esim that will add
 	/// whatever events it's called for to the \a events vector.
-	static void EventCheckHandler(EventType *, EventFrame *);
+	static void ActionEventHandler(EventType *, EventFrame *);
+
+	/// Event handler that calls the \a DoChecks method.
+	static void DoChecksHandler(EventType *, EventFrame *);
 
 	/// Add a check that should be made.
-	void AddCheck(EventInfo event) { checks.push_back(event); }
+	void AddCheck(const EventInfo &event) { checks.push_back(event); }
 
 	/// Add event info for an event that happened.
-	void AddEvent(EventInfo event) { events.push_back(event); }
+	void AddEvent(const EventInfo &event) { events.push_back(event); }
 
 	/// Check that events were scheduled when they should have been.  This
 	/// should be called after simulation is done.
