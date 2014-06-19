@@ -252,6 +252,12 @@ public:
 		debug.setPath(path);
 		debug.setPrefix("[esim]");
 	}
+
+	/// Load and process a configuration file for event-driven simulation.
+	///
+	/// \param path
+	///	Path to the configuration file to load.
+	void ParseConfiguration(const std::string &path);
 };
 
 
