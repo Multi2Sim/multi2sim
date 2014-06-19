@@ -366,6 +366,11 @@ void Context::LoadBinary()
 
 	// Stack
 	LoadStack();
+
+	// Register initialization
+	regs.setSP(loader->environ_base);
+	regs.setPC(loader->interp.empty() ? loader->prog_entry
+			: loader->interp_prog_entry);
 }
 
 } // namespace mips
