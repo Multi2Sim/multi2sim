@@ -113,7 +113,7 @@ void Driver::RegisterOptions()
 void Driver::ProcessOptions()
 {
 	debug.setPath(debug_file);
-	debug.setPrefix("[Kepler]");
+	debug.setPrefix("[Kepler driver]");
 }
 
 
