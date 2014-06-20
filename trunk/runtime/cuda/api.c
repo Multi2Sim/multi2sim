@@ -34,6 +34,7 @@
 #include "function.h"
 #include "list.h"
 #include "mhandle.h"
+#include "misc.h"
 #include "module.h"
 #include "stream.h"
 
@@ -54,7 +55,7 @@ struct cuda_version_t
 };
 
 /* Debug */
-static int cuda_debug_enable;
+static FILE *cuda_debug_file;
 
 /* Error */
 char *cuda_err_not_impl =
@@ -77,36 +78,44 @@ char *cuda_err_native =
 		__func__, cuda_err_not_impl)
 
 
+
+
 /*
  * M2S CUDA Internal Functions
  */
 
-/* If the environment variable 'M2S_CUDA_DEBUG' is set to 1, the Multi2Sim CUDA
- * Runtime/Driver library will dump debugging information about CUDA calls,
- * argument values, intermediate actions, and return values. */
+/* Environment variable M2S_CUDA_DEBUG specifies debug information for the
+ * CUDA runtime. */
 void cuda_debug(char *fmt, ...)
 {
 	va_list va;
 	char str[1024];
+	char *cuda_debug_file_name;
 	static int cuda_debug_init = 0;
 
 	/* Initialize debug */
-	if (! cuda_debug_init)
+	if (!cuda_debug_init)
 	{
 		cuda_debug_init = 1;
-		cuda_debug_enable = atoi(getenv("M2S_CUDA_DEBUG"));
+		cuda_debug_file_name = getenv("M2S_CUDA_DEBUG");
+		if (cuda_debug_file_name)
+		{
+			cuda_debug_file = file_open_for_write(cuda_debug_file_name);
+			if (!cuda_debug_file)
+				fatal("%s: cannot open debug output file",
+						cuda_debug_file_name);
+		}
 	}
 
 	/* Exit if not enabled */
-	
-         if (! cuda_debug_enable)
+         if (!cuda_debug_file)
 		return;
 
 	/* Reconstruct message in 'str' first. This is done to avoid multiple
 	 * calls to 'printf', that can have race conditions among threads. */
 	va_start(va, fmt);
 	vsnprintf(str, sizeof str, fmt, va);
-	fprintf(stderr, "[libm2s-cuda] %s\n", str); // Get_time how? 
+	fprintf(stderr, "[libm2s-cuda] %s\n", str);
 }
 
 void versionCheck(void)
