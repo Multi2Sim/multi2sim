@@ -25,42 +25,37 @@
 
 #include "Emu.h"
 #include "Grid.h"
-#include "isa.h"
 #include "Machine.h"
 #include "Thread.h"
 #include "ThreadBlock.h"
 #include "Warp.h"
-//#include "Wrapper.h"
 
-/*
- * Public Functions
- */
 
 namespace Kepler
 {
 
 Warp::Warp(ThreadBlock *thread_block, unsigned id)
 {
-	/* Initialization */
+	// Initialization
 	this->id = id + thread_block->getId() * thread_block->getWarpsInWorkgroup();
 	id_in_thread_block = id;
 	grid = thread_block->getGrid();
 	this->thread_block = thread_block;
 
-	/* Allocate threads */
+	// Allocate threads
 	if (id < thread_block->getWarpsInWorkgroup() - 1)
 		thread_count = warp_size;
 	else
 		thread_count = grid->getThreadBlockSize() -
 		(thread_block->getWarpsInWorkgroup() - 1) * warp_size;
 
-	/* Instruction */
+	// Instruction
 	inst = new Inst();
 	inst_size = 8;
 	inst_buffer = grid->getInstBuffer();
 	inst_buffer_size = grid->getInstBufferSize();
 
-	/* Sync stack */
+	// Sync stack
 	sync_stack_top = 0;
 	//sync_stack.entries[sync_stack_top].active_thread_mask =
 	//		bit_map_create(thread_count);
@@ -70,12 +65,12 @@ Warp::Warp(ThreadBlock *thread_block, unsigned id)
 	sync_stack.entries[sync_stack_top].active_thread_mask =
 			((unsigned long long)1 << thread_count) - 1;
 
-	/* Reset flags */
+	// Reset flags
 	at_barrier_thread_count = 0;
 	finished_thread_count = 0;
 	finished_emu = false;		//make it clear
 
-	/* simulation performance */
+	// simulation performance
 	emu_inst_count = 0;
 	emu_time_start = 0;
 	emu_time_end = 0;
@@ -100,18 +95,18 @@ void Warp::Execute()
 
 	InstFunc InstFunction;
 
-	/* Get instruction */
+	// Get instruction
 	inst_bytes.as_uint[0] = inst_buffer[pc / inst_size] >> 32;
 	inst_bytes.as_uint[1] = inst_buffer[pc / inst_size];
 	//kpl_isa_debug("%s:%d: warp[%d] executes instruction [0x%x] 0x%016llx\n",
 		//	__FILE__, __LINE__, this->id, this->pc, inst_bytes.as_dword);
 
-	/* Decode instruction */
+	// Decode instruction
 	if( pc % 64)
 	{
 		inst->Decode((const char *) &inst_bytes, pc);
 
-		/* Execute instruction */
+		// Execute instruction
 		inst_op = (InstOpcode) inst->getOpcode();
 		if (!inst_op)
 			std::cerr << __FILE__ << ":" << __LINE__ << ": unrecognized instruction ("
@@ -122,7 +117,7 @@ void Warp::Execute()
 			(*InstFunction)(thread_id->get(), inst);
 		}
 	}
-	/* Finish */
+	// Finish
 
 	if (finished_emu)
 	{
@@ -144,7 +139,7 @@ void Warp::Execute()
 
 	}
 
-	/* Update PC */
+	// Update PC
 	if( pc % 64 )
 	{
         inst_count++;					//other counter?
@@ -162,7 +157,7 @@ void Warp::Execute()
     	finished_emu = true;
     	thread_block->incWarpsCompletedEmu();
     }
-	/* Stats */
+	// Stats
 
 	//asEmu(emu)->instructions++; // no parent class any more
 }

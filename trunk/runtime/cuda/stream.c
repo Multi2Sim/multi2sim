@@ -75,7 +75,7 @@ void cuMemcpyAsyncImpl(struct cuda_stream_command_t *command)
 			warning("%s: host to host and device to device async memory copy \
 					not implemented.\n", __func__);
 	}
-	else if (active_device->type == CUDA_DEVICE_KEPLER)
+/*	else if (active_device->type == CUDA_DEVICE_KEPLER)
 	{
 		if ((! src_is_device) && dst_is_device)
 			ret = syscall(CUDA_SYS_CODE, cuda_call_cuKplMemcpyHtoD, dst, src,
@@ -83,11 +83,11 @@ void cuMemcpyAsyncImpl(struct cuda_stream_command_t *command)
 		else if (src_is_device && (! dst_is_device))
 			ret = syscall(CUDA_SYS_CODE, cuda_call_cuKplMemcpyDtoH, dst, src,
 					size);
-		/* TODO: host2host and device2device */
+		// TODO: host2host and device2device
 		else
 			warning("%s: host to host and device to device async memory copy \
 					not implemented.\n", __func__);
-	}
+	}*/
 	else
 		fatal("device not supported.\n");
 
@@ -160,8 +160,8 @@ void cuLaunchKernelImpl(struct cuda_stream_command_t *command)
 	/* Syscall */
 	if (active_device->type == CUDA_DEVICE_FERMI)
 		ret = syscall(CUDA_SYS_CODE, cuda_call_cuFrmLaunchKernel, sys_args);
-	else if (active_device->type == CUDA_DEVICE_KEPLER)
-		ret = syscall(CUDA_SYS_CODE, cuda_call_cuKplLaunchKernel, sys_args);
+	//else if (active_device->type == CUDA_DEVICE_KEPLER)
+	//	ret = syscall(CUDA_SYS_CODE, cuda_call_cuKplLaunchKernel, sys_args);
 	else
 		fatal("device not supported.\n");
 

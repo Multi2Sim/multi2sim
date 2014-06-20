@@ -53,20 +53,6 @@
 #include <arch/kepler/asm/Wrapper.h>
 #include <arch/mips/asm/Wrapper.h>
 
-#include <arch/kepler/emu/emu.h>
-#include <arch/kepler/emu/grid.h>
-#include <arch/kepler/emu/isa.h>
-#include <arch/kepler/emu/thread.h>
-#include <arch/kepler/emu/thread-block.h>
-#include <arch/kepler/emu/warp.h>
-#include <arch/kepler/emu/Wrapper.h>
-#include <arch/kepler/emu/Emu.h>
-#include <arch/kepler/emu/Grid.h>
-#include <arch/kepler/emu/isa.h>
-#include <arch/kepler/emu/Thread.h>
-#include <arch/kepler/emu/ThreadBlock.h>
-#include <arch/kepler/emu/Warp.h>
-
 #include <arch/mips/emu/context.h>
 #include <arch/mips/emu/isa.h>
 #include <arch/mips/timing/cpu.h>
@@ -201,9 +187,6 @@ static EvgGpu *evg_gpu;
 
 static struct FrmAsmWrap *frm_asm;
 static FrmEmu *frm_emu;
-
-static struct KplAsm *kpl_asm;
-static KplEmu *kpl_emu;
 
 static struct MIPSAsmWrap *mips_asm;
 static MIPSEmu *mips_emu;
@@ -2017,12 +2000,6 @@ static void m2s_init(void)
 	CLASS_REGISTER(FrmGpu);
 	CLASS_REGISTER(FrmSM);
 
-	CLASS_REGISTER(KplEmu);
-	CLASS_REGISTER(KplThread);
-	CLASS_REGISTER(KplThreadBlock);
-	CLASS_REGISTER(KplWarp);
-	CLASS_REGISTER(KplGrid);
-
 	CLASS_REGISTER(MIPSEmu);
 	CLASS_REGISTER(MIPSContext);
 
@@ -2100,9 +2077,8 @@ static void m2s_loop(void)
 		 * of architectures actively running emulation, as well as the number of
 		 * architectures running an active timing simulation. */
 		
-                  //arch_run(&num_emu_active, &num_timing_active);
 		// Hacking for current Kepler emulator
-		arch_run(&num_emu_active, &num_timing_active, kpl_emu);
+		arch_run(&num_emu_active, &num_timing_active);
 
 		/* Event-driven simulation. Only process events and advance to next global
 		 * simulation cycle if any architecture performed a useful timing simulation.
@@ -2210,15 +2186,6 @@ int main(int argc, char **argv)
 		struct FrmAsmWrap *as;
 		as = FrmAsmWrapCreate();
 		FrmAsmWrapDisassembleBinary(as, frm_disasm_file_name);
-		goto end;
-	}
-
-	/* Kepler disassembler tool */
-	if (*kpl_disasm_file_name)
-	{
-		struct KplAsm *as = KplAsmCreate();
-		KplAsmDisassembleBinary(as, kpl_disasm_file_name);
-		KplAsmFree(as);
 		goto end;
 	}
 
@@ -2418,16 +2385,9 @@ int main(int argc, char **argv)
 	}
 	arch_set_emu(arch_southern_islands, asEmu(si_emu));
 
-	//kpl_asm = KplAsmCreate();
-	//kpl_emu = new(KplEmu, kpl_asm);
-	kpl_asm = KplAsmCreate();
-	kpl_emu = KplWrapEmuCreate(kpl_asm);
-
 	/* Drivers */
 	opencl_driver = new(OpenclDriver, x86_emu, si_emu);
 	opencl_old_driver = new(OpenclOldDriver, x86_emu, evg_emu);
-	/* Adding Kpl parameter */
-	cuda_driver = new(CudaDriver, x86_emu, frm_emu, kpl_emu);
 
 #ifdef HAVE_OPENGL
 	opengl_driver = new(OpenglDriver, x86_emu, si_emu);
