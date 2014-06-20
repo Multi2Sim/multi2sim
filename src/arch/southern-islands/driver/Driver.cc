@@ -29,7 +29,7 @@ const char *Driver::call_name[CallCodeCount] =
 {
 	"Invalid",  // For code 0
 #define DEFCALL(name, code) #name,
-#include "Driver.dat"
+#include "Driver.def"
 #undef DEFCALL
 };
 
@@ -39,7 +39,7 @@ const Driver::CallFn Driver::call_fn[CallCodeCount] =
 {
 	nullptr,  // For code 0
 #define DEFCALL(name, code) &Driver::Call##name,
-#include "Driver.dat"
+#include "Driver.def"
 #undef DEFCALL
 };
 

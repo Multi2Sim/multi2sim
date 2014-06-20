@@ -52,7 +52,7 @@ class Driver : public comm::Driver
 	// Singletons have private constructors
 	Driver() : comm::Driver("Southern Islands", "/dev/southern-islands") { }
 
-	// Enumeration with all ABI call codes. Each entry of Driver.dat will
+	// Enumeration with all ABI call codes. Each entry of Driver.def will
 	// expand into an assignment. For example, entry
 	//
 	//	DEFCALL(Init, 1)
@@ -66,12 +66,12 @@ class Driver : public comm::Driver
 	enum
 	{
 #define DEFCALL(name, code) CallCode##name = code,
-#include "Driver.dat"
+#include "Driver.def"
 #undef DEFCALL
 		CallCodeCount
 	};
 
-	// ABI call functions. Each entry in Driver.dat will expand into a
+	// ABI call functions. Each entry in Driver.def will expand into a
 	// function prototype. For example, entry
 	//
 	//	DEFCALL(Init, 1)
@@ -82,7 +82,7 @@ class Driver : public comm::Driver
 	//
 #define DEFCALL(name, code) int Call##name(mem::Memory *memory, \
 		unsigned args_ptr);
-#include "Driver.dat"
+#include "Driver.def"
 #undef DEFCALL
 
 	// System call names
