@@ -17,7 +17,10 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <fcntl.h>
+
 #include "../include/cuda.h"
+#include "debug.h"
 #include "device.h"
 #include "list.h"
 #include "mhandle.h"
@@ -25,7 +28,7 @@
 
 
 /* Create a device */
-struct cuda_device_t *cuda_device_create(enum cuda_device_type_t dev_type)
+struct cuda_device_t *cuda_device_create()
 {
 	struct cuda_device_t *device;
 	CUstream default_stream;
@@ -116,9 +119,18 @@ struct cuda_device_t *cuda_device_create(enum cuda_device_type_t dev_type)
 	device->attributes[CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR] = 5;
 	device->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE1D_MIPMAPPED_WIDTH] = 16384;
 	
+	/* Create stream list */
 	device->stream_list = list_create();
 	default_stream = cuda_stream_create();
 	list_enqueue(device->stream_list, default_stream);
+
+	/* Open driver communication system */
+	device->fd = open("/dev/kepler", O_RDWR);
+	if (device->fd < 0)
+		fatal("[CUDA Runtime] Could not open /dev/kepler\n\n"
+			"\tYour application is trying to access a virtual device only\n"
+			"\tavailable on Multi2Sim. You cannot run this application\n"
+			"\tnatively.\n");
 
 	/* Add to device list */
 	list_add(device_list, device);

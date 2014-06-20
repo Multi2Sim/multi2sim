@@ -17,18 +17,50 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <lib/cpp/String.h>
+#include <mem-system/Memory.h>
+
 #include "Driver.h"
 
 
 namespace Kepler
 {
 
+// Driver version numbers
+const int Driver::version_major = 2;
+const int Driver::version_minor = 0;
+
 
 /// ABI Call 'Init'
 ///
-/// ...
+/// This function return the version information of the driver.
+///
+/// \param version_ptr
+///	This argument is a pointer to a data structure in guest memory where
+///	the driver will place version information. The data structure has the
+///	following layout:
+///
+///	struct {
+///		int major;
+///		int minor;
+///	};
+///
+/// \return
+///	The function always returns 0.
 int Driver::CallInit(mem::Memory *memory, unsigned args_ptr)
 {
+	// Read arguments
+	unsigned version_ptr;
+	memory->Read(args_ptr, 4, (char *) &version_ptr);
+
+	// Debug
+	debug << misc::fmt("\tversion_ptr = 0x%x\n", version_ptr);
+
+	// Return version numbers
+	memory->Write(version_ptr, 4, (char *) &version_major);
+	memory->Write(version_ptr + 4, 4, (char *) &version_minor);
+
+	// Success
 	return 0;
 }
 
