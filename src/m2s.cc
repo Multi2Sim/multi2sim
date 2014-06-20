@@ -23,6 +23,7 @@
 #include <arch/common/CallStack.h>
 #include <arch/common/Driver.h>
 #include <arch/common/Runtime.h>
+#include <arch/kepler/driver/Driver.h>
 #include <arch/mips/asm/Asm.h>
 #include <arch/mips/emu/Context.h>
 #include <arch/mips/emu/Emu.h>
@@ -148,6 +149,10 @@ void RegisterDrivers()
 	// HSA driver
 	HSA::Driver *hsa_driver = HSA::Driver::getInstance();
 	driver_pool->Register(hsa_driver);
+
+	// Kepler driver
+	Kepler::Driver *kepler_driver = Kepler::Driver::getInstance();
+	driver_pool->Register(kepler_driver);
 
 	// Southern Islands driver
 	SI::Driver *si_driver = SI::Driver::getInstance();
@@ -473,6 +478,7 @@ void main_cpp(int argc, char **argv)
 	HSA::Asm::RegisterOptions();
 	HSA::Driver::RegisterOptions();
 	HSA::Emu::RegisterOptions();
+	Kepler::Driver::RegisterOptions();
 	MIPS::Asm::RegisterOptions();
 	MIPS::Emu::RegisterOptions();
 	SI::Driver::RegisterOptions();
@@ -493,6 +499,7 @@ void main_cpp(int argc, char **argv)
 	HSA::Asm::ProcessOptions();
 	HSA::Driver::ProcessOptions();
 	HSA::Emu::ProcessOptions();
+	Kepler::Driver::ProcessOptions();
 	MIPS::Asm::ProcessOptions();
 	MIPS::Emu::ProcessOptions();
 	SI::Driver::ProcessOptions();

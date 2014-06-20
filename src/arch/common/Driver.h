@@ -51,7 +51,7 @@ public:
 	///
 	/// \param path
 	///	Path of the virtual device used to access the driver (e.g.
-	///	"/dev/southern-islands")
+	///	 `/dev/southern-islands`)
 	Driver(const std::string &name, const std::string &path);
 
 	/// Return the path of the virtual device

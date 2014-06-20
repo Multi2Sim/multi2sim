@@ -1,0 +1,5 @@
+DEFCALL(Init, 1)
+DEFCALL(MemAlloc, 2)
+DEFCALL(MemWrite, 3)
+DEFCALL(MemRead, 4)
+DEFCALL(LaunchKernel, 5)
