@@ -54,6 +54,9 @@
 // Context configuration file
 std::string m2s_context_config;
 
+// Debug information in CUDA runtime
+std::string m2s_cuda_debug;
+
 // Event-driven simulator configuration file
 std::string m2s_esim_config;
 
@@ -130,6 +133,9 @@ void RegisterRuntimes()
 {
 	// Get runtime pool
 	comm::RuntimePool *runtime_pool = comm::RuntimePool::getInstance();
+
+	// CUDA runtime
+	runtime_pool->Register("CUDA", "libCUDA", "libm2s-cuda");
 
 	// OpenCL runtime
 	runtime_pool->Register("OpenCL", "libOpenCL", "libm2s-opencl");
@@ -345,6 +351,20 @@ void RegisterOptions()
 			"available on systems with support for GTK 3.0 or "
 			"higher.");
 
+	//
+	// CUDA runtime options
+	//
+
+	// Category
+	command_line->setCategory("CUDA", "CUDA Runtime Options");
+
+	// Debug information
+	command_line->RegisterString("--cuda-debug <file>",
+			m2s_cuda_debug,
+			"File used in the CUDA runtime to dump debug "
+			"information related with CUDA ABI calls. This option "
+			"is equivalent to environment variable M2S_CUDA_DEBUG.");
+
 	
 	//
 	// OpenCL runtime options
@@ -387,6 +407,10 @@ void ProcessOptions()
 {
 	// Get environment
 	misc::Environment *environment = misc::Environment::getInstance();
+
+	// CUDA runtime debug
+	if (!m2s_cuda_debug.empty())
+		environment->addVariable("M2S_CUDA_DEBUG", m2s_cuda_debug);
 
 	// Call stack debugger
 	if (!m2s_debug_callstack.empty())
