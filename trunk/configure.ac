@@ -984,6 +984,7 @@ AC_CONFIG_FILES([
 
 		src/arch/kepler/Makefile
 		src/arch/kepler/asm/Makefile
+		src/arch/kepler/driver/Makefile
 		src/arch/kepler/emu/Makefile
 
 		src/arch/mips/Makefile
