@@ -40,6 +40,9 @@ __top_builddir__lib_libm2s_cuda_la_SOURCES = \
 	memory.c \
 	memory.h \
 	\
+	misc.c \
+	misc.h \
+	\
 	module.c \
 	module.h \
 	\
