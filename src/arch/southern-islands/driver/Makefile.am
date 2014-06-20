@@ -1,14 +1,17 @@
 lib_LIBRARIES = libdriver.a
 
 libdriver_a_SOURCES = \
+		\
 		Driver.h \
 		Driver.cc \
-		Driver.dat \
+		Driver.def \
 		DriverCall.cc \
-		Program.h \
-		Program.cc \
+		\
 		Kernel.h \
-		Kernel.cc
+		Kernel.cc \
+		\
+		Program.h \
+		Program.cc
 
 AM_CPPFLAGS = @M2S_INCLUDES@
 
