@@ -41,8 +41,6 @@ void cuMemcpyAsyncImpl(struct cuda_stream_command_t *command)
 	unsigned size = command->m_args.size;
 	int dst_is_device = 0;
 	int src_is_device = 0;
-	int ret;
-	extern char *cuda_err_native;
 
 	cuda_debug("CUDA stream command 'cuMemcpyAsync' running now");
 	cuda_debug("\tin: src_ptr = 0x%08x", src);
@@ -62,41 +60,21 @@ void cuMemcpyAsyncImpl(struct cuda_stream_command_t *command)
 	}
 
 	/* Syscall */
-	if (active_device->type == CUDA_DEVICE_FERMI)
-	{
-		if ((! src_is_device) && dst_is_device)
-			ret = syscall(CUDA_SYS_CODE, cuda_call_cuFrmMemcpyHtoD, dst, src,
-					size);
-		else if (src_is_device && (! dst_is_device))
-			ret = syscall(CUDA_SYS_CODE, cuda_call_cuFrmMemcpyDtoH, dst, src,
-					size);
-		/* TODO: host2host and device2device */
-		else
-			warning("%s: host to host and device to device async memory copy \
-					not implemented.\n", __func__);
-	}
-/*	else if (active_device->type == CUDA_DEVICE_KEPLER)
-	{
-		if ((! src_is_device) && dst_is_device)
-			ret = syscall(CUDA_SYS_CODE, cuda_call_cuKplMemcpyHtoD, dst, src,
-					size);
-		else if (src_is_device && (! dst_is_device))
-			ret = syscall(CUDA_SYS_CODE, cuda_call_cuKplMemcpyDtoH, dst, src,
-					size);
-		// TODO: host2host and device2device
-		else
-			warning("%s: host to host and device to device async memory copy \
-					not implemented.\n", __func__);
-	}*/
+	/*
+	if ((!src_is_device) && dst_is_device)
+		ret = syscall(CUDA_SYS_CODE, cuda_call_cuKplMemcpyHtoD, dst, src,
+				size);
+	else if (src_is_device && (! dst_is_device))
+		ret = syscall(CUDA_SYS_CODE, cuda_call_cuKplMemcpyDtoH, dst, src,
+				size);
 	else
-		fatal("device not supported.\n");
-
-	/* Check that we are running on Multi2Sim. If a program linked with this
-	 * library is running natively, system call CUDA_SYS_CODE is not
-	 * supported. */
-	if (ret)
-		fatal("native execution not supported.\n%s", cuda_err_native);
-
+		warning("%s: host to host and device to device async memory copy \
+				not implemented.\n", __func__);
+	else
+		fatal("device not supported.\n");*/
+	fatal("%s: not implemented", __FUNCTION__);
+	
+	/* Debug */
 	cuda_debug("CUDA stream command 'cuMemcpyAsync' completed now");
 }
 
@@ -123,7 +101,7 @@ void cuLaunchKernelImpl(struct cuda_stream_command_t *command)
 	CUstream hStream = command->k_args.stream;
 	int **kernelParams = (int **)command->k_args.kernel_params;
 	void **extra = command->k_args.extra;
-	unsigned sys_args[11];
+	//unsigned sys_args[11];
 	int ret;
 	extern char *cuda_err_native;
 
@@ -145,7 +123,7 @@ void cuLaunchKernelImpl(struct cuda_stream_command_t *command)
 	assert(blockDimX != 0 && blockDimY != 0 && blockDimZ != 0);
 
 	/* Syscall arguments */
-	sys_args[0] = f->id;
+	/*sys_args[0] = f->id;
 	sys_args[1] = gridDimX;
 	sys_args[2] = gridDimY;
 	sys_args[3] = gridDimZ;
@@ -155,15 +133,12 @@ void cuLaunchKernelImpl(struct cuda_stream_command_t *command)
 	sys_args[7] = sharedMemBytes;
 	sys_args[8] = (hStream ? hStream->id : 0);
 	sys_args[9] = (unsigned)kernelParams;
-	sys_args[10] = (unsigned)extra;
+	sys_args[10] = (unsigned)extra;*/
 
 	/* Syscall */
-	if (active_device->type == CUDA_DEVICE_FERMI)
-		ret = syscall(CUDA_SYS_CODE, cuda_call_cuFrmLaunchKernel, sys_args);
-	//else if (active_device->type == CUDA_DEVICE_KEPLER)
-	//	ret = syscall(CUDA_SYS_CODE, cuda_call_cuKplLaunchKernel, sys_args);
-	else
-		fatal("device not supported.\n");
+	//ret = syscall(CUDA_SYS_CODE, cuda_call_cuKplLaunchKernel, sys_args);
+	ret = 0;
+	fatal("%s: not implemented", __FUNCTION__);
 
 	/* Check that we are running on Multi2Sim. If a program linked with this
 	 * library is running natively, system call CUDA_SYS_CODE is not
