@@ -138,8 +138,7 @@ class Asm
 
 public:
 
-	/// Return the single instance of the Kepler disassembler, and allocate
-	/// it if this is the first time the function is invoked.
+	/// Return instance of the singleton
 	static Asm *getInstance();
 
 	/// Return a pointer to the decoding table, which will be indexed by

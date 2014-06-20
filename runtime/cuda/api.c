@@ -859,8 +859,8 @@ CUresult cuMemAlloc(CUdeviceptr *dptr, size_t bytesize)
 	/* Syscall */
 	if (active_device->type == CUDA_DEVICE_FERMI)
 		ret = syscall(CUDA_SYS_CODE, cuda_call_cuFrmMemAlloc, dptr, bytesize);
-	else if (active_device->type == CUDA_DEVICE_KEPLER)
-		ret = syscall(CUDA_SYS_CODE, cuda_call_cuKplMemAlloc, dptr, bytesize);
+	//else if (active_device->type == CUDA_DEVICE_KEPLER)
+	//	ret = syscall(CUDA_SYS_CODE, cuda_call_cuKplMemAlloc, dptr, bytesize);
 	else
 		fatal("device not supported.\n");
 
@@ -1101,9 +1101,9 @@ CUresult cuMemcpyHtoD(CUdeviceptr dstDevice, const void *srcHost,
 	if (active_device->type == CUDA_DEVICE_FERMI)
 		ret = syscall(CUDA_SYS_CODE, cuda_call_cuFrmMemcpyHtoD, dstDevice,
 				srcHost, ByteCount);
-	else if (active_device->type == CUDA_DEVICE_KEPLER)
-		ret = syscall(CUDA_SYS_CODE, cuda_call_cuKplMemcpyHtoD, dstDevice,
-				srcHost, ByteCount);
+	//else if (active_device->type == CUDA_DEVICE_KEPLER)
+	//	ret = syscall(CUDA_SYS_CODE, cuda_call_cuKplMemcpyHtoD, dstDevice,
+	//			srcHost, ByteCount);
 	else
 		fatal("device not supported.\n");
 
@@ -1140,9 +1140,9 @@ CUresult cuMemcpyDtoH(void *dstHost, CUdeviceptr srcDevice, size_t ByteCount)
 	if (active_device->type == CUDA_DEVICE_FERMI)
 		ret = syscall(CUDA_SYS_CODE, cuda_call_cuFrmMemcpyDtoH, dstHost,
 				srcDevice, ByteCount);
-	else if (active_device->type == CUDA_DEVICE_KEPLER)
-		ret = syscall(CUDA_SYS_CODE, cuda_call_cuKplMemcpyDtoH, dstHost,
-				srcDevice, ByteCount);
+	//else if (active_device->type == CUDA_DEVICE_KEPLER)
+	//	ret = syscall(CUDA_SYS_CODE, cuda_call_cuKplMemcpyDtoH, dstHost,
+	//			srcDevice, ByteCount);
 	else
 		fatal("device not supported.\n");
 
@@ -1351,9 +1351,9 @@ CUresult cuMemsetD8(CUdeviceptr dstDevice, unsigned char uc, size_t N)
 	if (active_device->type == CUDA_DEVICE_FERMI)
 		ret = syscall(CUDA_SYS_CODE, cuda_call_cuFrmMemcpyHtoD, dstDevice,
 			src_host, N);
-	else if (active_device->type == CUDA_DEVICE_KEPLER)
-		ret = syscall(CUDA_SYS_CODE, cuda_call_cuKplMemcpyHtoD, dstDevice,
-			src_host, N);
+	//else if (active_device->type == CUDA_DEVICE_KEPLER)
+	//	ret = syscall(CUDA_SYS_CODE, cuda_call_cuKplMemcpyHtoD, dstDevice,
+	//		src_host, N);
 	else
 		fatal("device not supported.\n");
 

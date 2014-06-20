@@ -159,8 +159,6 @@ int arch_get_sim_kind_detailed_count(void);
  * finish simulation, or whether to call the event-driven simulation.
  */
 
-//void arch_run(int *num_emu_active_ptr, int *num_timing_active_ptr);
-//Hacking for current Kepler emulator
-void arch_run(int *num_emu_active_ptr, int *num_timing_active_ptr, KplEmu* kpl_emu);
+void arch_run(int *num_emu_active_ptr, int *num_timing_active_ptr);
 
 #endif
