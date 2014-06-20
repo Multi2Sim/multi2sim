@@ -28,6 +28,9 @@ struct cuda_device_t
 	/* CUdevice is also an ID */
 	CUdevice device;
 
+	/* File descriptor, as returned by 'open' system call */
+	int fd;
+
 	/* Name */
 	char *name;
 
@@ -38,7 +41,7 @@ struct cuda_device_t
 	struct list_t *stream_list;
 };
 
-struct cuda_device_t *cuda_device_create(enum cuda_device_type_t dev_type);
+struct cuda_device_t *cuda_device_create();
 void cuda_device_free(struct cuda_device_t *device);
 
 

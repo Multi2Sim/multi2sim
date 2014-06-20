@@ -39,6 +39,10 @@ class Driver : public comm::Driver
 	// Unique instance of singleton
 	static std::unique_ptr<Driver> instance;
 
+	// Version numbers
+	static const int version_major;
+	static const int version_minor;
+
 	// Singletons have private constructors
 	Driver();
 

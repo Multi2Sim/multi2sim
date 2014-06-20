@@ -22,6 +22,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/ioctl.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -43,16 +44,9 @@
  * Global Variables
  */
 
-/* Version */
-#define CUDA_VERSION_MAJOR 1
-
-#define CUDA_VERSION_MINOR 1010
-
-struct cuda_version_t
-{
-	int major;
-	int minor;
-};
+/* Runtime version numbers */
+#define CUDA_VERSION_MAJOR 2
+#define CUDA_VERSION_MINOR 0
 
 /* Debug */
 static FILE *cuda_debug_file;
@@ -121,22 +115,26 @@ void cuda_debug(char *fmt, ...)
 
 void versionCheck(void)
 {
-	struct cuda_version_t version;
+	struct
+	{
+		int major;
+		int minor;
+	} version;
 	int ret;
 
 	/* Debug */
 	cuda_debug("CUDA driver internal function '%s'", __func__);
 
 	/* Version negotiation */
-	//ret = syscall(CUDA_SYS_CODE, cuda_call_versionCheck, &version);
-	ret = 0;
-	fatal("%s: not implemented", __FUNCTION__);
-
-	/* Check that we are running on Multi2Sim. If a program linked with this
-	 * library is running natively, system call CUDA_SYS_CODE is not
-	 * supported. */
+	unsigned args[1] = { (unsigned) &version };
+	ret = ioctl(active_device->fd, cuda_call_Init, args);
 	if (ret)
-		fatal("native execution not supported.\n%s", cuda_err_native);
+		fatal("[CUDA Runtime] %s: Unexpected error", __FUNCTION__);
+
+	/* Debug */
+	cuda_debug("\tReturned values:");
+	cuda_debug("\tmajor = %d", version.major);
+	cuda_debug("\tminor = %d", version.minor);
 
 	/* Check that exact major version matches */
 	if (version.major != CUDA_VERSION_MAJOR || version.minor <
@@ -159,9 +157,6 @@ CUresult cuInit(unsigned int Flags)
 	cuda_debug("CUDA driver API '%s'", __func__);
 	cuda_debug("\t(driver) '%s' in: Flags = %u", __func__, Flags);
 
-	/* Check version */
-	versionCheck();
-
 	/* Check input */
 	if (Flags != 0U)
 	{
@@ -177,8 +172,10 @@ CUresult cuInit(unsigned int Flags)
 	event_list = list_create();
 
 	/* Create one Fermi device and one Kepler device */
-	frm_device = cuda_device_create(CUDA_DEVICE_FERMI);
-	kpl_device = cuda_device_create(CUDA_DEVICE_KEPLER);
+	active_device = cuda_device_create();
+
+	/* Check version */
+	versionCheck();
 
 	/* Create memory object lists */
 	pinned_memory_object_list = list_create();
@@ -186,12 +183,6 @@ CUresult cuInit(unsigned int Flags)
 
 	/* Initialize mutex */
 	pthread_mutex_init(&cuda_mutex, NULL);
-
-	/* Fermi is selected by default. This could change if the user specifies
-	 * which device should be used in cudaSetDevice function */
-	active_device = frm_device;
-	if (getenv("KPL"))
-		active_device = kpl_device;
 
 	/* Syscall */
 	//ret = syscall(CUDA_SYS_CODE, cuda_call_cuInit);
@@ -215,7 +206,7 @@ CUresult cuDriverGetVersion(int *driverVersion)
 	cuda_debug("\t(driver) '%s' in: driverVersion = [%p]", __func__,
 			driverVersion);
 
-	if (! active_device)
+	if (!active_device)
 	{
 		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
 				CUDA_ERROR_NOT_INITIALIZED);
@@ -246,7 +237,7 @@ CUresult cuDeviceGet(CUdevice *device, int ordinal)
 	cuda_debug("\t(driver) '%s' in: device = [%p]", __func__, device);
 	cuda_debug("\t(driver) '%s' in: ordinal = %d", __func__, ordinal);
 
-	if (! active_device)
+	if (!active_device)
 	{
 		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
 				CUDA_ERROR_NOT_INITIALIZED);
@@ -275,7 +266,7 @@ CUresult cuDeviceGetCount(int *count)
 	cuda_debug("CUDA driver API '%s'", __func__);
 	cuda_debug("\t(driver) '%s' in: count = [%p]", __func__, count);
 
-	if (! active_device)
+	if (!active_device)
 	{
 		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
 				CUDA_ERROR_NOT_INITIALIZED);
@@ -299,7 +290,7 @@ CUresult cuDeviceGetName(char *name, int len, CUdevice dev)
 	cuda_debug("\t(driver) '%s' in: len = %d", __func__, len);
 	cuda_debug("\t(driver) '%s' in: dev = %d", __func__, dev);
 
-	if (! active_device)
+	if (!active_device)
 	{
 		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
 				CUDA_ERROR_NOT_INITIALIZED);
@@ -332,7 +323,7 @@ CUresult cuDeviceTotalMem(size_t *bytes, CUdevice dev)
 	cuda_debug("\t(driver) '%s' in: bytes = [%p]", __func__, bytes);
 	cuda_debug("\t(driver) '%s' in: dev = %d", __func__, dev);
 
-	if (! active_device)
+	if (!active_device)
 	{
 		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
 				CUDA_ERROR_NOT_INITIALIZED);
@@ -371,7 +362,7 @@ CUresult cuDeviceGetAttribute(int *pi, CUdevice_attribute attrib, CUdevice dev)
 	cuda_debug("\t(driver) '%s' in: attrib = %d", __func__, attrib);
 	cuda_debug("\t(driver) '%s' in: dev = %d", __func__, dev);
 
-	if (! active_device)
+	if (!active_device)
 	{
 		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
 				CUDA_ERROR_NOT_INITIALIZED);
@@ -404,7 +395,7 @@ CUresult cuDeviceGetProperties(CUdevprop *prop, CUdevice dev)
 	cuda_debug("\t(driver) '%s' in: prop = [%p]", __func__, prop);
 	cuda_debug("\t(driver) '%s' in: dev = %d", __func__, dev);
 
-	if (! active_device)
+	if (!active_device)
 	{
 		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
 				CUDA_ERROR_NOT_INITIALIZED);
@@ -465,7 +456,7 @@ CUresult cuDeviceComputeCapability(int *major, int *minor, CUdevice dev)
 	cuda_debug("\t(driver) '%s' in: minor = [%p]", __func__, minor);
 	cuda_debug("\t(driver) '%s' in: dev = %d", __func__, dev);
 
-	if (! active_device)
+	if (!active_device)
 	{
 		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
 				CUDA_ERROR_NOT_INITIALIZED);
@@ -501,7 +492,7 @@ CUresult cuCtxCreate(CUcontext *pctx, unsigned int flags, CUdevice dev)
 	cuda_debug("\t(driver) '%s' in: flags = %u", __func__, flags);
 	cuda_debug("\t(driver) '%s' in: dev = %d", __func__, dev);
 
-	if (! active_device)
+	if (!active_device)
 	{
 		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
 				CUDA_ERROR_NOT_INITIALIZED);
@@ -521,7 +512,7 @@ CUresult cuCtxDestroy(CUcontext ctx)
 	cuda_debug("CUDA driver API '%s'", __func__);
 	cuda_debug("\t(driver) '%s' in: ctx = [%p]", __func__, ctx);
 
-	if (! active_device)
+	if (!active_device)
 	{
 		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
 				CUDA_ERROR_NOT_INITIALIZED);
@@ -613,7 +604,7 @@ CUresult cuCtxGetApiVersion(CUcontext ctx, unsigned int *version)
 	cuda_debug("\t(driver) '%s' in: ctx = [%p]", __func__, ctx);
 	cuda_debug("\t(driver) '%s' in: version = [%p]", __func__, version);
 
-	if (! active_device)
+	if (!active_device)
 	{
 		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
 				CUDA_ERROR_NOT_INITIALIZED);
@@ -654,7 +645,7 @@ CUresult cuModuleLoad(CUmodule *module, const char *fname)
 	cuda_debug("\t(driver) '%s' in: module = [%p]", __func__, module);
 	cuda_debug("\t(driver) '%s' in: fname = [%p] %s", __func__, fname, fname);
 
-	if (! active_device)
+	if (!active_device)
 	{
 		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
 				CUDA_ERROR_NOT_INITIALIZED);
@@ -707,7 +698,7 @@ CUresult cuModuleUnload(CUmodule hmod)
 	cuda_debug("CUDA driver API '%s'", __func__);
 	cuda_debug("\t(driver) '%s' in: hmod = [%p]", __func__, hmod);
 
-	if (! active_device)
+	if (!active_device)
 	{
 		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
 				CUDA_ERROR_NOT_INITIALIZED);
@@ -742,7 +733,7 @@ CUresult cuModuleGetFunction(CUfunction *hfunc, CUmodule hmod, const char *name)
 	cuda_debug("\t(driver) '%s' in: hmod = [%p]", __func__, hmod);
 	cuda_debug("\t(driver) '%s' in: name = [%p] %s", __func__, name, name);
 
-	if (! active_device)
+	if (!active_device)
 	{
 		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
 				CUDA_ERROR_NOT_INITIALIZED);
@@ -833,7 +824,7 @@ CUresult cuMemGetInfo(size_t *free, size_t *total)
 	cuda_debug("\t(driver) '%s' in: free = [%p]", __func__, free);
 	cuda_debug("\t(driver) '%s' in: total = [%p]", __func__, total);
 
-	if (! active_device)
+	if (!active_device)
 	{
 		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
 				CUDA_ERROR_NOT_INITIALIZED);
@@ -866,7 +857,7 @@ CUresult cuMemAlloc(CUdeviceptr *dptr, size_t bytesize)
 	cuda_debug("\t(driver) '%s' in: device_ptr = [%p]", __func__, dptr);
 	cuda_debug("\t(driver) '%s' in: bytesize = %d", __func__, bytesize);
 
-	if (! active_device)
+	if (!active_device)
 	{
 		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
 				CUDA_ERROR_NOT_INITIALIZED);
@@ -914,7 +905,7 @@ CUresult cuMemFree(CUdeviceptr dptr)
 	cuda_debug("CUDA driver API '%s'", __func__);
 	cuda_debug("\t(driver) '%s' in: device_ptr = 0x%08x", __func__, dptr);
 
-	if (! active_device)
+	if (!active_device)
 	{
 		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
 				CUDA_ERROR_NOT_INITIALIZED);
@@ -953,7 +944,7 @@ CUresult cuMemAllocHost(void **pp, size_t bytesize)
 	cuda_debug("\t(driver) '%s' in: pp = [%p]", __func__, pp);
 	cuda_debug("\t(driver) '%s' in: bytesize = %d", __func__, bytesize);
 
-	if (! active_device)
+	if (!active_device)
 	{
 		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
 				CUDA_ERROR_NOT_INITIALIZED);
@@ -977,7 +968,7 @@ CUresult cuMemFreeHost(void *p)
 	cuda_debug("CUDA driver API '%s'", __func__);
 	cuda_debug("\t(driver) '%s' in: p = [%p]", __func__, p);
 
-	if (! active_device)
+	if (!active_device)
 	{
 		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
 				CUDA_ERROR_NOT_INITIALIZED);
@@ -1001,7 +992,7 @@ CUresult cuMemHostAlloc(void **pp, size_t bytesize, unsigned int Flags)
 	cuda_debug("\t(driver) '%s' in: bytesize = %d", __func__, bytesize);
 	cuda_debug("\t(driver) '%s' in: Flags = %u", __func__, Flags);
 
-	if (! active_device)
+	if (!active_device)
 	{
 		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
 				CUDA_ERROR_NOT_INITIALIZED);
@@ -1111,7 +1102,7 @@ CUresult cuMemcpyHtoD(CUdeviceptr dstDevice, const void *srcHost,
 	cuda_debug("\t(driver) '%s' in: srcHost = [%p]", __func__, srcHost);
 	cuda_debug("\t(driver) '%s' in: ByteCount = %d", __func__, ByteCount);
 
-	if (! active_device)
+	if (!active_device)
 	{
 		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
 				CUDA_ERROR_NOT_INITIALIZED);
@@ -1146,7 +1137,7 @@ CUresult cuMemcpyDtoH(void *dstHost, CUdeviceptr srcDevice, size_t ByteCount)
 	cuda_debug("\t(driver) '%s' in: srcDevice = 0x%08x", __func__, srcDevice);
 	cuda_debug("\t(driver) '%s' in: ByteCount = %d", __func__, ByteCount);
 
-	if (! active_device)
+	if (!active_device)
 	{
 		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
 				CUDA_ERROR_NOT_INITIALIZED);
@@ -1250,7 +1241,7 @@ CUresult cuMemcpyAsync(CUdeviceptr dst, CUdeviceptr src, size_t ByteCount,
 	cuda_debug("\t(driver) '%s' in: ByteCount = %d", __func__, ByteCount);
 	cuda_debug("\t(driver) '%s' in: hStream = [%p]", __func__, hStream);
 
-	if (! active_device)
+	if (!active_device)
 	{
 		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
 				CUDA_ERROR_NOT_INITIALIZED);
@@ -1351,7 +1342,7 @@ CUresult cuMemsetD8(CUdeviceptr dstDevice, unsigned char uc, size_t N)
 	cuda_debug("\t(driver) '%s' in: uc = 0x%x", __func__, uc);
 	cuda_debug("\t(driver) '%s' in: N = %d", __func__, N);
 
-	if (! active_device)
+	if (!active_device)
 	{
 		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
 				CUDA_ERROR_NOT_INITIALIZED);
@@ -1428,7 +1419,7 @@ CUresult cuMemsetD8Async(CUdeviceptr dstDevice, unsigned char uc, size_t N,
 	cuda_debug("\t(driver) '%s' in: N = %d", __func__, N);
 	cuda_debug("\t(driver) '%s' in: hStream = [%p]", __func__, hStream);
 
-	if (! active_device)
+	if (!active_device)
 	{
 		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
 				CUDA_ERROR_NOT_INITIALIZED);
@@ -1565,7 +1556,7 @@ CUresult cuStreamCreate(CUstream *phStream, unsigned int Flags)
 	cuda_debug("\t(driver) '%s' in: phStream = [%p]", __func__, phStream);
 	cuda_debug("\t(driver) '%s' in: Flags = %d", __func__, Flags);
 
-	if (! active_device)
+	if (!active_device)
 	{
 		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
 				CUDA_ERROR_NOT_INITIALIZED);
@@ -1612,7 +1603,7 @@ CUresult cuStreamWaitEvent(CUstream hStream, CUevent hEvent, unsigned int Flags)
 	cuda_debug("\t(driver) '%s' in: hEvent = [%p]", __func__, hEvent);
 	cuda_debug("\t(driver) '%s' in: Flags = %d", __func__, Flags);
 
-	if (! active_device)
+	if (!active_device)
 	{
 		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
 				CUDA_ERROR_NOT_INITIALIZED);
@@ -1657,7 +1648,7 @@ CUresult cuStreamAddCallback(CUstream hStream, CUstreamCallback callback,
 	cuda_debug("\t(driver) '%s' in: userData = [%p]", __func__, userData);
 	cuda_debug("\t(driver) '%s' in: flags = %u", __func__, flags);
 
-	if (! active_device)
+	if (!active_device)
 	{
 		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
 				CUDA_ERROR_NOT_INITIALIZED);
@@ -1696,7 +1687,7 @@ CUresult cuStreamSynchronize(CUstream hStream)
 	cuda_debug("CUDA driver API '%s'", __func__);
 	cuda_debug("\t(driver) '%s' in: hStream = [%p]", __func__, hStream);
 
-	if (! active_device)
+	if (!active_device)
 	{
 		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
 				CUDA_ERROR_NOT_INITIALIZED);
@@ -1721,7 +1712,7 @@ CUresult cuStreamDestroy(CUstream hStream)
 	cuda_debug("CUDA driver API '%s'", __func__);
 	cuda_debug("\t(driver) '%s' in: hStream = [%p]", __func__, hStream);
 
-	if (! active_device)
+	if (!active_device)
 	{
 		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
 				CUDA_ERROR_NOT_INITIALIZED);
@@ -1742,7 +1733,7 @@ CUresult cuEventCreate(CUevent *phEvent, unsigned int Flags)
 	cuda_debug("\t(driver) '%s' in: phEvent = [%p]", __func__, phEvent);
 	cuda_debug("\t(driver) '%s' in: Flags = %u", __func__, Flags);
 
-	if (! active_device)
+	if (!active_device)
 	{
 		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
 				CUDA_ERROR_NOT_INITIALIZED);
@@ -1766,7 +1757,7 @@ CUresult cuEventRecord(CUevent hEvent, CUstream hStream)
 	cuda_debug("\t(driver) '%s' in: hEvent = [%p]", __func__, hEvent);
 	cuda_debug("\t(driver) '%s' in: hStream = [%p]", __func__, hStream);
 
-	if (! active_device)
+	if (!active_device)
 	{
 		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
 				CUDA_ERROR_NOT_INITIALIZED);
@@ -1799,14 +1790,14 @@ CUresult cuEventQuery(CUevent hEvent)
 	cuda_debug("CUDA driver API '%s'", __func__);
 	cuda_debug("\t(driver) '%s' in: hEvent = [%p]", __func__, hEvent);
 
-	if (! active_device)
+	if (!active_device)
 	{
 		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
 				CUDA_ERROR_NOT_INITIALIZED);
 		return CUDA_ERROR_NOT_INITIALIZED;
 	}
 
-	if (! hEvent->recorded)
+	if (!hEvent->recorded)
 	{
 		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
 				CUDA_ERROR_NOT_READY);
@@ -1824,14 +1815,14 @@ CUresult cuEventSynchronize(CUevent hEvent)
 	cuda_debug("CUDA driver API '%s'", __func__);
 	cuda_debug("\t(driver) '%s' in: hEvent = [%p]", __func__, hEvent);
 
-	if (! active_device)
+	if (!active_device)
 	{
 		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
 				CUDA_ERROR_NOT_INITIALIZED);
 		return CUDA_ERROR_NOT_INITIALIZED;
 	}
 
-	while (! hEvent->to_be_recorded)
+	while (!hEvent->to_be_recorded)
 		;
 
 	cuda_debug("\t(driver) '%s' out: return = %d", __func__, CUDA_SUCCESS);
@@ -1844,7 +1835,7 @@ CUresult cuEventDestroy(CUevent hEvent)
 	cuda_debug("CUDA driver API '%s'", __func__);
 	cuda_debug("\t(driver) '%s' in: hEvent = [%p]", __func__, hEvent);
 
-	if (! active_device)
+	if (!active_device)
 	{
 		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
 				CUDA_ERROR_NOT_INITIALIZED);
@@ -1866,22 +1857,22 @@ CUresult cuEventElapsedTime(float *pMilliseconds, CUevent hStart, CUevent hEnd)
 	cuda_debug("\t(driver) '%s' in: hStart = [%p]", __func__, hStart);
 	cuda_debug("\t(driver) '%s' in: hEnd = [%p]", __func__, hEnd);
 
-	if (! active_device)
+	if (!active_device)
 	{
 		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
 				CUDA_ERROR_NOT_INITIALIZED);
 		return CUDA_ERROR_NOT_INITIALIZED;
 	}
 
-	if (! hStart->to_be_recorded || ! hEnd->to_be_recorded)
+	if (!hStart->to_be_recorded || !hEnd->to_be_recorded)
 	{
 		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
 				CUDA_ERROR_INVALID_HANDLE);
 		return CUDA_ERROR_INVALID_HANDLE;
 	}
 
-	if (hStart->to_be_recorded && hEnd->to_be_recorded && (! hStart->recorded ||
-			! hEnd->recorded))
+	if (hStart->to_be_recorded && hEnd->to_be_recorded && (!hStart->recorded ||
+			!hEnd->recorded))
 	{
 		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
 				CUDA_ERROR_NOT_READY);
@@ -1902,7 +1893,7 @@ CUresult cuFuncGetAttribute(int *pi, CUfunction_attribute attrib,
 	cuda_debug("\t(driver) '%s' in: attrib = %d", __func__, attrib);
 	cuda_debug("\t(driver) '%s' in: hfunc = [%p]", __func__, hfunc);
 
-	if (! active_device)
+	if (!active_device)
 	{
 		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
 				CUDA_ERROR_NOT_INITIALIZED);
@@ -1936,7 +1927,7 @@ CUresult cuFuncSetCacheConfig(CUfunction hfunc, CUfunc_cache config)
 	cuda_debug("\t(driver) '%s' in: hfunc = [%p]", __func__, hfunc);
 	cuda_debug("\t(driver) '%s' in: config = %d", __func__, config);
 
-	if (! active_device)
+	if (!active_device)
 	{
 		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
 				CUDA_ERROR_NOT_INITIALIZED);
@@ -1982,7 +1973,7 @@ CUresult cuLaunchKernel(CUfunction f, unsigned int gridDimX,
 			kernelParams);
 	cuda_debug("\t(driver) '%s' in: extra = [%p]", __func__, extra);
 
-	if (! active_device)
+	if (!active_device)
 	{
 		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
 				CUDA_ERROR_NOT_INITIALIZED);
@@ -2007,7 +1998,7 @@ CUresult cuLaunchKernel(CUfunction f, unsigned int gridDimX,
 			break;
 	}
 	assert(i < list_count(stream->command_list));
-	if (! command)  /* Directly called, i.e., CUDA runtime APIs are used. */
+	if (!command)  /* Directly called, i.e., CUDA runtime APIs are used. */
 	{
 		/* If stream == 0, it is the default stream. */
 		if (hStream == 0)
