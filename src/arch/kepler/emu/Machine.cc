@@ -17,20 +17,20 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <math.h>
+#include <cmath>
 #include <iostream>
+
+#include <arch/kepler/asm/Inst.h>
 #include <lib/util/bit-map.h>
 #include <lib/util/debug.h>
 #include <mem-system/memory.h>
 
-
 #include "Emu.h"
 #include "Grid.h"
-#include "isa.h"
 #include "Warp.h"
 #include "Thread.h"
-#include "../asm/Inst.h"
 #include "ThreadBlock.h"
+
 
 namespace Kepler
 {

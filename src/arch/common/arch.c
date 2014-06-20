@@ -30,8 +30,6 @@
 #include "emu.h"
 #include "timing.h"
 
-// Hacking for current Kepelr emulator
-#include "../kepler/emu/Wrapper.h"
 
 /*
  * Object 'arch_t' Functions
@@ -368,7 +366,7 @@ int arch_get_sim_kind_detailed_count(void)
 }
 
 
-void arch_run(int *num_emu_active_ptr, int *num_timing_active_ptr, KplEmu* kpl_emu)
+void arch_run(int *num_emu_active_ptr, int *num_timing_active_ptr)
 {
 	struct arch_t *arch;
 	long long cycle;
@@ -395,10 +393,6 @@ void arch_run(int *num_emu_active_ptr, int *num_timing_active_ptr, KplEmu* kpl_e
 			assert(emu && emu->Run);
 			arch->active = emu->Run(emu);
                            
-                           // Hacking for current Kepler emulator
-			if(strcmp(arch->name, "Fermi"))
-				KplRun(kpl_emu);
-
 			/* Increase number of active emulations if the architecture
 			 * actually performed a useful emulation iteration. */
 			*num_emu_active_ptr += arch->active;
