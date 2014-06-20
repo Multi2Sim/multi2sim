@@ -39,7 +39,7 @@ int Driver::CallInit(mem::Memory *memory, unsigned args_ptr)
 }
 
 
-/// ABI Call 'MEM Alloc'
+/// ABI Call 'MemAlloc'
 ///
 /// \param unsigned int size
 ///	Number of bytes to allocate
@@ -80,7 +80,7 @@ int Driver::CallMemAlloc(mem::Memory *memory, unsigned args_ptr)
 	return device_ptr;
 }
 
-// ABI Call 'MEM Read'
+// ABI Call 'MemRead'
 //
 // ...
 int Driver::CallMemRead(mem::Memory *memory, unsigned args_ptr)
@@ -89,7 +89,7 @@ int Driver::CallMemRead(mem::Memory *memory, unsigned args_ptr)
 }
 
 
-/// ABI Call 'MEM Write'
+/// ABI Call 'MemWrite'
 ///
 /// Write memory from host into Southern Islands device.
 ///
@@ -136,7 +136,7 @@ int Driver::CallMemWrite(mem::Memory *memory, unsigned args_ptr)
 }
 
 
-// ABI Call 'MEM Copy'
+// ABI Call 'MemCopy'
 //
 // ...
 int Driver::CallMemCopy(mem::Memory *memory, unsigned args_ptr)
@@ -145,7 +145,7 @@ int Driver::CallMemCopy(mem::Memory *memory, unsigned args_ptr)
 	return 0;
 }
 
-// ABI Call 'MEM Free'
+// ABI Call 'MemFree'
 //
 // ...
 int Driver::CallMemFree(mem::Memory *memory, unsigned args_ptr)
@@ -154,7 +154,7 @@ int Driver::CallMemFree(mem::Memory *memory, unsigned args_ptr)
 	return 0;
 }
 
-/// ABI Call 'Program Create'
+/// ABI Call 'ProgramCreate'
 ///
 /// \return
 ///	Return unique program id
@@ -216,7 +216,7 @@ int Driver::CallProgramSetBinary(mem::Memory *memory, unsigned args_ptr)
 }
 
 
-/// ABI Call 'Kernel Create'
+/// ABI Call 'KernelCreate'
 ///
 /// \param int program_id
 ///	Program ID, as returned by ABI call 'Program Create'.
@@ -258,7 +258,7 @@ int Driver::CallKernelCreate(mem::Memory *memory, unsigned args_ptr)
 }
 
 
-// ABI Call 'Kernel Set Arg Value'
+// ABI Call 'KernelSetArgValue'
 //
 // ...
 int Driver::CallKernelSetArgValue(mem::Memory *memory, unsigned args_ptr)
@@ -301,7 +301,7 @@ int Driver::CallKernelSetArgPointer(mem::Memory *memory, unsigned args_ptr)
 	return 0;
 }
 
-// ABI Call 'Kernel Set Arg Sampler'
+// ABI Call 'KernelSetArgSampler'
 //
 // ...
 int Driver::CallKernelSetArgSampler(mem::Memory *memory, unsigned args_ptr)

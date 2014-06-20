@@ -1,6 +1,5 @@
-/*
- *  Multi2Sim
- *  Copyright (C) 2014  Rafael Ubal (ubal@ece.neu.edu)
+/*  Multi2Sim
+ *  Copyright (C) 2014  Xun Gong (gong.xun@husky.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,24 +16,21 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_SOUTHERN_ISLANDS_DRIVER_DRIVER_H
-#define ARCH_SOUTHERN_ISLANDS_DRIVER_DRIVER_H
+#ifndef ARCH_KEPLER_DRIVER_DRIVER_H
+#define ARCH_KEPLER_DRIVER_DRIVER_H
 
 #include <arch/common/Driver.h>
-#include <lib/cpp/CommandLine.h>
 #include <lib/cpp/Debug.h>
 
-#include "Program.h"
-#include "Kernel.h"
 
-namespace SI
+namespace Kepler
 {
 
 // Forward Declarations
 class Program;
 
 
-/// Southern Islands driver
+/// Kepler driver
 class Driver : public comm::Driver
 {
 	// Debug file name, as set by user
@@ -43,17 +39,8 @@ class Driver : public comm::Driver
 	// Unique instance of singleton
 	static std::unique_ptr<Driver> instance;
 
-	// Primary list of Programs
-	std::vector<std::unique_ptr<Program>> programs;
-
-	// Primary list of Kernels
-	std::vector<std::unique_ptr<Kernel>> kernels;
-
 	// Singletons have private constructors
-	Driver() : comm::Driver("Southern Islands",
-			"/dev/southern-islands")
-	{
-	}
+	Driver();
 
 	// Enumeration with all ABI call codes. Each entry of Driver.def will
 	// expand into an assignment. For example, entry
@@ -97,21 +84,15 @@ class Driver : public comm::Driver
 	// Table of ABI call execution functions
 	static const CallFn call_fn[CallCodeCount];
 
-	// Add program
-	void AddProgram(int program_id);
-
-	// Add kernel
-	void AddKernel(int kernel_id, const std::string &func, Program *program);
-
 public:
 
 	/// Obtain instance of the singleton
 	static Driver *getInstance();
-	
+
 	/// Invoke an ABI call. See documentation for comm::Driver::Call for
 	/// details on the meaning of the arguments.
 	int Call(int code, mem::Memory *memory, unsigned args_ptr);
-	
+
 	/// Debugger
 	static misc::Debug debug;
 
@@ -120,25 +101,9 @@ public:
 
 	/// Process command-line options
 	static void ProcessOptions();
-
-	/// Get reference to the main program list
-	std::vector<std::unique_ptr<Program>> &getPrograms() { return programs; }
-
-	/// Get count of programs in list
-	int getProgramCount() const { return programs.size(); }
-
-	/// Get program by its ID
-	Program *getProgramById(unsigned id) { return programs[id].get(); }
-
-	/// Get count of kernels in list
-	int getKernelCount() const { return kernels.size(); }
-
-	/// Get kernel by its Id
-	Kernel *getKernelById(unsigned id) { return kernels[id].get(); }
 };
 
 
 }  // namespace SI
 
 #endif
-
