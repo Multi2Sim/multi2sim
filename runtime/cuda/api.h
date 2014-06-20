@@ -35,9 +35,9 @@ void cuda_debug(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
 enum cuda_call_t
 {
 	cuda_call_invalid,
-#define CUDA_DEFINE_CALL(name) cuda_call_##name,
-#include "../../src/driver/cuda/cuda.dat"
-#undef CUDA_DEFINE_CALL
+#define DEFCALL(name, id) cuda_call_##name,
+#include "../../src/arch/kepler/driver/Driver.def"
+#undef DEFCALL
 	cuda_call_count
 };
 
