@@ -28,9 +28,6 @@ struct cuda_device_t
 	/* CUdevice is also an ID */
 	CUdevice device;
 
-	/* Type */
-	enum cuda_device_type_t type;
-
 	/* Name */
 	char *name;
 

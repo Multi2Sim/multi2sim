@@ -115,18 +115,22 @@ void cuda_debug(char *fmt, ...)
 	 * calls to 'printf', that can have race conditions among threads. */
 	va_start(va, fmt);
 	vsnprintf(str, sizeof str, fmt, va);
-	fprintf(stderr, "[libm2s-cuda] %s\n", str);
+	fprintf(stderr, "[CUDA Runtime] %s\n", str);
 }
+
 
 void versionCheck(void)
 {
 	struct cuda_version_t version;
 	int ret;
 
+	/* Debug */
 	cuda_debug("CUDA driver internal function '%s'", __func__);
 
 	/* Version negotiation */
-	ret = syscall(CUDA_SYS_CODE, cuda_call_versionCheck, &version);
+	//ret = syscall(CUDA_SYS_CODE, cuda_call_versionCheck, &version);
+	ret = 0;
+	fatal("%s: not implemented", __FUNCTION__);
 
 	/* Check that we are running on Multi2Sim. If a program linked with this
 	 * library is running natively, system call CUDA_SYS_CODE is not
@@ -190,7 +194,9 @@ CUresult cuInit(unsigned int Flags)
 		active_device = kpl_device;
 
 	/* Syscall */
-	ret = syscall(CUDA_SYS_CODE, cuda_call_cuInit);
+	//ret = syscall(CUDA_SYS_CODE, cuda_call_cuInit);
+	ret = 0;
+	fatal("%s: not implemented", __FUNCTION__);
 
 	/* Check that we are running on Multi2Sim. If a program linked with this
 	 * library is running natively, system call CUDA_SYS_CODE is not
@@ -320,7 +326,6 @@ CUresult cuDeviceGetName(char *name, int len, CUdevice dev)
 
 CUresult cuDeviceTotalMem(size_t *bytes, CUdevice dev)
 {
-	size_t free;
 	int ret;
 
 	cuda_debug("CUDA driver API '%s'", __func__);
@@ -343,7 +348,9 @@ CUresult cuDeviceTotalMem(size_t *bytes, CUdevice dev)
 	}
 
 	/* Syscall */
-	ret = syscall(CUDA_SYS_CODE, cuda_call_cuMemGetInfo, &free, bytes);
+	//ret = syscall(CUDA_SYS_CODE, cuda_call_cuMemGetInfo, &free, bytes);
+	ret = 0;
+	fatal("%s: not implemented", __FUNCTION__);
 
 	/* Check that we are running on Multi2Sim. If a program linked with this
 	 * library is running natively, system call CUDA_SYS_CODE is not
@@ -658,7 +665,9 @@ CUresult cuModuleLoad(CUmodule *module, const char *fname)
 	*module = cuda_module_create(fname);
 
 	/* Syscall */
-	ret = syscall(CUDA_SYS_CODE, cuda_call_cuModuleLoad, fname);
+	//ret = syscall(CUDA_SYS_CODE, cuda_call_cuModuleLoad, fname);
+	ret = 0;
+	fatal("%s: not implemented", __FUNCTION__);
 
 	/* Check that we are running on Multi2Sim. If a program linked with this
 	 * library is running natively, system call CUDA_SYS_CODE is not
@@ -706,7 +715,9 @@ CUresult cuModuleUnload(CUmodule hmod)
 	}
 
 	/* Free module in driver */
-	ret = syscall(CUDA_SYS_CODE, cuda_call_cuModuleUnload, hmod->id);
+	//ret = syscall(CUDA_SYS_CODE, cuda_call_cuModuleUnload, hmod->id);
+	ret = 0;
+	fatal("%s: not implemented", __FUNCTION__);
 
 	/* Check that we are running on Multi2Sim. If a program linked with this
 	 * library is running natively, system call CUDA_SYS_CODE is not
@@ -742,8 +753,10 @@ CUresult cuModuleGetFunction(CUfunction *hfunc, CUmodule hmod, const char *name)
 	*hfunc = cuda_function_create(hmod, name);
 
 	/* Syscall */
-	ret = syscall(CUDA_SYS_CODE, cuda_call_cuModuleGetFunction, hmod->id, name,
-			(*hfunc)->inst_buf, (*hfunc)->inst_buf_size, (*hfunc)->numRegs);
+	//ret = syscall(CUDA_SYS_CODE, cuda_call_cuModuleGetFunction, hmod->id, name,
+	//		(*hfunc)->inst_buf, (*hfunc)->inst_buf_size, (*hfunc)->numRegs);
+	ret = 0;
+	fatal("%s: not implemented", __FUNCTION__);
 
 	/* Check that we are running on Multi2Sim. If a program linked with this
 	 * library is running natively, system call CUDA_SYS_CODE is not
@@ -828,7 +841,9 @@ CUresult cuMemGetInfo(size_t *free, size_t *total)
 	}
 
 	/* Syscall */
-	ret = syscall(CUDA_SYS_CODE, cuda_call_cuMemGetInfo, free, total);
+	//ret = syscall(CUDA_SYS_CODE, cuda_call_cuMemGetInfo, free, total);
+	ret = 0;
+	fatal("%s: not implemented", __FUNCTION__);
 
 	/* Check that we are running on Multi2Sim. If a program linked with this
 	 * library is running natively, system call CUDA_SYS_CODE is not
@@ -866,12 +881,9 @@ CUresult cuMemAlloc(CUdeviceptr *dptr, size_t bytesize)
 	}
 
 	/* Syscall */
-	if (active_device->type == CUDA_DEVICE_FERMI)
-		ret = syscall(CUDA_SYS_CODE, cuda_call_cuFrmMemAlloc, dptr, bytesize);
-	//else if (active_device->type == CUDA_DEVICE_KEPLER)
-	//	ret = syscall(CUDA_SYS_CODE, cuda_call_cuKplMemAlloc, dptr, bytesize);
-	else
-		fatal("device not supported.\n");
+	//ret = syscall(CUDA_SYS_CODE, cuda_call_cuKplMemAlloc, dptr, bytesize);
+	ret = 0;
+	fatal("%s: not implemented", __FUNCTION__);
 
 	/* Check that we are running on Multi2Sim. If a program linked with this
 	 * library is running natively, system call CUDA_SYS_CODE is not
@@ -910,7 +922,9 @@ CUresult cuMemFree(CUdeviceptr dptr)
 	}
 
 	/* Syscall */
-	ret = syscall(CUDA_SYS_CODE, cuda_call_cuMemFree, dptr);
+	//ret = syscall(CUDA_SYS_CODE, cuda_call_cuMemFree, dptr);
+	ret = 0;
+	fatal("%s: not implemented", __FUNCTION__);
 
 	/* Check that we are running on Multi2Sim. If a program linked with this
 	 * library is running natively, system call CUDA_SYS_CODE is not
@@ -1107,14 +1121,10 @@ CUresult cuMemcpyHtoD(CUdeviceptr dstDevice, const void *srcHost,
 	cuStreamSynchronize(0);
 
 	/* Syscall */
-	if (active_device->type == CUDA_DEVICE_FERMI)
-		ret = syscall(CUDA_SYS_CODE, cuda_call_cuFrmMemcpyHtoD, dstDevice,
-				srcHost, ByteCount);
-	//else if (active_device->type == CUDA_DEVICE_KEPLER)
-	//	ret = syscall(CUDA_SYS_CODE, cuda_call_cuKplMemcpyHtoD, dstDevice,
+	// ret = syscall(CUDA_SYS_CODE, cuda_call_cuKplMemcpyHtoD, dstDevice,
 	//			srcHost, ByteCount);
-	else
-		fatal("device not supported.\n");
+	ret = 0;
+	fatal("%s: not implemented", __FUNCTION__);
 
 	/* Check that we are running on Multi2Sim. If a program linked with this
 	 * library is running natively, system call CUDA_SYS_CODE is not
@@ -1146,14 +1156,10 @@ CUresult cuMemcpyDtoH(void *dstHost, CUdeviceptr srcDevice, size_t ByteCount)
 	cuStreamSynchronize(0);
 
 	/* Syscall */
-	if (active_device->type == CUDA_DEVICE_FERMI)
-		ret = syscall(CUDA_SYS_CODE, cuda_call_cuFrmMemcpyDtoH, dstHost,
-				srcDevice, ByteCount);
-	//else if (active_device->type == CUDA_DEVICE_KEPLER)
-	//	ret = syscall(CUDA_SYS_CODE, cuda_call_cuKplMemcpyDtoH, dstHost,
-	//			srcDevice, ByteCount);
-	else
-		fatal("device not supported.\n");
+	//ret = syscall(CUDA_SYS_CODE, cuda_call_cuKplMemcpyDtoH, dstHost,
+	//		srcDevice, ByteCount);
+	ret = 0;
+	fatal("%s: not implemented", __FUNCTION__);
 
 	/* Check that we are running on Multi2Sim. If a program linked with this
 	 * library is running natively, system call CUDA_SYS_CODE is not
@@ -1357,14 +1363,10 @@ CUresult cuMemsetD8(CUdeviceptr dstDevice, unsigned char uc, size_t N)
 	memset(src_host, uc, N);
 
 	/* Syscall */
-	if (active_device->type == CUDA_DEVICE_FERMI)
-		ret = syscall(CUDA_SYS_CODE, cuda_call_cuFrmMemcpyHtoD, dstDevice,
-			src_host, N);
-	//else if (active_device->type == CUDA_DEVICE_KEPLER)
-	//	ret = syscall(CUDA_SYS_CODE, cuda_call_cuKplMemcpyHtoD, dstDevice,
+	//ret = syscall(CUDA_SYS_CODE, cuda_call_cuKplMemcpyHtoD, dstDevice,
 	//		src_host, N);
-	else
-		fatal("device not supported.\n");
+	ret = 0;
+	fatal("%s: not implemented", __FUNCTION__);
 
 	/* Free host data */
 	free(src_host);
