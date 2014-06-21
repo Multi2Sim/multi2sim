@@ -26,7 +26,7 @@
 #include "Tree.h"
 
 
-namespace Common
+namespace comm
 {
 
 
@@ -502,5 +502,5 @@ bool Node::RemoveFromList(std::list<std::unique_ptr<Node>> &list,
 }
 
 
-}  // namespace Common
+}  // namespace comm
 

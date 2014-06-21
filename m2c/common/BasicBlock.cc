@@ -23,7 +23,7 @@
 #include "Node.h"
 
 
-namespace Common
+namespace comm
 {
 
 
@@ -40,5 +40,5 @@ BasicBlock::BasicBlock(LeafNode *node)
 }
 
 
-}  // namespace Common
+}  // namespace comm
 

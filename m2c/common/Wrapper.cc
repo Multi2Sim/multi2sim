@@ -20,7 +20,7 @@
 #include "Tree.h"
 #include "Wrapper.h"
 
-using namespace Common;
+using namespace comm;
 
 
 void CommonTreeConfigSetPath(char *path)
