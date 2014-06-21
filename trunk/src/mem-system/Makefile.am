@@ -45,11 +45,18 @@ libmemsystem_a_SOURCES = \
 	prefetcher.h \
 	\
 	\
+	\
+	Directory.cc \
+	Directory.h \
+	\
 	Memory.cc \
 	Memory.h \
 	\
 	SpecMem.cc \
 	SpecMem.h \
+	\
+	System.cc \
+	System.h \
 	\
 	Wrapper.cc \
 	Wrapper.h
