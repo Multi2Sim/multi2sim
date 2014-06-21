@@ -36,7 +36,7 @@
 namespace llvm2si
 {
 
-/* Forward declarations */
+// Forward declarations
 class Function;
 
 class BasicBlock : public comm::BasicBlock
@@ -45,21 +45,21 @@ class BasicBlock : public comm::BasicBlock
 
 	int global_id;
 
-	/* List list of instructions forming the basic block. */
+	// List list of instructions forming the basic block.
 	std::list<std::unique_ptr<si2bin::Inst>> inst_list;
 
 	/* Comment stored temporarily in the basic block to be attached to the
 	 * next instruction added. */
 	std::string comment;
 
-	/* Return the size in bytes of an LLVM type */
+	// Return the size in bytes of an LLVM type
 	static int getLlvmTypeSize(llvm::Type *llvm_type);
 
 	/* Return the size in bytes of the LLVM type pointed to by an
 	 * LLVM pointer. */
 	static int getPointedLlvmTypeSize(llvm::Type *llvm_type);
 
-	/* Emit instructions */
+	// Emit instructions
 	void EmitAdd(llvm::BinaryOperator *llvm_inst);
 	void EmitCall(llvm::CallInst *llvm_inst);
 	void EmitGetElementPtr(llvm::GetElementPtrInst *llvm_inst);
@@ -78,28 +78,31 @@ class BasicBlock : public comm::BasicBlock
 
 public:
 
-	/* Function where the basic block belongs. */
+	// Function where the basic block belongs.
 	Function *function;
 
-	/* Bitmaps to hold live register analysis intermediate data */
+	// Bitmaps to hold live register analysis intermediate data
 	misc::Bitmap *def;
 	misc::Bitmap *use;
 
 	misc::Bitmap *in;
 	misc::Bitmap *out;
 
-	/* Constructor */
+	// Constructor
 	BasicBlock(Function *function, comm::LeafNode *node) :
-		comm::BasicBlock(node), function(function) { }
+			comm::BasicBlock(node),
+			function(function)
+	{
+	}
 
 	std::list<std::unique_ptr<si2bin::Inst>> &getInstList() { return inst_list; }
 
-	/* Dump */
+	// Dump
 	void Dump(std::ostream &os);
 	friend std::ostream &operator<<(std::ostream &os, BasicBlock &basic_block)
 			{ basic_block.Dump(os); return os; }
 
-	/* Add one SI instruction to the 'inst_list' field of the basic block. */
+	// Add one SI instruction to the 'inst_list' field of the basic block.
 	void AddInst(si2bin::Inst *inst);
 
 	/* Add a comment to a basic block. The comment will be attached to the
@@ -107,7 +110,7 @@ public:
 	 * to the basic block, the comment won't have any effect. */
 	void AddComment(const std::string &comment) { this->comment = comment; }
 
-	/* Emit SI code for the LLVM basic block into field 'inst_list'. */
+	// Emit SI code for the LLVM basic block into field 'inst_list'.
 	void Emit(llvm::BasicBlock *llvm_basic_block);
 
 	/* Perform analysis on live variables inside the llvm function to allow for
@@ -136,7 +139,7 @@ public:
 };
 
 
-}  /* namespace llvm2si */
+}  // namespace llvm2si
 
 #endif
 
