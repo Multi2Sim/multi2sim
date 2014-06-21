@@ -50,16 +50,12 @@ void fatal(const char *fmt, ...)
 	vsnprintf(buf, sizeof buf, fmt, va);
 
 	// Print in clean paragraphs
-	std::string msg = "fatal: ";
-	std::cerr << '\n' << StringParagraph(msg + buf, 7) << '\n';
-
-	// Exit with error code 1, or abort in debug mode in order to allow for
-	// backtrace in gdb.
-#ifdef NDEBUG
+	StringFormatter formatter;
+	formatter.setIndent(8);
+	formatter.setFirstLineIndent(0);
+	formatter << buf;
+	std::cerr << '\n' << formatter << "\n\n";
 	exit(1);
-#else
-	abort();
-#endif
 }
 
 
@@ -73,8 +69,11 @@ void panic(const char *fmt, ...)
 	vsnprintf(buf, sizeof buf, fmt, va);
 
 	// Print in clean paragraphs
-	std::string msg = "panic: ";
-	std::cerr << '\n' << StringParagraph(msg + buf, 7) << '\n';
+	StringFormatter formatter;
+	formatter.setIndent(8);
+	formatter.setFirstLineIndent(0);
+	formatter << "Panic: " << buf;
+	std::cerr << '\n' << formatter << "\n\n";
 
 	// Abort program
 	abort();
@@ -91,8 +90,11 @@ void warning(const char *fmt, ...)
 	vsnprintf(buf, sizeof buf, fmt, va);
 
 	// Print in clean paragraphs
-	std::string msg = "warning: ";
-	std::cerr << '\n' << StringParagraph(msg + buf, 9) << '\n';
+	StringFormatter formatter;
+	formatter.setIndent(8);
+	formatter.setFirstLineIndent(0);
+	formatter << "Warning: " << buf;
+	std::cerr << '\n' << formatter << "\n\n";
 }
 
 

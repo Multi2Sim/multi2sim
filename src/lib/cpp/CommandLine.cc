@@ -48,10 +48,13 @@ CommandLineOption::CommandLineOption(Type type, const std::string &name,
 void CommandLineOption::Help(std::ostream &os) const
 {
 	// Option name
-	os << "  " << help_name;
+	os << "  " << help_name << "\n\n";
 
 	// Description
-	os << "\n\n" << StringParagraph(help, 8, 8) << '\n';
+	StringFormatter formatter;
+	formatter.setIndent(8);
+	formatter << help;
+	os << formatter << "\n\n";
 }
 
 
@@ -204,8 +207,8 @@ void CommandLine::Help(std::ostream &os)
 	// Header
 	if (!help.empty())
 	{
-		os << '\n';
-		os << StringParagraph(help);
+		StringFormatter formatter(help);
+		os << '\n' << formatter;
 	}
 
 	// Empty line

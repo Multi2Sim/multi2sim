@@ -26,7 +26,8 @@
 #include <elf.h>
 #include <iostream>
 #include <sstream>
-#include <stdexcept>
+
+#include "Error.h"
 
 
 namespace ELFReader
@@ -36,14 +37,8 @@ class File;
 
 
 /// Exception class thrown by the class functions in the ELFReader name space.
-class Exception : public std::runtime_error
+class Error : public misc::Error
 {
-	// ELF file path causing the exception
-	std::string path;
-
-	// Error string
-	std::string error;
-
 public:
 
 	/// Constructor
@@ -53,20 +48,10 @@ public:
 	///
 	/// \param error
 	///	Error string
-	Exception(const std::string &path,
-			const std::string &error)
-			:
-			runtime_error(path + ": " + error),
-			path(path),
-			error(error)
+	Error(const std::string &path, const std::string &message) :
+			misc::Error("ELF Reader", path + ": " + message)
 	{
 	}
-
-	/// Return affected path
-	const std::string &getPath() const { return path; }
-
-	/// Return error message
-	const std::string &getError() const { return error; }
 };
 
 

@@ -567,93 +567,6 @@ long long StringToInt64(const std::string &_s, StringError &error)
 }
 
 
-std::string StringParagraph(const std::string &text,
-		int indent, int first_indent, int width)
-{
-	std::string word;
-	bool first_word_in_line = true;
-	bool first_word_in_paragraph = true;
-
-	// Check good values for 'first_indent' and 'indent'
-	if (first_indent >= width || indent >= width)
-		panic("%s: invalid indentation values", __FUNCTION__);
-
-	// Add initial indentation
-	std::string output = std::string(first_indent, ' ');
-	int line_length = first_indent;
-
-	// Process text
-	char last = 0;
-	char curr = 0;
-	for (int i = 0; i <= (int) text.length(); i++)
-	{
-		// Current character
-		last = curr;
-		curr = i == (int) text.length() ? 0 : text[i];
-
-		// New paragraph
-		if (curr == '\n' && last == '\n' && !first_word_in_paragraph)
-		{
-			first_word_in_paragraph = true;
-			first_word_in_line = true;
-			output += "\n\n";
-			output += std::string(indent, ' ');
-			line_length = indent;
-		}
-
-		// Space-like character
-		if (curr == ' ' || curr == '\t' || curr == '\n' || !curr)
-		{
-			// No new word, ignore
-			if (!word.length())
-				continue;
-
-			// If word doesn't fit, add new line
-			if (line_length + 1 + (int) word.length() > width)
-			{
-				output += '\n';
-				output += std::string(indent, ' ');
-				line_length = indent;
-				first_word_in_line = true;
-			}
-
-			// Split word in chunks that fit in line
-			while (line_length + (int) word.length() > width)
-			{
-				output += word.substr(0, width - line_length);
-				output += '\n';
-				word.erase(0, width - line_length);
-				output += std::string(indent, ' ');
-				line_length = indent;
-				first_word_in_line = true;
-			}
-			
-			// Space if needed
-			if (!first_word_in_line)
-			{
-				output += ' ';
-				line_length++;
-			}
-
-			// Rest of the word
-			first_word_in_line = false;
-			first_word_in_paragraph = false;
-			output += word;
-			line_length += word.length();
-			word.clear();
-			continue;
-		}
-
-		// Other character just gets added to the current word
-		word += curr;
-	}
-
-	// Final output
-	output += '\n';
-	return output;
-}
-
-
 std::string StringBinaryBuffer(char *buffer, int size, int truncate)
 {
 	// Truncate size to
@@ -786,6 +699,142 @@ std::string StringMap::MapFlags(unsigned flags) const
 
 	// Return created text
 	return s.str();
+}
+
+
+
+
+//
+// Class 'StringFormatter'
+//
+
+void StringFormatter::NewLine()
+{
+	// Ignore if we are already in the beginning of a new line
+	if (first_word_in_line)
+		return;
+	
+	// Add new line
+	stream << '\n';
+	first_word_in_line = true;
+	first_word_in_paragraph = false;
+	current_line_width = 0;
+}
+
+
+void StringFormatter::NewParagraph()
+{
+	stream << '\n';
+	first_word_in_line = true;
+	first_word_in_paragraph = true;
+	current_line_width = 0;
+	paragraph_indent = 0;
+}
+
+
+void StringFormatter::AddIndent()
+{
+	// Nothing to add if this is not the first word in the line
+	if (!first_word_in_line)
+		return;
+	
+	// Calculate indentation based on whether this is the first line in a
+	// paragraph or not.
+	int total_indent = first_word_in_paragraph ?
+			first_line_indent + paragraph_indent :
+			indent + paragraph_indent;
+	
+	// Make sure that total indent is never higher than width
+	if (total_indent >= width)
+		total_indent = width - 1;
+	
+	// Add indentation
+	assert(current_line_width == 0);
+	stream << std::string(total_indent, ' ');
+	current_line_width = total_indent;
+}
+
+
+void StringFormatter::AddWord(const std::string &word)
+{
+	// Discard empty word
+	if (word.empty())
+		return;
+	
+	// Word fits after a line that has already started (need room for space)
+	if (!first_word_in_line && current_line_width + (int) word.length()
+			+ 1 <= width)
+	{
+		stream << ' ' << word;
+		current_line_width += word.length() + 1;
+		first_word_in_line = false;
+		first_word_in_paragraph = false;
+		return;
+	}
+
+	// Break the word in chunks
+	int chunk_offset = 0;
+	while (true)
+	{
+		// Add indentation
+		NewLine();
+		AddIndent();
+	
+		// Take chunk
+		int chunk_size = width - current_line_width;
+		std::string chunk = word.substr(chunk_offset, chunk_size);
+
+		// Add chunk
+		stream << chunk;
+		current_line_width += chunk.size();
+		first_word_in_line = false;
+		first_word_in_paragraph = false;
+
+		// Next chunk
+		chunk_offset += chunk_size;
+		if (chunk_offset >= (int) word.length())
+			break;
+	}
+}
+
+
+void StringFormatter::Add(const std::string &text)
+{
+	// Check good values for 'first_indent' and 'indent'
+	if (first_line_indent >= width || indent >= width)
+		throw std::logic_error("Invalid indentation values");
+
+	// Process text
+	std::string word;
+	for (int i = 0; i <= (int) text.length(); i++)
+	{
+		// Current character. The loop will process the null character
+		// at the end of the string as well.
+		char c = text.c_str()[i];
+
+		// End of word
+		if (c == ' ' || c == '\t' || c == '\n' || c == '\0')
+		{
+			AddWord(word);
+			word = "";
+		}
+		else
+		{
+			word += c;
+		}
+
+		// Add one extra indentation space to current paragraph
+		if (first_word_in_paragraph && c == ' ')
+			paragraph_indent++;
+
+		// Add 8 extra indentations spaces to current paragraph
+		if (first_word_in_paragraph && c == '\t')
+			paragraph_indent += 8;
+
+		// New paragraph
+		if (c == '\n')
+			NewParagraph();
+	}
 }
 
 

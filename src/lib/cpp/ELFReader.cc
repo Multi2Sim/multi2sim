@@ -43,8 +43,8 @@ Section::Section(File *file, int index, unsigned int pos)
 	// Read section header
 	info = (Elf32_Shdr *) (file->getBuffer() + pos);
 	if (pos < 0 || pos + sizeof(Elf32_Shdr) > file->getSize())
-		throw Exception(file->getPath(),
-				"Invalid position for section header");
+		throw Error(file->getPath(), "Invalid position for "
+				"section header");
 
 	// Initialize
 	this->file = file;
@@ -58,8 +58,7 @@ Section::Section(File *file, int index, unsigned int pos)
 	{
 		// Check valid range
 		if (info->sh_offset + info->sh_size > file->getSize())
-			throw Exception(file->getPath(),
-					"Section out of range");
+			throw Error(file->getPath(), "Section out of range");
 
 		// Set up buffer and stream
 		buffer = file->getBuffer() + info->sh_offset;
@@ -82,8 +81,8 @@ ProgramHeader::ProgramHeader(File *file, int index, unsigned int pos)
 	// Read program header
 	info = (Elf32_Phdr *) (file->getBuffer() + pos);
 	if (pos < 0 || pos + sizeof(Elf32_Phdr) > file->getSize())
-		throw Exception(file->getPath(),
-				"Invalid position for program header");
+		throw Error(file->getPath(), "Invalid position for program "
+				"header");
 
 	// File content
 	size = info->p_filesz;
@@ -96,7 +95,7 @@ void ProgramHeader::getStream(std::istringstream &stream, unsigned int offset,
 {
 	// Check valid offset/size
 	if (offset + size > this->size)
-		throw Exception(file->getPath(), "Invalid offset/size");
+		throw Error(file->getPath(), "Invalid offset/size");
 
 	// Set substream
 	std::stringbuf *buf = stream.rdbuf();
@@ -118,18 +117,18 @@ Symbol::Symbol(File *file, Section *section, unsigned int pos)
 	// Read symbol
 	info = (Elf32_Sym *) (section->getBuffer() + pos);
 	if (pos < 0 || pos + sizeof(Elf32_Sym) > section->getSize())
-		throw Exception(file->getPath(), "Invalid position for symbol");
+		throw Error(file->getPath(), "Invalid position for symbol");
 
 	// Get section with symbol name
 	unsigned name_section_index = section->getLink();
 	Section *name_section = file->getSection(name_section_index);
 	if (!name_section)
-		throw Exception(file->getPath(),
-				"Invalid index for symbol name section");
+		throw Error(file->getPath(), "Invalid index for symbol name "
+				"section");
 
 	// Get symbol name
 	if (info->st_name >= name_section->getSize())
-		throw Exception(file->getPath(), "Invalid symbol name offset");
+		throw Error(file->getPath(), "Invalid symbol name offset");
 	name = name_section->getBuffer() + info->st_name;
 
 	// Get section in 'st_shndx'
@@ -175,13 +174,13 @@ void Symbol::getStream(std::istringstream &stream, unsigned int offset,
 {
 	// Symbol without content
 	if (!buffer)
-		throw Exception(file->getPath(),
+		throw Error(file->getPath(),
 				misc::fmt("symbol '%s' does not have any valid content",
 				name.c_str()));
 
 	// Check valid offset/size
 	if (offset + size > info->st_size)
-		throw Exception(file->getPath(),
+		throw Error(file->getPath(),
 				misc::fmt("symbol '%s': invalid offset and/or size",
 				name.c_str()));
 
@@ -209,7 +208,7 @@ Header::Header(const std::string &path)
 	// Open file
 	std::ifstream f(path);
 	if (!f)
-		throw Exception(path, "Cannot open file");
+		throw Error(path, "Cannot open file");
 
 	// Get file size
 	f.seekg(0, std::ios_base::end);
@@ -218,7 +217,7 @@ Header::Header(const std::string &path)
 
 	// Check that size is at least equal to header size
 	if (size < sizeof(Elf32_Ehdr))
-		throw Exception(path, "Invalid ELF file");
+		throw Error(path, "Invalid ELF file");
 
 	// Load header
 	f.read((char *) &info, sizeof(Elf32_Ehdr));
@@ -226,11 +225,11 @@ Header::Header(const std::string &path)
 
 	// Check that file is a valid ELF file
 	if (strncmp((char *) info.e_ident, ELFMAG, 4))
-		throw Exception(path, "Invalid ELF file");
+		throw Error(path, "Invalid ELF file");
 
 	// Check that ELF file is a 32-bit object
 	if (info.e_ident[EI_CLASS] == ELFCLASS64)
-		throw Exception(path, misc::fmt(
+		throw Error(path, misc::fmt(
 				"64-bit ELF files not supported\n\n%s",
 				err_64bit));
 }
@@ -247,15 +246,15 @@ void File::ReadHeader()
 	// Read ELF header
 	info = (Elf32_Ehdr *) buffer;
 	if (size < sizeof(Elf32_Ehdr))
-		throw Exception(path, "Invalid ELF file");
+		throw Error(path, "Invalid ELF file");
 
 	// Check that file is a valid ELF file
 	if (strncmp((char *) info->e_ident, ELFMAG, 4))
-		throw Exception(path, "Invalid ELF file");
+		throw Error(path, "Invalid ELF file");
 
 	// Check that ELF file is a 32-bit object
 	if (info->e_ident[EI_CLASS] == ELFCLASS64)
-		throw Exception(path, misc::fmt(
+		throw Error(path, misc::fmt(
 				"64-bit ELF files not supported\n\n%s",
 				err_64bit));
 }
@@ -265,7 +264,7 @@ void File::ReadSections()
 {
 	// Check section size and number
 	if (!info->e_shnum || info->e_shentsize != sizeof(Elf32_Shdr))
-		throw Exception(path, misc::fmt(
+		throw Error(path, misc::fmt(
 				"Number of sections is 0 or section size is not %d",
 				(int) sizeof(Elf32_Shdr)));
 
@@ -276,10 +275,10 @@ void File::ReadSections()
 
 	// Read string table
 	if (info->e_shstrndx >= info->e_shnum)
-		throw Exception(path, "Invalid string table index");
+		throw Error(path, "Invalid string table index");
 	string_table = sections[info->e_shstrndx].get();
 	if (string_table->info->sh_type != 3)
-		throw Exception(path, "Invalid string table type");
+		throw Error(path, "Invalid string table type");
 
 	// Read section names
 	for (auto &section : sections)
@@ -296,7 +295,7 @@ void File::ReadProgramHeaders()
 	
 	// Check program header size
 	if (info->e_phentsize != sizeof(Elf32_Phdr))
-		throw Exception(path, misc::fmt(
+		throw Error(path, misc::fmt(
 				"Program header size %d (should be %d)",
 				info->e_phentsize, (int) sizeof(Elf32_Phdr)));
 	
@@ -349,7 +348,7 @@ File::File(const std::string &path)
 	// Open file
 	std::ifstream f(path);
 	if (!f)
-		throw Exception(path, "Cannot open file");
+		throw Error(path, "Cannot open file");
 
 	// Get file size
 	f.seekg(0, std::ios_base::end);
@@ -358,7 +357,7 @@ File::File(const std::string &path)
 
 	// Check that size is at least equal to header size
 	if (size < sizeof(Elf32_Ehdr))
-		throw Exception(path, "Invalid ELF file");
+		throw Error(path, "Invalid ELF file");
 
 	// Load entire file into buffer and close
 	buffer = new char[size];
@@ -511,7 +510,7 @@ void File::getStream(std::istringstream &stream, unsigned int offset,
 {
 	// Check valid offset/size
 	if (offset + size > this->size)
-		throw Exception(path, "Invalid offset and/or size");
+		throw Error(path, "Invalid offset and/or size");
 
 	// Set substream
 	std::stringbuf *buf = stream.rdbuf();
