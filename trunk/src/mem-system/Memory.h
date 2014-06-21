@@ -29,64 +29,22 @@
 namespace mem
 {
 
-enum MemoryAccess
-{
-	MemoryAccessInvalid = 0,
-	MemoryAccessRead = 1 << 0,
-	MemoryAccessWrite = 1 << 1,
-	MemoryAccessExec = 1 << 2,
-	MemoryAccessInit = 1 << 3,
-	MemoryAccessModif = 1 << 4
-};
-
-static const unsigned MemoryLogPageSize = 12;
-static const unsigned MemoryPageShift = MemoryLogPageSize;
-static const unsigned MemoryPageSize = (1u << MemoryLogPageSize);
-static const unsigned MemoryPageMask = (~(MemoryPageSize - 1));
-static const unsigned MemoryPageCount = 1024;
-
-
-/// A 4KB page of memory
-struct MemoryPage
-{	
-	unsigned tag;
-	unsigned perm;
-	MemoryPage *next;
-	char *data;
-};
-
-
 /// A 32-bit virtual memory space
 class Memory
 {
-	// Configuration option indicating whether memory objects should use
-	// safe mode.
-	static bool safe_mode;
-
-	/// Hash table of memory pages
-	MemoryPage *page_table[MemoryPageCount];
-
-	/// Safe mode
-	bool safe;
-
-	/// Heap break for CPU contexts
-	unsigned heap_break;
-
-	/// Last accessed address
-	unsigned last_address;
-
-	/// Create a new page and add it to the page table. The value given in
-	/// \a perm is an OR'ed bitmap of \a MemoryAccess flags.
-	MemoryPage *NewPage(unsigned addr, unsigned perm);
-
-	/// Free page at the given address
-	void FreePage(unsigned addr);
-
-	// Access memory without exceeding page boundaries
-	void AccessAtPageBoundary(unsigned addr, unsigned size, char *buf,
-			MemoryAccess access);
-
 public:
+
+	/// Log base 2 of the page size
+	static const unsigned LogPageSize = 12;
+
+	/// Size of a memory page
+	static const unsigned PageSize = (1u << LogPageSize);
+
+	/// Mask to apply on a byte address to discard the page offset
+	static const unsigned PageMask = (~(PageSize - 1));
+
+	/// Number of pages in the page table
+	static const unsigned PageCount = 1024;
 
 	/// Class representing a runtime error in a memory object
 	class Error : public misc::Error
@@ -99,6 +57,57 @@ public:
 		{
 		}
 	};
+
+	/// A 4KB page of memory
+	struct Page
+	{	
+		unsigned tag;
+		unsigned perm;
+		Page *next;
+		char *data;
+	};
+
+	/// Types of memory accesses
+	enum AccessType
+	{
+		AccessInvalid = 0,
+		AccessRead = 1 << 0,
+		AccessWrite = 1 << 1,
+		AccessExec = 1 << 2,
+		AccessInit = 1 << 3,
+		AccessModif = 1 << 4
+	};
+
+private:
+
+	// Configuration option indicating whether memory objects should use
+	// safe mode.
+	static bool safe_mode;
+
+	/// Hash table of memory pages
+	Page *page_table[PageCount];
+
+	/// Safe mode
+	bool safe;
+
+	/// Heap break for CPU contexts
+	unsigned heap_break;
+
+	/// Last accessed address
+	unsigned last_address;
+
+	/// Create a new page and add it to the page table. The value given in
+	/// \a perm is an *or*'ed bitmap of AccessType flags.
+	Page *newPage(unsigned addr, unsigned perm);
+
+	/// Free page at the given address
+	void freePage(unsigned addr);
+
+	// Access memory without exceeding page boundaries
+	void AccessAtPageBoundary(unsigned addr, unsigned size, char *buf,
+			AccessType access);
+
+public:
 
 	/// Constructor
 	Memory();
@@ -125,20 +134,20 @@ public:
 	void Clear();
 
 	/// Return the memory page corresponding to an address
-	MemoryPage *getPage(unsigned addr);
+	Page *getPage(unsigned addr);
 
 	/// Return the memory page following \a addr in the current memory map.
 	/// This function is useful to reconstruct consecutive ranges of mapped
 	/// pages.
-	MemoryPage *getNextPage(unsigned addr);
+	Page *getNextPage(unsigned addr);
 
  	/// Allocate, if not already allocated, all necessary memory pages to
 	/// access \a size bytes after base address \a addr. These fields have
 	/// no alignment restrictions.
 	/// 
 	/// Each new page will be allocated with the permissions specified in \a
-	/// perm, a bitmap of constants of type \a MemoryAccess. If any page
-	/// already existed, the permissions in \a perm will be added to it.
+	/// perm, a bitmap of constants of type AccessType. If any page already
+	/// existed, the permissions in \a perm will be added to it.
 	void Map(unsigned addr, unsigned size, unsigned perm);
 
  	/// Deallocate memory. If a page in the specified range was not
@@ -164,8 +173,8 @@ public:
 	///	size.
 	///
 	/// \param perm
-	///	Bitmap of constants of type \a MemoryAccess containing the
-	///	permission assigned to the allocated pages.
+	///	Bitmap of constants of type AccessType containing the permission
+	///	assigned to the allocated pages.
 	///
 	/// \return
 	///	The function returns the base address of the allocated memory
@@ -186,8 +195,8 @@ public:
 	///	the page size.
 	///
 	/// \param perm
-	///	Bitmap of constants of type \a MemoryAccess containing the
-	///	permission assigned to the allocated pages.
+	///	Bitmap of constants of type AccessType containing the permission
+	///	assigned to the allocated pages.
 	///
 	/// \returns
 	///	The base address of the allocated memory region, or `(unsigned)
@@ -204,7 +213,7 @@ public:
 	///	Number of bytes, multiple of page size.
 	///
 	/// \param perm
-	///	Bitmap of constants of type \a MemoryAccess specifying the new
+	///	Bitmap of constants of type AccessType specifying the new
 	///	permissions of the pages in the range.
 	void Protect(unsigned addr, unsigned size, unsigned perm);
 
@@ -222,7 +231,7 @@ public:
 	///	Number of bytes to copy
 	///
 	/// \throw
-	///	This function throws a MemoryException in safe mode if the
+	///	This function throws a Memory::Error in safe mode if the
 	///	source region does not have read permissions, or the destination
 	///	region does not have write permissions.
 	void Copy(unsigned dest, unsigned src, unsigned size);
@@ -243,11 +252,10 @@ public:
 	///	Type of access
 	///
 	/// \throw
-	///	A MemoryException is thrown in safe mode is the written pages
+	///	A Memory::Error is thrown in safe mode is the written pages
 	///	are not allocated, or do not have the permissions requested in
 	///	argument \a access.
-	void Access(unsigned addr, unsigned size, char *buf,
-			MemoryAccess access);
+	void Access(unsigned addr, unsigned size, char *buf, AccessType access);
 
 	/// Read from memory, with no alignment or size restrictions.
 	///
@@ -261,11 +269,11 @@ public:
 	///	Output buffer to write data
 	///
 	/// \throw
-	///	A MemoryException is thrown in safe mode is the written pages
+	///	A Memory::Error is thrown in safe mode is the written pages
 	///	are not allocated, or do not have read permissions.
 	void Read(unsigned addr, unsigned size, char *buf)
 	{
-		Access(addr, size, buf, MemoryAccessRead);
+		Access(addr, size, buf, AccessRead);
 	}
 
 	/// Write to memory, with no alignment of size restrictions.
@@ -280,11 +288,11 @@ public:
 	///	Input buffer to read data from
 	///
 	/// \throw
-	///	A MemoryException is thrown in safe mode is the written pages
+	///	A Memory::Error is thrown in safe mode is the written pages
 	///	are not allocated, or do not have write permissions.
 	void Write(unsigned addr, unsigned size, const char *buf)
 	{
-		Access(addr, size, const_cast<char *>(buf), MemoryAccessWrite);
+		Access(addr, size, const_cast<char *>(buf), AccessWrite);
 	}
 
 	/// Initialize memory with no alignment of size restrictions. The
@@ -300,11 +308,11 @@ public:
 	///	Input buffer to read data from
 	///
 	/// \throw
-	///	This function throws a MemoryException in safe mode if the
+	///	This function throws a Memory::Error in safe mode if the
 	///	destination page does not have initialization permissions.
 	void Init(unsigned addr, unsigned size, const char *buf)
 	{
-		Access(addr, size, const_cast<char *>(buf), MemoryAccessInit);
+		Access(addr, size, const_cast<char *>(buf), AccessInit);
 	}
 
 	/// Read a string from memory.
@@ -316,7 +324,7 @@ public:
 	///	Maximum length of the read string.
 	///
 	/// \throw
-	///	This function throws a MemoryException in safe mode if the
+	///	This function throws a Memory::Error in safe mode if the
 	///	source page does not have read permissions.
 	std::string ReadString(unsigned addr, int max_length = 1024);
 
@@ -329,7 +337,7 @@ public:
 	///	String to write
 	///
 	/// \throw
-	///	This function throws a MemoryException in safe mode if the
+	///	This function throws a Memory::Error in safe mode if the
 	///	destination page does not have write permissions.
 	void WriteString(unsigned addr, const std::string &s);
 	
@@ -354,10 +362,10 @@ public:
 	///	operations.
 	///
 	/// \throw
-	///	This function will throw a MemoryException if the memory is on
+	///	This function will throw a Memory::Error if the memory is on
 	///	safe mode and the page does not have the permissions requested
 	///	in argument \a access.
-	char *getBuffer(unsigned addr, unsigned size, MemoryAccess access);
+	char *getBuffer(unsigned addr, unsigned size, AccessType access);
 
 	/// Save a subset of the memory space into a file
 	///
@@ -371,13 +379,13 @@ public:
 	///	Last address to save
 	///
 	/// \throw
-	///	A MemoryException is thrown if file \a path cannot be accessed.
+	///	A Memory::Error is thrown if file \a path cannot be accessed.
 	void Save(const std::string &path, unsigned start, unsigned end);
 
 	/// Load a region of the memory space from a file into address \a start
 	///
 	/// \throw
-	///	A MemoryException is thrown if file \a path cannot be accessed.
+	///	A Memory::Error is thrown if file \a path cannot be accessed.
 	void Load(const std::string &path, unsigned start);
 
 	/// Set a new value for the heap break.

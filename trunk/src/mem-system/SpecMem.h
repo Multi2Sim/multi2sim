@@ -26,8 +26,6 @@
 namespace mem
 {
 
-class Memory;
-
 /// This class represents a temporary memory used during speculative execution
 /// of a CPU context. Speculative memory writes are stored here. A subsequent
 /// load during speculative execution will read its value from this memory if it
@@ -75,27 +73,32 @@ class SpecMem
 
 	// Access the memory at an aligned position
 	void AccessAligned(unsigned address, int size, char *buffer,
-			MemoryAccess access);
+			Memory::AccessType access);
 
 	// Access the memory without alignment restrictions
 	void Access(unsigned address, int size, char *buffer,
-			MemoryAccess access);
+			Memory::AccessType access);
 public:
 
 	/// Create a speculative memory associated with a real memory object
 	SpecMem(Memory *memory);
 
 	/// Destructor
-	~SpecMem() { Clear(); }
+	~SpecMem()
+	{
+		Clear();
+	}
 
 	/// Read from the memory
-	void Read(unsigned address, int size, char *buffer) {
-		Access(address, size, buffer, MemoryAccessRead);
+	void Read(unsigned address, int size, char *buffer)
+	{
+		Access(address, size, buffer, Memory::AccessRead);
 	}
 
 	/// Write to memory
-	void Write(unsigned address, int size, char *buffer) {
-		Access(address, size, buffer, MemoryAccessWrite);
+	void Write(unsigned address, int size, char *buffer)
+	{
+		Access(address, size, buffer, Memory::AccessWrite);
 	}
 
 	/// Clear content of the memory

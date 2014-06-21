@@ -83,7 +83,8 @@ int OpenGLABIMemAllocImpl(x86::Context *ctx)
 	// Map new pages 
 	mem::Memory &video_mem = si_emu->getVideoMem();
 	video_mem.Map(si_emu->getVideoMemTop(), size,
-		MemoryAccessRead | MemoryAccessWrite);
+			Memory::AccessRead |
+			Memory::AccessWrite);
 
 	// Virtual address of memory object 
 	unsigned device_ptr = si_emu->getVideoMemTop();

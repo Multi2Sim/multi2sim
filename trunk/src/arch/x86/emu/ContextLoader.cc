@@ -150,7 +150,7 @@ void Context::LoadELFSections(ELFReader::File *binary)
 	for (auto &section : binary->getSections())
 	{
 		// Debug
-		unsigned perm = mem::MemoryAccessInit | mem::MemoryAccessRead;
+		unsigned perm = mem::Memory::AccessInit | mem::Memory::AccessRead;
 		std::string flags_str = section_flags_map.MapFlags(section->getFlags());
 		Emu::loader_debug << misc::fmt("  section '%s': offset=0x%x, "
 				"addr=0x%x, size=%u, flags=%s\n",
@@ -163,13 +163,13 @@ void Context::LoadELFSections(ELFReader::File *binary)
 		{
 			// Write permission
 			if (section->getFlags() & SHF_WRITE)
-				perm |= mem::MemoryAccessWrite;
+				perm |= mem::Memory::AccessWrite;
 
 			// Executable section
 			if (section->getFlags() & SHF_EXECINSTR)
 			{
 				// Add execute permission
-				perm |= mem::MemoryAccessExec;
+				perm |= mem::Memory::AccessExec;
 
 				// Add region to call stack
 				if (call_stack != nullptr)
@@ -260,8 +260,8 @@ void Context::LoadProgramHeaders()
 			"table: 0x%x\n", phdt_base);
 
 	// Allocate memory for program headers
-	memory->Map(phdt_base, phdt_size, mem::MemoryAccessInit
-			| mem::MemoryAccessRead);
+	memory->Map(phdt_base, phdt_size, mem::Memory::AccessInit
+			| mem::Memory::AccessRead);
 
 	// Load program headers
 	int index = 0;
@@ -322,7 +322,7 @@ unsigned Context::LoadAV(unsigned where)
 	LoadAVEntry(sp, 5, loader->phdr_count);  // AT_PHNUM
 
 	// Other values
-	LoadAVEntry(sp, 6, mem::MemoryPageSize);  // AT_PAGESZ
+	LoadAVEntry(sp, 6, mem::Memory::PageSize);  // AT_PAGESZ
 	LoadAVEntry(sp, 7, 0);  // AT_BASE
 	LoadAVEntry(sp, 8, 0);  // AT_FLAGS
 	LoadAVEntry(sp, 9, loader->prog_entry);  // AT_ENTRY
@@ -385,7 +385,7 @@ void Context::LoadStack()
 	loader->stack_size = LoaderStackSize;
 	loader->stack_top = LoaderStackBase - LoaderStackSize;
 	memory->Map(loader->stack_top, loader->stack_size,
-			mem::MemoryAccessRead | mem::MemoryAccessWrite);
+			mem::Memory::AccessRead | mem::Memory::AccessWrite);
 	emu->loader_debug << misc::fmt("mapping region for stack from 0x%x to 0x%x\n",
 			loader->stack_top, loader->stack_base - 1);
 	
@@ -498,7 +498,7 @@ void Context::LoadBinary()
 	// Set heap break to the highest written address rounded up to
 	// the memory page boundary.
 	memory->setHeapBreak(misc::RoundUp(memory->getHeapBreak(),
-			mem::MemoryPageSize));
+			mem::Memory::PageSize));
 
 	// Load program header table. If we found a PT_INTERP program header,
 	// we have to load the program interpreter. This means we are dealing with
