@@ -142,16 +142,16 @@ class Function
 	std::vector<std::unique_ptr<FunctionUAV>> uav_list;
 
 	/* Predefined nodes */
-	Common::LeafNode *header_node;
-	Common::LeafNode *uavs_node;
-	Common::LeafNode *args_node;
-	Common::LeafNode *body_node;
+	comm::LeafNode *header_node;
+	comm::LeafNode *uavs_node;
+	comm::LeafNode *args_node;
+	comm::LeafNode *body_node;
 
 	/* Symbol table associated with the function, storing LLVM variables */
 	SymbolTable symbol_table;
 
 	/* Control tree */
-	Common::Tree tree;
+	comm::Tree tree;
 
 	/* List of elements found in LLVM phi instructions during emission of
 	 * the function body. */
@@ -174,9 +174,9 @@ class Function
 
 	void DumpData(std::ostream &os);
 
-	void EmitIfThen(Common::AbstractNode *node);
-	void EmitIfThenElse(Common::AbstractNode *node);
-	void EmitWhileLoop(Common::AbstractNode *node);
+	void EmitIfThen(comm::AbstractNode *node);
+	void EmitIfThenElse(comm::AbstractNode *node);
+	void EmitWhileLoop(comm::AbstractNode *node);
 
 	si2bin::Arg *TranslateConstant(llvm::Constant *llvm_const);
 
@@ -188,7 +188,7 @@ public:
 	explicit Function(llvm::Function *llvm_function);
 
 	/* Getters */
-	Common::Tree *getTree() { return &tree; }
+	comm::Tree *getTree() { return &tree; }
 	int getVRegGid() { return vreg_gid; }
 	int getVRegLid() { return vreg_lid; }
 	int getSRegGSize() { return sreg_gsize; }

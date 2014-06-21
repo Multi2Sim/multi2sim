@@ -32,7 +32,7 @@
 #include "Tree.h"
 
 
-namespace Common
+namespace comm
 {
 
 
@@ -1237,5 +1237,5 @@ void Tree::Compare(Tree *tree2)
 }
 
 
-}  // namespace Common
+}  // namespace comm
 

@@ -332,9 +332,9 @@ Function::Function(llvm::Function *llvm_function)
 		  num_vregs(0)
 {
 	/* Create pre-defined nodes in control tree */
-	header_node = new Common::LeafNode("header");
-	uavs_node = new Common::LeafNode("uavs");
-	args_node = new Common::LeafNode("args");
+	header_node = new comm::LeafNode("header");
+	uavs_node = new comm::LeafNode("uavs");
+	args_node = new comm::LeafNode("args");
 	tree.AddNode(header_node);
 	tree.AddNode(uavs_node);
 	tree.AddNode(args_node);
@@ -363,13 +363,13 @@ void Function::Dump(std::ostream &os)
 
 	/* Dump basic blocks */
 	os << ".text\n";
-	std::list<Common::Node *> node_list;
+	std::list<comm::Node *> node_list;
 	tree.PreorderTraversal(node_list);
 	for (auto &node : node_list)
 	{
 		/* Skip abstract nodes */
-		Common::LeafNode *leaf_node = dynamic_cast
-				<Common::LeafNode *>(node);
+		comm::LeafNode *leaf_node = dynamic_cast
+				<comm::LeafNode *>(node);
 		if (!leaf_node)
 			continue;
 
@@ -549,15 +549,15 @@ void Function::EmitBody()
 	/* Whether we use a pre- or a post-order traversal does not matter,
 	 * since we are only considering the leaf nodes.
 	 */
-	std::list<Common::Node *> node_list;
+	std::list<comm::Node *> node_list;
 	tree.PreorderTraversal(node_list);
 
 	/* Emit code for basic blocks */
 	for (auto node : node_list)
 	{
 		/* Skip abstract nodes */
-		Common::LeafNode *leaf_node = dynamic_cast
-				<Common::LeafNode *>(node);
+		comm::LeafNode *leaf_node = dynamic_cast
+				<comm::LeafNode *>(node);
 		if (!leaf_node)
 			continue;
 
@@ -581,7 +581,7 @@ void Function::EmitPhi()
 		Phi *phi = phi_list.front().get();
 
 		/* Get basic block */
-		Common::LeafNode *node = phi->getSrcNode();
+		comm::LeafNode *node = phi->getSrcNode();
 		BasicBlock *basic_block = misc::cast<BasicBlock *>(node->getBasicBlock());
 
 		/* Get source value */
@@ -601,25 +601,25 @@ void Function::EmitPhi()
 }
 
 
-void Function::EmitIfThen(Common::AbstractNode *node)
+void Function::EmitIfThen(comm::AbstractNode *node)
 {
 	/* Identify the two nodes */
 	assert(node);
-	assert(node->getRegion() == Common::AbstractNodeIfThen);
+	assert(node->getRegion() == comm::AbstractNodeIfThen);
 	assert(node->getChildList().size() == 2);
-	Common::Node *if_node = node->getChildList().front();
-	Common::Node *then_node = node->getChildList().back();
+	comm::Node *if_node = node->getChildList().front();
+	comm::Node *then_node = node->getChildList().back();
 
 	/* Make sure roles match */
-	assert(if_node->getRole() == Common::NodeRoleIf);
-	assert(then_node->getRole() == Common::NodeRoleThen);
+	assert(if_node->getRole() == comm::NodeRoleIf);
+	assert(then_node->getRole() == comm::NodeRoleThen);
 
 	/* Get basic blocks. 'If' node should be a leaf. */
 	then_node = then_node->getLastLeaf();
-	assert(if_node->getKind() == Common::NodeKindLeaf);
-	assert(then_node->getKind() == Common::NodeKindLeaf);
-	Common::LeafNode *if_leaf_node = misc::cast<Common::LeafNode *>(if_node);
-	Common::LeafNode *then_leaf_node = misc::cast<Common::LeafNode *>(then_node);
+	assert(if_node->getKind() == comm::NodeKindLeaf);
+	assert(then_node->getKind() == comm::NodeKindLeaf);
+	comm::LeafNode *if_leaf_node = misc::cast<comm::LeafNode *>(if_node);
+	comm::LeafNode *then_leaf_node = misc::cast<comm::LeafNode *>(then_node);
 	BasicBlock *if_basic_block = misc::cast<BasicBlock *>(if_leaf_node->getBasicBlock());
 	BasicBlock *then_basic_block = misc::cast<BasicBlock *>(then_leaf_node->getBasicBlock());
 
@@ -666,32 +666,32 @@ void Function::EmitIfThen(Common::AbstractNode *node)
 }
 
 
-void Function::EmitIfThenElse(Common::AbstractNode *node)
+void Function::EmitIfThenElse(comm::AbstractNode *node)
 {
 	/* Identify the three nodes */
 	assert(node);
-	assert(node->getRegion() == Common::AbstractNodeIfThenElse);
+	assert(node->getRegion() == comm::AbstractNodeIfThenElse);
 	assert(node->getChildList().size() == 3);
 	auto it = node->getChildList().begin();
-	Common::Node *if_node = *(it++);
-	Common::Node *then_node = *(it++);
-	Common::Node *else_node = *(it++);
+	comm::Node *if_node = *(it++);
+	comm::Node *then_node = *(it++);
+	comm::Node *else_node = *(it++);
 	assert(it == node->getChildList().end());
 
 	/* Make sure roles match */
-	assert(if_node->getRole() == Common::NodeRoleIf);
-	assert(then_node->getRole() == Common::NodeRoleThen);
-	assert(else_node->getRole() == Common::NodeRoleElse);
+	assert(if_node->getRole() == comm::NodeRoleIf);
+	assert(then_node->getRole() == comm::NodeRoleThen);
+	assert(else_node->getRole() == comm::NodeRoleElse);
 
 	/* Get basic blocks. 'If' node should be a leaf. */
 	then_node = then_node->getLastLeaf();
 	else_node = else_node->getLastLeaf();
-	assert(if_node->getKind() == Common::NodeKindLeaf);
-	assert(then_node->getKind() == Common::NodeKindLeaf);
-	assert(else_node->getKind() == Common::NodeKindLeaf);
-	Common::LeafNode *if_leaf_node = dynamic_cast<Common::LeafNode *>(if_node);
-	Common::LeafNode *then_leaf_node = dynamic_cast<Common::LeafNode *>(then_node);
-	Common::LeafNode *else_leaf_node = dynamic_cast<Common::LeafNode *>(else_node);
+	assert(if_node->getKind() == comm::NodeKindLeaf);
+	assert(then_node->getKind() == comm::NodeKindLeaf);
+	assert(else_node->getKind() == comm::NodeKindLeaf);
+	comm::LeafNode *if_leaf_node = dynamic_cast<comm::LeafNode *>(if_node);
+	comm::LeafNode *then_leaf_node = dynamic_cast<comm::LeafNode *>(then_node);
+	comm::LeafNode *else_leaf_node = dynamic_cast<comm::LeafNode *>(else_node);
 	BasicBlock *if_basic_block = dynamic_cast<BasicBlock *>(if_leaf_node->getBasicBlock());
 	BasicBlock *then_basic_block = dynamic_cast<BasicBlock *>(then_leaf_node->getBasicBlock());
 	BasicBlock *else_basic_block = dynamic_cast<BasicBlock *>(else_leaf_node->getBasicBlock());
@@ -751,24 +751,24 @@ void Function::EmitIfThenElse(Common::AbstractNode *node)
 }
 
 
-void Function::EmitWhileLoop(Common::AbstractNode *node)
+void Function::EmitWhileLoop(comm::AbstractNode *node)
 {
 	/* Identify the two nodes */
 	assert(node);
-	assert(node->getRegion() == Common::AbstractNodeWhileLoop);
+	assert(node->getRegion() == comm::AbstractNodeWhileLoop);
 	assert(node->getChildList().size() == 4);
 	auto it = node->getChildList().begin();
-	Common::Node *pre_node = *(it++);
-	Common::Node *head_node = *(it++);
-	Common::Node *tail_node = *(it++);
-	Common::Node *exit_node = *(it++);
+	comm::Node *pre_node = *(it++);
+	comm::Node *head_node = *(it++);
+	comm::Node *tail_node = *(it++);
+	comm::Node *exit_node = *(it++);
 	assert(it == node->getChildList().end());
 
 	/* Make sure roles match */
-	assert(pre_node->getRole() == Common::NodeRolePre);
-	assert(head_node->getRole() == Common::NodeRoleHead);
-	assert(tail_node->getRole() == Common::NodeRoleTail);
-	assert(exit_node->getRole() == Common::NodeRoleExit);
+	assert(pre_node->getRole() == comm::NodeRolePre);
+	assert(head_node->getRole() == comm::NodeRoleHead);
+	assert(tail_node->getRole() == comm::NodeRoleTail);
+	assert(exit_node->getRole() == comm::NodeRoleExit);
 
 	/* Get basic blocks. Pre-header/head/exit nodes should be a leaves.
 	 * Tail node can be an abstract node, which we need to track down to
@@ -780,14 +780,14 @@ void Function::EmitWhileLoop(Common::AbstractNode *node)
 	 * contain no basic block yet.
 	 */
 	tail_node = tail_node->getLastLeaf();
-	assert(pre_node->getKind() == Common::NodeKindLeaf);
-	assert(head_node->getKind() == Common::NodeKindLeaf);
-	assert(tail_node->getKind() == Common::NodeKindLeaf);
-	assert(exit_node->getKind() == Common::NodeKindLeaf);
-	Common::LeafNode *pre_leaf_node = misc::cast<Common::LeafNode *>(pre_node);
-	Common::LeafNode *head_leaf_node = misc::cast<Common::LeafNode *>(head_node);
-	Common::LeafNode *tail_leaf_node = misc::cast<Common::LeafNode *>(tail_node);
-	Common::LeafNode *exit_leaf_node = misc::cast<Common::LeafNode *>(exit_node);
+	assert(pre_node->getKind() == comm::NodeKindLeaf);
+	assert(head_node->getKind() == comm::NodeKindLeaf);
+	assert(tail_node->getKind() == comm::NodeKindLeaf);
+	assert(exit_node->getKind() == comm::NodeKindLeaf);
+	comm::LeafNode *pre_leaf_node = misc::cast<comm::LeafNode *>(pre_node);
+	comm::LeafNode *head_leaf_node = misc::cast<comm::LeafNode *>(head_node);
+	comm::LeafNode *tail_leaf_node = misc::cast<comm::LeafNode *>(tail_node);
+	comm::LeafNode *exit_leaf_node = misc::cast<comm::LeafNode *>(exit_node);
 	assert(!pre_leaf_node->getBasicBlock());
 	BasicBlock *head_basic_block = misc::cast<BasicBlock *>(head_leaf_node->getBasicBlock());
 	BasicBlock *tail_basic_block = misc::cast<BasicBlock *>(tail_leaf_node->getBasicBlock());
@@ -881,15 +881,15 @@ void Function::EmitControlFlow()
 	/* Emit control flow actions using a post-order traversal of the syntax
 	 * tree (not control-flow graph), from inner to outer control flow
 	 * structures. Which specific post-order traversal does not matter. */
-	std::list<Common::Node *> node_list;
+	std::list<comm::Node *> node_list;
 	tree.PostorderTraversal(node_list);
 
 	/* Traverse nodes */
 	for (auto &node : node_list)
 	{
 		/* Ignore leaf nodes */
-		Common::AbstractNode *abs_node = dynamic_cast
-				<Common::AbstractNode *>(node);
+		comm::AbstractNode *abs_node = dynamic_cast
+				<comm::AbstractNode *>(node);
 		if (!abs_node)
 			continue;
 
@@ -897,29 +897,29 @@ void Function::EmitControlFlow()
 		switch (abs_node->getRegion())
 		{
 
-		case Common::AbstractNodeBlock:
+		case comm::AbstractNodeBlock:
 
 			/* Ignore blocks */
 			break;
 
-		case Common::AbstractNodeIfThen:
+		case comm::AbstractNodeIfThen:
 
 			EmitIfThen(abs_node);
 			break;
 
-		case Common::AbstractNodeIfThenElse:
+		case comm::AbstractNodeIfThenElse:
 
 			EmitIfThenElse(abs_node);
 			break;
 
-		case Common::AbstractNodeWhileLoop:
+		case comm::AbstractNodeWhileLoop:
 
 			EmitWhileLoop(abs_node);
 			break;
 
 		default:
 			misc::panic("%s: region %s not supported", __FUNCTION__,
-					Common::abstract_node_region_map.MapValue(
+					comm::abstract_node_region_map.MapValue(
 					abs_node->getRegion()));
 		}
 	}
@@ -928,23 +928,23 @@ void Function::EmitControlFlow()
 
 void Function::LiveRegisterAnalysis() {
 	llvm2si::BasicBlock *basic_block;
-	//Common::Node *node;
+	//comm::Node *node;
 
 	std::list<llvm2si::BasicBlock *> worklist;
 
-	std::list<Common::Node *> node_list;
+	std::list<comm::Node *> node_list;
 	tree.PostorderTraversal(node_list);
 	for(auto &node : node_list)
 	{
 		/* Skip abstract nodes */
-		if (node->getKind() != Common::NodeKindLeaf)
+		if (node->getKind() != comm::NodeKindLeaf)
 			continue;
 
 		/* Get node's basic block */
-		if (!dynamic_cast<Common::LeafNode*>(node))
+		if (!dynamic_cast<comm::LeafNode*>(node))
 			continue;
 
-		basic_block = dynamic_cast<llvm2si::BasicBlock*>((dynamic_cast<Common::LeafNode*>(node)->getBasicBlock()));
+		basic_block = dynamic_cast<llvm2si::BasicBlock*>((dynamic_cast<comm::LeafNode*>(node)->getBasicBlock()));
 		if (!basic_block)
 			continue;
 
@@ -986,7 +986,7 @@ void Function::LiveRegisterAnalysis() {
 		}
 
 		/* Adds basic block into worklist if it is a exit node */
-		llvm::BasicBlock *llvm_basic_block = (dynamic_cast<Common::LeafNode*>(node))->getLlvmBasicBlock();
+		llvm::BasicBlock *llvm_basic_block = (dynamic_cast<comm::LeafNode*>(node))->getLlvmBasicBlock();
 		llvm::TerminatorInst *llvm_inst = llvm_basic_block->getTerminator();
 		assert(llvm_inst);
 		if(llvm_inst->getOpcode() == llvm::Instruction::Ret)
@@ -1007,14 +1007,14 @@ void Function::LiveRegisterAnalysis() {
 			llvm2si::BasicBlock *pred_basic_block;
 
 			/* Skip abstract nodes */
-			if (node->getKind() != Common::NodeKindLeaf)
+			if (node->getKind() != comm::NodeKindLeaf)
 				continue;
 
 			/* Get node's basic block */
-			if (!dynamic_cast<Common::LeafNode*>(node))
+			if (!dynamic_cast<comm::LeafNode*>(node))
 				continue;
 			//
-			pred_basic_block = dynamic_cast<llvm2si::BasicBlock*>((dynamic_cast<Common::LeafNode*>(node)->getBasicBlock()));
+			pred_basic_block = dynamic_cast<llvm2si::BasicBlock*>((dynamic_cast<comm::LeafNode*>(node)->getBasicBlock()));
 			if (!basic_block)
 				continue;
 
@@ -1040,14 +1040,14 @@ void Function::LiveRegisterAnalysis() {
 	for (auto &node : node_list)
 	{
 		/* Skip abstract nodes */
-		if (node->getKind() != Common::NodeKindLeaf)
+		if (node->getKind() != comm::NodeKindLeaf)
 			continue;
 
 		/* Get node's basic block */
-		if (!dynamic_cast<Common::LeafNode*>(node))
+		if (!dynamic_cast<comm::LeafNode*>(node))
 			continue;
 
-		basic_block = dynamic_cast<llvm2si::BasicBlock*>((dynamic_cast<Common::LeafNode*>(node)->getBasicBlock()));
+		basic_block = dynamic_cast<llvm2si::BasicBlock*>((dynamic_cast<comm::LeafNode*>(node)->getBasicBlock()));
 		if (!basic_block)
 			continue;
 
@@ -1062,14 +1062,14 @@ void Function::LiveRegisterAnalysis() {
 	for (auto &node : node_list)
 	{
 		/* Skip abstract nodes */
-		if (node->getKind() != Common::NodeKindLeaf)
+		if (node->getKind() != comm::NodeKindLeaf)
 			continue;
 
 		/* Get node's basic block */
-		if (!dynamic_cast<Common::LeafNode*>(node))
+		if (!dynamic_cast<comm::LeafNode*>(node))
 			continue;
 
-		basic_block = dynamic_cast<llvm2si::BasicBlock*>((dynamic_cast<Common::LeafNode*>(node)->getBasicBlock()));
+		basic_block = dynamic_cast<llvm2si::BasicBlock*>((dynamic_cast<comm::LeafNode*>(node)->getBasicBlock()));
 		if (!basic_block)
 			continue;
 
@@ -1098,21 +1098,21 @@ void Function::LiveRegisterAllocation() {
 	llvm2si::InterferenceGraph interferenceGraph(this->num_vregs);
 
 	llvm2si::BasicBlock *basic_block;
-	//Common::Node *node;
+	//comm::Node *node;
 
-	std::list<Common::Node *> node_list;
+	std::list<comm::Node *> node_list;
 	tree.PostorderTraversal(node_list);
 	for(auto &node : node_list)
 	{
 		/* Skip abstract nodes */
-		if (node->getKind() != Common::NodeKindLeaf)
+		if (node->getKind() != comm::NodeKindLeaf)
 			continue;
 
 		/* Get node's basic block */
-		if (!dynamic_cast<Common::LeafNode*>(node))
+		if (!dynamic_cast<comm::LeafNode*>(node))
 			continue;
 
-		basic_block = dynamic_cast<llvm2si::BasicBlock*>((dynamic_cast<Common::LeafNode*>(node)->getBasicBlock()));
+		basic_block = dynamic_cast<llvm2si::BasicBlock*>((dynamic_cast<comm::LeafNode*>(node)->getBasicBlock()));
 		if (!basic_block)
 			continue;
 
@@ -1160,19 +1160,19 @@ void Function::LiveRegisterAnalysisBitmapDump() {
 
 	int i = 0;
 
-	std::list<Common::Node *> node_list;
+	std::list<comm::Node *> node_list;
 	tree.PostorderTraversal(node_list);
 	for (auto &node : node_list)
 	{
 		/* Skip abstract nodes */
-		if (node->getKind() != Common::NodeKindLeaf)
+		if (node->getKind() != comm::NodeKindLeaf)
 			continue;
 
 		/* Get node's basic block */
-		if (!dynamic_cast<Common::LeafNode*>(node))
+		if (!dynamic_cast<comm::LeafNode*>(node))
 			continue;
 
-		llvm2si::BasicBlock *basic_block = dynamic_cast<llvm2si::BasicBlock*>((dynamic_cast<Common::LeafNode*>(node)->getBasicBlock()));
+		llvm2si::BasicBlock *basic_block = dynamic_cast<llvm2si::BasicBlock*>((dynamic_cast<comm::LeafNode*>(node)->getBasicBlock()));
 		if (!basic_block)
 			continue;
 
