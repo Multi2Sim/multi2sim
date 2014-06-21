@@ -23,25 +23,34 @@
 namespace Common
 {
 
-/* Forward declarations */
+// Forward declarations
 class LeafNode;
 
 
+/// This class is used as a base class representing a basic block of any
+/// architecture. Each back-end should derive its own basic block class.
 class BasicBlock
 {
-	/* Node associated in control tree */
+	// Node associated in control tree
 	LeafNode *node;
+
 public:
 
-	/* Constructor/destructor */
+	/// Constructor
+	///
+	/// \param node
+	///	Associated node in the control tree
 	BasicBlock(LeafNode *node);
+
+	/// Virtual destructor
 	virtual ~BasicBlock() { }
 
-	/* Getters */
-	LeafNode *getNode() { return node; }
+	/// Return associated node in the control tree
+	LeafNode *getNode() const { return node; }
 };
 
 
-}  /* namespace Common */
+}  // namespace Common
 
 #endif
+

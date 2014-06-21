@@ -1002,7 +1002,7 @@ void Function::LiveRegisterAnalysis() {
 
 		// Get predecessors
 		// TODO is this pred list correct??? I dont think it contains headers
-		for (auto &node : basic_block->getNode()->pred_list)
+		for (auto &node : basic_block->getNode()->getPredList())
 		{
 			llvm2si::BasicBlock *pred_basic_block;
 
