@@ -23,6 +23,8 @@
 #include <iostream>
 #include <stdexcept>
 
+#include <lib/cpp/Error.h>
+
 
 namespace mem
 {
@@ -44,24 +46,6 @@ static const unsigned MemoryPageMask = (~(MemoryPageSize - 1));
 static const unsigned MemoryPageCount = 1024;
 
 
-class MemoryException : public std::runtime_error
-{
-	// Address causing exception
-	unsigned address;
-
-public:
-
-	/// Constructor
-	///
-	/// \param address
-	///	Memory address causing the exception.
-	MemoryException(const std::string &error)
-			: std::runtime_error("[Memory] " + error)
-	{
-	}
-};
-
-
 /// A 4KB page of memory
 struct MemoryPage
 {	
@@ -75,6 +59,8 @@ struct MemoryPage
 /// A 32-bit virtual memory space
 class Memory
 {
+	// Configuration option indicating whether memory objects should use
+	// safe mode.
 	static bool safe_mode;
 
 	/// Hash table of memory pages
@@ -101,6 +87,18 @@ class Memory
 			MemoryAccess access);
 
 public:
+
+	/// Class representing a runtime error in a memory object
+	class Error : public misc::Error
+	{
+	public:
+
+		/// Constructor
+		Error(const std::string &message) :
+				misc::Error("Memory", message)
+		{
+		}
+	};
 
 	/// Constructor
 	Memory();

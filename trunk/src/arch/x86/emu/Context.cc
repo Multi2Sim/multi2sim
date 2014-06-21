@@ -780,7 +780,7 @@ void Context::Execute()
 			ExecuteInstFn fn = execute_inst_fn[inst.getOpcode()];
 			(this->*fn)();
 		}
-		catch (mem::MemoryException &e)
+		catch (mem::Memory::Error &e)
 		{
 			// Stack back trace
 			if (call_stack != nullptr)
