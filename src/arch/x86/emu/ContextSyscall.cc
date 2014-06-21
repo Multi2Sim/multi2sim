@@ -1546,8 +1546,8 @@ int Context::ExecuteSyscall_brk()
 			new_heap_break, old_heap_break);
 
 	// Align
-	unsigned new_heap_break_aligned = misc::RoundUp(new_heap_break, mem::MemoryPageSize);
-	unsigned old_heap_break_aligned = misc::RoundUp(old_heap_break, mem::MemoryPageSize);
+	unsigned new_heap_break_aligned = misc::RoundUp(new_heap_break, mem::Memory::PageSize);
+	unsigned old_heap_break_aligned = misc::RoundUp(old_heap_break, mem::Memory::PageSize);
 
 	// If argument is zero, the system call is used to obtain the current
 	// top of the heap
@@ -1566,7 +1566,7 @@ int Context::ExecuteSyscall_brk()
 					old_heap_break_aligned)
 				misc::fatal("%s: out of memory", __FUNCTION__);
 			memory->Map(old_heap_break_aligned, size,
-					mem::MemoryAccessRead | mem::MemoryAccessWrite);
+					mem::Memory::AccessRead | mem::Memory::AccessWrite);
 		}
 		memory->setHeapBreak(new_heap_break);
 		emu->syscall_debug << misc::fmt("  heap grows %u bytes\n",
@@ -2317,10 +2317,10 @@ int Context::SyscallMmapAux(unsigned addr, unsigned len,
 		misc::fatal("%s: invalid guest descriptor", __FUNCTION__);
 
 	// Permissions
-	int perm = mem::MemoryAccessInit;
-	perm |= prot & PROT_READ ? mem::MemoryAccessRead : 0;
-	perm |= prot & PROT_WRITE ? mem::MemoryAccessWrite : 0;
-	perm |= prot & PROT_EXEC ? mem::MemoryAccessExec : 0;
+	int perm = mem::Memory::AccessInit;
+	perm |= prot & PROT_READ ? mem::Memory::AccessRead : 0;
+	perm |= prot & PROT_WRITE ? mem::Memory::AccessWrite : 0;
+	perm |= prot & PROT_EXEC ? mem::Memory::AccessExec : 0;
 
 	// Flag MAP_ANONYMOUS.
 	// If it is set, the 'fd' parameter is ignored.
@@ -2329,11 +2329,11 @@ int Context::SyscallMmapAux(unsigned addr, unsigned len,
 
 	// 'addr' and 'offset' must be aligned to page size boundaries.
 	// 'len' is rounded up to page boundary.
-	if (offset & ~mem::MemoryPageMask)
+	if (offset & ~mem::Memory::PageMask)
 		misc::fatal("%s: unaligned offset", __FUNCTION__);
-	if (addr & ~mem::MemoryPageMask)
+	if (addr & ~mem::Memory::PageMask)
 		misc::fatal("%s: unaligned address", __FUNCTION__);
-	unsigned len_aligned = misc::RoundUp(len, mem::MemoryPageSize);
+	unsigned len_aligned = misc::RoundUp(len, mem::Memory::PageSize);
 
 	// Find region for allocation
 	if (flags & MAP_FIXED)
@@ -2369,18 +2369,18 @@ int Context::SyscallMmapAux(unsigned addr, unsigned len,
 		lseek(host_fd, offset, SEEK_SET);
 
 		// Read pages
-		assert(len_aligned % mem::MemoryPageSize == 0);
-		assert(addr % mem::MemoryPageSize == 0);
+		assert(len_aligned % mem::Memory::PageSize == 0);
+		assert(addr % mem::Memory::PageSize == 0);
 		unsigned curr_addr = addr;
-		for (int size = len_aligned; size > 0; size -= mem::MemoryPageSize)
+		for (int size = len_aligned; size > 0; size -= mem::Memory::PageSize)
 		{
-			char buf[mem::MemoryPageSize];
-			memset(buf, 0, mem::MemoryPageSize);
-			int count = read(host_fd, buf, mem::MemoryPageSize);
+			char buf[mem::Memory::PageSize];
+			memset(buf, 0, mem::Memory::PageSize);
+			int count = read(host_fd, buf, mem::Memory::PageSize);
 			if (count)
-				memory->Access(curr_addr, mem::MemoryPageSize,
-						buf, mem::MemoryAccessInit);
-			curr_addr += mem::MemoryPageSize;
+				memory->Access(curr_addr, mem::Memory::PageSize,
+						buf, mem::Memory::AccessInit);
+			curr_addr += mem::Memory::PageSize;
 		}
 
 		// Record map in call stack
@@ -2440,11 +2440,11 @@ int Context::ExecuteSyscall_munmap()
 	emu->syscall_debug << misc::fmt("  addr=0x%x, size=0x%x\n", addr, size);
 
 	// Restrictions
-	if (addr & (mem::MemoryPageSize - 1))
+	if (addr & (mem::Memory::PageSize - 1))
 		misc::fatal("%s: address not aligned", __FUNCTION__);
 
 	// Unmap
-	unsigned size_aligned = misc::RoundUp(size, mem::MemoryPageSize);
+	unsigned size_aligned = misc::RoundUp(size, mem::Memory::PageSize);
 	memory->Unmap(addr, size_aligned);
 
 	// Return
@@ -3054,9 +3054,9 @@ int Context::ExecuteSyscall_mprotect()
 
 	// Permissions
 	int perm = 0;
-	perm |= prot & 0x01 ? mem::MemoryAccessRead : 0;
-	perm |= prot & 0x02 ? mem::MemoryAccessWrite : 0;
-	perm |= prot & 0x04 ? mem::MemoryAccessExec : 0;
+	perm |= prot & 0x01 ? mem::Memory::AccessRead : 0;
+	perm |= prot & 0x02 ? mem::Memory::AccessWrite : 0;
+	perm |= prot & 0x04 ? mem::Memory::AccessExec : 0;
 	memory->Protect(start, len, perm);
 
 	// Return
@@ -3926,9 +3926,9 @@ int Context::ExecuteSyscall_mremap()
 			addr, old_len, new_len, flags);
 
 	// Restrictions
-	assert(!(addr & (mem::MemoryPageSize - 1)));
-	assert(!(old_len & (mem::MemoryPageSize - 1)));
-	assert(!(new_len & (mem::MemoryPageSize - 1)));
+	assert(!(addr & (mem::Memory::PageSize - 1)));
+	assert(!(old_len & (mem::Memory::PageSize - 1)));
+	assert(!(new_len & (mem::Memory::PageSize - 1)));
 	if (!(flags & 0x1))
 		misc::fatal("%s: flags MAP_MAYMOVE must be present",
 				__FUNCTION__);
@@ -3953,7 +3953,8 @@ int Context::ExecuteSyscall_mremap()
 			new_len - old_len) == addr + old_len)
 	{
 		memory->Map(addr + old_len, new_len - old_len,
-				mem::MemoryAccessRead | mem::MemoryAccessWrite);
+				mem::Memory::AccessRead |
+				mem::Memory::AccessWrite);
 		return addr;
 	}
 
@@ -3963,8 +3964,9 @@ int Context::ExecuteSyscall_mremap()
 		misc::fatal("%s: out of guest memory", __FUNCTION__);
 
 	// Map new region and copy old one
-	memory->Map(new_addr, new_len, mem::MemoryAccessRead |
-			mem::MemoryAccessWrite);
+	memory->Map(new_addr, new_len,
+			mem::Memory::AccessRead |
+			mem::Memory::AccessWrite);
 	memory->Copy(new_addr, addr, std::min(old_len, new_len));
 	memory->Unmap(addr, old_len);
 
@@ -4760,7 +4762,7 @@ int Context::ExecuteSyscall_mmap2()
 	// System calls 'mmap' and 'mmap2' only differ in the interpretation of
 	// argument 'offset'. Here, it is given in memory pages.
 	return SyscallMmapAux(addr, len, prot, flags, guest_fd,
-			offset << mem::MemoryPageShift);
+			offset << mem::Memory::LogPageSize);
 }
 
 

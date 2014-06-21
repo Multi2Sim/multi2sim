@@ -156,7 +156,7 @@ void Context::Execute()
 	/// read 4 bytes mips instruction from memory into buffer
 	char buffer[4];
 	char *buffer_ptr = memory->getBuffer(regs.getPC(), 4,
-				mem::MemoryAccessExec);
+				mem::Memory::AccessExec);
 	if (!buffer_ptr)
 	{
 		// Disable safe mode. If a part of the 4 read bytes does not
@@ -166,7 +166,7 @@ void Context::Execute()
 		memory->setSafe(false);
 		buffer_ptr = buffer;
 		memory->Access(regs.getPC(), 4, buffer_ptr,
-			mem::MemoryAccessExec);
+				mem::Memory::AccessExec);
 	}
 
 	// Return to default safe mode
