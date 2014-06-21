@@ -49,12 +49,14 @@ void fatal(const char *fmt, ...)
 	va_start(va, fmt);
 	vsnprintf(buf, sizeof buf, fmt, va);
 
+	// Colors
+	std::string red = std::cerr.tellp() == -1 ? "\033[31m" : "";
+	std::string black = std::cerr.tellp() == -1 ? "\033[30m" : "";
+
 	// Print in clean paragraphs
 	StringFormatter formatter;
-	formatter.setIndent(8);
-	formatter.setFirstLineIndent(0);
 	formatter << buf;
-	std::cerr << '\n' << formatter << "\n\n";
+	std::cerr << '\n' << red << formatter << black << "\n\n";
 	exit(1);
 }
 
@@ -68,12 +70,14 @@ void panic(const char *fmt, ...)
 	va_start(va, fmt);
 	vsnprintf(buf, sizeof buf, fmt, va);
 
+	// Colors
+	std::string red = std::cerr.tellp() == -1 ? "\033[31m" : "";
+	std::string black = std::cerr.tellp() == -1 ? "\033[30m" : "";
+
 	// Print in clean paragraphs
 	StringFormatter formatter;
-	formatter.setIndent(8);
-	formatter.setFirstLineIndent(0);
 	formatter << "Panic: " << buf;
-	std::cerr << '\n' << formatter << "\n\n";
+	std::cerr << '\n' << red << formatter << black << "\n\n";
 
 	// Abort program
 	abort();
@@ -88,13 +92,15 @@ void warning(const char *fmt, ...)
 	// Construct message
 	va_start(va, fmt);
 	vsnprintf(buf, sizeof buf, fmt, va);
+	
+	// Colors
+	std::string blue = std::cerr.tellp() == -1 ? "\033[34m" : "";
+	std::string black = std::cerr.tellp() == -1 ? "\033[30m" : "";
 
 	// Print in clean paragraphs
 	StringFormatter formatter;
-	formatter.setIndent(8);
-	formatter.setFirstLineIndent(0);
 	formatter << "Warning: " << buf;
-	std::cerr << '\n' << formatter << "\n\n";
+	std::cerr << '\n' << blue << formatter << black << "\n\n";
 }
 
 
