@@ -56,6 +56,18 @@ public:
 
 		/// Set new owner
 		void setOwner(int owner) { this->owner = owner; }
+
+		/// Increment the number of sharers
+		void incNumSharers() { num_sharers++; }
+
+		/// Decrement the number of sharers
+		void decNumSharers() { num_sharers--; }
+
+		/// Set the number of sharers
+		void setNumSharers(int num_sharers)
+		{
+			this->num_sharers = num_sharers;
+		}
 	};
 
 private:
@@ -112,6 +124,25 @@ public:
 
 	/// Set new owner for the directory entry
 	void setOwner(int set_id, int way_id, int subblock_id, int owner);
+
+	/// Activate one sharer for a directory entry
+	void setSharer(int set_id, int way_id, int subblock_id, int node);
+
+	/// Disable one sharer for a directory entry
+	void clearSharer(int set_id, int way_id, int subblock_id, int node);
+
+	/// Clear all sharers of a directory entry
+	void clearAllSharers(int set_id, int way_id, int subblock_id);
+
+	/// Return whether a sharer is present in a directory entry
+	bool isSharer(int set_id, int way_id, int subblock_id, int node_id);
+
+	/// Return whether part of a block is shared or owned
+	bool isBlockSharedOrOwned(int set_id, int way_id);
+
+	/// Dump array of sharers of a sub-block into an output stream
+	void DumpSharers(int set_id, int way_id, int subblock_id,
+			std::ostream &os = std::cout);
 };
 
 
