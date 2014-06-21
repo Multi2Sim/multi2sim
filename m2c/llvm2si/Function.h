@@ -32,6 +32,7 @@
 #include <m2c/common/Tree.h>
 #include <m2c/si2bin/Arg.h>
 
+#include "BasicBlock.h"
 #include "Phi.h"
 #include "Symbol.h"
 
@@ -39,8 +40,7 @@
 namespace llvm2si
 {
 
-/* Forward declarations */
-class BasicBlock;
+// Forward declarations
 class Function;
 
 class FunctionArg
@@ -51,7 +51,7 @@ class FunctionArg
 
 	std::string name;
 	
-	/* Associated LLVM argument */
+	// Associated LLVM argument
 	llvm::Argument *llvm_arg;
 
 
@@ -59,30 +59,30 @@ class FunctionArg
 	 * a function with a call to Function::AddArg(). */
 	Function *function;
 
-	/* Index occupied in function argument list */
+	// Index occupied in function argument list
 	int index;
 	
 	/* For arguments of type SI::ArgTypePointer, and scope
 	 * SI::ArgScopeUAV */
 	int uav_index;
 
-	/* Scalar register identifier containing the argument */
+	// Scalar register identifier containing the argument
 	int sreg;
 
-	/* Vector register identifier containing the argument */
+	// Vector register identifier containing the argument
 	int vreg;
 
 public:
 
-	/* Constructor */
+	// Constructor
 	FunctionArg(llvm::Argument *llvm_arg);
 
-	/* Dump */
+	// Dump
 	void Dump(std::ostream &os);
 	friend std::ostream &operator<<(std::ostream &os, FunctionArg &arg)
 			{ arg.Dump(os); return os; }
 
-	/* Return a Southern Islands argument type from an LLVM type. */
+	// Return a Southern Islands argument type from an LLVM type.
 	static SI::ArgDataType getDataType(llvm::Type *llvm_type);
 
 	/* Return the number of elements in a vector type, or 1 if the LLVM
@@ -95,7 +95,7 @@ class FunctionUAV
 {
 	friend class Function;
 
-	/* Function where it belongs */
+	// Function where it belongs
 	Function *function;
 
 	/* UAV index in 'function->uav_list'. Uav10 has an index 0, uav11 has
@@ -108,7 +108,7 @@ class FunctionUAV
 
 public:
 
-	/* Getters */
+	// Getters
 	int getSReg() { return sreg; }
 };
 
@@ -117,40 +117,43 @@ class Function
 {
 	std::string name;
 
-	/* Associated LLVM function */
+	// Associated LLVM function
 	llvm::Function *llvm_function;
 
-	/* Number of used registers */
-	int num_sregs;  /* Scalar */
+	// Number of used registers
+	int num_sregs;  // Scalar
 
-	int sreg_uav_table;  /* UAV table (2 registers) */
-	int sreg_cb0;  /* CB0 (4 registers) */
-	int sreg_cb1;  /* CB1 (4 registers) */
-	int sreg_wgid;  /* Work-group ID (3 registers) */
-	int sreg_gsize;  /* Global size (3 register) */
-	int sreg_lsize;  /* Local size (3 registers) */
-	int sreg_offs;  /* Global offset (3 registers) */
+	int sreg_uav_table;  // UAV table (2 registers)
+	int sreg_cb0;  // CB0 (4 registers)
+	int sreg_cb1;  // CB1 (4 registers)
+	int sreg_wgid;  // Work-group ID (3 registers)
+	int sreg_gsize;  // Global size (3 register)
+	int sreg_lsize;  // Local size (3 registers)
+	int sreg_offs;  // Global offset (3 registers)
 
-	int vreg_lid;  /* Local ID (3 registers) */
-	int vreg_gid;  /* Global ID (4 registers) */
+	int vreg_lid;  // Local ID (3 registers)
+	int vreg_gid;  // Global ID (4 registers)
 
-	/* List of arguments */
+	// List of arguments
 	std::list<std::unique_ptr<FunctionArg>> arg_list;
 
 	/* Array of UAVs, starting at uav10. Each UAV is associated with one
 	 * function argument using a buffer in global memory. */
 	std::vector<std::unique_ptr<FunctionUAV>> uav_list;
 
-	/* Predefined nodes */
+	// List of basic blocks belonging to the function
+	std::vector<std::unique_ptr<BasicBlock>> basic_blocks;
+
+	// Predefined nodes
 	comm::LeafNode *header_node;
 	comm::LeafNode *uavs_node;
 	comm::LeafNode *args_node;
 	comm::LeafNode *body_node;
 
-	/* Symbol table associated with the function, storing LLVM variables */
+	// Symbol table associated with the function, storing LLVM variables
 	SymbolTable symbol_table;
 
-	/* Control tree */
+	// Control tree
 	comm::Tree tree;
 
 	/* List of elements found in LLVM phi instructions during emission of
@@ -182,12 +185,12 @@ class Function
 
 public:
 
-	int num_vregs;  /* Vector */
+	int num_vregs;  // Vector
 
-	/* Constructor */
+	// Constructor
 	explicit Function(llvm::Function *llvm_function);
 
-	/* Getters */
+	// Getters
 	comm::Tree *getTree() { return &tree; }
 	int getVRegGid() { return vreg_gid; }
 	int getVRegLid() { return vreg_lid; }
@@ -196,15 +199,27 @@ public:
 			(int) uav_list.size() ? uav_list[index].get() :
 			nullptr; }
 
-	/* Dump */
+	// Dump
 	void Dump(std::ostream &os);
 	friend std::ostream &operator<<(std::ostream &os, Function &function)
-			{ function.Dump(os); return os; }
+	{
+		function.Dump(os);
+		return os;
+	}
 
-	/* Add symbol to symbol table */
+	/// Create a basic block that belongs to the function, and return a
+	/// pointer to it. The new basic block will be internally freed when the
+	/// function object is destroyed.
+	BasicBlock *newBasicBlock(comm::LeafNode *node)
+	{
+		basic_blocks.emplace_back(new BasicBlock(this, node));
+		return basic_blocks.back().get();
+	}
+
+	// Add symbol to symbol table
 	void AddSymbol(Symbol *symbol) { symbol_table.AddSymbol(symbol); }
 
-	/* Add phi node to list */
+	// Add phi node to list
 	void AddPhi(Phi *phi) { phi_list.emplace_back(phi); }
 
 	/* Generate initialization code for the function in basic block
@@ -276,7 +291,7 @@ public:
 	 */
 	void LiveRegisterAllocation();
 
-	/* Dumps the results of the live register analysis. */
+	// Dumps the results of the live register analysis.
 	void LiveRegisterAnalysisBitmapDump();
 
 	/* Create a Southern Islands instruction argument from an LLVM value.
@@ -306,7 +321,7 @@ public:
 
 };
 
-}  /* namespace llvm2si */
+}  // namespace llvm2si
 
 #endif
 

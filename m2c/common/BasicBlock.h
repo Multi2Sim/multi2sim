@@ -39,7 +39,7 @@ public:
 	/// Constructor
 	///
 	/// \param node
-	///	Associated node in the control tree
+	///	Leaf node associated with the basic block
 	BasicBlock(LeafNode *node);
 
 	/// Virtual destructor

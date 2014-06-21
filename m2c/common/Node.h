@@ -74,7 +74,10 @@ class Node
 {
 	friend class Tree;
 
+	// Name of the node
 	std::string name;
+
+	// Node kind (leaf or abstract)
 	NodeKind kind;
 
 	// Control tree that the node belongs to
@@ -262,12 +265,12 @@ class LeafNode : public Node
 	friend class Tree;
 
 	// Basic block associated with the node
-	BasicBlock *basic_block;
+	BasicBlock *basic_block = nullptr;
 
 	// When the node is created automatically from an LLVM function's
 	// control flow graph, this fields contains the associated LLVM
 	// basic block.
-	llvm::BasicBlock *llvm_basic_block;
+	llvm::BasicBlock *llvm_basic_block = nullptr;
 
 public:
 
@@ -277,22 +280,23 @@ public:
 	///	Name of the LLVM basic block that caused the creation of this
 	///	node. This will be a label assigned to the block when translated
 	///	to assembly code.
-	LeafNode(const std::string &name);
+	LeafNode(const std::string &name) :
+			Node(name, NodeKindLeaf)
+	{
+	}
 
-	/// Destructor
-	~LeafNode();
+	/// Set the basic block associated with this leaf node.
+	void setBasicBlock(BasicBlock *basic_block)
+	{
+		assert(this->basic_block == nullptr);
+		this->basic_block = basic_block;
+	}
 
 	/// Return the basic block associated with the node
 	BasicBlock *getBasicBlock() const { return basic_block; }
 
 	/// Return the LLVM basic block associated with the node
 	llvm::BasicBlock *getLlvmBasicBlock() const { return llvm_basic_block; }
-
-	/// Set the basic block associated with the node
-	void setBasicBlock(BasicBlock *basic_block)
-	{
-		this->basic_block = basic_block;
-	}
 
 	/// Dump node
 	void Dump(std::ostream &os);

@@ -20,6 +20,7 @@
 #include <iostream>
 
 #include <lib/cpp/Misc.h>
+#include <lib/cpp/String.h>
 
 #include "BasicBlock.h"
 #include "Node.h"
@@ -33,21 +34,6 @@ namespace comm
 //
 // Class 'LeafNode'
 //
-
-LeafNode::LeafNode(const std::string &name)
-		: Node(name, NodeKindLeaf)
-{
-	basic_block = nullptr;
-	llvm_basic_block = nullptr;
-}
-
-
-LeafNode::~LeafNode()
-{
-	if (basic_block)
-		delete basic_block;
-}
-
 
 void LeafNode::Dump(std::ostream &os)
 {
