@@ -50,9 +50,9 @@ void Context::RunSignalHandler(int sig)
 	// Create a memory page with execution permission, and copy return code
 	// on it.
 	signal_mask_table.setRetCodePtr(memory->MapSpace(
-			mem::MemoryPageSize, mem::MemoryPageSize));
-	memory->Map(signal_mask_table.getRetCodePtr(), mem::MemoryPageSize,
-			mem::MemoryAccessExec | mem::MemoryAccessInit);
+			mem::Memory::PageSize, mem::Memory::PageSize));
+	memory->Map(signal_mask_table.getRetCodePtr(), mem::Memory::PageSize,
+			mem::Memory::AccessExec | mem::Memory::AccessInit);
 	Emu::syscall_debug << "  return code of signal handler allocated at "
 			<< misc::fmt("0x%x\n",
 			signal_mask_table.getRetCodePtr());
@@ -114,7 +114,7 @@ void Context::ReturnFromSignalHandler()
 	clearState(ContextHandler);
 
 	// Free signal frame
-	memory->Unmap(signal_mask_table.getRetCodePtr(), mem::MemoryPageSize);
+	memory->Unmap(signal_mask_table.getRetCodePtr(), mem::Memory::PageSize);
 	Emu::syscall_debug << "  signal handler return code at " <<
 			misc::fmt("0x%x", signal_mask_table.getRetCodePtr())
 			<< " deallocated\n";

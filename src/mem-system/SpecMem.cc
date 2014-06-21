@@ -73,7 +73,7 @@ SpecMem::Page *SpecMem::newPage(unsigned address)
 
 
 void SpecMem::AccessAligned(unsigned address, int size, char *buffer,
-		MemoryAccess access)
+		Memory::AccessType access)
 {
 	// Get the memory page
 	Page *page = getPage(address);
@@ -83,7 +83,7 @@ void SpecMem::AccessAligned(unsigned address, int size, char *buffer,
 		// speculative memory just translates into the corresponding
 		// access to non-speculative memory. This access must be made in
 		// unsafe mode, in case the page is invalid.
-		if (access == MemoryAccessRead)
+		if (access == Memory::AccessRead)
 		{
 			bool safe = memory->getSafe();
 			memory->setSafe(false);
@@ -91,7 +91,7 @@ void SpecMem::AccessAligned(unsigned address, int size, char *buffer,
 			memory->setSafe(safe);
 			return;
 		}
-		else if (access == MemoryAccessWrite)
+		else if (access == Memory::AccessWrite)
 		{
 			// On a write, we need to create a new page. If the
 			// maximum number of pages has been reached, the write
@@ -112,9 +112,9 @@ void SpecMem::AccessAligned(unsigned address, int size, char *buffer,
 	// We have the page, now access it
 	unsigned offset = address & ~PageMask;
 	assert(offset + size <= PageSize);
-	if (access == MemoryAccessRead)
+	if (access == Memory::AccessRead)
 		memcpy(buffer, page->data + offset, size);
-	else if (access == MemoryAccessWrite)
+	else if (access == Memory::AccessWrite)
 		memcpy(page->data + offset, buffer, size);
 	else
 		misc::panic("%s: invalid access type (%d)",
@@ -123,7 +123,7 @@ void SpecMem::AccessAligned(unsigned address, int size, char *buffer,
 
 
 void SpecMem::Access(unsigned address, int size, char *buffer,
-		MemoryAccess access)
+		Memory::AccessType access)
 {
 	while (size)
 	{
@@ -142,7 +142,7 @@ SpecMem::SpecMem(Memory *memory)
 {
 	// Make sure that the speculative memory page is a divisor of the
 	// non-speculative memory page size.
-	assert(MemoryPageSize % PageSize == 0);
+	assert(Memory::PageSize % PageSize == 0);
 
 	// Initialize
 	this->memory = memory;

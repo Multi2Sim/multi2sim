@@ -213,34 +213,34 @@ std::string Context::OpenProcSelfMaps()
 	for (;;)
 	{
 		// Get start of next range
-		mem::MemoryPage *page = memory->getNextPage(end);
+		mem::Memory::Page *page = memory->getNextPage(end);
 		if (!page)
 			break;
 		unsigned start = page->tag;
 		end = page->tag;
-		int perm = page->perm & (mem::MemoryAccessRead |
-				mem::MemoryAccessWrite | mem::MemoryAccessExec);
+		int perm = page->perm & (mem::Memory::AccessRead |
+				mem::Memory::AccessWrite | mem::Memory::AccessExec);
 
 		// Get end of range
 		for (;;)
 		{
-			page = memory->getPage(end + mem::MemoryPageSize);
+			page = memory->getPage(end + mem::Memory::PageSize);
 			if (!page)
 				break;
-			int page_perm = page->perm & (mem::MemoryAccessRead |
-					mem::MemoryAccessWrite | mem::MemoryAccessExec);
+			int page_perm = page->perm & (mem::Memory::AccessRead |
+					mem::Memory::AccessWrite | mem::Memory::AccessExec);
 			if (page_perm != perm)
 				break;
-			end += mem::MemoryPageSize;
+			end += mem::Memory::PageSize;
 			perm = page_perm;
 		}
 
 		// Dump range
 		fprintf(f, "%08x-%08x %c%c%c%c 00000000 00:00\n", start,
-				end + mem::MemoryPageSize,
-				perm & mem::MemoryAccessRead ? 'r' : '-',
-				perm & mem::MemoryAccessWrite ? 'w' : '-',
-				perm & mem::MemoryAccessExec ? 'x' : '-',
+				end + mem::Memory::PageSize,
+				perm & mem::Memory::AccessRead ? 'r' : '-',
+				perm & mem::Memory::AccessWrite ? 'w' : '-',
+				perm & mem::Memory::AccessExec ? 'x' : '-',
 				'p');
 	}
 
@@ -724,7 +724,7 @@ void Context::Execute()
 	// (i.e., allowing segmentation faults) if executing speculatively.
 	char buffer[20];
 	char *buffer_ptr = memory->getBuffer(regs.getEip(), 20,
-			mem::MemoryAccessExec);
+			mem::Memory::AccessExec);
 	if (!buffer_ptr)
 	{
 		// Disable safe mode. If a part of the 20 read bytes does not
@@ -734,7 +734,7 @@ void Context::Execute()
 		memory->setSafe(false);
 		buffer_ptr = buffer;
 		memory->Access(regs.getEip(), 20, buffer_ptr,
-				mem::MemoryAccessExec);
+				mem::Memory::AccessExec);
 	}
 
 	// Return to default safe mode

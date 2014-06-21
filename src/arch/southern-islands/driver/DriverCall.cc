@@ -63,7 +63,7 @@ int Driver::CallMemAlloc(mem::Memory *memory, unsigned args_ptr)
 	SI::Emu *si_emu = SI::Emu::getInstance();	
 	mem::Memory &video_mem = si_emu->getVideoMem();
 	video_mem.Map(si_emu->getVideoMemTop(), size,
-		mem::MemoryAccessRead | mem::MemoryAccessWrite);
+		mem::Memory::AccessRead | mem::Memory::AccessWrite);
 
 	// Virtual address of memory object 
 	unsigned device_ptr = si_emu->getVideoMemTop();
