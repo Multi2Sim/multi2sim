@@ -20,6 +20,9 @@ libcpp_a_SOURCES = \
 	Environment.cc \
 	Environment.h \
 	\
+	Error.cc \
+	Error.h \
+	\
 	IniFile.cc \
 	IniFile.h \
 	\
