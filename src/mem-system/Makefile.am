@@ -52,6 +52,9 @@ libmemsystem_a_SOURCES = \
 	Memory.cc \
 	Memory.h \
 	\
+	Module.cc \
+	Module.h \
+	\
 	SpecMem.cc \
 	SpecMem.h \
 	\
