@@ -788,6 +788,10 @@ then
 	LLVM_CFLAGS=`$LLVM_CONFIG --cflags | sed "s/\(\-DNDEBUG\>\)\|\(\-g\>\)\|\(\-O[0-9]\>\)//g"`
 	LLVM_CXXFLAGS=`$LLVM_CONFIG --cxxflags | sed "s/\(\-DNDEBUG\>\)\|\(\-g\>\)\|\(\-O[0-9]\>\)//g"`
 
+	# Allow expressions
+	LLVM_CFLAGS=`echo "$LLVM_CFLAGS" | sed "s/-fno-exceptions\>//g"`
+	LLVM_CXXFLAGS=`echo "$LLVM_CXXFLAGS" | sed "s/-fno-exceptions\>//g"`
+
 	# In profile mode, flag '-pg' interferes with LLVM's flags
 	# -fomit-frame-pointer.
 	if test x$profile = xtrue

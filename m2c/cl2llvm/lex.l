@@ -286,7 +286,7 @@ L			(long)
 U			(unsigned)
 S			(signed)
 
-PREPROCESSOR		((\#)[ \t]+[0-9]+[ \t]+\"[^\"\`]*\"[ \t]*(\n))
+PREPROCESSOR		((\#)[ \t]*[0-9]+[ \t]+\"[^\"\`]*\".*(\n))
 EXTENSION		((\#pragma)[ \t]+(OPENCL)[ \t]+(EXTENSION)[ \t]+[^\n]*)
 TOK_ID			[a-zA-Z_][a-zA-Z0-9_]*
 CONST_HEX		0[xX][a-fA-F0-9]+
