@@ -20,7 +20,7 @@
 #ifndef M2C_COMMON_BASIC_BLOCK_H
 #define M2C_COMMON_BASIC_BLOCK_H
 
-namespace Common
+namespace comm
 {
 
 // Forward declarations
@@ -50,7 +50,7 @@ public:
 };
 
 
-}  // namespace Common
+}  // namespace comm
 
 #endif
 

@@ -636,8 +636,8 @@ void BasicBlock::EmitPhi(llvm::PHINode *llvm_inst)
 
 		/* Find node */
 		std::string name = llvm_basic_block->getName();
-		Common::Tree *tree = function->getTree();
-		Common::LeafNode *node = tree->getLeafNode(name);
+		comm::Tree *tree = function->getTree();
+		comm::LeafNode *node = tree->getLeafNode(name);
 		if (!node)
 			panic("%s: cannot find node '%s'",
 					__FUNCTION__, name.c_str());
@@ -1061,7 +1061,7 @@ void BasicBlock::Dump(std::ostream &os)
 		return;
 
 	/* Label with node's name */
-	Common::LeafNode *node = getNode();
+	comm::LeafNode *node = getNode();
 	os << "\n" << node->getName() << ":\n";
 
 	/* Print list of instructions */

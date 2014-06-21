@@ -39,7 +39,7 @@ namespace llvm2si
 /* Forward declarations */
 class Function;
 
-class BasicBlock : public Common::BasicBlock
+class BasicBlock : public comm::BasicBlock
 {
 	static int id_counter;
 
@@ -89,8 +89,8 @@ public:
 	misc::Bitmap *out;
 
 	/* Constructor */
-	BasicBlock(Function *function, Common::LeafNode *node) :
-		Common::BasicBlock(node), function(function) { }
+	BasicBlock(Function *function, comm::LeafNode *node) :
+		comm::BasicBlock(node), function(function) { }
 
 	std::list<std::unique_ptr<si2bin::Inst>> &getInstList() { return inst_list; }
 

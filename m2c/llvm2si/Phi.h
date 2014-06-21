@@ -38,7 +38,7 @@ class Phi
 	/* Source node in the control tree to take the source value from. This
 	 * node is extracted from the basic block argument in an entry of the
 	 * 'phi' LLVM instruction. */
-	Common::LeafNode *src_node;
+	comm::LeafNode *src_node;
 
 	/* Value to take from the source basic block, as it appears in one of
 	 * the arguments of the 'phi' LLVM instruction. */
@@ -52,7 +52,7 @@ class Phi
 public:
 
 	/* Constructor */
-	Phi(Common::LeafNode *src_node, llvm::Value *src_value,
+	Phi(comm::LeafNode *src_node, llvm::Value *src_value,
 			si2bin::Arg *dest_value) {
 		this->src_node = src_node;
 		this->src_value = src_value;
@@ -60,7 +60,7 @@ public:
 	}
 
 	/* Getters */
-	Common::LeafNode *getSrcNode() { return src_node; }
+	comm::LeafNode *getSrcNode() { return src_node; }
 	llvm::Value *getSrcValue() { return src_value; }
 	si2bin::Arg *getDestValue() { return dest_value; }
 };

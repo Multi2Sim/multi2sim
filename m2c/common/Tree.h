@@ -30,7 +30,7 @@
 #include "Node.h"
 
 
-namespace Common
+namespace comm
 {
 
 // Forward declarations
@@ -241,7 +241,7 @@ public:
 
 
 
-}  // namespace Common
+}  // namespace comm
 
 #endif
 
