@@ -43,10 +43,10 @@ ELFReader::File *CallStack::getELFFile(const std::string &path)
 		// Load file
 		elf_file = new ELFReader::File(path);
 	}
-	catch (ELFReader::Exception &e)
+	catch (ELFReader::Error &e)
 	{
 		// Error loading file
-		debug << misc::fmt("[%s] %s\n", path.c_str(), e.what());
+		debug << e.what();
 		elf_file_map[path] = nullptr;
 		return nullptr;
 	}

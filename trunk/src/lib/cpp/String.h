@@ -21,6 +21,7 @@
 #define LIB_CPP_STRING_H
 
 #include <cassert>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -52,7 +53,8 @@ std::string fmt(const char *fmt_str, ...)
 		__attribute__ ((format(printf, 1, 2)));
 
 /// Return \c true if the character given in \a c is present in string \a set.
-inline bool StringHasChar(const std::string &set, char c) {
+inline bool StringHasChar(const std::string &set, char c)
+{
 	return set.find(c) != std::string::npos;
 }
 
@@ -137,19 +139,6 @@ int StringToInt(const std::string &s);
 long long StringToInt64(const std::string &s, StringError &error);
 long long StringToInt64(const std::string &s);
 
-/// Organize the string in \a text with a nice layout, removing redundant spaces
-/// and adjusting it to a fixed text width. This function is ideal to format
-/// error messages, or help messages provided to the user.
-///
-/// Argument \a indent specifies the number of spaces to include in the
-/// beginning of each line, starting at the second line. Argument \a
-/// first_indent indicates the number of spaces on the left of the first line.
-/// Argument \a width specifies the maximum number of characters in one line,
-/// including indentation spaces.
-std::string StringParagraph(const std::string &text,
-		int indent = 0, int first_indent = 0,
-		int width = 80);
-
 /// Return a string with a human-readable representation of a binary buffer.
 /// \param buffer Pointer to the binary buffer.
 /// \param size Number of bytes available in the buffer.
@@ -202,7 +191,8 @@ public:
 	void Dump(std::ostream &os = std::cout) const;
 
 	/// Operator \c << invoking function Dump() on an output stream.
-	friend std::ostream &operator<<(std::ostream &os, const StringMap &map) {
+	friend std::ostream &operator<<(std::ostream &os, const StringMap &map)
+	{
 		map.Dump(os);
 		return os;
 	}
@@ -279,6 +269,103 @@ public:
 	std::string MapFlags(unsigned flags) const;
 };
 
+
+/// Organize the string in \a text with a nice layout, removing redundant spaces
+/// and adjusting it to a fixed text width. This function is ideal to format
+/// error messages, or help messages provided to the user.
+///
+/// Argument \a indent specifies the number of spaces to include in the
+/// beginning of each line, starting at the second line. Argument \a
+/// first_indent indicates the number of spaces on the left of the first line.
+/// Argument \a width specifies the maximum number of characters in one line,
+/// including indentation spaces.
+class StringFormatter
+{
+	// Stream constianing formatted string
+	std::stringstream stream;
+
+	// Indentation of second and following lines of paragraphs
+	int indent = 0;
+
+	// Indentation of first line of each paragraph
+	int first_line_indent = 0;
+
+	// Extra indentation for the current paragraph
+	int paragraph_indent = 0;
+
+	// Width of the text
+	int width = 80;
+
+	// True if the next word would be the first in a paragraph
+	bool first_word_in_paragraph = true;
+
+	// True if the next word would be the first in a line
+	bool first_word_in_line = true;
+
+	// Width of the current line as words are added
+	int current_line_width = 0;
+
+	// Add a line break without a new paragraph
+	void NewLine();
+
+	// Add a line break for new paragraph
+	void NewParagraph();
+
+	// All all indentation needed in the beginning of a line or paragraph
+	void AddIndent();
+
+	// Add one word to the stream
+	void AddWord(const std::string &word);
+
+	// Add text to the stream
+	void Add(const std::string &text);
+
+public:
+
+	/// Constructor with an optional initial string
+	StringFormatter(const std::string &text = "")
+	{
+		Add(text);
+	}
+
+	/// Set the indentation of the first line of each paragraph
+	void setFirstLineIndent(int first_line_indent)
+	{
+		this->first_line_indent = first_line_indent;
+	}
+
+	/// Set the indentation of paragraphs
+	void setIndent(int indent)
+	{
+		this->first_line_indent = indent;
+		this->indent = indent;
+	}
+
+	/// Set the paragraph width
+	void setWidth(int width) { this->width = width; }
+
+	/// Add text to the string formatter
+	StringFormatter &operator<<(const std::string &s)
+	{
+		Add(s);
+		return *this;
+	}
+	
+	/// Dump the content of the fromatted string
+	void Dump(std::ostream &os = std::cout) const
+	{
+		os << stream.str();
+	}
+
+	/// Alternative syntax for Dump()
+	friend std::ostream &operator<<(std::ostream &os,
+			const StringFormatter &formatter)
+	{
+		formatter.Dump(os);
+		return os;
+	}
+
+};
 
 } // namespace misc
 
