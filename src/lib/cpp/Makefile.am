@@ -26,6 +26,9 @@ libcpp_a_SOURCES = \
 	IniFile.cc \
 	IniFile.h \
 	\
+	List.cc \
+	List.h \
+	\
 	Misc.cc \
 	Misc.h \
 	\
