@@ -60,6 +60,7 @@ libemu_a_SOURCES = \
 	ContextIsaSSE.cc \
 	ContextIsaStd.cc \
 	ContextIsaStr.cc \
+	ContextIsaXMM.cc \
 	ContextLoader.cc \
 	ContextSignal.cc \
 	ContextSyscall.cc \

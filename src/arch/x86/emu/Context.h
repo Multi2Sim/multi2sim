@@ -513,7 +513,7 @@ class Context
 
 	// Fatal error message during instruction emulation, shown only while
 	// in non-speculative mode.
-	void IsaError(const char *fmt, ...);
+	void IsaError(const char *fmt, ...) const;
 
 	// Safe memory accesses, based on the current speculative mode
 	void MemoryRead(unsigned int address, int size, void *buffer);
@@ -640,6 +640,25 @@ class Context
 	unsigned getMoffsAddress();
 
 
+	// Import the value into XMM register
+	// \param value
+	// 		Reference to the value to be copied
+	void StoreXMM(const XMMValue &value);
+
+	// Export the value in XMM register to memory
+	// \param value
+	// 		Referemce to the XMMValue object to receice the value
+	void LoadXMM(XMMValue &value);
+
+	// Store lower 32/64/128 bits from value into XMM register or memory
+	void StoreXMMM32(const XMMValue &value);
+	void StoreXMMM64(const XMMValue &value);
+	void StoreXMMM128(const XMMValue &value);
+
+	// Load the lower 32/64/128 bits into lower bits of value
+	void LoadXMMM32(XMMValue &value);
+	void LoadXMMM64(XMMValue &value);
+	void LoadXMMM128(XMMValue &value);
 
 
 	///////////////////////////////////////////////////////////////////////
