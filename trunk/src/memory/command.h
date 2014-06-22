@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef MEM_SYSTEM_COMMAND_H
-#define MEM_SYSTEM_COMMAND_H
+#ifndef MEMORY_COMMAND_H
+#define MEMORY_COMMAND_H
 
 /*
  * Event to handle memory hierarchy commands that initialize memory modules to a

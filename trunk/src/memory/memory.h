@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef MEM_SYSTEM_MEMORY_OLD_H
-#define MEM_SYSTEM_MEMORY_OLD_H
+#ifndef MEMORY_MEMORY_OLD_H
+#define MEMORY_MEMORY_OLD_H
 
 
 #define MEM_LOG_PAGE_SIZE  12

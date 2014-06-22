@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef MEM_SYSTEM_DIRECTORY_H
-#define MEM_SYSTEM_DIRECTORY_H
+#ifndef MEMORY_DIRECTORY_H
+#define MEMORY_DIRECTORY_H
 
 
 struct dir_lock_t
