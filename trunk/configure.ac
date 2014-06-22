@@ -951,7 +951,7 @@ AC_CONFIG_FILES([
 		src/arch/Makefile
 		src/driver/Makefile
 		src/lib/Makefile
-		src/mem-system/Makefile
+		src/memory/Makefile
 		src/network/Makefile
 		src/dram/Makefile
 

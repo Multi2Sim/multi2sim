@@ -17,10 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
-#include <src/arch/x86/emu/Context.h>
-#include <src/arch/x86/emu/Emu.h>
-#include <src/mem-system/Memory.h>
+#include <arch/x86/emu/Context.h>
+#include <arch/x86/emu/Emu.h>
+#include <memory/Memory.h>
 
 #include "ABI.h"
 #include "OpenGLDriver.h"

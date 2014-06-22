@@ -22,7 +22,7 @@
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
-#include <mem-system/memory.h>
+#include <memory/memory.h>
 
 #include "ndrange.h"
 #include "wavefront.h"

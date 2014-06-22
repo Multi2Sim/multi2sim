@@ -21,7 +21,7 @@
 #include <arch/evergreen/emu/emu.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
-#include <mem-system/memory.h>
+#include <memory/memory.h>
 
 #include "context.h"
 #include "opencl.h"

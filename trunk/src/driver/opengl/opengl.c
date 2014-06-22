@@ -31,8 +31,8 @@
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
 #include <lib/util/misc.h>
-#include <mem-system/memory.h>
-#include <mem-system/mmu.h>
+#include <memory/memory.h>
+#include <memory/mmu.h>
 
 #include "../glut/frame-buffer.h"
 #include "opengl.h"

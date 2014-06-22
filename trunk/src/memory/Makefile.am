@@ -1,6 +1,6 @@
-lib_LIBRARIES = libmemsystem.a
+lib_LIBRARIES = libmemory.a
 
-libmemsystem_a_SOURCES = \
+libmemory_a_SOURCES = \
 	\
 	cache.c \
 	cache.h \

@@ -24,7 +24,7 @@
 #include <memory>
 #include <vector>
 
-#include <mem-system/Memory.h>
+#include <memory/Memory.h>
 
 
 namespace SI

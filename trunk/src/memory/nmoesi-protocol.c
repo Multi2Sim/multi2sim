@@ -24,7 +24,7 @@
 #include <lib/util/linked-list.h>
 #include <lib/util/list.h>
 #include <lib/util/string.h>
-#include <mem-system/memory.h>
+#include <memory/memory.h>
 #include <network/message.h>
 #include <network/net-system.h>
 #include <network/network.h>

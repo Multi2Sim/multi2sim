@@ -27,7 +27,7 @@
 #include <lib/util/list.h>
 #include <lib/util/misc.h>
 #include <lib/util/debug.h>
-#include <mem-system/memory.h>
+#include <memory/memory.h>
 
 #include "command-queue.h"
 #include "context.h"

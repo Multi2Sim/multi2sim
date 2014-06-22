@@ -21,7 +21,7 @@
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/misc.h>
-#include <mem-system/memory.h>
+#include <memory/memory.h>
 
 #include "context.h"
 #include "emu.h"

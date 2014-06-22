@@ -25,7 +25,7 @@
 
 #include <arch/southern-islands/asm/Arg.h>
 #include <arch/southern-islands/emu/NDRange.h>
-#include <mem-system/Memory.h>
+#include <memory/Memory.h>
 
 #include "Driver.h"
 

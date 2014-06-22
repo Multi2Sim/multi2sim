@@ -24,7 +24,7 @@
 #include <arch/southern-islands/emu/work-group.h>
 #include <lib/esim/trace.h>
 #include <lib/util/list.h>
-#include <mem-system/mmu.h>
+#include <memory/mmu.h>
 
 #include "compute-unit.h"
 #include "gpu.h"

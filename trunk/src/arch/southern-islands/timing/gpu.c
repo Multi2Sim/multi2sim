@@ -32,7 +32,7 @@
 #include <lib/util/list.h>
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
-#include <mem-system/mmu.h>
+#include <memory/mmu.h>
 
 #include "calc.h"
 #include "compute-unit.h"
