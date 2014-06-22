@@ -38,6 +38,12 @@ public:
 		friend class List;
 		Node *prev = nullptr;
 		Node *next = nullptr;
+		bool in_list = false;
+	
+	public:
+
+		// Make class polymorphic with a virtual destructor
+		virtual ~Node();
 	};
 
 	/// Error of the latest operation on the list
@@ -46,7 +52,6 @@ public:
 		 ErrorOK,
 		 ErrorBounds,
 		 ErrorEmpty,
-		 ErrorNullNode,
 		 ErrorNotFound
 	};
 
@@ -117,7 +122,7 @@ public:
 	///
 	/// - `ErrorOK`: Valid element returned.
 	/// - `ErrorEmpty`: The list is empty.
-	Node *Head();
+	Node *Front();
 
 	/// Move the current element to the last valid element of the list, and
 	/// return the element at that position, or `nullptr` if the list is
@@ -125,22 +130,53 @@ public:
 	///
 	/// - `ErrorOK`: Valid element returned.
 	/// - `ErrorEmpty`: The list is empty.
-	Node *Tail();
+	Node *Back();
 
 	/// Move the current element to a past-the-end position. The error code
 	/// is set to `ErrorOK`.
 	void End();
 
 	/// Insert an element in the list before the element at the current
-	/// position or at the end if the current position is past the end.
-	/// If the insertion succeeds, the inserted element becomes the current
-	/// element, and the function returns this element. If the insertion
-	/// fails, the current element remain the same, and the function returns
-	/// `nullptr`. The error code is updated to:
+	/// position or at the end if the current position is past the end. The
+	/// inserted element cannot be `nullptr`. The current position is
+	/// updated to that of the new element. The error code is set to
+	/// `ErrorOK`.
 	///
-	/// - `ErrorOK`: Element successfully inserted.
-	/// - `ErrorNullNode`: Inserted element is null
+	/// \throw
+	///	This function throws an `std::logic_error` exception if the
+	///	inserted element is `nullptr`, or if the inserted element was
+	///	already a member of a list.
 	Node *Insert(Node *node);
+
+	/// Insert an element at the end of the list. The inserted element
+	/// cannot be `nullptr`. The current element is set to the inserted
+	/// element, that is, the tail of the list. The error code is set to
+	/// `ErrorOK`.
+	///
+	/// \throw
+	///	This function throws an `std::logic_error` exception if the
+	///	inserted element is `nullptr`, or if the inserted element was
+	///	already a member of a list.
+	Node *PushBack(Node *node)
+	{
+		End();
+		return Insert(node);
+	}
+
+	/// Insert an element at the head of the list. The inserted element
+	/// cannot be `nullptr`. The current element is set to the inserted
+	/// element, that is, the head of the list. The error code is set to
+	/// `ErrorOK`.
+	///
+	/// \throw
+	///	This function throws an `std::logic_error` exception if the
+	///	inserted element is `nullptr`, or if the inserted element was
+	///	already a member of a list.
+	Node *PushFront(Node *node)
+	{
+		Front();
+		return Insert(node);
+	}
 
 	/// Remove the element in the current position of the list. If the
 	/// removal succeeds, the removed element is returned, and the current
@@ -152,6 +188,16 @@ public:
 	/// - `ErrorOK`: Element successfully removed.
 	/// - `ErrorBounds`: Current element is past the end.
 	Node *Remove();
+
+	/// Remove the given element from the list. The element must be
+	/// currently inserted in the list. The current element is moved to the
+	/// beginning of the list. The error code is updated to `ErrorOK`.
+	///
+	/// \throw
+	///	This function throws an `std::logic_error` exception if the
+	///	elemement to remove is `nullptr`, or if it is currently no a
+	///	member of a list.
+	void Remove(Node *node);
 };
 
 } // namespace misc

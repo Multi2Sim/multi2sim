@@ -18,6 +18,7 @@
  */
 
 #include <cassert>
+#include <stdexcept>
 
 #include "List.h"
 
@@ -100,7 +101,7 @@ List::Node *List::Prev()
 }
 
 
-List::Node *List::Head()
+List::Node *List::Front()
 {
 	// List is empty
 	if (size == 0)
@@ -119,7 +120,7 @@ List::Node *List::Head()
 }
 
 
-List::Node *List::Tail()
+List::Node *List::Back()
 {
 	// List is empty
 	if (size == 0)
@@ -150,10 +151,11 @@ List::Node *List::Insert(Node *node)
 {
 	// Invalid node
 	if (node == nullptr)
-	{
-		error = ErrorNullNode;
-		return nullptr;
-	}
+		throw std::logic_error("Inserted node cannot be null");
+
+	// Node is already in a list
+	if (node->in_list)
+		throw std::logic_error("Inserted node is already in a list");
 
 	// Insert it
 	if (size == 0)
@@ -190,6 +192,7 @@ List::Node *List::Insert(Node *node)
 	error = ErrorOK;
 	size++;
 	current = node;
+	node->in_list = true;
 	return node;
 }
 
@@ -226,12 +229,59 @@ List::Node *List::Remove()
 		node->next->prev = node->prev;
 	}
 
+	// Mark as removed
+	assert(node->in_list);
+	node->in_list = false;
+
 	// Update state
 	assert(size > 0);
 	error = ErrorOK;
 	size--;
 	current = node->next;
 	return node;
+}
+
+
+void List::Remove(Node *node)
+{
+	// Check valid node
+	if (node == nullptr)
+		throw std::logic_error("Removed element cannot be null");
+	
+	// Check that node was in a list
+	if (!node->in_list)
+		throw std::logic_error("Removed element is not in the list");
+
+	// Remove element
+	if (size == 1)
+	{
+		assert(head == node && tail == node);
+		head = nullptr;
+		tail = nullptr;
+	}
+	else if (node == head)
+	{
+		node->next->prev = nullptr;
+		head = node->next;
+	}
+	else if (node == tail)
+	{
+		node->prev->next = nullptr;
+		tail = node->prev;
+	}
+	else
+	{
+		node->prev->next = node->next;
+		node->next->prev = node->prev;
+	}
+
+	// Update state
+	assert(size > 0);
+	node->in_list = false;
+	error = ErrorOK;
+	size--;
+	current = head;
+	current_index = 0;
 }
 
 
