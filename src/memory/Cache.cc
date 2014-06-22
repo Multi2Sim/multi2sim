@@ -24,7 +24,7 @@
 namespace mem
 {
 
-misc::StringMap Cache::replacement_policy_map =
+const misc::StringMap Cache::ReplacementPolicyMap =
 {
 	{ "LRU", ReplacementLRU },
 	{ "FIFO", ReplacementFIFO },
@@ -32,14 +32,14 @@ misc::StringMap Cache::replacement_policy_map =
 };
 
 
-misc::StringMap Cache::write_policy_map =
+const misc::StringMap Cache::WritePolicyMap =
 {
 	{ "WriteBack", WriteBack },
 	{ "WriteThrough", WriteThrough }
 };
 
 
-misc::StringMap Cache::block_state_map =
+const misc::StringMap Cache::BlockStateMap =
 {
 	{ "N", BlockNonCoherent },
 	{ "M", BlockModified },
@@ -143,7 +143,7 @@ void Cache::setBlock(unsigned set_id,
 			set_id,
 			way_id,
 			tag,
-			block_state_map.MapValue(state));
+			BlockStateMap[state]);
 	
 	// Get set and block
 	Set *set = getSet(set_id);
