@@ -23,7 +23,7 @@
 #include <lib/util/debug.h>
 #include <lib/util/linked-list.h>
 #include <lib/util/string.h>
-#include <mem-system/mem-system.h>
+#include <memory/mem-system.h>
 
 #include "compute-unit.h"
 #include "gpu.h"

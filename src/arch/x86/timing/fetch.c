@@ -25,8 +25,8 @@
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
 #include <lib/util/string.h>
-#include <mem-system/mmu.h>
-#include <mem-system/module.h>
+#include <memory/mmu.h>
+#include <memory/module.h>
 
 #include "bpred.h"
 #include "core.h"

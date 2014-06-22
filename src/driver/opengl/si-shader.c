@@ -26,8 +26,8 @@
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
 #include <../runtime/include/GL/gl.h>
-#include <mem-system/memory.h>
-#include <mem-system/mmu.h>
+#include <memory/memory.h>
+#include <memory/mmu.h>
 
  
 #include "opengl.h"

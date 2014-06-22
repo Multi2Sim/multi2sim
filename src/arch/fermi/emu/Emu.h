@@ -25,7 +25,7 @@
 
 #include <arch/fermi/asm/Wrapper.h>
 #include <lib/cpp/Debug.h>
-#include <mem-system/Memory.h>
+#include <memory/Memory.h>
 
 
 namespace Frm

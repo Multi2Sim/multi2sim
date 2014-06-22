@@ -20,7 +20,7 @@
 
 #include <lib/esim/trace.h>
 #include <lib/util/list.h>
-#include <mem-system/module.h>
+#include <memory/module.h>
 
 #include "core.h"
 #include "cpu.h"

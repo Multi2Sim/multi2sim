@@ -19,7 +19,7 @@
 
 
 #include <lib/util/debug.h>
-#include <mem-system/memory.h>
+#include <memory/memory.h>
 
 #include "context.h"
 #include "isa.h"

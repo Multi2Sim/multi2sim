@@ -20,7 +20,7 @@
 
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/list.h>
-#include <mem-system/memory.h>
+#include <memory/memory.h>
 
 #include "emu.h"
 #include "grid.h"

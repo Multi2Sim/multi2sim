@@ -21,7 +21,7 @@
 #define ARCH_SOUTHERN_ISLANDS_EMU_WORK_ITEM_H
 
 #include <arch/southern-islands/asm/Inst.h>
-#include <mem-system/Memory.h>
+#include <memory/Memory.h>
 
 #include "Emu.h"
 

@@ -17,11 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <arch/southern-islands/emu/Emu.h>
 #include <lib/cpp/String.h>
-#include <mem-system/Memory.h>
-
-#include <src/arch/southern-islands/emu/Emu.h>
-#include <src/mem-system/Memory.h>
+#include <memory/Memory.h>
 
 #include "Driver.h"
 

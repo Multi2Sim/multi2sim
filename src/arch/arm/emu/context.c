@@ -29,7 +29,7 @@
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
 #include <lib/util/timer.h>
-#include <mem-system/memory.h>
+#include <memory/memory.h>
 
 #include "context.h"
 #include "file.h"

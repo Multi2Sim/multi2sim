@@ -21,7 +21,7 @@
 #define ARCH_SOUTHERN_ISLANDS_TIMING_UOP_H
 
 #include <arch/southern-islands/emu/work-item.h>
-#include <mem-system/module.h>
+#include <memory/module.h>
 
 
 #define INST_NOT_FETCHED LLONG_MAX

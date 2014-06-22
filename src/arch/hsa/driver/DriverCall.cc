@@ -18,7 +18,7 @@
  */
 
 #include <lib/cpp/String.h>
-#include <mem-system/Memory.h>
+#include <memory/Memory.h>
 
 #include "Driver.h"
 

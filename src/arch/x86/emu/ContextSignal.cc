@@ -20,7 +20,7 @@
 #include <csignal>
 
 #include <lib/cpp/Misc.h>
-#include <mem-system/Memory.h>
+#include <memory/Memory.h>
 
 #include "Context.h"
 #include "Emu.h"

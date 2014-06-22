@@ -23,8 +23,8 @@
 #include <lib/esim/trace.h>
 #include <lib/util/debug.h>
 #include <lib/util/linked-list.h>
-#include <mem-system/mmu.h>
-#include <mem-system/module.h>
+#include <memory/mmu.h>
+#include <memory/module.h>
 
 #include "core.h"
 #include "cpu.h"

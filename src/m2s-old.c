@@ -98,9 +98,9 @@
 #include <lib/util/file.h>
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
-#include <mem-system/config.h>
-#include <mem-system/mem-system.h>
-#include <mem-system/mmu.h>
+#include <memory/config.h>
+#include <memory/mem-system.h>
+#include <memory/mmu.h>
 #include <network/net-system.h>
 #include <network/config.h>
 #include <dram/dram-system.h>

@@ -3,7 +3,7 @@ SUBDIRS = \
 	dram \
 	driver \
 	lib \
-	mem-system \
+	memory \
 	network \
 	visual
 
@@ -69,7 +69,7 @@ LDADD = \
 	$(top_builddir)/src/arch/common/libcommon.a \
 	\
 	$(top_builddir)/src/dram/libdram.a \
-	$(top_builddir)/src/mem-system/libmemsystem.a \
+	$(top_builddir)/src/memory/libmemory.a \
 	$(top_builddir)/src/network/libnetwork.a \
 	\
 	$(top_builddir)/src/visual/common/libcommon.a \
