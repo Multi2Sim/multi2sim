@@ -647,7 +647,7 @@ const char *StringMap::MapValue(int value, bool &error) const
 
 	// Not found
 	error = true;
-	return "<unknown>";
+	return "[Unknown]";
 }
 
 int StringMap::MapString(const std::string &s, bool &error) const
