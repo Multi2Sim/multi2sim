@@ -943,7 +943,6 @@ AC_CONFIG_FILES([
 		runtime/glu/Makefile
 		runtime/glut/Makefile
 		runtime/opencl/Makefile
-		runtime/opencl-old/Makefile
 		runtime/opengl/Makefile
 		runtime/include/Makefile
 
