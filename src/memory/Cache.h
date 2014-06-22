@@ -43,7 +43,7 @@ public:
 	};
 
 	/// String map for ReplacementPolicy
-	static misc::StringMap replacement_policy_map;
+	static const misc::StringMap ReplacementPolicyMap;
 
 	/// Possible values for write policy
 	enum WritePolicy
@@ -54,7 +54,7 @@ public:
 	};
 
 	/// String map for WritePolicy
-	static misc::StringMap write_policy_map;
+	static const misc::StringMap WritePolicyMap;
 
 	/// Possible values for a cache block state
 	enum BlockState
@@ -68,7 +68,7 @@ public:
 	};
 
 	/// String map for BlockState
-	static misc::StringMap block_state_map;
+	static const misc::StringMap BlockStateMap;
 
 	/// Cache block. This class is a child of misc::List::Node because one
 	/// block will belong to one set's LRU list. See documentation of

@@ -166,17 +166,20 @@ class StringMap
 		int value;
 		
 		Item(const char *text, int value) :
-				text(text), value(value) { }
+				text(text), value(value)
+		{
+		}
 	};
 
 	std::vector<Item> items;
 public:
 
 	/// Constructor
-	StringMap(std::initializer_list<Item> items) : items(items) {
+	StringMap(std::initializer_list<Item> items) : items(items)
+	{
+#ifndef NDEBUG
 		// Make sure that map is not null-terminated, since this used
 		// to be the way string maps were declared in the past
-#ifndef NDEBUG
 		assert(items.size() > 0);
 		if (!this->items[items.size() - 1].text)
 			panic("string map %s is null-terminated. This is a\n"
@@ -190,7 +193,7 @@ public:
 	/// toString() does.
 	void Dump(std::ostream &os = std::cout) const;
 
-	/// Operator \c << invoking function Dump() on an output stream.
+	/// Alternative syntax for Dump()
 	friend std::ostream &operator<<(std::ostream &os, const StringMap &map)
 	{
 		map.Dump(os);
@@ -202,7 +205,8 @@ public:
 	/// following bitmap:
 	///
 	/// \code
-	///	StringMap my_map = {
+	///	const misc::StringMap MyMap =
+	///     {
 	///		{ "Fetch", 1 },
 	///		{ "Decode", 2 },
 	///		{ "Issue", 3 },
@@ -210,8 +214,8 @@ public:
 	///	};
 	/// \endcode
 	///
-	/// a call to <tt>my_map.toString()</tt> returns string
-	/// <tt>{Fetch,Decode,Issue,Writeback}</tt>.
+	/// a call to `MyMap.toString()` returns string
+	/// `{Fetch,Decode,Issue,Writeback}`.
 	///
 	std::string toString() const;
 
@@ -222,9 +226,17 @@ public:
 	const char *MapValue(int value, bool &error) const;
 
 	/// Overloaded version of MapValue() that omits the \a error argument.
-	const char *MapValue(int value) const {
+	/// This is equivalent to the `[]` operator.
+	const char *MapValue(int value) const
+	{
 		bool error;
 		return MapValue(value, error);
+	}
+
+	/// Alternative syntax for MapValue()
+	const char *operator[](int value) const
+	{
+		return MapValue(value);
 	}
 
 	/// Obtain the string associated with \a value in the string map. If
@@ -234,9 +246,17 @@ public:
 	int MapString(const std::string &s, bool &error) const;
 
 	/// Overloaded version of MapString() that omits the \a error argument.
-	int MapString(const std::string &s) const {
+	/// This is equivalent to the `[]` operator.
+	int MapString(const std::string &s) const
+	{
 		bool error;
 		return MapString(s, error);
+	}
+
+	/// Alternative syntax for MapString()
+	int operator[](const std::string &s) const
+	{
+		return MapString(s);
 	}
 
 	/// Same as MapString(), but case insensitive.
@@ -244,7 +264,8 @@ public:
 
 	/// Overloaded version of MapStringCase() that omits the \a error
 	/// argument.
-	int MapStringCase(const std::string &s) const {
+	int MapStringCase(const std::string &s) const
+	{
 		bool error;
 		return MapStringCase(s, error);
 	}
@@ -255,7 +276,8 @@ public:
 	/// example, given the following bitmap:
 	///
 	/// \code
-	///	StringMap my_flags = {
+	///	const StringMap MyFlags =
+	///     {
 	///		{ "Read", 1 },
 	///		{ "Write", 2 },
 	///		{ "Modify", 4 },
@@ -263,8 +285,8 @@ public:
 	///	};
 	/// \endcode
 	///
-	/// a call to <tt>my_flags.MapFlags(my_flags, 1|4|8)</tt> returns string
-	/// <tt>{Read|Modify|Execute}</tt>.
+	/// a call to `MyFlags.MapFlags(1 | 4 | 8)` returns string
+	/// `{Read|Modify|Execute}`.
 	///
 	std::string MapFlags(unsigned flags) const;
 };
