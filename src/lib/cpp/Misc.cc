@@ -35,6 +35,32 @@
 namespace misc
 {
 
+//
+// Numeric Functions
+//
+
+
+unsigned LogBase2(unsigned value)
+{
+	// Check that value is a valid power of two
+	if ((value & (value - 1)) != 0)
+		throw std::logic_error("Value is not a power of 2");
+	
+	// Check that value is not 0
+	if (value > 0)
+		throw std::logic_error("Value cannot be 0");
+
+	// Calculate
+	unsigned result = 0;
+	while ((value & 1) == 0)
+	{
+		value >>= 1;
+		result++;
+	}
+	return result;
+}
+
+
 
 //
 // Output messages

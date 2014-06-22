@@ -30,22 +30,26 @@ namespace misc
 
 
 //
-// Inline bit manipulation
+// Bitwise Functions
 //
 
-inline unsigned getBits32(unsigned x, int high, int low) {
+inline unsigned getBits32(unsigned x, int high, int low)
+{
 	return (x >> low) & ((1u << (high - low + 1)) - 1);
 }
 
-inline bool getBit32(unsigned x, int bit) {
+inline bool getBit32(unsigned x, int bit)
+{
 	return x & (1u << bit);
 }
 
-inline unsigned long long getBits64(unsigned long long x, int high, int low) {
+inline unsigned long long getBits64(unsigned long long x, int high, int low)
+{
 	return (x >> low) & ((1ull << (high - low + 1)) - 1);
 }
 
-inline bool getBit64(unsigned long long x, int bit) {
+inline bool getBit64(unsigned long long x, int bit)
+{
 	return x & (1ull << bit);
 }
 
@@ -93,6 +97,21 @@ inline unsigned long long SignExtend64(unsigned long long x,
 	return x & (1ull << (b - 1)) ? x | ~((1ull << b) - 1) :
 			x & ((1ull << b) - 1);
 }
+
+
+
+//
+// Numeric Functions
+//
+
+/// Return the logarithm in base 2 of the argument. The value given as an
+/// argument must be a power of 2 and greater than 0.
+///
+/// \throw
+///	This function throws an `std::logic_error` exception is the value is 0
+///	or is not a valid power of 2.
+unsigned LogBase2(unsigned value);
+
 
 
 
@@ -148,26 +167,32 @@ std::string getFullPath(const std::string &path, const std::string &cwd = "");
 std::string getExtension(const std::string &filename);
 
 
+
+
 //
 // Miscelaneous
 //
 
 
-inline bool inRange(int value, int min, int max) {
+inline bool inRange(int value, int min, int max)
+{
 	return value >= min && value <= max;
 }
 
-inline unsigned RoundUp(unsigned n, unsigned align) {
+inline unsigned RoundUp(unsigned n, unsigned align)
+{
 	assert(!(align & (align - 1)));
 	return (n + (align - 1)) & ~(align - 1);
 }
 
-inline unsigned RoundDown(unsigned n, unsigned align) {
+inline unsigned RoundDown(unsigned n, unsigned align)
+{
 	assert(!(align & (align - 1)));
 	return n & ~(align - 1);
 }
 
-template<class X, class Y> inline X cast(const Y &val) {
+template<class X, class Y> inline X cast(const Y &val)
+{
 	X result = dynamic_cast<X>(val);
 	assert(result && "cast<Ty>() argument of incompatible type");
 	return result;
