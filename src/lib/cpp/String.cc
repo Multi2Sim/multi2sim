@@ -23,6 +23,7 @@
 #include <cstdarg>
 #include <cstring>
 #include <sstream>
+#include <stdexcept>
 
 #include "Misc.h"
 #include "String.h"
