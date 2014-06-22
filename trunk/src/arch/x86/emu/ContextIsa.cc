@@ -39,7 +39,7 @@ Context::ExecuteInstFn Context::execute_inst_fn[InstOpcodeCount] =
 };
 
 
-void Context::IsaError(const char *fmt, ...)
+void Context::IsaError(const char *fmt, ...) const
 {
 	va_list va;
 	va_start(va, fmt);
