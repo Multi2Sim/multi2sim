@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef MEM_SYSTEM_MOD_STACK_H
-#define MEM_SYSTEM_MOD_STACK_H
+#ifndef MEMORY_MOD_STACK_H
+#define MEMORY_MOD_STACK_H
 
 #include "module.h"
 

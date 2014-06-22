@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef MEM_SYSTEM_PREFETCHER_H
-#define MEM_SYSTEM_PREFETCHER_H
+#ifndef MEMORY_PREFETCHER_H
+#define MEMORY_PREFETCHER_H
 
 
 /* 

@@ -17,9 +17,13 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef MEMORY_WRAPPER_H
-#define MEMORY_WRAPPER_H
+#include "Cache.h"
 
 
-#endif
+namespace mem
+{
+
+
+
+}  // namespace mem
 

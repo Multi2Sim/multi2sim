@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef MEM_SYSTEM_NMOESI_PROTOCOL_H
-#define MEM_SYSTEM_NMOESI_PROTOCOL_H
+#ifndef MEMORY_NMOESI_PROTOCOL_H
+#define MEMORY_NMOESI_PROTOCOL_H
 
 
 /* NMOESI Event-Driven Simulation */

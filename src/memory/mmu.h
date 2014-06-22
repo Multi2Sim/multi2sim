@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef MEM_SYSTEM_MMU_H
-#define MEM_SYSTEM_MMU_H
+#ifndef MEMORY_MMU_H
+#define MEMORY_MMU_H
 
 #include <lib/class/class.h>
 #include <lib/mhandle/mhandle.h>
