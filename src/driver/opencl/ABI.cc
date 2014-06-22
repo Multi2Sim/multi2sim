@@ -18,9 +18,9 @@
  */
 
 
-#include <src/arch/x86/emu/Context.h>
-#include <src/arch/x86/emu/Emu.h>
-#include <src/mem-system/Memory.h>
+#include <arch/x86/emu/Context.h>
+#include <arch/x86/emu/Emu.h>
+#include <memory/Memory.h>
 
 #include "ABI.h"
 #include "OpenCLDriver.h"

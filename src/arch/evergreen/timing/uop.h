@@ -21,7 +21,7 @@
 #define ARCH_EVERGREEN_TIMING_UOP_H
 
 #include <arch/evergreen/emu/work-item.h>
-#include <mem-system/module.h>
+#include <memory/module.h>
 
 
 /* Debugging */

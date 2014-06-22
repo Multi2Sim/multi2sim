@@ -28,8 +28,8 @@
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
 #include <lib/util/timer.h>
-#include <mem-system/memory.h>
-#include <mem-system/spec-mem.h>
+#include <memory/memory.h>
+#include <memory/spec-mem.h>
 
 #include "context.h"
 #include "emu.h"

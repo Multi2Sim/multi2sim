@@ -30,7 +30,7 @@
 #include <lib/util/debug.h>
 #include <lib/util/heap.h>
 #include <lib/util/linked-list.h>
-#include <mem-system/memory.h>
+#include <memory/memory.h>
 
 #include "compute-unit.h"
 #include "faults.h"

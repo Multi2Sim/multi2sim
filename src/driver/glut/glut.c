@@ -26,7 +26,7 @@
 #include <lib/util/debug.h>
 #include <lib/util/linked-list.h>
 #include <lib/util/string.h>
-#include <mem-system/memory.h>
+#include <memory/memory.h>
 
 #include "frame-buffer.h"
 #include "glut.h"

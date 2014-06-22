@@ -24,7 +24,7 @@
 
 #include <arch/fermi/asm/Inst.h>
 #include <arch/fermi/asm/Wrapper.h>
-#include <mem-system/Memory.h>
+#include <memory/Memory.h>
 
 #include "Emu.h"
 

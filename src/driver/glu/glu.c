@@ -22,7 +22,7 @@
 #include <arch/x86/emu/regs.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
-#include <mem-system/memory.h>
+#include <memory/memory.h>
 
 #include "glu.h"
 

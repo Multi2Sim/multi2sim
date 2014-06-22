@@ -25,7 +25,7 @@
 #include <lib/esim/trace.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
-#include <mem-system/mmu.h>
+#include <memory/mmu.h>
 
 #include "compute-unit.h"
 #include "gpu.h"

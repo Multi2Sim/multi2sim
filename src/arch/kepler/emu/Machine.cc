@@ -23,7 +23,7 @@
 #include <arch/kepler/asm/Inst.h>
 #include <lib/util/bit-map.h>
 #include <lib/util/debug.h>
-#include <mem-system/memory.h>
+#include <memory/memory.h>
 
 #include "Emu.h"
 #include "Grid.h"

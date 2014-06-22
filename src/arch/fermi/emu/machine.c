@@ -23,7 +23,7 @@
 
 #include <lib/util/bit-map.h>
 #include <lib/util/debug.h>
-#include <mem-system/memory.h>
+#include <memory/memory.h>
 
 #include "emu.h"
 #include "grid.h"

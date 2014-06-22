@@ -19,7 +19,7 @@
 
 #include <math.h>
 #include <lib/util/debug.h>
-#include <mem-system/memory.h>
+#include <memory/memory.h>
 #include <lib/util/misc.h>
 
 #include "context.h"

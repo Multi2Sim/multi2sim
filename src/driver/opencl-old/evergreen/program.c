@@ -23,7 +23,7 @@
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
 #include <lib/util/string.h>
-#include <mem-system/memory.h>
+#include <memory/memory.h>
 
 #include "mem.h"
 #include "opencl.h"

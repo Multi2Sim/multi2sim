@@ -21,7 +21,7 @@
 #include <arch/x86/emu/Emu.h>
 #include <arch/southern-islands/emu/Emu.h>
 #include <arch/southern-islands/emu/NDRange.h>
-#include <mem-system/Memory.h>
+#include <memory/Memory.h>
 #include <driver/opengl/ABI.h>
 #include <driver/opengl/OpenGLDriver.h>
 #include <driver/opengl/southern-islands/SPI.h>

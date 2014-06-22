@@ -23,7 +23,7 @@
 
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/misc.h>
-#include <mem-system/Memory.h>
+#include <memory/Memory.h>
 
 #include "Emu.h"
 #include "Grid.h"

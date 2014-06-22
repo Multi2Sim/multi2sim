@@ -28,7 +28,7 @@
 #include <lib/util/misc.h>
 #include <lib/util/repos.h>
 #include <lib/util/string.h>
-#include <mem-system/memory.h>
+#include <memory/memory.h>
 
 #include "emu.h"
 #include "isa.h"

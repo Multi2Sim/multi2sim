@@ -35,8 +35,8 @@
 #include <lib/util/list.h>
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
-#include <mem-system/memory.h>
-#include <mem-system/mmu.h>
+#include <memory/memory.h>
+#include <memory/mmu.h>
 
 #include "opencl.h"
 #include "si-program.h"

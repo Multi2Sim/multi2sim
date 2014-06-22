@@ -22,7 +22,7 @@
 
 #include <arch/x86/emu/uinst.h>
 #include <lib/class/class.h>
-#include <mem-system/prefetch-history.h>
+#include <memory/prefetch-history.h>
 
 
 

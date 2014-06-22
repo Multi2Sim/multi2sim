@@ -32,9 +32,9 @@
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
 #include <lib/util/string.h>
-#include <mem-system/memory.h>
-#include <mem-system/mmu.h>
-#include <mem-system/module.h>
+#include <memory/memory.h>
+#include <memory/mmu.h>
+#include <memory/module.h>
 
 #include "opencl.h"
 #include "si-kernel.h"

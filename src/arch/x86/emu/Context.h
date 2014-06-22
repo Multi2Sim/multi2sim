@@ -25,8 +25,8 @@
 #include <arch/common/CallStack.h>
 #include <lib/cpp/Debug.h>
 #include <lib/cpp/ELFReader.h>
-#include <mem-system/Memory.h>
-#include <mem-system/SpecMem.h>
+#include <memory/Memory.h>
+#include <memory/SpecMem.h>
 
 #include "arch/common/FileTable.h"
 #include "Regs.h"
