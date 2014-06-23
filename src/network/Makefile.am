@@ -1,8 +1,12 @@
 lib_LIBRARIES = libnetwork.a
 libnetwork_a_SOURCES = \
 	\
+	Buffer.h \
+	\
 	buffer.c \
 	buffer.h \
+	\
+	Bus.h \
 	\
 	bus.c \
 	bus.h \
@@ -30,6 +34,7 @@ libnetwork_a_SOURCES = \
 	network.h \
 	network.c \
 	\
+	Node.c \
 	Node.h \
 	\
 	node.c \
