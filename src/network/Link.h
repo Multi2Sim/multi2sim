@@ -17,39 +17,22 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef NETWORK_NETWORK_H
-#define NETWORK_NETWORK_H
+#ifndef NETWORK_LINK_H
+#define NETWORK_LINK_H
 
 
 namespace net
 {
 
-class Node;
-class Link;
-
-
-class Network
+class Link
 {
 
 	//
 	// Class Members
 	//
 
-	// Network Name
+	// Node Name
 	std::string name;
-
-	// Message ID counter
-	long long msg_id_counter;
-
-	// Node list of the Network
-	const std::vector<std::unique_ptr<Node>> node_list;
-
-	// Total number of End nodes in the Network
-	int end_node_count;
-
-	// Link List of the Network
-	const std::vector<std::unique_ptr<Link>> link_list;
-
 
 };
 }  // namespace net
