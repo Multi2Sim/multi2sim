@@ -368,28 +368,39 @@ public:
 class ArgLabel : public Arg
 {
 	std::string name;
-public:
-	ArgLabel(const std::string &name) :
-		Arg(ArgTypeLabel),
-		name(name) { }
 
-	void Dump(std::ostream &os) {
-		os << ' ' << name; }
+public:
+
+	ArgLabel(const std::string &name) :
+			Arg(ArgTypeLabel),
+			name(name)
+	{
+	}
+
+	void Dump(std::ostream &os)
+	{
+		os << ' ' << name;
+	}
 
 	const std::string &getName() { return name; }
 };
 
 class ArgPhi : public Arg
 {
-	// Register number
+	// Vector register identifier
 	int id;
+
+	// Name of the label
 	std::string name;
 
 public:
+
 	ArgPhi(int id, const std::string &name) :
-		Arg(ArgTypePhi),
-		id(id),
-		name(name) { }
+			Arg(ArgTypePhi),
+			id(id),
+			name(name)
+	{
+	}
 
 	void Dump(std::ostream &os);
 

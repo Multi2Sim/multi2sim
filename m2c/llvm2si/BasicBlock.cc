@@ -621,20 +621,49 @@ void BasicBlock::EmitPhi(llvm::PHINode *llvm_inst)
 		fatal("%s: only supported for 32-bit integers",
 				__FUNCTION__);
 
-	/* Allocate vector register and create symbol for return value */
+	// Argument list for output Phi instruction
+	std::vector<Arg *> arg_list;
+
+	// Allocate vector register and create symbol for return value
 	std::string ret_name = llvm_inst->getName();
 	int ret_vreg = function->AllocVReg();
 	Symbol *ret_symbol = new Symbol(ret_name, SymbolVectorRegister, ret_vreg);
 	function->AddSymbol(ret_symbol);
 
-	/* Process arguments */
+	// Add destination argument
+	ArgVectorRegister *ret_arg = new ArgVectorRegister(ret_vreg);
+	arg_list.push_back(ret_arg);
+
+	// Process arguments
 	for (unsigned i = 0; i < llvm_inst->getNumIncomingValues(); i++)
 	{
-		/* Get item */
+		// Get source label
+		llvm::BasicBlock *llvm_basic_block = llvm_inst->getIncomingBlock(i);
+		std::string label = llvm_basic_block->getName();
+
+		// Get source vector register mapped to LLVM value
+		llvm::Value *src_value = llvm_inst->getIncomingValue(i);
+		Arg *src_arg = function->TranslateValue(src_value);
+		ArgVectorRegister *src_arg_vreg = misc::cast<ArgVectorRegister *>(src_arg);
+		int src_vreg = src_arg_vreg->getId();
+
+		// Create Phi argument
+		ArgPhi *arg = new si2bin::ArgPhi(src_vreg, label);
+		arg_list.push_back(arg);
+	}
+
+	// Emit Phi instruction
+	Inst *inst = new Inst(SI::INST_PHI, arg_list);
+	AddInst(inst);
+
+	// Process arguments
+	/*for (unsigned i = 0; i < llvm_inst->getNumIncomingValues(); i++)
+	{
+		// Get item
 		llvm::BasicBlock *llvm_basic_block = llvm_inst->getIncomingBlock(i);
 		llvm::Value *value = llvm_inst->getIncomingValue(i);
 
-		/* Find node */
+		// Find node
 		std::string name = llvm_basic_block->getName();
 		comm::Tree *tree = function->getTree();
 		comm::LeafNode *node = tree->getLeafNode(name);
@@ -642,13 +671,13 @@ void BasicBlock::EmitPhi(llvm::PHINode *llvm_inst)
 			panic("%s: cannot find node '%s'",
 					__FUNCTION__, name.c_str());
 
-		/* Create destination argument */
+		// Create destination argument
 		Arg *arg = new ArgVectorRegister(ret_vreg);
 
-		/* Create 'phi' element and add it. */
+		// Create 'phi' element and add it.
 		Phi *phi = new Phi(node, value, arg);
 		function->AddPhi(phi);
-	}
+	}*/
 }
 
 
@@ -936,6 +965,12 @@ void BasicBlock::EmitFMul(llvm::BinaryOperator *llvm_inst)
 }
 
 
+void BasicBlock::EmitSExt(llvm::SExtInst *llvm_inst)
+{
+	misc::panic("%s: Not implemented", __FUNCTION__);
+}
+
+
 void BasicBlock::EmitExtractElement(llvm::ExtractElementInst *llvm_inst)
 {
 	/* Only supported for 2 operands (op1, op2) */
@@ -1183,6 +1218,11 @@ void BasicBlock::Emit(llvm::BasicBlock *llvm_basic_block)
 			EmitInsertElement(misc::cast<llvm::InsertElementInst *>
 					(&llvm_inst));
 			break;
+
+		case llvm::Instruction::SExt:
+
+			EmitSExt(misc::cast<llvm::SExtInst *>(&llvm_inst));
+			break;
 		
 		default:
 
@@ -1191,6 +1231,33 @@ void BasicBlock::Emit(llvm::BasicBlock *llvm_basic_block)
 		}
 	}
 }
+
+
+std::list<std::unique_ptr<si2bin::Inst>>::iterator
+		BasicBlock::getFirstControlFlowInst()
+{
+	// If list is empty, return a past-the-end iterator
+	if (inst_list.empty())
+		return inst_list.end();
+
+	// Traverse list backward
+	auto it = inst_list.end();
+	do
+	{
+		// Go to previous element
+		--it;
+
+		// Check if this is the first non-control flow instruction
+		Inst *inst = it->get();
+		if (!inst->getControlFlow())
+			return ++it;
+
+	} while (it != inst_list.begin());
+
+	// There are only control flow instruction
+	return inst_list.begin();
+}
+
 
 void BasicBlock::LiveRegisterAnalysis()
 {

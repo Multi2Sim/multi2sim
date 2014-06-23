@@ -19,9 +19,6 @@ libllvm2si_a_SOURCES = \
 	llvm2si.c \
 	llvm2si.h \
 	\
-	Phi.cc \
-	Phi.h \
-	\
 	Symbol.cc \
 	Symbol.h \
 	\

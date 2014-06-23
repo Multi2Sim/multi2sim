@@ -92,8 +92,8 @@ void Context::Parse(const std::string &in, const std::string &out)
 		function.EmitHeader();
 		function.EmitArgs();
 		function.EmitBody();
-		function.EmitPhi();
 		function.EmitControlFlow();
+		function.EmitPhi();
 
 		/* Dump code */
 		f << function;

@@ -25,5 +25,7 @@ namespace mem
 
 misc::Debug System::trace;
 
+misc::Debug System::debug;
+
 }  // namespace mem
 

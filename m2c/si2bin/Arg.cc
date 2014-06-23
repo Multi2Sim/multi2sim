@@ -426,9 +426,15 @@ int ArgSpecialRegister::Encode()
 	}
 }
 
+
+
+//
+// Class 'ArgPhi'
+//
+
 void ArgPhi::Dump(std::ostream &os)
 {
-	os << 'v' << id << ' ' << name;
+	os << misc::fmt("[ v%d, %s ]", id, name.c_str());
 }
 	
 
