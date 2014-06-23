@@ -118,14 +118,23 @@ public:
 		return networks;
 	}
 
-	// Get Network by name
-	Network *getNetwork(const std::string &name);
+	/// Find and Returns Network in the Net-System using network name
+	///
+	/// \param name
+	///	Network Name
+	Network *getNetworkbyName(const std::string &name);
+
+	/// Create a new Network
+	/// \param name
+	///	Name of the new Network
+	Network *newNetwork(const std::string &name);
 
 	/// Register command-line options
 	static void RegisterOptions();
 
 	/// Process command-line options
 	static void ProcessOptions();
+
 };
 
 }  // namespace net
