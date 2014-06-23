@@ -94,6 +94,9 @@ class Context{
  			const std::string &cwd = "",
  			const std::string &stdin_file_name = "",
  			const std::string &stdout_file_name = "");
+
+ 	/// Run one instruction for the context at the position pointed 
+ 	void Execute();
 };
 
 }// namespace HSA

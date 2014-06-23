@@ -39,6 +39,9 @@ class Emu : public comm::Emu
 	// Debugger files
 	static std::string hsa_debug_file;
 
+	// Maximum number of instructions
+	// static long long max_instructions;
+
 	// Simulation kind
 	static comm::Arch::SimKind sim_kind;
 
@@ -48,6 +51,13 @@ class Emu : public comm::Emu
 	// Private constructor. The only possible instance of the hsa emulator 
 	// can be obtained with a call to getInstance()
 	Emu();
+
+	// list of contexts
+	std::list<std::unique_ptr<Context>> contexts;
+
+	// Secondary lists of contexts. Contexts in different states
+	// are added/removed from this lists as their state gets updates
+	//std::list<Context *> context_list[ContextListCount];
 
 	// Process ID to be assigned next. Process IDs are assigned in 
 	// increasing order, using function Emu::getPid()

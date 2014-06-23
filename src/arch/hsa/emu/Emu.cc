@@ -98,12 +98,49 @@ Context *Emu::newContext()
 {
 	// Create context and add to context list
 	Context *context = new Context();
+	contexts.emplace_back(context);
 	return context;
 }
 
 bool Emu::Run()
 {
-	return false;
+	// Stop if there is no more contexts
+	if(!contexts.size())
+		return false;
+
+	// Stop if maxmum number of CPU instructions exceeded
+	// if(max_instructions && instructions >= max_instructions)
+		// esim->Finish("hsaMaxInst");
+
+	// Stop if any previous reason met
+	if(esim->hasFinished())
+		return true;
+
+	// Currently I traverse all the contexts. If requreied, I will change 
+	// it to only traversing running contexts;
+	auto end = contexts.end();
+	for(auto it = contexts.begin(); it != end; )
+	{
+		// Save the position of next context
+		auto next = it;
+		++next;
+
+		// Run one iteration
+		Context *context = &(*it->get());
+		context->Execute();
+
+		// Move to saved next context
+		it = next;
+	}
+
+	//TODO: add free context function call
+
+	// Process list of suspended contexts
+	// ProcessEvents();
+		
+
+	// Still running;
+	return true;
 }
 
 
@@ -115,11 +152,8 @@ void Emu::LoadProgram(const std::vector<std::string> &args,
 {
 	// Create new context
 	Context *context = newContext();
-	context->Load(args,
-			env,
-			cwd,
-			stdin_file_name,
-			stdout_file_name);
+	context->Load(args, env, cwd,
+			stdin_file_name, stdout_file_name);
 }
 
 
