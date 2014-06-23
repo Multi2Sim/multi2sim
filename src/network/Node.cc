@@ -17,61 +17,12 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef NETWORK_NETWORK_H
-#define NETWORK_NETWORK_H
+#include <cstring>
 
-#include "System.h"
+#include "Node.h"
 
 namespace net
 {
 
-class Node;
-class Link;
 
-
-class Network
-{
-
-	//
-	// Class Members
-	//
-
-	// Network Name
-	std::string name;
-
-	// Message ID counter
-	long long msg_id_counter;
-
-	// Node list of the Network
-	const std::vector<std::unique_ptr<Node>> node_list;
-
-	// Total number of End nodes in the Network
-	int end_node_count;
-
-	// Link List of the Network
-	const std::vector<std::unique_ptr<Link>> link_list;
-
-	// Unique instance of singleton
-	std::unique_ptr<Network> network;
-
-	// Private constructor for singleton
-	Network();
-
-public:
-
-	/// Get instance of singleton
-	static Network *getInstance();
-
-	/// Find and Returns Node in the Network using node name
-	///
-	/// \param name
-	///	Node Name
-	Node *getNodebyName(const std::string &name);
-
-
-
-};
-}  // namespace net
-
-#endif
-
+}
