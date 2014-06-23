@@ -13,6 +13,8 @@ libnetwork_a_SOURCES = \
 	config.c \
 	config.h \
 	\
+	Link.h \
+	\
 	link.c \
 	link.h \
 	\
@@ -22,8 +24,12 @@ libnetwork_a_SOURCES = \
 	net-system.c \
 	net-system.h \
 	\
+	Network.h \
+	\
 	network.h \
 	network.c \
+	\
+	Node.h \
 	\
 	node.c \
 	node.h \

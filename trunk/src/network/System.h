@@ -118,6 +118,9 @@ public:
 		return networks;
 	}
 
+	// Get Network by name
+	Network *getNetwork(const std::string &name);
+
 	/// Register command-line options
 	static void RegisterOptions();
 
