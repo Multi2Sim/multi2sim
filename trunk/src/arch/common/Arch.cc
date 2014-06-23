@@ -25,13 +25,6 @@
 namespace comm
 {
 
-misc::StringMap arch_sim_kind_map =
-{
-	{ "functional", ArchSimFunctional },
-	{ "detailed", ArchSimDetailed }
-};
-
-
 
 //
 // Class ArchPool
@@ -71,7 +64,7 @@ void ArchPool::Run(int &num_emu_active, int &num_timing_active)
 	{
 		switch (arch->getSimKind())
 		{
-		case ArchSimFunctional:
+		case Arch::SimFunctional:
 		{
 			// Get the emulator. If none is available, skip this
 			// architecture.
@@ -93,7 +86,7 @@ void ArchPool::Run(int &num_emu_active, int &num_timing_active)
 			break;
 		}
 		
-		case ArchSimDetailed:
+		case Arch::SimDetailed:
 		{
 			misc::panic("%s: not implemented (ArchSimDetailed)",
 					__FUNCTION__);
@@ -148,16 +141,19 @@ void ArchPool::Run(int &num_emu_active, int &num_timing_active)
 // Class Arch
 //
 
-Arch::Arch(const std::string &name, Asm *as, Emu *emu, Timing *timing)
+const misc::StringMap Arch::SimKindMap =
 {
-	// Arguments
-	this->name = name;
-	this->as = as;
-	this->emu = emu;
-	this->timing = timing;
+	{ "functional", SimFunctional },
+	{ "detailed", SimDetailed }
+};
 
-	// Initialize
-	sim_kind = ArchSimFunctional;
+
+Arch::Arch(const std::string &name, Asm *as, Emu *emu, Timing *timing) :
+		name(name),
+		as(as),
+		emu(emu),
+		timing(timing)
+{
 }
 
 

@@ -463,9 +463,13 @@ void Context::LoadBinary()
 					loader->stdin_file_name.c_str());
 
 		// Replace file descriptor 0
-		file_table->freeFileDesc(0);
-		file_table->newFileDesc(comm::FileDescStd, 0, f,
-				loader->stdin_file_name, O_RDONLY);
+		file_table->freeFileDescriptor(0);
+		file_table->newFileDescriptor(
+				comm::FileDescriptor::TypeStandard,
+				0,
+				f,
+				loader->stdin_file_name,
+				O_RDONLY);
 	}
 
 	// Alternative stdout/stderr
@@ -480,12 +484,20 @@ void Context::LoadBinary()
 					loader->stdout_file_name.c_str());
 
 		// Replace file descriptors 1 and 2
-		file_table->freeFileDesc(1);
-		file_table->freeFileDesc(2);
-		file_table->newFileDesc(comm::FileDescStd, 1, f,
-				loader->stdout_file_name, O_WRONLY);
-		file_table->newFileDesc(comm::FileDescStd, 2, f,
-				loader->stdout_file_name, O_WRONLY);
+		file_table->freeFileDescriptor(1);
+		file_table->freeFileDescriptor(2);
+		file_table->newFileDescriptor(
+				comm::FileDescriptor::TypeStandard,
+				1,
+				f,
+				loader->stdout_file_name,
+				O_WRONLY);
+		file_table->newFileDescriptor(
+				comm::FileDescriptor::TypeStandard,
+				2,
+				f,
+				loader->stdout_file_name,
+				O_WRONLY);
 	}
 	
 	// Load ELF binary

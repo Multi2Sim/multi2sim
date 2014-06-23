@@ -34,30 +34,6 @@ namespace MIPS
 class Context;
 
 
-class EmuConfig
-{
-	// Maximum number of instructions
-	long long max_instructions;
-
-	// Simulation kind
-	comm::ArchSimKind sim_kind;
-
-	// Process prefetch instructions
-	bool process_prefetch_hints;
-
-public:
-
-	/// Initialization of default command-line options
-	//EmuConfig();
-
-	/// Return maximum number of instructions
-	long long getMaxInstructions() { return max_instructions; }
-
-	/// Return the type of simulation
-	comm::ArchSimKind getSimKind() { return sim_kind; }
-};
-
-
 class Emu : public comm::Emu
 {
 	// Unique instance of the singleton
@@ -99,7 +75,7 @@ class Emu : public comm::Emu
 	long long futex_sleep_count;
 
 	// Simulation kind
-	static comm::ArchSimKind sim_kind;
+	static comm::Arch::SimKind sim_kind;
 
 	// Maximum number of instructions
 	static long long max_instructions;
@@ -173,9 +149,6 @@ public:
 
 	/// Process command-line options
 	static void ProcessOptions();
-
-	/// Configuration for MIPS emulator
-	static EmuConfig config;
 
 	/// Debugger for x86 contexts
 	static misc::Debug context_debug;

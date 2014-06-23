@@ -28,11 +28,6 @@ namespace MIPS
 // Configuration variables
 //
 
-// Simulation kind
-comm::ArchSimKind Emu::sim_kind = comm::ArchSimFunctional;
-
-// Maximum number of instructions
-long long Emu::max_instructions = 0;
 
 
 
@@ -258,8 +253,8 @@ bool Emu::Run()
 		return false;
 
 	// Stop if maximum number of CPU instructions exceeded
-	if (max_instructions && instructions >= max_instructions)
-		esim->Finish("MIPSMaxInst");
+	//if (max_instructions && instructions >= max_instructions)
+	//	esim->Finish("MIPSMaxInst");
 
 	// Stop if any previous reason met
 	if (esim->hasFinished())
