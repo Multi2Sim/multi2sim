@@ -49,16 +49,16 @@ class Context;
 
 class Inst
 {
-	/* Instruction opcode. This field should match the content of
-	 * info->info->opcode. */
+	// Instruction opcode. This field should match the content of
+	// info->info->opcode.
 	SI::InstOpcode opcode;
 
-	/* Instruction size in bytes (4 or 8). This value is produced after a
-	 * call to Inst::Encode() */
+	// Instruction size in bytes (4 or 8). This value is produced after a
+	// call to Inst::Encode()
 	int size;
 
-	/* Instruction bytes. This value is produced after a call to
-	 * Inst::Encode(). */
+	// Instruction bytes. This value is produced after a call to
+	// Inst::Encode().
 	SI::InstBytes bytes;
 
 	// Invariable information related with this instruction
@@ -67,14 +67,19 @@ class Inst
 	// List of arguments
 	std::vector<std::unique_ptr<Arg>> args;
 
-	/* For LLVM-to-SI back-end: basic block that the instruction
-	 * belongs to. */
+	// For LLVM-to-SI back-end: basic block that the instruction
+	// belongs to.
 	llvm2si::BasicBlock *basic_block;
 
-	/* Comment attached to the instruction, which will be dumped together
-	 * with it. */
+	// Comment attached to the instruction, which will be dumped together
+	// with it.
 	std::string comment;
 
+	// This flag is set if the instruction has been emitted during the
+	// control flow generation pass, for active mask manipulation purposes.
+	bool control_flow = false;
+
+	// Obtain back-end context in a field for efficiency
 	Context *context;
 
 	// Common construction
@@ -116,46 +121,67 @@ public:
 	 * Southern Islands disassembler. The arguments contained in the list
 	 * will be freed automatically in the destructor of this class. */
 	template<typename... Args> Inst(SI::InstOpcode opcode, Args&&... args)
-			{ Initialize(opcode, args...); }
+	{
+		Initialize(opcode, args...);
+	}
 	
 	/* Create a new instruction with one of the possible opcodes
 	 * corresponding to a name. The arguments contained in the list will be
 	 * adopted by the instruction and freed in the destructor. */
 	template<typename... Args> Inst(const std::string &name, Args&&... args)
-			{ Initialize(name, args...); }
+	{
+		Initialize(name, args...);
+	}
 
 	// Construction based on opcode + argument list as vector
 	Inst(SI::InstOpcode opcode, std::vector<Arg *> &arg_list)
 	{
 		for (auto &arg : arg_list)
 		{
-			args.push_back(static_cast<std::unique_ptr<Arg>>(arg));
+			args.emplace_back(arg);
 		}
 		Initialize(opcode);
 	}
 	
-	// Construction based on opcode + argument list as vector
+	/// Construction based on an instruction opcode and a list of arguments.
+	/// The argument in the list are given as newly allocated object that
+	/// the instruction will take ownership from.
 	Inst(const std::string &name, std::vector<Arg *> &arg_list)
 	{
 		for (auto &arg : arg_list)
 		{
-			args.push_back(static_cast<std::unique_ptr<Arg>>(arg));
+			args.emplace_back(arg);
 		}
 		Initialize(name);
 	}
 
 	// Dump instruction in a human-ready way
 	void Dump(std::ostream &os);
-	friend std::ostream &operator<<(std::ostream &os, Inst &inst) {
+
+	/// Alternative syntax for Dump()
+	friend std::ostream &operator<<(std::ostream &os, Inst &inst)
+	{
 		inst.Dump(os);
 		return os;
 	}
 
-	// Getters/setters
+	/// Return a reference to the instruction arguments
 	const std::vector<std::unique_ptr<Arg>> &getArgs() { return args; }
+
+	/// Return the number of arguments
+	int getNumArgs() const { return args.size(); }
+
+	/// Return the basic block that the instruction belongs to
 	llvm2si::BasicBlock *getBasicBlock() { return basic_block; }
-	void setBasicBlock(llvm2si::BasicBlock *basic_block) {
-		this->basic_block = basic_block; }
+
+	/// Return the instruction opcode
+	SI::InstOpcode getOpcode() const { return opcode; }
+
+	/// Associate the instruction to a basic block
+	void setBasicBlock(llvm2si::BasicBlock *basic_block)
+	{
+		this->basic_block = basic_block;
+	}
 
 	// Attach a comment to the instruction
 	void setComment(const std::string &comment) { this->comment = comment; }
@@ -165,8 +191,21 @@ public:
 	 * the instructions bytes. */
 	void Encode();
 
-	// Write the instruction bytes into output stream.
-	void Write(std::ostream &os) { os.write((char *)(bytes.byte), size); };
+	/// Write the instruction bytes into output stream.
+	void Write(std::ostream &os)
+	{
+		os.write((char *)(bytes.byte), size);
+	};
+
+	/// Label this instruction as an instruction emitted by the control
+	/// flow pass.
+	void setControlFlow(bool control_flow)
+	{
+		this->control_flow = control_flow;
+	}
+
+	/// Return whether the instruction was emitted by the control flow pass
+	bool getControlFlow() const { return control_flow; }
 };
 
 

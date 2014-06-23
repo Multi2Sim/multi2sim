@@ -53,6 +53,9 @@ libmemory_a_SOURCES = \
 	Directory.cc \
 	Directory.h \
 	\
+	Frame.cc \
+	Frame.h \
+	\
 	Memory.cc \
 	Memory.h \
 	\
