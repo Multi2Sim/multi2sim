@@ -46,7 +46,7 @@ std::string Emu::syscall_debug_file;
 long long Emu::max_instructions;
 
 // Simulation kind
-comm::ArchSimKind Emu::sim_kind = comm::ArchSimFunctional;
+comm::Arch::SimKind Emu::sim_kind = comm::Arch::SimFunctional;
 
 bool Emu::process_prefetch_hints = false;
 
@@ -151,7 +151,7 @@ void Emu::RegisterOptions()
 	// Option --x86-sim <kind>
 	command_line->RegisterEnum("--x86-sim {functional|detailed} "
 			"(default = functional)",
-			(int &) sim_kind, comm::arch_sim_kind_map,
+			(int &) sim_kind, comm::Arch::SimKindMap,
 			"Level of accuracy of x86 simulation.");
 }
 

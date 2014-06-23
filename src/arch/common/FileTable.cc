@@ -24,20 +24,20 @@
 namespace comm
 {
 
-const misc::StringMap file_desc_type_map =
+const misc::StringMap FileDescriptor::TypeTypeMap =
 {
-	{ "Regular", FileDescRegular },
-	{ "Standard", FileDescStd },
-	{ "Pipe", FileDescPipe },
-	{ "Virtual", FileDescVirtual },
-	{ "Device", FileDescDevice },
-	{ "Socket", FileDescSocket }
+	{ "Regular", TypeRegular },
+	{ "Standard", TypeStandard },
+	{ "Pipe", TypePipe },
+	{ "Virtual", TypeVirtual },
+	{ "Device", TypeDevice },
+	{ "Socket", TypeSocket }
 };
 
 
-void FileDesc::Dump(std::ostream &os) const
+void FileDescriptor::Dump(std::ostream &os) const
 {
-	os << "type = " << file_desc_type_map.MapValue(type);
+	os << "type = " << TypeTypeMap[type];
 	os << ", guest_index = " << guest_index;
 	os << ", host_index = " << host_index;
 	os << misc::fmt(", flags = 0x%x", flags);
@@ -48,16 +48,22 @@ void FileDesc::Dump(std::ostream &os) const
 FileTable::FileTable()
 {
 	// Add stdin
-	FileDesc *desc = new FileDesc(FileDescStd, 0, 0, 0, "");
-	file_descs.emplace_back(desc);
+	FileDescriptor *desc = new FileDescriptor(
+			FileDescriptor::TypeStandard,
+			0, 0, 0, "");
+	descriptors.emplace_back(desc);
 
 	// Add stdout
-	desc = new FileDesc(FileDescStd, 1, 1, 0, "");
-	file_descs.emplace_back(desc);
+	desc = new FileDescriptor(
+			FileDescriptor::TypeStandard,
+			1, 1, 0, "");
+	descriptors.emplace_back(desc);
 
 	// Add stderr
-	desc = new FileDesc(FileDescStd, 2, 2, 0, "");
-	file_descs.emplace_back(desc);
+	desc = new FileDescriptor(
+			FileDescriptor::TypeStandard,
+			2, 2, 0, "");
+	descriptors.emplace_back(desc);
 }
 
 
@@ -65,9 +71,9 @@ void FileTable::Dump(std::ostream &os) const
 {
 	int occupied = 0;
 	os << "File descriptor table:\n";
-	for (unsigned i = 0; i < file_descs.size(); i++)
+	for (unsigned i = 0; i < descriptors.size(); i++)
 	{
-		FileDesc *desc = file_descs[i].get();
+		FileDescriptor *desc = descriptors[i].get();
 		os << i << ". ";
 		if (!desc)
 		{
@@ -79,7 +85,7 @@ void FileTable::Dump(std::ostream &os) const
 		os << '\n';
 		occupied++;
 	}
-	os << "\t" << file_descs.size() << " entries, " <<
+	os << "\t" << descriptors.size() << " entries, " <<
 			occupied << " occupied\n\n";
 }
 
@@ -87,11 +93,11 @@ void FileTable::Dump(std::ostream &os) const
 int FileTable::getHostIndex(int guest_index) const
 {
 	// Invalid index
-	if (!misc::inRange(guest_index, 0, (int) file_descs.size()))
+	if (!misc::inRange(guest_index, 0, (int) descriptors.size()))
 		return -1;
 
 	// Return
-	FileDesc *desc = file_descs[guest_index].get();
+	FileDescriptor *desc = descriptors[guest_index].get();
 	return desc ? desc->getHostIndex() : -1;
 }
 
@@ -99,7 +105,7 @@ int FileTable::getHostIndex(int guest_index) const
 int FileTable::getGuestIndex(int host_index) const
 {
 	int guest_index = 0;
-	for (auto &desc : file_descs)
+	for (auto &desc : descriptors)
 	{
 		if (desc.get() && desc->getHostIndex() == host_index)
 			return guest_index;
@@ -111,48 +117,52 @@ int FileTable::getGuestIndex(int host_index) const
 }
 
 
-FileDesc *FileTable::newFileDesc(FileDescType type, int guest_index,
-		int host_index, const std::string &path, int flags)
+FileDescriptor *FileTable::newFileDescriptor(
+		FileDescriptor::Type type,
+		int guest_index,
+		int host_index,
+		const std::string &path,
+		int flags)
 {
 	// Look for a free entry
-	for (int i = 0; i < (int) file_descs.size() && guest_index < 0; i++)
-		if (!file_descs[i].get())
+	for (int i = 0; i < (int) descriptors.size() && guest_index < 0; i++)
+		if (!descriptors[i].get())
 			guest_index = i;
 	
 	// If no free entry was found, add new entry.
 	if (guest_index < 0)
 	{
-		guest_index = file_descs.size();
-		file_descs.emplace_back(nullptr);
+		guest_index = descriptors.size();
+		descriptors.emplace_back(nullptr);
 	}
 
 	// Specified guest_index may still be too large
-	for (int i = file_descs.size(); i <= guest_index; ++i)
-		file_descs.emplace_back(nullptr);
+	for (int i = descriptors.size(); i <= guest_index; ++i)
+		descriptors.emplace_back(nullptr);
 
 	// Create guest file descriptor and return.
-	FileDesc *desc = new FileDesc(type, guest_index, host_index,
+	FileDescriptor *desc = new FileDescriptor(type, guest_index, host_index,
 			flags, path);
-	file_descs[guest_index].reset(desc);
+	descriptors[guest_index].reset(desc);
 
 	// Return
 	return desc;
 }
 
 
-void FileTable::freeFileDesc(int index)
+void FileTable::freeFileDescriptor(int index)
 {
 	// Out of range
-	if (!misc::inRange(index, 0, (int) file_descs.size() - 1))
+	if (!misc::inRange(index, 0, (int) descriptors.size() - 1))
 		return;
 
 	// Get file descriptor. If it is empty, exit
-	FileDesc *desc = file_descs[index].get();
+	FileDescriptor *desc = descriptors[index].get();
 	if (!desc)
 		return;
 	
 	// If it is a virtual file, delete the temporary host path.
-	if (desc->getType() == FileDescVirtual)
+	if (desc->getType() == FileDescriptor::TypeVirtual)
 	{
 		if (unlink(desc->getPath().c_str()))
 			misc::warning("%s: temporary host virtual file could not "
@@ -160,7 +170,7 @@ void FileTable::freeFileDesc(int index)
 	}
 
 	// Free file descriptor and remove entry in table.
-	file_descs[index] = nullptr;
+	descriptors[index] = nullptr;
 }
 
 

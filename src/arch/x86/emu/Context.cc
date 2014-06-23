@@ -342,7 +342,7 @@ Context::Context()
 		context_list_present[i] = false;
 
 	// Micro-instructions
-	uinst_active = Emu::getSimKind() == comm::ArchSimDetailed;
+	uinst_active = Emu::getSimKind() == comm::Arch::SimDetailed;
 	uinst_effaddr_emitted = false;
 
 	// Debug
@@ -546,7 +546,7 @@ void Context::HostThreadSuspend()
 	if (getState(ContextRead))
 	{
 		// Get file descriptor
-		comm::FileDesc *desc = file_table->getFileDesc(syscall_read_fd);
+		comm::FileDescriptor *desc = file_table->getFileDescriptor(syscall_read_fd);
 		if (!desc)
 			misc::panic("%s: invalid file descriptor (%d)",
 					__FUNCTION__, syscall_read_fd);
@@ -565,7 +565,7 @@ void Context::HostThreadSuspend()
 	if (getState(ContextWrite))
 	{
 		// Get file descriptor
-		comm::FileDesc *desc = file_table->getFileDesc(syscall_write_fd);
+		comm::FileDescriptor *desc = file_table->getFileDescriptor(syscall_write_fd);
 		if (!desc)
 			misc::panic("%s: invalid file descriptor (%d)",
 					__FUNCTION__, syscall_write_fd);
@@ -584,7 +584,7 @@ void Context::HostThreadSuspend()
 	if (getState(ContextPoll))
 	{
 		// Get file descriptor
-		comm::FileDesc *desc = file_table->getFileDesc(syscall_poll_fd);
+		comm::FileDescriptor *desc = file_table->getFileDescriptor(syscall_poll_fd);
 		if (!desc)
 			misc::panic("%s: invalid file descriptor (%d)",
 					__FUNCTION__, syscall_poll_fd);

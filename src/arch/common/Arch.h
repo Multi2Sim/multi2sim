@@ -34,35 +34,43 @@ class Asm;
 class Emu;
 class Timing;
 
-/// Type of simulation for each architecture
-enum ArchSimKind
-{
-	ArchSimInvalid = 0,
-	ArchSimFunctional,
-	ArchSimDetailed
-};
-
-/// String map for type ArchSimKind
-extern misc::StringMap arch_sim_kind_map;
-
-
 /// Class representing one of the supported architectures on Multi2Sim (x86,
 /// ARM, Southern Islands, etc.)
 class Arch
 {
+
+public:
+
+	/// Type of simulation for each architecture
+	enum SimKind
+	{
+		SimInvalid = 0,
+		SimFunctional,
+		SimDetailed
+	};
+
+	/// String map for SimKind
+	static const misc::StringMap SimKindMap;
+
+private:
+
 	// Name of architecture (x86, ARM, etc.)
 	std::string name;
 
-	// Disassembler, emulator, and timing simulator
-	Asm *as;
-	Emu *emu;
-	Timing *timing;
+	// Disassembler
+	Asm *as = nullptr;
+
+	// Emulator
+	Emu *emu = nullptr;
+
+	// Timing simulator
+	Timing *timing = nullptr;
 
 	// Simulation kind
-	ArchSimKind sim_kind;
+	SimKind sim_kind = SimFunctional;
 
 	// True if last iteration had an active simulation
-	bool active;
+	bool active = false;
 	
 public:
 
@@ -93,7 +101,7 @@ public:
 	Timing *getTiming() const { return timing; }
 
 	/// Return the type of simulation for the architecture
-	ArchSimKind getSimKind() const { return sim_kind; }
+	SimKind getSimKind() const { return sim_kind; }
 
 	/// Return whether the architecture performed an active simulation in
 	/// the last simulation iteration.

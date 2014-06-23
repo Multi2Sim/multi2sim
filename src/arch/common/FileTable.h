@@ -33,24 +33,32 @@ namespace comm
 
 class Driver;
 
-extern const misc::StringMap file_desc_type_map;
-enum FileDescType
-{
-	FileDescInvalid = 0,
-	FileDescRegular,		/// Regular file
-	FileDescStd,			/// Standard input/output
-	FileDescPipe,			/// Pipe
-	FileDescVirtual,		/// Virtual file with artificial content
-	FileDescDevice,			/// Virtual device
-	FileDescSocket			/// Network socket
-};
 
-
-// File descriptor
-class FileDesc
+/// File descriptor
+class FileDescriptor
 {
+
+public:
+
+	/// File descriptor types
+	enum Type
+	{
+		TypeInvalid = 0,
+		TypeRegular,	/// Regular file
+		TypeStandard,	/// Standard input/output
+		TypePipe,		/// Pipe
+		TypeVirtual,	/// Virtual file with artificial content
+		TypeDevice,	/// Virtual device
+		TypeSocket	/// Network socket
+	};
+
+	/// String map for Type
+	static const misc::StringMap TypeTypeMap;
+
+private:
+
 	// File type
-	FileDescType type;
+	Type type;
 
 	// Guest and host file descriptors
 	int guest_index;
@@ -68,7 +76,7 @@ class FileDesc
 public:
 
 	/// Constructor
-	FileDesc(FileDescType type,
+	FileDescriptor(Type type,
 			int guest_index,
 			int host_index,
 			int flags,
@@ -86,13 +94,14 @@ public:
 
 	/// Equivalent to Dump()
 	friend std::ostream &operator<<(std::ostream &os,
-			const FileDesc &desc) {
+			const FileDescriptor &desc)
+	{
 		desc.Dump(os);
 		return os;
 	}
 
 	/// Return type of file descriptor
-	FileDescType getType() const { return type; }
+	Type getType() const { return type; }
 
 	/// Return guest file descriptor index
 	int getGuestIndex() const { return guest_index; }
@@ -111,15 +120,17 @@ public:
 
 	/// Set a driver associated with the file descriptor. The descriptor
 	/// must be of type FileDescDevice.
-	void setDriver(comm::Driver *driver) {
-		assert(type == FileDescDevice);
+	void setDriver(comm::Driver *driver)
+	{
+		assert(type == TypeDevice);
 		this->driver = driver;
 	}
 
 	/// Return the driver associated with the file descriptor. The file
-	/// descriptor must be of type FileDescDevice.
-	comm::Driver *getDriver() const {
-		assert(type == FileDescDevice);
+	/// descriptor must be of type TypeDevice.
+	comm::Driver *getDriver() const
+	{
+		assert(type == TypeDevice);
 		return driver;
 	}
 };
@@ -130,7 +141,7 @@ public:
 class FileTable
 {
 	// List of file descriptors
-	std::vector<std::unique_ptr<FileDesc>> file_descs;
+	std::vector<std::unique_ptr<FileDescriptor>> descriptors;
 
 public:
 
@@ -142,34 +153,44 @@ public:
 
 	/// Equivalent to Dump()
 	friend std::ostream &operator<<(std::ostream &os,
-			const FileTable &table) {
+			const FileTable &table)
+	{
 		table.Dump(os);
 		return os;
 	}
 
 	/// Return file descriptor \a index, or \c nullptr is no file descriptor
 	/// exists with that identifier.
-	FileDesc *getFileDesc(int index) const {
-		return misc::inRange(index, 0, (int) file_descs.size() - 1) ?
-				file_descs[index].get() : nullptr;
+	FileDescriptor *getFileDescriptor(int index) const
+	{
+		return misc::inRange(index, 0, (int) descriptors.size() - 1) ?
+				descriptors[index].get() : nullptr;
 	}
 
 	/// Create a new file descriptor with a specific guest identifier. If
 	/// the value in \a guest_index is set to -1, the first free guest file
 	/// descriptor will be allocated.
-	FileDesc *newFileDesc(FileDescType type, int guest_index, int host_index,
-			const std::string &path, int flags);
+	FileDescriptor *newFileDescriptor(
+			FileDescriptor::Type type,
+			int guest_index,
+			int host_index,
+			const std::string &path,
+			int flags);
 	
 	/// Create a new file descriptor, assigning the first available guest
 	/// identifier.
-	FileDesc *newFileDesc(FileDescType type, int host_index,
-			const std::string &path, int flags) {
-		return newFileDesc(type, -1, host_index, path, flags);
+	FileDescriptor *newFileDescriptor(
+			FileDescriptor::Type type,
+			int host_index,
+			const std::string &path,
+			int flags)
+	{
+		return newFileDescriptor(type, -1, host_index, path, flags);
 	}
 
 	/// Free file descriptor with identifier \a index. If \a index is out of
 	/// range, the call will ignore it silently.
-	void freeFileDesc(int index);
+	void freeFileDescriptor(int index);
 
 	/// Return the host file descriptor associated with the guest file
 	/// descriptor given in \a guest_index, or -1 if \a index is not a
