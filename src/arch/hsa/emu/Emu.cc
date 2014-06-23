@@ -29,7 +29,7 @@ namespace HSA
 //
 
 // Simulation kind
-comm::ArchSimKind Emu::sim_kind = comm::ArchSimFunctional;
+comm::Arch::SimKind Emu::sim_kind = comm::Arch::SimFunctional;
 
 // Debug file
 std::string Emu::hsa_debug_file;
@@ -67,7 +67,7 @@ void Emu::RegisterOptions()
 	// Option --hsa-sim <kind>
 	command_line->RegisterEnum("--hsa-sim {functional|detailed} "
 			"(default = functional)",
-			(int &) sim_kind, comm::arch_sim_kind_map,
+			(int &) sim_kind, comm::Arch::SimKindMap,
 			"Level of accuracy of hsa simulation");
 }
 

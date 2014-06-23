@@ -40,7 +40,7 @@ class Emu : public comm::Emu
 	static std::string hsa_debug_file;
 
 	// Simulation kind
-	static comm::ArchSimKind sim_kind;
+	static comm::Arch::SimKind sim_kind;
 
 	// Unique instance of hsa emulator
 	static std::unique_ptr<Emu> instance;

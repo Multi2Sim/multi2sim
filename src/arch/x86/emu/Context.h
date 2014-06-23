@@ -710,9 +710,9 @@ class Context
 	// Auxiliary system call functions
 	int SyscallMmapAux(unsigned int addr, unsigned int len, int prot,
 			int flags, int guest_fd, int offset);
-	comm::FileDesc *SyscallOpenVirtualFile(const std::string &path,
+	comm::FileDescriptor *SyscallOpenVirtualFile(const std::string &path,
 			int flags, int mode);
-	comm::FileDesc *SyscallOpenVirtualDevice(const std::string &path,
+	comm::FileDescriptor *SyscallOpenVirtualDevice(const std::string &path,
 			int flags, int mode);
 
 	// System call 'nanosleep'
