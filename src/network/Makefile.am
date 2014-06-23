@@ -24,6 +24,7 @@ libnetwork_a_SOURCES = \
 	net-system.c \
 	net-system.h \
 	\
+	Network.cc \
 	Network.h \
 	\
 	network.h \
