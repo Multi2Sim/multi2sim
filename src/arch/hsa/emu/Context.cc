@@ -31,6 +31,10 @@ Context::Context()
 	emu->hsa_debug << "Context " << pid << " created\n";
 }
 
+Context::~Context(){
+	
+}
+
 void Context::Load(const std::vector<std::string> &args,
 	const std::vector<std::string> &env, 
 	const std::string &cwd,
@@ -45,6 +49,11 @@ void Context::Load(const std::vector<std::string> &args,
 	loader->stdout_file_name = misc::getFullPath(stdout_file_name, cwd);
 
 	LoadBinary();	
+}
+
+void Context::Execute()
+{
+
 }
 
 }
