@@ -28,6 +28,16 @@
 namespace net
 {
 
+class Network;
+
+/// Traffic Pattern states
+enum TrafficPattern
+{
+	TrafficPatternInvalid = 0,
+	TrafficPatternUniform,
+	TrafficPatternCommand
+};
+
 
 class System
 {
@@ -41,17 +51,72 @@ class System
 	// Configuration file
 	static std::string config_file;
 
+	// Report file
+	static std::string report_file;
+
+	// Visual file
+	static std::string visual_file;
+
+	// Routing table print file
+	static std::string routing_table_file;
+
+	// Network Traffic Pattern
+	static int traffic_pattern;
+
 	// Stand-alone simulation duration.
 	static long long max_cycles;
 
+	// Stand-alone message injection rate
+	static int injection_rate;
 
+	// Message Size in stand alone network
+	static int msg_size;
 
-public:
+	// Network snapshot sampling period
+	static int snapshot_period;
+
+	// Network Help
+	static bool net_help;
+
+	// Stand-alone simulator instantiator
+	static bool stand_alone;
+
 	/// Debugger for network
 	static misc::Debug debug;
 
 	/// External Networks configuration file
 	static misc::IniFile config;
+
+
+
+	//
+	// Class members
+	//
+
+	// Unique instance of singleton
+	static std::unique_ptr<System> instance;
+
+	// Private constructor for singleton
+	System();
+
+	// Unordered Map of Networks
+	static std::unordered_map<std::string, Network *> network_map;
+
+	// List of Networks to access from
+	static std::vector<std::unique_ptr<Network>> networks;
+
+
+
+public:
+
+	/// Get instance of Singleton
+	static System *getInstance();
+
+	// Get the list of Networks
+	std::vector<std::unique_ptr<Network>> &getNetworks()
+	{
+		return networks;
+	}
 
 	/// Register command-line options
 	static void RegisterOptions();
