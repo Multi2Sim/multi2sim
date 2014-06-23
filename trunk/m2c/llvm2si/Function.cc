@@ -573,30 +573,64 @@ void Function::EmitBody()
 }
 
 
+void Function::EmitPhiMoves(si2bin::Inst *inst)
+{
+	// Get destination register
+	si2bin::Arg *dst_arg = inst->getArgs()[0].get();
+	si2bin::ArgVectorRegister *dst_arg_vreg =
+			misc::cast<si2bin::ArgVectorRegister *>(dst_arg);
+	int dst_vreg = dst_arg_vreg->getId();
+
+	// Process source argument
+	for (int i = 1; i < inst->getNumArgs(); i++)
+	{
+		// Get the Phi argument
+		si2bin::Arg *arg = inst->getArgs()[i].get();
+		si2bin::ArgPhi *arg_phi = misc::cast<si2bin::ArgPhi *>(arg);
+
+		// Get the source basic block
+		comm::LeafNode *node = tree.getLeafNode(arg_phi->getName());
+		comm::BasicBlock *comm_basic_block = node->getBasicBlock();
+		BasicBlock *basic_block = misc::cast<BasicBlock *>(comm_basic_block);
+
+		// Get the source vector register
+		int src_vreg = arg_phi->getId();
+
+		// Get reverse iterator to last non-control flow instruction
+		auto it = basic_block->getFirstControlFlowInst();
+
+		// Emit move instruction
+		// s_mov_b32 <dest_value>, <src_value>
+		Inst *inst = new Inst(SI::INST_V_MOV_B32,
+				new si2bin::ArgVectorRegister(dst_vreg),
+				new si2bin::ArgVectorRegister(src_vreg));
+		basic_block->getInstList().emplace(it, inst);
+	}
+}
+
+
 void Function::EmitPhi()
 {
-	while (phi_list.size())
+	for (auto &basic_block : basic_blocks)
 	{
-		// Extract element from list
-		Phi *phi = phi_list.front().get();
+		auto it = basic_block->getInstList().begin();
+		while (it != basic_block->getInstList().end())
+		{
+			// Store next instruction
+			auto it_next = it;
+			++it_next;
 
-		// Get basic block
-		comm::LeafNode *node = phi->getSrcNode();
-		BasicBlock *basic_block = misc::cast<BasicBlock *>(node->getBasicBlock());
+			// Process Phi instruction
+			Inst *inst = it->get();
+			if (inst->getOpcode() == SI::INST_PHI)
+			{
+				EmitPhiMoves(inst);
+				basic_block->getInstList().erase(it);
+			}
 
-		// Get source value
-		Arg *src_value = TranslateValue(phi->getSrcValue());
-
-		/* Copy source value to destination value.
-		 * s_mov_b32 <dest_value>, <src_value>
-		 */
-		Inst *inst = new Inst(SI::INST_V_MOV_B32,
-				phi->getDestValue(),
-				src_value);
-		basic_block->AddInst(inst);
-
-		// Free phi object
-		phi_list.pop_front();
+			// Go to next instruction
+			it = it_next;
+		}
 	}
 }
 
@@ -651,6 +685,7 @@ void Function::EmitIfThen(comm::AbstractNode *node)
 	Inst *inst = new Inst(SI::INST_S_AND_SAVEEXEC_B64,
 			new ArgScalarRegisterSeries(tos_sreg, tos_sreg + 1),
 			new ArgScalarRegisterSeries(cond_sreg, cond_sreg + 1));
+	inst->setControlFlow(true);
 	if_basic_block->AddInst(inst);
 
 
@@ -662,6 +697,7 @@ void Function::EmitIfThen(comm::AbstractNode *node)
 	inst = new Inst(SI::INST_S_MOV_B64,
 			new ArgSpecialRegister(SI::InstSpecialRegExec),
 			new ArgScalarRegisterSeries(tos_sreg, tos_sreg + 1));
+	inst->setControlFlow(true);
 	then_basic_block->AddInst(inst);
 }
 
@@ -718,35 +754,35 @@ void Function::EmitIfThenElse(comm::AbstractNode *node)
 	// Allocate two scalar registers to push the active mask
 	int tos_sreg = AllocSReg(2, 2);
 
-	/* Emit active mask push and set at the end of the 'If' block.
-	 * s_and_saveexec_b64 <tos_sreg> <cond_sreg>
-	 */
+	// Emit active mask push and set at the end of the 'If' block.
+	// s_and_saveexec_b64 <tos_sreg> <cond_sreg>
 	Inst *inst = new Inst(SI::INST_S_AND_SAVEEXEC_B64,
 			new ArgScalarRegisterSeries(tos_sreg, tos_sreg + 1),
 			new ArgScalarRegisterSeries(cond_sreg, cond_sreg + 1));
+	inst->setControlFlow(true);
 	if_basic_block->AddInst(inst);
 
 
 	/*** Code for 'then' block ***/
 
-	/* Invert active mask and-ing it with the top of the stack.
-	 * s_andn2_b64 exec, <tos_sreg>, exec
-	 */
+	// Invert active mask and-ing it with the top of the stack.
+	// s_andn2_b64 exec, <tos_sreg>, exec
 	inst = new Inst(SI::INST_S_ANDN2_B64,
 			new ArgSpecialRegister(SI::InstSpecialRegExec),
 			new ArgScalarRegisterSeries(tos_sreg, tos_sreg + 1),
 			new ArgSpecialRegister(SI::InstSpecialRegExec));
+	inst->setControlFlow(true);
 	then_basic_block->AddInst(inst);
 
 
 	/*** Code for 'else' block ***/
 
-	/* Pop the active mask.
-	 * s_mov_b64 exec, <tos_sreg>
-	 */
+	// Pop the active mask.
+	// s_mov_b64 exec, <tos_sreg>
 	inst = new Inst(SI::INST_S_MOV_B64,
 			new ArgSpecialRegister(SI::InstSpecialRegExec),
 			new ArgScalarRegisterSeries(tos_sreg, tos_sreg + 1));
+	inst->setControlFlow(true);
 	else_basic_block->AddInst(inst);
 }
 
@@ -809,6 +845,7 @@ void Function::EmitWhileLoop(comm::AbstractNode *node)
 	Inst *inst = new Inst(SI::INST_S_MOV_B64,
 			new ArgScalarRegisterSeries(tos_sreg, tos_sreg + 1),
 			new ArgSpecialRegister(SI::InstSpecialRegExec));
+	inst->setControlFlow(true);
 	pre_basic_block->AddInst(inst);
 
 
@@ -820,6 +857,7 @@ void Function::EmitWhileLoop(comm::AbstractNode *node)
 	inst = new Inst(SI::INST_S_MOV_B64,
 			new ArgSpecialRegister(SI::InstSpecialRegExec),
 			new ArgScalarRegisterSeries(tos_sreg, tos_sreg + 1));
+	inst->setControlFlow(true);
 	exit_basic_block->AddInst(inst);
 
 
@@ -830,6 +868,7 @@ void Function::EmitWhileLoop(comm::AbstractNode *node)
 	 */
 	inst = new Inst(SI::INST_S_BRANCH,
 			new ArgLabel(head_leaf_node->getName()));
+	inst->setControlFlow(true);
 	tail_basic_block->AddInst(inst);
 
 
@@ -851,27 +890,27 @@ void Function::EmitWhileLoop(comm::AbstractNode *node)
 	assert(cond_symbol->getNumRegs() == 2);
 	int cond_sreg = cond_symbol->getReg();
 
-	/* Obtain opcode depending on whether the loop exists when the head's
-	 * condition is true or it does when it is false. */
+	// Obtain opcode depending on whether the loop exists when the head's
+	// condition is true or it does when it is false.
 	SI::InstOpcode opcode = SI::INST_S_AND_B64;
 	assert(head_node->getExitIfTrue() ^ head_node->getExitIfFalse());
 	if (head_node->getExitIfTrue())
 		opcode = SI::INST_S_ANDN2_B64;
 
-	/* Bitwise 'and' of active mask with condition.
-	 * s_and(n2)_b64 exec, exec, <cond_sreg>
-	 */
+	// Bitwise 'and' of active mask with condition.
+	// s_and(n2)_b64 exec, exec, <cond_sreg>
 	inst = new Inst(opcode,
 			new ArgSpecialRegister(SI::InstSpecialRegExec),
 			new ArgSpecialRegister(SI::InstSpecialRegExec),
 			new ArgScalarRegisterSeries(cond_sreg, cond_sreg + 1));
+	inst->setControlFlow(true);
 	head_basic_block->AddInst(inst);
 
-	/* Exit loop if no more work-items are active.
-	 * s_cbranch_execz <exit_node>
-	 */
+	// Exit loop if no more work-items are active.
+	// s_cbranch_execz <exit_node>
 	inst = new Inst(SI::INST_S_CBRANCH_EXECZ,
 			new ArgLabel(exit_node->getName()));
+	inst->setControlFlow(true);
 	head_basic_block->AddInst(inst);
 }
 

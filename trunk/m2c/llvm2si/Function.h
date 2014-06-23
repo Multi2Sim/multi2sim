@@ -33,7 +33,6 @@
 #include <m2c/si2bin/Arg.h>
 
 #include "BasicBlock.h"
-#include "Phi.h"
 #include "Symbol.h"
 
 
@@ -156,10 +155,6 @@ class Function
 	// Control tree
 	comm::Tree tree;
 
-	/* List of elements found in LLVM phi instructions during emission of
-	 * the function body. */
-	std::list<std::unique_ptr<Phi>> phi_list;
-
 	/* While code is generated, this variable keeps track of the total
 	 * amount of bytes pushed into the stack for this function. */
 	unsigned int stack_size;
@@ -219,9 +214,6 @@ public:
 	// Add symbol to symbol table
 	void AddSymbol(Symbol *symbol) { symbol_table.AddSymbol(symbol); }
 
-	// Add phi node to list
-	void AddPhi(Phi *phi) { phi_list.emplace_back(phi); }
-
 	/* Generate initialization code for the function in basic block
 	 * 'basic_block_header'. */
 	void EmitHeader();
@@ -237,9 +229,10 @@ public:
 	 * basic blocks will be created. */
 	void EmitBody();
 
-	/* Emit code for the phi elements that were encountered during the
-	 * emission of the function body, comming from LLVM phi nodes. */
+	/// Process all virtual Phi instructions and replace them by Move
+	/// instructions in the predecessor basic blocks.
 	void EmitPhi();
+	void EmitPhiMoves(si2bin::Inst *inst);
 
 	/* Emit additional instructions managing active masks and active mask
 	 * stacks related with the function control flow. */

@@ -73,6 +73,7 @@ class BasicBlock : public comm::BasicBlock
 	void EmitFAdd(llvm::BinaryOperator *llvm_inst);
 	void EmitFSub(llvm::BinaryOperator *llvm_inst);
 	void EmitFMul(llvm::BinaryOperator *llvm_inst);
+	void EmitSExt(llvm::SExtInst *llvm_inst);
 	void EmitExtractElement(llvm::ExtractElementInst *llvm_inst);
 	void EmitInsertElement(llvm::InsertElementInst *llvm_inst);
 
@@ -95,7 +96,11 @@ public:
 	{
 	}
 
-	std::list<std::unique_ptr<si2bin::Inst>> &getInstList() { return inst_list; }
+	/// Return a reference to the list of instructions
+	std::list<std::unique_ptr<si2bin::Inst>> &getInstList()
+	{
+		return inst_list;
+	}
 
 	// Dump
 	void Dump(std::ostream &os);
@@ -110,8 +115,14 @@ public:
 	 * to the basic block, the comment won't have any effect. */
 	void AddComment(const std::string &comment) { this->comment = comment; }
 
-	// Emit SI code for the LLVM basic block into field 'inst_list'.
+	/// Emit SI code for the LLVM basic block into field `inst_list`.
 	void Emit(llvm::BasicBlock *llvm_basic_block);
+
+	/// Return an iterator to the first instruction that was emitted by
+	/// the control flow pass in the basic block. If there is no control
+	/// flow instruction, a past-the-end iterator is returned.
+	std::list<std::unique_ptr<si2bin::Inst>>::iterator
+			getFirstControlFlowInst();
 
 	/* Perform analysis on live variables inside the llvm function to allow for
 	 * memory efficient register allocation at an instruction level granularity

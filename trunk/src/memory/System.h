@@ -34,7 +34,10 @@ public:
 	/// Memory system trace
 	static misc::Debug trace;
 
-	/// Register comand-line options
+	/// Memory system debugger
+	static misc::Debug debug;
+
+	/// Register command-line options
 	static void RegisterOptions();
 
 	/// Process command-line options

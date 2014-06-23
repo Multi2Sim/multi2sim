@@ -58,6 +58,17 @@ void Inst::Initialize(SI::InstOpcode opcode)
 	if (!info)
 		misc::fatal("%s: opcode %d not supported", __FUNCTION__, opcode);
 
+	// FIXME
+	// For the particular case of the Phi instruction we don't check the
+	// number of arguments or their type. This is a quick hack. The right
+	// way to do this is creating an instruction only partially in the
+	// constructor, and then keep adding arguments. A separate function
+	// should do the argument verification. The whole ownership transfer
+	// of argument pointers should be fixed. Same thing for the ownership
+	// transfer between instructions and functions.
+	if (opcode == SI::INST_PHI)
+		return;
+
 	// Check number of arguments
 	if (args.size() != info->getNumTokens())
 		misc::fatal("%s: invalid number of arguments (%d given, %d expected)",
