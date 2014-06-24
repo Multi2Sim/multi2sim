@@ -199,6 +199,8 @@ public:
 
 	//Function list for dump inst. One function for a kind
 	static DumpInstFn dump_inst_fn[15];
+
+	void DebugInst();
 };
 
 }//end namespace

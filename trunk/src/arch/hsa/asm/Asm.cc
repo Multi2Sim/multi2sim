@@ -76,36 +76,41 @@ Asm *Asm::getInstance()
 
 Asm::Asm()
 {
-	/*
+	
 #define DEFINST(_name, _opstr)	\
 	InitTable(Inst_##_name, #_name, _opstr);
 #include "Inst.def"
 #undef DEFINST
-	*/
+	
 	indent = 0;
 }
 
-// void Asm::InitTable(InstOpcode opcode, const char *name, const char *fmt_str)
-// {
-// 	inst_info[opcode].opcode = opcode;
-// 	inst_info[opcode].name = name;
-// 	inst_info[opcode].fmt_str = fmt_str;	
-// }
+void Asm::InitTable(InstOpcode opcode, const char *name, const char *fmt_str)
+{
+	inst_info[opcode].opcode = opcode;
+	inst_info[opcode].name = name;
+	inst_info[opcode].fmt_str = fmt_str;	
+}
 
 void Asm::DisassembleBinary(const std::string &path) const
 {
-	BrigFile bf(path.c_str());
-	BrigSection *bs = bf.getBrigSection(BrigSectionDirective);
-	const char *buf = bs->getBuffer();
+	BrigFile brig_file(path.c_str());
+	BrigSection *brig_section = 
+			brig_file.getBrigSection(BrigSectionDirective);
+	const char *buffer = brig_section->getBuffer();
 
-	char *bufPtr = (char *)buf;
+	char *buffer_pointer = (char *)buffer;
+
 	// Increament by 4 to skip the section size field
-	bufPtr += 4;
-	while(bufPtr && bufPtr < buf + bs->getSize())
+	buffer_pointer += 4;
+
+	// Traverse all top level directives and dump them
+	while(buffer_pointer && 
+			buffer_pointer < buffer + brig_section->getSize())
 	{
-		BrigDirEntry dir(bufPtr, &bf);
+		BrigDirEntry dir(buffer_pointer, &brig_file);
 		dir.Dump();
-		bufPtr = dir.nextTop();
+		buffer_pointer = dir.nextTop();
 	}
 }
 

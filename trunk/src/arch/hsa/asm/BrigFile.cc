@@ -24,18 +24,19 @@ namespace HSA
 {
 
 BrigFile::BrigFile(const std::string &path)
-	: file(path)
-	, brig_sections(6)
+		: 
+		file(path),
+		brig_sections(6)
 {	
 	for(int i=0; i<file.getNumSections(); i++)
 	{
 		BrigSection * section = new BrigSection(file.getSection(i));
 
 		//only add known section to section list
-		if( section->getType() >=0 && section->getType() <=5 )
+		if(section->getType() >= 0 && section->getType() <= 5)
 		{
-			this->brig_sections[section->getType()]
-					= std::unique_ptr<BrigSection> (section);
+			this->brig_sections[section->getType()] = 
+					std::unique_ptr<BrigSection> (section);
 		} 
 	}
 }
@@ -49,28 +50,6 @@ BrigSection *BrigFile::getBrigSection(BrigSectionType type) const
 	return this->brig_sections[type].get();
 }
 
-void BrigSection::dumpSectionHex() const
-{
-	printf(
-			"\n********** Section %s **********\n", 
-			this->getName().c_str()
-		);
-	const unsigned char *buf = (const unsigned char *)this->getBuffer();
-	for(unsigned int i=0; i<this->getSize(); i++)
-	{
-		printf("%02x", buf[i]);
-		if((i + 1) % 4 == 0)
-		{
-			printf(" ");
-		}
-		if((i + 1) % 16 == 0)
-		{
-			printf("\n");
-		}
-	}
-	printf("\n");
-}
-
 bool BrigFile::isValid() const
 {
 	// If the section names match BRIG standard, it is considered to be
@@ -82,9 +61,11 @@ bool BrigFile::isValid() const
 		".operands",
 		".debug"
 	};
-	for(unsigned int i=0; i<secNames.size(); i++){
+	for(unsigned int i=0; i<secNames.size(); i++)
+	{
 		BrigSection *sec = this->brig_sections[i].get();
-		if(! (sec->getName() == secNames[i]) ) {
+		if(!(sec->getName() == secNames[i])) 
+		{
 			//std::cout << "Expected: " << secNames[i]
 			//	<< ", but: " << sec->getName();
 			return false;
@@ -93,31 +74,33 @@ bool BrigFile::isValid() const
 	return true;
 }
 
-char *BrigFile::findMainFun()
+char *BrigFile::findMainFunction()
 {
 	BrigSection *dirSection = this->getBrigSection(BrigSectionDirective);
-	BrigSection *codeSection = this->getBrigSection(BrigSectionDirective);
-	char *codeBuf = (char *)codeSection->getBuffer() + 4;
-	const char *buf = dirSection->getBuffer();
+	BrigSection *codeSection = this->getBrigSection(BrigSectionCode);
+	char *codeBuf = (char *)codeSection->getBuffer();
+	const char *dirBuf = dirSection->getBuffer();
 
 	// skip the header, the size field, of the section
-	char *bufPtr = (char *)buf;
+	char *bufPtr = (char *)dirBuf;
 	bufPtr += 4;
 
-	// Traverse all the 
-	while(bufPtr && bufPtr < buf + dirSection->getSize())
+	// Traverse all the directives to find function declarations
+	while(bufPtr && bufPtr < dirBuf + dirSection->getSize())
 	{
 		BrigDirEntry dir(bufPtr, this);
 		if(dir.getKind() == BRIG_DIRECTIVE_FUNCTION)
 		{
 			// function declarations
-			struct BrigDirectiveFunction *dirStr = 
-					(struct BrigDirectiveFunction *)dir.getBuffer();
-			std::string funName = BrigStrEntry::GetStringByOffset(
-					this, dirStr->name);
-			if(funName == "&main")
+			struct BrigDirectiveFunction *dirStruct = 
+					(struct BrigDirectiveFunction *)
+					dir.getBuffer();
+			std::string funcName = 
+					BrigStrEntry::GetStringByOffset(this, 
+						dirStruct->name);
+			if(funcName == "&main")
 			{	
-				char *firstInst = codeBuf + dirStr->code;
+				char *firstInst = codeBuf + dirStruct->code;
 				return firstInst;	
 			}
 		}

@@ -17,73 +17,73 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <lib/cpp/Misc.h>
+#include <lib/cpp/String.h>
+
 #include "BrigEntry.h"
 #include "BrigStrEntry.h"
 #include "BrigDirEntry.h"
 #include "BrigInstEntry.h"
-#include "lib/cpp/Misc.h"
-#include "lib/cpp/String.h"
 #include "Asm.h"
 #include "BrigImmed.h"
 
-namespace HSA{
+namespace HSA
+{
+
 const char *BrigEntry::type2str(int type)
 {
-	switch(type)
-	{
-		case 0:	return "";
-		case 1: return "u8";
-		case 2: return "u16";
-		case 3: return "u32";
-		case 4: return "u64";
-		case 5: return "s8";
-		case 6: return "s16";
-		case 7: return "s32";
-		case 8: return "s64";
-		case 9: return "f16";
-		case 10: return "f32";
-		case 11: return "f64";
-		case 12: return "b1";
-		case 13: return "b8";
-		case 14: return "b16";
-		case 15: return "b32";
-		case 16: return "b64";
-		case 17: return "b128";
-		case 18: return "samp";
-		case 19: return "roimg";
-		case 20: return "rwimg";
-		case 21: return "fbar";
-
-		case BRIG_TYPE_U8|BRIG_TYPE_PACK_32: return "u8x4";
-		case BRIG_TYPE_U8|BRIG_TYPE_PACK_64: return "u8x8";
-		case BRIG_TYPE_U8|BRIG_TYPE_PACK_128: return "u8x16";
-		case BRIG_TYPE_U16|BRIG_TYPE_PACK_32: return "u16x2";
-		case BRIG_TYPE_U16|BRIG_TYPE_PACK_64: return "u16x4";
-		case BRIG_TYPE_U16|BRIG_TYPE_PACK_128: return "u16x8";
-		case BRIG_TYPE_U32|BRIG_TYPE_PACK_64: return "u32x2";
-		case BRIG_TYPE_U32|BRIG_TYPE_PACK_128: return "u32x4";
-		case BRIG_TYPE_U64|BRIG_TYPE_PACK_128: return "u64x2";
-		case BRIG_TYPE_S8|BRIG_TYPE_PACK_32: return "s8x4";
-		case BRIG_TYPE_S8|BRIG_TYPE_PACK_64: return "s8x8";
-		case BRIG_TYPE_S8|BRIG_TYPE_PACK_128: return "s8x16";
-		case BRIG_TYPE_S16|BRIG_TYPE_PACK_32: return "s16x2";
-		case BRIG_TYPE_S16|BRIG_TYPE_PACK_64: return "s16x4";
-		case BRIG_TYPE_S16|BRIG_TYPE_PACK_128: return "s16x8";
-		case BRIG_TYPE_S32|BRIG_TYPE_PACK_64: return "s32x2";
-		case BRIG_TYPE_S32|BRIG_TYPE_PACK_128: return "s32x4";
-		case BRIG_TYPE_S64|BRIG_TYPE_PACK_128: return "s64x2";
-		case BRIG_TYPE_F16|BRIG_TYPE_PACK_32: return "f16x2";
-		case BRIG_TYPE_F16|BRIG_TYPE_PACK_64: return "f16x4";
-		case BRIG_TYPE_F16|BRIG_TYPE_PACK_128: return "f16x8";
-		case BRIG_TYPE_F32|BRIG_TYPE_PACK_64: return "f32x2";
-		case BRIG_TYPE_F32|BRIG_TYPE_PACK_128: return "f32x4";
-		case BRIG_TYPE_F64|BRIG_TYPE_PACK_128: return "f64x2";
-		default: 
-			misc::warning("Unsupported type!");
-			return "";
-	}
-	return "";
+	return type_to_str_map.MapValue(type);
 }
+
+misc::StringMap BrigEntry::type_to_str_map = 
+{
+	{"", 		0},
+	{"u8", 		1},
+	{"u16", 	2},
+	{"u32", 	3},
+	{"u64", 	4},
+	{"s8", 		5},
+	{"s16", 	6},
+	{"s32", 	7},
+	{"s64", 	8},
+	{"f16", 	9},
+	{"f32", 	10},
+	{"f64", 	11},
+	{"b1", 		12},
+	{"b8", 		13},
+	{"b16",		14},
+	{"b32", 	15},
+	{"b64", 	16},
+	{"b128", 	17},
+	{"samp", 	18},
+	{"roimg",	19},
+	{"rwimg", 	20},
+	{"fbar", 	21},
+	{"u8x4", 	BRIG_TYPE_U8|BRIG_TYPE_PACK_32},
+	{"u8x8", 	BRIG_TYPE_U8|BRIG_TYPE_PACK_64},
+	{"u8x16", 	BRIG_TYPE_U8|BRIG_TYPE_PACK_128},
+	{"u16x2", 	BRIG_TYPE_U16|BRIG_TYPE_PACK_32},
+	{"u16x4", 	BRIG_TYPE_U16|BRIG_TYPE_PACK_64},
+	{"u16x8", 	BRIG_TYPE_U16|BRIG_TYPE_PACK_128},
+	{"u32x2", 	BRIG_TYPE_U32|BRIG_TYPE_PACK_64},
+	{"u32x4", 	BRIG_TYPE_U32|BRIG_TYPE_PACK_128},
+	{"u64x2", 	BRIG_TYPE_U64|BRIG_TYPE_PACK_128},
+	{"s8x4", 	BRIG_TYPE_S8|BRIG_TYPE_PACK_32},
+	{"s8x8", 	BRIG_TYPE_S8|BRIG_TYPE_PACK_64},
+	{"s8x16", 	BRIG_TYPE_S8|BRIG_TYPE_PACK_128},
+	{"s16x2", 	BRIG_TYPE_S16|BRIG_TYPE_PACK_32},
+	{"s16x4", 	BRIG_TYPE_S16|BRIG_TYPE_PACK_64},
+	{"s16x8", 	BRIG_TYPE_S16|BRIG_TYPE_PACK_128},
+	{"s32x2", 	BRIG_TYPE_S32|BRIG_TYPE_PACK_64},
+	{"s32x4", 	BRIG_TYPE_S32|BRIG_TYPE_PACK_64},
+	{"s64x2", 	BRIG_TYPE_S64|BRIG_TYPE_PACK_128},
+	{"f16x2", 	BRIG_TYPE_F16|BRIG_TYPE_PACK_32},
+	{"f16x4", 	BRIG_TYPE_F16|BRIG_TYPE_PACK_64},
+	{"f16x8", 	BRIG_TYPE_F16|BRIG_TYPE_PACK_128},
+	{"f32x2", 	BRIG_TYPE_F32|BRIG_TYPE_PACK_64},
+	{"f32x4", 	BRIG_TYPE_F32|BRIG_TYPE_PACK_128},
+	{"f64x2", 	BRIG_TYPE_F64|BRIG_TYPE_PACK_128}
+};
 
 const char *BrigEntry::profile2str(int profile)
 {
@@ -176,1099 +176,7 @@ void BrigEntry::dumpValueList(
 		BrigImmed immed(temp, type);
 		immed.Dump(os);;
 	}
-
-/*
-	switch(type)
-	{
-		case 0:	DumpBrigTypeNone(temp, elementCount, os); break;
-		case 1: DumpBrigTypeU8(temp, elementCount, os); break;
-		case 2: DumpBrigTypeU16(temp, elementCount, os); break;
-		case 3: DumpBrigTypeU32(temp, elementCount, os); break;
-		case 4: DumpBrigTypeU64(temp, elementCount, os); break;
-		case 5: DumpBrigTypeS8(temp, elementCount, os); break;
-		case 6: DumpBrigTypeS16(temp, elementCount, os); break;
-		case 7: DumpBrigTypeS32(temp, elementCount, os); break;
-		case 8: DumpBrigTypeS64(temp, elementCount, os); break;
-		case 9: DumpBrigTypeF16(temp, elementCount, os); break;
-		case 10: DumpBrigTypeF32(temp, elementCount, os); break;
-		case 11: DumpBrigTypeF64(temp, elementCount, os); break;
-		case 12: DumpBrigTypeB1(temp, elementCount, os); break;
-		case 13: DumpBrigTypeB8(temp, elementCount, os); break;
-		case 14: DumpBrigTypeB16(temp, elementCount, os); break;
-		case 15: DumpBrigTypeB32(temp, elementCount, os); break;
-		case 16: DumpBrigTypeB64(temp, elementCount, os); break;
-		case 17: DumpBrigTypeB128(temp, elementCount, os); break;
-		case 18: DumpBrigTypeSamp(temp, elementCount, os); break;
-		case 19: DumpBrigTypeRoimg(temp, elementCount, os); break;
-		case 20: DumpBrigTypeRwimg(temp, elementCount, os); break;
-		case 21: DumpBrigTypeFbar(temp, elementCount, os); break;
-
-		case BRIG_TYPE_U8|BRIG_TYPE_PACK_32: DumpBrigTypeU8X4(temp, elementCount, os); break;
-		case BRIG_TYPE_U8|BRIG_TYPE_PACK_64: DumpBrigTypeU8X8(temp, elementCount, os); break;
-		case BRIG_TYPE_U8|BRIG_TYPE_PACK_128: DumpBrigTypeU8X16(temp, elementCount, os); break;
-		case BRIG_TYPE_U16|BRIG_TYPE_PACK_32: DumpBrigTypeU16X2(temp, elementCount, os); break;
-		case BRIG_TYPE_U16|BRIG_TYPE_PACK_64: DumpBrigTypeU16X4(temp, elementCount, os); break;
-		case BRIG_TYPE_U16|BRIG_TYPE_PACK_128: DumpBrigTypeU16X8(temp, elementCount, os); break;
-		case BRIG_TYPE_U32|BRIG_TYPE_PACK_64: DumpBrigTypeU32X2(temp, elementCount, os); break;
-		case BRIG_TYPE_U32|BRIG_TYPE_PACK_128: DumpBrigTypeU32X4(temp, elementCount, os); break;
-		case BRIG_TYPE_U64|BRIG_TYPE_PACK_128: DumpBrigTypeU64X2(temp, elementCount, os); break;
-		case BRIG_TYPE_S8|BRIG_TYPE_PACK_32: DumpBrigTypeS8X4(temp, elementCount, os); break;
-		case BRIG_TYPE_S8|BRIG_TYPE_PACK_64: DumpBrigTypeS8X8(temp, elementCount, os); break;
-		case BRIG_TYPE_S8|BRIG_TYPE_PACK_128: DumpBrigTypeS8X16(temp, elementCount, os); break;
-		case BRIG_TYPE_S16|BRIG_TYPE_PACK_32: DumpBrigTypeS16X2(temp, elementCount, os); break;
-		case BRIG_TYPE_S16|BRIG_TYPE_PACK_64: DumpBrigTypeS16X4(temp, elementCount, os); break;
-		case BRIG_TYPE_S16|BRIG_TYPE_PACK_128: DumpBrigTypeS16X8(temp, elementCount, os); break;
-		case BRIG_TYPE_S32|BRIG_TYPE_PACK_64: DumpBrigTypeS32X2(temp, elementCount, os); break;
-		case BRIG_TYPE_S32|BRIG_TYPE_PACK_128: DumpBrigTypeS32X4(temp, elementCount, os); break;
-		case BRIG_TYPE_S64|BRIG_TYPE_PACK_128: DumpBrigTypeS64X2(temp, elementCount, os); break;
-		case BRIG_TYPE_F16|BRIG_TYPE_PACK_32: DumpBrigTypeF16X2(temp, elementCount, os); break;
-		case BRIG_TYPE_F16|BRIG_TYPE_PACK_64: DumpBrigTypeF16X4(temp, elementCount, os); break;
-		case BRIG_TYPE_F16|BRIG_TYPE_PACK_128: DumpBrigTypeF16X8(temp, elementCount, os); break;
-		case BRIG_TYPE_F32|BRIG_TYPE_PACK_64: DumpBrigTypeF32X2(temp, elementCount, os); break;
-		case BRIG_TYPE_F32|BRIG_TYPE_PACK_128: DumpBrigTypeF32X4(temp, elementCount, os); break;
-		case BRIG_TYPE_F64|BRIG_TYPE_PACK_128: DumpBrigTypeF64X2(temp, elementCount, os); break;
-		default:
-			misc::warning("Unsupported type!"); break;
-	}
-*/
 }
-
-/*
-void BrigEntry::DumpBrigTypeNone(void *data, uint32_t count, std::ostream &os = std::cout)
-{
-	misc::warning("Unknown dump format for type: %s", "None");
-}
-
-void BrigEntry::DumpBrigTypeU8(void *data, uint32_t count, std::ostream &os = std::cout)
-{
-	uint8_t *ptr = (uint8_t *)data;
-	if(count == 1)
-		os << *ptr << ";\n";
-	else if(count != 0)
-	{
-		os << "{ ";
-		for(unsigned i = 0; i < count - 1; i++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << *ptr << "};\n";
-	}
-}
-
-void BrigEntry::DumpBrigTypeU16(void *data, uint32_t count, std::ostream &os = std::cout)
-{
-	uint16_t *ptr = (uint16_t *)data;
-	if(count == 1)
-		os << *ptr << ";\n";
-	else if(count != 0)
-	{
-		os << "{ ";
-		for(unsigned i = 0; i < count - 1; i++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << *ptr << "};\n";
-	}
-}
-
-void BrigEntry::DumpBrigTypeU32(void *data, uint32_t count, std::ostream &os = std::cout)
-{
-	uint32_t *ptr = (uint32_t *)data;
-	if(count == 1)
-		os << *ptr << ";\n";
-	else if(count != 0)
-	{
-		os << "{ ";
-		for(unsigned i = 0; i < count - 1; i++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << *ptr << "};\n";
-	}
-}
-
-void BrigEntry::DumpBrigTypeU64(void *data, uint32_t count, std::ostream &os = std::cout)
-{
-	uint64_t *ptr = (uint64_t *)data;
-	if(count == 1)
-		os << *ptr << ";\n";
-	else if(count != 0)
-	{
-		os << "{ ";
-		for(unsigned i = 0; i < count - 1; i++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << *ptr << "};\n";
-	}
-}
-
-void BrigEntry::DumpBrigTypeS8(void *data, uint32_t count, std::ostream &os = std::cout)
-{
-	int8_t *ptr = (int8_t *)data;
-	if(count == 1)
-		os << *ptr << ";\n";
-	else if(count != 0)
-	{
-		os << "{ ";
-		for(unsigned i = 0; i < count - 1; i++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << *ptr << "};\n";
-	}
-}
-
-void BrigEntry::DumpBrigTypeS16(void *data, uint32_t count, std::ostream &os = std::cout)
-{
-	int16_t *ptr = (int16_t *)data;
-	if(count == 1)
-		os << *ptr << ";\n";
-	else if(count != 0)
-	{
-		os << "{ ";
-		for(unsigned i = 0; i < count - 1; i++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << *ptr << "};\n";
-	}
-}
-
-void BrigEntry::DumpBrigTypeS32(void *data, uint32_t count, std::ostream &os = std::cout)
-{
-	int32_t *ptr = (int32_t *)data;
-	if(count == 1)
-		os << *ptr << ";\n";
-	else if(count != 0)
-	{
-		os << "{ ";
-		for(unsigned i = 0; i < count - 1; i++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << *ptr << "};\n";
-	}
-}
-
-void BrigEntry::DumpBrigTypeS64(void *data, uint32_t count, std::ostream &os = std::cout)
-{
-	int64_t *ptr = (int64_t *)data;
-	if(count == 1)
-		os << *ptr << ";\n";
-	else if(count != 0)
-	{
-		os << "{ ";
-		for(unsigned i = 0; i < count - 1; i++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << *ptr << "};\n";
-	}
-}
-
-void BrigEntry::DumpBrigTypeF16(void *data, uint32_t count, std::ostream &os = std::cout)
-{
-	misc::warning("type %s not supported by standard c", "half-precision");
-}
-
-void BrigEntry::DumpBrigTypeF32(void *data, uint32_t count, std::ostream &os = std::cout)
-{
-	float *ptr = (float *)data;
-	if(count == 1)
-		os << *ptr << ";\n";
-	else if(count != 0)
-	{
-		os << "{ ";
-		for(unsigned i = 0; i < count - 1; i++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << *ptr << "};\n";
-	}
-}
-
-void BrigEntry::DumpBrigTypeF64(void *data, uint32_t count, std::ostream &os = std::cout)
-{
-	double *ptr = (double *)data;
-	if(count == 1)
-		os << *ptr << ";\n";
-	else if(count != 0)
-	{
-		os << "{ ";
-		for(unsigned i = 0; i < count - 1; i++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << *ptr << "};\n";
-	}
-}
-
-void BrigEntry::DumpBrigTypeB1(void *data, uint32_t count, std::ostream &os = std::cout)
-{
-	misc::warning("Unknown dump format for type: %s", "B1");
-	os << "\n";
-}
-
-void BrigEntry::DumpBrigTypeB8(void *data, uint32_t count, std::ostream &os = std::cout)
-{
-	misc::warning("Unknown dump format for type: %s", "B8");
-	os << "\n";
-}
-
-void BrigEntry::DumpBrigTypeB16(void *data, uint32_t count, std::ostream &os = std::cout)
-{
-	misc::warning("Unknown dump format for type: %s", "B16");
-	os << "\n";
-}
-
-void BrigEntry::DumpBrigTypeB32(void *data, uint32_t count, std::ostream &os = std::cout)
-{
-	misc::warning("Unknown dump format for type: %s", "B32");
-	os << "\n";
-}
-
-void BrigEntry::DumpBrigTypeB64(void *data, uint32_t count, std::ostream &os = std::cout)
-{
-	misc::warning("Unknown dump format for type: %s", "B64");
-	os << "\n";
-}
-
-void BrigEntry::DumpBrigTypeB128(void *data, uint32_t count, std::ostream &os = std::cout)
-{
-	misc::warning("Unknown dump format for type: %s", "B128");
-	os << "\n";
-}
-
-void BrigEntry::DumpBrigTypeSamp(void *data, uint32_t count, std::ostream &os = std::cout)
-{
-	misc::warning("Unknown dump format for type: %s", "Samp");
-	os << "\n";
-}
-
-void BrigEntry::DumpBrigTypeRoimg(void *data, uint32_t count, std::ostream &os = std::cout)
-{
-	misc::warning("Unknown dump format for type: %s", "Roimg");
-	os << "\n";
-}
-
-void BrigEntry::DumpBrigTypeRwimg(void *data, uint32_t count, std::ostream &os = std::cout)
-{
-	misc::warning("Unknown dump format for type: %s", "Rwimg");
-	os << "\n";
-}
-
-void BrigEntry::DumpBrigTypeFbar(void *data, uint32_t count, std::ostream &os = std::cout)
-{
-	misc::warning("Unknown dump format for type: %s", "Fbar");
-	os << "\n";
-}
-
-void BrigEntry::DumpBrigTypeU8X4(void *data, uint32_t count, std::ostream &os = std::cout)
-{
-	uint8_t *ptr = (uint8_t *)data;
-	if(count == 1)
-	{
-		os << "(";
-		for(int i = 1; i < 4; i++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << ptr << ");\n";
-	}
-
-	else if(count != 0)
-	{
-		os << "{ ";
-		for(unsigned i = 0; i < count - 1; i++)
-		{
-			os << "(";
-			for(int j = 1; j < 4; j++)
-			{
-				os << *ptr << ", ";
-				ptr++;
-			}
-			os << ptr << "), ";
-		}
-		os << "(";
-		for(int j = 1; j < 4; j++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << ptr << ")};\n";
-	}
-}
-
-void BrigEntry::DumpBrigTypeU8X8(void *data, uint32_t count, std::ostream &os = std::cout)
-{
-	uint8_t *ptr = (uint8_t *)data;
-	if(count == 1)
-	{
-		os << "(";
-		for(int i = 1; i < 8; i++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << ptr << ");\n";
-	}
-
-	else if(count != 0)
-	{
-		os << "{ ";
-		for(unsigned i = 0; i < count - 1; i++)
-		{
-			os << "(";
-			for(int j = 1; j < 8; j++)
-			{
-				os << *ptr << ", ";
-				ptr++;
-			}
-			os << ptr << "), ";
-		}
-		os << "(";
-		for(int j = 1; j < 8; j++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << ptr << ")};\n";
-	}
-}
-
-void BrigEntry::DumpBrigTypeU8X16(void *data, uint32_t count, std::ostream &os = std::cout)
-{
-	uint8_t *ptr = (uint8_t *)data;
-	if(count == 1)
-	{
-		os << "(";
-		for(int i = 1; i < 16; i++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << ptr << ");\n";
-	}
-
-	else if(count != 0)
-	{
-		os << "{ ";
-		for(unsigned i = 0; i < count - 1; i++)
-		{
-			os << "(";
-			for(int j = 1; j < 16; j++)
-			{
-				os << *ptr << ", ";
-				ptr++;
-			}
-			os << ptr << "), ";
-		}
-		os << "(";
-		for(int j = 1; j < 16; j++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << ptr << ")};\n";
-	}
-}
-
-void BrigEntry::DumpBrigTypeU16X2(void *data, uint32_t count, std::ostream &os = std::cout)
-{
-	uint16_t *ptr = (uint16_t *)data;
-	if(count == 1)
-	{
-		os << "(";
-		for(int i = 1; i < 2; i++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << ptr << ");\n";
-	}
-
-	else if(count != 0)
-	{
-		os << "{ ";
-		for(unsigned i = 0; i < count - 1; i++)
-		{
-			os << "(";
-			for(int j = 1; j < 2; j++)
-			{
-				os << *ptr << ", ";
-				ptr++;
-			}
-			os << ptr << "), ";
-		}
-		os << "(";
-		for(int j = 1; j < 2; j++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << ptr << ")};\n";
-	}
-}
-
-void BrigEntry::DumpBrigTypeU16X4(void *data, uint32_t count, std::ostream &os = std::cout)
-{
-	uint16_t *ptr = (uint16_t *)data;
-	if(count == 1)
-	{
-		os << "(";
-		for(int i = 1; i < 4; i++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << ptr << ");\n";
-	}
-
-	else if(count != 0)
-	{
-		os << "{ ";
-		for(unsigned i = 0; i < count - 1; i++)
-		{
-			os << "(";
-			for(int j = 1; j < 4; j++)
-			{
-				os << *ptr << ", ";
-				ptr++;
-			}
-			os << ptr << "), ";
-		}
-		os << "(";
-		for(int j = 1; j < 4; j++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << ptr << ")};\n";
-	}
-}
-
-void BrigEntry::DumpBrigTypeU16X8(void *data, uint32_t count, std::ostream &os = std::cout)
-{
-	uint16_t *ptr = (uint16_t *)data;
-	if(count == 1)
-	{
-		os << "(";
-		for(int i = 1; i < 8; i++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << ptr << ");\n";
-	}
-
-	else if(count != 0)
-	{
-		os << "{ ";
-		for(unsigned i = 0; i < count - 1; i++)
-		{
-			os << "(";
-			for(int j = 1; j < 8; j++)
-			{
-				os << *ptr << ", ";
-				ptr++;
-			}
-			os << ptr << "), ";
-		}
-		os << "(";
-		for(int j = 1; j < 8; j++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << ptr << ")};\n";
-	}
-}
-
-void BrigEntry::DumpBrigTypeU32X2(void *data, uint32_t count, std::ostream &os = std::cout)
-{
-	uint32_t *ptr = (uint32_t *)data;
-	if(count == 1)
-	{
-		os << "(";
-		for(int i = 1; i < 2; i++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << ptr << ");\n";
-	}
-
-	else if(count != 0)
-	{
-		os << "{ ";
-		for(unsigned i = 0; i < count - 1; i++)
-		{
-			os << "(";
-			for(int j = 1; j < 2; j++)
-			{
-				os << *ptr << ", ";
-				ptr++;
-			}
-			os << ptr << "), ";
-		}
-		os << "(";
-		for(int j = 1; j < 2; j++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << ptr << ")};\n";
-	}
-}
-
-void BrigEntry::DumpBrigTypeU32X4(void *data, uint32_t count, std::ostream &os = std::cout)
-{
-	uint32_t *ptr = (uint32_t *)data;
-	if(count == 1)
-	{
-		os << "(";
-		for(int i = 1; i < 4; i++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << ptr << ");\n";
-	}
-
-	else if(count != 0)
-	{
-		os << "{ ";
-		for(unsigned i = 0; i < count - 1; i++)
-		{
-			os << "(";
-			for(int j = 1; j < 4; j++)
-			{
-				os << *ptr << ", ";
-				ptr++;
-			}
-			os << ptr << "), ";
-		}
-		os << "(";
-		for(int j = 1; j < 4; j++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << ptr << ")};\n";
-	}
-}
-
-void BrigEntry::DumpBrigTypeU64X2(void *data, uint32_t count, std::ostream &os = std::cout)
-{
-	uint64_t *ptr = (uint64_t *)data;
-	if(count == 1)
-	{
-		os << "(";
-		for(int i = 1; i < 2; i++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << ptr << ");\n";
-	}
-
-	else if(count != 0)
-	{
-		os << "{ ";
-		for(unsigned i = 0; i < count - 1; i++)
-		{
-			os << "(";
-			for(int j = 1; j < 2; j++)
-			{
-				os << *ptr << ", ";
-				ptr++;
-			}
-			os << ptr << "), ";
-		}
-		os << "(";
-		for(int j = 1; j < 2; j++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << ptr << ")};\n";
-	}
-}
-
-void BrigEntry::DumpBrigTypeS8X4(void *data, uint32_t count, std::ostream &os = std::cout)
-{
-	int8_t *ptr = (int8_t *)data;
-	if(count == 1)
-	{
-		os << "(";
-		for(int i = 1; i < 4; i++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << ptr << ");\n";
-	}
-
-	else if(count != 0)
-	{
-		os << "{ ";
-		for(unsigned i = 0; i < count - 1; i++)
-		{
-			os << "(";
-			for(int j = 1; j < 4; j++)
-			{
-				os << *ptr << ", ";
-				ptr++;
-			}
-			os << ptr << "), ";
-		}
-		os << "(";
-		for(int j = 1; j < 4; j++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << ptr << ")};\n";
-	}
-}
-
-void BrigEntry::DumpBrigTypeS8X8(void *data, uint32_t count, std::ostream &os = std::cout)
-{
-	int8_t *ptr = (int8_t *)data;
-	if(count == 1)
-	{
-		os << "(";
-		for(int i = 1; i < 8; i++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << ptr << ");\n";
-	}
-
-	else if(count != 0)
-	{
-		os << "{ ";
-		for(unsigned i = 0; i < count - 1; i++)
-		{
-			os << "(";
-			for(int j = 1; j < 8; j++)
-			{
-				os << *ptr << ", ";
-				ptr++;
-			}
-			os << ptr << "), ";
-		}
-		os << "(";
-		for(int j = 1; j < 8; j++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << ptr << ")};\n";
-	}
-}
-
-void BrigEntry::DumpBrigTypeS8X16(void *data, uint32_t count, std::ostream &os = std::cout)
-{
-	int8_t *ptr = (int8_t *)data;
-	if(count == 1)
-	{
-		os << "(";
-		for(int i = 1; i < 16; i++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << ptr << ");\n";
-	}
-
-	else if(count != 0)
-	{
-		os << "{ ";
-		for(unsigned i = 0; i < count - 1; i++)
-		{
-			os << "(";
-			for(int j = 1; j < 16; j++)
-			{
-				os << *ptr << ", ";
-				ptr++;
-			}
-			os << ptr << "), ";
-		}
-		os << "(";
-		for(int j = 1; j < 16; j++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << ptr << ")};\n";
-	}
-}
-
-void BrigEntry::DumpBrigTypeS16X2(void *data, uint32_t count, std::ostream &os = std::cout)
-{
-	int16_t *ptr = (int16_t *)data;
-	if(count == 1)
-	{
-		os << "(";
-		for(int i = 1; i < 2; i++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << ptr << ");\n";
-	}
-
-	else if(count != 0)
-	{
-		os << "{ ";
-		for(unsigned i = 0; i < count - 1; i++)
-		{
-			os << "(";
-			for(int j = 1; j < 2; j++)
-			{
-				os << *ptr << ", ";
-				ptr++;
-			}
-			os << ptr << "), ";
-		}
-		os << "(";
-		for(int j = 1; j < 2; j++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << ptr << ")};\n";
-	}
-}
-
-void BrigEntry::DumpBrigTypeS16X4(void *data, uint32_t count, std::ostream &os = std::cout)
-{
-	int16_t *ptr = (int16_t *)data;
-	if(count == 1)
-	{
-		os << "(";
-		for(int i = 1; i < 4; i++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << ptr << ");\n";
-	}
-
-	else if(count != 0)
-	{
-		os << "{ ";
-		for(unsigned i = 0; i < count - 1; i++)
-		{
-			os << "(";
-			for(int j = 1; j < 4; j++)
-			{
-				os << *ptr << ", ";
-				ptr++;
-			}
-			os << ptr << "), ";
-		}
-		os << "(";
-		for(int j = 1; j < 4; j++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << ptr << ")};\n";
-	}
-}
-
-void BrigEntry::DumpBrigTypeS16X8(void *data, uint32_t count, std::ostream &os = std::cout)
-{
-	int16_t *ptr = (int16_t *)data;
-	if(count == 1)
-	{
-		os << "(";
-		for(int i = 1; i < 8; i++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << ptr << ");\n";
-	}
-
-	else if(count != 0)
-	{
-		os << "{ ";
-		for(unsigned i = 0; i < count - 1; i++)
-		{
-			os << "(";
-			for(int j = 1; j < 8; j++)
-			{
-				os << *ptr << ", ";
-				ptr++;
-			}
-			os << ptr << "), ";
-		}
-		os << "(";
-		for(int j = 1; j < 8; j++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << ptr << ")};\n";
-	}
-}
-
-void BrigEntry::DumpBrigTypeS32X2(void *data, uint32_t count, std::ostream &os = std::cout)
-{
-	int32_t *ptr = (int32_t *)data;
-	if(count == 1)
-	{
-		os << "(";
-		for(int i = 1; i < 2; i++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << ptr << ");\n";
-	}
-
-	else if(count != 0)
-	{
-		os << "{ ";
-		for(unsigned i = 0; i < count - 1; i++)
-		{
-			os << "(";
-			for(int j = 1; j < 2; j++)
-			{
-				os << *ptr << ", ";
-				ptr++;
-			}
-			os << ptr << "), ";
-		}
-		os << "(";
-		for(int j = 1; j < 2; j++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << ptr << ")};\n";
-	}
-}
-
-void BrigEntry::DumpBrigTypeS32X4(void *data, uint32_t count, std::ostream &os = std::cout)
-{
-	int32_t *ptr = (int32_t *)data;
-	if(count == 1)
-	{
-		os << "(";
-		for(int i = 1; i < 4; i++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << ptr << ");\n";
-	}
-
-	else if(count != 0)
-	{
-		os << "{ ";
-		for(unsigned i = 0; i < count - 1; i++)
-		{
-			os << "(";
-			for(int j = 1; j < 4; j++)
-			{
-				os << *ptr << ", ";
-				ptr++;
-			}
-			os << ptr << "), ";
-		}
-		os << "(";
-		for(int j = 1; j < 4; j++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << ptr << ")};\n";
-	}
-}
-
-void BrigEntry::DumpBrigTypeS64X2(void *data, uint32_t count, std::ostream &os = std::cout)
-{
-	int64_t *ptr = (int64_t *)data;
-	if(count == 1)
-	{
-		os << "(";
-		for(int i = 1; i < 2; i++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << ptr << ");\n";
-	}
-
-	else if(count != 0)
-	{
-		os << "{ ";
-		for(unsigned i = 0; i < count - 1; i++)
-		{
-			os << "(";
-			for(int j = 1; j < 2; j++)
-			{
-				os << *ptr << ", ";
-				ptr++;
-			}
-			os << ptr << "), ";
-		}
-		os << "(";
-		for(int j = 1; j < 2; j++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << ptr << ")};\n";
-	}
-}
-
-void BrigEntry::DumpBrigTypeF16X2(void *data, uint32_t count, std::ostream &os = std::cout)
-{
-	misc::warning("type %s not supported by standard c", "half-precision");
-	os << "\n";
-}
-
-void BrigEntry::DumpBrigTypeF16X4(void *data, uint32_t count, std::ostream &os = std::cout)
-{
-	misc::warning("type %s not supported by standard c", "half-precision");
-	os << "\n";
-}
-
-void BrigEntry::DumpBrigTypeF16X8(void *data, uint32_t count, std::ostream &os = std::cout)
-{
-	misc::warning("type %s not supported by standard c", "half-precision");
-	os << "\n";
-}
-
-void BrigEntry::DumpBrigTypeF32X2(void *data, uint32_t count, std::ostream &os = std::cout)
-{
-	float *ptr = (float *)data;
-	if(count == 1)
-	{
-		os << "(";
-		for(int i = 1; i < 2; i++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << ptr << ");\n";
-	}
-
-	else if(count != 0)
-	{
-		os << "{ ";
-		for(unsigned i = 0; i < count - 1; i++)
-		{
-			os << "(";
-			for(int j = 1; j < 2; j++)
-			{
-				os << *ptr << ", ";
-				ptr++;
-			}
-			os << ptr << "), ";
-		}
-		os << "(";
-		for(int j = 1; j < 2; j++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << ptr << ")};\n";
-	}
-}
-
-void BrigEntry::DumpBrigTypeF32X4(void *data, uint32_t count, std::ostream &os = std::cout)
-{
-	float *ptr = (float *)data;
-	if(count == 1)
-	{
-		os << "(";
-		for(int i = 1; i < 4; i++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << ptr << ");\n";
-	}
-
-	else if(count != 0)
-	{
-		os << "{ ";
-		for(unsigned i = 0; i < count - 1; i++)
-		{
-			os << "(";
-			for(int j = 1; j < 4; j++)
-			{
-				os << *ptr << ", ";
-				ptr++;
-			}
-			os << ptr << "), ";
-		}
-		os << "(";
-		for(int j = 1; j < 4; j++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << ptr << ")};\n";
-	}
-}
-
-void BrigEntry::DumpBrigTypeF64X2(void *data, uint32_t count, std::ostream &os = std::cout)
-{
-	double *ptr = (double *)data;
-	if(count == 1)
-	{
-		os << "(";
-		for(int i = 1; i < 2; i++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << ptr << ");\n";
-	}
-
-	else if(count != 0)
-	{
-		os << "{ ";
-		for(unsigned i = 0; i < count - 1; i++)
-		{
-			os << "(";
-			for(int j = 1; j < 2; j++)
-			{
-				os << *ptr << ", ";
-				ptr++;
-			}
-			os << ptr << "), ";
-		}
-		os << "(";
-		for(int j = 1; j < 2; j++)
-		{
-			os << *ptr << ", ";
-			ptr++;
-		}
-		os << ptr << ")};\n";
-	}
-}
-*/
 
 void BrigEntry::dumpValue(char *value) const
 {
@@ -1315,27 +223,28 @@ char *BrigEntry::dumpArgs(
 {
 	os << "(";	
 	char *next = arg;
-	if(argCount == 1)
+	if (argCount == 1)
 	{
+		// Only one argument, dump it directly;
 		BrigDirEntry dir(next, file);
 		dumpSymDecl(&dir, os);
 		next = dir.nextTop();
 	}
-	else if(argCount >1)
+	else if (argCount >1)
 	{
+		// More than 1 arguments, dump each argument in a new line
 		Asm *as = Asm::getInstance();
-		as->indent++;
-		for(int i  = 0; i < argCount; i++)
+		as->IndentMore();
+		for (int i  = 0; i < argCount; i++)
 		{
+			if (i > 0) os << ",";
 			os << "\n";
 			dumpIndent(os);
 			BrigDirEntry dir(next, file);
 			dumpSymDecl(&dir, os);
 			next = dir.nextTop();
-			if(i != argCount - 1)
-				os << ",";
 		}
-		as->indent--;
+		as->IndentLess();
 	}	
 	os << ")";
 	return next;
@@ -1349,30 +258,50 @@ void BrigEntry::dumpBody(
 		std::ostream &os = std::cout
 	) const
 {
+	// If it is a declaration, only dump semicolumn
+	// Otherwise, dump the content
 	if(!isDecl)
 	{
 		Asm *as = Asm::getInstance();
-		as->indent++;
+
+		// Retrieve next (not top level) directive to dump in the future
+		struct BrigDirectiveBase *dirPtr = 
+				(struct BrigDirectiveBase *)next;
+
+		// Write a new line and the open bracket
 		os << "\n{\n";
-		BrigSection *bsc = this->file->getBrigSection(BrigSectionCode);
-		char *bsc_buffer = (char *)bsc->getBuffer();
-		char *bufPtr = bsc_buffer + codeOffset;
-		struct BrigDirectiveBase *dirPtr = (struct BrigDirectiveBase *)next;
+		as->IndentMore();
+
+		// Get the code section and its raw buffer
+		BrigSection *code_section = 
+				this->file->getBrigSection(BrigSectionCode);
+		char *code_buffer = (char *)code_section->getBuffer();
+		char *buffer_pointer = code_buffer + codeOffset;
+
+		// Traverse all the insts belong to the function or kernal
 		for(int i=0; i<nInst; i++)
 		{	
-			while(dirPtr && dirPtr->code <= (BrigCodeOffset32_t)(bufPtr - bsc_buffer))
+
+			// Dump all directives should appear before current line
+			// of instuction
+			// FIXME:  the next five lines of code should be a 
+			// 	stand-alone function
+			while(dirPtr && dirPtr->code <= (BrigCodeOffset32_t)(buffer_pointer - code_buffer))
 			{
 				BrigDirEntry dir((char *)dirPtr, this->file);
 				dir.Dump(os);
 				dirPtr = (struct BrigDirectiveBase *)dir.nextTop();
 			}
-			//printf("Inst %d/%d", i, nInst);
-			BrigInstEntry inst(bufPtr, this->file);
+			
+			// Create and dump the inst at buffer_pointer
+			BrigInstEntry inst(buffer_pointer, this->file);
 			dumpIndent(os);
 			inst.Dump(os);
-			bufPtr = inst.next();
+			buffer_pointer = inst.next();
 		}
-		as->indent--;
+
+		// Decrease the indentation level and close the bracket
+		as->IndentLess();
 		os << "}";
 	}	
 	os << ";\n";
@@ -1381,7 +310,7 @@ void BrigEntry::dumpBody(
 void BrigEntry::dumpIndent(std::ostream &os = std::cout)
 {
 	Asm *as = Asm::getInstance();
-	for(int i = 0; i < as->indent; i++)
+	for(int i = 0; i < as->getIndent(); i++)
 		os << "\t";
 }
 

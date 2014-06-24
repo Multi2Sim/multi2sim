@@ -126,7 +126,8 @@ std::map<int, int> BrigImmed::type_to_size_map =
 	{BRIG_TYPE_F64 | BRIG_TYPE_PACK_128, 16}
 };
 
-int BrigImmed::getSize(){
+int BrigImmed::getSize()
+{
 	return type_to_size_map[type]; 	
 }
 

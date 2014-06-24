@@ -121,9 +121,9 @@ const char *BrigInstEntry::operandV2str(char *o) const
 	
 }
 
-const char *BrigInstEntry::v2str(char* i) const
+const char *BrigInstEntry::v2str(char* instPtr) const
 {
-	struct BrigInstBase *inst = (struct BrigInstBase *)i;
+	struct BrigInstBase *inst = (struct BrigInstBase *)instPtr;
 	switch(inst->opcode)
 	{
 	case BRIG_OPCODE_LD:
@@ -413,10 +413,7 @@ void BrigInstEntry::dumpOperands(std::ostream &os = std::cout) const
 	{
 		if(inst->operands[i] == 0) return;
 		if(i>0) os << ", ";
-		BrigOperandEntry op(
-			getOperand(i), file,
-			this, i
-		);
+		BrigOperandEntry op(getOperand(i), file, this, i);
 		op.Dump(os);
 	}
 }
@@ -424,6 +421,7 @@ void BrigInstEntry::dumpOperands(std::ostream &os = std::cout) const
 BrigInstEntry::BrigInstEntry(char *buf, BrigFile *file)
 	:BrigEntry(buf, file)
 {
+	//this->DebugInst();	
 }
 
 int BrigInstEntry::getKind() const
@@ -438,7 +436,8 @@ int BrigInstEntry::getOpcode() const
 	return inst->opcode;
 }
 
-unsigned short BrigInstEntry::getType() const{
+unsigned short BrigInstEntry::getType() const
+{
 	struct BrigInstBase *inst = (struct BrigInstBase *)base;
 	return inst->type;
 }
@@ -480,11 +479,11 @@ void BrigInstEntry::DumpInstAtomic(std::ostream &os = std::cout) const
 {
 	struct BrigInstAtomic *inst = (struct BrigInstAtomic *)base;
 	os << this->opcode2str((InstOpcode)inst->opcode);
-	dump_(atomicOp2str(inst->atomicOperation), os);
+	dumpUnderscore(atomicOp2str(inst->atomicOperation), os);
 	//FIXME: diff from official disassembler
-	dump_(BrigEntry::seg2str(inst->segment), os); 
-	dump_(sem2str(inst->memorySemantic), os);
-	dump_(type2str(inst->type), os);
+	dumpUnderscore(BrigEntry::seg2str(inst->segment), os); 
+	dumpUnderscore(sem2str(inst->memorySemantic), os);
+	dumpUnderscore(type2str(inst->type), os);
 	this->dumpOperands(os);
 	os << ";\n";
 }
@@ -493,11 +492,11 @@ void BrigInstEntry::DumpInstAtomicImage(std::ostream &os = std::cout) const
 {
 	struct BrigInstAtomicImage *inst = (struct BrigInstAtomicImage *)base;
 	os << this->opcode2str((InstOpcode)inst->opcode);
-	dump_(atomicOp2str(inst->atomicOperation));
-	dump_(imageGeo2str(inst->geometry));
-	dump_(type2str(inst->type));
-	dump_(type2str(inst->imageType));
-	dump_(type2str(inst->coordType));
+	dumpUnderscore(atomicOp2str(inst->atomicOperation));
+	dumpUnderscore(imageGeo2str(inst->geometry));
+	dumpUnderscore(type2str(inst->type));
+	dumpUnderscore(type2str(inst->imageType));
+	dumpUnderscore(type2str(inst->coordType));
 	this->dumpOperands(os);
 	os << ";\n";
 }
@@ -506,10 +505,10 @@ void BrigInstEntry::DumpInstCvt(std::ostream &os = std::cout) const
 {
 	struct BrigInstCvt *inst = (struct BrigInstCvt *)base;
 	os << this->opcode2str((InstOpcode)inst->opcode);
-	dump_(modifier2str(inst->modifier.allBits), os);
-	dump_(rounding2str(inst), os);
-	dump_(type2str(inst->type), os);
-	dump_(type2str(inst->sourceType), os);
+	dumpUnderscore(modifier2str(inst->modifier.allBits), os);
+	dumpUnderscore(rounding2str(inst), os);
+	dumpUnderscore(type2str(inst->type), os);
+	dumpUnderscore(type2str(inst->sourceType), os);
 	this->dumpOperands(os);
 	os << ";\n";
 }
@@ -518,8 +517,8 @@ void BrigInstEntry::DumpInstBar(std::ostream &os = std::cout) const
 {
 	struct BrigInstBar *inst = (struct BrigInstBar *)base;
 	os << this->opcode2str((InstOpcode)inst->opcode);
-	dump_(width2str(inst), os);
-	dump_(memFence2str(inst), os);
+	dumpUnderscore(width2str(inst), os);
+	dumpUnderscore(memFence2str(inst), os);
 	this->dumpOperands(os);
 	os << ";\n";
 }
@@ -528,10 +527,10 @@ void BrigInstEntry::DumpInstBr(std::ostream &os = std::cout) const
 {
 	struct BrigInstBr *inst = (struct BrigInstBr *)base;
 	os << this->opcode2str((InstOpcode)inst->opcode);
-	dump_(width2str(inst), os);
-	dump_(modifier2str(inst->modifier.allBits), os);
-	dump_(rounding2str(inst), os);
-	if(this->hasType()) dump_(type2str(inst->type));
+	dumpUnderscore(width2str(inst), os);
+	dumpUnderscore(modifier2str(inst->modifier.allBits), os);
+	dumpUnderscore(rounding2str(inst), os);
+	if(this->hasType()) dumpUnderscore(type2str(inst->type));
 	if(inst->opcode == BRIG_OPCODE_CALL)
 	{
 		this->dumpCallOperands(os);
@@ -547,12 +546,12 @@ void BrigInstEntry::DumpInstCmp(std::ostream &os = std::cout) const
 {
 	struct BrigInstCmp *inst = (struct BrigInstCmp *)base;
 	os << this->opcode2str((InstOpcode)inst->opcode);
-	dump_(cmpOp2str(inst->compare), os);
-	dump_(modifier2str(inst->modifier.allBits), os);
-	dump_(rounding2str(inst), os);
-	dump_(pack2str(inst->pack), os);
-	dump_(type2str(inst->type), os);
-	dump_(type2str(inst->sourceType), os);
+	dumpUnderscore(cmpOp2str(inst->compare), os);
+	dumpUnderscore(modifier2str(inst->modifier.allBits), os);
+	dumpUnderscore(rounding2str(inst), os);
+	dumpUnderscore(pack2str(inst->pack), os);
+	dumpUnderscore(type2str(inst->type), os);
+	dumpUnderscore(type2str(inst->sourceType), os);
 	this->dumpOperands(os);
 	os << ";\n";
 }
@@ -561,13 +560,13 @@ void BrigInstEntry::DumpInstFbar(std::ostream &os = std::cout) const
 {
 	struct BrigInstFbar *inst = (struct BrigInstFbar *)base;
 	os << this->opcode2str((InstOpcode)inst->opcode);
-	dump_(width2str(inst), os);
+	dumpUnderscore(width2str(inst), os);
 	if(inst->opcode==BRIG_OPCODE_WAITFBAR || 
 		inst->opcode==BRIG_OPCODE_ARRIVEFBAR)
 	{
-		dump_(memFence2str(inst), os);
+		dumpUnderscore(memFence2str(inst), os);
 	}
-	if(this->hasType()) dump_(type2str(inst->type), os);
+	if(this->hasType()) dumpUnderscore(type2str(inst->type), os);
 	this->dumpOperands(os);
 	os << ";\n";
 }
@@ -576,11 +575,11 @@ void BrigInstEntry::DumpInstImage(std::ostream &os = std::cout) const
 {
 	struct BrigInstImage *inst = (struct BrigInstImage *)base;
 	os << this->opcode2str((InstOpcode)inst->opcode);
-	dump_(v2str(base));
-	dump_(imageGeo2str(inst->geometry));
-	dump_(type2str(inst->type));
-	dump_(type2str(inst->imageType));
-	dump_(type2str(inst->coordType));
+	dumpUnderscore(v2str(base));
+	dumpUnderscore(imageGeo2str(inst->geometry));
+	dumpUnderscore(type2str(inst->type));
+	dumpUnderscore(type2str(inst->imageType));
+	dumpUnderscore(type2str(inst->coordType));
 	this->dumpOperands(os);
 	os << ";\n";
 }
@@ -589,13 +588,13 @@ void BrigInstEntry::DumpInstMem(std::ostream &os = std::cout) const
 {
 	struct BrigInstMem *inst = (struct BrigInstMem *)base;
 	os << this->opcode2str((InstOpcode)inst->opcode);
-	dump_(v2str(base), os);
-	dump_(width2str(inst), os);
-	dump_(BrigEntry::seg2str(inst->segment), os);
-	dump_(aligned2str(inst->modifier.allBits), os);
-	dump_(BrigEntry::sem2str(inst->modifier.allBits), os);
-	dump_(equiv2str(inst->equivClass), os);
-	dump_(type2str(inst->type), os);
+	dumpUnderscore(v2str(base), os);
+	dumpUnderscore(width2str(inst), os);
+	dumpUnderscore(BrigEntry::seg2str(inst->segment), os);
+	dumpUnderscore(aligned2str(inst->modifier.allBits), os);
+	dumpUnderscore(BrigEntry::sem2str(inst->modifier.allBits), os);
+	dumpUnderscore(equiv2str(inst->equivClass), os);
+	dumpUnderscore(type2str(inst->type), os);
 	this->dumpOperands(os);
 	os << ";\n";
 }
@@ -604,8 +603,8 @@ void BrigInstEntry::DumpInstAddr(std::ostream &os = std::cout) const
 {
 	struct BrigInstAddr *inst = (struct BrigInstAddr *)base;
 	os << this->opcode2str((InstOpcode)inst->opcode);
-	dump_(BrigEntry::seg2str(inst->segment));
-	dump_(BrigEntry::type2str(inst->type));
+	dumpUnderscore(BrigEntry::seg2str(inst->segment));
+	dumpUnderscore(BrigEntry::type2str(inst->type));
 	this->dumpOperands(os);
 	os << ";\n";
 }
@@ -614,9 +613,9 @@ void BrigInstEntry::DumpInstMod(std::ostream &os = std::cout) const
 {
 	struct BrigInstMod *inst = (struct BrigInstMod *)base;
 	os << this->opcode2str((InstOpcode)inst->opcode);
-	dump_(modifier2str(inst->modifier.allBits), os);
-	dump_(rounding2str(inst), os);
-	dump_(pack2str(inst->pack), os);
+	dumpUnderscore(modifier2str(inst->modifier.allBits), os);
+	dumpUnderscore(rounding2str(inst), os);
+	dumpUnderscore(pack2str(inst->pack), os);
 	if(this->hasType()) os << "_" << BrigEntry::type2str(inst->type);
 	this->dumpOperands(os);
 	os << ";\n";
@@ -626,9 +625,9 @@ void BrigInstEntry::DumpInstSeg(std::ostream &os = std::cout) const
 {
 	struct BrigInstSeg *inst = (struct BrigInstSeg *)base;
 	os << this->opcode2str((InstOpcode)inst->opcode);
-	dump_(BrigEntry::seg2str(inst->segment), os);
-	dump_(BrigEntry::type2str(inst->type), os);
-	dump_(BrigEntry::type2str(inst->sourceType), os);
+	dumpUnderscore(BrigEntry::seg2str(inst->segment), os);
+	dumpUnderscore(BrigEntry::type2str(inst->type), os);
+	dumpUnderscore(BrigEntry::type2str(inst->sourceType), os);
 	this->dumpOperands(os);
 	os << ";\n";
 }
@@ -638,7 +637,7 @@ void BrigInstEntry::DumpInstSourceType(std::ostream &os = std::cout) const
 	struct BrigInstSourceType *inst = (struct BrigInstSourceType *)base;
 	os << this->opcode2str((InstOpcode)inst->opcode);
 	
-	dump_(v2str(base), os);
+	dumpUnderscore(v2str(base), os);
 	os << "_" << BrigEntry::type2str(inst->type);
 	os << "_" << BrigEntry::type2str(inst->sourceType);
 	this->dumpOperands(os);
@@ -655,4 +654,10 @@ void BrigInstEntry::DumpInstUnsupported(
 		<< "(" << inst->kind << ") " 
 		<< "opcode:" << inst->opcode << " >;\n";
 }
+
+void BrigInstEntry::DebugInst(){
+	std::cout << "Inst kind: " << this->getKind() << "\n";
+	std::cout << misc::fmt("Inst opcode: %d\n", this->getOpcode()); 	
+}
+
 }//end namespace

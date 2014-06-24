@@ -17,8 +17,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <lib/cpp/String.h>
+
 #include "BrigSection.h"
 #include "BrigFile.h"
+
 namespace HSA{
 
 BrigSection::BrigSection(ELFReader::Section *elfSection)
@@ -66,5 +69,25 @@ BrigSection::~BrigSection()
 {
 }
 
+void BrigSection::dumpSectionHex(std::ostream &os = std::cout) const
+{
+	os << misc::fmt("\n********** Section %s **********\n", 
+			this->getName().c_str());
+	
+	const unsigned char *buf = (const unsigned char *)this->getBuffer();
+	for(unsigned int i=0; i<this->getSize(); i++)
+	{
+		os << misc::fmt("%02x", buf[i]);
+		if((i + 1) % 4 == 0)
+		{
+			os << " ";
+		}
+		if((i + 1) % 16 == 0)
+		{
+			os << "\n";
+		}
+	}
+	os << "\n";
+}
 
 }

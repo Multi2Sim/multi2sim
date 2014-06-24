@@ -40,11 +40,14 @@ protected:
 	// The decode table, 
 	struct InstInfo inst_info[InstOpcodeCount];
 
-	// Fill in the inst info with the data from asm.dat
+	// Fill in the inst info with the data from Inst.def
 	void InitTable(InstOpcode opcode, const char *name, const char *fmt_str);
 
 	// Instance of the singleton
 	static std::unique_ptr<Asm> instance;
+
+	// Indent of current line
+	int indent;
 
 	// Private constructor for singleton
 	Asm();
@@ -52,7 +55,8 @@ protected:
 public:
 
 	/// Checks if the elf file to be loaded
-	static bool isValidBrigELF(const std::string &path){
+	static bool isValidBrigELF(const std::string &path)
+	{
 		BrigFile bf(path.c_str());
 		return bf.isValid();
 	}
@@ -66,8 +70,14 @@ public:
 	/// Disassemble the Brig file into HSAIL format
 	void DisassembleBinary(const std::string &path) const;
 
-	/// Indentation of current line
-	int indent;
+	/// Get the current indent level
+	int getIndent(){return indent;}
+
+	/// Increase current indent level by 1
+	void IndentMore(){++indent;}
+
+	/// Decrease current indent level by 1
+	void IndentLess(){--indent;}
 
 	/// Register command-line options
 	static void RegisterOptions();
