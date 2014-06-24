@@ -21,6 +21,7 @@
 
 #include <arch/common/Driver.h>
 #include <lib/cpp/Debug.h>
+#include <lib/cpp/Error.h>
 
 
 namespace Kepler
@@ -28,6 +29,19 @@ namespace Kepler
 
 // Forward Declarations
 class Program;
+
+
+// Exception thrown by driver errors
+class Error : public misc::Error
+{
+public:
+
+	/// Constructor
+	Error(const std::string &message) :
+			misc::Error("Kepler driver", message)
+	{
+	}
+};
 
 
 /// Kepler driver

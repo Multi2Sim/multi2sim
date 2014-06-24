@@ -26,7 +26,7 @@
 #include <lib/cpp/String.h>
 
 #include "Asm.h"
-
+#include "Inst.h"
 
 using namespace misc;
 
@@ -121,7 +121,6 @@ static const int AsmOpcode_C_B_E_B_A_A = 1;
 
 
 std::unique_ptr<Asm> Asm::as;
-
 
 void Asm::InitTableWithArray(InstOpcode opcode, const char *name,
 		const char *fmt_str, int argc, int argv[])

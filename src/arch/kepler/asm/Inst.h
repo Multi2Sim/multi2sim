@@ -22,7 +22,6 @@
 
 #include <iostream>
 
-
 namespace Kepler
 {
 
