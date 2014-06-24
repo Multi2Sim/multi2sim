@@ -21,6 +21,7 @@
 #include <unistd.h>
 
 #include <lib/cpp/String.h>
+#include <arch/hsa/asm/BrigInstEntry.h>
 
 #include "Context.h"
 
@@ -79,6 +80,27 @@ void Context::LoadBinary()
 	loader->binary.reset(new BrigFile(loader->exe));
 	
 	emu->hsa_debug << misc::fmt("Program loaded\n");
+
+	loader->pc = findMainFunction();
+
+}
+
+char* Context::findMainFunction()
+{
+	// Traverse all the top level directives until the one with
+	char *firstInst = loader->binary->findMainFun();
+
+	if(firstInst)
+	{
+		BrigInstEntry inst(firstInst, loader->binary.get());
+		emu->hsa_debug << inst;
+	}
+	else
+	{
+		misc::panic("Main function not found");
+	}
+
+	return firstInst;
 }
 
 }
