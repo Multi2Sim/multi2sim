@@ -1185,7 +1185,7 @@ void Context::ExecuteInst_fldcw_m16()
 	MemoryRead(addr, 2, &value);
 
 	// Mask all floating-point exception on wrong path
-	spec_mode = getState(ContextSpecMode);
+	spec_mode = getState(StateSpecMode);
 	if (spec_mode)
 		value |= 0x3f;
 

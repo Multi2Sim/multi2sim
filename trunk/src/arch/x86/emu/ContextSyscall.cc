@@ -268,7 +268,7 @@ void Context::ExecuteSyscall()
 
 	// Set return value in 'eax', except for 'sigreturn' system call. Also, if the
 	// context got suspended, the wake up routine will set the return value.
-	if (code != SyscallCode_sigreturn && !getState(ContextSuspended))
+	if (code != SyscallCode_sigreturn && !getState(StateSuspended))
 		regs.setEax(ret);
 
 	// Debug
@@ -447,7 +447,7 @@ int Context::ExecuteSyscall_read()
 	emu->syscall_debug << misc::fmt("  blocking read - process suspended\n");
 	syscall_read_fd = guest_fd;
 	Suspend(&Context::SyscallReadCanWakeup, &Context::SyscallReadWakeup,
-			ContextRead);
+			StateRead);
 	emu->ProcessEventsSchedule();
 
 	// Free allocated buffer. Return value doesn't matter,
@@ -575,7 +575,7 @@ int Context::ExecuteSyscall_write()
 	emu->syscall_debug << misc::fmt("  blocking write - process suspended\n");
 	syscall_write_fd = guest_fd;
 	Suspend(&Context::SyscallWriteCanWakeup, &Context::SyscallWriteWakeup,
-			ContextWrite);
+			StateWrite);
 	emu->ProcessEventsSchedule();
 
 	// Return value doesn't matter here. It will be overwritten when the
@@ -806,7 +806,7 @@ bool Context::SyscallWaitpidCanWakeup()
 		regs.setEax(child->pid);
 		if (pstatus)
 			memory->Write(pstatus, 4, (char *) &child->exit_code);
-		child->setState(ContextFinished);
+		child->setState(StateFinished);
 
 		emu->syscall_debug << misc::fmt("syscall waitpid - "
 				"continue (pid %d)\n", pid)
@@ -845,7 +845,7 @@ int Context::ExecuteSyscall_waitpid()
 		syscall_waitpid_pid = pid;
 		Suspend(&Context::SyscallWaitpidCanWakeup,
 				&Context::SyscallWaitpidWakeup,
-				ContextWaitpid);
+				StateWaitpid);
 		return 0;
 	}
 
@@ -855,7 +855,7 @@ int Context::ExecuteSyscall_waitpid()
 	{
 		if (status_ptr)
 			memory->Write(status_ptr, 4, (char *) &child->exit_code);
-		child->setState(ContextFinished);
+		child->setState(StateFinished);
 		return child->pid;
 	}
 
@@ -3900,7 +3900,7 @@ int Context::ExecuteSyscall_nanosleep()
 	// Suspend process
 	syscall_nanosleep_wakeup_time = now + total;
 	Suspend(&Context::SyscallNanosleepCanWakeup,
-			&Context::SyscallNanosleepWakeup, ContextNanosleep);
+			&Context::SyscallNanosleepWakeup, StateNanosleep);
 	emu->ProcessEventsSchedule();
 
 	// Success
@@ -4240,7 +4240,7 @@ int Context::ExecuteSyscall_poll()
 
 	// Suspend
 	Suspend(&Context::SyscallPollCanWakeup, &Context::SyscallPollWakeup,
-			ContextPoll);
+			StatePoll);
 	emu->ProcessEventsSchedule();
 	return 0;
 }
@@ -4525,7 +4525,7 @@ int Context::ExecuteSyscall_rt_sigsuspend()
 	signal_mask_table.setBlocked(new_set);
 	Suspend(&Context::SyscallSigsuspendCanWakeup,
 			&Context::SyscallSigsuspendWakeup,
-			ContextSigsuspend);
+			StateSigsuspend);
 	
 	// New signal mask may cause new events
 	emu->ProcessEventsSchedule();
@@ -5633,8 +5633,8 @@ int Context::ExecuteSyscall_futex()
 		wakeup_futex = addr1;
 		wakeup_futex_bitset = bitset;
 		wakeup_futex_sleep = emu->incFutexSleepCount();
-		setState(ContextSuspended);
-		setState(ContextFutex);
+		setState(StateSuspended);
+		setState(StateFutex);
 		return 0;
 	}
 
@@ -5668,9 +5668,9 @@ int Context::ExecuteSyscall_futex()
 		// The rest of the threads waiting in futex 'addr1' are requeued
 		// into futex 'addr2'
 		int requeued = 0;
-		for (Context *context : emu->getContextList(ContextListSuspended))
+		for (Context *context : emu->getContextList(ListSuspended))
 		{
-			if (context->getState(ContextFutex)
+			if (context->getState(StateFutex)
 					&& context->wakeup_futex == addr1)
 			{
 				context->wakeup_futex = addr2;

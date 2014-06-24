@@ -622,7 +622,7 @@ void Context::ExecuteInst_div_rm8()
 
 	/* A devide exception would occur in the host process if the 'div' instruction
 	 * in the assembly code below generates a result greater than 0xff. */
-	spec_mode = getState(ContextSpecMode);
+	spec_mode = getState(StateSpecMode);
 	skip_emulation = spec_mode && ax > 0xff;
 
 	// Emulate
@@ -663,7 +663,7 @@ void Context::ExecuteInst_div_rm32()
 
 	/* A devide exception would occur in the host process if the 'div' instruction
 	 * in the assembly code below generates a result greater than 0xffffffff. */
-	spec_mode = getState(ContextSpecMode);
+	spec_mode = getState(StateSpecMode);
 	skip_emulation = spec_mode && edx;
 
 	// Emulate
@@ -714,7 +714,7 @@ void Context::ExecuteInst_idiv_rm32()
 
 	// Avoid emulation in speculative mode if it could cause a divide exception
 	skip_emulation = 0;
-	spec_mode = getState(ContextSpecMode);
+	spec_mode = getState(StateSpecMode);
 	if (spec_mode)
 	{
 		long long edx_eax = ((unsigned long long) edx << 32) | eax;
@@ -1054,7 +1054,7 @@ void Context::ExecuteInst_int_imm8()
 		emu->isa_debug << " syscall '" << syscall_name[code] << "'";
 
 	// Do system call if not in speculative mode
-	spec_mode = getState(ContextSpecMode);
+	spec_mode = getState(StateSpecMode);
 	if (!spec_mode)
 		ExecuteSyscall();
 

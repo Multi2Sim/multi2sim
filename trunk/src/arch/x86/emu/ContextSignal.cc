@@ -94,9 +94,9 @@ void Context::RunSignalHandler(int sig)
 	// The program will continue now executing the signal handler.
 	// In the current implementation, we do not allow other signals to
 	// interrupt the signal handler, so we notify it in the context status.
-	if (getState(ContextHandler))
+	if (getState(StateHandler))
 		misc::fatal("%s: already running a handler", __FUNCTION__);
-	setState(ContextHandler);
+	setState(StateHandler);
 
 	// Set eip to run handler
 	unsigned handler = signal_handler->getHandler();
@@ -109,9 +109,9 @@ void Context::RunSignalHandler(int sig)
 void Context::ReturnFromSignalHandler()
 {
 	// Change context status
-	if (!getState(ContextHandler))
+	if (!getState(StateHandler))
 		misc::fatal("%s: not handling a signal", __FUNCTION__);
-	clearState(ContextHandler);
+	clearState(StateHandler);
 
 	// Free signal frame
 	memory->Unmap(signal_mask_table.getRetCodePtr(), mem::Memory::PageSize);
@@ -129,7 +129,7 @@ void Context::CheckSignalHandlerIntr()
 {
 	// Context cannot be running a signal handler. A signal must be pending
 	// and unblocked.
-	assert(!getState(ContextHandler));
+	assert(!getState(StateHandler));
 	assert((signal_mask_table.getPending().getBitmap() &
 			~signal_mask_table.getBlocked().getBitmap()).Any());
 
@@ -167,7 +167,7 @@ void Context::CheckSignalHandlerIntr()
 void Context::CheckSignalHandler()
 {
 	// If context is already running a signal handler, do nothing.
-	if (getState(ContextHandler))
+	if (getState(StateHandler))
 		return;
 	
 	// If there is no pending unblocked signal, do nothing.
