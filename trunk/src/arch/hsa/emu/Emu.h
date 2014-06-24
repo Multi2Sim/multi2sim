@@ -33,11 +33,21 @@ namespace HSA
 
 class WorkItem;
 
+class Error : public misc::Error
+{
+public: 
+	Error(const std::string &message)
+			: misc::Error("HSA", message)
+	{	
+	}
+};
+
 /// HSA Emulator
 class Emu : public comm::Emu
 {
 	// Debugger files
-	static std::string hsa_debug_file;
+	static std::string hsa_debug_loader_file;
+	static std::string hsa_debug_isa_file;
 
 	// Maximum number of instructions
 	// static long long max_instructions;
@@ -85,7 +95,8 @@ public:
 	bool Run();
 
 	/// Debugger for hsa
-	static misc::Debug hsa_debug;
+	static misc::Debug loader_debug;
+	static misc::Debug isa_debug;
 
 	/// Register command-line options
 	static void RegisterOptions();
@@ -100,7 +111,6 @@ public:
 			const std::string &cwd = "",
 			const std::string &stdin_file_name = "",
 			const std::string &stdout_file_name = "");
-
 };
 
 }
