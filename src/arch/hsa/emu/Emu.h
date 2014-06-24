@@ -26,12 +26,12 @@
 #include <lib/cpp/Debug.h>
 
 #include "arch/hsa/asm/BrigFile.h"
-#include "Context.h"
+#include "WorkItem.h"
 
 namespace HSA
 {
 
-class Context;
+class WorkItem;
 
 /// HSA Emulator
 class Emu : public comm::Emu
@@ -52,12 +52,12 @@ class Emu : public comm::Emu
 	// can be obtained with a call to getInstance()
 	Emu();
 
-	// list of contexts
-	std::list<std::unique_ptr<Context>> contexts;
+	// list of work items
+	std::list<std::unique_ptr<WorkItem>> work_items;
 
-	// Secondary lists of contexts. Contexts in different states
+	// Secondary lists of work items. Work items in different states
 	// are added/removed from this lists as their state gets updates
-	//std::list<Context *> context_list[ContextListCount];
+	//std::list<WorkItem *> work_item_list[WorkItemListCount];
 
 	// Process ID to be assigned next. Process IDs are assigned in 
 	// increasing order, using function Emu::getPid()
@@ -69,17 +69,19 @@ public:
 	/// of it will be allocated the first time this funcion is invoked
 	static Emu *getInstance();
 
-	/// Return a unique process ID. Contexts can call this function when 
+	/// Return a unique process ID. Work items can call this function when 
 	/// created to obtain their unique identifier
+	/// TODO: work items should not have a process id, instead, they should 
+	/// 	have work group ids and work item ids. 
 	int getPid() { return pid++; }
 
-	/// Create a new context associated with the emulator. The context is 
-	/// inserted in the main emulator context list
-	Context *newContext();
+	/// Create a new work item associated with the emulator. The work item is 
+	/// inserted in the main emulator work item list
+	WorkItem *newWorkItem();
 
 	/// Run one iteration of the emulation loop
 	/// \return This function \c true if the iteration had a useful emulation 
-	/// and \c false if all contexts finished execution
+	/// and \c false if all work items finished execution
 	bool Run();
 
 	/// Debugger for hsa
@@ -91,8 +93,8 @@ public:
 	/// Process command-line options
 	static void ProcessOptions();
 
-	/// Create a context and load a program. See comm::Emu::Load() for
-	/// details on the meaning of each argument.
+	/// Create a main work item and load a program. See comm::Emu::Load() 
+	/// for details on the meaning of each argument.
 	void LoadProgram(const std::vector<std::string> &args,
 			const std::vector<std::string> &env = { },
 			const std::string &cwd = "",

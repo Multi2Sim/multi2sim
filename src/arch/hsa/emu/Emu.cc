@@ -95,18 +95,18 @@ Emu *Emu::getInstance()
 	return instance.get();
 }
 
-Context *Emu::newContext()
+WorkItem *Emu::newWorkItem()
 {
-	// Create context and add to context list
-	Context *context = new Context();
-	contexts.emplace_back(context);
-	return context;
+	// Create work item and add to work item list
+	WorkItem *wi = new WorkItem();
+	work_items.emplace_back(wi);
+	return wi;
 }
 
 bool Emu::Run()
 {
-	// Stop if there is no more contexts
-	if(!contexts.size())
+	// Stop if there is no more work items
+	if(!work_items.size())
 		return false;
 
 	// Stop if maxmum number of CPU instructions exceeded
@@ -117,26 +117,26 @@ bool Emu::Run()
 	if(esim->hasFinished())
 		return true;
 
-	// Currently I traverse all the contexts. If requreied, I will change 
-	// it to only traversing running contexts;
-	auto end = contexts.end();
-	for(auto it = contexts.begin(); it != end; )
+	// Currently I traverse all the work items. If requreied, I will change 
+	// it to only traversing running work items;
+	auto end = work_items.end();
+	for(auto it = work_items.begin(); it != end; )
 	{
-		// Save the position of next context
+		// Save the position of next work item
 		auto next = it;
 		++next;
 
 		// Run one iteration
-		Context *context = &(*it->get());
-		context->Execute();
+		WorkItem *wi = &(*it->get());
+		wi->Execute();
 
-		// Move to saved next context
+		// Move to saved next work item
 		it = next;
 	}
 
-	//TODO: add free context function call
+	//TODO: add free work item function call
 
-	// Process list of suspended contexts
+	// Process list of suspended work items
 	// ProcessEvents();
 		
 
@@ -151,9 +151,11 @@ void Emu::LoadProgram(const std::vector<std::string> &args,
 		const std::string &stdin_file_name,
 		const std::string &stdout_file_name)
 {
-	// Create new context
-	Context *context = newContext();
-	context->Load(args, env, cwd,
+	// Create new work item
+	WorkItem *wi = newWorkItem();
+
+	// Load the whole program
+	wi->Load(args, env, cwd,
 			stdin_file_name, stdout_file_name);
 }
 
