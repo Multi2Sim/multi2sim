@@ -34,14 +34,14 @@ namespace comm
 
 
 static const char *runtime_err_redirect_current =
-	"The dynamic linker of your application seems to be accessing a "
+	"\tThe dynamic linker of your application seems to be accessing a "
 	"runtime library. A copy of this runtime library has been found "
 	"in the current working directory, and this copy will be used by "
 	"the linker. As a safer and portable option, please link your "
 	"guest program statically with the corresponding runtime.";
 
 static const char *runtime_err_redirect_root =
-	"The dynamic linker of your application seems to be accessing a "
+	"\tThe dynamic linker of your application seems to be accessing a "
 	"runtime library. A copy of this runtime library has been found "
 	"in '$(TOPDIR)/lib/.libs', while running Multi2Sim from its "
 	"build tree root. As a safer and portable option, please link "

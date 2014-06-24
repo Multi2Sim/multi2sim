@@ -20,8 +20,6 @@
 #ifndef ARCH_KEPLER_EMU_EMU_H
 #define ARCH_KEPLER_EMU_EMU_H
 
-#ifdef __cplusplus
-
 #include <iostream>
 #include <list>
 #include <memory>
@@ -37,7 +35,7 @@ class Grid;
 class CUDADriver;
 class ThreadBlock;
 class Thread;
-struct KplInstWrap;
+
 
 typedef void (*InstFunc)(Kepler::Thread *thread, Inst *inst);
 
@@ -127,6 +125,12 @@ public:
 	/// Get ALU instruction count
 	unsigned getAluInstCount() const { return alu_inst_count; }
 
+	/// Get global memory
+	mem::Memory* getGlobalMem() const { return global_mem; }
+
+	///Get constant memory
+	mem::Memory* getConstMem() const { return const_mem; }
+
 	// Setter
 	/// set global memory top
 	void SetGlobalMemTop(unsigned value) { global_mem_top = value; }
@@ -139,6 +143,9 @@ public:
 
 	/// Increment ALU instruction counter
 	void incAluInstCount() { alu_inst_count ++; }
+
+	/// Increse global memory top
+	void incGloablMemTop(unsigned inc) { global_mem_top += inc; }
 
 	/// Dump Kepler Emulator in a human-readable fashion into an output stream (or
 	/// standard output if argument \a os is omitted.
@@ -185,11 +192,10 @@ public:
 
 	/// Push an element into pending grid list
 	void PushPendingGrid(Grid *grid);
+
 };
 
 
-}	//namespace
-
-#endif
+}  //namespace Kepler
 
 #endif

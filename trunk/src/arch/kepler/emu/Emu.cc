@@ -42,7 +42,7 @@ Emu *Emu::getInstance()
 {
 	if (instance)
 		return instance.get();
-	instance.reset(new Emu);
+	instance.reset(new Emu());
 	return instance.get();
 }
 

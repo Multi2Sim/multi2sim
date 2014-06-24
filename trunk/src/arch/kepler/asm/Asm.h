@@ -150,7 +150,6 @@ public:
 	void DisassembleBinary(const std::string &path) const;
 };
 
-
 }  // namespace Kepler
 
 #endif  // ARCH_KEPLER_ASM_ASM_H
