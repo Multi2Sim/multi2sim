@@ -22,8 +22,10 @@
 
 #include <cstdint>
 #include <map>
-#include "lib/cpp/ELFReader.h"
 #include <elf.h>
+
+#include <lib/cpp/ELFReader.h>
+
 #include "BrigSection.h"
 #include "BrigDef.h"
 
@@ -58,11 +60,8 @@ public:
 	/// Returns the path to the BRIG file
 	const std::string &getPath() const { return file.getPath(); }
 
-
 	/// Returns the section according to the type value passed in
-	BrigSection *getBrigSection (
-		enum BrigSectionType type
-	) const;
+	BrigSection *getBrigSection(BrigSectionType type) const;
 
 	/// Checks if the loaded brig file is a valid brig file
 	/// \return
@@ -73,10 +72,10 @@ public:
 	/// \return
 	/// 	Returns the pointer to the first insts in main function or 
 	/// 	nullptr if main function is not found;
-	char *findMainFun();
+	char *findMainFunction();
 
 };
 
-}
+} // namespace HSA
 
 #endif

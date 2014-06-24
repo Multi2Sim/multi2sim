@@ -143,7 +143,7 @@ void BrigOperandEntry::dumpOperandImmed(std::ostream &os = std::cout) const
 	int type = getOperandType();
 	struct BrigOperandImmed *operand = (struct BrigOperandImmed *)base;
 	BrigImmed immed( operand->bytes, type );
-	immed.Dump();
+	immed.Dump(os);
 
 }
 void BrigOperandEntry::dumpOperandWavesize(std::ostream &os = std::cout) const
