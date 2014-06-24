@@ -46,9 +46,7 @@ protected:
 
 public:
 	/// Creates the BRIG section, set the type and read in buffer
-	BrigSection(
-		ELFReader::Section *elfSection
-	);
+	BrigSection(ELFReader::Section *elfSection);
 
 	/// Deconstructor
 	~BrigSection();
@@ -66,7 +64,7 @@ public:
 	BrigSectionType getType() const { return this->type; }
 
 	/// Dump section on stdout in HEX
-	void dumpSectionHex() const;
+	void dumpSectionHex(std::ostream &os) const;
 
 };
 }

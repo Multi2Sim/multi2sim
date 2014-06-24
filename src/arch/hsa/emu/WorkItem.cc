@@ -37,10 +37,10 @@ WorkItem::~WorkItem()
 }
 
 void WorkItem::Load(const std::vector<std::string> &args,
-	const std::vector<std::string> &env, 
-	const std::string &cwd,
-	const std::string &stdin_file_name,
-	const std::string &stdout_file_name)
+		const std::vector<std::string> &env, 
+		const std::string &cwd,
+		const std::string &stdin_file_name,
+		const std::string &stdout_file_name)
 {
 	loader.reset(new Loader);
 	loader->exe = misc::getFullPath(args[0], cwd);

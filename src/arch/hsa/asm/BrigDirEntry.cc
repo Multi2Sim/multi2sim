@@ -27,12 +27,14 @@
 #include "lib/cpp/String.h"
 #include "Asm.h"
 
-namespace HSA{
+namespace HSA
+{
 
 BrigDirEntry::BrigDirEntry(char *buf, BrigFile *file)
 	:BrigEntry(buf, file)
 {
 }
+
 
 int BrigDirEntry::getKind() const
 {
@@ -40,6 +42,7 @@ int BrigDirEntry::getKind() const
 		= (struct BrigDirectiveBase *)base;
 	return dir->kind;
 }
+
 
 char *BrigDirEntry::nextTop() const
 {
@@ -53,7 +56,7 @@ char *BrigDirEntry::nextTop() const
 		struct BrigDirectiveExecutable * dir
 			= (struct BrigDirectiveExecutable *)base;
 		char *bufPtr = (char *)bs->getBuffer() + dir->nextTopLevelDirective;
-		if(bufPtr >= bs->getBuffer() + bs->getSize())
+		if (bufPtr >= bs->getBuffer() + bs->getSize())
 			return NULL;
 		return bufPtr;
 	}
@@ -63,7 +66,7 @@ char *BrigDirEntry::nextTop() const
 	{
 		struct BrigDirectiveSymbol *dir = 
 			(struct BrigDirectiveSymbol *)this->base;
-		if(!dir->init) return next();
+		if (!dir->init) return next();
 		else
 		{
 			BrigDirEntry initDir(
@@ -82,7 +85,7 @@ char *BrigDirEntry::next() const
 {
 	BrigSection *bs = file->getBrigSection(BrigSectionDirective);
 	char * ret = this->base + this->getSize();
-	if(ret >= bs->getBuffer() + bs->getSize())
+	if (ret >= bs->getBuffer() + bs->getSize())
 		return NULL;
 	return ret;
 }
@@ -91,28 +94,28 @@ char *BrigDirEntry::next() const
 BrigDirEntry::DumpDirectiveFn BrigDirEntry::dump_dir_fn[27] = 
 {
 	&BrigDirEntry::DumpDirectiveArgScopeEnd,	// 0 
-	&BrigDirEntry::DumpDirectiveArgScopeStart, // 1
+	&BrigDirEntry::DumpDirectiveArgScopeStart, 	// 1
 	&BrigDirEntry::DumpDirectiveBlockEnd,		// 2
 	&BrigDirEntry::DumpDirectiveNumeric,		// 3
-	&BrigDirEntry::DumpDirectiveBlockStart,	// 4
+	&BrigDirEntry::DumpDirectiveBlockStart,		// 4
 	&BrigDirEntry::DumpDirectiveBlockString,	// 5
 	&BrigDirEntry::DumpDirectiveComment,		// 6
 	&BrigDirEntry::DumpDirectiveControl,		// 7
 	&BrigDirEntry::DumpDirectiveExtension,		// 8
 	&BrigDirEntry::DumpDirectiveFBarrier,		// 9 
-	&BrigDirEntry::DumpDirectiveFile,			// 10 
+	&BrigDirEntry::DumpDirectiveFile,		// 10 
 	&BrigDirEntry::DumpDirectiveFunction,		// 11 
-	&BrigDirEntry::DumpDirectiveImage,			// 12 
+	&BrigDirEntry::DumpDirectiveImage,		// 12 
 	&BrigDirEntry::DumpDirectiveImageInit,		// 13 
 	&BrigDirEntry::DumpDirectiveKernel,		// 14 
-	&BrigDirEntry::DumpDirectiveLabel,			// 15 
+	&BrigDirEntry::DumpDirectiveLabel,		// 15 
 	&BrigDirEntry::DumpDirectiveLabelInit,		// 16 
 	&BrigDirEntry::DumpDirectiveLabelTargets,	// 17 
-	&BrigDirEntry::DumpDirectiveLoc,			// 18 
+	&BrigDirEntry::DumpDirectiveLoc,		// 18 
 	&BrigDirEntry::DumpDirectivePragma,		// 19 
 	&BrigDirEntry::DumpDirectiveSampler,		// 20
 	&BrigDirEntry::DumpDirectiveSamplerInit,	// 21 
-	&BrigDirEntry::DumpDirectiveScope,			// 22 
+	&BrigDirEntry::DumpDirectiveScope,		// 22 
 	&BrigDirEntry::DumpDirectiveSignature,		// 23 
 	&BrigDirEntry::DumpDirectiveVariable,		// 24 
 	&BrigDirEntry::DumpDirectiveVariableInit,	// 25 
@@ -122,22 +125,32 @@ BrigDirEntry::DumpDirectiveFn BrigDirEntry::dump_dir_fn[27] =
 void BrigDirEntry::DumpDirectiveArgScopeEnd(std::ostream &os = std::cout) const
 {
 	Asm *as = Asm::getInstance();
-	as->indent--;
+
+	// First reduce the indent level, then output the close bracket
+	as->IndentLess();
 	BrigEntry::dumpIndent(os);
 	os << "}\n";
 }
+
+
 void BrigDirEntry::DumpDirectiveArgScopeStart(std::ostream &os = std::cout) const
 {
 	Asm *as = Asm::getInstance();
 	BrigEntry::dumpIndent(os);
 	os << "{\n";
-	as->indent++;
+
+	// All arguments within the bracket should indent one more level
+	as->IndentMore();
 }
+
+
 void BrigDirEntry::DumpDirectiveBlockEnd(std::ostream &os = std::cout) const
 {
 	BrigEntry::dumpIndent(os);
 	os << "endblock;";
 }
+
+
 void BrigDirEntry::DumpDirectiveNumeric(std::ostream &os = std::cout) const
 {
 	BrigEntry::dumpIndent(os);
@@ -146,6 +159,8 @@ void BrigDirEntry::DumpDirectiveNumeric(std::ostream &os = std::cout) const
 	os << BrigEntry::type2str(dir->type);
 	this->dumpValueList(dir->data, dir->type, dir->elementCount, this->file, os);
 }
+
+
 void BrigDirEntry::DumpDirectiveBlockStart(std::ostream &os = std::cout) const
 {
 	BrigEntry::dumpIndent(os);
@@ -153,6 +168,8 @@ void BrigDirEntry::DumpDirectiveBlockStart(std::ostream &os = std::cout) const
 	struct BrigBlockStart *dir = (struct BrigBlockStart *)this->base;
 	BrigStrEntry::DumpString(this->file, dir->name, os);
 }
+
+
 void BrigDirEntry::DumpDirectiveBlockString(std::ostream &os = std::cout) const
 {
 	BrigEntry::dumpIndent(os);
@@ -161,21 +178,29 @@ void BrigDirEntry::DumpDirectiveBlockString(std::ostream &os = std::cout) const
 	BrigStrEntry::DumpString(this->file, dir->string, os);
 	os << ";";
 }
+
+
 void BrigDirEntry::DumpDirectiveComment(std::ostream &os = std::cout) const
 {
 	BrigEntry::dumpIndent(os);
 	misc::warning("Unsupport directive %s", "Comment");
 }
+
+
 void BrigDirEntry::DumpDirectiveControl(std::ostream &os = std::cout) const
 {
 	BrigEntry::dumpIndent(os);
 	misc::warning("Unsupport directive %s", "Control");
 }
+
+
 void BrigDirEntry::DumpDirectiveExtension(std::ostream &os = std::cout) const
 {
 	BrigEntry::dumpIndent(os);
 	misc::warning("Unsupport directive %s", "Extension");
 }
+
+
 void BrigDirEntry::DumpDirectiveFBarrier(std::ostream &os = std::cout) const
 {		
 	BrigEntry::dumpIndent(os);
@@ -185,11 +210,15 @@ void BrigDirEntry::DumpDirectiveFBarrier(std::ostream &os = std::cout) const
 	os << BrigStrEntry::GetStringByOffset(this->file, fbar->name);
 	os << ";\n";
 }
+
+
 void BrigDirEntry::DumpDirectiveFile(std::ostream &os = std::cout) const
 {
 	BrigEntry::dumpIndent(os);
 	misc::warning("Unsupport directive %s", "File");
 }
+
+
 void BrigDirEntry::DumpDirectiveFunction(std::ostream &os = std::cout) const
 {
 	BrigEntry::dumpIndent(os);
@@ -207,22 +236,28 @@ void BrigDirEntry::DumpDirectiveFunction(std::ostream &os = std::cout) const
 	dumpBody(dir->code, dir->instCount, next, modifier.isDeclaration(), os);
 	
 }
+
+
 void BrigDirEntry::DumpDirectiveImage(std::ostream &os = std::cout) const
 {
 	BrigEntry::dumpIndent(os);
 	struct BrigDirectiveImage *image = 
 		(struct BrigDirectiveImage *)this->base;
 	BrigEntry::dumpSymDecl(this, os);
-	if(image->init)
+	if (image->init)
 	{
 		misc::warning("Image init is not supported!");
 	}
 	os << ";\n";
 }
+
+
 void BrigDirEntry::DumpDirectiveImageInit(std::ostream &os = std::cout) const
 {
 	misc::warning("Unsupport directive %s", "ImageInit");
 }
+
+
 void BrigDirEntry::DumpDirectiveKernel(std::ostream &os = std::cout) const
 {
 	BrigEntry::dumpIndent(os);
@@ -234,6 +269,8 @@ void BrigDirEntry::DumpDirectiveKernel(std::ostream &os = std::cout) const
 	next = BrigEntry::dumpArgs(next, dir->inArgCount, this->file, os);
 	dumpBody(dir->code, dir->instCount, next, false, os);
 }
+
+
 void BrigDirEntry::DumpDirectiveLabel(std::ostream &os = std::cout) const
 {
 	os << "\n";
@@ -242,25 +279,35 @@ void BrigDirEntry::DumpDirectiveLabel(std::ostream &os = std::cout) const
 	os << BrigStrEntry::GetStringByOffset(this->file, label->name);
 	os << ":\n";
 }
+
+
 void BrigDirEntry::DumpDirectiveLabelInit(std::ostream &os = std::cout) const
 {
 	misc::warning("Unsupport directive %s", "LabelInit");
 }
+
+
 void BrigDirEntry::DumpDirectiveLabelTargets(std::ostream &os = std::cout) const
 {
 	BrigEntry::dumpIndent(os);
 	misc::warning("Unsupport directive %s", "LabelTagets");
 }
+
+
 void BrigDirEntry::DumpDirectiveLoc(std::ostream &os = std::cout) const
 {
 	BrigEntry::dumpIndent(os);
 	misc::warning("Unsupport directive %s", "Loc");
 }
+
+
 void BrigDirEntry::DumpDirectivePragma(std::ostream &os = std::cout) const
 {
 	BrigEntry::dumpIndent(os);
 	misc::warning("Unsupport directive %s", "Pragma");
 }
+
+
 void BrigDirEntry::DumpDirectiveSampler(std::ostream &os = std::cout) const
 {
 	BrigEntry::dumpIndent(os);
@@ -273,54 +320,56 @@ void BrigDirEntry::DumpDirectiveSampler(std::ostream &os = std::cout) const
 	}
 	os << ";\n";
 }
+
+
 void BrigDirEntry::DumpDirectiveSamplerInit(std::ostream &os = std::cout) const
 {
 	misc::warning("Unsupport directive %s", "SamplerInit");
 }
+
+
 void BrigDirEntry::DumpDirectiveScope(std::ostream &os = std::cout) const
 {
 	BrigEntry::dumpIndent(os);
 	misc::warning("Unsupport directive %s", "Scope");
 }
+
+
 void BrigDirEntry::DumpDirectiveSignature(std::ostream &os = std::cout) const
 {
 	BrigEntry::dumpIndent(os);
 	misc::warning("Unsupport directive %s", "Signature");
 }
+
+
 void BrigDirEntry::DumpDirectiveVariable(std::ostream &os = std::cout) const
 {
 	BrigEntry::dumpIndent(os);
 	struct BrigDirectiveVariable *dir
 		= (struct BrigDirectiveVariable *)this->base;
 	BrigEntry::dumpSymDecl(this, os);
-	if(dir->init)
+	if (dir->init)
 	{
+
+		// if the variable is init directly, print '=' and the value
 		os << " = ";
 		SymbolModifier modifier(dir->modifier.allBits);
-		if(modifier.isArray()) os << "{";
-		BrigDirEntry initDir(
-			BrigDirEntry::GetDirByOffset(file, dir->init), file
-		);
+		
+		// get and dump the init directive
+		if (modifier.isArray()) os << "{";
+		char *initDirPtr = 
+				BrigDirEntry::GetDirByOffset(file, dir->init);
+		BrigDirEntry initDir(initDirPtr, file);
 		initDir.Dump();	
-		if(modifier.isArray()) os << "}";
-		/*
-		struct BrigDirectiveVariableInit *init = (struct BrigDirectiveVariableInit *)GetDirByOffset(this->file, var->init);
-		if(init->elementCount == 0)
-			os << ";\n";
-		else
-		{
-			/// assert(var->type == init->type);
-			/// The assembler provided by the HSA foundation might be incorrect to cause this unmatched type.
-			os << " = ";
-			BrigEntry::dumpValueList(init->data, init->type, init->elementCount, this->file, os);
-		}
-		*/
+		if (modifier.isArray()) os << "}";
 		os << ";\n";
-	}else
+	}
+	else
 	{
 		os << ";\n";
 	}
 }
+
 
 void BrigDirEntry::DumpDirectiveVariableInit(std::ostream &os = std::cout) const
 {
@@ -328,6 +377,7 @@ void BrigDirEntry::DumpDirectiveVariableInit(std::ostream &os = std::cout) const
 		(struct BrigDirectiveVariableInit *) this->base;
 	dumpValueList(dir->data, dir->type, dir->elementCount, this->file, os);
 }
+
 
 void BrigDirEntry::DumpDirectiveVersion(std::ostream &os = std::cout) const
 {
@@ -345,6 +395,7 @@ void BrigDirEntry::DumpDirectiveVersion(std::ostream &os = std::cout) const
 	os << "\n";
 }
 
+
 char *BrigDirEntry::GetDirByOffset(BrigFile *file, BrigDirectiveOffset32_t offset)
 {
 	BrigSection *sec = file->getBrigSection(BrigSectionDirective);
@@ -352,4 +403,5 @@ char *BrigDirEntry::GetDirByOffset(BrigFile *file, BrigDirectiveOffset32_t offse
 	buf += offset;
 	return buf;
 }
+
 }
