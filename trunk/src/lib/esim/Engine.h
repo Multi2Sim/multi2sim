@@ -38,15 +38,18 @@
 namespace esim
 {
 
+// Forward declarations
+class Queue;
+
+
 /// Exception object produced by objects in the event-driven simulator
-class Exception : std::runtime_error
+class Error : std::runtime_error
 {
 
 public:
 
 	/// Constructor
-	Exception(const std::string &message)
-			:
+	Error(const std::string &message) :
 			std::runtime_error("[esim] " + message)
 	{
 	}
@@ -140,12 +143,6 @@ class Engine
 			std::map<std::string, EventType *> &events);
 	void ParseActionCreateCheck(const std::vector<std::string> &tokens);
 
-	// Schedule an event. See Next() for the meaning of the fields.
-	void Schedule(EventType *event_type,
-			std::shared_ptr<EventFrame> event_frame,
-			int after = 0,
-			int period = 0);
-
 	// Drain the event heap, with a maximum number of events specified in
 	// the argument. If this number is exceeded, the function returns true.
 	// If the heap is drained successfully, the function returns false.
@@ -235,6 +232,14 @@ public:
 			EventHandler handler,
 			FrequencyDomain *frequency_domain = nullptr);
 
+	/// Schedule an event. This function is only used internally and should
+	/// not be invoked from outside of this library. Use Call() or Next()
+	/// instead. See Next() for the meaning of the arguments.
+	void Schedule(EventType *event_type,
+			std::shared_ptr<EventFrame> event_frame,
+			int after = 0,
+			int period = 0);
+
 	/// Schedule an event, using the event frame set by the last invocation
 	/// to Call() in the event chain, or nullptr if no event frame was set
 	/// before.
@@ -302,12 +307,24 @@ public:
 	/// Schedule the return event specified in the last invocation to
 	/// Call() in argument \a return_event_type, using the frame that was
 	/// active at that time. This function should only be invoked in the
-	/// body of an event
+	/// body of an event handler.
 	///
 	/// \param after (optional)
 	///	Number of cycles after which the return event will execute. See
 	///	Schedule() for details.
 	void Return(int after = 0);
+
+	/// Suspend the current event chain in a queue. This function should
+	/// only be invoked in the body of an event handler.
+	///
+	/// \param queue
+	///	Queue at the end of which the current event is suspended.
+	///
+	/// \param event_type
+	///	Type of event to schedule when the queue receives a wakeup
+	///	signal. This event will be scheduled using the current event
+	///	frame. The event type cannot be `nullptr`.
+	void Wait(Queue &queue, EventType *event_type);
 
 	/// Schedule an event for the end of the simulation. End events have
 	/// no event frame (event frame set to `nullptr`).

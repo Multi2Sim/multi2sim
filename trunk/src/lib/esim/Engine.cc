@@ -23,6 +23,7 @@
 
 #include "Action.h"
 #include "Engine.h"
+#include "Queue.h"
 
 
 namespace esim
@@ -84,66 +85,6 @@ void Engine::SignalHandler(int signum)
 	// execution. The signal will be processed at the end of the simulation
 	// loop iteration.
 	esim->signal_received = signum;
-}
-
-
-void Engine::Schedule(EventType *event_type,
-		std::shared_ptr<EventFrame> event_frame,
-		int after,
-		int period)
-{
-	// Sanity
-	assert(after >= 0);
-	assert(event_frame != nullptr);
-
-	// Ignore event if engine is locked
-	if (locked)
-		return;
-
-	// Null event
-	if (event_type == nullptr || event_type == null_event_type)
-	{
-		debug << misc::fmt("[%.2fns] Null event discarded\n",
-				(double) current_time / 1000);
-		return;
-	}
-
-	// Get frequency domain. All events scheduled here must belong to a
-	// valid frequency domain.
-	FrequencyDomain *frequency_domain = event_type->getFrequencyDomain();
-	if (!frequency_domain)
-		throw std::logic_error(misc::fmt("Event '%s' has been "
-				"scheduled, but it does not belong to a "
-				"valid frequency domain",
-				event_type->getName().c_str()));
-
-	// Calculate absolute time for the event based on the event's frequency
-	// domain. First, get the actual current time for the current frequency
-	// domain, then add the time after which the event should be scheduled.
-	long long when = current_time / frequency_domain->getCycleTime() *
-			frequency_domain->getCycleTime() +
-			frequency_domain->getCycleTime() * after;
-
-	// Create new event and insert it in the event list
-	events.emplace(new Event(event_type, event_frame, when, period));
-
-	// Debug
-	debug << misc::fmt("[%.2fns] Event '%s/%s' scheduled for [%.2fns]\n",
-			(double) current_time / 1000,
-			frequency_domain->getName().c_str(),
-			event_type->getName().c_str(),
-			(double) when / 1000);
-
-	// Warn when heap is overloaded
-	if (!max_inflight_events_warning && (int) events.size() >=
-			max_inflight_events)
-	{
-		max_inflight_events_warning = true;
-		misc::warning("[esim] Maximum number of %d "
-				"in-flight events exceeds\n\n%s",
-				max_inflight_events,
-				engine_err_max_inflight_events);
-	}
 }
 
 
@@ -332,6 +273,71 @@ EventType *Engine::RegisterEventType(const std::string &name,
 }
 	
 	
+void Engine::Schedule(EventType *event_type,
+		std::shared_ptr<EventFrame> event_frame,
+		int after,
+		int period)
+{
+	// Sanity
+	assert(after >= 0);
+	assert(event_frame != nullptr);
+
+	// Frame must not be suspended in a queue
+	if (event_frame->isInQueue())
+		throw new std::logic_error("Attempt to schedule an event "
+				"that is currently suspended in a queue");
+
+	// Ignore event if engine is locked
+	if (locked)
+		return;
+
+	// Null event
+	if (event_type == nullptr || event_type == null_event_type)
+	{
+		debug << misc::fmt("[%.2fns] Null event discarded\n",
+				(double) current_time / 1000);
+		return;
+	}
+
+	// Get frequency domain. All events scheduled here must belong to a
+	// valid frequency domain.
+	FrequencyDomain *frequency_domain = event_type->getFrequencyDomain();
+	if (!frequency_domain)
+		throw std::logic_error(misc::fmt("Event '%s' has been "
+				"scheduled, but it does not belong to a "
+				"valid frequency domain",
+				event_type->getName().c_str()));
+
+	// Calculate absolute time for the event based on the event's frequency
+	// domain. First, get the actual current time for the current frequency
+	// domain, then add the time after which the event should be scheduled.
+	long long when = current_time / frequency_domain->getCycleTime() *
+			frequency_domain->getCycleTime() +
+			frequency_domain->getCycleTime() * after;
+
+	// Create new event and insert it in the event list
+	events.emplace(new Event(event_type, event_frame, when, period));
+
+	// Debug
+	debug << misc::fmt("[%.2fns] Event '%s/%s' scheduled for [%.2fns]\n",
+			(double) current_time / 1000,
+			frequency_domain->getName().c_str(),
+			event_type->getName().c_str(),
+			(double) when / 1000);
+
+	// Warn when heap is overloaded
+	if (!max_inflight_events_warning && (int) events.size() >=
+			max_inflight_events)
+	{
+		max_inflight_events_warning = true;
+		misc::warning("[esim] Maximum number of %d "
+				"in-flight events exceeds\n\n%s",
+				max_inflight_events,
+				engine_err_max_inflight_events);
+	}
+}
+
+
 void Engine::Next(EventType *event_type,
 		int after,
 		int period)
@@ -406,8 +412,8 @@ void Engine::Return(int after)
 {
 	// This function must be invoked within an event handler
 	if (!current_event)
-		throw std::logic_error(misc::fmt("Function %s invoked "
-				"outside of an event handler", __FUNCTION__));
+		throw std::logic_error("Function cannot be invoked outside of "
+				"an event handler");
 
 	// If this is the bottom of the stack, ignore
 	if (current_event->getFrame()->getReturnEventType() == nullptr)
@@ -418,6 +424,27 @@ void Engine::Return(int after)
 	Schedule(current_event->getFrame()->getReturnEventType(),
 			current_event->getFrame()->getParentFrame(),
 			after);
+}
+
+
+void Engine::Wait(Queue &queue, EventType *event_type)
+{
+	// This function must be invoked within an event handler
+	if (current_event == nullptr)
+		throw std::logic_error("Function cannot be invoked outside of "
+				"an event handler");
+
+	// The event type must be valid
+	if (event_type == nullptr)
+		throw std::logic_error("Cannot suspend an event with a null "
+				"wakeup event type");
+
+	// Add event frame to the stack
+	std::shared_ptr<EventFrame> event_frame = current_event->getFrame();
+	assert(event_frame != nullptr);
+	assert(event_frame->getWakeupEventType() == nullptr);
+	event_frame->setWakeupEventType(event_type);
+	queue.PushBack(event_frame);
 }
 
 

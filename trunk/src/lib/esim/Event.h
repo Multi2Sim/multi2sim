@@ -89,6 +89,16 @@ class EventFrame
 	// event
 	EventType *return_event_type = nullptr;
 
+	// Flag indicating whether the frame is currently suspended in a queue
+	bool in_queue = false;
+
+	// Pointer to next frames in a waiting queue, or null if the event
+	// frame is not suspended in a queue.
+	std::shared_ptr<EventFrame> next;
+
+	// Event type scheduled when the frame is woken up from a queue
+	EventType *wakeup_event_type = nullptr;
+
 public:
 
 	/// A virtual destructor guarantees that child classes are destructed
@@ -115,12 +125,38 @@ public:
 
 	/// Get the return event type
 	EventType *getReturnEventType() const { return return_event_type; }
+
+	/// Return whether the event frame is currently suspended in an
+	/// event queue.
+	bool isInQueue() const { return in_queue; }
+
+	/// Mark the event frame as suspended in an event queue. This function
+	/// should only be used internally.
+	void setInQueue(bool in_queue) { this->in_queue = in_queue; }
+
+	/// Return the next event frame suspended in an event queue. Only used
+	/// internally by class Queue.
+	std::shared_ptr<EventFrame> getNext() { return next; }
+
+	/// Set the next event frame suspended in an event queue. Only used
+	/// internally by class Queue;
+	void setNext(std::shared_ptr<EventFrame> next) { this->next = next; }
+
+	/// Return the event type to schedule when the frame is woken up from
+	/// a suspension queue.
+	EventType *getWakeupEventType() const { return wakeup_event_type; }
+
+	/// When an event is suspended in a queue, set the event to schedule
+	/// when the frame is woken up.
+	void setWakeupEventType(EventType *wakeup_event_type)
+	{
+		this->wakeup_event_type = wakeup_event_type;
+	}
 };
 
 
 /// Class representing a scheduled event. This class should not be instantiated
-/// directly by the user. Instead, it should be created implicitly with a call
-/// to Engine::ScheduleEvent().
+/// directly from outside of this library.
 class Event
 {
 	// Event type
@@ -137,7 +173,8 @@ class Event
 
 public:
 
-	// Comparison lambda
+	// Comparison lambda, used as the comparison function in the event
+	// min-heap of the simulation engine.
 	struct CompareUniquePtrs
 	{
 		bool operator()(const std::unique_ptr<Event> &lhs,

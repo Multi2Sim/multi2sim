@@ -49,7 +49,7 @@ libnetwork_a_SOURCES = \
 	Network.cc \
 	Network.h \
 	\
-	Node.c \
+	Node.cc \
 	Node.h \
 	\
 	System.cc \
