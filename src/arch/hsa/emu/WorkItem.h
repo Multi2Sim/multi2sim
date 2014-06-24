@@ -17,10 +17,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_HSA_EMU_CONTEXT_H
-#define ARCH_HSA_EMU_CONTEXT_H
+#ifndef ARCH_HSA_EMU_WORKITEM_H
+#define ARCH_HSA_EMU_WORKITEM_H
 
-#include "arch/common/FileTable.h"
+#include <arch/common/FileTable.h>
+#include <arch/hsa/asm/BrigInstEntry.h>
 
 #include "Emu.h"
 
@@ -29,15 +30,15 @@ namespace HSA
 
 class Emu;
 
-/// HSA Context
-class Context{
+/// HSA WorkItem
+class WorkItem{
  	// Emulator that is belongs to 
  	Emu *emu;
 
  	// Process ID
  	int pid;
 
-	// File descriptor table, shared by contexts
+	// File descriptor table, shared by workitems
 	std::shared_ptr<comm::FileTable> file_table;
 
  	///
@@ -46,9 +47,8 @@ class Context{
  	///
 
  	/// Structure containing information initialized by the program loader,
- 	/// associated with a context. When a context is created from a program 
- 	/// executable, a Loader object is associtaed to it. All child contexts
- 	/// spawned by it will share the same Loader object
+ 	/// associated with a workitem. When a workitem is created from a 
+ 	/// program executable, a Loader object is associtaed to it. 
  	struct Loader
  	{
  		// Binary file in brig format
@@ -72,9 +72,9 @@ class Context{
  	};
 
  	// Loader information. This information can be shared among multiple 
- 	// contexts. For this reason, it is declared as a shared pointer. The
- 	// last destructed context sharing this variable will automatically free
- 	// it.
+ 	// workitems. For this reason, it is declared as a shared pointer. The
+ 	// last destructed workitem sharing this variable will automatically 
+ 	// free it.
  	std::shared_ptr<Loader> loader;
 
  	// Find the main function of the brig elf.
@@ -86,17 +86,39 @@ class Context{
  	// Load Brig ELF binary, as alread decoded in 'loader.binary'
  	void LoadBinary();
 
+ 	//
+ 	// Functions related with the insts of HSA assembly, implemented in
+ 	// hsaIsa.cc
+ 	//
+
+ 	// Prototype of member function of class WorkItem devoted to the 
+ 	// execution of HSA virtual ISA instructions.
+ 	typedef void (WorkItem::*ExecuteInstFn)();
+
+ 	// Instruction emulation functions. Each entry of of Inst.def will be 
+ 	// expanded into a funtion prototype.
+#define DEFINST(name, opstr) \
+ 		void ExecuteInst_##name();
+#include <arch/hsa/asm/Inst.def>
+#undef DEFINST
+
+ 	// unsupported inst opcode
+ 	void ExecuteInst_unsupported();
+
+ 	// Table of functions that implement instructions
+ 	static ExecuteInstFn execute_inst_fn[InstOpcodeCount + 1];
+
  public:
- 	/// Create a context from a command line. To safely create a context 
+ 	/// Create a work item from a command line. To safely create a  
  	/// function Emu::NewContext should be used instead. After the creation 
- 	/// of a context, its basic data structures are initialized with Load(),
- 	/// Clone(), or Fork()
- 	Context();
+ 	/// of a work item, its basic data structures are initialized with 
+ 	/// Load(), Clone(), or Fork()
+ 	WorkItem();
 
  	/// Destructor
- 	~Context();
+ 	~WorkItem();
 
- 	/// Load a program on the context. The meaning of each argument is 
+ 	/// Load a program on the workitem. The meaning of each argument is 
  	/// identical to the prototype of comm::Emy::Load()
  	void Load(const std::vector<std::string> &args,
  			const std::vector<std::string> &env = { },
@@ -104,7 +126,7 @@ class Context{
  			const std::string &stdin_file_name = "",
  			const std::string &stdout_file_name = "");
 
- 	/// Run one instruction for the context at the position pointed 
+ 	/// Run one instruction for the workitem at the position pointed 
  	void Execute();
 };
 

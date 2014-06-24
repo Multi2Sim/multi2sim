@@ -23,12 +23,12 @@
 #include <lib/cpp/String.h>
 #include <arch/hsa/asm/BrigInstEntry.h>
 
-#include "Context.h"
+#include "WorkItem.h"
 
 namespace HSA
 {
 
-void Context::LoadBinary()
+void WorkItem::LoadBinary()
 {
 	// Alternative stdin
 	if (!loader->stdin_file_name.empty())
@@ -85,7 +85,7 @@ void Context::LoadBinary()
 
 }
 
-char* Context::findMainFunction()
+char* WorkItem::findMainFunction()
 {
 	// Traverse all the top level directives until the one with
 	char *firstInst = loader->binary->findMainFun();
