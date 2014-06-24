@@ -79,7 +79,7 @@ void WorkItem::LoadBinary()
 
 	loader->binary.reset(new BrigFile(loader->exe));
 	
-	emu->hsa_debug << misc::fmt("Program loaded\n");
+	emu->loader_debug << misc::fmt("Program loaded\n");
 
 	loader->pc = findMainFunction();
 
@@ -93,11 +93,13 @@ char* WorkItem::findMainFunction()
 	if(firstInst)
 	{
 		BrigInstEntry inst(firstInst, loader->binary.get());
-		emu->hsa_debug << inst;
+		std::cout << inst << "\n";
+		emu->loader_debug << inst;
 	}
 	else
 	{
-		misc::panic("Main function not found");
+		emu->loader_debug << misc::fmt("Function (main) not found\n");
+		throw Error("Function (main) not found\n");
 	}
 
 	return firstInst;

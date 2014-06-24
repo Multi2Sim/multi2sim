@@ -32,7 +32,8 @@ namespace HSA
 comm::Arch::SimKind Emu::sim_kind = comm::Arch::SimFunctional;
 
 // Debug file
-std::string Emu::hsa_debug_file;
+std::string Emu::hsa_debug_loader_file;
+std::string Emu::hsa_debug_isa_file;
 
 
 //
@@ -41,7 +42,8 @@ std::string Emu::hsa_debug_file;
 
 
 // Debugger
-misc::Debug Emu::hsa_debug;
+misc::Debug Emu::loader_debug;
+misc::Debug Emu::isa_debug;
 
 // Singleton instance
 std::unique_ptr<Emu> Emu::instance;
@@ -60,10 +62,16 @@ void Emu::RegisterOptions()
 	// Category
 	command_line->setCategory("HSA");
 
-	// Option --hsa-debug <file>
-	command_line->RegisterString("--hsa-debug <file>", hsa_debug_file,
-		"Dump debug information about hsa");
+	// Option --hsa-debug-loader <file>
+	command_line->RegisterString("--hsa-debug-loader <file>", 
+			hsa_debug_loader_file,
+			"Dump debug information about hsa program loader");
 	
+	// Option --hsa-debug-isa <file>
+	command_line->RegisterString("--hsa-debug-isa <file>", 
+			hsa_debug_isa_file,
+			"Dump debug information about hsa isa implementation");
+
 	// Option --hsa-sim <kind>
 	command_line->RegisterEnum("--hsa-sim {functional|detailed} "
 			"(default = functional)",
@@ -74,8 +82,8 @@ void Emu::RegisterOptions()
 
 void Emu::ProcessOptions()
 {
-	hsa_debug.setPath(hsa_debug_file);
-	//std::cout << "hsa_debug path " << hsa_debug_file << "\n";
+	loader_debug.setPath(hsa_debug_loader_file);
+	isa_debug.setPath(hsa_debug_isa_file);
 }
 
 

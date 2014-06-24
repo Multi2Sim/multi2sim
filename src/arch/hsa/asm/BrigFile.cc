@@ -115,13 +115,13 @@ char *BrigFile::findMainFun()
 					(struct BrigDirectiveFunction *)dir.getBuffer();
 			std::string funName = BrigStrEntry::GetStringByOffset(
 					this, dirStr->name);
-			if(funName == "main")
+			if(funName == "&main")
 			{	
 				char *firstInst = codeBuf + dirStr->code;
 				return firstInst;	
 			}
 		}
-		
+		bufPtr = dir.nextTop();
 	}
 	return nullptr;
 }
