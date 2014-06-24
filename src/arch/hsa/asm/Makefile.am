@@ -7,8 +7,6 @@ libasm_a_SOURCES = \
 	Asm.h \
 	Asm.cc \
 	\
-	asm.dat \
-	\
 	BrigDirEntry.cc \
 	BrigDirEntry.h \
 	\
@@ -32,6 +30,8 @@ libasm_a_SOURCES = \
 	\
 	BrigImmed.h \
 	BrigImmed.cc \
+	\
+	Inst.def \
 	\
 	SymbolModifier.cc \
 	SymbolModifier.h
