@@ -152,8 +152,6 @@ void versionCheck(void)
 
 CUresult cuInit(unsigned int Flags)
 {
-	int ret;
-
 	cuda_debug("CUDA driver API '%s'", __func__);
 	cuda_debug("\t(driver) '%s' in: Flags = %u", __func__, Flags);
 
@@ -184,19 +182,7 @@ CUresult cuInit(unsigned int Flags)
 	/* Initialize mutex */
 	pthread_mutex_init(&cuda_mutex, NULL);
 
-	/* Syscall */
-	//ret = syscall(CUDA_SYS_CODE, cuda_call_cuInit);
-	ret = 0;
-	fatal("%s: not implemented", __FUNCTION__);
-
-	/* Check that we are running on Multi2Sim. If a program linked with this
-	 * library is running natively, system call CUDA_SYS_CODE is not
-	 * supported. */
-	if (ret)
-		fatal("native execution not supported.\n%s", cuda_err_native);
-
-	cuda_debug("\t(driver) '%s' out: return = %d", __func__, CUDA_SUCCESS);
-
+	/* Success */
 	return CUDA_SUCCESS;
 }
 

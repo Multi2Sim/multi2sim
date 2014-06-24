@@ -22,6 +22,7 @@
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/bit-map.h>
 #include <lib/util/hash-table.h>
+#include <arch/kepler/asm/Asm.h>
 
 #include "Emu.h"
 #include "Grid.h"
