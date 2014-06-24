@@ -28,10 +28,11 @@ WorkItem::WorkItem()
 
 	pid = emu->getPid();	
 
-	emu->hsa_debug << "WorkItem " << pid << " created\n";
+	emu->loader_debug << "WorkItem " << pid << " created\n";
 }
 
-WorkItem::~WorkItem(){
+WorkItem::~WorkItem()
+{
 	
 }
 
