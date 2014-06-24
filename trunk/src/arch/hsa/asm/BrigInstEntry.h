@@ -35,7 +35,7 @@ enum InstOpcode
 {
 #define DEFINST(_name, _opstr) \
 	Inst_##_name,
-#include "asm.dat"
+#include "Inst.def"
 #undef DEFINST
 	InstOpcodeCount
 };

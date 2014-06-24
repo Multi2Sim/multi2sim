@@ -17,25 +17,25 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "Context.h"
+#include "WorkItem.h"
 
 namespace HSA
 {
 
-Context::Context()
+WorkItem::WorkItem()
 {
 	emu = Emu::getInstance();
 
 	pid = emu->getPid();	
 
-	emu->hsa_debug << "Context " << pid << " created\n";
+	emu->hsa_debug << "WorkItem " << pid << " created\n";
 }
 
-Context::~Context(){
+WorkItem::~WorkItem(){
 	
 }
 
-void Context::Load(const std::vector<std::string> &args,
+void WorkItem::Load(const std::vector<std::string> &args,
 	const std::vector<std::string> &env, 
 	const std::string &cwd,
 	const std::string &stdin_file_name,
@@ -51,7 +51,7 @@ void Context::Load(const std::vector<std::string> &args,
 	LoadBinary();	
 }
 
-void Context::Execute()
+void WorkItem::Execute()
 {
 
 }
