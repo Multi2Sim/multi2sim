@@ -75,6 +75,7 @@ void Emu::RegisterOptions()
 void Emu::ProcessOptions()
 {
 	hsa_debug.setPath(hsa_debug_file);
+	//std::cout << "hsa_debug path " << hsa_debug_file << "\n";
 }
 
 

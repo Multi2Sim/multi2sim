@@ -63,6 +63,9 @@ class Context{
  		// Current working directory
  		std::string cwd;
 
+ 		// The program counter, pointing to the inst in .code section
+ 		char* pc;
+
  		// File name for standard input and output
  		std::string stdin_file_name;
  		std::string stdout_file_name;
@@ -73,6 +76,12 @@ class Context{
  	// last destructed context sharing this variable will automatically free
  	// it.
  	std::shared_ptr<Loader> loader;
+
+ 	// Find the main function of the brig elf.
+ 	// \return
+ 	// 	pointer to the first inst of the main function
+ 	//	or nullptr if main function is not found
+ 	char* findMainFunction();
 
  	// Load Brig ELF binary, as alread decoded in 'loader.binary'
  	void LoadBinary();
@@ -87,7 +96,7 @@ class Context{
  	/// Destructor
  	~Context();
 
- 	/// Load a program on the xontext. The meaning of each argument is 
+ 	/// Load a program on the context. The meaning of each argument is 
  	/// identical to the prototype of comm::Emy::Load()
  	void Load(const std::vector<std::string> &args,
  			const std::vector<std::string> &env = { },
