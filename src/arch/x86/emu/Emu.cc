@@ -181,7 +181,7 @@ Emu::Emu() : comm::Emu("x86")
 	address_space_index = 0;
 }
 
-void Emu::AddContextToList(ContextListType type, Context *context)
+void Emu::AddContextToList(Context::ListType type, Context *context)
 {
 	// Nothing if already present
 	if (context->context_list_present[type])
@@ -195,7 +195,7 @@ void Emu::AddContextToList(ContextListType type, Context *context)
 }
 
 	
-void Emu::RemoveContextFromList(ContextListType type, Context *context)
+void Emu::RemoveContextFromList(Context::ListType type, Context *context)
 {
 	// Nothing if not present
 	if (!context->context_list_present[type])
@@ -208,13 +208,17 @@ void Emu::RemoveContextFromList(ContextListType type, Context *context)
 }
 	
 
-void Emu::UpdateContextInList(ContextListType type, Context *context,
+void Emu::UpdateContextInList(Context::ListType type, Context *context,
 			bool present)
 {
 	if (present && !context->context_list_present[type])
+	{
 		AddContextToList(type, context);
+	}
 	else if (!present && context->context_list_present[type])
+	{
 		RemoveContextFromList(type, context);
+	}
 }
 
 
@@ -242,7 +246,7 @@ Context *Emu::newContext()
 
 	// Set the context in running state. This call will add it automatically
 	// to the emulator list of running contexts.
-	context->setState(ContextRunning);
+	context->setState(Context::StateRunning);
 
 	// Return
 	return context;
@@ -280,8 +284,8 @@ void Emu::LoadProgram(const std::vector<std::string> &args,
 void Emu::freeContext(Context *context)
 {
 	// Remove context from all context lists
-	for (int i = 0; i < ContextListCount; i++)
-		RemoveContextFromList((ContextListType) i, context);
+	for (int i = 0; i < Context::ListCount; i++)
+		RemoveContextFromList((Context::ListType) i, context);
 	
 	// Remove from main context list. This will invoke the context
 	// destructor and free it.
@@ -315,7 +319,7 @@ void Emu::ProcessEvents()
 	// Look at the list of suspended contexts and try to find
 	// one that needs to be waken up.
 	//
-	auto &suspended_context_list = getContextList(ContextListSuspended);
+	auto &suspended_context_list = getContextList(Context::ListSuspended);
 	auto iter_next = suspended_context_list.end();
 	for (auto iter = suspended_context_list.begin();
 			iter != suspended_context_list.end();
@@ -326,9 +330,9 @@ void Emu::ProcessEvents()
 		iter_next = iter;
 		++iter_next;
 		Context *context = *iter;
-		assert(context->getState(ContextSuspended));
-		assert(context->context_list_iter[ContextListSuspended] == iter);
-		assert(context->context_list_present[ContextListSuspended]);
+		assert(context->getState(Context::StateSuspended));
+		assert(context->context_list_iter[Context::ListSuspended] == iter);
+		assert(context->context_list_present[Context::ListSuspended]);
 
 		// Context suspended in a system call using a custom wake up
 		// check call-back function. NOTE: this is a new mechanism. It'd
@@ -337,7 +341,8 @@ void Emu::ProcessEvents()
 		// together with the system call itself, without having
 		// distributed code for the implementation of a system call
 		// (e.g. 'read').
-		if (context->getState(ContextCallback) && context->CanWakeup())
+		if (context->getState(Context::StateCallback) &&
+				context->CanWakeup())
 		{
 			context->Wakeup();
 			continue;
@@ -408,7 +413,7 @@ void Emu::ProcessEvents()
 	// LOOP 3
 	// Process pending signals in running contexts to launch signal handlers
 	//
-	for (Context *context : context_list[ContextListRunning])
+	for (Context *context : context_list[Context::ListRunning])
 		context->CheckSignalHandler();
 	
 	// Unlock
@@ -431,26 +436,21 @@ bool Emu::Run()
 		return true;
 
 	// Run an instruction from every running context. During execution, a
-	// context can remove itself from the running list, so we need to save
-	// the iterator to the next element before executing.
-	auto end = context_list[ContextListRunning].end();
-	for (auto it = context_list[ContextListRunning].begin(); it != end; )
+	// context can remove itself from the running list, so traversing the
+	// running list is not an option.
+	for (auto &context : contexts)
 	{
-		// Save position of next context
-		auto next = it;
-		++next;
+		// Skip if not running
+		if (!context->getState(Context::StateRunning))
+			continue;
 
 		// Run one iteration
-		Context *context = *it;
 		context->Execute();
-
-		// Move to saved next context
-		it = next;
 	}
 
 	// Free finished contexts
-	while (context_list[ContextListFinished].size())
-		freeContext(context_list[ContextListFinished].front());
+	while (context_list[Context::ListFinished].size())
+		freeContext(context_list[Context::ListFinished].front());
 
 	// Process list of suspended contexts
 	ProcessEvents();

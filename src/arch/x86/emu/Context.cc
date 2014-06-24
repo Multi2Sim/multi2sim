@@ -34,30 +34,32 @@ namespace x86
 {
 
 
-misc::StringMap context_state_map =
+const misc::StringMap Context::StateMap =
 {
-	{ "running",      ContextRunning },
-	{ "specmode",     ContextSpecMode },
-	{ "suspended",    ContextSuspended },
-	{ "finished",     ContextFinished },
-	{ "exclusive",    ContextExclusive },
-	{ "locked",       ContextLocked },
-	{ "handler",      ContextHandler },
-	{ "sigsuspend",   ContextSigsuspend },
-	{ "nanosleep",    ContextNanosleep },
-	{ "poll",         ContextPoll },
-	{ "read",         ContextRead },
-	{ "write",        ContextWrite },
-	{ "waitpid",      ContextWaitpid },
-	{ "zombie",       ContextZombie },
-	{ "futex",        ContextFutex },
-	{ "alloc",        ContextAlloc },
-	{ "callback",     ContextCallback },
-	{ "mapped",       ContextMapped }
+	{ "running",      StateRunning },
+	{ "specmode",     StateSpecMode },
+	{ "suspended",    StateSuspended },
+	{ "finished",     StateFinished },
+	{ "exclusive",    StateExclusive },
+	{ "locked",       StateLocked },
+	{ "handler",      StateHandler },
+	{ "sigsuspend",   StateSigsuspend },
+	{ "nanosleep",    StateNanosleep },
+	{ "poll",         StatePoll },
+	{ "read",         StateRead },
+	{ "write",        StateWrite },
+	{ "waitpid",      StateWaitpid },
+	{ "zombie",       StateZombie },
+	{ "futex",        StateFutex },
+	{ "alloc",        StateAlloc },
+	{ "callback",     StateCallback },
+	{ "mapped",       StateMapped }
 };
 
-long context_host_flags;
-unsigned char context_host_fpenv[28];
+
+long Context::host_flags;
+
+unsigned char Context::host_fpenv[28];
 
 
 
@@ -70,45 +72,45 @@ void Context::UpdateState(unsigned state)
 	// If the difference between the old and new state lies in other
 	// states other than 'ContextSpecMode', a reschedule is marked. */
 	unsigned diff = this->state ^ state;
-	if (diff & ~ContextSpecMode)
+	if (diff & ~StateSpecMode)
 		emu->setScheduleSignal();
 	
 	// Update state
 	this->state = state;
-	if (this->state & ContextFinished)
-		this->state = ContextFinished
-				| (state & ContextAlloc)
-				| (state & ContextMapped);
-	if (this->state & ContextZombie)
-		this->state = ContextZombie
-				| (state & ContextAlloc)
-				| (state & ContextMapped);
-	if (!(this->state & ContextSuspended) &&
-			!(this->state & ContextFinished) &&
-			!(this->state & ContextZombie) &&
-			!(this->state & ContextLocked))
-		this->state |= ContextRunning;
+	if (this->state & StateFinished)
+		this->state = StateFinished
+				| (state & StateAlloc)
+				| (state & StateMapped);
+	if (this->state & StateZombie)
+		this->state = StateZombie
+				| (state & StateAlloc)
+				| (state & StateMapped);
+	if (!(this->state & StateSuspended) &&
+			!(this->state & StateFinished) &&
+			!(this->state & StateZombie) &&
+			!(this->state & StateLocked))
+		this->state |= StateRunning;
 	else
-		this->state &= ~ContextRunning;
+		this->state &= ~StateRunning;
 	
 	// Update presence of context in emulator lists depending on its state
-	emu->UpdateContextInList(ContextListRunning, this, this->state & ContextRunning);
-	emu->UpdateContextInList(ContextListZombie, this, this->state & ContextZombie);
-	emu->UpdateContextInList(ContextListFinished, this, this->state & ContextFinished);
-	emu->UpdateContextInList(ContextListSuspended, this, this->state & ContextSuspended);
+	emu->UpdateContextInList(ListRunning, this, this->state & StateRunning);
+	emu->UpdateContextInList(ListZombie, this, this->state & StateZombie);
+	emu->UpdateContextInList(ListFinished, this, this->state & StateFinished);
+	emu->UpdateContextInList(ListSuspended, this, this->state & StateSuspended);
 
 	// Dump new state (ignore ContextSpecMode state, it's too frequent)
-	if (Emu::context_debug && (diff & ~ContextSpecMode))
+	if (Emu::context_debug && (diff & ~StateSpecMode))
 	{
 		Emu::context_debug << misc::fmt(
 				"inst %lld: context %d changed state to %s\n",
 				emu->getInstructions(), pid,
-				context_state_map.MapFlags(this->state).c_str());
+				StateMap.MapFlags(this->state).c_str());
 	}
 
 	// Resume or pause timer depending on whether there are any contexts
 	// currently running.
-	if (emu->getContextList(ContextListRunning).size())
+	if (emu->getContextList(ListRunning).size())
 		emu->StartTimer();
 	else
 		emu->StopTimer();
@@ -124,9 +126,9 @@ int Context::FutexWake(unsigned futex, unsigned count, unsigned bitset)
 	while (count)
 	{
 		wakeup_context = nullptr;
-		for (Context *context : emu->getContextList(ContextListSuspended))
+		for (Context *context : emu->getContextList(ListSuspended))
 		{
-			if (!context->getState(ContextFutex) || context->wakeup_futex != futex)
+			if (!context->getState(StateFutex) || context->wakeup_futex != futex)
 				continue;
 			if (!(context->wakeup_futex_bitset & bitset))
 				continue;
@@ -138,8 +140,8 @@ int Context::FutexWake(unsigned futex, unsigned count, unsigned bitset)
 		if (wakeup_context)
 		{
 			// Wake up context
-			wakeup_context->clearState(ContextFutex);
-			wakeup_context->clearState(ContextSuspended);
+			wakeup_context->clearState(StateFutex);
+			wakeup_context->clearState(StateSuspended);
 			emu->syscall_debug << misc::fmt("  futex 0x%x: thread %d woken up\n",
 					futex, wakeup_context->pid);
 			wakeup_count++;
@@ -338,7 +340,7 @@ Context::Context()
 	str_op_count = 0;
 
 	// Presence in context lists
-	for (int i = 0; i < ContextListCount; i++)
+	for (int i = 0; i < ListCount; i++)
 		context_list_present[i] = false;
 
 	// Micro-instructions
@@ -533,7 +535,7 @@ void Context::HostThreadSuspend()
 	pthread_detach(pthread_self());
 
 	// Suspended in system call 'nanosleep'
-	if (getState(ContextNanosleep))
+	if (getState(StateNanosleep))
 	{
 		// Calculate remaining sleep time in microseconds
 		long long timeout = syscall_nanosleep_wakeup_time > now ?
@@ -543,7 +545,7 @@ void Context::HostThreadSuspend()
 	}
 
 	// Suspended in system call 'read'
-	if (getState(ContextRead))
+	if (getState(StateRead))
 	{
 		// Get file descriptor
 		comm::FileDescriptor *desc = file_table->getFileDescriptor(syscall_read_fd);
@@ -562,7 +564,7 @@ void Context::HostThreadSuspend()
 	}
 
 	// Suspended in system call 'write'
-	if (getState(ContextWrite))
+	if (getState(StateWrite))
 	{
 		// Get file descriptor
 		comm::FileDescriptor *desc = file_table->getFileDescriptor(syscall_write_fd);
@@ -581,7 +583,7 @@ void Context::HostThreadSuspend()
 	}
 
 	// Suspended in system call 'poll'
-	if (getState(ContextPoll))
+	if (getState(StatePoll))
 	{
 		// Get file descriptor
 		comm::FileDescriptor *desc = file_table->getFileDescriptor(syscall_poll_fd);
@@ -639,10 +641,10 @@ void Context::HostThreadSuspendCancel()
 
 
 void Context::Suspend(CanWakeupFn can_wakeup_fn, WakeupFn wakeup_fn,
-		ContextState wakeup_state)
+		State wakeup_state)
 {
 	// Checks
-	assert(!getState(ContextSuspended));
+	assert(!getState(StateSuspended));
 	assert(!this->can_wakeup_fn);
 	assert(!this->wakeup_fn);
 
@@ -652,8 +654,8 @@ void Context::Suspend(CanWakeupFn can_wakeup_fn, WakeupFn wakeup_fn,
 	this->wakeup_state = wakeup_state;
 
 	// Suspend context
-	setState(ContextSuspended);
-	setState(ContextCallback);
+	setState(StateSuspended);
+	setState(StateCallback);
 	setState(wakeup_state);
 	emu->ProcessEventsSchedule();
 }
@@ -662,8 +664,8 @@ void Context::Suspend(CanWakeupFn can_wakeup_fn, WakeupFn wakeup_fn,
 bool Context::CanWakeup()
 {
 	// Checks
-	assert(getState(ContextCallback));
-	assert(getState(ContextSuspended));
+	assert(getState(StateCallback));
+	assert(getState(StateSuspended));
 	assert(this->can_wakeup_fn);
 
 	// Invoke callback
@@ -674,14 +676,14 @@ bool Context::CanWakeup()
 void Context::Wakeup()
 {
 	// Checks
-	assert(getState(ContextCallback));
-	assert(getState(ContextSuspended));
+	assert(getState(StateCallback));
+	assert(getState(StateSuspended));
 	assert(this->wakeup_fn);
 
 	// Wakeup context
 	(this->*wakeup_fn)();
-	clearState(ContextCallback);
-	clearState(ContextSuspended);
+	clearState(StateCallback);
+	clearState(StateSuspended);
 	clearState(wakeup_state);
 
 	// Reset callbacks and free data
@@ -714,7 +716,7 @@ void Context::Execute()
 {
 	// Memory permissions should not be checked if the context is executing in
 	// speculative mode. This will prevent guest segmentation faults to occur.
-	bool spec_mode = getState(ContextSpecMode);
+	bool spec_mode = getState(StateSpecMode);
 	if (spec_mode)
 		memory->setSafe(false);
 	else
@@ -812,7 +814,7 @@ void Context::FinishGroup(int exit_code)
 	}
 
 	// Context already finished
-	if (getState(ContextFinished) || getState(ContextZombie))
+	if (getState(StateFinished) || getState(StateZombie))
 		return;
 
 	// Finish all contexts in the group
@@ -821,9 +823,9 @@ void Context::FinishGroup(int exit_code)
 		if (context->group_parent != this && context.get() != this)
 			continue;
 
-		if (context->getState(ContextZombie))
-			context->setState(ContextFinished);
-		if (context->getState(ContextHandler))
+		if (context->getState(StateZombie))
+			context->setState(StateFinished);
+		if (context->getState(StateHandler))
 			context->ReturnFromSignalHandler();
 		context->HostThreadSuspendCancel();
 		context->HostThreadTimerCancel();
@@ -831,9 +833,9 @@ void Context::FinishGroup(int exit_code)
 		// Child context of 'context' goes to state 'finished'.
 		// Context 'context' goes to state 'zombie' or 'finished' if it has a parent
 		if (context.get() == this)
-			context->setState(context->parent ? ContextZombie : ContextFinished);
+			context->setState(context->parent ? StateZombie : StateFinished);
 		else
-			context->setState(ContextFinished);
+			context->setState(StateFinished);
 		context->exit_code = exit_code;
 	}
 
@@ -845,7 +847,7 @@ void Context::FinishGroup(int exit_code)
 void Context::Finish(int exit_code)
 {
 	// Context already finished
-	if (getState(ContextFinished) || getState(ContextZombie))
+	if (getState(StateFinished) || getState(StateZombie))
 		return;
 
 	// If context is waiting for host events, cancel spawned host threads
@@ -860,8 +862,8 @@ void Context::Finish(int exit_code)
 		if (context->parent == this)
 		{
 			context->parent = nullptr;
-			if (context->getState(ContextZombie))
-				context->setState(ContextFinished);
+			if (context->getState(StateZombie))
+				context->setState(StateFinished);
 		}
 	}
 
@@ -885,11 +887,11 @@ void Context::Finish(int exit_code)
 	ExitRobustList();
 
 	// If we are in a signal handler, stop it.
-	if (getState(ContextHandler))
+	if (getState(StateHandler))
 		ReturnFromSignalHandler();
 
 	// Finish context26
-	setState(parent ? ContextZombie : ContextFinished);
+	setState(parent ? StateZombie : StateFinished);
 	this->exit_code = exit_code;
 	emu->ProcessEventsSchedule();
 }
@@ -897,7 +899,7 @@ void Context::Finish(int exit_code)
 
 Context *Context::getZombie(int pid)
 {
-	for (Context *context : emu->getContextList(ContextListZombie))
+	for (Context *context : emu->getContextList(ListZombie))
 	{
 		if (context->parent != this)
 			continue;

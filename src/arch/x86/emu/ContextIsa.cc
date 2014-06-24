@@ -45,7 +45,7 @@ void Context::IsaError(const char *fmt, ...) const
 	va_start(va, fmt);
 
 	// No error shown on speculative mode
-	if (state & ContextSpecMode)
+	if (state & StateSpecMode)
 		return;
 
 	// Error
@@ -60,7 +60,7 @@ void Context::IsaError(const char *fmt, ...) const
 void Context::MemoryRead(unsigned int address, int size, void *buffer)
 {
 	// Speculative mode read
-	if (getState(ContextSpecMode))
+	if (getState(StateSpecMode))
 	{
 		spec_mem->Read(address, size, (char *) buffer);
 		return;
@@ -74,7 +74,7 @@ void Context::MemoryRead(unsigned int address, int size, void *buffer)
 void Context::MemoryWrite(unsigned int address, int size, void *buffer)
 {
 	// Speculative mode write
-	if (getState(ContextSpecMode))
+	if (getState(StateSpecMode))
 	{
 		spec_mem->Write(address, size, (char *) buffer);
 		return;
