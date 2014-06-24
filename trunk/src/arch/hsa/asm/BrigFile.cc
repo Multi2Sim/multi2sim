@@ -18,6 +18,7 @@
  */
 
 #include "BrigFile.h"
+#include "BrigDirEntry.h"
 
 namespace HSA
 {
@@ -90,6 +91,39 @@ bool BrigFile::isValid() const
 		}
 	}
 	return true;
+}
+
+char *BrigFile::findMainFun()
+{
+	BrigSection *dirSection = this->getBrigSection(BrigSectionDirective);
+	BrigSection *codeSection = this->getBrigSection(BrigSectionDirective);
+	char *codeBuf = (char *)codeSection->getBuffer() + 4;
+	const char *buf = dirSection->getBuffer();
+
+	// skip the header, the size field, of the section
+	char *bufPtr = (char *)buf;
+	bufPtr += 4;
+
+	// Traverse all the 
+	while(bufPtr && bufPtr < buf + dirSection->getSize())
+	{
+		BrigDirEntry dir(bufPtr, this);
+		if(dir.getKind() == BRIG_DIRECTIVE_FUNCTION)
+		{
+			// function declarations
+			struct BrigDirectiveFunction *dirStr = 
+					(struct BrigDirectiveFunction *)dir.getBuffer();
+			std::string funName = BrigStrEntry::GetStringByOffset(
+					this, dirStr->name);
+			if(funName == "main")
+			{	
+				char *firstInst = codeBuf + dirStr->code;
+				return firstInst;	
+			}
+		}
+		
+	}
+	return nullptr;
 }
 
 }// end namespace

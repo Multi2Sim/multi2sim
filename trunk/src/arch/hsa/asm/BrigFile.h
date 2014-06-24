@@ -69,8 +69,12 @@ public:
 	///	Returns \c true if the loaded file is valid
 	bool isValid() const;	
 
-	/// Disassembles the binary file, output to stdout
-	void disassemble();
+	/// Search for the main function 
+	/// \return
+	/// 	Returns the pointer to the first insts in main function or 
+	/// 	nullptr if main function is not found;
+	char *findMainFun();
+
 };
 
 }
