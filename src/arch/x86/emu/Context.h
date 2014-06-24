@@ -25,6 +25,7 @@
 #include <arch/common/CallStack.h>
 #include <lib/cpp/Debug.h>
 #include <lib/cpp/ELFReader.h>
+#include <lib/cpp/String.h>
 #include <memory/Memory.h>
 #include <memory/SpecMem.h>
 
@@ -45,58 +46,17 @@ class Context;
 class Emu;
 
 
-/// Context states
-enum ContextState
-{
-	ContextInvalid      = 0x00000,
-	ContextRunning      = 0x00001,  // it is able to run instructions
-	ContextSpecMode     = 0x00002,  // executing in speculative mode
-	ContextSuspended    = 0x00004,  // suspended in a system call
-	ContextFinished     = 0x00008,  // no more inst to execute
-	ContextExclusive    = 0x00010,  // executing in excl mode
-	ContextLocked       = 0x00020,  // another context is running in excl mode
-	ContextHandler      = 0x00040,  // executing a signal handler
-	ContextSigsuspend   = 0x00080,  // suspended after syscall 'sigsuspend'
-	ContextNanosleep    = 0x00100,  // suspended after syscall 'nanosleep'
-	ContextPoll         = 0x00200,  // 'poll' system call
-	ContextRead         = 0x00400,  // 'read' system call
-	ContextWrite        = 0x00800,  // 'write' system call
-	ContextWaitpid      = 0x01000,  // 'waitpid' system call
-	ContextZombie       = 0x02000,  // zombie context
-	ContextFutex        = 0x04000,  // suspended in a futex
-	ContextAlloc        = 0x08000,  // allocated to a core/thread
-	ContextCallback     = 0x10000,  // suspended after syscall with callback
-	ContextMapped       = 0x20000   // mapped to a core/thread
-};
-
-/// Context list identifiers
-enum ContextListType
-{
-	// No 'Invalid' identifier here
-	ContextListRunning = 0,
-	ContextListSuspended,
-	ContextListZombie,
-	ContextListFinished,
-
-	// Number of context lists
-	ContextListCount
-};
-
-// Saved host statue during emulation
-extern long context_host_flags;
-extern unsigned char context_host_fpenv[28];
-
 // Assembly code used before and after instruction emulation when the host flags
 // are affected by the guest code
 #define __X86_CONTEXT_SAVE_FLAGS__ asm volatile ( \
 	"pushf\n\t" \
 	"pop %0\n\t" \
-	: "=m" (context_host_flags));
+	: "=m" (Context::host_flags));
 
 #define __X86_CONTEXT_RESTORE_FLAGS__ asm volatile ( \
 	"push %0\n\t" \
 	"popf\n\t" \
-	: "=m" (context_host_flags));
+	: "=m" (Context::host_flags));
 
 
 // Assembly code used before and after emulation of floating-point operations
@@ -108,7 +68,7 @@ extern unsigned char context_host_fpenv[28];
 		"fnstenv %1\n\t" \
 		"fnclex\n\t" \
 		"fldcw %2\n\t" \
-		: "=m" (context_host_flags), "=m" (*context_host_fpenv) \
+		: "=m" (Context::host_flags), "=m" (*Context::host_fpenv) \
 		: "m" (fpu_ctrl) \
 	); \
 }
@@ -120,8 +80,8 @@ extern unsigned char context_host_fpenv[28];
 		"popf\n\t" \
 		"fnstcw %1\n\t" \
 		"fldenv %2\n\t" \
-		: "=m" (context_host_flags), "=m" (fpu_ctrl) \
-		: "m" (*context_host_fpenv) \
+		: "=m" (Context::host_flags), "=m" (fpu_ctrl) \
+		: "m" (*Context::host_fpenv) \
 	); \
 	regs.setFpuCtrl(fpu_ctrl); \
 }
@@ -132,6 +92,56 @@ extern unsigned char context_host_fpenv[28];
 /// x86 Context
 class Context
 {
+public:
+
+	/// Context list identifiers
+	enum ListType
+	{
+		// No 'Invalid' identifier here
+		ListRunning,
+		ListSuspended,
+		ListZombie,
+		ListFinished,
+
+		// Number of context lists
+		ListCount
+	};
+
+	/// Context states
+	enum State
+	{
+		StateInvalid      = 0x00000,
+		StateRunning      = 0x00001,  // it is able to run instructions
+		StateSpecMode     = 0x00002,  // executing in speculative mode
+		StateSuspended    = 0x00004,  // suspended in a system call
+		StateFinished     = 0x00008,  // no more inst to execute
+		StateExclusive    = 0x00010,  // executing in excl mode
+		StateLocked       = 0x00020,  // another context is running in excl mode
+		StateHandler      = 0x00040,  // executing a signal handler
+		StateSigsuspend   = 0x00080,  // suspended after syscall 'sigsuspend'
+		StateNanosleep    = 0x00100,  // suspended after syscall 'nanosleep'
+		StatePoll         = 0x00200,  // 'poll' system call
+		StateRead         = 0x00400,  // 'read' system call
+		StateWrite        = 0x00800,  // 'write' system call
+		StateWaitpid      = 0x01000,  // 'waitpid' system call
+		StateZombie       = 0x02000,  // zombie context
+		StateFutex        = 0x04000,  // suspended in a futex
+		StateAlloc        = 0x08000,  // allocated to a core/thread
+		StateCallback     = 0x10000,  // suspended after syscall with callback
+		StateMapped       = 0x20000   // mapped to a core/thread
+	};
+
+	/// String map for State
+	static const misc::StringMap StateMap;
+
+private:
+
+	// Saved host flags during instruction emulation
+	static long host_flags;
+
+	// Saved host floating-point environment during instruction emulation
+	static unsigned char host_fpenv[28];
+
 	// Emulator that it belongs to
 	Emu *emu;
 
@@ -265,7 +275,7 @@ class Context
 	// waken up
 	CanWakeupFn can_wakeup_fn;
 	WakeupFn wakeup_fn;
-	ContextState wakeup_state;
+	State wakeup_state;
 
 	// Suspend a context, using callbacks 'can_wakeup_fn' and 'wakeup_fn'
 	// to check whether the context can wakeup and to wake it up,
@@ -273,7 +283,7 @@ class Context
 	// state added to the context when suspended, and removed when
 	// waken up.
 	void Suspend(CanWakeupFn can_wakeup_fn, WakeupFn wakeup_fn,
-			ContextState wakeup_state);
+			State wakeup_state);
 
 
 	///////////////////////////////////////////////////////////////////////
@@ -756,11 +766,11 @@ public:
 	/// Flag indicating whether this context is present in a certain context
 	/// list of the emulator. This field is exclusively managed by the
 	/// emulator.
-	bool context_list_present[ContextListCount];
+	bool context_list_present[ListCount];
 
 	/// Position of the context in a certain context list. This field is
 	/// exclusively managed by the emulator.
-	std::list<Context *>::iterator context_list_iter[ContextListCount];
+	std::list<Context *>::iterator context_list_iter[ListCount];
 
 	/// Create a context from a command line. To safely create a context,
 	/// function Emu::NewContext() should be used instead. After the
@@ -802,14 +812,13 @@ public:
 	Context *getZombie(int pid);
 
 	/// Return \c true if flag \a state is part of the context state
-	bool getState(ContextState state) const { return this->state & state; }
+	bool getState(State state) const { return this->state & state; }
 
 	/// Set flag \a state in the context state
-	void setState(ContextState state) { UpdateState(this->state | state); }
+	void setState(State state) { UpdateState(this->state | state); }
 
 	/// Clear flag \a state in the context state
-	void clearState(ContextState state) { UpdateState(this->state
-			& ~state); }
+	void clearState(State state) { UpdateState(this->state & ~state); }
 
 	// Finish a context. If the context has no parent, its state will be
 	// set to ContextFinished. If it has, its state is set to

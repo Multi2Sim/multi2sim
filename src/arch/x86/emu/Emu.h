@@ -77,7 +77,7 @@ class Emu : public comm::Emu
 
 	// Secondary lists of contexts. Contexts in different states
 	// are added/removed from this lists as their state gets updated.
-	std::list<Context *> context_list[ContextListCount];
+	std::list<Context *> context_list[Context::ListCount];
 
 	// See setScheduleSignal()
 	bool schedule_signal;
@@ -135,21 +135,23 @@ public:
 			const std::string &stdout_file_name = "");
 
 	/// Add a context to a context list if it is not present already
-	void AddContextToList(ContextListType type, Context *context);
+	void AddContextToList(Context::ListType type, Context *context);
 
 	/// Remove a context from a context list if present
-	void RemoveContextFromList(ContextListType type, Context *context);
+	void RemoveContextFromList(Context::ListType type, Context *context);
 
 	/// Update the presence of a context in a list depending on the value
 	/// passed in argument \a present. If \c true, the context will be added
 	/// to the list (if not present already. If \c false, it will be removed
 	/// (if still present).
-	void UpdateContextInList(ContextListType type, Context *context,
+	void UpdateContextInList(Context::ListType type, Context *context,
 			bool present);
 
 	/// Return a constant reference to a list of contexts
-	const std::list<Context *> &getContextList(ContextListType type) const {
-			return context_list[type]; }
+	const std::list<Context *> &getContextList(Context::ListType type) const
+	{
+		return context_list[type];
+	}
 
 	/// Signals a call to the scheduler Timing::Schedule() in the
 	/// beginning of next cycle. This flag is set any time a context changes
