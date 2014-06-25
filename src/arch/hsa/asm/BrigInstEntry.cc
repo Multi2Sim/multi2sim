@@ -18,12 +18,13 @@
  */
 
 #include <sstream>
+
 #include "BrigInstEntry.h"
 #include "BrigOperandEntry.h"
 #include "Asm.h"
 
-namespace HSA{
-
+namespace HSA
+{
 
 const char *BrigInstEntry::opcode2str(InstOpcode opcode) const
 {
@@ -31,6 +32,7 @@ const char *BrigInstEntry::opcode2str(InstOpcode opcode) const
 	const struct InstInfo *inst_info = as->getInstInfo();
 	return inst_info[opcode].fmt_str;
 }
+
 
 template <typename BrigInst>
 const char *BrigInstEntry::rounding2str(BrigInst* base) const
@@ -42,6 +44,7 @@ const char *BrigInstEntry::rounding2str(BrigInst* base) const
 	//FIXME compare rouding with deaultRounding	
 	return BrigInstEntry::rounding_to_str_map.MapValue(rounding);
 }
+
 
 misc::StringMap BrigInstEntry::rounding_to_str_map = 
 {
@@ -60,6 +63,7 @@ misc::StringMap BrigInstEntry::rounding_to_str_map =
 	{"downi_sat", 12}
 };
 
+
 const char *BrigInstEntry::modifier2str(unsigned short modifier) const
 {
 	unsigned short ftz = modifier & 16;
@@ -69,6 +73,7 @@ const char *BrigInstEntry::modifier2str(unsigned short modifier) const
 	}
 	return "";
 }
+
 
 misc::StringMap BrigInstEntry::pack_to_str_map = 
 {
@@ -87,10 +92,12 @@ misc::StringMap BrigInstEntry::pack_to_str_map =
 	{"p_sat", 12}
 };
 
+
 const char *BrigInstEntry::pack2str(unsigned char pack) const
 {
 	return BrigInstEntry::pack_to_str_map.MapValue(pack);
 }
+
 
 misc::StringMap BrigInstEntry::v_to_str_map = 
 {
@@ -98,6 +105,7 @@ misc::StringMap BrigInstEntry::v_to_str_map =
 	{"v3", 3},
 	{"v4", 4}
 };
+
 
 const char *BrigInstEntry::operandV2str(char *o) const
 {
@@ -121,6 +129,7 @@ const char *BrigInstEntry::operandV2str(char *o) const
 	
 }
 
+
 const char *BrigInstEntry::v2str(char* instPtr) const
 {
 	struct BrigInstBase *inst = (struct BrigInstBase *)instPtr;
@@ -142,6 +151,7 @@ const char *BrigInstEntry::v2str(char* instPtr) const
 	}
 	return "";
 }
+
 
 misc::StringMap BrigInstEntry::width_to_str_map = 
 {
@@ -182,6 +192,7 @@ misc::StringMap BrigInstEntry::width_to_str_map =
 	{"width(all)", 34}
 };
 
+
 template<class T>
 int BrigInstEntry::getDefaultWidth(T *inst) const
 {
@@ -212,6 +223,7 @@ int BrigInstEntry::getDefaultWidth(T *inst) const
 	return 1;
 }
 
+
 template<class T>
 const char *BrigInstEntry::width2str(T *inst) const
 {
@@ -221,6 +233,7 @@ const char *BrigInstEntry::width2str(T *inst) const
 	}
 	return width_to_str_map.MapValue(inst->width);	
 }
+
 
 misc::StringMap BrigInstEntry::comp_op_to_str_map = 
 {
@@ -254,10 +267,12 @@ misc::StringMap BrigInstEntry::comp_op_to_str_map =
 	{"sgtu", 27}
 };
 
+
 const char *BrigInstEntry::cmpOp2str(unsigned char op) const
 {
 	return comp_op_to_str_map.MapValue(op);
 }
+
 
 const char *BrigInstEntry::equiv2str(unsigned char val) const
 {
@@ -266,12 +281,14 @@ const char *BrigInstEntry::equiv2str(unsigned char val) const
 	return s.str().c_str();
 }
 
+
 const char *BrigInstEntry::aligned2str(unsigned char modifier) const
 {
 	unsigned char aligned = modifier & BRIG_MEMORY_ALIGNED;
 	if(aligned) return "aligned";
 	return "";
 }
+
 
 misc::StringMap BrigInstEntry::atomic_op_to_str_map = 
 {
@@ -288,10 +305,12 @@ misc::StringMap BrigInstEntry::atomic_op_to_str_map =
 	{"sub", 10},
 };
 
+
 const char *BrigInstEntry::atomicOp2str(unsigned atomicOperation) const
 {
 	return atomic_op_to_str_map.MapValue(atomicOperation);
 }
+
 
 misc::StringMap BrigInstEntry::image_geo_to_str_map =
 {
@@ -303,10 +322,12 @@ misc::StringMap BrigInstEntry::image_geo_to_str_map =
 	{"2da", 5}
 };
 
+
 const char *BrigInstEntry::imageGeo2str(unsigned geometry) const
 {
 	return image_geo_to_str_map.MapValue(geometry);
 }
+
 
 misc::StringMap BrigInstEntry::mem_fence_to_str_map = 
 {
@@ -317,6 +338,7 @@ misc::StringMap BrigInstEntry::mem_fence_to_str_map =
 	{"fpartial", 4},
 	{"fpartialboth", 5}
 };
+
 
 template<typename T>
 int BrigInstEntry::getDefaultMemFence(T *inst) const
@@ -330,6 +352,7 @@ int BrigInstEntry::getDefaultMemFence(T *inst) const
 	return 0;
 }
 
+
 template<typename T>
 const char *BrigInstEntry::memFence2str(T *inst) const
 {
@@ -339,6 +362,8 @@ const char *BrigInstEntry::memFence2str(T *inst) const
 	}
 	return mem_fence_to_str_map.MapValue(inst->memoryFence);
 }
+
+
 bool BrigInstEntry::hasType() const
 {
 	struct BrigInstBase *inst = (struct BrigInstBase *)base;
@@ -369,17 +394,20 @@ bool BrigInstEntry::hasType() const
 	}
 }
 
+
 char *BrigInstEntry::getOperand(int i) const
 {
 	struct BrigInstBase *inst = (struct BrigInstBase *)base;
-	return BrigOperandEntry::GetOperandBufferByOffset(
-			file, inst->operands[i]
-		);
+	return BrigOperandEntry::GetOperandBufferByOffset(file,
+			inst->operands[i]);
 }
+
 
 void BrigInstEntry::dumpCallOperands(std::ostream &os = std::cout) const
 {
 	struct BrigInstBase *inst = (struct BrigInstBase *)base;
+
+	// With call insts, dump operand 1 first, dump operand 0 then
 	os << "\t";
 	BrigOperandEntry op1(
 		getOperand(1), file,
@@ -392,6 +420,8 @@ void BrigInstEntry::dumpCallOperands(std::ostream &os = std::cout) const
 		this, 0
 	);
 	op0.Dump(os);
+
+	// Dump other functions
 	for(int i=2; i<5; i++)
 	{
 		if(inst->operands[i] == 0) return;
@@ -403,6 +433,7 @@ void BrigInstEntry::dumpCallOperands(std::ostream &os = std::cout) const
 		op.Dump(os);
 	}	
 }
+
 
 void BrigInstEntry::dumpOperands(std::ostream &os = std::cout) const
 {
@@ -418,11 +449,13 @@ void BrigInstEntry::dumpOperands(std::ostream &os = std::cout) const
 	}
 }
 
+
 BrigInstEntry::BrigInstEntry(char *buf, BrigFile *file)
 	:BrigEntry(buf, file)
 {
 	//this->DebugInst();	
 }
+
 
 int BrigInstEntry::getKind() const
 {
@@ -430,17 +463,20 @@ int BrigInstEntry::getKind() const
 	return inst->kind;
 }
 
+
 int BrigInstEntry::getOpcode() const
 {
 	struct BrigInstBase *inst = (struct BrigInstBase *)base;
 	return inst->opcode;
 }
 
+
 unsigned short BrigInstEntry::getType() const
 {
 	struct BrigInstBase *inst = (struct BrigInstBase *)base;
 	return inst->type;
 }
+
 
 BrigInstEntry::DumpInstFn BrigInstEntry::dump_inst_fn[] = 
 {
@@ -461,10 +497,12 @@ BrigInstEntry::DumpInstFn BrigInstEntry::dump_inst_fn[] =
 	&BrigInstEntry::DumpInstSourceType
 };
 
+
 void BrigInstEntry::DumpInstNone(std::ostream &os = std::cout) const
 {
 	this->DumpInstUnsupported("None", os);
 }
+
 
 void BrigInstEntry::DumpInstBasic(std::ostream &os = std::cout) const
 {
@@ -474,6 +512,7 @@ void BrigInstEntry::DumpInstBasic(std::ostream &os = std::cout) const
 	this->dumpOperands(os);
 	os << ";\n";
 }
+
 
 void BrigInstEntry::DumpInstAtomic(std::ostream &os = std::cout) const
 {
@@ -488,18 +527,20 @@ void BrigInstEntry::DumpInstAtomic(std::ostream &os = std::cout) const
 	os << ";\n";
 }
 
+
 void BrigInstEntry::DumpInstAtomicImage(std::ostream &os = std::cout) const
 {
 	struct BrigInstAtomicImage *inst = (struct BrigInstAtomicImage *)base;
 	os << this->opcode2str((InstOpcode)inst->opcode);
-	dumpUnderscore(atomicOp2str(inst->atomicOperation));
-	dumpUnderscore(imageGeo2str(inst->geometry));
-	dumpUnderscore(type2str(inst->type));
-	dumpUnderscore(type2str(inst->imageType));
-	dumpUnderscore(type2str(inst->coordType));
+	dumpUnderscore(atomicOp2str(inst->atomicOperation), os);
+	dumpUnderscore(imageGeo2str(inst->geometry), os);
+	dumpUnderscore(type2str(inst->type), os);
+	dumpUnderscore(type2str(inst->imageType), os);
+	dumpUnderscore(type2str(inst->coordType), os);
 	this->dumpOperands(os);
 	os << ";\n";
 }
+
 
 void BrigInstEntry::DumpInstCvt(std::ostream &os = std::cout) const
 {
@@ -513,6 +554,7 @@ void BrigInstEntry::DumpInstCvt(std::ostream &os = std::cout) const
 	os << ";\n";
 }
 
+
 void BrigInstEntry::DumpInstBar(std::ostream &os = std::cout) const
 {
 	struct BrigInstBar *inst = (struct BrigInstBar *)base;
@@ -522,6 +564,7 @@ void BrigInstEntry::DumpInstBar(std::ostream &os = std::cout) const
 	this->dumpOperands(os);
 	os << ";\n";
 }
+
 
 void BrigInstEntry::DumpInstBr(std::ostream &os = std::cout) const
 {
@@ -542,6 +585,7 @@ void BrigInstEntry::DumpInstBr(std::ostream &os = std::cout) const
 	os << ";\n";
 }
 
+
 void BrigInstEntry::DumpInstCmp(std::ostream &os = std::cout) const
 {
 	struct BrigInstCmp *inst = (struct BrigInstCmp *)base;
@@ -555,6 +599,7 @@ void BrigInstEntry::DumpInstCmp(std::ostream &os = std::cout) const
 	this->dumpOperands(os);
 	os << ";\n";
 }
+
 
 void BrigInstEntry::DumpInstFbar(std::ostream &os = std::cout) const
 {
@@ -571,18 +616,20 @@ void BrigInstEntry::DumpInstFbar(std::ostream &os = std::cout) const
 	os << ";\n";
 }
 
+
 void BrigInstEntry::DumpInstImage(std::ostream &os = std::cout) const
 {
 	struct BrigInstImage *inst = (struct BrigInstImage *)base;
 	os << this->opcode2str((InstOpcode)inst->opcode);
-	dumpUnderscore(v2str(base));
-	dumpUnderscore(imageGeo2str(inst->geometry));
-	dumpUnderscore(type2str(inst->type));
-	dumpUnderscore(type2str(inst->imageType));
-	dumpUnderscore(type2str(inst->coordType));
+	dumpUnderscore(v2str(base), os);
+	dumpUnderscore(imageGeo2str(inst->geometry), os);
+	dumpUnderscore(type2str(inst->type), os);
+	dumpUnderscore(type2str(inst->imageType), os);
+	dumpUnderscore(type2str(inst->coordType), os);
 	this->dumpOperands(os);
 	os << ";\n";
 }
+
 
 void BrigInstEntry::DumpInstMem(std::ostream &os = std::cout) const
 {
@@ -599,6 +646,7 @@ void BrigInstEntry::DumpInstMem(std::ostream &os = std::cout) const
 	os << ";\n";
 }
 
+
 void BrigInstEntry::DumpInstAddr(std::ostream &os = std::cout) const
 {
 	struct BrigInstAddr *inst = (struct BrigInstAddr *)base;
@@ -608,6 +656,7 @@ void BrigInstEntry::DumpInstAddr(std::ostream &os = std::cout) const
 	this->dumpOperands(os);
 	os << ";\n";
 }
+
 
 void BrigInstEntry::DumpInstMod(std::ostream &os = std::cout) const
 {
@@ -621,6 +670,7 @@ void BrigInstEntry::DumpInstMod(std::ostream &os = std::cout) const
 	os << ";\n";
 }
 
+
 void BrigInstEntry::DumpInstSeg(std::ostream &os = std::cout) const
 {
 	struct BrigInstSeg *inst = (struct BrigInstSeg *)base;
@@ -631,6 +681,7 @@ void BrigInstEntry::DumpInstSeg(std::ostream &os = std::cout) const
 	this->dumpOperands(os);
 	os << ";\n";
 }
+
 
 void BrigInstEntry::DumpInstSourceType(std::ostream &os = std::cout) const
 {
@@ -644,16 +695,16 @@ void BrigInstEntry::DumpInstSourceType(std::ostream &os = std::cout) const
 	os << ";\n";
 }
 
-void BrigInstEntry::DumpInstUnsupported( 
-		const char *kind, 
-		std::ostream &os = std::cout
-	) const
+
+void BrigInstEntry::DumpInstUnsupported(const char *kind,
+		std::ostream &os = std::cout) const
 {
 	struct BrigInstBase *inst = (struct BrigInstBase *)base;
 	os << "<unsupported kind:" << kind 
 		<< "(" << inst->kind << ") " 
 		<< "opcode:" << inst->opcode << " >;\n";
 }
+
 
 void BrigInstEntry::DebugInst(){
 	std::cout << "Inst kind: " << this->getKind() << "\n";

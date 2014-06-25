@@ -20,11 +20,12 @@
 #ifndef HSA_ASM_BRIGIMMED_H
 #define HSA_ASM_BRIGIMMED_H
 
-#include "lib/cpp/Misc.h"
-#include "lib/cpp/String.h"
 #include <map>
-#include "BrigEntry.h"
 
+#include <lib/cpp/Misc.h>
+#include <lib/cpp/String.h>
+
+#include "BrigEntry.h"
 
 namespace HSA
 {
@@ -39,6 +40,7 @@ class BrigImmed
 	int type;
 
 public:
+
 	/// Constructor
 	BrigImmed(unsigned char* ptr, int type)
 	{
@@ -71,10 +73,8 @@ public:
 	}
 
 	/// Operator \c << invoking function Dump() on an output stream.
-	friend std::ostream &operator<<(
-			std::ostream &os, 
-			const BrigImmed &immed
-		) 
+	friend std::ostream &operator<<(std::ostream &os,
+			const BrigImmed &immed)
 	{
 		immed.Dump(os);
 		return os;
@@ -130,6 +130,6 @@ public:
 	void dumpImmedUnsupported(std::ostream &os) const;
 };
 
-}
+}  // namespace HSA
 
 #endif

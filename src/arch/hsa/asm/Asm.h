@@ -25,11 +25,10 @@
 
 #include "BrigInstEntry.h"
 
-
 namespace HSA
 {
 
-/// HSA dissassembler singleton
+/// HSA disassembler singleton
 class Asm : public comm::Asm
 {
 	// File to disassemble
@@ -41,7 +40,8 @@ protected:
 	struct InstInfo inst_info[InstOpcodeCount];
 
 	// Fill in the inst info with the data from Inst.def
-	void InitTable(InstOpcode opcode, const char *name, const char *fmt_str);
+	void InitTable(InstOpcode opcode,
+			const char *name, const char *fmt_str);
 
 	// Instance of the singleton
 	static std::unique_ptr<Asm> instance;
@@ -87,6 +87,6 @@ public:
 };
 
 
-} // namespace HSA
+}  // namespace HSA
 
 #endif

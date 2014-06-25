@@ -21,8 +21,9 @@
 #define HSA_ASM_BRIGENTRY_H
 
 #include <cstring>
-#include "lib/cpp/Misc.h"
-#include "lib/cpp/String.h"
+
+#include <lib/cpp/Misc.h>
+#include <lib/cpp/String.h>
 
 #include "BrigFile.h"
 #include "BrigDef.h"
@@ -34,7 +35,9 @@ namespace HSA
 /// Pure virtual class representing a brig entry
 class BrigEntry
 {
-protected: 
+
+protected:
+
 	// Pointer to the first byte of the entry
 	char *base;
 
@@ -74,15 +77,16 @@ protected:
 	static void dumpSymDecl(const BrigEntry *dir, std::ostream &os);
 	
 	// Dump Argument list
-	// Returns a pointer to the next directive to be processed
+	// \return
+	// 	pointer to the next directive to be processed
 	static char *dumpArgs(char *arg, 
 			unsigned short argCount,
 			BrigFile *file,
 			std::ostream &os);
 
 	// Dump _str if str is not empty, otherwise do nothing
-	void dumpUnderscore(const std::string &str, 
-			std::ostream &os = std::cout) const
+	static void dumpUnderscore(const std::string &str,
+			std::ostream &os = std::cout)
 	{
 		if(str.length())
 		{
@@ -100,10 +104,20 @@ protected:
 			bool isDecl, 
 			std::ostream &os) const;
 
+	// Dump nested directives inside a class. It will dump all the directive
+	// should be dumped before the current code offset
+	// \param dirPtr
+	//	Pointer to the directive to be dumped next
+	// \return
+	// 	Pointer to the next directive to be dumped
+	char *DumpRelatedDirectives(char *dirPtr,
+			unsigned int offset, std::ostream &os) const;
+
 	// Dump the tab for indentation
 	static void dumpIndent(std::ostream &os);
 	
 public:
+
 	/// Constructor
 	BrigEntry(char *buf, BrigFile *file);
 
@@ -125,10 +139,10 @@ public:
 	virtual void Dump(std::ostream &os) const;
 
 	/// Returns the pointer to the next entry
-	/// FIX: This function is not safe since it may return a pointer out of current Brig Section
 	virtual char *next() const{return this->base + this->getSize();}
 
 };
-}
+
+}  // namespace HSA
 
 #endif

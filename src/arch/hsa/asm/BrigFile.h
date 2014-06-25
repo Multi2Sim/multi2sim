@@ -38,6 +38,7 @@ class BrigSection;
 /// interfaces to the other parts of the Multi2sim.
 class BrigFile
 {
+
 protected:
 
 	// The elf file, read by ELFReader
@@ -51,6 +52,7 @@ protected:
 	std::vector<std::unique_ptr<BrigSection>> brig_sections;
 
 public:
+
 	/// Loads a BRIG File from the file system, create sections
 	BrigFile(const std::string &path);
 
