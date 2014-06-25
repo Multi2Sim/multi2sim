@@ -17,9 +17,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "Context.h"
+#include <stdexcept>
 
 #include <lib/cpp/Misc.h>
+
+#include "Context.h"
 
 
 namespace x86
@@ -33,12 +35,6 @@ namespace x86
 #define panic __COMPILATION_ERROR__
 #define warning __COMPILATION_ERROR__
 #define assert __COMPILATION_ERROR__
-
-
-#define __UNIMPLEMENTED__ misc::fatal("%s: unimplemented instruction", \
-		__FUNCTION__);
-
-
 
 
 void Context::StartRepInst()
@@ -249,7 +245,7 @@ void Context::ExecuteInst_insb()
 {
 	newUInst_insb(regs.getEsi(), regs.getEdi());
 	ExecuteStringInst_insb();
-	IsaError("%s: not implemented", __FUNCTION__);
+	throw std::logic_error("Unimplemented instruction");
 }
 
 
@@ -275,7 +271,7 @@ void Context::ExecuteInst_insd()
 {
 	newUInst_insd(regs.getEsi(), regs.getEdi());
 	ExecuteStringInst_insd();
-	IsaError("%s: not implemented", __FUNCTION__);
+	throw std::logic_error("Unimplemented instruction");
 }
 
 
@@ -301,7 +297,7 @@ void Context::ExecuteInst_lodsb()
 {
 	newUInst_lodsb(regs.getEsi(), regs.getEdi());
 	ExecuteStringInst_lodsb();
-	IsaError("%s: not implemented", __FUNCTION__);
+	throw std::logic_error("Unimplemented instruction");
 }
 
 
@@ -327,7 +323,7 @@ void Context::ExecuteInst_lodsd()
 {
 	newUInst_lodsd(regs.getEsi(), regs.getEdi());
 	ExecuteStringInst_lodsd();
-	IsaError("%s: not implemented", __FUNCTION__);
+	throw std::logic_error("Unimplemented instruction");
 }
 
 
@@ -459,7 +455,7 @@ void Context::ExecuteInst_outsb()
 {
 	newUInst_outsb(regs.getEsi(), regs.getEdi());
 	ExecuteStringInst_outsb();
-	IsaError("%s: not implemented", __FUNCTION__);
+	throw std::logic_error("Unimplemented instruction");
 }
 
 
@@ -485,7 +481,7 @@ void Context::ExecuteInst_outsd()
 {
 	newUInst_outsd(regs.getEsi(), regs.getEdi());
 	ExecuteStringInst_outsd();
-	IsaError("%s: not implemented", __FUNCTION__);
+	throw std::logic_error("Unimplemented instruction");
 }
 
 

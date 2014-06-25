@@ -521,10 +521,6 @@ private:
 	// Table of functions
 	static ExecuteInstFn execute_inst_fn[InstOpcodeCount];
 
-	// Fatal error message during instruction emulation, shown only while
-	// in non-speculative mode.
-	void IsaError(const char *fmt, ...) const;
-
 	// Safe memory accesses, based on the current speculative mode
 	void MemoryRead(unsigned int address, int size, void *buffer);
 	void MemoryWrite(unsigned int address, int size, void *buffer);

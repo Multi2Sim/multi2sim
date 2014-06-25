@@ -37,9 +37,10 @@ class Error : public misc::Error
 public:
 
 	/// Constructor
-	Error(const std::string &message) :
-			misc::Error("Kepler driver", message)
+	Error(const std::string &message) : misc::Error(message)
 	{
+		// Add module prefix
+		AppendPrefix("Kepler driver");
 	}
 };
 

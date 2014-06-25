@@ -49,8 +49,11 @@ public:
 	/// \param error
 	///	Error string
 	Error(const std::string &path, const std::string &message) :
-			misc::Error("ELF Reader", path + ": " + message)
+			misc::Error(message)
 	{
+		// Add module prefix
+		AppendPrefix("ELF Reader");
+		AppendPrefix(path);
 	}
 };
 

@@ -17,9 +17,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "Context.h"
+#include <stdexcept>
 
 #include <lib/cpp/Misc.h>
+
+#include "Context.h"
 
 
 namespace x86
@@ -34,16 +36,13 @@ namespace x86
 #define warning __COMPILATION_ERROR__
 #define assert __COMPILATION_ERROR__
 
-
-#define __UNIMPLEMENTED__ IsaError("%s: unimplemented instruction", \
-		__FUNCTION__);
-
-
+#define __UNIMPLEMENTED__ throw std::logic_error("Unimplemented instruction");
 
 void Context::ExecuteInst_addps_xmm_xmmm128()
 {
 	__UNIMPLEMENTED__
 }
+
 void Context::ExecuteInst_addss_xmm_xmmm32()
 {
 	__UNIMPLEMENTED__

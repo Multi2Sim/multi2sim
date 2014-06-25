@@ -26,6 +26,7 @@
 #include <arch/common/Emu.h>
 #include <lib/cpp/CommandLine.h>
 #include <lib/cpp/Debug.h>
+#include <lib/cpp/Error.h>
 
 #include "Context.h"
 
@@ -35,6 +36,19 @@ namespace x86
 
 class Asm;
 class Context;
+
+/// x86 exception
+class Error : public misc::Error
+{
+public:
+
+	/// Constructor
+	Error(const std::string &message) : misc::Error(message)
+	{
+		/// Add module prefix
+		AppendPrefix("x86");
+	}
+};
 
 
 /// x86 emulator
