@@ -21,6 +21,7 @@
 #define HSA_ASM_BRIGENTRY_H
 
 #include <cstring>
+#include <stdexcept>
 
 #include <lib/cpp/Misc.h>
 #include <lib/cpp/String.h>
