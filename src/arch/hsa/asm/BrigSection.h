@@ -20,21 +20,23 @@
 #ifndef HSA_ASM_BRIGSECTION_H
 #define HSA_ASM_BRIGSECTION_H
  
+#include <lib/cpp/ELFReader.h>
+#include <lib/cpp/Misc.h>
+
 #include "BrigFile.h"
-#include "lib/cpp/ELFReader.h"
-#include "lib/cpp/Misc.h"
 #include "BrigDef.h"
 
-namespace HSA{
+namespace HSA
+{
 
 class BrigFile;
-
-
 
 /// This class represents a section in a BRIG file. 
 class BrigSection
 {
+
 protected:
+
 	// The file in which this section is contained
 	BrigFile *file;
 
@@ -45,6 +47,7 @@ protected:
 	ELFReader::Section *elf_section;
 
 public:
+
 	/// Creates the BRIG section, set the type and read in buffer
 	BrigSection(ELFReader::Section *elfSection);
 
@@ -67,6 +70,8 @@ public:
 	void dumpSectionHex(std::ostream &os) const;
 
 };
-}
+
+}  // namespace HSA
 
 #endif
+

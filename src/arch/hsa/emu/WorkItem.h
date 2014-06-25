@@ -32,6 +32,7 @@ class Emu;
 
 /// HSA WorkItem
 class WorkItem{
+
  	// Emulator that is belongs to 
  	Emu *emu;
 
@@ -40,6 +41,9 @@ class WorkItem{
 
 	// File descriptor table, shared by workitems
 	std::shared_ptr<comm::FileTable> file_table;
+
+
+
 
  	///
  	/// Functions and data stuctures related to the program loader
@@ -86,6 +90,9 @@ class WorkItem{
  	// Load Brig ELF binary, as alread decoded in 'loader.binary'
  	void LoadBinary();
 
+
+
+
  	//
  	// Functions related with the insts of HSA assembly, implemented in
  	// hsaIsa.cc
@@ -109,6 +116,7 @@ class WorkItem{
  	static ExecuteInstFn execute_inst_fn[InstOpcodeCount + 1];
 
  public:
+
  	/// Create a work item from a command line. To safely create a  
  	/// function Emu::NewContext should be used instead. After the creation 
  	/// of a work item, its basic data structures are initialized with 
@@ -128,8 +136,10 @@ class WorkItem{
 
  	/// Run one instruction for the workitem at the position pointed 
  	void Execute();
+
 };
 
-}// namespace HSA
+}  // namespace HSA
 
  #endif
+

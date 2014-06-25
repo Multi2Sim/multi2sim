@@ -30,31 +30,31 @@ BrigSection::BrigSection(ELFReader::Section *elfSection)
 	std::string sectionName = elfSection->getName();	
 	
 	//Determine section type according to its name
-	if(sectionName.compare(".strtab") == 0)
+	if (sectionName.compare(".strtab") == 0)
 	{
 		this->type = BrigSectionString; 
 	}
-	else if(sectionName.compare(".directives") == 0)
+	else if (sectionName.compare(".directives") == 0)
 	{
 		this->type = BrigSectionDirective;
 	}
-	else if(sectionName.compare(".operands") == 0)
+	else if (sectionName.compare(".operands") == 0)
 	{
 		this->type = BrigSectionOperand;
 	}
-	else if(sectionName.compare(".code") == 0)
+	else if (sectionName.compare(".code") == 0)
 	{
 		this->type = BrigSectionCode;
 	}
-	else if(sectionName.compare(".debug") == 0)
+	else if (sectionName.compare(".debug") == 0)
 	{
 		this->type = BrigSectionDebug;
 	}
-	else if(sectionName.compare(".shstrtab") == 0)
+	else if (sectionName.compare(".shstrtab") == 0)
 	{
 		this->type = BrigSectionShstrtab;
 	}
-	else if(sectionName.compare("") == 0)
+	else if (sectionName.compare("") == 0)
 	{
 		this->type = BrigSectionUnknown;
 	}
@@ -65,9 +65,11 @@ BrigSection::BrigSection(ELFReader::Section *elfSection)
 	}
 }
 
+
 BrigSection::~BrigSection()
 {
 }
+
 
 void BrigSection::dumpSectionHex(std::ostream &os = std::cout) const
 {
@@ -75,14 +77,14 @@ void BrigSection::dumpSectionHex(std::ostream &os = std::cout) const
 			this->getName().c_str());
 	
 	const unsigned char *buf = (const unsigned char *)this->getBuffer();
-	for(unsigned int i=0; i<this->getSize(); i++)
+	for (unsigned int i=0; i<this->getSize(); i++)
 	{
 		os << misc::fmt("%02x", buf[i]);
-		if((i + 1) % 4 == 0)
+		if ((i + 1) % 4 == 0)
 		{
 			os << " ";
 		}
-		if((i + 1) % 16 == 0)
+		if ((i + 1) % 16 == 0)
 		{
 			os << "\n";
 		}
@@ -90,4 +92,5 @@ void BrigSection::dumpSectionHex(std::ostream &os = std::cout) const
 	os << "\n";
 }
 
-}
+}  // namespace HSA
+

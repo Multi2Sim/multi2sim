@@ -27,10 +27,14 @@ namespace HSA
 /// Represents and encapsulates the symbol modifier
 class SymbolModifier
 {
+
 protected:
+
 	// The symbol modifier byte
 	unsigned char byte;
+
 public:
+
 	/// Constructor
 	SymbolModifier(unsigned char byte);
 
@@ -54,8 +58,10 @@ public:
 
 	/// Returns true if it is declaration
 	bool isDeclaration() const;
+
 };
 
-} // end namespace HSA
+}  // namespace HSA
 
 #endif
+
