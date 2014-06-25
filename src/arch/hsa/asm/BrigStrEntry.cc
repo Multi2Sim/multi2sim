@@ -19,12 +19,14 @@
 
 #include "BrigStrEntry.h"
 
-namespace HSA{
+namespace HSA
+{
 
 BrigStrEntry::BrigStrEntry(char *buf, BrigFile *file)
 	: BrigEntry(buf, file)
 {
 }
+
 
 unsigned int BrigStrEntry::getByteCount() const
 {
@@ -32,22 +34,25 @@ unsigned int BrigStrEntry::getByteCount() const
 	return str->byteCount;
 }
 
+
 unsigned int BrigStrEntry::getSize() const
 {
 	unsigned int byteCount = this->getByteCount();
 	return (byteCount + 7) * 4 / 4;
 }
 
+
 void BrigStrEntry::Dump(std::ostream &os = std::cout) const
 {
 	char *temp = (char *)base;
 	temp += 4;
-	for(unsigned int i=0; i<this->getByteCount(); i++)
+	for (unsigned int i=0; i<this->getByteCount(); i++)
 	{
 		os << *temp;
 		temp++;
 	}
 }
+
 
 void BrigStrEntry::DumpString(
 		BrigFile *file, 
@@ -61,18 +66,20 @@ void BrigStrEntry::DumpString(
 	str.Dump(os);
 }
 
+
 std::string BrigStrEntry::getString() const
 {
 	std::stringstream ss;
 	unsigned char *temp = (unsigned char *)base;
 	temp += 4;
-	for(unsigned int i=0; i<this->getByteCount(); i++)
+	for (unsigned int i=0; i<this->getByteCount(); i++)
 	{
 		ss << *temp;
 		temp++;
 	}
 	return ss.str();
 }
+
 
 std::string BrigStrEntry::GetStringByOffset(
 		BrigFile *file,
@@ -85,4 +92,6 @@ std::string BrigStrEntry::GetStringByOffset(
 	BrigStrEntry str(temp, file);
 	return str.getString();
 }
-}
+
+}  // namespace HSA
+

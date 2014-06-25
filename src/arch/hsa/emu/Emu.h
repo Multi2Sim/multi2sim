@@ -24,8 +24,8 @@
 #include <arch/common/Emu.h>
 #include <lib/cpp/CommandLine.h>
 #include <lib/cpp/Debug.h>
+#include <arch/hsa/asm/BrigFile.h>
 
-#include "arch/hsa/asm/BrigFile.h"
 #include "WorkItem.h"
 
 namespace HSA
@@ -35,16 +35,21 @@ class WorkItem;
 
 class Error : public misc::Error
 {
+
 public: 
+
 	Error(const std::string &message)
-			: misc::Error("HSA", message)
+			:
+			misc::Error("HSA", message)
 	{	
 	}
+
 };
 
 /// HSA Emulator
 class Emu : public comm::Emu
 {
+
 	// Debugger files
 	static std::string hsa_debug_loader_file;
 	static std::string hsa_debug_isa_file;
@@ -111,8 +116,10 @@ public:
 			const std::string &cwd = "",
 			const std::string &stdin_file_name = "",
 			const std::string &stdout_file_name = "");
+
 };
 
-}
+}  // namespace HSA
 
 #endif
+

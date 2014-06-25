@@ -31,10 +31,12 @@ WorkItem::WorkItem()
 	emu->loader_debug << "WorkItem " << pid << " created\n";
 }
 
+
 WorkItem::~WorkItem()
 {
 	
 }
+
 
 void WorkItem::Load(const std::vector<std::string> &args,
 		const std::vector<std::string> &env, 
@@ -52,9 +54,12 @@ void WorkItem::Load(const std::vector<std::string> &args,
 	LoadBinary();	
 }
 
+
 void WorkItem::Execute()
 {
 
 }
 
-}
+
+}  // namespace HSA
+

@@ -18,10 +18,13 @@
  */
 
 #include <arch/hsa/driver/Driver.h>
+
 #include "Emu.h"
 
 namespace HSA
 {
+
+
 
 
 //
@@ -36,10 +39,11 @@ std::string Emu::hsa_debug_loader_file;
 std::string Emu::hsa_debug_isa_file;
 
 
+
+
 //
 // Static variables
 //
-
 
 // Debugger
 misc::Debug Emu::loader_debug;
@@ -50,9 +54,11 @@ std::unique_ptr<Emu> Emu::instance;
 
 
 
+
 //
 // Functions
 //
+
 
 void Emu::RegisterOptions()
 {
@@ -103,6 +109,7 @@ Emu *Emu::getInstance()
 	return instance.get();
 }
 
+
 WorkItem *Emu::newWorkItem()
 {
 	// Create work item and add to work item list
@@ -111,10 +118,11 @@ WorkItem *Emu::newWorkItem()
 	return wi;
 }
 
+
 bool Emu::Run()
 {
 	// Stop if there is no more work items
-	if(!work_items.size())
+	if (!work_items.size())
 		return false;
 
 	// Stop if maxmum number of CPU instructions exceeded
@@ -122,13 +130,13 @@ bool Emu::Run()
 		// esim->Finish("hsaMaxInst");
 
 	// Stop if any previous reason met
-	if(esim->hasFinished())
+	if (esim->hasFinished())
 		return true;
 
 	// Currently I traverse all the work items. If requreied, I will change 
 	// it to only traversing running work items;
 	auto end = work_items.end();
-	for(auto it = work_items.begin(); it != end; )
+	for (auto it = work_items.begin(); it != end; )
 	{
 		// Save the position of next work item
 		auto next = it;
@@ -166,7 +174,6 @@ void Emu::LoadProgram(const std::vector<std::string> &args,
 	wi->Load(args, env, cwd,
 			stdin_file_name, stdout_file_name);
 }
-
 
 }  // namespace HSA
 

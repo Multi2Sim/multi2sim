@@ -31,6 +31,7 @@ WorkItem::ExecuteInstFn WorkItem::execute_inst_fn[InstOpcodeCount + 1] =
 	&WorkItem::ExecuteInst_unsupported
 };
 
+
 void WorkItem::ExecuteInst_NOP()
 {
 	throw std::logic_error("Instruction not implemented");
@@ -834,7 +835,5 @@ void WorkItem::ExecuteInst_WORKITEMID()
 	throw std::logic_error("Instruction not implemented");
 }
 
+}  // namespace HSA
 
-
-
-} // namespace HSA
