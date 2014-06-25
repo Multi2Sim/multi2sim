@@ -17,16 +17,18 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <lib/cpp/Misc.h>
 
 #include "SymbolModifier.h"
-#include "lib/cpp/Misc.h"
 
-namespace HSA{
+namespace HSA
+{
 
 SymbolModifier::SymbolModifier(unsigned char byte)
 {
 	this->byte = byte;
 }
+
 
 unsigned char SymbolModifier::getLinkage() const
 {
@@ -34,17 +36,19 @@ unsigned char SymbolModifier::getLinkage() const
 	return byte & mask;
 }
 
+
 const char *SymbolModifier::getLinkageStr() const
 {
-	switch(this->getLinkage())
+	switch (this->getLinkage())
 	{
-		case 0: return "";
-		case 1: return "static";
-		case 2: return "extern";
-		default: misc::warning("Unsupportd linkage type!");
+	case 0: return "";
+	case 1: return "static";
+	case 2: return "extern";
+	default: misc::warning("Unsupportd linkage type!");
 	}
 	return "";
 }
+
 
 unsigned char SymbolModifier::getConst() const
 {
@@ -52,14 +56,16 @@ unsigned char SymbolModifier::getConst() const
 	return !(!(this->byte & mask));
 }
 
+
 const char *SymbolModifier::getConstStr() const
 {
-	if(this->getConst())
+	if (this->getConst())
 	{
 		return "const ";
 	}
 	return "";
 }
+
 
 bool SymbolModifier::isFlexArray() const
 {
@@ -67,11 +73,13 @@ bool SymbolModifier::isFlexArray() const
 	return !(!(this->byte & mask));
 }
 
+
 bool SymbolModifier::isArray() const
 {
 	unsigned char mask = 16;
 	return !(!(this->byte & mask));
 }
+
 
 bool SymbolModifier::isDeclaration() const
 {
@@ -79,4 +87,5 @@ bool SymbolModifier::isDeclaration() const
 	return !(!(this->byte & mask));
 }
 
-}// end namespace
+}  // namespace HSA
+

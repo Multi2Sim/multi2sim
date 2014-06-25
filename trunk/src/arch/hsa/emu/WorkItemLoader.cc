@@ -85,6 +85,7 @@ void WorkItem::LoadBinary()
 
 }
 
+
 char* WorkItem::findMainFunction()
 {
 	// Traverse all the top level directives until the one with
@@ -105,4 +106,5 @@ char* WorkItem::findMainFunction()
 	return firstInst;
 }
 
-}
+}  // namespace HSA
+
