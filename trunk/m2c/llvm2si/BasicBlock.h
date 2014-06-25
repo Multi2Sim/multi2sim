@@ -73,6 +73,7 @@ class BasicBlock : public comm::BasicBlock
 	void EmitFAdd(llvm::BinaryOperator *llvm_inst);
 	void EmitFSub(llvm::BinaryOperator *llvm_inst);
 	void EmitFMul(llvm::BinaryOperator *llvm_inst);
+	void EmitAnd(llvm::BinaryOperator *llvm_inst);
 	void EmitSExt(llvm::SExtInst *llvm_inst);
 	void EmitExtractElement(llvm::ExtractElementInst *llvm_inst);
 	void EmitInsertElement(llvm::InsertElementInst *llvm_inst);
