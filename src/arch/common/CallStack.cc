@@ -46,7 +46,7 @@ ELFReader::File *CallStack::getELFFile(const std::string &path)
 	catch (ELFReader::Error &e)
 	{
 		// Error loading file
-		debug << e.what();
+		debug << e;
 		elf_file_map[path] = nullptr;
 		return nullptr;
 	}

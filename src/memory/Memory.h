@@ -52,9 +52,10 @@ public:
 	public:
 
 		/// Constructor
-		Error(const std::string &message) :
-				misc::Error("Memory", message)
+		Error(const std::string &message) : misc::Error(message)
 		{
+			// Set module prefix
+			AppendPrefix("Memory");
 		}
 	};
 

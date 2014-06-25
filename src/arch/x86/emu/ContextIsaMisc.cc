@@ -38,13 +38,13 @@ namespace x86
 
 void Context::ExecuteInst_bound_r16_rm32()
 {
-	IsaError("%s: not implemented", __FUNCTION__);
+	throw std::logic_error("Unimplemented instruction");
 }
 
 
 void Context::ExecuteInst_bound_r32_rm64()
 {
-	IsaError("%s: not implemented", __FUNCTION__);
+	throw std::logic_error("Unimplemented instruction");
 }
 
 
@@ -453,7 +453,8 @@ void Context::ExecuteInst_cpuid()
 
 	default:
 
-		IsaError("inst 'cpuid' not implemented for eax=0x%x", regs.getEax());
+		throw std::logic_error(misc::fmt("Unimplemented for eax = 0x%x",
+				regs.getEax()));
 	}
 
 	newUInst(UInstMove, 0, 0, 0, UInstDepEax, 0, 0, 0);
@@ -615,10 +616,8 @@ void Context::ExecuteInst_div_rm8()
 	unsigned short ax = regs.Read(InstRegAx);
 	unsigned char rm8 = LoadRm8();
 
-	if (!rm8) {
-		IsaError("%s: division by 0", __FUNCTION__);
-		return;
-	}
+	if (!rm8)
+		throw Error("Division by 0");
 
 	/* A devide exception would occur in the host process if the 'div' instruction
 	 * in the assembly code below generates a result greater than 0xff. */
@@ -656,10 +655,8 @@ void Context::ExecuteInst_div_rm32()
 	unsigned int edx = regs.getEdx();
 	unsigned int rm32 = LoadRm32();
 
-	if (!rm32) {
-		IsaError("%s: division by 0", __FUNCTION__);
-		return;
-	}
+	if (!rm32)
+		throw Error("Division by 0");
 
 	/* A devide exception would occur in the host process if the 'div' instruction
 	 * in the assembly code below generates a result greater than 0xffffffff. */
@@ -693,7 +690,7 @@ void Context::ExecuteInst_div_rm32()
 
 void Context::ExecuteInst_hlt()
 {
-	IsaError("%s: 'hlt' instruction", __FUNCTION__);
+	throw Error("Instruction 'hlt' executed");
 }
 
 
@@ -707,10 +704,7 @@ void Context::ExecuteInst_idiv_rm32()
 	unsigned int rm32 = LoadRm32();
 
 	if (!rm32)
-	{
-		IsaError("%s: division by 0", __FUNCTION__);
-		return;
-	}
+		throw Error("Division by 0");
 
 	// Avoid emulation in speculative mode if it could cause a divide exception
 	skip_emulation = 0;
@@ -1034,7 +1028,7 @@ void Context::ExecuteInst_inc_ir32()
 
 void Context::ExecuteInst_int_3()
 {
-	IsaError("%s: not implemented", __FUNCTION__);
+	throw std::logic_error("Unimplemented instruction");
 }
 
 
@@ -1046,7 +1040,8 @@ void Context::ExecuteInst_int_imm8()
 	// Interrupt code
 	num = (unsigned char) inst.getImmByte();
 	if (num != 0x80)
-		IsaError("%s: not supported for num != 0x80", __FUNCTION__);
+		throw std::logic_error("Software interrupt not supported for "
+				"code other than 0x80");
 	
 	// Debug
 	int code = regs.getEax();
@@ -1064,7 +1059,7 @@ void Context::ExecuteInst_int_imm8()
 
 void Context::ExecuteInst_into()
 {
-	IsaError("%s: not implemented", __FUNCTION__);
+	throw std::logic_error("Unimplemented instruction");
 }
 
 
@@ -1101,10 +1096,7 @@ void Context::ExecuteInst_lea_r32_m()
 	unsigned int value = getEffectiveAddress();
 
 	if (inst.getSegment())
-	{
-		IsaError("%s: not supported for this segment", __FUNCTION__);
-		return;
-	}
+		throw std::logic_error("Unsupported segment");
 
 	StoreR32(value);
 
@@ -1118,10 +1110,7 @@ void Context::ExecuteInst_leave()
 	regs.setEsp(regs.getEbp());
 
 	if (inst.getSegment())
-	{
-		IsaError("%s: not supported segment", __FUNCTION__);
-		return;
-	}
+		throw std::logic_error("Unsupported segment");
 
 	MemoryRead(regs.getEsp(), 4, &value);
 	regs.incEsp(4);
@@ -1317,7 +1306,7 @@ void Context::ExecuteInst_mov_rm16_sreg()
 {
 	unsigned short value = LoadSReg();
 	if (inst.getModRmReg() != 5)
-		IsaError("%s: not supported for sreg != gs", __FUNCTION__);
+		throw std::logic_error("Not supported for sreg != gs");
 	StoreRm16(value);
 
 	newUInst(UInstMove, UInstDepSreg, 0, 0, UInstDepRm16, 0, 0, 0);
@@ -1334,7 +1323,7 @@ void Context::ExecuteInst_mov_sreg_rm16()
 {
 	unsigned short value = LoadRm16();
 	if (inst.getModRmReg() != 5)
-		IsaError("%s: not supported for sreg != gs", __FUNCTION__);
+		throw std::logic_error("Not supported for sreg != gs");
 	StoreSReg(value);
 
 	newUInst(UInstMove, UInstDepRm16, 0, 0, UInstDepSreg, 0, 0, 0);
@@ -1535,37 +1524,37 @@ void Context::ExecuteInst_not_rm32()
 
 void Context::ExecuteInst_out_imm8_al()
 {
-	IsaError("%s: not implemented", __FUNCTION__);
+	throw std::logic_error("Unimplemented instruction");
 }
 
 
 void Context::ExecuteInst_out_imm8_ax()
 {
-	IsaError("%s: not implemented", __FUNCTION__);
+	throw std::logic_error("Unimplemented instruction");
 }
 
 
 void Context::ExecuteInst_out_imm8_eax()
 {
-	IsaError("%s: not implemented", __FUNCTION__);
+	throw std::logic_error("Unimplemented instruction");
 }
 
 
 void Context::ExecuteInst_out_dx_al()
 {
-	IsaError("%s: not implemented", __FUNCTION__);
+	throw std::logic_error("Unimplemented instruction");
 }
 
 
 void Context::ExecuteInst_out_dx_ax()
 {
-	IsaError("%s: not implemented", __FUNCTION__);
+	throw std::logic_error("Unimplemented instruction");
 }
 
 
 void Context::ExecuteInst_out_dx_eax()
 {
-	IsaError("%s: not implemented", __FUNCTION__);
+	throw std::logic_error("Unimplemented instruction");
 }
 
 
@@ -1593,10 +1582,7 @@ void Context::ExecuteInst_pop_ir32()
 	unsigned int value;
 
 	if (inst.getSegment())
-	{
-		IsaError("%s: not supported segment", __FUNCTION__);
-		return;
-	}
+		throw std::logic_error("Unsupported segment");
 
 	MemoryRead(regs.getEsp(), 4, &value);
 	regs.incEsp(4);
@@ -1749,10 +1735,7 @@ void Context::ExecuteInst_rdtsc()
 void Context::ExecuteInst_ret()
 {
 	if (inst.getSegment())
-	{
-		IsaError("%s: not supported segment", __FUNCTION__);
-		return;
-	}
+		throw std::logic_error("Unsupported segment");
 
 	// Emulate
 	MemoryRead(regs.getEsp(), 4, &target_eip);
@@ -1780,10 +1763,7 @@ void Context::ExecuteInst_repz_ret()
 void Context::ExecuteInst_ret_imm16()
 {
 	if (inst.getSegment())
-	{
-		IsaError("%s: not supported segment", __FUNCTION__);
-		return;
-	}
+		throw std::logic_error("Unsupported segment");
 
 	// Emulate
 	MemoryRead(regs.getEsp(), 4, &target_eip);
