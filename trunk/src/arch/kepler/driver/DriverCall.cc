@@ -269,4 +269,39 @@ int Driver::CallLaunchKernel(mem::Memory *memory, unsigned args_ptr)
 }
 
 
+/// ABI Call 'MemGetInfo'
+///
+/// param unsigned free;
+/// Returned free global memory in bytes.
+///
+/// param unsigned total
+/// Returned total global memory in bytes
+///
+/// return value
+/// the return is always 0 on success
+int Driver::CallMemGetInfo(mem::Memory *memory, unsigned args_ptr)
+{
+	// Get emu instance and global memory
+	Kepler::Emu *kpl_emu = Kepler::Emu::getInstance();
+
+	// Arguments
+	unsigned free;
+	unsigned total;
+
+	// Read Arguments
+	memory->Read(args_ptr, sizeof(unsigned), (char *) &free);
+	memory->Read(args_ptr + 4, sizeof(unsigned), (char *) &total);
+
+	// Debug Info
+	debug << misc::fmt("\tout: free=%u\n", free);
+	debug << misc::fmt("\tout: total=%u\n", total);
+
+	// Write Result to Device
+	kpl_emu->setGlobalMemFreeSize(free);
+	kpl_emu->setGlobalMemTotalSize(total);
+
+	// Return
+	return 0;
+}
+
 }  // namespace Kepler
