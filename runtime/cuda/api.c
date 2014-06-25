@@ -819,14 +819,10 @@ CUresult cuMemGetInfo(size_t *free, size_t *total)
 
 	/* Syscall */
 	//ret = syscall(CUDA_SYS_CODE, cuda_call_cuMemGetInfo, free, total);
-	ret = 0;
-	fatal("%s: not implemented", __FUNCTION__);
-
-	/* Check that we are running on Multi2Sim. If a program linked with this
-	 * library is running natively, system call CUDA_SYS_CODE is not
-	 * supported. */
+	unsigned args[2] = {(unsigned) &free, (unsigned) &total};
+	ret = ioctl(active_device->fd, cuda_call_MemGetInfo, args);
 	if (ret)
-		fatal("native execution not supported.\n%s", cuda_err_native);
+		fatal("[CUDA Runtime] %s: Unexpected error", __FUNCTION__);
 
 	cuda_debug("\t(driver) '%s' out: free = %d", __func__, *free);
 	cuda_debug("\t(driver) '%s' out: total = %d", __func__, *total);
