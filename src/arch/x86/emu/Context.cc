@@ -745,10 +745,10 @@ void Context::Execute()
 	// Disassemble
 	inst.Decode(buffer_ptr, regs.getEip());
 	if (inst.getOpcode() == InstOpcodeInvalid && !spec_mode)
-		misc::fatal("0x%x: not supported x86 instruction "
+		throw Error(misc::fmt("Unsupported instruction "
 				"(%02x %02x %02x %02x...)",
-				regs.getEip(), buffer_ptr[0], buffer_ptr[1],
-				buffer_ptr[2], buffer_ptr[3]);
+				buffer_ptr[0], buffer_ptr[1],
+				buffer_ptr[2], buffer_ptr[3]));
 
 	// Clear existing list of microinstructions, though the architectural
 	// simulator might have cleared it already. A new list will be generated
@@ -784,12 +784,31 @@ void Context::Execute()
 		}
 		catch (mem::Memory::Error &e)
 		{
-			// Stack back trace
+			// Guest stack back trace
 			if (call_stack != nullptr)
 				call_stack->BackTrace(inst.getEip(), std::cerr);
 
-			// End
-			misc::fatal("%s", e.what());
+			// Propagate exception
+			e.PrependPrefix("x86");
+			throw e;
+		}
+		catch (misc::Error &e)
+		{
+			// Ignore in speculative mode. Otherwise, add context
+			// information to the error message
+			if (!spec_mode)
+			{
+				e.AppendPrefix(misc::fmt("pid %d", pid));
+				e.AppendPrefix(misc::fmt("eip 0x%x",
+						regs.getEip()));
+				throw e;
+			}
+		}
+		catch (misc::Panic &e)
+		{
+			// Ignore in speculative mode
+			if (!spec_mode)
+				throw e;
 		}
 	}
 	

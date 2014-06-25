@@ -22,29 +22,34 @@
 
 #include <arch/common/Arch.h>
 #include <arch/common/Emu.h>
+#include <arch/hsa/asm/BrigFile.h>
 #include <lib/cpp/CommandLine.h>
 #include <lib/cpp/Debug.h>
 #include <arch/hsa/asm/BrigFile.h>
 
 #include "WorkItem.h"
 
+
 namespace HSA
 {
 
 class WorkItem;
 
+
+/// Exception thrown by HSA modules
 class Error : public misc::Error
 {
 
 public: 
-
-	Error(const std::string &message)
-			:
-			misc::Error("HSA", message)
-	{	
+	
+	/// Constructor
+	Error(const std::string &message) : misc::Error(message)
+	{
+		// Add module prefix
+		AppendPrefix("HSA");
 	}
-
 };
+
 
 /// HSA Emulator
 class Emu : public comm::Emu

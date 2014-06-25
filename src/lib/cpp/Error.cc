@@ -18,11 +18,45 @@
  */
 
 #include "Error.h"
+#include "String.h"
 
 
 namespace misc
 {
 
+
+Exception::~Exception()
+{
+}
+
+
+void Exception::Dump(std::ostream &os) const
+{
+	// Colors
+	std::string red = os.tellp() == -1 ? "\033[31m" : "";
+	std::string black = os.tellp() == -1 ? "\033[30m" : "";
+
+	// Print in clean paragraphs
+	StringFormatter formatter;
+
+	// Prefixes
+	formatter << prefixes;
+	
+	// Type
+	if (!type.empty())
+		formatter << type << ": ";
+	
+	// Message
+	formatter << getMessage();
+
+	// Dump it
+	os << '\n' << red << formatter << black << "\n\n";
+}
+
+
+void Exception::SaveCallStack()
+{
+}
 
 
 }  // namespace misc

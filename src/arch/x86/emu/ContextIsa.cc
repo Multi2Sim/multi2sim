@@ -39,24 +39,6 @@ Context::ExecuteInstFn Context::execute_inst_fn[InstOpcodeCount] =
 };
 
 
-void Context::IsaError(const char *fmt, ...) const
-{
-	va_list va;
-	va_start(va, fmt);
-
-	// No error shown on speculative mode
-	if (state & StateSpecMode)
-		return;
-
-	// Error
-	fflush(NULL);
-	fprintf(stderr, "\n\nfatal: x86 context %d at 0x%08x inst %lld: ",
-			pid, current_eip, emu->getInstructions());
-	vfprintf(stderr, fmt, va);
-	fprintf(stderr, "\n");
-	exit(1);
-}
-
 void Context::MemoryRead(unsigned int address, int size, void *buffer)
 {
 	// Speculative mode read
@@ -201,20 +183,22 @@ unsigned Context::getLinearAddress(unsigned offset)
 	// Segment override
 	if (inst.getSegment() != InstRegGs)
 	{
-		IsaError("segment override not supported");
+		throw std::logic_error("Unimplemented segment override");
 		return 0;
 	}
 
 	// GLibc segment at TLS entry 6
 	if (regs.Read(InstRegGs) != 0x33)
 	{
-		IsaError("isa_linear_address: gs = 0x%x", regs.Read(InstRegGs));
+		throw std::logic_error(misc::fmt("Linear address for gs = 0x%x",
+				regs.Read(InstRegGs)));
 		return 0;
 	}
 
 	if (!glibc_segment_base)
 	{
-		IsaError("isa_linear_address: glibc segment not set");
+		throw std::logic_error(misc::fmt("GLibc segment not set "
+				"in linear address calculation"));
 		return 0;
 	}
 
@@ -227,10 +211,7 @@ unsigned Context::getEffectiveAddress()
 {
 	// Check 'modrm_mod' field
 	if (inst.getModRmMod() == 3)
-	{
-		IsaError("%s: wrong value for 'modrm_mod'", __FUNCTION__);
-		return 0;
-	}
+		throw Error("Invalid value for 'modrm_mod'");
 
 	// Address
 	unsigned address = regs.Read(inst.getEaBase()) +
@@ -240,10 +221,11 @@ unsigned Context::getEffectiveAddress()
 	// Add segment base
 	address = getLinearAddress(address);
 
-	// Record effective address in context. This address is used later in the
-	// generation of micro-instructions. We need to record it to avoid calling this
-	// function again later, since the source register used to calculate the effective
-	// address can be overwritten after the instruction emulation.
+	// Record effective address in context. This address is used later in
+	// the generation of micro-instructions. We need to record it to avoid
+	// calling this function again later, since the source register used to
+	// calculate the effective address can be overwritten after the
+	// instruction emulation.
 	effective_address = address;
 
 	return address;
@@ -263,17 +245,11 @@ unsigned Context::getMoffsAddress()
 void Context::LoadFpu(int index, unsigned char *value)
 {
 	if (!misc::inRange(index, 0, 7))
-	{
-		IsaError("%s: invalid value for 'index'", __FUNCTION__);
-		return;
-	}
+		throw Error("Invalid value for 'index'");
 
 	int eff_index = (regs.getFpuTop() + index) % 8;
 	if (!regs.isFpuValid(eff_index))
-	{
-		IsaError("%s: invalid FPU stack entry", __FUNCTION__);
-		return;
-	}
+		throw Error("Invalid FPU stack entry");
 
 	memcpy(value, regs.getFpuValue(eff_index), 10);
 	if (emu->isa_debug)
@@ -286,18 +262,12 @@ void Context::StoreFpu(int index, unsigned char *value)
 {
 	// Check valid index
 	if (!misc::inRange(index, 0, 7))
-	{
-		IsaError("%s: invalid value for 'index'", __FUNCTION__);
-		return;
-	}
+		throw Error("Invalid value for 'index'");
 
 	// Get index
 	index = (regs.getFpuTop() + index) % 8;
 	if (!regs.isFpuValid(index))
-	{
-		IsaError("%s: invalid FPU stack entry", __FUNCTION__);
-		return;
-	}
+		throw Error("Invalid FPU stack entry");
 
 	// Store value
 	memcpy(regs.getFpuValue(index), value, 10);
@@ -317,10 +287,7 @@ void Context::PushFpu(unsigned char *value)
 	// Get stack top
 	regs.decFpuTop();
 	if (regs.isFpuValid(regs.getFpuTop()))
-	{
-		IsaError("%s: unexpected valid entry", __FUNCTION__);
-		return;
-	}
+		throw std::logic_error("Unexpected valid FPU entry");
 
 	regs.setFpuValid(regs.getFpuTop());
 	memcpy(regs.getFpuValue(regs.getFpuTop()), value, 10);
@@ -331,10 +298,7 @@ void Context::PopFpu(unsigned char *value)
 {
 	// Check valid entry
 	if (!regs.isFpuValid(regs.getFpuTop()))
-	{
-		IsaError("%s: unexpected invalid entry", __FUNCTION__);
-		return;
-	}
+		throw std::logic_error("Unexpected invalid FPU entry");
 
 	// Copy value
 	if (value)
@@ -385,7 +349,8 @@ float Context::LoadFloat()
 	float value;
 
 	MemoryRead(getEffectiveAddress(), 4, &value);
-	emu->isa_debug << misc::fmt("  [0x%x]=%g", getEffectiveAddress(), (double) value);
+	emu->isa_debug << misc::fmt("  [0x%x]=%g", getEffectiveAddress(),
+			(double) value);
 
 	return value;
 }
@@ -394,7 +359,8 @@ float Context::LoadFloat()
 void Context::StoreFloat(float value)
 {
 	MemoryWrite(getEffectiveAddress(), 4, &value);
-	emu->isa_debug << misc::fmt("  [0x%x]<=%g", getEffectiveAddress(), (double) value);
+	emu->isa_debug << misc::fmt("  [0x%x]<=%g", getEffectiveAddress(),
+			(double) value);
 }
 
 
@@ -412,10 +378,7 @@ unsigned short Context::LoadFpuStatus()
 	unsigned short status = 0;
 	
 	if (!misc::inRange(regs.getFpuTop(), 0, 7))
-	{
-		IsaError("%s: wrong FPU stack top", __FUNCTION__);
-		return 0;
-	}
+		throw std::logic_error("Invalid FPU stack top");
 
 	status |= regs.getFpuTop() << 11;
 	if (misc::getBit32(regs.getFpuCode(), 3))

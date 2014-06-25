@@ -544,13 +544,10 @@ void main_cpp(int argc, char **argv)
 		// Main simulation loop
 		MainLoop();
 	}
-	catch (std::runtime_error &e)
+	catch (misc::Exception &e)
 	{
-		misc::fatal("%s", e.what());
-	}
-	catch (std::logic_error &e)
-	{
-		misc::panic("%s", e.what());
+		e.Dump();
+		exit(1);
 	}
 
 	// End
