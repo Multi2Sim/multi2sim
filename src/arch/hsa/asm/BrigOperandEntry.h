@@ -24,17 +24,22 @@
 
 namespace HSA
 {
+
 class BrigInstEntry;
 
 class BrigOperandEntry : public BrigEntry 
 {
+
 protected:
+
 	// The Instruction object that the operand belongs to
 	const BrigInstEntry *inst;
 
 	// Index of the operand in the inst
 	unsigned char index;
+
 public:
+
 	/// Constructor
 	BrigOperandEntry(
 		char *buf, BrigFile *file, 
@@ -59,10 +64,8 @@ public:
 	}
 
 	/// Operator \c << invoking function Dump() on an output stream.
-	friend std::ostream &operator<<(
-			std::ostream &os, 
-			const BrigOperandEntry &operand
-		) 
+	friend std::ostream &operator<<(std::ostream &os,
+			const BrigOperandEntry &operand)
 	{
 		operand.Dump(os);
 		return os;
@@ -90,6 +93,6 @@ public:
 	
 };
 
-} // end namespace HSA
+}  // namespace HSA
 
 #endif

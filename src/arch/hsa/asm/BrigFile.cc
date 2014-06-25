@@ -41,41 +41,48 @@ BrigFile::BrigFile(const std::string &path)
 	}
 }
 
+
 BrigFile::~BrigFile()
 {
 }
+
 
 BrigSection *BrigFile::getBrigSection(BrigSectionType type) const
 {
 	return this->brig_sections[type].get();
 }
 
+
 bool BrigFile::isValid() const
 {
 	// If the section names match BRIG standard, it is considered to be
 	// a valid brig file
-	std::vector<std::string> secNames = {
+	std::vector<std::string> secNames =
+	{
 		".strtab", 
 		".directives",
 		".code",
 		".operands",
 		".debug"
 	};
+
+	// Traverse all sections and compare the names
 	for(unsigned int i=0; i<secNames.size(); i++)
 	{
 		BrigSection *sec = this->brig_sections[i].get();
 		if(!(sec->getName() == secNames[i])) 
 		{
-			//std::cout << "Expected: " << secNames[i]
-			//	<< ", but: " << sec->getName();
+			// section name does not match
 			return false;
 		}
 	}
 	return true;
 }
 
+
 char *BrigFile::findMainFunction()
 {
+	// get pointers to code and dir section
 	BrigSection *dirSection = this->getBrigSection(BrigSectionDirective);
 	BrigSection *codeSection = this->getBrigSection(BrigSectionCode);
 	char *codeBuf = (char *)codeSection->getBuffer();
@@ -98,6 +105,9 @@ char *BrigFile::findMainFunction()
 			std::string funcName = 
 					BrigStrEntry::GetStringByOffset(this, 
 						dirStruct->name);
+
+			// Defines the program entry point as the function name
+			// as \c &main
 			if(funcName == "&main")
 			{	
 				char *firstInst = codeBuf + dirStruct->code;
@@ -109,4 +119,4 @@ char *BrigFile::findMainFunction()
 	return nullptr;
 }
 
-}// end namespace
+}  // namespace HSA

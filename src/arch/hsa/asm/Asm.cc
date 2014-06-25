@@ -78,12 +78,13 @@ Asm::Asm()
 {
 	
 #define DEFINST(_name, _opstr)	\
-	InitTable(Inst_##_name, #_name, _opstr);
+		InitTable(Inst_##_name, #_name, _opstr);
 #include "Inst.def"
 #undef DEFINST
 	
 	indent = 0;
 }
+
 
 void Asm::InitTable(InstOpcode opcode, const char *name, const char *fmt_str)
 {
@@ -91,6 +92,7 @@ void Asm::InitTable(InstOpcode opcode, const char *name, const char *fmt_str)
 	inst_info[opcode].name = name;
 	inst_info[opcode].fmt_str = fmt_str;	
 }
+
 
 void Asm::DisassembleBinary(const std::string &path) const
 {
@@ -101,11 +103,11 @@ void Asm::DisassembleBinary(const std::string &path) const
 
 	char *buffer_pointer = (char *)buffer;
 
-	// Increament by 4 to skip the section size field
+	// Increment by 4 to skip the section size field
 	buffer_pointer += 4;
 
 	// Traverse all top level directives and dump them
-	while(buffer_pointer && 
+	while (buffer_pointer &&
 			buffer_pointer < buffer + brig_section->getSize())
 	{
 		BrigDirEntry dir(buffer_pointer, &brig_file);
@@ -114,4 +116,4 @@ void Asm::DisassembleBinary(const std::string &path) const
 	}
 }
 
-} // namespace HSA
+}  // namespace HSA

@@ -34,6 +34,7 @@ class BrigDirEntry : public BrigEntry
 {
 
 public:
+
 	/// Constructor
 	BrigDirEntry(char *buf, BrigFile *file);
 	
@@ -46,7 +47,8 @@ public:
 	/// Dumps the assembly of the directive
 	void Dump(std::ostream &os = std::cout) const
 	{
-		DumpDirectiveFn fn = BrigDirEntry::dump_dir_fn[this->getKind()];
+		DumpDirectiveFn fn =
+				BrigDirEntry::dump_dir_fn[this->getKind()];
 		(this->*fn)(os);
 	}
 
@@ -97,10 +99,12 @@ public:
 	static DumpDirectiveFn dump_dir_fn[27];
 
 	/// Returns the pointer to the directive 
-	static char *GetDirByOffset(BrigFile *file, BrigDirectiveOffset32_t offset);
+	static char *GetDirByOffset(BrigFile *file,
+			BrigDirectiveOffset32_t offset);
 
 };
-}
+
+}  // namespace HSA
 
 
 #endif

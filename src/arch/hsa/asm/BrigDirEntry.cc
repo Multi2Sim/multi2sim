@@ -17,21 +17,22 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <lib/cpp/Misc.h>
+#include <lib/cpp/String.h>
+
 #include "BrigSection.h"
 #include "BrigDirEntry.h"
 #include "BrigStrEntry.h"
 #include "BrigDef.h"
 #include "SymbolModifier.h"
 #include "Asm.h"
-#include "lib/cpp/Misc.h"
-#include "lib/cpp/String.h"
-#include "Asm.h"
 
 namespace HSA
 {
 
 BrigDirEntry::BrigDirEntry(char *buf, BrigFile *file)
-	:BrigEntry(buf, file)
+		:
+		BrigEntry(buf, file)
 {
 }
 
@@ -47,18 +48,24 @@ int BrigDirEntry::getKind() const
 char *BrigDirEntry::nextTop() const
 {
 
-	switch(this->getKind())
+	switch (this->getKind())
 	{
 	case BRIG_DIRECTIVE_FUNCTION:
 	case BRIG_DIRECTIVE_KERNEL:
 	{
-		BrigSection *bs = file->getBrigSection(BrigSectionDirective);
+		// TODO:  very hard to read this piece of code, but it appears
+		// 	several times
+		BrigSection *brig_section =
+				file->getBrigSection(BrigSectionDirective);
 		struct BrigDirectiveExecutable * dir
 			= (struct BrigDirectiveExecutable *)base;
-		char *bufPtr = (char *)bs->getBuffer() + dir->nextTopLevelDirective;
-		if (bufPtr >= bs->getBuffer() + bs->getSize())
-			return NULL;
-		return bufPtr;
+		char *buffer_pointer = (char *)brig_section->getBuffer()
+				+ dir->nextTopLevelDirective;
+		if (buffer_pointer >=
+				brig_section->getBuffer() +
+				brig_section->getSize())
+			return nullptr;
+		return buffer_pointer;
 	}
 	case BRIG_DIRECTIVE_IMAGE:
 	case BRIG_DIRECTIVE_VARIABLE:
@@ -69,9 +76,10 @@ char *BrigDirEntry::nextTop() const
 		if (!dir->init) return next();
 		else
 		{
-			BrigDirEntry initDir(
-				BrigDirEntry::GetDirByOffset(file, dir->init), file
-			);
+			char *brig_dir_ptr =
+					BrigDirEntry::GetDirByOffset(file,
+							dir->init);
+			BrigDirEntry initDir(brig_dir_ptr, file);
 			return initDir.next();
 		}
 	}
@@ -83,10 +91,10 @@ char *BrigDirEntry::nextTop() const
 
 char *BrigDirEntry::next() const
 {
-	BrigSection *bs = file->getBrigSection(BrigSectionDirective);
+	BrigSection *brig_section = file->getBrigSection(BrigSectionDirective);
 	char * ret = this->base + this->getSize();
-	if (ret >= bs->getBuffer() + bs->getSize())
-		return NULL;
+	if (ret >= brig_section->getBuffer() + brig_section->getSize())
+		return nullptr;
 	return ret;
 }
 
@@ -224,15 +232,21 @@ void BrigDirEntry::DumpDirectiveFunction(std::ostream &os = std::cout) const
 	BrigEntry::dumpIndent(os);
 	struct BrigDirectiveFunction *dir
 		= (struct BrigDirectiveFunction *)this->base;
+
 	// Pointer to the next directive in sequence
 	char *next = this->next();
+
+	// Dump function head
 	SymbolModifier modifier(dir->modifier.allBits);
 	os << "\n";
 	os << modifier.getLinkageStr() << "function ";
 	os << BrigStrEntry::GetStringByOffset(this->file, dir->name);
+
+	// Dump function arguments
 	next = BrigEntry::dumpArgs(next, dir->outArgCount,this->file, os);
 	next = BrigEntry::dumpArgs(next, dir->inArgCount, this->file, os);
-	// Dump the function body;
+
+	// Dump function body;
 	dumpBody(dir->code, dir->instCount, next, modifier.isDeclaration(), os);
 	
 }
@@ -246,7 +260,7 @@ void BrigDirEntry::DumpDirectiveImage(std::ostream &os = std::cout) const
 	BrigEntry::dumpSymDecl(this, os);
 	if (image->init)
 	{
-		misc::warning("Image init is not supported!");
+		throw std::logic_error("Image init is not supported yet!");
 	}
 	os << ";\n";
 }
@@ -254,7 +268,7 @@ void BrigDirEntry::DumpDirectiveImage(std::ostream &os = std::cout) const
 
 void BrigDirEntry::DumpDirectiveImageInit(std::ostream &os = std::cout) const
 {
-	misc::warning("Unsupport directive %s", "ImageInit");
+	throw std::logic_error("Unsupport directive (ImageInit)");
 }
 
 
@@ -264,9 +278,13 @@ void BrigDirEntry::DumpDirectiveKernel(std::ostream &os = std::cout) const
 	struct BrigDirectiveKernel *dir
 		= (struct BrigDirectiveKernel *)this->base;
 	char *next = this->next();
+
+	// Dump kernel head
 	os << "\nkernel ";
 	os << BrigStrEntry::GetStringByOffset(this->file, dir->name);
 	next = BrigEntry::dumpArgs(next, dir->inArgCount, this->file, os);
+
+	// Dump kernel body
 	dumpBody(dir->code, dir->instCount, next, false, os);
 }
 
@@ -283,28 +301,28 @@ void BrigDirEntry::DumpDirectiveLabel(std::ostream &os = std::cout) const
 
 void BrigDirEntry::DumpDirectiveLabelInit(std::ostream &os = std::cout) const
 {
-	misc::warning("Unsupport directive %s", "LabelInit");
+	throw std::logic_error("Unsupport directive (LabelInit)");
 }
 
 
 void BrigDirEntry::DumpDirectiveLabelTargets(std::ostream &os = std::cout) const
 {
 	BrigEntry::dumpIndent(os);
-	misc::warning("Unsupport directive %s", "LabelTagets");
+	throw std::logic_error("Unsupport directive (LabelTagets)");
 }
 
 
 void BrigDirEntry::DumpDirectiveLoc(std::ostream &os = std::cout) const
 {
 	BrigEntry::dumpIndent(os);
-	misc::warning("Unsupport directive %s", "Loc");
+	throw std::logic_error("Unsupport directive (Loc)");
 }
 
 
 void BrigDirEntry::DumpDirectivePragma(std::ostream &os = std::cout) const
 {
 	BrigEntry::dumpIndent(os);
-	misc::warning("Unsupport directive %s", "Pragma");
+	throw std::logic_error("Unsupport directive (Pragma)");
 }
 
 
@@ -316,7 +334,7 @@ void BrigDirEntry::DumpDirectiveSampler(std::ostream &os = std::cout) const
 	BrigEntry::dumpSymDecl(this, os);
 	if(samp->init)
 	{
-		misc::warning("Sampler init is not supported!");
+		throw std::logic_error("Sampler init is not supported!");
 	}
 	os << ";\n";
 }
@@ -324,21 +342,21 @@ void BrigDirEntry::DumpDirectiveSampler(std::ostream &os = std::cout) const
 
 void BrigDirEntry::DumpDirectiveSamplerInit(std::ostream &os = std::cout) const
 {
-	misc::warning("Unsupport directive %s", "SamplerInit");
+	throw std::logic_error("Unsupport directive (SamplerInit)");
 }
 
 
 void BrigDirEntry::DumpDirectiveScope(std::ostream &os = std::cout) const
 {
 	BrigEntry::dumpIndent(os);
-	misc::warning("Unsupport directive %s", "Scope");
+	throw std::logic_error("Unsupport directive (Scope)");
 }
 
 
 void BrigDirEntry::DumpDirectiveSignature(std::ostream &os = std::cout) const
 {
 	BrigEntry::dumpIndent(os);
-	misc::warning("Unsupport directive %s", "Signature");
+	throw std::logic_error("Unsupport directive (Signature)");
 }
 
 
@@ -389,8 +407,7 @@ void BrigDirEntry::DumpDirectiveVersion(std::ostream &os = std::cout) const
 	os << ":";
 	os << BrigEntry::machineModel2str(dir->machineModel);
 	os << ";";
-	os << misc::fmt(
-			" // BRIG Object Format Version %d:%d",
+	os << misc::fmt(" // BRIG Object Format Version %d:%d",
 			dir->brigMajor, dir->brigMinor);
 	os << "\n";
 }
@@ -398,10 +415,10 @@ void BrigDirEntry::DumpDirectiveVersion(std::ostream &os = std::cout) const
 
 char *BrigDirEntry::GetDirByOffset(BrigFile *file, BrigDirectiveOffset32_t offset)
 {
-	BrigSection *sec = file->getBrigSection(BrigSectionDirective);
-	char *buf = (char *)sec->getBuffer();
-	buf += offset;
-	return buf;
+	BrigSection *brig_section = file->getBrigSection(BrigSectionDirective);
+	char *buffer = (char *)brig_section->getBuffer();
+	buffer += offset;
+	return buffer;
 }
 
-}
+}  // namespace HSA
