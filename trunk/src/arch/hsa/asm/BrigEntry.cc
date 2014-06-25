@@ -35,6 +35,7 @@ const char *BrigEntry::type2str(int type)
 	return type_to_str_map.MapValue(type);
 }
 
+
 misc::StringMap BrigEntry::type_to_str_map = 
 {
 	{"", 		0},
@@ -85,36 +86,39 @@ misc::StringMap BrigEntry::type_to_str_map =
 	{"f64x2", 	BRIG_TYPE_F64|BRIG_TYPE_PACK_128}
 };
 
+
 const char *BrigEntry::profile2str(int profile)
 {
-	if(profile == 1)
+	if (profile == 1)
 	{
 		return "$full";
 	}
-	else if(profile == 0)
+	else if (profile == 0)
 	{
 		return "$base";
 	}
 	return "Invalid profile";
 }
 
+
 const char *BrigEntry::machineModel2str(int machineModel)
 {
-	if(machineModel == 1)
+	if (machineModel == 1)
 	{
 		return "$large";
 	}
-	else if(machineModel == 0)
+	else if (machineModel == 0)
 	{
 		return "$small";
 	}
 	return "Invalid machine model";
 }
 
+
 const char *BrigEntry::align2str(unsigned char align)
 {
 	std::stringstream ss;
-	if(align > 1)
+	if (align > 1)
 	{
 		ss << "align " << (unsigned)align << ' ';	
 	}
@@ -124,21 +128,23 @@ const char *BrigEntry::align2str(unsigned char align)
 
 const char *BrigEntry::seg2str(unsigned char seg)
 {
-	switch(seg)
+	switch (seg)
 	{
-		case 0:	return "";	
-		case 1: return "";
-		case 2: return "global";
-		case 3: return "readonly";
-		case 4: return "kernarg";
-		case 5: return "group";
-		case 6: return "private";
-		case 7: return "spill";
-		case 8: return "arg";
-		default: misc::warning("Unsupported segment!");
+	case 0:	return "";
+	case 1: return "";
+	case 2: return "global";
+	case 3: return "readonly";
+	case 4: return "kernarg";
+	case 5: return "group";
+	case 6: return "private";
+	case 7: return "spill";
+	case 8: return "arg";
+	default:
+		throw std::logic_error("Unsupported segment!");
 	}
 	return "";
 }
+
 
 misc::StringMap BrigEntry::sem_to_str_map = 
 {
@@ -152,74 +158,92 @@ misc::StringMap BrigEntry::sem_to_str_map =
 	{"part_ar", 7}
 };
 
+
 const char *BrigEntry::sem2str(unsigned char modifier) const
 {
 	unsigned char sem = modifier & BRIG_MEMORY_SEMANTIC;
 	return sem_to_str_map.MapValue(sem);
 }
 
-void BrigEntry::dumpValueList(
-		BrigDataOffset32_t data,
+
+void BrigEntry::dumpValueList(BrigDataOffset32_t data,
 		BrigType16_t type,
 		uint32_t elementCount,
 		BrigFile *file,
-		std::ostream &os = std::cout
-	)
+		std::ostream &os = std::cout)
 {
-	BrigSection *stringSection = file->getBrigSection(BrigSectionString);
-	unsigned char *temp = (unsigned char *)stringSection->getBuffer();
-	temp += 4;
-	temp += data;
+	// get buffer pointer pointing to the beginning of string section
+	BrigSection *string_section = file->getBrigSection(BrigSectionString);
+	unsigned char *buffer = (unsigned char *)string_section->getBuffer();
+
+	// Move pointer to offset data
+	buffer += 4;
+	buffer += data;
+
+	// Traverse all data stored in the string entry, dump them as immediate
+	// values
 	for(unsigned int i=0; i<elementCount; i++)
 	{
 		if(i>0) os << ", ";
-		BrigImmed immed(temp, type);
+		BrigImmed immed(buffer, type);
 		immed.Dump(os);;
 	}
 }
 
+
 void BrigEntry::dumpValue(char *value) const
 {
+	// May be an unused function, consider to delete it
 }
 
-void BrigEntry::dumpSymDecl(
-		const BrigEntry *dir,
-		std::ostream &os = std::cout
-	)
+
+void BrigEntry::dumpSymDecl(const BrigEntry *dir,
+		std::ostream &os = std::cout)
 {
 	struct BrigDirectiveSymbol *sym = (struct BrigDirectiveSymbol *)dir->base;
+
+	// Get symbol modifier
 	SymbolModifier modifier(sym->modifier.allBits);
+
 	// extern, static
 	os << modifier.getLinkageStr();
+
 	// const
 	os << modifier.getConstStr();
+
 	// align
 	os << BrigEntry::align2str(sym->align);
+
 	// segment
 	os << BrigEntry::seg2str(sym->segment);
-	// type
-	os << '_' << BrigEntry::type2str(sym->type);
+
+	// type, such as u32, f64...
+	dumpUnderscore(BrigEntry::type2str(sym->type), os);
+
 	// name
 	os << ' ' << BrigStrEntry::GetStringByOffset(dir->file, sym->name);
+
+	// Dump square bracket and the dimension number if the symbol is an
+	// array
 	uint64_t dim = (uint64_t(sym->dimHi) << 32) | uint64_t(sym->dimLo);
-	if(
+	if (
 		modifier.isFlexArray() ||
 		( dim == 0 && modifier.isArray() && modifier.isDeclaration() )
-	){
+	)
+	{
 		os << "[]";
 	}
-	else if(modifier.isArray())
+	else if (modifier.isArray())
 	{
 		os << "[" << dim << "]";
 	}
 }
 
-char *BrigEntry::dumpArgs(
-		char *arg, 
+
+char *BrigEntry::dumpArgs(char *arg,
 		unsigned short argCount,
 		BrigFile * file,
-		std::ostream &os = std::cout
-	)
+		std::ostream &os = std::cout)
 {
 	os << "(";	
 	char *next = arg;
@@ -250,23 +274,18 @@ char *BrigEntry::dumpArgs(
 	return next;
 }
 
-void BrigEntry::dumpBody(
-		int codeOffset,
+
+void BrigEntry::dumpBody(int codeOffset,
 		int nInst,
 		char *next,
 		bool isDecl, 
-		std::ostream &os = std::cout
-	) const
+		std::ostream &os = std::cout) const
 {
 	// If it is a declaration, only dump semicolumn
 	// Otherwise, dump the content
-	if(!isDecl)
+	if (!isDecl)
 	{
 		Asm *as = Asm::getInstance();
-
-		// Retrieve next (not top level) directive to dump in the future
-		struct BrigDirectiveBase *dirPtr = 
-				(struct BrigDirectiveBase *)next;
 
 		// Write a new line and the open bracket
 		os << "\n{\n";
@@ -279,20 +298,13 @@ void BrigEntry::dumpBody(
 		char *buffer_pointer = code_buffer + codeOffset;
 
 		// Traverse all the insts belong to the function or kernal
-		for(int i=0; i<nInst; i++)
+		for (int i=0; i<nInst; i++)
 		{	
+			// Dump directives related with the code
+			unsigned char code_offset =
+					buffer_pointer - code_buffer;
+			next = DumpRelatedDirectives(next, code_offset, os);
 
-			// Dump all directives should appear before current line
-			// of instuction
-			// FIXME:  the next five lines of code should be a 
-			// 	stand-alone function
-			while(dirPtr && dirPtr->code <= (BrigCodeOffset32_t)(buffer_pointer - code_buffer))
-			{
-				BrigDirEntry dir((char *)dirPtr, this->file);
-				dir.Dump(os);
-				dirPtr = (struct BrigDirectiveBase *)dir.nextTop();
-			}
-			
 			// Create and dump the inst at buffer_pointer
 			BrigInstEntry inst(buffer_pointer, this->file);
 			dumpIndent(os);
@@ -307,6 +319,30 @@ void BrigEntry::dumpBody(
 	os << ";\n";
 }
 
+
+char *BrigEntry::DumpRelatedDirectives(char *dirPtr,
+		unsigned int offset,
+		std::ostream &os = std::cout) const
+{
+	// Retrieve next (not top level) directive to dump in the future
+	struct BrigDirectiveBase *dir =
+			(struct BrigDirectiveBase *)dirPtr;
+
+	// Dump all directives should appear before current line
+	// of instuction
+	while (dir && dir->code <= offset)
+	{
+		BrigDirEntry dir_entry((char *)dir, this->file);
+		dir_entry.Dump(os);
+		dir = (struct BrigDirectiveBase *)dir_entry.nextTop();
+	}
+
+	// Returns the next directive to dump. If no directive is dumped, this
+	// function will return the dirPtr passed in
+	return (char *)dir;
+}
+
+
 void BrigEntry::dumpIndent(std::ostream &os = std::cout)
 {
 	Asm *as = Asm::getInstance();
@@ -314,11 +350,13 @@ void BrigEntry::dumpIndent(std::ostream &os = std::cout)
 		os << "\t";
 }
 
+
 BrigEntry::BrigEntry(char *buf, BrigFile* file)
 {
 	this->base = buf;
 	this->file = file;
 }
+
 
 unsigned int BrigEntry::getSize() const
 {
@@ -327,6 +365,7 @@ unsigned int BrigEntry::getSize() const
 	*size = ((*size) + 3 ) / 4 * 4;
 	return *size;
 }
+
 
 void BrigEntry::dumpHex(std::ostream &os = std::cout) const
 {
@@ -339,7 +378,9 @@ void BrigEntry::dumpHex(std::ostream &os = std::cout) const
 	os << "\n";
 }
 
-void BrigEntry::Dump(std::ostream &os = std::cout) const {};
 
-	
+void BrigEntry::Dump(std::ostream &os = std::cout) const
+{
 }
+
+}  // namespace HSA

@@ -20,17 +20,17 @@
 #ifndef HSA_ASM_BRIGINSTENTRY_H
 #define HSA_ASM_BRIGINSTENTRY_H
 
+#include <lib/cpp/Misc.h>
+#include <lib/cpp/String.h>
+
 #include "BrigEntry.h"
-#include "lib/cpp/Misc.h"
-#include "lib/cpp/String.h"
 
 namespace HSA
 {
 
-/// InstOpcode: I do not use the enumeration fom the BrigDef.h for the 
+/// InstOpcode: I do not use the enumeration from the BrigDef.h for the
 ///  following reasons:
 ///		1. I need the InstOpcodeCount for the total number of opcodes.
-///		2. I forget the second reason.
 enum InstOpcode
 {
 #define DEFINST(_name, _opstr) \
@@ -50,7 +50,9 @@ struct InstInfo
 /// Represents a instruction entry in the .code section
 class BrigInstEntry : public BrigEntry
 {
+
 protected:
+
 	// convert opcode to string
 	const char *opcode2str(InstOpcode opcode) const;
 
@@ -59,6 +61,7 @@ protected:
 	template <typename BrigInst>
 	const char *rounding2str(BrigInst* base) const;
 
+	// map rouning method to string
 	static misc::StringMap rounding_to_str_map;
 
 	// Convert ALU modifier to string
@@ -70,7 +73,6 @@ protected:
 	// Aux function to convert operand to vector string
 	const char *operandV2str(char *operand) const;
 
-	
 	// Convert vector to string, return string like v2, v4...
 	const char *v2str(char *inst) const;
 
@@ -140,7 +142,9 @@ protected:
 
 	// Dumps inst's operands
 	void dumpOperands(std::ostream &os) const;
+
 public:
+
 	/// Constructor
 	BrigInstEntry(char *buf, BrigFile *file);
 
@@ -168,10 +172,8 @@ public:
 	}
 
 	/// Operator \c << invoking function Dump() on an output stream.
-	friend std::ostream &operator<<(
-			std::ostream &os, 
-			const BrigInstEntry &inst
-		) 
+	friend std::ostream &operator<<(std::ostream &os,
+			const BrigInstEntry &inst)
 	{
 		inst.Dump(os);
 		return os;
@@ -197,12 +199,13 @@ public:
 	/// Temporarily used, dump unimplemented insts
 	void DumpInstUnsupported(const char *kind, std::ostream &os) const;
 
-	//Function list for dump inst. One function for a kind
+	/// Function list for dump inst. One function for a kind
 	static DumpInstFn dump_inst_fn[15];
 
+	/// Dump debug information for this inst
 	void DebugInst();
 };
 
-}//end namespace
+}  // namespace HSA
 
 #endif
