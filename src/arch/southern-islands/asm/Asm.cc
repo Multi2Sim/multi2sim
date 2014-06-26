@@ -37,10 +37,10 @@ Asm::Asm()
 	InstInfo *info;
 	int i;
 
-	/* Type size assertions */
+	// Type size assertions
 	assert(sizeof(InstReg) == 4);
 
-	/* Read information about all instructions */
+	// Read information about all instructions
 #define DEFINST(_name, _fmt_str, _fmt, _op, _size, _flags) \
 	info = &inst_info[INST_##_name]; \
 	info->opcode = INST_##_name; \
@@ -53,7 +53,7 @@ Asm::Asm()
 #include "Inst.def"
 #undef DEFINST
 
-	/* Tables of pointers to 'inst_info' */
+	// Tables of pointers to 'inst_info'
 	for (i = 1; i < InstOpcodeCount; i++)
 	{
 		info = &inst_info[i];
@@ -190,25 +190,25 @@ void Asm::DisassembleBuffer(std::ostream& os, const char *buffer, int size)
 	int inst_count = 0;
 	int rel_addr = 0;
 
-	int label_addr[size / 4];	/* A list of created labels sorted by rel_addr. */
+	int label_addr[size / 4];	// A list of created labels sorted by rel_addr.
 
-	int *next_label = &label_addr[0];	/* The next label to dump. */
-	int *end_label = &label_addr[0];	/* The address after the last label. */
+	int *next_label = &label_addr[0];	// The next label to dump.
+	int *end_label = &label_addr[0];	// The address after the last label.
 
 	InstFormat format;
 	InstBytes *bytes;
 
 	Inst inst(this);
 
-	/* Read through instructions to find labels. */
+	// Read through instructions to find labels.
 	while (buffer < original_buffer + size)
 	{
-		/* Decode instruction */
+		// Decode instruction
 		inst.Decode(buffer, rel_addr);
 		format = inst.getFormat();
 		bytes = inst.getBytes();
 
-		/* If ENDPGM, break. */
+		// If ENDPGM, break.
 		if (format == InstFormatSOPP && bytes->sopp.op == 1)
 			break;
 
@@ -222,7 +222,7 @@ void Asm::DisassembleBuffer(std::ostream& os, const char *buffer, int size)
 			int se_simm = simm16;
 			int label = rel_addr + (se_simm * 4) + 4;
 
-			/* Find position to insert label. */
+			// Find position to insert label.
 			int *t_label = &label_addr[0];
 
 			while (t_label < end_label && *t_label < label)
@@ -231,7 +231,7 @@ void Asm::DisassembleBuffer(std::ostream& os, const char *buffer, int size)
 			if (label != *t_label || t_label == end_label)
 			{
 
-				/* Shift labels after position down. */
+				// Shift labels after position down.
 				int *t2_label = end_label;
 
 				while (t2_label > t_label)
@@ -241,7 +241,7 @@ void Asm::DisassembleBuffer(std::ostream& os, const char *buffer, int size)
 				}
 				end_label++;
 
-				/* Insert the new label. */
+				// Insert the new label.
 				*t_label = label;
 			}
 
@@ -252,47 +252,47 @@ void Asm::DisassembleBuffer(std::ostream& os, const char *buffer, int size)
 	}
 
 
-	/* Reset to disassemble. */
+	// Reset to disassemble.
 	buffer = original_buffer;
 	rel_addr = 0;
 
-	/* Disassemble */
+	// Disassemble
 	while (buffer < original_buffer + size)
 	{
-		/* Parse the instruction */
+		// Parse the instruction
 		inst.Decode(buffer, rel_addr);
 		format = inst.getFormat();
 		bytes = inst.getBytes();
 		inst_count++;
 
-		/* Dump a label if necessary. */
+		// Dump a label if necessary.
 		if (*next_label == rel_addr && next_label != end_label)
 		{
 			os << misc::fmt("label_%04X:\n", rel_addr / 4);
 			next_label++;
 		}
 
-		/* Dump the instruction */
+		// Dump the instruction
 		ss.str("");
 		ss << ' ';
 		inst.Dump(ss);
 
-		/* Spaces */
+		// Spaces
 		if (ss.str().length() < 59)
 			ss << std::string(59 - ss.str().length(), ' ');
 
-		/* Hex dump */
+		// Hex dump
 		os << ss.str();
 		os << misc::fmt(" // %08X: %08X", rel_addr, bytes->word[0]);
 		if (inst.getSize() == 8)
 			os << misc::fmt(" %08X", bytes->word[1]);
 		os << '\n';
 
-		/* Break at end of program. */
+		// Break at end of program.
 		if (format == InstFormatSOPP && bytes->sopp.op == 1)
 			break;
 
-		/* Increment instruction pointer */
+		// Increment instruction pointer
 		buffer += inst.getSize();
 		rel_addr += inst.getSize();
 	}
@@ -300,13 +300,13 @@ void Asm::DisassembleBuffer(std::ostream& os, const char *buffer, int size)
 
 void Asm::DisassembleBinary(std::string path)
 {
-	/* Load ELF file */
+	// Load ELF file
 	ELFReader::File file(path);
 
-	/* Decode external ELF */
+	// Decode external ELF
 	for (int i = 0; i < file.getNumSymbols(); i++)
 	{
-		/* Get symbol */
+		// Get symbol
 		ELFReader::Symbol *symbol = file.getSymbol(i);
 		std::string symbol_name = symbol->getName();
 
@@ -315,24 +315,26 @@ void Asm::DisassembleBinary(std::string path)
 		if (misc::StringPrefix(symbol_name, "__OpenCL_") &&
 				misc::StringSuffix(symbol_name, "_kernel"))
 		{
-			/* Symbol must point to valid content */
+			// Symbol must point to valid content
 			if (!symbol->getBuffer())
-				misc::fatal("%s: symbol '%s' without content",
-						path.c_str(), symbol_name.c_str());
-			/* Get kernel name */
+				throw Error(misc::fmt(
+					"%s: symbol '%s' without content",
+					path.c_str(), symbol_name.c_str()));
+
+			// Get kernel name
 			std::string kernel_name = symbol_name.substr(9,
 					symbol_name.length() - 16);
 			std::cout << "**\n** Disassembly for '__kernel " <<
 					kernel_name << "'\n**\n\n";
 
-			/* Create internal ELF */
+			// Create internal ELF
 			Binary binary(symbol->getBuffer(), symbol->getSize(), kernel_name);
 
-			/* Get section with Southern Islands ISA */
+			// Get section with Southern Islands ISA
 			BinaryDictEntry *si_dict_entry = binary.GetSIDictEntry();
 			ELFReader::Section *section = si_dict_entry->text_section;
 
-			/* Disassemble */
+			// Disassemble
 			DisassembleBuffer(std::cout, section->getBuffer(), section->getSize());
 			std::cout << "\n\n\n";
 		}
@@ -357,30 +359,33 @@ void Asm::DisassembleOpenGLBinary(std::string path, int shader_index)
 	struct opengl_si_program_binary_t *program_bin;
 	struct opengl_si_shader_binary_t *shader;
 
-	/* Open file */
+	// Open file
 	std::ifstream f(path);
 	if (!f)
-		misc::fatal("%s: cannot open file", path.c_str());
+		throw misc::Error(misc::fmt("%s: cannot open file",
+				path.c_str()));
 
-	/* Load file into string */
+	// Load file into string
 	std::stringstream ss;
 	ss << f.rdbuf();
 	std::string s = ss.str();
 
-	/* Analyze the file and initialize structure */	
+	// Analyze the file and initialize structure	
 	program_bin = opengl_si_program_binary_create(s.c_str(), s.length(),
 			path.c_str());
 
-	/* Basic info of the shader binary */
+	// Basic info of the shader binary
 	std::cout << "This program binary contains "
 			<< list_count(program_bin->shader_bins)
 			<< " shaders\n\n";
 	if (shader_index > list_count(program_bin->shader_bins) ||
 			shader_index <= 0 )
-		misc::fatal("shader index out of range.\n\tPlease choose <index> "
-			"from 1 ~ %d", list_count(program_bin->shader_bins));
+		throw misc::Error(misc::fmt("Shader index out of range.\n"
+				"\tPlease choose <index> "
+				"from 1 ~ %d",
+				list_count(program_bin->shader_bins)));
 
-	/* Disassemble */
+	// Disassemble
 	shader = (struct opengl_si_shader_binary_t *)
 			list_get(program_bin->shader_bins,
 			shader_index - 1);
@@ -390,7 +395,7 @@ void Asm::DisassembleOpenGLBinary(std::string path, int shader_index)
 	opengl_si_shader_binary_debug_meta(shader);
 	std::cout << "\n\n\n";
 
-	/* Free */
+	// Free
 	opengl_si_program_binary_free(program_bin);
 }
 
