@@ -42,6 +42,9 @@ class Exception
 	// Call stack is saved here
 	std::string call_stack;
 
+	// Demangle symbol from stack trace
+	static std::string DemangleSymbol(const char* const symbol);
+
 public:
 
 	/// Constructor

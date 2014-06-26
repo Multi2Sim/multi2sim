@@ -86,6 +86,9 @@ LDADD = \
 	$(top_builddir)/src/lib/class/libclass.a \
 	$(top_builddir)/src/lib/cpp/libcpp.a
 
+if ENABLE_DEBUG
+AM_LDFLAGS = -rdynamic
+endif
 
 if HAVE_GTK
 AM_CFLAGS = @GTK_CFLAGS@

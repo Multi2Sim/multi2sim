@@ -306,6 +306,9 @@ class StringFormatter
 	// Stream constianing formatted string
 	std::stringstream stream;
 
+	// Current text
+	std::string text;
+
 	// Indentation of second and following lines of paragraphs
 	int indent = 0;
 
@@ -339,16 +342,18 @@ class StringFormatter
 	// Add one word to the stream
 	void AddWord(const std::string &word);
 
-	// Add text to the stream
-	void Add(const std::string &text);
+	// Format current text and add it to the string stream
+	void Format();
 
 public:
 
 	/// Constructor with an optional initial string
-	StringFormatter(const std::string &text = "")
+	StringFormatter(const std::string &text = "") : text(text)
 	{
-		Add(text);
 	}
+
+	/// Clear the content
+	void Clear();
 
 	/// Set the indentation of the first line of each paragraph
 	void setFirstLineIndent(int first_line_indent)
@@ -367,21 +372,22 @@ public:
 	void setWidth(int width) { this->width = width; }
 
 	/// Add text to the string formatter
-	StringFormatter &operator<<(const std::string &s)
+	StringFormatter &operator<<(const std::string &text)
 	{
-		Add(s);
+		this->text += text;
 		return *this;
 	}
 	
 	/// Dump the content of the fromatted string
-	void Dump(std::ostream &os = std::cout) const
+	void Dump(std::ostream &os = std::cout)
 	{
+		Format();
 		os << stream.str();
 	}
 
 	/// Alternative syntax for Dump()
 	friend std::ostream &operator<<(std::ostream &os,
-			const StringFormatter &formatter)
+			StringFormatter &formatter)
 	{
 		formatter.Dump(os);
 		return os;

@@ -709,6 +709,14 @@ std::string StringMap::MapFlags(unsigned flags) const
 // Class 'StringFormatter'
 //
 
+void StringFormatter::Clear()
+{
+	NewParagraph();
+	stream.str("");
+	text = "";
+}
+
+
 void StringFormatter::NewLine()
 {
 	// Ignore if we are already in the beginning of a new line
@@ -799,11 +807,14 @@ void StringFormatter::AddWord(const std::string &word)
 }
 
 
-void StringFormatter::Add(const std::string &text)
+void StringFormatter::Format()
 {
 	// Check good values for 'first_indent' and 'indent'
 	if (first_line_indent >= width || indent >= width)
 		throw misc::Panic("Invalid indentation values");
+	
+	// Clear output stream
+	stream.str("");
 
 	// Process text
 	std::string word;
