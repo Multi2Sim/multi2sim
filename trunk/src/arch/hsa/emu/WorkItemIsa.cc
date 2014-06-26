@@ -17,10 +17,37 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <arch/hsa/asm/BrigOperandEntry.h> 
+
 #include "WorkItem.h"
 
 namespace HSA
 {
+
+template <typename Type>
+Type WorkItem::getOperandValue(unsigned int index)
+{
+	// Get the operand entry
+	BrigInstEntry inst(pc, loader->binary.get());
+	BrigOperandEntry operand(inst.getOperand(index), inst.file, 
+			&inst, index);
+
+	// Do coresponding action according to the type of operand
+	switch (operand.getKind())
+	{
+	case BRIG_OPERAND_IMMED:
+		throw std::logic_error("Unsupported operand type IMMED");
+		break;
+	case BRIG_OPERAND_WAVESIZE:
+		return 1;
+	case BRIG_OPERAND_REG:
+		break;
+	default:
+		throw std::logic_error("Unsupported operand type");
+		break;
+	}
+
+}
 
 WorkItem::ExecuteInstFn WorkItem::execute_inst_fn[InstOpcodeCount + 1] = 
 {
@@ -130,7 +157,31 @@ void WorkItem::ExecuteInst_MULHI()
 
 void WorkItem::ExecuteInst_NEG()
 {
-	throw std::logic_error("Instruction not implemented");
+	BrigInstEntry inst(pc, loader->binary.get());
+
+	// Do different action accoding to the kind of the inst
+	if (inst.getKind() == BRIG_INST_BASIC)
+	{
+		switch (inst.getType())
+		{
+		case BRIG_TYPE_S32:
+		{
+			//int src = 1;
+			//int des = -src;
+			break;
+		}
+		case BRIG_TYPE_S64:
+			break;
+		}
+	}
+	else if (inst.getKind() == BRIG_INST_MOD)
+	{
+
+	}
+	else
+	{
+		throw Error("Unexpected instruction kind for NEG");
+	}
 }
 
 

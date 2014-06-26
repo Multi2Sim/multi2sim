@@ -23,6 +23,7 @@
 #include <arch/common/FileTable.h>
 #include <arch/hsa/asm/BrigInstEntry.h>
 
+#include "Registers.h"
 #include "Emu.h"
 
 namespace HSA
@@ -41,6 +42,9 @@ class WorkItem{
 
 	// File descriptor table, shared by workitems
 	std::shared_ptr<comm::FileTable> file_table;
+
+	// Private register file of this work item
+	Registers registers;
 
 
 
@@ -67,8 +71,8 @@ class WorkItem{
  		// Current working directory
  		std::string cwd;
 
- 		// The program counter, pointing to the inst in .code section
- 		char* pc;
+ 		// Entry point of current program 
+ 		char *entry_point;
 
  		// File name for standard input and output
  		std::string stdin_file_name;
@@ -98,6 +102,9 @@ class WorkItem{
  	// hsaIsa.cc
  	//
 
+ 	// The program counter, pointing to the inst in .code section
+ 	char* pc;
+
  	// Prototype of member function of class WorkItem devoted to the 
  	// execution of HSA virtual ISA instructions.
  	typedef void (WorkItem::*ExecuteInstFn)();
@@ -111,6 +118,10 @@ class WorkItem{
 
  	// unsupported inst opcode
  	void ExecuteInst_unsupported();
+
+ 	// Get the value of the index-th operand
+ 	template <typename Type>
+ 	Type getOperandValue(unsigned int index);
 
  	// Table of functions that implement instructions
  	static ExecuteInstFn execute_inst_fn[InstOpcodeCount + 1];

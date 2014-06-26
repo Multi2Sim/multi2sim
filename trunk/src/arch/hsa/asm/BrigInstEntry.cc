@@ -444,8 +444,8 @@ void BrigInstEntry::dumpOperands(std::ostream &os = std::cout) const
 	{
 		if(inst->operands[i] == 0) return;
 		if(i>0) os << ", ";
-		BrigOperandEntry op(getOperand(i), file, this, i);
-		op.Dump(os);
+		BrigOperandEntry operand(getOperand(i), file, this, i);
+		operand.Dump(os);
 	}
 }
 
