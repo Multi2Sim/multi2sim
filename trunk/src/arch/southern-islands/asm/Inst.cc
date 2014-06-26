@@ -283,15 +283,16 @@ void Inst::DumpOperandSeries(std::ostream& os, int start, int end)
 				os << "-2.0";
 				break;
 			default:
-				misc::fatal("Unimplemented series: "
-					"[%d:%d]", start, end);
+				throw Asm::Error(misc::fmt(
+						"Unimplemented series: "
+						"[%d:%d]", start, end));
 			}
 		}
 	}
 	else if (start <= 255)
 	{
-		misc::fatal("%s: illegal operand series: [%d:%d]",
-				__FUNCTION__, start, end);
+		throw Asm::Error(misc::fmt("Illegal operand series: [%d:%d]",
+				start, end));
 	}
 	else if (start <= 511)
 	{
@@ -344,8 +345,8 @@ void Inst::DumpOperandExp(std::ostream& os, int operand)
 	}
 	else if (operand < 12)
 	{
-		misc::fatal("%s: operand code [%d] unused.",
-				__FUNCTION__, operand);
+		throw Asm::Error(misc::fmt("Operand code [%d] unused.",
+				operand));
 	}
 	else if (operand <= 15)
 	{
@@ -354,8 +355,8 @@ void Inst::DumpOperandExp(std::ostream& os, int operand)
 	}
 	else if (operand < 32)
 	{
-		misc::fatal("%s: operand code [%d] unused.",
-				__FUNCTION__, operand);
+		throw Asm::Error(misc::fmt("Operand code [%d] unused.",
+				operand));
 	}
 	else if (operand <= 63)
 	{
@@ -393,7 +394,8 @@ void Inst::DumpSeriesVdata(std::ostream& os, unsigned int vdata, int op)
 			vdata_end = vdata + 3;
 			break;
 		default:
-			misc::fatal("MUBUF/MTBUF opcode not recognized");
+
+			throw Asm::Error("MUBUF/MTBUF opcode not recognized");
 	}
 
 	DumpVectorSeries(os, vdata, vdata_end);
@@ -730,8 +732,7 @@ void Inst::Dump(std::ostream &os) const
 					sdst_end = sdst + 15;
 					break;
 				default:
-					misc::fatal("Invalid smrd "
-						"opcode");
+					throw Asm::Error("Invalid smrd opcode");
 				}
 			}
 			/* S_BUFFER_LOAD_DWORD */
@@ -755,25 +756,24 @@ void Inst::Dump(std::ostream &os) const
 					sdst_end = sdst + 15;
 					break;
 				default:
-					misc::fatal("Invalid smrd "
-						"opcode");
+					throw Asm::Error("Invalid smrd opcode");
 				}
 			}
 			/* S_MEMTIME */
 			else if (op == 30)
 			{
-				misc::fatal("S_MEMTIME instruction not currently" 
-					"supported");
+				throw misc::Panic("S_MEMTIME instruction not "
+						"supported");
 			}
 			/* S_DCACHE_INV */
 			else if (op == 31)
 			{
-				misc::fatal("S_DCACHE_INV instruction not" 
+				throw misc::Panic("S_DCACHE_INV instruction not" 
 					"currently supported");
 			}
 			else
 			{
-				misc::fatal("Invalid smrd opcode");
+				throw Asm::Error("Invalid smrd opcode");
 			}
 
 			DumpScalarSeries(os, sdst, sdst_end);
@@ -803,18 +803,18 @@ void Inst::Dump(std::ostream &os) const
 			/* S_MEMTIME */
 			else if (op == 30)
 			{
-				misc::fatal("S_MEMTIME instruction not currently"
-					" supported");
+				throw misc::Panic("S_MEMTIME instruction not "
+						" supported");
 			}
 			/* S_DCACHE_INV */
 			else if (op == 31)
 			{
-				misc::fatal("S_DCACHE_INV instruction not currently"
-					" supported");
+				throw misc::Panic("S_DCACHE_INV instruction "
+						"not supported");
 			}
 			else
 			{
-				misc::fatal("Invalid smrd opcode");
+				throw Asm::Error("Invalid smrd opcode");
 			}
 
 			DumpScalarSeries(os, sbase, sbase_end);
@@ -1003,7 +1003,8 @@ void Inst::Dump(std::ostream &os) const
 		}
 		else
 		{
-			misc::fatal("%s: token not recognized.", fmt_str);
+			throw misc::Panic(misc::fmt("%s: token not recognized.",
+					fmt_str));
 		}
 
 		fmt_str += token_len;
@@ -1034,9 +1035,10 @@ void Inst::Decode(const char *buf, unsigned int address)
 	{
 		if (!as->getDecTableSopp(bytes.sopp.op))
 		{
-			misc::fatal("Unimplemented Instruction: SOPP:%d  "
-				"// %08X: %08X\n", bytes.sopp.op,
-				address, * (unsigned int *) buf);
+			throw misc::Panic(misc::fmt(
+					"Unimplemented Instruction: SOPP:%d  "
+					"// %08X: %08X\n", bytes.sopp.op,
+					address, * (unsigned int *) buf));
 		}
 
 		info = as->getDecTableSopp(bytes.sopp.op);
@@ -1045,9 +1047,10 @@ void Inst::Decode(const char *buf, unsigned int address)
 	{
 		if (!as->getDecTableSopc(bytes.sopc.op))
 		{
-			misc::fatal("Unimplemented Instruction: SOPC:%d  "
-				"// %08X: %08X\n", bytes.sopc.op,
-				address, * (unsigned int *) buf);
+			throw misc::Panic(misc::fmt(
+					"Unimplemented Instruction: SOPC:%d  "
+					"// %08X: %08X\n", bytes.sopc.op,
+					address, * (unsigned int *) buf));
 		}
 
 		info = as->getDecTableSopc(bytes.sopc.op);
@@ -1067,9 +1070,10 @@ void Inst::Decode(const char *buf, unsigned int address)
 	{
 		if (!as->getDecTableSop1(bytes.sop1.op))
 		{
-			misc::fatal("Unimplemented Instruction: SOP1:%d  "
-				"// %08X: %08X\n", bytes.sop1.op,
-				address, *(unsigned int*)buf);
+			throw misc::Panic(misc::fmt(
+					"Unimplemented Instruction: SOP1:%d  "
+					"// %08X: %08X\n", bytes.sop1.op,
+					address, *(unsigned int *) buf));
 		}
 
 		info = as->getDecTableSop1(bytes.sop1.op);
@@ -1086,9 +1090,10 @@ void Inst::Decode(const char *buf, unsigned int address)
 	{
 		if (!as->getDecTableSopk(bytes.sopk.op))
 		{
-			misc::fatal("Unimplemented Instruction: SOPK:%d  "
-				"// %08X: %08X\n", bytes.sopk.op,
-				address, * (unsigned int *) buf);
+			throw misc::Panic(misc::fmt(
+					"Unimplemented Instruction: SOPK:%d  "
+					"// %08X: %08X\n", bytes.sopk.op,
+					address, * (unsigned int *) buf));
 		}
 
 		info = as->getDecTableSopk(bytes.sopk.op);
@@ -1097,9 +1102,10 @@ void Inst::Decode(const char *buf, unsigned int address)
 	{
 		if (!as->getDecTableSop2(bytes.sop2.op))
 		{
-			misc::fatal("Unimplemented Instruction: SOP2:%d  "
-				"// %08X: %08X\n", bytes.sop2.op,
-				address, *(unsigned int *)buf);
+			throw misc::Panic(misc::fmt(
+					"Unimplemented Instruction: SOP2:%d  "
+					"// %08X: %08X\n", bytes.sop2.op,
+					address, *(unsigned int *) buf));
 		}
 
 		info = as->getDecTableSop2(bytes.sop2.op);
@@ -1119,9 +1125,10 @@ void Inst::Decode(const char *buf, unsigned int address)
 	{
 		if (!as->getDecTableSmrd(bytes.smrd.op))
 		{
-			misc::fatal("Unimplemented Instruction: SMRD:%d  "
-				"// %08X: %08X\n", bytes.smrd.op,
-				address, *(unsigned int *)buf);
+			throw misc::Panic(misc::fmt(
+					"Unimplemented Instruction: SMRD:%d  "
+					"// %08X: %08X\n", bytes.smrd.op,
+					address, *(unsigned int *) buf));
 		}
 
 		info = as->getDecTableSmrd(bytes.smrd.op);
@@ -1134,11 +1141,12 @@ void Inst::Decode(const char *buf, unsigned int address)
 
 		if (!as->getDecTableVop3(bytes.vop3a.op))
 		{
-			misc::fatal("Unimplemented Instruction: VOP3:%d  "
-				"// %08X: %08X %08X\n",
-				bytes.vop3a.op, address,
-				*(unsigned int *)buf,
-				*(unsigned int *)(buf + 4));
+			throw misc::Panic(misc::fmt(
+					"Unimplemented Instruction: VOP3:%d  "
+					"// %08X: %08X %08X\n",
+					bytes.vop3a.op, address,
+					*(unsigned int *) buf,
+					*(unsigned int *) (buf + 4)));
 		}
 
 		info = as->getDecTableVop3(bytes.vop3a.op);
@@ -1147,10 +1155,11 @@ void Inst::Decode(const char *buf, unsigned int address)
 	{
 		if (!as->getDecTableVopc(bytes.vopc.op))
 		{
-			misc::fatal("Unimplemented Instruction: VOPC:%d  "
-				"// %08X: %08X\n",
-				bytes.vopc.op, address,
-				*(unsigned int *)buf);
+			throw misc::Panic(misc::fmt(
+					"Unimplemented Instruction: VOPC:%d  "
+					"// %08X: %08X\n",
+					bytes.vopc.op, address,
+					*(unsigned int *) buf));
 		}
 
 		info = as->getDecTableVopc(bytes.vopc.op);
@@ -1167,9 +1176,10 @@ void Inst::Decode(const char *buf, unsigned int address)
 	{
 		if (!as->getDecTableVop1(bytes.vop1.op))
 		{
-			misc::fatal("Unimplemented Instruction: VOP1:%d  "
-				"// %08X: %08X\n", bytes.vop1.op,
-				address, * (unsigned int *) buf);
+			throw misc::Panic(misc::fmt(
+					"Unimplemented Instruction: VOP1:%d  "
+					"// %08X: %08X\n", bytes.vop1.op,
+					address, * (unsigned int *) buf));
 		}
 
 		info = as->getDecTableVop1(bytes.vop1.op);
@@ -1186,9 +1196,10 @@ void Inst::Decode(const char *buf, unsigned int address)
 	{
 		if (!as->getDecTableVop2(bytes.vop2.op))
 		{
-			misc::fatal("Unimplemented Instruction: VOP2:%d  "
-				"// %08X: %08X\n", bytes.vop2.op,
-				address, * (unsigned int *) buf);
+			throw misc::Panic(misc::fmt(
+					"Unimplemented Instruction: VOP2:%d  "
+					"// %08X: %08X\n", bytes.vop2.op,
+					address, * (unsigned int *) buf));
 		}
 
 		info = as->getDecTableVop2(bytes.vop2.op);
@@ -1213,9 +1224,10 @@ void Inst::Decode(const char *buf, unsigned int address)
 	{
 		if (!as->getDecTableVintrp(bytes.vintrp.op))
 		{
-			misc::fatal("Unimplemented Instruction: VINTRP:%d  "
-				"// %08X: %08X\n", bytes.vintrp.op,
-				address, * (unsigned int *) buf);
+			throw misc::Panic(misc::fmt(
+					"Unimplemented Instruction: VINTRP:%d  "
+					"// %08X: %08X\n", bytes.vintrp.op,
+					address, * (unsigned int *) buf));
 		}
 
 		info = as->getDecTableVintrp(bytes.vintrp.op);
@@ -1228,10 +1240,11 @@ void Inst::Decode(const char *buf, unsigned int address)
 		bytes.dword = * (unsigned long long *) buf;
 		if (!as->getDecTableDs(bytes.ds.op))
 		{
-			misc::fatal("Unimplemented Instruction: DS:%d  "
-				"// %08X: %08X %08X\n", bytes.ds.op,
-				address, *(unsigned int *)buf,
-				*(unsigned int *)(buf + 4));
+			throw misc::Panic(misc::fmt(
+					"Unimplemented Instruction: DS:%d  "
+					"// %08X: %08X %08X\n", bytes.ds.op,
+					address, *(unsigned int *)buf,
+					*(unsigned int *) (buf + 4)));
 		}
 
 		info = as->getDecTableDs(bytes.ds.op);
@@ -1244,10 +1257,12 @@ void Inst::Decode(const char *buf, unsigned int address)
 
 		if (!as->getDecTableMtbuf(bytes.mtbuf.op))
 		{
-			misc::fatal("Unimplemented Instruction: MTBUF:%d  "
-				"// %08X: %08X %08X\n",
-				bytes.mtbuf.op, address,
-				*(unsigned int *)buf, *(unsigned int *)(buf+4));
+			throw misc::Panic(misc::fmt(
+					"Unimplemented Instruction: MTBUF:%d  "
+					"// %08X: %08X %08X\n",
+					bytes.mtbuf.op, address,
+					*(unsigned int *) buf,
+					*(unsigned int *) (buf+4)));
 		}
 
 		info = as->getDecTableMtbuf(bytes.mtbuf.op);
@@ -1260,11 +1275,12 @@ void Inst::Decode(const char *buf, unsigned int address)
 
 		if (!as->getDecTableMubuf(bytes.mubuf.op))
 		{
-			misc::fatal("Unimplemented Instruction: MUBUF:%d  "
-				"// %08X: %08X %08X\n",
-				bytes.mubuf.op, address,
-				*(unsigned int *)buf,
-				*(unsigned int *)(buf+4));
+			throw misc::Panic(misc::fmt(
+					"Unimplemented Instruction: MUBUF:%d  "
+					"// %08X: %08X %08X\n",
+					bytes.mubuf.op, address,
+					*(unsigned int *) buf,
+					*(unsigned int *) (buf+4)));
 		}
 
 		info = as->getDecTableMubuf(bytes.mubuf.op);
@@ -1277,11 +1293,12 @@ void Inst::Decode(const char *buf, unsigned int address)
 
 		if(!as->getDecTableMimg(bytes.mimg.op))
 		{
-			misc::fatal("Unimplemented Instruction: MIMG:%d  "
-				"// %08X: %08X %08X\n",
-				bytes.mimg.op, address,
-				*(unsigned int *)buf,
-				*(unsigned int *)(buf+4));
+			throw misc::Panic(misc::fmt(
+					"Unimplemented Instruction: MIMG:%d  "
+					"// %08X: %08X %08X\n",
+					bytes.mimg.op, address,
+					*(unsigned int *) buf,
+					*(unsigned int *) (buf + 4)));
 		}
 
 		info = as->getDecTableMimg(bytes.mimg.op);
@@ -1294,14 +1311,16 @@ void Inst::Decode(const char *buf, unsigned int address)
 
 		/* Export is the only instruction in its kind */
 		if (!as->getDecTableExp(0))
-			misc::fatal("Unimplemented Instruction: EXP\n");
+			throw misc::Panic("Unimplemented Instruction: EXP\n");
 
 		info = as->getDecTableExp(0);
 	}
 	else
 	{
-		misc::fatal("Unimplemented format. Instruction is:  // %08X: %08X\n",
-				address, ((unsigned int*)buf)[0]);
+		throw misc::Panic(misc::fmt(
+				"Unimplemented format. Instruction is:  "
+				"// %08X: %08X\n",
+				address, ((unsigned int*) buf)[0]));
 	}
 }
 

@@ -23,6 +23,8 @@
 #include <cassert>
 #include <iostream>
 
+#include <lib/cpp/Error.h>
+
 #include "Inst.h"
 
 
@@ -73,6 +75,18 @@ class Asm
 	void DisassembleBuffer(std::ostream& os, const char *buffer, int size);
 
 public:
+
+	/// Error in Southern Islands disassembler
+	class Error : public misc::Error
+	{
+	public:
+
+		/// Constructor
+		Error(const std::string &message) : misc::Error(message)
+		{
+			AppendPrefix("Southern Islands disassembler");
+		}
+	};
 
 	// Constructor
 	Asm();

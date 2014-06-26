@@ -122,8 +122,7 @@ int Driver::CallMemWrite(mem::Memory *memory, unsigned args_ptr)
 
 	/* Check memory range */
 	if (device_ptr + size > si_emu->getVideoMemTop())
-		misc::fatal("%s: accessing device memory not allocated",
-				__FUNCTION__);
+		throw Error("Device not allocated");
 
 	// Read memory from host to device
 	std::unique_ptr<char> buffer(new char[size]);
@@ -140,18 +139,20 @@ int Driver::CallMemWrite(mem::Memory *memory, unsigned args_ptr)
 // ...
 int Driver::CallMemCopy(mem::Memory *memory, unsigned args_ptr)
 {
-	misc::fatal("%s:function call is not currently implemented in multi2sim", __FUNCTION__);
+	throw misc::Panic("ABI call not implemented");
 	return 0;
 }
+
 
 // ABI Call 'MemFree'
 //
 // ...
 int Driver::CallMemFree(mem::Memory *memory, unsigned args_ptr)
 {
-	misc::fatal("%s:function call is not currently implemented in multi2sim", __FUNCTION__);
+	throw misc::Panic("ABI call not implemented");
 	return 0;
 }
+
 
 /// ABI Call 'ProgramCreate'
 ///
@@ -202,8 +203,7 @@ int Driver::CallProgramSetBinary(mem::Memory *memory, unsigned args_ptr)
 	// Get program 
 	Program *program = getProgramById(program_id);
 	if (!program)
-		misc::fatal("%s: invalid program ID (%d)",
-				__FUNCTION__, program_id);
+		throw Error(misc::fmt("Invalid program ID (%d)", program_id));
 
 	// Set the binary
 	std::unique_ptr<char> buffer(new char[bin_size]);
@@ -245,8 +245,7 @@ int Driver::CallKernelCreate(mem::Memory *memory, unsigned args_ptr)
 	// Get program object 
 	Program *program = getProgramById(program_id);
 	if (!program)
-		misc::fatal("%s: invalid program ID (%d)",
-				__FUNCTION__, program_id);
+		throw Error(misc::fmt("Invalid program ID (%d)", program_id));
 
 	// Add kernel object
 	int kernel_count = getKernelCount();
@@ -304,19 +303,17 @@ int Driver::CallKernelSetArgValue(mem::Memory *memory, unsigned args_ptr)
 	// Get kernel 
 	Kernel *kernel = getKernelById(kernel_id);
 	if (!kernel)
-		misc::fatal("%s: invalid kernel ID (%d)",
-				__FUNCTION__, kernel_id);
+		throw Error(misc::fmt("Invalid kernel ID (%d)", kernel_id));
 
 	// Get argument 
 	ArgValue *arg = dynamic_cast<ArgValue *>(kernel->getArgByIndex(index));
 	if (!arg || arg->getType() != ArgTypeValue)
-		misc::fatal("%s: invalid argument %d type",
-				__FUNCTION__, index);
+		throw Error(misc::fmt("Invalid type for argument %d", index));
 
 	// Check valid size 
 	if (size != arg->getSize())
-		misc::fatal("%s: argument %d: size %d expected, %d found",
-				__FUNCTION__, index, arg->getSize(), size);
+		throw Error(misc::fmt("Argument %d: Size %d expected, but "
+				"%d found", index, arg->getSize(), size));
 
 	// Save value 
 	std::unique_ptr<void> value_ptr(operator new(size));
@@ -376,19 +373,17 @@ int Driver::CallKernelSetArgPointer(mem::Memory *memory, unsigned args_ptr)
 	// Get kernel 
 	Kernel *kernel = getKernelById(kernel_id);
 	if (!kernel)
-		misc::fatal("%s: invalid kernel ID (%d)",
-				__FUNCTION__, kernel_id);
+		throw Error(misc::fmt("Invalid kernel ID (%d)", kernel_id));
 
 	// Get argument 
 	ArgPointer *arg = dynamic_cast<ArgPointer *> (kernel->getArgByIndex(index));
 	if (!arg || arg->getType() != ArgTypePointer)
-		misc::fatal("%s: invalid argument %d type",
-				__FUNCTION__, index);
+		throw Error(misc::fmt("Invalid type for argument %d", index));
 
 	// Check valid size 
 	if (size != arg->getSize())
-		misc::fatal("%s: argument %d: size %d expected, %d found",
-				__FUNCTION__, index, arg->getSize(), size);
+		throw Error(misc::fmt("Argument %d: size %d expected, but "
+				"%d found", index, arg->getSize(), size));
 
 	// Save value 
 	arg->setSetFlag(true);
@@ -399,113 +394,126 @@ int Driver::CallKernelSetArgPointer(mem::Memory *memory, unsigned args_ptr)
 	return 0;
 }
 
+
 // ABI Call 'KernelSetArgSampler'
 //
 // ...
 int Driver::CallKernelSetArgSampler(mem::Memory *memory, unsigned args_ptr)
 {
-	misc::fatal("%s:function call is not currently implemented in multi2sim", __FUNCTION__);
+	throw misc::Panic("ABI call not implemented");
 	return 0;
 }
+
 
 // ABI Call 'KernelSetArgImage'
 //
 // ...
 int Driver::CallKernelSetArgImage(mem::Memory *memory, unsigned args_ptr)
 {
-	misc::fatal("%s:function call is not currently implemented in multi2sim", __FUNCTION__);
+	throw misc::Panic("ABI call not implemented");
 	return 0;
 }
 
 
-// ABI Call 'NdrangeCreate'
+// ABI Call 'NDRangeCreate'
 //
 // ...
-int Driver::CallNdrangeCreate(mem::Memory *memory, unsigned args_ptr)
+int Driver::CallNDRangeCreate(mem::Memory *memory, unsigned args_ptr)
+{
+	throw misc::Panic("ABI call not implemented");
+	return 0;
+}
+
+
+// ABI Call 'NDRangeGetNumBufferEntries'
+//
+// ...
+int Driver::CallNDRangeGetNumBufferEntries(mem::Memory *memory, unsigned args_ptr)
+{
+	throw misc::Panic("ABI call not implemented");
+	return 0;
+}
+
+// ABI Call 'NDRangeSendWorkGroups'
+//
+// ...
+int Driver::CallNDRangeSendWorkGroups(mem::Memory *memory, unsigned args_ptr)
+{
+	throw misc::Panic("ABI call not implemented");
+	return 0;
+}
+
+// ABI Call 'NDRangeFinish'
+//
+// ...
+int Driver::CallNDRangeFinish(mem::Memory *memory, unsigned args_ptr)
+{
+	throw misc::Panic("ABI call not implemented");
+	return 0;
+}
+
+// ABI Call 'NDRangePassMemObjs'
+//
+// ...
+int Driver::CallNDRangePassMemObjs(mem::Memory *memory, unsigned args_ptr)
+{
+	throw misc::Panic("ABI call not implemented");
+	return 0;
+}
+
+// ABI Call 'NDRangeSetFused'
+//
+// ...
+int Driver::CallNDRangeSetFused(mem::Memory *memory, unsigned args_ptr)
 {
 	return 0;
 }
 
-
-// ABI Call 'NdrangeGetNumBufferEntries'
+// ABI Call 'NDRangeFlush'
 //
 // ...
-int Driver::CallNdrangeGetNumBufferEntries(mem::Memory *memory, unsigned args_ptr)
+int Driver::CallNDRangeFlush(mem::Memory *memory, unsigned args_ptr)
 {
+	throw misc::Panic("ABI call not implemented");
 	return 0;
 }
 
-// ABI Call 'NdrangeSendWorkGroups'
+// ABI Call 'NDRangeFree'
 //
 // ...
-int Driver::CallNdrangeSendWorkGroups(mem::Memory *memory, unsigned args_ptr)
+int Driver::CallNDRangeFree(mem::Memory *memory, unsigned args_ptr)
 {
+	throw misc::Panic("ABI call not implemented");
 	return 0;
 }
 
-// ABI Call 'NdrangeFinish'
+
+// ABI Call 'NDRangeStart'
 //
 // ...
-int Driver::CallNdrangeFinish(mem::Memory *memory, unsigned args_ptr)
+int Driver::CallNDRangeStart(mem::Memory *memory, unsigned args_ptr)
 {
+	throw misc::Panic("ABI call not implemented");
 	return 0;
 }
 
-// ABI Call 'NdrangePassMemObjs'
+
+// ABI Call 'NDRangeEnd'
 //
 // ...
-int Driver::CallNdrangePassMemObjs(mem::Memory *memory, unsigned args_ptr)
+int Driver::CallNDRangeEnd(mem::Memory *memory, unsigned args_ptr)
 {
+	throw misc::Panic("ABI call not implemented");
 	return 0;
 }
 
-// ABI Call 'NdrangeSetFused'
-//
-// ...
-int Driver::CallNdrangeSetFused(mem::Memory *memory, unsigned args_ptr)
-{
-	return 0;
-}
-
-// ABI Call 'NdrangeFlush'
-//
-// ...
-int Driver::CallNdrangeFlush(mem::Memory *memory, unsigned args_ptr)
-{
-	return 0;
-}
-
-// ABI Call 'NdrangeFree'
-//
-// ...
-int Driver::CallNdrangeFree(mem::Memory *memory, unsigned args_ptr)
-{
-	return 0;
-}
-
-// ABI Call 'NdrangeStart'
-//
-// ...
-int Driver::CallNdrangeStart(mem::Memory *memory, unsigned args_ptr)
-{
-	return 0;
-}
-
-// ABI Call 'NdrangeEnd'
-//
-// ...
-int Driver::CallNdrangeEnd(mem::Memory *memory, unsigned args_ptr)
-{
-	misc::fatal("%s:function call is not currently implemented in multi2sim", __FUNCTION__);
-	return 0;
-}
 
 // ABI Call 'RuntimeDebug'
 //
 // ...
 int Driver::CallRuntimeDebug(mem::Memory *memory, unsigned args_ptr)
 {
-	misc::fatal("%s:function call is not currently implemented in multi2sim", __FUNCTION__);
+	throw misc::Panic("ABI call not implemented");
 	return 0;
 }
 
