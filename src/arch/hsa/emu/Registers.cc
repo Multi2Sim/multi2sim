@@ -35,13 +35,13 @@ Registers::~Registers()
 
 void Registers::setCRegister(const std::string &name, char *value)
 {
-	throw std::logic_error("Unimplemented setCRegister");
+	throw misc::Panic("Unimplemented setCRegister");
 }
 
 
 char *Registers::getCRegister(const std::string &name)
 {
-	throw std::logic_error("Unimplemented getCRegister");
+	throw misc::Panic("Unimplemented getCRegister");
 	return nullptr;
 }
 
@@ -120,8 +120,7 @@ char *Registers::getRegister(const std::string &name)
 	if (it == register_info.end())
 	{
 		// register not found
-		throw std::logic_error("Register not allocated");
-		return nullptr;
+		throw misc::Panic("Register not allocated");
 	}
 
 	// Get offset to certain register

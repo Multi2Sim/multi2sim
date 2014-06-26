@@ -17,8 +17,6 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <stdexcept>
-
 #include <lib/cpp/Misc.h>
 
 #include "Context.h"
@@ -245,7 +243,7 @@ void Context::ExecuteInst_insb()
 {
 	newUInst_insb(regs.getEsi(), regs.getEdi());
 	ExecuteStringInst_insb();
-	throw std::logic_error("Unimplemented instruction");
+	throw misc::Panic("Unimplemented instruction");
 }
 
 
@@ -271,7 +269,7 @@ void Context::ExecuteInst_insd()
 {
 	newUInst_insd(regs.getEsi(), regs.getEdi());
 	ExecuteStringInst_insd();
-	throw std::logic_error("Unimplemented instruction");
+	throw misc::Panic("Unimplemented instruction");
 }
 
 
@@ -297,7 +295,7 @@ void Context::ExecuteInst_lodsb()
 {
 	newUInst_lodsb(regs.getEsi(), regs.getEdi());
 	ExecuteStringInst_lodsb();
-	throw std::logic_error("Unimplemented instruction");
+	throw misc::Panic("Unimplemented instruction");
 }
 
 
@@ -323,7 +321,7 @@ void Context::ExecuteInst_lodsd()
 {
 	newUInst_lodsd(regs.getEsi(), regs.getEdi());
 	ExecuteStringInst_lodsd();
-	throw std::logic_error("Unimplemented instruction");
+	throw misc::Panic("Unimplemented instruction");
 }
 
 
@@ -455,7 +453,7 @@ void Context::ExecuteInst_outsb()
 {
 	newUInst_outsb(regs.getEsi(), regs.getEdi());
 	ExecuteStringInst_outsb();
-	throw std::logic_error("Unimplemented instruction");
+	throw misc::Panic("Unimplemented instruction");
 }
 
 
@@ -481,7 +479,7 @@ void Context::ExecuteInst_outsd()
 {
 	newUInst_outsd(regs.getEsi(), regs.getEdi());
 	ExecuteStringInst_outsd();
-	throw std::logic_error("Unimplemented instruction");
+	throw misc::Panic("Unimplemented instruction");
 }
 
 

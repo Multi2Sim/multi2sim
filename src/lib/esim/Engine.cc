@@ -19,6 +19,7 @@
 
 #include <csignal>
 
+#include <lib/cpp/Error.h>
 #include <lib/cpp/IniFile.h>
 
 #include "Action.h"
@@ -284,7 +285,7 @@ void Engine::Schedule(EventType *event_type,
 
 	// Frame must not be suspended in a queue
 	if (event_frame->isInQueue())
-		throw new std::logic_error("Attempt to schedule an event "
+		throw misc::Panic("Attempt to schedule an event "
 				"that is currently suspended in a queue");
 
 	// Ignore event if engine is locked
@@ -303,7 +304,7 @@ void Engine::Schedule(EventType *event_type,
 	// valid frequency domain.
 	FrequencyDomain *frequency_domain = event_type->getFrequencyDomain();
 	if (!frequency_domain)
-		throw std::logic_error(misc::fmt("Event '%s' has been "
+		throw misc::Panic(misc::fmt("Event '%s' has been "
 				"scheduled, but it does not belong to a "
 				"valid frequency domain",
 				event_type->getName().c_str()));
@@ -412,7 +413,7 @@ void Engine::Return(int after)
 {
 	// This function must be invoked within an event handler
 	if (!current_event)
-		throw std::logic_error("Function cannot be invoked outside of "
+		throw misc::Panic("Function cannot be invoked outside of "
 				"an event handler");
 
 	// If this is the bottom of the stack, ignore
@@ -431,12 +432,12 @@ void Engine::Wait(Queue &queue, EventType *event_type)
 {
 	// This function must be invoked within an event handler
 	if (current_event == nullptr)
-		throw std::logic_error("Function cannot be invoked outside of "
+		throw misc::Panic("Function cannot be invoked outside of "
 				"an event handler");
 
 	// The event type must be valid
 	if (event_type == nullptr)
-		throw std::logic_error("Cannot suspend an event with a null "
+		throw misc::Panic("Cannot suspend an event with a null "
 				"wakeup event type");
 
 	// Add event frame to the stack
@@ -463,7 +464,7 @@ EventFrame *Engine::getParentFrame()
 {
 	// Check that we are in an event handler
 	if (!current_event)
-		throw std::logic_error(misc::fmt("Function %s invoked "
+		throw misc::Panic(misc::fmt("Function %s invoked "
 				"outside of an event handler", __FUNCTION__));
 
 	// Return parent frame
@@ -482,7 +483,7 @@ void Engine::ParseConfiguration(const std::string &path)
 	// Find the 'Actions' section.
 	if (!config_file.Exists("Actions"))
 	{
-		throw std::logic_error(misc::fmt("Esim Actions section "
+		throw misc::Panic(misc::fmt("Esim Actions section "
 				"not found in configuration file."));
 	}
 
@@ -523,9 +524,9 @@ void Engine::ParseAction(const std::string &line,
 
 	// Every action type has 3 arguments, so assert that we have 3 tokens.
 	if (tokens.size() != 3)
-		throw std::runtime_error(misc::fmt("Esim action malformed.\n"
+		throw Error(misc::fmt("Malformed action.\n"
 				"Expected 3 tokens, but instead received %d.\n"
-				">\t%s",
+				"\t> %s",
 				(int) tokens.size(),
 				line.c_str()));
 
@@ -540,9 +541,9 @@ void Engine::ParseAction(const std::string &line,
 		ParseActionCreateCheck(tokens);
 	else
 		// Invalid action type.
-		throw std::runtime_error(misc::fmt("Esim action malformed.\n"
+		throw Error(misc::fmt("Malformed action.\n"
 				"Invalid action type '%s'.\n"
-				">\t%s", tokens[0].c_str(), line.c_str()));
+				"\t>%s", tokens[0].c_str(), line.c_str()));
 }
 
 
@@ -608,21 +609,16 @@ void Engine::TestLoop(const std::string &config_path)
 		ParseConfiguration(config_path);
 
 		// Run the simulation until there are no more events left.
-		while(events.size() != 0)
-		{
+		while (events.size() != 0)
 			ProcessEvents();
-		}
 
 		// Process the end events.
 		ProcessAllEvents();
 	}
-	catch (std::runtime_error &e)
+	catch (misc::Exception &e)
 	{
-		misc::fatal("%s", e.what());
-	}
-	catch (std::logic_error &e)
-	{
-		misc::panic("%s", e.what());
+		e.Dump();
+		exit(1);
 	}
 }
 

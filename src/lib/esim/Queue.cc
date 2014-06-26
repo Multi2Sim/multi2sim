@@ -17,6 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <lib/cpp/Error.h>
+
 #include "Engine.h"
 #include "Queue.h"
 
@@ -79,7 +81,7 @@ void Queue::WakeupOne()
 {
 	// Queue must have at least one event in it
 	if (isEmpty())
-		throw std::logic_error("Queue is empty");
+		throw misc::Panic("Queue is empty");
 
 	// Get event frame from the head
 	std::shared_ptr<EventFrame> event_frame = PopFront();

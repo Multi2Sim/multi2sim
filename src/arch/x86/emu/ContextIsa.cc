@@ -183,21 +183,21 @@ unsigned Context::getLinearAddress(unsigned offset)
 	// Segment override
 	if (inst.getSegment() != InstRegGs)
 	{
-		throw std::logic_error("Unimplemented segment override");
+		throw misc::Panic("Unimplemented segment override");
 		return 0;
 	}
 
 	// GLibc segment at TLS entry 6
 	if (regs.Read(InstRegGs) != 0x33)
 	{
-		throw std::logic_error(misc::fmt("Linear address for gs = 0x%x",
+		throw misc::Panic(misc::fmt("Linear address for gs = 0x%x",
 				regs.Read(InstRegGs)));
 		return 0;
 	}
 
 	if (!glibc_segment_base)
 	{
-		throw std::logic_error(misc::fmt("GLibc segment not set "
+		throw misc::Panic(misc::fmt("GLibc segment not set "
 				"in linear address calculation"));
 		return 0;
 	}
@@ -287,7 +287,7 @@ void Context::PushFpu(unsigned char *value)
 	// Get stack top
 	regs.decFpuTop();
 	if (regs.isFpuValid(regs.getFpuTop()))
-		throw std::logic_error("Unexpected valid FPU entry");
+		throw misc::Panic("Unexpected valid FPU entry");
 
 	regs.setFpuValid(regs.getFpuTop());
 	memcpy(regs.getFpuValue(regs.getFpuTop()), value, 10);
@@ -298,7 +298,7 @@ void Context::PopFpu(unsigned char *value)
 {
 	// Check valid entry
 	if (!regs.isFpuValid(regs.getFpuTop()))
-		throw std::logic_error("Unexpected invalid FPU entry");
+		throw misc::Panic("Unexpected invalid FPU entry");
 
 	// Copy value
 	if (value)
@@ -378,7 +378,7 @@ unsigned short Context::LoadFpuStatus()
 	unsigned short status = 0;
 	
 	if (!misc::inRange(regs.getFpuTop(), 0, 7))
-		throw std::logic_error("Invalid FPU stack top");
+		throw misc::Panic("Invalid FPU stack top");
 
 	status |= regs.getFpuTop() << 11;
 	if (misc::getBit32(regs.getFpuCode(), 3))

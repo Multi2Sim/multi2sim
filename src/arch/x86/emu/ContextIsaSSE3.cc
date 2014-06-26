@@ -35,7 +35,7 @@ namespace x86
 #define assert __COMPILATION_ERROR__
 
 
-#define __UNIMPLEMENTED__ throw std::logic_error("Unimplemented instruction");
+#define __UNIMPLEMENTED__ throw misc::Panic("Unimplemented instruction");
 
 
 void Context::ExecuteInst_palignr_xmm_xmmm128_imm8()

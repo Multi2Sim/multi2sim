@@ -38,13 +38,13 @@ namespace x86
 
 void Context::ExecuteInst_bound_r16_rm32()
 {
-	throw std::logic_error("Unimplemented instruction");
+	throw misc::Panic("Unimplemented instruction");
 }
 
 
 void Context::ExecuteInst_bound_r32_rm64()
 {
-	throw std::logic_error("Unimplemented instruction");
+	throw misc::Panic("Unimplemented instruction");
 }
 
 
@@ -453,7 +453,7 @@ void Context::ExecuteInst_cpuid()
 
 	default:
 
-		throw std::logic_error(misc::fmt("Unimplemented for eax = 0x%x",
+		throw misc::Panic(misc::fmt("Unimplemented for eax = 0x%x",
 				regs.getEax()));
 	}
 
@@ -1028,7 +1028,7 @@ void Context::ExecuteInst_inc_ir32()
 
 void Context::ExecuteInst_int_3()
 {
-	throw std::logic_error("Unimplemented instruction");
+	throw misc::Panic("Unimplemented instruction");
 }
 
 
@@ -1040,7 +1040,7 @@ void Context::ExecuteInst_int_imm8()
 	// Interrupt code
 	num = (unsigned char) inst.getImmByte();
 	if (num != 0x80)
-		throw std::logic_error("Software interrupt not supported for "
+		throw misc::Panic("Software interrupt not supported for "
 				"code other than 0x80");
 	
 	// Debug
@@ -1059,7 +1059,7 @@ void Context::ExecuteInst_int_imm8()
 
 void Context::ExecuteInst_into()
 {
-	throw std::logic_error("Unimplemented instruction");
+	throw misc::Panic("Unimplemented instruction");
 }
 
 
@@ -1096,7 +1096,7 @@ void Context::ExecuteInst_lea_r32_m()
 	unsigned int value = getEffectiveAddress();
 
 	if (inst.getSegment())
-		throw std::logic_error("Unsupported segment");
+		throw misc::Panic("Unsupported segment");
 
 	StoreR32(value);
 
@@ -1110,7 +1110,7 @@ void Context::ExecuteInst_leave()
 	regs.setEsp(regs.getEbp());
 
 	if (inst.getSegment())
-		throw std::logic_error("Unsupported segment");
+		throw misc::Panic("Unsupported segment");
 
 	MemoryRead(regs.getEsp(), 4, &value);
 	regs.incEsp(4);
@@ -1306,7 +1306,7 @@ void Context::ExecuteInst_mov_rm16_sreg()
 {
 	unsigned short value = LoadSReg();
 	if (inst.getModRmReg() != 5)
-		throw std::logic_error("Not supported for sreg != gs");
+		throw misc::Panic("Not supported for sreg != gs");
 	StoreRm16(value);
 
 	newUInst(UInstMove, UInstDepSreg, 0, 0, UInstDepRm16, 0, 0, 0);
@@ -1323,7 +1323,7 @@ void Context::ExecuteInst_mov_sreg_rm16()
 {
 	unsigned short value = LoadRm16();
 	if (inst.getModRmReg() != 5)
-		throw std::logic_error("Not supported for sreg != gs");
+		throw misc::Panic("Not supported for sreg != gs");
 	StoreSReg(value);
 
 	newUInst(UInstMove, UInstDepRm16, 0, 0, UInstDepSreg, 0, 0, 0);
@@ -1524,37 +1524,37 @@ void Context::ExecuteInst_not_rm32()
 
 void Context::ExecuteInst_out_imm8_al()
 {
-	throw std::logic_error("Unimplemented instruction");
+	throw misc::Panic("Unimplemented instruction");
 }
 
 
 void Context::ExecuteInst_out_imm8_ax()
 {
-	throw std::logic_error("Unimplemented instruction");
+	throw misc::Panic("Unimplemented instruction");
 }
 
 
 void Context::ExecuteInst_out_imm8_eax()
 {
-	throw std::logic_error("Unimplemented instruction");
+	throw misc::Panic("Unimplemented instruction");
 }
 
 
 void Context::ExecuteInst_out_dx_al()
 {
-	throw std::logic_error("Unimplemented instruction");
+	throw misc::Panic("Unimplemented instruction");
 }
 
 
 void Context::ExecuteInst_out_dx_ax()
 {
-	throw std::logic_error("Unimplemented instruction");
+	throw misc::Panic("Unimplemented instruction");
 }
 
 
 void Context::ExecuteInst_out_dx_eax()
 {
-	throw std::logic_error("Unimplemented instruction");
+	throw misc::Panic("Unimplemented instruction");
 }
 
 
@@ -1582,7 +1582,7 @@ void Context::ExecuteInst_pop_ir32()
 	unsigned int value;
 
 	if (inst.getSegment())
-		throw std::logic_error("Unsupported segment");
+		throw misc::Panic("Unsupported segment");
 
 	MemoryRead(regs.getEsp(), 4, &value);
 	regs.incEsp(4);
@@ -1735,7 +1735,7 @@ void Context::ExecuteInst_rdtsc()
 void Context::ExecuteInst_ret()
 {
 	if (inst.getSegment())
-		throw std::logic_error("Unsupported segment");
+		throw misc::Panic("Unsupported segment");
 
 	// Emulate
 	MemoryRead(regs.getEsp(), 4, &target_eip);
@@ -1763,7 +1763,7 @@ void Context::ExecuteInst_repz_ret()
 void Context::ExecuteInst_ret_imm16()
 {
 	if (inst.getSegment())
-		throw std::logic_error("Unsupported segment");
+		throw misc::Panic("Unsupported segment");
 
 	// Emulate
 	MemoryRead(regs.getEsp(), 4, &target_eip);

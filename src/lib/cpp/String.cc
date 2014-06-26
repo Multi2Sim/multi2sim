@@ -23,8 +23,8 @@
 #include <cstdarg>
 #include <cstring>
 #include <sstream>
-#include <stdexcept>
 
+#include "Error.h"
 #include "Misc.h"
 #include "String.h"
 
@@ -803,7 +803,7 @@ void StringFormatter::Add(const std::string &text)
 {
 	// Check good values for 'first_indent' and 'indent'
 	if (first_line_indent >= width || indent >= width)
-		throw std::logic_error("Invalid indentation values");
+		throw misc::Panic("Invalid indentation values");
 
 	// Process text
 	std::string word;

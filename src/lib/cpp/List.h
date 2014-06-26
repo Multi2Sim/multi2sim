@@ -143,7 +143,7 @@ public:
 	/// `ErrorOK`.
 	///
 	/// \throw
-	///	This function throws an `std::logic_error` exception if the
+	///	This function throws a `misc::Panic` exception if the
 	///	inserted element is `nullptr`, or if the inserted element was
 	///	already a member of a list.
 	Node *Insert(Node *node);
@@ -154,7 +154,7 @@ public:
 	/// `ErrorOK`.
 	///
 	/// \throw
-	///	This function throws an `std::logic_error` exception if the
+	///	This function throws a `misc::Panic` exception if the
 	///	inserted element is `nullptr`, or if the inserted element was
 	///	already a member of a list.
 	Node *PushBack(Node *node)
@@ -169,7 +169,7 @@ public:
 	/// `ErrorOK`.
 	///
 	/// \throw
-	///	This function throws an `std::logic_error` exception if the
+	///	This function throws an `misc::Panic` exception if the
 	///	inserted element is `nullptr`, or if the inserted element was
 	///	already a member of a list.
 	Node *PushFront(Node *node)
@@ -194,7 +194,7 @@ public:
 	/// beginning of the list. The error code is updated to `ErrorOK`.
 	///
 	/// \throw
-	///	This function throws an `std::logic_error` exception if the
+	///	This function throws an `misc::Panic` exception if the
 	///	elemement to remove is `nullptr`, or if it is currently no a
 	///	member of a list.
 	void Remove(Node *node);
