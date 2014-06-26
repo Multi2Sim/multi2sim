@@ -25,6 +25,7 @@
 #include <string>
 #include <typeinfo>
 
+#include <lib/cpp/Error.h>
 #include <lib/cpp/Misc.h>
 
 #include "Asm.h"
@@ -2146,8 +2147,8 @@ void Inst::DumpToBufWithFmtReg(void)
 		}
 		else
 		{
-			misc::fatal("%s: unknown token: %s", __FUNCTION__,
-					fmt_str);
+			throw misc::Panic(misc::fmt("Unknown token: %s",
+					fmt_str));
 		}
 
 		str += ss.str();
@@ -2451,8 +2452,8 @@ void Inst::DumpToBufWithFmtImm(void)
 		}
 		else
 		{
-			misc::fatal("%s: unknown token: %s", __FUNCTION__,
-					fmt_str);
+			throw misc::Panic(misc::fmt("Unknown token: %s",
+					fmt_str));
 		}
 
 		str += ss.str();
@@ -3157,8 +3158,8 @@ void Inst::DumpToBufWithFmtOther(void)
 		}
 		else
 		{
-			misc::fatal("%s: unknown token: %s", __FUNCTION__,
-					fmt_str);
+			throw misc::Panic(misc::fmt("Unknown token: %s",
+					fmt_str));
 		}
 
 		str += ss.str();
@@ -3796,8 +3797,8 @@ void Inst::DumpToBufWithFmtLdSt(void)
 		}
 		else
 		{
-			misc::fatal("%s: unknown token: %s", __FUNCTION__,
-					fmt_str);
+			throw misc::Panic(misc::fmt("Unknown token: %s",
+					fmt_str));
 		}
 
 		str += ss.str();
@@ -4072,8 +4073,8 @@ void Inst::DumpToBufWithFmtCtrl(void)
 		}
 		else
 		{
-			misc::fatal("%s: unknown token: %s", __FUNCTION__,
-					fmt_str);
+			throw misc::Panic(misc::fmt("Unknown token: %s",
+					fmt_str));
 		}
 
 		str += ss.str();

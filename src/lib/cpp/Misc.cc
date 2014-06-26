@@ -110,7 +110,7 @@ void panic(const char *fmt, ...)
 }
 
 
-void warning(const char *fmt, ...)
+void Warning(const char *fmt, ...)
 {
 	char buf[4096];  // 4KB
 	va_list va;

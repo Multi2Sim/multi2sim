@@ -44,7 +44,7 @@ const char *SymbolModifier::getLinkageStr() const
 	case 0: return "";
 	case 1: return "static";
 	case 2: return "extern";
-	default: misc::warning("Unsupportd linkage type!");
+	default: misc::Warning("Unsupportd linkage type!");
 	}
 	return "";
 }

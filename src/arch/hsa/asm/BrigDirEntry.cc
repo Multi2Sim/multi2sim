@@ -191,21 +191,21 @@ void BrigDirEntry::DumpDirectiveBlockString(std::ostream &os = std::cout) const
 void BrigDirEntry::DumpDirectiveComment(std::ostream &os = std::cout) const
 {
 	BrigEntry::dumpIndent(os);
-	misc::warning("Unsupport directive %s", "Comment");
+	misc::Warning("Unsupport directive %s", "Comment");
 }
 
 
 void BrigDirEntry::DumpDirectiveControl(std::ostream &os = std::cout) const
 {
 	BrigEntry::dumpIndent(os);
-	misc::warning("Unsupport directive %s", "Control");
+	misc::Warning("Unsupport directive %s", "Control");
 }
 
 
 void BrigDirEntry::DumpDirectiveExtension(std::ostream &os = std::cout) const
 {
 	BrigEntry::dumpIndent(os);
-	misc::warning("Unsupport directive %s", "Extension");
+	misc::Warning("Unsupport directive %s", "Extension");
 }
 
 
@@ -223,7 +223,7 @@ void BrigDirEntry::DumpDirectiveFBarrier(std::ostream &os = std::cout) const
 void BrigDirEntry::DumpDirectiveFile(std::ostream &os = std::cout) const
 {
 	BrigEntry::dumpIndent(os);
-	misc::warning("Unsupport directive %s", "File");
+	misc::Warning("Unsupport directive %s", "File");
 }
 
 
