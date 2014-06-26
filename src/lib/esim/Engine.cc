@@ -19,7 +19,6 @@
 
 #include <csignal>
 
-#include <lib/cpp/Error.h>
 #include <lib/cpp/IniFile.h>
 
 #include "Action.h"

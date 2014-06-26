@@ -27,6 +27,7 @@
 #include <map>
 
 #include <lib/cpp/Debug.h>
+#include <lib/cpp/Error.h>
 #include <lib/cpp/String.h>
 #include <lib/cpp/Timer.h>
 
@@ -42,15 +43,16 @@ class Queue;
 
 
 /// Exception object produced by objects in the event-driven simulator
-class Error : std::runtime_error
+class Error : public misc::Error
 {
 
 public:
 
 	/// Constructor
-	Error(const std::string &message) :
-			std::runtime_error("[esim] " + message)
+	Error(const std::string &message) : misc::Error(message)
 	{
+		// Add module prefix
+		AppendPrefix("esim");
 	}
 };
 
