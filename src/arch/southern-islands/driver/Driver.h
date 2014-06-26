@@ -105,6 +105,18 @@ class Driver : public comm::Driver
 
 public:
 
+	/// Error related with the Southern Islands driver
+	class Error : public misc::Error
+	{
+	public:
+
+		/// Constructor
+		Error(const std::string &message) : misc::Error(message)
+		{
+			AppendPrefix("Southern Islands driver");
+		}
+	};
+
 	/// Obtain instance of the singleton
 	static Driver *getInstance();
 	
