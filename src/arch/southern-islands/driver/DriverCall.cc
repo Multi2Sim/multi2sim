@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <arch/southern-islands/asm/Arg.h>
 #include <arch/southern-islands/emu/Emu.h>
 #include <lib/cpp/String.h>
 #include <memory/Memory.h>
@@ -258,10 +259,71 @@ int Driver::CallKernelCreate(mem::Memory *memory, unsigned args_ptr)
 
 // ABI Call 'KernelSetArgValue'
 //
-// ...
+
+/// OpenCL ABI call #10 - si_kernel_set_arg_value
+///
+/// Set a kernel argument with a basic type (cl_char, cl_int, cl_float, ...).
+///
+/// \param int kernel_id
+/// 	Kernel ID, as returned by ABI call 'si_kernel_create'
+///
+/// \param unsigned index
+/// 	Argument index to set.
+///
+/// \param void *host_ptr
+///	Address in host memory containing the value of the argument. The memory
+/// 	pointed to by this variable will be copied internally, keeping a copy of
+/// 	the argument for future use.
+///
+/// \param int size
+/// 	Argument size. This size must match the size encoded in the kernel
+/// 	metadata for this particular argument.
+///
+/// @return int
+///
+///	No return value.
+
 int Driver::CallKernelSetArgValue(mem::Memory *memory, unsigned args_ptr)
 {
-	misc::fatal("%s:function call is not currently implemented in multi2sim", __FUNCTION__);
+	// Arguments
+	int kernel_id;
+	int index;
+	unsigned host_ptr;
+	int size;
+
+	// Read arguments
+	memory->Read(args_ptr, sizeof(int), (char *) &kernel_id);
+	memory->Read(args_ptr + 4, sizeof(int), (char *) &index);
+	memory->Read(args_ptr + 8, sizeof(unsigned), (char *) &host_ptr);
+	memory->Read(args_ptr + 12, sizeof(int), (char *) &size);
+
+	// Debug
+	debug << misc::fmt("\tkernel_id=%d, index=%d\n", kernel_id, index);
+	debug << misc::fmt("\thost_ptr=0x%x, size=%u\n", host_ptr, size);
+
+	// Get kernel 
+	Kernel *kernel = getKernelById(kernel_id);
+	if (!kernel)
+		misc::fatal("%s: invalid kernel ID (%d)",
+				__FUNCTION__, kernel_id);
+
+	// Get argument 
+	ArgValue *arg = dynamic_cast<ArgValue *>(kernel->getArgByIndex(index));
+	if (!arg || arg->getType() != ArgTypeValue)
+		misc::fatal("%s: invalid argument %d type",
+				__FUNCTION__, index);
+
+	// Check valid size 
+	if (size != arg->getSize())
+		misc::fatal("%s: argument %d: size %d expected, %d found",
+				__FUNCTION__, index, arg->getSize(), size);
+
+	// Save value 
+	std::unique_ptr<void> value_ptr(operator new(size));
+	memory->Read(host_ptr, size, (char *) value_ptr.get());
+	arg->setValue(value_ptr.get());
+
+	// No return value 
 	return 0;
 }
 
@@ -295,6 +357,44 @@ int Driver::CallKernelSetArgValue(mem::Memory *memory, unsigned args_ptr)
 ///	No return value.
 int Driver::CallKernelSetArgPointer(mem::Memory *memory, unsigned args_ptr)
 {
+	// Arguments
+	int kernel_id;
+	int index;
+	unsigned device_ptr;
+	int size;
+
+	// Read arguments
+	memory->Read(args_ptr, sizeof(int), (char *) &kernel_id);
+	memory->Read(args_ptr + 4, sizeof(int), (char *) &index);
+	memory->Read(args_ptr + 8, sizeof(unsigned), (char *) &device_ptr);
+	memory->Read(args_ptr + 12, sizeof(int), (char *) &size);
+
+	// Debug
+	debug << misc::fmt("\tkernel_id=%d, index=%d\n", kernel_id, index);
+	debug << misc::fmt("\tdevice_ptr=0x%x, size=%u\n", device_ptr, size);
+
+	// Get kernel 
+	Kernel *kernel = getKernelById(kernel_id);
+	if (!kernel)
+		misc::fatal("%s: invalid kernel ID (%d)",
+				__FUNCTION__, kernel_id);
+
+	// Get argument 
+	ArgPointer *arg = dynamic_cast<ArgPointer *> (kernel->getArgByIndex(index));
+	if (!arg || arg->getType() != ArgTypePointer)
+		misc::fatal("%s: invalid argument %d type",
+				__FUNCTION__, index);
+
+	// Check valid size 
+	if (size != arg->getSize())
+		misc::fatal("%s: argument %d: size %d expected, %d found",
+				__FUNCTION__, index, arg->getSize(), size);
+
+	// Save value 
+	arg->setSetFlag(true);
+	arg->setSize(size);
+	arg->setDevicePtr(device_ptr);
+
 	// No return value 
 	return 0;
 }
