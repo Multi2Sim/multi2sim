@@ -81,7 +81,7 @@ class Node
 	NodeKind kind;
 
 	// Control tree that the node belongs to
-	Tree *tree;
+	Tree *tree = nullptr;
 
 	// List of successor nodes
 	std::list<Node *> succ_list;
@@ -101,39 +101,42 @@ class Node
 	// List of nodes connected through cross edges
 	std::list<Node *> cross_edge_list;
 
-	//List of if-else-then successor nodes connected through scalar edges.
-	std::list<Node *> scalar_succ_list;
-
-	//List of if-else-then predecessor nodes connected through scalar edges.
-	std::list<Node *> scalar_pred_list;
+	// Additional scalar edge inserted between a 'Then' and an 'Else' block
+	// in an if-then-else region after structural analysis.
+	Node *scalar_succ_node = nullptr;
+	Node *scalar_pred_node = nullptr;
 
 	// If the node is part of a higher-level abstract node, this field
 	// points to it. If not, the field is null.
-	Node *parent;
+	Node *parent = nullptr;
 
 	// Role that the node plays inside of its parent abstract node.
 	// This field is other than 'NodeRoleInvalid' only when 'parent' is
 	// not null.
-	NodeRole role;
+	NodeRole role = NodeRoleInvalid;
 
 	// Flags indicating when a node with role 'NodeRoleHead' belonging
 	// to a parent region 'WhileLoop' exists the loop when its condition
 	// is evaluated to true or false. Only one of these two flags can be
 	// set.
-	bool exit_if_true;
-	bool exit_if_false;
+	bool exit_if_true = false;
+	bool exit_if_false = false;
 
 	// Identifiers assigned during the depth-first search
-	int preorder_id;
-	int postorder_id;
+	int preorder_id = -1;
+	int postorder_id = -1;
 
 	// Color used for traversal algorithms
-	int color;
+	int color = 0;
 
 public:
 
 	/// Constructor
-	Node(const std::string &name, NodeKind kind);
+	Node(const std::string &name, NodeKind kind) :
+			name(name),
+			kind(kind)
+	{
+	}
 	
 	/// Return a reference to the list of successor nodes, which can be used
 	/// for convenient traversal using:
@@ -199,10 +202,10 @@ public:
 	/// function.
 	void Connect(Node *node);
 
-	/// Create a scalar edge between 'then' and 'else' node. There should be no
-	/// existing edge for this source and destination when calling this
+	/// Create a scalar edge between 'then' and 'else' node. There should be
+	/// no existing edge for this source and destination when calling this
 	/// function.
-	void ScalarEdgeConnect(Node *node);
+	void ConnectScalar(Node *node);
 
 	/// Try to remove an edge between `this` and \a node. If the edge does
 	/// not exist, the function exists silently.

@@ -62,11 +62,10 @@ misc::StringMap abstract_node_region_map =
 };
 
 
-AbstractNode::AbstractNode(const std::string &name, AbstractNodeRegion region)
-		: Node(name, NodeKindAbstract)
+AbstractNode::AbstractNode(const std::string &name, AbstractNodeRegion region) :
+		Node(name, NodeKindAbstract),
+		region(region)
 {
-	// Initialize
-	this->region = region;
 }
 
 
@@ -84,8 +83,6 @@ void AbstractNode::Dump(std::ostream &os)
 
 void AbstractNode::Compare(Node *node)
 {
-	bool differ;
-
 	// Call parent compare function
 	Node::Compare(node);
 
@@ -101,7 +98,7 @@ void AbstractNode::Compare(Node *node)
 				node->getName().c_str());
 
 	// Compare children
-	differ = child_list.size() != abs_node->child_list.size();
+	bool differ = child_list.size() != abs_node->child_list.size();
 	for (auto &child : child_list)
 	{
 		Node *tmp_node = abs_node->getTree()->getNode(child->getName());
@@ -141,19 +138,6 @@ misc::StringMap node_role_map =
 };
 
 
-Node::Node(const std::string &name, NodeKind kind)
-{
-	// Initialize
-	this->name = name;
-	this->kind = kind;
-	tree = nullptr;
-	parent = nullptr;
-	role = NodeRoleInvalid;
-	preorder_id = -1;
-	postorder_id = -1;
-}
-
-
 void Node::Dump(std::ostream &os)
 {
 	std::string no_name = "<no-name>";
@@ -175,11 +159,13 @@ void Node::Dump(std::ostream &os)
 			os << '|';
 		else if (succ_node->InList(cross_edge_list))
 			os << '*';
-		else if (succ_node->InList(scalar_succ_list))
-			os << '#';
 		os << succ_node->getName();
 		comma = ",";
 	}
+
+	// Scalar successor
+	if (scalar_succ_node)
+		os << comma << '#' << scalar_succ_node->getName();
 
 	// Parent
 	os << "} structof=";
@@ -245,14 +231,14 @@ void Node::Connect(Node *node_dest)
 	node_dest->pred_list.push_back(this);
 }
 
-void Node::ScalarEdgeConnect(Node *node_dest)
+void Node::ConnectScalar(Node *node_dest)
 {
-	scalar_succ_list.push_back(node_dest);
-	node_dest->scalar_pred_list.push_back(this);
-
-	// DEBUG: Uncomment the following to check the nodes comprising the scalar edges
-	// Node::DumpList(scalar_succ_list, std::cout);
-	// Node::DumpList(node_dest->scalar_pred_list, std::cout);
+	assert(scalar_succ_node == nullptr);
+	assert(node_dest->scalar_pred_node == nullptr);
+	assert(!node_dest->InList(succ_list));
+	assert(!InList(node_dest->pred_list));
+	scalar_succ_node = node_dest;
+	node_dest->scalar_pred_node = this;
 }
 
 
