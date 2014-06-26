@@ -177,16 +177,6 @@ public:
 	/// Constructor
 	StringMap(std::initializer_list<Item> items) : items(items)
 	{
-#ifndef NDEBUG
-		// Make sure that map is not null-terminated, since this used
-		// to be the way string maps were declared in the past
-		assert(items.size() > 0);
-		if (!this->items[items.size() - 1].text)
-			panic("string map %s is null-terminated. This is a\n"
-					"deprecated form of declaring string\n"
-					"maps. Please remove its last element.",
-					toString().c_str());
-#endif
 	}
 
 	/// Dump the strings in the string map, in the same format as function

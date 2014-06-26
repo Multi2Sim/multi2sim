@@ -536,7 +536,7 @@ void Binary::ReadNote(BinaryDictEntry *dict_entry, std::istringstream& ss,
 	{
 		// FIXME: Analyze program inputs
 		if (header->descsz) 
-			warning("%s: pt_note '%s' with descsz != 0 ignored (desc value = 0x%x)",
+			Warning("%s: pt_note '%s' with descsz != 0 ignored (desc value = 0x%x)",
 				note_str, __FUNCTION__, * (unsigned int *) desc);
 
 		break;
@@ -547,7 +547,7 @@ void Binary::ReadNote(BinaryDictEntry *dict_entry, std::istringstream& ss,
 	{
 		// FIXME: Analyze program inputs
 		if (header->descsz) 
-			warning("%s: pt_note '%s' with descsz != 0 ignored (desc value = 0x%x)",
+			Warning("%s: pt_note '%s' with descsz != 0 ignored (desc value = 0x%x)",
 				note_str, __FUNCTION__, * (unsigned int *) desc);
 
 		break;

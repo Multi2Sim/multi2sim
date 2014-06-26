@@ -165,7 +165,7 @@ void FileTable::freeFileDescriptor(int index)
 	if (desc->getType() == FileDescriptor::TypeVirtual)
 	{
 		if (unlink(desc->getPath().c_str()))
-			misc::warning("%s: temporary host virtual file could not "
+			misc::Warning("%s: temporary host virtual file could not "
 					"be deleted", desc->getPath().c_str());
 	}
 

@@ -143,7 +143,7 @@ std::string RuntimePool::getBuildTreeRoot()
 	exe_name[0] = '\0';
 	int length = readlink("/proc/self/exe", exe_name, sizeof exe_name);
 	if (length < 0 || length >= (int) sizeof(exe_name))
-		misc::fatal("%s: error in 'readlink'", __FUNCTION__);
+		throw Error("Error in 'readlink'");
 	exe_name[length] = '\0';
 
 	// Discard suffix '/m2s'
@@ -223,7 +223,7 @@ bool RuntimePool::Redirect(const std::string &library_name,
 		{
 			redirect_library_name = path;
 			runtime->setOpenAttempt(false);
-			misc::warning("path '%s' has been redirected to "
+			misc::Warning("path '%s' has been redirected to "
 					"'%s' while loading the %s runtime.\n\n%s",
 					library_name.c_str(),
 					redirect_library_name.c_str(),
@@ -242,7 +242,7 @@ bool RuntimePool::Redirect(const std::string &library_name,
 			{
 				redirect_library_name = path;
 				runtime->setOpenAttempt(false);
-				misc::warning("path '%s' has been redirected to "
+				misc::Warning("path '%s' has been redirected to "
 						"'%s' while loading the %s runtime.\n\n%s",
 						library_name.c_str(),
 						redirect_library_name.c_str(),

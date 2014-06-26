@@ -120,7 +120,7 @@ unsigned LogBase2(unsigned value);
 //
 
 /// Warning message
-void warning(const char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
+void Warning(const char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
 
 /// Error message terminating the program as a result of an invalid user input
 /// or runtime error.
