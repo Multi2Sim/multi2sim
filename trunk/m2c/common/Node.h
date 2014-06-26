@@ -101,6 +101,12 @@ class Node
 	// List of nodes connected through cross edges
 	std::list<Node *> cross_edge_list;
 
+	//List of if-else-then successor nodes connected through scalar edges.
+	std::list<Node *> scalar_succ_list;
+
+	//List of if-else-then predecessor nodes connected through scalar edges.
+	std::list<Node *> scalar_pred_list;
+
 	// If the node is part of a higher-level abstract node, this field
 	// points to it. If not, the field is null.
 	Node *parent;
@@ -192,6 +198,11 @@ public:
 	/// existing edge for this source and destination when calling this
 	/// function.
 	void Connect(Node *node);
+
+	/// Create a scalar edge between 'then' and 'else' node. There should be no
+	/// existing edge for this source and destination when calling this
+	/// function.
+	void ScalarEdgeConnect(Node *node);
 
 	/// Try to remove an edge between `this` and \a node. If the edge does
 	/// not exist, the function exists silently.

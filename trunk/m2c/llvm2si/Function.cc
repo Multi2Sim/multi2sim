@@ -732,6 +732,8 @@ void Function::EmitIfThenElse(comm::AbstractNode *node)
 	BasicBlock *then_basic_block = dynamic_cast<BasicBlock *>(then_leaf_node->getBasicBlock());
 	BasicBlock *else_basic_block = dynamic_cast<BasicBlock *>(else_leaf_node->getBasicBlock());
 
+	// connect the then-and-else nodes with scalar edges
+	//	then_leaf_node->ScalarEdgeConnect(else_leaf_node);
 
 	/*** Code for 'If' block ***/
 
@@ -962,6 +964,7 @@ void Function::EmitControlFlow()
 					abs_node->getRegion()));
 		}
 	}
+	//tree.Dump(std::cout);
 }
 
 

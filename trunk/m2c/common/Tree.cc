@@ -258,6 +258,8 @@ void Tree::DFS(std::list<Node *> &postorder_list)
 		node->cross_edge_list.clear();
 		node->tree_edge_list.clear();
 		node->forward_edge_list.clear();
+		node->scalar_succ_list.clear();
+		node->scalar_pred_list.clear();
 	}
 
 	// Initiate recursion
@@ -806,7 +808,7 @@ Tree::Tree(const std::string &name)
 void Tree::Dump(std::ostream &os)
 {
 	// Legend
-	os << "\nControl tree (edges: +forward, -back, *cross, "
+	os << "\nControl tree (edges: +forward, -back, *cross, #scalar, "
 			<< "|tree, =>entry)\n";
 	
 	// Dump all nodes
@@ -989,6 +991,9 @@ LeafNode *Tree::AddLlvmCFG(llvm::BasicBlock *llvm_basic_block)
 		llvm::BasicBlock *false_llvm_basic_block = terminator->getSuccessor(1);
 		LeafNode *false_node = AddLlvmCFG(false_llvm_basic_block);
 		node->Connect(false_node);
+
+		// connect the then-and-else block with a scalar edge.
+		true_node->ScalarEdgeConnect(false_node);
 		return node;
 	}
 
