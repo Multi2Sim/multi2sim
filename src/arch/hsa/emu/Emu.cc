@@ -121,8 +121,6 @@ WorkItem *Emu::newWorkItem()
 
 bool Emu::Run()
 {
-	std::cout << "In Emu::Run\n";
-
 	// Stop if there is no more work items
 	if (!work_items.size())
 		return false;

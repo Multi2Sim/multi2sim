@@ -42,6 +42,10 @@ LDADD = \
 	$(top_builddir)/src/lib/cpp/libcpp.a \
 	$(top_builddir)/src/lib/mhandle/libmhandle.a
 
+if ENABLE_DEBUG
+AM_LDFLAGS = -rdynamic
+endif
+
 if HAVE_LLVM
 AM_CFLAGS = $(LLVM_CFLAGS)
 endif
