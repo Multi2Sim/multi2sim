@@ -125,6 +125,9 @@ public:
 	/// Returns the pointer to the buffer of the entry
 	char *getBuffer() const{return base;}
 
+	/// Returns the pointer to the brig file this entry belongs to
+	BrigFile *getFile() const{return file;}
+
 	/// Converts type to type string
 	static const char *type2str(int type);
 
