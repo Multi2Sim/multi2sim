@@ -133,9 +133,6 @@ protected:
 	// Returns true is the instruction has type
 	bool hasType() const;
 
-	// Returns the pointer to the operand indexed with i
-	char *getOperand(int i) const;
-
 	// Dumps calls operands. The call inst put the function name as the second
 	// operand. But it should be dumped first
 	void dumpCallOperands(std::ostream &os) const;
@@ -157,9 +154,8 @@ public:
 	/// Returns the type of the inst
 	unsigned short getType() const;
 
-	/// Decode the bytes and prepares the inst_info struct
-	/// Not really used
-	void Decode();
+	// Returns the pointer to the operand indexed with i
+	char *getOperand(int i) const;
 
 	/// Prototype of functions that dump the inst
 	typedef void (BrigInstEntry::*DumpInstFn)(std::ostream &os) const;
