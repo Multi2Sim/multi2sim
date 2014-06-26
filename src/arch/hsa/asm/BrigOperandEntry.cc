@@ -141,6 +141,16 @@ int BrigOperandEntry::getOperandType() const
 }
 
 
+std::string BrigOperandEntry::getRegisterName() const
+{
+	if (this->getKind() != BRIG_OPERAND_REG)
+		throw std::logic_error("Trying to get register name on"
+				" non-register operand");
+	struct BrigOperandReg *op = (struct BrigOperandReg *)base;
+	return BrigStrEntry::GetStringByOffset(file, op->reg);
+}
+
+
 void BrigOperandEntry::dumpOperandImmed(std::ostream &os = std::cout) const
 {
 	int type = getOperandType();

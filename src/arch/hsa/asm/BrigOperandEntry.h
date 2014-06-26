@@ -71,6 +71,9 @@ public:
 		return os;
 	}
 
+	/// Returns the name of the register encapsulated 
+	std::string getRegisterName() const;
+
 	/// Functions that dump operands
 	void dumpOperandImmed(std::ostream &os) const;
 	void dumpOperandWavesize(std::ostream &os) const;
