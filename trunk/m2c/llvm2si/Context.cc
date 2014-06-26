@@ -58,14 +58,14 @@ Context *Context::getInstance()
 
 void Context::Parse(const std::string &in, const std::string &out)
 {
-	/* Load file content */
+	// Load file content
 	llvm::LLVMContext &llvm_context = llvm::getGlobalContext();
 	llvm::OwningPtr<llvm::MemoryBuffer> llvm_memory_buffer;
 	llvm::error_code ec = llvm::MemoryBuffer::getFile(in, llvm_memory_buffer);
 	if (ec)
 		fatal("%s: %s", in.c_str(), ec.message().c_str());
 
-	/* Load module */
+	// Load module
 	llvm::OwningPtr<llvm::Module> llvm_module(
 			llvm::ParseBitcodeFile(llvm_memory_buffer.get(),
 					llvm_context));

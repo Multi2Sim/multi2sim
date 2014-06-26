@@ -258,8 +258,6 @@ void Tree::DFS(std::list<Node *> &postorder_list)
 		node->cross_edge_list.clear();
 		node->tree_edge_list.clear();
 		node->forward_edge_list.clear();
-		node->scalar_succ_list.clear();
-		node->scalar_pred_list.clear();
 	}
 
 	// Initiate recursion
@@ -858,12 +856,17 @@ void Tree::StructuralAnalysis()
 	// Debug
 	debug << "Starting structural analysis on tree '"
 			<< name << "'\n\n";
+	debug << "Initial control flow graph:\n";
 
 	// Obtain the DFS spanning tree first, and a post-order traversal of
 	// the CFG in 'postorder_list'. This list will be used for progressive
 	// reduction steps.
 	std::list<Node *> postorder_list;
 	DFS(postorder_list);
+
+	// Debug
+	if (debug)
+		Dump(debug);
 
 	// Sharir's algorithm
 	std::list<Node *> region_list;
@@ -992,8 +995,6 @@ LeafNode *Tree::AddLlvmCFG(llvm::BasicBlock *llvm_basic_block)
 		LeafNode *false_node = AddLlvmCFG(false_llvm_basic_block);
 		node->Connect(false_node);
 
-		// connect the then-and-else block with a scalar edge.
-		true_node->ScalarEdgeConnect(false_node);
 		return node;
 	}
 
