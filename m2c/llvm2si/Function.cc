@@ -732,8 +732,12 @@ void Function::EmitIfThenElse(comm::AbstractNode *node)
 	BasicBlock *then_basic_block = dynamic_cast<BasicBlock *>(then_leaf_node->getBasicBlock());
 	BasicBlock *else_basic_block = dynamic_cast<BasicBlock *>(else_leaf_node->getBasicBlock());
 
-	// connect the then-and-else nodes with scalar edges
-	//	then_leaf_node->ScalarEdgeConnect(else_leaf_node);
+	// Create a scalar edge between the 'Then' and 'Else' blocks. This
+	// guarantees that the liveness analysis performed in the register
+	// allocation pass considers the new dependencies we're adding here in
+	// the scalar registers used for control flow manipulations.
+	then_leaf_node->ConnectScalar(else_leaf_node);
+
 
 	/*** Code for 'If' block ***/
 
