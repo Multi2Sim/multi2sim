@@ -140,7 +140,7 @@ const char *BrigEntry::seg2str(unsigned char seg)
 	case 7: return "spill";
 	case 8: return "arg";
 	default:
-		throw std::logic_error("Unsupported segment!");
+		throw misc::Panic("Unsupported segment");
 	}
 	return "";
 }

@@ -108,7 +108,7 @@ inline unsigned long long SignExtend64(unsigned long long x,
 /// argument must be a power of 2 and greater than 0.
 ///
 /// \throw
-///	This function throws an `std::logic_error` exception is the value is 0
+///	This function throws an `misc::Panic` exception is the value is 0
 ///	or is not a valid power of 2.
 unsigned LogBase2(unsigned value);
 

@@ -17,8 +17,6 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <stdexcept>
-
 #include <lib/cpp/Misc.h>
 
 #include "Context.h"
@@ -36,7 +34,7 @@ namespace x86
 #define warning __COMPILATION_ERROR__
 #define assert __COMPILATION_ERROR__
 
-#define __UNIMPLEMENTED__ throw std::logic_error("Unimplemented instruction");
+#define __UNIMPLEMENTED__ throw misc::Panic("Unimplemented instruction");
 
 void Context::ExecuteInst_addps_xmm_xmmm128()
 {

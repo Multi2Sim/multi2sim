@@ -25,9 +25,9 @@
 #include <cstring>
 #include <fstream>
 #include <sstream>
-#include <stdexcept>
 #include <unistd.h>
 
+#include "Error.h"
 #include "Misc.h"
 #include "String.h"
 
@@ -44,11 +44,11 @@ unsigned LogBase2(unsigned value)
 {
 	// Check that value is a valid power of two
 	if ((value & (value - 1)) != 0)
-		throw std::logic_error("Value is not a power of 2");
+		throw misc::Panic("Value is not a power of 2");
 	
 	// Check that value is not 0
 	if (value > 0)
-		throw std::logic_error("Value cannot be 0");
+		throw misc::Panic("Value cannot be 0");
 
 	// Calculate
 	unsigned result = 0;

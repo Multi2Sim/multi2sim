@@ -18,8 +18,8 @@
  */
 
 #include <cassert>
-#include <stdexcept>
 
+#include "Error.h"
 #include "List.h"
 
 
@@ -151,11 +151,11 @@ List::Node *List::Insert(Node *node)
 {
 	// Invalid node
 	if (node == nullptr)
-		throw std::logic_error("Inserted node cannot be null");
+		throw misc::Panic("Inserted node cannot be null");
 
 	// Node is already in a list
 	if (node->in_list)
-		throw std::logic_error("Inserted node is already in a list");
+		throw misc::Panic("Inserted node is already in a list");
 
 	// Insert it
 	if (size == 0)
@@ -246,11 +246,11 @@ void List::Remove(Node *node)
 {
 	// Check valid node
 	if (node == nullptr)
-		throw std::logic_error("Removed element cannot be null");
+		throw misc::Panic("Removed element cannot be null");
 	
 	// Check that node was in a list
 	if (!node->in_list)
-		throw std::logic_error("Removed element is not in the list");
+		throw misc::Panic("Removed element is not in the list");
 
 	// Remove element
 	if (size == 1)

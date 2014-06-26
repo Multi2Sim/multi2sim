@@ -23,7 +23,6 @@
 #include <memory>
 #include <list>
 #include <queue>
-#include <stdexcept>
 #include <vector>
 #include <map>
 
