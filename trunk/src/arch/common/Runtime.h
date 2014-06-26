@@ -25,6 +25,9 @@
 #include <iostream>
 #include <string>
 
+#include <lib/cpp/Error.h>
+
+
 namespace comm
 {
 
@@ -105,6 +108,18 @@ class RuntimePool
 	static std::string getBuildTreeRoot();
 	
 public:
+
+	/// Runtime pool error
+	class Error : public misc::Error
+	{
+	public:
+		
+		/// Constructor
+		Error(const std::string &message) : misc::Error(message)
+		{
+			AppendPrefix("Runtime pool");
+		}
+	};
 
 	/// Return a unique instance of the singleton
 	static RuntimePool *getInstance();

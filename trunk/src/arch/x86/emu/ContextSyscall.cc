@@ -3666,7 +3666,7 @@ int Context::ExecuteSyscall_sched_setscheduler()
 		break;
 
 	case SCHED_FIFO:
-		misc::warning("%s: FIFO policy is not implemented to spec\n%s",
+		misc::Warning("%s: FIFO policy is not implemented to spec\n%s",
 				__FUNCTION__, syscall_error_note);
 		if (priority < 1 || priority > 99)
 			misc::fatal("%s: invalid priority.\n%s",

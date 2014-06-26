@@ -88,8 +88,7 @@ void ArchPool::Run(int &num_emu_active, int &num_timing_active)
 		
 		case Arch::SimDetailed:
 		{
-			misc::panic("%s: not implemented (ArchSimDetailed)",
-					__FUNCTION__);
+			throw misc::Panic("Timing simulation not supported");
 #if 0
 			// Get the timing simulator. If none is available, skip
 			// this architecture.
@@ -128,8 +127,7 @@ void ArchPool::Run(int &num_emu_active, int &num_timing_active)
 
 		default:
 
-			misc::panic("%s: Invalid simulation kind (%d)",
-					__FUNCTION__, arch->getSimKind());
+			throw misc::Panic("Invalid simulation kind");
 		}
 	}
 }

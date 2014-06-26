@@ -330,7 +330,7 @@ void Engine::Schedule(EventType *event_type,
 			max_inflight_events)
 	{
 		max_inflight_events_warning = true;
-		misc::warning("[esim] Maximum number of %d "
+		misc::Warning("[esim] Maximum number of %d "
 				"in-flight events exceeds\n\n%s",
 				max_inflight_events,
 				engine_err_max_inflight_events);
@@ -629,7 +629,7 @@ void Engine::ProcessAllEvents()
 	bool overflow = Drain(max_finalization_events);
 	if (overflow)
 	{
-		misc::warning("[esim] Maximum number of finalization events "
+		misc::Warning("[esim] Maximum number of finalization events "
 				"exceeded\n\n%s",
 				engine_err_finalization);
 		return;
