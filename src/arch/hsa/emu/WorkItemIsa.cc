@@ -835,5 +835,10 @@ void WorkItem::ExecuteInst_WORKITEMID()
 	throw std::logic_error("Instruction not implemented");
 }
 
+
+void WorkItem::ExecuteInst_unsupported()
+{
+}
+
 }  // namespace HSA
 
