@@ -138,8 +138,11 @@ AC_ARG_ENABLE(debug,
 				[ AC_MSG_RESULT([no]) ]
 			)
 		CFLAGS="$saved_flags"
+		enable_debug="yes"
+		AC_SUBST([ENABLE_DEBUG], 1)
 		;;
 	no)
+		enable_debug="no"
 		;;
 	*)
 		AC_MSG_ERROR(bad value ${enableval} for --enable-debug)
@@ -147,6 +150,7 @@ AC_ARG_ENABLE(debug,
 	esac
 ],
 [])
+AM_CONDITIONAL(ENABLE_DEBUG, test x$enable_debug = xyes)
 
 profile=false
 AC_ARG_ENABLE(profile,
