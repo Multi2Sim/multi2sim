@@ -29,7 +29,7 @@ Type WorkItem::getOperandValue(unsigned int index)
 {
 	// Get the operand entry
 	BrigInstEntry inst(pc, loader->binary.get());
-	BrigOperandEntry operand(inst.getOperand(index), inst.file, 
+	BrigOperandEntry operand(inst.getOperand(index), inst.getFile(), 
 			&inst, index);
 
 	// Do coresponding action according to the type of operand
@@ -41,13 +41,44 @@ Type WorkItem::getOperandValue(unsigned int index)
 	case BRIG_OPERAND_WAVESIZE:
 		return 1;
 	case BRIG_OPERAND_REG:
-		break;
+	{
+		std::string register_name = operand.getRegisterName();
+		Type value = *((Type *)registers.getRegister(register_name));
+		return value;
+	}
 	default:
-		throw std::logic_error("Unsupported operand type");
+		throw std::logic_error("Unsupported operand type "
+				"for getOperandValue");
 		break;
 	}
-
 }
+
+
+template <typename Type>
+void WorkItem::storeOperandValue(unsigned int index, Type value)
+{
+	// Get the operand entry
+	BrigInstEntry inst(pc, loader->binary.get());
+	BrigOperandEntry operand(inst.getOperand(index), inst.getFile(), 
+			&inst, index);
+
+	// Do corresponding action according to the type of operand
+	// I do not think there should be other type except reg
+	switch (operand.getKind())
+	{
+	case BRIG_OPERAND_REG:
+	{
+		std::string register_name = operand.getRegisterName();
+		registers.setRegister(register_name, 
+				(char *)&value);
+		break;
+	}
+	default:
+		throw std::logic_error("Unsupported operand type "
+				"for storeOperandValue");
+	}
+}
+
 
 WorkItem::ExecuteInstFn WorkItem::execute_inst_fn[InstOpcodeCount + 1] = 
 {
@@ -166,8 +197,9 @@ void WorkItem::ExecuteInst_NEG()
 		{
 		case BRIG_TYPE_S32:
 		{
-			//int src = 1;
-			//int des = -src;
+			int src = getOperandValue<int>(1);
+			int des = -src;
+			storeOperandValue<int>(0, des);
 			break;
 		}
 		case BRIG_TYPE_S64:

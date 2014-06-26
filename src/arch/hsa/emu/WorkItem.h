@@ -123,6 +123,10 @@ class WorkItem{
  	template <typename Type>
  	Type getOperandValue(unsigned int index);
 
+ 	// Store the value into registers marked by the operand
+ 	template <typename Type>
+ 	void storeOperandValue(unsigned int index, Type value);
+
  	// Table of functions that implement instructions
  	static ExecuteInstFn execute_inst_fn[InstOpcodeCount + 1];
 
