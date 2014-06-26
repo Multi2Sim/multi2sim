@@ -120,7 +120,9 @@ void RegisterArchitectures()
 	arch_pool->Register("SouthernIslands");
 
 	// HSA
-	arch_pool->Register("HSA");
+	arch_pool->Register("HSA",
+			HSA::Asm::getInstance(),
+			HSA::Emu::getInstance());
 
 	// MIPS
 	arch_pool->Register("MIPS",

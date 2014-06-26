@@ -36,10 +36,30 @@ protected:
 
 	// Number of bits used. If allocated size exceed 128x32 bits, expception
 	// will be raised. C registers would not occupy this space
-	unsigned int allocated_size;
+	unsigned int allocated_size = 0;
 
-	// Register name and their position in the register file
-	std::map<std::string, std::unique_ptr<char *>> register_profile;
+	// Stores the c registers
+	char c_register = 0;
+
+	// Register storage
+	char bytes[512];
+
+	// register info. name and offset to a register.
+	std::map<std::string, unsigned int> register_info;
+
+	// Return the size of the register according to its name. 
+	// "$cx" - 1 returns 1, but its actually only 1 bit
+	// "$sx" - 4
+	// "$dx" - 8
+	// "$qx" - 16
+	// Invalid register name - 0
+	unsigned int getSizeByName(const std::string &name) const;
+
+	// Set C register
+	void setCRegister(const std::string &name, char *value);
+
+	// Get C register
+	char *getCRegister(const std::string &name);
 
 public:
 

@@ -94,7 +94,6 @@ char* WorkItem::findMainFunction()
 	if(firstInst)
 	{
 		BrigInstEntry inst(firstInst, loader->binary.get());
-		std::cout << inst << "\n";
 		emu->loader_debug << "First instruction: " << inst;
 	}
 	else
