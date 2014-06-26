@@ -57,7 +57,18 @@ void WorkItem::Load(const std::vector<std::string> &args,
 
 void WorkItem::Execute()
 {
+	std::cout << "In WorkItem::Execute\n";
+	// Retrieve function and execute it
+	BrigInstEntry inst(loader->pc, loader->binary.get());
 
+	emu->isa_debug << inst;
+
+	int opcode = inst.getOpcode();
+	ExecuteInstFn fn = WorkItem::execute_inst_fn[opcode];
+	(this->*fn)();
+
+	// move pc register to next function
+	loader->pc = inst.next();
 }
 
 
