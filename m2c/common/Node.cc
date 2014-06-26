@@ -158,7 +158,7 @@ void Node::Dump(std::ostream &os)
 {
 	std::string no_name = "<no-name>";
 	os << "Node '" << (name.empty() ? "<anonymous>" : name) << "':";
-	os << " pred=";
+	os << " pred= ";
 	DumpList(pred_list, os);
 
 	// List of successors
@@ -175,6 +175,8 @@ void Node::Dump(std::ostream &os)
 			os << '|';
 		else if (succ_node->InList(cross_edge_list))
 			os << '*';
+		else if (succ_node->InList(scalar_succ_list))
+			os << '#';
 		os << succ_node->getName();
 		comma = ",";
 	}
@@ -241,6 +243,16 @@ void Node::Connect(Node *node_dest)
 	assert(!InList(node_dest->pred_list));
 	succ_list.push_back(node_dest);
 	node_dest->pred_list.push_back(this);
+}
+
+void Node::ScalarEdgeConnect(Node *node_dest)
+{
+	scalar_succ_list.push_back(node_dest);
+	node_dest->scalar_pred_list.push_back(this);
+
+	// DEBUG: Uncomment the following to check the nodes comprising the scalar edges
+	// Node::DumpList(scalar_succ_list, std::cout);
+	// Node::DumpList(node_dest->scalar_pred_list, std::cout);
 }
 
 
