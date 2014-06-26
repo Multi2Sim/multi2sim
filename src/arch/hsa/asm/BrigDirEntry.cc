@@ -260,7 +260,7 @@ void BrigDirEntry::DumpDirectiveImage(std::ostream &os = std::cout) const
 	BrigEntry::dumpSymDecl(this, os);
 	if (image->init)
 	{
-		throw std::logic_error("Image init is not supported yet!");
+		throw misc::Panic("Image init is not supported yet");
 	}
 	os << ";\n";
 }
@@ -268,7 +268,7 @@ void BrigDirEntry::DumpDirectiveImage(std::ostream &os = std::cout) const
 
 void BrigDirEntry::DumpDirectiveImageInit(std::ostream &os = std::cout) const
 {
-	throw std::logic_error("Unsupport directive (ImageInit)");
+	throw misc::Panic("Unsupport directive (ImageInit)");
 }
 
 
@@ -301,28 +301,28 @@ void BrigDirEntry::DumpDirectiveLabel(std::ostream &os = std::cout) const
 
 void BrigDirEntry::DumpDirectiveLabelInit(std::ostream &os = std::cout) const
 {
-	throw std::logic_error("Unsupport directive (LabelInit)");
+	throw misc::Panic("Unsupport directive (LabelInit)");
 }
 
 
 void BrigDirEntry::DumpDirectiveLabelTargets(std::ostream &os = std::cout) const
 {
 	BrigEntry::dumpIndent(os);
-	throw std::logic_error("Unsupport directive (LabelTagets)");
+	throw misc::Panic("Unsupport directive (LabelTagets)");
 }
 
 
 void BrigDirEntry::DumpDirectiveLoc(std::ostream &os = std::cout) const
 {
 	BrigEntry::dumpIndent(os);
-	throw std::logic_error("Unsupport directive (Loc)");
+	throw misc::Panic("Unsupport directive (Loc)");
 }
 
 
 void BrigDirEntry::DumpDirectivePragma(std::ostream &os = std::cout) const
 {
 	BrigEntry::dumpIndent(os);
-	throw std::logic_error("Unsupport directive (Pragma)");
+	throw misc::Panic("Unsupport directive (Pragma)");
 }
 
 
@@ -334,7 +334,7 @@ void BrigDirEntry::DumpDirectiveSampler(std::ostream &os = std::cout) const
 	BrigEntry::dumpSymDecl(this, os);
 	if(samp->init)
 	{
-		throw std::logic_error("Sampler init is not supported!");
+		throw misc::Panic("Sampler init is not supported!");
 	}
 	os << ";\n";
 }
@@ -342,21 +342,21 @@ void BrigDirEntry::DumpDirectiveSampler(std::ostream &os = std::cout) const
 
 void BrigDirEntry::DumpDirectiveSamplerInit(std::ostream &os = std::cout) const
 {
-	throw std::logic_error("Unsupport directive (SamplerInit)");
+	throw misc::Panic("Unsupport directive (SamplerInit)");
 }
 
 
 void BrigDirEntry::DumpDirectiveScope(std::ostream &os = std::cout) const
 {
 	BrigEntry::dumpIndent(os);
-	throw std::logic_error("Unsupport directive (Scope)");
+	throw misc::Panic("Unsupport directive (Scope)");
 }
 
 
 void BrigDirEntry::DumpDirectiveSignature(std::ostream &os = std::cout) const
 {
 	BrigEntry::dumpIndent(os);
-	throw std::logic_error("Unsupport directive (Signature)");
+	throw misc::Panic("Unsupport directive (Signature)");
 }
 
 

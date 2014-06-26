@@ -21,7 +21,6 @@
 #define MEMORY_MEMORY_H
 
 #include <iostream>
-#include <stdexcept>
 
 #include <lib/cpp/Error.h>
 

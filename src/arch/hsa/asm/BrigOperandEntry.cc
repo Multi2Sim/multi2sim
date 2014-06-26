@@ -144,7 +144,7 @@ int BrigOperandEntry::getOperandType() const
 std::string BrigOperandEntry::getRegisterName() const
 {
 	if (this->getKind() != BRIG_OPERAND_REG)
-		throw std::logic_error("Trying to get register name on"
+		throw misc::Panic("Trying to get register name on"
 				" non-register operand");
 	struct BrigOperandReg *op = (struct BrigOperandReg *)base;
 	return BrigStrEntry::GetStringByOffset(file, op->reg);
@@ -239,8 +239,8 @@ void BrigOperandEntry::dumpOperandLabelRef(std::ostream &os = std::cout) const
 	}
 	else
 	{
-		throw std::logic_error("OperandLabelRef can"
-				" only ref to label of label target!");
+		throw misc::Panic("OperandLabelRef can"
+				" only ref to label of label target");
 	}
 }
 
