@@ -158,7 +158,7 @@ void Registers::setRegister(const std::string &name, char *value)
 		offset = allocated_size;
 
 		// insert allocated register into info register info table
-		register_info.emplace(name, allocated_size);
+		register_info.insert(std::pair<std::string, unsigned int>(name, allocated_size));
 		allocated_size += size;
 	}
 

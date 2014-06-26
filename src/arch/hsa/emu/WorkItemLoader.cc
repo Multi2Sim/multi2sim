@@ -77,11 +77,13 @@ void WorkItem::LoadBinary()
 				O_WRONLY);
 	}
 
+	// Reset program loader
 	loader->binary.reset(new BrigFile(loader->exe));
-	
 	emu->loader_debug << misc::fmt("Program loaded\n");
 
-	loader->pc = findMainFunction();
+	// Set entry_pointer and program counter to the first inst
+	loader->entry_point = findMainFunction();
+	pc = loader->entry_point;
 
 }
 
@@ -90,7 +92,6 @@ char* WorkItem::findMainFunction()
 {
 	// Traverse all the top level directives until the one with
 	char *firstInst = loader->binary->findMainFunction();
-
 	if(firstInst)
 	{
 		BrigInstEntry inst(firstInst, loader->binary.get());
