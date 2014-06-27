@@ -29,6 +29,7 @@
 #include <arch/southern-islands/asm/Binary.h>
 #include <lib/cpp/ELFWriter.h>
 #include <lib/cpp/Misc.h>
+#include <lib/cpp/Error.h>
 
 //#include "Arg.h"
 #include "InternalBinary.h"
@@ -237,15 +238,15 @@ metadata_stmt
 		}
 		else if (!strcmp($1, "userElementCount"))
 		{
-			misc::warning("User has provided 'userElementCount' but this number is automatically calculated");
+			throw misc::Error("User has provided 'userElementCount' but this number is automatically calculated");
 		}
 		else if (!strcmp($1, "NumVgprs"))
 		{	
-			misc::warning("User has provided 'NumVgprs' but this number is automatically calculated");
+			throw misc::Error("User has provided 'NumVgprs' but this number is automatically calculated");
 		}
 		else if (!strcmp($1, "NumSgprs"))
 		{
-			misc::warning("User has provided 'NumSgprs' but this number is automatically calculated");
+			throw misc::Error("User has provided 'NumSgprs' but this number is automatically calculated");
 		}
 		else if (!strcmp($1, "FloatMode"))
 		{
@@ -257,11 +258,11 @@ metadata_stmt
 		}
 		else if (!strcmp($1, "COMPUTE_PGM_RSRC2"))
 		{
-			misc::warning("User has provided 'COMPUTE_PGM_RSRC2' but this number is automatically calculated from provided PGM_RSRC2 fields");
+			throw misc::Error("User has provided 'COMPUTE_PGM_RSRC2' but this number is automatically calculated from provided PGM_RSRC2 fields");
 		}
 		else if (!strcmp($1, "COMPUTE_PGM_RSRC2"))
 		{
-			misc::warning("User has provided 'COMPUTE_PGM_RSRC2' but this number is automatically calculated from provided PGM_RSRC2 fields");
+			throw misc::Error("User has provided 'COMPUTE_PGM_RSRC2' but this number is automatically calculated from provided PGM_RSRC2 fields");
 		}
 		else
 		{
