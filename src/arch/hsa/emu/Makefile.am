@@ -10,7 +10,10 @@ libemu_a_SOURCES = \
 		WorkItemIsa.cc \
 		\
 		Registers.h \
-		Registers.cc
+		Registers.cc \
+		\
+		Function.h \
+		Function.cc 
 		
 AM_CPPFLAGS = @M2S_INCLUDES@
 

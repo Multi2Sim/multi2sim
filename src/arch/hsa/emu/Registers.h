@@ -25,14 +25,21 @@
 
 #include <lib/cpp/String.h>
 
+#include "WorkItem.h"
+
 namespace HSA
 {
+
+class WorkItem;
 
 /// Class representing the state of the hsa architecture register file
 class Registers
 {
 
 protected:
+
+	// Pointer to the workitem it belongs to
+	WorkItem * workitem;
 
 	// Number of bits used. If allocated size exceed 128x32 bits, expception
 	// will be raised. C registers would not occupy this space
@@ -72,7 +79,7 @@ protected:
 public:
 
 	/// Constructor
-	Registers();
+	Registers(WorkItem *workitem);
 
 	/// Destructor
 	~Registers();

@@ -711,4 +711,12 @@ void BrigInstEntry::DebugInst(){
 	std::cout << misc::fmt("Inst opcode: %d\n", this->getOpcode()); 	
 }
 
+char *BrigInstEntry::GetInstByOffset(BrigFile *file, BrigCodeOffset32_t offset)
+{
+	BrigSection *brig_section = file->getBrigSection(BrigSectionCode);
+	char *buffer = (char *)brig_section->getBuffer();
+	buffer += offset;
+	return buffer;
+}
+
 }//end namespace

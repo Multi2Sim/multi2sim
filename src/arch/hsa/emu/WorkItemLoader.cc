@@ -21,7 +21,6 @@
 #include <unistd.h>
 
 #include <lib/cpp/String.h>
-#include <arch/hsa/asm/BrigInstEntry.h>
 
 #include "WorkItem.h"
 
@@ -81,6 +80,13 @@ void WorkItem::LoadBinary()
 	loader->binary.reset(new BrigFile(loader->exe));
 	emu->loader_debug << misc::fmt("Program loaded\n");
 
+	// Load function table
+	int num_functions = loadFunctions();
+	if (num_functions == 0)
+	{
+		throw Error("No function found in the Brig file provided");
+	}
+
 	// Set entry_pointer and program counter to the first inst
 	loader->entry_point = findMainFunction();
 	pc = loader->entry_point;
@@ -104,6 +110,62 @@ char* WorkItem::findMainFunction()
 	}
 
 	return firstInst;
+}
+
+
+unsigned int WorkItem::loadFunctions()
+{
+	unsigned int num_functions = 0;
+
+	// Get pointer to directive section
+	BrigFile *file = loader->binary.get();
+	BrigSection *dir_section = file->getBrigSection(BrigSectionDirective);
+	const char *buffer = dir_section->getBuffer();
+	char *buffer_ptr = (char *)buffer + 4;
+
+	// Traverse top level directive
+	while (buffer_ptr && buffer_ptr < buffer + dir_section->getSize())
+	{
+		BrigDirEntry dir(buffer_ptr, file);
+		if (dir.getKind() == BRIG_DIRECTIVE_FUNCTION)
+		{
+			// Parse and create the function, insert the function 
+			// in table
+			parseFunction(&dir);
+			num_functions++;	
+		}
+		// move pointer to next top level directive
+		buffer_ptr = dir.nextTop();
+	}
+
+	return num_functions;
+}
+
+
+void WorkItem::parseFunction(BrigDirEntry *dir)
+{
+	struct BrigDirectiveFunction *dir_struct = 
+			(struct BrigDirectiveFunction *)dir->getBuffer();
+
+	// Get the name of the function
+	std::string name = BrigStrEntry::GetStringByOffset(loader->binary.get(), 
+			dir_struct->name);
+
+	// Get the pointer to the first code
+	char *entry_point = BrigInstEntry::GetInstByOffset(loader->binary.get(), 
+			dir_struct->code);
+
+	// Construct function object and insert into function_table
+	//std::unique_ptr<Function> function(new Function(name, entry_point));
+	loader->function_table.insert(
+			std::make_pair(name, 
+					std::unique_ptr<Function>(
+						new Function(name, entry_point)
+					)
+			)
+	);
+
+	emu->loader_debug << misc::fmt("Function %s loaded.\n", name.c_str()); 
 }
 
 }  // namespace HSA
