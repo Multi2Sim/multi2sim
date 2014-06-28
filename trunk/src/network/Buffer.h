@@ -38,7 +38,7 @@ class Buffer
 	Node *node;
 
 	// Buffer Name
-	static std::string name;
+	std::string name;
 };
 
 }  // namespace net
