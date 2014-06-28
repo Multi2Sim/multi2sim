@@ -23,12 +23,15 @@ namespace HSA
 {
 
 WorkItem::WorkItem()
+		:
+		registers(this)
 {
 	emu = Emu::getInstance();
 
 	pid = emu->getPid();	
 
 	emu->loader_debug << "WorkItem " << pid << " created\n";
+	emu->isa_debug    << "WorkItem " << pid << " created\n";
 
 	emu->isa_debug << registers;
 }
@@ -58,12 +61,13 @@ void WorkItem::Load(const std::vector<std::string> &args,
 
 void WorkItem::Execute()
 {
-	std::cout << "In WorkItem::Execute\n";
-	// Retrieve function and execute it
+	//std::cout << "In WorkItem::Execute\n";
 	BrigInstEntry inst(pc, loader->binary.get());
 
+	// Put the inst to perform to isa debug file
 	emu->isa_debug << inst;
 
+	// Get the function according to the opcode and perform the inst
 	int opcode = inst.getOpcode();
 	ExecuteInstFn fn = WorkItem::execute_inst_fn[opcode];
 	(this->*fn)();

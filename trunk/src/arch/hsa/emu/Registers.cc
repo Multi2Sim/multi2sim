@@ -23,8 +23,9 @@
 namespace HSA
 {
 
-Registers::Registers()
+Registers::Registers(WorkItem* workitem)
 {
+	this->workitem = workitem;
 }
 
 
@@ -180,7 +181,8 @@ void Registers::setRegister(const std::string &name, char *value)
 
 void Registers::Dump(std::ostream &os = std::cout) const
 {
-	os << "\n******** Register States ********\n";
+	os << misc::fmt("\n******** Register States of WorkItem pid = %d"
+		" ********\n", workitem->getPid());
 	for (std::map<std::string, unsigned int>::const_iterator it 
 			= register_info.begin(); 
 			it != register_info.end(); it++)
@@ -219,7 +221,7 @@ void Registers::Dump(std::ostream &os = std::cout) const
 		}
 		os << "\n";
 	}
-	os << "\n";
+	os << "*******************************************************\n\n";
 }
 
 }  // namespace HSA
