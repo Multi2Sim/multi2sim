@@ -23,7 +23,7 @@ namespace net
 {
 
 // Command Map
-misc::StringMap command_map =
+misc::StringMap System::command_map =
 {
 		{ "command",     TrafficPatternCommand },
 		{ "uniform",     TrafficPatternUniform }
@@ -45,9 +45,6 @@ std::string System::visual_file;
 
 // Network Routing Table print
 std::string System::routing_table_file;
-
-// Network Traffic Pattern
-int System::traffic_pattern;
 
 // maximum number of cycles
 long long System::max_cycles = 1000000;
@@ -198,7 +195,9 @@ void System::RegisterOptions()
 			"inserted in the network on certain cycles indicated in"
 			"commands (use '--net-help' for learning more about"
 			"commands");
-	traffic_pattern = command_map.MapString(pattern, err);
+
+	traffic_pattern = (System::TrafficPattern)
+			command_map.MapString(pattern, err);
 	if (err)
 	{
 		misc::fatal("%s: unrecognized command for network traffic "
