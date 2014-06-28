@@ -52,6 +52,9 @@ public:
 	/// Returns the kind field of an operand
 	unsigned short getKind() const;
 
+	// Returns the bytes field of immed operands
+	unsigned char *getImmedBytes() const;
+
 	/// Definition of functions to dump operands
 	typedef void (BrigOperandEntry::*DumpOperandFn)(std::ostream &os) const;
 
