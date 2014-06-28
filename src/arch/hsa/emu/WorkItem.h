@@ -20,10 +20,14 @@
 #ifndef ARCH_HSA_EMU_WORKITEM_H
 #define ARCH_HSA_EMU_WORKITEM_H
 
+#include <memory>
+
 #include <arch/common/FileTable.h>
 #include <arch/hsa/asm/BrigInstEntry.h>
+#include <arch/hsa/asm/BrigDirEntry.h>
 
 #include "Registers.h"
+#include "Function.h"
 #include "Emu.h"
 
 namespace HSA
@@ -77,6 +81,10 @@ class WorkItem{
  		// File name for standard input and output
  		std::string stdin_file_name;
  		std::string stdout_file_name;
+
+ 		// Function table for the functions in the brig file
+ 		std::map<std::string, std::unique_ptr<Function>> 
+ 				function_table;
  	};
 
  	// Loader information. This information can be shared among multiple 
@@ -84,6 +92,15 @@ class WorkItem{
  	// last destructed workitem sharing this variable will automatically 
  	// free it.
  	std::shared_ptr<Loader> loader;
+
+ 	// Load functions in the brig table. Prepare the function table in 
+ 	// loader.
+ 	// \return 
+ 	// 	Number of functions loaded
+ 	unsigned int loadFunctions();
+
+ 	// Parse and create a function object
+ 	void parseFunction(BrigDirEntry *dir);
 
  	// Find the main function of the brig elf.
  	// \return
@@ -140,6 +157,9 @@ class WorkItem{
 
  	/// Destructor
  	~WorkItem();
+
+ 	/// Returns the pid of this work item
+ 	int getPid() const{return pid;}
 
  	/// Load a program on the workitem. The meaning of each argument is 
  	/// identical to the prototype of comm::Emy::Load()

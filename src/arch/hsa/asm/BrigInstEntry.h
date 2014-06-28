@@ -200,6 +200,9 @@ public:
 
 	/// Dump debug information for this inst
 	void DebugInst();
+
+	/// Returns the pointer to the directive 
+	static char *GetInstByOffset(BrigFile *file, BrigCodeOffset32_t offset);
 };
 
 }  // namespace HSA
