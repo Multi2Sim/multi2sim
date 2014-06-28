@@ -18,6 +18,7 @@
  */
 
 #include <arch/hsa/asm/BrigOperandEntry.h> 
+#include <arch/hsa/asm/BrigImmed.h>
 
 #include "WorkItem.h"
 
@@ -36,8 +37,12 @@ Type WorkItem::getOperandValue(unsigned int index)
 	switch (operand.getKind())
 	{
 	case BRIG_OPERAND_IMMED:
-		throw misc::Panic("Unsupported operand type IMMED");
-		break;
+	{
+		BrigImmed immed(operand.getImmedBytes(), 
+				operand.getOperandType());
+		Type value = immed.getImmedValue<Type>();
+		return value;
+	}
 	case BRIG_OPERAND_WAVESIZE:
 		return 1;
 	case BRIG_OPERAND_REG:
@@ -200,6 +205,7 @@ void WorkItem::ExecuteInst_NEG()
 			int src = getOperandValue<int>(1);
 			int des = -src;
 			storeOperandValue<int>(0, des);
+			emu->isa_debug << registers;
 			break;
 		}
 		case BRIG_TYPE_S64:

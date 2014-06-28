@@ -55,6 +55,14 @@ protected:
 	// Invalid register name - 0
 	unsigned int getSizeByName(const std::string &name) const;
 
+	// Allocation register
+	// \param name
+	// 	Name of the register $cx, $sx, $dx, $qx
+	// \return 
+	// 	Offset of the allocated register
+	//	If the register already allocated, offset to that register
+	unsigned int allocateRegister(const std::string &name);
+
 	// Set C register
 	void setCRegister(const std::string &name, char *value);
 
