@@ -48,6 +48,7 @@ unsigned short BrigOperandEntry::getKind() const
 }
 
 
+
 BrigOperandEntry::DumpOperandFn BrigOperandEntry::dump_operand_fn[] = 
 {
 	&BrigOperandEntry::dumpOperandImmed,
@@ -63,6 +64,21 @@ BrigOperandEntry::DumpOperandFn BrigOperandEntry::dump_operand_fn[] =
 	&BrigOperandEntry::dumpOperandSignatureRef,
 	&BrigOperandEntry::dumpOperandFbarrierRef
 };
+
+
+unsigned char *BrigOperandEntry::getImmedBytes() const
+{
+	// Check operand type
+	if( this->getKind() != BRIG_OPERAND_IMMED)
+	{
+		throw misc::Panic("Trying to get bytes field of non-immed "
+				"operand");
+	}
+
+	//Get the bytes of immed operand
+	struct BrigOperandImmed *operand = (struct BrigOperandImmed *)base;
+	return operand->bytes;
+}
 
 
 int BrigOperandEntry::getOperandType() const

@@ -60,6 +60,14 @@ public:
 	/// Returns the size of the element according to the type field
 	int getSize();
 
+	/// Returns the value of the immediate type
+	template <typename Type>
+	Type getImmedValue()
+	{
+		// TODO: support for packed data
+		return *((Type *)this->ptr);
+	};
+
 	/// Map of the functions for dumping immed
 	static std::map<int, DumpImmedFn> dump_immed_fn;
 
