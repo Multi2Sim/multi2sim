@@ -30,17 +30,21 @@ namespace net
 
 class Network;
 
-/// Traffic Pattern states
-enum TrafficPattern
-{
-	TrafficPatternInvalid = 0,
-	TrafficPatternUniform,
-	TrafficPatternCommand
-};
-
 
 class System
 {
+
+	/// Traffic pattern states for network system
+	enum TrafficPattern
+	{
+		TrafficPatternInvalid = 0,
+		TrafficPatternUniform,
+		TrafficPatternCommand
+	};
+
+	/// String map for traffic pattern
+	static misc::StringMap command_map;
+
 	//
 	// Configuration options
 	//
@@ -61,7 +65,7 @@ class System
 	static std::string routing_table_file;
 
 	// Network Traffic Pattern
-	static int traffic_pattern;
+	static TrafficPattern traffic_pattern;
 
 	// Stand-alone simulation duration.
 	static long long max_cycles;
@@ -122,9 +126,10 @@ public:
 	///
 	/// \param name
 	///	Network Name
-	Network *getNetworkbyName(const std::string &name);
+	Network *getNetworkByName(const std::string &name);
 
 	/// Create a new Network
+	///
 	/// \param name
 	///	Name of the new Network
 	Network *newNetwork(const std::string &name);

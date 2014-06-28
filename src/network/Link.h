@@ -24,15 +24,84 @@
 namespace net
 {
 
+class Network;
+class Node;
+class Buffer;
+
 class Link
 {
+	//
+	// Class members
+	//
 
-	//
-	// Class Members
-	//
+	// Network associated with the link
+	Network *network;
+
+	// Link source node
+	Node *source_node;
+
+	// Link source buffer
+	Buffer *source_buffer;
+
+	// Link destination node
+	Node *destination_node;
+
+	// Link destination buffer
+	Buffer *destination_buffer;
+
+	// Link bandwidth
+	int bandwidth;
 
 	// Node Name
 	std::string name;
+
+	// Number of virtual channels on link
+	int virtual_channels;
+
+
+	//
+	// Scheduling and arbitration
+	//
+
+	// Link busy cycle for event scheduling
+	long long busy;
+
+	// Last cycle a buffer was assigned to a link in virtual channel
+	// arbitration
+	long long scheduled_when;
+
+	// Last buffer that was has the ownership of physical link in virtual
+	// channel arbitration
+	Buffer *scheduled_buffer;
+
+
+	//
+	// Statistics
+	//
+
+	// Number of cycles that the link was busy
+	long long busy_cycles;
+
+	// Number of bytes that was transfered through the links
+	long long transferred_bytes;
+
+
+public:
+	/// Link Constructor
+	///
+	/// \param name
+	///	link name
+	///
+	/// \param source_node
+	///	Source node that is connected to link. Buffer will be added to
+	///	this node.
+	///
+	Link(const std::string &name,
+			Node *source_node,
+			Node *destination_node,
+			int source_buffer_size,
+			int destination_buffer_size,
+			int virtual_channels);
 
 };
 }  // namespace net
