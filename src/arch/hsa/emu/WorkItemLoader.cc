@@ -158,14 +158,14 @@ void WorkItem::parseFunction(BrigDirEntry *dir)
 	// Construct function object and insert into function_table
 	// std::unique_ptr<Function> function(new Function(name, entry_point));
 	loader->function_table.insert(
-			std::make_pair(name, 
+			std::make_pair(name,
 					std::unique_ptr<Function>(
 						new Function(name, entry_point)
 					)
 			)
 	);
 	Function *function = loader->function_table[name].get();
-	emu->loader_debug << misc::fmt("\nFunction %s loaded.\n", name.c_str());
+//	emu->loader_debug << misc::fmt("\nFunction %s loaded.\n", name.c_str());
 
 	// Load Arguments
 	unsigned short num_in_arg = dir_struct->inArgCount;
@@ -174,7 +174,7 @@ void WorkItem::parseFunction(BrigDirEntry *dir)
 	next_dir = loadArguments(num_out_arg, next_dir, false, function);
 	next_dir = loadArguments(num_in_arg, next_dir, true, function);
 
-	emu->loader_debug << "\n";
+	function->Dump(emu->loader_debug);
 }
 
 
@@ -185,7 +185,7 @@ char *WorkItem::loadArguments(unsigned short num_arg, char *next_dir,
 	for (int i = 0; i < num_arg; i++)
 	{
 		// Retrieve argument pointer
-		BrigDirEntry output_arg_entry(next_dir, loader->binary.get());
+		BrigDirEntry arg_entry(next_dir, loader->binary.get());
 		struct BrigDirectiveSymbol *arg_struct =
 				(struct BrigDirectiveSymbol *)next_dir;
 
@@ -195,20 +195,18 @@ char *WorkItem::loadArguments(unsigned short num_arg, char *next_dir,
 		unsigned short type = arg_struct->type;
 
 		// Add this argument to the argument table
-		function->addArgument(arg_name, type, isInput);
+		function->addArgument(arg_name, isInput, type);
 
 		// Put argument information into loader_debug log file
-		emu->loader_debug << misc::fmt("\tArg %s %s loaded\n",
-				BrigEntry::type2str(type).c_str(),
-				arg_name.c_str());
+//		emu->loader_debug << misc::fmt("\tArg %s %s loaded\n",
+//				BrigEntry::type2str(type).c_str(),
+//				arg_name.c_str());
 
 		// Move pointer forward
-		next_dir = output_arg_entry.next();
+		next_dir = arg_entry.next();
 	}
 	return next_dir;
 }
-
-
 
 }  // namespace HSA
 
