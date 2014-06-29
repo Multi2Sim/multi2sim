@@ -25,6 +25,7 @@
 #include <arch/common/FileTable.h>
 #include <arch/hsa/asm/BrigInstEntry.h>
 #include <arch/hsa/asm/BrigDirEntry.h>
+#include <arch/hsa/asm/BrigStrEntry.h>
 
 #include "Registers.h"
 #include "Function.h"

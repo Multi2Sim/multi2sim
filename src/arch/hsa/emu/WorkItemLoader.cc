@@ -156,7 +156,7 @@ void WorkItem::parseFunction(BrigDirEntry *dir)
 			dir_struct->code);
 
 	// Construct function object and insert into function_table
-	//std::unique_ptr<Function> function(new Function(name, entry_point));
+	// std::unique_ptr<Function> function(new Function(name, entry_point));
 	loader->function_table.insert(
 			std::make_pair(name, 
 					std::unique_ptr<Function>(
@@ -164,8 +164,43 @@ void WorkItem::parseFunction(BrigDirEntry *dir)
 					)
 			)
 	);
+	emu->loader_debug << misc::fmt("\nFunction %s loaded.\n", name.c_str());
 
-	emu->loader_debug << misc::fmt("Function %s loaded.\n", name.c_str()); 
+	// Load Arguments
+	unsigned short num_in_arg = dir_struct->inArgCount;
+	unsigned short num_out_arg = dir_struct->outArgCount;
+	char *next_dir = dir->next();
+
+	// Load output arguments
+	for (int i = 0; i < num_out_arg; i++)
+	{
+		BrigDirEntry output_arg_entry(next_dir, loader->binary.get());
+		struct BrigDirectiveSymbol *arg_struct =
+				(struct BrigDirectiveSymbol *)next_dir;
+		std::string arg_name = BrigStrEntry::GetStringByOffset(
+				loader->binary.get(), arg_struct->name);
+		unsigned short type = arg_struct->type;
+		emu->loader_debug << misc::fmt("Output arg %s %s loaded\n",
+				BrigEntry::type2str(type), arg_name.c_str());
+		next_dir = output_arg_entry.next();
+	}
+
+	// Load input arguments
+	for (int i = 0; i < num_in_arg; i++)
+	{
+		BrigDirEntry input_arg_entry(next_dir, loader->binary.get());
+		struct BrigDirectiveSymbol *arg_struct =
+				(struct BrigDirectiveSymbol *)next_dir;
+		std::string arg_name = BrigStrEntry::GetStringByOffset(
+				loader->binary.get(), arg_struct->name);
+		unsigned short type = arg_struct->type;
+		emu->loader_debug << misc::fmt("Input arg %s %s loaded\n",
+				BrigEntry::type2str(type), arg_name.c_str());
+		next_dir = input_arg_entry.next();
+	}
+
+	emu->loader_debug << "\n";
+
 }
 
 }  // namespace HSA
