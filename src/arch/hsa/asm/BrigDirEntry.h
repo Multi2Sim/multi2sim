@@ -38,6 +38,9 @@ public:
 	/// Constructor
 	BrigDirEntry(char *buf, BrigFile *file);
 	
+	/// Destructor
+	virtual ~BrigDirEntry(){};
+
 	// Get the kind field from the base
 	int getKind() const;
 
