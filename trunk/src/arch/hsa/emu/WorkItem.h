@@ -21,6 +21,7 @@
 #define ARCH_HSA_EMU_WORKITEM_H
 
 #include <memory>
+//#include <map>
 
 #include <arch/common/FileTable.h>
 #include <arch/hsa/asm/BrigInstEntry.h>

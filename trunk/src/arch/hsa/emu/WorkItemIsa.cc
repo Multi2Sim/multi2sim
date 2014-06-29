@@ -56,6 +56,7 @@ Type WorkItem::getOperandValue(unsigned int index)
 				"for getOperandValue");
 		break;
 	}
+	return 0;
 }
 
 
