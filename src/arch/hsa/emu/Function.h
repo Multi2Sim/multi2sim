@@ -90,6 +90,17 @@ public:
 	void addArgument(const std::string &name, bool isInput,
 			unsigned short type);
 
+	/// Dump function information for debug propose
+	void Dump(std::ostream &os) const;
+
+	/// Operator \c << invoking the function Dump9) on an output stream
+	friend std::ostream &operator<<(std::ostream &os,
+			const Function &registers)
+	{
+		registers.Dump(os);
+		return os;
+	}
+
 };
 
 }  // namespace HSA

@@ -46,9 +46,9 @@ void Function::addArgument(const std::string &name, bool isInput,
 	}
 
 	// Insert argument into table
-	struct Argument *argument = new Argument();
 	arg_info.insert(std::make_pair(name,
-			std::unique_ptr<Argument>(argument)));
+			std::unique_ptr<Argument>(new Argument)));
+	struct Argument *argument = arg_info[name].get();
 	argument->type = type;
 	argument->offset = arg_size;
 	argument->isInput = isInput;
@@ -56,6 +56,28 @@ void Function::addArgument(const std::string &name, bool isInput,
 
 	// Increase allocated argument size
 	this->arg_size += argument->size;
+}
+
+
+void Function::Dump(std::ostream &os = std::cout) const
+{
+	os << misc::fmt("\n ************* Function %s *************\n",
+			name.c_str());
+	std::map<std::string, std::unique_ptr<Argument>>::const_iterator it;
+	for (it = arg_info.begin(); it != arg_info.end(); it++)
+	{
+		os << "\t";
+		if (it->second->isInput)
+			os << "Input ";
+		else
+			os << "Output ";
+		os << misc::fmt("argument %s, %s, size %d, offset %d\n",
+				BrigEntry::type2str(it->second->type).c_str(),
+				it->first.c_str(),
+				it->second->size,
+				it->second->offset);
+	}
+	os << "\n";
 }
 
 }  // namespace HSA
