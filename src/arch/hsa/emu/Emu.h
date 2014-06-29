@@ -85,8 +85,11 @@ class Emu : public comm::Emu
 
 public:
 
+	/// Destructor
+	virtual ~Emu(){};
+
 	/// The hsa emulator is a singleton class. The only possible instance 
-	/// of it will be allocated the first time this funcion is invoked
+	/// of it will be allocated the first time this function is invoked
 	static Emu *getInstance();
 
 	/// Return a unique process ID. Work items can call this function when 

@@ -164,44 +164,51 @@ void WorkItem::parseFunction(BrigDirEntry *dir)
 					)
 			)
 	);
+	Function *function = loader->function_table[name].get();
 	emu->loader_debug << misc::fmt("\nFunction %s loaded.\n", name.c_str());
 
 	// Load Arguments
 	unsigned short num_in_arg = dir_struct->inArgCount;
 	unsigned short num_out_arg = dir_struct->outArgCount;
 	char *next_dir = dir->next();
+	next_dir = loadArguments(num_out_arg, next_dir, false, function);
+	next_dir = loadArguments(num_in_arg, next_dir, true, function);
 
+	emu->loader_debug << "\n";
+}
+
+
+char *WorkItem::loadArguments(unsigned short num_arg, char *next_dir,
+		bool isInput, Function* function)
+{
 	// Load output arguments
-	for (int i = 0; i < num_out_arg; i++)
+	for (int i = 0; i < num_arg; i++)
 	{
+		// Retrieve argument pointer
 		BrigDirEntry output_arg_entry(next_dir, loader->binary.get());
 		struct BrigDirectiveSymbol *arg_struct =
 				(struct BrigDirectiveSymbol *)next_dir;
+
+		// Get argument information
 		std::string arg_name = BrigStrEntry::GetStringByOffset(
 				loader->binary.get(), arg_struct->name);
 		unsigned short type = arg_struct->type;
-		emu->loader_debug << misc::fmt("Output arg %s %s loaded\n",
-				BrigEntry::type2str(type), arg_name.c_str());
+
+		// Add this argument to the argument table
+		function->addArgument(arg_name, type, isInput);
+
+		// Put argument information into loader_debug log file
+		emu->loader_debug << misc::fmt("\tArg %s %s loaded\n",
+				BrigEntry::type2str(type).c_str(),
+				arg_name.c_str());
+
+		// Move pointer forward
 		next_dir = output_arg_entry.next();
 	}
-
-	// Load input arguments
-	for (int i = 0; i < num_in_arg; i++)
-	{
-		BrigDirEntry input_arg_entry(next_dir, loader->binary.get());
-		struct BrigDirectiveSymbol *arg_struct =
-				(struct BrigDirectiveSymbol *)next_dir;
-		std::string arg_name = BrigStrEntry::GetStringByOffset(
-				loader->binary.get(), arg_struct->name);
-		unsigned short type = arg_struct->type;
-		emu->loader_debug << misc::fmt("Input arg %s %s loaded\n",
-				BrigEntry::type2str(type), arg_name.c_str());
-		next_dir = input_arg_entry.next();
-	}
-
-	emu->loader_debug << "\n";
-
+	return next_dir;
 }
+
+
 
 }  // namespace HSA
 

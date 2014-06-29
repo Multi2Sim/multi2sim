@@ -18,7 +18,10 @@
  */
 
 #ifndef ARCH_HSA_EMU_FUNCTION_H
-#define ARHC_HSA_EMU_FUNCTION_H
+#define ARCH_HSA_EMU_FUNCTION_H
+
+#include <map>
+#include <memory>
 
 namespace HSA
 {
@@ -33,10 +36,31 @@ class Function
 	// Entry point of the function, helps the work item to set its init pc
 	char *entry_point;
 
-public:
 
-	/// Constructor
-	Function(const std::string &name);
+
+
+	//
+	// Fields related with arguments
+	//
+
+	// Information for argument
+	struct Argument
+	{
+		unsigned short type;
+		unsigned short size;	// argument size in bytes
+		unsigned short offset;
+		bool isInput;
+	};
+
+	// argument size. When stack frame initialize, allocate the size of
+	// memory
+	unsigned short arg_size = 0;
+
+	// Map the name with the information of the argument
+	std::map<std::string, std::unique_ptr<Argument>> arg_info;
+
+
+public:
 
 	/// Constructor
 	Function(const std::string &name, char *entry_point);
@@ -52,6 +76,19 @@ public:
 
 	/// Returns pointer to entry point
 	char *getEntryPoint() const{return entry_point;}
+
+	/// Adds an argument information in argument table
+	///
+	/// \Param name
+	/// 	Name of the argument
+	///
+	/// \Param isInput
+	/// 	If true, the argument is an input arguement
+	///
+	/// \Param type
+	///	type of the argument, as defined in BrigDef.h
+	void addArgument(const std::string &name, bool isInput,
+			unsigned short type);
 
 };
 

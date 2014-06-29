@@ -30,7 +30,7 @@
 namespace HSA
 {
 
-const char *BrigEntry::type2str(int type)
+std::string BrigEntry::type2str(int type)
 {
 	return type_to_str_map.MapValue(type);
 }
@@ -84,6 +84,62 @@ misc::StringMap BrigEntry::type_to_str_map =
 	{"f32x2", 	BRIG_TYPE_F32|BRIG_TYPE_PACK_64},
 	{"f32x4", 	BRIG_TYPE_F32|BRIG_TYPE_PACK_128},
 	{"f64x2", 	BRIG_TYPE_F64|BRIG_TYPE_PACK_128}
+};
+
+
+unsigned short BrigEntry::type2size(int type)
+{
+	return type_to_size_map[type];
+}
+
+std::map<unsigned short, unsigned short> BrigEntry::type_to_size_map =
+{
+	{0, 0},
+	{1, 1},
+	{2, 2},
+	{3, 4},
+	{4, 8},
+	{5, 1},
+	{6, 2},
+	{7, 4},
+	{8, 8},
+	{9, 2},
+	{10, 4},
+	{11, 8},
+	{12, 1},
+	{13, 1},
+	{14, 2},
+	{15, 4},
+	{16, 8},
+	{17, 16},
+	{18, 1},
+	{19, 1},
+	{20, 1},
+	{21, 1},
+	{BRIG_TYPE_U8|BRIG_TYPE_PACK_32, 4},
+	{BRIG_TYPE_U8|BRIG_TYPE_PACK_64, 8},
+	{BRIG_TYPE_U8|BRIG_TYPE_PACK_128, 16},
+	{BRIG_TYPE_U16|BRIG_TYPE_PACK_32, 4},
+	{BRIG_TYPE_U16|BRIG_TYPE_PACK_64, 8},
+	{BRIG_TYPE_U16|BRIG_TYPE_PACK_128, 16},
+	{BRIG_TYPE_U32|BRIG_TYPE_PACK_64, 8},
+	{BRIG_TYPE_U32|BRIG_TYPE_PACK_128, 16},
+	{BRIG_TYPE_U64|BRIG_TYPE_PACK_128, 16},
+	{BRIG_TYPE_S8|BRIG_TYPE_PACK_32, 4},
+	{BRIG_TYPE_S8|BRIG_TYPE_PACK_64, 8},
+	{BRIG_TYPE_S8|BRIG_TYPE_PACK_128, 16},
+	{BRIG_TYPE_S16|BRIG_TYPE_PACK_32, 4},
+	{BRIG_TYPE_S16|BRIG_TYPE_PACK_64, 8},
+	{BRIG_TYPE_S16|BRIG_TYPE_PACK_128, 16},
+	{BRIG_TYPE_S32|BRIG_TYPE_PACK_64, 8},
+	{BRIG_TYPE_S32|BRIG_TYPE_PACK_64, 8},
+	{BRIG_TYPE_S64|BRIG_TYPE_PACK_128, 16},
+	{BRIG_TYPE_F16|BRIG_TYPE_PACK_32, 4},
+	{BRIG_TYPE_F16|BRIG_TYPE_PACK_64, 8},
+	{BRIG_TYPE_F16|BRIG_TYPE_PACK_128, 16},
+	{BRIG_TYPE_F32|BRIG_TYPE_PACK_64, 8},
+	{BRIG_TYPE_F32|BRIG_TYPE_PACK_128, 16},
+	{BRIG_TYPE_F64|BRIG_TYPE_PACK_128, 16}
 };
 
 

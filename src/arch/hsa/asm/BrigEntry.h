@@ -47,6 +47,9 @@ protected:
 	// Maps type to type strings
 	static misc::StringMap type_to_str_map;
 
+	// Maps type and the number of byte is needs
+	static std::map<unsigned short, unsigned short> type_to_size_map;
+
 	// Convert profile to string to print out
 	static const char *profile2str(int profile);
 	
@@ -121,6 +124,9 @@ public:
 	/// Constructor
 	BrigEntry(char *buf, BrigFile *file);
 
+	/// Destructor
+	virtual ~BrigEntry(){};
+
 	/// Returns the pointer to the buffer of the entry
 	char *getBuffer() const{return base;}
 
@@ -128,7 +134,10 @@ public:
 	BrigFile *getFile() const{return file;}
 
 	/// Converts type to type string
-	static const char *type2str(int type);
+	static std::string type2str(int type);
+
+	/// Converts type to the number of bytes it occupies
+	static unsigned short type2size(int type);
 
 	/// Returns the size of the entry, the size is paddint into 4 bytes
 	/// String entry should have different implementation, since the size

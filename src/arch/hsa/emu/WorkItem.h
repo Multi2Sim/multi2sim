@@ -103,6 +103,25 @@ class WorkItem{
  	// Parse and create a function object
  	void parseFunction(BrigDirEntry *dir);
 
+ 	// Load output arguments for a function
+ 	//
+ 	// \param num_out_arg
+ 	// 	Number of output arguments
+ 	//
+ 	// \param next_dir
+ 	// 	Pointer to the argument to start with
+ 	//
+ 	// \param isInput
+ 	//	if true, add input arguments. Otherwise, add output arguments
+ 	//
+ 	// \param function
+ 	// 	Pointer to the function to load arguments
+ 	//
+ 	// \return
+ 	// 	Pointer to next directive to parse
+ 	char *loadArguments(unsigned short num_arg, char *next_dir,
+ 			bool isInput, Function* function);
+
  	// Find the main function of the brig elf.
  	// \return
  	// 	pointer to the first inst of the main function

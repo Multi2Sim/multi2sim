@@ -18,22 +18,44 @@
  */
 
 #include <lib/cpp/String.h>
+#include <arch/hsa/asm/BrigEntry.h>
 
+#include "Emu.h"
 #include "Function.h"
 
 namespace HSA
 {
 
-Function::Function(const std::string& name)
-{
-	this->name = name;
-}
-
-
 Function::Function(const std::string& name, char *entry_point)
 {
 	this->name = name;
 	this->entry_point = entry_point;
+}
+
+
+void Function::addArgument(const std::string &name, bool isInput,
+			unsigned short type)
+{
+	// Check if argument is defined
+	std::map<std::string, std::unique_ptr<Argument>>::iterator it
+			= arg_info.find(name);
+	if (it != arg_info.end())
+	{
+		throw Error(misc::fmt("Function argument %s redefined",
+				name.c_str()));
+	}
+
+	// Insert argument into table
+	struct Argument *argument = new Argument();
+	arg_info.insert(std::make_pair(name,
+			std::unique_ptr<Argument>(argument)));
+	argument->type = type;
+	argument->offset = arg_size;
+	argument->isInput = isInput;
+	argument->size = BrigEntry::type2size(type);
+
+	// Increase allocated argument size
+	this->arg_size += argument->size;
 }
 
 }  // namespace HSA
