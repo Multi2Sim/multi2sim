@@ -42,9 +42,12 @@ class Driver : public comm::Driver
 	static std::unique_ptr<Driver> instance;
 
 	// List of programs, kernels, NDRanges
-	static std::list<DriverProgram *> program_list;
-	static std::list<DriverKernel *> kernel_list;
-	static std::list<DriverNDRange *> ndrange_list;
+	static std::list<Program *> program_list;
+	static unsigned program_count;
+	static std::list<Kernel *> kernel_list;
+	static unsigned kernel_count;
+	static std::list<NDRange *> ndrange_list;
+	static unsigned ndrange_count;
 
 	// Driver version
 	const int driver_major = 0;
@@ -52,7 +55,11 @@ class Driver : public comm::Driver
 
 
 	// Singletons have private constructors
-	Driver() : comm::Driver("HSA", "/dev/hsa") { }
+	Driver() : comm::Driver("HSA", "/dev/hsa") {
+		program_count = 0;
+		kernel_count = 0;
+		ndrange_count = 0;
+	}
 
 	// Enumeration with all ABI call codes. Each entry of Driver.dat will
 	// expand into an assignment. For example, entry
@@ -96,15 +103,30 @@ class Driver : public comm::Driver
 	// Table of ABI call execution functions
 	static const CallFn call_fn[CallCodeCount];
 
+	unsigned getNewProgramID()
+	{
+		return program_count++;
+	}
+
+	unsigned getNewKernelID()
+	{
+		return kernel_count++;
+	}
+
+	unsigned getNewNDRangeID()
+	{
+		return ndrange_count++;
+	}
+
 public:
 
 	/// Obtain instance of the singleton
 	static Driver *getInstance();
-	
+
 	/// Invoke an ABI call. See documentation for comm::Driver::Call for
 	/// details on the meaning of the arguments.
 	int Call(int code, mem::Memory *memory, unsigned args_ptr);
-	
+
 	/// Debugger
 	static misc::Debug debug;
 

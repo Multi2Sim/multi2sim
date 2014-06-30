@@ -20,15 +20,29 @@
 #ifndef ARCH_HSA_DRIVER_PROGRAM_H
 #define ARCH_HSA_DRIVER_PROGRAM_H
 
-#include <lib/cpp/ELFWriter.h>
+#include <lib/cpp/ELFReader.h>
 
 namespace HSA
 {
 
-class DriverProgram
+class Program
 {
-	int id;
-	ELFWriter::File *file;
+	unsigned id;
+	ELFReader::File *file;
+
+public:
+
+	Program(unsigned id)
+	{
+		this->id = id;
+		file = NULL;
+	}
+
+	void setBinary(const char *buffer, unsigned int size)
+	{
+		file = new ELFReader::File(buffer, size);
+	}
+
 };
 
 } // namespace HSA

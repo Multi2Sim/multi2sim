@@ -23,7 +23,7 @@
 namespace HSA
 {
 
-class DriverNDRange
+class NDRange
 {
 
 };
