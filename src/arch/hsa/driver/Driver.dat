@@ -4,4 +4,6 @@ DEFCALL(MemFree, 3)
 DEFCALL(MemWrite, 4)
 DEFCALL(MemRead, 5)
 DEFCALL(MemCopyDevice, 6)
+DEFCALL(ProgramCreateWithBinary, 7)
+DEFCALL(KernelCreate, 8)
 

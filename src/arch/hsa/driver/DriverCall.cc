@@ -26,17 +26,17 @@
 namespace HSA
 {
 
-// ABI Call 'Init'
-// Version check between runtime and driver
-//
-// runtime_major
-//  Major version from the runtime
-//
-// runtime_minor
-//  Minor version from the runtime
-//
-// Return Value
-//  0 if version check passed
+/// ABI Call 'Init'
+/// Version check between runtime and driver
+///
+/// \param runtime_major
+///	Major version from the runtime
+///
+/// \param runtime_minor
+///	Minor version from the runtime
+///
+/// \return
+///	0 if version check passed
 int Driver::CallInit(mem::Memory *memory, unsigned args_ptr)
 {
 	// Read arguments
@@ -46,9 +46,9 @@ int Driver::CallInit(mem::Memory *memory, unsigned args_ptr)
 	memory->Read(args_ptr + 4, 4, (char *)&runtime_minor);
 
 	// Debug
-	debug << misc::fmt("\tMulti2Sim OpenCL implementation in host: v.%d.%d.",
+	debug << misc::fmt("\tMulti2Sim implementation in host: v.%d.%d.",
 			runtime_major, runtime_minor);
-	debug << misc::fmt("\tMulti2Sim OpenCL implementation in guest: v.%d.%d.",
+	debug << misc::fmt("\tMulti2Sim implementation in guest: v.%d.%d.",
 				driver_major, driver_minor);
 
 	// Version check
@@ -119,7 +119,8 @@ int Driver::CallMemFree(mem::Memory *memory, unsigned args_ptr)
 
 
 // ABI Call 'MemWrite'
-// Copy buffer from the host to the device. The length of the buffer is defined in argument size
+// Copy buffer from the host to the device.
+// The length of the buffer is defined in argument size
 //
 // device_ptr
 //  address of device buffer as destination
@@ -144,10 +145,11 @@ int Driver::CallMemWrite(mem::Memory *memory, unsigned args_ptr)
 	memory->Read(args_ptr + 8, 4, (char *) &size);
 
 	// Debug
-	debug << misc::fmt("\tMemWrite device_ptr = 0x%08x; host_ptr = 0x%08x; size = 0x%08x",
-			device_ptr, host_ptr, size);
+	debug << misc::fmt("\tMemWrite device_ptr = 0x%08x", device_ptr);
+	debug << misc::fmt("\tMemWrite host_ptr = 0x%08x;", host_ptr);
+	debug << misc::fmt("\tMemWrite size = 0x%08x", size);
 
-	// Read From host, write to device
+	// Read From host, write to device1
 	std::unique_ptr<char> buf(new char[size]);
 	memory->Read(host_ptr, size, buf.get());
 	/* TODO:
@@ -184,8 +186,9 @@ int Driver::CallMemRead(mem::Memory *memory, unsigned args_ptr)
 	memory->Read(args_ptr + 8, 4, (char *) &size);
 
 	// Debug
-	debug << misc::fmt("\tMemRead host_ptr = 0x%08x; device_ptr = 0x%08x; size = 0x%08x",
-				host_ptr, device_ptr, size);
+	debug << misc::fmt("\tMemRead host_ptr = 0x%08x;", host_ptr);
+	debug << misc::fmt("\tMemRead device_ptr = 0x%08x;", device_ptr);
+	debug << misc::fmt("\tMemRead size = 0x%08x", size);
 
 	// Read from device, write to host
 	std::unique_ptr<char> buf(new char[size]);
@@ -241,7 +244,78 @@ int Driver::CallMemCopyDevice(mem::Memory *memory, unsigned args_ptr)
 	return 0;
 }
 
-// ABI Call 'ProgramCreate'
+
+// ABI Call 'ProgramCreateWithBinary'
+// Create a program with binary and return an unique ID to the program
+//
+// file
+//  Pointer to an ELF file in the host memory
+//
+// size
+//  Size of the ELF file
+//
+// Return Value
+//  Unique program ID
+//
+// FIXME: Figure out the mechanism for the binary file
+// 1. load the binary to device memory or only pass the pointer
+// 2. ELFReader only support loading binary from the multi2sim host machine
+int Driver::CallProgramCreateWithBinary(mem::Memory *memory, unsigned args_ptr)
+{
+	// Read arguments
+	void *file;
+	unsigned size;
+	memory->Read(args_ptr, 4, (char *) &file);
+	memory->Read(args_ptr, 4, (char *) &size);
+
+	// Create Program object
+	unsigned id = getNewProgramID();
+	Program * program = new Program(id);
+	program_list.push_back(program);
+
+	// Load binary
+	program->setBinary((char *)file, size);
+
+	// debug
+	debug << misc::fmt("\tProgram with ID %d created", id);
+	debug << misc::fmt("\tBinary location = %p", file);
+	debug << misc::fmt("\tBinary size = %d", size);
+
+	// Return unique program ID
+	return (int)id;
+}
+
+
+// ABI Call 'KernelCreate'
+// Create a kernel for a given program
+//
+// program_id
+//  ID of a program to for which the kernel is created
+//
+// kernel_name
+//  Name of the kernel in program
+//
+// Return Value
+//  Unique kernel ID
+int Driver::CallKernelCreate(mem::Memory *memory, unsigned args_ptr)
+{
+	// Read arguments
+	unsigned program_id;
+	std::string *kernel_name;
+	memory->Read(args_ptr, 4, (char *) &program_id);
+	memory->Read(args_ptr, 4, (char *) &kernel_name);
+
+	// Create new Kernel
+	unsigned kernel_id = getNewKernelID();
+	Kernel * kernel = new Kernel(kernel_id, kernel_name, program_id);
+	kernel_list.push_back(kernel);
+
+	// Debug
+	debug << misc::fmt("\tKernel created for Program %d", program_id);
+	debug << misc::fmt("\tKernel name is %s", kernel_name->c_str());
+	return kernel_id;
+}
+
 
 
 }  // namepsace HSA
