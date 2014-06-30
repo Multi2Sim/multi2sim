@@ -20,11 +20,26 @@
 #ifndef ARCH_HSA_DRIVER_KERNEL_H
 #define ARCH_HSA_DRIVER_KERNEL_H
 
+#include <string>
+
 namespace HSA
 {
 
-class DriverKernel{
+class Kernel{
+	// unique kernel ID
+	unsigned id;
+	// name of the kernel
+	std::string *name;
+	// the program this kernel is created for
+	unsigned program_id;
 
+public:
+	Kernel(unsigned id, std::string *name, unsigned program_id)
+	{
+		this->id = id;
+		this->name = name;
+		this->program_id = program_id;
+	}
 };
 
 } // namespace HSA
