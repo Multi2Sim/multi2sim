@@ -999,7 +999,7 @@ void BasicBlock::EmitAnd(llvm::BinaryOperator *llvm_inst)
 			SymbolVectorRegister, ret_vreg);
 	function->AddSymbol(ret_symbol);
 
-	/* Emit addition.
+	/* Emit AND.
 	 * v_and_b32 ret_vreg, arg_op1, arg_op2
 	 */
 	Inst *inst = new Inst(SI::INST_V_AND_B32,
@@ -1009,7 +1009,49 @@ void BasicBlock::EmitAnd(llvm::BinaryOperator *llvm_inst)
 	AddInst(inst);
 }
 
+void BasicBlock::EmitOr(llvm::BinaryOperator *llvm_inst)
+{
+	/* Only supported for 32-bit integers */
+	llvm::Type *llvm_type = llvm_inst->getType();
+	if (!llvm_type->isIntegerTy(32))
+		panic("%s: only supported for 32-bit integers",
+				__FUNCTION__);
 
+	/* Only supported for 2 operands (op1, op2) */
+	if (llvm_inst->getNumOperands() != 2)
+		panic("%s: 2 operands supported, %d found",
+			__FUNCTION__, llvm_inst->getNumOperands());
+
+	/* Get operands (vreg, literal) */
+	llvm::Value *llvm_arg1 = llvm_inst->getOperand(0);
+	llvm::Value *llvm_arg2 = llvm_inst->getOperand(1);
+	Arg *arg1 = function->TranslateValue(llvm_arg1);
+	Arg *arg2 = function->TranslateValue(llvm_arg2);
+
+	/* Second operand cannot be a constant */
+	arg2 = function->ConstToVReg(this, arg2);
+	arg2->ValidTypes(ArgTypeVectorRegister);
+	arg1->ValidTypes(ArgTypeVectorRegister,
+			ArgTypeLiteral,
+			ArgTypeLiteralReduced,
+			ArgTypeLiteralFloat,
+			ArgTypeLiteralFloatReduced);
+
+	/* Allocate vector register and create symbol for return value */
+	int ret_vreg = function->AllocVReg();
+	Symbol *ret_symbol = new Symbol(llvm_inst->getName(),
+			SymbolVectorRegister, ret_vreg);
+	function->AddSymbol(ret_symbol);
+
+	/* Emit OR.
+	 * v_or_b32 ret_vreg, arg_op1, arg_op2
+	 */
+	Inst *inst = new Inst(SI::INST_V_OR_B32,
+			new ArgVectorRegister(ret_vreg),
+			arg1,
+			arg2);
+	AddInst(inst);
+}
 
 
 void BasicBlock::EmitSExt(llvm::SExtInst *llvm_inst)
@@ -1275,6 +1317,10 @@ void BasicBlock::Emit(llvm::BasicBlock *llvm_basic_block)
 
 				EmitAnd(misc::cast<llvm::BinaryOperator *>(&llvm_inst));
 				break;
+
+		case llvm::Instruction::Or:
+					EmitOr(misc::cast<llvm::BinaryOperator *>(&llvm_inst));
+					break;
 		
 		default:
 
