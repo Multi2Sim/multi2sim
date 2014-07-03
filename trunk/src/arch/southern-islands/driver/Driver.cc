@@ -105,16 +105,31 @@ void Driver::ProcessOptions()
 	debug.setPrefix("[Southern Islands driver]");
 }
 
-void Driver::AddProgram(int program_id)
+Program *Driver::AddProgram(int program_id)
 {
 	// Create new program and insert it to program list
 	programs.emplace_back(new Program(program_id));
+
+	// Return
+	return programs.end()->get();
 }
 
-void Driver::AddKernel(int kernel_id, const std::string &func, Program *program)
+Kernel *Driver::AddKernel(int kernel_id, const std::string &func, Program *program)
 {
 	// Create new kernel and insert it to program list
 	kernels.emplace_back(new Kernel(kernel_id, func, program));
+
+	// Return
+	return kernels.end()->get();
+}
+
+NDRange *Driver::AddNDRange()
+{
+	// Create new ndrange and insert it to ndrange list
+	ndranges.emplace_back(new NDRange(SI::Emu::getInstance()));
+
+	// Return
+	return ndranges.end()->get();
 }
 
 }  // namepsace SI

@@ -19,6 +19,7 @@
 
 #include <arch/southern-islands/asm/Arg.h>
 #include <arch/southern-islands/emu/Emu.h>
+#include <arch/x86/emu/Emu.h>
 #include <lib/cpp/String.h>
 #include <memory/Memory.h>
 
@@ -376,7 +377,7 @@ int Driver::CallKernelSetArgPointer(mem::Memory *memory, unsigned args_ptr)
 		throw Error(misc::fmt("Invalid kernel ID (%d)", kernel_id));
 
 	// Get argument 
-	ArgPointer *arg = dynamic_cast<ArgPointer *> (kernel->getArgByIndex(index));
+	ArgPointer *arg = dynamic_cast<ArgPointer *>(kernel->getArgByIndex(index));
 	if (!arg || arg->getType() != ArgTypePointer)
 		throw Error(misc::fmt("Invalid type for argument %d", index));
 
@@ -415,13 +416,98 @@ int Driver::CallKernelSetArgImage(mem::Memory *memory, unsigned args_ptr)
 }
 
 
-// ABI Call 'NDRangeCreate'
-//
-// ...
+/// ABI Call 'NDRangeCreate'
+///
+/// Create and initialize an ND-Range for the supplied kernel.
+///
+/// \param int kernel_id
+/// 	Kernel ID, as returned by ABI call 'KernelCreate'
+///
+/// \param int work_dim
+///	Number of work dimensions. This is an integer number between 1 and 3,
+///	which determines the number of elements of the following arrays.
+///
+/// \param unsigned int *global_offset
+///	Array of 'work_dim' integers containing global offsets.
+///
+/// \param unsigned int *global_size
+///	Array of 'work_dim' integers containing the ND-Range global size in each
+///	dimension.
+///
+/// \param unsigned int *local_size
+///	Array of 'work_dim' integers containing the local size in each
+///	dimension.
+///
+/// \return int
+///	ID of new nd-range
+
 int Driver::CallNDRangeCreate(mem::Memory *memory, unsigned args_ptr)
 {
-	throw misc::Panic("ABI call not implemented");
-	return 0;
+	// Arugments
+	int kernel_id;
+	int work_dim;
+	unsigned global_offset_ptr;
+	unsigned global_size_ptr;
+	unsigned local_size_ptr;
+
+	unsigned int global_offset[3];
+	unsigned int global_size[3];
+	unsigned int local_size[3];
+
+	// FIXME
+	// if (driver->isFused())
+	// 	si_emu->setGlobalMem(&(ctx->getMem()));
+
+	// Read arguments
+	memory->Read(args_ptr, sizeof(int), (char *) &kernel_id);
+	memory->Read(args_ptr + 4, sizeof(int), (char *) &work_dim);
+	memory->Read(args_ptr + 8, sizeof(int), (char *) &global_offset_ptr);
+	memory->Read(args_ptr + 12, sizeof(int), (char *) &global_size_ptr);
+	memory->Read(args_ptr + 16, sizeof(int), (char *) &local_size_ptr);
+
+	// Debug
+	debug << misc::fmt("\tkernel_id=%d, work_dim=%d\n", 
+		kernel_id, work_dim);
+	debug << misc::fmt("\tglobal_offset_ptr=0x%x, global_size_ptr=0x%x, "
+		"local_size_ptr=0x%x\n", global_offset_ptr, global_size_ptr, local_size_ptr);
+	
+	// Debug 
+	assert(work_dim >= 1 && work_dim <= 3);
+	memory->Read(global_offset_ptr, work_dim * 4, (char *) global_offset);
+	memory->Read(global_size_ptr, work_dim * 4, (char *) global_size);
+	memory->Read(local_size_ptr, work_dim * 4, (char *) local_size);
+	for (int i = 0; i < work_dim; i++)
+		debug << misc::fmt("\tglobal_offset[%d] = %u\n", i, global_offset[i]);
+	for (int i = 0; i < work_dim; i++)
+		debug << misc::fmt("\tglobal_size[%d] = %u\n", i, global_size[i]);
+	for (int i = 0; i < work_dim; i++)
+		debug << misc::fmt("\tlocal_size[%d] = %u\n", i, local_size[i]);
+
+	// Get kernel
+	SI::Kernel *kernel = getKernelById(kernel_id);
+	if (!kernel)
+		throw Error(misc::fmt("%s: invalid kernel ID (%d)", 
+			__FUNCTION__, kernel_id));
+
+	// Create ND-Range
+	NDRange *ndrange = AddNDRange();
+	debug << misc::fmt("\tcreated ndrange %d\n", ndrange->getId());
+
+	// Initialize address space ID.  Our current SVM implementation sets
+	// the ndrange ASID to the CPU context's ASID 
+	ndrange->setAddressSpaceIndex(x86::Emu::getInstance()->getAddressSpaceIndex());
+	debug << misc::fmt("\tndrange address space index = %d\n", 
+		ndrange->getAddressSpaceIndex());
+
+	// Initialize from kernel binary encoding dictionary
+	ndrange->InitFromKernel(kernel);
+
+	// FIXME
+	// if (si_gpu)
+	// 	SIGpuMapNDRange(si_gpu, ndrange);
+	
+	// Return ID of new nd-range 
+	return ndrange->getId();
 }
 
 
