@@ -61,8 +61,9 @@ void Function::addArgument(const std::string &name, bool isInput,
 
 void Function::Dump(std::ostream &os = std::cout) const
 {
-	os << misc::fmt("\n ************* Function %s *************\n",
-			name.c_str());
+	os << misc::fmt("\n****************************************"
+			"***************************************\n");
+	os << misc::fmt("\tFunction name: %s.\n", name.c_str());
 	std::map<std::string, std::unique_ptr<Argument>>::const_iterator it;
 	for (it = arg_info.begin(); it != arg_info.end(); it++)
 	{
@@ -77,7 +78,9 @@ void Function::Dump(std::ostream &os = std::cout) const
 				it->second->size,
 				it->second->offset);
 	}
-	os << "\n";
+	os << misc::fmt("\tArgument size allocated %d bytes\n", arg_size);
+	os << misc::fmt("****************************************"
+			"***************************************\n");
 }
 
 }  // namespace HSA

@@ -165,7 +165,6 @@ void WorkItem::parseFunction(BrigDirEntry *dir)
 			)
 	);
 	Function *function = loader->function_table[name].get();
-//	emu->loader_debug << misc::fmt("\nFunction %s loaded.\n", name.c_str());
 
 	// Load Arguments
 	unsigned short num_in_arg = dir_struct->inArgCount;
@@ -196,11 +195,6 @@ char *WorkItem::loadArguments(unsigned short num_arg, char *next_dir,
 
 		// Add this argument to the argument table
 		function->addArgument(arg_name, isInput, type);
-
-		// Put argument information into loader_debug log file
-//		emu->loader_debug << misc::fmt("\tArg %s %s loaded\n",
-//				BrigEntry::type2str(type).c_str(),
-//				arg_name.c_str());
 
 		// Move pointer forward
 		next_dir = arg_entry.next();
