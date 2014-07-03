@@ -21,6 +21,7 @@
 #define ARCH_SOUTHERN_ISLANDS_DRIVER_DRIVER_H
 
 #include <arch/common/Driver.h>
+#include <arch/southern-islands/emu/NDRange.h>
 #include <lib/cpp/CommandLine.h>
 #include <lib/cpp/Debug.h>
 
@@ -48,6 +49,9 @@ class Driver : public comm::Driver
 
 	// Primary list of Kernels
 	std::vector<std::unique_ptr<Kernel>> kernels;
+
+	// Primary list of NDRanges
+	std::vector<std::unique_ptr<NDRange>> ndranges;
 
 	// Singletons have private constructors
 	Driver() : comm::Driver("Southern Islands",
@@ -98,10 +102,13 @@ class Driver : public comm::Driver
 	static const CallFn call_fn[CallCodeCount];
 
 	// Add program
-	void AddProgram(int program_id);
+	Program *AddProgram(int program_id);
 
 	// Add kernel
-	void AddKernel(int kernel_id, const std::string &func, Program *program);
+	Kernel *AddKernel(int kernel_id, const std::string &func, Program *program);
+
+	// Add ndrange
+	NDRange *AddNDRange();
 
 public:
 
@@ -147,6 +154,7 @@ public:
 
 	/// Get kernel by its Id
 	Kernel *getKernelById(unsigned id) { return kernels[id].get(); }
+
 };
 
 

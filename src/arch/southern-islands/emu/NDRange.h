@@ -25,6 +25,7 @@
 
 #include <arch/southern-islands/asm/Binary.h>
 #include <driver/opengl/southern-islands/SPI.h>
+#include <memory/Memory.h>
 
 #include "Emu.h"
 
