@@ -23,6 +23,15 @@
 namespace HSA
 {
 
+// FIXME: just for fixing compilation error. Not sure if this is correct
+unsigned Driver::program_count = 0;
+unsigned Driver::kernel_count = 0;
+unsigned Driver::ndrange_count = 0;
+std::list<Program *> Driver::program_list = {};
+std::list<Kernel *> Driver::kernel_list = {};
+std::list<NDRange *> Driver::ndrange_list = {};
+
+
 // Initialize table of ABI call names
 const char *Driver::call_name[CallCodeCount] =
 {
