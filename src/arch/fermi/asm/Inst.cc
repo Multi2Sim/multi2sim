@@ -4092,8 +4092,8 @@ void Inst::DumpToBuf(void)
 
 	// Check if instruction is supported
 	if (!info)
-		misc::fatal("%s: instruction not supported (offset=0x%x)",
-				__FUNCTION__, addr);
+		throw Asm::Error(misc::fmt("Instruction not supported at 0x%x",
+				addr));
 
 	// Get instruction category
 	cat = bytes.bytes[0] & 0xf;
@@ -4110,8 +4110,8 @@ void Inst::DumpToBuf(void)
 	else if (cat == InstCategoryCtrl)
 		DumpToBufWithFmtCtrl();
 	else
-		misc::fatal("%s: instruction category %d (offset=0x%x)",
-				__FUNCTION__, addr, cat);
+		throw Asm::Error(misc::fmt("Invalid instruction category %d "
+				"at offset 0x%x", cat, addr));
 }
 
 

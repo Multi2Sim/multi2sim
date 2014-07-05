@@ -300,8 +300,7 @@ void Context::LoadStack()
 
 	// Check that we didn't overflow the stack
 	if (sp > LoaderStackBase)
-		misc::fatal("%s: initial stack overflow, increment LoaderMaxEnviron",
-			__FUNCTION__);
+		throw misc::Panic("Stack overflow in loader");
 }
 
 
@@ -314,8 +313,8 @@ void Context::LoadBinary()
 		// Open new stdin
 		int f = open(stdin_full_path.c_str(), O_RDONLY);
 		if (f < 0)
-			misc::fatal("%s: cannot open stdin",
-					stdin_full_path.c_str());
+			throw Emu::Error(misc::fmt("[%s] Cannot open standard "
+					"input", stdin_full_path.c_str()));
 
 		// Replace file descriptor 0
 		file_table->freeFileDescriptor(0);
@@ -336,8 +335,8 @@ void Context::LoadBinary()
 				O_CREAT | O_APPEND | O_TRUNC | O_WRONLY,
 				0660);
 		if (f < 0)
-			misc::fatal("%s: cannot open stdin",
-					stdin_full_path.c_str());
+			throw Emu::Error(misc::fmt("[%s] Cannot open standard "
+					"output", stdout_full_path.c_str()));
 
 		// Replace file descriptors 1 and 2
 		file_table->freeFileDescriptor(1);

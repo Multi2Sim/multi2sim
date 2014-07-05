@@ -120,6 +120,18 @@ class Driver : public comm::Driver
 
 public:
 
+	/// Exceptions related with the HSA driver
+	class Error : misc::Error
+	{
+	public:
+
+		Error(const std::string message) :
+				misc::Error(message)
+		{
+			AppendPrefix("HSA Driver");
+		}
+	};
+
 	/// Obtain instance of the singleton
 	static Driver *getInstance();
 

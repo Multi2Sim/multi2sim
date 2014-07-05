@@ -23,6 +23,7 @@
 #include <memory>
 
 #include <arch/common/Asm.h>
+#include <lib/cpp/Error.h>
 
 #include "Inst.h"
 
@@ -43,6 +44,17 @@ class Asm : public comm::Asm
 	Asm();
 
 public:
+
+	/// Exception for MIPS disassembler
+	class Error : public misc::Error
+	{
+	public:
+		
+		Error(const std::string &message) : misc::Error(message)
+		{
+			AppendPrefix("MIPS Disassembler");
+		}
+	};
 
 	// Decoding tables
 	InstInfo *dec_table;

@@ -60,8 +60,8 @@ BrigSection::BrigSection(ELFReader::Section *elfSection)
 	}
 	else
 	{
-		misc::panic("Unexpected section: %s", sectionName.c_str());
 		this->type = BrigSectionUnknown;
+		throw misc::Panic("Unexpected section: " + sectionName);
 	}
 }
 

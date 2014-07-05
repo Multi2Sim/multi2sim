@@ -17,10 +17,12 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <lib/cpp/Error.h>
 #include <lib/cpp/Misc.h>
+#include <lib/cpp/String.h>
+
 #include "Input.h"
 
-using namespace misc;
 
 namespace SI
 {
@@ -55,9 +57,8 @@ unsigned Input::getDataType(InputDataType data_type)
 
 	default:
 
-		panic("%s: invalid data type (%d)",
-				__FUNCTION__, data_type);
-		return 0;
+		throw misc::Panic(misc::fmt("Invalid data type (%d)",
+				data_type));
 	}
 
 }
