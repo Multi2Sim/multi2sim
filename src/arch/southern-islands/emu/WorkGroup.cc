@@ -154,17 +154,19 @@ WorkGroup::WorkGroup(NDRange *ndrange, unsigned id)
 				}
 				else 
 				{
-					fatal("%s: invalid work-item id (%d)",
-						__FUNCTION__, 
-						work_item->getIdInWavefront());
+					throw Emu::Error(misc::fmt("Invalid "
+							"work-item ID (%d)",
+							work_item->
+							getIdInWavefront()));
 				}
 			}
 		}
 	}
 
 	// Intialize wavefront state 
-	for(auto wf_i = WavefrontsBegin(),
-			wf_e = WavefrontsEnd(); wf_i != wf_e; ++wf_i)
+	for (auto wf_i = WavefrontsBegin(), wf_e = WavefrontsEnd();
+			wf_i != wf_e;
+			++wf_i)
 	{
 		wavefront = (*wf_i).get();
 

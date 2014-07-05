@@ -17,76 +17,74 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 #include <arch/x86/emu/Emu.h>
 #include <arch/southern-islands/emu/Emu.h>
 #include <arch/southern-islands/emu/NDRange.h>
+#include <lib/cpp/Error.h>
 #include <lib/cpp/Misc.h>
 #include <string.h>
-
 
 #include "Kernel.h"
 #include "Program.h"
 
-using namespace misc;
 
 namespace SI
 {
 
 static const char *OpenCLErrSIKernelSymbol =
-	"\tThe ELF file analyzer is trying to find a name in the ELF symbol table."
-	"\tIf it is not found, it probably means that your application is requesting"
-	"\texecution of a kernel function that is not present in the encoded binary."
-	"\tPlease, check the parameters passed to the 'clCreateKernel' function in"
-	"\tyour application.\n"
-	"\tThis could be also a symptom of compiling an OpenCL kernel source on a"
-	"\tmachine with an installation of the AMD SDK (using 'm2s-clcc') but"
-	"\twith an incorrect or missing installation of the GPU driver. In this case,"
-	"\tthe tool will still compile the kernel into LLVM, but the ISA section will"
-	"\tbe missing in the kernel binary.";
+	"\tThe ELF file analyzer is trying to find a name in the ELF symbol "
+	"table. If it is not found, it probably means that your application is "
+	"requesting execution of a kernel function that is not present in the "
+	"encoded binary. Please, check the parameters passed to the "
+	"'clCreateKernel' function in your application.\n"
+	"\n"
+	"\tThis could also be a symptom of compiling an OpenCL kernel source "
+	"on a tmachine with an installation of the AMD SDK (using 'm2c') "
+	"but with an incorrect or missing installation of the GPU driver. In "
+	"this case, the tool will still compile the kernel into LLVM, but the "
+	"ISA section will be missing in the kernel binary.";
 
 static const char *OpenCLErrSIKernelMetadata =
-	"\tThe kernel binary loaded by your application is a valid ELF file. In this"
-	"\tfile, a '.rodata' section contains specific information about the OpenCL"
-	"\tkernel. However, this information is only partially supported by Multi2Sim."
-	"\tTo request support for this error, please email 'development@multi2sim.org'.";
+	"\tThe kernel binary loaded by your application is a valid ELF file. "
+	"In this file, a '.rodata' section contains specific information about "
+	"the OpenCL kernel. However, this information is only partially "
+	"supported by Multi2Sim. To request support for this error, please "
+	"report a bug on www.multi2sim.org.";
 
-// Private functions
 
-void Kernel::Expect(std::vector<std::string> &token_list, std::string head_token)
+void Kernel::Expect(std::vector<std::string> &token_list,
+		std::string head_token)
 {
 	std::string token = token_list.at(0);
-
 	if (token != head_token)
-		misc::fatal("%s: token '%s' expected, '%s' found.\n%s",
-				__FUNCTION__, head_token.c_str(), token_list[0].c_str(),
-				OpenCLErrSIKernelMetadata);
+		throw Driver::Error(misc::fmt("Token '%s' expected, "
+				"'%s' found.\n%s",
+				head_token.c_str(),
+				token_list[0].c_str(),
+				OpenCLErrSIKernelMetadata));
 }
 
 void Kernel::ExpectInt(std::vector<std::string> &token_list)
 {
 	std::string token = token_list.at(0);
 	misc::StringError err;
-
 	StringToInt(token, err);
 	if (err)
-	{
-		misc::fatal("%s: integer number expected, '%s' found.\n%s",
-				__FUNCTION__, token.c_str(),
-				OpenCLErrSIKernelMetadata);
-	}
+		throw Driver::Error(misc::fmt("Integer number expected, "
+				"'%s' found.\n%s",
+				token.c_str(),
+				OpenCLErrSIKernelMetadata));
 }
 
 void Kernel::ExpectCount(std::vector<std::string> &token_list, unsigned count)
 {
 	std::string head_token = token_list.at(0);
-
 	if (token_list.size() != count)
-	{
-		misc::fatal("%s: %d tokens expected for '%s', %d found.\n%s",
-				__FUNCTION__, count, head_token.c_str(), (unsigned)token_list.size(),
-				OpenCLErrSIKernelMetadata);
-	}
+		throw Driver::Error(misc::fmt("%d tokens expected for '%s', "
+				"%d found.\n%s",
+				count, head_token.c_str(),
+				(unsigned) token_list.size(),
+				OpenCLErrSIKernelMetadata));
 }
 
 void Kernel::LoadMetaDataV3()
@@ -132,9 +130,10 @@ void Kernel::LoadMetaDataV3()
 			ArgDataType data_type = static_cast<ArgDataType>(data_type_int);
 			const char *data_type_string = arg_data_type_map.MapValue(data_type, err);
 			if (err)
-				misc::fatal("%s: invalid data type '%s'.\n%s",
-					__FUNCTION__, data_type_string,
-					OpenCLErrSIKernelMetadata);
+				throw Driver::Error(misc::fmt("Invalid data "
+						"type: %s.\n%s",
+						data_type_string,
+						OpenCLErrSIKernelMetadata));
 
 			// Token 3 - Number of elements
 			token_list.erase(token_list.begin());
@@ -187,9 +186,10 @@ void Kernel::LoadMetaDataV3()
 			ArgDataType data_type = static_cast<ArgDataType>(data_type_int);
 			const char *data_type_string = arg_data_type_map.MapValue(data_type, err);
 			if (err)
-				misc::fatal("%s: invalid data type '%s'.\n%s",
-					__FUNCTION__, data_type_string,
-					OpenCLErrSIKernelMetadata);
+				throw Driver::Error(misc::fmt("Invalid data "
+						"type: %s\n%s",
+						data_type_string,
+						OpenCLErrSIKernelMetadata));
 
 			// Token 3 - Number of elements
 			// Arrays of pointers not supported,
@@ -216,9 +216,9 @@ void Kernel::LoadMetaDataV3()
 			ArgScope arg_scope = static_cast<ArgScope>(arg_scope_int);
 			const char *arg_scope_string = arg_scope_map.MapValue(arg_scope, err);
 			if (err)
-				misc::fatal("%s: invalid scope '%s'.\n%s",
-					__FUNCTION__, arg_scope_string,
-					OpenCLErrSIKernelMetadata);
+				throw Driver::Error(misc::fmt("Invalid scope: "
+						"%s\n%s", arg_scope_string,
+						OpenCLErrSIKernelMetadata));
 
 			// Token 7 - Buffer number
 			token_list.erase(token_list.begin());
@@ -235,9 +235,9 @@ void Kernel::LoadMetaDataV3()
 			int access_type_int = misc::StringToInt(*token_list.begin());
 			ArgAccessType access_type = static_cast<ArgAccessType>(access_type_int);
 			if (err)
-				misc::fatal("%s: invalid access type '%s'.\n%s",
-					__FUNCTION__, token.c_str(),
-					OpenCLErrSIKernelMetadata);
+				throw Driver::Error(misc::fmt("Invalid access "
+						"type: %s\n%s", token.c_str(),
+						OpenCLErrSIKernelMetadata));
 
 			// Token 10 - ???
 			token_list.erase(token_list.begin());
@@ -279,17 +279,19 @@ void Kernel::LoadMetaDataV3()
 			int dimension = misc::StringToInt(*token_list.begin());
 			const char*dimension_string = arg_dimension_map.MapValue(dimension, err);
 			if (err)
-				misc::fatal("%s: invalid image dimensions '%s'.\n%s",
-					__FUNCTION__, dimension_string, OpenCLErrSIKernelMetadata);
+				throw Driver::Error(misc::fmt("Invalid image "
+						"dimensions: %s\n%s",
+						dimension_string,
+						OpenCLErrSIKernelMetadata));
 
 			// Token 3 - Access type
 			token_list.erase(token_list.begin());
 			int access_type_int = misc::StringToInt(*token_list.begin());
 			ArgAccessType access_type = static_cast<ArgAccessType>(access_type_int);
 			if (err)
-				misc::fatal("%s: invalid access type '%s'.\n%s",
-					__FUNCTION__, token.c_str(),
-					OpenCLErrSIKernelMetadata);
+				throw Driver::Error(misc::fmt("Invalid access "
+						"type: %s\n%s", token.c_str(),
+						OpenCLErrSIKernelMetadata));
 
 			// Token 4 - UAV
 			token_list.erase(token_list.begin());
@@ -407,8 +409,10 @@ void Kernel::LoadMetaDataV3()
 			}
 			else
 			{
-				misc::fatal("%s: not supported metadata '%s'.\n%s",
-						__FUNCTION__, token.c_str(), OpenCLErrSIKernelMetadata);
+				throw Driver::Error(misc::fmt("Unsupported "
+						"metadata: %s\n%s",
+						token.c_str(),
+						OpenCLErrSIKernelMetadata));
 			}
 
 			// Next
@@ -521,8 +525,9 @@ void Kernel::LoadMetaDataV3()
 		}
 
 		// Crash when uninterpreted entries appear
-		misc::fatal("kernel '%s': unknown metadata entry '%s'",
-			this->name.c_str(), token.c_str());
+		throw Driver::Error(misc::fmt("Kernel %s: Unknown metadata "
+				"entry: %s", this->name.c_str(),
+				token.c_str()));
 	}
 }
 
@@ -560,8 +565,9 @@ void Kernel::LoadMetaData()
 		break;
 
 	default:
-		misc::fatal("%s: metadata version %d not supported.\n%s",
-				__FUNCTION__, version, OpenCLErrSIKernelMetadata);
+
+		throw Driver::Error(misc::fmt("Unsupported metadata version "
+				"%d\n%s", version, OpenCLErrSIKernelMetadata));
 	}
 
 }
@@ -603,8 +609,9 @@ void Kernel::CreateBufferDesc(unsigned base_addr, unsigned size, int num_elems,
 			break;
 
 		default:
-			misc::fatal("%s: invalid number of i8/u8 elements (%d)",
-					__FUNCTION__, num_elems);
+
+			throw Driver::Error(misc::fmt("Invalid number of "
+					"i8/u8 elements (%d)", num_elems));
 		}
 		elem_size = 1 * num_elems;
 		break;
@@ -629,8 +636,9 @@ void Kernel::CreateBufferDesc(unsigned base_addr, unsigned size, int num_elems,
 			break;
 
 		default:
-			misc::fatal("%s: invalid number of i16/u16 elements (%d)",
-					__FUNCTION__, num_elems);
+
+			throw Driver::Error(misc::fmt("Invalid number of "
+					"i16/u16 elements (%d)", num_elems));
 		}
 		elem_size = 2 * num_elems;
 		break;
@@ -659,8 +667,9 @@ void Kernel::CreateBufferDesc(unsigned base_addr, unsigned size, int num_elems,
 			break;
 
 		default:
-			misc::fatal("%s: invalid number of i32/u32 elements (%d)",
-					__FUNCTION__, num_elems);
+
+			throw Driver::Error(misc::fmt("Invalid number of "
+					"i32/u32 elements (%d)", num_elems));
 		}
 		elem_size = 4 * num_elems;
 		break;
@@ -687,8 +696,9 @@ void Kernel::CreateBufferDesc(unsigned base_addr, unsigned size, int num_elems,
 			break;
 
 		default:
-			misc::fatal("%s: invalid number of float elements (%d)",
-					__FUNCTION__, num_elems);
+
+			throw Driver::Error(misc::fmt("Invalid number of "
+					"float elements (%d)", num_elems));
 		}
 		elem_size = 4 * num_elems;
 		break;
@@ -707,8 +717,9 @@ void Kernel::CreateBufferDesc(unsigned base_addr, unsigned size, int num_elems,
 			break;
 
 		default:
-			misc::fatal("%s: invalid number of double elements (%d)",
-					__FUNCTION__, num_elems);
+
+			throw Driver::Error(misc::fmt("Invalid number of "
+					"double elements (%d)", num_elems));
 		}
 		elem_size = 8 * num_elems;
 		break;
@@ -720,8 +731,9 @@ void Kernel::CreateBufferDesc(unsigned base_addr, unsigned size, int num_elems,
 		break;
 
 	default:
-		misc::fatal("%s: invalid data type for SI buffer (%d)",
-			__FUNCTION__, data_type);
+
+		throw Driver::Error(misc::fmt("Invalid data type for buffer "
+				"(%d)", data_type));
 	}
 	assert(num_format != EmuBufDescNumFmtInvalid);
 	assert(data_format != EmuBufDescDataFmtInvalid);
@@ -739,18 +751,18 @@ void Kernel::CreateBufferDesc(unsigned base_addr, unsigned size, int num_elems,
 
 // Public functions
 
-Kernel::Kernel(int id, const std::string &name, Program *program)
+Kernel::Kernel(int id, const std::string &name, Program *program) :
+		id(id),
+		name(name),
+		program(program)
 {
-	this->id = id;
-	this->name = name;
-	this->program = program;
-
 	metadata_symbol = program->getSymbol("__OpenCL_" + name + "_metadata");
 	header_symbol = program->getSymbol("__OpenCL_" + name + "_header");
 	kernel_symbol = program->getSymbol("__OpenCL_" + name + "_kernel");
 	if (!metadata_symbol || !header_symbol || !kernel_symbol)
-		misc::fatal("%s: invalid kernel function (ELF symbol '__OpenCL_%s_xxx missing')\n%s",
-				__FUNCTION__, name.c_str(), OpenCLErrSIKernelSymbol);
+		throw Driver::Error(misc::fmt("Invalid kernel function\n"
+				"\tELF symbol 'OpenCL_%s_xxx missing'\n%s",
+				name.c_str(), OpenCLErrSIKernelSymbol));
 
 	x86::Emu::opencl_debug << misc::fmt("\tmetadata symbol: offset=0x%x, size=%u\n",
 			(unsigned)metadata_symbol->getValue(), (unsigned)metadata_symbol->getSize());
@@ -823,15 +835,19 @@ void Kernel::SetupNDRangeArgs(NDRange *ndrange /* MMU *gpu_mmu */)
 
 	// Kernel arguments
 	int index = 0;;
-	for( auto &arg : getArgs())
+	for (auto &arg : getArgs())
 	{
 		// Check that argument was set
 		assert(arg);
 		if (!arg->isSet())
-			fatal("%s: kernel '%s': argument '%s' not set",
-				__FUNCTION__, getName().c_str(), arg->getName().c_str());
+			throw Driver::Error(misc::fmt("Kernel '%s': "
+					"Argument '%s' is not set",
+					getName().c_str(),
+					arg->getName().c_str()));
 
-		x86::Emu::opencl_debug << misc::fmt("\targ[%d] = %s ", index, arg->getName().c_str());
+		// Debug
+		x86::Emu::opencl_debug << misc::fmt("\targ[%d] = %s ",
+				index, arg->getName().c_str());
 
 		// Process argument depending on its type
 		switch (arg->getType())
@@ -929,30 +945,29 @@ void Kernel::SetupNDRangeArgs(NDRange *ndrange /* MMU *gpu_mmu */)
 
 			default:
 
-				fatal("%s: not implemented memory scope",
-						__FUNCTION__);
+				throw Driver::Error("Invalid memory scope");
 			}
 
 			break;
 		}
+
 		case ArgTypeImage:
 
-			fatal("%s: type 'image' not implemented", __FUNCTION__);
-			break;
+			throw misc::Panic("Type 'image' not implemented");
 
 		case ArgTypeSampler:
 
-			fatal("%s: type 'sampler' not implemented",
-				__FUNCTION__);
-			break;
+			throw misc::Panic("Type 'sampler' not implemented");
 
 		default:
 
-			fatal("%s: argument type not recognized (%d)",
-				__FUNCTION__, arg->getType());
+			throw Driver::Error(misc::fmt("Invalid argument type "
+					"(%d)", arg->getType()));
 
 		}
-		x86::Emu::opencl_debug << misc::fmt("\n");
+
+		// Debug
+		x86::Emu::opencl_debug << "\n";
 
 		// Next
 		index++;
@@ -968,7 +983,7 @@ void Kernel::SetupNDRangeArgs(NDRange *ndrange /* MMU *gpu_mmu */)
 		if (!constant_buffer)
 			break;
 
-		fatal("ConstantBuffer Size unknown!");
+		throw misc::Panic("ConstantBuffer size unknown");
 		// CreateBufferDesc(
 		// 	ndrange->cb_start + SI_EMU_CONST_BUF_SIZE*i,
 		// 	constant_buffer->getSize(),
@@ -986,10 +1001,12 @@ void Kernel::SetupNDRangeArgs(NDRange *ndrange /* MMU *gpu_mmu */)
 	}
 }
 
+
 void Kernel::DebugNDRangeState(NDRange *ndrange)
 {
-	fatal("%s: Not implemented", __FUNCTION__);
+	throw misc::Panic("Not implemented");
 }
+
 
 void Kernel::SetupNDRangeConstantBuffers(NDRange *ndrange)
 {

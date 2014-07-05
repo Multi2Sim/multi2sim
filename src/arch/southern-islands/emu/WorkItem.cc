@@ -23,22 +23,20 @@
 #include "WorkItem.h"
 #include "WorkGroup.h"
 
-using namespace misc;
 
 namespace SI
 {
 
-/// Private functions
-
 void WorkItem::ISAUnimplemented(Inst *inst)
 {
-	static const char *err_si_isa_note =
-	"The AMD Southern Islands instruction set is partially supported by"
-	"Multi2Sim. If your program is using an unimplemented instruction,"
-	"please email development@multi2sim.org' to request support for it.";
-
-	fatal("GPU instruction '%s' not implemented\n%s",
-		inst->getName(), err_si_isa_note);
+	throw misc::Panic(misc::fmt("%s: Unimplemented Southern Islands "
+			"instruction\n"
+			"\n\t"
+			"The AMD Southern Islands instruction set is partially "
+			"supported by Multi2Sim. If your program is using an "
+			"unimplemented instruction, please report a bug on "
+			"www.multi2sim.org requesting support for it.",
+			inst->getName()));
 
 }
 
@@ -80,7 +78,8 @@ int WorkItem::ISAGetNumElems(int data_format)
 	}
 
 	default:
-		fatal("%s: Invalid or unsupported data format", __FUNCTION__);
+
+		throw misc::Panic("Invalid data format");
 
 	}
 
@@ -123,9 +122,9 @@ int WorkItem::ISAGetElemSize(int data_format)
 	}
 
 	default:
-	{
-		fatal("%s: Invalid or unsupported data format", __FUNCTION__);
-	}
+
+		throw misc::Panic("Invalid data format");
+
 	}
 
 	return elem_size;
