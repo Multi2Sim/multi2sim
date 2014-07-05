@@ -35,8 +35,8 @@ void WorkItem::LoadBinary()
 		// Open new stdin
 		int f = open(loader->stdin_file_name.c_str(), O_RDONLY);
 		if (f < 0)
-			misc::fatal("%s: cannot open stdin",
-					loader->stdin_file_name.c_str());
+			throw Error(loader->stdin_file_name +
+					": Cannot open standard input");
 
 		// Replace file descriptor 0
 		file_table->freeFileDescriptor(0);
@@ -56,8 +56,8 @@ void WorkItem::LoadBinary()
 				O_CREAT | O_APPEND | O_TRUNC | O_WRONLY,
 				0660);
 		if (f < 0)
-			misc::fatal("%s: cannot open stdout",
-					loader->stdout_file_name.c_str());
+			throw Error(loader->stdout_file_name +
+					": Cannot open standard output");
 
 		// Replace file descriptors 1 and 2
 		file_table->freeFileDescriptor(1);

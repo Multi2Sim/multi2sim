@@ -82,6 +82,17 @@ class Emu : public comm::Emu
 
 public:
 
+	/// Exception for MIPS emulator
+	class Error : public misc::Error
+	{
+	public:
+		
+		Error(const std::string &message) : misc::Error(message)
+		{
+			AppendPrefix("MIPS Emulator");
+		}
+	};
+
 	/// Return unique instance of the MIPS emulator singleton.
 	static Emu *getInstance();
 
@@ -92,8 +103,10 @@ public:
 	Context *newContext();
 
 	/// Return a constant reference to a list of contexts
-	const std::list<Context *> &getContextList(ContextListType type) const {
-		return context_list[type]; }
+	const std::list<Context *> &getContextList(ContextListType type) const
+	{
+		return context_list[type];
+	}
 
 	/// Signals a call to the scheduler Timing::Schedule() in the
 	/// beginning of next cycle. This flag is set any time a context changes

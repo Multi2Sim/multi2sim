@@ -20,25 +20,28 @@
 #include <cassert>
 #include <cstring>
 
+#include <lib/cpp/Error.h>
 #include <lib/cpp/Misc.h>
+#include <lib/cpp/String.h>
 
+#include "Asm.h"
 #include "Binary.h"
 
-
-using namespace misc;
 
 namespace SI
 {
 
 // Debugger
-Debug Binary::debug;
+misc::Debug Binary::debug;
 
 
 #define SI_BIN_FILE_NOT_SUPPORTED(__var) \
-	fatal("%s: value 0x%x not supported for parameter '" #__var "'", __FUNCTION__, (__var))
+	throw misc::Panic(misc::fmt("Value 0x%x not supported for parameter '" \
+			#__var "'", (__var)))
 #define SI_BIN_FILE_NOT_SUPPORTED_NEQ(__var, __val) \
 	if ((__var) != (__val)) \
-		fatal("%s: parameter '" #__var "' was expected to be 0x%x", __FUNCTION__, (__val))
+		throw misc::Panic(misc::fmt("Parameter '" #__var \
+				"' was expected to be 0x%x", (__val)))
 
 
 // Note header
@@ -50,7 +53,7 @@ struct BinaryNoteHeader
 	char name[8];  // Note header string. Must be "ATI CAL"
 };
 
-StringMap binary_user_data_map =
+misc::StringMap binary_user_data_map =
 {
 	{ "IMM_RESOURCE",                      BinaryUserDataResource },
 	{ "IMM_SAMPLER",                       BinaryUserDataSampler},
@@ -87,7 +90,7 @@ StringMap binary_user_data_map =
 };
 
 
-StringMap binary_machine_map =
+misc::StringMap binary_machine_map =
 {
 	{ "R600",	0 },
 	{ "RV610",	1 },
@@ -112,7 +115,7 @@ StringMap binary_machine_map =
 };
 
 
-StringMap binary_note_map = {
+misc::StringMap binary_note_map = {
 	{ "ELF_NOTE_ATI_PROGINFO", 1 },
 	{ "ELF_NOTE_ATI_INPUTS", 2 },
 	{ "ELF_NOTE_ATI_OUTPUTS", 3 },
@@ -132,7 +135,7 @@ StringMap binary_note_map = {
 	{ "ELF_NOTE_ATI_UAV_OP_MASK", 17 }
 };
 
-StringMap binary_prog_info_map = {
+misc::StringMap binary_prog_info_map = {
 	{ "mmSQ_DYN_GPR_CNTL_PS_FLUSH_REQ",          0x00002363 },
 	{ "mmSQ_GPR_RESOURCE_MGMT_1",                0x00002301 },
 	{ "mmSQ_GPR_RESOURCE_MGMT_3__EG",            0x00002303 },
@@ -425,13 +428,13 @@ void Binary::ReadNote(BinaryDictEntry *dict_entry, std::istringstream& ss,
 	BinaryNoteHeader *header = (BinaryNoteHeader *) (buffer + ss.tellg());
 	ss.seekg(sizeof(BinaryNoteHeader), std::ios_base::cur);
 	if (!ss)
-		fatal("%s: error decoding note header", name.c_str());
+		throw Asm::Error(name + ": Cannot decode note header");
 	
 	// Read note description (payload)
 	const char *desc = buffer + ss.tellg();
 	ss.seekg(header->descsz, std::ios_base::cur);
 	if (!ss)
-		fatal("%s: error decoding note description", name.c_str());
+		throw Asm::Error(name + ": Cannot decode note description");
 
 	// Debug
 	const char *note_str = binary_note_map.MapValue(header->type);
@@ -536,8 +539,9 @@ void Binary::ReadNote(BinaryDictEntry *dict_entry, std::istringstream& ss,
 	{
 		// FIXME: Analyze program inputs
 		if (header->descsz) 
-			Warning("%s: pt_note '%s' with descsz != 0 ignored (desc value = 0x%x)",
-				note_str, __FUNCTION__, * (unsigned int *) desc);
+			misc::Warning("pt_note '%s' with descsz != 0 "
+					"ignored (desc value = 0x%x)",
+					note_str, * (unsigned int *) desc);
 
 		break;
 	}
@@ -547,8 +551,9 @@ void Binary::ReadNote(BinaryDictEntry *dict_entry, std::istringstream& ss,
 	{
 		// FIXME: Analyze program inputs
 		if (header->descsz) 
-			Warning("%s: pt_note '%s' with descsz != 0 ignored (desc value = 0x%x)",
-				note_str, __FUNCTION__, * (unsigned int *) desc);
+			misc::Warning("pt_note '%s' with descsz != 0 ignored "
+					"(desc value = 0x%x)",
+					note_str, * (unsigned int *) desc);
 
 		break;
 	}
@@ -757,7 +762,7 @@ void Binary::ReadDictionary()
 		ph = NULL;
 	}
 	if (!ph)
-		fatal("%s: no encoding dictionary", name.c_str());
+		throw Asm::Error(name + ": No encoding dictionary");
 	debug << "Encoding dictionary found in program header "
 			<< ph->getIndex() << "\n";
 	
@@ -821,8 +826,8 @@ void Binary::ReadDictionary()
 		}
 		else
 	 	{
-			fatal("%s: unknown machine number (%d)\n", __FUNCTION__, 
-				dict_entry->header->d_machine);
+			throw Asm::Error(misc::fmt("Unknown machine number "
+					"(%d)", dict_entry->header->d_machine));
 		}
 	}
 
@@ -868,8 +873,8 @@ void Binary::ReadSegments()
 			if (ph->getType() == PT_NOTE)
 			{
 				if (dict_entry->pt_note_segment)
-					fatal("%s: more than one PT_NOTE segment",
-							__FUNCTION__);
+					throw Asm::Error("More than one "
+							"PT_NOTE segment");
 				dict_entry->pt_note_segment = ph;
 			}
 
@@ -877,17 +882,17 @@ void Binary::ReadSegments()
 			if (ph->getType() == PT_LOAD)
 			{
 				if (dict_entry->pt_load_segment)
-					fatal("%s: more than one PT_LOAD segment",
-							__FUNCTION__);
+					throw Asm::Error("More than one "
+							"PT_LOAD segment");
 				dict_entry->pt_load_segment = ph;
 			}
 		}
 
 		// Check that both PT_NOTE and PT_LOAD segments were found
 		if (!dict_entry->pt_note_segment)
-			fatal("%s: no PT_NOTE segment", __FUNCTION__);
+			throw Asm::Error("No PT_NOTE segment");
 		if (!dict_entry->pt_load_segment)
-			fatal("%s: no PT_LOAD segment", __FUNCTION__);
+			throw Asm::Error("No PT_LOAD segment");
 		debug << "  Dict. entry " << i
 				<< ": PT_NOTE segment: "
 				<< "offset = 0x" << std::hex
@@ -935,34 +940,39 @@ void Binary::ReadSections()
 			if (section->getName() == ".text")
 			{
 				if (dict_entry->text_section)
-					fatal("%s: duplicated '.text' section", __FUNCTION__);
+					throw Asm::Error("Duplicated .text "
+							"section");
 				dict_entry->text_section = section;
 			}
 			else if (section->getName() == ".data")
 			{
 				if (dict_entry->data_section)
-					fatal("%s: duplicated '.data' section", __FUNCTION__);
+					throw Asm::Error("Duplicated .data "
+							"section");
 				dict_entry->data_section = section;
 				if (section->getSize() != 4736)
-					fatal("%s: '.data' section != 4736 bytes", __FUNCTION__);
+					throw Asm::Error("Section .data is not "
+							"4736 bytes");
 				dict_entry->consts = (BinaryDictConsts *) section->getBuffer();
 			}
 			else if (section->getName() == ".symtab")
 			{
 				if (dict_entry->symtab_section)
-					fatal("%s: duplicated '.symtab' section", __FUNCTION__);
+					throw Asm::Error("Duplicated .symtab "
+							"section");
 				dict_entry->symtab_section = section;
 			}
 			else if (section->getName() == ".strtab")
 			{
 				if (dict_entry->strtab_section)
-					fatal("%s: duplicated '.strtab' section", __FUNCTION__);
+					throw Asm::Error("Duplicated .strtab "
+							"section");
 				dict_entry->strtab_section = section;
 			}
 			else
 			{
-				fatal("%s: not recognized section name: '%s'",
-					__FUNCTION__, section->getName().c_str());
+				throw Asm::Error("Unrecognized section: " +
+						section->getName());
 			}
 		}
 
@@ -971,8 +981,8 @@ void Binary::ReadSections()
 				|| !dict_entry->data_section
 				|| !dict_entry->symtab_section
 				|| !dict_entry->strtab_section)
-			fatal("%s: some section was not found: .text .data"
-				" .symtab .strtab", __FUNCTION__);
+			throw Asm::Error("One of these sections not found: "
+					".text .data .symtab .strtab");
 	}
 }
 
@@ -988,16 +998,15 @@ Binary::Binary(const char *buffer, unsigned int size, std::string name)
 	si_dict_entry = NULL;
 	ReadDictionary();
 	if (!si_dict_entry)
-		fatal(
-	"%s: no encoding dictionary entry for Southern Islands.\n"
-	"\tThe OpenCL kernel binary that your application is trying to load\n"
-	"\tdoes not contain Southern Islands assembly code. Please make\n" 
-	"\tsure that a Tahiti device is selected when compiling the OpenCL\n"
-	"\tkernel source. In some cases, even a proper selection of this\n"
-	"\tarchitecture causes Southern Islands assembly not to be included\n"
-	"\tif the APP SDK is not correctly installed when compiling your\n"
-	"\town kernel sources.\n", 
-			name.c_str());
+		throw Asm::Error(name +
+	": No encoding dictionary entry for Southern Islands.\n\n"
+	"\tThe OpenCL kernel binary that your application is trying to load "
+	"does not contain Southern Islands assembly code. Please make " 
+	"sure that a Tahiti device is selected when compiling the OpenCL "
+	"kernel source. In some cases, even a proper selection of this "
+	"architecture causes Southern Islands assembly not to be included "
+	"if the APP SDK is not correctly installed when compiling your "
+	"own kernel sources.");
 	
 	// Read segments and sections
 	ReadSegments();

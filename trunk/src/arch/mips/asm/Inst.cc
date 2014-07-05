@@ -22,6 +22,7 @@
 #include <iostream>
 
 #include <arch/common/Asm.h>
+#include <lib/cpp/Error.h>
 #include <lib/cpp/Misc.h>
 #include <lib/cpp/String.h>
 
@@ -122,7 +123,8 @@ void Inst::Decode(unsigned addr, const char *buf)
 		}
 		else if (loop_iteration > 4)
 		{
-			misc::fatal("%s: invalid instruction", __FUNCTION__);
+			throw Asm::Error(misc::fmt("Invalid instruction at "
+					"0x%x", addr));
 		}
 		else
 		{
@@ -299,8 +301,7 @@ void Inst::Dump(std::ostream &os)
 	// Get format string
 	const char *fmt_str = info->fmt_str;
 	if (!fmt_str || !*fmt_str)
-		misc::fatal("%s: instruction not implemented",
-				__FUNCTION__);
+		throw misc::Panic("Instruction not implemented");
 
 	// Traverse format string
 	bool first_token = true;
@@ -471,7 +472,8 @@ void Inst::Dump(std::ostream &os)
 		else if (comm::Asm::isToken(fmt_str, "code", token_len))
 			DumpCode(os);
 		else
-			misc::fatal("%s: token not recognized\n", fmt_str);
+			throw misc::Panic(misc::fmt("%s: Unrecognized "
+					"token", fmt_str));
 
 		fmt_str += token_len;
 

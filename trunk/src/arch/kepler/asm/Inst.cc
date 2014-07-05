@@ -22,6 +22,7 @@
 #include <iostream>
 
 #include <arch/common/Asm.h>
+#include <lib/cpp/Error.h>
 #include <lib/cpp/Misc.h>
 #include <lib/cpp/String.h>
 
@@ -221,16 +222,16 @@ Inst::Inst()
 
 void Inst::Decode(const char *buffer, unsigned int address)
 {
-	/* Populate */
+	// Populate
 	this->address = address;
 	bytes.as_dword = * (unsigned long long *) buffer;
 
-	/* Start with master table */
+	// Start with master table
 	const InstDecodeInfo *table = as->getDecTable();
 	int low = 0;
 	int high = 1;
 
-	/* Traverse tables */
+	// Traverse tables
 	while (1)
 	{
 		int index = misc::getBits64(bytes.as_dword, high, low);
@@ -240,7 +241,7 @@ void Inst::Decode(const char *buffer, unsigned int address)
 			return;
 		}
 
-		/* Go to next table */
+		// Go to next table
 		low = table[index].next_table_low;
 		high = table[index].next_table_high;
 		table = table[index].next_table;
@@ -503,18 +504,18 @@ void Inst::DumpTarget(std::ostream &os, int high0, int low0, int high1,
 
 void Inst::Dump(std::ostream &os) const
 {
-	/* Invalid instruction */
+	// Invalid instruction
 	if (!info || !info->fmt_str)
 	{
 		os << "<unknown>";
 		return;
 	}
 
-	/* Print entire format string temporarily */
+	// Print entire format string temporarily
 	const char *fmt_str = info->fmt_str;
 	while (*fmt_str)
 	{
-		/* Literal value */
+		// Literal value
 		if (*fmt_str != '%')
 		{
 			os << *fmt_str;
@@ -522,7 +523,7 @@ void Inst::Dump(std::ostream &os) const
 			continue;
 		}
 
-		/* Tokens */
+		// Tokens
 		int length = 0;
 		fmt_str++;
 		if (comm::Asm::isToken(fmt_str, "tgt", length))
@@ -663,14 +664,15 @@ void Inst::Dump(std::ostream &os) const
 		}
 		else
 		{
-			misc::panic("'%s': unrecognized token", fmt_str);
+			throw misc::Panic(misc::fmt("%s: Unrecognized token",
+					fmt_str));
 		}
 
-		/* Advance format string */
+		// Advance format string
 		fmt_str += length;
 	}
 }
 
 
-}  /* namespace Kepler */
+}  // namespace Kepler
 

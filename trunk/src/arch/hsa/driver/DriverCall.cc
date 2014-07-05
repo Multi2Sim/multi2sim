@@ -52,10 +52,13 @@ int Driver::CallInit(mem::Memory *memory, unsigned args_ptr)
 				driver_major, driver_minor);
 
 	// Version check
-	if(driver_major != runtime_major)
-		misc::fatal("Host and device major versions do not match!");
-	if(driver_minor < runtime_minor)
-		misc::fatal("Device minor version is lower than host minor version!");
+	if (driver_major != runtime_major || driver_minor < runtime_minor)
+		throw Error(misc::fmt("Version mismatch between HSA runtime "
+				"and driver\n"
+				"\tRuntime requires %d.%d\n"
+				"\tDriver is %d.%d\n",
+				runtime_major, runtime_minor,
+				driver_major, driver_minor));
 	return 0;
 }
 

@@ -84,7 +84,7 @@ public:
 		/// Constructor
 		Error(const std::string &message) : misc::Error(message)
 		{
-			AppendPrefix("Southern Islands disassembler");
+			AppendPrefix("Southern Islands Disassembler");
 		}
 	};
 

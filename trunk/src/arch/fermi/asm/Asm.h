@@ -24,6 +24,7 @@
 #include <memory>
 
 #include <arch/common/Asm.h>
+#include <lib/cpp/Error.h>
 
 #include "Inst.h"
 
@@ -31,15 +32,14 @@
 namespace Fermi
 {
 
-
-class Asm: public comm::Asm
+class Asm : public comm::Asm
 {
 	// Max number of operations per category
 	static const unsigned InstOpCountPerCategory = 64;
 
 	// Instruction information table. The 1st level is indexed by the
-	// instruction category. The 2nd level is indexed by the opcode bits in the
-	// category.
+	// instruction category. The 2nd level is indexed by the opcode bits in
+	// the category.
 	InstInfo inst_info_table[InstCategoryCount][InstOpCountPerCategory];
 
 	// Constructor
@@ -49,9 +49,21 @@ class Asm: public comm::Asm
 	static std::unique_ptr<Asm> instance;
 
 public:
-	/// Get the only instance of the Fermi disassembler. If the instance does
-	/// not exist yet, it will be created, and will remain allocated until the
-	/// end of the execution.
+
+	/// For exceptions related with the Fermi disassembler
+	class Error : public misc::Error
+	{
+	public:
+		Error(const std::string &message) :
+				misc::Error(message)
+		{
+			AppendPrefix("Fermi Disassembler");
+		}
+	};
+
+	/// Get the only instance of the Fermi disassembler. If the instance
+	/// does not exist yet, it will be created, and will remain allocated
+	/// until the end of the execution.
 	static Asm *getInstance();
 
 	/// Disassembler

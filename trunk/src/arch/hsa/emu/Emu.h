@@ -39,13 +39,11 @@ class WorkItem;
 /// Exception thrown by HSA modules
 class Error : public misc::Error
 {
-
 public: 
 	
 	/// Constructor
 	Error(const std::string &message) : misc::Error(message)
 	{
-		// Add module prefix
 		AppendPrefix("HSA");
 	}
 };
