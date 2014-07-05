@@ -157,6 +157,12 @@ public:
 	/// Virtual destructor
 	virtual ~Node() { }
 
+	/// Return the parent node, or `nullptr` if node has no parent.
+	Node *getParent() const { return parent; }
+
+	/// Set the parent node
+	void setParent(Node *parent) { this->parent = parent; }
+
 	/// Return the tree that the node belongs to
 	Tree *getTree() const { return tree; }
 
@@ -276,8 +282,6 @@ public:
 
 class LeafNode : public Node
 {
-	friend class Tree;
-
 	// Basic block associated with the node
 	BasicBlock *basic_block = nullptr;
 
@@ -310,43 +314,50 @@ public:
 	BasicBlock *getBasicBlock() const { return basic_block; }
 
 	/// Return the LLVM basic block associated with the node
-	llvm::BasicBlock *getLlvmBasicBlock() const { return llvm_basic_block; }
+	llvm::BasicBlock *getLLVMBasicBlock() const { return llvm_basic_block; }
+
+	/// Update the LLVM basic block associated with the node
+	void setLLVMBasicBlock(llvm::BasicBlock *llvm_basic_block)
+	{
+		this->llvm_basic_block = llvm_basic_block;
+	}
 
 	/// Dump node
-	void Dump(std::ostream &os);
+	void Dump(std::ostream &os = std::cout);
 };
-
-
-/// Region that an abstract node forms
-enum AbstractNodeRegion
-{
-	AbstractNodeRegionInvalid,
-
-	AbstractNodeBlock,
-	AbstractNodeIfThen,
-	AbstractNodeIfThenElse,
-	AbstractNodeWhileLoop,
-	AbstractNodeLoop,
-	AbstractNodeProperInterval,
-	AbstractNodeImproperInterval,
-	AbstractNodeProperOuterInterval,
-	AbstractNodeImproperOuterInterval,
-
-	AbstractNodeRegionCount
-};
-
-/// String map for AbstractNodeRegion
-extern misc::StringMap abstract_node_region_map;
 
 
 /// Abstract node in the control tree, created after a reduction process during
 /// the structural analysis pass.
 class AbstractNode : public Node
 {
-	friend class Tree;
+public:
+
+	/// Region types that an abstract node forms
+	enum Region
+	{
+		RegionInvalid,
+
+		RegionBlock,
+		RegionIfThen,
+		RegionIfThenElse,
+		RegionWhileLoop,
+		RegionLoop,
+		RegionProperInterval,
+		RegionImproperInterval,
+		RegionProperOuterInterval,
+		RegionImproperOuterInterval,
+	
+		RegionCount
+	};
+
+	/// String map for Region
+	static const misc::StringMap RegionMap;
+
+private:
 
 	// Type of region
-	AbstractNodeRegion region;
+	Region region;
 
 	// List of function nodes associated with the abstract node
 	std::list<Node *> child_list;
@@ -360,16 +371,42 @@ public:
 	///
 	/// \param region
 	///	Region type formed by the abstract node
-	AbstractNode(const std::string &name, AbstractNodeRegion region);
+	AbstractNode(const std::string &name, Region region);
 
 	/// Return the region type for this abstract node
-	AbstractNodeRegion getRegion() const { return region; }
+	Region getRegion() const { return region; }
 
 	/// Return the list of child nodes
 	std::list<Node *> &getChildList() { return child_list; }
+
+	/// Return a constant reference to the list of child nodes
+	const std::list<Node *> &getChildList() const { return child_list; }
+
+	/// Return the number of child nodes
+	int getNumChildren() const { return child_list.size(); }
+
+	/// Return the first child in the list
+	Node *getFirstChild() const { return child_list.front(); }
+
+	/// Return the last child in the list
+	Node *getLastChild() const { return child_list.back(); }
+
+	/// Add a node as a child
+	void AddChild(Node *node)
+	{
+		assert(node->getParent() == nullptr);
+		child_list.push_back(node);
+		node->setParent(this);
+	}
+
+	/// Remove a child node. The node must be part of the child list.
+	void RemoveChild(Node *node)
+	{
+		Node::RemoveFromList(child_list, node);
+	}
 	
-	/// Dump
-	void Dump(std::ostream &os);
+	/// Dump node
+	void Dump(std::ostream &os = std::cout);
 
 	/// Compare `this` with \a node, and error out if not equal
 	void Compare(Node *node);
