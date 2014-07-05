@@ -23,18 +23,24 @@
 #include <llvm/IR/Function.h>
 
 #include "BasicBlock.h"
+#include "Context.h"
 #include "Function.h"
 #include "InterferenceGraph.h"
 
+
+// FIXME - This is against the coding guidelines, but all the code for the
+// back-end and disassembler will eventually be restructure to revolve around
+// a centralized SI program representation, formed for classes for a module,
+// function, basic block, instruction, and argument.
 using namespace si2bin;
 
 namespace llvm2si
 {
 
 
-/*
- * Class 'FunctionArg'
- */
+//
+// Class 'FunctionArg'
+//
 
 FunctionArg::FunctionArg(llvm::Argument *llvm_arg) :
 		llvm_arg(llvm_arg)
@@ -49,7 +55,7 @@ FunctionArg::FunctionArg(llvm::Argument *llvm_arg) :
 	// Get argument name
 	name = llvm_arg->getName();
 	if (name.empty())
-		misc::fatal("%s: anonymous arguments not allowed", __FUNCTION__);
+		throw Error("Anonymous arguments not allowed");
 
 	// Initialize SI argument
 	llvm::Type *llvm_type = llvm_arg->getType();
@@ -87,8 +93,9 @@ SI::ArgDataType FunctionArg::getDataType(llvm::Type *llvm_type)
 		case 64: return SI::ArgDataTypeInt64;
 
 		default:
-			misc::panic("%s: unsupported argument bit width (%d)",
-				__FUNCTION__, bit_width);
+
+			throw misc::Panic(misc::fmt("Unsupported argument "
+					"bit width (%d)", bit_width));
 		}
 	}
 	else if (llvm_type->isFloatTy())
@@ -97,8 +104,8 @@ SI::ArgDataType FunctionArg::getDataType(llvm::Type *llvm_type)
 	}
 	else
 	{
-		misc::panic("%s: unsupported argument type kind (%d)",
-				__FUNCTION__, llvm_type->getTypeID());
+		throw misc::Panic(misc::fmt("Unsupported argument type kind "
+				"(%d)", llvm_type->getTypeID()));
 	}
 
 	// Unreachable
@@ -134,8 +141,9 @@ void FunctionArg::Dump(std::ostream &os)
 	}
 
 	default:
-		misc::panic("%s: argument type not recognized (%d)",
-				__FUNCTION__, arg->getType());
+
+		throw misc::Panic(misc::fmt("Argument type not recognized (%d)",
+				arg->getType()));
 	}
 }
 
@@ -159,9 +167,10 @@ void Function::AddUAV(FunctionUAV *uav)
 	uav->index = uav_list.size();
 	uav_list.emplace_back(uav);
 
-	/* Emit code to load UAV.
-	 * s_load_dwordx4 s[uavX:uavX+3], s[uav_table:uav_table+1], x * 8
-	 */
+	// Emit code to load UAV.
+	//
+	// s_load_dwordx4 s[uavX:uavX+3], s[uav_table:uav_table+1], x * 8
+	//
 	Inst *inst = new Inst(SI::INST_S_LOAD_DWORDX4,
 			new ArgScalarRegisterSeries(uav->sreg, uav->sreg + 3),
 			new ArgScalarRegisterSeries(sreg_uav_table, sreg_uav_table + 1),
@@ -174,7 +183,7 @@ int Function::AddArg(FunctionArg *arg, int num_elem, int offset)
 {
 	// Check that argument does not belong to a self yet
 	if (arg->function)
-		misc::panic("%s: argument already added", __FUNCTION__);
+		throw misc::Panic("Argument already added");
 
 	// Get basic block, or create it
 	BasicBlock *basic_block = dynamic_cast<BasicBlock *>
@@ -191,9 +200,10 @@ int Function::AddArg(FunctionArg *arg, int num_elem, int offset)
 	arg->sreg = AllocSReg(num_elem, num_elem);
 	arg->vreg = AllocVReg(num_elem, num_elem);
 
-	/* Generate code to load argument into a scalar register.
-	 * s_buffer_load_dword s[arg], s[cb1:cb1+3], idx*4
-	 */
+	// Emit code to load argument into a scalar register.
+	//
+	// s_buffer_load_dword s[arg], s[cb1:cb1+3], idx*4
+	//
 	Symbol *symbol = nullptr;
 	switch (num_elem)
 	{
@@ -209,20 +219,23 @@ int Function::AddArg(FunctionArg *arg, int num_elem, int offset)
 				new ArgWaitCnt(WaitCntTypeLgkmCnt));
 		basic_block->AddInst(inst);
 
-		/* Copy argument into a vector register. This vector register will be
-		 * used for convenience during code emission, so that we don't have to
-		 * worry at this point about different operand type encodings for
-		 * instructions. Optimization passes will get rid later of redundant
-		 * copies and scalar opportunities.
-		 * v_mov_b32 v[arg], s[arg]
-		 */
+		// Copy argument into a vector register. This vector register
+		// will be used for convenience during code emission, so that we
+		// don't have to worry at this point about different operand
+		// type encodings for instructions. Optimization passes will get
+		// rid later of redundant copies and scalar opportunities.
+		//
+		// v_mov_b32 v[arg], s[arg]
+		//
 		/*inst = new Inst(SI::INST_V_MOV_B32,
 				new ArgVectorRegister(arg->vreg),
 				new ArgScalarRegister(arg->sreg));
 		basic_block->AddInst(inst);*/
 
 		// Insert argument name in symbol table, using its vector register.
-		symbol = new Symbol(arg->name, SymbolScalarRegister, arg->sreg);
+		symbol = new Symbol(arg->name,
+				Symbol::TypeScalarRegister,
+				arg->sreg);
 		AddSymbol(symbol);
 		break;
 	}
@@ -240,7 +253,9 @@ int Function::AddArg(FunctionArg *arg, int num_elem, int offset)
 		basic_block->AddInst(inst);
 
 		// Insert argument name in symbol table, using its scalar register.
-		symbol = new Symbol(arg->name, SymbolScalarRegister, arg->sreg);
+		symbol = new Symbol(arg->name,
+				Symbol::TypeScalarRegister,
+				arg->sreg);
 		AddSymbol(symbol);
 
 		break;
@@ -266,18 +281,22 @@ int Function::AddArg(FunctionArg *arg, int num_elem, int offset)
 		basic_block->AddInst(inst);
 
 		// Insert argument name in symbol table, using its scalar register.
-		symbol = new Symbol(arg->name, SymbolScalarRegister, arg->sreg);
+		symbol = new Symbol(arg->name,
+				Symbol::TypeScalarRegister,
+				arg->sreg);
 		AddSymbol(symbol);
 		
 		break;
 	}
+
 	default:
-		misc::panic("%s: not supported number of elements", __FUNCTION__);
+
+		throw misc::Panic("Unsupported number of elements");
 	}
 
 
-	/* If argument is an object in global memory, create a UAV
-	 * associated with it. */
+	// If argument is an object in global memory, create a UAV
+	// associated with it.
 	SI::ArgPointer *pointer = dynamic_cast<SI::ArgPointer *>
 			(arg->arg.get());
 	if (pointer && pointer->getScope() == SI::ArgScopeUAV)
@@ -402,29 +421,30 @@ void Function::EmitHeader()
 	// Allocate 3 vector registers (v[0:2]) for local ID
 	vreg_lid = AllocVReg(3);
 	if (vreg_lid)
-		misc::panic("%s: vreg_lid is expected to be 0", __FUNCTION__);
+		throw misc::Panic("vreg_lid is expected to be 0");
 
-	/* Allocate 2 scalar registers for UAV table. The value for these
-	 * registers is assigned by the runtime based on info found in the
-	 * 'userElements' metadata of the binary.*/
+	// Allocate 2 scalar registers for UAV table. The value for these
+	// registers is assigned by the runtime based on info found in the
+	// 'userElements' metadata of the binary.
 	sreg_uav_table = AllocSReg(2);
 
-	/* Allocate 4 scalar registers for CB0, and 4 more for CB1. The
-	 * values for these registers will be assigned by the runtime based
-	 * on info present in the 'userElements' metadata. */
+	// Allocate 4 scalar registers for CB0, and 4 more for CB1. The
+	// values for these registers will be assigned by the runtime based
+	// on info present in the 'userElements' metadata.
 	sreg_cb0 = AllocSReg(4);
 	sreg_cb1 = AllocSReg(4);
 
-	/* Allocate 3 scalar registers for the work-group ID. The content of
-	 * these register will be populated by the runtime based on info found
-	 * in COMPUTE_PGM_RSRC2 metadata. */
+	// Allocate 3 scalar registers for the work-group ID. The content of
+	// these register will be populated by the runtime based on info found
+	// in COMPUTE_PGM_RSRC2 metadata.
 	sreg_wgid = AllocSReg(3);
 
-	/* Obtain global size in s[gsize:gsize+2].
-	 * s_buffer_load_dword s[gsize], s[cb0:cb0+3], 0x00
-	 * s_buffer_load_dword s[gsize+1], s[cb0:cb0+3], 0x01
-	 * s_buffer_load_dword s[gsize+2], s[cb0:cb0+3], 0x02
-	 */
+	// Obtain global size in s[gsize:gsize + 2].
+	//
+	// s_buffer_load_dword s[gsize], s[cb0:cb0 + 3], 0x00
+	// s_buffer_load_dword s[gsize + 1], s[cb0:cb0 + 3], 0x01
+	// s_buffer_load_dword s[gsize + 2], s[cb0:cb0 + 3], 0x02
+	//
 	basic_block->AddComment("Obtain global size");
 	sreg_gsize = AllocSReg(3);
 	for (int index = 0; index < 3; index++)
@@ -436,12 +456,12 @@ void Function::EmitHeader()
 		basic_block->AddInst(inst);
 	}
 
-	/* Obtain local size in s[lsize:lsize+2].
-	 *
-	 * s_buffer_load_dword s[lsize], s[cb0:cb0+3], 0x04
-	 * s_buffer_load_dword s[lsize+1], s[cb0:cb0+3], 0x05
-	 * s_buffer_load_dword s[lsize+2], s[cb0:cb0+3], 0x06
-	 */
+	// Obtain local size in s[lsize:lsize + 2].
+	//
+	// s_buffer_load_dword s[lsize], s[cb0:cb0 + 3], 0x04
+	// s_buffer_load_dword s[lsize + 1], s[cb0:cb0 + 3], 0x05
+	// s_buffer_load_dword s[lsize + 2], s[cb0:cb0 + 3], 0x06
+	//
 	basic_block->AddComment("Obtain local size");
 	sreg_lsize = AllocSReg(3);
 	for (int index = 0; index < 3; index++)
@@ -453,12 +473,12 @@ void Function::EmitHeader()
 		basic_block->AddInst(inst);
 	}
 
-	/* Obtain global offset in s[offs:offs+2].
-	 *
-	 * s_buffer_load_dword s[offs], s[cb0:cb0+3], 0x18
-	 * s_buffer_load_dword s[offs], s[cb0:cb0+3], 0x19
-	 * s_buffer_load_dword s[offs], s[cb0:cb0+3], 0x1a
-	 */
+	// Obtain global offset in s[offs:offs + 2].
+	//
+	// s_buffer_load_dword s[offs], s[cb0:cb0 + 3], 0x18
+	// s_buffer_load_dword s[offs], s[cb0:cb0 + 3], 0x19
+	// s_buffer_load_dword s[offs], s[cb0:cb0 + 3], 0x1a
+	//
 	basic_block->AddComment("Obtain global offset");
 	sreg_offs = AllocSReg(3);
 	for (int index = 0; index < 3; index++)
@@ -470,13 +490,13 @@ void Function::EmitHeader()
 		basic_block->AddInst(inst);
 	}
 
-	/* Calculate global ID in dimensions [0:2] and store it in v[3:5].
-	 *
-	 * v_mov_b32 v[gid+dim], s[lsize+dim]
-	 * v_mul_i32_i24 v[gid+dim], s[wgid+dim], v[gid+dim]
-	 * v_add_i32 v[gid+dim], vcc, v[gid+dim], v[lid+dim]
-	 * v_add_i32 v[gid+dim], vcc, v[gid+dim], s[offs+dim]
-	 */
+	// Calculate global ID in dimensions [0:2] and store it in v[3:5].
+	//
+	// v_mov_b32 v[gid + dim], s[lsize + dim]
+	// v_mul_i32_i24 v[gid + dim], s[wgid + dim], v[gid + dim]
+	// v_add_i32 v[gid + dim], vcc, v[gid + dim], v[lid + dim]
+	// v_add_i32 v[gid + dim], vcc, v[gid + dim], s[offs + dim]
+	//
 	vreg_gid = AllocVReg(3);
 	for (int index = 0; index < 3; index++)
 	{
@@ -529,8 +549,8 @@ void Function::EmitArgs()
 		int num_elem = llvm_type->isVectorTy() ?
 				llvm_type->getVectorNumElements() : 1;
 
-		/* Add the argument to the list. This call will cause the
-		 * corresponding code to be emitted. */
+		// Add the argument to the list. This call will cause the
+		// corresponding code to be emitted.
 		offset = AddArg(arg, num_elem, offset);
 	}
 }
@@ -538,17 +558,15 @@ void Function::EmitArgs()
 
 void Function::EmitBody()
 {
-	/* Code for the function body must be emitted using a depth-first
-	 * traversal of the control tree. For this, we need right here the
-	 * structural analysis that produces the control tree from the
-	 * control flow graph.
-	 */
+	// Code for the function body must be emitted using a depth-first
+	// traversal of the control tree. For this, we need right here the
+	// structural analysis that produces the control tree from the
+	// control flow graph.
 	assert(!tree.IsStructuralAnalysisDone());
 	tree.StructuralAnalysis();
 
-	/* Whether we use a pre- or a post-order traversal does not matter,
-	 * since we are only considering the leaf nodes.
-	 */
+	// Whether we use a pre- or a post-order traversal does not matter,
+	// since we are only considering the leaf nodes.
 	std::list<comm::Node *> node_list;
 	tree.PreorderTraversal(node_list);
 
@@ -562,13 +580,13 @@ void Function::EmitBody()
 			continue;
 
 		// Skip nodes with no LLVM code to translate
-		if (!leaf_node->getLlvmBasicBlock())
+		if (!leaf_node->getLLVMBasicBlock())
 			continue;
 
 		// Create basic block and emit the code
 		assert(!leaf_node->getBasicBlock());
 		BasicBlock *basic_block = newBasicBlock(leaf_node);
-		basic_block->Emit(leaf_node->getLlvmBasicBlock());
+		basic_block->Emit(leaf_node->getLLVMBasicBlock());
 	}
 }
 
@@ -639,7 +657,7 @@ void Function::EmitIfThen(comm::AbstractNode *node)
 {
 	// Identify the two nodes
 	assert(node);
-	assert(node->getRegion() == comm::AbstractNodeIfThen);
+	assert(node->getRegion() == comm::AbstractNode::RegionIfThen);
 	assert(node->getChildList().size() == 2);
 	comm::Node *if_node = node->getChildList().front();
 	comm::Node *then_node = node->getChildList().back();
@@ -658,10 +676,12 @@ void Function::EmitIfThen(comm::AbstractNode *node)
 	BasicBlock *then_basic_block = misc::cast<BasicBlock *>(then_leaf_node->getBasicBlock());
 
 
-	/*** Code for 'If' block ***/
+	//
+	// Code for 'If' block
+	//
 
 	// Get 'If' basic block terminator
-	llvm::BasicBlock *llvm_basic_block = if_leaf_node->getLlvmBasicBlock();
+	llvm::BasicBlock *llvm_basic_block = if_leaf_node->getLLVMBasicBlock();
 	llvm::TerminatorInst *llvm_inst = llvm_basic_block->getTerminator();
 	assert(llvm_inst);
 	assert(llvm_inst->getOpcode() == llvm::Instruction::Br);
@@ -672,16 +692,17 @@ void Function::EmitIfThen(comm::AbstractNode *node)
 	std::string cond_name = llvm_cond->getName();
 	Symbol *cond_symbol = symbol_table.Lookup(cond_name);
 	assert(cond_symbol);
-	assert(cond_symbol->getType() == SymbolScalarRegister);
+	assert(cond_symbol->getType() == Symbol::TypeScalarRegister);
 	assert(cond_symbol->getNumRegs() == 2);
 	int cond_sreg = cond_symbol->getReg();
 
 	// Allocate two scalar registers to push the active mask
 	int tos_sreg = AllocSReg(2, 2);
 
-	/* Emit active mask push and set at the end of the 'If' block.
-	 * s_and_saveexec_b64 <tos_sreg> <cond_sreg>
-	 */
+	// Emit active mask push and set at the end of the 'If' block.
+	//
+	// s_and_saveexec_b64 <tos_sreg> <cond_sreg>
+	//
 	Inst *inst = new Inst(SI::INST_S_AND_SAVEEXEC_B64,
 			new ArgScalarRegisterSeries(tos_sreg, tos_sreg + 1),
 			new ArgScalarRegisterSeries(cond_sreg, cond_sreg + 1));
@@ -689,11 +710,14 @@ void Function::EmitIfThen(comm::AbstractNode *node)
 	if_basic_block->AddInst(inst);
 
 
-	/*** Code for 'then' block ***/
+	//
+	// Code for 'then' block
+	//
 
-	/* Pop the active mask.
-	 * s_mov_b64 exec, <tos_sreg>
-	 */
+	// Pop the active mask.
+	//
+	// s_mov_b64 exec, <tos_sreg>
+	//
 	inst = new Inst(SI::INST_S_MOV_B64,
 			new ArgSpecialRegister(SI::InstSpecialRegExec),
 			new ArgScalarRegisterSeries(tos_sreg, tos_sreg + 1));
@@ -706,7 +730,7 @@ void Function::EmitIfThenElse(comm::AbstractNode *node)
 {
 	// Identify the three nodes
 	assert(node);
-	assert(node->getRegion() == comm::AbstractNodeIfThenElse);
+	assert(node->getRegion() == comm::AbstractNode::RegionIfThenElse);
 	assert(node->getChildList().size() == 3);
 	auto it = node->getChildList().begin();
 	comm::Node *if_node = *(it++);
@@ -739,10 +763,12 @@ void Function::EmitIfThenElse(comm::AbstractNode *node)
 	then_leaf_node->ConnectScalar(else_leaf_node);
 
 
-	/*** Code for 'If' block ***/
+	//
+	// Code for 'If' block
+	//
 
 	// Get 'If' basic block terminator
-	llvm::BasicBlock *llvm_basic_block = if_leaf_node->getLlvmBasicBlock();
+	llvm::BasicBlock *llvm_basic_block = if_leaf_node->getLLVMBasicBlock();
 	llvm::TerminatorInst *llvm_inst = llvm_basic_block->getTerminator();
 	assert(llvm_inst);
 	assert(llvm_inst->getOpcode() == llvm::Instruction::Br);
@@ -753,7 +779,7 @@ void Function::EmitIfThenElse(comm::AbstractNode *node)
 	std::string cond_name = llvm_cond->getName();
 	Symbol *cond_symbol = symbol_table.Lookup(cond_name);
 	assert(cond_symbol);
-	assert(cond_symbol->getType() == SymbolScalarRegister);
+	assert(cond_symbol->getType() == Symbol::TypeScalarRegister);
 	assert(cond_symbol->getNumRegs() == 2);
 	int cond_sreg = cond_symbol->getReg();
 
@@ -761,7 +787,9 @@ void Function::EmitIfThenElse(comm::AbstractNode *node)
 	int tos_sreg = AllocSReg(2, 2);
 
 	// Emit active mask push and set at the end of the 'If' block.
+	//
 	// s_and_saveexec_b64 <tos_sreg> <cond_sreg>
+	//
 	Inst *inst = new Inst(SI::INST_S_AND_SAVEEXEC_B64,
 			new ArgScalarRegisterSeries(tos_sreg, tos_sreg + 1),
 			new ArgScalarRegisterSeries(cond_sreg, cond_sreg + 1));
@@ -769,10 +797,14 @@ void Function::EmitIfThenElse(comm::AbstractNode *node)
 	if_basic_block->AddInst(inst);
 
 
-	/*** Code for 'then' block ***/
+	//
+	// Code for 'then' block
+	//
 
 	// Invert active mask and-ing it with the top of the stack.
+	//
 	// s_andn2_b64 exec, <tos_sreg>, exec
+	//
 	inst = new Inst(SI::INST_S_ANDN2_B64,
 			new ArgSpecialRegister(SI::InstSpecialRegExec),
 			new ArgScalarRegisterSeries(tos_sreg, tos_sreg + 1),
@@ -781,10 +813,14 @@ void Function::EmitIfThenElse(comm::AbstractNode *node)
 	then_basic_block->AddInst(inst);
 
 
-	/*** Code for 'else' block ***/
+	//
+	// Code for 'else' block
+	//
 
 	// Pop the active mask.
+	//
 	// s_mov_b64 exec, <tos_sreg>
+	//
 	inst = new Inst(SI::INST_S_MOV_B64,
 			new ArgSpecialRegister(SI::InstSpecialRegExec),
 			new ArgScalarRegisterSeries(tos_sreg, tos_sreg + 1));
@@ -797,7 +833,7 @@ void Function::EmitWhileLoop(comm::AbstractNode *node)
 {
 	// Identify the two nodes
 	assert(node);
-	assert(node->getRegion() == comm::AbstractNodeWhileLoop);
+	assert(node->getRegion() == comm::AbstractNode::RegionWhileLoop);
 	assert(node->getChildList().size() == 4);
 	auto it = node->getChildList().begin();
 	comm::Node *pre_node = *(it++);
@@ -812,15 +848,15 @@ void Function::EmitWhileLoop(comm::AbstractNode *node)
 	assert(tail_node->getRole() == comm::NodeRoleTail);
 	assert(exit_node->getRole() == comm::NodeRoleExit);
 
-	/* Get basic blocks. Pre-header/head/exit nodes should be a leaves.
-	 * Tail node can be an abstract node, which we need to track down to
-	 * its last leaf to introduce control flow at the end.
-	 *
-	 * Basic blocks must exist associated to the head and the tail blocks:
-	 * they come from LLVM blocks already emitted. But pre-header and exit
-	 * blocks have been inserted during the structural analysis, so they
-	 * contain no basic block yet.
-	 */
+	// Get basic blocks. Pre-header/head/exit nodes should be a leaves.
+	// Tail node can be an abstract node, which we need to track down to
+	// its last leaf to introduce control flow at the end.
+	//
+	// Basic blocks must exist associated to the head and the tail blocks:
+	// they come from LLVM blocks already emitted. But pre-header and exit
+	// blocks have been inserted during the structural analysis, so they
+	// contain no basic block yet.
+	//
 	tail_node = tail_node->getLastLeaf();
 	assert(pre_node->getKind() == comm::NodeKindLeaf);
 	assert(head_node->getKind() == comm::NodeKindLeaf);
@@ -840,14 +876,17 @@ void Function::EmitWhileLoop(comm::AbstractNode *node)
 	BasicBlock *exit_basic_block = newBasicBlock(exit_leaf_node);
 
 
-	/*** Code for pre-header block ***/
+	//
+	// Code for pre-header block
+	//
 
 	// Allocate two scalar registers to push the active mask
 	int tos_sreg = AllocSReg(2, 2);
 
-	/* Push active mask.
-	 * s_mov_b64 <tos_sreg>, exec
-	 */
+	// Push active mask.
+	//
+	// s_mov_b64 <tos_sreg>, exec
+	//
 	Inst *inst = new Inst(SI::INST_S_MOV_B64,
 			new ArgScalarRegisterSeries(tos_sreg, tos_sreg + 1),
 			new ArgSpecialRegister(SI::InstSpecialRegExec));
@@ -855,11 +894,14 @@ void Function::EmitWhileLoop(comm::AbstractNode *node)
 	pre_basic_block->AddInst(inst);
 
 
-	/*** Code for exit block ***/
+	//
+	// Code for exit block
+	//
 
-	/* Pop active mask.
-	 * s_mov_b64 exec, <tos_sreg>
-	 */
+	// Pop active mask.
+	//
+	// s_mov_b64 exec, <tos_sreg>
+	//
 	inst = new Inst(SI::INST_S_MOV_B64,
 			new ArgSpecialRegister(SI::InstSpecialRegExec),
 			new ArgScalarRegisterSeries(tos_sreg, tos_sreg + 1));
@@ -867,21 +909,26 @@ void Function::EmitWhileLoop(comm::AbstractNode *node)
 	exit_basic_block->AddInst(inst);
 
 
-	/*** Code for tail block ***/
+	//
+	// Code for tail block
+	//
 
-	/* Jump to head block.
-	 * s_branch <head_block>
-	 */
+	// Jump to head block.
+	//
+	// s_branch <head_block>
+	//
 	inst = new Inst(SI::INST_S_BRANCH,
 			new ArgLabel(head_leaf_node->getName()));
 	inst->setControlFlow(true);
 	tail_basic_block->AddInst(inst);
 
 
-	/*** Code for head block ***/
+	//
+	// Code for head block
+	//
 
 	// Get head block terminator
-	llvm::BasicBlock *llvm_basic_block = head_leaf_node->getLlvmBasicBlock();
+	llvm::BasicBlock *llvm_basic_block = head_leaf_node->getLLVMBasicBlock();
 	llvm::TerminatorInst *llvm_inst = llvm_basic_block->getTerminator();
 	assert(llvm_inst);
 	assert(llvm_inst->getOpcode() == llvm::Instruction::Br);
@@ -892,7 +939,7 @@ void Function::EmitWhileLoop(comm::AbstractNode *node)
 	std::string cond_name = llvm_cond->getName();
 	Symbol *cond_symbol = symbol_table.Lookup(cond_name);
 	assert(cond_symbol);
-	assert(cond_symbol->getType() == SymbolScalarRegister);
+	assert(cond_symbol->getType() == Symbol::TypeScalarRegister);
 	assert(cond_symbol->getNumRegs() == 2);
 	int cond_sreg = cond_symbol->getReg();
 
@@ -923,9 +970,9 @@ void Function::EmitWhileLoop(comm::AbstractNode *node)
 
 void Function::EmitControlFlow()
 {
-	/* Emit control flow actions using a post-order traversal of the syntax
-	 * tree (not control-flow graph), from inner to outer control flow
-	 * structures. Which specific post-order traversal does not matter. */
+	// Emit control flow actions using a post-order traversal of the syntax
+	// tree (not control-flow graph), from inner to outer control flow
+	// structures. Which specific post-order traversal does not matter.
 	std::list<comm::Node *> node_list;
 	tree.PostorderTraversal(node_list);
 
@@ -942,37 +989,38 @@ void Function::EmitControlFlow()
 		switch (abs_node->getRegion())
 		{
 
-		case comm::AbstractNodeBlock:
+		case comm::AbstractNode::RegionBlock:
 
 			// Ignore blocks
 			break;
 
-		case comm::AbstractNodeIfThen:
+		case comm::AbstractNode::RegionIfThen:
 
 			EmitIfThen(abs_node);
 			break;
 
-		case comm::AbstractNodeIfThenElse:
+		case comm::AbstractNode::RegionIfThenElse:
 
 			EmitIfThenElse(abs_node);
 			break;
 
-		case comm::AbstractNodeWhileLoop:
+		case comm::AbstractNode::RegionWhileLoop:
 
 			EmitWhileLoop(abs_node);
 			break;
 
 		default:
-			misc::panic("%s: region %s not supported", __FUNCTION__,
-					comm::abstract_node_region_map.MapValue(
-					abs_node->getRegion()));
+
+			throw misc::Panic(misc::fmt("Region %s not supported",
+					comm::AbstractNode::RegionMap[
+					abs_node->getRegion()]));
 		}
 	}
-	//tree.Dump(std::cout);
 }
 
 
-void Function::LiveRegisterAnalysis() {
+void Function::LiveRegisterAnalysis()
+{
 	llvm2si::BasicBlock *basic_block;
 	//comm::Node *node;
 
@@ -994,9 +1042,8 @@ void Function::LiveRegisterAnalysis() {
 		if (!basic_block)
 			continue;
 
-		/* Assigns blank bitmaps of size num_sregs to each of the
-		 * basic block's bitmap fields
-		 */
+		// Assigns blank bitmaps of size num_sregs to each of the
+		// basic block's bitmap fields
 		basic_block->def = new misc::Bitmap(this->num_vregs);
 		basic_block->use = new misc::Bitmap(this->num_vregs);
 		basic_block->in = new misc::Bitmap(this->num_vregs);
@@ -1032,7 +1079,7 @@ void Function::LiveRegisterAnalysis() {
 		}
 
 		// Adds basic block into worklist if it is a exit node
-		llvm::BasicBlock *llvm_basic_block = (dynamic_cast<comm::LeafNode*>(node))->getLlvmBasicBlock();
+		llvm::BasicBlock *llvm_basic_block = (dynamic_cast<comm::LeafNode*>(node))->getLLVMBasicBlock();
 		llvm::TerminatorInst *llvm_inst = llvm_basic_block->getTerminator();
 		assert(llvm_inst);
 		if(llvm_inst->getOpcode() == llvm::Instruction::Ret)
@@ -1129,7 +1176,7 @@ void Function::LiveRegisterAnalysis() {
 			delete(inst->out);
 		}
 
-		/* Deletes allocated memory*/
+		// Deletes allocated memory
 		delete(basic_block->def);
 		delete(basic_block->use);
 		delete(basic_block->in);
@@ -1224,9 +1271,8 @@ void Function::LiveRegisterAnalysisBitmapDump() {
 
 		file << "Basic Block: " << i << std::endl;
 
-		/* Assigns blank bitmaps of size num_sregs to each of the
-		 * basic block's bitmap fields
-		 */
+		// Assigns blank bitmaps of size num_sregs to each of the
+		// basic block's bitmap fields
 		file << "--Def Bitmap:\t";
 		basic_block->def->Dump(file);
 
@@ -1268,12 +1314,12 @@ Arg *Function::TranslateConstant(llvm::Constant *llvm_const)
 	llvm::Type *llvm_type = llvm_const->getType();
 	if (llvm_type->isIntegerTy())
 	{
-		/* Only 32-bit constants supported for now. We need to figure
-		 * out what to do with the sign extension otherwise. */
+		// Only 32-bit constants supported for now. We need to figure
+		// out what to do with the sign extension otherwise.
 		if (!llvm_type->isIntegerTy(32))
-			misc::panic("%s: only 32-bit integer constant supported "
-					" (%d-bit found)", __FUNCTION__,
-					llvm_type->getIntegerBitWidth());
+			throw misc::Panic(misc::fmt("Only 32-bit integer "
+					"constant supported (%d-bit found)",
+					llvm_type->getIntegerBitWidth()));
 
 		// Create argument
 		llvm::ConstantInt *llvm_int_const = misc::cast
@@ -1283,9 +1329,8 @@ Arg *Function::TranslateConstant(llvm::Constant *llvm_const)
 	}
 	else
 	{
-		misc::panic("%s: constant type not supported (%d)",
-				__FUNCTION__, llvm_type->getTypeID());
-		return NULL;
+		throw misc::Panic(misc::fmt("Constant type not supported (%d)",
+				llvm_type->getTypeID()));
 	}
 }
 
@@ -1303,33 +1348,32 @@ Arg *Function::TranslateValue(llvm::Value *llvm_value, Symbol *&symbol)
 	// Get name
 	std::string name = llvm_value->getName();
 	if (name.empty())
-		misc::panic("%s: anonymous value", __FUNCTION__);
+		throw misc::Panic("Anonymous value not supported");
 
 	// Look up symbol
 	symbol = symbol_table.Lookup(name);
 	if (!symbol)
-		misc::fatal("%s: %s: symbol not found", __FUNCTION__, name.c_str());
+		throw Error("Symbol not found: " + name);
 
 	// Create argument based on symbol type
 	Arg *arg;
 	switch (symbol->getType())
 	{
 
-	case SymbolVectorRegister:
+	case Symbol::TypeVectorRegister:
 
 		arg = new ArgVectorRegister(symbol->getReg());
 		break;
 
-	case SymbolScalarRegister:
+	case Symbol::TypeScalarRegister:
 
 		arg = new ArgScalarRegister(symbol->getReg());
 		break;
 
 	default:
 
-		arg = nullptr;
-		misc::panic("%s: invalid symbol type (%d)", __FUNCTION__,
-				symbol->getType());
+		throw misc::Panic(misc::fmt("Invalid symbol type (%d)",
+				symbol->getType()));
 	}
 
 	// Return argument and symbol
@@ -1347,9 +1391,10 @@ Arg *Function::ConstToVReg(BasicBlock *basic_block, Arg *arg)
 	int vreg = AllocVReg();
 	Arg *ret_arg = new ArgVectorRegister(vreg);
 
-	/* Copy constant to vector register.
-	 * v_mov_b32 <vreg>, <const>
-	 */
+	// Copy constant to vector register.
+	//
+	// v_mov_b32 <vreg>, <const>
+	//
 	Inst *inst = new Inst(SI::INST_V_MOV_B32,
 			new ArgVectorRegister(vreg),
 			arg);

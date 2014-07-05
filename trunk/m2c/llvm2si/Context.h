@@ -23,10 +23,27 @@
 #include <iostream>
 #include <memory>
 
+#include <lib/cpp/Error.h>
+
 
 namespace llvm2si
 {
 
+
+/// Exception used for the Southern Islands back-end
+class Error : public misc::Error
+{
+public:
+
+	Error(const std::string &message) : misc::Error(message)
+	{
+		AppendPrefix("Southern Islands back-end");
+	}
+};
+
+
+/// Singleton containing global information for the LLVM to Southern Islands
+/// back-end.
 class Context
 {
 	// Flag indicating whether the user activated the Southern Islands

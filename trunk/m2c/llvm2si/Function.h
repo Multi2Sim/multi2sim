@@ -53,16 +53,15 @@ class FunctionArg
 	// Associated LLVM argument
 	llvm::Argument *llvm_arg;
 
-
-	/* The fields below are populated when the argument is inserted into
-	 * a function with a call to Function::AddArg(). */
+	// The fields below are populated when the argument is inserted into
+	// a function with a call to Function::AddArg().
 	Function *function;
 
 	// Index occupied in function argument list
 	int index;
 	
-	/* For arguments of type SI::ArgTypePointer, and scope
-	 * SI::ArgScopeUAV */
+	// For arguments of type SI::ArgTypePointer, and scope
+	// SI::ArgScopeUAV
 	int uav_index;
 
 	// Scalar register identifier containing the argument
@@ -73,19 +72,27 @@ class FunctionArg
 
 public:
 
-	// Constructor
+	/// Constructor
+	///
+	/// \param llvm_arg
+	///	Associated LLVM argument
 	FunctionArg(llvm::Argument *llvm_arg);
 
-	// Dump
-	void Dump(std::ostream &os);
-	friend std::ostream &operator<<(std::ostream &os, FunctionArg &arg)
-			{ arg.Dump(os); return os; }
+	/// Dump argument
+	void Dump(std::ostream &os = std::cout);
 
-	// Return a Southern Islands argument type from an LLVM type.
+	/// Alternative syntax for Dump()
+	friend std::ostream &operator<<(std::ostream &os, FunctionArg &arg)
+	{
+		arg.Dump(os);
+		return os;
+	}
+
+	/// Return a Southern Islands argument type from an LLVM type.
 	static SI::ArgDataType getDataType(llvm::Type *llvm_type);
 
-	/* Return the number of elements in a vector type, or 1 if the LLVM
-	 * type passed is not a vector type. */
+	/// Return the number of elements in a vector type, or 1 if the LLVM
+	/// type passed is not a vector type.
 	static int getNumElements(llvm::Type *llvm_type);
 };
 
@@ -97,17 +104,18 @@ class FunctionUAV
 	// Function where it belongs
 	Function *function;
 
-	/* UAV index in 'function->uav_list'. Uav10 has an index 0, uav11 has
-	 * index 1, etc. */
+	// UAV index in 'function->uav_list'. Uav10 has an index 0, uav11 has
+	// index 1, etc.
 	int index;
 
-	/* Base scalar register of a group of 4 assigned to the UAV. This
-	 * register identifier is a multiple of 4. */
+	// Base scalar register of a group of 4 assigned to the UAV. This
+	// register identifier is a multiple of 4.
 	int sreg;
 
 public:
 
-	// Getters
+	/// Return the base scalar register of a group of 4 representing the
+	/// UAV descriptor.
 	int getSReg() { return sreg; }
 };
 
@@ -136,8 +144,8 @@ class Function
 	// List of arguments
 	std::list<std::unique_ptr<FunctionArg>> arg_list;
 
-	/* Array of UAVs, starting at uav10. Each UAV is associated with one
-	 * function argument using a buffer in global memory. */
+	// Array of UAVs, starting at uav10. Each UAV is associated with one
+	// function argument using a buffer in global memory.
 	std::vector<std::unique_ptr<FunctionUAV>> uav_list;
 
 	// List of basic blocks belonging to the function
@@ -155,19 +163,19 @@ class Function
 	// Control tree
 	comm::Tree tree;
 
-	/* While code is generated, this variable keeps track of the total
-	 * amount of bytes pushed into the stack for this function. */
+	// While code is generated, this variable keeps track of the total
+	// amount of bytes pushed into the stack for this function.
 	unsigned int stack_size;
 
-	/* Add a UAV to the UAV list. This function allocates a series of 4
-	 * aligned scalar registers to the UAV, populating its 'index' and
-	 * 'sreg' fields. The UAV object will be freed automatically after
-	 * calling this function. Emit the code needed to load UAV into
-	 * 'function->basic_block_uavs' */
+	// Add a UAV to the UAV list. This function allocates a series of 4
+	// aligned scalar registers to the UAV, populating its 'index' and
+	// 'sreg' fields. The UAV object will be freed automatically after
+	// calling this function. Emit the code needed to load UAV into
+	// 'function->basic_block_uavs'
 	void AddUAV(FunctionUAV *uav);
 
-	/* Add argument 'arg' into the list of arguments of 'function', and
-	 * emit code to load it into 'function->basic_block_args'. */
+	// Add argument 'arg' into the list of arguments of 'function', and
+	// emit code to load it into 'function->basic_block_args'.
 	int AddArg(FunctionArg *arg, int num_elem, int offset);
 
 	void DumpData(std::ostream &os);
@@ -182,20 +190,34 @@ public:
 
 	int num_vregs;  // Vector
 
-	// Constructor
+	/// Constructor
+	///
+	/// \param llvm_function
+	///	Associated function in the LLVM code.
 	explicit Function(llvm::Function *llvm_function);
 
-	// Getters
+	/// Return the control tree associated with this function
 	comm::Tree *getTree() { return &tree; }
-	int getVRegGid() { return vreg_gid; }
-	int getVRegLid() { return vreg_lid; }
-	int getSRegGSize() { return sreg_gsize; }
-	FunctionUAV *getUAV(int index) { return index >= 0 && index <
-			(int) uav_list.size() ? uav_list[index].get() :
-			nullptr; }
 
-	// Dump
-	void Dump(std::ostream &os);
+	int getVRegGid() { return vreg_gid; }
+
+	int getVRegLid() { return vreg_lid; }
+
+	int getSRegGSize() { return sreg_gsize; }
+
+	/// Return a UAV object given its index, or null if there is not UAV
+	/// with that index.
+	FunctionUAV *getUAV(int index)
+	{
+		return index >= 0 && index < (int) uav_list.size() ?
+				uav_list[index].get() :
+				nullptr;
+	}
+
+	// Dump function
+	void Dump(std::ostream &os = std::cout);
+
+	/// Alternative syntax for Dump()
 	friend std::ostream &operator<<(std::ostream &os, Function &function)
 	{
 		function.Dump(os);
@@ -211,22 +233,22 @@ public:
 		return basic_blocks.back().get();
 	}
 
-	// Add symbol to symbol table
+	/// Add symbol to symbol table
 	void AddSymbol(Symbol *symbol) { symbol_table.AddSymbol(symbol); }
 
-	/* Generate initialization code for the function in basic block
-	 * 'basic_block_header'. */
+	/// Generate initialization code for the function in basic block
+	/// 'basic_block_header'.
 	void EmitHeader();
 
-	/* Emit code to load arguments into registers. The code will be emitted
-	 * in 'args_node'. UAVs will be created and loaded in 'uavs_node', as
-	 * they are needed by new arguments. */
+	/// Emit code to load arguments into registers. The code will be emitted
+	/// in 'args_node'. UAVs will be created and loaded in 'uavs_node', as
+	/// they are needed by new arguments.
 	void EmitArgs();
 
-	/* Emit code for the function body. The first basic block of the
-	 * function will be added at the end of 'basic_block', which should be
-	 * already part of the function. As the code emission progresses, new
-	 * basic blocks will be created. */
+	/// Emit code for the function body. The first basic block of the
+	/// function will be added at the end of 'basic_block', which should be
+	/// already part of the function. As the code emission progresses, new
+	/// basic blocks will be created.
 	void EmitBody();
 
 	/// Process all virtual Phi instructions and replace them by Move
@@ -234,84 +256,115 @@ public:
 	void EmitPhi();
 	void EmitPhiMoves(si2bin::Inst *inst);
 
-	/* Emit additional instructions managing active masks and active mask
-	 * stacks related with the function control flow. */
+	/// Emit additional instructions managing active masks and active mask
+	/// stacks related with the function control flow.
 	void EmitControlFlow();
 
-	/* Perform analysis on live variables inside the llvm function to allow for
-	 * memory efficient register allocation at a basic block level granularity
-	 *
-	 * Pseudo-code:
-	 *
-	 * Populate def and use bitmaps for each basic block
-	 *
-	 * For all basic blocks n: in[n] = out[n] = 0
-	 * worklist = all exit basic blocks
-	 *
-	 * while(worklist is not empty)
-	 * 	remove n from worklist
-	 * 	in[n] = ( out[n] - def[n] ) U use[n]
-	 *
-	 * 	for each predecessor n':
-	 * 		out[n'] = out[n'] U in[n]
-	 * 		if ( out[n'] changed )
-	 * 			add n' to worklist
-	 * */
+	/// Perform analysis on live variables inside the llvm function to allow
+	/// for memory efficient register allocation at a basic block level
+	/// granularity.
+	///
+	/// Pseudo-code:
+	///
+	/// Populate def and use bitmaps for each basic block
+	///
+	/// For all basic blocks n: in[n] = out[n] = 0
+	/// worklist = all exit basic blocks
+	///
+	/// while (worklist is not empty)
+	///	remove n from worklist
+	/// 	in[n] = ( out[n] - def[n] ) U use[n]
+	///
+	///	for each predecessor n':
+	///		out[n'] = out[n'] U in[n]
+	///		if ( out[n'] changed )
+	///			add n' to worklist
+	///
 	void LiveRegisterAnalysis();
 
-	/* Creates an interference graph populated by the register lifetimes seen
-	 * from conducting live register analysis. Uses this interference graph
-	 * to map and allocate registers to each pre-mapped register.
-	 *
-	 * Pseudo-code:
-	 *
-	 * n = number of registers available
-	 * b = bitmap specifying previously defined interfering registers' mappings
-	 * registerMap = T -> R
-	 * T = used temporaries
-	 * R = available registers
-	 *
-	 * for (temp (column) in interference graph) {
-	 * 	Bitmap b(n) // clear
-	 *
-	 * 	for (each row in the temp's column; row < column)
-	 * 		if (if vertex c -> r in int. graph is true)
-	 * 			b[registerMap[row]] = true
-	 *
-	 * 	iterate over b to find first 0 at index i
-	 * 	registerMap[column] = i;
-	 * }
-	 */
+	/// Creates an interference graph populated by the register lifetimes
+	/// seen from conducting live register analysis. Uses this interference
+	/// graph to map and allocate registers to each pre-mapped register.
+	///
+	/// Pseudo-code:
+	///
+	/// n = number of registers available
+	/// b = bitmap specifying previously defined interfering registers'
+	///	mappings
+	/// registerMap = T -> R
+	/// T = used temporaries
+	/// R = available registers
+	///
+	/// for (temp (column) in interference graph) {
+	///	Bitmap b(n) // clear
+	///
+	///	for (each row in the temp's column; row < column)
+	///		if (if vertex c -> r in int. graph is true)
+	///			b[registerMap[row]] = true
+	///
+	///	iterate over b to find first 0 at index i
+	///	registerMap[column] = i;
+	/// }
+	///
 	void LiveRegisterAllocation();
 
-	// Dumps the results of the live register analysis.
+	/// Dump the results of the live register analysis.
 	void LiveRegisterAnalysisBitmapDump();
 
-	/* Create a Southern Islands instruction argument from an LLVM value.
-	 * The type of argument created depends on the LLVM value as follows:
-	 *   - If the LLVM value is an integer constant, the Southern Islands
-	 *     argument will be of type integer literal.
-	 *   - If the LLVM value is an LLVM identifier, the Southern Islands
-	 *     argument will be the vector register associated with that symbol.
-	 *     In this case, the symbol is returned in argument 'symbol'.
-	 */
+	/// Create a Southern Islands instruction argument from an LLVM value.
+	/// The type of argument created depends on the LLVM value as follows:
+	///
+	/// - If the LLVM value is an integer constant, the Southern Islands
+	///   argument will be of type integer literal.
+	/// - If the LLVM value is an LLVM identifier, the Southern Islands
+	///   argument will be the vector register associated with that symbol.
+	///   In this case, the symbol is returned in argument 'symbol'.
+	///
 	si2bin::Arg *TranslateValue(llvm::Value *llvm_value, Symbol *&symbol);
-	si2bin::Arg *TranslateValue(llvm::Value *llvm_value) { Symbol *symbol;
-			return TranslateValue(llvm_value, symbol); }
 
-	/* Convert an argument of type literal (any variant) into a vector
-	 * register by emitting a 'v_mob_b32' instruction. The original argument
-	 * is consumed and make part of the new instruction, while a new
-	 * argument instance is returned containing the new vector register. If
-	 * the original argument was not a literal, it will be returned
-	 * directly, and no instruction is emitted. */
+	/// Alternative syntax for TranslateValue() where the \a symbol output
+	/// argument is omitted.
+	si2bin::Arg *TranslateValue(llvm::Value *llvm_value)
+	{
+		Symbol *symbol;
+		return TranslateValue(llvm_value, symbol);
+	}
+
+	/// Convert an argument of type literal (any variant) into a vector
+	/// register by emitting a 'v_mob_b32' instruction. The original
+	/// argument is consumed and make part of the new instruction, while a
+	/// new argument instance is returned containing the new vector
+	/// register. If the original argument was not a literal, it will be
+	/// returned directly, and no instruction is emitted.
 	si2bin::Arg *ConstToVReg(BasicBlock *basic_block, si2bin::Arg *arg);
 
-	/* Allocate 'count' scalar/vector registers where the first register
-	 * identifier is a multiple of 'align'. */
+	/// Allocate a scalar register
+	///
+	/// \param count
+	///	Number of contiguous scalar registers to allocate.
+	///
+	/// \param align
+	///	Alignment of the first scalar register in the group of allocated
+	///	registers.
+	///
+	/// \return
+	///	The function returns the first scalar register allocated in the
+	///	group.
 	int AllocSReg(int count = 1, int align = 1);
+	
+	/// Allocate a vector register
+	///
+	/// \param count
+	///	Number of contiguous vector registers to allocate.
+	///
+	/// \param align
+	///	Alignment of the first vector register in the group of allocated
+	///	registers.
+	///
+	/// \return
+	///	The function returns the first vector register allocated in the
+	///	group.
 	int AllocVReg(int count = 1, int align = 1);
-
 };
 
 }  // namespace llvm2si

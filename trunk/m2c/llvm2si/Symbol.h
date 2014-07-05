@@ -30,88 +30,135 @@
 namespace llvm2si
 {
 
-extern misc::StringMap symbol_type_map;
-enum SymbolType
-{
-	SymbolTypeInvalid = 0,
-	SymbolVectorRegister,
-	SymbolScalarRegister
-};
-
-
 class Symbol
 {
+public:
+
+	/// Symbol types
+	enum Type
+	{
+		TypeInvalid = 0,
+		TypeVectorRegister,
+		TypeScalarRegister
+	};
+
+	/// String map for Type
+	static const misc::StringMap TypeMap;
+
+
+private:
+
+	// FIXME
 	friend class SymbolTable;
 
+	// Symbol name
 	std::string name;
-	SymbolType type;
 
-	/* Register ID and number of registers */
+	// Symbol type
+	Type type;
+
+	// Register ID and number of registers
 	int reg;
-	int num_regs;
+	int num_regs = 1;
 
-	/* Flag indicating whether the symbol contains a global memory
-	 * address. */
-	bool address;
+	// Flag indicating whether the symbol contains a global memory
+	// address.
+	bool address = false;
 
 	/* If the symbol represents a global memory address (flag 'address'
 	 * is set to true), UAV identifier (0=uav10, 1=uav11, ...). */
-	int uav_index;
+	int uav_index = 0;
 
 public:
 
-	/* Constructor */
-	Symbol(const std::string &name, SymbolType type, int reg) :
-			name(name), type(type), reg(reg), num_regs(1),
-			address(false), uav_index(0) { }
-	Symbol(const std::string &name, SymbolType type, int low, int high) :
-			name(name), type(type), reg(low),
-			num_regs(high - low + 1), address(false),
-			uav_index(0) { }
+	/// Constructor specifying a single register
+	Symbol(const std::string &name, Type type, int reg) :
+			name(name),
+			type(type),
+			reg(reg)
+	{
+	}
 
-	/* Getters */
-	const std::string &getName() { return name; }
-	SymbolType getType() { return type; }
-	int getReg() { return reg; }
-	int getNumRegs() { return num_regs; }
-	bool isAddress() { return address; }
-	int getUAVIndex() { return uav_index; }
+	/// Constructor specifying a register range
+	Symbol(const std::string &name, Type type, int low, int high) :
+			name(name),
+			type(type),
+			reg(low),
+			num_regs(high - low + 1)
+	{
+	}
 
-	/* Dump */
-	void Dump(std::ostream &os);
-	friend std::ostream &operator<<(std::ostream &os, Symbol &symbol) {
-			symbol.Dump(os); return os; }
+	/// Return the symbol name
+	const std::string &getName() const { return name; }
 
-	/* Set the symbol type to an address to global memory and associate it
-	 * with a UAV as specified in 'uav_index' (0=uav10, 1=uav11, ...). */
-	void setUAVIndex(int uav_index) { address = true;
-			this->uav_index = uav_index; }
-	/* Set Symbol Type */
-	void setType(SymbolType type) { this->type = type; }
+	/// Return the symbol type
+	Type getType() const { return type; }
+
+	/// Return the register identifier associated with the symbol. This can
+	/// be a vector or scalar register, depending on the symbol type.
+	int getReg() const { return reg; }
+
+	/// Return the number of registers if the symbol contains a register
+	/// range.
+	int getNumRegs() const { return num_regs; }
+
+	/// Return true if the symbol represents a memory address
+	bool isAddress() const { return address; }
+
+	/// For memory address symbols, return the associated UAV index
+	int getUAVIndex() const { return uav_index; }
+
+	/// Dump the symbol
+	void Dump(std::ostream &os = std::cout) const;
+
+	/// Alternative syntax for Dump()
+	friend std::ostream &operator<<(std::ostream &os, const Symbol &symbol)
+	{
+		symbol.Dump(os);
+		return os;
+	}
+
+	/// Set the symbol type to an address to global memory and associate it
+	/// with a UAV as specified in \a uav_index (0 = uav10, 1 = uav11, ...).
+	void setUAVIndex(int uav_index)
+	{
+		address = true;
+		this->uav_index = uav_index;
+	}
+
+	/// Update the symbol type
+	void setType(Type type) { this->type = type; }
+
+	/// Update the register identifier associated with the symbol
 	void setReg(int reg) { this->reg = reg; }
 };
 
 
 class SymbolTable
 {
+	// Hash table of symbols
 	std::unordered_map<std::string, std::unique_ptr<Symbol>> table;
+
 public:
-	/* Create new symbol and add it to the list */
-	void AddSymbol(Symbol *symbol) {
+
+	// Create new symbol and add it to the list
+	void AddSymbol(Symbol *symbol)
+	{
 		std::unique_ptr<Symbol> symbol_ptr(symbol);
 		table[symbol_ptr->getName()] = std::move(symbol_ptr);
 	}
 
-	/* Look up symbol by name and return it, or return null if symbol is
-	 * not found. */
-	Symbol *Lookup(const std::string &name) {
+	// Look up symbol by name and return it, or return null if symbol is
+	// not found.
+	Symbol *Lookup(const std::string &name)
+	{
 		auto it = table.find(name);
 		return it == table.end() ? nullptr : it->second.get();
 	}
 };
 
 
-}  /* namespace llvm2si */
+}  // namespace llvm2si
 
 #endif
 

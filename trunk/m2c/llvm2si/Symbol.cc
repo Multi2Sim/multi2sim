@@ -22,33 +22,31 @@
 #include "Symbol.h"
 
 
-using namespace misc;
-
 namespace llvm2si
 {
 
-StringMap symbol_type_map =
+const misc::StringMap Symbol::TypeMap =
 {
-	{ "vreg", SymbolVectorRegister },
-	{ "sreg", SymbolScalarRegister }
+	{ "vreg", TypeVectorRegister },
+	{ "sreg", TypeScalarRegister }
 };
 
 
-void Symbol::Dump(std::ostream &os)
+void Symbol::Dump(std::ostream &os) const
 {
-	/* Basic info */
+	// Basic info
 	os << "name = '" << name << "', "
-			<< "type = " << symbol_type_map.MapValue(type)
+			<< "type = " << TypeMap[type]
 			<< ", reg = " << reg;
 
-	/* UAV index */
+	// UAV index
 	if (address)
 		os << ", uav" << uav_index + 10;
 	
-	/* End */
+	// End
 	os << '\n';
 }
 
 
-}  /* namespace llvm2si */
+}  // namespace llvm2si
 
