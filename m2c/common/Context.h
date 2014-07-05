@@ -35,18 +35,6 @@ class Context
 	// Source files obtained from command line
 	std::vector<std::string> source_files;
 
-	// Preprocessor output files (.clp)
-	std::vector<std::string> pre_files;
-
-	// LLVM intermediate files (.llvm)
-	std::vector<std::string> llvm_files;
-
-	// Assembly files (.s)
-	std::vector<std::string> asm_files;
-
-	// Binary files (.bin)
-	std::vector<std::string> bin_files;
-
 	// Macros defined in command line
 	std::vector<std::string> macros;
 
@@ -78,34 +66,24 @@ public:
 	/// .clp/.llvm/.s/.bin files with the same index.
 	void AddSourceFile(const std::string &path);
 
+	/// Return the number of source files
+	int getNumSourceFiles() const { return source_files.size(); }
+
+	/// Return the name of a registered source file.
+	///
+	/// \param index
+	///	Index of the registered source file.
+	///
+	/// \param extension
+	///	Optional argument indicating a replacement for the source file
+	///	extension. If none specified, the original source file is
+	///	returned.
+	std::string getSourceFile(int index, const std::string &extension = "");
+
 	/// Obtain list of source file
 	const std::vector<std::string> &getSourceFiles()
 	{
 		return source_files;
-	}
-
-	/// Obtain list of pre-processed files
-	const std::vector<std::string> &getPreFiles()
-	{
-		return pre_files;
-	}
-
-	/// Obtain list of LLVM files
-	const std::vector<std::string> &getLLVMFiles()
-	{
-		return llvm_files;
-	}
-
-	/// Obtain list of assembly files
-	const std::vector<std::string> &getAsmFiles()
-	{
-		return asm_files;
-	}
-
-	/// Obtain list of binary files
-	const std::vector<std::string> &getBinFiles()
-	{
-		return bin_files;
 	}
 };
 

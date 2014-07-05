@@ -74,26 +74,25 @@ void Context::AddSourceFile(const std::string &path)
 {
 	// Add it to the source file list
 	source_files.emplace_back(path);
-
-	// Derived names
-	std::string base_name = misc::getBaseName(path);
-	std::string pre_file = base_name + ".clp";
-	std::string llvm_file = base_name + ".llvm";
-	std::string asm_file = base_name + ".s";
-	std::string bin_file = base_name + ".bin";
-
-	// Add it to the rest of the lists
-	pre_files.emplace_back(pre_file);
-	llvm_files.emplace_back(llvm_file);
-	asm_files.emplace_back(asm_file);
-	bin_files.emplace_back(bin_file);
-
-	// Debug
 	debug << misc::fmt("[%s] Source file added\n", path.c_str());
-	debug << misc::fmt("\t[%s] Pre-processed file\n", pre_file.c_str());
-	debug << misc::fmt("\t[%s] LLVM file\n", llvm_file.c_str());
-	debug << misc::fmt("\t[%s] Assembly file\n", asm_file.c_str());
-	debug << misc::fmt("\t[%s] Binary file\n", bin_file.c_str());
+}
+	
+
+std::string Context::getSourceFile(int index, const std::string &extension)
+{
+	// Get source file
+	assert(misc::inRange((unsigned) index, 0, source_files.size() - 1));
+	std::string source_file = source_files[index];
+
+	// Transform name if an extension is given
+	if (!extension.empty())
+	{
+		source_file = misc::getBaseName(source_file);
+		source_file += extension;
+	}
+	
+	// Return name
+	return source_file;
 }
 
 

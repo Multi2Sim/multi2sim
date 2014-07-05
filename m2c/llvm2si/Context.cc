@@ -40,9 +40,10 @@ using namespace misc;
 namespace llvm2si
 {
 
-/* Global context */
-//Context context;
 std::unique_ptr<Context> Context::instance;
+
+bool Context::active;
+
 
 Context *Context::getInstance()
 {
@@ -98,6 +99,27 @@ void Context::Parse(const std::string &in, const std::string &out)
 		/* Dump code */
 		f << function;
 	}
+}
+
+
+void Context::RegisterOptions()
+{
+	// Get command line object
+	misc::CommandLine *command_line = misc::CommandLine::getInstance();
+
+	// Category
+	command_line->setCategory("Southern Islands back-end");
+
+	// Option --si2bin <file>
+	command_line->RegisterBool("--llvm2si", active,
+			"Interpret the source files as LLVM files (.llvm) and "
+			"translate them to Southern Islands assembly code "
+			"(.s) using the Southern Islands back-end.");
+}
+
+
+void Context::ProcessOptions()
+{
 }
 
 
