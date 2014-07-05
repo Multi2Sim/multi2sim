@@ -29,7 +29,6 @@
 #include <cstdlib>
 
 
-
 void si2bin_yyerror(const char *s)
 {
 	fprintf(stderr, "INPUT_FILE:%d: error: %s\n",
@@ -53,12 +52,12 @@ void si2bin_yyerror_fmt(const char *fmt, ...)
 
 
 
-using namespace misc;
-
 namespace si2bin
 {
 
 std::string MachineName = "tahiti";
+
+bool Context::active = false;
 
 
 
@@ -76,7 +75,7 @@ InstInfo::InstInfo(SI::InstInfo *info)
 	opcode = info->opcode;
 
 	// Create list of tokens from format string
-	StringTokenize(info->fmt_str, str_tokens, ", ");
+	misc::StringTokenize(info->fmt_str, str_tokens, ", ");
 	assert(str_tokens.size());
 	name = str_tokens[0];
 	for (unsigned i = 1; i < str_tokens.size(); i++)
@@ -86,7 +85,7 @@ InstInfo::InstInfo(SI::InstInfo *info)
 		TokenType type = (TokenType) token_type_map.MapStringCase(
 				str_tokens[i], error);
 		if (error)
-			panic("%s: invalid token string: %s",
+			misc::panic("%s: invalid token string: %s",
 					__FUNCTION__, str_tokens[i].c_str());
 
 		// Add token
@@ -166,7 +165,7 @@ void Context::Compile(const std::string &source_file, const std::string &output_
 	// Open source file
 	si2bin_yyin = fopen(source_file.c_str(), "r");
 	if (!si2bin_yyin)
-		fatal("%s: cannot open input file", source_file.c_str());
+		misc::fatal("%s: cannot open input file", source_file.c_str());
 
 	// Open output file
 	std::ofstream of(output_file);
@@ -194,25 +193,20 @@ void Context::RegisterOptions()
 	// Get command line object
 	misc::CommandLine *command_line = misc::CommandLine::getInstance();
 
+	// Category
+	command_line->setCategory("Southern Islands assembler");
+
 	// Option --si2bin <file>
-	command_line->RegisterString("--si2bin", source_file,
-			"Creates an AMD Southern Islands GPU compliant ELF "
-			"from the assembly file provided in <arg> using the "
-			"internal Southern Islands Assembler.");
+	command_line->RegisterBool("--si2bin", active,
+			"Interpret the source files as Southern Islands "
+			"assembly code (.s) and produce one final binary for "
+			"each input file (.bin) using the Southern Islands "
+			"assembler.");
 }
 
 
 void Context::ProcessOptions()
 {
-	// Run Southern Islands Assembler
-	if (!source_file.empty())
-	{
-		output_file = "output.bin";
-
-		Context *context = Context::getInstance();
-		context->Compile(source_file, output_file);
-		exit(0);
-	}
 }
 
 
