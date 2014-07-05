@@ -663,13 +663,13 @@ void Function::EmitIfThen(comm::AbstractNode *node)
 	comm::Node *then_node = node->getChildList().back();
 
 	// Make sure roles match
-	assert(if_node->getRole() == comm::NodeRoleIf);
-	assert(then_node->getRole() == comm::NodeRoleThen);
+	assert(if_node->getRole() == comm::Node::RoleIf);
+	assert(then_node->getRole() == comm::Node::RoleThen);
 
 	// Get basic blocks. 'If' node should be a leaf.
 	then_node = then_node->getLastLeaf();
-	assert(if_node->getKind() == comm::NodeKindLeaf);
-	assert(then_node->getKind() == comm::NodeKindLeaf);
+	assert(if_node->getKind() == comm::Node::KindLeaf);
+	assert(then_node->getKind() == comm::Node::KindLeaf);
 	comm::LeafNode *if_leaf_node = misc::cast<comm::LeafNode *>(if_node);
 	comm::LeafNode *then_leaf_node = misc::cast<comm::LeafNode *>(then_node);
 	BasicBlock *if_basic_block = misc::cast<BasicBlock *>(if_leaf_node->getBasicBlock());
@@ -739,16 +739,16 @@ void Function::EmitIfThenElse(comm::AbstractNode *node)
 	assert(it == node->getChildList().end());
 
 	// Make sure roles match
-	assert(if_node->getRole() == comm::NodeRoleIf);
-	assert(then_node->getRole() == comm::NodeRoleThen);
-	assert(else_node->getRole() == comm::NodeRoleElse);
+	assert(if_node->getRole() == comm::Node::RoleIf);
+	assert(then_node->getRole() == comm::Node::RoleThen);
+	assert(else_node->getRole() == comm::Node::RoleElse);
 
 	// Get basic blocks. 'If' node should be a leaf.
 	then_node = then_node->getLastLeaf();
 	else_node = else_node->getLastLeaf();
-	assert(if_node->getKind() == comm::NodeKindLeaf);
-	assert(then_node->getKind() == comm::NodeKindLeaf);
-	assert(else_node->getKind() == comm::NodeKindLeaf);
+	assert(if_node->getKind() == comm::Node::KindLeaf);
+	assert(then_node->getKind() == comm::Node::KindLeaf);
+	assert(else_node->getKind() == comm::Node::KindLeaf);
 	comm::LeafNode *if_leaf_node = dynamic_cast<comm::LeafNode *>(if_node);
 	comm::LeafNode *then_leaf_node = dynamic_cast<comm::LeafNode *>(then_node);
 	comm::LeafNode *else_leaf_node = dynamic_cast<comm::LeafNode *>(else_node);
@@ -843,10 +843,10 @@ void Function::EmitWhileLoop(comm::AbstractNode *node)
 	assert(it == node->getChildList().end());
 
 	// Make sure roles match
-	assert(pre_node->getRole() == comm::NodeRolePre);
-	assert(head_node->getRole() == comm::NodeRoleHead);
-	assert(tail_node->getRole() == comm::NodeRoleTail);
-	assert(exit_node->getRole() == comm::NodeRoleExit);
+	assert(pre_node->getRole() == comm::Node::RolePre);
+	assert(head_node->getRole() == comm::Node::RoleHead);
+	assert(tail_node->getRole() == comm::Node::RoleTail);
+	assert(exit_node->getRole() == comm::Node::RoleExit);
 
 	// Get basic blocks. Pre-header/head/exit nodes should be a leaves.
 	// Tail node can be an abstract node, which we need to track down to
@@ -858,10 +858,10 @@ void Function::EmitWhileLoop(comm::AbstractNode *node)
 	// contain no basic block yet.
 	//
 	tail_node = tail_node->getLastLeaf();
-	assert(pre_node->getKind() == comm::NodeKindLeaf);
-	assert(head_node->getKind() == comm::NodeKindLeaf);
-	assert(tail_node->getKind() == comm::NodeKindLeaf);
-	assert(exit_node->getKind() == comm::NodeKindLeaf);
+	assert(pre_node->getKind() == comm::Node::KindLeaf);
+	assert(head_node->getKind() == comm::Node::KindLeaf);
+	assert(tail_node->getKind() == comm::Node::KindLeaf);
+	assert(exit_node->getKind() == comm::Node::KindLeaf);
 	comm::LeafNode *pre_leaf_node = misc::cast<comm::LeafNode *>(pre_node);
 	comm::LeafNode *head_leaf_node = misc::cast<comm::LeafNode *>(head_node);
 	comm::LeafNode *tail_leaf_node = misc::cast<comm::LeafNode *>(tail_node);
@@ -1031,7 +1031,7 @@ void Function::LiveRegisterAnalysis()
 	for(auto &node : node_list)
 	{
 		// Skip abstract nodes
-		if (node->getKind() != comm::NodeKindLeaf)
+		if (node->getKind() != comm::Node::KindLeaf)
 			continue;
 
 		// Get node's basic block
@@ -1100,7 +1100,7 @@ void Function::LiveRegisterAnalysis()
 			llvm2si::BasicBlock *pred_basic_block;
 
 			// Skip abstract nodes
-			if (node->getKind() != comm::NodeKindLeaf)
+			if (node->getKind() != comm::Node::KindLeaf)
 				continue;
 
 			// Get node's basic block
@@ -1133,7 +1133,7 @@ void Function::LiveRegisterAnalysis()
 	for (auto &node : node_list)
 	{
 		// Skip abstract nodes
-		if (node->getKind() != comm::NodeKindLeaf)
+		if (node->getKind() != comm::Node::KindLeaf)
 			continue;
 
 		// Get node's basic block
@@ -1155,7 +1155,7 @@ void Function::LiveRegisterAnalysis()
 	for (auto &node : node_list)
 	{
 		// Skip abstract nodes
-		if (node->getKind() != comm::NodeKindLeaf)
+		if (node->getKind() != comm::Node::KindLeaf)
 			continue;
 
 		// Get node's basic block
@@ -1198,7 +1198,7 @@ void Function::LiveRegisterAllocation() {
 	for(auto &node : node_list)
 	{
 		// Skip abstract nodes
-		if (node->getKind() != comm::NodeKindLeaf)
+		if (node->getKind() != comm::Node::KindLeaf)
 			continue;
 
 		// Get node's basic block
@@ -1258,7 +1258,7 @@ void Function::LiveRegisterAnalysisBitmapDump() {
 	for (auto &node : node_list)
 	{
 		// Skip abstract nodes
-		if (node->getKind() != comm::NodeKindLeaf)
+		if (node->getKind() != comm::Node::KindLeaf)
 			continue;
 
 		// Get node's basic block
