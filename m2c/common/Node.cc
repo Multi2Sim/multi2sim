@@ -19,6 +19,7 @@
 
 #include <iostream>
 
+#include <lib/cpp/Error.h>
 #include <lib/cpp/Misc.h>
 #include <lib/cpp/String.h>
 
@@ -48,21 +49,21 @@ void LeafNode::Dump(std::ostream &os)
 // Class 'AbstractNode'
 //
 
-misc::StringMap abstract_node_region_map =
+const misc::StringMap AbstractNode::RegionMap =
 {
-	{ "block", AbstractNodeBlock },
-	{ "if_then", AbstractNodeIfThen },
-	{ "if_then_else", AbstractNodeIfThenElse },
-	{ "while_loop", AbstractNodeWhileLoop },
-	{ "loop", AbstractNodeLoop },
-	{ "proper_interval", AbstractNodeProperInterval },
-	{ "improper_interval", AbstractNodeImproperInterval },
-	{ "proper_outer_interval", AbstractNodeProperOuterInterval },
-	{ "improper_outer_interval", AbstractNodeImproperOuterInterval }
+	{ "block", RegionBlock },
+	{ "if_then", RegionIfThen },
+	{ "if_then_else", RegionIfThenElse },
+	{ "while_loop", RegionWhileLoop },
+	{ "loop", RegionLoop },
+	{ "proper_interval", RegionProperInterval },
+	{ "improper_interval", RegionImproperInterval },
+	{ "proper_outer_interval", RegionProperOuterInterval },
+	{ "improper_outer_interval", RegionImproperOuterInterval }
 };
 
 
-AbstractNode::AbstractNode(const std::string &name, AbstractNodeRegion region) :
+AbstractNode::AbstractNode(const std::string &name, Region region) :
 		Node(name, NodeKindAbstract),
 		region(region)
 {
@@ -341,8 +342,7 @@ void Node::InsertBefore(Node *before)
 	// Check parent
 	AbstractNode *parent = dynamic_cast<AbstractNode *>(before->parent);
 	if (!parent)
-		misc::panic("%s: node '%s' has no parent",
-				__FUNCTION__, before->name.c_str());
+		throw misc::Panic("Node has no parent: " + before->name);
 
 	// Insert in common parent
 	this->parent = parent;

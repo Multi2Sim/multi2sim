@@ -22,6 +22,7 @@
 #include <list>
 #include <sstream>
 
+#include <lib/cpp/Error.h>
 #include <lib/cpp/Misc.h>
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/Function.h>
@@ -198,11 +199,11 @@ void TreeConfig::Run()
 // Class 'Tree'
 //
 
-// Global variables
 misc::Debug Tree::debug;
+
 TreeConfig Tree::config;
 
-// Recursive DFS traversal for a node.
+
 int Tree::DFS(std::list<Node *> &postorder_list, Node *node, int time)
 {
 	node->color = 1;  // Gray
@@ -314,11 +315,11 @@ void Tree::FlattenBlock(AbstractNode *abs_node)
 	std::list<Node *> tmp_node_list;
 
 	// Get nodes
-	assert(!abs_node->parent);
-	assert(abs_node->region == AbstractNodeBlock);
-	assert(abs_node->child_list.size() == 2);
-	Node *in_node = abs_node->child_list.front();
-	Node *out_node = abs_node->child_list.back();
+	assert(abs_node->getParent() == nullptr);
+	assert(abs_node->getRegion() == AbstractNode::RegionBlock);
+	assert(abs_node->getNumChildren() == 2);
+	Node *in_node = abs_node->getFirstChild();
+	Node *out_node = abs_node->getLastChild();
 
 	// Remove existing connection between child nodes
 	in_node->Disconnect(out_node);
@@ -329,49 +330,48 @@ void Tree::FlattenBlock(AbstractNode *abs_node)
 
 	// Add elements of 'in_node' to 'tmp_node_list'
 	AbstractNode *abs_in_node = dynamic_cast<AbstractNode *>(in_node);
-	if (abs_in_node && abs_in_node->region == AbstractNodeBlock)
+	if (abs_in_node && abs_in_node->getRegion() ==
+			AbstractNode::RegionBlock)
 	{
 		// Save child nodes
-		for (auto &tmp_node : abs_in_node->child_list)
+		for (auto &tmp_node : abs_in_node->getChildList())
 			tmp_node_list.push_back(tmp_node);
 
 		// Remove from parent node and tree
-		Node::RemoveFromList(abs_node->child_list, in_node);
+		abs_node->RemoveChild(in_node);
 		Node::RemoveFromList(node_list, in_node);
 	}
 	else
 	{
 		// Save node and remove from children
 		tmp_node_list.push_back(in_node);
-		Node::RemoveFromList(abs_node->child_list, in_node);
+		abs_node->RemoveChild(in_node);
 	}
 
 	// Add elements of 'out_node' to 'tmp_node_list'
 	AbstractNode *abs_out_node = dynamic_cast<AbstractNode *>(out_node);
-	if (abs_out_node && abs_out_node->region == AbstractNodeBlock)
+	if (abs_out_node && abs_out_node->getRegion() ==
+			AbstractNode::RegionBlock)
 	{
 		// Save child nodes
-		for (auto &tmp_node : abs_out_node->child_list)
+		for (auto &tmp_node : abs_out_node->getChildList())
 			tmp_node_list.push_back(tmp_node);
 
 		// Remove from parent node and control tree
-		Node::RemoveFromList(abs_node->child_list, out_node);
+		abs_node->RemoveChild(out_node);
 		Node::RemoveFromList(node_list, out_node);
 	}
 	else
 	{
 		// Save node and remove from children
 		tmp_node_list.push_back(out_node);
-		Node::RemoveFromList(abs_node->child_list, out_node);
+		abs_node->RemoveChild(out_node);
 	}
 
 	// Adopt orphan nodes
-	assert(!abs_node->child_list.size());
+	assert(abs_node->getNumChildren() == 0);
 	for (auto &tmp_node : tmp_node_list)
-	{
-		abs_node->child_list.push_back(tmp_node);
-		tmp_node->parent = abs_node;
-	}
+		abs_node->AddChild(tmp_node);
 
 	// Debug
 	if (debug)
@@ -383,7 +383,8 @@ void Tree::FlattenBlock(AbstractNode *abs_node)
 }
 
 
-AbstractNode *Tree::Reduce(std::list<Node *> &list, AbstractNodeRegion region)
+AbstractNode *Tree::Reduce(std::list<Node *> &list,
+		AbstractNode::Region region)
 {
 #ifndef NDEBUG
 
@@ -396,18 +397,16 @@ AbstractNode *Tree::Reduce(std::list<Node *> &list, AbstractNodeRegion region)
 	for (auto &tmp_node : list)
 	{
 		if (!tmp_node->InList(node_list))
-			misc::panic("%s: node not in control tree",
-					__FUNCTION__);
-		if (tmp_node->parent)
-			misc::panic("%s: node has a parent already",
-					__FUNCTION__);
+			throw misc::Panic("Node not in control tree");
+		if (tmp_node->getParent())
+			throw misc::Panic("Node has a parent already");
 	}
 #endif
 
 	// Figure out a name for the new abstract node
 	assert(region);
 	std::string abs_node_name = misc::fmt("__%s_%d",
-			abstract_node_region_map.MapValue(region),
+			AbstractNode::RegionMap[region],
 			name_counter[region]);
 	name_counter[region]++;
 
@@ -418,9 +417,8 @@ AbstractNode *Tree::Reduce(std::list<Node *> &list, AbstractNodeRegion region)
 	// Debug
 	if (debug)
 	{
-		debug << "\nReducing " <<
-				abstract_node_region_map.MapValue(
-				region) << " region: ";
+		debug << misc::fmt("\nReducing %s region: ",
+				AbstractNode::RegionMap[region]);
 		Node::DumpList(list, debug);
 		debug << " -> '" << abs_node->name << "'\n";
 	}
@@ -429,7 +427,7 @@ AbstractNode *Tree::Reduce(std::list<Node *> &list, AbstractNodeRegion region)
 	// goes from the last node into the first. In this case, this edge
 	// should stay outside of the reduced region.
 	bool cyclic_block = false;
-	if (region == AbstractNodeBlock)
+	if (region == AbstractNode::RegionBlock)
 	{
 		Node *in_node = list.front();
 		Node *out_node = list.back();
@@ -500,13 +498,9 @@ AbstractNode *Tree::Reduce(std::list<Node *> &list, AbstractNodeRegion region)
 	}
 
 	// Add all nodes as child nodes of the new abstract node
-	assert(!abs_node->child_list.size());
+	assert(abs_node->getNumChildren() == 0);
 	for (auto &tmp_node : list)
-	{
-		assert(!tmp_node->parent);
-		tmp_node->parent = abs_node;
-		abs_node->child_list.push_back(tmp_node);
-	}
+		abs_node->AddChild(tmp_node);
 
 	// Special case for block regions: if a cyclic block was detected, now
 	// the cycle must be inserted as a self-loop in the abstract node.
@@ -521,7 +515,7 @@ AbstractNode *Tree::Reduce(std::list<Node *> &list, AbstractNodeRegion region)
 	// Special case for block regions: in order to avoid nested blocks,
 	// block regions are flattened when we detect that one block contains
 	// another.
-	if (region == AbstractNodeBlock)
+	if (region == AbstractNode::RegionBlock)
 	{
 		assert(list.size() == 2);
 		Node *in_node = list.front();
@@ -531,15 +525,17 @@ AbstractNode *Tree::Reduce(std::list<Node *> &list, AbstractNodeRegion region)
 		AbstractNode *abs_in_node = dynamic_cast<AbstractNode *>(in_node);
 		AbstractNode *abs_out_node = dynamic_cast<AbstractNode *>(out_node);
 		if ((abs_in_node &&
-				abs_in_node->region == AbstractNodeBlock) ||
+				abs_in_node->getRegion() ==
+					AbstractNode::RegionBlock) ||
 				(abs_out_node &&
-				abs_out_node->region == AbstractNodeBlock))
+				abs_out_node->getRegion() ==
+					AbstractNode::RegionBlock))
 			FlattenBlock(abs_node);
 	}
 
 	// Special case for while loops: a pre-header and exit blocks are added
 	// into the region.
-	if (region == AbstractNodeWhileLoop)
+	if (region == AbstractNode::RegionWhileLoop)
 	{
 		// Get original nodes
 		assert(list.size() == 2);
@@ -573,7 +569,7 @@ AbstractNode *Tree::Reduce(std::list<Node *> &list, AbstractNodeRegion region)
 }
 
 
-AbstractNodeRegion Tree::Region(Node *node, std::list<Node *> &list)
+AbstractNode::Region Tree::Region(Node *node, std::list<Node *> &list)
 {
 	// Reset output region
 	list.clear();
@@ -596,7 +592,7 @@ AbstractNodeRegion Tree::Region(Node *node, std::list<Node *> &list)
 		{
 			list.push_back(node);
 			list.push_back(succ_node);
-			return AbstractNodeBlock;
+			return AbstractNode::RegionBlock;
 		}
 	}
 
@@ -633,7 +629,7 @@ AbstractNodeRegion Tree::Region(Node *node, std::list<Node *> &list)
 			then_node->role = NodeRoleThen;
 
 			// Return region
-			return AbstractNodeIfThen;
+			return AbstractNode::RegionIfThen;
 		}
 	}
 
@@ -672,7 +668,7 @@ AbstractNodeRegion Tree::Region(Node *node, std::list<Node *> &list)
 			else_node->role = NodeRoleElse;
 
 			// Return region
-			return AbstractNodeIfThenElse;
+			return AbstractNode::RegionIfThenElse;
 		}
 	}
 
@@ -680,7 +676,7 @@ AbstractNodeRegion Tree::Region(Node *node, std::list<Node *> &list)
 	if (node->InList(node->succ_list))
 	{
 		list.push_back(node);
-		return AbstractNodeLoop;
+		return AbstractNode::RegionLoop;
 	}
 
 
@@ -692,7 +688,7 @@ AbstractNodeRegion Tree::Region(Node *node, std::list<Node *> &list)
 	// Obtain the interval in 'list'
 	ReachUnder(node, list);
 	if (!list.size())
-		return AbstractNodeRegionInvalid;
+		return AbstractNode::RegionInvalid;
 	
 
 	// 1. While-loop
@@ -748,14 +744,14 @@ AbstractNodeRegion Tree::Region(Node *node, std::list<Node *> &list)
 					head_node->succ_list.back();
 
 			// Return region
-			return AbstractNodeWhileLoop;
+			return AbstractNode::RegionWhileLoop;
 		}
 	}
 
 	
 	// Nothing identified
 	list.clear();
-	return AbstractNodeRegionInvalid;
+	return AbstractNode::RegionInvalid;
 }
 
 
@@ -767,7 +763,7 @@ void Tree::PreorderTraversal(Node *node, std::list<Node *> &list)
 	// Visit children
 	AbstractNode *abs_node = dynamic_cast<AbstractNode *>(node);
 	if (abs_node)
-		for (auto &child : abs_node->child_list)
+		for (auto &child : abs_node->getChildList())
 			PreorderTraversal(child, list);
 }
 
@@ -777,7 +773,7 @@ void Tree::PostorderTraversal(Node *node, std::list<Node *> &list)
 	// Visit children
 	AbstractNode *abs_node = dynamic_cast<AbstractNode *>(node);
 	if (abs_node)
-		for (auto &child : abs_node->child_list)
+		for (auto &child : abs_node->getChildList())
 			PreorderTraversal(child, list);
 
 	// Postorder visit
@@ -882,7 +878,7 @@ void Tree::StructuralAnalysis()
 		// Identify a region starting at 'node'. If a valid region is
 		// found, reduce it into a new abstract node and reconstruct
 		// DFS spanning tree.
-		AbstractNodeRegion region = Region(node, region_list);
+		AbstractNode::Region region = Region(node, region_list);
 		if (region)
 		{
 			// Reduce and reconstruct DFS
@@ -968,7 +964,7 @@ LeafNode *Tree::AddLlvmCFG(llvm::BasicBlock *llvm_basic_block)
 	// Create node
 	LeafNode *node = new LeafNode(llvm_basic_block->getName());
 	AddNode(node);
-	node->llvm_basic_block = llvm_basic_block;
+	node->setLLVMBasicBlock(llvm_basic_block);
 
 	// Get basic block terminator
 	llvm::TerminatorInst *terminator = llvm_basic_block->getTerminator();
@@ -1079,13 +1075,13 @@ void Tree::Write(misc::IniFile &f)
 		{
 			// Children
 			stream.str("");
-			Node::DumpList(abs_node->child_list, stream);
+			Node::DumpList(abs_node->getChildList(), stream);
 			f.WriteString(section, "Child", stream.str());
 
 			// Region
 			f.WriteString(section, "Region",
-					abstract_node_region_map.MapValue(
-					abs_node->region));
+					AbstractNode::RegionMap[
+					abs_node->getRegion()]);
 		}
 
 	}
@@ -1144,12 +1140,13 @@ void Tree::Read(misc::IniFile &f, const std::string &name)
 		{
 			// Read region
 			std::string region_str = f.ReadString(section, "Region");
-			AbstractNodeRegion region = (AbstractNodeRegion)
-					abstract_node_region_map.MapStringCase(
+			AbstractNode::Region region = (AbstractNode::Region)
+					AbstractNode::RegionMap.MapStringCase(
 					region_str);
 			if (!region)
-				misc::fatal("%s: %s: invalid or missing 'Region'",
-						path.c_str(), node_name.c_str());
+				misc::fatal("[%s] Invalid or missing region: "
+						"%s", path.c_str(),
+						node_name.c_str());
 
 			// Create node
 			node = new AbstractNode(node_name, region);
@@ -1185,13 +1182,7 @@ void Tree::Read(misc::IniFile &f, const std::string &name)
 			list_str = f.ReadString(section, "Child");
 			getNodeList(list, list_str);
 			for (auto &tmp_node : list)
-			{
-				tmp_node->parent = node.get();
-				if (tmp_node->InList(abs_node->child_list))
-					misc::fatal("%s.%s: duplicate child", name.c_str(),
-							node->name.c_str());
-				abs_node->child_list.push_back(tmp_node);
-			}
+				abs_node->AddChild(tmp_node);
 		}
 	}
 

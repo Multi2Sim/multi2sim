@@ -73,7 +73,7 @@ class Tree
 
 	// Counters used to assign names to new nodes. A different counter is
 	// used for each possible abstract node region.
-	unsigned int name_counter[AbstractNodeRegionCount];
+	unsigned int name_counter[AbstractNode::RegionCount];
 
 	// The main container for nodes is this linked list with smart pointers.
 	// When a node is removed from this list, it will be automatically
@@ -118,17 +118,20 @@ class Tree
 	// of the new abstract node. All incoming edges to any of the nodes in
 	// the list will point to 'node'. Likewise, all outgoing edges from any
 	// node in the list will come from 'this'.
-	AbstractNode *Reduce(std::list<Node *> &list, AbstractNodeRegion region);
+	AbstractNode *Reduce(std::list<Node *> &list,
+			AbstractNode::Region region);
 
 	// Identify a region, and return it in 'list'. The list
 	// 'list' must be empty when the function is called. If a valid block
 	// region is identified, the function returns true. Otherwise, it returns
 	// false and 'list' remains empty.
 	// List 'list' is an output list.
-	AbstractNodeRegion Region(Node *node, std::list<Node *> &list);
+	AbstractNode::Region Region(Node *node, std::list<Node *> &list);
 
-	// Tree traversal
+	// Tree traversal in pre-order
 	void PreorderTraversal(Node *node, std::list<Node *> &list);
+
+	// Tree traversal in post-order
 	void PostorderTraversal(Node *node, std::list<Node *> &list);
 
 	// Auxiliary function called by its public homonymous.

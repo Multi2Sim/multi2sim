@@ -48,15 +48,15 @@ class BasicBlock : public comm::BasicBlock
 	// List list of instructions forming the basic block.
 	std::list<std::unique_ptr<si2bin::Inst>> inst_list;
 
-	/* Comment stored temporarily in the basic block to be attached to the
-	 * next instruction added. */
+	// Comment stored temporarily in the basic block to be attached to the
+	// next instruction added.
 	std::string comment;
 
 	// Return the size in bytes of an LLVM type
 	static int getLlvmTypeSize(llvm::Type *llvm_type);
 
-	/* Return the size in bytes of the LLVM type pointed to by an
-	 * LLVM pointer. */
+	// Return the size in bytes of the LLVM type pointed to by an
+	// LLVM pointer.
 	static int getPointedLlvmTypeSize(llvm::Type *llvm_type);
 
 	// Emit instructions
@@ -105,17 +105,23 @@ public:
 		return inst_list;
 	}
 
-	// Dump
-	void Dump(std::ostream &os);
-	friend std::ostream &operator<<(std::ostream &os, BasicBlock &basic_block)
-			{ basic_block.Dump(os); return os; }
+	/// Dump basic block
+	void Dump(std::ostream &os = std::cout);
+
+	/// Alternative syntax for Dump()
+	friend std::ostream &operator<<(std::ostream &os,
+			BasicBlock &basic_block)
+	{
+		basic_block.Dump(os);
+		return os;
+	}
 
 	// Add one SI instruction to the 'inst_list' field of the basic block.
 	void AddInst(si2bin::Inst *inst);
 
-	/* Add a comment to a basic block. The comment will be attached to the
-	 * next instruction added to the block. If no other instruction is added
-	 * to the basic block, the comment won't have any effect. */
+	/// Add a comment to a basic block. The comment will be attached to the
+	/// next instruction added to the block. If no other instruction is
+	/// added to the basic block, the comment won't have any effect.
 	void AddComment(const std::string &comment) { this->comment = comment; }
 
 	/// Emit SI code for the LLVM basic block into field `inst_list`.
@@ -127,28 +133,29 @@ public:
 	std::list<std::unique_ptr<si2bin::Inst>>::iterator
 			getFirstControlFlowInst();
 
-	/* Perform analysis on live variables inside the llvm function to allow for
-	 * memory efficient register allocation at an instruction level granularity
-	 *
-	 * Pseudo-code:
-	 *
-	 * Populate def and use bitmaps for each instruction
-	 *
-	 * For all instructions n: in[n] = out[n] = 0
-	 * current = last instruction in basic block
-	 *
-	 * while(current is not null)
-	 * 	if (current is last in basic block)
-	 * 		out[current] = out[basic_block]
-	 * 	else
-	 * 		out[current] = in[successor]
-	 *
-	 * 	in[current] = ( out[current] - def[current] ) U use[current]
-	 *
-	 *	current = predecessor
-	 *
-	 *assert (in[first instruction] == in[basic_block])
-	 * */
+	/// Perform analysis on live variables inside the llvm function to allow
+	/// for memory efficient register allocation at an instruction level
+	/// granularity.
+	///
+	/// Pseudo-code:
+	///
+	/// Populate def and use bitmaps for each instruction
+	///
+	/// For all instructions n: in[n] = out[n] = 0
+	/// current = last instruction in basic block
+	///
+	/// while (current is not null)
+	/// 	if (current is last in basic block)
+	/// 		out[current] = out[basic_block]
+	/// 	else
+	///		out[current] = in[successor]
+	///
+	/// 	in[current] = ( out[current] - def[current] ) U use[current]
+	///
+	///	current = predecessor
+	///
+	/// assert (in[first instruction] == in[basic_block])
+	///
 	void LiveRegisterAnalysis();
 };
 
