@@ -498,7 +498,7 @@ void Wavefront::Execute()
 		}
 		else 
 		{
-			misc::fatal("%s: unimplemented LDS opcode", __FUNCTION__);
+			throw misc::Panic("Unimplemented LDS opcode");
 		}
 
 		// Execute the instruction
@@ -528,11 +528,17 @@ void Wavefront::Execute()
 
 		// Record access type
 		if (op >= 0 && op < 4)
+		{
 			vector_mem_read = true;
+		}
 		else if (op >= 4 && op < 8)
+		{
 			vector_mem_write = true;
-		else 
-			misc::fatal("%s: invalid mtbuf opcode", __FUNCTION__);
+		}
+		else
+		{
+			throw Emu::Error("Invalid MTBUF opcode");
+		}
 	
 		// Execute the instruction
 		for(auto i = work_items_begin; i != work_items_end; ++i)
@@ -575,8 +581,8 @@ void Wavefront::Execute()
 		}
 		else 
 		{
-			misc::fatal("%s: unsupported mubuf opcode (%d)", 
-				__FUNCTION__, op);
+			throw misc::Panic(misc::fmt("Unsupported MUBUF "
+					"opcode (%d)", op));
 		}
 	
 		// Execute the instruction
@@ -626,11 +632,9 @@ void Wavefront::Execute()
 	}
 
 	default:
-	{
-		misc::fatal("%s: instruction type not implemented (%d)", 
-			__FUNCTION__, format);
-		break;
-	}
+		
+		throw misc::Panic(misc::fmt("Unsupported instruction type (%d)",
+				format));
 
 	}
 

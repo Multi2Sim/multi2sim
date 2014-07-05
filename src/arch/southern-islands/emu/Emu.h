@@ -25,6 +25,9 @@
 #include <memory>
 
 #include <lib/cpp/Debug.h>
+#include <lib/cpp/Error.h>
+#include <memory/Memory.h>
+
 
 // Forward declarations
 namespace Driver
@@ -33,21 +36,15 @@ namespace Driver
 	class OpenGLSIDriver;
 }
 
-namespace mem
-{
-	class Memory;
-}
-
 namespace SI
 {
-	class Asm;
-	class NDRange;
-	class ShaderExport;
-	class WorkGroup;
-}
 
-namespace SI
-{
+// Forward declarations
+class Asm;
+class NDRange;
+class ShaderExport;
+class WorkGroup;
+
 /// UAV Table
 const unsigned EmuMaxNumUAVs = 16;
 const unsigned EmuUAVTableEntrySize = 32;
@@ -245,8 +242,6 @@ class Emu
 	::Driver::OpenGLSIDriver *opengl_driver;
 #endif
 
-	// Memory spaces
-
 	// Local to the GPU
 	std::unique_ptr<mem::Memory> video_mem;
 	unsigned video_mem_top;
@@ -286,22 +281,34 @@ class Emu
 
 public:
 
+	/// Exception for Southern Islands emulator
+	class Error : public misc::Error
+	{
+	public:
+
+		Error(const std::string &message) : misc::Error(message)
+		{
+			AppendPrefix("Southern Islands emulator");
+		}
+	};
+
 	/// Debugger for ISA traces
 	static misc::Debug debug;
 
 	/// Emulator configuration;
 	static EmuConfig config;
 
-	/// Get the only instance of the Southern Islands emulator. If the instance does not
-	/// exist yet, it will be created, and will remain allocated until the
-	/// end of the execution.
+	/// Get the only instance of the Southern Islands emulator. If the
+	/// instance does not exist yet, it will be created, and will remain
+	/// allocated until the end of the execution.
 	static Emu *getInstance();
 
 	/// Dump emulator state
 	void Dump(std::ostream &os) const;
 
 	/// Dump emulator state (equivalent to Dump())
-	friend std::ostream &operator<<(std::ostream &os, const Emu &emu) {
+	friend std::ostream &operator<<(std::ostream &os, const Emu &emu)
+	{
 		emu.Dump(os);
 		return os;
 	}
@@ -335,14 +342,16 @@ public:
 	void setWorkGroupCount(long long count) { work_group_count = count; }
 
 	/// Set OpenCL driver
-	void setDriverCL(::Driver::OpenCLSIDriver *opencl_driver) {
+	void setDriverCL(::Driver::OpenCLSIDriver *opencl_driver)
+	{
 		if (opencl_driver)
 			this->opencl_driver = opencl_driver;
 	}
 
 #ifdef HAVE_OPENGL
 	/// Set OpenGL driver
-	void setDriverGL(::Driver::OpenGLSIDriver *opengl_driver) {
+	void setDriverGL(::Driver::OpenGLSIDriver *opengl_driver)
+	{
 		this->opengl_driver = opengl_driver;
 	}
 #endif

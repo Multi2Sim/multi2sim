@@ -66,10 +66,8 @@ void NDRange::SetupSize(unsigned *global_size, unsigned *local_size,
 	{
 		this->local_size3[i] = local_size[i];
 		if (this->local_size3[i] < 1)
-		{
-			fatal("%s: local work size must be greater than 0",
-					__FUNCTION__);
-		}
+			throw Emu::Error("Local work size must be greater "
+					"than 0");
 	}
 	this->local_size = this->local_size3[0] * 
 		this->local_size3[1] * this->local_size3[2];
@@ -77,19 +75,17 @@ void NDRange::SetupSize(unsigned *global_size, unsigned *local_size,
 	// Check valid global/local sizes
 	if (this->global_size3[0] < 1 || this->global_size3[1] < 1
 			|| this->global_size3[2] < 1)
-		fatal("%s: invalid global size", __FUNCTION__);
+		throw Emu::Error("Invalid global size");
 	if (this->local_size3[0] < 1 || this->local_size3[1] < 1
 			|| this->local_size3[2] < 1)
-		fatal("%s: invalid local size", __FUNCTION__);
+		throw Emu::Error("Invalid local size");
 
 	// Check divisibility of global by local sizes
 	if ((this->global_size3[0] % this->local_size3[0])
-		|| (this->global_size3[1] % this->local_size3[1])
-		|| (this->global_size3[2] % this->local_size3[2]))
-	{
-		fatal("%s: global work sizes must be multiples of local sizes",
-				__FUNCTION__);
-	}
+			|| (this->global_size3[1] % this->local_size3[1])
+			|| (this->global_size3[2] % this->local_size3[2]))
+		throw Emu::Error("The global work size must be a multiple "
+				"of the local size");
 
 	// Calculate number of groups
 	for (int i = 0; i < 3; i++)
@@ -140,21 +136,23 @@ void NDRange::InitFromKernel(Kernel *kernel)
 	const char *text_buffer = si_enc->text_section->getBuffer();
 	unsigned text_size = si_enc->text_section->getSize();
 	if (!text_size)
-		fatal("%s: cannot load kernel code", __FUNCTION__);
+		throw Emu::Error("Cannot load kernel code");
 
 	// Set up instruction memory
 	SetupInstMem(text_buffer, text_size, 0);
 	
-	x86::Emu::opencl_debug << misc::fmt("\tcopying %d arguments from the kernel\n", 
-		kernel->getArgsCount());
-
 	// Copy kernel argument list to NDRange 
-	for( auto &arg : kernel->getArgs())
+	x86::Emu::opencl_debug << misc::fmt("\tcopying %d arguments from "
+			"the kernel\n", 
+			kernel->getArgsCount());
+	for (auto &arg : kernel->getArgs())
 		this->args.push_back(std::move(arg));
 }
 
-void NDRange::ConstantBufferWrite(int const_buffer_num, unsigned offset,
-	void *pvalue, unsigned size)
+void NDRange::ConstantBufferWrite(int const_buffer_num,
+		unsigned offset,
+		void *pvalue,
+		unsigned size)
 {
 	EmuBufferDesc buffer_desc;
 
@@ -170,20 +168,22 @@ void NDRange::ConstantBufferWrite(int const_buffer_num, unsigned offset,
 	}
 
 	unsigned addr = this->const_buf_table +
-		const_buffer_num*EmuConstBufTableEntrySize;
+		const_buffer_num * EmuConstBufTableEntrySize;
 
-	emu->getGlobalMem()->Read(addr, (unsigned)sizeof(EmuBufferDesc), 
-		(char *)&buffer_desc);
+	emu->getGlobalMem()->Read(addr, (unsigned) sizeof(EmuBufferDesc), 
+		(char *) &buffer_desc);
 
-	addr = (unsigned)buffer_desc.base_addr;
+	addr = buffer_desc.base_addr;
 	addr += offset;
 
 	// Write 
-	emu->getGlobalMem()->Write(addr, size, (const char *)pvalue);
+	emu->getGlobalMem()->Write(addr, size, (const char *) pvalue);
 }
 
-void NDRange::ConstantBufferRead(int const_buffer_num, unsigned offset,
-	void *pvalue, unsigned size)
+void NDRange::ConstantBufferRead(int const_buffer_num,
+		unsigned offset,
+		void *pvalue,
+		unsigned size)
 {
 	EmuBufferDesc buffer_desc;
 
@@ -201,14 +201,14 @@ void NDRange::ConstantBufferRead(int const_buffer_num, unsigned offset,
 	unsigned addr = this->const_buf_table +
 		const_buffer_num*EmuConstBufTableEntrySize;
 
-	emu->getGlobalMem()->Read(addr, (unsigned)sizeof(EmuBufferDesc), 
+	emu->getGlobalMem()->Read(addr, sizeof(EmuBufferDesc), 
 		(char *)&buffer_desc);
 
-	addr = (unsigned)buffer_desc.base_addr;
+	addr = buffer_desc.base_addr;
 	addr += offset;
 
 	// Read 
-	emu->getGlobalMem()->Read(addr, size, (char *)pvalue);
+	emu->getGlobalMem()->Read(addr, size, (char *) pvalue);
 
 }
 
