@@ -541,9 +541,9 @@ AbstractNode *Tree::Reduce(std::list<Node *> &list,
 		assert(list.size() == 2);
 		Node *head_node = list.front();
 		Node *tail_node = list.back();
-		assert(head_node->kind == NodeKindLeaf);
-		assert(head_node->role == NodeRoleHead);
-		assert(tail_node->role == NodeRoleTail);
+		assert(head_node->kind == Node::KindLeaf);
+		assert(head_node->role == Node::RoleHead);
+		assert(tail_node->role == Node::RoleTail);
 
 		// Create pre-header and exit nodes
 		std::string pre_name = abs_node->name + "_pre";
@@ -555,13 +555,13 @@ AbstractNode *Tree::Reduce(std::list<Node *> &list,
 		AddNode(pre_node);
 		pre_node->InsertBefore(head_node);
 		pre_node->Connect(head_node);
-		pre_node->role = NodeRolePre;
+		pre_node->role = Node::RolePre;
 
 		// Insert exit node into control tree
 		AddNode(exit_node);
 		exit_node->InsertAfter(tail_node);
 		head_node->Connect(exit_node);
-		exit_node->role = NodeRoleExit;
+		exit_node->role = Node::RoleExit;
 	}
 
 	// Return created abstract node
@@ -625,8 +625,8 @@ AbstractNode::Region Tree::Region(Node *node, std::list<Node *> &list)
 			list.push_back(then_node);
 
 			// Set node roles
-			node->role = NodeRoleIf;
-			then_node->role = NodeRoleThen;
+			node->role = Node::RoleIf;
+			then_node->role = Node::RoleThen;
 
 			// Return region
 			return AbstractNode::RegionIfThen;
@@ -663,9 +663,9 @@ AbstractNode::Region Tree::Region(Node *node, std::list<Node *> &list)
 			list.push_back(else_node);
 
 			// Assign roles
-			node->role = NodeRoleIf;
-			then_node->role = NodeRoleThen;
-			else_node->role = NodeRoleElse;
+			node->role = Node::RoleIf;
+			then_node->role = Node::RoleThen;
+			else_node->role = Node::RoleElse;
 
 			// Return region
 			return AbstractNode::RegionIfThenElse;
@@ -722,8 +722,8 @@ AbstractNode::Region Tree::Region(Node *node, std::list<Node *> &list)
 			list.push_back(tail_node);
 
 			// Set node roles
-			head_node->role = NodeRoleHead;
-			tail_node->role = NodeRoleTail;
+			head_node->role = Node::RoleHead;
+			tail_node->role = Node::RoleTail;
 
 			// Determine here whether the loop exists when the condition
 			// in its head node is evaluated to true or false - we need
@@ -1056,9 +1056,9 @@ void Tree::Write(misc::IniFile &f)
 					node->name.c_str());
 
 		// Dump node properties
-		if (node->kind == NodeKindAbstract)
+		if (node->kind == Node::KindAbstract)
 			f.WriteString(section, "Kind", "Abstract");
-		else if (node->kind == NodeKindLeaf)
+		else if (node->kind == Node::KindLeaf)
 			f.WriteString(section, "Kind", "Leaf");
 		else
 			misc::fatal("%s: unknown type of node '%s'", __FUNCTION__,
@@ -1124,15 +1124,15 @@ void Tree::Read(misc::IniFile &f, const std::string &name)
 		// Get node properties
 		std::string node_name = tokens[3];
 		std::string kind_str = f.ReadString(section, "Kind", "Leaf");
-		NodeKind kind = (NodeKind)
-				node_kind_map.MapStringCase(kind_str);
+		Node::Kind kind = (Node::Kind)
+				Node::KindMap.MapStringCase(kind_str);
 		if (!kind)
 			misc::fatal("%s: %s: invalid value for 'Kind'",
 					path.c_str(), section.c_str());
 
 		// Create node
 		Node *node;
-		if (kind == NodeKindLeaf)
+		if (kind == Node::KindLeaf)
 		{
 			node = new LeafNode(node_name);
 		}

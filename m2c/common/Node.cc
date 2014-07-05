@@ -64,7 +64,7 @@ const misc::StringMap AbstractNode::RegionMap =
 
 
 AbstractNode::AbstractNode(const std::string &name, Region region) :
-		Node(name, NodeKindAbstract),
+		Node(name, KindAbstract),
 		region(region)
 {
 }
@@ -120,22 +120,22 @@ void AbstractNode::Compare(Node *node)
 // Class 'Node'
 //
 
-misc::StringMap node_kind_map =
+const misc::StringMap Node::KindMap =
 {
-	{ "Leaf", NodeKindLeaf },
-	{ "Abstract", NodeKindAbstract }
+	{ "Leaf", KindLeaf },
+	{ "Abstract", KindAbstract }
 };
 
 
-misc::StringMap node_role_map =
+const misc::StringMap Node::RoleMap =
 {
-	{ "if", NodeRoleIf },
-	{ "then", NodeRoleThen },
-	{ "else", NodeRoleElse },
-	{ "head", NodeRoleHead },
-	{ "tail", NodeRoleTail },
-	{ "pre", NodeRolePre },
-	{ "exit", NodeRoleExit }
+	{ "if", RoleIf },
+	{ "then", RoleThen },
+	{ "else", RoleElse },
+	{ "head", RoleHead },
+	{ "tail", RoleTail },
+	{ "pre", RolePre },
+	{ "exit", RoleExit }
 };
 
 
@@ -177,10 +177,10 @@ void Node::Dump(std::ostream &os)
 
 	// Role
 	if (role)
-		os << " role=" << node_role_map.MapValue(role);
+		os << " role=" << RoleMap[role];
 
 	// Loop head nodes exit if false/true
-	if (role == NodeRoleHead)
+	if (role == RoleHead)
 	{
 		if (exit_if_false)
 			os << " exit_if_false";
@@ -376,7 +376,7 @@ Node *Node::getFirstLeaf()
 {
 	// Traverse syntax tree down
 	Node *node = this;
-	while (node->kind == NodeKindAbstract)
+	while (node->kind == KindAbstract)
 	{
 		auto child_list = dynamic_cast<AbstractNode *>(node)
 				->getChildList();
@@ -385,7 +385,7 @@ Node *Node::getFirstLeaf()
 	}
 
 	// Return leaf
-	assert(node->kind == NodeKindLeaf);
+	assert(node->kind == KindLeaf);
 	return node;
 }
 
@@ -394,7 +394,7 @@ Node *Node::getLastLeaf()
 {
 	// Traverse syntax tree down
 	Node *node = this;
-	while (node->kind == NodeKindAbstract)
+	while (node->kind == KindAbstract)
 	{
 		auto child_list = dynamic_cast<AbstractNode *>(node)
 				->getChildList();
@@ -403,7 +403,7 @@ Node *Node::getLastLeaf()
 	}
 
 	// Return leaf
-	assert(node->kind == NodeKindLeaf);
+	assert(node->kind == KindLeaf);
 	return node;
 }
 
