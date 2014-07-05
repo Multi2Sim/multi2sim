@@ -17,8 +17,7 @@ endif
 __top_builddir__bin_m2c_LINK = $(CXX) -o $@
 __top_builddir__bin_m2c_SOURCES = \
 	\
-	m2c.c \
-	m2c-cpp.cc \
+	m2c.cc \
 	\
 	Wrapper.cc \
 	Wrapper.h
@@ -35,8 +34,8 @@ LDADD = \
 	$(top_builddir)/m2c/si2bin/libsi2bin.a \
 	$(top_builddir)/m2c/common/libcommon.a \
 	$(top_builddir)/src/arch/fermi/asm/libasm.a \
-	$(top_builddir)/src/arch/common/libcommon.a \
 	$(top_builddir)/src/arch/southern-islands/asm/libasm.a \
+	$(top_builddir)/src/arch/common/libcommon.a \
 	$(top_builddir)/src/lib/class/libclass.a \
 	$(top_builddir)/src/lib/util/libutil.a \
 	$(top_builddir)/src/lib/cpp/libcpp.a \

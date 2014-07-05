@@ -84,19 +84,22 @@ public:
 	InstInfo *getNext() { return next; }
 	size_t getNumTokens() { return tokens.size(); }
 
-	const std::string &getTokenStr(size_t index) {
+	const std::string &getTokenStr(size_t index)
+	{
 		assert(index < tokens.size());
 		return str_tokens[index];
 	}
 
-	Token *getToken(size_t index) {
+	Token *getToken(size_t index)
+	{
 		assert(index < tokens.size());
 		return tokens[index].get();
 	}
 
 	/* Insert after another object of type InstInfo with the same name in
 	 * the main hash table. */
-	void InsertAfter(InstInfo *info) {
+	void InsertAfter(InstInfo *info)
+	{
 		assert(!info->next);
 		info->next = this;
 	}
@@ -106,6 +109,9 @@ public:
 
 class Context
 {
+	// True if the user activated the stand-alone Southern Islands assembler
+	static bool active;
+
 	// Input file, as set by user
 	static std::string source_file;
 
@@ -214,13 +220,20 @@ public:
 
 	void SymbolTableClear() { symbol_table.clear(); };
 	
-	void Compile(const std::string &source_file, const std::string &output_file);
+	/// Compile a Southern Islands assembly file (.s) into a kernel binary
+	/// file (.bin).
+	void Compile(const std::string &source_file,
+			const std::string &output_file);
 
 	/// Register command-line options
 	static void RegisterOptions();
 
 	/// Process command-line options
 	static void ProcessOptions();
+
+	/// Return whether the user activated the stand-alone Southern Islands
+	/// assembler.
+	static bool isActive() { return active; }
 };
 
 }  // namespace si2bin

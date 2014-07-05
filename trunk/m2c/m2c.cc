@@ -22,12 +22,13 @@
 
 #include <lib/cpp/CommandLine.h>
 #include <lib/cpp/Misc.h>
+#include <m2c/common/Context.h>
 #include <m2c/si2bin/Context.h>
 
 #include "Wrapper.h"
 
 
-void main_cpp(int argc, char **argv)
+int main(int argc, char **argv)
 {
 	// Read command line
 	misc::CommandLine *command_line = misc::CommandLine::getInstance();
@@ -36,44 +37,49 @@ void main_cpp(int argc, char **argv)
 
 	// Set help message
 	command_line->setHelp("Syntax:"
-			"\n\n"
-			"$ m2c [<options>] [<sources>]"
-			"\n\n"
-			"Multi2Sim's command line can take a program "
-			"executable <exe> as an argument, given as a binary "
-			"file in any of the supported CPU architectures, and "
-			"optionally followed by its arguments <args>. The "
-			"following list of command-line options can be used "
-			"for <options>:");
+		"\n\n"
+		"$ m2c [<options>] [<sources>]"
+		"\n\n"
+		"Multi2Sim's command line can take a program executable <exe> "
+		"as an argument, given as a binary file in any of the "
+		"supported CPU architectures, and optionally followed by its "
+		"arguments <args>. The following list of command-line options "
+		"can be used for <options>:");
 
 	
 	// Register command-line options
+	comm::Context::RegisterOptions();
 	si2bin::Context::RegisterOptions();
 
-	// Process command line. Return to C version of Multi2Sim if a
-	// command-line option was not recognized.
-	if (!command_line->Process(argc, argv, false))
-		return;
-
-	// Finish if C++ version of Multi2Sim is not activated
-	if (command_line->getUseC())
-		return;
-
 	// Process command line
+	command_line->Process(argc, argv);
+
+	// Process command line options
+	comm::Context::ProcessOptions();
 	si2bin::Context::ProcessOptions();
 
-	std::cerr << "; Multi2C C++\n";
-	std::cerr <<
-		"\n"
-		"* WARNING: The version of Multi2C released together with Multi2Sim *\n"
-		"* 4.2 is aimed to be a preliminary version of an open-source       *\n"
-		"* OpenCL compiler generating compatible binaries for real GPUs.    *\n"
-		"* Important features of OpenCL C are still missing or not fully    *\n"
-		"* supported. To request support or provide contributions, please   *\n"
-		"* email development@multi2sim.org.                                 *\n"
-		"\n";
+	// Rest of the arguments contain sources
+	comm::Context *context = comm::Context::getInstance();
+	for (int i = 0; i < command_line->getNumArguments(); i++)
+		context->AddSourceFile(command_line->getArgument(i));
+	
+	// Southern Islands assembler
+	if (si2bin::Context::isActive())
+	{
+		// List of files
+		si2bin::Context *si2bin_context = si2bin::Context::getInstance();
+		const std::vector<std::string> &source_files = context->getSourceFiles();
+		const std::vector<std::string> &bin_files = context->getSourceFiles();
+
+		// Compile
+		for (unsigned i = 0; i < source_files.size(); i++)
+			si2bin_context->Compile(source_files[i], bin_files[i]);
+
+		// Success
+		return 0;
+	}
 
 	// End
-	exit(0);
+	return 0;
 }
 

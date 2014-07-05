@@ -174,10 +174,41 @@ std::string getFullPath(const std::string &path, const std::string &cwd)
 }
 
 
-std::string getExtension(const std::string &filename)
+std::string getExtension(const std::string &path)
 {
-	return filename.substr(filename.find_last_of('.')+1);
+	// Get last '.' and '/'
+	size_t dot_index = path.find_last_of('.');
+	size_t slash_index = path.find_last_of('/');
 
+	// No '.' found
+	if (dot_index == std::string::npos)
+		return "";
+	
+	// Last '.' comes before last '/'
+	if (slash_index != std::string::npos && slash_index > dot_index)
+		return "";
+	
+	// Return extension
+	return path.substr(dot_index + 1);
+}
+
+
+std::string getBaseName(const std::string &path)
+{
+	// Get last '.' and '/'
+	size_t dot_index = path.find_last_of('.');
+	size_t slash_index = path.find_last_of('/');
+
+	// No '.' found
+	if (dot_index == std::string::npos)
+		return path;
+	
+	// Last '.' comes before last '/'
+	if (slash_index != std::string::npos && slash_index > dot_index)
+		return path;
+	
+	// Return base name
+	return path.substr(0, dot_index);
 }
 
 }  // namespace Misc
