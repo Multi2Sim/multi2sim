@@ -36,49 +36,52 @@ class BasicBlock;
 class Tree;
 
 
-/// Kind of control tree node. The node can be a leaf representing a basic block
-/// of the function, or an abstract node, representing a reduction of the control
-/// flow graph.
-enum NodeKind
-{
-	NodeKindInvalid,
-	NodeKindLeaf,
-	NodeKindAbstract
-};
-
-/// String map for NodeKind
-extern misc::StringMap node_kind_map;
-
-/// Role of an abstract node
-enum NodeRole
-{
-	NodeRoleInvalid,
-
-	NodeRoleIf,
-	NodeRoleThen,
-	NodeRoleElse,
-	NodeRoleHead,
-	NodeRoleTail,
-	NodeRolePre,  // Loop pre-header
-	NodeRoleExit,  // Loop exit
-
-	NodeRoleCount
-};
-
-/// String map for NodeRole
-extern misc::StringMap node_role_map;
-
-
 /// Node of the control tree
 class Node
 {
+public:
+
+	/// Kind of control tree node. The node can be a leaf representing a
+	/// basic block of the function, or an abstract node, representing a
+	/// reduction of the control flow graph.
+	enum Kind
+	{
+		KindInvalid,
+		KindLeaf,
+		KindAbstract
+	};
+
+	/// String map for Kind
+	static const misc::StringMap KindMap;
+
+	/// Role of a node as a child of an abstract node
+	enum NodeRole
+	{
+		NodeRoleInvalid,
+	
+		RoleIf,
+		RoleThen,
+		RoleElse,
+		RoleHead,
+		RoleTail,
+		RolePre,  // Loop pre-header
+		RoleExit,  // Loop exit
+	
+		RoleCount
+	};
+
+	/// String map for Role
+	static const misc::StringMap RoleMap;
+
+private:
+
 	friend class Tree;
 
 	// Name of the node
 	std::string name;
 
 	// Node kind (leaf or abstract)
-	NodeKind kind;
+	Kind kind;
 
 	// Control tree that the node belongs to
 	Tree *tree = nullptr;
@@ -132,7 +135,7 @@ class Node
 public:
 
 	/// Constructor
-	Node(const std::string &name, NodeKind kind) :
+	Node(const std::string &name, Kind kind) :
 			name(name),
 			kind(kind)
 	{
@@ -170,7 +173,7 @@ public:
 	const std::string &getName() const { return name; }
 
 	/// Return the node kind
-	NodeKind getKind() const { return kind; }
+	Kind getKind() const { return kind; }
 
 	/// Return the role of the node
 	NodeRole getRole() const { return role; }
@@ -298,8 +301,7 @@ public:
 	///	Name of the LLVM basic block that caused the creation of this
 	///	node. This will be a label assigned to the block when translated
 	///	to assembly code.
-	LeafNode(const std::string &name) :
-			Node(name, NodeKindLeaf)
+	LeafNode(const std::string &name) : Node(name, KindLeaf)
 	{
 	}
 
