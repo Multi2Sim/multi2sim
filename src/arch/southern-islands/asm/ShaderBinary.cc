@@ -21,14 +21,14 @@
 #include <lib/cpp/Misc.h>
 #include <lib/cpp/String.h>
 
+#include "Asm.h"
 #include "ShaderBinary.h"
 
-using namespace misc;
 
 namespace SI
 {
 
-StringMap EncDictInputTypeMap =
+misc::StringMap EncDictInputTypeMap =
 {
 	{ "generic attribute",                          OpenGLSiInputAttrib },
 	{ "primary color",                              OpenGLSiInputColor },
@@ -40,7 +40,7 @@ StringMap EncDictInputTypeMap =
 	{ "texture resource id",                        OpenGLSiInputTextureresourceid }
 };
 
-StringMap EncDictInputSwizzleTypeMap =
+misc::StringMap EncDictInputSwizzleTypeMap =
 {
 	{"x",                                           OpenGLSiSwizzleX },
 	{"y",                                           OpenGLSiSwizzleY },
@@ -50,7 +50,7 @@ StringMap EncDictInputSwizzleTypeMap =
 	{"1",                                           OpenGLSiSwizzle1 }
 };
 
-StringMap EncDictOutputTypeMap =
+misc::StringMap EncDictOutputTypeMap =
 {
 	{ "pos",                                        OpenGLSiOutputPos },
 	{ "point size",                                 OpenGLSiOutputPointsize },
@@ -68,7 +68,7 @@ StringMap EncDictOutputTypeMap =
 	{ "stream id",                                  OpenGLSiOutputStreamid}
 };
 
-StringMap EncDictSymbolDataTypeMap =
+misc::StringMap EncDictSymbolDataTypeMap =
 {
 	{ "VOID",                                       OpenGLSiSymbolDatatypeVoid },
 	{ "BOOL",                                       OpenGLSiSymbolDatatypeBool },
@@ -236,12 +236,12 @@ StringMap EncDictSymbolDataTypeMap =
 	{ "INTERFACE",                                  OpenGLSiSymbolDatatypeInterface }
 };
 
-StringMap EncDictSemanticInputTypeMap =
+misc::StringMap EncDictSemanticInputTypeMap =
 {
 	{ "generic",0 }
 };
 
-StringMap EncDictSemanticOutputTypeMap =
+misc::StringMap EncDictSemanticOutputTypeMap =
 {
 	{ "generic",0 },
 	{ "unknown 1",1 },
@@ -252,7 +252,7 @@ StringMap EncDictSemanticOutputTypeMap =
 	{ "unknown 6",6 }
 };
 
-StringMap EncDictUserElementsTypeMap = 
+misc::StringMap EncDictUserElementsTypeMap = 
 {
 	{"unknown 0", 0},
 	{"unknown 1", 1},
@@ -286,7 +286,7 @@ StringMap EncDictUserElementsTypeMap =
 	{"unknown 0", 29}
 };
 
-StringMap EncDictSymbolTypeMap =
+misc::StringMap EncDictSymbolTypeMap =
 {
 	{ "GLSL uniform",                               OpenGLSiSymbolUniform },
 	{ "GLSL bindable uniform",                      OpenGLSiSymbolBindableUniform },
@@ -368,17 +368,19 @@ StringMap EncDictSymbolTypeMap =
 	{ "input valid bits for sparse texture",        OpenGLSiSymbolAttribInputvalid }
 };
 
+
 OpenGLSiBinInput::OpenGLSiBinInput(const char *buffer)
 {
 	OpenGLSiBinInput *input_ptr = (OpenGLSiBinInput *)buffer;
 	type = input_ptr->type;
-	if (type < OpenGLSiInputAttrib || type > OpenGLSiInputTextureresourceid )
-		fatal("Invalid input type(%d)", type);
+	if (type < OpenGLSiInputAttrib || type > OpenGLSiInputTextureresourceid)
+		throw Asm::Error(misc::fmt("Invalid input type (%d)", type));
 	voffset = input_ptr->voffset;
 	poffset = input_ptr->poffset;
 	for (int i = 0; i < 4; ++i)
 		swizzles[i] = input_ptr->swizzles[i];
 }
+
 
 OpenGLSiBinOutput::OpenGLSiBinOutput(const char *buffer)
 {
@@ -386,22 +388,25 @@ OpenGLSiBinOutput::OpenGLSiBinOutput(const char *buffer)
 
 	type = output_ptr->type;
 	if (type < OpenGLSiOutputPos || type > OpenGLSiOutputStreamid )
-		fatal("Invalid output type(%d)", type);
+		throw Asm::Error(misc::fmt("Invalid output type (%d)", type));
 	voffset = output_ptr->voffset;
 	poffset = output_ptr->poffset;
 	data_type = output_ptr->data_type;
 	if (data_type < OpenGLSiSymbolDatatypeFirst || data_type > OpenGLSiSymbolDatatypeLast)
-		fatal("Invalid output datatype(%d)", data_type);
+		throw Asm::Error(misc::fmt("Invalid output datatype (%d)",
+				data_type));
 	// Make a copy of name
 	name = new char[strlen(output_ptr->name) + 1];
 	strcpy(this->name, output_ptr->name);
 }
+
 
 OpenGLSiBinOutput::~OpenGLSiBinOutput()
 {
 	// Free name
 	delete [] name;
 }
+
 
 OpenGLSiBinInfo::OpenGLSiBinInfo(const char *buffer)
 {
@@ -717,8 +722,10 @@ void OpenGLSiShaderBinaryCommon::DecodeInputs(ELFReader::Section *section)
 
 	// Calculate number of inputs based on section size and structure size
 	if (section->getSize() % sizeof(OpenGLSiBinInput))
-		fatal("Section size(%d) must be multiples of input structure(%d).", 
-			(unsigned)section->getSize(), (unsigned)sizeof(OpenGLSiBinInput));
+		throw Asm::Error(misc::fmt("Section size (%d) must be "
+				"multiples of input structure (%d).",
+				(int) section->getSize(),
+				(int) sizeof(OpenGLSiBinInput)));
 	else
 	{
 		int input_count = section->getSize() / sizeof(OpenGLSiBinInput);
@@ -747,8 +754,10 @@ void OpenGLSiShaderBinaryCommon::DecodeInfo(ELFReader::Section *section)
 
 	// Size must match
 	if (section->getSize() != sizeof(OpenGLSiBinInfo))
-		fatal("Section size(%d) != sizeof(OpenGLSiBinInfo)(%d)",
-			(unsigned)section->getSize(), (unsigned)sizeof(OpenGLSiBinInfo));
+		throw Asm::Error(misc::fmt("Section size (%d) != "
+				"sizeof(OpenGLSiBinInfo) (%d)",
+				(int) section->getSize(),
+				(int) sizeof(OpenGLSiBinInfo)));
 	else
 		info.reset(new OpenGLSiBinInfo(section->getBuffer()));
 }
@@ -759,8 +768,10 @@ void OpenGLSiShaderBinaryCommon::DecodeUsageInfo(ELFReader::Section *section)
 
 	// Size must match
 	if (section->getSize() != sizeof(OpenGLSiBinUsageinfo))
-		fatal("Section size(%d) != sizeof(OpenGLSiBinUsageinfo)(%d)",
-			(unsigned)section->getSize(), (unsigned)sizeof(OpenGLSiBinUsageinfo));
+		throw Asm::Error(misc::fmt("Section size (%d) != "
+				"sizeof(OpenGLSiBinUsageinfo) (%d)",
+				(int) section->getSize(),
+				(int) sizeof(OpenGLSiBinUsageinfo)));
 	else
 		usageinfo.reset(new OpenGLSiBinUsageinfo(section->getBuffer()));
 

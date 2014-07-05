@@ -206,8 +206,8 @@ void Inst::DumpOperand(std::ostream& os, int operand)
 	}
 	else if (operand <= 239)
 	{
-		misc::fatal("%s: operand code unused (%d)",
-				__FUNCTION__, operand);
+		throw Asm::Error(misc::fmt("Unused operand code (%d)",
+				operand));
 	}
 	else if (operand <= 255)
 	{

@@ -19,24 +19,24 @@
 
 #include <string>
 
+#include <lib/cpp/Error.h>
 #include <lib/cpp/Misc.h>
 
 #include "Arg.h"
+#include "Asm.h"
 
-
-using namespace misc;
 
 namespace SI
 {
 
-StringMap arg_dimension_map =
+misc::StringMap arg_dimension_map =
 {
 	{ "2D", 2 },
 	{ "3D", 3 }
 };
 
 
-StringMap arg_access_type_map =
+misc::StringMap arg_access_type_map =
 {
 	{ "RO", ArgAccessTypeReadOnly },
 	{ "WO", ArgAccessTypeWriteOnly },
@@ -44,7 +44,7 @@ StringMap arg_access_type_map =
 };
 
 
-StringMap arg_data_type_map =
+misc::StringMap arg_data_type_map =
 {
 	{ "i1", ArgDataTypeInt1 },
 	{ "i8", ArgDataTypeInt8 },
@@ -65,7 +65,7 @@ StringMap arg_data_type_map =
 };
 
 
-StringMap arg_scope_map =
+misc::StringMap arg_scope_map =
 {
 	{ "g", ArgScopeGlobal },
 	{ "p", ArgScopeEmuPrivate },
@@ -81,7 +81,7 @@ StringMap arg_scope_map =
 
 
 /* FIXME: Still need to figure out reflection for i1 and u1 */
-StringMap arg_reflection_map =
+misc::StringMap arg_reflection_map =
 {
 	{ "char", ArgDataTypeInt8 },
 	{ "short", ArgDataTypeInt16 },
@@ -134,9 +134,8 @@ int Arg::getDataSize(ArgDataType data_type)
 
 	default:
 
-		panic("%s: invalid data type (%d)",
-				__FUNCTION__, data_type);
-		return 0;
+		throw misc::Panic(misc::fmt("Invalid data type (%d)",
+				data_type));
 	}
 }
 
@@ -177,8 +176,11 @@ void ArgPointer::WriteInfo(ELFWriter::Buffer *buffer, unsigned int index,
 
 	/* Check for 16 byte alignment */
 	if (((constant_offset - offset) < 16) && index)
-		misc::fatal("16 byte alignment not maintained in argument: %s - Expected offset of %d or higher",
-				getName().c_str(), offset + 16);
+		throw Asm::Error(misc::fmt("16 byte alignment not maintained "
+				"in argument: %s - Expected offset of %d or "
+				"higher",
+				getName().c_str(),
+				offset + 16));
 
 	offset = constant_offset;
 
@@ -222,7 +224,8 @@ void ArgPointer::WriteReflection(ELFWriter::Buffer *buffer, unsigned int index)
 	}
 	else
 	{
-		misc::fatal("Invalid number of elements in argument: %s", getName().c_str());
+		throw Asm::Error("Invalid number of elements in argument " +
+				getName());
 	}
 
 	buffer->Write(line.c_str(), line.size());
@@ -255,8 +258,11 @@ void ArgValue::WriteInfo(ELFWriter::Buffer *buffer, unsigned int index,
 	
 	/* Check for 16 byte alignment */
 	if (((constant_offset - offset) < 16) && index)
-		misc::fatal("16 byte alignment not maintained in argument: %s - Expected offset of %d or higher",
-				getName().c_str(), offset + 16);
+		throw Asm::Error(misc::fmt("16 byte alignment not maintained "
+				"in argument: %s - Expected offset of %d or "
+				"higher",
+				getName().c_str(),
+				offset + 16));
 
 	offset = constant_offset;
 
@@ -295,12 +301,14 @@ void ArgValue::WriteReflection(ELFWriter::Buffer *buffer, unsigned int index)
 	}
 	else
 	{
-		misc::fatal("Invalid number of elements in argument: %s", getName().c_str());
+		throw Asm::Error("Invalid number of elements in argument "
+				+ getName());
 	}
 
 	buffer->Write(line.c_str(), line.size());
 
 }
+
 
 void ArgImage::Dump(std::ostream &os)
 {
@@ -310,37 +318,38 @@ void ArgImage::Dump(std::ostream &os)
 	os << ' ' << getName();
 }
 
+
 void ArgImage::WriteInfo(ELFWriter::Buffer *buffer, unsigned int index, 
 		unsigned int &offset, int *uav)
 {
-	// FIXME: an empty implementation to pass compilation
-	fatal("%s: Not Implemented!", __FUNCTION__);
+	throw misc::Panic("Not implemented");
 }
+
 
 void ArgImage::WriteReflection(ELFWriter::Buffer *buffer, unsigned int index)
 {
-	// FIXME: an empty implementation to pass compilation
-	fatal("%s: Not Implemented!", __FUNCTION__);
+	throw misc::Panic("Not implemented");
 }
+
 
 void ArgSampler::Dump(std::ostream &os)
 {
-	// FIXME: an empty implementation to pass compilation
-	fatal("%s: Not Implemented!", __FUNCTION__);
+	throw misc::Panic("Not implemented");
 }
+
 
 void ArgSampler::WriteInfo(ELFWriter::Buffer *buffer, unsigned int index, 
 		unsigned int &offset, int *uav)
 {
-	// FIXME: an empty implementation to pass compilation
-	fatal("%s: Not Implemented!", __FUNCTION__);
+	throw misc::Panic("Not implemented");
 }
+
 
 void ArgSampler::WriteReflection(ELFWriter::Buffer *buffer, unsigned int index)
 {
-	// FIXME: an empty implementation to pass compilation
-	fatal("%s: Not Implemented!", __FUNCTION__);
+	throw misc::Panic("Not implemented");
 }
+
 
 #if 0
 SIArg * SIArgCopy(SIArg *original)
