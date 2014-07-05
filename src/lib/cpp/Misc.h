@@ -158,13 +158,21 @@ std::string getFullPath(const std::string &path, const std::string &cwd = "");
 
 /// Returns the extension of a file name.
 /// 
-/// \param filename
-///	The filename with the extension 
+/// \param path
+///	The file name with the extension 
 ///
 /// \return
-/// 	The extension of the filename, or empty if \filename does not have 
+/// 	The extension of the filename, or empty if \a path does not have 
 /// 	an extension
-std::string getExtension(const std::string &filename);
+std::string getExtension(const std::string &path);
+
+
+/// Obtain a file name without its extension. If the file name has not
+/// extension, the same name is returned.
+///
+/// \param path
+///	The file name with an extension.
+std::string getBaseName(const std::string &path);
 
 
 
