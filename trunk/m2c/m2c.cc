@@ -23,6 +23,7 @@
 #include <lib/cpp/CommandLine.h>
 #include <lib/cpp/Misc.h>
 #include <m2c/common/Context.h>
+#include <m2c/llvm2si/Context.h>
 #include <m2c/si2bin/Context.h>
 
 #include "Wrapper.h"
@@ -49,6 +50,7 @@ int main(int argc, char **argv)
 	
 	// Register command-line options
 	comm::Context::RegisterOptions();
+	llvm2si::Context::RegisterOptions();
 	si2bin::Context::RegisterOptions();
 
 	// Process command line
@@ -56,6 +58,7 @@ int main(int argc, char **argv)
 
 	// Process command line options
 	comm::Context::ProcessOptions();
+	llvm2si::Context::ProcessOptions();
 	si2bin::Context::ProcessOptions();
 
 	// Rest of the arguments contain sources
@@ -66,14 +69,30 @@ int main(int argc, char **argv)
 	// Southern Islands assembler
 	if (si2bin::Context::isActive())
 	{
-		// List of files
+		// Compile all source files
 		si2bin::Context *si2bin_context = si2bin::Context::getInstance();
-		const std::vector<std::string> &source_files = context->getSourceFiles();
-		const std::vector<std::string> &bin_files = context->getSourceFiles();
+		for (int i = 0; i < context->getNumSourceFiles(); i++)
+		{
+			std::string in = context->getSourceFile(i);
+			std::string out = context->getSourceFile(i, ".bin");
+			si2bin_context->Compile(in, out);
+		}
 
-		// Compile
-		for (unsigned i = 0; i < source_files.size(); i++)
-			si2bin_context->Compile(source_files[i], bin_files[i]);
+		// Success
+		return 0;
+	}
+
+	// Southern Islands back-end
+	if (llvm2si::Context::isActive())
+	{
+		// Compile all source files
+		llvm2si::Context *llvm2si_context = llvm2si::Context::getInstance();
+		for (int i = 0; i < context->getNumSourceFiles(); i++)
+		{
+			std::string in = context->getSourceFile(i);
+			std::string out = context->getSourceFile(i, ".s");
+			llvm2si_context->Parse(in, out);
+		}
 
 		// Success
 		return 0;

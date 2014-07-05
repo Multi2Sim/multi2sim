@@ -29,22 +29,34 @@ namespace llvm2si
 
 class Context
 {
+	// Flag indicating whether the user activated the Southern Islands
+	// back-end
+	static bool active;
 
+	// Singleton instance
 	static std::unique_ptr<Context> instance;
 
 public:
 
-	/* Parse a file */
+	/// Parse one file
 	void Parse(const std::string &in, const std::string &out);
 
+	/// Get instance of singleton
 	static Context *getInstance();
+
+	/// Return whether the user activated the Southern Islands back-end
+	static bool isActive() { return active; }
+
+	/// Register command-line options
+	static void RegisterOptions();
+
+	/// Process command-line options
+	static void ProcessOptions();
 };
 
 
-/* Global variable */
-//extern Context context;
+}  // namespace llvm2si
 
-
-}  /* namespace llvm2si */
 
 #endif
+
