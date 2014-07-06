@@ -33,15 +33,15 @@
 namespace Kepler
 {
 
-Grid::Grid(cuda_function_t *function)
+Grid::Grid(CUfunction *function)
 {
 	/* Initialization */
 	this->emu = emu->getInstance();
 	id = emu->getGridSize();
 
-	inst_buffer = function->inst_bin;
-	inst_buffer_size = function->inst_bin_size;
-	gpr_count = function->num_gpr;
+	inst_buffer = function->getInstructionBuffer();
+	inst_buffer_size = function->getInstructionBinarySize();
+	gpr_count = function->getNumberofGPR();
 
 	state = GridStateInvalid;
 

@@ -21,9 +21,11 @@
 #include <arch/kepler/asm/Asm.h>
 #include <arch/kepler/emu/Grid.h>
 #include <lib/cpp/String.h>
+#include <lib/util/string.h>
 #include <memory/Memory.h>
 
 #include "Driver.h"
+#include "Function.h"
 
 
 namespace Kepler
@@ -192,7 +194,6 @@ int Driver::CallMemWrite(mem::Memory *memory, unsigned args_ptr)
 /// ...
 int Driver::CallLaunchKernel(mem::Memory *memory, unsigned args_ptr)
 {
-#if 0
 	Kepler::Emu *kpl_emu = Kepler::Emu::getInstance();
 	mem::Memory* const_mem = kpl_emu->getConstMem();
 
@@ -204,14 +205,6 @@ int Driver::CallLaunchKernel(mem::Memory *memory, unsigned args_ptr)
 	unsigned stream;
 	unsigned kernel_args;
 	unsigned extra;
-
-	struct cuda_function_t *function;
-	void *temp;
-	int i;
-	struct cuda_function_arg_t *arg;
-	unsigned arg_ptr;
-	int offset = 0x20;  // need to be changed?
-	Grid *grid;
 
 	// Read arguments
 	memory->Read(args_ptr, sizeof(unsigned), (char *) &function_id);
@@ -239,21 +232,26 @@ int Driver::CallLaunchKernel(mem::Memory *memory, unsigned args_ptr)
 	debug << misc::fmt("\tkernel_args = 0x%08x\n", kernel_args);
 
 	// Get function
-
-	temp = list_get(function_list, function_id);
-	function = (cuda_function_t*) temp;
+	CUfunction *function;
+	function = CUfunction::function_list[function_id];
 
 	// Set up arguments
-	for (i = 0; i < function->arg_count; ++i)
+	CUfunctionarg *arg;
+	unsigned arg_ptr;
+	unsigned temp;
+	int offset = 0x20;  // need to be changed?
+	for (int i = 0; i < function->getArgCount(); ++i)
 	{
-		arg = function->arg_array[i];
+		arg = function->getArgMember(i);
 		memory->Read(kernel_args + i * 4, sizeof(unsigned), (char *)&arg_ptr);
-		memory->Read(arg_ptr, sizeof(unsigned),(char *) &(arg->value));
-		const_mem->Write(offset, sizeof(unsigned),(char *) &(arg->value));
+		memory->Read(arg_ptr, sizeof(unsigned),(char *) &temp);
+		arg->setValue(temp);
+		const_mem->Write(offset, sizeof(unsigned),(char *) &temp);
 		offset += 0x4;
 	}
 
 	// Create grid
+	Grid *grid;
 	grid = new Grid(function);
 
 	// Set up grid
@@ -262,7 +260,6 @@ int Driver::CallLaunchKernel(mem::Memory *memory, unsigned args_ptr)
 
 	// Add to pending list
 	kpl_emu->PushPendingGrid(grid);
-#endif
 
 	// Return value
 	return 0;
@@ -281,7 +278,7 @@ int Driver::CallLaunchKernel(mem::Memory *memory, unsigned args_ptr)
 /// the return is always 0 on success
 int Driver::CallMemGetInfo(mem::Memory *memory, unsigned args_ptr)
 {
-	// Get emu instance and global memory
+	// Get Emu instance and global memory
 	Kepler::Emu *kpl_emu = Kepler::Emu::getInstance();
 
 	// Arguments
@@ -302,6 +299,53 @@ int Driver::CallMemGetInfo(mem::Memory *memory, unsigned args_ptr)
 
 	// Return
 	return 0;
+}
+
+
+/// ABI Call 'MemGetInfo'
+///
+/// param unsigned free;
+/// Returned free global memory in bytes.
+///
+/// param unsigned total
+/// Returned total global memory in bytes
+///
+/// return value
+/// the return is always 0 on success
+int Driver::CallModuleLoad(mem::Memory *memory, unsigned args_ptr)
+{
+	// Get kernel binary
+	char cubin_path[MAX_STRING_SIZE];
+	memory->Read(args_ptr, MAX_STRING_SIZE, cubin_path);
+
+	// Create module
+	CUmodule Module1(cubin_path);
+	return 0;
+}
+
+
+int Driver::CallModuleGetFunction(mem::Memory *memory, unsigned args_ptr)
+{	/*
+	// Arguments
+	unsigned module_id;
+	char func_name[MAX_STRING_SIZE];;
+
+	// Read Arguments
+	memory->Read(args_ptr, sizeof (unsigned), (char*) &module_id);
+	memory->Read(args_ptr, sizeof func_name, func_name);
+
+	// Debug Info
+	debug << misc::fmt("\tout: module_id=%u\n", module_id);
+
+	CUmodule *module;
+	// Get module
+	module = module_list(module_id);
+
+	// Create function
+	CUfunction function(module, func_name);  */
+
+	return 0;
+
 }
 
 }  // namespace Kepler

@@ -18,7 +18,7 @@
  */
 
 
-#include <driver/cuda/function.h>
+//#include <driver/cuda/function.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/bit-map.h>
 #include <lib/util/hash-table.h>
