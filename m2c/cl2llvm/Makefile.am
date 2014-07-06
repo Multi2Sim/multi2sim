@@ -5,11 +5,10 @@ AM_LFLAGS = -Pcl2llvm_yy -olex.yy.c
 
 lib_LIBRARIES = libcl2llvm.a
 
-if HAVE_FLEX_BISON_AND_LLVM
-
 BUILT_SOURCES = parser.h
 
 libcl2llvm_a_SOURCES = \
+	\
 	arg.h \
 	arg.c \
 	\
@@ -60,15 +59,6 @@ libcl2llvm_a_SOURCES = \
 
 AM_CFLAGS = $(LLVM_CFLAGS)
 AM_CXXFLAGS = $(LLVM_CXXFLAGS)
-
-else
-
-libcl2llvm_a_SOURCES = \
-	cl2llvm-missing.c \
-	cl2llvm.h
-
-endif
-
 AM_CPPFLAGS = @M2S_INCLUDES@
 
 
@@ -81,3 +71,4 @@ CFLAGS_NO_WERROR = `echo "$(CFLAGS)" | $(SED) "s/\-Werror\>//g"`
 parser.o: CFLAGS := $(CFLAGS_NO_WERROR)
 
 lex.o: CFLAGS := $(CFLAGS_NO_WERROR)
+

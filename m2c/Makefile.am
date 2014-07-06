@@ -7,12 +7,11 @@ SUBDIRS = \
 	llvm2si \
 	si2bin
 
-# The entire OpenCL compiler can only be built if g++ is installed on the
-# system. This is done with conditional compilation based on HAVE_CXX
-if HAVE_CXX
+# The entire Multi2C compiler is only built if libraries LLVM, Flex, and Bison
+# are present in the system.
+if HAVE_FLEX_BISON_AND_LLVM
 bin_PROGRAMS = $(top_builddir)/bin/m2c
 endif
-
 
 __top_builddir__bin_m2c_LINK = $(CXX) -o $@
 __top_builddir__bin_m2c_SOURCES = \
@@ -22,8 +21,6 @@ __top_builddir__bin_m2c_SOURCES = \
 	Wrapper.cc \
 	Wrapper.h
 
-
-AM_CPPFLAGS = @M2S_INCLUDES@
 
 LDADD = \
 	$(top_builddir)/m2c/amd/libamd.a \
@@ -41,12 +38,13 @@ LDADD = \
 	$(top_builddir)/src/lib/cpp/libcpp.a \
 	$(top_builddir)/src/lib/mhandle/libmhandle.a
 
-if ENABLE_DEBUG
-AM_LDFLAGS = -rdynamic
-endif
+# Reset flags
+AM_CPPFLAGS = @M2S_INCLUDES@ $(LLVM_CXXFLAGS)
+AM_LDFLAGS = ""
+LDADD += $(LLVM_LIBS) $(LLVM_LDFLAGS)
 
-if HAVE_LLVM
-AM_CFLAGS = $(LLVM_CFLAGS)
+if ENABLE_DEBUG
+AM_LDFLAGS += -rdynamic
 endif
 
 if HAVE_OPENCL
@@ -57,9 +55,5 @@ endif
 
 if HAVE_OPENGL
 LDADD += -lX11 -lGL 
-endif
-
-if HAVE_FLEX_BISON_AND_LLVM
-LDADD += $(LLVM_LIBS) $(LLVM_LDFLAGS)
 endif
 
