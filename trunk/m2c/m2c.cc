@@ -22,6 +22,7 @@
 
 #include <lib/cpp/CommandLine.h>
 #include <lib/cpp/Misc.h>
+#include <m2c/cl2llvm/Context.h>
 #include <m2c/common/Context.h>
 #include <m2c/llvm2si/Context.h>
 #include <m2c/si2bin/Context.h>
@@ -50,6 +51,7 @@ int main(int argc, char **argv)
 	
 	// Register command-line options
 	comm::Context::RegisterOptions();
+	cl2llvm::Context::RegisterOptions();
 	llvm2si::Context::RegisterOptions();
 	si2bin::Context::RegisterOptions();
 
@@ -58,6 +60,7 @@ int main(int argc, char **argv)
 
 	// Process command line options
 	comm::Context::ProcessOptions();
+	cl2llvm::Context::ProcessOptions();
 	llvm2si::Context::ProcessOptions();
 	si2bin::Context::ProcessOptions();
 
@@ -65,24 +68,21 @@ int main(int argc, char **argv)
 	comm::Context *context = comm::Context::getInstance();
 	for (int i = 0; i < command_line->getNumArguments(); i++)
 		context->AddSourceFile(command_line->getArgument(i));
-	
-	// Southern Islands assembler
-	if (si2bin::Context::isActive())
+
+	// Stand-alone OpenCL front-end
+	if (cl2llvm::Context::isActive())
 	{
 		// Compile all source files
-		si2bin::Context *si2bin_context = si2bin::Context::getInstance();
+		cl2llvm::Context *cl2llvm_context = cl2llvm::Context::getInstance();
 		for (int i = 0; i < context->getNumSourceFiles(); i++)
 		{
 			std::string in = context->getSourceFile(i);
-			std::string out = context->getSourceFile(i, ".bin");
-			si2bin_context->Compile(in, out);
+			std::string out = context->getSourceFile(i, ".llvm");
+			cl2llvm_context->Parse(in, out);
 		}
-
-		// Success
-		return 0;
 	}
-
-	// Southern Islands back-end
+	
+	// Stand-alone Southern Islands back-end
 	if (llvm2si::Context::isActive())
 	{
 		// Compile all source files
@@ -92,6 +92,22 @@ int main(int argc, char **argv)
 			std::string in = context->getSourceFile(i);
 			std::string out = context->getSourceFile(i, ".s");
 			llvm2si_context->Parse(in, out);
+		}
+
+		// Success
+		return 0;
+	}
+
+	// Stand-alone Southern Islands assembler
+	if (si2bin::Context::isActive())
+	{
+		// Compile all source files
+		si2bin::Context *si2bin_context = si2bin::Context::getInstance();
+		for (int i = 0; i < context->getNumSourceFiles(); i++)
+		{
+			std::string in = context->getSourceFile(i);
+			std::string out = context->getSourceFile(i, ".bin");
+			si2bin_context->Parse(in, out);
 		}
 
 		// Success

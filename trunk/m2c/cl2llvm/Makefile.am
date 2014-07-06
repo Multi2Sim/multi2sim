@@ -18,6 +18,9 @@ libcl2llvm_a_SOURCES = \
 	cl2llvm.c \
 	cl2llvm.h \
 	\
+	Context.cc \
+	Context.h \
+	\
 	declarator-list.h \
 	declarator-list.c \
 	\
@@ -53,6 +56,9 @@ libcl2llvm_a_SOURCES = \
 	\
 	while-blocks.c \
 	while-blocks.h \
+	\
+	Wrapper.c \
+	Wrapper.h \
 	\
 	lex.l \
 	parser.y

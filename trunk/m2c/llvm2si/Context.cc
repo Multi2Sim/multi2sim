@@ -110,7 +110,7 @@ void Context::RegisterOptions()
 	// Category
 	command_line->setCategory("Southern Islands back-end");
 
-	// Option --si2bin <file>
+	// Option to activate stand-alone Southern Islands back-end
 	command_line->RegisterBool("--llvm2si", active,
 			"Interpret the source files as LLVM files (.llvm) and "
 			"translate them to Southern Islands assembly code "

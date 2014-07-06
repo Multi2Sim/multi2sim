@@ -222,7 +222,7 @@ public:
 	
 	/// Compile a Southern Islands assembly file (.s) into a kernel binary
 	/// file (.bin).
-	void Compile(const std::string &source_file,
+	void Parse(const std::string &source_file,
 			const std::string &output_file);
 
 	/// Register command-line options

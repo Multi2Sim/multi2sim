@@ -160,15 +160,15 @@ Context *Context::getInstance()
 	return instance.get();
 }
 
-void Context::Compile(const std::string &source_file, const std::string &output_file)
+void Context::Parse(const std::string &in, const std::string &out)
 {
 	// Open source file
-	si2bin_yyin = fopen(source_file.c_str(), "r");
+	si2bin_yyin = fopen(in.c_str(), "r");
 	if (!si2bin_yyin)
-		misc::fatal("%s: cannot open input file", source_file.c_str());
+		misc::fatal("%s: cannot open input file", in.c_str());
 
 	// Open output file
-	std::ofstream of(output_file);
+	std::ofstream of(out);
 
 	// Create output buffer
 	this->outer_bin = new OuterBin();

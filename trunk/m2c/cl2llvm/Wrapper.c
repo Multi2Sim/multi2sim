@@ -1,6 +1,6 @@
 /*
  *  Multi2Sim
- *  Copyright (C) 2013  Rafael Ubal (ubal@ece.neu.edu)
+ *  Copyright (C) 2013  Chris Barton (barton.ch@husky.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -20,44 +20,30 @@
 #include <lib/mhandle/mhandle.h>
 
 #include "cl2llvm.h"
+#include "Wrapper.h"
 
 
-/*
- * Private Functions
- */
-
-static char *cl2llvm_err_note =
-	"\tThe OpenCL-to-LLVM front-end could not be compiled due to an unsatisfied\n"
-	"\tdependence with Flex/Bison or LLVM libraries. Please install these\n"
-	"\tlibraries and recompile.\n";
-
-static void cl2llvm_missing(void)
+struct Cl2llvmContext *Cl2llvmContextCreate()
 {
-	fatal("OpenCL-to-LLVM front-end not available.\n%s",
-			cl2llvm_err_note);
+	CLASS_REGISTER(Cl2llvm);
+	Cl2llvm *cl2llvm = new(Cl2llvm);
+	return (struct Cl2llvmContext *) cl2llvm;
 }
 
 
-
-
-/*
- * Public Functions
- */
-
-void Cl2llvmCreate(Cl2llvm *self)
+void Cl2llvmContextDestroy(struct Cl2llvmContext *context)
 {
+	Cl2llvm *cl2llvm = (Cl2llvm *) context;
+	delete(cl2llvm);
 }
 
 
-void Cl2llvmDestroy(Cl2llvm *self)
-{
-}
-
-
-void Cl2llvmCompile(Cl2llvm *self,
-		struct list_t *source_file_list,
-		struct list_t *llvm_file_list,
+void Cl2llvmContextParse(struct Cl2llvmContext *context,
+		const char *in,
+		const char *out,
 		int opt_level)
 {
-	cl2llvm_missing();
+	Cl2llvm *cl2llvm = (Cl2llvm *) context;
+	Cl2llvmParse(cl2llvm, in, out, opt_level);
 }
+
