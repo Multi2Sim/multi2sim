@@ -5,8 +5,6 @@ AM_LFLAGS = -Psi2bin_yy -olex.yy.c
 
 lib_LIBRARIES = libsi2bin.a
 
-if HAVE_FLEX_BISON
-
 # This rule is needed for Automake 1.12 and up. These versions generate a
 # file name Parser.hh instead of Parser.h. To make compilation work under any
 # version of Automake, we make sure that any .hh file is first converted into
@@ -58,18 +56,6 @@ LDADD = \
 	$(top_builddir)/src/arch/southern-islands/asm/libasm.a \
 	$(top_builddir)/src/lib/util/libutil.a \
 	$(top_builddir)/src/lib/mhandle/libmhandle.a
-
-else
-
-libsi2bin_a_SOURCES = \
-	\
-	ContextMissing.cc \
-	Context.h \
-	\
-	si2bin-missing.c \
-	si2bin.h
-
-endif
 
 AM_CPPFLAGS = @M2S_INCLUDES@
 

@@ -1,7 +1,5 @@
 lib_LIBRARIES = libcommon.a
 
-if HAVE_FLEX_BISON_AND_LLVM
-
 libcommon_a_SOURCES = \
 	\
 	basic-block.c \
@@ -30,12 +28,5 @@ libcommon_a_SOURCES = \
 
 AM_CFLAGS = $(LLVM_CFLAGS)
 AM_CXXFLAGS = $(LLVM_CXXFLAGS)
-
-else
-
-libcommon_a_SOURCES =
-
-endif
-
 AM_CPPFLAGS = @M2S_INCLUDES@
 

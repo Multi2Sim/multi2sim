@@ -1,7 +1,5 @@
 lib_LIBRARIES = libllvm2si.a
 
-if HAVE_FLEX_BISON_AND_LLVM
-
 libllvm2si_a_SOURCES = \
 	\
 	BasicBlock.cc \
@@ -27,14 +25,5 @@ libllvm2si_a_SOURCES = \
 
 AM_CFLAGS = $(LLVM_CFLAGS)
 AM_CXXFLAGS = $(LLVM_CXXFLAGS)
-
-else
-
-libllvm2si_a_SOURCES = \
-	llvm2si-missing.c \
-	llvm2si.h
-
-endif
-
 AM_CPPFLAGS = @M2S_INCLUDES@
 
