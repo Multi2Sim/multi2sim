@@ -1,5 +1,5 @@
 /*
- *  Multi2Sim
+F *  Multi2Sim
  *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -643,7 +643,9 @@ CUresult cuModuleLoad(CUmodule *module, const char *fname)
 
 	/* Syscall */
 	//ret = syscall(CUDA_SYS_CODE, cuda_call_cuModuleLoad, fname);
-	ret = 0;
+	unsigned args[1] = {(unsigned) &fname};
+	ret = ioctl(active_device->fd, cuda_call_MemGetInfo, args);
+	if(ret)
 	fatal("%s: not implemented", __FUNCTION__);
 
 	/* Check that we are running on Multi2Sim. If a program linked with this

@@ -27,7 +27,7 @@
 #include <vector>
 #include <memory/Memory.h>
 
-#include <driver/cuda/function.h>
+#include <arch/kepler/driver/Function.h>
 
 #include "Emu.h"
 #include "ThreadBlock.h"
@@ -94,7 +94,7 @@ class Grid
 
 public:
 	/// Constructor
-	Grid(cuda_function_t *function);
+	Grid(CUfunction *function);
 
 	/// Dump the state of the grid in a plain-text format into an output
 	/// stream.
