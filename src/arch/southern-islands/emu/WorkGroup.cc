@@ -312,14 +312,14 @@ WorkGroup::WorkGroup(NDRange *ndrange, unsigned id)
 			else if (user_element->dataClass ==
 				BinaryUserDataInternalGlobalTable)
 			{
-				fatal("%s: PTR_INTERNAL_GLOBAL_TABLE not "
-					"supported", __FUNCTION__);
+				throw misc::Panic("PTR_INTERNAL_GLOBAL_TABLE "
+						"not supported");
 			}
 			else
 			{
-				fatal("%s: Unimplemented User Element: "
-					"dataClass:%d", __FUNCTION__,
-					user_element->dataClass);
+				throw misc::Panic(misc::fmt("Unimplemented "
+						"user element: dataClass:%d",
+						user_element->dataClass));
 			}
 		}
 	}

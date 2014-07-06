@@ -545,7 +545,9 @@ void Inst::Decode(const char *buffer, unsigned eip)
 			break;
 
 		default:
-			misc::panic("%s: invalid prefix", __FUNCTION__);
+			
+			throw Asm::Error(misc::fmt("Invalid prefix (0x%x)",
+					(unsigned char) *buffer));
 
 		}
 

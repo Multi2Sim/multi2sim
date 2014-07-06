@@ -24,6 +24,7 @@
 
 #include <arch/common/Asm.h>
 #include <lib/cpp/CommandLine.h>
+#include <lib/cpp/Error.h>
 
 #include "Inst.h"
 
@@ -34,17 +35,8 @@ namespace x86
 
 class Asm : public comm::Asm
 {
-	//
-	// Configuration options
-	//
-
 	// Disassemble a file
 	static std::string path;
-
-
-	//
-	// Constants used in Inst.def
-	//
 
 	// For fields 'op1', 'op2', 'modrm', 'imm'
 	static const int SKIP = 0x0100;
@@ -86,6 +78,17 @@ class Asm : public comm::Asm
 	Asm();
 
 public:
+
+	/// Exception for the x86 disassembler
+	class Error : public misc::Error
+	{
+	public:
+		
+		Error(const std::string &message) : misc::Error(message)
+		{
+			AppendPrefix("x86 disassembler");
+		}
+	};
 
 	/// Register options in the command line
 	static void RegisterOptions();
