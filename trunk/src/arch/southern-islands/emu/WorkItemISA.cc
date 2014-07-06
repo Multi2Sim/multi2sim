@@ -5739,7 +5739,7 @@ void WorkItem::ISA_V_MAX3_I32_Impl(Inst *inst)
 	}
 	else
 	{
-		misc::fatal("%s: Max algorithm failed\n", __FUNCTION__);
+		throw misc::Panic("Max algorithm failed");
 	}
 
 	// Write the results.
@@ -5797,7 +5797,7 @@ void WorkItem::ISA_V_MED3_I32_Impl(Inst *inst)
 	}
 	else
 	{
-		misc::fatal("%s: Median algorithm failed\n", __FUNCTION__);
+		throw misc::Panic("Median algorithm failed");
 	}
 
 	// Write the results.
@@ -6370,12 +6370,12 @@ void WorkItem::ISA_DS_WRITE2_B32_Impl(Inst *inst)
 	if (addr0.as_uint > std::min(work_group->getNDRange()->getLocalMemTop(),
 		ReadSReg(SI_M0)))
 	{
-		misc::fatal("%s: invalid address\n", __FUNCTION__);
+		throw Emu::Error("Invalid local memory address");
 	}
 	if (addr1.as_uint > std::min(work_group->getNDRange()->getLocalMemTop(),
 		ReadSReg(SI_M0)))
 	{
-		misc::fatal("%s: invalid address\n", __FUNCTION__);
+		throw Emu::Error("Invalid local memory address");
 	}
 
 	// Write Dword.
@@ -6446,7 +6446,7 @@ void WorkItem::ISA_DS_WRITE_B32_Impl(Inst *inst)
 	if (addr.as_uint > std::min(work_group->getNDRange()->getLocalMemTop(), 
 		ReadSReg(SI_M0)))
 	{
-		misc::fatal("%s: invalid address\n", __FUNCTION__);
+		throw Emu::Error("Invalid local memory address");
 	}
 
 	// Global data store not supported
@@ -6995,10 +6995,7 @@ void WorkItem::ISA_BUFFER_LOAD_SBYTE_Impl(Inst *inst)
 	/* It wouldn't make sense to have a value for idxen without
 	 * having a stride */
 	if (idx_vgpr && !stride)
-	{
-		misc::fatal("%s: the buffer descriptor is probably not correct",
-			__FUNCTION__);
-	}
+		throw misc::Panic("The buffer descriptor is probably invalid");
 
 	unsigned addr = base + mem_offset + inst_offset + off_vgpr + 
 		stride * (idx_vgpr + id_in_wavefront);
@@ -7068,10 +7065,7 @@ void WorkItem::ISA_BUFFER_LOAD_DWORD_Impl(Inst *inst)
 	/* It wouldn't make sense to have a value for idxen without
 	 * having a stride */
 	if (idx_vgpr && !stride)
-	{
-		misc::fatal("%s: the buffer descriptor is probably not correct",
-			__FUNCTION__);
-	}
+		throw misc::Panic("Probably invalid buffer descriptor");
 
 	unsigned addr = base + mem_offset + inst_offset + off_vgpr + 
 		stride * (idx_vgpr + id_in_wavefront);
@@ -7145,10 +7139,7 @@ void WorkItem::ISA_BUFFER_STORE_BYTE_Impl(Inst *inst)
 	/* It wouldn't make sense to have a value for idxen without
 	 * having a stride */
 	if (idx_vgpr && !stride)
-	{
-		misc::fatal("%s: the buffer descriptor is probably not correct",
-			__FUNCTION__);
-	}
+		throw misc::Panic("Probably invalid buffer descriptor");
 
 	unsigned addr = base + mem_offset + inst_offset + off_vgpr + 
 		stride * (idx_vgpr + id_in_wavefront);
@@ -7223,10 +7214,7 @@ void WorkItem::ISA_BUFFER_STORE_DWORD_Impl(Inst *inst)
 	/* It wouldn't make sense to have a value for idxen without
 	 * having a stride */
 	if (idx_vgpr && !stride)
-	{
-		misc::fatal("%s: the buffer descriptor is probably not correct",
-			__FUNCTION__);
-	}
+		throw misc::Panic("Probably invalid buffer descriptor");
 
 	unsigned addr = base + mem_offset + inst_offset + off_vgpr + 
 		stride * (idx_vgpr + id_in_wavefront);
@@ -7305,10 +7293,7 @@ void WorkItem::ISA_BUFFER_ATOMIC_ADD_Impl(Inst *inst)
 	/* It wouldn't make sense to have a value for idxen without
 	 * having a stride */
 	if (idx_vgpr && !stride)
-	{
-		misc::fatal("%s: the buffer descriptor is probably not correct",
-			__FUNCTION__);
-	}
+		throw misc::Panic("Probably invalid buffer descriptor");
 
 	unsigned addr = base + mem_offset + inst_offset + off_vgpr + 
 		stride * (idx_vgpr + id_in_wavefront);
@@ -7397,10 +7382,7 @@ void WorkItem::ISA_TBUFFER_LOAD_FORMAT_X_Impl(Inst *inst)
 	/* It wouldn't make sense to have a value for idxen without
 	 * having a stride */
 	if (idx_vgpr && !stride)
-	{
-		misc::fatal("%s: the buffer descriptor is probably not correct",
-			__FUNCTION__);
-	}
+		throw misc::Panic("Probably invalid buffer descriptor");
 
 	// Calculate the address
 	// XXX Need to know when to enable id_in_wavefront
@@ -7480,10 +7462,7 @@ void WorkItem::ISA_TBUFFER_LOAD_FORMAT_XY_Impl(Inst *inst)
 	/* It wouldn't make sense to have a value for idxen without
 	 * having a stride */
 	if (idx_vgpr && !stride)
-	{
-		misc::fatal("%s: the buffer descriptor is probably not correct",
-			__FUNCTION__);
-	}
+		throw misc::Panic("Probably invalid buffer descriptor");
 
 	// Calculate the address
 	// XXX Need to know when to enable id_in_wavefront
@@ -7569,10 +7548,7 @@ void WorkItem::ISA_TBUFFER_LOAD_FORMAT_XYZW_Impl(Inst *inst)
 	/* It wouldn't make sense to have a value for idxen without
 	 * having a stride */
 	if (idx_vgpr && !stride)
-	{
-		misc::fatal("%s: the buffer descriptor is probably not correct",
-			__FUNCTION__);
-	}
+		throw misc::Panic("Probably invalid buffer descriptor");
 
 	// XXX Need to know when to enable id_in_wavefront
 	id_in_wavefront = buf_desc.add_tid_enable ?  id_in_wavefront : 0;
@@ -7649,10 +7625,7 @@ void WorkItem::ISA_TBUFFER_STORE_FORMAT_X_Impl(Inst *inst)
 	/* It wouldn't make sense to have a value for idxen without
 	 * having a stride */
 	if (idx_vgpr && !stride)
-	{
-		misc::fatal("%s: the buffer descriptor is probably not correct",
-			__FUNCTION__);
-	}
+		throw misc::Panic("Probably invalid buffer descriptor");
 
 	unsigned addr = base + mem_offset + inst_offset + off_vgpr + 
 		stride * (idx_vgpr + id_in_wavefront);
@@ -7722,10 +7695,7 @@ void WorkItem::ISA_TBUFFER_STORE_FORMAT_XY_Impl(Inst *inst)
 	/* It wouldn't make sense to have a value for idxen without
 	 * having a stride */
 	if (idx_vgpr && !stride)
-	{
-		misc::fatal("%s: the buffer descriptor is probably not correct",
-			__FUNCTION__);
-	}
+		throw misc::Panic("Probably invalid buffer descriptor");
 
 	unsigned addr = base + mem_offset + inst_offset + off_vgpr + 
 		stride * (idx_vgpr + id_in_wavefront);
@@ -7797,10 +7767,7 @@ void WorkItem::ISA_TBUFFER_STORE_FORMAT_XYZW_Impl(Inst *inst)
 	/* It wouldn't make sense to have a value for idxen without
 	 * having a stride */
 	if (idx_vgpr && !stride)
-	{
-		misc::fatal("%s: the buffer descriptor is probably not correct",
-			__FUNCTION__);
-	}
+		throw misc::Panic("Probably invalid buffer descriptor");
 
 	// Calculate the address
 	unsigned addr = base + mem_offset + inst_offset + off_vgpr + 
