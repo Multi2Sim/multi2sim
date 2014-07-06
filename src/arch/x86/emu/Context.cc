@@ -208,7 +208,7 @@ std::string Context::OpenProcSelfMaps()
 	char path[256];
 	strcpy(path, "/tmp/m2s.XXXXXX");
 	if ((fd = mkstemp(path)) == -1 || (f = fdopen(fd, "wt")) == NULL)
-		misc::fatal("ctx_gen_proc_self_maps: cannot create temporary file");
+		throw misc::Panic("Cannot create temporary file");
 
 	// Get the first page
 	unsigned end = 0;
@@ -259,7 +259,7 @@ std::string Context::OpenProcCPUInfo()
 	char path[256];
 	strcpy(path, "/tmp/m2s.XXXXXX");
 	if ((fd = mkstemp(path)) == -1 || (f = fdopen(fd, "wt")) == NULL)
-		misc::fatal("ctx_gen_proc_self_maps: cannot create temporary file");
+		throw misc::Panic("Cannot create temporary file");
 
 	for (int i = 0; i < x86_cpu_num_cores; i++)
 	{
@@ -367,14 +367,13 @@ void Context::Load(const std::vector<std::string> &args,
 {
 	// String in 'args' must contain at least one non-empty element
 	if (!args.size() || args[0].empty())
-		misc::panic("%s: function invoked with no program name, or with an "
-				"empty program.", __FUNCTION__);
+		throw misc::Panic("Function invoked with no program name, or "
+				"with an empty program.");
 
 	// Program must not have been loaded before
 	if (loader.get() || memory.get())
-		misc::panic("%s: program '%s' has already been loaded in a "
-				"previous call to this function.",
-				__FUNCTION__, args[0].c_str());
+		throw misc::Panic(misc::fmt("[%s] Program already loaded",
+				args[0].c_str()));
 	
 	// Create new memory image
 	assert(!memory.get());
@@ -550,8 +549,8 @@ void Context::HostThreadSuspend()
 		// Get file descriptor
 		comm::FileDescriptor *desc = file_table->getFileDescriptor(syscall_read_fd);
 		if (!desc)
-			misc::panic("%s: invalid file descriptor (%d)",
-					__FUNCTION__, syscall_read_fd);
+			throw misc::Panic(misc::fmt("Invalid file descriptor "
+					"(%d)", syscall_read_fd));
 
 		// Perform blocking host 'poll'
 		struct pollfd host_fds;
@@ -559,8 +558,7 @@ void Context::HostThreadSuspend()
 		host_fds.events = POLLIN;
 		int err = poll(&host_fds, 1, -1);
 		if (err < 0)
-			misc::panic("%s: unexpected error in host 'poll'",
-					__FUNCTION__);
+			throw misc::Panic("Unexpected error in host 'poll'");
 	}
 
 	// Suspended in system call 'write'
@@ -569,8 +567,8 @@ void Context::HostThreadSuspend()
 		// Get file descriptor
 		comm::FileDescriptor *desc = file_table->getFileDescriptor(syscall_write_fd);
 		if (!desc)
-			misc::panic("%s: invalid file descriptor (%d)",
-					__FUNCTION__, syscall_write_fd);
+			throw misc::Panic(misc::fmt("Invalid file descriptor "
+					"(%d)", syscall_write_fd));
 
 		// Perform blocking host 'poll'
 		struct pollfd host_fds;
@@ -578,8 +576,7 @@ void Context::HostThreadSuspend()
 		host_fds.events = POLLOUT;
 		int err = poll(&host_fds, 1, -1);
 		if (err < 0)
-			misc::panic("%s: unexpected error in host 'poll'",
-					__FUNCTION__);
+			throw misc::Panic("Unexpected error in host 'poll'");
 	}
 
 	// Suspended in system call 'poll'
@@ -588,8 +585,8 @@ void Context::HostThreadSuspend()
 		// Get file descriptor
 		comm::FileDescriptor *desc = file_table->getFileDescriptor(syscall_poll_fd);
 		if (!desc)
-			misc::panic("%s: invalid file descriptor (%d)",
-					__FUNCTION__, syscall_poll_fd);
+			throw misc::Panic(misc::fmt("Invalid file descriptor "
+					"(%d)", syscall_poll_fd));
 
 		// Calculate timeout for host call in milliseconds from now
 		int timeout;
@@ -607,8 +604,7 @@ void Context::HostThreadSuspend()
 				((syscall_poll_events & 1) ? POLLIN : 0);
 		int err = poll(&host_fds, 1, timeout);
 		if (err < 0)
-			misc::panic("%s: unexpected error in host 'poll'",
-					__FUNCTION__);
+			throw misc::Panic("Unexpected error in host 'poll'");
 	}
 
 	// Event occurred - thread finishes
@@ -624,8 +620,8 @@ void Context::HostThreadSuspendCancelUnsafe()
 	if (host_thread_suspend_active)
 	{
 		if (pthread_cancel(host_thread_suspend))
-			misc::fatal("%s: context %d: error canceling host thread",
-					__FUNCTION__, pid);
+			throw misc::Panic(misc::fmt("[Context %d] Error "
+					"canceling host thread", pid));
 		host_thread_suspend_active = false;
 	}
 	emu->ProcessEventsScheduleUnsafe();
@@ -697,8 +693,8 @@ void Context::HostThreadTimerCancelUnsafe()
 	if (!host_thread_timer_active)
 		return;
 	if (pthread_cancel(host_thread_timer))
-		misc::fatal("%s: context %d: error canceling host thread",
-				__FUNCTION__, pid);
+		throw misc::Panic(misc::fmt("[Context %d] Error canceling "
+				"host thread", pid));
 	host_thread_timer_active = false;
 	emu->ProcessEventsScheduleUnsafe();
 }
