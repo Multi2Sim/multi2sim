@@ -62,7 +62,7 @@ struct hash_table_t *cl2llvm_built_in_const_table;
 struct hash_table_t *cl2llvm_global_symbol_table;
 
 /* Current file being compiled */
-char *cl2llvm_file_name;
+const char *cl2llvm_file_name;
 
 /* Preprocessor file list */
 struct list_t *cl2llvm_preprcr_file_list;
@@ -241,4 +241,53 @@ void Cl2llvmCompile(Cl2llvm *self,
 		fclose(cl2llvm_yyin);
 		cl2llvm_erase_global_vars();
 	}
+}
+
+
+void Cl2llvmParse(Cl2llvm *self,
+		const char *in,
+		const char *out,
+		int opt_level)
+{
+	char *error = NULL;
+	const char *llvm_file_name;
+
+	/* Initialize */
+	cl2llvm_init_global_vars();
+
+	/* Open file */
+	cl2llvm_file_name = in;
+	cl2llvm_yyin = fopen(cl2llvm_file_name, "rb");
+	if (!cl2llvm_yyin)
+		fatal("%s: cannot open file", cl2llvm_file_name);
+
+	/* Compile */
+	cl2llvm_yyparse();
+		
+	/* Verify module and optimize */
+	LLVMVerifyModule(cl2llvm_module, LLVMAbortProcessAction, &error);
+	LLVMPassManagerRef pm = LLVMCreatePassManager();
+
+	switch (opt_level)
+	{
+	case 2:
+	case 1:
+		LLVMAddCFGSimplificationPass(pm);
+		LLVMAddPromoteMemoryToRegisterPass(pm);
+	case 0:
+		break;
+	default:
+		panic("invalid optimization level (%d)", opt_level);
+	}
+	LLVMRunPassManager(pm, cl2llvm_module);
+
+	/* Dump bit code */
+	llvm_file_name = out;
+	LLVMWriteBitcodeToFile(cl2llvm_module, llvm_file_name);
+	LLVMDisposePassManager(pm);
+	LLVMDisposeMessage(error);
+
+	/* Finalize */
+	fclose(cl2llvm_yyin);
+	cl2llvm_erase_global_vars();
 }

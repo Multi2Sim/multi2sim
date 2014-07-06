@@ -14,14 +14,8 @@ libllvm2si_a_SOURCES = \
 	InterferenceGraph.cc \
 	InterferenceGraph.h \
 	\
-	llvm2si.c \
-	llvm2si.h \
-	\
 	Symbol.cc \
-	Symbol.h \
-	\
-	Wrapper.cc \
-	Wrapper.h
+	Symbol.h
 
 AM_CFLAGS = $(LLVM_CFLAGS)
 AM_CXXFLAGS = $(LLVM_CXXFLAGS)

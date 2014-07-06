@@ -49,7 +49,7 @@ LDADD = \
 	\
 	$(top_builddir)/src/arch/hsa/driver/libdriver.a \
 	$(top_builddir)/src/arch/hsa/asm/libasm.a \
-	$(top_builddir)/src/arch/hsa/emu/libemu.a \		
+	$(top_builddir)/src/arch/hsa/emu/libemu.a \
 	\
 	$(top_builddir)/src/arch/kepler/driver/libdriver.a \
 	$(top_builddir)/src/arch/kepler/emu/libemu.a \
