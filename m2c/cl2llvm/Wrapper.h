@@ -17,21 +17,28 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef M2C_COMMON_WRAPPER_H
-#define M2C_COMMON_WRAPPER_H
+#ifndef M2C_CL2LLVM_WRAPPER_H
+#define M2C_CL2LLVM_WRAPPER_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void CommonTreeConfigSetPath(char *path);
-const char *CommonTreeConfigGetPath();
-void CommonTreeConfigRun();
-void CommonTreeDebugSetPath(char *path);
+
+struct Cl2llvmContext;
+
+struct Cl2llvmContext *Cl2llvmContextCreate();
+void Cl2llvmContextDestroy(struct Cl2llvmContext *context);
+
+void Cl2llvmContextParse(struct Cl2llvmContext *context,
+		const char *in,
+		const char *out,
+		int opt_level);
 
 #ifdef __cplusplus
-}
+}   // extern "C"
 #endif
+
 
 #endif
 

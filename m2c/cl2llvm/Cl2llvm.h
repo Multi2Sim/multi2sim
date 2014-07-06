@@ -67,6 +67,11 @@ CLASS_END(Cl2llvm)
 void Cl2llvmCreate(Cl2llvm *self);
 void Cl2llvmDestroy(Cl2llvm *self);
 
+void Cl2llvmParse(Cl2llvm *self,
+		const char *in,
+		const char *out,
+		int opt_level);
+	
 void Cl2llvmCompile(Cl2llvm *self,
 		struct list_t *source_file_list,
 		struct list_t *llvm_file_list,

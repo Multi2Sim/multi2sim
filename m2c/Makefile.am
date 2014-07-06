@@ -1,3 +1,7 @@
+# The entire Multi2C compiler is only built if libraries LLVM, Flex, and Bison
+# are present in the system.
+if HAVE_FLEX_BISON_AND_LLVM
+
 SUBDIRS = \
 	amd \
 	cl2llvm \
@@ -7,11 +11,7 @@ SUBDIRS = \
 	llvm2si \
 	si2bin
 
-# The entire Multi2C compiler is only built if libraries LLVM, Flex, and Bison
-# are present in the system.
-if HAVE_FLEX_BISON_AND_LLVM
 bin_PROGRAMS = $(top_builddir)/bin/m2c
-endif
 
 __top_builddir__bin_m2c_LINK = $(CXX) -o $@
 __top_builddir__bin_m2c_SOURCES = \
@@ -56,4 +56,7 @@ endif
 if HAVE_OPENGL
 LDADD += -lX11 -lGL 
 endif
+
+
+endif  # HAVE_FLEX_BISON_AND_LLVM
 

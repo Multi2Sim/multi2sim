@@ -11,7 +11,7 @@
 #include "parser.h"
 #include "cl2llvm.h"
 
-extern char *cl2llvm_file_name;
+extern const char *cl2llvm_file_name;
 extern struct list_t *cl2llvm_preprcr_file_list;
 
 int cl2llvm_col_num = 0;
@@ -442,7 +442,7 @@ TOK_TYPENAME		({TOK_TYPEDEF}[ ]+{TOK_INT})
 	yyset_lineno(extract_lineno(yytext));
 	cl2llvm_set_col_num(0);
 	cl2llvm_file_name = extract_file_name(yytext);
-	list_add(cl2llvm_preprcr_file_list, cl2llvm_file_name);
+	list_add(cl2llvm_preprcr_file_list, (char *) cl2llvm_file_name);
 }
 {EXTENSION} {
 	yyset_lineno(yyget_lineno() + 1);

@@ -2,15 +2,6 @@ lib_LIBRARIES = libcommon.a
 
 libcommon_a_SOURCES = \
 	\
-	basic-block.c \
-	basic-block.h \
-	\
-	node.c \
-	node.h \
-	\
-	ctree.c \
-	ctree.h \
-	\
 	BasicBlock.cc \
 	BasicBlock.h \
 	\
@@ -21,10 +12,7 @@ libcommon_a_SOURCES = \
 	Node.h \
 	\
 	Tree.cc \
-	Tree.h \
-	\
-	Wrapper.cc \
-	Wrapper.h
+	Tree.h
 
 AM_CFLAGS = $(LLVM_CFLAGS)
 AM_CXXFLAGS = $(LLVM_CXXFLAGS)

@@ -396,7 +396,6 @@ public:
 	/// Add a node as a child
 	void AddChild(Node *node)
 	{
-		assert(node->getParent() == nullptr);
 		child_list.push_back(node);
 		node->setParent(this);
 	}
@@ -405,6 +404,7 @@ public:
 	void RemoveChild(Node *node)
 	{
 		Node::RemoveFromList(child_list, node);
+		node->setParent(nullptr);
 	}
 	
 	/// Dump node
