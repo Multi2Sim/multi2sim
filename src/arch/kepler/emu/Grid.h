@@ -94,7 +94,7 @@ class Grid
 
 public:
 	/// Constructor
-	Grid(CUfunction *function);
+	Grid(Function *function);
 
 	/// Dump the state of the grid in a plain-text format into an output
 	/// stream.

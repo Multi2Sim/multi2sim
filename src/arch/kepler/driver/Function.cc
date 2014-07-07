@@ -18,13 +18,9 @@
  */
 
 #include <assert.h>
+#include <cstring>
 
-#include <lib/mhandle/mhandle.h>
-extern "C"
-{
-#include <lib/util/elf-format.h>
-#include <lib/util/list.h>
-}
+#include <lib/cpp/ELFReader.h>
 #include <lib/util/string.h>
 
 #include "Function.h"
@@ -34,9 +30,9 @@ extern "C"
 namespace Kepler
 {
 
-std::vector<CUfunction*> CUfunction::function_list;
+std::vector<Function*> Function::function_list;
 
-CUfunction::CUfunction(CUmodule *module, char *function_name)
+Function::Function(Module *module, char *function_name)
 {
 	// Initialization
 	this->id = function_list.size();
@@ -44,86 +40,101 @@ CUfunction::CUfunction(CUmodule *module, char *function_name)
 	this->module_id = module->getID();
 
 	// Get cubin
-	struct elf_file_t *cubin;
+	ELFReader::File *cubin;
 	cubin = module->getELF();
 
 	// Get .text.kernel_name section
-	struct elf_section_t *func_info_sec;
-	struct elf_section_t *func_text_sec;
-	struct elf_section_t *sec;
+	ELFReader::Section *function_text_section;
+	ELFReader::Section *sec;
 	char func_text_sec_name[MAX_STRING_SIZE];
 	snprintf(func_text_sec_name, sizeof func_text_sec_name, ".text.%s",
 			function_name);
+	std::string section_name (func_text_sec_name);
 	int i = 0;
-	for (i = 0; i < list_count(cubin->section_list); ++i)
+	for (i = 0; i < cubin->getNumSections(); ++i)
 	{
-		sec = (elf_section_t*)list_get(cubin->section_list, i);
-		if (!strncmp(sec->name, func_text_sec_name, strlen(func_text_sec_name)))
+		sec = cubin->getSection(i);
+		std::string name = sec->getName();
+		int flag = 0;
+		for(unsigned j = 0; j < section_name.length(); ++j)
 		{
-			func_text_sec = (elf_section_t*)list_get(cubin->section_list, i);
-			break;
+			if( name.at(j) != section_name.at(j) )
+			{
+				flag = 1;
+				break;
+			}
 		}
+
+		if(!flag)
+			function_text_section = cubin->getSection(i);
 	}
-	assert(i < list_count(cubin->section_list));
+	assert(i < cubin->getNumSections());
 
 	// Get instruction binary
-	this->inst_bin_size = func_text_sec->header->sh_size;
-	//this->inst_buffer = (unsigned long long *)xcalloc(1, this->inst_bin_size);  complier error!!!!
+	this->inst_bin_size = function_text_section->getEntSize();
 	this->inst_buffer= (unsigned long long *)new char[inst_bin_size];
-	unsigned char inst_bin_byte;
+	char *inst_bin_byte = new char [cubin->getSize()];
+	strcpy(inst_bin_byte, cubin->getBuffer());
 	for (i = 0; i < this->inst_bin_size; ++i)
 	{
-		elf_buffer_seek(&(cubin->buffer), func_text_sec->header->sh_offset + i);
-		elf_buffer_read(&(cubin->buffer), &inst_bin_byte, 1);
 		if (i % 8 == 0 || i % 8 == 1 || i % 8 == 2 || i % 8 == 3)
 		{
-			this->inst_buffer[i / 8] |= (unsigned long long int)(inst_bin_byte)
-					<< (i * 8 + 32);
+			this->inst_buffer[i / 8] |=
+						(unsigned long long int)(*(inst_bin_byte+i)) << (i * 8 + 32);
 		}
 		else
 		{
-			this->inst_buffer[i / 8] |= (unsigned long long int)(inst_bin_byte)
-					<< (i * 8 - 32);
+			this->inst_buffer[i / 8] |=
+						(unsigned long long int)(*(inst_bin_byte+i)) << (i * 8 - 32);
 		}
 	}
 
-	// Get GPR usage
-	this->num_gpr = func_text_sec->header->sh_info >> 24;
+	// Get GPR usage         !!!!!!!!!!!!  need to be done!!!!
+	//this->num_gpr = function_text_section->header->sh_info >> 24;
+	//this->num_gpr = function_text_section
 
 	// Get .nv.info.kernel_name section
-	//char *temp_name;
+	ELFReader::Section *function_info_section;
 	char func_info_sec_name[MAX_STRING_SIZE];
 	snprintf(func_info_sec_name, MAX_STRING_SIZE, ".nv.info.%s",
 			name.get());
-	for (i = 0; i < list_count(cubin->section_list); ++i)
+	for (i = 0; i < cubin->getNumSections(); ++i)
 	{
-		sec = (elf_section_t*)list_get(cubin->section_list, i);
-		if (!strncmp(sec->name, func_info_sec_name, strlen(func_info_sec_name)))
+		std::string name = sec->getName();
+		int flag = 0;
+		for(unsigned j = 0; j < section_name.length(); ++j)
 		{
-			func_info_sec = (elf_section_t*)list_get(cubin->section_list, i);
-			break;
+			if( name.at(j) != section_name.at(j) )
+			{
+				flag = 1;
+				break;
+			}
 		}
+
+		if(!flag)
+			function_info_section = cubin->getSection(i);
+
 	}
-	assert(i < list_count(cubin->section_list));
+	assert(i < cubin->getNumSections());
 
 	// Get the number of arguments
-	this->setArgCount(((unsigned char *)func_info_sec->buffer.ptr)[10] / 4);
+	this->setArgCount(((unsigned char *)
+				function_info_section->getBuffer())[10] / 4);
 
 	// Create arguments
-	//this->arg_array = (CUfunction**)xcalloc(this->arg_count, sizeof(CUfunctionarg*)); //???  Error::  invalid conversion from ‘void*’ to ‘Kepler::CUfunctionarg**’
-	this->arg_array = new CUfunctionarg* [this->arg_count];
+	this->arg_array = new Argument* [this->arg_count];
 	char arg_name[MAX_STRING_SIZE];
 	for (i = 0; i < this->getArgCount(); ++i)
 	{
 		snprintf(arg_name, MAX_STRING_SIZE, "arg_%d", i);
-		this->arg_array[i] = new CUfunctionarg(arg_name);
+		this->arg_array[i] = new Argument(arg_name);
 	}
 
 	// Add function to function list
 	function_list.push_back(this);
 }
 
-CUfunction::~CUfunction()
+Function::~Function()
 {
 	delete this->inst_buffer;
 	delete this->arg_array;

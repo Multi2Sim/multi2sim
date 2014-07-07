@@ -24,15 +24,8 @@
 namespace Kepler
 {
 
-CUfunctionarg::CUfunctionarg(char *name)
+Argument::Argument(char *name)
 {
-	//void* temp = xstrdup(name);
-	/*
-	 *  error: deprecated conversion from string constant to ‘char*’ [-Werror=write-strings]
- #define xstrdup(x) (__xstrdup((x), MHANDLE_AT))
-                                              ^
-Function-arg.cc:29:15: note: in expansion of macro ‘xstrdup’
-	 */
 	this->name.reset(name);
 }
 
