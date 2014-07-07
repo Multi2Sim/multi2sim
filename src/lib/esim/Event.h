@@ -51,6 +51,9 @@ class EventType
 	// Frequency domain
 	FrequencyDomain *frequency_domain;
 
+	// Current number of scheduled events of this type
+	int num_in_flight = 0;
+
 public:
 
 	/// Constructor
@@ -75,6 +78,17 @@ public:
 
 	/// Return the event handler for this event type
 	EventHandler getEventHandler() const { return handler; }
+
+	/// Returns whether or not there are currently any events of this type
+	/// scheduled.  An event type is not considered to be in flight any
+	/// more when the event handler for its last instance is being run.
+	bool isInFlight() const { return num_in_flight != 0; }
+
+	/// Increase the number of in-flight events of this type by one.
+	void IncrementInFlight() { num_in_flight++; }
+
+	/// Decrease the number of in-flight events of this type by one.
+	void DecrementInFlight() { num_in_flight--; }
 };
 
 
