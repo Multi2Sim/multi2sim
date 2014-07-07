@@ -232,11 +232,11 @@ int Driver::CallLaunchKernel(mem::Memory *memory, unsigned args_ptr)
 	debug << misc::fmt("\tkernel_args = 0x%08x\n", kernel_args);
 
 	// Get function
-	CUfunction *function;
-	function = CUfunction::function_list[function_id];
+	Function *function;
+	function = Function::function_list[function_id];
 
 	// Set up arguments
-	CUfunctionarg *arg;
+	Argument *arg;
 	unsigned arg_ptr;
 	unsigned temp;
 	int offset = 0x20;  // need to be changed?
@@ -302,7 +302,7 @@ int Driver::CallMemGetInfo(mem::Memory *memory, unsigned args_ptr)
 }
 
 
-/// ABI Call 'MemGetInfo'
+/// ABI Call 'ModuleLoad'
 ///
 /// param unsigned free;
 /// Returned free global memory in bytes.
@@ -319,7 +319,7 @@ int Driver::CallModuleLoad(mem::Memory *memory, unsigned args_ptr)
 	memory->Read(args_ptr, MAX_STRING_SIZE, cubin_path);
 
 	// Create module
-	CUmodule Module1(cubin_path);
+	Module Module1(cubin_path);
 	return 0;
 }
 

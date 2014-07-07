@@ -16,12 +16,6 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-extern "C"
-{
-#include <lib/mhandle/mhandle.h>
-#include <lib/util/elf-format.h>
-}
-
 #include "Module.h"
 
 
@@ -29,22 +23,22 @@ namespace Kepler
 {
 
 // Module List Definition
-std::vector<CUmodule*> CUmodule:: module_list;
+std::vector<Module*> Module:: module_list;
 
-CUmodule::CUmodule(char *cubin_path)
+Module::Module(const std::string cubin_path)
 {
 	// Initialization
 	id = module_list.size();
-	elf_file = elf_file_create_from_path(cubin_path);
+	//elf_file = elf_file_create_from_path(cubin_path);
+	elf_file = new ELFReader::File(cubin_path);
 
 	// Add module to list
 	module_list.push_back(this);
 }
 
-CUmodule::~CUmodule()
+Module::~Module()
 {
-	module_list.pop_back();
-	elf_file_free(elf_file);
+	delete elf_file;
 }
 
 } // namespace Kepler

@@ -30,7 +30,7 @@ d *  Multi2Sim
 namespace Kepler
 {
 
-class CUfunction
+class Function
 {
 	// ID
 	int id;
@@ -50,39 +50,39 @@ class CUfunction
 
 	// Arguments
 	int arg_count;
-	CUfunctionarg **arg_array;
+	Argument **arg_array;
 
 public:
 
 	/// Constructor
-	CUfunction(CUmodule *module, char *function_name);
+	Function(Module *module, char *function_name);
 
 	/// Destructor
-	~CUfunction();
+	~Function();
 
 	/// Static Function List
-	static std::vector<CUfunction*> function_list;
+	static std::vector<Function*> function_list;
 
 	/// Get Instruction binary
-	int getInstructionBinarySize()	{ return inst_bin_size; }
+	int getInstructionBinarySize() const { return inst_bin_size; }
 
 	/// Get Instruction buffer
-	unsigned long long* getInstructionBuffer()	{ return inst_buffer; }
+	unsigned long long* getInstructionBuffer() const { return inst_buffer; }
 
 	/// Get Number of GPRS
-	int getNumberofGPR()	{ return num_gpr; }
+	int getNumberofGPR() const { return num_gpr; }
 
 	/// Get Argument count
-	int getArgCount()	{ return arg_count; }
+	int getArgCount() const { return arg_count; }
 
 	/// Get Argument member
-	CUfunctionarg* getArgMember (int i)	{return arg_array[i];}
+	Argument* getArgMember (int i) const {return arg_array[i];}
 
 	/// Set Argument count
 	void setArgCount(int arg_count)	{ this->arg_count = arg_count; }
 
 	/// Set Argument member
-	void setArgMember (CUfunctionarg* arg, int index) { this->arg_array[index] = arg; }
+	void setArgMember (Argument* arg, int index) { this->arg_array[index] = arg; }
 };
 
 } // namespace Kepler

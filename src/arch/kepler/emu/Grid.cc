@@ -33,7 +33,7 @@
 namespace Kepler
 {
 
-Grid::Grid(CUfunction *function)
+Grid::Grid(Function *function)
 {
 	/* Initialization */
 	this->emu = emu->getInstance();
