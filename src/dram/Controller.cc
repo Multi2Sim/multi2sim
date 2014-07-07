@@ -262,8 +262,8 @@ void Controller::dump(std::ostream &os) const
 {
 	os << misc::fmt("Dumping Controller %d (%s)\n", id, name.c_str());
 	os << misc::fmt("%d requests in the incoming queue\n",
-			incoming_requests.size());
-	os << misc::fmt("%d Channels\nChannel dump:\n", channels.size());
+			(int) incoming_requests.size());
+	os << misc::fmt("%d Channels\nChannel dump:\n", (int) channels.size());
 
 	for (auto channel : channels)
 	{

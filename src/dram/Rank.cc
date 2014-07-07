@@ -50,7 +50,7 @@ Rank::Rank(int id,
 void Rank::dump(std::ostream &os) const
 {
 	os << misc::fmt("\t\tDumping Rank %d\n", id);
-	os << misc::fmt("\t\t%d Banks\n\t\tBank dump:\n", banks.size());
+	os << misc::fmt("\t\t%d Banks\n\t\tBank dump:\n", (int) banks.size());
 
 	for (auto bank : banks)
 	{

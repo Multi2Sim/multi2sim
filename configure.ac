@@ -118,7 +118,7 @@ fi
 
 debug=false
 CFLAGS="-msse2 -O3 -std=gnu99 -DNDEBUG"
-CXXFLAGS="-std=gnu++0x -O3 -DNDEBUG"
+CXXFLAGS="-msse2 -std=gnu++0x -O3 -DNDEBUG"
 AC_ARG_ENABLE(debug,
 [  --enable-debug    Turn on debugging],
 [
