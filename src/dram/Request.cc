@@ -18,7 +18,7 @@
  */
 
 #include "Request.h"
-#include "Dram.h"
+#include "System.h"
 
 
 namespace dram
@@ -39,7 +39,7 @@ void Request::setEncodedAddress(long long addr)
 
 void Request::DecodeAddress()
 {
-	Dram *dram = Dram::getInstance();
+	System *dram = System::getInstance();
 	dram->DecodeAddress(*address);
 }
 

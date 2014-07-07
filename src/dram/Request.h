@@ -44,7 +44,7 @@ public:
 
 	Request();
 
-	RequestType getType() { return type; }
+	RequestType getType() const { return type; }
 	void setType(RequestType new_type) { type = new_type; }
 
 	Address *getAddress() { return address; }

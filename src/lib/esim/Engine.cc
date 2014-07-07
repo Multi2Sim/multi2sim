@@ -228,7 +228,7 @@ void Engine::ProcessEvents()
 
 		// The event is being run, so decrement the number of in-flight
 		// events of its type.
-		event_type->DecrementInFlight();
+		event_type->decInFlight();
 
 		// Run event handler
 		EventHandler event_handler = event_type->getEventHandler();
@@ -323,7 +323,7 @@ void Engine::Schedule(EventType *event_type,
 	events.emplace(new Event(event_type, event_frame, when, period));
 
 	// Increment the number of in-flight events of this type.
-	event_type->IncrementInFlight();
+	event_type->incInFlight();
 
 	// Debug
 	debug << misc::fmt("[%.2fns] Event '%s/%s' scheduled for [%.2fns]\n",

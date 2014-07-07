@@ -22,6 +22,7 @@
 
 #include <memory>
 #include <deque>
+#include <iostream>
 
 #include "Command.h"
 
@@ -65,21 +66,37 @@ public:
 			int num_columns,
 			int num_bits);
 
-	int getId() { return id; }
+	int getId() const { return id; }
+
+	Rank *getRank() const { return rank; }
 
 	// Returns if the bank is precharged.
-	bool isPrecharged() { return current_active_row == -1; }
+	bool isPrecharged() const { return current_active_row == -1; }
 
 	/// Returns if the bank will be precharged.
-	bool isPrechargedFuture() { return future_active_row == -1; }
+	bool isPrechargedFuture() const { return future_active_row == -1; }
 
 	/// Returns what row is activated.
-	int getActiveRow() { return current_active_row; }
+	int getActiveRow() const { return current_active_row; }
 
 	/// Returns what row will be activated.
-	int getActiveRowFuture() { return future_active_row; }
+	int getActiveRowFuture() const { return future_active_row; }
 
-	Rank *getRank() { return rank; }
+	/// Returns how many commands are in the queue.
+	int getNumCommandsInQueue() const { return (int) command_queue.size(); }
+
+	/// Returns the command in the queue at a certain position.
+	CommandType getCommandInQueueType(int position = 0)
+	{
+		return command_queue[position]->getType();
+	}
+
+	/// Returns the cycle when the command at the front of the queue will
+	/// be ready to be run.
+	long long getFrontCommandTiming();
+
+	/// Pops off the top command in the queue.
+	void runFrontCommand();
 
 	/// Breaks a request down into it's component commands and adds them to the
 	/// bank's command queue.

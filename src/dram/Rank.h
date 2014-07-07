@@ -21,6 +21,7 @@
 #define DRAM_RANK_H
 
 #include <vector>
+#include <iostream>
 
 #include "Command.h"
 
@@ -41,7 +42,7 @@ class Rank
 	Channel *channel;
 
 	// List of ranks contained in this channel
-	std::vector<std::shared_ptr<Bank>> banks;
+	std::vector<std::unique_ptr<Bank>> banks;
 
 	// Last scheduled command information
 	CommandType last_scheduled_command_type = CommandTypeInvalid;
@@ -58,8 +59,8 @@ public:
 
 	int getId() { return id; }
 
-	Bank *getBank(int id) { return banks[id].get(); }
-	Channel *getChannel() { return channel; }
+	Bank *getBank(int id) const { return banks[id].get(); }
+	Channel *getChannel() const { return channel; }
 
 	/// Dump the object to an output stream.
 	void dump(std::ostream &os = std::cout) const;

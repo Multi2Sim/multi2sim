@@ -60,24 +60,17 @@ struct Address
 	}
 };
 
-class Dram
+class System
 {
 	// Unique instance of this class
-	static std::unique_ptr<Dram> instance;
+	static std::unique_ptr<System> instance;
 
 	// Private constructor, used internally to instantiate a singleton. Use
 	// a call to getInstance() instead.
-	Dram();
+	System();
 
 	// List of all the memory controllers
-	std::vector<std::shared_ptr<Controller>> controllers;
-
-	// Map of ids to EventTypes for each controller's request processor
-	static std::map<int, esim::EventType *> REQUEST_PROCESSORS;
-
-	// Double map of controller ids to channel ids for each channel's
-	// scheduler
-	static std::map<int, std::map<int, esim::EventType *>> SCHEDULERS;
+	std::vector<std::unique_ptr<Controller>> controllers;
 
 public:
 
@@ -89,7 +82,7 @@ public:
 	static esim::EventType *ACTION_REQUEST;
 
 	/// Obtain the instance of the dram simulator singleton.
-	static Dram *getInstance();
+	static System *getInstance();
 
 	/// Register command-line options
 	static void RegisterOptions();
@@ -102,18 +95,6 @@ public:
 
 	/// Run the standalone dram simulation loop.
 	void Run();
-
-	/// Obtain the EventType for the controller's request processor.
-	static esim::EventType *getRequestProcessor(int controller);
-
-	/// Create a new EventType for a controller's request processor.
-	static void CreateRequestProcessor(int controller);
-
-	/// Obtain the EventType for a channel's scheduler.
-	static esim::EventType *getScheduler(int controller, int channel);
-
-	/// Create a set of new EventTypes for the controller's schedulers.
-	static void CreateSchedulers(int controller, int num_channels);
 
 	/// Add a request to the system. Should be used in the standalone
 	/// simulator only; during full simulation, requests should be
@@ -147,7 +128,7 @@ public:
 
 	/// Dump object with the << operator
 	friend std::ostream &operator<<(std::ostream &os,
-			const Dram &object)
+			const System &object)
 	{
 		object.dump(os);
 		return os;
