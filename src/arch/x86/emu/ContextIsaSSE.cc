@@ -34,12 +34,37 @@ namespace x86
 #define warning __COMPILATION_ERROR__
 #define assert __COMPILATION_ERROR__
 
-#define __UNIMPLEMENTED__ throw misc::Panic("Unimplemented instruction");
+#define __UNIMPLEMENTED__ throw misc::Panic(misc::fmt("Unimplemented instruction %s", __FUNCTION__));
 
 void Context::ExecuteInst_addps_xmm_xmmm128()
 {
-	__UNIMPLEMENTED__
+	XMMValue dest;
+	XMMValue src;
+
+	this->LoadXMM(dest);
+	this->LoadXMMM128(src);
+
+	int spec_mode = this->getState(StateSpecMode);
+	if(!spec_mode)
+	{
+		__X86_ISA_ASM_START__
+		asm volatile (
+			"movdqu %1, %%xmm0\n\t"
+			"movdqu %0, %%xmm1\n\t"
+			"addps %%xmm0, %%xmm1\n\t"
+			"movdqu %%xmm1, %0\n\t"
+			: "=m" (dest)
+			: "m" (src)
+			: "xmm0", "xmm1"
+		);
+		__X86_ISA_ASM_END__
+	}
+
+	this->StoreXMM(dest);
+
+	this->newUInst(UInstFpAdd, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
+
 
 void Context::ExecuteInst_addss_xmm_xmmm32()
 {

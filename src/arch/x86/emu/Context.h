@@ -48,6 +48,16 @@ class Emu;
 
 // Assembly code used before and after instruction emulation when the host flags
 // are affected by the guest code
+#define __X86_ISA_ASM_START__ asm volatile ( \
+	"pushf\n\t" \
+	"pop %0\n\t" \
+	: "=m" (Context::host_flags));
+
+#define __X86_ISA_ASM_END__ asm volatile ( \
+	"push %0\n\t" \
+	"popf\n\t" \
+	: "=m" (Context::host_flags));
+
 #define __X86_CONTEXT_SAVE_FLAGS__ asm volatile ( \
 	"pushf\n\t" \
 	"pop %0\n\t" \

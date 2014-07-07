@@ -21,6 +21,7 @@
 #define ARCH_X86_EMU_XMM_VALUE_H
 
 #include <iostream>
+#include <cstring>
 
 #include <lib/cpp/Misc.h>
 
@@ -203,6 +204,20 @@ public:
 	void setAsDouble(int index, double value) {
 		assert(misc::inRange(index, 0, 1));
 		as_double[index] = value;
+	}
+
+	/// Copy the content of another value
+	void setWithMemcpy(XMMValue* source)
+	{
+		memcpy(this->as_char, source->as_char, 16);
+	}
+
+	/// set each 8-bits to value
+	void setWithMemset(unsigned int index, char value, unsigned int num)
+	{
+		assert(misc::inRange(index, 0, 16));
+		assert(misc::inRange(index + num, 0, 16));
+		memset(as_uchar + index, value, num);
 	}
 
 	/// Dump as sequence of 8-bit integers
