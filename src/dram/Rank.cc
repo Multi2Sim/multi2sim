@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include <lib/cpp/String.h>
+#include "lib/cpp/String.h"
 
 #include "Bank.h"
 #include "Rank.h"
@@ -39,11 +39,8 @@ Rank::Rank(int id,
 {
 	// Create the banks for this rank.
 	for (int i = 0; i < num_banks; i++)
-	{
-		auto bank = std::make_shared<Bank>(i, this, num_rows,
-				num_columns, num_bits);
-		banks.push_back(bank);
-	}
+		banks.emplace_back(new Bank(i, this, num_rows, num_columns,
+				num_bits));
 }
 
 
@@ -52,7 +49,7 @@ void Rank::dump(std::ostream &os) const
 	os << misc::fmt("\t\tDumping Rank %d\n", id);
 	os << misc::fmt("\t\t%d Banks\n\t\tBank dump:\n", (int) banks.size());
 
-	for (auto bank : banks)
+	for (auto const& bank : banks)
 	{
 		bank->dump(os);
 	}

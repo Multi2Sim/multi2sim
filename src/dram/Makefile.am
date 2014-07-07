@@ -43,14 +43,17 @@ libdram_a_SOURCES = \
 	Controller.cc \
 	Controller.h \
 	\
-	Dram.cc \
-	Dram.h \
-	\
 	Rank.cc \
 	Rank.h \
 	\
 	Request.cc \
-	Request.h
+	Request.h \
+	\
+	Scheduler.cc \
+	Scheduler.h \
+	\
+	System.cc \
+	System.h
 
 AM_CPPFLAGS = @M2S_INCLUDES@
 

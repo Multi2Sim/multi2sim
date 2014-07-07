@@ -20,11 +20,13 @@
 #ifndef DRAM_CONTROLLER_H
 #define DRAM_CONTROLLER_H
 
+#include <map>
 #include <memory>
 #include <vector>
 #include <queue>
 
 #include <lib/cpp/IniFile.h>
+#include <lib/esim/Event.h>
 
 
 namespace dram
@@ -32,6 +34,7 @@ namespace dram
 
 // Forward declarations
 class Channel;
+class Command;
 class Request;
 
 
@@ -50,7 +53,7 @@ enum TimingLocation
 {
 	TimingSame = 0,
 	TimingDifferent,
-	TimingAny
+	TimingAny = 0
 };
 
 
@@ -89,13 +92,20 @@ class Controller
 	int num_bits;
 
 	// Timing matrix
-	int timings[4][4][3][3] = {};
+	int timings[4][4][2][2] = {};
 
 	// List of physical channels contained in this controller
-	std::vector<std::shared_ptr<Channel>> channels;
+	std::vector<std::unique_ptr<Channel>> channels;
 
 	// Incoming request queue
 	std::queue<std::shared_ptr<Request>> incoming_requests;
+
+	// Map of ids to EventTypes for each controller's request processor
+	static std::map<int, esim::EventType *> REQUEST_PROCESSORS;
+
+	// Map of ids to EventTypes for each channel's scheduler for the
+	// controller
+	std::map<int, esim::EventType *> SCHEDULERS;
 
 public:
 
@@ -109,21 +119,39 @@ public:
 	void ParseTiming(const std::string &section,
 			misc::IniFile &config);
 
-	/// Set default timing parameters for DDR3 1066
-	void DefaultDDR3_1066(TimingParameters &parameters);
+	/// Set default timing parameters for DDR3 1600
+	void DefaultDDR3_1600(TimingParameters &parameters);
 
-	int getId() { return id; }
+	int getId() const { return id; }
 
-	int getNumChannels() { return num_channels; }
-	int getNumRanks() { return num_ranks; }
-	int getNumBanks() { return num_banks; }
-	int getNumRows() { return num_rows; }
-	int getNumColumns() { return num_columns; }
+	int getNumChannels() const { return num_channels; }
+	int getNumRanks() const { return num_ranks; }
+	int getNumBanks() const { return num_banks; }
+	int getNumRows() const { return num_rows; }
+	int getNumColumns() const { return num_columns; }
 
 	Channel *getChannel(int id) { return channels[id].get(); }
 
 	/// Add a request to the controller's incoming request queue.
 	void AddRequest(std::shared_ptr<Request> request);
+
+	/// Obtain the EventType for the controller's request processor.
+	static esim::EventType *getRequestProcessor(int controller)
+	{
+		return REQUEST_PROCESSORS[controller];
+	}
+
+	/// Create a new EventType for a controller's request processor.
+	static void CreateRequestProcessor(int controller);
+
+	/// Obtain the EventType for the channel's scheduler.
+	esim::EventType *getScheduler(int channel)
+	{
+		return SCHEDULERS[channel];
+	}
+
+	/// Create a set of new EventTypes for the controller's schedulers.
+	void CreateSchedulers(int num_channels);
 
 	/// Call the request processor for this controller.  This function will
 	/// only invoke the request processor if it is not already scheduled to
@@ -137,7 +165,7 @@ public:
 
 	/// Process requests in the incoming requests queue, breaking them
 	/// down into their commands.
-	void RequestProcessor();
+	void RunRequestProcessor();
 
 	/// Dump the object to an output stream.
 	void dump(std::ostream &os = std::cout) const;

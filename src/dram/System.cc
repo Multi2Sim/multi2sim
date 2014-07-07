@@ -27,9 +27,11 @@
 #include <lib/esim/Engine.h>
 
 #include "Action.h"
+#include "Bank.h"
 #include "Controller.h"
 #include "Channel.h"
-#include "Dram.h"
+#include "Scheduler.h"
+#include "System.h"
 
 
 namespace dram
@@ -50,38 +52,34 @@ bool stand_alone = false;
 // Static variables
 //
 
-misc::Debug Dram::debug;
+misc::Debug System::debug;
 
-std::unique_ptr<Dram> Dram::instance;
+std::unique_ptr<System> System::instance;
 
-esim::FrequencyDomain *Dram::DRAM_DOMAIN(nullptr);
+esim::FrequencyDomain *System::DRAM_DOMAIN(nullptr);
 
-esim::EventType *Dram::ACTION_REQUEST(nullptr);
-
-std::map<int, esim::EventType *> Dram::REQUEST_PROCESSORS;
-
-std::map<int, std::map<int, esim::EventType *>> Dram::SCHEDULERS;
+esim::EventType *System::ACTION_REQUEST(nullptr);
 
 
-Dram *Dram::getInstance()
+System *System::getInstance()
 {
 	// Instance already exists
 	if (instance.get())
 		return instance.get();
 
 	// Create instance
-	instance.reset(new Dram());
+	instance.reset(new System());
 	return instance.get();
 }
 
 
-Dram::Dram()
+System::System()
 {
 	debug << "Dram simulator initialized\n";
 }
 
 
-void Dram::RegisterOptions()
+void System::RegisterOptions()
 {
 	// Get command line object
 	misc::CommandLine *command_line = misc::CommandLine::getInstance();
@@ -110,9 +108,9 @@ void Dram::RegisterOptions()
 }
 
 
-void Dram::ProcessOptions()
+void System::ProcessOptions()
 {
-	Dram *dram = Dram::getInstance();
+	System *dram = System::getInstance();
 
 	// Debugger
 	if (!debug_file.empty())
@@ -130,7 +128,7 @@ void Dram::ProcessOptions()
 }
 
 
-void Dram::ParseConfiguration(const std::string &path)
+void System::ParseConfiguration(const std::string &path)
 {
 	esim::Engine *esim = esim::Engine::getInstance();
 	misc::IniFile config(path);
@@ -148,9 +146,8 @@ void Dram::ParseConfiguration(const std::string &path)
 		std::string section_name = config.getSection(i);
 		if (misc::StringPrefix(section_name, "MemoryController"))
 		{
-			auto controller = std::make_shared<Controller>(
-					num_controller, section_name, config);
-			controllers.push_back(controller);
+			controllers.emplace_back(new Controller(num_controller,
+					section_name, config));
 			num_controller++;
 		}
 	}
@@ -164,7 +161,7 @@ void Dram::ParseConfiguration(const std::string &path)
 }
 
 
-void Dram::Run()
+void System::Run()
 {
 	debug << "It's happening.\n";
 
@@ -178,48 +175,7 @@ void Dram::Run()
 }
 
 
-esim::EventType *Dram::getRequestProcessor(int controller)
-{
-	return REQUEST_PROCESSORS[controller];
-}
-
-
-void Dram::CreateRequestProcessor(int controller)
-{
-	esim::Engine *esim = esim::Engine::getInstance();
-
-	// Create a new EventType for this controller's request processor
-	// and store it in the map.
-	REQUEST_PROCESSORS[controller] = esim->RegisterEventType(
-			misc::fmt("%d_REQUEST_PROCESSOR", controller),
-			Controller::RequestProcessorHandler,
-			Dram::DRAM_DOMAIN);
-}
-
-
-esim::EventType *Dram::getScheduler(int controller, int channel)
-{
-	return SCHEDULERS[controller][channel];
-}
-
-
-void Dram::CreateSchedulers(int controller, int num_channels)
-{
-	esim::Engine *esim = esim::Engine::getInstance();
-
-	// Create a new EventType for each channel's scheduler for this
-	// controller and store them in the map.
-	for (int i = 0; i < num_channels; i++)
-	{
-		SCHEDULERS[controller][i] = esim->RegisterEventType(
-				misc::fmt("%d_SCHEDULER", i),
-				Channel::SchedulerHandler,
-				Dram::DRAM_DOMAIN);
-	}
-}
-
-
-void Dram::AddRequest(std::shared_ptr<Request> request)
+void System::AddRequest(std::shared_ptr<Request> request)
 {
 	// Decode the address and move the request to the correct controller.
 	request->DecodeAddress();
@@ -232,7 +188,7 @@ void Dram::AddRequest(std::shared_ptr<Request> request)
 			request->getAddress()->physical);
 }
 
-int Dram::Log2(unsigned num)
+int System::Log2(unsigned num)
 {
 	// Find the index of the highest set bit of num by shifting num to the
 	// right repeatedly until it equals 0.
@@ -242,7 +198,7 @@ int Dram::Log2(unsigned num)
 	return result;
 }
 
-void Dram::DecodeAddress(Address &address)
+void System::DecodeAddress(Address &address)
 {
 	// Get the sizes of each address component in number of bits required
 	// to represent it.
@@ -256,7 +212,7 @@ void Dram::DecodeAddress(Address &address)
 	// Find the largest of each component size.
 	// Controllers can potentially each have different sizes for everything
 	// but all sizes under the controller are uniform.
-	for (auto controller : controllers)
+	for (auto const& controller : controllers)
 	{
 		logical_size = std::max(logical_size,
 				Log2(controller->getNumChannels()));
@@ -302,14 +258,13 @@ void Dram::DecodeAddress(Address &address)
 }
 
 
-void Dram::dump(std::ostream &os) const
+void System::dump(std::ostream &os) const
 {
 	os << "\n\n--------------------\n\n";
 	os << "Dumping DRAM system\n";
-	os << misc::fmt("%d Controllers\nController dump:\n",
-			(int) controllers.size());
+	os << misc::fmt("%d Controllers\nController dump:\n", controllers.size());
 
-	for (auto controller : controllers)
+	for (auto const& controller : controllers)
 	{
 		controller->dump(os);
 	}

@@ -20,7 +20,7 @@
 #include <lib/cpp/String.h>
 
 #include "Command.h"
-#include "Dram.h"
+#include "System.h"
 
 
 namespace dram

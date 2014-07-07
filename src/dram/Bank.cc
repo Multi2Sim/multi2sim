@@ -22,7 +22,7 @@
 
 #include "Bank.h"
 #include "Channel.h"
-#include "Dram.h"
+#include "System.h"
 #include "Rank.h"
 
 namespace dram
@@ -48,6 +48,9 @@ void Bank::ProcessRequest(std::shared_ptr<Request> request)
 	// Pull the address out of the request.
 	Address *address = request->getAddress();
 
+	// Get the parent rank's id.
+	int rank_id = getRank()->getId();
+
 	// Note: For now everthing is done with an open-page policy.  Closed
 	// page to come later.
 
@@ -63,7 +66,7 @@ void Bank::ProcessRequest(std::shared_ptr<Request> request)
 	{
 		// Create the command.
 		auto activate_cmd = std::make_shared<Command>(request,
-				CommandTypeActivate);
+				CommandTypeActivate, id, rank_id);
 
 		// Add it to the command queue.
 		command_queue.push_back(activate_cmd);
@@ -78,9 +81,9 @@ void Bank::ProcessRequest(std::shared_ptr<Request> request)
 	{
 		// Create the commands.
 		auto precharge_cmd = std::make_shared<Command>(request,
-				CommandTypePrecharge);
+				CommandTypePrecharge, id, rank_id);
 		auto activate_cmd = std::make_shared<Command>(request,
-				CommandTypeActivate);
+				CommandTypeActivate, id, rank_id);
 
 		// Add them to the command queue.
 		command_queue.push_back(precharge_cmd);
@@ -97,10 +100,10 @@ void Bank::ProcessRequest(std::shared_ptr<Request> request)
 	std::shared_ptr<Command> access_cmd;
 	if (request->getType() == RequestTypeRead)
 		access_cmd = std::make_shared<Command>(request,
-				CommandTypeRead);
+				CommandTypeRead, id, rank_id);
 	else if (request->getType() == RequestTypeWrite)
 		access_cmd = std::make_shared<Command>(request,
-				CommandTypeWrite);
+				CommandTypeWrite, id, rank_id);
 	else
 		// Invalid request type
 		return;
@@ -113,8 +116,32 @@ void Bank::ProcessRequest(std::shared_ptr<Request> request)
 
 	// Debug
 	esim::Engine *esim = esim::Engine::getInstance();
-	Dram::debug << misc::fmt("[%lld] Processed request for 0x%llx in "
+	System::debug << misc::fmt("[%lld] Processed request for 0x%llx in "
 		"bank %d\n", esim->getTime(), address->encoded, id);
+}
+
+
+long long Bank::getFrontCommandTiming()
+{
+	return last_scheduled_commands[0] + 5000;
+}
+
+
+void Bank::runFrontCommand()
+{
+	esim::Engine *esim = esim::Engine::getInstance();
+
+	// Get the command that is being run.
+	std::shared_ptr<Command> cmd = command_queue.front();
+
+	// Add this command to the last scheduled command matrix.
+	last_scheduled_commands[0] = esim->getTime();
+
+	// Debug
+	System::debug << misc::fmt("[%lld] Running command %s\n",
+			esim->getTime(), cmd->getTypeString().c_str());
+
+	command_queue.pop_front();
 }
 
 
