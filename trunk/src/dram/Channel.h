@@ -20,6 +20,7 @@
 #ifndef DRAM_CHANNEL_H
 #define DRAM_CHANNEL_H
 
+#include <memory>
 #include <vector>
 
 #include <lib/esim/Event.h>
@@ -32,6 +33,7 @@ namespace dram
 
 // Forward declarations
 class Controller;
+class Scheduler;
 
 
 class Channel
@@ -41,8 +43,19 @@ class Channel
 	// Pointer to the owning controller.
 	Controller *controller;
 
+	// Sizes of components under this channel
+	int num_ranks;
+	int num_banks;
+
+	// Pointer to the bank whose front command should be run next.
+	Bank *next_scheduled_bank = nullptr;
+
 	// List of ranks contained in this channel
-	std::vector<std::shared_ptr<Rank>> ranks;
+	std::vector<std::unique_ptr<Rank>> ranks;
+
+	// Pointer to the scheduler instance that determines what commands
+	// are run.
+	std::unique_ptr<Scheduler> scheduler;
 
 	// Total number of commands in bank queues under this channel
 	int num_commands_in_queue = 0;
@@ -57,10 +70,19 @@ public:
 			int num_columns,
 			int num_bits);
 
-	int getId() { return id; }
+	int getId() const { return id; }
 
-	Rank *getRank(int id) { return ranks[id].get(); }
-	Controller *getController() { return controller; }
+	/// Returns the number of ranks in this channel.
+	int getNumRanks() const { return num_ranks; }
+
+	/// Returns the number of banks in each rank in this channel.
+	int getNumBanks() const { return num_banks; }
+
+	/// Returns the total number of banks in this channel.
+	int getNumBanksTotal() const { return num_banks * num_ranks; }
+
+	Rank *getRank(int id) const { return ranks[id].get(); }
+	Controller *getController() const { return controller; }
 
 	/// Call the scheduler for this channel.  This function will only
 	/// invoke the scheduler if it is not already scheduled to run.  The
@@ -80,7 +102,7 @@ public:
 
 	/// Schedules commands from all the bank queues under this channel,
 	/// in the correct order according to the scheduling policy.
-	void Scheduler();
+	void RunScheduler();
 
 	/// Dump the object to an output stream.
 	void dump(std::ostream &os = std::cout) const;

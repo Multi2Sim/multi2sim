@@ -85,10 +85,10 @@ public:
 	bool isInFlight() const { return num_in_flight != 0; }
 
 	/// Increase the number of in-flight events of this type by one.
-	void IncrementInFlight() { num_in_flight++; }
+	void incInFlight() { num_in_flight++; }
 
 	/// Decrease the number of in-flight events of this type by one.
-	void DecrementInFlight() { num_in_flight--; }
+	void decInFlight() { num_in_flight--; }
 };
 
 

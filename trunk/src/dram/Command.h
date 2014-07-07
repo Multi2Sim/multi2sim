@@ -22,6 +22,7 @@
 
 #include <map>
 #include <memory>
+#include <string>
 
 #include "Request.h"
 
@@ -45,17 +46,23 @@ class Command
 {
 	std::shared_ptr<Request> request;
 	CommandType type;
+	int bank_id;
+	int rank_id;
 
 public:
-	Command(std::shared_ptr<Request> request, CommandType type)
+	Command(std::shared_ptr<Request> request, CommandType type,
+			int bank_id, int rank_id)
 			:
 			request(request),
-			type(type)
+			type(type),
+			bank_id(bank_id),
+			rank_id(rank_id)
 	{
 	}
 
-	CommandType getType() { return type; }
-	std::string getTypeString() { return CommandTypeMap[type]; }
+	CommandType getType() const { return type; }
+
+	std::string getTypeString() const { return CommandTypeMap[type]; }
 
 	Address *getAddress();
 

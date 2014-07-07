@@ -27,12 +27,18 @@
 #include "Bank.h"
 #include "Channel.h"
 #include "Controller.h"
-#include "Dram.h"
+#include "Command.h"
 #include "Request.h"
+#include "Scheduler.h"
+#include "System.h"
 
 
 namespace dram
 {
+
+// Static variables
+
+std::map<int, esim::EventType *> Controller::REQUEST_PROCESSORS;
 
 
 Controller::Controller(int id)
@@ -40,7 +46,7 @@ Controller::Controller(int id)
 		id(id)
 {
 	// Create a new request processor event for this controller.
-	Dram::CreateRequestProcessor(id);
+	CreateRequestProcessor(id);
 }
 
 
@@ -73,17 +79,14 @@ void Controller::ParseConfiguration(const std::string &section,
 
 	// Create channels 
 	for (int i = 0; i < num_channels; i++)
-	{
-		auto channel = std::make_shared<Channel>(i, this, num_ranks,
-				num_banks, num_rows, num_columns, num_bits);
-		channels.push_back(channel);
-	}
+		channels.emplace_back(new Channel(i, this, num_ranks,
+				num_banks, num_rows, num_columns, num_bits));
 
 	// Read DRAM timing parameters
 	ParseTiming(section, config);
 
 	// Create a set of new scheduler events for all the channels.
-	Dram::CreateSchedulers(id, num_channels);
+	CreateSchedulers(num_channels);
 }
 
 
@@ -96,8 +99,8 @@ void Controller::ParseTiming(const std::string &section,
 	// Set the default timing parameters if set.  If a default is not set,
 	// the parameters are all set to 0 and the user must set all of them.
 	std::string set_default = config.ReadString(section, "Default", "");
-	if (set_default == "DDR3_1066")
-		DefaultDDR3_1066(parameters);
+	if (set_default == "DDR3_1600")
+		DefaultDDR3_1600(parameters);
 
 	// Read the timing parameters set by the user.
 	parameters.tRC = config.ReadInt(section, "tRC", parameters.tRC);
@@ -165,24 +168,23 @@ void Controller::ParseTiming(const std::string &section,
 }
 
 
-void Controller::DefaultDDR3_1066(TimingParameters &parameters)
+void Controller::DefaultDDR3_1600(TimingParameters &parameters)
 {
-	// FIXME: These aren't actually 0.
-	parameters.tRC = 0;
-	parameters.tRRD = 0;
-	parameters.tRP = 0;
-	parameters.tRFC = 0;
-	parameters.tCCD = 0;
-	parameters.tRTRS = 0;
-	parameters.tCWD = 0;
-	parameters.tWTR = 0;
-	parameters.tCAS = 0;
-	parameters.tRCD = 0;
-	parameters.tOST = 0;
-	parameters.tRAS = 0;
-	parameters.tWR = 0;
-	parameters.tRTP = 0;
-	parameters.tBURST = 0;
+	parameters.tRC = 49;
+	parameters.tRRD = 5;
+	parameters.tRP = 11;
+	parameters.tRFC = 128;
+	parameters.tCCD = 4;
+	parameters.tRTRS = 1;
+	parameters.tCWD = 5;
+	parameters.tWTR = 6;
+	parameters.tCAS = 11;
+	parameters.tRCD = 11;
+	parameters.tOST = 1;
+	parameters.tRAS = 28;
+	parameters.tWR = 12;
+	parameters.tRTP = 6;
+	parameters.tBURST = 4;
 }
 
 
@@ -196,13 +198,40 @@ void Controller::AddRequest(std::shared_ptr<Request> request)
 }
 
 
+void Controller::CreateRequestProcessor(int controller)
+{
+	esim::Engine *esim = esim::Engine::getInstance();
+
+	// Create a new EventType for this controller's request processor
+	// and store it in the map.
+	REQUEST_PROCESSORS[controller] = esim->RegisterEventType(
+			misc::fmt("%d_REQUEST_PROCESSOR", controller),
+			Controller::RequestProcessorHandler,
+			System::DRAM_DOMAIN);
+}
+
+
+void Controller::CreateSchedulers(int num_channels)
+{
+	esim::Engine *esim = esim::Engine::getInstance();
+
+	// Create a new EventType for each channel's scheduler for this
+	// controller and store them in the map.
+	for (int i = 0; i < num_channels; i++)
+		SCHEDULERS[i] = esim->RegisterEventType(
+				misc::fmt("%d_%d_SCHEDULER", id, i),
+				Channel::SchedulerHandler,
+				System::DRAM_DOMAIN);
+}
+
+
 void Controller::CallRequestProcessor()
 {
 	// Get the esim engine instance.
 	esim::Engine *esim = esim::Engine::getInstance();
 
 	// Get the request processor event for this controller.
-	esim::EventType *request_processor = Dram::getRequestProcessor(id);
+	esim::EventType *request_processor = getRequestProcessor(id);
 
 	// Check that the event isn't already scheduled.
 	if (request_processor->isInFlight())
@@ -228,11 +257,11 @@ void Controller::RequestProcessorHandler(esim::EventType *type,
 	Controller *controller = request_frame->controller;
 
 	// Call this controller's request processor.
-	controller->RequestProcessor();
+	controller->RunRequestProcessor();
 }
 
 
-void Controller::RequestProcessor()
+void Controller::RunRequestProcessor()
 {
 	// Just in case, make sure there are actually requests to process.
 	if (incoming_requests.size() == 0)
@@ -265,7 +294,7 @@ void Controller::dump(std::ostream &os) const
 			(int) incoming_requests.size());
 	os << misc::fmt("%d Channels\nChannel dump:\n", (int) channels.size());
 
-	for (auto channel : channels)
+	for (auto const& channel : channels)
 	{
 		channel->dump(os);
 	}

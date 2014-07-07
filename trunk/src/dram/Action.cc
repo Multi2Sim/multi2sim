@@ -21,7 +21,7 @@
 #include <lib/esim/Engine.h>
 
 #include "Action.h"
-#include "Dram.h"
+#include "System.h"
 #include "Request.h"
 
 namespace dram
@@ -33,8 +33,8 @@ Actions::Actions()
 {
 	// Get the esim engine instance and register events with it.
 	esim::Engine *esim = esim::Engine::getInstance();
-	Dram::ACTION_REQUEST = esim->RegisterEventType("ACTION_REQUEST",
-			ActionRequestHandler, Dram::DRAM_DOMAIN);
+	System::ACTION_REQUEST = esim->RegisterEventType("ACTION_REQUEST",
+			ActionRequestHandler, System::DRAM_DOMAIN);
 }
 
 
@@ -112,7 +112,7 @@ void Actions::ParseActionRequest(const std::vector<std::string> &tokens)
 	// Schedule an event to insert it at the specified cycle.
 	esim::Engine *esim = esim::Engine::getInstance();
 	auto request_frame = std::make_shared<ActionRequestFrame>(request);
-	esim->Call(Dram::ACTION_REQUEST, request_frame, nullptr, cycle);
+	esim->Call(System::ACTION_REQUEST, request_frame, nullptr, cycle);
 }
 
 void Actions::ParseActionDecode(const std::vector<std::string> &tokens)
@@ -122,7 +122,7 @@ void Actions::ParseActionDecode(const std::vector<std::string> &tokens)
 	address.encoded = misc::StringToInt64(tokens[2]);
 
 	// Decode it.
-	Dram *dram = Dram::getInstance();
+	System *dram = System::getInstance();
 	dram->DecodeAddress(address);
 }
 
@@ -131,7 +131,7 @@ void Actions::ActionRequestHandler(esim::EventType *type,
 		esim::EventFrame *frame)
 {
 	ActionRequestFrame *action_frame = dynamic_cast<ActionRequestFrame *>(frame);
-	Dram *dram = Dram::getInstance();
+	System *dram = System::getInstance();
 	dram->AddRequest(action_frame->request);
 }
 
