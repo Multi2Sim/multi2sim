@@ -26,7 +26,31 @@ libdram_a_SOURCES = \
 	rank.h \
 	\
 	request.c \
-	request.h
+	request.h \
+	\
+	Action.cc \
+	Action.h \
+	\
+	Bank.cc \
+	Bank.h \
+	\
+	Channel.cc \
+	Channel.h \
+	\
+	Command.cc \
+	Command.h \
+	\
+	Controller.cc \
+	Controller.h \
+	\
+	Dram.cc \
+	Dram.h \
+	\
+	Rank.cc \
+	Rank.h \
+	\
+	Request.cc \
+	Request.h
 
 AM_CPPFLAGS = @M2S_INCLUDES@
 

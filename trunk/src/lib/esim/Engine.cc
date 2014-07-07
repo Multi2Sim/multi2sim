@@ -226,6 +226,10 @@ void Engine::ProcessEvents()
 				frequency_domain->getName().c_str(),
 				event_type->getName().c_str());
 
+		// The event is being run, so decrement the number of in-flight
+		// events of its type.
+		event_type->DecrementInFlight();
+
 		// Run event handler
 		EventHandler event_handler = event_type->getEventHandler();
 		current_event = event;
@@ -317,6 +321,9 @@ void Engine::Schedule(EventType *event_type,
 
 	// Create new event and insert it in the event list
 	events.emplace(new Event(event_type, event_frame, when, period));
+
+	// Increment the number of in-flight events of this type.
+	event_type->IncrementInFlight();
 
 	// Debug
 	debug << misc::fmt("[%.2fns] Event '%s/%s' scheduled for [%.2fns]\n",
