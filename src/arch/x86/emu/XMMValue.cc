@@ -25,7 +25,6 @@
 namespace x86
 {
 
-
 void XMMValue::DumpAsChar(std::ostream &os) const
 {
 	std::string comma;

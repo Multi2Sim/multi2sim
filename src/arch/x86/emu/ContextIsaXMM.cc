@@ -138,8 +138,8 @@ void Context::LoadXMMM128(XMMValue &value)
 		this->MemoryRead((unsigned int)this->effective_address + 8,
 				8, (void *) &contentHi);
 	}
-	value.setAsUInt(0, contentLo);
-	value.setAsUInt(0, contentHi);
+	value.setAsUInt64(0, contentLo);
+	value.setAsUInt64(1, contentHi);
 }
 
 } // namespace x86
