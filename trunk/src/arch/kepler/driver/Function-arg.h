@@ -25,8 +25,8 @@
 namespace Kepler
 {
 
-// Cuda Function
-class CUfunctionarg
+// Cuda Function Argument
+class Argument
 {
 	// Function ID
 	int id;
@@ -40,10 +40,10 @@ class CUfunctionarg
 public:
 
 	/// Constructor
-	CUfunctionarg(char *name);
+	Argument(char* name);
 
 	/// Get Value
-	unsigned getValue()	{ return value; }
+	unsigned getValue()	const { return value; }
 
 	/// Set Value
 	void setValue(unsigned value)	{this->value = value; }
