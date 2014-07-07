@@ -35,7 +35,7 @@ namespace x86
 #define assert __COMPILATION_ERROR__
 
 
-#define __UNIMPLEMENTED__ throw misc::Panic("Unimplemented instruction");
+#define __UNIMPLEMENTED__ throw misc::Panic(misc::fmt("Unimplemented instruction %s", __FUNCTION__));
 
 
 
