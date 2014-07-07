@@ -102,7 +102,7 @@ void Channel::Scheduler()
 void Channel::dump(std::ostream &os) const
 {
 	os << misc::fmt("\tDumping Channel %d\n", id);
-	os << misc::fmt("\t%d Ranks\n\tRank dump:\n", ranks.size());
+	os << misc::fmt("\t%d Ranks\n\tRank dump:\n", (int) ranks.size());
 
 	for (auto rank : ranks)
 	{
