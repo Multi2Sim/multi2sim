@@ -1056,7 +1056,7 @@ void Function::LiveRegisterAnalysis()
 			for (auto &arg : inst->getArgs())
 			{
 				// Currently only deals with scalar registers
-				if (arg->getType() == si2bin::ArgTypeVectorRegister) {
+				if (arg->getType() == si2bin::Argument::TypeVectorRegister) {
 
 					si2bin::ArgVectorRegister *argReg = dynamic_cast<si2bin::ArgVectorRegister*>(arg.get());
 					if (!argReg)
