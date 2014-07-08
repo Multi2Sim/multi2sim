@@ -17,18 +17,17 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <lib/cpp/Error.h>
 #include <lib/cpp/Misc.h>
 
 #include "Argument.h"
 #include "Token.h"
 
 
-using namespace misc;
-
 namespace si2bin
 {
 
-StringMap token_type_map =
+misc::StringMap token_type_map =
 {
 	{ "<invalid>", TokenInvalid },
 
@@ -104,11 +103,9 @@ StringMap token_type_map =
 
 
 Token::Token(TokenType type)
+		: type(type)
 {
-	/* Initialize */
-	this->type = type;
-
-	/* Set direction */
+	// Set direction
 	switch (type)
 	{
 
@@ -130,7 +127,9 @@ Token::Token(TokenType type)
 	case TokenMtSeriesVdataDst:
 	case TokenMimgSeriesVdataDst:
 	case TokenVIntrpVdst:
-		this->direction = TokenDirectionDst;
+
+		// Destionation tokens
+		direction = TokenDirectionDst;
 		break;
 
 	case Token64Ssrc0:
@@ -170,7 +169,9 @@ Token::Token(TokenType type)
 	case TokenVSrcIJ:
 	case TokenData0:
 	case TokenData1:
-		this->direction = TokenDirectionSrc;
+
+		// Source tokens
+		direction = TokenDirectionSrc;
 		break;
 
 	case TokenLabel:
@@ -186,14 +187,16 @@ Token::Token(TokenType type)
 	case TokenAttrChan:
 	case TokenMuGlc:
 	case TokenTgt:
-		this->direction = TokenDirectionOther;
+
+		// N/A tokens
+		direction = TokenDirectionOther;
 		break;
 
 
-	/* Need the rest, finish with Rafa */
 	default:
+
+		// FIXME - Rest of tokens missing
 		direction = TokenDirectionInvalid;
-		//panic("%s: token type not supported", __FUNCTION__);
 	}
 
 }
@@ -201,147 +204,170 @@ Token::Token(TokenType type)
 
 bool Token::IsArgAllowed(Argument *arg)
 {
-	/* FIXME
-	 * Some tokens that currently allow for literal and literal_float
-	 * actually should change to literal_reduced and literal_float_reduced.
-	 * Some others should extend it to literal_reduced and
-	 * literal_float_reduced (such as src0) */
-	ArgType t = arg->getType();
+	// FIXME
+	// Some tokens that currently allow for literal and literal_float
+	// actually should change to literal_reduced and literal_float_reduced.
+	// Some others should extend it to literal_reduced and
+	// literal_float_reduced (such as src0)
+	Argument::Type t = arg->getType();
 	switch (type)
 	{
 
 	case TokenSimm16:
-		return t == ArgTypeLiteral ||
-			t == ArgTypeLiteralReduced ||
-			t == ArgTypeLiteralFloat ||
-			t == ArgTypeLiteralFloatReduced;
-		/*TODO - Check if this is correct */
+
+		return t == Argument::TypeLiteral ||
+			t == Argument::TypeLiteralReduced ||
+			t == Argument::TypeLiteralFloat ||
+			t == Argument::TypeLiteralFloatReduced;
+		// TODO - Check if this is correct
 
 	case Token64Sdst:
-		return t == ArgTypeScalarRegisterSeries ||
-				t == ArgTypeSpecialRegister;
+
+		return t == Argument::TypeScalarRegisterSeries ||
+				t == Argument::TypeSpecialRegister;
 
 	case Token64Ssrc0:
 	case Token64Ssrc1:
-		return t == ArgTypeScalarRegisterSeries ||
-				t == ArgTypeLiteral ||
-				t == ArgTypeLiteralReduced ||
-				t == ArgTypeLiteralFloat ||
-				t == ArgTypeLiteralFloatReduced ||
-				t == ArgTypeSpecialRegister;
+
+		return t == Argument::TypeScalarRegisterSeries ||
+				t == Argument::TypeLiteral ||
+				t == Argument::TypeLiteralReduced ||
+				t == Argument::TypeLiteralFloat ||
+				t == Argument::TypeLiteralFloatReduced ||
+				t == Argument::TypeSpecialRegister;
 	
 	case TokenLabel:
-		return t == ArgTypeLabel;
+
+		return t == Argument::TypeLabel;
 
 	case TokenMtMaddr:
-		return t == ArgTypeMaddr;
+
+		return t == Argument::TypeMaddr;
 
 	case TokenMtSeriesVdataSrc:
 	case TokenMtSeriesVdataDst:
-		return t == ArgTypeVectorRegister ||
-			t == ArgTypeVectorRegisterSeries;
+
+		return t == Argument::TypeVectorRegister ||
+			t == Argument::TypeVectorRegisterSeries;
 
 	case TokenOffset:
-		return t == ArgTypeLiteral ||
-			t == ArgTypeLiteralReduced ||
-			t == ArgTypeScalarRegister;
+
+		return t == Argument::TypeLiteral ||
+			t == Argument::TypeLiteralReduced ||
+			t == Argument::TypeScalarRegister;
 
 	case TokenSsrc0:
 	case TokenSsrc1:
-		return t == ArgTypeLiteral ||
-				t == ArgTypeLiteralReduced ||
-				t == ArgTypeLiteralFloat ||
-				t == ArgTypeLiteralFloatReduced ||
-				t == ArgTypeScalarRegister ||
-				t == ArgTypeSpecialRegister;
+
+		return t == Argument::TypeLiteral ||
+				t == Argument::TypeLiteralReduced ||
+				t == Argument::TypeLiteralFloat ||
+				t == Argument::TypeLiteralFloatReduced ||
+				t == Argument::TypeScalarRegister ||
+				t == Argument::TypeSpecialRegister;
 
 	case TokenSeriesSdst:
 	case TokenSeriesSbase:
 	case TokenSeriesSrsrc:
-		return t == ArgTypeScalarRegisterSeries;
+
+		return t == Argument::TypeScalarRegisterSeries;
 
 	case TokenSdst:
 	case TokenSmrdSdst:
-		return t == ArgTypeScalarRegister ||
-			t == ArgTypeMemRegister;
+
+		return t == Argument::TypeScalarRegister ||
+			t == Argument::TypeMemRegister;
 
 	case TokenSrc0:
 
-		/* Token 'src' does not accept 'abs' of 'neg' function */
+		// Token 'src' does not accept 'abs' of 'neg' function
 		if (arg->getAbs())
 			return false;
+
 		if (arg->getNeg())
 			return false;
 
-		return t == ArgTypeLiteral ||
-			t == ArgTypeLiteralReduced ||
-			t == ArgTypeLiteralFloat ||
-			t == ArgTypeLiteralFloatReduced ||
-			t == ArgTypeVectorRegister ||
-			t == ArgTypeScalarRegister;
+		return t == Argument::TypeLiteral ||
+			t == Argument::TypeLiteralReduced ||
+			t == Argument::TypeLiteralFloat ||
+			t == Argument::TypeLiteralFloatReduced ||
+			t == Argument::TypeVectorRegister ||
+			t == Argument::TypeScalarRegister;
 
 	case TokenVaddr:
-		return t == ArgTypeVectorRegisterSeries ||
-			t == ArgTypeVectorRegister;
+
+		return t == Argument::TypeVectorRegisterSeries ||
+			t == Argument::TypeVectorRegister;
 
 	case TokenVdst:
 	case TokenVsrc0:
 		
-		/* Token 'src' does not accept 'abs' of 'neg' function */
+		// Token 'src' does not accept 'abs' of 'neg' function
 		if (arg->getAbs())
 			return false;
+
 		if (arg->getNeg())
 			return false;
 
-		return t == ArgTypeVectorRegister;
+		return t == Argument::TypeVectorRegister;
 	
 	case TokenVop3Vdst:
-		return t == ArgTypeVectorRegister;
+
+		return t == Argument::TypeVectorRegister;
 	
 	case Token64Src0:
-		return t == ArgTypeVectorRegisterSeries ||
-			t == ArgTypeScalarRegisterSeries;
+
+		return t == Argument::TypeVectorRegisterSeries ||
+			t == Argument::TypeScalarRegisterSeries;
 
 	case Token64Vdst:
-		return t == ArgTypeVectorRegisterSeries;
+
+		return t == Argument::TypeVectorRegisterSeries;
 
 	case TokenSvdst:
-		return t == ArgTypeScalarRegister;
+
+		return t == Argument::TypeScalarRegister;
 
 	case TokenVsrc1:
 		
-		/* Token 'src' does not accept 'abs' of 'neg' function */
+		// Token 'src' does not accept 'abs' of 'neg' function
 		if (arg->getAbs())
 			return false;
+
 		if (arg->getNeg())
 			return false;
 		
-		return t == ArgTypeVectorRegister;
+		return t == Argument::TypeVectorRegister;
 
 	case TokenVop364Svdst:
-		return t == ArgTypeScalarRegisterSeries ||
-			t == ArgTypeSpecialRegister;
+
+		return t == Argument::TypeScalarRegisterSeries ||
+			t == Argument::TypeSpecialRegister;
 
 	case TokenVop3Src0:
 	case TokenVop3Src1:
 	case TokenVop3Src2:
-		return t == ArgTypeLiteralReduced ||
-			t == ArgTypeLiteralFloatReduced ||
-			t == ArgTypeVectorRegister ||
-			t == ArgTypeScalarRegister;
+
+		return t == Argument::TypeLiteralReduced ||
+			t == Argument::TypeLiteralFloatReduced ||
+			t == Argument::TypeVectorRegister ||
+			t == Argument::TypeScalarRegister;
 	
 	case TokenVop364Src0:
 	case TokenVop364Src1:
 	case TokenVop364Src2:
-		return t == ArgTypeScalarRegisterSeries ||
-			t == ArgTypeVectorRegisterSeries ||
-			t == ArgTypeSpecialRegister;
+
+		return t == Argument::TypeScalarRegisterSeries ||
+			t == Argument::TypeVectorRegisterSeries ||
+			t == Argument::TypeSpecialRegister;
 	
 	case TokenVop364Vdst:
-		return t == ArgTypeVectorRegisterSeries;
+
+		return t == Argument::TypeVectorRegisterSeries;
 	
 	case TokenVop364Sdst:
-		return t == ArgTypeSpecialRegister;
+
+		return t == Argument::TypeSpecialRegister;
 	
 	case TokenVcc:
 	{
@@ -352,12 +378,14 @@ bool Token::IsArgAllowed(Argument *arg)
 	}
 	
 	case TokenWaitCnt:
-		return t == ArgTypeWaitCnt;
+
+		return t == Argument::TypeWaitCnt;
 	
 	case TokenAddr:
 	case TokenData0:
 	case TokenDsVdst:
-		return t == ArgTypeVectorRegister;
+
+		return t == Argument::TypeVectorRegister;
 
 	// New tokens
 	case TokenVop2Lit:
@@ -382,16 +410,16 @@ bool Token::IsArgAllowed(Argument *arg)
 	case TokenMimgDugSeriesSsamp:
 	case TokenTgt:
 	case TokenExpVSrcs:
-		return 1;
-	
+
+		return true;
 
 	default:
-		panic("%s: unsupported token (%s)",
-				__FUNCTION__,
-				token_type_map.MapValue(type));
-		return 0;
+
+		throw misc::Panic(misc::fmt("Unsupported token: %s",
+				Argument::TypeMap[type]));
 	}
 }
 
 
-}  /* namespace si2bin */
+}  // namespace si2bin
+

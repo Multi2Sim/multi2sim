@@ -37,31 +37,6 @@ namespace si2bin
 class Token;
 
 
-extern misc::StringMap arg_type_map;
-
-/// Possible argument types
-enum ArgType
-{
-	ArgTypeInvalid = 0,
-
-	ArgTypeScalarRegister,
-	ArgTypeVectorRegister,
-	ArgTypeScalarRegisterSeries,
-	ArgTypeVectorRegisterSeries,
-	ArgTypeMemRegister,
-	ArgTypeSpecialRegister,
-	ArgTypeLiteral,
-	ArgTypeLiteralReduced,
-	ArgTypeLiteralFloat,
-	ArgTypeLiteralFloatReduced,
-	ArgTypeWaitCnt,
-	ArgTypeLabel,
-	ArgTypeMaddr,
-	ArgTypeMaddrQual,
-	ArgTypePhi,
-
-	ArgTypeCount
-};
 
 /// Possible argument types for the s_waitcnt instruction
 enum WaitCntType
@@ -79,82 +54,145 @@ enum WaitCntType
 /// instruction classes can be derived from this class
 class Argument
 {
-	friend class Instruction;
+public:
+
+	/// Possible argument types
+	enum Type
+	{
+		TypeInvalid = 0,
+
+		TypeScalarRegister,
+		TypeVectorRegister,
+		TypeScalarRegisterSeries,
+		TypeVectorRegisterSeries,
+		TypeMemRegister,
+		TypeSpecialRegister,
+		TypeLiteral,
+		TypeLiteralReduced,
+		TypeLiteralFloat,
+		TypeLiteralFloatReduced,
+		TypeWaitCnt,
+		TypeLabel,
+		TypeMaddr,
+		TypeMaddrQual,
+		TypePhi,
+
+		TypeCount
+	};
+
+	/// String map for Type
+	static const misc::StringMap TypeMap;
 
 protected:
 
-	/* Argument type. It determines the sub-class of the actual instance of
-	 * type 'Arg'. */
-	ArgType type;
+	// FIXME
+	friend class Instruction;
 
-	/* Argument index, populated when inserted into an instruction */
-	int index;
+	// Argument type, determining the actual subclass.
+	Type type;
 
-	/* Token associated with argument. This field is populated when an
-	 * instruction is created that contains the argument as part of its
-	 * argument list. */
-	Token *token;
+	// Argument index, populated when inserted into an instruction
+	int index = -1;
 
-	/* Absolute value */
-	bool abs;
+	// Token associated with argument. This field is populated when an
+	// instruction is created that contains the argument as part of its
+	// argument list.
+	Token *token = nullptr;
 
-	/* Negation */
-	bool neg;
+	// Absolute value operation applied on the argument
+	bool abs = false;
 
-	/* True if the argument is of a constant type */
-	bool constant;
+	// Negation operation applied on the argument
+	bool neg = false;
+
+	// True if the argument is of a constant type
+	bool constant = false;
 
 public:
 
 	/// Constructor
-	Argument(ArgType type) : type(type), index(-1), token(nullptr),
-			abs(false), neg(false), constant(false) { }
+	Argument(Type type) : type(type)
+	{
+	}
+
+	/// Virtual destructor
+	virtual ~Argument()
+	{
+	}
 	
-	/// Virtual Destructor
-	virtual ~Argument();
+	/// Return the argument type
+	Type getType() const { return type; }
 
-	/* Getters */
-	ArgType getType() { return type; }
-	Token *getToken() { return token; }
-	bool getAbs() { return abs; }
-	bool getNeg() { return neg; }
-	bool getConstant() { return constant; }
-	int getIndex() { return index; }
+	/// Return the token associated with the argument
+	Token *getToken() const { return token; }
 
-	bool isConstant() { return type == ArgTypeLiteral ||
-			type == ArgTypeLiteralReduced ||
-			type == ArgTypeLiteralFloat ||
-			type == ArgTypeLiteralFloatReduced; }
+	/// Return whether an absolute value operation is applied on the
+	/// argument.
+	bool getAbs() const { return abs; }
 
-	/* Setters */
+	/// Return whether a negation operation is applied on the argument.
+	bool getNeg() const { return neg; }
+
+	/// Return whether the argument is of type constant
+	bool getConstant() const { return constant; }
+
+	/// Return the index of the argument in an instruction's argument list,
+	/// or -1 if the argument has not been inserted yet.
+	int getIndex() const { return index; }
+
+	/// Return whether the argument is of a constant type
+	bool isConstant() const
+	{
+		return type == TypeLiteral ||
+				type == TypeLiteralReduced ||
+				type == TypeLiteralFloat ||
+				type == TypeLiteralFloatReduced;
+	}
+
+	/// Specify whether an absolute value operation should be applied on the
+	/// argument.
 	bool setAbs(bool abs) { return this->abs = abs; }
+
+	/// Specify whether a negation operation should be applied on the
+	/// argument.
 	bool setNeg(bool neg) { return this->neg = neg; }
 	
-	/* Dump operand (pure virtual function) */
-	virtual void Dump(std::ostream &os) = 0;
-	friend std::ostream &operator<<(std::ostream &os, Argument &arg) {
-		arg.Dump(os);
+	/// Pure virtual function to dump the argument. Each child class will
+	/// provide its own implementation for this function.
+	virtual void Dump(std::ostream &os = std::cout) = 0;
+
+	/// Alternative syntax for Dump()
+	friend std::ostream &operator<<(std::ostream &os,
+			Argument &argument)
+	{
+		argument.Dump(os);
 		return os;
 	}
 
-	/* Return encoded value representing operands. This operation is valid
-	 * only for a certain type of arguments. */
+	/// Return encoded value representing operands. This operation is valid
+	/// only for a certain type of arguments.
 	virtual int Encode();
 
-	/* Check that the argument is of any of the types listed in the
-	 * arguments. If not, abort the program with a fatal message.
-	 * For example, this function could be used like this:
-	 *   arg->ValidTypes(ArgTypeLiteral, ArgTypeScalarRegister); */
+	/// Check that the argument is of any of the types listed in the
+	/// arguments. If not, abort the program with a fatal message.
+	/// For example, this function could be used like this:
+	///
+	/// \code
+	///     argument->ValidTypes(Argument::TypeLiteral,
+	///                     Argument::TypeScalarRegister,
+	///                     Argument::TypeVectorRegister);
+	/// \endcode
 	void ValidTypes(bool types[]);
-	template<typename... T> void ValidTypes(bool types[], ArgType type,
-			T... args) {
-		assert(misc::inRange(type, 0, ArgTypeCount - 1));
+	template<typename... T> void ValidTypes(bool types[], Type type,
+			T... args)
+	{
+		assert(misc::inRange(type, 0, TypeCount - 1));
 		types[type] = true;
 		ValidTypes(types, args...);
 	}
-	template<typename... T> void ValidTypes(T... args) {
-		bool types[ArgTypeCount];
-		memset(types, 0, sizeof types);
+	template<typename... T> void ValidTypes(T... args)
+	{
+		bool types[TypeCount] = { false };
 		ValidTypes(types, args...);
 	}
 };
@@ -162,15 +200,25 @@ public:
 
 class ArgScalarRegister : public Argument
 {
-	/* Register number */
+	// Register number
 	int id;
+
 public:
-	ArgScalarRegister(int id) : Argument(ArgTypeScalarRegister), id(id) { }
+
+	/// Constructor
+	ArgScalarRegister(int id) :
+			Argument(TypeScalarRegister),
+			id(id)
+	{
+	}
 
 	int Encode();
+
+	/// Dump the scalar register
 	void Dump(std::ostream &os) { os << 's' << id; }
 
 	int getId() { return id; }
+
 	void setId(int id) { this->id = id; }
 };
 
@@ -179,14 +227,22 @@ class ArgScalarRegisterSeries : public Argument
 {
 	int low;
 	int high;
+
 public:
+
+	/// Constructor
 	ArgScalarRegisterSeries(int low, int high);
 
-	void Dump(std::ostream &os) { os << "s[" << low << ':'
-			<< high << ']'; }
+	/// Dump the scalar register series
+	void Dump(std::ostream &os)
+	{
+		os << "s[" << low << ':' << high << ']';
+	}
+
 	int Encode();
 
 	int getLow() { return low; }
+
 	int getHigh() { return high; }
 };
 
@@ -194,13 +250,23 @@ public:
 class ArgVectorRegister : public Argument
 {
 	int id;
-public:
-	ArgVectorRegister(int id) : Argument(ArgTypeVectorRegister), id(id) { }
 
+public:
+
+	/// Constructor
+	ArgVectorRegister(int id) :
+			Argument(TypeVectorRegister),
+			id(id)
+	{
+	}
+
+	/// Dump the vector register
 	void Dump(std::ostream &os) { os << 'v' << id; }
+
 	int Encode();
 
 	int getId() { return id; }
+
 	void setId(int id) { this->id = id; }
 };
 	
@@ -209,45 +275,60 @@ class ArgVectorRegisterSeries : public Argument
 {
 	int low;
 	int high;
+
 public:
+
 	ArgVectorRegisterSeries(int low, int high);
 
-	void Dump(std::ostream &os) { os << "v[" << low << ':'
-			<< high << ']'; }
+	/// Dump the vector register series
+	void Dump(std::ostream &os)
+	{
+		os << "v[" << low << ':' << high << ']';
+	}
 
 	int Encode();
 
 	int getLow() { return low; }
+
 	int getHigh() { return high; }
 };
 
 
-/* Class used both when the argument is of type ArgTypeLiteral and
- * ArgTypeLiteralReduced. */
+/// Class used both when the argument is of type TypeLiteral and
+/// TypeLiteralReduced.
 class ArgLiteral : public Argument
 {
 	int value;
+
 public:
+
 	ArgLiteral(int value);
 
-	void Dump(std::ostream &os) { os << "0x" << std::hex <<
-			value << std::dec; }
+	void Dump(std::ostream &os)
+	{
+		os << "0x" << std::hex << value << std::dec;
+	}
+
 	int Encode();
 
 	int getValue() { return value; }
+
 	void setValue(int value) { this->value = value; }
 };
 
 
-/* Class used when the argument is of type ArgTypeLiteralFloat or
- * ArgTypeLiteralFloatReduced */
+/// Class used when the argument is of type TypeLiteralFloat or
+/// TypeLiteralFloatReduced
 class ArgLiteralFloat : public Argument
 {
 	float value;
+
 public:
+
 	ArgLiteralFloat(float value);
 
 	void Dump(std::ostream &os) { os << value; }
+
 	int Encode();
 
 	float getValue() { return value; }
@@ -256,32 +337,43 @@ public:
 
 class ArgWaitCnt : public Argument
 {
-	bool vmcnt_active;
-	int vmcnt_value;
+	bool vmcnt_active = false;
+	int vmcnt_value = 0;
 
-	bool lgkmcnt_active;
-	int lgkmcnt_value;
+	bool lgkmcnt_active = false;
+	int lgkmcnt_value = 0;
 
-	bool expcnt_active;
-	int expcnt_value;
+	bool expcnt_active = false;
+	int expcnt_value = 0;
+
 public:
-	ArgWaitCnt();
-	ArgWaitCnt(WaitCntType type);
+
+	ArgWaitCnt(WaitCntType type = WaitCntTypeInvalid);
 	
 	void Dump(std::ostream &os);
 
 	void setVmcntActive(bool active) { vmcnt_active = active; }
+
 	void setVmcntValue(int value) { vmcnt_value = value; }
+
 	void setLgkmcntActive(bool active) { lgkmcnt_active = active; }
+
 	void setLgkmcntValue(int value) { lgkmcnt_value = value; }
+
 	void setExpcntActive(bool active) { expcnt_active = active; }
+
 	void setExpcntValue(int value) { expcnt_value = value; }
 
 	bool getVmcntActive() { return vmcnt_active; }
+
 	int getVmcntValue() { return vmcnt_value; }
+
 	bool getLgkmcntActive() { return lgkmcnt_active; }
+
 	int getLgkmcntValue() { return lgkmcnt_value; }
+
 	bool getExpcntActive() { return expcnt_active; }
+
 	int getExpcntValue() { return expcnt_value; }
 };
 
@@ -289,10 +381,17 @@ public:
 class ArgMemRegister : public Argument
 {
 	int id;
+
 public:
-	ArgMemRegister(int id) : Argument(ArgTypeMemRegister), id(id) { }
+
+	ArgMemRegister(int id) :
+			Argument(TypeMemRegister),
+			id(id)
+	{
+	}
 
 	void Dump(std::ostream &os) { os << 'm' << id; }
+
 	int Encode();
 
 	int getId() { return id; }
@@ -304,21 +403,28 @@ class ArgMaddrQual : public Argument
 	bool offen;
 	bool idxen;
 	int offset;
+
 public:
+
+	/// Constructor
 	ArgMaddrQual(bool offen, bool idxen, int offset) :
-		Argument(ArgTypeMaddrQual),
+		Argument(TypeMaddrQual),
 		offen(offen),
 		idxen(idxen),
-		offset(offset) { }
+		offset(offset)
+	{
+	}
 
-	/* Getters */
 	bool getOffen() { return offen; }
+
 	bool getIdxen() { return idxen; }
+
 	int getOffset() { return offset; }
 	
-	/* Setters */
 	bool setOffen(bool offen) { return this->offen = offen; }
+
 	bool setIdxen(bool idxen) { return this->idxen = idxen; }
+
 	int setOffset(int offset) { return this->offset = offset; }
 
 	void Dump(std::ostream &os);
@@ -327,16 +433,19 @@ public:
 
 class ArgMaddr : public Argument
 {
-	/* Sub-argument of type ArgVector, ArgScalar, ArgLiteral,
-	 * ArgLiteralReduced, ArgLiteralFloat, ArgLiteralFloatReduced. */
+	// Sub-argument of type ArgVector, ArgScalar, ArgLiteral,
+	// ArgLiteralReduced, ArgLiteralFloat, ArgLiteralFloatReduced.
 	std::unique_ptr<Argument> soffset;
 
-	/* Sub-argument of type ArgMaddrQual (memory address qualifier) */
+	// Sub-argument of type ArgMaddrQual (memory address qualifier)
 	std::unique_ptr<ArgMaddrQual> qual;
 
 	SI::InstBufDataFormat data_format;
+
 	SI::InstBufNumFormat num_format;
+
 public:
+
 	ArgMaddr(Argument *soffset, ArgMaddrQual *qual,
 			SI::InstBufDataFormat data_format,
 			SI::InstBufNumFormat num_format);
@@ -344,8 +453,11 @@ public:
 	void Dump(std::ostream &os);
 	
 	Argument *getSoffset() { return soffset.get(); }
+
 	ArgMaddrQual *getQual() { return qual.get(); }
+
 	SI::InstBufDataFormat getDataFormat() { return data_format; }
+
 	SI::InstBufNumFormat getNumFormat() { return num_format; }
 };
 
@@ -353,12 +465,17 @@ public:
 class ArgSpecialRegister : public Argument
 {
 	SI::InstSpecialReg reg;
+
 public:
+
 	ArgSpecialRegister(SI::InstSpecialReg reg) :
-		Argument(ArgTypeSpecialRegister),
-		reg(reg) { }
+		Argument(TypeSpecialRegister),
+		reg(reg)
+	{
+	}
 
 	void Dump(std::ostream &os);
+
 	int Encode();
 
 	SI::InstSpecialReg getReg() { return reg; }
@@ -372,7 +489,7 @@ class ArgLabel : public Argument
 public:
 
 	ArgLabel(const std::string &name) :
-			Argument(ArgTypeLabel),
+			Argument(TypeLabel),
 			name(name)
 	{
 	}
@@ -385,6 +502,7 @@ public:
 	const std::string &getName() { return name; }
 };
 
+
 class ArgPhi : public Argument
 {
 	// Vector register identifier
@@ -396,7 +514,7 @@ class ArgPhi : public Argument
 public:
 
 	ArgPhi(int id, const std::string &name) :
-			Argument(ArgTypePhi),
+			Argument(TypePhi),
 			id(id),
 			name(name)
 	{
@@ -409,6 +527,6 @@ public:
 	int getId() { return id; }
 };
 
-}  /* namespace si2bin */
+}  // namespace si2bin
 
 #endif

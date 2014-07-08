@@ -33,7 +33,6 @@
 
 //#include "Arg.h"
 #include "InternalBinary.h"
-//#include "Inst.h"
 #include "Metadata.h"
 #include "Binary.h"
 #include "Context.h"
@@ -60,11 +59,11 @@
 	int num;
 	float num_float;
 	char *id;
-	si2bin::Inst *inst;
+	si2bin::Instruction *inst;
 	struct si_label_t *label;
-	si2bin::Arg *arg;
+	si2bin::Argument *arg;
 	SI::Arg *si_arg;
-	std::vector<si2bin::Arg *> *list;
+	std::vector<si2bin::Argument *> *list;
 }
 
  
@@ -717,7 +716,7 @@ text_stmt
 	: label TOK_NEW_LINE
 	| instr
 	{
-		si2bin::Inst *inst = $1;
+		si2bin::Instruction *inst = $1;
 		
 		ELFWriter::Buffer *buffer;
 		
@@ -773,18 +772,18 @@ label
 instr
 	: TOK_ID arg_list 
 	{
-		si2bin::Inst *inst;
-		std::vector<si2bin::Arg *> *arg_list;
+		si2bin::Instruction *inst;
+		std::vector<si2bin::Argument *> *arg_list;
 
 		// Get arguments
 		arg_list = $2;
 
 		//no arguments - s_endpgm
 		if (!arg_list)
-			arg_list = new std::vector<si2bin::Arg *>() ;
+			arg_list = new std::vector<si2bin::Argument *>() ;
 		
 		// Create instruction
-		inst = new si2bin::Inst($1, *arg_list);
+		inst = new si2bin::Instruction($1, *arg_list);
 
 		// Return instructions
 		$$ = inst;
@@ -798,14 +797,14 @@ arg_list
 	}
 	| arg
 	{
-		std::vector<si2bin::Arg *> *arg_list = new std::vector<si2bin::Arg *>() ;
+		std::vector<si2bin::Argument *> *arg_list = new std::vector<si2bin::Argument *>() ;
 		
 		arg_list->push_back($1);
 		$$ = arg_list;
 	}
 	| arg_list TOK_COMMA arg
 	{
-		std::vector<si2bin::Arg *> *arg_list = $1;
+		std::vector<si2bin::Argument *> *arg_list = $1;
 
 		// Add argument to head of argument list
 		//ListHead(arg_list);
@@ -890,7 +889,7 @@ arg
 
 	| TOK_ID TOK_OBRA TOK_DECIMAL TOK_COLON TOK_DECIMAL TOK_CBRA  
 	{
-		si2bin::Arg *arg = NULL;
+		si2bin::Argument *arg = nullptr;
 
 		int low;
 		int high;
@@ -927,18 +926,18 @@ arg
 
 	| TOK_ABS TOK_OPAR arg TOK_CPAR
 	{
-		si2bin::Arg *arg = $3;
+		si2bin::Argument *argument = $3;
 
 		// Activate absolute value flag
-		arg->setAbs(true);
+		argument->setAbs(true);
 
 		// Check valid application of 'abs'
-		switch (arg->getType())
+		switch (argument->getType())
 		{
-		case si2bin::ArgTypeScalarRegister:
-		case si2bin::ArgTypeScalarRegisterSeries:
-		case si2bin::ArgTypeVectorRegister:
-		case si2bin::ArgTypeVectorRegisterSeries:
+		case si2bin::Argument::TypeScalarRegister:
+		case si2bin::Argument::TypeScalarRegisterSeries:
+		case si2bin::Argument::TypeVectorRegister:
+		case si2bin::Argument::TypeVectorRegisterSeries:
 			break;
 
 		default:
@@ -946,23 +945,23 @@ arg
 		}
 
 		// Return
-		$$ = arg;
+		$$ = argument;
 	}
 
 	| TOK_NEG arg
 	{
-		si2bin::Arg *arg = $2;
+		si2bin::Argument *argument = $2;
 
 		// Activate absolute value flag
-		arg->setNeg(true);
+		argument->setNeg(true);
 
 		// Check valid application of 'abs'
-		switch (arg->getType())
+		switch (argument->getType())
 		{
-		case si2bin::ArgTypeScalarRegister:
-		case si2bin::ArgTypeScalarRegisterSeries:
-		case si2bin::ArgTypeVectorRegister:
-		case si2bin::ArgTypeVectorRegisterSeries:
+		case si2bin::Argument::TypeScalarRegister:
+		case si2bin::Argument::TypeScalarRegisterSeries:
+		case si2bin::Argument::TypeVectorRegister:
+		case si2bin::Argument::TypeVectorRegisterSeries:
 			break;
 
 		default:
@@ -970,13 +969,13 @@ arg
 		}
 
 		// Return
-		$$ = arg;
+		$$ = argument;
 	}
 
 	| operand maddr_qual TOK_FORMAT TOK_COLON TOK_OBRA TOK_ID TOK_COMMA TOK_ID TOK_CBRA
 	{
-		si2bin::Arg *arg;
-		si2bin::Arg *soffset;
+		si2bin::Argument *arg;
+		si2bin::Argument *soffset;
 		si2bin::ArgMaddrQual *qual;
 
 		char *id_data_format;
@@ -1016,7 +1015,7 @@ arg
 
 	| TOK_ID
 	{
-		si2bin::Arg *arg;
+		si2bin::Argument *arg;
 		
 		// Create argument
 		arg = new si2bin::ArgLabel($1);
@@ -1043,7 +1042,7 @@ maddr_qual
 		si2bin::ArgMaddrQual *qual = 
 			static_cast<si2bin::ArgMaddrQual *>($1);
 
-		assert(qual->getType() == si2bin::ArgTypeMaddrQual);
+		assert(qual->getType() == si2bin::Argument::TypeMaddrQual);
 		if (qual->getOffen())
 			si2bin_yyerror_fmt("redundant qualifier 'offen'");
 		qual->setOffen(true);
@@ -1055,7 +1054,7 @@ maddr_qual
 		si2bin::ArgMaddrQual *qual = 
 			static_cast<si2bin::ArgMaddrQual *>($1);
 
-		assert(qual->getType() == si2bin::ArgTypeMaddrQual);
+		assert(qual->getType() == si2bin::Argument::TypeMaddrQual);
 		if (qual->getIdxen())
 			si2bin_yyerror_fmt("redundant qualifier 'idxen'");
 		qual->setIdxen(true);
@@ -1068,7 +1067,7 @@ maddr_qual
 			static_cast<si2bin::ArgMaddrQual *>($1);
 		int offset = $4;
 
-		assert(qual->getType() == si2bin::ArgTypeMaddrQual);
+		assert(qual->getType() == si2bin::Argument::TypeMaddrQual);
 		qual->setOffset(offset);
 		// FIXME - check range of 'offset'
 		$$ = qual;

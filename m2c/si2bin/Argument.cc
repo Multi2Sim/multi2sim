@@ -18,300 +18,298 @@
  */
 
 #include <sstream>
+
+#include <lib/cpp/Error.h>
 #include <lib/cpp/Misc.h>
+
 #include "Argument.h"
 
-
-using namespace misc;
 
 namespace si2bin
 {
 
-StringMap arg_type_map =
+const misc::StringMap Argument::TypeMap =
 {
-	{ "invalid", ArgTypeInvalid },
-	{ "sreg", ArgTypeScalarRegister },
-	{ "vreg", ArgTypeVectorRegister },
-	{ "sreg_series", ArgTypeScalarRegisterSeries },
-	{ "vreg_series", ArgTypeVectorRegisterSeries },
-	{ "mreg", ArgTypeMemRegister },
-	{ "special_reg", ArgTypeSpecialRegister },
-	{ "literal", ArgTypeLiteral },
-	{ "literal_reduced", ArgTypeLiteralReduced },
-	{ "literal_float", ArgTypeLiteralFloat },
-	{ "literal_float_reduced", ArgTypeLiteralFloatReduced },
-	{ "waitcnt", ArgTypeWaitCnt },
-	{ "label", ArgTypeLabel },
-	{ "maddr", ArgTypeMaddr },
-	{ "maddr_qual", ArgTypeMaddrQual }
+	{ "invalid",			TypeInvalid },
+	{ "sreg",			TypeScalarRegister },
+	{ "vreg",			TypeVectorRegister },
+	{ "sreg_series",		TypeScalarRegisterSeries },
+	{ "vreg_series",		TypeVectorRegisterSeries },
+	{ "mreg",			TypeMemRegister },
+	{ "special_reg",		TypeSpecialRegister },
+	{ "literal",			TypeLiteral },
+	{ "literal_reduced",		TypeLiteralReduced },
+	{ "literal_float",		TypeLiteralFloat },
+	{ "literal_float_reduced",	TypeLiteralFloatReduced },
+	{ "waitcnt",			TypeWaitCnt },
+	{ "label",			TypeLabel },
+	{ "maddr",			TypeMaddr },
+	{ "maddr_qual",			TypeMaddrQual }
 };
 
 
-/*
- * Class 'Arg'
- */
-
-/* Virtual Destructor */
-Argument::~Argument() {}
-
 int Argument::Encode()
 {
-	panic("%s: cannot encode argument of type %s",
-			__FUNCTION__, arg_type_map.MapValue(type));
-	return 0;
+	throw misc::Panic(misc::fmt("Cannot encode argument of type '%s'",
+			TypeMap[type]));
 }
 
 
 void Argument::ValidTypes(bool types[])
 {
-	/* If argument type is in array of allowed types, ok. */
+	// If argument type is in array of allowed types, ok.
 	if (types[type])
 		return;
 
-	/* Construct error message */
+	// Construct error message
 	std::stringstream msg;
 	msg << "argument of type " <<
-			arg_type_map.MapValue(type)
+			Argument::TypeMap[type]
 			<< " found, {";
 
-	/* List allowed types */
+	// List allowed types
 	std::string sep = "";
-	for (int i = 0; i < ArgTypeCount; i++)
+	for (int i = 0; i < TypeCount; i++)
 	{
 		if (types[i])
 		{
-			msg << sep << arg_type_map.MapValue(
-					(ArgType) i);
+			msg << sep << Argument::TypeMap[i];
 			sep = "|";
 		}
 	}
 
-	/* Message tail */
+	// Message tail
 	msg << "} expected";
-	panic("%s", msg.str().c_str());
+
+	// Exception
+	throw misc::Panic(msg.str());
 }
 
 
 
 
-/*
- * Class 'ArgScalarRegister'
- */
+//
+// Class 'ArgScalarRegister'
+//
 
 int ArgScalarRegister::Encode()
 {
-	if (inRange(id, 0, 103))
+	if (misc::inRange(id, 0, 103))
 		return id;
 
-	panic("%s: invalid scalar register (s%d)",
-			__FUNCTION__, id);
-	return 0;
+	// Invalid
+	throw misc::Panic(misc::fmt("Invalid scalar register (s%d)", id));
 }
 
 
 
-/*
- * Class 'ScalarRegisterSeries'
- */
+//
+// Class 'ScalarRegisterSeries'
+//
 
 ArgScalarRegisterSeries::ArgScalarRegisterSeries(int low, int high) :
-		Argument(ArgTypeScalarRegisterSeries), low(low), high(high)
+		Argument(TypeScalarRegisterSeries),
+		low(low),
+		high(high)
 {
+	// Verify range
 	if (low > high)
-		panic("%s: low > high", __FUNCTION__);
+		throw misc::Panic("low > high");
 }
 
 
 int ArgScalarRegisterSeries::Encode()
 {
-	if (inRange(low, 0, 103))
+	// Valid values
+	if (misc::inRange(low, 0, 103))
 		return low;
 
-	panic("%s: invalid scalar register series (s[%d:%d])",
-			__FUNCTION__, low, high);
-	return 0;
+	// Invalid
+	throw misc::Panic(misc::fmt("Invalid scalar register series (s[%d:%d])",
+			low, high));
 }
 
 
 
 
-/*
- * Class 'ArgVectorRegister'
- */
+//
+// Class 'ArgVectorRegister'
+//
 
 int ArgVectorRegister::Encode()
 {
-	if (inRange(id, 0, 255))
+	// Valid values
+	if (misc::inRange(id, 0, 255))
 		return id + 256;
 
-	panic("%s: invalid vector register (v%d)",
-			__FUNCTION__, id);
-	return 0;
+	// Invalid
+	throw misc::Panic(misc::fmt("Invalid vector register (v%d)", id));
 }
 
 
 
-/*
- * Class 'ArgVectorRegisterSeries'
- */
+//
+// Class 'ArgVectorRegisterSeries'
+//
 
 ArgVectorRegisterSeries::ArgVectorRegisterSeries(int low, int high) :
-		Argument(ArgTypeVectorRegisterSeries), low(low), high(high)
+		Argument(TypeVectorRegisterSeries),
+		low(low),
+		high(high)
 {
+	// Verify range
 	if (low > high)
-		panic("%s: low > high", __FUNCTION__);
+		throw misc::Panic("low > high");
 }
 
 
 int ArgVectorRegisterSeries::Encode()
 {
-	if (inRange(low, 0, 255))
+	// Valid values
+	if (misc::inRange(low, 0, 255))
 		return low + 256;
 
-	panic("%s: invalid vector register series (v[%d:%d:])",
-			__FUNCTION__, low, high);
-	return 0;
+	// Invalid
+	throw misc::Panic(misc::fmt("Invalid vector register series "
+			"(v[%d:%d:])", low, high));
 }
 
 
 
 
-/*
- * Class 'ArgLiteral'
- */
+//
+// Class 'ArgLiteral'
+//
 
 ArgLiteral::ArgLiteral(int value) :
-		Argument(ArgTypeLiteral), value(value)
+		Argument(TypeLiteral),
+		value(value)
 {
+	// This is a constant argument
 	constant = true;
 
-	/* Detect the special case where the literal constant is in range
-	 * [-16..64]. Some instructions can encode these values more
-	 * efficiently. Some others even only allow for these values. */
-	if (inRange(value, -16, 64))
-		type = ArgTypeLiteralReduced;
+	// Detect the special case where the literal constant is in range
+	// [-16..64]. Some instructions can encode these values more
+	// efficiently. Some others even only allow for these values.
+	if (misc::inRange(value, -16, 64))
+		type = TypeLiteralReduced;
 }
 
 
 int ArgLiteral::Encode()
 {
-	if (type != ArgTypeLiteralReduced)
-		panic("%s: only valid for ArgTypeLiteralReduced",
-				__FUNCTION__);
+	// Only reduced literals can be encoded
+	if (type != TypeLiteralReduced)
+		throw misc::Panic("Only reduced literals can be encoded");
 	
-	if (inRange(value, 0, 64))
+	// Positive constants
+	if (misc::inRange(value, 0, 64))
 		return value + 128;
-	if (inRange(value, -16, -1))
+
+	// Negative constants
+	if (misc::inRange(value, -16, -1))
 		return 192 - value;
 	
-	panic("%s: cannot encode integer constant (%d)",
-			__FUNCTION__, value);
-	return 0;
+	// Invalid
+	throw misc::Panic(misc::fmt("Invalid integer constant (%d)", value));
 }
 
 
 
 
-/*
- * Class 'ArgLiteralFloat'
- */
+//
+// Class 'ArgLiteralFloat'
+//
 
 ArgLiteralFloat::ArgLiteralFloat(float value) :
-		Argument(ArgTypeLiteralFloat), value(value)
+		Argument(TypeLiteralFloat),
+		value(value)
 {
-	/* Initialize */
+	// This is a constant argument
 	constant = true;
 
-	/* Detect the special case where the literal float constant can
-	 * be encoded in a specific register based on value */
-	if (value == 0.5 || value == -0.5 || value == 1.0 || value == -1.0
-		|| value == 2.0 || value == -2.0 || value == 4.0
-		|| value == -4.0)
-		type = ArgTypeLiteralFloatReduced;
+	// Detect the special case where the literal float constant can
+	// be encoded in a specific register based on value
+	if (value == 0.5 ||
+			value == -0.5 ||
+			value == 1.0 ||
+			value == -1.0 ||
+			value == 2.0 ||
+			value == -2.0 ||
+			value == 4.0 ||
+			value == -4.0)
+		type = TypeLiteralFloatReduced;
 }
 
 
 int ArgLiteralFloat::Encode()
 {
-	if (type != ArgTypeLiteralFloatReduced)
-		panic("%s: only valid for ArgTypeLiteralFloatReduced",
-				__FUNCTION__);
+	// Only reduced literals
+	if (type != TypeLiteralFloatReduced)
+		throw misc::Panic("Only reduced literals can be encoded");
 
 	if (value == 0.5)
 		return 240;
+
 	if (value == -0.5)
 		return 241;
+
 	if (value == 1.0)
 		return 242;
+
 	if (value == -1.0)
 		return 243;
+
 	if (value == 2.0)
 		return 244;
+
 	if (value == -2.0)
 		return 245;
+
 	if (value == 4.0)
 		return 246;
+
 	if (value == -4.0)
 		return 247;
 
-	panic("%s: cannot encode float constant (%g)",
-			__FUNCTION__, value);
-	return 0.0;
+	// Invalid
+	throw misc::Panic(misc::fmt("Cannot encode float constant (%g)",
+			value));
 }
 
 
 
-/*
- * Class 'ArgWaitCnt'
- */
+//
+// Class 'ArgWaitCnt'
+//
 
-ArgWaitCnt::ArgWaitCnt() :
-		Argument(ArgTypeWaitCnt)
+ArgWaitCnt::ArgWaitCnt(WaitCntType wait_cnt_type) :
+		Argument(TypeWaitCnt)
 {
-	/* Initialize */
-	vmcnt_active = false;
-	vmcnt_value = 0;
-	lgkmcnt_active = false;
-	lgkmcnt_value = 0;
-	expcnt_active = false;
-	expcnt_value = 0;
-}
-
-ArgWaitCnt::ArgWaitCnt(WaitCntType type) :
-		Argument(ArgTypeWaitCnt)
-{
-	/* Initialize */
-	vmcnt_value = 0;
-	lgkmcnt_value = 0;
-	expcnt_value = 0;
-
-	switch (type)
+	switch (wait_cnt_type)
 	{
 
 	case WaitCntTypeVmCnt:
+
 		vmcnt_active = true;
-		lgkmcnt_active = false;
-		expcnt_active = false;
 		break;
 
 	case WaitCntTypeLgkmCnt:
+
 		vmcnt_active = false;
-		lgkmcnt_active = true;
-		expcnt_active = false;
 		break;
 
 	case WaitCntTypeExpCnt:
+
 		vmcnt_active = false;
-		lgkmcnt_active = false;
-		expcnt_active = true;
 		break;
 	
 	default:
-		panic("%s: invalid s_waitcnt token (%d)",
-			__FUNCTION__, type);
+
 		break;
 	}
 }
+
 
 void ArgWaitCnt::Dump(std::ostream &os)
 {
@@ -336,24 +334,25 @@ void ArgWaitCnt::Dump(std::ostream &os)
 
 
 
-/*
- * Class 'ArgMemRegister'
- */
+//
+// Class 'ArgMemRegister'
+//
 
 int ArgMemRegister::Encode()
 {
-	if (!id)
+	// Valid value
+	if (id == 0)
 		return 124;
 
-	panic("invalid memory register (m%d)", id);
-	return 0;
+	// Invalid
+	throw misc::Panic(misc::fmt("Invalid memory register (m%d)", id));
 }
 
 
 
-/*
- * Class 'ArgMaddrQual'
- */
+//
+// Class 'ArgMaddrQual'
+//
 
 void ArgMaddrQual::Dump(std::ostream &os)
 {
@@ -367,16 +366,16 @@ void ArgMaddrQual::Dump(std::ostream &os)
 	
 
 
-/*
- * Class 'ArgMaddr'
- */
+//
+// Class 'ArgMaddr'
+//
 
 ArgMaddr::ArgMaddr(Argument *soffset, ArgMaddrQual *qual,
 		SI::InstBufDataFormat data_format,
 		SI::InstBufNumFormat num_format) :
-		Argument(ArgTypeMaddr)
+		Argument(TypeMaddr)
 {
-	/* Initialize */
+	// Initialize
 	this->soffset.reset(soffset);
 	this->qual.reset(qual);
 	this->data_format = data_format;
@@ -411,18 +410,21 @@ int ArgSpecialRegister::Encode()
 	switch (reg)
 	{
 	case SI::InstSpecialRegVcc:
+
 		return 106;
 
 	case SI::InstSpecialRegExec:
+
 		return 126;
 
 	case SI::InstSpecialRegScc:
+
 		return 253;
 
 	default:
-		panic("%s: unsupported special register (code=%d)",
-			__FUNCTION__, reg);
-		return 0;
+
+		throw misc::Panic(misc::fmt("Unsupported special register "
+				"(code %d)", reg));
 	}
 }
 
