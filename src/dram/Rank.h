@@ -62,6 +62,23 @@ public:
 	Bank *getBank(int id) const { return banks[id].get(); }
 	Channel *getChannel() const { return channel; }
 
+	/// Returns the type of the last scheduled command.
+	CommandType getLastScheduledCommandType() const
+	{
+		return last_scheduled_command_type;
+	}
+
+	/// Returns the cycle that the last scheduled command of the specfied
+	/// type was made in.
+	long long getLastScheduledCommand(CommandType type) const
+	{
+		return last_scheduled_commands[type];
+	}
+
+	/// Updates the cycle of the last scheduled command of the specified
+	/// type and updates the last scheduled command type.
+	void setLastScheduledCommand(CommandType type);
+
 	/// Dump the object to an output stream.
 	void dump(std::ostream &os = std::cout) const;
 
