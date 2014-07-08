@@ -35,17 +35,16 @@ namespace Kepler
 
 Grid::Grid(Function *function)
 {
-	/* Initialization */
+	// Initialization
 	this->emu = emu->getInstance();
 	id = emu->getGridSize();
 
-	inst_buffer = function->getInstructionBuffer();
-	inst_buffer_size = function->getInstructionBinarySize();
-	gpr_count = function->getNumberofGPR();
+	inst_buffer = function->getTextBuffer();
+	inst_buffer_size = function->getTextSize();
 
 	state = GridStateInvalid;
 
-	/* Add to list */
+	// Add to list
 	emu->GridsPushBack(this);
 }
 
@@ -57,25 +56,25 @@ void Grid::SetupSize(unsigned *thread_block_count,
 		unsigned *thread_block_size)
 {
 
-	/* Setup thread-block counts */
+	// Setup thread-block counts
 	for (int i = 0; i < 3; i++)
 		thread_block_count3[i] = thread_block_count[i];
 	this->thread_block_count = thread_block_count3[0] *
 			thread_block_count3[1] * thread_block_count3[2];
 
-	/* Setup thread-block sizes */
+	// Setup thread-block sizes
 	for (int i = 0; i < 3; i++)
 		thread_block_size3[i] = thread_block_size[i];
 	this->thread_block_size = thread_block_size3[0] *
 			thread_block_size3[1] * thread_block_size3[2];
 
-	/* Calculate thread counts */
+	// Calculate thread counts
 	for (int i = 0; i < 3; i++)
 		thread_count3[i] = thread_block_count[i] * thread_block_size[i];
 	thread_count = thread_count3[0] * thread_count3[1] *
 			thread_count3[2];
 
-	/* Create lists */
+	// Create lists
 
 	//this->pending_thread_blocks = new std::list<std::unique_ptr<ThreadBlock>>;
 	for (unsigned i = 0; i < this->thread_block_count; ++i)
@@ -86,7 +85,7 @@ void Grid::SetupSize(unsigned *thread_block_count,
 	//this->running_thread_blocks = list_create();
 	//this->finished_thread_blocks = list_create();
 
-	/* Debug */
+	// Debug
 	/*kpl_isa_debug("%s:%d: block count = (%d,%d,%d)\n",
 			__FILE__, __LINE__, this->thread_block_count3[0],
 			this->thread_block_count3[1],

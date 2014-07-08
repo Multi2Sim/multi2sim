@@ -2,17 +2,17 @@ lib_LIBRARIES = libdriver.a
 
 libdriver_a_SOURCES = \
 		\
-		Driver.h \
+		Argument.cc \
+		Argument.h \
+		\
 		Driver.cc \
+		Driver.h \
 		\
-		Driver.def \
 		DriverCall.cc \
+		Driver.def \
 		\
-		Function.h \
 		Function.cc \
-		\
-		Function-arg.h \
-		Function-arg.cc \
+		Function.h \
 		\
 		Module.cc \
 		Module.h

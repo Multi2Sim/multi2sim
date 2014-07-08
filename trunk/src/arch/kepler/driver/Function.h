@@ -20,70 +20,66 @@ d *  Multi2Sim
 #ifndef ARCH_KEPLER_DRIVER_FUNCTION_H
 #define ARCH_KEPLER_DRIVER_FUNCTION_H
 
+#include <cassert>
 #include <memory>
 #include <vector>
 
-#include"Function-arg.h"
-#include"Module.h"
+#include <lib/cpp/Misc.h>
+
+#include "Argument.h"
 
 
 namespace Kepler
 {
 
+// Forward declarations
+class Module;
+
+
 class Function
 {
-	// ID
+	// Function unique identifier
 	int id;
 
+	// Module that the function belongs to
+	Module *module;
+
 	// Name
-	std::unique_ptr<char> name;
+	std::string name;
 
-	// Module ID
-	unsigned module_id;
-
-	// Instruction binary
-	int inst_bin_size;
-	unsigned long long *inst_buffer;
-
-	// Number of GPRs used by one thread
-	int num_gpr;
+	// Pointer to a region of the ELF file in the associated module
+	// containing the ISA section for the function. FIXME
+	const char *text_buffer;
+	
+	// Size of the ISA section FIXME
+	int text_size;
 
 	// Arguments
-	int arg_count;
-	Argument **arg_array;
+	std::vector<std::unique_ptr<Argument>> arguments;
 
 public:
 
 	/// Constructor
-	Function(Module *module, char *function_name);
+	Function(int id, Module *module, const std::string &name);
 
-	/// Destructor
-	~Function();
+	/// Get the size of the ISA section in the associated ELF binary
+	int getTextSize() const { return text_size; }
 
-	/// Static Function List
-	static std::vector<Function*> function_list;
+	/// Get a buffer pointing to the ISA section in the associated ELF file
+	const char *getTextBuffer() const { return text_buffer; }
 
-	/// Get Instruction binary
-	int getInstructionBinarySize() const { return inst_bin_size; }
+	/// Get number of arguments
+	int getNumArguments() const { return arguments.size(); }
 
-	/// Get Instruction buffer
-	unsigned long long* getInstructionBuffer() const { return inst_buffer; }
-
-	/// Get Number of GPRS
-	int getNumberofGPR() const { return num_gpr; }
-
-	/// Get Argument count
-	int getArgCount() const { return arg_count; }
-
-	/// Get Argument member
-	Argument* getArgMember (int i) const {return arg_array[i];}
-
-	/// Set Argument count
-	void setArgCount(int arg_count)	{ this->arg_count = arg_count; }
-
-	/// Set Argument member
-	void setArgMember (Argument* arg, int index) { this->arg_array[index] = arg; }
+	/// Get the arguments with the given index
+	Argument *getArgument(int index)
+	{
+		assert(misc::inRange((unsigned) index, 0,
+				arguments.size() - 1));
+		return arguments[index].get();
+	}
 };
+
 
 } // namespace Kepler
 
