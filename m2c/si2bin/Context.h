@@ -31,7 +31,7 @@
 #include <lib/cpp/ELFWriter.h>
 
 #include "Binary.h"
-#include "Inst.h"
+#include "Instruction.h"
 #include "InternalBinary.h"
 #include "Metadata.h"
 #include "Symbol.h"

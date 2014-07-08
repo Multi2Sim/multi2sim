@@ -19,16 +19,16 @@
 
 #include <lib/cpp/Misc.h>
 
-#include "Arg.h"
+#include "Argument.h"
 #include "Context.h"
-#include "Inst.h"
+#include "Instruction.h"
 #include "Token.h"
 
 
 namespace si2bin
 {
 
-void Inst::Initialize()
+void Instruction::Initialize()
 {
 	size = 0;
 	bytes.dword = 0;
@@ -43,7 +43,7 @@ void Inst::Initialize()
 }
 
 
-void Inst::Initialize(SI::InstOpcode opcode)
+void Instruction::Initialize(SI::InstOpcode opcode)
 {
 	// Common initialization
 	Initialize();
@@ -81,7 +81,7 @@ void Inst::Initialize(SI::InstOpcode opcode)
 		/* Get formal argument from instruction info. Associate token with the
 		 * instruction argument. */
 		Token *token = info->getToken(i);
-		Arg *arg = args[i].get();
+		Argument *arg = args[i].get();
 		arg->token = token;
 		assert(token);
 
@@ -92,7 +92,7 @@ void Inst::Initialize(SI::InstOpcode opcode)
 }
 
 
-void Inst::Initialize(const std::string &name)
+void Instruction::Initialize(const std::string &name)
 {
 	// Common initialization
 	Initialize();
@@ -118,7 +118,7 @@ void Inst::Initialize(const std::string &name)
 		{
 			/* Get formal argument from instruction info. We associate the
 			 * instruction argument with the token. */
-			Arg *arg = args[i].get();
+			Argument *arg = args[i].get();
 			Token *token = info->getToken(i);
 			arg->token = token;
 			assert(token);
@@ -150,7 +150,7 @@ void Inst::Initialize(const std::string &name)
 }
 
 
-void Inst::Dump(std::ostream &os)
+void Instruction::Dump(std::ostream &os)
 {
         // Comment attached to the instruction
         if (!comment.empty())
@@ -171,7 +171,7 @@ void Inst::Dump(std::ostream &os)
         os << '\n';
 }
 
-void Inst::EncodeArg(Arg *arg, Token *token)
+void Instruction::EncodeArg(Argument *arg, Token *token)
 {
 	// Check token
 	switch (token->getType())
@@ -1057,7 +1057,7 @@ void Inst::EncodeArg(Arg *arg, Token *token)
 }
 
 
-void Inst::Encode()
+void Instruction::Encode()
 {
 	/* By default, the instruction has the number of bytes specified by its
 	 * format. 4-bit instructions could be extended later to 8 bits upon
@@ -1199,7 +1199,7 @@ void Inst::Encode()
 	for (unsigned i = 0; i < args.size(); i++)
 	{
 		// Get argument and token
-		Arg *arg = args[i].get();
+		Argument *arg = args[i].get();
 		Token *token = info->getToken(i);
 		assert(token);
 		EncodeArg(arg, token);

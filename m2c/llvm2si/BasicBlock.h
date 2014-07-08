@@ -28,7 +28,7 @@
 #include <llvm/IR/Type.h>
 #include <m2c/common/BasicBlock.h>
 #include <m2c/common/Node.h>
-#include <m2c/si2bin/Inst.h>
+#include <m2c/si2bin/Instruction.h>
 
 #include <src/lib/cpp/Bitmap.h>
 
@@ -46,7 +46,7 @@ class BasicBlock : public comm::BasicBlock
 	int global_id;
 
 	// List list of instructions forming the basic block.
-	std::list<std::unique_ptr<si2bin::Inst>> inst_list;
+	std::list<std::unique_ptr<si2bin::Instruction>> inst_list;
 
 	// Comment stored temporarily in the basic block to be attached to the
 	// next instruction added.
@@ -100,7 +100,7 @@ public:
 	}
 
 	/// Return a reference to the list of instructions
-	std::list<std::unique_ptr<si2bin::Inst>> &getInstList()
+	std::list<std::unique_ptr<si2bin::Instruction>> &getInstList()
 	{
 		return inst_list;
 	}
@@ -117,7 +117,7 @@ public:
 	}
 
 	// Add one SI instruction to the 'inst_list' field of the basic block.
-	void AddInst(si2bin::Inst *inst);
+	void AddInst(si2bin::Instruction *inst);
 
 	/// Add a comment to a basic block. The comment will be attached to the
 	/// next instruction added to the block. If no other instruction is
@@ -130,7 +130,7 @@ public:
 	/// Return an iterator to the first instruction that was emitted by
 	/// the control flow pass in the basic block. If there is no control
 	/// flow instruction, a past-the-end iterator is returned.
-	std::list<std::unique_ptr<si2bin::Inst>>::iterator
+	std::list<std::unique_ptr<si2bin::Instruction>>::iterator
 			getFirstControlFlowInst();
 
 	/// Perform analysis on live variables inside the llvm function to allow

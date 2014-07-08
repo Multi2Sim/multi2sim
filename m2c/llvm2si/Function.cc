@@ -171,7 +171,7 @@ void Function::AddUAV(FunctionUAV *uav)
 	//
 	// s_load_dwordx4 s[uavX:uavX+3], s[uav_table:uav_table+1], x * 8
 	//
-	Inst *inst = new Inst(SI::INST_S_LOAD_DWORDX4,
+	Instruction *inst = new Instruction(SI::INST_S_LOAD_DWORDX4,
 			new ArgScalarRegisterSeries(uav->sreg, uav->sreg + 3),
 			new ArgScalarRegisterSeries(sreg_uav_table, sreg_uav_table + 1),
 			new ArgLiteral((uav->index + 10) * 8));
@@ -209,13 +209,13 @@ int Function::AddArg(FunctionArg *arg, int num_elem, int offset)
 	{
 	case 1:
 	{
-		Inst *inst = new Inst(SI::INST_S_BUFFER_LOAD_DWORD,
+		Instruction *inst = new Instruction(SI::INST_S_BUFFER_LOAD_DWORD,
 				new ArgScalarRegister(arg->sreg),
 				new ArgScalarRegisterSeries(sreg_cb1, sreg_cb1 + 3),
 				new ArgLiteral(arg->index * 4 + offset));
 		basic_block->AddInst(inst);
 
-		inst = new Inst(SI::INST_S_WAITCNT,
+		inst = new Instruction(SI::INST_S_WAITCNT,
 				new ArgWaitCnt(WaitCntTypeLgkmCnt));
 		basic_block->AddInst(inst);
 
@@ -242,13 +242,13 @@ int Function::AddArg(FunctionArg *arg, int num_elem, int offset)
 
 	case 4:
 	{
-		Inst *inst = new Inst(SI::INST_S_BUFFER_LOAD_DWORDX4,
+		Instruction *inst = new Instruction(SI::INST_S_BUFFER_LOAD_DWORDX4,
 				new ArgScalarRegisterSeries(arg->sreg, arg->sreg + 3),
 				new ArgScalarRegisterSeries(sreg_cb1, sreg_cb1 + 3),
 				new ArgLiteral(arg->index * 4 + offset));
 		basic_block->AddInst(inst);
 
-		inst = new Inst(SI::INST_S_WAITCNT,
+		inst = new Instruction(SI::INST_S_WAITCNT,
 				new ArgWaitCnt(WaitCntTypeLgkmCnt));
 		basic_block->AddInst(inst);
 
@@ -262,13 +262,13 @@ int Function::AddArg(FunctionArg *arg, int num_elem, int offset)
 	}
 	case 8:
 	{
-		Inst *inst = new Inst(SI::INST_S_BUFFER_LOAD_DWORDX4,
+		Instruction *inst = new Instruction(SI::INST_S_BUFFER_LOAD_DWORDX4,
 				new ArgScalarRegisterSeries(arg->sreg, arg->sreg + 3),
 				new ArgScalarRegisterSeries(sreg_cb1, sreg_cb1 + 3),
 				new ArgLiteral(arg->index * 4 + offset));
 		basic_block->AddInst(inst);
 		
-		inst = new Inst(SI::INST_S_BUFFER_LOAD_DWORDX4,
+		inst = new Instruction(SI::INST_S_BUFFER_LOAD_DWORDX4,
 				new ArgScalarRegisterSeries(arg->sreg + 4, arg->sreg + 7),
 				new ArgScalarRegisterSeries(sreg_cb1, sreg_cb1 + 3),
 				new ArgLiteral(arg->index * 4 + 4 + offset));
@@ -276,7 +276,7 @@ int Function::AddArg(FunctionArg *arg, int num_elem, int offset)
 		offset += 4;
 		basic_block->AddInst(inst);
 		
-		inst = new Inst(SI::INST_S_WAITCNT,
+		inst = new Instruction(SI::INST_S_WAITCNT,
 				new ArgWaitCnt(WaitCntTypeLgkmCnt));
 		basic_block->AddInst(inst);
 
@@ -449,7 +449,7 @@ void Function::EmitHeader()
 	sreg_gsize = AllocSReg(3);
 	for (int index = 0; index < 3; index++)
 	{
-		Inst *inst = new Inst(SI::INST_S_BUFFER_LOAD_DWORD,
+		Instruction *inst = new Instruction(SI::INST_S_BUFFER_LOAD_DWORD,
 				new ArgScalarRegister(sreg_gsize + index),
 				new ArgScalarRegisterSeries(sreg_cb0, sreg_cb0 + 3),
 				new ArgLiteral(index));
@@ -466,7 +466,7 @@ void Function::EmitHeader()
 	sreg_lsize = AllocSReg(3);
 	for (int index = 0; index < 3; index++)
 	{
-		Inst *inst = new Inst(SI::INST_S_BUFFER_LOAD_DWORD,
+		Instruction *inst = new Instruction(SI::INST_S_BUFFER_LOAD_DWORD,
 				new ArgScalarRegister(sreg_lsize + index),
 				new ArgScalarRegisterSeries(sreg_cb0, sreg_cb0 + 3),
 				new ArgLiteral(4 + index));
@@ -483,7 +483,7 @@ void Function::EmitHeader()
 	sreg_offs = AllocSReg(3);
 	for (int index = 0; index < 3; index++)
 	{
-		Inst *inst = new Inst(SI::INST_S_BUFFER_LOAD_DWORD,
+		Instruction *inst = new Instruction(SI::INST_S_BUFFER_LOAD_DWORD,
 				new ArgScalarRegister(sreg_offs + index),
 				new ArgScalarRegisterSeries(sreg_cb0, sreg_cb0 + 3),
 				new ArgLiteral(0x18 + index));
@@ -505,20 +505,20 @@ void Function::EmitHeader()
 				"in dimension %d", index));
 
 		// v_mov_b32
-		Inst *inst = new Inst(SI::INST_V_MOV_B32,
+		Instruction *inst = new Instruction(SI::INST_V_MOV_B32,
 				new ArgVectorRegister(vreg_gid + index),
 				new ArgScalarRegister(sreg_lsize + index));
 		basic_block->AddInst(inst);
 
 		// v_mul_i32_i24
-		inst = new Inst(SI::INST_V_MUL_I32_I24,
+		inst = new Instruction(SI::INST_V_MUL_I32_I24,
 				new ArgVectorRegister(vreg_gid + index),
 				new ArgScalarRegister(sreg_wgid + index),
 				new ArgVectorRegister(vreg_gid + index));
 		basic_block->AddInst(inst);
 
 		// v_add_i32
-		inst = new Inst(SI::INST_V_ADD_I32,
+		inst = new Instruction(SI::INST_V_ADD_I32,
 				new ArgVectorRegister(vreg_gid + index),
 				new ArgSpecialRegister(SI::InstSpecialRegVcc),
 				new ArgVectorRegister(vreg_gid + index),
@@ -526,7 +526,7 @@ void Function::EmitHeader()
 		basic_block->AddInst(inst);
 
 		// v_add_i32
-		inst = new Inst(SI::INST_V_ADD_I32,
+		inst = new Instruction(SI::INST_V_ADD_I32,
 				new ArgVectorRegister(vreg_gid + index),
 				new ArgSpecialRegister(SI::InstSpecialRegVcc),
 				new ArgScalarRegister(sreg_offs + index),
@@ -591,10 +591,10 @@ void Function::EmitBody()
 }
 
 
-void Function::EmitPhiMoves(si2bin::Inst *inst)
+void Function::EmitPhiMoves(si2bin::Instruction *inst)
 {
 	// Get destination register
-	si2bin::Arg *dst_arg = inst->getArgs()[0].get();
+	si2bin::Argument *dst_arg = inst->getArgs()[0].get();
 	si2bin::ArgVectorRegister *dst_arg_vreg =
 			misc::cast<si2bin::ArgVectorRegister *>(dst_arg);
 	int dst_vreg = dst_arg_vreg->getId();
@@ -603,7 +603,7 @@ void Function::EmitPhiMoves(si2bin::Inst *inst)
 	for (int i = 1; i < inst->getNumArgs(); i++)
 	{
 		// Get the Phi argument
-		si2bin::Arg *arg = inst->getArgs()[i].get();
+		si2bin::Argument *arg = inst->getArgs()[i].get();
 		si2bin::ArgPhi *arg_phi = misc::cast<si2bin::ArgPhi *>(arg);
 
 		// Get the source basic block
@@ -619,7 +619,7 @@ void Function::EmitPhiMoves(si2bin::Inst *inst)
 
 		// Emit move instruction
 		// s_mov_b32 <dest_value>, <src_value>
-		Inst *inst = new Inst(SI::INST_V_MOV_B32,
+		Instruction *inst = new Instruction(SI::INST_V_MOV_B32,
 				new si2bin::ArgVectorRegister(dst_vreg),
 				new si2bin::ArgVectorRegister(src_vreg));
 		basic_block->getInstList().emplace(it, inst);
@@ -639,7 +639,7 @@ void Function::EmitPhi()
 			++it_next;
 
 			// Process Phi instruction
-			Inst *inst = it->get();
+			Instruction *inst = it->get();
 			if (inst->getOpcode() == SI::INST_PHI)
 			{
 				EmitPhiMoves(inst);
@@ -703,7 +703,7 @@ void Function::EmitIfThen(comm::AbstractNode *node)
 	//
 	// s_and_saveexec_b64 <tos_sreg> <cond_sreg>
 	//
-	Inst *inst = new Inst(SI::INST_S_AND_SAVEEXEC_B64,
+	Instruction *inst = new Instruction(SI::INST_S_AND_SAVEEXEC_B64,
 			new ArgScalarRegisterSeries(tos_sreg, tos_sreg + 1),
 			new ArgScalarRegisterSeries(cond_sreg, cond_sreg + 1));
 	inst->setControlFlow(true);
@@ -718,7 +718,7 @@ void Function::EmitIfThen(comm::AbstractNode *node)
 	//
 	// s_mov_b64 exec, <tos_sreg>
 	//
-	inst = new Inst(SI::INST_S_MOV_B64,
+	inst = new Instruction(SI::INST_S_MOV_B64,
 			new ArgSpecialRegister(SI::InstSpecialRegExec),
 			new ArgScalarRegisterSeries(tos_sreg, tos_sreg + 1));
 	inst->setControlFlow(true);
@@ -790,7 +790,7 @@ void Function::EmitIfThenElse(comm::AbstractNode *node)
 	//
 	// s_and_saveexec_b64 <tos_sreg> <cond_sreg>
 	//
-	Inst *inst = new Inst(SI::INST_S_AND_SAVEEXEC_B64,
+	Instruction *inst = new Instruction(SI::INST_S_AND_SAVEEXEC_B64,
 			new ArgScalarRegisterSeries(tos_sreg, tos_sreg + 1),
 			new ArgScalarRegisterSeries(cond_sreg, cond_sreg + 1));
 	inst->setControlFlow(true);
@@ -805,7 +805,7 @@ void Function::EmitIfThenElse(comm::AbstractNode *node)
 	//
 	// s_andn2_b64 exec, <tos_sreg>, exec
 	//
-	inst = new Inst(SI::INST_S_ANDN2_B64,
+	inst = new Instruction(SI::INST_S_ANDN2_B64,
 			new ArgSpecialRegister(SI::InstSpecialRegExec),
 			new ArgScalarRegisterSeries(tos_sreg, tos_sreg + 1),
 			new ArgSpecialRegister(SI::InstSpecialRegExec));
@@ -821,7 +821,7 @@ void Function::EmitIfThenElse(comm::AbstractNode *node)
 	//
 	// s_mov_b64 exec, <tos_sreg>
 	//
-	inst = new Inst(SI::INST_S_MOV_B64,
+	inst = new Instruction(SI::INST_S_MOV_B64,
 			new ArgSpecialRegister(SI::InstSpecialRegExec),
 			new ArgScalarRegisterSeries(tos_sreg, tos_sreg + 1));
 	inst->setControlFlow(true);
@@ -887,7 +887,7 @@ void Function::EmitWhileLoop(comm::AbstractNode *node)
 	//
 	// s_mov_b64 <tos_sreg>, exec
 	//
-	Inst *inst = new Inst(SI::INST_S_MOV_B64,
+	Instruction *inst = new Instruction(SI::INST_S_MOV_B64,
 			new ArgScalarRegisterSeries(tos_sreg, tos_sreg + 1),
 			new ArgSpecialRegister(SI::InstSpecialRegExec));
 	inst->setControlFlow(true);
@@ -902,7 +902,7 @@ void Function::EmitWhileLoop(comm::AbstractNode *node)
 	//
 	// s_mov_b64 exec, <tos_sreg>
 	//
-	inst = new Inst(SI::INST_S_MOV_B64,
+	inst = new Instruction(SI::INST_S_MOV_B64,
 			new ArgSpecialRegister(SI::InstSpecialRegExec),
 			new ArgScalarRegisterSeries(tos_sreg, tos_sreg + 1));
 	inst->setControlFlow(true);
@@ -917,7 +917,7 @@ void Function::EmitWhileLoop(comm::AbstractNode *node)
 	//
 	// s_branch <head_block>
 	//
-	inst = new Inst(SI::INST_S_BRANCH,
+	inst = new Instruction(SI::INST_S_BRANCH,
 			new ArgLabel(head_leaf_node->getName()));
 	inst->setControlFlow(true);
 	tail_basic_block->AddInst(inst);
@@ -952,7 +952,7 @@ void Function::EmitWhileLoop(comm::AbstractNode *node)
 
 	// Bitwise 'and' of active mask with condition.
 	// s_and(n2)_b64 exec, exec, <cond_sreg>
-	inst = new Inst(opcode,
+	inst = new Instruction(opcode,
 			new ArgSpecialRegister(SI::InstSpecialRegExec),
 			new ArgSpecialRegister(SI::InstSpecialRegExec),
 			new ArgScalarRegisterSeries(cond_sreg, cond_sreg + 1));
@@ -961,7 +961,7 @@ void Function::EmitWhileLoop(comm::AbstractNode *node)
 
 	// Exit loop if no more work-items are active.
 	// s_cbranch_execz <exit_node>
-	inst = new Inst(SI::INST_S_CBRANCH_EXECZ,
+	inst = new Instruction(SI::INST_S_CBRANCH_EXECZ,
 			new ArgLabel(exit_node->getName()));
 	inst->setControlFlow(true);
 	head_basic_block->AddInst(inst);
@@ -1308,7 +1308,7 @@ void Function::LiveRegisterAnalysisBitmapDump() {
 }
 
 
-Arg *Function::TranslateConstant(llvm::Constant *llvm_const)
+Argument *Function::TranslateConstant(llvm::Constant *llvm_const)
 {
 	// Check constant type
 	llvm::Type *llvm_type = llvm_const->getType();
@@ -1335,7 +1335,7 @@ Arg *Function::TranslateConstant(llvm::Constant *llvm_const)
 }
 
 
-Arg *Function::TranslateValue(llvm::Value *llvm_value, Symbol *&symbol)
+Argument *Function::TranslateValue(llvm::Value *llvm_value, Symbol *&symbol)
 {
 	// Returned symbol is null by default
 	symbol = nullptr;
@@ -1356,7 +1356,7 @@ Arg *Function::TranslateValue(llvm::Value *llvm_value, Symbol *&symbol)
 		throw Error("Symbol not found: " + name);
 
 	// Create argument based on symbol type
-	Arg *arg;
+	Argument *arg;
 	switch (symbol->getType())
 	{
 
@@ -1381,7 +1381,7 @@ Arg *Function::TranslateValue(llvm::Value *llvm_value, Symbol *&symbol)
 }
 
 
-Arg *Function::ConstToVReg(BasicBlock *basic_block, Arg *arg)
+Argument *Function::ConstToVReg(BasicBlock *basic_block, Argument *arg)
 {
 	// If argument is not a literal of any kind, don't convert.
 	if (!arg->isConstant())
@@ -1389,13 +1389,13 @@ Arg *Function::ConstToVReg(BasicBlock *basic_block, Arg *arg)
 
 	// Allocate vector register
 	int vreg = AllocVReg();
-	Arg *ret_arg = new ArgVectorRegister(vreg);
+	Argument *ret_arg = new ArgVectorRegister(vreg);
 
 	// Copy constant to vector register.
 	//
 	// v_mov_b32 <vreg>, <const>
 	//
-	Inst *inst = new Inst(SI::INST_V_MOV_B32,
+	Instruction *inst = new Instruction(SI::INST_V_MOV_B32,
 			new ArgVectorRegister(vreg),
 			arg);
 	basic_block->AddInst(inst);

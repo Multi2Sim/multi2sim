@@ -50,8 +50,8 @@
 	#include <string>
 	#include <vector>
 	#include <arch/southern-islands/asm/Arg.h>
-	#include "Arg.h"
-	#include "Inst.h"
+	#include "Argument.h"
+	#include "Instruction.h"
 	#include "Context.h"
 }
 
