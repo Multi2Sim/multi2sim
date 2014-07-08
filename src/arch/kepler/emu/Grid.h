@@ -42,8 +42,8 @@ enum GridState
 {
 	GridStateInvalid = 0,
 	GridPending = 0x1,
-    GridRunning = 0x2,
-    GridFinished = 0x4
+	GridRunning = 0x2,
+	GridFinished = 0x4
 };
 
 class Grid
@@ -86,7 +86,7 @@ class Grid
 	std::list<Grid *>::iterator finished_grid_list_iter;
 
 	// Instruction buffer
-	void *inst_buffer;
+	const void *inst_buffer;
 	int inst_buffer_size;
 
 	// Shared memory top pointer

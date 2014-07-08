@@ -16,39 +16,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_KEPLER_DRIVER_FUNCTION_ARG_H
-#define ARCH_KEPLER_DRIVER_FUNCTION_ARG_H
-
-#include <memory>
+#include "Argument.h"
 
 
 namespace Kepler
 {
 
-// Cuda Function Argument
-class Argument
-{
-	// Function ID
-	int id;
-
-	// Function name
-	std::unique_ptr<char> name;
-
-	// The argument value in constant memory
-	unsigned value;
-
-public:
-
-	/// Constructor
-	Argument(char* name);
-
-	/// Get Value
-	unsigned getValue()	const { return value; }
-
-	/// Set Value
-	void setValue(unsigned value)	{this->value = value; }
-};
-
 } // namespace Kepler
 
-#endif

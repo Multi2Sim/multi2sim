@@ -232,20 +232,27 @@ int Driver::CallLaunchKernel(mem::Memory *memory, unsigned args_ptr)
 	debug << misc::fmt("\tkernel_args = 0x%08x\n", kernel_args);
 
 	// Get function
-	Function *function;
-	function = Function::function_list[function_id];
+	Function *function = getFunction(function_id);
+	if (function == nullptr)
+		throw Driver::Error(misc::fmt("Invalid function ID (%d)",
+				function_id));
 
 	// Set up arguments
-	Argument *arg;
-	unsigned arg_ptr;
-	unsigned temp;
-	int offset = 0x20;  // need to be changed?
-	for (int i = 0; i < function->getArgCount(); ++i)
+	int offset = 0x20;  // Start writing at this position
+	for (int i = 0; i < function->getNumArguments(); ++i)
 	{
-		arg = function->getArgMember(i);
-		memory->Read(kernel_args + i * 4, sizeof(unsigned), (char *)&arg_ptr);
-		memory->Read(arg_ptr, sizeof(unsigned),(char *) &temp);
-		arg->setValue(temp);
+		// Read argument value
+		unsigned arg_ptr;
+		unsigned temp;
+		memory->Read(kernel_args + i * 4, sizeof(unsigned),
+				(char *) &arg_ptr);
+		memory->Read(arg_ptr, sizeof(unsigned), (char *) &temp);
+
+		// Store argument value
+		Argument *argument = function->getArgument(i);
+		argument->setValue(temp);
+
+		// Write value to constant memory
 		const_mem->Write(offset, sizeof(unsigned),(char *) &temp);
 		offset += 0x4;
 	}
@@ -266,7 +273,7 @@ int Driver::CallLaunchKernel(mem::Memory *memory, unsigned args_ptr)
 }
 
 
-/// ABI Call 'MemGetInfo'
+/// ABI Call 'MemGetInfo'  FIXME
 ///
 /// param unsigned free;
 /// Returned free global memory in bytes.
@@ -304,23 +311,24 @@ int Driver::CallMemGetInfo(mem::Memory *memory, unsigned args_ptr)
 
 /// ABI Call 'ModuleLoad'
 ///
-/// param unsigned free;
-/// Returned free global memory in bytes.
+/// \param char *path
+///	Path of a cubin binary to load the module from.
 ///
-/// param unsigned total
-/// Returned total global memory in bytes
-///
-/// return value
-/// the return is always 0 on success
+/// \return
+///	[...] FIXME
 int Driver::CallModuleLoad(mem::Memory *memory, unsigned args_ptr)
 {
-	// Get kernel binary
-	char cubin_path[MAX_STRING_SIZE];
-	memory->Read(args_ptr, MAX_STRING_SIZE, cubin_path);
+	// Arguments
+	unsigned path_ptr;
+	memory->Read(args_ptr, sizeof(unsigned), (char *) &path_ptr);
+
+	// Get path to cubin binary
+	char path[MAX_STRING_SIZE];
+	memory->Read(path_ptr, MAX_STRING_SIZE, path);
 
 	// Create module
-	Module Module1(cubin_path);
-	return 0;
+	Module *module = addModule(path);
+	return module->getId();
 }
 
 

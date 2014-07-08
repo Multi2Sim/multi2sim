@@ -19,9 +19,9 @@
 #ifndef ARCH_KEPLER_MODULE_H
 #define ARCH_KEPLER_MODULE_H
 
-#include<lib/cpp/ELFReader.h>
-
 #include <vector>
+
+#include <lib/cpp/ELFReader.h>
 
 
 namespace Kepler
@@ -29,28 +29,26 @@ namespace Kepler
 
 class Module
 {
-	// ID
-	unsigned id;
+	// Unique identifier for the module
+	int id;
 
 	// Kernel binary
-	ELFReader::File *elf_file;
-
+	ELFReader::File elf_file;
 
 public:
-	/// Static Module List
-	static std::vector<Module*> module_list;
 
 	/// Constructor
-	Module(const std::string cubin_path);
+	Module(int id, const std::string &cubin_path) :
+			id(id),
+			elf_file(cubin_path)
+	{
+	}
 
-	/// Destructor
-	~Module();
+	/// Get the module's unique identifier
+	unsigned getId() const { return id; }
 
-	/// Get ID
-	unsigned getID() const { return id; }
-
-	/// Get Kernel Binary
-	ELFReader::File* getELF() const { return elf_file; }
+	/// Get kernel binary
+	ELFReader::File *getELFFile() { return &elf_file; }
 };
 
 } // namespace Kepler
