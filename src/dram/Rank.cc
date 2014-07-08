@@ -21,6 +21,7 @@
 
 #include "Bank.h"
 #include "Rank.h"
+#include "System.h"
 
 
 namespace dram
@@ -41,6 +42,13 @@ Rank::Rank(int id,
 	for (int i = 0; i < num_banks; i++)
 		banks.emplace_back(new Bank(i, this, num_rows, num_columns,
 				num_bits));
+}
+
+
+void Rank::setLastScheduledCommand(CommandType type)
+{
+	last_scheduled_commands[type] = System::DRAM_DOMAIN->getCycle();
+	last_scheduled_command_type = type;
 }
 
 

@@ -70,6 +70,23 @@ public:
 
 	Rank *getRank() const { return rank; }
 
+	/// Returns the type of the last scheduled command.
+	CommandType getLastScheduledCommandType() const
+	{
+		return last_scheduled_command_type;
+	}
+
+	/// Returns the cycle that the last scheduled command of the specfied
+	/// type was made in.
+	long long getLastScheduledCommand(CommandType type) const
+	{
+		return last_scheduled_commands[type];
+	}
+
+	/// Updates the cycle of the last scheduled command of the specified
+	/// type and updates the last scheduled command type.
+	void setLastScheduledCommand(CommandType type);
+
 	// Returns if the bank is precharged.
 	bool isPrecharged() const { return current_active_row == -1; }
 

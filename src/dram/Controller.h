@@ -113,6 +113,22 @@ public:
 	Controller(int id, const std::string &section,
 			misc::IniFile &config);
 
+	int getId() const { return id; }
+
+	Channel *getChannel(int id) { return channels[id].get(); }
+
+	int getNumChannels() const { return num_channels; }
+	int getNumRanks() const { return num_ranks; }
+	int getNumBanks() const { return num_banks; }
+	int getNumRows() const { return num_rows; }
+	int getNumColumns() const { return num_columns; }
+
+	int getTiming(TimingCommand prev, TimingCommand next,
+			TimingLocation rank, TimingLocation bank) const
+	{
+		return timings[prev][next][rank][bank];
+	}
+
 	/// Parse a MemoryController section of a dram configuration file
 	void ParseConfiguration(const std::string &section,
 			misc::IniFile &config);
@@ -121,16 +137,6 @@ public:
 
 	/// Set default timing parameters for DDR3 1600
 	void DefaultDDR3_1600(TimingParameters &parameters);
-
-	int getId() const { return id; }
-
-	int getNumChannels() const { return num_channels; }
-	int getNumRanks() const { return num_ranks; }
-	int getNumBanks() const { return num_banks; }
-	int getNumRows() const { return num_rows; }
-	int getNumColumns() const { return num_columns; }
-
-	Channel *getChannel(int id) { return channels[id].get(); }
 
 	/// Add a request to the controller's incoming request queue.
 	void AddRequest(std::shared_ptr<Request> request);

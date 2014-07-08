@@ -72,6 +72,9 @@ public:
 
 	int getId() const { return id; }
 
+	Rank *getRank(int id) const { return ranks[id].get(); }
+	Controller *getController() const { return controller; }
+
 	/// Returns the number of ranks in this channel.
 	int getNumRanks() const { return num_ranks; }
 
@@ -80,9 +83,6 @@ public:
 
 	/// Returns the total number of banks in this channel.
 	int getNumBanksTotal() const { return num_banks * num_ranks; }
-
-	Rank *getRank(int id) const { return ranks[id].get(); }
-	Controller *getController() const { return controller; }
 
 	/// Call the scheduler for this channel.  This function will only
 	/// invoke the scheduler if it is not already scheduled to run.  The

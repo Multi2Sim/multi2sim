@@ -93,7 +93,11 @@ void Channel::SchedulerHandler(esim::EventType *type,
 
 void Channel::RunScheduler()
 {
-	esim::Engine *esim = esim::Engine::getInstance();
+	long long cycle = System::DRAM_DOMAIN->getCycle();
+
+	// Debug
+	System::debug << misc::fmt("[%lld] Controller %d Channel %d running "
+			"scheduler\n", cycle, getController()->getId(), id);
 
 	// Get a pointer to the bank whose front command should be run next.
 	// This is either the result of the scheduling algorithm from a previous
@@ -105,7 +109,7 @@ void Channel::RunScheduler()
 		std::pair<int, int> bank_found = scheduler->FindNext();
 
 		System::debug << misc::fmt("[%lld] Scheduler returns %d : %d "
-				"for next command scheduling\n", esim->getTime(),
+				"for next command scheduling\n", cycle,
 				bank_found.first, bank_found.second);
 
 		// Don't do anything if no bank was found.
@@ -120,11 +124,11 @@ void Channel::RunScheduler()
 	// bank's queue.
 	long long cycle_ready = bank->getFrontCommandTiming();
 
-	std::cout << misc::fmt("%lld, %lld", cycle_ready, esim->getTime());
+	std::cout << misc::fmt("%lld, %lld", cycle_ready, cycle);
 
 	// Run the command now if able, otherwise put off running the
 	// command until it is able.
-	if (esim->getTime() >= cycle_ready)
+	if (cycle >= cycle_ready)
 	{
 		bank->runFrontCommand();
 		next_scheduled_bank = nullptr;
@@ -140,15 +144,10 @@ void Channel::RunScheduler()
 
 		// Call the scheduler again when the selected command is ready
 		// to be run.
-		CallScheduler((cycle_ready - esim->getTime()) / 1000);
+		CallScheduler(cycle_ready - cycle);
 
 		std::cout << "\t\tDelayed command\n";
 	}
-
-	// Debug
-	System::debug << misc::fmt("[%lld] Controller %d Channel %d running "
-			"scheduler\n", esim->getTime(),
-			getController()->getId(), getId());
 }
 
 
