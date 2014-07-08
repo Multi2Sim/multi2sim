@@ -261,12 +261,11 @@ void System::dump(std::ostream &os) const
 {
 	os << "\n\n--------------------\n\n";
 	os << "Dumping DRAM system\n";
-	os << misc::fmt("%d Controllers\nController dump:\n", controllers.size());
+	os << misc::fmt("%d Controllers\nController dump:\n",
+			(int) controllers.size());
 
-	for (auto const& controller : controllers)
-	{
+	for (auto &controller : controllers)
 		controller->dump(os);
-	}
 }
 
 
