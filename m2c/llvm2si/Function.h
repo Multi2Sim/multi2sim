@@ -30,7 +30,7 @@
 #include <llvm/IR/Type.h>
 #include <m2c/common/Node.h>
 #include <m2c/common/Tree.h>
-#include <m2c/si2bin/Arg.h>
+#include <m2c/si2bin/Argument.h>
 
 #include "BasicBlock.h"
 #include "Symbol.h"
@@ -184,7 +184,7 @@ class Function
 	void EmitIfThenElse(comm::AbstractNode *node);
 	void EmitWhileLoop(comm::AbstractNode *node);
 
-	si2bin::Arg *TranslateConstant(llvm::Constant *llvm_const);
+	si2bin::Argument *TranslateConstant(llvm::Constant *llvm_const);
 
 public:
 
@@ -254,7 +254,7 @@ public:
 	/// Process all virtual Phi instructions and replace them by Move
 	/// instructions in the predecessor basic blocks.
 	void EmitPhi();
-	void EmitPhiMoves(si2bin::Inst *inst);
+	void EmitPhiMoves(si2bin::Instruction *inst);
 
 	/// Emit additional instructions managing active masks and active mask
 	/// stacks related with the function control flow.
@@ -320,11 +320,11 @@ public:
 	///   argument will be the vector register associated with that symbol.
 	///   In this case, the symbol is returned in argument 'symbol'.
 	///
-	si2bin::Arg *TranslateValue(llvm::Value *llvm_value, Symbol *&symbol);
+	si2bin::Argument *TranslateValue(llvm::Value *llvm_value, Symbol *&symbol);
 
 	/// Alternative syntax for TranslateValue() where the \a symbol output
 	/// argument is omitted.
-	si2bin::Arg *TranslateValue(llvm::Value *llvm_value)
+	si2bin::Argument *TranslateValue(llvm::Value *llvm_value)
 	{
 		Symbol *symbol;
 		return TranslateValue(llvm_value, symbol);
@@ -336,7 +336,7 @@ public:
 	/// new argument instance is returned containing the new vector
 	/// register. If the original argument was not a literal, it will be
 	/// returned directly, and no instruction is emitted.
-	si2bin::Arg *ConstToVReg(BasicBlock *basic_block, si2bin::Arg *arg);
+	si2bin::Argument *ConstToVReg(BasicBlock *basic_block, si2bin::Argument *arg);
 
 	/// Allocate a scalar register
 	///

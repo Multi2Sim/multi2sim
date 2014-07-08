@@ -19,7 +19,7 @@
 
 #include <sstream>
 #include <lib/cpp/Misc.h>
-#include "Arg.h"
+#include "Argument.h"
 
 
 using namespace misc;
@@ -52,9 +52,9 @@ StringMap arg_type_map =
  */
 
 /* Virtual Destructor */
-Arg::~Arg() {}
+Argument::~Argument() {}
 
-int Arg::Encode()
+int Argument::Encode()
 {
 	panic("%s: cannot encode argument of type %s",
 			__FUNCTION__, arg_type_map.MapValue(type));
@@ -62,7 +62,7 @@ int Arg::Encode()
 }
 
 
-void Arg::ValidTypes(bool types[])
+void Argument::ValidTypes(bool types[])
 {
 	/* If argument type is in array of allowed types, ok. */
 	if (types[type])
@@ -115,7 +115,7 @@ int ArgScalarRegister::Encode()
  */
 
 ArgScalarRegisterSeries::ArgScalarRegisterSeries(int low, int high) :
-		Arg(ArgTypeScalarRegisterSeries), low(low), high(high)
+		Argument(ArgTypeScalarRegisterSeries), low(low), high(high)
 {
 	if (low > high)
 		panic("%s: low > high", __FUNCTION__);
@@ -156,7 +156,7 @@ int ArgVectorRegister::Encode()
  */
 
 ArgVectorRegisterSeries::ArgVectorRegisterSeries(int low, int high) :
-		Arg(ArgTypeVectorRegisterSeries), low(low), high(high)
+		Argument(ArgTypeVectorRegisterSeries), low(low), high(high)
 {
 	if (low > high)
 		panic("%s: low > high", __FUNCTION__);
@@ -181,7 +181,7 @@ int ArgVectorRegisterSeries::Encode()
  */
 
 ArgLiteral::ArgLiteral(int value) :
-		Arg(ArgTypeLiteral), value(value)
+		Argument(ArgTypeLiteral), value(value)
 {
 	constant = true;
 
@@ -217,7 +217,7 @@ int ArgLiteral::Encode()
  */
 
 ArgLiteralFloat::ArgLiteralFloat(float value) :
-		Arg(ArgTypeLiteralFloat), value(value)
+		Argument(ArgTypeLiteralFloat), value(value)
 {
 	/* Initialize */
 	constant = true;
@@ -266,7 +266,7 @@ int ArgLiteralFloat::Encode()
  */
 
 ArgWaitCnt::ArgWaitCnt() :
-		Arg(ArgTypeWaitCnt)
+		Argument(ArgTypeWaitCnt)
 {
 	/* Initialize */
 	vmcnt_active = false;
@@ -278,7 +278,7 @@ ArgWaitCnt::ArgWaitCnt() :
 }
 
 ArgWaitCnt::ArgWaitCnt(WaitCntType type) :
-		Arg(ArgTypeWaitCnt)
+		Argument(ArgTypeWaitCnt)
 {
 	/* Initialize */
 	vmcnt_value = 0;
@@ -371,10 +371,10 @@ void ArgMaddrQual::Dump(std::ostream &os)
  * Class 'ArgMaddr'
  */
 
-ArgMaddr::ArgMaddr(Arg *soffset, ArgMaddrQual *qual,
+ArgMaddr::ArgMaddr(Argument *soffset, ArgMaddrQual *qual,
 		SI::InstBufDataFormat data_format,
 		SI::InstBufNumFormat num_format) :
-		Arg(ArgTypeMaddr)
+		Argument(ArgTypeMaddr)
 {
 	/* Initialize */
 	this->soffset.reset(soffset);

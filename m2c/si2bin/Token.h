@@ -27,7 +27,7 @@ namespace si2bin
 {
 
 /* Forward declarations */
-class Arg;
+class Argument;
 
 
 extern misc::StringMap token_type_map;
@@ -133,7 +133,7 @@ public:
 
 	/* Return true if this token accepts the Southern Islands argument
 	 * passed in the function. */
-	bool IsArgAllowed(Arg *arg);
+	bool IsArgAllowed(Argument *arg);
 };
 
 
