@@ -493,6 +493,18 @@ std::ostream &operator<<(std::ostream &os, const File &file)
 }
 
 
+Section *File::getSection(const std::string &name) const
+{
+	// Search
+	for (auto &section : sections)
+		if (section->getName() == name)
+			return section.get();
+	
+	// Not found
+	return nullptr;
+}
+
+
 Symbol *File::getSymbol(const std::string &name) const
 {
 	// Search
@@ -501,7 +513,7 @@ Symbol *File::getSymbol(const std::string &name) const
 			return symbol.get();
 	
 	// Not found
-	return NULL;
+	return nullptr;
 }
 
 

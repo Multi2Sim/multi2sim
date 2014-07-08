@@ -133,7 +133,8 @@ public:
 	/// section. The section can then be read using I/O operations on the
 	/// stream. This operation involves no data copy. Instead, it just makes
 	/// \a stream point to the section buffer.
-	void getStream(std::istringstream &stream) const {
+	void getStream(std::istringstream &stream) const
+	{
 		getStream(stream, 0, size);
 	}
 
@@ -426,10 +427,15 @@ public:
 
 	/// Return the section at position \a index, or \a null if the
 	/// value given in \a index is out of range.
-	Section *getSection(int index) const {
+	Section *getSection(int index) const
+	{
 		return index >= 0 && index < (int) sections.size() ?
-				sections[index].get() : nullptr;
+				sections[index].get() :
+				nullptr;
 	}
+
+	/// Return a section by its name, or \a null if not found.
+	Section *getSection(const std::string &name) const;
 
 	/// Return a read-only reference to the vector of sections. This
 	/// function is useful for convenient iteration through sections using
@@ -438,32 +444,41 @@ public:
 	/// \code
 	///	for (auto &section : file.getSections())
 	/// \endcode
-	const std::vector<std::unique_ptr<Section>> &getSections() const {
-			return sections; }
+	const std::vector<std::unique_ptr<Section>> &getSections() const
+	{
+		return sections;
+	}
 
 	/// Return the number of program headers
 	int getNumProgramHeaders() const { return program_headers.size(); }
 
 	/// Return the program header at position \a index, or \a null if
 	/// the value given in \a index is out of range.
-	ProgramHeader *getProgramHeader(int index) const {
+	ProgramHeader *getProgramHeader(int index) const
+	{
 		return index >= 0 && index < (int) program_headers.size() ?
-				program_headers[index].get() : nullptr;
+				program_headers[index].get() :
+				nullptr;
 	}
 
 	/// Return a constant reference to the list of program headers for
 	/// convenient iteration.
-	const std::vector<std::unique_ptr<ProgramHeader>> &getProgramHeaders()
-			const { return program_headers; }
+	const std::vector<std::unique_ptr<ProgramHeader>>
+			&getProgramHeaders() const
+	{
+		return program_headers;
+	}
 
 	/// Return the number of symbols
 	int getNumSymbols() const { return symbols.size(); }
 
 	/// Return the symbol at position \a index, or \a null if the
 	/// value given in \a index is out of range.
-	Symbol *getSymbol(int index) const {
+	Symbol *getSymbol(int index) const
+	{
 		return index >= 0 && index < (int) symbols.size() ?
-				symbols[index].get() : nullptr;
+				symbols[index].get() :
+				nullptr;
 	}
 
 	/// Return a symbol given its \a name. Symbols are stored
@@ -473,8 +488,10 @@ public:
 
 	/// Return a constant reference to the list of symbols for convenient
 	/// iteration.
-	const std::vector<std::unique_ptr<Symbol>> &getSymbols() const {
-			return symbols; }
+	const std::vector<std::unique_ptr<Symbol>> &getSymbols() const
+	{
+		return symbols;
+	}
 
 	/// Return the section corresponding to the string table, or \a null if
 	/// the ELF file doesn't contain one.
@@ -488,7 +505,8 @@ public:
 
 	/// Modify the input string stream given in \a stream to point to
 	/// the entire content of the ELF file.
-	void getStream(std::istringstream &stream) const {
+	void getStream(std::istringstream &stream) const
+	{
 		getStream(stream, 0, size);
 	}
 

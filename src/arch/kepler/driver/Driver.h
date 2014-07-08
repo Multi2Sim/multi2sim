@@ -19,9 +19,14 @@
 #ifndef ARCH_KEPLER_DRIVER_DRIVER_H
 #define ARCH_KEPLER_DRIVER_DRIVER_H
 
+#include <memory>
+
 #include <arch/common/Driver.h>
 #include <lib/cpp/Debug.h>
 #include <lib/cpp/Error.h>
+
+#include "Function.h"
+#include "Module.h"
 
 
 namespace Kepler
@@ -29,20 +34,6 @@ namespace Kepler
 
 // Forward Declarations
 class Program;
-
-
-// Exception thrown by driver errors
-class Error : public misc::Error
-{
-public:
-
-	/// Constructor
-	Error(const std::string &message) : misc::Error(message)
-	{
-		// Add module prefix
-		AppendPrefix("Kepler driver");
-	}
-};
 
 
 /// Kepler driver
@@ -103,7 +94,26 @@ class Driver : public comm::Driver
 	// Table of ABI call execution functions
 	static const CallFn call_fn[CallCodeCount];
 
+	// List of CUDA modules created by the guest application
+	std::vector<std::unique_ptr<Module>> modules;
+
+	// List of CUDA functions created by the guest application
+	std::vector<std::unique_ptr<Function>> functions;
+
 public:
+
+	// Exception thrown by driver errors
+	class Error : public misc::Error
+	{
+	public:
+
+		/// Constructor
+		Error(const std::string &message) : misc::Error(message)
+		{
+			// Add module prefix
+			AppendPrefix("Kepler driver");
+		}
+	};
 
 	/// Obtain instance of the singleton
 	static Driver *getInstance();
@@ -120,6 +130,36 @@ public:
 
 	/// Process command-line options
 	static void ProcessOptions();
+
+	/// Create a new module and return a pointer to it.
+	Module *addModule(const std::string &path);
+
+	/// Create a new CUDA function and return a pointer to it.
+	Function *addFunction(Module *module, const std::string &name);
+
+	/// Return the number of available modules
+	int getNumModules() { return modules.size(); }
+
+	/// Return the module with the given identifier, or `nullptr` if the
+	/// identifier does not correspond to a valid module.
+	Module *getModule(int index)
+	{
+		return misc::inRange((unsigned) index, 0, modules.size()) ?
+				modules[index].get() :
+				nullptr;
+	}
+
+	/// Return the number of available functions
+	int getNumFunctions() { return functions.size(); }
+
+	/// Return the function with the given identifier, or `nullptr` if the
+	/// identifier does not correspond to a valid function.
+	Function *getFunction(int index)
+	{
+		return misc::inRange((unsigned) index, 0, functions.size()) ?
+				functions[index].get() :
+				nullptr;
+	}
 };
 
 

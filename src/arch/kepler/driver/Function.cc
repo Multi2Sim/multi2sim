@@ -21,124 +21,56 @@
 #include <cstring>
 
 #include <lib/cpp/ELFReader.h>
-#include <lib/util/string.h>
+#include <lib/cpp/String.h>
 
+#include "Driver.h"
 #include "Function.h"
-#include "Function-arg.h"
+#include "Module.h"
 
 
 namespace Kepler
 {
 
-std::vector<Function*> Function::function_list;
-
-Function::Function(Module *module, char *function_name)
+Function::Function(int id, Module *module, const std::string &name) :
+		id(id),
+		module(module),
+		name(name)
 {
-	// Initialization
-	this->id = function_list.size();
-	this->name.reset(function_name);
-	this->module_id = module->getID();
+	// Obtain cubin binary from associated module
+	ELFReader::File *elf_file = module->getELFFile();
 
-	// Get cubin
-	ELFReader::File *cubin;
-	cubin = module->getELF();
-
-	// Get .text.kernel_name section
-	ELFReader::Section *function_text_section;
-	ELFReader::Section *sec;
-	char func_text_sec_name[MAX_STRING_SIZE];
-	snprintf(func_text_sec_name, sizeof func_text_sec_name, ".text.%s",
-			function_name);
-	std::string section_name (func_text_sec_name);
-	int i = 0;
-	for (i = 0; i < cubin->getNumSections(); ++i)
-	{
-		sec = cubin->getSection(i);
-		std::string name = sec->getName();
-		int flag = 0;
-		for(unsigned j = 0; j < section_name.length(); ++j)
-		{
-			if( name.at(j) != section_name.at(j) )
-			{
-				flag = 1;
-				break;
-			}
-		}
-
-		if(!flag)
-			function_text_section = cubin->getSection(i);
-	}
-	assert(i < cubin->getNumSections());
+	// Get section named ".text.<name>" from the ELF file
+	std::string text_section_name = ".text." + name;
+	ELFReader::Section *text_section = elf_file->getSection(
+			text_section_name);
+	if (text_section == nullptr)
+		throw Driver::Error(misc::fmt("Cannot find section '%s' in "
+				"kernel binary", text_section_name.c_str()));
 
 	// Get instruction binary
-	this->inst_bin_size = function_text_section->getEntSize();
-	this->inst_buffer= (unsigned long long *)new char[inst_bin_size];
-	char *inst_bin_byte = new char [cubin->getSize()];
-	strcpy(inst_bin_byte, cubin->getBuffer());
-	for (i = 0; i < this->inst_bin_size; ++i)
-	{
-		if (i % 8 == 0 || i % 8 == 1 || i % 8 == 2 || i % 8 == 3)
-		{
-			this->inst_buffer[i / 8] |=
-						(unsigned long long int)(*(inst_bin_byte+i)) << (i * 8 + 32);
-		}
-		else
-		{
-			this->inst_buffer[i / 8] |=
-						(unsigned long long int)(*(inst_bin_byte+i)) << (i * 8 - 32);
-		}
-	}
+	text_buffer = text_section->getBuffer();
+	text_size = text_section->getSize();
 
-	// Get GPR usage         !!!!!!!!!!!!  need to be done!!!!
-	//this->num_gpr = function_text_section->header->sh_info >> 24;
-	//this->num_gpr = function_text_section
-
-	// Get .nv.info.kernel_name section
-	ELFReader::Section *function_info_section;
-	char func_info_sec_name[MAX_STRING_SIZE];
-	snprintf(func_info_sec_name, MAX_STRING_SIZE, ".nv.info.%s",
-			name.get());
-	for (i = 0; i < cubin->getNumSections(); ++i)
-	{
-		std::string name = sec->getName();
-		int flag = 0;
-		for(unsigned j = 0; j < section_name.length(); ++j)
-		{
-			if( name.at(j) != section_name.at(j) )
-			{
-				flag = 1;
-				break;
-			}
-		}
-
-		if(!flag)
-			function_info_section = cubin->getSection(i);
-
-	}
-	assert(i < cubin->getNumSections());
+	// Get section named ".nv.info.<name>" from the ELF file
+	std::string info_section_name = ".vn.info." + name;
+	ELFReader::Section *info_section = elf_file->getSection(
+			info_section_name);
+	if (info_section == nullptr)
+		throw Driver::Error(misc::fmt("Cannot find section '%s' in "
+				"kernel binary", info_section_name.c_str()));
 
 	// Get the number of arguments
-	this->setArgCount(((unsigned char *)
-				function_info_section->getBuffer())[10] / 4);
+	const char *info_buffer = info_section->getBuffer();
+	int num_arguments = ((unsigned char *) (info_buffer))[10] / 4;
 
 	// Create arguments
-	this->arg_array = new Argument* [this->arg_count];
-	char arg_name[MAX_STRING_SIZE];
-	for (i = 0; i < this->getArgCount(); ++i)
+	for (int i = 0; i < num_arguments; i++)
 	{
-		snprintf(arg_name, MAX_STRING_SIZE, "arg_%d", i);
-		this->arg_array[i] = new Argument(arg_name);
+		std::string argument_name = misc::fmt("arg_%d", i);
+		arguments.emplace_back(new Argument(argument_name));
 	}
-
-	// Add function to function list
-	function_list.push_back(this);
 }
 
-Function::~Function()
-{
-	delete this->inst_buffer;
-	delete this->arg_array;
-}
 
 } // namespace Kepler
 

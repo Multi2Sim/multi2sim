@@ -22,23 +22,6 @@
 namespace Kepler
 {
 
-// Module List Definition
-std::vector<Module*> Module:: module_list;
-
-Module::Module(const std::string cubin_path)
-{
-	// Initialization
-	id = module_list.size();
-	//elf_file = elf_file_create_from_path(cubin_path);
-	elf_file = new ELFReader::File(cubin_path);
-
-	// Add module to list
-	module_list.push_back(this);
-}
-
-Module::~Module()
-{
-	delete elf_file;
-}
 
 } // namespace Kepler
+

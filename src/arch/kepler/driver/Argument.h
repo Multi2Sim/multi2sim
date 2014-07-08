@@ -16,17 +16,43 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <lib/mhandle/mhandle.h>
+#ifndef ARCH_KEPLER_DRIVER_ARGUMENT_H
+#define ARCH_KEPLER_DRIVER_ARGUMENT_H
 
-#include"Function-arg.h"
+#include <string>
 
 
 namespace Kepler
 {
 
-Argument::Argument(char *name)
+class Argument
 {
-	this->name.reset(name);
-}
+	// Name of the argument
+	std::string name;
+
+	// Argument value
+	unsigned value;
+
+public:
+
+	/// Constructor
+	Argument(const std::string &name) :
+			name(name)
+	{
+	}
+
+	/// Return the argument name
+	const std::string &getName() { return name; }
+
+	/// Return the argument value
+	unsigned getValue() const { return value; }
+
+	/// Set the argument value
+	void setValue(unsigned value) {this->value = value; }
+};
+
 
 } // namespace Kepler
+
+#endif
+

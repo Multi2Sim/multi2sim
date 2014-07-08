@@ -115,6 +115,28 @@ void Driver::ProcessOptions()
 	debug.setPath(debug_file);
 	debug.setPrefix("[Kepler driver]");
 }
+	
+	
+Module *Driver::addModule(const std::string &cubin_path)
+{
+	// The module ID is its position in the list
+	int id = modules.size();
+
+	// Create module and add it to the list of modules
+	modules.emplace_back(new Module(id, cubin_path));
+	return modules.back().get();
+}
+
+
+Function *Driver::addFunction(Module *module, const std::string &name)
+{
+	// The function ID is its position in the list
+	int id = functions.size();
+
+	// Create function and add it to the list of functions
+	functions.emplace_back(new Function(id, module, name));
+	return functions.back().get();
+}
 
 
 }  // namepsace Kepler
