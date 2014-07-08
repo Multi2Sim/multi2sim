@@ -37,10 +37,10 @@ public:
 	static const unsigned LogPageSize = 12;
 
 	/// Size of a memory page
-	static const unsigned PageSize = (1u << LogPageSize);
+	static const unsigned PageSize = 1u << LogPageSize;
 
 	/// Mask to apply on a byte address to discard the page offset
-	static const unsigned PageMask = (~(PageSize - 1));
+	static const unsigned PageMask = ~(PageSize - 1);
 
 	/// Number of pages in the page table
 	static const unsigned PageCount = 1024;
