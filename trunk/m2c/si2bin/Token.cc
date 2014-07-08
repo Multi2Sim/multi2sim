@@ -19,7 +19,7 @@
 
 #include <lib/cpp/Misc.h>
 
-#include "Arg.h"
+#include "Argument.h"
 #include "Token.h"
 
 
@@ -199,7 +199,7 @@ Token::Token(TokenType type)
 }
 
 
-bool Token::IsArgAllowed(Arg *arg)
+bool Token::IsArgAllowed(Argument *arg)
 {
 	/* FIXME
 	 * Some tokens that currently allow for literal and literal_float

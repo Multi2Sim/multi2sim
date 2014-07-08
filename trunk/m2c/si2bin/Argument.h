@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef M2C_SI2BIN_ARG_H
-#define M2C_SI2BIN_ARG_H
+#ifndef M2C_SI2BIN_ARGUMENT_H
+#define M2C_SI2BIN_ARGUMENT_H
 
 #include <arch/southern-islands/asm/Inst.h>
 #include <lib/cpp/Misc.h>
@@ -33,7 +33,7 @@
 namespace si2bin
 {
 
-/* Forward declarations */
+// Forward declarations
 class Token;
 
 
@@ -77,9 +77,9 @@ enum WaitCntType
 
 /// Base class representing the argument of an instruction. More specific
 /// instruction classes can be derived from this class
-class Arg
+class Argument
 {
-	friend class Inst;
+	friend class Instruction;
 
 protected:
 
@@ -107,11 +107,11 @@ protected:
 public:
 
 	/// Constructor
-	Arg(ArgType type) : type(type), index(-1), token(nullptr),
+	Argument(ArgType type) : type(type), index(-1), token(nullptr),
 			abs(false), neg(false), constant(false) { }
 	
 	/// Virtual Destructor
-	virtual ~Arg();
+	virtual ~Argument();
 
 	/* Getters */
 	ArgType getType() { return type; }
@@ -132,7 +132,7 @@ public:
 	
 	/* Dump operand (pure virtual function) */
 	virtual void Dump(std::ostream &os) = 0;
-	friend std::ostream &operator<<(std::ostream &os, Arg &arg) {
+	friend std::ostream &operator<<(std::ostream &os, Argument &arg) {
 		arg.Dump(os);
 		return os;
 	}
@@ -160,12 +160,12 @@ public:
 };
 
 
-class ArgScalarRegister : public Arg
+class ArgScalarRegister : public Argument
 {
 	/* Register number */
 	int id;
 public:
-	ArgScalarRegister(int id) : Arg(ArgTypeScalarRegister), id(id) { }
+	ArgScalarRegister(int id) : Argument(ArgTypeScalarRegister), id(id) { }
 
 	int Encode();
 	void Dump(std::ostream &os) { os << 's' << id; }
@@ -175,7 +175,7 @@ public:
 };
 
 
-class ArgScalarRegisterSeries : public Arg
+class ArgScalarRegisterSeries : public Argument
 {
 	int low;
 	int high;
@@ -191,11 +191,11 @@ public:
 };
 
 
-class ArgVectorRegister : public Arg
+class ArgVectorRegister : public Argument
 {
 	int id;
 public:
-	ArgVectorRegister(int id) : Arg(ArgTypeVectorRegister), id(id) { }
+	ArgVectorRegister(int id) : Argument(ArgTypeVectorRegister), id(id) { }
 
 	void Dump(std::ostream &os) { os << 'v' << id; }
 	int Encode();
@@ -205,7 +205,7 @@ public:
 };
 	
 
-class ArgVectorRegisterSeries : public Arg
+class ArgVectorRegisterSeries : public Argument
 {
 	int low;
 	int high;
@@ -224,7 +224,7 @@ public:
 
 /* Class used both when the argument is of type ArgTypeLiteral and
  * ArgTypeLiteralReduced. */
-class ArgLiteral : public Arg
+class ArgLiteral : public Argument
 {
 	int value;
 public:
@@ -241,7 +241,7 @@ public:
 
 /* Class used when the argument is of type ArgTypeLiteralFloat or
  * ArgTypeLiteralFloatReduced */
-class ArgLiteralFloat : public Arg
+class ArgLiteralFloat : public Argument
 {
 	float value;
 public:
@@ -254,7 +254,7 @@ public:
 };
 
 
-class ArgWaitCnt : public Arg
+class ArgWaitCnt : public Argument
 {
 	bool vmcnt_active;
 	int vmcnt_value;
@@ -286,11 +286,11 @@ public:
 };
 
 
-class ArgMemRegister : public Arg
+class ArgMemRegister : public Argument
 {
 	int id;
 public:
-	ArgMemRegister(int id) : Arg(ArgTypeMemRegister), id(id) { }
+	ArgMemRegister(int id) : Argument(ArgTypeMemRegister), id(id) { }
 
 	void Dump(std::ostream &os) { os << 'm' << id; }
 	int Encode();
@@ -299,14 +299,14 @@ public:
 };
 
 
-class ArgMaddrQual : public Arg
+class ArgMaddrQual : public Argument
 {
 	bool offen;
 	bool idxen;
 	int offset;
 public:
 	ArgMaddrQual(bool offen, bool idxen, int offset) :
-		Arg(ArgTypeMaddrQual),
+		Argument(ArgTypeMaddrQual),
 		offen(offen),
 		idxen(idxen),
 		offset(offset) { }
@@ -325,11 +325,11 @@ public:
 };
 
 
-class ArgMaddr : public Arg
+class ArgMaddr : public Argument
 {
 	/* Sub-argument of type ArgVector, ArgScalar, ArgLiteral,
 	 * ArgLiteralReduced, ArgLiteralFloat, ArgLiteralFloatReduced. */
-	std::unique_ptr<Arg> soffset;
+	std::unique_ptr<Argument> soffset;
 
 	/* Sub-argument of type ArgMaddrQual (memory address qualifier) */
 	std::unique_ptr<ArgMaddrQual> qual;
@@ -337,25 +337,25 @@ class ArgMaddr : public Arg
 	SI::InstBufDataFormat data_format;
 	SI::InstBufNumFormat num_format;
 public:
-	ArgMaddr(Arg *soffset, ArgMaddrQual *qual,
+	ArgMaddr(Argument *soffset, ArgMaddrQual *qual,
 			SI::InstBufDataFormat data_format,
 			SI::InstBufNumFormat num_format);
 	
 	void Dump(std::ostream &os);
 	
-	Arg *getSoffset() { return soffset.get(); }
+	Argument *getSoffset() { return soffset.get(); }
 	ArgMaddrQual *getQual() { return qual.get(); }
 	SI::InstBufDataFormat getDataFormat() { return data_format; }
 	SI::InstBufNumFormat getNumFormat() { return num_format; }
 };
 
 
-class ArgSpecialRegister : public Arg
+class ArgSpecialRegister : public Argument
 {
 	SI::InstSpecialReg reg;
 public:
 	ArgSpecialRegister(SI::InstSpecialReg reg) :
-		Arg(ArgTypeSpecialRegister),
+		Argument(ArgTypeSpecialRegister),
 		reg(reg) { }
 
 	void Dump(std::ostream &os);
@@ -365,14 +365,14 @@ public:
 };
 
 
-class ArgLabel : public Arg
+class ArgLabel : public Argument
 {
 	std::string name;
 
 public:
 
 	ArgLabel(const std::string &name) :
-			Arg(ArgTypeLabel),
+			Argument(ArgTypeLabel),
 			name(name)
 	{
 	}
@@ -385,7 +385,7 @@ public:
 	const std::string &getName() { return name; }
 };
 
-class ArgPhi : public Arg
+class ArgPhi : public Argument
 {
 	// Vector register identifier
 	int id;
@@ -396,7 +396,7 @@ class ArgPhi : public Arg
 public:
 
 	ArgPhi(int id, const std::string &name) :
-			Arg(ArgTypePhi),
+			Argument(ArgTypePhi),
 			id(id),
 			name(name)
 	{

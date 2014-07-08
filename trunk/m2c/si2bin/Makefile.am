@@ -16,8 +16,8 @@ BUILT_SOURCES = Parser.h
 
 libsi2bin_a_SOURCES = \
 	\
-	Arg.cc \
-	Arg.h \
+	Argument.cc \
+	Argument.h \
 	\
 	Binary.cc \
 	Binary.h \
@@ -28,8 +28,8 @@ libsi2bin_a_SOURCES = \
 	InternalBinary.cc \
 	InternalBinary.h \
 	\
-	Inst.cc \
-	Inst.h \
+	Instruction.cc \
+	Instruction.h \
 	\
 	Metadata.cc \
 	Metadata.h \

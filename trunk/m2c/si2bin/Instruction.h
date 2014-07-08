@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef M2C_SI2BIN_INST_H
-#define M2C_SI2BIN_INST_H
+#ifndef M2C_SI2BIN_INSTRUCTION_H
+#define M2C_SI2BIN_INSTRUCTION_H
 
 #include <iostream>
 #include <list>
@@ -28,7 +28,7 @@
 #include <arch/southern-islands/asm/Inst.h>
 #include <src/lib/cpp/Bitmap.h>
 
-#include "Arg.h"
+#include "Argument.h"
 #include "Context.h"
 #include "Token.h"
 
@@ -47,7 +47,7 @@ class InstInfo;
 class Context;
 
 
-class Inst
+class Instruction
 {
 	// Instruction opcode. This field should match the content of
 	// info->info->opcode.
@@ -65,7 +65,7 @@ class Inst
 	InstInfo *info;
 
 	// List of arguments
-	std::vector<std::unique_ptr<Arg>> args;
+	std::vector<std::unique_ptr<Argument>> args;
 
 	// For LLVM-to-SI back-end: basic block that the instruction
 	// belongs to.
@@ -88,7 +88,7 @@ class Inst
 	// Construction based on opcode + argument list
 	void Initialize(SI::InstOpcode opcode);
 	template<typename... Args> void Initialize(SI::InstOpcode opcode,
-			Arg *arg, Args&&... args)
+			Argument *arg, Args&&... args)
 	{
 		this->args.emplace_back(arg);
 		Initialize(opcode, args...);
@@ -97,13 +97,13 @@ class Inst
 	// Construction based on name + argument list
 	void Initialize(const std::string &name);
 	template<typename... Args> void Initialize(const std::string &name,
-			Arg *arg, Args&&... args)
+			Argument *arg, Args&&... args)
 	{
 		this->args.emplace_back(arg);
 		Initialize(name, args...);
 	}
 
-	void EncodeArg(Arg *arg, Token *token);
+	void EncodeArg(Argument *arg, Token *token);
 
 
 public:
@@ -120,7 +120,7 @@ public:
 	/* Create a new instruction with the specified opcode, as defined in the
 	 * Southern Islands disassembler. The arguments contained in the list
 	 * will be freed automatically in the destructor of this class. */
-	template<typename... Args> Inst(SI::InstOpcode opcode, Args&&... args)
+	template<typename... Args> Instruction(SI::InstOpcode opcode, Args&&... args)
 	{
 		Initialize(opcode, args...);
 	}
@@ -128,13 +128,13 @@ public:
 	/* Create a new instruction with one of the possible opcodes
 	 * corresponding to a name. The arguments contained in the list will be
 	 * adopted by the instruction and freed in the destructor. */
-	template<typename... Args> Inst(const std::string &name, Args&&... args)
+	template<typename... Args> Instruction(const std::string &name, Args&&... args)
 	{
 		Initialize(name, args...);
 	}
 
 	// Construction based on opcode + argument list as vector
-	Inst(SI::InstOpcode opcode, std::vector<Arg *> &arg_list)
+	Instruction(SI::InstOpcode opcode, std::vector<Argument *> &arg_list)
 	{
 		for (auto &arg : arg_list)
 		{
@@ -146,7 +146,7 @@ public:
 	/// Construction based on an instruction opcode and a list of arguments.
 	/// The argument in the list are given as newly allocated object that
 	/// the instruction will take ownership from.
-	Inst(const std::string &name, std::vector<Arg *> &arg_list)
+	Instruction(const std::string &name, std::vector<Argument *> &arg_list)
 	{
 		for (auto &arg : arg_list)
 		{
@@ -159,14 +159,14 @@ public:
 	void Dump(std::ostream &os);
 
 	/// Alternative syntax for Dump()
-	friend std::ostream &operator<<(std::ostream &os, Inst &inst)
+	friend std::ostream &operator<<(std::ostream &os, Instruction &inst)
 	{
 		inst.Dump(os);
 		return os;
 	}
 
 	/// Return a reference to the instruction arguments
-	const std::vector<std::unique_ptr<Arg>> &getArgs() { return args; }
+	const std::vector<std::unique_ptr<Argument>> &getArgs() { return args; }
 
 	/// Return the number of arguments
 	int getNumArgs() const { return args.size(); }
