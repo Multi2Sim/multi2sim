@@ -166,7 +166,7 @@ void System::Run()
 	debug << "It's happening.\n";
 
 	esim::Engine *engine = esim::Engine::getInstance();
-	for (int i = 0; i < 1000l; i++)
+	for (int i = 0; i < 1000; i++)
 	{
 		engine->ProcessEvents();
 	}
@@ -181,10 +181,9 @@ void System::AddRequest(std::shared_ptr<Request> request)
 	request->DecodeAddress();
 	controllers[request->getAddress()->physical]->AddRequest(request);
 
-	// Print out debug info.
-	esim::Engine *engine = esim::Engine::getInstance();
+	// Debug
 	debug << misc::fmt("[%lld] Adding request for 0x%llx to controller %d\n",
-			engine->getTime(), request->getAddress()->encoded,
+			DRAM_DOMAIN->getCycle(), request->getAddress()->encoded,
 			request->getAddress()->physical);
 }
 

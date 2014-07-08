@@ -17,8 +17,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+#include <lib/cpp/Error.h>
 #include <lib/cpp/String.h>
-#include <lib/esim/Engine.h>
 
 #include "Bank.h"
 #include "Channel.h"
@@ -40,6 +40,14 @@ Bank::Bank(int id,
 		num_columns(num_columns),
 		num_bits(num_bits)
 {
+}
+
+
+void Bank::setLastScheduledCommand(CommandType type)
+{
+	last_scheduled_commands[type] = System::DRAM_DOMAIN->getCycle();
+	last_scheduled_command_type = type;
+	rank->setLastScheduledCommand(type);
 }
 
 
@@ -106,6 +114,7 @@ void Bank::ProcessRequest(std::shared_ptr<Request> request)
 				CommandTypeWrite, id, rank_id);
 	else
 		// Invalid request type
+		throw misc::Panic("Invalid request type");
 		return;
 
 	// Add it to the command queue.
@@ -115,32 +124,33 @@ void Bank::ProcessRequest(std::shared_ptr<Request> request)
 	getRank()->getChannel()->CallScheduler();
 
 	// Debug
-	esim::Engine *esim = esim::Engine::getInstance();
 	System::debug << misc::fmt("[%lld] Processed request for 0x%llx in "
-		"bank %d\n", esim->getTime(), address->encoded, id);
+			"bank %d\n", System::DRAM_DOMAIN->getCycle(),
+			address->encoded, id);
 }
 
 
 long long Bank::getFrontCommandTiming()
 {
-	return last_scheduled_commands[0] + 5000;
+	return last_scheduled_commands[0] + 5;
 }
 
 
 void Bank::runFrontCommand()
 {
-	esim::Engine *esim = esim::Engine::getInstance();
+	long long cycle = System::DRAM_DOMAIN->getCycle();
 
 	// Get the command that is being run.
 	std::shared_ptr<Command> cmd = command_queue.front();
 
 	// Add this command to the last scheduled command matrix.
-	last_scheduled_commands[0] = esim->getTime();
+	setLastScheduledCommand(cmd->getType());
 
 	// Debug
-	System::debug << misc::fmt("[%lld] Running command %s\n",
-			esim->getTime(), cmd->getTypeString().c_str());
+	System::debug << misc::fmt("[%lld] Running command %s\n", cycle,
+			cmd->getTypeString().c_str());
 
+	// Command is being run, remove it from the queue.
 	command_queue.pop_front();
 }
 
