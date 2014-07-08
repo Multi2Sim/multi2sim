@@ -100,12 +100,12 @@ void BasicBlock::EmitAdd(llvm::BinaryOperator *llvm_inst)
 
 	// Second operand cannot be a constant
 	arg2 = function->ConstToVReg(this, arg2);
-	arg1->ValidTypes(ArgTypeVectorRegister,
-			ArgTypeLiteral,
-			ArgTypeLiteralReduced,
-			ArgTypeLiteralFloat,
-			ArgTypeLiteralFloatReduced);
-	arg2->ValidTypes(ArgTypeVectorRegister);
+	arg1->ValidTypes(Argument::TypeVectorRegister,
+			Argument::TypeLiteral,
+			Argument::TypeLiteralReduced,
+			Argument::TypeLiteralFloat,
+			Argument::TypeLiteralFloatReduced);
+	arg2->ValidTypes(Argument::TypeVectorRegister);
 
 	// Allocate vector register and create symbol for return value
 	int ret_vreg = function->AllocVReg();
@@ -211,10 +211,11 @@ void BasicBlock::EmitGetElementPtr(llvm::GetElementPtrInst *llvm_inst)
 	llvm::Value *llvm_arg_ptr = llvm_inst->getPointerOperand();
 	Symbol *ptr_symbol;
 	Argument *arg_ptr = function->TranslateValue(llvm_arg_ptr, ptr_symbol);
-	arg_ptr->ValidTypes(ArgTypeVectorRegister, ArgTypeScalarRegister);
+	arg_ptr->ValidTypes(Argument::TypeVectorRegister,
+			Argument::TypeScalarRegister);
 
 	// If arg_ptr is a scalar register convert it to a vector register
-	if (arg_ptr->getType() == ArgTypeScalarRegister)
+	if (arg_ptr->getType() == Argument::TypeScalarRegister)
 	{	
 		ArgScalarRegister *arg_scalar = 
 				dynamic_cast<ArgScalarRegister *>(arg_ptr);
@@ -234,7 +235,7 @@ void BasicBlock::EmitGetElementPtr(llvm::GetElementPtrInst *llvm_inst)
 
 		delete arg_ptr;
 
-		 arg_ptr = new ArgVectorRegister(ret_vreg);
+		arg_ptr = new ArgVectorRegister(ret_vreg);
 	}
 
 
@@ -249,9 +250,9 @@ void BasicBlock::EmitGetElementPtr(llvm::GetElementPtrInst *llvm_inst)
 	// Get index operand (vreg, literal)
 	llvm::Value *llvm_arg_index = llvm_inst->getOperand(1);
 	Argument *arg_index = function->TranslateValue(llvm_arg_index);
-	arg_index->ValidTypes(ArgTypeVectorRegister,
-			ArgTypeLiteral,
-			ArgTypeLiteralReduced);
+	arg_index->ValidTypes(Argument::TypeVectorRegister,
+			Argument::TypeLiteral,
+			Argument::TypeLiteralReduced);
 
 	// Allocate vector register and create symbol for return value
 	std::string ret_name = llvm_inst->getName();
@@ -267,8 +268,8 @@ void BasicBlock::EmitGetElementPtr(llvm::GetElementPtrInst *llvm_inst)
 	// literal, we can pre-calculate it here. If 'arg_index' is a vector
 	// register, we need to emit an instruction.
 	Argument *arg_offset;
-	if (arg_index->getType() == ArgTypeLiteral ||
-			arg_index->getType() == ArgTypeLiteralReduced)
+	if (arg_index->getType() == Argument::TypeLiteral ||
+			arg_index->getType() == Argument::TypeLiteralReduced)
 	{
 		// Argument 'arg_offset' is just a modification of
 		// 'arg_index'.
@@ -331,7 +332,7 @@ void BasicBlock::EmitICmp(llvm::ICmpInst *llvm_inst)
 	// Only the first argument can be a literal. If the second argument is
 	// a literal, flip them and invert comparison predicate later.
 	bool invert = false;
-	if (arg2->getType() != ArgTypeVectorRegister)
+	if (arg2->getType() != Argument::TypeVectorRegister)
 	{
 		std::swap(arg1, arg2);
 		invert = true;
@@ -339,12 +340,12 @@ void BasicBlock::EmitICmp(llvm::ICmpInst *llvm_inst)
 
 	// Valid argument types. Argument 2 cannot be a literal.
 	arg2 = function->ConstToVReg(this, arg2);
-	arg1->ValidTypes(ArgTypeVectorRegister,
-			ArgTypeLiteral,
-			ArgTypeLiteralReduced,
-			ArgTypeLiteralFloat,
-			ArgTypeLiteralFloatReduced);
-	arg2->ValidTypes(ArgTypeVectorRegister);
+	arg1->ValidTypes(Argument::TypeVectorRegister,
+			Argument::TypeLiteral,
+			Argument::TypeLiteralReduced,
+			Argument::TypeLiteralFloat,
+			Argument::TypeLiteralFloatReduced);
+	arg2->ValidTypes(Argument::TypeVectorRegister);
 
 	// Allocate vector register and create symbol for return value
 	std::string ret_name = llvm_inst->getName();
@@ -463,7 +464,7 @@ void BasicBlock::EmitLoad(llvm::LoadInst *llvm_inst)
 	llvm::Value *llvm_arg_addr = llvm_inst->getOperand(0);
 	Symbol *addr_symbol;
 	Argument *arg_addr = function->TranslateValue(llvm_arg_addr, addr_symbol);
-	arg_addr->ValidTypes(ArgTypeVectorRegister);
+	arg_addr->ValidTypes(Argument::TypeVectorRegister);
 
 	// Address must be a symbol with UAV
 	if (!addr_symbol || !addr_symbol->isAddress())
@@ -537,7 +538,7 @@ void BasicBlock::EmitMul(llvm::BinaryOperator *llvm_inst)
 	Argument *arg2 = function->TranslateValue(llvm_arg2);
 	
 	// If arg1 is a scalar register convert it to a vector register
-	if (arg1->getType() == ArgTypeScalarRegister)
+	if (arg1->getType() == Argument::TypeScalarRegister)
 	{	
 		ArgScalarRegister *arg_scalar = 
 				dynamic_cast<ArgScalarRegister *>(arg1);
@@ -566,7 +567,7 @@ void BasicBlock::EmitMul(llvm::BinaryOperator *llvm_inst)
 	}
 	
 	// If arg2 is a scalar register convert it to a vector register
-	if (arg2->getType() == ArgTypeScalarRegister)
+	if (arg2->getType() == Argument::TypeScalarRegister)
 	{	
 		ArgScalarRegister *arg_scalar = 
 				dynamic_cast<ArgScalarRegister *>(arg2);
@@ -596,14 +597,14 @@ void BasicBlock::EmitMul(llvm::BinaryOperator *llvm_inst)
 
 	// Only the first operand can be a constant, so swap them if there is
 	// a constant in the second.
-	if (arg2->getType() != ArgTypeVectorRegister)
+	if (arg2->getType() != Argument::TypeVectorRegister)
 		std::swap(arg1, arg2);
-	arg1->ValidTypes(ArgTypeVectorRegister,
-			ArgTypeLiteral,
-			ArgTypeLiteralReduced,
-			ArgTypeLiteralFloat,
-			ArgTypeLiteralFloatReduced);
-	arg2->ValidTypes(ArgTypeVectorRegister);
+	arg1->ValidTypes(Argument::TypeVectorRegister,
+			Argument::TypeLiteral,
+			Argument::TypeLiteralReduced,
+			Argument::TypeLiteralFloat,
+			Argument::TypeLiteralFloatReduced);
+	arg2->ValidTypes(Argument::TypeVectorRegister);
 
 	// Allocate vector register and create symbol for return value
 	std::string ret_name = llvm_inst->getName();
@@ -715,10 +716,11 @@ void BasicBlock::EmitStore(llvm::StoreInst *llvm_inst)
 	llvm::Value *llvm_arg_data = llvm_inst->getOperand(0);
 	Argument *arg_data = function->TranslateValue(llvm_arg_data);
 	arg_data = function->ConstToVReg(this, arg_data);
-	arg_data->ValidTypes(ArgTypeVectorRegister, ArgTypeScalarRegister);
+	arg_data->ValidTypes(Argument::TypeVectorRegister,
+			Argument::TypeScalarRegister);
 
 	// If arg_data is a scalar register convert it to a vector register
-	if (arg_data->getType() == ArgTypeScalarRegister)
+	if (arg_data->getType() == Argument::TypeScalarRegister)
 	{	
 		ArgScalarRegister *arg_scalar = 
 				dynamic_cast<ArgScalarRegister *>(arg_data);
@@ -748,7 +750,7 @@ void BasicBlock::EmitStore(llvm::StoreInst *llvm_inst)
 	llvm::Value *llvm_arg_addr = llvm_inst->getOperand(1);
 	Symbol *addr_symbol;
 	Argument *arg_addr = function->TranslateValue(llvm_arg_addr, addr_symbol);
-	arg_addr->ValidTypes(ArgTypeVectorRegister);
+	arg_addr->ValidTypes(Argument::TypeVectorRegister);
 
 	// Address must be a symbol with UAV
 	if (!addr_symbol || !addr_symbol->isAddress())
@@ -815,12 +817,12 @@ void BasicBlock::EmitSub(llvm::BinaryOperator *llvm_inst)
 
 	// Operand 2 cannot be a constant
 	arg2 = function->ConstToVReg(this, arg2);
-	arg1->ValidTypes(ArgTypeVectorRegister,
-			ArgTypeLiteral,
-			ArgTypeLiteralReduced,
-			ArgTypeLiteralFloat,
-			ArgTypeLiteralFloatReduced);
-	arg2->ValidTypes(ArgTypeVectorRegister);
+	arg1->ValidTypes(Argument::TypeVectorRegister,
+			Argument::TypeLiteral,
+			Argument::TypeLiteralReduced,
+			Argument::TypeLiteralFloat,
+			Argument::TypeLiteralFloatReduced);
+	arg2->ValidTypes(Argument::TypeVectorRegister);
 
 	// Allocate vector register and create symbol for return value
 	std::string ret_name = llvm_inst->getName();
@@ -863,12 +865,12 @@ void BasicBlock::EmitFAdd(llvm::BinaryOperator *llvm_inst)
 
 	// Second operand cannot be a constant
 	arg2 = function->ConstToVReg(this, arg2);
-	arg1->ValidTypes(ArgTypeVectorRegister,
-			ArgTypeLiteral,
-			ArgTypeLiteralReduced,
-			ArgTypeLiteralFloat,
-			ArgTypeLiteralFloatReduced);
-	arg2->ValidTypes(ArgTypeVectorRegister);
+	arg1->ValidTypes(Argument::TypeVectorRegister,
+			Argument::TypeLiteral,
+			Argument::TypeLiteralReduced,
+			Argument::TypeLiteralFloat,
+			Argument::TypeLiteralFloatReduced);
+	arg2->ValidTypes(Argument::TypeVectorRegister);
 
 	// Allocate vector register and create symbol for return value
 	std::string ret_name = llvm_inst->getName();
@@ -910,12 +912,12 @@ void BasicBlock::EmitFSub(llvm::BinaryOperator *llvm_inst)
 
 	// Second operand cannot be a constant
 	arg2 = function->ConstToVReg(this, arg2);
-	arg1->ValidTypes(ArgTypeVectorRegister,
-			ArgTypeLiteral,
-			ArgTypeLiteralReduced,
-			ArgTypeLiteralFloat,
-			ArgTypeLiteralFloatReduced);
-	arg2->ValidTypes(ArgTypeVectorRegister);
+	arg1->ValidTypes(Argument::TypeVectorRegister,
+			Argument::TypeLiteral,
+			Argument::TypeLiteralReduced,
+			Argument::TypeLiteralFloat,
+			Argument::TypeLiteralFloatReduced);
+	arg2->ValidTypes(Argument::TypeVectorRegister);
 
 	// Allocate vector register and create symbol for return value
 	std::string ret_name = llvm_inst->getName();
@@ -957,14 +959,14 @@ void BasicBlock::EmitFMul(llvm::BinaryOperator *llvm_inst)
 
 	// Only the first operand can be a constant, so swap them if there is
 	// a constant in the second.
-	if (arg2->getType() != ArgTypeVectorRegister)
+	if (arg2->getType() != Argument::TypeVectorRegister)
 		std::swap(arg1, arg2);
-	arg1->ValidTypes(ArgTypeVectorRegister,
-			ArgTypeLiteral,
-			ArgTypeLiteralReduced,
-			ArgTypeLiteralFloat,
-			ArgTypeLiteralFloatReduced);
-	arg2->ValidTypes(ArgTypeVectorRegister);
+	arg1->ValidTypes(Argument::TypeVectorRegister,
+			Argument::TypeLiteral,
+			Argument::TypeLiteralReduced,
+			Argument::TypeLiteralFloat,
+			Argument::TypeLiteralFloatReduced);
+	arg2->ValidTypes(Argument::TypeVectorRegister);
 
 	// Allocate vector register and create symbol for return value
 	std::string ret_name = llvm_inst->getName();
@@ -1006,12 +1008,12 @@ void BasicBlock::EmitAnd(llvm::BinaryOperator *llvm_inst)
 
 	// Second operand cannot be a constant
 	arg2 = function->ConstToVReg(this, arg2);
-	arg2->ValidTypes(ArgTypeVectorRegister);
-	arg1->ValidTypes(ArgTypeVectorRegister,
-			ArgTypeLiteral,
-			ArgTypeLiteralReduced,
-			ArgTypeLiteralFloat,
-			ArgTypeLiteralFloatReduced);
+	arg2->ValidTypes(Argument::TypeVectorRegister);
+	arg1->ValidTypes(Argument::TypeVectorRegister,
+			Argument::TypeLiteral,
+			Argument::TypeLiteralReduced,
+			Argument::TypeLiteralFloat,
+			Argument::TypeLiteralFloatReduced);
 
 	// Allocate vector register and create symbol for return value
 	int ret_vreg = function->AllocVReg();
@@ -1051,12 +1053,12 @@ void BasicBlock::EmitOr(llvm::BinaryOperator *llvm_inst)
 
 	// Second operand cannot be a constant
 	arg2 = function->ConstToVReg(this, arg2);
-	arg2->ValidTypes(ArgTypeVectorRegister);
-	arg1->ValidTypes(ArgTypeVectorRegister,
-			ArgTypeLiteral,
-			ArgTypeLiteralReduced,
-			ArgTypeLiteralFloat,
-			ArgTypeLiteralFloatReduced);
+	arg2->ValidTypes(Argument::TypeVectorRegister);
+	arg1->ValidTypes(Argument::TypeVectorRegister,
+			Argument::TypeLiteral,
+			Argument::TypeLiteralReduced,
+			Argument::TypeLiteralFloat,
+			Argument::TypeLiteralFloatReduced);
 
 	// Allocate vector register and create symbol for return value
 	int ret_vreg = function->AllocVReg();
@@ -1096,12 +1098,12 @@ void BasicBlock::EmitXor(llvm::BinaryOperator *llvm_inst)
 
 	// Second operand cannot be a constant
 	arg2 = function->ConstToVReg(this, arg2);
-	arg2->ValidTypes(ArgTypeVectorRegister);
-	arg1->ValidTypes(ArgTypeVectorRegister,
-			ArgTypeLiteral,
-			ArgTypeLiteralReduced,
-			ArgTypeLiteralFloat,
-			ArgTypeLiteralFloatReduced);
+	arg2->ValidTypes(Argument::TypeVectorRegister);
+	arg1->ValidTypes(Argument::TypeVectorRegister,
+			Argument::TypeLiteral,
+			Argument::TypeLiteralReduced,
+			Argument::TypeLiteralFloat,
+			Argument::TypeLiteralFloatReduced);
 
 	// Allocate vector register and create symbol for return value
 	int ret_vreg = function->AllocVReg();
@@ -1143,9 +1145,9 @@ void BasicBlock::EmitExtractElement(llvm::ExtractElementInst *llvm_inst)
 
 	// First argument must be a scalar register and the second must be the
 	// offset.
-	arg1->ValidTypes(ArgTypeScalarRegister);
-	arg2->ValidTypes(ArgTypeLiteral,
-			ArgTypeLiteralReduced);
+	arg1->ValidTypes(Argument::TypeScalarRegister);
+	arg2->ValidTypes(Argument::TypeLiteral,
+			Argument::TypeLiteralReduced);
 
 	// Obtain actual scalar register
 	ArgScalarRegister *arg1_scalar = dynamic_cast<ArgScalarRegister *>(arg1);
@@ -1193,14 +1195,16 @@ void BasicBlock::EmitInsertElement(llvm::InsertElementInst *llvm_inst)
 
 	// First argument must be a scalar register and the second must be the
 	// offset.
-	arg1->ValidTypes(ArgTypeScalarRegister, ArgTypeVectorRegister);
-	arg2->ValidTypes(ArgTypeScalarRegister, ArgTypeVectorRegister);
-	arg3->ValidTypes(ArgTypeLiteral,
-			ArgTypeLiteralReduced);
+	arg1->ValidTypes(Argument::TypeScalarRegister,
+			Argument::TypeVectorRegister);
+	arg2->ValidTypes(Argument::TypeScalarRegister,
+			Argument::TypeVectorRegister);
+	arg3->ValidTypes(Argument::TypeLiteral,
+			Argument::TypeLiteralReduced);
 
 	// Rule out case where dest is vgpr and src is sgpr
-	assert((arg1->getType() != ArgTypeScalarRegister) && 
-			(arg2->getType() != ArgTypeVectorRegister));
+	assert((arg1->getType() != Argument::TypeScalarRegister) && 
+			(arg2->getType() != Argument::TypeVectorRegister));
 
 	ArgLiteral *arg3_literal = dynamic_cast<ArgLiteral *>(arg3);
 	assert(arg3_literal);
@@ -1208,8 +1212,8 @@ void BasicBlock::EmitInsertElement(llvm::InsertElementInst *llvm_inst)
 	// Allocate vector register and create symbol for return value
 	std::string ret_name = llvm_arg2->getName();
 	
-	if (arg1->getType() == ArgTypeScalarRegister && 
-			arg2->getType() == ArgTypeScalarRegister)
+	if (arg1->getType() == Argument::TypeScalarRegister && 
+			arg2->getType() == Argument::TypeScalarRegister)
 	{
 		ArgScalarRegister *arg1_scalar = dynamic_cast<ArgScalarRegister *>(arg1);
 		arg1_scalar->setId(arg1_scalar->getId() + arg3_literal->getValue());
@@ -1444,7 +1448,7 @@ void BasicBlock::LiveRegisterAnalysis()
 		for (auto &arg : inst->getArgs())
 		{
 			// Currently only deals with scalar registers
-			if (arg->getType() == si2bin::ArgTypeVectorRegister)
+			if (arg->getType() == si2bin::Argument::TypeVectorRegister)
 			{
 
 				si2bin::ArgVectorRegister *argReg = dynamic_cast<si2bin::ArgVectorRegister *>(arg.get());

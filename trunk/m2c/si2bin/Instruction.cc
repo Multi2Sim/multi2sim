@@ -309,7 +309,7 @@ void Instruction::EncodeArg(Argument *arg, Token *token)
 		switch (arg->type)
 		{
 
-		case ArgTypeVectorRegister:
+		case Argument::TypeVectorRegister:
 		{
 			ArgVectorRegister *vr = dynamic_cast
 					<ArgVectorRegister *>(arg);
@@ -319,7 +319,7 @@ void Instruction::EncodeArg(Argument *arg, Token *token)
 			break;
 		}
 
-		case ArgTypeVectorRegisterSeries:
+		case Argument::TypeVectorRegisterSeries:
 		{
 			ArgVectorRegisterSeries *vrs = dynamic_cast
 					<ArgVectorRegisterSeries *>(arg);
@@ -380,7 +380,7 @@ void Instruction::EncodeArg(Argument *arg, Token *token)
 		switch (arg->type)
 		{
 
-		case ArgTypeVectorRegister:
+		case Argument::TypeVectorRegister:
 		{
 			ArgVectorRegister *vr = dynamic_cast
 					<ArgVectorRegister *>(arg);
@@ -392,7 +392,7 @@ void Instruction::EncodeArg(Argument *arg, Token *token)
 			break;
 		}
 
-		case ArgTypeVectorRegisterSeries:
+		case Argument::TypeVectorRegisterSeries:
 		{
 			ArgVectorRegisterSeries *vrs = dynamic_cast
 					<ArgVectorRegisterSeries *>(arg);
@@ -448,8 +448,8 @@ void Instruction::EncodeArg(Argument *arg, Token *token)
 		switch (arg->type)
 		{
 
-		case ArgTypeLiteral:
-		case ArgTypeLiteralReduced:
+		case Argument::TypeLiteral:
+		case Argument::TypeLiteralReduced:
 		{
 			ArgLiteral *literal = dynamic_cast
 					<ArgLiteral *>(arg);
@@ -462,7 +462,7 @@ void Instruction::EncodeArg(Argument *arg, Token *token)
 			// FIXME - check valid range of literal
 			break;
 		}
-		case ArgTypeScalarRegister:
+		case Argument::TypeScalarRegister:
 		{
 			ArgScalarRegister *sr = dynamic_cast
 					<ArgScalarRegister *>(arg);
@@ -597,7 +597,7 @@ void Instruction::EncodeArg(Argument *arg, Token *token)
 
 	case TokenSrc0:
 	{
-		if (arg->type == ArgTypeLiteral)
+		if (arg->type == Argument::TypeLiteral)
 		{
 			/* Literal constant other than [-16...64] is encoded by adding
 			 * four more bits to the instruction. */
@@ -620,7 +620,7 @@ void Instruction::EncodeArg(Argument *arg, Token *token)
 
 	case TokenSsrc0:
 	{
-		if (arg->type == ArgTypeLiteral)
+		if (arg->type == Argument::TypeLiteral)
 		{
 			/* Literal constant other than [-16...64] is encoded by adding
 			 * four more bits to the instruction. */
@@ -646,7 +646,7 @@ void Instruction::EncodeArg(Argument *arg, Token *token)
 
 	case TokenSsrc1:
 	{
-		if (arg->type == ArgTypeLiteral)
+		if (arg->type == Argument::TypeLiteral)
 		{
 			/* Literal constant other than [-16...64] is encoded by adding
 			 * four more bits to the instruction. */
@@ -675,7 +675,7 @@ void Instruction::EncodeArg(Argument *arg, Token *token)
 		switch (arg->type)
 		{
 
-		case ArgTypeVectorRegister:
+		case Argument::TypeVectorRegister:
 		{
 			ArgVectorRegister *vr = dynamic_cast<ArgVectorRegister *>(arg);
 			assert(vr);
@@ -683,7 +683,7 @@ void Instruction::EncodeArg(Argument *arg, Token *token)
 			break;
 		}
 		
-		case ArgTypeVectorRegisterSeries:
+		case Argument::TypeVectorRegisterSeries:
 		{
 			// High register must be low plus 1
 			ArgVectorRegisterSeries *vrs = dynamic_cast
@@ -711,7 +711,7 @@ void Instruction::EncodeArg(Argument *arg, Token *token)
 
 	case TokenSvdst:
 	{
-		assert(arg->type == ArgTypeScalarRegister);
+		assert(arg->type == Argument::TypeScalarRegister);
 		bytes.vop1.vdst = arg->Encode();
 		break;
 	}
@@ -733,7 +733,7 @@ void Instruction::EncodeArg(Argument *arg, Token *token)
 		switch (arg->type)
 		{
 
-		case ArgTypeScalarRegisterSeries:
+		case Argument::TypeScalarRegisterSeries:
 		{
 			ArgScalarRegisterSeries *srs = dynamic_cast
 					<ArgScalarRegisterSeries *>(arg);
@@ -745,7 +745,7 @@ void Instruction::EncodeArg(Argument *arg, Token *token)
 			break;
 		}
 
-		case ArgTypeVectorRegisterSeries:
+		case Argument::TypeVectorRegisterSeries:
 		{
 			ArgVectorRegisterSeries *vrs = dynamic_cast
 					<ArgVectorRegisterSeries *>(arg);
@@ -784,7 +784,7 @@ void Instruction::EncodeArg(Argument *arg, Token *token)
 	case TokenVop364Svdst:
 	{
 		// If operand is a scalar register series, check range
-		if (arg->type == ArgTypeScalarRegisterSeries)
+		if (arg->type == Argument::TypeScalarRegisterSeries)
 		{
 			ArgScalarRegisterSeries *srs = dynamic_cast
 					<ArgScalarRegisterSeries *>(arg);
@@ -831,14 +831,14 @@ void Instruction::EncodeArg(Argument *arg, Token *token)
 	case TokenVop364Src0:
 	{
 		// If operand is a scalar register series, check range
-		if (arg->type == ArgTypeScalarRegisterSeries)
+		if (arg->type == Argument::TypeScalarRegisterSeries)
 		{
 			ArgScalarRegisterSeries *srs = dynamic_cast
 					<ArgScalarRegisterSeries *>(arg);
 			if (srs->getHigh() != srs->getLow() + 1)
 				misc::fatal("register series must be s[low:low+1]");
 		}
-		else if (arg->type == ArgTypeVectorRegisterSeries)
+		else if (arg->type == Argument::TypeVectorRegisterSeries)
 		{
 			ArgVectorRegisterSeries *vrs = dynamic_cast
 					<ArgVectorRegisterSeries *>(arg);
@@ -858,14 +858,14 @@ void Instruction::EncodeArg(Argument *arg, Token *token)
 	case TokenVop364Src1:
 	{
 		// If operand is a scalar register series, check range
-		if (arg->type == ArgTypeScalarRegisterSeries)
+		if (arg->type == Argument::TypeScalarRegisterSeries)
 		{
 			ArgScalarRegisterSeries *srs = dynamic_cast
 					<ArgScalarRegisterSeries *>(arg);
 			if (srs->getHigh() != srs->getLow() + 1)
 				misc::fatal("register series must be s[low:low+1]");
 		}
-		else if (arg->type == ArgTypeVectorRegisterSeries)
+		else if (arg->type == Argument::TypeVectorRegisterSeries)
 		{
 			ArgVectorRegisterSeries *vrs = dynamic_cast
 					<ArgVectorRegisterSeries *>(arg);
@@ -884,14 +884,14 @@ void Instruction::EncodeArg(Argument *arg, Token *token)
 	case TokenVop364Src2:
 	{
 		// If operand is a scalar register series, check range
-		if (arg->type == ArgTypeScalarRegisterSeries)
+		if (arg->type == Argument::TypeScalarRegisterSeries)
 		{
 			ArgScalarRegisterSeries *srs = dynamic_cast
 					<ArgScalarRegisterSeries *>(arg);
 			if (srs->getHigh() != srs->getLow() + 1)
 				misc::fatal("register series must be s[low:low+1]");
 		}
-		else if (arg->type == ArgTypeVectorRegisterSeries)
+		else if (arg->type == Argument::TypeVectorRegisterSeries)
 		{
 			ArgVectorRegisterSeries *vrs = dynamic_cast
 					<ArgVectorRegisterSeries *>(arg);
@@ -1027,7 +1027,7 @@ void Instruction::EncodeArg(Argument *arg, Token *token)
 		symbol = context->getSymbol(label->getName());
 	
 		// Search symbol in symbol table
-		assert(arg->type == ArgTypeLabel);
+		assert(arg->type == Argument::TypeLabel);
 
 		// Create symbol if it doesn't exist
 		if (!symbol)
