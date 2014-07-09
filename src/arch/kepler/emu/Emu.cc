@@ -21,6 +21,7 @@
 #include <list>
 #include <memory>
 
+#include <driver/cuda/function.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/misc.h>
 #include <memory/Memory.h>
@@ -138,12 +139,6 @@ bool Emu::Run()
 	return TRUE;
 }
 
-// push back an element in grids list
-void Emu::GridsPushBack(Grid * grid)
-{
-	grids.push_back(grid);
-}
-
 void Emu::ReadConstMem(unsigned addr, unsigned size, char *buf)
 {
 	const_mem->Read(addr, size, buf);
@@ -169,6 +164,13 @@ void Emu::WriteConstMem(unsigned addr, unsigned size, const char *buf)
 void Emu::PushPendingGrid(Grid *grid)
 {
 	pending_grids.push_back(grid);
+}
+
+Grid *Emu::addGrid(Function *function)
+{
+	// Create the grid and add it to the grid list
+	grids.emplace_back(new Grid(function));
+	return grids.back().get();
 }
 
 }	//namespace

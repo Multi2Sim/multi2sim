@@ -191,7 +191,46 @@ int Driver::CallMemWrite(mem::Memory *memory, unsigned args_ptr)
 
 /// ABI Call 'LaunchKernel'
 ///
-/// ...
+/// Invokes the kernel f on a gridDimX * gridDimY * gridDimZ grid of blocks.
+/// Each block contains blockDimX * blockDimY * blockDimZ threads.
+/// sharedMemBytes sets the amount of dynamic shared memory that will be
+/// available to each thread block
+///
+/// \param unsigned function_id
+///	Function unique identifier
+///
+/// \param unsigned grid_dim[0]
+///	Width of grid in blocks
+///
+/// \param unsigned grid_dim[1]
+///	Height of grid in blocks
+///
+/// \param unsigned grid_dim[0]
+///	Depth of grid in blocks
+///
+/// \param unsigned block_dim[0]
+///	X dimension of each thread block
+///
+/// \param unsigned grid_dim[1]
+///	Y dimension of each thread block
+///
+/// \param unsigned grid_dim[0]
+///	Z dimension of each thread block
+///
+/// \param unsigned shared_mem_size
+///	Dynamic shared-memory size per thread block in bytes
+///
+/// \param unsigned stream
+/// Stream identifier
+///
+/// \param void* *kernel_args
+/// Array of pointers to kernel parameters
+///
+/// \param extra
+/// extra options (to be decided)
+///
+/// \return
+///	The function does not have any return value.
 int Driver::CallLaunchKernel(mem::Memory *memory, unsigned args_ptr)
 {
 	Kepler::Emu *kpl_emu = Kepler::Emu::getInstance();
@@ -258,8 +297,7 @@ int Driver::CallLaunchKernel(mem::Memory *memory, unsigned args_ptr)
 	}
 
 	// Create grid
-	Grid *grid;
-	grid = new Grid(function);
+	Grid *grid = kpl_emu->addGrid(function);
 
 	// Set up grid
 	grid->SetupSize(grid_dim, block_dim);
@@ -332,25 +370,36 @@ int Driver::CallModuleLoad(mem::Memory *memory, unsigned args_ptr)
 }
 
 
+/// ABI Call 'ModuleGetFunction'
+///
+/// Returns in *function the handle of the function of name func_name located
+/// in module module_id. If no function of that name exists,
+/// returns error
+///
+/// \param unsigned module_id
+///	Module unique identifier
+///
+/// \param unsigned func_name
+///	Function name
 int Driver::CallModuleGetFunction(mem::Memory *memory, unsigned args_ptr)
-{	/*
-	// Arguments
+{
+	// Read module id
 	unsigned module_id;
-	char func_name[MAX_STRING_SIZE];;
-
-	// Read Arguments
 	memory->Read(args_ptr, sizeof (unsigned), (char*) &module_id);
+
+	// Read function name
+	char func_name[MAX_STRING_SIZE];
 	memory->Read(args_ptr, sizeof func_name, func_name);
 
 	// Debug Info
 	debug << misc::fmt("\tout: module_id=%u\n", module_id);
 
-	CUmodule *module;
-	// Get module
-	module = module_list(module_id);
+	// Load the module whose id is module_id from module list
+	// Module *Module = std::move(modules[module_id]);
 
-	// Create function
-	CUfunction function(module, func_name);  */
+	// Find function name in function list
+
+
 
 	return 0;
 
