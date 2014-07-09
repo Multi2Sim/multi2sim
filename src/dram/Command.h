@@ -46,11 +46,11 @@ enum CommandType
 
 class Command
 {
-	// The type of command
-	CommandType type;
-
 	// The request associated with this command
 	std::shared_ptr<Request> request;
+	
+	// The type of command
+	CommandType type;
 
 	// Location information
 	Bank *bank;
