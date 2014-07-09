@@ -20,6 +20,7 @@
 #include <vector>
 #include <algorithm>
 #include <cmath>
+#include <iostream>
 
 #include <lib/cpp/CommandLine.h>
 #include <lib/cpp/IniFile.h>
@@ -59,6 +60,8 @@ std::unique_ptr<System> System::instance;
 esim::FrequencyDomain *System::DRAM_DOMAIN(nullptr);
 
 esim::EventType *System::ACTION_REQUEST(nullptr);
+
+esim::EventType *System::COMMAND_RETURN(nullptr);
 
 
 System *System::getInstance()
@@ -137,6 +140,10 @@ void System::ParseConfiguration(const std::string &path)
 	int frequency = config.ReadInt("General", "Frequency", 1000);
 	DRAM_DOMAIN = esim->RegisterFrequencyDomain(
 			"DRAM_DOMAIN", frequency);
+
+	// Create events used by the entire system
+	COMMAND_RETURN = esim->RegisterEventType("COMMAND_RETURN",
+			Controller::CommandReturnHandler, DRAM_DOMAIN);
 
 	// Iterate through each section.
 	// Parse it if it is a MemoryController section.
@@ -259,11 +266,13 @@ void System::DecodeAddress(Address &address)
 
 void System::dump(std::ostream &os) const
 {
+	// Print header
 	os << "\n\n--------------------\n\n";
 	os << "Dumping DRAM system\n";
+
+	// Print controllers in the system
 	os << misc::fmt("%d Controllers\nController dump:\n",
 			(int) controllers.size());
-
 	for (auto &controller : controllers)
 		controller->dump(os);
 }
@@ -271,6 +280,7 @@ void System::dump(std::ostream &os) const
 
 void Address::dump(std::ostream &os) const
 {
+	// Print the encoded address and its component locations
 	os << misc::fmt("0x%llx = %d : %d : %d : %d : %d : %d\n", encoded,
 			physical, logical, rank, bank, row, column);
 }

@@ -19,9 +19,11 @@
 
 #include <lib/cpp/Error.h>
 #include <lib/cpp/String.h>
+#include <lib/esim/Engine.h>
 
 #include "Bank.h"
 #include "Channel.h"
+#include "Controller.h"
 #include "System.h"
 #include "Rank.h"
 
@@ -45,8 +47,11 @@ Bank::Bank(int id,
 
 void Bank::setLastScheduledCommand(CommandType type)
 {
+	// Update the last scheduled command matrix for this bank.
 	last_scheduled_commands[type] = System::DRAM_DOMAIN->getCycle();
 	last_scheduled_command_type = type;
+
+	// Make the rank that this bank belongs to do the same update.
 	rank->setLastScheduledCommand(type);
 }
 
@@ -55,9 +60,6 @@ void Bank::ProcessRequest(std::shared_ptr<Request> request)
 {
 	// Pull the address out of the request.
 	Address *address = request->getAddress();
-
-	// Get the parent rank's id.
-	int rank_id = getRank()->getId();
 
 	// Note: For now everthing is done with an open-page policy.  Closed
 	// page to come later.
@@ -73,11 +75,11 @@ void Bank::ProcessRequest(std::shared_ptr<Request> request)
 	if (isPrechargedFuture())
 	{
 		// Create the command.
-		auto activate_cmd = std::make_shared<Command>(request,
-				CommandTypeActivate, id, rank_id);
+		auto activate_command = std::make_shared<Command>(
+				request, CommandActivate, this);
 
 		// Add it to the command queue.
-		command_queue.push_back(activate_cmd);
+		command_queue.push_back(activate_command);
 
 		// Set the future active row.
 		future_active_row = address->row;
@@ -88,37 +90,39 @@ void Bank::ProcessRequest(std::shared_ptr<Request> request)
 	else if (getActiveRowFuture() != address->row)
 	{
 		// Create the commands.
-		auto precharge_cmd = std::make_shared<Command>(request,
-				CommandTypePrecharge, id, rank_id);
-		auto activate_cmd = std::make_shared<Command>(request,
-				CommandTypeActivate, id, rank_id);
+		auto precharge_command = std::make_shared<Command>(
+				request, CommandPrecharge, this);
+		auto activate_command = std::make_shared<Command>(
+				request, CommandActivate, this);
 
 		// Add them to the command queue.
-		command_queue.push_back(precharge_cmd);
-		command_queue.push_back(activate_cmd);
+		command_queue.push_back(precharge_command);
+		command_queue.push_back(activate_command);
 
 		// Set the future active row.
 		future_active_row = address->row;
 	}
 
+	// Check that the desired row will actually be open.
+	if (future_active_row != address->row)
+		throw misc::Panic("Desired row will not be opened.");
+
 	// At this point either the desired row will already be open, or we
 	// just created the commands necessary for it to be open.  Create
 	// the appropriate access command (read or write).
-	// FIXME: assert that the future_active_row == address->row
-	std::shared_ptr<Command> access_cmd;
+	std::shared_ptr<Command> access_command;
 	if (request->getType() == RequestTypeRead)
-		access_cmd = std::make_shared<Command>(request,
-				CommandTypeRead, id, rank_id);
+		access_command = std::make_shared<Command>(
+				request, CommandRead, this);
 	else if (request->getType() == RequestTypeWrite)
-		access_cmd = std::make_shared<Command>(request,
-				CommandTypeWrite, id, rank_id);
+		access_command = std::make_shared<Command>(
+				request, CommandWrite, this);
 	else
 		// Invalid request type
 		throw misc::Panic("Invalid request type");
-		return;
 
 	// Add it to the command queue.
-	command_queue.push_back(access_cmd);
+	command_queue.push_back(access_command);
 
 	// Ensure the scheduler is running.
 	getRank()->getChannel()->CallScheduler();
@@ -132,7 +136,8 @@ void Bank::ProcessRequest(std::shared_ptr<Request> request)
 
 long long Bank::getFrontCommandTiming()
 {
-	return last_scheduled_commands[0] + 5;
+	return getRank()->getChannel()->CalculateReadyCycle(
+			command_queue.front().get());
 }
 
 
@@ -141,14 +146,24 @@ void Bank::runFrontCommand()
 	long long cycle = System::DRAM_DOMAIN->getCycle();
 
 	// Get the command that is being run.
-	std::shared_ptr<Command> cmd = command_queue.front();
+	std::shared_ptr<Command> command = command_queue.front();
 
 	// Add this command to the last scheduled command matrix.
-	setLastScheduledCommand(cmd->getType());
+	setLastScheduledCommand(command->getType());
+
+	// Get the esim engine instance.
+	esim::Engine *esim = esim::Engine::getInstance();
+
+	// Create return event
+	auto frame = std::make_shared<CommandReturnFrame>(command);
+	esim->Call(System::COMMAND_RETURN, frame, nullptr,
+			command->getDuration());
 
 	// Debug
-	System::debug << misc::fmt("[%lld] Running command %s\n", cycle,
-			cmd->getTypeString().c_str());
+	std::cout << misc::fmt("[%lld] [%d : %d] Running command %s for "
+			"0x%llx\n", cycle, rank->getId(), id,
+			command->getTypeString().c_str(),
+			command->getAddress()->encoded);
 
 	// Command is being run, remove it from the queue.
 	command_queue.pop_front();
@@ -157,11 +172,15 @@ void Bank::runFrontCommand()
 
 void Bank::dump(std::ostream &os) const
 {
+	// Print header
 	os << misc::fmt("\t\t\tDumping Bank %d\n", id);
+
+	// Print bank geometry
 	os << misc::fmt("\t\t\t%d Rows, %d Columns, %d Bits per Column\n",
 			num_rows, num_columns, num_bits);
-	os << misc::fmt("\t\t\t%d Commands in queue\n", (int)command_queue.size());
 
+	// Print the commands currently in queue
+	os << misc::fmt("\t\t\t%d Commands in queue\n", (int)command_queue.size());
 	for (int i = 0; i < (int)command_queue.size(); i++)
 	{
 		os << misc::fmt("\t\t\t\t%d - %s\n", i,

@@ -17,6 +17,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+#include <lib/cpp/String.h>
+
 #include "Request.h"
 #include "System.h"
 
@@ -28,6 +30,23 @@ Request::Request()
 {
 	type = RequestTypeInvalid;
 	address = new Address();
+}
+
+
+void Request::decCommands()
+{
+	// Decrement the number of in flight commands.
+	num_commands_in_flight--;
+
+	// If the command that just finished was the last one, then the request
+	// is finished processing.
+	// FIXME: If not in stand alone DRAM sim, return request back up
+	// through cache hierarchy.
+
+	// Debug
+	long long cycle = System::DRAM_DOMAIN->getCycle();
+	System::debug << misc::fmt("[%lld] Request complete for 0x%llx\n",
+		cycle, address->encoded);
 }
 
 

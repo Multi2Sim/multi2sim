@@ -54,9 +54,11 @@ void Rank::setLastScheduledCommand(CommandType type)
 
 void Rank::dump(std::ostream &os) const
 {
+	// Print header
 	os << misc::fmt("\t\tDumping Rank %d\n", id);
-	os << misc::fmt("\t\t%d Banks\n\t\tBank dump:\n", (int) banks.size());
 
+	// Print banks owned by this rank
+	os << misc::fmt("\t\t%d Banks\n\t\tBank dump:\n", (int) banks.size());
 	for (auto const& bank : banks)
 	{
 		bank->dump(os);
