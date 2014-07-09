@@ -182,9 +182,9 @@ void LoadProgram(const std::vector<std::string> &args,
 	
 	// Choose emulator based on ELF header
 	std::string exe = misc::getFullPath(args[0], cwd);
-	ELFReader::Header header(exe);
+	ELFReader::File elf_file(exe, false);
 	comm::Emu *emu;
-	switch (header.getMachine())
+	switch (elf_file.getMachine())
 	{
 	case EM_386:
 
