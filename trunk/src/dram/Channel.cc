@@ -17,6 +17,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+#include <algorithm>
 #include <iostream>
 
 #include <lib/cpp/String.h>
@@ -93,6 +94,7 @@ void Channel::SchedulerHandler(esim::EventType *type,
 
 void Channel::RunScheduler()
 {
+	// Get the current cycle
 	long long cycle = System::DRAM_DOMAIN->getCycle();
 
 	// Debug
@@ -106,56 +108,227 @@ void Channel::RunScheduler()
 	Bank *bank = next_scheduled_bank;
 	if (bank == nullptr)
 	{
-		std::pair<int, int> bank_found = scheduler->FindNext();
-
-		System::debug << misc::fmt("[%lld] Scheduler returns %d : %d "
-				"for next command scheduling\n", cycle,
-				bank_found.first, bank_found.second);
+		bank = scheduler->FindNext();
 
 		// Don't do anything if no bank was found.
-		if (bank_found.first == -1)
+		if (bank == nullptr)
 			return;
-
-		// Get the rank found by the scheduling algorithm.
-		bank = getRank(bank_found.first)->getBank(bank_found.second);
 	}
 
 	// Check the timing for the command at the front of the selected
 	// bank's queue.
 	long long cycle_ready = bank->getFrontCommandTiming();
 
-	std::cout << misc::fmt("%lld, %lld", cycle_ready, cycle);
-
 	// Run the command now if able, otherwise put off running the
 	// command until it is able.
 	if (cycle >= cycle_ready)
 	{
+		// Run the command.
 		bank->runFrontCommand();
 		next_scheduled_bank = nullptr;
 
 		// Call the scheduler again for next cycle.
 		CallScheduler(1);
-
-		std::cout << "\t\tRan command\n";
 	}
 	else
 	{
+		// Keep track of the bank that should be scheduled for next
+		// time the scheduler is run.
 		next_scheduled_bank = bank;
 
 		// Call the scheduler again when the selected command is ready
 		// to be run.
 		CallScheduler(cycle_ready - cycle);
-
-		std::cout << "\t\tDelayed command\n";
 	}
+}
+
+
+long long Channel::CalculateReadyCycle(Command *cmd)
+{
+	// Yes, Rafa, this is ugly.
+
+	// Set the ready cycle to be this cycle.
+	long long ready = System::DRAM_DOMAIN->getCycle();
+
+	// Get the rank and bank ids of the commands location.
+	int cmd_bank = cmd->getBankId();
+	int cmd_rank = cmd->getRankId();
+
+	// Get the command's type.
+	CommandType cmd_type = cmd->getType();
+
+	// Iterate through every rank and bank in the channel.
+	for (int rank_id = 0; rank_id < num_ranks; rank_id++)
+	{
+		// Get the current rank
+		Rank *rank = getRank(rank_id);
+
+		for (int bank_id = 0; bank_id < num_banks; bank_id++)
+		{
+			// Get the current bank
+			Bank *bank = rank->getBank(bank_id);
+
+			switch (cmd_type)
+			{
+
+			// All the following statements change the ready cycle
+			// to follow the DRAM timing constraints depending on
+			// when previous commands of certain types were
+			// scheduled to certain locations.
+			// The read cycle to follow each rule is calculated,
+			// and then the max of that cycle and the current ready
+			// cycle is taken and assigned to be the new ready cycle.
+
+			case CommandPrecharge:
+				// The rank and bank are the same as the
+				// new command.
+				if (rank_id == cmd_rank && bank_id == cmd_bank)
+				{
+					// A P s s
+					ready = std::max(bank->getLastScheduledCommand(CommandActivate)
+							+ controller->getTiming(TimingActivate, TimingPrecharge, TimingSame, TimingSame),
+							ready);
+
+					// R P s s
+					ready = std::max(bank->getLastScheduledCommand(CommandRead)
+							+ controller->getTiming(TimingRead, TimingPrecharge, TimingSame, TimingSame),
+							ready);
+
+					// W P s s
+					ready = std::max(bank->getLastScheduledCommand(CommandWrite)
+							+ controller->getTiming(TimingWrite, TimingPrecharge, TimingSame, TimingSame),
+							ready);
+				}
+				break;
+
+			case CommandActivate:
+				// The rank and bank are the same as the
+				// new command.
+				if (rank_id == cmd_rank && bank_id == cmd_bank)
+				{
+					// A A s s
+					ready = std::max(bank->getLastScheduledCommand(CommandActivate)
+							+ controller->getTiming(TimingActivate, TimingActivate, TimingSame, TimingSame),
+							ready);
+
+					// P A s s
+					ready = std::max(bank->getLastScheduledCommand(CommandPrecharge)
+							+ controller->getTiming(TimingPrecharge, TimingActivate, TimingSame, TimingSame),
+							ready);
+				}
+
+				// The rank is the same as the new command, and
+				// the bank is different.
+				if (rank_id == cmd_rank && bank_id != cmd_bank)
+				{
+					// A A s d
+					ready = std::max(bank->getLastScheduledCommand(CommandActivate)
+							+ controller->getTiming(TimingActivate, TimingActivate, TimingSame, TimingDifferent),
+							ready);
+				}
+				break;
+
+			case CommandRead:
+				// The rank and bank are the same as the
+				// new command.
+				if (rank_id == cmd_rank && bank_id == cmd_bank)
+				{
+					// A R s s
+					ready = std::max(bank->getLastScheduledCommand(CommandActivate)
+							+ controller->getTiming(TimingActivate, TimingRead, TimingSame, TimingSame),
+							ready);
+				}
+
+				// The rank is the same as the new command,
+				// the bank is either the same or different.
+				if (rank_id == cmd_rank)
+				{
+					// R R s a
+					ready = std::max(rank->getLastScheduledCommand(CommandRead)
+							+ controller->getTiming(TimingRead, TimingRead, TimingSame, TimingAny),
+							ready);
+
+					// W R s a
+					ready = std::max(rank->getLastScheduledCommand(CommandWrite)
+							+ controller->getTiming(TimingWrite, TimingRead, TimingSame, TimingAny),
+							ready);
+				}
+
+				// The rank is different than the new command,
+				// the bank is either the same or different.
+				if (rank_id != cmd_rank)
+				{
+					// R R d a
+					ready = std::max(rank->getLastScheduledCommand(CommandRead)
+							+ controller->getTiming(TimingRead, TimingRead, TimingDifferent, TimingAny),
+							ready);
+
+					// W R d a
+					ready = std::max(rank->getLastScheduledCommand(CommandWrite)
+							+ controller->getTiming(TimingRead, TimingRead, TimingDifferent, TimingAny),
+							ready);
+				}
+				break;
+
+			case CommandWrite:
+				// The rank and bank are the same as the
+				// new command.
+				if (rank_id == cmd_rank && bank_id == cmd_bank)
+				{
+					// A W s s
+					ready = std::max(rank->getLastScheduledCommand(CommandActivate)
+							+ controller->getTiming(TimingActivate, TimingWrite, TimingSame, TimingSame),
+							ready);
+				}
+
+				// The rank is the same as the new command,
+				// the bank is either the same or different.
+				if (rank_id == cmd_rank)
+				{
+					// W W s a
+					ready = std::max(rank->getLastScheduledCommand(CommandWrite)
+							+ controller->getTiming(TimingWrite, TimingWrite, TimingSame, TimingAny),
+							ready);
+				}
+
+				// The rank is different than the new command,
+				// the bank is either the same or different.
+				if (rank_id != cmd_rank)
+				{
+					// W W d a
+					ready = std::max(rank->getLastScheduledCommand(CommandWrite)
+							+ controller->getTiming(TimingWrite, TimingWrite, TimingDifferent, TimingAny),
+							ready);
+				}
+
+				// Both the rank and bank are either the same
+				// or different than the new command.
+				// R W a a
+				ready = std::max(rank->getLastScheduledCommand(CommandRead)
+						+ controller->getTiming(TimingRead, TimingWrite, TimingAny, TimingAny),
+						ready);
+				break;
+
+			// Timings cannot be calculated for an invalid command.
+			case CommandInvalid:
+				throw misc::Panic("Can't calculate timing for invalid command");
+
+			}
+		}
+	}
+
+	// Return the final cycle that the command will be ready to run.
+	return ready;
 }
 
 
 void Channel::dump(std::ostream &os) const
 {
+	// Print header
 	os << misc::fmt("\tDumping Channel %d\n", id);
-	os << misc::fmt("\t%d Ranks\n\tRank dump:\n", (int) ranks.size());
 
+	// Print ranks owned by this channel
+	os << misc::fmt("\t%d Ranks\n\tRank dump:\n", (int) ranks.size());
 	for (auto const& rank : ranks)
 	{
 		rank->dump(os);

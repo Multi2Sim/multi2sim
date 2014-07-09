@@ -45,8 +45,8 @@ class Rank
 	std::vector<std::unique_ptr<Bank>> banks;
 
 	// Last scheduled command information
-	CommandType last_scheduled_command_type = CommandTypeInvalid;
-	long long last_scheduled_commands[5] = {0, 0, 0, 0, 0};
+	CommandType last_scheduled_command_type = CommandInvalid;
+	long long last_scheduled_commands[5] = {-100, -100, -100, -100, -100};
 
 public:
 
@@ -57,9 +57,14 @@ public:
 			int num_columns,
 			int num_bits);
 
+	/// Returns the id of this rank, which is unique in the channel that
+	/// this rank belongs to.
 	int getId() { return id; }
 
+	/// Returns a bank that belongs to this rank with the specified id.
 	Bank *getBank(int id) const { return banks[id].get(); }
+
+	/// Returns the channel that this rank belongs to.
 	Channel *getChannel() const { return channel; }
 
 	/// Returns the type of the last scheduled command.

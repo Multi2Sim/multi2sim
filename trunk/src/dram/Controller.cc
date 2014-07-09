@@ -126,8 +126,8 @@ void Controller::ParseTiming(const std::string &section,
 	// A A s d
 	timings[TimingActivate][TimingActivate][TimingSame][TimingDifferent] =
 			parameters.tRRD;
-	// P A s d
-	timings[TimingPrecharge][TimingActivate][TimingSame][TimingDifferent] =
+	// P A s s
+	timings[TimingPrecharge][TimingActivate][TimingSame][TimingSame] =
 			parameters.tRP;
 	// A R s s
 	timings[TimingActivate][TimingRead][TimingSame][TimingSame] =
@@ -165,6 +165,13 @@ void Controller::ParseTiming(const std::string &section,
 	// W P s s
 	timings[TimingWrite][TimingPrecharge][TimingSame][TimingSame] =
 			parameters.tCWD + parameters.tBURST + parameters.tWR;
+
+	// Store command durations.
+	command_durations[CommandPrecharge] = parameters.tRP;
+	command_durations[CommandActivate] = parameters.tRCD;
+	command_durations[CommandRead] = parameters.tCAS + parameters.tBURST;
+	command_durations[CommandWrite] =
+			parameters.tCWD + parameters.tBURST + parameters.tWTR;
 }
 
 
@@ -287,13 +294,40 @@ void Controller::RunRequestProcessor()
 }
 
 
+void Controller::CommandReturnHandler(esim::EventType *type,
+		esim::EventFrame *frame)
+{
+	// Get the command pointer out of the frame.
+	CommandReturnFrame *command_frame =
+			dynamic_cast<CommandReturnFrame *>(frame);
+	Command *command = command_frame->getCommand();
+
+	// The command is finished, so mark it as such.  This also triggers
+	// the command to decrement the number of in flight commands for
+	// its request.
+	command->setFinished();
+
+	// Debug
+	long long cycle = System::DRAM_DOMAIN->getCycle();
+	std::cout << misc::fmt("[%lld] [%d : %d] Finished command %s for "
+			"0x%llx\n", cycle, command->getRankId(),
+			command->getBankId(),
+			command->getTypeString().c_str(),
+			command->getAddress()->encoded);
+}
+
+
 void Controller::dump(std::ostream &os) const
 {
+	// Print header
 	os << misc::fmt("Dumping Controller %d (%s)\n", id, name.c_str());
+
+	// Print the requests currently in queue
 	os << misc::fmt("%d requests in the incoming queue\n",
 			(int) incoming_requests.size());
-	os << misc::fmt("%d Channels\nChannel dump:\n", (int) channels.size());
 
+	// Print channels owned by this controller
+	os << misc::fmt("%d Channels\nChannel dump:\n", (int) channels.size());
 	for (auto const& channel : channels)
 	{
 		channel->dump(os);

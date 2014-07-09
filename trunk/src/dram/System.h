@@ -80,6 +80,7 @@ public:
 	// EventTypes and FrequencyDomains for DRAM
 	static esim::FrequencyDomain *DRAM_DOMAIN;
 	static esim::EventType *ACTION_REQUEST;
+	static esim::EventType *COMMAND_RETURN;
 
 	/// Obtain the instance of the dram simulator singleton.
 	static System *getInstance();

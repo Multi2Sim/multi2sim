@@ -29,6 +29,7 @@ namespace dram
 {
 
 // Forward declarations
+class Bank;
 class Channel;
 
 
@@ -53,17 +54,17 @@ public:
 	{
 	}
 
-	/// Returns the ids of the next Rank-Bank pair that should have its
-	/// command scheduled next.  In the case that one isn't found, the pair
-	/// (-1, -1) is returned.
-	virtual std::pair<int, int> FindNext() = 0;
+	/// Returns the pointer to the next bank that should have its command
+	/// scheduled next.  In the case that one isn't found, nullptr is
+	/// returned.
+	virtual Bank *FindNext() = 0;
 };
 
 
 class RankBank : public Scheduler
 {
-	int cur_rank = 0;
-	int cur_bank = 0;
+	int current_rank = 0;
+	int current_bank = 0;
 
 public:
 
@@ -73,10 +74,10 @@ public:
 	{
 	}
 
-	/// Returns the ids of the next Rank-Bank pair that should have its
+	/// Returns the the pointer to the next bank that should have its
 	/// command scheduled next based on the Rank Bank Round Robin
 	/// algorithm.
-	std::pair<int, int> FindNext();
+	Bank *FindNext();
 };
 
 }  // namespace dram

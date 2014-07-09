@@ -20,6 +20,7 @@
 #ifndef DRAM_CONTROLLER_H
 #define DRAM_CONTROLLER_H
 
+#include <algorithm>
 #include <map>
 #include <memory>
 #include <vector>
@@ -83,7 +84,7 @@ class Controller
 
 	std::string name;
 
-	// Sizes of components under this controller
+	// Controller geometry
 	int num_channels;
 	int num_ranks;
 	int num_banks;
@@ -93,6 +94,9 @@ class Controller
 
 	// Timing matrix
 	int timings[4][4][2][2] = {};
+
+	// Command durations
+	int command_durations[5] = {};
 
 	// List of physical channels contained in this controller
 	std::vector<std::unique_ptr<Channel>> channels;
@@ -113,8 +117,12 @@ public:
 	Controller(int id, const std::string &section,
 			misc::IniFile &config);
 
+	/// Returns the id of this controller, which is unique for all
+	/// controllers.
 	int getId() const { return id; }
 
+	/// Returns a channel that belongs to this controller with the
+	/// specified id.
 	Channel *getChannel(int id) { return channels[id].get(); }
 
 	int getNumChannels() const { return num_channels; }
@@ -123,10 +131,19 @@ public:
 	int getNumRows() const { return num_rows; }
 	int getNumColumns() const { return num_columns; }
 
+	/// Returns the minimum timing seperation (in number of cycles) between
+	/// two commands in two locations, based on the timing protocol matrix.
 	int getTiming(TimingCommand prev, TimingCommand next,
 			TimingLocation rank, TimingLocation bank) const
 	{
-		return timings[prev][next][rank][bank];
+		// FIXME: this is a hack, initialize everything to 1 instead.
+		return std::max(timings[prev][next][rank][bank], 1);
+	}
+
+	/// Returns the duration of a command of the specified type.
+	int getCommandDuration(CommandType type)
+	{
+		return command_durations[type];
 	}
 
 	/// Parse a MemoryController section of a dram configuration file
@@ -173,6 +190,10 @@ public:
 	/// down into their commands.
 	void RunRequestProcessor();
 
+	/// Event handler that for when a command finishes executing.
+	static void CommandReturnHandler(esim::EventType *,
+			esim::EventFrame *);
+
 	/// Dump the object to an output stream.
 	void dump(std::ostream &os = std::cout) const;
 
@@ -195,6 +216,23 @@ public:
 	}
 
 	Controller *controller;
+};
+
+
+class CommandReturnFrame : public esim::EventFrame
+{
+	// The command that this event was created for.
+	std::shared_ptr<Command> command;
+
+public:
+	CommandReturnFrame(std::shared_ptr<Command> command)
+			:
+			command(command)
+	{
+	}
+
+	// Returns a pointer to the command that this event was created for.
+	Command *getCommand() { return command.get(); }
 };
 
 }  // namespace dram

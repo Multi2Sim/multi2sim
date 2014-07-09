@@ -42,6 +42,7 @@ class Bank
 	// Pointer to the owning rank.
 	Rank *rank;
 
+	// Bank geometry
 	int num_rows;
 	int num_columns;
 	int num_bits;
@@ -50,8 +51,8 @@ class Bank
 	std::deque<std::shared_ptr<Command>> command_queue;
 
 	// Last scheduled command information
-	CommandType last_scheduled_command_type = CommandTypeInvalid;
-	long long last_scheduled_commands[5] = {0, 0, 0, 0, 0};
+	CommandType last_scheduled_command_type = CommandInvalid;
+	long long last_scheduled_commands[5] = {-100, -100, -100, -100, -100};
 
 	// Current and future row activations.
 	// A value of -1 means the bank is precharged.
@@ -66,8 +67,11 @@ public:
 			int num_columns,
 			int num_bits);
 
+	/// Returns the id of this bank, which is unique in the rank that this
+	/// bank belongs to.
 	int getId() const { return id; }
 
+	/// Returns the rank that this bank belongs to.
 	Rank *getRank() const { return rank; }
 
 	/// Returns the type of the last scheduled command.
