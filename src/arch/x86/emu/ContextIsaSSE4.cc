@@ -50,7 +50,32 @@ static char *x86_isa_err_sse4 =
 
 void Context::ExecuteInst_pcmpeqq_xmm_xmmm128()
 {
-	__UNIMPLEMENTED__
+#ifdef HAVE_SSE4
+	XMMValue dest;
+	XMMValue src;
+
+	LoadXMM(dest);
+	LoadXMMM128(src);
+
+	__X86_ISA_ASM_START__
+	asm volatile (
+		"movdqu %1, %%xmm0\n\t"
+		"movdqu %0, %%xmm1\n\t"
+		"pcmpeqq %%xmm0, %%xmm1\n\t"
+		"movdqu %%xmm1, %0\n\t"
+		: "=m" (dest)
+		: "m" (src)
+		: "xmm0", "xmm1"
+	);
+	__X86_ISA_ASM_END__
+
+	StoreXMM(dest);
+
+	newUInst(UInstXmmComp, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+
+#else
+	throw misc::Panic(x86_isa_err_sse4);
+#endif
 }
 
 void Context::ExecuteInst_pcmpistri_xmm_xmmm128_imm8()

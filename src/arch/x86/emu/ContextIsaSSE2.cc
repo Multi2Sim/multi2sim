@@ -44,12 +44,12 @@ void Context::ExecuteInst_addpd_xmm_xmmm128()
 
 	int spec_mode;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM128(src);
+	LoadXMM(dest);
+	LoadXMMM128(src);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = this->getState(StateSpecMode);
+	spec_mode = getState(StateSpecMode);
 	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
@@ -65,9 +65,9 @@ void Context::ExecuteInst_addpd_xmm_xmmm128()
 		__X86_ISA_ASM_END__
 	}
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmFpAdd, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmFpAdd, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -78,12 +78,12 @@ void Context::ExecuteInst_addsd_xmm_xmmm64()
 
 	int spec_mode;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM64(src);
+	LoadXMM(dest);
+	LoadXMMM64(src);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = this->getState(StateSpecMode);
+	spec_mode = getState(StateSpecMode);
 	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
@@ -99,9 +99,9 @@ void Context::ExecuteInst_addsd_xmm_xmmm64()
 		__X86_ISA_ASM_END__
 	}
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmFpAdd, UInstDepXmmm64, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmFpAdd, UInstDepXmmm64, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -110,8 +110,8 @@ void Context::ExecuteInst_andpd_xmm_xmmm128()
 	XMMValue dest;
 	XMMValue src;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM128(src);
+	LoadXMM(dest);
+	LoadXMMM128(src);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -125,9 +125,9 @@ void Context::ExecuteInst_andpd_xmm_xmmm128()
 	);
 	__X86_ISA_ASM_END__
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmAnd, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmAnd, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -138,12 +138,12 @@ void Context::ExecuteInst_cvtdq2pd_xmm_xmmm64()
 
 	int spec_mode;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM64(src);
+	LoadXMM(dest);
+	LoadXMMM64(src);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = this->getState(StateSpecMode);
+	spec_mode = getState(StateSpecMode);
 	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
@@ -159,8 +159,8 @@ void Context::ExecuteInst_cvtdq2pd_xmm_xmmm64()
 		__X86_ISA_ASM_END__
 	}
 
-	this->StoreXMM(dest);
-	this->newUInst(UInstXmmConv, UInstDepXmmm64, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	StoreXMM(dest);
+	newUInst(UInstXmmConv, UInstDepXmmm64, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -171,12 +171,12 @@ void Context::ExecuteInst_cvtdq2ps_xmm_xmmm128()
 
 	int spec_mode;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM128(src);
+	LoadXMM(dest);
+	LoadXMMM128(src);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = this->getState(StateSpecMode);
+	spec_mode = getState(StateSpecMode);
 	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
@@ -192,9 +192,9 @@ void Context::ExecuteInst_cvtdq2ps_xmm_xmmm128()
 		__X86_ISA_ASM_END__
 	}
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmConv, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmConv, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -205,12 +205,12 @@ void Context::ExecuteInst_cvtps2pd_xmm_xmmm64()
 
 	int spec_mode;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM64(src);
+	LoadXMM(dest);
+	LoadXMMM64(src);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = this->getState(StateSpecMode);
+	spec_mode = getState(StateSpecMode);
 	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
@@ -226,8 +226,8 @@ void Context::ExecuteInst_cvtps2pd_xmm_xmmm64()
 		__X86_ISA_ASM_END__
 	}
 
-	this->StoreXMM(dest);
-	this->newUInst(UInstXmmConv, UInstDepXmmm64, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	StoreXMM(dest);
+	newUInst(UInstXmmConv, UInstDepXmmm64, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -238,12 +238,12 @@ void Context::ExecuteInst_cvtsi2sd_xmm_rm32()
 
 	int spec_mode;
 
-	src = this->LoadRm32();
-	this->LoadXMM(dest);
+	src = LoadRm32();
+	LoadXMM(dest);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = this->getState(StateSpecMode);
+	spec_mode = getState(StateSpecMode);
 	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
@@ -259,9 +259,9 @@ void Context::ExecuteInst_cvtsi2sd_xmm_rm32()
 		__X86_ISA_ASM_END__
 	}
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmConv, UInstDepXmm, UInstDepRm32, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmConv, UInstDepXmm, UInstDepRm32, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -270,7 +270,7 @@ void Context::ExecuteInst_cvttsd2si_r32_xmmm64()
 	XMMValue xmm;
 	unsigned int r32;
 
-	this->LoadXMMM64(xmm);
+	LoadXMMM64(xmm);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -282,9 +282,9 @@ void Context::ExecuteInst_cvttsd2si_r32_xmmm64()
 	);
 	__X86_ISA_ASM_END__
 
-	this->StoreR32(r32);
+	StoreR32(r32);
 
-	this->newUInst(UInstXmmConv, UInstDepXmmm64, 0, 0, UInstDepR32, 0, 0, 0);
+	newUInst(UInstXmmConv, UInstDepXmmm64, 0, 0, UInstDepR32, 0, 0, 0);
 }
 
 
@@ -295,11 +295,11 @@ void Context::ExecuteInst_cvtsd2si_r32_xmmm64()
 
 	int spec_mode;
 
-	this->LoadXMMM64(src);
+	LoadXMMM64(src);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = this->getState(StateSpecMode);
+	spec_mode = getState(StateSpecMode);
 	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
@@ -314,8 +314,8 @@ void Context::ExecuteInst_cvtsd2si_r32_xmmm64()
 		__X86_ISA_ASM_END__
 	}
 
-	this->StoreR32(r32);
-	this->newUInst(UInstXmmShift, UInstDepXmmm64, 0, 0, UInstDepR32, 0, 0, 0);
+	StoreR32(r32);
+	newUInst(UInstXmmShift, UInstDepXmmm64, 0, 0, UInstDepR32, 0, 0, 0);
 }
 
 
@@ -326,12 +326,12 @@ void Context::ExecuteInst_cvtsd2ss_xmm_xmmm64()
 
 	int spec_mode;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM64(src);
+	LoadXMM(dest);
+	LoadXMMM64(src);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = this->getState(StateSpecMode);
+	spec_mode = getState(StateSpecMode);
 	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
@@ -347,8 +347,8 @@ void Context::ExecuteInst_cvtsd2ss_xmm_xmmm64()
 		__X86_ISA_ASM_END__
 	}
 
-	this->StoreXMM(dest);
-	this->newUInst(UInstXmmConv, UInstDepXmmm64, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	StoreXMM(dest);
+	newUInst(UInstXmmConv, UInstDepXmmm64, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -359,12 +359,12 @@ void Context::ExecuteInst_cvtpd2ps_xmm_xmmm128()
 
 	int spec_mode;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM128(src);
+	LoadXMM(dest);
+	LoadXMMM128(src);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = this->getState(StateSpecMode);
+	spec_mode = getState(StateSpecMode);
 	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
@@ -380,9 +380,9 @@ void Context::ExecuteInst_cvtpd2ps_xmm_xmmm128()
 		__X86_ISA_ASM_END__
 	}
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmConv, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmConv, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -393,12 +393,12 @@ void Context::ExecuteInst_cvtss2sd_xmm_xmmm32()
 
 	int spec_mode;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM32(src);
+	LoadXMM(dest);
+	LoadXMMM32(src);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = this->getState(StateSpecMode);
+	spec_mode = getState(StateSpecMode);
 	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
@@ -414,9 +414,9 @@ void Context::ExecuteInst_cvtss2sd_xmm_xmmm32()
 		__X86_ISA_ASM_END__
 	}
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmConv, UInstDepXmmm32, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmConv, UInstDepXmmm32, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -427,12 +427,12 @@ void Context::ExecuteInst_cvttpd2dq_xmm_xmmm128()
 
 	int spec_mode;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM128(src);
+	LoadXMM(dest);
+	LoadXMMM128(src);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = this->getState(StateSpecMode);
+	spec_mode = getState(StateSpecMode);
 	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
@@ -448,9 +448,9 @@ void Context::ExecuteInst_cvttpd2dq_xmm_xmmm128()
 		__X86_ISA_ASM_END__
 	}
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmConv, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmConv, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -461,12 +461,12 @@ void Context::ExecuteInst_cvttps2dq_xmm_xmmm128()
 
 	int spec_mode;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM128(src);
+	LoadXMM(dest);
+	LoadXMMM128(src);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = this->getState(StateSpecMode);
+	spec_mode = getState(StateSpecMode);
 	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
@@ -482,9 +482,9 @@ void Context::ExecuteInst_cvttps2dq_xmm_xmmm128()
 		__X86_ISA_ASM_END__
 	}
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmConv, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmConv, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -495,12 +495,12 @@ void Context::ExecuteInst_divpd_xmm_xmmm128()
 
 	int spec_mode;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM128(src);
+	LoadXMM(dest);
+	LoadXMMM128(src);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = this->getState(StateSpecMode);
+	spec_mode = getState(StateSpecMode);
 	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
@@ -516,9 +516,9 @@ void Context::ExecuteInst_divpd_xmm_xmmm128()
 		__X86_ISA_ASM_END__
 	}
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmFpDiv, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmFpDiv, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -529,12 +529,12 @@ void Context::ExecuteInst_divsd_xmm_xmmm64()
 
 	int spec_mode;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM64(src);
+	LoadXMM(dest);
+	LoadXMMM64(src);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = this->getState(StateSpecMode);
+	spec_mode = getState(StateSpecMode);
 	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
@@ -550,9 +550,9 @@ void Context::ExecuteInst_divsd_xmm_xmmm64()
 		__X86_ISA_ASM_END__
 	}
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmFpDiv, UInstDepXmmm64, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmFpDiv, UInstDepXmmm64, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -563,12 +563,12 @@ void Context::ExecuteInst_maxpd_xmm_xmmm128()
 
 	int spec_mode;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM128(src);
+	LoadXMM(dest);
+	LoadXMMM128(src);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = this->getState(StateSpecMode);
+	spec_mode = getState(StateSpecMode);
 	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
@@ -584,9 +584,9 @@ void Context::ExecuteInst_maxpd_xmm_xmmm128()
 		__X86_ISA_ASM_END__
 	}
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmFpComp, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmFpComp, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -597,12 +597,12 @@ void Context::ExecuteInst_maxsd_xmm_xmmm64()
 
 	int spec_mode;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM64(src);
+	LoadXMM(dest);
+	LoadXMMM64(src);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = this->getState(StateSpecMode);
+	spec_mode = getState(StateSpecMode);
 	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
@@ -618,9 +618,9 @@ void Context::ExecuteInst_maxsd_xmm_xmmm64()
 		__X86_ISA_ASM_END__
 	}
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmFpComp, UInstDepXmmm64, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmFpComp, UInstDepXmmm64, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -631,12 +631,12 @@ void Context::ExecuteInst_minpd_xmm_xmmm128()
 
 	int spec_mode;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM128(src);
+	LoadXMM(dest);
+	LoadXMMM128(src);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = this->getState(StateSpecMode);
+	spec_mode = getState(StateSpecMode);
 	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
@@ -652,9 +652,9 @@ void Context::ExecuteInst_minpd_xmm_xmmm128()
 		__X86_ISA_ASM_END__
 	}
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmFpComp, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmFpComp, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -665,12 +665,12 @@ void Context::ExecuteInst_minsd_xmm_xmmm64()
 
 	int spec_mode;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM64(src);
+	LoadXMM(dest);
+	LoadXMMM64(src);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = this->getState(StateSpecMode);
+	spec_mode = getState(StateSpecMode);
 	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
@@ -686,9 +686,9 @@ void Context::ExecuteInst_minsd_xmm_xmmm64()
 		__X86_ISA_ASM_END__
 	}
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmFpComp, UInstDepXmmm64, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmFpComp, UInstDepXmmm64, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -696,10 +696,10 @@ void Context::ExecuteInst_movapd_xmm_xmmm128()
 {
 	XMMValue xmm;
 
-	this->LoadXMMM128(xmm);
-	this->StoreXMM(xmm);
+	LoadXMMM128(xmm);
+	StoreXMM(xmm);
 
-	this->newUInst(UInstXmmMove, UInstDepXmmm128, 0, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmMove, UInstDepXmmm128, 0, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -707,10 +707,10 @@ void Context::ExecuteInst_movapd_xmmm128_xmm()
 {
 	XMMValue xmm;
 
-	this->LoadXMM(xmm);
-	this->StoreXMMM128(xmm);
+	LoadXMM(xmm);
+	StoreXMMM128(xmm);
 
-	this->newUInst(UInstXmmMove, UInstDepXmm, 0, 0, UInstDepXmmm128, 0, 0, 0);
+	newUInst(UInstXmmMove, UInstDepXmm, 0, 0, UInstDepXmmm128, 0, 0, 0);
 }
 
 
@@ -720,11 +720,11 @@ void Context::ExecuteInst_movd_xmm_rm32()
 
 
 	xmm.setWithMemset(0, 0, 16);
-	xmm.setAsUInt(0, this->LoadRm32());
+	xmm.setAsUInt(0, LoadRm32());
 
-	this->StoreXMM(xmm);
+	StoreXMM(xmm);
 
-	this->newUInst(UInstXmmMove, UInstDepRm32, 0, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmMove, UInstDepRm32, 0, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -732,10 +732,10 @@ void Context::ExecuteInst_movd_rm32_xmm()
 {
 	XMMValue xmm;
 
-	this->LoadXMM(xmm);
-	this->StoreRm32(xmm.getAsUInt(0));
+	LoadXMM(xmm);
+	StoreRm32(xmm.getAsUInt(0));
 
-	this->newUInst(UInstXmmMove, UInstDepXmm, 0, 0, UInstDepRm32, 0, 0, 0);
+	newUInst(UInstXmmMove, UInstDepXmm, 0, 0, UInstDepRm32, 0, 0, 0);
 }
 
 
@@ -743,10 +743,10 @@ void Context::ExecuteInst_movdqa_xmm_xmmm128()
 {
 	XMMValue xmm;
 
-	this->LoadXMMM128(xmm);
-	this->StoreXMM(xmm);
+	LoadXMMM128(xmm);
+	StoreXMM(xmm);
 
-	this->newUInst(UInstXmmMove, UInstDepXmmm128, 0, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmMove, UInstDepXmmm128, 0, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -754,10 +754,10 @@ void Context::ExecuteInst_movdqa_xmmm128_xmm()
 {
 	XMMValue xmm;
 
-	this->LoadXMM(xmm);
-	this->StoreXMMM128(xmm);
+	LoadXMM(xmm);
+	StoreXMMM128(xmm);
 
-	this->newUInst(UInstXmmMove, UInstDepXmm, 0, 0, UInstDepXmmm128, 0, 0, 0);
+	newUInst(UInstXmmMove, UInstDepXmm, 0, 0, UInstDepXmmm128, 0, 0, 0);
 }
 
 
@@ -765,10 +765,10 @@ void Context::ExecuteInst_movdqu_xmm_xmmm128()
 {
 	XMMValue xmm;
 
-	this->LoadXMMM128(xmm);
-	this->StoreXMM(xmm);
+	LoadXMMM128(xmm);
+	StoreXMM(xmm);
 
-	this->newUInst(UInstXmmMove, UInstDepXmmm128, 0, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmMove, UInstDepXmmm128, 0, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -776,10 +776,10 @@ void Context::ExecuteInst_movdqu_xmmm128_xmm()
 {
 	XMMValue xmm;
 
-	this->LoadXMM(xmm);
-	this->StoreXMMM128(xmm);
+	LoadXMM(xmm);
+	StoreXMMM128(xmm);
 
-	this->newUInst(UInstXmmMove, UInstDepXmm, 0, 0, UInstDepXmmm128, 0, 0, 0);
+	newUInst(UInstXmmMove, UInstDepXmm, 0, 0, UInstDepXmmm128, 0, 0, 0);
 }
 
 
@@ -787,11 +787,11 @@ void Context::ExecuteInst_movhpd_xmm_m64()
 {
 	XMMValue xmm;
 
-	this->LoadXMM(xmm);
-	xmm.setAsUInt64(1, this->LoadM64());
-	this->StoreXMM(xmm);
+	LoadXMM(xmm);
+	xmm.setAsUInt64(1, LoadM64());
+	StoreXMM(xmm);
 
-	this->newUInst(UInstXmmMove, UInstDepXmmm64, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmMove, UInstDepXmmm64, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -799,10 +799,10 @@ void Context::ExecuteInst_movhpd_m64_xmm()
 {
 	XMMValue xmm;
 
-	this->LoadXMM(xmm);
-	this->StoreM64(xmm.getAsUInt64(1));
+	LoadXMM(xmm);
+	StoreM64(xmm.getAsUInt64(1));
 
-	this->newUInst(UInstXmmMove, UInstDepXmm, 0, 0, UInstDepXmmm64, 0, 0, 0);
+	newUInst(UInstXmmMove, UInstDepXmm, 0, 0, UInstDepXmmm64, 0, 0, 0);
 }
 
 
@@ -810,11 +810,11 @@ void Context::ExecuteInst_movlpd_xmm_m64()
 {
 	XMMValue xmm;
 
-	this->LoadXMM(xmm);
-	xmm.setAsUInt64(0, this->LoadM64());
-	this->StoreXMM(xmm);
+	LoadXMM(xmm);
+	xmm.setAsUInt64(0, LoadM64());
+	StoreXMM(xmm);
 
-	this->newUInst(UInstXmmMove, UInstDepXmmm64, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmMove, UInstDepXmmm64, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -822,10 +822,10 @@ void Context::ExecuteInst_movlpd_m64_xmm()
 {
 	XMMValue xmm;
 
-	this->LoadXMM(xmm);
-	this->StoreM64(xmm.getAsUInt64(0));
+	LoadXMM(xmm);
+	StoreM64(xmm.getAsUInt64(0));
 
-	this->newUInst(UInstXmmMove, UInstDepXmm, 0, 0, UInstDepXmmm64, 0, 0, 0);
+	newUInst(UInstXmmMove, UInstDepXmm, 0, 0, UInstDepXmmm64, 0, 0, 0);
 }
 
 
@@ -834,7 +834,7 @@ void Context::ExecuteInst_movmskpd_r32_xmmm128()
 	XMMValue src;
 	unsigned int r32;
 
-	this->LoadXMMM128(src);
+	LoadXMMM128(src);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -847,9 +847,9 @@ void Context::ExecuteInst_movmskpd_r32_xmmm128()
 	);
 	__X86_ISA_ASM_END__
 
-	this->StoreR32(r32);
+	StoreR32(r32);
 
-	this->newUInst(UInstXmmShift, UInstDepXmmm128, 0, 0, UInstDepR32, 0, 0, 0);
+	newUInst(UInstXmmShift, UInstDepXmmm128, 0, 0, UInstDepR32, 0, 0, 0);
 }
 
 
@@ -858,7 +858,7 @@ void Context::ExecuteInst_movmskps_r32_xmmm128()
 	XMMValue src;
 	unsigned int r32;
 
-	this->LoadXMMM128(src);
+	LoadXMMM128(src);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -871,9 +871,9 @@ void Context::ExecuteInst_movmskps_r32_xmmm128()
 	);
 	__X86_ISA_ASM_END__
 
-	this->StoreR32(r32);
+	StoreR32(r32);
 
-	this->newUInst(UInstXmmShift, UInstDepXmmm128, 0, 0, UInstDepR32, 0, 0, 0);
+	newUInst(UInstXmmShift, UInstDepXmmm128, 0, 0, UInstDepR32, 0, 0, 0);
 }
 
 
@@ -888,25 +888,25 @@ void Context::ExecuteInst_movq_xmm_xmmm64()
 	XMMValue value;
 
 	value.setWithMemset(0, 0, 16);
-	this->LoadXMMM64(value);
-	this->StoreXMM(value);
+	LoadXMMM64(value);
+	StoreXMM(value);
 
-	this->newUInst(UInstXmmMove, UInstDepXmmm64, 0, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmMove, UInstDepXmmm64, 0, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
 void Context::ExecuteInst_movq_xmmm64_xmm()
 {
-	Regs &regs = this->getRegs();
+	Regs &regs = getRegs();
 	XMMValue value;
 
 	value.setWithMemset(0, 0, 16);
-	if (this->inst.getModRmMod() == 3)
-		regs.getXMM(this->inst.getModRmRm()).setWithMemcpy(&value);
-	this->LoadXMM(value);
-	this->StoreXMMM64(value);
+	if (inst.getModRmMod() == 3)
+		regs.getXMM(inst.getModRmRm()).setWithMemcpy(&value);
+	LoadXMM(value);
+	StoreXMMM64(value);
 
-	this->newUInst(UInstXmmMove, UInstDepXmm, 0, 0, UInstDepXmmm64, 0, 0, 0);
+	newUInst(UInstXmmMove, UInstDepXmm, 0, 0, UInstDepXmmm64, 0, 0, 0);
 }
 
 
@@ -916,14 +916,14 @@ void Context::ExecuteInst_movsd_xmm_xmmm64()
 
 	/* xmm <= m64: bits 127-64 of xmm set to 0.
 	 * xmm <= xmm: bits 127-64 unmodified */
-	if (this->inst.getModRmMod() == 3)
-		this->LoadXMM(value);
+	if (inst.getModRmMod() == 3)
+		LoadXMM(value);
 	else
 		value.setWithMemset(0, 0, 16);
-	this->LoadXMMM64(value);
-	this->StoreXMM(value);
+	LoadXMMM64(value);
+	StoreXMM(value);
 
-	this->newUInst(UInstXmmMove, UInstDepXmmm64, 0, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmMove, UInstDepXmmm64, 0, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -933,10 +933,10 @@ void Context::ExecuteInst_movsd_xmmm64_xmm()
 
 	/* xmm <= xmm: bits 127-64 unmodified.
 	 * m64 <= xmm: copy 64 bits to memory */
-	this->LoadXMM(value);
-	this->StoreXMMM64(value);
+	LoadXMM(value);
+	StoreXMMM64(value);
 
-	this->newUInst(UInstXmmMove, UInstDepXmm, 0, 0, UInstDepXmmm64, 0, 0, 0);
+	newUInst(UInstXmmMove, UInstDepXmm, 0, 0, UInstDepXmmm64, 0, 0, 0);
 }
 
 
@@ -947,12 +947,12 @@ void Context::ExecuteInst_mulpd_xmm_xmmm128()
 
 	int spec_mode;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM128(src);
+	LoadXMM(dest);
+	LoadXMMM128(src);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = this->getState(StateSpecMode);
+	spec_mode = getState(StateSpecMode);
 	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
@@ -968,9 +968,9 @@ void Context::ExecuteInst_mulpd_xmm_xmmm128()
 		__X86_ISA_ASM_END__
 	}
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmFpMult, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmFpMult, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -981,12 +981,12 @@ void Context::ExecuteInst_mulsd_xmm_xmmm64()
 
 	int spec_mode;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM64(src);
+	LoadXMM(dest);
+	LoadXMMM64(src);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = this->getState(StateSpecMode);
+	spec_mode = getState(StateSpecMode);
 	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
@@ -1002,9 +1002,9 @@ void Context::ExecuteInst_mulsd_xmm_xmmm64()
 		__X86_ISA_ASM_END__
 	}
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmFpMult, UInstDepXmmm64, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmFpMult, UInstDepXmmm64, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -1013,8 +1013,8 @@ void Context::ExecuteInst_orpd_xmm_xmmm128()
 	XMMValue dest;
 	XMMValue src;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM128(src);
+	LoadXMM(dest);
+	LoadXMMM128(src);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1028,9 +1028,9 @@ void Context::ExecuteInst_orpd_xmm_xmmm128()
 	);
 	__X86_ISA_ASM_END__
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmOr, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmOr, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -1039,8 +1039,8 @@ void Context::ExecuteInst_paddb_xmm_xmmm128()
 	XMMValue dest;
 	XMMValue src;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM128(src);
+	LoadXMM(dest);
+	LoadXMMM128(src);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1054,9 +1054,9 @@ void Context::ExecuteInst_paddb_xmm_xmmm128()
 	);
 	__X86_ISA_ASM_END__
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmAdd, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmAdd, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -1065,8 +1065,8 @@ void Context::ExecuteInst_paddw_xmm_xmmm128()
 	XMMValue dest;
 	XMMValue src;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM128(src);
+	LoadXMM(dest);
+	LoadXMMM128(src);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1080,9 +1080,9 @@ void Context::ExecuteInst_paddw_xmm_xmmm128()
 	);
 	__X86_ISA_ASM_END__
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmAdd, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmAdd, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -1091,8 +1091,8 @@ void Context::ExecuteInst_paddd_xmm_xmmm128()
 	XMMValue dest;
 	XMMValue src;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM128(src);
+	LoadXMM(dest);
+	LoadXMMM128(src);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1106,9 +1106,9 @@ void Context::ExecuteInst_paddd_xmm_xmmm128()
 	);
 	__X86_ISA_ASM_END__
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmAdd, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmAdd, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -1117,8 +1117,8 @@ void Context::ExecuteInst_paddq_xmm_xmmm128()
 	XMMValue dest;
 	XMMValue src;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM128(src);
+	LoadXMM(dest);
+	LoadXMMM128(src);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1132,9 +1132,9 @@ void Context::ExecuteInst_paddq_xmm_xmmm128()
 	);
 	__X86_ISA_ASM_END__
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmAdd, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmAdd, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -1143,8 +1143,8 @@ void Context::ExecuteInst_pand_xmm_xmmm128()
 	XMMValue dest;
 	XMMValue src;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM128(src);
+	LoadXMM(dest);
+	LoadXMMM128(src);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1158,9 +1158,9 @@ void Context::ExecuteInst_pand_xmm_xmmm128()
 	);
 	__X86_ISA_ASM_END__
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmAnd, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmAnd, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -1169,8 +1169,8 @@ void Context::ExecuteInst_pandn_xmm_xmmm128()
 	XMMValue dest;
 	XMMValue src;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM128(src);
+	LoadXMM(dest);
+	LoadXMMM128(src);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1184,9 +1184,9 @@ void Context::ExecuteInst_pandn_xmm_xmmm128()
 	);
 	__X86_ISA_ASM_END__
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmNand, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmNand, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -1195,8 +1195,8 @@ void Context::ExecuteInst_pcmpeqb_xmm_xmmm128()
 	XMMValue dest;
 	XMMValue src;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM128(src);
+	LoadXMM(dest);
+	LoadXMMM128(src);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1210,9 +1210,9 @@ void Context::ExecuteInst_pcmpeqb_xmm_xmmm128()
 	);
 	__X86_ISA_ASM_END__
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmComp, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmComp, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -1221,8 +1221,8 @@ void Context::ExecuteInst_pcmpeqw_xmm_xmmm128()
 	XMMValue dest;
 	XMMValue src;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM128(src);
+	LoadXMM(dest);
+	LoadXMMM128(src);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1236,9 +1236,9 @@ void Context::ExecuteInst_pcmpeqw_xmm_xmmm128()
 	);
 	__X86_ISA_ASM_END__
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmComp, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmComp, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -1247,8 +1247,8 @@ void Context::ExecuteInst_pcmpeqd_xmm_xmmm128()
 	XMMValue dest;
 	XMMValue src;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM128(src);
+	LoadXMM(dest);
+	LoadXMMM128(src);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1262,9 +1262,9 @@ void Context::ExecuteInst_pcmpeqd_xmm_xmmm128()
 	);
 	__X86_ISA_ASM_END__
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmComp, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmComp, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -1273,8 +1273,8 @@ void Context::ExecuteInst_pcmpgtb_xmm_xmmm128()
 	XMMValue dest;
 	XMMValue src;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM128(src);
+	LoadXMM(dest);
+	LoadXMMM128(src);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1288,9 +1288,9 @@ void Context::ExecuteInst_pcmpgtb_xmm_xmmm128()
 	);
 	__X86_ISA_ASM_END__
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmComp, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmComp, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -1299,8 +1299,8 @@ void Context::ExecuteInst_pcmpgtw_xmm_xmmm128()
 	XMMValue dest;
 	XMMValue src;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM128(src);
+	LoadXMM(dest);
+	LoadXMMM128(src);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1314,9 +1314,9 @@ void Context::ExecuteInst_pcmpgtw_xmm_xmmm128()
 	);
 	__X86_ISA_ASM_END__
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmComp, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmComp, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -1325,8 +1325,8 @@ void Context::ExecuteInst_pcmpgtd_xmm_xmmm128()
 	XMMValue dest;
 	XMMValue src;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM128(src);
+	LoadXMM(dest);
+	LoadXMMM128(src);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1340,9 +1340,9 @@ void Context::ExecuteInst_pcmpgtd_xmm_xmmm128()
 	);
 	__X86_ISA_ASM_END__
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmComp, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmComp, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -1351,8 +1351,8 @@ void Context::ExecuteInst_por_xmm_xmmm128()
 	XMMValue dest;
 	XMMValue src;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM128(src);
+	LoadXMM(dest);
+	LoadXMMM128(src);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1366,25 +1366,25 @@ void Context::ExecuteInst_por_xmm_xmmm128()
 	);
 	__X86_ISA_ASM_END__
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmOr, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmOr, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
 void Context::ExecuteInst_pshufd_xmm_xmmm128_imm8()
 {
 	XMMValue src, dest;
-	unsigned char imm = this->inst.getImmByte();
+	unsigned char imm = inst.getImmByte();
 
-	this->LoadXMMM128(src);
+	LoadXMMM128(src);
 	dest.setAsUChar(0, src.getAsUChar(imm & 3));
 	dest.setAsUChar(1, src.getAsUChar((imm >> 2) & 3));
 	dest.setAsUChar(2, src.getAsUChar((imm >> 4) & 3));
 	dest.setAsUChar(3, src.getAsUChar((imm >> 6) & 3));
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmShuf, UInstDepXmmm128, 0, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmShuf, UInstDepXmmm128, 0, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -1396,8 +1396,8 @@ void Context::ExecuteInst_pslldq_xmmm128_imm8()
 	int count;
 	int i;
 
-	this->LoadXMMM128(src);
-	count = this->inst.getImmByte();
+	LoadXMMM128(src);
+	count = inst.getImmByte();
 	if (count > 16)
 		count = 16;
 
@@ -1406,8 +1406,8 @@ void Context::ExecuteInst_pslldq_xmmm128_imm8()
 		dest.setAsUChar(i+count, src.getAsUChar(i));
 
 
-	this->StoreXMMM128(dest);
-	this->newUInst(UInstXmmShift, UInstDepXmmm128, 0, 0, UInstDepXmmm128, 0, 0, 0);
+	StoreXMMM128(dest);
+	newUInst(UInstXmmShift, UInstDepXmmm128, 0, 0, UInstDepXmmm128, 0, 0, 0);
 }
 
 
@@ -1416,9 +1416,9 @@ void Context::ExecuteInst_pslld_xmmm128_imm8()
 	XMMValue dest;
 	XMMValue src;
 
-	this->LoadXMMM128(dest);
+	LoadXMMM128(dest);
 	src.setWithMemset(0, 0, 16);
-	src.setAsUChar(0, this->inst.getImmByte());
+	src.setAsUChar(0, inst.getImmByte());
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1432,9 +1432,9 @@ void Context::ExecuteInst_pslld_xmmm128_imm8()
 	);
 	__X86_ISA_ASM_END__
 
-	this->StoreXMMM128(dest);
+	StoreXMMM128(dest);
 
-	this->newUInst(UInstXmmShift, UInstDepXmmm128, 0, 0, UInstDepXmmm128, 0, 0, 0);
+	newUInst(UInstXmmShift, UInstDepXmmm128, 0, 0, UInstDepXmmm128, 0, 0, 0);
 }
 
 
@@ -1443,8 +1443,8 @@ void Context::ExecuteInst_pslld_xmm_xmmm128()
 	XMMValue dest;
 	XMMValue src;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM128(src);
+	LoadXMM(dest);
+	LoadXMMM128(src);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1458,9 +1458,9 @@ void Context::ExecuteInst_pslld_xmm_xmmm128()
 	);
 	__X86_ISA_ASM_END__
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmShift, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmShift, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -1469,9 +1469,9 @@ void Context::ExecuteInst_psllw_xmmm128_imm8()
 	XMMValue dest;
 	XMMValue src;
 
-	this->LoadXMMM128(dest);
+	LoadXMMM128(dest);
 	src.setWithMemset(0, 0, 16);
-	src.setAsUChar(0, this->inst.getImmByte());
+	src.setAsUChar(0, inst.getImmByte());
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1485,9 +1485,9 @@ void Context::ExecuteInst_psllw_xmmm128_imm8()
 	);
 	__X86_ISA_ASM_END__
 
-	this->StoreXMMM128(dest);
+	StoreXMMM128(dest);
 
-	this->newUInst(UInstXmmShift, UInstDepXmmm128, 0, 0, UInstDepXmmm128, 0, 0, 0);
+	newUInst(UInstXmmShift, UInstDepXmmm128, 0, 0, UInstDepXmmm128, 0, 0, 0);
 }
 
 
@@ -1496,8 +1496,8 @@ void Context::ExecuteInst_psllw_xmm_xmmm128()
 	XMMValue dest;
 	XMMValue src;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM128(src);
+	LoadXMM(dest);
+	LoadXMMM128(src);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1511,9 +1511,9 @@ void Context::ExecuteInst_psllw_xmm_xmmm128()
 	);
 	__X86_ISA_ASM_END__
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmShift, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmShift, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -1522,9 +1522,9 @@ void Context::ExecuteInst_psllq_xmmm128_imm8()
 	XMMValue dest;
 	XMMValue src;
 
-	this->LoadXMMM128(dest);
+	LoadXMMM128(dest);
 	src.setWithMemset(0, 0, 16);
-	src.setAsUChar(0, this->inst.getImmByte());
+	src.setAsUChar(0, inst.getImmByte());
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1538,9 +1538,9 @@ void Context::ExecuteInst_psllq_xmmm128_imm8()
 	);
 	__X86_ISA_ASM_END__
 
-	this->StoreXMMM128(dest);
+	StoreXMMM128(dest);
 
-	this->newUInst(UInstXmmShift, UInstDepXmmm128, 0, 0, UInstDepXmmm128, 0, 0, 0);
+	newUInst(UInstXmmShift, UInstDepXmmm128, 0, 0, UInstDepXmmm128, 0, 0, 0);
 }
 
 
@@ -1549,8 +1549,8 @@ void Context::ExecuteInst_psllq_xmm_xmmm128()
 	XMMValue dest;
 	XMMValue src;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM128(src);
+	LoadXMM(dest);
+	LoadXMMM128(src);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1564,9 +1564,9 @@ void Context::ExecuteInst_psllq_xmm_xmmm128()
 	);
 	__X86_ISA_ASM_END__
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmShift, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmShift, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -1575,9 +1575,9 @@ void Context::ExecuteInst_psraw_xmmm128_imm8()
 	XMMValue dest;
 	XMMValue src;
 
-	this->LoadXMMM128(dest);
+	LoadXMMM128(dest);
 	src.setWithMemset(0, 0, 16);
-	src.setAsUChar(0, this->inst.getImmByte());
+	src.setAsUChar(0, inst.getImmByte());
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1591,9 +1591,9 @@ void Context::ExecuteInst_psraw_xmmm128_imm8()
 	);
 	__X86_ISA_ASM_END__
 
-	this->StoreXMMM128(dest);
+	StoreXMMM128(dest);
 
-	this->newUInst(UInstXmmShift, UInstDepXmmm128, 0, 0, UInstDepXmmm128, 0, 0, 0);
+	newUInst(UInstXmmShift, UInstDepXmmm128, 0, 0, UInstDepXmmm128, 0, 0, 0);
 }
 
 
@@ -1602,8 +1602,8 @@ void Context::ExecuteInst_psraw_xmm_xmmm128()
 	XMMValue dest;
 	XMMValue src;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM128(src);
+	LoadXMM(dest);
+	LoadXMMM128(src);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1617,9 +1617,9 @@ void Context::ExecuteInst_psraw_xmm_xmmm128()
 	);
 	__X86_ISA_ASM_END__
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmShift, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmShift, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -1628,9 +1628,9 @@ void Context::ExecuteInst_psrlw_xmmm128_imm8()
 	XMMValue dest;
 	XMMValue src;
 
-	this->LoadXMMM128(dest);
+	LoadXMMM128(dest);
 	src.setWithMemset(0, 0, 16);
-	src.setAsUChar(0, this->inst.getImmByte());
+	src.setAsUChar(0, inst.getImmByte());
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1644,9 +1644,9 @@ void Context::ExecuteInst_psrlw_xmmm128_imm8()
 	);
 	__X86_ISA_ASM_END__
 
-	this->StoreXMMM128(dest);
+	StoreXMMM128(dest);
 
-	this->newUInst(UInstXmmShift, UInstDepXmmm128, 0, 0, UInstDepXmmm128, 0, 0, 0);
+	newUInst(UInstXmmShift, UInstDepXmmm128, 0, 0, UInstDepXmmm128, 0, 0, 0);
 }
 
 
@@ -1655,9 +1655,9 @@ void Context::ExecuteInst_psrad_xmmm128_imm8()
 	XMMValue dest;
 	XMMValue src;
 
-	this->LoadXMMM128(dest);
+	LoadXMMM128(dest);
 	src.setWithMemset(0, 0, 16);
-	src.setAsUChar(0, this->inst.getImmByte());
+	src.setAsUChar(0, inst.getImmByte());
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1671,9 +1671,9 @@ void Context::ExecuteInst_psrad_xmmm128_imm8()
 	);
 	__X86_ISA_ASM_END__
 
-	this->StoreXMMM128(dest);
+	StoreXMMM128(dest);
 
-	this->newUInst(UInstXmmShift, UInstDepXmmm128, 0, 0, UInstDepXmmm128, 0, 0, 0);
+	newUInst(UInstXmmShift, UInstDepXmmm128, 0, 0, UInstDepXmmm128, 0, 0, 0);
 }
 
 
@@ -1682,8 +1682,8 @@ void Context::ExecuteInst_psrad_xmm_xmmm128()
 	XMMValue dest;
 	XMMValue src;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM128(src);
+	LoadXMM(dest);
+	LoadXMMM128(src);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1697,9 +1697,9 @@ void Context::ExecuteInst_psrad_xmm_xmmm128()
 	);
 	__X86_ISA_ASM_END__
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmShift, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmShift, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -1708,8 +1708,8 @@ void Context::ExecuteInst_psrlw_xmm_xmmm128()
 	XMMValue dest;
 	XMMValue src;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM128(src);
+	LoadXMM(dest);
+	LoadXMMM128(src);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1723,9 +1723,9 @@ void Context::ExecuteInst_psrlw_xmm_xmmm128()
 	);
 	__X86_ISA_ASM_END__
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmShift, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmShift, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -1734,8 +1734,8 @@ void Context::ExecuteInst_psrld_xmm_xmmm128()
 	XMMValue dest;
 	XMMValue src;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM128(src);
+	LoadXMM(dest);
+	LoadXMMM128(src);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1749,9 +1749,9 @@ void Context::ExecuteInst_psrld_xmm_xmmm128()
 	);
 	__X86_ISA_ASM_END__
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmShift, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmShift, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -1760,9 +1760,9 @@ void Context::ExecuteInst_psrld_xmmm128_imm8()
 	XMMValue dest;
 	XMMValue src;
 
-	this->LoadXMMM128(dest);
+	LoadXMMM128(dest);
 	src.setWithMemset(0, 0, 16);
-	src.setAsUChar(0, this->inst.getImmByte());
+	src.setAsUChar(0, inst.getImmByte());
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1776,9 +1776,9 @@ void Context::ExecuteInst_psrld_xmmm128_imm8()
 	);
 	__X86_ISA_ASM_END__
 
-	this->StoreXMMM128(dest);
+	StoreXMMM128(dest);
 
-	this->newUInst(UInstXmmShift, UInstDepXmmm128, 0, 0, UInstDepXmmm128, 0, 0, 0);
+	newUInst(UInstXmmShift, UInstDepXmmm128, 0, 0, UInstDepXmmm128, 0, 0, 0);
 }
 
 
@@ -1787,8 +1787,8 @@ void Context::ExecuteInst_psrlq_xmm_xmmm128()
 	XMMValue dest;
 	XMMValue src;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM128(src);
+	LoadXMM(dest);
+	LoadXMMM128(src);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1802,9 +1802,9 @@ void Context::ExecuteInst_psrlq_xmm_xmmm128()
 	);
 	__X86_ISA_ASM_END__
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmShift, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmShift, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -1813,9 +1813,9 @@ void Context::ExecuteInst_psrlq_xmmm128_imm8()
 	XMMValue dest;
 	XMMValue src;
 
-	this->LoadXMMM128(dest);
+	LoadXMMM128(dest);
 	src.setWithMemset(0, 0, 16);
-	src.setAsUChar(1, this->inst.getImmByte());
+	src.setAsUChar(1, inst.getImmByte());
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1829,9 +1829,9 @@ void Context::ExecuteInst_psrlq_xmmm128_imm8()
 	);
 	__X86_ISA_ASM_END__
 
-	this->StoreXMMM128(dest);
+	StoreXMMM128(dest);
 
-	this->newUInst(UInstXmmShift, UInstDepXmmm128, 0, 0, UInstDepXmmm128, 0, 0, 0);
+	newUInst(UInstXmmShift, UInstDepXmmm128, 0, 0, UInstDepXmmm128, 0, 0, 0);
 }
 
 
@@ -1843,8 +1843,8 @@ void Context::ExecuteInst_psrldq_xmmm128_imm8()
 	int count;
 	int i;
 
-	this->LoadXMMM128(src);
-	count = this->inst.getImmByte();
+	LoadXMMM128(src);
+	count = inst.getImmByte();
 	if (count > 16)
 		count = 16;
 
@@ -1853,8 +1853,8 @@ void Context::ExecuteInst_psrldq_xmmm128_imm8()
 		dest.setAsUChar(i, src.getAsUChar(i+count));
 
 
-	this->StoreXMMM128(dest);
-	this->newUInst(UInstXmmShift, UInstDepXmmm128, 0, 0, UInstDepXmmm128, 0, 0, 0);
+	StoreXMMM128(dest);
+	newUInst(UInstXmmShift, UInstDepXmmm128, 0, 0, UInstDepXmmm128, 0, 0, 0);
 }
 
 
@@ -1863,8 +1863,8 @@ void Context::ExecuteInst_psubb_xmm_xmmm128()
 	XMMValue dest;
 	XMMValue src;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM128(src);
+	LoadXMM(dest);
+	LoadXMMM128(src);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1878,9 +1878,9 @@ void Context::ExecuteInst_psubb_xmm_xmmm128()
 	);
 	__X86_ISA_ASM_END__
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmFpSub, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmFpSub, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -1889,8 +1889,8 @@ void Context::ExecuteInst_psubw_xmm_xmmm128()
 	XMMValue dest;
 	XMMValue src;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM128(src);
+	LoadXMM(dest);
+	LoadXMMM128(src);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1904,9 +1904,9 @@ void Context::ExecuteInst_psubw_xmm_xmmm128()
 	);
 	__X86_ISA_ASM_END__
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmSub, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmSub, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -1915,8 +1915,8 @@ void Context::ExecuteInst_psubd_xmm_xmmm128()
 	XMMValue dest;
 	XMMValue src;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM128(src);
+	LoadXMM(dest);
+	LoadXMMM128(src);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1930,8 +1930,8 @@ void Context::ExecuteInst_psubd_xmm_xmmm128()
 	);
 	__X86_ISA_ASM_END__
 
-	this->StoreXMM(dest);
-	this->newUInst(UInstXmmSub, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	StoreXMM(dest);
+	newUInst(UInstXmmSub, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -1940,8 +1940,8 @@ void Context::ExecuteInst_psubq_xmm_xmmm128()
 	XMMValue dest;
 	XMMValue src;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM128(src);
+	LoadXMM(dest);
+	LoadXMMM128(src);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1955,8 +1955,8 @@ void Context::ExecuteInst_psubq_xmm_xmmm128()
 	);
 	__X86_ISA_ASM_END__
 
-	this->StoreXMM(dest);
-	this->newUInst(UInstXmmSub, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	StoreXMM(dest);
+	newUInst(UInstXmmSub, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -1965,8 +1965,8 @@ void Context::ExecuteInst_punpcklbw_xmm_xmmm128()
 	XMMValue dest;
 	XMMValue src;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM128(src);
+	LoadXMM(dest);
+	LoadXMMM128(src);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1980,9 +1980,9 @@ void Context::ExecuteInst_punpcklbw_xmm_xmmm128()
 	);
 	__X86_ISA_ASM_END__
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmShuf, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmShuf, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -1991,8 +1991,8 @@ void Context::ExecuteInst_punpcklwd_xmm_xmmm128()
 	XMMValue dest;
 	XMMValue src;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM128(src);
+	LoadXMM(dest);
+	LoadXMMM128(src);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -2006,9 +2006,9 @@ void Context::ExecuteInst_punpcklwd_xmm_xmmm128()
 	);
 	__X86_ISA_ASM_END__
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmShuf, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmShuf, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -2017,8 +2017,8 @@ void Context::ExecuteInst_punpckldq_xmm_xmmm128()
 	XMMValue dest;
 	XMMValue src;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM128(src);
+	LoadXMM(dest);
+	LoadXMMM128(src);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -2032,9 +2032,9 @@ void Context::ExecuteInst_punpckldq_xmm_xmmm128()
 	);
 	__X86_ISA_ASM_END__
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmShuf, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmShuf, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -2043,8 +2043,8 @@ void Context::ExecuteInst_punpcklqdq_xmm_xmmm128()
 	XMMValue dest;
 	XMMValue src;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM128(src);
+	LoadXMM(dest);
+	LoadXMMM128(src);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -2058,9 +2058,9 @@ void Context::ExecuteInst_punpcklqdq_xmm_xmmm128()
 	);
 	__X86_ISA_ASM_END__
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmShuf, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmShuf, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -2069,8 +2069,8 @@ void Context::ExecuteInst_pxor_xmm_xmmm128()
 	XMMValue dest;
 	XMMValue src;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM128(src);
+	LoadXMM(dest);
+	LoadXMMM128(src);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -2084,9 +2084,9 @@ void Context::ExecuteInst_pxor_xmm_xmmm128()
 	);
 	__X86_ISA_ASM_END__
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmXor, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmXor, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -2097,12 +2097,12 @@ void Context::ExecuteInst_sqrtpd_xmm_xmmm128()
 
 	int spec_mode;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM128(src);
+	LoadXMM(dest);
+	LoadXMMM128(src);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = this->getState(StateSpecMode);
+	spec_mode = getState(StateSpecMode);
 	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
@@ -2118,9 +2118,9 @@ void Context::ExecuteInst_sqrtpd_xmm_xmmm128()
 		__X86_ISA_ASM_END__
 	}
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmFpSqrt, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmFpSqrt, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -2131,12 +2131,12 @@ void Context::ExecuteInst_sqrtsd_xmm_xmmm64()
 
 	int spec_mode;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM64(src);
+	LoadXMM(dest);
+	LoadXMMM64(src);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = this->getState(StateSpecMode);
+	spec_mode = getState(StateSpecMode);
 	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
@@ -2152,9 +2152,9 @@ void Context::ExecuteInst_sqrtsd_xmm_xmmm64()
 		__X86_ISA_ASM_END__
 	}
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmFpSqrt, UInstDepXmmm64, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmFpSqrt, UInstDepXmmm64, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -2165,12 +2165,12 @@ void Context::ExecuteInst_subpd_xmm_xmmm128()
 
 	int spec_mode;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM128(src);
+	LoadXMM(dest);
+	LoadXMMM128(src);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = this->getState(StateSpecMode);
+	spec_mode = getState(StateSpecMode);
 	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
@@ -2186,9 +2186,9 @@ void Context::ExecuteInst_subpd_xmm_xmmm128()
 		__X86_ISA_ASM_END__
 	}
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmFpSub, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmFpSub, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -2199,12 +2199,12 @@ void Context::ExecuteInst_subsd_xmm_xmmm64()
 
 	int spec_mode;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM64(src);
+	LoadXMM(dest);
+	LoadXMMM64(src);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = this->getState(StateSpecMode);
+	spec_mode = getState(StateSpecMode);
 	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
@@ -2220,9 +2220,9 @@ void Context::ExecuteInst_subsd_xmm_xmmm64()
 		__X86_ISA_ASM_END__
 	}
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmFpSub, UInstDepXmmm64, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmFpSub, UInstDepXmmm64, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -2233,12 +2233,12 @@ void Context::ExecuteInst_unpckhpd_xmm_xmmm128()
 
 	int spec_mode;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM128(src);
+	LoadXMM(dest);
+	LoadXMMM128(src);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = this->getState(StateSpecMode);
+	spec_mode = getState(StateSpecMode);
 	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
@@ -2254,9 +2254,9 @@ void Context::ExecuteInst_unpckhpd_xmm_xmmm128()
 		__X86_ISA_ASM_END__
 	}
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmShuf, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmShuf, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -2267,12 +2267,12 @@ void Context::ExecuteInst_unpcklpd_xmm_xmmm128()
 
 	int spec_mode;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM128(src);
+	LoadXMM(dest);
+	LoadXMMM128(src);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = this->getState(StateSpecMode);
+	spec_mode = getState(StateSpecMode);
 	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
@@ -2288,9 +2288,9 @@ void Context::ExecuteInst_unpcklpd_xmm_xmmm128()
 		__X86_ISA_ASM_END__
 	}
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmShuf, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmShuf, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 
@@ -2299,8 +2299,8 @@ void Context::ExecuteInst_xorpd_xmm_xmmm128()
 	XMMValue dest;
 	XMMValue src;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM128(src);
+	LoadXMM(dest);
+	LoadXMMM128(src);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -2314,9 +2314,9 @@ void Context::ExecuteInst_xorpd_xmm_xmmm128()
 	);
 	__X86_ISA_ASM_END__
 
-	this->StoreXMM(dest);
+	StoreXMM(dest);
 
-	this->newUInst(UInstXmmXor, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUInst(UInstXmmXor, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
 }
 
 }  // namespace x86
