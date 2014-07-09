@@ -45,7 +45,7 @@ Grid::Grid(Function *function)
 	state = GridStateInvalid;
 
 	// Add to list
-	emu->GridsPushBack(this);
+	emu->addGrid(function);
 }
 
 void Grid::Dump(std::ostream &os) const

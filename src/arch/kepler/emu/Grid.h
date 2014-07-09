@@ -157,6 +157,7 @@ public:
 	{
 		return running_thread_blocks.begin();
 	}
+
 	// Setters
 	//
 

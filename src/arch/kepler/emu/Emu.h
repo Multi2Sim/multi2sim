@@ -23,9 +23,13 @@
 #include <iostream>
 #include <list>
 #include <memory>
+#include <vector>
 
 #include <memory/Memory.h>
 #include <arch/kepler/asm/Asm.h>
+#include <lib/cpp/Debug.h>
+#include <lib/cpp/Error.h>
+#include <lib/cpp/Misc.h>
 
 namespace Kepler
 {
@@ -35,6 +39,7 @@ class Grid;
 class CUDADriver;
 class ThreadBlock;
 class Thread;
+class Function;
 
 
 typedef void (*InstFunc)(Kepler::Thread *thread, Inst *inst);
@@ -49,7 +54,11 @@ class Emu
 	Asm *as;
 
 	// Grids
-	std::list<Grid *> grids;
+	//std::list<Grid *> grids;
+	// List of Grid created by the guest application
+	std::vector<std::unique_ptr<Grid>> grids;
+
+	// List of Grid
 	std::list<Grid *> pending_grids;
 	std::list<Grid *> running_grids;
 	std::list<Grid *> finished_grids;
@@ -131,6 +140,18 @@ public:
 	///Get constant memory
 	mem::Memory* getConstMem() const { return const_mem; }
 
+	/// Return the number of available grids
+	int getNumGrids() { return grids.size(); }
+
+	/// Return the grid with the given identifier, or `nullptr` if the
+	/// identifier does not correspond to a valid module.
+	Grid *getGrid(int index)
+	{
+		return misc::inRange((unsigned) index, 0, grids.size()) ?
+				grids[index].get() :
+				nullptr;
+	}
+
 	// Setter
 	/// set global memory top
 	void SetGlobalMemTop(unsigned value) { global_mem_top = value; }
@@ -163,9 +184,6 @@ public:
 	/// Run one iteration of the emulation loop
 	bool Run();
 
-	/// push back an element in grids list
-	void GridsPushBack(Grid *grid);
-
 	/// Write Constant Memory
 	/// \param starting address to be written in
 	/// \param size of data
@@ -192,6 +210,9 @@ public:
 
 	/// Push an element into pending grid list
 	void PushPendingGrid(Grid *grid);
+
+	/// Create a new grid to the grid list and return a pointer to it.
+	Grid *addGrid(Function *function);
 
 };
 
