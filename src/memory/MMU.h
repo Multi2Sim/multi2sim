@@ -84,6 +84,15 @@ public:
 				physical_address(physical_address)
 		{
 		}
+
+		/// Return the virtual address space that the page belongs to
+		Space *getSpace() const { return space; }
+
+		/// Return the page's virtual address
+		unsigned getVirtualAddress() const { return virtual_address; }
+
+		/// Return the page's physical address
+		unsigned getPhysicalAddress() const { return physical_address; }
 	};
 
 	/// Virtual memory space in the MMU
@@ -157,7 +166,7 @@ public:
 	///
 	/// \param virtual_address
 	///	Output argument containing the virtual memory address that the
-	///	physical address is associated with, or -1 if the physical
+	///	physical address is associated with, or 0 if the physical
 	///	address is invalid.
 	///
 	/// \return
