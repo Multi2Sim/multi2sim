@@ -20,7 +20,10 @@
 #ifndef MEMORY_MEMORY_H
 #define MEMORY_MEMORY_H
 
+#include <cassert>
 #include <iostream>
+#include <memory>
+#include <unordered_map>
 
 #include <lib/cpp/Error.h>
 
@@ -42,9 +45,6 @@ public:
 	/// Mask to apply on a byte address to discard the page offset
 	static const unsigned PageMask = ~(PageSize - 1);
 
-	/// Number of pages in the page table
-	static const unsigned PageCount = 1024;
-
 	/// Class representing a runtime error in a memory object
 	class Error : public misc::Error
 	{
@@ -55,16 +55,8 @@ public:
 		{
 			// Set module prefix
 			AppendPrefix("Memory");
+			abort();/////////
 		}
-	};
-
-	/// A 4KB page of memory
-	struct Page
-	{	
-		unsigned tag;
-		unsigned perm;
-		Page *next;
-		char *data;
 	};
 
 	/// Types of memory accesses
@@ -75,7 +67,59 @@ public:
 		AccessWrite = 1 << 1,
 		AccessExec = 1 << 2,
 		AccessInit = 1 << 3,
-		AccessModif = 1 << 4
+		AccessModified = 1 << 4
+	};
+
+	/// A 4KB page of memory
+	class Page
+	{
+		// Page tag, equal to the address of the first byte contained
+		// in the page.
+		unsigned tag;
+
+		// Page permissions
+		unsigned perm;
+
+		// The page data
+		std::unique_ptr<char> data;
+	
+	public:
+
+		/// Constructor
+		Page(unsigned tag, unsigned perm) :
+				tag(tag),
+				perm(perm)
+		{
+			assert((tag & (PageSize - 1)) == 0);
+		}
+
+		/// Return the page tag, equal to the address of the first byte
+		/// contained in the page.
+		unsigned getTag() const { return tag; }
+
+		/// Return the page permissions. This is a bitmap of flags
+		/// contained in AccessType.
+		unsigned getPerm() const { return perm; }
+
+		/// Return a pointer to the page data, or `nullptr` if the data
+		/// was not allocated.
+		char *getData() { return data.get(); }
+
+		/// Allocate the page data. If the data buffer was allocated
+		/// before, this call is ignored.
+		void AllocateData()
+		{
+			if (data == nullptr)
+				data.reset(new char[PageSize]());
+		}
+
+		/// Set the page permissions, given as a bitmap of flags of
+		/// type AccessType.
+		void setPerm(unsigned perm) { this->perm = perm; }
+
+		/// Add a flag to the page permissions, given as a bitmap of
+		/// flags of type AccessType.
+		void addPerm(unsigned perm) { this->perm |= perm; }
 	};
 
 private:
@@ -84,36 +128,30 @@ private:
 	// safe mode.
 	static bool safe_mode;
 
-	/// Hash table of memory pages
-	Page *page_table[PageCount];
+	/// Hash table of memory pages, indexed by the page tag.
+	std::unordered_map<unsigned, std::unique_ptr<Page>> pages;
 
 	/// Safe mode
 	bool safe;
 
 	/// Heap break for CPU contexts
-	unsigned heap_break;
+	unsigned heap_break = 0;
 
 	/// Last accessed address
-	unsigned last_address;
+	unsigned last_address = 0;
 
 	/// Create a new page and add it to the page table. The value given in
 	/// \a perm is an *or*'ed bitmap of AccessType flags.
-	Page *newPage(unsigned addr, unsigned perm);
-
-	/// Free page at the given address
-	void freePage(unsigned addr);
+	Page *newPage(unsigned address, unsigned perm);
 
 	// Access memory without exceeding page boundaries
-	void AccessAtPageBoundary(unsigned addr, unsigned size, char *buf,
+	void AccessAtPageBoundary(unsigned address, unsigned size, char *buffer,
 			AccessType access);
 
 public:
 
 	/// Constructor
 	Memory();
-
-	/// Destructor
-	~Memory();
 
 	/// Copy constructor
 	Memory(const Memory &memory);
@@ -131,38 +169,39 @@ public:
 	bool getSafe() const { return safe; }
 
 	/// Clear content of memory
-	void Clear();
+	void Clear() { pages.clear(); }
 
-	/// Return the memory page corresponding to an address
-	Page *getPage(unsigned addr);
+	/// Return the memory page corresponding to an address, or `nullptr` if
+	/// there is currently no page allocated for that address.
+	Page *getPage(unsigned address);
 
-	/// Return the memory page following \a addr in the current memory map.
-	/// This function is useful to reconstruct consecutive ranges of mapped
-	/// pages.
-	Page *getNextPage(unsigned addr);
+	/// Return the memory page following \a address in the current memory
+	/// map. This function is useful to reconstruct consecutive ranges of
+	/// mapped pages.
+	Page *getNextPage(unsigned address);
 
  	/// Allocate, if not already allocated, all necessary memory pages to
-	/// access \a size bytes after base address \a addr. These fields have
-	/// no alignment restrictions.
+	/// access \a size bytes after base address \a address. These fields
+	/// have no alignment restrictions.
 	/// 
 	/// Each new page will be allocated with the permissions specified in \a
 	/// perm, a bitmap of constants of type AccessType. If any page already
 	/// existed, the permissions in \a perm will be added to it.
-	void Map(unsigned addr, unsigned size, unsigned perm);
+	void Map(unsigned address, unsigned size, unsigned perm);
 
  	/// Deallocate memory. If a page in the specified range was not
 	/// allocated, it is silently skipped.
 	///
-	/// \param addr
+	/// \param address
 	///	Address aligned to page boundary.
 	///
 	/// \param size
 	///	Number of bytes, multiple of page size.
-	void Unmap(unsigned addr, unsigned size);
+	void Unmap(unsigned address, unsigned size);
 
 	/// Allocate memory.
 	///
-	/// \param addr
+	/// \param address
 	///	Address to start looking for free memory. If the end of the
 	///	memory space is reached, the function will continue circularly
 	///	with the lowest memory addresses. The address must be aligned to
@@ -180,11 +219,11 @@ public:
 	///	The function returns the base address of the allocated memory
 	///	region, or (unsigned) -1 if no free region was found with the
 	///	requested size.
-	unsigned MapSpace(unsigned addr, unsigned size);
+	unsigned MapSpace(unsigned address, unsigned size);
 	
 	/// Allocate memory downward.
 	///
-	/// \param addr
+	/// \param address
 	///	Address to start checking for available free memory. If not
 	///	available, the function will keep trying to look for free
 	///	regions circularly in a decreasing order. The address must be
@@ -201,12 +240,12 @@ public:
 	/// \returns
 	///	The base address of the allocated memory region, or `(unsigned)
 	///	-1` if no free space was found with \a size bytes.
-	unsigned MapSpaceDown(unsigned addr, unsigned size);
+	unsigned MapSpaceDown(unsigned address, unsigned size);
 	
 	/// Assign protection attributes to pages. If a page in the range is not
 	/// allocated, it is silently skipped.
 	///
-	/// \param addr
+	/// \param address
 	///	Address aligned to page boundary.
 	///
 	/// \param size
@@ -215,7 +254,7 @@ public:
 	/// \param perm
 	///	Bitmap of constants of type AccessType specifying the new
 	///	permissions of the pages in the range.
-	void Protect(unsigned addr, unsigned size, unsigned perm);
+	void Protect(unsigned address, unsigned size, unsigned perm);
 
 	/// Copy a region of memory. All arguments must be multiples of the page
 	/// size. In safe mode, the source region must have read access, and the
@@ -239,13 +278,13 @@ public:
  	/// Access memory at any address and size, without page boundary
 	/// restrictions.
 	///
- 	/// \param addr
+ 	/// \param address
 	///	Memory address
 	///
 	/// \param size
 	///	Number of bytes
 	///
-	/// \param buf
+	/// \param buffer
 	///	Buffer to read data from, or write data into.
 	///
 	/// \param access
@@ -255,69 +294,70 @@ public:
 	///	A Memory::Error is thrown in safe mode is the written pages
 	///	are not allocated, or do not have the permissions requested in
 	///	argument \a access.
-	void Access(unsigned addr, unsigned size, char *buf, AccessType access);
+	void Access(unsigned address, unsigned size, char *buffer,
+			AccessType access);
 
 	/// Read from memory, with no alignment or size restrictions.
 	///
-	/// \param addr
+	/// \param address
 	///	Memory address
 	///
 	/// \param size
 	///	Number of bytes
 	///
-	/// \param buf
+	/// \param buffer
 	///	Output buffer to write data
 	///
 	/// \throw
 	///	A Memory::Error is thrown in safe mode is the written pages
 	///	are not allocated, or do not have read permissions.
-	void Read(unsigned addr, unsigned size, char *buf)
+	void Read(unsigned address, unsigned size, char *buffer)
 	{
-		Access(addr, size, buf, AccessRead);
+		Access(address, size, buffer, AccessRead);
 	}
 
 	/// Write to memory, with no alignment of size restrictions.
 	///
-	/// \param addr
+	/// \param address
 	///	Memory address
 	///
 	/// \param size
 	///	Number of bytes
 	///
-	/// \param buf
+	/// \param buffer
 	///	Input buffer to read data from
 	///
 	/// \throw
 	///	A Memory::Error is thrown in safe mode is the written pages
 	///	are not allocated, or do not have write permissions.
-	void Write(unsigned addr, unsigned size, const char *buf)
+	void Write(unsigned address, unsigned size, const char *buffer)
 	{
-		Access(addr, size, const_cast<char *>(buf), AccessWrite);
+		Access(address, size, const_cast<char *>(buffer), AccessWrite);
 	}
 
 	/// Initialize memory with no alignment of size restrictions. The
 	/// operation is equivalent to writing, but with different permissions.
 	///
-	/// \param addr
+	/// \param address
 	///	Memory address
 	///
 	/// \param size
 	///	Number of bytes
 	///
-	/// \param buf
+	/// \param buffer
 	///	Input buffer to read data from
 	///
 	/// \throw
 	///	This function throws a Memory::Error in safe mode if the
 	///	destination page does not have initialization permissions.
-	void Init(unsigned addr, unsigned size, const char *buf)
+	void Init(unsigned address, unsigned size, const char *buffer)
 	{
-		Access(addr, size, const_cast<char *>(buf), AccessInit);
+		Access(address, size, const_cast<char *>(buffer), AccessInit);
 	}
 
 	/// Read a string from memory.
 	///
-	/// \param addr
+	/// \param address
 	///	Memory address to read string from
 	///
 	/// \param max_length (optional, default = 1024)
@@ -326,11 +366,11 @@ public:
 	/// \throw
 	///	This function throws a Memory::Error in safe mode if the
 	///	source page does not have read permissions.
-	std::string ReadString(unsigned addr, int max_length = 1024);
+	std::string ReadString(unsigned address, int max_length = 1024);
 
 	/// Write a string into memory.
 	///
-	/// \param addr
+	/// \param address
 	///	Memory address
 	///
 	/// \param s
@@ -339,14 +379,14 @@ public:
 	/// \throw
 	///	This function throws a Memory::Error in safe mode if the
 	///	destination page does not have write permissions.
-	void WriteString(unsigned addr, const std::string &s);
+	void WriteString(unsigned address, const std::string &s);
 	
-	/// Zero-out \a size bytes of memory starting at address \a addr.
-	void Zero(unsigned addr, unsigned size);
+	/// Zero-out \a size bytes of memory starting at address \a address.
+	void Zero(unsigned address, unsigned size);
 
 	/// Obtain a buffer to memory content.
 	///
-	/// \param addr
+	/// \param address
 	///	Memory address
 	///
 	/// \param size
@@ -365,7 +405,7 @@ public:
 	///	This function will throw a Memory::Error if the memory is on
 	///	safe mode and the page does not have the permissions requested
 	///	in argument \a access.
-	char *getBuffer(unsigned addr, unsigned size, AccessType access);
+	char *getBuffer(unsigned address, unsigned size, AccessType access);
 
 	/// Save a subset of the memory space into a file
 	///
