@@ -63,26 +63,43 @@ public:
 /// instantiate objects of class Section, since its constructor is made private.
 class Section
 {
-	friend class File;
-
 	// File that it belongs to
 	File *file;
 
 	// Name of the section
 	std::string name;
 
-	// File content
-	const char *buffer;
-	unsigned int size;
+	// Section content
+	const char *buffer = nullptr;
+
+	// Size of the section in bytes
+	unsigned size;
 
 	// Section information
 	int index;
+
+	// Raw section header
 	Elf32_Shdr *info;
 
-	// Constructor
-	Section(File *file, int index, unsigned int pos);
-
 public:
+
+	/// Constructor. An ELF section is only created internally by the ELF
+	/// reader, so this function should not be invoked.
+	///
+	/// \param file
+	///	ELF file that the section belongs to.
+	///
+	/// \param index
+	///	Section index within the ELF file
+	///
+	/// \param info_offset
+	///	Offset within the ELF file where the section header can be
+	///	found.
+	Section(File *file, int index, unsigned info_offset);
+
+	/// Set the section name. This function is used internally by the ELF
+	/// reader, and should not be called.
+	void setName(const std::string &name) { this->name = name; }
 
 	/// Return the index that the section occupies in the section
 	/// list of the File object where it belongs.
@@ -95,6 +112,9 @@ public:
 
 	/// Return the section name
 	const std::string &getName() const { return name; }
+
+	/// Return the value of field \a sh_name of the section header
+	Elf32_Word getNameOffset() const { return info->sh_name; }
 
 	/// Return the value of field \a sh_type of the section header
 	Elf32_Word getType() const { return info->sh_type; }
@@ -129,19 +149,30 @@ public:
 	/// the internal buffer representing the entire ELF file.
 	const char *getBuffer() const { return buffer; }
 
-	/// Modify variable \a stream to point to the content of the
-	/// section. The section can then be read using I/O operations on the
-	/// stream. This operation involves no data copy. Instead, it just makes
-	/// \a stream point to the section buffer.
+	/// Return a stream pointing to part of the content of the section,
+	/// without involving any copy operations.
+	///
+	/// \param stream
+	///	Input stream whose internal pointers will be modified to point
+	///	to the content of the section.
+	///
+	/// \param offset
+	///	Offset in the section that the stream points to.
+	///
+	/// \param size
+	///	Number of bytes to include in the stream.
+	void getStream(std::istringstream &stream,
+			unsigned offset,
+			unsigned size)
+			const;
+	
+	/// Alternative syntax of getStream() to obtain a stream containing the
+	/// entire section content.
 	void getStream(std::istringstream &stream) const
 	{
 		getStream(stream, 0, size);
 	}
 
-	/// Return a stream pointing to a subset of section, starting at
-	/// \a offset and containing \a size bytes.
-	void getStream(std::istringstream &stream, unsigned int offset,
-			unsigned int size) const;
 };
 
 
@@ -151,23 +182,35 @@ public:
 /// ProgramHeader (in fact, it has a private constructor).
 class ProgramHeader
 {
-	friend class File;
-
 	// File that it belongs to
 	File *file;
 
-	// Program header information
+	// Index of the program header inf the ELF file
 	int index;
+
+	// Program header information
 	Elf32_Phdr *info;
 
-	// File content
-	const char *buffer;
-	unsigned int size;
+	// Content pointed to by the program header
+	const char *buffer = nullptr;
 
-	// Constructor
-	ProgramHeader(File *file, int index, unsigned int pos);
+	// Size of the content pointed to by program header
+	unsigned size;
 
 public:
+
+	/// Constructor. A program header is created internally by the ELF
+	/// file, so this function should not be invoked directly.
+	///
+	/// \param file
+	///	ELF file that the program header belongs to.
+	///
+	/// \param index
+	///	Index in the list of program headers of the ELF file.
+	///
+	/// \param info_offset
+	///	Offset in ELF file content where the program header is found.
+	ProgramHeader(File *file, int index, unsigned info_offset);
 
 	/// Return the index of the program header in the program header
 	/// list of the File object where it belongs.
@@ -209,18 +252,29 @@ public:
 	/// Return a pointer to the segment content
 	const char *getBuffer() const { return buffer; }
 
-	/// Modify the input string stream passed in \a stream to point
-	/// to the content of the segment. This operation does not replicate any
-	/// content
-	void getStream(std::istringstream &stream) const {
+	/// Modify an input stream to hold the content pointed to by the program
+	/// header, without involving any copy operations.
+	///
+	/// \param stream
+	///	Input stream whose internal pointers will be modified.
+	///
+	/// \param offset
+	///	Offset in the program header content that the stream points to.
+	///
+	/// \param size
+	///	Number of bytes to include in the stream.
+	void getStream(std::istringstream &stream,
+			unsigned offset,
+			unsigned size)
+			const;
+	
+	/// Alternative syntax for getStream() to obtain the entire content
+	/// pointed to by the program header.
+	void getStream(std::istringstream &stream) const
+	{
 		getStream(stream, 0, size);
 	}
 
-	/// Modify the input string stream passed in \a stream to point
-	/// to a subset of the segment, containing \a size bytes starting at
-	/// position \a offset.
-	void getStream(std::istringstream &stream, unsigned int offset,
-			unsigned int size) const;
 };
 
 
@@ -230,8 +284,6 @@ public:
 /// constructor is private).
 class Symbol
 {
-	friend class File;
-
 	// File that it belongs to
 	File *file;
 
@@ -252,14 +304,26 @@ class Symbol
 	// file's buffer.
 	Elf32_Sym *info;
 
-	// Constructor
-	Symbol(File *file, Section *section, unsigned int pos);
+public:
 
-	// Comparison between symbols
+	/// Comparison function between symbols, used for sorting purposes.
+	/// This function is used internally by the ELF file and should not be
+	/// called.
 	static bool Compare(const std::unique_ptr<Symbol> &a,
 			const std::unique_ptr<Symbol> &b);
 
-public:
+	/// Constructor. A symbol is only created internally by the ELF reader,
+	/// so this function should not be invoked.
+	///
+	/// \param file
+	///	ELF file that the symbol belongs to.
+	///
+	/// \param section
+	///	Section pointed to by the symbol.
+	///
+	/// \param info_offset
+	///	Offset in ELF file content where the symbol is found.
+	Symbol(File *file, Section *section, unsigned info_offset);
 
 	/// Return a pointer to the Elf32_Sym structure representing the
 	/// symbol. Each field of this structure can be queried with dedicated
@@ -291,78 +355,28 @@ public:
 	/// symbol, if any.
 	const char *getBuffer() const { return buffer; }
 
-	/// If the symbol points to valid content, modify the input
-	/// string stream passed in \a stream to point to it.
-	void getStream(std::istringstream &stream) const {
+	/// Modify an input stream to hold the content pointed to by the symbol,
+	/// without involving any copy operations.
+	///
+	/// \param stream
+	///	Input stream whose internal pointers will be modified.
+	///
+	/// \param offset
+	///	Offset in the symbol content that the stream will point to.
+	///
+	/// \param size
+	///	Number of bytes to include in the stream.
+	void getStream(std::istringstream &stream,
+			unsigned offset,
+			unsigned size) const;
+	
+	
+	/// Alternative syntax for getStream() to obtain the entire content
+	/// pointed to by the symbol.
+	void getStream(std::istringstream &stream) const
+	{
 		getStream(stream, 0, info->st_size);
 	}
-
-	/// Modify the input string stream passed in \a stream to contain
-	/// a subset of the content pointed to by the symbol, taking \a size
-	/// bytes starting at position \a offset.
-	void getStream(std::istringstream &stream, unsigned int offset,
-			unsigned int size) const;
-};
-
-
-/// This class is used as a replacement for File. It parses only the header of
-/// an ELF file. The constructor verifies that the file is valid, causing fatal
-/// messages otherwise. The ELF header is then available through the public
-/// functions.
-class Header
-{
-	Elf32_Ehdr info;
-public:
-
-	/// Constructor
-	///
-	/// Exceptions:
-	/// - The file in \a path cannot be opened
-	/// - The file in \a path is not a valid ELF file
-	/// - The file is a non-supported 64-bit ELF file
-	Header(const std::string &path);
-	
-	/// Return \a e_ident field of ELF header
-	const unsigned char *getIdent() const { return info.e_ident; }
-	
-	/// Return \a e_type field of ELF header
-	Elf32_Half getType() const { return info.e_type; }
-	
-	/// Return \a e_machine field of ELF header
-	Elf32_Half getMachine() const { return info.e_machine; }
-	
-	/// Return \a e_version field of ELF header
-	Elf32_Word getVersion() const { return info.e_version; }
-	
-	/// Return \a e_entry field of ELF header
-	Elf32_Addr getEntry() const { return info.e_entry; }
-	
-	/// Return \a e_phoff field of ELF header
-	Elf32_Off getPhoff() const { return info.e_phoff; }
-	
-	/// Return \a e_shoff field of ELF header
-	Elf32_Off getShoff() const { return info.e_shoff; }
-	
-	/// Return \a e_flags field of ELF header
-	Elf32_Word getFlags() const { return info.e_flags; }
-	
-	/// Return \a e_ehsize field of ELF header
-	Elf32_Half getEhsize() const { return info.e_ehsize; }
-	
-	/// Return \a e_phentsize field of ELF header
-	Elf32_Half getPhentsize() const { return info.e_phentsize; }
-	
-	/// Return \a e_phnum field of ELF header
-	Elf32_Half getPhnum() const { return info.e_phnum; }
-	
-	/// Return \a e_shentsize field of ELF header
-	Elf32_Half getShentsize() const { return info.e_shentsize; }
-	
-	/// Return \a e_shnum field of ELF header
-	Elf32_Half getShnum() const { return info.e_shnum; }
-	
-	/// Return \a e_shstrndx field of ELF header
-	Elf32_Half getShstrndx() const { return info.e_shstrndx; }
 };
 
 
@@ -371,18 +385,28 @@ public:
 /// contains functions to traverse its sections, segments, or symbols.
 class File
 {
-	// Functions to load file content
+	// Read the ELF header
 	void ReadHeader();
+
+	// Populate the section list
 	void ReadSections();
+
+	// Populate the program header list
 	void ReadProgramHeaders();
+
+	// Populate the symbol list
 	void ReadSymbols();
 
 	// Path if loaded from a file
 	std::string path;
 
-	// File content
-	char *buffer;
-	unsigned int size;
+	// Content of the ELF file
+	std::unique_ptr<char> buffer;
+
+	// Total size of the ELF file
+	unsigned size;
+
+	// Stream pointing to the file content
 	std::istringstream stream;
 
 	// ELF header
@@ -391,28 +415,43 @@ class File
 	// String table section
 	Section *string_table;
 
-	// Sections, program headers, and symbols. Each vector has exclusive
-	// ownership of the object points. When the vector is destroyed, all
-	// dynamically allocated objects are automatically freed as well.
+	// List of sections
 	std::vector<std::unique_ptr<Section>> sections;
+
+	// List of program headers
 	std::vector<std::unique_ptr<ProgramHeader>> program_headers;
+
+	// List of symbols
 	std::vector<std::unique_ptr<Symbol>> symbols;
 
 public:
 
-	/// Load an ELF file from the file system
+	/// Load an ELF file from the file system.
 	///
-	/// Exceptions:
-	/// - The file in \a path cannot be opened
-	/// - The file in \a path is not a valid ELF file
-	/// - The file is a non-supported 64-bit ELF file
-	File(const std::string &path);
+	/// \param path
+	///	Path to load the ELF file from.
+	///
+	/// \param read_content
+	///	If true (or omitted), interpret the entire content of the ELF
+	///	file. If false, read only the ELF reader. The ELF reader will
+	///	return no program header, section, or symbol for the file.
+	File(const std::string &path, bool read_content = true);
 
-	/// Load an ELF file from a \a buffer in memory of \a size bytes
-	File(const char *buffer, unsigned int size);
-
-	/// Destructor
-	~File(void);
+	/// Load an ELF file from a buffer in memory.
+	///
+	/// \param buffer
+	///	Buffer to read the ELF file from. The content of the buffer
+	///	will be replicated internally, so any external changes in it
+	///	will not affect the ELF reader.
+	///
+	/// \param size
+	///	Size of the buffer in bytes.
+	///
+	/// \param read_content
+	///	If true (or omitted), interpret the entire content of the ELF
+	///	file. If false, read only the ELF reader. The ELF reader will
+	///	return no program header, section, or symbol for the file.
+	File(const char *buffer, unsigned size, bool read_content = true);
 
 	/// Dump file information into output stream
 	friend std::ostream &operator<<(std::ostream &os, const File &file);
@@ -501,29 +540,30 @@ public:
 	unsigned int getSize() const { return size; }
 
 	/// Return a buffer to the content of the file
-	const char *getBuffer() const { return buffer; }
+	const char *getBuffer() const { return buffer.get(); }
 
-	/// Modify the input string stream given in \a stream to point to
-	/// the entire content of the ELF file.
+	/// Obtain a subset (\a size bytes starting at position \a
+	/// offset) of the ELF file into the input string stream given in \a
+	/// stream.
+	void getStream(std::istringstream& stream,
+			unsigned offset,
+			unsigned size) const;
+
+	/// Alternative syntax to getStream() to return a stream to the entire
+	/// content of the ELF file.
 	void getStream(std::istringstream &stream) const
 	{
 		getStream(stream, 0, size);
 	}
 
-	/// Obtain a subset (\a size bytes starting at position \a
-	/// offset) of the ELF file into the input string stream given in \a
-	/// stream.
-	void getStream(std::istringstream& stream, unsigned int offset,
-			unsigned int size) const;
-
-	/// @{
 	/// Return the first symbol at a given address/name, or the
-	/// closest one with a higher address. If argument \a offset is passed,
-	/// the offset of the symbol relative to the address is returned.
+	/// closest one with a higher address.
 	Symbol *getSymbolByAddress(unsigned int address) const;
+
+	/// Alternative syntax to getSymbolByAddress(), where the offset of the
+	/// returned symbol (if any) is also returned in argument \a offset.
 	Symbol *getSymbolByAddress(unsigned int address,
 			unsigned int &offset) const;
-	/// @}
 
 	/// Return \a e_ident field of ELF header
 	unsigned char *getIdent() const { return info->e_ident; }
