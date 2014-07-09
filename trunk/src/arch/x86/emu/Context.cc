@@ -218,10 +218,11 @@ std::string Context::OpenProcSelfMaps()
 		mem::Memory::Page *page = memory->getNextPage(end);
 		if (!page)
 			break;
-		unsigned start = page->tag;
-		end = page->tag;
-		int perm = page->perm & (mem::Memory::AccessRead |
-				mem::Memory::AccessWrite | mem::Memory::AccessExec);
+		unsigned start = page->getTag();
+		end = page->getTag();
+		int perm = page->getPerm() & (mem::Memory::AccessRead |
+				mem::Memory::AccessWrite |
+				mem::Memory::AccessExec);
 
 		// Get end of range
 		for (;;)
@@ -229,8 +230,10 @@ std::string Context::OpenProcSelfMaps()
 			page = memory->getPage(end + mem::Memory::PageSize);
 			if (!page)
 				break;
-			int page_perm = page->perm & (mem::Memory::AccessRead |
-					mem::Memory::AccessWrite | mem::Memory::AccessExec);
+			int page_perm = page->getPerm() &
+					(mem::Memory::AccessRead |
+					mem::Memory::AccessWrite |
+					mem::Memory::AccessExec);
 			if (page_perm != perm)
 				break;
 			end += mem::Memory::PageSize;
