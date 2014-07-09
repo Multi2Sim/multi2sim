@@ -21,6 +21,7 @@
 #include <lib/esim/Engine.h>
 
 #include "Action.h"
+#include "Address.h"
 #include "System.h"
 #include "Request.h"
 
@@ -117,13 +118,10 @@ void Actions::ParseActionRequest(const std::vector<std::string> &tokens)
 
 void Actions::ParseActionDecode(const std::vector<std::string> &tokens)
 {
-	// Get the address to decode and create an Address object for it.
-	Address address;
-	address.encoded = misc::StringToInt64(tokens[2]);
-
-	// Decode it.
-	System *dram = System::getInstance();
-	dram->DecodeAddress(address);
+	// Get the address to decode and create an Address object for it.  The
+	// constructor of the address object will decode it.
+	Address address(misc::StringToInt64(tokens[2]));
+	System::debug << address;
 }
 
 

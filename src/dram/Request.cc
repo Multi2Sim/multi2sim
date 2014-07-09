@@ -19,6 +19,7 @@
 
 #include <lib/cpp/String.h>
 
+#include "Address.h"
 #include "Request.h"
 #include "System.h"
 
@@ -29,7 +30,6 @@ namespace dram
 Request::Request()
 {
 	type = RequestTypeInvalid;
-	address = new Address();
 }
 
 
@@ -46,20 +46,13 @@ void Request::decCommands()
 	// Debug
 	long long cycle = System::DRAM_DOMAIN->getCycle();
 	System::debug << misc::fmt("[%lld] Request complete for 0x%llx\n",
-		cycle, address->encoded);
+		cycle, address->getEncoded());
 }
 
 
 void Request::setEncodedAddress(long long addr)
 {
-	address->encoded = addr;
-}
-
-
-void Request::DecodeAddress()
-{
-	System *dram = System::getInstance();
-	dram->DecodeAddress(*address);
+	address.reset(new Address(addr));
 }
 
 }  // namespace dram
