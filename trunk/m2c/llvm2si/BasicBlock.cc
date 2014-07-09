@@ -988,6 +988,71 @@ void BasicBlock::EmitFMul(llvm::BinaryOperator *llvm_inst)
 }
 
 
+void BasicBlock::EmitFDiv(llvm::BinaryOperator *llvm_inst)
+{
+	// Only supported for 2 operands (op1, op2)
+	if (llvm_inst->getNumOperands() != 2)
+		throw misc::Panic(misc::fmt("2 operands supported, %d found",
+				llvm_inst->getNumOperands()));
+
+	// Only supported for 32-bit integers
+	llvm::Type *type = llvm_inst->getType();
+	if (!type->isFloatTy())
+		throw misc::Panic("Only supported for float type arguments");
+
+	// Get operands (vreg, literal)
+	llvm::Value *llvm_arg1 = llvm_inst->getOperand(0);
+	llvm::Value *llvm_arg2 = llvm_inst->getOperand(1);
+	Argument *arg1 = function->TranslateValue(llvm_arg1);
+	Argument *arg2 = function->TranslateValue(llvm_arg2);
+
+	// Only the first operand can be a constant, so swap them if there is
+	// a constant in the second.
+	if (arg2->getType() != Argument::TypeVectorRegister)
+		std::swap(arg1, arg2);
+	arg1->ValidTypes(Argument::TypeVectorRegister,
+			Argument::TypeLiteral,
+			Argument::TypeLiteralReduced,
+			Argument::TypeLiteralFloat,
+			Argument::TypeLiteralFloatReduced);
+	arg2->ValidTypes(Argument::TypeVectorRegister);
+
+	// Allocate vector register and create symbol for return value
+	std::string ret_name = llvm_inst->getName();
+	int ret_vreg = function->AllocVReg();
+	Symbol *ret_symbol = new Symbol(ret_name,
+			Symbol::TypeVectorRegister,
+			ret_vreg);
+	function->AddSymbol(ret_symbol);
+
+	// Emit effective address calculation.
+	//
+	// Float Division
+	// v_rcp_f32 arg_op2, arg_op2
+	// v_mul_f32 ret_vreg, arg_op1, arg_op2
+	//
+	// The reciprocal value can't be assigned back to the same register!
+	// v_rcp_f32 rcp_vreg, arg_op2
+	// v_mul_f32 ret_vreg, arg_op1, rcp_vreg
+	//
+	int arg2_rcp_id = function->AllocVReg();
+	ArgVectorRegister *arg2_rcp = new ArgVectorRegister(arg2_rcp_id);
+
+	Instruction *inst = new Instruction(SI::INST_V_RCP_F32,
+			arg2_rcp,
+			arg2);
+	AddInst(inst);
+
+	arg2_rcp = new ArgVectorRegister(arg2_rcp_id);
+
+	inst = new Instruction(SI::INST_V_MUL_F32,
+			new ArgVectorRegister(ret_vreg),
+			arg1,
+			arg2_rcp);
+	AddInst(inst);
+}
+
+
 void BasicBlock::EmitAnd(llvm::BinaryOperator *llvm_inst)
 {
 	// Only supported for 32-bit integers
@@ -1369,6 +1434,11 @@ void BasicBlock::Emit(llvm::BasicBlock *llvm_basic_block)
 		case llvm::Instruction::FMul:
 
 			EmitFMul(misc::cast<llvm::BinaryOperator *>(&llvm_inst));
+			break;
+
+		case llvm::Instruction::FDiv:
+
+			EmitFDiv(misc::cast<llvm::BinaryOperator *>(&llvm_inst));
 			break;
 
 		case llvm::Instruction::ExtractElement:
