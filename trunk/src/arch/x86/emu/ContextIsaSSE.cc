@@ -45,7 +45,7 @@ void Context::ExecuteInst_addps_xmm_xmmm128()
 	this->LoadXMMM128(src);
 
 	int spec_mode = this->getState(StateSpecMode);
-	if(!spec_mode)
+	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
 		asm volatile (

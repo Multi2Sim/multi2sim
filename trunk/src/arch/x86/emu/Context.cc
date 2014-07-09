@@ -756,8 +756,8 @@ void Context::Execute()
 	current_eip = regs.getEip();
 	target_eip = 0;
 
-	// Reset effective address
-	effective_address = 0;
+	// Reset effective address of last emulated instruction
+	last_effective_address = 0;
 
 	// Debug
 	if (emu->isa_debug)

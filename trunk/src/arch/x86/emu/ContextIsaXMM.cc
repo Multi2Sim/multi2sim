@@ -29,41 +29,36 @@ namespace x86
 
 void Context::StoreXMM(const XMMValue &value)
 {
-	this->regs.getXMM(this->inst.getModRmReg()) = value;
+	regs.getXMM(inst.getModRmReg()) = value;
 }
 
 void Context::LoadXMM(XMMValue &value)
 {
-	value = this->regs.getXMM(this->inst.getModRmReg());
+	value = regs.getXMM(inst.getModRmReg());
 }
 
 void Context::StoreXMMM32(const XMMValue &value)
 {
 	unsigned int content = value.getAsUInt(0);
-	if(this->inst.getModRmMod() == 3)
+	if (inst.getModRmMod() == 3)
 	{
 		// Store into XMM
-		this->regs.getXMM(this->inst.getModRmReg())
-				.setAsUInt(0, content);
+		regs.getXMM(inst.getModRmRm()).setAsUInt(0, content);
 		return;
 	}
-	this->MemoryWrite((unsigned int)this->effective_address,
-			4, (void*) &content);
+	MemoryWrite(getEffectiveAddress(), 4, (char *) &content);
 }
 
 void Context::LoadXMMM32(XMMValue &value)
 {
 	unsigned int content;
-	if(this->inst.getModRmMod() == 3)
+	if(inst.getModRmMod() == 3)
 	{
-		content = this->regs
-				.getXMM(this->inst.getModRmReg())
-				.getAsUInt(0);
+		content = regs.getXMM(inst.getModRmRm()).getAsUInt(0);
 	}
 	else
 	{
-		this->MemoryRead((unsigned int)this->effective_address,
-				4, (void *) &content);
+		MemoryRead(getEffectiveAddress(), 4, (char *) &content);
 	}
 	value.setAsUInt(0, content);
 }
@@ -71,30 +66,25 @@ void Context::LoadXMMM32(XMMValue &value)
 void Context::StoreXMMM64(const XMMValue &value)
 {
 	unsigned long long content = value.getAsUInt64(0);
-	if(this->inst.getModRmMod() == 3)
+	if(inst.getModRmMod() == 3)
 	{
 		// Store into XMM
-		this->regs.getXMM(this->inst.getModRmReg())
-				.setAsUInt64(0, content);
+		regs.getXMM(inst.getModRmRm()).setAsUInt64(0, content);
 		return;
 	}
-	this->MemoryWrite((unsigned int)this->effective_address,
-			8, (void*) &content);
+	MemoryWrite(getEffectiveAddress(), 8, (char *) &content);
 }
 
 void Context::LoadXMMM64(XMMValue &value)
 {
 	unsigned long long content;
-	if(this->inst.getModRmMod() == 3)
+	if(inst.getModRmMod() == 3)
 	{
-		content = this->regs
-				.getXMM(this->inst.getModRmReg())
-				.getAsUInt64(0);
+		content = regs.getXMM(inst.getModRmRm()).getAsUInt64(0);
 	}
 	else
 	{
-		this->MemoryRead((unsigned int)this->effective_address,
-				8, (void *) &content);
+		MemoryRead(getEffectiveAddress(), 8, (char *) &content);
 	}
 	value.setAsUInt(0, content);
 }
@@ -103,43 +93,37 @@ void Context::StoreXMMM128(const XMMValue &value)
 {
 	unsigned long long contentLo = value.getAsUInt64(0);
 	unsigned long long contentHi = value.getAsUInt64(1);
-	if(this->inst.getModRmMod() == 3)
+	if(inst.getModRmMod() == 3)
 	{
 		// Store into XMM
-		this->regs.getXMM(this->inst.getModRmReg())
+		regs.getXMM(inst.getModRmRm())
 				.setAsUInt64(0, contentLo);
-		this->regs.getXMM(this->inst.getModRmReg())
+		regs.getXMM(inst.getModRmRm())
 				.setAsUInt64(1, contentHi);
 		return;
 	}
-	this->MemoryWrite((unsigned int)this->effective_address,
-			8, (void*) &contentLo);
-	this->MemoryWrite((unsigned int)this->effective_address + 8,
+	MemoryWrite(getEffectiveAddress(), 8, (void*) &contentLo);
+	MemoryWrite(getEffectiveAddress() + 8,
 			8, (void*) &contentHi);
 }
 
 void Context::LoadXMMM128(XMMValue &value)
 {
-	unsigned long long contentLo;
-	unsigned long long contentHi;
-	if(this->inst.getModRmMod() == 3)
+	unsigned long long content_lo;
+	unsigned long long content_hi;
+
+	if (inst.getModRmMod() == 3)
 	{
-		contentLo = this->regs
-				.getXMM(this->inst.getModRmReg())
-				.getAsUInt64(0);
-		contentHi = this->regs
-				.getXMM(this->inst.getModRmReg())
-				.getAsUInt64(1);
+		content_lo = regs.getXMM(inst.getModRmRm()).getAsUInt64(0);
+		content_hi = regs.getXMM(inst.getModRmRm()).getAsUInt64(1);
 	}
 	else
 	{
-		this->MemoryRead((unsigned int)this->effective_address,
-				8, (void *) &contentLo);
-		this->MemoryRead((unsigned int)this->effective_address + 8,
-				8, (void *) &contentHi);
+		MemoryRead(getEffectiveAddress(), 8, (char *) &content_lo);
+		MemoryRead(getEffectiveAddress() + 8, 8, (char *) &content_hi);
 	}
-	value.setAsUInt64(0, contentLo);
-	value.setAsUInt64(1, contentHi);
+	value.setAsUInt64(0, content_lo);
+	value.setAsUInt64(1, content_hi);
 }
 
 } // namespace x86
