@@ -237,7 +237,7 @@ void Context::ParseUInstIDep(UInst *uinst, int index)
 		{
 			uinst->setOpcode(UInstLoad);
 			uinst->setDep(index, UInstDepEa);
-			uinst->setMemoryAccess(effective_address, mem_dep_size);
+			uinst->setMemoryAccess(last_effective_address, mem_dep_size);
 			return;
 		}
 
@@ -245,7 +245,7 @@ void Context::ParseUInstIDep(UInst *uinst, int index)
 		UInst *new_uinst = new UInst(UInstLoad);
 		new_uinst->setIDep(0, UInstDepEa);
 		new_uinst->setODep(0, mem_std_dep);
-		new_uinst->setMemoryAccess(effective_address, mem_dep_size);
+		new_uinst->setMemoryAccess(last_effective_address, mem_dep_size);
 		uinst_list.emplace_back(new_uinst);
 
 		// Input dependence of instruction is converted into UInstDepData
@@ -281,7 +281,7 @@ void Context::ParseUInstODep(UInst *uinst, int index)
 			{
 				uinst->setOpcode(UInstStore);
 				uinst->setDep(index, UInstDepNone);
-				uinst->setMemoryAccess(effective_address,
+				uinst->setMemoryAccess(last_effective_address,
 						mem_dep_size);
 				return;
 			}
@@ -291,7 +291,7 @@ void Context::ParseUInstODep(UInst *uinst, int index)
 		UInst *new_uinst = new UInst(UInstStore);
 		new_uinst->setIDep(0, UInstDepEa);
 		new_uinst->setIDep(1, mem_std_dep);
-		new_uinst->setMemoryAccess(effective_address, mem_dep_size);
+		new_uinst->setMemoryAccess(last_effective_address, mem_dep_size);
 		uinst_list.emplace_back(new_uinst);
 
 		// Output dependence of instruction is UInstDepData

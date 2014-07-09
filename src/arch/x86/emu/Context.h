@@ -203,7 +203,7 @@ private:
 
 	// Virtual address of the memory access performed by the last emulated
 	// instruction.
-	unsigned effective_address;
+	unsigned last_effective_address;
 	
 	// For emulation of string operations
 	unsigned int str_op_esi;  // Initial value for register 'esi'

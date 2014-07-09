@@ -86,7 +86,7 @@ unsigned char Context::LoadRm8()
 		return regs.Read(inst.getModRmRm() + InstRegAl);
 
 	MemoryRead(getEffectiveAddress(), 1, &value);
-	emu->isa_debug << misc::fmt("  [0x%x]=0x%x", effective_address, value);
+	emu->isa_debug << misc::fmt("  [0x%x]=0x%x", last_effective_address, value);
 	return value;
 }
 
@@ -98,7 +98,7 @@ unsigned short Context::LoadRm16()
 		return regs.Read(inst.getModRmRm() + InstRegAx);
 
 	MemoryRead(getEffectiveAddress(), 2, &value);
-	emu->isa_debug << misc::fmt("  [0x%x]=0x%x", effective_address, value);
+	emu->isa_debug << misc::fmt("  [0x%x]=0x%x", last_effective_address, value);
 	return value;
 }
 
@@ -110,7 +110,7 @@ unsigned int Context::LoadRm32()
 		return regs.Read(inst.getModRmRm() + InstRegEax);
 
 	MemoryRead(getEffectiveAddress(), 4, &value);
-	emu->isa_debug << misc::fmt("  [0x%x]=0x%x", effective_address, value);
+	emu->isa_debug << misc::fmt("  [0x%x]=0x%x", last_effective_address, value);
 	return value;
 }
 
@@ -122,7 +122,7 @@ unsigned short Context::LoadR32M16()
 		return regs.Read(inst.getModRmRm() + InstRegEax);
 
 	MemoryRead(getEffectiveAddress(), 2, &value);
-	emu->isa_debug << misc::fmt("  [0x%x]=0x%x", effective_address, value);
+	emu->isa_debug << misc::fmt("  [0x%x]=0x%x", last_effective_address, value);
 	return value;
 }
 
@@ -131,7 +131,7 @@ unsigned long long Context::LoadM64()
 	unsigned long long value;
 
 	MemoryRead(getEffectiveAddress(), 8, &value);
-	emu->isa_debug << misc::fmt("  [0x%x]=0x%llx", effective_address, value);
+	emu->isa_debug << misc::fmt("  [0x%x]=0x%llx", last_effective_address, value);
 	return value;
 }
 
@@ -143,7 +143,7 @@ void Context::StoreRm8(unsigned char value)
 		return;
 	}
 	MemoryWrite(getEffectiveAddress(), 1, &value);
-	emu->isa_debug << misc::fmt("  [0x%x] <- 0x%x", effective_address, value);
+	emu->isa_debug << misc::fmt("  [0x%x] <- 0x%x", last_effective_address, value);
 }
 
 void Context::StoreRm16(unsigned short value)
@@ -154,7 +154,7 @@ void Context::StoreRm16(unsigned short value)
 		return;
 	}
 	MemoryWrite(getEffectiveAddress(), 2, &value);
-	emu->isa_debug << misc::fmt("  [0x%x] <- 0x%x", effective_address, value);
+	emu->isa_debug << misc::fmt("  [0x%x] <- 0x%x", last_effective_address, value);
 }
 
 void Context::StoreRm32(unsigned int value)
@@ -165,13 +165,13 @@ void Context::StoreRm32(unsigned int value)
 		return;
 	}
 	MemoryWrite(getEffectiveAddress(), 4, &value);
-	emu->isa_debug << misc::fmt("  [0x%x] <- 0x%x", effective_address, value);
+	emu->isa_debug << misc::fmt("  [0x%x] <- 0x%x", last_effective_address, value);
 }
 
 void Context::StoreM64(unsigned long long value)
 {
 	MemoryWrite(getEffectiveAddress(), 8, &value);
-	emu->isa_debug << misc::fmt("  [0x%x] <- 0x%llx", effective_address, value);
+	emu->isa_debug << misc::fmt("  [0x%x] <- 0x%llx", last_effective_address, value);
 }
 
 unsigned Context::getLinearAddress(unsigned offset)
@@ -215,8 +215,8 @@ unsigned Context::getEffectiveAddress()
 
 	// Address
 	unsigned address = regs.Read(inst.getEaBase()) +
-		regs.Read(inst.getEaIndex()) * inst.getEaScale() +
-		inst.getDisp();
+			regs.Read(inst.getEaIndex()) * inst.getEaScale() +
+			inst.getDisp();
 	
 	// Add segment base
 	address = getLinearAddress(address);
@@ -226,7 +226,7 @@ unsigned Context::getEffectiveAddress()
 	// calling this function again later, since the source register used to
 	// calculate the effective address can be overwritten after the
 	// instruction emulation.
-	effective_address = address;
+	last_effective_address = address;
 
 	return address;
 }
