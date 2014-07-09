@@ -20,12 +20,15 @@
 #ifndef DRAM_REQUEST_H
 #define DRAM_REQUEST_H
 
+#include <memory>
+
 
 namespace dram
 {
 
 // Forward declarations
-struct Address;
+class Address;
+
 
 enum RequestType
 {
@@ -38,28 +41,34 @@ enum RequestType
 class Request
 {
 	RequestType type;
-	Address *address;
+	std::unique_ptr<Address> address;
 	int num_commands_in_flight;
 
 public:
 
 	Request();
 
+	/// Returns the type of the request.
 	RequestType getType() const { return type; }
+
+	/// Sets the type of the request.
 	void setType(RequestType new_type) { type = new_type; }
 
-	// Increase the number of commands in flight for this request, which
-	// should be called every time a command is created for it.
+	/// Increase the number of commands in flight for this request, which
+	/// should be called every time a command is created for it.
 	void incCommands() { num_commands_in_flight++; }
 
-	// Decrement the number of commands in flight for this request, which
-	// should be called every time a command associated with this request
-	// finishes running.
+	/// Decrement the number of commands in flight for this request, which
+	/// should be called every time a command associated with this request
+	/// finishes running.
 	void decCommands();
 
-	Address *getAddress() { return address; }
+	/// Returns a pointer to the address object of the request.
+	Address *getAddress() { return address.get(); }
+
+	/// Sets the encoded address of the request, which will also decode
+	/// the address into its components.
 	void setEncodedAddress(long long addr);
-	void DecodeAddress();
 };
 
 }  // namespace dram
