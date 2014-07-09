@@ -32,39 +32,56 @@ namespace dram
 
 // Forward declarations
 struct Address;
+class Bank;
+class Rank;
 
 enum CommandType
 {
-	CommandTypeInvalid = 0,
-	CommandTypePrecharge,
-	CommandTypeActivate,
-	CommandTypeRead,
-	CommandTypeWrite
+	CommandInvalid = 0,
+	CommandPrecharge,
+	CommandActivate,
+	CommandRead,
+	CommandWrite
 };
 
 class Command
 {
-	std::shared_ptr<Request> request;
+	// The type of command
 	CommandType type;
-	int bank_id;
-	int rank_id;
+
+	// The request associated with this command
+	std::shared_ptr<Request> request;
+
+	// Location information
+	Bank *bank;
+	Rank *rank;
 
 public:
 	Command(std::shared_ptr<Request> request, CommandType type,
-			int bank_id, int rank_id)
-			:
-			request(request),
-			type(type),
-			bank_id(bank_id),
-			rank_id(rank_id)
-	{
-	}
+			Bank *bank);
 
+	/// Returns the command's type.
 	CommandType getType() const { return type; }
 
+	/// Returns the command's type as a string.
 	std::string getTypeString() const { return CommandTypeMap[type]; }
 
+	int getDuration() const;
+
+	/// Returns the bank that the command was created in.
+	Bank *getBank() { return bank; }
+
+	/// Returns the rank that the command's bank belonds to.
+	Rank *getRank() { return rank; }
+
+	int getBankId() const;
+	int getRankId() const;
+
 	Address *getAddress();
+
+	/// Marks the command as finished and decrements the number of in
+	/// flight commands for associated request.
+	void setFinished();
 
 	/// Map that converts the CommandType enum to a string.
 	static std::map<CommandType, std::string> CommandTypeMap;

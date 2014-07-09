@@ -19,7 +19,11 @@
 
 #include <lib/cpp/String.h>
 
+#include "Bank.h"
+#include "Channel.h"
 #include "Command.h"
+#include "Controller.h"
+#include "Rank.h"
 #include "System.h"
 
 
@@ -27,17 +31,61 @@ namespace dram
 {
 
 std::map<CommandType, std::string> Command::CommandTypeMap = {
-	{CommandTypeInvalid, "Invalid"},
-	{CommandTypePrecharge, "Precharge"},
-	{CommandTypeActivate, "Activate"},
-	{CommandTypeRead, "Read"},
-	{CommandTypeWrite, "Write"}
+	{CommandInvalid, "Invalid"},
+	{CommandPrecharge, "Precharge"},
+	{CommandActivate, "Activate"},
+	{CommandRead, "Read"},
+	{CommandWrite, "Write"}
 };
+
+
+Command::Command(std::shared_ptr<Request> request, CommandType type,
+		Bank *bank)
+		:
+		request(request),
+		type(type),
+		bank(bank)
+{
+	// Increment the number of in flight commands for the
+	// associated request.
+	request->incCommands();
+
+	// Set the rank.
+	rank = bank->getRank();
+}
+
+
+int Command::getDuration() const
+{
+	// Get the controller that this command is under.
+	Controller *controller = bank->getRank()->getChannel()->getController();
+
+	// Return the correct duration of this command based on its type.
+	return controller->getCommandDuration(type);
+}
+
+
+int Command::getBankId() const
+{
+	return bank->getId();
+}
+
+
+int Command::getRankId() const
+{
+	return rank->getId();
+}
 
 
 Address *Command::getAddress()
 {
 	return request->getAddress();
+}
+
+
+void Command::setFinished()
+{
+	request->decCommands();
 }
 
 }  // namespace dram

@@ -39,6 +39,7 @@ class Request
 {
 	RequestType type;
 	Address *address;
+	int num_commands_in_flight;
 
 public:
 
@@ -46,6 +47,15 @@ public:
 
 	RequestType getType() const { return type; }
 	void setType(RequestType new_type) { type = new_type; }
+
+	// Increase the number of commands in flight for this request, which
+	// should be called every time a command is created for it.
+	void incCommands() { num_commands_in_flight++; }
+
+	// Decrement the number of commands in flight for this request, which
+	// should be called every time a command associated with this request
+	// finishes running.
+	void decCommands();
 
 	Address *getAddress() { return address; }
 	void setEncodedAddress(long long addr);

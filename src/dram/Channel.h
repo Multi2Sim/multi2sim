@@ -43,7 +43,7 @@ class Channel
 	// Pointer to the owning controller.
 	Controller *controller;
 
-	// Sizes of components under this channel
+	// Channel geometry
 	int num_ranks;
 	int num_banks;
 
@@ -70,9 +70,14 @@ public:
 			int num_columns,
 			int num_bits);
 
+	/// Returns the id of this channel, which is unique in the controller
+	/// that this channel belongs to.
 	int getId() const { return id; }
 
+	/// Returns a rank belonging to this channel with the specified id.
 	Rank *getRank(int id) const { return ranks[id].get(); }
+
+	/// Returns the controller that this channel belongs to.
 	Controller *getController() const { return controller; }
 
 	/// Returns the number of ranks in this channel.
@@ -103,6 +108,10 @@ public:
 	/// Schedules commands from all the bank queues under this channel,
 	/// in the correct order according to the scheduling policy.
 	void RunScheduler();
+
+	/// Calculates the cycle that the command passed can be run in first,
+	/// given the current state of the system.
+	long long CalculateReadyCycle(Command *cmd);
 
 	/// Dump the object to an output stream.
 	void dump(std::ostream &os = std::cout) const;
