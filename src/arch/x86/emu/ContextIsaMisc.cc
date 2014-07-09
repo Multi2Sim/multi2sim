@@ -1596,7 +1596,7 @@ void Context::ExecuteInst_pop_ir32()
 
 void Context::ExecuteInst_popf()
 {
-	unsigned eflags = regs.getEflags();
+	unsigned eflags;
 	MemoryRead(regs.getEsp(), 4, &eflags);
 	regs.incEsp(4);
 
@@ -1604,8 +1604,12 @@ void Context::ExecuteInst_popf()
 	// happen during speculative execution (case reported by Multi2Sim user).
 	// The next instruction that is emulated in speculative mode could cause the
 	// host to push this value of 'eflags', causing a TRAP in the host code.
-	regs.setEflags(regs.getEflags() & ~(1 << 8));
+	eflags &= ~(1 << 8);
 
+	// Set the new value for flags
+	regs.setEflags(eflags);
+
+	// Micro-instructions
 	newUInst(UInstEffaddr, UInstDepEsp, 0, 0, UInstDepAux, 0, 0, 0);
 	newMemoryUInst(UInstLoad, regs.getEsp() - 4, 4, UInstDepAux, 0, 0, UInstDepZps, UInstDepCf, UInstDepOf, 0);
 	newUInst(UInstAdd, UInstDepEsp, 0, 0, UInstDepEsp, 0, 0, 0);

@@ -153,13 +153,15 @@ public:
 	Extended PopFpu();
 
 	/// Get a reference to XMM register \a index (0 to 7)
-	XMMValue &getXMM(int index) {
+	XMMValue &getXMM(int index)
+	{
 		assert(misc::inRange(index, 0, 7));
 		return xmm[index];
 	}
 
 	/// Get a constant reference to XMM register \a index (0 to 7)
-	const XMMValue &getXMM(int index) const {
+	const XMMValue &getXMM(int index) const
+	{
 		assert(misc::inRange(index, 0, 7));
 		return xmm[index];
 	}
