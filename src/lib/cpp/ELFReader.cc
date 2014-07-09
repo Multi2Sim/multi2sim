@@ -38,18 +38,18 @@ namespace ELFReader
 //
 
 
-Section::Section(File *file, int index, unsigned int pos)
+Section::Section(File *file, int index, unsigned info_offset) :
+		file(file),
+		index(index)
 {
 	// Read section header
-	info = (Elf32_Shdr *) (file->getBuffer() + pos);
-	if (pos < 0 || pos + sizeof(Elf32_Shdr) > file->getSize())
+	info = (Elf32_Shdr *) (file->getBuffer() + info_offset);
+	if (info_offset < 0 || info_offset + sizeof(Elf32_Shdr)
+			> file->getSize())
 		throw Error(file->getPath(), "Invalid position for "
 				"section header");
 
 	// Initialize
-	this->file = file;
-	this->index = index;
-	buffer = NULL;
 	size = info->sh_size;
 
 	// Get section contents, if section type is not SHT_NOBITS
@@ -72,15 +72,18 @@ Section::Section(File *file, int index, unsigned int pos)
 //
 
 
-ProgramHeader::ProgramHeader(File *file, int index, unsigned int pos)
+ProgramHeader::ProgramHeader(File *file, int index, unsigned info_offset) :
+		file(file),
+		index(index)
 {
 	// Initialize
 	this->file = file;
 	this->index = index;
 
 	// Read program header
-	info = (Elf32_Phdr *) (file->getBuffer() + pos);
-	if (pos < 0 || pos + sizeof(Elf32_Phdr) > file->getSize())
+	info = (Elf32_Phdr *) (file->getBuffer() + info_offset);
+	if (info_offset < 0 || info_offset + sizeof(Elf32_Phdr) >
+			file->getSize())
 		throw Error(file->getPath(), "Invalid position for program "
 				"header");
 
@@ -136,7 +139,7 @@ Symbol::Symbol(File *file, Section *section, unsigned int pos)
 
 	// If symbol points to a valid region of the section, set
 	// variable buffer.
-	buffer = NULL;
+	buffer = nullptr;
 	if (this->section && info->st_value + info->st_size <=
 			this->section->getSize())
 		buffer = this->section->getBuffer();
@@ -192,7 +195,7 @@ void Symbol::getStream(std::istringstream &stream, unsigned int offset,
 
 
 //
-// Class 'Header'
+// Class 'File'
 //
 
 static const char *err_64bit =
@@ -203,48 +206,11 @@ static const char *err_64bit =
 	"the 32-bit gcc package associated with your Linux distribution is "
 	"installed.";
 
-Header::Header(const std::string &path)
-{
-	// Open file
-	std::ifstream f(path);
-	if (!f)
-		throw Error(path, "Cannot open file");
-
-	// Get file size
-	f.seekg(0, std::ios_base::end);
-	unsigned size = f.tellg();
-	f.seekg(0, std::ios_base::beg);
-
-	// Check that size is at least equal to header size
-	if (size < sizeof(Elf32_Ehdr))
-		throw Error(path, "Invalid ELF file");
-
-	// Load header
-	f.read((char *) &info, sizeof(Elf32_Ehdr));
-	f.close();
-
-	// Check that file is a valid ELF file
-	if (strncmp((char *) info.e_ident, ELFMAG, 4))
-		throw Error(path, "Invalid ELF file");
-
-	// Check that ELF file is a 32-bit object
-	if (info.e_ident[EI_CLASS] == ELFCLASS64)
-		throw Error(path, misc::fmt(
-				"64-bit ELF files not supported\n\n%s",
-				err_64bit));
-}
-
-
-
-
-//
-// Class 'File'
-//
 
 void File::ReadHeader()
 {
 	// Read ELF header
-	info = (Elf32_Ehdr *) buffer;
+	info = (Elf32_Ehdr *) buffer.get();
 	if (size < sizeof(Elf32_Ehdr))
 		throw Error(path, "Invalid ELF file");
 
@@ -264,25 +230,28 @@ void File::ReadSections()
 {
 	// Check section size and number
 	if (!info->e_shnum || info->e_shentsize != sizeof(Elf32_Shdr))
-		throw Error(path, misc::fmt(
-				"Number of sections is 0 or section size is not %d",
+		throw Error(path, misc::fmt("Number of sections is 0 or "
+				"section header size is not %d",
 				(int) sizeof(Elf32_Shdr)));
 
 	// Read section headers
 	for (int i = 0; i < info->e_shnum; i++)
-		sections.push_back(std::unique_ptr<Section>(new Section(this,
-				i, info->e_shoff + i * info->e_shentsize)));
+		sections.emplace_back(new Section(this, i,
+				info->e_shoff + i * info->e_shentsize));
 
-	// Read string table
+	// Check string table index
 	if (info->e_shstrndx >= info->e_shnum)
 		throw Error(path, "Invalid string table index");
+	
+	// Read string table
 	string_table = sections[info->e_shstrndx].get();
-	if (string_table->info->sh_type != 3)
+	if (string_table->getType() != 3)
 		throw Error(path, "Invalid string table type");
 
 	// Read section names
 	for (auto &section : sections)
-		section->name = string_table->buffer + section->info->sh_name;
+		section->setName(string_table->getBuffer() +
+				section->getNameOffset());
 }
 
 
@@ -314,24 +283,23 @@ void File::ReadSymbols()
 	// Load symbols from sections
 	for (auto &section : sections)
 	{
-		if (section->info->sh_type != 2 &&
-				section->info->sh_type != 11)
+		// Ignore section that don't represent symbol tables
+		if (section->getType() != 2 && section->getType() != 11)
 			continue;
 
 		// Read symbol table
-		int num_symbols = section->info->sh_size / sizeof(Elf32_Sym);
+		int num_symbols = section->getSize() / sizeof(Elf32_Sym);
 		for (int i = 0; i < num_symbols; i++)
 		{
-			// Create symbol
-			auto symbol = std::unique_ptr<Symbol>(new Symbol(this,
-					section.get(), i * sizeof(Elf32_Sym)));
+			// Create symbol in symbol list
+			symbols.emplace_back(new Symbol(this,
+					section.get(),
+					i * sizeof(Elf32_Sym)));
 
 			// Discard empty symbol
-			if (symbol->name.empty())
-				continue;
-
-			// Add symbol
-			symbols.push_back(std::move(symbol));
+			Symbol *symbol = symbols.back().get();
+			if (symbol->getName().empty())
+				symbols.pop_back();
 		}
 	}
 
@@ -340,11 +308,9 @@ void File::ReadSymbols()
 }
 
 
-File::File(const std::string &path)
+File::File(const std::string &path, bool read_content) :
+		path(path)
 {
-	// Initialize
-	this->path = path;
-
 	// Open file
 	std::ifstream f(path);
 	if (!f)
@@ -360,48 +326,51 @@ File::File(const std::string &path)
 		throw Error(path, "Invalid ELF file");
 
 	// Load entire file into buffer and close
-	buffer = new char[size];
-	f.read(buffer, size);
+	buffer.reset(new char[size]);
+	f.read(buffer.get(), size);
 	f.close();
 
 	// Make string stream point to buffer
 	std::stringbuf *buf = stream.rdbuf();
-	buf->pubsetbuf(buffer, size);
+	buf->pubsetbuf(buffer.get(), size);
+
+	// Read ELF header
+	ReadHeader();
 
 	// Read content
-	ReadHeader();
-	ReadSections();
-	ReadProgramHeaders();
-	ReadSymbols();
+	if (read_content)
+	{
+		ReadSections();
+		ReadProgramHeaders();
+		ReadSymbols();
+	}
 }
 
 
-File::File(const char *buffer, unsigned int size)
+File::File(const char *buffer, unsigned size, bool read_content)
 {
 	// Initialize
 	path = "<anonymous>";
 
 	// Copy buffer
 	this->size = size;
-	this->buffer = new char[size];
-	memcpy(this->buffer, buffer, size);
+	this->buffer.reset(new char[size]);
+	memcpy(this->buffer.get(), buffer, size);
 
 	// Make string stream point to buffer
 	std::stringbuf *buf = stream.rdbuf();
-	buf->pubsetbuf(this->buffer, size);
+	buf->pubsetbuf(this->buffer.get(), size);
+
+	// Read ELF header
+	ReadHeader();
 
 	// Read content
-	ReadHeader();
-	ReadSections();
-	ReadProgramHeaders();
-	ReadSymbols();
-}
-
-
-File::~File(void)
-{
-	// Free content
-	delete[] buffer;
+	if (read_content)
+	{
+		ReadSections();
+		ReadProgramHeaders();
+		ReadSymbols();
+	}
 }
 
 
@@ -509,7 +478,7 @@ Symbol *File::getSymbol(const std::string &name) const
 {
 	// Search
 	for (auto &symbol : symbols)
-		if (symbol->name == name)
+		if (symbol->getName() == name)
 			return symbol.get();
 	
 	// Not found
@@ -526,7 +495,7 @@ void File::getStream(std::istringstream &stream, unsigned int offset,
 
 	// Set substream
 	std::stringbuf *buf = stream.rdbuf();
-	buf->pubsetbuf(buffer + offset, size);
+	buf->pubsetbuf(buffer.get() + offset, size);
 }
 
 
@@ -542,11 +511,11 @@ Symbol *File::getSymbolByAddress(unsigned int address,
 {
 	// Empty symbol table
 	if (!symbols.size())
-		return NULL;
+		return nullptr;
 
 	// All symbols in the table have a higher address
-	if (address < symbols[0]->info->st_value)
-		return NULL;
+	if (address < symbols[0]->getValue())
+		return nullptr;
 
 	// Binary search
 	int min = 0;
@@ -555,11 +524,11 @@ Symbol *File::getSymbolByAddress(unsigned int address,
 	{
 		int mid = (max + min) / 2;
 		Symbol *symbol = symbols[mid].get();
-		if (symbol->info->st_value > address)
+		if (symbol->getValue() > address)
 		{
 			max = mid;
 		}
-		else if (symbol->info->st_value < address)
+		else if (symbol->getValue() < address)
 		{
 			min = mid;
 		}
@@ -572,8 +541,8 @@ Symbol *File::getSymbolByAddress(unsigned int address,
 
 	// Invalid symbol
 	Symbol *symbol = symbols[min].get();
-	if (!symbol->info->st_value)
-		return NULL;
+	if (!symbol->getValue())
+		return nullptr;
 
 	// Go backwards to find first symbol with that address
 	for (;;)
@@ -585,16 +554,16 @@ Symbol *File::getSymbolByAddress(unsigned int address,
 
 		// If address is lower, stop
 		Symbol *prev_symbol = symbols[min].get();
-		if (prev_symbol->info->st_value != symbol->info->st_value)
+		if (prev_symbol->getValue() != symbol->getValue())
 			break;
 
 		// Take symbol if it has global/local/weak binding
-		if (ELF32_ST_BIND(prev_symbol->info->st_info) < 3)
+		if (ELF32_ST_BIND(prev_symbol->getInfo()) < 3)
 			symbol = prev_symbol;
 	}
 
 	// Return the symbol and its address
-	offset = address - symbol->info->st_value;
+	offset = address - symbol->getValue();
 	return symbol;
 }
 
