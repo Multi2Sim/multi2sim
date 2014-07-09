@@ -48,7 +48,7 @@ class Command
 {
 	// The request associated with this command
 	std::shared_ptr<Request> request;
-	
+
 	// The type of command
 	CommandType type;
 
@@ -60,10 +60,10 @@ public:
 	Command(std::shared_ptr<Request> request, CommandType type,
 			Bank *bank);
 
-	/// Returns the command's type.
+	/// Returns the type of the command.
 	CommandType getType() const { return type; }
 
-	/// Returns the command's type as a string.
+	/// Returns the type of the command as a string.
 	std::string getTypeString() const { return CommandTypeMap[type]; }
 
 	int getDuration() const;

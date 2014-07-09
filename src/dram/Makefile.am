@@ -31,6 +31,9 @@ libdram_a_SOURCES = \
 	Action.cc \
 	Action.h \
 	\
+	Address.cc \
+	Address.h \
+	\
 	Bank.cc \
 	Bank.h \
 	\

@@ -24,6 +24,7 @@
 #include <lib/esim/Engine.h>
 #include <lib/esim/Event.h>
 
+#include "Address.h"
 #include "Bank.h"
 #include "Channel.h"
 #include "Controller.h"
@@ -279,8 +280,9 @@ void Controller::RunRequestProcessor()
 
 	// Get the bank the request is destined for.
 	Address *address = request->getAddress();
-	Bank *bank = channels[address->logical]->getRank(address->rank)
-			->getBank(address->bank);
+	Bank *bank = channels[address->getLogical()]->
+			getRank(address->getRank())->
+			getBank(address->getBank());
 
 	// Send the request to the bank to be processed.
 	bank->ProcessRequest(request);
@@ -313,7 +315,7 @@ void Controller::CommandReturnHandler(esim::EventType *type,
 			"0x%llx\n", cycle, command->getRankId(),
 			command->getBankId(),
 			command->getTypeString().c_str(),
-			command->getAddress()->encoded);
+			command->getAddress()->getEncoded());
 }
 
 

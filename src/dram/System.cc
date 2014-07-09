@@ -19,7 +19,6 @@
 
 #include <vector>
 #include <algorithm>
-#include <cmath>
 #include <iostream>
 
 #include <lib/cpp/CommandLine.h>
@@ -28,6 +27,7 @@
 #include <lib/esim/Engine.h>
 
 #include "Action.h"
+#include "Address.h"
 #include "Bank.h"
 #include "Controller.h"
 #include "Channel.h"
@@ -159,6 +159,10 @@ void System::ParseConfiguration(const std::string &path)
 		}
 	}
 
+	// All controllers and all the memory hierarchy under them has been
+	// made, so now calculate the sizes of address components.
+	GenerateAddressSizes();
+
 	// Parse actions if the section exists.
 	if (config.Exists("Actions"))
 	{
@@ -185,14 +189,15 @@ void System::Run()
 void System::AddRequest(std::shared_ptr<Request> request)
 {
 	// Decode the address and move the request to the correct controller.
-	request->DecodeAddress();
-	controllers[request->getAddress()->physical]->AddRequest(request);
+	Address *address = request->getAddress();
+	controllers[address->getPhysical()]->AddRequest(request);
 
 	// Debug
 	debug << misc::fmt("[%lld] Adding request for 0x%llx to controller %d\n",
-			DRAM_DOMAIN->getCycle(), request->getAddress()->encoded,
-			request->getAddress()->physical);
+			DRAM_DOMAIN->getCycle(), address->getEncoded(),
+			address->getPhysical());
 }
+
 
 int System::Log2(unsigned num)
 {
@@ -204,18 +209,14 @@ int System::Log2(unsigned num)
 	return result;
 }
 
-void System::DecodeAddress(Address &address)
-{
-	// Get the sizes of each address component in number of bits required
-	// to represent it.
-	int physical_size = Log2(controllers.size());
-	int logical_size = 0;
-	int rank_size = 0;
-	int bank_size = 0;
-	int row_size = 0;
-	int column_size = 0;
 
-	// Find the largest of each component size.
+void System::GenerateAddressSizes()
+{
+	// Set physical size based on number of controllers in the system.
+	physical_size = Log2(controllers.size());
+
+	// Find the largest of each component size because one address format
+	// must be able to decode to any location in the system.
 	// Controllers can potentially each have different sizes for everything
 	// but all sizes under the controller are uniform.
 	for (auto const& controller : controllers)
@@ -231,36 +232,6 @@ void System::DecodeAddress(Address &address)
 		column_size = std::max(column_size,
 				Log2(controller->getNumColumns()));
 	}
-
-	// Make a local copy of the address.  Don't use the one in the address
-	// struct because it will be altered during decoding.
-	long long decoding = address.encoded;
-
-	// Step through the address to parse out the components.
-	// This will be configurable, but for now the address mapping is
-	// (from MSB to LSB) physical:logical:rank:bank:row:column.
-	address.column = decoding & int(pow(2, column_size) - 1);
-	// Step to row.
-	decoding >>= column_size;
-	address.row = decoding & int(pow(2, row_size) - 1);
-	// Step to bank.
-	decoding >>= row_size;
-	address.bank = decoding & int(pow(2, bank_size) - 1);
-	// Step to rank.
-	decoding >>= bank_size;
-	address.rank = decoding & int(pow(2, rank_size) - 1);
-	// Step to logical.
-	decoding >>= rank_size;
-	address.logical = decoding & int(pow(2, logical_size) - 1);
-	// Step to physical.
-	decoding >>= logical_size;
-	address.physical = decoding & int(pow(2, physical_size) - 1);
-
-	// Debug
-	// debug << misc::fmt("Sizes: %d, %d, %d, %d, %d, %d\n", physical_size,
-	// 		logical_size, rank_size, bank_size, row_size,
-	// 		column_size);
-	// debug << address;
 }
 
 
@@ -275,14 +246,6 @@ void System::dump(std::ostream &os) const
 			(int) controllers.size());
 	for (auto &controller : controllers)
 		controller->dump(os);
-}
-
-
-void Address::dump(std::ostream &os) const
-{
-	// Print the encoded address and its component locations
-	os << misc::fmt("0x%llx = %d : %d : %d : %d : %d : %d\n", encoded,
-			physical, logical, rank, bank, row, column);
 }
 
 

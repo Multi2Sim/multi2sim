@@ -21,6 +21,7 @@
 #include <lib/cpp/String.h>
 #include <lib/esim/Engine.h>
 
+#include "Address.h"
 #include "Bank.h"
 #include "Channel.h"
 #include "Controller.h"
@@ -82,12 +83,12 @@ void Bank::ProcessRequest(std::shared_ptr<Request> request)
 		command_queue.push_back(activate_command);
 
 		// Set the future active row.
-		future_active_row = address->row;
+		future_active_row = address->getRow();
 	}
 
 	// Create the precharge and activate commands if the wrong row will
 	// be open. (Row miss)
-	else if (getActiveRowFuture() != address->row)
+	else if (getActiveRowFuture() != address->getRow())
 	{
 		// Create the commands.
 		auto precharge_command = std::make_shared<Command>(
@@ -100,11 +101,11 @@ void Bank::ProcessRequest(std::shared_ptr<Request> request)
 		command_queue.push_back(activate_command);
 
 		// Set the future active row.
-		future_active_row = address->row;
+		future_active_row = address->getRow();
 	}
 
 	// Check that the desired row will actually be open.
-	if (future_active_row != address->row)
+	if (future_active_row != address->getRow())
 		throw misc::Panic("Desired row will not be opened.");
 
 	// At this point either the desired row will already be open, or we
@@ -130,7 +131,7 @@ void Bank::ProcessRequest(std::shared_ptr<Request> request)
 	// Debug
 	System::debug << misc::fmt("[%lld] Processed request for 0x%llx in "
 			"bank %d\n", System::DRAM_DOMAIN->getCycle(),
-			address->encoded, id);
+			address->getEncoded(), id);
 }
 
 
@@ -163,7 +164,7 @@ void Bank::runFrontCommand()
 	std::cout << misc::fmt("[%lld] [%d : %d] Running command %s for "
 			"0x%llx\n", cycle, rank->getId(), id,
 			command->getTypeString().c_str(),
-			command->getAddress()->encoded);
+			command->getAddress()->getEncoded());
 
 	// Command is being run, remove it from the queue.
 	command_queue.pop_front();

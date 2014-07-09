@@ -38,28 +38,6 @@ class Controller;
 class Request;
 
 
-struct Address
-{
-	long long encoded;
-	int physical;
-	int logical;
-	int rank;
-	int bank;
-	int row;
-	int column;
-
-	/// Dump the object to an output stream.
-	void dump(std::ostream &os = std::cout) const;
-
-	/// Dump object with the << operator
-	friend std::ostream &operator<<(std::ostream &os,
-			const Address &object)
-	{
-		object.dump(os);
-		return os;
-	}
-};
-
 class System
 {
 	// Unique instance of this class
@@ -71,6 +49,21 @@ class System
 
 	// List of all the memory controllers
 	std::vector<std::unique_ptr<Controller>> controllers;
+
+	// Sizes of address components
+	int physical_size = 0;
+	int logical_size = 0;
+	int rank_size = 0;
+	int bank_size = 0;
+	int row_size = 0;
+	int column_size = 0;
+
+	/// Finds the integer base 2 log of a number.
+	int Log2(unsigned num);
+
+	/// Sets the sizes of each address component, in the number of bits
+	/// required to represent it.
+	void GenerateAddressSizes();
 
 public:
 
@@ -84,6 +77,24 @@ public:
 
 	/// Obtain the instance of the dram simulator singleton.
 	static System *getInstance();
+
+	/// Returns the size in bits of the physical channel address component.
+	int getPhysicalSize() const { return physical_size; }
+
+	/// Returns the size in bits of the logical channel address component.
+	int getLogicalSize() const { return logical_size; }
+
+	/// Returns the size in bits of the rank address component.
+	int getRankSize() const { return rank_size; }
+
+	/// Returns the size in bits of the bank address component.
+	int getBankSize() const { return bank_size; }
+
+	/// Returns the size in bits of the row address component.
+	int getRowSize() const { return row_size; }
+
+	/// Returns the size in bits of the column address component.
+	int getColumnSize() const { return column_size; }
 
 	/// Register command-line options
 	static void RegisterOptions();
@@ -101,16 +112,6 @@ public:
 	/// simulator only; during full simulation, requests should be
 	/// sent to the controllers through a network.
 	void AddRequest(std::shared_ptr<Request> request);
-
-	/// Decode an address to its component locations. For now, this decodes
-	/// in the order physical:logical:rank:bank:row:column. This will
-	/// eventually be confiurable.
-	///
-	/// \param address
-	/// The Address object passed in should be initalized with the encoded
-	/// field.  The function will fill in the rest of the fields based on it.
-	void DecodeAddress(Address &address);
-	int Log2(unsigned num);
 
 	/// Activate debug information for the dram simulator.
 	///
