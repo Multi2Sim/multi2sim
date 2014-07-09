@@ -86,7 +86,7 @@ void Context::LoadXMMM64(XMMValue &value)
 	{
 		MemoryRead(getEffectiveAddress(), 8, (char *) &content);
 	}
-	value.setAsUInt(0, content);
+	value.setAsUInt64(0, content);
 }
 
 void Context::StoreXMMM128(const XMMValue &value)
