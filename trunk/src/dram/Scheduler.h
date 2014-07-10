@@ -22,6 +22,8 @@
 
 #include <utility>
 
+#include <lib/cpp/String.h>
+
 #include "Command.h"
 
 
@@ -33,11 +35,24 @@ class Bank;
 class Channel;
 
 
+// Possible scheduling algorithms
+enum SchedulerType
+{
+	SchedulerRankBankRoundRobin,
+	SchedulerOldestFirst
+};
+
+// String map for SchedulerType
+extern misc::StringMap SchedulerTypeMap;
+
+
 /// To make a new scheduler, this base class should be subclassed.  The
 /// constructor must contain at least a pointer to the channel that owns it
 /// and should call the base class constructor.  The FindNext method should
 /// be implemented with the scheduling algorithm, and any state variables
 /// required should be added to the class.
+/// After the new scheduler is made, add it to the SchedulerType enum,
+/// SchedulerTypeMap StringMap and the switch block in Channel::Channel.
 class Scheduler
 {
 
@@ -61,14 +76,30 @@ public:
 };
 
 
-class RankBank : public Scheduler
+class OldestFirst : public Scheduler
+{
+
+public:
+	OldestFirst(Channel *owner)
+			:
+			Scheduler(owner)
+	{
+	}
+
+	/// Returns the the pointer to the next bank that should have its
+	/// command scheduled next based on the Oldest First algorithm.
+	Bank *FindNext();
+};
+
+
+class RankBankRoundRobin : public Scheduler
 {
 	int current_rank = 0;
 	int current_bank = 0;
 
 public:
 
-	RankBank(Channel *owner)
+	RankBankRoundRobin(Channel *owner)
 			:
 			Scheduler(owner)
 	{

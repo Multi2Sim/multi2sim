@@ -17,6 +17,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+#include <climits>
+
 #include <lib/cpp/String.h>
 
 #include "Bank.h"
@@ -28,7 +30,56 @@
 namespace dram
 {
 
-Bank *RankBank::FindNext()
+misc::StringMap SchedulerTypeMap
+{
+	{ "RankBankRoundRobin", SchedulerRankBankRoundRobin},
+	{ "OldestFirst", SchedulerOldestFirst }
+};
+
+
+Bank *OldestFirst::FindNext()
+{
+	// Keep track of the bank with the oldest command found so far.
+	long long oldest_cycle = LLONG_MAX;
+	Bank *oldest_bank = nullptr;
+
+	// Get the number of banks in each rank of the channel.
+	int num_banks = channel->getNumBanks();
+
+	// Iterate through all the ranks and banks.
+	for (int i = 0; i < channel->getNumBanksTotal(); i++)
+	{
+		// Get the current bank
+		Bank *bank = channel->getRank(i / num_banks)
+				->getBank(i % num_banks);
+
+		// Move to the next bank if this one has no commands in queue.
+		if (bank->getNumCommandsInQueue() == 0)
+		{
+			continue;
+		}
+
+		// Get the cycle when the front command in this bank was
+		// created.
+		long long current_bank_cycle =
+				bank->getFrontCommandCycleCreated();
+
+		// Make this the bank with the oldest command if it is.
+		if (current_bank_cycle < oldest_cycle)
+		{
+			oldest_cycle = current_bank_cycle;
+			oldest_bank = bank;
+		}
+	}
+
+	// Return the bank with the oldest command at the front of its queue.
+	// If no bank was found, then the value of oldest_bank will still be
+	// nullptr, which is the return value that indicates none was found.
+	return oldest_bank;
+}
+
+
+Bank *RankBankRoundRobin::FindNext()
 {
 	// Iterate through all the ranks and banks.  No more, no less.
 	for (int i = 0; i < channel->getNumBanksTotal(); i++)

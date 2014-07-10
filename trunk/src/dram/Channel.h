@@ -26,6 +26,7 @@
 #include <lib/esim/Event.h>
 
 #include "Rank.h"
+#include "Scheduler.h"
 
 
 namespace dram
@@ -68,7 +69,8 @@ public:
 			int num_banks,
 			int num_rows,
 			int num_columns,
-			int num_bits);
+			int num_bits,
+			SchedulerType scheduler_type);
 
 	/// Returns the id of this channel, which is unique in the controller
 	/// that this channel belongs to.

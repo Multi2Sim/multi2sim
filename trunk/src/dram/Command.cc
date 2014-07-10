@@ -40,16 +40,13 @@ std::map<CommandType, std::string> Command::CommandTypeMap = {
 
 
 Command::Command(std::shared_ptr<Request> request, CommandType type,
-		Bank *bank)
+		long long cycle_created, Bank *bank)
 		:
 		request(request),
 		type(type),
+		cycle_created(cycle_created),
 		bank(bank)
 {
-	// Increment the number of in flight commands for the
-	// associated request.
-	request->incCommands();
-
 	// Set the rank.
 	rank = bank->getRank();
 
@@ -89,7 +86,10 @@ Address *Command::getAddress()
 
 void Command::setFinished()
 {
-	request->decCommands();
+	// Mark the associated request as finished, too, if this is the read or
+	// write command for that request.
+	if (type == CommandRead || type == CommandWrite)
+		request->setFinished();
 }
 
 }  // namespace dram

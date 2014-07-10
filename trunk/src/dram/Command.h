@@ -55,13 +55,16 @@ class Command
 	// The type of command
 	CommandType type;
 
+	// Creation cycle of the command
+	long long cycle_created;
+
 	// Location information
 	Bank *bank;
 	Rank *rank;
 
 public:
 	Command(std::shared_ptr<Request> request, CommandType type,
-			Bank *bank);
+			long long cycle_created, Bank *bank);
 
 	/// Returns the id of this command, which is unique in the
 	/// memory system.
@@ -73,7 +76,12 @@ public:
 	/// Returns the type of the command as a string.
 	std::string getTypeString() const { return CommandTypeMap[type]; }
 
+	/// Returns how long the command will take to execute once it is
+	/// scheduled.
 	int getDuration() const;
+
+	/// Returns the cycle when the command was created.
+	long long getCycleCreated() { return cycle_created; }
 
 	/// Returns the bank that the command was created in.
 	Bank *getBank() { return bank; }
