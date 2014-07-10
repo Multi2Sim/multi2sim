@@ -20,9 +20,7 @@
 #include <algorithm>
 #include <vector>
 
-#include <lib/cpp/String.h>
 #include <lib/esim/Engine.h>
-#include <lib/esim/Event.h>
 
 #include "Address.h"
 #include "Bank.h"
@@ -32,12 +30,19 @@
 #include "Request.h"
 #include "Scheduler.h"
 #include "System.h"
+#include "TimingParameters.h"
 
 
 namespace dram
 {
 
 // Static variables
+
+misc::StringMap PagePolicyTypeMap
+{
+	{ "Open", PagePolicyOpen},
+	{ "Closed", PagePolicyClosed }
+};
 
 std::map<int, esim::EventType *> Controller::REQUEST_PROCESSORS;
 
@@ -63,11 +68,18 @@ Controller::Controller(int id, const std::string &section,
 void Controller::ParseConfiguration(const std::string &section,
 		misc::IniFile &config)
 {
-	// Load the name of the Controller
-	// Format of section title is "MemoryController <name>"
+	// Tokenize the section title
 	std::vector<std::string> section_tokens;
 	misc::StringTokenize(section, section_tokens);
+
+	// Load the name of the Controller
+	// Format of section title is "MemoryController <name>"
 	name = section_tokens[1];
+
+	// Load the page policy, defaulting to PagePolicyOpen
+	page_policy = (PagePolicyType) config.ReadEnum(section, "PagePolicy",
+			PagePolicyTypeMap, PagePolicyOpen);
+	// std::cout << page_policy;
 
 	// Read DRAM size settings
 	num_channels = config.ReadInt(section, "NumChannels", 1);
@@ -101,7 +113,7 @@ void Controller::ParseTiming(const std::string &section,
 	// the parameters are all set to 0 and the user must set all of them.
 	std::string set_default = config.ReadString(section, "Default", "");
 	if (set_default == "DDR3_1600")
-		DefaultDDR3_1600(parameters);
+		parameters.DefaultDDR3_1600();
 
 	// Read the timing parameters set by the user.
 	parameters.tRC = config.ReadInt(section, "tRC", parameters.tRC);
@@ -173,26 +185,6 @@ void Controller::ParseTiming(const std::string &section,
 	command_durations[CommandRead] = parameters.tCAS + parameters.tBURST;
 	command_durations[CommandWrite] =
 			parameters.tCWD + parameters.tBURST + parameters.tWTR;
-}
-
-
-void Controller::DefaultDDR3_1600(TimingParameters &parameters)
-{
-	parameters.tRC = 49;
-	parameters.tRRD = 5;
-	parameters.tRP = 11;
-	parameters.tRFC = 128;
-	parameters.tCCD = 4;
-	parameters.tRTRS = 1;
-	parameters.tCWD = 5;
-	parameters.tWTR = 6;
-	parameters.tCAS = 11;
-	parameters.tRCD = 11;
-	parameters.tOST = 1;
-	parameters.tRAS = 28;
-	parameters.tWR = 12;
-	parameters.tRTP = 6;
-	parameters.tBURST = 4;
 }
 
 
@@ -311,9 +303,9 @@ void Controller::CommandReturnHandler(esim::EventType *type,
 
 	// Debug
 	long long cycle = System::DRAM_DOMAIN->getCycle();
-	std::cout << misc::fmt("[%lld] [%d : %d] Finished command %s for "
-			"0x%llx\n", cycle, command->getRankId(),
-			command->getBankId(),
+	System::activity << misc::fmt("[%lld] [%d : %d] Finished command #%d "
+			"%s for 0x%llx\n", cycle, command->getRankId(),
+			command->getBankId(), command->getId(),
 			command->getTypeString().c_str(),
 			command->getAddress()->getEncoded());
 }

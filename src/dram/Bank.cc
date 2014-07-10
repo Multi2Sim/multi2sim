@@ -112,10 +112,10 @@ void Bank::ProcessRequest(std::shared_ptr<Request> request)
 	// just created the commands necessary for it to be open.  Create
 	// the appropriate access command (read or write).
 	std::shared_ptr<Command> access_command;
-	if (request->getType() == RequestTypeRead)
+	if (request->getType() == RequestRead)
 		access_command = std::make_shared<Command>(
 				request, CommandRead, this);
-	else if (request->getType() == RequestTypeWrite)
+	else if (request->getType() == RequestWrite)
 		access_command = std::make_shared<Command>(
 				request, CommandWrite, this);
 	else
@@ -124,6 +124,22 @@ void Bank::ProcessRequest(std::shared_ptr<Request> request)
 
 	// Add it to the command queue.
 	command_queue.push_back(access_command);
+
+	// If the the page policy is set to closed page, then also add a
+	// precharge command to the end of the queue.
+	if (getRank()->getChannel()->getController()->getPagePolicy() ==
+			PagePolicyClosed)
+	{
+		// Create the command.
+		auto precharge_command = std::make_shared<Command>(
+				request, CommandPrecharge, this);
+
+		// Add it to the command queue.
+		command_queue.push_back(precharge_command);
+
+		// Set the future active row to indicate precharged.
+		future_active_row = -1;
+	}
 
 	// Ensure the scheduler is running.
 	getRank()->getChannel()->CallScheduler();
@@ -161,9 +177,9 @@ void Bank::runFrontCommand()
 			command->getDuration());
 
 	// Debug
-	std::cout << misc::fmt("[%lld] [%d : %d] Running command %s for "
-			"0x%llx\n", cycle, rank->getId(), id,
-			command->getTypeString().c_str(),
+	System::activity << misc::fmt("[%lld] [%d : %d] Running command #%d "
+			"%s for 0x%llx\n", cycle, rank->getId(), id,
+			command->getId(), command->getTypeString().c_str(),
 			command->getAddress()->getEncoded());
 
 	// Command is being run, remove it from the queue.

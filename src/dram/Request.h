@@ -32,9 +32,9 @@ class Address;
 
 enum RequestType
 {
-	RequestTypeInvalid = 0,
-	RequestTypeRead,
-	RequestTypeWrite
+	RequestInvalid = 0,
+	RequestRead,
+	RequestWrite
 };
 
 

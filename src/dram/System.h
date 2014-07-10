@@ -58,6 +58,10 @@ class System
 	int row_size = 0;
 	int column_size = 0;
 
+	// Counter of commands created in the system.  This serves to let every
+	// command have a unique id for logging purposes.
+	int next_command_id = -1;
+
 	/// Finds the integer base 2 log of a number.
 	int Log2(unsigned num);
 
@@ -69,6 +73,9 @@ public:
 
 	/// Debugger
 	static misc::Debug debug;
+
+	/// Activity log
+	static misc::Debug activity;
 
 	// EventTypes and FrequencyDomains for DRAM
 	static esim::FrequencyDomain *DRAM_DOMAIN;
@@ -108,6 +115,9 @@ public:
 	/// Run the standalone dram simulation loop.
 	void Run();
 
+	/// Returns the next available unique command id.
+	int getNextCommandId();
+
 	/// Add a request to the system. Should be used in the standalone
 	/// simulator only; during full simulation, requests should be
 	/// sent to the controllers through a network.
@@ -123,6 +133,18 @@ public:
 	{
 		debug.setPath(path);
 		debug.setPrefix("[dram]");
+	}
+
+	/// Activate activity debug information for the dram simulator.
+	///
+	/// \param path
+	///	Path to dump debug information. Strings \c stdout and \c stderr
+	///	are special values referring to the standard output and standard
+	///	error output, respectively.
+	static void setActivityDebugPath(const std::string &path)
+	{
+		activity.setPath(path);
+		activity.setPrefix("[dram-activity]");
 	}
 
 	/// Dump the object to an output stream.
