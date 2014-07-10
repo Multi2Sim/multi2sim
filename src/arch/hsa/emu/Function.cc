@@ -59,11 +59,124 @@ void Function::addArgument(const std::string &name, bool isInput,
 }
 
 
+unsigned int Function::getRegisterSizeByName(const std::string &name) const
+{
+
+	// First byte is '$'
+	if (name[0] != '$')
+	{
+		throw Error("Invalid register name " + name
+				+ ". Expect ($) to be register prefix");
+		return 0;
+	}
+
+	// Get the index number of the register
+	unsigned int register_index = atoi(name.c_str() + 2);
+
+	switch (name[1])
+	{
+	case 'c':
+		if (register_index > 7)
+		{
+			throw Error("Invalid register name " + name
+					+ ". Expecte register index between"
+					" 0 and 7");
+			return 0;
+		}
+		return 1;
+	case 's':
+		if (register_index > 127)
+		{
+			throw Error("Invalid register name " + name
+					+ ". Expecte register index between"
+					" 0 and 127");
+			return 0;
+		}
+		return 4;
+	case 'd':
+		if (register_index > 63)
+		{
+			throw Error("Invalid register name " + name
+					+ ". Expecte register index between"
+					" 0 and 63");
+			return 0;
+		}
+		return 8;
+	case 'q':
+		if (register_index > 31)
+		{
+			throw Error("Invalid register name " + name
+					+ ". Expecte register index between"
+					" 0 and 31");
+			return 0;
+		}
+		return 16;
+	default:
+		throw Error("Invalid register name " + name +
+				+ ". Expect register type to be (c, s, d, q)");
+		return 0;
+	}
+}
+
+int Function::getRegisterOffset(const std::string &name)
+{
+	auto it = reg_info.find(name);
+	if (it == reg_info.end())
+	{
+		return -1;
+	}
+	return it->second;
+}
+
+void Function::addRegister(const std::string &name)
+{
+	// Validate the name of the register
+	int size = getRegisterSizeByName(name);
+
+	// Skip C registers
+	if (size == 1)
+		return;
+
+	// Check if the register exists
+	int offset = getRegisterOffset(name);
+	if (offset >= 0)
+		return;
+
+	// Check if enough space is available
+	if (reg_size + size > 512)
+		throw Error(misc::fmt("No enough space to allocated register %s"
+				"in function %s.",
+				name.c_str(), this->name.c_str()));
+
+	// Insert the register information
+	reg_info.insert(std::make_pair(name, reg_size));
+	reg_size += size;
+}
+
+
 void Function::Dump(std::ostream &os = std::cout) const
 {
 	os << misc::fmt("\n****************************************"
 			"***************************************\n");
+
+	// Dump function information
 	os << misc::fmt("\tFunction name: %s.\n", name.c_str());
+
+	// Dump argument related information
+	DumpArgumentInfo(os);
+
+	// Dump register related information
+	DumpRegisterInfo(os);
+
+	os << misc::fmt("****************************************"
+			"***************************************\n");
+}
+
+
+void Function::DumpArgumentInfo(std::ostream &os = std::cout) const
+{
+	// Dump the argument information
+	os << misc::fmt("\n\t***** Arguments *****\n");
 	std::map<std::string, std::unique_ptr<Argument>>::const_iterator it;
 	for (it = arg_info.begin(); it != arg_info.end(); it++)
 	{
@@ -79,8 +192,22 @@ void Function::Dump(std::ostream &os = std::cout) const
 				it->second->offset);
 	}
 	os << misc::fmt("\tArgument size allocated %d bytes\n", arg_size);
-	os << misc::fmt("****************************************"
-			"***************************************\n");
+	os << misc::fmt("\t*********************\n\n");
+}
+
+
+void Function::DumpRegisterInfo(std::ostream &os = std::cout) const
+{
+	// Dump the argument information
+	os << misc::fmt("\n\t***** Registers *****\n");
+	for (auto it = reg_info.begin(); it != reg_info.end(); it++)
+	{
+		os << misc::fmt("\tregister %s, offset %d\n",
+				it->first.c_str(),
+				it->second);
+	}
+	os << misc::fmt("\tRegister size allocated %d bytes\n", reg_size);
+	os << misc::fmt("\t*********************\n\n");
 }
 
 }  // namespace HSA
