@@ -98,6 +98,19 @@ class ProgramLoader
 	char *loadArguments(unsigned short num_arg, char *next_dir,
 			bool isInput, Function* function);
 
+	// Preprocess register allocation in a function
+	//
+	// \param entry_point
+	// 	Pointer to first instruction to parse
+	//
+	// \param inst_count
+	// 	Number of instructions in the function
+	//
+	// \param function
+	// 	Pointer to the function to process
+	void preprocessRegisters(char *entry_point,
+			unsigned int inst_count, Function* function);
+
 public:
 
 	/// Load the program to be executed. Unlike a typical singleton, it can

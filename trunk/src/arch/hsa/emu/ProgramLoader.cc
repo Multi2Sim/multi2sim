@@ -20,6 +20,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include <arch/hsa/asm/BrigOperandEntry.h>
+
 #include "ProgramLoader.h"
 
 namespace HSA
@@ -104,7 +106,7 @@ void ProgramLoader::LoadBinary()
 
 	// Reset program loader
 	binary.reset(new BrigFile(exe));
-	Emu::loader_debug << misc::fmt("Program loaded\n");
+	Emu::loader_debug << misc::fmt("Program %s loaded\n", exe.c_str());
 
 	// Load function table
 	int num_functions = loadFunctions();
@@ -176,6 +178,9 @@ void ProgramLoader::parseFunction(BrigDirEntry *dir)
 	next_dir = loadArguments(num_out_arg, next_dir, false, function);
 	next_dir = loadArguments(num_in_arg, next_dir, true, function);
 
+	// Allocate registers
+	preprocessRegisters(entry_point, dir_struct->instCount, function);
+
 	function->Dump(Emu::loader_debug);
 }
 
@@ -203,6 +208,39 @@ char *ProgramLoader::loadArguments(unsigned short num_arg, char *next_dir,
 		next_dir = arg_entry.next();
 	}
 	return next_dir;
+}
+
+
+void ProgramLoader::preprocessRegisters(char *entry_point,
+			unsigned int inst_count, Function* function)
+{
+	char *inst_ptr = entry_point;
+	BrigFile *binary = ProgramLoader::getInstance()->getBinary();
+
+	// Traverse all instructions
+	for (unsigned int i = 0; i < inst_count; i++)
+	{
+		BrigInstEntry inst_entry(inst_ptr, binary);
+
+		// Traverse each operands of an instruction
+		for (int j = 0; j < 5; j++)
+		{
+			char *operand_ptr = inst_entry.getOperand(i);
+			if (!operand_ptr) break;
+			BrigOperandEntry operand_entry(operand_ptr, binary,
+					&inst_entry, j);
+			if (operand_entry.getKind() == BRIG_OPERAND_REG)
+			{
+
+				std::string reg_name =
+						operand_entry.getRegisterName();
+				function->addRegister(reg_name);
+			}
+		}
+
+		// Move inst_ptr forward
+		inst_ptr = inst_entry.next();
+	}
 }
 
 }  // namespace HSA
