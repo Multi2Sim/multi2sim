@@ -38,6 +38,7 @@
 #include <dram/System.h>
 #include <driver/opencl/OpenCLDriver.h>
 #include <driver/opengl/OpenGLDriver.h>
+#include <memory/MMU.h>
 #include <lib/cpp/CommandLine.h>
 #include <lib/cpp/Environment.h>
 #include <lib/cpp/IniFile.h>
@@ -506,6 +507,7 @@ void main_cpp(int argc, char **argv)
 	HSA::Driver::RegisterOptions();
 	HSA::Emu::RegisterOptions();
 	Kepler::Driver::RegisterOptions();
+	mem::MMU::RegisterOptions();
 	MIPS::Asm::RegisterOptions();
 	MIPS::Emu::RegisterOptions();
 	SI::Driver::RegisterOptions();
@@ -528,6 +530,7 @@ void main_cpp(int argc, char **argv)
 	HSA::Driver::ProcessOptions();
 	HSA::Emu::ProcessOptions();
 	Kepler::Driver::ProcessOptions();
+	mem::MMU::ProcessOptions();
 	MIPS::Asm::ProcessOptions();
 	MIPS::Emu::ProcessOptions();
 	SI::Driver::ProcessOptions();
