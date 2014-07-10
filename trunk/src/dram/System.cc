@@ -44,6 +44,8 @@ namespace dram
 
 std::string debug_file;
 
+std::string activity_file;
+
 std::string config_file;
 
 bool stand_alone = false;
@@ -54,6 +56,8 @@ bool stand_alone = false;
 //
 
 misc::Debug System::debug;
+
+misc::Debug System::activity;
 
 std::unique_ptr<System> System::instance;
 
@@ -89,24 +93,30 @@ void System::RegisterOptions()
 
 	// Category
 	command_line->setCategory("dram");
-	
+
 	// Debugger for dram
-	command_line->RegisterString("--debug-dram <file>",
+	command_line->RegisterString("--dram-debug <file>",
 			debug_file,
-			"Dump debug information related with the dram "
+			"Dump debug information related with the DRAM "
 			"simulation.");
+
+	// Activity log for dram
+	command_line->RegisterString("--dram-debug-activity <file>",
+			activity_file,
+			"Dump debuf information related with DRAM activity "
+			"during simulation.");
 
 	// Dram system configuration
 	command_line->RegisterString("--dram-config <file>",
 			config_file,
-			"Dram configuration file. Memory controllers and "
+			"DRAM configuration file. Memory controllers and "
 			"their components can be defined here.");
 
 	// Stand-alone simulator
 	command_line->RegisterBool("--dram-sim",
 			stand_alone,
-			"Runs a dram simulation using the actions provided "
-			"in the dram configuration file (option "
+			"Runs a DRAM simulation using the actions provided "
+			"in the DRAM configuration file (option "
 			"'--dram-config').");
 }
 
@@ -118,6 +128,10 @@ void System::ProcessOptions()
 	// Debugger
 	if (!debug_file.empty())
 		setDebugPath(debug_file);
+
+	// Activity Debugger
+	if (!activity_file.empty())
+		setActivityDebugPath(activity_file);
 
 	// Configuration
 	if (!config_file.empty())
@@ -183,6 +197,13 @@ void System::Run()
 	}
 
 	dump(debug);
+}
+
+
+int System::getNextCommandId()
+{
+	next_command_id++;
+	return next_command_id;
 }
 
 
