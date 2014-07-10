@@ -37,9 +37,6 @@ class BrigSection
 
 protected:
 
-	// The file in which this section is contained
-	BrigFile *file;
-
 	// Type of the section
 	BrigSectionType type;
 

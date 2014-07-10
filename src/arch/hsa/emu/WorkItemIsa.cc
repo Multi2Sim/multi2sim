@@ -29,7 +29,7 @@ template <typename Type>
 Type WorkItem::getOperandValue(unsigned int index)
 {
 	// Get the operand entry
-	BrigInstEntry inst(pc, loader->binary.get());
+	BrigInstEntry inst(pc, ProgramLoader::getInstance()->getBinary());
 	BrigOperandEntry operand(inst.getOperand(index), inst.getFile(), 
 			&inst, index);
 
@@ -64,7 +64,7 @@ template <typename Type>
 void WorkItem::storeOperandValue(unsigned int index, Type value)
 {
 	// Get the operand entry
-	BrigInstEntry inst(pc, loader->binary.get());
+	BrigInstEntry inst(pc, ProgramLoader::getInstance()->getBinary());
 	BrigOperandEntry operand(inst.getOperand(index), inst.getFile(), 
 			&inst, index);
 
@@ -194,7 +194,7 @@ void WorkItem::ExecuteInst_MULHI()
 
 void WorkItem::ExecuteInst_NEG()
 {
-	BrigInstEntry inst(pc, loader->binary.get());
+	BrigInstEntry inst(pc, ProgramLoader::getInstance()->getBinary());
 
 	// Do different action accoding to the kind of the inst
 	if (inst.getKind() == BRIG_INST_BASIC)

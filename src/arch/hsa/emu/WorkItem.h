@@ -46,98 +46,15 @@ class WorkItem{
  	// Process ID
  	int pid;
 
-	// File descriptor table, shared by workitems
-	std::shared_ptr<comm::FileTable> file_table;
-
 	// Private register file of this work item
 	Registers registers;
 
 
 
 
- 	///
- 	/// Functions and data stuctures related to the program loader
- 	/// Functions implemented in CopntextLoader.cc
- 	///
-
- 	/// Structure containing information initialized by the program loader,
- 	/// associated with a workitem. When a workitem is created from a 
- 	/// program executable, a Loader object is associtaed to it. 
- 	struct Loader
- 	{
- 		// Binary file in brig format
- 		std::unique_ptr<BrigFile> binary;	
-
- 		// Command-line arguments
- 		std::vector<std::string> args;
-
- 		// Executable file name
- 		std::string exe;
-
- 		// Current working directory
- 		std::string cwd;
-
- 		// Entry point of current program 
- 		char *entry_point;
-
- 		// File name for standard input and output
- 		std::string stdin_file_name;
- 		std::string stdout_file_name;
-
- 		// Function table for the functions in the brig file
- 		std::map<std::string, std::unique_ptr<Function>> 
- 				function_table;
- 	};
-
- 	// Loader information. This information can be shared among multiple 
- 	// workitems. For this reason, it is declared as a shared pointer. The
- 	// last destructed workitem sharing this variable will automatically 
- 	// free it.
- 	std::shared_ptr<Loader> loader;
-
- 	// Load functions in the brig table. Prepare the function table in 
- 	// loader.
- 	// \return 
- 	// 	Number of functions loaded
- 	unsigned int loadFunctions();
-
- 	// Parse and create a function object
- 	void parseFunction(BrigDirEntry *dir);
-
- 	// Load output arguments for a function
- 	//
- 	// \param num_out_arg
- 	// 	Number of output arguments
- 	//
- 	// \param next_dir
- 	// 	Pointer to the argument to start with
- 	//
- 	// \param isInput
- 	//	if true, add input arguments. Otherwise, add output arguments
- 	//
- 	// \param function
- 	// 	Pointer to the function to load arguments
- 	//
- 	// \return
- 	// 	Pointer to next directive to parse
- 	char *loadArguments(unsigned short num_arg, char *next_dir,
- 			bool isInput, Function* function);
-
- 	// Find the main function of the brig elf.
- 	// \return
- 	// 	pointer to the first inst of the main function
- 	//	or nullptr if main function is not found
- 	char* findMainFunction();
-
- 	// Load Brig ELF binary, as alread decoded in 'loader.binary'
- 	void LoadBinary();
-
-
-
-
  	//
  	// Functions related with the insts of HSA assembly, implemented in
- 	// hsaIsa.cc
+ 	// WorkItemIsa.cc
  	//
 
  	// The program counter, pointing to the inst in .code section
@@ -181,14 +98,6 @@ class WorkItem{
 
  	/// Returns the pid of this work item
  	int getPid() const{return pid;}
-
- 	/// Load a program on the workitem. The meaning of each argument is 
- 	/// identical to the prototype of comm::Emy::Load()
- 	void Load(const std::vector<std::string> &args,
- 			const std::vector<std::string> &env = { },
- 			const std::string &cwd = "",
- 			const std::string &stdin_file_name = "",
- 			const std::string &stdout_file_name = "");
 
  	/// Run one instruction for the workitem at the position pointed 
  	void Execute();
