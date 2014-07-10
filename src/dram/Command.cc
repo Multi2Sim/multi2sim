@@ -52,6 +52,10 @@ Command::Command(std::shared_ptr<Request> request, CommandType type,
 
 	// Set the rank.
 	rank = bank->getRank();
+
+	// Set the id.
+	System *dram = System::getInstance();
+	id = dram->getNextCommandId();
 }
 
 

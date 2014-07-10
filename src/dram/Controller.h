@@ -27,6 +27,7 @@
 #include <queue>
 
 #include <lib/cpp/IniFile.h>
+#include <lib/cpp/String.h>
 #include <lib/esim/Event.h>
 
 
@@ -50,6 +51,7 @@ enum TimingCommand
 	TimingWrite
 };
 
+
 enum TimingLocation
 {
 	TimingSame = 0,
@@ -58,24 +60,15 @@ enum TimingLocation
 };
 
 
-struct TimingParameters
+/// Page Policy Types
+enum PagePolicyType
 {
-	int tRC = 0;
-	int tRRD = 0;
-	int tRP = 0;
-	int tRFC = 0;
-	int tCCD = 0;
-	int tRTRS = 0;
-	int tCWD = 0;
-	int tWTR = 0;
-	int tCAS = 0;
-	int tRCD = 0;
-	int tOST = 0;
-	int tRAS = 0;
-	int tWR = 0;
-	int tRTP = 0;
-	int tBURST = 0;
+	PagePolicyOpen = 0,
+	PagePolicyClosed
 };
+
+/// String map for PagePolicyType
+extern misc::StringMap PagePolicyTypeMap;
 
 
 class Controller
@@ -91,6 +84,9 @@ class Controller
 	int num_rows;
 	int num_columns;
 	int num_bits;
+
+	// The page policy that command processors in this controller follow
+	PagePolicyType page_policy;
 
 	// Timing matrix
 	int timings[4][4][2][2] = {};
@@ -131,6 +127,10 @@ public:
 	int getNumRows() const { return num_rows; }
 	int getNumColumns() const { return num_columns; }
 
+	/// Returns that page policy that command processers under this
+	/// controller follow.
+	PagePolicyType getPagePolicy() { return page_policy; }
+
 	/// Returns the minimum timing seperation (in number of cycles) between
 	/// two commands in two locations, based on the timing protocol matrix.
 	int getTiming(TimingCommand prev, TimingCommand next,
@@ -151,9 +151,6 @@ public:
 			misc::IniFile &config);
 	void ParseTiming(const std::string &section,
 			misc::IniFile &config);
-
-	/// Set default timing parameters for DDR3 1600
-	void DefaultDDR3_1600(TimingParameters &parameters);
 
 	/// Add a request to the controller's incoming request queue.
 	void AddRequest(std::shared_ptr<Request> request);

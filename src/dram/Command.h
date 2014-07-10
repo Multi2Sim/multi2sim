@@ -44,8 +44,11 @@ enum CommandType
 	CommandWrite
 };
 
+
 class Command
 {
+	int id;
+
 	// The request associated with this command
 	std::shared_ptr<Request> request;
 
@@ -59,6 +62,10 @@ class Command
 public:
 	Command(std::shared_ptr<Request> request, CommandType type,
 			Bank *bank);
+
+	/// Returns the id of this command, which is unique in the
+	/// memory system.
+	int getId() const { return id; }
 
 	/// Returns the type of the command.
 	CommandType getType() const { return type; }
@@ -77,6 +84,7 @@ public:
 	int getBankId() const;
 	int getRankId() const;
 
+	/// Returns a pointer to the address object of the command.
 	Address *getAddress();
 
 	/// Marks the command as finished and decrements the number of in

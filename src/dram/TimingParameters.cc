@@ -17,42 +17,31 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include <lib/cpp/String.h>
-
-#include "Address.h"
-#include "Request.h"
-#include "System.h"
+#include "TimingParameters.h"
 
 
 namespace dram
 {
 
-Request::Request()
+
+void TimingParameters::DefaultDDR3_1600()
 {
-	type = RequestInvalid;
+	tRC = 49;
+	tRRD = 5;
+	tRP = 11;
+	tRFC = 128;
+	tCCD = 4;
+	tRTRS = 1;
+	tCWD = 5;
+	tWTR = 6;
+	tCAS = 11;
+	tRCD = 11;
+	tOST = 1;
+	tRAS = 28;
+	tWR = 12;
+	tRTP = 6;
+	tBURST = 4;
 }
 
-
-void Request::decCommands()
-{
-	// Decrement the number of in flight commands.
-	num_commands_in_flight--;
-
-	// If the command that just finished was the last one, then the request
-	// is finished processing.
-	// FIXME: If not in stand alone DRAM sim, return request back up
-	// through cache hierarchy.
-
-	// Debug
-	long long cycle = System::DRAM_DOMAIN->getCycle();
-	System::activity << misc::fmt("[%lld] Request complete for 0x%llx\n",
-		cycle, address->getEncoded());
-}
-
-
-void Request::setEncodedAddress(long long addr)
-{
-	address.reset(new Address(addr));
-}
 
 }  // namespace dram

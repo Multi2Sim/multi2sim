@@ -56,7 +56,10 @@ libdram_a_SOURCES = \
 	Scheduler.h \
 	\
 	System.cc \
-	System.h
+	System.h \
+	\
+	TimingParameters.cc \
+	TimingParameters.h
 
 AM_CPPFLAGS = @M2S_INCLUDES@
 

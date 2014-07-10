@@ -100,9 +100,9 @@ void Actions::ParseActionRequest(const std::vector<std::string> &tokens)
 
 	// Set the request's type.
 	if (tokens[2] == "READ")
-		request->setType(RequestTypeRead);
+		request->setType(RequestRead);
 	else if (tokens[2] == "WRITE")
-		request->setType(RequestTypeWrite);
+		request->setType(RequestWrite);
 	else
 		// Invalid request type
 		return;
