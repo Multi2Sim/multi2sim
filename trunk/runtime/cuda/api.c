@@ -734,8 +734,9 @@ CUresult cuModuleGetFunction(CUfunction *hfunc, CUmodule hmod, const char *name)
 	/* Syscall */
 	//ret = syscall(CUDA_SYS_CODE, cuda_call_cuModuleGetFunction, hmod->id, name,
 	//		(*hfunc)->inst_buf, (*hfunc)->inst_buf_size, (*hfunc)->numRegs);
+
 	ret = 0;
-	fatal("%s: not implemented", __FUNCTION__);
+	//fatal("%s: not implemented", __FUNCTION__);
 
 	/* Check that we are running on Multi2Sim. If a program linked with this
 	 * library is running natively, system call CUDA_SYS_CODE is not
@@ -858,7 +859,7 @@ CUresult cuMemAlloc(CUdeviceptr *dptr, size_t bytesize)
 	/* Syscall */
 	//ret = syscall(CUDA_SYS_CODE, cuda_call_cuKplMemAlloc, dptr, bytesize);
 	ret = 0;
-	fatal("%s: not implemented", __FUNCTION__);
+	//fatal("%s: not implemented", __FUNCTION__);
 
 	/* Check that we are running on Multi2Sim. If a program linked with this
 	 * library is running natively, system call CUDA_SYS_CODE is not
@@ -899,7 +900,7 @@ CUresult cuMemFree(CUdeviceptr dptr)
 	/* Syscall */
 	//ret = syscall(CUDA_SYS_CODE, cuda_call_cuMemFree, dptr);
 	ret = 0;
-	fatal("%s: not implemented", __FUNCTION__);
+	//fatal("%s: not implemented", __FUNCTION__);
 
 	/* Check that we are running on Multi2Sim. If a program linked with this
 	 * library is running natively, system call CUDA_SYS_CODE is not
@@ -1099,7 +1100,7 @@ CUresult cuMemcpyHtoD(CUdeviceptr dstDevice, const void *srcHost,
 	// ret = syscall(CUDA_SYS_CODE, cuda_call_cuKplMemcpyHtoD, dstDevice,
 	//			srcHost, ByteCount);
 	ret = 0;
-	fatal("%s: not implemented", __FUNCTION__);
+	//fatal("%s: not implemented", __FUNCTION__);
 
 	/* Check that we are running on Multi2Sim. If a program linked with this
 	 * library is running natively, system call CUDA_SYS_CODE is not
@@ -1134,7 +1135,7 @@ CUresult cuMemcpyDtoH(void *dstHost, CUdeviceptr srcDevice, size_t ByteCount)
 	//ret = syscall(CUDA_SYS_CODE, cuda_call_cuKplMemcpyDtoH, dstHost,
 	//		srcDevice, ByteCount);
 	ret = 0;
-	fatal("%s: not implemented", __FUNCTION__);
+	//fatal("%s: not implemented", __FUNCTION__);
 
 	/* Check that we are running on Multi2Sim. If a program linked with this
 	 * library is running natively, system call CUDA_SYS_CODE is not

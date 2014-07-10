@@ -101,8 +101,8 @@ int Driver::CallMemAlloc(mem::Memory *memory, unsigned args_ptr)
 	debug << misc::fmt("\t%d bytes of device memory allocated at 0x%x\n",
 			size, device_ptr);
 
-	// Increase global memory top
-	kpl_emu->incGloablMemTop(size);
+	// Increase global memory top FIXME
+	//kpl_emu->incGloablMemTop(size);
 
 	// Return device pointer
 	return device_ptr;
@@ -191,7 +191,8 @@ int Driver::CallMemWrite(mem::Memory *memory, unsigned args_ptr)
 
 /// ABI Call 'LaunchKernel'
 ///
-/// Invokes the kernel f on a gridDimX * gridDimY * gridDimZ grid of blocks.
+/// Invokes the kernel function whose if is function_id
+/// on a gridDimX * gridDimY * gridDimZ grid of blocks.
 /// Each block contains blockDimX * blockDimY * blockDimZ threads.
 /// sharedMemBytes sets the amount of dynamic shared memory that will be
 /// available to each thread block
@@ -372,15 +373,18 @@ int Driver::CallModuleLoad(mem::Memory *memory, unsigned args_ptr)
 
 /// ABI Call 'ModuleGetFunction'
 ///
-/// Returns in *function the handle of the function of name func_name located
-/// in module module_id. If no function of that name exists,
-/// returns error
+/// Return a handle to a function within a module
+/// If no function of that name exists, returns error
 ///
 /// \param unsigned module_id
 ///	Module unique identifier
 ///
-/// \param unsigned func_name
+/// \param char *func_name
 ///	Function name
+///
+/// \return
+/// the return value is a valid function id on success
+/// otherwise an error will be thrown
 int Driver::CallModuleGetFunction(mem::Memory *memory, unsigned args_ptr)
 {
 	// Read module id
@@ -388,21 +392,54 @@ int Driver::CallModuleGetFunction(mem::Memory *memory, unsigned args_ptr)
 	memory->Read(args_ptr, sizeof (unsigned), (char*) &module_id);
 
 	// Read function name
-	char func_name[MAX_STRING_SIZE];
-	memory->Read(args_ptr, sizeof func_name, func_name);
+	std::string function_name;
+	function_name = memory->ReadString(args_ptr);
 
 	// Debug Info
 	debug << misc::fmt("\tout: module_id=%u\n", module_id);
 
-	// Load the module whose id is module_id from module list
-	// Module *Module = std::move(modules[module_id]);
+	// Find function name in function list and return function id
+	for(unsigned i = 0; i < functions.size(); ++i )
+	{
+		if( unsigned (functions[i]->getModuleId()) == module_id
+					&& functions[i]->getName() == function_name)
+			return functions[i]->getId();
+	}
 
-	// Find function name in function list
+	// If no function found, return error
+	throw Driver::Error(misc::fmt("Invalid function name (%s)",
+					function_name.c_str()));
+}
 
 
+/// ABI Call 'MemFree'
+///
+/// Frees device memory
+///
+/// \param unsigned *device_ptr
+/// Pointer to the Device memory will be freed
+///
+/// return value
+/// the return is always 0
+int Driver::CallMemFree(mem::Memory *memory, unsigned args_ptr)
+{
+	// Arguments
+	unsigned device_ptr;
 
+	// Read Arguments
+	memory->Read(args_ptr, sizeof(unsigned), (char *) &device_ptr);
+
+	// Debug Info
+	debug << misc::fmt("\t%lu bytes of device memory deallocated at 0x%x\n",
+			sizeof(&device_ptr), device_ptr);
+
+	// Deallocate memory
+	Kepler::Emu *kpl_emu = Kepler::Emu::getInstance();
+	mem::Memory *global_mem = kpl_emu->getGlobalMem();
+	global_mem->Unmap(kpl_emu->getGlobalMemTop(), sizeof( &device_ptr));
+
+	// Return
 	return 0;
-
 }
 
 }  // namespace Kepler
