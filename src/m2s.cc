@@ -268,8 +268,8 @@ void RegisterOptions()
 {
 	// Set error message
 	misc::CommandLine *command_line = misc::CommandLine::getInstance();
-	command_line->setErrorMessage("Please type 'm2s --help' for a list of "
-			"valid Multi2Sim command-line options.\n");
+	command_line->setErrorMessage("\nPlease type 'm2s --help' for a list of "
+			"valid Multi2Sim command-line options.");
 
 	// Set help message
 	command_line->setHelp("Syntax:"
@@ -499,7 +499,7 @@ void MainLoop()
 }
 
 
-void main_cpp(int argc, char **argv)
+int MainProgram(int argc, char **argv)
 {
 	// Read command line
 	RegisterOptions();
@@ -520,10 +520,6 @@ void main_cpp(int argc, char **argv)
 	misc::CommandLine *command_line = misc::CommandLine::getInstance();
 	command_line->Process(argc, argv);
 	
-	// Finish if C++ version of Multi2Sim is not activated
-	if (command_line->getUseC())
-		return;
-
 	// Process command line
 	ProcessOptions();
 	HSA::Asm::ProcessOptions();
@@ -543,22 +539,29 @@ void main_cpp(int argc, char **argv)
 	RegisterRuntimes();
 	RegisterDrivers();
 
-	// Capture errors
+	// Load programs
+	LoadPrograms();
+		
+	// Main simulation loop
+	MainLoop();
+	
+	// Success
+	return 0;
+}
+
+
+int main(int argc, char **argv)
+{
+	// Main exception handler
 	try
 	{
-		// Load programs
-		LoadPrograms();
-		
-		// Main simulation loop
-		MainLoop();
+		// Run main program
+		return MainProgram(argc, argv);
 	}
 	catch (misc::Exception &e)
 	{
 		e.Dump();
-		exit(1);
+		return 1;
 	}
-
-	// End
-	exit(0);
 }
 

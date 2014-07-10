@@ -28,6 +28,7 @@
 #include <list>
 #include <vector>
 
+#include "Error.h"
 #include "String.h"
 
 
@@ -51,17 +52,26 @@ public:
 
 private:
 
+	// Option type, determining actual subclass
 	Type type;
+
+	// Option name as given by the user in the command line
 	std::string name;
+
+	// Option name together with extra arguments
 	std::string help_name;
+
+	// Number of arguments for the option
 	int num_args;
+
+	// Help string associated with the option
 	std::string help;
 
 	// True if option was specified by the user
-	bool present;
+	bool present = false;
 
 	// True if option is incompatible with any other option
-	bool incompatible;
+	bool incompatible = false;
 
 public:
 
@@ -127,14 +137,15 @@ public:
 /// Command-line option taking a string as an argument
 class CommandLineOptionString : public CommandLineOption
 {
+	// Variable affected by this option
 	std::string *var;
+
 public:
 
 	/// Constructor
 	CommandLineOptionString(const std::string &name,
 			std::string *var,
-			const std::string &help)
-			:
+			const std::string &help) :
 			CommandLineOption(TypeString, name, 1, help),
 			var(var)
 	{
@@ -168,6 +179,7 @@ public:
 /// Command-line option taking a 64-bit integer as an argument
 class CommandLineOptionInt64 : public CommandLineOption
 {
+	// Variable affected by this option
 	long long *var;
 
 public:
@@ -175,8 +187,7 @@ public:
 	/// Constructor
 	CommandLineOptionInt64(const std::string &name,
 			long long *var,
-			const std::string &help)
-			:
+			const std::string &help) :
 			CommandLineOption(TypeInt64, name, 1, help),
 			var(var)
 	{
@@ -190,7 +201,10 @@ public:
 /// Command-line option taking an identifier as an argument
 class CommandLineOptionEnum : public CommandLineOption
 {
+	// Variable affected by this option
 	int *var;
+
+	// String map used to translate enumeration
 	const StringMap &map;
 
 public:
@@ -199,8 +213,7 @@ public:
 	CommandLineOptionEnum(const std::string &name,
 			int *var,
 			const StringMap &map,
-			const std::string &help)
-			:
+			const std::string &help) :
 			CommandLineOption(TypeEnum, name, 1, help),
 			var(var),
 			map(map)
@@ -215,14 +228,15 @@ public:
 /// Command-line option taking no argument
 class CommandLineOptionBool : public CommandLineOption
 {
+	// Variable affected by this option
 	bool *var;
+
 public:
 
 	/// Constructor
 	CommandLineOptionBool(const std::string &name,
 			bool *var,
-			const std::string &help)
-			:
+			const std::string &help) :
 			CommandLineOption(TypeBool, name, 0, help),
 			var(var)
 	{
@@ -248,8 +262,7 @@ class CommandLineCategory
 public:
 
 	/// Constructor
-	CommandLineCategory(const std::string &name)
-			: name(name)
+	CommandLineCategory(const std::string &name) : name(name)
 	{
 	}
 
@@ -324,6 +337,17 @@ class CommandLine
 	CommandLine();
 
 public:
+
+	/// Exception thrown by the command line processor
+	class Error : public misc::Error
+	{
+	public:
+
+		Error(const std::string &message) : misc::Error(message)
+		{
+			AppendPrefix("Command line");
+		}
+	};
 	
 	/// Get instance of singleton
 	static CommandLine *getInstance();
