@@ -138,7 +138,7 @@ void cuLaunchKernelImpl(struct cuda_stream_command_t *command)
 	/* Syscall */
 	//ret = syscall(CUDA_SYS_CODE, cuda_call_cuKplLaunchKernel, sys_args);
 	ret = 0;
-	fatal("%s: not implemented", __FUNCTION__);
+	//fatal("%s: not implemented", __FUNCTION__);
 
 	/* Check that we are running on Multi2Sim. If a program linked with this
 	 * library is running natively, system call CUDA_SYS_CODE is not

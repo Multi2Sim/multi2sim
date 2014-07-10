@@ -27,13 +27,14 @@ d *  Multi2Sim
 #include <lib/cpp/Misc.h>
 
 #include "Argument.h"
+#include "Module.h"
 
 
 namespace Kepler
 {
 
 // Forward declarations
-class Module;
+// class Module;
 
 
 class Function
@@ -62,6 +63,9 @@ public:
 	/// Constructor
 	Function(int id, Module *module, const std::string &name);
 
+	/// Get function id
+	int getId() const { return id; }
+
 	/// Get the size of the ISA section in the associated ELF binary
 	int getTextSize() const { return text_size; }
 
@@ -78,6 +82,12 @@ public:
 				arguments.size() - 1));
 		return arguments[index].get();
 	}
+
+	/// Get module id of the module which the function belongs to
+	int getModuleId () const { return module->getId(); }
+
+	/// Get function name
+	std::string getName() const { return name; }
 };
 
 
