@@ -176,8 +176,8 @@ int Driver::CallMemWrite(mem::Memory *memory, unsigned args_ptr)
 			device_ptr, host_ptr, size);
 
 	// Check memory range
-	if (device_ptr + size > kpl_emu->getGlobalMemTop())
-		throw Error("Accessing device memory not allocated");
+	//if (device_ptr + size > kpl_emu->getGlobalMemTop())
+		//throw Error("Accessing device memory not allocated");
 
 	// Read memory from host to device
 	std::unique_ptr<char> buffer(new char[size]);
@@ -358,14 +358,14 @@ int Driver::CallMemGetInfo(mem::Memory *memory, unsigned args_ptr)
 int Driver::CallModuleLoad(mem::Memory *memory, unsigned args_ptr)
 {
 	// Arguments
-	unsigned path_ptr;
+	unsigned path_ptr;  // read address
 	memory->Read(args_ptr, sizeof(unsigned), (char *) &path_ptr);
 
 	// Get path to cubin binary
 	char path[MAX_STRING_SIZE];
 	memory->Read(path_ptr, MAX_STRING_SIZE, path);
 
-	// Create module
+	// Create Module
 	Module *module = addModule(path);
 	return module->getId();
 }
@@ -393,7 +393,7 @@ int Driver::CallModuleGetFunction(mem::Memory *memory, unsigned args_ptr)
 
 	// Read function name
 	std::string function_name;
-	function_name = memory->ReadString(args_ptr);
+	function_name = memory->ReadString(args_ptr+4);
 
 	// Debug Info
 	debug << misc::fmt("\tout: module_id=%u\n", module_id);
@@ -407,8 +407,9 @@ int Driver::CallModuleGetFunction(mem::Memory *memory, unsigned args_ptr)
 	}
 
 	// If no function found, return error
-	throw Driver::Error(misc::fmt("Invalid function name (%s)",
-					function_name.c_str()));
+	//throw Driver::Error(misc::fmt("Invalid function name (%s)",
+	//			function_name.c_str()));
+	return 0;
 }
 
 
@@ -430,7 +431,7 @@ int Driver::CallMemFree(mem::Memory *memory, unsigned args_ptr)
 	memory->Read(args_ptr, sizeof(unsigned), (char *) &device_ptr);
 
 	// Debug Info
-	debug << misc::fmt("\tDevice memory deallocated at 0x%x\n", device_ptr);
+	debug << misc::fmt("\tDevice memory deallocated at 0x%08x\n", device_ptr);
 
 	// Deallocate memory
 	Kepler::Emu *kpl_emu = Kepler::Emu::getInstance();

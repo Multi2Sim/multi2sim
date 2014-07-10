@@ -49,6 +49,9 @@ public:
 
 	/// Get kernel binary
 	ELFReader::File *getELFFile() { return &elf_file; }
+
+	/// Get function the module owns
+	//int getFunction(int index) { }
 };
 
 } // namespace Kepler
