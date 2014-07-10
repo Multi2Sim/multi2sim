@@ -42,7 +42,6 @@ class Request
 {
 	RequestType type;
 	std::unique_ptr<Address> address;
-	int num_commands_in_flight;
 
 public:
 
@@ -54,14 +53,9 @@ public:
 	/// Sets the type of the request.
 	void setType(RequestType new_type) { type = new_type; }
 
-	/// Increase the number of commands in flight for this request, which
-	/// should be called every time a command is created for it.
-	void incCommands() { num_commands_in_flight++; }
-
-	/// Decrement the number of commands in flight for this request, which
-	/// should be called every time a command associated with this request
-	/// finishes running.
-	void decCommands();
+	/// Marks the request as completed, which should happen when the
+	/// associated read or write command finishes.
+	void setFinished();
 
 	/// Returns a pointer to the address object of the request.
 	Address *getAddress() { return address.get(); }

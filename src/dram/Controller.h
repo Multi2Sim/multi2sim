@@ -148,8 +148,8 @@ public:
 
 	/// Parse a MemoryController section of a dram configuration file
 	void ParseConfiguration(const std::string &section,
-			misc::IniFile &config);
-	void ParseTiming(const std::string &section,
+			misc::IniFile &ini_file);
+	void ParseConfigurationTiming(const std::string &section,
 			misc::IniFile &config);
 
 	/// Add a request to the controller's incoming request queue.

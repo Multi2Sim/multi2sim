@@ -26,8 +26,6 @@
 #include "Bank.h"
 #include "Channel.h"
 #include "Controller.h"
-#include "Rank.h"
-#include "Scheduler.h"
 #include "System.h"
 
 
@@ -41,7 +39,8 @@ Channel::Channel(int id,
 		int num_banks,
 		int num_rows,
 		int num_columns,
-		int num_bits)
+		int num_bits,
+		SchedulerType scheduler_type)
 		:
 		id(id),
 		controller(parent),
@@ -52,7 +51,21 @@ Channel::Channel(int id,
 	for (int i = 0; i < num_ranks; i++)
 		ranks.emplace_back(new Rank(i, this, num_banks, num_rows,
 				num_columns, num_bits));
-	scheduler = std::unique_ptr<Scheduler>(new RankBank(this));
+
+	switch(scheduler_type)
+	{
+	// Create a Rank Bank Round Robin scheduler.
+	case SchedulerRankBankRoundRobin:
+		scheduler = std::unique_ptr<Scheduler>(
+				new RankBankRoundRobin(this));
+		break;
+
+	// Create an Oldest First scheduler.
+	case SchedulerOldestFirst:
+		scheduler = std::unique_ptr<Scheduler>(
+				new OldestFirst(this));
+		break;
+	}
 }
 
 
