@@ -18,6 +18,7 @@
  */
 
 #include <assert.h>
+#include <sys/ioctl.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -122,6 +123,21 @@ void cuLaunchKernelImpl(struct cuda_stream_command_t *command)
 	assert(gridDimX != 0 && gridDimY != 0 && gridDimZ != 0);
 	assert(blockDimX != 0 && blockDimY != 0 && blockDimZ != 0);
 
+	unsigned args[11];
+	args[0] = f->id;
+	args[1] = gridDimX;
+	args[2] = gridDimY;
+	args[3] = gridDimZ;
+	args[4] = blockDimX;
+	args[5] = blockDimY;
+	args[6] = blockDimZ;
+	args[7] = sharedMemBytes;
+	args[8] = (hStream ? hStream->id : 0);
+	args[9] = (unsigned)kernelParams;
+	args[10] = (unsigned)extra;
+	ret = ioctl(active_device->fd, cuda_call_LaunchKernel, args);
+
+
 	/* Syscall arguments */
 	/*sys_args[0] = f->id;
 	sys_args[1] = gridDimX;
@@ -137,7 +153,7 @@ void cuLaunchKernelImpl(struct cuda_stream_command_t *command)
 
 	/* Syscall */
 	//ret = syscall(CUDA_SYS_CODE, cuda_call_cuKplLaunchKernel, sys_args);
-	ret = 0;
+	//ret = 0;
 	//fatal("%s: not implemented", __FUNCTION__);
 
 	/* Check that we are running on Multi2Sim. If a program linked with this
