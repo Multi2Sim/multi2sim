@@ -643,8 +643,8 @@ CUresult cuModuleLoad(CUmodule *module, const char *fname)
 
 	/* Syscall */
 	//ret = syscall(CUDA_SYS_CODE, cuda_call_cuModuleLoad, fname);
-	unsigned args[1] = {(unsigned) &fname};
-	ret = ioctl(active_device->fd, cuda_call_MemGetInfo, args);
+	unsigned args[1] = {(unsigned) fname};
+	ret = ioctl(active_device->fd, cuda_call_ModuleLoad, args);
 	if(ret)
 	fatal("%s: not implemented", __FUNCTION__);
 
@@ -730,12 +730,14 @@ CUresult cuModuleGetFunction(CUfunction *hfunc, CUmodule hmod, const char *name)
 
 	/* Create function */
 	*hfunc = cuda_function_create(hmod, name);
+	unsigned args[2] = {(unsigned) (hmod->id), (unsigned)name};
 
+	ret = ioctl(active_device->fd, cuda_call_ModuleGetFunction, args);
 	/* Syscall */
 	//ret = syscall(CUDA_SYS_CODE, cuda_call_cuModuleGetFunction, hmod->id, name,
 	//		(*hfunc)->inst_buf, (*hfunc)->inst_buf_size, (*hfunc)->numRegs);
 
-	ret = 0;
+	//ret = 0;
 	//fatal("%s: not implemented", __FUNCTION__);
 
 	/* Check that we are running on Multi2Sim. If a program linked with this
@@ -856,9 +858,12 @@ CUresult cuMemAlloc(CUdeviceptr *dptr, size_t bytesize)
 		return CUDA_ERROR_INVALID_VALUE;
 	}
 
+	unsigned args[2] = {(unsigned) bytesize};
+	ret = ioctl(active_device->fd, cuda_call_MemAlloc, args);
+
 	/* Syscall */
 	//ret = syscall(CUDA_SYS_CODE, cuda_call_cuKplMemAlloc, dptr, bytesize);
-	ret = 0;
+	//ret = 0;
 	//fatal("%s: not implemented", __FUNCTION__);
 
 	/* Check that we are running on Multi2Sim. If a program linked with this
@@ -1096,10 +1101,13 @@ CUresult cuMemcpyHtoD(CUdeviceptr dstDevice, const void *srcHost,
 
 	cuStreamSynchronize(0);
 
+	unsigned args[3] = {(unsigned) dstDevice, (unsigned) srcHost,
+				(unsigned) ByteCount};
+	ret = ioctl(active_device->fd, cuda_call_MemWrite, args);
 	/* Syscall */
 	// ret = syscall(CUDA_SYS_CODE, cuda_call_cuKplMemcpyHtoD, dstDevice,
 	//			srcHost, ByteCount);
-	ret = 0;
+	//ret = 0;
 	//fatal("%s: not implemented", __FUNCTION__);
 
 	/* Check that we are running on Multi2Sim. If a program linked with this
