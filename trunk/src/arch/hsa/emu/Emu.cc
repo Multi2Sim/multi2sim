@@ -20,13 +20,10 @@
 #include <arch/hsa/driver/Driver.h>
 
 #include "Emu.h"
+#include "ProgramLoader.h"
 
 namespace HSA
 {
-
-
-
-
 //
 // Configuration options
 //
@@ -155,7 +152,6 @@ bool Emu::Run()
 	// Process list of suspended work items
 	// ProcessEvents();
 		
-
 	// Still running;
 	return true;
 }
@@ -167,11 +163,8 @@ void Emu::LoadProgram(const std::vector<std::string> &args,
 		const std::string &stdin_file_name,
 		const std::string &stdout_file_name)
 {
-	// Create new work item
-	WorkItem *wi = newWorkItem();
-
 	// Load the whole program
-	wi->Load(args, env, cwd,
+	ProgramLoader::LoadProgram(args, env, cwd,
 			stdin_file_name, stdout_file_name);
 }
 

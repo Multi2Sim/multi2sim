@@ -4,9 +4,11 @@ libemu_a_SOURCES = \
 		Emu.h \
 		Emu.cc \
 		\
+		ProgramLoader.h \
+		ProgramLoader.cc \
+		\
 		WorkItem.h \
 		WorkItem.cc \
-		WorkItemLoader.cc \
 		WorkItemIsa.cc \
 		\
 		Registers.h \
