@@ -42,27 +42,10 @@ WorkItem::~WorkItem()
 }
 
 
-void WorkItem::Load(const std::vector<std::string> &args,
-		const std::vector<std::string> &env, 
-		const std::string &cwd,
-		const std::string &stdin_file_name,
-		const std::string &stdout_file_name)
-{
-	loader.reset(new Loader);
-	loader->exe = misc::getFullPath(args[0], cwd);
-	loader->args = args;
-	loader->cwd = cwd.empty() ? misc::getCwd() : cwd;
-	loader->stdin_file_name = misc::getFullPath(stdin_file_name, cwd);
-	loader->stdout_file_name = misc::getFullPath(stdout_file_name, cwd);
-
-	LoadBinary();	
-}
-
-
 void WorkItem::Execute()
 {
 	//std::cout << "In WorkItem::Execute\n";
-	BrigInstEntry inst(pc, loader->binary.get());
+	BrigInstEntry inst(pc, ProgramLoader::getInstance()->getBinary());
 
 	// Put the inst to perform to isa debug file
 	emu->isa_debug << inst;

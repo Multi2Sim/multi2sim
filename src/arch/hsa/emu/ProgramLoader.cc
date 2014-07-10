@@ -20,22 +20,48 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include <lib/cpp/String.h>
-
-#include "WorkItem.h"
+#include "ProgramLoader.h"
 
 namespace HSA
 {
 
-void WorkItem::LoadBinary()
+// Singleton instance
+std::unique_ptr<ProgramLoader> ProgramLoader::instance;
+
+void ProgramLoader::LoadProgram(const std::vector<std::string> &args,
+			const std::vector<std::string> &env = { },
+			const std::string &cwd = "",
+			const std::string &stdin_file_name = "",
+			const std::string &stdout_file_name = "")
+{
+	instance.reset(new ProgramLoader());
+	instance->exe = misc::getFullPath(args[0], cwd);
+	instance->args = args;
+	instance->cwd = cwd.empty() ? misc::getCwd() : cwd;
+	instance->stdin_file_name = misc::getFullPath(stdin_file_name, cwd);
+	instance->stdout_file_name = misc::getFullPath(stdout_file_name, cwd);
+
+	instance->LoadBinary();
+}
+
+
+ProgramLoader *ProgramLoader::getInstance()
+{
+	if (instance.get())
+		return instance.get();
+	throw misc::Panic("Program not loaded!");
+}
+
+
+void ProgramLoader::LoadBinary()
 {
 	// Alternative stdin
-	if (!loader->stdin_file_name.empty())
+	if (!stdin_file_name.empty())
 	{
 		// Open new stdin
-		int f = open(loader->stdin_file_name.c_str(), O_RDONLY);
+		int f = open(stdin_file_name.c_str(), O_RDONLY);
 		if (f < 0)
-			throw Error(loader->stdin_file_name +
+			throw Error(stdin_file_name +
 					": Cannot open standard input");
 
 		// Replace file descriptor 0
@@ -44,19 +70,19 @@ void WorkItem::LoadBinary()
 				comm::FileDescriptor::TypeStandard,
 				0,
 				f,
-				loader->stdin_file_name,
+				stdin_file_name,
 				O_RDONLY);
 	}
 
 	// Alternative stdout/stderr
-	if (!loader->stdout_file_name.empty())
+	if (!stdout_file_name.empty())
 	{
 		// Open new stdout
-		int f = open(loader->stdout_file_name.c_str(),
+		int f = open(stdout_file_name.c_str(),
 				O_CREAT | O_APPEND | O_TRUNC | O_WRONLY,
 				0660);
 		if (f < 0)
-			throw Error(loader->stdout_file_name +
+			throw Error(stdout_file_name +
 					": Cannot open standard output");
 
 		// Replace file descriptors 1 and 2
@@ -66,19 +92,19 @@ void WorkItem::LoadBinary()
 				comm::FileDescriptor::TypeStandard,
 				1,
 				f,
-				loader->stdout_file_name,
+				stdout_file_name,
 				O_WRONLY);
 		file_table->newFileDescriptor(
 				comm::FileDescriptor::TypeStandard,
 				2,
 				f,
-				loader->stdout_file_name,
+				stdout_file_name,
 				O_WRONLY);
 	}
 
 	// Reset program loader
-	loader->binary.reset(new BrigFile(loader->exe));
-	emu->loader_debug << misc::fmt("Program loaded\n");
+	binary.reset(new BrigFile(exe));
+	Emu::loader_debug << misc::fmt("Program loaded\n");
 
 	// Load function table
 	int num_functions = loadFunctions();
@@ -87,38 +113,15 @@ void WorkItem::LoadBinary()
 		throw Error("No function found in the Brig file provided");
 	}
 
-	// Set entry_pointer and program counter to the first inst
-	loader->entry_point = findMainFunction();
-	pc = loader->entry_point;
-
 }
 
 
-char* WorkItem::findMainFunction()
-{
-	// Traverse all the top level directives until the one with
-	char *firstInst = loader->binary->findMainFunction();
-	if(firstInst)
-	{
-		BrigInstEntry inst(firstInst, loader->binary.get());
-		emu->loader_debug << "First instruction: " << inst;
-	}
-	else
-	{
-		emu->loader_debug << misc::fmt("Function (main) not found\n");
-		throw Error("Function (main) not found\n");
-	}
-
-	return firstInst;
-}
-
-
-unsigned int WorkItem::loadFunctions()
+unsigned int ProgramLoader::loadFunctions()
 {
 	unsigned int num_functions = 0;
 
 	// Get pointer to directive section
-	BrigFile *file = loader->binary.get();
+	BrigFile *file = binary.get();
 	BrigSection *dir_section = file->getBrigSection(BrigSectionDirective);
 	const char *buffer = dir_section->getBuffer();
 	char *buffer_ptr = (char *)buffer + 4;
@@ -129,10 +132,10 @@ unsigned int WorkItem::loadFunctions()
 		BrigDirEntry dir(buffer_ptr, file);
 		if (dir.getKind() == BRIG_DIRECTIVE_FUNCTION)
 		{
-			// Parse and create the function, insert the function 
+			// Parse and create the function, insert the function
 			// in table
 			parseFunction(&dir);
-			num_functions++;	
+			num_functions++;
 		}
 		// move pointer to next top level directive
 		buffer_ptr = dir.nextTop();
@@ -142,29 +145,29 @@ unsigned int WorkItem::loadFunctions()
 }
 
 
-void WorkItem::parseFunction(BrigDirEntry *dir)
+void ProgramLoader::parseFunction(BrigDirEntry *dir)
 {
-	struct BrigDirectiveFunction *dir_struct = 
+	struct BrigDirectiveFunction *dir_struct =
 			(struct BrigDirectiveFunction *)dir->getBuffer();
 
 	// Get the name of the function
-	std::string name = BrigStrEntry::GetStringByOffset(loader->binary.get(), 
+	std::string name = BrigStrEntry::GetStringByOffset(binary.get(),
 			dir_struct->name);
 
 	// Get the pointer to the first code
-	char *entry_point = BrigInstEntry::GetInstByOffset(loader->binary.get(), 
+	char *entry_point = BrigInstEntry::GetInstByOffset(binary.get(),
 			dir_struct->code);
 
 	// Construct function object and insert into function_table
 	// std::unique_ptr<Function> function(new Function(name, entry_point));
-	loader->function_table.insert(
+	function_table.insert(
 			std::make_pair(name,
 					std::unique_ptr<Function>(
 						new Function(name, entry_point)
 					)
 			)
 	);
-	Function *function = loader->function_table[name].get();
+	Function *function = function_table[name].get();
 
 	// Load Arguments
 	unsigned short num_in_arg = dir_struct->inArgCount;
@@ -173,24 +176,24 @@ void WorkItem::parseFunction(BrigDirEntry *dir)
 	next_dir = loadArguments(num_out_arg, next_dir, false, function);
 	next_dir = loadArguments(num_in_arg, next_dir, true, function);
 
-	function->Dump(emu->loader_debug);
+	function->Dump(Emu::loader_debug);
 }
 
 
-char *WorkItem::loadArguments(unsigned short num_arg, char *next_dir,
+char *ProgramLoader::loadArguments(unsigned short num_arg, char *next_dir,
 		bool isInput, Function* function)
 {
 	// Load output arguments
 	for (int i = 0; i < num_arg; i++)
 	{
 		// Retrieve argument pointer
-		BrigDirEntry arg_entry(next_dir, loader->binary.get());
+		BrigDirEntry arg_entry(next_dir, binary.get());
 		struct BrigDirectiveSymbol *arg_struct =
 				(struct BrigDirectiveSymbol *)next_dir;
 
 		// Get argument information
 		std::string arg_name = BrigStrEntry::GetStringByOffset(
-				loader->binary.get(), arg_struct->name);
+				binary.get(), arg_struct->name);
 		unsigned short type = arg_struct->type;
 
 		// Add this argument to the argument table

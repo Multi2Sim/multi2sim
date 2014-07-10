@@ -27,6 +27,7 @@
 #include <lib/cpp/Debug.h>
 #include <arch/hsa/asm/BrigFile.h>
 
+#include "ProgramLoader.h"
 #include "WorkItem.h"
 
 
