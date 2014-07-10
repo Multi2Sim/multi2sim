@@ -430,8 +430,7 @@ int Driver::CallMemFree(mem::Memory *memory, unsigned args_ptr)
 	memory->Read(args_ptr, sizeof(unsigned), (char *) &device_ptr);
 
 	// Debug Info
-	debug << misc::fmt("\t%lu bytes of device memory deallocated at 0x%x\n",
-			sizeof(&device_ptr), device_ptr);
+	debug << misc::fmt("\tDevice memory deallocated at 0x%x\n", device_ptr);
 
 	// Deallocate memory
 	Kepler::Emu *kpl_emu = Kepler::Emu::getInstance();

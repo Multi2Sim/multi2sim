@@ -24,18 +24,17 @@
 #include "String.h"
 
 
-using namespace misc;
-	
-CommandLineOption::CommandLineOption(Type type, const std::string &name,
-		int num_args, const std::string &help)
+namespace misc
 {
-	// Initialize
-	this->type = type;
-	this->num_args = num_args;
-	this->help = help;
-	present = false;
-	incompatible = false;
 
+CommandLineOption::CommandLineOption(Type type,
+		const std::string &name,
+		int num_args,
+		const std::string &help) :
+		type(type),
+		num_args(num_args),
+		help(help)
+{
 	// Option name
 	std::vector<std::string> tokens;
 	misc::StringTokenize(name, tokens);
@@ -90,9 +89,9 @@ void CommandLineOptionInt32::Read(int argc, char **argv, int index)
 	StringError error;
 	*var = StringToInt(argv[index + 1], error);
 	if (error)
-		fatal("invalid value of option '%s': %s",
-				getName().c_str(),
-				StringErrorToString(error));
+		throw CommandLine::Error(misc::fmt("Invalid value for option "
+				"'%s': %s", getName().c_str(),
+				StringErrorToString(error)));
 }
 
 
@@ -106,9 +105,9 @@ void CommandLineOptionInt64::Read(int argc, char **argv, int index)
 	StringError error;
 	*var = StringToInt64(argv[index + 1], error);
 	if (error)
-		fatal("invalid value of option '%s': %s",
-				getName().c_str(),
-				StringErrorToString(error));
+		throw CommandLine::Error(misc::fmt("Invalid value for option "
+				"'%s': %s", getName().c_str(),
+				StringErrorToString(error)));
 }
 
 
@@ -122,11 +121,11 @@ void CommandLineOptionEnum::Read(int argc, char **argv, int index)
 	bool error;
 	*var = map.MapString(argv[index + 1], error);
 	if (error)
-		fatal("'%s' is not a valid value of option '%s'.\n"
-				"Possible values are %s.",
-				argv[index + 1],
+		throw CommandLine::Error(misc::fmt("Invalid value for option "
+				"'%s': %s\nPossible values are %s.",
 				getName().c_str(),
-				map.toString().c_str());
+				argv[index + 1],
+				map.toString().c_str()));
 }
 
 
@@ -307,25 +306,30 @@ bool CommandLine::Process(int argc, char **argv, bool fatal_on_bad_option)
 		if (it == option_table.end())
 		{
 			if (fatal_on_bad_option)
-				fatal("command-line option '%s' is not "
-						"recognized. %s",
+			{
+				throw Error(misc::fmt("Invalid option: %s\n%s",
 						argv[index],
-						error_message.c_str());
+						error_message.c_str()));
+			}
 			else
+			{
 				return false;
+			}
 		}
 
 		// Check extra arguments
 		CommandLineOption *option = it->second;
 		if (index + option->getNumArguments() >= argc)
-			fatal("option '%s' expects %d argument(s)",
+			throw Error(misc::fmt("Option '%s' expects %d "
+					"argument(s)",
 					option->getName().c_str(),
-					option->getNumArguments());
+					option->getNumArguments()));
 
 		// Check if option was already specified
 		if (options.find(argv[index]) != options.end())
-			fatal("options '%s' found multiple times",
-					option->getName().c_str());
+			throw Error(misc::fmt("Multiple occurrences of "
+					"option '%s'",
+					option->getName().c_str()));
 		options[argv[index]] = option;
 
 		// Process command-line option
@@ -343,9 +347,10 @@ bool CommandLine::Process(int argc, char **argv, bool fatal_on_bad_option)
 		{
 			CommandLineOption *option = it.second;
 			if (option->isIncompatible())
-				fatal("option '%s' is incompatible with any "
+				throw Error(misc::fmt("Option '%s' is "
+						"incompatible with any "
 						"other option.",
-						option->getName().c_str());
+						option->getName().c_str()));
 		}
 	}
 
@@ -357,8 +362,9 @@ bool CommandLine::Process(int argc, char **argv, bool fatal_on_bad_option)
 	if (!use_c && show_help)
 	{
 		if (args.size() || options.size())
-			fatal("option '--help' is incompatible with any other"
-					"command-line option or argument.");
+			throw Error("Options '--help' is incompatible with any "
+					"other command-line option or "
+					"argument.");
 		Help();
 		exit(0);
 	}
@@ -366,4 +372,6 @@ bool CommandLine::Process(int argc, char **argv, bool fatal_on_bad_option)
 	// Command line successfully processed
 	return true;
 }
+
+}  // namespace misc
 
