@@ -33,13 +33,8 @@ Request::Request()
 }
 
 
-void Request::decCommands()
+void Request::setFinished()
 {
-	// Decrement the number of in flight commands.
-	num_commands_in_flight--;
-
-	// If the command that just finished was the last one, then the request
-	// is finished processing.
 	// FIXME: If not in stand alone DRAM sim, return request back up
 	// through cache hierarchy.
 

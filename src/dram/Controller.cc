@@ -79,7 +79,11 @@ void Controller::ParseConfiguration(const std::string &section,
 	// Load the page policy, defaulting to PagePolicyOpen
 	page_policy = (PagePolicyType) config.ReadEnum(section, "PagePolicy",
 			PagePolicyTypeMap, PagePolicyOpen);
-	// std::cout << page_policy;
+
+	// Load the scheduling algorithm, defaulting to SchedulerOldestFirst.
+	SchedulerType scheduler_type = (SchedulerType) config.ReadEnum(section,
+			"SchedulingPolicy", SchedulerTypeMap,
+			SchedulerOldestFirst);
 
 	// Read DRAM size settings
 	num_channels = config.ReadInt(section, "NumChannels", 1);
@@ -93,44 +97,23 @@ void Controller::ParseConfiguration(const std::string &section,
 	// Create channels 
 	for (int i = 0; i < num_channels; i++)
 		channels.emplace_back(new Channel(i, this, num_ranks,
-				num_banks, num_rows, num_columns, num_bits));
+				num_banks, num_rows, num_columns, num_bits,
+				scheduler_type));
 
 	// Read DRAM timing parameters
-	ParseTiming(section, config);
+	ParseConfigurationTiming(section, config);
 
 	// Create a set of new scheduler events for all the channels.
 	CreateSchedulers(num_channels);
 }
 
 
-void Controller::ParseTiming(const std::string &section,
-		misc::IniFile &config)
+void Controller::ParseConfigurationTiming(const std::string &section,
+		misc::IniFile &ini_file)
 {
-	// Create a timings object to use to read the parameters
-	TimingParameters parameters;
-
-	// Set the default timing parameters if set.  If a default is not set,
-	// the parameters are all set to 0 and the user must set all of them.
-	std::string set_default = config.ReadString(section, "Default", "");
-	if (set_default == "DDR3_1600")
-		parameters.DefaultDDR3_1600();
-
-	// Read the timing parameters set by the user.
-	parameters.tRC = config.ReadInt(section, "tRC", parameters.tRC);
-	parameters.tRRD = config.ReadInt(section, "tRRD", parameters.tRRD);
-	parameters.tRP = config.ReadInt(section, "tRP", parameters.tRP);
-	parameters.tRFC = config.ReadInt(section, "tRFC", parameters.tRFC);
-	parameters.tCCD = config.ReadInt(section, "tCCD", parameters.tCCD);
-	parameters.tRTRS = config.ReadInt(section, "tRTRS", parameters.tRTRS);
-	parameters.tCWD = config.ReadInt(section, "tCWD", parameters.tCWD);
-	parameters.tWTR = config.ReadInt(section, "tWTR", parameters.tWTR);
-	parameters.tCAS = config.ReadInt(section, "tCAS", parameters.tCAS);
-	parameters.tRCD = config.ReadInt(section, "tRCD", parameters.tRCD);
-	parameters.tOST = config.ReadInt(section, "tOST", parameters.tOST);
-	parameters.tRAS = config.ReadInt(section, "tRAS", parameters.tRAS);
-	parameters.tWR = config.ReadInt(section, "tWR", parameters.tWR);
-	parameters.tRTP = config.ReadInt(section, "tRTP", parameters.tRTP);
-	parameters.tBURST = config.ReadInt(section, "tBURST", parameters.tBURST);
+	// Create a timings object to use to read the parameters and pass it
+	// the configuration file and section to parse.
+	TimingParameters parameters(section, ini_file);
 
 	// Build the timing matrix.
 	// A A s s

@@ -20,6 +20,8 @@
 #ifndef DRAM_TIMINGPARAMETERS_H
 #define DRAM_TIMINGPARAMETERS_H
 
+#include <lib/cpp/IniFile.h>
+
 
 namespace dram
 {
@@ -41,6 +43,21 @@ struct TimingParameters
 	int tWR = 0;
 	int tRTP = 0;
 	int tBURST = 0;
+
+	/// Create a new TimingParameters instance with all parameters set to 0
+	TimingParameters()
+	{
+	}
+
+	/// Create a new TimingParameters instance with all parameters
+	/// parsed from the configuration file MemoryController section.
+	TimingParameters(const std::string &section,
+			misc::IniFile &ini_file);
+
+	/// Parse timings out of a MemoryController section of a dram
+	/// configuration file.
+	void ParseTiming(const std::string &section,
+			misc::IniFile &ini_file);
 
 	/// Set the parameters to what they would in a system with DRR3-1600.
 	void DefaultDDR3_1600();

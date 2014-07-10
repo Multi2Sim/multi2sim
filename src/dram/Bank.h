@@ -112,6 +112,13 @@ public:
 		return command_queue[position]->getType();
 	}
 
+	/// Returns the cycle when the command at the front of the queue was
+	/// created.
+	long long getFrontCommandCycleCreated()
+	{
+		return command_queue.front()->getCycleCreated();
+	}
+
 	/// Returns the cycle when the command at the front of the queue will
 	/// be ready to be run.
 	long long getFrontCommandTiming();

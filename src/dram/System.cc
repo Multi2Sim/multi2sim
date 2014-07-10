@@ -92,7 +92,7 @@ void System::RegisterOptions()
 	misc::CommandLine *command_line = misc::CommandLine::getInstance();
 
 	// Category
-	command_line->setCategory("dram");
+	command_line->setCategory("DRAM");
 
 	// Debugger for dram
 	command_line->RegisterString("--dram-debug <file>",
@@ -103,7 +103,7 @@ void System::RegisterOptions()
 	// Activity log for dram
 	command_line->RegisterString("--dram-debug-activity <file>",
 			activity_file,
-			"Dump debuf information related with DRAM activity "
+			"Dump debug information related with DRAM activity "
 			"during simulation.");
 
 	// Dram system configuration
@@ -148,10 +148,10 @@ void System::ProcessOptions()
 void System::ParseConfiguration(const std::string &path)
 {
 	esim::Engine *esim = esim::Engine::getInstance();
-	misc::IniFile config(path);
+	misc::IniFile ini_file(path);
 
 	// Get the frequency and make the FrequencyDomain.
-	int frequency = config.ReadInt("General", "Frequency", 1000);
+	int frequency = ini_file.ReadInt("General", "Frequency", 1000);
 	DRAM_DOMAIN = esim->RegisterFrequencyDomain(
 			"DRAM_DOMAIN", frequency);
 
@@ -162,13 +162,13 @@ void System::ParseConfiguration(const std::string &path)
 	// Iterate through each section.
 	// Parse it if it is a MemoryController section.
 	int num_controller = 0;
-	for (int i = 0; i < config.getNumSections(); i++)
+	for (int i = 0; i < ini_file.getNumSections(); i++)
 	{
-		std::string section_name = config.getSection(i);
+		std::string section_name = ini_file.getSection(i);
 		if (misc::StringPrefix(section_name, "MemoryController"))
 		{
 			controllers.emplace_back(new Controller(num_controller,
-					section_name, config));
+					section_name, ini_file));
 			num_controller++;
 		}
 	}
@@ -178,10 +178,10 @@ void System::ParseConfiguration(const std::string &path)
 	GenerateAddressSizes();
 
 	// Parse actions if the section exists.
-	if (config.Exists("Actions"))
+	if (ini_file.Exists("Actions"))
 	{
 		Actions *actions = Actions::getInstance();
-		actions->ParseConfiguration(config);
+		actions->ParseConfiguration(ini_file);
 	}
 }
 

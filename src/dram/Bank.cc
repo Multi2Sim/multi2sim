@@ -59,11 +59,11 @@ void Bank::setLastScheduledCommand(CommandType type)
 
 void Bank::ProcessRequest(std::shared_ptr<Request> request)
 {
+	// Get the current cycle.
+	long long cycle = System::DRAM_DOMAIN->getCycle();
+
 	// Pull the address out of the request.
 	Address *address = request->getAddress();
-
-	// Note: For now everthing is done with an open-page policy.  Closed
-	// page to come later.
 
 	// Break the request down into its commands and add them to the queue.
 	// For all checks to the active row, the checks are made to what the
@@ -77,7 +77,7 @@ void Bank::ProcessRequest(std::shared_ptr<Request> request)
 	{
 		// Create the command.
 		auto activate_command = std::make_shared<Command>(
-				request, CommandActivate, this);
+				request, CommandActivate, cycle, this);
 
 		// Add it to the command queue.
 		command_queue.push_back(activate_command);
@@ -92,9 +92,9 @@ void Bank::ProcessRequest(std::shared_ptr<Request> request)
 	{
 		// Create the commands.
 		auto precharge_command = std::make_shared<Command>(
-				request, CommandPrecharge, this);
+				request, CommandPrecharge, cycle, this);
 		auto activate_command = std::make_shared<Command>(
-				request, CommandActivate, this);
+				request, CommandActivate, cycle, this);
 
 		// Add them to the command queue.
 		command_queue.push_back(precharge_command);
@@ -114,10 +114,10 @@ void Bank::ProcessRequest(std::shared_ptr<Request> request)
 	std::shared_ptr<Command> access_command;
 	if (request->getType() == RequestRead)
 		access_command = std::make_shared<Command>(
-				request, CommandRead, this);
+				request, CommandRead, cycle, this);
 	else if (request->getType() == RequestWrite)
 		access_command = std::make_shared<Command>(
-				request, CommandWrite, this);
+				request, CommandWrite, cycle, this);
 	else
 		// Invalid request type
 		throw misc::Panic("Invalid request type");
@@ -132,7 +132,7 @@ void Bank::ProcessRequest(std::shared_ptr<Request> request)
 	{
 		// Create the command.
 		auto precharge_command = std::make_shared<Command>(
-				request, CommandPrecharge, this);
+				request, CommandPrecharge, cycle, this);
 
 		// Add it to the command queue.
 		command_queue.push_back(precharge_command);
@@ -146,7 +146,7 @@ void Bank::ProcessRequest(std::shared_ptr<Request> request)
 
 	// Debug
 	System::debug << misc::fmt("[%lld] Processed request for 0x%llx in "
-			"bank %d\n", System::DRAM_DOMAIN->getCycle(),
+			"bank %d\n", cycle,
 			address->getEncoded(), id);
 }
 
