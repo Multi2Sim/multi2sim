@@ -36,6 +36,12 @@ class Function
 	// Entry point of the function, helps the work item to set its init pc
 	char *entry_point;
 
+	/// Dump argument related information
+	void DumpArgumentInfo(std::ostream &os) const;
+
+	/// Dump register related information
+	void DumpRegisterInfo(std::ostream &os) const;
+
 
 
 
@@ -48,16 +54,41 @@ class Function
 	{
 		unsigned short type;
 		unsigned short size;	// argument size in bytes
-		unsigned short offset;
+		unsigned int offset;
 		bool isInput;
 	};
 
 	// argument size. When stack frame initialize, allocate the size of
 	// memory
-	unsigned short arg_size = 0;
+	unsigned int arg_size = 0;
 
 	// Map the name with the information of the argument
 	std::map<std::string, std::unique_ptr<Argument>> arg_info;
+
+
+
+
+	//
+	// Fields related with registers
+	//
+
+	// Allocated register size
+	unsigned int reg_size = 0;
+
+	// Map the name with the offset of the register
+	std::map<std::string, unsigned int> reg_info;
+
+	// Return the size of the register according to its name. It only
+	// returns the size of the register from its name, regardless of if
+	// if have been allocated. Trying to get the size of an invalid
+	// register name will raise panic.
+	// "$cx" - 1 returns 1, but its actually only 1 bit
+	// "$sx" - 4
+	// "$dx" - 8
+	// "$qx" - 16
+	// Invalid register name - 0
+	unsigned int getRegisterSizeByName(const std::string &name) const;
+
 
 
 public:
@@ -90,14 +121,23 @@ public:
 	void addArgument(const std::string &name, bool isInput,
 			unsigned short type);
 
+	/// Add the register to the register list
+	void addRegister(const std::string &name);
+
+	/// Returns the offset of an register. If the register does not exist,
+	/// return -1.
+	int getRegisterOffset(const std::string &name);
+
 	/// Dump function information for debug propose
 	void Dump(std::ostream &os) const;
 
+
+
 	/// Operator \c << invoking the function Dump9) on an output stream
 	friend std::ostream &operator<<(std::ostream &os,
-			const Function &registers)
+			const Function &function)
 	{
-		registers.Dump(os);
+		function.Dump(os);
 		return os;
 	}
 
