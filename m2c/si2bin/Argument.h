@@ -28,6 +28,7 @@
 #include <iomanip>
 #include <iostream>
 #include <memory>
+#include <vector>
 
 
 namespace si2bin
@@ -83,6 +84,21 @@ public:
 	/// String map for Type
 	static const misc::StringMap TypeMap;
 
+	/// Possible argument direction
+	enum Direction
+	{
+		DirectionInvalid = 0,
+
+		DirectionSource,
+		DirectionDest,
+		DirectionOther,
+
+		DirectionCount
+	};
+
+	/// String map for Direction
+	static const misc::StringMap DirectionMap;
+
 protected:
 
 	// FIXME
@@ -108,6 +124,9 @@ protected:
 	// True if the argument is of a constant type
 	bool constant = false;
 
+	// Direction
+	Direction direction = DirectionInvalid;
+
 public:
 
 	/// Constructor
@@ -119,7 +138,7 @@ public:
 	virtual ~Argument()
 	{
 	}
-	
+
 	/// Return the argument type
 	Type getType() const { return type; }
 
@@ -156,7 +175,7 @@ public:
 	/// Specify whether a negation operation should be applied on the
 	/// argument.
 	bool setNeg(bool neg) { return this->neg = neg; }
-	
+
 	/// Pure virtual function to dump the argument. Each child class will
 	/// provide its own implementation for this function.
 	virtual void Dump(std::ostream &os = std::cout) = 0;
@@ -195,6 +214,27 @@ public:
 		bool types[TypeCount] = { false };
 		ValidTypes(types, args...);
 	}
+
+	/// Specify argument direction
+	void setDirection(Direction direction) { this->direction = direction; }
+
+	/// Return argument direction, assert it has been properly set
+	Direction getDirection()
+	{
+		assert(direction != DirectionInvalid);
+		return direction;
+	}
+
+	/// Return a list of registers involved in this arguments. By default, no
+	/// register is returned. Subclasses can override this function as needed.
+	///
+	/// \param registers
+	///	Existing list where the registers will be appended. The previous content
+	///	of the list is not modified. Ownership of the provided registers is kept
+	///	internally, and the caller is not responsible for freeing them.
+	virtual void getRegisters(std::vector<Argument *> &registers)
+	{
+	}
 };
 
 
@@ -212,21 +252,36 @@ public:
 	{
 	}
 
+	/// see Argument::Encode()
 	int Encode();
 
 	/// Dump the scalar register
 	void Dump(std::ostream &os) { os << 's' << id; }
 
+	/// Return register number
 	int getId() { return id; }
 
+	/// Set register number
 	void setId(int id) { this->id = id; }
+
+	/// See Argument::getRegisters()
+	void getRegisters(std::vector<Argument *> &registers)
+	{
+		registers.push_back(this);
+	}
 };
 
 
 class ArgScalarRegisterSeries : public Argument
 {
+	// First register in the series
 	int low;
+
+	// Last register in the series
 	int high;
+
+	// Expanded list of scalar registers forming the series
+	std::vector<std::unique_ptr<ArgScalarRegister>> registers;
 
 public:
 
@@ -241,14 +296,20 @@ public:
 
 	int Encode();
 
+	/// Return the position of the first register
 	int getLow() { return low; }
 
+	/// Return the position of the last register
 	int getHigh() { return high; }
+
+	/// See Argument::getRegisters()
+	void getRegisters(std::vector<Argument *> &registers);
 };
 
 
 class ArgVectorRegister : public Argument
 {
+	// Register number
 	int id;
 
 public:
@@ -263,21 +324,37 @@ public:
 	/// Dump the vector register
 	void Dump(std::ostream &os) { os << 'v' << id; }
 
+	/// See Argument::Encode()
 	int Encode();
 
+	/// Return register number
 	int getId() { return id; }
 
+	/// Set register number
 	void setId(int id) { this->id = id; }
+
+	/// See Argument::getRegisters()
+	void getRegisters(std::vector<Argument *> &registers)
+	{
+		registers.push_back(this);
+	}
 };
-	
+
 
 class ArgVectorRegisterSeries : public Argument
 {
+	// First register in the series
 	int low;
+
+	// Last register in the series
 	int high;
+
+	// Expanded list of scalar registers forming the series
+	std::vector<std::unique_ptr<ArgVectorRegister>> registers;
 
 public:
 
+	/// Constructor
 	ArgVectorRegisterSeries(int low, int high);
 
 	/// Dump the vector register series
@@ -286,11 +363,17 @@ public:
 		os << "v[" << low << ':' << high << ']';
 	}
 
+	/// See Argument::Encode()
 	int Encode();
 
+	/// Return the position of the first register
 	int getLow() { return low; }
 
+	/// Return the position of the last register
 	int getHigh() { return high; }
+
+	/// See Argument::getRegisters()
+	void getRegisters(std::vector<Argument *> &registers);
 };
 
 
@@ -298,21 +381,27 @@ public:
 /// TypeLiteralReduced.
 class ArgLiteral : public Argument
 {
+	// Literal integer value
 	int value;
 
 public:
 
+	/// Constructor
 	ArgLiteral(int value);
 
+	/// Dump the literal integer value
 	void Dump(std::ostream &os)
 	{
 		os << "0x" << std::hex << value << std::dec;
 	}
 
+	/// See Argument::Encode()
 	int Encode();
 
+	/// Return literal integer value
 	int getValue() { return value; }
 
+	/// Set literal integer value
 	void setValue(int value) { this->value = value; }
 };
 
@@ -321,16 +410,21 @@ public:
 /// TypeLiteralFloatReduced
 class ArgLiteralFloat : public Argument
 {
+	// Literal float value
 	float value;
 
 public:
 
+	/// Constructor
 	ArgLiteralFloat(float value);
 
+	/// Dump literal float value
 	void Dump(std::ostream &os) { os << value; }
 
+	/// See Argument::Encode()
 	int Encode();
 
+	/// Return literal float value
 	float getValue() { return value; }
 };
 
@@ -349,7 +443,7 @@ class ArgWaitCnt : public Argument
 public:
 
 	ArgWaitCnt(WaitCntType type = WaitCntTypeInvalid);
-	
+
 	void Dump(std::ostream &os);
 
 	void setVmcntActive(bool active) { vmcnt_active = active; }
@@ -420,7 +514,7 @@ public:
 	bool getIdxen() { return idxen; }
 
 	int getOffset() { return offset; }
-	
+
 	bool setOffen(bool offen) { return this->offen = offen; }
 
 	bool setIdxen(bool idxen) { return this->idxen = idxen; }
@@ -449,9 +543,9 @@ public:
 	ArgMaddr(Argument *soffset, ArgMaddrQual *qual,
 			SI::InstBufDataFormat data_format,
 			SI::InstBufNumFormat num_format);
-	
+
 	void Dump(std::ostream &os);
-	
+
 	Argument *getSoffset() { return soffset.get(); }
 
 	ArgMaddrQual *getQual() { return qual.get(); }
@@ -505,26 +599,70 @@ public:
 
 class ArgPhi : public Argument
 {
-	// Vector register identifier
-	int id;
+	// Label associated with the Phi argument
+	ArgLabel label;
 
-	// Name of the label
-	std::string name;
+	// Value associated with the Phi argument. The possible base classes
+	// for the argument are:
+	// - ArgVectorRegister
+	// - ArgScalarRegister
+	// - ArgLiteral
+	// - ArgLiteralFloat
+	std::unique_ptr<Argument> value;
+
+	// Register number
+	int id = 0;
 
 public:
 
-	ArgPhi(int id, const std::string &name) :
+	/// Constructor: create a Phi argument whose label is of ArgLabel class
+	ArgPhi(const std::string &label_name) :
 			Argument(TypePhi),
-			id(id),
-			name(name)
+			label(label_name)
 	{
 	}
 
+	/// Set value to be an ArgScalarRegister pointer
+	void setScalarRegister(int id)
+	{
+		this->id = id;
+		value.reset(new ArgVectorRegister(id));
+	}
+
+	/// Set value to be an ArgVectorRegister pointer
+	void setVectorRegister(int id)
+	{
+		this->id = id;
+		value.reset(new ArgVectorRegister(id));
+	}
+
+	/// Set value to be a literal (interger)
+	void setLiteral(int value)
+	{
+		this->value.reset(new ArgLiteral(value));
+	}
+
+	/// Set value to be a literal (float)
+	void setLiteralFloat(float value)
+	{
+		this->value.reset(new ArgLiteralFloat(value));
+	}
+
+	/// Dump ArgPhi
 	void Dump(std::ostream &os);
 
-	const std::string &getName() { return name; }
+	/// Return label name
+	const std::string &getName() { return label.getName(); }
 
+	/// Return register number if value is ArgVectorRegister or
+	/// ArgScalarRegister
 	int getId() { return id; }
+
+	/// See Argument::getRegisters()
+	void getRegisters(std::vector<Argument *> &registers)
+	{
+		registers.push_back(value.get());
+	}
 };
 
 }  // namespace si2bin
