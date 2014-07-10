@@ -47,6 +47,13 @@ const misc::StringMap Argument::TypeMap =
 	{ "maddr_qual",			TypeMaddrQual }
 };
 
+const misc::StringMap Argument::DirectionMap =
+{
+	{ "invalid",			DirectionInvalid },
+	{ "source",			DirectionSource },
+	{ "dest",			DirectionDest },
+};
+
 
 int Argument::Encode()
 {
@@ -130,6 +137,20 @@ int ArgScalarRegisterSeries::Encode()
 }
 
 
+void ArgScalarRegisterSeries::getRegisters(std::vector<Argument *> &registers)
+{
+	// Create the register components if they don't exist yet
+	if (this->registers.empty())
+	{
+		for (int i = low; i < high; i++)
+			this->registers.emplace_back(new ArgScalarRegister(i));
+	}
+
+	// Append registers to the output list
+	for (auto &single_register : this->registers)
+		registers.push_back(single_register.get());
+}
+
 
 
 //
@@ -174,6 +195,21 @@ int ArgVectorRegisterSeries::Encode()
 			"(v[%d:%d:])", low, high));
 }
 
+
+
+void ArgVectorRegisterSeries::getRegisters(std::vector<Argument *> &registers)
+{
+	// Create the register components if they don't exist yet
+	if (this->registers.empty())
+	{
+		for (int i = low; i < high; i++)
+			this->registers.emplace_back(new ArgVectorRegister(i));
+	}
+
+	// Append registers to the output list
+	for (auto &single_register : this->registers)
+		registers.push_back(single_register.get());
+}
 
 
 
@@ -436,7 +472,7 @@ int ArgSpecialRegister::Encode()
 
 void ArgPhi::Dump(std::ostream &os)
 {
-	os << misc::fmt("[ v%d, %s ]", id, name.c_str());
+	os << misc::fmt("[ v%d, %s ]", id, label.getName().c_str());
 }
 	
 
