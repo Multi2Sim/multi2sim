@@ -514,7 +514,7 @@ void BasicBlock::EmitLoad(llvm::LoadInst *llvm_inst)
 	);
 	AddInst(inst);
 	
-	inst = new Instruction(SI::INST_S_WAITCNT, new ArgWaitCnt(WaitCntTypeVmCnt));
+	inst = new Instruction(SI::INST_S_WAITCNT, new ArgWaitCounter(ArgWaitCounter::WaitCounterTypeVmCnt));
 	AddInst(inst);
 }
 
@@ -793,7 +793,7 @@ void BasicBlock::EmitStore(llvm::StoreInst *llvm_inst)
 	);
 	AddInst(inst);
 
-	inst = new Instruction(SI::INST_S_WAITCNT, new ArgWaitCnt(WaitCntTypeExpCnt));
+	inst = new Instruction(SI::INST_S_WAITCNT, new ArgWaitCounter(ArgWaitCounter::WaitCounterTypeExpCnt));
 	AddInst(inst);
 }
 

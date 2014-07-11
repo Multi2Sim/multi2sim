@@ -41,7 +41,7 @@ const misc::StringMap Argument::TypeMap =
 	{ "literal_reduced",		TypeLiteralReduced },
 	{ "literal_float",		TypeLiteralFloat },
 	{ "literal_float_reduced",	TypeLiteralFloatReduced },
-	{ "waitcnt",			TypeWaitCnt },
+	{ "waitcnt",			TypeWaitCounter },
 	{ "label",			TypeLabel },
 	{ "maddr",			TypeMaddr },
 	{ "maddr_qual",			TypeMaddrQual }
@@ -51,7 +51,7 @@ const misc::StringMap Argument::DirectionMap =
 {
 	{ "invalid",			DirectionInvalid },
 	{ "source",			DirectionSource },
-	{ "dest",			DirectionDest },
+	{ "dest",			DirectionDest }
 };
 
 
@@ -316,26 +316,34 @@ int ArgLiteralFloat::Encode()
 
 
 //
-// Class 'ArgWaitCnt'
+// Class 'ArgWaitCounter'
 //
 
-ArgWaitCnt::ArgWaitCnt(WaitCntType wait_cnt_type) :
-		Argument(TypeWaitCnt)
+const misc::StringMap ArgWaitCounter::WaitCounterTypeMap =
 {
-	switch (wait_cnt_type)
+	{ "invalid",				WaitCounterTypeInvalid },
+	{ "vector memory count",		WaitCounterTypeVmCnt },
+	{ "LDS, GDS, Kconstant, Message",	WaitCounterTypeLgkmCnt },
+	{ "VGPR-export count",			WaitCounterTypeExpCnt }
+};
+
+ArgWaitCounter::ArgWaitCounter(WaitCounterType wait_counter_type) :
+		Argument(TypeWaitCounter)
+{
+	switch (wait_counter_type)
 	{
 
-	case WaitCntTypeVmCnt:
+	case WaitCounterTypeVmCnt:
 
 		vmcnt_active = true;
 		break;
 
-	case WaitCntTypeLgkmCnt:
+	case WaitCounterTypeLgkmCnt:
 
 		vmcnt_active = false;
 		break;
 
-	case WaitCntTypeExpCnt:
+	case WaitCounterTypeExpCnt:
 
 		vmcnt_active = false;
 		break;
@@ -347,7 +355,7 @@ ArgWaitCnt::ArgWaitCnt(WaitCntType wait_cnt_type) :
 }
 
 
-void ArgWaitCnt::Dump(std::ostream &os)
+void ArgWaitCounter::Dump(std::ostream &os) const
 {
 	std::string comma;
 
@@ -390,7 +398,7 @@ int ArgMemRegister::Encode()
 // Class 'ArgMaddrQual'
 //
 
-void ArgMaddrQual::Dump(std::ostream &os)
+void ArgMaddrQual::Dump(std::ostream &os) const
 {
 	if (idxen)
 		os << " idxen";
@@ -419,7 +427,7 @@ ArgMaddr::ArgMaddr(Argument *soffset, ArgMaddrQual *qual,
 }
 
 
-void ArgMaddr::Dump(std::ostream &os)
+void ArgMaddr::Dump(std::ostream &os) const
 {
 	soffset->Dump(os);
 	qual->Dump(os);
@@ -435,7 +443,7 @@ void ArgMaddr::Dump(std::ostream &os)
  * Class 'ArgSpecialRegister'
  */
 
-void ArgSpecialRegister::Dump(std::ostream &os)
+void ArgSpecialRegister::Dump(std::ostream &os) const
 {
 	os << SI::inst_special_reg_map.MapValue(reg);
 }
@@ -470,11 +478,33 @@ int ArgSpecialRegister::Encode()
 // Class 'ArgPhi'
 //
 
-void ArgPhi::Dump(std::ostream &os)
+void ArgPhi::Dump(std::ostream &os) const
 {
-	os << misc::fmt("[ v%d, %s ]", id, label.getName().c_str());
+	os << misc::fmt("[ v%d, %s ]", getId(), label.getName().c_str());
 }
 	
+int ArgPhi::getId() const
+{
+	switch (getValueType())
+	{
+	case TypeScalarRegister:
+
+		// Return scalar register id 
+		ArgScalarRegister * s;
+		s = getScalarRegister();
+		return s->getId();
+
+	case TypeVectorRegister:
+
+		// Return vector register id 
+		return getVectorRegister()->getId();
+
+	default:
+
+		return 0;
+	}
+}
+
 
 }  /* namespace si2bin */
 

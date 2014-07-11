@@ -1079,8 +1079,10 @@ waitcnt_arg
 
 	| waitcnt_elem TOK_AMP waitcnt_arg
 	{
-		si2bin::ArgWaitCnt *arg1 = dynamic_cast<si2bin::ArgWaitCnt *>($1);
-		si2bin::ArgWaitCnt *arg2 = dynamic_cast<si2bin::ArgWaitCnt *>($3);
+		si2bin::ArgWaitCounter *arg1 =
+				dynamic_cast<si2bin::ArgWaitCounter *>($1);
+		si2bin::ArgWaitCounter *arg2 =
+				dynamic_cast<si2bin::ArgWaitCounter *>($3);
 		
 		if (arg2->getVmcntActive() && arg1->getVmcntActive())
 			si2bin_yyerror_fmt("duplicate 'vmcnt' token");
@@ -1106,10 +1108,10 @@ waitcnt_elem
 
 	: TOK_ID TOK_OPAR TOK_DECIMAL TOK_CPAR
 	{
-		si2bin::ArgWaitCnt *arg;
+		si2bin::ArgWaitCounter *arg;
 
 		// Create argument
-		arg = new si2bin::ArgWaitCnt();
+		arg = new si2bin::ArgWaitCounter();
 		
 		if (!strcmp($1, "vmcnt"))
 		{

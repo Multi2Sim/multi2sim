@@ -216,7 +216,7 @@ int Function::AddArg(FunctionArg *arg, int num_elem, int offset)
 		basic_block->AddInst(inst);
 
 		inst = new Instruction(SI::INST_S_WAITCNT,
-				new ArgWaitCnt(WaitCntTypeLgkmCnt));
+				new ArgWaitCounter(ArgWaitCounter::WaitCounterTypeLgkmCnt));
 		basic_block->AddInst(inst);
 
 		// Copy argument into a vector register. This vector register
@@ -249,7 +249,7 @@ int Function::AddArg(FunctionArg *arg, int num_elem, int offset)
 		basic_block->AddInst(inst);
 
 		inst = new Instruction(SI::INST_S_WAITCNT,
-				new ArgWaitCnt(WaitCntTypeLgkmCnt));
+				new ArgWaitCounter(ArgWaitCounter::WaitCounterTypeLgkmCnt));
 		basic_block->AddInst(inst);
 
 		// Insert argument name in symbol table, using its scalar register.
@@ -277,7 +277,7 @@ int Function::AddArg(FunctionArg *arg, int num_elem, int offset)
 		basic_block->AddInst(inst);
 		
 		inst = new Instruction(SI::INST_S_WAITCNT,
-				new ArgWaitCnt(WaitCntTypeLgkmCnt));
+				new ArgWaitCounter(ArgWaitCounter::WaitCounterTypeLgkmCnt));
 		basic_block->AddInst(inst);
 
 		// Insert argument name in symbol table, using its scalar register.
@@ -607,7 +607,8 @@ void Function::EmitPhiMoves(si2bin::Instruction *inst)
 		si2bin::ArgPhi *arg_phi = misc::cast<si2bin::ArgPhi *>(arg);
 
 		// Get the source basic block
-		comm::LeafNode *node = tree.getLeafNode(arg_phi->getName());
+		comm::LeafNode *node = tree.getLeafNode(
+				arg_phi->getLabel()->getName());
 		comm::BasicBlock *comm_basic_block = node->getBasicBlock();
 		BasicBlock *basic_block = misc::cast<BasicBlock *>(comm_basic_block);
 
