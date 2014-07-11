@@ -36,7 +36,7 @@ void Instruction::Initialize()
 
 	// Assign argument indices
 	for (unsigned i = 0; i < args.size(); i++)
-		args[i]->index = i;
+		args[i]->setIndex(i);
 	
 	// Assign context
 	context = Context::getInstance();
@@ -82,7 +82,7 @@ void Instruction::Initialize(SI::InstOpcode opcode)
 		 * instruction argument. */
 		Token *token = info->getToken(i);
 		Argument *arg = args[i].get();
-		arg->token = token;
+		arg->setToken(token);
 		assert(token);
 
 		// Check that actual argument type is acceptable for token
@@ -120,14 +120,14 @@ void Instruction::Initialize(const std::string &name)
 			 * instruction argument with the token. */
 			Argument *arg = args[i].get();
 			Token *token = info->getToken(i);
-			arg->token = token;
+			arg->setToken(token);
 			assert(token);
 
 			// Check that actual argument type is acceptable for token
 			if (!token->IsArgAllowed(arg))
 			{
 				error = misc::fmt("line:%d: invalid type for argument %d",
-						si2bin_yylineno, arg->index + 1);
+						si2bin_yylineno, arg->getIndex() + 1);
 				break;
 			}
 		}
@@ -163,7 +163,7 @@ void Instruction::Dump(std::ostream &os)
         for (auto &arg : args)
         {
         	arg->Dump(os);
-                if (arg->index < (int) args.size() - 1)
+                if (arg->getIndex() < (int) args.size() - 1)
                 	os << ", ";
 	}
 
@@ -306,7 +306,7 @@ void Instruction::EncodeArg(Argument *arg, Token *token)
 		int high_must = 0;
 
 		// Get registers
-		switch (arg->type)
+		switch (arg->getType())
 		{
 
 		case Argument::TypeVectorRegister:
@@ -377,7 +377,7 @@ void Instruction::EncodeArg(Argument *arg, Token *token)
 		int high_must = 0;
 
 		// Get registers
-		switch (arg->type)
+		switch (arg->getType())
 		{
 
 		case Argument::TypeVectorRegister:
@@ -445,7 +445,7 @@ void Instruction::EncodeArg(Argument *arg, Token *token)
 	case TokenOffset:
 	{
 		// Depends of argument type
-		switch (arg->type)
+		switch (arg->getType())
 		{
 
 		case Argument::TypeLiteral:
@@ -597,7 +597,7 @@ void Instruction::EncodeArg(Argument *arg, Token *token)
 
 	case TokenSrc0:
 	{
-		if (arg->type == Argument::TypeLiteral)
+		if (arg->getType() == Argument::TypeLiteral)
 		{
 			/* Literal constant other than [-16...64] is encoded by adding
 			 * four more bits to the instruction. */
@@ -620,7 +620,7 @@ void Instruction::EncodeArg(Argument *arg, Token *token)
 
 	case TokenSsrc0:
 	{
-		if (arg->type == Argument::TypeLiteral)
+		if (arg->getType() == Argument::TypeLiteral)
 		{
 			/* Literal constant other than [-16...64] is encoded by adding
 			 * four more bits to the instruction. */
@@ -646,7 +646,7 @@ void Instruction::EncodeArg(Argument *arg, Token *token)
 
 	case TokenSsrc1:
 	{
-		if (arg->type == Argument::TypeLiteral)
+		if (arg->getType() == Argument::TypeLiteral)
 		{
 			/* Literal constant other than [-16...64] is encoded by adding
 			 * four more bits to the instruction. */
@@ -672,7 +672,7 @@ void Instruction::EncodeArg(Argument *arg, Token *token)
 
 	case TokenVaddr:
 	{
-		switch (arg->type)
+		switch (arg->getType())
 		{
 
 		case Argument::TypeVectorRegister:
@@ -711,7 +711,7 @@ void Instruction::EncodeArg(Argument *arg, Token *token)
 
 	case TokenSvdst:
 	{
-		assert(arg->type == Argument::TypeScalarRegister);
+		assert(arg->getType() == Argument::TypeScalarRegister);
 		bytes.vop1.vdst = arg->Encode();
 		break;
 	}
@@ -730,7 +730,7 @@ void Instruction::EncodeArg(Argument *arg, Token *token)
 		int high;
 
 		// Check argument type
-		switch (arg->type)
+		switch (arg->getType())
 		{
 
 		case Argument::TypeScalarRegisterSeries:
@@ -784,7 +784,7 @@ void Instruction::EncodeArg(Argument *arg, Token *token)
 	case TokenVop364Svdst:
 	{
 		// If operand is a scalar register series, check range
-		if (arg->type == Argument::TypeScalarRegisterSeries)
+		if (arg->getType() == Argument::TypeScalarRegisterSeries)
 		{
 			ArgScalarRegisterSeries *srs = dynamic_cast
 					<ArgScalarRegisterSeries *>(arg);
@@ -831,14 +831,14 @@ void Instruction::EncodeArg(Argument *arg, Token *token)
 	case TokenVop364Src0:
 	{
 		// If operand is a scalar register series, check range
-		if (arg->type == Argument::TypeScalarRegisterSeries)
+		if (arg->getType() == Argument::TypeScalarRegisterSeries)
 		{
 			ArgScalarRegisterSeries *srs = dynamic_cast
 					<ArgScalarRegisterSeries *>(arg);
 			if (srs->getHigh() != srs->getLow() + 1)
 				misc::fatal("register series must be s[low:low+1]");
 		}
-		else if (arg->type == Argument::TypeVectorRegisterSeries)
+		else if (arg->getType() == Argument::TypeVectorRegisterSeries)
 		{
 			ArgVectorRegisterSeries *vrs = dynamic_cast
 					<ArgVectorRegisterSeries *>(arg);
@@ -858,14 +858,14 @@ void Instruction::EncodeArg(Argument *arg, Token *token)
 	case TokenVop364Src1:
 	{
 		// If operand is a scalar register series, check range
-		if (arg->type == Argument::TypeScalarRegisterSeries)
+		if (arg->getType() == Argument::TypeScalarRegisterSeries)
 		{
 			ArgScalarRegisterSeries *srs = dynamic_cast
 					<ArgScalarRegisterSeries *>(arg);
 			if (srs->getHigh() != srs->getLow() + 1)
 				misc::fatal("register series must be s[low:low+1]");
 		}
-		else if (arg->type == Argument::TypeVectorRegisterSeries)
+		else if (arg->getType() == Argument::TypeVectorRegisterSeries)
 		{
 			ArgVectorRegisterSeries *vrs = dynamic_cast
 					<ArgVectorRegisterSeries *>(arg);
@@ -884,14 +884,14 @@ void Instruction::EncodeArg(Argument *arg, Token *token)
 	case TokenVop364Src2:
 	{
 		// If operand is a scalar register series, check range
-		if (arg->type == Argument::TypeScalarRegisterSeries)
+		if (arg->getType() == Argument::TypeScalarRegisterSeries)
 		{
 			ArgScalarRegisterSeries *srs = dynamic_cast
 					<ArgScalarRegisterSeries *>(arg);
 			if (srs->getHigh() != srs->getLow() + 1)
 				misc::fatal("register series must be s[low:low+1]");
 		}
-		else if (arg->type == Argument::TypeVectorRegisterSeries)
+		else if (arg->getType() == Argument::TypeVectorRegisterSeries)
 		{
 			ArgVectorRegisterSeries *vrs = dynamic_cast
 					<ArgVectorRegisterSeries *>(arg);
@@ -945,7 +945,7 @@ void Instruction::EncodeArg(Argument *arg, Token *token)
 
 	case TokenWaitCnt:
 	{
-		ArgWaitCnt *wait_cnt = dynamic_cast<ArgWaitCnt *>(arg);
+		ArgWaitCounter *wait_cnt = dynamic_cast<ArgWaitCounter *>(arg);
 		assert(wait_cnt);
 
 		// vmcnt(x)
@@ -1027,7 +1027,7 @@ void Instruction::EncodeArg(Argument *arg, Token *token)
 		symbol = context->getSymbol(label->getName());
 	
 		// Search symbol in symbol table
-		assert(arg->type == Argument::TypeLabel);
+		assert(arg->getType() == Argument::TypeLabel);
 
 		// Create symbol if it doesn't exist
 		if (!symbol)
@@ -1052,7 +1052,7 @@ void Instruction::EncodeArg(Argument *arg, Token *token)
 
 	default:
 		si2bin_yyerror_fmt("unsupported token for argument %d",
-				arg->index + 1);
+				arg->getIndex() + 1);
 	}
 }
 
