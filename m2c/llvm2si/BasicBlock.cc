@@ -661,8 +661,9 @@ void BasicBlock::EmitPhi(llvm::PHINode *llvm_inst)
 		ArgVectorRegister *src_arg_vreg = misc::cast<ArgVectorRegister *>(src_arg);
 		int src_vreg = src_arg_vreg->getId();
 
-		// Create Phi argument
-		ArgPhi *arg = new si2bin::ArgPhi(src_vreg, label);
+		// Create Phi argument and set vector register
+		ArgPhi *arg = new si2bin::ArgPhi(label);
+		arg->setVectorRegister(src_vreg);
 		arg_list.push_back(arg);
 	}
 
