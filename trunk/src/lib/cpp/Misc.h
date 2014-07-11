@@ -22,6 +22,7 @@
 
 #include <cassert>
 #include <iostream>
+#include <memory>
 #include <vector>
 
 
@@ -187,11 +188,13 @@ inline bool inRange(int value, int min, int max)
 	return value >= min && value <= max;
 }
 
+
 inline unsigned RoundUp(unsigned n, unsigned align)
 {
 	assert(!(align & (align - 1)));
 	return (n + (align - 1)) & ~(align - 1);
 }
+
 
 inline unsigned RoundDown(unsigned n, unsigned align)
 {
@@ -199,11 +202,26 @@ inline unsigned RoundDown(unsigned n, unsigned align)
 	return n & ~(align - 1);
 }
 
+
 template<class X, class Y> inline X cast(const Y &val)
 {
 	X result = dynamic_cast<X>(val);
 	assert(result && "cast<Ty>() argument of incompatible type");
 	return result;
+}
+
+
+template<typename T, typename... Args> std::shared_ptr<T>
+		new_shared(Args&&... args)
+{
+	return std::shared_ptr<T>(new T(std::forward<Args>(args)...));
+}
+
+
+template<typename T, typename... Args> std::unique_ptr<T>
+		new_unique(Args&&... args)
+{
+	return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
 }
 
 

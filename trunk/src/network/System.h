@@ -20,9 +20,12 @@
 #ifndef NETWORK_SYSTEM_H
 #define NETWORK_SYSTEM_H
 
-#include <lib/cpp/CommandLine.h>
+#include <cassert>
+#include <memory>
+
 #include <lib/cpp/Debug.h>
 #include <lib/cpp/IniFile.h>
+#include <lib/cpp/String.h>
 
 
 namespace net
@@ -33,7 +36,6 @@ class Network;
 
 class System
 {
-
 	/// Traffic pattern states for network system
 	enum TrafficPattern
 	{
@@ -43,11 +45,7 @@ class System
 	};
 
 	/// String map for traffic pattern
-	static misc::StringMap command_map;
-
-	//
-	// Configuration options
-	//
+	static const misc::StringMap TrafficPatternMap;
 
 	// Debugger file
 	static std::string debug_file;
@@ -88,50 +86,42 @@ class System
 	/// Debugger for network
 	static misc::Debug debug;
 
-	/// External Networks configuration file
-	static misc::IniFile config;
-
-
-
-	//
-	// Class members
-	//
+	/// Networks configuration file
+	static misc::IniFile ini_file;
 
 	// Unique instance of singleton
 	static std::unique_ptr<System> instance;
 
-	// Private constructor for singleton
-	System();
-
-	// Unordered Map of Networks
+	// Hash table of networks indexed by their names
 	static std::unordered_map<std::string, Network *> network_map;
 
-	// List of Networks to access from
+	// List of networks in the system
 	static std::vector<std::unique_ptr<Network>> networks;
-
-
 
 public:
 
-	/// Get instance of Singleton
+	/// Get instance of singleton
 	static System *getInstance();
 
-	// Get the list of Networks
-	std::vector<std::unique_ptr<Network>> &getNetworks()
+	/// Constructor
+	System() { assert(instance == nullptr); }
+
+	// Get the list of networks
+	const std::vector<std::unique_ptr<Network>> &getNetworks() const
 	{
 		return networks;
 	}
 
-	/// Find and Returns Network in the Net-System using network name
+	/// Find and returns a network in the network system given its name.
 	///
 	/// \param name
-	///	Network Name
+	///	Network name
 	Network *getNetworkByName(const std::string &name);
 
-	/// Create a new Network
+	/// Create a new network.
 	///
 	/// \param name
-	///	Name of the new Network
+	///	Name of the new network.
 	Network *newNetwork(const std::string &name);
 
 	/// Register command-line options
@@ -139,9 +129,9 @@ public:
 
 	/// Process command-line options
 	static void ProcessOptions();
-
 };
 
 }  // namespace net
 
 #endif
+

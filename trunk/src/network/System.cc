@@ -19,57 +19,40 @@
 
 #include "System.h"
 
+#include <lib/cpp/CommandLine.h>
+
+
 namespace net
 {
 
-// Command Map
-misc::StringMap System::command_map =
+const misc::StringMap System::TrafficPatternMap =
 {
-		{ "command",     TrafficPatternCommand },
-		{ "uniform",     TrafficPatternUniform }
+	{ "command", TrafficPatternCommand },
+	{ "uniform", TrafficPatternUniform }
 };
 
-//
-// Configuration Options
-//
-
-// Network Debug
 std::string System::debug_file;
+
 misc::Debug System::debug;
 
-// Network Report
 std::string System::report_file;
 
-// Visual File name
 std::string System::visual_file;
 
-// Network Routing Table print
 std::string System::routing_table_file;
 
-// maximum number of cycles
 long long System::max_cycles = 1000000;
 
-// default message size for stand alone network
 int System::msg_size = 1;
 
-// default injection rate for stand alone network
 int System::injection_rate = 0.001;
 
-// snapshot period
 int System::snapshot_period = 0;
 
-// Printing the Network Help
 bool System::net_help = false;
 
-// Stand-alone simulator instantiation
 bool System::stand_alone = false;
 
-
-//
-// Static variables
-//
-
-// Network System singleton
 std::unique_ptr<System> System::instance;
 
 
@@ -80,15 +63,10 @@ System *System::getInstance()
 		return instance.get();
 
 	// Create instance
-	instance.reset(new System());
+	instance = misc::new_unique<System>();
 	return instance.get();
 }
 
-System::System()
-{
-	// Initialize class members
-
-}
 
 void System::RegisterOptions()
 {
@@ -183,11 +161,9 @@ void System::RegisterOptions()
 			"file would be in <network_name>_<file> format");
 
 	// Network Traffic Pattern
-	bool err;
-	std::string pattern;
-	command_line->RegisterString("--net-traffic-pattern {uniform|command} "
+	command_line->RegisterEnum("--net-traffic-pattern {uniform|command} "
 			"(default = uniform) ",
-			pattern,
+			(int &) traffic_pattern, TrafficPatternMap,
 			"If set on uniform, messages are injected in the network"
 			"uniformly with random delays with exponential "
 			"distribution. If set on command, the Commands section"
@@ -195,15 +171,6 @@ void System::RegisterOptions()
 			"inserted in the network on certain cycles indicated in"
 			"commands (use '--net-help' for learning more about"
 			"commands");
-
-	traffic_pattern = (System::TrafficPattern)
-			command_map.MapString(pattern, err);
-	if (err)
-	{
-		misc::fatal("%s: unrecognized command for network traffic "
-				"pattern", __FUNCTION__);
-	}
-
 }
 
 void System::ProcessOptions()
@@ -215,3 +182,4 @@ void System::ProcessOptions()
 }
 
 }
+
