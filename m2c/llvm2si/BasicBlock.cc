@@ -1025,16 +1025,56 @@ void BasicBlock::EmitFDiv(llvm::BinaryOperator *llvm_inst)
 			ret_vreg);
 	function->AddSymbol(ret_symbol);
 
-	// Emit effective address calculation.
+	// For float division, the compiler provides extra steps to prevent
+	// possible overflow/downflow.
 	//
-	// Float Division
-	// v_rcp_f32 arg_op2, arg_op2
-	// v_mul_f32 ret_vreg, arg_op1, arg_op2
+	// LLVM IR is shown below to calcuate a = b/c.
 	//
-	// The reciprocal value can't be assigned back to the same register!
-	// v_rcp_f32 rcp_vreg, arg_op2
-	// v_mul_f32 ret_vreg, arg_op1, rcp_vreg
+	// 		%a = fdiv float %b, %c
 	//
+	// Here is the corresponding SI assembly code.
+	//
+	// 		s_mov_b32     s0, 0x6f800000
+	//  	v_mov_b32     v2, 0x2f800000
+	//		s_waitcnt     vmcnt(1)
+	//		v_cmp_gt_f32  vcc, abs(v1), s0
+	//		v_cndmask_b32  v2, 1.0, v2, vcc
+	//		v_mul_f32     v1, v1, v2
+	//		v_rcp_f32     v1, v1
+	//		s_waitcnt     vmcnt(0)
+	//		v_mul_f32     v1, v3, v1
+	//		v_mul_f32     v1, v2, v1
+	//
+	// The final result of a is stored in v1. The SSA format is shown here,
+	// in order to better understand this implementation. The %a is saved in v7.
+	//
+	//		s_mov_b32     s0, 1.0 * 2^96
+	//  	v_mov_b32     v2, 1.0 * 2^-32
+	//		v_cmp_gt_f32  vcc, abs(v1), s0
+	//		v_cndmask_b32  v3, 1.0, v2, vcc
+	//		v_mul_f32     v4, v1, v3
+	//		v_rcp_f32     v5, v4
+	//		v_mul_f32     v6, v0, v5
+	//		v_mul_f32     v7, v3, v6
+	//
+	// The pseudocode is illustrated below.
+	//
+	//		if |%c| > 2^96
+	//			v3 = 2^-32
+	//		else
+	//			v3 = 1.0
+	//
+	//		v4 = %c * v3
+	//
+	//		v5 = 1 / (%c * v3)
+	//
+	//		v6 = %b / (%c * v3)
+	//
+	//		%a = ( v3 * %b ) / (v3 * %c) = %b / %c
+	//
+	// Currently, the v3 step has not been implemented yet. A simplified version of
+	// floating point division is carried out.
+
 	int arg2_rcp_id = function->AllocVReg();
 	ArgVectorRegister *arg2_rcp = new ArgVectorRegister(arg2_rcp_id);
 
