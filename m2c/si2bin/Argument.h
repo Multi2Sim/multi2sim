@@ -39,18 +39,6 @@ class Token;
 
 
 
-/// Possible argument types for the s_waitcnt instruction
-enum WaitCntType
-{
-	WaitCntTypeInvalid = 0,
-
-	WaitCntTypeVmCnt,
-	WaitCntTypeLgkmCnt,
-	WaitCntTypeExpCnt,
-
-	WaitCntTypeCount
-};
-
 /// Base class representing the argument of an instruction. More specific
 /// instruction classes can be derived from this class
 class Argument
@@ -72,7 +60,7 @@ public:
 		TypeLiteralReduced,
 		TypeLiteralFloat,
 		TypeLiteralFloatReduced,
-		TypeWaitCnt,
+		TypeWaitCounter,
 		TypeLabel,
 		TypeMaddr,
 		TypeMaddrQual,
@@ -100,9 +88,6 @@ public:
 	static const misc::StringMap DirectionMap;
 
 protected:
-
-	// FIXME
-	friend class Instruction;
 
 	// Argument type, determining the actual subclass.
 	Type type;
@@ -176,9 +161,15 @@ public:
 	/// argument.
 	bool setNeg(bool neg) { return this->neg = neg; }
 
+	/// Specify argument index
+	void setIndex(int index) { this->index = index; }
+
+	/// Specify argument token
+	void setToken(Token *token) { this->token = token; }
+
 	/// Pure virtual function to dump the argument. Each child class will
 	/// provide its own implementation for this function.
-	virtual void Dump(std::ostream &os = std::cout) = 0;
+	virtual void Dump(std::ostream &os = std::cout) const = 0;
 
 	/// Alternative syntax for Dump()
 	friend std::ostream &operator<<(std::ostream &os,
@@ -219,7 +210,7 @@ public:
 	void setDirection(Direction direction) { this->direction = direction; }
 
 	/// Return argument direction, assert it has been properly set
-	Direction getDirection()
+	Direction getDirection() const
 	{
 		assert(direction != DirectionInvalid);
 		return direction;
@@ -252,14 +243,14 @@ public:
 	{
 	}
 
-	/// see Argument::Encode()
+	/// See Argument::Encode()
 	int Encode();
 
 	/// Dump the scalar register
-	void Dump(std::ostream &os) { os << 's' << id; }
+	void Dump(std::ostream &os) const { os << 's' << id; }
 
 	/// Return register number
-	int getId() { return id; }
+	int getId() const { return id; }
 
 	/// Set register number
 	void setId(int id) { this->id = id; }
@@ -289,18 +280,19 @@ public:
 	ArgScalarRegisterSeries(int low, int high);
 
 	/// Dump the scalar register series
-	void Dump(std::ostream &os)
+	void Dump(std::ostream &os) const
 	{
 		os << "s[" << low << ':' << high << ']';
 	}
 
+	/// See Argument::Encode()
 	int Encode();
 
 	/// Return the position of the first register
-	int getLow() { return low; }
+	int getLow() const { return low; }
 
 	/// Return the position of the last register
-	int getHigh() { return high; }
+	int getHigh() const { return high; }
 
 	/// See Argument::getRegisters()
 	void getRegisters(std::vector<Argument *> &registers);
@@ -322,13 +314,13 @@ public:
 	}
 
 	/// Dump the vector register
-	void Dump(std::ostream &os) { os << 'v' << id; }
+	void Dump(std::ostream &os) const { os << 'v' << id; }
 
 	/// See Argument::Encode()
 	int Encode();
 
 	/// Return register number
-	int getId() { return id; }
+	int getId() const { return id; }
 
 	/// Set register number
 	void setId(int id) { this->id = id; }
@@ -358,7 +350,7 @@ public:
 	ArgVectorRegisterSeries(int low, int high);
 
 	/// Dump the vector register series
-	void Dump(std::ostream &os)
+	void Dump(std::ostream &os) const
 	{
 		os << "v[" << low << ':' << high << ']';
 	}
@@ -367,10 +359,10 @@ public:
 	int Encode();
 
 	/// Return the position of the first register
-	int getLow() { return low; }
+	int getLow() const { return low; }
 
 	/// Return the position of the last register
-	int getHigh() { return high; }
+	int getHigh() const { return high; }
 
 	/// See Argument::getRegisters()
 	void getRegisters(std::vector<Argument *> &registers);
@@ -390,7 +382,7 @@ public:
 	ArgLiteral(int value);
 
 	/// Dump the literal integer value
-	void Dump(std::ostream &os)
+	void Dump(std::ostream &os) const
 	{
 		os << "0x" << std::hex << value << std::dec;
 	}
@@ -399,7 +391,7 @@ public:
 	int Encode();
 
 	/// Return literal integer value
-	int getValue() { return value; }
+	int getValue() const { return value; }
 
 	/// Set literal integer value
 	void setValue(int value) { this->value = value; }
@@ -419,17 +411,17 @@ public:
 	ArgLiteralFloat(float value);
 
 	/// Dump literal float value
-	void Dump(std::ostream &os) { os << value; }
+	void Dump(std::ostream &os) const { os << value; }
 
 	/// See Argument::Encode()
 	int Encode();
 
 	/// Return literal float value
-	float getValue() { return value; }
+	float getValue() const { return value; }
 };
 
 
-class ArgWaitCnt : public Argument
+class ArgWaitCounter : public Argument
 {
 	bool vmcnt_active = false;
 	int vmcnt_value = 0;
@@ -442,9 +434,25 @@ class ArgWaitCnt : public Argument
 
 public:
 
-	ArgWaitCnt(WaitCntType type = WaitCntTypeInvalid);
+	/// Possible argument types for the s_waitcnt instruction
+	enum WaitCounterType
+	{
+		WaitCounterTypeInvalid = 0,
 
-	void Dump(std::ostream &os);
+		WaitCounterTypeVmCnt,
+		WaitCounterTypeLgkmCnt,
+		WaitCounterTypeExpCnt,
+
+		WaitCounterTypeCount
+	};
+
+	/// String map for WaitCounterType
+	static const misc::StringMap WaitCounterTypeMap;
+	
+	/// 
+	ArgWaitCounter(WaitCounterType type = WaitCounterTypeInvalid);
+
+	void Dump(std::ostream &os) const;
 
 	void setVmcntActive(bool active) { vmcnt_active = active; }
 
@@ -458,37 +466,42 @@ public:
 
 	void setExpcntValue(int value) { expcnt_value = value; }
 
-	bool getVmcntActive() { return vmcnt_active; }
+	bool getVmcntActive() const { return vmcnt_active; }
 
-	int getVmcntValue() { return vmcnt_value; }
+	int getVmcntValue() const { return vmcnt_value; }
 
-	bool getLgkmcntActive() { return lgkmcnt_active; }
+	bool getLgkmcntActive() const { return lgkmcnt_active; }
 
-	int getLgkmcntValue() { return lgkmcnt_value; }
+	int getLgkmcntValue() const { return lgkmcnt_value; }
 
-	bool getExpcntActive() { return expcnt_active; }
+	bool getExpcntActive() const { return expcnt_active; }
 
-	int getExpcntValue() { return expcnt_value; }
+	int getExpcntValue() const { return expcnt_value; }
 };
 
 
 class ArgMemRegister : public Argument
 {
+	// Register number
 	int id;
 
 public:
 
+	/// Constructor
 	ArgMemRegister(int id) :
 			Argument(TypeMemRegister),
 			id(id)
 	{
 	}
 
-	void Dump(std::ostream &os) { os << 'm' << id; }
+	/// Dump the memory register
+	void Dump(std::ostream &os) const { os << 'm' << id; }
 
+	/// See Argument::Encode()
 	int Encode();
 
-	int getId() { return id; }
+	/// Return register number
+	int getId() const { return id; }
 };
 
 
@@ -509,11 +522,11 @@ public:
 	{
 	}
 
-	bool getOffen() { return offen; }
+	bool getOffen() const { return offen; }
 
-	bool getIdxen() { return idxen; }
+	bool getIdxen() const { return idxen; }
 
-	int getOffset() { return offset; }
+	int getOffset() const { return offset; }
 
 	bool setOffen(bool offen) { return this->offen = offen; }
 
@@ -521,7 +534,7 @@ public:
 
 	int setOffset(int offset) { return this->offset = offset; }
 
-	void Dump(std::ostream &os);
+	void Dump(std::ostream &os) const;
 };
 
 
@@ -544,15 +557,15 @@ public:
 			SI::InstBufDataFormat data_format,
 			SI::InstBufNumFormat num_format);
 
-	void Dump(std::ostream &os);
+	void Dump(std::ostream &os) const;
 
-	Argument *getSoffset() { return soffset.get(); }
+	Argument *getSoffset() const { return soffset.get(); }
 
-	ArgMaddrQual *getQual() { return qual.get(); }
+	ArgMaddrQual *getQual() const { return qual.get(); }
 
-	SI::InstBufDataFormat getDataFormat() { return data_format; }
+	SI::InstBufDataFormat getDataFormat() const { return data_format; }
 
-	SI::InstBufNumFormat getNumFormat() { return num_format; }
+	SI::InstBufNumFormat getNumFormat() const { return num_format; }
 };
 
 
@@ -563,16 +576,16 @@ class ArgSpecialRegister : public Argument
 public:
 
 	ArgSpecialRegister(SI::InstSpecialReg reg) :
-		Argument(TypeSpecialRegister),
-		reg(reg)
+			Argument(TypeSpecialRegister),
+			reg(reg)
 	{
 	}
 
-	void Dump(std::ostream &os);
+	void Dump(std::ostream &os) const;
 
 	int Encode();
 
-	SI::InstSpecialReg getReg() { return reg; }
+	SI::InstSpecialReg getReg() const { return reg; }
 };
 
 
@@ -588,12 +601,12 @@ public:
 	{
 	}
 
-	void Dump(std::ostream &os)
+	void Dump(std::ostream &os) const
 	{
 		os << ' ' << name;
 	}
 
-	const std::string &getName() { return name; }
+	const std::string &getName() const { return name; }
 };
 
 
@@ -602,16 +615,13 @@ class ArgPhi : public Argument
 	// Label associated with the Phi argument
 	ArgLabel label;
 
-	// Value associated with the Phi argument. The possible base classes
+	// Value associated with the Phi argument. The possible child classes
 	// for the argument are:
 	// - ArgVectorRegister
 	// - ArgScalarRegister
 	// - ArgLiteral
 	// - ArgLiteralFloat
 	std::unique_ptr<Argument> value;
-
-	// Register number
-	int id = 0;
 
 public:
 
@@ -622,17 +632,46 @@ public:
 	{
 	}
 
+	/// Return value type
+	Type getValueType() const { return value.get()->getType(); }
+
+	/// Return the Phi value interpreted as a scalar register, or `nullptr`
+	/// if the type of the Phi value is not scalar register. 
+	ArgScalarRegister *getScalarRegister() const
+	{ 
+	       return dynamic_cast<ArgScalarRegister *>(value.get()); 
+	} 
+
+	/// Return the Phi value interpreted as a vector register, or `nullptr`
+	/// if the type of the Phi value is not vector register. 
+	ArgVectorRegister *getVectorRegister() const
+	{ 
+	       return dynamic_cast<ArgVectorRegister *>(value.get()); 
+	} 
+
+	/// Return the Phi value interpreted as a literal, or `nullptr`
+	/// if the type of the Phi value is not literal. 
+	ArgLiteral *getLiteral() const
+	{ 
+	       return dynamic_cast<ArgLiteral *>(value.get()); 
+	} 
+
+	/// Return the Phi value interpreted as a literalFloat, or `nullptr`
+	/// if the type of the Phi value is not literalFloat. 
+	ArgLiteralFloat *getLiteralFloat() const
+	{ 
+	       return dynamic_cast<ArgLiteralFloat *>(value.get()); 
+	} 
+
 	/// Set value to be an ArgScalarRegister pointer
 	void setScalarRegister(int id)
 	{
-		this->id = id;
 		value.reset(new ArgVectorRegister(id));
 	}
 
 	/// Set value to be an ArgVectorRegister pointer
 	void setVectorRegister(int id)
 	{
-		this->id = id;
 		value.reset(new ArgVectorRegister(id));
 	}
 
@@ -649,14 +688,14 @@ public:
 	}
 
 	/// Dump ArgPhi
-	void Dump(std::ostream &os);
+	void Dump(std::ostream &os) const;
 
-	/// Return label name
-	const std::string &getName() { return label.getName(); }
+	/// Return label
+	ArgLabel *getLabel() { return &label; }
 
 	/// Return register number if value is ArgVectorRegister or
 	/// ArgScalarRegister
-	int getId() { return id; }
+	int getId() const;
 
 	/// See Argument::getRegisters()
 	void getRegisters(std::vector<Argument *> &registers)

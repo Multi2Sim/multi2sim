@@ -379,7 +379,7 @@ bool Token::IsArgAllowed(Argument *arg)
 	
 	case TokenWaitCnt:
 
-		return t == Argument::TypeWaitCnt;
+		return t == Argument::TypeWaitCounter;
 	
 	case TokenAddr:
 	case TokenData0:
