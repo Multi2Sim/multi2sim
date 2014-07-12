@@ -23,6 +23,7 @@
 #include <lib/cpp/Misc.h>
 
 #include "Argument.h"
+#include "Context.h"
 
 
 namespace si2bin
@@ -69,27 +70,25 @@ void Argument::ValidTypes(bool types[])
 		return;
 
 	// Construct error message
-	std::stringstream msg;
-	msg << "argument of type " <<
-			Argument::TypeMap[type]
-			<< " found, {";
+	std::string message = misc::fmt("Argument %d of type %s, {",
+			index, TypeMap[type]);
 
 	// List allowed types
-	std::string sep = "";
+	std::string separator;
 	for (int i = 0; i < TypeCount; i++)
 	{
 		if (types[i])
 		{
-			msg << sep << Argument::TypeMap[i];
-			sep = "|";
+			message += separator + TypeMap[i];
+			separator = "|";
 		}
 	}
 
 	// Message tail
-	msg << "} expected";
+	message += "} expected";
 
 	// Exception
-	throw misc::Panic(msg.str());
+	throw Error(message);
 }
 
 

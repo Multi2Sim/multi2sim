@@ -445,7 +445,7 @@ void Function::EmitHeader()
 	// s_buffer_load_dword s[gsize + 1], s[cb0:cb0 + 3], 0x01
 	// s_buffer_load_dword s[gsize + 2], s[cb0:cb0 + 3], 0x02
 	//
-	basic_block->AddComment("Obtain global size");
+	basic_block->setComment("Obtain global size");
 	sreg_gsize = AllocSReg(3);
 	for (int index = 0; index < 3; index++)
 	{
@@ -462,7 +462,7 @@ void Function::EmitHeader()
 	// s_buffer_load_dword s[lsize + 1], s[cb0:cb0 + 3], 0x05
 	// s_buffer_load_dword s[lsize + 2], s[cb0:cb0 + 3], 0x06
 	//
-	basic_block->AddComment("Obtain local size");
+	basic_block->setComment("Obtain local size");
 	sreg_lsize = AllocSReg(3);
 	for (int index = 0; index < 3; index++)
 	{
@@ -479,7 +479,7 @@ void Function::EmitHeader()
 	// s_buffer_load_dword s[offs], s[cb0:cb0 + 3], 0x19
 	// s_buffer_load_dword s[offs], s[cb0:cb0 + 3], 0x1a
 	//
-	basic_block->AddComment("Obtain global offset");
+	basic_block->setComment("Obtain global offset");
 	sreg_offs = AllocSReg(3);
 	for (int index = 0; index < 3; index++)
 	{
@@ -501,7 +501,7 @@ void Function::EmitHeader()
 	for (int index = 0; index < 3; index++)
 	{
 		// Comment
-		basic_block->AddComment(misc::fmt("Calculate global ID "
+		basic_block->setComment(misc::fmt("Calculate global ID "
 				"in dimension %d", index));
 
 		// v_mov_b32
@@ -623,7 +623,7 @@ void Function::EmitPhiMoves(si2bin::Instruction *inst)
 		Instruction *inst = new Instruction(SI::INST_V_MOV_B32,
 				new si2bin::ArgVectorRegister(dst_vreg),
 				new si2bin::ArgVectorRegister(src_vreg));
-		basic_block->getInstList().emplace(it, inst);
+		basic_block->getInstructions().emplace(it, inst);
 	}
 }
 
@@ -632,8 +632,8 @@ void Function::EmitPhi()
 {
 	for (auto &basic_block : basic_blocks)
 	{
-		auto it = basic_block->getInstList().begin();
-		while (it != basic_block->getInstList().end())
+		auto it = basic_block->getInstructions().begin();
+		while (it != basic_block->getInstructions().end())
 		{
 			// Store next instruction
 			auto it_next = it;
@@ -644,7 +644,7 @@ void Function::EmitPhi()
 			if (inst->getOpcode() == SI::INST_PHI)
 			{
 				EmitPhiMoves(inst);
-				basic_block->getInstList().erase(it);
+				basic_block->getInstructions().erase(it);
 			}
 
 			// Go to next instruction
@@ -1052,7 +1052,7 @@ void Function::LiveRegisterAnalysis()
 		basic_block->out = new misc::Bitmap(this->num_vregs);
 
 		// Read each line of basic block
-		for (auto &inst : basic_block->getInstList())
+		for (auto &inst : basic_block->getInstructions())
 		{
 			// Get each argument in the line
 			for (auto &arg : inst->getArgs())
@@ -1169,7 +1169,7 @@ void Function::LiveRegisterAnalysis()
 			continue;
 
 		// Iterate through list of instructions to delete bitmaps
-		for(auto &inst : basic_block->getInstList())
+		for(auto &inst : basic_block->getInstructions())
 		{
 			delete(inst->def);
 			delete(inst->use);
@@ -1211,7 +1211,7 @@ void Function::LiveRegisterAllocation() {
 		if (!basic_block)
 			continue;
 
-		for(auto &inst : basic_block->getInstList())
+		for(auto &inst : basic_block->getInstructions())
 		{
 			for (unsigned int i = 0; i < inst->out->getSize(); i++) {
 				if (inst->out->Test(i)) {
@@ -1292,7 +1292,7 @@ void Function::LiveRegisterAnalysisBitmapDump() {
 		// Iterate over instructions in basic block
 		//si2bin::Inst *inst;
 
-//		for (auto &inst : basic_block->getInstList())
+//		for (auto &inst : basic_block->getInstructions())
 //		{
 //			file << "\tLive After Instruction " << j << ": ";
 //			inst->out->Dump(file);

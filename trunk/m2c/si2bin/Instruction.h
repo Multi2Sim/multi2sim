@@ -35,9 +35,7 @@
 
 
 // Forward declarations
-namespace llvm2si {
-class BasicBlock;
-}
+namespace llvm2si { class BasicBlock; }
 
 
 namespace si2bin
@@ -50,6 +48,10 @@ class Context;
 
 class Instruction
 {
+	// For LLVM-to-SI back-end: basic block that the instruction
+	// belongs to.
+	llvm2si::BasicBlock *basic_block = nullptr;
+
 	// Instruction opcode. This field should match the content of
 	// info->info->opcode.
 	SI::InstOpcode opcode = SI::InstOpcodeInvalid;
@@ -67,10 +69,6 @@ class Instruction
 
 	// List of arguments
 	std::vector<std::unique_ptr<Argument>> arguments;
-
-	// For LLVM-to-SI back-end: basic block that the instruction
-	// belongs to.
-	llvm2si::BasicBlock *basic_block = nullptr;
 
 	// Comment attached to the instruction, which will be dumped together
 	// with it.
@@ -144,6 +142,15 @@ public:
 		}
 		Initialize(opcode);
 	}
+
+	/// Create an instruction with the given \a opcode.
+	///
+	/// \param basic_block
+	///	Basic block that the instruction belongs to.
+	///
+	/// \param opcode
+	///	Instruction opcode.
+	Instruction(llvm2si::BasicBlock *basic_block, SI::InstOpcode opcode);
 	
 	/// Construction based on an instruction opcode and a list of arguments.
 	/// The argument in the list are given as newly allocated object that
@@ -234,7 +241,13 @@ public:
 		return addArgument<ArgPhi>(label_name);
 	}
 
-	// Dump instruction in a human-ready way
+	/// Check that the number and type of the arguments added to the
+	/// instruction with previous calls to addVectorRegister,
+	/// addScalarRegister, ... are valid. An exception is thrown if any
+	/// error is detected.
+	void VerifyArguments();
+
+	/// Dump instruction in plain text
 	void Dump(std::ostream &os);
 
 	/// Alternative syntax for Dump()
@@ -254,12 +267,12 @@ public:
 	/// Return the number of arguments
 	int getNumArguments() const { return arguments.size(); }
 
-	/// Return the argument with the given index, or `nullptr` if the index
-	/// is invalid.
+	/// Return the argument with the given index. The index must be a valid
+	/// number between 0 and the number of arguments minux 1.
 	Argument *getArgument(int index)
 	{
-		return misc::inRange((unsigned) index, 0, arguments.size() - 1)
-				? arguments[index].get() : nullptr;
+		assert(misc::inRange(index, 0, (int) arguments.size() - 1));
+		return arguments[index].get();
 	}
 
 	/// Return the basic block that the instruction belongs to

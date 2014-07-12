@@ -106,6 +106,18 @@ public:
 };
 
 
+/// Exception used for the Southern Islands assembler
+class Error : public misc::Error
+{
+public:
+
+	Error(const std::string &message) : misc::Error(message)
+	{
+		AppendPrefix("Southern Islands assembler");
+	}
+};
+
+
 
 class Context
 {
