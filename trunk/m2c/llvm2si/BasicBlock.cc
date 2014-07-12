@@ -115,12 +115,12 @@ void BasicBlock::EmitAdd(llvm::BinaryOperator *llvm_inst)
 
 	// Emit addition.
 	// v_add_i32 ret_vreg, vcc, arg_op1, arg_op2
-	Instruction *inst = new Instruction(SI::INST_V_ADD_I32,
-			new ArgVectorRegister(ret_vreg),
-			new ArgSpecialRegister(SI::InstSpecialRegVcc),
-			arg1,
-			arg2);
-	AddInst(inst);
+	Instruction *instruction = addInstruction(SI::INST_V_ADD_I32);
+	instruction->addVectorRegister(ret_vreg);
+	instruction->addSpecialRegister(SI::InstSpecialRegVcc);
+	instruction->addArgument(arg1);
+	instruction->addArgument(arg2);
+	instruction->VerifyArguments();
 }
 
 
@@ -180,18 +180,17 @@ void BasicBlock::EmitCall(llvm::CallInst *llvm_inst)
 	{
 		// Allocate a new vector register to copy global size.
 		int ret_vreg = function->AllocVReg();
-		auto ret_arg = new ArgVectorRegister(ret_vreg);
 		auto ret_symbol = new Symbol(var_name,
 				Symbol::TypeVectorRegister,
 				ret_vreg);
 		function->AddSymbol(ret_symbol);
 
 		// Create new vector register containing the global size.
-		// v_mov_b32 vreg, s[gsize+dim]
-		Instruction *inst = new Instruction(SI::INST_V_MOV_B32,
-				ret_arg,
-				new ArgScalarRegister(function->getSRegGSize() + dim));
-		AddInst(inst);
+		// v_mov_b32 vreg, s[gsize + dim]
+		Instruction *instruction = addInstruction(SI::INST_V_MOV_B32);
+		instruction->addVectorRegister(ret_vreg);
+		instruction->addScalarRegister(function->getSRegGSize() + dim);
+		instruction->VerifyArguments();
 	}
 	else
 	{
@@ -290,11 +289,11 @@ void BasicBlock::EmitGetElementPtr(llvm::GetElementPtrInst *llvm_inst)
 		//
 		// v_mul_i32_i24 tmp_vreg, ptr_size, arg_index
 		//
-		auto inst = new Instruction(SI::INST_V_MUL_I32_I24,
-				new ArgVectorRegister(tmp_vreg),
-				new ArgLiteral(ptr_size),
-				arg_index);
-		AddInst(inst);
+		Instruction *instruction = addInstruction(SI::INST_V_MUL_I32_I24);
+		instruction->addVectorRegister(tmp_vreg);
+		instruction->addLiteral(ptr_size);
+		instruction->addArgument(arg_index);
+		instruction->VerifyArguments();
 	}
 
 	// Emit effective address calculation as the addition between the
@@ -302,12 +301,12 @@ void BasicBlock::EmitGetElementPtr(llvm::GetElementPtrInst *llvm_inst)
 	//
 	// v_add_i32 ret_vreg, vcc, arg_offset, arg_pointer
 	//
-	Instruction *inst = new Instruction(SI::INST_V_ADD_I32,
-			new ArgVectorRegister(ret_vreg),
-			new ArgSpecialRegister(SI::InstSpecialRegVcc),
-			arg_offset,
-			arg_ptr);
-	AddInst(inst);
+	Instruction *instruction = addInstruction(SI::INST_V_ADD_I32);
+	instruction->addVectorRegister(ret_vreg);
+	instruction->addSpecialRegister(SI::InstSpecialRegVcc);
+	instruction->addArgument(arg_offset);
+	instruction->addArgument(arg_ptr);
+	instruction->VerifyArguments();
 }
 
 
@@ -1507,10 +1506,12 @@ void BasicBlock::Emit(llvm::BasicBlock *llvm_basic_block)
 			break;
 
 		case llvm::Instruction::Or:
+
 			EmitOr(misc::cast<llvm::BinaryOperator *>(&llvm_inst));
 			break;
 
 		case llvm::Instruction::Xor:
+
 			EmitXor(misc::cast<llvm::BinaryOperator *>(&llvm_inst));
 			break;
 		
