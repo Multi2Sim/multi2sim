@@ -30,13 +30,12 @@ namespace si2bin
 
 void Instruction::Initialize()
 {
-	size = 0;
+	// Initialize
 	bytes.dword = 0;
-	basic_block = nullptr;
 
 	// Assign argument indices
-	for (unsigned i = 0; i < args.size(); i++)
-		args[i]->setIndex(i);
+	for (unsigned i = 0; i < arguments.size(); i++)
+		arguments[i]->setIndex(i);
 	
 	// Assign context
 	context = Context::getInstance();
@@ -51,12 +50,13 @@ void Instruction::Initialize(SI::InstOpcode opcode)
 	// Check opcode
 	this->opcode = opcode;
 	if (!misc::inRange(opcode, 1, SI::InstOpcodeCount - 1))
-		misc::fatal("%s: invalid opcode (%d)", __FUNCTION__, opcode);
+		throw misc::Panic(misc::fmt("Invalid opcode (%d)", opcode));
 
 	// Get instruction information
 	info = context->getInstInfo(opcode);
 	if (!info)
-		misc::fatal("%s: opcode %d not supported", __FUNCTION__, opcode);
+		throw misc::Panic(misc::fmt("Opcode not supported (%d)",
+				opcode));
 
 	// FIXME
 	// For the particular case of the Phi instruction we don't check the
@@ -70,18 +70,18 @@ void Instruction::Initialize(SI::InstOpcode opcode)
 		return;
 
 	// Check number of arguments
-	if (args.size() != info->getNumTokens())
+	if (arguments.size() != info->getNumTokens())
 		misc::fatal("%s: invalid number of arguments (%d given, %d expected)",
-				__FUNCTION__, (int) args.size(),
+				__FUNCTION__, (int) arguments.size(),
 				(int) info->getNumTokens());
 
 	// Check argument types
-	for (unsigned i = 0; i < args.size(); i++)
+	for (unsigned i = 0; i < arguments.size(); i++)
 	{
-		/* Get formal argument from instruction info. Associate token with the
-		 * instruction argument. */
+		// Get formal argument from instruction info. Associate token
+		// with the instruction argument.
 		Token *token = info->getToken(i);
-		Argument *arg = args[i].get();
+		Argument *arg = arguments[i].get();
 		arg->setToken(token);
 		assert(token);
 
@@ -98,32 +98,33 @@ void Instruction::Initialize(const std::string &name)
 	Initialize();
 
 	// Try to create the instruction following all possible encodings for
-	// the same instruction name. */
+	// the same instruction name.
 	std::string error = "invalid instruction: " + name;
 	for (info = context->getInstInfo(name); info; info = info->getNext())
 	{
 		// Check number of arguments
-		if (args.size() != info->getNumTokens())
+		if (arguments.size() != info->getNumTokens())
 		{
 			error = misc::fmt("invalid number of arguments for %s "
 					"(%d given, %d expected)",
-					name.c_str(), (int) args.size(),
+					name.c_str(), (int) arguments.size(),
 					(int) info->getNumTokens());
 			continue;
 		}
 
 		// Check arguments
 		error = "";
-		for (unsigned i = 0; i < args.size(); i++)
+		for (unsigned i = 0; i < arguments.size(); i++)
 		{
-			/* Get formal argument from instruction info. We associate the
-			 * instruction argument with the token. */
-			Argument *arg = args[i].get();
+			// Get formal argument from instruction info. We
+			// associate the instruction argument with the token.
+			Argument *arg = arguments[i].get();
 			Token *token = info->getToken(i);
 			arg->setToken(token);
 			assert(token);
 
-			// Check that actual argument type is acceptable for token
+			// Check that actual argument type is acceptable for
+			// token
 			if (!token->IsArgAllowed(arg))
 			{
 				error = misc::fmt("line:%d: invalid type for argument %d",
@@ -160,10 +161,10 @@ void Instruction::Dump(std::ostream &os)
         os << '\t' << info->getName() << ' ';
 
         // Dump arguments
-        for (auto &arg : args)
+        for (auto &arg : arguments)
         {
         	arg->Dump(os);
-                if (arg->getIndex() < (int) args.size() - 1)
+                if (arg->getIndex() < (int) arguments.size() - 1)
                 	os << ", ";
 	}
 
@@ -1195,11 +1196,11 @@ void Instruction::Encode()
 	}
 
 	// Arguments
-	assert(args.size() == info->getNumTokens());
-	for (unsigned i = 0; i < args.size(); i++)
+	assert(arguments.size() == info->getNumTokens());
+	for (unsigned i = 0; i < arguments.size(); i++)
 	{
 		// Get argument and token
-		Argument *arg = args[i].get();
+		Argument *arg = arguments[i].get();
 		Token *token = info->getToken(i);
 		assert(token);
 		EncodeArg(arg, token);

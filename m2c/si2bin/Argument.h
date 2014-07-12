@@ -161,7 +161,8 @@ public:
 	/// argument.
 	bool setNeg(bool neg) { return this->neg = neg; }
 
-	/// Specify argument index
+	/// Set the index that the argument occupies within the instruction that
+	/// it belongs to.
 	void setIndex(int index) { this->index = index; }
 
 	/// Specify argument token
@@ -435,22 +436,22 @@ class ArgWaitCounter : public Argument
 public:
 
 	/// Possible argument types for the s_waitcnt instruction
-	enum WaitCounterType
+	enum CounterType
 	{
-		WaitCounterTypeInvalid = 0,
+		CounterTypeInvalid = 0,
 
-		WaitCounterTypeVmCnt,
-		WaitCounterTypeLgkmCnt,
-		WaitCounterTypeExpCnt,
+		CounterTypeVmCnt,
+		CounterTypeLgkmCnt,
+		CounterTypeExpCnt,
 
-		WaitCounterTypeCount
+		CounterTypeCount
 	};
 
-	/// String map for WaitCounterType
-	static const misc::StringMap WaitCounterTypeMap;
+	/// String map for CounterType
+	static const misc::StringMap CounterTypeMap;
 	
 	/// 
-	ArgWaitCounter(WaitCounterType type = WaitCounterTypeInvalid);
+	ArgWaitCounter(CounterType type = CounterTypeInvalid);
 
 	void Dump(std::ostream &os) const;
 
@@ -632,8 +633,12 @@ public:
 	{
 	}
 
-	/// Return value type
-	Type getValueType() const { return value.get()->getType(); }
+	/// Return value type. If the value of the Phi argument has not been
+	/// set yet, TypeInvalid is returned.
+	Type getValueType() const
+	{
+		return value == nullptr ? TypeInvalid : value->getType();
+	}
 
 	/// Return the Phi value interpreted as a scalar register, or `nullptr`
 	/// if the type of the Phi value is not scalar register. 

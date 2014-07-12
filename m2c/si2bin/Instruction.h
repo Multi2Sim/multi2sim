@@ -27,6 +27,7 @@
 
 #include <arch/southern-islands/asm/Inst.h>
 #include <src/lib/cpp/Bitmap.h>
+#include <src/lib/cpp/Misc.h>
 
 #include "Argument.h"
 #include "Context.h"
@@ -51,11 +52,11 @@ class Instruction
 {
 	// Instruction opcode. This field should match the content of
 	// info->info->opcode.
-	SI::InstOpcode opcode;
+	SI::InstOpcode opcode = SI::InstOpcodeInvalid;
 
 	// Instruction size in bytes (4 or 8). This value is produced after a
 	// call to Inst::Encode()
-	int size;
+	int size = 0;
 
 	// Instruction bytes. This value is produced after a call to
 	// Inst::Encode().
@@ -65,11 +66,11 @@ class Instruction
 	InstInfo *info;
 
 	// List of arguments
-	std::vector<std::unique_ptr<Argument>> args;
+	std::vector<std::unique_ptr<Argument>> arguments;
 
 	// For LLVM-to-SI back-end: basic block that the instruction
 	// belongs to.
-	llvm2si::BasicBlock *basic_block;
+	llvm2si::BasicBlock *basic_block = nullptr;
 
 	// Comment attached to the instruction, which will be dumped together
 	// with it.
@@ -90,7 +91,7 @@ class Instruction
 	template<typename... Args> void Initialize(SI::InstOpcode opcode,
 			Argument *arg, Args&&... args)
 	{
-		this->args.emplace_back(arg);
+		this->arguments.emplace_back(arg);
 		Initialize(opcode, args...);
 	}
 	
@@ -99,36 +100,37 @@ class Instruction
 	template<typename... Args> void Initialize(const std::string &name,
 			Argument *arg, Args&&... args)
 	{
-		this->args.emplace_back(arg);
+		this->arguments.emplace_back(arg);
 		Initialize(name, args...);
 	}
 
 	void EncodeArg(Argument *arg, Token *token);
 
+	// Add an argument
+	template<typename T, typename... Args> T *addArgument(Args&&... args)
+	{
+		arguments.emplace_back(misc::new_unique<T>(args...));
+		T *argument = misc::cast<T *>(arguments.back().get());
+		argument->setIndex(arguments.size() - 1);
+		return argument;
+	}
 
 public:
 	
-
-	/* Bitmaps to hold live register analysis intermediate data */
-	misc::Bitmap *def;
-	misc::Bitmap *use;
-
-	misc::Bitmap *in;
-	misc::Bitmap *out;
-
-	
-	/* Create a new instruction with the specified opcode, as defined in the
-	 * Southern Islands disassembler. The arguments contained in the list
-	 * will be freed automatically in the destructor of this class. */
-	template<typename... Args> Instruction(SI::InstOpcode opcode, Args&&... args)
+	/// Create a new instruction with the specified opcode, as defined in
+	/// the Southern Islands disassembler. The arguments contained in the
+	/// list will be freed automatically in the destructor of this class.
+	template<typename... Args> Instruction(SI::InstOpcode opcode,
+			Args&&... args)
 	{
 		Initialize(opcode, args...);
 	}
 	
-	/* Create a new instruction with one of the possible opcodes
-	 * corresponding to a name. The arguments contained in the list will be
-	 * adopted by the instruction and freed in the destructor. */
-	template<typename... Args> Instruction(const std::string &name, Args&&... args)
+	/// Create a new instruction with one of the possible opcodes
+	/// corresponding to a name. The arguments contained in the list will be
+	/// adopted by the instruction and freed in the destructor.
+	template<typename... Args> Instruction(const std::string &name,
+			Args&&... args)
 	{
 		Initialize(name, args...);
 	}
@@ -138,7 +140,7 @@ public:
 	{
 		for (auto &arg : arg_list)
 		{
-			args.emplace_back(arg);
+			arguments.emplace_back(arg);
 		}
 		Initialize(opcode);
 	}
@@ -150,26 +152,115 @@ public:
 	{
 		for (auto &arg : arg_list)
 		{
-			args.emplace_back(arg);
+			arguments.emplace_back(arg);
 		}
 		Initialize(name);
+	}
+
+	/// Add a scalar register argument.
+	ArgScalarRegister *addScalarRegister(int id)
+	{
+		return addArgument<ArgScalarRegister>(id);
+	}
+
+	/// Add a scalar register series argument.
+	ArgScalarRegisterSeries *addScalarRegisterSeries(int low, int high)
+	{
+		return addArgument<ArgScalarRegisterSeries>(low, high);
+	}
+
+	/// Add a vector register argument.
+	ArgVectorRegister *addVectorRegister(int id)
+	{
+		return addArgument<ArgVectorRegister>(id);
+	}
+
+	/// Add a vector register series argument.
+	ArgVectorRegisterSeries *addVectorRegisterSeries(int low, int high)
+	{
+		return addArgument<ArgVectorRegisterSeries>(low, high);
+	}
+
+	/// Add a literal argument.
+	ArgLiteral *addLiteral(int value)
+	{
+		return addArgument<ArgLiteral>(value);
+	}
+
+	/// Add a floating-point literal argument.
+	ArgLiteralFloat *addLiteralFloat(float value)
+	{
+		return addArgument<ArgLiteralFloat>(value);
+	}
+
+	/// Add a wait counter argument
+	ArgWaitCounter *addWaitCounter(ArgWaitCounter::CounterType type
+			= ArgWaitCounter::CounterTypeInvalid)
+	{
+		return addArgument<ArgWaitCounter>(type);
+	}
+
+	/// Add a memory register argument
+	ArgMemRegister *addMemRegister(int id)
+	{
+		return addArgument<ArgMemRegister>(id);
+	}
+
+	/// Add a memory address argument
+	ArgMaddr *addMemoryAddress(Argument *soffset,
+			ArgMaddrQual *qual,
+			SI::InstBufDataFormat data_format,
+			SI::InstBufNumFormat num_format)
+	{
+		return addArgument<ArgMaddr>(soffset, qual, data_format,
+				num_format);
+	}
+
+	/// Add a special register argument
+	ArgSpecialRegister *addSpecialRegister(SI::InstSpecialReg reg)
+	{
+		return addArgument<ArgSpecialRegister>(reg);
+	}
+
+	/// Add a label argument
+	ArgLabel *addLabel(const std::string &name)
+	{
+		return addArgument<ArgLabel>(name);
+	}
+
+	/// Add a phi argument
+	ArgPhi *addPhi(const std::string &label_name)
+	{
+		return addArgument<ArgPhi>(label_name);
 	}
 
 	// Dump instruction in a human-ready way
 	void Dump(std::ostream &os);
 
 	/// Alternative syntax for Dump()
-	friend std::ostream &operator<<(std::ostream &os, Instruction &inst)
+	friend std::ostream &operator<<(std::ostream &os,
+			Instruction &instruction)
 	{
-		inst.Dump(os);
+		instruction.Dump(os);
 		return os;
 	}
 
-	/// Return a reference to the instruction arguments
-	const std::vector<std::unique_ptr<Argument>> &getArgs() { return args; }
+	/// Return a constant reference to the instruction arguments
+	const std::vector<std::unique_ptr<Argument>> &getArguments()
+	{
+		return arguments;
+	}
 
 	/// Return the number of arguments
-	int getNumArgs() const { return args.size(); }
+	int getNumArguments() const { return arguments.size(); }
+
+	/// Return the argument with the given index, or `nullptr` if the index
+	/// is invalid.
+	Argument *getArgument(int index)
+	{
+		return misc::inRange((unsigned) index, 0, arguments.size() - 1)
+				? arguments[index].get() : nullptr;
+	}
 
 	/// Return the basic block that the instruction belongs to
 	llvm2si::BasicBlock *getBasicBlock() { return basic_block; }
@@ -183,18 +274,17 @@ public:
 		this->basic_block = basic_block;
 	}
 
-	// Attach a comment to the instruction
+	/// Attach a comment to the instruction
 	void setComment(const std::string &comment) { this->comment = comment; }
 
-	/* Encode the instruction, internally populating the 'bytes' and 'size'
-	 * fields. A call to Inst::Write() can be performed after this to dump
-	 * the instructions bytes. */
+	/// Encode the instruction internally. After this, a call to Write()
+	/// can be made to dump the instruction bytes into a file.
 	void Encode();
 
 	/// Write the instruction bytes into output stream.
 	void Write(std::ostream &os)
 	{
-		os.write((char *)(bytes.byte), size);
+		os.write((char *) bytes.byte, size);
 	};
 
 	/// Label this instruction as an instruction emitted by the control
