@@ -109,7 +109,11 @@ class Instruction
 	{
 		arguments.emplace_back(misc::new_unique<T>(args...));
 		T *argument = misc::cast<T *>(arguments.back().get());
+
+		// FIXME Instead, the Argument object should take an initial
+		// Instruction argument, from which it will deduce its index.
 		argument->setIndex(arguments.size() - 1);
+
 		return argument;
 	}
 
@@ -162,6 +166,15 @@ public:
 			arguments.emplace_back(arg);
 		}
 		Initialize(name);
+	}
+
+	/// Add an argument to the list of arguments. The instruction will take
+	/// ownership of this argument.
+	/// FIXME - This function is temporary and should be removed once all
+	/// memory allocation is made with symmetric patterns and smart pointers.
+	void addArgument(Argument *argument)
+	{
+		arguments.emplace_back(argument);
 	}
 
 	/// Add a scalar register argument.
