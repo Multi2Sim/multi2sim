@@ -216,7 +216,7 @@ int Function::AddArg(FunctionArg *arg, int num_elem, int offset)
 		basic_block->AddInst(inst);
 
 		inst = new Instruction(SI::INST_S_WAITCNT,
-				new ArgWaitCounter(ArgWaitCounter::WaitCounterTypeLgkmCnt));
+				new ArgWaitCounter(ArgWaitCounter::CounterTypeLgkmCnt));
 		basic_block->AddInst(inst);
 
 		// Copy argument into a vector register. This vector register
@@ -249,7 +249,7 @@ int Function::AddArg(FunctionArg *arg, int num_elem, int offset)
 		basic_block->AddInst(inst);
 
 		inst = new Instruction(SI::INST_S_WAITCNT,
-				new ArgWaitCounter(ArgWaitCounter::WaitCounterTypeLgkmCnt));
+				new ArgWaitCounter(ArgWaitCounter::CounterTypeLgkmCnt));
 		basic_block->AddInst(inst);
 
 		// Insert argument name in symbol table, using its scalar register.
@@ -277,7 +277,7 @@ int Function::AddArg(FunctionArg *arg, int num_elem, int offset)
 		basic_block->AddInst(inst);
 		
 		inst = new Instruction(SI::INST_S_WAITCNT,
-				new ArgWaitCounter(ArgWaitCounter::WaitCounterTypeLgkmCnt));
+				new ArgWaitCounter(ArgWaitCounter::CounterTypeLgkmCnt));
 		basic_block->AddInst(inst);
 
 		// Insert argument name in symbol table, using its scalar register.
@@ -594,16 +594,16 @@ void Function::EmitBody()
 void Function::EmitPhiMoves(si2bin::Instruction *inst)
 {
 	// Get destination register
-	si2bin::Argument *dst_arg = inst->getArgs()[0].get();
+	si2bin::Argument *dst_arg = inst->getArgument(0);
 	si2bin::ArgVectorRegister *dst_arg_vreg =
 			misc::cast<si2bin::ArgVectorRegister *>(dst_arg);
 	int dst_vreg = dst_arg_vreg->getId();
 
 	// Process source argument
-	for (int i = 1; i < inst->getNumArgs(); i++)
+	for (int i = 1; i < inst->getNumArguments(); i++)
 	{
 		// Get the Phi argument
-		si2bin::Argument *arg = inst->getArgs()[i].get();
+		si2bin::Argument *arg = inst->getArgument(i);
 		si2bin::ArgPhi *arg_phi = misc::cast<si2bin::ArgPhi *>(arg);
 
 		// Get the source basic block
@@ -1020,6 +1020,7 @@ void Function::EmitControlFlow()
 }
 
 
+#if 0
 void Function::LiveRegisterAnalysis()
 {
 	llvm2si::BasicBlock *basic_block;
@@ -1307,6 +1308,7 @@ void Function::LiveRegisterAnalysisBitmapDump() {
 	// Free structures
 	file.close();
 }
+#endif
 
 
 Argument *Function::TranslateConstant(llvm::Constant *llvm_const)

@@ -514,7 +514,8 @@ void BasicBlock::EmitLoad(llvm::LoadInst *llvm_inst)
 	);
 	AddInst(inst);
 	
-	inst = new Instruction(SI::INST_S_WAITCNT, new ArgWaitCounter(ArgWaitCounter::WaitCounterTypeVmCnt));
+	inst = new Instruction(SI::INST_S_WAITCNT, new
+			ArgWaitCounter(ArgWaitCounter::CounterTypeVmCnt));
 	AddInst(inst);
 }
 
@@ -793,7 +794,8 @@ void BasicBlock::EmitStore(llvm::StoreInst *llvm_inst)
 	);
 	AddInst(inst);
 
-	inst = new Instruction(SI::INST_S_WAITCNT, new ArgWaitCounter(ArgWaitCounter::WaitCounterTypeExpCnt));
+	inst = new Instruction(SI::INST_S_WAITCNT, new
+			ArgWaitCounter(ArgWaitCounter::CounterTypeExpCnt));
 	AddInst(inst);
 }
 
@@ -1547,6 +1549,7 @@ std::list<std::unique_ptr<si2bin::Instruction>>::iterator
 }
 
 
+#if 0
 void BasicBlock::LiveRegisterAnalysis()
 {
 	// Iterate through list of instructions to populate bitmaps
@@ -1611,6 +1614,7 @@ void BasicBlock::LiveRegisterAnalysis()
 	// Makes sure first instruction's in bitmap matches basic blocks in bitmap
 	//assert(!BitmapCompare(prev_inst->in, basic_block->in));
 }
+#endif
 
 
 }  // namespace llvm2si
