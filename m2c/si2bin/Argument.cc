@@ -319,31 +319,31 @@ int ArgLiteralFloat::Encode()
 // Class 'ArgWaitCounter'
 //
 
-const misc::StringMap ArgWaitCounter::WaitCounterTypeMap =
+const misc::StringMap ArgWaitCounter::CounterTypeMap =
 {
-	{ "invalid",				WaitCounterTypeInvalid },
-	{ "vector memory count",		WaitCounterTypeVmCnt },
-	{ "LDS, GDS, Kconstant, Message",	WaitCounterTypeLgkmCnt },
-	{ "VGPR-export count",			WaitCounterTypeExpCnt }
+	{ "invalid", CounterTypeInvalid },
+	{ "vector memory count", CounterTypeVmCnt },
+	{ "LDS, GDS, Kconstant, Message", CounterTypeLgkmCnt },
+	{ "VGPR-export count", CounterTypeExpCnt }
 };
 
-ArgWaitCounter::ArgWaitCounter(WaitCounterType wait_counter_type) :
+ArgWaitCounter::ArgWaitCounter(CounterType counter_type) :
 		Argument(TypeWaitCounter)
 {
-	switch (wait_counter_type)
+	switch (counter_type)
 	{
 
-	case WaitCounterTypeVmCnt:
+	case CounterTypeVmCnt:
 
 		vmcnt_active = true;
 		break;
 
-	case WaitCounterTypeLgkmCnt:
+	case CounterTypeLgkmCnt:
 
 		vmcnt_active = false;
 		break;
 
-	case WaitCounterTypeExpCnt:
+	case CounterTypeExpCnt:
 
 		vmcnt_active = false;
 		break;
