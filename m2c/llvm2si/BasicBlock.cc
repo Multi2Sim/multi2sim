@@ -1365,7 +1365,7 @@ void BasicBlock::EmitInsertElement(llvm::InsertElementInst *llvm_inst)
 void BasicBlock::Dump(std::ostream &os)
 {
 	// Nothing if basic block is empty
-	if (!inst_list.size())
+	if (!instructions.size())
 		return;
 
 	// Label with node's name
@@ -1373,27 +1373,27 @@ void BasicBlock::Dump(std::ostream &os)
 	os << "\n" << node->getName() << ":\n";
 
 	// Print list of instructions
-	for (auto &inst : inst_list)
-		inst->Dump(os);
+	for (auto &instruction : instructions)
+		instruction->Dump(os);
 }
 
 
-void BasicBlock::AddInst(Instruction *inst)
+void BasicBlock::AddInst(Instruction *instruction)
 {
 	// Check that the instruction does not belong to any other basic
 	// block already.
-	if (inst->getBasicBlock())
+	if (instruction->getBasicBlock())
 		throw misc::Panic("Instruction already added to basic block");
 
 	// Add instruction
-	inst_list.emplace_back(inst);
-	inst->setBasicBlock(this);
+	instructions.emplace_back(instruction);
+	instruction->setBasicBlock(this);
 
 	// If there was a comment added to the basic block, attach it to
 	// the instruction being added now.
 	if (!comment.empty())
 	{
-		inst->setComment(comment);
+		instruction->setComment(comment);
 		comment.clear();
 	}
 }
@@ -1527,11 +1527,11 @@ std::list<std::unique_ptr<si2bin::Instruction>>::iterator
 		BasicBlock::getFirstControlFlowInst()
 {
 	// If list is empty, return a past-the-end iterator
-	if (inst_list.empty())
-		return inst_list.end();
+	if (instructions.empty())
+		return instructions.end();
 
 	// Traverse list backward
-	auto it = inst_list.end();
+	auto it = instructions.end();
 	do
 	{
 		// Go to previous element
@@ -1542,10 +1542,10 @@ std::list<std::unique_ptr<si2bin::Instruction>>::iterator
 		if (!inst->getControlFlow())
 			return ++it;
 
-	} while (it != inst_list.begin());
+	} while (it != instructions.begin());
 
 	// There are only control flow instruction
-	return inst_list.begin();
+	return instructions.begin();
 }
 
 

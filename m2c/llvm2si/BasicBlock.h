@@ -45,8 +45,11 @@ class BasicBlock : public comm::BasicBlock
 
 	int global_id;
 
+	// Function that the basic block belongs to
+	Function *function;
+
 	// List list of instructions forming the basic block.
-	std::list<std::unique_ptr<si2bin::Instruction>> inst_list;
+	std::list<std::unique_ptr<si2bin::Instruction>> instructions;
 
 	// Comment stored temporarily in the basic block to be attached to the
 	// next instruction added.
@@ -83,17 +86,7 @@ class BasicBlock : public comm::BasicBlock
 
 public:
 
-	// Function where the basic block belongs.
-	Function *function;
-
-	// Bitmaps to hold live register analysis intermediate data
-	misc::Bitmap *def;
-	misc::Bitmap *use;
-
-	misc::Bitmap *in;
-	misc::Bitmap *out;
-
-	// Constructor
+	/// Constructor
 	BasicBlock(Function *function, comm::LeafNode *node) :
 			comm::BasicBlock(node),
 			function(function)
@@ -101,9 +94,9 @@ public:
 	}
 
 	/// Return a reference to the list of instructions
-	std::list<std::unique_ptr<si2bin::Instruction>> &getInstList()
+	std::list<std::unique_ptr<si2bin::Instruction>> &getInstructions()
 	{
-		return inst_list;
+		return instructions;
 	}
 
 	/// Dump basic block
@@ -117,15 +110,30 @@ public:
 		return os;
 	}
 
-	// Add one SI instruction to the 'inst_list' field of the basic block.
+	/// Return the function that the basic block belongs to
+	Function *getFunction() { return function; }
+
+	/// Add one SI instruction to the 'inst_list' field of the basic block.
+	/// FIXME - This is the old version with asymmetric memory allocation.
+	/// This function should be removed.
 	void AddInst(si2bin::Instruction *inst);
 
-	/// Add a comment to a basic block. The comment will be attached to the
+	/// Add an instruction to the basic block.
+	si2bin::Instruction *addInstruction(SI::InstOpcode opcode)
+	{
+		instructions.emplace_back(misc::new_unique<si2bin::Instruction>
+				(this, opcode));
+		return instructions.back().get();
+	}
+
+	/// Set a comment to a basic block. The comment will be attached to the
 	/// next instruction added to the block. If no other instruction is
 	/// added to the basic block, the comment won't have any effect.
-	void AddComment(const std::string &comment) { this->comment = comment; }
+	void setComment(const std::string &comment) { this->comment = comment; }
 
-	/// Emit SI code for the LLVM basic block into field `inst_list`.
+	/// Translate an LLVM basic block into Southern Islands instructions.
+	/// The produced instructions are then available in the internal
+	/// instruction list, available through getInstructions().
 	void Emit(llvm::BasicBlock *llvm_basic_block);
 
 	/// Return an iterator to the first instruction that was emitted by

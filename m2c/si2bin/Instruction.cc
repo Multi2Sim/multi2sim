@@ -28,6 +28,19 @@
 namespace si2bin
 {
 
+Instruction::Instruction(llvm2si::BasicBlock *basic_block,
+		SI::InstOpcode opcode) :
+		basic_block(basic_block),
+		opcode(opcode)
+{
+	// Get instruction information
+	info = context->getInstInfo(opcode);
+	if (!info)
+		throw misc::Panic(misc::fmt("Opcode not supported (%d)",
+				opcode));
+}
+
+
 void Instruction::Initialize()
 {
 	// Initialize
@@ -148,6 +161,52 @@ void Instruction::Initialize(const std::string &name)
 
 	// Initialize opcode
 	opcode = info->getOpcode();
+}
+
+
+void Instruction::VerifyArguments()
+{
+	// The Phi instruction is a special case
+	if (opcode == SI::INST_PHI)
+	{
+		// At least 3 arguments
+		if (arguments.size() != 3)
+			throw Error("Phi instruction expects at least 3 "
+					"arguments");
+
+		// First argument must be a vector, scalar, vector series, or
+		// scalar series.
+		arguments[0]->ValidTypes(Argument::TypeVectorRegister,
+				Argument::TypeVectorRegisterSeries,
+				Argument::TypeScalarRegister,
+				Argument::TypeScalarRegisterSeries);
+		
+		// The rest of the argument must be Phi arguments
+		for (unsigned i = 1; i < arguments.size(); i++)
+			arguments[i]->ValidTypes(Argument::TypePhi);
+	}
+
+	// Check number of arguments
+	if (arguments.size() != info->getNumTokens())
+		throw Error(misc::fmt("%d arguments expected, but %d found",
+				(int) info->getNumTokens(),
+				(int) arguments.size()));
+
+	// Check argument types
+	for (unsigned i = 0; i < arguments.size(); i++)
+	{
+		// Get formal argument from instruction info. Associate token
+		// with the instruction argument.
+		Token *token = info->getToken(i);
+		Argument *argument = arguments[i].get();
+		argument->setToken(token);
+		assert(token);
+
+		// Check that actual argument type is acceptable for token
+		if (!token->IsArgAllowed(argument))
+			throw Error(misc::fmt("Invalid type for argument %d",
+					i));
+	}
 }
 
 
