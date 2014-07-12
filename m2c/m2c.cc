@@ -30,7 +30,7 @@
 #include "Wrapper.h"
 
 
-int main(int argc, char **argv)
+int MainProgram(int argc, char **argv)
 {
 	// Read command line
 	misc::CommandLine *command_line = misc::CommandLine::getInstance();
@@ -116,5 +116,21 @@ int main(int argc, char **argv)
 
 	// End
 	return 0;
+}
+
+
+int main(int argc, char **argv)
+{
+	// Main exception handler
+	try
+	{
+		// Run main program
+		return MainProgram(argc, argv);
+	}
+	catch (misc::Exception &e)
+	{
+		e.Dump();
+		return 1;
+	}
 }
 
