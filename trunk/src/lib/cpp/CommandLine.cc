@@ -57,37 +57,34 @@ void CommandLineOption::Help(std::ostream &os) const
 }
 
 
-void CommandLineOptionBool::Read(int argc, char **argv, int index)
+void CommandLineOptionBool::Read(std::deque<std::string> &arguments)
 {
-	// Checks
-	assert(index < argc);
-	assert(argv[index] == getName());
-
 	// If option is present, set boolean variable
-	*var = true;
+	*variable = true;
 }
 
 
-void CommandLineOptionString::Read(int argc, char **argv, int index)
+void CommandLineOptionString::Read(std::deque<std::string> &arguments)
 {
-	// Checks
-	assert(index < argc - 1);
-	assert(argv[index] == getName());
-
 	// Read value
-	*var = argv[index + 1];
+	assert(arguments.size() > 0);
+	*variable = arguments.front();
+	arguments.pop_front();
 }
 
 
-void CommandLineOptionInt32::Read(int argc, char **argv, int index)
+void CommandLineOptionInt32::Read(std::deque<std::string> &arguments)
 {
-	// Checks
-	assert(index < argc - 1);
-	assert(argv[index] == getName());
-
 	// Read value
+	assert(arguments.size() > 0);
+	std::string argument = arguments.front();
+	arguments.pop_front();
+
+	// Convert value
 	StringError error;
-	*var = StringToInt(argv[index + 1], error);
+	*variable = StringToInt(argument, error);
+
+	// Check valid value
 	if (error)
 		throw CommandLine::Error(misc::fmt("Invalid value for option "
 				"'%s': %s", getName().c_str(),
@@ -95,15 +92,18 @@ void CommandLineOptionInt32::Read(int argc, char **argv, int index)
 }
 
 
-void CommandLineOptionInt64::Read(int argc, char **argv, int index)
+void CommandLineOptionInt64::Read(std::deque<std::string> &arguments)
 {
-	// Checks
-	assert(index < argc - 1);
-	assert(argv[index] == getName());
-
 	// Read value
+	assert(arguments.size() > 0);
+	std::string argument = arguments.front();
+	arguments.pop_front();
+
+	// Convert value
 	StringError error;
-	*var = StringToInt64(argv[index + 1], error);
+	*variable = StringToInt64(argument, error);
+
+	// Check valid value
 	if (error)
 		throw CommandLine::Error(misc::fmt("Invalid value for option "
 				"'%s': %s", getName().c_str(),
@@ -111,20 +111,22 @@ void CommandLineOptionInt64::Read(int argc, char **argv, int index)
 }
 
 
-void CommandLineOptionEnum::Read(int argc, char **argv, int index)
+void CommandLineOptionEnum::Read(std::deque<std::string> &arguments)
 {
-	// Checks
-	assert(index < argc - 1);
-	assert(argv[index] == getName());
-
 	// Read value
+	assert(arguments.size() > 0);
+	std::string argument = arguments.front();
+	arguments.pop_front();
+
+	// Convert value
 	bool error;
-	*var = map.MapString(argv[index + 1], error);
+	*variable = map.MapString(argument, error);
+
+	// Check valid value
 	if (error)
 		throw CommandLine::Error(misc::fmt("Invalid value for option "
 				"'%s': %s\nPossible values are %s.",
-				getName().c_str(),
-				argv[index + 1],
+				getName().c_str(), argument.c_str(),
 				map.toString().c_str()));
 }
 
@@ -160,41 +162,58 @@ CommandLine *CommandLine::getInstance()
 		return instance.get();
 
 	// Create instance
-	instance.reset(new CommandLine());
+	instance = misc::new_unique<CommandLine>();
 	return instance.get();
 }
 
 
 CommandLine::CommandLine()
 {
+	// Only one instance for singleton
+	assert(instance == nullptr);
+
 	// Create default category
-	CommandLineCategory *category = new CommandLineCategory("default");
+	categories.emplace_back(misc::new_unique<CommandLineCategory>
+			("default"));
+	
+	// Set category description
+	CommandLineCategory *category = categories.back().get();
 	category->setDescription("General options");
-	category_list.emplace_back(category);
+
+	// Add category into hash table
 	category_map[category->getName()] = category;
+
+	// Update current category
 	current_category = category;
 }
 
 
-void CommandLine::Register(CommandLineOption *option)
+void CommandLine::Register(std::unique_ptr<CommandLineOption> &&option)
 {
 	// Command-line must not have been processed yet
 	assert(!processed);
 
-	// Option name must start with two dashes
-	if (!StringPrefix(option->getName(), "--"))
-		panic("%s: %s: option name must start with double dash",
-				__FUNCTION__, option->getName().c_str());
+	// Option name must start with a dash
+	if (!StringPrefix(option->getName(), "-"))
+		throw misc::Panic(misc::fmt("Option name must start with a "
+				"dash (%s)", option->getName().c_str()));
+	
+	// Options with one single dash must have one letter only
+	if (!StringPrefix(option->getName(), "--") &&
+			option->getName().length() != 2)
+		throw misc::Panic(misc::fmt("Option with one dash must be one "
+				"single character (%s)",
+				option->getName().c_str()));
 
 	// Check that option with same name was not present already
 	if (option_table.find(option->getName()) != option_table.end())
-		panic("%s: %s: option already registered",
-				__FUNCTION__, option->getName().c_str());
+		throw misc::Panic(misc::fmt("Option name already registered "
+				"(%s)", option->getName().c_str()));
 
 	// Add option to the current category
-	option_table[option->getName()] = option;
-	option_list.emplace_back(option);
-	current_category->addOption(option);
+	option_table[option->getName()] = option.get();
+	current_category->addOption(option.get());
+	options.emplace_back(std::move(option));
 }
 
 
@@ -233,9 +252,10 @@ void CommandLine::setCategory(const std::string &name,
 	CommandLineCategory *category;
 	if (category_map.find(name) == category_map.end())
 	{
-		category = new CommandLineCategory(name);
+		categories.emplace_back(misc::new_unique<CommandLineCategory>
+				(name));
+		category = categories.back().get();
 		category_map[name] = category;
-		category_list.emplace_back(category);
 	}
 	else
 	{
@@ -259,8 +279,8 @@ void CommandLine::setIncompatible(const std::string &name)
 	// Find option
 	auto it = option_table.find(name);
 	if (it == option_table.end())
-		panic("%s: option '%s' has not been registered",
-				__FUNCTION__, name.c_str());
+		throw misc::Panic(misc::fmt("Option no registered (%s)",
+				name.c_str()));
 	
 	// Set incompatibility
 	CommandLineOption *option = it->second;
@@ -268,75 +288,101 @@ void CommandLine::setIncompatible(const std::string &name)
 }
 
 
-bool CommandLine::Process(int argc, char **argv, bool fatal_on_bad_option)
+void CommandLine::Process(int argc, char **argv, bool options_anywhere)
 {
 	// Processed
 	assert(!processed);
 	processed = true;
 
+	// Copy into a deque
+	std::deque<std::string> arguments;
+	for (int i = 0; i < argc; i++)
+		arguments.push_back(argv[i]);
+
 	// Save program name
-	assert(argc);
-	program_name = argv[0];
+	assert(arguments.size() > 0);
+	program_name = arguments.front();
+	arguments.pop_front();
 
 	// Process command-line options
-	int index;
 	std::unordered_map<std::string, CommandLineOption *> options;
-	for (index = 1; index < argc; index++)
+	while (arguments.size() > 0)
 	{
-		// No more command-line options
-		if (!StringPrefix(argv[index], "-"))
-			break;
+		// Get current argument
+		std::string argument = arguments.front();
+		arguments.pop_front();
 
-		// Special option -c
-		if (!strcmp(argv[index], "-c"))
+		// Not a command-line option
+		if (!StringPrefix(argument, "-"))
 		{
-			use_c = true;
-			continue;
+			// Skip argument if options can be anywhere in the
+			// command line.
+			if (options_anywhere)
+			{
+				
+				this->arguments.push_back(argument);
+				continue;
+			}
+
+			// Stop processing if options can only be before the
+			// first argument not being an option.
+			break;
 		}
 
 		// Special option --help
-		if (!strcmp(argv[index], "--help"))
+		if (argument == "--help")
 		{
 			show_help = true;
 			continue;
 		}
 
-		// Find command-line option
-		auto it = option_table.find(argv[index]);
-		if (it == option_table.end())
+		// An option with a single dash can have its argument attached
+		// to it without a space.
+		bool attached_argument = !StringPrefix(argument, "--") &&
+				argument.length() > 2;
+
+		// Split attached argument
+		if (attached_argument)
 		{
-			if (fatal_on_bad_option)
-			{
-				throw Error(misc::fmt("Invalid option: %s\n%s",
-						argv[index],
-						error_message.c_str()));
-			}
-			else
-			{
-				return false;
-			}
+			arguments.push_front(argument.substr(2));
+			argument = argument.substr(0, 2);
 		}
 
-		// Check extra arguments
+		// Find command-line option
+		auto it = option_table.find(argument);
+		if (it == option_table.end())
+			throw Error(misc::fmt("Invalid option: %s\n%s",
+					argument.c_str(),
+					error_message.c_str()));
+
+		// Get the command-line option
 		CommandLineOption *option = it->second;
-		if (index + option->getNumArguments() >= argc)
+
+		// Check valid attached argument
+		if (attached_argument && option->getNumArguments() != 1)
+			throw Error(misc::fmt("Option '%s' expects %d "
+					"argument(s)",
+					option->getName().c_str(),
+					option->getNumArguments()));
+
+		// Check number of option arguments
+		if ((int) arguments.size() < option->getNumArguments())
 			throw Error(misc::fmt("Option '%s' expects %d "
 					"argument(s)",
 					option->getName().c_str(),
 					option->getNumArguments()));
 
 		// Check if option was already specified
-		if (options.find(argv[index]) != options.end())
+		if (options.find(argument) != options.end())
 			throw Error(misc::fmt("Multiple occurrences of "
 					"option '%s'",
 					option->getName().c_str()));
-		options[argv[index]] = option;
+
+		// Store option in table
+		options[argument] = option;
 
 		// Process command-line option
-		option->Read(argc, argv, index);
-
-		// Consume extra arguments
-		index += option->getNumArguments();
+		option->Read(arguments);
 	}
 
 	// If the user specified more than one option, check that none of them
@@ -355,22 +401,23 @@ bool CommandLine::Process(int argc, char **argv, bool fatal_on_bad_option)
 	}
 
 	// Save rest of the arguments
-	for (; index < argc; index++)
-		args.push_back(argv[index]);
+	while (arguments.size())
+	{
+		std::string argument = arguments.front();
+		this->arguments.push_back(argument);
+		arguments.pop_front();
+	}
 
 	// Option --help was specified
-	if (!use_c && show_help)
+	if (show_help)
 	{
-		if (args.size() || options.size())
+		if (this->arguments.size() || options.size())
 			throw Error("Options '--help' is incompatible with any "
 					"other command-line option or "
 					"argument.");
 		Help();
 		exit(0);
 	}
-
-	// Command line successfully processed
-	return true;
 }
 
 }  // namespace misc

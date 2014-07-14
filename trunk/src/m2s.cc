@@ -518,7 +518,7 @@ int MainProgram(int argc, char **argv)
 	// Process command line. Return to C version of Multi2Sim if a
 	// command-line option was not recognized.
 	misc::CommandLine *command_line = misc::CommandLine::getInstance();
-	command_line->Process(argc, argv);
+	command_line->Process(argc, argv, false);
 	
 	// Process command line
 	ProcessOptions();

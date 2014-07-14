@@ -49,6 +49,9 @@ class Context
 	// front-end
 	static bool active;
 
+	// Optimization level set by the user
+	static int optimization_level;
+
 	// Singleton instance
 	static std::unique_ptr<Context> instance;
 
