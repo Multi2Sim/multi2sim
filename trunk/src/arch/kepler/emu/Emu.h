@@ -122,6 +122,9 @@ public:
 	/// Get global memory top
 	unsigned getGlobalMemTop() const { return global_mem_top; }
 
+	/// Get global memory top address
+	unsigned* getGlobalMemTopAddress() {return &global_mem_top;}
+
 	/// Get instruction emulation table
 	InstFunc getInstFunc(InstOpcode inst) { return inst_func[inst]; }
 
