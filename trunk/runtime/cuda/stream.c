@@ -125,16 +125,17 @@ void cuLaunchKernelImpl(struct cuda_stream_command_t *command)
 
 	unsigned args[11];
 	args[0] = f->id;
-	args[1] = gridDimX;
-	args[2] = gridDimY;
-	args[3] = gridDimZ;
-	args[4] = blockDimX;
-	args[5] = blockDimY;
-	args[6] = blockDimZ;
-	args[7] = sharedMemBytes;
-	args[8] = (hStream ? hStream->id : 0);
-	args[9] = (unsigned)kernelParams;
-	args[10] = (unsigned)extra;
+	args[1] = (unsigned) f->name;
+	args[2] = gridDimX;
+	args[3] = gridDimY;
+	args[4] = gridDimZ;
+	args[5] = blockDimX;
+	args[6] = blockDimY;
+	args[7] = blockDimZ;
+	args[8] = sharedMemBytes;
+	args[9] = (hStream ? hStream->id : 0);
+	args[10] = (unsigned)kernelParams;
+	args[11] = (unsigned)extra;
 	ret = ioctl(active_device->fd, cuda_call_LaunchKernel, args);
 
 

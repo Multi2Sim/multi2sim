@@ -52,7 +52,7 @@ Function::Function(int id, Module *module, const std::string &name) :
 	text_size = text_section->getSize();
 
 	// Get section named ".nv.info.<name>" from the ELF file
-	std::string info_section_name = ".vn.info." + name;
+	std::string info_section_name = ".nv.info." + name;
 	ELFReader::Section *info_section = elf_file->getSection(
 			info_section_name);
 	if (info_section == nullptr)
@@ -70,7 +70,5 @@ Function::Function(int id, Module *module, const std::string &name) :
 		arguments.emplace_back(new Argument(argument_name));
 	}
 }
-
-
 } // namespace Kepler
 
