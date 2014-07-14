@@ -21,6 +21,7 @@
 #define LIB_CPP_COMMAND_LINE_H
 
 #include <cassert>
+#include <deque>
 #include <map>
 #include <memory>
 #include <iostream>
@@ -29,6 +30,7 @@
 #include <vector>
 
 #include "Error.h"
+#include "Misc.h"
 #include "String.h"
 
 
@@ -121,13 +123,10 @@ public:
 	/// Dump help message related with this option
 	void DumpHelp(std::ostream &os) const;
 
-	/// Read value of the option from the command-line option given in \a
-	/// argc and \a argv. The element in \a argv pointed to by \a index
-	/// should be the option itself, optionally followed by its arguments in
-	/// the following positions of \a argv. If \a argv does not have enough
-	/// arguments as per what the option expects, an error message will
-	/// terminate execution.
-	virtual void Read(int argc, char **argv, int index) = 0;
+	/// Read the arguments for a command-line option from the head of the
+	/// list provided in \a arguments. The option arguments will be removed
+	/// from the head of the list.
+	virtual void Read(std::deque<std::string> &arguments) = 0;
 
 	/// Dump help about command line option into output stream
 	void Help(std::ostream &os = std::cout) const;
@@ -138,41 +137,43 @@ public:
 class CommandLineOptionString : public CommandLineOption
 {
 	// Variable affected by this option
-	std::string *var;
+	std::string *variable;
 
 public:
 
 	/// Constructor
 	CommandLineOptionString(const std::string &name,
-			std::string *var,
+			std::string *variable,
 			const std::string &help) :
 			CommandLineOption(TypeString, name, 1, help),
-			var(var)
+			variable(variable)
 	{
 	}
 	
 	/// Read option from command line. See CommandLineOption::Read().
-	void Read(int argc, char **argv, int index);
+	void Read(std::deque<std::string> &arguments);
 };
 
 
 /// Command-line option taking a 32-bit integer as an argument
 class CommandLineOptionInt32 : public CommandLineOption
 {
-	int *var;
+	// Variable affected by this option
+	int *variable;
+
 public:
+
 	/// Constructor
 	CommandLineOptionInt32(const std::string &name,
-			int *var,
-			const std::string &help)
-			:
+			int *variable,
+			const std::string &help) :
 			CommandLineOption(TypeInt32, name, 1, help),
-			var(var)
+			variable(variable)
 	{
 	}
 	
 	/// Read option from command line. See CommandLineOption::Read().
-	void Read(int argc, char **argv, int index);
+	void Read(std::deque<std::string> &arguments);
 };
 
 
@@ -180,21 +181,21 @@ public:
 class CommandLineOptionInt64 : public CommandLineOption
 {
 	// Variable affected by this option
-	long long *var;
+	long long *variable;
 
 public:
 
 	/// Constructor
 	CommandLineOptionInt64(const std::string &name,
-			long long *var,
+			long long *variable,
 			const std::string &help) :
 			CommandLineOption(TypeInt64, name, 1, help),
-			var(var)
+			variable(variable)
 	{
 	}
 	
 	/// Read option from command line. See CommandLineOption::Read().
-	void Read(int argc, char **argv, int index);
+	void Read(std::deque<std::string> &arguments);
 };
 
 
@@ -202,7 +203,7 @@ public:
 class CommandLineOptionEnum : public CommandLineOption
 {
 	// Variable affected by this option
-	int *var;
+	int *variable;
 
 	// String map used to translate enumeration
 	const StringMap &map;
@@ -211,17 +212,17 @@ public:
 
 	/// Constructor
 	CommandLineOptionEnum(const std::string &name,
-			int *var,
+			int *variable,
 			const StringMap &map,
 			const std::string &help) :
 			CommandLineOption(TypeEnum, name, 1, help),
-			var(var),
+			variable(variable),
 			map(map)
 	{
 	}
 	
 	/// Read option from command line. See CommandLineOption::Read()
-	void Read(int argc, char **argv, int index);
+	void Read(std::deque<std::string> &arguments);
 };
 
 
@@ -229,21 +230,21 @@ public:
 class CommandLineOptionBool : public CommandLineOption
 {
 	// Variable affected by this option
-	bool *var;
+	bool *variable;
 
 public:
 
 	/// Constructor
 	CommandLineOptionBool(const std::string &name,
-			bool *var,
+			bool *variable,
 			const std::string &help) :
 			CommandLineOption(TypeBool, name, 0, help),
-			var(var)
+			variable(variable)
 	{
 	}
 	
 	/// Read option from command line. See CommandLineOption::Read().
-	void Read(int argc, char **argv, int index);
+	void Read(std::deque<std::string> &arguments);
 };
 
 
@@ -296,33 +297,29 @@ class CommandLine
 	std::string program_name;
 
 	// Arguments left after removing program name and command-line options
-	std::vector<std::string> args;
+	std::vector<std::string> arguments;
 
 	// Hash table of registered command-line options.
 	std::unordered_map<std::string, CommandLineOption *> option_table;
 
 	// Sequential list of registered command-line options. We keep the
 	// sequential order of registration to show an organized help message.
-	std::vector<std::unique_ptr<CommandLineOption>> option_list;
+	std::vector<std::unique_ptr<CommandLineOption>> options;
 
 	// Ordered map of categories
 	std::map<std::string, CommandLineCategory *> category_map;
 
 	// List of category unique pointers
-	std::vector<std::unique_ptr<CommandLineCategory>> category_list;
+	std::vector<std::unique_ptr<CommandLineCategory>> categories;
 
 	// Current category, as set with function 'setCategory()'
 	CommandLineCategory *current_category;
 
-	// Register a newly created command-line option. The dynamically created
-	// option will be taken ownership from by a unique smart pointer.
-	void Register(CommandLineOption *option);
+	// Register a command-line option
+	void Register(std::unique_ptr<CommandLineOption> &&option);
 
 	// Set to true when function Process() is invoked.
 	bool processed = false;
-
-	// Command-line option indicating whether to use the old C code instead
-	bool use_c = false;
 
 	// Show help message with command-line options
 	bool show_help = false;
@@ -332,9 +329,6 @@ class CommandLine
 
 	// Singleton instance
 	static std::unique_ptr<CommandLine> instance;
-
-	/// Private constructor for singleton
-	CommandLine();
 
 public:
 
@@ -351,6 +345,9 @@ public:
 	
 	/// Get instance of singleton
 	static CommandLine *getInstance();
+
+	/// Constructor
+	CommandLine();
 
 	/// Set the error message to be displayed when an invalid option is
 	/// found in the command line during the execution of function
@@ -383,7 +380,7 @@ public:
 	int getNumArguments() const
 	{
 		assert(processed);
-		return args.size();
+		return arguments.size();
 	}
 
 	/// Return the argument with a specific \a index. A value of 0 for \a
@@ -392,8 +389,8 @@ public:
 	/// been processed with a call to Process().
 	const std::string &getArgument(int index) const
 	{
-		assert(index >= 0 && index < (int) args.size());
-		return args[index];
+		assert(index >= 0 && index < (int) arguments.size());
+		return arguments[index];
 	}
 
 	/// Return a constant reference to the internal vector containing the
@@ -403,29 +400,21 @@ public:
 	const std::vector<std::string> &getArguments() const
 	{
 		assert(processed);
-		return args;
-	}
-
-	/// Return \c true if the user specified command-line option \c -c.
-	/// This option is temporarily used to activate the C++ version of
-	/// Multi2Sim.
-	bool getUseC() const
-	{
-		assert(processed);
-		return use_c;
+		return arguments;
 	}
 
 	/// Register a command-line option that takes no argument. If present,
-	/// variable \a var will be set to \a true. If not, to \a false.
-	void Register(const std::string &name, bool &var,
+	/// variable \a variable will be set to \a true. If not, to \a false.
+	void Register(const std::string &name, bool &variable,
 			const std::string &help)
 	{
-		Register(new CommandLineOptionBool(name, &var, help));
+		Register(misc::new_unique<CommandLineOptionBool>(name,
+				&variable, help));
 	}
 
 	/// Register a command-line option taking a string as an argument. If
-	/// present, variable \a var takes the value of the argument. If not
-	/// present, the original content of \a var is not modified. The value
+	/// present, variable \a variable takes the value of the argument. If not
+	/// present, the original content of \a variable is not modified. The value
 	/// passed in argument \a help is the help string shown to the user when
 	/// invoking Help().
 	///
@@ -437,61 +426,67 @@ public:
 	///
 	/// All Register<tt>xxx</tt>() calls must be invoked before processing
 	/// the actual command line with a call to Process().
-	void RegisterString(const std::string &name, std::string &var,
+	void RegisterString(const std::string &name, std::string &variable,
 			const std::string &help)
 	{
-		Register(new CommandLineOptionString(name, &var, help));
+		Register(misc::new_unique<CommandLineOptionString>(name,
+				&variable, help));
 	}
 
 	/// Same as RegisterString(), but taking an unsigned 32-bit integer as the
 	/// type of the command-line option.
-	void RegisterInt32(const std::string &name, int &var,
+	void RegisterInt32(const std::string &name, int &variable,
 			const std::string &help)
 	{
-		Register(new CommandLineOptionInt32(name, &var, help));
+		Register(misc::new_unique<CommandLineOptionInt32>(name,
+				&variable, help));
 	}
 
 	/// Same as RegisterString(), but taking a signed 64-bit integer as the
 	/// type of the command-line option.
-	void RegisterUInt32(const std::string &name, unsigned &var,
+	void RegisterUInt32(const std::string &name, unsigned &variable,
 			const std::string &help)
 	{
-		Register(new CommandLineOptionInt32(name,
-				(int *) &var, help));
+		Register(misc::new_unique<CommandLineOptionInt32>(name,
+				(int *) &variable, help));
 	}
 
 	/// Same as RegisterString(), but taking an unsigned 64-bit integer as
 	/// the type of the command-line option.
-	void RegisterInt64(const std::string &name, long long &var,
+	void RegisterInt64(const std::string &name, long long &variable,
 			const std::string &help)
 	{
-		Register(new CommandLineOptionInt64(name, &var, help));
+		Register(misc::new_unique<CommandLineOptionInt64>(name,
+				&variable, help));
 	}
 
 	/// Same as RegisterString(), but taking a signed 32-bit integer as the
 	/// type of the command-line option.
-	void RegisterUInt64(const std::string &name, unsigned long long &var,
+	void RegisterUInt64(const std::string &name,
+			unsigned long long &variable,
 			const std::string &help)
 	{
-		Register(new CommandLineOptionInt64(name,
-				(long long *) &var, help));
+		Register(misc::new_unique<CommandLineOptionInt64>(name,
+				(long long *) &variable, help));
 	}
 
 	/// Register an option that can take values from the string map provided
 	/// in argument \a map.
-	void RegisterEnum(const std::string &name, int &var,
+	void RegisterEnum(const std::string &name, int &variable,
 			const StringMap &map, const std::string &help)
 	{
-		Register(new CommandLineOptionEnum(name, &var, map, help));
+		Register(misc::new_unique<CommandLineOptionEnum>(name,
+				&variable, map, help));
 	}
 
 	/// Register a boolean option with no additional arguments. If the
 	/// option is present, a value of \c True is assumed, and \c False if
 	/// the option is not provided by the user.
-	void RegisterBool(const std::string &name, bool &var,
+	void RegisterBool(const std::string &name, bool &variable,
 			const std::string &help)
 	{
-		Register(new CommandLineOptionBool(name, &var, help));
+		Register(misc::new_unique<CommandLineOptionBool>(name,
+				&variable, help));
 	}
 
 	/// Make option \a name incompatible with any other option.
@@ -523,15 +518,17 @@ public:
 	/// \param argv
 	///	Argument vector, as passed in the main program
 	///
-	/// \param fatal_on_bad_option (optional)
-	/// 	Specifies whether a fatal message should be issued when a
-	/// 	command-line option is found that is not recognized.
+	/// \param options_anywhere (optional)
+	///	If `true` (default), this flag indicates that there can be
+	///	options anywhere in the command line, even after the first
+	///	argument that is not an option. If `false`, option processing
+	///	will stop after the first argument is found that is not an
+	///	option.
 	///
-	/// \return
-	///	If \a fatal_on_bad_options value is \c false and a bad
-	///	command-line option is found, this error is indicated by the
-	///	return value: \c true if no error, and \c false on error.
-	bool Process(int argc, char **argv, bool fatal_on_bad_option = true);
+	/// \throw
+	///	An exception will occur if any of the options passed in the
+	///	command line are invalid or does not have enough arguments.
+	void Process(int argc, char **argv, bool options_anywhere = true);
 };
 
 
