@@ -48,7 +48,8 @@ Type WorkItem::getOperandValue(unsigned int index)
 	case BRIG_OPERAND_REG:
 	{
 		std::string register_name = operand.getRegisterName();
-		Type value = *((Type *)registers.getRegister(register_name));
+		Type value = 0;
+		//Type value = *((Type *)registers.getRegister(register_name));
 		return value;
 	}
 	default:
@@ -75,8 +76,8 @@ void WorkItem::storeOperandValue(unsigned int index, Type value)
 	case BRIG_OPERAND_REG:
 	{
 		std::string register_name = operand.getRegisterName();
-		registers.setRegister(register_name, 
-				(char *)&value);
+		//registers.setRegister(register_name,
+		//		(char *)&value);
 		break;
 	}
 	default:
@@ -206,7 +207,7 @@ void WorkItem::ExecuteInst_NEG()
 			int src = getOperandValue<int>(1);
 			int des = -src;
 			storeOperandValue<int>(0, des);
-			emu->isa_debug << registers;
+			//emu->isa_debug << registers;
 			break;
 		}
 		case BRIG_TYPE_S64:

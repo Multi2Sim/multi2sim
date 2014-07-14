@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <arch/hsa/driver/Driver.h>
+//#include <arch/hsa/driver/Driver.h>
 
 #include "Emu.h"
 #include "ProgramLoader.h"
@@ -93,6 +93,11 @@ void Emu::ProcessOptions()
 Emu::Emu() : comm::Emu("hsa")
 {
 	pid = 100;
+
+	// FIXME: Allow user to set up customized HSA virtual machine
+	setDefaultComponentList();
+	DumpComponentList(loader_debug);
+
 }
 
 
@@ -107,6 +112,25 @@ Emu *Emu::getInstance()
 }
 
 
+void Emu::setDefaultComponentList()
+{
+	components.push_back(std::unique_ptr<Component>(
+			Component::getDefaultCPUComponent()));
+	components.push_back(std::unique_ptr<Component>(
+			Component::getDefaultGPUComponent()));
+}
+
+
+void Emu::DumpComponentList(std::ostream &os = std::cout) const
+{
+	os << "Components installed.\n";
+	for (auto it = components.begin(); it != components.end(); it++)
+	{
+		os << *((*it).get());
+	}
+}
+
+
 WorkItem *Emu::newWorkItem()
 {
 	// Create work item and add to work item list
@@ -118,10 +142,6 @@ WorkItem *Emu::newWorkItem()
 
 bool Emu::Run()
 {
-	// Stop if there is no more work items
-	if (!work_items.size())
-		return false;
-
 	// Stop if maxmum number of CPU instructions exceeded
 	// if(max_instructions && instructions >= max_instructions)
 		// esim->Finish("hsaMaxInst");
@@ -130,30 +150,21 @@ bool Emu::Run()
 	if (esim->hasFinished())
 		return true;
 
-	// Currently I traverse all the work items. If requreied, I will change 
-	// it to only traversing running work items;
-	auto end = work_items.end();
-	for (auto it = work_items.begin(); it != end; )
+	bool stillRunning = false;
+
+	// Let all components to execute their own task
+	for (auto it = components.begin(); it != components.end(); it++)
 	{
-		// Save the position of next work item
-		auto next = it;
-		++next;
-
-		// Run one iteration
-		WorkItem *wi = &(*it->get());
-		wi->Execute();
-
-		// Move to saved next work item
-		it = next;
+		bool running = (*it)->Execute();
+		if (running)
+			stillRunning = true;
 	}
-
-	//TODO: add free work item function call
 
 	// Process list of suspended work items
 	// ProcessEvents();
 		
 	// Still running;
-	return true;
+	return stillRunning;
 }
 
 

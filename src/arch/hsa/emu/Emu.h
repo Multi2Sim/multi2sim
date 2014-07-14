@@ -28,12 +28,15 @@
 #include <arch/hsa/asm/BrigFile.h>
 
 #include "ProgramLoader.h"
+#include "Component.h"
+#include "WorkGroup.h"
 #include "WorkItem.h"
 
 
 namespace HSA
 {
 
+class Component;
 class WorkItem;
 
 
@@ -71,6 +74,9 @@ class Emu : public comm::Emu
 	// can be obtained with a call to getInstance()
 	Emu();
 
+	// list of available components
+	std::list<std::unique_ptr<Component>> components;
+
 	// list of work items
 	std::list<std::unique_ptr<WorkItem>> work_items;
 
@@ -78,7 +84,7 @@ class Emu : public comm::Emu
 	// are added/removed from this lists as their state gets updates
 	//std::list<WorkItem *> work_item_list[WorkItemListCount];
 
-	// Process ID to be assigned next. Process IDs are assigned in 
+	// Process ID to be assigned next. Process IDs are assigned in
 	// increasing order, using function Emu::getPid()
 	int pid;
 
@@ -96,6 +102,13 @@ public:
 	/// TODO: work items should not have a process id, instead, they should 
 	/// 	have work group ids and work item ids. 
 	int getPid() { return pid++; }
+
+	/// Set component list with default devices. A single core CPU and a
+	/// simple GPU will be installed on the virtual machine
+	void setDefaultComponentList();
+
+	/// Dump component list for debug purpose
+	void DumpComponentList(std::ostream &os) const;
 
 	/// Create a new work item associated with the emulator. The work item is 
 	/// inserted in the main emulator work item list

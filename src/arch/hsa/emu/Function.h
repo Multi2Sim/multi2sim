@@ -131,9 +131,7 @@ public:
 	/// Dump function information for debug propose
 	void Dump(std::ostream &os) const;
 
-
-
-	/// Operator \c << invoking the function Dump9) on an output stream
+	/// Operator \c << invoking the function Dump) on an output stream
 	friend std::ostream &operator<<(std::ostream &os,
 			const Function &function)
 	{

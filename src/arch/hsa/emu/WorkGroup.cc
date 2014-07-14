@@ -17,45 +17,15 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "WorkItem.h"
+#include "WorkGroup.h"
 
 namespace HSA
 {
 
-WorkItem::WorkItem()
+WorkGroup::WorkGroup(Component *component)
 {
-	emu = Emu::getInstance();
-
-	pid = emu->getPid();	
-
-	emu->loader_debug << "WorkItem " << pid << " created\n";
-	emu->isa_debug    << "WorkItem " << pid << " created\n";
-
+	this->component = component;
 }
 
-
-WorkItem::~WorkItem()
-{
 }
-
-
-void WorkItem::Execute()
-{
-	//std::cout << "In WorkItem::Execute\n";
-	BrigInstEntry inst(pc, ProgramLoader::getInstance()->getBinary());
-
-	// Put the inst to perform to isa debug file
-	emu->isa_debug << inst;
-
-	// Get the function according to the opcode and perform the inst
-	int opcode = inst.getOpcode();
-	ExecuteInstFn fn = WorkItem::execute_inst_fn[opcode];
-	(this->*fn)();
-
-	// move pc register to next function
-	pc = inst.next();
-}
-
-
-}  // namespace HSA
 
