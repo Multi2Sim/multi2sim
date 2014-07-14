@@ -44,8 +44,6 @@ class WorkItem{
  	// Process ID
  	int pid;
 
-	// Private register file of this work item
-	Registers registers;
 
 
 

@@ -4,15 +4,18 @@ libemu_a_SOURCES = \
 		Emu.h \
 		Emu.cc \
 		\
+		Component.h \
+		Component.cc \
+		\
+		WorkGroup.h \
+		WorkGroup.cc \
+		\
 		ProgramLoader.h \
 		ProgramLoader.cc \
 		\
 		WorkItem.h \
 		WorkItem.cc \
 		WorkItemIsa.cc \
-		\
-		Registers.h \
-		Registers.cc \
 		\
 		Function.h \
 		Function.cc 
