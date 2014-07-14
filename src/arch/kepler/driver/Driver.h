@@ -97,9 +97,6 @@ class Driver : public comm::Driver
 	// List of CUDA modules created by the guest application
 	std::vector<std::unique_ptr<Module>> modules;
 
-	// List of CUDA functions created by the guest application
-	std::vector<std::unique_ptr<Function>> functions;
-
 public:
 
 	// Exception thrown by driver errors
@@ -134,9 +131,6 @@ public:
 	/// Create a new module and return a pointer to it.
 	Module *addModule(const std::string &path);
 
-	/// Create a new CUDA function and return a pointer to it.
-	Function *addFunction(Module *module, const std::string &name);
-
 	/// Return the number of available modules
 	int getNumModules() { return modules.size(); }
 
@@ -146,18 +140,6 @@ public:
 	{
 		return misc::inRange((unsigned) index, 0, modules.size()) ?
 				modules[index].get() :
-				nullptr;
-	}
-
-	/// Return the number of available functions
-	int getNumFunctions() { return functions.size(); }
-
-	/// Return the function with the given identifier, or `nullptr` if the
-	/// identifier does not correspond to a valid function.
-	Function *getFunction(int index)
-	{
-		return misc::inRange((unsigned) index, 0, functions.size()) ?
-				functions[index].get() :
 				nullptr;
 	}
 };

@@ -25,6 +25,7 @@
 #include <memory/Memory.h>
 
 #include "Driver.h"
+#include "Module.h"
 #include "Function.h"
 
 
@@ -102,10 +103,11 @@ int Driver::CallMemAlloc(mem::Memory *memory, unsigned args_ptr)
 			size, device_ptr);
 
 	// Increase global memory top FIXME
-	//kpl_emu->incGloablMemTop(size);
+	kpl_emu->incGloablMemTop(size);
 
 	// Return device pointer
-	return device_ptr;
+	/////return device_ptr;
+	return 0;
 }
 
 
@@ -123,17 +125,17 @@ int Driver::CallMemRead(mem::Memory *memory, unsigned args_ptr)
 	unsigned size;
 
 	// Read Arguments
-	memory->Read(args_ptr, sizeof(unsigned), (char *) &device_ptr);
-	memory->Read(args_ptr + 4, sizeof(unsigned), (char *) &host_ptr);
+	memory->Read(args_ptr, sizeof(unsigned), (char *) &host_ptr);
+	memory->Read(args_ptr + 4, sizeof(unsigned), (char *) &device_ptr);
 	memory->Read(args_ptr + 8, sizeof(unsigned), (char *) &size);
 	debug << misc::fmt("\tdevice_ptr = 0x%x, host_ptr = 0x%x, size = %d bytes\n",
 			device_ptr, host_ptr, size);
 
 	// Check memory range
-	if (device_ptr + size > kpl_emu->getGlobalMemTop())
-		throw Error("Accessing device memory not allocated");
+	//if (device_ptr + size > kpl_emu->getGlobalMemTop())
+		//throw Error("Accessing device memory not allocated");
 
-	// Read memory from to device host
+	// Read memory from device to host
 	std::unique_ptr<char> buffer(new char[size]);
 	memory->Read(device_ptr, size, buffer.get());
 	global_mem->Write(host_ptr, size, buffer.get());
@@ -239,6 +241,7 @@ int Driver::CallLaunchKernel(mem::Memory *memory, unsigned args_ptr)
 
 	// Arguments
 	unsigned function_id;
+	unsigned function_name_ptr;
 	unsigned grid_dim[3];
 	unsigned block_dim[3];
 	unsigned shared_mem_size;
@@ -248,16 +251,17 @@ int Driver::CallLaunchKernel(mem::Memory *memory, unsigned args_ptr)
 
 	// Read arguments
 	memory->Read(args_ptr, sizeof(unsigned), (char *) &function_id);
-	memory->Read(args_ptr + 4, sizeof(unsigned), (char *) &grid_dim[0]);
-	memory->Read(args_ptr + 8, sizeof(unsigned), (char *) &grid_dim[1]);
-	memory->Read(args_ptr + 12, sizeof(unsigned), (char *) &grid_dim[2]);
-	memory->Read(args_ptr + 16, sizeof(unsigned), (char *) &block_dim[0]);
-	memory->Read(args_ptr + 20, sizeof(unsigned), (char *) &block_dim[1]);
-	memory->Read(args_ptr + 24, sizeof(unsigned), (char *) &block_dim[2]);
-	memory->Read(args_ptr + 28, sizeof(unsigned), (char *) &shared_mem_size);
-	memory->Read(args_ptr + 32, sizeof(unsigned), (char *) &stream);
-	memory->Read(args_ptr + 36, sizeof(unsigned), (char *) &kernel_args);
-	memory->Read(args_ptr + 40, sizeof(unsigned), (char *) &extra);
+	memory->Read(args_ptr + 4, sizeof(unsigned), (char *) &function_name_ptr);
+	memory->Read(args_ptr + 8, sizeof(unsigned), (char *) &grid_dim[0]);
+	memory->Read(args_ptr + 12, sizeof(unsigned), (char *) &grid_dim[1]);
+	memory->Read(args_ptr + 16, sizeof(unsigned), (char *) &grid_dim[2]);
+	memory->Read(args_ptr + 20, sizeof(unsigned), (char *) &block_dim[0]);
+	memory->Read(args_ptr + 24, sizeof(unsigned), (char *) &block_dim[1]);
+	memory->Read(args_ptr + 28, sizeof(unsigned), (char *) &block_dim[2]);
+	memory->Read(args_ptr + 32, sizeof(unsigned), (char *) &shared_mem_size);
+	memory->Read(args_ptr + 36, sizeof(unsigned), (char *) &stream);
+	memory->Read(args_ptr + 40, sizeof(unsigned), (char *) &kernel_args);
+	memory->Read(args_ptr + 44, sizeof(unsigned), (char *) &extra);
 
 	// Debug
 	debug << misc::fmt("\tfunction_id = 0x%08x\n", function_id);
@@ -271,8 +275,23 @@ int Driver::CallLaunchKernel(mem::Memory *memory, unsigned args_ptr)
 	debug << misc::fmt("\tstream_handle = 0x%08x\n", stream);
 	debug << misc::fmt("\tkernel_args = 0x%08x\n", kernel_args);
 
+	// Read function name
+	std::string function_name;
+	Function *function;
+	function_name = memory->ReadString(function_name_ptr);
 	// Get function
-	Function *function = getFunction(function_id);
+	for (unsigned i = 0; i < modules.size(); i++)
+	{
+		for (int j = 0; j < modules[i]->getNumFunctions(); j++)
+		{
+			if(function_name == modules[i]->getFunctionName(j))
+				function = modules[i]->getFunction(i);
+		}
+
+	}
+	//std::cout<<functions.size()<<std::endl;
+	//Function *function = getFunction(function_id);
+	std::cout<<function->getName()<<std::endl;
 	if (function == nullptr)
 		throw Driver::Error(misc::fmt("Invalid function ID (%d)",
 				function_id));
@@ -366,8 +385,10 @@ int Driver::CallModuleLoad(mem::Memory *memory, unsigned args_ptr)
 	memory->Read(path_ptr, MAX_STRING_SIZE, path);
 
 	// Create Module
-	Module *module = addModule(path);
-	return module->getId();
+	//Module *module = addModule(path);
+	addModule(path);
+	//return module->getId();
+	return 0;
 }
 
 
@@ -391,20 +412,22 @@ int Driver::CallModuleGetFunction(mem::Memory *memory, unsigned args_ptr)
 	unsigned module_id;
 	memory->Read(args_ptr, sizeof (unsigned), (char*) &module_id);
 
-	// Read function name
+	// Read address of function name
+	unsigned name_addr;
+	memory->Read(args_ptr+4, sizeof (unsigned), (char*) &name_addr);
+
+	//Read function name
 	std::string function_name;
-	function_name = memory->ReadString(args_ptr+4);
+	function_name = memory->ReadString(name_addr);
+	std::cout<<function_name<<std::endl;
 
 	// Debug Info
 	debug << misc::fmt("\tout: module_id=%u\n", module_id);
 
 	// Find function name in function list and return function id
-	for(unsigned i = 0; i < functions.size(); ++i )
-	{
-		if( unsigned (functions[i]->getModuleId()) == module_id
-					&& functions[i]->getName() == function_name)
-			return functions[i]->getId();
-	}
+	modules[module_id]->addFunction(modules[module_id].get(),function_name);
+			std::cout<<modules[module_id]->getFunctionName(0)<<std::endl;
+			std::cout<<modules[module_id]->getNumFunctions()<<std::endl;
 
 	// If no function found, return error
 	//throw Driver::Error(misc::fmt("Invalid function name (%s)",
@@ -436,8 +459,9 @@ int Driver::CallMemFree(mem::Memory *memory, unsigned args_ptr)
 	// Deallocate memory
 	Kepler::Emu *kpl_emu = Kepler::Emu::getInstance();
 	mem::Memory *global_mem = kpl_emu->getGlobalMem();
-	global_mem->Unmap(kpl_emu->getGlobalMemTop(), sizeof( &device_ptr));
-
+	//global_mem->Unmap(kpl_emu->getGlobalMemTop(), sizeof( &device_ptr));
+	std::cout<<sizeof(device_ptr)<<std::endl;
+	global_mem->Unmap(device_ptr, sizeof(device_ptr));
 	// Return
 	return 0;
 }

@@ -27,15 +27,13 @@ d *  Multi2Sim
 #include <lib/cpp/Misc.h>
 
 #include "Argument.h"
-#include "Module.h"
+//#include "Module.h"
 
 
 namespace Kepler
 {
 
-// Forward declarations
-// class Module;
-
+class Module;
 
 class Function
 {
@@ -82,9 +80,6 @@ public:
 				arguments.size() - 1));
 		return arguments[index].get();
 	}
-
-	/// Get module id of the module which the function belongs to
-	int getModuleId () const { return module->getId(); }
 
 	/// Get function name
 	std::string getName() const { return name; }
