@@ -310,7 +310,6 @@ void CommandLine::Process(int argc, char **argv, bool options_anywhere)
 	{
 		// Get current argument
 		std::string argument = arguments.front();
-		arguments.pop_front();
 
 		// Not a command-line option
 		if (!StringPrefix(argument, "-"))
@@ -321,6 +320,7 @@ void CommandLine::Process(int argc, char **argv, bool options_anywhere)
 			{
 				
 				this->arguments.push_back(argument);
+				arguments.pop_front();
 				continue;
 			}
 
@@ -328,6 +328,9 @@ void CommandLine::Process(int argc, char **argv, bool options_anywhere)
 			// first argument not being an option.
 			break;
 		}
+
+		// Extract argument
+		arguments.pop_front();
 
 		// Special option --help
 		if (argument == "--help")
