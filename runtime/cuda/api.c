@@ -858,7 +858,7 @@ CUresult cuMemAlloc(CUdeviceptr *dptr, size_t bytesize)
 		return CUDA_ERROR_INVALID_VALUE;
 	}
 
-	unsigned args[1] = {(unsigned) bytesize};
+	unsigned args[2] = {(unsigned)dptr,(unsigned) bytesize};
 	ret = ioctl(active_device->fd, cuda_call_MemAlloc, args);
 	cuda_debug("\t (driver) '%s' ret =  %d", __func__, ret);
 	/* Syscall */
