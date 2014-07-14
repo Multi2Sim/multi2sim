@@ -858,9 +858,9 @@ CUresult cuMemAlloc(CUdeviceptr *dptr, size_t bytesize)
 		return CUDA_ERROR_INVALID_VALUE;
 	}
 
-	unsigned args[2] = {(unsigned) bytesize};
+	unsigned args[1] = {(unsigned) bytesize};
 	ret = ioctl(active_device->fd, cuda_call_MemAlloc, args);
-
+	cuda_debug("\t (driver) '%s' ret =  %d", __func__, ret);
 	/* Syscall */
 	//ret = syscall(CUDA_SYS_CODE, cuda_call_cuKplMemAlloc, dptr, bytesize);
 	//ret = 0;
@@ -904,8 +904,11 @@ CUresult cuMemFree(CUdeviceptr dptr)
 
 	/* Syscall */
 	//ret = syscall(CUDA_SYS_CODE, cuda_call_cuMemFree, dptr);
-	ret = 0;
+	//ret = 0;
 	//fatal("%s: not implemented", __FUNCTION__);
+	unsigned args[1] = {(unsigned) dptr};
+	ret = ioctl(active_device->fd, cuda_call_MemFree, args);
+	cuda_debug("\t (driver) '%s' ret =  %d", __func__, ret);
 
 	/* Check that we are running on Multi2Sim. If a program linked with this
 	 * library is running natively, system call CUDA_SYS_CODE is not
@@ -1139,10 +1142,14 @@ CUresult cuMemcpyDtoH(void *dstHost, CUdeviceptr srcDevice, size_t ByteCount)
 
 	cuStreamSynchronize(0);
 
+	unsigned args[3] = {(unsigned) dstHost, (unsigned) srcDevice,
+				(unsigned) ByteCount};
+	ret = ioctl(active_device->fd, cuda_call_MemRead, args);
+
 	/* Syscall */
 	//ret = syscall(CUDA_SYS_CODE, cuda_call_cuKplMemcpyDtoH, dstHost,
 	//		srcDevice, ByteCount);
-	ret = 0;
+	//ret = 0;
 	//fatal("%s: not implemented", __FUNCTION__);
 
 	/* Check that we are running on Multi2Sim. If a program linked with this
@@ -1965,6 +1972,7 @@ CUresult cuLaunchKernel(CUfunction f, unsigned int gridDimX,
 	cuda_debug("\t(driver) '%s' in: kernelParams = [%p]", __func__,
 			kernelParams);
 	cuda_debug("\t(driver) '%s' in: extra = [%p]", __func__, extra);
+	cuda_debug("\t(driver) '%s' function is is %d", __func__, f->id);
 
 	if (!active_device)
 	{
