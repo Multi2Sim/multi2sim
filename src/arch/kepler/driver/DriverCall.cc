@@ -83,10 +83,12 @@ int Driver::CallInit(mem::Memory *memory, unsigned args_ptr)
 int Driver::CallMemAlloc(mem::Memory *memory, unsigned args_ptr)
 {
 	// Arguments
+	unsigned device_ptr;
 	unsigned size;
 
 	// Read arguments
-	memory->Read(args_ptr, sizeof(unsigned), (char *) &size);
+	memory->Read(args_ptr, sizeof(unsigned), (char *) &device_ptr);
+	memory->Read(args_ptr+4, sizeof(unsigned), (char *) &size);
 
 	// Debug
 	debug << misc::fmt("\tsize = %u\n", size);
@@ -96,17 +98,15 @@ int Driver::CallMemAlloc(mem::Memory *memory, unsigned args_ptr)
 	mem::Memory *global_mem = kpl_emu->getGlobalMem();
 	global_mem->Map(kpl_emu->getGlobalMemTop(), size,
 			mem::Memory::AccessRead | mem::Memory::AccessWrite);
+	memory->Write(device_ptr, sizeof(unsigned),
+				(char *) kpl_emu->getGlobalMemTopAddress());
 
-	// Virtual address of memory
-	unsigned device_ptr = kpl_emu->getGlobalMemTop();
 	debug << misc::fmt("\t%d bytes of device memory allocated at 0x%x\n",
 			size, device_ptr);
 
 	// Increase global memory top FIXME
 	kpl_emu->incGloablMemTop(size);
 
-	// Return device pointer
-	/////return device_ptr;
 	return 0;
 }
 
