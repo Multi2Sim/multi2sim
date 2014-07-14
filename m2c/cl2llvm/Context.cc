@@ -30,6 +30,8 @@ std::unique_ptr<Context> Context::instance;
 
 bool Context::active;
 
+int Context::optimization_level;
+
 
 Context *Context::getInstance()
 {
@@ -46,7 +48,8 @@ Context *Context::getInstance()
 void Context::Parse(const std::string &in, const std::string &out)
 {
 	Cl2llvmContext *context = Cl2llvmContextCreate();
-	Cl2llvmContextParse(context, in.c_str(), out.c_str(), 0);
+	Cl2llvmContextParse(context, in.c_str(), out.c_str(),
+			optimization_level);
 	Cl2llvmContextDestroy(context);
 }
 
@@ -64,11 +67,20 @@ void Context::RegisterOptions()
 			"Interpret the source files as OpenCL C source files "
 			"(.cl) and produce an LLVM intermediate representation "
 			"(.llvm) using the OpenCL front-end.");
+	
+	// Optimizations
+	command_line->RegisterInt32("-O {0, 1, 2}", optimization_level,
+			"Optimization level in LLVM code. The default value is "
+			"-O2.");
 }
 
 
 void Context::ProcessOptions()
 {
+	// Check valid optimization level
+	if (!misc::inRange(optimization_level, 0, 2))
+		throw Error(misc::fmt("Invalid optimization level (-O%d)",
+				optimization_level));
 }
 
 
