@@ -26,7 +26,6 @@
 #include <arch/hsa/asm/BrigDirEntry.h>
 #include <arch/hsa/asm/BrigStrEntry.h>
 
-#include "Registers.h"
 #include "Function.h"
 #include "Emu.h"
 

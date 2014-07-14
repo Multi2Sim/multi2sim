@@ -1,6 +1,9 @@
 lib_LIBRARIES = libemu.a
 
 libemu_a_SOURCES = \
+		AQLPacket.h \
+		AQLPacket.cc \
+		\
 		Emu.h \
 		Emu.cc \
 		\
