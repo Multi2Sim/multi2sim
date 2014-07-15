@@ -434,27 +434,6 @@ void Engine::Return(int after)
 }
 
 
-void Engine::Wait(Queue &queue, EventType *event_type)
-{
-	// This function must be invoked within an event handler
-	if (current_event == nullptr)
-		throw misc::Panic("Function cannot be invoked outside of "
-				"an event handler");
-
-	// The event type must be valid
-	if (event_type == nullptr)
-		throw misc::Panic("Cannot suspend an event with a null "
-				"wakeup event type");
-
-	// Add event frame to the stack
-	std::shared_ptr<EventFrame> event_frame = current_event->getFrame();
-	assert(event_frame != nullptr);
-	assert(event_frame->getWakeupEventType() == nullptr);
-	event_frame->setWakeupEventType(event_type);
-	queue.PushBack(event_frame);
-}
-
-
 void Engine::EndEvent(EventType *event_type)
 {
 	// Discard null event

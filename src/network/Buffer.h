@@ -29,17 +29,13 @@ class Node;
 
 class Buffer
 {
-
-	//
-	// Class Members
-	//
-
 	// Node that the buffer belongs to
 	Node *node;
 
 	// Buffer Name
 	std::string name;
 };
+
 
 }  // namespace net
 

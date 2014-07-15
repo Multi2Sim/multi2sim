@@ -147,6 +147,13 @@ private:
 	// Array of blocks
 	std::unique_ptr<Block> blocks;
 
+	/// Return a pointer to a cache set
+	Set *getSet(unsigned set_id)
+	{
+		assert(misc::inRange(set_id, 0, num_sets - 1));
+		return &sets.get()[set_id];
+	}
+
 public:
 
 	/// Constructor
@@ -157,13 +164,6 @@ public:
 			ReplacementPolicy replacement_policy,
 			WritePolicy write_policy);
 	
-	/// Return a pointer to a cache set
-	Set *getSet(unsigned set_id)
-	{
-		assert(misc::inRange(set_id, 0, num_sets - 1));
-		return &sets.get()[set_id];
-	}
-
 	/// Return a pointer to a cache block
 	Block *getBlock(unsigned set_id, unsigned way_id)
 	{
@@ -269,6 +269,7 @@ public:
 		block->transient_tag = tag;
 	}
 };
+
 
 }  // namespace mem
 
