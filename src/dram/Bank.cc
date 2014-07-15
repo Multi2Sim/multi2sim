@@ -21,6 +21,7 @@
 #include <lib/cpp/String.h>
 #include <lib/esim/Engine.h>
 
+#include "Action.h"
 #include "Address.h"
 #include "Bank.h"
 #include "Channel.h"
@@ -175,6 +176,15 @@ void Bank::runFrontCommand()
 	auto frame = std::make_shared<CommandReturnFrame>(command);
 	esim->Call(System::COMMAND_RETURN, frame, nullptr,
 			command->getDuration());
+
+	// If we're currently in a stand alone DRAM simulation, log this
+	// command with Actions.
+	System *dram = System::getInstance();
+	if (dram->isStandAlone())
+	{
+		Actions *actions = Actions::getInstance();
+		actions->addCommand(command.get(), cycle);
+	}
 
 	// Debug
 	System::activity << misc::fmt("[%lld] [%d : %d] Running command #%d "
