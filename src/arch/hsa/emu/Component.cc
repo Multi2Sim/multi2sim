@@ -56,6 +56,13 @@ Component *Component::getDefaultGPUComponent()
 }
 
 
+void Component::addQueue(AQLQueue *queue)
+{
+	queue->Associate(this);
+	queues.emplace_back(queue);
+}
+
+
 bool Component::Execute()
 {
 	return false;

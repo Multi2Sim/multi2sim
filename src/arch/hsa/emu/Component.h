@@ -24,6 +24,7 @@
 #include <memory>
 
 #include "Emu.h"
+#include "AQLQueue.h"
 #include "WorkGroup.h"
 
 namespace HSA
@@ -58,6 +59,9 @@ protected:
 	// list of work groups
 	std::list<std::unique_ptr<WorkGroup>> work_groups;
 
+	// list of queues associated with this component
+	std::list<std::unique_ptr<AQLQueue>> queues;
+
 public:
 
 	/// Constructor
@@ -68,6 +72,9 @@ public:
 
 	/// Create and return a virtual GPU device
 	static Component *getDefaultGPUComponent();
+
+	/// Insert a queue into the queue list
+	void addQueue(AQLQueue *queue);
 
 	/// Execute instructions on this components
 	///

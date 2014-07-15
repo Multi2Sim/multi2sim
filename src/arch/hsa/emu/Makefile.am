@@ -4,6 +4,9 @@ libemu_a_SOURCES = \
 		AQLPacket.h \
 		AQLPacket.cc \
 		\
+		AQLQueue.h \
+		AQLQueue.cc \
+		\
 		Emu.h \
 		Emu.cc \
 		\
