@@ -22,6 +22,7 @@
 
 #include "System.h"
 
+
 namespace net
 {
 
@@ -58,9 +59,12 @@ class Network
 	// Last offered bandwidth recorded for the snapshot
 	long long last_recorded_offered_bandwidth;
 
-	///
-	/// Statistics
-	///
+
+
+
+	//
+	// Statistics
+	//
 
 	// number of transfer that has occurred in the network
 	long long transfers;
@@ -71,17 +75,10 @@ class Network
 	// Accumulation of size of all messages in the network
 	long long offered_bandwidth;
 
-
-
-
 public:
 
-	/// constructor for object
+	/// Constructor
 	Network(const std::string &name);
-
-	///
-	/// Node Related Functions
-	///
 
 	/// find and returns node in the network using node name
 	///
@@ -156,14 +153,9 @@ public:
 	Node *newPhotonicNode(const std::string &name, int channels,
 			int wavelength);
 
-
-	///
-	/// Connection Related Functions
-	///
-
-
-
 };
+
+
 }  // namespace net
 
 #endif

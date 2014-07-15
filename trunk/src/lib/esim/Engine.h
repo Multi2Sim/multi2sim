@@ -198,6 +198,10 @@ public:
 	/// ScheduleEvent() to schedule useless events.
 	EventType *getNullEventType() const { return null_event_type; }
 
+	/// If an event handler is currently executing, return the corresponding
+	/// event. If no event handler is executing, return `nullptr`.
+	Event *getCurrentEvent() { return current_event; }
+
 	/// Register a new frequency domain.
 	///
 	/// \param name
@@ -314,18 +318,6 @@ public:
 	///	Number of cycles after which the return event will execute. See
 	///	Schedule() for details.
 	void Return(int after = 0);
-
-	/// Suspend the current event chain in a queue. This function should
-	/// only be invoked in the body of an event handler.
-	///
-	/// \param queue
-	///	Queue at the end of which the current event is suspended.
-	///
-	/// \param event_type
-	///	Type of event to schedule when the queue receives a wakeup
-	///	signal. This event will be scheduled using the current event
-	///	frame. The event type cannot be `nullptr`.
-	void Wait(Queue &queue, EventType *event_type);
 
 	/// Schedule an event for the end of the simulation. End events have
 	/// no event frame (event frame set to `nullptr`).

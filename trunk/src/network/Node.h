@@ -33,29 +33,26 @@ class NodeData
 {
 public:
 
-	// virtual destructor
-	~NodeData();
+	// Virtual destructor
+	virtual ~NodeData();
 };
+
 
 class Node
 {
 
 	/// Node types
-	enum NodeType
+	enum Type
 	{
-		NodeTypeInvalid = 0,
-		NodeTypeEndNode,
-		NodeTypeSwitch,
-		NodeTypeBus,
-		NodeTypePhotonic
+		TypeInvalid = 0,
+		TypeEndNode,
+		TypeSwitch,
+		TypeBus,
+		TypePhotonic
 	};
 
 	/// String map for type
 	misc::StringMap TypeMap;
-
-	//
-	// Class Members
-	//
 
 	// Network that it belongs to
 	Network *network;
@@ -64,22 +61,22 @@ class Node
 	std::string name;
 
 	// Node Type
-	enum NodeType kind;
+	Type type;
 
 	// Node index
 	int id;
 
-	// User Data. This is information required for memory system.
+	// User data. This is information required for memory system.
 	NodeData *user_data;
 
-	// Node Bandwidth. Required for Bus and Switch
+	// Node bandwidth, required for bus and switch
 	int bandwidth;
 
 	// Input/Output Buffer List
 	std::vector<std::unique_ptr<Buffer>> input_buffers;
 	std::vector<std::unique_ptr<Buffer>> output_buffers;
 
-	// Bus and Photonic Nodes
+	// Bus and photonic nodes
 	std::vector<std::unique_ptr<Bus>> bus_lanes;
 
 	// For Bus and Photonic:
@@ -97,7 +94,6 @@ class Node
 	// index of the last bus (in case there are multiple lanes) that
 	// has been assigned to a node to transmit data on.
 	int last_bus_index;
-
 
 public:
 
@@ -125,7 +121,7 @@ public:
 	/// \param user_data
 	///	user_data associated with the node which is used in memory
 	///	system.
-	Node(const std::string &name, int input_buffer_size, NodeType node_type,
+	Node(const std::string &name, int input_buffer_size, Type type,
 			int output_buffer_size, int bandwidth, int index,
 			NodeData *user_data);
 
@@ -136,11 +132,8 @@ public:
 	/// \param buffer_name
 	///	name of the buffer.
 	Buffer *getBufferByName(const std::string &buffer_name);
-
-
-
-
 };
+
 
 }  // namespace net
 
