@@ -30,10 +30,6 @@ class Buffer;
 
 class Link
 {
-	//
-	// Class members
-	//
-
 	// Network associated with the link
 	Network *network;
 
@@ -59,6 +55,8 @@ class Link
 	int virtual_channels;
 
 
+
+
 	//
 	// Scheduling and arbitration
 	//
@@ -73,6 +71,8 @@ class Link
 	// Last buffer that was has the ownership of physical link in virtual
 	// channel arbitration
 	Buffer *scheduled_buffer;
+
+
 
 
 	//
@@ -104,6 +104,8 @@ public:
 			int virtual_channels);
 
 };
+
+
 }  // namespace net
 
 #endif

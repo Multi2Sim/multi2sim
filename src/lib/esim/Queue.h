@@ -35,18 +35,28 @@ namespace esim
 /// event frame.
 class Queue
 {
-	// Head and tail pointers
+	// Head pointer
 	std::shared_ptr<EventFrame> head;
+
+	// Tail pointer
 	std::shared_ptr<EventFrame> tail;
 
 	// Remove an event frame from the queue.
 	std::shared_ptr<EventFrame> PopFront();
 
+	// Add an event frame to the queue
+	void PushBack(std::shared_ptr<EventFrame> event_frame);
+
 public:
 
-	/// Add an event frame to the queue. This function should not be
-	/// invoked from outside of the library. Use Engine::Wait() instead.
-	void PushBack(std::shared_ptr<EventFrame> event_frame);
+	/// Suspend the current event chain in the queue. This function should
+	/// only be invoked in the body of an event handler.
+	///
+	/// \param event_type
+	///	Type of event to schedule when the queue receives a wakeup
+	///	signal. This event will be scheduled using the current event
+	///	frame. The event type cannot be `nullptr`.
+	void Wait(EventType *event_type);
 
 	/// Wake the last recently suspended event frame, scheduling the wakeup
 	/// event for the current cycle. The queue must have at least one
