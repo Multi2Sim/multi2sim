@@ -26,12 +26,55 @@
 #include <lib/cpp/IniFile.h>
 #include <lib/esim/Event.h>
 
+#include "Command.h"
+
 
 namespace dram
 {
 
 // Forward declarations
 class Request;
+
+
+/// A class to act as a record for a command being scheduled, keeping track of
+/// the command's type and the cycle it was scheduled in.
+class CommandInfo
+{
+	CommandType type;
+	long long cycle;
+
+public:
+
+	CommandInfo(CommandType type, long long cycle)
+			:
+			type(type),
+			cycle(cycle)
+	{
+	}
+
+	/// Returns the type of the command.
+	CommandType getType() const { return type; }
+
+	/// Returns the type of the command as a string.
+	std::string getTypeString() const
+	{
+		return CommandTypeMapToString[type];
+	}
+
+	/// Returns the cycle the command was started in.
+	long long getCycle() const { return cycle; }
+
+	/// Dump the object to an output stream.
+	void dump(std::ostream &os = std::cout) const;
+
+	/// Dump object with the << operator
+	friend std::ostream &operator<<(std::ostream &os,
+			const CommandInfo &object)
+	{
+		object.dump(os);
+		return os;
+	}
+};
 
 
 class Actions
@@ -43,10 +86,20 @@ class Actions
 	// a call to getInstance() instead.
 	Actions();
 
+	/// Debugger
+	static misc::Debug debug;
+
+	// Vector of commands that should be scheduled
+	std::vector<CommandInfo> checks;
+
+	// Vector of commands that have been scheduled
+	std::vector<CommandInfo> commands;
+
 	// Private methods to help with configuration parsing.
 	void ParseAction(const std::string &line);
 	void ParseActionRequest(const std::vector<std::string> &tokens);
 	void ParseActionDecode(const std::vector<std::string> &tokens);
+	void ParseActionCheck(const std::vector<std::string> &tokens);
 
 public:
 
@@ -55,9 +108,31 @@ public:
 
 	void ParseConfiguration(misc::IniFile &config);
 
-	/// Event handler that adds a request to the dram system.
+	/// Event handler that adds a request to the DRAM system.
 	static void ActionRequestHandler(esim::EventType *,
 			esim::EventFrame *);
+
+	/// Adds a check for a command type at a cycle to the list of checks to
+	/// be made at the end of simulation.
+	void addCheck(CommandType type, long long cycle);
+
+	/// Adds a command to the list of commands created during simulation.
+	void addCommand(Command *command, long long cycle);
+
+	/// Check that commands happened when they should have been.  This
+	/// should be called after simulation is done.
+	void DoChecks();
+
+	/// Dump the object to an output stream.
+	void dump(std::ostream &os = std::cout) const;
+
+	/// Dump object with the << operator
+	friend std::ostream &operator<<(std::ostream &os,
+			const Actions &object)
+	{
+		object.dump(os);
+		return os;
+	}
 };
 
 

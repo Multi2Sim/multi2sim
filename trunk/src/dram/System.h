@@ -47,6 +47,9 @@ class System
 	// a call to getInstance() instead.
 	System();
 
+	// Stand alone simulation
+	bool stand_alone = false;
+
 	// List of all the memory controllers
 	std::vector<std::unique_ptr<Controller>> controllers;
 
@@ -84,6 +87,9 @@ public:
 
 	/// Obtain the instance of the dram simulator singleton.
 	static System *getInstance();
+
+	/// Returns whether or not DRAM is running as a stand alone simulator.
+	bool isStandAlone() { return stand_alone; }
 
 	/// Returns the size in bits of the physical channel address component.
 	int getPhysicalSize() const { return physical_size; }

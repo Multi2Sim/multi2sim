@@ -44,6 +44,12 @@ enum CommandType
 	CommandWrite
 };
 
+// String map for SchedulerType
+extern misc::StringMap CommandTypeMap;
+
+/// Map that converts the CommandType enum to a string.
+extern std::map<CommandType, std::string> CommandTypeMapToString;
+
 
 class Command
 {
@@ -74,7 +80,10 @@ public:
 	CommandType getType() const { return type; }
 
 	/// Returns the type of the command as a string.
-	std::string getTypeString() const { return CommandTypeMap[type]; }
+	std::string getTypeString() const
+	{
+		return CommandTypeMapToString[type];
+	}
 
 	/// Returns how long the command will take to execute once it is
 	/// scheduled.
@@ -98,9 +107,6 @@ public:
 	/// Marks the command as finished and decrements the number of in
 	/// flight commands for associated request.
 	void setFinished();
-
-	/// Map that converts the CommandType enum to a string.
-	static std::map<CommandType, std::string> CommandTypeMap;
 };
 
 }  // namespace dram
