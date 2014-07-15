@@ -227,11 +227,11 @@ void BasicBlock::EmitGetElementPtr(llvm::GetElementPtrInst *llvm_inst)
 
 		// Emit instruction
 		// v_mov_b32 ret_vreg, arg1
-		auto inst = new Instruction(SI::INST_V_MOV_B32,
-				 new ArgVectorRegister(ret_vreg), 
-				 new ArgScalarRegister(arg_scalar->getId()));
-		AddInst(inst);
+		Instruction *inst = addInstruction(SI::INST_V_MOV_B32);
+		inst->addVectorRegister(ret_vreg);
+		inst->addScalarRegister(arg_scalar->getId());
 
+		// FIXME: use unique_ptr later
 		delete arg_ptr;
 
 		arg_ptr = new ArgVectorRegister(ret_vreg);
@@ -434,21 +434,19 @@ void BasicBlock::EmitICmp(llvm::ICmpInst *llvm_inst)
 	// Emit comparison.
 	//
 	// v_cmp_<pred>_<type> vcc, arg_op1, arg_op2
-	///
-	Instruction *inst = new Instruction(opcode,
-			new ArgSpecialRegister(SI::InstSpecialRegVcc),
-			arg1,
-			arg2);
-	AddInst(inst);
+	//
+	Instruction *inst = addInstruction(opcode);
+	inst->addSpecialRegister(SI::InstSpecialRegVcc);
+	inst->addArgument(arg1);
+	inst->addArgument(arg2);
 
 	// Store 'vcc' in scalar register
 	//
 	// s_mov_b64 ret_sreg_series, vcc
 	//
-	inst = new Instruction(SI::INST_S_MOV_B64,
-			new ArgScalarRegisterSeries(ret_sreg_series, ret_sreg_series + 1),
-			new ArgSpecialRegister(SI::InstSpecialRegVcc));
-	AddInst(inst);
+	inst = addInstruction(SI::INST_S_MOV_B64);
+	inst->addScalarRegisterSeries(ret_sreg_series, ret_sreg_series + 1);
+	inst->addSpecialRegister(SI::InstSpecialRegVcc);
 }
 
 
@@ -501,21 +499,17 @@ void BasicBlock::EmitLoad(llvm::LoadInst *llvm_inst)
 	// 	s[sreg_uav,sreg_uav+3],
 	//	0 offen format:[BUF_DATA_FORMAT_32,BUF_NUM_FORMAT_FLOAT]
 	//
-	Instruction *inst = new Instruction(SI::INST_TBUFFER_LOAD_FORMAT_X,
-			new ArgVectorRegister(ret_vreg),
-			arg_addr,
-			new ArgScalarRegisterSeries(uav->getSReg(), uav->getSReg() + 3),
-			new ArgMaddr(
-					new ArgLiteral(0),
-					new ArgMaddrQual(true, false, 0),
-					SI::InstBufDataFormat32,
-					SI::InstBufNumFormatFloat)
-	);
-	AddInst(inst);
+	Instruction *inst = addInstruction(SI::INST_TBUFFER_LOAD_FORMAT_X);
+	inst->addVectorRegister(ret_vreg);
+	inst->addArgument(arg_addr);
+	inst->addScalarRegisterSeries(uav->getSReg(), uav->getSReg() + 3);
+	inst->addMemoryAddress(new ArgLiteral(0),
+			new ArgMaddrQual(true, false, 0),
+			SI::InstBufDataFormat32,
+			SI::InstBufNumFormatFloat);
 	
-	inst = new Instruction(SI::INST_S_WAITCNT, new
-			ArgWaitCounter(ArgWaitCounter::CounterTypeVmCnt));
-	AddInst(inst);
+	inst = addInstruction(SI::INST_S_WAITCNT);
+	inst->addWaitCounter(ArgWaitCounter::CounterTypeVmCnt);
 }
 
 
@@ -556,10 +550,9 @@ void BasicBlock::EmitMul(llvm::BinaryOperator *llvm_inst)
 		//
 		// v_mov_b32 ret_vreg, arg1
 		//
-		auto inst = new Instruction(SI::INST_V_MOV_B32,
-				 new ArgVectorRegister(ret_vreg), 
-				 new ArgScalarRegister(arg_scalar->getId()));
-		AddInst(inst);
+		Instruction *inst = addInstruction(SI::INST_V_MOV_B32);
+		inst->addVectorRegister(ret_vreg);
+		inst->addScalarRegister(arg_scalar->getId());
 
 		delete arg1;
 
@@ -585,10 +578,9 @@ void BasicBlock::EmitMul(llvm::BinaryOperator *llvm_inst)
 		//
 		// v_mov_b32 ret_vreg, arg1
 		//
-		auto inst = new Instruction(SI::INST_V_MOV_B32,
-			 new ArgVectorRegister(ret_vreg), 
-			 new ArgScalarRegister(arg_scalar->getId()));
-		AddInst(inst);
+		Instruction *inst = addInstruction(SI::INST_V_MOV_B32);
+		inst->addVectorRegister(ret_vreg);
+		inst->addScalarRegister(arg_scalar->getId());
 
 		delete arg2;
 
@@ -618,11 +610,10 @@ void BasicBlock::EmitMul(llvm::BinaryOperator *llvm_inst)
 	//
 	// v_mul_lo_i32 ret_vreg, arg_op1, arg_op2
 	//
-	Instruction *inst = new Instruction(SI::INST_V_MUL_LO_U32,
-			new ArgVectorRegister(ret_vreg),
-			arg1,
-			arg2);
-	AddInst(inst);
+	Instruction *inst = addInstruction(SI::INST_V_MUL_LO_U32);
+	inst->addVectorRegister(ret_vreg);
+	inst->addArgument(arg1);
+	inst->addArgument(arg2);
 }
 
 
@@ -668,8 +659,9 @@ void BasicBlock::EmitPhi(llvm::PHINode *llvm_inst)
 	}
 
 	// Emit Phi instruction
-	Instruction *inst = new Instruction(SI::INST_PHI, arg_list);
-	AddInst(inst);
+	Instruction *inst = addInstruction(SI::INST_PHI);
+	for (auto arg: arg_list)
+		inst->addArgument(arg);
 
 	// Process arguments
 	/*for (unsigned i = 0; i < llvm_inst->getNumIncomingValues(); i++)
@@ -701,8 +693,7 @@ void BasicBlock::EmitRet(llvm::ReturnInst *llvm_inst)
 	//
 	// s_endpgm
 	//
-	Instruction *inst = new Instruction(SI::INST_S_ENDPGM);
-	AddInst(inst);
+	addInstruction(SI::INST_S_ENDPGM);
 }
 
 
@@ -739,10 +730,10 @@ void BasicBlock::EmitStore(llvm::StoreInst *llvm_inst)
 		//
 		// v_mov_b32 ret_vreg, arg1
 		//
-		auto inst = new Instruction(SI::INST_V_MOV_B32,
-				new ArgVectorRegister(ret_vreg), 
-				new ArgScalarRegister(arg_scalar->getId()));
-		AddInst(inst);
+		Instruction *inst = addInstruction(SI::INST_V_MOV_B32);
+		inst->addVectorRegister(ret_vreg);
+		inst->addScalarRegister(arg_scalar->getId());
+
 		delete arg_data;
 		arg_data = new ArgVectorRegister(ret_vreg);
 	}
@@ -781,21 +772,17 @@ void BasicBlock::EmitStore(llvm::StoreInst *llvm_inst)
 	// 	s[sreg_uav,sreg_uav+3], 0 offen format:[BUF_DATA_FORMAT_32,
 	// 	BUF_NUM_FORMAT_FLOAT]
 	//
-	Instruction *inst = new Instruction(SI::INST_TBUFFER_STORE_FORMAT_X,
-			arg_data,
-			arg_addr,
-			new ArgScalarRegisterSeries(uav->getSReg(), uav->getSReg() + 3),
-			new ArgMaddr(
-					new ArgLiteral(0),
-					new ArgMaddrQual(true, false, 0),
-					SI::InstBufDataFormat32,
-					SI::InstBufNumFormatFloat)
-	);
-	AddInst(inst);
+	Instruction *inst = addInstruction(SI::INST_TBUFFER_STORE_FORMAT_X);
+	inst->addArgument(arg_data);
+	inst->addArgument(arg_addr);
+	inst->addScalarRegisterSeries(uav->getSReg(), uav->getSReg() + 3);
+	inst->addMemoryAddress(new ArgLiteral(0),
+			new ArgMaddrQual(true, false, 0),
+			SI::InstBufDataFormat32,
+			SI::InstBufNumFormatFloat);
 
-	inst = new Instruction(SI::INST_S_WAITCNT, new
-			ArgWaitCounter(ArgWaitCounter::CounterTypeExpCnt));
-	AddInst(inst);
+	inst = addInstruction(SI::INST_S_WAITCNT);
+	inst->addWaitCounter(ArgWaitCounter::CounterTypeExpCnt);
 }
 
 
@@ -838,12 +825,11 @@ void BasicBlock::EmitSub(llvm::BinaryOperator *llvm_inst)
 	//
 	// v_sub_i32 ret_vreg, vcc, arg_op1, arg_op2
 	//
-	Instruction *inst = new Instruction(SI::INST_V_SUB_I32,
-			new ArgVectorRegister(ret_vreg),
-			new ArgSpecialRegister(SI::InstSpecialRegVcc),
-			arg1,
-			arg2);
-	AddInst(inst);
+	Instruction *inst = addInstruction(SI::INST_V_SUB_I32);
+	inst->addVectorRegister(ret_vreg);
+	inst->addSpecialRegister(SI::InstSpecialRegVcc);
+	inst->addArgument(arg1);
+	inst->addArgument(arg2);
 }
 
 
@@ -886,11 +872,10 @@ void BasicBlock::EmitFAdd(llvm::BinaryOperator *llvm_inst)
 	//
 	// v_add_f32 ret_vreg, arg_op1, arg_op2
 	//
-	Instruction *inst = new Instruction(SI::INST_V_ADD_F32,
-			new ArgVectorRegister(ret_vreg),
-			arg1,
-			arg2);
-	AddInst(inst);
+	Instruction *inst = addInstruction(SI::INST_V_ADD_F32);
+	inst->addVectorRegister(ret_vreg);
+	inst->addArgument(arg1);
+	inst->addArgument(arg2);
 }
 
 
@@ -933,11 +918,10 @@ void BasicBlock::EmitFSub(llvm::BinaryOperator *llvm_inst)
 	//
 	// v_sub_f32 ret_vreg, arg_op1, arg_op2
 	//
-	Instruction *inst = new Instruction(SI::INST_V_SUB_F32,
-			new ArgVectorRegister(ret_vreg),
-			arg1,
-			arg2);
-	AddInst(inst);
+	Instruction *inst = addInstruction(SI::INST_V_SUB_F32);
+	inst->addVectorRegister(ret_vreg);
+	inst->addArgument(arg1);
+	inst->addArgument(arg2);
 }
 
 
@@ -982,11 +966,10 @@ void BasicBlock::EmitFMul(llvm::BinaryOperator *llvm_inst)
 	//
 	// v_mul_f32 ret_vreg, arg_op1, arg_op2
 	//
-	Instruction *inst = new Instruction(SI::INST_V_MUL_F32,
-			new ArgVectorRegister(ret_vreg),
-			arg1,
-			arg2);
-	AddInst(inst);
+	Instruction *inst = addInstruction(SI::INST_V_MUL_F32);
+	inst->addVectorRegister(ret_vreg);
+	inst->addArgument(arg1);
+	inst->addArgument(arg2);
 }
 
 
@@ -1078,20 +1061,15 @@ void BasicBlock::EmitFDiv(llvm::BinaryOperator *llvm_inst)
 	// floating point division is carried out.
 
 	int arg2_rcp_id = function->AllocVReg();
-	ArgVectorRegister *arg2_rcp = new ArgVectorRegister(arg2_rcp_id);
 
-	Instruction *inst = new Instruction(SI::INST_V_RCP_F32,
-			arg2_rcp,
-			arg2);
-	AddInst(inst);
+	Instruction *inst = addInstruction(SI::INST_V_RCP_F32);
+	inst->addVectorRegister(arg2_rcp_id);
+	inst->addArgument(arg2);
 
-	arg2_rcp = new ArgVectorRegister(arg2_rcp_id);
-
-	inst = new Instruction(SI::INST_V_MUL_F32,
-			new ArgVectorRegister(ret_vreg),
-			arg1,
-			arg2_rcp);
-	AddInst(inst);
+	inst = addInstruction(SI::INST_V_MUL_F32);
+	inst->addVectorRegister(ret_vreg);
+	inst->addArgument(arg1);
+	inst->addVectorRegister(arg2_rcp_id);
 }
 
 
@@ -1133,11 +1111,10 @@ void BasicBlock::EmitAnd(llvm::BinaryOperator *llvm_inst)
 	//
 	// v_and_b32 ret_vreg, arg_op1, arg_op2
 	//
-	Instruction *inst = new Instruction(SI::INST_V_AND_B32,
-			new ArgVectorRegister(ret_vreg),
-			arg1,
-			arg2);
-	AddInst(inst);
+	Instruction *inst = addInstruction(SI::INST_V_AND_B32);
+	inst->addVectorRegister(ret_vreg);
+	inst->addArgument(arg1);
+	inst->addArgument(arg2);
 }
 
 void BasicBlock::EmitOr(llvm::BinaryOperator *llvm_inst)
@@ -1178,11 +1155,10 @@ void BasicBlock::EmitOr(llvm::BinaryOperator *llvm_inst)
 	//
 	// v_or_b32 ret_vreg, arg_op1, arg_op2
 	//
-	Instruction *inst = new Instruction(SI::INST_V_OR_B32,
-			new ArgVectorRegister(ret_vreg),
-			arg1,
-			arg2);
-	AddInst(inst);
+	Instruction *inst = addInstruction(SI::INST_V_OR_B32);
+	inst->addVectorRegister(ret_vreg);
+	inst->addArgument(arg1);
+	inst->addArgument(arg2);
 }
 
 void BasicBlock::EmitXor(llvm::BinaryOperator *llvm_inst)
@@ -1223,11 +1199,10 @@ void BasicBlock::EmitXor(llvm::BinaryOperator *llvm_inst)
 	//
 	// v_xor_b32 ret_vreg, arg_op1, arg_op2
 	//
-	Instruction *inst = new Instruction(SI::INST_V_XOR_B32,
-			new ArgVectorRegister(ret_vreg),
-			arg1,
-			arg2);
-	AddInst(inst);
+	Instruction *inst = addInstruction(SI::INST_V_XOR_B32);
+	inst->addVectorRegister(ret_vreg);
+	inst->addArgument(arg1);
+	inst->addArgument(arg2);
 }
 
 
@@ -1334,8 +1309,9 @@ void BasicBlock::EmitInsertElement(llvm::InsertElementInst *llvm_inst)
 		//
 		// s_mov_b32 arg1, arg2
 		///
-		Instruction *inst = new Instruction(SI::INST_S_MOV_B32, arg1, arg2);
-		AddInst(inst);
+		Instruction *inst = addInstruction(SI::INST_S_MOV_B32);
+		inst->addArgument(arg1);
+		inst->addArgument(arg2);
 	}
 	else
 	{
@@ -1351,8 +1327,9 @@ void BasicBlock::EmitInsertElement(llvm::InsertElementInst *llvm_inst)
 		//
 		// v_mov_b32 arg2, arg1
 		///
-		Instruction *inst = new Instruction(SI::INST_V_MOV_B32, arg2, arg1);
-		AddInst(inst);
+		Instruction *inst = addInstruction(SI::INST_V_MOV_B32);
+		inst->addArgument(arg2);
+		inst->addArgument(arg1);
 	}
 	
 	delete arg3;
