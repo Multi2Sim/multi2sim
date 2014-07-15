@@ -20,13 +20,16 @@
 #ifndef LIB_CPP_LINKED_LIST_H
 #define LIB_CPP_LINKED_LIST_H
 
+#include <cassert>
+
+
 namespace misc
 {
 
 /// This class implements a linked list where node pointers are allocated
 /// in-place within the objects contained by the lists. This is accomplished
 /// by forcing list elements to be children of class List::Node.
-class List
+template<typename T> class List
 {
 public:
 
@@ -35,172 +38,240 @@ public:
 	/// linked list at a time.
 	class Node
 	{
+		// The list can update the node's pointers
 		friend class List;
+
+		// Pointer to the previous node
 		Node *prev = nullptr;
+
+		// Pointer to next node
 		Node *next = nullptr;
-		bool in_list = false;
+
+		// List that the node is inserted in, or null if the node does
+		// not currently belong to any list.
+		List<T> *list = nullptr;
+
+		// Data associated with the node
+		T *data;
 	
 	public:
 
-		// Make class polymorphic with a virtual destructor
-		virtual ~Node();
+		/// Constructor
+		Node(T *data) : data(data)
+		{
+			assert(data != nullptr);
+		}
+
+		/// The destructor automatically extracts the node from the
+		/// list, if it was present in one.
+		~Node()
+		{
+			if (list)
+				list->Erase(*this);
+		}
 	};
 
-	/// Error of the latest operation on the list
-	enum Error
+	/// Iterator to an element in the list
+	class Iterator
 	{
-		 ErrorOK,
-		 ErrorBounds,
-		 ErrorEmpty,
-		 ErrorNotFound
+		// Only the list can access the iterator's fields
+		friend class List;
+
+		// Node that the iterator points to
+		Node *node;
+
+		// Only the list can create an iterator
+		Iterator(Node *node) : node(node)
+		{
+		}
+	
+	public:
+
+		/// Operator !=
+		bool operator!=(const Iterator &right) const
+		{
+			return node != right.node;
+		}
+
+		/// Operator ==
+		bool operator==(const Iterator &right) const
+		{
+			return node == right.node;
+		}
+
+		/// Pre-increment operator
+		const Iterator &operator++()
+		{
+			assert(node != nullptr);
+			node = node->next;
+			return *this;
+		}
+
+		/// Pre-decrement operator
+		const Iterator &operator--()
+		{
+			assert(node != nullptr);
+			node = node->prev;
+			return *this;
+		}
+
+		/// Dereference operator
+		T *operator*() const
+		{
+			assert(node != nullptr);
+			return node->data;
+		}
 	};
 
 private:
 
-	// List pointers
+	// Pointer to the first node in the list
 	Node *head = nullptr;
-	Node *tail = nullptr;
-	Node *current = nullptr;
 
-	// Index of the current element
-	int current_index = 0;
+	// Pointer to the last node in the list
+	Node *tail = nullptr;
 
 	// Number of element in the list
 	int size = 0;
 
-	// Error of latest operation
-	Error error = ErrorOK;
-
 public:
-
-	/// Return the error of the last operation on the list that is specified
-	/// to update this value.
-	Error getError() const { return error; }
 
 	/// Return the number of elements in the list
 	int getSize() const { return size; }
 
-	/// Return the current element in the list. If the current position is
-	/// past the end, return `nullptr`. The list error code is updated to:
-	///
-	/// - `ErrorOK`: Valid element returned.
-	/// - `ErrorBounds`: Current element is past the end.
-	Node *getCurrent();
-
-	/// Return the index of the current element. This is a value between 0
-	/// and *N*, where *N* is the number of elements in the list. A value of
-	/// *N* indicates a past-the-end position. The list error code is set to
-	/// `ErrorOK`.
-	int getCurrentIndex()
+	/// Return an iterator to the first element in the list
+	Iterator begin()
 	{
-		error = ErrorOK;
-		return current_index;
+		return Iterator(head);
 	}
 
-	/// Move the current element to the next position and return the new
-	/// current element, or `nullptr` if the previous or the new position
-	/// is past the end or the list is empty The error code is updated to:
-	///
-	/// - `ErrorOK`: Valid element returned.
-	/// - `ErrorEmpty`: The list is empty.
-	/// - `ErrorBounds`: Position was or is now past the end
-	Node *Next();
-
-	/// Move the current element to the previous position and return the
-	/// new current element, or `nullptr` if the current position is already
-	/// the beginning of the list, or the list is empty. The error code is
-	/// updated to:
-	///
-	/// - `ErrorOK`: Valid element returned.
-	/// - `ErrorEmpty`: The list is empty.
-	/// - `ErrorBounds`: Position was the beginning of the list.
-	Node *Prev();
-
-	/// Move the current element to the head of the list and return the
-	/// element contained at that position, or `nullptr` if the list is
-	/// empty. The error code is updated to:
-	///
-	/// - `ErrorOK`: Valid element returned.
-	/// - `ErrorEmpty`: The list is empty.
-	Node *Front();
-
-	/// Move the current element to the last valid element of the list, and
-	/// return the element at that position, or `nullptr` if the list is
-	/// empty. The error code is updated to:
-	///
-	/// - `ErrorOK`: Valid element returned.
-	/// - `ErrorEmpty`: The list is empty.
-	Node *Back();
-
-	/// Move the current element to a past-the-end position. The error code
-	/// is set to `ErrorOK`.
-	void End();
-
-	/// Insert an element in the list before the element at the current
-	/// position or at the end if the current position is past the end. The
-	/// inserted element cannot be `nullptr`. The current position is
-	/// updated to that of the new element. The error code is set to
-	/// `ErrorOK`.
-	///
-	/// \throw
-	///	This function throws a `misc::Panic` exception if the
-	///	inserted element is `nullptr`, or if the inserted element was
-	///	already a member of a list.
-	Node *Insert(Node *node);
-
-	/// Insert an element at the end of the list. The inserted element
-	/// cannot be `nullptr`. The current element is set to the inserted
-	/// element, that is, the tail of the list. The error code is set to
-	/// `ErrorOK`.
-	///
-	/// \throw
-	///	This function throws a `misc::Panic` exception if the
-	///	inserted element is `nullptr`, or if the inserted element was
-	///	already a member of a list.
-	Node *PushBack(Node *node)
+	/// Return a past-the-end iterator
+	Iterator end()
 	{
-		End();
-		return Insert(node);
+		return Iterator(nullptr);
 	}
 
-	/// Insert an element at the head of the list. The inserted element
-	/// cannot be `nullptr`. The current element is set to the inserted
-	/// element, that is, the head of the list. The error code is set to
-	/// `ErrorOK`.
-	///
-	/// \throw
-	///	This function throws an `misc::Panic` exception if the
-	///	inserted element is `nullptr`, or if the inserted element was
-	///	already a member of a list.
-	Node *PushFront(Node *node)
+	/// Return the first element in the list, or `nullptr` if the list is
+	/// empty.
+	T *Front()
 	{
-		Front();
-		return Insert(node);
+		return head ? head->data : nullptr;
 	}
 
-	/// Remove the element in the current position of the list. If the
-	/// removal succeeds, the removed element is returned, and the current
-	/// element becomes the element after the removed element, or
-	/// past-the-end if the removed element was the last. If the removal
-	/// fails, the current element remains the same, and the function
-	/// returns `nullptr`. The error code is updated to:
-	///
-	/// - `ErrorOK`: Element successfully removed.
-	/// - `ErrorBounds`: Current element is past the end.
-	Node *Remove();
+	/// Return the last element in the list, or `nullptr` if the list is
+	/// empty.
+	T *Back()
+	{
+		return tail ? tail->data : nullptr;
+	}
 
-	/// Remove the given element from the list. The element must be
-	/// currently inserted in the list. The current element is moved to the
-	/// beginning of the list. The error code is updated to `ErrorOK`.
-	///
-	/// \throw
-	///	This function throws an `misc::Panic` exception if the
-	///	elemement to remove is `nullptr`, or if it is currently no a
-	///	member of a list.
-	void Remove(Node *node);
+	/// Insert a node in the list before the node pointed to by the
+	/// iterator, or at the end if the iterator is a past-the-end
+	/// iterator.
+	Iterator Insert(Iterator position, Node &node)
+	{
+		assert(node.list == nullptr);
+		if (size == 0)
+		{
+			// List is empty
+			head = &node;
+			tail = &node;
+		}
+		else if (position == begin())
+		{
+			// Insert at the head
+			node.next = head;
+			head->prev = &node;
+			head = &node;
+		}
+		else if (position == end())
+		{
+			// Insert at the tail
+			node.prev = tail;
+			tail->next = &node;
+			tail = &node;
+		}
+		else
+		{
+			// Insert in the middle
+			node.prev = position.node->prev;
+			node.next = position.node;
+			position.node->prev = &node;
+			node.prev->next = &node;
+		}
+	
+		// Update state
+		size++;
+		node.list = this;
+		return Iterator(&node);
+	}
+
+	/// Insert an element at the end of the list, and return an iterator
+	/// to the inserted element.
+	Iterator PushBack(Node &node)
+	{
+		return Insert(end(), node);
+	}
+
+	/// Insert an element at the beginning of the list, and return an
+	/// iterator to the inserted element.
+	Iterator PushFront(Node &node)
+	{
+		return Insert(begin(), node);
+	}
+
+	/// Remove the elemented at the specified position in the list, and
+	/// return an iterator to the element following it, or a past-the-end
+	/// iterator if it was the last element.
+	Iterator Erase(Iterator position)
+	{
+		assert(size > 0);
+		assert(position.node != nullptr);
+		assert(position.node->list == this);
+
+		// Remove current element
+		if (size == 1)
+		{
+			assert(head == position.node);
+			assert(tail == position.node);
+			head = nullptr;
+			tail = nullptr;
+		}
+		else if (position.node == head)
+		{
+			position.node->next->prev = nullptr;
+			head = position.node->next;
+		}
+		else if (position.node == tail)
+		{
+			position.node->prev->next = nullptr;
+			tail = position.node->prev;
+		}
+		else
+		{
+			position.node->prev->next = position.node->next;
+			position.node->next->prev = position.node->prev;
+		}
+
+		// Mark as removed
+		position.node->list = nullptr;
+		size--;
+
+		// Return iterator to next element
+		return Iterator(position.node->next);
+	}
+
+	
+	/// Alternative syntax for Erase() that takes a list node as an
+	/// argument.
+	Iterator Erase(Node &node)
+	{
+		return Erase(Iterator(&node));
+	}
 };
 
 } // namespace misc
 
 #endif
+
 

@@ -73,19 +73,35 @@ public:
 	/// Cache block. This class is a child of misc::List::Node because one
 	/// block will belong to one set's LRU list. See documentation of
 	/// misc::List::Node for details.
-	class Block : public misc::List::Node
+	class Block
 	{
 		// Only Cache needs to initialize fields
 		friend class Cache;
 
-		// Block properties
-		unsigned tag;
-		unsigned transient_tag;
-		unsigned way_id;
-		bool prefetched;
-		BlockState state;
+		// Block tag
+		unsigned tag = 0;
+
+		// Transient tag assigned by NMOESI protocol
+		unsigned transient_tag = 0;
+
+		// Way identifier
+		unsigned way_id = 0;
+
+		// If true, the block has been prefreched
+		bool prefetched = false;
+
+		// Block state
+		BlockState state = BlockInvalid;
+
+		// The block belongs to an LRU list
+		misc::List<Block>::Node lru_node;
 	
 	public:
+
+		/// Constructor
+		Block() : lru_node(this)
+		{
+		}
 
 		/// Get the block tag
 		unsigned getTag() const { return tag; }
@@ -99,7 +115,7 @@ public:
 		/// Get the block state
 		BlockState getState() const { return state; }
 
-		/// Returned whether the block was prefetched
+		/// Returns whether the block was prefetched
 		bool isPrefetched() const { return prefetched; }
 	};
 
@@ -112,7 +128,7 @@ private:
 		friend class Cache;
 
 		// List of blocks in LRU order
-		misc::List lru_list;
+		misc::List<Block> lru_list;
 
 		// Position in Cache::blocks where the blocks start for this set
 		Block *blocks;
