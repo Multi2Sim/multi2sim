@@ -48,7 +48,7 @@ std::string activity_file;
 
 std::string config_file;
 
-bool stand_alone = false;
+bool stand_alone_setting = false;
 
 
 //
@@ -114,7 +114,7 @@ void System::RegisterOptions()
 
 	// Stand-alone simulator
 	command_line->RegisterBool("--dram-sim",
-			stand_alone,
+			stand_alone_setting,
 			"Runs a DRAM simulation using the actions provided "
 			"in the DRAM configuration file (option "
 			"'--dram-config').");
@@ -138,7 +138,7 @@ void System::ProcessOptions()
 		dram->ParseConfiguration(config_file);
 
 	// Stand-alone simulator
-	if (stand_alone)
+	if (stand_alone_setting)
 	{
 		dram->Run();
 	}
@@ -188,15 +188,26 @@ void System::ParseConfiguration(const std::string &path)
 
 void System::Run()
 {
-	debug << "It's happening.\n";
+	// Running a simulation seperate from the rest of m2s.
+	stand_alone = true;
 
+	// Get the simulation engine and actions.
 	esim::Engine *engine = esim::Engine::getInstance();
+	Actions *actions = Actions::getInstance();
+
+	// Run a simulation with 1000 cycles.
+	// FIXME: Make this dependent on actions.
 	for (int i = 0; i < 1000; i++)
 	{
 		engine->ProcessEvents();
 	}
 
+	// Dump the system and actions to the debug file.
 	dump(debug);
+	actions->dump(debug);
+
+	// Run checks from actions.
+	actions->DoChecks();
 }
 
 

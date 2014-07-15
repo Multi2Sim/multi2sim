@@ -30,7 +30,16 @@
 namespace dram
 {
 
-std::map<CommandType, std::string> Command::CommandTypeMap = {
+misc::StringMap CommandTypeMap
+{
+	{"Invalid", CommandInvalid},
+	{"Precharge", CommandPrecharge},
+	{"Activate", CommandActivate},
+	{"Read", CommandRead},
+	{"Write", CommandWrite}
+};
+
+std::map<CommandType, std::string> CommandTypeMapToString = {
 	{CommandInvalid, "Invalid"},
 	{CommandPrecharge, "Precharge"},
 	{CommandActivate, "Activate"},
