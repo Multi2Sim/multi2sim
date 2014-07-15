@@ -53,7 +53,7 @@ class AQLPacket
 					"index %d of an AQL packet", offset));
 		unsigned int size = sizeof(Type);
 		char *buffer = (char *)(&value);
-		for (int i = 0; i < size; i++)
+		for (unsigned int i = 0; i < size; i++)
 		{
 			bytes[offset + i] = buffer[i];
 		}
