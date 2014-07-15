@@ -118,7 +118,7 @@ public:
 	/// This function should be removed.
 	void AddInst(si2bin::Instruction *inst);
 
-	/// Add an instruction to the basic block.
+	/// Add an instruction to the basic block, constructed with an opcode
 	si2bin::Instruction *addInstruction(SI::InstOpcode opcode)
 	{
 		instructions.emplace_back(misc::new_unique<si2bin::Instruction>
