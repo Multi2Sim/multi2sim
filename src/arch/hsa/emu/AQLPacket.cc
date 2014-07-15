@@ -23,15 +23,29 @@ namespace HSA
 {
 
 AQLPacket::AQLPacket()
-{
-	// TODO Auto-generated constructor stub
-
-}
+{}
 
 
 AQLPacket::~AQLPacket()
+{}
+
+
+void AQLPacket::Assign()
 {
-	// TODO Auto-generated destructor stub
+	setFormat(AQL_FORMAT_DISPATCH);
 }
 
-} /* namespace HSA */
+
+void AQLPacket::setFormat(unsigned char format)
+{
+	setByOffset<unsigned char>(0, format);
+}
+
+
+unsigned char AQLPacket::getFormat() const
+{
+	return getByOffset<unsigned char>(0);
+}
+
+}  // namespace HSA
+

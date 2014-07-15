@@ -26,6 +26,14 @@
 namespace HSA
 {
 
+enum AQLFormat
+{
+	AQL_FORMAT_ALWAYS_RESERVED = 0,
+	AQL_FORMAT_INVALID,
+	AQL_FORMAT_DISPATCH,
+	AQL_FORMAT_BARRIER,
+	AQL_FORMAT_AGENT_DISPATCH
+};
 
 /// Represent an AQL packet for HSA agent to dispatch task
 class AQLPacket
@@ -36,7 +44,7 @@ class AQLPacket
 
 	/// Get field by offset
 	template <typename Type>
-	Type getByOffset(unsigned short offset)
+	Type getByOffset(unsigned short offset) const
 	{
 		if (!misc::inRange(offset, 0, 63))
 			throw misc::Panic(misc::fmt("Trying to access invalid"
@@ -67,86 +75,103 @@ public:
 	/// Destructor
 	virtual ~AQLPacket();
 
+	/// Assign the packet to the HSA Packet Processor, by changing the AQL
+	/// packet format field from INVALID or ALWAYS_RESERVED
+	void Assign();
+
+
+
+
+	//
+	// Setters and getters
+	//
+
 	/// Returns the pointer to the beginning of the packet buffer
 	char *getBuffer(){ return bytes; }
 
+	/// Get the format the field in the header
+	unsigned char getFormat() const;
+
+	/// Set format field in the header
+	void setFormat(unsigned char format);
+
 	/// Returns the header as a whole in unsigned integer
-	unsigned short getHeader() { return getByOffset<unsigned short>(0);}
+	unsigned short getHeader() const{ return getByOffset<unsigned short>(0);}
 
 	/// Set the header in whole
-	void setHeader(unsigned short header) { setByOffset<unsigned int>(2, header); }
+	void setHeader(unsigned short header){ setByOffset<unsigned int>(2, header); }
 
 	/// Returns the dimension
-	unsigned short getDimension(){ return getByOffset<unsigned short>(2); }
+	unsigned short getDimension() const{ return getByOffset<unsigned short>(2); }
 
 	/// Set the dimension field
 	void setDimension(unsigned short dim){ setByOffset<unsigned short>(2, dim); }
 
 	/// Returns the work group size x
-	unsigned short getWorkGroupSizeX(){ return getByOffset<unsigned short>(4); }
+	unsigned short getWorkGroupSizeX() const{ return getByOffset<unsigned short>(4); }
 
 	/// Set the work group size x
 	void setWorkGroupSizeX(unsigned short wg_size_x){ setByOffset<unsigned short>(4, wg_size_x); }
 
 	/// Returns the work group size y
-	unsigned short getWorkGroupSizeY(){ return getByOffset<unsigned short>(6); }
+	unsigned short getWorkGroupSizeY() const{ return getByOffset<unsigned short>(6); }
 
 	/// Set the work group size y
 	void setWorkGroupSizeY(unsigned short wg_size_y){ setByOffset<unsigned short>(6, wg_size_y); }
 
 	/// Returns the work group size z
-	unsigned short getWorkGroupSizeZ(){ return getByOffset<unsigned short>(8); }
+	unsigned short getWorkGroupSizeZ() const{ return getByOffset<unsigned short>(8); }
 
 	/// Set the work group size z
 	void setWorkGroupSizeZ(unsigned int wg_size_z){ setByOffset<unsigned short>(8, wg_size_z); }
 
 	/// Returns the grid size x
-	unsigned int getGridSizeX(){ return getByOffset<unsigned int>(12); }
+	unsigned int getGridSizeX() const{ return getByOffset<unsigned int>(12); }
 
 	/// Set the grid size x
 	void setGridSizeX(unsigned int grid_size_x){ setByOffset<unsigned int>(12, grid_size_x); }
 
 	/// Returns the grid size y
-	unsigned int getGridSizeY(){ return getByOffset<unsigned int>(16); }
+	unsigned int getGridSizeY() const{ return getByOffset<unsigned int>(16); }
 
 	/// Set the grid size y
 	void setGridSizeY(unsigned int grid_size_y){ setByOffset<unsigned int>(16, grid_size_y); }
 
 	/// Returns the grid size z
-	unsigned int getGridSizeZ(){ return getByOffset<unsigned int>(20); }
+	unsigned int getGridSizeZ() const{ return getByOffset<unsigned int>(20); }
 
 	/// Set the grid size z
 	void setGridSizeZ(unsigned int grid_size_z){ setByOffset<unsigned int>(20, grid_size_z); }
 
 	/// Returns primary segment size in bytes per work-item
-	unsigned int getPrivateSegmentSizeBytes(){ return getByOffset<unsigned int>(24); }
+	unsigned int getPrivateSegmentSizeBytes() const{ return getByOffset<unsigned int>(24); }
 
 	/// Set primary segment size in bytes per work-item
 	void setPrivateSegmentSizeBytes(unsigned int size){ setByOffset<unsigned int>(24, size); }
 
 	/// Returns group memory size in bytes per work-group
-	unsigned int getGroupSegmentSizeBytes(){ return getByOffset<unsigned int>(28); }
+	unsigned int getGroupSegmentSizeBytes() const{ return getByOffset<unsigned int>(28); }
 
 	/// Set group memory size in bytes per work-group
 	void setGroupSegmentSizeBytes(unsigned int size){ setByOffset<unsigned int>(28, size); }
 
 	/// Returns the address to kernel object
-	unsigned long long getKernalObjectAddress(){ return getByOffset<unsigned long long>(32); }
+	unsigned long long getKernalObjectAddress() const{ return getByOffset<unsigned long long>(32); }
 
 	/// Set the address to kernel object
 	void setKernalObjectAddress(unsigned long long address){ setByOffset<unsigned long long>(32, address); }
 
 	/// Returns the address to kernel arguments
-	unsigned long long getKernargAddress(){ return getByOffset<unsigned long long>(40); }
+	unsigned long long getKernargAddress() const{ return getByOffset<unsigned long long>(40); }
 
 	/// Set the address to kernel argument
 	void setKernargAddress(unsigned long long address){ setByOffset<unsigned long long>(40, address); }
 
 	/// Returns the completion signal
-	unsigned long long getCompletionSignal(){ return getByOffset<unsigned long long>(56); }
+	unsigned long long getCompletionSignal() const{ return getByOffset<unsigned long long>(56); }
 
 	/// Set the address to kernel argument
-	void getCompletionSignal(unsigned long long signal){ setByOffset<unsigned long long>(56, signal); }
+	void setCompletionSignal(unsigned long long signal){ setByOffset<unsigned long long>(56, signal); }
 
 };
 
