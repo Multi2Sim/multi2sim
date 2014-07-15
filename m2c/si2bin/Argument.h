@@ -671,7 +671,7 @@ public:
 	/// Set value to be an ArgScalarRegister pointer
 	void setScalarRegister(int id)
 	{
-		value.reset(new ArgVectorRegister(id));
+		value = misc::new_unique<ArgVectorRegister>(id);
 	}
 
 	/// Set value to be an ArgVectorRegister pointer
