@@ -84,7 +84,7 @@ Cache::Cache(const std::string &name,
 		{
 			Block *block = getBlock(set_id, way_id);
 			block->way_id = way_id;
-			set->lru_list.PushBack(block);
+			set->lru_list.PushBack(block->lru_node);
 		}
 	}
 }
@@ -154,8 +154,8 @@ void Cache::setBlock(unsigned set_id,
 	if (replacement_policy == ReplacementFIFO
 			&& block->tag != tag)
 	{
-		set->lru_list.Remove(block);
-		set->lru_list.PushFront(block);
+		set->lru_list.Erase(block->lru_node);
+		set->lru_list.PushFront(block->lru_node);
 	}
 
 	// Set new values for block
@@ -191,8 +191,8 @@ void Cache::AccessBlock(unsigned set_id, unsigned way_id)
 	// Move to the head of the LRU list
 	if (move_to_head)
 	{
-		set->lru_list.Remove(block);
-		set->lru_list.PushFront(block);
+		set->lru_list.Erase(block->lru_node);
+		set->lru_list.PushFront(block->lru_node);
 	}
 }
 
@@ -213,8 +213,8 @@ unsigned Cache::ReplaceBlock(unsigned set_id)
 
 		// Move it to the head to avoid making it a candidate in the
 		// next call to getReplacementBlock().
-		set->lru_list.Remove(block);
-		set->lru_list.PushFront(block);
+		set->lru_list.Erase(block->lru_node);
+		set->lru_list.PushFront(block->lru_node);
 
 		// Return way index of the selected block
 		return block->way_id;
