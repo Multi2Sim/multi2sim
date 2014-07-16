@@ -29,6 +29,8 @@ namespace MIPS
 //
 
 
+// Maximum number of instructions
+long long Emu::max_instructions;
 
 
 
@@ -67,6 +69,40 @@ Emu::Emu() : comm::Emu("MIPS")
 	schedule_signal = false;
 	futex_sleep_count = 0;
 	address_space_index = 0;
+}
+
+void Emu::AddContextToList(ContextListType type, Context *context)
+{
+	// Nothing if already present
+	if (context->context_list_present[type])
+		return;
+
+	// Add context
+	context->context_list_present[type] = true;
+	context_list[type].push_back(context);
+	auto iter = context_list[type].end();
+	context->context_list_iter[type] = --iter;
+}
+
+void Emu::RemoveContextFromList(ContextListType type, Context *context)
+{
+	// Nothing if not present
+	if (!context->context_list_present[type])
+		return;
+
+	// Remove context
+	context->context_list_present[type] = false;
+	auto iter = context->context_list_iter[type];
+	context_list[type].erase(iter);
+}
+
+void Emu::UpdateContextInList(ContextListType type, Context *context,
+			bool present)
+{
+	if (present && !context->context_list_present[type])
+		AddContextToList(type, context);
+	else if (!present && context->context_list_present[type])
+		RemoveContextFromList(type, context);
 }
 
 Emu *Emu::getInstance()
@@ -108,6 +144,7 @@ void Emu::LoadProgram(const std::vector<std::string> &args,
 {
 	// Create new context
 	Context *context = newContext();
+
 	context->Load(args,
 			env,
 			cwd,
@@ -119,14 +156,20 @@ void Emu::LoadProgram(const std::vector<std::string> &args,
 void Emu::freeContext(Context *context)
 {
 	// Remove context from all context lists
-/*	for (int i = 0; i < ContextListCount; i++)
+	for (int i = 0; i < ContextListCount; i++)
 		RemoveContextFromList((ContextListType) i, context);
 
 	// Remove from main context list. This will invoke the context
 	// destructor and free it.
-	contexts.erase(context->contexts_iter); */
+	contexts.erase(context->contexts_iter);
 }
 
+void Emu::ProcessEventsSchedule()
+{
+	LockMutex();
+	process_events_force = true;
+	UnlockMutex();
+}
 
 void Emu::ProcessEvents()
 {
@@ -169,11 +212,11 @@ void Emu::ProcessEvents()
 		// together with the system call itself, without having
 		// distributed code for the implementation of a system call
 		// (e.g. 'read').
-		/*if (context->getState(ContextCallback) && context->CanWakeup())
+		if (context->getState(ContextCallback) && context->CanWakeup())
 		{
 			context->Wakeup();
 			continue;
-		}*/
+		}
 	}
 #if 0
 	/*
@@ -238,8 +281,8 @@ void Emu::ProcessEvents()
 	// LOOP 3
 	// Process pending signals in running contexts to launch signal handlers
 	//
-	/*for (Context *context : context_list[ContextListRunning])
-		context->CheckSignalHandler();*/
+	for (Context *context : context_list[ContextListRunning])
+		context->CheckSignalHandler();
 
 	// Unlock
 	UnlockMutex();

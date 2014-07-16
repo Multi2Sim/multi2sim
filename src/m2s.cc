@@ -188,7 +188,6 @@ void LoadProgram(const std::vector<std::string> &args,
 	switch (elf_file.getMachine())
 	{
 	case EM_386:
-
 		emu = x86::Emu::getInstance();
 		break;
 
@@ -211,11 +210,11 @@ void LoadProgram(const std::vector<std::string> &args,
 			emu = HSA::Emu::getInstance();
 			break;
 		}
-	
+
 	default:
 		misc::fatal("%s: unsupported ELF architecture", exe.c_str());
 	}
-		
+
 	// Load the program in selected emulator
 	emu->LoadProgram(args, env, cwd, stdin_file_name, stdout_file_name);
 }

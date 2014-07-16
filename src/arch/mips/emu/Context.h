@@ -23,6 +23,7 @@
 #include <memory>
 #include <vector>
 
+#include <arch/common/CallStack.h>
 #include <arch/mips/asm/Inst.h>
 #include <lib/cpp/ELFReader.h>
 #include <memory/Memory.h>
@@ -39,6 +40,8 @@ namespace MIPS
 class Context;
 class Emu;
 
+/// Constant types used for context system calls to transfer the system call number
+const unsigned int __NR_Linux = 4000;
 
 /// Context states
 enum ContextState
@@ -47,8 +50,14 @@ enum ContextState
 	ContextRunning      = 0x00001,  // it is able to run instructions
 	ContextSpecMode     = 0x00002,  // executing in speculative mode
 	ContextSuspended    = 0x00004,  // suspended in a system call
+	ContextFinished     = 0x00008,  // no more inst to execute
+	ContextLocked       = 0x00020,  // another context is running in excl mode
 	ContextHandler      = 0x00040,  // executing a signal handler
+	ContextWrite        = 0x00800,  // 'write' system call
+	ContextZombie       = 0x02000,  // zombie context
+	ContextAlloc        = 0x08000,  // allocated to a core/thread
 	ContextCallback     = 0x10000,  // suspended after syscall with callback
+	ContextMapped       = 0x20000   // mapped to a core/thread
 };
 
 /// Context list identifiers
@@ -80,6 +89,28 @@ class Context
 	// ContextSuspended | ContextFutex
 	unsigned state;
 
+	// For segmented memory access in glibc
+	unsigned glibc_segment_base;
+	unsigned glibc_segment_limit;
+
+	// Host thread that suspends and then schedules call to Emu::ProcessEvents()
+	// The 'host_thread_suspend_active' flag is set when a 'host_thread_suspend' thread
+	// is launched for this context (by caller).
+	// It is clear when the context finished (by the host thread).
+	// It should be accessed safely by locking the emulator mutex
+	pthread_t host_thread_suspend;  // Thread
+	bool host_thread_suspend_active;  // Thread-spawned flag
+
+	// Host thread that lets time elapse and schedules call to
+	// emu->ProcessEvents()
+	pthread_t host_thread_timer;
+	int host_thread_timer_active;
+	long long host_thread_timer_wakeup;
+
+	// Scheduler
+	int sched_policy;
+	int sched_priority;
+
 	// Context memory. This object can be shared by multiple contexts, so it
 	// is declared as a shared pointer. The last freed context pointing to
 	// this memory object will be the one automatically freeing it.
@@ -92,16 +123,33 @@ class Context
 	// Register file. Each context has its own copy always.
 	Regs regs;
 
-	// last emulated instruction
-	std::unique_ptr<Inst> inst;
+	// current emulated instruction
+	//std::unique_ptr<Inst> inst(new Inst());
+	Inst inst;
 
 	// File descriptor table, shared by contexts
 	std::shared_ptr<comm::FileTable> file_table;
+
+	// Call stack
+	std::unique_ptr<comm::CallStack> call_stack;
 
 	// Instruction pointers
 	unsigned last_eip;  // Address of last emulated instruction
 	unsigned current_eip;  // Address of currently emulated instruction
 	unsigned target_eip;  // Target address for branch, even if not taken
+
+	// Parent context
+	Context *parent;
+
+	// Context group initiator. There is only one group parent (if not null)
+	// with many group children, no tree organization.
+	Context *group_parent;
+
+	int exit_signal;  // Signal to send parent when finished
+	int exit_code;  // For zombie contexts
+
+	unsigned int clear_child_tid;
+	unsigned int robust_list_head;  // robust futex list
 
 	// Virtual address of the memory access performed by the last emulated
 	// instruction.
@@ -122,6 +170,14 @@ class Context
 	CanWakeupFn can_wakeup_fn;
 	WakeupFn wakeup_fn;
 	ContextState wakeup_state;
+
+	// Suspend a context, using callbacks 'can_wakeup_fn' and 'wakeup_fn'
+	// to check whether the context can wakeup and to wake it up,
+	// respectively. Argument 'wakeup_state' specified a temporary
+	// state added to the context when suspended, and removed when
+	// waken up.
+	void Suspend(CanWakeupFn can_wakeup_fn, WakeupFn wakeup_fn,
+			ContextState wakeup_state);
 
 	///////////////////////////////////////////////////////////////////////
 	//
@@ -230,8 +286,8 @@ class Context
 
 	///////////////////////////////////////////////////////////////////////
 	//
-	// Functions and fields related with mips instruction emulation,
-	// implemented in ContextIsaXXX.cc files
+	// Functions and fields related with the emulation of execute instructions,
+	// implemented in Machine.cc.
 	//
 	///////////////////////////////////////////////////////////////////////
 
@@ -251,8 +307,58 @@ class Context
 #undef DEFINST
 
 	// Table of functions
-	ExecuteInstFn execute_inst_fn[InstOpcodeCount];
+	static ExecuteInstFn execute_inst_fn[InstOpcodeCount];
 
+	///////////////////////////////////////////////////////////////////////
+	//
+	// Functions and fields related with the emulation of system calls,
+	// implemented in ContextSyscall.cc.
+	//
+	///////////////////////////////////////////////////////////////////////
+
+	// Emulate a system call
+	void ExecuteSyscall();
+
+	// Enumeration with all system call codes. Each entry of Syscall.dat
+	// will be expanded into a code. For example, entry
+	//	DEFSYSCALL(exit, 1)
+	// will produce code
+	//	SyscallCode_exit
+	// There is a last element 'SyscallCodeCount' that will be one unit
+	// higher than the highest system call code found in Syscall.dat.
+	enum
+	{
+#define DEFSYSCALL(name, code) SyscallCode_##name = code,
+#include "syscall.dat"
+#undef DEFSYSCALL
+		SyscallCodeCount
+	};
+
+	// System call emulation functions. Each entry of syscall.dat will be
+	// expanded into a function prototype. For example, entry
+	//	DEFSYSCALL(exit, 1)
+	// is expanded to
+	//	void ExecuteSyscall_exit();
+#define DEFSYSCALL(name, code) int ExecuteSyscall_##name();
+#include "syscall.dat"
+#undef DEFSYSCALL
+
+	// System call names
+	static const char *syscall_name[SyscallCodeCount + 1];
+
+	// Prototype of a member function of class Context devoted to the
+	// execution of System Calls. The emulator has a table indexed by an
+	// instruction identifier that points to all instruction emulation
+	// functions.
+	typedef int (Context::*ExecuteSyscallFn)();
+
+	// Table of system call execution functions
+	static const ExecuteSyscallFn execute_syscall_fn[SyscallCodeCount + 1];
+
+	// System call 'write'
+	int syscall_write_fd;
+	void SyscallWriteWakeup();
+	bool SyscallWriteCanWakeup();
 
 public:
 	/// Position of the context in the main context list. This field is
@@ -288,20 +394,6 @@ public:
 		return misc::getFullPath(path, loader->cwd);
 	}
 
-	/// Run one instruction for the context at the position pointed to by
-	/// register program counter.
-	void Execute();
-
-	/// Return \c true if flag \a state is part of the context state
-	bool getState(ContextState state) const { return this->state & state; }
-
-	/// Set flag \a state in the context state
-	void setState(ContextState state) { UpdateState(this->state | state); }
-
-	/// Clear flag \a state in the context state
-	void clearState(ContextState state) { UpdateState(this->state
-			& ~state); }
-
 	/// Check whether a context suspended with a call to Suspend() is ready
 	/// to wake up, by invoking the 'can_wakeup' callback.
 	bool CanWakeup();
@@ -314,6 +406,35 @@ public:
 	// Check whether there is any pending unblocked signal in the context,
 	// and invoke the corresponding signal handler.
 	void CheckSignalHandler();
+
+	/// Run one instruction for the context at the position pointed to by
+	/// register program counter.
+	void Execute();
+
+	// Finish a context group. This call does a subset of action of the
+	// Finish() call, but for all parent and child contexts sharing a
+	// memory map.
+	void FinishGroup(int status);
+
+	// Finish a context. If the context has no parent, its state will be
+	// set to ContextFinished. If it has, its state is set to
+	// ContextZombie, waiting for a call to 'waitpid'. The children of the
+	// finished context will set their 'parent' attribute to null. The
+	// zombie children will be finished.
+	void Finish(int status);
+
+	/// Return \c true if flag \a state is part of the context state
+	bool getState(ContextState state) const { return this->state & state; }
+
+	/// Set flag \a state in the context state
+	void setState(ContextState state) { UpdateState(this->state | state); }
+
+	/// Clear flag \a state in the context state
+	void clearState(ContextState state) { UpdateState(this->state
+			& ~state); }
+
+
+
 };
 
 }  // namespace MIPS

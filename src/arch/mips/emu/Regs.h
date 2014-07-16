@@ -22,6 +22,7 @@
 
 namespace MIPS
 {
+
 class Regs
 {
 	unsigned int  gpr[32]; // General Purpose registers
@@ -41,17 +42,20 @@ public:
     ///if n is great than 31, exit program
     void setGPR(int n, unsigned int value);
     
-    ///read from Program Counter
-    unsigned int getPC(){ return pc; }
-    
     ///write pc with value
     void setPC(unsigned int value){ pc = value; }
     
     /// Increment value of register \c eip by \a value bytes.
     void incPC(int value) { pc += value; }
 
+    ///read from Program Counter
+    unsigned int getPC(){ return pc; }
+
     /// Set Register31 stack pointer to value
     void setSP(int value) { gpr[31] = value; }
+
+    /// read from Stack Pointer
+    unsigned int getSP() { return gpr[31]; }
 
     ///read from HI register
     unsigned int getHI();

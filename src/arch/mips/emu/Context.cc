@@ -19,13 +19,11 @@
 #include <iostream>
 #include <vector>
 
+#include <lib/cpp/Environment.h>
 #include <lib/cpp/Misc.cc>
 
 #include "Context.h"
 #include "Emu.h"
-
-// Variable used in function Context::loadProgram()
-extern char **environ;
 
 namespace MIPS
 {
@@ -40,6 +38,34 @@ void Context::UpdateState(unsigned state)
 	unsigned diff = this->state ^ state;
 	if (diff & ~ContextSpecMode)
 		emu->setScheduleSignal();
+
+	// Update state
+	this->state = state;
+	if (this->state & ContextFinished)
+		this->state = ContextFinished
+		| (state & ContextAlloc)
+		| (state & ContextMapped);
+	if (this->state & ContextZombie)
+		this->state = ContextZombie
+		| (state & ContextAlloc)
+		| (state & ContextMapped);
+	if (!(this->state & ContextSuspended) &&
+			!(this->state & ContextFinished) &&
+			!(this->state & ContextZombie) &&
+			!(this->state & ContextLocked))
+		this->state |= ContextRunning;
+	else
+		this->state &= ~ContextRunning;
+
+	// Update presence of context in emulator lists depending on its state
+	emu->UpdateContextInList(ContextListRunning, this, this->state & ContextRunning);
+	emu->UpdateContextInList(ContextListZombie, this, this->state & ContextZombie);
+	emu->UpdateContextInList(ContextListFinished, this, this->state & ContextFinished);
+	emu->UpdateContextInList(ContextListSuspended, this, this->state & ContextSuspended);
+
+
+
+
 }
 
 
@@ -48,6 +74,28 @@ Context::Context()
 	// Save emulator instance
 	emu = Emu::getInstance();
 
+	// Initialize
+	state = 0;
+	glibc_segment_base = 0;
+	glibc_segment_limit = 0;
+	pid = emu->getPid();
+	parent = nullptr;
+	group_parent = nullptr;
+	exit_signal = 0;
+	exit_code = 0;
+	clear_child_tid = 0;
+	robust_list_head = 0;
+	host_thread_suspend_active = false;
+	host_thread_timer_active = false;
+	sched_policy = SCHED_RR;
+	sched_priority = 1;  // Lowest priority
+
+	wakeup_fn = nullptr;
+	can_wakeup_fn = nullptr;
+
+	// Presence in context lists
+	for (int i = 0; i < ContextListCount; i++)
+		context_list_present[i] = false;
 
 }
 
@@ -56,37 +104,6 @@ Context::~Context()
 {
 	// Debug
 	emu->context_debug << "Context " << pid << " destroyed\n";
-}
-
-
-bool Context::CanWakeup()
-{
-	// Checks
-	assert(getState(ContextCallback));
-	assert(getState(ContextSuspended));
-	assert(this->can_wakeup_fn);
-
-	// Invoke callback
-	return (this->*can_wakeup_fn)();
-}
-
-
-void Context::Wakeup()
-{
-	// Checks
-	assert(getState(ContextCallback));
-	assert(getState(ContextSuspended));
-	assert(this->wakeup_fn);
-
-	// Wakeup context
-	(this->*wakeup_fn)();
-	clearState(ContextCallback);
-	clearState(ContextSuspended);
-	clearState(wakeup_state);
-
-	// Reset callbacks and free data
-	can_wakeup_fn = nullptr;
-	wakeup_fn = nullptr;
 }
 
 
@@ -127,19 +144,76 @@ void Context::Load(const std::vector<std::string> &args,
 	// Create new loader info
 	assert(!loader.get());
 	loader.reset(new Loader());
+	loader->exe = misc::getFullPath(args[0], cwd);
 	loader->args = args;
-	loader->cwd = cwd;
+	loader->cwd = cwd.empty() ? misc::getCwd() : cwd;
 	loader->stdin_file_name = stdin_file_name;
 	loader->stdout_file_name = stdout_file_name;
 
 	// Add environment variables
-	for (int i = 0; environ[i]; i++)
-		loader->env.emplace_back(environ[i]);
+	misc::Environment *environment = misc::Environment::getInstance();
+	for (auto variable : environment->getVariables())
+		loader->env.emplace_back(variable);
 	for (auto &var : env)
 		loader->env.emplace_back(var);
 
+	// Create call stack
+	call_stack.reset(new comm::CallStack(loader->exe));
+
 	// Load the binary
 	LoadBinary();
+}
+
+
+void Context::Suspend(CanWakeupFn can_wakeup_fn, WakeupFn wakeup_fn,
+		ContextState wakeup_state)
+{
+	// Checks
+	assert(!getState(ContextSuspended));
+	assert(!this->can_wakeup_fn);
+	assert(!this->wakeup_fn);
+
+	// Store callbacks and data
+	this->can_wakeup_fn = can_wakeup_fn;
+	this->wakeup_fn = wakeup_fn;
+	this->wakeup_state = wakeup_state;
+
+	// Suspend context
+	setState(ContextSuspended);
+	setState(ContextCallback);
+	setState(wakeup_state);
+	emu->ProcessEventsSchedule();
+}
+
+
+bool Context::CanWakeup()
+{
+	// Checks
+	assert(getState(ContextCallback));
+	assert(getState(ContextSuspended));
+	assert(this->can_wakeup_fn);
+
+	// Invoke callback
+	return (this->*can_wakeup_fn)();
+}
+
+
+void Context::Wakeup()
+{
+	// Checks
+	assert(getState(ContextCallback));
+	assert(getState(ContextSuspended));
+	assert(this->wakeup_fn);
+
+	// Wakeup context
+	(this->*wakeup_fn)();
+	clearState(ContextCallback);
+	clearState(ContextSuspended);
+	clearState(wakeup_state);
+
+	// Reset callbacks and free data
+	can_wakeup_fn = nullptr;
+	wakeup_fn = nullptr;
 }
 
 
@@ -173,7 +247,7 @@ void Context::Execute()
 	memory->setSafeDefault();
 
 	// Disassemble
-	inst->Decode(regs.getPC(),buffer_ptr);
+	inst.Decode(regs.getPC(),buffer_ptr);
 
 	// Set last, current, and target instruction addresses
 	last_eip = current_eip;
@@ -186,10 +260,11 @@ void Context::Execute()
 	// Advance Program Counter to the size of instruction (4 bytes)
 	regs.incPC(4);
 
+	std::cout<<inst.GetName()<<std::endl;
 	// Call instruction emulation function
-	if(inst->GetOpcode())
+	if(inst.GetOpcode())
 	{
-		ExecuteInstFn fn = execute_inst_fn[inst->GetOpcode()];
+		ExecuteInstFn fn = execute_inst_fn[inst.GetOpcode()];
 		(this->*fn)();
 	}
 
@@ -197,6 +272,62 @@ void Context::Execute()
 	emu->incInstructions();
 }
 
+void Context::FinishGroup(int exit_code)
+{
+	// Make call on group parent only
+	if (group_parent)
+	{
+		assert(!group_parent->group_parent);
+		group_parent->FinishGroup(exit_code);
+		return;
+	}
+
+	// Context already finished
+	if (getState(ContextFinished) || getState(ContextZombie))
+		return;
+
+	// Finish all contexts in the group
+	for (auto &context : emu->getContexts())
+	{
+		if (context->group_parent != this && context.get() != this)
+			continue;
+
+		// TODO: Thread support to be added for Mips
+		/*
+		if (context->getState(ContextZombie))
+			context->setState(ContextFinished);
+		if (context->getState(ContextHandler))
+			context->ReturnFromSignalHandler();
+		context->HostThreadSuspendCancel();
+		context->HostThreadTimerCancel();
+
+		// Child context of 'context' goes to state 'finished'.
+		// Context 'context' goes to state 'zombie' or 'finished' if it has a parent
+		*/
+		if (context.get() == this)
+			context->setState(context->parent ? ContextZombie : ContextFinished);
+		else
+			context->setState(ContextFinished);
+		context->exit_code = exit_code;
+	}
+
+	// Process events
+	emu->ProcessEventsSchedule();
+}
+
+void Context::Finish(int exit_code)
+{
+	// Context already finished
+	if (getState(ContextFinished) || getState(ContextZombie))
+		return;
+
+	// TODO: multithread support for mips
+
+	// finish context
+	setState(parent ? ContextZombie : ContextFinished);
+	this->exit_code = exit_code;
+	emu->ProcessEventsSchedule();
+}
 
 }  // namespace MIPS
 
