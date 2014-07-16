@@ -100,6 +100,7 @@ public:
 			const std::string &stdin_file_name = "",
 			const std::string &stdout_file_name = "")
 	{
+		std::cout<<"virtual";
 		// Should not be invoked directly
 		abort();
 	}

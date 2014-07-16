@@ -25,6 +25,7 @@
 #include <arch/common/Emu.h>
 #include <lib/cpp/CommandLine.h>
 #include <lib/cpp/Debug.h>
+#include <arch/mips/asm/Inst.h>
 
 #include "Context.h"
 
@@ -102,6 +103,13 @@ public:
 	/// contexts.
 	Context *newContext();
 
+	/// Update the presence of a context in a list depending on the value
+	/// passed in argument \a present. If \c true, the context will be added
+	/// to the list (if not present already. If \c false, it will be removed
+	/// (if still present).
+	void UpdateContextInList(ContextListType type, Context *context,
+			bool present);
+
 	/// Return a constant reference to a list of contexts
 	const std::list<Context *> &getContextList(ContextListType type) const
 	{
@@ -115,6 +123,13 @@ public:
 	/// when a system call is executed to change the context's affinity.
 	void setScheduleSignal() { schedule_signal = true; }
 
+	/// Get reference to the main context list
+	std::list<std::unique_ptr<Context>> &getContexts() { return contexts; }
+
+	/// Return a unique process ID. Contexts can call this function when
+	/// created to obtain their unique identifier.
+	int getPid() { return pid++; }
+
 	/// Create a context and load a program. See comm::Emu::Load() for
 	/// details on the meaning of each argument.
 	void LoadProgram(const std::vector<std::string> &args,
@@ -122,6 +137,9 @@ public:
 			const std::string &cwd = "",
 			const std::string &stdin_file_name = "",
 			const std::string &stdout_file_name = "");
+
+	/// Add a context to a context list if it is not present already
+	void AddContextToList(ContextListType type, Context *context);
 
 	/// Remove a context from all context lists and free it
 	void freeContext(Context *context);
@@ -147,6 +165,10 @@ public:
 	// if events have been scheduled to get processed with a previous call
 	// to ProcessEventsSchedule().
 	void ProcessEvents();
+
+	/// Schedule a call to ProcessEvents(). This call internally locks the
+	/// emulator mutex.
+	void ProcessEventsSchedule();
 
 	/// Run one iteration of the emulation loop.
 	/// \return This function \c true if the iteration had a useful

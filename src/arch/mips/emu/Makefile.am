@@ -5,34 +5,37 @@ libemu_a_SOURCES = \
 	emu.h \
 	emu.c \
 	\
+	Emu.cc \
+	Emu.h  \
+	\
 	context.c \
 	context.h \
 	\
+	Context.cc \
+	Context.h \
 	file.c \
 	file.h \
 	\
 	regs.c \
 	regs.h \
 	\
+	Regs.cc \
+	Regs.h \
+	\
 	syscall.c \
 	syscall.dat \
 	syscall.h \
+	Syscall.cc \
 	\
 	machine.c \
 	machine.h \
+	Machine.cc \
 	\
 	isa.c \
 	isa.h \
 	\
-	Context.cc \
-	Context.h \
 	ContextLoader.cc \
-	\
-	Regs.cc \
-	Regs.h \
-	\
-	Emu.cc \
-	Emu.h  \
+	ContextSignal.cc \
 	\
 	Signal.h \
 	Signal.cc 
