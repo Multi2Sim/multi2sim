@@ -23,13 +23,13 @@
 
 namespace MIPS
 {
-Regs::Regs()
+Regs::Regs() : pc(0), hi(0), lo(0)
 {
 	for(int i=0; i<32; i++)
 		{
 			gpr[i]=0;
 		}
-		pc=hi=lo=0;
+//		pc=hi=lo=0;
 
 }
 
