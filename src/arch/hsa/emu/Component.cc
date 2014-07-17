@@ -65,6 +65,14 @@ void Component::addQueue(AQLQueue *queue)
 
 bool Component::Execute()
 {
+	//TODO implement this function
+
+	// 1. Check if the tasks is being processed. If true, process it.
+
+	// 2. Otherwise, read from queue list and grab a task to start.
+
+	// 3. If this component is not running and there is no pending task,
+	// 	return false indicating this component is idle.
 	return false;
 }
 

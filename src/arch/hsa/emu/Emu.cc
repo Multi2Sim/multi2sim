@@ -56,7 +56,6 @@ std::unique_ptr<Emu> Emu::instance;
 // Functions
 //
 
-
 void Emu::RegisterOptions()
 {
 	// Get command line object
@@ -96,7 +95,7 @@ Emu::Emu() : comm::Emu("hsa")
 
 	// FIXME: Allow user to set up customized HSA virtual machine
 	setDefaultComponentList();
-	DumpComponentList(loader_debug);
+	//DumpComponentList(loader_debug);
 
 }
 
@@ -174,9 +173,13 @@ void Emu::LoadProgram(const std::vector<std::string> &args,
 		const std::string &stdin_file_name,
 		const std::string &stdout_file_name)
 {
-	// Load the whole program
+	// Load the whole program binary
 	ProgramLoader::LoadProgram(args, env, cwd,
 			stdin_file_name, stdout_file_name);
+
+	// Kick start the program by dispatching main function on CPU
+	// TODO: implement this part
+
 }
 
 }  // namespace HSA
