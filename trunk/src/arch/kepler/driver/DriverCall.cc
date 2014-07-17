@@ -85,12 +85,14 @@ int Driver::CallMemAlloc(mem::Memory *memory, unsigned args_ptr)
 	// Arguments
 	unsigned device_ptr;
 	unsigned size;
+	unsigned device_ptr;
 
 	// Read arguments
 	memory->Read(args_ptr, sizeof(unsigned), (char *) &device_ptr);
 	memory->Read(args_ptr+4, sizeof(unsigned), (char *) &size);
 
 	// Debug
+	debug << misc::fmt("\tdevice_ptr = 0x%x\n", device_ptr);
 	debug << misc::fmt("\tsize = %u\n", size);
 
 	// Allocate memory
@@ -101,6 +103,8 @@ int Driver::CallMemAlloc(mem::Memory *memory, unsigned args_ptr)
 	memory->Write(device_ptr, sizeof(unsigned),
 				(char *) kpl_emu->getGlobalMemTopAddress());
 
+	memory->Write(device_ptr, sizeof(unsigned),
+	                          (char *) kpl_emu->getGlobalMemTopAddress());
 	debug << misc::fmt("\t%d bytes of device memory allocated at 0x%x\n",
 			size, device_ptr);
 
@@ -447,22 +451,24 @@ int Driver::CallModuleGetFunction(mem::Memory *memory, unsigned args_ptr)
 /// the return is always 0
 int Driver::CallMemFree(mem::Memory *memory, unsigned args_ptr)
 {
+	/*
 	// Arguments
+	//unsigned device_ptr_addr;
 	unsigned device_ptr;
-
 	// Read Arguments
 	memory->Read(args_ptr, sizeof(unsigned), (char *) &device_ptr);
+	//memory->Read(device_ptr_addr, sizeof(unsigned), (char *) &device_ptr);
 
 	// Debug Info
 	debug << misc::fmt("\tDevice memory deallocated at 0x%08x\n", device_ptr);
 
 	// Deallocate memory
 	Kepler::Emu *kpl_emu = Kepler::Emu::getInstance();
-	mem::Memory *global_mem = kpl_emu->getGlobalMem();
+	//mem::Memory *global_mem = kpl_emu->getGlobalMem();
 	//global_mem->Unmap(kpl_emu->getGlobalMemTop(), sizeof( &device_ptr));
-	std::cout<<sizeof(device_ptr)<<std::endl;
-	global_mem->Unmap(device_ptr, sizeof(device_ptr));
-	// Return
+	//std::cout<<sizeof((unsigned*)device_ptr)<<std::endl;
+	//global_mem->Unmap(device_ptr, sizeof(device_ptr));
+	// Return  */
 	return 0;
 }
 
