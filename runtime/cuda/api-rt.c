@@ -1360,6 +1360,7 @@ cudaError_t cudaFree(void *devPtr)
 
 	if (!active_device)
 		cuInit(0);
+	cuda_debug("the size of the mem need to be deallocated is %d", sizeof(devPtr));
 
 	cuMemFree((CUdeviceptr)devPtr);
 
