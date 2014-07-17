@@ -85,7 +85,6 @@ int Driver::CallMemAlloc(mem::Memory *memory, unsigned args_ptr)
 	// Arguments
 	unsigned device_ptr;
 	unsigned size;
-	unsigned device_ptr;
 
 	// Read arguments
 	memory->Read(args_ptr, sizeof(unsigned), (char *) &device_ptr);
