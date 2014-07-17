@@ -95,8 +95,8 @@ void BasicBlock::EmitAdd(llvm::BinaryOperator *llvm_inst)
 	// Get operands (vreg, literal)
 	llvm::Value *llvm_arg1 = llvm_inst->getOperand(0);
 	llvm::Value *llvm_arg2 = llvm_inst->getOperand(1);
-	Argument *arg1 = function->TranslateValue(llvm_arg1);
-	Argument *arg2 = function->TranslateValue(llvm_arg2);
+	Argument *arg1 = function->TranslateValue(llvm_arg1).get();
+	Argument *arg2 = function->TranslateValue(llvm_arg2).get();
 
 	// Second operand cannot be a constant
 	arg2 = function->ConstToVReg(this, arg2);
@@ -209,7 +209,7 @@ void BasicBlock::EmitGetElementPtr(llvm::GetElementPtrInst *llvm_inst)
 	// Get pointer operand (vreg)
 	llvm::Value *llvm_arg_ptr = llvm_inst->getPointerOperand();
 	Symbol *ptr_symbol;
-	Argument *arg_ptr = function->TranslateValue(llvm_arg_ptr, ptr_symbol);
+	Argument *arg_ptr = function->TranslateValue(llvm_arg_ptr, ptr_symbol).get();
 	arg_ptr->ValidTypes(Argument::TypeVectorRegister,
 			Argument::TypeScalarRegister);
 
@@ -230,6 +230,7 @@ void BasicBlock::EmitGetElementPtr(llvm::GetElementPtrInst *llvm_inst)
 		Instruction *inst = addInstruction(SI::INST_V_MOV_B32);
 		inst->addVectorRegister(ret_vreg);
 		inst->addScalarRegister(arg_scalar->getId());
+		inst->VerifyArguments();
 
 		// FIXME: use unique_ptr later
 		delete arg_ptr;
@@ -248,7 +249,7 @@ void BasicBlock::EmitGetElementPtr(llvm::GetElementPtrInst *llvm_inst)
 
 	// Get index operand (vreg, literal)
 	llvm::Value *llvm_arg_index = llvm_inst->getOperand(1);
-	Argument *arg_index = function->TranslateValue(llvm_arg_index);
+	Argument *arg_index = function->TranslateValue(llvm_arg_index).get();
 	arg_index->ValidTypes(Argument::TypeVectorRegister,
 			Argument::TypeLiteral,
 			Argument::TypeLiteralReduced);
@@ -320,8 +321,8 @@ void BasicBlock::EmitICmp(llvm::ICmpInst *llvm_inst)
 	// Get operands (vreg, literal)
 	llvm::Value *llvm_arg1 = llvm_inst->getOperand(0);
 	llvm::Value *llvm_arg2 = llvm_inst->getOperand(1);
-	Argument *arg1 = function->TranslateValue(llvm_arg1);
-	Argument *arg2 = function->TranslateValue(llvm_arg2);
+	Argument *arg1 = function->TranslateValue(llvm_arg1).get();
+	Argument *arg2 = function->TranslateValue(llvm_arg2).get();
 
 	// Only supported for 32-bit integers
 	llvm::Type *llvm_type = llvm_arg1->getType();
@@ -439,6 +440,7 @@ void BasicBlock::EmitICmp(llvm::ICmpInst *llvm_inst)
 	inst->addSpecialRegister(SI::InstSpecialRegVcc);
 	inst->addArgument(arg1);
 	inst->addArgument(arg2);
+	inst->VerifyArguments();
 
 	// Store 'vcc' in scalar register
 	//
@@ -447,6 +449,7 @@ void BasicBlock::EmitICmp(llvm::ICmpInst *llvm_inst)
 	inst = addInstruction(SI::INST_S_MOV_B64);
 	inst->addScalarRegisterSeries(ret_sreg_series, ret_sreg_series + 1);
 	inst->addSpecialRegister(SI::InstSpecialRegVcc);
+	inst->VerifyArguments();
 }
 
 
@@ -460,7 +463,7 @@ void BasicBlock::EmitLoad(llvm::LoadInst *llvm_inst)
 	// Get address operand (vreg)
 	llvm::Value *llvm_arg_addr = llvm_inst->getOperand(0);
 	Symbol *addr_symbol;
-	Argument *arg_addr = function->TranslateValue(llvm_arg_addr, addr_symbol);
+	Argument *arg_addr = function->TranslateValue(llvm_arg_addr, addr_symbol).get();
 	arg_addr->ValidTypes(Argument::TypeVectorRegister);
 
 	// Address must be a symbol with UAV
@@ -507,9 +510,11 @@ void BasicBlock::EmitLoad(llvm::LoadInst *llvm_inst)
 			new ArgMaddrQual(true, false, 0),
 			SI::InstBufDataFormat32,
 			SI::InstBufNumFormatFloat);
+	inst->VerifyArguments();
 	
 	inst = addInstruction(SI::INST_S_WAITCNT);
 	inst->addWaitCounter(ArgWaitCounter::CounterTypeVmCnt);
+	inst->VerifyArguments();
 }
 
 
@@ -528,8 +533,8 @@ void BasicBlock::EmitMul(llvm::BinaryOperator *llvm_inst)
 	// Get operands (vreg, literal)
 	llvm::Value *llvm_arg1 = llvm_inst->getOperand(0);
 	llvm::Value *llvm_arg2 = llvm_inst->getOperand(1);
-	Argument *arg1 = function->TranslateValue(llvm_arg1);
-	Argument *arg2 = function->TranslateValue(llvm_arg2);
+	Argument *arg1 = function->TranslateValue(llvm_arg1).get();
+	Argument *arg2 = function->TranslateValue(llvm_arg2).get();
 	
 	// If arg1 is a scalar register convert it to a vector register
 	if (arg1->getType() == Argument::TypeScalarRegister)
@@ -553,6 +558,7 @@ void BasicBlock::EmitMul(llvm::BinaryOperator *llvm_inst)
 		Instruction *inst = addInstruction(SI::INST_V_MOV_B32);
 		inst->addVectorRegister(ret_vreg);
 		inst->addScalarRegister(arg_scalar->getId());
+		inst->VerifyArguments();
 
 		delete arg1;
 
@@ -581,6 +587,7 @@ void BasicBlock::EmitMul(llvm::BinaryOperator *llvm_inst)
 		Instruction *inst = addInstruction(SI::INST_V_MOV_B32);
 		inst->addVectorRegister(ret_vreg);
 		inst->addScalarRegister(arg_scalar->getId());
+		inst->VerifyArguments();
 
 		delete arg2;
 
@@ -614,6 +621,7 @@ void BasicBlock::EmitMul(llvm::BinaryOperator *llvm_inst)
 	inst->addVectorRegister(ret_vreg);
 	inst->addArgument(arg1);
 	inst->addArgument(arg2);
+	inst->VerifyArguments();
 }
 
 
@@ -648,7 +656,7 @@ void BasicBlock::EmitPhi(llvm::PHINode *llvm_inst)
 
 		// Get source vector register mapped to LLVM value
 		llvm::Value *src_value = llvm_inst->getIncomingValue(i);
-		Argument *src_arg = function->TranslateValue(src_value);
+		Argument *src_arg = function->TranslateValue(src_value).get();
 		ArgVectorRegister *src_arg_vreg = misc::cast<ArgVectorRegister *>(src_arg);
 		int src_vreg = src_arg_vreg->getId();
 
@@ -662,6 +670,7 @@ void BasicBlock::EmitPhi(llvm::PHINode *llvm_inst)
 	Instruction *inst = addInstruction(SI::INST_PHI);
 	for (auto arg: arg_list)
 		inst->addArgument(arg);
+	inst->VerifyArguments();
 
 	// Process arguments
 	/*for (unsigned i = 0; i < llvm_inst->getNumIncomingValues(); i++)
@@ -706,7 +715,7 @@ void BasicBlock::EmitStore(llvm::StoreInst *llvm_inst)
 
 	// Get data operand (vreg)
 	llvm::Value *llvm_arg_data = llvm_inst->getOperand(0);
-	Argument *arg_data = function->TranslateValue(llvm_arg_data);
+	Argument *arg_data = function->TranslateValue(llvm_arg_data).get();
 	arg_data = function->ConstToVReg(this, arg_data);
 	arg_data->ValidTypes(Argument::TypeVectorRegister,
 			Argument::TypeScalarRegister);
@@ -733,6 +742,7 @@ void BasicBlock::EmitStore(llvm::StoreInst *llvm_inst)
 		Instruction *inst = addInstruction(SI::INST_V_MOV_B32);
 		inst->addVectorRegister(ret_vreg);
 		inst->addScalarRegister(arg_scalar->getId());
+		inst->VerifyArguments();
 
 		delete arg_data;
 		arg_data = new ArgVectorRegister(ret_vreg);
@@ -741,7 +751,7 @@ void BasicBlock::EmitStore(llvm::StoreInst *llvm_inst)
 	// Get address operand (vreg)
 	llvm::Value *llvm_arg_addr = llvm_inst->getOperand(1);
 	Symbol *addr_symbol;
-	Argument *arg_addr = function->TranslateValue(llvm_arg_addr, addr_symbol);
+	Argument *arg_addr = function->TranslateValue(llvm_arg_addr, addr_symbol).get();
 	arg_addr->ValidTypes(Argument::TypeVectorRegister);
 
 	// Address must be a symbol with UAV
@@ -780,9 +790,11 @@ void BasicBlock::EmitStore(llvm::StoreInst *llvm_inst)
 			new ArgMaddrQual(true, false, 0),
 			SI::InstBufDataFormat32,
 			SI::InstBufNumFormatFloat);
+	inst->VerifyArguments();
 
 	inst = addInstruction(SI::INST_S_WAITCNT);
 	inst->addWaitCounter(ArgWaitCounter::CounterTypeExpCnt);
+	inst->VerifyArguments();
 }
 
 
@@ -801,8 +813,8 @@ void BasicBlock::EmitSub(llvm::BinaryOperator *llvm_inst)
 	// Get operands (vreg, literal)
 	llvm::Value *llvm_arg1 = llvm_inst->getOperand(0);
 	llvm::Value *llvm_arg2 = llvm_inst->getOperand(1);
-	Argument *arg1 = function->TranslateValue(llvm_arg1);
-	Argument *arg2 = function->TranslateValue(llvm_arg2);
+	Argument *arg1 = function->TranslateValue(llvm_arg1).get();
+	Argument *arg2 = function->TranslateValue(llvm_arg2).get();
 
 	// Operand 2 cannot be a constant
 	arg2 = function->ConstToVReg(this, arg2);
@@ -830,6 +842,7 @@ void BasicBlock::EmitSub(llvm::BinaryOperator *llvm_inst)
 	inst->addSpecialRegister(SI::InstSpecialRegVcc);
 	inst->addArgument(arg1);
 	inst->addArgument(arg2);
+	inst->VerifyArguments();
 }
 
 
@@ -848,8 +861,8 @@ void BasicBlock::EmitFAdd(llvm::BinaryOperator *llvm_inst)
 	// Get operands (vreg, literal)
 	llvm::Value *llvm_arg1 = llvm_inst->getOperand(0);
 	llvm::Value *llvm_arg2 = llvm_inst->getOperand(1);
-	Argument *arg1 = function->TranslateValue(llvm_arg1);
-	Argument *arg2 = function->TranslateValue(llvm_arg2);
+	Argument *arg1 = function->TranslateValue(llvm_arg1).get();
+	Argument *arg2 = function->TranslateValue(llvm_arg2).get();
 
 	// Second operand cannot be a constant
 	arg2 = function->ConstToVReg(this, arg2);
@@ -876,6 +889,7 @@ void BasicBlock::EmitFAdd(llvm::BinaryOperator *llvm_inst)
 	inst->addVectorRegister(ret_vreg);
 	inst->addArgument(arg1);
 	inst->addArgument(arg2);
+	inst->VerifyArguments();
 }
 
 
@@ -894,8 +908,8 @@ void BasicBlock::EmitFSub(llvm::BinaryOperator *llvm_inst)
 	// Get operands (vreg, literal)
 	llvm::Value *llvm_arg1 = llvm_inst->getOperand(0);
 	llvm::Value *llvm_arg2 = llvm_inst->getOperand(1);
-	Argument *arg1 = function->TranslateValue(llvm_arg1);
-	Argument *arg2 = function->TranslateValue(llvm_arg2);
+	Argument *arg1 = function->TranslateValue(llvm_arg1).get();
+	Argument *arg2 = function->TranslateValue(llvm_arg2).get();
 
 	// Second operand cannot be a constant
 	arg2 = function->ConstToVReg(this, arg2);
@@ -922,6 +936,7 @@ void BasicBlock::EmitFSub(llvm::BinaryOperator *llvm_inst)
 	inst->addVectorRegister(ret_vreg);
 	inst->addArgument(arg1);
 	inst->addArgument(arg2);
+	inst->VerifyArguments();
 }
 
 
@@ -940,8 +955,8 @@ void BasicBlock::EmitFMul(llvm::BinaryOperator *llvm_inst)
 	// Get operands (vreg, literal)
 	llvm::Value *llvm_arg1 = llvm_inst->getOperand(0);
 	llvm::Value *llvm_arg2 = llvm_inst->getOperand(1);
-	Argument *arg1 = function->TranslateValue(llvm_arg1);
-	Argument *arg2 = function->TranslateValue(llvm_arg2);
+	Argument *arg1 = function->TranslateValue(llvm_arg1).get();
+	Argument *arg2 = function->TranslateValue(llvm_arg2).get();
 
 	// Only the first operand can be a constant, so swap them if there is
 	// a constant in the second.
@@ -970,6 +985,7 @@ void BasicBlock::EmitFMul(llvm::BinaryOperator *llvm_inst)
 	inst->addVectorRegister(ret_vreg);
 	inst->addArgument(arg1);
 	inst->addArgument(arg2);
+	inst->VerifyArguments();
 }
 
 
@@ -988,8 +1004,8 @@ void BasicBlock::EmitFDiv(llvm::BinaryOperator *llvm_inst)
 	// Get operands (vreg, literal)
 	llvm::Value *llvm_arg1 = llvm_inst->getOperand(0);
 	llvm::Value *llvm_arg2 = llvm_inst->getOperand(1);
-	Argument *arg1 = function->TranslateValue(llvm_arg1);
-	Argument *arg2 = function->TranslateValue(llvm_arg2);
+	Argument *arg1 = function->TranslateValue(llvm_arg1).get();
+	Argument *arg2 = function->TranslateValue(llvm_arg2).get();
 
 	// Only the first operand can be a constant, so swap them if there is
 	// a constant in the second.
@@ -1065,11 +1081,13 @@ void BasicBlock::EmitFDiv(llvm::BinaryOperator *llvm_inst)
 	Instruction *inst = addInstruction(SI::INST_V_RCP_F32);
 	inst->addVectorRegister(arg2_rcp_id);
 	inst->addArgument(arg2);
+	inst->VerifyArguments();
 
 	inst = addInstruction(SI::INST_V_MUL_F32);
 	inst->addVectorRegister(ret_vreg);
 	inst->addArgument(arg1);
 	inst->addVectorRegister(arg2_rcp_id);
+	inst->VerifyArguments();
 }
 
 
@@ -1088,8 +1106,8 @@ void BasicBlock::EmitAnd(llvm::BinaryOperator *llvm_inst)
 	// Get operands (vreg, literal)
 	llvm::Value *llvm_arg1 = llvm_inst->getOperand(0);
 	llvm::Value *llvm_arg2 = llvm_inst->getOperand(1);
-	Argument *arg1 = function->TranslateValue(llvm_arg1);
-	Argument *arg2 = function->TranslateValue(llvm_arg2);
+	Argument *arg1 = function->TranslateValue(llvm_arg1).get();
+	Argument *arg2 = function->TranslateValue(llvm_arg2).get();
 
 	// Second operand cannot be a constant
 	arg2 = function->ConstToVReg(this, arg2);
@@ -1115,6 +1133,7 @@ void BasicBlock::EmitAnd(llvm::BinaryOperator *llvm_inst)
 	inst->addVectorRegister(ret_vreg);
 	inst->addArgument(arg1);
 	inst->addArgument(arg2);
+	inst->VerifyArguments();
 }
 
 void BasicBlock::EmitOr(llvm::BinaryOperator *llvm_inst)
@@ -1132,8 +1151,8 @@ void BasicBlock::EmitOr(llvm::BinaryOperator *llvm_inst)
 	// Get operands (vreg, literal)
 	llvm::Value *llvm_arg1 = llvm_inst->getOperand(0);
 	llvm::Value *llvm_arg2 = llvm_inst->getOperand(1);
-	Argument *arg1 = function->TranslateValue(llvm_arg1);
-	Argument *arg2 = function->TranslateValue(llvm_arg2);
+	Argument *arg1 = function->TranslateValue(llvm_arg1).get();
+	Argument *arg2 = function->TranslateValue(llvm_arg2).get();
 
 	// Second operand cannot be a constant
 	arg2 = function->ConstToVReg(this, arg2);
@@ -1159,6 +1178,7 @@ void BasicBlock::EmitOr(llvm::BinaryOperator *llvm_inst)
 	inst->addVectorRegister(ret_vreg);
 	inst->addArgument(arg1);
 	inst->addArgument(arg2);
+	inst->VerifyArguments();
 }
 
 void BasicBlock::EmitXor(llvm::BinaryOperator *llvm_inst)
@@ -1176,8 +1196,8 @@ void BasicBlock::EmitXor(llvm::BinaryOperator *llvm_inst)
 	// Get operands (vreg, literal)
 	llvm::Value *llvm_arg1 = llvm_inst->getOperand(0);
 	llvm::Value *llvm_arg2 = llvm_inst->getOperand(1);
-	Argument *arg1 = function->TranslateValue(llvm_arg1);
-	Argument *arg2 = function->TranslateValue(llvm_arg2);
+	Argument *arg1 = function->TranslateValue(llvm_arg1).get();
+	Argument *arg2 = function->TranslateValue(llvm_arg2).get();
 
 	// Second operand cannot be a constant
 	arg2 = function->ConstToVReg(this, arg2);
@@ -1203,6 +1223,7 @@ void BasicBlock::EmitXor(llvm::BinaryOperator *llvm_inst)
 	inst->addVectorRegister(ret_vreg);
 	inst->addArgument(arg1);
 	inst->addArgument(arg2);
+	inst->VerifyArguments();
 }
 
 
@@ -1222,8 +1243,8 @@ void BasicBlock::EmitExtractElement(llvm::ExtractElementInst *llvm_inst)
 	// Get operands (vreg, literal)
 	llvm::Value *llvm_arg1 = llvm_inst->getOperand(0);
 	llvm::Value *llvm_arg2 = llvm_inst->getOperand(1);
-	Argument *arg1 = function->TranslateValue(llvm_arg1);
-	Argument *arg2 = function->TranslateValue(llvm_arg2);
+	Argument *arg1 = function->TranslateValue(llvm_arg1).get();
+	Argument *arg2 = function->TranslateValue(llvm_arg2).get();
 
 	// First argument must be a scalar register and the second must be the
 	// offset.
@@ -1271,9 +1292,9 @@ void BasicBlock::EmitInsertElement(llvm::InsertElementInst *llvm_inst)
 	llvm::Value *llvm_arg1 = llvm_inst->getOperand(0);
 	llvm::Value *llvm_arg2 = llvm_inst->getOperand(1);
 	llvm::Value *llvm_arg3 = llvm_inst->getOperand(2);
-	Argument *arg1 = function->TranslateValue(llvm_arg1);
-	Argument *arg2 = function->TranslateValue(llvm_arg2);
-	Argument *arg3 = function->TranslateValue(llvm_arg3);
+	Argument *arg1 = function->TranslateValue(llvm_arg1).get();
+	Argument *arg2 = function->TranslateValue(llvm_arg2).get();
+	Argument *arg3 = function->TranslateValue(llvm_arg3).get();
 
 	// First argument must be a scalar register and the second must be the
 	// offset.
@@ -1312,6 +1333,7 @@ void BasicBlock::EmitInsertElement(llvm::InsertElementInst *llvm_inst)
 		Instruction *inst = addInstruction(SI::INST_S_MOV_B32);
 		inst->addArgument(arg1);
 		inst->addArgument(arg2);
+		inst->VerifyArguments();
 	}
 	else
 	{
@@ -1330,6 +1352,7 @@ void BasicBlock::EmitInsertElement(llvm::InsertElementInst *llvm_inst)
 		Instruction *inst = addInstruction(SI::INST_V_MOV_B32);
 		inst->addArgument(arg2);
 		inst->addArgument(arg1);
+		inst->VerifyArguments();
 	}
 	
 	delete arg3;
