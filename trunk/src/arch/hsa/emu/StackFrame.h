@@ -32,7 +32,10 @@ class StackFrame
 	Function *function;
 
 	// Argument storage
-	std::unique<char> bytes;
+	std::unique<char> argument_storage;
+
+	// Register storage
+	std::unique<char> register_storage;
 
 	// Pointer to parent stack frame
 	StackFrame *parent;
