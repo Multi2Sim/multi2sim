@@ -184,7 +184,7 @@ class Function
 	void EmitIfThenElse(comm::AbstractNode *node);
 	void EmitWhileLoop(comm::AbstractNode *node);
 
-	si2bin::Argument *TranslateConstant(llvm::Constant *llvm_const);
+	std::unique_ptr<si2bin::Argument> TranslateConstant(llvm::Constant *llvm_const);
 
 public:
 
@@ -320,11 +320,11 @@ public:
 	///   argument will be the vector register associated with that symbol.
 	///   In this case, the symbol is returned in argument 'symbol'.
 	///
-	si2bin::Argument *TranslateValue(llvm::Value *llvm_value, Symbol *&symbol);
+	std::unique_ptr<si2bin::Argument> TranslateValue(llvm::Value *llvm_value, Symbol *&symbol);
 
 	/// Alternative syntax for TranslateValue() where the \a symbol output
 	/// argument is omitted.
-	si2bin::Argument *TranslateValue(llvm::Value *llvm_value)
+	std::unique_ptr<si2bin::Argument> TranslateValue(llvm::Value *llvm_value)
 	{
 		Symbol *symbol;
 		return TranslateValue(llvm_value, symbol);

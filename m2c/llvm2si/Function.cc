@@ -1311,7 +1311,7 @@ void Function::LiveRegisterAnalysisBitmapDump() {
 #endif
 
 
-Argument *Function::TranslateConstant(llvm::Constant *llvm_const)
+std::unique_ptr<Argument> Function::TranslateConstant(llvm::Constant *llvm_const)
 {
 	// Check constant type
 	llvm::Type *llvm_type = llvm_const->getType();
@@ -1328,7 +1328,7 @@ Argument *Function::TranslateConstant(llvm::Constant *llvm_const)
 		llvm::ConstantInt *llvm_int_const = misc::cast
 				<llvm::ConstantInt *>(llvm_const);
 		int value = llvm_int_const->getZExtValue();
-		return new ArgLiteral(value);
+		return misc::new_unique<ArgLiteral>(value);
 	}
 	else
 	{
@@ -1338,7 +1338,7 @@ Argument *Function::TranslateConstant(llvm::Constant *llvm_const)
 }
 
 
-Argument *Function::TranslateValue(llvm::Value *llvm_value, Symbol *&symbol)
+std::unique_ptr<Argument> Function::TranslateValue(llvm::Value *llvm_value, Symbol *&symbol)
 {
 	// Returned symbol is null by default
 	symbol = nullptr;
@@ -1359,18 +1359,18 @@ Argument *Function::TranslateValue(llvm::Value *llvm_value, Symbol *&symbol)
 		throw Error("Symbol not found: " + name);
 
 	// Create argument based on symbol type
-	Argument *arg;
+	std::unique_ptr<Argument> arg;
 	switch (symbol->getType())
 	{
 
 	case Symbol::TypeVectorRegister:
 
-		arg = new ArgVectorRegister(symbol->getReg());
+		arg = misc::new_unique<ArgVectorRegister>(symbol->getReg());
 		break;
 
 	case Symbol::TypeScalarRegister:
 
-		arg = new ArgScalarRegister(symbol->getReg());
+		arg = misc::new_unique<ArgScalarRegister>(symbol->getReg());
 		break;
 
 	default:
