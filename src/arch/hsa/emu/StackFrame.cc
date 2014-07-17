@@ -30,8 +30,6 @@ StackFrame::StackFrame(Function *function, StackFrame *parent)
 
 
 StackFrame::~StackFrame()
-{
-	// TODO Auto-generated destructor stub
-}
+{}
 
 } /* namespace HSA */
