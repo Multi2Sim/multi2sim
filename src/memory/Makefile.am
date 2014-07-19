@@ -59,6 +59,9 @@ libmemory_a_SOURCES = \
 	Memory.cc \
 	Memory.h \
 	\
+	Manager.cc \
+	Manager.h \
+	\
 	MMU.cc \
 	MMU.h \
 	\
