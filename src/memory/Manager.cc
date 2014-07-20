@@ -288,11 +288,12 @@ Manager::Chunk *Manager::createHole(unsigned addr, unsigned size)
 	Chunk *hole = new Chunk(addr, size);
 
 	// Insert it into the chunks map
-	auto pair = chunks.emplace(addr, std::unique_ptr<Chunk>(hole));
+	auto pair = chunks.insert(std::make_pair(addr,
+			std::unique_ptr<Chunk>(hole)));
 	hole->setChunksIterator(pair.first);
 
 	// Insert it into the holes map
-	auto it = holes.emplace(size, hole);
+	auto it = holes.insert(std::make_pair(size, hole));
 	hole->setHolesIterator(it);	
 
 	// return it	
@@ -313,7 +314,8 @@ Manager::Chunk *Manager::createPointer(unsigned addr, unsigned size)
 	Chunk *pointer = new Chunk(addr, size, true);
 
 	// Insert it into the chunks map
-	auto pair = chunks.emplace(addr, std::unique_ptr<Chunk>(pointer));
+	auto pair = chunks.insert(std::make_pair(addr,
+			std::unique_ptr<Chunk>(pointer)));
 	pointer->setChunksIterator(pair.first);
 
 	// return the pointer
