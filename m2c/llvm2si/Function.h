@@ -336,7 +336,8 @@ public:
 	/// new argument instance is returned containing the new vector
 	/// register. If the original argument was not a literal, it will be
 	/// returned directly, and no instruction is emitted.
-	si2bin::Argument *ConstToVReg(BasicBlock *basic_block, si2bin::Argument *arg);
+	std::unique_ptr<si2bin::Argument>ConstToVReg(BasicBlock *basic_block, 
+			std::unique_ptr<si2bin::Argument> arg);
 
 	/// Allocate a scalar register
 	///
