@@ -21,6 +21,7 @@
 #include <cstdarg>
 #include <iostream>
 
+#include <lib/cpp/CommandLine.h>
 #include <lib/cpp/ELFReader.h>
 #include <lib/cpp/Misc.h>
 #include <lib/cpp/String.h>
@@ -121,6 +122,33 @@ static const int AsmOpcode_C_B_E_B_A_A = 1;
 
 
 std::unique_ptr<Asm> Asm::as;
+
+
+void Asm::RegisterOptions()
+{
+	/*
+	// Get command line object
+	misc::CommandLine *command_line = misc::CommandLine::getInstance();
+
+	// Category
+	command_line->setCategory("KPL");
+
+	// Option --kpl-disasm <file>
+	command_line->RegisterString("--kpl-disasm <file>", path,
+			"Disassemble the Kepler BRIG ELF file provided in <arg>. "
+			"This option is incompatible with any other option.");
+
+	// Option incompatibility
+	command_line->setIncompatible("--kpl-disasm");
+
+	*/
+}
+
+
+void Asm::ProcessOptions()
+{
+
+}
 
 void Asm::InitTableWithArray(InstOpcode opcode, const char *name,
 		const char *fmt_str, int argc, int argv[])

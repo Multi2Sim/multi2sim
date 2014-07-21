@@ -38,10 +38,23 @@ Grid::Grid(Function *function)
 	// Initialization
 	this->emu = emu->getInstance();
 	id = emu->getGridSize();
-
-	inst_buffer = function->getTextBuffer();
+	const char * temp_buffer;
+	temp_buffer = function->getTextBuffer();
 	inst_buffer_size = function->getTextSize();
-
+	for (int i = 0; i < inst_buffer_size; ++i)
+	{
+		unsigned char inst_bin_byte = temp_buffer[i];
+		if (i % 8 == 0 || i % 8 == 1 || i % 8 == 2 || i % 8 == 3)
+		{
+			inst_buffer[i / 8] |= (unsigned long long int) (inst_bin_byte)
+					<< (i * 8 + 32);
+		}
+		else
+		{
+			inst_buffer[i / 8] |= (unsigned long long int) (inst_bin_byte)
+					<< (i * 8 - 32);
+		}
+	}
 	state = GridStateInvalid;
 
 	// Add to list  (no need? )

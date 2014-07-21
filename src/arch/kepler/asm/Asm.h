@@ -23,13 +23,16 @@
 
 #include <memory>
 
+#include <arch/common/Asm.h>
+#include <lib/cpp/CommandLine.h>
+
 #include "Inst.h"
 
 
 namespace Kepler
 {
 
-class Asm
+class Asm : public comm::Asm
 {
 	// Instruction information
 	InstInfo inst_info[InstOpcodeCount];
@@ -148,6 +151,12 @@ public:
 	/// Disassemble the \c .cubin file in \a path, using the same format as
 	/// NVIDIA's \c cuobjdump tool.
 	void DisassembleBinary(const std::string &path) const;
+
+	/// Register command-line options
+	static void RegisterOptions();
+
+	/// Process command-line options
+	static void ProcessOptions();
 };
 
 }  // namespace Kepler

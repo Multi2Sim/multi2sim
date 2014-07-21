@@ -23,7 +23,9 @@
 #include <arch/common/CallStack.h>
 #include <arch/common/Driver.h>
 #include <arch/common/Runtime.h>
+#include <arch/kepler/asm/Asm.h>
 #include <arch/kepler/driver/Driver.h>
+#include <arch/kepler/emu/Emu.h>
 #include <arch/mips/asm/Asm.h>
 #include <arch/mips/emu/Context.h>
 #include <arch/mips/emu/Emu.h>
@@ -126,10 +128,16 @@ void RegisterArchitectures()
 			HSA::Asm::getInstance(),
 			HSA::Emu::getInstance());
 
+	// Kepler
+	arch_pool->Register("Kepler",
+			Kepler::Asm::getInstance(),
+			Kepler::Emu::getInstance());
+
 	// MIPS
 	arch_pool->Register("MIPS",
 			MIPS::Asm::getInstance(),
 			MIPS::Emu::getInstance());
+
 }
 
 
@@ -506,6 +514,7 @@ int MainProgram(int argc, char **argv)
 	HSA::Driver::RegisterOptions();
 	HSA::Emu::RegisterOptions();
 	Kepler::Driver::RegisterOptions();
+	Kepler::Emu::RegisterOptions();
 	mem::MMU::RegisterOptions();
 	MIPS::Asm::RegisterOptions();
 	MIPS::Emu::RegisterOptions();
@@ -525,6 +534,7 @@ int MainProgram(int argc, char **argv)
 	HSA::Driver::ProcessOptions();
 	HSA::Emu::ProcessOptions();
 	Kepler::Driver::ProcessOptions();
+	Kepler::Emu::ProcessOptions();
 	mem::MMU::ProcessOptions();
 	MIPS::Asm::ProcessOptions();
 	MIPS::Emu::ProcessOptions();
