@@ -21,6 +21,8 @@
 #include <list>
 #include <memory>
 
+#include <arch/common/Arch.h>
+#include <lib/cpp/CommandLine.h>
 #include <driver/cuda/function.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/misc.h>
@@ -34,9 +36,25 @@
 
 namespace Kepler
 {
-/*
- * Class 'Emu'
- */
+//
+// Configuration options
+//
+
+// Debugger file
+std::string Emu::isa_debug_file;
+
+// Simulation kind
+comm::Arch::SimKind Emu::sim_kind = comm::Arch::SimFunctional;
+
+
+
+//
+// Static variables
+//
+
+// Debugger
+misc::Debug Emu::isa_debug;
+
 std::unique_ptr<Emu> Emu::instance;
 
 Emu *Emu::getInstance()
@@ -47,7 +65,7 @@ Emu *Emu::getInstance()
 	return instance.get();
 }
 
-Emu::Emu()
+Emu::Emu() : comm::Emu("kpl")
 {
     /* Initialize */
 	this->as = as->getInstance();
@@ -155,22 +173,45 @@ void Emu::WriteGlobalMem(unsigned addr, unsigned size, const char *buf)
 }
 
 
-
 void Emu::WriteConstMem(unsigned addr, unsigned size, const char *buf)
 {
 	const_mem->Write(addr, size, buf);
 }
+
 
 void Emu::PushPendingGrid(Grid *grid)
 {
 	pending_grids.push_back(grid);
 }
 
+
 Grid *Emu::addGrid(Function *function)
 {
 	// Create the grid and add it to the grid list
 	grids.emplace_back(new Grid(function));
 	return grids.back().get();
+}
+
+
+void Emu::RegisterOptions()
+{
+	// Get command line object
+	misc::CommandLine *command_line = misc::CommandLine::getInstance();
+
+	// Category
+	command_line->setCategory("KPL");
+
+	// Option --kpl-sim <kind>
+	command_line->RegisterEnum("--kpl-sim {functional|detailed} "
+			"(default = functional)",
+			(int &) sim_kind, comm::Arch::SimKindMap,
+			"Level of accuracy of kepler simulation");
+}
+
+
+void Emu::ProcessOptions()
+{
+	isa_debug.setPath(isa_debug_file);
 }
 
 }	//namespace

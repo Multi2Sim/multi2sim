@@ -25,11 +25,13 @@
 #include <memory>
 #include <vector>
 
-#include <memory/Memory.h>
+#include <arch/common/Arch.h>
 #include <arch/kepler/asm/Asm.h>
 #include <lib/cpp/Debug.h>
+#include <arch/common/Emu.h>
 #include <lib/cpp/Error.h>
 #include <lib/cpp/Misc.h>
+#include <memory/Memory.h>
 
 namespace Kepler
 {
@@ -47,8 +49,14 @@ typedef void (*InstFunc)(Kepler::Thread *thread, Inst *inst);
 /*
  * Class 'KplEmu'
  */
-class Emu
+class Emu : public comm::Emu
 {
+	// Debugger file
+	static std::string isa_debug_file;
+
+	// Simulation kind
+	static comm::Arch::SimKind sim_kind;
+
 	static std::unique_ptr<Emu> instance;
 	// Disassembler
 	Asm *as;
@@ -96,6 +104,9 @@ class Emu
 	Emu();
 
 public:
+
+	/// Debugger
+	static misc::Debug isa_debug;
 
 	///Kepler emulator maximum cycles
 	long long emu_max_cycles;
@@ -215,6 +226,12 @@ public:
 
 	/// Create a new grid to the grid list and return a pointer to it.
 	Grid *addGrid(Function *function);
+
+	/// Register command-line options
+	static void RegisterOptions();
+
+	/// Process command-line options
+	static void ProcessOptions();
 
 };
 

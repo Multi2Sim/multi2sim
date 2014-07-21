@@ -60,7 +60,7 @@ class Warp
 
 	struct SyncStack
 	{
-		SyncStackEntry entries[32];  // 注意 32个entry 对应32个thread
+		SyncStackEntry entries[32];
 	};
 
 	// IDs
@@ -74,23 +74,22 @@ class Warp
 	Grid *grid;
 	ThreadBlock *thread_block;
 
-	// threads　　　　　     how many threads the warp includes ?? 
+	// threads
 	unsigned thread_count;
 
 	// Additional data added by timing simulator
 	std::unique_ptr<WarpData> data;
 
-	// Program counter. Offset in 'inst_buffer' where we can find the next
-	// instruction to be executed.　　　　　　　??  what's inst_buffer 
+	// Program counter
 	unsigned pc;
 	int inst_size;
-    int target_pc;    // ????????????????????????????????????????
+    int target_pc;
 
 	// Current instruction
 	//KeplerInstWrap *inst;
 	Inst* inst;
 
-	// Starting/current position in buffer          what's the buffer ?
+	// Starting/current position in buffer
 	unsigned long long *inst_buffer;
 	unsigned inst_buffer_index;
 	unsigned inst_buffer_size;

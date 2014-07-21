@@ -86,7 +86,7 @@ class Grid
 	std::list<Grid *>::iterator finished_grid_list_iter;
 
 	// Instruction buffer
-	const void *inst_buffer;
+	unsigned long long *inst_buffer;
 	int inst_buffer_size;
 
 	// Shared memory top pointer
