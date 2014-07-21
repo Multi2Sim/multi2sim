@@ -126,6 +126,8 @@ public:
 		return instructions.back().get();
 	}
 
+	/// Add an instruction to the basic block from an unique_ptr<Argument>
+
 	/// Set a comment to a basic block. The comment will be attached to the
 	/// next instruction added to the block. If no other instruction is
 	/// added to the basic block, the comment won't have any effect.
