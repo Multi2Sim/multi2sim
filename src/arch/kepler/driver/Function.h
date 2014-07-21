@@ -65,7 +65,7 @@ public:
 	int getId() const { return id; }
 
 	/// Get the size of the ISA section in the associated ELF binary
-	int getTextSize() const { return text_size; }
+	int getTextSize() const { std::cout<<text_size<<std::endl; return text_size; }
 
 	/// Get a buffer pointing to the ISA section in the associated ELF file
 	const char *getTextBuffer() const { return text_buffer; }

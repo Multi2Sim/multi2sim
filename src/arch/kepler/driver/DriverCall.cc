@@ -292,7 +292,6 @@ int Driver::CallLaunchKernel(mem::Memory *memory, unsigned args_ptr)
 		}
 
 	}
-	//std::cout<<functions.size()<<std::endl;
 	//Function *function = getFunction(function_id);
 	std::cout<<function->getName()<<std::endl;
 	if (function == nullptr)
