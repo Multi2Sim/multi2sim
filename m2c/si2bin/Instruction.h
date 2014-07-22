@@ -201,11 +201,10 @@ public:
 		return addArgument<ArgPhi>(label_name);
 	}
 
-	/// Check that the number and type of the arguments added to the
+	/// Return whether the number and type of the arguments added to the
 	/// instruction with previous calls to addVectorRegister,
-	/// addScalarRegister, ... are valid. An exception is thrown if any
-	/// error is detected.
-	void VerifyArguments();
+	/// addScalarRegister, ... are valid.
+	bool hasValidArguments();
 
 	/// Dump instruction in plain text
 	void Dump(std::ostream &os);

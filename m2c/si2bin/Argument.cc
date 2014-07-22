@@ -63,36 +63,6 @@ int Argument::Encode()
 }
 
 
-void Argument::ValidTypes(bool types[])
-{
-	// If argument type is in array of allowed types, ok.
-	if (types[type])
-		return;
-
-	// Construct error message
-	std::string message = misc::fmt("Argument %d of type %s, {",
-			index, TypeMap[type]);
-
-	// List allowed types
-	std::string separator;
-	for (int i = 0; i < TypeCount; i++)
-	{
-		if (types[i])
-		{
-			message += separator + TypeMap[i];
-			separator = "|";
-		}
-	}
-
-	// Message tail
-	message += "} expected";
-
-	// Exception
-	throw Error(message);
-}
-
-
-
 
 //
 // Class 'ArgScalarRegister'

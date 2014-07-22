@@ -202,7 +202,7 @@ Token::Token(TokenType type)
 }
 
 
-bool Token::IsArgAllowed(Argument *arg)
+bool Token::isArgumentAllowed(Argument *arg)
 {
 	// FIXME
 	// Some tokens that currently allow for literal and literal_float
