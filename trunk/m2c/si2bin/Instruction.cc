@@ -100,7 +100,7 @@ void Instruction::InferOpcodeFromName(const std::string &name)
 
 			// Check that actual argument type is acceptable for
 			// token
-			if (!token->IsArgAllowed(argument))
+			if (!token->isArgumentAllowed(argument))
 			{
 				error = misc::fmt("Invalid type for argument "
 						"%d", argument->getIndex() + 1);
@@ -126,36 +126,35 @@ void Instruction::InferOpcodeFromName(const std::string &name)
 }
 
 
-void Instruction::VerifyArguments()
+bool Instruction::hasValidArguments()
 {
 	// The Phi instruction is a special case
 	if (opcode == SI::INST_PHI)
 	{
 		// At least 3 arguments
 		if (arguments.size() < 3)
-			throw Error("Phi instruction expects at least 3 "
-					"arguments");
+			return false;
 
 		// First argument must be a vector, scalar, vector series, or
 		// scalar series.
-		arguments[0]->ValidTypes(Argument::TypeVectorRegister,
+		if (!arguments[0]->hasValidType(Argument::TypeVectorRegister,
 				Argument::TypeVectorRegisterSeries,
 				Argument::TypeScalarRegister,
-				Argument::TypeScalarRegisterSeries);
+				Argument::TypeScalarRegisterSeries))
+			return false;
 		
 		// The rest of the argument must be Phi arguments
 		for (unsigned i = 1; i < arguments.size(); i++)
-			arguments[i]->ValidTypes(Argument::TypePhi);
+			if (arguments[i]->getType() != Argument::TypePhi)
+				return false;
 
-		// No more actions for Phi instruction
-		return;
+		// All checks passed for Phi instruction
+		return true;
 	}
 
 	// Check number of arguments
 	if (arguments.size() != info->getNumTokens())
-		throw Error(misc::fmt("%d arguments expected, but %d found",
-				(int) info->getNumTokens(),
-				(int) arguments.size()));
+		return false;
 
 	// Check argument types
 	for (unsigned i = 0; i < arguments.size(); i++)
@@ -168,10 +167,12 @@ void Instruction::VerifyArguments()
 		assert(token);
 
 		// Check that actual argument type is acceptable for token
-		if (!token->IsArgAllowed(argument))
-			throw Error(misc::fmt("Invalid type for argument %d",
-					i));
+		if (!token->isArgumentAllowed(argument))
+			return false;
 	}
+
+	// All checks passed
+	return true;
 }
 
 

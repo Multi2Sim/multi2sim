@@ -175,7 +175,7 @@ void Function::AddUAV(FunctionUAV *uav)
 	inst->addScalarRegisterSeries(uav->sreg, uav->sreg + 3);
 	inst->addScalarRegisterSeries(sreg_uav_table, sreg_uav_table + 1);
 	inst->addLiteral((uav->index + 10) * 8);
-	inst->VerifyArguments();
+	assert(inst->hasValidArguments());
 }
 
 
@@ -213,11 +213,11 @@ int Function::AddArg(FunctionArg *arg, int num_elem, int offset)
 		inst->addScalarRegister(arg->sreg);
 		inst->addScalarRegisterSeries(sreg_cb1, sreg_cb1 + 3);
 		inst->addLiteral(arg->index * 4 + offset);
-		inst->VerifyArguments();
+		assert(inst->hasValidArguments());
 
 		inst = basic_block->addInstruction(SI::INST_S_WAITCNT);
 		inst->addWaitCounter(ArgWaitCounter::CounterTypeLgkmCnt);
-		inst->VerifyArguments();
+		assert(inst->hasValidArguments());
 
 		// Copy argument into a vector register. This vector register
 		// will be used for convenience during code emission, so that we
@@ -246,11 +246,11 @@ int Function::AddArg(FunctionArg *arg, int num_elem, int offset)
 		inst->addScalarRegisterSeries(arg->sreg, arg->sreg + 3);
 		inst->addScalarRegisterSeries(sreg_cb1, sreg_cb1 + 3);
 		inst->addLiteral(arg->index * 4 + offset);
-		inst->VerifyArguments();
+		assert(inst->hasValidArguments());
 
 		inst = basic_block->addInstruction(SI::INST_S_WAITCNT);
 		inst->addWaitCounter(ArgWaitCounter::CounterTypeLgkmCnt);
-		inst->VerifyArguments();
+		assert(inst->hasValidArguments());
 
 		// Insert argument name in symbol table, using its scalar register.
 		symbol = new Symbol(arg->name,
@@ -266,18 +266,18 @@ int Function::AddArg(FunctionArg *arg, int num_elem, int offset)
 		inst->addScalarRegisterSeries(arg->sreg, arg->sreg + 3);
 		inst->addScalarRegisterSeries(sreg_cb1, sreg_cb1 + 3);
 		inst->addLiteral(arg->index * 4 + offset);
-		inst->VerifyArguments();
+		assert(inst->hasValidArguments());
 		
 		inst = basic_block->addInstruction(SI::INST_S_BUFFER_LOAD_DWORDX4);
 		inst->addScalarRegisterSeries(arg->sreg + 4, arg->sreg + 7);
 		inst->addScalarRegisterSeries(sreg_cb1, sreg_cb1 + 3);
 		inst->addLiteral(arg->index * 4 + 4 + offset);
-		inst->VerifyArguments();
+		assert(inst->hasValidArguments());
 		offset += 4;
 		
 		inst = basic_block->addInstruction(SI::INST_S_WAITCNT);
 		inst->addWaitCounter(ArgWaitCounter::CounterTypeLgkmCnt);
-		inst->VerifyArguments();
+		assert(inst->hasValidArguments());
 
 		// Insert argument name in symbol table, using its scalar register.
 		symbol = new Symbol(arg->name,
@@ -452,7 +452,7 @@ void Function::EmitHeader()
 		inst->addScalarRegister(sreg_gsize + index);
 		inst->addScalarRegisterSeries(sreg_cb0, sreg_cb0 + 3);
 		inst->addLiteral(index);
-		inst->VerifyArguments();
+		assert(inst->hasValidArguments());
 	}
 
 	// Obtain local size in s[lsize:lsize + 2].
@@ -469,7 +469,7 @@ void Function::EmitHeader()
 		inst->addScalarRegister(sreg_lsize + index);
 		inst->addScalarRegisterSeries(sreg_cb0, sreg_cb0 + 3);
 		inst->addLiteral(4 + index);
-		inst->VerifyArguments();
+		assert(inst->hasValidArguments());
 	}
 
 	// Obtain global offset in s[offs:offs + 2].
@@ -486,7 +486,7 @@ void Function::EmitHeader()
 		inst->addScalarRegister(sreg_offs + index);
 		inst->addScalarRegisterSeries(sreg_cb0, sreg_cb0 + 3);
 		inst->addLiteral(0x18 + index);
-		inst->VerifyArguments();
+		assert(inst->hasValidArguments());
 	}
 
 	// Calculate global ID in dimensions [0:2] and store it in v[3:5].
@@ -507,14 +507,14 @@ void Function::EmitHeader()
 		Instruction *inst = basic_block->addInstruction(SI::INST_V_MOV_B32);
 		inst->addVectorRegister(vreg_gid + index);
 		inst->addScalarRegister(sreg_lsize + index);
-		inst->VerifyArguments();
+		assert(inst->hasValidArguments());
 
 		// v_mul_i32_i24
 		inst = basic_block->addInstruction(SI::INST_V_MUL_I32_I24);
 		inst->addVectorRegister(vreg_gid + index);
 		inst->addScalarRegister(sreg_wgid + index);
 		inst->addVectorRegister(vreg_gid + index);
-		inst->VerifyArguments();
+		assert(inst->hasValidArguments());
 
 		// v_add_i32
 		inst = basic_block->addInstruction(SI::INST_V_ADD_I32);
@@ -522,7 +522,7 @@ void Function::EmitHeader()
 		inst->addSpecialRegister(SI::InstSpecialRegVcc);
 		inst->addVectorRegister(vreg_gid + index);
 		inst->addVectorRegister(vreg_lid + index);
-		inst->VerifyArguments();
+		assert(inst->hasValidArguments());
 
 		// v_add_i32
 		inst = basic_block->addInstruction(SI::INST_V_ADD_I32);
@@ -530,7 +530,7 @@ void Function::EmitHeader()
 		inst->addSpecialRegister(SI::InstSpecialRegVcc);
 		inst->addScalarRegister(sreg_offs + index);
 		inst->addVectorRegister(vreg_gid + index);
-		inst->VerifyArguments();
+		assert(inst->hasValidArguments());
 	}
 }
 
@@ -623,7 +623,7 @@ void Function::EmitPhiMoves(si2bin::Instruction *inst)
 				SI::INST_V_MOV_B32);
 		instruction->addVectorRegister(dst_vreg);
 		instruction->addVectorRegister(src_vreg);
-		instruction->VerifyArguments();
+		assert(instruction->hasValidArguments());
 	}
 }
 
@@ -709,7 +709,7 @@ void Function::EmitIfThen(comm::AbstractNode *node)
 	inst->addScalarRegisterSeries(tos_sreg, tos_sreg + 1);
 	inst->addScalarRegisterSeries(cond_sreg, cond_sreg + 1);
 	inst->setControlFlow(true);
-	inst->VerifyArguments();
+	assert(inst->hasValidArguments());
 
 
 	//
@@ -724,7 +724,7 @@ void Function::EmitIfThen(comm::AbstractNode *node)
 	inst->addSpecialRegister(SI::InstSpecialRegExec);
 	inst->addScalarRegisterSeries(tos_sreg, tos_sreg + 1);
 	inst->setControlFlow(true);
-	inst->VerifyArguments();
+	assert(inst->hasValidArguments());
 }
 
 
@@ -797,7 +797,7 @@ void Function::EmitIfThenElse(comm::AbstractNode *node)
 	inst->addScalarRegisterSeries(tos_sreg, tos_sreg + 1);
 	inst->addScalarRegisterSeries(cond_sreg, cond_sreg + 1);
 	inst->setControlFlow(true);
-	inst->VerifyArguments();
+	assert(inst->hasValidArguments());
 
 
 	//
@@ -813,7 +813,7 @@ void Function::EmitIfThenElse(comm::AbstractNode *node)
 	inst->addScalarRegisterSeries(tos_sreg, tos_sreg + 1);
 	inst->addSpecialRegister(SI::InstSpecialRegExec);
 	inst->setControlFlow(true);
-	inst->VerifyArguments();
+	assert(inst->hasValidArguments());
 
 
 	//
@@ -828,7 +828,7 @@ void Function::EmitIfThenElse(comm::AbstractNode *node)
 	inst->addSpecialRegister(SI::InstSpecialRegExec);
 	inst->addScalarRegisterSeries(tos_sreg, tos_sreg + 1);
 	inst->setControlFlow(true);
-	inst->VerifyArguments();
+	assert(inst->hasValidArguments());
 }
 
 
@@ -894,7 +894,7 @@ void Function::EmitWhileLoop(comm::AbstractNode *node)
 	inst->addScalarRegisterSeries(tos_sreg, tos_sreg + 1);
 	inst->addSpecialRegister(SI::InstSpecialRegExec);
 	inst->setControlFlow(true);
-	inst->VerifyArguments();
+	assert(inst->hasValidArguments());
 
 
 	//
@@ -909,7 +909,7 @@ void Function::EmitWhileLoop(comm::AbstractNode *node)
 	inst->addSpecialRegister(SI::InstSpecialRegExec);
 	inst->addScalarRegisterSeries(tos_sreg, tos_sreg + 1);
 	inst->setControlFlow(true);
-	inst->VerifyArguments();
+	assert(inst->hasValidArguments());
 
 
 	//
@@ -923,7 +923,7 @@ void Function::EmitWhileLoop(comm::AbstractNode *node)
 	inst = tail_basic_block->addInstruction(SI::INST_S_BRANCH);
 	inst->addLabel(head_leaf_node->getName());
 	inst->setControlFlow(true);
-	inst->VerifyArguments();
+	assert(inst->hasValidArguments());
 
 
 	//
@@ -960,14 +960,14 @@ void Function::EmitWhileLoop(comm::AbstractNode *node)
 	inst->addSpecialRegister(SI::InstSpecialRegExec);
 	inst->addScalarRegisterSeries(cond_sreg, cond_sreg + 1);
 	inst->setControlFlow(true);
-	inst->VerifyArguments();
+	assert(inst->hasValidArguments());
 
 	// Exit loop if no more work-items are active.
 	// s_cbranch_execz <exit_node>
 	inst = head_basic_block->addInstruction(SI::INST_S_CBRANCH_EXECZ);
 	inst->addLabel(exit_node->getName());
 	inst->setControlFlow(true);
-	inst->VerifyArguments();
+	assert(inst->hasValidArguments());
 }
 
 
@@ -1404,7 +1404,7 @@ std::unique_ptr<Argument> Function::ConstToVReg(BasicBlock *basic_block,
 	Instruction *inst = basic_block->addInstruction(SI::INST_V_MOV_B32);
 	inst->addVectorRegister(vreg);
 	inst->addArgument(std::move(arg));
-	inst->VerifyArguments();
+	assert(inst->hasValidArguments());
 
 	// Return new argument
 	return ret_arg;
