@@ -107,13 +107,10 @@ class Instruction
 	// Add an argument
 	template<typename T, typename... Args> T *addArgument(Args&&... args)
 	{
+		// FIXME set the instruction field inside the argument
 		arguments.emplace_back(misc::new_unique<T>(args...));
 		T *argument = misc::cast<T *>(arguments.back().get());
-
-		// FIXME Instead, the Argument object should take an initial
-		// Instruction argument, from which it will deduce its index.
 		argument->setIndex(arguments.size() - 1);
-
 		return argument;
 	}
 
@@ -122,6 +119,7 @@ public:
 	/// Create a new instruction with the specified opcode, as defined in
 	/// the Southern Islands disassembler. The arguments contained in the
 	/// list will be freed automatically in the destructor of this class.
+	// FIXME should go away
 	template<typename... Args> Instruction(SI::InstOpcode opcode,
 			Args&&... args)
 	{
@@ -172,9 +170,12 @@ public:
 	/// ownership of this argument.
 	/// FIXME - This function is temporary and should be removed once all
 	/// memory allocation is made with symmetric patterns and smart pointers.
-	void addArgument(Argument *argument)
+	void addArgument(std::unique_ptr<Argument> &&argument)
 	{
-		arguments.emplace_back(argument);
+		// FIXME assign an index of the argument within the instruction
+		arguments.emplace_back(std::move(argument));
+
+		// FIXME set the instruction field inside the argument
 	}
 
 	/// Add a scalar register argument.
