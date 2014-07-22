@@ -118,15 +118,28 @@ public:
 	/// This function should be removed.
 	void AddInst(si2bin::Instruction *inst);
 
-	/// Add an instruction to the basic block, constructed with an opcode
+	/// Add an instruction to the end of the basic block, constructed with
+	/// an opcode.
 	si2bin::Instruction *addInstruction(SI::InstOpcode opcode)
 	{
-		instructions.emplace_back(misc::new_unique<si2bin::Instruction>
+		instructions.emplace_back(
+				misc::new_unique<si2bin::Instruction>
 				(this, opcode));
 		return instructions.back().get();
 	}
 
-	/// Add an instruction to the basic block from an unique_ptr<Argument>
+	/// Add an instruction to the basic block at the position indicated by
+	/// \a it. The instruction is constructed by its opcode.
+	si2bin::Instruction *addInstruction(
+			std::list<std::unique_ptr<si2bin::Instruction>>
+			::iterator it,
+			SI::InstOpcode opcode)
+	{
+		it = instructions.emplace(it,
+				misc::new_unique<si2bin::Instruction>
+				(this, opcode));
+		return it->get();
+	}
 
 	/// Set a comment to a basic block. The comment will be attached to the
 	/// next instruction added to the block. If no other instruction is
@@ -142,7 +155,7 @@ public:
 	/// the control flow pass in the basic block. If there is no control
 	/// flow instruction, a past-the-end iterator is returned.
 	std::list<std::unique_ptr<si2bin::Instruction>>::iterator
-			getFirstControlFlowInst();
+			getFirstControlFlowInstruction();
 
 	/// Perform analysis on live variables inside the llvm function to allow
 	/// for memory efficient register allocation at an instruction level

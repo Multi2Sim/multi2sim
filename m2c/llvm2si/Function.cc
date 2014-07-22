@@ -615,14 +615,15 @@ void Function::EmitPhiMoves(si2bin::Instruction *inst)
 		int src_vreg = arg_phi->getId();
 
 		// Get reverse iterator to last non-control flow instruction
-		auto it = basic_block->getFirstControlFlowInst();
+		auto it = basic_block->getFirstControlFlowInstruction();
 
 		// Emit move instruction
 		// s_mov_b32 <dest_value>, <src_value>
-		Instruction *inst = new Instruction(SI::INST_V_MOV_B32,
-				new si2bin::ArgVectorRegister(dst_vreg),
-				new si2bin::ArgVectorRegister(src_vreg));
-		basic_block->getInstructions().emplace(it, inst);
+		Instruction *instruction = basic_block->addInstruction(it,
+				SI::INST_V_MOV_B32);
+		instruction->addVectorRegister(dst_vreg);
+		instruction->addVectorRegister(src_vreg);
+		instruction->VerifyArguments();
 	}
 }
 
