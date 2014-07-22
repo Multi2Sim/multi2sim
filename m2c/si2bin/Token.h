@@ -133,7 +133,7 @@ public:
 
 	/* Return true if this token accepts the Southern Islands argument
 	 * passed in the function. */
-	bool IsArgAllowed(Argument *arg);
+	bool isArgumentAllowed(Argument *arg);
 };
 
 

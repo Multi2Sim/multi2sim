@@ -21,6 +21,7 @@
 #define M2C_SI2BIN_ARGUMENT_H
 
 #include <arch/southern-islands/asm/Inst.h>
+#include <lib/cpp/Error.h>
 #include <lib/cpp/Misc.h>
 
 #include <cassert>
@@ -198,6 +199,28 @@ public:
 	/// only for a certain type of arguments.
 	virtual int Encode();
 
+	/// Return whether the argument object is of any of the types passed to
+	/// the function. For example, this function could be used like this:
+	///
+	/// \code
+	///     assert(argument->hasValidType(Argument::TypeLiteral,
+	///                     Argument::TypeScalarRegister,
+	///                     Argument::TypeVectorRegister));
+	/// \endcode
+	bool hasValidType(bool types[]) { return types[type]; }
+	template<typename... T> bool hasValidType(bool types[], Type type,
+			T... args)
+	{
+		assert(misc::inRange(type, 0, TypeCount - 1));
+		types[type] = true;
+		return hasValidType(types, args...);
+	}
+	template<typename... T> bool hasValidType(T... args)
+	{
+		bool types[TypeCount] = { false };
+		return hasValidType(types, args...);
+	}
+
 	/// Check that the argument object is of any of the types passed to
 	/// the function, and throw an exception otherwise.
 	/// For example, this function could be used like this:
@@ -207,18 +230,11 @@ public:
 	///                     Argument::TypeScalarRegister,
 	///                     Argument::TypeVectorRegister);
 	/// \endcode
-	void ValidTypes(bool types[]);
-	template<typename... T> void ValidTypes(bool types[], Type type,
-			T... args)
-	{
-		assert(misc::inRange(type, 0, TypeCount - 1));
-		types[type] = true;
-		ValidTypes(types, args...);
-	}
 	template<typename... T> void ValidTypes(T... args)
 	{
-		bool types[TypeCount] = { false };
-		ValidTypes(types, args...);
+		if (!hasValidType(std::forward<T>(args)...))
+			throw misc::Panic(misc::fmt("Invalid argument type "
+					"(%s)", TypeMap[type]));
 	}
 
 	/// Specify argument direction
