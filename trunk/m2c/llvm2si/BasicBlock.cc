@@ -1503,7 +1503,7 @@ void BasicBlock::Emit(llvm::BasicBlock *llvm_basic_block)
 
 
 std::list<std::unique_ptr<si2bin::Instruction>>::iterator
-		BasicBlock::getFirstControlFlowInst()
+		BasicBlock::getFirstControlFlowInstruction()
 {
 	// If list is empty, return a past-the-end iterator
 	if (instructions.empty())

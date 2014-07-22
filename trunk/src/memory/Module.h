@@ -21,6 +21,7 @@
 #define MEMORY_MODULE_H
 
 #include <memory>
+#include <unordered_map>
 
 #include <lib/esim/Engine.h>
 #include <lib/esim/Queue.h>
@@ -53,7 +54,7 @@ public:
 	};
 
 	/// Address range
-	enum Range
+	enum RangeType
 	{
 		RangeInvalid = 0,
 		RangeBounds,
@@ -61,7 +62,7 @@ public:
 	};
 
 	/// Module access types
-	enum Access
+	enum AccessType
 	{
 		AccessInvalid = 0,
 		AccessLoad,
@@ -137,7 +138,7 @@ private:
 	//
 	
 	// Memory address range served by module
-	Range range;
+	RangeType range_type;
 
 	// Range attributes
 	union
@@ -156,7 +157,7 @@ private:
 			unsigned int div;
 			unsigned int eq;
 		} interleaved;
-	};
+	} range;
 
 
 
@@ -201,16 +202,36 @@ private:
 	//
 
 	// High network, closer to the processor
-	net::Network *high_network;
+	net::Network *high_network = nullptr;
 
 	// Low network, closer to main memory
-	net::Network *low_network;
+	net::Network *low_network = nullptr;
 
 	// Node in the high network that the module is associated with
-	net::Node *high_node;
+	net::Node *high_node = nullptr;
 
 	// Node in the low network that the module is associated with
-	net::Node *low_node;
+	net::Node *low_node = nullptr;
+
+
+	
+	//
+	// In-flight accesses
+	//
+
+	// List of all in-flight accesses
+	misc::List<Frame> access_list;
+
+	// List of all in-flight write accesses
+	misc::List<Frame> write_access_list;
+	
+	// Number of in-flight coalesced accesses. This is a number
+	// between 0 and access_list.getSize() at all times.
+	int access_list_coalesced_count = 0;
+
+	// Hash table of accesses, indexed by an access ID
+	std::unordered_map<long long, std::shared_ptr<Frame>> access_map;
+
 
 
 
@@ -230,15 +251,83 @@ private:
 	// List of next-level modules, closer to main memory
 	std::vector<Module *> low_modules;
 	
-	
-	
-	
-// Continue here in C version of module.h once intrusive linked list is
-// completely implemented.
-// -----------struct mod_stack_t *access_list_head;
+
+
+	//
+	// Statistics
+	//
+
+	long long accesses = 0;
+	long long retry_accesses = 0;
+
+	long long evictions = 0;
+
+	long long dir_entry_conflicts = 0;
+	long long retry_dir_entry_conflicts = 0;
+
+	long long conflict_invalidations = 0;
+
+	// Statistics for up-down accesses
+	long long reads = 0;
+	long long read_hits = 0;
+	long long read_misses = 0;
+	long long coalesced_reads = 0;
+	long long writes = 0;
+	long long write_hits = 0;
+	long long write_misses = 0;
+	long long coalesced_writes = 0;
+	long long nc_writes = 0;
+	long long nc_write_hits = 0;
+	long long nc_write_misses = 0;
+	long long coalesced_nc_writes = 0;
+	long long prefetches = 0;
+	long long prefetch_aborts = 0;
+	long long useless_prefetches = 0;
+	long long retry_reads = 0;
+	long long retry_read_hits = 0;
+	long long retry_read_misses = 0;
+	long long retry_writes = 0;
+	long long retry_write_hits = 0;
+	long long retry_write_misses = 0;
+	long long retry_nc_writes = 0;
+	long long retry_nc_write_hits = 0;
+	long long retry_nc_write_misses = 0;
+	long long retry_prefetches = 0;
+
+	// Statistics for down-up accesses
+	long long read_probes = 0;
+	long long write_probes = 0;
+	long long retry_read_probes = 0;
+	long long retry_write_probes = 0;
+
+	// Statistics for other coherence traffic
+	long long hlc_evictions = 0;
+
+	// FIXME Update the local memory protocol and remove these
+	long long effective_reads = 0;
+	long long effective_writes = 0;
+
+	// Statistics that are possibly power related
+	long long dir_accesses = 0;
+	long long data_accesses = 0;
 
 public:
 
+	/// Constructor
+	Module(const std::string &name,
+			Type type,
+			int num_ports,
+			int block_size,
+			int latency);
+
+	/// Return whether the module can be accessed. A module can be accessed
+	/// if there are available ports and enough room in the MSHR register.
+	bool canAccess();
+
+	///
+	long long Access(AccessType access_type,
+			unsigned address,
+			int &witness);
 };
 
 

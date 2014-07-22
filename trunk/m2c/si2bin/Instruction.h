@@ -81,70 +81,26 @@ class Instruction
 	// Obtain back-end context in a field for efficiency
 	Context *context;
 
-	// Common construction
-	void Initialize();
+	// Function used in the constructor of an instruction by its name,
+	// inferring the opcode from the name and the type of the arguments.
+	void InferOpcodeFromName(const std::string &name);
 
-	// Construction based on opcode + argument list
-	void Initialize(SI::InstOpcode opcode);
-	template<typename... Args> void Initialize(SI::InstOpcode opcode,
-			Argument *arg, Args&&... args)
-	{
-		this->arguments.emplace_back(arg);
-		Initialize(opcode, args...);
-	}
-	
-	// Construction based on name + argument list
-	void Initialize(const std::string &name);
-	template<typename... Args> void Initialize(const std::string &name,
-			Argument *arg, Args&&... args)
-	{
-		this->arguments.emplace_back(arg);
-		Initialize(name, args...);
-	}
+	// Populate the instruction bits for the given argument
+	void EncodeArgument(Argument *argument, Token *token);
 
-	void EncodeArg(Argument *arg, Token *token);
-
-	// Add an argument
+	// Add an argument. This function is invoked by public functions with
+	// the same prefix but specific argument types (e.g., addVectorRegister)
 	template<typename T, typename... Args> T *addArgument(Args&&... args)
 	{
-		// FIXME set the instruction field inside the argument
 		arguments.emplace_back(misc::new_unique<T>(args...));
 		T *argument = misc::cast<T *>(arguments.back().get());
+		argument->setInstruction(this);
 		argument->setIndex(arguments.size() - 1);
 		return argument;
 	}
 
 public:
 	
-	/// Create a new instruction with the specified opcode, as defined in
-	/// the Southern Islands disassembler. The arguments contained in the
-	/// list will be freed automatically in the destructor of this class.
-	// FIXME should go away
-	template<typename... Args> Instruction(SI::InstOpcode opcode,
-			Args&&... args)
-	{
-		Initialize(opcode, args...);
-	}
-	
-	/// Create a new instruction with one of the possible opcodes
-	/// corresponding to a name. The arguments contained in the list will be
-	/// adopted by the instruction and freed in the destructor.
-	template<typename... Args> Instruction(const std::string &name,
-			Args&&... args)
-	{
-		Initialize(name, args...);
-	}
-
-	// Construction based on opcode + argument list as vector
-	Instruction(SI::InstOpcode opcode, std::vector<Argument *> &arg_list)
-	{
-		for (auto &arg : arg_list)
-		{
-			arguments.emplace_back(arg);
-		}
-		Initialize(opcode);
-	}
-
 	/// Create an instruction with the given \a opcode.
 	///
 	/// \param basic_block
@@ -157,25 +113,15 @@ public:
 	/// Construction based on an instruction opcode and a list of arguments.
 	/// The argument in the list are given as newly allocated object that
 	/// the instruction will take ownership from.
-	Instruction(const std::string &name, std::vector<Argument *> &arg_list)
-	{
-		for (auto &arg : arg_list)
-		{
-			arguments.emplace_back(arg);
-		}
-		Initialize(name);
-	}
+	Instruction(const std::string &name, std::vector<Argument *> &arg_list);
 
 	/// Add an argument to the list of arguments. The instruction will take
 	/// ownership of this argument.
-	/// FIXME - This function is temporary and should be removed once all
-	/// memory allocation is made with symmetric patterns and smart pointers.
 	void addArgument(std::unique_ptr<Argument> &&argument)
 	{
-		// FIXME assign an index of the argument within the instruction
 		arguments.emplace_back(std::move(argument));
-
-		// FIXME set the instruction field inside the argument
+		argument->setInstruction(this);
+		argument->setIndex(arguments.size() - 1);
 	}
 
 	/// Add a scalar register argument.
