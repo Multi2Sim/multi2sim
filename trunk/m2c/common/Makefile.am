@@ -11,6 +11,15 @@ libcommon_a_SOURCES = \
 	Node.cc \
 	Node.h \
 	\
+	Pass.cc \
+	Pass.h \
+	\
+	PassInfo.cc \
+	PassInfo.h \
+	\
+	PassInfoPool.cc \
+	PassInfoPool.h \
+	\
 	Tree.cc \
 	Tree.h
 
