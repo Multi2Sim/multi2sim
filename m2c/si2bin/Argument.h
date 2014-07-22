@@ -35,6 +35,7 @@ namespace si2bin
 {
 
 // Forward declarations
+class Instruction;
 class Token;
 
 
@@ -91,6 +92,10 @@ protected:
 
 	// Argument type, determining the actual subclass.
 	Type type;
+
+	// Instruction that the argument belongs to, or null if the argument
+	// has not been inserted to an instruction yet.
+	Instruction *instruction = nullptr;
 
 	// Argument index, populated when inserted into an instruction
 	int index = -1;
@@ -162,8 +167,17 @@ public:
 	bool setNeg(bool neg) { return this->neg = neg; }
 
 	/// Set the index that the argument occupies within the instruction that
-	/// it belongs to.
+	/// it belongs to. This function should only be used when the argument
+	/// is inserted to an instruction's argument list.
 	void setIndex(int index) { this->index = index; }
+
+	/// Set the instruction that the argument belongs to. This function
+	/// should only be used when the argument is inserted to an
+	/// instruction's argument list.
+	void setInstruction(Instruction *instruction)
+	{
+		this->instruction = instruction;
+	}
 
 	/// Specify argument token
 	void setToken(Token *token) { this->token = token; }
@@ -184,8 +198,8 @@ public:
 	/// only for a certain type of arguments.
 	virtual int Encode();
 
-	/// Check that the argument is of any of the types listed in the
-	/// arguments. If not, abort the program with a fatal message.
+	/// Check that the argument object is of any of the types passed to
+	/// the function, and throw an exception otherwise.
 	/// For example, this function could be used like this:
 	///
 	/// \code
