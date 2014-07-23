@@ -26,9 +26,10 @@
 namespace HSA
 {
 
-Function::Function(const std::string& name, char *entry_point)
+Function::Function(const std::string& name, char *directive, char *entry_point)
 {
 	this->name = name;
+	this->directive = directive;
 	this->entry_point = entry_point;
 }
 

@@ -84,7 +84,7 @@ class AQLQueue
 public:
 
 	/// Constructor
-	AQLQueue(unsigned int size);
+	AQLQueue(unsigned int size, QueueType type);
 
 	/// Destructor
 	virtual ~AQLQueue();

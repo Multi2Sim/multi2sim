@@ -36,6 +36,9 @@ class Function
 	// Entry point of the function, helps the work item to set its init pc
 	char *entry_point;
 
+	// The directive of the function declaration
+	char *directive;
+
 	/// Dump argument related information
 	void DumpArgumentInfo(std::ostream &os) const;
 
@@ -94,19 +97,25 @@ class Function
 public:
 
 	/// Constructor
-	Function(const std::string &name, char *entry_point);
+	Function(const std::string &name, char *directive, char *entry_point);
 
 	/// Destructor
 	~Function(){};
 
 	/// Returns function name
-	std::string getName() const{return name;}
+	std::string getName() const {return name;}
 
 	/// Sets the entry point
-	void setEntryPoint(char *entry_point){this->entry_point = entry_point;} 
+	void setEntryPoint(char *entry_point) {this->entry_point = entry_point;}
 
 	/// Returns pointer to entry point
-	char *getEntryPoint() const{return entry_point;}
+	char *getEntryPoint() const {return entry_point;}
+
+	/// Sets the directive
+	void setDirective(char *directive) {this->directive = directive;}
+
+	/// Returns the pointer to the directive
+	char *getDirective() const {return directive;}
 
 	/// Adds an argument information in argument table
 	///

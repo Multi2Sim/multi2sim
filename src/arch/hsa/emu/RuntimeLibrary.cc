@@ -17,35 +17,30 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "AQLPacket.h"
+#include "RuntimeLibrary.h"
 
 namespace HSA
 {
 
-AQLPacket::AQLPacket()
-{}
-
-
-AQLPacket::~AQLPacket()
-{}
-
-
-void AQLPacket::Assign()
+AQLQueue *RuntimeLibrary::CreateQueue(Component *component,
+		unsigned int size,
+		QueueType type)
 {
-	setFormat(AQLFormatDispatch);
+	AQLQueue *queue = new AQLQueue(size, type);
+	component->addQueue(queue);
+
+	return queue;
 }
 
-
-void AQLPacket::setFormat(unsigned char format)
+unsigned int RuntimeLibrary::getNumberOfHSAComponent()
 {
-	setByOffset<unsigned char>(0, format);
+	Emu *emu = Emu::getInstance();
+	return emu->getNumberOfComponent();
 }
 
-
-unsigned char AQLPacket::getFormat() const
+void RuntimeLibrary::EnqueueDispatchPacket(AQLQueue *queue, AQLPacket *packet)
 {
-	return getByOffset<unsigned char>(0);
+	queue->Enqueue(packet);
 }
 
-}  // namespace HSA
-
+} /* namespace HSA */

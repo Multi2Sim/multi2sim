@@ -28,16 +28,17 @@ namespace HSA
 
 enum AQLFormat
 {
-	AQL_FORMAT_ALWAYS_RESERVED = 0,
-	AQL_FORMAT_INVALID,
-	AQL_FORMAT_DISPATCH,
-	AQL_FORMAT_BARRIER,
-	AQL_FORMAT_AGENT_DISPATCH
+	AQLFormatAlwaysReserved = 0,
+	AQLFormatInvalid,
+	AQLFormatDispatch,
+	AQLFormatBarrier,
+	AQLFormatAgentDispatch
 };
 
 /// Represent an AQL packet for HSA agent to dispatch task
 class AQLPacket
 {
+protected:
 
 	// Content of the packet, which is always 64 bytes long.
 	char bytes[64];
@@ -79,13 +80,6 @@ public:
 	/// packet format field from INVALID or ALWAYS_RESERVED
 	void Assign();
 
-
-
-
-	//
-	// Setters and getters
-	//
-
 	/// Returns the pointer to the beginning of the packet buffer
 	char *getBuffer(){ return bytes; }
 
@@ -100,6 +94,22 @@ public:
 
 	/// Set the header in whole
 	void setHeader(unsigned short header){ setByOffset<unsigned int>(2, header); }
+
+
+
+};
+
+
+// Abstract an AQL Dispatch Packet
+class AQLDispatchPacket : public AQLPacket
+{
+public:
+
+	// Constructor
+	AQLDispatchPacket(){};
+
+	// Destructor
+	~AQLDispatchPacket(){};
 
 	/// Returns the dimension
 	unsigned short getDimension() const{ return getByOffset<unsigned short>(2); }
