@@ -1113,7 +1113,7 @@ static int mips_sys_exit_group_impl(MIPSContext *ctx)
 
 	/* Arguments */
 	status = regs->regs_R[4];
-	mips_sys_debug("  status=%d\n", status);;
+	mips_sys_debug("  status=%d\n", status);
 
 	/* Finish */
 	MIPSContextFinishGroup(ctx, status);

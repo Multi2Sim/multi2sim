@@ -38,35 +38,40 @@ public:
     /// exit program
     unsigned int getGPR(int n);
     
-    ///write one word to GPR, n is the register number, value
-    ///if n is great than 31, exit program
+    /// Set the value of a general purpose register.
+    ///
+    /// \param n
+    ///      Register index. Must be a value between 0 and 31.
+    ///
+    /// \param value
+    ///      New value for the register.
     void setGPR(int n, unsigned int value);
     
-    ///write pc with value
+    /// Write pc with value
     void setPC(unsigned int value){ pc = value; }
     
     /// Increment value of register \c eip by \a value bytes.
     void incPC(int value) { pc += value; }
 
-    ///read from Program Counter
+    /// Read from Program Counter
     unsigned int getPC(){ return pc; }
 
     /// Set Register31 stack pointer to value
     void setSP(int value) { gpr[31] = value; }
 
-    /// read from Stack Pointer
+    /// Return the value of the stack pointer register ($31)
     unsigned int getSP() { return gpr[31]; }
 
-    ///read from HI register
+    /// Read from HI register
     unsigned int getHI();
     
-    ///write HI register with value 
+    /// Write HI register with value
     void setHI(unsigned int value);
     
-    ///read from low register
+    /// Read from low register
     unsigned int getLO();
     
-    ///write Lo register with value
+    /// Write Lo register with value
     void setLO(unsigned int value); 
     
     ///show all registers

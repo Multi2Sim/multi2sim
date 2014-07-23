@@ -75,18 +75,7 @@ Context::Context()
 	emu = Emu::getInstance();
 
 	// Initialize
-	state = 0;
-	glibc_segment_base = 0;
-	glibc_segment_limit = 0;
 	pid = emu->getPid();
-	parent = nullptr;
-	group_parent = nullptr;
-	exit_signal = 0;
-	exit_code = 0;
-	clear_child_tid = 0;
-	robust_list_head = 0;
-	host_thread_suspend_active = false;
-	host_thread_timer_active = false;
 	sched_policy = SCHED_RR;
 	sched_priority = 1;  // Lowest priority
 
@@ -260,11 +249,10 @@ void Context::Execute()
 	// Advance Program Counter to the size of instruction (4 bytes)
 	regs.incPC(4);
 
-	std::cout<<inst.GetName()<<std::endl;
 	// Call instruction emulation function
-	if(inst.GetOpcode())
+	if (inst.getOpcode())
 	{
-		ExecuteInstFn fn = execute_inst_fn[inst.GetOpcode()];
+		ExecuteInstFn fn = execute_inst_fn[inst.getOpcode()];
 		(this->*fn)();
 	}
 
@@ -292,18 +280,6 @@ void Context::FinishGroup(int exit_code)
 		if (context->group_parent != this && context.get() != this)
 			continue;
 
-		// TODO: Thread support to be added for Mips
-		/*
-		if (context->getState(ContextZombie))
-			context->setState(ContextFinished);
-		if (context->getState(ContextHandler))
-			context->ReturnFromSignalHandler();
-		context->HostThreadSuspendCancel();
-		context->HostThreadTimerCancel();
-
-		// Child context of 'context' goes to state 'finished'.
-		// Context 'context' goes to state 'zombie' or 'finished' if it has a parent
-		*/
 		if (context.get() == this)
 			context->setState(context->parent ? ContextZombie : ContextFinished);
 		else
@@ -321,9 +297,7 @@ void Context::Finish(int exit_code)
 	if (getState(ContextFinished) || getState(ContextZombie))
 		return;
 
-	// TODO: multithread support for mips
-
-	// finish context
+	// Finish context
 	setState(parent ? ContextZombie : ContextFinished);
 	this->exit_code = exit_code;
 	emu->ProcessEventsSchedule();

@@ -148,6 +148,9 @@ class Inst
 	// Instruction bytes
 	InstBytes bytes;
 
+	// Target address used for instruction dump
+	unsigned int target;
+
 	void DumpSa(std::ostream &os) const;
 	void DumpRd(std::ostream &os) const;
 	void DumpRt(std::ostream &os) const;
@@ -168,36 +171,34 @@ class Inst
 	void DumpCode(std::ostream &os) const;
 
 public:
-	// Target address used for instruction dump
-	unsigned int target;
 
-	// Constructor
+	/// Constructor
 	Inst();
 
-	/* Read an instruction from the buffer 'buf' into the 'bytes' field of the
-	 * instruction object, and decode it by populating the 'info' field. The value
-	 * in 'addr' gives the virtual address of the instruction, needed to print
-	 * branch addresses. */
+	/// Read an instruction from the buffer 'buf' into the 'bytes' field of the
+	/// instruction object, and decode it by populating the 'info' field. The value
+	/// in 'addr' gives the virtual address of the instruction, needed to print
+	/// branch addresses.
 	void Decode(unsigned int addr, const char *buf);
 
-	/* Dump an instruction. This function sets the 'target' field of the
-	 * instruction offset to a value other than 0 if a target address has been
-	 * printed. */
+	/// Dump an instruction. This function sets the 'target' field of the
+	/// instruction offset to a value other than 0 if a target address has been
+	/// printed.
 	// FIXME - Fritz, the behavior of this function should be modified to
-	// not alter the 'target' field. We want to be able to declare this
-	// function as 'const'. Instead, it should be the 'Decode()' function
-	// the one setting this field.
+	/// not alter the 'target' field. We want to be able to declare this
+	/// function as 'const'. Instead, it should be the 'Decode()' function
+	/// the one setting this field.
 	void Dump(std::ostream &os);
 	
-	// Print address and hexadecimal characters for instruction
+	/// Print address and hexadecimal characters for instruction
 	void DumpHex(std::ostream &os);
 
-	// Getters
-	std::string GetName() { return info ? info->name : "<unknwon>"; }
-	InstOpcode GetOpcode() { return info ? info->opcode :
-			InstOpcodeInvalid; }
-	unsigned int GetAddress() { return addr; }
-	InstBytes *GetBytes() { return &bytes; }
+	/// Getters
+	std::string getName() { return info ? info->name : "<unknwon>"; }
+	InstOpcode getOpcode() { return info ? info->opcode : InstOpcodeInvalid; }
+	unsigned int getAddress() { return addr; }
+	InstBytes *getBytes() { return &bytes; }
+	unsigned int getTarget() {return target; }
 };
 
 

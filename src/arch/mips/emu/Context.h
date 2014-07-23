@@ -87,11 +87,11 @@ class Context
 
 	// Context state, expressed as a bitmap of flags, e.g.,
 	// ContextSuspended | ContextFutex
-	unsigned state;
+	unsigned state = 0;
 
 	// For segmented memory access in glibc
-	unsigned glibc_segment_base;
-	unsigned glibc_segment_limit;
+	unsigned glibc_segment_base = 0;
+	unsigned glibc_segment_limit = 0;
 
 	// Host thread that suspends and then schedules call to Emu::ProcessEvents()
 	// The 'host_thread_suspend_active' flag is set when a 'host_thread_suspend' thread
@@ -99,12 +99,12 @@ class Context
 	// It is clear when the context finished (by the host thread).
 	// It should be accessed safely by locking the emulator mutex
 	pthread_t host_thread_suspend;  // Thread
-	bool host_thread_suspend_active;  // Thread-spawned flag
+	bool host_thread_suspend_active = false;  // Thread-spawned flag
 
 	// Host thread that lets time elapse and schedules call to
 	// emu->ProcessEvents()
 	pthread_t host_thread_timer;
-	int host_thread_timer_active;
+	int host_thread_timer_active = false;
 	long long host_thread_timer_wakeup;
 
 	// Scheduler
@@ -123,8 +123,7 @@ class Context
 	// Register file. Each context has its own copy always.
 	Regs regs;
 
-	// current emulated instruction
-	//std::unique_ptr<Inst> inst(new Inst());
+	// Current emulated instruction
 	Inst inst;
 
 	// File descriptor table, shared by contexts
@@ -139,17 +138,17 @@ class Context
 	unsigned target_eip;  // Target address for branch, even if not taken
 
 	// Parent context
-	Context *parent;
+	Context *parent = nullptr;
 
 	// Context group initiator. There is only one group parent (if not null)
 	// with many group children, no tree organization.
-	Context *group_parent;
+	Context *group_parent = nullptr;
 
-	int exit_signal;  // Signal to send parent when finished
-	int exit_code;  // For zombie contexts
+	int exit_signal = 0;  // Signal to send parent when finished
+	int exit_code = 0;  // For zombie contexts
 
-	unsigned int clear_child_tid;
-	unsigned int robust_list_head;  // robust futex list
+	unsigned int clear_child_tid = 0;
+	unsigned int robust_list_head = 0;  // robust futex list
 
 	// Virtual address of the memory access performed by the last emulated
 	// instruction.
@@ -432,8 +431,6 @@ public:
 	/// Clear flag \a state in the context state
 	void clearState(ContextState state) { UpdateState(this->state
 			& ~state); }
-
-
 
 };
 
