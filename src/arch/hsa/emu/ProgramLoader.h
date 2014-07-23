@@ -128,7 +128,10 @@ public:
 	static ProgramLoader *getInstance();
 
 	/// Returns the Brig binary
-	BrigFile *getBinary(){return binary.get();}
+	BrigFile *getBinary() const { return binary.get(); }
+
+	/// Returns the pointer to the main function
+	Function *getMainFunction() const;
 
 };
 

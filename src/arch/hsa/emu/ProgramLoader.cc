@@ -162,14 +162,9 @@ void ProgramLoader::parseFunction(BrigDirEntry *dir)
 
 	// Construct function object and insert into function_table
 	// std::unique_ptr<Function> function(new Function(name, entry_point));
-	function_table.insert(
-			std::make_pair(name,
-					std::unique_ptr<Function>(
-						new Function(name, entry_point)
-					)
-			)
-	);
-	Function *function = function_table[name].get();
+	Function *function = new Function(name, dir->getBuffer(), entry_point);
+	function_table.insert(std::make_pair(name,
+				std::unique_ptr<Function>(function)));
 
 	// Load Arguments
 	unsigned short num_in_arg = dir_struct->inArgCount;
@@ -241,6 +236,17 @@ void ProgramLoader::preprocessRegisters(char *entry_point,
 		// Move inst_ptr forward
 		inst_ptr = inst_entry.next();
 	}
+}
+
+
+Function *ProgramLoader::getMainFunction() const
+{
+	auto it = function_table.find("&main");
+	if (it == function_table.end())
+	{
+		throw Error("Undefined reference to &main()");
+	}
+	return it->second.get();
 }
 
 }  // namespace HSA

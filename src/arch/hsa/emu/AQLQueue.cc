@@ -26,7 +26,7 @@
 namespace HSA
 {
 
-AQLQueue::AQLQueue(unsigned int size)
+AQLQueue::AQLQueue(unsigned int size, QueueType type)
 {
 	// Global queue id to assign
 	static unsigned int process_queue_id = 0;
@@ -37,7 +37,7 @@ AQLQueue::AQLQueue(unsigned int size)
 	this->size = size;
 
 	// Set default type and feature
-	queue_type = HSAQueueMulti;
+	queue_type = type;
 	queue_feature = 1;
 	bell_signal = 0;
 	service_queue = 0;
