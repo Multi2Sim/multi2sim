@@ -7,17 +7,20 @@ libemu_a_SOURCES = \
 		AQLQueue.h \
 		AQLQueue.cc \
 		\
-		Emu.h \
-		Emu.cc \
-		\
 		Component.h \
 		Component.cc \
 		\
-		WorkGroup.h \
-		WorkGroup.cc \
+		Emu.h \
+		Emu.cc \
 		\
 		ProgramLoader.h \
 		ProgramLoader.cc \
+		\
+		RuntimeLibrary.h \
+		RuntimeLibrary.cc \
+		\
+		WorkGroup.h \
+		WorkGroup.cc \
 		\
 		WorkItem.h \
 		WorkItem.cc \

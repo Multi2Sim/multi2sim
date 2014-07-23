@@ -95,7 +95,10 @@ Emu::Emu() : comm::Emu("hsa")
 
 	// FIXME: Allow user to set up customized HSA virtual machine
 	setDefaultComponentList();
-	//DumpComponentList(loader_debug);
+	if (loader_debug)
+	{
+		DumpComponentList(loader_debug);
+	}
 
 }
 
@@ -113,10 +116,17 @@ Emu *Emu::getInstance()
 
 void Emu::setDefaultComponentList()
 {
-	components.push_back(std::unique_ptr<Component>(
-			Component::getDefaultCPUComponent()));
-	components.push_back(std::unique_ptr<Component>(
-			Component::getDefaultGPUComponent()));
+	// Add a CPU device
+	Component *cpu = Component::getDefaultCPUComponent();
+	components.push_back(std::unique_ptr<Component>(cpu));
+
+	// Add a simple GPU component
+	Component *gpu = Component::getDefaultGPUComponent();
+	components.push_back(std::unique_ptr<Component>(gpu));
+
+	// Set the CPU as the host component
+	setHostCPUComponent(cpu);
+
 }
 
 
@@ -127,15 +137,6 @@ void Emu::DumpComponentList(std::ostream &os = std::cout) const
 	{
 		os << *((*it).get());
 	}
-}
-
-
-WorkItem *Emu::newWorkItem()
-{
-	// Create work item and add to work item list
-	WorkItem *wi = new WorkItem();
-	work_items.emplace_back(wi);
-	return wi;
 }
 
 
@@ -177,9 +178,21 @@ void Emu::LoadProgram(const std::vector<std::string> &args,
 	ProgramLoader::LoadProgram(args, env, cwd,
 			stdin_file_name, stdout_file_name);
 
-	// Kick start the program by dispatching main function on CPU
-	// TODO: implement this part
+	// Create the default queue for the host device
+	AQLQueue *queue = RuntimeLibrary::CreateQueue(host_cpu, 2,
+			HSAQueueMulti);
 
+	//Prepare the dispatch packet
+	AQLDispatchPacket *packet = new AQLDispatchPacket();
+	packet->setDimension(1);
+	packet->setGridSizeX(1);
+	packet->setWorkGroupSizeX(1);
+	ProgramLoader *loader = ProgramLoader::getInstance();
+	Function *main_function = loader->getMainFunction();
+	packet->setKernalObjectAddress((unsigned long long)main_function);
+
+	// Enqueue the packet
+	queue->Enqueue(packet);
 }
 
 }  // namespace HSA

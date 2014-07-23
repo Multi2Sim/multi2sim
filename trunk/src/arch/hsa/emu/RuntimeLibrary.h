@@ -17,35 +17,32 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "AQLPacket.h"
+#ifndef ARCH_HSA_EMU_RUNTIMELIBRARY_H
+#define ARCH_HSA_EMU_RUNTIMELIBRARY_H
+
+#include "AQLQueue.h"
+#include "Component.h"
 
 namespace HSA
 {
 
-AQLPacket::AQLPacket()
-{}
-
-
-AQLPacket::~AQLPacket()
-{}
-
-
-void AQLPacket::Assign()
+/// Encapsulates a bunch of runtime functions and definitions
+class RuntimeLibrary
 {
-	setFormat(AQLFormatDispatch);
-}
+public:
 
+	/// Create a queue
+	static AQLQueue *CreateQueue(Component *component,
+			unsigned int size,
+			QueueType queue_type);
 
-void AQLPacket::setFormat(unsigned char format)
-{
-	setByOffset<unsigned char>(0, format);
-}
+	/// Enqueue an AQL dispatch packet
+	static void EnqueueDispatchPacket(AQLQueue *queue, AQLPacket *packet);
 
+	/// Get the number of HSA Component
+	static unsigned int getNumberOfHSAComponent();
+};
 
-unsigned char AQLPacket::getFormat() const
-{
-	return getByOffset<unsigned char>(0);
-}
+} /* namespace HSA */
 
-}  // namespace HSA
-
+#endif 

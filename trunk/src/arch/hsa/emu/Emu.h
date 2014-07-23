@@ -31,6 +31,7 @@
 #include "Component.h"
 #include "WorkGroup.h"
 #include "WorkItem.h"
+#include "RuntimeLibrary.h"
 
 
 namespace HSA
@@ -67,22 +68,18 @@ class Emu : public comm::Emu
 	// Simulation kind
 	static comm::Arch::SimKind sim_kind;
 
-	// Unique instance of hsa emulator
+	// Unique instance of HSA emulator
 	static std::unique_ptr<Emu> instance;
 
-	// Private constructor. The only possible instance of the hsa emulator 
+	// Private constructor. The only possible instance of the HSA emulator
 	// can be obtained with a call to getInstance()
 	Emu();
 
 	// list of available components
 	std::list<std::unique_ptr<Component>> components;
 
-	// list of work items
-	std::list<std::unique_ptr<WorkItem>> work_items;
-
-	// Secondary lists of work items. Work items in different states
-	// are added/removed from this lists as their state gets updates
-	//std::list<WorkItem *> work_item_list[WorkItemListCount];
+	// Host CPU component, the unique_ptr is kept in the list components.
+	Component *host_cpu;
 
 	// Process ID to be assigned next. Process IDs are assigned in
 	// increasing order, using function Emu::getPid()
@@ -93,7 +90,7 @@ public:
 	/// Destructor
 	virtual ~Emu(){};
 
-	/// The hsa emulator is a singleton class. The only possible instance 
+	/// The HSA emulator is a singleton class. The only possible instance
 	/// of it will be allocated the first time this function is invoked
 	static Emu *getInstance();
 
@@ -107,19 +104,18 @@ public:
 	/// simple GPU will be installed on the virtual machine
 	void setDefaultComponentList();
 
+	/// Set host CPU component
+	void setHostCPUComponent(Component *cpu) { host_cpu = cpu; }
+
 	/// Dump component list for debug purpose
 	void DumpComponentList(std::ostream &os) const;
-
-	/// Create a new work item associated with the emulator. The work item is 
-	/// inserted in the main emulator work item list
-	WorkItem *newWorkItem();
 
 	/// Run one iteration of the emulation loop
 	/// \return This function \c true if the iteration had a useful emulation 
 	/// and \c false if all work items finished execution
 	bool Run();
 
-	/// Debugger for hsa
+	/// Debugger for HSA
 	static misc::Debug loader_debug;
 	static misc::Debug isa_debug;
 
@@ -136,6 +132,9 @@ public:
 			const std::string &cwd = "",
 			const std::string &stdin_file_name = "",
 			const std::string &stdout_file_name = "");
+
+	/// Returns the number of components
+	unsigned int getNumberOfComponent() const { return components.size(); }
 
 };
 
