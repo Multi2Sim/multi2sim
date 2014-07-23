@@ -597,7 +597,6 @@ void mips_isa_BLTZAL_impl(MIPSContext *ctx)
 void mips_isa_BGEZAL_impl(MIPSContext *ctx)
 {
 	mips_gpr_set_value(ctx,31, ctx->regs->pc + 8);
-	printf("pc = %d",ctx->regs->pc);
 	if ((int)mips_gpr_get_value(ctx,RS) >= 0)
 		mips_isa_rel_branch(ctx,SEXT32(IMM,16) << 2);
 	mips_isa_inst_debug("  BGEZAL: PC=%8x, r31=%8x",
