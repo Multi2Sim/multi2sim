@@ -365,18 +365,18 @@ void Asm::DisassembleBinary(const std::string &path)
 			inst.Dump(std::cout);
 
 			/* Symbol name */
-			if (inst.target)
+			if (inst.getTarget())
 			{
 				ELFReader::Symbol *print_symbol;
-				print_symbol = file.getSymbolByAddress(inst.target);
+				print_symbol = file.getSymbolByAddress(inst.getTarget());
 				if (print_symbol)
 				{
-					if (print_symbol->getValue() == inst.target)
+					if (print_symbol->getValue() == inst.getTarget())
 						std::cout << " <" << print_symbol->getName() << ">";
 					else
 						std::cout << misc::fmt(" <%s+0x%x>",
 								print_symbol->getName().c_str(),
-								inst.target -
+								inst.getTarget() -
 								print_symbol->getValue());
 				}
 			}

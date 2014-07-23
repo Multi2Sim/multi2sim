@@ -97,26 +97,26 @@ void MIPSInstWrapDump(struct MIPSInstWrap *self, FILE *f)
 MIPSInstOpcode MIPSInstWrapGetOpcode(struct MIPSInstWrap *self)
 {
 	Inst *inst = (Inst *) self;
-	return (MIPSInstOpcode) inst->GetOpcode();
+	return (MIPSInstOpcode) inst->getOpcode();
 }
 
 
 const char *MIPSInstWrapGetName(struct MIPSInstWrap *self)
 {
 	Inst *inst = (Inst *) self;
-	return inst->GetName().c_str();
+	return inst->getName().c_str();
 }
 
 
 unsigned MIPSInstWrapGetAddress(struct MIPSInstWrap *self)
 {
 	Inst *inst = (Inst *) self;
-	return inst->GetAddress();
+	return inst->getAddress();
 }
 
 
 MIPSInstBytes *MIPSInstWrapGetBytes(struct MIPSInstWrap *self)
 {
 	Inst *inst = (Inst *) self;
-	return (MIPSInstBytes *) inst->GetBytes();
+	return (MIPSInstBytes *) inst->getBytes();
 }
