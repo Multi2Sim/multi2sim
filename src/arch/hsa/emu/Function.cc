@@ -34,7 +34,7 @@ Function::Function(const std::string& name, char *directive, char *entry_point)
 }
 
 
-void Function::addArgument(const std::string &name, bool isInput,
+void Function::addArgument(const std::string &name, bool is_input,
 			unsigned short type)
 {
 	// Check if argument is defined
@@ -52,7 +52,7 @@ void Function::addArgument(const std::string &name, bool isInput,
 	struct Argument *argument = arg_info[name].get();
 	argument->type = type;
 	argument->offset = arg_size;
-	argument->isInput = isInput;
+	argument->is_input = is_input;
 	argument->size = BrigEntry::type2size(type);
 
 	// Increase allocated argument size
@@ -182,7 +182,7 @@ void Function::DumpArgumentInfo(std::ostream &os = std::cout) const
 	for (it = arg_info.begin(); it != arg_info.end(); it++)
 	{
 		os << "\t";
-		if (it->second->isInput)
+		if (it->second->is_input)
 			os << "Input ";
 		else
 			os << "Output ";

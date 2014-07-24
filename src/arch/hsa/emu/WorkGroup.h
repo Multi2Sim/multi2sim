@@ -22,15 +22,15 @@
 
 #include "Component.h"
 
+
 namespace HSA
 {
 
 class Component;
 
-/// Abstract a work group in an HSA component
+/// Work group of an HSA component
 class WorkGroup
 {
-
 	// Pointer to the HSA component it belongs to
 	Component *component;
 

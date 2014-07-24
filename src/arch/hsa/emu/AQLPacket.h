@@ -23,6 +23,7 @@
 #include <lib/cpp/String.h>
 #include <lib/cpp/Error.h>
 
+
 namespace HSA
 {
 
@@ -43,7 +44,7 @@ protected:
 	// Content of the packet, which is always 64 bytes long.
 	char bytes[64];
 
-	/// Get field by offset
+	// Get field by offset
 	template <typename Type>
 	Type getByOffset(unsigned short offset) const
 	{
@@ -53,7 +54,7 @@ protected:
 		return *((Type *)(&(bytes[offset])));
 	}
 
-	/// Set field by offset
+	// Set field by offset
 	template <typename Type>
 	void setByOffset(unsigned short offset, Type value)
 	{
@@ -74,7 +75,7 @@ public:
 	AQLPacket();
 
 	/// Destructor
-	virtual ~AQLPacket();
+	~AQLPacket();
 
 	/// Assign the packet to the HSA Packet Processor, by changing the AQL
 	/// packet format field from INVALID or ALWAYS_RESERVED
@@ -89,7 +90,7 @@ public:
 	/// Set format field in the header
 	void setFormat(unsigned char format);
 
-	/// Returns the header as a whole in unsigned integer
+	/// Return the header as a whole in unsigned integer
 	unsigned short getHeader() const{ return getByOffset<unsigned short>(0);}
 
 	/// Set the header in whole
@@ -100,7 +101,7 @@ public:
 };
 
 
-// Abstract an AQL Dispatch Packet
+// An AQLDispatchPacket encapsulates information required to launch a kernel
 class AQLDispatchPacket : public AQLPacket
 {
 public:
@@ -111,73 +112,73 @@ public:
 	// Destructor
 	~AQLDispatchPacket(){};
 
-	/// Returns the dimension
+	/// Return the dimension
 	unsigned short getDimension() const{ return getByOffset<unsigned short>(2); }
 
 	/// Set the dimension field
 	void setDimension(unsigned short dim){ setByOffset<unsigned short>(2, dim); }
 
-	/// Returns the work group size x
+	/// Return the work group size x
 	unsigned short getWorkGroupSizeX() const{ return getByOffset<unsigned short>(4); }
 
 	/// Set the work group size x
 	void setWorkGroupSizeX(unsigned short wg_size_x){ setByOffset<unsigned short>(4, wg_size_x); }
 
-	/// Returns the work group size y
+	/// Return the work group size y
 	unsigned short getWorkGroupSizeY() const{ return getByOffset<unsigned short>(6); }
 
 	/// Set the work group size y
 	void setWorkGroupSizeY(unsigned short wg_size_y){ setByOffset<unsigned short>(6, wg_size_y); }
 
-	/// Returns the work group size z
+	/// Return the work group size z
 	unsigned short getWorkGroupSizeZ() const{ return getByOffset<unsigned short>(8); }
 
 	/// Set the work group size z
 	void setWorkGroupSizeZ(unsigned int wg_size_z){ setByOffset<unsigned short>(8, wg_size_z); }
 
-	/// Returns the grid size x
+	/// Return the grid size x
 	unsigned int getGridSizeX() const{ return getByOffset<unsigned int>(12); }
 
 	/// Set the grid size x
 	void setGridSizeX(unsigned int grid_size_x){ setByOffset<unsigned int>(12, grid_size_x); }
 
-	/// Returns the grid size y
+	/// Return the grid size y
 	unsigned int getGridSizeY() const{ return getByOffset<unsigned int>(16); }
 
 	/// Set the grid size y
 	void setGridSizeY(unsigned int grid_size_y){ setByOffset<unsigned int>(16, grid_size_y); }
 
-	/// Returns the grid size z
+	/// Return the grid size z
 	unsigned int getGridSizeZ() const{ return getByOffset<unsigned int>(20); }
 
 	/// Set the grid size z
 	void setGridSizeZ(unsigned int grid_size_z){ setByOffset<unsigned int>(20, grid_size_z); }
 
-	/// Returns primary segment size in bytes per work-item
+	/// Return primary segment size in bytes per work-item
 	unsigned int getPrivateSegmentSizeBytes() const{ return getByOffset<unsigned int>(24); }
 
 	/// Set primary segment size in bytes per work-item
 	void setPrivateSegmentSizeBytes(unsigned int size){ setByOffset<unsigned int>(24, size); }
 
-	/// Returns group memory size in bytes per work-group
+	/// Return group memory size in bytes per work-group
 	unsigned int getGroupSegmentSizeBytes() const{ return getByOffset<unsigned int>(28); }
 
 	/// Set group memory size in bytes per work-group
 	void setGroupSegmentSizeBytes(unsigned int size){ setByOffset<unsigned int>(28, size); }
 
-	/// Returns the address to kernel object
+	/// Return the address to kernel object
 	unsigned long long getKernalObjectAddress() const{ return getByOffset<unsigned long long>(32); }
 
 	/// Set the address to kernel object
 	void setKernalObjectAddress(unsigned long long address){ setByOffset<unsigned long long>(32, address); }
 
-	/// Returns the address to kernel arguments
+	/// Return the address to kernel arguments
 	unsigned long long getKernargAddress() const{ return getByOffset<unsigned long long>(40); }
 
 	/// Set the address to kernel argument
 	void setKernargAddress(unsigned long long address){ setByOffset<unsigned long long>(40, address); }
 
-	/// Returns the completion signal
+	/// Return the completion signal
 	unsigned long long getCompletionSignal() const{ return getByOffset<unsigned long long>(56); }
 
 	/// Set the address to kernel argument

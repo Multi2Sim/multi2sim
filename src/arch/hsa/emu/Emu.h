@@ -57,7 +57,6 @@ public:
 /// HSA Emulator
 class Emu : public comm::Emu
 {
-
 	// Debugger files
 	static std::string hsa_debug_loader_file;
 	static std::string hsa_debug_isa_file;
@@ -88,7 +87,7 @@ class Emu : public comm::Emu
 public:
 
 	/// Destructor
-	virtual ~Emu(){};
+	~Emu(){};
 
 	/// The HSA emulator is a singleton class. The only possible instance
 	/// of it will be allocated the first time this function is invoked

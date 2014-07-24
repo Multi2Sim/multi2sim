@@ -29,6 +29,7 @@
 #include "BrigSection.h"
 #include "BrigDef.h"
 
+
 namespace HSA{
 
 class BrigSection;
