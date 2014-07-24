@@ -63,7 +63,7 @@ void AQLQueue::Associate(Component *component)
 }
 
 
-void AQLQueue::Enqueue(AQLPacket *packet)
+void AQLQueue::Enqueue(AQLDispatchPacket *packet)
 {
 	// 1. Allocating an AQL packet slot
 	unsigned long long packet_id = write_index;
@@ -81,10 +81,30 @@ void AQLQueue::Enqueue(AQLPacket *packet)
 }
 
 
-AQLPacket *AQLQueue::getPacket(unsigned long long linear_index)
+AQLDispatchPacket *AQLQueue::getPacket(unsigned long long linear_index)
 {
 	unsigned long long recursive_index = toRecursiveIndex(linear_index);
-	return (AQLPacket *)recursive_index;
+	return (AQLDispatchPacket *)recursive_index;
+}
+
+
+AQLDispatchPacket *AQLQueue::ReadPacket()
+{
+	// If the queue is empty, return a nullptr
+	if (isEmpty())
+		return nullptr;
+
+	// Get the pointer to the packet
+	AQLDispatchPacket *packet = getPacket(read_index);
+
+	// Set packet format to invalid
+	packet->setFormat(AQLFormatInvalid);
+
+	// Increase read index
+	read_index += 64;
+
+	// Return the packet
+	return packet;
 }
 
 }  // namespace HSA

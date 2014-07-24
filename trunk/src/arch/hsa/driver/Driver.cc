@@ -70,8 +70,8 @@ void Driver::RegisterOptions()
 	// Category
 	command_line->setCategory("HSA");
 
-	// Option --hsa-driver-debug <file>
-	command_line->RegisterString("--hsa-driver-debug <file>", debug_file,
+	// Option --hsa-debug-driver <file>
+	command_line->RegisterString("--hsa-debug-driver <file>", debug_file,
 			"Dump debug information related with HSA driver ABI "
 			"calls and their arguments.");
 }

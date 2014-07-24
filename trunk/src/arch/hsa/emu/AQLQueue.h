@@ -82,6 +82,9 @@ class AQLQueue
 		return (index % size) * sizeof(AQLPacket);
 	}
 
+	/// Return the packet starts at a certain linear index
+	AQLDispatchPacket *getPacket(unsigned long long linear_index);
+
 public:
 
 	/// Constructor
@@ -91,7 +94,7 @@ public:
 	~AQLQueue();
 
 	/// Enqueue a packet
-	void Enqueue(AQLPacket *packet);
+	void Enqueue(AQLDispatchPacket *packet);
 
 	/// Associate the queue with HSA component. Raise error if the queue
 	/// has already been associated with another device
@@ -104,8 +107,11 @@ public:
 	/// size of AQLPacket
 	void allocatesPacketSlot(){ write_index += sizeof(AQLPacket); }
 
-	/// Return the packet starts at a certain linear index
-	AQLPacket *getPacket(unsigned long long linear_index);
+	/// Read next packet, increase read_index, mark the packet format as
+	/// Invalid
+	AQLDispatchPacket *ReadPacket();
+
+
 
 
 

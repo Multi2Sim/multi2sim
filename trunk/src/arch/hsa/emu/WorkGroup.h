@@ -21,18 +21,26 @@
 #define ARCH_HSA_EMU_WORKGROUP_H
 
 #include "Component.h"
+#include "Wavefront.h"
 
 
 namespace HSA
 {
 
 class Component;
+class Wavefront;
 
 /// Work group of an HSA component
 class WorkGroup
 {
 	// Pointer to the HSA component it belongs to
 	Component *component;
+
+	// List of wavefronts
+	std::list<std::unique_ptr<Wavefront>> wavefronts;
+
+	// Determines if the work item is active
+	bool is_active = false;
 
 public:
 
@@ -41,6 +49,19 @@ public:
 	/// \param component
 	///	The HSA component this work group belongs to
 	WorkGroup(Component *component);
+
+	// Set is_active
+	void setActive(bool is_active) {this->is_active = is_active;}
+
+	// Get is_active field
+	bool isActive() const {return is_active;}
+
+	// Execute each wavefront of the work group
+	//
+	// \return
+	// 	True, if the execution have not finished
+	//	False, if the execution finished
+	bool Execute();
 };
 
 }

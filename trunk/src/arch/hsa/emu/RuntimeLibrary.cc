@@ -38,7 +38,8 @@ unsigned int RuntimeLibrary::getNumberOfHSAComponent()
 	return emu->getNumberOfComponent();
 }
 
-void RuntimeLibrary::EnqueueDispatchPacket(AQLQueue *queue, AQLPacket *packet)
+void RuntimeLibrary::EnqueueDispatchPacket(AQLQueue *queue,
+		AQLDispatchPacket *packet)
 {
 	queue->Enqueue(packet);
 }

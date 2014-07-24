@@ -88,7 +88,7 @@ class WorkItem{
  	~WorkItem();
 
  	/// Run one instruction for the workitem at the position pointed 
- 	void Execute();
+ 	bool Execute();
 
 };
 
