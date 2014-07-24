@@ -27,5 +27,17 @@ WorkGroup::WorkGroup(Component *component)
 	this->component = component;
 }
 
+
+bool WorkGroup::Execute()
+{
+	bool on_going = false;
+	for (auto it = wavefronts.begin(); it != wavefronts.end(); it++)
+	{
+		if ((*it)->Execute())
+			on_going = true;
+	}
+	return on_going;
+}
+
 }
 

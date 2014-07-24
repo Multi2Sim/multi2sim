@@ -65,11 +65,24 @@ void Component::addQueue(AQLQueue *queue)
 
 bool Component::Execute()
 {
-	//TODO implement this function
-
 	// 1. Check if the tasks is being processed. If true, process it.
+	bool has_active_workgroup = false;
+	for(auto it = work_groups.begin(); it != work_groups.end(); it++)
+	{
+		if ((*it)->Execute())
+			has_active_workgroup = true;
+	}
+	if (has_active_workgroup)
+		return true;
 
 	// 2. Otherwise, read from queue list and grab a task to start.
+	if (!has_active_workgroup)
+	{
+		for(auto it = queues.begin(); it != queues.end(); it++)
+		{
+
+		}
+	}
 
 	// 3. If this component is not running and there is no pending task,
 	// 	return false indicating this component is idle.

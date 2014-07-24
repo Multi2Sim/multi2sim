@@ -17,41 +17,41 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifndef ARCH_HSA_EMU_WAVEFRONT_H
+#define ARCH_HSA_EMU_WAVEFRONT_H
+
 #include "WorkItem.h"
+#include "WorkGroup.h"
+
 
 namespace HSA
 {
 
-WorkItem::WorkItem()
+class WorkGroup;
+class WorkItem;
+
+class Wavefront
 {
-	emu = Emu::getInstance();
-}
 
+	// The work group it belongs to
+	WorkGroup *workgroup;
 
-WorkItem::~WorkItem()
-{
-}
+	// List of work items
+	std::list<std::unique_ptr<WorkItem>> workitems;
 
+public:
 
-bool WorkItem::Execute()
-{
-	//std::cout << "In WorkItem::Execute\n";
-	BrigInstEntry inst(pc, ProgramLoader::getInstance()->getBinary());
+	/// Constructor
+	Wavefront(WorkGroup *workgroup);
 
-	// Put the inst to perform to isa debug file
-	emu->isa_debug << inst;
+	/// Destructor
+	~Wavefront();
 
-	// Get the function according to the opcode and perform the inst
-	int opcode = inst.getOpcode();
-	ExecuteInstFn fn = WorkItem::execute_inst_fn[opcode];
-	(this->*fn)();
-
-	// move pc register to next function
-	pc = inst.next();
-
-	return true;
-}
-
+	/// Execute instructions
+	bool Execute();
+};
 
 }  // namespace HSA
+
+#endif 
 

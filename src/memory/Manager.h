@@ -185,7 +185,7 @@ class Manager
 	unsigned AllocateLarge(unsigned size);
 
 	// Free memory chunk larger than a page size 
-	void FreeLarge(unsigned size);
+	void FreeLarge(Chunk *pointer);
 
 	// Determine if a size is aligned
 	bool isAlignedSize(unsigned size, unsigned alignment) const
@@ -244,6 +244,9 @@ public:
 	///     not a valid address returned by a previous call to Allocate() or
 	///     if it has been freed before.
 	void Free(unsigned address);
+
+	/// Determines if the address falls in an allocated region
+	bool isValidAddress(unsigned address);
 
 	/// Dump the memory managing status for debug purpose
 	void Dump(std::ostream &os) const;
