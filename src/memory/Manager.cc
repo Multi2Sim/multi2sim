@@ -63,11 +63,29 @@ unsigned Manager::Allocate(unsigned size, unsigned alignment=1)
 bool Manager::canHoleContain(Chunk *hole, unsigned size,
 		unsigned alignment) const
 {
+	// Get next aligned address
 	unsigned aligned_address = getNextAlignedAddress(hole->getAddress(),
 			alignment);
-	unsigned offset = aligned_address - size;
 
-	return hole->getSize() >= size + offset;
+	// Calculate the size in bytes of the gap between the base address
+	// of the hole to the first aligned address in the hole. It is the
+	// space wasted in this allocation
+	//
+	//  | Beginning of the hole
+	// -----------------
+	// | | | | | | | | |
+	// -----------------
+	//      | First aligned address
+	//
+	// In this example the aligned size is at the third byte of the hole.
+	// Therefore, the gap is 2. Assuming the hole is 8 bytes large,
+	// only if the requested size is smaller than 6, can the hole contain
+	// the request size of memory/
+	unsigned gap = aligned_address - hole->getAddress();
+
+	// Returns true if the hole's size is greater than the requested size
+	// plus the gap.
+	return hole->getSize() >= size + gap;
 }
 
 
@@ -81,31 +99,31 @@ unsigned Manager::getNextAlignedAddress(unsigned address,
 unsigned Manager::AllocateLarge(unsigned size)
 {
 
-	unsigned int addr = Manager::MapBaseAddress;
+	unsigned int address = Manager::MapBaseAddress;
 	unsigned int page_aligned_size = 
 			ceil((double)size / Memory::PageSize) 
 			* Memory::PageSize;
 
 	// Find a good place to allocate a new page
-	addr = memory->MapSpaceDown(addr, page_aligned_size);
-	if (addr == (unsigned)-1)
+	address = memory->MapSpaceDown(address, page_aligned_size);
+	if (address == (unsigned)-1)
 		throw misc::Error("Guest program out of memory.");
 
 	// Use map to allocate a new page
-	memory->Map(addr, size, 0x06);
+	memory->Map(address, size, 0x06);
 
 	// Allocate the chunk
-	CreatePointer(addr, page_aligned_size);
+	CreatePointer(address, page_aligned_size);
 
-	return addr;
+	// Return the address to the newly allocated pointer
+	return address;
 }
 
 
 unsigned Manager::AllocateIn(Chunk *hole, unsigned size, unsigned alignment)
 {
 	// Assert the hole can contain the size
-	if (!canHoleContain(hole, size, alignment))
-		throw misc::Panic("Memory hole cannot contain size");
+	assert(canHoleContain(hole, size, alignment));
 
 	// Remove the hole  
 	unsigned address = hole->getAddress();
@@ -115,6 +133,28 @@ unsigned Manager::AllocateIn(Chunk *hole, unsigned size, unsigned alignment)
 	// Get the address to allocate memory
 	unsigned aligned_address = getNextAlignedAddress(address, alignment);
 
+	// Allocating a piece of memory in a hole may create a pointer and
+	// two holes. For example, if the hole starts at address 30, and it is
+	// 8 bytes long, we want to allocate a 3 bytes, 8 aligned address.
+	//
+	//
+	// | Address 30
+	// -----------------
+	// | | | | | | | | |
+	// -----------------
+	//     | First aligned address 32
+	//
+	//
+	// Then it become 3 small chunks
+	//
+	//
+	// | Address 30       | Address 32       | Address 35
+	// -----              -------            -------
+	// | | |              |x|x|x|            | | | |
+	// -----              -------            -------
+	// Hole 1             Pointer            Hole 2
+	//
+	//
 	// Insert first hole, in front of allocated memory chunk.
 	unsigned hole1_size = aligned_address - address;
 	if (hole1_size > 0)
@@ -141,17 +181,19 @@ void Manager::Free(unsigned address)
 	auto it = chunks.find(address);
 	if (it == chunks.end())
 	{
-		throw misc::Panic("Trying to free a pointer not created by malloc.");
+		throw Error("Trying to free a pointer not created by Allocate "
+				"or has already been freed.");
 	}
 
-	// Remove the pointer
+	// If the chunk is larger than a page size, use special rule for it.
 	unsigned size = it->second->getSize();
 	if (size > Memory::PageSize)
 	{
-		FreeLarge(address);
+		FreeLarge(it->second.get());
 		return;
 	}
 
+	// Remove the pointer
 	RemovePointer(it->second.get());
 
 	// Add the hole
@@ -162,18 +204,11 @@ void Manager::Free(unsigned address)
 }
 
 
-void Manager::FreeLarge(unsigned address)
+void Manager::FreeLarge(Chunk *pointer)
 {
-
-	auto it = chunks.find(address);
-	if (it == chunks.end() && it->second->isAllocated())
-	{
-		throw Error("Trying to free a pointer not created by Allocate "
-				" or it has been freed before");
-	}
-
 	// Remove the page
-	unsigned num_pages = it->second->getSize() / Memory::PageSize;
+	unsigned num_pages = pointer->getSize() / Memory::PageSize;
+	unsigned address = pointer->getAddress();
 	for (unsigned i = 0; i < num_pages; i++)
 	{
 		DeallocatePage(address);
@@ -182,7 +217,7 @@ void Manager::FreeLarge(unsigned address)
 
 
 	// Remove chunk
-	RemovePointer(it->second.get());
+	RemovePointer(pointer);
 
 }
 
@@ -239,19 +274,10 @@ void Manager::MergeHoles(Chunk *hole)
 void Manager::Merge2Holes(Chunk *hole1, Chunk *hole2)
 {
 	// Assert hole1 and hole2 are not allocated and they are consecutive
-	if (hole1->isAllocated())
-	{
-		throw misc::Panic("Hole 1 is not a hole.");
-	}
-	if (hole2->isAllocated())
-	{
-		throw misc::Panic("Hole 2 is not a hole.");
-	}
-	if (hole1->getAddress() + hole1->getSize() != hole2->getAddress())
-	{
-		throw misc::Panic("Hole1 and hole2 are not adjacent.");
-	}
-	
+	assert(!hole1->isAllocated());
+	assert(!hole2->isAllocated());
+	assert(hole1->getAddress() + hole1->getSize() == hole2->getAddress());
+
 	// Get information
 	unsigned size1 = hole1->getSize();
 	unsigned size2 = hole2->getSize();
@@ -343,6 +369,21 @@ void Manager::RemovePointer(Chunk *pointer)
 {
 	// Remove the chunk in the chunks map
 	chunks.erase(pointer->getChunksIterator());
+}
+
+bool Manager::isValidAddress(unsigned address)
+{
+	// Find the possible chunk it can locate in
+	auto it = chunks.lower_bound(address);
+
+	// Determine if the address falls in the chunk and if the chunk is
+	// allocated
+	if (it->second->getAddress() <= address &&
+			it->second->getEndAddress() >= address &&
+			it->second->isAllocated())
+		return true;
+	else
+		return false;
 }
 
 

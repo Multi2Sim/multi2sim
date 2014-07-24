@@ -38,7 +38,8 @@ public:
 			QueueType queue_type);
 
 	/// Enqueue an AQL dispatch packet
-	static void EnqueueDispatchPacket(AQLQueue *queue, AQLPacket *packet);
+	static void EnqueueDispatchPacket(AQLQueue *queue,
+			AQLDispatchPacket *packet);
 
 	/// Get the number of HSA Component
 	static unsigned int getNumberOfHSAComponent();

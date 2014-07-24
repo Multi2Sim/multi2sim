@@ -19,6 +19,9 @@ libemu_a_SOURCES = \
 		RuntimeLibrary.h \
 		RuntimeLibrary.cc \
 		\
+		Wavefront.h \
+		Wavefront.cc \
+		\
 		WorkGroup.h \
 		WorkGroup.cc \
 		\
