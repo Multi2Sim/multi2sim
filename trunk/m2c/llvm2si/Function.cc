@@ -233,10 +233,8 @@ int Function::AddArg(FunctionArg *arg, int num_elem, int offset)
 		basic_block->AddInst(inst);*/
 
 		// Insert argument name in symbol table, using its vector register.
-		symbol = new Symbol(arg->name,
-				Symbol::TypeScalarRegister,
-				arg->sreg);
-		AddSymbol(symbol);
+		symbol = addSymbol(arg->name);
+		symbol->setRegister(Symbol::TypeScalarRegister, arg->sreg);
 		break;
 	}
 
@@ -253,10 +251,8 @@ int Function::AddArg(FunctionArg *arg, int num_elem, int offset)
 		assert(inst->hasValidArguments());
 
 		// Insert argument name in symbol table, using its scalar register.
-		symbol = new Symbol(arg->name,
-				Symbol::TypeScalarRegister,
-				arg->sreg);
-		AddSymbol(symbol);
+		symbol = addSymbol(arg->name);
+		symbol->setRegister( Symbol::TypeScalarRegister, arg->sreg);
 
 		break;
 	}
@@ -280,10 +276,8 @@ int Function::AddArg(FunctionArg *arg, int num_elem, int offset)
 		assert(inst->hasValidArguments());
 
 		// Insert argument name in symbol table, using its scalar register.
-		symbol = new Symbol(arg->name,
-				Symbol::TypeScalarRegister,
-				arg->sreg);
-		AddSymbol(symbol);
+		symbol = addSymbol(arg->name);
+		symbol->setRegister(Symbol::TypeScalarRegister, arg->sreg);
 		
 		break;
 	}

@@ -88,6 +88,11 @@ public:
 	{
 	}
 
+	/// Constructor specifying a name
+	Symbol(const std::string &name): name(name)
+	{
+	}
+
 	/// Return the symbol name
 	const std::string &getName() const { return name; }
 
@@ -131,6 +136,26 @@ public:
 
 	/// Update the register identifier associated with the symbol
 	void setReg(int reg) { this->reg = reg; }
+
+	/// Update the register identifier associated with the symbol
+	void setRegister(int reg) { this->reg = reg; }
+	
+	/// Update the register type and identifier associate with the symbol
+	void setRegister(Type type, int reg)
+	{
+		this->type = type;
+		this->reg  = reg;
+		num_regs = 1;
+	}
+
+	/// Update the register type and identifier range asscoiate with the
+	/// symbol
+	void setRegister(Type type, int low, int high)
+	{
+		this->type = type;
+		reg  = low;
+		num_regs = high - low + 1;
+	}
 };
 
 
@@ -141,15 +166,24 @@ class SymbolTable
 
 public:
 
-	// Create new symbol and add it to the list
+	/// Create new symbol and add it to the list
 	void AddSymbol(Symbol *symbol)
 	{
 		std::unique_ptr<Symbol> symbol_ptr(symbol);
 		table[symbol_ptr->getName()] = std::move(symbol_ptr);
 	}
+	
+	/// Create new symbol and add it to the list, return a pointer to the
+	/// symbol
+	Symbol *addSymbol(const std::string &name)
+	{
+		table[name] = misc::new_unique<Symbol>(name);
+		return table[name].get();
+	}
+	
 
-	// Look up symbol by name and return it, or return null if symbol is
-	// not found.
+	/// Look up symbol by name and return it, or return null if symbol is
+	/// not found.
 	Symbol *Lookup(const std::string &name)
 	{
 		auto it = table.find(name);

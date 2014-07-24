@@ -236,6 +236,13 @@ public:
 	/// Add symbol to symbol table
 	void AddSymbol(Symbol *symbol) { symbol_table.AddSymbol(symbol); }
 
+	/// Add symbol to symbol table, constructed with symbol name, return
+	/// a pointer the symbol
+	Symbol *addSymbol(const std::string &name) 
+	{
+		return symbol_table.addSymbol(name);
+	}
+
 	/// Generate initialization code for the function in basic block
 	/// 'basic_block_header'.
 	void EmitHeader();

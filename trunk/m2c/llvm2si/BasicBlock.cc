@@ -109,9 +109,8 @@ void BasicBlock::EmitAdd(llvm::BinaryOperator *llvm_inst)
 
 	// Allocate vector register and create symbol for return value
 	int ret_vreg = function->AllocVReg();
-	Symbol *ret_symbol = new Symbol(llvm_inst->getName(),
-			Symbol::TypeVectorRegister, ret_vreg);
-	function->AddSymbol(ret_symbol);
+	Symbol *ret_symbol = function->addSymbol(llvm_inst->getName());
+	ret_symbol->setRegister(Symbol::TypeVectorRegister, ret_vreg);
 
 	// Emit addition.
 	// v_add_i32 ret_vreg, vcc, arg_op1, arg_op2
@@ -162,28 +161,24 @@ void BasicBlock::EmitCall(llvm::CallInst *llvm_inst)
 	{
 		// Create new symbol associating it with the vector register
 		// containing the global ID in the given dimension.
-		Symbol *ret_symbol = new Symbol(var_name,
-				Symbol::TypeVectorRegister,
+		Symbol *ret_symbol = function->addSymbol(var_name);
+		ret_symbol->setRegister(Symbol::TypeVectorRegister,
 				function->getVRegGid() + dim);
-		function->AddSymbol(ret_symbol);
 	}
 	else if (func_name == "__get_local_id_u32")
 	{
 		// Create new symbol associating it with the vector register
 		// containing the global ID in the given dimension.
-		Symbol *ret_symbol = new Symbol(var_name,
-				Symbol::TypeVectorRegister,
+		Symbol *ret_symbol = function->addSymbol(var_name);
+		ret_symbol->setRegister(Symbol::TypeVectorRegister,
 				function->getVRegLid() + dim);
-		function->AddSymbol(ret_symbol);
 	}
 	else if (func_name == "__get_global_size_u32")
 	{
 		// Allocate a new vector register to copy global size.
 		int ret_vreg = function->AllocVReg();
-		auto ret_symbol = new Symbol(var_name,
-				Symbol::TypeVectorRegister,
-				ret_vreg);
-		function->AddSymbol(ret_symbol);
+		Symbol *ret_symbol = function->addSymbol(var_name);
+		ret_symbol->setRegister(Symbol::TypeVectorRegister, ret_vreg);
 
 		// Create new vector register containing the global size.
 		// v_mov_b32 vreg, s[gsize + dim]
@@ -233,8 +228,7 @@ void BasicBlock::EmitGetElementPtr(llvm::GetElementPtrInst *llvm_inst)
 		inst->addScalarRegister(arg_scalar->getId());
 		assert(inst->hasValidArguments());
 
-		// FIXME: use unique_ptr later
-		arg_ptr.reset(new ArgVectorRegister(ret_vreg));
+		arg_ptr = misc::new_unique<ArgVectorRegister>(ret_vreg);
 	}
 
 
@@ -256,11 +250,9 @@ void BasicBlock::EmitGetElementPtr(llvm::GetElementPtrInst *llvm_inst)
 	// Allocate vector register and create symbol for return value
 	std::string ret_name = llvm_inst->getName();
 	int ret_vreg = function->AllocVReg();
-	Symbol *ret_symbol = new Symbol(ret_name,
-			Symbol::TypeVectorRegister,
-			ret_vreg);
+	Symbol *ret_symbol = function->addSymbol(ret_name);
+	ret_symbol->setRegister(Symbol::TypeVectorRegister, ret_vreg);
 	ret_symbol->setUAVIndex(ptr_symbol->getUAVIndex());
-	function->AddSymbol(ret_symbol);
 
 	// Calculate offset as the multiplication between 'arg_index' and the
 	// size of the pointed element ('ptr_size'). If 'arg_index' is a
@@ -281,8 +273,7 @@ void BasicBlock::EmitGetElementPtr(llvm::GetElementPtrInst *llvm_inst)
 	{
 		// Allocate one register and create 'arg_offset' with it
 		int tmp_vreg = function->AllocVReg();
-		auto arg_offset_vreg = new ArgVectorRegister(tmp_vreg);
-		arg_offset.reset(arg_offset_vreg);
+		arg_offset = misc::new_unique<ArgVectorRegister>(tmp_vreg);
 
 		// Emit calculation of offset as the multiplication between the
 		// index argument and the pointed element size.
@@ -349,9 +340,9 @@ void BasicBlock::EmitICmp(llvm::ICmpInst *llvm_inst)
 	// Allocate vector register and create symbol for return value
 	std::string ret_name = llvm_inst->getName();
 	int ret_sreg_series = function->AllocSReg(2, 2);
-	Symbol *ret_symbol = new Symbol(ret_name, Symbol::TypeScalarRegister,
+	Symbol *ret_symbol = function->addSymbol(ret_name);
+	ret_symbol->setRegister(Symbol::TypeScalarRegister,
 			ret_sreg_series, ret_sreg_series + 1);
-	function->AddSymbol(ret_symbol);
 
 	// Choose instruction based on predicate
 	SI::InstOpcode opcode = SI::InstOpcodeInvalid;
@@ -490,10 +481,8 @@ void BasicBlock::EmitLoad(llvm::LoadInst *llvm_inst)
 	// Allocate vector register and create symbol for return value
 	std::string ret_name = llvm_inst->getName();
 	int ret_vreg = function->AllocVReg();
-	Symbol *ret_symbol = new Symbol(ret_name,
-			Symbol::TypeVectorRegister,
-			ret_vreg);
-	function->AddSymbol(ret_symbol);
+	Symbol *ret_symbol = function->addSymbol(ret_name);
+	ret_symbol->setRegister(Symbol::TypeVectorRegister, ret_vreg);
 
 	// Emit memory load instruction.
 	//
@@ -544,10 +533,8 @@ void BasicBlock::EmitMul(llvm::BinaryOperator *llvm_inst)
 		// Allocate vector register and create symbol for return value
 		std::string ret_name = llvm_arg1->getName();
 		int ret_vreg = function->AllocVReg();
-		Symbol *ret_symbol = new Symbol(ret_name,
-				Symbol::TypeVectorRegister,
-				ret_vreg);
-		function->AddSymbol(ret_symbol);
+		Symbol *ret_symbol = function->addSymbol(ret_name);
+		ret_symbol->setRegister(Symbol::TypeVectorRegister, ret_vreg);
 
 		// Emit instruction
 		//
@@ -570,10 +557,8 @@ void BasicBlock::EmitMul(llvm::BinaryOperator *llvm_inst)
 		// Allocate vector register and create symbol for return value
 		std::string ret_name = llvm_arg2->getName();
 		int ret_vreg = function->AllocVReg();
-		Symbol *ret_symbol = new Symbol(ret_name,
-				Symbol::TypeVectorRegister,
-				ret_vreg);
-		function->AddSymbol(ret_symbol);
+		Symbol *ret_symbol = function->addSymbol(ret_name);
+		ret_symbol->setRegister(Symbol::TypeVectorRegister, ret_vreg);
 
 
 		// Emit instruction
@@ -585,7 +570,7 @@ void BasicBlock::EmitMul(llvm::BinaryOperator *llvm_inst)
 		inst->addScalarRegister(arg_scalar->getId());
 		assert(inst->hasValidArguments());
 
-		arg2.reset(new ArgVectorRegister(ret_vreg));
+		arg2 = misc::new_unique<ArgVectorRegister>(ret_vreg);
 	}
 
 	// Only the first operand can be a constant, so swap them if there is
@@ -602,10 +587,8 @@ void BasicBlock::EmitMul(llvm::BinaryOperator *llvm_inst)
 	// Allocate vector register and create symbol for return value
 	std::string ret_name = llvm_inst->getName();
 	int ret_vreg = function->AllocVReg();
-	Symbol *ret_symbol = new Symbol(ret_name,
-			Symbol::TypeVectorRegister,
-			ret_vreg);
-	function->AddSymbol(ret_symbol);
+	Symbol *ret_symbol = function->addSymbol(ret_name);
+	ret_symbol->setRegister(Symbol::TypeVectorRegister, ret_vreg);
 
 	// Emit effective address calculation.
 	//
@@ -632,10 +615,8 @@ void BasicBlock::EmitPhi(llvm::PHINode *llvm_inst)
 	// Allocate vector register and create symbol for return value
 	std::string ret_name = llvm_inst->getName();
 	int ret_vreg = function->AllocVReg();
-	Symbol *ret_symbol = new Symbol(ret_name,
-			Symbol::TypeVectorRegister,
-			ret_vreg);
-	function->AddSymbol(ret_symbol);
+	Symbol *ret_symbol = function->addSymbol(ret_name);
+	ret_symbol->setRegister(Symbol::TypeVectorRegister, ret_vreg);
 
 	// Add destination argument
 	ArgVectorRegister *ret_arg = new ArgVectorRegister(ret_vreg);
@@ -724,10 +705,8 @@ void BasicBlock::EmitStore(llvm::StoreInst *llvm_inst)
 		// Allocate vector register and create symbol for return value
 		std::string ret_name = llvm_arg_data->getName();
 		int ret_vreg = function->AllocVReg();
-		Symbol *ret_symbol = new Symbol(ret_name,
-				Symbol::TypeVectorRegister,
-				ret_vreg);
-		function->AddSymbol(ret_symbol);
+		Symbol *ret_symbol = function->addSymbol(ret_name);
+		ret_symbol->setRegister(Symbol::TypeVectorRegister, ret_vreg);
 
 
 		// Emit instruction
@@ -739,7 +718,7 @@ void BasicBlock::EmitStore(llvm::StoreInst *llvm_inst)
 		inst->addScalarRegister(arg_scalar->getId());
 		assert(inst->hasValidArguments());
 
-		arg_data.reset(new ArgVectorRegister(ret_vreg));
+		arg_data = misc::new_unique<ArgVectorRegister>(ret_vreg);
 	}
 
 	// Get address operand (vreg)
@@ -822,10 +801,8 @@ void BasicBlock::EmitSub(llvm::BinaryOperator *llvm_inst)
 	// Allocate vector register and create symbol for return value
 	std::string ret_name = llvm_inst->getName();
 	int ret_vreg = function->AllocVReg();
-	Symbol *ret_symbol = new Symbol(ret_name,
-			Symbol::TypeVectorRegister,
-			ret_vreg);
-	function->AddSymbol(ret_symbol);
+	Symbol *ret_symbol = function->addSymbol(ret_name);
+	ret_symbol->setRegister(Symbol::TypeVectorRegister, ret_vreg);
 
 	// Emit subtraction.
 	//
@@ -870,10 +847,8 @@ void BasicBlock::EmitFAdd(llvm::BinaryOperator *llvm_inst)
 	// Allocate vector register and create symbol for return value
 	std::string ret_name = llvm_inst->getName();
 	int ret_vreg = function->AllocVReg();
-	Symbol *ret_symbol = new Symbol(ret_name,
-			Symbol::TypeVectorRegister,
-			ret_vreg);
-	function->AddSymbol(ret_symbol);
+	Symbol *ret_symbol = function->addSymbol(ret_name);
+	ret_symbol->setRegister(Symbol::TypeVectorRegister, ret_vreg);
 
 	// Emit addition.
 	//
@@ -917,10 +892,8 @@ void BasicBlock::EmitFSub(llvm::BinaryOperator *llvm_inst)
 	// Allocate vector register and create symbol for return value
 	std::string ret_name = llvm_inst->getName();
 	int ret_vreg = function->AllocVReg();
-	Symbol *ret_symbol = new Symbol(ret_name,
-			Symbol::TypeVectorRegister,
-			ret_vreg);
-	function->AddSymbol(ret_symbol);
+	Symbol *ret_symbol = function->addSymbol(ret_name);
+	ret_symbol->setRegister(Symbol::TypeVectorRegister, ret_vreg);
 
 	// Emit addition.
 	//
@@ -966,10 +939,8 @@ void BasicBlock::EmitFMul(llvm::BinaryOperator *llvm_inst)
 	// Allocate vector register and create symbol for return value
 	std::string ret_name = llvm_inst->getName();
 	int ret_vreg = function->AllocVReg();
-	Symbol *ret_symbol = new Symbol(ret_name,
-			Symbol::TypeVectorRegister,
-			ret_vreg);
-	function->AddSymbol(ret_symbol);
+	Symbol *ret_symbol = function->addSymbol(ret_name);
+	ret_symbol->setRegister(Symbol::TypeVectorRegister, ret_vreg);
 
 	// Emit effective address calculation.
 	//
@@ -1015,10 +986,8 @@ void BasicBlock::EmitFDiv(llvm::BinaryOperator *llvm_inst)
 	// Allocate vector register and create symbol for return value
 	std::string ret_name = llvm_inst->getName();
 	int ret_vreg = function->AllocVReg();
-	Symbol *ret_symbol = new Symbol(ret_name,
-			Symbol::TypeVectorRegister,
-			ret_vreg);
-	function->AddSymbol(ret_symbol);
+	Symbol *ret_symbol = function->addSymbol(ret_name);
+	ret_symbol->setRegister(Symbol::TypeVectorRegister, ret_vreg);
 
 	// For float division, the compiler provides extra steps to prevent
 	// possible overflow/downflow.
@@ -1114,10 +1083,8 @@ void BasicBlock::EmitAnd(llvm::BinaryOperator *llvm_inst)
 
 	// Allocate vector register and create symbol for return value
 	int ret_vreg = function->AllocVReg();
-	Symbol *ret_symbol = new Symbol(llvm_inst->getName(),
-			Symbol::TypeVectorRegister,
-			ret_vreg);
-	function->AddSymbol(ret_symbol);
+	Symbol *ret_symbol = function->addSymbol(llvm_inst->getName());
+	ret_symbol->setRegister(Symbol::TypeVectorRegister, ret_vreg);
 
 	// Emit AND.
 	//
@@ -1159,10 +1126,8 @@ void BasicBlock::EmitOr(llvm::BinaryOperator *llvm_inst)
 
 	// Allocate vector register and create symbol for return value
 	int ret_vreg = function->AllocVReg();
-	Symbol *ret_symbol = new Symbol(llvm_inst->getName(),
-			Symbol::TypeVectorRegister,
-			ret_vreg);
-	function->AddSymbol(ret_symbol);
+	Symbol *ret_symbol = function->addSymbol(llvm_inst->getName());
+	ret_symbol->setRegister(Symbol::TypeVectorRegister, ret_vreg);
 
 	// Emit OR.
 	//
@@ -1204,10 +1169,8 @@ void BasicBlock::EmitXor(llvm::BinaryOperator *llvm_inst)
 
 	// Allocate vector register and create symbol for return value
 	int ret_vreg = function->AllocVReg();
-	Symbol *ret_symbol = new Symbol(llvm_inst->getName(),
-			Symbol::TypeVectorRegister,
-			ret_vreg);
-	function->AddSymbol(ret_symbol);
+	Symbol *ret_symbol = function->addSymbol(llvm_inst->getName());
+	ret_symbol->setRegister(Symbol::TypeVectorRegister, ret_vreg);
 
 	// Emit XOR.
 	//
@@ -1256,10 +1219,8 @@ void BasicBlock::EmitExtractElement(llvm::ExtractElementInst *llvm_inst)
 	// Allocate vector register and create symbol for return value
 	std::string ret_name = llvm_inst->getName();
 	//int ret_vreg = function->AllocVReg();
-	Symbol *ret_symbol = new Symbol(ret_name,
-			Symbol::TypeScalarRegister, 
-			arg1_scalar->getId());
-	function->AddSymbol(ret_symbol);
+	Symbol *ret_symbol = function->addSymbol(ret_name);
+	ret_symbol->setRegister(Symbol::TypeScalarRegister, arg1_scalar->getId());
 }
 
 
@@ -1300,13 +1261,14 @@ void BasicBlock::EmitInsertElement(llvm::InsertElementInst *llvm_inst)
 	if (arg1->getType() == Argument::TypeScalarRegister && 
 			arg2->getType() == Argument::TypeScalarRegister)
 	{
-		ArgScalarRegister *arg1_scalar = dynamic_cast<ArgScalarRegister *>(arg1.get());
-		arg1_scalar->setId(arg1_scalar->getId() + arg3_literal->getValue());
+		ArgScalarRegister *arg1_scalar =
+			dynamic_cast<ArgScalarRegister *>(arg1.get());
+		arg1_scalar->setId(arg1_scalar->getId() + 
+				arg3_literal->getValue());
 		
-		Symbol *ret_symbol = new Symbol(ret_name,
-				Symbol::TypeScalarRegister, 
+		Symbol *ret_symbol = function->addSymbol(ret_name);
+		ret_symbol->setRegister(Symbol::TypeScalarRegister,
 				arg1_scalar->getId());
-		function->AddSymbol(ret_symbol);
 		
 		// Emit instruction
 		//
@@ -1319,13 +1281,14 @@ void BasicBlock::EmitInsertElement(llvm::InsertElementInst *llvm_inst)
 	}
 	else
 	{
-		ArgVectorRegister *arg1_vector = dynamic_cast<ArgVectorRegister *>(arg1.get());
-		arg1_vector->setId(arg1_vector->getId() + arg3_literal->getValue());
+		ArgVectorRegister *arg1_vector = 
+				dynamic_cast<ArgVectorRegister *>(arg1.get());
+		arg1_vector->setId(arg1_vector->getId() + 
+				arg3_literal->getValue());
 		
-		Symbol *ret_symbol = new Symbol(ret_name,
-				Symbol::TypeVectorRegister, 
+		Symbol *ret_symbol = function->addSymbol(ret_name);
+		ret_symbol->setRegister(Symbol::TypeVectorRegister, 
 				arg1_vector->getId());
-		function->AddSymbol(ret_symbol);
 		
 		// Emit instruction
 		//
