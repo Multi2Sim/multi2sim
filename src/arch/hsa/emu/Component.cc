@@ -81,7 +81,7 @@ void Component::Dump(std::ostream &os = std::cout) const
 {
 	// Set device type
 	std::string deviceType = "CPU";
-	if (agent_info.isGPU)
+	if (agent_info.is_GPU)
 		deviceType = "GPU";
 
 	os << misc::fmt("\t***** %s device *****\n", deviceType.c_str());

@@ -17,6 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifndef ARCH_HSA_EMU_PROGRAMLOADER_H
+#define ARCH_HSA_EMU_PROGRAMLOADER_H
+
 #include <string>
 #include <memory>
 
@@ -27,16 +30,13 @@
 #include "Emu.h"
 #include "Function.h"
 
-#ifndef ARCH_HSA_EMU_PROGRAMLOADER_H
-#define ARCH_HSA_EMU_PROGRAMLOADER_H
 
 namespace HSA
 {
 
-/// Abstract the program to emulate
+/// ProgramLoader is a singleton that loads the the program to be emulated
 class ProgramLoader
 {
-
 	// Unique instance of hsa program loader
 	static std::unique_ptr<ProgramLoader> instance;
 
@@ -70,8 +70,8 @@ class ProgramLoader
 	// Load and parse Brig ELF binary
 	void LoadBinary();
 
-	// Load functions in the brig table. Prepare the function table in
-	// loader.
+	// Load functions in the brig file.
+	//
 	// \return
 	// 	Number of functions loaded
 	unsigned int loadFunctions();
@@ -102,7 +102,7 @@ class ProgramLoader
 	//
 	// \param entry_point
 	// 	Pointer to first instruction to parse
-	//
+	//s
 	// \param inst_count
 	// 	Number of instructions in the function
 	//
@@ -127,10 +127,10 @@ public:
 	/// program has been loaded
 	static ProgramLoader *getInstance();
 
-	/// Returns the Brig binary
+	/// Return the Brig binary
 	BrigFile *getBinary() const { return binary.get(); }
 
-	/// Returns the pointer to the main function
+	/// Return the pointer to the main function
 	Function *getMainFunction() const;
 
 };

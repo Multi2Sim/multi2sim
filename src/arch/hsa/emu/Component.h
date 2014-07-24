@@ -27,21 +27,21 @@
 #include "AQLQueue.h"
 #include "WorkGroup.h"
 
+
 namespace HSA
 {
 
 class WorkGroup;
 
-/// Abstract an HSA agent that supports HSAIL
+/// An HSA component is an HSA agent that support HSAIL virtual ISAs
 class Component
 {
 protected:
 
 	// A data structure holds the information of the agent
 	struct AgentInfo{
-
-		// Tells if the device is a GPU device
-		bool isGPU;
+		// Determine if the device is a GPU device
+		bool is_GPU;
 
 		// Name of the device
 		std::string name;
@@ -56,10 +56,10 @@ protected:
 	// Information of current device
 	AgentInfo agent_info;
 
-	// list of work groups
+	// List of work groups
 	std::list<std::unique_ptr<WorkGroup>> work_groups;
 
-	// list of queues associated with this component
+	// List of queues associated with this component
 	std::list<std::unique_ptr<AQLQueue>> queues;
 
 public:
@@ -103,11 +103,11 @@ public:
 	// Setters and getters for agent_info
 	//
 
-	/// Set isGPU field in agent_info
-	void setIsGPU(bool isGPU){ agent_info.isGPU = isGPU; }
+	/// Set is_GPU field in agent_info
+	void setIsGPU(bool is_GPU){ agent_info.is_GPU = is_GPU; }
 
-	/// Get isGPU field of agent_info
-	bool getIsGPU(){ return agent_info.isGPU; }
+	/// Get is_GPU field of agent_info
+	bool IsGPU(){ return agent_info.is_GPU; }
 
 	/// Set name field in agent_info
 	void setName(const std::string &name){ agent_info.name = name; }

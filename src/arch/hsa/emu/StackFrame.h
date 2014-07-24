@@ -22,13 +22,13 @@
 
 #include "Function.h"
 
+
 namespace HSA
 {
 
 class StackFrame
 {
-
-	// The function this stack frame assorciate with
+	// The function this stack frame associate with
 	Function *function;
 
 	// Argument storage
@@ -46,7 +46,7 @@ public:
 	StackFrame(Function *function, StackFrame *parent);
 
 	/// Destructor
-	virtual ~StackFrame();
+	~StackFrame();
 
 	/// Copy the argument value
 	void copyArgument();

@@ -17,6 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifndef MEMORY_MANAGER_H
+#define MEMORY_MANAGER_H
+
 #include <list>
 #include <map>
 #include <memory>
@@ -25,32 +28,43 @@
 
 #include "Memory.h"
 
+
 namespace mem
 {
-	
+
+// A delegate of a memory object for memory allocation and deallocation
 class Manager
 {
-	
 	// Memory object it manage
 	Memory *memory;
 
 	// Page allocation base address
-	static const unsigned map_base_address = 0xb7fb0000;
-
-	// Memory align unit, default to be 8 bytes long
-	static unsigned align_size;
+	static const unsigned MapBaseAddress = 0xb7fb0000;
 	
-	// Abstract a chunk of memory, including pointer and hole
+	// The error to throw of memory manager
+	class Error : public misc::Error
+	{
+	public:
+
+		/// Constructor
+		Error(const std::string &message) : misc::Error(message)
+		{
+			AppendPrefix("Memory manager");
+		}
+	};
+
+	// A chunk holds information of a piece of memory.
+	// A chunk is called a hole if it is free.
+	// A chunk is called a pointer if it allocated and can be freed.
 	class Chunk
 	{
-
-		// pointer address
+		// Base address of the chunk
 		unsigned address;
 
-		// size
+		// Size of the chunk
 		unsigned size;
 
-		// if the chunk is allocated 
+		// If the chunk is allocated.
 		bool is_allocated;
 
 		// Iterator to the chunk in chunks map
@@ -62,58 +76,57 @@ class Manager
 	public:
 
 		/// Constructor
-		Chunk(unsigned addr, unsigned size, bool is_allocated = false)
-		{
-			this->address = addr;
-			this->size = size;
-			this->is_allocated = is_allocated;
-		}
+		Chunk(unsigned address, unsigned size,
+				bool is_allocated = false) :
+				address(address),
+				size(size),
+				is_allocated(is_allocated)
+		{}
 
-		/// Returns the address
+		/// Return the address
 		unsigned getAddress() const { return address; };
 
 		/// Set the address 
-		void setAddress(unsigned addr) { address = addr; }
+		void setAddress(unsigned address) { this->address = address; }
 
-		/// Returns the end address
+		/// Return the end address
 		unsigned getEndAddress() const { return address + size - 1; }
 
-		/// Returns the size
+		/// Return the size
 		unsigned getSize() const { return size; }
 
 		/// Set the size
 		void setSize(unsigned size) { this->size = size; }
 
 		/// Set is_allocated field
-		void setIsAllocated(bool is_allocated)
+		void setAllocated(bool is_allocated)
 		{ 
 			this->is_allocated = is_allocated;
 		}
 
-		/// Returns is_allocated field
-		bool IsAllocated() const {return is_allocated;}
+		/// Return is_allocated field
+		bool isAllocated() const {return is_allocated;}
 
-		/// returns the iterator in the chunks map
+		/// Return the iterator in the chunks map
 		std::map<unsigned, std::unique_ptr<Chunk>>::iterator
 				getChunksIterator() const { return it_chunks; }
 
-		/// sets the iterator in the chunks map
+		/// set the iterator in the chunks map
 		void setChunksIterator(std::map<unsigned, 
 				std::unique_ptr<Chunk>>::iterator it)
 		{
 			it_chunks = it;
 		}
 		
-		/// returns the iterator in the holes map
+		/// Return the iterator in the holes map
 		std::multimap<unsigned, Chunk*>::iterator
-			getHolesIterator() const 
-		{ 
-			if (is_allocated)
-				throw misc::Error("Chunk is not a hole.");
+				getHolesIterator() const
+		{
+			assert(is_allocated);
 			return it_holes; 
 		}
 
-		/// sets the iterator in the chunks map
+		/// Set the iterator in the chunks map
 		void setHolesIterator(std::multimap<unsigned, 
 				Chunk*>::iterator it)
 		{
@@ -124,7 +137,7 @@ class Manager
 		void Dump(std::ostream &os = std::cout) const
 		{
 			std::string chunk_allocation_status = 
-					IsAllocated() ? "Occupied": "Free";
+					isAllocated() ? "Occupied": "Free";
 			os << misc::fmt("0x%x - 0x%0x (size %d) --- %s\n",
 					getAddress(),
 					getEndAddress(),
@@ -144,102 +157,100 @@ class Manager
 	};
 
 	// Memory chunks, map address to chunk information
-	std::map<unsigned int, std::unique_ptr<Chunk>> chunks;
+	std::map<unsigned, std::unique_ptr<Chunk>> chunks;
 
 	// Memory holes, map the size of the holes to chunks
-	std::multimap<unsigned int, Chunk*> holes;
+	std::multimap<unsigned, Chunk*> holes;
 
-	// request a memory page 
+	// Request a memory page
 	//
 	// \return
 	//	The hole created 
-	Chunk* requestOnePage();
+	Chunk *RequestOnePage();
 
 	// Deallocate a memory page
-	void deallocatePage(unsigned size);
+	void DeallocatePage(unsigned size);
 
 	// Merge memory holes in a certain page
 	void MergeHoles(Chunk *hole);
 
 	// Merge 2 consecutive holes
-	void Merge2Holes(Chunk *hole1, Chunk*hole2);
+	void Merge2Holes(Chunk *hole1, Chunk *hole2);
 
-	// Allocate memory at a certain address 
-	// 
-	// \param hole
-	//	the hole for the new pointer to be allocated in
-	//
-	// \param size
-	//	size of the memory requested
-	void AllocateIn(Chunk *hole, unsigned int size);
+	// Allocate memory in a big enough hole, return the allocated base
+	// address
+	unsigned AllocateIn(Chunk *hole, unsigned size, unsigned alignment);
 
 	// Allocate memory chunk larger than a page size
-	unsigned int AllocateLarge(unsigned int size);
+	unsigned AllocateLarge(unsigned size);
 
 	// Free memory chunk larger than a page size 
-	void FreeLarge(unsigned int size);
+	void FreeLarge(unsigned size);
 
-	// Returns the hole or pointer next to address 
-	unsigned int getNextAddress(unsigned int address);
+	// Determine if a size is aligned
+	bool isAlignedSize(unsigned size, unsigned alignment) const
+	{
+		return !(size % alignment);
+	}
 
-	// Returns the aligned size
-	unsigned toAlignedSize(unsigned size);
-
-	// Judges if a size is aligned
-	bool isAlignedSize(unsigned size) const { return size % align_size; }
-
-	// Judges if the hole can hold the size requested
-	bool canHoleContain(Chunk *hole, unsigned int size);
+	// Determine if the hole can hold the size requested
+	bool canHoleContain(Chunk *hole, unsigned size,
+			unsigned alignment) const;
 
 	// Create a hole
-	Chunk *createHole(unsigned addr, unsigned size);
+	Chunk *CreateHole(unsigned addr, unsigned size);
 
 	// Remove a hole
-	void removeHole(Chunk *hole);
+	void RemoveHole(Chunk *hole);
 
 	// Create a pointer
-	Chunk *createPointer(unsigned addr, unsigned size);
-
-	// Judge if two address are in same page
-	bool isInSamePage(unsigned addr1, unsigned addr2);
+	Chunk *CreatePointer(unsigned addr, unsigned size);
 
 	// Remove a pointer
-	void removePointer(Chunk *pointer);
+	void RemovePointer(Chunk *pointer);
+
+	// Determine if two address are in same page
+	bool isInSamePage(unsigned addr1, unsigned addr2);
+
+	/// Dump how chunk is allocated in the managed memory
+	void DumpChunks(std::ostream &os) const;
+
+	/// Return next closest aligned address
+	unsigned getNextAlignedAddress(unsigned address,
+			unsigned alignment) const;
 
 public:
 
-	/// Constructor, assign the memory to manange
+	/// Constructor, assign the memory to manager
 	Manager(Memory *memory);
 
 	/// Allocate a piece of memory
 	/// 
 	/// \param size
-	///		size of the address requested
+	///	size of the address requested
 	/// 
 	/// \return
-	///		base address to the allocated address
-	unsigned int Allocate(unsigned int size);
+	///	base address to the allocated address
+	unsigned Allocate(unsigned size, unsigned alignment);
 
-	/// Free the memory at a certain address
-	void Free(unsigned int address);
+	/// Free allocated memory.
+	///
+	/// \param address
+	///     Base address of a chunk of memory, as returned by a previous
+	///     call to Allocate().
+	///
+	/// \throws
+	///     This function throws a Manager::Error exception if the address is
+	///     not a valid address returned by a previous call to Allocate() or
+	///     if it has been freed before.
+	void Free(unsigned address);
 
 	/// Dump the memory managing status for debug purpose
 	void Dump(std::ostream &os) const;
 
-	/// Dump how chunk is allocated in the managed memory
-	void DumpChunks(std::ostream &os = std::cout) const
-	{
-		os << "Chunks *****\n";
-		for (auto it = chunks.begin(); it != chunks.end(); it++)
-		{
-			os << *(it->second.get());
-		}
-		os << "***** *****\n\n";
-	}
-
 	/// Operator \c << invoking the function Dump) on an output stream
 	friend std::ostream &operator<<(std::ostream &os,
-		const Manager &manager)
+			const Manager &manager)
 	{
 		manager.Dump(os);
 		return os;
@@ -248,4 +259,6 @@ public:
 };
 
 }  // namespace mem
+
+#endif
 

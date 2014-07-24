@@ -23,13 +23,13 @@
 #include <map>
 #include <memory>
 
+
 namespace HSA
 {
 
-/// Abstraction of an HSA function
+/// A function encapsulates information about a HSAIL function
 class Function
 {
-
 	// name of the function
 	std::string name;
 
@@ -58,10 +58,10 @@ class Function
 		unsigned short type;
 		unsigned short size;	// argument size in bytes
 		unsigned int offset;
-		bool isInput;
+		bool is_input;
 	};
 
-	// argument size. When stack frame initialize, allocate the size of
+	// Argument size. When stack frame initialize, allocate the size of
 	// memory
 	unsigned int arg_size = 0;
 
@@ -105,19 +105,19 @@ public:
 	/// Returns function name
 	std::string getName() const {return name;}
 
-	/// Sets the entry point
+	/// Set the entry point
 	void setEntryPoint(char *entry_point) {this->entry_point = entry_point;}
 
-	/// Returns pointer to entry point
+	/// Return pointer to entry point
 	char *getEntryPoint() const {return entry_point;}
 
-	/// Sets the directive
+	/// Set the directive
 	void setDirective(char *directive) {this->directive = directive;}
 
-	/// Returns the pointer to the directive
+	/// Return the pointer to the directive
 	char *getDirective() const {return directive;}
 
-	/// Adds an argument information in argument table
+	/// Add an argument information in argument table
 	///
 	/// \Param name
 	/// 	Name of the argument
@@ -133,7 +133,7 @@ public:
 	/// Add the register to the register list
 	void addRegister(const std::string &name);
 
-	/// Returns the offset of an register. If the register does not exist,
+	/// Return the offset of an register. If the register does not exist,
 	/// return -1.
 	int getRegisterOffset(const std::string &name);
 

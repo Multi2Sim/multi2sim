@@ -29,20 +29,16 @@
 #include "Function.h"
 #include "Emu.h"
 
+
 namespace HSA
 {
 
 class Emu;
 
-/// HSA WorkItem
+/// HSA work item
 class WorkItem{
-
  	// Emulator that is belongs to 
  	Emu *emu;
-
- 	// Process ID
- 	int pid;
-
 
 
 
@@ -60,13 +56,13 @@ class WorkItem{
  	typedef void (WorkItem::*ExecuteInstFn)();
 
  	// Instruction emulation functions. Each entry of of Inst.def will be 
- 	// expanded into a funtion prototype.
+ 	// expanded into a function prototype.
 #define DEFINST(name, opstr) \
  		void ExecuteInst_##name();
 #include <arch/hsa/asm/Inst.def>
 #undef DEFINST
 
- 	// unsupported inst opcode
+ 	// Unsupported opcode
  	void ExecuteInst_unsupported();
 
  	// Get the value of the index-th operand
@@ -90,9 +86,6 @@ class WorkItem{
 
  	/// Destructor
  	~WorkItem();
-
- 	/// Returns the pid of this work item
- 	int getPid() const{return pid;}
 
  	/// Run one instruction for the workitem at the position pointed 
  	void Execute();

@@ -24,6 +24,7 @@
 
 #include "AQLPacket.h"
 
+
 namespace HSA
 {
 
@@ -69,13 +70,13 @@ class AQLQueue
 	// application managed queue.
 	unsigned long long service_queue;
 
-	// position where to write next
+	// Position where to write next
 	unsigned long long write_index;
 
-	// position to read next
+	// Position to read next
 	unsigned long long read_index;
 
-	// to real position
+	// Convert the linear write/ read index to real position
 	unsigned long long toRecursiveIndex(unsigned long long index)
 	{
 		return (index % size) * sizeof(AQLPacket);
@@ -87,7 +88,7 @@ public:
 	AQLQueue(unsigned int size, QueueType type);
 
 	/// Destructor
-	virtual ~AQLQueue();
+	~AQLQueue();
 
 	/// Enqueue a packet
 	void Enqueue(AQLPacket *packet);
@@ -96,14 +97,14 @@ public:
 	/// has already been associated with another device
 	void Associate(Component *component);
 
-	/// Judges if the queue is empty
+	/// Determine if the queue is empty
 	bool isEmpty() const{ return read_index == write_index; }
 
-	/// Allocates an AQL packet slot by incrementing the writeIndex by
+	/// Allocate an AQL packet slot by incrementing the writeIndex by
 	/// size of AQLPacket
 	void allocatesPacketSlot(){ write_index += sizeof(AQLPacket); }
 
-	/// Returns the packet starts at a certain linear index
+	/// Return the packet starts at a certain linear index
 	AQLPacket *getPacket(unsigned long long linear_index);
 
 
