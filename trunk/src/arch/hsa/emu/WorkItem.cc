@@ -25,12 +25,6 @@ namespace HSA
 WorkItem::WorkItem()
 {
 	emu = Emu::getInstance();
-
-	pid = emu->getPid();	
-
-	emu->loader_debug << "WorkItem " << pid << " created\n";
-	emu->isa_debug    << "WorkItem " << pid << " created\n";
-
 }
 
 

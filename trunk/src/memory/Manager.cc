@@ -26,16 +26,17 @@
 namespace mem
 {
 
-unsigned Manager::align_size = 8;
-
 Manager::Manager(Memory *memory)
 {
 	this->memory = memory;
 }
 
 
-unsigned Manager::Allocate(unsigned size)
+unsigned Manager::Allocate(unsigned size, unsigned alignment=1)
 {
+	// Assert the alignment is smaller than page size
+	assert(alignment<=Memory::PageSize);
+
 	// If requested size is larger than a page, allocate whole pages for it
 	if (size > Memory::PageSize)
 	{
@@ -45,39 +46,42 @@ unsigned Manager::Allocate(unsigned size)
 	// Traverse all holes to find an available slot
 	for (auto it = holes.lower_bound(size); it != holes.end(); it++)
 	{
-		if (canHoleContain(it->second, size))
+		if (canHoleContain(it->second, size, alignment))
 		{
-			unsigned addr = it->second->getAddress();
-			AllocateIn(it->second, size);
-			return addr;
+			return AllocateIn(it->second, size, alignment);
 		}
 	}
 	
 	// No available space, need a new page
-	Chunk *hole = requestOnePage();
+	Chunk *hole = RequestOnePage();
 	unsigned addr = hole->getAddress();
-	AllocateIn(hole, size);
-
+	AllocateIn(hole, size, alignment);
 	return addr;
 }
 
 
-unsigned Manager::toAlignedSize(unsigned size)
+bool Manager::canHoleContain(Chunk *hole, unsigned size,
+		unsigned alignment) const
 {
-	return ceil((double)size / align_size) * align_size;
+	unsigned aligned_address = getNextAlignedAddress(hole->getAddress(),
+			alignment);
+	unsigned offset = aligned_address - size;
+
+	return hole->getSize() >= size + offset;
 }
 
 
-bool Manager::canHoleContain(Chunk *hole, unsigned size)
+unsigned Manager::getNextAlignedAddress(unsigned address,
+			unsigned alignment) const
 {
-	return hole->getSize() >= toAlignedSize(size);
+	return ceil((double)address / alignment) * alignment;
 }
 
 
 unsigned Manager::AllocateLarge(unsigned size)
 {
 
-	unsigned int addr = map_base_address;
+	unsigned int addr = Manager::MapBaseAddress;
 	unsigned int page_aligned_size = 
 			ceil((double)size / Memory::PageSize) 
 			* Memory::PageSize;
@@ -91,32 +95,43 @@ unsigned Manager::AllocateLarge(unsigned size)
 	memory->Map(addr, size, 0x06);
 
 	// Allocate the chunk
-	createPointer(addr, page_aligned_size);
+	CreatePointer(addr, page_aligned_size);
 
 	return addr;
 }
 
 
-void Manager::AllocateIn(Chunk *hole, unsigned int size)
+unsigned Manager::AllocateIn(Chunk *hole, unsigned size, unsigned alignment)
 {
 	// Assert the hole can contain the size
-	if (!canHoleContain(hole, size))
+	if (!canHoleContain(hole, size, alignment))
 		throw misc::Panic("Memory hole cannot contain size");
 
 	// Remove the hole  
-	unsigned addr = hole->getAddress();
+	unsigned address = hole->getAddress();
 	unsigned hole_size = hole->getSize();
-	unsigned aligned_size = toAlignedSize(size);
-	removeHole(hole);
+	RemoveHole(hole);
+
+	// Get the address to allocate memory
+	unsigned aligned_address = getNextAlignedAddress(address, alignment);
+
+	// Insert first hole, in front of allocated memory chunk.
+	unsigned hole1_size = aligned_address - address;
+	if (hole1_size > 0)
+	{
+		CreateHole(address, hole1_size);
+	}
+
+	// Insert second hole, behind the allocated memory chunk
+	unsigned hole2_size = hole_size - size - hole1_size;
+	if (hole2_size > 0)
+	{
+		CreateHole(address + hole1_size + size, hole2_size);
+	}
 
 	// Create a new pointer
-	createPointer(addr, aligned_size);
-
-	// If required, create another hole
-	if (hole_size > aligned_size)
-	{
-		createHole(addr + aligned_size, hole_size - aligned_size);
-	}
+	CreatePointer(aligned_address, size);
+	return aligned_address;
 }
 
 
@@ -137,10 +152,10 @@ void Manager::Free(unsigned address)
 		return;
 	}
 
-	removePointer(it->second.get());
+	RemovePointer(it->second.get());
 
 	// Add the hole
-	Chunk *hole = createHole(address, size);
+	Chunk *hole = CreateHole(address, size);
 
 	// Merge Holes
 	MergeHoles(hole);
@@ -151,22 +166,23 @@ void Manager::FreeLarge(unsigned address)
 {
 
 	auto it = chunks.find(address);
-	if (it == chunks.end())
+	if (it == chunks.end() && it->second->isAllocated())
 	{
-		throw misc::Panic("Trying to free a pointer not created by malloc");
+		throw Error("Trying to free a pointer not created by Allocate "
+				" or it has been freed before");
 	}
 
 	// Remove the page
 	unsigned num_pages = it->second->getSize() / Memory::PageSize;
 	for (unsigned i = 0; i < num_pages; i++)
 	{
-		deallocatePage(address);
+		DeallocatePage(address);
 		address += Memory::PageSize;
 	}
 
 
 	// Remove chunk
-	removePointer(it->second.get());
+	RemovePointer(it->second.get());
 
 }
 
@@ -174,7 +190,7 @@ void Manager::FreeLarge(unsigned address)
 void Manager::MergeHoles(Chunk *hole)
 {
 	// Assert the chunk passed in as argument is a hole
-	if (hole->IsAllocated())
+	if (hole->isAllocated())
 		throw misc::Panic("Trying to merge around a allocated pointer");
 
 	// Get hole address and size
@@ -188,7 +204,7 @@ void Manager::MergeHoles(Chunk *hole)
 	it++;
 	if (it!=chunks.end() && 
 			isInSamePage(addr, it->second->getAddress()) &&
-			(!it->second->IsAllocated()))	
+			(!it->second->isAllocated()))
 	{
 		Merge2Holes(hole, it->second.get());
 	}
@@ -201,7 +217,7 @@ void Manager::MergeHoles(Chunk *hole)
 		it--;
 		Chunk *chunk2 = it->second.get();
 		if (isInSamePage(addr, chunk2->getAddress()) &&
-				(!chunk2->IsAllocated()))
+				(!chunk2->isAllocated()))
 		{
 			Merge2Holes(chunk2, chunk1);
 			merged_addr = chunk2->getAddress();
@@ -214,8 +230,8 @@ void Manager::MergeHoles(Chunk *hole)
 	it = chunks.lower_bound(merged_addr);
 	if (it->second->getSize() == Memory::PageSize)	
 	{
-		deallocatePage(merged_addr);
-		removeHole(it->second.get());
+		DeallocatePage(merged_addr);
+		RemoveHole(it->second.get());
 	}
 }
 
@@ -223,11 +239,11 @@ void Manager::MergeHoles(Chunk *hole)
 void Manager::Merge2Holes(Chunk *hole1, Chunk *hole2)
 {
 	// Assert hole1 and hole2 are not allocated and they are consecutive
-	if (hole1->IsAllocated())
+	if (hole1->isAllocated())
 	{
 		throw misc::Panic("Hole 1 is not a hole.");
 	}
-	if (hole2->IsAllocated())
+	if (hole2->isAllocated())
 	{
 		throw misc::Panic("Hole 2 is not a hole.");
 	}
@@ -241,7 +257,7 @@ void Manager::Merge2Holes(Chunk *hole1, Chunk *hole2)
 	unsigned size2 = hole2->getSize();
 
 	// Erase the second hole
-	removeHole(hole2);
+	RemoveHole(hole2);
 
 	// Enlarge first hole
 	hole1->setSize(size1 + size2);
@@ -256,16 +272,16 @@ bool Manager::isInSamePage(unsigned addr1, unsigned addr2)
 }
 
 
-void Manager::deallocatePage(unsigned addr)
+void Manager::DeallocatePage(unsigned addr)
 {
 	// Deallocate page
 	memory->Unmap(addr, Memory::PageSize);
 }
 
 
-Manager::Chunk *Manager::requestOnePage()
+Manager::Chunk *Manager::RequestOnePage()
 {
-	unsigned int addr = map_base_address;
+	unsigned int addr = Manager::MapBaseAddress;
 
 	// Find a good place to allocate a new page
 	addr = memory->MapSpaceDown(addr, Memory::PageSize);
@@ -276,13 +292,13 @@ Manager::Chunk *Manager::requestOnePage()
 	memory->Map(addr, memory->PageSize, 0x06);
 
 	// Make the whole page a big hole
-	Chunk *hole = createHole(addr, memory->PageSize);
+	Chunk *hole = CreateHole(addr, memory->PageSize);
 
 	return hole;
 }
 
 
-Manager::Chunk *Manager::createHole(unsigned addr, unsigned size)
+Manager::Chunk *Manager::CreateHole(unsigned addr, unsigned size)
 {
 	// Create the chunk object
 	Chunk *hole = new Chunk(addr, size);
@@ -296,19 +312,19 @@ Manager::Chunk *Manager::createHole(unsigned addr, unsigned size)
 	auto it = holes.insert(std::make_pair(size, hole));
 	hole->setHolesIterator(it);	
 
-	// return it	
+	// Return the hole created
 	return hole;
 }
 
 
-void Manager::removeHole(Chunk *hole)
+void Manager::RemoveHole(Chunk *hole)
 {
 	holes.erase(hole->getHolesIterator());
 	chunks.erase(hole->getChunksIterator());
 }
 
 
-Manager::Chunk *Manager::createPointer(unsigned addr, unsigned size)
+Manager::Chunk *Manager::CreatePointer(unsigned addr, unsigned size)
 {
 	// Create the chunk object
 	Chunk *pointer = new Chunk(addr, size, true);
@@ -323,9 +339,21 @@ Manager::Chunk *Manager::createPointer(unsigned addr, unsigned size)
 }
 
 
-void Manager::removePointer(Chunk *pointer)
+void Manager::RemovePointer(Chunk *pointer)
 {
+	// Remove the chunk in the chunks map
 	chunks.erase(pointer->getChunksIterator());
+}
+
+
+void Manager::DumpChunks(std::ostream &os = std::cout) const
+{
+	os << "Chunks *****\n";
+	for (auto it = chunks.begin(); it != chunks.end(); it++)
+	{
+		os << *(it->second.get());
+	}
+	os << "***** *****\n\n";
 }
 
 

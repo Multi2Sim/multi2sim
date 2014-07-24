@@ -26,6 +26,7 @@
 #include "BrigStrEntry.h"
 #include "BrigDef.h"
 
+
 namespace HSA
 {
 
@@ -39,7 +40,7 @@ public:
 	BrigDirEntry(char *buf, BrigFile *file);
 	
 	/// Destructor
-	virtual ~BrigDirEntry(){};
+	~BrigDirEntry(){};
 
 	// Get the kind field from the base
 	int getKind() const;

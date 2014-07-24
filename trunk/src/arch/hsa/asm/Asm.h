@@ -25,6 +25,7 @@
 
 #include "BrigInstEntry.h"
 
+
 namespace HSA
 {
 
