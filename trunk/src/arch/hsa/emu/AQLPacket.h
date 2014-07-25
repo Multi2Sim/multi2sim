@@ -113,76 +113,87 @@ public:
 	~AQLDispatchPacket(){};
 
 	/// Return the dimension
-	unsigned short getDimension() const{ return getByOffset<unsigned short>(2); }
+	unsigned short getDimension() const { return getByOffset<unsigned short>(2); }
 
 	/// Set the dimension field
 	void setDimension(unsigned short dim){ setByOffset<unsigned short>(2, dim); }
 
 	/// Return the work group size x
-	unsigned short getWorkGroupSizeX() const{ return getByOffset<unsigned short>(4); }
+	unsigned short getWorkGroupSizeX() const { return getByOffset<unsigned short>(4); }
 
 	/// Set the work group size x
 	void setWorkGroupSizeX(unsigned short wg_size_x){ setByOffset<unsigned short>(4, wg_size_x); }
 
 	/// Return the work group size y
-	unsigned short getWorkGroupSizeY() const{ return getByOffset<unsigned short>(6); }
+	unsigned short getWorkGroupSizeY() const { return getByOffset<unsigned short>(6); }
 
 	/// Set the work group size y
 	void setWorkGroupSizeY(unsigned short wg_size_y){ setByOffset<unsigned short>(6, wg_size_y); }
 
 	/// Return the work group size z
-	unsigned short getWorkGroupSizeZ() const{ return getByOffset<unsigned short>(8); }
+	unsigned short getWorkGroupSizeZ() const { return getByOffset<unsigned short>(8); }
 
 	/// Set the work group size z
 	void setWorkGroupSizeZ(unsigned int wg_size_z){ setByOffset<unsigned short>(8, wg_size_z); }
 
 	/// Return the grid size x
-	unsigned int getGridSizeX() const{ return getByOffset<unsigned int>(12); }
+	unsigned int getGridSizeX() const { return getByOffset<unsigned int>(12); }
 
 	/// Set the grid size x
 	void setGridSizeX(unsigned int grid_size_x){ setByOffset<unsigned int>(12, grid_size_x); }
 
 	/// Return the grid size y
-	unsigned int getGridSizeY() const{ return getByOffset<unsigned int>(16); }
+	unsigned int getGridSizeY() const { return getByOffset<unsigned int>(16); }
 
 	/// Set the grid size y
 	void setGridSizeY(unsigned int grid_size_y){ setByOffset<unsigned int>(16, grid_size_y); }
 
 	/// Return the grid size z
-	unsigned int getGridSizeZ() const{ return getByOffset<unsigned int>(20); }
+	unsigned int getGridSizeZ() const { return getByOffset<unsigned int>(20); }
 
 	/// Set the grid size z
 	void setGridSizeZ(unsigned int grid_size_z){ setByOffset<unsigned int>(20, grid_size_z); }
 
 	/// Return primary segment size in bytes per work-item
-	unsigned int getPrivateSegmentSizeBytes() const{ return getByOffset<unsigned int>(24); }
+	unsigned int getPrivateSegmentSizeBytes() const { return getByOffset<unsigned int>(24); }
 
 	/// Set primary segment size in bytes per work-item
 	void setPrivateSegmentSizeBytes(unsigned int size){ setByOffset<unsigned int>(24, size); }
 
 	/// Return group memory size in bytes per work-group
-	unsigned int getGroupSegmentSizeBytes() const{ return getByOffset<unsigned int>(28); }
+	unsigned int getGroupSegmentSizeBytes() const { return getByOffset<unsigned int>(28); }
 
 	/// Set group memory size in bytes per work-group
 	void setGroupSegmentSizeBytes(unsigned int size){ setByOffset<unsigned int>(28, size); }
 
 	/// Return the address to kernel object
-	unsigned long long getKernalObjectAddress() const{ return getByOffset<unsigned long long>(32); }
+	unsigned long long getKernalObjectAddress() const { return getByOffset<unsigned long long>(32); }
 
 	/// Set the address to kernel object
 	void setKernalObjectAddress(unsigned long long address){ setByOffset<unsigned long long>(32, address); }
 
 	/// Return the address to kernel arguments
-	unsigned long long getKernargAddress() const{ return getByOffset<unsigned long long>(40); }
+	unsigned long long getKernargAddress() const { return getByOffset<unsigned long long>(40); }
 
 	/// Set the address to kernel argument
 	void setKernargAddress(unsigned long long address){ setByOffset<unsigned long long>(40, address); }
 
 	/// Return the completion signal
-	unsigned long long getCompletionSignal() const{ return getByOffset<unsigned long long>(56); }
+	unsigned long long getCompletionSignal() const { return getByOffset<unsigned long long>(56); }
 
 	/// Set the address to kernel argument
 	void setCompletionSignal(unsigned long long signal){ setByOffset<unsigned long long>(56, signal); }
+
+	/// Dump the AQL dispatch packet
+	void Dump(std::ostream &os) const;
+
+	/// Operator \c << invoking the function Dump) on an output stream
+	friend std::ostream &operator<<(std::ostream &os,
+			const AQLDispatchPacket &packet)
+	{
+		packet.Dump(os);
+		return os;
+	}
 
 };
 

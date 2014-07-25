@@ -26,6 +26,8 @@
 #include <lib/cpp/CommandLine.h>
 #include <lib/cpp/Debug.h>
 #include <arch/hsa/asm/BrigFile.h>
+#include <memory/Memory.h>
+#include <memory/Manager.h>
 
 #include "ProgramLoader.h"
 #include "Component.h"
@@ -60,6 +62,7 @@ class Emu : public comm::Emu
 	// Debugger files
 	static std::string hsa_debug_loader_file;
 	static std::string hsa_debug_isa_file;
+	static std::string hsa_debug_aql_file;
 
 	// Maximum number of instructions
 	// static long long max_instructions;
@@ -83,6 +86,12 @@ class Emu : public comm::Emu
 	// Process ID to be assigned next. Process IDs are assigned in
 	// increasing order, using function Emu::getPid()
 	int pid;
+
+	// Global segment of memory
+	mem::Memory memory;
+
+	// Memory manager
+	mem::Manager manager;
 
 public:
 
@@ -117,6 +126,7 @@ public:
 	/// Debugger for HSA
 	static misc::Debug loader_debug;
 	static misc::Debug isa_debug;
+	static misc::Debug aql_debug;
 
 	/// Register command-line options
 	static void RegisterOptions();
@@ -132,8 +142,14 @@ public:
 			const std::string &stdin_file_name = "",
 			const std::string &stdout_file_name = "");
 
-	/// Returns the number of components
+	/// Return the number of components
 	unsigned int getNumberOfComponent() const { return components.size(); }
+
+	/// Return the global memory manager
+	mem::Manager *getManager() { return &manager; };
+
+	/// Return the pointer to the global memory
+	mem::Memory *getMemory() { return &memory; };
 
 };
 
