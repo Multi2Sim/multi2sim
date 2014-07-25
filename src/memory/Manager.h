@@ -122,7 +122,7 @@ class Manager
 		std::multimap<unsigned, Chunk*>::iterator
 				getHolesIterator() const
 		{
-			assert(is_allocated);
+			assert(!is_allocated);
 			return it_holes; 
 		}
 

@@ -34,6 +34,7 @@ comm::Arch::SimKind Emu::sim_kind = comm::Arch::SimFunctional;
 // Debug file
 std::string Emu::hsa_debug_loader_file;
 std::string Emu::hsa_debug_isa_file;
+std::string Emu::hsa_debug_aql_file;
 
 
 
@@ -45,6 +46,7 @@ std::string Emu::hsa_debug_isa_file;
 // Debugger
 misc::Debug Emu::loader_debug;
 misc::Debug Emu::isa_debug;
+misc::Debug Emu::aql_debug;
 
 // Singleton instance
 std::unique_ptr<Emu> Emu::instance;
@@ -67,18 +69,23 @@ void Emu::RegisterOptions()
 	// Option --hsa-debug-loader <file>
 	command_line->RegisterString("--hsa-debug-loader <file>", 
 			hsa_debug_loader_file,
-			"Dump debug information about hsa program loader");
+			"Dump debug information about HSA program loader");
 	
 	// Option --hsa-debug-isa <file>
 	command_line->RegisterString("--hsa-debug-isa <file>", 
 			hsa_debug_isa_file,
-			"Dump debug information about hsa isa implementation");
+			"Dump debug information about HSA isa implementation");
+
+	// Option --hsa-debug-aql <file>
+	command_line->RegisterString("--hsa-debug-aql <file>",
+			hsa_debug_aql_file,
+			"Dump debug information about AQL queues and packets");
 
 	// Option --hsa-sim <kind>
 	command_line->RegisterEnum("--hsa-sim {functional|detailed} "
 			"(default = functional)",
 			(int &) sim_kind, comm::Arch::SimKindMap,
-			"Level of accuracy of hsa simulation");
+			"Level of accuracy of HSA simulation");
 }
 
 
@@ -86,11 +93,14 @@ void Emu::ProcessOptions()
 {
 	loader_debug.setPath(hsa_debug_loader_file);
 	isa_debug.setPath(hsa_debug_isa_file);
+	aql_debug.setPath(hsa_debug_aql_file);
 }
 
 
-Emu::Emu() : comm::Emu("hsa")
+Emu::Emu() : comm::Emu("hsa"),
+		manager(&memory)
 {
+	// FIXME remove everything related to pid
 	pid = 100;
 
 	// FIXME: Allow user to set up customized HSA virtual machine
@@ -99,7 +109,6 @@ Emu::Emu() : comm::Emu("hsa")
 	{
 		DumpComponentList(loader_debug);
 	}
-
 }
 
 
@@ -192,6 +201,7 @@ void Emu::LoadProgram(const std::vector<std::string> &args,
 	packet->setKernalObjectAddress((unsigned long long)main_function);
 
 	// Enqueue the packet
+	aql_debug << "Packet created and enqueued: \n" << *packet;
 	queue->Enqueue(packet);
 }
 
