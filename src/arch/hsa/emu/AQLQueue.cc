@@ -44,8 +44,13 @@ AQLQueue::AQLQueue(unsigned int size, QueueType type)
 	queue_id = process_queue_id++;
 
 	// Allocate buffer space for the queue
-	buffer.reset(new AQLPacket[size]);
-	base_address = (unsigned long long)buffer.get();
+	Emu *emu = Emu::getInstance();
+	mem::Manager *manager = emu->getManager();
+	assert(sizeof(AQLDispatchPacket) == 64);
+	base_address = manager->Allocate(size * sizeof(AQLDispatchPacket),
+			sizeof(AQLDispatchPacket));
+
+	// Set initial write and read index to base address
 	write_index = base_address;
 	read_index = base_address;
 }
@@ -70,10 +75,15 @@ void AQLQueue::Enqueue(AQLDispatchPacket *packet)
 	allocatesPacketSlot();
 
 	// 2. update the AQL packet with the task particulars
-	memcpy((char *)toRecursiveIndex(packet_id), packet, sizeof(AQLPacket));
+	Emu *emu = Emu::getInstance();
+	mem::Memory *memory = emu->getMemory();
+	memory->Write(packet_id, sizeof(AQLDispatchPacket), (char *)packet);
 
 	// 3. Assigning the packet to the Packet Processor
-	getPacket(packet_id)->Assign();
+	AQLDispatchPacket *saved_packet = getPacket(packet_id);
+	//std::cout << misc::fmt("saved_packet address: 0x%llx\n",
+	//		(unsigned long long)saved_packet);
+	saved_packet->Assign();
 
 	// 4. Notifying the Packet Processor of the packet
 	bell_signal = packet_id;
@@ -83,8 +93,22 @@ void AQLQueue::Enqueue(AQLDispatchPacket *packet)
 
 AQLDispatchPacket *AQLQueue::getPacket(unsigned long long linear_index)
 {
+	// Convert the linear index to real recursive index
 	unsigned long long recursive_index = toRecursiveIndex(linear_index);
-	return (AQLDispatchPacket *)recursive_index;
+
+	// Get the memory object
+	Emu *emu = Emu::getInstance();
+	mem::Memory *memory = emu->getMemory();
+
+	// Returns the buffer in real memory space
+	//std::cout << misc::fmt("Getting packet at 0x%llx\n", recursive_index);
+	AQLDispatchPacket *packet = (AQLDispatchPacket *)memory->getBuffer(
+			recursive_index,
+			sizeof(AQLDispatchPacket),
+			mem::Memory::AccessWrite);
+
+	// Return the packet buffer
+	return packet;
 }
 
 

@@ -176,7 +176,9 @@ void ProgramLoader::parseFunction(BrigDirEntry *dir)
 	// Allocate registers
 	preprocessRegisters(entry_point, dir_struct->instCount, function);
 
-	function->Dump(Emu::loader_debug);
+	// Dump the function information into loader_debug file
+	if (Emu::loader_debug)
+		function->Dump(Emu::loader_debug);
 }
 
 

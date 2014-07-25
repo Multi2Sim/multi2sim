@@ -51,9 +51,6 @@ class AQLQueue
 	// Base address to the buffer of packets
 	unsigned long long base_address;
 
-	// Buffer space for the buffer data
-	std::unique_ptr<AQLPacket> buffer;
-
 	// Bell signal
 	unsigned long long bell_signal;
 
@@ -79,7 +76,14 @@ class AQLQueue
 	// Convert the linear write/ read index to real position
 	unsigned long long toRecursiveIndex(unsigned long long index)
 	{
-		return (index % size) * sizeof(AQLPacket);
+		unsigned long long recurve_index =
+				(index - base_address)
+				% (size * sizeof(AQLPacket))
+				+ base_address;
+		//std::cout << misc::fmt("Mapping linear index %lld to "
+		//		"recursive index %lld\n",
+		//		index, recurve_index);
+		return recurve_index;
 	}
 
 	/// Return the packet starts at a certain linear index
@@ -110,8 +114,6 @@ public:
 	/// Read next packet, increase read_index, mark the packet format as
 	/// Invalid
 	AQLDispatchPacket *ReadPacket();
-
-
 
 
 
