@@ -64,7 +64,6 @@ public:
 		this->func_type = func_type; }
 	void setSign(bool sign) { this->sign = sign; }
 	void setName(string name) { this->name = name; }
-	void AddSymbol(Symbol);
 	void AddArg(Arg);
 	void setEntryBlock(llvm::Value *entry_block) {
 		this->entry_block = entry_block; }

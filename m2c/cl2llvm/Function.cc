@@ -30,11 +30,6 @@
 using namespace cl2llvm;
 using namespace std;
 
-void Function::AddSymbol(Symbol symbol)
-{
-	symbol_table.insert( { symbol.getName(), symbol } );
-}
-
 void Function::AddArg(Arg arg)
 {
 	arg_list.push_back(arg);
