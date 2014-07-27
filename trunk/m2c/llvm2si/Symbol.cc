@@ -37,7 +37,7 @@ void Symbol::Dump(std::ostream &os) const
 	// Basic info
 	os << "name = '" << name << "', "
 			<< "type = " << TypeMap[type]
-			<< ", reg = " << reg;
+			<< ", registerId = " << id;
 
 	// UAV index
 	if (address)

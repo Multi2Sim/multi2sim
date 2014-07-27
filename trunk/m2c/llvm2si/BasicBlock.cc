@@ -219,14 +219,14 @@ void BasicBlock::EmitGetElementPtr(llvm::GetElementPtrInst *llvm_inst)
 		std::string ret_name = llvm_arg_ptr->getName();
 		int ret_vreg = function->AllocVReg();
 		ptr_symbol->setType(Symbol::TypeVectorRegister);
-		ptr_symbol->setReg(ret_vreg);
+		ptr_symbol->setRegister(ret_vreg);
 
 		// Emit instruction
 		// v_mov_b32 ret_vreg, arg1
-		Instruction *inst = addInstruction(SI::INST_V_MOV_B32);
-		inst->addVectorRegister(ret_vreg);
-		inst->addScalarRegister(arg_scalar->getId());
-		assert(inst->hasValidArguments());
+		Instruction *instruction = addInstruction(SI::INST_V_MOV_B32);
+		instruction->addVectorRegister(ret_vreg);
+		instruction->addScalarRegister(arg_scalar->getId());
+		assert(instruction->hasValidArguments());
 
 		arg_ptr = misc::new_unique<ArgVectorRegister>(ret_vreg);
 	}
@@ -426,20 +426,20 @@ void BasicBlock::EmitICmp(llvm::ICmpInst *llvm_inst)
 	//
 	// v_cmp_<pred>_<type> vcc, arg_op1, arg_op2
 	//
-	Instruction *inst = addInstruction(opcode);
-	inst->addSpecialRegister(SI::InstSpecialRegVcc);
-	inst->addArgument(std::move(arg1));
-	inst->addArgument(std::move(arg2));
-	assert(inst->hasValidArguments());
+	Instruction *instruction = addInstruction(opcode);
+	instruction->addSpecialRegister(SI::InstSpecialRegVcc);
+	instruction->addArgument(std::move(arg1));
+	instruction->addArgument(std::move(arg2));
+	assert(instruction->hasValidArguments());
 
 	// Store 'vcc' in scalar register
 	//
 	// s_mov_b64 ret_sreg_series, vcc
 	//
-	inst = addInstruction(SI::INST_S_MOV_B64);
-	inst->addScalarRegisterSeries(ret_sreg_series, ret_sreg_series + 1);
-	inst->addSpecialRegister(SI::InstSpecialRegVcc);
-	assert(inst->hasValidArguments());
+	instruction = addInstruction(SI::INST_S_MOV_B64);
+	instruction->addScalarRegisterSeries(ret_sreg_series, ret_sreg_series + 1);
+	instruction->addSpecialRegister(SI::InstSpecialRegVcc);
+	assert(instruction->hasValidArguments());
 }
 
 
@@ -490,19 +490,19 @@ void BasicBlock::EmitLoad(llvm::LoadInst *llvm_inst)
 	// 	s[sreg_uav,sreg_uav+3],
 	//	0 offen format:[BUF_DATA_FORMAT_32,BUF_NUM_FORMAT_FLOAT]
 	//
-	Instruction *inst = addInstruction(SI::INST_TBUFFER_LOAD_FORMAT_X);
-	inst->addVectorRegister(ret_vreg);
-	inst->addArgument(std::move(arg_addr));
-	inst->addScalarRegisterSeries(uav->getSReg(), uav->getSReg() + 3);
-	inst->addMemoryAddress(new ArgLiteral(0),
+	Instruction *instruction = addInstruction(SI::INST_TBUFFER_LOAD_FORMAT_X);
+	instruction->addVectorRegister(ret_vreg);
+	instruction->addArgument(std::move(arg_addr));
+	instruction->addScalarRegisterSeries(uav->getSReg(), uav->getSReg() + 3);
+	instruction->addMemoryAddress(new ArgLiteral(0),
 			new ArgMaddrQual(true, false, 0),
 			SI::InstBufDataFormat32,
 			SI::InstBufNumFormatFloat);
-	assert(inst->hasValidArguments());
+	assert(instruction->hasValidArguments());
 	
-	inst = addInstruction(SI::INST_S_WAITCNT);
-	inst->addWaitCounter(ArgWaitCounter::CounterTypeVmCnt);
-	assert(inst->hasValidArguments());
+	instruction = addInstruction(SI::INST_S_WAITCNT);
+	instruction->addWaitCounter(ArgWaitCounter::CounterTypeVmCnt);
+	assert(instruction->hasValidArguments());
 }
 
 
@@ -540,10 +540,10 @@ void BasicBlock::EmitMul(llvm::BinaryOperator *llvm_inst)
 		//
 		// v_mov_b32 ret_vreg, arg1
 		//
-		Instruction *inst = addInstruction(SI::INST_V_MOV_B32);
-		inst->addVectorRegister(ret_vreg);
-		inst->addScalarRegister(arg_scalar->getId());
-		assert(inst->hasValidArguments());
+		Instruction *instruction = addInstruction(SI::INST_V_MOV_B32);
+		instruction->addVectorRegister(ret_vreg);
+		instruction->addScalarRegister(arg_scalar->getId());
+		assert(instruction->hasValidArguments());
 
 		arg1 = misc::new_unique<ArgVectorRegister>(ret_vreg);
 	}
@@ -565,10 +565,10 @@ void BasicBlock::EmitMul(llvm::BinaryOperator *llvm_inst)
 		//
 		// v_mov_b32 ret_vreg, arg1
 		//
-		Instruction *inst = addInstruction(SI::INST_V_MOV_B32);
-		inst->addVectorRegister(ret_vreg);
-		inst->addScalarRegister(arg_scalar->getId());
-		assert(inst->hasValidArguments());
+		Instruction *instruction = addInstruction(SI::INST_V_MOV_B32);
+		instruction->addVectorRegister(ret_vreg);
+		instruction->addScalarRegister(arg_scalar->getId());
+		assert(instruction->hasValidArguments());
 
 		arg2 = misc::new_unique<ArgVectorRegister>(ret_vreg);
 	}
@@ -594,11 +594,11 @@ void BasicBlock::EmitMul(llvm::BinaryOperator *llvm_inst)
 	//
 	// v_mul_lo_i32 ret_vreg, arg_op1, arg_op2
 	//
-	Instruction *inst = addInstruction(SI::INST_V_MUL_LO_U32);
-	inst->addVectorRegister(ret_vreg);
-	inst->addArgument(std::move(arg1));
-	inst->addArgument(std::move(arg2));
-	assert(inst->hasValidArguments());
+	Instruction *instruction = addInstruction(SI::INST_V_MUL_LO_U32);
+	instruction->addVectorRegister(ret_vreg);
+	instruction->addArgument(std::move(arg1));
+	instruction->addArgument(std::move(arg2));
+	assert(instruction->hasValidArguments());
 }
 
 
@@ -642,10 +642,10 @@ void BasicBlock::EmitPhi(llvm::PHINode *llvm_inst)
 	}
 
 	// Emit Phi instruction
-	Instruction *inst = addInstruction(SI::INST_PHI);
+	Instruction *instruction = addInstruction(SI::INST_PHI);
 	for (auto &arg: arg_list)
-		inst->addArgument(std::move(arg));
-	assert(inst->hasValidArguments());
+		instruction->addArgument(std::move(arg));
+	assert(instruction->hasValidArguments());
 
 	// Process arguments
 	/*for (unsigned i = 0; i < llvm_inst->getNumIncomingValues(); i++)
@@ -713,10 +713,10 @@ void BasicBlock::EmitStore(llvm::StoreInst *llvm_inst)
 		//
 		// v_mov_b32 ret_vreg, arg1
 		//
-		Instruction *inst = addInstruction(SI::INST_V_MOV_B32);
-		inst->addVectorRegister(ret_vreg);
-		inst->addScalarRegister(arg_scalar->getId());
-		assert(inst->hasValidArguments());
+		Instruction *instruction = addInstruction(SI::INST_V_MOV_B32);
+		instruction->addVectorRegister(ret_vreg);
+		instruction->addScalarRegister(arg_scalar->getId());
+		assert(instruction->hasValidArguments());
 
 		arg_data = misc::new_unique<ArgVectorRegister>(ret_vreg);
 	}
@@ -755,19 +755,19 @@ void BasicBlock::EmitStore(llvm::StoreInst *llvm_inst)
 	// 	s[sreg_uav,sreg_uav+3], 0 offen format:[BUF_DATA_FORMAT_32,
 	// 	BUF_NUM_FORMAT_FLOAT]
 	//
-	Instruction *inst = addInstruction(SI::INST_TBUFFER_STORE_FORMAT_X);
-	inst->addArgument(std::move(arg_data));
-	inst->addArgument(std::move(arg_addr));
-	inst->addScalarRegisterSeries(uav->getSReg(), uav->getSReg() + 3);
-	inst->addMemoryAddress(new ArgLiteral(0),
+	Instruction *instruction = addInstruction(SI::INST_TBUFFER_STORE_FORMAT_X);
+	instruction->addArgument(std::move(arg_data));
+	instruction->addArgument(std::move(arg_addr));
+	instruction->addScalarRegisterSeries(uav->getSReg(), uav->getSReg() + 3);
+	instruction->addMemoryAddress(new ArgLiteral(0),
 			new ArgMaddrQual(true, false, 0),
 			SI::InstBufDataFormat32,
 			SI::InstBufNumFormatFloat);
-	assert(inst->hasValidArguments());
+	assert(instruction->hasValidArguments());
 
-	inst = addInstruction(SI::INST_S_WAITCNT);
-	inst->addWaitCounter(ArgWaitCounter::CounterTypeExpCnt);
-	assert(inst->hasValidArguments());
+	instruction = addInstruction(SI::INST_S_WAITCNT);
+	instruction->addWaitCounter(ArgWaitCounter::CounterTypeExpCnt);
+	assert(instruction->hasValidArguments());
 }
 
 
@@ -808,12 +808,12 @@ void BasicBlock::EmitSub(llvm::BinaryOperator *llvm_inst)
 	//
 	// v_sub_i32 ret_vreg, vcc, arg_op1, arg_op2
 	//
-	Instruction *inst = addInstruction(SI::INST_V_SUB_I32);
-	inst->addVectorRegister(ret_vreg);
-	inst->addSpecialRegister(SI::InstSpecialRegVcc);
-	inst->addArgument(std::move(arg1));
-	inst->addArgument(std::move(arg2));
-	assert(inst->hasValidArguments());
+	Instruction *instruction = addInstruction(SI::INST_V_SUB_I32);
+	instruction->addVectorRegister(ret_vreg);
+	instruction->addSpecialRegister(SI::InstSpecialRegVcc);
+	instruction->addArgument(std::move(arg1));
+	instruction->addArgument(std::move(arg2));
+	assert(instruction->hasValidArguments());
 }
 
 
@@ -854,11 +854,11 @@ void BasicBlock::EmitFAdd(llvm::BinaryOperator *llvm_inst)
 	//
 	// v_add_f32 ret_vreg, arg_op1, arg_op2
 	//
-	Instruction *inst = addInstruction(SI::INST_V_ADD_F32);
-	inst->addVectorRegister(ret_vreg);
-	inst->addArgument(std::move(arg1));
-	inst->addArgument(std::move(arg2));
-	assert(inst->hasValidArguments());
+	Instruction *instruction = addInstruction(SI::INST_V_ADD_F32);
+	instruction->addVectorRegister(ret_vreg);
+	instruction->addArgument(std::move(arg1));
+	instruction->addArgument(std::move(arg2));
+	assert(instruction->hasValidArguments());
 }
 
 
@@ -899,11 +899,11 @@ void BasicBlock::EmitFSub(llvm::BinaryOperator *llvm_inst)
 	//
 	// v_sub_f32 ret_vreg, arg_op1, arg_op2
 	//
-	Instruction *inst = addInstruction(SI::INST_V_SUB_F32);
-	inst->addVectorRegister(ret_vreg);
-	inst->addArgument(std::move(arg1));
-	inst->addArgument(std::move(arg2));
-	assert(inst->hasValidArguments());
+	Instruction *instruction = addInstruction(SI::INST_V_SUB_F32);
+	instruction->addVectorRegister(ret_vreg);
+	instruction->addArgument(std::move(arg1));
+	instruction->addArgument(std::move(arg2));
+	assert(instruction->hasValidArguments());
 }
 
 
@@ -946,11 +946,11 @@ void BasicBlock::EmitFMul(llvm::BinaryOperator *llvm_inst)
 	//
 	// v_mul_f32 ret_vreg, arg_op1, arg_op2
 	//
-	Instruction *inst = addInstruction(SI::INST_V_MUL_F32);
-	inst->addVectorRegister(ret_vreg);
-	inst->addArgument(std::move(arg1));
-	inst->addArgument(std::move(arg2));
-	assert(inst->hasValidArguments());
+	Instruction *instruction = addInstruction(SI::INST_V_MUL_F32);
+	instruction->addVectorRegister(ret_vreg);
+	instruction->addArgument(std::move(arg1));
+	instruction->addArgument(std::move(arg2));
+	assert(instruction->hasValidArguments());
 }
 
 
@@ -1041,16 +1041,16 @@ void BasicBlock::EmitFDiv(llvm::BinaryOperator *llvm_inst)
 
 	int arg2_rcp_id = function->AllocVReg();
 
-	Instruction *inst = addInstruction(SI::INST_V_RCP_F32);
-	inst->addVectorRegister(arg2_rcp_id);
-	inst->addArgument(std::move(arg2));
-	assert(inst->hasValidArguments());
+	Instruction *instruction = addInstruction(SI::INST_V_RCP_F32);
+	instruction->addVectorRegister(arg2_rcp_id);
+	instruction->addArgument(std::move(arg2));
+	assert(instruction->hasValidArguments());
 
-	inst = addInstruction(SI::INST_V_MUL_F32);
-	inst->addVectorRegister(ret_vreg);
-	inst->addArgument(std::move(arg1));
-	inst->addVectorRegister(arg2_rcp_id);
-	assert(inst->hasValidArguments());
+	instruction = addInstruction(SI::INST_V_MUL_F32);
+	instruction->addVectorRegister(ret_vreg);
+	instruction->addArgument(std::move(arg1));
+	instruction->addVectorRegister(arg2_rcp_id);
+	assert(instruction->hasValidArguments());
 }
 
 
@@ -1090,11 +1090,11 @@ void BasicBlock::EmitAnd(llvm::BinaryOperator *llvm_inst)
 	//
 	// v_and_b32 ret_vreg, arg_op1, arg_op2
 	//
-	Instruction *inst = addInstruction(SI::INST_V_AND_B32);
-	inst->addVectorRegister(ret_vreg);
-	inst->addArgument(std::move(arg1));
-	inst->addArgument(std::move(arg2));
-	assert(inst->hasValidArguments());
+	Instruction *instruction = addInstruction(SI::INST_V_AND_B32);
+	instruction->addVectorRegister(ret_vreg);
+	instruction->addArgument(std::move(arg1));
+	instruction->addArgument(std::move(arg2));
+	assert(instruction->hasValidArguments());
 }
 
 void BasicBlock::EmitOr(llvm::BinaryOperator *llvm_inst)
@@ -1133,11 +1133,11 @@ void BasicBlock::EmitOr(llvm::BinaryOperator *llvm_inst)
 	//
 	// v_or_b32 ret_vreg, arg_op1, arg_op2
 	//
-	Instruction *inst = addInstruction(SI::INST_V_OR_B32);
-	inst->addVectorRegister(ret_vreg);
-	inst->addArgument(std::move(arg1));
-	inst->addArgument(std::move(arg2));
-	assert(inst->hasValidArguments());
+	Instruction *instruction = addInstruction(SI::INST_V_OR_B32);
+	instruction->addVectorRegister(ret_vreg);
+	instruction->addArgument(std::move(arg1));
+	instruction->addArgument(std::move(arg2));
+	assert(instruction->hasValidArguments());
 }
 
 void BasicBlock::EmitXor(llvm::BinaryOperator *llvm_inst)
@@ -1176,11 +1176,11 @@ void BasicBlock::EmitXor(llvm::BinaryOperator *llvm_inst)
 	//
 	// v_xor_b32 ret_vreg, arg_op1, arg_op2
 	//
-	Instruction *inst = addInstruction(SI::INST_V_XOR_B32);
-	inst->addVectorRegister(ret_vreg);
-	inst->addArgument(std::move(arg1));
-	inst->addArgument(std::move(arg2));
-	assert(inst->hasValidArguments());
+	Instruction *instruction = addInstruction(SI::INST_V_XOR_B32);
+	instruction->addVectorRegister(ret_vreg);
+	instruction->addArgument(std::move(arg1));
+	instruction->addArgument(std::move(arg2));
+	assert(instruction->hasValidArguments());
 }
 
 
@@ -1274,10 +1274,10 @@ void BasicBlock::EmitInsertElement(llvm::InsertElementInst *llvm_inst)
 		//
 		// s_mov_b32 arg1, arg2
 		///
-		Instruction *inst = addInstruction(SI::INST_S_MOV_B32);
-		inst->addArgument(std::move(arg1));
-		inst->addArgument(std::move(arg2));
-		assert(inst->hasValidArguments());
+		Instruction *instruction = addInstruction(SI::INST_S_MOV_B32);
+		instruction->addArgument(std::move(arg1));
+		instruction->addArgument(std::move(arg2));
+		assert(instruction->hasValidArguments());
 	}
 	else
 	{
@@ -1294,10 +1294,10 @@ void BasicBlock::EmitInsertElement(llvm::InsertElementInst *llvm_inst)
 		//
 		// v_mov_b32 arg2, arg1
 		///
-		Instruction *inst = addInstruction(SI::INST_V_MOV_B32);
-		inst->addArgument(std::move(arg2));
-		inst->addArgument(std::move(arg1));
-		assert(inst->hasValidArguments());
+		Instruction *instruction = addInstruction(SI::INST_V_MOV_B32);
+		instruction->addArgument(std::move(arg2));
+		instruction->addArgument(std::move(arg1));
+		assert(instruction->hasValidArguments());
 	}
 }
 
@@ -1480,8 +1480,8 @@ std::list<std::unique_ptr<si2bin::Instruction>>::iterator
 		--it;
 
 		// Check if this is the first non-control flow instruction
-		Instruction *inst = it->get();
-		if (!inst->getControlFlow())
+		Instruction *instruction = it->get();
+		if (!instruction->getControlFlow())
 			return ++it;
 
 	} while (it != instructions.begin());

@@ -666,9 +666,12 @@ void Function::EmitIfThen(comm::AbstractNode *node)
 	assert(if_node->getKind() == comm::Node::KindLeaf);
 	assert(then_node->getKind() == comm::Node::KindLeaf);
 	comm::LeafNode *if_leaf_node = misc::cast<comm::LeafNode *>(if_node);
-	comm::LeafNode *then_leaf_node = misc::cast<comm::LeafNode *>(then_node);
-	BasicBlock *if_basic_block = misc::cast<BasicBlock *>(if_leaf_node->getBasicBlock());
-	BasicBlock *then_basic_block = misc::cast<BasicBlock *>(then_leaf_node->getBasicBlock());
+	comm::LeafNode *then_leaf_node = misc::cast<comm::LeafNode *>(
+			then_node);
+	BasicBlock *if_basic_block = misc::cast<BasicBlock *>(
+			if_leaf_node->getBasicBlock());
+	BasicBlock *then_basic_block = misc::cast<BasicBlock *>(
+			then_leaf_node->getBasicBlock());
 
 
 	//
@@ -688,8 +691,8 @@ void Function::EmitIfThen(comm::AbstractNode *node)
 	Symbol *cond_symbol = symbol_table.Lookup(cond_name);
 	assert(cond_symbol);
 	assert(cond_symbol->getType() == Symbol::TypeScalarRegister);
-	assert(cond_symbol->getNumRegs() == 2);
-	int cond_sreg = cond_symbol->getReg();
+	assert(cond_symbol->getNumRegisters() == 2);
+	int cond_sreg = cond_symbol->getId();
 
 	// Allocate two scalar registers to push the active mask
 	int tos_sreg = AllocSReg(2, 2);
@@ -776,8 +779,8 @@ void Function::EmitIfThenElse(comm::AbstractNode *node)
 	Symbol *cond_symbol = symbol_table.Lookup(cond_name);
 	assert(cond_symbol);
 	assert(cond_symbol->getType() == Symbol::TypeScalarRegister);
-	assert(cond_symbol->getNumRegs() == 2);
-	int cond_sreg = cond_symbol->getReg();
+	assert(cond_symbol->getNumRegisters() == 2);
+	int cond_sreg = cond_symbol->getId();
 
 	// Allocate two scalar registers to push the active mask
 	int tos_sreg = AllocSReg(2, 2);
@@ -937,8 +940,8 @@ void Function::EmitWhileLoop(comm::AbstractNode *node)
 	Symbol *cond_symbol = symbol_table.Lookup(cond_name);
 	assert(cond_symbol);
 	assert(cond_symbol->getType() == Symbol::TypeScalarRegister);
-	assert(cond_symbol->getNumRegs() == 2);
-	int cond_sreg = cond_symbol->getReg();
+	assert(cond_symbol->getNumRegisters() == 2);
+	int cond_sreg = cond_symbol->getId();
 
 	// Obtain opcode depending on whether the loop exists when the head's
 	// condition is true or it does when it is false.
@@ -1361,12 +1364,12 @@ std::unique_ptr<Argument> Function::TranslateValue(llvm::Value *llvm_value, Symb
 
 	case Symbol::TypeVectorRegister:
 
-		arg = misc::new_unique<ArgVectorRegister>(symbol->getReg());
+		arg = misc::new_unique<ArgVectorRegister>(symbol->getId());
 		break;
 
 	case Symbol::TypeScalarRegister:
 
-		arg = misc::new_unique<ArgScalarRegister>(symbol->getReg());
+		arg = misc::new_unique<ArgScalarRegister>(symbol->getId());
 		break;
 
 	default:

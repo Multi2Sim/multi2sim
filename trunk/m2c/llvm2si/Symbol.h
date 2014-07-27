@@ -57,9 +57,11 @@ private:
 	// Symbol type
 	Type type;
 
-	// Register ID and number of registers
-	int reg;
-	int num_regs = 1;
+	// Register identifier
+	int id;
+
+	// num of registers
+	int num_registers = 1;
 
 	// Flag indicating whether the symbol contains a global memory
 	// address.
@@ -72,10 +74,10 @@ private:
 public:
 
 	/// Constructor specifying a single register
-	Symbol(const std::string &name, Type type, int reg) :
+	Symbol(const std::string &name, Type type, int id) :
 			name(name),
 			type(type),
-			reg(reg)
+			id(id)
 	{
 	}
 
@@ -83,8 +85,8 @@ public:
 	Symbol(const std::string &name, Type type, int low, int high) :
 			name(name),
 			type(type),
-			reg(low),
-			num_regs(high - low + 1)
+			id(low),
+			num_registers(high - low + 1)
 	{
 	}
 
@@ -101,11 +103,11 @@ public:
 
 	/// Return the register identifier associated with the symbol. This can
 	/// be a vector or scalar register, depending on the symbol type.
-	int getReg() const { return reg; }
+	int getId() const { return id; }
 
 	/// Return the number of registers if the symbol contains a register
 	/// range.
-	int getNumRegs() const { return num_regs; }
+	int getNumRegisters() const { return num_registers; }
 
 	/// Return true if the symbol represents a memory address
 	bool isAddress() const { return address; }
@@ -135,17 +137,14 @@ public:
 	void setType(Type type) { this->type = type; }
 
 	/// Update the register identifier associated with the symbol
-	void setReg(int reg) { this->reg = reg; }
-
-	/// Update the register identifier associated with the symbol
-	void setRegister(int reg) { this->reg = reg; }
+	void setRegister(int id) { this->id = id; }
 	
 	/// Update the register type and identifier associate with the symbol
-	void setRegister(Type type, int reg)
+	void setRegister(Type type, int id)
 	{
 		this->type = type;
-		this->reg  = reg;
-		num_regs = 1;
+		this->id  = id;
+		num_registers = 1;
 	}
 
 	/// Update the register type and identifier range asscoiate with the
@@ -153,8 +152,8 @@ public:
 	void setRegister(Type type, int low, int high)
 	{
 		this->type = type;
-		reg  = low;
-		num_regs = high - low + 1;
+		id  = low;
+		num_registers = high - low + 1;
 	}
 };
 
@@ -166,13 +165,6 @@ class SymbolTable
 
 public:
 
-	/// Create new symbol and add it to the list
-	void AddSymbol(Symbol *symbol)
-	{
-		std::unique_ptr<Symbol> symbol_ptr(symbol);
-		table[symbol_ptr->getName()] = std::move(symbol_ptr);
-	}
-	
 	/// Create new symbol and add it to the list, return a pointer to the
 	/// symbol
 	Symbol *addSymbol(const std::string &name)
