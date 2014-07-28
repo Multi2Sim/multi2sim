@@ -34,6 +34,8 @@
 #include "Context.h"
 #include "Function.h"
 
+// TODO: Figure out a way to include all passes once.
+#include "passes/DataDependencyPass.h"
 
 namespace llvm2si
 {
@@ -88,6 +90,10 @@ void Context::Parse(const std::string &in, const std::string &out)
 
 		// Create function
 		Function function(&llvm_function);
+
+		// TODO: Remove this in place of actual Pass running.
+		DataDependencyPass ddp;
+		ddp.run();
 
 		// Emit code for function
 		function.EmitHeader();

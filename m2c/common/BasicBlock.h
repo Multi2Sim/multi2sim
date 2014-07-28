@@ -20,6 +20,9 @@
 #ifndef M2C_COMMON_BASIC_BLOCK_H
 #define M2C_COMMON_BASIC_BLOCK_H
 
+#include "PassInfo.h"
+#include "PassInfoPool.h"
+
 namespace comm
 {
 
@@ -31,6 +34,9 @@ class LeafNode;
 /// architecture. Each back-end should derive its own basic block class.
 class BasicBlock
 {
+	// PassInfoPool containing the info per pass for this BasicBlock.
+	PassInfoPool<BasicBlockPassInfo> pass_info_pool;
+
 	// Node associated in control tree
 	LeafNode *node;
 

@@ -17,21 +17,15 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "Pass.h"
+#include "DataDependencyPass.h"
 
-
-namespace comm
+namespace llvm2si
 {
 
-// The global id_counter.
-int Pass::id_counter;
-
-Pass::Pass()
+void DataDependencyPass::run()
 {
-	// Increment the id_counter by 1.
-	id = ++id_counter;
+
 }
 
-
-}  // namespace comm
+}  // namespace llvm2si
 

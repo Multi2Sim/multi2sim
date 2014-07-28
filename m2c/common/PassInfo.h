@@ -24,6 +24,18 @@ namespace comm
 {
 
 /// Abstract class to be inherited from classes unique to each pass.
+/// For example, ModuleDataDependencyPassInfo.
+class ModulePassInfo
+{
+
+public:
+
+	/// Pure virtual destructor makes this class abstract.
+	virtual ~ModulePassInfo() = 0;
+
+};
+
+/// Abstract class to be inherited from classes unique to each pass.
 /// For example, FunctionDataDependecyPassInfo.
 class FunctionPassInfo
 {

@@ -17,21 +17,26 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "Pass.h"
-
+#ifndef M2C_COMMON_ARGUMENT_H
+#define M2C_COMMON_ARGUMENT_H
 
 namespace comm
 {
 
-// The global id_counter.
-int Pass::id_counter;
-
-Pass::Pass()
+/// This class is used as a base class representing a argument of any
+/// architecture. Each back-end should derive its own argument class.
+class Argument
 {
-	// Increment the id_counter by 1.
-	id = ++id_counter;
-}
+
+public:
+
+	/// Virtual destructor
+	virtual ~Argument() { }
+
+};
 
 
 }  // namespace comm
+
+#endif
 
