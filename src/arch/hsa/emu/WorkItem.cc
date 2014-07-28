@@ -22,14 +22,73 @@
 namespace HSA
 {
 
-WorkItem::WorkItem()
+WorkItem::WorkItem(WorkGroup *work_group,
+			unsigned int abs_id_x,
+			unsigned int abs_id_y,
+			unsigned int abs_id_z,
+			Function *root_function,
+			unsigned long long kernel_args)
 {
+	// Set global emulator object
 	emu = Emu::getInstance();
+
+	// Set work group
+	this->work_group = work_group;
+
+	// Set absolute ids
+	this->abs_id_x = abs_id_x;
+	this->abs_id_y = abs_id_y;
+	this->abs_id_z = abs_id_z;
+
+	// Set kernel args
+	this->kernel_args = kernel_args;
+
+	// Set the first stack frame
+
 }
 
 
 WorkItem::~WorkItem()
 {
+}
+
+
+unsigned int WorkItem::getLocalIdX() const
+{
+	unsigned int group_size_x = work_group->getGrid()->getGroupSizeX();
+	return this->abs_id_x - work_group->getGroupIdX() * group_size_x;
+}
+
+
+unsigned int WorkItem::getLocalIdY() const
+{
+	unsigned int group_size_y = work_group->getGrid()->getGroupSizeY();
+	return this->abs_id_y - work_group->getGroupIdY() * group_size_y;
+}
+
+
+unsigned int WorkItem::getLocalIdZ() const
+{
+	unsigned int group_size_z = work_group->getGrid()->getGroupSizeZ();
+	return this->abs_id_z - work_group->getGroupIdZ() * group_size_z;
+}
+
+
+unsigned int WorkItem::getFlattenedId() const
+{
+	return getLocalIdX() +
+			getLocalIdY() * work_group->getGrid()->getGroupSizeX()
+			+ getLocalIdZ() *
+			work_group->getGrid()->getGroupSizeX() *
+			work_group->getGrid()->getGroupSizeY();
+}
+
+
+unsigned int WorkItem::getAbsoluteFlattenedId() const
+{
+	return abs_id_x + abs_id_y * work_group->getGrid()->getGroupSizeX() +
+			abs_id_z * work_group->getGrid()->getGroupSizeY()
+			* work_group->getGrid()->getGroupSizeZ();
 }
 
 

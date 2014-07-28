@@ -34,21 +34,24 @@ class Wavefront
 {
 
 	// The work group it belongs to
-	WorkGroup *workgroup;
+	WorkGroup *work_group;
 
 	// List of work items
-	std::list<std::unique_ptr<WorkItem>> workitems;
+	std::list<std::unique_ptr<WorkItem>> work_items;
 
 public:
 
 	/// Constructor
-	Wavefront(WorkGroup *workgroup);
+	Wavefront(WorkGroup *work_group);
 
 	/// Destructor
 	~Wavefront();
 
 	/// Execute instructions
 	bool Execute();
+
+	/// Add work item into list
+	void addWorkItem(WorkItem *work_item);
 };
 
 }  // namespace HSA

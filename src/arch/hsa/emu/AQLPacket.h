@@ -136,6 +136,14 @@ public:
 	/// Set the work group size z
 	void setWorkGroupSizeZ(unsigned int wg_size_z){ setByOffset<unsigned short>(8, wg_size_z); }
 
+	/// Set 3 work group size at one time
+	void setWorkGroupSize(unsigned x, unsigned y, unsigned z)
+	{
+		setWorkGroupSizeX(x);
+		setWorkGroupSizeY(y);
+		setWorkGroupSizeZ(z);
+	}
+
 	/// Return the grid size x
 	unsigned int getGridSizeX() const { return getByOffset<unsigned int>(12); }
 
@@ -147,6 +155,14 @@ public:
 
 	/// Set the grid size y
 	void setGridSizeY(unsigned int grid_size_y){ setByOffset<unsigned int>(16, grid_size_y); }
+
+	/// Set 3 grid size at one time
+	void setGridSize(unsigned x, unsigned y, unsigned z)
+	{
+		setGridSizeX(x);
+		setGridSizeY(y);
+		setGridSizeZ(z);
+	}
 
 	/// Return the grid size z
 	unsigned int getGridSizeZ() const { return getByOffset<unsigned int>(20); }

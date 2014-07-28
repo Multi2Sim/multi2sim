@@ -66,27 +66,37 @@ void Component::addQueue(AQLQueue *queue)
 bool Component::Execute()
 {
 	// 1. Check if the tasks is being processed. If true, process it.
-	bool has_active_workgroup = false;
-	for(auto it = work_groups.begin(); it != work_groups.end(); it++)
+	bool has_active_grid = false;
+	for(auto it = grids.begin(); it != grids.end(); it++)
 	{
 		if ((*it)->Execute())
-			has_active_workgroup = true;
+			has_active_grid = true;
 	}
-	if (has_active_workgroup)
+	if (has_active_grid)
 		return true;
 
 	// 2. Otherwise, read from queue list and grab a task to start.
-	if (!has_active_workgroup)
+	for(auto it = queues.begin(); it != queues.end(); it++)
 	{
-		for(auto it = queues.begin(); it != queues.end(); it++)
+		if(!(*it)->isEmpty())
 		{
-
+			AQLDispatchPacket *packet =
+					(*it)->ReadPacket();
+			LaunchGrid(packet);
+			return true;
 		}
 	}
 
 	// 3. If this component is not running and there is no pending task,
 	// 	return false indicating this component is idle.
 	return false;
+}
+
+
+void Component::LaunchGrid(AQLDispatchPacket *packet)
+{
+	Grid *grid = new Grid(this, packet);
+	this->grids.push_back(std::unique_ptr<Grid>(grid));
 }
 
 

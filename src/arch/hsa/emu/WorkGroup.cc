@@ -22,9 +22,18 @@
 namespace HSA
 {
 
-WorkGroup::WorkGroup(Component *component)
+WorkGroup::WorkGroup(Grid *grid,
+		unsigned int group_id_x,
+		unsigned int group_id_y,
+		unsigned int group_id_z)
 {
-	this->component = component;
+	// Get grid object
+	this->grid = grid;
+
+	// Set group id
+	this->group_id_x = group_id_x;
+	this->group_id_y = group_id_y;
+	this->group_id_z = group_id_z;
 }
 
 
@@ -33,10 +42,46 @@ bool WorkGroup::Execute()
 	bool on_going = false;
 	for (auto it = wavefronts.begin(); it != wavefronts.end(); it++)
 	{
-		if ((*it)->Execute())
+		if (it->second->Execute())
 			on_going = true;
 	}
 	return on_going;
+}
+
+
+void WorkGroup::addWorkItem(WorkItem *work_item)
+{
+	// Get work item id and wave front id it should belongs to
+	unsigned int workitem_flattened_id = work_item->getFlattenedId();
+	unsigned int wavefront_id = workitem_flattened_id /
+			getGrid()->getComponent()->getWavesize();
+
+	// Check if wavefront is created
+	auto it = wavefronts.find(wavefront_id);
+	Wavefront *wavefront;
+	if (it == wavefronts.end())
+	{
+		wavefront = new Wavefront(this);
+		wavefronts.insert(std::make_pair(wavefront_id,
+				std::unique_ptr<Wavefront>(wavefront)));
+	}
+	else
+	{
+		wavefront = it->second.get();
+	}
+
+
+	// Insert the work item into the wave front
+	wavefront->addWorkItem(work_item);
+}
+
+
+unsigned int WorkGroup::getGroupFlattenedId()
+{
+	return group_id_x +
+			group_id_y * grid->getGroupSizeX() +
+			group_id_z * grid->getGroupSizeX() *
+			grid->getGroupSizeZ();
 }
 
 }
