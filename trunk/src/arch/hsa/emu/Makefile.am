@@ -13,6 +13,9 @@ libemu_a_SOURCES = \
 		Emu.h \
 		Emu.cc \
 		\
+		Grid.h \
+		Grid.cc \
+		\
 		ProgramLoader.h \
 		ProgramLoader.cc \
 		\

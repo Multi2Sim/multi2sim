@@ -22,9 +22,9 @@
 namespace HSA
 {
 
-Wavefront::Wavefront(WorkGroup *workgroup)
+Wavefront::Wavefront(WorkGroup *work_group)
 {
-	this->workgroup = workgroup;
+	this->work_group = work_group;
 
 }
 
@@ -37,12 +37,18 @@ Wavefront::~Wavefront()
 bool Wavefront::Execute()
 {
 	bool on_going = false;
-	for (auto it = workitems.begin(); it != workitems.end(); it++)
+	for (auto it = work_items.begin(); it != work_items.end(); it++)
 	{
 		if ((*it)->Execute())
 			on_going = true;
 	}
 	return on_going;
+}
+
+
+void Wavefront::addWorkItem(WorkItem *work_item)
+{
+	this->work_items.push_back(std::unique_ptr<WorkItem>(work_item));
 }
 
 }  // namespace HSA

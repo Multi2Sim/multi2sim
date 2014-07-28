@@ -194,8 +194,8 @@ void Emu::LoadProgram(const std::vector<std::string> &args,
 	//Prepare the dispatch packet
 	AQLDispatchPacket *packet = new AQLDispatchPacket();
 	packet->setDimension(1);
-	packet->setGridSizeX(1);
-	packet->setWorkGroupSizeX(1);
+	packet->setGridSize(1, 1, 1);
+	packet->setWorkGroupSize(1, 1, 1);
 	ProgramLoader *loader = ProgramLoader::getInstance();
 	Function *main_function = loader->getMainFunction();
 	packet->setKernalObjectAddress((unsigned long long)main_function);

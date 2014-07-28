@@ -20,24 +20,33 @@
 #ifndef ARCH_HSA_EMU_WORKGROUP_H
 #define ARCH_HSA_EMU_WORKGROUP_H
 
-#include "Component.h"
 #include "Wavefront.h"
+#include "WorkItem.h"
+#include "Grid.h"
 
 
 namespace HSA
 {
 
-class Component;
 class Wavefront;
+class Grid;
+class WorkItem;
 
 /// Work group of an HSA component
 class WorkGroup
 {
-	// Pointer to the HSA component it belongs to
-	Component *component;
+	// The grid object that this work group works in
+	Grid *grid;
 
-	// List of wavefronts
-	std::list<std::unique_ptr<Wavefront>> wavefronts;
+	// Work group id, unique in the grid.
+	unsigned int group_id_x;
+	unsigned int group_id_y;
+	unsigned int group_id_z;
+
+	// List of wavefronts, map wave front id to wave fronts
+	// Wave front id is not specified in the standard, but can be
+	// calculated with work-item flattened id / wavefront size
+	std::map<unsigned int, std::unique_ptr<Wavefront>> wavefronts;
 
 	// Determines if the work item is active
 	bool is_active = false;
@@ -46,9 +55,12 @@ public:
 
 	/// Constructor
 	///
-	/// \param component
-	///	The HSA component this work group belongs to
-	WorkGroup(Component *component);
+	/// \param group_id
+	/// 	Work group id, assigned by the grid
+	WorkGroup(Grid *grid,
+			unsigned int group_id_x,
+			unsigned int group_id_y,
+			unsigned int group_id_z);
 
 	// Set is_active
 	void setActive(bool is_active) {this->is_active = is_active;}
@@ -62,6 +74,25 @@ public:
 	// 	True, if the execution have not finished
 	//	False, if the execution finished
 	bool Execute();
+
+	// Add work item into current work group
+	void addWorkItem(WorkItem *work_item);
+
+	/// Return work group flattened id
+	unsigned int getGroupFlattenedId();
+
+	/// Return the pointer the grid
+	Grid *getGrid() const { return grid; };
+
+	/// Return the work group id x
+	unsigned int getGroupIdX() const { return group_id_x; }
+
+	/// Return the work group id y
+	unsigned int getGroupIdY() const { return group_id_y; }
+
+	/// Return the work group id z
+	unsigned int getGroupIdZ() const { return group_id_z; }
+
 };
 
 }
