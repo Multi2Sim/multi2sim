@@ -17,21 +17,31 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "Pass.h"
+#ifndef M2C_COMMON_INSTRUCTION_H
+#define M2C_COMMON_INSTRUCTION_H
+
+#include "PassInfo.h"
+#include "PassInfoPool.h"
 
 
 namespace comm
 {
 
-// The global id_counter.
-int Pass::id_counter;
-
-Pass::Pass()
+/// This class is used as a base class representing a instruction of any
+/// architecture. Each back-end should derive its own instruction class.
+class Instruction
 {
-	// Increment the id_counter by 1.
-	id = ++id_counter;
-}
+	// PassInfoPool containing the info per pass for this Instruction.
+	PassInfoPool<InstructionPassInfo> pass_info_pool;
+
+public:
+
+	/// Virtual destructor
+	virtual ~Instruction() { }
+};
 
 
 }  // namespace comm
+
+#endif
 

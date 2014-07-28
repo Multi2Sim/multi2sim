@@ -1,3 +1,6 @@
+SUBDIRS = \
+	passes
+
 lib_LIBRARIES = libllvm2si.a
 
 libllvm2si_a_SOURCES = \

@@ -2,11 +2,23 @@ lib_LIBRARIES = libcommon.a
 
 libcommon_a_SOURCES = \
 	\
+	Argument.cc \
+	Argument.h \
+	\
 	BasicBlock.cc \
 	BasicBlock.h \
 	\
 	Context.cc \
 	Context.h \
+	\
+	Function.cc \
+	Function.h \
+	\
+	Instruction.cc \
+	Instruction.h \
+	\
+	Module.cc \
+	Module.h \
 	\
 	Node.cc \
 	Node.h \

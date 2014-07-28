@@ -17,20 +17,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "Pass.h"
+#include "Module.h"
 
 
 namespace comm
 {
-
-// The global id_counter.
-int Pass::id_counter;
-
-Pass::Pass()
-{
-	// Increment the id_counter by 1.
-	id = ++id_counter;
-}
 
 
 }  // namespace comm

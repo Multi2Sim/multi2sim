@@ -1,6 +1,6 @@
 /*
  *  Multi2Sim
- *  Copyright (C) 2014  Nathan Lilienthal (nathan@nixpulvis.com)
+ *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,19 +17,43 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "Pass.h"
+#include "PassPool.h"
 
 
 namespace comm
 {
 
-// The global id_counter.
-int Pass::id_counter;
 
-Pass::Pass()
+std::unique_ptr<PassPool> PassPool::instance;
+
+
+PassPool *PassPool::getInstance()
 {
-	// Increment the id_counter by 1.
-	id = ++id_counter;
+	// Instance already exists
+	if (instance.get())
+		return instance.get();
+
+	// Create Instance
+	instance.reset(new PassPool());
+	return instance.get();
+}
+
+
+void PassPool::registerPass(std::unique_ptr<Pass> &&pass)
+{
+	passes[pass->getId()] = std::move(pass);
+}
+
+
+Pass *PassPool::getPass(int pass_id)
+{
+	return passes[pass_id].get();
+}
+
+
+void PassPool::runAll()
+{
+
 }
 
 
