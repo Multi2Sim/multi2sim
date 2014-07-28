@@ -25,13 +25,13 @@
 
 #include "Emu.h"
 #include "AQLQueue.h"
-#include "WorkGroup.h"
+#include "Grid.h"
 
 
 namespace HSA
 {
 
-class WorkGroup;
+class Grid;
 
 /// An HSA component is an HSA agent that support HSAIL virtual ISAs
 class Component
@@ -57,7 +57,7 @@ protected:
 	AgentInfo agent_info;
 
 	// List of work groups
-	std::list<std::unique_ptr<WorkGroup>> work_groups;
+	std::list<std::unique_ptr<Grid>> grids;
 
 	// List of queues associated with this component
 	std::list<std::unique_ptr<AQLQueue>> queues;
@@ -83,6 +83,9 @@ public:
 	/// 	no more tasks to be processed. When all components finish
 	///	their tasks, the emulation finishes.
 	bool Execute();
+
+	/// Create a grid from a dispatch packet
+	void LaunchGrid(AQLDispatchPacket *packet);
 
 	/// Dump the information about the agent
 	void Dump(std::ostream &os) const;

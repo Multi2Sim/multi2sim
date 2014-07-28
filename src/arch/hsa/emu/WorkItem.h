@@ -28,17 +28,32 @@
 
 #include "Function.h"
 #include "Emu.h"
+#include "WorkGroup.h"
 
 
 namespace HSA
 {
 
 class Emu;
+class WorkGroup;
 
 /// HSA work item
-class WorkItem{
+class WorkItem
+{
  	// Emulator that is belongs to 
  	Emu *emu;
+
+ 	// Work group that current work item belongs to
+ 	WorkGroup *work_group;
+
+ 	// work item absolute ids, equivalent to global_id in OpenCL
+ 	unsigned int abs_id_x;
+ 	unsigned int abs_id_y;
+ 	unsigned int abs_id_z;
+
+ 	// kernel arguments storage
+ 	unsigned long long kernel_args;
+
 
 
 
@@ -78,17 +93,30 @@ class WorkItem{
 
  public:
 
- 	/// Create a work item from a command line. To safely create a  
- 	/// function Emu::NewContext should be used instead. After the creation 
- 	/// of a work item, its basic data structures are initialized with 
- 	/// Load(), Clone(), or Fork()
- 	WorkItem();
+ 	/// Create a work item. HSA should let grid object to create work item
+ 	WorkItem(WorkGroup *work_group,
+ 			unsigned int abs_id_x,
+ 			unsigned int abs_id_y,
+ 			unsigned int abs_id_z,
+ 			Function *root_function,
+ 			unsigned long long kernel_args);
 
  	/// Destructor
  	~WorkItem();
 
  	/// Run one instruction for the workitem at the position pointed 
  	bool Execute();
+
+ 	/// Return local ids
+ 	unsigned int getLocalIdX() const;
+ 	unsigned int getLocalIdY() const;
+ 	unsigned int getLocalIdZ() const;
+
+ 	/// Return flattened id
+ 	unsigned int getFlattenedId() const;
+
+ 	/// Return absolute flattened id
+ 	unsigned int getAbsoluteFlattenedId() const;
 
 };
 
