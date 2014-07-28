@@ -20,8 +20,16 @@
 #ifndef M2C_COMMON_PASS_H
 #define M2C_COMMON_PASS_H
 
+
 namespace comm
 {
+
+// Forward declarations.
+class Module;
+class Function;
+class BasicBlock;
+class Instruction;
+class Argument;
 
 /// Abstract class to be inherited from when building a compiler pass.
 /// Helps encapsulate data for each pass, and allow passes to share their
@@ -42,8 +50,70 @@ public:
 	/// Constructor of a pass.
 	Pass();
 
+	// Virtual destructor.
+	virtual ~Pass() { }
+
+/*
+
 	/// Return the unique identifier for this pass (starting at 1).
 	int getId() const { return id; }
+
+	/// Return true if there is a ModulePassInfo for the given Module
+	/// for this pass.
+	bool hasInfo(Module *module) { };
+
+	/// Return true if there is a FunctionPassInfo for the given Function
+	/// for this pass.
+	bool hasInfo(Function *function) { };
+
+	/// Return true if there is a BasicBlockPassInfo for the given
+	/// BasicBlock for this pass.
+	bool hasInfo(BasicBlock *basic_block) { };
+
+	/// Return true if there is a InstructionPassInfo for the given
+	/// Instruction for this pass.
+	bool hasInfo(Instruction *instruction) { };
+
+	/// Return true if there is a ArgumentPassInfo for the given Argument
+	/// for this pass.
+	bool hasInfo(Argument *argument) { };
+
+	/// Return a pointer to the ModulePassInfo of the given Module
+	/// for this pass.
+	template<typename T> T *getInfo(Module *module) { };
+
+	/// Return a pointer to the FunctionPassInfo of the given Function
+	/// for this pass.
+	template<typename T> T *getInfo(Function *function) { };
+
+	/// Return a pointer to the BasicBlockPassInfo of the given BaiscBlock
+	/// for this pass.
+	template<typename T> T *getInfo(BasicBlock *basic_block) { };
+
+	/// Return a pointer to the InstructionPassInfo of the given
+	/// Instruction for this pass.
+	template<typename T> T *getInfo(Instruction *instruction) { };
+
+	/// Return a pointer to the ArgumentPassInfo of the given Argument
+	/// for this pass.
+	template<typename T> T *getInfo(Argument *argument) { };
+
+	/// Resets the ModulePassInfo of the given Module.
+	void resetInfo(Module *module, bool recursive = false) { };
+
+	/// Resets the FunctionPassInfo of the given Function.
+	void resetInfo(Function *function, bool recursive = false) { };
+
+	/// Resets the BasicBlockPassInfo of the given BasicBlock.
+	void resetInfo(BasicBlock *basic_block, bool recursive = false) { };
+
+	/// Resets the InstructionPassInfo of the given Instruction.
+	void resetInfo(Instruction *instruction, bool recursive = false) { };
+
+	/// Resets the ArgumentPassInfo of the given Argument.
+	void resetInfo(Argument *argument, bool recursive = false) { };
+
+*/
 
 	/// This function MUST be implemented in all subclasses of Pass,
 	/// defining the logic of the pass.
