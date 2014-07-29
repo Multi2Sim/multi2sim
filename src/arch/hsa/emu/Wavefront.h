@@ -50,6 +50,17 @@ public:
 	/// Execute instructions
 	bool Execute();
 
+	/// Operator \c << invoking the function Dump on an output stream
+	friend std::ostream &operator<<(std::ostream &os,
+			const Wavefront &wavefront)
+	{
+		wavefront.Dump(os);
+		return os;
+	}
+
+	/// Dump wavefront formation
+	void Dump(std::ostream &os) const;
+
 	/// Add work item into list
 	void addWorkItem(WorkItem *work_item);
 };

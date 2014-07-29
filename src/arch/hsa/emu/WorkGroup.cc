@@ -48,6 +48,22 @@ bool WorkGroup::Execute()
 	return on_going;
 }
 
+void WorkGroup::Dump(std::ostream &os = std::cout) const
+{
+	os << misc::fmt("  ***** %dD Work group (%d, %d, %d) ****\n",
+			getGrid()->getDimension(), getGroupIdX(),
+			getGroupIdY(), getGroupIdZ());
+	os << misc::fmt("  ***** Group size (%d x %d x %d) *****\n",
+			getGrid()->getGroupSizeX(),
+			getGrid()->getGroupSizeY(),
+			getGrid()->getGroupSizeZ());
+	for (auto it = wavefronts.begin(); it != wavefronts.end(); it++)
+	{
+		os << *(it->second.get());
+	}
+	os << "  ***** ***** ***** ************** *****\n";
+}
+
 
 void WorkGroup::addWorkItem(WorkItem *work_item)
 {

@@ -62,18 +62,29 @@ public:
 			unsigned int group_id_y,
 			unsigned int group_id_z);
 
-	// Set is_active
+	/// Set is_active
 	void setActive(bool is_active) {this->is_active = is_active;}
 
-	// Get is_active field
+	/// Get is_active field
 	bool isActive() const {return is_active;}
 
-	// Execute each wavefront of the work group
-	//
-	// \return
-	// 	True, if the execution have not finished
-	//	False, if the execution finished
+	/// Execute each wavefront of the work group
+	///
+	/// \return
+	/// 	True, if the execution have not finished
+	///	False, if the execution finished
 	bool Execute();
+
+	/// Dump the work group formation information for debug purpose
+	void Dump(std::ostream &os) const;
+
+	/// Operator \c << invoking the function Dump on an output stream
+	friend std::ostream &operator<<(std::ostream &os,
+			const WorkGroup &work_group)
+	{
+		work_group.Dump(os);
+		return os;
+	}
 
 	// Add work item into current work group
 	void addWorkItem(WorkItem *work_item);
