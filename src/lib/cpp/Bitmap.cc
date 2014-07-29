@@ -41,7 +41,7 @@ Bitmap::Bitmap(size_t size)
 	// Initialize
 	this->size = size;
 	size_in_blocks = (size + bits_per_block - 1) / bits_per_block;
-	mask = ~((1 << (size_in_blocks * bits_per_block - size)) - 1);
+	mask = (1 << (size % bits_per_block)) - 1;
 	data.reset(new size_t[size_in_blocks]());
 }
 
