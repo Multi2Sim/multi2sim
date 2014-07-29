@@ -83,10 +83,6 @@ class Emu : public comm::Emu
 	// Host CPU component, the unique_ptr is kept in the list components.
 	Component *host_cpu;
 
-	// Process ID to be assigned next. Process IDs are assigned in
-	// increasing order, using function Emu::getPid()
-	int pid;
-
 	// Global segment of memory
 	mem::Memory memory;
 
@@ -101,12 +97,6 @@ public:
 	/// The HSA emulator is a singleton class. The only possible instance
 	/// of it will be allocated the first time this function is invoked
 	static Emu *getInstance();
-
-	/// Return a unique process ID. Work items can call this function when 
-	/// created to obtain their unique identifier
-	/// TODO: work items should not have a process id, instead, they should 
-	/// 	have work group ids and work item ids. 
-	int getPid() { return pid++; }
 
 	/// Set component list with default devices. A single core CPU and a
 	/// simple GPU will be installed on the virtual machine

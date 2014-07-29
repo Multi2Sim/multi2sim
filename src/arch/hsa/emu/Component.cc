@@ -95,8 +95,15 @@ bool Component::Execute()
 
 void Component::LaunchGrid(AQLDispatchPacket *packet)
 {
+	// Create grid and insert it into list
 	Grid *grid = new Grid(this, packet);
 	this->grids.push_back(std::unique_ptr<Grid>(grid));
+
+	// Dump debug information
+	Emu::aql_debug << "Packet dispatched: \n" << *packet;
+	Emu::aql_debug << "Grid formed and launched: \n";
+	if (Emu::aql_debug)
+		grid->Dump(Emu::aql_debug);
 }
 
 

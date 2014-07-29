@@ -100,9 +100,6 @@ void Emu::ProcessOptions()
 Emu::Emu() : comm::Emu("hsa"),
 		manager(&memory)
 {
-	// FIXME remove everything related to pid
-	pid = 100;
-
 	// FIXME: Allow user to set up customized HSA virtual machine
 	setDefaultComponentList();
 	if (loader_debug)

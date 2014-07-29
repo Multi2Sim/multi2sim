@@ -92,6 +92,20 @@ public:
 	///	False, if this grid has finished its execution
 	bool Execute();
 
+	/// Dump grid formation
+	void Dump(std::ostream &os) const;
+
+	/// Operator \c << invoking the function Dump on an output stream
+	friend std::ostream &operator<<(std::ostream &os,
+			const Grid &grid)
+	{
+		grid.Dump(os);
+		return os;
+	}
+
+	/// Return grid dimension
+	unsigned short getDimension() const { return dimension; }
+
 	/// Return grid size x
 	unsigned int getGridSizeX() const { return grid_size_x; }
 
