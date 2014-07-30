@@ -22,6 +22,9 @@ libemu_a_SOURCES = \
 		RuntimeLibrary.h \
 		RuntimeLibrary.cc \
 		\
+		StackFrame.h \
+		StackFrame.cc \
+		\
 		Wavefront.h \
 		Wavefront.cc \
 		\

@@ -31,25 +31,79 @@ class StackFrame
 	// The function this stack frame associate with
 	Function *function;
 
+	// Pointer to the instruction to be executed
+	char *pc;
+
 	// Argument storage
-	std::unique<char> argument_storage;
+	// FIXME: Move argument_storage to guest memory
+	std::unique_ptr<char> argument_storage;
 
 	// Register storage
-	std::unique<char> register_storage;
-
-	// Pointer to parent stack frame
-	StackFrame *parent;
+	// FIXME: Move register_storgae to guest memory
+	std::unique_ptr<char> register_storage;
 
 public:
 
 	/// Constructor
-	StackFrame(Function *function, StackFrame *parent);
+	StackFrame(Function *function);
 
 	/// Destructor
 	~StackFrame();
 
-	/// Copy the argument value
-	void copyArgument();
+	/// Return the function
+	Function *getFunction() const { return function; }
+
+	/// Return the program counter
+	char *getPc() const { return pc; }
+
+	/// Set the program counter
+	void setPc(char *pc)
+	{
+		// FIXME: check if the pc is in valid region
+		this->pc = pc;
+	}
+
+	/// Dump stack frame information
+	void Dump(std::ostream &os) const;
+
+	/// Operator \c << invoking the function Dump on an output stream
+	friend std::ostream &operator<<(std::ostream &os,
+			const StackFrame &frame)
+	{
+		frame.Dump(os);
+		return os;
+	}
+
+	/// Dump the information of a register by name
+	void DumpRegister(const std::string &name, std::ostream &os) const;
+
+	/// Return register value
+	template <typename Type>
+	Type getRegisterValue(const std::string &name) const
+	{
+		// Get the offset of the register
+		unsigned int offset = function->getRegisterOffset(name);
+
+		// Cast corresponding pointer to certain type
+		Type *pointer = (Type *)(this->register_storage.get() + offset);
+
+		// Return the value of the register
+		return *pointer;
+	}
+
+	// Set a registers value
+	template <typename Type>
+	void setRegisterValue(const std::string &name, Type value)
+	{
+		// Get the offset of the register
+		unsigned int offset = function->getRegisterOffset(name);
+
+		// Cast corresponding pointer to certain type
+		Type *pointer = (Type *)(this->register_storage.get() + offset);
+
+		// Set the value of the register
+		*pointer = value;
+	}
 
 };
 

@@ -103,19 +103,19 @@ public:
 	~Function(){};
 
 	/// Returns function name
-	std::string getName() const {return name;}
+	std::string getName() const { return name; }
 
 	/// Set the entry point
-	void setEntryPoint(char *entry_point) {this->entry_point = entry_point;}
+	void setEntryPoint(char *entry_point) { this->entry_point = entry_point; }
 
 	/// Return pointer to entry point
-	char *getEntryPoint() const {return entry_point;}
+	char *getEntryPoint() const { return entry_point; }
 
 	/// Set the directive
-	void setDirective(char *directive) {this->directive = directive;}
+	void setDirective(char *directive) { this->directive = directive; }
 
 	/// Return the pointer to the directive
-	char *getDirective() const {return directive;}
+	char *getDirective() const { return directive; }
 
 	/// Add an argument information in argument table
 	///
@@ -136,6 +136,15 @@ public:
 	/// Return the offset of an register. If the register does not exist,
 	/// return -1.
 	int getRegisterOffset(const std::string &name);
+
+	/// Return register information
+	std::map<std::string, unsigned int> getRegisterInformation() const
+	{
+		return reg_info;
+	}
+
+	/// Return the size of register required
+	unsigned int getRegisterSize() const { return reg_size; }
 
 	/// Dump function information for debug propose
 	void Dump(std::ostream &os) const;

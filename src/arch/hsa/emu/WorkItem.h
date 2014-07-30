@@ -29,6 +29,7 @@
 #include "Function.h"
 #include "Emu.h"
 #include "WorkGroup.h"
+#include "StackFrame.h"
 
 
 namespace HSA
@@ -36,6 +37,7 @@ namespace HSA
 
 class Emu;
 class WorkGroup;
+class StackFrame;
 
 /// HSA work item
 class WorkItem
@@ -61,10 +63,9 @@ class WorkItem
  	//
  	// Functions related with the insts of HSA assembly, implemented in
  	// WorkItemIsa.cc
- 	//
 
- 	// The program counter, pointing to the inst in .code section
- 	char* pc;
+ 	// Stack of current work item.
+ 	std::vector<std::unique_ptr<StackFrame>> stack;
 
  	// Prototype of member function of class WorkItem devoted to the 
  	// execution of HSA virtual ISA instructions.
@@ -79,6 +80,10 @@ class WorkItem
 
  	// Unsupported opcode
  	void ExecuteInst_unsupported();
+
+ 	// Move the program counter by one. Return false if current PC is
+ 	// at the end of the function
+ 	bool movePcForwardByOne();
 
  	// Get the value of the index-th operand
  	template <typename Type>
@@ -106,6 +111,16 @@ class WorkItem
 
  	/// Run one instruction for the workitem at the position pointed 
  	bool Execute();
+
+ 	/// Dump backtrace information
+ 	void Backtrace(std::ostream &os) const;
+
+
+
+
+ 	//
+ 	// Work item id read only getters
+ 	//
 
  	/// Return local ids
  	unsigned int getLocalIdX() const;

@@ -29,7 +29,9 @@ template <typename Type>
 Type WorkItem::getOperandValue(unsigned int index)
 {
 	// Get the operand entry
-	BrigInstEntry inst(pc, ProgramLoader::getInstance()->getBinary());
+	StackFrame *stack_top = stack.back().get();
+	BrigInstEntry inst(stack_top->getPc(),
+			ProgramLoader::getInstance()->getBinary());
 	BrigOperandEntry operand(inst.getOperand(index), inst.getFile(), 
 			&inst, index);
 
@@ -48,9 +50,7 @@ Type WorkItem::getOperandValue(unsigned int index)
 	case BRIG_OPERAND_REG:
 	{
 		std::string register_name = operand.getRegisterName();
-		Type value = 0;
-		//Type value = *((Type *)registers.getRegister(register_name));
-		return value;
+		return stack_top->getRegisterValue<Type>(register_name);
 	}
 	default:
 		throw misc::Panic("Unsupported operand type "
@@ -65,7 +65,9 @@ template <typename Type>
 void WorkItem::storeOperandValue(unsigned int index, Type value)
 {
 	// Get the operand entry
-	BrigInstEntry inst(pc, ProgramLoader::getInstance()->getBinary());
+	StackFrame *stack_top = stack.back().get();
+	BrigInstEntry inst(stack_top->getPc(),
+			ProgramLoader::getInstance()->getBinary());
 	BrigOperandEntry operand(inst.getOperand(index), inst.getFile(), 
 			&inst, index);
 
@@ -76,8 +78,7 @@ void WorkItem::storeOperandValue(unsigned int index, Type value)
 	case BRIG_OPERAND_REG:
 	{
 		std::string register_name = operand.getRegisterName();
-		//registers.setRegister(register_name,
-		//		(char *)&value);
+		stack_top->setRegisterValue<Type>(register_name, value);
 		break;
 	}
 	default:
@@ -195,7 +196,9 @@ void WorkItem::ExecuteInst_MULHI()
 
 void WorkItem::ExecuteInst_NEG()
 {
-	BrigInstEntry inst(pc, ProgramLoader::getInstance()->getBinary());
+	StackFrame *stack_top = stack.back().get();
+	BrigInstEntry inst(stack_top->getPc(),
+			ProgramLoader::getInstance()->getBinary());
 
 	// Do different action accoding to the kind of the inst
 	if (inst.getKind() == BRIG_INST_BASIC)

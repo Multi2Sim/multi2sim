@@ -33,8 +33,6 @@ Grid::Grid(Component *component, AQLDispatchPacket *packet)
 	grid_size_y = packet->getGridSizeY();
 	grid_size_z = packet->getGridSizeZ();
 	grid_size = grid_size_x * grid_size_y * grid_size_z;
-	std::cout << misc::fmt("Deploying grid size %d (%d x %d x %d).\n",
-			grid_size, grid_size_x, grid_size_y, grid_size_z);
 
 
 	// Set work group information
@@ -48,15 +46,11 @@ Grid::Grid(Component *component, AQLDispatchPacket *packet)
 	this->kernel_args = packet->getKernargAddress();
 
 	// Create work items
-	for (unsigned int i; i < grid_size; i++)
+	for (unsigned int i = 0; i < grid_size; i++)
 	{
 		unsigned int z = i / group_size_x / group_size_y;
 		unsigned int y = i % (group_size_x *group_size_y) / group_size_x;
 		unsigned int x = i % (group_size_x * group_size_y) % group_size_x;
-
-		std::cout << misc::fmt("About to create work item (%d, %d, "
-				"%d)\n", x, y, z);
-
 		this->deployWorkItem(x, y, z);
 	}
 
@@ -70,7 +64,13 @@ Grid::~Grid()
 
 bool Grid::Execute()
 {
-	return false;
+	bool on_going = false;
+	for (auto it = workgroups.begin(); it != workgroups.end(); it++)
+	{
+		if (it->second->Execute())
+			on_going = true;
+	}
+	return on_going;
 }
 
 
