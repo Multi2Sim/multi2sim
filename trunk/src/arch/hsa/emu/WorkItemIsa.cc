@@ -106,7 +106,36 @@ void WorkItem::ExecuteInst_NOP()
 
 void WorkItem::ExecuteInst_ABS()
 {
-	throw misc::Panic("Instruction not implemented");
+	StackFrame *stack_top = stack.back().get();
+	BrigInstEntry inst(stack_top->getPc(),
+			ProgramLoader::getInstance()->getBinary());
+
+	// Do different action accoding to the kind of the inst
+	if (inst.getKind() == BRIG_INST_BASIC)
+	{
+		switch (inst.getType())
+		{
+		case BRIG_TYPE_S32:
+		{
+			int src = getOperandValue<int>(1);
+			int des = abs(src);
+			storeOperandValue<int>(0, des);
+			break;
+		}
+		case BRIG_TYPE_S64:
+			long long src = getOperandValue<long long>(1);
+			long long des = abs(src);
+			storeOperandValue<long long>(0, des);
+			break;
+		}
+	}
+	else if (inst.getKind() == BRIG_INST_MOD)
+	{
+
+	}
+
+	// Move the pc forward
+	this->MovePcForwardByOne();
 }
 
 
@@ -210,7 +239,6 @@ void WorkItem::ExecuteInst_NEG()
 			int src = getOperandValue<int>(1);
 			int des = -src;
 			storeOperandValue<int>(0, des);
-			//emu->isa_debug << registers;
 			break;
 		}
 		case BRIG_TYPE_S64:
@@ -221,10 +249,9 @@ void WorkItem::ExecuteInst_NEG()
 	{
 
 	}
-	else
-	{
-		throw Error("Unexpected instruction kind for NEG");
-	}
+
+	// Move pc to next instruction
+	MovePcForwardByOne();
 }
 
 
@@ -764,7 +791,7 @@ void WorkItem::ExecuteInst_CALL()
 
 void WorkItem::ExecuteInst_RET()
 {
-	throw misc::Panic("Instruction not implemented");
+	ReturnFunction();
 }
 
 

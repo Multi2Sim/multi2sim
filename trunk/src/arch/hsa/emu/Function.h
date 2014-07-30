@@ -37,6 +37,10 @@ class Function
 	// Entry point of the function, helps the work item to set its init pc
 	char *entry_point;
 
+	// Pointer to the last instuction in the function, when pc is move to
+	// a point beyond this, return the function
+	char *last_inst;
+
 	// The directive of the function declaration
 	char *directive;
 
@@ -112,6 +116,12 @@ public:
 
 	/// Return pointer to entry point
 	char *getEntryPoint() const { return entry_point; }
+
+	/// Set the last instruction
+	void setLastInst(char *last_inst) { this->last_inst = last_inst; }
+
+	/// Return pointer to the last instruction
+	char *getLastInst() const { return last_inst; }
 
 	/// Set the directive
 	void setDirective(char *directive) { this->directive = directive; }

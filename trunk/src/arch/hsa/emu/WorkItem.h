@@ -83,7 +83,7 @@ class WorkItem
 
  	// Move the program counter by one. Return false if current PC is
  	// at the end of the function
- 	bool movePcForwardByOne();
+ 	bool MovePcForwardByOne();
 
  	// Get the value of the index-th operand
  	template <typename Type>
@@ -114,6 +114,12 @@ class WorkItem
 
  	/// Dump backtrace information
  	void Backtrace(std::ostream &os) const;
+
+ 	/// Finish the execution of a function by poping a frame from the stack
+ 	///
+ 	/// \return
+ 	///	Return false if the stack is empty after poping
+ 	bool ReturnFunction();
 
 
 

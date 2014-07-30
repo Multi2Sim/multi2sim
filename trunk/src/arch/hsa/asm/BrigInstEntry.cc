@@ -397,7 +397,16 @@ bool BrigInstEntry::hasType() const
 
 char *BrigInstEntry::getOperand(int i) const
 {
+	// Convert the pointer to InstBase struct
 	struct BrigInstBase *inst = (struct BrigInstBase *)base;
+
+	// Get operand offset
+	unsigned int operand_offset = inst->operands[i];
+
+	// Return null pointer if the operand is not valid
+	if (operand_offset == 0) return nullptr;
+
+	// Return the operand buffer
 	return BrigOperandEntry::GetOperandBufferByOffset(file,
 			inst->operands[i]);
 }
