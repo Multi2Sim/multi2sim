@@ -218,22 +218,29 @@ void ProgramLoader::preprocessRegisters(char *entry_point,
 	for (unsigned int i = 0; i < inst_count; i++)
 	{
 		BrigInstEntry inst_entry(inst_ptr, binary);
+		//std::cout << inst_entry << "\n";
 
 		// Traverse each operands of an instruction
 		for (int j = 0; j < 5; j++)
 		{
-			char *operand_ptr = inst_entry.getOperand(i);
+			char *operand_ptr = inst_entry.getOperand(j);
 			if (!operand_ptr) break;
 			BrigOperandEntry operand_entry(operand_ptr, binary,
 					&inst_entry, j);
+			//std::cout << operand_entry << "\n";
 			if (operand_entry.getKind() == BRIG_OPERAND_REG)
 			{
 
 				std::string reg_name =
 						operand_entry.getRegisterName();
+				//std::cout << "Add register: " << reg_name << "\n";
 				function->addRegister(reg_name);
 			}
 		}
+
+		// Set the last instruction
+		if (i == inst_count-1)
+			function->setLastInst(inst_ptr);
 
 		// Move inst_ptr forward
 		inst_ptr = inst_entry.next();
