@@ -54,7 +54,7 @@ WorkItem::~WorkItem()
 }
 
 
-bool WorkItem::movePcForwardByOne()
+bool WorkItem::MovePcForwardByOne()
 {
 	// Retrieve the stack top
 	StackFrame *stack_top = stack.back().get();
@@ -64,9 +64,13 @@ bool WorkItem::movePcForwardByOne()
 				ProgramLoader::getInstance()->getBinary());
 	char *next_pc = inst.next();
 
-	// FIXME: check if next_pc out of range
-	if (false)
+	// If next pc is beyond last inst, the last instruction of the function
+	// is executed. Return the function.
+	if (next_pc > stack_top->getFunction()->getLastInst())
+	{
+		ReturnFunction();
 		return false;
+	}
 
 	// Set program counter to next instruction
 	stack_top->setPc(next_pc);
@@ -87,6 +91,16 @@ void WorkItem::Backtrace(std::ostream &os = std::cout) const
 		os << "\n";
 	}
 
+}
+
+
+bool WorkItem::ReturnFunction()
+{
+	// Pop frame at stack top
+	stack.pop_back();
+
+	// Return true if stack is empty
+	return !stack.empty();
 }
 
 
@@ -149,11 +163,9 @@ bool WorkItem::Execute()
 	ExecuteInstFn fn = WorkItem::execute_inst_fn[opcode];
 	(this->*fn)();
 
-	// move pc register to next function
-	if (!this->movePcForwardByOne())
-	{
-		// Return the guest function
-	}
+	// Return false if execution finished
+	if (stack.empty())
+		return false;
 
 	// Record frame status after the instruction is executed
 	Emu::isa_debug << "Stack from after executing, \n\n";
