@@ -51,7 +51,7 @@ Grid::Grid(Component *component, AQLDispatchPacket *packet)
 		unsigned int z = i / group_size_x / group_size_y;
 		unsigned int y = i % (group_size_x *group_size_y) / group_size_x;
 		unsigned int x = i % (group_size_x * group_size_y) % group_size_x;
-		this->deployWorkItem(x, y, z);
+		deployWorkItem(x, y, z);
 	}
 
 }
