@@ -44,12 +44,49 @@ WorkItem::WorkItem(WorkGroup *work_group,
 	this->kernel_args = kernel_args;
 
 	// Set the first stack frame
-
+	StackFrame *frame = new StackFrame(root_function);
+	stack.push_back(std::unique_ptr<StackFrame>(frame));
 }
 
 
 WorkItem::~WorkItem()
 {
+}
+
+
+bool WorkItem::movePcForwardByOne()
+{
+	// Retrieve the stack top
+	StackFrame *stack_top = stack.back().get();
+
+	// Set the stackframe's pc to the next instuction
+	BrigInstEntry inst(stack_top->getPc(),
+				ProgramLoader::getInstance()->getBinary());
+	char *next_pc = inst.next();
+
+	// FIXME: check if next_pc out of range
+	if (false)
+		return false;
+
+	// Set program counter to next instruction
+	stack_top->setPc(next_pc);
+
+	// Returns true to tell the caller that the function is not returned
+	return true;
+}
+
+
+void WorkItem::Backtrace(std::ostream &os = std::cout) const
+{
+	int frame_count = 1;
+	for (auto it = stack.rbegin(); it != stack.rend(); it++)
+	{
+		os << misc::fmt("#%d ", frame_count++);
+		os << misc::fmt("%s ", (*it)->getFunction()->getName().c_str());
+		// TODO: dump argument lists with argument values here
+		os << "\n";
+	}
+
 }
 
 
@@ -94,11 +131,18 @@ unsigned int WorkItem::getAbsoluteFlattenedId() const
 
 bool WorkItem::Execute()
 {
-	//std::cout << "In WorkItem::Execute\n";
-	BrigInstEntry inst(pc, ProgramLoader::getInstance()->getBinary());
+	// Retrieve stack top
+	StackFrame *stack_top = stack.back().get();
+	BrigInstEntry inst(stack_top->getPc(),
+			ProgramLoader::getInstance()->getBinary());
 
-	// Put the inst to perform to isa debug file
-	emu->isa_debug << inst;
+	// Record frame status before the instruction is executed
+	Emu::isa_debug << "Stack frame before executing: ";
+	Emu::isa_debug << inst;
+	Emu::isa_debug << "\n";
+	if (Emu::isa_debug)
+		stack_top->Dump(Emu::isa_debug);
+	Emu::isa_debug << "\n";
 
 	// Get the function according to the opcode and perform the inst
 	int opcode = inst.getOpcode();
@@ -106,7 +150,16 @@ bool WorkItem::Execute()
 	(this->*fn)();
 
 	// move pc register to next function
-	pc = inst.next();
+	if (!this->movePcForwardByOne())
+	{
+		// Return the guest function
+	}
+
+	// Record frame status after the instruction is executed
+	Emu::isa_debug << "Stack from after executing, \n\n";
+	if (Emu::isa_debug)
+		stack_top->Dump(Emu::isa_debug);
+	Emu::isa_debug << "\n";
 
 	return true;
 }
