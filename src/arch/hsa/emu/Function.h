@@ -22,6 +22,7 @@
 
 #include <map>
 #include <memory>
+#include <string>
 
 
 namespace HSA
@@ -78,7 +79,8 @@ class Function
 	// Allocated register size
 	unsigned int reg_size = 0;
 
-	// Map the name with the offset of the register
+	// Map the name with the offset in StackFrame::register_storage of the
+	// register
 	std::map<std::string, unsigned int> reg_info;
 
 	// Return the size of the register according to its name. It only
