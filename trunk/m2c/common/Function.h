@@ -41,8 +41,6 @@ public:
 
 };
 
-
 }  // namespace comm
 
 #endif
-
