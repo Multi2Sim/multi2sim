@@ -41,7 +41,19 @@ public:
 	bool has(int pass_id);
 
 	/// Get a pointer to the pass info of pass given by pass id.
-	template<typename ConcreteType> ConcreteType *get(int pass_id);
+	template<typename ConcreteType> ConcreteType *get(int pass_id)
+	{
+		if (has(pass_id))
+		{
+			return dynamic_cast<ConcreteType*>(table.at(pass_id).get());
+		}
+		else
+		{
+			ConcreteType *instance = new ConcreteType();
+			table[pass_id] = std::unique_ptr<ConcreteType>(instance);
+			return instance;
+		}
+	}
 
 	/// Reset the data of pass given by pass id.
 	void reset(int pass_id);

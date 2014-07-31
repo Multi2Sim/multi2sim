@@ -23,27 +23,10 @@
 namespace comm
 {
 
-
 template<typename AbstractType>
 bool PassInfoPool<AbstractType>::has(int pass_id)
 {
 	return table.count(pass_id) > 0;
-}
-
-template<typename AbstractType>
-template<typename ConcreteType>
-ConcreteType *PassInfoPool<AbstractType>::get(int pass_id)
-{
-	if (has(pass_id))
-	{
-		return dynamic_cast<ConcreteType*>(table.at(pass_id).get());
-	}
-	else
-	{
-		ConcreteType *instance = new ConcreteType();
-		table[pass_id] = std::unique_ptr<ConcreteType>(instance);
-		return instance;
-	}
 }
 
 template<typename AbstractType>
@@ -52,6 +35,4 @@ void PassInfoPool<AbstractType>::reset(int pass_id)
 	table.erase(pass_id);
 }
 
-
 }  // namespace comm
-
