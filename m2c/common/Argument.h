@@ -20,6 +20,10 @@
 #ifndef M2C_COMMON_ARGUMENT_H
 #define M2C_COMMON_ARGUMENT_H
 
+#include "PassInfo.h"
+#include "PassInfoPool.h"
+
+
 namespace comm
 {
 
@@ -27,6 +31,8 @@ namespace comm
 /// architecture. Each back-end should derive its own argument class.
 class Argument
 {
+	// PassInfoPool containing the info per pass for the Argument.
+	PassInfoPool<ArgumentPassInfo> pass_info_pool;
 
 public:
 
@@ -35,8 +41,6 @@ public:
 
 };
 
-
 }  // namespace comm
 
 #endif
-

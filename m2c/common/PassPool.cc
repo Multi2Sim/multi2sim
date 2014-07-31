@@ -24,6 +24,7 @@ namespace comm
 {
 
 
+// The singleton instance of a PassPool.
 std::unique_ptr<PassPool> PassPool::instance;
 
 
@@ -41,12 +42,14 @@ PassPool *PassPool::getInstance()
 
 void PassPool::registerPass(std::unique_ptr<Pass> &&pass)
 {
+	// Add the given pass rvalue reference to the pass pool.
 	passes[pass->getId()] = std::move(pass);
 }
 
 
 Pass *PassPool::getPass(int pass_id)
 {
+	// Return a pointer to the pass with the given pass_id.
 	return passes[pass_id].get();
 }
 
@@ -58,4 +61,3 @@ void PassPool::runAll()
 
 
 }  // namespace comm
-
