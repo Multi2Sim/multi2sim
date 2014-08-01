@@ -216,8 +216,8 @@ void LoadProgram(const std::vector<std::string> &args,
 		if(HSA::Asm::isValidBrigELF(exe))
 		{
 			emu = HSA::Emu::getInstance();
-			break;
 		}
+		break;
 
 	default:
 		misc::fatal("%s: unsupported ELF architecture", exe.c_str());

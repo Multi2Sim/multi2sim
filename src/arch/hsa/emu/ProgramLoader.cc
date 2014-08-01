@@ -43,6 +43,8 @@ void ProgramLoader::LoadProgram(const std::vector<std::string> &args,
 	instance->stdin_file_name = misc::getFullPath(stdin_file_name, cwd);
 	instance->stdout_file_name = misc::getFullPath(stdout_file_name, cwd);
 
+	instance->file_table.reset(new comm::FileTable());
+
 	instance->LoadBinary();
 }
 
