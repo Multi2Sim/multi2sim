@@ -34,6 +34,7 @@ libemu_a_SOURCES = \
 		WorkItem.h \
 		WorkItem.cc \
 		WorkItemIsa.cc \
+		WorkItemSyscall.cc \
 		\
 		Function.h \
 		Function.cc 
