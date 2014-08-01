@@ -173,6 +173,7 @@ bool WorkItem::Execute()
 		stack_top->Dump(Emu::isa_debug);
 	Emu::isa_debug << "\n";
 
+	// Return true, since the execution is not finished
 	return true;
 }
 

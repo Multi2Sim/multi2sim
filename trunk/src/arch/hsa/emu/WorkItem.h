@@ -71,7 +71,7 @@ class WorkItem
  	// execution of HSA virtual ISA instructions.
  	typedef void (WorkItem::*ExecuteInstFn)();
 
- 	// Instruction emulation functions. Each entry of of Inst.def will be 
+ 	// Instruction emulation functions. Each entry of Inst.def will be
  	// expanded into a function prototype.
 #define DEFINST(name, opstr) \
  		void ExecuteInst_##name();
@@ -95,6 +95,40 @@ class WorkItem
 
  	// Table of functions that implement instructions
  	static ExecuteInstFn execute_inst_fn[InstOpcodeCount + 1];
+
+
+
+
+
+
+ 	//
+ 	// Functions and fields related to system call services
+ 	//
+
+ 	// Prototype of member function of class WorkItem devoted to the
+	// execution of the Syscall services
+	typedef void (WorkItem::*ExecuteSyscallFn)();
+
+	// Enumeration with all syscall codes
+	enum
+	{
+		SyscallCode_nop = 0,
+#define DEFSYSCALL(name, code) SyscallCode_##name = code,
+#include "Syscall.def"
+#undef DEFSYSCALL
+		SyscallCodeCount
+	};
+
+	// Syscall follows the SPIM simulator style. Syscall emulation
+	// functions. Each entry of Syscall.def will be expanded into a
+	// function prototype.
+#define DEFSYSCALL(name, code) \
+		void ExecuteSyscall_##name();
+#include "Syscall.def"
+#undef DEFSYSCALL
+
+	// Table of functions that implement instructions
+	static ExecuteSyscallFn execute_syscall_fn[SyscallCodeCount + 1];
 
  public:
 

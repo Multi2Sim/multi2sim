@@ -797,7 +797,18 @@ void WorkItem::ExecuteInst_RET()
 
 void WorkItem::ExecuteInst_SYSCALL()
 {
-	throw misc::Panic("Instruction not implemented");
+	// Get the syscall code
+	StackFrame *stack_top = stack.back().get();
+	BrigInstEntry inst(stack_top->getPc(),
+			ProgramLoader::getInstance()->getBinary());
+	unsigned int syscall_code = getOperandValue<unsigned int>(1);
+
+	// Retrieve the function to be executed
+	ExecuteSyscallFn fn = WorkItem::execute_syscall_fn[syscall_code];
+	(this->*fn)();
+
+	// Move pc to next instruction
+	MovePcForwardByOne();
 }
 
 
