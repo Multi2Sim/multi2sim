@@ -41,25 +41,80 @@ void WorkItem::ExecuteSyscall_print_int()
 	BrigInstEntry inst(stack_top->getPc(),
 			ProgramLoader::getInstance()->getBinary());
 
+	// Get file descriptor
+	comm::FileDescriptor *desc =
+			ProgramLoader::getInstance()->
+			getFileTable()->getFileDescriptor(1);
+
+	// Convert guest file descriptor to host file descriptor
+	int host_fd = 1;
+	if (desc)
+	{
+		host_fd = desc->getHostIndex();
+	}
+
+
+
 
 	// Do action according to type
 	switch (inst.getType())
 	{
 	case BRIG_TYPE_U32:
 		{
-			int src1 = getOperandValue<unsigned int>(2);
+			// Signed or unsigned, marked in operand 3
+			int isSigned = getOperandValue<unsigned int>(3);
 
-			// Get file descriptor
-			comm::FileDescriptor *desc = ProgramLoader::getInstance()->
-					getFileTable()->getFileDescriptor(1);
+			// Retrieve and dump the integer
+			if (isSigned)
+			{
+				// Get the integer to output
+				int src1 = getOperandValue<int>(2);
 
-			// Out put the integer
-			if(!desc)
-				std::cout << src1;
+				// Output to file
+				std::string str = misc::fmt("%d", src1);
+				write(host_fd, str.c_str(), str.size());
+			}
 			else
 			{
-				int host_fd = desc->getHostIndex();
+				// Get the integer to output
+				unsigned int src1 =
+						getOperandValue
+						<unsigned int>(2);
+
+				// Output to file
 				std::string str = misc::fmt("%d", src1);
+				write(host_fd, str.c_str(), str.size());
+			}
+
+		}
+		break;
+	case BRIG_TYPE_U64:
+		{
+			// Signed or unsigned, marked in operand 3
+			unsigned long long isSigned =
+					getOperandValue<unsigned long long>(3);
+
+			// Retrieve and dump the integer
+			if (isSigned)
+			{
+				// Get the integer to output
+				long long src1 = getOperandValue<long long>(2);
+				//std::cout << "long long " << src1 << "\n";
+
+				// Output to file
+				std::string str = misc::fmt("%lld", src1);
+				write(host_fd, str.c_str(), str.size());
+			}
+			else
+			{
+				// Get the integer to output
+				unsigned long long src1 =
+						getOperandValue
+						<unsigned long long>(2);
+				//std::cout << "unsigned long long " << src1 << "\n";
+
+				// Output to file
+				std::string str = misc::fmt("%lld", src1);
 				write(host_fd, str.c_str(), str.size());
 			}
 		}

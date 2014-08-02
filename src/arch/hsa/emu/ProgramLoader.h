@@ -27,7 +27,6 @@
 #include <arch/hsa/asm/BrigDirEntry.h>
 #include <arch/common/FileTable.h>
 
-#include "Emu.h"
 #include "Function.h"
 
 
