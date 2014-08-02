@@ -17,76 +17,10 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <arch/hsa/asm/BrigOperandEntry.h> 
-#include <arch/hsa/asm/BrigImmed.h>
-
 #include "WorkItem.h"
 
 namespace HSA
 {
-
-template <typename Type>
-Type WorkItem::getOperandValue(unsigned int index)
-{
-	// Get the operand entry
-	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
-	BrigOperandEntry operand(inst.getOperand(index), inst.getFile(), 
-			&inst, index);
-
-	// Do coresponding action according to the type of operand
-	switch (operand.getKind())
-	{
-	case BRIG_OPERAND_IMMED:
-	{
-		BrigImmed immed(operand.getImmedBytes(), 
-				operand.getOperandType());
-		Type value = immed.getImmedValue<Type>();
-		return value;
-	}
-	case BRIG_OPERAND_WAVESIZE:
-		return 1;
-	case BRIG_OPERAND_REG:
-	{
-		std::string register_name = operand.getRegisterName();
-		return stack_top->getRegisterValue<Type>(register_name);
-	}
-	default:
-		throw misc::Panic("Unsupported operand type "
-				"for getOperandValue");
-		break;
-	}
-	return 0;
-}
-
-
-template <typename Type>
-void WorkItem::storeOperandValue(unsigned int index, Type value)
-{
-	// Get the operand entry
-	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
-	BrigOperandEntry operand(inst.getOperand(index), inst.getFile(), 
-			&inst, index);
-
-	// Do corresponding action according to the type of operand
-	// I do not think there should be other type except reg
-	switch (operand.getKind())
-	{
-	case BRIG_OPERAND_REG:
-	{
-		std::string register_name = operand.getRegisterName();
-		stack_top->setRegisterValue<Type>(register_name, value);
-		break;
-	}
-	default:
-		throw misc::Panic("Unsupported operand type "
-				"for storeOperandValue");
-	}
-}
-
 
 WorkItem::ExecuteInstFn WorkItem::execute_inst_fn[InstOpcodeCount + 1] = 
 {

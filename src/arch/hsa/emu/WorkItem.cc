@@ -31,6 +31,7 @@ WorkItem::WorkItem(WorkGroup *work_group,
 {
 	// Set global emulator object
 	emu = Emu::getInstance();
+	loader = ProgramLoader::getInstance();
 
 	// Set work group
 	this->work_group = work_group;

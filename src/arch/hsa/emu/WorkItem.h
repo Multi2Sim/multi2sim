@@ -25,11 +25,14 @@
 #include <arch/hsa/asm/BrigInstEntry.h>
 #include <arch/hsa/asm/BrigDirEntry.h>
 #include <arch/hsa/asm/BrigStrEntry.h>
+#include <arch/hsa/asm/BrigOperandEntry.h>
+#include <arch/hsa/asm/BrigImmed.h>
 
 #include "Function.h"
 #include "Emu.h"
 #include "WorkGroup.h"
 #include "StackFrame.h"
+#include "ProgramLoader.h"
 
 
 namespace HSA
@@ -38,12 +41,16 @@ namespace HSA
 class Emu;
 class WorkGroup;
 class StackFrame;
+class ProgramLoader;
 
 /// HSA work item
 class WorkItem
 {
  	// Emulator that is belongs to 
  	Emu *emu;
+
+ 	// Loader object
+ 	ProgramLoader *loader;
 
  	// Work group that current work item belongs to
  	WorkGroup *work_group;
@@ -87,11 +94,64 @@ class WorkItem
 
  	// Get the value of the index-th operand
  	template <typename Type>
- 	Type getOperandValue(unsigned int index);
+ 	Type getOperandValue(unsigned int index)
+ 	{
+ 		// Get the operand entry
+ 		StackFrame *stack_top = stack.back().get();
+ 		BrigInstEntry inst(stack_top->getPc(), loader->getBinary());
+ 		BrigOperandEntry operand(inst.getOperand(index), inst.getFile(),
+ 				&inst, index);
+
+ 		// Do coresponding action according to the type of operand
+ 		switch (operand.getKind())
+ 		{
+ 		case BRIG_OPERAND_IMMED:
+ 		{
+ 			BrigImmed immed(operand.getImmedBytes(),
+ 					operand.getOperandType());
+ 			Type value = immed.getImmedValue<Type>();
+ 			return value;
+ 		}
+ 		case BRIG_OPERAND_WAVESIZE:
+ 			return 1;
+ 		case BRIG_OPERAND_REG:
+ 		{
+ 			std::string register_name = operand.getRegisterName();
+ 			return stack_top->getRegisterValue<Type>(register_name);
+ 		}
+ 		default:
+ 			throw misc::Panic("Unsupported operand type "
+ 					"for getOperandValue");
+ 			break;
+ 		}
+ 		return 0;
+ 	}
 
  	// Store the value into registers marked by the operand
  	template <typename Type>
- 	void storeOperandValue(unsigned int index, Type value);
+ 	void storeOperandValue(unsigned int index, Type value)
+ 	{
+ 		// Get the operand entry
+ 		StackFrame *stack_top = stack.back().get();
+ 		BrigInstEntry inst(stack_top->getPc(), loader->getBinary());
+ 		BrigOperandEntry operand(inst.getOperand(index), inst.getFile(),
+ 				&inst, index);
+
+ 		// Do corresponding action according to the type of operand
+ 		// I do not think there should be other type except reg
+ 		switch (operand.getKind())
+ 		{
+ 		case BRIG_OPERAND_REG:
+ 		{
+ 			std::string register_name = operand.getRegisterName();
+ 			stack_top->setRegisterValue<Type>(register_name, value);
+ 			break;
+ 		}
+ 		default:
+ 			throw misc::Panic("Unsupported operand type "
+ 					"for storeOperandValue");
+ 		}
+ 	}
 
  	// Table of functions that implement instructions
  	static ExecuteInstFn execute_inst_fn[InstOpcodeCount + 1];

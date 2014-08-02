@@ -25,6 +25,8 @@ libemu_a_SOURCES = \
 		StackFrame.h \
 		StackFrame.cc \
 		\
+		Syscall.def \
+		\
 		Wavefront.h \
 		Wavefront.cc \
 		\
