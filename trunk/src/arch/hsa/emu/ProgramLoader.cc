@@ -22,6 +22,7 @@
 
 #include <arch/hsa/asm/BrigOperandEntry.h>
 
+#include "Emu.h"
 #include "ProgramLoader.h"
 
 namespace HSA

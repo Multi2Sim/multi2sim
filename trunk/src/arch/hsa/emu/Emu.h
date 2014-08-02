@@ -32,7 +32,6 @@
 #include "ProgramLoader.h"
 #include "Component.h"
 #include "WorkGroup.h"
-#include "WorkItem.h"
 #include "RuntimeLibrary.h"
 
 
@@ -40,7 +39,6 @@ namespace HSA
 {
 
 class Component;
-class WorkItem;
 
 
 /// Exception thrown by HSA modules
