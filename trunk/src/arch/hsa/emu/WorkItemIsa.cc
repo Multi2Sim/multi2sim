@@ -51,15 +51,17 @@ void WorkItem::ExecuteInst_ABS()
 		{
 		case BRIG_TYPE_S32:
 		{
-			int src = getOperandValue<int>(1);
-			int des = abs(src);
+			int src0 = getOperandValue<int>(1);
+			int des = abs(src0);
 			storeOperandValue<int>(0, des);
 			break;
 		}
 		case BRIG_TYPE_S64:
-			long long src = getOperandValue<long long>(1);
-			long long des = abs(src);
+		{
+			long long src0 = getOperandValue<long long>(1);
+			long long des = abs(src0);
 			storeOperandValue<long long>(0, des);
+		}
 			break;
 		}
 	}
@@ -75,19 +77,165 @@ void WorkItem::ExecuteInst_ABS()
 
 void WorkItem::ExecuteInst_ADD()
 {
-	throw misc::Panic("Instruction not implemented");
+	StackFrame *stack_top = stack.back().get();
+	BrigInstEntry inst(stack_top->getPc(),
+			ProgramLoader::getInstance()->getBinary());
+
+	// Do different action accoding to the kind of the inst
+	if (inst.getKind() == BRIG_INST_BASIC)
+	{
+		switch (inst.getType())
+		{
+		case BRIG_TYPE_S32:
+		{
+			int src0 = getOperandValue<int>(1);
+			int src1 = getOperandValue<int>(2);
+			int des = src0 + src1;
+			storeOperandValue<int>(0, des);
+			break;
+		}
+		case BRIG_TYPE_S64:
+		{
+			long long src0 = getOperandValue<long long>(1);
+			long long src1 = getOperandValue<long long>(2);
+			long long des = src0 + src1;
+			storeOperandValue<long long>(0, des);
+		}
+			break;
+		case BRIG_TYPE_U32:
+		{
+			unsigned int src0 = getOperandValue<unsigned int>(1);
+			unsigned int src1 = getOperandValue<unsigned int>(2);
+			unsigned int des = src0 + src1;
+			storeOperandValue<unsigned int>(0, des);
+			break;
+		}
+		case BRIG_TYPE_U64:
+		{
+			unsigned long long src0 = getOperandValue<unsigned long long>(1);
+			unsigned long long src1 = getOperandValue<unsigned long long>(2);
+			unsigned long long des = src0 + src1;
+			storeOperandValue<unsigned long long>(0, des);
+		}
+			break;
+		}
+	}
+	else if (inst.getKind() == BRIG_INST_MOD)
+	{
+
+	}
+
+	// Move the pc forward
+	this->MovePcForwardByOne();
+}
+
+
+template<typename T>
+void WorkItem::Inst_BORROW_Aux()
+{
+	// Retrieve instruction
+	StackFrame *stack_top = stack.back().get();
+	BrigInstEntry inst(stack_top->getPc(),
+			ProgramLoader::getInstance()->getBinary());
+
+	// Perform action
+	T src0 = getOperandValue<T>(1);
+	T src1 = getOperandValue<T>(2);
+
+	// If overflows, set des to 1;
+	T des = 0;
+	if (src0 < src1)
+		des = 1;
+
+	// Store result
+	storeOperandValue<T>(0, des);
 }
 
 
 void WorkItem::ExecuteInst_BORROW()
 {
-	throw misc::Panic("Instruction not implemented");
+	StackFrame *stack_top = stack.back().get();
+	BrigInstEntry inst(stack_top->getPc(),
+			ProgramLoader::getInstance()->getBinary());
+
+	// Do different action according to the kind of the inst
+	if (inst.getKind() == BRIG_INST_BASIC)
+	{
+		switch (inst.getType())
+		{
+		case BRIG_TYPE_S32:
+		case BRIG_TYPE_U32:
+			// Regard 32-bit value always as unsinged.
+			Inst_BORROW_Aux<unsigned int>();
+			break;
+		case BRIG_TYPE_S64:
+		case BRIG_TYPE_U64:
+			Inst_BORROW_Aux<unsigned long long>();
+			break;
+		}
+	}
+	else if (inst.getKind() == BRIG_INST_MOD)
+	{
+
+	}
+
+	// Move the pc forward
+	this->MovePcForwardByOne();
+}
+
+
+template<typename T>
+void WorkItem::Inst_CARRY_Aux()
+{
+	// Retrieve instruction
+	StackFrame *stack_top = stack.back().get();
+	BrigInstEntry inst(stack_top->getPc(),
+			ProgramLoader::getInstance()->getBinary());
+
+	// Perform action
+	T src0 = getOperandValue<T>(1);
+	T src1 = getOperandValue<T>(2);
+
+	// If overflows, set des to 1;
+	T des = 0;
+	T sum = src0 + src1;
+	if (sum < src0 || sum < src1)
+		des = 1;
+
+	// Store result
+	storeOperandValue<T>(0, des);
 }
 
 
 void WorkItem::ExecuteInst_CARRY()
 {
-	throw misc::Panic("Instruction not implemented");
+	StackFrame *stack_top = stack.back().get();
+	BrigInstEntry inst(stack_top->getPc(),
+			ProgramLoader::getInstance()->getBinary());
+
+	// Do different action according to the kind of the inst
+	if (inst.getKind() == BRIG_INST_BASIC)
+	{
+		switch (inst.getType())
+		{
+		case BRIG_TYPE_S32:
+		case BRIG_TYPE_U32:
+			// Regard 32-bit value always as unsinged.
+			Inst_CARRY_Aux<unsigned int>();
+			break;
+		case BRIG_TYPE_S64:
+		case BRIG_TYPE_U64:
+			Inst_CARRY_Aux<unsigned long long>();
+			break;
+		}
+	}
+	else if (inst.getKind() == BRIG_INST_MOD)
+	{
+
+	}
+
+	// Move the pc forward
+	this->MovePcForwardByOne();
 }
 
 
@@ -105,7 +253,56 @@ void WorkItem::ExecuteInst_COPYSIGN()
 
 void WorkItem::ExecuteInst_DIV()
 {
-	throw misc::Panic("Instruction not implemented");
+	StackFrame *stack_top = stack.back().get();
+	BrigInstEntry inst(stack_top->getPc(),
+			ProgramLoader::getInstance()->getBinary());
+
+	// Do different action accoding to the kind of the inst
+	if (inst.getKind() == BRIG_INST_BASIC)
+	{
+		switch (inst.getType())
+		{
+		case BRIG_TYPE_S32:
+		{
+			int src0 = getOperandValue<int>(1);
+			int src1 = getOperandValue<int>(2);
+			int des = src0 / src1;
+			storeOperandValue<int>(0, des);
+		}
+		break;
+		case BRIG_TYPE_S64:
+		{
+			long long src0 = getOperandValue<long long>(1);
+			long long src1 = getOperandValue<long long>(2);
+			long long des = src0 / src1;
+			storeOperandValue<long long>(0, des);
+		}
+			break;
+		case BRIG_TYPE_U32:
+		{
+			unsigned int src0 = getOperandValue<unsigned int>(1);
+			unsigned int src1 = getOperandValue<unsigned int>(2);
+			unsigned int des = src0 / src1;
+			storeOperandValue<unsigned int>(0, des);
+		}
+		break;
+		case BRIG_TYPE_U64:
+		{
+			unsigned long long src0 = getOperandValue<unsigned long long>(1);
+			unsigned long long src1 = getOperandValue<unsigned long long>(2);
+			unsigned long long des = src0 / src1;
+			storeOperandValue<unsigned long long>(0, des);
+		}
+			break;
+		}
+	}
+	else if (inst.getKind() == BRIG_INST_MOD)
+	{
+
+	}
+
+	// Move the pc forward
+	this->MovePcForwardByOne();
 }
 
 
@@ -135,25 +332,242 @@ void WorkItem::ExecuteInst_MAD()
 
 void WorkItem::ExecuteInst_MAX()
 {
-	throw misc::Panic("Instruction not implemented");
+	StackFrame *stack_top = stack.back().get();
+	BrigInstEntry inst(stack_top->getPc(),
+			ProgramLoader::getInstance()->getBinary());
+
+	// Do different action accoding to the kind of the inst
+	if (inst.getKind() == BRIG_INST_BASIC)
+	{
+		switch (inst.getType())
+		{
+		case BRIG_TYPE_S32:
+		{
+			int src0 = getOperandValue<int>(1);
+			int src1 = getOperandValue<int>(2);
+			int des = (src0 > src1) ? src0 : src1;
+			storeOperandValue<int>(0, des);
+		}
+		break;
+		case BRIG_TYPE_S64:
+		{
+			long long src0 = getOperandValue<long long>(1);
+			long long src1 = getOperandValue<long long>(2);
+			long long des = (src0 > src1) ? src0 : src1;
+			storeOperandValue<long long>(0, des);
+		}
+			break;
+		case BRIG_TYPE_U32:
+		{
+			unsigned int src0 = getOperandValue<unsigned int>(1);
+			unsigned int src1 = getOperandValue<unsigned int>(2);
+			unsigned int des = (src0 > src1) ? src0 : src1;
+			storeOperandValue<unsigned int>(0, des);
+		}
+		break;
+		case BRIG_TYPE_U64:
+		{
+			unsigned long long src0 = getOperandValue<unsigned long long>(1);
+			unsigned long long src1 = getOperandValue<unsigned long long>(2);
+			unsigned long long des = (src0 > src1) ? src0 : src1;
+			storeOperandValue<unsigned long long>(0, des);
+		}
+			break;
+		}
+	}
+	else if (inst.getKind() == BRIG_INST_MOD)
+	{
+
+	}
+
+	// Move the pc forward
+	this->MovePcForwardByOne();
 }
 
 
 void WorkItem::ExecuteInst_MIN()
 {
-	throw misc::Panic("Instruction not implemented");
+	StackFrame *stack_top = stack.back().get();
+	BrigInstEntry inst(stack_top->getPc(),
+			ProgramLoader::getInstance()->getBinary());
+
+	// Do different action accoding to the kind of the inst
+	if (inst.getKind() == BRIG_INST_BASIC)
+	{
+		switch (inst.getType())
+		{
+		case BRIG_TYPE_S32:
+		{
+			int src0 = getOperandValue<int>(1);
+			int src1 = getOperandValue<int>(2);
+			int des = (src0 < src1) ? src0 : src1;
+			storeOperandValue<int>(0, des);
+		}
+		break;
+		case BRIG_TYPE_S64:
+		{
+			long long src0 = getOperandValue<long long>(1);
+			long long src1 = getOperandValue<long long>(2);
+			long long des = (src0 < src1) ? src0 : src1;
+			storeOperandValue<long long>(0, des);
+		}
+			break;
+		case BRIG_TYPE_U32:
+		{
+			unsigned int src0 = getOperandValue<unsigned int>(1);
+			unsigned int src1 = getOperandValue<unsigned int>(2);
+			unsigned int des = (src0 < src1) ? src0 : src1;
+			storeOperandValue<unsigned int>(0, des);
+		}
+		break;
+		case BRIG_TYPE_U64:
+		{
+			unsigned long long src0 = getOperandValue<unsigned long long>(1);
+			unsigned long long src1 = getOperandValue<unsigned long long>(2);
+			unsigned long long des = (src0 < src1) ? src0 : src1;
+			storeOperandValue<unsigned long long>(0, des);
+		}
+			break;
+		}
+	}
+	else if (inst.getKind() == BRIG_INST_MOD)
+	{
+
+	}
+
+	// Move the pc forward
+	this->MovePcForwardByOne();
+}
+
+template<typename T> void WorkItem::Inst_MUL_Aux()
+{
+	// Retrieve instruction
+	StackFrame *stack_top = stack.back().get();
+	BrigInstEntry inst(stack_top->getPc(),
+			ProgramLoader::getInstance()->getBinary());
+
+	// Perform action
+	T src0 = getOperandValue<T>(1);
+	T src1 = getOperandValue<T>(2);
+	T des = src0 * src1;
+	storeOperandValue<T>(0, des);
 }
 
 
 void WorkItem::ExecuteInst_MUL()
 {
-	throw misc::Panic("Instruction not implemented");
+	StackFrame *stack_top = stack.back().get();
+	BrigInstEntry inst(stack_top->getPc(),
+			ProgramLoader::getInstance()->getBinary());
+
+	// Do different action accoding to the kind of the inst
+	if (inst.getKind() == BRIG_INST_BASIC)
+	{
+		switch (inst.getType())
+		{
+		case BRIG_TYPE_S32:
+			Inst_MUL_Aux<int>();
+			break;
+		case BRIG_TYPE_S64:
+			Inst_MUL_Aux<long long>();
+			break;
+		case BRIG_TYPE_U32:
+			Inst_MUL_Aux<unsigned int>();
+		break;
+		case BRIG_TYPE_U64:
+			Inst_MUL_Aux<unsigned long long>();
+			break;
+		}
+	}
+	else if (inst.getKind() == BRIG_INST_MOD)
+	{
+
+	}
+
+	// Move the pc forward
+	this->MovePcForwardByOne();
+}
+
+
+template<typename T>
+void WorkItem::Inst_MULHI_Aux(int half_width, T lo_mask)
+{
+	// Retrive the inst to execute
+	StackFrame *stack_top = stack.back().get();
+	BrigInstEntry inst(stack_top->getPc(),
+			ProgramLoader::getInstance()->getBinary());
+
+	// Get source value
+	T src0 = getOperandValue<T>(1);
+	T src1 = getOperandValue<T>(2);
+
+	// Split source value to upper and higher bits
+	T src0_lo = src0 | lo_mask;
+	T src0_hi = src0 >> half_width;
+	T src1_lo = src1 | lo_mask;
+	T src1_hi = src1 >> half_width;
+
+	// Multiply parts to get result
+	// int part1 = src0_lo * src1_lo;
+	T part2 = src0_hi * src1_lo;
+	T part3 = src0_lo * src1_hi;
+	T part4 = src0_hi * src1_hi;
+
+	T des = part4;
+
+	// Detemine if part2 + part3 contribute to part 4
+	if (part2 != (part2 + part3) - part3)
+		des += 1;
+	storeOperandValue<T>(0, des);
 }
 
 
 void WorkItem::ExecuteInst_MULHI()
 {
-	throw misc::Panic("Instruction not implemented");
+	StackFrame *stack_top = stack.back().get();
+	BrigInstEntry inst(stack_top->getPc(),
+			ProgramLoader::getInstance()->getBinary());
+
+	// Do different action accoding to the kind of the inst
+	if (inst.getKind() == BRIG_INST_BASIC)
+	{
+		switch (inst.getType())
+		{
+		case BRIG_TYPE_S32:
+			Inst_MULHI_Aux<int>(16, 0xffff);
+			break;
+		case BRIG_TYPE_S64:
+			Inst_MULHI_Aux<long long>(32, 0xffffffff);
+			break;
+		case BRIG_TYPE_U32:
+			Inst_MULHI_Aux<unsigned int>(16, 0xffff);
+			break;
+		case BRIG_TYPE_U64:
+			Inst_MULHI_Aux<unsigned long long>(32, 0xffffffff);
+			break;
+		}
+	}
+	else if (inst.getKind() == BRIG_INST_MOD)
+	{
+
+	}
+
+	// Move the pc forward
+	this->MovePcForwardByOne();
+}
+
+
+template<typename T> void WorkItem::Inst_NEG_Aux()
+{
+	// Retrieve instruction
+	StackFrame *stack_top = stack.back().get();
+	BrigInstEntry inst(stack_top->getPc(),
+			ProgramLoader::getInstance()->getBinary());
+
+	// Perform action
+	T src0 = getOperandValue<T>(1);
+	T des = -src0;
+	storeOperandValue<T>(0, des);
 }
 
 
@@ -169,13 +583,10 @@ void WorkItem::ExecuteInst_NEG()
 		switch (inst.getType())
 		{
 		case BRIG_TYPE_S32:
-		{
-			int src = getOperandValue<int>(1);
-			int des = -src;
-			storeOperandValue<int>(0, des);
+			Inst_NEG_Aux<int>();
 			break;
-		}
 		case BRIG_TYPE_S64:
+			Inst_NEG_Aux<long long>();
 			break;
 		}
 	}
@@ -184,14 +595,63 @@ void WorkItem::ExecuteInst_NEG()
 
 	}
 
-	// Move pc to next instruction
-	MovePcForwardByOne();
+	// Move the pc forward
+	this->MovePcForwardByOne();
 }
 
 
 void WorkItem::ExecuteInst_REM()
 {
-	throw misc::Panic("Instruction not implemented");
+	StackFrame *stack_top = stack.back().get();
+	BrigInstEntry inst(stack_top->getPc(),
+			ProgramLoader::getInstance()->getBinary());
+
+	// Do different action accoding to the kind of the inst
+	if (inst.getKind() == BRIG_INST_BASIC)
+	{
+		switch (inst.getType())
+		{
+		case BRIG_TYPE_S32:
+		{
+			int src0 = getOperandValue<int>(1);
+			int src1 = getOperandValue<int>(2);
+			int des = src0 % src1;
+			storeOperandValue<int>(0, des);
+		}
+		break;
+		case BRIG_TYPE_S64:
+		{
+			long long src0 = getOperandValue<long long>(1);
+			long long src1 = getOperandValue<long long>(2);
+			long long des = src0 % src1;
+			storeOperandValue<long long>(0, des);
+		}
+			break;
+		case BRIG_TYPE_U32:
+		{
+			unsigned int src0 = getOperandValue<unsigned int>(1);
+			unsigned int src1 = getOperandValue<unsigned int>(2);
+			unsigned int des = src0 % src1;
+			storeOperandValue<unsigned int>(0, des);
+		}
+		break;
+		case BRIG_TYPE_U64:
+		{
+			unsigned long long src0 = getOperandValue<unsigned long long>(1);
+			unsigned long long src1 = getOperandValue<unsigned long long>(2);
+			unsigned long long des = src0 % src1;
+			storeOperandValue<unsigned long long>(0, des);
+		}
+			break;
+		}
+	}
+	else if (inst.getKind() == BRIG_INST_MOD)
+	{
+
+	}
+
+	// Move the pc forward
+	this->MovePcForwardByOne();
 }
 
 
@@ -207,9 +667,53 @@ void WorkItem::ExecuteInst_SQRT()
 }
 
 
+template<typename T> void WorkItem::Inst_SUB_Aux()
+{
+	// Retrieve inst
+	StackFrame *stack_top = stack.back().get();
+	BrigInstEntry inst(stack_top->getPc(),
+			ProgramLoader::getInstance()->getBinary());
+
+	// Perform action
+	int src0 = getOperandValue<int>(1);
+	int src1 = getOperandValue<int>(2);
+	int des = src0 - src1;
+	storeOperandValue<int>(0, des);
+}
+
+
 void WorkItem::ExecuteInst_SUB()
 {
-	throw misc::Panic("Instruction not implemented");
+	StackFrame *stack_top = stack.back().get();
+	BrigInstEntry inst(stack_top->getPc(),
+			ProgramLoader::getInstance()->getBinary());
+
+	// Do different action according to the kind of the inst
+	if (inst.getKind() == BRIG_INST_BASIC)
+	{
+		switch (inst.getType())
+		{
+		case BRIG_TYPE_S32:
+			Inst_SUB_Aux<int>();
+			break;
+		case BRIG_TYPE_S64:
+			Inst_SUB_Aux<long long>();
+			break;
+		case BRIG_TYPE_U32:
+			Inst_SUB_Aux<unsigned int>();
+			break;
+		case BRIG_TYPE_U64:
+			Inst_SUB_Aux<unsigned int>();
+			break;
+		}
+	}
+	else if (inst.getKind() == BRIG_INST_MOD)
+	{
+
+	}
+
+	// Move the pc forward
+	this->MovePcForwardByOne();
 }
 
 

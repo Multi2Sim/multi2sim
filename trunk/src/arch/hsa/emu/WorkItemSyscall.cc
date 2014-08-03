@@ -46,15 +46,13 @@ void WorkItem::ExecuteSyscall_print_int()
 			ProgramLoader::getInstance()->
 			getFileTable()->getFileDescriptor(1);
 
-	// Convert guest file descriptor to host file descriptor
+	// Convert guest file descriptor to host file descriptor, default to
+	// be stdout (1).
 	int host_fd = 1;
 	if (desc)
 	{
 		host_fd = desc->getHostIndex();
 	}
-
-
-
 
 	// Do action according to type
 	switch (inst.getType())
@@ -82,7 +80,7 @@ void WorkItem::ExecuteSyscall_print_int()
 						<unsigned int>(2);
 
 				// Output to file
-				std::string str = misc::fmt("%d", src1);
+				std::string str = misc::fmt("%u", src1);
 				write(host_fd, str.c_str(), str.size());
 			}
 
@@ -114,7 +112,7 @@ void WorkItem::ExecuteSyscall_print_int()
 				//std::cout << "unsigned long long " << src1 << "\n";
 
 				// Output to file
-				std::string str = misc::fmt("%lld", src1);
+				std::string str = misc::fmt("%llu", src1);
 				write(host_fd, str.c_str(), str.size());
 			}
 		}
@@ -126,11 +124,85 @@ void WorkItem::ExecuteSyscall_print_int()
 
 void WorkItem::ExecuteSyscall_print_float()
 {
+	// Get current inst
+	StackFrame *stack_top = stack.back().get();
+	BrigInstEntry inst(stack_top->getPc(),
+			ProgramLoader::getInstance()->getBinary());
+
+	// Get file descriptor
+	comm::FileDescriptor *desc =
+			ProgramLoader::getInstance()->
+			getFileTable()->getFileDescriptor(1);
+
+	// Convert guest file descriptor to host file descriptor, default to
+	// be stdout (1).
+	int host_fd = 1;
+	if (desc)
+	{
+		host_fd = desc->getHostIndex();
+	}
+
+	// Do action according to type
+	switch (inst.getType())
+	{
+	case BRIG_TYPE_U32:
+		{
+			// Get the float to output
+			float src1 = getOperandValue<float>(2);
+
+			// Output to file
+			std::string str = misc::fmt("%f", src1);
+			write(host_fd, str.c_str(), str.size());
+
+		}
+		break;
+	case BRIG_TYPE_U64:
+		throw Error(misc::fmt("Type U64 not supported for "
+				"print_float"));
+		break;
+	}
 }
 
 
 void WorkItem::ExecuteSyscall_print_double()
 {
+	// Get current inst
+	StackFrame *stack_top = stack.back().get();
+	BrigInstEntry inst(stack_top->getPc(),
+			ProgramLoader::getInstance()->getBinary());
+
+	// Get file descriptor
+	comm::FileDescriptor *desc =
+			ProgramLoader::getInstance()->
+			getFileTable()->getFileDescriptor(1);
+
+	// Convert guest file descriptor to host file descriptor, default to
+	// be stdout (1).
+	int host_fd = 1;
+	if (desc)
+	{
+		host_fd = desc->getHostIndex();
+	}
+
+	// Do action according to type
+	switch (inst.getType())
+	{
+	case BRIG_TYPE_U64:
+		{
+			// Get the float to output
+			double src1 = getOperandValue<double>(2);
+
+			// Output to file
+			std::string str = misc::fmt("%f", src1);
+			write(host_fd, str.c_str(), str.size());
+
+		}
+		break;
+	case BRIG_TYPE_U32:
+		throw Error(misc::fmt("Type U32 not supported for "
+				"print_double"));
+		break;
+	}
 }
 
 
@@ -171,6 +243,43 @@ void WorkItem::ExecuteSyscall_exit()
 
 void WorkItem::ExecuteSyscall_print_character()
 {
+	// Get current inst
+	StackFrame *stack_top = stack.back().get();
+	BrigInstEntry inst(stack_top->getPc(),
+			ProgramLoader::getInstance()->getBinary());
+
+	// Get file descriptor
+	comm::FileDescriptor *desc =
+			ProgramLoader::getInstance()->
+			getFileTable()->getFileDescriptor(1);
+
+	// Convert guest file descriptor to host file descriptor, default to
+	// be stdout (1).
+	int host_fd = 1;
+	if (desc)
+	{
+		host_fd = desc->getHostIndex();
+	}
+
+	// Do action according to type
+	switch (inst.getType())
+	{
+	case BRIG_TYPE_U32:
+		{
+			// Get the float to output
+			char src1 = getOperandValue<char>(2);
+
+			// Output to file
+			std::string str = misc::fmt("%c", src1);
+			write(host_fd, str.c_str(), str.size());
+
+		}
+		break;
+	case BRIG_TYPE_U64:
+		throw Error(misc::fmt("Type U64 not supported for "
+				"print_character"));
+		break;
+	}
 }
 
 

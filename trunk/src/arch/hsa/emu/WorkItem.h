@@ -88,6 +88,14 @@ class WorkItem
  	// Unsupported opcode
  	void ExecuteInst_unsupported();
 
+ 	// Execute inst auxiliary functions
+ 	template<typename T> void Inst_BORROW_Aux();
+ 	template<typename T> void Inst_CARRY_Aux();
+ 	template<typename T> void Inst_MUL_Aux();
+ 	template<typename T> void Inst_MULHI_Aux(int half_width, T masks);
+ 	template<typename T> void Inst_NEG_Aux();
+ 	template<typename T> void Inst_SUB_Aux();
+
  	// Move the program counter by one. Return false if current PC is
  	// at the end of the function
  	bool MovePcForwardByOne();
