@@ -32,6 +32,7 @@
 #include <llvm/Support/MemoryBuffer.h>
 
 #include "Context.h"
+#include "Module.h"
 #include "Function.h"
 
 // TODO: Figure out a way to include all passes once.
@@ -79,6 +80,9 @@ void Context::Parse(const std::string &in, const std::string &out)
 		throw Error(misc::fmt("[%s] Cannot open output file",
 				out.c_str()));
 
+	// The module for this context.
+	Module module(llvm_module.get());
+
 	// Translate all functions
 	for (auto &llvm_function : llvm_module->getFunctionList())
 	{
@@ -89,21 +93,21 @@ void Context::Parse(const std::string &in, const std::string &out)
 			continue;
 
 		// Create function
-		Function function(&llvm_function);
+		Function *function = module.newFunction(&llvm_function);
 
 		// TODO: Remove this in place of actual Pass running.
 		DataDependencyPass ddp;
 		ddp.run();
 
 		// Emit code for function
-		function.EmitHeader();
-		function.EmitArgs();
-		function.EmitBody();
-		function.EmitControlFlow();
-		function.EmitPhi();
+		function->EmitHeader();
+		function->EmitArgs();
+		function->EmitBody();
+		function->EmitControlFlow();
+		function->EmitPhi();
 
 		// Dump code
-		f << function;
+		f << *function;
 	}
 }
 

@@ -17,6 +17,9 @@ libllvm2si_a_SOURCES = \
 	InterferenceGraph.cc \
 	InterferenceGraph.h \
 	\
+	Module.cc \
+	Module.h \
+	\
 	Symbol.cc \
 	Symbol.h
 
