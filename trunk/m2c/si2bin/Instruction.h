@@ -119,9 +119,9 @@ public:
 	/// ownership of this argument.
 	void addArgument(std::unique_ptr<Argument> &&argument)
 	{
-		arguments.emplace_back(std::move(argument));
 		argument->setInstruction(this);
 		argument->setIndex(arguments.size() - 1);
+		arguments.emplace_back(std::move(argument));
 	}
 
 	/// Add a scalar register argument.
