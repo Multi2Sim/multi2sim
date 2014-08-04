@@ -41,6 +41,7 @@ namespace llvm2si
 {
 
 // Forward declarations
+class Module;
 class Function;
 
 class FunctionArg
@@ -125,6 +126,9 @@ class Function : public comm::Function
 {
 	std::string name;
 
+	// Module that the function belongs to.
+	Module *module;
+
 	// Associated LLVM function
 	llvm::Function *llvm_function;
 
@@ -195,7 +199,7 @@ public:
 	///
 	/// \param llvm_function
 	///	Associated function in the LLVM code.
-	explicit Function(llvm::Function *llvm_function);
+	explicit Function(Module *module, llvm::Function *llvm_function);
 
 	/// Return the control tree associated with this function
 	comm::Tree *getTree() { return &tree; }
