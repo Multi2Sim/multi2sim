@@ -29,6 +29,7 @@
 #include <llvm/IR/Value.h>
 #include <llvm/IR/Type.h>
 #include <m2c/common/Node.h>
+#include <m2c/common/Function.h>
 #include <m2c/common/Tree.h>
 #include <m2c/si2bin/Argument.h>
 
@@ -120,7 +121,7 @@ public:
 };
 
 
-class Function
+class Function : public comm::Function
 {
 	std::string name;
 

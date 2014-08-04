@@ -28,6 +28,7 @@
 #include <arch/southern-islands/asm/Inst.h>
 #include <src/lib/cpp/Bitmap.h>
 #include <src/lib/cpp/Misc.h>
+#include <m2c/common/Instruction.h>
 
 #include "Argument.h"
 #include "Context.h"
@@ -46,7 +47,7 @@ class InstInfo;
 class Context;
 
 
-class Instruction
+class Instruction : public comm::Instruction
 {
 	// For LLVM-to-SI back-end: basic block that the instruction
 	// belongs to.
