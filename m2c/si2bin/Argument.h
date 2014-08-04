@@ -23,6 +23,7 @@
 #include <arch/southern-islands/asm/Inst.h>
 #include <lib/cpp/Error.h>
 #include <lib/cpp/Misc.h>
+#include <m2c/common/Argument.h>
 
 #include <cassert>
 #include <cstring>
@@ -43,7 +44,7 @@ class Token;
 
 /// Base class representing the argument of an instruction. More specific
 /// instruction classes can be derived from this class
-class Argument
+class Argument : public comm::Argument
 {
 public:
 
