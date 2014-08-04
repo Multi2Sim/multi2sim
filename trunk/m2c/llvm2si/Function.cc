@@ -336,8 +336,9 @@ void Function::DumpData(std::ostream &os)
 }
 
 
-Function::Function(llvm::Function *llvm_function)
+Function::Function(Module *module, llvm::Function *llvm_function)
 		: name(llvm_function->getName()),
+		  module(module),
 		  llvm_function(llvm_function),
 		  num_sregs(0),
 		  tree(name),
