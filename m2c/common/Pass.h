@@ -50,7 +50,7 @@ public:
 	/// Constructor of a pass.
 	Pass();
 
-	// Virtual destructor.
+	// Virtual destructor to make class polymorphic.
 	virtual ~Pass() { }
 
 /*
