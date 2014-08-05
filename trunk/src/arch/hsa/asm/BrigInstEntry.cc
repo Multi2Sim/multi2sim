@@ -487,6 +487,14 @@ unsigned short BrigInstEntry::getType() const
 }
 
 
+unsigned short BrigInstEntry::getSourceType() const
+{
+	struct BrigInstSourceType *inst = (struct BrigInstSourceType*)base;
+	assert(inst->kind == BRIG_INST_SOURCE_TYPE);
+	return inst->sourceType;
+}
+
+
 BrigInstEntry::DumpInstFn BrigInstEntry::dump_inst_fn[] = 
 {
 	&BrigInstEntry::DumpInstNone,

@@ -98,7 +98,7 @@ void Emu::ProcessOptions()
 
 
 Emu::Emu() : comm::Emu("hsa"),
-		manager(&memory)
+		global_manager(&memory)
 {
 	// FIXME: Allow user to set up customized HSA virtual machine
 	setDefaultComponentList();

@@ -231,7 +231,7 @@ public:
 	/// 
 	/// \return
 	///	base address to the allocated address
-	unsigned Allocate(unsigned size, unsigned alignment);
+	unsigned Allocate(unsigned size, unsigned alignment = 1);
 
 	/// Free allocated memory.
 	///

@@ -24,6 +24,8 @@
 #include <memory>
 #include <string>
 
+#include "ArgScope.h"
+
 
 namespace HSA
 {
@@ -44,6 +46,9 @@ class Function
 	// The directive of the function declaration
 	char *directive;
 
+	// The first directive in the function;
+	char *first_in_function_directive;
+
 	/// Dump argument related information
 	void DumpArgumentInfo(std::ostream &os) const;
 
@@ -56,15 +61,6 @@ class Function
 	//
 	// Fields related with arguments
 	//
-
-	// Information for argument
-	struct Argument
-	{
-		unsigned short type;
-		unsigned short size;	// argument size in bytes
-		unsigned int offset;
-		bool is_input;
-	};
 
 	// Argument size. When stack frame initialize, allocate the size of
 	// memory
@@ -125,6 +121,18 @@ public:
 
 	/// Set the directive
 	void setDirective(char *directive) { this->directive = directive; }
+
+	/// Return the pointer to first in function directive
+	char *getFirstInFunctionDirective() const
+	{
+		return first_in_function_directive;
+	}
+
+	/// Set the first in-function directive
+	void setFirstInFunctionDirective(char *directive)
+	{
+		first_in_function_directive = directive;
+	}
 
 	/// Return the pointer to the directive
 	char *getDirective() const { return directive; }

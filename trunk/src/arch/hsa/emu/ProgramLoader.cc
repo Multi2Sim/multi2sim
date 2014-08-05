@@ -176,6 +176,9 @@ void ProgramLoader::parseFunction(BrigDirEntry *dir)
 	next_dir = loadArguments(num_out_arg, next_dir, false, function);
 	next_dir = loadArguments(num_in_arg, next_dir, true, function);
 
+	// Now next_dir should be an in-function directive
+	function->setFirstInFunctionDirective(next_dir);
+
 	// Allocate registers
 	preprocessRegisters(entry_point, dir_struct->instCount, function);
 

@@ -130,7 +130,6 @@ protected:
 	template<typename T>
 	const char *memFence2str(T* inst) const;
 
-
 	// Returns true is the instruction has type
 	bool hasType() const;
 
@@ -154,6 +153,9 @@ public:
 
 	/// Returns the type of the inst
 	unsigned short getType() const;
+
+	/// Returns the source_type field
+	unsigned short getSourceType() const;
 
 	// Returns the pointer to the operand indexed with i
 	char *getOperand(int i) const;
