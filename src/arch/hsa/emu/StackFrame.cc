@@ -32,6 +32,9 @@ StackFrame::StackFrame(Function *function)
 	// function
 	pc = function->getEntryPoint();
 
+	// Set next directive to be processed to the first in function directive
+	next_dir = function->getFirstInFunctionDirective();
+
 	// Allocate register space
 	char *register_space = new char[function->getRegisterSize()];
 	this->register_storage.reset(register_space);
@@ -111,6 +114,15 @@ void StackFrame::DumpRegister(const std::string &name,
 				name.c_str()));
 	}
 	os << "\n";
+}
+
+
+unsigned int StackFrame::getCodeOffset() const
+{
+	BrigSection *code_section =
+		ProgramLoader::getInstance()->getBinary()->getBrigSection(BrigSectionCode);
+	char *code_buffer = (char *)code_section->getBuffer();
+	return pc - code_buffer;
 }
 
 }  // namespace HSA

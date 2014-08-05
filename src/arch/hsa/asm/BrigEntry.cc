@@ -357,7 +357,7 @@ void BrigEntry::dumpBody(int codeOffset,
 		for (int i=0; i<nInst; i++)
 		{	
 			// Dump directives related with the code
-			unsigned char code_offset =
+			unsigned int code_offset =
 					buffer_pointer - code_buffer;
 			next = DumpRelatedDirectives(next, code_offset, os);
 

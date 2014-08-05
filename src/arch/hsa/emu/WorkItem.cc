@@ -17,6 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <arch/hsa/asm/BrigDef.h>
+
 #include "WorkItem.h"
 
 namespace HSA
@@ -144,12 +146,114 @@ unsigned int WorkItem::getAbsoluteFlattenedId() const
 }
 
 
+void WorkItem::ProcessRelatedDirectives()
+{
+	// Get current instruction offset in code section
+	StackFrame *stack_top = stack.back().get();
+	unsigned int code_offset = stack_top->getCodeOffset();
+
+	// Retrieve directive
+	struct BrigDirectiveBase *dir =
+			(struct BrigDirectiveBase *)
+			stack_top->getNextDirective();
+
+	// Traverse all the directives in front of current inst
+	while (dir && dir->code <= code_offset)
+	{
+		BrigDirEntry dir_entry((char *)dir,
+				ProgramLoader::getInstance()->getBinary());
+		switch (dir_entry.getKind())
+		{
+		case BRIG_DIRECTIVE_ARG_SCOPE_START:
+			stack_top->StartArgumentScope();
+			break;
+		case BRIG_DIRECTIVE_ARG_SCOPE_END:
+			stack_top->CloseArgumentScope();
+			break;
+		case BRIG_DIRECTIVE_VARIABLE:
+			DeclearVariable();
+			break;
+		}
+
+		// move next directive pointer forwards
+		dir = (struct BrigDirectiveBase *)dir_entry.nextTop();
+		stack_top->setNextDirective((char *)dir);
+	}
+
+
+}
+
+
+void WorkItem::DeclearVariable()
+{
+	StackFrame *stack_top = stack.back().get();
+	BrigDirectiveVariable *dir =
+			(BrigDirectiveVariable *)stack_top->getNextDirective();
+
+	// Allocate memory in different segment
+	switch (dir->segment)
+	{
+	case BRIG_SEGMENT_NONE:
+		break;
+	case BRIG_SEGMENT_FLAT:
+		break;
+	case BRIG_SEGMENT_GLOBAL:
+		break;
+	case BRIG_SEGMENT_GROUP:
+		break;
+	case BRIG_SEGMENT_PRIVATE:
+		break;
+	case BRIG_SEGMENT_KERNARG:
+		break;
+	case BRIG_SEGMENT_READONLY:
+		break;
+	case BRIG_SEGMENT_SPILL:
+		break;
+	case BRIG_SEGMENT_ARG:
+		CreateArgument();
+		break;
+	}
+}
+
+
+void WorkItem::CreateArgument()
+{
+	// Retrieve directive
+	StackFrame *stack_top = stack.back().get();
+	BrigDirectiveVariable *dir =
+			(BrigDirectiveVariable *)stack_top->getNextDirective();
+
+	// Get argument name
+	std::string name = BrigStrEntry::GetStringByOffset(
+			ProgramLoader::getInstance()->getBinary(),
+			dir->name);
+
+	// Create argument
+	stack_top->CreateArgument(name, dir->size, dir->type);
+
+	// Put information in isa_debug
+	BrigDirEntry dir_entry((char *)dir,
+			ProgramLoader::getInstance()->getBinary());
+	Emu::isa_debug << "Create argument: " << dir_entry;
+}
+
+
 bool WorkItem::Execute()
 {
 	// Retrieve stack top
 	StackFrame *stack_top = stack.back().get();
 	BrigInstEntry inst(stack_top->getPc(),
 			ProgramLoader::getInstance()->getBinary());
+
+	// Deal with empty function
+	if (!stack_top->getFunction()->getLastInst())
+	{
+		ProcessRelatedDirectives();
+		if (!MovePcForwardByOne())
+		{
+			return false;
+		}
+	}
 
 	// Record frame status before the instruction is executed
 	Emu::isa_debug << "Stack frame before executing: ";
@@ -158,6 +262,9 @@ bool WorkItem::Execute()
 	if (Emu::isa_debug)
 		stack_top->Dump(Emu::isa_debug);
 	Emu::isa_debug << "\n";
+
+	// Process directives in front of current instruction
+	ProcessRelatedDirectives();
 
 	// Get the function according to the opcode and perform the inst
 	int opcode = inst.getOpcode();

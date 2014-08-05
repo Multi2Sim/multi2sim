@@ -32,7 +32,7 @@ Manager::Manager(Memory *memory)
 }
 
 
-unsigned Manager::Allocate(unsigned size, unsigned alignment=1)
+unsigned Manager::Allocate(unsigned size, unsigned alignment)
 {
 	// Assert the alignment is smaller than page size
 	assert(alignment<=Memory::PageSize);

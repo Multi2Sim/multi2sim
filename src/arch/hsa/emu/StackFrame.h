@@ -34,9 +34,16 @@ class StackFrame
 	// Pointer to the instruction to be executed
 	char *pc;
 
-	// Argument storage
-	// FIXME: Move argument_storage to guest memory
-	std::unique_ptr<char> argument_storage;
+	// Pointer to the directive to be executed
+	char *next_dir;
+
+	// Function input and output arguments
+	std::unique_ptr<ArgScope> function_arguments;
+
+	// Arguments scope, surrounded by {} in current function. Since
+	// argument scope cannot be nested, when we start a new one, the old
+	// one must have already been released.
+	std::unique_ptr<ArgScope> argument_scope;
 
 	// Register storage
 	// FIXME: Move register_storgae to guest memory
@@ -91,7 +98,7 @@ public:
 		return *pointer;
 	}
 
-	// Set a registers value
+	/// Set a registers value
 	template <typename Type>
 	void setRegisterValue(const std::string &name, Type value)
 	{
@@ -104,6 +111,44 @@ public:
 		// Set the value of the register
 		*pointer = value;
 	}
+
+	/// Start an argument scope, when a '{' appears.
+	void StartArgumentScope()
+	{
+		argument_scope.reset(new ArgScope);
+	};
+
+	/// Release an argument scope, when we find a '}'
+	void  CloseArgumentScope()
+	{
+		argument_scope.release();
+	};
+
+	/// Create an argument in the argument scope
+	void CreateArgument(const std::string &name,
+			unsigned int size, unsigned short type)
+	{
+		if (argument_scope.get())
+		{
+			argument_scope->AddArgument(name, size, type);
+		}
+	};
+
+	/// Returns argument scope
+	ArgScope *getArgumentScope() const { return argument_scope.get(); };
+
+	/// Setup function arguments and copy their values.
+	void PrepareFunctionArguments(ArgScope *host_scope);
+
+	/// Convert the PC pointer to the offset of the current instruction
+	/// in code section
+	unsigned int getCodeOffset() const;
+
+	/// Get next directive
+	char *getNextDirective() const { return next_dir; }
+
+	/// Set next directive
+	void setNextDirective(char *directive) { next_dir = directive; }
 
 };
 

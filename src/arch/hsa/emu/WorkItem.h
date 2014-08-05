@@ -89,12 +89,29 @@ class WorkItem
  	void ExecuteInst_unsupported();
 
  	// Execute inst auxiliary functions
+ 	template<typename T> void Inst_ABS_Aux();
+ 	template<typename T> void Inst_ADD_Aux();
  	template<typename T> void Inst_BORROW_Aux();
  	template<typename T> void Inst_CARRY_Aux();
+ 	template<typename T> void Inst_DIV_Aux();
+ 	template<typename T> void Inst_MAD_Aux();
+ 	template<typename T> void Inst_MAX_Aux();
+ 	template<typename T> void Inst_MIN_Aux();
  	template<typename T> void Inst_MUL_Aux();
  	template<typename T> void Inst_MULHI_Aux(int half_width, T masks);
  	template<typename T> void Inst_NEG_Aux();
  	template<typename T> void Inst_SUB_Aux();
+ 	template<typename T> void Inst_REM_Aux();
+ 	template<typename T> void Inst_SHL_Aux();
+ 	template<typename T> void Inst_SHR_Aux();
+ 	template<typename T> void Inst_AND_Aux();
+ 	template<typename T> void Inst_NOT_Aux();
+ 	template<typename T> void Inst_OR_Aux();
+ 	template<typename T> void Inst_POPCOUNT_Aux();
+ 	template<typename T> void Inst_XOR_Aux();
+ 	template<typename T> void Inst_BITEXTRACT_Aux();
+ 	template<typename T> void Inst_LD_Aux();
+ 	template<typename T> void Inst_ST_Aux();
 
  	// Move the program counter by one. Return false if current PC is
  	// at the end of the function
@@ -164,7 +181,14 @@ class WorkItem
  	// Table of functions that implement instructions
  	static ExecuteInstFn execute_inst_fn[InstOpcodeCount + 1];
 
+ 	// Allocate memory for variable
+ 	void DeclearVariable();
 
+ 	// Create an argument
+ 	void CreateArgument();
+
+ 	// Process directives between last PC and current PC
+ 	void ProcessRelatedDirectives();
 
 
 
