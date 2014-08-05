@@ -7,6 +7,9 @@ libemu_a_SOURCES = \
 		AQLQueue.h \
 		AQLQueue.cc \
 		\
+		ArgScope.h \
+		ArgScope.cc \
+		\
 		Component.h \
 		Component.cc \
 		\

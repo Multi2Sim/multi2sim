@@ -31,6 +31,8 @@ Function::Function(const std::string& name, char *directive, char *entry_point)
 	this->name = name;
 	this->directive = directive;
 	this->entry_point = entry_point;
+	this->last_inst = nullptr;
+	this->first_in_function_directive = nullptr;
 }
 
 

@@ -81,11 +81,11 @@ class Emu : public comm::Emu
 	// Host CPU component, the unique_ptr is kept in the list components.
 	Component *host_cpu;
 
-	// Global segment of memory
+	// Flattened memory space, the only memory space of the virtual memory
 	mem::Memory memory;
 
-	// Memory manager
-	mem::Manager manager;
+	// Global memory manager
+	mem::Manager global_manager;
 
 public:
 
@@ -134,7 +134,7 @@ public:
 	unsigned int getNumberOfComponent() const { return components.size(); }
 
 	/// Return the global memory manager
-	mem::Manager *getManager() { return &manager; };
+	mem::Manager *getGlobalManager() { return &global_manager; };
 
 	/// Return the pointer to the global memory
 	mem::Memory *getMemory() { return &memory; };
