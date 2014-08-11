@@ -205,7 +205,10 @@ char *ProgramLoader::loadArguments(unsigned short num_arg, char *next_dir,
 		unsigned short type = arg_struct->type;
 
 		// Add this argument to the argument table
-		function->addArgument(arg_name, isInput, type);
+		Variable *argument = new Variable(arg_name, type,
+				BrigEntry::type2size(type), 0);
+		argument->setIndex(i);
+		function->addArgument(argument);
 
 		// Move pointer forward
 		next_dir = arg_entry.next();
@@ -260,6 +263,17 @@ Function *ProgramLoader::getMainFunction() const
 	if (it == function_table.end())
 	{
 		throw Error("Undefined reference to &main()");
+	}
+	return it->second.get();
+}
+
+Function *ProgramLoader::getFunction(const std::string &name) const
+{
+	auto it = function_table.find(name);
+	if (it == function_table.end())
+	{
+		throw Error(misc::fmt("Undefined reference to %s",
+				name.c_str()));
 	}
 	return it->second.get();
 }

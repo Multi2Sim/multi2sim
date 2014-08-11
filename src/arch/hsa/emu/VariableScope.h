@@ -20,55 +20,55 @@
 #ifndef ARCH_HSA_EMU_ARGSCOPE_H
 #define ARCH_HSA_EMU_ARGSCOPE_H
 
-#include <memory/Manager.h>
-
 #include <map>
 #include <memory>
 
+#include <memory/Manager.h>
+
+#include "Variable.h"
 
 namespace HSA
 {
 
-/// Information for argument
-struct Argument
+class VariableScope
 {
-	unsigned short type;
-	unsigned short size;	// argument size in bytes
-	unsigned int offset;
-	bool is_input;
-};
-
-class ArgScope
-{
-	// Memory manager
-	mem::Manager arg_manager;
 
 	// Argument information
-	std::map<std::string, std::unique_ptr<Argument>> argument_info;
+	std::map<std::string, std::unique_ptr<Variable>> variable_info;
 
 public:
 
 	/// Constructor
-	ArgScope();
+	VariableScope();
 
 	/// Destructor
-	~ArgScope();
+	~VariableScope();
 
 	/// Add and argument
-	void AddArgument(const std::string &name, unsigned int size,
+	void AddVariable(const std::string &name, unsigned int size,
 			unsigned short type);
 
 	/// Get the value of an argument
 	template<typename T>
-	T getArgumentValue(const std::string &name){};
+	T getVariableValue(const std::string &name){};
 
 	/// Set the value of an argument
 	template<typename T>
-	void setArgumentValue(const std::string &name, T value){};
+	void setVariableValue(const std::string &name, T value){};
 
 	/// Get the buffer pointer to a certain argument
 	char *getBuffer(const std::string &name);
 
+	/// Dump information in the variable scope
+	void Dump(std::ostream &os) const;
+
+	/// Operator \c << invoking the function Dump) on an output stream
+	friend std::ostream &operator<<(std::ostream &os,
+			const VariableScope &variable_scope)
+	{
+		variable_scope.Dump(os);
+		return os;
+	}
 
 };
 

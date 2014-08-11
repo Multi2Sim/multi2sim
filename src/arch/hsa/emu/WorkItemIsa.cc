@@ -17,7 +17,10 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <arch/hsa/asm/BrigDef.h>
+
 #include "WorkItem.h"
+
 
 namespace HSA
 {
@@ -928,6 +931,7 @@ void WorkItem::ExecuteInst_NOT()
 	switch (inst.getType())
 	{
 	case BRIG_TYPE_B1:
+
 		break;
 	case BRIG_TYPE_B32:
 		Inst_NOT_Aux<unsigned int>();
@@ -1101,20 +1105,36 @@ void WorkItem::ExecuteInst_BITEXTRACT()
 	switch (inst.getType())
 	{
 	case BRIG_TYPE_U32:
+
 		Inst_BITEXTRACT_Aux<unsigned int>();
 		break;
+
 	case BRIG_TYPE_S32:
+
 		Inst_BITEXTRACT_Aux<int>();
 		break;
+
 	case BRIG_TYPE_U64:
+
 		Inst_BITEXTRACT_Aux<unsigned long long>();
 		break;
+
 	case BRIG_TYPE_S64:
+
 		Inst_BITEXTRACT_Aux<long long>();
 		break;
 	}
 
 	// Move the pc forward
+	// FIXME No "this"
+	// FIXME Default cases in instruction type:
+	//	throw misc::Panic("Illegal type");
+	// FIXME Function WorkItem::UnimplementedInstruction()
+	// FIXME Spaces in switch/case statements
+	// FIXME Loader is not a singleton, should be per context
+	// FIXME Create class Context. Class Emu will have a list of contexts
+	// and maybe other sub-lists of running/suspended contexts. Use
+	// intrusive linked lists for this (src/lib/cpp/List.h).
 	this->MovePcForwardByOne();
 }
 
@@ -1393,8 +1413,6 @@ void WorkItem::Inst_ST_Aux()
 	BrigDirectiveSymbol *symbol =
 			(BrigDirectiveSymbol *)BrigDirEntry::GetDirByOffset(
 					binary, address_operand_buf->symbol);
-	BrigOperandEntry address_operand((char *)address_operand_buf,
-			binary, &inst, 1);
 	std::string name = BrigStrEntry::GetStringByOffset(
 			binary, symbol->name);
 
@@ -1426,7 +1444,7 @@ void WorkItem::Inst_ST_Aux()
 		break;
 	case BRIG_SEGMENT_ARG:
 	{
-		ArgScope *arg_scope = stack_top->getArgumentScope();
+		VariableScope *arg_scope = stack_top->getArgumentScope();
 		host_buffer = arg_scope->getBuffer(name);
 		host_buffer += offset;
 	}
@@ -1664,7 +1682,36 @@ void WorkItem::ExecuteInst_RECEIVELANE()
 
 void WorkItem::ExecuteInst_CALL()
 {
-	throw misc::Panic("Instruction not implemented");
+	// Retrieve instruction
+	StackFrame *stack_top = stack.back().get();
+	BrigInstEntry inst(stack_top->getPc(), binary);
+
+	// Retrieve the function name, following the path operand -> directive
+	// -> function name.
+	BrigOperandFunctionRef *function_operand =
+			(BrigOperandFunctionRef *)inst.getOperand(1);
+	BrigDirectiveFunction *function_directive =
+			(BrigDirectiveFunction *)BrigDirEntry::GetDirByOffset(
+					binary, function_operand->ref);
+	std::string function_name = BrigStrEntry::GetStringByOffset(binary,
+			function_directive->name);
+
+	// Retrieve the function
+	Function *function = loader->getFunction(function_name);
+
+	// Prepare stack frame
+	StackFrame *new_frame = new StackFrame(function);
+
+	// Prepare argument
+	function->PassByValue(stack_top->getArgumentScope(),
+			new_frame->getFunctionArguments(), &inst);
+
+	// Push frame in stack
+	stack.push_back(std::unique_ptr<StackFrame>(new_frame));
+
+	// Dump backtrace information for debugging purpose
+	Backtrace(std::cout);
+
 }
 
 

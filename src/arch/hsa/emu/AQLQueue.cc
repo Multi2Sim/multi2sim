@@ -45,7 +45,7 @@ AQLQueue::AQLQueue(unsigned int size, QueueType type)
 
 	// Allocate buffer space for the queue
 	Emu *emu = Emu::getInstance();
-	mem::Manager *manager = emu->getGlobalManager();
+	mem::Manager *manager = emu->getMemoryManager();
 	assert(sizeof(AQLDispatchPacket) == 64);
 	base_address = manager->Allocate(size * sizeof(AQLDispatchPacket),
 			sizeof(AQLDispatchPacket));

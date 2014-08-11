@@ -52,6 +52,9 @@ class WorkItem
  	// Loader object
  	ProgramLoader *loader;
 
+ 	// Binary file
+ 	BrigFile *binary;
+
  	// Work group that current work item belongs to
  	WorkGroup *work_group;
 

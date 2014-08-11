@@ -85,7 +85,7 @@ class Emu : public comm::Emu
 	mem::Memory memory;
 
 	// Global memory manager
-	mem::Manager global_manager;
+	mem::Manager manager;
 
 public:
 
@@ -134,7 +134,7 @@ public:
 	unsigned int getNumberOfComponent() const { return components.size(); }
 
 	/// Return the global memory manager
-	mem::Manager *getGlobalManager() { return &global_manager; };
+	mem::Manager *getMemoryManager() { return &manager; };
 
 	/// Return the pointer to the global memory
 	mem::Memory *getMemory() { return &memory; };

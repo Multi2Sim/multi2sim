@@ -21,7 +21,7 @@
 #define ARCH_HSA_EMU_STACKFRAME_H
 
 #include "Function.h"
-
+#include "VariableScope.h"
 
 namespace HSA
 {
@@ -38,12 +38,12 @@ class StackFrame
 	char *next_dir;
 
 	// Function input and output arguments
-	std::unique_ptr<ArgScope> function_arguments;
+	std::unique_ptr<VariableScope> function_arguments;
 
 	// Arguments scope, surrounded by {} in current function. Since
 	// argument scope cannot be nested, when we start a new one, the old
 	// one must have already been released.
-	std::unique_ptr<ArgScope> argument_scope;
+	std::unique_ptr<VariableScope> argument_scope;
 
 	// Register storage
 	// FIXME: Move register_storgae to guest memory
@@ -115,7 +115,7 @@ public:
 	/// Start an argument scope, when a '{' appears.
 	void StartArgumentScope()
 	{
-		argument_scope.reset(new ArgScope);
+		argument_scope.reset(new VariableScope);
 	};
 
 	/// Release an argument scope, when we find a '}'
@@ -130,15 +130,21 @@ public:
 	{
 		if (argument_scope.get())
 		{
-			argument_scope->AddArgument(name, size, type);
+			argument_scope->AddVariable(name, size, type);
 		}
 	};
 
-	/// Returns argument scope
-	ArgScope *getArgumentScope() const { return argument_scope.get(); };
+	/// Return argument scope
+	VariableScope *getArgumentScope() const { return argument_scope.get(); }
+
+	/// Return function argument scope
+	VariableScope *getFunctionArguments() const
+	{
+		return function_arguments.get();
+	}
 
 	/// Setup function arguments and copy their values.
-	void PrepareFunctionArguments(ArgScope *host_scope);
+	void PrepareFunctionArguments(VariableScope *host_scope);
 
 	/// Convert the PC pointer to the offset of the current instruction
 	/// in code section

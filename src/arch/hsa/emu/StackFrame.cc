@@ -38,6 +38,10 @@ StackFrame::StackFrame(Function *function)
 	// Allocate register space
 	char *register_space = new char[function->getRegisterSize()];
 	this->register_storage.reset(register_space);
+
+	// Initialize argument scopes
+	function_arguments.reset(new VariableScope());
+	argument_scope.reset(new VariableScope());
 }
 
 
