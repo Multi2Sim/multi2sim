@@ -36,12 +36,12 @@ Function::Function(const std::string& name, char *directive, char *entry_point)
 }
 
 
-void Function::addArgument(const std::string &name, bool is_input,
-			unsigned short type)
+void Function::addArgument(Variable *argument)
 {
+
 	// Check if argument is defined
-	std::map<std::string, std::unique_ptr<Argument>>::iterator it
-			= arg_info.find(name);
+	std::map<std::string, std::unique_ptr<Variable>>::iterator it
+			= arg_info.find(argument->getName());
 	if (it != arg_info.end())
 	{
 		throw Error(misc::fmt("Function argument %s redefined",
@@ -49,16 +49,8 @@ void Function::addArgument(const std::string &name, bool is_input,
 	}
 
 	// Insert argument into table
-	arg_info.insert(std::make_pair(name,
-			std::unique_ptr<Argument>(new Argument)));
-	struct Argument *argument = arg_info[name].get();
-	argument->type = type;
-	argument->offset = arg_size;
-	argument->is_input = is_input;
-	argument->size = BrigEntry::type2size(type);
-
-	// Increase allocated argument size
-	this->arg_size += argument->size;
+	arg_info.insert(std::make_pair(argument->getName(),
+			std::unique_ptr<Variable>(argument)));
 }
 
 
@@ -157,6 +149,55 @@ void Function::addRegister(const std::string &name)
 }
 
 
+void Function::PassByValue(VariableScope *caller_scope,
+			VariableScope *callee_scope, BrigInstEntry *call_inst)
+{
+	// Get arguments operands
+	//BrigOperandArgumentList *out_args =
+	//		(BrigOperandArgumentList *)call_inst->getOperand(0);
+	BrigOperandArgumentList *in_args =
+			(BrigOperandArgumentList *)call_inst->getOperand(2);
+
+	// Get the binary
+	BrigFile *binary = ProgramLoader::getInstance()->getBinary();
+
+	for (auto it = arg_info.begin(); it != arg_info.end(); it++)
+	{
+		// Get argument information from the function
+		Variable *argument = it->second.get();
+
+		// Insert argument into callee's function argument scope
+		callee_scope->AddVariable(argument->getName(),
+				argument->getSize(), argument->getType());
+
+		// Copy argument's value
+		unsigned int index = argument->getIndex();
+		if (argument->isInput())
+		{
+			// Get the directive information and name
+			BrigDirectiveVariable *variable_dir =
+					(BrigDirectiveVariable *)
+					BrigDirEntry::GetDirByOffset(binary,
+							in_args->elements[index]
+					);
+			std::string name_in_caller = BrigStrEntry::GetStringByOffset(binary,
+					variable_dir->name);
+
+			// Get buffer in caller;
+			char *caller_buffer =
+					caller_scope->getBuffer(name_in_caller);
+			char *callee_buffer =
+					callee_scope->getBuffer(argument->getName());
+
+			// Copy memory
+			memcpy(callee_buffer, caller_buffer,
+					BrigEntry::type2size(argument->getType()));
+
+		}
+	}
+}
+
+
 void Function::Dump(std::ostream &os = std::cout) const
 {
 	os << misc::fmt("\n****************************************"
@@ -178,24 +219,22 @@ void Function::Dump(std::ostream &os = std::cout) const
 
 void Function::DumpArgumentInfo(std::ostream &os = std::cout) const
 {
+
 	// Dump the argument information
 	os << misc::fmt("\n\t***** Arguments *****\n");
-	std::map<std::string, std::unique_ptr<Argument>>::const_iterator it;
+	std::map<std::string, std::unique_ptr<Variable>>::const_iterator it;
 	for (it = arg_info.begin(); it != arg_info.end(); it++)
 	{
 		os << "\t";
-		if (it->second->is_input)
+		if (it->second->isInput())
 			os << "Input ";
 		else
 			os << "Output ";
-		os << misc::fmt("argument %s, %s, size %d, offset %d\n",
-				BrigEntry::type2str(it->second->type).c_str(),
-				it->first.c_str(),
-				it->second->size,
-				it->second->offset);
+		it->second->Dump(os);
 	}
 	os << misc::fmt("\tArgument size allocated %d bytes\n", arg_size);
 	os << misc::fmt("\t*********************\n\n");
+
 }
 
 

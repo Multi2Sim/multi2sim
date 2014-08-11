@@ -132,6 +132,9 @@ public:
 	/// Return the pointer to the main function
 	Function *getMainFunction() const;
 
+	/// Return the pointer to the function by the name
+	Function *getFunction(const std::string &name) const;
+
 	/// Return pointer to file table
 	comm::FileTable *getFileTable() const { return file_table.get(); };
 

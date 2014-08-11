@@ -24,7 +24,10 @@
 #include <memory>
 #include <string>
 
-#include "ArgScope.h"
+#include <arch/hsa/asm/BrigInstEntry.h>
+
+#include "VariableScope.h"
+#include "Variable.h"
 
 
 namespace HSA
@@ -67,7 +70,7 @@ class Function
 	unsigned int arg_size = 0;
 
 	// Map the name with the information of the argument
-	std::map<std::string, std::unique_ptr<Argument>> arg_info;
+	std::map<std::string, std::unique_ptr<Variable>> arg_info;
 
 
 
@@ -138,17 +141,21 @@ public:
 	char *getDirective() const { return directive; }
 
 	/// Add an argument information in argument table
-	///
-	/// \Param name
-	/// 	Name of the argument
-	///
-	/// \Param isInput
-	/// 	If true, the argument is an input arguement
-	///
-	/// \Param type
-	///	type of the argument, as defined in BrigDef.h
-	void addArgument(const std::string &name, bool isInput,
-			unsigned short type);
+	void addArgument(Variable *argument);
+
+	/// Get the beginning iterator of arguments
+	std::map<std::string, std::unique_ptr<Variable>>::iterator
+	getArgumentIteratorBegin()
+	{
+		return arg_info.begin();
+	}
+
+	/// Get the beginning iterator of arguments
+	std::map<std::string, std::unique_ptr<Variable>>::iterator
+	getArgumentIteratorEnd()
+	{
+		return arg_info.end();
+	}
 
 	/// Add the register to the register list
 	void addRegister(const std::string &name);
@@ -165,6 +172,11 @@ public:
 
 	/// Return the size of register required
 	unsigned int getRegisterSize() const { return reg_size; }
+
+	/// Copy variable information and value from caller's argument scope
+	/// to callee's argument scope
+	void PassByValue(VariableScope *caller_scope,
+			VariableScope *callee_scope, BrigInstEntry *call_inst);
 
 	/// Dump function information for debug propose
 	void Dump(std::ostream &os) const;
