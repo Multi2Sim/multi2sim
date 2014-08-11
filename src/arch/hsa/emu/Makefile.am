@@ -7,9 +7,6 @@ libemu_a_SOURCES = \
 		AQLQueue.h \
 		AQLQueue.cc \
 		\
-		ArgScope.h \
-		ArgScope.cc \
-		\
 		Component.h \
 		Component.cc \
 		\
@@ -29,6 +26,12 @@ libemu_a_SOURCES = \
 		StackFrame.cc \
 		\
 		Syscall.def \
+		\
+		Variable.h \
+		Variable.cc \
+		\
+		VariableScope.h \
+		VariableScope.cc \
 		\
 		Wavefront.h \
 		Wavefront.cc \

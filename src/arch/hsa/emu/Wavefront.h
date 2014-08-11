@@ -37,6 +37,7 @@ class Wavefront
 	WorkGroup *work_group;
 
 	// List of work items
+	// FIXME: vector
 	std::list<std::unique_ptr<WorkItem>> work_items;
 
 public:

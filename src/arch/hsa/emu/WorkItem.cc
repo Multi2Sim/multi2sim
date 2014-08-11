@@ -34,6 +34,7 @@ WorkItem::WorkItem(WorkGroup *work_group,
 	// Set global emulator object
 	emu = Emu::getInstance();
 	loader = ProgramLoader::getInstance();
+	binary = loader->getBinary();
 
 	// Set work group
 	this->work_group = work_group;
@@ -225,7 +226,7 @@ void WorkItem::CreateArgument()
 
 	// Get argument name
 	std::string name = BrigStrEntry::GetStringByOffset(
-			ProgramLoader::getInstance()->getBinary(),
+			binary,
 			dir->name);
 
 	// Create argument
@@ -234,7 +235,9 @@ void WorkItem::CreateArgument()
 	// Put information in isa_debug
 	BrigDirEntry dir_entry((char *)dir,
 			ProgramLoader::getInstance()->getBinary());
-	Emu::isa_debug << "Create argument: " << dir_entry;
+	Emu::isa_debug << misc::fmt("Create argument: %s %s(%d)\n",
+			BrigEntry::type2str(dir->type).c_str(), name.c_str(),
+			dir->size);
 }
 
 

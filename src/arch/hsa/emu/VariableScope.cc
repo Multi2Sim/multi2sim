@@ -18,40 +18,45 @@
  */
 
 #include "Emu.h"
-#include "ArgScope.h"
+#include "VariableScope.h"
+#include "Function.h"
 
 namespace HSA
 {
 
-ArgScope::ArgScope() :
-		arg_manager(Emu::getInstance()->getMemory())
+VariableScope::VariableScope()
 {
 }
 
 
-ArgScope::~ArgScope()
+VariableScope::~VariableScope()
 {
 }
 
 
-void ArgScope::AddArgument(const std::string &name,
+void VariableScope::AddVariable(const std::string &name,
 		unsigned int size, unsigned short type)
 {
-	unsigned int offset = arg_manager.Allocate(size);
-	Argument *arg = new Argument;
-	arg->offset = offset;
-	arg->type = type;
-	arg->size = size;
-	argument_info.insert(std::make_pair(name,
-			std::unique_ptr<Argument>(arg)));
+	//std::cout << misc::fmt("Add variable %s, size: %d, type: %s\n",
+	//		name.c_str(), size, BrigEntry::type2str(type).c_str());
+	// Retrieve global memory manager
+	mem::Manager *manager = Emu::getInstance()->getMemoryManager();
+
+	// Allocated memory
+	unsigned address = manager->Allocate(size, 1);
+
+	// Set up and insert into variable list
+	Variable *arg = new Variable(name, type, size, address);
+	variable_info.insert(std::make_pair(name,
+			std::unique_ptr<Variable>(arg)));
 }
 
 
-char *ArgScope::getBuffer(const std::string &name)
+char *VariableScope::getBuffer(const std::string &name)
 {
 	// Find argument information
-	auto it = argument_info.find(name);
-	if (it == argument_info.end())
+	auto it = variable_info.find(name);
+	if (it == variable_info.end())
 	{
 		throw Error(misc::fmt("Argument %s is not declared",
 				name.c_str()));
@@ -59,12 +64,21 @@ char *ArgScope::getBuffer(const std::string &name)
 	}
 
 	// Retrieve guest address
-	unsigned int guest_address = it->second->offset;
+	unsigned int guest_address = it->second->getAddress();
 
 	// Retrieve buffer in host memory
 	mem::Memory *memory = Emu::getInstance()->getMemory();
 	return memory->getBuffer(guest_address,
-			it->second->size, mem::Memory::AccessWrite);
+			it->second->getSize(), mem::Memory::AccessWrite);
+}
+
+
+void VariableScope::Dump(std::ostream &os = std::cout) const
+{
+	for (auto it = variable_info.begin(); it != variable_info.end(); it++)
+	{
+		it->second->Dump(os);
+	}
 }
 
 }  // namespace HSA
