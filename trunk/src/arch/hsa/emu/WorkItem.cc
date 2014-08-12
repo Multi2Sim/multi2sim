@@ -103,6 +103,19 @@ bool WorkItem::ReturnFunction()
 	// Pop frame at stack top
 	stack.pop_back();
 
+	// When stack gets empty, the work item have finished its task.
+	if (stack.empty())
+	{
+		return false;
+	}
+	else
+	{
+		// When return to the caller, the pc in caller is still
+		// pointing to the function call. Therefore, we need to move
+		// the pc forward.
+		MovePcForwardByOne();
+	}
+
 	// Return true if stack is empty
 	return !stack.empty();
 }
@@ -185,6 +198,72 @@ void WorkItem::ProcessRelatedDirectives()
 }
 
 
+char *WorkItem::getVariableBuffer(unsigned char segment,
+		const std::string &name)
+{
+	// Get stack top frame
+	StackFrame *stack_top = stack.back().get();
+
+	//
+	switch (segment)
+	{
+	case BRIG_SEGMENT_NONE:
+
+		throw misc::Panic("Unsupported segment NONE.");
+		break;
+
+	case BRIG_SEGMENT_FLAT:
+
+		throw misc::Panic("Unsupported segment FLAT.");
+		break;
+
+	case BRIG_SEGMENT_GLOBAL:
+
+		throw misc::Panic("Unsupported segment GLOBAL.");
+		break;
+
+	case BRIG_SEGMENT_GROUP:
+
+		throw misc::Panic("Unsupported segment GROUP.");
+		break;
+
+	case BRIG_SEGMENT_PRIVATE:
+
+		throw misc::Panic("Unsupported segment PRIVATE.");
+		break;
+
+	case BRIG_SEGMENT_KERNARG:
+
+		throw misc::Panic("Unsupported segment KERNARG.");
+		break;
+
+	case BRIG_SEGMENT_READONLY:
+
+		throw misc::Panic("Unsupported segment READONLY.");
+		break;
+
+	case BRIG_SEGMENT_SPILL:
+
+		throw misc::Panic("Unsupported segment SPILL.");
+		break;
+
+	case BRIG_SEGMENT_ARG:
+
+		// Get argument scope if in curve bracket, otherwise, get
+		// function arguments
+		VariableScope *argument_scope = stack_top->getArgumentScope();
+		if (!argument_scope)
+		{
+			argument_scope = stack_top->getFunctionArguments();
+		}
+		return argument_scope->getBuffer(name);
+		break;
+	}
+
+	return nullptr;
+}
+
+
 void WorkItem::DeclearVariable()
 {
 	StackFrame *stack_top = stack.back().get();
@@ -195,22 +274,47 @@ void WorkItem::DeclearVariable()
 	switch (dir->segment)
 	{
 	case BRIG_SEGMENT_NONE:
+
+		throw misc::Panic("Unsupported segment NONE.");
 		break;
+
 	case BRIG_SEGMENT_FLAT:
+
+		throw misc::Panic("Unsupported segment FLAT.");
 		break;
+
 	case BRIG_SEGMENT_GLOBAL:
+
+		throw misc::Panic("Unsupported segment GLOBAL.");
 		break;
+
 	case BRIG_SEGMENT_GROUP:
+
+		throw misc::Panic("Unsupported segment GROUP.");
 		break;
+
 	case BRIG_SEGMENT_PRIVATE:
+
+		throw misc::Panic("Unsupported segment PRIVATE.");
 		break;
+
 	case BRIG_SEGMENT_KERNARG:
+
+		throw misc::Panic("Unsupported segment KERNARG.");
 		break;
+
 	case BRIG_SEGMENT_READONLY:
+
+		throw misc::Panic("Unsupported segment READONLY.");
 		break;
+
 	case BRIG_SEGMENT_SPILL:
+
+		throw misc::Panic("Unsupported segment SPILL.");
 		break;
+
 	case BRIG_SEGMENT_ARG:
+
 		CreateArgument();
 		break;
 	}
@@ -279,7 +383,8 @@ bool WorkItem::Execute()
 		return false;
 
 	// Record frame status after the instruction is executed
-	Emu::isa_debug << "Stack from after executing, \n\n";
+	stack_top = stack.back().get();
+	Emu::isa_debug << "Stack frame after executing, \n\n";
 	if (Emu::isa_debug)
 		stack_top->Dump(Emu::isa_debug);
 	Emu::isa_debug << "\n";

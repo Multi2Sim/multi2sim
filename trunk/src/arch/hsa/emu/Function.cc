@@ -167,19 +167,19 @@ void Function::PassByValue(VariableScope *caller_scope,
 		Variable *argument = it->second.get();
 
 		// Insert argument into callee's function argument scope
-		callee_scope->AddVariable(argument->getName(),
+		callee_scope->DeclearVariable(argument->getName(),
 				argument->getSize(), argument->getType());
 
 		// Copy argument's value
 		unsigned int index = argument->getIndex();
+		std::cout << argument->getName() << " " << argument->isInput() << "\n";
 		if (argument->isInput())
 		{
 			// Get the directive information and name
 			BrigDirectiveVariable *variable_dir =
 					(BrigDirectiveVariable *)
 					BrigDirEntry::GetDirByOffset(binary,
-							in_args->elements[index]
-					);
+							in_args->elements[index]);
 			std::string name_in_caller = BrigStrEntry::GetStringByOffset(binary,
 					variable_dir->name);
 
@@ -191,7 +191,13 @@ void Function::PassByValue(VariableScope *caller_scope,
 
 			// Copy memory
 			memcpy(callee_buffer, caller_buffer,
-					BrigEntry::type2size(argument->getType()));
+					BrigEntry::type2size(
+							argument->getType()));
+
+			std::cout << misc::fmt("In caller: %s (%u), "
+					"in callee: %s (%u)\n",
+					name_in_caller.c_str(), *((unsigned int *)caller_buffer),
+					argument->getName().c_str(), *((unsigned int *)callee_buffer));
 
 		}
 	}

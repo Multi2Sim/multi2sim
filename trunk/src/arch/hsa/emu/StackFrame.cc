@@ -72,6 +72,17 @@ void StackFrame::Dump(std::ostream &os = std::cout) const
 	}
 	os << "  ***** ********* *****\n\n";
 
+	// Dump function arguments
+	os << "  ***** Function arguments *****\n";
+	function_arguments->Dump(os);
+	os << "  ***** ******** ********* *****\n\n";
+
+	// If in argument scope, dump argument scope
+	os << "  ***** Argument scope *****\n";
+	if (argument_scope.get())
+		argument_scope->Dump(os);
+	os << "  ***** ******** ***** *****\n\n";
+
 	os << "***** ***** ***** *****\n";
 }
 
