@@ -132,7 +132,7 @@ class Function : public comm::Function
 	// Associated LLVM function
 	llvm::Function *llvm_function;
 
-	// Number of used registers
+	// Number of used scalar registers
 	int num_sregs;  // Scalar
 
 	int sreg_uav_table;  // UAV table (2 registers)
@@ -193,8 +193,9 @@ class Function : public comm::Function
 
 public:
 
+	// Number of used vector registers
 	int num_vregs;  // Vector
-
+	
 	/// Constructor
 	///
 	/// \param llvm_function
@@ -209,6 +210,12 @@ public:
 	int getVRegLid() { return vreg_lid; }
 
 	int getSRegGSize() { return sreg_gsize; }
+
+	/// Return number of scalar registers
+	int getNumScalarRegisters() const { return num_sregs; }
+
+	/// Return number of vector registers
+	int getNumVectorRegisters() const { return num_vregs; }
 
 	/// Return a UAV object given its index, or null if there is not UAV
 	/// with that index.
@@ -227,6 +234,12 @@ public:
 	{
 		function.Dump(os);
 		return os;
+	}
+
+	/// Return a pointers to basic block list
+	std::vector<std::unique_ptr<BasicBlock>> *getBasicBlocks()
+	{
+		return &basic_blocks;
 	}
 
 	/// Create a basic block that belongs to the function, and return a
