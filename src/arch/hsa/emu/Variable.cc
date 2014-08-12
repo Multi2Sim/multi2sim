@@ -52,42 +52,62 @@ void Variable::DumpValue(std::ostream &os = std::cout) const
 
 void Variable::Dump(std::ostream &os = std::cout) const
 {
-	os << misc::fmt("%s %s(0x%x)", BrigEntry::type2str(type).c_str(),
+	os << misc::fmt("    %s %s(0x%x)", BrigEntry::type2str(type).c_str(),
 			name.c_str(), address);
 
 	// If address is allocated
 	if (address)
 	{
+		os << " = ";
 		switch (type)
 		{
 		case BRIG_TYPE_U8:
+
 			DumpValue<unsigned char>(os);
 			break;
+
 		case BRIG_TYPE_U16:
+
 			DumpValue<unsigned short>(os);
 			break;
+
 		case BRIG_TYPE_U32:
+
 			DumpValue<unsigned int>(os);
 			break;
+
 		case BRIG_TYPE_U64:
+
 			DumpValue<unsigned long>(os);
 			break;
+
 		case BRIG_TYPE_S8:
+
 			DumpValue<char>(os);
 			break;
+
 		case BRIG_TYPE_S16:
+
 			DumpValue<short>(os);
 			break;
+
 		case BRIG_TYPE_S32:
+
 			DumpValue<int>(os);
 			break;
+
 		case BRIG_TYPE_S64:
+
 			DumpValue<long>(os);
 			break;
+
 		case BRIG_TYPE_F32:
+
 			DumpValue<float>(os);
 			break;
+
 		case BRIG_TYPE_F64:
+
 			DumpValue<double>(os);
 			break;
 

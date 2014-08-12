@@ -45,7 +45,7 @@ public:
 	~VariableScope();
 
 	/// Add and argument
-	void AddVariable(const std::string &name, unsigned int size,
+	void DeclearVariable(const std::string &name, unsigned int size,
 			unsigned short type);
 
 	/// Get the value of an argument

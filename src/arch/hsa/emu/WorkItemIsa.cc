@@ -68,20 +68,32 @@ void WorkItem::ExecuteInst_ABS()
 		switch (inst.getType())
 		{
 		case BRIG_TYPE_S32:
+
 			Inst_ABS_Aux<int>();
 			break;
+
 		case BRIG_TYPE_S64:
+
 			Inst_ABS_Aux<long long>();
 			break;
+
+		default:
+
+			throw Error("Illegal type.");
 		}
 	}
 	else if (inst.getKind() == BRIG_INST_MOD)
 	{
-
+		throw misc::Panic("Unimplemented Inst ABS, "
+				"kind BRIG_INST_MOD.");
+	}
+	else
+	{
+		throw Error("Unsupported Inst kind.");
 	}
 
 	// Move the pc forward
-	this->MovePcForwardByOne();
+	MovePcForwardByOne();
 }
 
 
@@ -113,26 +125,42 @@ void WorkItem::ExecuteInst_ADD()
 		switch (inst.getType())
 		{
 		case BRIG_TYPE_S32:
+
 			Inst_ADD_Aux<int>();
 			break;
+
 		case BRIG_TYPE_S64:
+
 			Inst_ADD_Aux<long long>();
 			break;
+
 		case BRIG_TYPE_U32:
+
 			Inst_ADD_Aux<unsigned int>();
 			break;
+
 		case BRIG_TYPE_U64:
+
 			Inst_ADD_Aux<unsigned long long>();
 			break;
+
+		default:
+
+			throw Error("Illegal type.");
 		}
 	}
 	else if (inst.getKind() == BRIG_INST_MOD)
 	{
-
+		throw misc::Panic("Unimplemented Inst ADD, "
+				"kind BRIG_INST_MOD.");
+	}
+	else
+	{
+		throw Error("Unsupported Inst kind.");
 	}
 
 	// Move the pc forward
-	this->MovePcForwardByOne();
+	MovePcForwardByOne();
 }
 
 
@@ -171,22 +199,34 @@ void WorkItem::ExecuteInst_BORROW()
 		{
 		case BRIG_TYPE_S32:
 		case BRIG_TYPE_U32:
+
 			// Regard 32-bit value always as unsinged.
 			Inst_BORROW_Aux<unsigned int>();
 			break;
+
 		case BRIG_TYPE_S64:
 		case BRIG_TYPE_U64:
+
 			Inst_BORROW_Aux<unsigned long long>();
 			break;
+
+		default:
+
+			throw Error("Illegal type.");
 		}
 	}
 	else if (inst.getKind() == BRIG_INST_MOD)
 	{
-
+		throw misc::Panic("Unimplemented Inst BORROW, "
+				"kind BRIG_INST_MOD.");
+	}
+	else
+	{
+		throw Error("Unsupported Inst kind.");
 	}
 
 	// Move the pc forward
-	this->MovePcForwardByOne();
+	MovePcForwardByOne();
 }
 
 
@@ -226,22 +266,34 @@ void WorkItem::ExecuteInst_CARRY()
 		{
 		case BRIG_TYPE_S32:
 		case BRIG_TYPE_U32:
+
 			// Regard 32-bit value always as unsinged.
 			Inst_CARRY_Aux<unsigned int>();
 			break;
+
 		case BRIG_TYPE_S64:
 		case BRIG_TYPE_U64:
+
 			Inst_CARRY_Aux<unsigned long long>();
 			break;
+
+		default:
+
+				throw Error("Illegal type.");
 		}
 	}
 	else if (inst.getKind() == BRIG_INST_MOD)
 	{
-
+		throw misc::Panic("Unimplemented Inst ADD, "
+				"kind BRIG_INST_MOD.");
+	}
+	else
+	{
+		throw Error("Unsupported Inst kind.");
 	}
 
 	// Move the pc forward
-	this->MovePcForwardByOne();
+	MovePcForwardByOne();
 }
 
 
@@ -285,26 +337,42 @@ void WorkItem::ExecuteInst_DIV()
 		switch (inst.getType())
 		{
 		case BRIG_TYPE_S32:
+
 			Inst_DIV_Aux<int>();
-		break;
+			break;
+
 		case BRIG_TYPE_S64:
+
 			Inst_DIV_Aux<long long>();
 			break;
+
 		case BRIG_TYPE_U32:
+
 			Inst_DIV_Aux<unsigned int>();
 			break;
+
 		case BRIG_TYPE_U64:
+
 			Inst_DIV_Aux<unsigned long long>();
 			break;
+
+		default:
+
+			throw Error("Illegal type.");
 		}
 	}
 	else if (inst.getKind() == BRIG_INST_MOD)
 	{
-
+		throw misc::Panic("Unimplemented Inst DIV, "
+				"kind BRIG_INST_MOD.");
+	}
+	else
+	{
+		throw Error("Unsupported Inst kind.");
 	}
 
 	// Move the pc forward
-	this->MovePcForwardByOne();
+	MovePcForwardByOne();
 }
 
 
@@ -353,22 +421,33 @@ void WorkItem::ExecuteInst_MAD()
 	switch (inst.getType())
 	{
 	case BRIG_TYPE_S32:
+
 		Inst_MAD_Aux<int>();
-	break;
+		break;
+
 	case BRIG_TYPE_S64:
+
 		Inst_MAD_Aux<long long>();
 		break;
+
 	case BRIG_TYPE_U32:
+
 		Inst_MAD_Aux<unsigned int>();
 		break;
+
 	case BRIG_TYPE_U64:
+
 		Inst_MAD_Aux<unsigned long long>();
 		break;
+
+	default:
+
+		throw Error("Illegal type.");
 	}
 
 
 	// Move the pc forward
-	this->MovePcForwardByOne();
+	MovePcForwardByOne();
 }
 
 
@@ -400,26 +479,42 @@ void WorkItem::ExecuteInst_MAX()
 		switch (inst.getType())
 		{
 		case BRIG_TYPE_S32:
+
 			Inst_MAX_Aux<int>();
-		break;
+			break;
+
 		case BRIG_TYPE_S64:
+
 			Inst_MAX_Aux<long long>();
 			break;
+
 		case BRIG_TYPE_U32:
+
 			Inst_MAX_Aux<unsigned int>();
 			break;
+
 		case BRIG_TYPE_U64:
+
 			Inst_MAX_Aux<unsigned long long>();
 			break;
+
+		default:
+
+			throw Error("Illegal type.");
 		}
 	}
 	else if (inst.getKind() == BRIG_INST_MOD)
 	{
-
+		throw misc::Panic("Unimplemented Inst MAX, "
+				"kind BRIG_INST_MOD.");
+	}
+	else
+	{
+		throw Error("Unsupported Inst kind.");
 	}
 
 	// Move the pc forward
-	this->MovePcForwardByOne();
+	MovePcForwardByOne();
 }
 
 
@@ -451,26 +546,42 @@ void WorkItem::ExecuteInst_MIN()
 		switch (inst.getType())
 		{
 		case BRIG_TYPE_S32:
+
 			Inst_MIN_Aux<int>();
 			break;
+
 		case BRIG_TYPE_S64:
+
 			Inst_MIN_Aux<long long>();
 			break;
+
 		case BRIG_TYPE_U32:
+
 			Inst_MIN_Aux<unsigned int>();
 			break;
+
 		case BRIG_TYPE_U64:
+
 			Inst_MIN_Aux<unsigned long long>();
 			break;
+
+		default:
+
+			throw Error("Illegal type.");
 		}
 	}
 	else if (inst.getKind() == BRIG_INST_MOD)
 	{
-
+		throw misc::Panic("Unimplemented Inst MIN, "
+				"kind BRIG_INST_MOD.");
+	}
+	else
+	{
+		throw Error("Unsupported Inst kind.");
 	}
 
 	// Move the pc forward
-	this->MovePcForwardByOne();
+	MovePcForwardByOne();
 }
 
 template<typename T> void WorkItem::Inst_MUL_Aux()
@@ -500,26 +611,42 @@ void WorkItem::ExecuteInst_MUL()
 		switch (inst.getType())
 		{
 		case BRIG_TYPE_S32:
+
 			Inst_MUL_Aux<int>();
 			break;
+
 		case BRIG_TYPE_S64:
+
 			Inst_MUL_Aux<long long>();
 			break;
+
 		case BRIG_TYPE_U32:
+
 			Inst_MUL_Aux<unsigned int>();
-		break;
+			break;
+
 		case BRIG_TYPE_U64:
+
 			Inst_MUL_Aux<unsigned long long>();
 			break;
+
+		default:
+
+			throw Error("Illegal type.");
 		}
 	}
 	else if (inst.getKind() == BRIG_INST_MOD)
 	{
-
+		throw misc::Panic("Unimplemented Inst MUL, "
+				"kind BRIG_INST_MOD.");
+	}
+	else
+	{
+		throw Error("Unsupported Inst kind.");
 	}
 
 	// Move the pc forward
-	this->MovePcForwardByOne();
+	MovePcForwardByOne();
 }
 
 
@@ -568,26 +695,42 @@ void WorkItem::ExecuteInst_MULHI()
 		switch (inst.getType())
 		{
 		case BRIG_TYPE_S32:
+
 			Inst_MULHI_Aux<int>(16, 0xffff);
 			break;
+
 		case BRIG_TYPE_S64:
+
 			Inst_MULHI_Aux<long long>(32, 0xffffffff);
 			break;
+
 		case BRIG_TYPE_U32:
+
 			Inst_MULHI_Aux<unsigned int>(16, 0xffff);
 			break;
+
 		case BRIG_TYPE_U64:
+
 			Inst_MULHI_Aux<unsigned long long>(32, 0xffffffff);
 			break;
+
+		default:
+
+			throw Error("Illegal type.");
 		}
 	}
 	else if (inst.getKind() == BRIG_INST_MOD)
 	{
-
+		throw misc::Panic("Unimplemented Inst MULHI, "
+				"kind BRIG_INST_MOD.");
+	}
+	else
+	{
+		throw Error("Unsupported Inst kind.");
 	}
 
 	// Move the pc forward
-	this->MovePcForwardByOne();
+	MovePcForwardByOne();
 }
 
 
@@ -617,20 +760,32 @@ void WorkItem::ExecuteInst_NEG()
 		switch (inst.getType())
 		{
 		case BRIG_TYPE_S32:
+
 			Inst_NEG_Aux<int>();
 			break;
+
 		case BRIG_TYPE_S64:
+
 			Inst_NEG_Aux<long long>();
 			break;
+
+		default:
+
+			throw Error("Illegal type.");
 		}
 	}
 	else if (inst.getKind() == BRIG_INST_MOD)
 	{
-
+		throw misc::Panic("Unimplemented Inst NEG, "
+				"kind BRIG_INST_MOD.");
+	}
+	else
+	{
+		throw Error("Unsupported Inst kind.");
 	}
 
 	// Move the pc forward
-	this->MovePcForwardByOne();
+	MovePcForwardByOne();
 }
 
 
@@ -662,26 +817,42 @@ void WorkItem::ExecuteInst_REM()
 		switch (inst.getType())
 		{
 		case BRIG_TYPE_S32:
+
 			Inst_REM_Aux<int>();
 			break;
+
 		case BRIG_TYPE_S64:
+
 			Inst_REM_Aux<long long>();
 			break;
+
 		case BRIG_TYPE_U32:
+
 			Inst_REM_Aux<unsigned int>();
 			break;
+
 		case BRIG_TYPE_U64:
+
 			Inst_REM_Aux<unsigned long long>();
 			break;
+
+		default:
+
+			throw Error("Illegal type.");
 		}
 	}
 	else if (inst.getKind() == BRIG_INST_MOD)
 	{
-
+		throw misc::Panic("Unimplemented Inst REM, "
+				"kind BRIG_INST_MOD.");
+	}
+	else
+	{
+		throw Error("Unsupported Inst kind.");
 	}
 
 	// Move the pc forward
-	this->MovePcForwardByOne();
+	MovePcForwardByOne();
 }
 
 
@@ -724,26 +895,42 @@ void WorkItem::ExecuteInst_SUB()
 		switch (inst.getType())
 		{
 		case BRIG_TYPE_S32:
+
 			Inst_SUB_Aux<int>();
 			break;
+
 		case BRIG_TYPE_S64:
+
 			Inst_SUB_Aux<long long>();
 			break;
+
 		case BRIG_TYPE_U32:
+
 			Inst_SUB_Aux<unsigned int>();
 			break;
+
 		case BRIG_TYPE_U64:
+
 			Inst_SUB_Aux<unsigned int>();
 			break;
+
+		default:
+
+			throw Error("Illegal type.");
 		}
 	}
 	else if (inst.getKind() == BRIG_INST_MOD)
 	{
-
+		throw misc::Panic("Unimplemented Inst SUB, "
+				"kind BRIG_INST_MOD.");
+	}
+	else
+	{
+		throw Error("Unsupported Inst kind.");
 	}
 
 	// Move the pc forward
-	this->MovePcForwardByOne();
+	MovePcForwardByOne();
 }
 
 
@@ -803,21 +990,32 @@ void WorkItem::ExecuteInst_SHL()
 	switch (inst.getType())
 	{
 	case BRIG_TYPE_S32:
+
 		Inst_SHL_Aux<int>();
 		break;
+
 	case BRIG_TYPE_S64:
+
 		Inst_SHL_Aux<long long>();
 		break;
+
 	case BRIG_TYPE_U32:
+
 		Inst_SHL_Aux<unsigned int>();
 		break;
+
 	case BRIG_TYPE_U64:
+
 		Inst_SHL_Aux<unsigned int>();
 		break;
+
+	default:
+
+		throw Error("Illegal type.");
 	}
 
 	// Move the pc forward
-	this->MovePcForwardByOne();
+	MovePcForwardByOne();
 }
 
 
@@ -848,21 +1046,32 @@ void WorkItem::ExecuteInst_SHR()
 	switch (inst.getType())
 	{
 	case BRIG_TYPE_S32:
+
 		Inst_SHR_Aux<int>();
 		break;
+
 	case BRIG_TYPE_S64:
+
 		Inst_SHR_Aux<long long>();
 		break;
+
 	case BRIG_TYPE_U32:
+
 		Inst_SHR_Aux<unsigned int>();
 		break;
+
 	case BRIG_TYPE_U64:
+
 		Inst_SHR_Aux<unsigned int>();
 		break;
+
+	default:
+
+		throw Error("Illegal type.");
 	}
 
 	// Move the pc forward
-	this->MovePcForwardByOne();
+	MovePcForwardByOne();
 }
 
 
@@ -892,17 +1101,27 @@ void WorkItem::ExecuteInst_AND()
 	switch (inst.getType())
 	{
 	case BRIG_TYPE_B1:
+
+		throw misc::Panic("Unimplemented Inst AND, type B1.");
 		break;
+
 	case BRIG_TYPE_B32:
+
 		Inst_AND_Aux<unsigned int>();
 		break;
+
 	case BRIG_TYPE_B64:
+
 		Inst_AND_Aux<unsigned long long>();
 		break;
+
+	default:
+
+		throw Error("Illegal type.");
 	}
 
 	// Move the pc forward
-	this->MovePcForwardByOne();
+	MovePcForwardByOne();
 }
 
 
@@ -932,17 +1151,26 @@ void WorkItem::ExecuteInst_NOT()
 	{
 	case BRIG_TYPE_B1:
 
+		throw misc::Panic("Unimplemented Inst NOT, kind B1.");
 		break;
+
 	case BRIG_TYPE_B32:
+
 		Inst_NOT_Aux<unsigned int>();
 		break;
+
 	case BRIG_TYPE_B64:
+
 		Inst_NOT_Aux<unsigned long long>();
 		break;
+
+	default:
+
+		throw Error("Illegal type.");
 	}
 
 	// Move the pc forward
-	this->MovePcForwardByOne();
+	MovePcForwardByOne();
 }
 
 
@@ -972,17 +1200,27 @@ void WorkItem::ExecuteInst_OR()
 	switch (inst.getType())
 	{
 	case BRIG_TYPE_B1:
+
+		throw misc::Panic("Unimplemented Inst OR, type B1.");
 		break;
+
 	case BRIG_TYPE_B32:
+
 		Inst_OR_Aux<unsigned int>();
 		break;
+
 	case BRIG_TYPE_B64:
+
 		Inst_OR_Aux<unsigned long long>();
 		break;
+
+	default:
+
+		throw Error("Illegal type.");
 	}
 
 	// Move the pc forward
-	this->MovePcForwardByOne();
+	MovePcForwardByOne();
 }
 
 
@@ -1016,15 +1254,22 @@ void WorkItem::ExecuteInst_POPCOUNT()
 	switch (inst.getSourceType())
 	{
 	case BRIG_TYPE_B32:
+
 		Inst_POPCOUNT_Aux<unsigned int>();
 		break;
+
 	case BRIG_TYPE_B64:
+
 		Inst_POPCOUNT_Aux<unsigned long long>();
 		break;
+
+	default:
+
+		throw Error("Illegal type.");
 	}
 
 	// Move the pc forward
-	this->MovePcForwardByOne();
+	MovePcForwardByOne();
 }
 
 
@@ -1054,17 +1299,27 @@ void WorkItem::ExecuteInst_XOR()
 	switch (inst.getType())
 	{
 	case BRIG_TYPE_B1:
+
+		throw misc::Panic("Unimplemented Inst XOR, type B1.");
 		break;
+
 	case BRIG_TYPE_B32:
+
 		Inst_XOR_Aux<unsigned int>();
 		break;
+
 	case BRIG_TYPE_B64:
+
 		Inst_XOR_Aux<unsigned long long>();
 		break;
+
+	default:
+
+		throw Error("Illegal type.");
 	}
 
 	// Move the pc forward
-	this->MovePcForwardByOne();
+	MovePcForwardByOne();
 }
 
 
@@ -1123,19 +1378,18 @@ void WorkItem::ExecuteInst_BITEXTRACT()
 
 		Inst_BITEXTRACT_Aux<long long>();
 		break;
+
+	default:
+
+		throw Error("Illegal type.");
 	}
 
 	// Move the pc forward
-	// FIXME No "this"
-	// FIXME Default cases in instruction type:
-	//	throw misc::Panic("Illegal type");
-	// FIXME Function WorkItem::UnimplementedInstruction()
-	// FIXME Spaces in switch/case statements
 	// FIXME Loader is not a singleton, should be per context
 	// FIXME Create class Context. Class Emu will have a list of contexts
 	// and maybe other sub-lists of running/suspended contexts. Use
 	// intrusive linked lists for this (src/lib/cpp/List.h).
-	this->MovePcForwardByOne();
+	MovePcForwardByOne();
 }
 
 
@@ -1394,7 +1648,7 @@ void WorkItem::ExecuteInst_LD()
 	}
 
 	// Move the pc forward
-	this->MovePcForwardByOne();
+	MovePcForwardByOne();
 }
 
 
@@ -1413,8 +1667,8 @@ void WorkItem::Inst_ST_Aux()
 	BrigDirectiveSymbol *symbol =
 			(BrigDirectiveSymbol *)BrigDirEntry::GetDirByOffset(
 					binary, address_operand_buf->symbol);
-	std::string name = BrigStrEntry::GetStringByOffset(
-			binary, symbol->name);
+	std::string name = BrigStrEntry::GetStringByOffset(binary,
+			symbol->name);
 
 	// Get offset
 	unsigned long long offset =
@@ -1427,38 +1681,58 @@ void WorkItem::Inst_ST_Aux()
 	switch (inst_buf->segment)
 	{
 	case BRIG_SEGMENT_NONE:
+
+		throw misc::Panic("Unimplemented segment None for ST");
 		break;
+
 	case BRIG_SEGMENT_FLAT:
+
+		throw misc::Panic("Unimplemented segment FLAT for ST");
 		break;
+
 	case BRIG_SEGMENT_GLOBAL:
+
+		throw misc::Panic("Unimplemented segment GLOBAL for ST");
 		break;
+
 	case BRIG_SEGMENT_GROUP:
+
+		throw misc::Panic("Unimplemented segment GROUP for ST");
 		break;
+
 	case BRIG_SEGMENT_PRIVATE:
+
+		throw misc::Panic("Unimplemented segment PRIVATE for ST");
 		break;
+
 	case BRIG_SEGMENT_KERNARG:
+
+		throw misc::Panic("Unimplemented segment KERNARG for ST");
 		break;
+
 	case BRIG_SEGMENT_READONLY:
+
+		throw misc::Panic("Unimplemented segment READONLY for ST");
 		break;
+
 	case BRIG_SEGMENT_SPILL:
+
+		throw misc::Panic("Unimplemented segment SPILL for ST");
 		break;
+
 	case BRIG_SEGMENT_ARG:
-	{
+
 		VariableScope *arg_scope = stack_top->getArgumentScope();
 		host_buffer = arg_scope->getBuffer(name);
 		host_buffer += offset;
-	}
 		break;
 	}
 
 	// Move value from register or immediate into memory
-	T src0 = this->getOperandValue<T>(0);
+	T src0 = getOperandValue<T>(0);
 	memcpy((void *)host_buffer, (void *)&src0, sizeof(T));
 
-	std::cout << "Result of ST: " << *(T*)host_buffer << "\n";
-
-	// Move the pc forward
-	this->MovePcForwardByOne();
+	//std::cout << "Result of ST: " << *(T*)host_buffer << "\n";
 }
 
 
@@ -1474,23 +1748,33 @@ void WorkItem::ExecuteInst_ST()
 	{
 	case BRIG_TYPE_U8:
 	case BRIG_TYPE_S8:
+
 		Inst_ST_Aux<unsigned char>();
 		break;
+
 	case BRIG_TYPE_U16:
 	case BRIG_TYPE_S16:
+
 		Inst_ST_Aux<unsigned short>();
 		break;
+
 	case BRIG_TYPE_U32:
 	case BRIG_TYPE_S32:
 	case BRIG_TYPE_F32:
+
 		Inst_ST_Aux<unsigned int>();
 		break;
+
 	case BRIG_TYPE_U64:
 	case BRIG_TYPE_S64:
 	case BRIG_TYPE_F64:
+
 		Inst_ST_Aux<unsigned long long>();
 		break;
 	}
+
+	// Move the pc forward
+	MovePcForwardByOne();
 }
 
 

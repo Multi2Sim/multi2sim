@@ -130,7 +130,7 @@ public:
 	{
 		if (argument_scope.get())
 		{
-			argument_scope->AddVariable(name, size, type);
+			argument_scope->DeclearVariable(name, size, type);
 		}
 	};
 

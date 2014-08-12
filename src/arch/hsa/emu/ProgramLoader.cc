@@ -208,6 +208,7 @@ char *ProgramLoader::loadArguments(unsigned short num_arg, char *next_dir,
 		Variable *argument = new Variable(arg_name, type,
 				BrigEntry::type2size(type), 0);
 		argument->setIndex(i);
+		argument->setInput(isInput);
 		function->addArgument(argument);
 
 		// Move pointer forward
