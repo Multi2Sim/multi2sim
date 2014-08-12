@@ -134,20 +134,27 @@ class WorkItem
  		switch (operand.getKind())
  		{
  		case BRIG_OPERAND_IMMED:
+
  		{
  			BrigImmed immed(operand.getImmedBytes(),
  					operand.getOperandType());
  			Type value = immed.getImmedValue<Type>();
  			return value;
  		}
+
  		case BRIG_OPERAND_WAVESIZE:
+
  			return 1;
+
  		case BRIG_OPERAND_REG:
+
  		{
  			std::string register_name = operand.getRegisterName();
  			return stack_top->getRegisterValue<Type>(register_name);
  		}
+
  		default:
+
  			throw misc::Panic("Unsupported operand type "
  					"for getOperandValue");
  			break;
@@ -170,12 +177,15 @@ class WorkItem
  		switch (operand.getKind())
  		{
  		case BRIG_OPERAND_REG:
+
  		{
  			std::string register_name = operand.getRegisterName();
  			stack_top->setRegisterValue<Type>(register_name, value);
  			break;
  		}
+
  		default:
+
  			throw misc::Panic("Unsupported operand type "
  					"for storeOperandValue");
  		}
@@ -183,6 +193,16 @@ class WorkItem
 
  	// Table of functions that implement instructions
  	static ExecuteInstFn execute_inst_fn[InstOpcodeCount + 1];
+
+
+
+
+ 	//
+ 	// Memory related fields and function
+ 	//
+ 	// Return buffer in host memory
+ 	char *getVariableBuffer(unsigned char segment,
+ 			const std::string &name);
 
  	// Allocate memory for variable
  	void DeclearVariable();

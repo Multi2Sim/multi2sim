@@ -34,11 +34,9 @@ VariableScope::~VariableScope()
 }
 
 
-void VariableScope::AddVariable(const std::string &name,
+void VariableScope::DeclearVariable(const std::string &name,
 		unsigned int size, unsigned short type)
 {
-	//std::cout << misc::fmt("Add variable %s, size: %d, type: %s\n",
-	//		name.c_str(), size, BrigEntry::type2str(type).c_str());
 	// Retrieve global memory manager
 	mem::Manager *manager = Emu::getInstance()->getMemoryManager();
 
