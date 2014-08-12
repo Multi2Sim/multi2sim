@@ -114,7 +114,7 @@ public:
 	Function *getFunction() { return function; }
 
 	/// Return global id of the basic block
-	int getId() const { return global_id; };
+	int getId() const { return global_id; }
 
 	/// Add one SI instruction to the 'inst_list' field of the basic block.
 	/// FIXME - This is the old version with asymmetric memory allocation.
