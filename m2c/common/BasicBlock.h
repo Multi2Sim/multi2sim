@@ -48,6 +48,12 @@ public:
 	///	Leaf node associated with the basic block
 	BasicBlock(LeafNode *node);
 
+	/// Getter for PassInfoPool
+	PassInfoPool<BasicBlockPassInfo> *getPassInfoPool()
+	{
+		return &pass_info_pool;
+	}
+
 	/// Virtual destructor
 	virtual ~BasicBlock() { }
 
