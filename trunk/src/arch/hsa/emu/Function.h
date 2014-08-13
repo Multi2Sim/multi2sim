@@ -178,6 +178,10 @@ public:
 	void PassByValue(VariableScope *caller_scope,
 			VariableScope *callee_scope, BrigInstEntry *call_inst);
 
+	/// Copy return value from the calle to caller
+	void PassBackByValue(VariableScope *caller_scope,
+			VariableScope *callee_scope, BrigInstEntry *call_inst);
+
 	/// Dump function information for debug propose
 	void Dump(std::ostream &os) const;
 

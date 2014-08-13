@@ -171,16 +171,18 @@ void Function::PassByValue(VariableScope *caller_scope,
 				argument->getSize(), argument->getType());
 
 		// Copy argument's value
-		unsigned int index = argument->getIndex();
-		std::cout << argument->getName() << " " << argument->isInput() << "\n";
 		if (argument->isInput())
 		{
+			// Get argument index
+			unsigned int index = argument->getIndex();
+
 			// Get the directive information and name
 			BrigDirectiveVariable *variable_dir =
 					(BrigDirectiveVariable *)
 					BrigDirEntry::GetDirByOffset(binary,
 							in_args->elements[index]);
-			std::string name_in_caller = BrigStrEntry::GetStringByOffset(binary,
+			std::string name_in_caller =
+					BrigStrEntry::GetStringByOffset(binary,
 					variable_dir->name);
 
 			// Get buffer in caller;
@@ -194,13 +196,56 @@ void Function::PassByValue(VariableScope *caller_scope,
 					BrigEntry::type2size(
 							argument->getType()));
 
-			std::cout << misc::fmt("In caller: %s (%u), "
-					"in callee: %s (%u)\n",
-					name_in_caller.c_str(), *((unsigned int *)caller_buffer),
-					argument->getName().c_str(), *((unsigned int *)callee_buffer));
-
 		}
 	}
+}
+
+
+void Function::PassBackByValue(VariableScope *caller_scope,
+			VariableScope *callee_scope, BrigInstEntry *call_inst)
+{
+	// Get the binary
+	BrigFile *binary = ProgramLoader::getInstance()->getBinary();
+
+	// Get arguments operands
+	BrigOperandArgumentList *out_args =
+			(BrigOperandArgumentList *)call_inst->getOperand(0);
+
+	// Traverse all arguments
+	for (auto it = arg_info.begin(); it != arg_info.end(); it++)
+	{
+		// Get argument information from the function
+		Variable *argument = it->second.get();
+
+		// Only process output argument
+		if (!argument->isInput())
+		{
+			// Get argument index
+			unsigned int index = argument->getIndex();
+
+			// Get the directive information and name
+			BrigDirectiveVariable *variable_dir =
+					(BrigDirectiveVariable *)
+					BrigDirEntry::GetDirByOffset(binary,
+							out_args->elements[index]);
+			std::string name_in_caller =
+					BrigStrEntry::GetStringByOffset(binary,
+					variable_dir->name);
+
+			// Get buffer in caller;
+			char *caller_buffer =
+					caller_scope->getBuffer(name_in_caller);
+			char *callee_buffer =
+					callee_scope->getBuffer(argument->getName());
+
+			// Copy memory
+			memcpy(caller_buffer, callee_buffer,
+					BrigEntry::type2size(
+							argument->getType()));
+		}
+
+	}
+
 }
 
 

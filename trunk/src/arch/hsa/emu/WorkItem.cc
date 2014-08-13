@@ -50,6 +50,14 @@ WorkItem::WorkItem(WorkGroup *work_group,
 	// Set the first stack frame
 	StackFrame *frame = new StackFrame(root_function);
 	stack.push_back(std::unique_ptr<StackFrame>(frame));
+
+	// Dump initial state of the stack frame when a work item created.
+	if (Emu::isa_debug)
+	{
+		frame->Dump(Emu::isa_debug);
+		Emu::isa_debug << "\n";
+	}
+
 }
 
 
@@ -100,6 +108,40 @@ void WorkItem::Backtrace(std::ostream &os = std::cout) const
 
 bool WorkItem::ReturnFunction()
 {
+	// Dump stack frame information
+	StackFrame *callee_frame = stack.back().get();
+	if (Emu::isa_debug)
+	{
+		callee_frame->Dump(Emu::isa_debug);
+		Emu::isa_debug << "\n";
+	}
+
+	// Retrieve second last element
+	if (stack.size()>1)
+	{
+		auto it = stack.rbegin();
+		it ++;
+
+		std::cout << "About to passback\n";
+
+		StackFrame *caller_frame = (*it).get();
+		if (Emu::isa_debug)
+		{
+			Emu::isa_debug << "Caller frame \n";
+			caller_frame->Dump(Emu::isa_debug);
+			Emu::isa_debug << "\n";
+		}
+
+		// Process value return
+		Function *function = callee_frame->getFunction();
+		BrigInstEntry inst = BrigInstEntry(caller_frame->getPc(),
+				binary);
+		function->PassBackByValue(caller_frame->getArgumentScope(),
+				callee_frame->getFunctionArguments(),
+				&inst);
+
+	}
+
 	// Pop frame at stack top
 	stack.pop_back();
 
@@ -179,17 +221,22 @@ void WorkItem::ProcessRelatedDirectives()
 		switch (dir_entry.getKind())
 		{
 		case BRIG_DIRECTIVE_ARG_SCOPE_START:
+
 			stack_top->StartArgumentScope();
 			break;
+
 		case BRIG_DIRECTIVE_ARG_SCOPE_END:
+
 			stack_top->CloseArgumentScope();
 			break;
+
 		case BRIG_DIRECTIVE_VARIABLE:
+
 			DeclearVariable();
 			break;
 		}
 
-		// move next directive pointer forwards
+		// Move next directive pointer forwards
 		dir = (struct BrigDirectiveBase *)dir_entry.nextTop();
 		stack_top->setNextDirective((char *)dir);
 	}
@@ -363,12 +410,8 @@ bool WorkItem::Execute()
 	}
 
 	// Record frame status before the instruction is executed
-	Emu::isa_debug << "Stack frame before executing: ";
+	Emu::isa_debug << "Executing: ";
 	Emu::isa_debug << inst;
-	Emu::isa_debug << "\n";
-	if (Emu::isa_debug)
-		stack_top->Dump(Emu::isa_debug);
-	Emu::isa_debug << "\n";
 
 	// Process directives in front of current instruction
 	ProcessRelatedDirectives();
@@ -384,7 +427,6 @@ bool WorkItem::Execute()
 
 	// Record frame status after the instruction is executed
 	stack_top = stack.back().get();
-	Emu::isa_debug << "Stack frame after executing, \n\n";
 	if (Emu::isa_debug)
 		stack_top->Dump(Emu::isa_debug);
 	Emu::isa_debug << "\n";

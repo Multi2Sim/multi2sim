@@ -52,6 +52,14 @@ void Variable::DumpValue(std::ostream &os = std::cout) const
 
 void Variable::Dump(std::ostream &os = std::cout) const
 {
+	// Dump input or output
+	if (this->isInput())
+	{
+		os << "Input ";
+	}
+
+
+	// Dump information of the argument.
 	os << misc::fmt("    %s %s(0x%x)", BrigEntry::type2str(type).c_str(),
 			name.c_str(), address);
 
