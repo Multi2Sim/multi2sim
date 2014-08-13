@@ -41,7 +41,7 @@ StackFrame::StackFrame(Function *function)
 
 	// Initialize argument scopes
 	function_arguments.reset(new VariableScope());
-	argument_scope.reset(new VariableScope());
+	//argument_scope.reset(new VariableScope());
 }
 
 

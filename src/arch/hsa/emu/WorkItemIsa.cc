@@ -1624,6 +1624,80 @@ void WorkItem::ExecuteInst_CVT()
 template<typename T>
 void WorkItem::Inst_LD_Aux()
 {
+	// Retrieve inst
+	StackFrame *stack_top = stack.back().get();
+	BrigInstEntry inst(stack_top->getPc(),
+			ProgramLoader::getInstance()->getBinary());
+	BrigInstMem *inst_buf = (BrigInstMem *)stack_top->getPc();
+
+	// Get variable name
+	BrigOperandAddress *address_operand_buf =
+			(BrigOperandAddress *)inst.getOperand(1);
+	BrigDirectiveSymbol *symbol =
+			(BrigDirectiveSymbol *)BrigDirEntry::GetDirByOffset(
+					binary, address_operand_buf->symbol);
+	std::string name = BrigStrEntry::GetStringByOffset(binary,
+			symbol->name);
+
+	// Get offset
+	unsigned long long offset =
+			(((unsigned long long)address_operand_buf->offsetHi)
+					<< 32)
+			+ (unsigned long long)address_operand_buf->offsetLo;
+
+	// Get buffer in host
+	char *host_buffer;
+	switch (inst_buf->segment)
+	{
+	case BRIG_SEGMENT_NONE:
+
+		throw misc::Panic("Unimplemented segment None for ST");
+		break;
+
+	case BRIG_SEGMENT_FLAT:
+
+		throw misc::Panic("Unimplemented segment FLAT for ST");
+		break;
+
+	case BRIG_SEGMENT_GLOBAL:
+
+		throw misc::Panic("Unimplemented segment GLOBAL for ST");
+		break;
+
+	case BRIG_SEGMENT_GROUP:
+
+		throw misc::Panic("Unimplemented segment GROUP for ST");
+		break;
+
+	case BRIG_SEGMENT_PRIVATE:
+
+		throw misc::Panic("Unimplemented segment PRIVATE for ST");
+		break;
+
+	case BRIG_SEGMENT_KERNARG:
+
+		throw misc::Panic("Unimplemented segment KERNARG for ST");
+		break;
+
+	case BRIG_SEGMENT_READONLY:
+
+		throw misc::Panic("Unimplemented segment READONLY for ST");
+		break;
+
+	case BRIG_SEGMENT_SPILL:
+
+		throw misc::Panic("Unimplemented segment SPILL for ST");
+		break;
+
+	case BRIG_SEGMENT_ARG:
+
+		host_buffer = this->getVariableBuffer(BRIG_SEGMENT_ARG, name);
+		host_buffer += offset;
+		break;
+	}
+
+	// Move value from register or immediate into memory
+	storeOperandValue<T>(0, *((T *)host_buffer));
 }
 
 
@@ -1638,13 +1712,37 @@ void WorkItem::ExecuteInst_LD()
 	switch (inst.getType())
 	{
 	case BRIG_TYPE_U32:
+
+		Inst_LD_Aux<unsigned int>();
 		break;
-	case BRIG_TYPE_U64:
-		break;
+
 	case BRIG_TYPE_S32:
+
+		Inst_LD_Aux<int>();
 		break;
+
+	case BRIG_TYPE_F32:
+
+		Inst_LD_Aux<float>();
+		break;
+
+	case BRIG_TYPE_U64:
+
+		Inst_LD_Aux<unsigned long long>();
+		break;
+
 	case BRIG_TYPE_S64:
+
+		Inst_LD_Aux<long long>();
 		break;
+
+	case BRIG_TYPE_F64:
+
+		Inst_LD_Aux<double>();
+		break;
+
+	default:
+		throw misc::Panic("Unimplemented type for Inst LD.");
 	}
 
 	// Move the pc forward
@@ -1722,8 +1820,7 @@ void WorkItem::Inst_ST_Aux()
 
 	case BRIG_SEGMENT_ARG:
 
-		VariableScope *arg_scope = stack_top->getArgumentScope();
-		host_buffer = arg_scope->getBuffer(name);
+		host_buffer = this->getVariableBuffer(inst_buf->segment, name);
 		host_buffer += offset;
 		break;
 	}
@@ -2001,6 +2098,7 @@ void WorkItem::ExecuteInst_CALL()
 
 void WorkItem::ExecuteInst_RET()
 {
+	// Return the function
 	ReturnFunction();
 }
 
