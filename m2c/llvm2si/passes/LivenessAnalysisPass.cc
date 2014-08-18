@@ -74,89 +74,74 @@ void LivenessAnalysisPass::run()
 			// Get each argument in the line
 			for (auto &argument : instruction->getArguments())
 			{
-				// Determine register type: scalar or vector
-				switch (argument->getType())
+				// Determine register direction
+				switch (argument->getToken()->getDirection())
 				{
-				case si2bin::Argument::TypeVectorRegister:
-
-					// Cast the argument to vector register
-					vector_register = misc::cast<si2bin
-							::ArgVectorRegister*>
-							(argument.get());
-
-					// Determine register direction
-					switch (argument->getToken()
-							->getDirection())
-					{
 					case si2bin::TokenDirectionDst:
+					{
+						switch (argument->getType())
+						{
+							// Determine register type: scalar or vector
+							case si2bin::Argument::TypeVectorRegister:
 
-						// Set true for destination
-						// register in def set
-						v_def_ptr->Set(vector_register
-								->getId(),
-								true);
-						break;
+								// Cast the argument to vector register
+								vector_register = misc::cast<si2bin::ArgVectorRegister*>
+										(argument.get());
+								// Set true for destination
+								// register in def set
+								v_def_ptr->Set(vector_register->getId(), true);
+								break;
 
+							case si2bin::Argument::TypeScalarRegister:
+
+								// Cast argument to scalar register
+								scalar_register = misc::cast<si2bin::ArgScalarRegister*>
+										(argument.get());
+								s_def_ptr->Set(scalar_register->getId(), true);
+								break;
+
+							default:
+								break;
+						}
+					}
 					case si2bin::TokenDirectionSrc:
+					{
+						switch (argument->getType())
+						{
+							case si2bin::Argument::TypeVectorRegister:
 
-						// Set true for source register
-						// in use set
-						v_use_ptr->Set(vector_register
-								->getId(),
-								true);
-						break;
+								// Cast the argument to vector register
+								vector_register = misc::cast<si2bin::ArgVectorRegister*>
+												(argument.get());
+								// Set true for source register
+								// in use set, and false in def
+								// set
+								v_use_ptr->Set(vector_register->getId(),true);
+								v_def_ptr->Set(vector_register->getId(),false);
+								break;
 
+							case si2bin::Argument::TypeScalarRegister:
+
+								// Cast argument to scalar register
+								scalar_register = misc::cast<si2bin::ArgScalarRegister*>
+												(argument.get());
+								// Set true for source register
+								// in use set, and false in def
+								// set
+								s_use_ptr->Set(scalar_register->getId(), true);
+								s_def_ptr->Set(scalar_register->getId(), false);
+								break;
+
+							default:
+								break;
+						} // end switch
+					} // end source case
 					default:
 						break;
-					}
-
-					break;
-
-				case si2bin::Argument::TypeScalarRegister:
-
-					// Cast argument to scalar register
-					scalar_register = misc::cast<si2bin
-						::ArgScalarRegister*>
-						(argument.get());
-
-					switch (argument->getToken()
-							->getDirection())
-					{
-					case si2bin::TokenDirectionDst:
-
-						// Set true for destination
-						// register in def set, and
-						// false in use set
-						s_def_ptr->Set(scalar_register
-								->getId(),
-								true);
-						s_use_ptr->Set(scalar_register
-								->getId(),
-								false);
-						break;
-
-					case si2bin::TokenDirectionSrc:
-
-						// Set true for source register
-						// in use set, and false in def
-						// set
-						s_use_ptr->Set(scalar_register
-								->getId(),
-								true);
-						s_def_ptr->Set(scalar_register
-								->getId(),
-								false);
-						break;
-					default:
-						break;
-
-					}
-				default:
-					break;
-				} // Argument register type
-			} // Arguments traversing
-		} // Instruction traversing
-	} // Basic blocks traversing
+				} // end register direction
+			} // end arguments
+		} //end basic block
+	}
 
 	// Declare pointers to current basic block and its successor
 	llvm2si::BasicBlock *basic_block_current, *basic_block_successor;
@@ -198,14 +183,10 @@ void LivenessAnalysisPass::run()
 
 		// Clones live-in and live-out sets for vector and scalar
 		// registers to save the current status
-                v_in_current   = *v_in_ptr;
-                v_out_current  = *v_out_ptr;
-                s_in_current   = *s_in_ptr;
-                s_out_current  = *s_out_ptr;
-
-		// Update live_in sets for vector and scalar registers
-		*v_in_ptr = (*v_out_ptr - *v_def_ptr) & *v_use_ptr;
-		*s_in_ptr = (*s_out_ptr - *s_def_ptr) & *s_use_ptr;
+		v_in_current   = *v_in_ptr;
+		v_out_current  = *v_out_ptr;
+		s_in_current   = *s_in_ptr;
+		s_out_current  = *s_out_ptr;
 
 		// Get succesors of current basic block
 		for (auto &node : basic_block_current->getNode()->getSuccList())
@@ -226,14 +207,16 @@ void LivenessAnalysisPass::run()
 			// Get live-in sets for vector and scalar registers of
 			// the succeeding basic block
 			v_in_successor = *basic_block_pass_info_successor
-					->getVectorInSet(
-					basic_block_successor->getId());
+					->getVectorInSet(basic_block_successor->getId());
 			s_in_successor = *basic_block_pass_info_successor
-					->getScalarInSet(
-					basic_block_successor->getId());
+					->getScalarInSet(basic_block_successor->getId());
 			*v_out_ptr |= v_in_successor;
 			*s_out_ptr |= s_in_successor;
 		}
+
+		// Update live_in sets for vector and scalar registers
+		*v_in_ptr = (*v_out_ptr - *v_def_ptr) & *v_use_ptr;
+		*s_in_ptr = (*s_out_ptr - *s_def_ptr) & *s_use_ptr;
 
 		// The register liveness in the basic block has changed
 		if (*v_out_ptr == v_out_current
