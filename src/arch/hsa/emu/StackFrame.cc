@@ -41,12 +41,18 @@ StackFrame::StackFrame(Function *function)
 
 	// Initialize argument scopes
 	function_arguments.reset(new VariableScope());
-	//argument_scope.reset(new VariableScope());
+	variable_scope.reset(new VariableScope());
 }
 
 
 StackFrame::~StackFrame()
 {}
+
+void StackFrame::setPc(char *pc)
+{
+	// Otherwise move pc;
+	this->pc = pc;
+}
 
 
 void StackFrame::Dump(std::ostream &os = std::cout) const
@@ -94,20 +100,31 @@ void StackFrame::DumpRegister(const std::string &name,
 	switch (name[1])
 	{
 	case 'c':
+
+		if (getRegisterValue<unsigned char>(name))
+			os << "ture";
+		else
+			os << "false";
 		break;
+
 	case 's':
+
 		os << misc::fmt("%d, %d, %f",
 				getRegisterValue<unsigned short>(name),
 				getRegisterValue<short>(name),
 				getRegisterValue<float>(name));
 		break;
+
 	case 'd':
+
 		os << misc::fmt("%d, %d, %f",
 				getRegisterValue<unsigned int>(name),
 				getRegisterValue<int>(name),
 				getRegisterValue<double>(name));
 		break;
+
 	case 'q':
+
 	{
 		unsigned int offset =
 				function->getRegisterOffset(name);
@@ -123,10 +140,13 @@ void StackFrame::DumpRegister(const std::string &name,
 		}
 		break;
 	}
+
 	default:
+
 		throw misc::Panic(misc::fmt(
 				"Unknown register name %s.",
 				name.c_str()));
+		break;
 	}
 	os << "\n";
 }

@@ -129,8 +129,8 @@ void Function::addRegister(const std::string &name)
 	int size = getRegisterSizeByName(name);
 
 	// Skip C registers
-	if (size == 1)
-		return;
+	// if (size == 1)
+	//	return;
 
 	// Check if the register exists
 	int offset = getRegisterOffset(name);

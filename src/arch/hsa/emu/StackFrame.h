@@ -45,9 +45,14 @@ class StackFrame
 	// one must have already been released.
 	std::unique_ptr<VariableScope> argument_scope;
 
+	// All variables declared in private, group and global segment
+	std::unique_ptr<VariableScope> variable_scope;
+
 	// Register storage
-	// FIXME: Move register_storgae to guest memory
 	std::unique_ptr<char> register_storage;
+
+	// C registers, use a 8 bit char for each 1 bit boolean value
+	unsigned char c_registers[8];
 
 public:
 
@@ -64,11 +69,7 @@ public:
 	char *getPc() const { return pc; }
 
 	/// Set the program counter
-	void setPc(char *pc)
-	{
-		// FIXME: check if the pc is in valid region
-		this->pc = pc;
-	}
+	void setPc(char *pc);
 
 	/// Dump stack frame information
 	void Dump(std::ostream &os) const;
@@ -88,6 +89,13 @@ public:
 	template <typename Type>
 	Type getRegisterValue(const std::string &name) const
 	{
+		// Do special action for c registers
+		if (name[1] == 'c')
+		{
+			unsigned int index = name[2] - '0';
+			return c_registers[index];
+		}
+
 		// Get the offset of the register
 		unsigned int offset = function->getRegisterOffset(name);
 
@@ -102,6 +110,14 @@ public:
 	template <typename Type>
 	void setRegisterValue(const std::string &name, Type value)
 	{
+		// Do special action for c registers
+		if (name[1] == 'c')
+		{
+			unsigned int index = name[2] - '0';
+			c_registers[index] = value;
+			return;
+		}
+
 		// Get the offset of the register
 		unsigned int offset = function->getRegisterOffset(name);
 
@@ -142,6 +158,9 @@ public:
 	{
 		return function_arguments.get();
 	}
+
+	/// Return variable scope
+	VariableScope *getVariableScope() const { return variable_scope.get(); }
 
 	/// Setup function arguments and copy their values.
 	void PrepareFunctionArguments(VariableScope *host_scope);

@@ -135,7 +135,8 @@ unsigned int ProgramLoader::loadFunctions()
 	while (buffer_ptr && buffer_ptr < buffer + dir_section->getSize())
 	{
 		BrigDirEntry dir(buffer_ptr, file);
-		if (dir.getKind() == BRIG_DIRECTIVE_FUNCTION)
+		if (dir.getKind() == BRIG_DIRECTIVE_FUNCTION ||
+				dir.getKind() == BRIG_DIRECTIVE_KERNEL)
 		{
 			// Parse and create the function, insert the function
 			// in table

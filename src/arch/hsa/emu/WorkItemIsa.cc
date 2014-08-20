@@ -1453,9 +1453,80 @@ void WorkItem::ExecuteInst_LDC()
 }
 
 
+template<typename T>
+void WorkItem::Inst_MOV_Aux()
+{
+	// Retrieve inst
+	// StackFrame *stack_top = stack.back().get();
+	// BrigInstEntry inst(stack_top->getPc(),
+	//		ProgramLoader::getInstance()->getBinary());
+	// BrigInstBasic *inst_buf = (BrigInstBasic *)stack_top->getPc();
+
+	// Retrieve src value
+	T src0 = getOperandValue<T>(1);
+
+	// Move to dst value
+	T dst = src0;
+	storeOperandValue<T>(0, dst);
+}
+
+
 void WorkItem::ExecuteInst_MOV()
 {
-	throw misc::Panic("Instruction not implemented");
+	// Retrieve inst
+	StackFrame *stack_top = stack.back().get();
+	BrigInstEntry inst(stack_top->getPc(),
+			ProgramLoader::getInstance()->getBinary());
+	BrigInstBasic *inst_buf = (BrigInstBasic *)stack_top->getPc();
+
+	// Call auxiliary function on different type
+	switch (inst_buf->type){
+	case BRIG_TYPE_B1:
+
+		Inst_MOV_Aux<unsigned char>();
+		break;
+
+	case BRIG_TYPE_B32:
+	case BRIG_TYPE_U32:
+
+		Inst_MOV_Aux<unsigned int>();
+		break;
+
+	case BRIG_TYPE_B64:
+	case BRIG_TYPE_U64:
+
+		Inst_MOV_Aux<unsigned long long>();
+		break;
+
+	case BRIG_TYPE_S32:
+
+		Inst_MOV_Aux<int>();
+		break;
+
+	case BRIG_TYPE_S64:
+
+		Inst_MOV_Aux<long long>();
+		break;
+
+	case BRIG_TYPE_F32:
+
+		Inst_MOV_Aux<float>();
+		break;
+
+	case BRIG_TYPE_F64:
+
+		Inst_MOV_Aux<double>();
+		break;
+
+	default:
+
+		throw misc::Panic("Unsupported type for opcode MOV.");
+		break;
+
+	}
+
+	// Move PC forward
+	MovePcForwardByOne();
 }
 
 
@@ -1609,9 +1680,153 @@ void WorkItem::ExecuteInst_STOF()
 }
 
 
+template<typename SrcType, typename DstType>
+void WorkItem::Inst_CMP_Aux()
+{
+	// Retrieve inst
+	StackFrame *stack_top = stack.back().get();
+	BrigInstEntry inst(stack_top->getPc(),
+			ProgramLoader::getInstance()->getBinary());
+	BrigInstCmp *inst_buf = (BrigInstCmp *)stack_top->getPc();
+
+	//Get source value
+	SrcType src1 = getOperandValue<SrcType>(1);
+	SrcType src2 = getOperandValue<SrcType>(2);
+	DstType dst = 0;
+
+	switch (inst_buf->compare){
+	case BRIG_COMPARE_EQ:
+
+		if (src1 == src2)
+			dst = 1;
+		else
+			dst = 0;
+		break;
+
+	case BRIG_COMPARE_NE:
+
+		if (src1 != src2)
+			dst = 1;
+		else
+			dst = 0;
+		break;
+
+	case BRIG_COMPARE_LT:
+
+		if (src1 < src2)
+			dst = 1;
+		else
+			dst = 0;
+		break;
+
+	case BRIG_COMPARE_LE:
+
+		if (src1 <= src2)
+			dst = 1;
+		else
+			dst = 0;
+		break;
+
+	case BRIG_COMPARE_GT:
+
+		if (src1 > src2)
+			dst = 1;
+		else
+			dst = 0;
+		break;
+
+	case BRIG_COMPARE_GE:
+
+		if (src1 >= src2)
+			dst = 1;
+		else
+			dst = 0;
+		break;
+
+	case BRIG_COMPARE_EQU:
+	case BRIG_COMPARE_NEU:
+	case BRIG_COMPARE_LTU:
+	case BRIG_COMPARE_LEU:
+	case BRIG_COMPARE_GTU:
+	case BRIG_COMPARE_GEU:
+	case BRIG_COMPARE_NUM:
+	case BRIG_COMPARE_NAN:
+	case BRIG_COMPARE_SEQ:
+	case BRIG_COMPARE_SNE:
+	case BRIG_COMPARE_SLT:
+	case BRIG_COMPARE_SLE:
+	case BRIG_COMPARE_SGT:
+	case BRIG_COMPARE_SGE:
+	case BRIG_COMPARE_SGEU:
+	case BRIG_COMPARE_SEQU:
+	case BRIG_COMPARE_SNEU:
+	case BRIG_COMPARE_SLTU:
+	case BRIG_COMPARE_SLEU:
+	case BRIG_COMPARE_SNUM:
+	case BRIG_COMPARE_SNAN:
+	case BRIG_COMPARE_SGTU:
+	default:
+		throw misc::Panic("Unimplemented compare operation.");
+
+	}
+
+	// Store result value
+	storeOperandValue<DstType>(0, dst);
+
+	// Move PC forward
+	MovePcForwardByOne();
+}
+
+
 void WorkItem::ExecuteInst_CMP()
 {
-	throw misc::Panic("Instruction not implemented");
+	// Retrieve inst
+	StackFrame *stack_top = stack.back().get();
+	BrigInstEntry inst(stack_top->getPc(),
+			ProgramLoader::getInstance()->getBinary());
+	BrigInstCmp *inst_buf = (BrigInstCmp *)stack_top->getPc();
+
+	switch (inst_buf->sourceType){
+	case BRIG_TYPE_B1:
+	case BRIG_TYPE_B8:
+
+		Inst_CMP_Aux<unsigned char, unsigned char>();
+		break;
+
+	case BRIG_TYPE_B16:
+	case BRIG_TYPE_U16:
+
+		Inst_CMP_Aux<unsigned short, unsigned char>();
+		break;
+
+	case BRIG_TYPE_B32:
+	case BRIG_TYPE_U32:
+
+		Inst_CMP_Aux<unsigned int, unsigned char>();
+		break;
+
+	case BRIG_TYPE_B64:
+	case BRIG_TYPE_U64:
+
+		Inst_CMP_Aux<unsigned long long, unsigned char>();
+		break;
+
+	case BRIG_TYPE_S32:
+
+		Inst_CMP_Aux<int, unsigned char>();
+		break;
+
+	case BRIG_TYPE_S64:
+
+		Inst_CMP_Aux<long long, unsigned char>();
+		break;
+
+	default:
+
+		throw misc::Panic("Unsupported source type for CMP.");
+		break;
+
+	}
 }
 
 
@@ -1646,55 +1861,8 @@ void WorkItem::Inst_LD_Aux()
 			+ (unsigned long long)address_operand_buf->offsetLo;
 
 	// Get buffer in host
-	char *host_buffer;
-	switch (inst_buf->segment)
-	{
-	case BRIG_SEGMENT_NONE:
-
-		throw misc::Panic("Unimplemented segment None for ST");
-		break;
-
-	case BRIG_SEGMENT_FLAT:
-
-		throw misc::Panic("Unimplemented segment FLAT for ST");
-		break;
-
-	case BRIG_SEGMENT_GLOBAL:
-
-		throw misc::Panic("Unimplemented segment GLOBAL for ST");
-		break;
-
-	case BRIG_SEGMENT_GROUP:
-
-		throw misc::Panic("Unimplemented segment GROUP for ST");
-		break;
-
-	case BRIG_SEGMENT_PRIVATE:
-
-		throw misc::Panic("Unimplemented segment PRIVATE for ST");
-		break;
-
-	case BRIG_SEGMENT_KERNARG:
-
-		throw misc::Panic("Unimplemented segment KERNARG for ST");
-		break;
-
-	case BRIG_SEGMENT_READONLY:
-
-		throw misc::Panic("Unimplemented segment READONLY for ST");
-		break;
-
-	case BRIG_SEGMENT_SPILL:
-
-		throw misc::Panic("Unimplemented segment SPILL for ST");
-		break;
-
-	case BRIG_SEGMENT_ARG:
-
-		host_buffer = this->getVariableBuffer(BRIG_SEGMENT_ARG, name);
-		host_buffer += offset;
-		break;
-	}
+	char *host_buffer = this->getVariableBuffer(inst_buf->segment, name);
+	host_buffer += offset;
 
 	// Move value from register or immediate into memory
 	storeOperandValue<T>(0, *((T *)host_buffer));
@@ -1742,7 +1910,9 @@ void WorkItem::ExecuteInst_LD()
 		break;
 
 	default:
+
 		throw misc::Panic("Unimplemented type for Inst LD.");
+		break;
 	}
 
 	// Move the pc forward
@@ -1755,7 +1925,6 @@ void WorkItem::Inst_ST_Aux()
 {
 	// Retrieve inst
 	StackFrame *stack_top = stack.back().get();
-	BrigFile *binary = ProgramLoader::getInstance()->getBinary();
 	BrigInstEntry inst(stack_top->getPc(), binary);
 	BrigInstMem *inst_buf = (BrigInstMem *)stack_top->getPc();
 
@@ -1775,55 +1944,8 @@ void WorkItem::Inst_ST_Aux()
 			+ (unsigned long long)address_operand_buf->offsetLo;
 
 	// Retrieve memory accessing in the host space
-	char *host_buffer;
-	switch (inst_buf->segment)
-	{
-	case BRIG_SEGMENT_NONE:
-
-		throw misc::Panic("Unimplemented segment None for ST");
-		break;
-
-	case BRIG_SEGMENT_FLAT:
-
-		throw misc::Panic("Unimplemented segment FLAT for ST");
-		break;
-
-	case BRIG_SEGMENT_GLOBAL:
-
-		throw misc::Panic("Unimplemented segment GLOBAL for ST");
-		break;
-
-	case BRIG_SEGMENT_GROUP:
-
-		throw misc::Panic("Unimplemented segment GROUP for ST");
-		break;
-
-	case BRIG_SEGMENT_PRIVATE:
-
-		throw misc::Panic("Unimplemented segment PRIVATE for ST");
-		break;
-
-	case BRIG_SEGMENT_KERNARG:
-
-		throw misc::Panic("Unimplemented segment KERNARG for ST");
-		break;
-
-	case BRIG_SEGMENT_READONLY:
-
-		throw misc::Panic("Unimplemented segment READONLY for ST");
-		break;
-
-	case BRIG_SEGMENT_SPILL:
-
-		throw misc::Panic("Unimplemented segment SPILL for ST");
-		break;
-
-	case BRIG_SEGMENT_ARG:
-
-		host_buffer = this->getVariableBuffer(inst_buf->segment, name);
-		host_buffer += offset;
-		break;
-	}
+	char *host_buffer = this->getVariableBuffer(inst_buf->segment, name);
+	host_buffer += offset;
 
 	// Move value from register or immediate into memory
 	T src0 = getOperandValue<T>(0);
@@ -1967,7 +2089,53 @@ void WorkItem::ExecuteInst_QUERYSAMPLERFILTER()
 
 void WorkItem::ExecuteInst_CBR()
 {
-	throw misc::Panic("Instruction not implemented");
+	// Retrieve
+	StackFrame *stack_top = stack.back().get();
+	BrigInstEntry inst(stack_top->getPc(), binary);
+	// BrigInstBr *inst_buf = (BrigInstBr *)stack_top->getPc();
+
+	// Retrieve condition
+	unsigned char condition = getOperandValue<unsigned char>(0);
+
+	// Jump if condition is true
+	if (condition){
+		// Retrieve 1st operand
+		BrigOperand *operand1 = (BrigOperand *)inst.getOperand(1);
+		if (operand1->kind == BRIG_OPERAND_LABEL_REF)
+		{
+			BrigOperandLabelRef *op =
+					(BrigOperandLabelRef *)operand1;
+			BrigDirectiveLabel *label =
+					(BrigDirectiveLabel *)
+					BrigDirEntry::GetDirByOffset(binary,
+							op->ref);
+
+			// If the label if an the end or beyond the end of the
+			// function, return the function
+			char *code = BrigInstEntry::GetInstByOffset(
+					binary, label->code);
+			if (code >= stack_top->getFunction()->getLastInst())
+			{
+				ReturnFunction();
+				return;
+			}
+
+			// Rewind directives.
+			stack_top->setNextDirective(
+					stack_top->getFunction()
+					->getFirstInFunctionDirective());
+
+			// Redirect pc to a certain label
+			stack_top->setPc(BrigInstEntry::GetInstByOffset(
+					binary, label->code));
+			return;
+		}else{
+			throw misc::Panic("Unsupported operand type for CBR.");
+		}
+	}
+
+	// Move PC forward
+	MovePcForwardByOne();
 }
 
 
@@ -2091,7 +2259,7 @@ void WorkItem::ExecuteInst_CALL()
 	stack.push_back(std::unique_ptr<StackFrame>(new_frame));
 
 	// Dump backtrace information for debugging purpose
-	Backtrace(std::cout);
+	// Backtrace(std::cout);
 
 }
 
