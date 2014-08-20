@@ -63,10 +63,6 @@ class WorkItem
  	unsigned int abs_id_y;
  	unsigned int abs_id_z;
 
- 	// kernel arguments storage
- 	unsigned long long kernel_args;
-
-
 
 
 
@@ -113,6 +109,8 @@ class WorkItem
  	template<typename T> void Inst_POPCOUNT_Aux();
  	template<typename T> void Inst_XOR_Aux();
  	template<typename T> void Inst_BITEXTRACT_Aux();
+ 	template<typename T> void Inst_MOV_Aux();
+ 	template<typename SrcType, typename DstType> void Inst_CMP_Aux();
  	template<typename T> void Inst_LD_Aux();
  	template<typename T> void Inst_ST_Aux();
 
@@ -207,8 +205,8 @@ class WorkItem
  	// Allocate memory for variable
  	void DeclearVariable();
 
- 	// Create an argument
- 	void CreateArgument();
+ 	// Create an argument in a certain variable scope
+ 	void CreateVariable(VariableScope *variable_scope);
 
  	// Process directives between last PC and current PC
  	void ProcessRelatedDirectives();
@@ -252,8 +250,7 @@ class WorkItem
  			unsigned int abs_id_x,
  			unsigned int abs_id_y,
  			unsigned int abs_id_z,
- 			Function *root_function,
- 			unsigned long long kernel_args);
+ 			Function *root_function);
 
  	/// Destructor
  	~WorkItem();

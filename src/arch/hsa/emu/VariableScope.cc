@@ -56,8 +56,6 @@ char *VariableScope::getBuffer(const std::string &name)
 	auto it = variable_info.find(name);
 	if (it == variable_info.end())
 	{
-		throw Error(misc::fmt("Argument %s is not declared",
-				name.c_str()));
 		return nullptr;
 	}
 

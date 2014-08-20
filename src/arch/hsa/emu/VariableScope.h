@@ -56,7 +56,8 @@ public:
 	template<typename T>
 	void setVariableValue(const std::string &name, T value){};
 
-	/// Get the buffer pointer to a certain argument
+	/// Get the buffer pointer to a certain variable, return nullptr if
+	/// the variable is not defined
 	char *getBuffer(const std::string &name);
 
 	/// Dump information in the variable scope
