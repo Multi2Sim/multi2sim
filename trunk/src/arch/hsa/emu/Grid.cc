@@ -111,7 +111,7 @@ void Grid::deployWorkItem(unsigned int abs_id_x,
 	// Create work item
 	WorkItem *work_item = new WorkItem(work_group,
 			abs_id_x, abs_id_y, abs_id_z,
-			root_function, kernel_args);
+			root_function);
 
 	// Add created work item into work group
 	work_group->addWorkItem(work_item);

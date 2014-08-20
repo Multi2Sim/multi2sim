@@ -28,8 +28,7 @@ WorkItem::WorkItem(WorkGroup *work_group,
 			unsigned int abs_id_x,
 			unsigned int abs_id_y,
 			unsigned int abs_id_z,
-			Function *root_function,
-			unsigned long long kernel_args)
+			Function *root_function)
 {
 	// Set global emulator object
 	emu = Emu::getInstance();
@@ -43,9 +42,6 @@ WorkItem::WorkItem(WorkGroup *work_group,
 	this->abs_id_x = abs_id_x;
 	this->abs_id_y = abs_id_y;
 	this->abs_id_z = abs_id_z;
-
-	// Set kernel args
-	this->kernel_args = kernel_args;
 
 	// Set the first stack frame
 	StackFrame *frame = new StackFrame(root_function);
@@ -121,8 +117,6 @@ bool WorkItem::ReturnFunction()
 	{
 		auto it = stack.rbegin();
 		it ++;
-
-		std::cout << "About to passback\n";
 
 		StackFrame *caller_frame = (*it).get();
 		if (Emu::isa_debug)
@@ -218,22 +212,27 @@ void WorkItem::ProcessRelatedDirectives()
 	{
 		BrigDirEntry dir_entry((char *)dir,
 				ProgramLoader::getInstance()->getBinary());
-		switch (dir_entry.getKind())
+
+		// Execute code affiliated with
+		if (dir->code == code_offset)
 		{
-		case BRIG_DIRECTIVE_ARG_SCOPE_START:
+			switch (dir_entry.getKind())
+			{
+			case BRIG_DIRECTIVE_ARG_SCOPE_START:
 
-			stack_top->StartArgumentScope();
-			break;
+				stack_top->StartArgumentScope();
+				break;
 
-		case BRIG_DIRECTIVE_ARG_SCOPE_END:
+			case BRIG_DIRECTIVE_ARG_SCOPE_END:
 
-			stack_top->CloseArgumentScope();
-			break;
+				stack_top->CloseArgumentScope();
+				break;
 
-		case BRIG_DIRECTIVE_VARIABLE:
+			case BRIG_DIRECTIVE_VARIABLE:
 
-			DeclearVariable();
-			break;
+				DeclearVariable();
+				break;
+			}
 		}
 
 		// Move next directive pointer forwards
@@ -275,9 +274,17 @@ char *WorkItem::getVariableBuffer(unsigned char segment,
 		break;
 
 	case BRIG_SEGMENT_PRIVATE:
-
-		throw misc::Panic("Unsupported segment PRIVATE.");
+	{
+		// Get argument scope if in curve bracket, otherwise, get
+		// function arguments
+		VariableScope *variable_scope = stack_top->getVariableScope();
+		if (!variable_scope)
+		{
+			variable_scope = stack_top->getFunctionArguments();
+		}
+		return variable_scope->getBuffer(name);
 		break;
+	}
 
 	case BRIG_SEGMENT_KERNARG:
 
@@ -295,15 +302,29 @@ char *WorkItem::getVariableBuffer(unsigned char segment,
 		break;
 
 	case BRIG_SEGMENT_ARG:
-
+	{
 		// Get argument scope if in curve bracket, otherwise, get
 		// function arguments
 		VariableScope *argument_scope = stack_top->getArgumentScope();
-		if (!argument_scope)
+		char *buffer;
+		if (argument_scope)
 		{
-			argument_scope = stack_top->getFunctionArguments();
+			buffer = argument_scope->getBuffer(name);
+			if (buffer)
+				return buffer;
 		}
-		return argument_scope->getBuffer(name);
+
+		// If variable is not declared in argument scope,
+		// try function arguments.
+		argument_scope = stack_top->getFunctionArguments();
+		buffer = argument_scope->getBuffer(name);
+		return buffer;
+		break;
+	}
+
+	default:
+
+		throw misc::Panic("Unsupported segment.");
 		break;
 	}
 
@@ -341,9 +362,11 @@ void WorkItem::DeclearVariable()
 		break;
 
 	case BRIG_SEGMENT_PRIVATE:
-
-		throw misc::Panic("Unsupported segment PRIVATE.");
+	{
+		VariableScope *variable_scope = stack_top->getVariableScope();
+		CreateVariable(variable_scope);
 		break;
+	}
 
 	case BRIG_SEGMENT_KERNARG:
 
@@ -361,14 +384,26 @@ void WorkItem::DeclearVariable()
 		break;
 
 	case BRIG_SEGMENT_ARG:
+	{
+		VariableScope *variable_scope;
+		if (stack_top->getArgumentScope())
+			variable_scope = stack_top->getArgumentScope();
+		else
+			throw misc::Panic("Error creating argument, not in a "
+					"argument scope");
+		CreateVariable(variable_scope);
+		break;
+	}
 
-		CreateArgument();
+	default:
+
+		throw misc::Panic("Unsupported segment.");
 		break;
 	}
 }
 
 
-void WorkItem::CreateArgument()
+void WorkItem::CreateVariable(VariableScope *variable_scope)
 {
 	// Retrieve directive
 	StackFrame *stack_top = stack.back().get();
@@ -381,7 +416,8 @@ void WorkItem::CreateArgument()
 			dir->name);
 
 	// Create argument
-	stack_top->CreateArgument(name, dir->size, dir->type);
+	variable_scope->DeclearVariable(name, dir->size, dir->type);
+	//stack_top->CreateArgument(name, dir->size, dir->type);
 
 	// Put information in isa_debug
 	BrigDirEntry dir_entry((char *)dir,
