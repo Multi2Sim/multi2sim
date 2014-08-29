@@ -44,7 +44,7 @@ WorkItem::WorkItem(WorkGroup *work_group,
 	this->abs_id_z = abs_id_z;
 
 	// Set the first stack frame
-	StackFrame *frame = new StackFrame(root_function);
+	StackFrame *frame = new StackFrame(root_function, this);
 	stack.push_back(std::unique_ptr<StackFrame>(frame));
 
 	// Dump initial state of the stack frame when a work item created.
@@ -90,14 +90,21 @@ bool WorkItem::MovePcForwardByOne()
 
 void WorkItem::Backtrace(std::ostream &os = std::cout) const
 {
+	os << "***** Backtrace *****\n";
 	int frame_count = 1;
 	for (auto it = stack.rbegin(); it != stack.rend(); it++)
 	{
+		StackFrame *frame = (*it).get();
 		os << misc::fmt("#%d ", frame_count++);
 		os << misc::fmt("%s ", (*it)->getFunction()->getName().c_str());
-		// TODO: dump argument lists with argument values here
+
+		// Dump arguments and their value
+		os << "(";
+		frame->getFunctionArguments()->DumpInLine(os);
+		os << ")";
 		os << "\n";
 	}
+	os << "***** ********* *****\n\n";
 
 }
 
@@ -264,15 +271,7 @@ char *WorkItem::getVariableBuffer(unsigned char segment,
 		break;
 
 	case BRIG_SEGMENT_GLOBAL:
-
-		throw misc::Panic("Unsupported segment GLOBAL.");
-		break;
-
 	case BRIG_SEGMENT_GROUP:
-
-		throw misc::Panic("Unsupported segment GROUP.");
-		break;
-
 	case BRIG_SEGMENT_PRIVATE:
 	{
 		// Get argument scope if in curve bracket, otherwise, get
@@ -337,6 +336,7 @@ void WorkItem::DeclearVariable()
 	StackFrame *stack_top = stack.back().get();
 	BrigDirectiveVariable *dir =
 			(BrigDirectiveVariable *)stack_top->getNextDirective();
+	std::string name = BrigStrEntry::GetStringByOffset(binary, dir->name);
 
 	// Allocate memory in different segment
 	switch (dir->segment)
@@ -352,19 +352,11 @@ void WorkItem::DeclearVariable()
 		break;
 
 	case BRIG_SEGMENT_GLOBAL:
-
-		throw misc::Panic("Unsupported segment GLOBAL.");
-		break;
-
 	case BRIG_SEGMENT_GROUP:
-
-		throw misc::Panic("Unsupported segment GROUP.");
-		break;
-
 	case BRIG_SEGMENT_PRIVATE:
 	{
 		VariableScope *variable_scope = stack_top->getVariableScope();
-		CreateVariable(variable_scope);
+		variable_scope->DeclearVariable(name, dir->size, dir->type);
 		break;
 	}
 
@@ -391,7 +383,7 @@ void WorkItem::DeclearVariable()
 		else
 			throw misc::Panic("Error creating argument, not in a "
 					"argument scope");
-		CreateVariable(variable_scope);
+		variable_scope->DeclearVariable(name, dir->size, dir->type);
 		break;
 	}
 
@@ -400,28 +392,7 @@ void WorkItem::DeclearVariable()
 		throw misc::Panic("Unsupported segment.");
 		break;
 	}
-}
 
-
-void WorkItem::CreateVariable(VariableScope *variable_scope)
-{
-	// Retrieve directive
-	StackFrame *stack_top = stack.back().get();
-	BrigDirectiveVariable *dir =
-			(BrigDirectiveVariable *)stack_top->getNextDirective();
-
-	// Get argument name
-	std::string name = BrigStrEntry::GetStringByOffset(
-			binary,
-			dir->name);
-
-	// Create argument
-	variable_scope->DeclearVariable(name, dir->size, dir->type);
-	//stack_top->CreateArgument(name, dir->size, dir->type);
-
-	// Put information in isa_debug
-	BrigDirEntry dir_entry((char *)dir,
-			ProgramLoader::getInstance()->getBinary());
 	Emu::isa_debug << misc::fmt("Create argument: %s %s(%d)\n",
 			BrigEntry::type2str(dir->type).c_str(), name.c_str(),
 			dir->size);

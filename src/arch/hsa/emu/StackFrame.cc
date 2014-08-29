@@ -23,10 +23,13 @@
 namespace HSA
 {
 
-StackFrame::StackFrame(Function *function)
+StackFrame::StackFrame(Function *function, WorkItem *work_item)
 {
 	// Set function that this frame is working on
 	this->function = function;
+
+	// Set work item
+	this->work_item = work_item;
 
 	// Set the program counter to be pointing to the first entry of the
 	// function
@@ -80,14 +83,23 @@ void StackFrame::Dump(std::ostream &os = std::cout) const
 
 	// Dump function arguments
 	os << "  ***** Function arguments *****\n";
-	function_arguments->Dump(os);
+	function_arguments->Dump(os, 4);
 	os << "  ***** ******** ********* *****\n\n";
 
 	// If in argument scope, dump argument scope
 	os << "  ***** Argument scope *****\n";
 	if (argument_scope.get())
-		argument_scope->Dump(os);
+		argument_scope->Dump(os, 4);
 	os << "  ***** ******** ***** *****\n\n";
+
+	// Variable scope, 4
+	os << "  ***** Variables *****\n";
+	variable_scope->Dump(os, 4);
+	os << "  ***** ********* *****\n\n";
+
+	// Dump back trace information
+	work_item->Backtrace(os);
+
 
 	os << "***** ***** ***** *****\n";
 }
@@ -102,7 +114,7 @@ void StackFrame::DumpRegister(const std::string &name,
 	case 'c':
 
 		if (getRegisterValue<unsigned char>(name))
-			os << "ture";
+			os << "true";
 		else
 			os << "false";
 		break;

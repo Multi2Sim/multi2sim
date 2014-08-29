@@ -25,11 +25,15 @@
 
 namespace HSA
 {
+class WorkItem;
 
 class StackFrame
 {
 	// The function this stack frame associate with
 	Function *function;
+
+	// The work item that this stack frame belongs to
+	WorkItem *work_item;
 
 	// Pointer to the instruction to be executed
 	char *pc;
@@ -57,7 +61,7 @@ class StackFrame
 public:
 
 	/// Constructor
-	StackFrame(Function *function);
+	StackFrame(Function *function, WorkItem *work_item);
 
 	/// Destructor
 	~StackFrame();

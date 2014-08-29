@@ -205,9 +205,6 @@ class WorkItem
  	// Allocate memory for variable
  	void DeclearVariable();
 
- 	// Create an argument in a certain variable scope
- 	void CreateVariable(VariableScope *variable_scope);
-
  	// Process directives between last PC and current PC
  	void ProcessRelatedDirectives();
 
