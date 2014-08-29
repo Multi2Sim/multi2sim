@@ -44,10 +44,6 @@ class Variable
 	// Index of the argument in the argument
 	unsigned int index = 0;
 
-	// Output variable value
-	template<typename T>
-	void DumpValue(std::ostream &os) const;
-
 public:
 
 	/// Constructor
@@ -58,7 +54,12 @@ public:
 	~Variable();
 
 	/// Dump variable information
-	void Dump(std::ostream &os) const;
+	void Dump(std::ostream &os = std::cout, unsigned int indent = 0,
+			bool is_simple_format = false) const;
+
+	// Output variable value
+	template<typename T>
+	void DumpValue(std::ostream &os = std::cout) const;
 
 	/// Operator \c << invoking the function Dump) on an output stream
 	friend std::ostream &operator<<(std::ostream &os,
