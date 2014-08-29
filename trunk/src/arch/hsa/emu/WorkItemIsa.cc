@@ -2249,7 +2249,7 @@ void WorkItem::ExecuteInst_CALL()
 	Function *function = loader->getFunction(function_name);
 
 	// Prepare stack frame
-	StackFrame *new_frame = new StackFrame(function);
+	StackFrame *new_frame = new StackFrame(function, this);
 
 	// Prepare argument
 	function->PassByValue(stack_top->getArgumentScope(),
@@ -2259,7 +2259,8 @@ void WorkItem::ExecuteInst_CALL()
 	stack.push_back(std::unique_ptr<StackFrame>(new_frame));
 
 	// Dump backtrace information for debugging purpose
-	// Backtrace(std::cout);
+	if (Emu::isa_debug)
+		Backtrace(Emu::isa_debug);
 
 }
 
@@ -2268,6 +2269,8 @@ void WorkItem::ExecuteInst_RET()
 {
 	// Return the function
 	ReturnFunction();
+	if (Emu::isa_debug)
+		Backtrace(Emu::isa_debug);
 }
 
 

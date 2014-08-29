@@ -69,11 +69,23 @@ char *VariableScope::getBuffer(const std::string &name)
 }
 
 
-void VariableScope::Dump(std::ostream &os = std::cout) const
+void VariableScope::Dump(std::ostream &os, unsigned int indent) const
 {
 	for (auto it = variable_info.begin(); it != variable_info.end(); it++)
 	{
-		it->second->Dump(os);
+		it->second->Dump(os, indent);
+		os << "\n";
+	}
+}
+
+
+void VariableScope::DumpInLine(std::ostream &os) const
+{
+	for (auto it = variable_info.begin(); it != variable_info.end(); it++)
+	{
+		if (it != variable_info.begin())
+			os << ", ";
+		it->second->Dump(os, 0, true);
 	}
 }
 

@@ -61,7 +61,10 @@ public:
 	char *getBuffer(const std::string &name);
 
 	/// Dump information in the variable scope
-	void Dump(std::ostream &os) const;
+	void Dump(std::ostream &os = std::cout, unsigned int indent = 0) const;
+
+	/// Dump information in the variable scope in one line
+	void DumpInLine(std::ostream &os = std::cout) const;
 
 	/// Operator \c << invoking the function Dump) on an output stream
 	friend std::ostream &operator<<(std::ostream &os,

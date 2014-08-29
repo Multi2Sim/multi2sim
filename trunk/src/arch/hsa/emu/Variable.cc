@@ -38,7 +38,7 @@ Variable::Variable(const std::string& name, unsigned short type, unsigned size,
 }
 
 template<typename T>
-void Variable::DumpValue(std::ostream &os = std::cout) const
+void Variable::DumpValue(std::ostream &os) const
 {
 	// Get the buffer of the value
 	mem::Memory *memory = Emu::getInstance()->getMemory();
@@ -50,7 +50,8 @@ void Variable::DumpValue(std::ostream &os = std::cout) const
 }
 
 
-void Variable::Dump(std::ostream &os = std::cout) const
+void Variable::Dump(std::ostream &os, unsigned int indent,
+		bool is_simple_format) const
 {
 	// Dump input or output
 	if (this->isInput())
@@ -58,10 +59,23 @@ void Variable::Dump(std::ostream &os = std::cout) const
 		os << "Input ";
 	}
 
+	// Print indent
+	for (unsigned int i = 0; i < indent; i++)
+	{
+		os << " ";
+	}
 
-	// Dump information of the argument.
-	os << misc::fmt("    %s %s(0x%x)", BrigEntry::type2str(type).c_str(),
-			name.c_str(), address);
+	if (!is_simple_format)
+	{
+		// Dump information of the argument.
+		os << misc::fmt("%s %s(0x%x)", BrigEntry::type2str(type).c_str(),
+				name.c_str(), address);
+	}
+	else
+	{
+		// Dump information of the argument.
+		os << misc::fmt("%s", name.c_str());
+	}
 
 	// If address is allocated
 	if (address)
@@ -126,7 +140,7 @@ void Variable::Dump(std::ostream &os = std::cout) const
 	}
 
 	// New line
-	os << "\n";
+	// os << "\n";
 
 }
 
