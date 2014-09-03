@@ -99,7 +99,7 @@ class Driver : public comm::Driver
 
 public:
 
-	// Exception thrown by driver errors
+	/// Exception thrown by driver errors
 	class Error : public misc::Error
 	{
 	public:

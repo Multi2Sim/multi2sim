@@ -85,9 +85,11 @@ class Grid
 	std::list<Grid *>::iterator running_grid_list_iter;
 	std::list<Grid *>::iterator finished_grid_list_iter;
 
-	// Instruction buffer
-	unsigned long long *inst_buffer;
+	// Instruction buffer size in bytes
 	int inst_buffer_size;
+
+	// Instruction buffer contains the all the instructions in the kernel binary
+	std::vector<unsigned long long> inst_buffer;
 
 	// Shared memory top pointer
 	unsigned shared_mem_top;
@@ -136,24 +138,34 @@ public:
 		//assert(index < 3);
 		return thread_block_count3[index];
 	}
-
+/*
 	///get instruction function
 	InstFunc getInstFunc(InstOpcode inst) { return emu->getInstFunc(inst); }
-
+*/
 	/// Get instruction buffer
-	long long unsigned *getInstBuffer() const { return (long long unsigned *)inst_buffer; }
+	std::vector<unsigned long long>::iterator getInstBuffer()
+	{
+		return inst_buffer.begin();
+	}
 
 	/// Get instruction buffer size
 	unsigned getInstBufferSize() const { return inst_buffer_size; }
 
 	/// Get pending_thread_blocks size
-	unsigned getPendThreadBlocksize() const { return pending_thread_blocks.size();}
+	unsigned getPendThreadBlocksize() const
+	{
+		return pending_thread_blocks.size();
+	}
 
 	/// Get running_thread_blocks size
-	unsigned getRunThreadBlocksize() const { return running_thread_blocks.size();}
+	unsigned getRunThreadBlocksize() const
+	{
+		return running_thread_blocks.size();
+	}
 
 	/// Get running thread blocks list begin
-	std::list<std::unique_ptr<ThreadBlock>>::iterator getRunningThreadBlocksBegin()
+	std::list<std::unique_ptr<ThreadBlock>>::iterator
+			getRunningThreadBlocksBegin()
 	{
 		return running_thread_blocks.begin();
 	}

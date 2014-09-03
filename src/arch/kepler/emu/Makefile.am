@@ -8,11 +8,9 @@ libemu_a_SOURCES = \
 	Emu.cc \
 	Emu.h \
 	\
-	Machine.h \
-	Machine.cc \
-	\
 	Thread.cc \
 	Thread.h \
+	ThreadISA.cc\
 	\
 	ThreadBlock.cc \
 	ThreadBlock.h \

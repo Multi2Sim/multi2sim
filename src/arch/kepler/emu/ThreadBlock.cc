@@ -43,7 +43,7 @@ ThreadBlock::ThreadBlock(Grid *grid, int id)
 	int warp_count;
 	int thread_count;
 
-	/* Initialization */
+	// Initialization
 	this->id = id;
 	this->grid = grid;
 
@@ -88,6 +88,9 @@ unsigned ThreadBlock::getWarpsInWorkgroup() const
 
 void ThreadBlock::Dump(std::ostream &os) const
 {
+	os<<"ID:	"<<id<<std::endl;
+	//os<<"the first of grid inst buffer" <<*grid->getInstBuffer()<<std::endl;
+	os<<"the buffer size of grid is"<<grid->getInstBufferSize()<<std::endl;
 }
 
 }	//namespace

@@ -42,7 +42,6 @@ Function::Function(int id, Module *module, const std::string &name) :
 
 	// Get section named ".text.<name>" from the ELF file
 	std::string text_section_name = ".text." + name;
-	std::cout<<text_section_name<<std::endl;
 	ELFReader::Section *text_section = elf_file->getSection(
 			text_section_name);
 	if (text_section == nullptr)
