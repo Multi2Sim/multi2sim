@@ -111,6 +111,22 @@ struct InstBytesGeneral2
 	unsigned long long int op1     	: 9; 	// 63:55
 };
 
+//LDC
+struct InstBytesLDC
+{
+	unsigned long long int op0		: 2;		//1:0
+	unsigned long long int dst		: 8;		//9:2
+	unsigned long long int src1     : 8;        //17:10
+	unsigned long long int pred		: 4;		//21:18
+	unsigned long long int s		: 1;		//22
+	unsigned long long int src2_2  : 16;		//38:23
+	unsigned long long int src2_1	: 5;		//43:39
+	unsigned long long int unknown1 : 3;		//46:44
+	unsigned long long int is		: 2;		//48:47
+ 	unsigned long long int unknown2 : 2;		//50:49
+	unsigned long long int u_or_s	: 3;		//53:51
+	unsigned long long int op1		: 10;		//63:54
+};
 
 // MOV32I, FADD32I, LOP32I, FFMA32I, IMAD32I, ISCADD32I, FMUL32I, IMUL32I 
 struct InstBytesImm
@@ -120,9 +136,9 @@ struct InstBytesImm
 	unsigned long long int mod0     : 8; 	// 17:10
 	unsigned long long int pred     : 4; 	// 21:18
 	unsigned long long int s        : 1; 	// 22
-	unsigned long long int srcB     : 9; 	// 54:23
+	unsigned long long int srcB     :32; 	// 54:23
 	unsigned long long int mod1    	: 6; 	// 60:55
-	unsigned long long int op1 	: 3; 	// 63:61
+	unsigned long long int op1 		: 3; 	// 63:61
 };
 
 
@@ -271,6 +287,138 @@ struct InstBytesImmMod1C
 };
 
 
+// PSETP
+struct InstBytesPSETP
+{
+	unsigned long long int op0:			 2; // 1:0
+	unsigned long long int pred1:		 3; // 4:2
+	unsigned long long int pred0:		 3; // 7:5
+	unsigned long long int unknown5:	 6; // 13:8
+	unsigned long long int pred2:		 4; // 17:14
+	unsigned long long int pred:		 4; // 21:18
+	unsigned long long int s:			 1; // 22
+	unsigned long long int unknown4:	 4; // 26:23
+	unsigned long long int bool_op1:	 2; // 28:27
+	unsigned long long int unknown3:	 3; // 31:29
+	unsigned long long int pred3:		 4; // 35:32
+	unsigned long long int unknown2:	 6; // 41:36
+	unsigned long long int pred4:		 4; // 45:42
+	unsigned long long int unknown1:	 2; // 47:46
+	unsigned long long int bool_op0:	 2; // 49:48
+	unsigned long long int unknown0:	 4; // 53:50
+	unsigned long long int op1:			10; // 63:54
+};
+
+
+// BRA
+struct InstBytesBRA
+{
+	unsigned long long int op0:          2; // 1:0
+	unsigned long long int cc:           5; // 6:2
+	unsigned long long int src_mod:      1; // 7
+	unsigned long long int lmt:          1; // 8
+	unsigned long long int uni:          1; // 9
+	unsigned long long int unknown2:	 8; // 17:10
+	unsigned long long int pred:         4; // 21:18
+	unsigned long long int unknown1:     1; // 22
+	unsigned long long int offset:	    24; // 46:23
+	unsigned long long int unknown0:	 8; // 54:47
+	unsigned long long int op1:			 9; // 63:55
+};
+
+
+// SSY
+struct InstBytesSSY
+{
+	unsigned long long int op0:          2; // 1:0
+	unsigned long long int unknown2:     5; // 6:2
+	unsigned long long int isconstmem:	 1; // 7
+	unsigned long long int unknown1:    15; // 22:8
+	unsigned long long int offset:	    24; // 46:23
+	unsigned long long int unknown0:	 8; // 54:47
+	unsigned long long int op1:			 9; // 63:55
+};
+
+
+// NOP
+struct InstBytesNOP
+{
+	unsigned long long int op0:           2; // 1:0
+	unsigned long long int unknown2:	  8; // 9:2
+	unsigned long long int cc:			  5; // 14:10
+	unsigned long long int trig:      	  1; // 15
+	unsigned long long int unknown1:	  2; // 17:16
+	unsigned long long int pred:	  	  4; // 21:18
+	unsigned long long int s:    		  1; // 22
+	unsigned long long int address:	     16; // 38:23
+	unsigned long long int unknown0:	 15; // 53:39
+	unsigned long long int op1:			 10; // 63:54
+};
+
+
+// SHL
+struct InstBytesSHL
+{
+	unsigned long long int op0:			  2; // 1:0
+	unsigned long long int dst:			  8; // 9:2
+	unsigned long long int src1:		  8; // 17:10
+	unsigned long long int pred:		  4; // 21:18
+	unsigned long long int s:             1; // 22
+	unsigned long long int src2:	  	 19; // 41:23
+	unsigned long long int w:			  1; // 42
+	unsigned long long int unknown2:      3; // 45:43
+	unsigned long long int x:	  		  1; // 46
+	unsigned long long int unknown1:	  3; // 49:47
+	unsigned long long int cc:    		  1; // 50
+	unsigned long long int unknown0:	  3; // 53:51
+	unsigned long long int op1:	 	      9; // 62:54
+	unsigned long long int op2:			  1; // 63
+};
+
+
+// PBK
+struct InstBytesPBK
+{
+	unsigned long long int op0:			  2; // 1:0
+	unsigned long long int unknown0:	  5; // 6:2
+	unsigned long long int constant:	  1; // 7
+	unsigned long long int unknown1:	 15; // 22:8
+	unsigned long long int offset:       24; // 46:23
+	unsigned long long int unknown2:	  8; // 54:47
+	unsigned long long int op1:			  9; // 63:55
+};
+
+
+// BRK
+struct InstBytesBRK
+{
+	unsigned long long int op0:			  2; // 1:0
+	unsigned long long int cc:   	      5; // 6:2
+	unsigned long long int unknown0:	 11; // 17:10
+	unsigned long long int pred:	      4; // 21:18
+	unsigned long long int unknown1:     33; // 54:22
+	unsigned long long int op1:			  9; // 63:55
+};
+
+// IADD
+struct InstBytesIADD
+{
+	unsigned long long int op0: 		  2; // 1:0
+	unsigned long long int dst: 		  8; // 9:2
+	unsigned long long int src1: 		  8; // 17:10
+	unsigned long long int pred: 		  4; // 21:18
+	unsigned long long int s: 			  1; // 22
+	unsigned long long int src2: 	 	 19; // 41:23
+	unsigned long long int unknown0: 	  4; // 45:42
+	unsigned long long int x: 			  1; // 46
+	unsigned long long int unknown1: 	  3; // 49:47
+	unsigned long long int cc: 			  1; // 50
+	unsigned long long int po: 			  2; // 52:51
+	unsigned long long int sat:			  1; // 53
+	unsigned long long int op1: 		  9; // 62:54
+	unsigned long long int op2:			  1; // 63
+};
+
 union InstBytes
 {
 	unsigned char as_uchar[8];
@@ -280,7 +428,16 @@ union InstBytes
 	InstBytesGeneral0 general0;
 	InstBytesGeneral1 general1;
 	InstBytesGeneral2 general2;
-
+	InstBytesImm      immediate;
+	InstBytesLDC      ldc;
+	InstBytesPSETP    psetp;
+	InstBytesSSY      ssy;
+	InstBytesBRA      bra;
+	InstBytesNOP      nop;
+	InstBytesSHL	  shl;
+	InstBytesPBK	  pbk;
+	InstBytesBRK	  brk;
+	InstBytesIADD     iadd;
 };
 
 
@@ -340,6 +497,9 @@ public:
 
 	/// Get opcode
 	unsigned getOpcode() { return info ? (unsigned) info->opcode : InstOpcodeInvalid; }
+
+	/// Get instruction name
+	const char *getName() { return info ? info->name : "<UnknownInsturction>"; }
 
 	///Get Inst Bytes
 	InstBytes getInstBytes() const { return bytes; }

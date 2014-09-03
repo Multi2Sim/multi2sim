@@ -35,12 +35,20 @@
 namespace Kepler
 {
 
-Warp::Warp(ThreadBlock *thread_block, unsigned id)
+Warp::Warp(ThreadBlock *thread_block, unsigned id):inst(Inst())
 {
+
 	// Initialization
+	// Calculate the warp ID in grid
 	this->id = id + thread_block->getId() * thread_block->getWarpsInWorkgroup();
+
+	// Get the ID in thread block
 	id_in_thread_block = id;
+
+	// Get the Grid it belongs to
 	grid = thread_block->getGrid();
+
+	// Get the thread block it belongs to
 	this->thread_block = thread_block;
 
 	// Allocate threads
@@ -51,25 +59,30 @@ Warp::Warp(ThreadBlock *thread_block, unsigned id)
 		(thread_block->getWarpsInWorkgroup() - 1) * warp_size;
 
 	// Instruction
-	inst = new Inst();
 	inst_size = 8;
 	inst_buffer = grid->getInstBuffer();
 	inst_buffer_size = grid->getInstBufferSize();
 
-	// Sync stack
+	// Initialize Sync stack
+	for(int i = 0; i < 32; i++)
+	{
+		sync_stack[i].start_address = 0 ;
+		sync_stack[i].reconv_pc = 0;
+		sync_stack[i].active_thread_mask = 0;
+		sync_stack[i].inst_type = "";
+		sync_stack[i].pre_relative_address = 0;
+		sync_stack[i].original_active_thread_mask = 0;
+	}
 	sync_stack_top = 0;
-	//sync_stack.entries[sync_stack_top].active_thread_mask =
-	//		bit_map_create(thread_count);
-	//bit_map_set(sync_stack.entries[sync_stack_top].
-	//		active_thread_mask, 0, thread_count,
-	//		((unsigned long long)1 << thread_count) - 1);
-	sync_stack.entries[sync_stack_top].active_thread_mask =
-			((unsigned long long)1 << thread_count) - 1;
+	sync_stack[sync_stack_top].active_thread_mask = (1ull << thread_count )- 1;
+	sync_stack[sync_stack_top].original_active_thread_mask =
+				(1ull << thread_count )- 1;
 
 	// Reset flags
 	at_barrier_thread_count = 0;
 	finished_thread_count = 0;
 	finished_emu = false;		//make it clear
+	taken_thread = 0;
 
 	// simulation performance
 	emu_inst_count = 0;
@@ -90,32 +103,33 @@ void Warp::Dump(std::ostream &os) const
 
 void Warp::Execute()
 {
+	// Get emu instance
 	Emu *emu = Emu::getInstance();
+
+	// Instruction binary
 	InstBytes inst_bytes;
+
+	// Instruction opcode
 	InstOpcode inst_op;
 
-	InstFunc InstFunction;
-
-	// Get instruction
+	// Read instruction binary
 	inst_bytes.as_uint[0] = inst_buffer[pc / inst_size] >> 32;
 	inst_bytes.as_uint[1] = inst_buffer[pc / inst_size];
-	//kpl_isa_debug("%s:%d: warp[%d] executes instruction [0x%x] 0x%016llx\n",
-		//	__FILE__, __LINE__, this->id, this->pc, inst_bytes.as_dword);
 
 	// Decode instruction
 	if( pc % 64)
 	{
-		inst->Decode((const char *) &inst_bytes, pc);
+		inst.Decode((const char *) &inst_bytes, pc);
 
 		// Execute instruction
-		inst_op = (InstOpcode) inst->getOpcode();
+		inst_op = (InstOpcode) inst.getOpcode();
+
 		if (!inst_op)
 			std::cerr << __FILE__ << ":" << __LINE__ << ": unrecognized instruction ("
 					<< inst_bytes.as_uint[0]<< inst_bytes.as_uint[1] << std::endl;
 		for (auto thread_id = threads_begin; thread_id < threads_end; ++thread_id)
 		{
-			InstFunction = grid->getInstFunc(inst_op); //make it clear
-			(*InstFunction)(thread_id->get(), inst);
+			thread_id->get()->Execute(inst_op,&inst);
 		}
 	}
 	// Finish
@@ -153,7 +167,7 @@ void Warp::Execute()
 		pc = this->target_pc;
 */
         pc += inst_size;		//make it clear, no jump
-    if(pc >= grid->getInstBufferSize() - 8)
+    if(pc >= inst_buffer_size - 8)
     {
     	finished_emu = true;
     	thread_block->incWarpsCompletedEmu();

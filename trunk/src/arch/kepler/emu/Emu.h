@@ -33,6 +33,7 @@
 #include <lib/cpp/Misc.h>
 #include <memory/Memory.h>
 
+
 namespace Kepler
 {
 
@@ -43,12 +44,6 @@ class ThreadBlock;
 class Thread;
 class Function;
 
-
-typedef void (*InstFunc)(Kepler::Thread *thread, Inst *inst);
-
-/*
- * Class 'KplEmu'
- */
 class Emu : public comm::Emu
 {
 	// Debugger file
@@ -57,13 +52,13 @@ class Emu : public comm::Emu
 	// Simulation kind
 	static comm::Arch::SimKind sim_kind;
 
+	// Emu singleton instance
 	static std::unique_ptr<Emu> instance;
+
 	// Disassembler
 	Asm *as;
 
-	// Grids
-	//std::list<Grid *> grids;
-	// List of Grid created by the guest application
+	// List of Grids created by the guest application
 	std::vector<std::unique_ptr<Grid>> grids;
 
 	// List of Grid
@@ -72,9 +67,10 @@ class Emu : public comm::Emu
 	std::list<Grid *> finished_grids;
 
 	// Memory
-	mem::Memory *global_mem;
-	mem::Memory *const_mem;
-	mem::Memory *shared_mem;
+	std::unique_ptr<mem::Memory> global_mem;
+	std::unique_ptr<mem::Memory> const_mem;
+	std::unique_ptr<mem::Memory> shared_mem;
+
 
 	// Global memory parameters
 	unsigned global_mem_top;
@@ -86,44 +82,56 @@ class Emu : public comm::Emu
 	// if an uninitialized element is used by the kernel.
 	bool const_mem_init[32];
 
-	// Instruction emulation table
-	InstFunc inst_func[InstOpcodeCount];
+	// Number of ALU instructions executed
+	long long alu_inst_count = 0;
 
-	// Stats		//make it clear
-	/*
-	long long alu_inst_count;  // ALU instructions executed
-	long long branch_inst_count;  // Branch instructions executed
-	long long ldst_inst_count;  // LDST instructions executed
-*/
-	long long branch_inst_count;
-	long long alu_inst_count;
-	long long shared_mem_inst_count;
-	long long global_mem_inst_count;
+	// Number of branch instructions executed
+	long long branch_inst_count = 0;
+
+	// Number of shared memory instructions executed
+	long long shared_mem_inst_count = 0;
+
+	// Number of global memory instructions executed
+	long long global_mem_inst_count = 0;
 
 	/// Constructor
 	Emu();
 
 public:
 
+	/// Runtime error for Kepler
+	class Error : public misc::Error
+	{
+	public:
+
+		/// Constructor
+		Error(const std::string &message) : misc::Error(message)
+		{
+			// Add module prefix
+			AppendPrefix("Kepler emulator");
+		}
+	};
+
 	/// Debugger
 	static misc::Debug isa_debug;
 
-	///Kepler emulator maximum cycles
+	/// Kepler emulator maximum cycles
 	long long emu_max_cycles;
 
-	///Kepler emulator maximum number of instructions
+	/// Kepler emulator maximum number of instructions
 	long long emu_max_inst;
 
-	///Kepler emulator maximum number of functions
+	/// Kepler emulator maximum number of functions
 	int emu_max_functions;
-	static const int emu_warp_size = 32;
+
+	/// Warp size
+	static const int warp_size = 32;
 
 	/// Get the only instance of the Kepler emulator. If the instance does not
 	/// exist yet, it will be created, and will remain allocated until the
 	/// end of the execution.
 	static Emu *getInstance();
 
-	// Getters
 	/// Get grid list size
 	unsigned getGridSize() { return grids.size(); }
 
@@ -135,8 +143,6 @@ public:
 
 	/// Get global memory top
 	unsigned* getGlobalMemTopAddress() { return &global_mem_top; }
-	/// Get instruction emulation table
-	InstFunc getInstFunc(InstOpcode inst) { return inst_func[inst]; }
 
 	/// Get global memory free size
 	unsigned getGlobalMemFreeSize() const { return global_mem_free_size; }
@@ -148,10 +154,10 @@ public:
 	unsigned getAluInstCount() const { return alu_inst_count; }
 
 	/// Get global memory
-	mem::Memory* getGlobalMem() const { return global_mem; }
+	mem::Memory* getGlobalMem() const  { return global_mem.get(); }
 
-	///Get constant memory
-	mem::Memory* getConstMem() const { return const_mem; }
+	/// Get constant memory
+	mem::Memory * getConstMem() const { return const_mem.get();}
 
 	/// Return the number of available grids
 	int getNumGrids() { return grids.size(); }
@@ -165,15 +171,14 @@ public:
 				nullptr;
 	}
 
-	// Setter
-	/// set global memory top
+	/// Set global memory top
 	void SetGlobalMemTop(unsigned value) { global_mem_top = value; }
 
 	/// Set global memory free size
 	void setGlobalMemFreeSize(unsigned value) { global_mem_free_size = value; }
 
 	/// Set global memory total size
-	void setGlobalMemTotalSize(unsigned value) { global_mem_total_size = value; }
+	void setGlobalMemTotalSize(unsigned value) { global_mem_total_size = value;}
 
 	/// Increment ALU instruction counter
 	void incAluInstCount() { alu_inst_count ++; }
@@ -181,12 +186,13 @@ public:
 	/// Increse global memory top
 	void incGloablMemTop(unsigned inc) { global_mem_top += inc; }
 
-	/// Dump Kepler Emulator in a human-readable fashion into an output stream (or
-	/// standard output if argument \a os is omitted.
+	/// Dump Kepler Emulator in a human-readable fashion into an output
+	/// stream (or standard output if argument \a os is omitted.
 	void Dump(std::ostream &os = std::cout) const;
 
 	/// Dump emulator state (equivalent to Dump())
-	friend std::ostream &operator<<(std::ostream &os, const Emu &emu) {
+	friend std::ostream &operator<<(std::ostream &os, const Emu &emu)
+	{
 		emu.Dump(os);
 		return os;
 	}
@@ -232,9 +238,7 @@ public:
 
 	/// Process command-line options
 	static void ProcessOptions();
-
 };
-
 
 }  //namespace Kepler
 
