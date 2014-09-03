@@ -30,7 +30,7 @@
 
 #include "Emu.h"
 #include "Grid.h"
-#include "Machine.h"
+#include "Thread.h"
 #include "Warp.h"
 #include "ThreadBlock.h"
 
